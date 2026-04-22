@@ -17,4 +17,4 @@ Disallow: /launch.html
 Disallow: /alerts.html
 Disallow: /notifications.html
 
-Sitemap: https://your-domain.com/sitemap.xml
+Sitemap: https://trillion-ai-juku.com/sitemap.xml

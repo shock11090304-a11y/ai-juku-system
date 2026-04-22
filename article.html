@@ -126,7 +126,7 @@
       document.title = `${article.title} | AI学習コーチ塾`;
       document.getElementById('pageTitle').textContent = document.title;
       document.getElementById('pageDescription').content = article.description;
-      document.getElementById('canonicalLink').href = `https://ai-juku.example/article.html?slug=${article.slug}`;
+      document.getElementById('canonicalLink').href = `https://trillion-ai-juku.com/article.html?slug=${article.slug}`;
       document.getElementById('ogTitle').content = article.title;
       document.getElementById('ogDescription').content = article.description;
 
@@ -164,9 +164,9 @@
         "publisher": {
           "@type": "EducationalOrganization",
           "name": "AI学習コーチ塾",
-          "logo": { "@type": "ImageObject", "url": "https://ai-juku.example/og-image.png" }
+          "logo": { "@type": "ImageObject", "url": "https://trillion-ai-juku.com/og-image.png" }
         },
-        "mainEntityOfPage": `https://ai-juku.example/article.html?slug=${article.slug}`
+        "mainEntityOfPage": `https://trillion-ai-juku.com/article.html?slug=${article.slug}`
       };
       const scriptTag = document.createElement('script');
       scriptTag.type = 'application/ld+json';

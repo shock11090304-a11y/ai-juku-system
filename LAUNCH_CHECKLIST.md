@@ -41,7 +41,7 @@
 - [ ] 独自ドメイン購入
 - [ ] Vercel の Domains にドメイン追加
 - [ ] DNS設定完了・SSL証明書自動発行
-- [ ] `https://your-domain.com/lp.html` が正常表示
+- [ ] `https://trillion-ai-juku.com/lp.html` が正常表示
 
 ### Railway/Render（バックエンド）
 - [ ] Railway/Renderアカウント作成
@@ -54,7 +54,7 @@
   - [ ] `STRIPE_PRICE_PREMIUM`
   - [ ] `STRIPE_PRICE_FAMILY`
   - [ ] `STRIPE_PRICE_STUDENT_ADDON`
-  - [ ] `BASE_URL=https://your-domain.com`
+  - [ ] `BASE_URL=https://trillion-ai-juku.com`
 - [ ] `/api/health` エンドポイントが `{"ok": true}` を返す
 
 ---

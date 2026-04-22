@@ -240,7 +240,7 @@
           </div>
           <div class="bc-var">
             <label>LP URL（公開後）</label>
-            <input type="text" id="varLpUrl" placeholder="https://your-domain.com/student-upgrade.html">
+            <input type="text" id="varLpUrl" placeholder="https://trillion-ai-juku.com/student-upgrade.html">
           </div>
         </div>
 
@@ -442,7 +442,7 @@ AIシステムを独自開発しまして、今月から
       JUKU_NAME: localStorage.getItem('bc_var_juku') || '○○塾',
       OWNER_NAME: localStorage.getItem('bc_var_owner') || '塾長',
       DEADLINE: localStorage.getItem('bc_var_deadline') || '4月30日',
-      LP_URL: localStorage.getItem('bc_var_lp') || 'https://your-domain.com/student-upgrade.html',
+      LP_URL: localStorage.getItem('bc_var_lp') || 'https://trillion-ai-juku.com/student-upgrade.html',
     };
 
     let currentTpl = 'line_short';
@@ -459,7 +459,7 @@ AIシステムを独自開発しまして、今月から
       const url = vars.LP_URL;
       const img = document.getElementById('bcQrImage');
       const urlDisplay = document.getElementById('bcQrUrl');
-      if (url && !url.includes('your-domain.com')) {
+      if (url && !url.includes('trillion-ai-juku.com')) {
         img.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(url)}`;
         urlDisplay.textContent = url;
       } else {
@@ -472,7 +472,7 @@ AIシステムを独自開発しまして、今月から
     document.getElementById('varJukuName').value = vars.JUKU_NAME !== '○○塾' ? vars.JUKU_NAME : '';
     document.getElementById('varOwnerName').value = vars.OWNER_NAME !== '塾長' ? vars.OWNER_NAME : '';
     document.getElementById('varDeadline').value = vars.DEADLINE !== '4月30日' ? vars.DEADLINE : '';
-    document.getElementById('varLpUrl').value = vars.LP_URL.includes('your-domain.com') ? '' : vars.LP_URL;
+    document.getElementById('varLpUrl').value = vars.LP_URL.includes('trillion-ai-juku.com') ? '' : vars.LP_URL;
 
     function bindVarInput(id, key, storageKey) {
       document.getElementById(id).addEventListener('input', (e) => {
