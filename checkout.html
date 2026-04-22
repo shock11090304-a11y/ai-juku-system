@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>お支払い | AI学習コーチ塾</title>
+  <link rel="stylesheet" href="lp.css">
+  <link rel="stylesheet" href="checkout.css">
+  <script src="analytics.js" defer></script>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="lp.html" class="nav-logo">
+        <span class="logo-icon">🎓</span>
+        <span class="logo-text">AI学習コーチ塾</span>
+      </a>
+      <div class="nav-cta">
+        <a href="lp.html" class="btn-ghost">← トップに戻る</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="checkout-main">
+    <div class="checkout-wrapper">
+      <div class="checkout-header">
+        <div class="eyebrow">🎖 FOUNDER TRIAL</div>
+        <h1>第1期生 トライアル申込み</h1>
+        <p class="checkout-sub">創業記念・先着100名限定 / <strong>¥1,980で3日間</strong>全機能トライアル（月額の1/10）</p>
+      </div>
+
+      <div class="plan-selector">
+        <label class="plan-option" data-plan="standard">
+          <input type="radio" name="plan" value="standard">
+          <div class="plan-card">
+            <div class="plan-card-header">
+              <div class="plan-card-name">スタンダード</div>
+              <div class="plan-card-price">¥24,980<span>/月</span></div>
+            </div>
+            <div class="plan-card-desc">24時間AIチューター + AI問題生成 + 添削月10回 + 参考書月3冊</div>
+          </div>
+        </label>
+
+        <label class="plan-option featured" data-plan="premium">
+          <input type="radio" name="plan" value="premium" checked>
+          <div class="plan-card">
+            <div class="plan-recommend">🔥 人気No.1</div>
+            <div class="plan-card-header">
+              <div class="plan-card-name">プレミアム</div>
+              <div class="plan-card-price">¥39,800<span>/月</span></div>
+            </div>
+            <div class="plan-card-desc">差額¥14,820で<strong>全機能無制限</strong>解放 + 最上位AI(Opus 4.7)</div>
+          </div>
+        </label>
+
+        <label class="plan-option" data-plan="family">
+          <input type="radio" name="plan" value="family">
+          <div class="plan-card">
+            <div class="plan-card-header">
+              <div class="plan-card-name">家族プラン（最大3名）</div>
+              <div class="plan-card-price">¥59,800<span>/月</span></div>
+            </div>
+            <div class="plan-card-desc">👨‍👩‍👧 兄弟姉妹3名まで使える・1人あたり実質¥19,933/月</div>
+          </div>
+        </label>
+      </div>
+
+      <form id="checkoutForm" class="checkout-form">
+        <h2>お客様情報</h2>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>お名前（お子様） *</label>
+            <input type="text" id="name" required>
+          </div>
+          <div class="form-group">
+            <label>学年 *</label>
+            <select id="grade" required>
+              <option value="">選択してください</option>
+              <option>小学5年</option>
+              <option>小学6年</option>
+              <option>中学1年</option>
+              <option>中学2年</option>
+              <option>中学3年</option>
+              <option>高校1年</option>
+              <option>高校2年</option>
+              <option>高校3年</option>
+              <option>既卒生</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>保護者様メールアドレス *</label>
+          <input type="email" id="email" required>
+          <p class="field-hint">📧 このアドレスに決済確認・レポートが届きます</p>
+        </div>
+        <div class="form-group">
+          <label>志望校・目標（任意）</label>
+          <input type="text" id="goal" placeholder="例：東京大学 文科一類 / 英検準1級合格">
+        </div>
+
+        <div class="summary-box">
+          <h3>📋 ご注文内容</h3>
+          <div class="summary-row">
+            <span>選択プラン（トライアル後）</span>
+            <span id="summaryPlan">プレミアム</span>
+          </div>
+          <div class="summary-row">
+            <span>月額（トライアル後・税込）</span>
+            <span id="summaryPrice">¥39,800</span>
+          </div>
+          <div class="summary-row emphasis">
+            <span>🎖 第1期生トライアル（3日間）</span>
+            <span style="color:var(--warning);font-weight:800;">¥1,980</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-row">
+            <span>本日お支払い金額</span>
+            <span class="total">¥1,980</span>
+          </div>
+          <p class="summary-note">
+            <strong>📅 料金スケジュール</strong><br>
+            ・本日: ¥1,980（3日間トライアル）<br>
+            ・3日後: 選択プランに自動移行（月額課金開始）<br>
+            ・3日以内にマイページから解約すれば以降の課金なし
+          </p>
+        </div>
+
+        <div class="trust-row">
+          <div class="trust-item">🔒 SSL暗号化</div>
+          <div class="trust-item">💳 Stripe決済</div>
+          <div class="trust-item">🏢 決済情報は弊社サーバーに保存されません</div>
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn-primary btn-lg btn-block">
+          ¥1,980で3日間トライアルを開始する →
+        </button>
+
+        <p class="legal-note">
+          ご登録により、<a href="legal.html#terms">利用規約</a>・<a href="legal.html#privacy">プライバシーポリシー</a>・<a href="legal.html#tokusho">特商法に基づく表記</a>に同意したものとみなされます。
+        </p>
+
+        <div id="errorBox" class="error-box" style="display:none;"></div>
+        <div id="loadingBox" class="loading-box" style="display:none;">
+          <div class="spinner"></div>
+          <p>Stripeの安全な決済ページに移動しています...</p>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-bottom">© 2026 AI学習コーチ塾 | Powered by Claude AI</div>
+  </footer>
+
+  <script src="checkout.js"></script>
+</body>
+</html>

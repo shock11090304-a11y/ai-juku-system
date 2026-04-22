@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎥 実機能デモ | AI学習コーチ塾</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="demo-features.css">
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <div class="demo-container">
+    <!-- Progress bar -->
+    <div class="demo-progress-top">
+      <div class="dp-bar" id="dpBar"></div>
+    </div>
+
+    <!-- Frame counter & controls -->
+    <div class="demo-controls">
+      <div class="dc-left">
+        <button class="dc-btn" id="prevBtn" title="前の機能">◀</button>
+        <button class="dc-btn main" id="playBtn" title="再生/一時停止">▶</button>
+        <button class="dc-btn" id="nextBtn" title="次の機能">▶</button>
+      </div>
+      <div class="dc-center">
+        <span class="dc-counter"><span id="currentFrame">1</span> / <span id="totalFrames">8</span></span>
+        <span class="dc-title" id="frameTitle">はじめまして</span>
+      </div>
+      <div class="dc-right">
+        <button class="dc-btn" id="fullscreenBtn" title="フルスクリーン">⛶</button>
+        <a href="lp.html" class="dc-link">LP →</a>
+        <a href="ceo.html" class="dc-link">CEO →</a>
+      </div>
+    </div>
+
+    <!-- Main viewport -->
+    <div class="demo-viewport-wrap">
+      <!-- Feature frames (overlays) -->
+      <div class="feature-overlays">
+        <div id="featureBadge" class="feature-badge">🎓 1/8</div>
+        <div id="featureCallout" class="feature-callout"></div>
+      </div>
+
+      <!-- Beautiful feature mockup viewport (no iframe, no SW issues) -->
+      <div id="mockViewport" class="mock-viewport"></div>
+      <a id="useRealBtn" href="index.html" class="use-real-btn">🚀 実際に試す →</a>
+
+      <!-- Narration panel -->
+      <div id="narrationPanel" class="narration-panel">
+        <div class="np-badge">🎯 CEO 推薦機能</div>
+        <h2 id="npTitle">24時間 AI チューター</h2>
+        <p id="npDesc">いつでも、どこでも、わからない問題をAIが即解説。深夜2時でも、日曜日でも、勉強が止まりません。</p>
+        <div class="np-stats" id="npStats">
+          <div class="np-stat">
+            <div class="nps-num">24h</div>
+            <div class="nps-label">応答時間</div>
+          </div>
+          <div class="np-stat">
+            <div class="nps-num">30秒</div>
+            <div class="nps-label">解答生成</div>
+          </div>
+        </div>
+        <div class="np-wow" id="npWow">💡 <strong>ここがすごい:</strong> 塾講師なら週2回しか質問できないが、これは年中無休24時間対応</div>
+      </div>
+    </div>
+
+    <!-- Feature chips -->
+    <div class="feature-chips" id="featureChips"></div>
+
+    <!-- CTA bottom -->
+    <div class="demo-cta">
+      <div class="dcta-text">🎖 第1期生100名限定 / 残り枠 <strong id="seatsRemaining">68</strong></div>
+      <a href="checkout.html?plan=hybrid" class="dcta-btn">¥1,980で3日間試す →</a>
+    </div>
+  </div>
+
+  <script src="demo-features.js"></script>
+</body>
+</html>

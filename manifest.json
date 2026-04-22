@@ -1,0 +1,44 @@
+{
+  "name": "AI学習コーチ塾",
+  "short_name": "AI塾",
+  "description": "24時間AIチューター付き・完全個別最適化学習プラットフォーム",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#6366f1",
+  "background_color": "#0a0a1a",
+  "lang": "ja",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "AIチューター",
+      "short_name": "チューター",
+      "description": "AIに質問する",
+      "url": "/index.html#tab-tutor",
+      "icons": [{ "src": "icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "マイページ",
+      "short_name": "マイページ",
+      "description": "学習状況を確認",
+      "url": "/mypage.html",
+      "icons": [{ "src": "icon-192.svg", "sizes": "192x192" }]
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "screenshots": []
+}

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登録完了 | AI学習コーチ塾</title>
+  <link rel="stylesheet" href="lp.css">
+  <link rel="stylesheet" href="checkout.css">
+  <style>
+    .success-hero { text-align: center; padding: 4rem 2rem; }
+    .success-emoji { font-size: 6rem; margin-bottom: 1rem; animation: pop 0.8s ease-out; }
+    .success-title { font-size: 2.5rem; font-weight: 900; margin-bottom: 1rem; }
+    .success-sub { font-size: 1.1rem; color: var(--text-dim); margin-bottom: 2rem; }
+    .next-steps { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 16px; padding: 2rem; margin: 2rem 0; text-align: left; }
+    .step-list { list-style: none; padding: 0; }
+    .step-list li {
+      padding: 1rem 0;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      border-bottom: 1px solid var(--panel-border);
+    }
+    .step-list li:last-child { border-bottom: none; }
+    .step-num {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+    @keyframes pop {
+      0% { transform: scale(0); }
+      70% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    .confetti {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .confetti-piece {
+      position: absolute;
+      font-size: 2rem;
+      animation: fall 3s linear forwards;
+    }
+    @keyframes fall {
+      to { transform: translateY(120vh) rotate(720deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+  <div class="confetti" id="confetti"></div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="lp.html" class="nav-logo">
+        <span class="logo-icon">🎓</span>
+        <span class="logo-text">AI学習コーチ塾</span>
+      </a>
+    </div>
+  </nav>
+
+  <main class="checkout-main">
+    <div class="success-hero">
+      <div class="success-emoji">🎉</div>
+      <h1 class="success-title">ご登録<span class="gradient-text">完了しました！</span></h1>
+      <p class="success-sub">
+        🎖 第1期生としてご登録ありがとうございます！<br>
+        3日間のトライアルが始まります。3日後に月額プランに自動移行します。
+      </p>
+
+      <div class="next-steps">
+        <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:1rem;text-align:center;">📋 次のステップ</h2>
+        <ol class="step-list">
+          <li>
+            <div class="step-num">1</div>
+            <div>
+              <strong>アプリにアクセス</strong><br>
+              <span style="font-size:0.85rem;color:var(--text-dim);">下のボタンから学習環境にアクセスできます</span>
+            </div>
+          </li>
+          <li>
+            <div class="step-num">2</div>
+            <div>
+              <strong>LINE公式アカウントを友だち追加</strong><br>
+              <span style="font-size:0.85rem;color:var(--text-dim);">保護者レポートが毎週日曜にLINEに届きます</span>
+            </div>
+          </li>
+          <li>
+            <div class="step-num">3</div>
+            <div>
+              <strong>最初の質問をAIにしてみる</strong><br>
+              <span style="font-size:0.85rem;color:var(--text-dim);">深夜でも即答。今夜からでも使えます</span>
+            </div>
+          </li>
+          <li>
+            <div class="step-num">4</div>
+            <div>
+              <strong>志望校・目標を設定</strong><br>
+              <span style="font-size:0.85rem;color:var(--text-dim);">AIがカリキュラムを自動生成します</span>
+            </div>
+          </li>
+        </ol>
+      </div>
+
+      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+        <a href="index.html" class="btn-primary btn-lg">🎓 アプリを開く</a>
+        <a href="mypage.html" class="btn-ghost btn-lg">🎮 マイページへ</a>
+      </div>
+
+      <p style="margin-top:2rem;font-size:0.85rem;color:var(--text-muted);">
+        ご質問がございましたら、<a href="mailto:info@ai-juku.example" style="color:var(--primary-light);">info@ai-juku.example</a> までお気軽にどうぞ。<br>
+        体験期間中はいつでも<a href="legal.html#tokusho" style="color:var(--primary-light);">解約可能</a>です。
+      </p>
+    </div>
+  </main>
+
+  <script>
+    // Confetti animation
+    const emojis = ['🎉', '✨', '🎊', '⭐', '🌟', '🎈', '💫'];
+    const container = document.getElementById('confetti');
+    for (let i = 0; i < 30; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      piece.style.left = Math.random() * 100 + '%';
+      piece.style.top = '-50px';
+      piece.style.animationDelay = Math.random() * 2 + 's';
+      piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+      container.appendChild(piece);
+    }
+    setTimeout(() => container.remove(), 5000);
+
+    // Track success event
+    const API_BASE = window.location.origin.includes(':8090') ? 'http://localhost:8000' : window.location.origin;
+    fetch(`${API_BASE}/api/track`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'checkout_completed', props: { session_id: new URLSearchParams(window.location.search).get('session_id') } })
+    }).catch(() => {});
+  </script>
+</body>
+</html>

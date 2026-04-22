@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📚 テキスト教材生成 | AI学習コーチ塾</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="textbook-generator.css">
+  <script src="textbooks-db.js"></script>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">📚</span>
+      <div>
+        <h1>オリジナル参考書ジェネレーター</h1>
+        <p class="tagline">自分の弱点に合わせた「世界で1冊の教材」をAIが執筆</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span id="modeIndicator" class="mode-badge">🟡 デモモード</span>
+      <a href="index.html" class="btn-nav-pill" title="アプリに戻る"><span class="bnp-icon">🎓</span><span class="bnp-label">アプリ</span></a>
+      <a href="mypage.html" class="btn-nav-pill" title="マイページへ"><span class="bnp-icon">🎮</span><span class="bnp-label">マイページ</span></a>
+    </div>
+  </header>
+
+  <main class="tb-main">
+    <section class="tb-intro">
+      <h2>✨ こんな教材が作れます</h2>
+      <p>
+        「英検準1級の単語だけを集めた自分用単語帳」「源氏物語の敬語だけ特化した解説書」のように、
+        <strong>自分の弱点にピンポイントで合わせた参考書</strong>をAIが執筆します。<br>
+        目次・導入・例題・解説・練習問題・まとめまで完備。PDFで保存して紙のテキストのように使えます。
+      </p>
+    </section>
+
+    <div class="tb-layout">
+      <section class="tb-form">
+        <h3>🎯 教材の設計</h3>
+
+        <div class="form-group">
+          <label>教材タイプ</label>
+          <select id="tbType">
+            <option value="full_textbook">📚 総合テキスト（章立て構造・全編）</option>
+            <option value="unit_lesson">📖 単元レッスン（1単元 導入〜演習）</option>
+            <option value="exam_package">📝 模擬試験パッケージ（問題+採点基準）</option>
+            <option value="vocab_list">📋 語彙集（意味+例文+類題）</option>
+            <option value="reading_set">📄 長文読解セット（本文+設問+解説）</option>
+            <option value="worksheet">✏️ ワークシート（演習プリント1枚）</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>科目・分野</label>
+          <select id="tbSubject">
+            <option>英語（英検準1級）</option>
+            <option>英語（英検2級）</option>
+            <option>英語（共通テスト）</option>
+            <option>英語（東大2次）</option>
+            <option>英語（高校英文法）</option>
+            <option>英語（中学英文法）</option>
+            <option>数学ⅠA</option>
+            <option>数学ⅡB</option>
+            <option>数学Ⅲ</option>
+            <option>国語（現代文）</option>
+            <option>国語（古文）</option>
+            <option>国語（漢文）</option>
+            <option>物理基礎・物理</option>
+            <option>化学基礎・化学</option>
+            <option>生物基礎・生物</option>
+            <option>日本史</option>
+            <option>世界史</option>
+            <option>地理</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>単元・テーマ <span style="color:var(--primary-light);font-weight:600;font-size:0.8em;">（プルダウンから複数選択可）</span></label>
+          <div class="unit-picker">
+            <div class="unit-chips" id="tbUnitChips">
+              <p class="unit-hint" id="tbUnitHint">↑ まず科目を選択してください</p>
+            </div>
+            <div class="unit-selected-bar" id="tbUnitSelectedBar" style="display:none;">
+              <span class="usb-label">選択中:</span>
+              <span id="tbUnitSelectedTags"></span>
+              <button id="tbUnitClear" class="usb-clear" title="全てクリア">✕ クリア</button>
+            </div>
+          </div>
+          <input type="text" id="tbTopic" placeholder="（上のチップを選択 / または自由記入も可）" style="margin-top:0.5rem;">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>対象レベル</label>
+            <select id="tbLevel">
+              <option>中学基礎</option>
+              <option>中学応用</option>
+              <option>高校基礎</option>
+              <option selected>高校標準</option>
+              <option>高校応用</option>
+              <option>難関大受験</option>
+              <option>ネイティブ・英検1級</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>分量</label>
+            <select id="tbLength">
+              <option value="short">簡潔（A4で2〜3ページ）</option>
+              <option value="medium" selected>標準（A4で5〜8ページ）</option>
+              <option value="long">詳細（A4で10〜15ページ）</option>
+              <option value="exhaustive">網羅（A4で20ページ超）</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>含める要素（複数選択可）</label>
+          <div class="checkbox-grid">
+            <label class="checkbox-item"><input type="checkbox" value="intro" checked> 導入文</label>
+            <label class="checkbox-item"><input type="checkbox" value="theory" checked> 基本事項解説</label>
+            <label class="checkbox-item"><input type="checkbox" value="tip" checked> 💡 TIPボックス</label>
+            <label class="checkbox-item"><input type="checkbox" value="warn" checked> ⚠️ 注意事項</label>
+            <label class="checkbox-item"><input type="checkbox" value="examples" checked> 例題＋詳細解説</label>
+            <label class="checkbox-item"><input type="checkbox" value="practice" checked> 演習問題</label>
+            <label class="checkbox-item"><input type="checkbox" value="answers" checked> 解答・解説</label>
+            <label class="checkbox-item"><input type="checkbox" value="summary" checked> まとめ</label>
+            <label class="checkbox-item"><input type="checkbox" value="vocab"> 重要語彙表</label>
+            <label class="checkbox-item"><input type="checkbox" value="table"> 比較表</label>
+            <label class="checkbox-item"><input type="checkbox" value="mnemonic"> 覚え方・語呂</label>
+            <label class="checkbox-item"><input type="checkbox" value="past_exam"> 過去問リンク</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>📖 解答表示レイアウト <span style="color:var(--accent);font-weight:700;">NEW</span></label>
+          <div class="layout-picker">
+            <label class="layout-opt">
+              <input type="radio" name="answerLayout" value="hidden" checked>
+              <div class="layout-card">
+                <div class="layout-emoji">🙈</div>
+                <div class="layout-title">答えを隠す</div>
+                <div class="layout-desc">答えを<strong>見るボタン</strong>でワンクリック表示。まず考えさせる教育設計。</div>
+              </div>
+            </label>
+            <label class="layout-opt">
+              <input type="radio" name="answerLayout" value="end">
+              <div class="layout-card">
+                <div class="layout-emoji">📖</div>
+                <div class="layout-title">巻末解答</div>
+                <div class="layout-desc">問題集のように<strong>末尾に解答セクション</strong>をまとめる。PDF向き。</div>
+              </div>
+            </label>
+            <label class="layout-opt">
+              <input type="radio" name="answerLayout" value="inline">
+              <div class="layout-card">
+                <div class="layout-emoji">📋</div>
+                <div class="layout-title">全表示</div>
+                <div class="layout-desc">問題直後に解答・解説。<strong>講師用</strong>レビュー時に。</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>追加指示（任意）</label>
+          <textarea id="tbNotes" rows="3" placeholder="例: 具体例を3つ以上、ユーモアも少し、関連する他単元への橋渡しを必ず入れる"></textarea>
+        </div>
+
+        <button id="generateTbBtn" class="btn-primary" style="width:100%;">✨ テキスト教材を生成</button>
+        <div class="quality-badge">
+          <strong>💎 クオリティ最優先モード</strong>
+          <span>Claude Opus 4.7 + Extended Thinking で市販参考書レベル。<strong style="color:var(--success);">プラン料金に含まれているため追加料金なし</strong>。</span>
+        </div>
+        <p class="tb-cost">💡 生成時間: 60〜180秒 / <strong style="color:var(--success);">追加料金：なし（月額プラン内）</strong></p>
+      </section>
+
+      <section class="tb-output">
+        <div class="output-header">
+          <h3>📖 生成された教材</h3>
+          <div class="output-actions" id="tbActions" style="display:none;">
+            <button id="tbCopyMd" class="btn-secondary btn-small">📋 Markdown</button>
+            <button id="tbCopyHtml" class="btn-secondary btn-small">📋 HTML</button>
+            <button id="tbCopyPython" class="btn-secondary btn-small">🐍 Python配列</button>
+            <button id="tbCopyJson" class="btn-secondary btn-small">🔧 JSON</button>
+            <button id="tbPrint" class="btn-secondary btn-small">🖨 PDF印刷</button>
+            <button id="tbDownload" class="btn-secondary btn-small">💾 .md保存</button>
+          </div>
+        </div>
+
+        <div class="view-tabs" id="viewTabs" style="display:none;">
+          <button class="view-tab active" data-view="rendered">👁 プレビュー</button>
+          <button class="view-tab" data-view="markdown">📝 Markdown</button>
+          <button class="view-tab" data-view="python">🐍 Python配列</button>
+          <button class="view-tab" data-view="json">🔧 JSON</button>
+          <div class="view-toolbar" id="viewToolbar">
+            <button id="revealAllBtn" class="reveal-toolbar-btn" title="答えを一気に表示">👁‍🗨 全解答を表示</button>
+            <button id="hideAllBtn" class="reveal-toolbar-btn" title="答えを一気に隠す">🙈 全解答を隠す</button>
+          </div>
+        </div>
+
+        <div id="tbResult" class="tb-result">
+          <div class="tb-placeholder">
+            <div style="font-size:4rem;margin-bottom:1rem;">📖</div>
+            <p>左側で条件を指定して「テキスト教材を生成」を押すと、<br>章立て・例題・演習・解説まで揃った本格的な教材が出力されます。</p>
+            <p style="margin-top:1rem;font-size:0.85rem;color:var(--text-muted);">💾 Markdown / PDF で保存可能。自分だけの参考書としてくり返し使えます。</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <details class="reportlab-section">
+      <summary style="cursor:pointer;list-style:none;"><h2 style="display:inline;">🐍 開発者向け: reportlab 連携ガイド（上級者のみ）</h2></summary>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin:0.5rem 0 1rem;">※ この欄は Python + reportlab 経験者向けの高度な使い方です。通常は上の「PDFで保存」ボタンで十分です。</p>
+      <div class="reportlab-grid">
+        <div class="rl-card">
+          <h3>1. 生成した Python配列をコピー</h3>
+          <p>右上「🐍 Python配列」ボタンで <code>CHAPTERS</code> 形式の配列をコピー。</p>
+          <pre class="rl-code">CHAPTERS = [
+  {
+    "title": "関係代名詞",
+    "sections": [
+      {"type": "intro", "text": "..."},
+      {"type": "theory", "text": "..."},
+      {"type": "example", "q": "...", "a": "..."},
+      ...
+    ]
+  }
+]</pre>
+        </div>
+        <div class="rl-card">
+          <h3>2. 既存の <code>.py</code> ファイルに貼り付け</h3>
+          <p>eiken_pre1_textbook.py / kobun_textbook.py の CHAPTERS 変数に上書き。</p>
+          <pre class="rl-code"># 上書き例
+CHAPTERS = [ ... ]  # 生成したコンテンツ
+
+# 既存のビルド関数が自動で処理
+build_pdf(CHAPTERS, output_path='output.pdf')</pre>
+        </div>
+        <div class="rl-card">
+          <h3>3. PDF ビルド</h3>
+          <p>ターミナルで実行するだけ。</p>
+          <pre class="rl-code">python3 eiken_pre1_textbook.py
+# → textbook.pdf が生成される</pre>
+        </div>
+      </div>
+    </details>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-bottom">© 2026 AI学習コーチ塾 | Textbook Generator</div>
+  </footer>
+
+  <script src="textbook-generator.js"></script>
+</body>
+</html>

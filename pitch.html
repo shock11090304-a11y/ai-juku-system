@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>💎 投資家向けピッチ | AI学習コーチ塾</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="pitch.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="pitch-nav">
+    <button id="prevSlide" class="nav-btn">←</button>
+    <div class="slide-indicator"><span id="currentSlide">1</span> / <span id="totalSlides">14</span></div>
+    <button id="nextSlide" class="nav-btn">→</button>
+    <div class="nav-spacer"></div>
+    <button id="fullscreen" class="nav-btn" title="フルスクリーン">⛶</button>
+    <a href="ceo.html" class="nav-btn">戻る</a>
+  </div>
+
+  <div class="slides-container">
+    <!-- Slide 1: Title -->
+    <section class="slide active" data-slide="1">
+      <div class="slide-content center">
+        <div class="pitch-logo">🎓</div>
+        <h1 class="pitch-title">AI学習コーチ塾</h1>
+        <p class="pitch-tagline">AIで学習塾を再発明する</p>
+        <div class="pitch-meta">
+          <div>2026年X月 | シリーズA調達向けピッチ</div>
+          <div>代表 〇〇 | press@ai-juku.jp</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 2: Problem -->
+    <section class="slide" data-slide="2">
+      <div class="slide-header">
+        <span class="slide-label">Problem</span>
+        <h2>日本の教育市場が抱える3つの構造問題</h2>
+      </div>
+      <div class="problem-columns">
+        <div class="p-col">
+          <div class="p-icon">💸</div>
+          <h3>教育費の高騰</h3>
+          <p class="big-num">¥5-8万/月</p>
+          <p class="p-desc">首都圏の個別指導塾の相場。家計の教育費率は年々上昇し、世帯年収の15-20%を占める家庭も。</p>
+        </div>
+        <div class="p-col">
+          <div class="p-icon">👨‍🏫</div>
+          <h3>講師の質依存</h3>
+          <p class="big-num">60%</p>
+          <p class="p-desc">塾月謝に占める講師人件費。講師の質でサービスの質が決まり、スケールしない構造。</p>
+        </div>
+        <div class="p-col">
+          <div class="p-icon">🌍</div>
+          <h3>教育格差の拡大</h3>
+          <p class="big-num">地方×都市</p>
+          <p class="p-desc">地方は質の高い講師が不足。首都圏並みの難関校対策が受けられず、機会の不平等が固定化。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 3: Solution -->
+    <section class="slide" data-slide="3">
+      <div class="slide-header">
+        <span class="slide-label">Solution</span>
+        <h2><span class="grad">Claude AI</span> を核にした、完全個別最適化学習プラットフォーム</h2>
+      </div>
+      <div class="solution-grid">
+        <div class="sol-box">
+          <h3>🎯 3つの革新</h3>
+          <ol>
+            <li><strong>AIで「量」を無限化</strong> ─ 24時間質問・無制限添削・問題自動生成</li>
+            <li><strong>人間は「質」に特化</strong> ─ 戦略・モチベ・温度感の提供</li>
+            <li><strong>構造的な低価格</strong> ─ 従来塾の1/3の価格で同等以上</li>
+          </ol>
+        </div>
+        <div class="sol-box">
+          <h3>🔑 8つのAI機能</h3>
+          <div class="feature-grid">
+            <div>💬 24hAIチューター</div>
+            <div>📊 AI学習診断</div>
+            <div>🎯 カリキュラムAI生成</div>
+            <div>✍️ 無制限AI添削</div>
+            <div>📷 模試Vision AI</div>
+            <div>🧪 AI問題生成</div>
+            <div>🎙 音声AIスピーキング</div>
+            <div>📱 保護者PWA</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 4: Market -->
+    <section class="slide" data-slide="4">
+      <div class="slide-header">
+        <span class="slide-label">Market</span>
+        <h2>巨大な市場機会 ─ TAM ¥1兆2,000億</h2>
+      </div>
+      <div class="market-layout">
+        <div class="market-circles">
+          <div class="circle tam">
+            <div class="circle-label">TAM</div>
+            <div class="circle-num">¥1.2兆</div>
+            <div class="circle-sub">日本の学習塾市場全体</div>
+          </div>
+          <div class="circle sam">
+            <div class="circle-label">SAM</div>
+            <div class="circle-num">¥3,000億</div>
+            <div class="circle-sub">個別指導塾市場</div>
+          </div>
+          <div class="circle som">
+            <div class="circle-label">SOM (3年以内)</div>
+            <div class="circle-num">¥30億</div>
+            <div class="circle-sub">D2C×B2Bで獲得目標</div>
+          </div>
+        </div>
+        <div class="market-notes">
+          <div class="market-stat">
+            <strong>学習塾市場: 年1.2兆円</strong><br>
+            <span>少子化でも縮小せず、単価上昇で横ばい成長</span>
+          </div>
+          <div class="market-stat">
+            <strong>既存塾の約50,000施設</strong><br>
+            <span>B2B OEMターゲット。うち30校獲得で月商¥750万達成</span>
+          </div>
+          <div class="market-stat">
+            <strong>AI塾の認知率: 5%未満 (2026年時点)</strong><br>
+            <span>市場教育の段階で先行者利益を獲得できる</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 5: Business Model -->
+    <section class="slide" data-slide="5">
+      <div class="slide-header">
+        <span class="slide-label">Business Model</span>
+        <h2>2軸の収益構造で高レバレッジ</h2>
+      </div>
+      <div class="bm-grid">
+        <div class="bm-card d2c">
+          <div class="bm-label">D2C (個人向け)</div>
+          <h3>AI学習コーチ塾</h3>
+          <div class="bm-metrics">
+            <div class="bm-metric"><span class="k">平均単価</span><span class="v">¥39,800/月</span></div>
+            <div class="bm-metric"><span class="k">LTV</span><span class="v">¥358,200 (9ヶ月平均)</span></div>
+            <div class="bm-metric"><span class="k">CAC</span><span class="v">¥8,000</span></div>
+            <div class="bm-metric"><span class="k">LTV/CAC</span><span class="v highlight">44.8x</span></div>
+            <div class="bm-metric"><span class="k">粗利率</span><span class="v">75%</span></div>
+          </div>
+        </div>
+        <div class="bm-card b2b">
+          <div class="bm-label">B2B (塾経営者向けOEM)</div>
+          <h3>AI学習コーチ塾 for Business</h3>
+          <div class="bm-metrics">
+            <div class="bm-metric"><span class="k">平均単価</span><span class="v">¥250,000/月</span></div>
+            <div class="bm-metric"><span class="k">LTV</span><span class="v">¥6,000,000 (24ヶ月)</span></div>
+            <div class="bm-metric"><span class="k">CAC</span><span class="v">¥80,000</span></div>
+            <div class="bm-metric"><span class="k">LTV/CAC</span><span class="v highlight">75x</span></div>
+            <div class="bm-metric"><span class="k">粗利率</span><span class="v">85%</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 6: Traction -->
+    <section class="slide" data-slide="6">
+      <div class="slide-header">
+        <span class="slide-label">Traction</span>
+        <h2>ローンチ後3ヶ月の成果</h2>
+      </div>
+      <div class="traction-kpis">
+        <div class="tk">
+          <div class="tk-num">103</div>
+          <div class="tk-label">既存顧客ベース</div>
+          <div class="tk-sub">運営中の塾から移行</div>
+        </div>
+        <div class="tk highlight">
+          <div class="tk-num">¥4M</div>
+          <div class="tk-label">目標MRR (6ヶ月後)</div>
+          <div class="tk-sub">D2C 60名 + B2B 5校</div>
+        </div>
+        <div class="tk">
+          <div class="tk-num">95%</div>
+          <div class="tk-label">目標継続率</div>
+          <div class="tk-sub">業界平均80%超え</div>
+        </div>
+        <div class="tk">
+          <div class="tk-num">2.5x</div>
+          <div class="tk-label">学習効率向上</div>
+          <div class="tk-sub">従来塾比較</div>
+        </div>
+      </div>
+      <div class="traction-chart-wrap">
+        <canvas id="tractionChart"></canvas>
+      </div>
+    </section>
+
+    <!-- Slide 7: Product -->
+    <section class="slide" data-slide="7">
+      <div class="slide-header">
+        <span class="slide-label">Product</span>
+        <h2>既に稼働する完全プロダクト</h2>
+      </div>
+      <div class="product-showcase">
+        <div class="prod-img">
+          <div class="prod-placeholder">
+            <span style="font-size:4rem;">💻</span>
+            <p>プロダクトデモ<br><a href="index.html" target="_blank" style="color:var(--primary-light);">→ ライブアプリを見る</a></p>
+          </div>
+        </div>
+        <div class="prod-list">
+          <div class="prod-item">✅ Webアプリ (PWA対応)</div>
+          <div class="prod-item">✅ 管理者ダッシュボード</div>
+          <div class="prod-item">✅ 生徒マイページ (ゲーミフィケーション)</div>
+          <div class="prod-item">✅ CEO経営ダッシュボード</div>
+          <div class="prod-item">✅ AI記事量産ツール</div>
+          <div class="prod-item">✅ Stripe決済統合</div>
+          <div class="prod-item">✅ LINE通知自動配信</div>
+          <div class="prod-item">✅ 紹介プログラム</div>
+          <div class="prod-item">✅ B2Bホワイトレーベル対応</div>
+          <div class="prod-item">✅ 全法的ページ整備済</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 8: Competition -->
+    <section class="slide" data-slide="8">
+      <div class="slide-header">
+        <span class="slide-label">Competition</span>
+        <h2>競合との位置関係</h2>
+      </div>
+      <div class="competition-matrix">
+        <div class="comp-grid">
+          <div class="comp-header"></div>
+          <div class="comp-header">価格</div>
+          <div class="comp-header">AI対話</div>
+          <div class="comp-header">個別最適</div>
+          <div class="comp-header">講師併用</div>
+
+          <div class="comp-name">当社</div>
+          <div class="comp-cell best">★★★</div>
+          <div class="comp-cell best">★★★</div>
+          <div class="comp-cell best">★★★</div>
+          <div class="comp-cell best">★★★</div>
+
+          <div class="comp-name">スタディサプリ</div>
+          <div class="comp-cell">★★★</div>
+          <div class="comp-cell">★</div>
+          <div class="comp-cell">★</div>
+          <div class="comp-cell">-</div>
+
+          <div class="comp-name">atama+</div>
+          <div class="comp-cell">★</div>
+          <div class="comp-cell">★</div>
+          <div class="comp-cell">★★</div>
+          <div class="comp-cell">★★</div>
+
+          <div class="comp-name">すらら</div>
+          <div class="comp-cell">★★</div>
+          <div class="comp-cell">-</div>
+          <div class="comp-cell">★★</div>
+          <div class="comp-cell">★</div>
+
+          <div class="comp-name">個別指導塾</div>
+          <div class="comp-cell">-</div>
+          <div class="comp-cell">-</div>
+          <div class="comp-cell">★★</div>
+          <div class="comp-cell">★★★</div>
+        </div>
+      </div>
+      <p class="comp-note">💡 <strong>強み</strong>: 「AI対話」を核にしたサービスは国内にほぼ存在しない。Khanmigo/Duolingo Maxの日本特化版として早期ポジションを確保。</p>
+    </section>
+
+    <!-- Slide 9: Go-to-Market -->
+    <section class="slide" data-slide="9">
+      <div class="slide-header">
+        <span class="slide-label">Go-to-Market</span>
+        <h2>3段階の市場開拓戦略</h2>
+      </div>
+      <div class="gtm-timeline">
+        <div class="gtm-phase">
+          <div class="gtm-period">Phase 1 (0-6ヶ月)</div>
+          <h3>既存顧客から種火を作る</h3>
+          <ul>
+            <li>既存塾103名にAI機能を開放</li>
+            <li>先行事例を作り、ケーススタディ化</li>
+            <li>Threads/X で週5-10投稿、初期ブランド形成</li>
+          </ul>
+          <div class="gtm-goal">目標MRR: ¥1,000,000</div>
+        </div>
+        <div class="gtm-phase">
+          <div class="gtm-period">Phase 2 (6-18ヶ月)</div>
+          <h3>D2C拡大とB2B試験展開</h3>
+          <ul>
+            <li>Google広告・Meta広告で月50名獲得</li>
+            <li>プレスリリース・メディア掲載で認知獲得</li>
+            <li>B2B 5-10校にパイロット導入</li>
+          </ul>
+          <div class="gtm-goal">目標MRR: ¥10,000,000</div>
+        </div>
+        <div class="gtm-phase">
+          <div class="gtm-period">Phase 3 (18-36ヶ月)</div>
+          <h3>B2B主軸でスケール</h3>
+          <ul>
+            <li>B2B 50校体制へ（年商3億）</li>
+            <li>海外展開の準備（英語圏、東南アジア）</li>
+            <li>教育行政との連携（自治体公教育導入）</li>
+          </ul>
+          <div class="gtm-goal">目標MRR: ¥30,000,000</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 10: Team -->
+    <section class="slide" data-slide="10">
+      <div class="slide-header">
+        <span class="slide-label">Team</span>
+        <h2>教育×技術のプレミアムチーム</h2>
+      </div>
+      <div class="team-grid">
+        <div class="team-card">
+          <div class="team-avatar">🧑‍🏫</div>
+          <h3>代表 〇〇</h3>
+          <p class="role">CEO / CTO</p>
+          <ul class="bio">
+            <li>元塾講師歴10年</li>
+            <li>既存塾で生徒100+名運営実績</li>
+            <li>英検1級・TOEIC950</li>
+            <li>Python/FastAPI 開発経験</li>
+          </ul>
+        </div>
+        <div class="team-card">
+          <div class="team-avatar">👩‍💼</div>
+          <h3>募集中</h3>
+          <p class="role">COO / Head of Sales</p>
+          <ul class="bio">
+            <li>B2Bセールス経験</li>
+            <li>教育業界知見</li>
+            <li>調達後に採用予定</li>
+          </ul>
+        </div>
+        <div class="team-card">
+          <div class="team-avatar">👩‍💻</div>
+          <h3>募集中</h3>
+          <p class="role">Lead Engineer</p>
+          <ul class="bio">
+            <li>フルスタック経験</li>
+            <li>LLM/AI実装経験</li>
+            <li>調達後に採用予定</li>
+          </ul>
+        </div>
+      </div>
+      <p class="team-note">👥 <strong>アドバイザー</strong>: 元大手塾役員1名、AI研究者1名、教育行政経験者1名 (就任内諾済)</p>
+    </section>
+
+    <!-- Slide 11: Financials -->
+    <section class="slide" data-slide="11">
+      <div class="slide-header">
+        <span class="slide-label">Financials</span>
+        <h2>3年財務計画</h2>
+      </div>
+      <div class="financials-chart-wrap">
+        <canvas id="financialsChart"></canvas>
+      </div>
+      <table class="fin-table">
+        <tr><th></th><th>Year 1</th><th>Year 2</th><th>Year 3</th></tr>
+        <tr><th>D2C MRR</th><td>¥2M</td><td>¥8M</td><td>¥15M</td></tr>
+        <tr><th>B2B MRR</th><td>¥0.5M</td><td>¥4M</td><td>¥15M</td></tr>
+        <tr><th>ARR</th><td>¥30M</td><td>¥144M</td><td>¥360M</td></tr>
+        <tr class="highlight-row"><th>営業利益</th><td>-¥10M</td><td>¥40M</td><td>¥180M</td></tr>
+        <tr><th>従業員数</th><td>3名</td><td>10名</td><td>25名</td></tr>
+      </table>
+    </section>
+
+    <!-- Slide 12: Unit Economics -->
+    <section class="slide" data-slide="12">
+      <div class="slide-header">
+        <span class="slide-label">Unit Economics</span>
+        <h2>驚異的なユニットエコノミクス</h2>
+      </div>
+      <div class="ue-grid">
+        <div class="ue-card">
+          <h3>D2C 1顧客あたり</h3>
+          <div class="ue-flow">
+            <div class="ue-step">
+              <div class="ue-val">¥39,800</div>
+              <div class="ue-label">月額売上</div>
+            </div>
+            <div class="ue-arrow">-</div>
+            <div class="ue-step">
+              <div class="ue-val">¥1,500</div>
+              <div class="ue-label">AI API原価</div>
+            </div>
+            <div class="ue-arrow">-</div>
+            <div class="ue-step">
+              <div class="ue-val">¥8,400</div>
+              <div class="ue-label">メンター人件費</div>
+            </div>
+            <div class="ue-arrow">=</div>
+            <div class="ue-step success">
+              <div class="ue-val">¥29,900</div>
+              <div class="ue-label">粗利 (75%)</div>
+            </div>
+          </div>
+        </div>
+        <div class="ue-card">
+          <h3>Payback Period</h3>
+          <div class="ue-big">0.3ヶ月</div>
+          <p>CAC ¥8,000 ÷ 月間粗利 ¥29,900 = <strong>10日</strong>で回収</p>
+        </div>
+        <div class="ue-card">
+          <h3>Churn</h3>
+          <div class="ue-big">5%/月</div>
+          <p>業界平均15%に対して大幅に低い。ゲーミフィケーション・保護者レポートが効果。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 13: The Ask -->
+    <section class="slide" data-slide="13">
+      <div class="slide-header">
+        <span class="slide-label">The Ask</span>
+        <h2>シリーズA: ¥200,000,000 調達</h2>
+      </div>
+      <div class="ask-layout">
+        <div class="ask-use">
+          <h3>💰 資金使途</h3>
+          <div class="use-item">
+            <div class="use-pct">40%</div>
+            <div class="use-detail">
+              <strong>エンジニア採用 (¥80M)</strong><br>
+              <span>フルスタック3名・デザイナー1名・MLエンジニア1名</span>
+            </div>
+          </div>
+          <div class="use-item">
+            <div class="use-pct">25%</div>
+            <div class="use-detail">
+              <strong>マーケティング (¥50M)</strong><br>
+              <span>Google広告・Meta広告・インフルエンサー・PR</span>
+            </div>
+          </div>
+          <div class="use-item">
+            <div class="use-pct">20%</div>
+            <div class="use-detail">
+              <strong>B2Bセールス体制 (¥40M)</strong><br>
+              <span>COO採用・セールス3名・カスタマーサクセス2名</span>
+            </div>
+          </div>
+          <div class="use-item">
+            <div class="use-pct">10%</div>
+            <div class="use-detail">
+              <strong>オフィス・運営 (¥20M)</strong><br>
+              <span>東京オフィス・法務・経理</span>
+            </div>
+          </div>
+          <div class="use-item">
+            <div class="use-pct">5%</div>
+            <div class="use-detail">
+              <strong>予備 (¥10M)</strong><br>
+              <span>不測事態への対応</span>
+            </div>
+          </div>
+        </div>
+        <div class="ask-milestones">
+          <h3>🎯 18ヶ月後のマイルストーン</h3>
+          <ul class="ms-list">
+            <li>✅ D2C 500名 (MRR ¥20M)</li>
+            <li>✅ B2B 20校 (MRR ¥5M)</li>
+            <li>✅ ARR ¥300M達成</li>
+            <li>✅ メディア掲載30件以上</li>
+            <li>✅ シリーズB準備完了 (¥500M〜¥1B)</li>
+            <li>✅ 海外展開開始</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 14: Close -->
+    <section class="slide" data-slide="14">
+      <div class="slide-content center">
+        <div class="close-emoji">🚀</div>
+        <h1 class="pitch-title">教育の<span class="grad">民主化</span>を、<br>あなたと。</h1>
+        <p class="close-sub">
+          AI学習コーチ塾は、「教育費の高さで夢を諦める子ども」をゼロにする。<br>
+          ぜひ、このミッションの第一投資家になってください。
+        </p>
+        <div class="close-cta">
+          <div class="close-ct">
+            <div class="close-label">代表連絡先</div>
+            <div class="close-val">press@ai-juku.jp</div>
+          </div>
+          <div class="close-ct">
+            <div class="close-label">次回ステップ</div>
+            <div class="close-val">30分のオンライン面談</div>
+          </div>
+        </div>
+        <a href="https://ai-juku.jp" class="close-btn">ライブサービスを体験する →</a>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    let currentSlide = 1;
+    const totalSlides = document.querySelectorAll('.slide').length;
+    document.getElementById('totalSlides').textContent = totalSlides;
+
+    function showSlide(n) {
+      currentSlide = Math.max(1, Math.min(n, totalSlides));
+      document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+      document.querySelector(`[data-slide="${currentSlide}"]`).classList.add('active');
+      document.getElementById('currentSlide').textContent = currentSlide;
+      if (currentSlide === 6) initTractionChart();
+      if (currentSlide === 11) initFinancialsChart();
+    }
+
+    document.getElementById('prevSlide').addEventListener('click', () => showSlide(currentSlide - 1));
+    document.getElementById('nextSlide').addEventListener('click', () => showSlide(currentSlide + 1));
+    document.getElementById('fullscreen').addEventListener('click', () => {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') showSlide(currentSlide + 1);
+      if (e.key === 'ArrowLeft') showSlide(currentSlide - 1);
+    });
+
+    let tractionChart, finChart;
+
+    function initTractionChart() {
+      if (tractionChart) return;
+      const ctx = document.getElementById('tractionChart');
+      Chart.defaults.color = '#e5e7eb';
+      tractionChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['M0', 'M1', 'M2', 'M3', 'M4', 'M5', 'M6'],
+          datasets: [
+            {
+              label: '顧客数',
+              data: [0, 15, 40, 80, 140, 220, 320],
+              borderColor: '#818cf8',
+              backgroundColor: 'rgba(129, 140, 248, 0.2)',
+              tension: 0.3, fill: true,
+            },
+            {
+              label: 'MRR (万円)',
+              data: [0, 50, 140, 280, 490, 770, 1120],
+              borderColor: '#ec4899',
+              backgroundColor: 'rgba(236, 72, 153, 0.2)',
+              tension: 0.3, fill: true, yAxisID: 'y2',
+            }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'top' } },
+          scales: {
+            y: { beginAtZero: true, position: 'left', title: { display: true, text: '顧客数' } },
+            y2: { beginAtZero: true, position: 'right', title: { display: true, text: 'MRR (万円)' }, grid: { drawOnChartArea: false } }
+          }
+        }
+      });
+    }
+
+    function initFinancialsChart() {
+      if (finChart) return;
+      const ctx = document.getElementById('financialsChart');
+      Chart.defaults.color = '#e5e7eb';
+      finChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Year 1', 'Year 2', 'Year 3'],
+          datasets: [
+            { label: 'D2C 売上', data: [24, 96, 180], backgroundColor: 'rgba(99, 102, 241, 0.7)' },
+            { label: 'B2B 売上', data: [6, 48, 180], backgroundColor: 'rgba(236, 72, 153, 0.7)' },
+            { label: '営業利益', data: [-10, 40, 180], backgroundColor: 'rgba(16, 185, 129, 0.7)' },
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'top' } },
+          scales: {
+            y: { beginAtZero: true, title: { display: true, text: '百万円 (MM JPY)' } }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

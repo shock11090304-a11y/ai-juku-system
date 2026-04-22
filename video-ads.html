@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎬 動画広告 制作センター | AI学習コーチ塾 CEO</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="video-ads.css">
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">🎬</span>
+      <div>
+        <h1>動画広告 制作センター</h1>
+        <p class="tagline">15秒〜3分の動画脚本・制作ガイド・配信プラットフォーム戦略</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a href="campaign.html" class="btn-icon" title="キャンペーン">🎯</a>
+      <a href="marketing-kit.html" class="btn-icon" title="マーケキット">📢</a>
+      <a href="ceo.html" class="btn-icon" title="CEO">💼</a>
+    </div>
+  </header>
+
+  <main class="va-main">
+    <!-- Why video -->
+    <section class="va-intro">
+      <div class="intro-left">
+        <h2>🎯 なぜ動画広告が強力なのか</h2>
+        <p>「AIが24時間答えてくれる」と文字で伝えるより、<strong>実際にAIが答えている画面</strong>を見せる方が説得力は10倍。視聴者の心に「自分も使いたい」が自然と湧きます。</p>
+        <div class="stats-strip">
+          <div class="ss-item">
+            <div class="ss-num">6x</div>
+            <div class="ss-label">テキスト広告比CTR</div>
+          </div>
+          <div class="ss-item">
+            <div class="ss-num">95%</div>
+            <div class="ss-label">動画視聴者の記憶率</div>
+          </div>
+          <div class="ss-item">
+            <div class="ss-num">30%</div>
+            <div class="ss-label">転換率UP（画面見せ効果）</div>
+          </div>
+        </div>
+      </div>
+      <div class="intro-right">
+        <a href="demo-features.html" class="demo-preview" style="text-decoration:none;">
+          <div class="demo-play">▶</div>
+          <div class="demo-caption">🎥 実画面デモを見る<br><small style="font-size:0.78rem;opacity:0.85;">(8機能ツアー・約1分20秒)</small></div>
+        </a>
+      </div>
+      <div style="display:none;">
+        <button id="playDemoBtn">hidden</button></div>
+    </section>
+
+    <!-- Platform strategy -->
+    <section class="platform-section">
+      <h2>📱 プラットフォーム別 最適化戦略</h2>
+      <div class="platform-grid">
+        <div class="platform-card">
+          <div class="plat-icon">🎵</div>
+          <div class="plat-name">TikTok / YouTubeショート</div>
+          <div class="plat-spec">縦型・15-30秒</div>
+          <div class="plat-tips">
+            <div><strong>フック:</strong> 最初の2秒が勝負。「深夜2時」「ママ泣いた」等</div>
+            <div><strong>BGM:</strong> トレンド楽曲を使う</div>
+            <div><strong>字幕:</strong> 必須。音なしで伝わるように</div>
+            <div><strong>CTA:</strong> プロフィールのリンクへ</div>
+          </div>
+          <div class="plat-target">ターゲット: 中高生本人・若い保護者</div>
+        </div>
+        <div class="platform-card">
+          <div class="plat-icon">📸</div>
+          <div class="plat-name">Instagram Reels / Feed</div>
+          <div class="plat-spec">縦型・15-60秒</div>
+          <div class="plat-tips">
+            <div><strong>フック:</strong> 「保護者の悩み」から入る</div>
+            <div><strong>演出:</strong> 綺麗なアプリ画面 + 字幕</div>
+            <div><strong>ハッシュタグ:</strong> #中学受験 #高校受験 #教育費</div>
+            <div><strong>CTA:</strong> プロフィール→LPリンク</div>
+          </div>
+          <div class="plat-target">ターゲット: 30-40代保護者（母親中心）</div>
+        </div>
+        <div class="platform-card">
+          <div class="plat-icon">🎥</div>
+          <div class="plat-name">YouTube 広告</div>
+          <div class="plat-spec">横型・6秒バンパー / 15秒スキップ不可 / 30秒以上</div>
+          <div class="plat-tips">
+            <div><strong>フック:</strong> 「5秒でスキップされないように」最初に効果見せる</div>
+            <div><strong>長尺:</strong> 3分の詳細デモも有効（YouTube特有）</div>
+            <div><strong>リマーケ:</strong> LP訪問者へのリマーケ広告が強力</div>
+            <div><strong>CTA:</strong> アノテーション + 説明欄リンク</div>
+          </div>
+          <div class="plat-target">ターゲット: 保護者・受験生両方</div>
+        </div>
+        <div class="platform-card">
+          <div class="plat-icon">🐦</div>
+          <div class="plat-name">X (Twitter) / Threads</div>
+          <div class="plat-spec">横型 or 縦型・〜2分</div>
+          <div class="plat-tips">
+            <div><strong>フック:</strong> 衝撃事実や本音トーンで</div>
+            <div><strong>拡散性:</strong> バズれば広告費ゼロで10万リーチも</div>
+            <div><strong>テキスト:</strong> 動画 + 補足テキスト必須</div>
+            <div><strong>CTA:</strong> プロフィール固定ポスト誘導</div>
+          </div>
+          <div class="plat-target">ターゲット: 情報感度高い保護者・受験生</div>
+        </div>
+        <div class="platform-card">
+          <div class="plat-icon">📘</div>
+          <div class="plat-name">Facebook広告</div>
+          <div class="plat-spec">横型 or 正方形・15-60秒</div>
+          <div class="plat-tips">
+            <div><strong>フック:</strong> 保護者の悩みに共感から</div>
+            <div><strong>年代:</strong> 40代以上にもリーチ可能</div>
+            <div><strong>地域:</strong> 細かいターゲティング可能</div>
+            <div><strong>CTA:</strong> LP直遷移ボタン</div>
+          </div>
+          <div class="plat-target">ターゲット: 40-50代保護者・祖父母世代</div>
+        </div>
+        <div class="platform-card">
+          <div class="plat-icon">📧</div>
+          <div class="plat-name">LINE広告</div>
+          <div class="plat-spec">縦型・15秒推奨</div>
+          <div class="plat-tips">
+            <div><strong>フック:</strong> LINE特有の親しみやすいトーン</div>
+            <div><strong>日本市場:</strong> 圧倒的リーチ</div>
+            <div><strong>ターゲティング:</strong> 子育て世代・教育関心層</div>
+            <div><strong>CTA:</strong> LINE公式アカウント友だち追加</div>
+          </div>
+          <div class="plat-target">ターゲット: 30-50代日本人全般</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Script library -->
+    <section class="scripts-section">
+      <h2>🎬 動画脚本ライブラリ（15本）</h2>
+      <div class="script-tabs">
+        <button class="script-tab active" data-duration="15">⚡ 15秒版（6本）</button>
+        <button class="script-tab" data-duration="60">🎯 60秒版（5本）</button>
+        <button class="script-tab" data-duration="180">📺 3分版（4本）</button>
+      </div>
+
+      <!-- 15 second scripts -->
+      <div class="script-group" data-duration="15">
+        <div class="script-card">
+          <div class="sc-head">
+            <div class="sc-tag hook">🎣 フック型</div>
+            <div class="sc-title">深夜2時、泣いてる娘</div>
+            <div class="sc-duration">15秒</div>
+          </div>
+          <div class="sc-storyboard">
+            <div class="sb-shot"><span class="sb-time">0-2s</span>📱 深夜の机、娘の後ろ姿（暗めの画面）</div>
+            <div class="sb-shot"><span class="sb-time">2-5s</span>💬 娘「もう…わかんない…」（涙）</div>
+            <div class="sb-shot"><span class="sb-time">5-9s</span>🤖 AI塾アプリを開いて質問入力→30秒で解答</div>
+            <div class="sb-shot"><span class="sb-time">9-12s</span>😊 娘「これ、神…」→笑顔</div>
+            <div class="sb-shot"><span class="sb-time">12-15s</span>📝 字幕「24時間AIチューター / 月¥24,980〜 / ¥1,980で3日間お試し」</div>
+          </div>
+          <div class="sc-meta">
+            <span>📱 最適: TikTok / Reels</span>
+            <span>🎯 想定CTR: 4-6%</span>
+          </div>
+          <button class="sc-copy-btn">📋 脚本をコピー</button>
+        </div>
+
+        <div class="script-card">
+          <div class="sc-head">
+            <div class="sc-tag data">📊 データ型</div>
+            <div class="sc-title">塾月謝、月いくら？</div>
+            <div class="sc-duration">15秒</div>
+          </div>
+          <div class="sc-storyboard">
+            <div class="sb-shot"><span class="sb-time">0-3s</span>💰 大きな文字「塾月謝、月いくら？」</div>
+            <div class="sb-shot"><span class="sb-time">3-7s</span>📊 個別指導塾 ¥50,000-80,000 / 大手予備校 ¥40,000-</div>
+            <div class="sb-shot"><span class="sb-time">7-11s</span>🎓 AI塾 <strong>¥24,980〜</strong>（色反転で強調）</div>
+            <div class="sb-shot"><span class="sb-time">11-15s</span>💡「同じ質で1/3の価格」「¥1,980で3日お試し」→CTA</div>
+          </div>
+          <div class="sc-meta">
+            <span>📱 最適: TikTok / YouTube広告</span>
+            <span>🎯 想定CTR: 5-8%</span>
+          </div>
+          <button class="sc-copy-btn">📋</button>
+        </div>
+
+        <div class="script-card">
+          <div class="sc-head">
+            <div class="sc-tag demo">🖥 デモ型</div>
+            <div class="sc-title">AIに質問してみた（画面録画）</div>
+            <div class="sc-duration">15秒</div>
+          </div>
+          <div class="sc-storyboard">
+            <div class="sb-shot"><span class="sb-time">0-2s</span>💬「関係代名詞のwhich/thatの使い分けわからない」と入力</div>
+            <div class="sb-shot"><span class="sb-time">2-8s</span>🤖 AI回答が流れる（実際のアプリ画面録画）</div>
+            <div class="sb-shot"><span class="sb-time">8-11s</span>📝 例題・解説が追加表示される</div>
+            <div class="sb-shot"><span class="sb-time">11-15s</span>🎓「24h対応 / ¥1,980で3日試す」→LPへ</div>
+          </div>
+          <div class="sc-meta">
+            <span>📱 最適: YouTube広告 / Reels</span>
+            <span>🎯 想定CTR: 4-7%</span>
+          </div>
+          <button class="sc-copy-btn">📋</button>
+        </div>
+
+        <div class="script-card">
+          <div class="sc-head">
+            <div class="sc-tag honne">💬 本音型</div>
+            <div class="sc-title">「塾の月謝、正直キツい」</div>
+            <div class="sc-duration">15秒</div>
+          </div>
+          <div class="sc-storyboard">
+            <div class="sb-shot"><span class="sb-time">0-3s</span>🗣 保護者 正面カメラ「塾の月謝、正直キツいですよね」</div>
+            <div class="sb-shot"><span class="sb-time">3-7s</span>「でも質を下げたくない…」</div>
+            <div class="sb-shot"><span class="sb-time">7-11s</span>📱 スマホ画面見せて「これなら月¥24,980」</div>
+            <div class="sb-shot"><span class="sb-time">11-15s</span>「同じ悩みの方、3日¥1,980で試してみて」→CTA</div>
+          </div>
+          <div class="sc-meta">
+            <span>📱 最適: Instagram Reels / TikTok</span>
+            <span>🎯 想定CTR: 5-9%</span>
+          </div>
+          <button class="sc-copy-btn">📋</button>
+        </div>
+
+        <div class="script-card">
+          <div class="sc-head">
+            <div class="sc-tag story">📖 ストーリー型</div>
+            <div class="sc-title">偏差値+8を半年で</div>
+            <div class="sc-duration">15秒</div>
+          </div>
+          <div class="sc-storyboard">
+            <div class="sb-shot"><span class="sb-time">0-3s</span>📊 グラフ「偏差値55 → 63」（6ヶ月で変化）</div>
+            <div class="sb-shot"><span class="sb-time">3-7s</span>🎓「なぜ伸びた？」の問い</div>
+            <div class="sb-shot"><span class="sb-time">7-11s</span>📱 AI塾アプリ画面パッパッ（機能紹介）</div>
+            <div class="sb-shot"><span class="sb-time">11-15s</span>🏆「AIで24時間学習、1/3の月謝」→¥1,980お試し</div>
+          </div>
+          <div class="sc-meta">
+            <span>📱 最適: YouTubeショート / Reels</span>
+            <span>🎯 想定CTR: 4-6%</span>
+          </div>
+          <button class="sc-copy-btn">📋</button>
+        </div>
+
+        <div class="script-card">
+          <div class="sc-head">
+            <div class="sc-tag urgency">⏰ 緊急型</div>
+            <div class="sc-title">先着100名、残り32枠</div>
+            <div class="sc-duration">15秒</div>
+          </div>
+          <div class="sc-storyboard">
+            <div class="sb-shot"><span class="sb-time">0-3s</span>🎖「創業記念 第1期生 100名限定」</div>
+            <div class="sb-shot"><span class="sb-time">3-7s</span>⏰ カウンター「残り 32名」（アニメ減少）</div>
+            <div class="sb-shot"><span class="sb-time">7-11s</span>💰「月額¥24,980 → ¥1,980で3日試せる」</div>
+            <div class="sb-shot"><span class="sb-time">11-15s</span>👉 LPリンク / 「今すぐ申込み」</div>
+          </div>
+          <div class="sc-meta">
+            <span>📱 最適: 全プラットフォーム（緊急性訴求）</span>
+            <span>🎯 想定CTR: 6-10%</span>
+          </div>
+          <button class="sc-copy-btn">📋</button>
+        </div>
+      </div>
+
+      <!-- 60 second scripts -->
+      <div class="script-group" data-duration="60" style="display:none;">
+        <div class="script-card">
+          <div class="sc-head">
+            <div class="sc-tag story">📖 ストーリー型</div>
+            <div class="sc-title">中3娘と母の物語</div>
+            <div class="sc-duration">60秒</div>
+          </div>
+          <div class="sc-storyboard">
+            <div class="sb-shot"><span class="sb-time">0-10s</span>🌙 深夜の机で勉強する娘、時計は2時</div>
+            <div class="sb-shot"><span class="sb-time">10-20s</span>💭 母 モノローグ「一緒に起きてあげたいけど、教えられない…」</div>
+            <div class="sb-shot"><span class="sb-time">20-30s</span>📱 AIチューターに質問する娘の手元</div>
+            <div class="sb-shot"><span class="sb-time">30-40s</span>🤖 AIが丁寧に解説→娘の表情が明るく</div>
+            <div class="sb-shot"><span class="sb-time">40-50s</span>👨‍👩‍👧 朝、家族で話す「偏差値5上がった！」</div>
+            <div class="sb-shot"><span class="sb-time">50-60s</span>🎓 ブランドロゴ + CTA「3日¥1,980で試す」</div>
+          </div>
+          <div class="sc-meta">
+            <span>📱 最適: Instagram Feed / YouTube広告</span>
+            <span>🎯 想定CVR: 2-4%</span>
+          </div>
+          <button class="sc-copy-btn">📋</button>
+        </div>
+
+        <div class="script-card">
+          <div class="sc-head">
+            <div class="sc-tag demo">🖥 デモ型</div>
+            <div class="sc-title">アプリ完全ツアー</div>
+            <div class="sc-duration">60秒</div>
+          </div>
+          <div class="sc-storyboard">
+            <div class="sb-shot"><span class="sb-time">0-8s</span>🎓「AI学習コーチ塾の全機能を60秒で」</div>
+            <div class="sb-shot"><span class="sb-time">8-18s</span>💬 24h AIチューター 実演（関係代名詞の質問）</div>
+            <div class="sb-shot"><span class="sb-time">18-28s</span>📊 学習診断 → 弱点を自動特定</div>
+            <div class="sb-shot"><span class="sb-time">28-38s</span>🎯 カリキュラム自動生成 → 志望校ロードマップ</div>
+            <div class="sb-shot"><span class="sb-time">38-48s</span>✍️ 英作文添削 → 瞬時に返却</div>
+            <div class="sb-shot"><span class="sb-time">48-55s</span>📷 模試画像解析 デモ</div>
+            <div class="sb-shot"><span class="sb-time">55-60s</span>🔥「これ全部月¥24,980。3日¥1,980で試せる」</div>
+          </div>
+          <div class="sc-meta">
+            <span>📱 最適: YouTube / LP埋込</span>
+            <span>🎯 想定CVR: 3-5%</span>
+          </div>
+          <button class="sc-copy-btn">📋</button>
+        </div>
+
+        <div class="script-card">
+          <div class="sc-head">
+            <div class="sc-tag compare">⚖️ 比較型</div>
+            <div class="sc-title">従来塾 vs AI塾 徹底比較</div>
+            <div class="sc-duration">60秒</div>
+          </div>
+          <div class="sc-storyboard">
+            <div class="sb-shot"><span class="sb-time">0-5s</span>⚖️「従来塾 vs AI塾 本当の違い」</div>
+            <div class="sb-shot"><span class="sb-time">5-15s</span>💰 月謝: ¥60,000 vs ¥24,980</div>
+            <div class="sb-shot"><span class="sb-time">15-25s</span>⏰ 質問可能時間: 週2h vs 24h</div>
+            <div class="sb-shot"><span class="sb-time">25-35s</span>✍️ 添削量: 月10本 vs 月100本</div>
+            <div class="sb-shot"><span class="sb-time">35-45s</span>🎯 カリキュラム: 画一 vs 完全個別</div>
+            <div class="sb-shot"><span class="sb-time">45-55s</span>📊 成績伸び率（データ比較）</div>
+            <div class="sb-shot"><span class="sb-time">55-60s</span>🎓 CTA</div>
+          </div>
+          <div class="sc-meta">
+            <span>📱 最適: YouTube / Facebook</span>
+            <span>🎯 想定CVR: 2-4%</span>
+          </div>
+          <button class="sc-copy-btn">📋</button>
+        </div>
+
+        <div class="script-card">
+          <div class="sc-head">
+            <div class="sc-tag testimonial">⭐ 口コミ型</div>
+            <div class="sc-title">合格した生徒の声</div>
+            <div class="sc-duration">60秒</div>
+          </div>
+          <div class="sc-storyboard">
+            <div class="sb-shot"><span class="sb-time">0-10s</span>🎓 合格証書をカメラに見せる高3男子</div>
+            <div class="sb-shot"><span class="sb-time">10-25s</span>💬「半年前、偏差値55でした。」「AI塾で毎日AIに質問して…」</div>
+            <div class="sb-shot"><span class="sb-time">25-40s</span>📱 実際に使ってた画面を見せながら解説</div>
+            <div class="sb-shot"><span class="sb-time">40-55s</span>🏆「東大文三、合格しました」→家族喜ぶ</div>
+            <div class="sb-shot"><span class="sb-time">55-60s</span>🎓 CTA「3日¥1,980で試す」</div>
+          </div>
+          <div class="sc-meta">
+            <span>📱 最適: Instagram / YouTube</span>
+            <span>🎯 想定CVR: 4-6%</span>
+          </div>
+          <button class="sc-copy-btn">📋</button>
+        </div>
+
+        <div class="script-card">
+          <div class="sc-head">
+            <div class="sc-tag founder">🎖 創業者型</div>
+            <div class="sc-title">なぜこの塾を作ったのか</div>
+            <div class="sc-duration">60秒</div>
+          </div>
+          <div class="sc-storyboard">
+            <div class="sb-shot"><span class="sb-time">0-10s</span>🧑‍🏫 代表正面「元塾講師10年です」</div>
+            <div class="sb-shot"><span class="sb-time">10-25s</span>「月¥5万の塾で困る家庭を見てきました」</div>
+            <div class="sb-shot"><span class="sb-time">25-40s</span>「AIなら質は落とさず1/3の価格が可能」</div>
+            <div class="sb-shot"><span class="sb-time">40-55s</span>📱 プロダクト紹介（実画面）</div>
+            <div class="sb-shot"><span class="sb-time">55-60s</span>「第1期生限定、3日¥1,980で試してください」</div>
+          </div>
+          <div class="sc-meta">
+            <span>📱 最適: LP埋込 / YouTube</span>
+            <span>🎯 想定CVR: 3-5%</span>
+          </div>
+          <button class="sc-copy-btn">📋</button>
+        </div>
+      </div>
+
+      <!-- 3 minute scripts -->
+      <div class="script-group" data-duration="180" style="display:none;">
+        <div class="script-card">
+          <div class="sc-head">
+            <div class="sc-tag detail">📺 詳細デモ型</div>
+            <div class="sc-title">AI塾 完全ガイド（保護者向け）</div>
+            <div class="sc-duration">3分</div>
+          </div>
+          <div class="sc-storyboard">
+            <div class="sb-shot"><span class="sb-time">0-20s</span>オープニング: 教育費問題の提起</div>
+            <div class="sb-shot"><span class="sb-time">20-50s</span>AI塾の仕組み説明（なぜ安くて質高いか）</div>
+            <div class="sb-shot"><span class="sb-time">50-110s</span>8機能を順に実演（1機能7秒）</div>
+            <div class="sb-shot"><span class="sb-time">110-140s</span>保護者レポート・安心感の説明</div>
+            <div class="sb-shot"><span class="sb-time">140-160s</span>料金プラン比較</div>
+            <div class="sb-shot"><span class="sb-time">160-180s</span>Q&A + 申込方法 + CTA</div>
+          </div>
+          <div class="sc-meta">
+            <span>📱 最適: YouTube / LP埋込</span>
+            <span>🎯 想定CVR: 5-8%（長尺視聴者は濃い）</span>
+          </div>
+          <button class="sc-copy-btn">📋</button>
+        </div>
+
+        <div class="script-card">
+          <div class="sc-head">
+            <div class="sc-tag detail">📺 受験生向け</div>
+            <div class="sc-title">難関大合格までのロードマップ</div>
+            <div class="sc-duration">3分</div>
+          </div>
+          <div class="sc-storyboard">
+            <div class="sb-shot"><span class="sb-time">0-30s</span>現状分析 → 目標設定の重要性</div>
+            <div class="sb-shot"><span class="sb-time">30-90s</span>AI学習診断で弱点自動特定のデモ</div>
+            <div class="sb-shot"><span class="sb-time">90-150s</span>カリキュラム自動生成→月別計画</div>
+            <div class="sb-shot"><span class="sb-time">150-180s</span>合格者インタビュー+CTA</div>
+          </div>
+          <div class="sc-meta">
+            <span>📱 最適: YouTube / 受験生SNS</span>
+            <span>🎯 想定CVR: 4-7%</span>
+          </div>
+          <button class="sc-copy-btn">📋</button>
+        </div>
+
+        <div class="script-card">
+          <div class="sc-head">
+            <div class="sc-tag detail">📺 英検対策特化</div>
+            <div class="sc-title">英検準1級合格への道</div>
+            <div class="sc-duration">3分</div>
+          </div>
+          <div class="sc-storyboard">
+            <div class="sb-shot"><span class="sb-time">0-30s</span>英検準1級の合格率・壁になるポイント</div>
+            <div class="sb-shot"><span class="sb-time">30-90s</span>ライティング添削10倍の実演</div>
+            <div class="sb-shot"><span class="sb-time">90-150s</span>面接対策AI音声のデモ</div>
+            <div class="sb-shot"><span class="sb-time">150-180s</span>合格者の声+CTA</div>
+          </div>
+          <div class="sc-meta">
+            <span>📱 最適: YouTube</span>
+            <span>🎯 想定CVR: 5-8%（ニッチ特化）</span>
+          </div>
+          <button class="sc-copy-btn">📋</button>
+        </div>
+
+        <div class="script-card">
+          <div class="sc-head">
+            <div class="sc-tag detail">📺 中学受験特化</div>
+            <div class="sc-title">共働き家庭の中学受験戦略</div>
+            <div class="sc-duration">3分</div>
+          </div>
+          <div class="sc-storyboard">
+            <div class="sb-shot"><span class="sb-time">0-30s</span>共働き家庭の中学受験課題</div>
+            <div class="sb-shot"><span class="sb-time">30-90s</span>AI塾での具体的な活用法</div>
+            <div class="sb-shot"><span class="sb-time">90-150s</span>保護者レポートによる「見守り」機能</div>
+            <div class="sb-shot"><span class="sb-time">150-180s</span>成功事例+CTA</div>
+          </div>
+          <div class="sc-meta">
+            <span>📱 最適: Facebook / Instagram</span>
+            <span>🎯 想定CVR: 4-6%</span>
+          </div>
+          <button class="sc-copy-btn">📋</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Production guide -->
+    <section class="production-section">
+      <h2>🛠 動画制作 完全ガイド（ノンデザイナーでもOK）</h2>
+      <div class="prod-grid">
+        <div class="prod-card">
+          <div class="prod-num">1</div>
+          <h3>🖥 画面録画ツール</h3>
+          <div class="tool-list">
+            <div class="tool"><strong>Screen Studio</strong> (Mac)<br><span>AIが自動でズーム・カーソル強調。<br>プロ級の仕上がり。 ¥4,500/月</span></div>
+            <div class="tool"><strong>Loom</strong> (無料〜)<br><span>ブラウザ版で即録画。<br>共有URL発行可。</span></div>
+            <div class="tool"><strong>OBS Studio</strong> (無料)<br><span>プロ仕様、機能豊富。<br>習得コストは中</span></div>
+            <div class="tool"><strong>iPhone 画面収録</strong> (無料)<br><span>iOS標準。<br>即撮影可能</span></div>
+          </div>
+        </div>
+
+        <div class="prod-card">
+          <div class="prod-num">2</div>
+          <h3>✂️ 編集ツール</h3>
+          <div class="tool-list">
+            <div class="tool"><strong>CapCut</strong> (無料)<br><span>スマホで完結。<br>初心者最強。日本語対応</span></div>
+            <div class="tool"><strong>Premiere Rush</strong><br><span>Adobeの簡易版。<br>¥1,058/月</span></div>
+            <div class="tool"><strong>Canva動画</strong><br><span>テンプレ豊富。<br>テキストアニメ得意</span></div>
+            <div class="tool"><strong>Descript</strong><br><span>文字起こし編集で超高速。<br>¥1,800〜/月</span></div>
+          </div>
+        </div>
+
+        <div class="prod-card">
+          <div class="prod-num">3</div>
+          <h3>🗣 ナレーション・音声</h3>
+          <div class="tool-list">
+            <div class="tool"><strong>ElevenLabs</strong><br><span>AI音声合成の最高峰。<br>日本語も自然 $5〜/月</span></div>
+            <div class="tool"><strong>CoeFont</strong><br><span>日本語特化AI音声。<br>月¥500〜</span></div>
+            <div class="tool"><strong>VOICEVOX</strong> (無料)<br><span>オープンソース日本語音声合成。<br>商用可</span></div>
+            <div class="tool"><strong>自分の声</strong><br><span>最も効果的。<br>人間味が信頼を生む</span></div>
+          </div>
+        </div>
+
+        <div class="prod-card">
+          <div class="prod-num">4</div>
+          <h3>🎭 AIアバター動画</h3>
+          <div class="tool-list">
+            <div class="tool"><strong>HeyGen</strong><br><span>リアルなAIアバター動画。<br>日本語対応 $29〜/月</span></div>
+            <div class="tool"><strong>Synthesia</strong><br><span>ビジネス向け高品質。<br>$22〜/月</span></div>
+            <div class="tool"><strong>D-ID</strong><br><span>写真1枚から動くアバター。<br>$5〜/月</span></div>
+          </div>
+        </div>
+
+        <div class="prod-card">
+          <div class="prod-num">5</div>
+          <h3>🎵 音楽・BGM</h3>
+          <div class="tool-list">
+            <div class="tool"><strong>YouTube オーディオライブラリ</strong> (無料)<br><span>商用利用OK。<br>ジャンル豊富</span></div>
+            <div class="tool"><strong>DOVA-SYNDROME</strong> (無料)<br><span>日本の定番フリー素材サイト</span></div>
+            <div class="tool"><strong>Epidemic Sound</strong><br><span>プロ向け音楽ライブラリ。<br>$15〜/月</span></div>
+            <div class="tool"><strong>Suno AI</strong><br><span>AIで楽曲生成。<br>BGM作り放題 $10〜/月</span></div>
+          </div>
+        </div>
+
+        <div class="prod-card">
+          <div class="prod-num">6</div>
+          <h3>📝 字幕・テロップ</h3>
+          <div class="tool-list">
+            <div class="tool"><strong>CapCut 自動字幕</strong> (無料)<br><span>音声→字幕自動生成。<br>超便利</span></div>
+            <div class="tool"><strong>Vrew</strong><br><span>AI字幕特化。<br>¥1,980〜/月</span></div>
+            <div class="tool"><strong>Descript</strong><br><span>文字起こし+字幕</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quickstart -->
+    <section class="quickstart-section">
+      <h2>⚡ 最速 動画1本作成ワークフロー（30分）</h2>
+      <div class="qs-steps">
+        <div class="qs-step">
+          <div class="qs-num">Step 1</div>
+          <div class="qs-time">5分</div>
+          <div class="qs-task">上の脚本ライブラリから1本選ぶ</div>
+          <div class="qs-tip">推奨: 15秒「深夜2時、泣いてる娘」</div>
+        </div>
+        <div class="qs-step">
+          <div class="qs-num">Step 2</div>
+          <div class="qs-time">10分</div>
+          <div class="qs-task">アプリ画面をiPhone画面収録で撮影</div>
+          <div class="qs-tip">コントロールセンター→画面収録ボタン</div>
+        </div>
+        <div class="qs-step">
+          <div class="qs-num">Step 3</div>
+          <div class="qs-time">10分</div>
+          <div class="qs-task">CapCutで編集（カット+字幕+BGM）</div>
+          <div class="qs-tip">自動字幕機能を使うと超速</div>
+        </div>
+        <div class="qs-step">
+          <div class="qs-num">Step 4</div>
+          <div class="qs-time">5分</div>
+          <div class="qs-task">TikTok / Reels / Threadsに投稿</div>
+          <div class="qs-tip">ハッシュタグ: #中学受験 #AI塾 #教育費</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Budget & KPI -->
+    <section class="budget-section">
+      <h2>💰 推奨予算配分と目標KPI</h2>
+      <table class="budget-table">
+        <thead>
+          <tr><th>プラットフォーム</th><th>月予算</th><th>動画本数</th><th>目標リーチ</th><th>目標登録</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>🧵 Threads（オーガニック）</td><td>¥0</td><td>30本/月</td><td>5-15万</td><td>10-20名</td></tr>
+          <tr><td>🎵 TikTok 広告</td><td>¥30,000</td><td>5本/月</td><td>10-20万</td><td>15-30名</td></tr>
+          <tr><td>📸 Instagram Reels 広告</td><td>¥40,000</td><td>5本/月</td><td>8-15万</td><td>20-35名</td></tr>
+          <tr><td>🎥 YouTube 広告</td><td>¥50,000</td><td>3本/月</td><td>5-10万</td><td>15-25名</td></tr>
+          <tr><td>📘 Facebook 広告</td><td>¥30,000</td><td>3本/月</td><td>5-10万</td><td>10-20名</td></tr>
+          <tr class="total-row"><td><strong>合計</strong></td><td><strong>¥150,000</strong></td><td><strong>46本</strong></td><td><strong>33-70万</strong></td><td><strong>70-130名</strong></td></tr>
+        </tbody>
+      </table>
+      <div class="budget-note">
+        💡 第1期生100名を1-2ヶ月で完売可能。¥198,000の入金 + ¥1,560,000のMRR → 広告費は即回収。
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-bottom">© 2026 AI学習コーチ塾 | Video Ads Command Center</div>
+  </footer>
+
+  <!-- Demo video modal -->
+  <div id="demoModal" class="demo-modal">
+    <div class="demo-modal-content">
+      <button class="demo-close" onclick="document.getElementById('demoModal').classList.remove('show')">×</button>
+      <div class="demo-viewport" id="demoViewport">
+        <!-- Dynamic demo frames -->
+      </div>
+      <div class="demo-progress"><div class="demo-progress-bar" id="demoProgress"></div></div>
+    </div>
+  </div>
+
+  <script src="video-ads.js"></script>
+</body>
+</html>

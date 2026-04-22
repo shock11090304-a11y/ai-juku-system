@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CEO経営ダッシュボード | AI学習コーチ塾</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="ceo.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">💼</span>
+      <div>
+        <h1>CEO経営ダッシュボード</h1>
+        <p class="tagline">リアルタイム事業指標 / AI学習コーチ塾</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span id="lastUpdated" class="mode-badge">更新: --</span>
+      <a href="index.html" class="btn-icon" title="アプリに戻る">🎓</a>
+      <a href="content-studio.html" class="btn-icon" title="AIコンテンツスタジオ">✨</a>
+      <a href="textbook-generator.html" class="btn-icon" title="📚 テキスト教材生成">📚</a>
+      <a href="blog.html" class="btn-icon" title="公開ブログ">📝</a>
+      <a href="launch.html" class="btn-icon" title="🚀 ローンチ">🚀</a>
+      <a href="marketing-kit.html" class="btn-icon" title="📢 マーケキット">📢</a>
+      <a href="personalized-outreach.html" class="btn-icon" title="📨 個別展開103名">📨</a>
+      <a href="alerts.html" class="btn-icon" title="🔔 自動アラート">🔔</a>
+      <a href="campaign.html" class="btn-icon" title="🎯 キャンペーン実行">🎯</a>
+      <a href="video-ads.html" class="btn-icon" title="🎬 動画広告制作">🎬</a>
+      <a href="access-map.html" class="btn-icon" title="🗺 画面アクセスマップ">🗺</a>
+      <a href="pitch.html" class="btn-icon" title="💎 投資家ピッチ">💎</a>
+      <a href="lp.html" class="btn-icon" title="LPを開く">🌐</a>
+    </div>
+  </header>
+
+  <main class="ceo-main">
+    <!-- KPI Hero -->
+    <section class="ceo-hero">
+      <div class="hero-metric main">
+        <div class="metric-label">月次収益 (MRR)</div>
+        <div class="metric-value" id="mrr">¥0</div>
+        <div class="metric-trend" id="mrrTrend">-</div>
+      </div>
+      <div class="hero-metric">
+        <div class="metric-label">年間見込み収益 (ARR)</div>
+        <div class="metric-value" id="arr">¥0</div>
+        <div class="metric-trend">MRR × 12</div>
+      </div>
+      <div class="hero-metric">
+        <div class="metric-label">CEO想定報酬</div>
+        <div class="metric-value" id="ceoSalary">¥0</div>
+        <div class="metric-trend">目標: ¥30,000,000</div>
+      </div>
+    </section>
+
+    <!-- Secondary KPIs -->
+    <section class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-icon">👥</div>
+        <div class="kpi-info">
+          <div class="kpi-label">通塾生徒数</div>
+          <div class="kpi-value" id="studentCount">0</div>
+          <div class="kpi-sub" id="studentBreakdown">-</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">💰</div>
+        <div class="kpi-info">
+          <div class="kpi-label">月間AI原価</div>
+          <div class="kpi-value" id="monthCost">¥0</div>
+          <div class="kpi-sub" id="costRatio">原価率 -</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">📈</div>
+        <div class="kpi-info">
+          <div class="kpi-label">粗利率 (想定)</div>
+          <div class="kpi-value" id="grossMargin">-%</div>
+          <div class="kpi-sub">売上 - 原価 / 売上</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">🎯</div>
+        <div class="kpi-info">
+          <div class="kpi-label">3000万円達成率</div>
+          <div class="kpi-value" id="goalProgress">0%</div>
+          <div class="kpi-sub" id="goalGap">あと¥-</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts -->
+    <section class="charts-section">
+      <div class="chart-box wide">
+        <div class="chart-header">
+          <h3>💰 月別売上推移（シミュレーション）</h3>
+          <div class="chart-controls">
+            <button class="chart-toggle active" data-sim="realistic">現実的</button>
+            <button class="chart-toggle" data-sim="aggressive">積極的</button>
+            <button class="chart-toggle" data-sim="conservative">保守的</button>
+          </div>
+        </div>
+        <canvas id="revenueChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>📊 プラン別生徒分布</h3>
+        <canvas id="planChart"></canvas>
+      </div>
+    </section>
+
+    <section class="charts-section">
+      <div class="chart-box">
+        <h3>📍 学年別生徒分布</h3>
+        <canvas id="gradeChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>💸 コスト構造 (年間想定)</h3>
+        <canvas id="costChart"></canvas>
+      </div>
+    </section>
+
+    <!-- Plan Management -->
+    <section class="roster-section" style="margin-top:2rem;">
+      <div class="section-header-row">
+        <h2>🎛 プラン管理</h2>
+        <small style="color:#888;">価格・機能は <code>plans.js</code> の設定で変更可能</small>
+      </div>
+      <div id="planMgmtTable" class="roster-table-wrapper"></div>
+    </section>
+
+    <!-- Student Roster -->
+    <section class="roster-section">
+      <div class="section-header-row">
+        <h2>📋 生徒ロスター (課金状況)</h2>
+        <div class="roster-controls">
+          <input type="text" id="rosterSearch" placeholder="名前/学年で検索..." />
+          <select id="rosterSort">
+            <option value="fee-desc">月謝順（高→低）</option>
+            <option value="fee-asc">月謝順（低→高）</option>
+            <option value="name">名前順</option>
+            <option value="grade">学年順</option>
+          </select>
+        </div>
+      </div>
+      <div class="roster-table-wrapper">
+        <table class="roster-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>氏名</th>
+              <th>学年</th>
+              <th>プラン / 受講コース</th>
+              <th>月謝</th>
+              <th>状態</th>
+              <th>目標</th>
+            </tr>
+          </thead>
+          <tbody id="rosterBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Action Items -->
+    <section class="action-section">
+      <h2>🎯 CEO 今週の意思決定ポイント</h2>
+      <div id="actionItems" class="action-list"></div>
+    </section>
+
+    <!-- Financial Projection -->
+    <section class="projection-section">
+      <h2>📅 3000万円達成までの道のり</h2>
+      <div class="milestone-grid">
+        <div class="milestone">
+          <div class="milestone-label">現在</div>
+          <div class="milestone-value" id="currentRevenue">¥0/月</div>
+          <div class="milestone-note" id="currentStudents">0名</div>
+        </div>
+        <div class="milestone-arrow">→</div>
+        <div class="milestone">
+          <div class="milestone-label">損益分岐点</div>
+          <div class="milestone-value">¥3,000,000/月</div>
+          <div class="milestone-note">約75名必要</div>
+        </div>
+        <div class="milestone-arrow">→</div>
+        <div class="milestone">
+          <div class="milestone-label">目標</div>
+          <div class="milestone-value">¥6,000,000/月</div>
+          <div class="milestone-note">営業利益¥250万/月 × 12 = 年間¥3,000万</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>© 2026 AI学習コーチ塾 | CEO Dashboard v1.0</p>
+  </footer>
+
+  <script src="plans.js?v=20260422"></script>
+  <script src="ceo.js"></script>
+  <script>
+    // プラン管理テーブル描画
+    (function renderPlanMgmt() {
+      const container = document.getElementById('planMgmtTable');
+      if (!container || !window.PLAN_CONFIG) return;
+      const plans = window.PLAN_CONFIG.plans;
+      const addon = window.PLAN_CONFIG.studentAddon;
+      const trial = window.PLAN_CONFIG.trial;
+      const enrollment = window.PLAN_CONFIG.enrollment;
+      container.innerHTML = `
+        <table class="roster-table">
+          <thead>
+            <tr>
+              <th>プラン種別</th>
+              <th>プラン名</th>
+              <th>価格</th>
+              <th>最大生徒数</th>
+              <th>AIモデル</th>
+              <th>備考</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${Object.values(plans).map(p => `
+              <tr>
+                <td>新規</td>
+                <td><strong style="color:${p.color};">${p.name}</strong>${p.recommended ? ' 🔥' : ''}</td>
+                <td>¥${p.price.toLocaleString()}/月</td>
+                <td>${p.maxStudents}名</td>
+                <td>${p.aiModel === 'opus' ? 'Opus 4.7（最上位）' : 'Sonnet 4.6（標準）'}</td>
+                <td>${p.tagline}</td>
+              </tr>
+            `).join('')}
+            <tr style="border-top:2px solid rgba(255,255,255,0.15);">
+              <td>体験</td>
+              <td>3日間トライアル</td>
+              <td>${trial.priceLabel}（単発）</td>
+              <td>1名</td>
+              <td>全機能</td>
+              <td>創業記念・第1期生向け</td>
+            </tr>
+            <tr>
+              <td>初回費用</td>
+              <td>入塾金</td>
+              <td>${enrollment.priceLabel}</td>
+              <td>-</td>
+              <td>-</td>
+              <td>${enrollment.description}</td>
+            </tr>
+            <tr>
+              <td>塾生</td>
+              <td>塾生アドオン</td>
+              <td>${addon.priceLabel}/月</td>
+              <td>1名</td>
+              <td>Opus 4.7</td>
+              <td>${addon.description}・入塾金不要</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="margin-top:1rem;color:#888;font-size:0.85rem;">
+          💡 価格や機能を変更する場合は <code>/plans.js</code> を編集してください。変更は全LPとチェックアウトに即時反映されます。
+        </p>
+      `;
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+# Render.com deployment config
+# https://render.com/docs/blueprint-spec
+#
+# 使い方:
+# 1. このリポジトリをGitHubにpush
+# 2. Render.com で "New Blueprint" から選択
+# 3. 環境変数を設定 (Stripe/LINE/Anthropic のキー)
+
+services:
+  - type: web
+    name: ai-juku-api
+    runtime: python
+    buildCommand: pip install -r server/requirements.txt
+    startCommand: cd server && uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_AI
+        sync: false
+      - key: STRIPE_PRICE_HYBRID
+        sync: false
+      - key: STRIPE_PRICE_INTENSIVE
+        sync: false
+      - key: LINE_CHANNEL_ACCESS_TOKEN
+        sync: false
+      - key: LINE_CHANNEL_SECRET
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: CRON_SECRET
+        generateValue: true
+      - key: BASE_URL
+        value: https://ai-juku.onrender.com
+    plan: starter  # $7/月
+
+  - type: cron
+    name: ai-juku-weekly-reports
+    runtime: docker
+    dockerCommand: >
+      sh -c "curl -X POST -H \"X-Cron-Secret: $CRON_SECRET\"
+             https://ai-juku.onrender.com/api/cron/weekly-reports"
+    schedule: "0 11 * * 0"  # 毎週日曜 20:00 JST (UTC 11:00)
+    envVars:
+      - key: CRON_SECRET
+        fromService:
+          name: ai-juku-api
+          type: web
+          envVarKey: CRON_SECRET

@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /lp.html
+Allow: /blog.html
+Allow: /article.html
+Allow: /legal.html
+Allow: /support.html
+Disallow: /index.html
+Disallow: /ceo.html
+Disallow: /mypage.html
+Disallow: /checkout.html
+Disallow: /student-upgrade.html
+Disallow: /broadcast-center.html
+Disallow: /access-map.html
+Disallow: /campaign.html
+Disallow: /personalized-outreach.html
+Disallow: /launch.html
+Disallow: /alerts.html
+Disallow: /notifications.html
+
+Sitemap: https://your-domain.com/sitemap.xml

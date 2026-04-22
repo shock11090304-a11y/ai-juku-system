@@ -1,0 +1,259 @@
+.notif-main {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 2rem 4rem;
+}
+
+.notif-intro {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 1.5rem 2rem;
+  margin-bottom: 2rem;
+}
+.notif-intro h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem; }
+.notif-intro p { color: var(--text-dim); font-size: 0.95rem; line-height: 1.8; }
+
+.notif-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+.notif-tab {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--panel-border);
+  color: var(--text-dim);
+  padding: 0.7rem 1.4rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.notif-tab:hover { background: rgba(255, 255, 255, 0.08); }
+.notif-tab.active {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  border-color: transparent;
+}
+
+/* LINE preview */
+.line-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+.line-phone {
+  background: #7fc89e;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+.line-header {
+  background: #06C755;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: white;
+}
+.line-avatar {
+  width: 36px; height: 36px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+.line-name { font-weight: 700; font-size: 0.9rem; }
+.line-status { font-size: 0.7rem; opacity: 0.85; }
+.line-chat {
+  background: #7fc89e;
+  padding: 1rem;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.line-msg { display: flex; flex-direction: column; gap: 0.25rem; }
+.line-bubble {
+  background: white;
+  color: #222;
+  padding: 0.8rem 1rem;
+  border-radius: 14px;
+  border-top-left-radius: 4px;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  max-width: 280px;
+  align-self: flex-start;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.line-bubble strong { color: #06C755; }
+.line-bubble.success { background: linear-gradient(135deg, #FEF3C7, #FDE68A); border: 1px solid #FBBF24; }
+.line-bubble.warning { background: linear-gradient(135deg, #FEE2E2, #FECACA); border: 1px solid #F87171; }
+.line-time { font-size: 0.7rem; color: rgba(255,255,255,0.8); padding-left: 0.5rem; }
+
+.line-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  max-width: 280px;
+  align-self: flex-start;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+.line-card-img {
+  background: linear-gradient(135deg, #6366f1, #ec4899);
+  color: white;
+  padding: 2rem 1rem;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.line-card-body { padding: 1rem; color: #222; }
+.line-card-title { font-weight: 700; font-size: 0.85rem; margin-bottom: 0.3rem; }
+.line-card-desc { font-size: 0.75rem; color: #555; line-height: 1.5; margin-bottom: 0.75rem; }
+.line-card-btn {
+  width: 100%;
+  padding: 0.6rem;
+  background: #06C755;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.template-label {
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text);
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Email preview */
+.email-preview {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 14px;
+  overflow: hidden;
+  color: #222;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+.email-header {
+  background: #f3f4f6;
+  padding: 1.25rem 2rem;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.85rem;
+  line-height: 2;
+  color: #4b5563;
+}
+.email-body {
+  padding: 2.5rem 2rem;
+  line-height: 1.8;
+}
+.email-body h2 { color: #111; font-size: 1.2rem; margin-bottom: 1rem; }
+.email-body p { margin-bottom: 1rem; color: #333; }
+.email-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin: 1.5rem 0;
+  padding: 1.25rem;
+  background: #f9fafb;
+  border-radius: 10px;
+}
+.email-kpi {
+  text-align: center;
+  color: #4b5563;
+  font-size: 0.85rem;
+}
+.email-kpi strong {
+  display: block;
+  font-size: 1.5rem;
+  background: linear-gradient(135deg, #6366f1, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.2rem;
+}
+.email-cta {
+  display: inline-block;
+  padding: 0.8rem 2rem;
+  background: linear-gradient(135deg, #6366f1, #ec4899);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+/* App notifications */
+.app-notif-grid {
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.app-notif {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.2s;
+}
+.app-notif:hover { border-color: rgba(99, 102, 241, 0.3); }
+.notif-icon {
+  width: 44px; height: 44px;
+  background: rgba(99, 102, 241, 0.15);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+.notif-body { flex: 1; }
+.notif-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem; }
+.notif-desc { font-size: 0.8rem; color: var(--text-dim); }
+.notif-time { font-size: 0.75rem; color: var(--text-muted); }
+
+/* CTA */
+.notif-cta { margin-top: 3rem; }
+.cta-box {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.05));
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 16px;
+  padding: 2rem;
+}
+.cta-box h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem; }
+.cta-box p { color: var(--text-dim); line-height: 1.8; margin-bottom: 1rem; }
+.cta-box ol { margin: 1rem 0 1rem 1.5rem; color: var(--text); }
+.cta-box ol li { padding: 0.3rem 0; }
+.notif-note {
+  background: rgba(245, 158, 11, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+  color: #fcd34d;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .line-preview-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .line-preview-grid { grid-template-columns: 1fr; }
+}

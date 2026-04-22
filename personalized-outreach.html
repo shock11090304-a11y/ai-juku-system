@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📨 個別展開ツール | 103名パーソナライズ配信</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="personalized-outreach.css">
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">📨</span>
+      <div>
+        <h1>個別展開ツール</h1>
+        <p class="tagline">juku-manager 103名へのパーソナライズ配信を管理</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span id="loadStatus" class="mode-badge">読み込み中...</span>
+      <button id="reloadBtn" class="btn-icon" title="再読み込み">🔄</button>
+      <a href="outreach-kit.html" class="btn-icon" title="テンプレ">📬</a>
+      <a href="launch.html" class="btn-icon" title="ローンチ手順">🚀</a>
+      <a href="ceo.html" class="btn-icon" title="CEO">💼</a>
+    </div>
+  </header>
+
+  <main class="po-main">
+    <!-- Progress overview -->
+    <section class="po-overview">
+      <div class="ov-card">
+        <div class="ov-num" id="totalCount">0</div>
+        <div class="ov-label">対象生徒</div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-num" id="sentCount">0</div>
+        <div class="ov-label">送信済み</div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-num" id="repliedCount">0</div>
+        <div class="ov-label">返信あり</div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-num success" id="paidCount">0</div>
+        <div class="ov-label">登録完了</div>
+      </div>
+      <div class="ov-card highlight">
+        <div class="ov-num" id="conversionRate">0%</div>
+        <div class="ov-label">転換率<br>(送信→登録)</div>
+      </div>
+    </section>
+
+    <!-- Filter bar -->
+    <section class="po-filters">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>月謝層</label>
+          <select id="feeFilter">
+            <option value="all">すべて</option>
+            <option value="low">低 (〜¥9,999)</option>
+            <option value="mid">中 (¥10,000-¥19,999)</option>
+            <option value="high">高 (¥20,000〜)</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>学年</label>
+          <select id="gradeFilter">
+            <option value="all">すべて</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>ステータス</label>
+          <select id="statusFilter">
+            <option value="all">すべて</option>
+            <option value="not_sent">未送信</option>
+            <option value="sent">送信済み</option>
+            <option value="replied">返信あり</option>
+            <option value="paid">登録完了</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>コース絞込</label>
+          <input type="text" id="courseFilter" placeholder="例: 英検準1級">
+        </div>
+        <div class="filter-group">
+          <label>検索</label>
+          <input type="text" id="nameFilter" placeholder="名前で検索">
+        </div>
+      </div>
+      <div class="bulk-actions">
+        <button id="exportCsv" class="bulk-btn">📊 CSVエクスポート</button>
+        <button id="markSelectedSent" class="bulk-btn">✅ 選択を送信済みに</button>
+        <button id="copyAllMessages" class="bulk-btn">📋 全選択メッセージをコピー</button>
+        <button id="clearStatus" class="bulk-btn danger">🗑 ステータスリセット</button>
+      </div>
+    </section>
+
+    <!-- Student list -->
+    <section class="po-students" id="studentList">
+      <div class="loading-state">⏳ 生徒データを読み込んでいます...</div>
+    </section>
+  </main>
+
+  <!-- Data load modal -->
+  <div id="loadModal" class="load-modal">
+    <div class="load-modal-content">
+      <h2>📂 juku-manager データを読み込みます</h2>
+      <p>103名の生徒データを取得するため、以下のいずれかを実行してください：</p>
+      <div class="load-options">
+        <div class="load-option">
+          <div class="lo-title">🟢 推奨：juku-managerを起動</div>
+          <pre class="lo-cmd">python3 -m http.server 8080 -d /Users/adachishouhei/juku-manager</pre>
+          <p>別ターミナルで上記を実行して、下のボタンを押してください。</p>
+          <button id="autoLoadBtn" class="btn-primary">🔄 自動取得を試す</button>
+        </div>
+        <div class="load-or">または</div>
+        <div class="load-option">
+          <div class="lo-title">📁 JSONファイルをアップロード</div>
+          <p>juku-manager/default_data.json を選択してください。</p>
+          <input type="file" id="fileInput" accept="application/json" style="display:none;">
+          <button id="uploadBtn" class="btn-secondary">ファイルを選択</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="personalized-outreach.js"></script>
+</body>
+</html>

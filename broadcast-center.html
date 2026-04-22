@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📢 配信センター | AI学習コーチ塾</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .bc-container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+    .bc-hero {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(59, 130, 246, 0.10));
+      border-radius: 16px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .bc-hero h1 {
+      margin: 0 0 0.5rem;
+      background: linear-gradient(135deg, #10b981, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .bc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+    @media (max-width: 1024px) { .bc-grid { grid-template-columns: 1fr; } }
+    .bc-panel {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      padding: 1.5rem;
+    }
+    .bc-panel h2 { margin-top: 0; font-size: 1.1rem; }
+    .bc-template-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .bc-template-tab {
+      padding: 0.5rem 0.9rem;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--panel-border);
+      color: var(--text-dim);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.15s;
+    }
+    .bc-template-tab.active {
+      background: linear-gradient(135deg, #10b981, #3b82f6);
+      color: #fff;
+      border-color: transparent;
+    }
+    .bc-textarea {
+      width: 100%;
+      min-height: 420px;
+      padding: 1rem;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--panel-border);
+      color: var(--text);
+      border-radius: 10px;
+      font-size: 0.92rem;
+      line-height: 1.75;
+      font-family: -apple-system, "Hiragino Sans", sans-serif;
+      resize: vertical;
+    }
+    .bc-variables {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .bc-var {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .bc-var label { font-size: 0.8rem; color: var(--text-dim); }
+    .bc-var input {
+      padding: 0.5rem 0.7rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--panel-border);
+      color: var(--text);
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+    .bc-actions {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+    .bc-btn {
+      padding: 0.75rem 1.25rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--panel-border);
+      color: var(--text);
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .bc-btn-primary {
+      background: linear-gradient(135deg, #10b981, #3b82f6);
+      color: #fff;
+      border-color: transparent;
+    }
+    .bc-btn:hover { transform: translateY(-1px); }
+    .bc-qr-box {
+      text-align: center;
+      padding: 1.5rem;
+      background: #fff;
+      border-radius: 12px;
+    }
+    .bc-qr-box img {
+      width: 240px;
+      height: 240px;
+      display: block;
+      margin: 0 auto 1rem;
+    }
+    .bc-qr-url {
+      font-size: 0.85rem;
+      color: #1a1a1a;
+      word-break: break-all;
+      font-family: monospace;
+      background: #f3f4f6;
+      padding: 0.5rem;
+      border-radius: 6px;
+    }
+    .bc-checklist {
+      list-style: none;
+      padding: 0;
+      margin: 1rem 0;
+    }
+    .bc-checklist li {
+      padding: 0.75rem 1rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .bc-checklist input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+    }
+    .bc-checklist li.done { opacity: 0.5; text-decoration: line-through; }
+    .bc-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .bc-stat {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 0.9rem;
+      text-align: center;
+    }
+    .bc-stat-label { color: var(--text-dim); font-size: 0.8rem; }
+    .bc-stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #10b981, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-top: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">📢</span>
+      <div>
+        <h1>配信センター</h1>
+        <p class="tagline">既存塾生・保護者への告知を1クリックで</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a href="index.html" class="btn-nav-pill"><span class="bnp-icon">🎓</span><span class="bnp-label">アプリ</span></a>
+      <a href="ceo.html" class="btn-nav-pill"><span class="bnp-icon">💼</span><span class="bnp-label">CEO</span></a>
+    </div>
+  </header>
+
+  <main class="bc-container">
+
+    <div class="bc-hero">
+      <h1>📢 塾生AIアドオン・ローンチ配信</h1>
+      <p>既存塾生200名の保護者へ一斉配信。目標転換50名 × ¥15,000 = <strong>¥75万/月</strong></p>
+    </div>
+
+    <div class="bc-stats">
+      <div class="bc-stat">
+        <div class="bc-stat-label">配信対象</div>
+        <div class="bc-stat-value">200名</div>
+      </div>
+      <div class="bc-stat">
+        <div class="bc-stat-label">目標成約</div>
+        <div class="bc-stat-value">50名</div>
+      </div>
+      <div class="bc-stat">
+        <div class="bc-stat-label">月商インパクト</div>
+        <div class="bc-stat-value">¥75万</div>
+      </div>
+    </div>
+
+    <div class="bc-grid">
+      <!-- 配信文作成パネル -->
+      <div class="bc-panel">
+        <h2>✏️ 配信文作成（LINE / Email）</h2>
+
+        <div class="bc-template-tabs">
+          <button class="bc-template-tab active" data-tpl="line_short">📱 LINE短文</button>
+          <button class="bc-template-tab" data-tpl="email_full">📧 メール詳細</button>
+          <button class="bc-template-tab" data-tpl="meeting_talk">🗣 面談トーク</button>
+        </div>
+
+        <div class="bc-variables">
+          <div class="bc-var">
+            <label>塾名</label>
+            <input type="text" id="varJukuName" placeholder="○○塾">
+          </div>
+          <div class="bc-var">
+            <label>塾長名</label>
+            <input type="text" id="varOwnerName" placeholder="山田太郎">
+          </div>
+          <div class="bc-var">
+            <label>申込締切日</label>
+            <input type="text" id="varDeadline" placeholder="4月30日">
+          </div>
+          <div class="bc-var">
+            <label>LP URL（公開後）</label>
+            <input type="text" id="varLpUrl" placeholder="https://your-domain.com/student-upgrade.html">
+          </div>
+        </div>
+
+        <textarea id="bcMessage" class="bc-textarea"></textarea>
+
+        <div class="bc-actions">
+          <button class="bc-btn bc-btn-primary" id="bcCopyBtn">📋 クリップボードにコピー</button>
+          <button class="bc-btn" id="bcLineBtn">📱 LINEで開く</button>
+          <button class="bc-btn" id="bcEmailBtn">📧 メーラーで開く</button>
+        </div>
+      </div>
+
+      <!-- QRコード + チェックリスト -->
+      <div>
+        <div class="bc-panel" style="margin-bottom:1rem;">
+          <h2>📱 QRコード（保護者に紙で配布用）</h2>
+          <div class="bc-qr-box">
+            <img id="bcQrImage" alt="LP QRコード" src="">
+            <div class="bc-qr-url" id="bcQrUrl">URLを入力するとQRコードが生成されます</div>
+          </div>
+          <p style="font-size:0.85rem;color:var(--text-dim);margin-top:0.5rem;">💡 保護者会や紙のお知らせでの配布に最適。スマホでスキャンするだけでLPへ直接アクセス可能。</p>
+        </div>
+
+        <div class="bc-panel">
+          <h2>✅ 配信前チェックリスト</h2>
+          <ul class="bc-checklist" id="bcChecklist">
+            <li><input type="checkbox" data-k="c1"><label>LP（student-upgrade.html）が公開URLでアクセス可能</label></li>
+            <li><input type="checkbox" data-k="c2"><label>配信文のLP URL・塾名・締切日を置換済み</label></li>
+            <li><input type="checkbox" data-k="c3"><label>保護者の問合せ受付体制（LINE/メール返信担当）を確定</label></li>
+            <li><input type="checkbox" data-k="c4"><label>初期10名のAIアドオン追加を塾月謝システムに事前準備</label></li>
+            <li><input type="checkbox" data-k="c5"><label>FAQ対応シナリオを確認（student-upgrade-outreach.md）</label></li>
+            <li><input type="checkbox" data-k="c6"><label>配信タイミング（平日朝9時 or 夜20時が開封率最高）</label></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    const TEMPLATES = {
+      line_short: `【{{JUKU_NAME}}からのお知らせ】
+AI学習システム導入のご案内 🎓
+
+いつもお世話になっております。
+
+当塾では今月より、AI学習プラットフォームを
+導入し、塾生の皆様にご提供を開始します。
+
+━━━━━━━━━━━━━━━━━━
+🌐 外部の個別契約
+ 入塾金 ¥20,000 + 月額 ¥24,980〜¥39,800
+
+🎓 塾生様アドオン
+ 入塾金なし + 月額 ¥15,000
+ （現在の月謝にプラス）
+━━━━━━━━━━━━━━━━━━
+
+▼ できること
+・24時間AIチューター質問し放題
+・弱点を入れるだけで問題自動生成
+・オリジナル参考書が作れる
+・英作文・記述を瞬時に添削
+・AI履歴を担当講師が毎週確認
+
+📅 先着50名様限定・残り枠わずか
+申込み締切: {{DEADLINE}}まで
+
+詳細: {{LP_URL}}
+
+▼ お申込み
+担当講師に直接お声がけいただくか、
+このLINEに「AI希望」とご返信ください。
+翌月の月謝請求に追加いたします。
+
+2週間の無料トライアルも可能です。
+
+{{JUKU_NAME}}
+塾長 {{OWNER_NAME}}`,
+
+      email_full: `件名: 【{{JUKU_NAME}}】AI学習システム導入のご案内（塾生様限定特典）
+
+○○様
+
+いつもお世話になっております。
+{{JUKU_NAME}}塾長の{{OWNER_NAME}}です。
+
+このたび当塾では、生徒様の学習効果を飛躍的に高めるため、
+最新のAI学習プラットフォームを導入する運びとなりました。
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+■ システムの概要
+
+Anthropic社の最先端AI「Claude Opus 4.7」を活用し、
+以下の機能を生徒様専用にご提供します:
+
+ 1. 24時間AIチューター
+ 2. AI問題自動生成（東大・京大レベル対応）
+ 3. オリジナル参考書生成
+ 4. 英作文・記述のAI添削
+ 5. 学習診断・カリキュラム自動生成
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+■ ご料金について
+
+ 【外部の新規契約】
+  入塾金: ¥20,000
+  月額: ¥24,980〜¥39,800
+
+ 【塾生様限定・特別アドオン】
+  入塾金: なし
+  月額: 現在の月謝 + ¥15,000のみ
+
+ 年間でお得になる金額: 約¥32万円分
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+■ 塾生様プランの特別付加価値
+
+外部契約にはない、以下の機能を追加でご提供:
+
+ ● AIの会話履歴を担当講師が毎週レビュー
+ ● 塾の宿題とAIが自動連携
+ ● 保護者様向けの統合レポート（塾成績+AI学習時間）
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+■ 先行導入の特典
+
+ ◎ 先着50名様限定
+ ◎ 2週間の無料トライアル
+ ◎ 年間一括先払いで¥30,000割引
+
+■ 申込み締切: {{DEADLINE}}
+
+■ お申込み方法
+
+ 1. 担当講師に直接お伝えください
+ 2. または、このメールに返信でご希望お伝えください
+ 3. 詳細は下記ページもご覧ください
+    {{LP_URL}}
+
+翌月の月謝請求に追加反映いたします。
+体験だけでもまずはお試しください。
+
+{{JUKU_NAME}}
+塾長 {{OWNER_NAME}}
+TEL:
+Mail: info@{{JUKU_NAME}}.com`,
+
+      meeting_talk: `【保護者面談での話し方スクリプト】
+
+━━━ オープニング（30秒）━━━
+
+「○○様、今日はご相談があります。
+
+実は{{JUKU_NAME}}で、生徒様の学習を劇的に伸ばす
+AIシステムを独自開発しまして、今月から
+導入を始めています。
+
+すでに業界で同様のAIシステムが
+入塾金2万円、月額3-4万円ほどで販売されているのですが、
+当塾の塾生様には、特別価格でご提供したく。」
+
+━━━ 価格提示（1分）━━━
+
+「具体的には、入塾金は免除で、
+現在の月謝にプラス¥15,000のみで、
+全機能をお使いいただけます。
+
+外部価格との差額は、年間で約32万円分の
+お得になります。
+
+もちろん、お子様が使ってみたいと
+思われなければ、2週間のトライアルで
+気に入らなければ申込み見送りで構いません。」
+
+━━━ クロージング（30秒）━━━
+
+「現在、先着50名様限定でご案内しており、
+もう数名しか枠がございません。
+申込み締切は{{DEADLINE}}となります。
+
+もしご興味があれば、翌月の月謝請求に
+¥15,000を追加する形でお手続きさせて
+いただきます。いかがでしょうか？」
+
+━━━ 成約率UP の追加特典 ━━━
+
+・即決特典: 今面談中に決めれば初月¥5,000割引
+・年間先払い特典: 一括先払いで¥30,000割引
+・ご兄弟割引: 2人目以降は¥12,000/月
+・紹介特典: 他の保護者様ご紹介で双方1ヶ月無料`
+    };
+
+    const vars = {
+      JUKU_NAME: localStorage.getItem('bc_var_juku') || '○○塾',
+      OWNER_NAME: localStorage.getItem('bc_var_owner') || '塾長',
+      DEADLINE: localStorage.getItem('bc_var_deadline') || '4月30日',
+      LP_URL: localStorage.getItem('bc_var_lp') || 'https://your-domain.com/student-upgrade.html',
+    };
+
+    let currentTpl = 'line_short';
+
+    function renderMessage() {
+      let text = TEMPLATES[currentTpl] || '';
+      Object.keys(vars).forEach(k => {
+        text = text.replaceAll(`{{${k}}}`, vars[k]);
+      });
+      document.getElementById('bcMessage').value = text;
+    }
+
+    function updateQR() {
+      const url = vars.LP_URL;
+      const img = document.getElementById('bcQrImage');
+      const urlDisplay = document.getElementById('bcQrUrl');
+      if (url && !url.includes('your-domain.com')) {
+        img.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(url)}`;
+        urlDisplay.textContent = url;
+      } else {
+        img.src = '';
+        urlDisplay.textContent = 'LP URL を入力するとQRコードが生成されます';
+      }
+    }
+
+    // 変数入力欄のイベント
+    document.getElementById('varJukuName').value = vars.JUKU_NAME !== '○○塾' ? vars.JUKU_NAME : '';
+    document.getElementById('varOwnerName').value = vars.OWNER_NAME !== '塾長' ? vars.OWNER_NAME : '';
+    document.getElementById('varDeadline').value = vars.DEADLINE !== '4月30日' ? vars.DEADLINE : '';
+    document.getElementById('varLpUrl').value = vars.LP_URL.includes('your-domain.com') ? '' : vars.LP_URL;
+
+    function bindVarInput(id, key, storageKey) {
+      document.getElementById(id).addEventListener('input', (e) => {
+        vars[key] = e.target.value.trim() || vars[key];
+        localStorage.setItem(storageKey, e.target.value.trim());
+        renderMessage();
+        if (key === 'LP_URL') updateQR();
+      });
+    }
+    bindVarInput('varJukuName', 'JUKU_NAME', 'bc_var_juku');
+    bindVarInput('varOwnerName', 'OWNER_NAME', 'bc_var_owner');
+    bindVarInput('varDeadline', 'DEADLINE', 'bc_var_deadline');
+    bindVarInput('varLpUrl', 'LP_URL', 'bc_var_lp');
+
+    // テンプレート切替
+    document.querySelectorAll('.bc-template-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.bc-template-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentTpl = tab.dataset.tpl;
+        renderMessage();
+      });
+    });
+
+    // コピー
+    document.getElementById('bcCopyBtn').addEventListener('click', async () => {
+      const text = document.getElementById('bcMessage').value;
+      try {
+        await navigator.clipboard.writeText(text);
+        alert('✅ クリップボードにコピーしました。\nLINEやメールに貼り付けてください。');
+      } catch(e) {
+        alert('コピーに失敗しました。手動で選択してコピーしてください。');
+      }
+    });
+
+    // LINE（モバイルからLINEアプリを起動する想定）
+    document.getElementById('bcLineBtn').addEventListener('click', () => {
+      const text = document.getElementById('bcMessage').value;
+      const url = `https://line.me/R/msg/text/?${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+    });
+
+    // メール
+    document.getElementById('bcEmailBtn').addEventListener('click', () => {
+      const text = document.getElementById('bcMessage').value;
+      const subject = currentTpl === 'email_full'
+        ? `【${vars.JUKU_NAME}】AI学習システム導入のご案内`
+        : `${vars.JUKU_NAME}からのお知らせ`;
+      window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+    });
+
+    // チェックリスト状態保存
+    document.querySelectorAll('#bcChecklist input[type="checkbox"]').forEach(cb => {
+      const key = cb.dataset.k;
+      cb.checked = localStorage.getItem(`bc_check_${key}`) === '1';
+      if (cb.checked) cb.closest('li').classList.add('done');
+      cb.addEventListener('change', () => {
+        localStorage.setItem(`bc_check_${key}`, cb.checked ? '1' : '0');
+        cb.closest('li').classList.toggle('done', cb.checked);
+      });
+    });
+
+    renderMessage();
+    updateQR();
+  </script>
+</body>
+</html>

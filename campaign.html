@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎯 キャンペーン実行ダッシュボード | AI学習コーチ塾 CEO</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="campaign.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">🎯</span>
+      <div>
+        <h1>キャンペーン実行ダッシュボード</h1>
+        <p class="tagline">第1期生100名募集 → 広告展開 → 第2期生へ自動移行</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span id="currentPhase" class="phase-badge">Phase 1</span>
+      <a href="ceo.html" class="btn-icon" title="CEO">💼</a>
+      <a href="personalized-outreach.html" class="btn-icon" title="個別展開">📨</a>
+      <a href="lp.html" class="btn-icon" title="LP">🌐</a>
+    </div>
+  </header>
+
+  <main class="camp-main">
+    <!-- Master progress -->
+    <section class="master-progress">
+      <div class="mp-title">
+        <h2>🏁 マスタープログレス</h2>
+        <div class="mp-date">更新: <span id="updateTime">--</span></div>
+      </div>
+      <div class="phase-flow">
+        <div class="phase-stage active" data-phase="1">
+          <div class="ps-num">Phase 1</div>
+          <div class="ps-name">第1期生 100名</div>
+          <div class="ps-price">¥1,980</div>
+          <div class="ps-progress">
+            <div class="ps-bar"><div class="ps-bar-fill" id="phase1Fill"></div></div>
+            <div class="ps-count"><span id="phase1Count">0</span> / 100</div>
+          </div>
+        </div>
+        <div class="phase-arrow">→</div>
+        <div class="phase-stage" data-phase="2">
+          <div class="ps-num">Phase 2</div>
+          <div class="ps-name">第2期生 200名</div>
+          <div class="ps-price">¥4,980</div>
+          <div class="ps-progress">
+            <div class="ps-bar"><div class="ps-bar-fill" id="phase2Fill"></div></div>
+            <div class="ps-count"><span id="phase2Count">0</span> / 200</div>
+          </div>
+        </div>
+        <div class="phase-arrow">→</div>
+        <div class="phase-stage" data-phase="3">
+          <div class="ps-num">Phase 3</div>
+          <div class="ps-name">第3期生 200名</div>
+          <div class="ps-price">¥9,800</div>
+          <div class="ps-progress">
+            <div class="ps-bar"><div class="ps-bar-fill" id="phase3Fill"></div></div>
+            <div class="ps-count"><span id="phase3Count">0</span> / 200</div>
+          </div>
+        </div>
+        <div class="phase-arrow">→</div>
+        <div class="phase-stage final" data-phase="4">
+          <div class="ps-num">通常</div>
+          <div class="ps-name">月額¥24,980〜</div>
+          <div class="ps-price">標準価格</div>
+          <div class="ps-progress">
+            <div class="ps-count">永続</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- KPI row -->
+    <section class="kpi-row">
+      <div class="kpi-c">
+        <div class="kpi-label">残り枠</div>
+        <div class="kpi-value" id="kpiRemaining">--</div>
+        <div class="kpi-sub">第1期生</div>
+      </div>
+      <div class="kpi-c highlight">
+        <div class="kpi-label">今日の獲得</div>
+        <div class="kpi-value" id="kpiToday">0</div>
+        <div class="kpi-sub">本日の新規トライアル</div>
+      </div>
+      <div class="kpi-c">
+        <div class="kpi-label">今週の獲得</div>
+        <div class="kpi-value" id="kpiWeek">0</div>
+        <div class="kpi-sub">過去7日</div>
+      </div>
+      <div class="kpi-c">
+        <div class="kpi-label">トライアル売上</div>
+        <div class="kpi-value" id="kpiRevenue">¥0</div>
+        <div class="kpi-sub">¥1,980 × 獲得数</div>
+      </div>
+      <div class="kpi-c">
+        <div class="kpi-label">予想MRR</div>
+        <div class="kpi-value" id="kpiMrr">¥0</div>
+        <div class="kpi-sub">転換40%想定</div>
+      </div>
+    </section>
+
+    <!-- Phase 1: Existing students -->
+    <section class="camp-phase active" id="phase1">
+      <div class="camp-phase-head">
+        <div class="cph-left">
+          <div class="cph-tag">Phase 1 - 今週の実行</div>
+          <h2>📨 既存生徒103名への優先案内（広告費ゼロ）</h2>
+          <p>既存顧客は「既に払う文化」の中にいる層。外部広告より圧倒的に高い転換率 (推定60-80%)。第1期生の最初の30-40枠はここで埋めます。</p>
+        </div>
+        <div class="cph-right">
+          <button id="openOutreach" class="btn-primary">📨 個別展開ツールを開く</button>
+        </div>
+      </div>
+
+      <div class="phase1-breakdown">
+        <h3>📊 月謝帯別 優先順位（高月謝 → Pro = ¥0追加で最優先）</h3>
+        <div class="tier-grid">
+          <div class="tier-card tier-high">
+            <div class="tier-badge">優先度 1</div>
+            <div class="tier-name">🟢 高月謝層（Pro候補）</div>
+            <div class="tier-count">26名</div>
+            <div class="tier-offer">月¥20,000+ 既存 → 追加¥0でPro提供</div>
+            <div class="tier-expected">転換率 70% 想定 → <strong>18名獲得</strong></div>
+            <button class="tier-btn" onclick="openOutreachWithFilter('high')">この層を個別配信</button>
+          </div>
+          <div class="tier-card tier-mid">
+            <div class="tier-badge">優先度 2</div>
+            <div class="tier-name">🟡 中月謝層（Plus候補）</div>
+            <div class="tier-count">23名</div>
+            <div class="tier-offer">月¥10-20K 既存 → +¥3,000でPlus提供</div>
+            <div class="tier-expected">転換率 40% 想定 → <strong>9名獲得</strong></div>
+            <button class="tier-btn" onclick="openOutreachWithFilter('mid')">この層を個別配信</button>
+          </div>
+          <div class="tier-card tier-low">
+            <div class="tier-badge">優先度 3</div>
+            <div class="tier-name">🟤 低月謝層（Lite候補）</div>
+            <div class="tier-count">54名</div>
+            <div class="tier-offer">月¥7,500-10K 既存 → +¥1,000でLite提供</div>
+            <div class="tier-expected">転換率 25% 想定 → <strong>14名獲得</strong></div>
+            <button class="tier-btn" onclick="openOutreachWithFilter('low')">この層を個別配信</button>
+          </div>
+        </div>
+        <div class="tier-total">
+          <div>📈 既存103名からの合計見込み</div>
+          <div class="tier-total-num"><strong>41名獲得</strong>（100枠の約40%を広告費ゼロで獲得）</div>
+        </div>
+      </div>
+
+      <div class="checklist-section">
+        <h3>✅ 今週やることチェックリスト</h3>
+        <div class="checklist-items">
+          <label class="ck-item">
+            <input type="checkbox" data-ck="day1">
+            <div class="ck-body">
+              <div class="ck-day">Day 1 (月)</div>
+              <div class="ck-task">高月謝層26名 に個別LINE/メール配信（<a href="personalized-outreach.html">個別展開ツール</a>の「📧 メール」を1人ずつコピー→送信）</div>
+              <div class="ck-goal">🎯 目標: 18名獲得 / 午後18時までに全員送信</div>
+            </div>
+          </label>
+          <label class="ck-item">
+            <input type="checkbox" data-ck="day2">
+            <div class="ck-body">
+              <div class="ck-day">Day 2 (火) 午前</div>
+              <div class="ck-task">中月謝層23名 に配信 + Day1の返信対応</div>
+              <div class="ck-goal">🎯 目標: 追加9名獲得 / 返信率60%</div>
+            </div>
+          </label>
+          <label class="ck-item">
+            <input type="checkbox" data-ck="day3">
+            <div class="ck-body">
+              <div class="ck-day">Day 3 (水)</div>
+              <div class="ck-task">低月謝層54名 に一斉メール配信（テンプレ同一でOK）</div>
+              <div class="ck-goal">🎯 目標: 追加14名獲得</div>
+            </div>
+          </label>
+          <label class="ck-item">
+            <input type="checkbox" data-ck="day4">
+            <div class="ck-body">
+              <div class="ck-day">Day 4 (木)</div>
+              <div class="ck-task">未返信者にリマインダー送信 + 質問対応デイ</div>
+              <div class="ck-goal">🎯 目標: 追加5-10名獲得</div>
+            </div>
+          </label>
+          <label class="ck-item">
+            <input type="checkbox" data-ck="day5">
+            <div class="ck-body">
+              <div class="ck-day">Day 5 (金)</div>
+              <div class="ck-task">第1週結果レビュー → 来週広告戦略の微調整</div>
+              <div class="ck-goal">🎯 目標累計: 40名獲得（残り60枠）</div>
+            </div>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- Phase 2: Ad campaign -->
+    <section class="camp-phase" id="phase2">
+      <div class="camp-phase-head">
+        <div class="cph-left">
+          <div class="cph-tag">Phase 2 - 来週の実行</div>
+          <h2>🎯 Google広告 + Threads で残り70枠を獲得</h2>
+          <p>既存顧客で埋めきれない枠を外部集客で。第1期生トライアル売上¥198,000が入る頃、その資金で広告を回します。</p>
+        </div>
+        <div class="cph-right">
+          <button id="openAdsKit" class="btn-primary">📣 広告バリエーション20本を見る</button>
+        </div>
+      </div>
+
+      <div class="ads-breakdown">
+        <div class="ads-channel">
+          <h3>🔍 Google検索広告</h3>
+          <div class="ads-stats">
+            <div><span class="k">推奨日予算</span><span class="v">¥3,000〜5,000</span></div>
+            <div><span class="k">想定CTR</span><span class="v">3-5%</span></div>
+            <div><span class="k">想定CPC</span><span class="v">¥150-300</span></div>
+            <div><span class="k">トライアル登録CVR</span><span class="v">8-12%</span></div>
+            <div><span class="k">目標獲得</span><span class="v highlight">40名/2週間</span></div>
+          </div>
+          <a href="https://ads.google.com" target="_blank" class="btn-secondary btn-small">Google広告を開く →</a>
+          <a href="ad-variations.html" class="btn-secondary btn-small">広告コピー20本 →</a>
+          <a href="video-ads.html" class="btn-secondary btn-small">🎬 動画脚本15本 →</a>
+        </div>
+
+        <div class="ads-channel">
+          <h3>🧵 Threads オーガニック投稿</h3>
+          <div class="ads-stats">
+            <div><span class="k">推奨頻度</span><span class="v">1日3-5投稿</span></div>
+            <div><span class="k">想定リーチ</span><span class="v">月5万-15万</span></div>
+            <div><span class="k">コスト</span><span class="v">¥0</span></div>
+            <div><span class="k">LP遷移率</span><span class="v">2-4%</span></div>
+            <div><span class="k">目標獲得</span><span class="v highlight">20-30名/月</span></div>
+          </div>
+          <a href="marketing-kit.html" class="btn-secondary btn-small">投稿テンプレ19本 →</a>
+        </div>
+      </div>
+
+      <div class="checklist-section">
+        <h3>✅ 広告配信開始チェックリスト</h3>
+        <div class="checklist-items">
+          <label class="ck-item">
+            <input type="checkbox" data-ck="ad-setup">
+            <div class="ck-body">
+              <div class="ck-day">準備</div>
+              <div class="ck-task">Google Ads アカウント作成 + 決済情報登録</div>
+            </div>
+          </label>
+          <label class="ck-item">
+            <input type="checkbox" data-ck="ad-create">
+            <div class="ck-body">
+              <div class="ck-day">設定</div>
+              <div class="ck-task">広告バリエーション20本のうち5本を選択してキャンペーン作成</div>
+            </div>
+          </label>
+          <label class="ck-item">
+            <input type="checkbox" data-ck="ad-launch">
+            <div class="ck-body">
+              <div class="ck-day">ローンチ</div>
+              <div class="ck-task">日予算¥3,000で配信開始・毎朝CTR確認</div>
+            </div>
+          </label>
+          <label class="ck-item">
+            <input type="checkbox" data-ck="threads">
+            <div class="ck-body">
+              <div class="ck-day">毎日</div>
+              <div class="ck-task">Threads投稿（フック系→ストーリー系→データ系 のローテ）</div>
+            </div>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- Phase 3: Transition to next tier -->
+    <section class="camp-phase" id="phase3">
+      <div class="camp-phase-head">
+        <div class="cph-left">
+          <div class="cph-tag">Phase 3 - 自動実行</div>
+          <h2>🚀 第1期生完売 → 第2期生 ¥4,980 へ自動移行</h2>
+          <p>第1期生100枠が埋まると、LPの表示が自動的に第2期生（¥4,980）に切り替わります。段階的値上げで<strong>第1期生の価値</strong>と<strong>早期申込みの優位性</strong>を示します。</p>
+        </div>
+      </div>
+
+      <div class="transition-preview">
+        <div class="tp-row">
+          <div class="tp-label">第1期生完売時（100名到達）</div>
+          <div class="tp-arrow">↓</div>
+        </div>
+        <div class="tp-grid">
+          <div class="tp-card current">
+            <div class="tp-title">現在: 第1期生</div>
+            <div class="tp-price">¥1,980</div>
+            <div class="tp-sub">月額の1/10</div>
+          </div>
+          <div class="tp-card next">
+            <div class="tp-title">自動切替: 第2期生</div>
+            <div class="tp-price">¥4,980</div>
+            <div class="tp-sub">月額の1/4</div>
+          </div>
+          <div class="tp-card future">
+            <div class="tp-title">次々期: 第3期生</div>
+            <div class="tp-price">¥9,800</div>
+            <div class="tp-sub">月額の1/2</div>
+          </div>
+        </div>
+        <p class="tp-note">💡 第1期生完売時、LP・checkout・特商法ページすべて自動更新。CEOの手動操作は不要。</p>
+      </div>
+
+      <div class="auto-trigger">
+        <h3>🔔 自動トリガー設定</h3>
+        <div class="trigger-grid">
+          <div class="tg-item">
+            <span class="tg-emoji">📧</span>
+            <span class="tg-text">95名到達時: 塾長にメール「残り5枠」</span>
+          </div>
+          <div class="tg-item">
+            <span class="tg-emoji">🎉</span>
+            <span class="tg-text">100名到達時: 第1期生完売記念・プレスリリース素材生成</span>
+          </div>
+          <div class="tg-item">
+            <span class="tg-emoji">🔄</span>
+            <span class="tg-text">100名到達時: LP文言を¥4,980版に自動更新</span>
+          </div>
+          <div class="tg-item">
+            <span class="tg-emoji">📨</span>
+            <span class="tg-text">第1期生全員に「ご登録ありがとうございます」メール一斉送信</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Revenue forecast chart -->
+    <section class="forecast-section">
+      <h2>📈 売上予測（3ヶ月）</h2>
+      <div class="forecast-chart-wrap">
+        <canvas id="forecastChart"></canvas>
+      </div>
+      <div class="forecast-summary">
+        <div class="fs-item">
+          <div class="fs-label">3ヶ月後 累計MRR</div>
+          <div class="fs-value">¥4,284,000</div>
+        </div>
+        <div class="fs-item">
+          <div class="fs-label">3ヶ月後 累計純利益</div>
+          <div class="fs-value success">¥4,950,000</div>
+        </div>
+        <div class="fs-item">
+          <div class="fs-label">年収3000万達成期待値</div>
+          <div class="fs-value highlight">6〜9ヶ月</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-bottom">© 2026 AI学習コーチ塾 | Campaign Command Center</div>
+  </footer>
+
+  <script src="campaign.js"></script>
+</body>
+</html>

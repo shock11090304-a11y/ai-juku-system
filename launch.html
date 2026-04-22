@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🚀 ローンチ プレイブック | AI学習コーチ塾 CEO</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="launch.css">
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">🚀</span>
+      <div>
+        <h1>ローンチ プレイブック</h1>
+        <p class="tagline">CEO用・本番稼働と初期顧客獲得の手順書</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span class="mode-badge">🔴 要実行</span>
+      <a href="ceo.html" class="btn-icon" title="CEOダッシュボード">💼</a>
+      <a href="marketing-kit.html" class="btn-icon" title="マーケ素材">📢</a>
+      <a href="ad-variations.html" class="btn-icon" title="広告20本">📣</a>
+      <a href="outreach-kit.html" class="btn-icon" title="既存生徒展開テンプレ">📬</a>
+      <a href="personalized-outreach.html" class="btn-icon" title="📨 103名個別展開">📨</a>
+      <a href="press-kit.html" class="btn-icon" title="プレスキット">📰</a>
+      <a href="index.html" class="btn-icon" title="アプリ">🎓</a>
+    </div>
+  </header>
+
+  <main class="launch-main">
+    <section class="launch-intro">
+      <h2>📅 5日間ローンチスケジュール</h2>
+      <p>既存の機能は完成済み。あとは <strong>ドメイン取得・各種アカウント開設・デプロイ</strong> の3つを順にやるだけで本番稼働します。</p>
+      <div class="progress-bar">
+        <div class="progress-step active"><div class="step-dot">1</div><div class="step-label">Day 1<br>外部アカウント</div></div>
+        <div class="progress-step"><div class="step-dot">2</div><div class="step-label">Day 2<br>ドメイン</div></div>
+        <div class="progress-step"><div class="step-dot">3</div><div class="step-label">Day 3<br>デプロイ</div></div>
+        <div class="progress-step"><div class="step-dot">4</div><div class="step-label">Day 4<br>広告配信</div></div>
+        <div class="progress-step"><div class="step-dot">5</div><div class="step-label">Day 5<br>最初の1名</div></div>
+      </div>
+    </section>
+
+    <section class="day-card">
+      <div class="day-header">
+        <div class="day-num">Day 1</div>
+        <h2>外部アカウント開設（所要約2時間）</h2>
+      </div>
+      <div class="checklist">
+        <label class="check-item">
+          <input type="checkbox" data-task="stripe">
+          <div class="check-body">
+            <div class="check-title">Stripe アカウント作成・本番化</div>
+            <div class="check-desc">
+              <a href="https://dashboard.stripe.com/register" target="_blank">dashboard.stripe.com/register</a> で登録 → 本人確認（個人事業主として登録可）→ Products で3プラン作成（¥24,980 / ¥39,800 / ¥59,800）→ Price IDを控える
+            </div>
+            <div class="check-keys">取得するもの: <code>STRIPE_SECRET_KEY</code> / <code>STRIPE_PRICE_AI</code> / <code>STRIPE_PRICE_HYBRID</code> / <code>STRIPE_PRICE_INTENSIVE</code></div>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" data-task="anthropic">
+          <div class="check-body">
+            <div class="check-title">Anthropic（Claude API）アカウント</div>
+            <div class="check-desc">
+              <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com/settings/keys</a> でAPIキー発行 → 最初は $5 チャージで十分
+            </div>
+            <div class="check-keys">取得: <code>ANTHROPIC_API_KEY</code>（sk-ant-api03-...）</div>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" data-task="line">
+          <div class="check-body">
+            <div class="check-title">LINE公式アカウント + Messaging API</div>
+            <div class="check-desc">
+              <a href="https://developers.line.biz/console/" target="_blank">developers.line.biz/console</a> でチャネル作成 → Messaging API有効化 → Webhook URLは後でデプロイ後に設定
+            </div>
+            <div class="check-keys">取得: <code>LINE_CHANNEL_ACCESS_TOKEN</code> / <code>LINE_CHANNEL_SECRET</code></div>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" data-task="ga4">
+          <div class="check-body">
+            <div class="check-title">Google Analytics 4</div>
+            <div class="check-desc">
+              <a href="https://analytics.google.com" target="_blank">analytics.google.com</a> で新規プロパティ作成 → 測定ID（G-XXXXXXXX）を取得
+            </div>
+            <div class="check-keys">取得: <code>GA4_ID</code>（analytics.jsの <code>GA4_ID</code> を置換）</div>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" data-task="gsc">
+          <div class="check-body">
+            <div class="check-title">Google Search Console</div>
+            <div class="check-desc">
+              <a href="https://search.google.com/search-console" target="_blank">search.google.com/search-console</a> でドメイン登録（ドメイン取得後）→ sitemap.xml を送信
+            </div>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" data-task="github">
+          <div class="check-body">
+            <div class="check-title">GitHub リポジトリ作成</div>
+            <div class="check-desc">
+              <code>ai-juku-system</code> ディレクトリを git init → GitHubに private repo作成 → push。これが Render.com へのデプロイ元になります。
+            </div>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <section class="day-card">
+      <div class="day-header">
+        <div class="day-num">Day 2</div>
+        <h2>ドメイン取得 + DNS（所要約1時間 + 伝播待ち24h）</h2>
+      </div>
+      <div class="checklist">
+        <label class="check-item">
+          <input type="checkbox" data-task="domain">
+          <div class="check-body">
+            <div class="check-title">独自ドメイン取得</div>
+            <div class="check-desc">
+              お名前.com / ムームードメイン / Cloudflare Registrar のいずれかで取得。候補：
+            </div>
+            <div class="domain-candidates">
+              <span class="domain-chip">ai-juku.jp</span>
+              <span class="domain-chip">ai-juku.com</span>
+              <span class="domain-chip">aistudy.jp</span>
+              <span class="domain-chip">ai-coach.jp</span>
+              <span class="domain-chip recommended">★ 推奨: ai-juku.jp (¥3,000/年程度)</span>
+            </div>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" data-task="cloudflare">
+          <div class="check-body">
+            <div class="check-title">Cloudflare 経由で無料CDN + SSL</div>
+            <div class="check-desc">
+              取得ドメインを Cloudflare のネームサーバーに向ける → 無料プランで CDN + SSL + DDoS対策が自動で効く
+            </div>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" data-task="email">
+          <div class="check-body">
+            <div class="check-title">メール設定</div>
+            <div class="check-desc">
+              <code>info@ai-juku.jp</code> / <code>support@ai-juku.jp</code> 用にメール転送設定（Cloudflare Email Routing 推奨、無料）
+            </div>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <section class="day-card">
+      <div class="day-header">
+        <div class="day-num">Day 3</div>
+        <h2>本番デプロイ（所要約1時間）</h2>
+      </div>
+      <div class="checklist">
+        <label class="check-item">
+          <input type="checkbox" data-task="preflight">
+          <div class="check-body">
+            <div class="check-title">プリフライトチェック実行</div>
+            <div class="check-desc">
+              デプロイ前に最終確認：<br>
+              <code class="cmd">cd ai-juku-system && python3 pre-launch-check.py</code><br>
+              全項目 ✅ になるまで修正
+            </div>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" data-task="placeholder">
+          <div class="check-body">
+            <div class="check-title">プレースホルダー置換</div>
+            <div class="check-desc">
+              <code>ai-juku.example</code> → 実ドメインに全置換（VS Codeのsed / 一括置換で）<br>
+              <code>GA4_ID</code> プレースホルダー → 実測定ID に置換
+            </div>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" data-task="render">
+          <div class="check-body">
+            <div class="check-title">Render.com にデプロイ</div>
+            <div class="check-desc">
+              <a href="https://render.com" target="_blank">render.com</a> で無料アカウント作成 → New Blueprint → 作成したGitHubリポジトリを選択 → <code>render.yaml</code>が自動検出される → 環境変数を設定 → Deploy
+            </div>
+            <div class="check-cost">💰 コスト: Web Service Starter ¥1,050/月（$7）</div>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" data-task="dns">
+          <div class="check-body">
+            <div class="check-title">カスタムドメイン設定</div>
+            <div class="check-desc">
+              Render の Settings → Custom Domain に <code>ai-juku.jp</code> 追加 → Cloudflare DNSで CNAME を設定 → SSL自動発行
+            </div>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" data-task="stripe-webhook">
+          <div class="check-body">
+            <div class="check-title">Stripe Webhook 設定</div>
+            <div class="check-desc">
+              Stripe Dashboard → Developers → Webhooks → <code>https://ai-juku.jp/api/stripe/webhook</code> を追加 → 署名シークレットを <code>STRIPE_WEBHOOK_SECRET</code> に設定
+            </div>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" data-task="line-webhook">
+          <div class="check-body">
+            <div class="check-title">LINE Webhook 設定</div>
+            <div class="check-desc">
+              LINE Developers → Webhook URL に <code>https://ai-juku.jp/api/line/webhook</code> → 検証 → 有効化
+            </div>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" data-task="test-flow">
+          <div class="check-body">
+            <div class="check-title">エンドツーエンド動作確認</div>
+            <div class="check-desc">
+              ①LP閲覧 → ②無料体験登録 → ③checkout (Stripe) → ④アプリ利用 → ⑤AIに質問 → ⑥保護者レポート閲覧 → 全て動くことを確認
+            </div>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <section class="day-card">
+      <div class="day-header">
+        <div class="day-num">Day 4</div>
+        <h2>初期集客チャネル準備（所要約3時間）</h2>
+      </div>
+      <div class="checklist">
+        <label class="check-item">
+          <input type="checkbox" data-task="google-ads">
+          <div class="check-body">
+            <div class="check-title">Google 検索広告セットアップ</div>
+            <div class="check-desc">
+              <a href="https://ads.google.com" target="_blank">ads.google.com</a> で新規キャンペーン → 「ウェブサイトのトラフィック」→ 日予算 ¥3,000〜5,000 で開始<br>
+              ターゲットキーワード: <span class="kw">AI塾</span> <span class="kw">オンライン 個別指導</span> <span class="kw">英検 AI添削</span> <span class="kw">中学受験 オンライン</span>
+            </div>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" data-task="x-account">
+          <div class="check-body">
+            <div class="check-title">X（Twitter）公式アカウント</div>
+            <div class="check-desc">
+              アカウント作成 → プロフィール設定 → 固定ポストに無料体験リンク<br>
+              週3-5回の投稿で徐々にフォロワー獲得（<a href="marketing-kit.html">マーケ素材</a>に投稿テンプレあり）
+            </div>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" data-task="instagram">
+          <div class="check-body">
+            <div class="check-title">Instagram 開設</div>
+            <div class="check-desc">
+              ビジネスアカウントで開設 → 投稿はX連動でOK → 保護者層は Instagram 比率高い
+            </div>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" data-task="existing-students">
+          <div class="check-body">
+            <div class="check-title">既存生徒への展開準備</div>
+            <div class="check-desc">
+              juku-manager の既存200名に「AI機能を追加料金¥0で使えるようになりました」案内文を準備（<a href="marketing-kit.html">マーケ素材</a>にテンプレあり）
+            </div>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <section class="day-card">
+      <div class="day-header">
+        <div class="day-num">Day 5</div>
+        <h2>ローンチ！ 最初の10名獲得へ（継続）</h2>
+      </div>
+      <div class="checklist">
+        <label class="check-item">
+          <input type="checkbox" data-task="launch-x">
+          <div class="check-body">
+            <div class="check-title">X でローンチ告知（午前10時）</div>
+            <div class="check-desc">
+              マーケ素材の「ローンチ投稿テンプレ」をコピペで投稿。画像 (og-image.svg)も添付。
+            </div>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" data-task="launch-ads">
+          <div class="check-body">
+            <div class="check-title">Google広告をON</div>
+            <div class="check-desc">
+              Day 4で準備した広告を有効化。最初の2週間はCPC(クリック単価)とCVR(転換率)を観察。
+            </div>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" data-task="launch-existing">
+          <div class="check-body">
+            <div class="check-title">既存生徒に告知（夜20時）</div>
+            <div class="check-desc">
+              juku-manager の生徒リストに告知文をLINE/メール一斉送信。最低でも10名は体験登録してくれるはず。
+            </div>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" data-task="prtimes">
+          <div class="check-body">
+            <div class="check-title">PR TIMES でプレスリリース配信（任意）</div>
+            <div class="check-desc">
+              <a href="https://prtimes.jp/" target="_blank">prtimes.jp</a>（¥30,000〜）でメディア向け発信。教育系メディアに拾われると爆発的な流入の可能性。
+            </div>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" data-task="monitor">
+          <div class="check-body">
+            <div class="check-title">初日のメトリクス確認</div>
+            <div class="check-desc">
+              GA4で page_view・cta_click・form_submit を確認。CEOダッシュボード (/ceo.html) でMRR推移を見る。
+            </div>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <section class="kpi-target-section">
+      <h2>🎯 ローンチ1ヶ月後の目標KPI</h2>
+      <div class="kpi-grid">
+        <div class="kpi-target">
+          <div class="kpi-target-num">1,000</div>
+          <div class="kpi-target-label">LP訪問者</div>
+          <div class="kpi-target-sub">広告+SNS+既存からの流入合計</div>
+        </div>
+        <div class="kpi-target">
+          <div class="kpi-target-num">50</div>
+          <div class="kpi-target-label">無料体験登録</div>
+          <div class="kpi-target-sub">転換率5%（業界平均2-3%の倍）</div>
+        </div>
+        <div class="kpi-target">
+          <div class="kpi-target-num">10</div>
+          <div class="kpi-target-label">有料転換（1ヶ月後）</div>
+          <div class="kpi-target-sub">体験→有料の転換率20%</div>
+        </div>
+        <div class="kpi-target primary">
+          <div class="kpi-target-num">¥398,000</div>
+          <div class="kpi-target-label">初月MRR</div>
+          <div class="kpi-target-sub">10名 × プレミアム ¥39,800</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cost-section">
+      <h2>💰 ローンチ時コスト（目安）</h2>
+      <table class="cost-table">
+        <tr><th>項目</th><th>費用</th><th>頻度</th></tr>
+        <tr><td>ドメイン（ai-juku.jp）</td><td>¥3,000</td><td>年額</td></tr>
+        <tr><td>Cloudflare CDN + SSL</td><td>¥0</td><td>無料</td></tr>
+        <tr><td>Render.com Starter Web</td><td>¥1,050/月</td><td>月額</td></tr>
+        <tr><td>Stripe 決済手数料</td><td>売上の3.6%</td><td>変動</td></tr>
+        <tr><td>Claude API</td><td>¥1,000〜5,000/月</td><td>使用量</td></tr>
+        <tr><td>LINE Messaging API</td><td>¥0（月1,000通まで）</td><td>無料〜</td></tr>
+        <tr><td>Google広告（初期テスト）</td><td>¥90,000〜150,000/月</td><td>月額</td></tr>
+        <tr><td>GA4 / Search Console</td><td>¥0</td><td>無料</td></tr>
+        <tr class="total-row"><th>初月合計（広告込み）</th><td colspan="2"><strong>約 ¥100,000〜160,000</strong></td></tr>
+      </table>
+      <p class="cost-note">💡 有料顧客10名獲得（MRR ¥398,000）で、2ヶ月目から完全に黒字化する見込み。</p>
+    </section>
+
+    <section class="troubleshoot-section">
+      <h2>🚨 よくあるトラブルと対処法</h2>
+      <details class="trouble-item">
+        <summary>デプロイ後、ページが表示されない</summary>
+        <p>
+          1. Render Dashboard → Logs でエラー確認<br>
+          2. 環境変数が全て設定されているか確認<br>
+          3. <code>render.yaml</code> の <code>buildCommand</code> / <code>startCommand</code> を再確認
+        </p>
+      </details>
+      <details class="trouble-item">
+        <summary>Stripe決済が通らない</summary>
+        <p>
+          1. Stripe Dashboard → Logs で失敗の理由を確認<br>
+          2. テストモードと本番モードの切り替えを確認（sk_test_... vs sk_live_...）<br>
+          3. Webhook署名シークレットが正しく設定されているか確認
+        </p>
+      </details>
+      <details class="trouble-item">
+        <summary>Claude APIからのレスポンスが遅い/失敗する</summary>
+        <p>
+          1. console.anthropic.com で残高確認<br>
+          2. Rate limit に達していないか確認<br>
+          3. モデル名（claude-sonnet-4-6）がタイポしていないか確認
+        </p>
+      </details>
+      <details class="trouble-item">
+        <summary>広告費を使っても登録が増えない</summary>
+        <p>
+          1. GA4 でファネル分析：LP→フォーム→送信 のどこで離脱しているか<br>
+          2. 広告キーワードと LPメッセージが一致しているか<br>
+          3. 無料体験のハードルを下げる（CC登録不要を強調）<br>
+          4. ヒートマップツール（Microsoft Clarity 無料）導入で改善ポイント特定
+        </p>
+      </details>
+    </section>
+
+    <section class="next-actions">
+      <h2>👇 今すぐできるアクション</h2>
+      <div class="action-buttons">
+        <a href="marketing-kit.html" class="action-btn big">
+          <div class="action-icon">📢</div>
+          <div>
+            <div class="action-title">マーケティング素材を見る</div>
+            <div class="action-desc">Google広告・SNS・メールの全テンプレート</div>
+          </div>
+        </a>
+        <a href="https://dashboard.stripe.com/register" target="_blank" class="action-btn">
+          <div class="action-icon">💳</div>
+          <div>
+            <div class="action-title">Stripeに登録する</div>
+            <div class="action-desc">決済基盤の準備開始</div>
+          </div>
+        </a>
+        <a href="https://console.anthropic.com/settings/keys" target="_blank" class="action-btn">
+          <div class="action-icon">🤖</div>
+          <div>
+            <div class="action-title">Anthropic APIキーを取得</div>
+            <div class="action-desc">Claude を使うためのキー</div>
+          </div>
+        </a>
+        <a href="https://render.com" target="_blank" class="action-btn">
+          <div class="action-icon">🚀</div>
+          <div>
+            <div class="action-title">Render.comに登録</div>
+            <div class="action-desc">バックエンドのホスティング</div>
+          </div>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-bottom">© 2026 AI学習コーチ塾 | CEO Internal Document</div>
+  </footer>
+
+  <script>
+    // Save checklist progress to localStorage
+    const KEY = 'ai_juku_launch_progress';
+    const progress = JSON.parse(localStorage.getItem(KEY) || '{}');
+
+    document.querySelectorAll('.check-item input').forEach(input => {
+      const task = input.dataset.task;
+      input.checked = !!progress[task];
+
+      input.addEventListener('change', () => {
+        progress[task] = input.checked;
+        localStorage.setItem(KEY, JSON.stringify(progress));
+        updateProgressBar();
+      });
+    });
+
+    function updateProgressBar() {
+      const total = document.querySelectorAll('.check-item input').length;
+      const done = Object.values(progress).filter(Boolean).length;
+      const pct = Math.round((done / total) * 100);
+      const steps = document.querySelectorAll('.progress-step');
+      const thresholds = [0, 20, 40, 60, 80];
+      steps.forEach((s, i) => {
+        s.classList.toggle('active', pct >= thresholds[i]);
+        s.classList.toggle('done', pct >= (thresholds[i + 1] || 100));
+      });
+    }
+    updateProgressBar();
+  </script>
+</body>
+</html>

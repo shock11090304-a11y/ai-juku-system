@@ -1,0 +1,210 @@
+.ad-intro {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(236, 72, 153, 0.06));
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 16px;
+  padding: 1.75rem 2rem;
+  margin-bottom: 2rem;
+}
+.ad-intro h2 { font-size: 1.2rem; font-weight: 800; margin-bottom: 0.75rem; }
+.ad-intro > p { color: var(--text-dim); line-height: 1.8; margin-bottom: 1.25rem; }
+
+.ab-tips {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+.ab-tip {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  font-size: 0.82rem;
+  color: var(--text);
+  line-height: 1.7;
+}
+.ab-tip strong { color: var(--primary-light); font-weight: 800; margin-right: 0.3rem; }
+
+.filter-bar {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.filter-btn {
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--panel-border);
+  color: var(--text-dim);
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.filter-btn:hover { background: rgba(255, 255, 255, 0.08); color: var(--text); }
+.filter-btn.active {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  border-color: transparent;
+}
+
+.ads-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+.ad-card {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 1.5rem;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.ad-card:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: translateY(-2px);
+}
+.ad-meta {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+.ad-num {
+  padding: 0.15rem 0.6rem;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  font-family: 'Inter', monospace;
+}
+.ad-target {
+  padding: 0.15rem 0.6rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.ad-angle {
+  padding: 0.15rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.ad-angle.fear { background: rgba(239, 68, 68, 0.15); color: var(--error); }
+.ad-angle.price { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+.ad-angle.hope { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+.ad-angle.empathy { background: rgba(168, 85, 247, 0.15); color: #d8b4fe; }
+.ad-angle.data { background: rgba(14, 165, 233, 0.15); color: #7dd3fc; }
+
+.ad-h1 {
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.6;
+  color: var(--text);
+  padding: 0.5rem 0.75rem;
+  background: rgba(99, 102, 241, 0.08);
+  border-left: 3px solid var(--primary);
+  border-radius: 0 6px 6px 0;
+}
+.ad-h2 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.6;
+  color: var(--text);
+  padding: 0.4rem 0.75rem;
+  background: rgba(236, 72, 153, 0.08);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+}
+.ad-desc {
+  font-size: 0.84rem;
+  line-height: 1.8;
+  color: var(--text-dim);
+  padding: 0.5rem 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+}
+.ad-kws { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.ad-kws span {
+  padding: 0.2rem 0.6rem;
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--primary-light);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-family: 'Inter', monospace;
+}
+.copy-ad-btn {
+  margin-top: 0.3rem;
+  align-self: flex-start;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  color: var(--primary-light);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.copy-ad-btn:hover { background: rgba(99, 102, 241, 0.25); }
+
+.angle-matrix {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 2rem;
+}
+.angle-matrix h2 { font-size: 1.2rem; font-weight: 800; margin-bottom: 1.25rem; }
+.matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+.matrix-table th, .matrix-table td {
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--panel-border);
+  text-align: center;
+  font-size: 0.88rem;
+}
+.matrix-table thead th {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--primary-light);
+  font-weight: 700;
+}
+.matrix-table tbody th {
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--text-dim);
+  font-weight: 600;
+  text-align: left;
+}
+.matrix-table td {
+  color: var(--primary-light);
+  font-weight: 700;
+  font-family: 'Inter', monospace;
+}
+.matrix-note {
+  background: rgba(245, 158, 11, 0.08);
+  border-left: 3px solid var(--warning);
+  padding: 0.9rem 1.1rem;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+
+@media (max-width: 1024px) {
+  .ab-tips { grid-template-columns: repeat(2, 1fr); }
+  .ads-grid { grid-template-columns: 1fr; }
+  .matrix-table { font-size: 0.78rem; }
+  .matrix-table th, .matrix-table td { padding: 0.5rem 0.5rem; }
+}

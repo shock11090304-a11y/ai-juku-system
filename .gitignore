@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+.vercel/
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.swo
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+server/data.db
+
+# Logs
+*.log
+logs/
+
+# Claude/IDE
+.claude/
+
+# Temp
+tmp/
+temp/

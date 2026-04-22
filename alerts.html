@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔔 自動アラート管理 | AI学習コーチ塾</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="alerts.css">
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">🔔</span>
+      <div>
+        <h1>自動アラート管理</h1>
+        <p class="tagline">非活動検知・段階的エスカレーション・保護者/生徒の出し分け</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span id="systemStatus" class="mode-badge live">🟢 監視中</span>
+      <a href="ceo.html" class="btn-icon" title="CEOダッシュボード">💼</a>
+      <a href="personalized-outreach.html" class="btn-icon" title="個別展開">📨</a>
+      <a href="notifications.html" class="btn-icon" title="通知テンプレ">💬</a>
+    </div>
+  </header>
+
+  <main class="alerts-main">
+    <!-- Philosophy card -->
+    <section class="philosophy-card">
+      <div class="phil-icon">💡</div>
+      <div class="phil-content">
+        <h3>このシステムの設計思想</h3>
+        <p>「過度に期待する保護者」から生徒を守りつつ、<strong>本当に必要な時だけ</strong>保護者に通知する3段階設計。
+        生徒の継続率と保護者の安心感を両立します。</p>
+      </div>
+    </section>
+
+    <!-- Escalation levels -->
+    <section class="escalation-section">
+      <h2>📊 エスカレーションルール</h2>
+      <div class="escalation-grid">
+        <div class="esc-card level-1">
+          <div class="esc-header">
+            <div class="esc-emoji">🟡</div>
+            <div class="esc-level">Level 1</div>
+          </div>
+          <h3>ソフトリマインド</h3>
+          <div class="esc-trigger">
+            <label>非活動<strong id="level1Days">3</strong>日</label>
+            <input type="range" min="1" max="14" value="3" id="level1Range">
+          </div>
+          <div class="esc-target">
+            <span class="target-badge student">👤 生徒本人のみ</span>
+          </div>
+          <div class="esc-sample">
+            <div class="esc-sample-label">送信されるメッセージ例:</div>
+            <div class="esc-sample-body">
+              〇〇さん、お疲れさま🌙<br>
+              今日もあと少しでストリーク🔥が途切れちゃう。<br>
+              <strong>5分だけ</strong>でもAIと話してみよう。
+            </div>
+          </div>
+          <div class="esc-note">保護者には通知されません</div>
+        </div>
+
+        <div class="esc-card level-2">
+          <div class="esc-header">
+            <div class="esc-emoji">🟠</div>
+            <div class="esc-level">Level 2</div>
+          </div>
+          <h3>併走アラート</h3>
+          <div class="esc-trigger">
+            <label>非活動<strong id="level2Days">5</strong>日</label>
+            <input type="range" min="3" max="21" value="5" id="level2Range">
+          </div>
+          <div class="esc-target">
+            <span class="target-badge student">👤 生徒</span>
+            <span class="target-badge parent">👨‍👩‍👧 保護者</span>
+          </div>
+          <div class="esc-sample">
+            <div class="esc-sample-label">保護者宛メッセージ例:</div>
+            <div class="esc-sample-body">
+              〇〇様<br><br>
+              〇〇さんが<strong>5日間学習記録がない</strong>状態です。<br>
+              <small>※原因は部活・体調・定期テスト期間など様々です。優しく声をかけていただけると助かります。</small>
+            </div>
+          </div>
+          <div class="esc-note warning">「詰問せず、事情を聞く」ことを保護者にお願いする文面</div>
+        </div>
+
+        <div class="esc-card level-3">
+          <div class="esc-header">
+            <div class="esc-emoji">🔴</div>
+            <div class="esc-level">Level 3</div>
+          </div>
+          <h3>介入要請</h3>
+          <div class="esc-trigger">
+            <label>非活動<strong id="level3Days">7</strong>日</label>
+            <input type="range" min="5" max="30" value="7" id="level3Range">
+          </div>
+          <div class="esc-target">
+            <span class="target-badge student">👤 生徒</span>
+            <span class="target-badge parent">👨‍👩‍👧 保護者</span>
+            <span class="target-badge mentor">👨‍🏫 メンター</span>
+          </div>
+          <div class="esc-sample">
+            <div class="esc-sample-label">メンター向けアラート例:</div>
+            <div class="esc-sample-body">
+              🔴 <strong>〇〇さん 1週間未学習</strong><br>
+              個別面談の検討をお願いします。<br>
+              ワンクリックでZoomリンク送信:
+              <a href="#">[自動送信]</a>
+            </div>
+          </div>
+          <div class="esc-note danger">メンターからの能動的アプローチを推奨</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Inactive students monitor -->
+    <section class="monitor-section">
+      <div class="monitor-header">
+        <h2>🎯 現在の要注意生徒</h2>
+        <div class="monitor-filters">
+          <button class="mon-filter active" data-level="all">すべて</button>
+          <button class="mon-filter" data-level="level-1">🟡 Lv1</button>
+          <button class="mon-filter" data-level="level-2">🟠 Lv2</button>
+          <button class="mon-filter" data-level="level-3">🔴 Lv3</button>
+        </div>
+      </div>
+      <div id="inactiveList" class="inactive-list">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- Additional rules -->
+    <section class="extra-rules-section">
+      <h2>⚙️ 追加ルール</h2>
+      <div class="extra-rules-grid">
+        <div class="rule-card">
+          <label class="rule-switch">
+            <input type="checkbox" id="ruleQuestCount" checked>
+            <span class="slider"></span>
+          </label>
+          <div class="rule-body">
+            <h3>クエスト未完了アラート</h3>
+            <p>3日連続で今日のクエストが0個完了の場合、生徒にリマインド</p>
+          </div>
+        </div>
+        <div class="rule-card">
+          <label class="rule-switch">
+            <input type="checkbox" id="ruleMoshiUpload" checked>
+            <span class="slider"></span>
+          </label>
+          <div class="rule-body">
+            <h3>模試アップロードリマインド</h3>
+            <p>月初に保護者へ「前月の模試結果の撮影アップロード」を依頼</p>
+          </div>
+        </div>
+        <div class="rule-card">
+          <label class="rule-switch">
+            <input type="checkbox" id="ruleWeeklyReport" checked>
+            <span class="slider"></span>
+          </label>
+          <div class="rule-body">
+            <h3>週次レポート自動配信</h3>
+            <p>毎週日曜20時、保護者LINEに進捗サマリーを配信</p>
+          </div>
+        </div>
+        <div class="rule-card">
+          <label class="rule-switch">
+            <input type="checkbox" id="ruleCelebration" checked>
+            <span class="slider"></span>
+          </label>
+          <div class="rule-body">
+            <h3>褒める通知</h3>
+            <p>ストリーク7日/30日達成時など、良い出来事も保護者に自動報告</p>
+          </div>
+        </div>
+        <div class="rule-card">
+          <label class="rule-switch">
+            <input type="checkbox" id="ruleTestWeek">
+            <span class="slider"></span>
+          </label>
+          <div class="rule-body">
+            <h3>定期テスト週間モード</h3>
+            <p>生徒側でテスト期間を登録すると、その期間はアラート停止</p>
+          </div>
+        </div>
+        <div class="rule-card">
+          <label class="rule-switch">
+            <input type="checkbox" id="ruleQuiet">
+            <span class="slider"></span>
+          </label>
+          <div class="rule-body">
+            <h3>保護者通知停止モード</h3>
+            <p>生徒の希望で「保護者へ細かい通知を送らない」設定を許可（塾長承認制）</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Parent preferences -->
+    <section class="parent-pref-section">
+      <h2>👨‍👩‍👧 保護者への通知頻度設定</h2>
+      <p class="pref-desc">保護者様ごとに、通知の受け取り方をカスタマイズできます。「全て受け取る」「重要なものだけ」「週1回のサマリーのみ」の3択。</p>
+      <div class="pref-options">
+        <label class="pref-option">
+          <input type="radio" name="parentFreq" value="all" checked>
+          <div class="pref-card">
+            <div class="pref-title">📬 全て受け取る</div>
+            <div class="pref-desc-small">毎日の進捗、アラート、達成通知すべて</div>
+            <div class="pref-sample">推定通知数: 週7〜15件</div>
+          </div>
+        </label>
+        <label class="pref-option">
+          <input type="radio" name="parentFreq" value="important">
+          <div class="pref-card recommended">
+            <div class="pref-badge">★ 推奨</div>
+            <div class="pref-title">🎯 重要なものだけ</div>
+            <div class="pref-desc-small">アラート Lv2以上、週次レポート、大きな達成のみ</div>
+            <div class="pref-sample">推定通知数: 週2〜3件</div>
+          </div>
+        </label>
+        <label class="pref-option">
+          <input type="radio" name="parentFreq" value="weekly">
+          <div class="pref-card">
+            <div class="pref-title">📅 週1回のサマリーのみ</div>
+            <div class="pref-desc-small">日曜20時のサマリーと、Lv3緊急時のみ</div>
+            <div class="pref-sample">推定通知数: 週1件</div>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <!-- Test dispatch -->
+    <section class="test-dispatch-section">
+      <h2>🧪 テスト配信</h2>
+      <p class="test-desc">本番配信前に、自分宛にテスト送信できます。メッセージが期待通りか確認してください。</p>
+      <div class="test-form">
+        <div class="test-row">
+          <label>テスト対象</label>
+          <select id="testType">
+            <option value="level1_student">Lv1 生徒向けソフトリマインド</option>
+            <option value="level2_student">Lv2 生徒向け</option>
+            <option value="level2_parent">Lv2 保護者向け</option>
+            <option value="level3_student">Lv3 生徒向け</option>
+            <option value="level3_parent">Lv3 保護者向け</option>
+            <option value="level3_mentor">Lv3 メンター向け</option>
+            <option value="weekly_summary">週次サマリー</option>
+            <option value="celebration">褒める通知</option>
+          </select>
+        </div>
+        <div class="test-row">
+          <label>送信先（自分のLINE User IDまたはメール）</label>
+          <input type="text" id="testDestination" placeholder="test@example.com または U1234...">
+        </div>
+        <button id="sendTestBtn" class="btn-primary">テスト配信を実行</button>
+        <div id="testResult" class="test-result" style="display:none;"></div>
+      </div>
+    </section>
+
+    <!-- Recent notifications log -->
+    <section class="log-section">
+      <h2>📋 最近の自動通知ログ（過去7日）</h2>
+      <div class="log-list" id="notificationLog">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-bottom">© 2026 AI学習コーチ塾 | Auto-Alert System</div>
+  </footer>
+
+  <script src="alerts.js"></script>
+</body>
+</html>

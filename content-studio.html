@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIコンテンツスタジオ | AI学習コーチ塾</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="content-studio.css">
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">✨</span>
+      <div>
+        <h1>AIコンテンツスタジオ</h1>
+        <p class="tagline">SEO記事をAIで量産 / 集客資産の自動構築</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span id="modeIndicator" class="mode-badge">🟡 デモモード</span>
+      <a href="ceo.html" class="btn-icon" title="CEOダッシュボード">💼</a>
+      <a href="blog.html" class="btn-icon" title="公開ブログ">📝</a>
+      <a href="index.html" class="btn-icon" title="アプリ">🎓</a>
+    </div>
+  </header>
+
+  <main class="studio-main">
+    <section class="studio-intro">
+      <h2>📈 1記事 = 永続的なSEO資産</h2>
+      <p>ブログ記事は一度書けば、Googleから半永久的に集客してくれる資産です。月に10記事をAIで量産すれば、1年後には120記事 × 月平均30PV = <strong>月36,000PV</strong>の集客インフラが手に入ります。1人あたり2%が無料体験に登録すれば、<strong>月720人の体験登録</strong>が自動化されます。</p>
+    </section>
+
+    <div class="studio-grid">
+      <section class="studio-form">
+        <h3>✏️ 新記事を生成</h3>
+
+        <div class="form-group">
+          <label>カテゴリ</label>
+          <select id="articleCategory">
+            <option>中学受験</option>
+            <option>高校受験</option>
+            <option>大学受験</option>
+            <option>英語学習</option>
+            <option>数学学習</option>
+            <option>塾選び</option>
+            <option>学習塾選び</option>
+            <option>AI活用</option>
+            <option>保護者向け</option>
+            <option>学習習慣</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>記事のテーマ・タイトル案</label>
+          <input type="text" id="articleTopic" placeholder="例: 中学受験で使える英語学習アプリ5選">
+        </div>
+
+        <div class="form-group">
+          <label>メインキーワード（SEO対策）</label>
+          <input type="text" id="articleKeywords" placeholder="例: 中学受験, 英語, アプリ, 小学生">
+        </div>
+
+        <div class="form-group">
+          <label>ターゲット読者</label>
+          <select id="articleTarget">
+            <option>保護者（小学生の親）</option>
+            <option>保護者（中学生の親）</option>
+            <option>保護者（高校生の親）</option>
+            <option>中学生本人</option>
+            <option>高校生本人</option>
+            <option>大学受験生</option>
+            <option>塾関係者</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>記事の長さ</label>
+            <select id="articleLength">
+              <option value="600">600字（ショート）</option>
+              <option value="1200" selected>1200字（標準）</option>
+              <option value="2000">2000字（ロング）</option>
+              <option value="3000">3000字（超ロング）</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>トーン</label>
+            <select id="articleTone">
+              <option>丁寧・解説的</option>
+              <option>親しみやすい</option>
+              <option>権威的・専門的</option>
+              <option>感情に訴える</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>含めたい要素（任意）</label>
+          <textarea id="articleNotes" rows="3" placeholder="例: 具体例を3つ以上、統計データを引用、CTA（無料体験への誘導）必須"></textarea>
+        </div>
+
+        <button id="generateArticleBtn" class="btn-primary" style="width:100%;">✨ 記事を生成</button>
+        <p style="margin-top:0.75rem;font-size:0.8rem;color:var(--text-muted);">💡 生成時間：20-60秒 / APIコスト：約10-40円</p>
+      </section>
+
+      <section class="studio-output">
+        <div class="output-header">
+          <h3>📝 生成された記事</h3>
+          <div class="output-actions" id="outputActions" style="display:none;">
+            <button id="copyMdBtn" class="btn-secondary btn-small">📋 Markdownコピー</button>
+            <button id="copyHtmlBtn" class="btn-secondary btn-small">📋 HTMLコピー</button>
+            <button id="saveJsonBtn" class="btn-secondary btn-small">💾 articles.js用JSON</button>
+          </div>
+        </div>
+
+        <div class="output-tabs" id="outputTabs" style="display:none;">
+          <button class="output-tab active" data-view="rendered">👁 プレビュー</button>
+          <button class="output-tab" data-view="markdown">📝 Markdown</button>
+          <button class="output-tab" data-view="json">🔧 JSON</button>
+        </div>
+
+        <div id="articlePreview" class="article-preview">
+          <p class="placeholder">左側で条件を指定して「記事を生成」を押すと、SEO最適化された本格的な記事をAIが生成します。<br><br>💡 ヒント：カテゴリ・キーワード・ターゲットを明確にするほど、質の高い記事になります。</p>
+        </div>
+      </section>
+    </div>
+
+    <section class="ideas-section">
+      <h3>💡 記事アイデア（すぐ使える）</h3>
+      <div class="ideas-grid">
+        <button class="idea-chip" data-title="共通テスト英語で満点を取るためのAI活用法">共通テスト英語で満点を取るためのAI活用法</button>
+        <button class="idea-chip" data-title="中学受験の算数、場合の数の苦手を克服する5ステップ">中学受験の算数、場合の数の苦手を克服する5ステップ</button>
+        <button class="idea-chip" data-title="英検準1級ライティングの採点基準とAI添削の活用">英検準1級ライティングの採点基準とAI添削の活用</button>
+        <button class="idea-chip" data-title="不登校の子どもの学習支援にAIが向いている理由">不登校の子どもの学習支援にAIが向いている理由</button>
+        <button class="idea-chip" data-title="共働き家庭の中学受験、AI活用で親の負担を1/3に">共働き家庭の中学受験、AI活用で親の負担を1/3に</button>
+        <button class="idea-chip" data-title="東大生が語る「AIを使った勉強法」の本当の強さ">東大生が語る「AIを使った勉強法」の本当の強さ</button>
+        <button class="idea-chip" data-title="古文読解のコツ：AIチューターとの対話で身につける">古文読解のコツ：AIチューターとの対話で身につける</button>
+        <button class="idea-chip" data-title="発達障害の子への個別最適化学習にAIが革命を起こす理由">発達障害の子への個別最適化学習にAIが革命を起こす理由</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="content-studio.js"></script>
+</body>
+</html>

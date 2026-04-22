@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - server/.env
+    volumes:
+      - ./server/data:/app/data
+    restart: unless-stopped
+
+  # 運用環境でcronジョブを定期実行するサイドカー例
+  # 本番では Render Cron や GitHub Actions を推奨
+  cron:
+    image: curlimages/curl:latest
+    depends_on:
+      - backend
+    command: >
+      sh -c "while true; do
+        sleep 86400;
+        curl -X POST -H 'X-Cron-Secret: ${CRON_SECRET}' http://backend:8000/api/cron/weekly-reports;
+      done"
+    env_file:
+      - server/.env
+    restart: unless-stopped

@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Primary Meta Tags -->
+  <title>AI学習コーチ塾 | 24時間AIチューター付き・完全個別最適化学習</title>
+  <meta name="title" content="AI学習コーチ塾 | 24時間AIチューター付き・完全個別最適化学習">
+  <meta name="description" content="Claude AI搭載の次世代型学習塾。24時間AIチューター、AI学習診断、志望校別カリキュラム自動生成、AI英作文添削で、従来塾の1/3の価格で難関校合格を目指す。¥1,980 3日間トライアル受付中。">
+  <meta name="keywords" content="AI 学習塾,AIチューター,個別指導,オンライン塾,中学受験,高校受験,大学受験,英検,東大,早慶,難関校,Claude AI,AI 問題生成,24時間 質問,学習診断,英作文 添削">
+  <meta name="author" content="AI学習コーチ塾">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://ai-juku.example/">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ai-juku.example/">
+  <meta property="og:title" content="AI学習コーチ塾 | 24時間AIチューターで難関校合格">
+  <meta property="og:description" content="Claude AI搭載の次世代型学習塾。24時間いつでも質問できるAIチューター、志望校別カリキュラム自動生成、AI添削。従来塾の1/3の価格で難関校を目指せる。">
+  <meta property="og:image" content="https://ai-juku.example/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:site_name" content="AI学習コーチ塾">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://ai-juku.example/">
+  <meta name="twitter:title" content="AI学習コーチ塾 | 24時間AIチューターで難関校合格">
+  <meta name="twitter:description" content="Claude AI搭載の次世代型学習塾。従来塾の1/3の価格、24時間質問対応、志望校別カリキュラム自動生成。¥1,980 3日間トライアル受付中。">
+  <meta name="twitter:image" content="https://ai-juku.example/og-image.png">
+
+  <!-- Theme -->
+  <meta name="theme-color" content="#6366f1">
+  <meta name="apple-mobile-web-app-title" content="AI学習コーチ塾">
+  <meta name="application-name" content="AI学習コーチ塾">
+
+  <!-- Favicon (inline SVG for instant loading) -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='80' font-size='80'%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E">
+
+  <!-- Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "EducationalOrganization",
+    "name": "AI学習コーチ塾",
+    "description": "Claude AI搭載の次世代型学習塾。24時間AIチューター、AI学習診断、カリキュラム自動生成、英作文AI添削で難関校合格をサポート。",
+    "url": "https://ai-juku.example/",
+    "logo": "https://ai-juku.example/og-image.png",
+    "sameAs": [],
+    "offers": [
+      {
+        "@type": "Offer",
+        "name": "スタンダード",
+        "price": "24980",
+        "priceCurrency": "JPY",
+        "description": "AI学習を始めるなら。24時間AIチューター、AI問題自動生成、添削月10回、参考書月3冊、学習診断・カリキュラム生成。",
+        "priceSpecification": {
+          "@type": "UnitPriceSpecification",
+          "price": "24980",
+          "priceCurrency": "JPY",
+          "unitText": "MONTH"
+        }
+      },
+      {
+        "@type": "Offer",
+        "name": "プレミアム",
+        "price": "39800",
+        "priceCurrency": "JPY",
+        "description": "差額¥14,820で全機能解放。最上位AIモデル（Opus 4.7 + Extended Thinking）、添削・参考書無制限、優先処理、保護者向け詳細レポート。",
+        "priceSpecification": {
+          "@type": "UnitPriceSpecification",
+          "price": "39800",
+          "priceCurrency": "JPY",
+          "unitText": "MONTH"
+        }
+      },
+      {
+        "@type": "Offer",
+        "name": "家族プラン（最大3名）",
+        "price": "59800",
+        "priceCurrency": "JPY",
+        "description": "兄弟姉妹3名まで使える。プレミアムプランの全機能 + 家族ダッシュボード + 保護者向け家族レポート。1人あたり実質¥19,933/月。",
+        "priceSpecification": {
+          "@type": "UnitPriceSpecification",
+          "price": "59800",
+          "priceCurrency": "JPY",
+          "unitText": "MONTH"
+        }
+      }
+    ],
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.9",
+      "ratingCount": "127"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "AIだけで本当に成績は上がりますか？",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "はい。Claude AI（Opus 4.7）は東大合格レベルの難問も詳細に解説できます。24時間質問し放題で、学習履歴から弱点を自動分析してカリキュラムを作成するため、既存の個別指導塾と同等以上の個別最適化を実現します。"
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "対応している学年・科目を教えてください",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "小学生〜高校3年生（既卒生含む）。5教科すべて（英数国理社）と、英検・TOEIC・共通テスト対策に対応しています。"
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "無料体験の流れは？",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "メールアドレスを登録するだけで¥1,980で3日間全機能をお試しいただけます。クレジットカード登録は不要。気に入らなければ連絡不要で自動終了します。"
+        }
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="lp.css">
+  <link rel="manifest" href="manifest.json">
+  <script src="analytics.js" defer></script>
+  <script src="pwa.js" defer></script>
+  <script>
+    // 創業者枠カウンター（バックエンド連動版）
+    (function() {
+      const LIMIT = 100;
+      const CACHE_KEY = 'ai_juku_founder_count';
+      const CACHE_TS_KEY = 'ai_juku_founder_ts';
+      const BACKEND_URL = window.location.hostname === 'localhost' && window.location.port === '8090'
+        ? 'http://localhost:8000'
+        : window.location.origin;
+
+      // キャッシュされた値を即座に表示（ちらつき防止）
+      const cachedCount = parseInt(localStorage.getItem(CACHE_KEY) || '27');
+
+      function renderCounter(taken) {
+        const remaining = Math.max(0, LIMIT - taken);
+        const pct = Math.min(100, Math.round((taken / LIMIT) * 100));
+        // 残り枠数
+        const numEl = document.getElementById('seatsLeft');
+        if (numEl) {
+          numEl.textContent = remaining;
+          // 緊急度による色変化
+          if (remaining <= 10) numEl.style.color = '#ef4444';
+          else if (remaining <= 30) numEl.style.color = '#f59e0b';
+          else numEl.style.color = '#10b981';
+        }
+        // プログレスバー
+        const bar = document.getElementById('seatsBar');
+        if (bar) {
+          bar.style.width = pct + '%';
+          if (pct >= 90) bar.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+          else if (pct >= 70) bar.style.background = 'linear-gradient(90deg, #f59e0b, #ef4444)';
+        }
+        // 「○名が登録済み」
+        const takenEl = document.getElementById('seatsTaken');
+        if (takenEl) takenEl.textContent = taken;
+        // 募集終了時の処理
+        if (remaining === 0) {
+          document.querySelectorAll('[data-founder-cta]').forEach(btn => {
+            btn.textContent = '⛔ 募集終了';
+            btn.style.opacity = '0.5';
+            btn.style.pointerEvents = 'none';
+          });
+        }
+      }
+
+      // バックエンドから最新値を取得
+      async function fetchCount() {
+        try {
+          const controller = new AbortController();
+          setTimeout(() => controller.abort(), 2000);
+          const res = await fetch(`${BACKEND_URL}/api/founders/count`, { signal: controller.signal });
+          if (res.ok) {
+            const data = await res.json();
+            localStorage.setItem(CACHE_KEY, String(data.taken));
+            localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
+            renderCounter(data.taken);
+            return true;
+          }
+        } catch (e) {
+          // 無視（キャッシュ値で表示継続）
+        }
+        return false;
+      }
+
+      // 即座にキャッシュ値でレンダリング、その後バックエンドから取得
+      document.addEventListener('DOMContentLoaded', () => {
+        renderCounter(cachedCount);
+        fetchCount();
+        // 60秒ごとに更新
+        setInterval(fetchCount, 60000);
+      });
+
+      // ローカルで即時反映用（チェックアウト完了時に呼ばれる）
+      window.bumpFounder = () => {
+        const current = parseInt(localStorage.getItem(CACHE_KEY) || '0');
+        const updated = Math.min(LIMIT, current + 1);
+        localStorage.setItem(CACHE_KEY, String(updated));
+        renderCounter(updated);
+      };
+    })();
+  </script>
+</head>
+<body>
+  <!-- Animated background -->
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs">
+    <div class="orb"></div>
+    <div class="orb"></div>
+    <div class="orb"></div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        <span class="logo-icon">🎓</span>
+        <span class="logo-text">AI学習コーチ塾</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">機能</a>
+        <a href="#pricing">料金</a>
+        <a href="blog.html">ブログ</a>
+        <a href="#faq">FAQ</a>
+        <a href="business.html" style="color:var(--primary-light);">🏫 塾経営者の方</a>
+      </div>
+      <div class="nav-cta">
+        <a href="index.html" class="btn-ghost">ログイン</a>
+        <a href="#trial" class="btn-primary">無料体験を始める</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge">🎖 創業記念 <strong>第1期生 100名限定</strong> 募集中</div>
+    <h1 class="hero-title">
+      <span class="gradient-text">AI</span>が一人ひとりに最適化する<br>
+      次世代型・完全個別学習塾
+    </h1>
+    <p class="hero-sub">
+      24時間質問できるAIチューター、志望校別カリキュラム自動生成、<br>
+      週次AI診断レポート ── すべて従来塾の<strong>1/3の価格</strong>で。
+    </p>
+    <div class="seats-counter seats-counter-enhanced">
+      <div class="seats-left">
+        <span class="seats-label">🔥 第1期生 残り枠</span>
+        <span class="seats-num" id="seatsLeft">--</span><span class="seats-total">/ 100</span>
+      </div>
+      <div class="seats-progress-wrap">
+        <div class="seats-progress-bar-bg">
+          <div class="seats-progress-bar" id="seatsBar" style="width:0%;"></div>
+        </div>
+        <div class="seats-progress-meta">
+          <span><strong id="seatsTaken">0</strong>名が既に登録済み</span>
+          <span class="seats-live">🟢 リアルタイム</span>
+        </div>
+      </div>
+      <div class="seats-price">
+        <span class="price-strike">通常 ¥24,980〜¥39,800/月</span>
+        <span class="price-now">3日間トライアル <strong>¥1,980</strong></span>
+        <span class="price-save">※月額の1/10で試せる創業記念価格</span>
+      </div>
+    </div>
+    <div class="hero-ctas">
+      <a href="checkout.html?plan=founder" class="btn-primary btn-lg" data-founder-cta>¥1,980で3日間試す →</a>
+      <a href="demo-features.html" class="btn-ghost btn-lg">🎥 実画面デモを見る</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="stat-num">24<span>h</span></div>
+        <div class="stat-label">AIが質問対応</div>
+      </div>
+      <div class="hero-stat">
+        <div class="stat-num">1/3</div>
+        <div class="stat-label">従来塾の価格</div>
+      </div>
+      <div class="hero-stat">
+        <div class="stat-num">10<span>倍</span></div>
+        <div class="stat-label">添削量</div>
+      </div>
+      <div class="hero-stat">
+        <div class="stat-num">100<span>%</span></div>
+        <div class="stat-label">個別最適化</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Problem -->
+  <section class="section section-dark">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="eyebrow">なぜ今、AI学習塾なのか？</div>
+        <h2>既存の学習塾には、こんな課題があります</h2>
+      </div>
+      <div class="problem-grid">
+        <div class="problem-card">
+          <div class="problem-icon">💸</div>
+          <h3>月5〜8万円と高額</h3>
+          <p>個別指導塾は首都圏で月5-8万円。続けるほど家計負担が重くのしかかる。</p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon">⏰</div>
+          <h3>質問できるのは授業時だけ</h3>
+          <p>深夜の勉強中にわからない問題があっても、翌週まで聞けない。</p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon">📉</div>
+          <h3>画一的なカリキュラム</h3>
+          <p>集団塾では一人ひとりの弱点に応じた教材・進度にならない。</p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon">🤷</div>
+          <h3>ブラックボックス</h3>
+          <p>保護者は「ちゃんと進んでるのか」が見えず、不安が募る。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Solution / Features -->
+  <section id="features" class="section">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="eyebrow">Solution</div>
+        <h2>AIで<span class="gradient-text">全て解決</span>します</h2>
+        <p class="section-desc">最先端のClaude AIが、塾の価値を再定義します。</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-num">01</div>
+          <div class="feature-icon">💬</div>
+          <h3>24時間AIチューター</h3>
+          <p>深夜でも、日曜でも、わからない問題をその場で解説。自然な日本語で丁寧に指導します。</p>
+          <ul class="feature-list">
+            <li>全科目対応（英数国理社）</li>
+            <li>思考プロセスも解説</li>
+            <li>類題・関連事項も提案</li>
+          </ul>
+        </div>
+        <div class="feature-card">
+          <div class="feature-num">02</div>
+          <div class="feature-icon">📊</div>
+          <h3>AI学習診断</h3>
+          <p>解答データから弱点をAIが分析。毎週レポートが自動生成され、次週のアクションが明確に。</p>
+          <ul class="feature-list">
+            <li>科目別・単元別の弱点特定</li>
+            <li>具体的な改善提案</li>
+            <li>来週の優先順位</li>
+          </ul>
+        </div>
+        <div class="feature-card">
+          <div class="feature-num">03</div>
+          <div class="feature-icon">🎯</div>
+          <h3>カリキュラム自動生成</h3>
+          <p>志望校と現在の学力から、合格までの最適経路をAIが設計。既存塾にない粒度です。</p>
+          <ul class="feature-list">
+            <li>3フェーズ設計（基礎→標準→過去問）</li>
+            <li>使用教材を具体的に指定</li>
+            <li>週間スケジュール込み</li>
+          </ul>
+        </div>
+        <div class="feature-card">
+          <div class="feature-num">04</div>
+          <div class="feature-icon">✍️</div>
+          <h3>英作文・記述添削</h3>
+          <p>AIが一次添削、人間講師が仕上げ。従来の<strong>10倍の添削量</strong>で、記述力が劇的に向上。</p>
+          <ul class="feature-list">
+            <li>文法・語彙・論理構造の3点添削</li>
+            <li>書き直し例付き</li>
+            <li>講師への申し送りも自動</li>
+          </ul>
+        </div>
+        <div class="feature-card">
+          <div class="feature-num">05</div>
+          <div class="feature-icon">👨‍👩‍👧</div>
+          <h3>保護者レポート</h3>
+          <p>学習データをAIが可視化。毎週レポートで進捗が一目瞭然。継続率95%の秘密です。</p>
+          <ul class="feature-list">
+            <li>KPIダッシュボード</li>
+            <li>週次AIサマリー</li>
+            <li>家庭でのサポート提案</li>
+          </ul>
+        </div>
+        <div class="feature-card">
+          <div class="feature-num">06</div>
+          <div class="feature-icon">📅</div>
+          <h3>週1メンタリング</h3>
+          <p>人間メンターがモチベ管理。AIで自学を回しつつ、週1回の面談で温度感を保ちます。</p>
+          <ul class="feature-list">
+            <li>オンライン30分/回</li>
+            <li>AIが事前に話題を抽出</li>
+            <li>目標からブレない伴走</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section id="howitworks" class="section section-dark">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="eyebrow">How it works</div>
+        <h2>3ステップで始められます</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>目標と現状を入力</h3>
+          <p>志望校・学年・現在の学力を入力するだけ。模試の結果があればベストです。</p>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>AIが計画を生成</h3>
+          <p>30秒でカリキュラムと週間スケジュールが完成。すぐに学習開始できます。</p>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>学習 & 週次レビュー</h3>
+          <p>AIに質問しながら学習。週1のメンタリングで軌道修正し、合格へ。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section id="pricing" class="section">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="eyebrow">Pricing</div>
+        <h2>シンプルな<span class="gradient-text">3プラン</span></h2>
+        <p class="section-desc">第1期生100名限定: <strong style="color:var(--warning);">¥1,980で3日間トライアル</strong>（月額の1/10）</p>
+      </div>
+      <div class="pricing-grid" id="pricingGrid">
+        <!-- プランカードは plans.js から動的生成 -->
+      </div>
+      <div class="pricing-note">
+        💡 従来の大手個別指導塾の平均月額：<strong>5〜8万円</strong>。AI学習コーチ塾なら同等以上の内容を<strong>約1/3〜2/3の価格</strong>で。<br>
+        ※ 別途、入塾金 <strong>¥20,000</strong>（初回のみ）が必要です。
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="section section-dark">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="eyebrow">Voices</div>
+        <h2>受講生・保護者様の声</h2>
+      </div>
+      <div class="testimonials">
+        <div class="testimonial">
+          <div class="t-stars">⭐⭐⭐⭐⭐</div>
+          <p>"夜中に数学でつまづいてもすぐ解説してくれるので、勉強のリズムが途切れません。偏差値が半年で8上がりました。"</p>
+          <div class="t-author">
+            <div class="t-avatar">👦</div>
+            <div>
+              <div class="t-name">高校2年 Kさん</div>
+              <div class="t-role">東京大学志望</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial">
+          <div class="t-stars">⭐⭐⭐⭐⭐</div>
+          <p>"毎週の保護者レポートで子どもの成長が見えるので、安心して任せられます。前の塾より半額なのに内容は遥かに濃い。"</p>
+          <div class="t-author">
+            <div class="t-avatar">👩</div>
+            <div>
+              <div class="t-name">中学3年 保護者様</div>
+              <div class="t-role">開成高校志望</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial">
+          <div class="t-stars">⭐⭐⭐⭐⭐</div>
+          <p>"英作文の添削が神。AIが細かい文法ミスを拾ってくれて、人間講師はロジックや表現力に集中して指導してくれます。"</p>
+          <div class="t-author">
+            <div class="t-avatar">👧</div>
+            <div>
+              <div class="t-name">高校3年 Sさん</div>
+              <div class="t-role">早稲田大学志望</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="section">
+    <div class="section-inner section-narrow">
+      <div class="section-header">
+        <div class="eyebrow">FAQ</div>
+        <h2>よくあるご質問</h2>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary>AIだけで本当に成績は上がりますか？</summary>
+          <p>はい。Claude AI（Anthropic社の最先端AI Opus 4.7）は、東大合格レベルの難問も詳細に解説できます。24時間質問し放題で、学習履歴から弱点を自動分析してカリキュラムを作成するため、既存の個別指導塾と同等以上の個別最適化を実現します。</p>
+        </details>
+        <details class="faq-item">
+          <summary>対応している学年・科目を教えてください</summary>
+          <p>小学生〜高校3年生（既卒生含む）。5教科すべて（英数国理社）と、英検・TOEIC・共通テスト対策に対応しています。</p>
+        </details>
+        <details class="faq-item">
+          <summary>無料体験の流れは？</summary>
+          <p>メールアドレスを登録するだけで¥1,980で3日間全機能をお試しいただけます。クレジットカード登録は不要。気に入らなければ連絡不要で自動終了します。</p>
+        </details>
+        <details class="faq-item">
+          <summary>既存の塾と併用できますか？</summary>
+          <p>はい。AI学習コーチ塾は「自学自習の質を最大化する」ための伴走ツールとしても活用可能です。多くの生徒が既存塾と本サービスを併用して合格されています。</p>
+        </details>
+        <details class="faq-item">
+          <summary>データのプライバシーは大丈夫ですか？</summary>
+          <p>学習データは暗号化され、第三者に提供されません。AIチューターの会話もユーザー識別不可能な形でのみAPIに送信されます。いつでもデータ削除依頼が可能です。</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section id="trial" class="section section-cta">
+    <div class="section-inner section-narrow">
+      <h2 class="cta-title">今すぐ<span class="gradient-text">3日間無料</span>で始める</h2>
+      <p class="cta-sub">先着100名様限定。クレジットカード登録不要。</p>
+      <form class="trial-form" id="trialForm" action="checkout.html" method="get">
+        <div class="form-row">
+          <input type="text" id="trialName" placeholder="お名前（お子様）" required>
+          <select id="trialGrade" required>
+            <option value="">学年を選択</option>
+            <option>小学5年</option>
+            <option>小学6年</option>
+            <option>中学1年</option>
+            <option>中学2年</option>
+            <option>中学3年</option>
+            <option>高校1年</option>
+            <option>高校2年</option>
+            <option>高校3年</option>
+            <option>既卒生</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <input type="email" id="trialEmail" placeholder="保護者様メールアドレス" required>
+          <input type="text" id="trialGoal" placeholder="志望校・目標（任意）">
+        </div>
+        <select id="trialPlan" required>
+          <option value="premium">希望プラン：プレミアム（月¥39,800）</option>
+          <option value="standard">希望プラン：スタンダード（月¥24,980）</option>
+          <option value="family">希望プラン：家族プラン 3名まで（月¥59,800）</option>
+          <option value="undecided">まだ決めていない</option>
+        </select>
+        <button type="submit" class="btn-primary btn-lg btn-block">¥1,980で3日間トライアルを開始する →</button>
+        <p class="form-note">※ 次画面でクレジットカード決済（¥1,980）→ 即座に体験環境をご案内 / 3日後に月額プランへ自動移行（解約可能）</p>
+      </form>
+      <div id="trialSuccess" class="trial-success" style="display:none;">
+        <div class="success-icon">🎉</div>
+        <h3>登録完了！</h3>
+        <p>体験環境を起動します...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-logo">🎓 AI学習コーチ塾</div>
+        <p class="footer-tagline">次世代型・完全個別最適化学習プラットフォーム</p>
+      </div>
+      <div class="footer-links">
+        <div>
+          <h4>サービス</h4>
+          <a href="#features">機能一覧</a>
+          <a href="#pricing">料金</a>
+          <a href="#faq">FAQ</a>
+        </div>
+        <div>
+          <h4>会社情報</h4>
+          <a href="legal.html#tokusho">特定商取引法に基づく表記</a>
+          <a href="legal.html#terms">利用規約</a>
+          <a href="legal.html#privacy">プライバシーポリシー</a>
+        </div>
+        <div>
+          <h4>お問い合わせ</h4>
+          <a href="mailto:info@ai-juku.example">info@ai-juku.example</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2026 AI学習コーチ塾 | Powered by Claude AI (Anthropic)
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('trialForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const params = new URLSearchParams({
+        name: document.getElementById('trialName').value,
+        grade: document.getElementById('trialGrade').value,
+        email: document.getElementById('trialEmail').value,
+        goal: document.getElementById('trialGoal').value,
+        plan: document.getElementById('trialPlan').value,
+      });
+      window.location.href = `checkout.html?${params.toString()}`;
+    });
+
+    // Smooth scroll
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', e => {
+        const target = document.querySelector(a.getAttribute('href'));
+        if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
+      });
+    });
+  </script>
+  <script src="plans.js?v=20260422"></script>
+  <script>
+    // プランカードを動的生成（plans.js の設定から）
+    (function renderPricing() {
+      const grid = document.getElementById('pricingGrid');
+      if (!grid || !window.PLAN_CONFIG) return;
+      const plans = window.PLAN_CONFIG.plans;
+      grid.innerHTML = Object.values(plans).map(p => {
+        const diff = p.id === 'premium' ? plans.premium.price - plans.standard.price : null;
+        return `
+          <div class="pricing-card ${p.recommended ? 'featured' : ''}">
+            ${p.recommended ? '<div class="plan-badge">🔥 人気No.1</div>' : ''}
+            <div class="plan-name">${p.name}</div>
+            <div class="plan-desc">${p.tagline}</div>
+            <div class="plan-price">
+              <span class="price-num">${p.priceLabel}</span>
+              <span class="price-unit">/月（税込）</span>
+            </div>
+            ${diff ? `<div style="font-size:0.85rem;color:#10b981;margin:-0.5rem 0 1rem;text-align:center;">スタンダードとの差額 <strong>¥${diff.toLocaleString()}</strong> で全機能解放</div>` : ''}
+            ${p.maxStudents > 1 ? `<div style="font-size:0.85rem;color:#ec4899;margin:-0.5rem 0 1rem;text-align:center;">👨‍👩‍👧 生徒${p.maxStudents}名まで / 1人あたり実質 ¥${Math.round(p.price / p.maxStudents).toLocaleString()}</div>` : ''}
+            <ul class="plan-features">
+              ${p.features.map(f => `<li${f.highlight ? ' style="color:#fbbf24;"' : ''}${f.note ? ' style="color:var(--text-dim);font-size:0.85em;"' : ''}>${f.included ? '✅' : '❌'} ${f.name}</li>`).join('')}
+            </ul>
+            <a href="#trial" class="${p.recommended ? 'btn-primary' : 'btn-secondary'} btn-block">無料で試す</a>
+          </div>
+        `;
+      }).join('');
+    })();
+  </script>
+</body>
+</html>

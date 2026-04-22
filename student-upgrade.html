@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎓 塾生限定・AI学習アドオン | AI学習コーチ塾</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .su-hero {
+      text-align: center;
+      padding: 3rem 1.5rem 2rem;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(59, 130, 246, 0.10));
+      border-radius: 20px;
+      margin: 1.5rem 0;
+    }
+    .su-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #10b981, #3b82f6);
+      color: #fff;
+      padding: 0.4rem 1rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .su-hero h1 {
+      font-size: 2.2rem;
+      margin: 0.5rem 0;
+      background: linear-gradient(135deg, #10b981, #818cf8, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .su-hero-sub {
+      font-size: 1.1rem;
+      color: var(--text-dim);
+      margin-bottom: 1rem;
+    }
+    .su-price-box {
+      background: rgba(255, 255, 255, 0.04);
+      border: 2px solid rgba(16, 185, 129, 0.4);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin: 1.5rem auto;
+      max-width: 600px;
+    }
+    .su-price-old {
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      text-decoration: line-through;
+    }
+    .su-price-new {
+      font-size: 3rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #10b981, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1;
+    }
+    .su-price-unit {
+      font-size: 1.1rem;
+      color: var(--text-dim);
+      margin-left: 0.3rem;
+    }
+    .su-price-diff {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-top: 0.75rem;
+      display: inline-block;
+    }
+
+    .su-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+    .su-col {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      padding: 1.5rem;
+    }
+    .su-col.highlight {
+      border-color: rgba(16, 185, 129, 0.5);
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(59, 130, 246, 0.06));
+    }
+    .su-col h3 { margin-top: 0; font-size: 1.1rem; }
+    .su-col .price {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0.5rem 0;
+    }
+    .su-col ul {
+      list-style: none;
+      padding: 0;
+      margin: 1rem 0 0;
+    }
+    .su-col li {
+      padding: 0.5rem 0;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+      font-size: 0.9rem;
+    }
+    .su-col li::before { content: "✓ "; color: #10b981; font-weight: 700; }
+    .su-col li.no::before { content: "✗ "; color: #ef4444; }
+
+    .su-features {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+    .su-feature {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+    .su-feature-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .su-feature h4 { margin: 0.5rem 0; font-size: 1rem; }
+    .su-feature p { margin: 0; font-size: 0.88rem; color: var(--text-dim); }
+
+    .su-cta {
+      text-align: center;
+      padding: 2.5rem 1.5rem;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(59, 130, 246, 0.12));
+      border-radius: 20px;
+      margin: 2rem 0;
+    }
+    .su-cta h2 { margin: 0 0 1rem; font-size: 1.5rem; }
+    .su-cta-btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #10b981, #3b82f6);
+      color: #fff;
+      padding: 1.2rem 2.5rem;
+      border-radius: 12px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      text-decoration: none;
+      margin: 1rem 0;
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
+      transition: transform 0.15s;
+    }
+    .su-cta-btn:hover { transform: translateY(-2px); }
+    .su-limited {
+      display: inline-block;
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      padding: 0.4rem 1rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin: 0.5rem 0;
+    }
+
+    .su-faq {
+      margin: 2rem 0;
+    }
+    .su-faq-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+    .su-faq-q { font-weight: 700; color: #a5b4fc; margin-bottom: 0.5rem; }
+    .su-faq-a { font-size: 0.9rem; color: var(--text-dim); line-height: 1.7; }
+
+    @media (max-width: 768px) {
+      .su-compare, .su-features { grid-template-columns: 1fr; }
+      .su-hero h1 { font-size: 1.6rem; }
+      .su-price-new { font-size: 2.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">🎓</span>
+      <div>
+        <h1>塾生限定・AI学習アドオン</h1>
+        <p class="tagline">現在通塾中の塾生様・保護者様専用ページ</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a href="index.html" class="btn-nav-pill"><span class="bnp-icon">📱</span><span class="bnp-label">デモを試す</span></a>
+      <a href="lp.html" class="btn-nav-pill"><span class="bnp-icon">🌐</span><span class="bnp-label">一般向けLP</span></a>
+    </div>
+  </header>
+
+  <main style="max-width:960px;margin:0 auto;padding:0 1.5rem;">
+
+    <section class="su-hero">
+      <span class="su-badge">🎁 塾生様限定オファー</span>
+      <h1>塾の月謝に +¥15,000 で<br>AI学習システムが使い放題</h1>
+      <p class="su-hero-sub">外部では <strong>入塾金¥20,000 + 月額¥24,980〜¥39,800</strong> のAIシステム。<br>通塾中の皆様には、<strong>入塾金免除・月額¥15,000</strong> でご提供します。</p>
+
+      <div class="su-price-box">
+        <div class="su-price-old">外部価格: 入塾金¥20,000 + 月額¥24,980〜¥39,800</div>
+        <div style="margin-top:0.5rem;">
+          <span style="font-size:0.95rem;color:var(--text-dim);">塾生特典価格</span><br>
+          <span class="su-price-new">+¥15,000</span><span class="su-price-unit">/月</span>
+        </div>
+        <div class="su-price-diff">✨ 年間 約¥32万円分お得（入塾金¥20,000免除＋月額¥24,800割引）</div>
+      </div>
+    </section>
+
+    <!-- 比較 -->
+    <section>
+      <h2 style="text-align:center;margin-bottom:1.5rem;">🔍 外部契約と塾生アドオンの違い</h2>
+      <div class="su-compare">
+        <div class="su-col">
+          <h3>🌐 外部契約（新規客向け）</h3>
+          <div class="price">¥20,000 + ¥39,800/月</div>
+          <ul>
+            <li>24時間AIチューター</li>
+            <li>AI問題自動生成</li>
+            <li>英作文・記述添削</li>
+            <li class="no">対面授業なし</li>
+            <li class="no">講師によるレビューなし</li>
+            <li class="no">塾の宿題との連携なし</li>
+          </ul>
+        </div>
+        <div class="su-col highlight">
+          <h3>🎓 塾生アドオン（現塾生向け）</h3>
+          <div class="price">月謝 + ¥15,000/月</div>
+          <ul>
+            <li>24時間AIチューター（最上位Opus 4.7）</li>
+            <li>AI問題自動生成（無制限）</li>
+            <li>英作文・記述のAI添削</li>
+            <li>📚 オリジナル参考書の自動生成</li>
+            <li>🎯 AI学習履歴を担当講師が毎週レビュー</li>
+            <li>🔗 塾の宿題とAIが自動連携</li>
+            <li>📊 保護者向け統合レポート（塾成績+AI）</li>
+            <li>🏫 対面授業も変わらず受講</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 機能詳細 -->
+    <section>
+      <h2 style="text-align:center;margin:3rem 0 1.5rem;">✨ 塾生アドオンの主要機能</h2>
+      <div class="su-features">
+        <div class="su-feature">
+          <div class="su-feature-icon">🤖</div>
+          <h4>24時間AIチューター</h4>
+          <p>分からない問題を深夜でも質問可能。画像添付で数式・図形も解説。塾の授業で消化しきれなかった疑問をその日のうちに解消。</p>
+        </div>
+        <div class="su-feature">
+          <div class="su-feature-icon">🧪</div>
+          <h4>AI問題自動生成</h4>
+          <p>弱点分野を入力するだけで、東大・京大レベルまで対応した練習問題を瞬時に作成。PDF保存で塾外学習にも活用。</p>
+        </div>
+        <div class="su-feature">
+          <div class="su-feature-icon">📚</div>
+          <h4>オリジナル参考書生成</h4>
+          <p>生徒の弱点にピンポイントで合わせた参考書をAIが執筆。目次・例題・解説・練習問題まで完備の本格テキスト。</p>
+        </div>
+        <div class="su-feature">
+          <div class="su-feature-icon">✍️</div>
+          <h4>英作文・記述のAI添削</h4>
+          <p>東大二次の英作文、京大記述問題を瞬時に添削。模範解答＋改善ポイントを具体的に指示。</p>
+        </div>
+        <div class="su-feature">
+          <div class="su-feature-icon">📊</div>
+          <h4>学習診断・カリキュラム生成</h4>
+          <p>模試の画像をアップするだけで、AIが弱点分析→志望校までの個別カリキュラム（週間スケジュール）を自動設計。</p>
+        </div>
+        <div class="su-feature">
+          <div class="su-feature-icon">🎯</div>
+          <h4>塾講師によるAI履歴レビュー</h4>
+          <p>AIとの会話履歴を担当講師が毎週確認。次回授業で「AIに聞いたあの単元」を重点的にフォロー。人間とAIの完全統合。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="su-cta">
+      <span class="su-limited">⏰ 先着50名様限定・残り枠わずか</span>
+      <h2>今月から始めれば、入試本番までに差がつく</h2>
+      <p style="margin-bottom:1rem;color:var(--text-dim);">申込みフォームからご記入いただくか、担当講師まで直接お声がけください。<br>翌月の月謝請求に追加反映いたします。</p>
+      <a href="mailto:info@ai-juku.example.com?subject=塾生アドオン申込み&body=生徒名:%0A保護者名:%0Aご希望開始月:%0A" class="su-cta-btn">📝 申込みフォーム</a>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin-top:1rem;">担当講師に直接お話いただければ、翌日から体験開始可能です。</p>
+    </section>
+
+    <!-- FAQ -->
+    <section class="su-faq">
+      <h2 style="text-align:center;margin-bottom:1.5rem;">❓ よくあるご質問</h2>
+
+      <div class="su-faq-item">
+        <div class="su-faq-q">Q. 外部の月額¥39,800との違いは？</div>
+        <div class="su-faq-a">A. 塾生アドオンは「対面授業の月謝」に含まれる対価として、講師による個別フォロー・塾の宿題連携・保護者向け統合レポートなど、外部契約では得られない付加価値がセットになっています。AI機能自体は同じ最上位モデルをご利用いただけます。</div>
+      </div>
+
+      <div class="su-faq-item">
+        <div class="su-faq-q">Q. いつでも解約できますか？</div>
+        <div class="su-faq-a">A. はい、月末までに担当講師にお申し出いただければ翌月から停止可能です。違約金は一切ありません。ただし、AI学習履歴は解約と同時に削除されます。</div>
+      </div>
+
+      <div class="su-faq-item">
+        <div class="su-faq-q">Q. 家族で複数利用できますか？</div>
+        <div class="su-faq-a">A. AI機能は生徒1名ごとのアカウントです。ご兄弟姉妹がご通塾の場合、それぞれ個別にアドオン申込みが必要になります。ただし、兄弟割引として2人目以降は¥12,000/月でご提供しております。</div>
+      </div>
+
+      <div class="su-faq-item">
+        <div class="su-faq-q">Q. スマホでも使えますか？</div>
+        <div class="su-faq-a">A. はい、PC・スマホ・タブレット全てに対応しています。スマホアプリとしてホーム画面に追加も可能です（PWA対応）。</div>
+      </div>
+
+      <div class="su-faq-item">
+        <div class="su-faq-q">Q. AIの回答は本当に正確ですか？</div>
+        <div class="su-faq-a">A. 世界最高レベルのAI（Anthropic社 Claude Opus 4.7）を採用しています。さらに塾生プランでは、AIの回答を担当講師が毎週確認し、誤りがあれば次回授業で訂正・補足するダブルチェック体制です。</div>
+      </div>
+
+      <div class="su-faq-item">
+        <div class="su-faq-q">Q. 年間先払いで割引はありますか？</div>
+        <div class="su-faq-a">A. はい、年間一括先払いで ¥15,000 × 12ヶ月 = ¥180,000 のところ、<strong>¥150,000（¥30,000割引）</strong>でご提供しています。担当講師までお申し出ください。</div>
+      </div>
+    </section>
+
+    <!-- セカンダリCTA -->
+    <section class="su-cta" style="background:linear-gradient(135deg, rgba(129, 140, 248, 0.15), rgba(236, 72, 153, 0.12));">
+      <h2>まずは試してみたい方へ</h2>
+      <p style="margin-bottom:1rem;">塾生の皆様には、<strong>2週間の無料トライアル</strong>をご提供しています。<br>期間中に一度でもご利用いただければ、機能の威力を実感いただけます。</p>
+      <a href="index.html" class="su-cta-btn" style="background:linear-gradient(135deg, #818cf8, #ec4899);box-shadow:0 8px 24px rgba(129, 140, 248, 0.35);">🚀 デモをすぐに試す</a>
+    </section>
+
+  </main>
+
+  <footer class="footer" style="text-align:center;padding:2rem 1rem;color:var(--text-muted);">
+    <p>© 2026 AI学習コーチ塾 | 塾生様専用ページ</p>
+    <p style="font-size:0.85rem;margin-top:0.5rem;">ご不明点は担当講師または info@ai-juku.example.com までお問い合わせください。</p>
+  </footer>
+</body>
+</html>

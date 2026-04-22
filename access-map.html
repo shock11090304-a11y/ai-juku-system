@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🗺 画面アクセスマップ | AI学習コーチ塾</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="access-map.css">
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">🗺</span>
+      <div>
+        <h1>画面アクセスマップ</h1>
+        <p class="tagline">ユーザー種別ごとに何が見えるかを可視化</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a href="ceo.html" class="btn-icon" title="CEO">💼</a>
+      <a href="index.html" class="btn-icon" title="アプリ">🎓</a>
+    </div>
+  </header>
+
+  <main class="am-main">
+    <section class="am-intro">
+      <h2>👥 3つのユーザータイプで見え方が変わる</h2>
+      <p>AI学習コーチ塾の各画面は、<strong>アクセスする人の立場</strong>によって見える範囲を自動制御しています。</p>
+    </section>
+
+    <section class="roles-grid">
+      <div class="role-card role-student">
+        <div class="role-head">
+          <div class="role-emoji">🎓</div>
+          <div class="role-name">生徒</div>
+          <div class="role-desc">実際にAI学習を使う中高生</div>
+        </div>
+        <div class="role-access">
+          <div class="access-count">14画面</div>
+          <div class="access-label">アクセス可能</div>
+        </div>
+      </div>
+      <div class="role-card role-parent">
+        <div class="role-head">
+          <div class="role-emoji">👨‍👩‍👧</div>
+          <div class="role-name">保護者</div>
+          <div class="role-desc">学習進捗を見守る保護者</div>
+        </div>
+        <div class="role-access">
+          <div class="access-count">10画面</div>
+          <div class="access-label">アクセス可能</div>
+        </div>
+      </div>
+      <div class="role-card role-admin">
+        <div class="role-head">
+          <div class="role-emoji">💼</div>
+          <div class="role-name">塾長/管理者</div>
+          <div class="role-desc">あなた（CEO・運営者）</div>
+        </div>
+        <div class="role-access">
+          <div class="access-count">全27画面</div>
+          <div class="access-label">フルアクセス</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Customer-facing (public) pages -->
+    <section class="page-section">
+      <h2 class="section-h2">
+        <span class="section-badge public">🌐 完全公開ページ</span>
+        <span class="section-sub">検索エンジンからも誰でもアクセス可能</span>
+      </h2>
+      <div class="page-grid">
+        <div class="page-card public">
+          <div class="pc-icon">🌐</div>
+          <div class="pc-name">LP（トップページ）</div>
+          <div class="pc-url">lp.html</div>
+          <div class="pc-viewers"><span class="viewer all">全員</span></div>
+          <div class="pc-desc">サービス紹介、料金、無料体験CTA</div>
+        </div>
+        <div class="page-card public">
+          <div class="pc-icon">📝</div>
+          <div class="pc-name">ブログ</div>
+          <div class="pc-url">blog.html / article.html</div>
+          <div class="pc-viewers"><span class="viewer all">全員</span></div>
+          <div class="pc-desc">SEO記事（4記事）、集客用コンテンツ</div>
+        </div>
+        <div class="page-card public">
+          <div class="pc-icon">🏫</div>
+          <div class="pc-name">B2B塾経営者向け</div>
+          <div class="pc-url">business.html</div>
+          <div class="pc-viewers"><span class="viewer all">全員</span></div>
+          <div class="pc-desc">他塾向けのOEM提供案内</div>
+        </div>
+        <div class="page-card public">
+          <div class="pc-icon">🆘</div>
+          <div class="pc-name">サポートセンター</div>
+          <div class="pc-url">support.html</div>
+          <div class="pc-viewers"><span class="viewer all">全員</span></div>
+          <div class="pc-desc">FAQ・お問い合わせ・稼働状況</div>
+        </div>
+        <div class="page-card public">
+          <div class="pc-icon">⚖️</div>
+          <div class="pc-name">法的ページ</div>
+          <div class="pc-url">legal.html</div>
+          <div class="pc-viewers"><span class="viewer all">全員</span></div>
+          <div class="pc-desc">特商法・利用規約・プライバシーポリシー</div>
+        </div>
+        <div class="page-card public">
+          <div class="pc-icon">🎥</div>
+          <div class="pc-name">実画面デモ</div>
+          <div class="pc-url">demo-features.html</div>
+          <div class="pc-viewers"><span class="viewer all">全員</span></div>
+          <div class="pc-desc">8機能のビジュアルツアー</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trial/Purchase flow -->
+    <section class="page-section">
+      <h2 class="section-h2">
+        <span class="section-badge trial">💳 トライアル・決済フロー</span>
+        <span class="section-sub">申込み→決済→完了の流れ</span>
+      </h2>
+      <div class="page-grid">
+        <div class="page-card trial">
+          <div class="pc-icon">💳</div>
+          <div class="pc-name">チェックアウト</div>
+          <div class="pc-url">checkout.html</div>
+          <div class="pc-viewers"><span class="viewer all">全員</span></div>
+          <div class="pc-desc">¥1,980トライアル申込み画面</div>
+        </div>
+        <div class="page-card trial">
+          <div class="pc-icon">🎉</div>
+          <div class="pc-name">登録完了</div>
+          <div class="pc-url">checkout-success.html</div>
+          <div class="pc-viewers"><span class="viewer student parent">登録者のみ</span></div>
+          <div class="pc-desc">決済完了後の次ステップ案内</div>
+        </div>
+        <div class="page-card trial">
+          <div class="pc-icon">😔</div>
+          <div class="pc-name">キャンセル</div>
+          <div class="pc-url">checkout-cancel.html</div>
+          <div class="pc-viewers"><span class="viewer all">全員</span></div>
+          <div class="pc-desc">決済キャンセル時の案内</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Student/Parent facing app -->
+    <section class="page-section">
+      <h2 class="section-h2">
+        <span class="section-badge customer">👥 登録者専用（生徒・保護者）</span>
+        <span class="section-sub">ログイン後にアクセス可能</span>
+      </h2>
+      <div class="page-grid">
+        <div class="page-card customer">
+          <div class="pc-icon">🎓</div>
+          <div class="pc-name">メインアプリ（8機能）</div>
+          <div class="pc-url">index.html</div>
+          <div class="pc-viewers"><span class="viewer student">生徒</span></div>
+          <div class="pc-desc">AIチューター・学習診断・問題生成等</div>
+          <div class="pc-note">⚠️ 管理メニュー（右上）は非表示</div>
+        </div>
+        <div class="page-card customer">
+          <div class="pc-icon">🎮</div>
+          <div class="pc-name">生徒マイページ</div>
+          <div class="pc-url">mypage.html</div>
+          <div class="pc-viewers"><span class="viewer student">生徒</span></div>
+          <div class="pc-desc">ストリーク・クエスト・XPレベル</div>
+        </div>
+        <div class="page-card customer restricted">
+          <div class="pc-icon">👨‍👩‍👧</div>
+          <div class="pc-name">保護者ビュー</div>
+          <div class="pc-url">index.html?role=parent&student=X</div>
+          <div class="pc-viewers"><span class="viewer parent">保護者</span></div>
+          <div class="pc-desc">3タブ限定（チューター/カリキュラム/レポート）</div>
+          <div class="pc-note">⚠️ 他タブ・管理ボタン・設定すべて非表示</div>
+        </div>
+        <div class="page-card customer">
+          <div class="pc-icon">🎁</div>
+          <div class="pc-name">紹介プログラム</div>
+          <div class="pc-url">referral.html</div>
+          <div class="pc-viewers"><span class="viewer student parent">生徒・保護者</span></div>
+          <div class="pc-desc">友達紹介URL発行</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Admin-only (塾長専用) -->
+    <section class="page-section admin-section">
+      <h2 class="section-h2">
+        <span class="section-badge admin">🔒 塾長/管理者専用</span>
+        <span class="section-sub">顧客には絶対に見せない画面（現在URLさえ知れば誰でもアクセス可能なのが課題）</span>
+      </h2>
+      <div class="page-grid">
+        <div class="page-card admin">
+          <div class="pc-icon">💼</div>
+          <div class="pc-name">CEO経営ダッシュボード</div>
+          <div class="pc-url">ceo.html</div>
+          <div class="pc-viewers"><span class="viewer admin">管理者</span></div>
+          <div class="pc-desc">MRR/ARR/生徒ロスター/全収支</div>
+        </div>
+        <div class="page-card admin">
+          <div class="pc-icon">🎯</div>
+          <div class="pc-name">キャンペーン実行</div>
+          <div class="pc-url">campaign.html</div>
+          <div class="pc-viewers"><span class="viewer admin">管理者</span></div>
+          <div class="pc-desc">3フェーズ進捗管理</div>
+        </div>
+        <div class="page-card admin">
+          <div class="pc-icon">📨</div>
+          <div class="pc-name">個別展開ツール</div>
+          <div class="pc-url">personalized-outreach.html</div>
+          <div class="pc-viewers"><span class="viewer admin">管理者</span></div>
+          <div class="pc-desc">既存103名への個別メッセージ管理</div>
+        </div>
+        <div class="page-card admin">
+          <div class="pc-icon">🔔</div>
+          <div class="pc-name">自動アラート設定</div>
+          <div class="pc-url">alerts.html</div>
+          <div class="pc-viewers"><span class="viewer admin">管理者</span></div>
+          <div class="pc-desc">非活動検知・通知ルール</div>
+        </div>
+        <div class="page-card customer">
+          <div class="pc-icon">📚</div>
+          <div class="pc-name">オリジナル参考書ジェネレーター</div>
+          <div class="pc-url">textbook-generator.html</div>
+          <div class="pc-viewers"><span class="viewer student">生徒</span><span class="viewer admin">管理者</span></div>
+          <div class="pc-desc">自分専用の参考書をAIが執筆（生徒にも開放）</div>
+          <div class="pc-note">✅ 2026-04-22: 生徒にも開放して差別化強化</div>
+        </div>
+        <div class="page-card admin">
+          <div class="pc-icon">✨</div>
+          <div class="pc-name">AIコンテンツ生成</div>
+          <div class="pc-url">content-studio.html</div>
+          <div class="pc-viewers"><span class="viewer admin">管理者</span></div>
+          <div class="pc-desc">ブログ記事量産ツール</div>
+        </div>
+        <div class="page-card admin">
+          <div class="pc-icon">🚀</div>
+          <div class="pc-name">ローンチ手順</div>
+          <div class="pc-url">launch.html</div>
+          <div class="pc-viewers"><span class="viewer admin">管理者</span></div>
+          <div class="pc-desc">5日間実行チェックリスト</div>
+        </div>
+        <div class="page-card admin">
+          <div class="pc-icon">📢</div>
+          <div class="pc-name">マーケキット</div>
+          <div class="pc-url">marketing-kit.html</div>
+          <div class="pc-viewers"><span class="viewer admin">管理者</span></div>
+          <div class="pc-desc">広告コピー・SNS素材</div>
+        </div>
+        <div class="page-card admin">
+          <div class="pc-icon">📣</div>
+          <div class="pc-name">広告バリエーション20本</div>
+          <div class="pc-url">ad-variations.html</div>
+          <div class="pc-viewers"><span class="viewer admin">管理者</span></div>
+          <div class="pc-desc">A/Bテスト用広告集</div>
+        </div>
+        <div class="page-card admin">
+          <div class="pc-icon">🎬</div>
+          <div class="pc-name">動画広告 制作センター</div>
+          <div class="pc-url">video-ads.html</div>
+          <div class="pc-viewers"><span class="viewer admin">管理者</span></div>
+          <div class="pc-desc">15本の動画脚本・制作ガイド</div>
+        </div>
+        <div class="page-card admin">
+          <div class="pc-icon">💬</div>
+          <div class="pc-name">通知テンプレ設計</div>
+          <div class="pc-url">notifications.html</div>
+          <div class="pc-viewers"><span class="viewer admin">管理者</span></div>
+          <div class="pc-desc">LINE/メール通知の設計</div>
+        </div>
+        <div class="page-card admin">
+          <div class="pc-icon">📰</div>
+          <div class="pc-name">プレスキット</div>
+          <div class="pc-url">press-kit.html</div>
+          <div class="pc-viewers"><span class="viewer admin">管理者</span></div>
+          <div class="pc-desc">メディア向けピッチ資料</div>
+        </div>
+        <div class="page-card admin">
+          <div class="pc-icon">💎</div>
+          <div class="pc-name">投資家ピッチ</div>
+          <div class="pc-url">pitch.html</div>
+          <div class="pc-viewers"><span class="viewer admin">管理者</span></div>
+          <div class="pc-desc">14スライドの調達用資料</div>
+        </div>
+        <div class="page-card admin">
+          <div class="pc-icon">📬</div>
+          <div class="pc-name">展開キット（テンプレ）</div>
+          <div class="pc-url">outreach-kit.html</div>
+          <div class="pc-viewers"><span class="viewer admin">管理者</span></div>
+          <div class="pc-desc">セグメント別メッセージ集</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Security concerns -->
+    <section class="security-section">
+      <h2>🔒 本番デプロイ時のセキュリティ強化案</h2>
+      <p>現在は <strong>URLさえ知っていれば誰でも管理画面にアクセス可能</strong> な状態です。本番稼働前に以下を実装推奨。</p>
+      <div class="security-issues">
+        <div class="sec-item">
+          <div class="sec-priority high">🔴 必須</div>
+          <div class="sec-body">
+            <h4>管理画面へのBasic認証 or IP制限</h4>
+            <p>ceo.html / campaign.html / alerts.html などにBasic認証をかける。<br>
+            Render.com / Cloudflare では設定で対応可能。</p>
+          </div>
+        </div>
+        <div class="sec-item">
+          <div class="sec-priority high">🔴 必須</div>
+          <div class="sec-body">
+            <h4>生徒/保護者ログイン機能</h4>
+            <p>現在は誰でも index.html にアクセスできる。<br>
+            メールアドレス+パスワード（or マジックリンク）での認証必須。</p>
+          </div>
+        </div>
+        <div class="sec-item">
+          <div class="sec-priority mid">🟡 推奨</div>
+          <div class="sec-body">
+            <h4>保護者URLに有効期限・署名</h4>
+            <p>現在は <code>?role=parent&student=1</code> で誰でも入れる。<br>
+            JWTトークン+有効期限で保護すべき。</p>
+          </div>
+        </div>
+        <div class="sec-item">
+          <div class="sec-priority mid">🟡 推奨</div>
+          <div class="sec-body">
+            <h4>robots.txt の強化</h4>
+            <p>管理画面すべてを noindex。<br>
+            すでに各HTMLに <code>&lt;meta name="robots" content="noindex"&gt;</code> は入れてある。</p>
+          </div>
+        </div>
+        <div class="sec-item">
+          <div class="sec-priority low">🟢 オプション</div>
+          <div class="sec-body">
+            <h4>学習データのロール別暗号化</h4>
+            <p>生徒のAI対話ログなど、GDPR/個人情報保護法対応のため。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Summary -->
+    <section class="summary-section">
+      <h2>📋 まとめ: 顧客体験の最終像</h2>
+      <div class="summary-flow">
+        <div class="sf-step">
+          <div class="sf-num">1</div>
+          <div class="sf-body">
+            <strong>検索・SNSで発見</strong><br>
+            <span>lp.html / blog.html / demo-features.html</span>
+          </div>
+        </div>
+        <div class="sf-arrow">→</div>
+        <div class="sf-step">
+          <div class="sf-num">2</div>
+          <div class="sf-body">
+            <strong>¥1,980トライアル登録</strong><br>
+            <span>checkout.html で決済→checkout-success.html</span>
+          </div>
+        </div>
+        <div class="sf-arrow">→</div>
+        <div class="sf-step">
+          <div class="sf-num">3</div>
+          <div class="sf-body">
+            <strong>学習開始（生徒）</strong><br>
+            <span>index.html + mypage.html（管理メニュー非表示）</span>
+          </div>
+        </div>
+        <div class="sf-arrow">→</div>
+        <div class="sf-step">
+          <div class="sf-num">4</div>
+          <div class="sf-body">
+            <strong>週次報告（保護者）</strong><br>
+            <span>LINE通知 + index.html?role=parent で読み取り専用</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-bottom">© 2026 AI学習コーチ塾 | Access Map</div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>通知テンプレート | AI学習コーチ塾</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="notifications.css">
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">💬</span>
+      <div>
+        <h1>通知テンプレート設計</h1>
+        <p class="tagline">LINE / メール / アプリ内通知の全テンプレート一覧</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a href="index.html" class="btn-icon" title="アプリ">🎓</a>
+      <a href="ceo.html" class="btn-icon" title="CEOダッシュボード">💼</a>
+      <a href="lp.html" class="btn-icon" title="LP">🌐</a>
+    </div>
+  </header>
+
+  <main class="notif-main">
+    <div class="notif-intro">
+      <h2>📱 リテンション戦略の核</h2>
+      <p>継続率を95%に押し上げるため、以下の9種類の通知テンプレートを設計しました。保護者と生徒の適切なタイミングでの接点が、LTVを最大化します。</p>
+    </div>
+
+    <div class="notif-tabs">
+      <button class="notif-tab active" data-channel="line">💚 LINE (推奨)</button>
+      <button class="notif-tab" data-channel="email">📧 メール</button>
+      <button class="notif-tab" data-channel="app">🔔 アプリ内通知</button>
+    </div>
+
+    <!-- LINE Templates -->
+    <section class="channel-section" data-channel="line">
+      <div class="line-preview-grid">
+        <!-- Weekly parent report -->
+        <div class="line-phone">
+          <div class="line-header">
+            <div class="line-avatar">🎓</div>
+            <div>
+              <div class="line-name">AI学習コーチ塾</div>
+              <div class="line-status">公式アカウント</div>
+            </div>
+          </div>
+          <div class="line-chat">
+            <div class="line-msg">
+              <div class="line-bubble">
+                <strong>📊 山田 太郎さんの今週のレポート</strong><br><br>
+                保護者様、お世話になっております。<br>
+                今週の学習状況をお知らせします。<br><br>
+                🔥 学習時間: <strong>12.5時間</strong> (先週比+2.5h)<br>
+                💯 平均正答率: <strong>78%</strong> (+5%)<br>
+                💬 AI質問数: <strong>47回</strong><br><br>
+                詳しいレポートはこちら👇
+              </div>
+              <div class="line-time">日曜 20:00</div>
+            </div>
+            <div class="line-msg">
+              <div class="line-card">
+                <div class="line-card-img">📊 週次レポート</div>
+                <div class="line-card-body">
+                  <div class="line-card-title">今週のハイライト</div>
+                  <div class="line-card-desc">英検準1級の過去問で合格ライン到達。自発的な弱点特定の姿勢が見られます。</div>
+                  <button class="line-card-btn">レポートを開く</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="template-label">🗓 毎週日曜20時配信 / 保護者向け</div>
+        </div>
+
+        <!-- Daily study reminder -->
+        <div class="line-phone">
+          <div class="line-header">
+            <div class="line-avatar">🎓</div>
+            <div>
+              <div class="line-name">AI学習コーチ塾</div>
+              <div class="line-status">公式アカウント</div>
+            </div>
+          </div>
+          <div class="line-chat">
+            <div class="line-msg">
+              <div class="line-bubble">
+                太郎さん、こんばんは！🌙<br><br>
+                今日はまだ学習時間がありません。<br>
+                <strong>5分だけ</strong>でもOKです。<br>
+                ストリーク <strong>🔥7日</strong> を途切れさせない！<br><br>
+                今日のおすすめクエスト:<br>
+                📝 英単語 15分 (+30XP)<br>
+                🧮 数学1問 (+20XP)
+              </div>
+              <div class="line-time">21:00</div>
+            </div>
+          </div>
+          <div class="template-label">🔔 未学習日の21時に自動送信 / 生徒向け</div>
+        </div>
+
+        <!-- Achievement unlock -->
+        <div class="line-phone">
+          <div class="line-header">
+            <div class="line-avatar">🎓</div>
+            <div>
+              <div class="line-name">AI学習コーチ塾</div>
+              <div class="line-status">公式アカウント</div>
+            </div>
+          </div>
+          <div class="line-chat">
+            <div class="line-msg">
+              <div class="line-bubble success">
+                🎉 <strong>アチーブメント獲得！</strong><br><br>
+                「<strong>7日連続学習</strong>」<br>
+                7日間連続で学習を続けました！<br><br>
+                +100 XP<br>
+                Lv.7 → Lv.8 にアップ！⬆️<br><br>
+                この調子で30日を目指しましょう💪
+              </div>
+              <div class="line-time">19:30</div>
+            </div>
+          </div>
+          <div class="template-label">✨ 達成時 即配信 / 生徒向け</div>
+        </div>
+
+        <!-- Mentor reminder -->
+        <div class="line-phone">
+          <div class="line-header">
+            <div class="line-avatar">🎓</div>
+            <div>
+              <div class="line-name">AI学習コーチ塾</div>
+              <div class="line-status">公式アカウント</div>
+            </div>
+          </div>
+          <div class="line-chat">
+            <div class="line-msg">
+              <div class="line-bubble">
+                📅 <strong>明日のメンター面談のお知らせ</strong><br><br>
+                担当: 田中先生<br>
+                日時: 4/22 (火) 19:00-19:30<br>
+                場所: Zoom (リンクは開始10分前に配信)<br><br>
+                事前に以下の準備をお願いします👇<br>
+                ・今週の進捗メモ<br>
+                ・わからなかった問題1つ<br>
+                ・相談したいこと
+              </div>
+              <div class="line-time">4/21 18:00</div>
+            </div>
+          </div>
+          <div class="template-label">📅 面談前日18時配信 / 生徒向け</div>
+        </div>
+
+        <!-- Test result request -->
+        <div class="line-phone">
+          <div class="line-header">
+            <div class="line-avatar">🎓</div>
+            <div>
+              <div class="line-name">AI学習コーチ塾</div>
+              <div class="line-status">公式アカウント</div>
+            </div>
+          </div>
+          <div class="line-chat">
+            <div class="line-msg">
+              <div class="line-bubble">
+                📷 <strong>模試結果のアップロードをお願いします</strong><br><br>
+                全統記述模試の結果が返却される時期ですね。<br><br>
+                成績表を撮影してアプリにアップロードいただくと、<br>
+                <strong>AIが自動で弱点を分析</strong>し、来月の学習計画に反映します📊<br><br>
+                所要時間: 30秒
+              </div>
+              <div class="line-time">月末</div>
+            </div>
+          </div>
+          <div class="template-label">🎯 模試返却時期 自動配信 / 生徒＋保護者</div>
+        </div>
+
+        <!-- Trial end reminder -->
+        <div class="line-phone">
+          <div class="line-header">
+            <div class="line-avatar">🎓</div>
+            <div>
+              <div class="line-name">AI学習コーチ塾</div>
+              <div class="line-status">公式アカウント</div>
+            </div>
+          </div>
+          <div class="line-chat">
+            <div class="line-msg">
+              <div class="line-bubble warning">
+                ⏰ <strong>無料体験終了まであと3日</strong><br><br>
+                太郎さんは3日間で:<br>
+                ⏱ <strong>42時間</strong> 学習<br>
+                💬 AI質問 <strong>183回</strong><br>
+                📈 模試偏差値 <strong>+4</strong><br><br>
+                このまま続けるには👇<br>
+                プラン選択ボタン
+              </div>
+              <div class="line-time">体験27日目</div>
+            </div>
+          </div>
+          <div class="template-label">💰 トライアル終了3日前 / 保護者向け</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Email Templates -->
+    <section class="channel-section" data-channel="email" style="display:none;">
+      <div class="email-preview">
+        <div class="email-header">
+          <div><strong>From:</strong> AI学習コーチ塾 &lt;noreply@ai-juku.example&gt;</div>
+          <div><strong>To:</strong> parent@example.com</div>
+          <div><strong>件名:</strong> 📊 山田太郎さんの今週のレポート</div>
+        </div>
+        <div class="email-body">
+          <h2>保護者様、お世話になっております。</h2>
+          <p>今週もお子様の学習を見守っていただき、ありがとうございます。<br>
+          太郎さんの今週のレポートをお届けいたします。</p>
+          <div class="email-kpi-grid">
+            <div class="email-kpi"><strong>12.5h</strong><br><small>学習時間</small></div>
+            <div class="email-kpi"><strong>78%</strong><br><small>平均正答率</small></div>
+            <div class="email-kpi"><strong>47</strong><br><small>AI質問数</small></div>
+            <div class="email-kpi"><strong>🔥7日</strong><br><small>連続学習</small></div>
+          </div>
+          <p><strong>✨ 今週のハイライト</strong><br>
+          英検準1級の過去問で初めて合格ラインに到達しました。自発的に苦手分野を特定する姿勢が見られます。</p>
+          <p><strong>📚 来週の方針</strong><br>
+          長文読解を重点的に取り組み、パラグラフリーディングの習得を目指します。</p>
+          <div style="text-align:center;margin:2rem 0;">
+            <a href="#" class="email-cta">詳細レポートを確認する →</a>
+          </div>
+          <p style="color:#999;font-size:0.85em;">このメールに返信してもお返事できません。ご質問は info@ai-juku.example まで。</p>
+        </div>
+        <div class="template-label">📧 毎週日曜朝8時配信 / 保護者向け</div>
+      </div>
+    </section>
+
+    <!-- In-app notifications -->
+    <section class="channel-section" data-channel="app" style="display:none;">
+      <div class="app-notif-grid">
+        <div class="app-notif">
+          <div class="notif-icon">🎯</div>
+          <div class="notif-body">
+            <div class="notif-title">今日のクエスト3つ完了！</div>
+            <div class="notif-desc">残り2つでXP+65獲得</div>
+          </div>
+          <div class="notif-time">3分前</div>
+        </div>
+        <div class="app-notif">
+          <div class="notif-icon">💬</div>
+          <div class="notif-body">
+            <div class="notif-title">AIチューターから新着メッセージ</div>
+            <div class="notif-desc">「昨日の関係代名詞の問題、類題を用意しました」</div>
+          </div>
+          <div class="notif-time">10分前</div>
+        </div>
+        <div class="app-notif">
+          <div class="notif-icon">🔥</div>
+          <div class="notif-body">
+            <div class="notif-title">ストリーク更新! 7日連続</div>
+            <div class="notif-desc">あと3日で「10日連続」アチーブメント獲得</div>
+          </div>
+          <div class="notif-time">1時間前</div>
+        </div>
+        <div class="app-notif">
+          <div class="notif-icon">📊</div>
+          <div class="notif-body">
+            <div class="notif-title">週次診断レポートができました</div>
+            <div class="notif-desc">今週の弱点分析をAIがまとめました</div>
+          </div>
+          <div class="notif-time">昨日</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="notif-cta">
+      <div class="cta-box">
+        <h3>📲 LINE Messaging API を本番稼働させるには</h3>
+        <p>このテンプレートは既に完成しています。LINE Developers で Messaging API を有効化し、バックエンドに以下のエンドポイントを実装するだけで稼働します：</p>
+        <ol>
+          <li><strong>/webhook</strong> - LINEからのメッセージ受信</li>
+          <li><strong>/notify/weekly</strong> - 毎週日曜20時に保護者へ週次レポート配信（Cron）</li>
+          <li><strong>/notify/streak</strong> - 未学習日の21時にリマインダー</li>
+          <li><strong>/notify/achievement</strong> - アチーブメント獲得時に即時配信</li>
+        </ol>
+        <p class="notif-note">💡 バックエンド構築は次スプリント予定。Node.js + LINE SDK or Python + FastAPI で2-3日で構築可能。</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>© 2026 AI学習コーチ塾 | Notifications Template v1.0</p>
+  </footer>
+
+  <script>
+    document.querySelectorAll('.notif-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const channel = tab.dataset.channel;
+        document.querySelectorAll('.notif-tab').forEach(t => t.classList.toggle('active', t === tab));
+        document.querySelectorAll('.channel-section').forEach(s => {
+          s.style.display = s.dataset.channel === channel ? '' : 'none';
+        });
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>サポートセンター | AI学習コーチ塾</title>
+  <meta name="description" content="AI学習コーチ塾のサポートセンター。よくある質問、お問い合わせ、システム稼働状況、ご利用ガイドをご確認いただけます。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='80' font-size='80'%3E%F0%9F%86%98%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="lp.css">
+  <link rel="stylesheet" href="support.css">
+  <link rel="manifest" href="manifest.json">
+  <script src="analytics.js" defer></script>
+  <script src="pwa.js" defer></script>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="lp.html" class="nav-logo">
+        <span class="logo-icon">🎓</span>
+        <span class="logo-text">AI学習コーチ塾</span>
+      </a>
+      <div class="nav-links">
+        <a href="lp.html#features">機能</a>
+        <a href="lp.html#pricing">料金</a>
+        <a href="blog.html">ブログ</a>
+      </div>
+      <div class="nav-cta">
+        <a href="lp.html#trial" class="btn-primary">無料体験</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="support-main">
+    <section class="support-hero">
+      <div class="eyebrow">SUPPORT</div>
+      <h1>サポートセンター</h1>
+      <p class="support-sub">お困りのことはありますか？お気軽にお問い合わせください。</p>
+      <div class="support-search-box">
+        <input type="text" id="supportSearch" placeholder="🔍 質問を検索（例: 解約、料金、AIの使い方）">
+      </div>
+      <div class="support-quick-tags" id="quickTags">
+        <button class="quick-tag" data-query="解約">解約</button>
+        <button class="quick-tag" data-query="料金">料金</button>
+        <button class="quick-tag" data-query="APIキー">APIキー</button>
+        <button class="quick-tag" data-query="紹介">紹介</button>
+        <button class="quick-tag" data-query="模試">模試</button>
+        <button class="quick-tag" data-query="LINE">LINE</button>
+      </div>
+    </section>
+
+    <section class="support-cards">
+      <div class="support-card">
+        <div class="support-card-icon">📚</div>
+        <h3>ご利用ガイド</h3>
+        <p>AIチューターの使い方、各機能の詳しい解説、おすすめの学習法をご紹介しています。</p>
+        <a href="blog.html" class="support-card-link">ガイドを見る →</a>
+      </div>
+      <div class="support-card">
+        <div class="support-card-icon">💬</div>
+        <h3>チャットサポート</h3>
+        <p>平日10-22時 / 土日10-18時。AIアシスタントが24時間一次対応。</p>
+        <button onclick="openChat()" class="support-card-link">チャットを開く →</button>
+      </div>
+      <div class="support-card">
+        <div class="support-card-icon">📧</div>
+        <h3>メールサポート</h3>
+        <p>24時間受付。営業時間内に担当者よりご返信いたします（平均3時間以内）。</p>
+        <a href="mailto:support@ai-juku.example" class="support-card-link">メールを送る →</a>
+      </div>
+      <div class="support-card">
+        <div class="support-card-icon">📞</div>
+        <h3>電話サポート</h3>
+        <p>プレミアム・家族プラン限定。平日10-19時。</p>
+        <a href="tel:0312345678" class="support-card-link">03-1234-5678 →</a>
+      </div>
+    </section>
+
+    <section class="support-faq">
+      <h2>よくある質問</h2>
+      <div id="faqContainer" class="faq-container"></div>
+      <div id="faqEmpty" style="display:none;text-align:center;padding:3rem;color:var(--text-muted);">
+        該当する質問が見つかりませんでした。<br>
+        下のフォームからお問い合わせください。
+      </div>
+    </section>
+
+    <section class="status-section">
+      <h2>🟢 システム稼働状況</h2>
+      <div class="status-grid">
+        <div class="status-item operational">
+          <div class="status-dot"></div>
+          <div class="status-name">Webアプリ</div>
+          <div class="status-label">正常稼働中</div>
+        </div>
+        <div class="status-item operational">
+          <div class="status-dot"></div>
+          <div class="status-name">AIチューター</div>
+          <div class="status-label">正常稼働中</div>
+        </div>
+        <div class="status-item operational">
+          <div class="status-dot"></div>
+          <div class="status-name">Vision AI（模試解析）</div>
+          <div class="status-label">正常稼働中</div>
+        </div>
+        <div class="status-item operational">
+          <div class="status-dot"></div>
+          <div class="status-name">決済システム（Stripe）</div>
+          <div class="status-label">正常稼働中</div>
+        </div>
+        <div class="status-item operational">
+          <div class="status-dot"></div>
+          <div class="status-name">LINE通知</div>
+          <div class="status-label">正常稼働中</div>
+        </div>
+        <div class="status-item operational">
+          <div class="status-dot"></div>
+          <div class="status-name">データベース</div>
+          <div class="status-label">正常稼働中</div>
+        </div>
+      </div>
+      <p class="status-note">🔄 1分ごとに自動更新 / 過去30日間のアップタイム: 99.97%</p>
+    </section>
+
+    <section class="contact-section">
+      <h2>📮 お問い合わせフォーム</h2>
+      <p class="contact-sub">上記で解決しない場合、こちらからお問い合わせください。</p>
+      <form class="contact-form" id="contactForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label>お名前 *</label>
+            <input type="text" id="contactName" required>
+          </div>
+          <div class="form-group">
+            <label>メールアドレス *</label>
+            <input type="email" id="contactEmail" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>お問い合わせカテゴリ *</label>
+          <select id="contactCategory" required>
+            <option value="">選択してください</option>
+            <option>サービス内容について</option>
+            <option>料金・支払いについて</option>
+            <option>技術的な問題</option>
+            <option>解約・返金について</option>
+            <option>提携・B2B導入</option>
+            <option>メディア掲載依頼</option>
+            <option>その他</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>件名 *</label>
+          <input type="text" id="contactSubject" required placeholder="例: プレミアムプランの詳細について">
+        </div>
+        <div class="form-group">
+          <label>お問い合わせ内容 *</label>
+          <textarea id="contactMessage" rows="6" required placeholder="できるだけ具体的にお書きいただくと、スムーズに対応できます。"></textarea>
+        </div>
+        <div class="form-check">
+          <input type="checkbox" id="contactPrivacy" required>
+          <label for="contactPrivacy">
+            <a href="legal.html#privacy" target="_blank">プライバシーポリシー</a>に同意します *
+          </label>
+        </div>
+        <button type="submit" class="btn-primary btn-lg btn-block">送信する</button>
+      </form>
+      <div id="contactSuccess" class="contact-success" style="display:none;">
+        <div style="font-size:4rem;margin-bottom:1rem;">✅</div>
+        <h3>送信完了</h3>
+        <p>24時間以内にご返信いたします。<br>お問い合わせ番号: <strong id="ticketId"></strong></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-logo">🎓 AI学習コーチ塾</div>
+        <p class="footer-tagline">次世代型・完全個別最適化学習プラットフォーム</p>
+      </div>
+      <div class="footer-links">
+        <div>
+          <h4>サービス</h4>
+          <a href="lp.html#features">機能</a>
+          <a href="lp.html#pricing">料金</a>
+          <a href="blog.html">ブログ</a>
+        </div>
+        <div>
+          <h4>サポート</h4>
+          <a href="support.html">サポートセンター</a>
+          <a href="referral.html">友達紹介</a>
+          <a href="business.html">B2B導入</a>
+        </div>
+        <div>
+          <h4>会社情報</h4>
+          <a href="legal.html#tokusho">特商法</a>
+          <a href="legal.html#terms">利用規約</a>
+          <a href="legal.html#privacy">プライバシーポリシー</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2026 AI学習コーチ塾</div>
+  </footer>
+
+  <script>
+    const FAQS = [
+      { cat: '料金', q: '無料体験期間はいつから課金が始まりますか？', a: '体験登録日から3日後の翌日から、ご選択いただいたプランの月額料金が自動課金されます。体験期間中はいつでも解約可能で、その場合は一切料金は発生しません。' },
+      { cat: '料金', q: 'プランの変更はできますか？', a: 'はい、マイページからいつでも変更可能です。アップグレードは即時反映、ダウングレードは翌月から適用されます。' },
+      { cat: '解約', q: '解約方法を教えてください', a: 'マイページの「設定」→「プラン管理」から解約できます。翌月の課金日前日までにお手続きいただければ、追加の料金は発生しません。' },
+      { cat: '解約', q: '解約後のデータはどうなりますか？', a: '解約後3ヶ月間は、データを保持しており、再契約時に復元可能です。それ以降は自動削除されますが、エクスポート機能でいつでもJSON形式でダウンロードできます。' },
+      { cat: '技術', q: 'APIキーはどう設定しますか？', a: 'Claude APIキーを使う場合: console.anthropic.com でキーを取得し、アプリの設定画面から入力してください。ブラウザのlocalStorageにのみ保存され、外部送信はされません。' },
+      { cat: '技術', q: '推奨ブラウザは何ですか？', a: 'Chrome / Safari / Edge / Firefox の最新版を推奨します。スピーキング練習機能は、音声認識対応のChrome / Safari / Edgeでのみ動作します。' },
+      { cat: '技術', q: 'スマホで使えますか？', a: 'はい、すべての機能がスマホでご利用いただけます。ホーム画面に追加すると、アプリのように使えるPWA対応です。' },
+      { cat: '機能', q: '模試結果の画像アップロードの精度は？', a: '一般的な模試の成績表であれば95%以上の精度で情報抽出できます。手書きのメモ等は誤認識の可能性があります。' },
+      { cat: '機能', q: 'AI問題生成は何問まで可能ですか？', a: '1回につき最大20問、1日あたりの上限はありません。問題は都度オリジナルで生成されるため、重複しません。' },
+      { cat: '機能', q: 'AIの回答が間違っていることはありますか？', a: 'AIは高精度ですが、完璧ではありません。重要な試験の判断は、必ず人間の講師・専門家にもご確認ください。誤りを発見した場合は、サポートまでご報告いただけると改善に役立ちます。' },
+      { cat: '紹介', q: '紹介プログラムの特典はいつもらえますか？', a: '紹介された方が3日間の無料体験を完走し、有料プランに移行した時点で、あなたの次回請求から1ヶ月分が無料になります。' },
+      { cat: '紹介', q: '紹介数に上限はありますか？', a: 'いいえ、上限はありません。紹介した人数分だけ無料期間が増えます。今月のTOP3の方には特別賞もございます。' },
+      { cat: 'LINE', q: 'LINE通知はどう登録しますか？', a: 'マイページの「通知設定」から「LINE公式アカウント」を友だち追加し、連携用のコードを入力すれば完了です。' },
+      { cat: '保護者', q: '保護者が子どもの学習状況を確認する方法は？', a: '保護者様専用のURLを発行しており、読み取り専用モードで学習状況をご確認いただけます。マイページの「保護者用URL発行」から取得できます。' },
+    ];
+
+    function renderFAQs(filter = '') {
+      const container = document.getElementById('faqContainer');
+      const empty = document.getElementById('faqEmpty');
+      const q = filter.toLowerCase();
+      const filtered = FAQS.filter(f =>
+        !q || f.q.toLowerCase().includes(q) || f.a.toLowerCase().includes(q) || f.cat.toLowerCase().includes(q)
+      );
+      if (filtered.length === 0) {
+        container.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+      container.innerHTML = filtered.map(f => `
+        <details class="faq-entry">
+          <summary>
+            <span class="faq-cat">${f.cat}</span>
+            <span class="faq-q">${f.q}</span>
+          </summary>
+          <div class="faq-a">${f.a}</div>
+        </details>
+      `).join('');
+    }
+
+    document.getElementById('supportSearch').addEventListener('input', (e) => renderFAQs(e.target.value));
+    document.querySelectorAll('.quick-tag').forEach(tag => {
+      tag.addEventListener('click', () => {
+        document.getElementById('supportSearch').value = tag.dataset.query;
+        renderFAQs(tag.dataset.query);
+      });
+    });
+
+    document.getElementById('contactForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const ticketId = 'AJ' + Date.now().toString(36).toUpperCase();
+      const ticket = {
+        ticketId,
+        name: document.getElementById('contactName').value,
+        email: document.getElementById('contactEmail').value,
+        category: document.getElementById('contactCategory').value,
+        subject: document.getElementById('contactSubject').value,
+        message: document.getElementById('contactMessage').value,
+        createdAt: new Date().toISOString(),
+      };
+      const tickets = JSON.parse(localStorage.getItem('ai_juku_support_tickets') || '[]');
+      tickets.push(ticket);
+      localStorage.setItem('ai_juku_support_tickets', JSON.stringify(tickets));
+
+      document.getElementById('contactForm').style.display = 'none';
+      document.getElementById('ticketId').textContent = ticketId;
+      document.getElementById('contactSuccess').style.display = 'block';
+
+      if (window.track) window.track('support_ticket_created', { category: ticket.category });
+    });
+
+    function openChat() {
+      alert('💬 チャットサポートはリリース準備中です。\n\nお急ぎの場合は、下のフォームまたは support@ai-juku.example までご連絡ください。');
+    }
+
+    renderFAQs();
+  </script>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title id="pageTitle">記事 | AI学習コーチ塾</title>
+  <meta id="pageDescription" name="description" content="">
+  <link id="canonicalLink" rel="canonical" href="">
+
+  <!-- OGP (dynamically set by JS) -->
+  <meta id="ogTitle" property="og:title" content="">
+  <meta id="ogDescription" property="og:description" content="">
+  <meta property="og:type" content="article">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:site_name" content="AI学習コーチ塾">
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='80' font-size='80'%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="lp.css">
+  <link rel="stylesheet" href="blog.css">
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="lp.html" class="nav-logo">
+        <span class="logo-icon">🎓</span>
+        <span class="logo-text">AI学習コーチ塾</span>
+      </a>
+      <div class="nav-links">
+        <a href="lp.html#features">機能</a>
+        <a href="lp.html#pricing">料金</a>
+        <a href="blog.html" class="active-nav">ブログ</a>
+      </div>
+      <div class="nav-cta">
+        <a href="index.html" class="btn-ghost">ログイン</a>
+        <a href="lp.html#trial" class="btn-primary">無料体験</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="article-main">
+    <article class="article-wrapper">
+      <div class="article-breadcrumb">
+        <a href="blog.html">← ブログ一覧に戻る</a>
+      </div>
+
+      <header class="article-header">
+        <div class="article-cat-badge" id="articleCategory">カテゴリ</div>
+        <h1 class="article-page-title" id="articleTitle">記事タイトル</h1>
+        <div class="article-page-meta">
+          <span id="articleAuthor">著者</span>
+          <span class="meta-dot">·</span>
+          <span id="articleDate">日付</span>
+          <span class="meta-dot">·</span>
+          <span id="articleReadTime">読了時間</span>
+        </div>
+      </header>
+
+      <div class="article-cover-large">
+        <div id="articleEmoji" class="article-emoji-large">📄</div>
+      </div>
+
+      <div class="article-body-full" id="articleContent"></div>
+
+      <div class="article-tags-row" id="articleTagsRow"></div>
+
+      <div class="article-cta">
+        <div class="cta-content">
+          <h3>📚 この記事が役に立ったら、3日間無料でAI学習を体験してみませんか？</h3>
+          <p>クレジットカード登録不要。気に入らなければ連絡不要で自動終了します。</p>
+          <a href="lp.html#trial" class="btn-primary btn-lg">3日間無料体験を始める →</a>
+        </div>
+      </div>
+
+      <section class="related-articles">
+        <h3>📖 関連記事</h3>
+        <div class="related-grid" id="relatedGrid"></div>
+      </section>
+
+      <div class="share-box">
+        <span>この記事をシェア：</span>
+        <button onclick="shareTwitter()" class="share-btn twitter">🐦 X (Twitter)</button>
+        <button onclick="shareLine()" class="share-btn line">💚 LINE</button>
+        <button onclick="copyLink()" class="share-btn copy">🔗 リンクコピー</button>
+      </div>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-logo">🎓 AI学習コーチ塾</div>
+        <p class="footer-tagline">次世代型・完全個別最適化学習プラットフォーム</p>
+      </div>
+      <div class="footer-links">
+        <div>
+          <h4>サービス</h4>
+          <a href="lp.html#features">機能一覧</a>
+          <a href="lp.html#pricing">料金</a>
+          <a href="blog.html">ブログ</a>
+        </div>
+        <div>
+          <h4>会社情報</h4>
+          <a href="legal.html#tokusho">特定商取引法</a>
+          <a href="legal.html#terms">利用規約</a>
+          <a href="legal.html#privacy">プライバシーポリシー</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2026 AI学習コーチ塾</div>
+  </footer>
+
+  <script src="articles.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const slug = params.get('slug');
+    const article = slug ? getArticleBySlug(slug) : null;
+
+    if (!article) {
+      document.getElementById('articleContent').innerHTML = '<p style="text-align:center;padding:3rem;">記事が見つかりませんでした。<br><a href="blog.html">ブログ一覧に戻る</a></p>';
+    } else {
+      // Set metadata
+      document.title = `${article.title} | AI学習コーチ塾`;
+      document.getElementById('pageTitle').textContent = document.title;
+      document.getElementById('pageDescription').content = article.description;
+      document.getElementById('canonicalLink').href = `https://ai-juku.example/article.html?slug=${article.slug}`;
+      document.getElementById('ogTitle').content = article.title;
+      document.getElementById('ogDescription').content = article.description;
+
+      // Set content
+      document.getElementById('articleCategory').textContent = article.category;
+      document.getElementById('articleTitle').textContent = article.title;
+      document.getElementById('articleAuthor').textContent = '✍️ ' + article.author;
+      document.getElementById('articleDate').textContent = '📅 ' + formatDate(article.date);
+      document.getElementById('articleReadTime').textContent = `⏱ ${article.readMinutes}分で読める`;
+      document.getElementById('articleEmoji').textContent = article.coverEmoji;
+      document.getElementById('articleContent').innerHTML = article.content;
+
+      // Tags
+      document.getElementById('articleTagsRow').innerHTML =
+        article.tags.map(t => `<span class="tag-large">#${t}</span>`).join('');
+
+      // Related articles
+      const related = getRelatedArticles(article.slug, 3);
+      document.getElementById('relatedGrid').innerHTML = related.map(a => `
+        <a href="article.html?slug=${a.slug}" class="related-card">
+          <div class="related-emoji">${a.coverEmoji}</div>
+          <div class="related-title">${a.title}</div>
+          <div class="related-excerpt">${a.excerpt}</div>
+        </a>
+      `).join('');
+
+      // Structured data for SEO
+      const schema = {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": article.title,
+        "description": article.description,
+        "datePublished": article.date,
+        "author": { "@type": "Organization", "name": article.author },
+        "publisher": {
+          "@type": "EducationalOrganization",
+          "name": "AI学習コーチ塾",
+          "logo": { "@type": "ImageObject", "url": "https://ai-juku.example/og-image.png" }
+        },
+        "mainEntityOfPage": `https://ai-juku.example/article.html?slug=${article.slug}`
+      };
+      const scriptTag = document.createElement('script');
+      scriptTag.type = 'application/ld+json';
+      scriptTag.textContent = JSON.stringify(schema);
+      document.head.appendChild(scriptTag);
+    }
+
+    function formatDate(iso) {
+      const d = new Date(iso);
+      return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+    }
+
+    function shareTwitter() {
+      const url = encodeURIComponent(window.location.href);
+      const text = encodeURIComponent(article ? article.title : 'AI学習コーチ塾');
+      window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`);
+    }
+    function shareLine() {
+      const url = encodeURIComponent(window.location.href);
+      window.open(`https://line.me/R/msg/text/?${url}`);
+    }
+    function copyLink() {
+      navigator.clipboard.writeText(window.location.href).then(() => alert('✅ URLをコピーしました'));
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>マイページ | AI学習コーチ塾</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="mypage.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="mypage-body">
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <header class="mypage-header">
+    <div class="mypage-logo">
+      <span class="logo-icon">🎓</span>
+      <span>AI学習コーチ塾</span>
+    </div>
+    <div class="mypage-user">
+      <span id="userAvatar" class="user-avatar">👦</span>
+      <div class="user-info">
+        <div id="userName" class="user-name">山田 太郎さん</div>
+        <div id="userLevel" class="user-level">Lv.7 見習い受験生</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="mypage-main">
+    <!-- Streak & XP Bar -->
+    <section class="streak-section">
+      <div class="streak-card">
+        <div class="streak-icon">🔥</div>
+        <div class="streak-info">
+          <div class="streak-num" id="streakDays">7</div>
+          <div class="streak-label">日連続学習</div>
+        </div>
+        <div class="streak-chart" id="streakChart"></div>
+      </div>
+      <div class="xp-card">
+        <div class="xp-header">
+          <div>
+            <div class="xp-label">経験値 (XP)</div>
+            <div class="xp-value"><span id="xpCurrent">680</span> / <span id="xpNext">1000</span></div>
+          </div>
+          <div class="xp-next">次のレベルまで <span id="xpGap">320</span> XP</div>
+        </div>
+        <div class="xp-bar-track">
+          <div class="xp-bar-fill" id="xpBar" style="width: 68%"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Today's Quest -->
+    <section class="quest-section">
+      <div class="section-title">
+        <h2>📋 今日のクエスト</h2>
+        <span class="quest-progress" id="questProgress">2/5 完了</span>
+      </div>
+      <div class="quests" id="questList"></div>
+    </section>
+
+    <div class="dashboard-grid">
+      <!-- Quick Actions -->
+      <section class="action-card-section">
+        <div class="section-title"><h2>⚡ クイックアクション</h2></div>
+        <div class="action-buttons">
+          <a href="index.html" class="action-btn primary">
+            <div class="action-icon">💬</div>
+            <div>
+              <div class="action-title">AIチューターに聞く</div>
+              <div class="action-desc">わからない問題をその場で解決</div>
+            </div>
+          </a>
+          <a href="index.html#tab-problems" class="action-btn" id="generateProblemsQuick">
+            <div class="action-icon">🧪</div>
+            <div>
+              <div class="action-title">問題を生成する</div>
+              <div class="action-desc">弱点を入力→オリジナル問題</div>
+            </div>
+          </a>
+          <a href="index.html#tab-essay" class="action-btn">
+            <div class="action-icon">✍️</div>
+            <div>
+              <div class="action-title">英作文を添削</div>
+              <div class="action-desc">書いた答案をAIがチェック</div>
+            </div>
+          </a>
+          <a href="index.html#tab-curriculum" class="action-btn">
+            <div class="action-icon">🎯</div>
+            <div>
+              <div class="action-title">学習計画を見る</div>
+              <div class="action-desc">志望校までのロードマップ</div>
+            </div>
+          </a>
+          <a href="textbook-generator.html" class="action-btn action-btn-highlight">
+            <div class="action-icon">📚</div>
+            <div>
+              <div class="action-title">自分の参考書を作る <span class="action-badge-new">NEW</span></div>
+              <div class="action-desc">弱点特化の教材をAIが執筆</div>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <!-- Today's Stats -->
+      <section class="today-stats">
+        <div class="section-title"><h2>📊 今日の学習</h2></div>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-icon">⏱</div>
+            <div class="stat-val" id="todayMinutes">0</div>
+            <div class="stat-lbl">分 学習</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon">❓</div>
+            <div class="stat-val" id="todayQ">0</div>
+            <div class="stat-lbl">AI質問数</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon">✅</div>
+            <div class="stat-val" id="todayDone">0</div>
+            <div class="stat-lbl">完了タスク</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon">💎</div>
+            <div class="stat-val" id="todayXp">0</div>
+            <div class="stat-lbl">獲得XP</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Achievements -->
+    <section class="achievements-section">
+      <div class="section-title">
+        <h2>🏆 アチーブメント</h2>
+        <span class="quest-progress" id="achProgress">4/12 獲得</span>
+      </div>
+      <div class="achievements-grid">
+        <div class="achievement unlocked">
+          <div class="ach-icon">🔥</div>
+          <div class="ach-name">3日連続</div>
+          <div class="ach-desc">3日連続で学習した</div>
+        </div>
+        <div class="achievement unlocked">
+          <div class="ach-icon">🌟</div>
+          <div class="ach-name">初質問</div>
+          <div class="ach-desc">AIチューターに質問した</div>
+        </div>
+        <div class="achievement unlocked">
+          <div class="ach-icon">📚</div>
+          <div class="ach-name">10時間勉強</div>
+          <div class="ach-desc">週に10時間以上勉強</div>
+        </div>
+        <div class="achievement unlocked">
+          <div class="ach-icon">✏️</div>
+          <div class="ach-name">添削マスター</div>
+          <div class="ach-desc">英作文添削を5回</div>
+        </div>
+        <div class="achievement locked">
+          <div class="ach-icon">🔒</div>
+          <div class="ach-name">7日連続</div>
+          <div class="ach-desc">7日連続で学習</div>
+        </div>
+        <div class="achievement locked">
+          <div class="ach-icon">🔒</div>
+          <div class="ach-name">問題マスター</div>
+          <div class="ach-desc">AI問題を100問解答</div>
+        </div>
+        <div class="achievement locked">
+          <div class="ach-icon">🔒</div>
+          <div class="ach-name">深夜の戦士</div>
+          <div class="ach-desc">深夜0-3時に学習5回</div>
+        </div>
+        <div class="achievement locked">
+          <div class="ach-icon">🔒</div>
+          <div class="ach-name">月間ヒーロー</div>
+          <div class="ach-desc">月50時間達成</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Weekly Progress -->
+    <section class="weekly-section">
+      <div class="section-title"><h2>📈 今週の学習ペース</h2></div>
+      <div class="weekly-chart-box">
+        <canvas id="weeklyChart"></canvas>
+      </div>
+    </section>
+
+    <!-- Motivation Quote -->
+    <section class="motivation-section">
+      <div class="motivation-card">
+        <div class="motivation-icon">💪</div>
+        <div>
+          <div class="motivation-quote" id="motivationText">
+            "千里の道も一歩から。今日もあなたは確実に成長しています。"
+          </div>
+          <div class="motivation-author">AIコーチ</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>© 2026 AI学習コーチ塾 | Mypage v1.0</p>
+  </footer>
+
+  <script src="mypage.js"></script>
+</body>
+</html>
