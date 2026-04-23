@@ -641,28 +641,34 @@ async function init() {
   const hostedMode = await detectBackendAI();
 
   if (role === 'parent') {
-    document.body.classList.add('parent-view');
-    // 署名付きトークンを優先検証。無効なら生URL fallback でDemoのみ機能。
+    // 保護者ビューは HMAC 署名付き token 必須。生URLの ?student=<id> 直指定は
+    // 連番IDで他生徒の成績を閲覧できてしまうため、一切受け付けない (secure fail)。
+    // parent-view クラスは検証成功後にのみ付与する。
     const token = params.get('token');
+    if (!token) {
+      alert('この保護者用リンクは無効です。塾から発行された最新リンクをご利用ください。');
+      return;
+    }
     let verifiedStudentId = null;
-    if (token) {
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/parent/verify?token=${encodeURIComponent(token)}`);
-        if (res.ok) {
-          const data = await res.json();
-          verifiedStudentId = data.student_id;
-        } else {
-          alert('この保護者用リンクは無効または期限切れです。最新のリンクを塾にリクエストしてください。');
-          return;
-        }
-      } catch (e) {
-        console.warn('Parent token verify failed:', e);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/parent/verify?token=${encodeURIComponent(token)}`);
+      if (!res.ok) {
+        alert('この保護者用リンクは無効または期限切れです。最新のリンクを塾にリクエストしてください。');
+        return;
       }
+      const data = await res.json();
+      verifiedStudentId = data.student_id;
+    } catch (e) {
+      console.warn('Parent token verify failed:', e);
+      alert('保護者用リンクの検証に失敗しました。ネットワークを確認して再度お試しください。');
+      return;
     }
-    const targetId = verifiedStudentId || (studentParam ? parseInt(studentParam) : null);
-    if (targetId && state.students.find(s => s.id === targetId)) {
-      state.currentStudentId = targetId;
+    if (!verifiedStudentId || !state.students.find(s => s.id === verifiedStudentId)) {
+      alert('生徒情報が見つかりません。塾にお問い合わせください。');
+      return;
     }
+    document.body.classList.add('parent-view');
+    state.currentStudentId = verifiedStudentId;
     setTimeout(() => switchTab('parent'), 100);
   } else if (hostedMode) {
     // サーバーがAI管理 → 顧客はAPIキー不要。モーダル非表示
