@@ -87,20 +87,29 @@ const TEXTBOOKS_DB = {
   '物理': [
     { name: '物理のエッセンス (力学・波動/電磁気・熱・原子)', publisher: '河合出版', level: ['基礎','標準'], vol: '2冊', use: '物理の王道入門書。基礎完成', recommended: ['高2-3','共通テスト','GMARCH'] },
     { name: '良問の風', publisher: '河合出版', level: ['標準'], vol: '約150題', use: 'エッセンス後の演習。共通テスト〜GMARCH', recommended: ['高3','GMARCH'] },
+    { name: '体系物理', publisher: '教学社', level: ['標準','応用'], vol: '約300題', use: '単元別体系化で難関私大・国立に対応', recommended: ['高3','早慶','国立'] },
     { name: '名問の森 (力学・熱・波動I/波動II・電磁気・原子)', publisher: '河合出版', level: ['応用','難関'], vol: '2冊', use: '難関大レベル。早慶・国立に必須', recommended: ['高3','早慶','国立難関'] },
+    { name: '為近の物理 基礎から難関大まで', publisher: '代々木ライブラリー', level: ['標準','応用'], vol: '講義本', use: '現象理解重視。東大・東工大に直結', recommended: ['高3','東大','東工大'] },
     { name: '難問題の系統とその解き方', publisher: 'ニュートンプレス', level: ['難関'], vol: '約400題', use: '物理最高峰問題集。東大・京大・医学部', recommended: ['東大','京大','医学部'] },
+    { name: '新・物理入門 (駿台)', publisher: '駿台文庫', level: ['応用','難関'], vol: '参考書', use: '微積物理の定番。現象の本質理解', recommended: ['高3','東大','京大','医学部'] },
   ],
   '化学': [
     { name: '化学の新研究', publisher: '三省堂', level: ['標準','応用','難関'], vol: '参考書', use: '化学の辞書。分からない時の参照用', recommended: ['高2-3','難関大'] },
+    { name: '化学基礎問題精講', publisher: '旺文社', level: ['基礎','標準'], vol: '約100題', use: '基礎を体系的に固める', recommended: ['高2-3','共通テスト','GMARCH'] },
     { name: '化学重要問題集', publisher: '数研出版', level: ['標準','応用'], vol: '約300題', use: '化学の定番演習書。A/B問題でレベル別', recommended: ['高3','GMARCH','早慶','国立'] },
+    { name: '化学 標準問題精講', publisher: '旺文社', level: ['応用','難関'], vol: '約110題', use: '記述・計算力強化。国立二次向け', recommended: ['高3','早慶','国立難関','医学部'] },
     { name: '化学の新演習', publisher: '三省堂', level: ['応用','難関'], vol: '約330題', use: '新研究の姉妹書。難関大向け', recommended: ['高3','早慶','国立難関'] },
     { name: '鎌田の有機化学', publisher: 'KADOKAWA', level: ['標準','応用'], vol: '講義本', use: '有機化学の名著。福間の無機と対', recommended: ['高3','難関大'] },
     { name: '福間の無機化学', publisher: 'KADOKAWA', level: ['標準','応用'], vol: '講義本', use: '無機化学の名著', recommended: ['高3','難関大'] },
+    { name: '化学の新標準演習', publisher: '三省堂', level: ['標準','応用'], vol: '約350題', use: '新研究対応の標準演習書', recommended: ['高3','早慶','国立'] },
   ],
   '生物': [
-    { name: '大森徹の最強問題集159問', publisher: '学研', level: ['標準','応用'], vol: '159題', use: '生物の定番演習書', recommended: ['高3','GMARCH','早慶','国立'] },
+    { name: '大森徹の最強講義117講', publisher: '文英堂', level: ['標準','応用','難関'], vol: '117講', use: '生物の辞書的参考書。図表豊富で難関大対応', recommended: ['高2-3','早慶','国立難関','医学部'] },
+    { name: '大森徹の最強問題集159問', publisher: '文英堂', level: ['標準','応用'], vol: '159題', use: '生物の定番演習書', recommended: ['高3','GMARCH','早慶','国立'] },
     { name: '生物基礎問題精講', publisher: '旺文社', level: ['基礎','標準'], vol: '約100題', use: '基礎を固めるのに最適', recommended: ['高2-3','共通テスト'] },
-    { name: '大学入試 生物の良問問題集', publisher: '旺文社', level: ['標準','応用'], vol: '多数', use: '幅広い大学対応', recommended: ['高3','難関大'] },
+    { name: '生物 標準問題精講', publisher: '旺文社', level: ['応用','難関'], vol: '約90題', use: '国立二次の記述・考察対策の定番', recommended: ['高3','早慶','国立難関','医学部'] },
+    { name: '生物 重要問題集', publisher: '数研出版', level: ['標準','応用'], vol: '約230題', use: 'A/B問題でレベル別。国立志望の幅広い演習', recommended: ['高3','GMARCH','早慶','国立'] },
+    { name: '理系標準問題集 生物', publisher: '駿台文庫', level: ['応用','難関'], vol: '約110題', use: '駿台系の記述対策。実験考察に強い', recommended: ['高3','東大','京大','医学部'] },
   ],
   '日本史': [
     { name: '石川晶康 日本史B講義の実況中継', publisher: '語学春秋社', level: ['基礎','標準','応用'], vol: '5冊', use: '通史理解の王道。マンガ並みに読める', recommended: ['高1-3','早慶','国立'] },
@@ -112,6 +121,20 @@ const TEXTBOOKS_DB = {
     { name: '荒巻の新世界史の見取り図 (古代〜中世/近世〜近代/現代)', publisher: 'ナガセ', level: ['標準','応用'], vol: '3冊', use: '通史理解の王道', recommended: ['高2-3','早慶','国立'] },
     { name: '世界史B 標準問題精講', publisher: '旺文社', level: ['応用','難関'], vol: '約100題', use: '論述対策', recommended: ['高3','早慶','国立難関'] },
     { name: '詳説世界史B (教科書)', publisher: '山川出版社', level: ['基礎','標準','応用'], vol: '教科書', use: '基本の通読用', recommended: ['高1-3'] },
+    { name: '東大の世界史27カ年', publisher: '教学社', level: ['難関'], vol: '600字大論述', use: '東大第1問の大論述27年分。時代/地域横断の因果連鎖訓練', recommended: ['高3','東大'] },
+  ],
+  '地理': [
+    { name: '村瀬の地理Bをはじめからていねいに', publisher: 'ナガセ', level: ['基礎','標準'], vol: '2冊', use: '系統地理の入門。気候・産業の基礎', recommended: ['高1-3','共通テスト'] },
+    { name: '権田地理B講義の実況中継', publisher: '語学春秋社', level: ['標準','応用'], vol: '2冊', use: '地誌の王道', recommended: ['高2-3','GMARCH','国立'] },
+    { name: 'データブック オブ・ザ・ワールド', publisher: '二宮書店', level: ['基礎','標準','応用','難関'], vol: '統計資料集', use: '人口/GDP/気候の一次出典。論述根拠に必須', recommended: ['高1-3','共通テスト','東大'] },
+    { name: '新詳地理資料 COMPLETE', publisher: '帝国書院', level: ['標準','応用'], vol: '資料集', use: '地図/写真/統計を網羅', recommended: ['高2-3'] },
+    { name: '東大の地理27カ年', publisher: '教学社', level: ['難関'], vol: '論述', use: '東大地理の小論述（90字/120字/180字）過去問集', recommended: ['高3','東大'] },
+  ],
+  '公民': [
+    { name: '蔭山の共通テスト政治経済', publisher: 'Gakken', level: ['基礎','標準'], vol: '講義本', use: '共通テスト政経の定番', recommended: ['高2-3','共通テスト'] },
+    { name: '畠山のスパッとわかる政治経済爽快講義', publisher: 'Gakken', level: ['標準','応用'], vol: '講義本', use: '難関私大・国立対応', recommended: ['高3','GMARCH','早慶'] },
+    { name: '倫理・政経 標準問題精講', publisher: '旺文社', level: ['標準','応用'], vol: '演習書', use: '国立二次対応', recommended: ['高3','国立'] },
+    { name: '現代社会の新常識（資料集）', publisher: '清水書院', level: ['標準','応用'], vol: '資料集', use: '時事統計の一次出典', recommended: ['高2-3'] },
   ],
 };
 
