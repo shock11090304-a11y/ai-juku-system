@@ -944,8 +944,19 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
         "messages": payload.messages,
     }
     if payload.thinking:
-        body["temperature"] = 1.0
-        body["thinking"] = {"type": "enabled", "budget_tokens": min(int(payload.thinking_budget or 4000), 16000)}
+        # Claude Opus 4.7 は "enabled" thinking を受け付けず "adaptive" + output_config.effort を要求。
+        # Sonnet 4.6 以下は "enabled" が依然有効なのでモデル名で分岐。
+        if (payload.model or "").startswith("claude-opus-4-7"):
+            # adaptive: effort は "low" / "medium" / "high" / "auto"。
+            # thinking_budget (tokens) → effort への大雑把な換算
+            budget = int(payload.thinking_budget or 4000)
+            effort = "high" if budget >= 4000 else ("medium" if budget >= 1500 else "low")
+            body["thinking"] = {"type": "adaptive"}
+            body["output_config"] = {"effort": effort}
+            body["temperature"] = 1.0
+        else:
+            body["temperature"] = 1.0
+            body["thinking"] = {"type": "enabled", "budget_tokens": min(int(payload.thinking_budget or 4000), 16000)}
 
     req = urllib.request.Request(
         "https://api.anthropic.com/v1/messages",
