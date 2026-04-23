@@ -642,9 +642,26 @@ async function init() {
 
   if (role === 'parent') {
     document.body.classList.add('parent-view');
-    if (studentParam) {
-      const id = parseInt(studentParam);
-      if (state.students.find(s => s.id === id)) state.currentStudentId = id;
+    // 署名付きトークンを優先検証。無効なら生URL fallback でDemoのみ機能。
+    const token = params.get('token');
+    let verifiedStudentId = null;
+    if (token) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/parent/verify?token=${encodeURIComponent(token)}`);
+        if (res.ok) {
+          const data = await res.json();
+          verifiedStudentId = data.student_id;
+        } else {
+          alert('この保護者用リンクは無効または期限切れです。最新のリンクを塾にリクエストしてください。');
+          return;
+        }
+      } catch (e) {
+        console.warn('Parent token verify failed:', e);
+      }
+    }
+    const targetId = verifiedStudentId || (studentParam ? parseInt(studentParam) : null);
+    if (targetId && state.students.find(s => s.id === targetId)) {
+      state.currentStudentId = targetId;
     }
     setTimeout(() => switchTab('parent'), 100);
   } else if (hostedMode) {
@@ -4413,12 +4430,34 @@ window.generateProblemsFromMoshi = generateProblemsFromMoshi;
 // ==========================================================================
 // Parent Share Link
 // ==========================================================================
-function copyParentLink() {
+async function copyParentLink() {
   const s = getCurrentStudent();
   if (!s) { alert('生徒を選択してください'); return; }
-  const url = `${window.location.origin}${window.location.pathname}?role=parent&student=${s.id}`;
+  // バックエンドに署名付きトークンを要求 → 改ざん不可な保護者用URLを生成
+  // STATS_TOKEN は別途 state.statsToken に保持（CEOが設定画面で入力）
+  const statsToken = storage.raw('JUKU_STATS_TOKEN') || state.statsToken;
+  let url;
+  if (statsToken) {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/parent/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-stats-token': statsToken },
+        body: JSON.stringify({ student_id: s.id, days: 30 }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        url = `${window.location.origin}${window.location.pathname}?role=parent&token=${encodeURIComponent(data.token)}`;
+      }
+    } catch (e) {
+      console.warn('Parent token issue failed:', e);
+    }
+  }
+  if (!url) {
+    // フォールバック: 署名なしURL（デモ用途。実データではSTATS_TOKEN設定を促す）
+    url = `${window.location.origin}${window.location.pathname}?role=parent&student=${s.id}`;
+  }
   navigator.clipboard.writeText(url).then(() => {
-    alert(`✅ 保護者用URLをコピーしました\n\n${url}\n\nこのURLを保護者様に送付してください。メンター管理・英作文添削・学習診断タブは非表示になり、レポートのみ閲覧可能です。`);
+    alert(`✅ 保護者用URLをコピーしました\n\n${url}\n\nこのURLを保護者様に送付してください。30日間有効・他生徒へは改ざん不可。`);
   }).catch(() => {
     prompt('保護者用URL (コピーしてください):', url);
   });

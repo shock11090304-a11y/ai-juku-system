@@ -31,7 +31,11 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 ROOT = pathlib.Path(__file__).parent
-DB_PATH = ROOT / "data.db"
+# DB_PATH は Railway Volume にマウントされたディレクトリを env で指定する。
+# 未設定時はローカル開発用に server/data.db を使用（Railway の ephemeral FS では
+# 再起動で消えるため本番では必ず DB_PATH=/app/data/data.db 等を設定すること）。
+DB_PATH = pathlib.Path(os.getenv("DB_PATH", str(ROOT / "data.db")))
+DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 STATIC_DIR = ROOT.parent  # Serve the parent HTML/CSS/JS as static
 
 # ==========================================================================
@@ -50,6 +54,10 @@ LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET", "")
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+CRON_SECRET = os.getenv("CRON_SECRET", "")  # 未設定時は cron 系エンドポイントを全拒否
+STATS_TOKEN = os.getenv("STATS_TOKEN", "")  # 未設定時は /api/stats を全拒否
+# HMAC 署名鍵（保護者ビュー署名・他の署名用途で利用）
+APP_SECRET = os.getenv("APP_SECRET", "")
 
 PRICE_MAP = {
     # 新プラン構造（2026-04-22〜、面談なし、AI機能で差別化）
@@ -75,6 +83,15 @@ FOUNDER_LIMIT = 100
 
 # 入塾金を免除するプラン
 ENROLLMENT_FEE_EXEMPT = {"student_addon"}
+
+# 本番で許可するフロントエンドのオリジン
+# カンマ区切りで env 上書き可能: ALLOWED_ORIGINS=https://foo.com,https://bar.com
+_default_origins = "https://trillion-ai-juku.com,https://www.trillion-ai-juku.com,http://localhost:8090,http://localhost:8000"
+ALLOWED_ORIGINS = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", _default_origins).split(",") if o.strip()]
+
+# 1日あたり1生徒が消費できるAIトークン上限 (input+output の合計)
+# 100K tokens ≒ Opus で $10、Sonnet で $1 程度。通常利用では十分超えない。
+AI_DAILY_TOKEN_BUDGET = int(os.getenv("AI_DAILY_TOKEN_BUDGET", "100000"))
 
 # Stripe SDK (lazy import)
 stripe = None
@@ -136,6 +153,13 @@ def init_db():
         session_id TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+    CREATE TABLE IF NOT EXISTS processed_events (
+        event_id TEXT PRIMARY KEY,
+        event_type TEXT,
+        processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_events_session ON events(session_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_students_status ON students(status);
     """)
     conn.commit()
     conn.close()
@@ -156,10 +180,10 @@ app = FastAPI(title="AI学習コーチ塾 API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 本番では具体的なドメインに制限
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "x-cron-secret", "stripe-signature", "x-line-signature"],
 )
 
 # ==========================================================================
@@ -202,8 +226,13 @@ def health():
     }
 
 @app.get("/api/stats")
-def stats():
-    """CEO dashboard 用の集計情報"""
+def stats(x_stats_token: str = Header(None)):
+    """CEO dashboard 用の集計情報。
+    STATS_TOKEN env で保護。未設定時は全拒否、設定済みならヘッダ x-stats-token で認証。"""
+    if not STATS_TOKEN:
+        raise HTTPException(status_code=503, detail="Stats endpoint not configured")
+    if not x_stats_token or not hmac.compare_digest(x_stats_token, STATS_TOKEN):
+        raise HTTPException(status_code=401, detail="Unauthorized")
     conn = db()
     c = conn.cursor()
     c.execute("SELECT COUNT(*) FROM students WHERE status='paid'")
@@ -410,7 +439,26 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
         log.error(f"Webhook signature error: {e}")
         raise HTTPException(status_code=400, detail="Invalid signature")
 
-    log.info(f"Stripe webhook: {event['type']}")
+    # 冪等性ガード: Stripe は webhook を再送するため、同じ event.id が2回処理されると
+    # InvoiceItem の二重作成などで多重課金に直結する。processed_events に UNIQUE 制約で
+    # 先勝ちINSERTし、既に入っていれば即座に return。
+    event_id = event.get("id")
+    if event_id:
+        conn = db()
+        c = conn.cursor()
+        try:
+            c.execute(
+                "INSERT INTO processed_events (event_id, event_type) VALUES (?, ?)",
+                (event_id, event.get("type", "")),
+            )
+            conn.commit()
+        except sqlite3.IntegrityError:
+            conn.close()
+            log.info(f"Stripe webhook duplicate ignored: id={event_id}, type={event.get('type')}")
+            return {"received": True, "duplicate": True}
+        conn.close()
+
+    log.info(f"Stripe webhook: {event['type']} id={event_id}")
 
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
@@ -594,8 +642,10 @@ async def line_webhook(request: Request, x_line_signature: str = Header(None)):
 @app.post("/api/cron/weekly-reports")
 def cron_weekly_reports(x_cron_secret: str = Header(None)):
     """毎週日曜20時に外部cronから呼び出し"""
-    expected = os.getenv("CRON_SECRET", "dev-secret")
-    if x_cron_secret != expected:
+    if not CRON_SECRET:
+        log.error("CRON_SECRET not configured; refusing cron request")
+        raise HTTPException(status_code=503, detail="Cron not configured")
+    if not x_cron_secret or not hmac.compare_digest(x_cron_secret, CRON_SECRET):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     conn = db()
@@ -632,26 +682,115 @@ class AIProxyRequest(BaseModel):
     kind: Optional[str] = "chat"
     student_id: Optional[int] = None
 
+def _origin_allowed(request: Request) -> bool:
+    """Origin/Referer が許可リストに含まれるか。サーバ間呼び出しを排除するため
+    Origin または Referer のどちらかが ALLOWED_ORIGINS の接頭辞と一致することを要求。"""
+    origin = (request.headers.get("origin") or "").rstrip("/")
+    referer = request.headers.get("referer") or ""
+    for allowed in ALLOWED_ORIGINS:
+        a = allowed.rstrip("/")
+        if origin == a or referer.startswith(a + "/") or referer == a:
+            return True
+    return False
+
+
+def _verify_student_active(student_id: int) -> dict:
+    """student_id が trial/paid で有効期限内なら student row (dict) を返す。
+    無効なら HTTPException を raise。"""
+    if not student_id or student_id <= 0:
+        raise HTTPException(status_code=400, detail="student_id が必要です")
+    conn = db()
+    c = conn.cursor()
+    c.execute(
+        "SELECT id, status, trial_end, plan FROM students WHERE id = ?",
+        (student_id,),
+    )
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="生徒が見つかりません")
+    status = row["status"]
+    if status == "paid":
+        return dict(row)
+    if status == "trial":
+        # トライアル期限切れチェック
+        trial_end_str = row["trial_end"]
+        if trial_end_str:
+            try:
+                te = datetime.fromisoformat(trial_end_str.replace("Z", "+00:00"))
+                if te.tzinfo is None:
+                    te = te.replace(tzinfo=timezone.utc)
+                if datetime.now(timezone.utc) > te:
+                    raise HTTPException(status_code=403, detail="トライアル期間が終了しています。契約を継続してください。")
+            except ValueError:
+                pass
+        return dict(row)
+    raise HTTPException(status_code=403, detail=f"契約状態が無効です (status={status})")
+
+
+def _check_ai_budget(student_id: int) -> None:
+    """その生徒が直近24hで消費したAIトークンが AI_DAILY_TOKEN_BUDGET を超えていないか確認。"""
+    conn = db()
+    c = conn.cursor()
+    c.execute(
+        """SELECT props FROM events
+           WHERE session_id = ?
+             AND name LIKE 'ai_call_%'
+             AND datetime(created_at) > datetime('now', '-1 day')""",
+        (str(student_id),),
+    )
+    total = 0
+    for row in c.fetchall():
+        try:
+            p = json.loads(row["props"] or "{}")
+            total += int(p.get("input_tokens", 0)) + int(p.get("output_tokens", 0))
+        except (json.JSONDecodeError, ValueError, TypeError):
+            continue
+    conn.close()
+    if total >= AI_DAILY_TOKEN_BUDGET:
+        raise HTTPException(
+            status_code=429,
+            detail=f"1日あたりのAI利用上限（{AI_DAILY_TOKEN_BUDGET:,}トークン）に達しました。明日またお試しください。",
+        )
+
+
 @app.post("/api/ai/call")
-async def ai_proxy(payload: AIProxyRequest):
-    """顧客の全AI呼び出しを塾長のAPIキーで代理実行"""
+async def ai_proxy(payload: AIProxyRequest, request: Request):
+    """顧客の全AI呼び出しを塾長のAPIキーで代理実行。
+    Origin検証・student_id存在/有効性検証・1日あたりトークンbudgetで多層防御。"""
     if not ANTHROPIC_API_KEY:
         raise HTTPException(
             status_code=503,
-            detail="AI サービスが構成されていません。管理者にお問い合わせください。"
+            detail="AI サービスが構成されていません。管理者にお問い合わせください。",
         )
+
+    # 1) Origin/Referer が許可ドメインか
+    if not _origin_allowed(request):
+        log.warning(
+            f"/api/ai/call blocked by origin check: origin={request.headers.get('origin')} referer={request.headers.get('referer')} ip={request.client.host if request.client else '?'}"
+        )
+        raise HTTPException(status_code=403, detail="Origin not allowed")
+
+    # 2) student_id 必須・DBで有効性確認
+    _verify_student_active(payload.student_id)
+
+    # 3) 1日あたりトークン予算チェック
+    _check_ai_budget(payload.student_id)
+
+    # 4) モデルとトークン数の上限ガード（異常値を弾く）
+    max_tokens = max(1, min(int(payload.max_tokens or 2000), 8000))
 
     import urllib.request
 
     body = {
         "model": payload.model,
-        "max_tokens": payload.max_tokens,
+        "max_tokens": max_tokens,
         "system": payload.system,
         "messages": payload.messages,
     }
     if payload.thinking:
         body["temperature"] = 1.0
-        body["thinking"] = {"type": "enabled", "budget_tokens": payload.thinking_budget}
+        body["thinking"] = {"type": "enabled", "budget_tokens": min(int(payload.thinking_budget or 4000), 16000)}
 
     req = urllib.request.Request(
         "https://api.anthropic.com/v1/messages",
@@ -745,8 +884,10 @@ def log_activity(payload: dict):
 @app.post("/api/alerts/check-inactivity")
 def check_inactivity(payload: AlertCheckRequest, x_cron_secret: str = Header(None)):
     """外部cronから呼び出し、非活動生徒を検知してアラート送信"""
-    expected = os.getenv("CRON_SECRET", "dev-secret")
-    if x_cron_secret != expected:
+    if not CRON_SECRET:
+        log.error("CRON_SECRET not configured; refusing cron request")
+        raise HTTPException(status_code=503, detail="Cron not configured")
+    if not x_cron_secret or not hmac.compare_digest(x_cron_secret, CRON_SECRET):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     conn = db()
@@ -791,8 +932,10 @@ def test_alert(payload: AlertTestRequest):
 @app.post("/api/cron/daily-alerts")
 def cron_daily_alerts(x_cron_secret: str = Header(None)):
     """毎日夜21時に外部cronから呼び出し、三段階の通知を自動実行"""
-    expected = os.getenv("CRON_SECRET", "dev-secret")
-    if x_cron_secret != expected:
+    if not CRON_SECRET:
+        log.error("CRON_SECRET not configured; refusing cron request")
+        raise HTTPException(status_code=503, detail="Cron not configured")
+    if not x_cron_secret or not hmac.compare_digest(x_cron_secret, CRON_SECRET):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     # Check inactivity at 3/5/7 day thresholds
@@ -854,6 +997,82 @@ def problem_library(subject: str = None, topic: str = None):
         problems = []
     conn.close()
     return {"problems": problems}
+
+# ==========================================================================
+# Routes: Parent portal signed tokens
+# ==========================================================================
+def _sign_parent_token(student_id: int, expires_at_unix: int) -> str:
+    """HMAC署名付きの保護者トークンを生成。形式: base64url(payload).base64url(sig)
+    payload = f"{student_id}:{expires_at_unix}"
+    """
+    if not APP_SECRET:
+        raise HTTPException(status_code=503, detail="APP_SECRET not configured")
+    payload = f"{student_id}:{expires_at_unix}".encode("utf-8")
+    sig = hmac.new(APP_SECRET.encode("utf-8"), payload, hashlib.sha256).digest()
+    p_b64 = base64.urlsafe_b64encode(payload).rstrip(b"=").decode("ascii")
+    s_b64 = base64.urlsafe_b64encode(sig).rstrip(b"=").decode("ascii")
+    return f"{p_b64}.{s_b64}"
+
+
+def _verify_parent_token(token: str) -> Optional[int]:
+    """トークンを検証して student_id を返す。無効または期限切れなら None。"""
+    if not APP_SECRET or not token or "." not in token:
+        return None
+    try:
+        p_b64, s_b64 = token.split(".", 1)
+        pad = "=" * (-len(p_b64) % 4)
+        payload = base64.urlsafe_b64decode(p_b64 + pad)
+        pad = "=" * (-len(s_b64) % 4)
+        sig = base64.urlsafe_b64decode(s_b64 + pad)
+        expected = hmac.new(APP_SECRET.encode("utf-8"), payload, hashlib.sha256).digest()
+        if not hmac.compare_digest(sig, expected):
+            return None
+        student_id_str, exp_str = payload.decode("utf-8").split(":", 1)
+        if int(exp_str) < int(datetime.now(timezone.utc).timestamp()):
+            return None
+        return int(student_id_str)
+    except (ValueError, TypeError, UnicodeDecodeError):
+        return None
+
+
+@app.post("/api/parent/token")
+def issue_parent_token(payload: dict, x_stats_token: str = Header(None)):
+    """保護者招待リンクを発行する。CEO専用のためSTATS_TOKEN認証。
+    body: {"student_id": int, "days": int=30}
+    """
+    if not STATS_TOKEN:
+        raise HTTPException(status_code=503, detail="Stats endpoint not configured")
+    if not x_stats_token or not hmac.compare_digest(x_stats_token or "", STATS_TOKEN):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    student_id = int(payload.get("student_id", 0))
+    days = int(payload.get("days", 30))
+    if student_id <= 0:
+        raise HTTPException(status_code=400, detail="student_id required")
+    conn = db()
+    c = conn.cursor()
+    c.execute("SELECT id FROM students WHERE id=?", (student_id,))
+    if not c.fetchone():
+        conn.close()
+        raise HTTPException(status_code=404, detail="Student not found")
+    conn.close()
+    exp = int((datetime.now(timezone.utc) + timedelta(days=days)).timestamp())
+    token = _sign_parent_token(student_id, exp)
+    return {
+        "token": token,
+        "student_id": student_id,
+        "expires_at": datetime.fromtimestamp(exp, tz=timezone.utc).isoformat(),
+        "parent_url": f"{BASE_URL}/?role=parent&token={token}",
+    }
+
+
+@app.get("/api/parent/verify")
+def verify_parent_token(token: str):
+    """保護者ビューが起動時に呼び出してトークン検証し、student_id を得る。"""
+    student_id = _verify_parent_token(token)
+    if student_id is None:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    return {"ok": True, "student_id": student_id}
+
 
 @app.post("/api/track")
 def track_event(event: EventTrack):
