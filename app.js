@@ -923,7 +923,13 @@ async function callClaude(systemPrompt, userMessage, options = {}) {
 
   if (useThinking && thinkingBudget > 0) {
     body.temperature = 1.0;
-    body.thinking = { type: 'enabled', budget_tokens: thinkingBudget };
+    // Opus 4.7 は adaptive + output_config.effort、旧モデルは enabled + budget_tokens
+    if ((model || '').startsWith('claude-opus-4-7')) {
+      body.thinking = { type: 'adaptive' };
+      body.output_config = { effort: thinkingBudget >= 4000 ? 'high' : (thinkingBudget >= 1500 ? 'medium' : 'low') };
+    } else {
+      body.thinking = { type: 'enabled', budget_tokens: thinkingBudget };
+    }
   }
 
   try {
