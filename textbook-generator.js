@@ -236,8 +236,23 @@ ${/数学/.test(subject) ? `
     json = generateDemo(subject, topic, level);
   } else {
     try {
-      // クオリティ最優先: Opus 4.7 を使用
-      // Extended Thinking で思考プロセスを経由させ、本格教材レベルに
+      // クオリティ最優先: Opus 4.7 を使用。
+      // Opus 4.7 は thinking.type='enabled' を拒否するため adaptive + effort を使う。
+      // 旧モデル(Sonnet 4.6 以下)は従来通り enabled + budget_tokens。
+      const isOpus47 = (MODEL_PREMIUM || '').startsWith('claude-opus-4-7');
+      const body = {
+        model: MODEL_PREMIUM,
+        max_tokens: 16000,
+        temperature: 1.0,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMsg }],
+      };
+      if (isOpus47) {
+        body.thinking = { type: 'adaptive' };
+        body.output_config = { effort: 'high' };  // 教材生成は高 effort 固定
+      } else {
+        body.thinking = { type: 'enabled', budget_tokens: 5000 };
+      }
       const res = await fetch(API_URL, {
         method: 'POST',
         headers: {
@@ -246,14 +261,7 @@ ${/数学/.test(subject) ? `
           'anthropic-version': '2023-06-01',
           'anthropic-dangerous-direct-browser-access': 'true'
         },
-        body: JSON.stringify({
-          model: MODEL_PREMIUM,
-          max_tokens: 16000,
-          temperature: 1.0,  // thinking requires temperature: 1
-          thinking: { type: 'enabled', budget_tokens: 5000 },
-          system: systemPrompt,
-          messages: [{ role: 'user', content: userMsg }],
-        }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
         const errText = await res.text();
