@@ -300,17 +300,12 @@ def create_checkout_session(payload: CheckoutRequest):
             "enrollment_fee": 0,
         }
 
-    # 通常プラン: 入塾金 + 3日間トライアル（¥1,980）+ 月額サブスク
-    # Stripe Checkout Session に複数のline_itemsを追加:
-    # - price_id (subscription)
-    # - 入塾金 (one-time fee, add_invoice_items or separate line)
-    # - トライアル料金 ¥1,980 (add_invoice_items として初回請求に含める)
+       # 通常プラン: 入塾金 + 3日間トライアル（¥1,980）+ 月額サブスク
+    # line_items に one-time priceを混在させることで初回請求に含める
     line_items = [{"price": price_id, "quantity": 1}]
 
-    # 入塾金・トライアル料金を初回請求に追加するため add_invoice_items を活用
-    add_invoice_items = []
     if payload.plan not in ENROLLMENT_FEE_EXEMPT:
-        add_invoice_items.append({
+        line_items.append({
             "price_data": {
                 "currency": "jpy",
                 "product_data": {"name": "入塾金（システム登録費用）"},
@@ -318,6 +313,14 @@ def create_checkout_session(payload: CheckoutRequest):
             },
             "quantity": 1,
         })
+    line_items.append({
+        "price_data": {
+            "currency": "jpy",
+            "product_data": {"name": "3日間トライアル料金（創業記念価格）"},
+            "unit_amount": FOUNDER_TRIAL_PRICE,
+        },
+        "quantity": 1,
+    })
     # トライアル料金（3日間体験）¥1,980
     add_invoice_items.append({
         "price_data": {
@@ -354,10 +357,7 @@ def create_checkout_session(payload: CheckoutRequest):
         }
     }
 
-    # add_invoice_items は Stripe API の特定パラメータ
-    if add_invoice_items:
-        session_kwargs["subscription_data"]["add_invoice_items"] = add_invoice_items
-
+   
     session = s.checkout.Session.create(**session_kwargs)
 
     return {
