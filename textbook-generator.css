@@ -570,14 +570,62 @@
 }
 
 @media print {
-  body > *:not(.tb-result) { display: none !important; }
-  .tb-result {
+  /* 旧ルール `body > *:not(.tb-result)` は .tb-result が <main> 内にネスト
+     されているため親ごと非表示になり印刷が空白化していた。visibility で
+     全体を隠してから .tb-result だけ可視化し、絶対配置で印刷面を占有する。 */
+  @page { margin: 15mm; }
+  html, body {
     background: white !important;
     color: #111 !important;
-    padding: 2cm !important;
-    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
-  .tb-result h1, .tb-result h2, .tb-result h3, .tb-result h4 { color: #111 !important; -webkit-text-fill-color: #111 !important; background: none !important; }
+  body * {
+    visibility: hidden !important;
+    animation: none !important;
+    transition: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  .bg-gradient, .floating-orbs, .tb-header, .footer,
+  .reportlab-section, details, .tb-layout > section:first-child,
+  .tb-result-toolbar, .tb-result-header {
+    display: none !important;
+  }
+  .tb-result, .tb-result * { visibility: visible !important; }
+  .tb-result {
+    position: absolute !important;
+    left: 0; top: 0;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: white !important;
+    color: #111 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .tb-result *,
+  .tb-result h1, .tb-result h2, .tb-result h3, .tb-result h4,
+  .tb-result p, .tb-result li, .tb-result div, .tb-result span,
+  .tb-result strong, .tb-result em, .tb-result td, .tb-result th {
+    color: #111 !important;
+    -webkit-text-fill-color: #111 !important;
+    background: transparent !important;
+    background-image: none !important;
+    text-shadow: none !important;
+  }
+  .tb-result h1, .tb-result h2, .tb-result h3 {
+    page-break-after: avoid;
+  }
+  .tb-result pre, .tb-result code {
+    background: #f5f5f5 !important;
+    border: 1px solid #ccc !important;
+    color: #111 !important;
+  }
+  .tb-result .tb-placeholder { display: none !important; }
 }
 
 @media (max-width: 1024px) {
