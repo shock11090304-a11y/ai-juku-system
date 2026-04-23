@@ -355,8 +355,11 @@ def create_checkout_session(payload: CheckoutRequest):
         }
     }
 
-   
-    session = s.checkout.Session.create(**session_kwargs)
+    try:
+        session = s.checkout.Session.create(**session_kwargs)
+    except Exception as e:
+        log.error(f"Stripe checkout.Session.create failed for plan={payload.plan}: {type(e).__name__}: {e}")
+        raise HTTPException(status_code=400, detail=f"Stripe error: {type(e).__name__}: {str(e)[:500]}")
 
     return {
         "checkout_url": session.url,
