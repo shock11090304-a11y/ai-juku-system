@@ -855,12 +855,13 @@ def _check_ai_budget(student_id: int) -> None:
     one_day_ago = datetime.now(timezone.utc) - timedelta(days=1)
     conn = db()
     c = conn.cursor()
+    # psycopg は % をプレースホルダ誤検知するため LIKE パターンもパラメータで渡す
     c.execute(
         """SELECT props FROM events
            WHERE session_id = ?
-             AND name LIKE 'ai_call_%'
+             AND name LIKE ?
              AND created_at > ?""",
-        (str(student_id), one_day_ago),
+        (str(student_id), 'ai_call_%', one_day_ago),
     )
     total = 0
     for row in c.fetchall():
