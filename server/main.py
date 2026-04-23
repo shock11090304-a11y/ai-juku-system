@@ -31,11 +31,27 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 ROOT = pathlib.Path(__file__).parent
-# DB_PATH は Railway Volume にマウントされたディレクトリを env で指定する。
-# 未設定時はローカル開発用に server/data.db を使用（Railway の ephemeral FS では
-# 再起動で消えるため本番では必ず DB_PATH=/app/data/data.db 等を設定すること）。
+
+# DATABASE_URL が設定されていれば Postgres、未設定なら SQLite（ローカル開発用）。
+# Railway で Postgres プラグインを追加すると DATABASE_URL が自動注入される。
+DATABASE_URL = os.getenv("DATABASE_URL", "")
+USE_POSTGRES = DATABASE_URL.startswith(("postgres://", "postgresql://"))
+
+if USE_POSTGRES:
+    import psycopg
+    from psycopg.rows import dict_row
+    from psycopg import errors as pg_errors
+    # psycopg3 は postgresql:// スキームのみ受け付ける
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = "postgresql://" + DATABASE_URL[len("postgres://"):]
+    IntegrityError = pg_errors.IntegrityError
+else:
+    IntegrityError = sqlite3.IntegrityError
+
+# ローカル開発用 SQLite ファイルパス（Postgres 使用時は無視）
 DB_PATH = pathlib.Path(os.getenv("DB_PATH", str(ROOT / "data.db")))
-DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+if not USE_POSTGRES:
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 STATIC_DIR = ROOT.parent  # Serve the parent HTML/CSS/JS as static
 
 # ==========================================================================
@@ -104,14 +120,84 @@ def get_stripe():
     return stripe
 
 # ==========================================================================
-# Database Setup (SQLite)
+# Database Setup (SQLite / Postgres 両対応)
 # ==========================================================================
+class _Cursor:
+    """sqlite3/psycopg 両対応のカーソル薄いラッパ。
+    `?` プレースホルダを Postgres 用に `%s` へ変換し、fetchone/fetchall の
+    結果を dict ライクに統一する。"""
+    def __init__(self, cur, is_pg):
+        self._cur = cur
+        self._is_pg = is_pg
+        self.lastrowid = None
+
+    def execute(self, sql, params=()):
+        if self._is_pg:
+            sql = sql.replace("?", "%s")
+        self._cur.execute(sql, params)
+        if not self._is_pg:
+            self.lastrowid = self._cur.lastrowid
+        return self
+
+    def executescript(self, sql):
+        if self._is_pg:
+            self._cur.execute(sql.replace("?", "%s"))
+        else:
+            self._cur.executescript(sql)
+        return self
+
+    def fetchone(self):
+        row = self._cur.fetchone()
+        if row is None:
+            return None
+        return row
+
+    def fetchall(self):
+        return self._cur.fetchall()
+
+
+class _Connection:
+    def __init__(self, conn, is_pg):
+        self._conn = conn
+        self._is_pg = is_pg
+
+    def cursor(self):
+        if self._is_pg:
+            cur = self._conn.cursor(row_factory=dict_row)
+        else:
+            cur = self._conn.cursor()
+        return _Cursor(cur, self._is_pg)
+
+    def commit(self):
+        self._conn.commit()
+
+    def rollback(self):
+        self._conn.rollback()
+
+    def close(self):
+        self._conn.close()
+
+
+def db():
+    if USE_POSTGRES:
+        return _Connection(psycopg.connect(DATABASE_URL), is_pg=True)
+    conn = sqlite3.connect(str(DB_PATH))
+    conn.row_factory = sqlite3.Row
+    return _Connection(conn, is_pg=False)
+
+
+def row_to_dict(row):
+    return dict(row) if row else None
+
+
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
+    # Postgres と SQLite で自動採番カラムの記法が異なる
+    pk = "BIGSERIAL PRIMARY KEY" if USE_POSTGRES else "INTEGER PRIMARY KEY AUTOINCREMENT"
+    conn = db()
     c = conn.cursor()
-    c.executescript("""
+    c.executescript(f"""
     CREATE TABLE IF NOT EXISTS students (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id {pk},
         name TEXT NOT NULL,
         email TEXT UNIQUE,
         grade TEXT,
@@ -128,7 +214,7 @@ def init_db():
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     CREATE TABLE IF NOT EXISTS payments (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id {pk},
         student_id INTEGER,
         stripe_payment_intent TEXT,
         amount INTEGER,
@@ -137,7 +223,7 @@ def init_db():
         FOREIGN KEY(student_id) REFERENCES students(id)
     );
     CREATE TABLE IF NOT EXISTS notifications (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id {pk},
         student_id INTEGER,
         channel TEXT,
         template TEXT,
@@ -147,7 +233,7 @@ def init_db():
         error TEXT
     );
     CREATE TABLE IF NOT EXISTS events (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id {pk},
         name TEXT,
         props TEXT,
         session_id TEXT,
@@ -164,14 +250,6 @@ def init_db():
     conn.commit()
     conn.close()
 init_db()
-
-def db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-def row_to_dict(row):
-    return dict(row) if row else None
 
 # ==========================================================================
 # FastAPI App
@@ -233,16 +311,19 @@ def stats(x_stats_token: str = Header(None)):
         raise HTTPException(status_code=503, detail="Stats endpoint not configured")
     if not x_stats_token or not hmac.compare_digest(x_stats_token, STATS_TOKEN):
         raise HTTPException(status_code=401, detail="Unauthorized")
+    now = datetime.now(timezone.utc)
+    thirty_days_ago = (now - timedelta(days=30)).isoformat()
+    seven_days_ago = (now - timedelta(days=7)).isoformat()
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT COUNT(*) FROM students WHERE status='paid'")
-    paid = c.fetchone()[0]
-    c.execute("SELECT COUNT(*) FROM students WHERE status='trial'")
-    trial = c.fetchone()[0]
-    c.execute("SELECT SUM(amount) FROM payments WHERE status='paid' AND paid_at > datetime('now', '-30 days')")
-    mrr = c.fetchone()[0] or 0
-    c.execute("SELECT COUNT(*) FROM notifications WHERE sent_at > datetime('now', '-7 days')")
-    notifs = c.fetchone()[0]
+    c.execute("SELECT COUNT(*) AS n FROM students WHERE status='paid'")
+    paid = c.fetchone()["n"]
+    c.execute("SELECT COUNT(*) AS n FROM students WHERE status='trial'")
+    trial = c.fetchone()["n"]
+    c.execute("SELECT SUM(amount) AS s FROM payments WHERE status='paid' AND paid_at > ?", (thirty_days_ago,))
+    mrr = c.fetchone()["s"] or 0
+    c.execute("SELECT COUNT(*) AS n FROM notifications WHERE sent_at > ?", (seven_days_ago,))
+    notifs = c.fetchone()["n"]
     conn.close()
     return {"paid_students": paid, "trial_students": trial, "mrr_yen": mrr, "notifications_7d": notifs}
 
@@ -258,13 +339,16 @@ def trial_signup(payload: TrialSignup):
     try:
         c.execute(
             """INSERT INTO students (name, email, grade, goal, plan, status, trial_start, trial_end)
-               VALUES (?, ?, ?, ?, ?, 'trial', ?, ?)""",
+               VALUES (?, ?, ?, ?, ?, 'trial', ?, ?)
+               RETURNING id""",
             (payload.name, payload.email, payload.grade, payload.goal,
              payload.plan or "hybrid", now.isoformat(), trial_end.isoformat())
         )
-        student_id = c.lastrowid
+        returned = c.fetchone()
+        student_id = returned["id"] if returned else None
         conn.commit()
-    except sqlite3.IntegrityError:
+    except IntegrityError:
+        conn.rollback()
         c.execute("SELECT id FROM students WHERE email = ?", (payload.email,))
         row = c.fetchone()
         student_id = row["id"] if row else None
@@ -452,7 +536,8 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                 (event_id, event.get("type", "")),
             )
             conn.commit()
-        except sqlite3.IntegrityError:
+        except IntegrityError:
+            conn.rollback()
             conn.close()
             log.info(f"Stripe webhook duplicate ignored: id={event_id}, type={event.get('type')}")
             return {"received": True, "duplicate": True}
@@ -713,31 +798,37 @@ def _verify_student_active(student_id: int) -> dict:
     if status == "paid":
         return dict(row)
     if status == "trial":
-        # トライアル期限切れチェック
-        trial_end_str = row["trial_end"]
-        if trial_end_str:
-            try:
-                te = datetime.fromisoformat(trial_end_str.replace("Z", "+00:00"))
+        # トライアル期限切れチェック（Postgres は datetime、SQLite は str で返す）
+        trial_end_raw = row["trial_end"]
+        if trial_end_raw:
+            te = None
+            if isinstance(trial_end_raw, str):
+                try:
+                    te = datetime.fromisoformat(trial_end_raw.replace("Z", "+00:00"))
+                except ValueError:
+                    te = None
+            else:
+                te = trial_end_raw  # datetime (Postgres)
+            if te is not None:
                 if te.tzinfo is None:
                     te = te.replace(tzinfo=timezone.utc)
                 if datetime.now(timezone.utc) > te:
                     raise HTTPException(status_code=403, detail="トライアル期間が終了しています。契約を継続してください。")
-            except ValueError:
-                pass
         return dict(row)
     raise HTTPException(status_code=403, detail=f"契約状態が無効です (status={status})")
 
 
 def _check_ai_budget(student_id: int) -> None:
     """その生徒が直近24hで消費したAIトークンが AI_DAILY_TOKEN_BUDGET を超えていないか確認。"""
+    one_day_ago = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
     conn = db()
     c = conn.cursor()
     c.execute(
         """SELECT props FROM events
            WHERE session_id = ?
              AND name LIKE 'ai_call_%'
-             AND datetime(created_at) > datetime('now', '-1 day')""",
-        (str(student_id),),
+             AND created_at > ?""",
+        (str(student_id), one_day_ago),
     )
     total = 0
     for row in c.fetchall():
@@ -890,23 +981,34 @@ def check_inactivity(payload: AlertCheckRequest, x_cron_secret: str = Header(Non
     if not x_cron_secret or not hmac.compare_digest(x_cron_secret, CRON_SECRET):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
+    threshold_dt = (datetime.now(timezone.utc) - timedelta(days=payload.threshold_days)).isoformat()
     conn = db()
     c = conn.cursor()
-    # Find students inactive for N days
+    # Find students inactive for N days（N日以上更新がない生徒）
     c.execute(
-        """SELECT id, name, line_user_id, status,
-                  (julianday('now') - julianday(updated_at)) as days_inactive
+        """SELECT id, name, line_user_id, status, updated_at
            FROM students
            WHERE status IN ('trial', 'paid')
-             AND julianday('now') - julianday(updated_at) >= ?""",
-        (payload.threshold_days,)
+             AND updated_at <= ?""",
+        (threshold_dt,)
     )
     inactive = c.fetchall()
     conn.close()
 
+    now = datetime.now(timezone.utc)
     sent_count = 0
     for row in inactive:
-        days = int(row["days_inactive"])
+        updated = row["updated_at"]
+        if isinstance(updated, str):
+            try:
+                updated_dt = datetime.fromisoformat(updated.replace("Z", "+00:00"))
+                if updated_dt.tzinfo is None:
+                    updated_dt = updated_dt.replace(tzinfo=timezone.utc)
+            except ValueError:
+                updated_dt = now
+        else:
+            updated_dt = updated if updated.tzinfo else updated.replace(tzinfo=timezone.utc)
+        days = int((now - updated_dt).total_seconds() / 86400)
         level = 3 if days >= 7 else 2 if days >= 5 else 1
         try:
             if row["line_user_id"]:
@@ -951,11 +1053,12 @@ def cron_daily_alerts(x_cron_secret: str = Header(None)):
 @app.post("/api/problems/save")
 def save_problem(payload: dict):
     """生成した問題をDBに保存（後で再利用可能）"""
+    pk = "BIGSERIAL PRIMARY KEY" if USE_POSTGRES else "INTEGER PRIMARY KEY AUTOINCREMENT"
     conn = db()
     c = conn.cursor()
-    c.execute("""
+    c.execute(f"""
         CREATE TABLE IF NOT EXISTS problems (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {pk},
             subject TEXT,
             topic TEXT,
             difficulty TEXT,
@@ -967,12 +1070,14 @@ def save_problem(payload: dict):
     """)
     c.execute(
         """INSERT INTO problems (subject, topic, difficulty, format, content, created_by)
-           VALUES (?, ?, ?, ?, ?, ?)""",
+           VALUES (?, ?, ?, ?, ?, ?)
+           RETURNING id""",
         (payload.get("subject"), payload.get("topic"), payload.get("difficulty"),
          payload.get("format"), payload.get("content"), payload.get("student_id"))
     )
+    returned = c.fetchone()
+    new_id = returned["id"] if returned else None
     conn.commit()
-    new_id = c.lastrowid
     conn.close()
     return {"ok": True, "problem_id": new_id}
 
