@@ -321,15 +321,7 @@ def create_checkout_session(payload: CheckoutRequest):
         },
         "quantity": 1,
     })
-    # トライアル料金（3日間体験）¥1,980
-    add_invoice_items.append({
-        "price_data": {
-            "currency": "jpy",
-            "product_data": {"name": "3日間トライアル料金（創業記念価格）"},
-            "unit_amount": FOUNDER_TRIAL_PRICE,
-        },
-        "quantity": 1,
-    })
+    
 
     session_kwargs = {
         "mode": "subscription",
