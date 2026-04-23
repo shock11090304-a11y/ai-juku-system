@@ -314,17 +314,10 @@ def create_checkout_session(payload: CheckoutRequest):
         },
     ]
 
-    # 入塾金はサブスクの初回請求書（トライアル終了時）に追加
-    subscription_add_items = []
-    if payload.plan not in ENROLLMENT_FEE_EXEMPT:
-        subscription_add_items.append({
-            "price_data": {
-                "currency": "jpy",
-                "product_data": {"name": "入塾金（システム登録費用・初回のみ）"},
-                "unit_amount": ENROLLMENT_FEE,
-            },
-            "quantity": 1,
-        })
+    # 入塾金はWebhook (checkout.session.completed) で InvoiceItem として
+    # 顧客に作成 → トライアル終了後の初回請求書に自動的に乗る。
+    # （Stripe Checkout の subscription_data は add_invoice_items 非対応）
+    needs_enrollment_fee = payload.plan not in ENROLLMENT_FEE_EXEMPT
     subscription_data = {
         "trial_period_days": 3,
         "trial_settings": {"end_behavior": {"missing_payment_method": "cancel"}},
@@ -332,11 +325,10 @@ def create_checkout_session(payload: CheckoutRequest):
             "plan": payload.plan,
             "student_id": str(payload.student_id or ""),
             "max_students": str(max_students),
-            "founder": "1"
+            "founder": "1",
+            "needs_enrollment_fee": "1" if needs_enrollment_fee else "0",
         }
     }
-    if subscription_add_items:
-        subscription_data["add_invoice_items"] = subscription_add_items
 
     session_kwargs = {
         "mode": "subscription",
@@ -351,7 +343,8 @@ def create_checkout_session(payload: CheckoutRequest):
             "plan_name": plan_name,
             "student_id": str(payload.student_id or ""),
             "max_students": str(max_students),
-            "founder_trial": "true"
+            "founder_trial": "true",
+            "needs_enrollment_fee": "1" if needs_enrollment_fee else "0",
         }
     }
 
@@ -457,6 +450,22 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
         conn.commit()
         conn.close()
         log.info(f"✅ Checkout completed: plan={plan}, customer={session.get('customer')}, max_students={max_students}")
+
+        # 入塾金 (¥10,000) を顧客に InvoiceItem として作成。
+        # トライアル終了後の初回月額請求書に自動的に追加される。
+        # トライアル中に解約された場合は orphan のまま残り、課金されない (= 解約時無料)。
+        if meta.get("needs_enrollment_fee") == "1" and session.get("customer"):
+            try:
+                s.InvoiceItem.create(
+                    customer=session.get("customer"),
+                    amount=ENROLLMENT_FEE,
+                    currency="jpy",
+                    description="入塾金（システム登録費用・初回のみ）",
+                    metadata={"plan": plan, "type": "enrollment_fee"},
+                )
+                log.info(f"✅ Enrollment fee InvoiceItem created: customer={session.get('customer')}, amount={ENROLLMENT_FEE}")
+            except Exception as e:
+                log.error(f"Failed to create enrollment fee InvoiceItem for customer={session.get('customer')}: {type(e).__name__}: {e}")
 
     elif event["type"] == "invoice.payment_succeeded":
         invoice = event["data"]["object"]
