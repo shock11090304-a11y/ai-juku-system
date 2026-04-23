@@ -20,6 +20,11 @@ function updateSummary() {
   const info = PLAN_INFO[plan];
   document.getElementById('summaryPlan').textContent = info.name;
   document.getElementById('summaryPrice').textContent = yen(info.price) + '（税込）';
+  // 入塾金 ¥10,000 は student_addon 以外のプランに適用。選択プランによって表示を切替。
+  const enrollmentRow = document.getElementById('summaryEnrollmentRow');
+  if (enrollmentRow) {
+    enrollmentRow.style.display = (plan === 'student_addon') ? 'none' : '';
+  }
 }
 
 // Pre-fill from URL params (from LP link)
@@ -93,31 +98,17 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     loadingBox.style.display = 'none';
     submitBtn.disabled = false;
 
-    if (err.message === 'BACKEND_DOWN' || err.message.includes('Failed to fetch')) {
+    // BACKEND_DOWN 時の「自動で成功画面へ進行」を削除。
+    // 以前は決済せずに localStorage に学生を作って「成功」画面へ遷移していたが、
+    // 攻撃者がバックエンドを一時ブロックすれば無料でアカウント作成できてしまう上、
+    // 保護者が「決済したつもり」の誤認を起こす（クレーム直結）。常にエラーのみ表示。
+    if (err.message === 'BACKEND_DOWN' || (err.message || '').includes('Failed to fetch')) {
       errorBox.innerHTML = `
-        <strong>⚠️ デモモード</strong><br>
-        バックエンドサーバーが起動していないため、実際の決済はスキップします。<br>
-        <strong>仮登録して体験版を開始します...</strong>
+        <strong>⚠️ 決済サービスに接続できませんでした</strong><br>
+        ただ今混み合っているか、ネットワークが不安定な可能性があります。<br>
+        少し時間をおいて再度お試しいただくか、塾までお問い合わせください。
       `;
       errorBox.style.display = 'block';
-      // Save to localStorage as fallback
-      const students = JSON.parse(localStorage.getItem('ai_juku_students') || '[]');
-      const newStudent = {
-        id: Date.now(),
-        name: payload.name,
-        grade: payload.grade,
-        goal: payload.goal || '未設定',
-        email: payload.email,
-        plan,
-        fee: PLAN_INFO[plan].price,
-        trialStart: new Date().toISOString(),
-        weeklyHours: 15,
-        subjects: { 英語: 60, 数学: 60, 国語: 60 },
-      };
-      students.push(newStudent);
-      localStorage.setItem('ai_juku_students', JSON.stringify(students));
-      localStorage.setItem('ai_juku_current_student', JSON.stringify(newStudent.id));
-      setTimeout(() => { window.location.href = 'checkout-success.html?session_id=demo'; }, 2000);
     } else {
       errorBox.textContent = `エラー: ${err.message}`;
       errorBox.style.display = 'block';

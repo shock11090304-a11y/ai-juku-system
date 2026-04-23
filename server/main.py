@@ -375,6 +375,19 @@ def create_checkout_session(payload: CheckoutRequest):
         raise HTTPException(status_code=400, detail=f"Invalid plan: {payload.plan}")
     price_id, amount, plan_name, max_students = price_info
 
+    # student_id が指定されている場合、email との一致を検証する。
+    # これをしないと連番IDで他生徒の stripe_customer_id を上書きでき、課金を奪える。
+    if payload.student_id:
+        conn_ck = db()
+        c_ck = conn_ck.cursor()
+        c_ck.execute("SELECT email FROM students WHERE id = ?", (payload.student_id,))
+        _row_ck = c_ck.fetchone()
+        conn_ck.close()
+        if not _row_ck:
+            raise HTTPException(status_code=404, detail="Student not found")
+        if (_row_ck["email"] or "").lower() != (payload.email or "").lower():
+            raise HTTPException(status_code=403, detail="student_id/email mismatch")
+
     if not STRIPE_SECRET_KEY:
         # Mock mode: return fake checkout URL（API key未設定時のデモ用）
         return {
@@ -661,28 +674,31 @@ LINE_TEMPLATES = {
     },
 }
 
-@app.post("/api/line/push")
-def line_push(payload: LinePushRequest):
+def _do_line_push(student_id: int, template: str, params: Optional[dict] = None) -> dict:
+    """LINE push の内部実装。cron からは HTTP ではなくこちらを直接呼ぶ。"""
     if not LINE_CHANNEL_ACCESS_TOKEN:
         log.warning("LINE push called but not configured")
         return {"ok": False, "mock": True, "message": "LINE_CHANNEL_ACCESS_TOKEN未設定"}
 
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT line_user_id, name FROM students WHERE id = ?", (payload.student_id,))
+    c.execute("SELECT line_user_id, name FROM students WHERE id = ?", (student_id,))
     row = c.fetchone()
     if not row or not row["line_user_id"]:
         raise HTTPException(status_code=404, detail="Student or LINE user ID not found")
 
-    tmpl_fn = LINE_TEMPLATES.get(payload.template)
+    tmpl_fn = LINE_TEMPLATES.get(template)
     if not tmpl_fn:
-        raise HTTPException(status_code=400, detail=f"Unknown template: {payload.template}")
+        raise HTTPException(status_code=400, detail=f"Unknown template: {template}")
 
-    params = {**(payload.params or {}), "name": row["name"]}
-    message = tmpl_fn(params)
+    # 念のため params 側の name を上書きし、URL パラメータも quote してフィッシングリンク偽装を防ぐ
+    import urllib.parse as _urlparse
+    safe_email = _urlparse.quote(str((params or {}).get("email", "")), safe="")
+    merged = {**(params or {}), "name": row["name"], "email": safe_email}
+    message = tmpl_fn(merged)
 
-    import urllib.request
-    req = urllib.request.Request(
+    import urllib.request as _urlreq
+    req = _urlreq.Request(
         "https://api.line.me/v2/bot/message/push",
         method="POST",
         headers={
@@ -692,7 +708,7 @@ def line_push(payload: LinePushRequest):
         data=json.dumps({"to": row["line_user_id"], "messages": [message]}).encode("utf-8")
     )
     try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with _urlreq.urlopen(req, timeout=10) as resp:
             success = resp.status == 200
     except Exception as e:
         log.error(f"LINE push failed: {e}")
@@ -701,11 +717,23 @@ def line_push(payload: LinePushRequest):
     c.execute(
         """INSERT INTO notifications (student_id, channel, template, payload, success)
            VALUES (?, 'line', ?, ?, ?)""",
-        (payload.student_id, payload.template, json.dumps(params, ensure_ascii=False), 1 if success else 0)
+        (student_id, template, json.dumps(merged, ensure_ascii=False), 1 if success else 0)
     )
     conn.commit()
     conn.close()
     return {"ok": success}
+
+
+@app.post("/api/line/push")
+def line_push(payload: LinePushRequest, x_cron_secret: str = Header(None)):
+    """LINE push の公開エンドポイント。CRON_SECRET を必須化し、
+    任意の塾外の攻撃者が生徒にフィッシング誘導メッセージを送れないようにする。"""
+    if not CRON_SECRET:
+        raise HTTPException(status_code=503, detail="LINE push not configured (CRON_SECRET missing)")
+    if not x_cron_secret or not hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    return _do_line_push(payload.student_id, payload.template, payload.params)
+
 
 @app.post("/api/line/webhook")
 async def line_webhook(request: Request, x_line_signature: str = Header(None)):
@@ -739,11 +767,11 @@ def cron_weekly_reports(x_cron_secret: str = Header(None)):
     sent = 0
     for row in c.fetchall():
         try:
-            line_push(LinePushRequest(
-                student_id=row["id"],
-                template="weekly_report",
-                params={"hours": 12.5, "accuracy": 78, "questions": 47, "url": f"{BASE_URL}/mypage.html"}
-            ))
+            _do_line_push(
+                row["id"],
+                "weekly_report",
+                {"hours": 12.5, "accuracy": 78, "questions": 47, "url": f"{BASE_URL}/mypage.html"},
+            )
             sent += 1
         except Exception as e:
             log.error(f"Weekly report failed for {row['id']}: {e}")
@@ -871,6 +899,33 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
     # 4) モデルとトークン数の上限ガード（異常値を弾く）
     max_tokens = max(1, min(int(payload.max_tokens or 2000), 8000))
 
+    # 5) Prompt Injection 緩和: system / messages のサイズと明白な jailbreak フレーズを弾く。
+    #    完全な防御は不可能だが、学生端末を経由した塾のAPIキー横取り用途を大幅に抑制する。
+    _JAILBREAK_PATTERNS = (
+        "ignore previous", "ignore all prior", "disregard previous",
+        "system prompt", "developer mode", "jailbreak",
+        "you are now", "act as dan", "dan mode",
+    )
+    _sys = (payload.system or "")
+    if len(_sys) > 6000:
+        raise HTTPException(status_code=400, detail="system prompt too long")
+    _sys_low = _sys.lower()
+    if any(p in _sys_low for p in _JAILBREAK_PATTERNS):
+        log.warning(f"/api/ai/call blocked by jailbreak pattern check: student_id={payload.student_id}")
+        raise HTTPException(status_code=403, detail="prohibited system prompt")
+    # messages 総長も上限（画像除く）
+    _msg_text_total = 0
+    for m in (payload.messages or []):
+        content = m.get("content") if isinstance(m, dict) else None
+        if isinstance(content, str):
+            _msg_text_total += len(content)
+        elif isinstance(content, list):
+            for part in content:
+                if isinstance(part, dict) and part.get("type") == "text":
+                    _msg_text_total += len(part.get("text") or "")
+    if _msg_text_total > 40000:
+        raise HTTPException(status_code=413, detail="messages too long")
+
     import urllib.request
 
     body = {
@@ -952,12 +1007,19 @@ class AlertTestRequest(BaseModel):
     destination: str
 
 @app.post("/api/activity/log")
-def log_activity(payload: dict):
-    """生徒の活動を記録（ログイン、質問、クエスト完了等）"""
+def log_activity(payload: dict, request: Request):
+    """生徒の活動を記録（ログイン、質問、クエスト完了等）。
+    無認証POSTでDB汚染（他人のupdated_at偽装、events爆撃）されないよう
+    Origin検証＋生徒有効性検証＋サイズ上限を課す。"""
+    if not _origin_allowed(request):
+        raise HTTPException(status_code=403, detail="Origin not allowed")
+    if len(json.dumps(payload)) > 4000:
+        raise HTTPException(status_code=413, detail="payload too large")
     student_id = payload.get("student_id")
-    activity_type = payload.get("type", "unknown")
+    activity_type = str(payload.get("type", "unknown"))[:64]
     if not student_id:
         raise HTTPException(status_code=400, detail="student_id required")
+    _verify_student_active(int(student_id))
     conn = db()
     c = conn.cursor()
     c.execute(
@@ -1013,11 +1075,11 @@ def check_inactivity(payload: AlertCheckRequest, x_cron_secret: str = Header(Non
         try:
             if row["line_user_id"]:
                 template = "streak_reminder" if level == 1 else "trial_ending"
-                line_push(LinePushRequest(
-                    student_id=row["id"],
-                    template=template,
-                    params={"days_inactive": days, "streak": 0}
-                ))
+                _do_line_push(
+                    row["id"],
+                    template,
+                    {"days_inactive": days, "streak": 0},
+                )
                 sent_count += 1
         except Exception as e:
             log.error(f"Alert send failed for student {row['id']}: {e}")
@@ -1051,8 +1113,19 @@ def cron_daily_alerts(x_cron_secret: str = Header(None)):
 # Routes: Problem Library (保存・再利用)
 # ==========================================================================
 @app.post("/api/problems/save")
-def save_problem(payload: dict):
-    """生成した問題をDBに保存（後で再利用可能）"""
+def save_problem(payload: dict, request: Request):
+    """生成した問題をDBに保存（後で再利用可能）。
+    DB書込DoS/PII注入防止: Origin検証・サイズ上限・生徒存在確認。"""
+    if not _origin_allowed(request):
+        raise HTTPException(status_code=403, detail="Origin not allowed")
+    if len(json.dumps(payload, ensure_ascii=False)) > 20000:
+        raise HTTPException(status_code=413, detail="payload too large")
+    sid = payload.get("student_id")
+    if sid:
+        try:
+            _verify_student_active(int(sid))
+        except HTTPException:
+            pass  # student_id は任意。無効なら None として保存
     pk = "BIGSERIAL PRIMARY KEY" if USE_POSTGRES else "INTEGER PRIMARY KEY AUTOINCREMENT"
     conn = db()
     c = conn.cursor()
@@ -1180,12 +1253,19 @@ def verify_parent_token(token: str):
 
 
 @app.post("/api/track")
-def track_event(event: EventTrack):
+def track_event(event: EventTrack, request: Request):
+    if not _origin_allowed(request):
+        raise HTTPException(status_code=403, detail="Origin not allowed")
+    # event.name / event.props の長さ制限でDBスパム防止
+    name = (event.name or "")[:128]
+    props_str = json.dumps(event.props or {}, ensure_ascii=False)
+    if len(props_str) > 4000:
+        raise HTTPException(status_code=413, detail="props too large")
     conn = db()
     c = conn.cursor()
     c.execute(
         "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
-        (event.name, json.dumps(event.props, ensure_ascii=False), event.session_id)
+        (name, props_str, event.session_id)
     )
     conn.commit()
     conn.close()

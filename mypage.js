@@ -40,8 +40,24 @@ function getCurrentStudent() {
   return students.find(s => s.id === currentId) || students[0] || { name: 'ゲスト', grade: '未設定', goal: '未設定' };
 }
 
+// 家族プランで兄弟が同端末を使うとマイページデータが混線していたため、
+// 生徒IDでキーをスコープする（旧 KEYS.MYPAGE 単一キーからの移行）。
+function mypageKeyForCurrentStudent() {
+  const s = getCurrentStudent();
+  const sid = s && s.id != null ? String(s.id) : 'guest';
+  return `${KEYS.MYPAGE}__${sid}`;
+}
+
+// 日付を JST (Asia/Tokyo) 基準の 'YYYY-MM-DD' で返す。UTC の toISOString だと
+// 日本の深夜学習が前日扱いになりストリークが誤って切れる問題を防ぐ。
+function todayKeyJST() {
+  const jst = new Date(Date.now() + 9 * 3600 * 1000);
+  return jst.toISOString().slice(0, 10);
+}
+
 function getMypageData() {
-  const saved = JSON.parse(localStorage.getItem(KEYS.MYPAGE) || 'null');
+  const key = mypageKeyForCurrentStudent();
+  const saved = JSON.parse(localStorage.getItem(key) || 'null');
   if (saved) return saved;
   // Generate realistic starting data
   const data = {
@@ -60,14 +76,14 @@ function getMypageData() {
       { id: 5, title: '学習日記を書く', desc: '今日の振り返りを3行で', xp: 15, done: false },
     ],
     weeklyMinutes: [60, 45, 80, 30, 90, 75, 45],
-    lastLogin: new Date().toISOString(),
+    lastLogin: todayKeyJST(),
   };
-  localStorage.setItem(KEYS.MYPAGE, JSON.stringify(data));
+  localStorage.setItem(key, JSON.stringify(data));
   return data;
 }
 
 function saveMypageData(data) {
-  localStorage.setItem(KEYS.MYPAGE, JSON.stringify(data));
+  localStorage.setItem(mypageKeyForCurrentStudent(), JSON.stringify(data));
 }
 
 // ==========================================================================

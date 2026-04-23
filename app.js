@@ -2127,6 +2127,24 @@ function loadChatHistory() {
   history.forEach(msg => appendMessage(msg.role, msg.content, false));
 }
 
+// KaTeX描画ヘルパ。\( ... \) と \[ ... \] 区切りを描画。
+// KaTeX 未ロード時は何もしない（プレーンテキストで表示される、非致命的）。
+function renderMathInNode(el) {
+  if (!el || typeof window.renderMathInElement !== 'function') return;
+  try {
+    window.renderMathInElement(el, {
+      delimiters: [
+        { left: '\\[', right: '\\]', display: true },
+        { left: '\\(', right: '\\)', display: false },
+        { left: '$$', right: '$$', display: true },
+      ],
+      throwOnError: false,
+    });
+  } catch (e) {
+    console.warn('KaTeX render failed:', e);
+  }
+}
+
 function appendMessage(role, content, save = true) {
   const container = document.getElementById('chatMessages');
   const div = document.createElement('div');
@@ -2136,6 +2154,7 @@ function appendMessage(role, content, save = true) {
     <div class="msg-body">${formatMarkdown(escapeHtml(content))}</div>
   `;
   container.appendChild(div);
+  renderMathInNode(div);
   container.scrollTop = container.scrollHeight;
   if (save) {
     state.chatHistory.push({ role, content });
@@ -2162,6 +2181,7 @@ function appendMessageHtml(role, htmlContent) {
     <div class="msg-body">${safeHtml}</div>
   `;
   container.appendChild(div);
+  renderMathInNode(div);
   container.scrollTop = container.scrollHeight;
   // Don't save image data to history (too big), save text only
   const textOnly = htmlContent.replace(/<img[^>]*>/g, '[画像]').replace(/\n\n📷 /g, '');
@@ -2478,6 +2498,8 @@ C1到達要件: 抽象語彙/複文/談話標識(however, nevertheless, moreover
 - can't → cannot（フォーマル）/ don't → do not
 - Japanese English: I think that〜の過用、Also文頭、So文頭、because単独文
 - 直訳(touch English, enjoy with 〜, discuss about)
+- 英語ネイティブが減点する幼稚表現: very/really/nice/good 乱用（→significantly/considerably/beneficial）、There is/are の連発（→主語を立てる）、many peoples (people は既に複数)
+- 【東大1(B)頻出減点】thesis が疑問文のまま/反論想定なし/具体例が抽象語のみ（in some country 等）→ 必ず「Advocates argue X, however〜」型の譲歩文を1つ入れる
 
 出力は Markdown で以下の構造:
 # ✏️ 添削結果
@@ -3610,6 +3632,11 @@ async function generateProblems() {
 - 【社会科】日本史・世界史・地理・公民で年号/人物/統計値/条約名を出す場合、山川『詳説日本史/世界史』『データブックオブ・ザ・ワールド』レベルで確実なもののみ記載。不確実な数値・細部は「○世紀前半」「推定約」等に留め、捏造は厳禁
 - 【論述問題】難易度「難関」かつ科目が日本史/世界史/地理の場合、東大本試準拠の字数（世界史大論述=600字／日本史・地理各問=90-180字）を明示し、解説に「評価観点」「キーワード網羅度」「因果関係の論理性」の3軸採点基準を含める
 - 【史料問題】日本史で「難関」難易度の場合、可能な限り『御成敗式目』『五箇条の誓文』『憲法十七条』等の一次史料の実在する一節を提示し、原文読解を要求する（捏造史料は絶対禁止）
+- 【古文専用】科目が「国語（古文）」の場合: (a) 実在する古文作品（源氏/枕草子/徒然草/伊勢/大鏡等）の原文のみ使用。うろ覚えの一節を捏造せず、確実に知っている箇所のみ出題。不確実なら問題側で「本文は以下の通り」と与える形式に限定 (b) 助動詞設問は必ず①基本形②活用形③接続④意味⑤判別根拠 の5点を explanation で明示 (c)「る/らる」「す/さす」「む/むず」「なり」「らむ/けむ」の識別は全て判別フローを提示 (d) 敬語設問は「誰から誰への敬意か」を必ず問い、絶対敬語（奏す・啓す）と最高敬語（せ給ふ/させ給ふ）を区別
+- 【漢文専用】返り点・書き下し・現代語訳の三点セット必須。再読文字・使役/受身句形は原文該当字を引用しながら解説
+- 【東大理系数学の採点基準】(a) 母数と場合分けの網羅性を冒頭で宣言 (b) 数え上げでは「どの対称性で割るか/割らないか」を一文で明示 (c) 幾何問題では使う定理（円周角の定理/方べき/余弦定理等）を本文中で引用してから適用 (d) 確率漸化式は状態遷移図または遷移行列を explanation で描画 (e) 最終値の等号成立条件・離散/連続の区別を結論で再確認
+- 【東大物理の論述構造】難関難易度では explanation を以下4段で記述: (1) モデル化（系の境界・外力・保存量を宣言）(2) 運動方程式または保存則の式を立てる根拠 (3) 代入・積分・境界条件の適用 (4) 物理的吟味（極限・次元・単調性チェック）。単振動系は「つりあいの位置を原点にとる変数変換」と、周期が外力に依存しないことを明示。電磁気は電流・電荷の向きを回路図座標で定義してから使う
+- 【東大世界史大論述の採点骨子】(a) 冒頭1-2文で「問いへの直接解答」を太い一文で宣言（例：「19世紀アジアの民族運動は、列強の植民地化への反発として初期は王朝的だが、後半に近代ナショナリズムへ転化した」）(b) 指定語句があれば全て本文中で使用（未使用は大幅減点） (c) 時系列でなく「原因→展開→結果」の因果構造で配列 (d) 地域間の横のつながり（英のインド支配→中国アヘン戦争の資金源等）を最低1つ明示 (e) 末尾1文で冒頭主張を再確認
 ${/数学/.test(subject) ? `
 【数学専用の追加厳守事項】
 - 数式は原則 LaTeX 記法（インライン \\( ... \\)、ディスプレイ \\[ ... \\]）で記述。分数・指数・根号・積分・総和は必ず LaTeX（例: \\(\\dfrac{n+1}{2}\\), \\(\\int_0^1 x^2\\,dx\\), \\(\\sum_{k=1}^{n} k\\)）。全角記号（²・√・∫）とASCII混在（x^2）は禁止
@@ -3692,6 +3719,7 @@ ${/数学/.test(subject) ? `
 
   // Render based on layout mode
   out.innerHTML = renderProblems(data, layout);
+  renderMathInNode(out);
 
   // Bind reveal buttons if "hidden" mode
   if (layout === 'hidden') {
