@@ -312,8 +312,9 @@ def stats(x_stats_token: str = Header(None)):
     if not x_stats_token or not hmac.compare_digest(x_stats_token, STATS_TOKEN):
         raise HTTPException(status_code=401, detail="Unauthorized")
     now = datetime.now(timezone.utc)
-    thirty_days_ago = (now - timedelta(days=30)).isoformat()
-    seven_days_ago = (now - timedelta(days=7)).isoformat()
+    # Postgres TIMESTAMP 比較のため datetime オブジェクトで渡す
+    thirty_days_ago = now - timedelta(days=30)
+    seven_days_ago = now - timedelta(days=7)
     conn = db()
     c = conn.cursor()
     c.execute("SELECT COUNT(*) AS n FROM students WHERE status='paid'")
@@ -848,7 +849,10 @@ def _verify_student_active(student_id: int) -> dict:
 
 def _check_ai_budget(student_id: int) -> None:
     """その生徒が直近24hで消費したAIトークンが AI_DAILY_TOKEN_BUDGET を超えていないか確認。"""
-    one_day_ago = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+    # Postgres は TIMESTAMP (tz なし) カラムと tz 付き ISO 文字列の比較で
+    # エラーを返すため、datetime オブジェクトをそのまま渡して psycopg に
+    # 型変換を任せる（SQLite も datetime を受け付ける）。
+    one_day_ago = datetime.now(timezone.utc) - timedelta(days=1)
     conn = db()
     c = conn.cursor()
     c.execute(
@@ -890,11 +894,15 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
         )
         raise HTTPException(status_code=403, detail="Origin not allowed")
 
-    # 2) student_id 必須・DBで有効性確認
-    _verify_student_active(payload.student_id)
-
-    # 3) 1日あたりトークン予算チェック
-    _check_ai_budget(payload.student_id)
+    # 2-3) student_id と budget 検証。DBエラー時は 500 を裸文字列ではなく JSON で返す。
+    try:
+        _verify_student_active(payload.student_id)
+        _check_ai_budget(payload.student_id)
+    except HTTPException:
+        raise  # 4xx はそのまま伝搬
+    except Exception as e:
+        log.error(f"/api/ai/call validation exception: {type(e).__name__}: {e}")
+        raise HTTPException(status_code=500, detail=f"validation error: {type(e).__name__}: {str(e)[:200]}")
 
     # 4) モデルとトークン数の上限ガード（異常値を弾く）
     max_tokens = max(1, min(int(payload.max_tokens or 2000), 8000))
@@ -1043,7 +1051,7 @@ def check_inactivity(payload: AlertCheckRequest, x_cron_secret: str = Header(Non
     if not x_cron_secret or not hmac.compare_digest(x_cron_secret, CRON_SECRET):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-    threshold_dt = (datetime.now(timezone.utc) - timedelta(days=payload.threshold_days)).isoformat()
+    threshold_dt = datetime.now(timezone.utc) - timedelta(days=payload.threshold_days)
     conn = db()
     c = conn.cursor()
     # Find students inactive for N days（N日以上更新がない生徒）
