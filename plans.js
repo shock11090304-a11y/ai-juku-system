@@ -81,9 +81,9 @@ const PLAN_CONFIG = {
   },
 
   enrollment: {
-    price: 20000,
-    priceLabel: '¥20,000',
-    description: '入塾金（初回のみ・システム登録費）',
+    price: 10000,
+    priceLabel: '¥10,000',
+    description: '入塾金（初回のみ・システム登録費・トライアル後の初回請求に追加）',
   },
 
   // 既存塾生向けアドオン

@@ -63,8 +63,8 @@ PRICE_MAP = {
     "intensive": (STRIPE_PRICE_FAMILY, 59800, "家族プラン（最大3名）", 3),
 }
 
-# 入塾金（初回のみ・塾生アドオンは免除）
-ENROLLMENT_FEE = 20000
+# 入塾金（トライアル後の初回請求に追加・塾生アドオンは免除）
+ENROLLMENT_FEE = 10000
 
 # 塾生アドオン（月額、入塾金不要）
 STUDENT_ADDON_PRICE = 15000
@@ -253,9 +253,9 @@ def trial_signup(payload: TrialSignup):
 def create_checkout_session(payload: CheckoutRequest):
     """
     新プラン構造でのチェックアウト:
-    - 通常プラン (standard/premium/family): 入塾金 ¥20,000 + 月額サブスク（3日間トライアル）
+    - 通常プラン (standard/premium/family): 月額サブスク（3日間トライアル）+ トライアル後の初回請求に入塾金 ¥10,000 を追加
     - 塾生アドオン (student_addon): 入塾金なし、月額 ¥15,000 のみ
-    - トライアル中に ¥1,980 を即時課金（setup fee として）
+    - トライアル開始時は ¥1,980 のみ即時課金、入塾金はトライアル後の初回請求書に計上
     """
     price_info = PRICE_MAP.get(payload.plan)
     if not price_info:
@@ -300,28 +300,43 @@ def create_checkout_session(payload: CheckoutRequest):
             "enrollment_fee": 0,
         }
 
-       # 通常プラン: 入塾金 + 3日間トライアル（¥1,980）+ 月額サブスク
-    # line_items に one-time priceを混在させることで初回請求に含める
-    line_items = [{"price": price_id, "quantity": 1}]
-
-    if payload.plan not in ENROLLMENT_FEE_EXEMPT:
-        line_items.append({
+    # 通常プラン: 3日間トライアル（¥1,980）+ 月額サブスク（入塾金はトライアル後に追加）
+    # トライアル開始時は ¥1,980 のみ即時請求
+    line_items = [
+        {"price": price_id, "quantity": 1},
+        {
             "price_data": {
                 "currency": "jpy",
-                "product_data": {"name": "入塾金（システム登録費用）"},
+                "product_data": {"name": "3日間トライアル料金（創業記念価格）"},
+                "unit_amount": FOUNDER_TRIAL_PRICE,
+            },
+            "quantity": 1,
+        },
+    ]
+
+    # 入塾金はサブスクの初回請求書（トライアル終了時）に追加
+    subscription_add_items = []
+    if payload.plan not in ENROLLMENT_FEE_EXEMPT:
+        subscription_add_items.append({
+            "price_data": {
+                "currency": "jpy",
+                "product_data": {"name": "入塾金（システム登録費用・初回のみ）"},
                 "unit_amount": ENROLLMENT_FEE,
             },
             "quantity": 1,
         })
-    line_items.append({
-        "price_data": {
-            "currency": "jpy",
-            "product_data": {"name": "3日間トライアル料金（創業記念価格）"},
-            "unit_amount": FOUNDER_TRIAL_PRICE,
-        },
-        "quantity": 1,
-    })
-    
+    subscription_data = {
+        "trial_period_days": 3,
+        "trial_settings": {"end_behavior": {"missing_payment_method": "cancel"}},
+        "metadata": {
+            "plan": payload.plan,
+            "student_id": str(payload.student_id or ""),
+            "max_students": str(max_students),
+            "founder": "1"
+        }
+    }
+    if subscription_add_items:
+        subscription_data["add_invoice_items"] = subscription_add_items
 
     session_kwargs = {
         "mode": "subscription",
@@ -330,16 +345,7 @@ def create_checkout_session(payload: CheckoutRequest):
         "customer_email": payload.email,
         "success_url": f"{BASE_URL}/checkout-success.html?session_id={{CHECKOUT_SESSION_ID}}",
         "cancel_url": f"{BASE_URL}/checkout-cancel.html",
-        "subscription_data": {
-            "trial_period_days": 3,
-            "trial_settings": {"end_behavior": {"missing_payment_method": "cancel"}},
-            "metadata": {
-                "plan": payload.plan,
-                "student_id": str(payload.student_id or ""),
-                "max_students": str(max_students),
-                "founder": "1"
-            }
-        },
+        "subscription_data": subscription_data,
         "metadata": {
             "plan": payload.plan,
             "plan_name": plan_name,

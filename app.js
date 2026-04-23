@@ -371,13 +371,13 @@ AI学習コーチ塾`,
 ${s.name}さんの学習をさらに加速させるため、塾生様限定の特別価格をご案内します。
 
 【外部の新規契約】
-入塾金: ¥20,000
+入塾金: ¥10,000
 月額: ¥39,800
 
 【塾生様限定アドオン】
 入塾金: なし
 月額: 現在の月謝 + ¥15,000のみ
-年間で約¥32万円分お得
+年間で約¥31万円分お得
 
 【ご利用いただける機能】
 ・24時間AIチューター（最上位Opus 4.7）
@@ -3552,13 +3552,24 @@ async function generateProblems() {
   // Parse JSON response
   let data;
   try {
-    const clean = response.trim().replace(/^```json\s*\n?/, '').replace(/\n?```\s*$/, '');
+    let clean = response.trim()
+      .replace(/^```(?:json)?\s*\n?/, '')
+      .replace(/\n?```\s*$/, '');
+    // 前後に説明文が混じっている場合、最初の { と最後の } の間を抽出
+    const firstBrace = clean.indexOf('{');
+    const lastBrace = clean.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      clean = clean.substring(firstBrace, lastBrace + 1);
+    }
     data = JSON.parse(clean);
   } catch (e) {
-    // Fallback: render as plain markdown if JSON parse fails
-    console.warn('Problems JSON parse failed:', e);
-    out.innerHTML = formatMarkdown(escapeHtml(response));
-    actions.style.display = 'flex';
+    console.warn('Problems JSON parse failed:', e, response);
+    out.innerHTML = `<div class="placeholder" style="padding:1.5rem;line-height:1.7;">
+      <p style="font-size:1.05rem;margin-bottom:0.5rem;">⚠️ 問題の生成中にフォーマットエラーが発生しました</p>
+      <p style="color:var(--text-dim);font-size:0.9rem;">AIの応答が想定外の形式でした。もう一度「🎲 問題を生成」を押してください。</p>
+      <p style="color:var(--text-dim);font-size:0.85rem;margin-top:0.75rem;">繰り返し失敗する場合は、問題数を減らす・難易度を下げるをお試しください。</p>
+    </div>`;
+    actions.style.display = 'none';
     btn.disabled = false;
     btn.textContent = '🎲 問題を生成';
     return;
