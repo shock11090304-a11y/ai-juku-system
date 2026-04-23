@@ -122,6 +122,7 @@
     <button class="tab active" data-tab="tutor">💬 24時間AIチューター</button>
     <button class="tab" data-tab="diagnostic">📊 学習診断</button>
     <button class="tab" data-tab="curriculum">🎯 カリキュラム生成</button>
+    <button class="tab" data-tab="studyplan">📋 学習計画・管理</button>
     <button class="tab" data-tab="essay">✍️ 英作文・記述添削</button>
     <button class="tab" data-tab="parent">👨‍👩‍👧 保護者レポート</button>
     <button class="tab" data-tab="problems">🧪 AI問題自動生成</button>
@@ -286,6 +287,60 @@
           <div id="curriculumResult" class="result-box">
             <p class="placeholder">目標と現状を入力すると、AIが週単位の学習計画を作成します。</p>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STUDY PLAN & MANAGEMENT TAB -->
+    <section id="tab-studyplan" class="tab-content">
+      <div class="panel-header">
+        <h2>📋 学習計画・管理</h2>
+        <p>カリキュラムから週間タスクを自動抽出。日々のチェックで「計画 vs 実行」を可視化します。</p>
+      </div>
+
+      <div class="sp-toolbar">
+        <button class="btn-secondary" id="spImportBtn" title="直近のカリキュラム生成結果から週間タスクを自動抽出">📥 カリキュラムから取込</button>
+        <button class="btn-secondary" id="spPrevWeek" title="前の週">← 前週</button>
+        <button class="btn-secondary" id="spThisWeek" title="今週に戻る">📅 今週</button>
+        <button class="btn-secondary" id="spNextWeek" title="次の週">次週 →</button>
+        <span id="spWeekLabel" class="sp-week-label"></span>
+        <span style="flex:1;"></span>
+        <button class="btn-secondary" id="spClearBtn" title="この生徒の全タスクを削除">🗑 全削除</button>
+      </div>
+
+      <div class="sp-grid">
+        <!-- 左: 今日のタスク + 進捗 -->
+        <aside class="sp-side">
+          <div class="sp-progress-card">
+            <h3>📊 進捗</h3>
+            <div id="spProgressSummary"><p class="placeholder">カリキュラムから取込してください</p></div>
+          </div>
+          <div class="sp-today-card">
+            <h3>📌 今日のタスク</h3>
+            <div id="spTodayList"><p class="placeholder">—</p></div>
+          </div>
+          <div class="sp-add-card">
+            <h3>➕ タスクを追加</h3>
+            <div class="sp-add-form">
+              <input type="date" id="spAddDate">
+              <select id="spAddSubject">
+                <option value="英語">英語</option>
+                <option value="数学">数学</option>
+                <option value="国語">国語</option>
+                <option value="理科">理科</option>
+                <option value="社会">社会</option>
+                <option value="その他">その他</option>
+              </select>
+              <input type="text" id="spAddTitle" placeholder="例: シス単 No.1-60">
+              <input type="number" id="spAddDuration" placeholder="分" min="5" max="600" step="5" style="max-width:6rem;">
+              <button class="btn-primary btn-small" id="spAddBtn">追加</button>
+            </div>
+          </div>
+        </aside>
+
+        <!-- 右: 週ビュー -->
+        <div class="sp-weekview">
+          <div id="spWeekGrid" class="sp-week-grid"><p class="placeholder">取込かタスク追加で表示されます</p></div>
         </div>
       </div>
     </section>
@@ -857,6 +912,6 @@
   </footer>
 
   <script src="demo-english-extra.js?v=20260422"></script>
-  <script src="app.js?v=20260423-opus47"></script>
+  <script src="app.js?v=20260423-studyplan"></script>
 </body>
 </html>

@@ -2523,7 +2523,273 @@ ${level}
 
   const response = await callClaude(systemPrompt, userMsg, { kind: 'curriculum', maxTokens: 6000 });
   out.innerHTML = formatMarkdown(escapeHtml(response));
+  // 「学習計画・管理」タブが取込で参照する最終生成結果を保存
+  window._lastCurriculumMarkdown = response;
+  try { localStorage.setItem('ai_juku_last_curriculum', response); } catch {}
 }
+
+
+// ==========================================================================
+// 学習計画・管理（Study Plan）
+// カリキュラムから週間タスクを自動抽出 → 日次チェックで計画vs実行を可視化
+// ==========================================================================
+let _spWeekOffset = 0; // 0=今週、-1=先週、+1=翌週
+
+function spStorageKey() {
+  const s = getCurrentStudent();
+  return `ai_juku_study_plan__${s.id ?? 'guest'}`;
+}
+function spLoad() {
+  try {
+    const raw = localStorage.getItem(spStorageKey());
+    return raw ? JSON.parse(raw) : { tasks: [], streak: { current: 0, best: 0, last_active: null } };
+  } catch { return { tasks: [], streak: { current: 0, best: 0, last_active: null } }; }
+}
+function spSave(data) {
+  try { localStorage.setItem(spStorageKey(), JSON.stringify(data)); } catch {}
+}
+function spTodayJST() {
+  // JST 基準の YYYY-MM-DD
+  return new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+}
+function spAddDays(iso, days) {
+  const d = new Date(iso + 'T00:00:00+09:00');
+  d.setDate(d.getDate() + days);
+  return new Date(d.getTime() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+}
+function spWeekMonday(offset = 0) {
+  // offset 週のぶん、その週の月曜(JST)を返す
+  const today = spTodayJST();
+  const d = new Date(today + 'T00:00:00+09:00');
+  const dow = d.getDay(); // 0=日, 1=月, ..., 6=土
+  const mondayShift = dow === 0 ? -6 : 1 - dow; // 日曜は前週月曜へ
+  const monday = new Date(d);
+  monday.setDate(d.getDate() + mondayShift + offset * 7);
+  return new Date(monday.getTime() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+function spImportFromCurriculum() {
+  const md = window._lastCurriculumMarkdown || localStorage.getItem('ai_juku_last_curriculum') || '';
+  if (!md) {
+    alert('先に「🎯 カリキュラム生成」タブでカリキュラムを作成してください。');
+    return;
+  }
+  // Markdown の「### 月曜 (Xh)」等のブロックをスキャンしてタスクを抽出
+  const dayMap = { '月':0, '火':1, '水':2, '木':3, '金':4, '土':5, '日':6 };
+  const lines = md.split(/\r?\n/);
+  let currentDay = null;
+  const imported = [];
+  const weekMonday = spWeekMonday(0);
+  const DAY_HEADER_RE = /^#+\s*(月|火|水|木|金|土|日)曜/;
+  const TASK_LINE_RE = /^[\s\-\*]+\s*(?:([^:：]+)[：:])?\s*(.+?)(?:\s*[（\(](\d+)\s*分[）\)])?\s*$/;
+  for (const raw of lines) {
+    const line = raw.trim();
+    const dm = DAY_HEADER_RE.exec(line);
+    if (dm) { currentDay = dayMap[dm[1]]; continue; }
+    if (currentDay === null) continue;
+    if (!/^[-*]/.test(line)) continue;
+    const m = TASK_LINE_RE.exec(line);
+    if (!m) continue;
+    const subject = (m[1] || 'その他').trim().slice(0, 16);
+    const title = (m[2] || '').trim().slice(0, 200);
+    if (!title || title.length < 2) continue;
+    const duration = m[3] ? parseInt(m[3]) : null;
+    imported.push({
+      id: 'c_' + Math.random().toString(36).slice(2, 10),
+      source: 'curriculum',
+      planned_date: spAddDays(weekMonday, currentDay),
+      subject,
+      title,
+      duration_min: duration,
+      completed: false,
+      completed_at: null,
+      notes: '',
+    });
+  }
+  if (imported.length === 0) {
+    alert('カリキュラム本文から「### 月曜」「- 英語: ... (30分)」形式の行が見つかりませんでした。AI生成カリキュラムは再生成すると自動で曜日ブロックを含みます。');
+    return;
+  }
+  const data = spLoad();
+  // 同じ週の curriculum 由来タスクは一旦クリアして差し替え（重複防止）
+  const weekStart = weekMonday;
+  const weekEnd = spAddDays(weekMonday, 6);
+  data.tasks = data.tasks.filter(t => !(t.source === 'curriculum' && t.planned_date >= weekStart && t.planned_date <= weekEnd));
+  data.tasks.push(...imported);
+  spSave(data);
+  alert(`${imported.length} 件のタスクを取込みました。`);
+  spRender();
+}
+
+function spAddManualTask() {
+  const date = document.getElementById('spAddDate').value || spTodayJST();
+  const subject = document.getElementById('spAddSubject').value || 'その他';
+  const title = document.getElementById('spAddTitle').value.trim();
+  const dur = parseInt(document.getElementById('spAddDuration').value);
+  if (!title) { alert('タスク名を入力してください'); return; }
+  const data = spLoad();
+  data.tasks.push({
+    id: 'm_' + Math.random().toString(36).slice(2, 10),
+    source: 'manual',
+    planned_date: date,
+    subject,
+    title: title.slice(0, 200),
+    duration_min: Number.isFinite(dur) ? dur : null,
+    completed: false,
+    completed_at: null,
+    notes: '',
+  });
+  spSave(data);
+  document.getElementById('spAddTitle').value = '';
+  document.getElementById('spAddDuration').value = '';
+  spRender();
+}
+
+function spToggleTask(taskId) {
+  const data = spLoad();
+  const t = data.tasks.find(x => x.id === taskId);
+  if (!t) return;
+  t.completed = !t.completed;
+  t.completed_at = t.completed ? new Date().toISOString() : null;
+  // streak 更新: 今日完了ならストリーク++
+  const today = spTodayJST();
+  if (t.completed) {
+    const last = data.streak.last_active;
+    if (last !== today) {
+      if (last && spAddDays(last, 1) === today) data.streak.current += 1;
+      else data.streak.current = 1;
+      data.streak.last_active = today;
+      if (data.streak.current > data.streak.best) data.streak.best = data.streak.current;
+    }
+  }
+  spSave(data);
+  spRender();
+}
+
+function spDeleteTask(taskId) {
+  if (!confirm('このタスクを削除しますか？')) return;
+  const data = spLoad();
+  data.tasks = data.tasks.filter(x => x.id !== taskId);
+  spSave(data);
+  spRender();
+}
+
+function spClearAll() {
+  if (!confirm('この生徒の全タスクを削除します。よろしいですか？')) return;
+  spSave({ tasks: [], streak: { current: 0, best: 0, last_active: null } });
+  spRender();
+}
+
+function spEscape(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function spTaskCard(t, isToday) {
+  const overdue = !t.completed && t.planned_date < spTodayJST();
+  const cls = ['sp-task', t.completed ? 'completed' : '', overdue ? 'overdue' : ''].filter(Boolean).join(' ');
+  const subjClass = `sp-subject-${t.subject}`;
+  const dur = t.duration_min ? ` · ${t.duration_min}分` : '';
+  return `<div class="${cls}" data-id="${t.id}">
+    <input type="checkbox" ${t.completed ? 'checked' : ''} onclick="event.stopPropagation(); spToggleTask('${t.id}')" aria-label="完了">
+    <div class="sp-task-meta">
+      <div class="sp-task-title"><span class="sp-task-subject ${subjClass}">${spEscape(t.subject)}</span>${spEscape(t.title)}</div>
+      <div class="sp-task-sub">${isToday ? '今日' : t.planned_date}${dur}${t.source === 'manual' ? ' · 手動' : ''}</div>
+    </div>
+    <button class="sp-task-del" onclick="event.stopPropagation(); spDeleteTask('${t.id}')" title="削除">×</button>
+  </div>`;
+}
+
+function spRenderWeek() {
+  const grid = document.getElementById('spWeekGrid');
+  const label = document.getElementById('spWeekLabel');
+  if (!grid) return;
+  const mon = spWeekMonday(_spWeekOffset);
+  const sun = spAddDays(mon, 6);
+  const today = spTodayJST();
+  const data = spLoad();
+  if (label) label.textContent = `${mon} 〜 ${sun}${_spWeekOffset === 0 ? '（今週）' : ''}`;
+  const dayNames = ['月', '火', '水', '木', '金', '土', '日'];
+  let html = '';
+  for (let i = 0; i < 7; i++) {
+    const date = spAddDays(mon, i);
+    const dayTasks = data.tasks.filter(t => t.planned_date === date)
+      .sort((a, b) => (a.subject || '').localeCompare(b.subject || ''));
+    const done = dayTasks.filter(t => t.completed).length;
+    const classes = ['sp-day'];
+    if (date === today) classes.push('today');
+    if (i >= 5) classes.push('weekend');
+    html += `<div class="${classes.join(' ')}">
+      <div class="sp-day-header">
+        <span class="sp-day-name">${dayNames[i]} ${date.slice(5)}</span>
+        <span class="sp-day-count">${done}/${dayTasks.length}</span>
+      </div>
+      <div class="sp-day-body">
+        ${dayTasks.length === 0 ? '<p class="placeholder" style="font-size:0.75rem;margin:0;">—</p>' : dayTasks.map(t => spTaskCard(t, false)).join('')}
+      </div>
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function spRenderToday() {
+  const out = document.getElementById('spTodayList');
+  if (!out) return;
+  const today = spTodayJST();
+  const data = spLoad();
+  const todayTasks = data.tasks.filter(t => t.planned_date === today)
+    .sort((a, b) => Number(a.completed) - Number(b.completed));
+  if (todayTasks.length === 0) {
+    out.innerHTML = '<p class="placeholder">今日のタスクはありません</p>';
+    return;
+  }
+  out.innerHTML = `<div class="sp-today-list">${todayTasks.map(t => spTaskCard(t, true)).join('')}</div>`;
+}
+
+function spRenderProgress() {
+  const out = document.getElementById('spProgressSummary');
+  if (!out) return;
+  const today = spTodayJST();
+  const mon = spWeekMonday(0);
+  const sun = spAddDays(mon, 6);
+  const data = spLoad();
+  const weekTasks = data.tasks.filter(t => t.planned_date >= mon && t.planned_date <= sun);
+  const doneAll = weekTasks.filter(t => t.completed).length;
+  const totalAll = weekTasks.length;
+  const overdue = data.tasks.filter(t => !t.completed && t.planned_date < today).length;
+  const pct = totalAll === 0 ? 0 : Math.round((doneAll / totalAll) * 100);
+  const streak = data.streak?.current || 0;
+  out.innerHTML = `
+    <div class="sp-progress-bar"><div class="sp-progress-fill" style="width:${pct}%"></div></div>
+    <div class="sp-progress-stats">
+      <span class="stat ${pct >= 70 ? 'ok' : ''}">今週 ${doneAll}/${totalAll} 件 (${pct}%)</span>
+      <span class="stat ${streak >= 3 ? 'ok' : ''}">🔥 連続 ${streak}日</span>
+      ${overdue > 0 ? `<span class="stat danger">⚠️ 遅延 ${overdue}件</span>` : '<span class="stat ok">遅延なし</span>'}
+    </div>`;
+}
+
+function spRender() {
+  spRenderProgress();
+  spRenderToday();
+  spRenderWeek();
+}
+
+function spInit() {
+  // 初期化: date input に今日をセット、ボタン hook
+  const dateInp = document.getElementById('spAddDate');
+  if (dateInp && !dateInp.value) dateInp.value = spTodayJST();
+  const hook = (id, fn) => { const el = document.getElementById(id); if (el && !el._spBound) { el.addEventListener('click', fn); el._spBound = true; } };
+  hook('spImportBtn', spImportFromCurriculum);
+  hook('spPrevWeek', () => { _spWeekOffset--; spRender(); });
+  hook('spThisWeek', () => { _spWeekOffset = 0; spRender(); });
+  hook('spNextWeek', () => { _spWeekOffset++; spRender(); });
+  hook('spAddBtn', spAddManualTask);
+  hook('spClearBtn', spClearAll);
+  spRender();
+}
+// window に公開してタブ起動時・チェック時に呼び出せるように
+window.spInit = spInit;
+window.spToggleTask = spToggleTask;
+window.spDeleteTask = spDeleteTask;
 
 // ==========================================================================
 // TAB: Essay Correction
@@ -2864,6 +3130,7 @@ function switchTab(tabId) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `tab-${tabId}`));
   if (tabId === 'parent') setTimeout(initChartsIfNeeded, 50);
+  if (tabId === 'studyplan') setTimeout(() => window.spInit && window.spInit(), 30);
 }
 
 // ==========================================================================
