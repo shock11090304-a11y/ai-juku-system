@@ -391,20 +391,40 @@ def _verify_session_token(token: str) -> Optional[dict]:
 # In-memory rate limit tracker: {(ip, bucket): [timestamps]}
 _RATE_LIMIT_STORE: dict = {}
 
+def _client_ip(request) -> str:
+    """X-Forwarded-For を考慮して本物のクライアントIPを取得（Railway等のプロキシ対応）。"""
+    if not request:
+        return "unknown"
+    xff = request.headers.get("x-forwarded-for", "")
+    if xff:
+        # 先頭が元のクライアントIP（カンマ区切り）
+        return xff.split(",")[0].strip()
+    xri = request.headers.get("x-real-ip", "")
+    if xri:
+        return xri.strip()
+    return request.client.host if request.client else "unknown"
+
+
 def _check_rate_limit_ip(request, bucket: str, limit: int = 10, window: int = 60) -> None:
     """IPアドレス単位の簡易レートリミッタ。超過時は HTTPException 429 を投げる。
     プロセス内のin-memoryなのでマルチワーカーでは厳密ではないが、ブルートフォース抑制には十分。"""
     import time as _t
-    ip = request.client.host if request and request.client else "unknown"
+    ip = _client_ip(request)
     key = (ip, bucket)
     now = _t.time()
     timestamps = _RATE_LIMIT_STORE.get(key, [])
-    # 古いタイムスタンプを除外
     timestamps = [t for t in timestamps if now - t < window]
     if len(timestamps) >= limit:
         raise HTTPException(status_code=429, detail="リクエストが多すぎます。しばらく待ってから再度お試しください。")
     timestamps.append(now)
     _RATE_LIMIT_STORE[key] = timestamps
+    # メモリ肥大化対策: 古いバケットを定期的にクリーンアップ
+    if len(_RATE_LIMIT_STORE) > 10000:
+        cutoff = now - 3600
+        for k in list(_RATE_LIMIT_STORE.keys()):
+            _RATE_LIMIT_STORE[k] = [t for t in _RATE_LIMIT_STORE[k] if t > cutoff]
+            if not _RATE_LIMIT_STORE[k]:
+                del _RATE_LIMIT_STORE[k]
 
 
 def _send_trial_ending_email(to_email: str, student_name: str, days_left: int, checkout_url: str) -> dict:
