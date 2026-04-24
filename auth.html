@@ -96,9 +96,10 @@
         localStorage.setItem('ai_juku_session_student', JSON.stringify(data.student));
         showSuccess(data.student.name || 'ゲスト');
         setTimeout(() => {
-          // リダイレクト先: ?redirect= で指定可、なければ index.html
-          const redirect = params.get('redirect') || 'index.html';
-          window.location.href = redirect;
+          // オープンリダイレクト対策: 同一オリジンの相対パスのみ許可
+          const raw = params.get('redirect') || 'index.html';
+          const safe = /^[a-z0-9_\-./?#=&]+$/i.test(raw) && !raw.startsWith('//') && !raw.startsWith('http');
+          window.location.href = safe ? raw : 'index.html';
         }, 1200);
       } catch (e) {
         showError('ネットワークエラーが発生しました。<br>しばらくしてから再度お試しください。');

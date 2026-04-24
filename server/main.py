@@ -388,12 +388,34 @@ def _verify_session_token(token: str) -> Optional[dict]:
         return None
 
 
+# In-memory rate limit tracker: {(ip, bucket): [timestamps]}
+_RATE_LIMIT_STORE: dict = {}
+
+def _check_rate_limit_ip(request, bucket: str, limit: int = 10, window: int = 60) -> None:
+    """IPアドレス単位の簡易レートリミッタ。超過時は HTTPException 429 を投げる。
+    プロセス内のin-memoryなのでマルチワーカーでは厳密ではないが、ブルートフォース抑制には十分。"""
+    import time as _t
+    ip = request.client.host if request and request.client else "unknown"
+    key = (ip, bucket)
+    now = _t.time()
+    timestamps = _RATE_LIMIT_STORE.get(key, [])
+    # 古いタイムスタンプを除外
+    timestamps = [t for t in timestamps if now - t < window]
+    if len(timestamps) >= limit:
+        raise HTTPException(status_code=429, detail="リクエストが多すぎます。しばらく待ってから再度お試しください。")
+    timestamps.append(now)
+    _RATE_LIMIT_STORE[key] = timestamps
+
+
 def _send_trial_ending_email(to_email: str, student_name: str, days_left: int, checkout_url: str) -> dict:
     """トライアル終了リマインダーメール。自動課金前に告知。"""
+    import html as _html
     if not RESEND_API_KEY:
         log.warning(f"[DEV-MODE] Trial reminder skipped for {to_email}")
         return {"sent": False, "dev_mode": True}
-    greeting = f"{student_name}さまの保護者さま" if student_name else "保護者さま"
+    # 生徒名に含まれるHTML特殊文字をエスケープ（XSS防止）
+    safe_name = _html.escape(student_name or "")
+    greeting = f"{safe_name}さまの保護者さま" if safe_name else "保護者さま"
     days_text = "あと1日" if days_left <= 1 else f"あと{days_left}日"
     subject = f"【AI学習コーチ塾】無料体験は{days_text}で終了します"
     html = f"""<!DOCTYPE html>
@@ -448,11 +470,14 @@ def _create_otp(student_id: int, ttl_seconds: int = 600) -> str:
 
 def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, otp_code: str = "", is_welcome: bool = False) -> dict:
     """Resend 経由でマジックリンクメール送信。OTPコードも含める。未設定ならコンソール出力。"""
+    import html as _html
     subject_welcome = "【AI学習コーチ塾】ご登録ありがとうございます（ログインコード）"
     subject_relogin = "【AI学習コーチ塾】ログインコードをお送りします"
     subject = subject_welcome if is_welcome else subject_relogin
 
-    greeting = f"{student_name}さまの保護者さま" if student_name else "保護者さま"
+    # XSS対策: student_name に含まれる特殊文字をエスケープ
+    safe_name = _html.escape(student_name or "")
+    greeting = f"{safe_name}さまの保護者さま" if safe_name else "保護者さま"
     body_intro = (
         f"""<p>{greeting}、ご登録ありがとうございます 🎉</p>
     <p>3日間のトライアルが始まりました。<strong>以下の6桁コードをアプリに入力</strong>してログインしてください。</p>"""
@@ -521,8 +546,13 @@ def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, otp
         return {"sent": False, "error": str(e)[:200]}
 
 
-def _get_current_student(authorization: Optional[str]) -> Optional[dict]:
-    """Authorization: Bearer <token> ヘッダからセッション検証し生徒レコードを返す。"""
+def _get_current_student(authorization: Optional[str], allow_canceled: bool = False) -> Optional[dict]:
+    """Authorization: Bearer <token> ヘッダからセッション検証し生徒レコードを返す。
+
+    セキュリティ: 有効なトークンでも、生徒のステータスが 'paid' でなければ None を返す。
+    これによりキャンセル/失効したユーザーがセッションを使い続けるのを防ぐ。
+    allow_canceled=True の場合のみ canceled 状態も許可（解約直後の画面遷移等で使用）。
+    """
     if not authorization or not authorization.startswith("Bearer "):
         return None
     token = authorization[len("Bearer "):].strip()
@@ -536,7 +566,10 @@ def _get_current_student(authorization: Optional[str]) -> Optional[dict]:
     conn.close()
     if not row:
         return None
-    # row は dict (dict_row / sqlite3.Row) のどちらか
+    # ステータスゲート: paid のみ許可（allow_canceled=True時は canceled も OK）
+    allowed = ("paid",) if not allow_canceled else ("paid", "canceled")
+    if row["status"] not in allowed:
+        return None
     return {
         "id": row["id"],
         "name": row["name"],
@@ -556,12 +589,14 @@ class MagicLinkRequest(BaseModel):
 
 
 @app.post("/api/auth/magic-link")
-def request_magic_link(payload: MagicLinkRequest):
+def request_magic_link(payload: MagicLinkRequest, request: Request):
     """メールアドレスから生徒を検索し、ログインURLをメール送信する。
     存在しないメールでも 200 を返す（アカウント列挙攻撃対策）。"""
     email_lower = (payload.email or "").lower().strip()
     if not email_lower:
         raise HTTPException(status_code=400, detail="Email required")
+    # レート制限: 同一IPから1分間に5回まで
+    _check_rate_limit_ip(request, bucket="magic_link", limit=5, window=60)
 
     conn = db()
     c = conn.cursor()
@@ -587,36 +622,83 @@ class VerifyCodeRequest(BaseModel):
 
 
 @app.post("/api/auth/verify-code")
-def verify_code(payload: VerifyCodeRequest):
-    """6桁OTPコードでログイン。成功時は session token を返す。"""
+def verify_code(payload: VerifyCodeRequest, request: Request):
+    """6桁OTPコードでログイン。成功時は session token を返す。
+
+    セキュリティ対策:
+    - 1つのOTPに対して最大5回まで失敗を許容。超えたら全OTP無効化
+    - IPごとに1分あたり10リクエストまで（in-memory）
+    - 原子的 UPDATE ... RETURNING で競合防止
+    - 失敗時の応答を一定にして列挙攻撃対策
+    """
+    import time
     email_lower = (payload.email or "").lower().strip()
     code = (payload.code or "").strip()
     if not email_lower or not code or len(code) != 6 or not code.isdigit():
         raise HTTPException(status_code=400, detail="有効なメールアドレスと6桁のコードを入力してください")
 
+    # シンプルなIP rate limit (in-memory)
+    _check_rate_limit_ip(request, bucket="verify_code", limit=10, window=60)
+
     conn = db()
     c = conn.cursor()
     c.execute("SELECT id, name, email, grade, goal, plan, status FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
     student = c.fetchone()
-    if not student or student["status"] != "paid":
-        conn.close()
-        # 同じエラー応答で列挙対策
-        raise HTTPException(status_code=401, detail="コードが正しくないか、有効期限が切れています")
 
-    # 有効なOTPを検索（未使用・未期限切れ）
+    generic_401 = HTTPException(status_code=401, detail="コードが正しくないか、有効期限が切れています")
+
+    if not student or student["status"] != "paid":
+        # ダミー処理で応答時間を揃える（列挙対策）
+        c.execute("SELECT 1")
+        conn.close()
+        raise generic_401
+
+    # 原子的に「未使用かつ有効なコード」を消費する
     c.execute(
-        """SELECT id FROM otp_codes
+        """UPDATE otp_codes
+           SET used_at = CURRENT_TIMESTAMP
            WHERE student_id = ? AND code = ? AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP
-           ORDER BY id DESC LIMIT 1""",
+           RETURNING id""",
         (student["id"], code)
     )
     otp = c.fetchone()
     if not otp:
+        # 失敗カウントをインクリメント、5回超えたらこのユーザーの全OTPを無効化
+        c.execute(
+            "SELECT COUNT(*) AS n FROM otp_codes WHERE student_id = ? AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP",
+            (student["id"],)
+        )
+        active_count = c.fetchone()["n"]
+        # 記録目的で failed_attempts テーブルは作らない（シンプル化）。代わりに、
+        # 5分以内の失敗試行をカウントしてlockoutする
+        # ここでは「直近5分の verify-code 失敗 >= 5」を発火条件に
+        c.execute(
+            """SELECT COUNT(*) AS n FROM notifications
+               WHERE student_id = ? AND template='otp_fail'
+                 AND sent_at > CURRENT_TIMESTAMP - INTERVAL '5 minutes'"""
+            if USE_POSTGRES else
+            """SELECT COUNT(*) AS n FROM notifications
+               WHERE student_id = ? AND template='otp_fail'
+                 AND sent_at > datetime('now', '-5 minutes')""",
+            (student["id"],)
+        )
+        fail_count = c.fetchone()["n"]
+        # 失敗記録
+        c.execute(
+            "INSERT INTO notifications (student_id, channel, template, payload, success) VALUES (?, 'internal', 'otp_fail', ?, 0)",
+            (student["id"], json.dumps({"ip": (request.client.host if request.client else None)}))
+        )
+        if fail_count >= 4:
+            # 5回目の失敗(=既に4回記録+今回で5): このユーザーの有効OTPを全て無効化
+            c.execute(
+                "UPDATE otp_codes SET used_at = CURRENT_TIMESTAMP WHERE student_id = ? AND used_at IS NULL",
+                (student["id"],)
+            )
+            log.warning(f"OTP lockout triggered for student {student['id']} ({email_lower}): invalidated all active codes")
+        conn.commit()
         conn.close()
-        raise HTTPException(status_code=401, detail="コードが正しくないか、有効期限が切れています")
+        raise generic_401
 
-    # 使用済みマーク
-    c.execute("UPDATE otp_codes SET used_at = CURRENT_TIMESTAMP WHERE id = ?", (otp["id"],))
     conn.commit()
     conn.close()
 
@@ -1305,7 +1387,11 @@ def create_billing_portal_session(authorization: Optional[str] = Header(None)):
 
 @app.post("/api/billing/cancel-trial")
 def cancel_trial(authorization: Optional[str] = Header(None)):
-    """トライアル中に解約希望: Stripe顧客が存在すればsubscription削除、そうでなければDBのstatusを'canceled'に。"""
+    """解約: Stripe側で解約(成功時のみwebhookがstatus更新) or 純trial(Stripe顧客なし)ならDB直接更新。
+
+    Stripe失敗を飲み込むと課金継続 & アクセス遮断の最悪事故になるため、
+    失敗時はHTTPExceptionを投げる（DBには何も書かない）。
+    """
     student = _get_current_student(authorization)
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -1316,20 +1402,33 @@ def cancel_trial(authorization: Optional[str] = Header(None)):
     if not row:
         conn.close()
         raise HTTPException(status_code=404, detail="Student not found")
-    # Stripe有料購読中なら、そちらから解約
+
+    # Stripe有料購読中なら、Stripe経由で解約（webhookがstatus更新）
     if row["stripe_subscription_id"]:
         _stripe = get_stripe()
-        if _stripe:
-            try:
-                _stripe.Subscription.delete(row["stripe_subscription_id"])
-                log.info(f"Stripe subscription canceled for student {student['id']}")
-            except Exception as e:
-                log.error(f"Stripe cancel failed: {e}")
-    # DBのステータスを更新
+        if not _stripe:
+            conn.close()
+            raise HTTPException(status_code=503, detail="決済サービスが一時的に利用できません。しばらくしてから再度お試しください。")
+        try:
+            _stripe.Subscription.delete(row["stripe_subscription_id"])
+            log.info(f"Stripe subscription canceled for student {student['id']}")
+        except Exception as e:
+            log.error(f"Stripe cancel failed for student {student['id']}: {type(e).__name__}: {e}")
+            conn.close()
+            raise HTTPException(
+                status_code=502,
+                detail="Stripeでの解約処理に失敗しました。お手数ですが info@trillion-ai-juku.com までお問い合わせください。"
+            )
+        # DB更新はStripe webhook (customer.subscription.deleted) が担当する。
+        # ただしwebhook到達まで遅延があるためクライアントには即時成功を返す。
+        conn.close()
+        return {"ok": True, "message": "解約手続きを受け付けました。現在のご契約期間終了まではご利用いただけます。"}
+
+    # 純trial (Stripe顧客なし) の場合のみDBを直接更新
     c.execute("UPDATE students SET status='canceled', updated_at=CURRENT_TIMESTAMP WHERE id=?", (student["id"],))
     conn.commit()
     conn.close()
-    return {"ok": True, "message": "トライアルを解約しました。3日間の無料期間は引き続きご利用いただけます。"}
+    return {"ok": True, "message": "トライアルを解約しました。再契約をご希望の際はトライアル申込ページからお願いします。"}
 
 
 @app.post("/api/cron/weekly-reports")
@@ -1343,7 +1442,7 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
 
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT id, name, line_user_id, parent_email FROM students WHERE status IN ('trial', 'paid')")
+    c.execute("SELECT id, name, email, line_user_id FROM students WHERE status IN ('trial', 'paid')")
     students = list(c.fetchall())
     conn.close()
 

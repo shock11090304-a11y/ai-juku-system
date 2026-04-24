@@ -541,3 +541,40 @@
   .to-task { flex-wrap: wrap; }
   .to-task-action { width: 100%; text-align: center; }
 }
+
+/* =================================================================
+   Mobile responsive fix for mypage header + main content
+   ================================================================= */
+@media (max-width: 768px) {
+  .mypage-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+  .mypage-logo { font-size: 1rem; gap: 0.5rem; }
+  .mypage-logo .logo-icon { font-size: 1.8rem; }
+  .mypage-user { width: 100%; }
+  .user-avatar { width: 40px; height: 40px; font-size: 1.4rem; flex-shrink: 0; }
+  .user-info { min-width: 0; flex: 1; }
+  .user-name { font-size: 0.95rem; }
+  .user-level { font-size: 0.75rem; }
+  .mypage-main { padding: 1rem; }
+
+  /* Dashboard grid 1列化 */
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Action buttons 1列化 */
+  .action-buttons { grid-template-columns: 1fr; }
+  .action-btn { padding: 0.85rem; }
+
+  /* Achievements 2列 */
+  .achievements-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Weekly chart 高さ調整 */
+  .weekly-chart-box { max-height: 260px; }
+
+  /* Billing section */
+  .billing-section { padding: 1rem !important; }
+}

@@ -290,9 +290,11 @@
           localStorage.setItem('ai_juku_session_student', JSON.stringify(data.student));
           showMsg('success', `✅ ようこそ、${data.student.name || 'ゲスト'}さま！学習環境へ移動します...`);
           setTimeout(() => {
+            // オープンリダイレクト対策: 同一オリジンの相対パスのみ許可
             const params = new URLSearchParams(window.location.search);
-            const redirect = params.get('redirect') || 'index.html';
-            window.location.href = redirect;
+            const raw = params.get('redirect') || 'index.html';
+            const safe = /^[a-z0-9_\-./?#=&]+$/i.test(raw) && !raw.startsWith('//') && !raw.startsWith('http');
+            window.location.href = safe ? raw : 'index.html';
           }, 800);
         } else {
           showMsg('error', '⚠️ ' + (data.detail || 'コードが正しくありません'));
