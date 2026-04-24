@@ -1,5 +1,5 @@
 // Service Worker — AI学習コーチ塾 PWA
-const VERSION = 'v2-20260422';
+const VERSION = 'v3-20260424-mobile';
 const CACHE = `ai-juku-${VERSION}`;
 
 // 初回訪問時にキャッシュする重要ファイル
@@ -7,9 +7,12 @@ const ASSETS = [
   '/',
   '/index.html',
   '/lp.html',
+  '/login.html',
+  '/auth.html',
   '/style.css',
   '/lp.css',
   '/app.js',
+  '/auth-guard.js',
   '/analytics.js',
   '/articles.js',
   '/manifest.json',
