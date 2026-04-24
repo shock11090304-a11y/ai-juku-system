@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>SNS販売開始キット | AI学習コーチ塾</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0a1a;
+    --panel: rgba(30, 30, 60, 0.6);
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #ec4899;
+    --text: #e4e4e7;
+    --text-dim: #a1a1aa;
+    --border: rgba(255,255,255,0.1);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, 'Hiragino Kaku Gothic ProN', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 2rem;
+  }
+  h1 { font-size: 2rem; background: linear-gradient(135deg, #818cf8, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  h2 { font-size: 1.4rem; margin-top: 3rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--primary); }
+  h3 { color: var(--primary-light); margin-top: 2rem; }
+  .post-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    position: relative;
+  }
+  .post-box pre {
+    white-space: pre-wrap;
+    font-family: inherit;
+    margin: 0;
+    color: var(--text);
+  }
+  .copy-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.4rem 0.9rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .copy-btn:hover { background: var(--primary-light); }
+  .copy-btn.copied { background: #10b981; }
+
+  /* Instagram slide styles — 1080x1080 */
+  .slides-grid {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+  }
+  .slide-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .download-btn {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white;
+    border: none;
+    padding: 0.7rem;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .download-btn:hover { opacity: 0.9; }
+
+  .ig-slide {
+    width: 540px;
+    height: 540px;
+    background: linear-gradient(135deg, #0a0a1a 0%, #1a0f2e 50%, #2d1b4e 100%);
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 50px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  }
+  /* Render actually at 1080x1080 for sharp Instagram upload */
+  .ig-slide-actual {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    width: 1080px;
+    height: 1080px;
+    padding: 100px;
+    font-size: 2rem;
+  }
+  .ig-slide::before, .ig-slide-actual::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 80%, rgba(99, 102, 241, 0.3) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 80% 20%, rgba(236, 72, 153, 0.25) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .ig-slide > *, .ig-slide-actual > * { position: relative; z-index: 1; }
+  .ig-brand {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: #a78bfa;
+    margin-bottom: 1rem;
+  }
+  .ig-slide-actual .ig-brand { font-size: 1.4rem; }
+
+  .ig-title {
+    font-size: 2.4rem;
+    font-weight: 900;
+    line-height: 1.2;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #c7d2fe, #f9a8d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .ig-slide-actual .ig-title { font-size: 5.2rem; }
+
+  .ig-sub {
+    font-size: 1.1rem;
+    color: #cbd5e1;
+    line-height: 1.6;
+  }
+  .ig-slide-actual .ig-sub { font-size: 2.4rem; }
+
+  .ig-foot {
+    margin-top: auto;
+    font-size: 0.8rem;
+    color: #8b5cf6;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+  .ig-slide-actual .ig-foot { font-size: 1.6rem; }
+
+  .ig-big {
+    font-size: 4rem;
+    font-weight: 900;
+    line-height: 1;
+    margin: 1rem 0;
+    background: linear-gradient(135deg, #fbbf24, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .ig-slide-actual .ig-big { font-size: 8rem; }
+
+  .ig-list { list-style: none; padding: 0; margin: 1rem 0; }
+  .ig-list li {
+    padding: 0.6rem 0;
+    font-size: 1.05rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .ig-slide-actual .ig-list li { font-size: 2.2rem; padding: 1.2rem 0; }
+  .ig-list li::before {
+    content: '✓';
+    color: #10b981;
+    font-weight: 900;
+    margin-right: 0.5rem;
+  }
+
+  .ig-cta {
+    background: linear-gradient(135deg, #6366f1, #ec4899);
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+    font-weight: 900;
+    font-size: 1.1rem;
+    margin-top: 1rem;
+  }
+  .ig-slide-actual .ig-cta { font-size: 2.4rem; padding: 2rem 3rem; border-radius: 24px; }
+
+  .ig-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  .ig-compare-col {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 1rem;
+  }
+  .ig-slide-actual .ig-compare-col { padding: 2rem; border-radius: 24px; }
+  .ig-compare-col.bad { opacity: 0.6; }
+  .ig-compare-col.good { background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.4); }
+  .ig-compare-title { font-size: 0.9rem; color: #94a3b8; margin-bottom: 0.5rem; font-weight: 700; }
+  .ig-slide-actual .ig-compare-title { font-size: 1.8rem; margin-bottom: 1rem; }
+
+  .slide-label {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    text-align: center;
+    font-weight: 700;
+  }
+
+  .reels-script {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+  }
+  .reels-script table { width: 100%; border-collapse: collapse; }
+  .reels-script th, .reels-script td {
+    padding: 0.8rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+  }
+  .reels-script th { color: var(--primary-light); font-size: 0.85rem; width: 80px; }
+
+  .tips {
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    font-size: 0.88rem;
+  }
+  .tips strong { color: #6ee7b7; }
+</style>
+</head>
+<body>
+
+<h1>🚀 AI学習コーチ塾 — SNS販売開始キット</h1>
+<p class="text-dim" style="color:var(--text-dim);">Threads / Instagram / Reels の投稿素材。コピペ＆画像ダウンロード対応。</p>
+
+<!-- ============ THREADS ============ -->
+<h2>📱 Threads 投稿文（5バリエーション）</h2>
+<p style="color:var(--text-dim); font-size: 0.9rem;">アカウント育成には5投稿以上が効果的。1日1本ペースでローテ推奨。</p>
+
+<h3>① 共感型（塾経営者の本音）</h3>
+<div class="post-box">
+<button class="copy-btn" onclick="copyPost(this)">コピー</button>
+<pre>「塾に通わせても家ではわからない」
+「質問したくても先生に会えるのは週1回」
+「保護者レポートは月1回が限界」
+
+塾経営12年でずっと感じてきた限界。
+これ、AIで全部解決できました。
+
+🎓 AI学習コーチ塾
+・24時間いつでも質問OK
+・個別カリキュラム自動生成
+・毎週の保護者レポート
+
+3日間トライアル / 月¥1,980〜
+第1期生100名限定で募集中🌱
+
+trillion-ai-juku.com</pre>
+</div>
+
+<h3>② 数字訴求型</h3>
+<div class="post-box">
+<button class="copy-btn" onclick="copyPost(this)">コピー</button>
+<pre>AIで"1,000時間"分の個別指導を月¥1,980で。
+
+普通の塾：週2回×月8回×2時間 = 月16時間
+AI塾：24時間×30日 = 月720時間（しかも個別）
+
+深夜の「わからない」も即解決。
+先生が疲れる心配ゼロ。
+保護者レポートは自動送信。
+
+第1期生100名限定 🎓
+trillion-ai-juku.com</pre>
+</div>
+
+<h3>③ ストーリー型</h3>
+<div class="post-box">
+<button class="copy-btn" onclick="copyPost(this)">コピー</button>
+<pre>塾を12年やって気づいた真実。
+
+「一人ひとりに最適な授業をする」
+これ、人間の先生には限界があります。
+
+20人クラス担当 → 全員ベスト不可能
+個別指導 → 料金高すぎる
+家庭教師 → 時間限定
+
+AIなら全部解決する。24時間、個別、低価格。
+
+ついに公開します。
+🎓 AI学習コーチ塾
+trillion-ai-juku.com</pre>
+</div>
+
+<h3>④ 比較型（LP誘導）</h3>
+<div class="post-box">
+<button class="copy-btn" onclick="copyPost(this)">コピー</button>
+<pre>🎓 AI学習コーチ塾 vs 従来の塾
+
+【月額】¥1,980〜 vs ¥30,000〜
+【対応時間】24時間 vs 週2〜3回
+【カリキュラム】完全個別AI生成 vs クラス授業
+【保護者報告】毎週自動 vs 月1回手書き
+【教材】AI自動生成 vs 既製問題集
+
+"塾の10倍の密度"を1/15の価格で。
+
+第1期生100名先行募集 🚀
+trillion-ai-juku.com</pre>
+</div>
+
+<h3>⑤ 保護者視点（母親層向け）</h3>
+<div class="post-box">
+<button class="copy-btn" onclick="copyPost(this)">コピー</button>
+<pre>お母さん、こんな経験ありませんか？
+
+「塾の進度、把握できてる？」
+「家での勉強、何してる？」
+「本当に身についてる？」
+
+AI学習コーチ塾なら、
+毎週 日曜の夜にレポートが届きます。
+
+📊 今週の学習時間
+💯 科目別の正答率
+🎯 弱点と来週の重点
+
+"見える化"で家族みんなで伴走を。
+月¥1,980〜 / trillion-ai-juku.com</pre>
+</div>
+
+<!-- ============ INSTAGRAM CAPTION ============ -->
+<h2>📸 Instagram キャプション</h2>
+<div class="post-box">
+<button class="copy-btn" onclick="copyPost(this)">コピー</button>
+<pre>🎓 AI学習コーチ塾 — ついに販売開始
+
+塾経営12年で見つけた"塾の限界"を、
+AIで全部ぶっ壊しました。
+
+━━━━━━━━━━━━━━
+✨特徴
+━━━━━━━━━━━━━━
+
+🤖 Claude Opus 4.7搭載の24時間AIチューター
+📚 受験科目すべて対応（数学・英語・国語・理科・社会）
+🎯 個別カリキュラム・教材を自動生成
+📊 毎週の保護者レポート自動配信
+📝 模試履歴を自動ストック・AI分析
+
+━━━━━━━━━━━━━━
+💰 料金
+━━━━━━━━━━━━━━
+
+✅ 3日間トライアル
+✅ 月額¥1,980〜
+✅ 第1期生100名限定
+
+━━━━━━━━━━━━━━
+👨‍🏫 塾長メッセージ
+━━━━━━━━━━━━━━
+
+「先生が深夜対応できない」
+「一人ひとりに合わせたカリキュラムは人力では無理」
+「週ごとの細かい進捗報告は限界がある」
+
+12年間ずっと悩んだ問題。
+AIは疲れないし、いつでも待っていてくれる。
+ようやく"理想の塾"が作れました。
+
+→ プロフィールのリンクから登録
+→ trillion-ai-juku.com
+
+.
+.
+.
+
+#AI学習 #個別指導塾 #AIチューター #受験生 #大学受験 #高校受験 #中学受験 #高校生 #中学生 #AI教育 #オンライン塾 #勉強垢 #勉強法 #受験勉強 #東大 #早慶 #MARCH #関関同立 #塾 #家庭教師 #EdTech #StudyWithMe #学習塾 #オンライン家庭教師 #ChatGPT勉強法</pre>
+</div>
+
+<!-- ============ INSTAGRAM CAROUSEL ============ -->
+<h2>🎨 Instagram カルーセル画像（5枚）</h2>
+<p style="color:var(--text-dim);">各「1080×1080でダウンロード」ボタンでInstagram最適サイズのPNGを書き出せます。</p>
+
+<div class="tips">
+<strong>💡 使い方:</strong> 各スライドの<strong>「1080×1080でダウンロード」</strong>ボタンをクリック → PNG保存 → Instagramで5枚まとめてカルーセル投稿（左→右の順）。プレビューは縮小版、DL時は高解像度1080×1080。
+</div>
+
+<div class="slides-grid">
+
+  <!-- Slide 1: HERO -->
+  <div class="slide-wrapper">
+    <div class="slide-label">①ヒーロー</div>
+    <div class="ig-slide" id="preview-1">
+      <div class="ig-brand">AI学習コーチ塾 / LAUNCH</div>
+      <h1 class="ig-title">塾の限界を、<br>AIで超える。</h1>
+      <p class="ig-sub">第1期生100名限定<br>販売開始しました</p>
+      <div class="ig-foot">→ trillion-ai-juku.com</div>
+    </div>
+    <button class="download-btn" onclick="downloadSlide(1)">📥 1080×1080でダウンロード</button>
+  </div>
+
+  <!-- Slide 2: PROBLEM -->
+  <div class="slide-wrapper">
+    <div class="slide-label">②問題提起</div>
+    <div class="ig-slide" id="preview-2">
+      <div class="ig-brand">02 / こんな経験ありませんか？</div>
+      <h2 class="ig-title" style="font-size:1.9rem;">塾の"3つの限界"</h2>
+      <ul class="ig-list" style="margin-top:1.5rem;">
+        <li style="border:none; padding:0.5rem 0;">❌ 深夜の質問は先生に届かない</li>
+        <li style="border:none; padding:0.5rem 0;">❌ クラス授業で個別最適は無理</li>
+        <li style="border:none; padding:0.5rem 0;">❌ 保護者報告は月1回が限界</li>
+      </ul>
+      <p class="ig-sub" style="margin-top:1rem;">全部、AIなら解決できます。</p>
+    </div>
+    <button class="download-btn" onclick="downloadSlide(2)">📥 1080×1080でダウンロード</button>
+  </div>
+
+  <!-- Slide 3: FEATURES -->
+  <div class="slide-wrapper">
+    <div class="slide-label">③機能訴求</div>
+    <div class="ig-slide" id="preview-3">
+      <div class="ig-brand">03 / 5つの主要機能</div>
+      <ul class="ig-list">
+        <li>24時間AIチューター</li>
+        <li>個別カリキュラム自動生成</li>
+        <li>教材AI自動生成</li>
+        <li>毎週の保護者レポート</li>
+        <li>模試履歴AI分析</li>
+      </ul>
+      <p class="ig-sub" style="font-size:0.9rem; margin-top:0.5rem;">全科目対応 / Claude Opus 4.7搭載</p>
+    </div>
+    <button class="download-btn" onclick="downloadSlide(3)">📥 1080×1080でダウンロード</button>
+  </div>
+
+  <!-- Slide 4: COMPARE -->
+  <div class="slide-wrapper">
+    <div class="slide-label">④比較</div>
+    <div class="ig-slide" id="preview-4">
+      <div class="ig-brand">04 / 圧倒的コスパ</div>
+      <h2 class="ig-title" style="font-size:1.9rem;">15分の1の料金で<br>10倍の学習密度</h2>
+      <div class="ig-compare">
+        <div class="ig-compare-col bad">
+          <div class="ig-compare-title">普通の塾</div>
+          <div style="font-size:1.6rem; font-weight:900;">¥30,000+</div>
+          <div style="font-size:0.8rem; color:#94a3b8;">週2〜3回・月1報告</div>
+        </div>
+        <div class="ig-compare-col good">
+          <div class="ig-compare-title">AI学習コーチ塾</div>
+          <div class="ig-big" style="font-size:2rem; margin:0;">¥1,980</div>
+          <div style="font-size:0.8rem; color:#c7d2fe;">24時間・週次報告</div>
+        </div>
+      </div>
+    </div>
+    <button class="download-btn" onclick="downloadSlide(4)">📥 1080×1080でダウンロード</button>
+  </div>
+
+  <!-- Slide 5: CTA -->
+  <div class="slide-wrapper">
+    <div class="slide-label">⑤CTA</div>
+    <div class="ig-slide" id="preview-5">
+      <div class="ig-brand">05 / 今すぐスタート</div>
+      <h2 class="ig-title" style="font-size:2.2rem;">3日間トライアル<br>無料。</h2>
+      <p class="ig-sub" style="margin:1rem 0;">月¥1,980〜<br>第1期生100名限定</p>
+      <div class="ig-cta">trillion-ai-juku.com</div>
+      <div class="ig-foot" style="margin-top:auto; text-align:center;">プロフィールのリンクから👆</div>
+    </div>
+    <button class="download-btn" onclick="downloadSlide(5)">📥 1080×1080でダウンロード</button>
+  </div>
+
+</div>
+
+<!-- Hidden high-res versions for download -->
+<div id="hidden-slides">
+  <div class="ig-slide-actual" id="dl-1">
+    <div class="ig-brand">AI学習コーチ塾 / LAUNCH</div>
+    <h1 class="ig-title">塾の限界を、<br>AIで超える。</h1>
+    <p class="ig-sub">第1期生100名限定<br>販売開始しました</p>
+    <div class="ig-foot" style="margin-top:auto;">→ trillion-ai-juku.com</div>
+  </div>
+
+  <div class="ig-slide-actual" id="dl-2">
+    <div class="ig-brand">02 / こんな経験ありませんか？</div>
+    <h2 class="ig-title" style="font-size:4rem;">塾の"3つの限界"</h2>
+    <ul class="ig-list" style="margin-top:3rem;">
+      <li style="border:none; padding:1rem 0;">❌ 深夜の質問は先生に届かない</li>
+      <li style="border:none; padding:1rem 0;">❌ クラス授業で個別最適は無理</li>
+      <li style="border:none; padding:1rem 0;">❌ 保護者報告は月1回が限界</li>
+    </ul>
+    <p class="ig-sub" style="margin-top:2rem;">全部、AIなら解決できます。</p>
+  </div>
+
+  <div class="ig-slide-actual" id="dl-3">
+    <div class="ig-brand">03 / 5つの主要機能</div>
+    <ul class="ig-list">
+      <li>24時間AIチューター</li>
+      <li>個別カリキュラム自動生成</li>
+      <li>教材AI自動生成</li>
+      <li>毎週の保護者レポート</li>
+      <li>模試履歴AI分析</li>
+    </ul>
+    <p class="ig-sub" style="font-size:1.8rem; margin-top:1rem;">全科目対応 / Claude Opus 4.7搭載</p>
+  </div>
+
+  <div class="ig-slide-actual" id="dl-4">
+    <div class="ig-brand">04 / 圧倒的コスパ</div>
+    <h2 class="ig-title" style="font-size:4rem;">15分の1の料金で<br>10倍の学習密度</h2>
+    <div class="ig-compare" style="margin-top:3rem;">
+      <div class="ig-compare-col bad">
+        <div class="ig-compare-title">普通の塾</div>
+        <div style="font-size:3.5rem; font-weight:900;">¥30,000+</div>
+        <div style="font-size:1.4rem; color:#94a3b8;">週2〜3回・月1報告</div>
+      </div>
+      <div class="ig-compare-col good">
+        <div class="ig-compare-title">AI学習コーチ塾</div>
+        <div style="font-size:4.5rem; font-weight:900; background:linear-gradient(135deg,#fbbf24,#ec4899); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">¥1,980</div>
+        <div style="font-size:1.4rem; color:#c7d2fe;">24時間・週次報告</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ig-slide-actual" id="dl-5">
+    <div class="ig-brand">05 / 今すぐスタート</div>
+    <h2 class="ig-title" style="font-size:5rem;">3日間トライアル<br>無料。</h2>
+    <p class="ig-sub" style="margin:2rem 0;">月¥1,980〜<br>第1期生100名限定</p>
+    <div class="ig-cta">trillion-ai-juku.com</div>
+    <div class="ig-foot" style="margin-top:auto; text-align:center;">プロフィールのリンクから👆</div>
+  </div>
+</div>
+
+<!-- ============ REELS SCRIPT ============ -->
+<h2>🎬 Instagram Reels 台本（30秒）</h2>
+
+<div class="tips">
+<strong>💡 撮影のコツ:</strong> スマホを縦向き固定、塾長の正面顔出しが伸びやすい。テロップは大きく・太く。BGMは「やる気系・穏やか系BGM」を選択。
+</div>
+
+<div class="reels-script">
+<table>
+<tr><th>時間</th><th>映像</th><th>テロップ（画面表示）</th><th>セリフ（肉声）</th></tr>
+
+<tr><td>0–3s</td><td>塾長（足立さん）カメラ目線</td><td>「塾、高くないですか？」</td><td>（真剣な表情で）塾、高くないですか？</td></tr>
+
+<tr><td>3–8s</td><td>×印テロップが次々出る</td><td>・月30,000円<br>・週2回だけ<br>・深夜の質問は無視</td><td>月3万、週2回、夜の質問は先生から返事が来ない。</td></tr>
+
+<tr><td>8–13s</td><td>塾長・自信ある表情</td><td>「12年塾をやって、全部ぶっ壊しました」</td><td>塾経営12年やって感じた限界、全部ぶっ壊したサービス作りました。</td></tr>
+
+<tr><td>13–22s</td><td>アプリ画面（スクリーンショット・スクロール）</td><td>🤖24時間AIチューター<br>📚教材自動生成<br>📊保護者レポート<br>→全部¥1,980〜</td><td>24時間AIチューター、教材自動生成、週次レポート、ぜんぶ月1,980円。</td></tr>
+
+<tr><td>22–27s</td><td>塾長・手を前に出す</td><td>「第1期生100名限定」</td><td>第1期生、100名限定です。</td></tr>
+
+<tr><td>27–30s</td><td>画面に大きく URL</td><td>🎓 trillion-ai-juku.com<br>プロフィールから飛べます</td><td>プロフィールから飛べます。ぜひ。</td></tr>
+</table>
+</div>
+
+<h3>🎥 もっとシンプルな代替案: アプリ画面だけ動画（塾長の顔出しナシ）</h3>
+<div class="reels-script">
+<table>
+<tr><th>時間</th><th>映像</th><th>テロップ</th></tr>
+<tr><td>0–3s</td><td>黒背景</td><td>「塾、月30,000円…」</td></tr>
+<tr><td>3–6s</td><td>黒背景</td><td>「もう必要ないです」</td></tr>
+<tr><td>6–12s</td><td>アプリ画面（AIチューター質問するところ）</td><td>AIチューターが即答</td></tr>
+<tr><td>12–18s</td><td>アプリ画面（教材生成の様子）</td><td>AIが教材を自動生成</td></tr>
+<tr><td>18–24s</td><td>アプリ画面（保護者レポート）</td><td>毎週レポートが届く</td></tr>
+<tr><td>24–30s</td><td>ロゴ+URL</td><td>🎓AI学習コーチ塾<br>月¥1,980〜<br>trillion-ai-juku.com</td></tr>
+</table>
+</div>
+
+<!-- ============ 投稿スケジュール ============ -->
+<h2>📅 おすすめ投稿スケジュール（初週）</h2>
+
+<div class="post-box">
+<h3 style="margin-top:0;">Day 1（販売開始日）</h3>
+<ul>
+<li>🌅 <strong>8:00</strong> Threads ①共感型 投稿</li>
+<li>🌞 <strong>12:00</strong> Instagram カルーセル5枚 + キャプション投稿</li>
+<li>🌇 <strong>19:00</strong> Threads ④比較型 投稿</li>
+</ul>
+
+<h3>Day 2</h3>
+<ul>
+<li>🌅 <strong>8:00</strong> Threads ②数字訴求 投稿</li>
+<li>🌇 <strong>19:00</strong> Instagram Reels 動画公開</li>
+</ul>
+
+<h3>Day 3–5</h3>
+<ul>
+<li>毎朝8時、Threadsに1投稿（③→⑤の順）</li>
+<li>反応が良かった投稿にReels・Instagramへ横展開</li>
+</ul>
+
+<div class="tips" style="margin-top:1rem;">
+<strong>🎯 KPI目標（初週）:</strong> Threads 1投稿あたりインプレッション1,000+・Instagram フォロワー100名・LP訪問50名・トライアル申込3〜5名
+</div>
+</div>
+
+<script>
+function copyPost(btn) {
+  const text = btn.nextElementSibling.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ コピー済';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'コピー';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+async function downloadSlide(n) {
+  const el = document.getElementById(`dl-${n}`);
+  el.style.left = '0px'; // Temporarily bring on-screen for render
+  const canvas = await html2canvas(el, {
+    width: 1080,
+    height: 1080,
+    scale: 1,
+    backgroundColor: '#0a0a1a',
+    logging: false,
+    useCORS: true,
+  });
+  el.style.left = '-9999px';
+  const link = document.createElement('a');
+  link.download = `ai-juku-slide-${n}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+</script>
+
+</body>
+</html>

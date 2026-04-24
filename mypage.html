@@ -244,6 +244,22 @@
         </div>
       </div>
     </section>
+
+    <!-- 契約・解約管理 -->
+    <section class="billing-section" style="margin-top:2rem; padding: 1.5rem; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;">
+      <div class="section-title"><h2>⚙️ 契約管理</h2></div>
+      <div id="billingInfo" style="font-size:0.9rem; color: #cbd5e1; margin-bottom: 1rem; line-height: 1.7;">
+        <span id="billingStatusLabel">—</span>
+      </div>
+      <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+        <button id="openPortalBtn" class="btn-secondary btn-small" style="display:none;">💳 支払い・プラン変更</button>
+        <button id="cancelTrialBtn" class="btn-secondary btn-small" style="display:none; color: #fca5a5; border-color: rgba(239, 68, 68, 0.3);">🚪 解約する</button>
+        <a href="mailto:info@trillion-ai-juku.com" class="btn-secondary btn-small" style="text-decoration:none; color:#a78bfa;">📧 お問い合わせ</a>
+      </div>
+      <p style="margin-top:1rem; font-size:0.8rem; color: #94a3b8;">
+        ※ 解約後も、既に支払った期間の終わりまで引き続きご利用いただけます。返金はございません。
+      </p>
+    </section>
   </main>
 
   <footer class="footer">
@@ -251,5 +267,95 @@
   </footer>
 
   <script src="mypage.js?v=20260424-trial3"></script>
+  <script>
+  // 契約管理: ステータス取得・ポータル遷移・解約
+  (function() {
+    const API_BASE = window.location.origin.includes(':8090') ? 'http://localhost:8000' : window.location.origin;
+    const statusLabel = document.getElementById('billingStatusLabel');
+    const portalBtn = document.getElementById('openPortalBtn');
+    const cancelBtn = document.getElementById('cancelTrialBtn');
+
+    // 現在のステータス表示
+    async function refresh() {
+      try {
+        const token = localStorage.getItem('ai_juku_session_token');
+        if (!token) return;
+        const res = await fetch(`${API_BASE}/api/auth/me`, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!res.ok) return;
+        const data = await res.json();
+        const s = data.student;
+        if (!s) return;
+        const statusText = {
+          'trial': '🎖 3日間 無料体験中',
+          'paid': '✅ 月額プラン契約中',
+          'canceled': '⏹ 解約済み（期間終了まで利用可）',
+        }[s.status] || s.status;
+        statusLabel.innerHTML = `ステータス: <strong style="color:#c7d2fe;">${statusText}</strong><br>プラン: <strong>${s.plan || '—'}</strong> / メール: ${s.email}`;
+        // Stripe顧客情報がある場合はポータルを表示
+        if (s.status === 'paid' || s.status === 'canceled') {
+          portalBtn.style.display = '';
+        }
+        if (s.status === 'trial' || s.status === 'paid') {
+          cancelBtn.style.display = '';
+        }
+      } catch (e) {
+        console.warn('Failed to load billing status', e);
+      }
+    }
+    refresh();
+
+    // Stripe Portal ボタン
+    portalBtn.addEventListener('click', async () => {
+      portalBtn.disabled = true;
+      portalBtn.textContent = '⏳ 準備中...';
+      try {
+        const token = localStorage.getItem('ai_juku_session_token');
+        const res = await fetch(`${API_BASE}/api/billing/portal-session`, {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        });
+        const data = await res.json();
+        if (res.ok && data.url) {
+          window.location.href = data.url;
+        } else {
+          alert('⚠️ ' + (data.detail || 'ポータル作成に失敗しました'));
+          portalBtn.disabled = false;
+          portalBtn.textContent = '💳 支払い・プラン変更';
+        }
+      } catch (e) {
+        alert('⚠️ ネットワークエラーが発生しました');
+        portalBtn.disabled = false;
+        portalBtn.textContent = '💳 支払い・プラン変更';
+      }
+    });
+
+    // 解約ボタン (トライアル中心、有料でもStripe API経由)
+    cancelBtn.addEventListener('click', async () => {
+      if (!confirm('本当に解約しますか？\n\n・3日間の無料期間が残っている場合は、期間終了まで利用可能です\n・解約後の返金はありません\n・後日再契約は可能です')) return;
+      cancelBtn.disabled = true;
+      cancelBtn.textContent = '⏳ 処理中...';
+      try {
+        const token = localStorage.getItem('ai_juku_session_token');
+        const res = await fetch(`${API_BASE}/api/billing/cancel-trial`, {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        });
+        const data = await res.json();
+        if (res.ok) {
+          alert('✅ ' + data.message);
+          location.reload();
+        } else {
+          alert('⚠️ ' + (data.detail || '解約に失敗しました'));
+          cancelBtn.disabled = false;
+          cancelBtn.textContent = '🚪 解約する';
+        }
+      } catch (e) {
+        alert('⚠️ ネットワークエラーが発生しました');
+        cancelBtn.disabled = false;
+        cancelBtn.textContent = '🚪 解約する';
+      }
+    });
+  })();
+  </script>
 </body>
 </html>

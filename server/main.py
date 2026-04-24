@@ -388,6 +388,48 @@ def _verify_session_token(token: str) -> Optional[dict]:
         return None
 
 
+def _send_trial_ending_email(to_email: str, student_name: str, days_left: int, checkout_url: str) -> dict:
+    """トライアル終了リマインダーメール。自動課金前に告知。"""
+    if not RESEND_API_KEY:
+        log.warning(f"[DEV-MODE] Trial reminder skipped for {to_email}")
+        return {"sent": False, "dev_mode": True}
+    greeting = f"{student_name}さまの保護者さま" if student_name else "保護者さま"
+    days_text = "あと1日" if days_left <= 1 else f"あと{days_left}日"
+    subject = f"【AI学習コーチ塾】無料体験は{days_text}で終了します"
+    html = f"""<!DOCTYPE html>
+<html><body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 560px; margin: 0 auto; padding: 2rem;">
+<h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AI学習コーチ塾</h1>
+<p>{greeting}、いつもご利用ありがとうございます。</p>
+<p><strong>無料体験期間は{days_text}で終了します</strong>。そのままご利用継続される場合は、このままなにもしていただかなくて大丈夫です（月額プランへ自動移行）。</p>
+<p><strong>継続しない場合</strong>は、以下のリンクから解約手続きをお願いします（ワンクリックで完了）:</p>
+<p style="text-align:center; margin: 2rem 0;">
+  <a href="{checkout_url}" style="display:inline-block; padding: 0.85rem 1.75rem; background:#6366f1; color:white; text-decoration:none; border-radius:8px; font-weight:700;">
+    マイページで解約する
+  </a>
+</p>
+<p style="font-size:0.85rem; color:#666;">ご継続の場合はそのままで結構です。引き続き学習環境をご活用ください。</p>
+<hr style="margin:2rem 0; border:none; border-top:1px solid #eee;">
+<p style="font-size:0.8rem; color:#999;">
+  お問い合わせ: <a href="mailto:info@trillion-ai-juku.com" style="color:#6366f1;">info@trillion-ai-juku.com</a>
+</p>
+</body></html>"""
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({"from": FROM_EMAIL, "to": [to_email], "subject": subject, "html": html}).encode("utf-8"),
+            headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json", "User-Agent": "ai-juku-system/1.0"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode())
+            log.info(f"Trial reminder sent to {to_email}: {result.get('id')}")
+            return {"sent": True, "resend_id": result.get("id")}
+    except Exception as e:
+        log.error(f"Trial reminder email failed for {to_email}: {type(e).__name__}: {e}")
+        return {"sent": False, "error": str(e)}
+
+
 def _create_otp(student_id: int, ttl_seconds: int = 600) -> str:
     """6桁数字のOTPコードを生成しDBに保存。10分有効。"""
     import secrets
@@ -1170,6 +1212,124 @@ def _compute_weekly_stats(student_id: int, days: int = 7) -> dict:
         "subject_stats": subject_stats,
         "days": days,
     }
+
+
+@app.post("/api/cron/trial-reminders")
+def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = False):
+    """毎日1回外部cronから呼び出し。trial_end が 1-2 日先の生徒にリマインダー送信。
+    notifications テーブルで重複送信防止。"""
+    if not CRON_SECRET:
+        raise HTTPException(status_code=503, detail="Cron not configured")
+    if not x_cron_secret or not hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    conn = db()
+    c = conn.cursor()
+    now = datetime.now(timezone.utc)
+    t_start = now + timedelta(hours=24)   # 24時間後以降
+    t_end = now + timedelta(hours=48)     # 48時間以内
+    # status='paid' はStripeトライアル中、'trial'はまだ未決済のトライアル
+    c.execute(
+        """SELECT id, name, email, trial_end, status FROM students
+           WHERE status IN ('trial','paid') AND email IS NOT NULL
+             AND trial_end IS NOT NULL
+             AND trial_end > ? AND trial_end <= ?""",
+        (t_start.isoformat(), t_end.isoformat())
+    )
+    candidates = list(c.fetchall())
+
+    sent = 0
+    skipped = 0
+    preview = []
+    for row in candidates:
+        # 重複チェック: この生徒に trial_ending 通知を既に送っていたらスキップ
+        c.execute(
+            "SELECT id FROM notifications WHERE student_id=? AND template='trial_ending' AND success=1 LIMIT 1",
+            (row["id"],)
+        )
+        if c.fetchone():
+            skipped += 1
+            continue
+        # trial_end までの残日数を概算
+        try:
+            te = row["trial_end"]
+            if isinstance(te, str):
+                te = datetime.fromisoformat(te.replace("Z", "+00:00"))
+            if te.tzinfo is None:
+                te = te.replace(tzinfo=timezone.utc)
+            days_left = max(1, int((te - now).total_seconds() / 86400))
+        except Exception:
+            days_left = 2
+        if dry_run:
+            preview.append({"student_id": row["id"], "email": row["email"], "days_left": days_left})
+            continue
+        result = _send_trial_ending_email(row["email"], row["name"] or "", days_left, f"{BASE_URL}/mypage.html")
+        c.execute(
+            """INSERT INTO notifications (student_id, channel, template, payload, success, error)
+               VALUES (?, 'email', 'trial_ending', ?, ?, ?)""",
+            (row["id"], json.dumps({"days_left": days_left}), 1 if result.get("sent") else 0, result.get("error", ""))
+        )
+        if result.get("sent"):
+            sent += 1
+    conn.commit()
+    conn.close()
+    return {"sent": sent, "skipped": skipped, "candidates": len(candidates), "preview": preview if dry_run else None}
+
+
+@app.post("/api/billing/portal-session")
+def create_billing_portal_session(authorization: Optional[str] = Header(None)):
+    """Stripe Customer Portal のURLを返す。有料ユーザーが解約・支払方法変更に使う。"""
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    conn = db()
+    c = conn.cursor()
+    c.execute("SELECT stripe_customer_id, status FROM students WHERE id=?", (student["id"],))
+    row = c.fetchone()
+    conn.close()
+    if not row or not row["stripe_customer_id"]:
+        raise HTTPException(status_code=400, detail="Stripe顧客情報がありません。お問い合わせください。")
+    _stripe = get_stripe()
+    if not _stripe:
+        raise HTTPException(status_code=503, detail="決済サービスが利用できません")
+    try:
+        session = _stripe.billing_portal.Session.create(
+            customer=row["stripe_customer_id"],
+            return_url=f"{BASE_URL}/mypage.html",
+        )
+        return {"url": session.url}
+    except Exception as e:
+        log.error(f"Portal session create failed for student {student['id']}: {e}")
+        raise HTTPException(status_code=500, detail="ポータル作成に失敗しました")
+
+
+@app.post("/api/billing/cancel-trial")
+def cancel_trial(authorization: Optional[str] = Header(None)):
+    """トライアル中に解約希望: Stripe顧客が存在すればsubscription削除、そうでなければDBのstatusを'canceled'に。"""
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    conn = db()
+    c = conn.cursor()
+    c.execute("SELECT stripe_customer_id, stripe_subscription_id, status FROM students WHERE id=?", (student["id"],))
+    row = c.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Student not found")
+    # Stripe有料購読中なら、そちらから解約
+    if row["stripe_subscription_id"]:
+        _stripe = get_stripe()
+        if _stripe:
+            try:
+                _stripe.Subscription.delete(row["stripe_subscription_id"])
+                log.info(f"Stripe subscription canceled for student {student['id']}")
+            except Exception as e:
+                log.error(f"Stripe cancel failed: {e}")
+    # DBのステータスを更新
+    c.execute("UPDATE students SET status='canceled', updated_at=CURRENT_TIMESTAMP WHERE id=?", (student["id"],))
+    conn.commit()
+    conn.close()
+    return {"ok": True, "message": "トライアルを解約しました。3日間の無料期間は引き続きご利用いただけます。"}
 
 
 @app.post("/api/cron/weekly-reports")
