@@ -113,21 +113,24 @@ def scene_fears(out_path):
     """3-10s: 受験生・保護者の3つの不安"""
     img = gradient_bg()
     draw = ImageDraw.Draw(img)
-    f_title = font(FONT_BLACK, 95)
-    f_item = font(FONT_BOLD, 58)
-    f_mark = font(FONT_BLACK, 75)
+    f_title = font(FONT_BLACK, 80)
+    f_item = font(FONT_BOLD, 56)
+    f_mark = font(FONT_BLACK, 70)
 
-    center_text(draw, "受験生が抱える、3つの不安", f_title, 280, TEXT)
+    # タイトル行1+2に分割して収める
+    center_text(draw, "受験生が抱える、", f_title, 240, TEXT)
+    grad_text(img, "3つの不安。", f_title, ((W - 380) // 2, 330), GRAD_P1, GRAD_P2)
 
+    draw = ImageDraw.Draw(img)
     items = [
         "何をどれだけ勉強すれば",
         "今の実力で合格できるのか",
         "残り時間で挽回できるのか",
     ]
     for i, item in enumerate(items):
-        y = 620 + i * 180
+        y = 660 + i * 180
         draw.rounded_rectangle([120, y, 230, y + 100], radius=20, fill=(139, 30, 30))
-        draw.text((143, y + 10), "?", font=f_mark, fill=RED)
+        draw.text((150, y + 10), "?", font=f_mark, fill=RED)
         draw.text((270, y + 20), item, font=f_item, fill=TEXT)
 
     img.save(out_path, "PNG")
@@ -276,88 +279,122 @@ def scene_step2_target(out_path):
 
 
 def scene_step3_curriculum(out_path):
-    """33-48s: STEP3 AI生成カリキュラム(1週間の時間割)"""
+    """33-48s: STEP3 AI生成カリキュラム — 実アプリUIに忠実なリッチ版"""
     img = gradient_bg()
     draw = ImageDraw.Draw(img)
-    f_brand = font(FONT_BOLD, 44)
-    f_head = font(FONT_BLACK, 60)
+    f_brand = font(FONT_BOLD, 40)
+    f_head = font(FONT_BLACK, 58)
 
-    draw.rounded_rectangle([60, 100, 280, 180], radius=20, fill=SUCCESS)
+    # ヘッダーバッジ: 2段組でバランス良く
+    draw.rounded_rectangle([60, 100, 290, 180], radius=20, fill=SUCCESS)
     draw.text((90, 123), "カリキュラム", font=font(FONT_BLACK, 32), fill=TEXT)
-    draw.text((310, 120), "AIが自動生成！", font=f_brand, fill=SUCCESS)
+    draw.text((320, 120), "AIが自動生成！", font=f_brand, fill=SUCCESS)
 
-    grad_text(img, "あなた専用の時間割", f_head, (150, 220), GRAD_T1, GRAD_T2)
+    grad_text(img, "あなた専用の学習計画", f_head, (100, 220), GRAD_T1, GRAD_T2)
 
-    x, y, w, h = phone_frame(draw, y=340, h=1380)
+    # アプリ画面フレーム（長めに）
+    x, y, w, h = phone_frame(draw, y=340, h=1400)
     draw = ImageDraw.Draw(img)
 
-    # ヘッダー
-    draw.rounded_rectangle([x + 20, y + 20, x + w - 20, y + 120], radius=24, fill=PANEL_DARK)
-    draw.text((x + 50, y + 50), "今週のスケジュール", font=font(FONT_BOLD, 38), fill=TEXT)
+    # タイトルバー
+    draw.rounded_rectangle([x + 20, y + 20, x + w - 20, y + 140], radius=24, fill=PANEL_DARK)
+    draw.text((x + 40, y + 40), "学習計画・管理", font=font(FONT_BOLD, 34), fill=TEXT)
+    draw.text((x + 40, y + 88), "2026/04/24 〜 04/30", font=font(FONT_BOLD, 26), fill=TEXT_MUTED)
+    # 右上に週次達成率バッジ
+    draw.rounded_rectangle([x + w - 200, y + 40, x + w - 40, y + 115], radius=16, fill=(60, 30, 40), outline=ACCENT, width=2)
+    draw.text((x + w - 185, y + 52), "目標達成度", font=font(FONT_BOLD, 22), fill=TEXT_DIM)
+    draw.text((x + w - 155, y + 78), "78%", font=font(FONT_BLACK, 30), fill=ACCENT)
+
+    # ゴールバー: 志望校/残り日数
+    gy = y + 170
+    draw.rounded_rectangle([x + 30, gy, x + w - 30, gy + 90], radius=16, fill=(50, 50, 100), outline=PRIMARY_LIGHT, width=2)
+    draw.text((x + 50, gy + 15), "▶ 早稲田大 政経  /  偏差値目標70", font=font(FONT_BOLD, 28), fill=PRIMARY_LIGHT)
+    draw.text((x + 50, gy + 52), "残り302日 / 必要学習 3.5h/日", font=font(FONT_BOLD, 24), fill=TEXT_DIM)
 
     # 週次スケジュール (月〜日)
     days = ["月", "火", "水", "木", "金", "土", "日"]
+    dates = ["4/24", "4/25", "4/26", "4/27", "4/28", "4/29", "4/30"]
     schedule = [
-        # (subject_code, title, duration, color)
-        ("英", "長文読解・ﾊﾟﾗｸﾞﾗﾌ整序", "1.5h", (59, 130, 246)),
-        ("数", "数III 極限・微分", "1.0h", (236, 72, 153)),
-        ("英", "リスニング特訓", "1.0h", (59, 130, 246)),
-        ("数", "積分の応用問題", "1.5h", (236, 72, 153)),
-        ("国", "現代文 論説読解", "1.0h", (16, 185, 129)),
-        ("模", "過去問演習 (早稲田 2023)", "3.0h", (251, 191, 36)),
-        ("休", "復習 + AI診断", "1.0h", (148, 163, 184)),
+        ("英", "長文読解(早稲田過去問パラ整序)", "1.5h", "完了", (59, 130, 246), True),
+        ("数", "数III 極限・微分の核心問題集", "1.5h", "完了", (236, 72, 153), True),
+        ("英", "リスニング特訓・ディクテーション", "1.0h", "進行中", (59, 130, 246), False),
+        ("数", "積分 応用(早稲田レベル)", "1.5h", "未着手", (236, 72, 153), False),
+        ("国", "現代文 論説文 論理構造解析", "1.0h", "未着手", (16, 185, 129), False),
+        ("模", "過去問演習(早稲田 2023年度)", "3.0h", "未着手", (251, 191, 36), False),
+        ("休", "週次復習 + AI診断レポート", "1.0h", "未着手", (148, 163, 184), False),
     ]
-    list_y = y + 160
-    for i, (day, (code, title, dur, color)) in enumerate(zip(days, schedule)):
-        ry = list_y + i * 150
-        # カード
-        draw.rounded_rectangle([x + 40, ry, x + w - 40, ry + 130], radius=16,
-                               fill=PANEL_DARK, outline=color, width=2)
+    list_y = y + 290
+    for i, (day, date, (code, title, dur, status, color, done)) in enumerate(zip(days, dates, schedule)):
+        ry = list_y + i * 145
+        # カード（完了は薄く）
+        card_fill = (25, 35, 30) if done else PANEL_DARK
+        draw.rounded_rectangle([x + 30, ry, x + w - 30, ry + 125], radius=14,
+                               fill=card_fill, outline=color, width=2)
         # 曜日バッジ
-        draw.rounded_rectangle([x + 60, ry + 25, x + 160, ry + 105], radius=14, fill=color)
-        bbox = draw.textbbox((0, 0), day, font=font(FONT_BLACK, 56))
+        draw.rounded_rectangle([x + 50, ry + 20, x + 135, ry + 105], radius=12, fill=color)
+        bbox = draw.textbbox((0, 0), day, font=font(FONT_BLACK, 48))
         tw = bbox[2] - bbox[0]
-        draw.text((x + 60 + (100 - tw) // 2, ry + 22), day, font=font(FONT_BLACK, 56), fill=TEXT)
-        # 科目コード
-        draw.text((x + 190, ry + 25), f"[{code}]", font=font(FONT_BLACK, 30), fill=color)
-        # タイトル
-        draw.text((x + 190, ry + 65), title, font=font(FONT_BOLD, 28), fill=TEXT)
-        # 時間 (右端)
+        draw.text((x + 50 + (85 - tw) // 2, ry + 22), day, font=font(FONT_BLACK, 48), fill=TEXT)
+        draw.text((x + 50 + 14, ry + 75), date, font=font(FONT_BOLD, 22), fill=TEXT)
+        # 科目コード & タイトル
+        draw.text((x + 160, ry + 22), f"[{code}]", font=font(FONT_BLACK, 26), fill=color)
+        title_color = TEXT_MUTED if done else TEXT
+        draw.text((x + 160, ry + 58), title, font=font(FONT_BOLD, 23), fill=title_color)
+        # ステータスピル
+        status_color = SUCCESS if status == "完了" else (WARNING if status == "進行中" else TEXT_MUTED)
+        draw.rounded_rectangle([x + 160, ry + 90, x + 260, ry + 120], radius=10, fill=(30, 40, 30) if status == "完了" else (40, 40, 60))
+        draw.text((x + 170, ry + 94), status, font=font(FONT_BOLD, 20), fill=status_color)
+        # 時間 (右端大きく)
         dur_text = dur
-        bbox = draw.textbbox((0, 0), dur_text, font=font(FONT_BLACK, 36))
+        bbox = draw.textbbox((0, 0), dur_text, font=font(FONT_BLACK, 34))
         dw = bbox[2] - bbox[0]
-        draw.text((x + w - 40 - dw - 20, ry + 45), dur_text, font=font(FONT_BLACK, 36), fill=color)
+        draw.text((x + w - 60 - dw, ry + 45), dur_text, font=font(FONT_BLACK, 34), fill=color)
+
+    # AI コーチコメント (下部)
+    cm_y = list_y + 7 * 145 + 10
+    if cm_y + 120 < y + h - 20:
+        draw.rounded_rectangle([x + 30, cm_y, x + w - 30, cm_y + 100], radius=14,
+                               fill=(50, 20, 50), outline=ACCENT, width=2)
+        draw.text((x + 50, cm_y + 15), "AIコーチ: 英語は計画通り◎ 数IIIの微分は追加演習を推奨",
+                  font=font(FONT_BOLD, 22), fill=TEXT)
+        draw.text((x + 50, cm_y + 55), "次週: 早稲田過去問の傾向分析を組込予定",
+                  font=font(FONT_BOLD, 22), fill=TEXT_DIM)
 
     img.save(out_path, "PNG")
     return img
 
 
 def scene_benefit(out_path):
-    """48-54s: 価値訴求"""
+    """48-54s: 価値訴求 — チェックマークをポリゴン描画で確実に表示"""
     img = gradient_bg()
     draw = ImageDraw.Draw(img)
     f_top = font(FONT_BOLD, 54)
     f_big = font(FONT_BLACK, 110)
     f_sub = font(FONT_BOLD, 48)
 
-    center_text(draw, "もう、迷わない。", f_top, 500, TEXT_DIM)
+    center_text(draw, "もう、迷わない。", f_top, 480, TEXT_DIM)
 
-    grad_text(img, "何をいつやるか、", f_big, (130, 650), GRAD_T1, GRAD_T2)
-    grad_text(img, "AIが決める。", f_big, (240, 810), GRAD_T1, GRAD_T2)
+    grad_text(img, "何をいつやるか、", f_big, (130, 620), GRAD_T1, GRAD_T2)
+    grad_text(img, "AIが決める。", f_big, (240, 780), GRAD_T1, GRAD_T2)
 
     draw = ImageDraw.Draw(img)
-    center_text(draw, "あとは、実行するだけ。", f_sub, 1100, ACCENT)
+    center_text(draw, "あとは、実行するだけ。", f_sub, 1070, ACCENT)
 
-    # 3つのチェック
+    # 3つのチェック — 緑丸の中にポリゴンチェックマーク
     bullets = [
         "模試成績の弱点分析",
         "志望校からの逆算カリキュラム",
         "週次で自動アップデート",
     ]
     for i, b in enumerate(bullets):
-        y = 1280 + i * 110
-        draw.ellipse([140, y, 220, y + 80], fill=SUCCESS)
-        draw.text((162, y + 10), "✓", font=font(FONT_BLACK, 54), fill=TEXT)
+        y = 1260 + i * 120
+        # 緑丸
+        cx, cy, r = 180, y + 40, 42
+        draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=SUCCESS)
+        # ポリゴンでチェックマーク描画
+        draw.line([(cx - 18, cy + 2), (cx - 4, cy + 16), (cx + 20, cy - 12)],
+                  fill=TEXT, width=8)
+        # テキスト
         draw.text((260, y + 15), b, font=font(FONT_BOLD, 42), fill=TEXT)
 
     img.save(out_path, "PNG")
@@ -365,36 +402,43 @@ def scene_benefit(out_path):
 
 
 def scene_cta(out_path):
-    """54-60s: CTA"""
+    """54-60s: CTA — 強い煽り+緊急性"""
     img = gradient_bg()
     draw = ImageDraw.Draw(img)
-    f_top = font(FONT_BOLD, 48)
+    f_top = font(FONT_BOLD, 46)
     f_big = font(FONT_BLACK, 130)
-    f_cta = font(FONT_BLACK, 70)
+    f_cta = font(FONT_BLACK, 66)
     f_foot = font(FONT_BOLD, 38)
-    f_hint = font(FONT_BOLD, 34)
+    f_hint = font(FONT_BOLD, 32)
 
-    center_text(draw, "あなたの志望校合格まで、", f_top, 250, TEXT_DIM)
+    center_text(draw, "あなたの志望校合格まで、", f_top, 220, TEXT_DIM)
 
-    grad_text(img, "¥1,980で3日間", f_big, (150, 380), GRAD_T1, GRAD_T2)
+    grad_text(img, "¥1,980で3日間", f_big, (150, 340), GRAD_T1, GRAD_T2)
 
     draw = ImageDraw.Draw(img)
-    center_text(draw, "模試入力 → カリキュラム生成を", f_top, 620, TEXT)
-    center_text(draw, "すべて試せます。", f_top, 690, TEXT)
+    center_text(draw, "模試入力 → カリキュラム生成を", f_top, 580, TEXT)
+    center_text(draw, "すべて試せます。", f_top, 650, TEXT)
 
-    center_text(draw, "継続は月額¥24,980〜", f_hint, 790, WARNING)
+    # 緊急性バッジ
+    badge_w = 520
+    badge_x = (W - badge_w) // 2
+    draw.rounded_rectangle([badge_x, 770, badge_x + badge_w, 850], radius=20,
+                           fill=(60, 30, 40), outline=RED, width=3)
+    draw.text((badge_x + 25, 788), "第1期生100名限定・早い者勝ち", font=font(FONT_BLACK, 30), fill=RED)
+
+    center_text(draw, "継続は月額¥24,980〜 (自動課金なし)", f_hint, 880, WARNING)
 
     # CTAボックス
-    box_y = 940
+    box_y = 970
     box_h = 200
     draw.rounded_rectangle([100, box_y, W - 100, box_y + box_h], radius=50, fill=PRIMARY)
     bbox = draw.textbbox((0, 0), "trillion-ai-juku.com", font=f_cta)
     bw = bbox[2] - bbox[0]
-    draw.text(((W - bw) // 2, box_y + 60), "trillion-ai-juku.com", font=f_cta, fill=TEXT)
+    draw.text(((W - bw) // 2, box_y + 62), "trillion-ai-juku.com", font=f_cta, fill=TEXT)
 
     center_text(draw, "— プロフィールのリンクから —", f_foot, box_y + box_h + 80, PRIMARY_LIGHT)
 
-    center_text(draw, "AI学習コーチ塾", font(FONT_BLACK, 52), 1550, TEXT)
+    center_text(draw, "AI学習コーチ塾", font(FONT_BLACK, 52), 1560, TEXT)
 
     img.save(out_path, "PNG")
     return img
