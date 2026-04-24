@@ -50,7 +50,9 @@
   </main>
 
   <script>
-    const API_BASE = window.location.origin.includes(':8090') ? 'http://localhost:8000' : window.location.origin;
+    const API_BASE = (window.location.origin.includes(':8090') || window.location.origin.includes('localhost:8090'))
+      ? 'http://localhost:8000'
+      : 'https://ai-juku-api-production.up.railway.app';
     const params = new URLSearchParams(window.location.search);
     const token = params.get('t');
     const card = document.getElementById('card');

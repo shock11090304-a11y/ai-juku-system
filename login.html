@@ -201,7 +201,15 @@
   </main>
 
   <script>
-    const API_BASE = window.location.origin.includes(':8090') ? 'http://localhost:8000' : window.location.origin;
+    // API_BASE 決定: 開発サーバ(:8090)はlocalhost:8000、それ以外は本番Railwayに直接接続。
+    // Vercel rewrite の遅延や 307 redirect の POST 問題を回避するため、本番URLを直接指定。
+    function getApiBase() {
+      const origin = window.location.origin;
+      if (origin.includes(':8090') || origin.includes('localhost:8090')) return 'http://localhost:8000';
+      // 本番はVercel rewriteに依存せず直接Railway APIを叩く(ネットワークエラー低減)
+      return 'https://ai-juku-api-production.up.railway.app';
+    }
+    const API_BASE = getApiBase();
     const emailForm = document.getElementById('emailForm');
     const emailBtn = document.getElementById('emailBtn');
     const emailInput = document.getElementById('email');
