@@ -427,29 +427,42 @@ def _check_rate_limit_ip(request, bucket: str, limit: int = 10, window: int = 60
                 del _RATE_LIMIT_STORE[k]
 
 
-def _send_trial_ending_email(to_email: str, student_name: str, days_left: int, checkout_url: str) -> dict:
-    """トライアル終了リマインダーメール。自動課金前に告知。"""
+def _send_trial_ending_email(to_email: str, student_name: str, days_left: int, upgrade_url: str) -> dict:
+    """体験終了リマインダーメール。継続したい人向けに本契約フォームへの誘導。
+    体験終了時の自動課金は行わないので、何もしなければアカウントは自動失効する（データは保持）。
+    """
     import html as _html
     if not RESEND_API_KEY:
         log.warning(f"[DEV-MODE] Trial reminder skipped for {to_email}")
         return {"sent": False, "dev_mode": True}
-    # 生徒名に含まれるHTML特殊文字をエスケープ（XSS防止）
     safe_name = _html.escape(student_name or "")
     greeting = f"{safe_name}さまの保護者さま" if safe_name else "保護者さま"
     days_text = "あと1日" if days_left <= 1 else f"あと{days_left}日"
-    subject = f"【AI学習コーチ塾】無料体験は{days_text}で終了します"
+    subject = f"【AI学習コーチ塾】体験は{days_text}で終了 — 継続のご案内"
     html = f"""<!DOCTYPE html>
 <html><body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 560px; margin: 0 auto; padding: 2rem;">
 <h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AI学習コーチ塾</h1>
-<p>{greeting}、いつもご利用ありがとうございます。</p>
-<p><strong>無料体験期間は{days_text}で終了します</strong>。そのままご利用継続される場合は、このままなにもしていただかなくて大丈夫です（月額プランへ自動移行）。</p>
-<p><strong>継続しない場合</strong>は、以下のリンクから解約手続きをお願いします（ワンクリックで完了）:</p>
+<p>{greeting}、体験のご利用ありがとうございます。</p>
+
+<p style="background:#f8f9fc; padding:1rem; border-left:4px solid #6366f1; border-radius:4px; margin: 1.5rem 0;">
+  📅 <strong>3日間の体験は{days_text}で終了します</strong>
+</p>
+
+<p><strong>継続してご利用されたい方</strong>は、以下のボタンから月額プランの本登録をお願いします。</p>
+
 <p style="text-align:center; margin: 2rem 0;">
-  <a href="{checkout_url}" style="display:inline-block; padding: 0.85rem 1.75rem; background:#6366f1; color:white; text-decoration:none; border-radius:8px; font-weight:700;">
-    マイページで解約する
+  <a href="{upgrade_url}" style="display:inline-block; padding: 1rem 2rem; background:linear-gradient(135deg,#6366f1,#ec4899); color:white; text-decoration:none; border-radius:8px; font-weight:700; font-size:1.05rem;">
+    🎓 継続登録する（月額プラン）
   </a>
 </p>
-<p style="font-size:0.85rem; color:#666;">ご継続の場合はそのままで結構です。引き続き学習環境をご活用ください。</p>
+
+<div style="background:#fafafa; padding:1rem; border-radius:6px; margin: 1.5rem 0; font-size: 0.9rem;">
+  <strong>💡 何もしなかった場合</strong><br>
+  体験終了日に自動的にアクセスが失効します（<strong>自動課金は発生しません</strong>）。<br>
+  アカウントデータは保持され、後日いつでも再開できます。
+</div>
+
+<p style="font-size:0.85rem; color:#666;">ご不明な点はお問い合わせください。</p>
 <hr style="margin:2rem 0; border:none; border-top:1px solid #eee;">
 <p style="font-size:0.8rem; color:#999;">
   お問い合わせ: <a href="mailto:info@trillion-ai-juku.com" style="color:#6366f1;">info@trillion-ai-juku.com</a>
@@ -569,9 +582,10 @@ def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, otp
 def _get_current_student(authorization: Optional[str], allow_canceled: bool = False) -> Optional[dict]:
     """Authorization: Bearer <token> ヘッダからセッション検証し生徒レコードを返す。
 
-    セキュリティ: 有効なトークンでも、生徒のステータスが 'paid' でなければ None を返す。
-    これによりキャンセル/失効したユーザーがセッションを使い続けるのを防ぐ。
-    allow_canceled=True の場合のみ canceled 状態も許可（解約直後の画面遷移等で使用）。
+    ステータスゲート:
+    - 'paid': 常に許可
+    - 'trial': trial_end が未来なら許可（体験期間中）
+    - 'canceled' / 'expired': 拒否（allow_canceled=True の時のみ canceled は許可）
     """
     if not authorization or not authorization.startswith("Bearer "):
         return None
@@ -581,14 +595,36 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
         return None
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT id, name, email, grade, goal, plan, status, stripe_customer_id FROM students WHERE id = ?", (claims["student_id"],))
+    c.execute("SELECT id, name, email, grade, goal, plan, status, stripe_customer_id, trial_end FROM students WHERE id = ?", (claims["student_id"],))
     row = c.fetchone()
     conn.close()
     if not row:
         return None
-    # ステータスゲート: paid のみ許可（allow_canceled=True時は canceled も OK）
-    allowed = ("paid",) if not allow_canceled else ("paid", "canceled")
-    if row["status"] not in allowed:
+
+    status = row["status"]
+    now = datetime.now(timezone.utc)
+    is_allowed = False
+    if status == "paid":
+        is_allowed = True
+    elif status == "trial":
+        # trial_end 未経過なら許可
+        te = row["trial_end"]
+        if te:
+            try:
+                if isinstance(te, str):
+                    te_dt = datetime.fromisoformat(te.replace("Z", "+00:00"))
+                else:
+                    te_dt = te
+                if te_dt.tzinfo is None:
+                    te_dt = te_dt.replace(tzinfo=timezone.utc)
+                if te_dt > now:
+                    is_allowed = True
+            except Exception:
+                pass
+    elif status == "canceled" and allow_canceled:
+        is_allowed = True
+
+    if not is_allowed:
         return None
     return {
         "id": row["id"],
@@ -597,7 +633,7 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
         "grade": row["grade"],
         "goal": row["goal"],
         "plan": row["plan"],
-        "status": row["status"],
+        "status": status,
     }
 
 
@@ -624,14 +660,38 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
     row = c.fetchone()
     conn.close()
 
-    if row and row["status"] == "paid":
+    # 体験期間中の trial ユーザーも送信対象（trial_end 未経過のみ）
+    is_sendable = False
+    if row:
+        if row["status"] == "paid":
+            is_sendable = True
+        elif row["status"] == "trial":
+            # trial_end チェック
+            c = db().cursor()
+            c.execute("SELECT trial_end FROM students WHERE id=?", (row["id"],))
+            te_row = c.fetchone()
+            if te_row and te_row["trial_end"]:
+                try:
+                    te = te_row["trial_end"]
+                    if isinstance(te, str):
+                        te_dt = datetime.fromisoformat(te.replace("Z", "+00:00"))
+                    else:
+                        te_dt = te
+                    if te_dt.tzinfo is None:
+                        te_dt = te_dt.replace(tzinfo=timezone.utc)
+                    if te_dt > datetime.now(timezone.utc):
+                        is_sendable = True
+                except Exception:
+                    pass
+
+    if is_sendable:
         token = _sign_session_token(row["id"])
         magic_url = f"{BASE_URL}/auth.html?t={token}"
         otp_code = _create_otp(row["id"])
         _send_magic_link_email(row["email"], row["name"] or "", magic_url, otp_code=otp_code, is_welcome=False)
     else:
-        # 存在しない or status != paid でも同じレスポンスを返す（列挙対策）
-        log.info(f"Magic link requested for unknown/unpaid email: {email_lower}")
+        # 存在しない or 期限切れでも同じレスポンスを返す（列挙対策）
+        log.info(f"Magic link requested for unknown/inactive email: {email_lower}")
 
     return {"ok": True, "message": "該当するアカウントがあればメールをお送りしました。届かない場合は迷惑メールフォルダもご確認ください。"}
 
@@ -662,13 +722,30 @@ def verify_code(payload: VerifyCodeRequest, request: Request):
 
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT id, name, email, grade, goal, plan, status FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
+    c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
     student = c.fetchone()
 
     generic_401 = HTTPException(status_code=401, detail="コードが正しくないか、有効期限が切れています")
 
-    if not student or student["status"] != "paid":
-        # ダミー処理で応答時間を揃える（列挙対策）
+    # trial_end 未経過の trial ユーザーも許可
+    _active = False
+    if student:
+        if student["status"] == "paid":
+            _active = True
+        elif student["status"] == "trial" and student["trial_end"]:
+            try:
+                te = student["trial_end"]
+                if isinstance(te, str):
+                    te_dt = datetime.fromisoformat(te.replace("Z", "+00:00"))
+                else:
+                    te_dt = te
+                if te_dt.tzinfo is None:
+                    te_dt = te_dt.replace(tzinfo=timezone.utc)
+                if te_dt > datetime.now(timezone.utc):
+                    _active = True
+            except Exception:
+                pass
+    if not _active:
         c.execute("SELECT 1")
         conn.close()
         raise generic_401
@@ -752,13 +829,31 @@ def verify_magic_link(t: str):
 
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT id, name, email, grade, goal, plan, status FROM students WHERE id = ?", (claims["student_id"],))
+    c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end FROM students WHERE id = ?", (claims["student_id"],))
     row = c.fetchone()
     conn.close()
     if not row:
         raise HTTPException(status_code=404, detail="Student not found")
-    if row["status"] != "paid":
-        raise HTTPException(status_code=403, detail="Account not active")
+
+    # paid or trial(未経過)のみ許可
+    _allowed = False
+    if row["status"] == "paid":
+        _allowed = True
+    elif row["status"] == "trial" and row["trial_end"]:
+        try:
+            te = row["trial_end"]
+            if isinstance(te, str):
+                te_dt = datetime.fromisoformat(te.replace("Z", "+00:00"))
+            else:
+                te_dt = te
+            if te_dt.tzinfo is None:
+                te_dt = te_dt.replace(tzinfo=timezone.utc)
+            if te_dt > datetime.now(timezone.utc):
+                _allowed = True
+        except Exception:
+            pass
+    if not _allowed:
+        raise HTTPException(status_code=403, detail="体験期間が終了しました。継続登録をご希望の方はLPからお申し込みください。")
 
     return {
         "ok": True,
@@ -771,6 +866,7 @@ def verify_magic_link(t: str):
             "grade": row["grade"],
             "goal": row["goal"],
             "plan": row["plan"],
+            "status": row["status"],
         }
     }
 
@@ -816,6 +912,72 @@ def trial_signup(payload: TrialSignup):
 # ==========================================================================
 # Routes: Stripe Checkout
 # ==========================================================================
+@app.post("/api/stripe/trial-checkout")
+def create_trial_checkout(payload: dict):
+    """3日間体験のための ¥1,980 単発決済。サブスク無し（自動課金なし）。
+    体験終了後、ユーザーが明示的に継続登録する必要がある。
+    """
+    email = (payload.get("email") or "").strip()
+    name = (payload.get("name") or "").strip()
+    student_id = payload.get("student_id")
+    if not email:
+        raise HTTPException(status_code=400, detail="email required")
+
+    # 第1期生枠チェック
+    conn_fc = db()
+    c_fc = conn_fc.cursor()
+    try:
+        c_fc.execute(
+            "SELECT COUNT(*) FROM students WHERE status IN ('paid', 'trial') AND plan IS NOT NULL"
+        )
+        taken = c_fc.fetchone()[0]
+    except Exception:
+        taken = 0
+    conn_fc.close()
+    if taken >= FOUNDER_LIMIT and not student_id:
+        raise HTTPException(
+            status_code=403,
+            detail=f"第1期生{FOUNDER_LIMIT}名の募集は終了しました。次期募集をお待ちください。"
+        )
+
+    if not STRIPE_SECRET_KEY:
+        return {
+            "mock": True,
+            "checkout_url": f"{BASE_URL}/checkout-success.html?session_id=mock_trial",
+            "amount": FOUNDER_TRIAL_PRICE,
+        }
+
+    s = get_stripe()
+    session = s.checkout.Session.create(
+        mode="payment",
+        payment_method_types=["card"],
+        line_items=[{
+            "price_data": {
+                "currency": "jpy",
+                "product_data": {
+                    "name": "AI学習コーチ塾 - 3日間体験",
+                    "description": "AIチューター・教材生成・学習分析をフル活用できる3日間。期間終了後に継続ご希望の方のみ、別途本契約フォームからお進みください。"
+                },
+                "unit_amount": FOUNDER_TRIAL_PRICE,
+            },
+            "quantity": 1,
+        }],
+        customer_email=email,
+        success_url=f"{BASE_URL}/checkout-success.html?session_id={{CHECKOUT_SESSION_ID}}",
+        cancel_url=f"{BASE_URL}/checkout-cancel.html",
+        metadata={
+            "purchase_type": "trial",
+            "student_id": str(student_id or ""),
+            "name": name,
+        }
+    )
+    return {
+        "checkout_url": session.url,
+        "session_id": session.id,
+        "amount": FOUNDER_TRIAL_PRICE,
+    }
+
+
 @app.post("/api/stripe/checkout")
 def create_checkout_session(payload: CheckoutRequest):
     """
@@ -902,40 +1064,26 @@ def create_checkout_session(payload: CheckoutRequest):
             "enrollment_fee": 0,
         }
 
-    # 通常プラン: 3日間トライアル（¥1,980）+ 月額サブスク（入塾金はトライアル後に追加）
-    # トライアル開始時は ¥1,980 のみ即時請求
-    line_items = [
-        {"price": price_id, "quantity": 1},
-        {
-            "price_data": {
-                "currency": "jpy",
-                "product_data": {"name": "3日間トライアル料金（創業記念価格）"},
-                "unit_amount": FOUNDER_TRIAL_PRICE,
-            },
-            "quantity": 1,
-        },
-    ]
-
+    # 継続本契約: 月額サブスク。トライアル無し（即時課金）。
+    # 体験期間は別途 /api/stripe/trial-checkout で単発¥1,980決済済み。
     # 入塾金はWebhook (checkout.session.completed) で InvoiceItem として
-    # 顧客に作成 → トライアル終了後の初回請求書に自動的に乗る。
-    # （Stripe Checkout の subscription_data は add_invoice_items 非対応）
+    # 顧客に作成 → 初回請求書に自動的に乗る。
     needs_enrollment_fee = payload.plan not in ENROLLMENT_FEE_EXEMPT
     subscription_data = {
-        "trial_period_days": 3,
-        "trial_settings": {"end_behavior": {"missing_payment_method": "cancel"}},
         "metadata": {
             "plan": payload.plan,
             "student_id": str(payload.student_id or ""),
             "max_students": str(max_students),
             "founder": "1",
             "needs_enrollment_fee": "1" if needs_enrollment_fee else "0",
+            "purchase_type": "monthly",
         }
     }
 
     session_kwargs = {
         "mode": "subscription",
         "payment_method_types": ["card"],
-        "line_items": line_items,
+        "line_items": [{"price": price_id, "quantity": 1}],
         "customer_email": payload.email,
         "success_url": f"{BASE_URL}/checkout-success.html?session_id={{CHECKOUT_SESSION_ID}}",
         "cancel_url": f"{BASE_URL}/checkout-cancel.html",
@@ -945,7 +1093,7 @@ def create_checkout_session(payload: CheckoutRequest):
             "plan_name": plan_name,
             "student_id": str(payload.student_id or ""),
             "max_students": str(max_students),
-            "founder_trial": "true",
+            "purchase_type": "monthly",
             "needs_enrollment_fee": "1" if needs_enrollment_fee else "0",
         }
     }
@@ -1043,23 +1191,57 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
         meta = session.get("metadata", {}) or {}
+        purchase_type = meta.get("purchase_type", "monthly")  # 既定は月額（旧互換）
         plan = meta.get("plan")
         student_id = meta.get("student_id")
         max_students = meta.get("max_students", "1")
+        name_from_meta = meta.get("name", "")
         conn = db()
         c = conn.cursor()
-        # 生徒が既に存在する場合は更新、なければ新規作成
-        if student_id and student_id != "":
-            c.execute(
-                """UPDATE students SET status='paid', stripe_customer_id=?, stripe_subscription_id=?,
-                       paid_since=CURRENT_TIMESTAMP, plan=?, updated_at=CURRENT_TIMESTAMP
-                   WHERE id=?""",
-                (session.get("customer"), session.get("subscription"), plan, student_id)
-            )
-        else:
-            # 匿名チェックアウトの場合は email で紐付け
-            email = session.get("customer_details", {}).get("email") or session.get("customer_email")
-            if email:
+        customer = session.get("customer")
+        subscription = session.get("subscription")
+        email = session.get("customer_details", {}).get("email") or session.get("customer_email")
+
+        if purchase_type == "trial":
+            # 3日間体験(単発¥1,980): status='trial', trial_start=now, trial_end=now+3d
+            # サブスク無し。自動課金は発生しない。
+            now = datetime.now(timezone.utc)
+            trial_end = now + timedelta(days=3)
+            if student_id and student_id != "":
+                c.execute(
+                    """UPDATE students SET status='trial', stripe_customer_id=?,
+                           trial_start=?, trial_end=?, updated_at=CURRENT_TIMESTAMP
+                       WHERE id=?""",
+                    (customer, now.isoformat(), trial_end.isoformat(), student_id)
+                )
+            elif email:
+                c.execute("SELECT id FROM students WHERE email=?", (email,))
+                row = c.fetchone()
+                if row:
+                    c.execute(
+                        """UPDATE students SET status='trial', stripe_customer_id=?,
+                               trial_start=?, trial_end=?, updated_at=CURRENT_TIMESTAMP
+                           WHERE id=?""",
+                        (customer, now.isoformat(), trial_end.isoformat(), row[0])
+                    )
+                else:
+                    c.execute(
+                        """INSERT INTO students (name, email, status, stripe_customer_id, trial_start, trial_end)
+                           VALUES (?, ?, 'trial', ?, ?, ?)""",
+                        (name_from_meta or "（新規）", email, customer, now.isoformat(), trial_end.isoformat())
+                    )
+            conn.commit()
+
+        else:  # purchase_type == "monthly" (旧互換含む)
+            # 月額サブスク登録: status='paid'、入塾金 InvoiceItem 作成
+            if student_id and student_id != "":
+                c.execute(
+                    """UPDATE students SET status='paid', stripe_customer_id=?, stripe_subscription_id=?,
+                           paid_since=CURRENT_TIMESTAMP, plan=?, updated_at=CURRENT_TIMESTAMP
+                       WHERE id=?""",
+                    (customer, subscription, plan, student_id)
+                )
+            elif email:
                 c.execute("SELECT id FROM students WHERE email=?", (email,))
                 row = c.fetchone()
                 if row:
@@ -1067,24 +1249,34 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                         """UPDATE students SET status='paid', stripe_customer_id=?, stripe_subscription_id=?,
                                paid_since=CURRENT_TIMESTAMP, plan=?, updated_at=CURRENT_TIMESTAMP
                            WHERE id=?""",
-                        (session.get("customer"), session.get("subscription"), plan, row[0])
+                        (customer, subscription, plan, row[0])
                     )
                 else:
                     c.execute(
                         """INSERT INTO students (name, email, plan, status, stripe_customer_id, stripe_subscription_id, paid_since)
                            VALUES (?, ?, ?, 'paid', ?, ?, CURRENT_TIMESTAMP)""",
-                        ("（新規）", email, plan, session.get("customer"), session.get("subscription"))
+                        ("（新規）", email, plan, customer, subscription)
                     )
-        conn.commit()
+            conn.commit()
 
-        # 購入完了後、該当生徒を再取得してマジックリンクを送信
-        # （保護者は checkout-success で「メールを確認してください」と案内される）
+            # 入塾金 InvoiceItem (月額のみ)
+            if meta.get("needs_enrollment_fee") == "1" and customer:
+                try:
+                    s.InvoiceItem.create(
+                        customer=customer, amount=ENROLLMENT_FEE, currency="jpy",
+                        description="入塾金（システム登録費用・初回のみ）",
+                        metadata={"plan": plan, "type": "enrollment_fee"},
+                    )
+                    log.info(f"✅ Enrollment fee InvoiceItem created: customer={customer}")
+                except Exception as e:
+                    log.error(f"Failed to create enrollment fee InvoiceItem: {type(e).__name__}: {e}")
+
+        # Welcome email (どちらのタイプも共通: ログインコード+リンク送信)
         try:
-            email_for_link = session.get("customer_details", {}).get("email") or session.get("customer_email")
             if student_id and student_id != "":
                 c.execute("SELECT id, name, email FROM students WHERE id=?", (student_id,))
-            elif email_for_link:
-                c.execute("SELECT id, name, email FROM students WHERE email=?", (email_for_link,))
+            elif email:
+                c.execute("SELECT id, name, email FROM students WHERE email=?", (email,))
             else:
                 c.execute("SELECT id, name, email FROM students WHERE 1=0")
             s_row = c.fetchone()
@@ -1097,23 +1289,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
             log.error(f"Failed to send welcome magic link: {type(e).__name__}: {e}")
 
         conn.close()
-        log.info(f"✅ Checkout completed: plan={plan}, customer={session.get('customer')}, max_students={max_students}")
-
-        # 入塾金 (¥10,000) を顧客に InvoiceItem として作成。
-        # トライアル終了後の初回月額請求書に自動的に追加される。
-        # トライアル中に解約された場合は orphan のまま残り、課金されない (= 解約時無料)。
-        if meta.get("needs_enrollment_fee") == "1" and session.get("customer"):
-            try:
-                s.InvoiceItem.create(
-                    customer=session.get("customer"),
-                    amount=ENROLLMENT_FEE,
-                    currency="jpy",
-                    description="入塾金（システム登録費用・初回のみ）",
-                    metadata={"plan": plan, "type": "enrollment_fee"},
-                )
-                log.info(f"✅ Enrollment fee InvoiceItem created: customer={session.get('customer')}, amount={ENROLLMENT_FEE}")
-            except Exception as e:
-                log.error(f"Failed to create enrollment fee InvoiceItem for customer={session.get('customer')}: {type(e).__name__}: {e}")
+        log.info(f"✅ Checkout completed: type={purchase_type}, plan={plan}, customer={customer}")
 
     elif event["type"] == "invoice.payment_succeeded":
         invoice = event["data"]["object"]
@@ -1316,6 +1492,37 @@ def _compute_weekly_stats(student_id: int, days: int = 7) -> dict:
     }
 
 
+@app.post("/api/cron/expire-trials")
+def cron_expire_trials(x_cron_secret: str = Header(None), dry_run: bool = False):
+    """体験期間終了した trial ユーザーを 'expired' に変更。毎日実行。
+    自動課金は行わないので、何もしなければデータは保持されたまま失効する。"""
+    if not CRON_SECRET:
+        raise HTTPException(status_code=503, detail="Cron not configured")
+    if not x_cron_secret or not hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    conn = db()
+    c = conn.cursor()
+    now = datetime.now(timezone.utc)
+    # trial かつ trial_end 経過済みのユーザーを expired に
+    c.execute(
+        "SELECT id, name, email, trial_end FROM students WHERE status='trial' AND trial_end IS NOT NULL AND trial_end < ?",
+        (now.isoformat(),)
+    )
+    candidates = list(c.fetchall())
+    expired_ids = []
+    for row in candidates:
+        if dry_run:
+            expired_ids.append({"id": row["id"], "email": row["email"]})
+            continue
+        c.execute("UPDATE students SET status='expired', updated_at=CURRENT_TIMESTAMP WHERE id=?", (row["id"],))
+        expired_ids.append(row["id"])
+    conn.commit()
+    conn.close()
+    log.info(f"Trial expiry: {len(expired_ids)} students marked as expired")
+    return {"expired": len(expired_ids), "candidates": len(candidates), "preview": expired_ids if dry_run else None}
+
+
 @app.post("/api/cron/trial-reminders")
 def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = False):
     """毎日1回外部cronから呼び出し。trial_end が 1-2 日先の生徒にリマインダー送信。
@@ -1365,7 +1572,7 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
         if dry_run:
             preview.append({"student_id": row["id"], "email": row["email"], "days_left": days_left})
             continue
-        result = _send_trial_ending_email(row["email"], row["name"] or "", days_left, f"{BASE_URL}/mypage.html")
+        result = _send_trial_ending_email(row["email"], row["name"] or "", days_left, f"{BASE_URL}/upgrade.html?email={row['email']}")
         c.execute(
             """INSERT INTO notifications (student_id, channel, template, payload, success, error)
                VALUES (?, 'email', 'trial_ending', ?, ?, ?)""",

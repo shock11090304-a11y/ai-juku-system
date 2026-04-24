@@ -252,6 +252,7 @@
         <span id="billingStatusLabel">—</span>
       </div>
       <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+        <a id="upgradeBtn" class="btn-primary btn-small" style="display:none; text-decoration:none; background: linear-gradient(135deg, #6366f1, #ec4899); color:white;" href="upgrade.html">🎓 継続登録する（月額プラン）</a>
         <button id="openPortalBtn" class="btn-secondary btn-small" style="display:none;">💳 支払い・プラン変更</button>
         <button id="cancelTrialBtn" class="btn-secondary btn-small" style="display:none; color: #fca5a5; border-color: rgba(239, 68, 68, 0.3);">🚪 解約する</button>
         <a href="mailto:info@trillion-ai-juku.com" class="btn-secondary btn-small" style="text-decoration:none; color:#a78bfa;">📧 お問い合わせ</a>
@@ -286,11 +287,20 @@
         const s = data.student;
         if (!s) return;
         const statusText = {
-          'trial': '🎖 3日間 無料体験中',
+          'trial': '🎖 3日間 体験中（¥1,980前払い済）',
           'paid': '✅ 月額プラン契約中',
           'canceled': '⏹ 解約済み（期間終了まで利用可）',
+          'expired': '⏱ 体験終了',
         }[s.status] || s.status;
         statusLabel.innerHTML = `ステータス: <strong style="color:#c7d2fe;">${statusText}</strong><br>プラン: <strong>${s.plan || '—'}</strong> / メール: ${s.email}`;
+        // trial ユーザーは継続登録ボタンを表示
+        const upgradeBtn = document.getElementById('upgradeBtn');
+        if (upgradeBtn) {
+          if (s.status === 'trial' || s.status === 'expired') {
+            upgradeBtn.style.display = '';
+            upgradeBtn.href = 'upgrade.html?email=' + encodeURIComponent(s.email);
+          }
+        }
         // Stripe顧客情報がある場合はポータルを表示
         if (s.status === 'paid' || s.status === 'canceled') {
           portalBtn.style.display = '';

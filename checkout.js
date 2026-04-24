@@ -74,11 +74,12 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
 
     const signupData = await signupRes.json();
 
-    // 2. Create Stripe Checkout Session
-    const checkoutRes = await fetch(`${API_BASE}/api/stripe/checkout`, {
+    // 2. 体験用 ¥1,980 単発決済（サブスク無し・自動課金なし）
+    //    継続は別途 upgrade.html で本契約。
+    const checkoutRes = await fetch(`${API_BASE}/api/stripe/trial-checkout`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plan, email: payload.email, name: payload.name, student_id: signupData.student_id }),
+      body: JSON.stringify({ email: payload.email, name: payload.name, student_id: signupData.student_id }),
     });
     // 第1期生100名達成時は403で停止する。URL直打ち経由の101名目以降をブロック。
     if (checkoutRes.status === 403) {
