@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ログイン | AI学習コーチ塾</title>
   <meta name="robots" content="noindex">
-  <link rel="stylesheet" href="lp.css">
+  <link rel="stylesheet" href="lp.css?v=20260424-mobile">
   <style>
-    .auth-main { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
+    .auth-main { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; position: relative; z-index: 1; }
     .auth-card {
       background: var(--panel);
       border: 1px solid var(--panel-border);
@@ -41,7 +41,8 @@
       color: var(--text);
       margin-bottom: 0.4rem;
     }
-    .auth-form input[type="email"] {
+    .auth-form input[type="email"],
+    .auth-form input[type="text"] {
       width: 100%;
       padding: 0.85rem 1rem;
       background: rgba(0, 0, 0, 0.3);
@@ -50,8 +51,16 @@
       color: var(--text);
       font-size: 1rem;
       font-family: inherit;
+      box-sizing: border-box;
     }
-    .auth-form input[type="email"]:focus {
+    .auth-form input[type="text"].otp-input {
+      text-align: center;
+      font-size: 1.5rem;
+      letter-spacing: 0.5rem;
+      font-family: 'SF Mono', 'Menlo', monospace;
+      font-weight: 700;
+    }
+    .auth-form input:focus {
       outline: none;
       border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
@@ -69,6 +78,7 @@
       cursor: pointer;
       font-family: inherit;
       transition: transform 0.15s, box-shadow 0.15s;
+      touch-action: manipulation;
     }
     .auth-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35); }
     .auth-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
@@ -101,6 +111,30 @@
     }
     .auth-foot a { color: var(--primary-light); text-decoration: none; }
     .auth-foot a:hover { text-decoration: underline; }
+    .auth-link-btn {
+      background: none;
+      border: none;
+      color: var(--primary-light);
+      text-decoration: underline;
+      cursor: pointer;
+      padding: 0;
+      font-size: inherit;
+      font-family: inherit;
+    }
+    .step-2 { display: none; }
+    .step-2.active { display: block; }
+    .step-1.hidden { display: none; }
+    .email-shown {
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      padding: 0.6rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--primary-light);
+      text-align: center;
+      margin-bottom: 1rem;
+    }
   </style>
 </head>
 <body>
@@ -111,21 +145,56 @@
     <div class="auth-card">
       <div class="auth-icon">🔐</div>
       <h1 class="auth-title">ログイン</h1>
-      <p class="auth-sub">
-        ご登録時のメールアドレスを入力してください。<br>
-        <strong>ログインリンク</strong>をメールでお送りします。
-      </p>
 
-      <form class="auth-form" id="loginForm">
-        <label for="email">メールアドレス</label>
-        <input type="email" id="email" name="email" required autocomplete="email" placeholder="parent@example.com">
-        <button type="submit" class="auth-submit" id="loginBtn">📧 ログインリンクを送信</button>
-      </form>
+      <!-- Step 1: Email入力 -->
+      <div class="step-1" id="step1">
+        <p class="auth-sub">
+          ご登録時のメールアドレスを入力してください。<br>
+          <strong>6桁のログインコード</strong>をメールでお送りします。
+        </p>
+
+        <form class="auth-form" id="emailForm">
+          <label for="email">メールアドレス</label>
+          <input type="email" id="email" name="email" required autocomplete="email" placeholder="parent@example.com">
+          <button type="submit" class="auth-submit" id="emailBtn">📧 ログインコードを送信</button>
+        </form>
+      </div>
+
+      <!-- Step 2: OTPコード入力 -->
+      <div class="step-2" id="step2">
+        <p class="auth-sub">
+          メールで届いた<strong>6桁のコード</strong>を入力してください。<br>
+          <small style="color:var(--text-muted);">届くまで1〜2分かかることがあります</small>
+        </p>
+
+        <div class="email-shown" id="emailShown"></div>
+
+        <form class="auth-form" id="codeForm">
+          <label for="otpCode">ログインコード（6桁）</label>
+          <input type="text"
+                 id="otpCode"
+                 name="code"
+                 required
+                 autocomplete="one-time-code"
+                 inputmode="numeric"
+                 pattern="[0-9]{6}"
+                 maxlength="6"
+                 class="otp-input"
+                 placeholder="・・・・・・">
+          <button type="submit" class="auth-submit" id="codeBtn">✅ ログイン</button>
+        </form>
+
+        <p style="margin-top:1rem; text-align:center; font-size:0.82rem; color:var(--text-dim);">
+          <button type="button" class="auth-link-btn" id="backBtn">← メールアドレスを変更</button>
+          <span style="margin:0 0.5rem; color:var(--text-muted);">|</span>
+          <button type="button" class="auth-link-btn" id="resendBtn">コードを再送信</button>
+        </p>
+      </div>
 
       <div class="auth-msg" id="msg"></div>
 
       <div class="auth-foot">
-        ※ パスワードはありません。毎回メールで届くリンクからログインします。<br>
+        ※ パスワードはありません。毎回メールで届くコードからログインします。<br>
         まだご登録していない方は <a href="lp.html">トライアル申込ページ</a> から。
       </div>
     </div>
@@ -133,19 +202,35 @@
 
   <script>
     const API_BASE = window.location.origin.includes(':8090') ? 'http://localhost:8000' : window.location.origin;
-    const form = document.getElementById('loginForm');
-    const btn = document.getElementById('loginBtn');
-    const msg = document.getElementById('msg');
+    const emailForm = document.getElementById('emailForm');
+    const emailBtn = document.getElementById('emailBtn');
     const emailInput = document.getElementById('email');
+    const codeForm = document.getElementById('codeForm');
+    const codeBtn = document.getElementById('codeBtn');
+    const otpInput = document.getElementById('otpCode');
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    const emailShown = document.getElementById('emailShown');
+    const backBtn = document.getElementById('backBtn');
+    const resendBtn = document.getElementById('resendBtn');
+    const msg = document.getElementById('msg');
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = emailInput.value.trim();
-      if (!email) return;
-      btn.disabled = true;
-      btn.textContent = '📮 送信中...';
+    let currentEmail = '';
+
+    function showMsg(type, text) {
+      msg.className = 'auth-msg ' + type;
+      msg.innerHTML = text;
+    }
+    function clearMsg() {
       msg.className = 'auth-msg';
-      msg.textContent = '';
+      msg.innerHTML = '';
+    }
+
+    async function sendCode(email, isResend = false) {
+      emailBtn.disabled = true;
+      resendBtn.disabled = true;
+      if (!isResend) emailBtn.textContent = '📮 送信中...';
+      clearMsg();
       try {
         const res = await fetch(`${API_BASE}/api/auth/magic-link`, {
           method: 'POST',
@@ -154,19 +239,97 @@
         });
         const data = await res.json();
         if (res.ok) {
-          msg.className = 'auth-msg success';
-          msg.innerHTML = `✅ <strong>${email}</strong> 宛にログインリンクを送信しました。<br>メールが届くまで1〜2分ほどお待ちください。迷惑メールフォルダもご確認ください。`;
-          emailInput.value = '';
+          currentEmail = email;
+          emailShown.textContent = email;
+          step1.classList.add('hidden');
+          step2.classList.add('active');
+          showMsg('success', `✅ <strong>${email}</strong> 宛にコードを送信しました`);
+          setTimeout(() => otpInput.focus(), 100);
         } else {
-          msg.className = 'auth-msg error';
-          msg.textContent = '⚠️ ' + (data.detail || 'エラーが発生しました');
+          showMsg('error', '⚠️ ' + (data.detail || 'エラーが発生しました'));
         }
       } catch (err) {
-        msg.className = 'auth-msg error';
-        msg.textContent = '⚠️ ネットワークエラーが発生しました。しばらくしてから再度お試しください。';
+        showMsg('error', '⚠️ ネットワークエラーが発生しました。しばらくしてから再度お試しください。');
       } finally {
-        btn.disabled = false;
-        btn.textContent = '📧 ログインリンクを送信';
+        emailBtn.disabled = false;
+        resendBtn.disabled = false;
+        emailBtn.textContent = '📧 ログインコードを送信';
+      }
+    }
+
+    // Step 1: Email 送信
+    emailForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = emailInput.value.trim();
+      if (!email) return;
+      await sendCode(email, false);
+    });
+
+    // Step 2: OTP 検証
+    codeForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const code = otpInput.value.trim().replace(/\D/g, '');
+      if (code.length !== 6) {
+        showMsg('error', '⚠️ 6桁の数字を入力してください');
+        return;
+      }
+      codeBtn.disabled = true;
+      codeBtn.textContent = '🔍 確認中...';
+      clearMsg();
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/verify-code`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: currentEmail, code }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          // セッション保存
+          localStorage.setItem('ai_juku_session_token', data.token);
+          localStorage.setItem('ai_juku_session_expires', String(data.expires_at));
+          localStorage.setItem('ai_juku_session_student', JSON.stringify(data.student));
+          showMsg('success', `✅ ようこそ、${data.student.name || 'ゲスト'}さま！学習環境へ移動します...`);
+          setTimeout(() => {
+            const params = new URLSearchParams(window.location.search);
+            const redirect = params.get('redirect') || 'index.html';
+            window.location.href = redirect;
+          }, 800);
+        } else {
+          showMsg('error', '⚠️ ' + (data.detail || 'コードが正しくありません'));
+          codeBtn.disabled = false;
+          codeBtn.textContent = '✅ ログイン';
+        }
+      } catch (err) {
+        showMsg('error', '⚠️ ネットワークエラー。時間をおいてお試しください。');
+        codeBtn.disabled = false;
+        codeBtn.textContent = '✅ ログイン';
+      }
+    });
+
+    // Back button
+    backBtn.addEventListener('click', () => {
+      step2.classList.remove('active');
+      step1.classList.remove('hidden');
+      otpInput.value = '';
+      clearMsg();
+      emailInput.focus();
+    });
+
+    // Resend button
+    resendBtn.addEventListener('click', async () => {
+      if (!currentEmail) return;
+      resendBtn.textContent = '📮 送信中...';
+      await sendCode(currentEmail, true);
+      resendBtn.textContent = 'コードを再送信';
+    });
+
+    // Auto-strip non-digits from OTP input
+    otpInput.addEventListener('input', (e) => {
+      const cleaned = e.target.value.replace(/\D/g, '').slice(0, 6);
+      if (cleaned !== e.target.value) e.target.value = cleaned;
+      // Auto-submit when 6 digits entered
+      if (cleaned.length === 6) {
+        codeForm.requestSubmit();
       }
     });
   </script>

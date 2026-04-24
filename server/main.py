@@ -256,8 +256,17 @@ def init_db():
         event_type TEXT,
         processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+    CREATE TABLE IF NOT EXISTS otp_codes (
+        id {pk},
+        student_id INTEGER NOT NULL,
+        code TEXT NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        used_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
     CREATE INDEX IF NOT EXISTS idx_events_session ON events(session_id, created_at);
     CREATE INDEX IF NOT EXISTS idx_students_status ON students(status);
+    CREATE INDEX IF NOT EXISTS idx_otp_student ON otp_codes(student_id, used_at, expires_at);
     """)
     conn.commit()
     conn.close()
@@ -379,36 +388,60 @@ def _verify_session_token(token: str) -> Optional[dict]:
         return None
 
 
-def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, is_welcome: bool = False) -> dict:
-    """Resend 経由でマジックリンクメール送信。未設定ならコンソール出力。"""
-    subject_welcome = "【AI学習コーチ塾】ご登録ありがとうございます（ログインリンク）"
-    subject_relogin = "【AI学習コーチ塾】ログインリンクをお送りします"
+def _create_otp(student_id: int, ttl_seconds: int = 600) -> str:
+    """6桁数字のOTPコードを生成しDBに保存。10分有効。"""
+    import secrets
+    code = f"{secrets.randbelow(1000000):06d}"
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds)
+    conn = db()
+    c = conn.cursor()
+    c.execute(
+        "INSERT INTO otp_codes (student_id, code, expires_at) VALUES (?, ?, ?)",
+        (student_id, code, expires_at.isoformat())
+    )
+    conn.commit()
+    conn.close()
+    return code
+
+
+def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, otp_code: str = "", is_welcome: bool = False) -> dict:
+    """Resend 経由でマジックリンクメール送信。OTPコードも含める。未設定ならコンソール出力。"""
+    subject_welcome = "【AI学習コーチ塾】ご登録ありがとうございます（ログインコード）"
+    subject_relogin = "【AI学習コーチ塾】ログインコードをお送りします"
     subject = subject_welcome if is_welcome else subject_relogin
 
     greeting = f"{student_name}さまの保護者さま" if student_name else "保護者さま"
     body_intro = (
         f"""<p>{greeting}、ご登録ありがとうございます 🎉</p>
-    <p>3日間のトライアルが始まりました。<strong>以下のリンクから学習環境にアクセス</strong>できます。</p>"""
+    <p>3日間のトライアルが始まりました。<strong>以下の6桁コードをアプリに入力</strong>してログインしてください。</p>"""
         if is_welcome else
-        f"<p>{greeting}、ログインリンクをお送りします。</p>"
+        f"<p>{greeting}、以下の6桁コードをアプリに入力してログインしてください。</p>"
     )
+
+    # OTPコード表示ブロック (視認性重視、コピーしやすいフォーマット)
+    otp_block = f"""
+  <div style="text-align:center; margin: 2rem 0;">
+    <p style="font-size:0.8rem; color:#666; margin-bottom:0.5rem;">ログインコード（10分間有効）</p>
+    <p style="font-size: 2.5rem; font-weight: 900; letter-spacing: 0.5rem; font-family: 'SF Mono', monospace; color: #6366f1; background: #f5f5f5; padding: 1rem; border-radius: 12px; margin: 0;">
+      {otp_code}
+    </p>
+  </div>""" if otp_code else ""
 
     html = f"""<!DOCTYPE html>
 <html>
 <body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 560px; margin: 0 auto; padding: 2rem;">
   <h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AI学習コーチ塾</h1>
   {body_intro}
-  <p style="text-align:center; margin: 2rem 0;">
-    <a href="{magic_url}" style="display:inline-block; padding: 0.9rem 2rem; background:linear-gradient(135deg,#6366f1,#ec4899); color:white; text-decoration:none; border-radius:8px; font-weight:700;">
-      🔗 アプリにログインする
+  {otp_block}
+  <p style="font-size:0.85rem; color:#666; text-align:center;">または以下のリンクから直接ログイン（30日間有効）:</p>
+  <p style="text-align:center; margin: 1rem 0 2rem;">
+    <a href="{magic_url}" style="display:inline-block; padding: 0.7rem 1.5rem; background:linear-gradient(135deg,#6366f1,#ec4899); color:white; text-decoration:none; border-radius:8px; font-weight:700; font-size:0.9rem;">
+      🔗 ワンクリックでログイン
     </a>
   </p>
-  <p style="font-size:0.85rem; color:#666;">このリンクは <strong>30日間</strong> 有効です。別の端末でログインする際も、同じメールアドレスに再発行できます。</p>
-  <p style="font-size:0.85rem; color:#666;">ボタンが押せない場合は以下のURLをコピーしてブラウザで開いてください:</p>
-  <p style="font-size:0.75rem; color:#999; word-break:break-all; background:#f5f5f5; padding:0.5rem; border-radius:4px;">{magic_url}</p>
   <hr style="margin:2rem 0; border:none; border-top:1px solid #eee;">
   <p style="font-size:0.8rem; color:#999;">
-    このメールに心当たりがない場合は無視してください（30日で自動失効します）。<br>
+    このメールに心当たりがない場合は無視してください（コードは10分、リンクは30日で自動失効します）。<br>
     お問い合わせ: <a href="mailto:info@trillion-ai-juku.com" style="color:#6366f1;">info@trillion-ai-juku.com</a>
   </p>
 </body>
@@ -497,12 +530,72 @@ def request_magic_link(payload: MagicLinkRequest):
     if row and row["status"] == "paid":
         token = _sign_session_token(row["id"])
         magic_url = f"{BASE_URL}/auth.html?t={token}"
-        _send_magic_link_email(row["email"], row["name"] or "", magic_url, is_welcome=False)
+        otp_code = _create_otp(row["id"])
+        _send_magic_link_email(row["email"], row["name"] or "", magic_url, otp_code=otp_code, is_welcome=False)
     else:
         # 存在しない or status != paid でも同じレスポンスを返す（列挙対策）
         log.info(f"Magic link requested for unknown/unpaid email: {email_lower}")
 
     return {"ok": True, "message": "該当するアカウントがあればメールをお送りしました。届かない場合は迷惑メールフォルダもご確認ください。"}
+
+
+class VerifyCodeRequest(BaseModel):
+    email: EmailStr
+    code: str
+
+
+@app.post("/api/auth/verify-code")
+def verify_code(payload: VerifyCodeRequest):
+    """6桁OTPコードでログイン。成功時は session token を返す。"""
+    email_lower = (payload.email or "").lower().strip()
+    code = (payload.code or "").strip()
+    if not email_lower or not code or len(code) != 6 or not code.isdigit():
+        raise HTTPException(status_code=400, detail="有効なメールアドレスと6桁のコードを入力してください")
+
+    conn = db()
+    c = conn.cursor()
+    c.execute("SELECT id, name, email, grade, goal, plan, status FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
+    student = c.fetchone()
+    if not student or student["status"] != "paid":
+        conn.close()
+        # 同じエラー応答で列挙対策
+        raise HTTPException(status_code=401, detail="コードが正しくないか、有効期限が切れています")
+
+    # 有効なOTPを検索（未使用・未期限切れ）
+    c.execute(
+        """SELECT id FROM otp_codes
+           WHERE student_id = ? AND code = ? AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP
+           ORDER BY id DESC LIMIT 1""",
+        (student["id"], code)
+    )
+    otp = c.fetchone()
+    if not otp:
+        conn.close()
+        raise HTTPException(status_code=401, detail="コードが正しくないか、有効期限が切れています")
+
+    # 使用済みマーク
+    c.execute("UPDATE otp_codes SET used_at = CURRENT_TIMESTAMP WHERE id = ?", (otp["id"],))
+    conn.commit()
+    conn.close()
+
+    # セッショントークン発行
+    token = _sign_session_token(student["id"])
+    import time
+    exp = int(time.time()) + SESSION_TTL_SECONDS
+    log.info(f"OTP verified for student_id={student['id']} ({email_lower})")
+    return {
+        "ok": True,
+        "token": token,
+        "expires_at": exp,
+        "student": {
+            "id": student["id"],
+            "name": student["name"],
+            "email": student["email"],
+            "grade": student["grade"],
+            "goal": student["goal"],
+            "plan": student["plan"],
+        }
+    }
 
 
 @app.get("/api/auth/verify")
@@ -854,7 +947,8 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
             if s_row and s_row["email"]:
                 _token = _sign_session_token(s_row["id"])
                 _magic_url = f"{BASE_URL}/auth.html?t={_token}"
-                _send_magic_link_email(s_row["email"], s_row["name"] or "", _magic_url, is_welcome=True)
+                _otp_code = _create_otp(s_row["id"])
+                _send_magic_link_email(s_row["email"], s_row["name"] or "", _magic_url, otp_code=_otp_code, is_welcome=True)
         except Exception as e:
             log.error(f"Failed to send welcome magic link: {type(e).__name__}: {e}")
 
