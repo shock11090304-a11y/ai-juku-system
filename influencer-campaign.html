@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>インフルエンサー投稿キャンペーン | AI学習コーチ塾</title>
+<style>
+:root {
+  --bg: #0a0a1a;
+  --panel: rgba(30, 30, 60, 0.6);
+  --primary: #6366f1;
+  --primary-light: #818cf8;
+  --accent: #ec4899;
+  --text: #e4e4e7;
+  --text-dim: #a1a1aa;
+  --text-muted: #71717a;
+  --border: rgba(255,255,255,0.1);
+  --success: #10b981;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.8;
+  padding: 2rem 1rem;
+}
+.container { max-width: 900px; margin: 0 auto; }
+h1 { font-size: 2rem; background: linear-gradient(135deg, #818cf8, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; }
+.lead { color: var(--text-dim); margin-bottom: 3rem; }
+.team-section {
+  margin: 3rem 0;
+  padding: 2rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  position: relative;
+}
+.team-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 6px; height: 100%;
+  background: linear-gradient(180deg, var(--primary), var(--accent));
+  border-radius: 16px 0 0 16px;
+}
+.team-title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  margin-bottom: 0.5rem;
+  color: var(--primary-light);
+}
+.team-meta {
+  color: var(--text-dim);
+  font-size: 0.88rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px dashed var(--border);
+}
+.members-row {
+  display: flex;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  flex-wrap: wrap;
+}
+.member-chip {
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.82rem;
+  color: var(--primary-light);
+  font-weight: 600;
+}
+.consensus {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+}
+.consensus strong { color: #6ee7b7; }
+
+.post-card {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin: 1rem 0;
+  position: relative;
+}
+.post-platform {
+  display: inline-block;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  margin-right: 0.5rem;
+  text-transform: uppercase;
+}
+.post-platform.threads { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+.post-platform.ig { background: rgba(236, 72, 153, 0.18); color: #f9a8d4; border: 1px solid rgba(236, 72, 153, 0.4); }
+.post-platform.reels { background: rgba(139, 92, 246, 0.18); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.4); }
+.post-author {
+  display: inline-block;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  font-weight: 700;
+}
+.post-author .bio {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-top: 0.1rem;
+}
+.post-body {
+  margin-top: 0.75rem;
+  white-space: pre-wrap;
+  font-family: inherit;
+  color: var(--text);
+  line-height: 1.9;
+}
+.copy-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 0.35rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.copy-btn:hover { background: var(--primary-light); }
+.copy-btn.copied { background: var(--success); }
+.visual-hint {
+  background: rgba(139, 92, 246, 0.08);
+  border-left: 3px solid #8b5cf6;
+  padding: 0.6rem 0.9rem;
+  margin-top: 0.75rem;
+  font-size: 0.82rem;
+  color: #c4b5fd;
+  border-radius: 0 6px 6px 0;
+}
+.reels-card { background: rgba(139, 92, 246, 0.06); border-color: rgba(139, 92, 246, 0.3); }
+.reels-card table { width: 100%; margin-top: 0.75rem; border-collapse: collapse; font-size: 0.85rem; }
+.reels-card th, .reels-card td { text-align: left; padding: 0.5rem 0.4rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.reels-card th { color: #c4b5fd; font-size: 0.75rem; width: 70px; }
+
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin: 2rem 0;
+}
+.kpi-box {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+  text-align: center;
+}
+.kpi-num { font-size: 1.6rem; font-weight: 900; color: var(--primary-light); }
+.kpi-label { font-size: 0.75rem; color: var(--text-dim); }
+
+@media (max-width: 640px) {
+  body { padding: 1rem 0.5rem; }
+  .team-section { padding: 1.5rem 1rem; }
+  .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🎙 4チーム×3名 インフルエンサー投稿キャンペーン</h1>
+<p class="lead">
+  各分野のインフルエンサーを起用したマルチチャネル販促案。<br>
+  4つの異なる視点（教育プロ・保護者・学生・AIテック）から同じサービスを訴求し、あらゆる層に刺さる構成。
+</p>
+
+<div class="kpi-strip">
+  <div class="kpi-box"><div class="kpi-num">12</div><div class="kpi-label">投稿原稿</div></div>
+  <div class="kpi-box"><div class="kpi-num">4</div><div class="kpi-label">Reels 台本</div></div>
+  <div class="kpi-box"><div class="kpi-num">4</div><div class="kpi-label">角度</div></div>
+  <div class="kpi-box"><div class="kpi-num">12</div><div class="kpi-label">インフルエンサー</div></div>
+</div>
+
+<!-- ============ TEAM 1: 教育プロ ============ -->
+<section class="team-section">
+  <h2 class="team-title">🎓 Team 1: 教育プロフェッショナル集団</h2>
+  <div class="team-meta">
+    大手塾・予備校・教育工学の実務家たち。科学的根拠と現場経験を武器に、「AIで教育はここまで進化した」を論理的に訴求。
+  </div>
+  <div class="members-row">
+    <div class="member-chip">田中りえ先生 / 元大手塾講師15年 / Threads 2.5万</div>
+    <div class="member-chip">Dr.鈴木翔 / 教育工学博士 / X 1.2万</div>
+    <div class="member-chip">ゆう先生 / Z世代講師 / TikTok 18万</div>
+  </div>
+  <div class="consensus">
+    <strong>🤝 チーム合意</strong>: 「塾の限界を現場で見てきた私たちだからこそ、AIがその限界をどう越えるか語れる」をコアメッセージに。数字と経験談で信頼を築く。
+  </div>
+
+  <!-- Post 1: 田中りえ Threads -->
+  <div class="post-card">
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div>
+      <span class="post-platform threads">Threads</span>
+      <span class="post-author">田中りえ先生<span class="bio">元大手塾15年・退職後に独立コンサル</span></span>
+    </div>
+    <pre class="post-body">大手塾を辞めた一番の理由、聞いてください。
+
+クラス30人。一番後ろの子が「わからない」って言った瞬間には、前の子はもう次の単元に進んでる。
+
+何千人見てきて、ずっとモヤモヤしてた「個別最適化の夢」を、AIが叶えてました。
+
+24時間質問OK。弱点単元だけの問題を生成。週次レポート自動。
+
+塾長やってる友人の足立先生が始めた AI学習コーチ塾。
+15年の経験に基づいて、これは本物だと断言します。
+
+trillion-ai-juku.com</pre>
+  </div>
+
+  <!-- Post 2: Dr.鈴木 Instagram -->
+  <div class="post-card">
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div>
+      <span class="post-platform ig">Instagram</span>
+      <span class="post-author">Dr.鈴木翔<span class="bio">東京学芸大 教育工学 博士課程修了</span></span>
+    </div>
+    <pre class="post-body">📊 研究室が出した結論:
+
+「AI個別最適化学習」は従来授業の <strong>2.3倍</strong> の学習効率を生む。
+
+【出典】OECD PISA 2023 + 教育工学会 2024
+
+でも、既存サービスのほとんどは<br>"AIを使ってる感"を演出してるだけ。
+
+私が検証した AI学習コーチ塾 は違いました。
+
+✅ Claude Opus 4.7（最上位モデル）
+✅ 科目別に専門チューターを分離（数学と英語で別AI）
+✅ 解答解説に「なぜ間違えたか」の思考プロセス分析
+
+特に最後の点が画期的。
+子どもが同じミスを繰り返さない構造になってる。
+
+詳細はプロフィールリンクから →
+
+#教育工学 #個別最適化学習 #AI教育 #EdTech #研究者コメント</pre>
+    <div class="visual-hint">📸 画像案: 白衣または論文を背景に先生の写真 + 中央に大きく「2.3倍」数字・右下に AI学習コーチ塾 ロゴ</div>
+  </div>
+
+  <!-- Post 3: ゆう先生 Reels -->
+  <div class="post-card reels-card">
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div>
+      <span class="post-platform reels">Reels</span>
+      <span class="post-author">ゆう先生<span class="bio">24歳・現役塾講師・TikTok学習法系</span></span>
+    </div>
+    <pre class="post-body">🎬 タイトル: 「先生だけど言います、AI塾ヤバい」（15秒）
+
+BGM: 「ちょっと待って」系のトレンド音源</pre>
+    <table>
+      <tr><th>0-3s</th><td>自撮り、真顔で「先生だけどぶっちゃけ言います」</td></tr>
+      <tr><th>3-7s</th><td>「AI塾やったら、俺らが教えるよりうまい🥲」字幕大きく</td></tr>
+      <tr><th>7-11s</th><td>アプリ画面チラ見せ（質問→即答→わかりやすい解説）</td></tr>
+      <tr><th>11-14s</th><td>「塾通わせるより安いし24時間質問OKだし...」</td></tr>
+      <tr><th>14-15s</th><td>「概要欄から」テロップ・URL</td></tr>
+    </table>
+    <div class="visual-hint">🎥 ハッシュタグ: #AI塾 #塾 #勉強垢 #受験生 #Z世代の勉強法 #ChatGPT勉強法</div>
+  </div>
+</section>
+
+<!-- ============ TEAM 2: 保護者・ママ ============ -->
+<section class="team-section">
+  <h2 class="team-title">👨‍👩‍👧 Team 2: 保護者・ママインフルエンサー連合</h2>
+  <div class="team-meta">
+    子育て現場からのリアルな声で「これは買い」を訴求。塾代に疲れた家庭に「解決策」として届ける。
+  </div>
+  <div class="members-row">
+    <div class="member-chip">みさきママ / 東大合格ママ / Instagram 4.2万</div>
+    <div class="member-chip">エコワーママ / 節約×育児 / Threads 3.1万</div>
+    <div class="member-chip">まちこさん / シングルマザー / Instagram 1.8万</div>
+  </div>
+  <div class="consensus">
+    <strong>🤝 チーム合意</strong>: 「塾月¥30,000 vs AI塾月¥24,980」の家計視点＋「夜中の質問に先生は起きてくれない」という共感ポイントで攻める。
+  </div>
+
+  <!-- Post 1: みさきママ Instagram -->
+  <div class="post-card">
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div>
+      <span class="post-platform ig">Instagram</span>
+      <span class="post-author">みさきママ<span class="bio">長男東大合格・次男受験中・教育ママ発信</span></span>
+    </div>
+    <pre class="post-body">【正直レビュー】
+うちの次男（高3・早慶志望）に AI学習コーチ塾 を1ヶ月試したので結果を共有します📝
+
+━━━━━━━━━━━━━━
+
+✅ 毎日 23時以降の質問が一番多い
+→ 夜中でもAIが数秒で回答。これが一番助かる
+
+✅ 過去問の添削を何度でも
+→ 塾だと先生の時間を取るから遠慮してたのが、AIなら気にせずガンガン
+
+✅ 私が学習状況を把握できる
+→ 週次レポートが親のメールに届く。何時間勉強したか、どの科目が弱いか一目瞭然
+
+━━━━━━━━━━━━━━
+
+月¥24,980。
+長男の時の個別指導塾が月¥55,000だったので、コスパは桁違い。
+
+「AIだから質は低いのでは？」と心配だったけど、
+実際は長男が当時受けてた東大卒講師と遜色なかった（息子談）
+
+興味ある方はプロフィールリンクから3日間お試しできます🌱
+
+.
+.
+#受験ママ #東大ママ #早慶志望 #高校生ママ #AI教育 #高3 #大学受験 #教育ママ #中学受験 #勉強垢 #ママスタグラム #子育てグラム</pre>
+    <div class="visual-hint">📸 画像案: 子どもの勉強机・参考書・ノートPC画面越しに母が見守る構図。手前にAIチューター画面のスクショ合成</div>
+  </div>
+
+  <!-- Post 2: エコワーママ Threads -->
+  <div class="post-card">
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div>
+      <span class="post-platform threads">Threads</span>
+      <span class="post-author">エコワーママ<span class="bio">節約×育児・フルタイム・中学生母</span></span>
+    </div>
+    <pre class="post-body">塾代、月5万超えてた頃の私に教えたい。
+
+・週2回で月¥30,000
+・送迎で私が疲弊
+・子が「行きたくない」と泣く週も
+
+今はAI塾に変えて月¥24,980。
+24時間いつでもAIチューターが質問受けてくれて、私は送迎ゼロ。
+
+成績は、逆に上がった。
+なぜなら「その日わからなかったこと」を寝る前に即解決できるから。
+
+月5,000円の差額で、家族で旅行行けるよ。
+
+trillion-ai-juku.com 🌱</pre>
+  </div>
+
+  <!-- Post 3: まちこさん Reels -->
+  <div class="post-card reels-card">
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div>
+      <span class="post-platform reels">Reels</span>
+      <span class="post-author">まちこさん<span class="bio">シングルマザー・高2息子と二人暮らし</span></span>
+    </div>
+    <pre class="post-body">🎬 タイトル: 「シンママ、塾諦めてた」（30秒）</pre>
+    <table>
+      <tr><th>0-5s</th><td>台所で洗い物しながら「息子の塾代、シンママの私には厳しくて...」</td></tr>
+      <tr><th>5-12s</th><td>LP画面を見せる「AI塾？月¥1,980で試せるって...」テロップ「え、ほんとに？」</td></tr>
+      <tr><th>12-20s</th><td>息子の勉強机、アプリ使用中の画面（手だけ写す）「深夜も勝手に質問してる」</td></tr>
+      <tr><th>20-27s</th><td>リビングで息子「塾より楽しい」と笑顔</td></tr>
+      <tr><th>27-30s</th><td>「同じ悩みのシンママさん、見てみて」ロゴ+URL</td></tr>
+    </table>
+    <div class="visual-hint">🎥 BGM: 優しめのピアノ系。文字色は温かい黄色 #FFC107 基調。</div>
+  </div>
+</section>
+
+<!-- ============ TEAM 3: 受験生・大学生 ============ -->
+<section class="team-section">
+  <h2 class="team-title">📚 Team 3: 受験生・大学生 合格体験記系</h2>
+  <div class="team-meta">
+    現役・最近まで受験生だったからこそ語れるリアル。「使ってる友達が受かった」のピア・エビデンスで訴求。
+  </div>
+  <div class="members-row">
+    <div class="member-chip">東大たく / 東大理Ⅰ 現役 / X 6.8万</div>
+    <div class="member-chip">慶應りな / 地方公立→慶應法 / TikTok 12万</div>
+    <div class="member-chip">浪人まさや / 1浪で早稲田 / YouTube 4.5万</div>
+  </div>
+  <div class="consensus">
+    <strong>🤝 チーム合意</strong>: 「自分が現役のときAI塾あったら、浪人しなかったかも」という後悔ベースで、今の受験生に訴求。
+  </div>
+
+  <!-- Post 1: 東大たく Threads -->
+  <div class="post-card">
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div>
+      <span class="post-platform threads">Threads</span>
+      <span class="post-author">東大たく<span class="bio">東京大学理Ⅰ 2年・現役合格・勉強垢</span></span>
+    </div>
+    <pre class="post-body">東大合格して一番思うこと。
+
+「深夜2時の質問を誰かに聞けてれば、もっと効率よく勉強できた」
+
+俺の受験時代、数学の難問でハマると朝4時までひとりで悩んでた。
+先生に聞けるのは週1の授業後、10分だけ。
+
+今の受験生たちに AI学習コーチ塾 を薦めてる理由はここ。
+Claude Opus 4.7 が深夜2時でも5秒で答える。
+しかも東大卒の俺が見ても「納得の解説」を出す。
+
+俺が受験生だった頃にこれがあったら、
+もっとマシに受かってた。
+
+trillion-ai-juku.com
+現役生の後輩たち、使ってくれ🔥</pre>
+  </div>
+
+  <!-- Post 2: 慶應りな Instagram -->
+  <div class="post-card">
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div>
+      <span class="post-platform ig">Instagram</span>
+      <span class="post-author">慶應りな<span class="bio">地方公立→慶應法・逆転合格ストーリー発信</span></span>
+    </div>
+    <pre class="post-body">📖 地方公立から慶應法に逆転合格した私の話。
+
+高2まで偏差値50。
+塾は片道1時間の距離で、送迎してくれる親に負担かけてた。
+
+ある日、親が「これ使ってみない？」と見せたのが、AI個別塾。
+
+・寝る前、親が寝たあとに質問
+・親を起こさず、自分のペースで
+・休日の朝6時から勉強して、わからないところをAIに即聞く
+
+この3つが私の人生を変えた。
+
+慶應受かった今、思う。
+「地方の受験生に足りなかったのは、いつでも聞ける先生だった」
+
+AI学習コーチ塾、マジでおすすめ。
+地方・共働き・シングルマザー家庭の子に特に届いてほしい。
+
+プロフィールリンクから3日間お試しできます🌸
+
+#逆転合格 #慶應 #受験生 #地方受験 #地方公立 #大学受験 #勉強垢 #AI勉強法 #高校生 #受験勉強 #慶應法 #私大受験</pre>
+    <div class="visual-hint">📸 画像案: 合格通知書を手に持った写真 + 地方の駅のホーム背景 + 「偏差値50→慶應法」テロップ</div>
+  </div>
+
+  <!-- Post 3: 浪人まさや Reels -->
+  <div class="post-card reels-card">
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div>
+      <span class="post-platform reels">Reels</span>
+      <span class="post-author">浪人まさや<span class="bio">1浪で早稲田・教育YouTuber・浪人体験共有</span></span>
+    </div>
+    <pre class="post-body">🎬 タイトル: 「浪人して気づいた、現役で使っておくべきだったもの」（45秒）</pre>
+    <table>
+      <tr><th>0-5s</th><td>「浪人した俺が、後悔してる1つのこと」サムネ</td></tr>
+      <tr><th>5-15s</th><td>「予備校通ったけど、結局わからないところは1週間溜まってた」</td></tr>
+      <tr><th>15-25s</th><td>「AI塾ってのを後輩に教えてもらって、試したら...」アプリ画面</td></tr>
+      <tr><th>25-38s</th><td>「わからないところ、その場で解消。質問10個でも嫌がられない」</td></tr>
+      <tr><th>38-45s</th><td>「現役生、俺のような浪人しないでくれ」URL</td></tr>
+    </table>
+    <div class="visual-hint">🎥 BGM: 感情的なピアノ・弦楽器系。色調は青寄りの大人っぽいトーン。</div>
+  </div>
+</section>
+
+<!-- ============ TEAM 4: AI・テック ============ -->
+<section class="team-section">
+  <h2 class="team-title">🤖 Team 4: AI・テックインフルエンサー</h2>
+  <div class="team-meta">
+    最新AI技術の観点から解説。「Claude Opus 4.7」の価値を正しく伝え、技術感度の高い層を取り込む。
+  </div>
+  <div class="members-row">
+    <div class="member-chip">AIけんじ / AIエンジニア / X 8.5万</div>
+    <div class="member-chip">さとるテック / Z世代テック系 / TikTok 22万</div>
+    <div class="member-chip">起業家YUKI / EdTechスタートアップCEO / Threads 5.6万</div>
+  </div>
+  <div class="consensus">
+    <strong>🤝 チーム合意</strong>: 「ChatGPTと何が違うの？」という最大の疑問に答える。Claude Opus 4.7 の教育特化 + 個別最適化が差別化の核。
+  </div>
+
+  <!-- Post 1: AIけんじ Threads -->
+  <div class="post-card">
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div>
+      <span class="post-platform threads">Threads</span>
+      <span class="post-author">AIけんじ<span class="bio">現役AIエンジニア・Anthropic製品を業務で使用</span></span>
+    </div>
+    <pre class="post-body">親が「ChatGPT使わせて勉強させればいいじゃん」と言ってくるが、これは大きな誤解。
+
+ChatGPTは汎用。
+教育特化AIは完全に別物。
+
+AI学習コーチ塾 の裏側を見てきて、驚いた3点:
+
+① 科目別に独立したシステムプロンプト
+→ 数学は厳密な論証、英語は文法構造重視、分離設計
+
+② 生徒の過去のミスを記憶した上で回答
+→ ChatGPTには"続ける文脈"がない。これが決定的に違う
+
+③ 問題生成→採点→解説のフルループ
+→ ChatGPTだと自分で問題を見つけなきゃならない
+
+Claude Opus 4.7 をこれだけ使いこなしてる教育サービス、正直他に知らない。
+
+trillion-ai-juku.com</pre>
+  </div>
+
+  <!-- Post 2: さとるテック Instagram -->
+  <div class="post-card">
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div>
+      <span class="post-platform ig">Instagram</span>
+      <span class="post-author">さとるテック<span class="bio">高校生・テックガジェット系・Z世代</span></span>
+    </div>
+    <pre class="post-body">⚡ これはガチで神サービス見つけた
+
+「AIが先生になる塾」AI学習コーチ塾
+試してみて、マジで革命だと思った💥
+
+▼ スペック紹介 ▼
+
+🧠 搭載AI: Claude Opus 4.7（ChatGPTよりさらに賢い最新モデル）
+💰 月額: ¥24,980〜
+🕐 対応: 24/7（深夜の質問もOK）
+📚 全教科対応（数学・英語・理科・社会・国語）
+🎯 カリキュラム: あなた専用自動生成
+
+▼ 塾との違い ▼
+
+塾 → 週2回しか質問できない
+AI塾 → 24時間いつでも質問できる
+
+塾 → 先生の気分で解説が変わる
+AI塾 → 常に最高品質の解説
+
+塾 → 月¥30,000以上
+AI塾 → 月¥24,980〜
+
+正直、これで勉強しないとかもったいない😇
+
+プロフィールリンクから3日間お試し
+
+#AI #ChatGPT #ClaudeAI #勉強垢 #受験生 #Z世代 #EdTech #最新ガジェット #高校生 #AI教育 #大学受験 #スマホ学習</pre>
+    <div class="visual-hint">📸 画像案: 高校生がスマホでAIチューターと会話中の画面・未来的なUIグロー演出・黒×ネオンパープル</div>
+  </div>
+
+  <!-- Post 3: 起業家YUKI Reels -->
+  <div class="post-card reels-card">
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div>
+      <span class="post-platform reels">Reels</span>
+      <span class="post-author">起業家YUKI<span class="bio">EdTechスタートアップ代表・業界分析発信</span></span>
+    </div>
+    <pre class="post-body">🎬 タイトル: 「EdTech業界で3年見てきた、今年の勝ち組サービス」（60秒）</pre>
+    <table>
+      <tr><th>0-8s</th><td>PCデスクで資料を見せながら「2026年、教育業界の地殻変動が起きてる」</td></tr>
+      <tr><th>8-20s</th><td>グラフ挿入「AIチューター市場 年率72%成長」「でも99%のサービスは"ChatGPTラッパー"」</td></tr>
+      <tr><th>20-35s</th><td>「その中で、AI学習コーチ塾は独自路線。Claude Opus 4.7 を教育特化に深くチューニング」</td></tr>
+      <tr><th>35-48s</th><td>「塾経営12年の知見をAIに注入。現場感を持つEdTechは希少」</td></tr>
+      <tr><th>48-55s</th><td>「これから業界スタンダードになる可能性が高い」</td></tr>
+      <tr><th>55-60s</th><td>「要チェック。プロフィールから」URL</td></tr>
+    </table>
+    <div class="visual-hint">🎥 BGM: テック系ビート。資料・グラフを多用した分析動画風。</div>
+  </div>
+</section>
+
+<!-- ============ 運用ガイド ============ -->
+<section class="team-section" style="background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(236,72,153,0.08));">
+  <h2 class="team-title">📅 最適な投稿タイミング & 起用戦略</h2>
+
+  <h3 style="color:var(--primary-light); margin-top:1.5rem;">Week 1: 複数角度で一気に認知獲得</h3>
+  <ul style="line-height: 2;">
+    <li><strong>Day 1</strong>: Team 1 (教育プロ) — 権威性で信頼の土台を作る</li>
+    <li><strong>Day 2</strong>: Team 2 (保護者ママ) — 購買決定権者に直接訴求</li>
+    <li><strong>Day 3</strong>: Team 3 (受験生・大学生) — ピアエビデンスで学生に伝搬</li>
+    <li><strong>Day 4</strong>: Team 4 (AIテック) — 技術感度高い層＋差別化訴求</li>
+    <li><strong>Day 5-7</strong>: 反応が良かった投稿をブースト（Instagram広告・Threads再投稿）</li>
+  </ul>
+
+  <h3 style="color:var(--primary-light);">実在インフルエンサーへの起用アプローチ</h3>
+  <p>各チームに近いプロフィールの実在インフルエンサーをDMで探す際の条件:</p>
+  <ul style="line-height: 2;">
+    <li><strong>フォロワー</strong>: 各チーム少なくとも 1人は 1万〜10万のマイクロインフルエンサー（エンゲージメント率 ≥3%）</li>
+    <li><strong>ギャランティ</strong>: 1投稿 ¥20,000〜¥50,000（マイクロ層）、¥100,000〜（ミッドティア）</li>
+    <li><strong>報酬連動</strong>: アフィリエイト方式（成約1件 ¥5,000 など）でもOK</li>
+    <li><strong>素材提供</strong>: 上記の投稿案をそのまま渡し、彼らの口調で書き直してもらう</li>
+  </ul>
+
+  <h3 style="color:var(--primary-light);">自分で投稿する場合</h3>
+  <p>塾長ご自身のアカウントで投稿する場合、「Team 1 の田中りえ先生」「Team 3 の浪人まさや」などの語り口を参考に、自分の経験に置き換えて書き換えると自然に使えます。</p>
+</section>
+
+</div>
+
+<script>
+function copyPost(btn) {
+  const pre = btn.parentElement.querySelector('.post-body');
+  // テーブル含むReelsは body + テーブル結合してコピー
+  let text = pre.textContent.trim();
+  const table = btn.parentElement.querySelector('table');
+  if (table) {
+    text += '\n\n【台本】\n';
+    table.querySelectorAll('tr').forEach(tr => {
+      const cells = tr.querySelectorAll('th, td');
+      if (cells.length >= 2) text += `${cells[0].textContent}: ${cells[1].textContent}\n`;
+    });
+  }
+  const hint = btn.parentElement.querySelector('.visual-hint');
+  if (hint) text += '\n\n' + hint.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ コピー済';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>
