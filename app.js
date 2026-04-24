@@ -2583,56 +2583,259 @@ function spWeekMonday(offset = 0) {
   return new Date(monday.getTime() + 9 * 3600 * 1000).toISOString().slice(0, 10);
 }
 
+// ==========================================================================
+// カリキュラム取込: 3段パイプライン (Parse → Synthesize → Materialize)
+// 今日 → 試験日までの全期間をフェーズ別に展開する。
+// ==========================================================================
+
+// HTMLタグとゼロ幅文字を除去
+function _stripHtml(s) {
+  return String(s || '').replace(/<[^>]+>/g, '').replace(/\u200B|\u200C|\u200D/g, '');
+}
+// 全角数字 → 半角 (full-width U+FF10-U+FF19 → ASCII U+0030-U+0039)
+function _normalizeDigits(s) {
+  return String(s || '').replace(/[\uFF10-\uFF19]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
+}
+
+// 週次スケジュール テンプレートを抽出
+// Returns: { 月: [{subject, title, duration_min}], 火: [...], ... }
+function _parseWeeklyTemplate(md) {
+  const result = { '月':[],'火':[],'水':[],'木':[],'金':[],'土':[],'日':[] };
+  // "## ⏰ 週間スケジュール例" または "週間スケジュール" を探す
+  const startIdx = md.search(/^##\s*(?:[^\n]*?)週間スケジュール/m);
+  if (startIdx < 0) return result;
+  // 次の "## " 見出し(同レベル)までを範囲とする
+  const rest = md.slice(startIdx);
+  const relEnd = rest.slice(3).search(/^##\s[^#]/m);
+  const section = relEnd < 0 ? rest : rest.slice(0, relEnd + 3);
+
+  const dayChars = ['月','火','水','木','金','土','日'];
+  // 末尾に sentinel を付加して最後の日曜ブロックも next-### lookahead で区切れるようにする
+  const sectionPadded = section + '\n### __end__\n';
+  for (const d of dayChars) {
+    // "### 月曜 (Xh)" ブロックを抽出 (次の ### まで)
+    const dayRe = new RegExp(String.raw`^###\s*${d}曜[^\n]*\n([\s\S]*?)(?=^###\s)`, 'm');
+    const m = dayRe.exec(sectionPadded);
+    if (!m) continue;
+    const block = _stripHtml(_normalizeDigits(m[1]));
+    const bulletRe = /^[\s]*[-*・]\s*(?:([^:：\n]{1,20})[：:])?\s*([^\n]+?)(?:\s*[（(](\d+)\s*分[)）])?\s*$/gm;
+    let bm;
+    while ((bm = bulletRe.exec(block)) !== null) {
+      const subject = (bm[1] || 'その他').trim();
+      let title = (bm[2] || '').trim();
+      if (!title || title.length < 2) continue;
+      // 記号だけのタイトル排除
+      if (!/[一-龥ぁ-んァ-ヶA-Za-z0-9]/.test(title)) continue;
+      // タイトルを50字以内に丸め
+      if (title.length > 50) title = title.slice(0, 50) + '…';
+      const duration = bm[3] ? parseInt(bm[3]) : null;
+      result[d].push({
+        subject: subject.slice(0, 16),
+        title,
+        duration_min: (duration && duration > 0 && duration < 600) ? duration : null,
+      });
+    }
+  }
+  return result;
+}
+
+// フェーズ情報を抽出
+// Returns: [{num, name, durationMonths, conditions, bullets}]
+function _parsePhases(md) {
+  const startIdx = md.search(/^##\s*(?:[^\n]*?)(?:フェーズ設計|3\s*フェーズ)/m);
+  if (startIdx < 0) return [];
+  const rest = md.slice(startIdx);
+  const relEnd = rest.slice(3).search(/^##\s[^#]/m);
+  const section = relEnd < 0 ? rest : rest.slice(0, relEnd + 3);
+
+  const phases = [];
+  // "### フェーズ1: 基礎固め (4-6月、3ヶ月)" 形式
+  // 末尾に sentinel を付加し最後のフェーズも区切れるようにする
+  const sectionPadded = section + '\n### フェーズ99: __end__ (0ヶ月)\n';
+  const phaseRe = /^###\s*フェーズ\s*(\d+)[:：]?\s*([^\s(（\n]+)\s*[（(]([^)）]*)[)）]([\s\S]*?)(?=^###\s*フェーズ)/gm;
+  let m;
+  while ((m = phaseRe.exec(sectionPadded)) !== null) {
+    if (m[1] === '99') continue; // sentinel skip
+    const num = parseInt(m[1]);
+    const name = (m[2] || '').trim();
+    const meta = (m[3] || '');
+    const body = _stripHtml(_normalizeDigits(m[4] || ''));
+    // 期間月数を抽出: "3ヶ月" を優先、なければ単独の "X月"
+    // "4-6月、3ヶ月" のような形式では "3ヶ月" を期間と判定する
+    const durMatch = meta.match(/(\d+)\s*ヶ月/) || meta.match(/(?:^|[、,\s])(\d+)\s*月(?!(?:末|初|中旬|下旬))/);
+    const durationMonths = durMatch ? parseInt(durMatch[1]) : 3;
+    // 完了条件を抽出
+    const condMatch = body.match(/\*\*完了条件\*\*[:：]?\s*([^\n]+)/);
+    const conditions = condMatch ? condMatch[1].trim() : '';
+    phases.push({ num, name, durationMonths, conditions });
+  }
+  return phases;
+}
+
+// 週次テンプレを開始週数オフセットで"進捗"させる
+// 例: "シス単 No.1-60" → week 2 → "シス単 No.61-120"
+function _advanceTaskRange(title, weekOffset) {
+  if (!weekOffset) return title;
+  // "No.X-Y" / "P.X-Y" / "例題X-Y" / "問X-Y" パターン
+  return title.replace(/(No\.|P\.|例題|問|問題)\s*(\d+)\s*[-〜~]\s*(\d+)/g,
+    (full, prefix, s, e) => {
+      const start = parseInt(s), end = parseInt(e);
+      const span = end - start + 1;
+      const newStart = start + weekOffset * span;
+      const newEnd = end + weekOffset * span;
+      return `${prefix}${newStart}-${newEnd}`;
+    });
+}
+
+// 指定日がどのフェーズに属するかを判定
+function _phaseForDate(date, phases, startDate) {
+  if (!phases.length) return null;
+  let cursor = new Date(startDate);
+  for (const p of phases) {
+    const phaseEnd = new Date(cursor);
+    phaseEnd.setMonth(phaseEnd.getMonth() + p.durationMonths);
+    if (date < phaseEnd) return { ...p, startDate: new Date(cursor) };
+    cursor = phaseEnd;
+  }
+  const last = phases[phases.length - 1];
+  return { ...last, startDate: cursor };
+}
+
+function _spDateStr(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
+}
+
+function _spParseDateStr(s) {
+  // "2027-02-22" or "2027/02/22" → Date
+  if (!s) return null;
+  const m = s.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+  if (!m) return null;
+  const d = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 function spImportFromCurriculum() {
   const md = window._lastCurriculumMarkdown || localStorage.getItem('ai_juku_last_curriculum') || '';
   if (!md) {
     alert('先に「🎯 カリキュラム生成」タブでカリキュラムを作成してください。');
     return;
   }
-  // Markdown の「### 月曜 (Xh)」等のブロックをスキャンしてタスクを抽出
-  const dayMap = { '月':0, '火':1, '水':2, '木':3, '金':4, '土':5, '日':6 };
-  const lines = md.split(/\r?\n/);
-  let currentDay = null;
-  const imported = [];
-  const weekMonday = spWeekMonday(0);
-  const DAY_HEADER_RE = /^#+\s*(月|火|水|木|金|土|日)曜/;
-  const TASK_LINE_RE = /^[\s\-\*]+\s*(?:([^:：]+)[：:])?\s*(.+?)(?:\s*[（\(](\d+)\s*分[）\)])?\s*$/;
-  for (const raw of lines) {
-    const line = raw.trim();
-    const dm = DAY_HEADER_RE.exec(line);
-    if (dm) { currentDay = dayMap[dm[1]]; continue; }
-    if (currentDay === null) continue;
-    if (!/^[-*]/.test(line)) continue;
-    const m = TASK_LINE_RE.exec(line);
-    if (!m) continue;
-    const subject = (m[1] || 'その他').trim().slice(0, 16);
-    const title = (m[2] || '').trim().slice(0, 200);
-    if (!title || title.length < 2) continue;
-    const duration = m[3] ? parseInt(m[3]) : null;
-    imported.push({
-      id: 'c_' + Math.random().toString(36).slice(2, 10),
-      source: 'curriculum',
-      planned_date: spAddDays(weekMonday, currentDay),
-      subject,
-      title,
-      duration_min: duration,
-      completed: false,
-      completed_at: null,
-      notes: '',
-    });
-  }
-  if (imported.length === 0) {
-    alert('カリキュラム本文から「### 月曜」「- 英語: ... (30分)」形式の行が見つかりませんでした。AI生成カリキュラムは再生成すると自動で曜日ブロックを含みます。');
+
+  // === STAGE 1: Parse ===
+  const weeklyTemplate = _parseWeeklyTemplate(md);
+  const phases = _parsePhases(md);
+  const templateSize = Object.values(weeklyTemplate).reduce((a, b) => a + b.length, 0);
+
+  if (templateSize === 0) {
+    alert('カリキュラムの「週間スケジュール例」セクションに「### 月曜」→「- 英語: ... (30分)」形式のタスクが見つかりません。カリキュラムを再生成してください。');
     return;
   }
+
+  // === STAGE 2: Synthesize ===
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  // 今週の月曜を起点に
+  const startDow = today.getDay() === 0 ? 6 : today.getDay() - 1; // Monday=0
+  const startMonday = new Date(today);
+  startMonday.setDate(today.getDate() - startDow);
+
+  // 試験日を特定: targetDate入力があれば使用、なければ phase 合計 or 10ヶ月後
+  const targetDateInput = document.getElementById('targetDate');
+  let endDate = _spParseDateStr(targetDateInput ? targetDateInput.value : '');
+  if (!endDate) {
+    const totalMonths = phases.reduce((a, p) => a + p.durationMonths, 0) || 10;
+    endDate = new Date(startMonday);
+    endDate.setMonth(endDate.getMonth() + totalMonths);
+  }
+  if (endDate <= today) {
+    alert('試験日(目標日)が過去または今日になっています。カリキュラム生成タブで未来の日付を設定してください。');
+    return;
+  }
+
+  // 上限: 70週まで(約16ヶ月)
+  const maxWeeks = 70;
+  const dayKeys = ['月','火','水','木','金','土','日'];
+
+  // === STAGE 3: Materialize ===
+  const imported = [];
+  let weekIdx = 0;
+  let cursor = new Date(startMonday);
+
+  while (cursor <= endDate && weekIdx < maxWeeks) {
+    // このフェーズ内で何週目か(タスク進捗用)
+    const phase = _phaseForDate(cursor, phases, startMonday);
+    let weekInPhase = 0;
+    if (phase) {
+      const diffDays = Math.floor((cursor - phase.startDate) / 86400000);
+      weekInPhase = Math.max(0, Math.floor(diffDays / 7));
+    }
+
+    // フェーズ開始週ならマイルストーンタスクを追加
+    if (phase && weekInPhase === 0 && cursor.getTime() !== startMonday.getTime()) {
+      imported.push({
+        id: 'c_' + Math.random().toString(36).slice(2, 12),
+        source: 'curriculum',
+        planned_date: _spDateStr(cursor),
+        subject: 'マイルストーン',
+        title: `▶ フェーズ${phase.num}開始: ${phase.name}`,
+        duration_min: 0,
+        completed: false,
+        completed_at: null,
+        notes: phase.conditions ? `完了条件: ${phase.conditions}` : '',
+      });
+    }
+
+    for (let dow = 0; dow < 7; dow++) {
+      const dayDate = new Date(cursor);
+      dayDate.setDate(cursor.getDate() + dow);
+      if (dayDate > endDate) break;
+      if (dayDate < today) continue; // 過去日はスキップ
+
+      const dayTasks = weeklyTemplate[dayKeys[dow]] || [];
+      for (const t of dayTasks) {
+        const advancedTitle = _advanceTaskRange(t.title, weekInPhase);
+        imported.push({
+          id: 'c_' + Math.random().toString(36).slice(2, 12),
+          source: 'curriculum',
+          planned_date: _spDateStr(dayDate),
+          subject: t.subject,
+          title: advancedTitle,
+          duration_min: t.duration_min,
+          completed: false,
+          completed_at: null,
+          notes: phase ? `フェーズ${phase.num}` : '',
+        });
+      }
+    }
+    cursor.setDate(cursor.getDate() + 7);
+    weekIdx++;
+  }
+
+  if (imported.length === 0) {
+    alert('取込対象のタスクが生成されませんでした。カリキュラムを再生成してください。');
+    return;
+  }
+
+  // 確認ダイアログ (UX)
+  const weeks = Math.ceil((endDate - today) / (86400000 * 7));
+  const phaseSummary = phases.length
+    ? `\n【フェーズ】${phases.map(p => `${p.name}(${p.durationMonths}ヶ月)`).join(' → ')}`
+    : '';
+  const confirmMsg = `🎯 ${imported.length}件のタスクを ${weeks}週分 取り込みます。${phaseSummary}\n\n※今日以降の「カリキュラム由来」タスクは置き換わります (手動追加分は保持)。\n\nよろしいですか？`;
+  if (!confirm(confirmMsg)) return;
+
+  // === Persist: 既存curriculumタスクは今日以降のみ削除 ===
   const data = spLoad();
-  // 同じ週の curriculum 由来タスクは一旦クリアして差し替え（重複防止）
-  const weekStart = weekMonday;
-  const weekEnd = spAddDays(weekMonday, 6);
-  data.tasks = data.tasks.filter(t => !(t.source === 'curriculum' && t.planned_date >= weekStart && t.planned_date <= weekEnd));
+  const todayStr = _spDateStr(today);
+  data.tasks = data.tasks.filter(t => !(t.source === 'curriculum' && t.planned_date >= todayStr));
   data.tasks.push(...imported);
   spSave(data);
-  alert(`${imported.length} 件のタスクを取込みました。`);
+
+  alert(`✅ ${imported.length}件を取り込みました。\n期間: ${todayStr} 〜 ${_spDateStr(endDate)}`);
   spRender();
 }
 
