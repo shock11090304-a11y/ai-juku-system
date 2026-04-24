@@ -230,9 +230,10 @@ const MODEL = MODEL_PREMIUM; // 互換性のため旧変数を維持
 const API_URL = 'https://api.anthropic.com/v1/messages';
 
 // バックエンドAI proxy の有無（顧客にAPIキー入力不要にする）
-const BACKEND_URL = window.location.hostname === 'localhost' && window.location.port === '8090'
+// 本番では Vercel rewrite を経由せず Railway 直接叩きでネットワークエラー回避
+const BACKEND_URL = (window.location.hostname === 'localhost' && window.location.port === '8090')
   ? 'http://localhost:8000'
-  : window.location.origin;
+  : 'https://ai-juku-api-production.up.railway.app';
 let BACKEND_AI_AVAILABLE = null;  // Auto-detected on init
 
 async function detectBackendAI() {
@@ -993,7 +994,18 @@ function demoResponse(system, user, options) {
     return `# 📊 今週の学習診断レポート\n\n## 総評\n${student.name}さんの今週の学習は**平均以上**のペースです。特に学習時間の確保ができており、取り組む姿勢に改善が見られます。\n\n## 強み\n- 学習時間の確保ができている\n- 継続的に問題演習をこなしている\n\n## 弱点\n1. **関係詞と仮定法の混同** — 文法の体系的理解が不足\n2. **長文読解の時間配分** — パラグラフリーディングの習熟が必要\n3. **数学の計算ミス** — 平方完成の手順確認\n\n## 来週の提案\n1. 文法：関係詞・仮定法を集中演習 (3時間)\n2. 長文：過去問を1日1題、時間計測あり (5時間)\n3. 数学：平方完成の典型問題20題 (2時間)\n\n💡 APIキー設定で実データに基づく高精度な分析が可能です。`;
   }
   if (kind === 'curriculum') {
-    return `# 🎯 ${student.goal} 合格カリキュラム\n\n## 📊 現状分析と戦略\n${student.name}さん (${student.grade})、現在地から目標まで偏差値+8が必要。10ヶ月で3フェーズ構成。\n\n## 📚 使用教材リスト（購入優先度順）\n\n### 🔴 最優先（今週購入）\n- 『青チャート 数IA』(数研出版) ¥2,079 — 典型問題網羅。例題1000問\n- 『システム英単語』(駿台文庫) ¥1,100 — シス単。第1-4章で2021語\n- 『Vintage』(いいずな書店) ¥1,570 — 英文法・語法1500問\n\n### 🟡 1ヶ月後\n- 『やっておきたい英語長文500』(河合出版) ¥1,100 — 30題\n- 『1対1対応の演習 数IA』(東京出版) ¥1,540 — 青チャ後の定番\n\n### 🟢 3ヶ月後\n- 『ポレポレ英文読解プロセス50』(代々木ライブラリー) — 難構文50題\n- 『新スタンダード演習』(東京出版) — 応用問題集\n\n## 📅 3フェーズ設計\n\n### フェーズ1: 基礎固め (4-6月、3ヶ月)\n**完了条件**: 青チャ例題が2周・正答率85%、シス単第1-2章完璧\n\n- 英単語: シス単 No.1-1200 (1日60語×3周)\n- 英文法: Vintage 1-900番 (1日30問、章末問題で確認)\n- 数学: 青チャ数IA 例題1-300 (1日5-8題、ノートに解答プロセス)\n\n### フェーズ2: 標準演習 (7-10月、4ヶ月)\n**完了条件**: 1対1対応 7割理解、長文500で週2題正答\n\n- 英語: ポレポレ + やっておきたい500 (隔日交互)\n- 数学: 1対1対応の演習 数IA/IIB (平日1日3題、週末復習)\n- 過去問: 志望校の2021-2023年度を3回ずつ\n\n### フェーズ3: 過去問演習 (11月-1月、3ヶ月)\n- 志望校過去問10年分×2周\n- 弱点分野を『標準問題精講』で集中演習\n- 時間配分練習（90分模試形式）\n\n## ⏰ 週間スケジュール例 (週20h)\n\n### 月曜 (3h)\n- 英語: シス単 No.1-60 (30分)\n- 英語: Vintage P.20-30 問21-35 (60分)\n- 数学: 青チャ数IA 例題21-25 (90分)\n\n### 火曜 (3h)\n- 数学: 青チャ数IA 例題26-30 (90分)\n- 現代文: キーワード読解 1章 (60分)\n- 英単語復習 (30分)\n\n### 水曜 (3h)\n- 英語: Vintage P.30-40 問36-50 (60分)\n- 数学: 青チャ 練習問題A (90分)\n- 古文単語 Day2-3 (30分)\n\n### 木曜 (3h)\n- 英語: 長文読解1題 + 音読 (60分)\n- 数学: 青チャ例題31-35 (90分)\n- 単語復習 (30分)\n\n### 金曜 (3h)\n- 英語: Vintage 苦手箇所 (60分)\n- 数学: 青チャ 章末問題B (90分)\n- 読書・調べ学習 (30分)\n\n### 土曜 (4h)\n- 週復習: Vintage + 青チャの誤答分析 (2h)\n- 長文読解2題 (1h)\n- 模試形式の過去問1題 (1h)\n\n### 日曜 (1h+休)\n- 週の振り返り+来週計画 (30分)\n- 復習 or 休息 (30分)\n\n## 🏁 月次マイルストーン\n- 4月末: シス単 1-600 / Vintage 1-300\n- 5月末: シス単 1-1200 / Vintage 1-600\n- 6月末: シス単完了 / 青チャIA 50%\n- 7月末: 1対1開始 / 長文500 半分\n- ...(以下継続)\n\n## 💡 完走のコツ\n- 青チャの例題は<strong>解答を見ずに5分考える</strong>→わからなければ解答プロセスを「写経」→翌日もう一度解く\n- Vintageは<strong>3周</strong>が目安。1周目で正解しても2-3周目で定着\n- 毎週日曜に必ず30分の<strong>振り返り</strong>を\n\n💡 APIキー設定で、<strong>さらに詳細で個別最適化された計画</strong>を自動生成できます。`;
+    // ⚠️ デモ応答だがフォーム入力を尊重する: userMessageから「志望校」「生徒名」「現在の学力」を抽出して
+    // hardcodedの student.goal / student.name を使わない(入力と表示の不一致を防ぐ)。
+    const goalMatch = String(user || '').match(/志望校[:：]\s*([^\n]+)/);
+    const nameMatch = String(user || '').match(/生徒[:：]\s*([^(（\n]+)/);
+    const gradeMatch = String(user || '').match(/生徒[:：][^(（]*[(（]([^)）]+)[)）]/);
+    const levelMatch = String(user || '').match(/現在の学力[:：]?\s*\n([\s\S]*?)(?:\n\n|\n週|$)/);
+    const goal = (goalMatch ? goalMatch[1] : '').trim() || student.goal || '志望校';
+    const sname = (nameMatch ? nameMatch[1] : '').trim() || student.name;
+    const sgrade = (gradeMatch ? gradeMatch[1] : '').trim() || student.grade;
+    const levelText = (levelMatch ? levelMatch[1] : '').trim() || '(入力なし)';
+    const notice = `\n\n> ⚠️ <strong>Backend AI未応答のためデモモードで表示中</strong>。本番環境ではClaude Opus 4.7で${goal}向けに完全個別生成されます。現在ログインセッションが切れている可能性があります。`;
+    return `# 🎯 ${goal} 合格カリキュラム${notice}\n\n## 📊 現状分析と戦略\n${sname}さん (${sgrade}) の入力: ${levelText.replace(/\n/g, ' / ')}\n現在地から目標まで必要な伸びを逆算。3フェーズ構成で設計します。\n\n## 📚 使用教材リスト（購入優先度順）\n\n### 🔴 最優先（今週購入）\n- 『青チャート 数IA』(数研出版) ¥2,079 — 典型問題網羅。例題1000問\n- 『システム英単語』(駿台文庫) ¥1,100 — シス単。第1-4章で2021語\n- 『Vintage』(いいずな書店) ¥1,570 — 英文法・語法1500問\n\n### 🟡 1ヶ月後\n- 『やっておきたい英語長文500』(河合出版) ¥1,100 — 30題\n- 『1対1対応の演習 数IA』(東京出版) ¥1,540 — 青チャ後の定番\n\n### 🟢 3ヶ月後\n- 『ポレポレ英文読解プロセス50』(代々木ライブラリー) — 難構文50題\n\n## 📅 3フェーズ設計\n\n### フェーズ1: 基礎固め (4-6月、3ヶ月)\n**完了条件**: 青チャ例題が2周・正答率85%、シス単第1-2章完璧\n- 英単語: シス単 No.1-1200 (1日60語×3周)\n- 英文法: Vintage 1-900番 (1日30問、章末問題で確認)\n- 数学: 青チャ数IA 例題1-300 (1日5-8題、ノートに解答プロセス)\n\n### フェーズ2: 標準演習 (7-10月、4ヶ月)\n**完了条件**: 1対1対応 7割理解、長文500で週2題正答\n- 英語: ポレポレ + やっておきたい500 (隔日交互)\n- 数学: 1対1対応の演習 数IA/IIB (平日1日3題、週末復習)\n- 過去問: ${goal}の2021-2023年度を3回ずつ\n\n### フェーズ3: 過去問演習 (11月-1月、3ヶ月)\n- ${goal}過去問10年分×2周\n- 弱点分野を『標準問題精講』で集中演習\n- 時間配分練習（90分模試形式）\n\n## ⏰ 週間スケジュール例 (週20h)\n\n### 月曜 (3h)\n- 英語: シス単 No.1-60 (30分)\n- 英語: Vintage P.20-30 問21-35 (60分)\n- 数学: 青チャ数IA 例題21-25 (90分)\n\n### 火曜 (3h)\n- 数学: 青チャ数IA 例題26-30 (90分)\n- 現代文: キーワード読解 1章 (60分)\n- 英単語復習 (30分)\n\n### 水曜〜日曜 ...(同様に具体タスクが並ぶ)\n\n## 🏁 月次マイルストーン\n- 初月末: シス単 1-600 / Vintage 1-300\n- 2ヶ月: シス単 1-1200 / Vintage 1-600\n- ...(以下継続)\n\n## 💡 完走のコツ\n- 青チャの例題は<strong>解答を見ずに5分考える</strong>→わからなければ解答プロセスを「写経」→翌日もう一度解く\n- Vintageは<strong>3周</strong>が目安\n- 毎週日曜に必ず30分の<strong>振り返り</strong>を\n\n---\n<strong>🚨 このカリキュラムはデモ応答です。</strong>Claude Opus 4.7での個別最適化生成は、ログイン(マジックリンク)+バックエンド稼働時のみ実行されます。`;
   }
   if (kind === 'essay') {
     return `# ✏️ 添削結果\n\n## 総合評価: **B+** (16/20点想定)\n\n## 良い点\n- 主張と理由の構造が明確\n- トピックセンテンスが機能している\n\n## 改善点\n1. **文法ミス (3箇所)**\n   - "I think uniforms is" → "uniforms are"\n   - 三単現の s\n   - 冠詞の抜け\n\n2. **語彙の単調さ**\n   - "good" が3回 → excellent, beneficial, valuable などに置換推奨\n\n3. **論理展開**\n   - 2段落目の because が弱い。具体例の追加を推奨\n\n## 書き直し例 (抜粋)\n> Before: "I think uniforms is good because students look same."\n> After: "I believe school uniforms are beneficial because they foster a sense of equality among students, regardless of socioeconomic background."\n\n## 講師への申し送り\n生徒は論理構造は理解しているが、文法のケアレスミスが多い。次回は三単現・冠詞を重点的に。\n\n💡 APIキー設定で、各生徒の答案を個別に詳細添削できます。`;
