@@ -871,6 +871,125 @@ def verify_magic_link(t: str):
     }
 
 
+# ==========================================================================
+# Routes: Admin (塾長専用) 認証
+# ==========================================================================
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
+ADMIN_SESSION_TTL = int(os.getenv("ADMIN_SESSION_TTL_SECONDS", str(30 * 86400)))  # 30日
+
+
+def _sign_admin_token(ttl: int = ADMIN_SESSION_TTL) -> dict:
+    import time
+    exp = int(time.time()) + ttl
+    payload = f"admin.{exp}"
+    sig = hmac.new(MAGIC_LINK_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
+    raw = f"{payload}.{sig}"
+    token = base64.urlsafe_b64encode(raw.encode()).decode().rstrip("=")
+    return {"token": token, "expires_at": exp}
+
+
+def _verify_admin_token(token: str) -> bool:
+    import time
+    if not token:
+        return False
+    try:
+        padded = token + "=" * (-len(token) % 4)
+        raw = base64.urlsafe_b64decode(padded).decode()
+        parts = raw.split(".")
+        if len(parts) != 3 or parts[0] != "admin":
+            return False
+        exp_str, sig = parts[1], parts[2]
+        expected = hmac.new(MAGIC_LINK_SECRET.encode(), f"admin.{exp_str}".encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(sig, expected):
+            return False
+        if int(exp_str) < int(time.time()):
+            return False
+        return True
+    except Exception:
+        return False
+
+
+class AdminLoginRequest(BaseModel):
+    password: str
+
+
+@app.post("/api/admin/login")
+def admin_login(payload: AdminLoginRequest, request: Request):
+    """塾長パスワードで認証。成功時は30日有効のトークンを返す。"""
+    _check_rate_limit_ip(request, bucket="admin_login", limit=5, window=300)  # 5分で5回まで
+    if not ADMIN_PASSWORD:
+        raise HTTPException(status_code=503, detail="管理者パスワードが未設定です。Railway環境変数 ADMIN_PASSWORD を設定してください。")
+    if not hmac.compare_digest((payload.password or ""), ADMIN_PASSWORD):
+        log.warning(f"Admin login failed from {_client_ip(request)}")
+        raise HTTPException(status_code=401, detail="パスワードが正しくありません")
+    tok = _sign_admin_token()
+    log.info(f"Admin login success from {_client_ip(request)}")
+    return {"ok": True, **tok}
+
+
+@app.get("/api/admin/verify")
+def admin_verify(authorization: Optional[str] = Header(None)):
+    """管理者トークンの有効性を確認。ceo.htmlのセッションチェック用。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+    return {"ok": True}
+
+
+@app.get("/api/admin/stats")
+def admin_stats(authorization: Optional[str] = Header(None)):
+    """管理者専用の経営統計。/api/statsよりリッチな情報を返す。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+
+    conn = db()
+    c = conn.cursor()
+    c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, paid_since, created_at FROM students ORDER BY id DESC")
+    students = []
+    for row in c.fetchall():
+        students.append({
+            "id": row["id"],
+            "name": row["name"],
+            "email": row["email"],
+            "grade": row["grade"],
+            "goal": row["goal"],
+            "plan": row["plan"],
+            "status": row["status"],
+            "trial_end": str(row["trial_end"]) if row["trial_end"] else None,
+            "paid_since": str(row["paid_since"]) if row["paid_since"] else None,
+            "created_at": str(row["created_at"]) if row["created_at"] else None,
+        })
+    # 集計
+    c.execute("SELECT COUNT(*) AS n FROM students WHERE status='paid'")
+    paid_count = c.fetchone()["n"]
+    c.execute("SELECT COUNT(*) AS n FROM students WHERE status='trial'")
+    trial_count = c.fetchone()["n"]
+    c.execute("SELECT COUNT(*) AS n FROM students WHERE status='canceled'")
+    canceled_count = c.fetchone()["n"]
+    conn.close()
+
+    plan_fees = {"standard": 24980, "premium": 39800, "family": 59800, "student_addon": 15000}
+    paid_students = [s for s in students if s["status"] == "paid"]
+    mrr = sum(plan_fees.get(s.get("plan") or "", 0) for s in paid_students)
+
+    return {
+        "students": students,
+        "summary": {
+            "total": len(students),
+            "paid": paid_count,
+            "trial": trial_count,
+            "canceled": canceled_count,
+            "mrr_yen": mrr,
+            "arr_yen": mrr * 12,
+        }
+    }
+
+
 @app.get("/api/auth/me")
 def auth_me(authorization: Optional[str] = Header(None)):
     """現在のセッションを検証して生徒情報を返す。全ページのアクセスガードに使う。"""

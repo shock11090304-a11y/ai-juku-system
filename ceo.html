@@ -7,10 +7,220 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="ceo.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* 塾長パスワードゲート (未認証時は全体を隠す) */
+    body.admin-locked .bg-gradient,
+    body.admin-locked .floating-orbs { display: block; }
+    body.admin-locked .header,
+    body.admin-locked .content,
+    body.admin-locked section:not(.admin-gate),
+    body.admin-locked footer { visibility: hidden !important; }
+    .admin-gate {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1.5rem;
+    }
+    .admin-gate.hidden { display: none; }
+    .admin-gate-card {
+      background: rgba(22, 22, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 2.5rem 2rem;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      text-align: center;
+    }
+    .admin-gate-icon { font-size: 3.2rem; margin-bottom: 0.5rem; }
+    .admin-gate-title {
+      font-size: 1.4rem; font-weight: 900; margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #818cf8, #ec4899);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .admin-gate-sub { font-size: 0.88rem; color: #a1a1aa; margin-bottom: 1.5rem; line-height: 1.7; }
+    .admin-gate input[type="password"] {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      color: #e4e4e7;
+      font-size: 1rem;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+    .admin-gate input[type="password"]:focus {
+      outline: none; border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
+    }
+    .admin-gate button {
+      width: 100%; margin-top: 1rem;
+      padding: 0.9rem;
+      background: linear-gradient(135deg, #6366f1, #ec4899);
+      color: white; border: none; border-radius: 10px;
+      font-weight: 800; font-size: 1rem; font-family: inherit;
+      cursor: pointer; touch-action: manipulation;
+    }
+    .admin-gate button:disabled { opacity: 0.6; }
+    .admin-gate-msg {
+      margin-top: 1rem; padding: 0.75rem;
+      border-radius: 8px; font-size: 0.85rem;
+      display: none;
+    }
+    .admin-gate-msg.error {
+      display: block;
+      background: rgba(239,68,68,0.12);
+      color: #fca5a5;
+      border: 1px solid rgba(239,68,68,0.3);
+    }
+    .admin-gate-foot {
+      margin-top: 1.25rem; font-size: 0.75rem; color: #71717a;
+      line-height: 1.6;
+    }
+    /* ログアウトボタンをヘッダーに追加 */
+    .admin-logout-btn {
+      padding: 0.4rem 0.9rem; border-radius: 999px;
+      background: rgba(239,68,68,0.15); color: #fca5a5;
+      border: 1px solid rgba(239,68,68,0.35);
+      font-size: 0.75rem; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+    }
+    @media (max-width: 640px) {
+      .admin-gate-card { padding: 2rem 1.25rem; }
+    }
+  </style>
 </head>
-<body>
+<body class="admin-locked">
   <div class="bg-gradient"></div>
   <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <!-- 塾長パスワードゲート -->
+  <section class="admin-gate" id="adminGate">
+    <div class="admin-gate-card">
+      <div class="admin-gate-icon">🔐</div>
+      <h1 class="admin-gate-title">塾長専用ページ</h1>
+      <p class="admin-gate-sub">
+        CEO経営ダッシュボードにアクセスするにはパスワードが必要です。<br>
+        一度ログインすると、<strong>30日間はパスワード入力不要</strong>です。
+      </p>
+      <form id="adminLoginForm" autocomplete="off">
+        <input type="password" id="adminPassword" placeholder="塾長パスワード" required autofocus>
+        <button type="submit" id="adminLoginBtn">🔓 ログイン</button>
+      </form>
+      <div class="admin-gate-msg" id="adminGateMsg"></div>
+      <p class="admin-gate-foot">
+        パスワードを忘れた場合は、Railwayダッシュボードの環境変数<br>
+        <code>ADMIN_PASSWORD</code> で確認・変更できます。
+      </p>
+    </div>
+  </section>
+
+  <!-- 管理者認証スクリプト (ページロード前に実行) -->
+  <script>
+    (function() {
+      const API_BASE = (window.location.origin.includes(':8090') || window.location.origin.includes('localhost:8090'))
+        ? 'http://localhost:8000'
+        : 'https://ai-juku-api-production.up.railway.app';
+      const TOKEN_KEY = 'ai_juku_admin_token';
+      const EXP_KEY = 'ai_juku_admin_expires';
+
+      function saveSession(token, exp) {
+        localStorage.setItem(TOKEN_KEY, token);
+        localStorage.setItem(EXP_KEY, String(exp));
+      }
+      function clearSession() {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(EXP_KEY);
+      }
+      function getToken() {
+        const tok = localStorage.getItem(TOKEN_KEY);
+        const exp = parseInt(localStorage.getItem(EXP_KEY) || '0', 10);
+        if (!tok || Math.floor(Date.now() / 1000) >= exp) return null;
+        return tok;
+      }
+
+      window.AdminAuth = {
+        getToken, clearSession, saveSession,
+        apiBase: API_BASE,
+        // 認証付き fetch
+        async fetch(path, init = {}) {
+          const token = getToken();
+          const headers = new Headers(init.headers || {});
+          if (token) headers.set('Authorization', 'Bearer ' + token);
+          const res = await fetch(API_BASE + path, { ...init, headers });
+          if (res.status === 401) { clearSession(); window.location.reload(); }
+          return res;
+        },
+      };
+
+      const gate = document.getElementById('adminGate');
+      const form = document.getElementById('adminLoginForm');
+      const input = document.getElementById('adminPassword');
+      const btn = document.getElementById('adminLoginBtn');
+      const msg = document.getElementById('adminGateMsg');
+
+      async function unlock() {
+        document.body.classList.remove('admin-locked');
+        gate.classList.add('hidden');
+      }
+
+      async function checkSession() {
+        const token = getToken();
+        if (!token) return false;
+        try {
+          const res = await fetch(API_BASE + '/api/admin/verify', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          if (res.ok) { unlock(); return true; }
+        } catch (e) { /* fall through */ }
+        clearSession();
+        return false;
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const password = input.value.trim();
+        if (!password) return;
+        btn.disabled = true; btn.textContent = '⏳ 認証中...';
+        msg.className = 'admin-gate-msg';
+        try {
+          const res = await fetch(API_BASE + '/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            saveSession(data.token, data.expires_at);
+            msg.className = 'admin-gate-msg';
+            await unlock();
+            if (typeof window.renderAll === 'function') window.renderAll();
+          } else {
+            msg.className = 'admin-gate-msg error';
+            msg.textContent = '⚠️ ' + (data.detail || '認証に失敗しました');
+            input.value = '';
+            input.focus();
+          }
+        } catch (err) {
+          msg.className = 'admin-gate-msg error';
+          msg.textContent = '⚠️ ネットワークエラー。しばらくしてから再度お試しください。';
+        } finally {
+          btn.disabled = false; btn.textContent = '🔓 ログイン';
+        }
+      });
+
+      // 初期チェック
+      checkSession();
+
+      // ログアウト関数 (グローバル)
+      window.adminLogout = function() {
+        if (!confirm('ログアウトしますか？次回アクセス時にパスワードの再入力が必要になります。')) return;
+        clearSession();
+        window.location.reload();
+      };
+    })();
+  </script>
 
   <header class="header">
     <div class="logo">
@@ -22,6 +232,7 @@
     </div>
     <div class="header-actions">
       <span id="lastUpdated" class="mode-badge">更新: --</span>
+      <button class="admin-logout-btn" onclick="adminLogout()" title="ログアウトしてパスワード保護画面に戻る">🚪 ログアウト</button>
       <a href="index.html" class="btn-icon" title="アプリに戻る">🎓</a>
       <a href="content-studio.html" class="btn-icon" title="AIコンテンツスタジオ">✨</a>
       <a href="textbook-generator.html" class="btn-icon" title="📚 テキスト教材生成">📚</a>
