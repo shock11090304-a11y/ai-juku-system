@@ -433,6 +433,7 @@ def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, is_
             headers={
                 "Authorization": f"Bearer {RESEND_API_KEY}",
                 "Content-Type": "application/json",
+                "User-Agent": "ai-juku-system/1.0",
             },
             method="POST",
         )
