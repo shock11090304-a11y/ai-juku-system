@@ -140,8 +140,8 @@ function guessAvatar(student) {
 function renderStreakBars(history) {
   const container = document.getElementById('streakChart');
   container.innerHTML = '';
-  // Show last 14 days
-  const days = history.slice(-14);
+  // Show last 14 days（古い保存データに streakHistory が無い場合の安全策）
+  const days = Array.isArray(history) ? history.slice(-14) : [];
   while (days.length < 14) days.unshift(0);
   days.forEach((d, i) => {
     const bar = document.createElement('div');
@@ -220,14 +220,16 @@ function renderWeeklyChart(minutes) {
   Chart.defaults.color = '#9ca3af';
 
   const labels = ['月', '火', '水', '木', '金', '土', '日'];
+  // 古い保存データに weeklyMinutes が無い場合の安全策
+  const safeMinutes = Array.isArray(minutes) && minutes.length === 7 ? minutes : [0, 0, 0, 0, 0, 0, 0];
   weeklyChart = new Chart(ctx, {
     type: 'bar',
     data: {
       labels,
       datasets: [{
         label: '学習時間 (分)',
-        data: minutes,
-        backgroundColor: minutes.map((m, i) => {
+        data: safeMinutes,
+        backgroundColor: safeMinutes.map((m, i) => {
           const today = new Date().getDay();
           const dayIdx = today === 0 ? 6 : today - 1;
           return i === dayIdx ? 'rgba(236, 72, 153, 0.8)' : 'rgba(99, 102, 241, 0.5)';
@@ -278,7 +280,166 @@ function logActivity(type) {
   }).catch(() => {});
 }
 
+// ==========================================================================
+// 3日間トライアル体験導線 (Trial Onboarding)
+// ==========================================================================
+const TRIAL_KEY = 'ai_juku_trial_onboarding';
+
+const TRIAL_DAYS = [
+  {
+    day: 1,
+    title: '学習診断 & AIに最初の質問',
+    sub: '自分の今の実力を知り、AIコーチに最初の質問をしてみましょう。所要時間: 約15分',
+    tasks: [
+      { id: 'd1_diagnosis', title: '学習診断を受ける', desc: '志望校と現在レベルを入力して弱点を発見', url: 'index.html#tab-diagnosis', action: '診断を開始' },
+      { id: 'd1_curriculum', title: '志望校カリキュラムを自動生成', desc: '合格までの月別ロードマップをAIが作成', url: 'index.html#tab-curriculum', action: '作成する' },
+      { id: 'd1_first_q', title: 'AIチューターに1問質問する', desc: '今わからない問題を1つだけ聞いてみる', url: 'index.html#tab-tutor', action: '質問する' },
+    ]
+  },
+  {
+    day: 2,
+    title: 'AI問題で弱点を深掘り',
+    sub: 'Day 1 の診断から見えた弱点を、AI生成問題で10問練習します。所要時間: 約30分',
+    tasks: [
+      { id: 'd2_gen_problems', title: 'AI問題を10問生成する', desc: '弱点単元に絞ったオリジナル問題', url: 'index.html#tab-problems', action: '生成する' },
+      { id: 'd2_grade', title: '解いて採点する', desc: '解答・解説を確認して理解を深める', url: 'index.html#tab-problems', action: '採点へ' },
+      { id: 'd2_textbook', title: '弱点特化の参考書を作る', desc: '自分だけの教材でさらに強化', url: 'textbook-generator.html', action: '作成する' },
+    ]
+  },
+  {
+    day: 3,
+    title: '保護者レポートを体験',
+    sub: '3日間の学習実績をLINEで保護者に送り、価値を実感してもらいます。所要時間: 約5分',
+    tasks: [
+      { id: 'd3_line_link', title: 'LINEを連携する', desc: '保護者の公式LINEで友だち追加', url: 'https://line.me', action: '連携する' },
+      { id: 'd3_preview_report', title: '週次レポートをプレビュー', desc: '保護者に届くメッセージを確認', url: 'index.html#tab-parent', action: 'プレビュー' },
+      { id: 'd3_send_report', title: '保護者に初回レポート送信', desc: '3日間の成果を実際に送ってみる', url: 'index.html#tab-parent', action: '送信する' },
+    ]
+  }
+];
+
+function getTrialState() {
+  const saved = JSON.parse(localStorage.getItem(TRIAL_KEY) || 'null');
+  if (saved) return saved;
+  // 初回起動 = 今日がトライアル開始日
+  const today = todayKeyJST();
+  const fresh = {
+    startDate: today,
+    completed: {}, // { taskId: timestamp }
+    dismissed: false,
+  };
+  localStorage.setItem(TRIAL_KEY, JSON.stringify(fresh));
+  return fresh;
+}
+function saveTrialState(s) {
+  localStorage.setItem(TRIAL_KEY, JSON.stringify(s));
+}
+
+function getTrialDayNumber(startDate) {
+  const start = new Date(startDate + 'T00:00:00+09:00');
+  const now = new Date(new Date().toISOString());
+  const diffDays = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+  return Math.min(3, Math.max(1, diffDays + 1));
+}
+
+function renderTrialOnboarding() {
+  const section = document.getElementById('trialOnboarding');
+  if (!section) return;
+  const state = getTrialState();
+  // ユーザーが「体験モード終了」を押した、またはトライアル期間(3日+余裕1日)を超えたら非表示
+  const dayNum = getTrialDayNumber(state.startDate);
+  const allTasks = TRIAL_DAYS.flatMap(d => d.tasks);
+  const doneTaskCount = allTasks.filter(t => state.completed[t.id]).length;
+  const allCompleted = doneTaskCount >= allTasks.length;
+  const dayOverflow = dayNum > 3;
+
+  if (state.dismissed || (dayOverflow && allCompleted)) {
+    section.style.display = 'none';
+    return;
+  }
+  // 期間超過かつ未完了の場合も表示するが終了予告を出す
+  section.style.display = 'block';
+
+  const currentDay = TRIAL_DAYS.find(d => d.day === dayNum) || TRIAL_DAYS[2];
+  document.getElementById('toDayLabel').textContent = `Day ${currentDay.day}`;
+  document.getElementById('toDayTitle').textContent = currentDay.title;
+  document.getElementById('toDaySub').textContent = currentDay.sub;
+  document.getElementById('toProgressCurrent').textContent = doneTaskCount;
+  document.getElementById('toProgressTotal').textContent = allTasks.length;
+
+  // Day pills
+  section.querySelectorAll('.to-day-pill').forEach(pill => {
+    const d = parseInt(pill.dataset.day, 10);
+    const dayDef = TRIAL_DAYS.find(x => x.day === d);
+    const dayTasks = dayDef ? dayDef.tasks : [];
+    const dayDone = dayTasks.every(t => state.completed[t.id]);
+    pill.classList.remove('active', 'completed');
+    if (dayDone) pill.classList.add('completed');
+    else if (d === currentDay.day) pill.classList.add('active');
+    const check = pill.querySelector('.to-day-pill-check');
+    if (check) check.textContent = dayDone ? '✓' : (d === currentDay.day ? '…' : '○');
+  });
+
+  // Tasks for current day
+  const tasksEl = document.getElementById('toTasks');
+  tasksEl.innerHTML = currentDay.tasks.map(t => {
+    const done = !!state.completed[t.id];
+    return `
+      <div class="to-task ${done ? 'done' : ''}" data-task-id="${t.id}">
+        <div class="to-task-check">${done ? '✓' : ''}</div>
+        <div class="to-task-body">
+          <div class="to-task-title">${escapeHtml(t.title)}</div>
+          <div class="to-task-desc">${escapeHtml(t.desc)}</div>
+        </div>
+        ${done
+          ? `<span class="to-task-action">✓ 完了</span>`
+          : `<a href="${escapeHtml(t.url)}" class="to-task-action" data-task-id="${t.id}">${escapeHtml(t.action)} →</a>`}
+      </div>
+    `;
+  }).join('');
+
+  // クリックしたらそのタスクを完了にマーク（ユーザーがリンク先で実行したと仮定）
+  tasksEl.querySelectorAll('.to-task-action[href]').forEach(a => {
+    a.addEventListener('click', () => {
+      const taskId = a.dataset.taskId;
+      state.completed[taskId] = Date.now();
+      saveTrialState(state);
+      // リンク先で実行中にタブが残るので、戻ってきたとき反映
+      setTimeout(renderTrialOnboarding, 100);
+    });
+  });
+
+  // 残り時間表示
+  const startMs = new Date(state.startDate + 'T00:00:00+09:00').getTime();
+  const endMs = startMs + 3 * 24 * 60 * 60 * 1000;
+  const leftMs = endMs - Date.now();
+  const timeLeft = document.getElementById('toTimeLeft');
+  if (leftMs > 0) {
+    const hrs = Math.floor(leftMs / (1000 * 60 * 60));
+    const d = Math.floor(hrs / 24), h = hrs % 24;
+    timeLeft.innerHTML = `⏳ トライアル残り <strong>${d}日 ${h}時間</strong>`;
+  } else {
+    timeLeft.innerHTML = `⏰ <strong>トライアル期間終了</strong> — 体験を継続するにはプランへアップグレード`;
+  }
+}
+
+function bindTrialOnboarding() {
+  const dismissBtn = document.getElementById('toDismissBtn');
+  if (dismissBtn) {
+    dismissBtn.addEventListener('click', () => {
+      if (!confirm('体験モードを終了しますか？（再表示はできません）')) return;
+      const s = getTrialState();
+      s.dismissed = true;
+      saveTrialState(s);
+      renderTrialOnboarding();
+    });
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  render();
-  logActivity('mypage_view');
+  // 各初期化を独立に try/catch して、1つの失敗で以降の初期化が連鎖停止しないようにする
+  try { render(); } catch (e) { console.error('render failed:', e); }
+  try { logActivity('mypage_view'); } catch (e) { console.error('logActivity failed:', e); }
+  try { bindTrialOnboarding(); } catch (e) { console.error('bindTrialOnboarding failed:', e); }
+  try { renderTrialOnboarding(); } catch (e) { console.error('renderTrialOnboarding failed:', e); }
 });

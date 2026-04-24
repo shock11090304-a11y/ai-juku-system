@@ -144,8 +144,9 @@
         ? 'http://localhost:8000'
         : window.location.origin;
 
-      // キャッシュされた値を即座に表示（ちらつき防止）
-      const cachedCount = parseInt(localStorage.getItem(CACHE_KEY) || '27');
+      // キャッシュされた値を即座に表示（ちらつき防止）。
+      // バックエンド不通時に架空の数字を見せないため、デフォルトは 0 で正直に表示する。
+      const cachedCount = parseInt(localStorage.getItem(CACHE_KEY) || '0');
 
       function renderCounter(taken) {
         const remaining = Math.max(0, LIMIT - taken);
@@ -298,6 +299,13 @@
         <div class="stat-num">100<span>%</span></div>
         <div class="stat-label">個別最適化</div>
       </div>
+    </div>
+    <!-- 実績プルーフ（localStorageの匿名集計） -->
+    <div id="lpProofWrap" style="display:none;">
+      <div style="text-align:center;margin-top:2.5rem;color:rgba(255,255,255,0.85);font-weight:700;font-size:0.9rem;letter-spacing:0.05em;">
+        🏆 実際に塾生が達成した成果（匿名集計・リアルタイム）
+      </div>
+      <div class="lp-proof-stats" id="lpProofStats"></div>
     </div>
   </section>
 
@@ -657,6 +665,33 @@
           </div>
         `;
       }).join('');
+    })();
+  </script>
+  <script>
+    // LP 実績プルーフ（localStorage匿名集計から）
+    (function() {
+      try {
+        const raw = localStorage.getItem('ai_juku_lp_proof_stats');
+        if (!raw) return;
+        const s = JSON.parse(raw);
+        if (!s || !s.totalStudents || s.totalStudents < 1) return;
+        const wrap = document.getElementById('lpProofWrap');
+        const stats = document.getElementById('lpProofStats');
+        if (!wrap || !stats) return;
+        const cards = [];
+        if (s.improved3 > 0) cards.push({ num: s.improved3 + '<span style="font-size:1rem;">名</span>', label: '偏差値+3 以上 達成', note: '入塾時→最新模試' });
+        if (s.improved5 > 0) cards.push({ num: s.improved5 + '<span style="font-size:1rem;">名</span>', label: '偏差値+5 以上 達成', note: '入塾時→最新模試' });
+        if (s.avgDelta > 0) cards.push({ num: '+' + s.avgDelta, label: '平均偏差値アップ', note: '塾生全体の平均' });
+        cards.push({ num: s.totalMoshi + '<span style="font-size:1rem;">件</span>', label: '登録された模試データ', note: '実測ベース' });
+        stats.innerHTML = cards.map(c => `
+          <div class="lp-proof-card">
+            <div class="lp-proof-num">${c.num}</div>
+            <div class="lp-proof-label">${c.label}</div>
+            <div class="lp-proof-note">${c.note}</div>
+          </div>
+        `).join('');
+        wrap.style.display = 'block';
+      } catch (e) { /* noop */ }
     })();
   </script>
 </body>

@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="textbook-generator.css?v=20260423-print">
   <script src="textbooks-db.js"></script>
+  <script src="past-exams-db.js?v=20260424-team3"></script>
 </head>
 <body>
   <div class="bg-gradient"></div>
@@ -55,26 +56,79 @@
         </div>
 
         <div class="form-group">
-          <label>科目・分野</label>
+          <label>科目・分野 <span style="color:var(--primary-light);font-weight:600;font-size:0.8em;">（大学別の傾向対応）</span></label>
           <select id="tbSubject">
-            <option>英語（英検準1級）</option>
-            <option>英語（英検2級）</option>
-            <option>英語（共通テスト）</option>
-            <option>英語（東大2次）</option>
-            <option>英語（高校英文法）</option>
-            <option>英語（中学英文法）</option>
-            <option>数学ⅠA</option>
-            <option>数学ⅡB</option>
-            <option>数学Ⅲ</option>
-            <option>国語（現代文）</option>
-            <option>国語（古文）</option>
-            <option>国語（漢文）</option>
-            <option>物理基礎・物理</option>
-            <option>化学基礎・化学</option>
-            <option>生物基礎・生物</option>
-            <option>日本史</option>
-            <option>世界史</option>
-            <option>地理</option>
+            <optgroup label="📘 英語（基礎・共通テスト）">
+              <option>英語（中学英文法）</option>
+              <option>英語（高校英文法）</option>
+              <option>英語（共通テスト）</option>
+              <option>英語（英検2級）</option>
+              <option selected>英語（英検準1級）</option>
+              <option>英語（英検1級）</option>
+            </optgroup>
+            <optgroup label="📘 英語（大学別・難関）">
+              <option>英語（MARCH）</option>
+              <option>英語（関関同立）</option>
+              <option>英語（早慶上智）</option>
+              <option>英語（難関国公立2次）</option>
+              <option>英語（京大2次）</option>
+              <option>英語（東大2次）</option>
+              <option>英語（医学部）</option>
+            </optgroup>
+            <optgroup label="📗 数学（基礎・共通テスト）">
+              <option>数学ⅠA</option>
+              <option>数学ⅡB</option>
+              <option>数学Ⅲ</option>
+              <option>数学C</option>
+              <option>数学（共通テスト）</option>
+            </optgroup>
+            <optgroup label="📗 数学（大学別・難関）">
+              <option>数学（MARCH・関関同立）</option>
+              <option>数学（早慶上智）</option>
+              <option>数学（難関国公立理系）</option>
+              <option>数学（京大2次）</option>
+              <option>数学（東大2次）</option>
+              <option>数学（医学部）</option>
+            </optgroup>
+            <optgroup label="📕 国語">
+              <option>国語（現代文）</option>
+              <option>国語（古文）</option>
+              <option>国語（漢文）</option>
+              <option>国語（共通テスト）</option>
+              <option>国語（MARCH・関関同立）</option>
+              <option>国語（早慶上智）</option>
+              <option>国語（難関国公立2次）</option>
+              <option>国語（東大・京大）</option>
+            </optgroup>
+            <optgroup label="📙 理科">
+              <option>物理基礎・物理</option>
+              <option>化学基礎・化学</option>
+              <option>生物基礎・生物</option>
+              <option>物理（難関国公立・医学部）</option>
+              <option>化学（難関国公立・医学部）</option>
+              <option>生物（難関国公立・医学部）</option>
+            </optgroup>
+            <optgroup label="📒 社会">
+              <option>日本史</option>
+              <option>世界史</option>
+              <option>地理</option>
+              <option>日本史（MARCH・関関同立）</option>
+              <option>日本史（早慶上智）</option>
+              <option>日本史（東大論述）</option>
+              <option>日本史（一橋論述）</option>
+              <option>世界史（MARCH・関関同立）</option>
+              <option>世界史（早慶上智）</option>
+              <option>世界史（東大大論述）</option>
+              <option>地理総合・地理探究</option>
+              <option>地理（共通テスト）</option>
+              <option>地理（東大論述）</option>
+              <option>地理（MARCH・関関同立）</option>
+            </optgroup>
+            <optgroup label="📜 公民（新課程）">
+              <option>公共・倫理</option>
+              <option>公共・政経</option>
+              <option>公民（共通テスト）</option>
+            </optgroup>
           </select>
         </div>
 
@@ -162,6 +216,38 @@
                 <div class="layout-desc">問題直後に解答・解説。<strong>講師用</strong>レビュー時に。</div>
               </div>
             </label>
+          </div>
+        </div>
+
+        <!-- 過去問モード -->
+        <div class="form-group past-exam-group">
+          <label class="past-exam-toggle">
+            <input type="checkbox" id="tbPastExamToggle">
+            🏛 <strong>過去問対応モード</strong> <span class="pd-badge-new">NEW</span>
+            <span class="past-exam-hint">— 特定大学・年度の出題傾向に合わせた教材・類題を執筆</span>
+          </label>
+          <div id="tbPastExamPanel" class="past-exam-panel" style="display:none;">
+            <div class="form-row">
+              <div class="form-group">
+                <label>🏫 大学</label>
+                <select id="tbPastExamUniv"><option value="">-- 選択 --</option></select>
+              </div>
+              <div class="form-group">
+                <label>📅 年度</label>
+                <select id="tbPastExamYear" disabled><option value="">-- 先に大学選択 --</option></select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>📖 過去問の科目</label>
+                <select id="tbPastExamSubject" disabled><option value="">-- 先に大学選択 --</option></select>
+              </div>
+              <div class="form-group">
+                <label>📌 大問</label>
+                <select id="tbPastExamQuestion" disabled><option value="">全ての大問</option></select>
+              </div>
+            </div>
+            <div id="tbPastExamPreview" class="past-exam-preview" style="display:none;"></div>
           </div>
         </div>
 
@@ -254,6 +340,6 @@ build_pdf(CHAPTERS, output_path='output.pdf')</pre>
     <div class="footer-bottom">© 2026 AI学習コーチ塾 | Textbook Generator</div>
   </footer>
 
-  <script src="textbook-generator.js?v=20260423-opus47"></script>
+  <script src="textbook-generator.js?v=20260424-team3"></script>
 </body>
 </html>

@@ -13,8 +13,10 @@
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+  <script src="past-exams-db.js?v=20260424-team3"></script>
   <script src="textbooks-db.js" defer></script>
   <script src="analytics.js" defer></script>
+  <script src="auth-guard.js?v=20260424-1"></script>
 </head>
 <body>
   <div class="bg-gradient"></div>
@@ -478,6 +480,41 @@
             <p class="placeholder">「AIで今週のサマリーを生成」を押すと、保護者向けのレポートを作成します。</p>
           </div>
         </div>
+
+        <!-- 週次自動レポート配信 -->
+        <div class="weekly-cron-panel">
+          <div class="wcp-header">
+            <div>
+              <h3>📱 週次自動レポート配信 <span class="pd-badge-new">NEW</span></h3>
+              <p class="wcp-desc">毎週日曜20:00、LINE連携済みの保護者へ今週の学習サマリーを自動配信します。</p>
+            </div>
+            <div class="wcp-status">
+              <span class="wcp-dot" id="wcpStatusDot"></span>
+              <span id="wcpStatusText">未確認</span>
+            </div>
+          </div>
+
+          <div class="wcp-preview-box">
+            <div class="wcp-preview-title">📩 送信されるメッセージのプレビュー（現在の生徒）</div>
+            <pre id="wcpPreview" class="wcp-preview-text">プレビューを表示するには「プレビュー」ボタンを押してください。</pre>
+          </div>
+
+          <div class="wcp-actions">
+            <button id="wcpPreviewBtn" class="btn-secondary btn-small">👁 プレビュー</button>
+            <button id="wcpSendNowBtn" class="btn-primary btn-small">📤 この生徒に今すぐ送信（LINE）</button>
+            <button id="wcpDryRunAllBtn" class="btn-secondary btn-small">🔍 全員分プレビュー</button>
+          </div>
+
+          <details class="wcp-setup">
+            <summary>⚙️ スケジューラ設定（初回のみ）</summary>
+            <ol class="wcp-setup-steps">
+              <li>GitHub リポジトリ Settings → Secrets で <code>BACKEND_URL</code>, <code>CRON_SECRET</code> を設定</li>
+              <li>Settings → Actions → Workflows → "Weekly Parent Reports" を有効化</li>
+              <li>毎週日曜 20:00 JST に自動起動（<code>.github/workflows/weekly-reports.yml</code>）</li>
+              <li>手動テストは Actions タブ → Run workflow → dry_run=true で実行可能</li>
+            </ol>
+          </details>
+        </div>
       </div>
     </section>
 
@@ -546,6 +583,46 @@
 
           <input type="file" id="qfMoshiInput" accept="image/*" style="display:none;">
           <div id="qfMoshiStatus" class="qf-status" style="display:none;"></div>
+
+          <!-- 過去問モード -->
+          <div class="form-group past-exam-group">
+            <label class="past-exam-toggle">
+              <input type="checkbox" id="pastExamToggle">
+              🏛 <strong>過去問類題モード</strong> <span class="pd-badge-new">NEW</span>
+              <span class="past-exam-hint">— 大学・年度・科目を指定して、実際の出題傾向に合わせた類題を生成</span>
+            </label>
+            <div id="pastExamPanel" class="past-exam-panel" style="display:none;">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>🏫 大学</label>
+                  <select id="pastExamUniv">
+                    <option value="">-- 大学を選択 --</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>📅 年度</label>
+                  <select id="pastExamYear" disabled>
+                    <option value="">-- 先に大学を選択 --</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>📖 科目</label>
+                  <select id="pastExamSubject" disabled>
+                    <option value="">-- 先に大学を選択 --</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>📌 大問（任意・絞り込み）</label>
+                  <select id="pastExamQuestion" disabled>
+                    <option value="">全ての大問</option>
+                  </select>
+                </div>
+              </div>
+              <div id="pastExamPreview" class="past-exam-preview" style="display:none;"></div>
+            </div>
+          </div>
           <div class="form-row">
             <div class="form-group">
               <label>問題数</label>
@@ -554,6 +631,8 @@
                 <option value="10" selected>10問</option>
                 <option value="15">15問</option>
                 <option value="20">20問</option>
+                <option value="30">30問（大量演習）</option>
+                <option value="50">50問（模試級）</option>
               </select>
             </div>
             <div class="form-group">
@@ -566,6 +645,11 @@
               </select>
             </div>
           </div>
+          <label class="quality-toggle" title="オンにすると Sonnet 4.6/Opus 4.7 で高品質出力（その分時間がかかります）">
+            <input type="checkbox" id="probQualityMode">
+            💎 <strong>高品質モード</strong>
+            <span class="quality-toggle-hint">— より高性能なモデル（Sonnet/Opus）で時間をかけて生成（OFF = 最速Haiku）</span>
+          </label>
           <div class="form-group">
             <label>形式</label>
             <select id="probFormat">
@@ -632,6 +716,49 @@
       <div class="panel-header">
         <h2>📋 模試履歴ストック <span style="font-size:0.7em;background:linear-gradient(135deg,#10b981,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">成績推移を一元管理</span></h2>
         <p>模試結果を画像アップまたは手入力で保存。時系列で偏差値・弱点の変化を可視化。弱点単元から即座に問題生成も可能。</p>
+      </div>
+
+      <!-- Before/After 成果ダッシュボード -->
+      <div class="progress-dashboard" id="progressDashboard">
+        <div class="pd-header">
+          <h3>📈 Before/After 成果ダッシュボード <span class="pd-badge-new">NEW</span></h3>
+          <p class="pd-sub">入塾時の模試から最新模試までの成績の伸びを可視化。保護者への実績報告にも使えます。</p>
+        </div>
+        <div id="pdEmpty" class="pd-empty">
+          <div style="font-size:3rem;margin-bottom:0.5rem;">📊</div>
+          <p><strong>模試を2件以上登録すると、Before→After の成績変化がここに表示されます。</strong></p>
+          <p style="margin-top:0.5rem;font-size:0.85rem;color:var(--text-muted);">入塾時の最初の模試が Before、最新が After になります。</p>
+        </div>
+        <div id="pdContent" style="display:none;">
+          <div class="pd-cards">
+            <div class="pd-card pd-card-before">
+              <div class="pd-card-label">🔵 Before（入塾時）</div>
+              <div class="pd-card-title" id="pdBeforeTitle">—</div>
+              <div class="pd-card-date" id="pdBeforeDate">—</div>
+              <div class="pd-card-value"><span id="pdBeforeValue">—</span><span class="pd-card-unit">偏差値</span></div>
+            </div>
+            <div class="pd-arrow-card">
+              <div class="pd-delta-big" id="pdDeltaBig">+0.0</div>
+              <div class="pd-delta-unit">偏差値アップ</div>
+              <div class="pd-period" id="pdPeriod">—</div>
+            </div>
+            <div class="pd-card pd-card-after">
+              <div class="pd-card-label">🔴 After（最新）</div>
+              <div class="pd-card-title" id="pdAfterTitle">—</div>
+              <div class="pd-card-date" id="pdAfterDate">—</div>
+              <div class="pd-card-value"><span id="pdAfterValue">—</span><span class="pd-card-unit">偏差値</span></div>
+            </div>
+          </div>
+          <div class="pd-chart-wrap">
+            <canvas id="pdProgressChart"></canvas>
+          </div>
+          <div class="pd-subjects" id="pdSubjects"></div>
+          <div class="pd-share">
+            <button id="pdCopyStatsBtn" class="btn-secondary btn-small">📋 実績サマリーをコピー</button>
+            <button id="pdShareParentBtn" class="btn-secondary btn-small">📧 保護者に報告</button>
+            <span class="pd-share-hint">※ LPに表示される「偏差値+N達成者数」にも反映されます（匿名集計）</span>
+          </div>
+        </div>
       </div>
 
       <div class="moshi-layout">
@@ -912,6 +1039,6 @@
   </footer>
 
   <script src="demo-english-extra.js?v=20260422"></script>
-  <script src="app.js?v=20260423-studyplan"></script>
+  <script src="app.js?v=20260424-team3"></script>
 </body>
 </html>

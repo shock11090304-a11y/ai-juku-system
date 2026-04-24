@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ログイン | AI学習コーチ塾</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="lp.css">
+  <style>
+    .auth-main { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
+    .auth-card {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      max-width: 440px;
+      width: 100%;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+    .auth-icon { font-size: 3rem; text-align: center; margin-bottom: 0.5rem; }
+    .auth-title {
+      font-size: 1.5rem;
+      font-weight: 900;
+      text-align: center;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, var(--primary-light), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .auth-sub {
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.88rem;
+      line-height: 1.7;
+      margin-bottom: 2rem;
+    }
+    .auth-form label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+    }
+    .auth-form input[type="email"] {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 1rem;
+      font-family: inherit;
+    }
+    .auth-form input[type="email"]:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+    .auth-submit {
+      width: 100%;
+      padding: 0.95rem;
+      margin-top: 1.25rem;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border: none;
+      color: white;
+      font-size: 1rem;
+      font-weight: 800;
+      border-radius: 10px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .auth-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35); }
+    .auth-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .auth-msg {
+      margin-top: 1.25rem;
+      padding: 0.85rem 1rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      line-height: 1.7;
+      display: none;
+    }
+    .auth-msg.success {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+      display: block;
+    }
+    .auth-msg.error {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      display: block;
+    }
+    .auth-foot {
+      margin-top: 1.5rem;
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+    .auth-foot a { color: var(--primary-light); text-decoration: none; }
+    .auth-foot a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <main class="auth-main">
+    <div class="auth-card">
+      <div class="auth-icon">🔐</div>
+      <h1 class="auth-title">ログイン</h1>
+      <p class="auth-sub">
+        ご登録時のメールアドレスを入力してください。<br>
+        <strong>ログインリンク</strong>をメールでお送りします。
+      </p>
+
+      <form class="auth-form" id="loginForm">
+        <label for="email">メールアドレス</label>
+        <input type="email" id="email" name="email" required autocomplete="email" placeholder="parent@example.com">
+        <button type="submit" class="auth-submit" id="loginBtn">📧 ログインリンクを送信</button>
+      </form>
+
+      <div class="auth-msg" id="msg"></div>
+
+      <div class="auth-foot">
+        ※ パスワードはありません。毎回メールで届くリンクからログインします。<br>
+        まだご登録していない方は <a href="lp.html">トライアル申込ページ</a> から。
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const API_BASE = window.location.origin.includes(':8090') ? 'http://localhost:8000' : window.location.origin;
+    const form = document.getElementById('loginForm');
+    const btn = document.getElementById('loginBtn');
+    const msg = document.getElementById('msg');
+    const emailInput = document.getElementById('email');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = emailInput.value.trim();
+      if (!email) return;
+      btn.disabled = true;
+      btn.textContent = '📮 送信中...';
+      msg.className = 'auth-msg';
+      msg.textContent = '';
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/magic-link`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          msg.className = 'auth-msg success';
+          msg.innerHTML = `✅ <strong>${email}</strong> 宛にログインリンクを送信しました。<br>メールが届くまで1〜2分ほどお待ちください。迷惑メールフォルダもご確認ください。`;
+          emailInput.value = '';
+        } else {
+          msg.className = 'auth-msg error';
+          msg.textContent = '⚠️ ' + (data.detail || 'エラーが発生しました');
+        }
+      } catch (err) {
+        msg.className = 'auth-msg error';
+        msg.textContent = '⚠️ ネットワークエラーが発生しました。しばらくしてから再度お試しください。';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '📧 ログインリンクを送信';
+      }
+    });
+  </script>
+</body>
+</html>

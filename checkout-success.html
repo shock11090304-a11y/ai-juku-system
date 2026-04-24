@@ -82,37 +82,36 @@
           <li>
             <div class="step-num">1</div>
             <div>
-              <strong>アプリにアクセス</strong><br>
-              <span style="font-size:0.85rem;color:var(--text-dim);">下のボタンから学習環境にアクセスできます</span>
+              <strong>📧 メールをご確認ください</strong><br>
+              <span style="font-size:0.85rem;color:var(--text-dim);">ご登録のメールアドレスに <strong>ログインリンク</strong> をお送りしました。クリックすると学習環境に入れます。</span>
             </div>
           </li>
           <li>
             <div class="step-num">2</div>
             <div>
-              <strong>LINE公式アカウントを友だち追加</strong><br>
-              <span style="font-size:0.85rem;color:var(--text-dim);">保護者レポートが毎週日曜にLINEに届きます</span>
+              <strong>メールが届かない場合</strong><br>
+              <span style="font-size:0.85rem;color:var(--text-dim);">迷惑メールフォルダをご確認ください。それでも届かない場合は <a href="login.html" style="color:var(--primary-light);">ログインページ</a> からメールアドレスを入力して再発行できます。</span>
             </div>
           </li>
           <li>
             <div class="step-num">3</div>
             <div>
-              <strong>最初の質問をAIにしてみる</strong><br>
-              <span style="font-size:0.85rem;color:var(--text-dim);">深夜でも即答。今夜からでも使えます</span>
+              <strong>志望校・目標を設定</strong><br>
+              <span style="font-size:0.85rem;color:var(--text-dim);">AIがカリキュラムを自動生成します</span>
             </div>
           </li>
           <li>
             <div class="step-num">4</div>
             <div>
-              <strong>志望校・目標を設定</strong><br>
-              <span style="font-size:0.85rem;color:var(--text-dim);">AIがカリキュラムを自動生成します</span>
+              <strong>最初の質問をAIにしてみる</strong><br>
+              <span style="font-size:0.85rem;color:var(--text-dim);">深夜でも即答。今夜からでも使えます</span>
             </div>
           </li>
         </ol>
       </div>
 
       <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
-        <a href="index.html" class="btn-primary btn-lg">🎓 アプリを開く</a>
-        <a href="mypage.html" class="btn-ghost btn-lg">🎮 マイページへ</a>
+        <a href="login.html" class="btn-primary btn-lg">📧 ログインリンクを再発行</a>
       </div>
 
       <p style="margin-top:2rem;font-size:0.85rem;color:var(--text-muted);">
@@ -123,6 +122,23 @@
   </main>
 
   <script>
+    // Trial Onboarding の開始日を購入日にセット
+    (function initTrial() {
+      try {
+        const existing = localStorage.getItem('ai_juku_trial_onboarding');
+        if (!existing) {
+          // JST今日
+          const jst = new Date(Date.now() + 9 * 3600 * 1000);
+          const today = jst.toISOString().slice(0, 10);
+          localStorage.setItem('ai_juku_trial_onboarding', JSON.stringify({
+            startDate: today,
+            completed: {},
+            dismissed: false,
+          }));
+        }
+      } catch (e) { /* noop */ }
+    })();
+
     // Confetti animation
     const emojis = ['🎉', '✨', '🎊', '⭐', '🌟', '🎈', '💫'];
     const container = document.getElementById('confetti');

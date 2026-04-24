@@ -109,6 +109,18 @@ ALLOWED_ORIGINS = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", _default_orig
 # 100K tokens ≒ Opus で $10、Sonnet で $1 程度。通常利用では十分超えない。
 AI_DAILY_TOKEN_BUDGET = int(os.getenv("AI_DAILY_TOKEN_BUDGET", "100000"))
 
+# ==========================================================================
+# 認証（マジックリンク方式）
+# ==========================================================================
+# HMAC-SHA256 署名によるステートレストークン。30日有効。
+# セキュリティ要件: MAGIC_LINK_SECRET は 32文字以上のランダム値を推奨
+MAGIC_LINK_SECRET = os.getenv("MAGIC_LINK_SECRET", "") or APP_SECRET or "dev-secret-DO-NOT-USE-IN-PROD"
+SESSION_TTL_SECONDS = int(os.getenv("SESSION_TTL_SECONDS", str(30 * 86400)))  # 30日
+
+# Resend (メール送信) — 未設定時はコンソール出力にフォールバック
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+FROM_EMAIL = os.getenv("FROM_EMAIL", "AI学習コーチ塾 <onboarding@resend.dev>")
+
 # Stripe SDK (lazy import)
 stripe = None
 def get_stripe():
@@ -331,6 +343,209 @@ def stats(x_stats_token: str = Header(None)):
 # ==========================================================================
 # Routes: Trial Signup (called from LP form)
 # ==========================================================================
+# ==========================================================================
+# Auth helpers: magic link token sign/verify & email send
+# ==========================================================================
+def _sign_session_token(student_id: int, ttl_seconds: int = SESSION_TTL_SECONDS) -> str:
+    """student_id と expiry を HMAC-SHA256 で署名し、URL-safe Base64 エンコード。"""
+    import time
+    exp = int(time.time()) + ttl_seconds
+    payload = f"{student_id}.{exp}"
+    sig = hmac.new(MAGIC_LINK_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
+    raw = f"{payload}.{sig}"
+    return base64.urlsafe_b64encode(raw.encode()).decode().rstrip("=")
+
+
+def _verify_session_token(token: str) -> Optional[dict]:
+    """トークンを検証して {student_id, exp} を返す。無効/期限切れなら None。"""
+    import time
+    if not token:
+        return None
+    try:
+        padded = token + "=" * (-len(token) % 4)
+        raw = base64.urlsafe_b64decode(padded).decode()
+        parts = raw.split(".")
+        if len(parts) != 3:
+            return None
+        sid_str, exp_str, sig = parts
+        expected = hmac.new(MAGIC_LINK_SECRET.encode(), f"{sid_str}.{exp_str}".encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(sig, expected):
+            return None
+        exp = int(exp_str)
+        if exp < int(time.time()):
+            return None
+        return {"student_id": int(sid_str), "exp": exp}
+    except Exception:
+        return None
+
+
+def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, is_welcome: bool = False) -> dict:
+    """Resend 経由でマジックリンクメール送信。未設定ならコンソール出力。"""
+    subject_welcome = "【AI学習コーチ塾】ご登録ありがとうございます（ログインリンク）"
+    subject_relogin = "【AI学習コーチ塾】ログインリンクをお送りします"
+    subject = subject_welcome if is_welcome else subject_relogin
+
+    greeting = f"{student_name}さまの保護者さま" if student_name else "保護者さま"
+    body_intro = (
+        f"""<p>{greeting}、ご登録ありがとうございます 🎉</p>
+    <p>3日間のトライアルが始まりました。<strong>以下のリンクから学習環境にアクセス</strong>できます。</p>"""
+        if is_welcome else
+        f"<p>{greeting}、ログインリンクをお送りします。</p>"
+    )
+
+    html = f"""<!DOCTYPE html>
+<html>
+<body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 560px; margin: 0 auto; padding: 2rem;">
+  <h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AI学習コーチ塾</h1>
+  {body_intro}
+  <p style="text-align:center; margin: 2rem 0;">
+    <a href="{magic_url}" style="display:inline-block; padding: 0.9rem 2rem; background:linear-gradient(135deg,#6366f1,#ec4899); color:white; text-decoration:none; border-radius:8px; font-weight:700;">
+      🔗 アプリにログインする
+    </a>
+  </p>
+  <p style="font-size:0.85rem; color:#666;">このリンクは <strong>30日間</strong> 有効です。別の端末でログインする際も、同じメールアドレスに再発行できます。</p>
+  <p style="font-size:0.85rem; color:#666;">ボタンが押せない場合は以下のURLをコピーしてブラウザで開いてください:</p>
+  <p style="font-size:0.75rem; color:#999; word-break:break-all; background:#f5f5f5; padding:0.5rem; border-radius:4px;">{magic_url}</p>
+  <hr style="margin:2rem 0; border:none; border-top:1px solid #eee;">
+  <p style="font-size:0.8rem; color:#999;">
+    このメールに心当たりがない場合は無視してください（30日で自動失効します）。<br>
+    お問い合わせ: <a href="mailto:info@trillion-ai-juku.com" style="color:#6366f1;">info@trillion-ai-juku.com</a>
+  </p>
+</body>
+</html>"""
+
+    if not RESEND_API_KEY:
+        # Dev モード: コンソールにログ出力してテストを可能に
+        log.warning(f"[DEV-MODE] RESEND_API_KEY 未設定のため送信スキップ。magic URL:\n  {magic_url}")
+        return {"sent": False, "dev_mode": True, "magic_url": magic_url}
+
+    try:
+        import urllib.request
+        import urllib.error
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({
+                "from": FROM_EMAIL,
+                "to": [to_email],
+                "subject": subject,
+                "html": html,
+            }).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode())
+            log.info(f"Magic link sent to {to_email}: {result.get('id')}")
+            return {"sent": True, "resend_id": result.get("id")}
+    except Exception as e:
+        log.error(f"Resend API error for {to_email}: {type(e).__name__}: {e}")
+        return {"sent": False, "error": str(e)[:200]}
+
+
+def _get_current_student(authorization: Optional[str]) -> Optional[dict]:
+    """Authorization: Bearer <token> ヘッダからセッション検証し生徒レコードを返す。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    token = authorization[len("Bearer "):].strip()
+    claims = _verify_session_token(token)
+    if not claims:
+        return None
+    conn = db()
+    c = conn.cursor()
+    c.execute("SELECT id, name, email, grade, goal, plan, status, stripe_customer_id FROM students WHERE id = ?", (claims["student_id"],))
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        return None
+    # row は dict (dict_row / sqlite3.Row) のどちらか
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "email": row["email"],
+        "grade": row["grade"],
+        "goal": row["goal"],
+        "plan": row["plan"],
+        "status": row["status"],
+    }
+
+
+# ==========================================================================
+# Routes: Authentication (Magic Link)
+# ==========================================================================
+class MagicLinkRequest(BaseModel):
+    email: EmailStr
+
+
+@app.post("/api/auth/magic-link")
+def request_magic_link(payload: MagicLinkRequest):
+    """メールアドレスから生徒を検索し、ログインURLをメール送信する。
+    存在しないメールでも 200 を返す（アカウント列挙攻撃対策）。"""
+    email_lower = (payload.email or "").lower().strip()
+    if not email_lower:
+        raise HTTPException(status_code=400, detail="Email required")
+
+    conn = db()
+    c = conn.cursor()
+    c.execute("SELECT id, name, email, status FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
+    row = c.fetchone()
+    conn.close()
+
+    if row and row["status"] == "paid":
+        token = _sign_session_token(row["id"])
+        magic_url = f"{BASE_URL}/auth.html?t={token}"
+        _send_magic_link_email(row["email"], row["name"] or "", magic_url, is_welcome=False)
+    else:
+        # 存在しない or status != paid でも同じレスポンスを返す（列挙対策）
+        log.info(f"Magic link requested for unknown/unpaid email: {email_lower}")
+
+    return {"ok": True, "message": "該当するアカウントがあればメールをお送りしました。届かない場合は迷惑メールフォルダもご確認ください。"}
+
+
+@app.get("/api/auth/verify")
+def verify_magic_link(t: str):
+    """auth.html からのトークン検証。有効なら生徒情報を返す。
+    成功時に同じトークンを返し、クライアントは localStorage にセッションとして保存する。"""
+    claims = _verify_session_token(t)
+    if not claims:
+        raise HTTPException(status_code=401, detail="Invalid or expired link")
+
+    conn = db()
+    c = conn.cursor()
+    c.execute("SELECT id, name, email, grade, goal, plan, status FROM students WHERE id = ?", (claims["student_id"],))
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="Student not found")
+    if row["status"] != "paid":
+        raise HTTPException(status_code=403, detail="Account not active")
+
+    return {
+        "ok": True,
+        "token": t,
+        "expires_at": claims["exp"],
+        "student": {
+            "id": row["id"],
+            "name": row["name"],
+            "email": row["email"],
+            "grade": row["grade"],
+            "goal": row["goal"],
+            "plan": row["plan"],
+        }
+    }
+
+
+@app.get("/api/auth/me")
+def auth_me(authorization: Optional[str] = Header(None)):
+    """現在のセッションを検証して生徒情報を返す。全ページのアクセスガードに使う。"""
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    return {"ok": True, "student": student}
+
+
 @app.post("/api/trial/signup")
 def trial_signup(payload: TrialSignup):
     now = datetime.now(timezone.utc)
@@ -375,6 +590,28 @@ def create_checkout_session(payload: CheckoutRequest):
     if not price_info:
         raise HTTPException(status_code=400, detail=f"Invalid plan: {payload.plan}")
     price_id, amount, plan_name, max_students = price_info
+
+    # 第1期生枠チェック: LP で「100名限定」と約束しているため、既存 paid 生徒が
+    # FOUNDER_LIMIT に達している場合はここで停止する。これがないと URL 直打ちで
+    # 101名目以降の決済が通ってしまい、マーケ上の約束を破ることになる。
+    # ただし、既存 paid 生徒の更新（再課金・プラン変更）は許可する。
+    if not payload.student_id:
+        conn_fc = db()
+        c_fc = conn_fc.cursor()
+        try:
+            c_fc.execute(
+                "SELECT COUNT(*) FROM students WHERE status='paid' AND plan IS NOT NULL AND plan != ''"
+            )
+            paid_count = c_fc.fetchone()[0]
+        except Exception as e:
+            log.error(f"Founder check query failed: {e}")
+            paid_count = 0
+        conn_fc.close()
+        if paid_count >= FOUNDER_LIMIT:
+            raise HTTPException(
+                status_code=403,
+                detail=f"第1期生{FOUNDER_LIMIT}名の募集は終了しました。次期募集をお待ちください。"
+            )
 
     # student_id が指定されている場合、email との一致を検証する。
     # これをしないと連番IDで他生徒の stripe_customer_id を上書きでき、課金を奪える。
@@ -508,13 +745,19 @@ def list_plans():
 
 @app.get("/api/founders/count")
 def founders_count():
-    """第1期生の残り枠をカウント"""
+    """第1期生の残り枠をカウント。
+    status='paid' の全プラン（新規: standard/premium/family/student_addon,
+    旧: ai/hybrid/intensive）を対象。トライアル中も status='paid' が立つため、
+    実際に枠を占有している全員をカウントする。"""
     conn = db()
     c = conn.cursor()
     try:
-        c.execute("SELECT COUNT(*) FROM students WHERE plan IN ('ai', 'hybrid', 'intensive') AND status='paid'")
+        c.execute(
+            "SELECT COUNT(*) FROM students WHERE status='paid' AND plan IS NOT NULL AND plan != ''"
+        )
         paid = c.fetchone()[0]
-    except Exception:
+    except Exception as e:
+        log.error(f"founders_count query failed: {e}")
         paid = 0
     conn.close()
     remaining = max(0, FOUNDER_LIMIT - paid)
@@ -595,6 +838,25 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                         ("（新規）", email, plan, session.get("customer"), session.get("subscription"))
                     )
         conn.commit()
+
+        # 購入完了後、該当生徒を再取得してマジックリンクを送信
+        # （保護者は checkout-success で「メールを確認してください」と案内される）
+        try:
+            email_for_link = session.get("customer_details", {}).get("email") or session.get("customer_email")
+            if student_id and student_id != "":
+                c.execute("SELECT id, name, email FROM students WHERE id=?", (student_id,))
+            elif email_for_link:
+                c.execute("SELECT id, name, email FROM students WHERE email=?", (email_for_link,))
+            else:
+                c.execute("SELECT id, name, email FROM students WHERE 1=0")
+            s_row = c.fetchone()
+            if s_row and s_row["email"]:
+                _token = _sign_session_token(s_row["id"])
+                _magic_url = f"{BASE_URL}/auth.html?t={_token}"
+                _send_magic_link_email(s_row["email"], s_row["name"] or "", _magic_url, is_welcome=True)
+        except Exception as e:
+            log.error(f"Failed to send welcome magic link: {type(e).__name__}: {e}")
+
         conn.close()
         log.info(f"✅ Checkout completed: plan={plan}, customer={session.get('customer')}, max_students={max_students}")
 
@@ -753,9 +1015,71 @@ async def line_webhook(request: Request, x_line_signature: str = Header(None)):
 # ==========================================================================
 # Routes: Cron-style (triggered externally)
 # ==========================================================================
+def _compute_weekly_stats(student_id: int, days: int = 7) -> dict:
+    """過去N日間の活動統計を events テーブルから集計"""
+    conn = db()
+    c = conn.cursor()
+    since_dt = datetime.now(timezone.utc) - timedelta(days=days)
+    # 活動ログ集計
+    c.execute(
+        """SELECT name, props FROM events
+           WHERE session_id = ? AND created_at >= ?""",
+        (str(student_id), since_dt)
+    )
+    rows = c.fetchall()
+    conn.close()
+
+    hours = 0.0
+    questions = 0
+    problems_done = 0
+    correct = 0
+    total_answered = 0
+    subject_stats = {}
+
+    for r in rows:
+        name = r["name"] or ""
+        try:
+            props = json.loads(r["props"] or "{}")
+        except Exception:
+            props = {}
+        if name == "activity_study_session":
+            hours += float(props.get("minutes", 0)) / 60.0
+        elif name == "activity_chat_message" or name == "activity_ai_question":
+            questions += 1
+        elif name == "activity_problem_solved":
+            problems_done += 1
+            total_answered += 1
+            if props.get("correct"):
+                correct += 1
+            subj = props.get("subject", "その他")
+            if subj not in subject_stats:
+                subject_stats[subj] = {"correct": 0, "total": 0}
+            subject_stats[subj]["total"] += 1
+            if props.get("correct"):
+                subject_stats[subj]["correct"] += 1
+        elif name == "activity_ai_call":
+            questions += 1
+
+    accuracy = round(100 * correct / total_answered) if total_answered > 0 else 0
+    weakest_subject = None
+    if subject_stats:
+        weakest = min(subject_stats.items(), key=lambda x: (x[1]["correct"] / x[1]["total"]) if x[1]["total"] else 1)
+        weakest_subject = weakest[0]
+
+    return {
+        "hours": round(hours, 1),
+        "questions": questions,
+        "problems_done": problems_done,
+        "accuracy": accuracy,
+        "weakest_subject": weakest_subject,
+        "subject_stats": subject_stats,
+        "days": days,
+    }
+
+
 @app.post("/api/cron/weekly-reports")
-def cron_weekly_reports(x_cron_secret: str = Header(None)):
-    """毎週日曜20時に外部cronから呼び出し"""
+def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False):
+    """毎週日曜20時に外部cronから呼び出し（GitHub Actions scheduled workflow）"""
     if not CRON_SECRET:
         log.error("CRON_SECRET not configured; refusing cron request")
         raise HTTPException(status_code=503, detail="Cron not configured")
@@ -764,20 +1088,70 @@ def cron_weekly_reports(x_cron_secret: str = Header(None)):
 
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT id, name, line_user_id FROM students WHERE status IN ('trial', 'paid') AND line_user_id IS NOT NULL")
+    c.execute("SELECT id, name, line_user_id, parent_email FROM students WHERE status IN ('trial', 'paid')")
+    students = list(c.fetchall())
+    conn.close()
+
     sent = 0
-    for row in c.fetchall():
+    skipped = 0
+    previews = []
+    for row in students:
         try:
-            _do_line_push(
-                row["id"],
-                "weekly_report",
-                {"hours": 12.5, "accuracy": 78, "questions": 47, "url": f"{BASE_URL}/mypage.html"},
-            )
-            sent += 1
+            stats = _compute_weekly_stats(row["id"], days=7)
+            # 活動が全くない週はスキップ（スパム防止）
+            if stats["hours"] == 0 and stats["questions"] == 0 and stats["problems_done"] == 0:
+                skipped += 1
+                continue
+            params = {
+                "hours": stats["hours"],
+                "accuracy": stats["accuracy"],
+                "questions": stats["questions"],
+                "url": f"{BASE_URL}/mypage.html",
+            }
+            if dry_run:
+                previews.append({"student_id": row["id"], "name": row["name"], "stats": stats, "would_send_line": bool(row["line_user_id"])})
+                continue
+            if row["line_user_id"]:
+                _do_line_push(row["id"], "weekly_report", params)
+                sent += 1
         except Exception as e:
             log.error(f"Weekly report failed for {row['id']}: {e}")
-    conn.close()
-    return {"sent": sent}
+    return {"sent": sent, "skipped": skipped, "total_students": len(students), "previews": previews if dry_run else None}
+
+
+@app.post("/api/weekly-reports/preview")
+def weekly_reports_preview(payload: dict, request: Request, x_stats_token: str = Header(None)):
+    """塾長ダッシュボードから、特定生徒の今週レポートをプレビュー"""
+    if not _origin_allowed(request):
+        raise HTTPException(status_code=403, detail="Origin not allowed")
+    # 塾長認証（STATS_TOKEN）
+    if STATS_TOKEN and (not x_stats_token or not hmac.compare_digest(x_stats_token, STATS_TOKEN)):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    student_id = payload.get("student_id")
+    if not student_id:
+        raise HTTPException(status_code=400, detail="student_id required")
+    stats = _compute_weekly_stats(int(student_id), days=int(payload.get("days", 7)))
+    return {"ok": True, "stats": stats}
+
+
+@app.post("/api/weekly-reports/send-one")
+def weekly_reports_send_one(payload: dict, request: Request, x_stats_token: str = Header(None)):
+    """塾長ダッシュボードから、特定生徒にレポートを即送信"""
+    if not _origin_allowed(request):
+        raise HTTPException(status_code=403, detail="Origin not allowed")
+    if STATS_TOKEN and (not x_stats_token or not hmac.compare_digest(x_stats_token, STATS_TOKEN)):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    student_id = payload.get("student_id")
+    if not student_id:
+        raise HTTPException(status_code=400, detail="student_id required")
+    stats = _compute_weekly_stats(int(student_id), days=7)
+    params = {
+        "hours": stats["hours"],
+        "accuracy": stats["accuracy"],
+        "questions": stats["questions"],
+        "url": f"{BASE_URL}/mypage.html",
+    }
+    return _do_line_push(int(student_id), "weekly_report", params)
 
 # ==========================================================================
 # Routes: Analytics
@@ -905,8 +1279,9 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
         log.error(f"/api/ai/call validation exception: {type(e).__name__}: {e}")
         raise HTTPException(status_code=500, detail=f"validation error: {type(e).__name__}: {str(e)[:200]}")
 
-    # 4) モデルとトークン数の上限ガード（異常値を弾く）
-    max_tokens = max(1, min(int(payload.max_tokens or 2000), 8000))
+    # 4) モデルとトークン数の上限ガード（異常値を弾く）。
+    #    30〜50問の大量生成・市販参考書級のテキスト教材に対応するため 24000 まで許容。
+    max_tokens = max(1, min(int(payload.max_tokens or 2000), 24000))
 
     # 5) Prompt Injection 緩和: system / messages のサイズと明白な jailbreak フレーズを弾く。
     #    完全な防御は不可能だが、学生端末を経由した塾のAPIキー横取り用途を大幅に抑制する。

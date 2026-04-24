@@ -80,6 +80,11 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ plan, email: payload.email, name: payload.name, student_id: signupData.student_id }),
     });
+    // 第1期生100名達成時は403で停止する。URL直打ち経由の101名目以降をブロック。
+    if (checkoutRes.status === 403) {
+      const errData = await checkoutRes.json().catch(() => ({ detail: '募集終了' }));
+      throw new Error(errData.detail || '第1期生の募集は終了しました');
+    }
     const checkoutData = await checkoutRes.json();
 
     if (checkoutData.checkout_url) {

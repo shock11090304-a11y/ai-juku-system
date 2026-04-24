@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>マイページ | AI学習コーチ塾</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="mypage.css">
+  <link rel="stylesheet" href="mypage.css?v=20260424-trial2">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="auth-guard.js?v=20260424-1"></script>
 </head>
 <body class="mypage-body">
   <div class="bg-gradient"></div>
@@ -27,6 +28,48 @@
   </header>
 
   <main class="mypage-main">
+    <!-- Trial Onboarding (3日間体験導線) -->
+    <section id="trialOnboarding" class="trial-onboarding" style="display:none;">
+      <div class="to-header">
+        <div>
+          <div class="to-eyebrow">🎖 3日間 無料体験プログラム</div>
+          <h2 class="to-title"><span id="toDayLabel">Day 1</span>: <span id="toDayTitle">—</span></h2>
+          <p class="to-sub" id="toDaySub">—</p>
+        </div>
+        <div class="to-progress-ring">
+          <div class="to-progress-num"><span id="toProgressCurrent">0</span>/<span id="toProgressTotal">0</span></div>
+          <div class="to-progress-label">完了タスク</div>
+        </div>
+      </div>
+
+      <div class="to-days">
+        <div class="to-day-pill" data-day="1">
+          <div class="to-day-pill-num">1</div>
+          <div class="to-day-pill-label">診断 & 質問</div>
+          <div class="to-day-pill-check">○</div>
+        </div>
+        <div class="to-day-pill" data-day="2">
+          <div class="to-day-pill-num">2</div>
+          <div class="to-day-pill-label">問題 & 弱点攻略</div>
+          <div class="to-day-pill-check">○</div>
+        </div>
+        <div class="to-day-pill" data-day="3">
+          <div class="to-day-pill-num">3</div>
+          <div class="to-day-pill-label">保護者レポート</div>
+          <div class="to-day-pill-check">○</div>
+        </div>
+      </div>
+
+      <div class="to-tasks" id="toTasks"></div>
+
+      <div class="to-footer">
+        <div class="to-time-left" id="toTimeLeft"></div>
+        <div class="to-actions">
+          <button id="toDismissBtn" class="to-dismiss">✕ 体験モードを終了</button>
+        </div>
+      </div>
+    </section>
+
     <!-- Streak & XP Bar -->
     <section class="streak-section">
       <div class="streak-card">
@@ -207,6 +250,6 @@
     <p>© 2026 AI学習コーチ塾 | Mypage v1.0</p>
   </footer>
 
-  <script src="mypage.js"></script>
+  <script src="mypage.js?v=20260424-trial3"></script>
 </body>
 </html>

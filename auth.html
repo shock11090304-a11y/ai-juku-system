@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ログイン中... | AI学習コーチ塾</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="lp.css">
+  <style>
+    .auth-main { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
+    .auth-card {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 3rem 2rem;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+    }
+    .auth-emoji { font-size: 4rem; margin-bottom: 1rem; animation: spin 1.5s linear infinite; display: inline-block; }
+    .auth-emoji.success { animation: pop 0.5s ease-out; }
+    .auth-emoji.error { animation: shake 0.4s ease-out; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pop { 0% { transform: scale(0); } 70% { transform: scale(1.2); } 100% { transform: scale(1); } }
+    @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+    .auth-title { font-size: 1.4rem; font-weight: 900; margin-bottom: 0.75rem; }
+    .auth-desc { color: var(--text-dim); line-height: 1.8; font-size: 0.9rem; }
+    .auth-btn {
+      display: inline-block;
+      margin-top: 1.5rem;
+      padding: 0.85rem 1.75rem;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      text-decoration: none;
+      border-radius: 10px;
+      font-weight: 800;
+      font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+
+  <main class="auth-main">
+    <div class="auth-card" id="card">
+      <div class="auth-emoji" id="emoji">⏳</div>
+      <h1 class="auth-title" id="title">認証中...</h1>
+      <p class="auth-desc" id="desc">ログインリンクを確認しています。そのままお待ちください。</p>
+    </div>
+  </main>
+
+  <script>
+    const API_BASE = window.location.origin.includes(':8090') ? 'http://localhost:8000' : window.location.origin;
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('t');
+    const card = document.getElementById('card');
+    const emoji = document.getElementById('emoji');
+    const title = document.getElementById('title');
+    const desc = document.getElementById('desc');
+
+    function showError(msg, linkHtml = '') {
+      emoji.textContent = '⚠️';
+      emoji.className = 'auth-emoji error';
+      title.textContent = 'ログインできませんでした';
+      desc.innerHTML = msg + (linkHtml || '<br><a class="auth-btn" href="login.html">ログインページへ</a>');
+    }
+
+    function showSuccess(studentName) {
+      emoji.textContent = '✅';
+      emoji.className = 'auth-emoji success';
+      title.textContent = `ようこそ、${studentName}さま！`;
+      desc.innerHTML = 'ログインに成功しました。学習環境へ移動します...';
+    }
+
+    (async () => {
+      if (!token) {
+        showError('ログインリンクが無効です。メールから再度お試しください。');
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/verify?t=${encodeURIComponent(token)}`);
+        const data = await res.json();
+        if (!res.ok) {
+          if (res.status === 401) {
+            showError('このリンクは有効期限が切れているか、無効です。', '<br><a class="auth-btn" href="login.html">新しいリンクを発行する</a>');
+          } else if (res.status === 403) {
+            showError('アカウントが有効ではありません。お問い合わせください。', '<br><a class="auth-btn" href="mailto:info@trillion-ai-juku.com">お問い合わせ</a>');
+          } else {
+            showError(data.detail || 'ログインに失敗しました。');
+          }
+          return;
+        }
+        // セッション保存
+        localStorage.setItem('ai_juku_session_token', data.token);
+        localStorage.setItem('ai_juku_session_expires', String(data.expires_at));
+        localStorage.setItem('ai_juku_session_student', JSON.stringify(data.student));
+        showSuccess(data.student.name || 'ゲスト');
+        setTimeout(() => {
+          // リダイレクト先: ?redirect= で指定可、なければ index.html
+          const redirect = params.get('redirect') || 'index.html';
+          window.location.href = redirect;
+        }, 1200);
+      } catch (e) {
+        showError('ネットワークエラーが発生しました。<br>しばらくしてから再度お試しください。');
+      }
+    })();
+  </script>
+</body>
+</html>
