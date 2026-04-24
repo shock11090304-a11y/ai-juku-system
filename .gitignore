@@ -40,3 +40,6 @@ logs/
 # Temp
 tmp/
 temp/
+
+# Generated video frames (regeneratable from script)
+marketing-assets/video-frames/
