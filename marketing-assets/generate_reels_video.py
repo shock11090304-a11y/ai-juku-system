@@ -125,7 +125,7 @@ def scene_hook(out_path):
 
 
 def scene_problem_intro(out_path):
-    """3-8s: 12年塾経営の塾長からの一言"""
+    """3-8s: 塾講師歴12年の塾長からの一言"""
     img = gradient_bg()
     draw = ImageDraw.Draw(img)
     f_brand = font(FONT_BOLD, 42)
@@ -134,7 +134,7 @@ def scene_problem_intro(out_path):
 
     center_text(draw, "— AI学習コーチ塾 塾長 —", f_brand, 450, PRIMARY_LIGHT)
 
-    grad_text(img, "塾経営12年で", f_body, (120, 650), GRAD_T1, GRAD_T2)
+    grad_text(img, "塾講師歴12年で", f_body, (120, 650), GRAD_T1, GRAD_T2)
     grad_text(img, "見つけた限界。", f_body, (120, 800), GRAD_T1, GRAD_T2)
 
     draw = ImageDraw.Draw(img)
@@ -231,14 +231,14 @@ def scene_app_chat(out_path):
 
 
 def scene_app_textbook(out_path):
-    """25-34s: 教材生成画面"""
+    """25-34s: 自分だけのオリジナルテキスト"""
     img = gradient_bg()
     draw = ImageDraw.Draw(img)
     f_brand = font(FONT_BOLD, 48)
-    f_head = font(FONT_BLACK, 62)
+    f_head = font(FONT_BLACK, 60)
 
-    center_text(draw, "機能②  AI教材自動生成", f_brand, 120, PRIMARY_LIGHT)
-    grad_text(img, "弱点に合わせて自動作成", f_head, (90, 200), GRAD_T1, GRAD_T2)
+    center_text(draw, "機能②  自分だけのオリジナルテキスト", f_brand, 120, PRIMARY_LIGHT)
+    grad_text(img, "弱点に合わせてAIが自動作成", f_head, (50, 200), GRAD_T1, GRAD_T2)
 
     phone_x, phone_y, phone_w, phone_h = 100, 380, W - 200, 1320
     draw = ImageDraw.Draw(img)
@@ -352,18 +352,18 @@ def scene_app_report(out_path):
 
 
 def scene_price_comparison(out_path):
-    """43-50s: 価格比較"""
+    """43-50s: 価格比較 — 体験¥1,980 + 月額¥24,980の明確化"""
     img = gradient_bg()
     draw = ImageDraw.Draw(img)
     f_title = font(FONT_BLACK, 95)
 
-    center_text(draw, "この全部を、", f_title, 250, TEXT)
-    grad_text(img, "15分の1の価格で。", f_title, (100, 380), GRAD_T1, GRAD_T2)
+    center_text(draw, "この全部を、", f_title, 230, TEXT)
+    grad_text(img, "15分の1の価格で。", f_title, (100, 350), GRAD_T1, GRAD_T2)
 
     # 2ボックス比較
     draw = ImageDraw.Draw(img)
-    box_y = 680
-    box_h = 650
+    box_y = 620
+    box_h = 700
     col_w = (W - 200 - 40) // 2
 
     # 普通の塾
@@ -371,24 +371,25 @@ def scene_price_comparison(out_path):
                            fill=(40, 40, 60), outline=(80, 80, 110), width=3)
     draw.text((120, box_y + 40), "普通の塾", font=font(FONT_BOLD, 36), fill=TEXT_MUTED)
     draw.text((120, box_y + 140), "¥30,000+", font=font(FONT_BLACK, 72), fill=TEXT_DIM)
-    bullets = ["週2〜3回のみ", "月1の紙レポ", "深夜質問不可"]
+    draw.text((120, box_y + 230), "/ 月", font=font(FONT_BOLD, 32), fill=TEXT_MUTED)
+    bullets = ["週2〜3回のみ", "月1の紙レポ", "深夜質問不可", "既製の問題集のみ"]
     for i, b in enumerate(bullets):
-        draw.text((120, box_y + 290 + i * 80), "• " + b, font=font(FONT_BOLD, 30), fill=TEXT_MUTED)
+        draw.text((120, box_y + 310 + i * 70), "• " + b, font=font(FONT_BOLD, 26), fill=TEXT_MUTED)
 
     # AI塾 (強調)
     x2 = 100 + col_w + 40
     draw.rounded_rectangle([x2, box_y, x2 + col_w, box_y + box_h], radius=32,
                            fill=(50, 50, 100), outline=PRIMARY_LIGHT, width=5)
     draw.text((x2 + 20, box_y + 40), "AI学習コーチ塾", font=font(FONT_BOLD, 32), fill=PRIMARY_LIGHT)
+    # 体験価格 大
     grad_text(img, "¥1,980", font(FONT_BLACK, 80), (x2 + 20, box_y + 140), GRAD_P1, GRAD_P2)
     draw = ImageDraw.Draw(img)
-    bullets2 = ["24時間対応", "毎週自動レポ", "無制限質問"]
+    draw.text((x2 + 20, box_y + 230), "/ 3日間体験", font=font(FONT_BOLD, 28), fill=PRIMARY_LIGHT)
+    # 継続の月額を小さめに表記
+    draw.text((x2 + 20, box_y + 280), "継続は月¥24,980〜", font=font(FONT_BOLD, 26), fill=TEXT_DIM)
+    bullets2 = ["24時間対応", "毎週自動レポ", "無制限質問", "オリジナルテキスト作成"]
     for i, b in enumerate(bullets2):
-        draw.text((x2 + 20, box_y + 290 + i * 80), "✓ " + b, font=font(FONT_BOLD, 30), fill=TEXT)
-
-    # 下部バッジ
-    draw = ImageDraw.Draw(img)
-    center_text(draw, "※ 初月は体験¥1,980、継続は月¥24,980〜", font(FONT_BOLD, 28), 1430, TEXT_MUTED)
+        draw.text((x2 + 20, box_y + 360 + i * 65), "✓ " + b, font=font(FONT_BOLD, 26), fill=TEXT)
 
     img.save(out_path, "PNG")
     return img
@@ -428,28 +429,30 @@ def scene_cta(out_path):
     """55-60s: 最後のCTA"""
     img = gradient_bg()
     draw = ImageDraw.Draw(img)
-    f_top = font(FONT_BOLD, 54)
+    f_top = font(FONT_BOLD, 48)
     f_big = font(FONT_BLACK, 130)
-    f_price = font(FONT_BLACK, 180)
     f_cta = font(FONT_BLACK, 70)
     f_foot = font(FONT_BOLD, 38)
+    f_hint = font(FONT_BOLD, 36)
 
-    center_text(draw, "まずは3日間、", f_top, 300, TEXT_DIM)
+    center_text(draw, "まずは3日間、", f_top, 250, TEXT_DIM)
 
-    grad_text(img, "¥1,980で体験", f_big, (90, 420), GRAD_T1, GRAD_T2)
+    grad_text(img, "¥1,980で体験", f_big, (90, 370), GRAD_T1, GRAD_T2)
 
     draw = ImageDraw.Draw(img)
-    center_text(draw, "自動課金なし。気に入ったら継続を。", f_top, 680, TEXT)
+    center_text(draw, "自動課金なし。気に入ったら", f_top, 620, TEXT)
+    center_text(draw, "月額¥24,980で継続利用可能。", f_top, 690, TEXT)
+    center_text(draw, "自分だけのオリジナルテキストも作れる。", f_hint, 790, WARNING)
 
     # CTAボックス
-    box_y = 1000
+    box_y = 980
     box_h = 200
     draw.rounded_rectangle([100, box_y, W - 100, box_y + box_h], radius=50, fill=PRIMARY)
     bbox = draw.textbbox((0, 0), "trillion-ai-juku.com", font=f_cta)
     bw = bbox[2] - bbox[0]
     draw.text(((W - bw) // 2, box_y + 60), "trillion-ai-juku.com", font=f_cta, fill=TEXT)
 
-    center_text(draw, "— プロフィールのリンクから —", f_foot, box_y + box_h + 100, PRIMARY_LIGHT)
+    center_text(draw, "— プロフィールのリンクから —", f_foot, box_y + box_h + 80, PRIMARY_LIGHT)
 
     # ロゴ
     center_text(draw, "AI学習コーチ塾", font(FONT_BLACK, 52), 1600, TEXT)
