@@ -2476,16 +2476,109 @@ ${data}
 }
 
 // ==========================================================================
+// 逆算で必要な週あたり学習時間を計算する
+// goal / level / targetDate から、志望校合格に必要なhours/週を推定
+// ==========================================================================
+function _computeRequiredStudyHours(goal, level, targetDateStr) {
+  // 志望校ティアごとのベース時間(週)
+  const g = String(goal || '');
+  let base = 20;
+  if (/東大|東京大|京大|京都大|医学部|医学科|一橋|東京工業|東工大/.test(g)) base = 38;
+  else if (/早稲田|慶應|慶応|上智|東京理科|ICU|国際基督教/.test(g)) base = 30;
+  else if (/MARCH|明治|青山|立教|中央|法政|関関同立|関西大学|関西学院|同志社|立命館|千葉大|筑波大|横浜国立|神戸大|大阪大|名古屋大|東北大|北海道大|九州大/.test(g)) base = 25;
+  else if (/日東駒専|日本大学|東洋|駒澤|専修|近畿|龍谷|甲南|京都産業/.test(g)) base = 20;
+
+  // 現在の学力から gap を推定(偏差値入力があれば)
+  const levelText = String(level || '');
+  let currentDev = null;
+  const devMatches = levelText.match(/偏差値[^\d]*(\d+)/);
+  if (devMatches) currentDev = parseInt(devMatches[1]);
+  // 科目別偏差値があれば平均
+  const subjectDevs = [...levelText.matchAll(/(英語|数学|国語|理科|社会|現代文|古文|物理|化学|生物|日本史|世界史)[\s:：]*(\d+)/g)];
+  if (subjectDevs.length > 0) {
+    const avg = subjectDevs.reduce((a, m) => a + parseInt(m[2]), 0) / subjectDevs.length;
+    if (!currentDev || Math.abs(avg - currentDev) > 3) currentDev = Math.round(avg);
+  }
+
+  // 志望校必要偏差値推定
+  let targetDev = 55;
+  if (/東大|京大|医学部|医学科/.test(g)) targetDev = 72;
+  else if (/一橋|東京工業|東工大/.test(g)) targetDev = 68;
+  else if (/早稲田|慶應|慶応|上智/.test(g)) targetDev = 68;
+  else if (/MARCH|明治|青山|立教|中央|法政|関関同立|千葉大|筑波大|横浜国立|神戸大|大阪大|名古屋大|東北大|北海道大|九州大/.test(g)) targetDev = 62;
+  else if (/日東駒専|日本大学|東洋|駒澤|専修|近畿/.test(g)) targetDev = 55;
+
+  const gap = currentDev !== null ? Math.max(0, targetDev - currentDev) : 8;
+  const gapBonus = gap * 0.7; // 偏差値+10なら+7h
+
+  // 残り期間でプレッシャー追加
+  let monthsLeft = 10;
+  if (targetDateStr) {
+    const td = new Date(targetDateStr);
+    const diff = (td - new Date()) / (86400000 * 30);
+    if (!isNaN(diff) && diff > 0) monthsLeft = Math.max(1, Math.round(diff));
+  }
+  let pressureBonus = 0;
+  if (monthsLeft <= 3) pressureBonus = 10;
+  else if (monthsLeft <= 6) pressureBonus = 5;
+  else if (monthsLeft <= 9) pressureBonus = 2;
+
+  const required = Math.round(base + gapBonus + pressureBonus);
+  return {
+    required,
+    base,
+    currentDev,
+    targetDev,
+    gap,
+    monthsLeft,
+    gapBonus: Math.round(gapBonus),
+    pressureBonus,
+  };
+}
+
+
+// ==========================================================================
 // TAB: Curriculum
 // ==========================================================================
 async function generateCurriculum() {
   const goal = document.getElementById('curriculumGoal').value.trim();
   const date = document.getElementById('targetDate').value;
   const level = document.getElementById('currentLevel').value.trim();
-  const weeklyHours = document.getElementById('weeklyHours').value;
+  let weeklyHours = parseFloat(document.getElementById('weeklyHours').value) || 0;
   const focus = document.getElementById('focusSubjects').value.trim();
 
   if (!goal || !level) { alert('志望校と現在の学力を入力してください'); return; }
+
+  // 🎯 逆算分析: 志望校に必要な学習時間 vs 入力値
+  const analysis = _computeRequiredStudyHours(goal, level, date);
+  let userAcknowledged = false;
+  let adjustedHours = weeklyHours;
+  if (weeklyHours > 0 && weeklyHours < analysis.required * 0.85) {
+    // ユーザー入力 < 推奨の85% → 警告＆推奨値への引き上げを提案
+    const shortage = analysis.required - weeklyHours;
+    const detail = [
+      `📊 逆算結果:`,
+      `・志望校: ${goal}`,
+      `・推定必要偏差値: ${analysis.targetDev}`,
+      analysis.currentDev ? `・現在の推定偏差値: ${analysis.currentDev}` : '',
+      `・偏差値ギャップ: +${analysis.gap}`,
+      `・試験まで: 約${analysis.monthsLeft}ヶ月`,
+      ``,
+      `⚠️ 推奨学習時間: 週${analysis.required}h`,
+      `⚠️ 現在の入力値: 週${weeklyHours}h (${shortage}h不足)`,
+      ``,
+      `このまま週${weeklyHours}hで進めると、合格ラインに届かない可能性が高いです。`,
+      `推奨値の週${analysis.required}hでカリキュラムを作成しますか？`,
+      `  「OK」: 週${analysis.required}h で作成 (推奨・合格可能性UP)`,
+      `  「キャンセル」: 週${weeklyHours}h で作成 (現状の時間を尊重)`
+    ].filter(Boolean).join('\n');
+    if (confirm(detail)) {
+      adjustedHours = analysis.required;
+      userAcknowledged = true;
+      // weeklyHours input も更新してUIに反映
+      document.getElementById('weeklyHours').value = analysis.required;
+    }
+  }
 
   const student = getCurrentStudent();
   const out = document.getElementById('curriculumResult');
@@ -2525,14 +2618,18 @@ async function generateCurriculum() {
 
 ${textbookContext}`;
 
+  const upliftNote = (userAcknowledged && adjustedHours > weeklyHours)
+    ? `\n\n【⚡ 学習時間を合格ライン逆算で調整】\n生徒申告: 週${weeklyHours}h → 合格必要時間: 週${adjustedHours}h\n偏差値ギャップ +${analysis.gap} / 試験まで${analysis.monthsLeft}ヶ月\n→ 週${adjustedHours}hで実行可能なカリキュラムを設計してください。\n→ 冒頭の「現状分析と戦略」セクションで、なぜ週${adjustedHours}hが必要か生徒に説明してください。`
+    : '';
+
   const userMsg = `生徒: ${student.name} (${student.grade})
 志望校: ${goal}
 目標日: ${date || '未設定'}
 現在の学力:
 ${level}
 
-週の学習可能時間: ${weeklyHours || '?'}h
-重点科目: ${focus || '全科目'}
+週の学習可能時間: ${adjustedHours || '?'}h
+重点科目: ${focus || '全科目'}${upliftNote}
 
 上記データベースから生徒のレベル・志望校に合う教材を具体的に指定し、曜日単位の実行可能なカリキュラムを設計してください。ページ範囲・問題番号も示してください。`;
 
