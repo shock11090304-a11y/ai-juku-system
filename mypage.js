@@ -347,11 +347,11 @@ function renderTrialOnboarding() {
   if (!section) return;
   const state = getTrialState();
   // ユーザーが「体験モード終了」を押した、またはトライアル期間(3日+余裕1日)を超えたら非表示
-  const dayNum = getTrialDayNumber(state.startDate);
+  const todayDayNum = getTrialDayNumber(state.startDate);
   const allTasks = TRIAL_DAYS.flatMap(d => d.tasks);
   const doneTaskCount = allTasks.filter(t => state.completed[t.id]).length;
   const allCompleted = doneTaskCount >= allTasks.length;
-  const dayOverflow = dayNum > 3;
+  const dayOverflow = todayDayNum > 3;
 
   if (state.dismissed || (dayOverflow && allCompleted)) {
     section.style.display = 'none';
@@ -360,14 +360,17 @@ function renderTrialOnboarding() {
   // 期間超過かつ未完了の場合も表示するが終了予告を出す
   section.style.display = 'block';
 
-  const currentDay = TRIAL_DAYS.find(d => d.day === dayNum) || TRIAL_DAYS[2];
+  // viewingDay が指定されていればそれを優先 (ユーザーが pill をクリックして任意の日を見ている)
+  const viewingDayNum = state.viewingDay || todayDayNum;
+  const currentDay = TRIAL_DAYS.find(d => d.day === viewingDayNum) || TRIAL_DAYS[2];
+  const isPreview = state.viewingDay && state.viewingDay !== todayDayNum;
   document.getElementById('toDayLabel').textContent = `Day ${currentDay.day}`;
-  document.getElementById('toDayTitle').textContent = currentDay.title;
+  document.getElementById('toDayTitle').textContent = currentDay.title + (isPreview ? '（プレビュー）' : '');
   document.getElementById('toDaySub').textContent = currentDay.sub;
   document.getElementById('toProgressCurrent').textContent = doneTaskCount;
   document.getElementById('toProgressTotal').textContent = allTasks.length;
 
-  // Day pills
+  // Day pills (クリックで切替可能)
   section.querySelectorAll('.to-day-pill').forEach(pill => {
     const d = parseInt(pill.dataset.day, 10);
     const dayDef = TRIAL_DAYS.find(x => x.day === d);
@@ -375,9 +378,18 @@ function renderTrialOnboarding() {
     const dayDone = dayTasks.every(t => state.completed[t.id]);
     pill.classList.remove('active', 'completed');
     if (dayDone) pill.classList.add('completed');
-    else if (d === currentDay.day) pill.classList.add('active');
+    if (d === currentDay.day) pill.classList.add('active');
     const check = pill.querySelector('.to-day-pill-check');
     if (check) check.textContent = dayDone ? '✓' : (d === currentDay.day ? '…' : '○');
+    pill.style.cursor = 'pointer';
+    pill.title = `Day ${d} のタスクを表示`;
+    // 既存リスナーを置き換える (再描画毎に bind しても重複しないよう onclick 直接代入)
+    pill.onclick = () => {
+      const s = getTrialState();
+      s.viewingDay = d;
+      saveTrialState(s);
+      renderTrialOnboarding();
+    };
   });
 
   // Tasks for current day
