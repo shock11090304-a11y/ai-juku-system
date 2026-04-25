@@ -9,7 +9,7 @@
  *
  * 特典ロジック:
  *  - 紹介者: 1名成立で 1ヶ月無料 (累積)
- *  - 被紹介者: 初月50%OFF (¥990)
+ *  - 被紹介者: 初月50%OFF (¥12,490)
  */
 (function () {
   'use strict';
@@ -74,7 +74,7 @@
       return { ok: false, error: '既に紹介コードを利用済みです: ' + existing };
     }
     _write(LS_USED_CODE, normalized);
-    return { ok: true, code: normalized, discount: 990, message: '✅ 紹介コードを適用。初月50%OFF (¥990) になります。' };
+    return { ok: true, code: normalized, discount: 12490, message: '✅ 紹介コードを適用。スタンダード初月50%OFF (¥24,980 → ¥12,490) になります。' };
   }
 
   function getHistory() {
@@ -113,7 +113,7 @@
   function buildShareText(code) {
     const url = buildShareUrl(code);
     return `🎓 AI学習コーチ塾を使ってる！毎日のAI個別指導で偏差値が伸びるよ。
-紹介コード ${code} で初月50%OFF (¥990) になります。
+紹介コード ${code} で初月50%OFF (¥12,490) になります。
 ${url}
 #AI塾 #個別指導 #受験`;
   }
@@ -128,7 +128,7 @@ ${url}
     el.innerHTML = `
       <div style="background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(236,72,153,0.08));border:1px solid rgba(167,139,250,0.3);border-radius:14px;padding:1.2rem;">
         <div style="font-weight:800;font-size:1.05rem;color:#e4e4e7;margin-bottom:0.3rem;">🎁 紹介プログラム</div>
-        <p style="font-size:0.85rem;color:#cbd5e1;margin:0 0 0.8rem 0;">友達を紹介すると <strong style="color:#fbbf24;">あなたは1ヶ月無料</strong>、<strong style="color:#34d399;">友達は初月50%OFF (¥990)</strong>。</p>
+        <p style="font-size:0.85rem;color:#cbd5e1;margin:0 0 0.8rem 0;">友達を紹介すると <strong style="color:#fbbf24;">あなたは1ヶ月無料</strong>、<strong style="color:#34d399;">友達は初月50%OFF (¥12,490)</strong>。</p>
 
         <div style="background:rgba(0,0,0,0.4);border-radius:10px;padding:0.8rem;margin-bottom:0.7rem;">
           <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.3rem;">あなたの紹介コード</div>

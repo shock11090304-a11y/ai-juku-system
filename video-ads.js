@@ -45,7 +45,7 @@ const DEMO_FRAMES = [
   { emoji: '✍️', title: 'AI英作文添削', sub: '無制限に使える', duration: 2500 },
   { emoji: '🎯', title: '志望校別カリキュラム', sub: 'AIが最適経路を30秒で設計', duration: 2500 },
   { emoji: '📷', title: '模試写真から分析', sub: 'Vision AIで自動採点・弱点抽出', duration: 2500 },
-  { emoji: '🎓', title: '従来塾の 1/3 の価格', sub: '月 ¥19,800〜', duration: 3000 },
+  { emoji: '🎓', title: '24時間 AI 個別最適化', sub: '月 ¥24,980〜', duration: 3000 },
   { emoji: '🎖', title: '🔥 第1期生 100名限定', sub: '3日間 ¥1,980 でお試し', duration: 3500 },
   { emoji: '🚀', title: '今すぐ始めよう', sub: 'ai-juku.jp', duration: 3000 },
 ];
