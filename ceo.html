@@ -441,7 +441,7 @@
                 <td><strong style="color:${p.color};">${p.name}</strong>${p.recommended ? ' 🔥' : ''}</td>
                 <td>¥${p.price.toLocaleString()}/月</td>
                 <td>${p.maxStudents}名</td>
-                <td>${p.aiModel === 'opus' ? 'Opus 4.7（最上位）' : 'Sonnet 4.6（標準）'}</td>
+                <td>'Claude AI（全プラン同一）'</td>
                 <td>${p.tagline}</td>
               </tr>
             `).join('')}
@@ -466,7 +466,7 @@
               <td>塾生アドオン</td>
               <td>${addon.priceLabel}/月</td>
               <td>1名</td>
-              <td>Opus 4.7</td>
+              <td>Claude AI</td>
               <td>${addon.description}・入塾金不要</td>
             </tr>
           </tbody>

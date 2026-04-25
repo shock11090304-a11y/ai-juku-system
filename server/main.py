@@ -366,6 +366,8 @@ def health():
         "stripe_configured": bool(STRIPE_SECRET_KEY),
         "line_configured": bool(LINE_CHANNEL_ACCESS_TOKEN),
         "anthropic_configured": bool(ANTHROPIC_API_KEY),
+        "email_configured": bool(RESEND_API_KEY),  # Magic link / Welcome / 各種通知メール
+        "campaign_waiver_active": ENROLLMENT_WAIVER_CAMPAIGN_ENABLED,
     }
 
 @app.get("/api/stats")
@@ -670,6 +672,11 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
 
     if not is_allowed:
         return None
+    # enrollment_fee_waived は新カラム → 古いDB行で存在しない場合に備えて defensive access
+    try:
+        waived = bool(row["enrollment_fee_waived"]) if "enrollment_fee_waived" in row.keys() else False
+    except (KeyError, TypeError, IndexError):
+        waived = False
     return {
         "id": row["id"],
         "name": row["name"],
@@ -678,6 +685,7 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
         "goal": row["goal"],
         "plan": row["plan"],
         "status": status,
+        "enrollment_fee_waived": waived,  # mypage の「免除済みバッジ」表示に使用
     }
 
 
