@@ -100,6 +100,19 @@ FOUNDER_LIMIT = 100
 # 入塾金を免除するプラン
 ENROLLMENT_FEE_EXEMPT = {"student_addon"}
 
+# プランごとの月次クォータ (None = 無制限)
+# plans.js の quotas と完全一致させる必要あり
+PLAN_QUOTAS = {
+    "standard":      {"problems": 50, "essays": 20, "textbooks": 5},
+    "premium":       {"problems": None, "essays": None, "textbooks": None},
+    "family":        {"problems": None, "essays": None, "textbooks": None},
+    "student_addon": {"problems": None, "essays": None, "textbooks": None},
+    # トライアル中もスタンダードと同等の制限
+    "trial":         {"problems": 50, "essays": 20, "textbooks": 5},
+}
+# クォータ check 対象の機能名 (これ以外は制限なし)
+QUOTA_FEATURES = {"problems", "essays", "textbooks"}
+
 # 本番で許可するフロントエンドのオリジン
 # カンマ区切りで env 上書き可能: ALLOWED_ORIGINS=https://foo.com,https://bar.com
 _default_origins = "https://trillion-ai-juku.com,https://www.trillion-ai-juku.com,http://localhost:8090,http://localhost:8000"
@@ -263,6 +276,13 @@ def init_db():
         expires_at TIMESTAMP NOT NULL,
         used_at TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS usage_monthly (
+        student_id INTEGER NOT NULL,
+        feature TEXT NOT NULL,
+        year_month TEXT NOT NULL,
+        used_count INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (student_id, feature, year_month)
     );
     CREATE INDEX IF NOT EXISTS idx_events_session ON events(session_id, created_at);
     CREATE INDEX IF NOT EXISTS idx_students_status ON students(status);
@@ -997,6 +1017,33 @@ def auth_me(authorization: Optional[str] = Header(None)):
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
     return {"ok": True, "student": student}
+
+
+@app.get("/api/usage/me")
+def usage_me(authorization: Optional[str] = Header(None)):
+    """ログイン中の生徒の今月の使用回数 + プラン上限を返す。
+    フロントの「残り○回」表示・アップグレード誘導に使用。"""
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    plan = (student.get("plan") or "trial").lower()
+    quotas = PLAN_QUOTAS.get(plan, PLAN_QUOTAS["trial"])
+    used = _get_all_monthly_usage(int(student["id"]))
+    out = {}
+    for feature in QUOTA_FEATURES:
+        limit = quotas.get(feature)
+        used_count = used.get(feature, 0)
+        out[feature] = {
+            "limit": limit,        # None = 無制限
+            "used": used_count,
+            "remaining": (None if limit is None else max(0, limit - used_count)),
+        }
+    return {
+        "ok": True,
+        "plan": plan,
+        "year_month": _jst_year_month(),
+        "usage": out,
+    }
 
 
 @app.post("/api/trial/signup")
@@ -1869,6 +1916,9 @@ class AIProxyRequest(BaseModel):
     thinking_budget: Optional[int] = 4000
     kind: Optional[str] = "chat"
     student_id: Optional[int] = None
+    # 月次クォータの対象機能。"problems"/"essays"/"textbooks" のいずれか
+    # それ以外の値 (chat等) は制限なし
+    feature: Optional[str] = None
 
 def _origin_allowed(request: Request) -> bool:
     """Origin/Referer が許可リストに含まれるか。サーバ間呼び出しを排除するため
@@ -1952,6 +2002,100 @@ def _check_ai_budget(student_id: int) -> None:
         )
 
 
+# ==========================================================================
+# 月次クォータ (プランごとの「使えるシステム」差別化)
+# ==========================================================================
+def _jst_year_month() -> str:
+    """JST(UTC+9) ベースの 'YYYYMM' を返す。Stripe請求月と一致させる。"""
+    now = datetime.now(timezone.utc) + timedelta(hours=9)
+    return now.strftime("%Y%m")
+
+
+def _get_monthly_usage(student_id: int, feature: str, year_month: Optional[str] = None) -> int:
+    """この生徒の今月の機能別使用回数を返す。"""
+    if not year_month:
+        year_month = _jst_year_month()
+    conn = db()
+    c = conn.cursor()
+    c.execute(
+        "SELECT used_count FROM usage_monthly WHERE student_id = ? AND feature = ? AND year_month = ?",
+        (student_id, feature, year_month),
+    )
+    row = c.fetchone()
+    conn.close()
+    return int(row["used_count"]) if row else 0
+
+
+def _get_all_monthly_usage(student_id: int, year_month: Optional[str] = None) -> dict:
+    """この生徒の今月の全機能の使用回数を {feature: count} で返す。"""
+    if not year_month:
+        year_month = _jst_year_month()
+    conn = db()
+    c = conn.cursor()
+    c.execute(
+        "SELECT feature, used_count FROM usage_monthly WHERE student_id = ? AND year_month = ?",
+        (student_id, year_month),
+    )
+    rows = c.fetchall()
+    conn.close()
+    return {r["feature"]: int(r["used_count"]) for r in rows}
+
+
+def _check_quota(student: dict, feature: str) -> None:
+    """その生徒のプランで feature が今月の上限に達していないか確認。
+    達していれば 429 + プラン情報付きエラーを返す。"""
+    if feature not in QUOTA_FEATURES:
+        return  # クォータ対象外
+    plan = (student.get("plan") or "trial").lower()
+    quotas = PLAN_QUOTAS.get(plan, PLAN_QUOTAS["trial"])
+    limit = quotas.get(feature)
+    if limit is None:
+        return  # 無制限
+    used = _get_monthly_usage(int(student["id"]), feature)
+    if used >= limit:
+        feature_label = {"problems": "問題生成", "essays": "添削", "textbooks": "参考書生成"}.get(feature, feature)
+        raise HTTPException(
+            status_code=429,
+            detail=(
+                f"今月の{feature_label}回数 {limit}回 の上限に達しました。"
+                f"プレミアムプランにアップグレードすると無制限で使えます。"
+            ),
+        )
+
+
+def _increment_usage(student_id: int, feature: str) -> int:
+    """使用回数を +1。INSERT or UPDATE (UPSERT)。新カウントを返す。"""
+    if feature not in QUOTA_FEATURES:
+        return 0
+    year_month = _jst_year_month()
+    conn = db()
+    c = conn.cursor()
+    # 既存行を update を試みて、影響行 0 なら insert (Postgres/SQLite 両対応)
+    c.execute(
+        "UPDATE usage_monthly SET used_count = used_count + 1 "
+        "WHERE student_id = ? AND feature = ? AND year_month = ?",
+        (student_id, feature, year_month),
+    )
+    if c.rowcount == 0:
+        try:
+            c.execute(
+                "INSERT INTO usage_monthly (student_id, feature, year_month, used_count) "
+                "VALUES (?, ?, ?, 1)",
+                (student_id, feature, year_month),
+            )
+        except Exception:
+            # 並行 INSERT で重複した場合の救済
+            c.execute(
+                "UPDATE usage_monthly SET used_count = used_count + 1 "
+                "WHERE student_id = ? AND feature = ? AND year_month = ?",
+                (student_id, feature, year_month),
+            )
+    conn.commit()
+    new_count = _get_monthly_usage(student_id, feature, year_month)
+    conn.close()
+    return new_count
+
+
 @app.post("/api/ai/call")
 async def ai_proxy(payload: AIProxyRequest, request: Request):
     """顧客の全AI呼び出しを塾長のAPIキーで代理実行。
@@ -1970,9 +2114,13 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
         raise HTTPException(status_code=403, detail="Origin not allowed")
 
     # 2-3) student_id と budget 検証。DBエラー時は 500 を裸文字列ではなく JSON で返す。
+    student_row = None
     try:
-        _verify_student_active(payload.student_id)
+        student_row = _verify_student_active(payload.student_id)
         _check_ai_budget(payload.student_id)
+        # 機能別月次クォータ check (problems / essays / textbooks)
+        if payload.feature:
+            _check_quota(student_row, payload.feature)
     except HTTPException:
         raise  # 4xx はそのまま伝搬
     except Exception as e:
@@ -2073,6 +2221,14 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
             )
             conn.commit()
             conn.close()
+
+        # 機能別月次カウント+1 (problems / essays / textbooks のみ)
+        # API 呼び出し成功後に increment する (失敗時は加算しないことでフェアネス確保)
+        if payload.student_id and payload.feature in QUOTA_FEATURES:
+            try:
+                _increment_usage(int(payload.student_id), payload.feature)
+            except Exception as e:
+                log.warning(f"_increment_usage failed silently: {e}")
 
         return data
     except urllib.error.HTTPError as e:

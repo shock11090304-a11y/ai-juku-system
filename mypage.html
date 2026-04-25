@@ -244,6 +244,7 @@
       </p>
       <div id="lbTodayReview"></div>
       <div id="lbStudyTimeWidget" style="margin-top:1rem;"></div>
+      <div id="usageQuotaWidget" style="margin-top:1rem;"></div>
       <div id="examPrepWidget" style="margin-top:1rem;"></div>
       <div id="referralWidget" style="margin-top:1rem;"></div>
 
@@ -314,11 +315,69 @@
         LB.renderStudyTimeWidget('lbStudyTimeWidget', studentId);
         ExamPrep.renderUpcomingWidget('examPrepWidget');
         ReferralProgram.renderReferralWidget('referralWidget', student);
+        renderUsageQuotaWidget('usageQuotaWidget');
       }
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initWidgets);
       } else { initWidgets(); }
     })();
+
+    // 月次クォータ・利用状況ウィジェット
+    async function renderUsageQuotaWidget(containerId) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      const API_BASE = (window.location.origin.includes(':8090') || window.location.origin.includes('localhost:8090'))
+        ? 'http://localhost:8000' : window.location.origin;
+      try {
+        const token = localStorage.getItem('ai_juku_session_token') || '';
+        const res = await fetch(`${API_BASE}/api/usage/me`, { headers: { 'Authorization': 'Bearer ' + token }});
+        if (!res.ok) { el.innerHTML = ''; return; }
+        const data = await res.json();
+        const labels = { problems: '問題生成', essays: '添削', textbooks: '参考書生成' };
+        const colors = { problems: '#a78bfa', essays: '#34d399', textbooks: '#fbbf24' };
+        const planName = { trial: 'トライアル', standard: 'スタンダード', premium: 'プレミアム', family: '家族プラン', student_addon: '塾生アドオン' }[data.plan] || data.plan;
+        const isUnlimited = Object.values(data.usage).every(u => u.limit === null);
+        const rows = Object.entries(data.usage).map(([key, u]) => {
+          const label = labels[key] || key;
+          const color = colors[key] || '#6366f1';
+          if (u.limit === null) {
+            return `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+              <span style="color:#cbd5e1;">${label}</span>
+              <span style="color:${color};font-weight:800;">無制限 (${u.used}回利用)</span>
+            </div>`;
+          }
+          const pct = Math.min(100, Math.round((u.used / u.limit) * 100));
+          const danger = pct >= 80;
+          return `<div style="padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.88rem;margin-bottom:0.3rem;">
+              <span style="color:#cbd5e1;">${label}</span>
+              <span style="color:${danger ? '#fca5a5' : color};font-weight:800;">${u.used} / ${u.limit}回</span>
+            </div>
+            <div style="background:rgba(255,255,255,0.05);border-radius:4px;height:6px;overflow:hidden;">
+              <div style="background:${danger ? '#ef4444' : color};width:${pct}%;height:100%;border-radius:4px;transition:width 0.3s;"></div>
+            </div>
+          </div>`;
+        }).join('');
+
+        const upgradeCta = isUnlimited ? '' : `
+          <div style="margin-top:0.8rem;text-align:center;">
+            <a href="upgrade.html" style="font-size:0.82rem;color:#a78bfa;text-decoration:none;">プレミアム ¥39,800/月で全機能無制限 →</a>
+          </div>`;
+
+        el.innerHTML = `
+          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:0.85rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+              <div style="font-weight:800;color:#a78bfa;">📊 今月の利用状況</div>
+              <span style="font-size:0.78rem;color:#94a3b8;">プラン: ${planName}</span>
+            </div>
+            ${rows}
+            ${upgradeCta}
+          </div>`;
+      } catch (e) {
+        console.warn('Usage quota widget fetch failed:', e);
+        el.innerHTML = '';
+      }
+    }
   </script>
   <script>
   // 契約管理: ステータス取得・ポータル遷移・解約

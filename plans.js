@@ -15,15 +15,21 @@ const PLAN_CONFIG = {
       maxStudents: 1,
       aiModel: 'sonnet',
       color: '#3b82f6',
+      // 月次クォータ (server/main.py のチェックロジックが参照)
+      quotas: {
+        problems: 50,    // 問題生成 月50回
+        essays: 20,      // 英作文・記述添削 月20回
+        textbooks: 5,    // 参考書生成 月5冊
+      },
       features: [
         { name: '24時間AIチューター', included: true },
-        { name: 'AI問題自動生成（月30回まで）', included: true },
-        { name: '英作文・記述添削（月10回まで）', included: true },
+        { name: 'AI問題自動生成（月50回まで）', included: true },
+        { name: '英作文・記述添削（月20回まで）', included: true },
         { name: '学習診断・カリキュラム生成', included: true },
-        { name: 'オリジナル参考書生成（月3冊まで）', included: true },
+        { name: 'オリジナル参考書生成（月5冊まで）', included: true },
         { name: 'AIモデル: 標準（Sonnet 4.6）', included: true },
         { name: '最上位AIモデル(Opus 4.7)', included: false },
-        { name: '添削無制限', included: false },
+        { name: '全機能無制限', included: false },
         { name: '家族プラン（複数生徒）', included: false },
       ],
     },
@@ -37,6 +43,8 @@ const PLAN_CONFIG = {
       aiModel: 'opus',
       color: '#8b5cf6',
       recommended: true,
+      // 月次クォータ: null = 無制限
+      quotas: { problems: null, essays: null, textbooks: null },
       features: [
         { name: '24時間AIチューター（最上位）', included: true },
         { name: 'AI問題自動生成（無制限）', included: true },
@@ -58,6 +66,8 @@ const PLAN_CONFIG = {
       maxStudents: 3,
       aiModel: 'opus',
       color: '#ec4899',
+      // 月次クォータ: null = 無制限
+      quotas: { problems: null, essays: null, textbooks: null },
       features: [
         { name: 'プレミアムプランの全機能', included: true },
         { name: '🆕 生徒アカウント最大3名まで', included: true, highlight: true },

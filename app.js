@@ -838,6 +838,38 @@ function addStudent() {
 // ==========================================================================
 // Claude API Call
 // ==========================================================================
+// クォータ超過時のアップグレード誘導モーダル
+function showQuotaExhaustedDialog(feature, message) {
+  const labels = { problems: '問題生成', essays: '添削', textbooks: '参考書生成' };
+  const featureName = labels[feature] || feature;
+  const existing = document.getElementById('quotaExhaustedModal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'quotaExhaustedModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;';
+  modal.innerHTML = `
+    <div style="background:linear-gradient(135deg,#1a1432,#2a1a48);border:1px solid rgba(167,139,250,0.4);border-radius:18px;padding:1.8rem;max-width:480px;width:100%;color:#f5f5fa;">
+      <div style="font-size:2rem;margin-bottom:0.5rem;">⚠️</div>
+      <h3 style="font-size:1.3rem;margin:0 0 0.5rem 0;color:#fbbf24;">${featureName}の今月分が上限に達しました</h3>
+      <p style="font-size:0.92rem;color:#cbd5e1;margin-bottom:1rem;line-height:1.6;">${message}</p>
+      <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:10px;padding:0.9rem;margin-bottom:1.2rem;">
+        <div style="font-weight:800;color:#a78bfa;margin-bottom:0.3rem;">プレミアム ¥39,800/月</div>
+        <ul style="margin:0;padding-left:1.2rem;font-size:0.88rem;color:#cbd5e1;line-height:1.7;">
+          <li>問題生成・添削・参考書生成すべて<strong style="color:#fbbf24;">無制限</strong></li>
+          <li>最上位AIモデル Opus 4.7 (Extended Thinking)</li>
+          <li>優先処理 + 保護者向け詳細レポート</li>
+        </ul>
+      </div>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <a href="upgrade.html" style="background:linear-gradient(135deg,#8b5cf6,#ec4899);color:white;padding:0.7rem 1.2rem;border-radius:8px;text-decoration:none;font-weight:800;font-size:0.95rem;flex:1;text-align:center;">プレミアムにアップグレード →</a>
+        <button onclick="document.getElementById('quotaExhaustedModal').remove()" style="background:rgba(255,255,255,0.08);color:#cbd5e1;border:1px solid rgba(255,255,255,0.15);padding:0.7rem 1.2rem;border-radius:8px;font-weight:700;font-size:0.95rem;cursor:pointer;">閉じる</button>
+      </div>
+      <p style="font-size:0.78rem;color:#71717a;margin-top:0.8rem;text-align:center;">来月1日に上限がリセットされます</p>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
 async function callClaude(systemPrompt, userMessage, options = {}) {
   const messages = options.messages || [{ role: 'user', content: userMessage }];
   const kind = options.kind || 'chat';
@@ -846,6 +878,11 @@ async function callClaude(systemPrompt, userMessage, options = {}) {
   const maxTokens = options.maxTokens || config.maxTokens;
   const useThinking = options.thinking !== undefined ? options.thinking : config.thinking;
   const thinkingBudget = options.thinkingBudget !== undefined ? options.thinkingBudget : config.budget;
+
+  // 月次クォータ対象機能の自動マップ (server側 PLAN_QUOTAS と一致)
+  // problems / essays / textbooks のみ制限される。それ以外 (chat/diagnostic 等) は無制限
+  const FEATURE_MAP = { problems: 'problems', essay: 'essays', textbook: 'textbooks' };
+  const feature = options.feature || FEATURE_MAP[kind] || null;
 
   // 同じ kind の前回リクエストが進行中なら中断（科目変更や再生成時の積み上がり防止）。
   // 並列バッチ生成時は abortKey を上書きして衝突を回避（problems_batch_0 など）。
@@ -879,10 +916,23 @@ async function callClaude(systemPrompt, userMessage, options = {}) {
           thinking: useThinking,
           thinking_budget: thinkingBudget,
           kind,
+          feature,  // 月次クォータ対象機能 (server で上限check)
           student_id: state.currentStudentId,
         }),
         signal: controller.signal,
       });
+      // 月次クォータ超過 (429) の場合は明示的にエラーを投げてアップグレード誘導
+      if (res.status === 429 && feature) {
+        const errData = await res.json().catch(() => ({}));
+        const msg = errData.detail || '今月の利用上限に達しました。プレミアムにアップグレードすると無制限で使えます。';
+        if (typeof showQuotaExhaustedDialog === 'function') {
+          showQuotaExhaustedDialog(feature, msg);
+        } else {
+          alert('⚠️ ' + msg);
+        }
+        if (inflightAbortControllers.get(abortKey) === controller) inflightAbortControllers.delete(abortKey);
+        throw new Error('QUOTA_EXHAUSTED:' + feature);
+      }
       if (res.ok) {
         const data = await res.json();
         const textBlock = (data.content || []).find(b => b.type === 'text');
