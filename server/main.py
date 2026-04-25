@@ -294,18 +294,25 @@ def init_db():
     CREATE INDEX IF NOT EXISTS idx_students_status ON students(status);
     CREATE INDEX IF NOT EXISTS idx_otp_student ON otp_codes(student_id, used_at, expires_at);
     """)
-    # 既存DBに enrollment_fee_waived 列が無い場合は追加 (キャンペーン用)
-    # SQLite/Postgres 両対応で「列が無ければ追加」を試みる
-    try:
-        c.execute("ALTER TABLE students ADD COLUMN enrollment_fee_waived INTEGER DEFAULT 0")
-    except Exception:
-        pass  # 既に存在する場合は無視
-    # 適用日時を記録 (NULL = 未適用)。これでキャンペーン開始日以降の純粋カウントが取れる
-    try:
-        c.execute("ALTER TABLE students ADD COLUMN enrollment_waiver_applied_at TIMESTAMP")
-    except Exception:
-        pass
-    conn.commit()
+    # 既存DBに不足列を追加 (idempotent migration)
+    # Postgres: 「column already exists」エラーで トランザクションが abort されると
+    # 後続の ALTER がスキップされてしまうため、各 ALTER の前後で commit/rollback する。
+    # SQLite: ADD COLUMN IF NOT EXISTS は古いバージョンで非対応なので try/except で対応。
+    _migrations = [
+        ("enrollment_fee_waived", "ALTER TABLE students ADD COLUMN enrollment_fee_waived INTEGER DEFAULT 0"),
+        ("enrollment_waiver_applied_at", "ALTER TABLE students ADD COLUMN enrollment_waiver_applied_at TIMESTAMP"),
+    ]
+    conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
+    for col_name, sql in _migrations:
+        try:
+            c.execute(sql)
+            conn.commit()
+            log.info(f"[init_db] Added column students.{col_name}")
+        except Exception as e:
+            # 既に存在する or 他のエラー → ロールバックしてトランザクション abort をクリア
+            try: conn.rollback()
+            except Exception: pass
+            log.debug(f"[init_db] Skip ALTER for {col_name}: {type(e).__name__}: {str(e)[:100]}")
     conn.close()
 init_db()
 
