@@ -2793,6 +2793,35 @@ function _normalizeDigits(s) {
   return String(s || '').replace(/[\uFF10-\uFF19]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
 }
 
+// AI 生成カリキュラムが一部曜日しか含まない場合の補完テンプレート。
+// 月・火のタスクを基準に、水〜日にもバランスのとれた学習を割り当てる。
+const _WEEKLY_FALLBACK = {
+  '水': [
+    { subject: '英語', title: '長文読解1題 + 音読', duration_min: 60 },
+    { subject: '数学', title: '青チャ 練習問題A 1-10', duration_min: 90 },
+    { subject: '現代文', title: '論説文 読解1題', duration_min: 30 },
+  ],
+  '木': [
+    { subject: '英語', title: '英作文1題 + 添削復習', duration_min: 60 },
+    { subject: '数学', title: '青チャ数IA 例題 続き5題', duration_min: 90 },
+    { subject: '古文', title: '古文単語 + 短文読解', duration_min: 30 },
+  ],
+  '金': [
+    { subject: '英語', title: 'Vintage 文法演習 続き', duration_min: 60 },
+    { subject: '数学', title: '青チャ 章末問題B', duration_min: 90 },
+    { subject: '漢文', title: '句法基本30 + 復習', duration_min: 30 },
+  ],
+  '土': [
+    { subject: '英語', title: '長文読解2題 + 音読', duration_min: 90 },
+    { subject: '過去問', title: '模試形式の過去問 1題', duration_min: 90 },
+    { subject: '復習', title: '1週間の誤答分析', duration_min: 60 },
+  ],
+  '日': [
+    { subject: '復習', title: '週次振り返り + AI診断レポート', duration_min: 60 },
+    { subject: '復習', title: '弱点総復習・暗記項目チェック', duration_min: 60 },
+  ],
+};
+
 // 週次スケジュール テンプレートを抽出
 // Returns: { 月: [{subject, title, duration_min}], 火: [...], ... }
 function _parseWeeklyTemplate(md) {
@@ -2832,6 +2861,39 @@ function _parseWeeklyTemplate(md) {
       });
     }
   }
+
+  // 補完: AI が一部曜日しか生成していない時、空曜日を fallback で埋める。
+  // ただし「全曜日空」の場合は何もしない（パース失敗扱いで上位で警告）。
+  const filled = dayChars.filter(d => result[d].length > 0);
+  if (filled.length > 0 && filled.length < 7) {
+    const autoFilled = [];
+    for (const d of dayChars) {
+      if (result[d].length > 0) continue;
+      const fb = _WEEKLY_FALLBACK[d];
+      if (fb && fb.length) {
+        result[d] = fb.map(t => ({ ...t }));
+      } else {
+        // 月/火 で fallback を持っていない曜日は、最も近い既存曜日の内容をコピー
+        const idx = dayChars.indexOf(d);
+        let nearest = filled[0], minDist = 7;
+        for (const f of filled) {
+          const dist = Math.abs(dayChars.indexOf(f) - idx);
+          if (dist < minDist) { minDist = dist; nearest = f; }
+        }
+        result[d] = result[nearest].map(t => ({ ...t }));
+      }
+      autoFilled.push(d);
+    }
+    // メタ情報は Object.values の集計に混入しないよう非列挙プロパティで保存
+    Object.defineProperty(result, '__meta', {
+      value: {
+        aiFilledDays: filled.join('・'),
+        autoFilledDays: autoFilled.join('・'),
+      },
+      enumerable: false,
+    });
+  }
+
   return result;
 }
 
@@ -3021,7 +3083,11 @@ function spImportFromCurriculum() {
   const phaseSummary = phases.length
     ? `\n【フェーズ】${phases.map(p => `${p.name}(${p.durationMonths}ヶ月)`).join(' → ')}`
     : '';
-  const confirmMsg = `🎯 ${imported.length}件のタスクを ${weeks}週分 取り込みます。${phaseSummary}\n\n※今日以降の「カリキュラム由来」タスクは置き換わります (手動追加分は保持)。\n\nよろしいですか？`;
+  const meta = weeklyTemplate.__meta;
+  const fillNote = meta
+    ? `\n【補完】AI生成: ${meta.aiFilledDays}曜 / 自動補完: ${meta.autoFilledDays}曜 (標準テンプレートから)`
+    : '';
+  const confirmMsg = `🎯 ${imported.length}件のタスクを ${weeks}週分 取り込みます。${phaseSummary}${fillNote}\n\n※今日以降の「カリキュラム由来」タスクは置き換わります (手動追加分は保持)。\n\nよろしいですか？`;
   if (!confirm(confirmMsg)) return;
 
   // === Persist: 既存curriculumタスクは今日以降のみ削除 ===
