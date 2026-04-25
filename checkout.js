@@ -33,7 +33,8 @@ if (params.get('plan') && PLAN_INFO[params.get('plan')]) {
   document.querySelector(`input[value="${params.get('plan')}"]`).checked = true;
 }
 if (params.get('email')) document.getElementById('email').value = params.get('email');
-if (params.get('name')) document.getElementById('name').value = params.get('name');
+if (params.get('lastName')) document.getElementById('lastName').value = params.get('lastName');
+if (params.get('firstName')) document.getElementById('firstName').value = params.get('firstName');
 if (params.get('grade')) document.getElementById('grade').value = params.get('grade');
 if (params.get('goal')) document.getElementById('goal').value = params.get('goal');
 
@@ -47,9 +48,17 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
   const loadingBox = document.getElementById('loadingBox');
 
   const plan = document.querySelector('input[name="plan"]:checked').value;
+  const lastName = (document.getElementById('lastName').value || '').trim();
+  const firstName = (document.getElementById('firstName').value || '').trim();
+  if (!lastName || !firstName) {
+    errorBox.textContent = 'フルネーム（姓と名の両方）を入力してください。';
+    errorBox.style.display = 'block';
+    submitBtn.disabled = false;
+    return;
+  }
   const payload = {
     plan,
-    name: document.getElementById('name').value,
+    name: `${lastName}${firstName}`,
     email: document.getElementById('email').value,
     grade: document.getElementById('grade').value,
     goal: document.getElementById('goal').value,

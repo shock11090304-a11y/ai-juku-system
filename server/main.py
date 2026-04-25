@@ -15,7 +15,7 @@ from fastapi import FastAPI, Request, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional, List
 from datetime import datetime, timezone, timedelta
 import os
@@ -332,6 +332,51 @@ app.add_middleware(
 # ==========================================================================
 # Models
 # ==========================================================================
+_FULLNAME_BLOCKED_KEYWORDS = (
+    "テスト", "ﾃｽﾄ", "test", "tset",
+    "ダミー", "dummy",
+    "サンプル", "sample",
+    "デモ", "demo",
+    "品質検証", "確認用", "動作確認", "検証用",
+    "ユーザー", "user", "guest", "ゲスト",
+    "qa", "qa用",
+    "あいうえお", "aaa", "bbb", "xxx", "zzz",
+    "名無し", "未設定", "noname",
+    "管理者", "admin", "root",
+)
+
+
+def _validate_fullname(v: str) -> str:
+    """フルネーム（姓と名）必須。空白のみ・1文字のみ・テスト用ダミー名は拒否。
+    日本人名は姓+名で最低3文字以上必要。明らかなテストキーワード
+    （例: 'テスト', '品質検証', 'dummy'）も弾く。"""
+    if v is None:
+        raise ValueError("氏名は必須です")
+    s = v.strip()
+    if not s:
+        raise ValueError("氏名は必須です（空白のみは不可）")
+    # 全角・半角スペースを除去した実質文字数で判定
+    bare = s.replace(" ", "").replace("　", "")
+    if len(bare) < 3:
+        raise ValueError("フルネーム（姓と名）で入力してください（最低3文字以上）")
+    # 数字のみは拒否
+    if bare.isdigit():
+        raise ValueError("氏名に数字のみは使用できません")
+    # テスト用と思われるキーワードを弾く
+    s_lower = s.lower()
+    bare_lower = bare.lower()
+    for kw in _FULLNAME_BLOCKED_KEYWORDS:
+        kw_lower = kw.lower()
+        if kw_lower in s_lower or kw_lower in bare_lower:
+            raise ValueError(
+                f"テスト用と思われる氏名は登録できません（『{kw}』を含む）。実在する生徒のフルネームを入力してください。"
+            )
+    # 同一文字の連続（例: 「ああああ」「kkkk」）も弾く
+    if len(set(bare)) == 1:
+        raise ValueError("氏名に同一文字の連続は使用できません")
+    return s
+
+
 class TrialSignup(BaseModel):
     name: str
     email: EmailStr
@@ -339,11 +384,22 @@ class TrialSignup(BaseModel):
     goal: Optional[str] = None
     plan: Optional[str] = "hybrid"
 
+    @field_validator("name")
+    @classmethod
+    def _name_must_be_fullname(cls, v: str) -> str:
+        return _validate_fullname(v)
+
+
 class CheckoutRequest(BaseModel):
     plan: str
     email: EmailStr
     name: str
     student_id: Optional[int] = None
+
+    @field_validator("name")
+    @classmethod
+    def _name_must_be_fullname(cls, v: str) -> str:
+        return _validate_fullname(v)
 
 class LinePushRequest(BaseModel):
     student_id: int

@@ -801,6 +801,38 @@ function updateStudentInfo() {
   document.getElementById('studentGoal').textContent = `🎯 ${s.goal}`;
 }
 
+// フルネームバリデーション (server/main.py の _validate_fullname と同じ規則)
+const FULLNAME_BLOCKED_KEYWORDS = [
+  'テスト', 'ﾃｽﾄ', 'test', 'tset',
+  'ダミー', 'dummy', 'サンプル', 'sample',
+  'デモ', 'demo',
+  '品質検証', '確認用', '動作確認', '検証用',
+  'ユーザー', 'user', 'guest', 'ゲスト',
+  'qa', 'qa用',
+  'あいうえお', 'aaa', 'bbb', 'xxx', 'zzz',
+  '名無し', '未設定', 'noname',
+  '管理者', 'admin', 'root',
+];
+
+function validateFullName(value) {
+  if (value == null) return { ok: false, reason: '氏名は必須です' };
+  const s = String(value).trim();
+  if (!s) return { ok: false, reason: '氏名は必須です（空白のみは不可）' };
+  const bare = s.replace(/\s|　/g, '');
+  if (bare.length < 3) return { ok: false, reason: 'フルネーム（姓と名）で入力してください（最低3文字以上）' };
+  if (/^\d+$/.test(bare)) return { ok: false, reason: '氏名に数字のみは使用できません' };
+  const sLower = s.toLowerCase();
+  const bareLower = bare.toLowerCase();
+  for (const kw of FULLNAME_BLOCKED_KEYWORDS) {
+    const kwLower = kw.toLowerCase();
+    if (sLower.includes(kwLower) || bareLower.includes(kwLower)) {
+      return { ok: false, reason: `テスト用と思われる氏名は登録できません（『${kw}』を含む）。実在する生徒のフルネームを入力してください。` };
+    }
+  }
+  if (new Set(bare).size === 1) return { ok: false, reason: '氏名に同一文字の連続は使用できません' };
+  return { ok: true, value: s };
+}
+
 function addStudent() {
   const planInfo = getPlanInfo();
   const current = state.students.length;
@@ -817,8 +849,25 @@ function addStudent() {
       return;
     }
   }
-  const name = prompt('生徒名を入力:');
-  if (!name) return;
+  const lastName = prompt('生徒の姓を入力（例: 山田）:\n※フルネーム登録が必須です');
+  if (lastName === null) return;
+  if (!lastName.trim()) {
+    alert('姓を入力してください。フルネーム（姓と名）での登録が必要です。');
+    return;
+  }
+  const firstName = prompt('生徒の名を入力（例: 太郎）:\n※フルネーム登録が必須です');
+  if (firstName === null) return;
+  if (!firstName.trim()) {
+    alert('名を入力してください。フルネーム（姓と名）での登録が必要です。');
+    return;
+  }
+  const name = `${lastName.trim()}${firstName.trim()}`;
+  // 連結後のフルネームを検証（テストキーワード等を弾く）
+  const check = validateFullName(name);
+  if (!check.ok) {
+    alert(`登録できません: ${check.reason}`);
+    return;
+  }
   const grade = prompt('学年 (例: 高校2年):') || '中学3年';
   const goal = prompt('志望校・目標:') || '未設定';
   const newId = Math.max(0, ...state.students.map(s => s.id)) + 1;
