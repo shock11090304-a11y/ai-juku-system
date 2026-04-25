@@ -571,12 +571,47 @@
         console.warn('[loadSignupSummary] failed:', e);
       }
     }
+    // 申込時 (DB 上) の plan 値からフロント表示用の月額・コース名を導出
+    function planFee(plan) {
+      const map = { standard: 24980, premium: 39800, family: 59800, student_addon: 15000 };
+      return map[plan] || 0;
+    }
+    function planLabel(plan) {
+      const map = { standard: 'スタンダード', premium: 'プレミアム', family: '家族プラン', student_addon: '塾生アドオン', trial: 'トライアル' };
+      return map[plan] || (plan || '未契約');
+    }
+
+    // 本番DBから実生徒データを取得して生徒ロスターを描画 (デモデータ上書き)
+    async function loadLiveRoster() {
+      if (!window.AdminAuth || !AdminAuth.getToken()) return;
+      try {
+        const res = await AdminAuth.fetch('/api/admin/stats');
+        if (!res.ok) return;
+        const data = await res.json();
+        const apiStudents = (data.students || []).map(s => ({
+          id: s.id,
+          name: s.name || '(名前未登録)',
+          grade: s.grade || '',
+          goal: s.goal || '',
+          fee: s.status === 'paid' ? planFee(s.plan) : 0,
+          courses: [planLabel(s.plan || s.status)],
+          status: s.status,
+          trial_end: s.trial_end,
+        }));
+        if (typeof renderRoster === 'function') {
+          renderRoster(apiStudents);
+        }
+      } catch (e) { console.warn('[loadLiveRoster] failed:', e); }
+    }
+
     // 初回読込 + 60秒ごと自動更新
     function start() {
       loadSignupSummary();
+      loadLiveRoster();
       setInterval(loadSignupSummary, 60000);
+      setInterval(loadLiveRoster, 60000);
       const btn = document.getElementById('refreshSignupSummary');
-      if (btn) btn.addEventListener('click', loadSignupSummary);
+      if (btn) btn.addEventListener('click', () => { loadSignupSummary(); loadLiveRoster(); });
     }
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => setTimeout(start, 1500));
