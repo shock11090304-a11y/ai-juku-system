@@ -94,6 +94,16 @@ const PLAN_CONFIG = {
     description: '入塾金（初回のみ・システム登録費・トライアル後の初回請求に追加）',
   },
 
+  // 入塾金免除キャンペーン (先着100名)
+  enrollmentWaiverCampaign: {
+    enabled: true,
+    limit: 100,
+    label: '🎉 先着100名 入塾金¥10,000 免除キャンペーン',
+    shortLabel: '入塾金¥10,000 OFF',
+    description: '初回請求から入塾金¥10,000が0円に。月額のみで開始可能。',
+    apiPath: '/api/campaigns/enrollment-waiver/status',
+  },
+
   // 既存塾生向けアドオン
   studentAddon: {
     price: 15000,

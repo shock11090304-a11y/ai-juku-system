@@ -29,7 +29,13 @@
       <div class="checkout-header">
         <div class="eyebrow">🎖 FOUNDER TRIAL</div>
         <h1>第1期生 トライアル申込み</h1>
-        <p class="checkout-sub">創業記念・先着100名限定 / <strong>¥1,980で3日間</strong>全機能トライアル（月額の1/10）</p>
+        <p class="checkout-sub">創業記念・先着100名限定 / <strong>¥1,980で3日間</strong>全機能トライアル</p>
+      </div>
+
+      <!-- 入塾金免除キャンペーンバナー (先着100名) -->
+      <div id="enrollmentWaiverBannerCheckout" style="display:none;background:linear-gradient(135deg,rgba(251,191,36,0.18),rgba(236,72,153,0.12));border:1px solid rgba(251,191,36,0.45);border-radius:12px;padding:0.85rem 1.1rem;margin-bottom:1rem;text-align:center;">
+        <div style="font-weight:900;color:#fbbf24;font-size:1rem;margin-bottom:0.25rem;">🎉 入塾金 ¥10,000 免除キャンペーン適用</div>
+        <div style="font-size:0.88rem;color:#fde68a;">月額移行時に通常加算される入塾金が0円。残り <strong id="waiverRemainingCheckout">--</strong> 名 / 100名</div>
       </div>
 
       <div class="plan-selector">
@@ -40,7 +46,7 @@
               <div class="plan-card-name">スタンダード</div>
               <div class="plan-card-price">¥24,980<span>/月</span></div>
             </div>
-            <div class="plan-card-desc">24時間AIチューター + AI問題生成 + 添削月10回 + 参考書月3冊</div>
+            <div class="plan-card-desc">24時間AIチューター + 問題生成月50回 + 添削月20回 + 参考書月5冊</div>
           </div>
         </label>
 
@@ -162,5 +168,22 @@
   </footer>
 
   <script src="checkout.js"></script>
+  <script>
+    // 入塾金免除キャンペーン残枠取得
+    (function() {
+      const BACKEND = window.location.hostname === 'localhost' && window.location.port === '8090'
+        ? 'http://localhost:8000' : window.location.origin;
+      fetch(`${BACKEND}/api/campaigns/enrollment-waiver/status`).then(r => r.ok ? r.json() : null).then(d => {
+        if (!d) return;
+        const banner = document.getElementById('enrollmentWaiverBannerCheckout');
+        const rem = document.getElementById('waiverRemainingCheckout');
+        if (!banner || !rem) return;
+        if (d.is_active && d.remaining > 0) {
+          rem.textContent = d.remaining;
+          banner.style.display = '';
+        }
+      }).catch(() => {});
+    })();
+  </script>
 </body>
 </html>

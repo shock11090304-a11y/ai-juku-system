@@ -208,6 +208,27 @@
         setInterval(fetchCount, 60000);
       });
 
+      // 入塾金免除キャンペーン残枠を取得してバナー表示
+      async function fetchWaiverStatus() {
+        try {
+          const ctrl = new AbortController();
+          setTimeout(() => ctrl.abort(), 2000);
+          const r = await fetch(`${BACKEND_URL}/api/campaigns/enrollment-waiver/status`, { signal: ctrl.signal });
+          if (!r.ok) return;
+          const d = await r.json();
+          const banner = document.getElementById('enrollmentWaiverBanner');
+          const remEl = document.getElementById('waiverRemaining');
+          if (!banner || !remEl) return;
+          if (d.is_active && d.remaining > 0) {
+            remEl.textContent = d.remaining;
+            banner.style.display = '';
+          } else {
+            banner.style.display = 'none';
+          }
+        } catch (e) { /* 無視 */ }
+      }
+      document.addEventListener('DOMContentLoaded', fetchWaiverStatus);
+
       // ローカルで即時反映用（チェックアウト完了時に呼ばれる）
       window.bumpFounder = () => {
         const current = parseInt(localStorage.getItem(CACHE_KEY) || '0');
@@ -278,6 +299,11 @@
         <span class="price-now">3日間トライアル <strong>¥1,980</strong></span>
         <span class="price-save">※月額の1/10で試せる創業記念価格</span>
       </div>
+    </div>
+    <!-- 入塾金免除キャンペーンバナー (先着100名) -->
+    <div id="enrollmentWaiverBanner" style="display:none;background:linear-gradient(135deg,rgba(251,191,36,0.18),rgba(236,72,153,0.12));border:1px solid rgba(251,191,36,0.45);border-radius:12px;padding:0.85rem 1.1rem;margin:1rem 0;text-align:center;">
+      <div style="font-weight:900;color:#fbbf24;font-size:1rem;margin-bottom:0.25rem;">🎉 先着100名 入塾金 ¥10,000 免除キャンペーン</div>
+      <div style="font-size:0.88rem;color:#fde68a;">月額移行時の初回請求から ¥10,000 が0円に。残り <strong id="waiverRemaining">--</strong> 名</div>
     </div>
     <div class="hero-ctas">
       <a href="checkout.html?plan=founder" class="btn-primary btn-lg" data-founder-cta>¥1,980で3日間試す →</a>

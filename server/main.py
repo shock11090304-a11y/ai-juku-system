@@ -100,6 +100,11 @@ FOUNDER_LIMIT = 100
 # 入塾金を免除するプラン
 ENROLLMENT_FEE_EXEMPT = {"student_addon"}
 
+# キャンペーン: 先着N名は入塾金 (¥10,000) を免除
+# 環境変数で枠数 / 有効化を制御可能
+ENROLLMENT_WAIVER_CAMPAIGN_ENABLED = os.getenv("ENROLLMENT_WAIVER_ENABLED", "1") == "1"
+ENROLLMENT_WAIVER_LIMIT = int(os.getenv("ENROLLMENT_WAIVER_LIMIT", "100"))
+
 # プランごとの月次クォータ (None = 無制限)
 # plans.js の quotas と完全一致させる必要あり
 PLAN_QUOTAS = {
@@ -235,6 +240,7 @@ def init_db():
         trial_start TIMESTAMP,
         trial_end TIMESTAMP,
         paid_since TIMESTAMP,
+        enrollment_fee_waived INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
@@ -288,6 +294,12 @@ def init_db():
     CREATE INDEX IF NOT EXISTS idx_students_status ON students(status);
     CREATE INDEX IF NOT EXISTS idx_otp_student ON otp_codes(student_id, used_at, expires_at);
     """)
+    # 既存DBに enrollment_fee_waived 列が無い場合は追加 (キャンペーン用)
+    # SQLite/Postgres 両対応で「列が無ければ追加」を試みる
+    try:
+        c.execute("ALTER TABLE students ADD COLUMN enrollment_fee_waived INTEGER DEFAULT 0")
+    except Exception:
+        pass  # 既に存在する場合は無視
     conn.commit()
     conn.close()
 init_db()
@@ -1019,6 +1031,39 @@ def auth_me(authorization: Optional[str] = Header(None)):
     return {"ok": True, "student": student}
 
 
+def _get_waiver_count() -> int:
+    """これまで入塾金免除を受けた生徒数を返す。"""
+    conn = db()
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) AS n FROM students WHERE enrollment_fee_waived = 1")
+    row = c.fetchone()
+    conn.close()
+    return int(row["n"]) if row else 0
+
+
+def _is_waiver_eligible() -> bool:
+    """現時点で入塾金免除キャンペーンの枠が残っているか。"""
+    if not ENROLLMENT_WAIVER_CAMPAIGN_ENABLED:
+        return False
+    return _get_waiver_count() < ENROLLMENT_WAIVER_LIMIT
+
+
+@app.get("/api/campaigns/enrollment-waiver/status")
+def waiver_status():
+    """入塾金免除キャンペーンの残枠を返す (公開エンドポイント)。
+    LP/checkout のバナー表示に使用。"""
+    used = _get_waiver_count()
+    remaining = max(0, ENROLLMENT_WAIVER_LIMIT - used)
+    return {
+        "enabled": ENROLLMENT_WAIVER_CAMPAIGN_ENABLED,
+        "limit": ENROLLMENT_WAIVER_LIMIT,
+        "used": used,
+        "remaining": remaining,
+        "is_active": ENROLLMENT_WAIVER_CAMPAIGN_ENABLED and remaining > 0,
+        "discount_amount": ENROLLMENT_FEE,
+    }
+
+
 @app.get("/api/usage/me")
 def usage_me(authorization: Optional[str] = Header(None)):
     """ログイン中の生徒の今月の使用回数 + プラン上限を返す。
@@ -1234,7 +1279,12 @@ def create_checkout_session(payload: CheckoutRequest):
     # 体験期間は別途 /api/stripe/trial-checkout で単発¥1,980決済済み。
     # 入塾金はWebhook (checkout.session.completed) で InvoiceItem として
     # 顧客に作成 → 初回請求書に自動的に乗る。
-    needs_enrollment_fee = payload.plan not in ENROLLMENT_FEE_EXEMPT
+    # 先着100名キャンペーン枠が残っていれば入塾金免除フラグを立てる
+    waiver_eligible = (
+        payload.plan not in ENROLLMENT_FEE_EXEMPT
+        and _is_waiver_eligible()
+    )
+    needs_enrollment_fee = (payload.plan not in ENROLLMENT_FEE_EXEMPT) and not waiver_eligible
     subscription_data = {
         "metadata": {
             "plan": payload.plan,
@@ -1242,6 +1292,7 @@ def create_checkout_session(payload: CheckoutRequest):
             "max_students": str(max_students),
             "founder": "1",
             "needs_enrollment_fee": "1" if needs_enrollment_fee else "0",
+            "enrollment_waiver_applied": "1" if waiver_eligible else "0",
             "purchase_type": "monthly",
         }
     }
@@ -1261,6 +1312,7 @@ def create_checkout_session(payload: CheckoutRequest):
             "max_students": str(max_students),
             "purchase_type": "monthly",
             "needs_enrollment_fee": "1" if needs_enrollment_fee else "0",
+            "enrollment_waiver_applied": "1" if waiver_eligible else "0",
         }
     }
 
@@ -1425,7 +1477,8 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                     )
             conn.commit()
 
-            # 入塾金 InvoiceItem (月額のみ)
+            # 入塾金 InvoiceItem (月額のみ・先着100名キャンペーン適用時はスキップ)
+            waiver_applied = meta.get("enrollment_waiver_applied") == "1"
             if meta.get("needs_enrollment_fee") == "1" and customer:
                 try:
                     s.InvoiceItem.create(
@@ -1436,6 +1489,23 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                     log.info(f"✅ Enrollment fee InvoiceItem created: customer={customer}")
                 except Exception as e:
                     log.error(f"Failed to create enrollment fee InvoiceItem: {type(e).__name__}: {e}")
+            elif waiver_applied:
+                # キャンペーン適用 → DB に免除フラグを立てて履歴管理
+                try:
+                    if student_id and student_id != "":
+                        c.execute(
+                            "UPDATE students SET enrollment_fee_waived = 1 WHERE id = ?",
+                            (student_id,),
+                        )
+                    elif email:
+                        c.execute(
+                            "UPDATE students SET enrollment_fee_waived = 1 WHERE email = ?",
+                            (email,),
+                        )
+                    conn.commit()
+                    log.info(f"✅ Enrollment fee WAIVED (campaign): customer={customer} student_id={student_id} email={email}")
+                except Exception as e:
+                    log.error(f"Failed to mark enrollment_fee_waived: {type(e).__name__}: {e}")
 
         # Welcome email (どちらのタイプも共通: ログインコード+リンク送信)
         try:
