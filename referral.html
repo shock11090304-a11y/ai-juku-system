@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="cache-purge.js?v=20260425-1"></script>
   <title>🎁 お友達紹介プログラム | AI学習コーチ塾</title>
   <meta name="description" content="AI学習コーチ塾のお友達紹介プログラム。紹介1名につき1ヶ月無料、紹介された方も体験期間+15日。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='80' font-size='80'%3E%F0%9F%8E%81%3C/text%3E%3C/svg%3E">
@@ -221,68 +222,60 @@
     <div class="footer-bottom">© 2026 AI学習コーチ塾</div>
   </footer>
 
+  <script src="referral-program.js?v=20260425-1"></script>
   <script>
-    const STORAGE_KEY = 'ai_juku_referral';
+    // referral-program.js (共通モジュール) を活用し、mypage と統一された紹介コードを表示
     const BACKEND = window.location.hostname === 'localhost' && window.location.port === '8090'
       ? 'http://localhost:8000' : window.location.origin;
 
-    function loadRef() {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-    }
-    function saveRef(data) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    }
-
-    function generateCode() {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      let code = '';
-      for (let i = 0; i < 7; i++) code += chars[Math.floor(Math.random() * chars.length)];
-      return code;
-    }
-
     function render() {
-      const ref = loadRef();
-      if (ref && ref.code) {
-        document.getElementById('refCode').textContent = ref.code;
-        document.getElementById('generateCodeBtn').style.display = 'none';
-        const url = `${window.location.origin}/lp.html?ref=${ref.code}`;
-        document.getElementById('refUrl').value = url;
-        document.getElementById('refUrlBox').style.display = 'block';
-        document.getElementById('statClicks').textContent = ref.clicks || 0;
-        document.getElementById('statSignups').textContent = ref.signups?.length || 0;
-        document.getElementById('statRewards').textContent = (ref.signups?.length || 0);
-        document.getElementById('statRank').textContent =
-          ref.signups?.length >= 5 ? 'TOP10入り' : '参加中';
+      const student = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null');
+      const code = ReferralProgram.getMyCode(student);
+      const summary = ReferralProgram.getRewardsSummary();
+      const history = ReferralProgram.getHistory();
+      const url = ReferralProgram.buildShareUrl(code);
 
-        const list = document.getElementById('refHistoryList');
-        if (ref.signups && ref.signups.length > 0) {
-          list.innerHTML = ref.signups.map(s => `
-            <div class="history-item">
-              <div class="history-icon">🎉</div>
-              <div class="history-body">
-                <div class="history-name">${s.name || '匿名'} さんが登録</div>
-                <div class="history-date">${new Date(s.date).toLocaleDateString('ja-JP')}</div>
-              </div>
-              <div class="history-status status-${s.status || 'pending'}">
-                ${s.status === 'paid' ? '✅ 特典付与済' : '⏳ 体験中'}
-              </div>
+      document.getElementById('refCode').textContent = code;
+      document.getElementById('generateCodeBtn').style.display = 'none';
+      document.getElementById('refUrl').value = url;
+      document.getElementById('refUrlBox').style.display = 'block';
+
+      // 統計表示
+      document.getElementById('statClicks').textContent = summary.totalReferrals;  // 簡易: 紹介数を流用
+      document.getElementById('statSignups').textContent = summary.totalReferrals;
+      document.getElementById('statRewards').textContent = summary.monthsFree;
+      document.getElementById('statRank').textContent =
+        summary.totalReferrals >= 5 ? 'TOP10入り' : (summary.totalReferrals > 0 ? '参加中' : '参加待ち');
+
+      const list = document.getElementById('refHistoryList');
+      if (history.length > 0) {
+        list.innerHTML = history.map(s => `
+          <div class="history-item">
+            <div class="history-icon">🎉</div>
+            <div class="history-body">
+              <div class="history-name">${s.referee || '匿名'} さんが登録</div>
+              <div class="history-date">${new Date(s.date).toLocaleDateString('ja-JP')}</div>
             </div>
-          `).join('');
-        }
+            <div class="history-status status-${s.status === 'confirmed' ? 'paid' : 'pending'}">
+              ${s.status === 'confirmed' ? '✅ 特典付与済' : '⏳ 体験中'}
+            </div>
+          </div>
+        `).join('');
+      } else {
+        list.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:1rem;">まだ紹介がありません。LINEや X でシェアして友達を誘ってみましょう！</p>';
       }
     }
 
-    document.getElementById('generateCodeBtn').addEventListener('click', async () => {
-      const code = generateCode();
-      const data = { code, createdAt: new Date().toISOString(), clicks: 0, signups: [] };
-      saveRef(data);
+    // 既存ボタンは「再生成」として動作させる
+    document.getElementById('generateCodeBtn').addEventListener('click', () => {
+      const student = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null');
+      ReferralProgram.regenerateMyCode(student);
       render();
-
-      // Register with backend
+      // backend にも軽量トラッキング
       fetch(`${BACKEND}/api/track`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'referral_code_generated', props: { code } })
+        body: JSON.stringify({ name: 'referral_code_generated' })
       }).catch(() => {});
     });
 

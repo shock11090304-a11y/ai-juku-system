@@ -75,8 +75,11 @@
     // 改変SM-2: シンプル化して使いやすく
     // 正解: 1日 → 3日 → 7日 → 21日 → 60日 (定着OKと判断したら止める)
     // 不正解: 翌日に再出題
+    const now = new Date();
     card.history.push({
       date: _todayStr(),
+      hour: now.getHours(),
+      dow: now.getDay(),  // 0=日 ... 6=土
       correct,
       ease: card.ease,
     });
@@ -214,7 +217,135 @@
   }
 
   // ==========================================================================
-  // ③ 躓きセンサー (連続不正解検知)
+  // ③ 学習時間帯最適化 (Best Hour Recommendation)
+  // ==========================================================================
+  // 過去の history.hour と history.correct から
+  // 時間帯ごとの正答率を集計し、最適な学習時間を推奨。
+  // 曜日別パターンも返す。
+  function analyzeStudyTimes(studentId) {
+    if (!studentId) studentId = 'guest';
+    const cards = _read(studentId, 'cards', {});
+    const all = [];
+    Object.values(cards).forEach(c => {
+      (c.history || []).forEach(h => {
+        if (typeof h.hour === 'number') all.push(h);
+      });
+    });
+    if (all.length === 0) {
+      return { ready: false, reason: 'データ不足', samples: 0 };
+    }
+
+    // 時間帯バケット (0-5, 6-9, 10-12, 13-17, 18-21, 22-23)
+    const buckets = [
+      { key: 'dawn',     label: '深夜・早朝 (0-5時)',  range: [0, 5],   correct: 0, total: 0 },
+      { key: 'morning',  label: '朝 (6-9時)',       range: [6, 9],   correct: 0, total: 0 },
+      { key: 'noon',     label: '昼 (10-12時)',      range: [10, 12], correct: 0, total: 0 },
+      { key: 'afternoon',label: '午後 (13-17時)',    range: [13, 17], correct: 0, total: 0 },
+      { key: 'evening',  label: '夜 (18-21時)',      range: [18, 21], correct: 0, total: 0 },
+      { key: 'night',    label: '深夜 (22-23時)',    range: [22, 23], correct: 0, total: 0 },
+    ];
+    all.forEach(h => {
+      const b = buckets.find(b => h.hour >= b.range[0] && h.hour <= b.range[1]);
+      if (!b) return;
+      b.total += 1;
+      if (h.correct) b.correct += 1;
+    });
+    buckets.forEach(b => {
+      b.accuracy = b.total > 0 ? Math.round(b.correct / b.total * 100) : null;
+    });
+
+    // 最良時間帯 (サンプル数3以上の中で正答率最大)
+    const valid = buckets.filter(b => b.total >= 3);
+    let best = null;
+    if (valid.length > 0) {
+      best = valid.reduce((a, b) => (b.accuracy > a.accuracy ? b : a));
+    }
+
+    // 曜日別 (日=0 ... 土=6)
+    const dowNames = ['日','月','火','水','木','金','土'];
+    const dowStats = dowNames.map(n => ({ day: n, correct: 0, total: 0 }));
+    all.forEach(h => {
+      if (typeof h.dow === 'number' && h.dow >= 0 && h.dow <= 6) {
+        dowStats[h.dow].total += 1;
+        if (h.correct) dowStats[h.dow].correct += 1;
+      }
+    });
+    dowStats.forEach(d => {
+      d.accuracy = d.total > 0 ? Math.round(d.correct / d.total * 100) : null;
+    });
+    const validDow = dowStats.filter(d => d.total >= 3);
+    const bestDow = validDow.length > 0
+      ? validDow.reduce((a, b) => (b.accuracy > a.accuracy ? b : a))
+      : null;
+
+    return {
+      ready: true,
+      samples: all.length,
+      buckets,
+      best,
+      dowStats,
+      bestDow,
+    };
+  }
+
+  function recommendStudyTime(studentId) {
+    const r = analyzeStudyTimes(studentId);
+    if (!r.ready || !r.best) {
+      return {
+        ready: false,
+        message: '学習データが不足しています。問題を10問以上解くと、最適な学習時間帯を AI が分析します。',
+      };
+    }
+    const parts = [`📊 あなたの最適学習時間帯は ${r.best.label} (正答率 ${r.best.accuracy}%, ${r.best.total}問)`];
+    if (r.bestDow && r.bestDow.accuracy >= 70) {
+      parts.push(`🗓 集中しやすい曜日: ${r.bestDow.day}曜 (正答率 ${r.bestDow.accuracy}%)`);
+    }
+    return { ready: true, message: parts.join('\n'), best: r.best, bestDow: r.bestDow, buckets: r.buckets, dowStats: r.dowStats };
+  }
+
+  function renderStudyTimeWidget(containerId, studentId) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    if (!studentId) studentId = 'guest';
+    const r = analyzeStudyTimes(studentId);
+    if (!r.ready) {
+      el.innerHTML = `<div style="color:#94a3b8;padding:0.8rem;font-size:0.9rem;">📊 学習時間帯分析: データを蓄積中。問題を10問以上解くと、AI が最適な学習時間帯を分析します。</div>`;
+      return;
+    }
+    const maxAcc = Math.max(...r.buckets.filter(b => b.accuracy !== null).map(b => b.accuracy));
+    const barsHtml = r.buckets.map(b => {
+      if (b.total === 0) {
+        return `<div style="display:flex;align-items:center;gap:0.5rem;margin:0.25rem 0;font-size:0.8rem;"><div style="width:140px;color:#71717a;">${b.label}</div><div style="flex:1;color:#52525b;">未学習</div></div>`;
+      }
+      const isBest = r.best && b.key === r.best.key;
+      const widthPct = b.accuracy;
+      const color = isBest ? 'linear-gradient(90deg,#10b981,#34d399)' : 'rgba(99,102,241,0.4)';
+      return `<div style="display:flex;align-items:center;gap:0.5rem;margin:0.25rem 0;font-size:0.8rem;">
+        <div style="width:140px;color:${isBest ? '#34d399' : '#cbd5e1'};font-weight:${isBest ? 700 : 400};">${b.label}${isBest ? ' ⭐' : ''}</div>
+        <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:4px;height:18px;position:relative;">
+          <div style="background:${color};width:${widthPct}%;height:100%;border-radius:4px;"></div>
+          <div style="position:absolute;top:0;left:0.4rem;line-height:18px;font-weight:700;color:#e4e4e7;font-size:0.75rem;">${b.accuracy}% (${b.total}問)</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    const dowHtml = r.bestDow
+      ? `<div style="margin-top:0.6rem;padding:0.5rem;background:rgba(16,185,129,0.08);border-radius:8px;font-size:0.82rem;color:#a7f3d0;">🗓 最も集中できている曜日: <strong>${r.bestDow.day}曜</strong> (正答率 ${r.bestDow.accuracy}%, ${r.bestDow.total}問)</div>`
+      : '';
+
+    el.innerHTML = `
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:0.85rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+          <div style="font-weight:800;color:#a78bfa;">⏰ 学習時間帯分析 (${r.samples}件)</div>
+          ${r.best ? `<div style="font-size:0.78rem;color:#34d399;">⭐ 最適: ${r.best.label.split(' ')[0]}</div>` : ''}
+        </div>
+        ${barsHtml}
+        ${dowHtml}
+      </div>`;
+  }
+
+  // ==========================================================================
+  // ⑤ 躓きセンサー (連続不正解検知)
   // ==========================================================================
   /**
    * 直近の同単元で 3 回以上不正解、または 4 回中 3 回以上不正解
@@ -388,6 +519,9 @@
     renderTodayReview,
     markCard,
     importProblemsAsCards,
+    analyzeStudyTimes,
+    recommendStudyTime,
+    renderStudyTimeWidget,
     // テスト用
     _read, _write, _todayStr,
   };

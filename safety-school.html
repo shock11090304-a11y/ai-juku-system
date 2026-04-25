@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script src="cache-purge.js?v=20260425-1"></script>
+<title>滑り止め校提案 | AI学習コーチ塾</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  .ss-container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+  .ss-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 1.2rem; margin-bottom: 1rem; }
+  .ss-form input, .ss-form select { width: 100%; padding: 0.6rem 0.8rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #e4e4e7; font-size: 0.95rem; margin-bottom: 0.6rem; box-sizing: border-box; }
+  .ss-form label { display: block; font-size: 0.82rem; color: #a1a1aa; margin-bottom: 0.3rem; font-weight: 700; }
+  .ss-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.7rem; }
+  .ss-btn { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; padding: 0.7rem 1.4rem; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 0.95rem; }
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="header-inner">
+    <a href="index.html" class="logo">🎓 AI学習コーチ塾</a>
+    <nav><a href="mypage.html">マイページ</a></nav>
+  </div>
+</header>
+
+<main class="ss-container">
+  <h1 style="font-size:1.6rem;color:#e4e4e7;">🛡️ 滑り止め校提案</h1>
+  <p style="color:#a1a1aa;font-size:0.92rem;">第一志望と現在の偏差値から、最適な「チャレンジ校 / 実力相応校 / 滑り止め校」を AI が提案します。後悔のない出願戦略を。</p>
+
+  <section class="ss-card">
+    <h2 style="font-size:1.1rem;color:#a78bfa;margin-top:0;">🎯 条件入力</h2>
+    <form id="ssForm" class="ss-form">
+      <div class="ss-row">
+        <div>
+          <label>第一志望大学</label>
+          <select id="fTarget" required></select>
+        </div>
+        <div>
+          <label>現在の偏差値</label>
+          <input id="fDev" type="number" min="30" max="80" placeholder="例: 60" required />
+        </div>
+      </div>
+      <div class="ss-row">
+        <div>
+          <label>地域フィルター</label>
+          <select id="fRegion">
+            <option value="all">指定なし</option>
+            <option value="関東">関東</option>
+            <option value="関西">関西</option>
+            <option value="中部">中部</option>
+            <option value="東北">東北</option>
+            <option value="北海道">北海道</option>
+            <option value="九州">九州</option>
+          </select>
+        </div>
+        <div>
+          <label>大学種別</label>
+          <select id="fType">
+            <option value="all">指定なし</option>
+            <option value="国立">国公立</option>
+            <option value="私立">私立</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="ss-btn">🎯 提案を取得</button>
+    </form>
+  </section>
+
+  <div id="ssResult"></div>
+</main>
+
+<script src="safety-school.js?v=20260425-1"></script>
+<script>
+(function() {
+  // 大学一覧をプルダウンに
+  const sel = document.getElementById('fTarget');
+  SafetySchool.listUniversities()
+    .sort((a, b) => b.deviation - a.deviation)
+    .forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u.name;
+      opt.textContent = `${u.name} (偏差値${u.deviation} · ${u.type} · ${u.region})`;
+      sel.appendChild(opt);
+    });
+
+  // 設定を復元
+  const prefs = SafetySchool.getPrefs();
+  if (prefs.target) document.getElementById('fTarget').value = prefs.target;
+  if (prefs.currentDeviation) document.getElementById('fDev').value = prefs.currentDeviation;
+  if (prefs.region) document.getElementById('fRegion').value = prefs.region;
+  if (prefs.type) document.getElementById('fType').value = prefs.type;
+
+  document.getElementById('ssForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const opts = {
+      target: document.getElementById('fTarget').value,
+      currentDeviation: parseInt(document.getElementById('fDev').value),
+      region: document.getElementById('fRegion').value,
+      type: document.getElementById('fType').value,
+    };
+    SafetySchool.savePrefs(opts);
+    const result = SafetySchool.recommend(opts);
+    SafetySchool.renderRecommendation('ssResult', result);
+    document.getElementById('ssResult').scrollIntoView({behavior:'smooth', block:'start'});
+  });
+
+  // 既に保存済みなら自動表示
+  if (prefs.target && prefs.currentDeviation) {
+    const result = SafetySchool.recommend(prefs);
+    SafetySchool.renderRecommendation('ssResult', result);
+  }
+})();
+</script>
+</body>
+</html>

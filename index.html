@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI学習コーチ塾 | 次世代型個別最適化学習プラットフォーム</title>
+  <script src="cache-purge.js?v=20260425-1"></script>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon-192.svg">
   <meta name="theme-color" content="#6366f1">
@@ -95,6 +96,22 @@
           <a href="broadcast-center.html" class="btn-icon-labeled" title="配信センター（保護者向け告知を1クリックで）">
             <span class="icon">📢</span>
             <span class="label">配信</span>
+          </a>
+          <a href="exam-prep.html" class="btn-icon-labeled" title="定期テスト・模試 対策">
+            <span class="icon">📅</span>
+            <span class="label">テスト対策</span>
+          </a>
+          <a href="material-scan.html" class="btn-icon-labeled" title="教材を撮影してAIで問題化">
+            <span class="icon">📷</span>
+            <span class="label">教材スキャン</span>
+          </a>
+          <a href="safety-school.html" class="btn-icon-labeled" title="第一志望と偏差値から滑り止め推奨">
+            <span class="icon">🛡️</span>
+            <span class="label">滑り止め</span>
+          </a>
+          <a href="success-stories.html" class="btn-icon-labeled" title="合格体験記">
+            <span class="icon">🏆</span>
+            <span class="label">合格体験</span>
           </a>
           <button id="openSettings" class="btn-icon-labeled" title="管理者設定（APIキー等・通常顧客には非表示）">
             <span class="icon">⚙️</span>
@@ -1039,7 +1056,79 @@
   </footer>
 
   <script src="demo-english-extra.js?v=20260422"></script>
-  <script src="learning-brain.js?v=20260425-1"></script>
+  <script src="learning-brain.js?v=20260425-2"></script>
+  <script src="exam-prep.js?v=20260425-1"></script>
+  <script src="referral-program.js?v=20260425-1"></script>
   <script src="app.js?v=20260425-learning-brain"></script>
+  <script>
+  // 定期テスト連携: exam-prep.html から ?examPrep=1&subject=&topic=&examId= で来た時、
+  // 問題ジェネレーターに自動入力 + タブ切替 + 通知バナー
+  (function() {
+    function applyExamPrepParams() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('examPrep') !== '1') return;
+      const subject = params.get('subject') || '';
+      const topic = params.get('topic') || '';
+      const examId = params.get('examId') || '';
+
+      // タブを「問題自動生成」に切替 (app.js初期化後に確実に効くよう少し遅延)
+      function switchToProblemsTab() {
+        const tabBtn = document.querySelector('.tab[data-tab="problems"]');
+        if (tabBtn) tabBtn.click();
+        // 念のためDOM直接操作も併用 (handlerが未バインドでも切替できるよう)
+        document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'problems'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-problems'));
+      }
+      switchToProblemsTab();
+      setTimeout(switchToProblemsTab, 800);
+
+      // 科目マッピング (exam-prep の値 → probSubject の選択肢)
+      const subjMap = {
+        '英語': '英語（文法）', '数学': '数学（代数）', '国語': '国語（現代文）',
+        '物理': '物理', '化学': '化学', '生物': '生物',
+        '日本史': '日本史', '世界史': '世界史',
+        '現代文': '国語（現代文）', '古文': '国語（古文）', '漢文': '国語（漢文）',
+      };
+      const subjSel = document.getElementById('probSubject');
+      const target = subjMap[subject] || subject;
+      if (subjSel && target) {
+        for (const opt of subjSel.options) {
+          if (opt.value === target || opt.textContent.includes(target) || opt.textContent.includes(subject)) {
+            subjSel.value = opt.value;
+            subjSel.dispatchEvent(new Event('change', { bubbles: true }));
+            break;
+          }
+        }
+      }
+
+      // 単元/範囲を probTopic textarea に反映
+      const topicEl = document.getElementById('probTopic');
+      if (topicEl && topic) {
+        topicEl.value = topic;
+      }
+
+      // 通知バナー
+      const formCol = document.querySelector('.problems-form');
+      if (formCol && examId) {
+        const banner = document.createElement('div');
+        banner.style.cssText = 'background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(99,102,241,0.1));border:1px solid rgba(251,191,36,0.4);border-radius:10px;padding:0.8rem 1rem;margin-bottom:1rem;font-size:0.88rem;color:#fde68a;';
+        banner.innerHTML = `📅 <strong>定期テスト対策モード</strong>: 範囲「${topic.slice(0,80)}${topic.length>80?'...':''}」を反映しました。<br><small style="color:#cbd5e1;">問題数・難易度を選んで「🎲 問題を生成」を押してください。生成された問題は自動的に Learning Brain の復習カードに登録されます。</small>`;
+        formCol.insertBefore(banner, formCol.firstChild);
+      }
+
+      // クエリパラメータをURLから消す (履歴汚染防止)
+      const cleanUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, '', cleanUrl);
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', applyExamPrepParams);
+    } else { applyExamPrepParams(); }
+
+    // 紹介URL自動適用 (?ref=AIJ-XXXX-YYYY)
+    if (typeof ReferralProgram !== 'undefined') {
+      ReferralProgram.autoApplyFromUrl();
+    }
+  })();
+  </script>
 </body>
 </html>

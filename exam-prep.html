@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script src="cache-purge.js?v=20260425-1"></script>
+<title>定期テスト対策 | AI学習コーチ塾</title>
+<link rel="stylesheet" href="style.css" />
+<link rel="manifest" href="manifest.json" />
+<style>
+  .ep-container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+  .ep-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 1.2rem; margin-bottom: 1rem; }
+  .ep-form input, .ep-form select, .ep-form textarea { width: 100%; padding: 0.6rem 0.8rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #e4e4e7; font-size: 0.95rem; margin-bottom: 0.6rem; box-sizing: border-box; }
+  .ep-form textarea { min-height: 90px; resize: vertical; font-family: inherit; }
+  .ep-form label { display: block; font-size: 0.82rem; color: #a1a1aa; margin-bottom: 0.3rem; font-weight: 700; }
+  .ep-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+  @media (max-width: 600px) { .ep-row { grid-template-columns: 1fr; } }
+  .ep-btn { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; padding: 0.7rem 1.4rem; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 0.95rem; }
+  .ep-btn:hover { transform: translateY(-1px); }
+  .ep-btn-secondary { background: rgba(255,255,255,0.08); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.15); padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
+  .ep-btn-danger { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
+  .ep-exam-card { border-left: 4px solid #6366f1; }
+  .ep-exam-card.urgent { border-left-color: #ef4444; }
+  .ep-exam-card.soon { border-left-color: #f59e0b; }
+  .ep-countdown { font-size: 2.2rem; font-weight: 900; line-height: 1; }
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="header-inner">
+    <a href="index.html" class="logo">🎓 AI学習コーチ塾</a>
+    <nav><a href="mypage.html">マイページ</a></nav>
+  </div>
+</header>
+
+<main class="ep-container">
+  <h1 style="font-size:1.6rem;color:#e4e4e7;">📅 定期テスト・模試 対策</h1>
+  <p style="color:#a1a1aa;font-size:0.92rem;">テスト日程と出題範囲を登録すると、AI が範囲に沿った問題を自動生成し、忘却曲線で復習スケジュールを最適化します。</p>
+
+  <!-- 新規登録 -->
+  <section class="ep-card">
+    <h2 style="font-size:1.1rem;color:#a78bfa;margin-top:0;">➕ 新規テストを登録</h2>
+    <form id="examForm" class="ep-form">
+      <div class="ep-row">
+        <div>
+          <label>学校名</label>
+          <input id="fSchool" placeholder="例: ○○中学校 / ○○高校" required />
+        </div>
+        <div>
+          <label>テスト名</label>
+          <input id="fExamName" placeholder="例: 1学期中間テスト / 第2回 駿台模試" required />
+        </div>
+      </div>
+      <div class="ep-row">
+        <div>
+          <label>科目</label>
+          <select id="fSubject">
+            <option value="英語">英語</option>
+            <option value="数学">数学</option>
+            <option value="国語">国語</option>
+            <option value="理科">理科</option>
+            <option value="社会">社会</option>
+            <option value="物理">物理</option>
+            <option value="化学">化学</option>
+            <option value="生物">生物</option>
+            <option value="日本史">日本史</option>
+            <option value="世界史">世界史</option>
+            <option value="現代文">現代文</option>
+            <option value="古文">古文</option>
+            <option value="漢文">漢文</option>
+          </select>
+        </div>
+        <div>
+          <label>テスト日</label>
+          <input id="fDate" type="date" required />
+        </div>
+      </div>
+      <div class="ep-row">
+        <div>
+          <label>出題範囲</label>
+          <textarea id="fScope" placeholder="例: 関係代名詞 (who/which/that)、現在完了、教科書 Lesson 5-7" required></textarea>
+        </div>
+        <div>
+          <label>目標点 (任意)</label>
+          <input id="fGoal" type="number" placeholder="例: 80" />
+        </div>
+      </div>
+      <button type="submit" class="ep-btn">📅 テストを登録</button>
+    </form>
+  </section>
+
+  <!-- 登録済テスト -->
+  <section>
+    <h2 style="font-size:1.1rem;color:#a78bfa;">📋 登録済みのテスト</h2>
+    <div id="examList"></div>
+  </section>
+</main>
+
+<script src="learning-brain.js?v=20260425-2"></script>
+<script src="exam-prep.js?v=20260425-1"></script>
+<script>
+(function() {
+  function _daysUntil(dateStr) {
+    const t = new Date(dateStr); t.setHours(0,0,0,0);
+    const n = new Date(); n.setHours(0,0,0,0);
+    return Math.round((t - n) / (1000*60*60*24));
+  }
+
+  function render() {
+    const exams = ExamPrep.listExams();
+    const listEl = document.getElementById('examList');
+    if (exams.length === 0) {
+      listEl.innerHTML = `<div style="color:#71717a;text-align:center;padding:2rem;">まだテストが登録されていません。</div>`;
+      return;
+    }
+    listEl.innerHTML = exams.map(e => {
+      const days = _daysUntil(e.examDate);
+      const passed = days < 0;
+      const urgClass = passed ? '' : (days <= 3 ? 'urgent' : (days <= 7 ? 'soon' : ''));
+      const urgColor = passed ? '#71717a' : (days <= 3 ? '#ef4444' : (days <= 7 ? '#f59e0b' : '#a78bfa'));
+      return `
+      <div class="ep-card ep-exam-card ${urgClass}" data-id="${e.id}">
+        <div style="display:flex;justify-content:space-between;align-items:start;gap:1rem;flex-wrap:wrap;">
+          <div style="flex:1;min-width:200px;">
+            <div style="font-weight:800;font-size:1.05rem;color:#e4e4e7;">${e.examName} <span style="font-size:0.75rem;background:rgba(99,102,241,0.2);padding:0.15rem 0.5rem;border-radius:4px;color:#a78bfa;">${e.subject}</span></div>
+            <div style="font-size:0.85rem;color:#a1a1aa;margin:0.3rem 0;">🏫 ${e.schoolName} · 📆 ${e.examDate}${e.goalScore ? ` · 🎯 目標 ${e.goalScore}点` : ''}</div>
+            <div style="font-size:0.85rem;color:#cbd5e1;background:rgba(0,0,0,0.2);padding:0.5rem 0.7rem;border-radius:6px;margin-top:0.5rem;white-space:pre-wrap;"><strong style="color:#a78bfa;">📚 範囲:</strong> ${e.scope}</div>
+          </div>
+          <div style="text-align:center;flex-shrink:0;">
+            <div class="ep-countdown" style="color:${urgColor};">${passed ? '終了' : `あと${days}日`}</div>
+            <div style="font-size:0.78rem;color:#71717a;margin-top:0.3rem;">対策問題 ${e.problems.length}問</div>
+          </div>
+        </div>
+        <div style="margin-top:0.8rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+          <button class="ep-btn-secondary" onclick="generateProblems('${e.id}')">🎲 範囲から問題生成</button>
+          <a href="index.html#problemGenerator" class="ep-btn-secondary" style="text-decoration:none;display:inline-block;">📝 問題ジェネレーターへ</a>
+          <button class="ep-btn-danger" onclick="if(confirm('削除しますか？'))deleteExam('${e.id}')">🗑 削除</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('examForm').addEventListener('submit', e => {
+    e.preventDefault();
+    ExamPrep.addExam({
+      schoolName: document.getElementById('fSchool').value,
+      examName: document.getElementById('fExamName').value,
+      subject: document.getElementById('fSubject').value,
+      examDate: document.getElementById('fDate').value,
+      scope: document.getElementById('fScope').value,
+      goalScore: parseInt(document.getElementById('fGoal').value) || null,
+    });
+    e.target.reset();
+    render();
+    alert('✅ テスト日程を登録しました');
+  });
+
+  window.deleteExam = function(id) {
+    ExamPrep.deleteExam(id);
+    render();
+  };
+
+  window.generateProblems = function(id) {
+    const exam = ExamPrep.getExam(id);
+    if (!exam) return;
+    // index.html の問題ジェネレーターに範囲を渡してジャンプ
+    const params = new URLSearchParams({
+      examPrep: '1',
+      subject: exam.subject,
+      topic: exam.scope.slice(0, 200),
+      examId: exam.id,
+    });
+    window.location.href = `index.html?${params.toString()}#problemGenerator`;
+  };
+
+  document.addEventListener('DOMContentLoaded', render);
+  // テスト日のデフォルト = 1週間後
+  const d = new Date(); d.setDate(d.getDate() + 7);
+  document.getElementById('fDate').value = d.toISOString().slice(0,10);
+})();
+</script>
+</body>
+</html>

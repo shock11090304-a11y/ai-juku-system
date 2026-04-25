@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script src="cache-purge.js?v=20260425-1"></script>
+<title>教材スキャン | AI学習コーチ塾</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  .ms-container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+  .ms-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 1.2rem; margin-bottom: 1rem; }
+  .ms-drop { border: 2px dashed rgba(167,139,250,0.4); border-radius: 12px; padding: 2.5rem 1rem; text-align: center; cursor: pointer; background: rgba(99,102,241,0.04); transition: all 0.2s; }
+  .ms-drop:hover, .ms-drop.dragover { background: rgba(99,102,241,0.12); border-color: #a78bfa; }
+  .ms-drop input { display: none; }
+  .ms-preview { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
+  .ms-preview .thumb { position: relative; width: 100px; height: 100px; border-radius: 8px; overflow: hidden; background: rgba(0,0,0,0.4); }
+  .ms-preview img { width: 100%; height: 100%; object-fit: cover; }
+  .ms-preview .x { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.7); color: white; border: none; width: 22px; height: 22px; border-radius: 50%; cursor: pointer; font-weight: 800; }
+  .ms-form input, .ms-form select { width: 100%; padding: 0.6rem 0.8rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #e4e4e7; font-size: 0.95rem; margin-bottom: 0.6rem; box-sizing: border-box; }
+  .ms-form label { display: block; font-size: 0.82rem; color: #a1a1aa; margin-bottom: 0.3rem; font-weight: 700; }
+  .ms-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+  @media (max-width: 600px) { .ms-row { grid-template-columns: 1fr; } }
+  .ms-btn { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; padding: 0.7rem 1.4rem; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 0.95rem; }
+  .ms-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .ms-problem { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 0.8rem; margin: 0.5rem 0; }
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="header-inner">
+    <a href="index.html" class="logo">🎓 AI学習コーチ塾</a>
+    <nav><a href="mypage.html">マイページ</a></nav>
+  </div>
+</header>
+
+<main class="ms-container">
+  <h1 style="font-size:1.6rem;color:#e4e4e7;">📷 教材スキャン</h1>
+  <p style="color:#a1a1aa;font-size:0.92rem;">学校の問題集・プリント・ノートを撮影してアップすると、AI が問題を読み取り、エビングハウス自動復習カードに登録します。</p>
+
+  <section class="ms-card">
+    <h2 style="font-size:1.1rem;color:#a78bfa;margin-top:0;">① 画像をアップロード</h2>
+    <label for="msFile" class="ms-drop" id="msDrop">
+      <div style="font-size:2.5rem;">📷</div>
+      <div style="font-weight:700;color:#e4e4e7;margin:0.5rem 0;">タップして画像を選択 / ここにドロップ</div>
+      <div style="font-size:0.82rem;color:#a1a1aa;">JPG / PNG / HEIC · 最大5枚 (各5MBまで)</div>
+      <input type="file" id="msFile" accept="image/*" multiple />
+    </label>
+    <div class="ms-preview" id="msPreview"></div>
+  </section>
+
+  <section class="ms-card ms-form">
+    <h2 style="font-size:1.1rem;color:#a78bfa;margin-top:0;">② 教材情報</h2>
+    <div class="ms-row">
+      <div>
+        <label>科目</label>
+        <select id="msSubject">
+          <option value="英語">英語</option>
+          <option value="数学">数学</option>
+          <option value="国語">国語</option>
+          <option value="理科">理科</option>
+          <option value="社会">社会</option>
+          <option value="物理">物理</option>
+          <option value="化学">化学</option>
+          <option value="生物">生物</option>
+          <option value="日本史">日本史</option>
+          <option value="世界史">世界史</option>
+        </select>
+      </div>
+      <div>
+        <label>単元 (任意)</label>
+        <input id="msTopic" placeholder="例: 関係代名詞 / 二次関数" />
+      </div>
+    </div>
+    <button class="ms-btn" id="msScan" disabled>🔍 AI で問題を読み取る</button>
+  </section>
+
+  <section class="ms-card" id="msResultCard" style="display:none;">
+    <h2 style="font-size:1.1rem;color:#a78bfa;margin-top:0;">③ 抽出された問題</h2>
+    <div id="msResult"></div>
+    <div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+      <button class="ms-btn" id="msImport">📥 全部を復習カードに登録</button>
+      <a href="mypage.html" style="background:rgba(255,255,255,0.08);color:#cbd5e1;border:1px solid rgba(255,255,255,0.15);padding:0.7rem 1.4rem;border-radius:8px;text-decoration:none;font-weight:700;">マイページで確認</a>
+    </div>
+  </section>
+</main>
+
+<script src="learning-brain.js?v=20260425-2"></script>
+<script>
+(function() {
+  const API_BASE = (window.location.origin.includes(':8090') || window.location.origin.includes('localhost:8090'))
+    ? 'http://localhost:8000'
+    : 'https://ai-juku-api-production.up.railway.app';
+
+  const dropEl = document.getElementById('msDrop');
+  const fileEl = document.getElementById('msFile');
+  const previewEl = document.getElementById('msPreview');
+  const scanBtn = document.getElementById('msScan');
+  const resultCard = document.getElementById('msResultCard');
+  const resultEl = document.getElementById('msResult');
+  const importBtn = document.getElementById('msImport');
+
+  let images = [];  // { dataUrl, mime, name }
+  let extractedProblems = [];
+
+  function refreshPreview() {
+    previewEl.innerHTML = images.map((img, i) => `
+      <div class="thumb">
+        <img src="${img.dataUrl}" />
+        <button class="x" onclick="window._removeImg(${i})">×</button>
+      </div>`).join('');
+    scanBtn.disabled = images.length === 0;
+  }
+  window._removeImg = (i) => { images.splice(i, 1); refreshPreview(); };
+
+  function readFiles(files) {
+    const arr = Array.from(files).slice(0, 5 - images.length);
+    arr.forEach(f => {
+      if (f.size > 5 * 1024 * 1024) { alert(`${f.name} は5MBを超えています`); return; }
+      const reader = new FileReader();
+      reader.onload = e => {
+        images.push({ dataUrl: e.target.result, mime: f.type || 'image/jpeg', name: f.name });
+        refreshPreview();
+      };
+      reader.readAsDataURL(f);
+    });
+  }
+
+  fileEl.addEventListener('change', e => readFiles(e.target.files));
+  ['dragenter','dragover'].forEach(ev => dropEl.addEventListener(ev, e => { e.preventDefault(); dropEl.classList.add('dragover'); }));
+  ['dragleave','drop'].forEach(ev => dropEl.addEventListener(ev, e => { e.preventDefault(); dropEl.classList.remove('dragover'); }));
+  dropEl.addEventListener('drop', e => readFiles(e.dataTransfer.files));
+
+  scanBtn.addEventListener('click', async () => {
+    if (images.length === 0) return;
+    scanBtn.disabled = true;
+    scanBtn.textContent = '🔍 AI が読み取り中...(10-30秒)';
+    resultCard.style.display = 'none';
+
+    const subject = document.getElementById('msSubject').value;
+    const topic = document.getElementById('msTopic').value;
+    const student = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null');
+    const studentId = student ? student.id : 'guest';
+    const token = localStorage.getItem('ai_juku_session_token') || '';
+
+    // Vision message を組み立て
+    const content = [
+      { type: 'text', text: `これは${subject}${topic ? '/' + topic : ''}の教材画像です。
+画像から学習者向けの「問題」と「解答」と「解説」を抽出してJSONで返してください。
+複数問あればそれぞれ抜き出してください。手書きや汚れ・歪みも考慮して読み取ってください。
+出力形式:
+{
+  "problems": [
+    {"question": "問題文", "answer": "解答(あれば)", "explanation": "解説(なければ簡潔に補足)"}
+  ]
+}
+解答が画像に無い場合は、あなたが${subject}の専門家として正しい解答と解説を補ってください。
+必ず純粋なJSONだけを返してください(マークダウンや前置きなし)。`}
+    ];
+    images.forEach(img => {
+      content.push({
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: img.mime,
+          data: img.dataUrl.split(',')[1],
+        },
+      });
+    });
+
+    try {
+      const res = await fetch(`${API_BASE}/api/ai/call`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({
+          student_id: studentId,
+          model: 'claude-sonnet-4-6',
+          max_tokens: 4000,
+          system: 'あなたは日本の中高生向け教材を読み取り、構造化データに変換するアシスタントです。必ず純粋なJSONだけ返答します。',
+          messages: [{ role: 'user', content }],
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`API error: ${res.status} ${err.slice(0, 200)}`);
+      }
+      const data = await res.json();
+      const text = (data.content || []).map(c => c.text).join('').trim();
+      // JSON取り出し (フェンス除去)
+      const jsonStr = text.replace(/^```(?:json)?\s*|\s*```$/g, '');
+      let parsed;
+      try { parsed = JSON.parse(jsonStr); }
+      catch (e) {
+        const m = jsonStr.match(/\{[\s\S]*\}/);
+        if (m) parsed = JSON.parse(m[0]);
+        else throw new Error('JSON解析失敗: ' + text.slice(0, 200));
+      }
+      extractedProblems = parsed.problems || [];
+
+      if (extractedProblems.length === 0) {
+        resultEl.innerHTML = `<div style="color:#fca5a5;">問題を抽出できませんでした。画像が鮮明か確認してください。</div>`;
+      } else {
+        resultEl.innerHTML = extractedProblems.map((p, i) => `
+          <div class="ms-problem">
+            <div style="font-weight:700;color:#a78bfa;margin-bottom:0.3rem;">問題 ${i+1}</div>
+            <div style="color:#e4e4e7;white-space:pre-wrap;margin-bottom:0.4rem;">${escapeHtml(p.question || '')}</div>
+            ${p.answer ? `<div style="font-size:0.85rem;color:#a7f3d0;background:rgba(16,185,129,0.08);padding:0.4rem 0.6rem;border-radius:6px;margin-top:0.3rem;"><strong>解答:</strong> ${escapeHtml(p.answer)}</div>` : ''}
+            ${p.explanation ? `<div style="font-size:0.82rem;color:#cbd5e1;background:rgba(99,102,241,0.08);padding:0.4rem 0.6rem;border-radius:6px;margin-top:0.3rem;"><strong>解説:</strong> ${escapeHtml(p.explanation)}</div>` : ''}
+          </div>`).join('');
+      }
+      resultCard.style.display = '';
+      resultCard.scrollIntoView({behavior:'smooth', block:'start'});
+    } catch (e) {
+      resultEl.innerHTML = `<div style="color:#fca5a5;background:rgba(239,68,68,0.1);padding:0.8rem;border-radius:8px;">⚠️ ${e.message}<br><small>※ ローカル開発時は backend (http://localhost:8000) と ANTHROPIC_API_KEY 設定が必要です。</small></div>`;
+      resultCard.style.display = '';
+    } finally {
+      scanBtn.disabled = false;
+      scanBtn.textContent = '🔍 AI で問題を読み取る';
+    }
+  });
+
+  importBtn.addEventListener('click', () => {
+    if (extractedProblems.length === 0) { alert('登録対象なし'); return; }
+    if (typeof LB === 'undefined') { alert('Learning Brain が読み込まれていません'); return; }
+    const subject = document.getElementById('msSubject').value;
+    const topic = document.getElementById('msTopic').value;
+    const student = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null');
+    const studentId = student ? student.id : 'guest';
+    const added = LB.importProblemsAsCards(studentId, subject, topic, extractedProblems, '標準');
+    alert(`✅ ${added}問を復習カードに登録しました。マイページでご確認ください。`);
+  });
+
+  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+})();
+</script>
+</body>
+</html>

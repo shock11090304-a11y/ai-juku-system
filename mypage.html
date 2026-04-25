@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="pragma" content="no-cache">
+  <meta http-equiv="expires" content="0">
   <title>マイページ | AI学習コーチ塾</title>
+  <script src="cache-purge.js?v=20260425-1"></script>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="mypage.css?v=20260425-trial-fix">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -239,6 +243,29 @@
         間違えた問題を 1日 → 3日 → 7日 → 21日 → 60日 の科学的タイミングで自動再出題します。
       </p>
       <div id="lbTodayReview"></div>
+      <div id="lbStudyTimeWidget" style="margin-top:1rem;"></div>
+      <div id="examPrepWidget" style="margin-top:1rem;"></div>
+      <div id="referralWidget" style="margin-top:1rem;"></div>
+
+      <!-- 機能ナビ -->
+      <div style="margin-top:1.5rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.5rem;">
+        <a href="exam-prep.html" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:10px;padding:0.8rem;text-decoration:none;text-align:center;">
+          <div style="font-size:1.5rem;">📅</div>
+          <div style="color:#c7d2fe;font-weight:700;font-size:0.88rem;">定期テスト対策</div>
+        </a>
+        <a href="material-scan.html" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:10px;padding:0.8rem;text-decoration:none;text-align:center;">
+          <div style="font-size:1.5rem;">📷</div>
+          <div style="color:#c7d2fe;font-weight:700;font-size:0.88rem;">教材スキャン</div>
+        </a>
+        <a href="safety-school.html" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:10px;padding:0.8rem;text-decoration:none;text-align:center;">
+          <div style="font-size:1.5rem;">🛡️</div>
+          <div style="color:#c7d2fe;font-weight:700;font-size:0.88rem;">滑り止め校提案</div>
+        </a>
+        <a href="success-stories.html" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:10px;padding:0.8rem;text-decoration:none;text-align:center;">
+          <div style="font-size:1.5rem;">🏆</div>
+          <div style="color:#c7d2fe;font-weight:700;font-size:0.88rem;">合格体験記</div>
+        </a>
+      </div>
     </section>
 
     <!-- Motivation Quote -->
@@ -276,20 +303,25 @@
     <p>© 2026 AI学習コーチ塾 | Mypage v1.0</p>
   </footer>
 
-  <script src="learning-brain.js?v=20260425-1"></script>
+  <script src="learning-brain.js?v=20260425-2"></script>
+  <script src="exam-prep.js?v=20260425-1"></script>
+  <script src="referral-program.js?v=20260425-1"></script>
   <script src="mypage.js?v=20260425-trial-fix"></script>
   <script>
-    // Learning Brain: 今日の復習を初期描画
+    // ウィジェット初期描画
     (function() {
-      function initReview() {
-        if (typeof LB === 'undefined') { setTimeout(initReview, 200); return; }
+      function initWidgets() {
+        if (typeof LB === 'undefined' || typeof ExamPrep === 'undefined' || typeof ReferralProgram === 'undefined') { setTimeout(initWidgets, 200); return; }
         const student = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null');
         const studentId = student ? student.id : 'guest';
         LB.renderTodayReview('lbTodayReview', studentId);
+        LB.renderStudyTimeWidget('lbStudyTimeWidget', studentId);
+        ExamPrep.renderUpcomingWidget('examPrepWidget');
+        ReferralProgram.renderReferralWidget('referralWidget', student);
       }
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initReview);
-      } else { initReview(); }
+        document.addEventListener('DOMContentLoaded', initWidgets);
+      } else { initWidgets(); }
     })();
   </script>
   <script>

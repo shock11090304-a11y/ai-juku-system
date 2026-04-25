@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script src="cache-purge.js?v=20260425-1"></script>
+<title>合格体験記 | AI学習コーチ塾</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  .ss-container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+  .ss-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 1.2rem; margin-bottom: 1rem; }
+  .ss-form input, .ss-form select, .ss-form textarea { width: 100%; padding: 0.6rem 0.8rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #e4e4e7; font-size: 0.95rem; margin-bottom: 0.6rem; box-sizing: border-box; }
+  .ss-form textarea { min-height: 90px; resize: vertical; font-family: inherit; }
+  .ss-form label { display: block; font-size: 0.82rem; color: #a1a1aa; margin-bottom: 0.3rem; font-weight: 700; }
+  .ss-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.7rem; }
+  .ss-btn { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; padding: 0.7rem 1.4rem; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 0.95rem; }
+  .ss-btn-toggle { background: rgba(255,255,255,0.08); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.15); padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
+  .ss-filter { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+  .ss-filter select, .ss-filter input { padding: 0.4rem 0.6rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #e4e4e7; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="header-inner">
+    <a href="index.html" class="logo">🎓 AI学習コーチ塾</a>
+    <nav><a href="mypage.html">マイページ</a></nav>
+  </div>
+</header>
+
+<main class="ss-container">
+  <h1 style="font-size:1.6rem;color:#e4e4e7;">🏆 合格体験記</h1>
+  <p style="color:#a1a1aa;font-size:0.92rem;">AI学習コーチ塾を活用した合格者の体験談です。志望校、偏差値変動、勉強方法、後輩へのアドバイスをご覧ください。</p>
+
+  <div style="text-align:right;margin-bottom:1rem;">
+    <button class="ss-btn-toggle" id="ssToggleForm">📝 自分の体験談を投稿</button>
+  </div>
+
+  <!-- 投稿フォーム -->
+  <section class="ss-card ss-form" id="ssFormCard" style="display:none;">
+    <h2 style="font-size:1.1rem;color:#a78bfa;margin-top:0;">📝 体験談を投稿</h2>
+    <div class="ss-row">
+      <div><label>ハンドル名</label><input id="fName" placeholder="例: 山田 (匿名可)" required /></div>
+      <div><label>学年</label><select id="fGrade"><option>現役</option><option>浪人</option><option>多浪</option></select></div>
+      <div><label>合格年</label><input id="fYear" type="number" value="2026" /></div>
+    </div>
+    <label>合格校</label>
+    <input id="fSchool" placeholder="例: 早稲田大学 政治経済学部" required />
+    <label>出身校 (任意)</label>
+    <input id="fSchoolBefore" placeholder="例: 都内私立高校" />
+    <div class="ss-row">
+      <div><label>受験開始時の偏差値</label><input id="fDevStart" type="number" placeholder="例: 56" /></div>
+      <div><label>合格時の偏差値</label><input id="fDevEnd" type="number" placeholder="例: 68" /></div>
+      <div><label>総学習時間 (h)</label><input id="fHours" type="number" placeholder="例: 1200" /></div>
+    </div>
+    <label>主要科目 (カンマ区切り)</label>
+    <input id="fSubjects" placeholder="例: 英語, 日本史, 現代文" />
+    <label>合格までのストーリー</label>
+    <textarea id="fStory" placeholder="どのように勉強し、どのように合格したか..." required></textarea>
+    <label>後輩へのアドバイス (任意)</label>
+    <textarea id="fAdvice" placeholder="後輩に伝えたい一番大事なこと"></textarea>
+    <button class="ss-btn" id="fSubmit">📤 投稿する</button>
+  </section>
+
+  <!-- フィルター -->
+  <div class="ss-filter">
+    <span style="font-size:0.85rem;color:#a1a1aa;">フィルター:</span>
+    <select id="fltSchool">
+      <option value="">志望校 (すべて)</option>
+      <option value="東京">東京大学</option>
+      <option value="京都">京都大学</option>
+      <option value="早稲田">早稲田大学</option>
+      <option value="慶應">慶應義塾大学</option>
+      <option value="明治">明治大学</option>
+      <option value="同志社">同志社大学</option>
+      <option value="東北">東北大学</option>
+    </select>
+    <select id="fltGrade">
+      <option value="all">学年 (すべて)</option>
+      <option value="現役">現役</option>
+      <option value="浪人">浪人</option>
+    </select>
+    <select id="fltSubject">
+      <option value="">科目 (すべて)</option>
+      <option value="英語">英語</option>
+      <option value="数学">数学</option>
+      <option value="国語">国語</option>
+      <option value="物理">物理</option>
+      <option value="化学">化学</option>
+      <option value="日本史">日本史</option>
+      <option value="世界史">世界史</option>
+    </select>
+  </div>
+
+  <div id="ssList"></div>
+</main>
+
+<script src="success-stories.js?v=20260425-1"></script>
+<script>
+(function() {
+  function render() {
+    const filter = {
+      school: document.getElementById('fltSchool').value,
+      grade: document.getElementById('fltGrade').value,
+      subject: document.getElementById('fltSubject').value,
+    };
+    SuccessStories.renderStoriesWidget('ssList', { filter });
+  }
+
+  document.getElementById('ssToggleForm').addEventListener('click', () => {
+    const c = document.getElementById('ssFormCard');
+    c.style.display = c.style.display === 'none' ? '' : 'none';
+    if (c.style.display === '') c.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+
+  document.getElementById('fSubmit').addEventListener('click', () => {
+    const subjects = document.getElementById('fSubjects').value
+      .split(',').map(s => s.trim()).filter(Boolean);
+    SuccessStories.addStory({
+      name: document.getElementById('fName').value,
+      grade: document.getElementById('fGrade').value,
+      year: parseInt(document.getElementById('fYear').value) || new Date().getFullYear(),
+      school: document.getElementById('fSchool').value,
+      schoolBefore: document.getElementById('fSchoolBefore').value,
+      deviationStart: document.getElementById('fDevStart').value,
+      deviationEnd: document.getElementById('fDevEnd').value,
+      studyHours: document.getElementById('fHours').value,
+      mainSubjects: subjects,
+      story: document.getElementById('fStory').value,
+      advice: document.getElementById('fAdvice').value,
+    });
+    document.getElementById('ssFormCard').style.display = 'none';
+    document.querySelectorAll('#ssFormCard input, #ssFormCard textarea').forEach(i => i.value = '');
+    document.getElementById('fYear').value = '2026';
+    alert('✅ 投稿しました！');
+    render();
+  });
+
+  ['fltSchool','fltGrade','fltSubject'].forEach(id => {
+    document.getElementById(id).addEventListener('change', render);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
