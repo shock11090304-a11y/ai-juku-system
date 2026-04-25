@@ -560,7 +560,7 @@ def slide_7():
     badge_y = 160
     draw.rounded_rectangle((badge_x, badge_y, badge_x + badge_w, badge_y + badge_h), radius=30, fill=BRAND_RED)
     f_badge = load_font(FONT_BLACK, 26)
-    draw_centered(draw, "4/30まで 先着100名 限定 残りわずか", f_badge, badge_y + 16, TEXT)
+    draw_centered(draw, "先着100名 限定 残りわずか", f_badge, badge_y + 16, TEXT)
 
     # メインコピー
     f_h = load_font(FONT_BLACK, 100)

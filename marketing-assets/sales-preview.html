@@ -5,37 +5,37 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>📱 Instagram 販売投稿セット | AI学習コーチ塾</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: linear-gradient(135deg, #0a0e1e, #1a0e2e); color: #f5f5fa; font-family: "Helvetica Neue", "ヒラギノ角ゴシック", sans-serif; padding: 2rem; min-height: 100vh; }
-  h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, #8b5cf6, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .lead { color: #aab; margin-bottom: 2rem; font-size: 1rem; }
-  .section { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; }
-  .section h2 { font-size: 1.3rem; margin-bottom: 1rem; color: #fbbf24; }
-  .section h3 { font-size: 1.1rem; margin: 1rem 0 0.5rem; color: #c7d2fe; }
-  .grid-feed { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
-  .grid-stories { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
-  .card { background: rgba(0,0,0,0.3); border-radius: 12px; padding: 0.75rem; }
-  .card img { width: 100%; height: auto; border-radius: 8px; display: block; }
-  .card .meta { padding: 0.5rem 0; font-size: 0.85rem; }
-  .card .meta strong { color: #a78bfa; }
-  .card .meta span { color: #aab; display: block; font-size: 0.75rem; margin-top: 0.2rem; }
-  .download-btn { display: inline-block; background: linear-gradient(135deg, #8b5cf6, #ec4899); color: white; padding: 0.4rem 0.8rem; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 700; margin-top: 0.5rem; }
-  .copy-block { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 1rem; font-family: "Menlo", monospace; font-size: 0.82rem; line-height: 1.7; white-space: pre-wrap; max-height: 600px; overflow-y: auto; }
-  .copy-btn { background: rgba(99,102,241,0.2); color: #c7d2fe; border: 1px solid rgba(99,102,241,0.4); padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.5rem; }
-  .copy-btn:hover { background: rgba(99,102,241,0.35); }
-  .badge { display: inline-block; background: rgba(251,191,36,0.2); color: #fbbf24; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; font-weight: 700; margin-right: 0.3rem; }
-  .badge.green { background: rgba(52,211,153,0.2); color: #34d399; }
-  .badge.pink { background: rgba(236,72,153,0.2); color: #ec4899; }
-  .reel-script { background: rgba(99,102,241,0.05); border-left: 3px solid #8b5cf6; padding: 1rem; margin: 0.7rem 0; border-radius: 4px; }
-  .reel-time { font-weight: 800; color: #fbbf24; margin-bottom: 0.3rem; }
-  .review-summary { background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.3); border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; }
-  .review-summary strong { color: #34d399; }
-  .iter-bar { display: flex; gap: 0.3rem; margin-bottom: 1rem; }
-  .iter-bar .step { flex: 1; padding: 0.4rem; background: rgba(255,255,255,0.05); border-radius: 4px; text-align: center; font-size: 0.75rem; color: #aab; }
-  .iter-bar .step.done { background: rgba(52,211,153,0.15); color: #34d399; }
-  .iter-bar .step.final { background: linear-gradient(135deg, #8b5cf6, #ec4899); color: white; font-weight: 700; }
-  details summary { cursor: pointer; padding: 0.5rem 0; color: #a78bfa; font-weight: 700; }
-  details[open] summary { margin-bottom: 0.5rem; }
+ * { box-sizing: border-box; margin: 0; padding: 0; }
+ body { background: linear-gradient(135deg, #0a0e1e, #1a0e2e); color: #f5f5fa; font-family: "Helvetica Neue", "ヒラギノ角ゴシック", sans-serif; padding: 2rem; min-height: 100vh; }
+ h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, #8b5cf6, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+ .lead { color: #aab; margin-bottom: 2rem; font-size: 1rem; }
+ .section { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; }
+ .section h2 { font-size: 1.3rem; margin-bottom: 1rem; color: #fbbf24; }
+ .section h3 { font-size: 1.1rem; margin: 1rem 0 0.5rem; color: #c7d2fe; }
+ .grid-feed { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+ .grid-stories { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+ .card { background: rgba(0,0,0,0.3); border-radius: 12px; padding: 0.75rem; }
+ .card img { width: 100%; height: auto; border-radius: 8px; display: block; }
+ .card .meta { padding: 0.5rem 0; font-size: 0.85rem; }
+ .card .meta strong { color: #a78bfa; }
+ .card .meta span { color: #aab; display: block; font-size: 0.75rem; margin-top: 0.2rem; }
+ .download-btn { display: inline-block; background: linear-gradient(135deg, #8b5cf6, #ec4899); color: white; padding: 0.4rem 0.8rem; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 700; margin-top: 0.5rem; }
+ .copy-block { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 1rem; font-family: "Menlo", monospace; font-size: 0.82rem; line-height: 1.7; white-space: pre-wrap; max-height: 600px; overflow-y: auto; }
+ .copy-btn { background: rgba(99,102,241,0.2); color: #c7d2fe; border: 1px solid rgba(99,102,241,0.4); padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.5rem; }
+ .copy-btn:hover { background: rgba(99,102,241,0.35); }
+ .badge { display: inline-block; background: rgba(251,191,36,0.2); color: #fbbf24; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; font-weight: 700; margin-right: 0.3rem; }
+ .badge.green { background: rgba(52,211,153,0.2); color: #34d399; }
+ .badge.pink { background: rgba(236,72,153,0.2); color: #ec4899; }
+ .reel-script { background: rgba(99,102,241,0.05); border-left: 3px solid #8b5cf6; padding: 1rem; margin: 0.7rem 0; border-radius: 4px; }
+ .reel-time { font-weight: 800; color: #fbbf24; margin-bottom: 0.3rem; }
+ .review-summary { background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.3); border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; }
+ .review-summary strong { color: #34d399; }
+ .iter-bar { display: flex; gap: 0.3rem; margin-bottom: 1rem; }
+ .iter-bar .step { flex: 1; padding: 0.4rem; background: rgba(255,255,255,0.05); border-radius: 4px; text-align: center; font-size: 0.75rem; color: #aab; }
+ .iter-bar .step.done { background: rgba(52,211,153,0.15); color: #34d399; }
+ .iter-bar .step.final { background: linear-gradient(135deg, #8b5cf6, #ec4899); color: white; font-weight: 700; }
+ details summary { cursor: pointer; padding: 0.5rem 0; color: #a78bfa; font-weight: 700; }
+ details[open] summary { margin-bottom: 0.5rem; }
 </style>
 </head>
 <body>
@@ -43,63 +43,63 @@
 <p class="lead">デザイナー3名 + 広告プロ3名のチームによる3回の反復レビュー (v1 → v2 → v3 → final) を経て完成。コピペ + 画像保存ですぐ投稿できます。</p>
 
 <div class="iter-bar">
-  <div class="step done">v1 生成</div>
-  <div class="step done">v1 レビュー (致命的問題発見)</div>
-  <div class="step done">v2 生成</div>
-  <div class="step done">v2 レビュー (微調整必要)</div>
-  <div class="step done">v3 生成</div>
-  <div class="step done">v3 レビュー (4/6 OK・2/6 微修正)</div>
-  <div class="step final">FINAL 完成 ✓</div>
+ <div class="step done">v1 生成</div>
+ <div class="step done">v1 レビュー (致命的問題発見)</div>
+ <div class="step done">v2 生成</div>
+ <div class="step done">v2 レビュー (微調整必要)</div>
+ <div class="step done">v3 生成</div>
+ <div class="step done">v3 レビュー (4/6 OK・2/6 微修正)</div>
+ <div class="step final">FINAL 完成 ✓</div>
 </div>
 
 <div class="review-summary">
-  <strong>✅ チーム最終承認状況</strong><br>
-  デザイナーA: 公開OK・販売開始可 / デザイナーB: 微修正→対応済 / デザイナーC: 微修正→対応済<br>
-  広告プロA: 販売GO / 広告プロB: 販売OK / 広告プロC: バズる素材として投稿OK<br>
-  <span style="color:#aab; font-size:0.85rem;">致命的問題 (絵文字豆腐・X プレースホルダー・見切れ・色統一・景表法・自動切替明示・リスクリバーサル) はすべて解消</span>
+ <strong>✅ チーム最終承認状況</strong><br>
+ デザイナーA: 公開OK・販売開始可 / デザイナーB: 微修正→対応済 / デザイナーC: 微修正→対応済<br>
+ 広告プロA: 販売GO / 広告プロB: 販売OK / 広告プロC: バズる素材として投稿OK<br>
+ <span style="color:#aab; font-size:0.85rem;">致命的問題 (絵文字豆腐・X プレースホルダー・見切れ・色統一・景表法・自動切替明示・リスクリバーサル) はすべて解消</span>
 </div>
 
 <!-- ========== 1. フィード (カルーセル) ========== -->
 <div class="section">
-  <h2>📷 ① フィード投稿: カルーセル 7枚</h2>
-  <p style="color:#aab; font-size:0.9rem; margin-bottom:1rem;">投稿時に下記7枚をすべて選択してアップ。<span class="badge">推奨投稿時刻 21:00-23:00</span> <span class="badge green">所要時間 5分</span></p>
-  <div class="grid-feed">
-    <div class="card">
-      <img src="sales-final-slide-1.png" alt="Slide 1">
-      <div class="meta"><strong>Slide 1: フック</strong><span>1080×1350 (4:5縦長・指止め最適) / ストーリー型訴求</span><a href="sales-final-slide-1.png" download class="download-btn">⬇️ ダウンロード</a></div>
-    </div>
-    <div class="card">
-      <img src="sales-final-slide-2.png" alt="Slide 2">
-      <div class="meta"><strong>Slide 2: 価格比較</strong><span>1080×1080 / 同価格帯機能比較 + 家族プラン¥19,933/人</span><a href="sales-final-slide-2.png" download class="download-btn">⬇️ ダウンロード</a></div>
-    </div>
-    <div class="card">
-      <img src="sales-final-slide-3.png" alt="Slide 3">
-      <div class="meta"><strong>Slide 3: 24h AI</strong><span>1080×1080 / 深夜の質問を放置しない</span><a href="sales-final-slide-3.png" download class="download-btn">⬇️ ダウンロード</a></div>
-    </div>
-    <div class="card">
-      <img src="sales-final-slide-4.png" alt="Slide 4">
-      <div class="meta"><strong>Slide 4: 6機能</strong><span>1080×1080 / Learning Brain ハイライト</span><a href="sales-final-slide-4.png" download class="download-btn">⬇️ ダウンロード</a></div>
-    </div>
-    <div class="card">
-      <img src="sales-final-slide-5.png" alt="Slide 5">
-      <div class="meta"><strong>Slide 5: 体験談</strong><span>1080×1080 / 佐藤さん (浪人→東北大合格) 主役</span><a href="sales-final-slide-5.png" download class="download-btn">⬇️ ダウンロード</a></div>
-    </div>
-    <div class="card">
-      <img src="sales-final-slide-6.png" alt="Slide 6">
-      <div class="meta"><strong>Slide 6: 価格透明性</strong><span>1080×1080 / 4行価格表 + 入塾金明示 + 家族プラン</span><a href="sales-final-slide-6.png" download class="download-btn">⬇️ ダウンロード</a></div>
-    </div>
-    <div class="card">
-      <img src="sales-final-slide-7.png" alt="Slide 7">
-      <div class="meta"><strong>Slide 7: CTA</strong><span>1080×1080 / 緊急性・リスクリバーサル・リンク誘導</span><a href="sales-final-slide-7.png" download class="download-btn">⬇️ ダウンロード</a></div>
-    </div>
-  </div>
+ <h2>📷 ① フィード投稿: カルーセル 7枚</h2>
+ <p style="color:#aab; font-size:0.9rem; margin-bottom:1rem;">投稿時に下記7枚をすべて選択してアップ。<span class="badge">推奨投稿時刻 21:00-23:00</span> <span class="badge green">所要時間 5分</span></p>
+ <div class="grid-feed">
+ <div class="card">
+ <img src="sales-final-slide-1.png" alt="Slide 1">
+ <div class="meta"><strong>Slide 1: フック</strong><span>1080×1350 (4:5縦長・指止め最適) / ストーリー型訴求</span><a href="sales-final-slide-1.png" download class="download-btn">⬇️ ダウンロード</a></div>
+ </div>
+ <div class="card">
+ <img src="sales-final-slide-2.png" alt="Slide 2">
+ <div class="meta"><strong>Slide 2: 価格比較</strong><span>1080×1080 / 同価格帯機能比較 + 家族プラン¥19,933/人</span><a href="sales-final-slide-2.png" download class="download-btn">⬇️ ダウンロード</a></div>
+ </div>
+ <div class="card">
+ <img src="sales-final-slide-3.png" alt="Slide 3">
+ <div class="meta"><strong>Slide 3: 24h AI</strong><span>1080×1080 / 深夜の質問を放置しない</span><a href="sales-final-slide-3.png" download class="download-btn">⬇️ ダウンロード</a></div>
+ </div>
+ <div class="card">
+ <img src="sales-final-slide-4.png" alt="Slide 4">
+ <div class="meta"><strong>Slide 4: 6機能</strong><span>1080×1080 / Learning Brain ハイライト</span><a href="sales-final-slide-4.png" download class="download-btn">⬇️ ダウンロード</a></div>
+ </div>
+ <div class="card">
+ <img src="sales-final-slide-5.png" alt="Slide 5">
+ <div class="meta"><strong>Slide 5: 体験談</strong><span>1080×1080 / 佐藤さん (浪人→東北大合格) 主役</span><a href="sales-final-slide-5.png" download class="download-btn">⬇️ ダウンロード</a></div>
+ </div>
+ <div class="card">
+ <img src="sales-final-slide-6.png" alt="Slide 6">
+ <div class="meta"><strong>Slide 6: 価格透明性</strong><span>1080×1080 / 4行価格表 + 入塾金明示 + 家族プラン</span><a href="sales-final-slide-6.png" download class="download-btn">⬇️ ダウンロード</a></div>
+ </div>
+ <div class="card">
+ <img src="sales-final-slide-7.png" alt="Slide 7">
+ <div class="meta"><strong>Slide 7: CTA</strong><span>1080×1080 / 緊急性・リスクリバーサル・リンク誘導</span><a href="sales-final-slide-7.png" download class="download-btn">⬇️ ダウンロード</a></div>
+ </div>
+ </div>
 
-  <h3>📝 キャプション (3パターン)</h3>
+ <h3>📝 キャプション (3パターン)</h3>
 
-  <details open>
-    <summary>A案: ストーリー型 (信頼感・保護者兼用) <span class="badge">★おすすめ</span></summary>
-    <button class="copy-btn" onclick="copyText('caption-a')">📋 全文コピー</button>
-    <pre id="caption-a" class="copy-block">【4月限定・先着100名】 月3万の塾代、もう要りません
+ <details open>
+ <summary>A案: ストーリー型 (信頼感・保護者兼用) <span class="badge">★おすすめ</span></summary>
+ <button class="copy-btn" onclick="copyText('caption-a')">📋 全文コピー</button>
+ <pre id="caption-a" class="copy-block">【先着100名 限定】 月3万の塾代、もう要りません
 
 「現役で東北大に2点足りなかった。
  でも翌年、現役組より上の偏差値で合格できた。」
@@ -130,7 +130,7 @@
 
 ━━━━━━━━━━━━━
 👇 プロフィールのリンクから30秒で体験開始
-4/30まで・先着100名 残りわずか
+先着100名 残りわずか
 ━━━━━━━━━━━━━
 
 ※個人の感想です。効果には個人差があります。
@@ -140,12 +140,12 @@
 #共通テスト #受験生応援 #宅浪
 #AI学習 #個別最適化 #保護者の悩み #塾選び
 #東北大 #早稲田 #慶應 #国立大学</pre>
-  </details>
+ </details>
 
-  <details>
-    <summary>B案: フック直球型 (若者向け・短文)</summary>
-    <button class="copy-btn" onclick="copyText('caption-b')">📋 全文コピー</button>
-    <pre id="caption-b" class="copy-block">🚨 現役で2点足りなかった浪人生が、翌年現役組を超えた話
+ <details>
+ <summary>B案: フック直球型 (若者向け・短文)</summary>
+ <button class="copy-btn" onclick="copyText('caption-b')">📋 全文コピー</button>
+ <pre id="caption-b" class="copy-block">🚨 現役で2点足りなかった浪人生が、翌年現役組を超えた話
 
 → AIが24時間質問対応
 → 9機能で完全個別最適化
@@ -156,7 +156,7 @@
 「学習時間帯最適化」で朝or夜どっちが伸びるか分かる
 「定期テスト連携」で学校範囲から自動で問題生成
 
-\\\ 4/30まで・先着100名 残りわずか ///
+\\\ 先着100名 残りわずか ///
 ワンタップ即解約・全額返金OK・違約金ゼロ
 
 👇 プロフィールリンクから30秒で開始
@@ -166,12 +166,12 @@
 #大学受験 #高3勉強垢 #勉強垢さんと繋がりたい
 #studygram #偏差値アップ #宅浪 #浪人生
 #AI学習 #効率的勉強法</pre>
-  </details>
+ </details>
 
-  <details>
-    <summary>C案: 保護者向け (親ターゲット)</summary>
-    <button class="copy-btn" onclick="copyText('caption-c')">📋 全文コピー</button>
-    <pre id="caption-c" class="copy-block">【保護者の方へ】月3万円の塾代、本当に効果ありますか?
+ <details>
+ <summary>C案: 保護者向け (親ターゲット)</summary>
+ <button class="copy-btn" onclick="copyText('caption-c')">📋 全文コピー</button>
+ <pre id="caption-c" class="copy-block">【保護者の方へ】月3万円の塾代、本当に効果ありますか?
 
 ✓ 週2回しか通えない
 ✓ 質問は授業時間のみ
@@ -201,7 +201,7 @@
 
 ━━━━━━━━━━━━━
 👇 プロフィールのリンクから30秒で
-4/30まで・先着100名 残りわずか
+先着100名 残りわずか
 ━━━━━━━━━━━━━
 
 ※個人の感想です。効果には個人差があります。
@@ -209,79 +209,79 @@
 #塾選び #保護者の悩み #中学受験 #高校受験 #大学受験
 #子育てママ #子育て #教育費 #子供の勉強
 #AI学習 #個別指導 #オンライン学習</pre>
-  </details>
+ </details>
 </div>
 
 <!-- ========== 2. ストーリー ========== -->
 <div class="section">
-  <h2>📲 ② ストーリー投稿: 1日3本ローテーション</h2>
-  <p style="color:#aab; font-size:0.9rem; margin-bottom:1rem;">それぞれリンクステッカー (URL: trillion-ai-juku.com) を貼って投稿。1日3本配信でリーチ最大化。</p>
-  <div class="grid-stories">
-    <div class="card">
-      <img src="story-1-morning.png" alt="Story 1">
-      <div class="meta"><strong>朝7:00 配信</strong><span>受験生向け・通学電車訴求</span><a href="story-1-morning.png" download class="download-btn">⬇️ ダウンロード</a></div>
-    </div>
-    <div class="card">
-      <img src="story-2-parent.png" alt="Story 2">
-      <div class="meta"><strong>昼12:00 配信</strong><span>保護者向け・LINE風DM</span><a href="story-2-parent.png" download class="download-btn">⬇️ ダウンロード</a></div>
-    </div>
-    <div class="card">
-      <img src="story-3-referral.png" alt="Story 3">
-      <div class="meta"><strong>夜21:00 配信</strong><span>紹介プログラム・シェア促進</span><a href="story-3-referral.png" download class="download-btn">⬇️ ダウンロード</a></div>
-    </div>
-  </div>
+ <h2>📲 ② ストーリー投稿: 1日3本ローテーション</h2>
+ <p style="color:#aab; font-size:0.9rem; margin-bottom:1rem;">それぞれリンクステッカー (URL: trillion-ai-juku.com) を貼って投稿。1日3本配信でリーチ最大化。</p>
+ <div class="grid-stories">
+ <div class="card">
+ <img src="story-1-morning.png" alt="Story 1">
+ <div class="meta"><strong>朝7:00 配信</strong><span>受験生向け・通学電車訴求</span><a href="story-1-morning.png" download class="download-btn">⬇️ ダウンロード</a></div>
+ </div>
+ <div class="card">
+ <img src="story-2-parent.png" alt="Story 2">
+ <div class="meta"><strong>昼12:00 配信</strong><span>保護者向け・LINE風DM</span><a href="story-2-parent.png" download class="download-btn">⬇️ ダウンロード</a></div>
+ </div>
+ <div class="card">
+ <img src="story-3-referral.png" alt="Story 3">
+ <div class="meta"><strong>夜21:00 配信</strong><span>紹介プログラム・シェア促進</span><a href="story-3-referral.png" download class="download-btn">⬇️ ダウンロード</a></div>
+ </div>
+ </div>
 </div>
 
 <!-- ========== 3. リール ========== -->
 <div class="section">
-  <h2>🎬 ③ リール (Reels) 60秒 構成台本</h2>
-  <p style="color:#aab; font-size:0.9rem; margin-bottom:1rem;">縦型 9:16 / iPhoneで撮影 / CapCut or VLLO で編集 / トレンドBGM必須<br><span class="badge pink">推奨配信 22:00 / 週1ペース</span></p>
+ <h2>🎬 ③ リール (Reels) 60秒 構成台本</h2>
+ <p style="color:#aab; font-size:0.9rem; margin-bottom:1rem;">縦型 9:16 / iPhoneで撮影 / CapCut or VLLO で編集 / トレンドBGM必須<br><span class="badge pink">推奨配信 22:00 / 週1ペース</span></p>
 
-  <div class="reel-script">
-    <div class="reel-time">⏱ 0:00 - 0:03 (3秒) 【HOOK】 ★最重要</div>
-    映像 (0:00-0:01 動きで指止め): 真っ黒画面 → 塾長の顔がアップでドンと表示 (ジャンプカット)<br>
-    テロップ動的アニメ (0:00-0:01): 「2点。」が画面中央に大きく爆発的にズームイン (赤色)<br>
-    テロップ (0:01-0:03): 「2点」が画面上部にスライドアップ → 「足りなかった浪人生が、翌年…」が下に追加表示<br>
-    セリフ: 「現役で第一志望に2点足りなかった浪人生が、翌年、現役組より上の偏差値で合格しました」<br>
-    <em style="color:#fbbf24;">※2026年4月IGアルゴは Reels 冒頭に「動き + 顔のクローズアップ + 大きなテロップ動的アニメ」を強く優遇</em>
-  </div>
-  <div class="reel-script">
-    <div class="reel-time">⏱ 0:03 - 0:13 (10秒) 【痛み・問題提起】</div>
-    映像: 塾の看板 / 高い月謝の請求書 / 夜中の机に向かう受験生<br>
-    テロップ (順次):
-    「月3万円の塾」 / 「× 週2回しか通えない」 / 「× 深夜の『わからない』は朝まで放置」 / 「× 個別最適化なんて存在しない」<br>
-    セリフ: 「月3万円払って、週2回。深夜の質問は届かない。個別最適化なんて言葉だけ。これが現実」
-  </div>
-  <div class="reel-script">
-    <div class="reel-time">⏱ 0:13 - 0:33 (20秒) 【解決策】</div>
-    映像: スマホ画面 (AI学習コーチ塾UI) のスクリーン録画<br>
-    テロップ: 「AIが24時間個別指導」「9つの機能で完全最適化」<br>
-    セリフ: 「彼が使ったのはAI学習コーチ塾。スタンダード¥24,980/月で、24時間AIチューター、エビングハウス自動復習、躓きセンサーが弱点を即発見、定期テスト範囲から自動で問題生成、これら9つのAI機能が個別最適化してくれる」
-  </div>
-  <div class="reel-script">
-    <div class="reel-time">⏱ 0:33 - 0:50 (17秒) 【実演 - スマホ画面録画】</div>
-    映像: 実際のアプリ画面録画<br>
-    ・チャット画面で「三角関数のsin/cos合成、わからない」と入力<br>
-    ・AIが3秒で図解と例題を生成<br>
-    ・マイページの「今日の復習」「躓きセンサー警告」を見せる<br>
-    テロップ: 「夜中の質問も3秒で図解」「忘却曲線で復習タイミング自動最適化」
-  </div>
-  <div class="reel-script">
-    <div class="reel-time">⏱ 0:50 - 0:60 (10秒) 【CTA】</div>
-    映像: 塾長カメラ目線 + プロフィールリンクをアニメで指し示す<br>
-    テロップ (大): 「今だけ 3日間 ¥1,980」「4/30まで先着100名」<br>
-    セリフ: 「3日間 ¥1,980 で全機能を試せます。4/30まで先着100名限定。プロフィールのリンクから30秒で始められます」
-  </div>
+ <div class="reel-script">
+ <div class="reel-time">⏱ 0:00 - 0:03 (3秒) 【HOOK】 ★最重要</div>
+ 映像 (0:00-0:01 動きで指止め): 真っ黒画面 → 塾長の顔がアップでドンと表示 (ジャンプカット)<br>
+ テロップ動的アニメ (0:00-0:01): 「2点。」が画面中央に大きく爆発的にズームイン (赤色)<br>
+ テロップ (0:01-0:03): 「2点」が画面上部にスライドアップ → 「足りなかった浪人生が、翌年…」が下に追加表示<br>
+ セリフ: 「現役で第一志望に2点足りなかった浪人生が、翌年、現役組より上の偏差値で合格しました」<br>
+ <em style="color:#fbbf24;">※2026年4月IGアルゴは Reels 冒頭に「動き + 顔のクローズアップ + 大きなテロップ動的アニメ」を強く優遇</em>
+ </div>
+ <div class="reel-script">
+ <div class="reel-time">⏱ 0:03 - 0:13 (10秒) 【痛み・問題提起】</div>
+ 映像: 塾の看板 / 高い月謝の請求書 / 夜中の机に向かう受験生<br>
+ テロップ (順次):
+ 「月3万円の塾」 / 「× 週2回しか通えない」 / 「× 深夜の『わからない』は朝まで放置」 / 「× 個別最適化なんて存在しない」<br>
+ セリフ: 「月3万円払って、週2回。深夜の質問は届かない。個別最適化なんて言葉だけ。これが現実」
+ </div>
+ <div class="reel-script">
+ <div class="reel-time">⏱ 0:13 - 0:33 (20秒) 【解決策】</div>
+ 映像: スマホ画面 (AI学習コーチ塾UI) のスクリーン録画<br>
+ テロップ: 「AIが24時間個別指導」「9つの機能で完全最適化」<br>
+ セリフ: 「彼が使ったのはAI学習コーチ塾。スタンダード¥24,980/月で、24時間AIチューター、エビングハウス自動復習、躓きセンサーが弱点を即発見、定期テスト範囲から自動で問題生成、これら9つのAI機能が個別最適化してくれる」
+ </div>
+ <div class="reel-script">
+ <div class="reel-time">⏱ 0:33 - 0:50 (17秒) 【実演 - スマホ画面録画】</div>
+ 映像: 実際のアプリ画面録画<br>
+ ・チャット画面で「三角関数のsin/cos合成、わからない」と入力<br>
+ ・AIが3秒で図解と例題を生成<br>
+ ・マイページの「今日の復習」「躓きセンサー警告」を見せる<br>
+ テロップ: 「夜中の質問も3秒で図解」「忘却曲線で復習タイミング自動最適化」
+ </div>
+ <div class="reel-script">
+ <div class="reel-time">⏱ 0:50 - 0:60 (10秒) 【CTA】</div>
+ 映像: 塾長カメラ目線 + プロフィールリンクをアニメで指し示す<br>
+ テロップ (大): 「今だけ 3日間 ¥1,980」「先着100名」<br>
+ セリフ: 「3日間 ¥1,980 で全機能を試せます。先着100名限定。プロフィールのリンクから30秒で始められます」
+ </div>
 
-  <h3>📝 リール用キャプション</h3>
-  <button class="copy-btn" onclick="copyText('reel-caption')">📋 全文コピー</button>
-  <pre id="reel-caption" class="copy-block">浪人生が現役組を超えた話。
+ <h3>📝 リール用キャプション</h3>
+ <button class="copy-btn" onclick="copyText('reel-caption')">📋 全文コピー</button>
+ <pre id="reel-caption" class="copy-block">浪人生が現役組を超えた話。
 
 月3万の塾じゃなく、スタンダード¥24,980/月のAI塾を選んだ理由。
 24時間質問できて、9機能で完全個別最適化。
 
 🎁 今なら3日¥1,980で全機能体験
-🚨 4/30まで・先着100名 残りわずか
+🚨 先着100名 残りわずか
 
 👇 プロフィールリンクから30秒で開始
 ワンタップ即解約・全額返金OK
@@ -294,49 +294,49 @@
 
 <!-- ========== 4. ハッシュタグ戦略 ========== -->
 <div class="section">
-  <h2>🏷 ④ ハッシュタグ戦略 (バイラル広告プロ推奨)</h2>
-  <button class="copy-btn" onclick="copyText('hashtags')">📋 推奨10個セットをコピー</button>
-  <pre id="hashtags" class="copy-block">#大学受験 #高3勉強垢 #勉強垢 #studygram #偏差値アップ #宅浪 #AI学習 #受験生応援 #個別最適化</pre>
-  <p style="color:#aab; font-size:0.85rem; margin-top:0.7rem;">
-    Tier 1 (ビッグ・必須): #大学受験 #高3勉強垢 #勉強垢<br>
-    Tier 2 (ミドル・リーチ拡張): #studygram #偏差値アップ #宅浪 #AI学習<br>
-    Tier 3 (ニッチ・エンゲージ深化): #受験生応援 #個別最適化
-  </p>
+ <h2>🏷 ④ ハッシュタグ戦略 (バイラル広告プロ推奨)</h2>
+ <button class="copy-btn" onclick="copyText('hashtags')">📋 推奨10個セットをコピー</button>
+ <pre id="hashtags" class="copy-block">#大学受験 #高3勉強垢 #勉強垢 #studygram #偏差値アップ #宅浪 #AI学習 #受験生応援 #個別最適化</pre>
+ <p style="color:#aab; font-size:0.85rem; margin-top:0.7rem;">
+ Tier 1 (ビッグ・必須): #大学受験 #高3勉強垢 #勉強垢<br>
+ Tier 2 (ミドル・リーチ拡張): #studygram #偏差値アップ #宅浪 #AI学習<br>
+ Tier 3 (ニッチ・エンゲージ深化): #受験生応援 #個別最適化
+ </p>
 </div>
 
 <!-- ========== 5. 投稿後の運用 ========== -->
 <div class="section">
-  <h2>🎯 ⑤ 投稿後の運用フロー</h2>
-  <h3>投稿直後 (0-30分)</h3>
-  <ul style="color:#cdd; line-height:2; padding-left:1.5rem;">
-    <li>ストーリーで「新規投稿あります」告知</li>
-    <li>フォロワー2-3人にDMで「見てね」</li>
-    <li>受験生アカウントのコメント欄で類似話題に反応</li>
-  </ul>
-  <h3>1時間後</h3>
-  <ul style="color:#cdd; line-height:2; padding-left:1.5rem;">
-    <li>ハッシュタグ経由ユーザーの投稿に「いいね」3-5件</li>
-    <li>カルーセル投稿の保存数チェック</li>
-  </ul>
-  <h3>24時間後</h3>
-  <ul style="color:#cdd; line-height:2; padding-left:1.5rem;">
-    <li>インサイト確認 (リーチ / 保存数 / シェア数 / プロフィールアクセス数)</li>
-    <li>プロフィールアクセス → 体験申込 の CV率を計測</li>
-  </ul>
-  <h3>1週間後</h3>
-  <ul style="color:#cdd; line-height:2; padding-left:1.5rem;">
-    <li>A/B/C案のうち最もパフォーマンス良かったコピーで再配信</li>
-    <li>リールに切り出して再投稿</li>
-  </ul>
+ <h2>🎯 ⑤ 投稿後の運用フロー</h2>
+ <h3>投稿直後 (0-30分)</h3>
+ <ul style="color:#cdd; line-height:2; padding-left:1.5rem;">
+ <li>ストーリーで「新規投稿あります」告知</li>
+ <li>フォロワー2-3人にDMで「見てね」</li>
+ <li>受験生アカウントのコメント欄で類似話題に反応</li>
+ </ul>
+ <h3>1時間後</h3>
+ <ul style="color:#cdd; line-height:2; padding-left:1.5rem;">
+ <li>ハッシュタグ経由ユーザーの投稿に「いいね」3-5件</li>
+ <li>カルーセル投稿の保存数チェック</li>
+ </ul>
+ <h3>24時間後</h3>
+ <ul style="color:#cdd; line-height:2; padding-left:1.5rem;">
+ <li>インサイト確認 (リーチ / 保存数 / シェア数 / プロフィールアクセス数)</li>
+ <li>プロフィールアクセス → 体験申込 の CV率を計測</li>
+ </ul>
+ <h3>1週間後</h3>
+ <ul style="color:#cdd; line-height:2; padding-left:1.5rem;">
+ <li>A/B/C案のうち最もパフォーマンス良かったコピーで再配信</li>
+ <li>リールに切り出して再投稿</li>
+ </ul>
 </div>
 
 <script>
 function copyText(id) {
-  const el = document.getElementById(id);
-  navigator.clipboard.writeText(el.innerText).then(() => {
-    event.target.textContent = '✓ コピー済';
-    setTimeout(() => event.target.textContent = '📋 全文コピー', 1500);
-  });
+ const el = document.getElementById(id);
+ navigator.clipboard.writeText(el.innerText).then(() => {
+ event.target.textContent = '✓ コピー済';
+ setTimeout(() => event.target.textContent = '📋 全文コピー', 1500);
+ });
 }
 </script>
 </body>
