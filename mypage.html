@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>マイページ | AI学習コーチ塾</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="mypage.css?v=20260424-mobile2">
+  <link rel="stylesheet" href="mypage.css?v=20260425-lb">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="auth-guard.js?v=20260424-1"></script>
 </head>
@@ -232,6 +232,15 @@
       </div>
     </section>
 
+    <!-- Learning Brain: 今日の復習 (エビングハウス自動復習) -->
+    <section class="lb-review-section" style="margin-top: 2rem; padding: 1.5rem; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;">
+      <div class="section-title"><h2>🔁 今日の復習 <span style="font-size:0.65em;background:linear-gradient(135deg,#818cf8,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">エビングハウス忘却曲線対応</span></h2></div>
+      <p style="font-size:0.85rem; color:#a1a1aa; margin-bottom:1rem;">
+        間違えた問題を 1日 → 3日 → 7日 → 21日 → 60日 の科学的タイミングで自動再出題します。
+      </p>
+      <div id="lbTodayReview"></div>
+    </section>
+
     <!-- Motivation Quote -->
     <section class="motivation-section">
       <div class="motivation-card">
@@ -267,7 +276,22 @@
     <p>© 2026 AI学習コーチ塾 | Mypage v1.0</p>
   </footer>
 
+  <script src="learning-brain.js?v=20260425-1"></script>
   <script src="mypage.js?v=20260424-trial3"></script>
+  <script>
+    // Learning Brain: 今日の復習を初期描画
+    (function() {
+      function initReview() {
+        if (typeof LB === 'undefined') { setTimeout(initReview, 200); return; }
+        const student = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null');
+        const studentId = student ? student.id : 'guest';
+        LB.renderTodayReview('lbTodayReview', studentId);
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initReview);
+      } else { initReview(); }
+    })();
+  </script>
   <script>
   // 契約管理: ステータス取得・ポータル遷移・解約
   (function() {
