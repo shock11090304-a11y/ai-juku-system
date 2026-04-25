@@ -5181,6 +5181,8 @@ function renderMoshiList() {
       <div class="moshi-card-actions">
         <button class="btn-small btn-detail" data-id="${m.id}">📖 詳細</button>
         <button class="btn-small btn-gen-problems" data-id="${m.id}" title="この弱点から問題を生成">🧪 問題生成</button>
+        <button class="btn-small btn-update-curriculum" data-id="${m.id}" title="この模試結果でカリキュラムを再生成"
+                style="background:linear-gradient(135deg,#6366f1,#ec4899);color:white;border:none;">🔄 カリキュラム更新</button>
         <button class="btn-small btn-delete-moshi" data-id="${m.id}">🗑 削除</button>
       </div>
     </div>
@@ -5191,6 +5193,9 @@ function renderMoshiList() {
   });
   list.querySelectorAll('.btn-gen-problems').forEach(btn => {
     btn.addEventListener('click', () => generateProblemsFromMoshi(btn.dataset.id));
+  });
+  list.querySelectorAll('.btn-update-curriculum').forEach(btn => {
+    btn.addEventListener('click', () => updateCurriculumFromMoshi(btn.dataset.id));
   });
   list.querySelectorAll('.btn-delete-moshi').forEach(btn => {
     btn.addEventListener('click', () => deleteMoshi(btn.dataset.id));
@@ -5677,6 +5682,60 @@ function generateProblemsFromMoshi(id) {
 
 // グローバル公開（詳細モーダル内のonclickから呼出）
 window.generateProblemsFromMoshi = generateProblemsFromMoshi;
+
+// ==========================================================================
+// 模試データからカリキュラムを再生成 (リンク機能のハイライト)
+// 模試の偏差値・弱点を「現在の学力」フィールドに自動転送 → カリキュラム生成
+// ==========================================================================
+function updateCurriculumFromMoshi(id) {
+  const m = getMoshiHistory().find(x => x.id === id);
+  if (!m) return;
+
+  // 「現在の学力・模試結果」テキストエリアに模試データを構造化して反映
+  const levelEl = document.getElementById('currentLevel');
+  if (!levelEl) {
+    alert('カリキュラム生成タブが見つかりません。');
+    return;
+  }
+
+  const lines = [
+    `📋 模試: ${m.name || '(模試名未記入)'}`,
+    m.date ? `実施日: ${m.date}` : '',
+    m.deviation ? `総合偏差値: ${m.deviation}` : '',
+    m.scores ? `\n■ 科目別スコア\n${m.scores}` : '',
+    m.weakness ? `\n■ 弱点分野\n${m.weakness}` : '',
+    m.notes ? `\n■ 所感\n${m.notes}` : '',
+  ].filter(Boolean);
+  levelEl.value = lines.join('\n');
+
+  // カリキュラム生成タブへ切替
+  switchTab('curriculum');
+
+  // 詳細モーダルがあれば閉じる
+  const det = document.getElementById('moshiDetail');
+  if (det) det.style.display = 'none';
+
+  // 「カリキュラム生成」ボタンの位置までスクロール
+  setTimeout(() => {
+    const goalEl = document.getElementById('curriculumGoal');
+    if (goalEl) goalEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+
+  // 確認ダイアログ→自動生成
+  setTimeout(() => {
+    const goal = (document.getElementById('curriculumGoal') || {}).value || '';
+    const msg = goal
+      ? `📋 模試「${m.name || ''}」の結果を反映しました。\n\n志望校「${goal}」のカリキュラムを今すぐ再生成しますか？\n\n弱点分野が反映されたカリキュラムが生成されます。`
+      : `📋 模試データを「現在の学力」欄に反映しました。\n\n志望校・試験日を入力した後、「🎯 カリキュラムを生成」をクリックしてください。`;
+    if (goal && confirm(msg)) {
+      // 自動でカリキュラム生成キック
+      generateCurriculum();
+    } else if (!goal) {
+      alert(msg);
+    }
+  }, 400);
+}
+window.updateCurriculumFromMoshi = updateCurriculumFromMoshi;
 
 // ==========================================================================
 // Parent Share Link
