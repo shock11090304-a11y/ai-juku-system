@@ -278,7 +278,7 @@ def slide_2():
     f_anchor = load_font(FONT_BLACK, 32)
     draw_centered(draw, "同価格帯でも、機能と時間帯が違う", f_anchor, top_y + col_h + 30, BRAND_GOLD)
     f_anchor2 = load_font(FONT_BOLD, 24)
-    draw_centered(draw, "家族プラン¥59,800なら 1人あたり¥19,933/月", f_anchor2, top_y + col_h + 75, TEXT_DIM)
+    draw_centered(draw, "家族プラン¥59,800 (兄弟姉妹3名まで) → 1人¥19,933/月", f_anchor2, top_y + col_h + 75, TEXT_DIM)
 
     draw_footer_brand(draw)
     img.save(f"{OUT_DIR}/sales-final-slide-2.png", "PNG", optimize=True)
@@ -540,12 +540,12 @@ def slide_6():
     f_safe = load_font(FONT_BLACK, 22)
     draw.text((table_x + 30, row_y), "安心保証", font=f_safe, fill=BRAND_PINK)
     f_safe_desc = load_font(FONT_BOLD, 20)
-    draw.text((table_x + 30, row_y + 30), "体験中ワンタップで即解約・全額返金", font=f_safe_desc, fill=TEXT)
+    draw.text((table_x + 30, row_y + 30), "体験中ワンタップで即解約・違約金ゼロ", font=f_safe_desc, fill=TEXT)
 
     # 家族プラン + 紹介プログラム (まとめて訴求)
     ref_y = 720
     f_ref_h = load_font(FONT_BLACK, 26)
-    draw_centered(draw, "家族プラン¥59,800/月 → 1人あたり¥19,933/月", f_ref_h, ref_y, BRAND_GOLD)
+    draw_centered(draw, "家族プラン¥59,800/月 (兄弟姉妹3名まで) → 1人¥19,933/月", f_ref_h, ref_y, BRAND_GOLD)
     f_ref_h2 = load_font(FONT_BLACK, 24)
     draw_centered(draw, "▼ 友達紹介で あなた1ヶ月無料 + 友達初月50%OFF ▼", f_ref_h2, ref_y + 50, BRAND_PINK)
 
@@ -597,7 +597,7 @@ def slide_7():
     # リスクリバーサル (文言強化: 心理戦略家)
     f_safe = load_font(FONT_BOLD, 24)
     safe_y = 820
-    draw_centered(draw, "ワンタップで即解約・違約金ゼロ・全額返金OK", f_safe, safe_y, BRAND_GOLD)
+    draw_centered(draw, "ワンタップで即解約・違約金ゼロ・通塾なし", f_safe, safe_y, BRAND_GOLD)
 
     # 自動切替明示 (信頼担保: 心理戦略家)
     f_auto = load_font(FONT_REGULAR, 18)
