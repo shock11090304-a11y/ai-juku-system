@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📄 契約書簡 メール送信ツール | AI学習コーチ塾</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: linear-gradient(135deg, #0a0e1e, #1a0e2e); color: #f5f5fa; font-family: "Helvetica Neue", "ヒラギノ角ゴシック", sans-serif; padding: 2rem; min-height: 100vh; }
+  h1 { font-size: 1.6rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, #8b5cf6, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .lead { color: #aab; margin-bottom: 1.5rem; font-size: 0.92rem; }
+  .nav { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .nav a { background: rgba(255,255,255,0.06); color: #cbd5e1; padding: 0.5rem 0.9rem; border-radius: 6px; text-decoration: none; font-size: 0.85rem; }
+  .nav a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav a.active { background: linear-gradient(135deg, #8b5cf6, #ec4899); color: white; }
+  .info-box { background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.3); border-radius: 10px; padding: 0.9rem; margin-bottom: 1.5rem; font-size: 0.88rem; color: #cbd5e1; }
+  .template { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 1.2rem; margin-bottom: 1rem; }
+  .template h2 { font-size: 1.1rem; color: #a78bfa; margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .template .desc { color: #aab; font-size: 0.85rem; margin-bottom: 0.8rem; }
+  .field { margin-bottom: 0.7rem; }
+  .field label { display: block; font-size: 0.78rem; color: #aab; margin-bottom: 0.3rem; font-weight: 700; }
+  .field input, .field textarea { width: 100%; padding: 0.6rem 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #f5f5fa; font-family: inherit; font-size: 0.88rem; }
+  .field textarea { min-height: 320px; resize: vertical; line-height: 1.6; white-space: pre-wrap; }
+  .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.8rem; }
+  .btn-primary { background: linear-gradient(135deg, #8b5cf6, #ec4899); color: white; border: none; padding: 0.7rem 1.4rem; border-radius: 8px; font-weight: 800; font-size: 0.92rem; cursor: pointer; }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-secondary { background: rgba(255,255,255,0.08); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.15); padding: 0.7rem 1.4rem; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
+  .badge { display: inline-block; background: rgba(251,191,36,0.2); color: #fbbf24; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 700; }
+  .badge.green { background: rgba(52,211,153,0.2); color: #34d399; }
+  .badge.red { background: rgba(248,113,113,0.2); color: #fca5a5; }
+  .badge.blue { background: rgba(96,165,250,0.2); color: #60a5fa; }
+  .placeholder-hint { font-size: 0.78rem; color: #94a3b8; margin-top: 0.3rem; }
+</style>
+</head>
+<body>
+<h1>📄 契約書簡 メール送信ツール</h1>
+<p class="lead">体験移行・契約成立・解約・更新通知など、塾運営で必要な契約系メール6パターン。<strong>{お名前}</strong> 等のプレースホルダーを置換してから送信してください。</p>
+
+<div class="nav">
+  <a href="email-templates.html">📧 販売・集客メール</a>
+  <a href="contract-emails.html" class="active">📄 契約書簡メール</a>
+  <a href="sales-preview.html">📱 Instagram 販促資料</a>
+</div>
+
+<div class="info-box">
+  <strong>📋 共通情報</strong> (各テンプレに自動展開済)<br>
+  ・3日間体験: ¥1,980 / スタンダード: ¥24,980/月 / プレミアム: ¥39,800/月<br>
+  ・入塾金: ¥10,000 (初回のみ・スタンダード/プレミアム/家族プラン)<br>
+  ・解約: 体験中いつでも・違約金ゼロ・全額返金OK
+</div>
+
+<!-- Template 1: 体験開始ありがとうメール -->
+<div class="template">
+  <h2>① 体験開始ウェルカムメール <span class="badge green">体験開始時</span></h2>
+  <p class="desc">¥1,980 体験申込が完了した直後に送信。3日間の使い方ガイドを案内</p>
+  <div class="field">
+    <label>送信先メール</label>
+    <input type="text" id="to1" placeholder="customer@example.com">
+  </div>
+  <div class="field">
+    <label>件名</label>
+    <input type="text" id="subject1" value="【AI学習コーチ塾】体験開始ありがとうございます - 3日間の使い方ガイド">
+  </div>
+  <div class="field">
+    <label>本文</label>
+    <textarea id="body1">{お名前} 様
+
+このたびはAI学習コーチ塾の3日間体験 (¥1,980) にお申込みいただき、誠にありがとうございます。
+
+塾長の足立です。
+
+▼ ログイン情報
+URL: https://www.trillion-ai-juku.com/login.html
+ログインID: ご登録のメールアドレス
+
+▼ 3日間の推奨スケジュール
+【1日目】志望校カリキュラムを自動生成 + AIチューターに最初の質問
+【2日目】AI問題を10問生成 + エビングハウス復習で定着確認
+【3日目】保護者レポートのプレビュー + 模試結果アップロード
+
+▼ 主な機能 (どれも体験中フル使用可能)
+・24時間AIチューター (深夜でも瞬時回答)
+・問題自動生成 / 添削 / 参考書生成
+・エビングハウス自動復習・躓きセンサー
+・定期テスト連携・滑り止め校提案
+
+▼ 体験中の解約について
+ワンタップで即解約可能・違約金ゼロ・全額返金OK
+3日後はスタンダード ¥24,980/月 + 入塾金 ¥10,000 (初回のみ) へ自動移行します
+継続を希望されない場合は3日以内に解約手続きをお願いします
+
+ご質問・ご不明点があれば、このメールへの返信でいつでもご連絡ください。
+
+足立翔平
+AI学習コーチ塾</textarea>
+  </div>
+  <div class="actions">
+    <button class="btn-primary" onclick="launch(1)">📧 メーラーを起動</button>
+    <button class="btn-secondary" onclick="copyBody(1, event)">📋 本文をコピー</button>
+  </div>
+</div>
+
+<!-- Template 2: 月額移行リマインド (体験3日目) -->
+<div class="template">
+  <h2>② 月額移行リマインド <span class="badge">体験2-3日目</span></h2>
+  <p class="desc">体験終了の前日 or 当日朝に送信。継続/解約の意思確認 + 信頼担保</p>
+  <div class="field">
+    <label>送信先メール</label>
+    <input type="text" id="to2" placeholder="customer@example.com">
+  </div>
+  <div class="field">
+    <label>件名</label>
+    <input type="text" id="subject2" value="【重要】明日、月額プランへ自動移行します - AI学習コーチ塾">
+  </div>
+  <div class="field">
+    <label>本文</label>
+    <textarea id="body2">{お名前} 様
+
+塾長の足立です。
+
+3日間体験 (¥1,980) のご利用、ありがとうございました。
+
+明日 (体験終了後)、ご登録のクレジットカードに以下が請求されます:
+
+━━━━━━━━━━━━━━━━━━━
+・スタンダードプラン  ¥24,980 (月額)
+・入塾金 (初回のみ)   ¥10,000
+─────────────────
+  初回請求合計      ¥34,980
+  以降毎月          ¥24,980
+━━━━━━━━━━━━━━━━━━━
+
+▼ 継続を希望される場合
+何もしなくて大丈夫です。明日から月額プランがスタートします。
+
+▼ 解約をご希望の場合
+本日中に以下の手順で手続きをお願いします:
+  1. https://www.trillion-ai-juku.com/mypage.html へログイン
+  2. 「契約管理」→「解約する」をタップ
+  3. 即時解約完了 (違約金ゼロ・3日体験中は全額返金可)
+
+▼ プランの変更をご希望の場合
+プレミアム ¥39,800/月 (全機能無制限) や 家族プラン ¥59,800/月 (3名まで) も
+ご用意しています。詳細はご返信ください。
+
+ご質問あればこのメールにご返信ください。
+
+足立翔平
+AI学習コーチ塾</textarea>
+  </div>
+  <div class="actions">
+    <button class="btn-primary" onclick="launch(2)">📧 メーラーを起動</button>
+    <button class="btn-secondary" onclick="copyBody(2, event)">📋 本文をコピー</button>
+  </div>
+</div>
+
+<!-- Template 3: 月額契約成立ウェルカム -->
+<div class="template">
+  <h2>③ 月額契約成立ウェルカム <span class="badge blue">月額移行時</span></h2>
+  <p class="desc">体験 → 月額に正式移行した時。お礼 + 領収書情報 + サポート窓口</p>
+  <div class="field">
+    <label>送信先メール</label>
+    <input type="text" id="to3" placeholder="customer@example.com">
+  </div>
+  <div class="field">
+    <label>件名</label>
+    <input type="text" id="subject3" value="【AI学習コーチ塾】月額プランご契約ありがとうございます">
+  </div>
+  <div class="field">
+    <label>本文</label>
+    <textarea id="body3">{お名前} 様
+
+このたびはAI学習コーチ塾の月額プランへご契約いただき、
+誠にありがとうございます。
+
+塾長の足立です。
+
+▼ ご契約内容
+・プラン: スタンダード ¥24,980/月
+・初回請求: ¥34,980 (月額¥24,980 + 入塾金¥10,000)
+・次回請求日: 1ヶ月後 (毎月同日)
+・領収書: Stripeから自動発行されます
+
+▼ ご利用上限 (毎月リセット)
+・問題生成: 月50回
+・添削: 月20回
+・参考書生成: 月5冊
+・24時間AIチューター: 無制限
+・学習診断・カリキュラム生成: 無制限
+
+※ 上限が足りない場合は プレミアム ¥39,800/月 (すべて無制限) へいつでもアップグレード可能です
+
+▼ サポート窓口
+・解約・プラン変更: マイページ → 契約管理
+・ご質問・ご相談: このメールへ返信
+・特商法・利用規約: https://www.trillion-ai-juku.com/legal.html
+
+引き続きどうぞよろしくお願いいたします。
+
+足立翔平
+AI学習コーチ塾</textarea>
+  </div>
+  <div class="actions">
+    <button class="btn-primary" onclick="launch(3)">📧 メーラーを起動</button>
+    <button class="btn-secondary" onclick="copyBody(3, event)">📋 本文をコピー</button>
+  </div>
+</div>
+
+<!-- Template 4: 解約完了通知 -->
+<div class="template">
+  <h2>④ 解約完了通知 <span class="badge red">解約時</span></h2>
+  <p class="desc">解約手続き完了直後に送信。再契約導線も含める</p>
+  <div class="field">
+    <label>送信先メール</label>
+    <input type="text" id="to4" placeholder="customer@example.com">
+  </div>
+  <div class="field">
+    <label>件名</label>
+    <input type="text" id="subject4" value="【AI学習コーチ塾】解約のお手続きが完了しました">
+  </div>
+  <div class="field">
+    <label>本文</label>
+    <textarea id="body4">{お名前} 様
+
+このたびはAI学習コーチ塾をご利用いただき、誠にありがとうございました。
+塾長の足立です。
+
+ご解約のお手続きが正常に完了いたしました。
+
+▼ 解約後の取扱い
+・以降の月額請求はございません
+・既にお支払い済みの期間中はご利用継続可能です ({利用終了日} まで)
+・学習データ (解いた問題・カリキュラム等) は90日間保管します
+  この期間内に再契約された場合は、データを引き継いでご利用いただけます
+
+▼ 再契約について
+お友達・お子様の状況が変わった際は、
+いつでも再契約していただけます。
+
+特に「定期テスト前だけ」「長期休暇中だけ」など
+スポット利用にも対応可能です。
+
+▼ ご感想・改善点をお聞かせください
+今後のサービス改善のため、ご利用された感想や
+「こうだったらもっと使いたい」という点があれば
+このメールへご返信いただけますと幸いです。
+
+短い期間でしたが、ご利用いただき誠にありがとうございました。
+
+足立翔平
+AI学習コーチ塾</textarea>
+  </div>
+  <div class="actions">
+    <button class="btn-primary" onclick="launch(4)">📧 メーラーを起動</button>
+    <button class="btn-secondary" onclick="copyBody(4, event)">📋 本文をコピー</button>
+  </div>
+</div>
+
+<!-- Template 5: プラン変更案内 (アップグレード) -->
+<div class="template">
+  <h2>⑤ プランアップグレード案内 <span class="badge">クォータ達時</span></h2>
+  <p class="desc">スタンダードの月次上限に達した顧客向け。プレミアムへの誘導</p>
+  <div class="field">
+    <label>送信先メール</label>
+    <input type="text" id="to5" placeholder="customer@example.com">
+  </div>
+  <div class="field">
+    <label>件名</label>
+    <input type="text" id="subject5" value="【ご相談】今月の利用上限に達しました - プラン変更のご案内">
+  </div>
+  <div class="field">
+    <label>本文</label>
+    <textarea id="body5">{お名前} 様
+
+塾長の足立です。
+
+いつもAI学習コーチ塾をご活用いただき、ありがとうございます。
+
+データを確認したところ、今月の {機能名} の利用回数が
+スタンダードプランの上限 ({上限回数}回) に達しました。
+
+▼ 選択肢
+1) 来月までお待ちいただく
+   毎月1日に上限がリセットされます
+
+2) プレミアムプラン (¥39,800/月) へアップグレード
+   問題生成・添削・参考書すべて無制限
+   今月の差額のみで本日から無制限ご利用可能
+   優先処理 + 保護者向け詳細レポート付き
+
+3) 家族プラン (¥59,800/月) へ変更
+   兄弟姉妹3名まで使えて1人あたり¥19,933/月
+   全機能無制限
+
+▼ アップグレード手続き
+マイページ → 契約管理 → 「プラン変更」から
+ワンタップで即時切替可能です。
+今月分は日割計算され、追加分のみ請求されます。
+
+ご質問あればご返信ください。
+
+足立翔平
+AI学習コーチ塾</textarea>
+  </div>
+  <div class="actions">
+    <button class="btn-primary" onclick="launch(5)">📧 メーラーを起動</button>
+    <button class="btn-secondary" onclick="copyBody(5, event)">📋 本文をコピー</button>
+  </div>
+</div>
+
+<!-- Template 6: 領収書発行案内 -->
+<div class="template">
+  <h2>⑥ 領収書発行案内 <span class="badge blue">請求月初</span></h2>
+  <p class="desc">毎月の請求後に送信。Stripe領収書のダウンロード手順を案内</p>
+  <div class="field">
+    <label>送信先メール</label>
+    <input type="text" id="to6" placeholder="customer@example.com">
+  </div>
+  <div class="field">
+    <label>件名</label>
+    <input type="text" id="subject6" value="【AI学習コーチ塾】今月の領収書をダウンロードできます">
+  </div>
+  <div class="field">
+    <label>本文</label>
+    <textarea id="body6">{お名前} 様
+
+塾長の足立です。
+いつもAI学習コーチ塾をご利用いただき、ありがとうございます。
+
+今月分のご請求が正常に処理されました。
+領収書は以下の手順でダウンロードできます:
+
+▼ 領収書ダウンロード手順
+1. https://www.trillion-ai-juku.com/mypage.html へログイン
+2. 「契約管理」→「💳 支払い・プラン変更」をタップ
+3. Stripe顧客ポータルが開きます
+4. 請求履歴一覧から該当月の領収書 (PDF) をダウンロード
+
+▼ 経費処理について
+領収書は宛名変更可能です (個人名 → 法人名 等)
+Stripe顧客ポータル → 請求情報 → 編集
+
+▼ ご利用状況
+今月のご利用回数はマイページの「📊 今月の利用状況」でご確認いただけます。
+上限が足りない場合はいつでもプラン変更可能です。
+
+ご質問あればこのメールにご返信ください。
+
+足立翔平
+AI学習コーチ塾</textarea>
+  </div>
+  <div class="actions">
+    <button class="btn-primary" onclick="launch(6)">📧 メーラーを起動</button>
+    <button class="btn-secondary" onclick="copyBody(6, event)">📋 本文をコピー</button>
+  </div>
+</div>
+
+<script>
+function launch(idx) {
+  const to = document.getElementById('to' + idx).value.trim();
+  const subject = document.getElementById('subject' + idx).value;
+  const body = document.getElementById('body' + idx).value;
+  const mailto = 'mailto:' + encodeURIComponent(to)
+    + '?subject=' + encodeURIComponent(subject)
+    + '&body=' + encodeURIComponent(body);
+  window.location.href = mailto;
+}
+
+function copyBody(idx, ev) {
+  const body = document.getElementById('body' + idx).value;
+  navigator.clipboard.writeText(body).then(() => {
+    const btn = ev.target;
+    const orig = btn.textContent;
+    btn.textContent = '✓ コピー済';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+}
+</script>
+</body>
+</html>
