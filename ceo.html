@@ -305,6 +305,63 @@
       </div>
     </section>
 
+    <!-- 申込状況サマリ (60秒ごとに自動更新) -->
+    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.25); border-radius: 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+        <h2 style="font-size:1.15rem;color:#a78bfa;margin:0;">📋 申込状況サマリ <span id="signupSummaryUpdated" style="font-size:0.7rem;color:#71717a;font-weight:400;">--</span></h2>
+        <button id="refreshSignupSummary" style="background:rgba(167,139,250,0.2);color:#a78bfa;border:1px solid rgba(167,139,250,0.4);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">🔄 今すぐ更新</button>
+      </div>
+
+      <!-- 4ボックス: 体験中 / 月額契約中 / 解約済 / 体験終了 -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.7rem;margin-bottom:1rem;">
+        <div style="background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
+          <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.3rem;">🎖 体験中</div>
+          <div id="sumTrial" style="font-size:1.8rem;font-weight:900;color:#a78bfa;">0</div>
+          <div style="font-size:0.7rem;color:#71717a;">名 (¥1,980 申込済)</div>
+        </div>
+        <div style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
+          <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.3rem;">✅ 月額契約中</div>
+          <div id="sumPaid" style="font-size:1.8rem;font-weight:900;color:#34d399;">0</div>
+          <div style="font-size:0.7rem;color:#71717a;">名 (継続課金)</div>
+        </div>
+        <div style="background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
+          <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.3rem;">⏱ 体験終了</div>
+          <div id="sumExpired" style="font-size:1.8rem;font-weight:900;color:#fbbf24;">0</div>
+          <div style="font-size:0.7rem;color:#71717a;">名 (継続せず)</div>
+        </div>
+        <div style="background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
+          <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.3rem;">⏹ 解約済</div>
+          <div id="sumCanceled" style="font-size:1.8rem;font-weight:900;color:#fca5a5;">0</div>
+          <div style="font-size:0.7rem;color:#71717a;">名 (元月額)</div>
+        </div>
+      </div>
+
+      <!-- 期間別新規 + 転換率 + キャンペーン -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.7rem;">
+        <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:0.7rem;">
+          <div style="font-size:0.72rem;color:#94a3b8;">📅 今日の新規</div>
+          <div style="font-size:1.4rem;font-weight:800;color:#e4e4e7;"><span id="sumNewToday">0</span><span style="font-size:0.8rem;color:#71717a;">名</span></div>
+        </div>
+        <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:0.7rem;">
+          <div style="font-size:0.72rem;color:#94a3b8;">📅 過去7日間</div>
+          <div style="font-size:1.4rem;font-weight:800;color:#e4e4e7;"><span id="sumNew7d">0</span><span style="font-size:0.8rem;color:#71717a;">名</span></div>
+        </div>
+        <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:0.7rem;">
+          <div style="font-size:0.72rem;color:#94a3b8;">📅 過去30日間</div>
+          <div style="font-size:1.4rem;font-weight:800;color:#e4e4e7;"><span id="sumNew30d">0</span><span style="font-size:0.8rem;color:#71717a;">名</span></div>
+        </div>
+        <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:0.7rem;">
+          <div style="font-size:0.72rem;color:#94a3b8;">📈 体験→月額 転換率</div>
+          <div style="font-size:1.4rem;font-weight:800;color:#a7f3d0;"><span id="sumConversion">0</span>%</div>
+        </div>
+        <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:10px;padding:0.7rem;">
+          <div style="font-size:0.72rem;color:#fbbf24;">🎁 入塾金免除キャンペーン</div>
+          <div style="font-size:1.1rem;font-weight:800;color:#fbbf24;"><span id="sumWaiverUsed">0</span> / <span id="sumWaiverLimit">100</span> 名</div>
+          <div style="font-size:0.7rem;color:#94a3b8;">残り <span id="sumWaiverRemaining">100</span> 名</div>
+        </div>
+      </div>
+    </section>
+
     <!-- Charts -->
     <section class="charts-section">
       <div class="chart-box wide">
@@ -476,6 +533,55 @@
         </p>
       `;
     })();
+  </script>
+
+  <!-- 申込状況サマリ ローダー (本番DBから60秒ごと) -->
+  <script>
+  (function() {
+    function fmtNum(n) {
+      const v = parseInt(n, 10);
+      if (Number.isNaN(v)) return '0';
+      return v.toLocaleString();
+    }
+    async function loadSignupSummary() {
+      if (!window.AdminAuth || !AdminAuth.getToken()) return;  // 未ログインならスキップ
+      try {
+        const res = await AdminAuth.fetch('/api/admin/stats');
+        if (!res.ok) return;
+        const data = await res.json();
+        const s = data.summary || {};
+        document.getElementById('sumTrial').textContent = fmtNum(s.trial);
+        document.getElementById('sumPaid').textContent = fmtNum(s.paid);
+        document.getElementById('sumExpired').textContent = fmtNum(s.expired);
+        document.getElementById('sumCanceled').textContent = fmtNum(s.canceled);
+        document.getElementById('sumNewToday').textContent = fmtNum(s.new_today);
+        document.getElementById('sumNew7d').textContent = fmtNum(s.new_7d);
+        document.getElementById('sumNew30d').textContent = fmtNum(s.new_30d);
+        document.getElementById('sumConversion').textContent = (s.conversion_rate_pct ?? 0);
+        document.getElementById('sumWaiverUsed').textContent = fmtNum(s.waiver_used);
+        document.getElementById('sumWaiverRemaining').textContent = fmtNum(s.waiver_remaining);
+        // limit はキャンペーン定数 (フロントは100固定だが API も返している)
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2,'0');
+        const mm = String(now.getMinutes()).padStart(2,'0');
+        const ss = String(now.getSeconds()).padStart(2,'0');
+        const updEl = document.getElementById('signupSummaryUpdated');
+        if (updEl) updEl.textContent = `(更新: ${hh}:${mm}:${ss})`;
+      } catch (e) {
+        console.warn('[loadSignupSummary] failed:', e);
+      }
+    }
+    // 初回読込 + 60秒ごと自動更新
+    function start() {
+      loadSignupSummary();
+      setInterval(loadSignupSummary, 60000);
+      const btn = document.getElementById('refreshSignupSummary');
+      if (btn) btn.addEventListener('click', loadSignupSummary);
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => setTimeout(start, 1500));
+    } else { setTimeout(start, 1500); }
+  })();
   </script>
 </body>
 </html>

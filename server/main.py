@@ -1023,11 +1023,43 @@ def admin_stats(authorization: Optional[str] = Header(None)):
     trial_count = c.fetchone()["n"]
     c.execute("SELECT COUNT(*) AS n FROM students WHERE status='canceled'")
     canceled_count = c.fetchone()["n"]
+    c.execute("SELECT COUNT(*) AS n FROM students WHERE status='expired'")
+    expired_count = c.fetchone()["n"]
+
+    # 期間別新規申込数 (created_at ベース・JST)
+    now_jst = datetime.now(timezone.utc) + timedelta(hours=9)
+    today_start = (now_jst.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(hours=9))
+    week_start = today_start - timedelta(days=7)
+    month_start = today_start - timedelta(days=30)
+    c.execute("SELECT COUNT(*) AS n FROM students WHERE created_at >= ?", (today_start,))
+    new_today = c.fetchone()["n"]
+    c.execute("SELECT COUNT(*) AS n FROM students WHERE created_at >= ?", (week_start,))
+    new_7d = c.fetchone()["n"]
+    c.execute("SELECT COUNT(*) AS n FROM students WHERE created_at >= ?", (month_start,))
+    new_30d = c.fetchone()["n"]
+
+    # 入塾金免除キャンペーン適用済数
+    try:
+        c.execute(
+            "SELECT COUNT(*) AS n FROM students "
+            "WHERE enrollment_fee_waived = 1 AND enrollment_waiver_applied_at IS NOT NULL"
+        )
+        waiver_used = c.fetchone()["n"]
+    except Exception:
+        waiver_used = 0
+
     conn.close()
 
     plan_fees = {"standard": 24980, "premium": 39800, "family": 59800, "student_addon": 15000}
     paid_students = [s for s in students if s["status"] == "paid"]
     mrr = sum(plan_fees.get(s.get("plan") or "", 0) for s in paid_students)
+
+    # 体験 → 月額 転換率 (累積ベース・粗計算)
+    # 分母: trial に入った全ユーザー (現trial + 現paid + 現canceled + 現expired)
+    # 分子: 現paid (= 月額移行成立) + 現canceled (= 一時的に成立した経験あり)
+    total_trial_entered = paid_count + trial_count + canceled_count + expired_count
+    converted = paid_count + canceled_count
+    conversion_rate = round(converted / total_trial_entered * 100, 1) if total_trial_entered > 0 else 0
 
     return {
         "students": students,
@@ -1036,6 +1068,13 @@ def admin_stats(authorization: Optional[str] = Header(None)):
             "paid": paid_count,
             "trial": trial_count,
             "canceled": canceled_count,
+            "expired": expired_count,
+            "new_today": new_today,
+            "new_7d": new_7d,
+            "new_30d": new_30d,
+            "conversion_rate_pct": conversion_rate,
+            "waiver_used": waiver_used,
+            "waiver_remaining": max(0, ENROLLMENT_WAIVER_LIMIT - waiver_used),
             "mrr_yen": mrr,
             "arr_yen": mrr * 12,
         }
