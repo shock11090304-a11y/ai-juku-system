@@ -405,7 +405,11 @@
           'canceled': '⏹ 解約済み（期間終了まで利用可）',
           'expired': '⏱ 体験終了',
         }[s.status] || s.status;
-        statusLabel.innerHTML = `ステータス: <strong style="color:#c7d2fe;">${statusText}</strong><br>プラン: <strong>${s.plan || '—'}</strong> / メール: ${s.email}`;
+        // 入塾金免除キャンペーン適用済みのバッジ
+        const waivedBadge = s.enrollment_fee_waived
+          ? `<br><span style="background:rgba(251,191,36,0.18);color:#fbbf24;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.78rem;font-weight:700;">🎁 入塾金 ¥10,000 免除キャンペーン適用済み</span>`
+          : '';
+        statusLabel.innerHTML = `ステータス: <strong style="color:#c7d2fe;">${statusText}</strong><br>プラン: <strong>${s.plan || '—'}</strong> / メール: ${s.email}${waivedBadge}`;
         // trial ユーザーは継続登録ボタンを表示
         const upgradeBtn = document.getElementById('upgradeBtn');
         if (upgradeBtn) {

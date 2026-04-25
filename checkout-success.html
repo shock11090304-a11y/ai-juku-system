@@ -76,6 +76,13 @@
         3日間のトライアルが始まります。3日後に月額プランに自動移行します。
       </p>
 
+      <!-- 入塾金免除キャンペーン適用バナー (現時点で枠が残っていれば月額移行時に免除確定) -->
+      <div id="enrollmentWaiverConfirm" style="display:none;background:linear-gradient(135deg,rgba(251,191,36,0.18),rgba(236,72,153,0.12));border:2px solid #fbbf24;border-radius:14px;padding:1.2rem;margin:1.5rem auto;max-width:600px;text-align:center;">
+        <div style="font-weight:900;color:#fbbf24;font-size:1.15rem;margin-bottom:0.4rem;">🎁 入塾金 ¥10,000 免除キャンペーン適用予定</div>
+        <div style="font-size:0.92rem;color:#fde68a;line-height:1.6;">月額移行時の初回請求から ¥10,000 が0円になります<br>初回請求額: <strong style="color:#fbbf24;">¥34,980 → ¥24,980</strong></div>
+        <div style="font-size:0.78rem;color:#94a3b8;margin-top:0.5rem;">※ 月額移行時点で枠が残っている場合に確定適用</div>
+      </div>
+
       <div class="next-steps">
         <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:1rem;text-align:center;">📋 次のステップ</h2>
         <ol class="step-list">
@@ -160,6 +167,13 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: 'checkout_completed', props: { session_id: new URLSearchParams(window.location.search).get('session_id') } })
+    }).catch(() => {});
+
+    // 入塾金免除キャンペーン残枠を取得して適用予定バナーを表示
+    fetch(`${API_BASE}/api/campaigns/enrollment-waiver/status`).then(r => r.ok ? r.json() : null).then(d => {
+      if (!d || !d.is_active || d.remaining <= 0) return;
+      const banner = document.getElementById('enrollmentWaiverConfirm');
+      if (banner) banner.style.display = '';
     }).catch(() => {});
   </script>
 </body>

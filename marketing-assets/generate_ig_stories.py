@@ -124,7 +124,7 @@ def story_1():
     badge_y = 1430
     d.rounded_rectangle((badge_x, badge_y, badge_x + badge_w, badge_y + badge_h),
                         radius=30, fill=BRAND_RED)
-    draw_centered(d, "先着100名 限定", f_urge, badge_y + 16, TEXT)
+    draw_centered(d, "先着100名 入塾金¥10,000免除", f_urge, badge_y + 16, TEXT)
 
     # リンクステッカーヒント
     draw_link_sticker_hint(d, 1620)

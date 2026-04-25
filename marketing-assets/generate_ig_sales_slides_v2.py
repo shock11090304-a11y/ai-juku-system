@@ -520,11 +520,19 @@ def slide_6():
     draw.text((table_x + table_w - 230, row_y + 3), "¥24,980", font=f_row_price, fill=BRAND_GOLD)
     draw.line((table_x + 30, row_y + row_h - 5, table_x + table_w - 30, row_y + row_h - 5), fill=(60, 60, 80), width=1)
 
-    # 行3: 入塾金 (透明性のため明示)
+    # 行3: 入塾金 (キャンペーン適用で 0 円・取消線で訴求)
     row_y = table_y + 25 + row_h * 2
     draw.text((table_x + 30, row_y), "入塾金 (初回のみ)", font=f_row_label, fill=TEXT)
-    draw.text((table_x + 30, row_y + 32), "システム登録費・体験後の初回請求に加算", font=f_row_desc, fill=TEXT_DIM)
-    draw.text((table_x + table_w - 220, row_y + 3), "¥10,000", font=f_row_price, fill=BRAND_GOLD)
+    draw.text((table_x + 30, row_y + 32), "★ 先着100名 キャンペーン適用で免除", font=f_row_desc, fill=BRAND_PINK)
+    # ¥10,000 を取消線で表示し、その横に 0円 を強調
+    f_strike = load_font(FONT_BOLD, 26)
+    strike_text = "¥10,000"
+    strike_x = table_x + table_w - 320
+    draw.text((strike_x, row_y + 8), strike_text, font=f_strike, fill=TEXT_MUTED)
+    # 取消線
+    sw = text_w(draw, strike_text, f_strike)
+    draw.line((strike_x - 4, row_y + 22, strike_x + sw + 4, row_y + 22), fill=BRAND_RED, width=3)
+    draw.text((table_x + table_w - 130, row_y + 3), "0円", font=f_row_price, fill=BRAND_GOLD)
     draw.line((table_x + 30, row_y + row_h - 5, table_x + table_w - 30, row_y + row_h - 5), fill=(60, 60, 80), width=1)
 
     # 行4: 安心保証
@@ -553,14 +561,14 @@ def slide_7():
     draw = ImageDraw.Draw(img)
     draw_brand_header(img, draw, "07 / 今すぐ始める")
 
-    # 緊急性バッジ (期日明示・Ad Pro A 指摘)
-    badge_w = 700
+    # 緊急性バッジ + キャンペーン訴求
+    badge_w = 820
     badge_h = 60
     badge_x = (W - badge_w) // 2
     badge_y = 160
     draw.rounded_rectangle((badge_x, badge_y, badge_x + badge_w, badge_y + badge_h), radius=30, fill=BRAND_RED)
     f_badge = load_font(FONT_BLACK, 26)
-    draw_centered(draw, "先着100名 限定 残りわずか", f_badge, badge_y + 16, TEXT)
+    draw_centered(draw, "先着100名 入塾金¥10,000免除キャンペーン中", f_badge, badge_y + 16, TEXT)
 
     # メインコピー
     f_h = load_font(FONT_BLACK, 100)

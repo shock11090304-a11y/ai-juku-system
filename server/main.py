@@ -300,6 +300,11 @@ def init_db():
         c.execute("ALTER TABLE students ADD COLUMN enrollment_fee_waived INTEGER DEFAULT 0")
     except Exception:
         pass  # 既に存在する場合は無視
+    # 適用日時を記録 (NULL = 未適用)。これでキャンペーン開始日以降の純粋カウントが取れる
+    try:
+        c.execute("ALTER TABLE students ADD COLUMN enrollment_waiver_applied_at TIMESTAMP")
+    except Exception:
+        pass
     conn.commit()
     conn.close()
 init_db()
@@ -627,7 +632,7 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
         return None
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT id, name, email, grade, goal, plan, status, stripe_customer_id, trial_end FROM students WHERE id = ?", (claims["student_id"],))
+    c.execute("SELECT id, name, email, grade, goal, plan, status, stripe_customer_id, trial_end, enrollment_fee_waived FROM students WHERE id = ?", (claims["student_id"],))
     row = c.fetchone()
     conn.close()
     if not row:
@@ -1032,10 +1037,16 @@ def auth_me(authorization: Optional[str] = Header(None)):
 
 
 def _get_waiver_count() -> int:
-    """これまで入塾金免除を受けた生徒数を返す。"""
+    """これまでキャンペーンで入塾金免除を受けた生徒数を返す。
+    enrollment_waiver_applied_at IS NOT NULL で絞ることで、
+    キャンペーン開始前の既存 paid 顧客 (waived=0 のまま) や
+    手動で waived=1 にした旧データを除外する。"""
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT COUNT(*) AS n FROM students WHERE enrollment_fee_waived = 1")
+    c.execute(
+        "SELECT COUNT(*) AS n FROM students "
+        "WHERE enrollment_fee_waived = 1 AND enrollment_waiver_applied_at IS NOT NULL"
+    )
     row = c.fetchone()
     conn.close()
     return int(row["n"]) if row else 0
@@ -1478,8 +1489,23 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
             conn.commit()
 
             # 入塾金 InvoiceItem (月額のみ・先着100名キャンペーン適用時はスキップ)
-            waiver_applied = meta.get("enrollment_waiver_applied") == "1"
-            if meta.get("needs_enrollment_fee") == "1" and customer:
+            # Race condition 対策: webhook 処理時に再度枠チェック (atomic)。
+            # checkout時に枠ありと判定されても、webhook処理時には100名超過している可能性があるため。
+            session_waiver_flag = meta.get("enrollment_waiver_applied") == "1"
+            apply_waiver_now = False
+            if session_waiver_flag and customer:
+                # 現在の適用済み数を再カウントして上限内か判定
+                current_count = _get_waiver_count()
+                if current_count < ENROLLMENT_WAIVER_LIMIT:
+                    apply_waiver_now = True
+                else:
+                    log.warning(
+                        f"⚠️ Enrollment waiver requested but limit reached "
+                        f"(used={current_count}/{ENROLLMENT_WAIVER_LIMIT}). "
+                        f"Falling back to standard enrollment fee. customer={customer}"
+                    )
+
+            if (meta.get("needs_enrollment_fee") == "1" or (session_waiver_flag and not apply_waiver_now)) and customer:
                 try:
                     s.InvoiceItem.create(
                         customer=customer, amount=ENROLLMENT_FEE, currency="jpy",
@@ -1489,17 +1515,21 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                     log.info(f"✅ Enrollment fee InvoiceItem created: customer={customer}")
                 except Exception as e:
                     log.error(f"Failed to create enrollment fee InvoiceItem: {type(e).__name__}: {e}")
-            elif waiver_applied:
-                # キャンペーン適用 → DB に免除フラグを立てて履歴管理
+            elif apply_waiver_now:
+                # キャンペーン適用確定 → DB に免除フラグ + 適用日時を記録
                 try:
                     if student_id and student_id != "":
                         c.execute(
-                            "UPDATE students SET enrollment_fee_waived = 1 WHERE id = ?",
+                            "UPDATE students SET enrollment_fee_waived = 1, "
+                            "enrollment_waiver_applied_at = CURRENT_TIMESTAMP "
+                            "WHERE id = ? AND enrollment_waiver_applied_at IS NULL",
                             (student_id,),
                         )
                     elif email:
                         c.execute(
-                            "UPDATE students SET enrollment_fee_waived = 1 WHERE email = ?",
+                            "UPDATE students SET enrollment_fee_waived = 1, "
+                            "enrollment_waiver_applied_at = CURRENT_TIMESTAMP "
+                            "WHERE email = ? AND enrollment_waiver_applied_at IS NULL",
                             (email,),
                         )
                     conn.commit()
