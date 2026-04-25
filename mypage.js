@@ -288,11 +288,11 @@ const TRIAL_KEY = 'ai_juku_trial_onboarding';
 const TRIAL_DAYS = [
   {
     day: 1,
-    title: '学習診断 & AIに最初の質問',
-    sub: '自分の今の実力を知り、AIコーチに最初の質問をしてみましょう。所要時間: 約15分',
+    title: '志望校カリキュラム作成 & 初質問',
+    sub: 'まずあなた専用のカリキュラムを作り、AIチューターに最初の質問をしてみましょう。所要時間: 約15分',
     tasks: [
-      { id: 'd1_diagnosis', title: '学習診断を受ける', desc: '志望校と現在レベルを入力して弱点を発見', url: 'index.html#tab-diagnosis', action: '診断を開始' },
-      { id: 'd1_curriculum', title: '志望校カリキュラムを自動生成', desc: '合格までの月別ロードマップをAIが作成', url: 'index.html#tab-curriculum', action: '作成する' },
+      { id: 'd1_curriculum', title: '志望校カリキュラムを自動生成', desc: '志望校・現状を入力 → AIが3フェーズ計画を作成', url: 'index.html#tab-curriculum', action: '作成する' },
+      { id: 'd1_diagnosis', title: '学習診断を受ける', desc: '今週の学習状況からAIが弱点を分析', url: 'index.html#tab-diagnostic', action: '診断する' },
       { id: 'd1_first_q', title: 'AIチューターに1問質問する', desc: '今わからない問題を1つだけ聞いてみる', url: 'index.html#tab-tutor', action: '質問する' },
     ]
   },
@@ -302,18 +302,18 @@ const TRIAL_DAYS = [
     sub: 'Day 1 の診断から見えた弱点を、AI生成問題で10問練習します。所要時間: 約30分',
     tasks: [
       { id: 'd2_gen_problems', title: 'AI問題を10問生成する', desc: '弱点単元に絞ったオリジナル問題', url: 'index.html#tab-problems', action: '生成する' },
-      { id: 'd2_grade', title: '解いて採点する', desc: '解答・解説を確認して理解を深める', url: 'index.html#tab-problems', action: '採点へ' },
-      { id: 'd2_textbook', title: '弱点特化の参考書を作る', desc: '自分だけの教材でさらに強化', url: 'textbook-generator.html', action: '作成する' },
+      { id: 'd2_review', title: '今日の復習を完了する', desc: 'エビングハウス復習で「✓正解/✗不正解」を記録', url: 'mypage.html#lbTodayReview', action: '復習する' },
+      { id: 'd2_textbook', title: '自分だけの参考書を作る', desc: '弱点特化の教材をAIが執筆', url: 'textbook-generator.html', action: '作成する' },
     ]
   },
   {
     day: 3,
-    title: '保護者レポートを体験',
-    sub: '3日間の学習実績をLINEで保護者に送り、価値を実感してもらいます。所要時間: 約5分',
+    title: '保護者レポート & 学習計画展開',
+    sub: 'カリキュラムを学習計画に取込み、保護者に届くレポートをプレビューします。所要時間: 約5分',
     tasks: [
-      { id: 'd3_line_link', title: 'LINEを連携する', desc: '保護者の公式LINEで友だち追加', url: 'https://line.me', action: '連携する' },
-      { id: 'd3_preview_report', title: '週次レポートをプレビュー', desc: '保護者に届くメッセージを確認', url: 'index.html#tab-parent', action: 'プレビュー' },
-      { id: 'd3_send_report', title: '保護者に初回レポート送信', desc: '3日間の成果を実際に送ってみる', url: 'index.html#tab-parent', action: '送信する' },
+      { id: 'd3_studyplan', title: 'カリキュラムを学習計画に取込', desc: '試験日まで全期間のタスクを自動展開', url: 'index.html#tab-studyplan', action: '取込む' },
+      { id: 'd3_preview_report', title: '保護者向けレポートをプレビュー', desc: '保護者にメールで届く週次レポートを確認', url: 'index.html#tab-parent', action: 'プレビュー' },
+      { id: 'd3_moshi', title: '模試結果をアップロード', desc: '画像から偏差値・弱点を自動抽出', url: 'index.html#tab-moshi', action: 'アップロード' },
     ]
   }
 ];
@@ -392,7 +392,7 @@ function renderTrialOnboarding() {
           <div class="to-task-desc">${escapeHtml(t.desc)}</div>
         </div>
         ${done
-          ? `<span class="to-task-action">✓ 完了</span>`
+          ? `<button class="to-task-action to-task-undo" data-task-id="${t.id}" title="完了を取り消す">✓ 完了 <small style="opacity:0.6;">(取消)</small></button>`
           : `<a href="${escapeHtml(t.url)}" class="to-task-action" data-task-id="${t.id}">${escapeHtml(t.action)} →</a>`}
       </div>
     `;
@@ -400,12 +400,24 @@ function renderTrialOnboarding() {
 
   // クリックしたらそのタスクを完了にマーク（ユーザーがリンク先で実行したと仮定）
   tasksEl.querySelectorAll('.to-task-action[href]').forEach(a => {
-    a.addEventListener('click', () => {
+    a.addEventListener('click', (e) => {
       const taskId = a.dataset.taskId;
       state.completed[taskId] = Date.now();
       saveTrialState(state);
       // リンク先で実行中にタブが残るので、戻ってきたとき反映
       setTimeout(renderTrialOnboarding, 100);
+    });
+  });
+
+  // 「✓ 完了」ボタン → クリックで完了取消(誤タップ救済)
+  tasksEl.querySelectorAll('.to-task-undo').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const taskId = btn.dataset.taskId;
+      if (confirm('このタスクの完了を取り消しますか？')) {
+        delete state.completed[taskId];
+        saveTrialState(state);
+        renderTrialOnboarding();
+      }
     });
   });
 

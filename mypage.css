@@ -504,12 +504,21 @@
   white-space: nowrap;
   transition: transform 0.15s;
 }
-.to-task-action:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(236, 72, 153, 0.35); }
+.to-task-action:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(236, 72, 153, 0.35); filter: brightness(1.15); }
+.to-task-action:active { transform: translateY(0); }
 .to-task.done .to-task-action {
   background: rgba(16, 185, 129, 0.2);
   color: #10b981;
-  pointer-events: none;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  cursor: pointer;
 }
+.to-task.done .to-task-action:hover {
+  background: rgba(16, 185, 129, 0.3);
+  filter: none;
+  transform: none;
+  box-shadow: none;
+}
+.to-task.done .to-task-action small { color: #fbbf24; margin-left: 0.3rem; }
 
 .to-footer {
   display: flex;
