@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📧 体験申込メール送信ツール | AI学習コーチ塾</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: linear-gradient(135deg, #0a0e1e, #1a0e2e); color: #f5f5fa; font-family: "Helvetica Neue", "ヒラギノ角ゴシック", sans-serif; padding: 2rem; min-height: 100vh; }
+  h1 { font-size: 1.6rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, #8b5cf6, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .lead { color: #aab; margin-bottom: 1.5rem; font-size: 0.92rem; }
+  .url-box { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3); border-radius: 10px; padding: 1rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  .url-box code { color: #fbbf24; font-size: 0.95rem; font-weight: 700; flex: 1; word-break: break-all; }
+  .copy-url-btn { background: #fbbf24; color: #0a0e1e; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 800; font-size: 0.85rem; }
+  .template { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 1.2rem; margin-bottom: 1rem; }
+  .template h2 { font-size: 1.1rem; color: #a78bfa; margin-bottom: 0.5rem; }
+  .template .desc { color: #aab; font-size: 0.85rem; margin-bottom: 0.8rem; }
+  .field { margin-bottom: 0.7rem; }
+  .field label { display: block; font-size: 0.78rem; color: #aab; margin-bottom: 0.3rem; }
+  .field input, .field textarea { width: 100%; padding: 0.6rem 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #f5f5fa; font-family: inherit; font-size: 0.88rem; }
+  .field textarea { min-height: 280px; resize: vertical; line-height: 1.6; white-space: pre-wrap; }
+  .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.8rem; }
+  .btn-primary { background: linear-gradient(135deg, #8b5cf6, #ec4899); color: white; border: none; padding: 0.7rem 1.4rem; border-radius: 8px; font-weight: 800; font-size: 0.92rem; cursor: pointer; }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-secondary { background: rgba(255,255,255,0.08); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.15); padding: 0.7rem 1.4rem; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
+  .badge { display: inline-block; background: rgba(251,191,36,0.2); color: #fbbf24; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 700; margin-left: 0.4rem; }
+</style>
+</head>
+<body>
+<h1>📧 体験申込メール送信ツール</h1>
+<p class="lead">3パターンの文面を準備済み。「メールを起動」ボタンをクリックすると、Mac標準メールアプリ (またはGmail等の規定メーラー) が件名・本文プリフィル済みで起動します。送信先メールアドレスを入れて送信するだけ。</p>
+
+<div class="url-box">
+  <span style="font-size: 0.85rem; color: #aab;">🔗 体験申込URL:</span>
+  <code id="trialUrl">https://www.trillion-ai-juku.com/checkout.html?plan=founder</code>
+  <button class="copy-url-btn" onclick="copyToClipboard(document.getElementById('trialUrl').textContent, this)">URLをコピー</button>
+</div>
+
+<!-- Template 1: 既存生徒向け -->
+<div class="template">
+  <h2>① 既存生徒向け <span class="badge">親しみ・シンプル</span></h2>
+  <p class="desc">塾に通っている生徒・卒塾生など、既に関係がある相手向け</p>
+  <div class="field">
+    <label>送信先メール (任意・複数はカンマ区切り)</label>
+    <input type="text" id="to1" placeholder="student1@example.com, student2@example.com">
+  </div>
+  <div class="field">
+    <label>件名</label>
+    <input type="text" id="subject1" value="【AI学習コーチ塾】3日間¥1,980で全機能体験できます">
+  </div>
+  <div class="field">
+    <label>本文 (送信時に編集可)</label>
+    <textarea id="body1">○○さん
+
+塾長の足立です。
+
+新サービス「AI学習コーチ塾」を3日間¥1,980で
+体験できる先着100名枠を用意しました。
+
+24時間AIに質問できて、9つの機能であなたの
+学習を完全個別最適化します。
+
+▼ 体験申込はこちら (30秒で完了)
+https://www.trillion-ai-juku.com/checkout.html?plan=founder
+
+▼ こんな機能があります
+・エビングハウス自動復習 (1日→3日→7日…の科学的タイミング)
+・躓きセンサー (連続不正解を即座に検知)
+・学習時間帯最適化 (朝/夜どちらが伸びるかAI分析)
+・定期テスト連携 (学校範囲から自動で問題生成)
+・24時間AIチューター (深夜の質問も即解説)
+
+体験中はワンタップで即解約・全額返金OKです。
+3日後はスタンダード¥24,980/月へ自動移行 (入塾金¥10,000・初回のみ)。
+
+質問あれば返信ください。
+
+足立</textarea>
+  </div>
+  <div class="actions">
+    <button class="btn-primary" onclick="launchMailer(1)">📧 メーラーを起動して送信準備</button>
+    <button class="btn-secondary" onclick="copyBody(1)">📋 本文をコピー</button>
+  </div>
+</div>
+
+<!-- Template 2: 保護者向け -->
+<div class="template">
+  <h2>② 保護者向け <span class="badge">信頼・安心</span></h2>
+  <p class="desc">小中高生のお子様の保護者向け。料金体系を明示</p>
+  <div class="field">
+    <label>送信先メール</label>
+    <input type="text" id="to2" placeholder="parent@example.com">
+  </div>
+  <div class="field">
+    <label>件名</label>
+    <input type="text" id="subject2" value="お子様の学習をAIで個別最適化 - 3日¥1,980体験のご案内">
+  </div>
+  <div class="field">
+    <label>本文</label>
+    <textarea id="body2">○○様
+
+いつもお世話になっております。
+AI学習コーチ塾 塾長の足立です。
+
+このたび、塾とは別のサービスとして
+「AI学習コーチ塾」を立ち上げました。
+お子様の学習を24時間サポートするAIサービスです。
+
+【主な機能】
+・24時間365日 AIに質問できる (深夜の「わからない」も解決)
+・AI が弱点を即時特定し、個別最適化
+・週次で保護者向け学習レポート配信
+・通塾不要、スマホ1台で完結
+
+【料金体系】
+・3日間体験: ¥1,980 (安心の体験料金)
+・月額継続: スタンダード ¥24,980/月
+・入塾金: ¥10,000 (初回のみ)
+・体験中ワンタップで即解約・全額返金可
+
+【先着100名 限定】
+↓ 体験申込はこちら (30秒で完了)
+https://www.trillion-ai-juku.com/checkout.html?plan=founder
+
+ご質問あればいつでもご連絡ください。
+
+足立</textarea>
+  </div>
+  <div class="actions">
+    <button class="btn-primary" onclick="launchMailer(2)">📧 メーラーを起動して送信準備</button>
+    <button class="btn-secondary" onclick="copyBody(2)">📋 本文をコピー</button>
+  </div>
+</div>
+
+<!-- Template 3: 紹介依頼 -->
+<div class="template">
+  <h2>③ 紹介依頼 <span class="badge">バイラル</span></h2>
+  <p class="desc">既存顧客に「周りで受験生がいたら紹介してほしい」と頼む</p>
+  <div class="field">
+    <label>送信先メール</label>
+    <input type="text" id="to3" placeholder="customer@example.com">
+  </div>
+  <div class="field">
+    <label>件名</label>
+    <input type="text" id="subject3" value="【お願い】AI学習コーチ塾を周りの方にご紹介ください">
+  </div>
+  <div class="field">
+    <label>本文</label>
+    <textarea id="body3">○○さん
+
+いつもありがとうございます。塾長の足立です。
+
+新しいAI学習コーチ塾を、周りで受験を控えた
+お子様や保護者の方がいらっしゃればご紹介
+いただけませんか?
+
+▼ サービス紹介ページ
+https://www.trillion-ai-juku.com/lp.html
+
+▼ 体験申込はこちら (3日間¥1,980)
+https://www.trillion-ai-juku.com/checkout.html?plan=founder
+
+【紹介プログラム】
+・あなた: 1名紹介成立で 1ヶ月無料 (累積)
+・ご友人: 初月50%OFF (¥12,490)
+
+紹介コードは塾生マイページで発行できます。
+よろしくお願いします。
+
+足立</textarea>
+  </div>
+  <div class="actions">
+    <button class="btn-primary" onclick="launchMailer(3)">📧 メーラーを起動して送信準備</button>
+    <button class="btn-secondary" onclick="copyBody(3)">📋 本文をコピー</button>
+  </div>
+</div>
+
+<script>
+function launchMailer(idx) {
+  const to = document.getElementById('to' + idx).value.trim();
+  const subject = document.getElementById('subject' + idx).value;
+  const body = document.getElementById('body' + idx).value;
+  // mailto: ではなく、Gmail compose URL も試せるようにする (mailto優先)
+  const mailto = 'mailto:' + encodeURIComponent(to)
+    + '?subject=' + encodeURIComponent(subject)
+    + '&body=' + encodeURIComponent(body);
+  window.location.href = mailto;
+}
+
+function copyBody(idx) {
+  const body = document.getElementById('body' + idx).value;
+  navigator.clipboard.writeText(body).then(() => {
+    const btn = event.target;
+    const orig = btn.textContent;
+    btn.textContent = '✓ コピー済';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+}
+
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ コピー済';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+}
+</script>
+</body>
+</html>
