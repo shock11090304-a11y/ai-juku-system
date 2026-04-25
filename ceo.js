@@ -179,6 +179,32 @@ function renderMetrics() {
   initCharts(m);
 }
 
+// フルネームの疑わしさを判定（roster 表示用の軽量チェック）。
+// app.js の validateFullName と同じキーワード集合。
+const ROSTER_BLOCKED_KEYWORDS = [
+  'テスト', 'ﾃｽﾄ', 'test',
+  'ダミー', 'dummy', 'サンプル', 'sample', 'デモ', 'demo',
+  '品質検証', '確認用', '動作確認', '検証用',
+  'ユーザー', 'user', 'guest', 'ゲスト',
+  'あいうえお', 'aaa', 'bbb', 'xxx', 'zzz',
+  '名無し', '未設定', 'noname', '管理者', 'admin', 'root',
+];
+
+function isSuspiciousStudentName(name) {
+  if (!name) return { suspicious: true, reason: '名前が未登録' };
+  const s = String(name).trim();
+  if (!s) return { suspicious: true, reason: '名前が空白' };
+  const bare = s.replace(/\s|　/g, '');
+  if (bare.length < 3) return { suspicious: true, reason: 'フルネームではありません（3文字未満）' };
+  const lower = s.toLowerCase();
+  for (const kw of ROSTER_BLOCKED_KEYWORDS) {
+    if (lower.includes(kw.toLowerCase())) {
+      return { suspicious: true, reason: `テストデータの疑い（「${kw}」を含む）` };
+    }
+  }
+  return { suspicious: false };
+}
+
 function renderRoster(students) {
   const tbody = document.getElementById('rosterBody');
   const search = (document.getElementById('rosterSearch').value || '').toLowerCase();
@@ -211,10 +237,14 @@ function renderRoster(students) {
                      fee >= 30000 ? 'プレミアム' :
                      fee >= 15000 ? 'スタンダード' : '未分類';
     const status = s.trialStart ? 'trial' : 'active';
+    const sus = isSuspiciousStudentName(s.name);
+    const nameWarning = sus.suspicious
+      ? ` <span style="color:#fbbf24;font-size:0.85em;cursor:help;" title="${escapeHtml(sus.reason)}（実在生徒の正しいフルネームに更新してください）">⚠️</span>`
+      : '';
     return `
       <tr>
         <td>${i + 1}</td>
-        <td><strong>${escapeHtml(s.name || '-')}</strong></td>
+        <td><strong>${escapeHtml(s.name || '-')}</strong>${nameWarning}</td>
         <td>${escapeHtml(s.grade || '-')}</td>
         <td style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(courses)}">
           ${fee > 0 ? `<span style="color:var(--primary-light);font-weight:700;">${planName}</span> / ` : ''}${escapeHtml(courses)}

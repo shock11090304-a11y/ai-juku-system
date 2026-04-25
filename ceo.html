@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+  <script src="cache-purge.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CEO経営ダッシュボード | AI学習コーチ塾</title>
@@ -404,7 +405,7 @@
     <!-- Student Roster -->
     <section class="roster-section">
       <div class="section-header-row">
-        <h2>📋 生徒ロスター (課金状況)</h2>
+        <h2>📋 生徒ロスター (課金状況) <span id="rosterCounter" style="font-size:0.75rem;color:#94a3b8;font-weight:400;margin-left:0.5rem;"></span></h2>
         <div class="roster-controls">
           <input type="text" id="rosterSearch" placeholder="名前/学年で検索..." />
           <select id="rosterSort">
@@ -429,6 +430,40 @@
             </tr>
           </thead>
           <tbody id="rosterBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- MRR 内訳 (Live data から算出) -->
+    <section class="roster-section" id="mrrBreakdownSection" style="margin-top:1.5rem;">
+      <div class="section-header-row">
+        <h2>💰 月次収益 (MRR) の根拠</h2>
+        <div id="mrrBreakdownStatus" style="font-size:0.75rem;color:#71717a;">読み込み中…</div>
+      </div>
+      <div id="mrrBreakdownAlert" style="display:none;margin:0.6rem 0;padding:0.7rem 0.9rem;border-radius:8px;font-size:0.85rem;line-height:1.5;"></div>
+      <div class="roster-table-wrapper">
+        <table class="roster-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>氏名</th>
+              <th>学年</th>
+              <th>プラン</th>
+              <th>状態</th>
+              <th style="text-align:right;">月謝</th>
+            </tr>
+          </thead>
+          <tbody id="mrrBreakdownBody"></tbody>
+          <tfoot>
+            <tr style="border-top:2px solid rgba(167,139,250,0.4);">
+              <td colspan="5" style="text-align:right;font-weight:700;color:#a78bfa;padding-top:0.7rem;">合計 (MRR)</td>
+              <td id="mrrBreakdownTotal" style="text-align:right;font-weight:900;color:#34d399;font-size:1.1rem;padding-top:0.7rem;">¥0</td>
+            </tr>
+            <tr>
+              <td colspan="5" style="text-align:right;font-size:0.78rem;color:#71717a;">サマリ API の MRR 値</td>
+              <td id="mrrBreakdownApi" style="text-align:right;font-size:0.85rem;color:#94a3b8;">¥0</td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </section>
@@ -469,7 +504,7 @@
   </footer>
 
   <script src="plans.js?v=20260422"></script>
-  <script src="ceo.js"></script>
+  <script src="ceo.js?v=20260426-mrr-breakdown"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {
@@ -581,28 +616,163 @@
       return map[plan] || (plan || '未契約');
     }
 
-    // 本番DBから実生徒データを取得して生徒ロスターを描画 (デモデータ上書き)
-    async function loadLiveRoster() {
+    // 通貨フォーマッタ (ceo.js の formatYen 互換)
+    function fmtYen(n) {
+      if (n >= 100000000) return `¥${(n/100000000).toFixed(1)}億`;
+      if (n >= 10000) return `¥${(n/10000).toFixed(1)}万`;
+      return `¥${Math.round(n).toLocaleString()}`;
+    }
+
+    // 本番DBから実 KPI 値 + 生徒ロスターを取得して上書き描画 (デモデータを置換)
+    async function loadLiveMetrics() {
       if (!window.AdminAuth || !AdminAuth.getToken()) return;
       try {
         const res = await AdminAuth.fetch('/api/admin/stats');
         if (!res.ok) return;
         const data = await res.json();
-        const apiStudents = (data.students || []).map(s => ({
-          id: s.id,
-          name: s.name || '(名前未登録)',
-          grade: s.grade || '',
-          goal: s.goal || '',
-          fee: s.status === 'paid' ? planFee(s.plan) : 0,
-          courses: [planLabel(s.plan || s.status)],
-          status: s.status,
-          trial_end: s.trial_end,
+        const s = data.summary || {};
+        const mrr = s.mrr_yen || 0;
+        const arr = s.arr_yen || 0;
+        const paidCount = s.paid || 0;
+        const trialCount = s.trial || 0;
+        const totalCount = s.total || 0;
+
+        // ヒーロー KPI を本番値で上書き
+        document.getElementById('mrr').textContent = fmtYen(mrr);
+        document.getElementById('arr').textContent = fmtYen(arr);
+        const ceoSalary = mrr * 12 * 0.4;  // 年間利益の40%
+        document.getElementById('ceoSalary').textContent = fmtYen(ceoSalary);
+        document.getElementById('mrrTrend').textContent =
+          mrr > 0
+            ? `通塾${paidCount}名 × 平均¥${Math.round(mrr/Math.max(1,paidCount)).toLocaleString()}/月`
+            : (trialCount > 0 ? `体験${trialCount}名 → 月額移行待ち` : 'まだ申込がありません');
+
+        // 通塾生徒数
+        document.getElementById('studentCount').textContent = totalCount;
+        document.getElementById('studentBreakdown').textContent = `有料${paidCount}名 / 体験${trialCount}名`;
+
+        // AI原価は今後の events 集計で算出予定。現状は0表示 (実装後に置換)
+        // 月額売上があれば 粗利率 100% (原価実装後に正確化)
+        const grossMargin = mrr > 0 ? 100.0 : 0;
+        document.getElementById('grossMargin').textContent = `${grossMargin.toFixed(1)}%`;
+
+        // 3000万円達成率 (CEO報酬 = 年間利益40%、目標年収¥30,000,000)
+        const goalYearly = 30000000;
+        const goalMonthly = goalYearly / 12 / 0.4;
+        const goalProgress = Math.min(100, (mrr / goalMonthly) * 100);
+        const goalGap = Math.max(0, goalMonthly - mrr);
+        document.getElementById('goalProgress').textContent = `${goalProgress.toFixed(1)}%`;
+        document.getElementById('goalGap').textContent = `あと${fmtYen(goalGap)}/月`;
+
+        // ヘッダーバッジを「LIVE」表示に更新 (デモ表記を消す)
+        const badge = document.getElementById('lastUpdated');
+        if (badge) {
+          badge.innerHTML = `🟢 LIVE (更新: ${new Date().toLocaleTimeString('ja-JP')})`;
+          badge.style.background = 'rgba(52,211,153,0.15)';
+          badge.style.color = '#34d399';
+          badge.style.borderColor = 'rgba(52,211,153,0.4)';
+          badge.title = '本番DBから取得した実データ';
+        }
+
+        // ロスターも同じデータで描画
+        const apiStudents = (data.students || []).map(st => ({
+          id: st.id,
+          name: st.name || '(名前未登録)',
+          grade: st.grade || '',
+          goal: st.goal || '',
+          fee: st.status === 'paid' ? planFee(st.plan) : 0,
+          courses: [planLabel(st.plan || st.status)],
+          status: st.status,
+          trial_end: st.trial_end,
+          plan: st.plan,
         }));
         if (typeof renderRoster === 'function') {
           renderRoster(apiStudents);
         }
-      } catch (e) { console.warn('[loadLiveRoster] failed:', e); }
+
+        // ロスターのカウンタ更新 (合計件数・ステータス別)
+        const counts = apiStudents.reduce((acc, st) => {
+          const k = st.status || 'unknown';
+          acc[k] = (acc[k] || 0) + 1;
+          return acc;
+        }, {});
+        const statusLabel = { paid: '有料', trial: '体験', canceled: '解約', expired: '体験終了' };
+        const counterParts = Object.entries(counts).map(([k, v]) => `${statusLabel[k] || k}${v}名`);
+        const counterEl = document.getElementById('rosterCounter');
+        if (counterEl) {
+          counterEl.textContent = `(取得 ${apiStudents.length}名 / ${counterParts.join(' • ')})`;
+        }
+
+        // === 💰 MRR 内訳: 有料生徒の月謝を一覧化して合計を MRR と突合 ===
+        const paidStudents = apiStudents.filter(st => st.status === 'paid');
+        const breakdownBody = document.getElementById('mrrBreakdownBody');
+        const breakdownStatus = document.getElementById('mrrBreakdownStatus');
+        const breakdownAlert = document.getElementById('mrrBreakdownAlert');
+        const breakdownTotal = document.getElementById('mrrBreakdownTotal');
+        const breakdownApi = document.getElementById('mrrBreakdownApi');
+        if (breakdownBody) {
+          if (paidStudents.length === 0) {
+            breakdownBody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:#71717a;">有料生徒（status=paid）がいません</td></tr>`;
+          } else {
+            breakdownBody.innerHTML = paidStudents.map((st, i) => {
+              const fee = planFee(st.plan);
+              return `
+                <tr>
+                  <td>${i + 1}</td>
+                  <td><strong>${escapeHtmlSafe(st.name)}</strong></td>
+                  <td>${escapeHtmlSafe(st.grade || '-')}</td>
+                  <td>${escapeHtmlSafe(planLabel(st.plan))}</td>
+                  <td><span class="roster-status active">通塾</span></td>
+                  <td style="text-align:right;font-weight:700;color:#34d399;">¥${fee.toLocaleString()}</td>
+                </tr>
+              `;
+            }).join('');
+          }
+          const sum = paidStudents.reduce((acc, st) => acc + planFee(st.plan), 0);
+          if (breakdownTotal) breakdownTotal.textContent = `¥${sum.toLocaleString()}`;
+          if (breakdownApi) breakdownApi.textContent = `¥${(mrr || 0).toLocaleString()}`;
+
+          // サマリ MRR と内訳合計の突合
+          const drift = sum - (mrr || 0);
+          const driftAbs = Math.abs(drift);
+          if (breakdownStatus) {
+            if (driftAbs === 0 && paidStudents.length === paidCount) {
+              breakdownStatus.innerHTML = `🟢 一致 (有料${paidStudents.length}名 = サマリ${paidCount}名 / 合計¥${sum.toLocaleString()} = MRR¥${(mrr||0).toLocaleString()})`;
+              breakdownStatus.style.color = '#34d399';
+            } else {
+              breakdownStatus.innerHTML = `⚠️ 不整合あり (内訳${paidStudents.length}名 / サマリ${paidCount}名)`;
+              breakdownStatus.style.color = '#fbbf24';
+            }
+          }
+          if (breakdownAlert) {
+            const issues = [];
+            if (paidStudents.length !== paidCount) {
+              issues.push(`サマリの「通塾${paidCount}名」と内訳テーブルの${paidStudents.length}名が一致しません。差分${paidCount - paidStudents.length}名は API レスポンスに含まれていない可能性があります。`);
+            }
+            if (driftAbs > 0) {
+              issues.push(`サマリ MRR ¥${(mrr||0).toLocaleString()} と内訳合計 ¥${sum.toLocaleString()} が ¥${driftAbs.toLocaleString()} ズレています（プラン単価の不一致や月謝未設定の生徒がいる可能性）。`);
+            }
+            if (issues.length === 0) {
+              breakdownAlert.style.display = 'none';
+            } else {
+              breakdownAlert.style.display = 'block';
+              breakdownAlert.style.background = 'rgba(251,191,36,0.1)';
+              breakdownAlert.style.border = '1px solid rgba(251,191,36,0.4)';
+              breakdownAlert.style.color = '#fbbf24';
+              breakdownAlert.innerHTML = '⚠️ <strong>整合性チェック</strong><br>' + issues.map(x => `・${x}`).join('<br>');
+            }
+          }
+        }
+      } catch (e) { console.warn('[loadLiveMetrics] failed:', e); }
     }
+
+    // 内訳セクション専用の HTML エスケープ (ceo.js の escapeHtml と独立)
+    function escapeHtmlSafe(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    // 旧名関数を残してロード順序の安全性確保
+    const loadLiveRoster = loadLiveMetrics;
 
     // 初回読込 + 60秒ごと自動更新
     function start() {
