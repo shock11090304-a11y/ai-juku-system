@@ -384,11 +384,15 @@
 
     <section class="charts-section">
       <div class="chart-box">
-        <h3>📍 学年別生徒分布</h3>
+        <h3>📍 学年別生徒分布 <span id="gradeChartSource" style="font-size:0.7rem;color:#71717a;font-weight:400;margin-left:0.4rem;">デモ</span></h3>
         <canvas id="gradeChart"></canvas>
       </div>
       <div class="chart-box">
-        <h3>💸 コスト構造 (年間想定)</h3>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;">
+          <h3 style="margin:0;">💸 コスト構造 (年間・実数値)</h3>
+          <button id="editCostsBtn" type="button" style="background:rgba(167,139,250,0.18);color:#a78bfa;border:1px solid rgba(167,139,250,0.4);padding:0.3rem 0.7rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">✏️ 編集</button>
+        </div>
+        <div id="costNotice" style="display:none;margin:0.6rem 0;padding:0.6rem 0.8rem;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.35);border-radius:8px;color:#fbbf24;font-size:0.82rem;line-height:1.5;"></div>
         <canvas id="costChart"></canvas>
       </div>
     </section>
@@ -486,14 +490,14 @@
         <div class="milestone-arrow">→</div>
         <div class="milestone">
           <div class="milestone-label">損益分岐点</div>
-          <div class="milestone-value">¥3,000,000/月</div>
-          <div class="milestone-note">約75名必要</div>
+          <div class="milestone-value" id="breakevenRevenue">¥0/月</div>
+          <div class="milestone-note" id="breakevenNote">コスト未入力</div>
         </div>
         <div class="milestone-arrow">→</div>
         <div class="milestone">
           <div class="milestone-label">目標</div>
-          <div class="milestone-value">¥6,000,000/月</div>
-          <div class="milestone-note">営業利益¥250万/月 × 12 = 年間¥3,000万</div>
+          <div class="milestone-value" id="goalRevenue">¥6,250,000/月</div>
+          <div class="milestone-note" id="goalRevenueNote">CEO報酬¥3,000万 = 年間利益¥7,500万 ÷ 12</div>
         </div>
       </div>
     </section>
@@ -504,7 +508,7 @@
   </footer>
 
   <script src="plans.js?v=20260422"></script>
-  <script src="ceo.js?v=20260426-mrr-breakdown"></script>
+  <script src="ceo.js?v=20260426-all-live"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {
@@ -690,6 +694,13 @@
           renderRoster(apiStudents);
         }
 
+        // 学年別チャートのソースバッジを LIVE 表示に
+        const gradeSrc = document.getElementById('gradeChartSource');
+        if (gradeSrc) {
+          gradeSrc.textContent = '🟢 LIVE';
+          gradeSrc.style.color = '#34d399';
+        }
+
         // ロスターのカウンタ更新 (合計件数・ステータス別)
         const counts = apiStudents.reduce((acc, st) => {
           const k = st.status || 'unknown';
@@ -763,6 +774,87 @@
             }
           }
         }
+
+        // ========================================================
+        // 全要素を LIVE データで再描画 (デモ依存を完全排除)
+        // ========================================================
+        // 1) 実コスト (localStorage) → 月間コスト・粗利率を計算
+        const annualCosts = (window.loadCosts ? (window.loadCosts() || {}) : {});
+        const fields = window.COST_FIELDS || [];
+        const annualTotalYen = fields.reduce((a, f) => a + (parseInt(annualCosts[f.key] || 0, 10) * 10000), 0);
+        const monthTotalYen = annualTotalYen / 12;
+        const annualApiYen = parseInt(annualCosts.api || 0, 10) * 10000;
+        const monthApiYen = annualApiYen / 12;
+        const grossMarginPct = mrr > 0 ? ((mrr - monthTotalYen) / mrr) * 100 : 0;
+
+        // 月間AI原価カード
+        document.getElementById('monthCost').textContent = fmtYen(monthApiYen);
+        document.getElementById('costRatio').textContent =
+          mrr > 0 && monthApiYen > 0 ? `原価率 ${((monthApiYen / mrr) * 100).toFixed(1)}%`
+          : (monthApiYen > 0 ? '原価率 -' : '実コスト未入力');
+
+        // 粗利率カード (実コスト全体 vs MRR)
+        const gmEl = document.getElementById('grossMargin');
+        gmEl.textContent = (mrr > 0 && monthTotalYen > 0) ? `${grossMarginPct.toFixed(1)}%` : (mrr > 0 ? '実コスト未入力' : '-');
+
+        // 2) 「現在」セクション (3000万達成までの道のり)
+        document.getElementById('currentRevenue').textContent = `${fmtYen(mrr)}/月`;
+        document.getElementById('currentStudents').textContent = `${paidCount}名`;
+
+        // 損益分岐点 = 月間総コスト
+        const breakevenEl = document.getElementById('breakevenRevenue');
+        const breakevenNoteEl = document.getElementById('breakevenNote');
+        if (monthTotalYen > 0) {
+          breakevenEl.textContent = `${fmtYen(monthTotalYen)}/月`;
+          const neededStudents = Math.ceil(monthTotalYen / 39800);
+          breakevenNoteEl.textContent = `プレミアム換算 約${neededStudents}名必要`;
+        } else {
+          breakevenEl.textContent = 'コスト未入力';
+          breakevenNoteEl.textContent = '右上の💸コスト構造で実コストを入力';
+        }
+
+        // 目標売上 (CEO報酬¥3,000万 = 年間利益40%、年間利益 ¥7,500万 ÷ 12)
+        document.getElementById('goalRevenue').textContent = `${fmtYen(goalMonthly)}/月`;
+
+        // 3) plan / grade / cost / revenue チャートを LIVE データで再描画
+        const planCount = { ai: 0, hybrid: 0, intensive: 0, other: 0 };
+        const gradeCount = {};
+        for (const st of apiStudents) {
+          const g = (st.grade || '').trim() || '未設定';
+          gradeCount[g] = (gradeCount[g] || 0) + 1;
+          if (st.status !== 'paid') continue;
+          const fee = planFee(st.plan);
+          if (fee >= 60000) planCount.intensive++;
+          else if (fee >= 30000) planCount.hybrid++;
+          else if (fee >= 15000) planCount.ai++;
+          else planCount.other++;
+        }
+
+        // LIVE metrics オブジェクト (ceo.js の関数群が期待する形)
+        const liveMetrics = {
+          mrr, arr,
+          ceoSalary,
+          studentCount: totalCount,
+          paidCount, trialCount,
+          monthlyCost: monthTotalYen,
+          costUSD: 0,
+          grossMargin: grossMarginPct,
+          goalProgress, goalGap, goalMonthly,
+          planCount, gradeCount,
+          students: apiStudents,
+        };
+
+        if (typeof initPlanChart === 'function') initPlanChart(liveMetrics);
+        if (typeof initGradeChart === 'function') initGradeChart(liveMetrics);
+        if (typeof initCostChart === 'function') initCostChart();
+        if (typeof initRevenueChart === 'function') {
+          const activeBtn = document.querySelector('.chart-toggle.active');
+          const sim = (activeBtn && activeBtn.dataset.sim) || 'realistic';
+          initRevenueChart(liveMetrics, sim);
+        }
+
+        // 4) CEO 今週の意思決定ポイントも LIVE データで再生成
+        if (typeof renderActionItems === 'function') renderActionItems(liveMetrics);
       } catch (e) { console.warn('[loadLiveMetrics] failed:', e); }
     }
 

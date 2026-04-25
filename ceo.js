@@ -328,7 +328,7 @@ function initCharts(m) {
   initRevenueChart(m, 'realistic');
   initPlanChart(m);
   initGradeChart(m);
-  initCostChart(m);
+  initCostChart();
 }
 
 function initRevenueChart(m, simType) {
@@ -447,18 +447,65 @@ function initGradeChart(m) {
   });
 }
 
-function initCostChart(m) {
+// コスト構造は塾長が手入力で管理（localStorage）。単位: 万円/年。
+const COST_STORAGE_KEY = 'ai_juku_annual_costs';
+const COST_FIELDS = [
+  { key: 'mentor', label: 'メンター人件費', color: '#818cf8' },
+  { key: 'api', label: 'AI API費用', color: '#ec4899' },
+  { key: 'system', label: 'システム開発', color: '#0ea5e9' },
+  { key: 'marketing', label: 'マーケティング', color: '#f59e0b' },
+  { key: 'other', label: 'その他', color: '#10b981' },
+];
+
+function loadCosts() {
+  try {
+    const raw = localStorage.getItem(COST_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') return parsed;
+  } catch {}
+  return null;
+}
+
+// loadLiveMetrics (ceo.html) から参照するため window へ公開
+window.COST_STORAGE_KEY = COST_STORAGE_KEY;
+window.COST_FIELDS = COST_FIELDS;
+window.loadCosts = loadCosts;
+
+function initCostChart() {
   const ctx = document.getElementById('costChart');
+  if (!ctx) return;
   if (charts.cost) charts.cost.destroy();
 
-  // Annual cost breakdown (from business model)
-  const data = [
-    { label: 'メンター人件費', value: 1800, color: '#818cf8' },
-    { label: 'AI API費用', value: 300, color: '#ec4899' },
-    { label: 'システム開発', value: 600, color: '#0ea5e9' },
-    { label: 'マーケティング', value: 1000, color: '#f59e0b' },
-    { label: 'その他', value: 400, color: '#10b981' },
-  ];
+  const stored = loadCosts();
+  const data = COST_FIELDS.map(f => ({
+    label: f.label,
+    value: Math.max(0, parseInt((stored && stored[f.key]) || 0, 10) || 0),
+    color: f.color,
+  }));
+  const total = data.reduce((a, d) => a + d.value, 0);
+
+  const notice = document.getElementById('costNotice');
+  if (total === 0) {
+    if (notice) {
+      notice.style.display = 'block';
+      notice.innerHTML = '実コストが未入力です。<br><strong>「✏️ 編集」</strong>を押して年間コスト（万円単位）を入力してください。';
+    }
+    charts.cost = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['未入力'],
+        datasets: [{ data: [1], backgroundColor: ['#3f3f46'], borderWidth: 0 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        cutout: '55%'
+      }
+    });
+    return;
+  }
+  if (notice) notice.style.display = 'none';
 
   charts.cost = new Chart(ctx, {
     type: 'doughnut',
@@ -480,11 +527,33 @@ function initCostChart(m) {
   });
 }
 
+function editCosts() {
+  const cur = loadCosts() || {};
+  const next = { ...cur };
+  for (const f of COST_FIELDS) {
+    const def = String(parseInt(cur[f.key] || 0, 10) || 0);
+    const v = prompt(`${f.label}（年間・万円単位の整数）\n例: 1800 と入力すると年間¥1,800万`, def);
+    if (v === null) return; // キャンセルは中断
+    const n = parseInt(v, 10);
+    if (Number.isNaN(n) || n < 0) {
+      alert(`${f.label}: 0以上の整数を入力してください`);
+      return;
+    }
+    next[f.key] = n;
+  }
+  localStorage.setItem(COST_STORAGE_KEY, JSON.stringify(next));
+  initCostChart();
+  alert('✅ コストを更新しました');
+}
+
 // ==========================================================================
 // Event Handlers
 // ==========================================================================
 document.addEventListener('DOMContentLoaded', () => {
   renderMetrics();
+
+  const editBtn = document.getElementById('editCostsBtn');
+  if (editBtn) editBtn.addEventListener('click', editCosts);
 
   document.getElementById('rosterSearch').addEventListener('input', () => {
     renderRoster(getStudents());
