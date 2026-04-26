@@ -109,11 +109,25 @@ FOUNDER_LIMIT = 100
 # 1期生100名永年プラン (本契約)
 FOUNDER1_PRICE = 25000
 
-# 顧客向け表示用の擬似申込数 (購買意欲喚起のためのカモフラージュ)
-# 公開API /api/founders/count?public=1 でこの値が実申込数に加算される。
-# 例: real_taken=0, FOUNDER_PUBLIC_FAKE_TAKEN=26 → 顧客には「残74」と見える。
-# 内部API (CEOダッシュボード) は加算なしの実数値を返す。
-FOUNDER_PUBLIC_FAKE_TAKEN = int(os.getenv("FOUNDER_PUBLIC_FAKE_TAKEN", "26"))
+# 顧客向け表示用の擬似申込数 (購買意欲喚起のためのカモフラージュ・FOMO 設計)
+# /api/founders/count?public=1 で動的計算された値が返る。塾長の指示で
+# 「実申込が増えるほど残枠表示も縮小して FOMO を加速」設計。
+#
+# 計算式:
+#   public_taken = real_taken + FAKE_BASE + (real_taken * FAKE_MULTIPLIER) + (days_since_launch * DAILY_GROWTH)
+#   public_remaining = max(MIN_REMAINING, FOUNDER_LIMIT - public_taken)
+#
+# 例 (デフォルト: BASE=26, MULTIPLIER=2, DAILY_GROWTH=0.5, MIN=2):
+#   day0  real=0  → public_taken=26 → 残74
+#   day7  real=0  → public_taken=29 → 残71  (1週間経過で +3)
+#   day7  real=10 → public_taken=59 → 残41  (実申込効果で大きく縮小)
+#   day14 real=20 → public_taken=87 → 残13  (緊急感MAX)
+#   day14 real=33 → public_taken=113 → max → 残2 (即決断ライン)
+FOUNDER_PUBLIC_FAKE_TAKEN = int(os.getenv("FOUNDER_PUBLIC_FAKE_TAKEN", "26"))  # 旧称・後方互換 (BASE と同義)
+FOUNDER_PUBLIC_FAKE_BASE = int(os.getenv("FOUNDER_PUBLIC_FAKE_BASE", str(FOUNDER_PUBLIC_FAKE_TAKEN)))
+FOUNDER_PUBLIC_FAKE_MULTIPLIER = float(os.getenv("FOUNDER_PUBLIC_FAKE_MULTIPLIER", "2.0"))
+FOUNDER_PUBLIC_FAKE_DAILY_GROWTH = float(os.getenv("FOUNDER_PUBLIC_FAKE_DAILY_GROWTH", "0.5"))
+FOUNDER_PUBLIC_MIN_REMAINING = int(os.getenv("FOUNDER_PUBLIC_MIN_REMAINING", "2"))
 
 # Daily SNS研究員: 毎日 JST DAILY_SNS_HOUR_JST 時に塾長キャラのThreads投稿5本を生成→Gmail送信
 DAILY_SNS_TO_EMAIL = os.getenv("DAILY_SNS_TO_EMAIL", "")
@@ -1868,6 +1882,87 @@ def admin_stats(authorization: Optional[str] = Header(None)):
     }
 
 
+@app.get("/api/admin/revenue-timeline")
+def admin_revenue_timeline(authorization: Optional[str] = Header(None), days: int = 30):
+    """過去N日の日次売上推移 (Stripe payments テーブルから集計)。
+    返却: [{date: "YYYY-MM-DD", paid_count, revenue_yen, cumulative_paid, cumulative_revenue}]"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+
+    days = max(1, min(int(days), 90))
+    JST = timezone(timedelta(hours=9))
+    today = datetime.now(JST).date()
+
+    conn = db()
+    c = conn.cursor()
+    timeline = []
+    cumulative_paid = 0
+    cumulative_revenue = 0
+    # まず累計の起点を取得 (集計範囲開始日より前の累計)
+    start_date = today - timedelta(days=days - 1)
+    start_utc = datetime.combine(start_date, time(0, 0), tzinfo=JST).astimezone(timezone.utc)
+    try:
+        c.execute(
+            "SELECT COUNT(*) FROM students WHERE status='paid' AND paid_since IS NOT NULL AND paid_since < ?",
+            (start_utc,)
+        )
+        cumulative_paid = c.fetchone()[0] or 0
+    except Exception:
+        try: conn.rollback()
+        except Exception: pass
+    try:
+        c.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status='succeeded' AND paid_at < ?",
+            (start_utc,)
+        )
+        cumulative_revenue = c.fetchone()[0] or 0
+    except Exception:
+        try: conn.rollback()
+        except Exception: pass
+
+    for i in range(days):
+        d = start_date + timedelta(days=i)
+        d_start_utc = datetime.combine(d, time(0, 0), tzinfo=JST).astimezone(timezone.utc)
+        d_end_utc = d_start_utc + timedelta(days=1)
+        # 当日の新規 paid 数
+        try:
+            c.execute(
+                "SELECT COUNT(*) FROM students WHERE status='paid' AND paid_since >= ? AND paid_since < ?",
+                (d_start_utc, d_end_utc)
+            )
+            new_paid = c.fetchone()[0] or 0
+        except Exception:
+            try: conn.rollback()
+            except Exception: pass
+            new_paid = 0
+        # 当日の決済額
+        try:
+            c.execute(
+                "SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status='succeeded' AND paid_at >= ? AND paid_at < ?",
+                (d_start_utc, d_end_utc)
+            )
+            day_revenue = c.fetchone()[0] or 0
+        except Exception:
+            try: conn.rollback()
+            except Exception: pass
+            day_revenue = 0
+        cumulative_paid += new_paid
+        cumulative_revenue += day_revenue
+        timeline.append({
+            "date": d.strftime("%Y-%m-%d"),
+            "label": d.strftime("%m/%d"),
+            "paid_count": new_paid,
+            "revenue_yen": day_revenue,
+            "cumulative_paid": cumulative_paid,
+            "cumulative_revenue": cumulative_revenue,
+        })
+    conn.close()
+    return {"days": days, "timeline": timeline}
+
+
 @app.get("/api/admin/analytics")
 def admin_analytics(authorization: Optional[str] = Header(None)):
     """events テーブルを集計してアクセス数ダッシュボード用データを返す。
@@ -2565,6 +2660,20 @@ def list_plans():
         "trial_duration_days": FOUNDER_TRIAL_DAYS,
     }
 
+def _calculate_dynamic_fake_taken(real_paid: int) -> int:
+    """カモフラージュ申込数を動的計算 (FOMO 加速設計)。
+    要素:
+      - BASE (デフォルト26): ローンチ初日の最低カモフラージュ
+      - MULTIPLIER (デフォルト2.0): 実申込1名あたりの追加偽申込
+      - DAILY_GROWTH (デフォルト0.5): 1日あたりの自然増 (週で +3.5)
+    最終的に MIN_REMAINING で下限保護 (残0=売り止め印象を防ぐ)。"""
+    import time
+    days_since_launch = max(0, (time.time() - SERVICE_LAUNCH_TS) / 86400)
+    natural_growth = int(days_since_launch * FOUNDER_PUBLIC_FAKE_DAILY_GROWTH)
+    fomo_boost = int(real_paid * FOUNDER_PUBLIC_FAKE_MULTIPLIER)
+    return real_paid + FOUNDER_PUBLIC_FAKE_BASE + fomo_boost + natural_growth
+
+
 @app.get("/api/founders/count")
 def founders_count(public: bool = False):
     """第1期生の残り枠をカウント。
@@ -2572,7 +2681,9 @@ def founders_count(public: bool = False):
     旧: ai/hybrid/intensive）を対象。トライアル中も status='paid' が立つため、
     実際に枠を占有している全員をカウントする。
 
-    public=1 (顧客向け): FOUNDER_PUBLIC_FAKE_TAKEN を加算したカモフラージュ値を返す。
+    public=1 (顧客向け): 動的計算カモフラージュ値を返す (FOMO設計)。
+      実申込が増えるほど + 経過日数が増えるほど 残枠表示が縮小する。
+      env で BASE/MULTIPLIER/DAILY_GROWTH/MIN_REMAINING を調整可能。
     public未指定 (内部用): 実数値を返す (CEOダッシュボード用)。"""
     conn = db()
     c = conn.cursor()
@@ -2587,10 +2698,10 @@ def founders_count(public: bool = False):
     conn.close()
     real_remaining = max(0, FOUNDER_LIMIT - paid)
     if public:
-        # 顧客向けカモフラージュ: 残枠を意図的に少なく見せて購買意欲を喚起
-        fake_taken = paid + FOUNDER_PUBLIC_FAKE_TAKEN
-        # 「残0」表示は完売印象=売り止めになるので最低1名分は残す
-        public_remaining = max(1, FOUNDER_LIMIT - fake_taken)
+        # 動的カモフラージュ計算
+        public_taken = _calculate_dynamic_fake_taken(paid)
+        # 最低 MIN_REMAINING 名は残す (「残0」=完売印象を防ぐ)
+        public_remaining = max(FOUNDER_PUBLIC_MIN_REMAINING, FOUNDER_LIMIT - public_taken)
         public_taken = FOUNDER_LIMIT - public_remaining
         return {"limit": FOUNDER_LIMIT, "taken": public_taken, "remaining": public_remaining}
     return {"limit": FOUNDER_LIMIT, "taken": paid, "remaining": real_remaining}

@@ -915,7 +915,7 @@ function showQuotaExhaustedDialog(feature, message) {
         <a href="upgrade.html" style="background:linear-gradient(135deg,#8b5cf6,#ec4899);color:white;padding:0.7rem 1.2rem;border-radius:8px;text-decoration:none;font-weight:800;font-size:0.95rem;flex:1;text-align:center;">プレミアムにアップグレード →</a>
         <button onclick="document.getElementById('quotaExhaustedModal').remove()" style="background:rgba(255,255,255,0.08);color:#cbd5e1;border:1px solid rgba(255,255,255,0.15);padding:0.7rem 1.2rem;border-radius:8px;font-weight:700;font-size:0.95rem;cursor:pointer;">閉じる</button>
       </div>
-      <p style="font-size:0.78rem;color:#71717a;margin-top:0.8rem;text-align:center;">来月1日に上限がリセットされます</p>
+      <p style="font-size:0.78rem;color:#71717a;margin-top:0.8rem;text-align:center;">次回の請求サイクル開始日に上限がリセットされます</p>
     </div>
   `;
   document.body.appendChild(modal);

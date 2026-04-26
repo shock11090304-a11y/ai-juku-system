@@ -302,38 +302,58 @@ ${/数学/.test(subject) ? `
 上記条件で、${topic}に関する${getTypeLabel(type)}を指定のJSON形式で生成してください。`;
 
   let json;
-  if (!getApiKey()) {
+  // 1) ログイン済みユーザーは backend AI proxy 経由 (生徒ブラウザにキー不要)
+  // 2) 管理者は localStorage の APIキー直叩き
+  // 3) どちらも無ければ demo
+  const sessionToken = localStorage.getItem('ai_juku_session_token')
+    || localStorage.getItem('ai_juku_admin_token');
+  const backend = (window.location.hostname === 'localhost' && window.location.port === '8090')
+    ? 'http://localhost:8000' : window.location.origin;
+  const apiKey = getApiKey();
+
+  if (!sessionToken && !apiKey) {
     await new Promise(r => setTimeout(r, 1500));
     json = generateDemo(subject, topic, level);
   } else {
     try {
-      // クオリティ最優先: Opus 4.7 を使用。
-      // Opus 4.7 は thinking.type='enabled' を拒否するため adaptive + effort を使う。
-      // 旧モデル(Sonnet 4.6 以下)は従来通り enabled + budget_tokens。
-      const isOpus47 = (MODEL_PREMIUM || '').startsWith('claude-opus-4-7');
       const body = {
         model: MODEL_PREMIUM,
         max_tokens: 16000,
-        temperature: 1.0,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMsg }],
       };
-      if (isOpus47) {
-        body.thinking = { type: 'adaptive' };
-        body.output_config = { effort: 'high' };  // 教材生成は高 effort 固定
+      let res;
+      if (sessionToken) {
+        // backend proxy 経由 (生徒も使える)
+        res = await fetch(`${backend}/api/ai/messages`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + sessionToken,
+          },
+          body: JSON.stringify(body),
+        });
       } else {
-        body.thinking = { type: 'enabled', budget_tokens: 5000 };
+        // 管理者: 直叩き (Anthropic 直接、thinking 設定込み)
+        const isOpus47 = (MODEL_PREMIUM || '').startsWith('claude-opus-4-7');
+        const directBody = { ...body, temperature: 1.0 };
+        if (isOpus47) {
+          directBody.thinking = { type: 'adaptive' };
+          directBody.output_config = { effort: 'high' };
+        } else {
+          directBody.thinking = { type: 'enabled', budget_tokens: 5000 };
+        }
+        res = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
+          },
+          body: JSON.stringify(directBody),
+        });
       }
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': getApiKey(),
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify(body),
-      });
       if (!res.ok) {
         const errText = await res.text();
         throw new Error(`API ${res.status}: ${errText.slice(0, 200)}`);
