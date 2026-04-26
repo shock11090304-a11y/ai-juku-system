@@ -404,7 +404,7 @@ def scene_cta(out_path):
 
     center_text(draw, "あなたの志望校合格まで、", f_top, 220, TEXT_DIM)
 
-    grad_text(img, "¥1,980で3日間", f_big, (150, 340), GRAD_T1, GRAD_T2)
+    grad_text(img, "7日間 完全無料で", f_big, (150, 340), GRAD_T1, GRAD_T2)
 
     draw = ImageDraw.Draw(img)
     center_text(draw, "模試入力 → カリキュラム生成を", f_top, 580, TEXT)

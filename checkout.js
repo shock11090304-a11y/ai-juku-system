@@ -84,7 +84,8 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
 
     const signupData = await signupRes.json();
 
-    // 2. 体験用 ¥1,980 単発決済（サブスク無し・自動課金なし）
+    // 2. 7日間 完全無料体験 (バックエンドが FOUNDER_TRIAL_PRICE=0 を検出すると
+    //    Stripe をスキップして即座に checkout-success.html へ遷移する)。
     //    継続は別途 upgrade.html で本契約。
     const checkoutRes = await fetch(`${API_BASE}/api/stripe/trial-checkout`, {
       method: 'POST',

@@ -1224,7 +1224,7 @@ def usage_me(authorization: Optional[str] = Header(None)):
 @app.post("/api/trial/signup")
 def trial_signup(payload: TrialSignup):
     now = datetime.now(timezone.utc)
-    trial_end = now + timedelta(days=FOUNDER_TRIAL_DAYS)  # 14日間の完全無料体験
+    trial_end = now + timedelta(days=FOUNDER_TRIAL_DAYS)  # 7日間の完全無料体験
     conn = db()
     c = conn.cursor()
     try:
@@ -1332,9 +1332,10 @@ def create_trial_checkout(payload: dict):
 def create_checkout_session(payload: CheckoutRequest):
     """
     新プラン構造でのチェックアウト:
-    - 通常プラン (standard/premium/family): 月額サブスク（7日間トライアル）+ トライアル後の初回請求に入塾金 ¥10,000 を追加
+    - 1期生プラン (founder1): 永年¥25,000/月 (100名限定) + 入塾金 ¥10,000
+    - 通常プラン (standard/premium/family): 月額サブスク + 初回請求に入塾金 ¥10,000 を追加
     - 塾生アドオン (student_addon): 入塾金なし、月額 ¥15,000 のみ
-    - トライアル開始時は ¥1,980 のみ即時課金、入塾金はトライアル後の初回請求書に計上
+    - 体験は別途 /api/stripe/trial-checkout で 7日間 完全無料 (Stripe を経由しない)
     """
     price_info = PRICE_MAP.get(payload.plan)
     if not price_info:
@@ -1415,7 +1416,7 @@ def create_checkout_session(payload: CheckoutRequest):
         }
 
     # 継続本契約: 月額サブスク。トライアル無し（即時課金）。
-    # 体験期間は別途 /api/stripe/trial-checkout で単発¥1,980決済済み。
+    # 体験期間は別途 /api/stripe/trial-checkout で 7日間 完全無料 (Stripe 不経由)。
     # 入塾金はWebhook (checkout.session.completed) で InvoiceItem として
     # 顧客に作成 → 初回請求書に自動的に乗る。
     # 先着100名キャンペーン枠が残っていれば入塾金免除フラグを立てる

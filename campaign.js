@@ -9,10 +9,10 @@ const KEYS = {
 };
 
 const PHASES = [
-  { id: 1, name: '第1期生', price: 1980, start: 0,   end: 100, discount: '1/10' },
-  { id: 2, name: '第2期生', price: 4980, start: 100, end: 300, discount: '1/4' },
-  { id: 3, name: '第3期生', price: 9800, start: 300, end: 500, discount: '1/2' },
-  { id: 4, name: '通常',    price: null, start: 500, end: Infinity, discount: null },
+  { id: 1, name: '第1期生 (永年¥25,000/月)', price: 25000, start: 0,   end: 100, discount: '永年' },
+  { id: 2, name: '第2期生',                  price: 29800, start: 100, end: 300, discount: '値上げ' },
+  { id: 3, name: '第3期生',                  price: 34800, start: 300, end: 500, discount: '値上げ' },
+  { id: 4, name: '通常',                     price: null,  start: 500, end: Infinity, discount: null },
 ];
 
 function getCurrentCount() {
@@ -70,11 +70,11 @@ function render() {
   document.getElementById('kpiWeek').textContent = weekCount;
 
   // Revenue calculations
-  const trialRev = count * 1980;
-  const expectedPaid = Math.round(count * 0.4);
-  const expectedMrr = expectedPaid * 39800;
-  document.getElementById('kpiRevenue').textContent = `¥${trialRev.toLocaleString()}`;
-  document.getElementById('kpiMrr').textContent = `¥${expectedMrr.toLocaleString()}`;
+  // 体験は完全無料なので体験売上はゼロ。本契約 (founder1) ベースで月次収益を試算する。
+  const expectedPaid = Math.round(count * 0.4); // 体験→本契約の想定転換率 40%
+  const founder1Mrr = expectedPaid * 25000;     // 1期生プラン永年¥25,000/月
+  document.getElementById('kpiRevenue').textContent = '¥0';
+  document.getElementById('kpiMrr').textContent = `¥${founder1Mrr.toLocaleString()}`;
 
   // Checklist
   const ck = JSON.parse(localStorage.getItem(KEYS.CK) || '{}');

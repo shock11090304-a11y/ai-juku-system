@@ -205,9 +205,9 @@
       <details>
         <summary>📋 紹介プログラムの詳細ルール</summary>
         <ul>
-          <li>紹介者の特典：紹介された方が3日のトライアル期間（¥1,980）を完走し、月額プランに継続した時点で「1ヶ月無料」が適用されます。</li>
+          <li>紹介者の特典：紹介された方が7日間 完全無料体験を完走し、月額プランに継続した時点で「1ヶ月無料」が適用されます。</li>
           <li>第1期生ランクアップ：3件紹介で永久50%OFF、10件紹介で永久無料+名誉称号が付与されます（第1期生100名限定）。</li>
-          <li>紹介された方の特典：登録時に紹介URLを経由した場合、トライアル期間が3日→6日に自動延長されます。</li>
+          <li>紹介された方の特典：登録時に紹介URLを経由した場合、トライアル期間が7日→14日に自動延長されます。</li>
           <li>1ユーザーあたり紹介数の上限はありません。</li>
           <li>同一世帯（保護者・兄弟姉妹）間の紹介も有効です。</li>
           <li>不正な紹介（架空アカウント、自己紹介など）が判明した場合、特典は無効となります。</li>
@@ -288,18 +288,18 @@
 
     function shareLine() {
       const url = encodeURIComponent(document.getElementById('refUrl').value);
-      const text = encodeURIComponent('AI学習コーチ塾、良かったよ！3日間無料で試せるから見てみて🎓');
+      const text = encodeURIComponent('AI学習コーチ塾、良かったよ！7日間 完全無料で試せるから見てみて🎓');
       window.open(`https://line.me/R/msg/text/?${text}%0A${url}`);
     }
     function shareTwitter() {
       const url = encodeURIComponent(document.getElementById('refUrl').value);
-      const text = encodeURIComponent('AI学習コーチ塾を紹介します！24時間AIチューターで勉強できる次世代の塾。3日間無料体験あり🎓');
+      const text = encodeURIComponent('AI学習コーチ塾を紹介します！24時間AIチューターで勉強できる次世代の塾。7日間 完全無料体験あり🎓');
       window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`);
     }
     function shareEmail() {
       const url = document.getElementById('refUrl').value;
       const subject = encodeURIComponent('【AI学習コーチ塾】良さそうな塾があったので紹介します');
-      const body = encodeURIComponent(`こんにちは。\n\nAI学習コーチ塾という新しい形の塾を紹介したくてメールしました。\n24時間いつでもAIに質問できて、月謝も従来塾の1/3程度です。\n\n3日間無料で試せます：\n${url}\n\nぜひ見てみてください！`);
+      const body = encodeURIComponent(`こんにちは。\n\nAI学習コーチ塾という新しい形の塾を紹介したくてメールしました。\n24時間いつでもAIに質問できて、月謝も従来塾の1/3程度です。\n\n7日間 完全無料で試せます（クレカ登録不要）：\n${url}\n\nぜひ見てみてください！`);
       window.location.href = `mailto:?subject=${subject}&body=${body}`;
     }
 

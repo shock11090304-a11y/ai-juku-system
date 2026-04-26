@@ -190,8 +190,8 @@ def slide_1():
     draw_card(draw, card_x, card_y, card_w, card_h, fill=(35, 25, 60), border_color=BRAND_GOLD, radius=24, border_width=3)
     f_label = load_font(FONT_BOLD, 30)
     f_price = load_font(FONT_BLACK, 96)
-    draw_centered(draw, "3日間体験", f_label, card_y + 30, TEXT_DIM, W)
-    draw_centered(draw, "¥1,980", f_price, card_y + 70, BRAND_GOLD, W)
+    draw_centered(draw, "7日間 完全無料体験", f_label, card_y + 30, TEXT_DIM, W)
+    draw_centered(draw, "¥0", f_price, card_y + 70, BRAND_GOLD, W)
 
     # スワイプ誘導 (絵文字なし、純テキスト)
     f_swipe = load_font(FONT_BOLD, 28)
@@ -259,7 +259,7 @@ def slide_2():
     draw.text((right_x + 30, top_y + 80), "月額", font=f_unit, fill=TEXT)
     draw.text((right_x + 30, top_y + 110), "¥24,980~", font=f_price, fill=BRAND_GOLD)
     f_trial = load_font(FONT_BOLD, 22)
-    draw.text((right_x + 30, top_y + 195), "(3日体験 ¥1,980)", font=f_trial, fill=BRAND_GOLD)
+    draw.text((right_x + 30, top_y + 195), "(3日体験 ¥0)", font=f_trial, fill=BRAND_GOLD)
 
     items_right = [
         "24時間365日 質問可能",
@@ -508,9 +508,9 @@ def slide_6():
 
     # 行1: 体験
     row_y = table_y + 25
-    draw.text((table_x + 30, row_y), "3日間 体験", font=f_row_label, fill=BRAND_GOLD)
+    draw.text((table_x + 30, row_y), "7日間 完全無料体験", font=f_row_label, fill=BRAND_GOLD)
     draw.text((table_x + 30, row_y + 32), "クレカ登録のみ・自動で月額に切替", font=f_row_desc, fill=TEXT_DIM)
-    draw.text((table_x + table_w - 220, row_y + 3), "¥1,980", font=f_row_price, fill=BRAND_GOLD)
+    draw.text((table_x + table_w - 220, row_y + 3), "¥0", font=f_row_price, fill=BRAND_GOLD)
     draw.line((table_x + 30, row_y + row_h - 5, table_x + table_w - 30, row_y + row_h - 5), fill=(60, 60, 80), width=1)
 
     # 行2: 月額継続
@@ -572,7 +572,7 @@ def slide_7():
 
     # メインコピー
     f_h = load_font(FONT_BLACK, 100)
-    draw_centered(draw, "3日間 ¥1,980 で", f_h, 270, TEXT)
+    draw_centered(draw, "7日間 完全無料で", f_h, 270, TEXT)
     draw_centered(draw, "全機能を体験", f_h, 410, BRAND_GOLD)
 
     # 3ステップ
@@ -581,7 +581,7 @@ def slide_7():
     steps = [
         ("1", "プロフィールのリンクをタップ"),
         ("2", "メールアドレスでサインアップ"),
-        ("3", "3日間 ¥1,980 で全機能体験開始"),
+        ("3", "7日間 完全無料で全機能体験開始"),
     ]
     y = 580
     for num, txt in steps:

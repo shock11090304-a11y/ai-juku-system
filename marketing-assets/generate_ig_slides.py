@@ -195,7 +195,7 @@ def slide_3_features(img):
 
 
 # ============================================================
-# Slide 4: COMPARE (¥30,000 vs ¥1,980)
+# Slide 4: COMPARE (¥30,000 vs ¥0)
 # ============================================================
 def slide_4_compare(img):
     draw = ImageDraw.Draw(img)
@@ -239,7 +239,7 @@ def slide_4_compare(img):
 
     # 右カラム内テキスト
     draw.text((right_x + 30, box_y + 30), "AI学習コーチ塾", font=f_col_label, fill=BRAND_PURPLE)
-    draw_gradient_text(img, "¥1,980", f_price_big, (right_x + 30, box_y + 110), GRAD_PRICE_FROM, GRAD_PRICE_TO)
+    draw_gradient_text(img, "¥0", f_price_big, (right_x + 30, box_y + 110), GRAD_PRICE_FROM, GRAD_PRICE_TO)
     draw = ImageDraw.Draw(img)
     draw.text((right_x + 30, box_y + 260), "24時間対応", font=f_col_sub, fill=(199, 210, 254))
     draw.text((right_x + 30, box_y + 300), "毎週自動レポート", font=f_col_sub, fill=(199, 210, 254))
@@ -260,9 +260,9 @@ def slide_5_cta(img):
     draw.text((PADDING, PADDING + 20), "05 / 今すぐスタート", font=f_brand, fill=BRAND_PURPLE)
 
     # タイトル（小さくして収める）
-    draw_gradient_text(img, "3日間トライアル", f_title, (PADDING, 260), GRAD_TITLE_FROM, GRAD_TITLE_TO)
+    draw_gradient_text(img, "7日間 無料体験", f_title, (PADDING, 260), GRAD_TITLE_FROM, GRAD_TITLE_TO)
     # 価格ドーンと
-    draw_gradient_text(img, "¥1,980", f_price, (PADDING, 400), GRAD_PRICE_FROM, GRAD_PRICE_TO)
+    draw_gradient_text(img, "¥0", f_price, (PADDING, 400), GRAD_PRICE_FROM, GRAD_PRICE_TO)
 
     # サブ
     draw = ImageDraw.Draw(img)

@@ -114,8 +114,8 @@ def story_1():
                         radius=24, fill=(35, 25, 60), outline=BRAND_GOLD, width=3)
     f_label = load_font(FONT_BOLD, 32)
     f_price = load_font(FONT_BLACK, 110)
-    draw_centered(d, "今だけ 3日間 体験", f_label, card_y + 30, TEXT_DIM)
-    draw_centered(d, "¥1,980", f_price, card_y + 75, BRAND_GOLD)
+    draw_centered(d, "今だけ 7日間 完全無料", f_label, card_y + 30, TEXT_DIM)
+    draw_centered(d, "¥0", f_price, card_y + 75, BRAND_GOLD)
 
     # 緊急性
     f_urge = load_font(FONT_BLACK, 28)
@@ -188,7 +188,7 @@ def story_2():
     d.text((bub_x2 + 20, bub_y2 + 82), "24時間AIが個別指導 + 9機能。", font=f_msg, fill=(20, 30, 60))
     d.text((bub_x2 + 20, bub_y2 + 114), "週次レポートで進捗わかるし、", font=f_msg, fill=(20, 30, 60))
     d.text((bub_x2 + 20, bub_y2 + 146), "通塾不要だから時間も浮く。", font=f_msg, fill=(20, 30, 60))
-    d.text((bub_x2 + 20, bub_y2 + 178), "まず3日¥1,980で試せるよ。", font=f_msg, fill=BRAND_PINK)
+    d.text((bub_x2 + 20, bub_y2 + 178), "まず7日間 完全無料で試せるよ。", font=f_msg, fill=BRAND_PINK)
     f_link = load_font(FONT_BOLD, 22)
     d.text((bub_x2 + 20, bub_y2 + 212), "↓ プロフィールリンクから", font=f_link, fill=BRAND_PINK)
 

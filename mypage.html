@@ -32,11 +32,11 @@
   </header>
 
   <main class="mypage-main">
-    <!-- Trial Onboarding (3日間体験導線) -->
+    <!-- Trial Onboarding (7日間体験導線) -->
     <section id="trialOnboarding" class="trial-onboarding" style="display:none;">
       <div class="to-header">
         <div>
-          <div class="to-eyebrow">🎖 3日間 無料体験プログラム</div>
+          <div class="to-eyebrow">🎖 7日間 完全無料体験プログラム</div>
           <h2 class="to-title"><span id="toDayLabel">Day 1</span>: <span id="toDayTitle">—</span></h2>
           <p class="to-sub" id="toDaySub">—</p>
         </div>
@@ -400,7 +400,7 @@
         const s = data.student;
         if (!s) return;
         const statusText = {
-          'trial': '🎖 3日間 体験中（¥1,980前払い済）',
+          'trial': '🎖 7日間 完全無料体験中（クレカ登録なし）',
           'paid': '✅ 月額プラン契約中',
           'canceled': '⏹ 解約済み（期間終了まで利用可）',
           'expired': '⏱ 体験終了',
@@ -458,7 +458,7 @@
 
     // 解約ボタン (トライアル中心、有料でもStripe API経由)
     cancelBtn.addEventListener('click', async () => {
-      if (!confirm('本当に解約しますか？\n\n・3日間の無料期間が残っている場合は、期間終了まで利用可能です\n・解約後の返金はありません\n・後日再契約は可能です')) return;
+      if (!confirm('本当に解約しますか？\n\n・7日間の無料体験期間が残っている場合は、期間終了まで利用可能です\n・体験中は元々課金されていないため返金は発生しません\n・後日再契約は可能です')) return;
       cancelBtn.disabled = true;
       cancelBtn.textContent = '⏳ 処理中...';
       try {

@@ -3,12 +3,12 @@ Usage: python3 generate_ig_sales_slides.py
 
 戦略:
   Slide 1: フック「塾代月3万、まだ払う?」
-  Slide 2: 価格比較 (¥1,980 3日体験 vs 月3万)
+  Slide 2: 価格比較 (¥0 3日体験 vs 月3万)
   Slide 3: 1日24時間AIチューター
   Slide 4: Learning Brain 9機能の個別最適化
   Slide 5: 受験生のリアルな声 (架空)
   Slide 6: 紹介プログラム (友達紹介で1ヶ月無料)
-  Slide 7: CTA「bio リンクから3日¥1,980 体験」
+  Slide 7: CTA「bio リンクから7日間 完全無料体験」
 """
 from PIL import Image, ImageDraw, ImageFont
 import os
@@ -143,8 +143,8 @@ def slide_1():
 
     draw_centered(draw, "もう、要りません。", f_med, 590, TEXT_DIM)
 
-    # ¥1,980 でAI塾
-    draw_centered(draw, "AIで、3日 ¥1,980 から", f_red, 720, BRAND_GOLD)
+    # ¥0 でAI塾
+    draw_centered(draw, "AIで、7日間 完全無料 から", f_red, 720, BRAND_GOLD)
 
     f_sub = load_font(FONT_BOLD, 38)
     draw_centered(draw, "24時間AIチューター × 9つの個別最適化機能", f_sub, 850, TEXT_DIM)
@@ -199,7 +199,7 @@ def slide_2():
     draw_card(draw, right_x, top_y, col_w, col_h, fill=(20, 40, 50), border_color=BRAND_GOLD, radius=24)
     draw.text((right_x + 30, top_y + 30), "AI学習コーチ塾", font=f_label, fill=BRAND_GOLD)
     draw.text((right_x + 30, top_y + 80), "3日体験", font=f_label, fill=TEXT)
-    draw.text((right_x + 30, top_y + 120), "¥1,980", font=f_price, fill=BRAND_GOLD)
+    draw.text((right_x + 30, top_y + 120), "¥0", font=f_price, fill=BRAND_GOLD)
 
     items_right = [
         "✓ 24時間 365日 質問可能",
@@ -386,7 +386,7 @@ def slide_7():
     draw_brand_header(img, draw, "07 / 今すぐ始める")
 
     f_h = load_font(FONT_BLACK, 110)
-    draw_centered(draw, "3日間 ¥1,980 で", f_h, 220, TEXT)
+    draw_centered(draw, "7日間 完全無料で", f_h, 220, TEXT)
     draw_centered(draw, "全機能を体験", f_h, 360, BRAND_GOLD)
 
     # 3ステップ
@@ -395,7 +395,7 @@ def slide_7():
     steps = [
         ("①", "プロフィールのリンクをタップ"),
         ("②", "メールアドレスでサインアップ"),
-        ("③", "3日間 ¥1,980 で全機能を試す"),
+        ("③", "7日間 完全無料で全機能を試す"),
     ]
     y = 560
     for num, txt in steps:

@@ -281,7 +281,8 @@ function logActivity(type) {
 }
 
 // ==========================================================================
-// 3日間トライアル体験導線 (Trial Onboarding)
+// 7日間トライアル体験導線 (Trial Onboarding)
+// Day 1-3 で基本機能をマスター → Day 4-7 は自由活用期間
 // ==========================================================================
 const TRIAL_KEY = 'ai_juku_trial_onboarding';
 
@@ -339,19 +340,19 @@ function getTrialDayNumber(startDate) {
   const start = new Date(startDate + 'T00:00:00+09:00');
   const now = new Date(new Date().toISOString());
   const diffDays = Math.floor((now - start) / (1000 * 60 * 60 * 24));
-  return Math.min(3, Math.max(1, diffDays + 1));
+  return Math.min(7, Math.max(1, diffDays + 1));
 }
 
 function renderTrialOnboarding() {
   const section = document.getElementById('trialOnboarding');
   if (!section) return;
   const state = getTrialState();
-  // ユーザーが「体験モード終了」を押した、またはトライアル期間(3日+余裕1日)を超えたら非表示
+  // ユーザーが「体験モード終了」を押した、またはトライアル期間(7日)を超えたら非表示
   const todayDayNum = getTrialDayNumber(state.startDate);
   const allTasks = TRIAL_DAYS.flatMap(d => d.tasks);
   const doneTaskCount = allTasks.filter(t => state.completed[t.id]).length;
   const allCompleted = doneTaskCount >= allTasks.length;
-  const dayOverflow = todayDayNum > 3;
+  const dayOverflow = todayDayNum > 7;
 
   if (state.dismissed || (dayOverflow && allCompleted)) {
     section.style.display = 'none';

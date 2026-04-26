@@ -352,7 +352,7 @@ def scene_app_report(out_path):
 
 
 def scene_price_comparison(out_path):
-    """43-50s: 価格比較 — 体験¥1,980 + 月額¥24,980の明確化"""
+    """43-50s: 価格比較 — 体験¥0 + 月額¥24,980の明確化"""
     img = gradient_bg()
     draw = ImageDraw.Draw(img)
     f_title = font(FONT_BLACK, 95)
@@ -382,9 +382,9 @@ def scene_price_comparison(out_path):
                            fill=(50, 50, 100), outline=PRIMARY_LIGHT, width=5)
     draw.text((x2 + 20, box_y + 40), "AI学習コーチ塾", font=font(FONT_BOLD, 32), fill=PRIMARY_LIGHT)
     # 体験価格 大
-    grad_text(img, "¥1,980", font(FONT_BLACK, 80), (x2 + 20, box_y + 140), GRAD_P1, GRAD_P2)
+    grad_text(img, "¥0", font(FONT_BLACK, 80), (x2 + 20, box_y + 140), GRAD_P1, GRAD_P2)
     draw = ImageDraw.Draw(img)
-    draw.text((x2 + 20, box_y + 230), "/ 3日間体験", font=font(FONT_BOLD, 28), fill=PRIMARY_LIGHT)
+    draw.text((x2 + 20, box_y + 230), "/ 7日間 完全無料体験", font=font(FONT_BOLD, 28), fill=PRIMARY_LIGHT)
     # 継続の月額を小さめに表記
     draw.text((x2 + 20, box_y + 280), "継続は月¥24,980〜", font=font(FONT_BOLD, 26), fill=TEXT_DIM)
     bullets2 = ["24時間対応", "毎週自動レポ", "無制限質問", "オリジナルテキスト作成"]
@@ -435,9 +435,9 @@ def scene_cta(out_path):
     f_foot = font(FONT_BOLD, 38)
     f_hint = font(FONT_BOLD, 36)
 
-    center_text(draw, "まずは3日間、", f_top, 250, TEXT_DIM)
+    center_text(draw, "まずは7日間、", f_top, 250, TEXT_DIM)
 
-    grad_text(img, "¥1,980で体験", f_big, (90, 370), GRAD_T1, GRAD_T2)
+    grad_text(img, "完全無料で体験", f_big, (90, 370), GRAD_T1, GRAD_T2)
 
     draw = ImageDraw.Draw(img)
     center_text(draw, "自動課金なし。気に入ったら", f_top, 620, TEXT)

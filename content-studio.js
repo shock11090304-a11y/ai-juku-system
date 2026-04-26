@@ -180,7 +180,7 @@ function generateDemoArticle(topic, category, keywords, target) {
   <li><strong>3ヶ月後の目標を書き出す</strong>：10分で完了</li>
   <li><strong>AI学習塾の無料体験に申し込む</strong>：5分で完了</li>
 </ol>
-<p>AI学習コーチ塾では、<strong>3日間の無料体験</strong>を実施中です。クレジットカード登録不要で、気軽にお試しいただけます。${topic}でお悩みの${target}の方、ぜひこの機会にお試しください。</p>
+<p>AI学習コーチ塾では、<strong>7日間 完全無料体験</strong>を実施中です。クレジットカード登録不要で、気軽にお試しいただけます。${topic}でお悩みの${target}の方、ぜひこの機会にお試しください。</p>
 <p><em>💡 デモ応答：APIキーを設定すると、実際のAIが各条件に応じた本格的な記事を生成します。</em></p>
     `,
   };

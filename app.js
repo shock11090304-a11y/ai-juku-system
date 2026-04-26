@@ -28,7 +28,7 @@ function getPlanInfo() {
     premium: { name: 'プレミアム', price: 39800, maxStudents: 1, color: '#8b5cf6' },
     family: { name: '家族プラン', price: 59800, maxStudents: 3, color: '#ec4899' },
     student_addon: { name: '塾生アドオン', price: 15000, maxStudents: 1, color: '#10b981' },
-    trial: { name: '3日間トライアル', price: 1980, maxStudents: 1, color: '#f59e0b' },
+    trial: { name: '7日間無料体験', price: 0, maxStudents: 1, color: '#f59e0b' },
   };
   return info[plan] || info.premium;
 }
