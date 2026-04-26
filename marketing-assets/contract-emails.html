@@ -292,7 +292,7 @@ AI学習コーチ塾</textarea>
 
 ▼ 選択肢
 1) 来月までお待ちいただく
-   毎月1日に上限がリセットされます
+   契約日を起算日として毎月のサイクルで上限がリセットされます (例: 15日契約→毎月15日リセット)
 
 2) プレミアムプラン (¥39,800/月) へアップグレード
    問題生成・添削・参考書すべて無制限
@@ -321,8 +321,8 @@ AI学習コーチ塾</textarea>
 
 <!-- Template 6: 領収書発行案内 -->
 <div class="template">
-  <h2>⑥ 領収書発行案内 <span class="badge blue">請求月初</span></h2>
-  <p class="desc">毎月の請求後に送信。Stripe領収書のダウンロード手順を案内</p>
+  <h2>⑥ 領収書発行案内 <span class="badge blue">請求日翌日</span></h2>
+  <p class="desc">毎月の請求(契約日基準・各顧客ごとに異なる日)後に送信。Stripe領収書のダウンロード手順を案内</p>
   <div class="field">
     <label>送信先メール</label>
     <input type="text" id="to6" placeholder="customer@example.com">
