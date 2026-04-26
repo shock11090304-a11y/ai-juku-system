@@ -610,13 +610,21 @@ ${examFlavor}
 }
 Speaking/Writing の場合: choices=[], answer に模範解答テキスト全文 (採点ルーブリック別評価コメント込み), type="essay" or "speaking"。`;
 
-  try {
-    let payload;
-    if (isLiveMode()) {
+  let payload;
+  // 1) Live モード優先 (backend AI proxy or 直接APIキー)
+  if (isLiveMode()) {
+    try {
       payload = await callClaudeJson({ system, user, model: MODEL_DEFAULT, maxTokens: 4000 });
-    } else {
-      payload = demoQuestions(exam, section, qCount, topic);
+    } catch (e) {
+      console.warn('[exam] AI generation failed, falling back to sample bank:', e);
+      payload = null;
     }
+  }
+  // 2) Live失敗 or デモモード → SAMPLE_BANKS / AUTO_GENERATED_BANKS から
+  if (!payload || !payload.questions || !payload.questions.length) {
+    payload = demoQuestions(exam, section, qCount, topic);
+  }
+  try {
     state.questions = payload.questions || [];
     state.passage = payload.passage || '';
     state.audioScript = payload.audio_script || '';
@@ -925,75 +933,29 @@ function showResult(exam, section, result) {
 // プレビュー fallback (API 未接続時の限定問題セット・ユーザーには「準備中」と見せる)
 // ==========================================================================
 // ==========================================================================
-// 試験別×part別 サンプル問題バンク (AI 接続前のフォールバック・公式形式準拠)
+// 試験別×part別 サンプル問題バンク → english-exam-banks.js に分離
+// window.SAMPLE_BANKS と window.AUTO_GENERATED_BANKS を統合参照
 // ==========================================================================
-const SAMPLE_BANKS = {
-  toefl: {
-    r_passage1: {
-      passage: `Throughout the 19th century, the Industrial Revolution dramatically reshaped urban landscapes across Europe and North America. Factories sprouted in city centers, drawing rural populations seeking employment. This rapid urbanization created unprecedented challenges: overcrowded tenements, polluted air, and inadequate sanitation. Reformers responded by advocating for public health regulations and worker protections. The cholera epidemics of the 1830s and 1850s, in particular, prompted scientific investigations that ultimately revolutionized epidemiology and urban planning. By the late 1800s, cities began implementing comprehensive sewer systems and zoning laws that would define modern urban infrastructure.`,
-      questions: [
-        { stem: 'According to the passage, what was a primary cause of urbanization during the Industrial Revolution?', choices: ['Government relocation programs', 'Rural populations seeking factory employment', 'The decline of agricultural productivity', 'New transportation networks alone'], answer: '1', explanation: '本文「drawing rural populations seeking employment」が根拠。雇用を求めて農村から都市へ流入。' },
-        { stem: 'Why does the author mention the cholera epidemics?', choices: ['To describe rural-to-urban migration', 'To illustrate technological progress', 'To explain how scientific investigations led to urban reform', 'To criticize 19th-century medicine'], answer: '2', explanation: '直後の「prompted scientific investigations that ultimately revolutionized epidemiology and urban planning」が根拠。' },
-        { stem: 'The word "unprecedented" most nearly means:', choices: ['Insignificant', 'Without prior occurrence', 'Carefully planned', 'Government-led'], answer: '1', explanation: 'unprecedented = 前例のない。文脈の「rapid urbanization created [unprecedented] challenges」=従来になかった課題。' },
-      ],
-    },
-    s_task1: {
-      prompt: 'Talk about a teacher or mentor who influenced you. Describe what made them special and how they impacted your life. You have 15 seconds to prepare and 45 seconds to respond.',
-      sample: `One teacher who profoundly influenced me was my high school English instructor, Ms. Tanaka. What made her special was her unwavering belief in every student's potential. When I struggled with essay writing, she didn't just correct my mistakes—she sat with me after class, asking questions that helped me discover my own ideas. Her patience taught me that good writing comes from genuine thinking, not formulas. Today, whenever I face a challenging task, I remember her approach: break it down, ask the right questions, and trust the process. That mindset has shaped my approach to every problem I encounter.`,
-    },
-    w_integrated: {
-      prompt: 'Reading: Some scientists argue that solar geoengineering could be a viable short-term solution to climate change. The reading lists three potential benefits.\n\nLecture: The professor explains that the lecture casts doubt on each of the three benefits mentioned in the reading.\n\nWrite a 150-225 word response summarizing how the lecture challenges the reading\'s arguments.',
-      sample: `The reading argues that solar geoengineering offers three benefits as a short-term climate solution. However, the lecture systematically challenges each of these claims.\n\nFirst, while the reading suggests that geoengineering could quickly cool global temperatures, the professor counters that this approach would only mask warming, not address the underlying CO2 accumulation. Once the intervention stops, temperatures would rebound rapidly.\n\nSecond, the reading praises the relatively low cost of geoengineering deployment. The professor refutes this by noting that long-term maintenance and monitoring expenses are substantial, and any system failure could trigger catastrophic climate disruption.\n\nFinally, regarding the reading's claim that geoengineering buys time for emission reductions, the lecture argues this assumption is flawed. Historical evidence shows that "moral hazard" effects emerge: societies tend to reduce mitigation efforts once they perceive a backup solution exists.\n\nThus, the lecture demonstrates that what appears to be benefits in the reading actually mask significant risks and unintended consequences, making solar geoengineering a far less promising solution than the reading suggests.`,
-    },
-  },
-  toeic: {
-    l_part2: {
-      audio_script: 'Question 1: Where did you put the quarterly report?\n(A) On your desk, near the monitor.\n(B) Yes, it was a productive quarter.\n(C) About thirty pages long.\n\nQuestion 2: Could you remind me when the meeting starts?\n(A) The conference room is upstairs.\n(B) It begins at 2:30 PM.\n(C) She remembered to call.',
-      questions: [
-        { stem: 'Where did you put the quarterly report? — どの応答が最も自然?', choices: ['(A) On your desk, near the monitor.', '(B) Yes, it was a productive quarter.', '(C) About thirty pages long.'], answer: '0', explanation: 'Where 疑問文 → 場所で答える (A)。(B)(C) は同音語 quarter/pages の引っかけ。' },
-        { stem: 'Could you remind me when the meeting starts? — どの応答が最も自然?', choices: ['(A) The conference room is upstairs.', '(B) It begins at 2:30 PM.', '(C) She remembered to call.'], answer: '1', explanation: 'when 疑問文 → 時間で答える (B)。(A) は場所、(C) は同音語 remind/remembered の引っかけ。' },
-      ],
-    },
-    r_part5: {
-      questions: [
-        { stem: 'The new software allows employees to ___ their work hours more efficiently.', choices: ['manage', 'manager', 'management', 'managed'], answer: '0', explanation: 'allow + O + to V (動詞原形)。manage が動詞原形で正解。' },
-        { stem: 'All employees are required to submit their expense reports ___ Friday.', choices: ['until', 'by', 'on', 'in'], answer: '1', explanation: 'by Friday = 金曜日までに (期限)。until は継続、on は曜日上の動作、in は月などに使う。' },
-        { stem: 'The CEO announced that the company ___ its operations to Asia next year.', choices: ['expands', 'expanded', 'will expand', 'has expanded'], answer: '2', explanation: 'next year = 未来 → will expand。announced との時制ずれは「未来への発表」で正解。' },
-      ],
-    },
-  },
-  ielts: {
-    l_sec1: {
-      audio_script: 'Receptionist: Hello, City Library. How can I help you?\nCustomer: Hi, I\'d like to register for a library card.\nReceptionist: Of course. May I have your full name?\nCustomer: It\'s Sarah Mitchell. M-I-T-C-H-E-L-L.\nReceptionist: And your address?\nCustomer: 47 Oakwood Avenue, postcode SE19 3PN.\nReceptionist: Phone number?\nCustomer: 0207 555 4892.\nReceptionist: Thank you. The annual membership fee is £15.',
-      questions: [
-        { stem: 'What is the customer\'s last name? (Listening Section 1 dictation 形式)', choices: ['Mitchel', 'Mitchell', 'Michell', 'Mitchel'], answer: '1', explanation: 'スペル「M-I-T-C-H-E-L-L」を聞き取る。L が2つ。' },
-        { stem: 'What is the customer\'s house number?', choices: ['17', '47', '74', '57'], answer: '1', explanation: '「47 Oakwood Avenue」と聞き取る。数字の聞き取りは IELTS 頻出。' },
-        { stem: 'What is the annual membership fee?', choices: ['£5', '£15', '£50', '£55'], answer: '1', explanation: 'fifteen pounds = £15。fifty (£50) と混同しないよう注意。' },
-      ],
-    },
-    w_task2: {
-      prompt: 'Some people believe that universities should focus on practical skills that prepare students for employment, while others argue that universities should emphasize academic knowledge and critical thinking. Discuss both views and give your own opinion. (Write at least 250 words.)',
-      sample: `Higher education has long been a subject of debate, with some advocating for vocational, employment-focused training and others championing pure academic inquiry. While both perspectives have merit, I believe a balanced approach best serves students and society.\n\nProponents of practical training argue that universities should equip graduates with employable skills. In an increasingly competitive job market, students invest heavily in their education and reasonably expect tangible career outcomes. Programs in engineering, computer science, and business administration explicitly train students for specific industries, producing workforce-ready professionals who contribute immediately to economic growth.\n\nHowever, those favoring academic depth contend that universities should cultivate critical thinking, intellectual curiosity, and broad knowledge. They argue that overly vocational training narrows students' perspectives and fails to prepare them for the unpredictable, evolving demands of modern careers. Studying philosophy, literature, or pure mathematics develops analytical capacities transferable to any field, fostering adaptable, lifelong learners rather than narrowly-trained technicians.\n\nIn my view, these perspectives are not mutually exclusive. The most effective university education integrates rigorous academic foundations with applied learning opportunities. For instance, a computer science degree should combine theoretical algorithms with practical projects; a literature degree benefits from internships in publishing or journalism. This dual approach produces graduates who possess both intellectual depth and real-world competence.\n\nIn conclusion, while practical employability and academic rigor each have value, universities serve students best by combining both. Education should prepare individuals not only for their first job but for a lifetime of meaningful work and citizenship.`,
-    },
-  },
-  eiken: {
-    r_q1: {
-      questions: [
-        { stem: 'The teacher told us to ( ) our textbooks to page 23.', choices: ['turn', 'open', 'put', 'show'], answer: '1', explanation: 'open ~ to page X = ~を X ページに開く (英検準2級頻出)。turn to a page も可だが open がより一般的。' },
-        { stem: 'I\'m really ( ) about the test results. I studied so hard.', choices: ['nervous', 'famous', 'noisy', 'angry'], answer: '0', explanation: 'nervous = 緊張している。文脈の「一生懸命勉強した」と整合。準2級〜2級の語彙。' },
-        { stem: 'My grandmother lives in a small ( ) in the countryside.', choices: ['village', 'building', 'station', 'office'], answer: '0', explanation: 'in the countryside (田舎) との整合。村 = village。3級〜準2級の頻出。' },
-      ],
-    },
-    w_email: {
-      prompt: 'You have received an e-mail from your friend Alex.\n\nHi! I heard you started a new hobby last month. What is it? How often do you do it? I want to know more!\n\nWrite a reply to Alex. Your reply should include answers to two questions in the e-mail. (40-50 words / 英検準2級 新形式)',
-      sample: `Hi Alex,\n\nThanks for your e-mail! My new hobby is rock climbing. I started it last month at an indoor gym near my house. It\'s really exciting and helps me stay strong. I usually go twice a week, on Wednesdays and Saturdays. You should try it sometime!\n\nBest, [Your name]\n(48 words)`,
-    },
-    s_q1: {
-      prompt: '【二次試験 Q1 サンプル】 パッセージを音読した後、面接官から:\n"According to the passage, why are some people choosing to work from home?"\n\nまず音読 → 質問への回答 (1-2 文・英検2級レベル)',
-      sample: `Some people are choosing to work from home because they can save commuting time and have more flexibility in their daily schedules. This change has become especially common since the pandemic.`,
-    },
-  },
-};
+const SAMPLE_BANKS = (typeof window !== 'undefined' && window.SAMPLE_BANKS) ? window.SAMPLE_BANKS : {};
+
+function getPartBank(examId, sectionKey) {
+  // 1) AI生成バンク (バックエンドが日々追加・優先) → ローテで多様性確保
+  const auto = (typeof window !== 'undefined' && window.AUTO_GENERATED_BANKS) ? window.AUTO_GENERATED_BANKS : {};
+  const autoBank = auto[examId] && auto[examId][sectionKey];
+  // 2) 静的サンプル
+  const staticBank = SAMPLE_BANKS[examId] && SAMPLE_BANKS[examId][sectionKey];
+  // 英検は g{N}_{key} 形式で sectionsByGrade を区別 (例: gp1_r_q1)
+  if (!autoBank && !staticBank && examId === 'eiken' && state && state.eikenGrade) {
+    const compoundKey = state.eikenGrade + '_' + sectionKey;
+    return SAMPLE_BANKS.eiken && SAMPLE_BANKS.eiken[compoundKey];
+  }
+  // ランダム選択 (AI生成があれば優先・無ければ静的)
+  if (autoBank && staticBank) {
+    return Math.random() < 0.6 ? autoBank : staticBank;
+  }
+  return autoBank || staticBank;
+}
+
 
 
 function demoQuestions(exam, section, qCount, topic) {
@@ -1002,9 +964,8 @@ function demoQuestions(exam, section, qCount, topic) {
   const isSpeaking = section.key.startsWith('s_') || section.key === 'speaking';
   const isWriting = section.key.startsWith('w_') || section.key === 'writing';
 
-  // 1) part 別の本格サンプルがあれば使用
-  const examBank = SAMPLE_BANKS[exam.id];
-  const partBank = examBank ? examBank[section.key] : null;
+  // 1) part 別の本格サンプル (静的バンク + AI生成バンク 統合) を取得
+  const partBank = getPartBank(exam.id, section.key);
 
   if (partBank) {
     if (partBank.questions) {
