@@ -186,7 +186,7 @@
         try {
           const controller = new AbortController();
           setTimeout(() => controller.abort(), 2000);
-          const res = await fetch(`${BACKEND_URL}/api/founders/count`, { signal: controller.signal });
+          const res = await fetch(`${BACKEND_URL}/api/founders/count?public=1`, { signal: controller.signal });
           if (res.ok) {
             const data = await res.json();
             localStorage.setItem(CACHE_KEY, String(data.taken));

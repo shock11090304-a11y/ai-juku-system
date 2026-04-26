@@ -401,6 +401,110 @@
       </div>
     </section>
 
+    <!-- 第1期生残枠 (実数値 vs 顧客表示値) -->
+    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.25); border-radius: 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+        <h2 style="font-size:1.15rem;color:#fbbf24;margin:0;">🎁 第1期生 残り枠 (内部 vs 公開)</h2>
+        <span id="foundersUpdated" style="font-size:0.7rem;color:#71717a;">--</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.7rem;">
+        <div style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
+          <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.3rem;">📊 実残枠 (内部)</div>
+          <div style="font-size:1.8rem;font-weight:900;color:#34d399;"><span id="foundersRealRemaining">--</span><span style="font-size:0.9rem;color:#71717a;"> / 100</span></div>
+          <div style="font-size:0.7rem;color:#71717a;">実申込: <span id="foundersRealTaken">--</span>名</div>
+        </div>
+        <div style="background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
+          <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.3rem;">👁 顧客に見せている残枠</div>
+          <div style="font-size:1.8rem;font-weight:900;color:#fbbf24;"><span id="foundersPublicRemaining">--</span><span style="font-size:0.9rem;color:#71717a;"> / 100</span></div>
+          <div style="font-size:0.7rem;color:#71717a;">表示申込: <span id="foundersPublicTaken">--</span>名 (オフセット +<span id="foundersOffset">--</span>)</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:0.85rem;text-align:center;">
+          <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.3rem;">⚙️ カモフラージュ設定</div>
+          <div style="font-size:0.85rem;color:#e4e4e7;line-height:1.5;">
+            Railway env<br>
+            <code style="font-size:0.72rem;color:#a78bfa;">FOUNDER_PUBLIC_FAKE_TAKEN</code>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- アクセス数モニター (LP / CTA / フォーム送信を events から集計) -->
+    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.25); border-radius: 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+        <h2 style="font-size:1.15rem;color:#38bdf8;margin:0;">📊 アクセス数モニター <span id="analyticsUpdated" style="font-size:0.7rem;color:#71717a;font-weight:400;">--</span></h2>
+        <button id="refreshAnalytics" style="background:rgba(56,189,248,0.2);color:#38bdf8;border:1px solid rgba(56,189,248,0.4);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">🔄 今すぐ更新</button>
+      </div>
+
+      <!-- KPIカード -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.7rem;margin-bottom:1rem;">
+        <div style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
+          <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.3rem;">👁 過去24h PV</div>
+          <div id="anaPv24h" style="font-size:1.6rem;font-weight:900;color:#38bdf8;">0</div>
+          <div style="font-size:0.7rem;color:#71717a;">7日: <span id="anaPv7d">0</span></div>
+        </div>
+        <div style="background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
+          <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.3rem;">👤 ユニークセッション 24h</div>
+          <div id="anaSess24h" style="font-size:1.6rem;font-weight:900;color:#a78bfa;">0</div>
+          <div style="font-size:0.7rem;color:#71717a;">7日: <span id="anaSess7d">0</span></div>
+        </div>
+        <div style="background:rgba(251,146,60,0.12);border:1px solid rgba(251,146,60,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
+          <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.3rem;">🎯 CTAクリック 24h</div>
+          <div id="anaCta24h" style="font-size:1.6rem;font-weight:900;color:#fb923c;">0</div>
+          <div style="font-size:0.7rem;color:#71717a;">7日: <span id="anaCta7d">0</span></div>
+        </div>
+        <div style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
+          <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.3rem;">📝 フォーム送信 24h</div>
+          <div id="anaForm24h" style="font-size:1.6rem;font-weight:900;color:#34d399;">0</div>
+          <div style="font-size:0.7rem;color:#71717a;">7日: <span id="anaForm7d">0</span></div>
+        </div>
+        <div style="background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
+          <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.3rem;">🔗 外部リンククリック 24h</div>
+          <div id="anaOut24h" style="font-size:1.6rem;font-weight:900;color:#fca5a5;">0</div>
+          <div style="font-size:0.7rem;color:#71717a;">7日: <span id="anaOut7d">0</span></div>
+        </div>
+      </div>
+
+      <!-- 申込ファネル (24h) -->
+      <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:0.85rem;margin-bottom:1rem;">
+        <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.5rem;">🎯 申込ファネル (過去24h)</div>
+        <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;font-size:0.85rem;color:#e4e4e7;">
+          <span><strong id="funnelPv">0</strong> ページビュー</span>
+          <span style="color:#71717a;">→</span>
+          <span><strong id="funnelCta">0</strong> CTAクリック (<span id="funnelCtaRate">0</span>%)</span>
+          <span style="color:#71717a;">→</span>
+          <span><strong id="funnelForm">0</strong> フォーム送信 (<span id="funnelFormRate">0</span>%)</span>
+        </div>
+      </div>
+
+      <!-- 時間別 PV / 日別 PV -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-bottom:1rem;">
+        <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:0.85rem;">
+          <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.5rem;">📈 時間別 PV (過去24h・JST)</div>
+          <div id="hourlyPvBars" style="display:flex;align-items:flex-end;gap:2px;height:80px;"></div>
+        </div>
+        <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:0.85rem;">
+          <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.5rem;">📅 日別 PV (過去7日)</div>
+          <div id="dailyPvBars" style="display:flex;align-items:flex-end;gap:4px;height:80px;"></div>
+        </div>
+      </div>
+
+      <!-- TOP ページ / TOP CTA -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">
+        <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:0.85rem;">
+          <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.5rem;">📄 TOP ページ (過去24h)</div>
+          <table style="width:100%;font-size:0.82rem;color:#e4e4e7;border-collapse:collapse;" id="topPagesTable">
+            <tbody><tr><td style="color:#71717a;padding:0.5rem 0;">読込中...</td></tr></tbody>
+          </table>
+        </div>
+        <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:0.85rem;">
+          <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.5rem;">🎯 TOP CTAクリック (過去24h)</div>
+          <table style="width:100%;font-size:0.82rem;color:#e4e4e7;border-collapse:collapse;" id="topCtasTable">
+            <tbody><tr><td style="color:#71717a;padding:0.5rem 0;">読込中...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <!-- Charts -->
     <section class="charts-section">
       <div class="chart-box wide">
@@ -904,14 +1008,116 @@
     // 旧名関数を残してロード順序の安全性確保
     const loadLiveRoster = loadLiveMetrics;
 
+    // 第1期生 残枠 (実数値 vs 公開カモフラージュ値) を並べて表示
+    async function loadFoundersDualCount() {
+      try {
+        const BACKEND = (window.location.hostname === 'localhost' && window.location.port === '8090')
+          ? 'http://localhost:8000' : window.location.origin;
+        const [realRes, publicRes] = await Promise.all([
+          fetch(`${BACKEND}/api/founders/count`),
+          fetch(`${BACKEND}/api/founders/count?public=1`),
+        ]);
+        if (realRes.ok) {
+          const r = await realRes.json();
+          document.getElementById('foundersRealRemaining').textContent = r.remaining;
+          document.getElementById('foundersRealTaken').textContent = r.taken;
+        }
+        if (publicRes.ok) {
+          const p = await publicRes.json();
+          document.getElementById('foundersPublicRemaining').textContent = p.remaining;
+          document.getElementById('foundersPublicTaken').textContent = p.taken;
+          // オフセット = public.taken - real.taken (後で再計算)
+          const realTakenEl = document.getElementById('foundersRealTaken');
+          const realTaken = parseInt(realTakenEl.textContent || '0', 10) || 0;
+          document.getElementById('foundersOffset').textContent = p.taken - realTaken;
+        }
+        const now = new Date();
+        const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        document.getElementById('foundersUpdated').textContent = `(更新: ${t})`;
+      } catch (e) {
+        console.warn('[loadFoundersDualCount] failed:', e);
+      }
+    }
+
+    // アクセス数モニター: /api/admin/analytics から events 集計を取得
+    async function loadAnalyticsDashboard() {
+      if (!window.AdminAuth || !AdminAuth.getToken()) return;
+      try {
+        const res = await AdminAuth.fetch('/api/admin/analytics');
+        if (!res.ok) return;
+        const data = await res.json();
+        const s = data.summary || {};
+        // KPI カード
+        document.getElementById('anaPv24h').textContent = fmtNum(s.pv_24h);
+        document.getElementById('anaPv7d').textContent = fmtNum(s.pv_7d);
+        document.getElementById('anaSess24h').textContent = fmtNum(s.sessions_24h);
+        document.getElementById('anaSess7d').textContent = fmtNum(s.sessions_7d);
+        document.getElementById('anaCta24h').textContent = fmtNum(s.cta_24h);
+        document.getElementById('anaCta7d').textContent = fmtNum(s.cta_7d);
+        document.getElementById('anaForm24h').textContent = fmtNum(s.form_24h);
+        document.getElementById('anaForm7d').textContent = fmtNum(s.form_7d);
+        document.getElementById('anaOut24h').textContent = fmtNum(s.outbound_24h);
+        document.getElementById('anaOut7d').textContent = fmtNum(s.outbound_7d);
+        // ファネル
+        const f = data.funnel_24h || {};
+        document.getElementById('funnelPv').textContent = fmtNum(f.page_view);
+        document.getElementById('funnelCta').textContent = fmtNum(f.cta_click);
+        document.getElementById('funnelForm').textContent = fmtNum(f.form_submit);
+        document.getElementById('funnelCtaRate').textContent = (f.cta_rate ?? 0);
+        document.getElementById('funnelFormRate').textContent = (f.form_rate ?? 0);
+        // 時間別 PV (棒)
+        const hourly = data.hourly_pv || [];
+        const maxH = Math.max(1, ...hourly.map(h => h.count));
+        document.getElementById('hourlyPvBars').innerHTML = hourly.map(h => {
+          const pct = Math.round((h.count / maxH) * 100);
+          return `<div title="${h.label} : ${h.count} PV" style="flex:1;background:linear-gradient(180deg,#38bdf8,#0ea5e9);height:${pct}%;min-height:2px;border-radius:2px 2px 0 0;"></div>`;
+        }).join('');
+        // 日別 PV (棒)
+        const daily = data.daily_pv || [];
+        const maxD = Math.max(1, ...daily.map(d => d.count));
+        document.getElementById('dailyPvBars').innerHTML = daily.map(d => {
+          const pct = Math.round((d.count / maxD) * 100);
+          return `<div title="${d.label} : ${d.count} PV" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <div style="width:100%;background:linear-gradient(180deg,#a78bfa,#8b5cf6);height:${pct}%;min-height:2px;border-radius:3px 3px 0 0;"></div>
+            <div style="font-size:0.65rem;color:#71717a;">${d.label}</div>
+          </div>`;
+        }).join('');
+        // TOP ページ
+        const pages = data.top_pages_24h || [];
+        document.getElementById('topPagesTable').innerHTML = '<tbody>' + (
+          pages.length ? pages.map(p =>
+            `<tr><td style="padding:0.25rem 0;color:#a7f3d0;">${escapeHtml(p.path)}</td><td style="text-align:right;color:#94a3b8;">${fmtNum(p.count)}</td></tr>`
+          ).join('') : '<tr><td style="color:#71717a;padding:0.5rem 0;">まだアクセスがありません</td></tr>'
+        ) + '</tbody>';
+        // TOP CTA
+        const ctas = data.top_ctas_24h || [];
+        document.getElementById('topCtasTable').innerHTML = '<tbody>' + (
+          ctas.length ? ctas.map(c =>
+            `<tr><td style="padding:0.25rem 0;color:#fbbf24;">${escapeHtml(c.text)}</td><td style="text-align:right;color:#94a3b8;">${fmtNum(c.count)}</td></tr>`
+          ).join('') : '<tr><td style="color:#71717a;padding:0.5rem 0;">まだクリックがありません</td></tr>'
+        ) + '</tbody>';
+        const now = new Date();
+        const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+        document.getElementById('analyticsUpdated').textContent = `(更新: ${t})`;
+      } catch (e) {
+        console.warn('[loadAnalyticsDashboard] failed:', e);
+      }
+    }
+
     // 初回読込 + 60秒ごと自動更新
     function start() {
       loadSignupSummary();
       loadLiveRoster();
+      loadFoundersDualCount();
+      loadAnalyticsDashboard();
       setInterval(loadSignupSummary, 60000);
       setInterval(loadLiveRoster, 60000);
+      setInterval(loadFoundersDualCount, 60000);
+      setInterval(loadAnalyticsDashboard, 60000);
       const btn = document.getElementById('refreshSignupSummary');
-      if (btn) btn.addEventListener('click', () => { loadSignupSummary(); loadLiveRoster(); });
+      if (btn) btn.addEventListener('click', () => { loadSignupSummary(); loadLiveRoster(); loadFoundersDualCount(); });
+      const anaBtn = document.getElementById('refreshAnalytics');
+      if (anaBtn) anaBtn.addEventListener('click', loadAnalyticsDashboard);
     }
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => setTimeout(start, 1500));

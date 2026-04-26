@@ -106,6 +106,12 @@ FOUNDER_LIMIT = 100
 # 1期生100名永年プラン (本契約)
 FOUNDER1_PRICE = 25000
 
+# 顧客向け表示用の擬似申込数 (購買意欲喚起のためのカモフラージュ)
+# 公開API /api/founders/count?public=1 でこの値が実申込数に加算される。
+# 例: real_taken=0, FOUNDER_PUBLIC_FAKE_TAKEN=26 → 顧客には「残74」と見える。
+# 内部API (CEOダッシュボード) は加算なしの実数値を返す。
+FOUNDER_PUBLIC_FAKE_TAKEN = int(os.getenv("FOUNDER_PUBLIC_FAKE_TAKEN", "26"))
+
 # 入塾金を免除するプラン
 ENROLLMENT_FEE_EXEMPT = {"student_addon"}
 
@@ -1146,6 +1152,131 @@ def admin_stats(authorization: Optional[str] = Header(None)):
     }
 
 
+@app.get("/api/admin/analytics")
+def admin_analytics(authorization: Optional[str] = Header(None)):
+    """events テーブルを集計してアクセス数ダッシュボード用データを返す。
+    page_view / cta_click / form_submit / outbound_click を 24h / 7d で集計。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+
+    conn = db()
+    c = conn.cursor()
+    now = datetime.now(timezone.utc)
+    h24 = now - timedelta(hours=24)
+    d7 = now - timedelta(days=7)
+
+    def count_event(name: str, since):
+        c.execute("SELECT COUNT(*) AS n FROM events WHERE name = ? AND created_at >= ?", (name, since))
+        row = c.fetchone()
+        return row["n"] if row else 0
+
+    pv_24h = count_event("page_view", h24)
+    pv_7d = count_event("page_view", d7)
+    cta_24h = count_event("cta_click", h24)
+    cta_7d = count_event("cta_click", d7)
+    form_24h = count_event("form_submit", h24)
+    form_7d = count_event("form_submit", d7)
+    out_24h = count_event("outbound_click", h24)
+    out_7d = count_event("outbound_click", d7)
+
+    # ユニークセッション数 (同じ session_id = 1人)
+    c.execute("SELECT COUNT(DISTINCT session_id) AS n FROM events WHERE created_at >= ?", (h24,))
+    sessions_24h = c.fetchone()["n"]
+    c.execute("SELECT COUNT(DISTINCT session_id) AS n FROM events WHERE created_at >= ?", (d7,))
+    sessions_7d = c.fetchone()["n"]
+
+    # ページ別 PV (24h)
+    c.execute(
+        """SELECT props, COUNT(*) AS n FROM events
+           WHERE name = 'page_view' AND created_at >= ?
+           GROUP BY props""",
+        (h24,)
+    )
+    page_stats: dict = {}
+    for r in c.fetchall():
+        try:
+            props = json.loads(r["props"] or "{}")
+            path = props.get("page_path") or "/"
+        except Exception:
+            path = "/"
+        page_stats[path] = page_stats.get(path, 0) + r["n"]
+    top_pages = sorted(page_stats.items(), key=lambda x: x[1], reverse=True)[:15]
+
+    # CTAクリック種類別 (24h)
+    c.execute(
+        """SELECT props, COUNT(*) AS n FROM events
+           WHERE name = 'cta_click' AND created_at >= ?
+           GROUP BY props""",
+        (h24,)
+    )
+    cta_stats: dict = {}
+    for r in c.fetchall():
+        try:
+            props = json.loads(r["props"] or "{}")
+            text = (props.get("text") or "").strip()[:60] or "(no text)"
+        except Exception:
+            text = "(parse error)"
+        cta_stats[text] = cta_stats.get(text, 0) + r["n"]
+    top_ctas = sorted(cta_stats.items(), key=lambda x: x[1], reverse=True)[:15]
+
+    # 時間別 PV (過去24時間、1時間ごと)
+    hourly_pv = []
+    for i in range(24):
+        h_start = now - timedelta(hours=24 - i)
+        h_end = now - timedelta(hours=23 - i)
+        c.execute(
+            "SELECT COUNT(*) AS n FROM events WHERE name='page_view' AND created_at >= ? AND created_at < ?",
+            (h_start, h_end)
+        )
+        hourly_pv.append({
+            "label": (h_start + timedelta(hours=9)).strftime("%H:00"),  # JST
+            "count": c.fetchone()["n"],
+        })
+
+    # 日別 PV (過去7日、JST日付ごと)
+    daily_pv = []
+    for i in range(7):
+        d_start = now - timedelta(days=7 - i)
+        d_end = now - timedelta(days=6 - i)
+        c.execute(
+            "SELECT COUNT(*) AS n FROM events WHERE name='page_view' AND created_at >= ? AND created_at < ?",
+            (d_start, d_end)
+        )
+        daily_pv.append({
+            "label": (d_start + timedelta(hours=9)).strftime("%m/%d"),
+            "count": c.fetchone()["n"],
+        })
+
+    # 申込ファネル (24h): page_view → cta_click → form_submit
+    funnel_24h = {
+        "page_view": pv_24h,
+        "cta_click": cta_24h,
+        "form_submit": form_24h,
+        "cta_rate": round(100 * cta_24h / pv_24h, 1) if pv_24h > 0 else 0.0,
+        "form_rate": round(100 * form_24h / pv_24h, 1) if pv_24h > 0 else 0.0,
+    }
+
+    conn.close()
+    return {
+        "summary": {
+            "pv_24h": pv_24h, "pv_7d": pv_7d,
+            "sessions_24h": sessions_24h, "sessions_7d": sessions_7d,
+            "cta_24h": cta_24h, "cta_7d": cta_7d,
+            "form_24h": form_24h, "form_7d": form_7d,
+            "outbound_24h": out_24h, "outbound_7d": out_7d,
+        },
+        "funnel_24h": funnel_24h,
+        "hourly_pv": hourly_pv,
+        "daily_pv": daily_pv,
+        "top_pages_24h": [{"path": p, "count": n} for p, n in top_pages],
+        "top_ctas_24h": [{"text": t, "count": n} for t, n in top_ctas],
+        "founders_public_offset": FOUNDER_PUBLIC_FAKE_TAKEN,
+    }
+
+
 @app.get("/api/auth/me")
 def auth_me(authorization: Optional[str] = Header(None)):
     """現在のセッションを検証して生徒情報を返す。全ページのアクセスガードに使う。"""
@@ -1488,11 +1619,14 @@ def list_plans():
     }
 
 @app.get("/api/founders/count")
-def founders_count():
+def founders_count(public: bool = False):
     """第1期生の残り枠をカウント。
-    status='paid' の全プラン（新規: standard/premium/family/student_addon,
+    status='paid' の全プラン（新規: founder1/standard/premium/family/student_addon,
     旧: ai/hybrid/intensive）を対象。トライアル中も status='paid' が立つため、
-    実際に枠を占有している全員をカウントする。"""
+    実際に枠を占有している全員をカウントする。
+
+    public=1 (顧客向け): FOUNDER_PUBLIC_FAKE_TAKEN を加算したカモフラージュ値を返す。
+    public未指定 (内部用): 実数値を返す (CEOダッシュボード用)。"""
     conn = db()
     c = conn.cursor()
     try:
@@ -1504,8 +1638,15 @@ def founders_count():
         log.error(f"founders_count query failed: {e}")
         paid = 0
     conn.close()
-    remaining = max(0, FOUNDER_LIMIT - paid)
-    return {"limit": FOUNDER_LIMIT, "taken": paid, "remaining": remaining}
+    real_remaining = max(0, FOUNDER_LIMIT - paid)
+    if public:
+        # 顧客向けカモフラージュ: 残枠を意図的に少なく見せて購買意欲を喚起
+        fake_taken = paid + FOUNDER_PUBLIC_FAKE_TAKEN
+        # 「残0」表示は完売印象=売り止めになるので最低1名分は残す
+        public_remaining = max(1, FOUNDER_LIMIT - fake_taken)
+        public_taken = FOUNDER_LIMIT - public_remaining
+        return {"limit": FOUNDER_LIMIT, "taken": public_taken, "remaining": public_remaining}
+    return {"limit": FOUNDER_LIMIT, "taken": paid, "remaining": real_remaining}
 
 # ==========================================================================
 # Routes: Stripe Webhook
