@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+  <script src="admin-only.js"></script>
 <meta charset="UTF-8">
 <title>SNS販売開始キット | AI学習コーチ塾</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -238,16 +239,7 @@
   }
   .tips strong { color: #6ee7b7; }
 </style>
-  <script>
-    // CEO専用ページ: 管理者ログインが無ければ ceo.html へ即座に転送
-    (function () {
-      try {
-        var tok = localStorage.getItem("ai_juku_admin_token");
-        if (!tok) { window.location.replace("ceo.html?reason=admin_required&from=" + encodeURIComponent(location.pathname)); }
-      } catch (e) { window.location.replace("ceo.html"); }
-    })();
-  </script>
-</head>
+  </head>
 <body>
 
 <h1>🚀 AI学習コーチ塾 — SNS販売開始キット</h1>

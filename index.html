@@ -45,7 +45,7 @@
 
   <!-- Header -->
   <header class="header">
-    <a href="ceo.html" class="back-to-ceo" title="CEO経営ダッシュボードに戻る" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.55rem 0.95rem;background:rgba(167,139,250,0.18);border:1px solid rgba(167,139,250,0.45);border-radius:9px;color:#a78bfa;text-decoration:none;font-weight:800;font-size:0.88rem;margin-right:0.9rem;white-space:nowrap;transition:all 0.18s;">⬅ CEO</a>
+    <a href="ceo.html" class="back-to-ceo admin-only-ui" title="CEO経営ダッシュボードに戻る" style="display:none;align-items:center;gap:0.4rem;padding:0.55rem 0.95rem;background:rgba(167,139,250,0.18);border:1px solid rgba(167,139,250,0.45);border-radius:9px;color:#a78bfa;text-decoration:none;font-weight:800;font-size:0.88rem;margin-right:0.9rem;white-space:nowrap;transition:all 0.18s;">⬅ CEO</a>
     <div class="logo">
       <span class="logo-icon">🎓</span>
       <div>
@@ -54,12 +54,12 @@
       </div>
     </div>
     <div class="header-actions">
-      <div class="nav-status-group" title="現在の利用料金とサービス稼働モード">
-        <span id="costMeter" class="cost-meter" title="今月の推定API費用（顧客モードでは非表示）">¥0</span>
+      <div class="nav-status-group">
+        <span id="costMeter" class="cost-meter admin-only-ui" style="display:none;" title="今月の推定API費用 (管理者のみ)">¥0</span>
         <span id="modeIndicator" class="mode-badge live">🟢 AI接続中</span>
       </div>
 
-      <div class="nav-bar-wrapper" title="🧭 管理者ナビゲーションバー">
+      <div class="nav-bar-wrapper admin-only-ui" style="display:none;" title="管理者ナビゲーション">
         <div class="nav-bar-label">🧭 管理メニュー</div>
         <div class="nav-bar-icons">
           <a href="mypage.html" class="btn-icon-labeled" title="生徒本人が見る画面（マイページ）">
@@ -110,7 +110,7 @@
             <span class="icon">🛡️</span>
             <span class="label">滑り止め</span>
           </a>
-          <button id="openSettings" class="btn-icon-labeled" title="管理者設定（APIキー等・通常顧客には非表示）">
+          <button id="openSettings" class="btn-icon-labeled" title="管理者設定">
             <span class="icon">⚙️</span>
             <span class="label">設定</span>
           </button>
@@ -118,6 +118,19 @@
       </div>
     </div>
   </header>
+
+  <!-- 管理者ログイン済み判定: localStorage に ai_juku_admin_token があれば admin-only-ui を表示 -->
+  <script>
+    (function() {
+      try {
+        if (localStorage.getItem('ai_juku_admin_token')) {
+          document.querySelectorAll('.admin-only-ui').forEach(function(el) {
+            el.style.display = '';
+          });
+        }
+      } catch (e) {}
+    })();
+  </script>
 
   <!-- Student Selector -->
   <div class="student-bar">

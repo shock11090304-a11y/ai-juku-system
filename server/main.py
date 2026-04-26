@@ -1993,6 +1993,131 @@ def admin_analytics(authorization: Optional[str] = Header(None)):
     }
 
 
+# ==========================================================================
+# Frontend AI Proxy: 生徒のブラウザに API キー無しで Anthropic API を呼び出させる
+# ==========================================================================
+# 既存の english-exam.js / app.js / textbook-generator.js は
+# `x-api-key: <user_localStorage_key>` で Anthropic API を直接呼んでいたため、
+# 生徒のブラウザに API キーが入っていないと「デモモード」状態だった。
+# この proxy 経由なら、生徒の画面でも実 Claude が動作する。
+# 認証: 生徒の Bearer (magic link 由来) または admin Bearer。
+# 簡易 rate limit: 同じ session_id (生徒) で 1分20回まで。
+
+_AI_PROXY_RATE = {}  # session_id → [unix timestamps]
+
+
+def _ai_proxy_rate_limit(session_id: str, max_per_min: int = 20) -> bool:
+    """True なら通過、False なら制限超過"""
+    import time as _t
+    now = _t.time()
+    cutoff = now - 60
+    arr = [t for t in _AI_PROXY_RATE.get(session_id, []) if t > cutoff]
+    if len(arr) >= max_per_min:
+        _AI_PROXY_RATE[session_id] = arr
+        return False
+    arr.append(now)
+    _AI_PROXY_RATE[session_id] = arr
+    # 古いエントリを定期掃除 (メモリリーク防止)
+    if len(_AI_PROXY_RATE) > 1000:
+        for k in list(_AI_PROXY_RATE.keys())[:500]:
+            _AI_PROXY_RATE[k] = [t for t in _AI_PROXY_RATE[k] if t > cutoff]
+            if not _AI_PROXY_RATE[k]:
+                del _AI_PROXY_RATE[k]
+    return True
+
+
+@app.post("/api/ai/messages")
+def ai_messages_proxy(payload: dict, authorization: Optional[str] = Header(None)):
+    """Anthropic Messages API への薄い proxy。
+    生徒のブラウザに API キーが無くても AI 機能が動くようにするため。
+    payload (フロントから):
+      - model: "claude-sonnet-4-6" 等 (省略時 sonnet)
+      - max_tokens: int (省略時 4000)
+      - system: str (省略可)
+      - messages: [{role, content}]
+    認証: 生徒の magic-link Bearer or admin Bearer。
+    Anthropic レスポンスをほぼそのまま返す。"""
+    if not ANTHROPIC_API_KEY:
+        raise HTTPException(status_code=503, detail="AI service not configured")
+
+    # 認証: 生徒 or 管理者
+    student = None
+    is_admin = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            is_admin = True
+        else:
+            student = _get_current_student(authorization)
+    if not student and not is_admin:
+        raise HTTPException(status_code=401, detail="Login required")
+
+    # Rate limit (生徒単位)
+    rate_key = f"admin" if is_admin else f"student:{student.get('id')}"
+    if not _ai_proxy_rate_limit(rate_key):
+        raise HTTPException(status_code=429, detail="Too many AI requests. Please wait a minute.")
+
+    # payload 検証
+    model = payload.get("model") or "claude-sonnet-4-6"
+    max_tokens = int(payload.get("max_tokens") or 4000)
+    if max_tokens > 8000:
+        max_tokens = 8000  # 上限保護
+    messages = payload.get("messages")
+    if not isinstance(messages, list) or not messages:
+        raise HTTPException(status_code=400, detail="messages required")
+    body = {"model": model, "max_tokens": max_tokens, "messages": messages}
+    system = payload.get("system")
+    if system:
+        body["system"] = system
+
+    # Anthropic 呼び出し
+    try:
+        req = urllib.request.Request(
+            "https://api.anthropic.com/v1/messages",
+            data=json.dumps(body).encode("utf-8"),
+            headers={
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            data = json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        body_err = e.read().decode("utf-8", errors="ignore")
+        log.error(f"[AI proxy] Anthropic HTTP {e.code}: {body_err[:300]}")
+        raise HTTPException(status_code=502, detail=f"AI upstream error: {e.code}")
+    except Exception as e:
+        log.error(f"[AI proxy] error: {type(e).__name__}: {e}")
+        raise HTTPException(status_code=500, detail="AI request failed")
+
+    # 使用ログ (events に記録、CEO ダッシュボード analytics で見える)
+    try:
+        usage = data.get("usage") or {}
+        conn = db()
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            (
+                "ai_proxy_call",
+                json.dumps({
+                    "model": model,
+                    "input_tokens": usage.get("input_tokens", 0),
+                    "output_tokens": usage.get("output_tokens", 0),
+                    "is_admin": is_admin,
+                }),
+                rate_key,
+            ),
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        log.warning(f"[AI proxy] failed to record event: {e}")
+
+    return data
+
+
 @app.post("/api/admin/sns/run-now")
 def admin_sns_run_now(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """Daily SNS 投稿を今すぐ生成→送信(手動トリガー)。

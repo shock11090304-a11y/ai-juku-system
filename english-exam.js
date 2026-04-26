@@ -258,7 +258,12 @@ const state = {
 function getApiKey() {
   return localStorage.getItem('ai_juku_api_key') || '';
 }
-function isLiveMode() { return !!getApiKey(); }
+function isLiveMode() {
+  // 生徒ログイン済み (backend proxy 経由) or 管理者APIキーあり (直接呼び出し)
+  return !!(localStorage.getItem('ai_juku_session_token')
+    || localStorage.getItem('ai_juku_admin_token')
+    || getApiKey());
+}
 function updateModeBadge() {
   // 生徒可視のため常に「🟢 AI接続中」固定。デモ表記は塾の信頼性に影響するため厳禁。
   // 内部の isLiveMode() は AI 呼び出し時のフォールバック判定に引き続き使用。
@@ -273,28 +278,60 @@ function updateModeBadge() {
 // Claude API 呼び出し (JSON出力強制)
 // ==========================================================================
 async function callClaudeJson({ system, user, model = MODEL_DEFAULT, maxTokens = 4000 }) {
-  const apiKey = getApiKey();
-  if (!apiKey) throw new Error('NO_API_KEY');
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: maxTokens,
-      system,
-      messages: [{ role: 'user', content: user }],
-    }),
-  });
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`Claude API ${res.status}: ${t.slice(0, 200)}`);
+  // 1) 生徒ログイン済みなら backend proxy 経由 (生徒ブラウザにキー不要・本番Live)
+  // 2) フォールバック: localStorage に APIキーがあれば従来の直接呼び出し (CEO/管理者用)
+  const sessionToken = localStorage.getItem('ai_juku_session_token')
+    || localStorage.getItem('ai_juku_admin_token');
+  const backend = (window.location.hostname === 'localhost' && window.location.port === '8090')
+    ? 'http://localhost:8000' : window.location.origin;
+
+  let data;
+  if (sessionToken) {
+    // Backend proxy 経由 (Anthropic key はサーバー側に存在)
+    const res = await fetch(`${backend}/api/ai/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + sessionToken,
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        system,
+        messages: [{ role: 'user', content: user }],
+      }),
+    });
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(`Backend AI ${res.status}: ${t.slice(0, 200)}`);
+    }
+    data = await res.json();
+  } else {
+    // 直接呼び出し (ログインしていない/プレビュー用)
+    const apiKey = getApiKey();
+    if (!apiKey) throw new Error('NO_AUTH');
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        system,
+        messages: [{ role: 'user', content: user }],
+      }),
+    });
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(`Claude API ${res.status}: ${t.slice(0, 200)}`);
+    }
+    data = await res.json();
   }
-  const data = await res.json();
+
   let text = (data.content?.[0]?.text || '').trim();
   // コードブロック除去
   if (text.startsWith('```')) {

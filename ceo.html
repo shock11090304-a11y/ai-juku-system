@@ -110,10 +110,16 @@
         <button type="submit" id="adminLoginBtn">🔓 ログイン</button>
       </form>
       <div class="admin-gate-msg" id="adminGateMsg"></div>
-      <p class="admin-gate-foot">
-        パスワードを忘れた場合は、Railwayダッシュボードの環境変数<br>
-        <code>ADMIN_PASSWORD</code> で確認・変更できます。
+      <p class="admin-gate-foot" id="adminGateFootPublic">
+        管理者専用画面です。
       </p>
+      <p class="admin-gate-foot" id="adminGateFootHelper" style="display:none;">
+        パスワードを忘れた場合はサーバー管理画面の環境変数 <code>ADMIN_PASSWORD</code> で再設定できます。
+      </p>
+      <script>
+        // 認証チャレンジを失敗した直後だけ helper メッセージを表示する仕組み (実装は ceo.js)
+        // デフォルトでは技術スタック露出を防ぐため public 文言のみ
+      </script>
     </div>
   </section>
 

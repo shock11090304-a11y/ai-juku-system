@@ -11,18 +11,34 @@ let filteredStudents = [];
 // Data loading
 // ==========================================================================
 async function loadStudents() {
-  // 1. Try same-origin local copy first (most reliable)
+  // 🚨 SECURITY: juku-manager-data.json は public 配信禁止 (個人情報・氏名/学年/月謝)
+  // 旧来の `fetch('juku-manager-data.json')` は本番で 213名分の個人情報を全公開していた
+  // ため削除。admin token 認証付き API 経由でのみ取得する。
+
+  // 1. Backend API (admin 認証必須)
   try {
-    const res = await fetch('juku-manager-data.json');
-    if (res.ok) {
-      const data = await res.json();
-      processData(data);
-      updateStatus('🟢 データ取得完了', 'live');
-      return true;
+    const adminTok = localStorage.getItem('ai_juku_admin_token');
+    if (adminTok) {
+      const backend = (window.location.hostname === 'localhost' && window.location.port === '8090')
+        ? 'http://localhost:8000' : window.location.origin;
+      const res = await fetch(`${backend}/api/admin/stats`, {
+        headers: { 'Authorization': 'Bearer ' + adminTok }
+      });
+      if (res.ok) {
+        const stats = await res.json();
+        // /api/admin/stats から取れる students を juku-manager 形式に変換
+        const data = { students: (stats.students || []).map(s => ({
+          id: s.id, name: s.name, grade: s.grade, email: s.email,
+          courses: [], totalFee: 0  // 月謝情報は本番DBにないので空
+        })) };
+        processData(data);
+        updateStatus('🟢 データ取得完了 (admin)', 'live');
+        return true;
+      }
     }
   } catch (e) {}
 
-  // 2. Try juku-manager server (CORS可能なら)
+  // 2. Local juku-manager server (開発時のみ・CORS可能なら)
   try {
     const res = await fetch('http://localhost:8080/default_data.json');
     if (!res.ok) throw new Error('fetch failed');

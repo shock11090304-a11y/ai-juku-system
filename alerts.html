@@ -1,22 +1,14 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+  <script src="admin-only.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🔔 自動アラート管理 | AI学習コーチ塾</title>
   <meta name="robots" content="noindex">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="alerts.css">
-  <script>
-    // CEO専用ページ: 管理者ログインが無ければ ceo.html へ即座に転送
-    (function () {
-      try {
-        var tok = localStorage.getItem("ai_juku_admin_token");
-        if (!tok) { window.location.replace("ceo.html?reason=admin_required&from=" + encodeURIComponent(location.pathname)); }
-      } catch (e) { window.location.replace("ceo.html"); }
-    })();
-  </script>
-</head>
+  </head>
 <body>
   <div class="bg-gradient"></div>
   <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>

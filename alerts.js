@@ -36,7 +36,8 @@ function saveConfig(cfg) {
 // ==========================================================================
 function getInactiveStudents() {
   const config = loadConfig();
-  // Use juku-manager-data.json + simulate some as inactive
+  // 旧: juku-manager-data.json から取得していたが、個人情報漏洩リスクで削除済み (2026-04-27)
+  // 本実装では admin API /api/admin/stats から取得すべき。下記はサンプルデータ。
   const sample = [
     { id: 1, name: '山田 太郎', grade: '高校2年', daysInactive: 2, level: 'ok' },
     { id: 2, name: '佐藤 花子', grade: '中学3年', daysInactive: 4, level: 'level-1' },

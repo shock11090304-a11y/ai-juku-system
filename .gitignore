@@ -44,3 +44,7 @@ temp/
 # Generated video frames (regeneratable from script)
 marketing-assets/video-frames/
 marketing-assets/video-frames-v2/
+
+# 個人情報を含むため public 配信禁止 (2026-04-27 修正)
+juku-manager-data.json
+*-data.json
