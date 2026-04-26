@@ -515,6 +515,60 @@
       <div id="monAlertsBox"></div>
     </section>
 
+    <!-- 🎓 問題プール状況 (随時自動追加スケジューラの可視化) -->
+    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(14,165,233,0.06); border: 1px solid rgba(14,165,233,0.25); border-radius: 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+        <h2 style="font-size:1.15rem;color:#0ea5e9;margin:0;">🎓 試験問題プール <span id="poolUpdated" style="font-size:0.7rem;color:#71717a;font-weight:400;">--</span></h2>
+        <div style="display:flex;gap:0.5rem;">
+          <button id="poolRefreshBtn" style="background:rgba(14,165,233,0.2);color:#0ea5e9;border:1px solid rgba(14,165,233,0.4);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">🔄 更新</button>
+          <button id="poolGenerateBtn" style="background:rgba(34,197,94,0.2);color:#22c55e;border:1px solid rgba(34,197,94,0.4);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">⚡ 今すぐ生成</button>
+        </div>
+      </div>
+
+      <!-- KPI カード -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.7rem;margin-bottom:1rem;">
+        <div style="background:rgba(14,165,233,0.12);border:1px solid rgba(14,165,233,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
+          <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.3rem;">📦 蓄積 合計</div>
+          <div id="poolTotal" style="font-size:1.6rem;font-weight:900;color:#0ea5e9;">--</div>
+          <div style="font-size:0.7rem;color:#71717a;">/ <span id="poolRotationSize">--</span> ローテ枠</div>
+        </div>
+        <div style="background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
+          <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.3rem;">✅ 充足 part 数</div>
+          <div id="poolFull" style="font-size:1.6rem;font-weight:900;color:#22c55e;">--</div>
+          <div style="font-size:0.7rem;color:#71717a;">target: <span id="poolTargetN">30</span></div>
+        </div>
+        <div style="background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
+          <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.3rem;">⚠️ 残量警戒</div>
+          <div id="poolLow" style="font-size:1.6rem;font-weight:900;color:#f87171;">--</div>
+          <div style="font-size:0.7rem;color:#71717a;">min: <span id="poolMinN">3</span> 未満</div>
+        </div>
+        <div style="background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
+          <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.3rem;">🤖 本日生成</div>
+          <div id="poolToday" style="font-size:1.6rem;font-weight:900;color:#fbbf24;">--</div>
+          <div style="font-size:0.7rem;color:#71717a;">/ <span id="poolDailyMax">60</span> 日次上限</div>
+        </div>
+        <div style="background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
+          <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.3rem;">⏱ 起動間隔</div>
+          <div id="poolInterval" style="font-size:1.6rem;font-weight:900;color:#a78bfa;">--</div>
+          <div style="font-size:0.7rem;color:#71717a;">時間 / tick <span id="poolPerTick">5</span>問</div>
+        </div>
+        <div style="background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
+          <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.3rem;">🔁 補充中</div>
+          <div id="poolInflight" style="font-size:1.6rem;font-weight:900;color:#60a5fa;">--</div>
+          <div style="font-size:0.7rem;color:#71717a;">in-flight</div>
+        </div>
+      </div>
+
+      <!-- 試験別積み上げ -->
+      <div id="poolByExamBox" style="margin-bottom:0.7rem;font-size:0.8rem;color:#94a3b8;"></div>
+
+      <!-- pool が薄い part 上位10件 -->
+      <details style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:0.6rem 0.9rem;">
+        <summary style="cursor:pointer;font-weight:700;color:#e4e4e7;font-size:0.88rem;">📋 part 別蓄積一覧 (薄い順)</summary>
+        <div id="poolPartsBox" style="margin-top:0.6rem;font-size:0.78rem;line-height:1.7;max-height:340px;overflow-y:auto;"></div>
+      </details>
+    </section>
+
     <!-- アクセス数モニター (LP / CTA / フォーム送信を events から集計) -->
     <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
@@ -1340,6 +1394,56 @@
       }
     }
 
+    // 🎓 試験問題プール状況をロード
+    async function loadPoolStatus() {
+      if (!window.AdminAuth || !AdminAuth.getToken()) return;
+      try {
+        const res = await AdminAuth.fetch('/api/admin/exam-questions/pool-status');
+        if (!res.ok) return;
+        const d = await res.json();
+        document.getElementById('poolTotal').textContent = d.total_questions ?? '--';
+        document.getElementById('poolRotationSize').textContent = d.rotation_size ?? '--';
+        document.getElementById('poolFull').textContent = d.full_pool_parts ?? '--';
+        document.getElementById('poolLow').textContent = d.low_pool_parts ?? '--';
+        document.getElementById('poolToday').textContent = d.today_generated ?? '--';
+        document.getElementById('poolInflight').textContent = d.in_flight_refills ?? '--';
+        const cfg = d.config || {};
+        document.getElementById('poolInterval').textContent = cfg.interval_hours ?? '--';
+        document.getElementById('poolPerTick').textContent = cfg.per_tick ?? '--';
+        document.getElementById('poolTargetN').textContent = cfg.target_pool ?? '--';
+        document.getElementById('poolMinN').textContent = cfg.min_pool ?? '--';
+        document.getElementById('poolDailyMax').textContent = cfg.daily_max ?? '--';
+
+        // 試験別積み上げ
+        const labelMap = { toefl: '🇺🇸 TOEFL', toeic: '💼 TOEIC', ielts: '🇬🇧 IELTS', eiken: '🇯🇵 英検', daigaku: '🎓 大学入試' };
+        const byExam = d.by_exam || {};
+        document.getElementById('poolByExamBox').innerHTML = Object.entries(byExam)
+          .map(([k, n]) => `<span style="display:inline-block;margin-right:1rem;"><strong>${labelMap[k] || k}</strong>: ${n}問</span>`).join('');
+
+        // part 別 (薄い順)
+        const parts = d.parts || [];
+        const target = cfg.target_pool || 30;
+        const min = cfg.min_pool || 3;
+        document.getElementById('poolPartsBox').innerHTML = parts.map(p => {
+          const ratio = Math.min(100, Math.round((p.count / target) * 100));
+          const color = p.is_low ? '#f87171' : (p.is_full ? '#22c55e' : '#fbbf24');
+          const label = (labelMap[p.exam] || p.exam) + (p.grade ? ` <span style="color:#71717a;">[${p.grade}]</span>` : '');
+          return `<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.3rem;">
+            <div style="flex:1;min-width:200px;">${label} <code style="font-size:0.72rem;color:#94a3b8;">${p.part}</code></div>
+            <div style="flex:2;background:rgba(255,255,255,0.05);border-radius:4px;height:6px;overflow:hidden;">
+              <div style="width:${ratio}%;height:100%;background:${color};"></div>
+            </div>
+            <div style="font-weight:800;color:${color};min-width:60px;text-align:right;">${p.count} / ${target}</div>
+          </div>`;
+        }).join('');
+
+        const t = new Date();
+        document.getElementById('poolUpdated').textContent = `(更新: ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}:${String(t.getSeconds()).padStart(2,'0')})`;
+      } catch (e) {
+        console.warn('[loadPoolStatus] failed:', e);
+      }
+    }
+
     // 初回読込 + 60秒ごと自動更新
     function start() {
       loadSignupSummary();
@@ -1348,12 +1452,14 @@
       loadAnalyticsDashboard();
       loadMonitorHealth();
       loadRevenueTimeline();
+      loadPoolStatus();
       setInterval(loadSignupSummary, 60000);
       setInterval(loadLiveRoster, 60000);
       setInterval(loadFoundersDualCount, 60000);
       setInterval(loadAnalyticsDashboard, 60000);
       setInterval(loadMonitorHealth, 60000);
       setInterval(loadRevenueTimeline, 60000);
+      setInterval(loadPoolStatus, 60000);
       document.getElementById('revenueRange')?.addEventListener('change', loadRevenueTimeline);
       const btn = document.getElementById('refreshSignupSummary');
       if (btn) btn.addEventListener('click', () => { loadSignupSummary(); loadLiveRoster(); loadFoundersDualCount(); });
@@ -1369,6 +1475,25 @@
         }
         loadMonitorHealth();
       });
+      const poolRefreshBtn = document.getElementById('poolRefreshBtn');
+      if (poolRefreshBtn) poolRefreshBtn.addEventListener('click', loadPoolStatus);
+      const poolGenBtn = document.getElementById('poolGenerateBtn');
+      if (poolGenBtn) poolGenBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        if (!confirm('今すぐローテに従って問題を生成します (デフォルト10問・薄い part 優先)。Anthropic 課金が発生します。続行?')) return;
+        poolGenBtn.disabled = true; poolGenBtn.textContent = '⏳ 生成中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/exam-questions/generate', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+          });
+          const j = await r.json();
+          alert(`✅ 生成完了: ${j.generated || 0}問 (失敗 ${j.failed || 0}問)`);
+          loadPoolStatus();
+        } catch (e) { alert('⚠️ ' + e.message); }
+        poolGenBtn.disabled = false; poolGenBtn.textContent = '⚡ 今すぐ生成';
+      });
+
       const sumBtn = document.getElementById('sendDailySummary');
       if (sumBtn) sumBtn.addEventListener('click', async () => {
         if (!confirm('本日の朝サマリを今すぐGmailに送信しますか?')) return;

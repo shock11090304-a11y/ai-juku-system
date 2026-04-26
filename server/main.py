@@ -2238,8 +2238,13 @@ def ai_messages_proxy(payload: dict, authorization: Optional[str] = Header(None)
 # Exam Questions Auto-Generator (4試験 × 各 part の問題を毎日蓄積)
 # ==========================================================================
 EXAM_QUESTIONS_ENABLED = os.getenv("EXAM_QUESTIONS_ENABLED", "1") == "1"
-EXAM_QUESTIONS_HOUR_JST = int(os.getenv("EXAM_QUESTIONS_HOUR_JST", "5"))
-EXAM_QUESTIONS_DAILY_QUOTA = int(os.getenv("EXAM_QUESTIONS_DAILY_QUOTA", "10"))  # 1日10問程度に抑制
+EXAM_QUESTIONS_HOUR_JST = int(os.getenv("EXAM_QUESTIONS_HOUR_JST", "5"))           # 1日1回モード時の起動時刻
+EXAM_QUESTIONS_DAILY_QUOTA = int(os.getenv("EXAM_QUESTIONS_DAILY_QUOTA", "10"))     # 1回の起動で生成する問題数 (interval モード時は1tick分)
+EXAM_QUESTIONS_INTERVAL_HOURS = float(os.getenv("EXAM_QUESTIONS_INTERVAL_HOURS", "6"))  # 0以下なら旧来の「毎日 HOUR_JST 時」モード、>0なら N時間おきに繰り返し
+EXAM_QUESTIONS_PER_TICK = int(os.getenv("EXAM_QUESTIONS_PER_TICK", "5"))            # interval モード時の1 tick あたり生成数
+EXAM_QUESTIONS_TARGET_POOL = int(os.getenv("EXAM_QUESTIONS_TARGET_POOL", "30"))     # 各 part の目標蓄積数 (これに達したら以降生成スキップ・暴走防止)
+EXAM_QUESTIONS_MIN_POOL = int(os.getenv("EXAM_QUESTIONS_MIN_POOL", "3"))            # この数を下回る part を最優先補充
+EXAM_QUESTIONS_DAILY_MAX = int(os.getenv("EXAM_QUESTIONS_DAILY_MAX", "60"))         # 1日の総生成数のハードリミット (Anthropic 課金暴走防止)
 EXAM_QUESTIONS_MODEL = os.getenv("EXAM_QUESTIONS_MODEL", "claude-sonnet-4-6")
 
 # ローテーション対象の (exam_id, part_key, eiken_grade) リスト
@@ -2534,11 +2539,8 @@ def _save_exam_question(exam_id: str, part_key: str, question_data: dict, eiken_
     conn.close()
 
 
-def _run_exam_questions_generation(quota: int = None) -> dict:
-    """ローテーション順で N 問生成 → DB保存"""
-    if quota is None:
-        quota = EXAM_QUESTIONS_DAILY_QUOTA
-    # 現在 DB に少ない part を優先 (バランス確保)
+def _exam_pool_counts() -> dict:
+    """全ローテーション組合せの現在 pool 蓄積数を辞書で返す: {(exam, part, grade): n}"""
     conn = db()
     c = conn.cursor()
     counts = {}
@@ -2557,12 +2559,63 @@ def _run_exam_questions_generation(quota: int = None) -> dict:
             try: conn.rollback()
             except Exception: pass
             n = 0
-        key = (exam_id, part_key, eiken_grade)
-        counts[key] = n
+        counts[(exam_id, part_key, eiken_grade)] = n
     conn.close()
+    return counts
 
-    # 件数少ない順にソート → 先頭から quota 件生成
-    sorted_targets = sorted(EXAM_QUESTION_ROTATION, key=lambda t: counts.get(t, 0))[:quota]
+
+def _exam_generated_today() -> int:
+    """JST 当日に生成された問題数 (created_at >= JST 00:00)。daily max 制御に使う。"""
+    JST = timezone(timedelta(hours=9))
+    midnight_jst = datetime.now(JST).replace(hour=0, minute=0, second=0, microsecond=0)
+    midnight_utc = midnight_jst.astimezone(timezone.utc).replace(tzinfo=None)
+    conn = db()
+    c = conn.cursor()
+    n = 0
+    try:
+        c.execute("SELECT COUNT(*) FROM exam_questions WHERE created_at >= ?", (midnight_utc,))
+        row = c.fetchone()
+        n = row[0] if row else 0
+    except Exception:
+        try: conn.rollback()
+        except Exception: pass
+    conn.close()
+    return int(n)
+
+
+def _run_exam_questions_generation(quota: int = None, respect_daily_max: bool = True) -> dict:
+    """ローテーション順で N 問生成 → DB保存。
+    優先順位:
+      1. pool < EXAM_QUESTIONS_MIN_POOL の part (緊急補充)
+      2. pool < EXAM_QUESTIONS_TARGET_POOL の part (蓄積中)
+      3. それ以外は skip (既に十分蓄積済み)
+    課金暴走防止: 当日の総生成数が EXAM_QUESTIONS_DAILY_MAX を超えたら respect_daily_max=True なら停止。"""
+    if quota is None:
+        quota = EXAM_QUESTIONS_DAILY_QUOTA
+    counts = _exam_pool_counts()
+
+    # ターゲット未達のものだけを対象に、pool が少ない順にソート
+    candidates = [
+        (exam_id, part_key, grade)
+        for (exam_id, part_key, grade) in EXAM_QUESTION_ROTATION
+        if counts.get((exam_id, part_key, grade), 0) < EXAM_QUESTIONS_TARGET_POOL
+    ]
+    candidates.sort(key=lambda t: counts.get(t, 0))
+    sorted_targets = candidates[:quota]
+
+    if not sorted_targets:
+        log.info(f"[ExamQ] All parts have reached target pool ({EXAM_QUESTIONS_TARGET_POOL}). Nothing to do.")
+        return {"ran": True, "generated": 0, "failed": 0, "skipped_full_pool": True, "details": []}
+
+    # daily max ガード
+    today_count = _exam_generated_today() if respect_daily_max else 0
+    remaining_today = max(0, EXAM_QUESTIONS_DAILY_MAX - today_count)
+    if respect_daily_max and remaining_today <= 0:
+        log.warning(f"[ExamQ] Daily max reached ({today_count}/{EXAM_QUESTIONS_DAILY_MAX}), skipping run.")
+        return {"ran": True, "generated": 0, "failed": 0, "skipped_daily_max": True, "today_count": today_count, "details": []}
+
+    if respect_daily_max and len(sorted_targets) > remaining_today:
+        sorted_targets = sorted_targets[:remaining_today]
 
     generated = []
     failed = []
@@ -2573,33 +2626,94 @@ def _run_exam_questions_generation(quota: int = None) -> dict:
             generated.append({"exam": exam_id, "part": part_key, "grade": eiken_grade})
         else:
             failed.append({"exam": exam_id, "part": part_key, "grade": eiken_grade})
-    return {"ran": True, "generated": len(generated), "failed": len(failed), "details": generated}
+    return {"ran": True, "generated": len(generated), "failed": len(failed), "today_count_after": today_count + len(generated), "details": generated}
+
+
+# オンデマンド補充の重複起動防止 (同じ key の補充が走行中なら待たせる)
+_REFILL_INFLIGHT: set = set()
+_REFILL_LOCK = asyncio.Lock()
+
+
+async def _refill_part_async(exam_id: str, part_key: str, eiken_grade: Optional[str], target: int = 2) -> None:
+    """生徒のリクエスト由来で薄い part を裏で補充。
+    target 問数を生成。in-flight ロックで多重発火を防止。daily max は遵守。"""
+    key = (exam_id, part_key, eiken_grade)
+    async with _REFILL_LOCK:
+        if key in _REFILL_INFLIGHT:
+            return
+        _REFILL_INFLIGHT.add(key)
+    try:
+        # daily max チェック
+        today_count = _exam_generated_today()
+        if today_count >= EXAM_QUESTIONS_DAILY_MAX:
+            log.warning(f"[ExamQ:Refill] Skipped {key}: daily max ({EXAM_QUESTIONS_DAILY_MAX}) reached")
+            return
+        # 既に target_pool 到達なら skip
+        counts = _exam_pool_counts()
+        if counts.get(key, 0) >= EXAM_QUESTIONS_TARGET_POOL:
+            return
+        n_to_gen = min(target, EXAM_QUESTIONS_DAILY_MAX - today_count)
+        log.info(f"[ExamQ:Refill] Generating {n_to_gen} for {key} (current pool={counts.get(key, 0)})")
+        for _ in range(n_to_gen):
+            # 同期的な API 呼び出しを別スレッドへ (FastAPI のイベントループをブロックしない)
+            q = await asyncio.get_event_loop().run_in_executor(
+                None, _generate_exam_question, exam_id, part_key, eiken_grade
+            )
+            if q:
+                await asyncio.get_event_loop().run_in_executor(
+                    None, _save_exam_question, exam_id, part_key, q, eiken_grade
+                )
+    except Exception as e:
+        log.error(f"[ExamQ:Refill] {key} failed: {e}", exc_info=True)
+    finally:
+        async with _REFILL_LOCK:
+            _REFILL_INFLIGHT.discard(key)
 
 
 async def _exam_questions_scheduler():
-    """毎日 JST EXAM_QUESTIONS_HOUR_JST 時に問題生成"""
+    """N時間おきに問題生成。EXAM_QUESTIONS_INTERVAL_HOURS<=0 のときは旧来の毎日 HOUR_JST 時モード。
+    各 tick で EXAM_QUESTIONS_PER_TICK 問生成。pool が target に到達した part は自動 skip。"""
     JST = timezone(timedelta(hours=9))
-    log.info(f"[ExamQ] Scheduler started, target hour JST {EXAM_QUESTIONS_HOUR_JST}:00, daily quota {EXAM_QUESTIONS_DAILY_QUOTA}")
-    while True:
-        try:
-            now_jst = datetime.now(JST)
-            target = now_jst.replace(hour=EXAM_QUESTIONS_HOUR_JST, minute=0, second=0, microsecond=0)
-            if target <= now_jst:
-                target += timedelta(days=1)
-            sleep_secs = (target - now_jst).total_seconds()
-            log.info(f"[ExamQ] Next run at {target.isoformat()} (in {int(sleep_secs)}s)")
-            await asyncio.sleep(sleep_secs)
+
+    if EXAM_QUESTIONS_INTERVAL_HOURS <= 0:
+        # 旧来の「毎日 HOUR_JST 時に DAILY_QUOTA 問」モード (互換)
+        log.info(f"[ExamQ] Daily mode: hour JST {EXAM_QUESTIONS_HOUR_JST}:00, quota {EXAM_QUESTIONS_DAILY_QUOTA}")
+        while True:
             try:
-                result = _run_exam_questions_generation()
-                log.info(f"[ExamQ] Run result: generated={result['generated']} failed={result['failed']}")
+                now_jst = datetime.now(JST)
+                target = now_jst.replace(hour=EXAM_QUESTIONS_HOUR_JST, minute=0, second=0, microsecond=0)
+                if target <= now_jst:
+                    target += timedelta(days=1)
+                sleep_secs = (target - now_jst).total_seconds()
+                log.info(f"[ExamQ] Next daily run at {target.isoformat()} (in {int(sleep_secs)}s)")
+                await asyncio.sleep(sleep_secs)
+                result = _run_exam_questions_generation(quota=EXAM_QUESTIONS_DAILY_QUOTA)
+                log.info(f"[ExamQ] Daily run result: {result}")
+            except asyncio.CancelledError:
+                log.info("[ExamQ] Scheduler cancelled")
+                raise
             except Exception as e:
-                log.error(f"[ExamQ] Run error: {e}", exc_info=True)
-        except asyncio.CancelledError:
-            log.info("[ExamQ] Scheduler cancelled")
-            raise
-        except Exception as e:
-            log.error(f"[ExamQ] Scheduler loop error: {e}", exc_info=True)
-            await asyncio.sleep(3600)
+                log.error(f"[ExamQ] Scheduler loop error: {e}", exc_info=True)
+                await asyncio.sleep(3600)
+    else:
+        # 「N時間おきに PER_TICK 問」モード (随時自動追加)
+        interval_secs = int(EXAM_QUESTIONS_INTERVAL_HOURS * 3600)
+        per_tick = EXAM_QUESTIONS_PER_TICK
+        log.info(f"[ExamQ] Interval mode: every {EXAM_QUESTIONS_INTERVAL_HOURS}h, per-tick {per_tick}, target_pool {EXAM_QUESTIONS_TARGET_POOL}, daily_max {EXAM_QUESTIONS_DAILY_MAX}")
+        # 起動 30 秒後に初回 tick (cold start 時に空 pool ならすぐ補充開始)
+        await asyncio.sleep(30)
+        while True:
+            try:
+                tick_start = datetime.now(JST)
+                result = _run_exam_questions_generation(quota=per_tick)
+                log.info(f"[ExamQ] Tick @ {tick_start.isoformat()}: {result}")
+                await asyncio.sleep(interval_secs)
+            except asyncio.CancelledError:
+                log.info("[ExamQ] Scheduler cancelled")
+                raise
+            except Exception as e:
+                log.error(f"[ExamQ] Tick error: {e}", exc_info=True)
+                await asyncio.sleep(min(interval_secs, 1800))
 
 
 @app.post("/api/admin/exam-questions/generate")
@@ -2676,7 +2790,69 @@ def public_exam_questions_bank(exam: str, part: str, eiken_grade: Optional[str] 
     # ランダムに1件返す (毎回違う問題で多様性確保)
     import random
     selected = random.choice(items) if items else None
+
+    # 🔁 オンデマンド補充: pool が薄い part を生徒が引いた瞬間に裏で補充キューイング
+    # (ExamQ scheduler は N時間おき・interval=6h なので、その間でも必要なら即補充)
+    if EXAM_QUESTIONS_ENABLED and len(items) < EXAM_QUESTIONS_MIN_POOL:
+        try:
+            asyncio.create_task(_refill_part_async(exam, part, eiken_grade, target=2))
+            log.info(f"[ExamQ:Refill] queued for {exam}/{part}/{eiken_grade} (pool={len(items)} < min={EXAM_QUESTIONS_MIN_POOL})")
+        except Exception as e:
+            log.warning(f"[ExamQ:Refill] failed to queue: {e}")
+
     return {"exam": exam, "part": part, "eiken_grade": eiken_grade, "count": len(items), "selected": selected, "all": items[:5]}
+
+
+@app.get("/api/admin/exam-questions/pool-status")
+def admin_exam_questions_pool_status(authorization: Optional[str] = Header(None)):
+    """全 part の pool 蓄積数を返す (CEO ダッシュボード用)。admin Bearer 認証必須。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="未認証")
+    counts = _exam_pool_counts()
+    JST = timezone(timedelta(hours=9))
+    today_count = _exam_generated_today()
+    parts = []
+    by_exam = {}
+    total = 0
+    full_pool = 0
+    low_pool = 0
+    for (exam_id, part_key, eiken_grade), n in counts.items():
+        total += n
+        is_full = n >= EXAM_QUESTIONS_TARGET_POOL
+        is_low = n < EXAM_QUESTIONS_MIN_POOL
+        if is_full: full_pool += 1
+        if is_low: low_pool += 1
+        parts.append({
+            "exam": exam_id,
+            "part": part_key,
+            "grade": eiken_grade,
+            "count": n,
+            "is_full": is_full,
+            "is_low": is_low,
+        })
+        by_exam[exam_id] = by_exam.get(exam_id, 0) + n
+    parts.sort(key=lambda p: (p["count"], p["exam"], p["part"]))
+    return {
+        "rotation_size": len(EXAM_QUESTION_ROTATION),
+        "total_questions": total,
+        "by_exam": by_exam,
+        "full_pool_parts": full_pool,
+        "low_pool_parts": low_pool,
+        "in_flight_refills": len(_REFILL_INFLIGHT),
+        "today_generated": today_count,
+        "config": {
+            "interval_hours": EXAM_QUESTIONS_INTERVAL_HOURS,
+            "per_tick": EXAM_QUESTIONS_PER_TICK,
+            "target_pool": EXAM_QUESTIONS_TARGET_POOL,
+            "min_pool": EXAM_QUESTIONS_MIN_POOL,
+            "daily_max": EXAM_QUESTIONS_DAILY_MAX,
+            "model": EXAM_QUESTIONS_MODEL,
+        },
+        "parts": parts,
+    }
 
 
 # ============================================================================
