@@ -1665,6 +1665,138 @@ pickExam = function(examId) {
 // ==========================================================================
 // Init
 // ==========================================================================
+// ==========================================================================
+// 📰 LIVE NEWS READING (CNN / Japan Times / BBC ...) — backend へ問い合わせて
+// 最新記事一覧を表示し、選択した記事を AI で読解問題化する
+// ==========================================================================
+const NEWS_FEEDS_META = [
+  { key: 'cnn',           name: 'CNN',           emoji: '🇺🇸', tag: 'Top Stories', level: 'B2-C1' },
+  { key: 'cnn_world',     name: 'CNN World',     emoji: '🌍', tag: 'World',       level: 'B2-C1' },
+  { key: 'japan_times',   name: 'Japan Times',   emoji: '🇯🇵', tag: 'Top',         level: 'B2'    },
+  { key: 'japan_times_news', name: 'Japan Times News', emoji: '🗾', tag: 'News',  level: 'B2'    },
+  { key: 'bbc',           name: 'BBC',           emoji: '🇬🇧', tag: 'Top',         level: 'B2'    },
+  { key: 'bbc_world',     name: 'BBC World',     emoji: '🌐', tag: 'World',       level: 'B2'    },
+  { key: 'nyt',           name: 'NY Times',      emoji: '🗽', tag: 'Home',        level: 'C1'    },
+  { key: 'guardian',      name: 'The Guardian',  emoji: '🇬🇧', tag: 'World',       level: 'B2-C1' },
+  { key: 'reuters_world', name: 'Reuters World', emoji: '📡', tag: 'World',       level: 'B2'    },
+  { key: 'nhk_world',     name: 'NHK World',     emoji: '🗾', tag: 'JP→EN',       level: 'B1-B2' },
+];
+
+function renderNewsFeedGrid() {
+  const grid = document.getElementById('newsFeedGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  NEWS_FEEDS_META.forEach(f => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'news-feed-card';
+    btn.dataset.feed = f.key;
+    btn.innerHTML = `
+      <div class="news-feed-emoji">${f.emoji}</div>
+      <div class="news-feed-name">${f.name}</div>
+      <div class="news-feed-tag">${f.tag} · CEFR ${f.level}</div>
+    `;
+    btn.addEventListener('click', () => loadNewsArticles(f.key));
+    grid.appendChild(btn);
+  });
+}
+
+async function loadNewsArticles(feedKey) {
+  const box = document.getElementById('newsArticlesBox');
+  box.style.display = '';
+  box.innerHTML = '<p class="ee-loading">⏳ 最新記事を取得中...</p>';
+  document.getElementById('newsQuestionBox').style.display = 'none';
+  const meta = NEWS_FEEDS_META.find(f => f.key === feedKey) || {};
+  try {
+    const backend = (window.location.hostname === 'localhost' && window.location.port === '8090')
+      ? 'http://localhost:8000' : window.location.origin;
+    const res = await fetch(`${backend}/api/news/articles?feed=${encodeURIComponent(feedKey)}&limit=5`);
+    if (!res.ok) throw new Error('fetch_failed:' + res.status);
+    const data = await res.json();
+    if (!data.articles || !data.articles.length) {
+      box.innerHTML = '<p class="ee-error">記事を取得できませんでした。少し時間をおいて再度お試しください。</p>';
+      return;
+    }
+    let html = `<div class="news-articles-head"><strong>${meta.emoji || ''} ${escapeHtml(data.feed_name || feedKey)}</strong> · 最新 ${data.articles.length} 件 · 任意の記事を選んで読解問題を作成</div>`;
+    html += '<div class="news-articles-list">';
+    data.articles.forEach((a, i) => {
+      html += `<button type="button" class="news-article-card" data-idx="${i}" data-feed="${feedKey}">
+        <div class="news-article-title">${escapeHtml(a.title)}</div>
+        <div class="news-article-summary">${escapeHtml((a.summary || '').slice(0, 220))}${a.summary && a.summary.length > 220 ? '…' : ''}</div>
+        <div class="news-article-meta">
+          ${a.published ? `<span>${escapeHtml(a.published)}</span>` : ''}
+          <span class="news-article-go">📝 この記事で問題を作る →</span>
+        </div>
+      </button>`;
+    });
+    html += '</div>';
+    box.innerHTML = html;
+    box.querySelectorAll('.news-article-card').forEach(btn => {
+      btn.addEventListener('click', () => generateNewsQuestion(feedKey, parseInt(btn.dataset.idx, 10)));
+    });
+  } catch (e) {
+    console.error('[news] articles failed', e);
+    box.innerHTML = `<p class="ee-error">⚠️ 記事の取得に失敗しました (${escapeHtml(String(e.message || e))})。バックエンド未接続かもしれません。</p>`;
+  }
+}
+
+async function generateNewsQuestion(feedKey, idx) {
+  const qBox = document.getElementById('newsQuestionBox');
+  qBox.style.display = '';
+  qBox.innerHTML = '<p class="ee-loading">⏳ AI が読解問題を作成中... (15〜45秒)</p>';
+  qBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  try {
+    const backend = (window.location.hostname === 'localhost' && window.location.port === '8090')
+      ? 'http://localhost:8000' : window.location.origin;
+    const res = await fetch(`${backend}/api/news/generate-question`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ feed: feedKey, index: idx }),
+    });
+    if (!res.ok) throw new Error('gen_failed:' + res.status);
+    const data = await res.json();
+    renderNewsQuestion(data);
+  } catch (e) {
+    console.error('[news] generate failed', e);
+    qBox.innerHTML = `<p class="ee-error">⚠️ 問題生成に失敗しました (${escapeHtml(String(e.message || e))})</p>`;
+  }
+}
+
+function renderNewsQuestion(data) {
+  const qBox = document.getElementById('newsQuestionBox');
+  const q = data.question || {};
+  const article = data.article || {};
+  let html = `<div class="news-q-head">
+    <span class="news-q-feed">📰 ${escapeHtml(data.feed_name || data.feed)} · CEFR ${escapeHtml(data.level || '')}</span>
+    <span class="news-q-source">出典: <a href="${escapeHtml(article.link || '#')}" target="_blank" rel="noopener noreferrer">${escapeHtml(article.title || '原文記事')}</a></span>
+  </div>`;
+  if (q.passage) {
+    html += `<div class="ee-passage"><h3>📖 Reading Passage (AI が記事テーマで独自執筆・250-350語)</h3><p>${escapeHtml(q.passage).replace(/\n/g, '<br>')}</p></div>`;
+  }
+  if (q.included_link_message) {
+    html += `<div class="news-q-cta">${escapeHtml(q.included_link_message)} → <a href="${escapeHtml(article.link || '#')}" target="_blank" rel="noopener noreferrer">${escapeHtml(article.link || '')}</a></div>`;
+  }
+  if (Array.isArray(q.questions)) {
+    q.questions.forEach((qq, i) => {
+      html += `<div class="ee-question" data-qid="${qq.id || ('nq'+i)}">
+        <div class="ee-question-num">Q${i + 1}</div>
+        <div class="ee-question-stem">${escapeHtml(qq.stem || '')}</div>`;
+      if (Array.isArray(qq.choices) && qq.choices.length) {
+        html += '<div class="ee-choices">';
+        qq.choices.forEach((c, ci) => {
+          html += `<label class="ee-choice"><input type="radio" name="news-${i}" value="${ci}"><span class="ee-choice-letter">${String.fromCharCode(65 + ci)}</span><span class="ee-choice-text">${escapeHtml(c)}</span></label>`;
+        });
+        html += '</div>';
+      }
+      html += `<details class="news-q-explain"><summary>📝 解答・解説を見る</summary>
+        <div><strong>正解:</strong> ${escapeHtml(String(qq.answer))}${(typeof qq.answer === 'string' && /^\d+$/.test(qq.answer) && Array.isArray(qq.choices)) ? ' (= ' + escapeHtml(qq.choices[parseInt(qq.answer,10)] || '') + ')' : ''}</div>
+        <div class="news-q-explain-text">${escapeHtml(qq.explanation || '').replace(/\n/g,'<br>')}</div>
+      </details>`;
+      html += '</div>';
+    });
+  }
+  qBox.innerHTML = html;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   updateModeBadge();
   bindExamCards();
@@ -1675,6 +1807,8 @@ document.addEventListener('DOMContentLoaded', () => {
   state.currentLevel = document.getElementById('currentLevel').value || 'B1';
   // 起動時に履歴セクションを描画
   renderHistorySection();
+  // ニュースフィード選択 UI
+  renderNewsFeedGrid();
   // 音声合成の voices ロードを待つ (Chrome は遅延ロード)
   if ('speechSynthesis' in window) {
     window.speechSynthesis.onvoiceschanged = () => {};

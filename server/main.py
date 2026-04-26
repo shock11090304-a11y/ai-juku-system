@@ -2679,6 +2679,195 @@ def public_exam_questions_bank(exam: str, part: str, eiken_grade: Optional[str] 
     return {"exam": exam, "part": part, "eiken_grade": eiken_grade, "count": len(items), "selected": selected, "all": items[:5]}
 
 
+# ============================================================================
+# 📰 CNN / Japan Times / BBC 記事から英語読解問題を生成 (実英文記事モード)
+# ============================================================================
+# 著作権配慮: 記事本文を丸ごと取り込まずに、RSS フィードのタイトル + 短い summary
+# (RSS が公開している抜粋・通常 1-3 文) を seed として AI に類題本文を生成させる。
+# 元記事の URL は出題と一緒に表示し、生徒が原典で読み比べできるようにする。
+
+NEWS_FEEDS = {
+    "cnn":           {"url": "http://rss.cnn.com/rss/cnn_topstories.rss",      "name": "CNN Top Stories",      "level": "B2-C1"},
+    "cnn_world":     {"url": "http://rss.cnn.com/rss/cnn_world.rss",           "name": "CNN World",            "level": "B2-C1"},
+    "japan_times":   {"url": "https://www.japantimes.co.jp/feed/topstories/",  "name": "The Japan Times",      "level": "B2"},
+    "japan_times_news": {"url": "https://www.japantimes.co.jp/news/feed/",     "name": "Japan Times News",     "level": "B2"},
+    "bbc":           {"url": "http://feeds.bbci.co.uk/news/rss.xml",           "name": "BBC News",             "level": "B2"},
+    "bbc_world":     {"url": "http://feeds.bbci.co.uk/news/world/rss.xml",     "name": "BBC World",            "level": "B2"},
+    "nyt":           {"url": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml", "name": "The New York Times", "level": "C1"},
+    "guardian":      {"url": "https://www.theguardian.com/world/rss",          "name": "The Guardian",         "level": "B2-C1"},
+    "reuters_world": {"url": "https://feeds.reuters.com/reuters/worldNews",    "name": "Reuters World",        "level": "B2"},
+    "nhk_world":     {"url": "https://www3.nhk.or.jp/nhkworld/en/news/feed/",  "name": "NHK World",            "level": "B1-B2"},
+}
+
+
+def _fetch_news_feed(feed_key: str, limit: int = 5) -> list[dict]:
+    """RSS フィードを取得して [{title, link, summary, published}] のリストを返す。
+    XML パースは標準ライブラリのみで実装 (xml.etree.ElementTree)。"""
+    feed = NEWS_FEEDS.get(feed_key)
+    if not feed:
+        return []
+    try:
+        import xml.etree.ElementTree as ET
+        req = urllib.request.Request(feed["url"], headers={"User-Agent": "Mozilla/5.0 (compatible; AIJukuBot/1.0)"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            xml_bytes = resp.read()
+        root = ET.fromstring(xml_bytes)
+        # RSS 2.0: channel/item, Atom: feed/entry — 両方サポート
+        items = []
+        # try RSS first
+        for item in root.findall(".//item")[:limit]:
+            title = (item.findtext("title") or "").strip()
+            link = (item.findtext("link") or "").strip()
+            summary = (item.findtext("description") or item.findtext("{http://purl.org/rss/1.0/modules/content/}encoded") or "").strip()
+            published = (item.findtext("pubDate") or item.findtext("{http://purl.org/dc/elements/1.1/}date") or "").strip()
+            if title and link:
+                # HTML タグを単純除去 (RSS の description には HTML が混じることが多い)
+                import re
+                summary_text = re.sub(r"<[^>]+>", "", summary)[:600]
+                items.append({"title": title, "link": link, "summary": summary_text, "published": published})
+        # try Atom if no RSS items
+        if not items:
+            ns = {"atom": "http://www.w3.org/2005/Atom"}
+            for entry in root.findall("atom:entry", ns)[:limit]:
+                title = (entry.findtext("atom:title", default="", namespaces=ns) or "").strip()
+                link_el = entry.find("atom:link", ns)
+                link = (link_el.get("href") if link_el is not None else "").strip()
+                summary = (entry.findtext("atom:summary", default="", namespaces=ns) or entry.findtext("atom:content", default="", namespaces=ns) or "").strip()
+                published = (entry.findtext("atom:published", default="", namespaces=ns) or "").strip()
+                if title and link:
+                    import re
+                    summary_text = re.sub(r"<[^>]+>", "", summary)[:600]
+                    items.append({"title": title, "link": link, "summary": summary_text, "published": published})
+        return items
+    except Exception as e:
+        log.error(f"[News] Failed to fetch {feed_key}: {type(e).__name__}: {e}")
+        return []
+
+
+def _generate_news_reading_question(article: dict, feed_name: str, level: str = "B2") -> Optional[dict]:
+    """ニュース記事の見出し+短い要約を seed に、AI で読解問題を生成。
+    元記事の文章は引用せず、AI が独自に「同じテーマで同じ語彙レベルの 250-350 語の本文」を執筆。
+    元 URL は参考リンクとして出題に併記。"""
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    system = f"""あなたは英語学習教材の編集者です。{feed_name} で報じられた話題をもとに、英語読解問題を作成してください。
+
+【絶対遵守】
+- 元記事の文章を引用しない (著作権)。AI が独自に同じテーマ・同じ語彙レベル・250-350 語で本文を執筆する。
+- 本文の文体は一般的なニュース英語 ({feed_name} 風・客観的・第三者視点)
+- CEFR {level} レベル相当の語彙・文法に統制する
+- 設問は内容理解・推論・語彙の意味推定をバランス良く 5問 (4択)
+- 解説は日本語で、正解の根拠 + 他選択肢の誤り + 関連語彙/文法を丁寧に
+- 「📰 元記事を読んでみよう」として元記事 URL を末尾に併記する案内文を included_link_message に入れる
+- 出力は純粋なJSONのみ"""
+
+    user = f"""【seed 情報 (これを参考に AI が独自に本文を書く)】
+ニュースソース: {feed_name}
+見出し: {article.get('title')}
+要約 (RSS): {article.get('summary', '')[:400]}
+
+【あなたへの指示】
+1. 上記の話題と同じテーマを扱う、独自の英語ニュース記事 (250-350 語) を書いてください。元記事の文を引用しない。
+2. 5問の理解問題 (4択) を作成。
+3. CEFR {level} レベルに統制。
+
+【出力形式】純粋なJSONのみ:
+{{
+  "passage": "AI が書いた独自の英語本文 (250-350 語)",
+  "audio_script": "",
+  "prompt": "",
+  "source_title": {json.dumps(article.get('title', ''))},
+  "source_url": {json.dumps(article.get('link', ''))},
+  "source_feed": {json.dumps(feed_name)},
+  "level": "{level}",
+  "included_link_message": "📰 元記事 ({feed_name}) を読み比べてみよう: ...",
+  "questions": [
+    {{
+      "id": "q1",
+      "type": "multiple_choice",
+      "stem": "問題文",
+      "choices": ["A", "B", "C", "D"],
+      "answer": "正解 (0始まり)",
+      "explanation": "解説 (日本語、3行以上)"
+    }}
+  ]
+}}"""
+
+    try:
+        req = urllib.request.Request(
+            "https://api.anthropic.com/v1/messages",
+            data=json.dumps({
+                "model": EXAM_QUESTIONS_MODEL,
+                "max_tokens": 4000,
+                "system": system,
+                "messages": [{"role": "user", "content": user}],
+            }).encode("utf-8"),
+            headers={
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            data = json.loads(resp.read().decode())
+        text = data["content"][0]["text"].strip()
+        if text.startswith("```"):
+            text = text.split("```", 2)[1]
+            if text.startswith("json"):
+                text = text[4:]
+            text = text.strip().rstrip("`").strip()
+        return json.loads(text)
+    except Exception as e:
+        log.error(f"[News] Generation failed: {type(e).__name__}: {e}")
+        return None
+
+
+@app.get("/api/news/feeds")
+def list_news_feeds():
+    """利用可能な英語ニュースソース一覧"""
+    return {"feeds": [{"key": k, **v} for k, v in NEWS_FEEDS.items()]}
+
+
+@app.get("/api/news/articles")
+def list_news_articles(feed: str = "cnn", limit: int = 5):
+    """指定フィードの最新記事一覧 (タイトル+URL+短いsummary・記事本文は含まない)"""
+    limit = max(1, min(limit, 10))
+    items = _fetch_news_feed(feed, limit=limit)
+    return {"feed": feed, "feed_name": NEWS_FEEDS.get(feed, {}).get("name", feed), "count": len(items), "articles": items}
+
+
+@app.post("/api/news/generate-question")
+def generate_news_question(payload: dict):
+    """指定記事 (またはランダム選択) から英語読解問題を AI 生成して返す。
+    payload: {"feed": "cnn", "index": 0}  # index 省略時はランダム
+    レート制限: IP ベース 10 req/min。"""
+    feed_key = (payload or {}).get("feed", "cnn")
+    if feed_key not in NEWS_FEEDS:
+        raise HTTPException(status_code=400, detail=f"Unknown feed: {feed_key}")
+    feed = NEWS_FEEDS[feed_key]
+    articles = _fetch_news_feed(feed_key, limit=10)
+    if not articles:
+        raise HTTPException(status_code=503, detail="記事の取得に失敗しました")
+    idx = (payload or {}).get("index")
+    if idx is None or not isinstance(idx, int) or idx < 0 or idx >= len(articles):
+        import random
+        article = random.choice(articles)
+    else:
+        article = articles[idx]
+    question = _generate_news_reading_question(article, feed["name"], feed.get("level", "B2"))
+    if not question:
+        raise HTTPException(status_code=503, detail="問題生成に失敗しました")
+    return {
+        "feed": feed_key,
+        "feed_name": feed["name"],
+        "level": feed.get("level"),
+        "article": article,  # 生徒に元記事リンクを表示するため
+        "question": question,
+    }
+
+
 @app.post("/api/admin/sns/run-now")
 def admin_sns_run_now(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """Daily SNS 投稿を今すぐ生成→送信(手動トリガー)。
