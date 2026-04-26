@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎓 英語試験対策スタジオ | TOEFL・TOEIC・IELTS・英検 4試験完全対応 | AI学習コーチ塾</title>
+  <meta name="description" content="TOEFL iBT・TOEIC L&R・IELTS Academic・英検の4試験を AI が完全対応。模試生成・スコア予測・CEFR換算・弱点分析まで一気通貫。Claude AI による個別最適化で、英語学習の専門塾として国内最高水準。">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="english-exam.css">
+  <script src="cache-purge.js"></script>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <header class="ee-header">
+    <div class="ee-header-inner">
+      <div class="ee-brand">
+        <span class="ee-logo">🎓</span>
+        <div>
+          <h1 class="ee-title">英語試験対策<span class="ee-title-accent">スタジオ</span></h1>
+          <p class="ee-subtitle">TOEFL iBT・TOEIC L&R・IELTS Academic・英検 — <strong>4試験完全対応</strong></p>
+        </div>
+      </div>
+      <div class="ee-header-actions">
+        <span id="modeIndicator" class="ee-mode-badge">🟡 デモ</span>
+        <a href="index.html" class="ee-icon-btn" title="メインアプリ">🏠</a>
+        <a href="ceo.html" class="ee-icon-btn" title="CEOダッシュボード">💼</a>
+      </div>
+    </div>
+    <div class="ee-trust-bar">
+      <span class="ee-trust-item">📚 公式出題傾向 100% 反映</span>
+      <span class="ee-trust-item">🤖 Claude AI による個別採点</span>
+      <span class="ee-trust-item">📊 CEFR 国際基準スコア換算</span>
+      <span class="ee-trust-item">🎯 弱点 → 学習プラン自動生成</span>
+    </div>
+  </header>
+
+  <main class="ee-main">
+
+    <!-- ========================================================== -->
+    <!-- Section 1: 試験選択カード                                  -->
+    <!-- ========================================================== -->
+    <section class="ee-section" id="examPickSection">
+      <div class="ee-section-head">
+        <div class="ee-eyebrow">STEP 1</div>
+        <h2>📝 受験する試験を選んでください</h2>
+        <p class="ee-section-desc">それぞれの公式形式・難易度・採点基準を完全再現します。</p>
+      </div>
+
+      <div class="exam-grid">
+        <button class="exam-card exam-toefl" data-exam="toefl" type="button">
+          <div class="exam-card-flag">🇺🇸</div>
+          <div class="exam-card-name">TOEFL iBT</div>
+          <div class="exam-card-tagline">米国大学・大学院・MBA 留学の世界標準</div>
+          <div class="exam-card-spec">
+            <span>4技能</span><span>0〜120点</span><span>約3時間</span>
+          </div>
+          <div class="exam-card-target">🎯 米国/カナダ留学を目指す方</div>
+        </button>
+
+        <button class="exam-card exam-toeic" data-exam="toeic" type="button">
+          <div class="exam-card-flag">💼</div>
+          <div class="exam-card-name">TOEIC L&R</div>
+          <div class="exam-card-tagline">日本企業の昇進・就活で最も使われる試験</div>
+          <div class="exam-card-spec">
+            <span>2技能</span><span>10〜990点</span><span>2時間</span>
+          </div>
+          <div class="exam-card-target">🎯 就活・昇進・転職で結果を出したい方</div>
+        </button>
+
+        <button class="exam-card exam-ielts" data-exam="ielts" type="button">
+          <div class="exam-card-flag">🇬🇧</div>
+          <div class="exam-card-name">IELTS Academic</div>
+          <div class="exam-card-tagline">英国・豪州・カナダ留学・移住の必須</div>
+          <div class="exam-card-spec">
+            <span>4技能</span><span>0〜9.0</span><span>約2.75時間</span>
+          </div>
+          <div class="exam-card-target">🎯 英国系留学・海外移住を目指す方</div>
+        </button>
+
+        <button class="exam-card exam-eiken" data-exam="eiken" type="button">
+          <div class="exam-card-flag">🇯🇵</div>
+          <div class="exam-card-name">英検</div>
+          <div class="exam-card-tagline">国内最大・受験/就職/単位認定に直結</div>
+          <div class="exam-card-spec">
+            <span>1〜5級</span><span>級別判定</span><span>級により異なる</span>
+          </div>
+          <div class="exam-card-target">🎯 中高生・大学受験・履歴書強化したい方</div>
+        </button>
+      </div>
+    </section>
+
+    <!-- ========================================================== -->
+    <!-- Section 2: CEFR スコア換算表 (常時表示)                    -->
+    <!-- ========================================================== -->
+    <section class="ee-section ee-section-converter">
+      <div class="ee-section-head">
+        <div class="ee-eyebrow">CEFR INTERNATIONAL STANDARD</div>
+        <h2>📊 4試験スコア換算表</h2>
+        <p class="ee-section-desc">CEFR (ヨーロッパ言語共通参照枠) に基づく、世界基準の4試験換算。</p>
+      </div>
+      <div class="cefr-table-wrap">
+        <table class="cefr-table">
+          <thead>
+            <tr>
+              <th>CEFR</th>
+              <th>レベル</th>
+              <th>🇺🇸 TOEFL iBT</th>
+              <th>💼 TOEIC L&R</th>
+              <th>🇬🇧 IELTS</th>
+              <th>🇯🇵 英検</th>
+              <th>到達目安</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="cefr-c2">C2</td><td>母語話者級</td><td>110-120</td><td>945-990</td><td>8.5-9.0</td><td>1級</td><td>国連職員/同時通訳</td></tr>
+            <tr><td class="cefr-c1">C1</td><td>上級</td><td>95-109</td><td>785-944</td><td>7.0-8.0</td><td>準1級</td><td>海外大学院/外資幹部</td></tr>
+            <tr><td class="cefr-b2">B2</td><td>中上級</td><td>72-94</td><td>605-784</td><td>5.5-6.5</td><td>2級</td><td>海外大学/外資総合職</td></tr>
+            <tr><td class="cefr-b1">B1</td><td>中級</td><td>42-71</td><td>405-604</td><td>4.0-5.0</td><td>準2級</td><td>海外短期留学/日常会話</td></tr>
+            <tr><td class="cefr-a2">A2</td><td>初級</td><td>25-41</td><td>225-404</td><td>3.0-3.5</td><td>3級</td><td>中学卒業レベル</td></tr>
+            <tr><td class="cefr-a1">A1</td><td>入門</td><td>0-24</td><td>10-224</td><td>1.0-2.5</td><td>4-5級</td><td>小学高学年〜中1</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="cefr-note">💡 1試験を伸ばすと他試験の点数も連動して上がる。AIは4試験すべてを横断的に最適化します。</p>
+    </section>
+
+    <!-- ========================================================== -->
+    <!-- Section 3: 試験詳細 + セクション選択 (試験選択後に表示)   -->
+    <!-- ========================================================== -->
+    <section class="ee-section ee-section-detail" id="examDetailSection" style="display:none;">
+      <div class="ee-section-head">
+        <div class="ee-eyebrow">STEP 2</div>
+        <h2 id="examDetailTitle">セクションを選んで模試を開始</h2>
+        <p class="ee-section-desc" id="examDetailDesc">--</p>
+      </div>
+
+      <div class="exam-meta-grid">
+        <div class="exam-meta-card">
+          <div class="exam-meta-label">🎯 目標スコア</div>
+          <input type="number" id="targetScore" placeholder="例: 100" class="exam-meta-input">
+          <div class="exam-meta-hint" id="targetScoreHint">--</div>
+        </div>
+        <div class="exam-meta-card">
+          <div class="exam-meta-label">📅 試験日</div>
+          <input type="date" id="examDate" class="exam-meta-input">
+          <div class="exam-meta-hint" id="daysUntilExam">未設定</div>
+        </div>
+        <div class="exam-meta-card">
+          <div class="exam-meta-label">📊 現在のレベル</div>
+          <select id="currentLevel" class="exam-meta-input">
+            <option value="A1">A1 (入門)</option>
+            <option value="A2">A2 (初級)</option>
+            <option value="B1" selected>B1 (中級)</option>
+            <option value="B2">B2 (中上級)</option>
+            <option value="C1">C1 (上級)</option>
+            <option value="C2">C2 (母語話者級)</option>
+          </select>
+          <div class="exam-meta-hint" id="levelHint">CEFR ベース自己申告</div>
+        </div>
+      </div>
+
+      <div class="section-grid" id="sectionGrid">
+        <!-- JSで各試験のセクションを動的生成 -->
+      </div>
+
+      <div class="ee-cta-row">
+        <button class="ee-btn ee-btn-primary" id="startMockBtn">📝 模試 (フル) を生成</button>
+        <button class="ee-btn ee-btn-ghost" id="backToExamPickBtn">← 試験を選び直す</button>
+      </div>
+    </section>
+
+    <!-- ========================================================== -->
+    <!-- Section 4: 問題実施画面                                    -->
+    <!-- ========================================================== -->
+    <section class="ee-section ee-section-runner" id="examRunnerSection" style="display:none;">
+      <div class="ee-runner-head">
+        <div>
+          <div class="ee-eyebrow" id="runnerExamLabel">--</div>
+          <h2 id="runnerSectionTitle">セクション</h2>
+        </div>
+        <div class="ee-timer" id="examTimer">⏱ --:--</div>
+      </div>
+
+      <div class="ee-question-box" id="questionBox">
+        <p class="ee-loading">⏳ AI が問題を生成中... (10〜30秒)</p>
+      </div>
+
+      <div class="ee-runner-actions">
+        <button class="ee-btn ee-btn-primary" id="submitAnswersBtn" disabled>📤 回答を提出して採点</button>
+        <button class="ee-btn ee-btn-ghost" id="cancelRunBtn">⏹ 中断して戻る</button>
+      </div>
+    </section>
+
+    <!-- ========================================================== -->
+    <!-- Section 5: 採点結果 + スコア予測 + 弱点分析                -->
+    <!-- ========================================================== -->
+    <section class="ee-section ee-section-result" id="examResultSection" style="display:none;">
+      <div class="ee-section-head">
+        <div class="ee-eyebrow">RESULT</div>
+        <h2>🎯 採点結果 + 4試験スコア換算</h2>
+      </div>
+
+      <div class="result-score-hero" id="resultScoreHero">
+        <!-- JSが生成: 大きなスコア + 達成度 -->
+      </div>
+
+      <div class="result-converter" id="resultConverter">
+        <h3>📊 あなたのスコアを4試験で換算すると</h3>
+        <div class="result-converter-grid" id="resultConverterGrid">
+          <!-- JS生成 -->
+        </div>
+      </div>
+
+      <div class="result-feedback" id="resultFeedback">
+        <!-- JS生成: 設問ごとの解説 -->
+      </div>
+
+      <div class="result-plan" id="resultPlan">
+        <h3>📋 AIが提案する学習プラン</h3>
+        <div id="learningPlanBox">--</div>
+      </div>
+
+      <div class="ee-cta-row">
+        <button class="ee-btn ee-btn-primary" id="retryBtn">🔄 同じセクションをもう一度</button>
+        <button class="ee-btn ee-btn-secondary" id="newExamBtn">📝 別のセクションに挑戦</button>
+        <button class="ee-btn ee-btn-ghost" id="backToTopBtn">← トップに戻る</button>
+      </div>
+    </section>
+
+    <!-- ========================================================== -->
+    <!-- Section 6: 体験CTA (英語強い印象を最後に強化)              -->
+    <!-- ========================================================== -->
+    <section class="ee-section ee-section-cta">
+      <div class="ee-cta-card">
+        <div class="ee-cta-eyebrow">🎁 第1期生100名限定</div>
+        <h2 class="ee-cta-title">英語のすべてを、AIが個別最適化</h2>
+        <p class="ee-cta-sub">
+          4試験対応 × 24時間質問対応 × 過去問学習 × 弱点自動分析。<br>
+          国内塾で <strong>「TOEFL/TOEIC/IELTS/英検すべて対応」</strong>を謳えるのは、AI塾だからこそ。<br>
+          <strong>7日間 完全無料</strong>でお試しください (クレジットカード登録不要)。
+        </p>
+        <div class="ee-cta-actions">
+          <a href="lp.html#trial" class="ee-btn ee-btn-primary ee-btn-lg">🎁 7日間 無料で試す →</a>
+          <a href="lp.html" class="ee-btn ee-btn-ghost ee-btn-lg">サービス詳細を見る</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="ee-footer">
+    <p>© 2026 AI学習コーチ塾 | Powered by Claude AI (Anthropic)</p>
+    <p class="ee-disclaimer">
+      ※ TOEFL® は ETS の登録商標、TOEIC® は ETS の登録商標、IELTS™ はブリティッシュ・カウンシル等の商標、英検® は公益財団法人日本英語検定協会の登録商標です。本サービスは各団体と直接の提携関係にはなく、過去の出題傾向と公開情報に基づき AI が独自に問題と採点ロジックを生成しています。スコア換算は CEFR 基準に基づく目安であり、実際の試験結果を保証するものではありません。
+    </p>
+  </footer>
+
+  <script src="english-exam.js"></script>
+</body>
+</html>
