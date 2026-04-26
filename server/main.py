@@ -2243,6 +2243,7 @@ EXAM_QUESTIONS_DAILY_QUOTA = int(os.getenv("EXAM_QUESTIONS_DAILY_QUOTA", "10")) 
 EXAM_QUESTIONS_MODEL = os.getenv("EXAM_QUESTIONS_MODEL", "claude-sonnet-4-6")
 
 # ローテーション対象の (exam_id, part_key, eiken_grade) リスト
+# 注: daigaku の場合 eiken_grade フィールドに「大学キー (todai/kyodai/...)」を流用 (DB スキーマ共有)
 EXAM_QUESTION_ROTATION = [
     # TOEFL (主要 part)
     ("toefl", "r_passage1", None),
@@ -2273,11 +2274,100 @@ EXAM_QUESTION_ROTATION = [
     ("eiken", "r_q1", "gp2"),
     ("eiken", "r_q1", "g4"),
     ("eiken", "r_q1", "g5"),
+    # 大学入試: 2005-2026 の年度をランダム選択して類題生成 (大学×大問の主要組合せを全網羅)
+    # 国公立トップ
+    ("daigaku", "r_long",        "todai"),
+    ("daigaku", "r_summary",     "todai"),
+    ("daigaku", "w_essay",       "todai"),
+    ("daigaku", "r_translation", "todai"),
+    ("daigaku", "r_long",        "kyodai"),
+    ("daigaku", "r_translation", "kyodai"),
+    ("daigaku", "w_essay",       "kyodai"),
+    ("daigaku", "r_long",        "osaka"),
+    ("daigaku", "w_essay",       "osaka"),
+    ("daigaku", "r_long",        "tokoda"),
+    ("daigaku", "r_long",        "hitotsu"),
+    ("daigaku", "r_translation", "hitotsu"),
+    ("daigaku", "r_long",        "nagoya"),
+    # 私立 早慶上智ICU
+    ("daigaku", "r_long",        "waseda"),
+    ("daigaku", "w_essay",       "waseda"),
+    ("daigaku", "r_long",        "keio"),
+    ("daigaku", "w_essay",       "keio"),
+    ("daigaku", "r_long",        "sophia"),
+    ("daigaku", "r_long",        "icu"),
+    # MARCH
+    ("daigaku", "r_long",        "meiji"),
+    ("daigaku", "r_long",        "aogaku"),
+    ("daigaku", "r_long",        "rikkyo"),
+    ("daigaku", "r_long",        "chuo"),
+    ("daigaku", "r_long",        "hosei"),
+    # 関関同立
+    ("daigaku", "r_long",        "kandai"),
+    ("daigaku", "r_long",        "kangaku"),
+    ("daigaku", "r_long",        "doshisha"),
+    ("daigaku", "r_long",        "ritsumei"),
+    # 医学部
+    ("daigaku", "r_long",        "igakubu_kokoritsu"),
+    ("daigaku", "r_translation", "igakubu_kokoritsu"),
+    ("daigaku", "r_long",        "igakubu_shiritsu"),
+    # 共通テスト・センター試験 (2005-2020 はセンター・2021- は共通テスト)
+    ("daigaku", "r_long",        "kyotsu"),
+    ("daigaku", "r_short",       "kyotsu"),
+    ("daigaku", "l_part1_2",     "kyotsu"),
+    ("daigaku", "l_part3_4",     "kyotsu"),
+    ("daigaku", "r_long",        "center"),
+    ("daigaku", "r_grammar",     "center"),
+    ("daigaku", "l_listening",   "center"),
 ]
 
 
+# 大学×大問 ごとの出題スタイル定義 (AI プロンプトに注入)
+DAIGAKU_UNIV_STYLES = {
+    "todai":     {"name": "東京大学",       "style": "要約 60-80字 (1B)・自由英作60-80語 (2A)・形式自由作文 (2B)・リスニング3パッセージ・文法整序 (4A)・構造把握型和訳 (4B)。物語/評論/エッセイ系の長文。"},
+    "kyodai":    {"name": "京都大学",       "style": "抽象的論理的英文 + 段落丸ごとの和訳。「日本語の文章を英訳」型の英作文 (新傾向)。Whether節/関係詞節/分詞構文を含む構造把握型和訳が中核。"},
+    "osaka":     {"name": "大阪大学",       "style": "英文要旨把握 + 自由英作 70-100語。長文中の和訳。"},
+    "tokoda":    {"name": "東京工業大学",   "style": "理工系語彙・科学技術系英文 (AI/材料/ロボティクス/バイオ)。技術系トピックでの英作文。"},
+    "hitotsu":   {"name": "一橋大学",       "style": "経済/社会/法律の抽象英文。関係詞節・分詞構文の構造把握型和訳。商学部頻出の100-150語論述。社会学部のリスニング。"},
+    "nagoya":    {"name": "名古屋大学",     "style": "評論/論説系の英文 + 自由英作文 (テーマ与えあり) + 部分和訳。"},
+    "waseda":    {"name": "早稲田大学",     "style": "学部別: 政経=政治経済/法=法律論文/商=ビジネス/文=人文/国際教養=自由英作100-150語。語彙の文脈推定問題が頻出。"},
+    "keio":      {"name": "慶應義塾大学",   "style": "経済学部=英作120-150語/商=ビジネス系長文/文=本格的な人文系英文/SFC=超長文/医=医学英文。やや長めの本格的英文。"},
+    "sophia":    {"name": "上智大学",       "style": "TEAP活用型・英語重視。長文+整序問題。"},
+    "icu":       {"name": "ICU 国際基督教大学", "style": "ATLAS型独自試験・リベラルアーツ。抽象度の高い長文 + 講義型リスニング (10問)。"},
+    "meiji":     {"name": "明治大学",       "style": "標準型: 長文+文法+整序の総合。社会/科学/文化系の英文。"},
+    "aogaku":    {"name": "青山学院大学",   "style": "英米文学部は高難度 (文学/論説系)。文法・語法 + 自由英作。"},
+    "rikkyo":    {"name": "立教大学",       "style": "全学部統一日程型・自由英作文 (テーマ自由度高め) が特徴。評論/物語/エッセイ系。"},
+    "chuo":      {"name": "中央大学",       "style": "法学部=論理重視・法律/政治/経済の論理的英文・法律英語の和訳。経済=ビジネス系。"},
+    "hosei":     {"name": "法政大学",       "style": "標準的な英文・各学部共通。基礎的な意見論述。"},
+    "kandai":    {"name": "関西大学",       "style": "長文中心・標準難度。4択穴埋め+整序。"},
+    "kangaku":   {"name": "関西学院大学",   "style": "実用英語重視・実用的なテーマの英文。英文要約 or 短い意見論述。"},
+    "doshisha":  {"name": "同志社大学",     "style": "やや長めの評論/エッセイ系長文。同志社型整序問題。"},
+    "ritsumei":  {"name": "立命館大学",     "style": "英語選択幅広い学部対応・長文+整序+自由英作。"},
+    "igakubu_kokoritsu": {"name": "国公立医学部 (東大理三/京大医/阪大医/東京医歯大)", "style": "CRISPR/iPS/ゲノム/感染症/疫学/医療AI/抗生物質耐性 等の医学・生命科学系英文。医療倫理 (遺伝子治療/AI診断/尊厳死) の英作文。"},
+    "igakubu_shiritsu":  {"name": "私立医学部 (慈恵/順天堂/日医/慶應医)", "style": "医療現場/疾患/薬学/公衆衛生 の英文。医学英語の語彙穴埋め。医療テーマの英作文 70-100語。"},
+    "kyotsu":    {"name": "共通テスト",     "style": "2021年〜の新形式・実用英語重視 (広告/メール/SNS/レビュー/記事/学術/物語)。複数情報源統合型。Listeningはグラフ/情報統合あり。"},
+    "center":    {"name": "センター試験",   "style": "2020年廃止 (1990-2020 過去問対象)。発音・アクセント・文法問題が大問1-3に出題 (現在の共通テストには無い)。長文3題 (グラフ/評論/物語)。リスニング (日常会話/講義)。"},
+}
+
+# 大学入試 大問キー → 形式説明 (eiken の part_hints と同様の役割)
+DAIGAKU_PART_HINTS = {
+    "r_long":        "長文読解 (8-10問前後・選択肢4択 + 内容一致 + 段落整序)",
+    "r_short":       "Reading 短文中心 (広告/メール/SNS/レビュー 4-5問)",
+    "r_summary":     "要約問題 (英文を 60-80字 で日本語要約・東大型 大問1B)",
+    "r_translation": "和訳問題 (構造把握型・関係詞節/分詞構文を含む長文の部分和訳・3問前後)",
+    "r_grammar":     "発音・アクセント・文法・語彙・整序問題 (大問1-3 のセンター/標準型)",
+    "w_essay":       "自由英作文 (大学指定の語数・テーマは時事/教育/グローバル化/AI/格差 等)",
+    "w_freeform":    "形式自由英作文 (イラスト/グラフ説明・東大型 大問2B)",
+    "l_listening":   "リスニング (対話/講義/Real-Life/グラフ統合)",
+    "l_part1_2":     "Listening 大問1-2 (短い対話・共通テスト型)",
+    "l_part3_4":     "Listening 大問3-4 (長い対話/討論・共通テスト型)",
+    "l_part5_6":     "Listening 大問5-6 (講義+討論・グラフ含む情報統合)",
+}
+
+
 def _generate_exam_question(exam_id: str, part_key: str, eiken_grade: Optional[str] = None) -> Optional[dict]:
-    """Anthropic API で1問生成して dict を返す。失敗時 None。"""
+    """Anthropic API で1問生成して dict を返す。失敗時 None。
+    daigaku の場合は eiken_grade に大学キー (todai/kyodai/...) を入れる慣例。"""
     if not ANTHROPIC_API_KEY:
         return None
 
@@ -2309,10 +2399,67 @@ def _generate_exam_question(exam_id: str, part_key: str, eiken_grade: Optional[s
         "w_essay": "Writing エッセイ模範回答 (新形式)",
         "w_opinion": "Writing 意見論述模範回答 (新形式)",
     }
-    exam_label = exam_hints.get(exam_id, exam_id)
-    part_label = part_hints.get(part_key, part_key)
 
-    system = f"""あなたは {exam_label} の試験対策専門家です。公式の出題形式に完全準拠した問題を生成してください。
+    # ===== 大学入試: 大学×年度×大問の高解像度プロンプト =====
+    if exam_id == "daigaku":
+        import random
+        univ_key = eiken_grade or "todai"
+        univ_info = DAIGAKU_UNIV_STYLES.get(univ_key, {"name": univ_key, "style": "汎用大学入試型"})
+        univ_name = univ_info["name"]
+        univ_style = univ_info["style"]
+        part_label = DAIGAKU_PART_HINTS.get(part_key, part_key)
+        # 2005-2026 のうち、その大学/枠が存在した年度を選択
+        if univ_key == "kyotsu":
+            year = random.randint(2021, 2026)  # 共通テスト
+        elif univ_key == "center":
+            year = random.randint(2005, 2020)  # センター試験
+        else:
+            year = random.randint(2005, 2026)
+        exam_label = f"{univ_name} {year}年度入試 (英語)"
+
+        system = f"""あなたは日本の大学受験英語の出題傾向に精通した専門家です。
+**{univ_name}** の **{year}年度** 入試の出題形式・難易度・テーマ傾向に完全準拠した類題を生成してください。
+
+【絶対遵守】
+- 過去問の丸写しは著作権上禁止。**「{univ_name} {year}年度の形式に完全準拠した類題」** を新規作成すること。
+- {univ_name} の出題スタイル: {univ_style}
+- 対象 大問形式: {part_label}
+- 英文は ETS / Cambridge / Oxford 級の自然な英語 (機械翻訳臭・不自然な語彙NG)
+- 日本人受験生の典型的弱点 (冠詞・関係詞節・分詞構文・無生物主語の和訳・コロケーション) を踏まえた解説
+- 解説は日本語で、正解の根拠 + 他選択肢の誤りポイント + 関連語彙/文法を3行以上
+- 「2005年〜2026年」の出題傾向: 時事 (AI/ChatGPT/環境/感染症/格差/ジェンダー/メンタルヘルス) + 古典的論題 (記憶/言語/科学哲学/教育) + 物語/エッセイ系を年度に応じて織り交ぜる
+- {year}年度なら、その年に話題だったテーマを優先的に扱うのがリアル (例: 2023年なら ChatGPT/AI、2020-2021年なら COVID-19、2011年以降なら震災/原発)
+- 出力は純粋なJSONのみ"""
+
+        user = f"""**{univ_name} {year}年度** 形式の **{part_key}** ({part_label}) の類題を1セット生成してください。
+
+【テーマ選定指針】
+- {year}年に話題だったトピック or {univ_name} 頻出の論題から自然に選ぶ
+- {univ_name} の難易度・抽象度に合わせる ({univ_style.split('。')[0]})
+
+【出力形式】純粋なJSONのみ:
+{{
+  "passage": "(Reading の場合は本文、それ以外は空文字)",
+  "audio_script": "(Listening の場合はスクリプト、それ以外は空文字)",
+  "prompt": "(Speaking/Writing の場合の出題、それ以外は空文字)",
+  "year_simulated": {year},
+  "univ_simulated": "{univ_name}",
+  "questions": [
+    {{
+      "id": "q1",
+      "type": "multiple_choice|short_answer|essay|speaking",
+      "stem": "問題文 (英文 or 日本語の和訳指示)",
+      "choices": ["選択肢があれば配列、無ければ空配列"],
+      "answer": "正解 (選択肢index 0始まり、または模範解答テキスト全文)",
+      "explanation": "解説 (日本語、3行以上)"
+    }}
+  ]
+}}"""
+    else:
+        exam_label = exam_hints.get(exam_id, exam_id)
+        part_label = part_hints.get(part_key, part_key)
+
+        system = f"""あなたは {exam_label} の試験対策専門家です。公式の出題形式に完全準拠した問題を生成してください。
 
 【厳守】
 - 出題形式は公式と完全一致 ({part_label})
@@ -2320,7 +2467,7 @@ def _generate_exam_question(exam_id: str, part_key: str, eiken_grade: Optional[s
 - 解説は日本語で正解の根拠 + 他選択肢の誤りポイントを丁寧に
 - 出力は純粋なJSONのみ"""
 
-    user = f"""{exam_label} の **{part_key}** ({part_label}) の問題を1セット生成してください。
+        user = f"""{exam_label} の **{part_key}** ({part_label}) の問題を1セット生成してください。
 
 【出力形式】純粋なJSONのみ:
 {{
@@ -2491,10 +2638,14 @@ def admin_exam_questions_generate(payload: dict, authorization: Optional[str] = 
 
 
 @app.get("/api/exam-questions/bank")
-def public_exam_questions_bank(exam: str, part: str, eiken_grade: Optional[str] = None, limit: int = 20):
+def public_exam_questions_bank(exam: str, part: str, eiken_grade: Optional[str] = None, univ: Optional[str] = None, limit: int = 20):
     """公開API: 試験パートの最新N問を返す (フロントが AUTO_GENERATED_BANKS に流し込む)。
-    認証不要 (出題内容は公開可・実回答は提出不要)。"""
+    認証不要 (出題内容は公開可・実回答は提出不要)。
+    univ パラメータは大学入試 (daigaku) 用 — DB スキーマ上は eiken_grade カラムに大学キーを保存している。"""
     limit = max(1, min(limit, 50))
+    # daigaku の場合 univ → eiken_grade として扱う (DB スキーマ共有)
+    if exam == "daigaku" and univ and not eiken_grade:
+        eiken_grade = univ
     conn = db()
     c = conn.cursor()
     try:

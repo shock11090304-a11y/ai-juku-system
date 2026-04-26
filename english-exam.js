@@ -151,6 +151,83 @@ const EXAMS = {
         { key: 'r_long',     name: 'ATLAS 長文 (リベラルアーツ)', icon: '📖', timeMin: 30, qCount: 10, scoreMax: 40, desc: 'ICU独自・抽象度高' },
         { key: 'l_listening', name: 'リスニング (講義型)',         icon: '🎧', timeMin: 30, qCount: 10, scoreMax: 30, desc: '長めの講義+設問' },
       ],
+      osaka: [
+        { key: 'r_long',     name: '長文要旨把握 (大問1)',        icon: '📖', timeMin: 30, qCount: 6, scoreMax: 30, desc: '抽象的英文の主旨をまとめる' },
+        { key: 'r_translation', name: '和訳 (大問2)',             icon: '🇯🇵', timeMin: 25, qCount: 3, scoreMax: 25, desc: '構造把握型の長文和訳' },
+        { key: 'w_essay',    name: '自由英作文 (大問3)',          icon: '✍️', timeMin: 25, qCount: 1, scoreMax: 25, desc: '70-100語の意見論述' },
+      ],
+      tokoda: [
+        { key: 'r_long',     name: '長文 (理工系)',                icon: '📖', timeMin: 30, qCount: 6, scoreMax: 40, desc: '科学技術・工学系英文 (例: AI/ロボティクス/材料)' },
+        { key: 'r_translation', name: '和訳 (技術文)',             icon: '🇯🇵', timeMin: 20, qCount: 3, scoreMax: 25, desc: '専門用語を含む技術英文の和訳' },
+        { key: 'w_essay',    name: '英作文 (技術系トピック)',     icon: '✍️', timeMin: 20, qCount: 1, scoreMax: 20, desc: '科学技術系の意見論述' },
+      ],
+      hitotsu: [
+        { key: 'r_long',        name: '長文読解 (社会科学系)',     icon: '📖', timeMin: 30, qCount: 6, scoreMax: 30, desc: '経済/社会/法律の抽象英文' },
+        { key: 'r_translation', name: '和訳 (抽象英文)',           icon: '🇯🇵', timeMin: 25, qCount: 3, scoreMax: 30, desc: '関係詞節/分詞構文の構造把握型和訳' },
+        { key: 'w_essay',       name: '自由英作文 (商学部頻出)',   icon: '✍️', timeMin: 25, qCount: 1, scoreMax: 20, desc: '100-150語の論述' },
+        { key: 'l_listening',   name: 'リスニング (社会学部)',     icon: '🎧', timeMin: 25, qCount: 10, scoreMax: 20, desc: '対話/講義' },
+      ],
+      nagoya: [
+        { key: 'r_long',        name: '長文読解 (大問1・2)',        icon: '📖', timeMin: 35, qCount: 8, scoreMax: 50, desc: '評論/論説系の英文' },
+        { key: 'w_essay',       name: '英作文 (大問3)',             icon: '✍️', timeMin: 25, qCount: 1, scoreMax: 30, desc: '自由英作文 (テーマ与えあり)' },
+        { key: 'r_translation', name: '和訳',                       icon: '🇯🇵', timeMin: 20, qCount: 3, scoreMax: 20, desc: '長文中の和訳' },
+      ],
+      igakubu_kokoritsu: [
+        { key: 'r_long',        name: '医学/生命科学 長文',         icon: '🩺', timeMin: 30, qCount: 6, scoreMax: 40, desc: 'CRISPR/iPS/ゲノム/感染症/疫学などの英文' },
+        { key: 'r_translation', name: '医学英文 和訳',              icon: '🇯🇵', timeMin: 25, qCount: 3, scoreMax: 30, desc: '医学論文型の構造把握和訳' },
+        { key: 'w_essay',       name: '医療倫理 英作文',            icon: '✍️', timeMin: 25, qCount: 1, scoreMax: 30, desc: '医療倫理/AI診断/遺伝子治療等のテーマ' },
+        { key: 'l_listening',   name: '面接英語 (二次面接対策)',   icon: '🎧', timeMin: 15, qCount: 5, scoreMax: 0, desc: '医学部二次面接で問われる英語Q&A' },
+      ],
+      igakubu_shiritsu: [
+        { key: 'r_long',        name: '医療系 長文 (慈恵/順天/日医)', icon: '🩺', timeMin: 30, qCount: 8, scoreMax: 50, desc: '医療現場/疾患/薬学/公衆衛生' },
+        { key: 'r_grammar',     name: '医療系 文法・語彙',          icon: '🔀', timeMin: 15, qCount: 10, scoreMax: 20, desc: '医学英語の語彙穴埋め (4択)' },
+        { key: 'w_essay',       name: '英作文',                     icon: '✍️', timeMin: 20, qCount: 1, scoreMax: 20, desc: '70-100語の意見論述 (医療テーマ)' },
+      ],
+      meiji: [
+        { key: 'r_long',     name: '長文読解 (大問1・2)',          icon: '📖', timeMin: 30, qCount: 10, scoreMax: 50, desc: '社会/科学/文化系の英文' },
+        { key: 'r_grammar',  name: '文法・語彙・整序 (大問3-4)',   icon: '🔀', timeMin: 20, qCount: 15, scoreMax: 30, desc: '4択穴埋め+整序' },
+        { key: 'r_translation', name: '和訳',                      icon: '🇯🇵', timeMin: 10, qCount: 2, scoreMax: 20, desc: '長文中の部分和訳' },
+      ],
+      aogaku: [
+        { key: 'r_long',     name: '長文読解 (英米文学部=高難度)', icon: '📖', timeMin: 30, qCount: 8, scoreMax: 50, desc: '文学/論説系の英文' },
+        { key: 'r_grammar',  name: '文法・語法',                   icon: '🔀', timeMin: 15, qCount: 10, scoreMax: 25, desc: '4択・整序' },
+        { key: 'w_essay',    name: '英作文',                       icon: '✍️', timeMin: 20, qCount: 1, scoreMax: 25, desc: '自由英作文' },
+      ],
+      rikkyo: [
+        { key: 'r_long',     name: '長文読解 (全学部統一日程型)',   icon: '📖', timeMin: 30, qCount: 8, scoreMax: 50, desc: '評論/物語/エッセイ系' },
+        { key: 'w_essay',    name: '英語自由英作文',                icon: '✍️', timeMin: 25, qCount: 1, scoreMax: 30, desc: '立教型 (テーマ自由度高め)' },
+        { key: 'r_grammar',  name: '文法・語彙',                    icon: '🔀', timeMin: 15, qCount: 10, scoreMax: 20, desc: '4択穴埋め' },
+      ],
+      chuo: [
+        { key: 'r_long',     name: '長文読解 (法学部=論理重視)',    icon: '📖', timeMin: 30, qCount: 8, scoreMax: 50, desc: '法律/政治/経済の論理的英文' },
+        { key: 'r_grammar',  name: '文法・整序',                    icon: '🔀', timeMin: 15, qCount: 10, scoreMax: 25, desc: '4択+整序' },
+        { key: 'r_translation', name: '和訳 (法学部)',             icon: '🇯🇵', timeMin: 15, qCount: 3, scoreMax: 25, desc: '法律英語の構造把握和訳' },
+      ],
+      hosei: [
+        { key: 'r_long',     name: '長文読解',                      icon: '📖', timeMin: 25, qCount: 8, scoreMax: 50, desc: '標準的英文・各学部共通' },
+        { key: 'r_grammar',  name: '文法・語彙',                    icon: '🔀', timeMin: 15, qCount: 10, scoreMax: 25, desc: '4択穴埋め' },
+        { key: 'w_essay',    name: '英作文 (一部学部)',             icon: '✍️', timeMin: 15, qCount: 1, scoreMax: 25, desc: '基礎的な意見論述' },
+      ],
+      doshisha: [
+        { key: 'r_long',        name: '長文読解 (大問1・2)',         icon: '📖', timeMin: 35, qCount: 10, scoreMax: 50, desc: '評論/エッセイ系・やや長め' },
+        { key: 'r_grammar',     name: '整序 (大問3)',                icon: '🔀', timeMin: 15, qCount: 5, scoreMax: 20, desc: '同志社型整序問題' },
+        { key: 'r_translation', name: '和訳',                        icon: '🇯🇵', timeMin: 15, qCount: 3, scoreMax: 30, desc: '長文中の部分和訳' },
+      ],
+      kangaku: [
+        { key: 'r_long',     name: '長文読解 (実用英語重視)',       icon: '📖', timeMin: 30, qCount: 10, scoreMax: 60, desc: '実用的なテーマの英文' },
+        { key: 'r_grammar',  name: '文法・語彙',                    icon: '🔀', timeMin: 15, qCount: 10, scoreMax: 20, desc: '4択穴埋め' },
+        { key: 'w_essay',    name: '英作文',                        icon: '✍️', timeMin: 15, qCount: 1, scoreMax: 20, desc: '英文要約 or 短い意見論述' },
+      ],
+      ritsumei: [
+        { key: 'r_long',     name: '長文読解',                      icon: '📖', timeMin: 30, qCount: 10, scoreMax: 50, desc: '英語選択幅広い学部対応' },
+        { key: 'r_grammar',  name: '文法・整序',                    icon: '🔀', timeMin: 15, qCount: 12, scoreMax: 25, desc: '4択+整序' },
+        { key: 'w_essay',    name: '英作文 (一部学部)',             icon: '✍️', timeMin: 15, qCount: 1, scoreMax: 25, desc: '自由英作文' },
+      ],
+      kandai: [
+        { key: 'r_long',     name: '長文読解 (関大型)',             icon: '📖', timeMin: 30, qCount: 10, scoreMax: 60, desc: '長文中心・標準難度' },
+        { key: 'r_grammar',  name: '文法・語彙・整序',              icon: '🔀', timeMin: 15, qCount: 10, scoreMax: 20, desc: '4択穴埋め+整序' },
+        { key: 'r_translation', name: '和訳',                       icon: '🇯🇵', timeMin: 15, qCount: 2, scoreMax: 20, desc: '部分和訳' },
+      ],
       kyotsu: [
         { key: 'r_short',     name: 'Reading 大問1-3 (短文中心)',   icon: '📝', timeMin: 25, qCount: 15, scoreMax: 30, desc: '広告/Eメール/SNS/レビュー 等の実用英語' },
         { key: 'r_long',      name: 'Reading 大問4-6 (長文)',        icon: '📖', timeMin: 55, qCount: 20, scoreMax: 70, desc: '記事/学術/物語 等の長文' },
