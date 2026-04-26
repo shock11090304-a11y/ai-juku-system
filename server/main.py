@@ -315,6 +315,16 @@ def init_db():
         session_id TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+    CREATE TABLE IF NOT EXISTS exam_questions (
+        id {pk},
+        exam_id TEXT NOT NULL,
+        part_key TEXT NOT NULL,
+        eiken_grade TEXT,
+        question_data TEXT NOT NULL,
+        model TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_exam_questions ON exam_questions(exam_id, part_key, created_at);
     CREATE TABLE IF NOT EXISTS processed_events (
         event_id TEXT PRIMARY KEY,
         event_type TEXT,
@@ -402,6 +412,17 @@ async def _start_background_tasks():
         if not MONITORING_TO_EMAIL: missing.append("MONITORING_TO_EMAIL")
         if not RESEND_API_KEY: missing.append("RESEND_API_KEY")
         log.warning(f"[Startup] Monitor scheduler NOT launched. Missing: {missing}")
+
+    # 4試験 問題自動生成 scheduler (毎日朝5時 JST)
+    if EXAM_QUESTIONS_ENABLED and ANTHROPIC_API_KEY:
+        task = asyncio.create_task(_exam_questions_scheduler())
+        _BACKGROUND_TASKS.append(task)
+        log.info(f"[Startup] Exam questions scheduler launched (target hour JST {EXAM_QUESTIONS_HOUR_JST}:00, daily quota {EXAM_QUESTIONS_DAILY_QUOTA})")
+    else:
+        missing = []
+        if not EXAM_QUESTIONS_ENABLED: missing.append("EXAM_QUESTIONS_ENABLED=0")
+        if not ANTHROPIC_API_KEY: missing.append("ANTHROPIC_API_KEY")
+        log.warning(f"[Startup] Exam questions scheduler NOT launched. Missing: {missing}")
 
 # ==========================================================================
 # Models
@@ -2211,6 +2232,300 @@ def ai_messages_proxy(payload: dict, authorization: Optional[str] = Header(None)
         log.warning(f"[AI proxy] failed to record event: {e}")
 
     return data
+
+
+# ==========================================================================
+# Exam Questions Auto-Generator (4試験 × 各 part の問題を毎日蓄積)
+# ==========================================================================
+EXAM_QUESTIONS_ENABLED = os.getenv("EXAM_QUESTIONS_ENABLED", "1") == "1"
+EXAM_QUESTIONS_HOUR_JST = int(os.getenv("EXAM_QUESTIONS_HOUR_JST", "5"))
+EXAM_QUESTIONS_DAILY_QUOTA = int(os.getenv("EXAM_QUESTIONS_DAILY_QUOTA", "10"))  # 1日10問程度に抑制
+EXAM_QUESTIONS_MODEL = os.getenv("EXAM_QUESTIONS_MODEL", "claude-sonnet-4-6")
+
+# ローテーション対象の (exam_id, part_key, eiken_grade) リスト
+EXAM_QUESTION_ROTATION = [
+    # TOEFL (主要 part)
+    ("toefl", "r_passage1", None),
+    ("toefl", "r_passage2", None),
+    ("toefl", "l_lect1", None),
+    ("toefl", "l_lect2", None),
+    ("toefl", "s_task1", None),
+    ("toefl", "w_integrated", None),
+    # TOEIC
+    ("toeic", "l_part2", None),
+    ("toeic", "l_part3", None),
+    ("toeic", "r_part5", None),
+    ("toeic", "r_part6", None),
+    ("toeic", "r_part7_single", None),
+    # IELTS
+    ("ielts", "l_sec1", None),
+    ("ielts", "l_sec3", None),
+    ("ielts", "r_p1", None),
+    ("ielts", "w_task2", None),
+    # 英検 (受験者多い順: 準1級, 2級, 3級, 準2級, 1級, 4級, 5級)
+    ("eiken", "r_q1", "gp1"),
+    ("eiken", "r_q3", "gp1"),
+    ("eiken", "w_essay", "gp1"),
+    ("eiken", "r_q1", "g2"),
+    ("eiken", "w_opinion", "g2"),
+    ("eiken", "r_q1", "g3"),
+    ("eiken", "r_q1", "g1"),
+    ("eiken", "r_q1", "gp2"),
+    ("eiken", "r_q1", "g4"),
+    ("eiken", "r_q1", "g5"),
+]
+
+
+def _generate_exam_question(exam_id: str, part_key: str, eiken_grade: Optional[str] = None) -> Optional[dict]:
+    """Anthropic API で1問生成して dict を返す。失敗時 None。"""
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    # 試験別ヒント
+    exam_hints = {
+        "toefl": "TOEFL iBT (米国大学留学・学術英語・C1レベル目標)",
+        "toeic": "TOEIC L&R (ビジネス英語・職場シーン)",
+        "ielts": "IELTS Academic (英国系大学留学・学術)",
+        "eiken": f"英検{eiken_grade or '準1級'} (日本英検・新形式 2024〜)",
+    }
+    part_hints = {
+        "r_passage1": "Reading Passage 1: 学術文700字 + 5問 multiple_choice",
+        "r_passage2": "Reading Passage 2: 別ジャンル学術文 + 5問",
+        "l_lect1": "Listening Lecture 1: 講義スクリプト + 5問",
+        "l_lect2": "Listening Lecture 2: 講義スクリプト + 5問",
+        "s_task1": "Speaking Task 1 (Independent): prompt + 模範回答",
+        "w_integrated": "Writing Integrated: prompt + 200語模範",
+        "l_part2": "Listening Part 2 応答問題 5問 (3択)",
+        "l_part3": "Listening Part 3 会話問題 6問 (3問1セット×2)",
+        "r_part5": "Reading Part 5 短文穴埋め 8問 (4択・品詞文法語彙)",
+        "r_part6": "Reading Part 6 長文穴埋め (4問1セット)",
+        "r_part7_single": "Reading Part 7 シングルパッセージ (3問)",
+        "l_sec1": "Listening Section 1 社会的会話 + 5問",
+        "l_sec3": "Listening Section 3 学術会話 + 5問",
+        "r_p1": "Reading Passage 1 + 6問 (TFNG/穴埋め)",
+        "w_task2": "Writing Task 2: prompt + 250語模範エッセイ",
+        "r_q1": "Reading 大問1: 短文穴埋め 5問 (語彙レベル統制)",
+        "r_q3": "Reading 大問3: 長文内容一致 3問",
+        "w_essay": "Writing エッセイ模範回答 (新形式)",
+        "w_opinion": "Writing 意見論述模範回答 (新形式)",
+    }
+    exam_label = exam_hints.get(exam_id, exam_id)
+    part_label = part_hints.get(part_key, part_key)
+
+    system = f"""あなたは {exam_label} の試験対策専門家です。公式の出題形式に完全準拠した問題を生成してください。
+
+【厳守】
+- 出題形式は公式と完全一致 ({part_label})
+- 英文はナチュラルな英語 (機械翻訳臭NG)
+- 解説は日本語で正解の根拠 + 他選択肢の誤りポイントを丁寧に
+- 出力は純粋なJSONのみ"""
+
+    user = f"""{exam_label} の **{part_key}** ({part_label}) の問題を1セット生成してください。
+
+【出力形式】純粋なJSONのみ:
+{{
+  "passage": "(Reading の場合は本文、それ以外は空文字)",
+  "audio_script": "(Listening の場合はスクリプト、それ以外は空文字)",
+  "prompt": "(Speaking/Writing の場合の英語の出題、それ以外は空文字)",
+  "questions": [
+    {{
+      "id": "q1",
+      "type": "multiple_choice|essay|speaking",
+      "stem": "問題文",
+      "choices": ["A", "B", "C", "D"],
+      "answer": "正解(選択肢index 0始まり、または模範解答テキスト)",
+      "explanation": "解説 (日本語、3行以上)"
+    }}
+  ]
+}}"""
+
+    try:
+        req = urllib.request.Request(
+            "https://api.anthropic.com/v1/messages",
+            data=json.dumps({
+                "model": EXAM_QUESTIONS_MODEL,
+                "max_tokens": 4000,
+                "system": system,
+                "messages": [{"role": "user", "content": user}],
+            }).encode("utf-8"),
+            headers={
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=90) as resp:
+            data = json.loads(resp.read().decode())
+        text = data["content"][0]["text"].strip()
+        if text.startswith("```"):
+            text = text.split("```", 2)[1]
+            if text.startswith("json"):
+                text = text[4:]
+            text = text.strip().rstrip("`").strip()
+        return json.loads(text)
+    except Exception as e:
+        log.error(f"[ExamQ] Generation failed for {exam_id}/{part_key}: {type(e).__name__}: {e}")
+        return None
+
+
+def _save_exam_question(exam_id: str, part_key: str, question_data: dict, eiken_grade: Optional[str] = None):
+    """生成済み問題を DB に保存"""
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(
+            "INSERT INTO exam_questions (exam_id, part_key, eiken_grade, question_data, model) VALUES (?, ?, ?, ?, ?)",
+            (exam_id, part_key, eiken_grade, json.dumps(question_data, ensure_ascii=False), EXAM_QUESTIONS_MODEL),
+        )
+        conn.commit()
+        log.info(f"[ExamQ] Saved: {exam_id}/{part_key} (grade={eiken_grade})")
+    except Exception as e:
+        log.error(f"[ExamQ] Save failed: {e}")
+        try: conn.rollback()
+        except Exception: pass
+    conn.close()
+
+
+def _run_exam_questions_generation(quota: int = None) -> dict:
+    """ローテーション順で N 問生成 → DB保存"""
+    if quota is None:
+        quota = EXAM_QUESTIONS_DAILY_QUOTA
+    # 現在 DB に少ない part を優先 (バランス確保)
+    conn = db()
+    c = conn.cursor()
+    counts = {}
+    for exam_id, part_key, eiken_grade in EXAM_QUESTION_ROTATION:
+        try:
+            grade_filter = " AND eiken_grade = ?" if eiken_grade else ""
+            params = [exam_id, part_key]
+            if eiken_grade:
+                params.append(eiken_grade)
+            c.execute(
+                f"SELECT COUNT(*) FROM exam_questions WHERE exam_id = ? AND part_key = ?{grade_filter}",
+                params,
+            )
+            n = c.fetchone()[0]
+        except Exception:
+            try: conn.rollback()
+            except Exception: pass
+            n = 0
+        key = (exam_id, part_key, eiken_grade)
+        counts[key] = n
+    conn.close()
+
+    # 件数少ない順にソート → 先頭から quota 件生成
+    sorted_targets = sorted(EXAM_QUESTION_ROTATION, key=lambda t: counts.get(t, 0))[:quota]
+
+    generated = []
+    failed = []
+    for exam_id, part_key, eiken_grade in sorted_targets:
+        q = _generate_exam_question(exam_id, part_key, eiken_grade)
+        if q:
+            _save_exam_question(exam_id, part_key, q, eiken_grade)
+            generated.append({"exam": exam_id, "part": part_key, "grade": eiken_grade})
+        else:
+            failed.append({"exam": exam_id, "part": part_key, "grade": eiken_grade})
+    return {"ran": True, "generated": len(generated), "failed": len(failed), "details": generated}
+
+
+async def _exam_questions_scheduler():
+    """毎日 JST EXAM_QUESTIONS_HOUR_JST 時に問題生成"""
+    JST = timezone(timedelta(hours=9))
+    log.info(f"[ExamQ] Scheduler started, target hour JST {EXAM_QUESTIONS_HOUR_JST}:00, daily quota {EXAM_QUESTIONS_DAILY_QUOTA}")
+    while True:
+        try:
+            now_jst = datetime.now(JST)
+            target = now_jst.replace(hour=EXAM_QUESTIONS_HOUR_JST, minute=0, second=0, microsecond=0)
+            if target <= now_jst:
+                target += timedelta(days=1)
+            sleep_secs = (target - now_jst).total_seconds()
+            log.info(f"[ExamQ] Next run at {target.isoformat()} (in {int(sleep_secs)}s)")
+            await asyncio.sleep(sleep_secs)
+            try:
+                result = _run_exam_questions_generation()
+                log.info(f"[ExamQ] Run result: generated={result['generated']} failed={result['failed']}")
+            except Exception as e:
+                log.error(f"[ExamQ] Run error: {e}", exc_info=True)
+        except asyncio.CancelledError:
+            log.info("[ExamQ] Scheduler cancelled")
+            raise
+        except Exception as e:
+            log.error(f"[ExamQ] Scheduler loop error: {e}", exc_info=True)
+            await asyncio.sleep(3600)
+
+
+@app.post("/api/admin/exam-questions/generate")
+def admin_exam_questions_generate(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """指定パート (or ローテ全件) の問題を生成。手動トリガー。
+    payload: {"exam_id": "eiken", "part_key": "r_q1", "eiken_grade": "gp1", "count": 1}
+    省略時はローテーション全件 (quota 使用)"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    exam_id = payload.get("exam_id")
+    part_key = payload.get("part_key")
+    eiken_grade = payload.get("eiken_grade")
+    count = int(payload.get("count") or 0)
+
+    if exam_id and part_key:
+        # 特定 part に N 問
+        n = max(1, min(count or 1, 10))
+        generated = []
+        for _ in range(n):
+            q = _generate_exam_question(exam_id, part_key, eiken_grade)
+            if q:
+                _save_exam_question(exam_id, part_key, q, eiken_grade)
+                generated.append({"exam": exam_id, "part": part_key, "grade": eiken_grade})
+        return {"generated": len(generated), "details": generated}
+    else:
+        # ローテ全件 (quota 使用)
+        return _run_exam_questions_generation(quota=count or EXAM_QUESTIONS_DAILY_QUOTA)
+
+
+@app.get("/api/exam-questions/bank")
+def public_exam_questions_bank(exam: str, part: str, eiken_grade: Optional[str] = None, limit: int = 20):
+    """公開API: 試験パートの最新N問を返す (フロントが AUTO_GENERATED_BANKS に流し込む)。
+    認証不要 (出題内容は公開可・実回答は提出不要)。"""
+    limit = max(1, min(limit, 50))
+    conn = db()
+    c = conn.cursor()
+    try:
+        if eiken_grade:
+            c.execute(
+                "SELECT question_data, created_at FROM exam_questions WHERE exam_id = ? AND part_key = ? AND eiken_grade = ? ORDER BY created_at DESC LIMIT ?",
+                (exam, part, eiken_grade, limit),
+            )
+        else:
+            c.execute(
+                "SELECT question_data, created_at FROM exam_questions WHERE exam_id = ? AND part_key = ? ORDER BY created_at DESC LIMIT ?",
+                (exam, part, limit),
+            )
+        rows = c.fetchall()
+    except Exception as e:
+        log.error(f"[ExamQ] bank query failed: {e}")
+        rows = []
+    conn.close()
+
+    items = []
+    for r in rows:
+        try:
+            data = json.loads(r["question_data"])
+            data["_created_at"] = str(r["created_at"])
+            items.append(data)
+        except Exception:
+            pass
+    # ランダムに1件返す (毎回違う問題で多様性確保)
+    import random
+    selected = random.choice(items) if items else None
+    return {"exam": exam, "part": part, "eiken_grade": eiken_grade, "count": len(items), "selected": selected, "all": items[:5]}
 
 
 @app.post("/api/admin/sns/run-now")
