@@ -71,6 +71,80 @@ const todayMonth = () => {
 
 // === Data Load ===
 const DATA_KEY = 'juku-payment-data-v1';
+const PW_KEY = 'juku-payment-pw-v1';
+
+// AES-GCM 復号 (Web Crypto API)
+async function decryptPayload(password, enc) {
+  const b64 = (s) => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  const salt = b64(enc.salt);
+  const nonce = b64(enc.nonce);
+  const ciphertext = b64(enc.ciphertext);
+  const passKey = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(password),
+    { name: 'PBKDF2' }, false, ['deriveKey']
+  );
+  const key = await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: enc.iterations || 200000, hash: 'SHA-256' },
+    passKey,
+    { name: 'AES-GCM', length: 256 },
+    false, ['decrypt']
+  );
+  const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: nonce }, key, ciphertext);
+  return JSON.parse(new TextDecoder().decode(plaintext));
+}
+
+function promptPassword(errMsg) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:grid;place-items:center;z-index:300;padding:1rem;backdrop-filter:blur(8px)';
+    overlay.innerHTML = `
+      <div style="background:#15152d;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:2rem;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
+        <h2 style="font-size:1.15rem;margin-bottom:0.5rem;color:#e5e7eb">🔐 初回セットアップ</h2>
+        <p style="color:#9ca3af;font-size:0.85rem;margin-bottom:1rem;line-height:1.6">塾長のメールに送付したパスワードを入力してください。<br>このデバイスでは1度だけ入力で済みます (以降は自動)。</p>
+        ${errMsg ? `<p style="color:#ef4444;font-size:0.82rem;margin-bottom:0.85rem">⚠ ${errMsg}</p>` : ''}
+        <input id="_pw_input" type="password" autofocus placeholder="パスワード"
+          style="width:100%;background:rgba(0,0,0,0.4);border:1px solid #6366f1;color:#e5e7eb;padding:0.85rem;border-radius:8px;font-size:1rem;font-family:monospace;letter-spacing:0.08em;box-sizing:border-box" />
+        <div style="display:flex;gap:0.5rem;margin-top:1rem;justify-content:flex-end">
+          <button id="_pw_ok" style="background:linear-gradient(135deg,#6366f1,#818cf8);color:white;border:none;padding:0.7rem 1.4rem;border-radius:8px;cursor:pointer;font-weight:700;font-family:inherit;font-size:0.9rem">▶ 復号</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    const input = document.getElementById('_pw_input');
+    const finish = (val) => { overlay.remove(); resolve(val); };
+    input.onkeydown = (e) => { if (e.key === 'Enter') finish(input.value); };
+    document.getElementById('_pw_ok').onclick = () => finish(input.value);
+    setTimeout(() => input.focus(), 50);
+  });
+}
+
+async function tryEncryptedFetch() {
+  const res = await fetch('encrypted-data.json?t=' + Date.now());
+  if (!res.ok) throw new Error('encrypted-data.json not found');
+  const enc = await res.json();
+  // 保存済パスワードでまず試行
+  const cachedPw = localStorage.getItem(PW_KEY);
+  if (cachedPw) {
+    try {
+      const payload = await decryptPayload(cachedPw, enc);
+      return payload;
+    } catch (e) { /* fall through to prompt */ }
+  }
+  // パスワード要求 (失敗したら再試行)
+  let errMsg = '';
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const pw = await promptPassword(errMsg);
+    if (!pw) throw new Error('cancelled');
+    try {
+      const payload = await decryptPayload(pw, enc);
+      localStorage.setItem(PW_KEY, pw);
+      return payload;
+    } catch (e) {
+      errMsg = 'パスワードが違います。再入力してください。';
+    }
+  }
+  throw new Error('パスワード認証失敗');
+}
 
 async function loadData() {
   // 1. localStorage キャッシュを最優先で使う
@@ -79,18 +153,41 @@ async function loadData() {
     try { STATE.data = JSON.parse(cached); }
     catch { STATE.data = null; }
   }
-  // 2. キャッシュなし → data.json fetch を試す (ローカル/サブパス用)
+  // 2. キャッシュなし → 平文 data.json (ローカル開発用) を先に試す
   if (!STATE.data) {
     try {
       const res = await fetch('data.json?t=' + Date.now());
       if (res.ok) {
         STATE.data = await res.json();
         localStorage.setItem(DATA_KEY, JSON.stringify(STATE.data));
-      } else { throw new Error('not found'); }
+      } else { throw new Error('plain not found'); }
     } catch (err) {
-      // 3. 初回・公開デプロイ → 空データ + 案内表示
-      STATE.data = { students: [], courses: [], payments: {}, nextStudentId: 1, nextCourseId: 1 };
-      window._needsImport = true;
+      // 3. 平文なし → 暗号化版を fetch + パスワード復号
+      try {
+        const payload = await tryEncryptedFetch();
+        if (payload.data && payload.data.students) {
+          STATE.data = payload.data;
+          localStorage.setItem(DATA_KEY, JSON.stringify(STATE.data));
+        }
+        // overrides も同梱されていれば自動取り込み
+        if (payload.overrides) {
+          const exist = JSON.parse(localStorage.getItem(LS_KEY) || '{"payments":{},"emails":{},"payerNames":{},"mailSent":{},"status":{}}');
+          const merged = {
+            payments: { ...(exist.payments || {}) },
+            emails: { ...(exist.emails || {}), ...(payload.overrides.emails || {}) },
+            payerNames: { ...(exist.payerNames || {}), ...(payload.overrides.payerNames || {}) },
+            mailSent: { ...(exist.mailSent || {}), ...(payload.overrides.mailSent || {}) },
+            status: { ...(exist.status || {}), ...(payload.overrides.status || {}) },
+          };
+          for (const m of Object.keys(payload.overrides.payments || {})) {
+            merged.payments[m] = { ...(merged.payments[m] || {}), ...payload.overrides.payments[m] };
+          }
+          localStorage.setItem(LS_KEY, JSON.stringify(merged));
+        }
+      } catch (e2) {
+        STATE.data = { students: [], courses: [], payments: {}, nextStudentId: 1, nextCourseId: 1 };
+        window._needsImport = true;
+      }
     }
   }
   STATE.overrides = JSON.parse(localStorage.getItem(LS_KEY) || '{"payments":{},"emails":{},"payerNames":{},"mailSent":{}}');
