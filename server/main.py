@@ -17,12 +17,15 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional, List
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, time
 import os
 import json
 import sqlite3
 import hmac
 import hashlib
+import asyncio
+import urllib.request
+import urllib.error
 import base64
 import pathlib
 import logging
@@ -111,6 +114,11 @@ FOUNDER1_PRICE = 25000
 # 例: real_taken=0, FOUNDER_PUBLIC_FAKE_TAKEN=26 → 顧客には「残74」と見える。
 # 内部API (CEOダッシュボード) は加算なしの実数値を返す。
 FOUNDER_PUBLIC_FAKE_TAKEN = int(os.getenv("FOUNDER_PUBLIC_FAKE_TAKEN", "26"))
+
+# Daily SNS研究員: 毎日 JST DAILY_SNS_HOUR_JST 時に塾長キャラのThreads投稿5本を生成→Gmail送信
+DAILY_SNS_TO_EMAIL = os.getenv("DAILY_SNS_TO_EMAIL", "")
+DAILY_SNS_HOUR_JST = int(os.getenv("DAILY_SNS_HOUR_JST", "6"))
+DAILY_SNS_MODEL = os.getenv("DAILY_SNS_MODEL", "claude-sonnet-4-6")
 
 # 入塾金を免除するプラン
 ENROLLMENT_FEE_EXEMPT = {"student_addon"}
@@ -343,6 +351,23 @@ app.add_middleware(
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "x-cron-secret", "stripe-signature", "x-line-signature"],
 )
+
+# 起動時に Daily SNS 研究員 scheduler を asyncio.Task として常駐起動
+_BACKGROUND_TASKS: list = []
+
+@app.on_event("startup")
+async def _start_background_tasks():
+    """uvicorn 起動時に呼ばれる。daily SNS scheduler を bg task として起動。"""
+    if DAILY_SNS_TO_EMAIL and ANTHROPIC_API_KEY and RESEND_API_KEY:
+        task = asyncio.create_task(_daily_sns_scheduler())
+        _BACKGROUND_TASKS.append(task)
+        log.info("[Startup] Daily SNS scheduler launched")
+    else:
+        missing = []
+        if not DAILY_SNS_TO_EMAIL: missing.append("DAILY_SNS_TO_EMAIL")
+        if not ANTHROPIC_API_KEY: missing.append("ANTHROPIC_API_KEY")
+        if not RESEND_API_KEY: missing.append("RESEND_API_KEY")
+        log.warning(f"[Startup] Daily SNS scheduler NOT launched. Missing env: {missing}")
 
 # ==========================================================================
 # Models
@@ -600,6 +625,283 @@ def _send_trial_ending_email(to_email: str, student_name: str, days_left: int, u
     except Exception as e:
         log.error(f"Trial reminder email failed for {to_email}: {type(e).__name__}: {e}")
         return {"sent": False, "error": str(e)}
+
+
+# ==========================================================================
+# Daily SNS 研究員: 塾長キャラのThreads投稿を毎朝5本生成→Gmail送信
+# ==========================================================================
+JUKUCHO_PERSONA = """あなたは「足立翔平」、200名規模の塾を10年運営してきた元塾講師。
+2026-04-26 にAI学習塾「AI学習コーチ塾」をローンチしたCEOです。
+- 月¥5万の塾で苦しむ家庭への憤りがエネルギー源
+- AIで質を落とさず1/3価格を実現した
+- Threadsでフォロワー集客中(現在地は0からのスタート)
+- 第1期生100名限定 永年¥25,000/月 / 7日間 完全無料体験(クレカ不要)
+- 元現場の本音を語るキャラ・売り込み臭は出さない"""
+
+THREADS_RULES = """【Threadsアルゴリズム最適化ルール (絶対遵守)】
+- 文字数: 100〜300字 (上限500字)
+- 1行目フック: 答えを書かない・気にさせて止める
+- 改行: 1〜2文ごと(スマホ前提)
+- 絵文字: ゼロ〜1個まで
+- 締め: 句点で終わらせない(余韻 or 問いかけで止める)
+- ハッシュタグ: 0〜1個まで(複数並べ禁止)
+- 投稿後1時間以内のリプライ獲得が最重要(Stage1突破)
+- NG: 「いいねしてね」「コメント下さい」直球エンゲージベイト
+- 売り込み臭は出さない(価格訴求は5本中最大1本まで)"""
+
+POST_TYPES = [
+    {"name": "逆説型", "desc": "業界常識を破る断定+逆説。例: 『正直な話、〇〇は古いです』『AI塾なんて流行らないと思ってました』"},
+    {"name": "保護者あるある共感型", "desc": "保護者の『あるある』相談を引用→意外な原因→解決の方向性。例: 『うちの子、頭は悪くないんですけど…』"},
+    {"name": "数字×権威型", "desc": "10年で2,000人見てきた等の数字+共通点リスト3つ"},
+    {"name": "体験談ストーリー型", "desc": "ある日の電話・相談の具体的エピソード→気づき(『昨日、ある中3の母から…』)"},
+    {"name": "二択問いかけ型", "desc": "対立軸を提示→自分の結論→『あなたはどっち?』(リプライ起爆装置)"},
+]
+
+
+def _get_recent_sns_posts(days: int = 30) -> list:
+    """過去N日間にdaily_sns_postで生成済みのテキストを返す(重複回避用)"""
+    conn = db()
+    c = conn.cursor()
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+    try:
+        c.execute(
+            "SELECT props FROM events WHERE name = 'daily_sns_post' AND created_at >= ?",
+            (since,)
+        )
+        rows = c.fetchall()
+    except Exception as e:
+        log.warning(f"_get_recent_sns_posts query failed: {e}")
+        rows = []
+    conn.close()
+    texts = []
+    for r in rows:
+        try:
+            props = json.loads(r["props"] or "{}")
+            for p in props.get("posts", []):
+                t = (p.get("text") or "")[:120]
+                if t:
+                    texts.append(t)
+        except Exception:
+            pass
+    return texts
+
+
+def _check_daily_sns_sent_today_jst() -> bool:
+    """今日(JST)のdaily_sns_postが既に events に記録されているか確認"""
+    JST = timezone(timedelta(hours=9))
+    today_jst = datetime.now(JST).date()
+    today_start_utc = datetime.combine(today_jst, time(0, 0), tzinfo=JST).astimezone(timezone.utc)
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(
+            "SELECT COUNT(*) AS n FROM events WHERE name = 'daily_sns_post' AND created_at >= ?",
+            (today_start_utc,)
+        )
+        n = c.fetchone()["n"]
+    except Exception as e:
+        log.warning(f"_check_daily_sns_sent_today_jst failed: {e}")
+        n = 0
+    conn.close()
+    return n > 0
+
+
+def _generate_daily_sns_posts() -> list:
+    """Anthropic API で塾長キャラのThreads投稿5本(5型ローテ)を生成"""
+    if not ANTHROPIC_API_KEY:
+        log.warning("[DailySNS] ANTHROPIC_API_KEY 未設定でスキップ")
+        return []
+    recent = _get_recent_sns_posts(days=30)
+    avoid_section = ""
+    if recent:
+        joined = "\n".join(f"- {t}" for t in recent[-25:])  # 直近25本まで
+        avoid_section = f"\n\n【重複回避】以下は過去30日に生成済み。同じ訴求/同じ書き出しは避けてください:\n{joined}"
+
+    types_section = "\n".join(f"{i+1}. {t['name']}: {t['desc']}" for i, t in enumerate(POST_TYPES))
+    user_msg = f"""今日のThreads投稿を5本作成してください。5型を1本ずつ:
+
+{types_section}
+{avoid_section}
+
+【出力形式】純粋なJSONのみ、他のテキストは含めない:
+{{
+  "posts": [
+    {{"type": "逆説型", "text": "本文(改行は\\n)"}},
+    {{"type": "保護者あるある共感型", "text": "本文"}},
+    {{"type": "数字×権威型", "text": "本文"}},
+    {{"type": "体験談ストーリー型", "text": "本文"}},
+    {{"type": "二択問いかけ型", "text": "本文"}}
+  ]
+}}"""
+
+    system_prompt = f"{JUKUCHO_PERSONA}\n\n{THREADS_RULES}"
+    try:
+        req = urllib.request.Request(
+            "https://api.anthropic.com/v1/messages",
+            data=json.dumps({
+                "model": DAILY_SNS_MODEL,
+                "max_tokens": 3000,
+                "system": system_prompt,
+                "messages": [{"role": "user", "content": user_msg}],
+            }).encode("utf-8"),
+            headers={
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read().decode())
+        content_text = data["content"][0]["text"].strip()
+        # コードブロックで囲まれている場合は除去
+        if content_text.startswith("```"):
+            content_text = content_text.split("```", 2)[1]
+            if content_text.startswith("json"):
+                content_text = content_text[4:]
+            content_text = content_text.strip()
+            if content_text.endswith("```"):
+                content_text = content_text[:-3].strip()
+        parsed = json.loads(content_text)
+        posts = parsed.get("posts", [])
+        log.info(f"[DailySNS] Generated {len(posts)} posts via {DAILY_SNS_MODEL}")
+        return posts
+    except Exception as e:
+        log.error(f"[DailySNS] Generation failed: {type(e).__name__}: {e}")
+        return []
+
+
+def _record_daily_sns_sent(posts: list, resend_id: str = ""):
+    """events に履歴を保存"""
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            ("daily_sns_post", json.dumps({"posts": posts, "resend_id": resend_id, "model": DAILY_SNS_MODEL}, ensure_ascii=False), "daily_sns_scheduler")
+        )
+        conn.commit()
+    except Exception as e:
+        log.error(f"[DailySNS] Failed to record event: {e}")
+    conn.close()
+
+
+def _send_daily_sns_email(posts: list, to_email: str) -> dict:
+    """Resend で塾長 Gmail に投稿候補を送信"""
+    if not RESEND_API_KEY:
+        log.warning("[DailySNS] RESEND_API_KEY 未設定でスキップ")
+        return {"sent": False, "reason": "no_api_key"}
+    if not to_email:
+        log.warning("[DailySNS] 送信先未設定でスキップ")
+        return {"sent": False, "reason": "no_to"}
+    if not posts:
+        return {"sent": False, "reason": "no_posts"}
+
+    JST = timezone(timedelta(hours=9))
+    today_jst = datetime.now(JST).strftime("%Y-%m-%d (%a)")
+    subject = f"📱 今日のThreads投稿候補 5本 / {today_jst}"
+
+    def card(p):
+        text = (p.get("text") or "").replace("\n", "<br>")
+        ptype = p.get("type") or "?"
+        char_count = len(p.get("text") or "")
+        return f"""
+<div style="background:#fafafa;border-left:4px solid #6366f1;border-radius:8px;padding:1.2rem;margin-bottom:1.2rem;">
+  <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;flex-wrap:wrap;">
+    <span style="background:#6366f1;color:white;font-weight:900;padding:0.15rem 0.6rem;border-radius:4px;font-size:0.78rem;">{ptype}</span>
+    <span style="color:#888;font-size:0.78rem;">{char_count}字</span>
+  </div>
+  <div style="background:white;border:1px solid #e5e5e5;border-radius:6px;padding:1rem;font-family:'Hiragino Sans','Yu Gothic',sans-serif;line-height:1.7;color:#222;font-size:0.95rem;white-space:pre-wrap;">{text}</div>
+</div>"""
+
+    posts_html = "".join(card(p) for p in posts)
+    html = f"""<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"></head>
+<body style="font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;line-height:1.7;color:#333;max-width:680px;margin:0 auto;padding:1.5rem;background:#f5f5f7;">
+<div style="background:white;border-radius:14px;padding:1.5rem;margin-bottom:1.5rem;">
+<h1 style="font-size:1.3rem;color:#6366f1;margin:0 0 0.4rem;">📱 今日のThreads投稿候補</h1>
+<p style="color:#666;font-size:0.85rem;margin:0;">{today_jst} / 5型ローテ・塾長キャラ・過去30日と重複回避済み</p>
+</div>
+<div style="background:white;border-radius:14px;padding:1.5rem;margin-bottom:1.5rem;">
+<p style="font-size:0.85rem;color:#666;margin-top:0;">朝7-8時 / 夜21時前後が母親ターゲット最適。リプ起爆装置の<strong>二択問いかけ型</strong>を朝に投げて、夜は<strong>体験談ストーリー型</strong>か<strong>共感型</strong>がおすすめ。</p>
+{posts_html}
+</div>
+<div style="background:#eef2ff;border-radius:14px;padding:1.2rem;font-size:0.85rem;color:#444;line-height:1.8;">
+<strong>📌 投稿後の運用</strong><br>
+1. <strong>投稿後1時間が勝負</strong>。リプライ即返信でStage1突破<br>
+2. 反応の良かった型を覚えておく → 翌日以降の生成にフィードバック<br>
+3. 5本全部使う必要なし。気に入ったものだけでOK
+</div>
+<p style="font-size:0.78rem;color:#999;text-align:center;margin-top:1.5rem;">🤖 AI塾SNS研究員 (claude-sonnet-4-6) / 毎朝{DAILY_SNS_HOUR_JST}時に自動配信</p>
+</body></html>"""
+
+    try:
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({
+                "from": FROM_EMAIL,
+                "to": [to_email],
+                "subject": subject,
+                "html": html,
+            }).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json",
+                "User-Agent": "ai-juku-daily-sns/1.0",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            result = json.loads(resp.read().decode())
+            log.info(f"[DailySNS] Email sent to {to_email}: {result.get('id')}")
+            return {"sent": True, "resend_id": result.get("id")}
+    except Exception as e:
+        log.error(f"[DailySNS] Email send failed: {type(e).__name__}: {e}")
+        return {"sent": False, "error": str(e)}
+
+
+def _run_daily_sns_post() -> dict:
+    """1日分の生成→送信→記録 を実行(scheduler / admin 共用)"""
+    if _check_daily_sns_sent_today_jst():
+        log.info("[DailySNS] Already sent today (JST), skipping")
+        return {"ran": False, "reason": "already_sent_today"}
+    if not DAILY_SNS_TO_EMAIL:
+        log.warning("[DailySNS] DAILY_SNS_TO_EMAIL 未設定でスキップ")
+        return {"ran": False, "reason": "no_recipient"}
+    posts = _generate_daily_sns_posts()
+    if not posts:
+        return {"ran": False, "reason": "generation_failed"}
+    result = _send_daily_sns_email(posts, DAILY_SNS_TO_EMAIL)
+    if result.get("sent"):
+        _record_daily_sns_sent(posts, resend_id=result.get("resend_id", ""))
+    return {"ran": True, "posts_count": len(posts), "send_result": result}
+
+
+async def _daily_sns_scheduler():
+    """asyncio で毎日 JST DAILY_SNS_HOUR_JST 時に自動実行"""
+    JST = timezone(timedelta(hours=9))
+    log.info(f"[DailySNS] Scheduler started, target hour JST {DAILY_SNS_HOUR_JST}:00")
+    while True:
+        try:
+            now_jst = datetime.now(JST)
+            target = now_jst.replace(hour=DAILY_SNS_HOUR_JST, minute=0, second=0, microsecond=0)
+            if target <= now_jst:
+                target += timedelta(days=1)
+            sleep_secs = (target - now_jst).total_seconds()
+            log.info(f"[DailySNS] Next run at {target.isoformat()} (in {int(sleep_secs)}s)")
+            await asyncio.sleep(sleep_secs)
+            # 実行 (重複チェック付き)
+            try:
+                result = _run_daily_sns_post()
+                log.info(f"[DailySNS] Run result: {result}")
+            except Exception as e:
+                log.error(f"[DailySNS] Run error: {type(e).__name__}: {e}", exc_info=True)
+        except asyncio.CancelledError:
+            log.info("[DailySNS] Scheduler cancelled")
+            raise
+        except Exception as e:
+            log.error(f"[DailySNS] Scheduler loop error: {e}", exc_info=True)
+            await asyncio.sleep(3600)
 
 
 def _create_otp(student_id: int, ttl_seconds: int = 600) -> str:
@@ -1275,6 +1577,59 @@ def admin_analytics(authorization: Optional[str] = Header(None)):
         "top_ctas_24h": [{"text": t, "count": n} for t, n in top_ctas],
         "founders_public_offset": FOUNDER_PUBLIC_FAKE_TAKEN,
     }
+
+
+@app.post("/api/admin/sns/run-now")
+def admin_sns_run_now(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """Daily SNS 投稿を今すぐ生成→送信(手動トリガー)。
+    認証は admin Bearer または x-cron-secret のどちらでも可。
+    今日既に送信済みの場合は重複防止で skip する。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    return _run_daily_sns_post()
+
+
+@app.get("/api/admin/sns/history")
+def admin_sns_history(authorization: Optional[str] = Header(None), days: int = 14):
+    """過去N日の生成履歴を返す(CEOダッシュボード用)"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(
+            "SELECT props, created_at FROM events WHERE name = 'daily_sns_post' AND created_at >= ? ORDER BY created_at DESC",
+            (since,)
+        )
+        rows = c.fetchall()
+    except Exception as e:
+        log.error(f"sns_history query failed: {e}")
+        rows = []
+    conn.close()
+    history = []
+    for r in rows:
+        try:
+            props = json.loads(r["props"] or "{}")
+        except Exception:
+            props = {}
+        history.append({
+            "created_at": str(r["created_at"]),
+            "model": props.get("model", ""),
+            "resend_id": props.get("resend_id", ""),
+            "posts": props.get("posts", []),
+        })
+    return {"days": days, "count": len(history), "history": history}
 
 
 @app.get("/api/auth/me")
