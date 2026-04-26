@@ -80,6 +80,100 @@ const EXAMS = {
     ],
     topics: ['Climate change', 'Urban planning', 'Education systems', 'Healthcare', 'Technology impact', 'Globalization', 'Social inequality', 'Cultural identity'],
   },
+  daigaku: {
+    id: 'daigaku',
+    name: '大学入試対策',
+    flag: '🎓',
+    color: '#0ea5e9',
+    scoreMin: 0, scoreMax: 100, scoreUnit: '点',
+    requiresGrade: true,  // 大学選択ステップを挟む (英検と同じパターン)
+    grades: [
+      // 国公立 トップ
+      { key: 'todai',     name: '東京大学',         cefr: 'B2-C1', target: '日本最難関・要約/和訳/英作文の総合力' },
+      { key: 'kyodai',    name: '京都大学',         cefr: 'B2-C1', target: '骨太な構造把握・難解な英文和訳' },
+      { key: 'osaka',     name: '大阪大学',         cefr: 'B2',    target: '英文要旨把握・自由英作文' },
+      { key: 'tokoda',    name: '東京工業大学',     cefr: 'B2',    target: '理工系語彙・科学技術系長文' },
+      { key: 'hitotsu',   name: '一橋大学',         cefr: 'B2',    target: '社会科学系・抽象的英文の和訳' },
+      { key: 'nagoya',    name: '名古屋大学',       cefr: 'B1-B2', target: '長文+英作のバランス型' },
+      // 私立 早慶上智ICU
+      { key: 'waseda',    name: '早稲田大学',       cefr: 'B2',    target: '学部別出題傾向 (政経/法/商/文/国際教養)' },
+      { key: 'keio',      name: '慶應義塾大学',     cefr: 'B2',    target: '経済学部=英作・SFC=長文・医=医学英文' },
+      { key: 'sophia',    name: '上智大学',         cefr: 'B2',    target: '英語重視学部・TEAP活用' },
+      { key: 'icu',       name: 'ICU 国際基督教大学', cefr: 'B2-C1', target: 'リベラルアーツ・ATLAS型独自試験' },
+      // 私立 MARCH
+      { key: 'meiji',     name: '明治大学',         cefr: 'B1-B2', target: '長文+文法+整序の標準型' },
+      { key: 'aogaku',    name: '青山学院大学',     cefr: 'B1-B2', target: '英米文学部=高レベル英文' },
+      { key: 'rikkyo',    name: '立教大学',         cefr: 'B1-B2', target: '英語自由英作文・全学部統一日程' },
+      { key: 'chuo',      name: '中央大学',         cefr: 'B1-B2', target: '法学部=論理的英文・経済=ビジネス系' },
+      { key: 'hosei',     name: '法政大学',         cefr: 'B1',    target: '標準的長文+文法' },
+      // 関関同立
+      { key: 'kandai',    name: '関西大学',         cefr: 'B1',    target: '長文中心・標準難度' },
+      { key: 'kangaku',   name: '関西学院大学',     cefr: 'B1-B2', target: '英語独自試験・実用英語重視' },
+      { key: 'doshisha',  name: '同志社大学',       cefr: 'B2',    target: '長文+和訳+整序の総合' },
+      { key: 'ritsumei',  name: '立命館大学',       cefr: 'B1-B2', target: '英語選択幅広い学部対応' },
+      // 医学部
+      { key: 'igakubu_kokoritsu',  name: '国公立医学部',   cefr: 'B2-C1', target: '東大理三/京大医/阪大医/慈恵/順天堂等' },
+      { key: 'igakubu_shiritsu',   name: '私立医学部',     cefr: 'B2',    target: '東医/日医/慶應医/慈恵/順天堂等' },
+      // 共通テスト・センター
+      { key: 'kyotsu',    name: '共通テスト',       cefr: 'A2-B2', target: '2021年〜・全国共通・Reading 80分/Listening 60分' },
+      { key: 'center',    name: 'センター試験',     cefr: 'A2-B1', target: '2020年廃止・1990-2020年過去問・基礎重視' },
+    ],
+    // 大学別 part 構造 (主要大学のみ実装、他は generic)
+    sectionsByGrade: {
+      todai: [
+        { key: 'r_long',        name: '長文読解 (大問1A・5)', icon: '📖', timeMin: 25, qCount: 4, scoreMax: 25, desc: '物語/評論/エッセイ系長文 + 内容一致・段落整序' },
+        { key: 'r_summary',     name: '要約 (大問1B)',         icon: '📋', timeMin: 15, qCount: 1, scoreMax: 10, desc: '英文を 60-80字で日本語要約' },
+        { key: 'w_essay',       name: '自由英作文 (大問2A)',   icon: '✍️', timeMin: 20, qCount: 1, scoreMax: 15, desc: '60-80語の意見論述' },
+        { key: 'w_freeform',    name: '形式自由英作文 (大問2B)', icon: '✍️', timeMin: 15, qCount: 1, scoreMax: 10, desc: 'イラスト説明や情景描写' },
+        { key: 'l_listening',   name: 'リスニング (大問3)',    icon: '🎧', timeMin: 30, qCount: 15, scoreMax: 30, desc: '対話/講義/Real-Life 各5問' },
+        { key: 'r_grammar',     name: '文法整序 (大問4A)',     icon: '🔀', timeMin: 10, qCount: 5, scoreMax: 10, desc: '誤文訂正・並べ替え' },
+        { key: 'r_translation', name: '和訳 (大問4B)',         icon: '🇯🇵', timeMin: 15, qCount: 3, scoreMax: 15, desc: '構造把握型の長文部分和訳' },
+      ],
+      kyodai: [
+        { key: 'r_long',        name: '長文読解 (大問1)',  icon: '📖', timeMin: 30, qCount: 5, scoreMax: 30, desc: '抽象的論理的英文 + 要旨把握' },
+        { key: 'r_translation', name: '和訳 (大問1・2)',   icon: '🇯🇵', timeMin: 30, qCount: 4, scoreMax: 40, desc: '京大型は長文中の和訳が中心 (1段落丸ごと等)' },
+        { key: 'w_essay',       name: '英作文 (大問4)',    icon: '✍️', timeMin: 30, qCount: 1, scoreMax: 30, desc: '日本語の文章を英訳 (新傾向)' },
+      ],
+      waseda: [
+        { key: 'r_long',     name: '長文読解 (政経/法/商等)', icon: '📖', timeMin: 30, qCount: 8, scoreMax: 40, desc: '学部別の出題テーマ' },
+        { key: 'r_grammar',  name: '文法・語彙',              icon: '🔀', timeMin: 15, qCount: 10, scoreMax: 20, desc: '4択穴埋め・整序' },
+        { key: 'w_essay',    name: '自由英作文 (国際教養等)', icon: '✍️', timeMin: 20, qCount: 1, scoreMax: 20, desc: '100-150語の意見論述' },
+      ],
+      keio: [
+        { key: 'r_long',  name: '長文読解 (経済/商/文)',  icon: '📖', timeMin: 30, qCount: 8, scoreMax: 40, desc: 'やや長めの本格的英文' },
+        { key: 'w_essay', name: '英作文 (経済学部)',       icon: '✍️', timeMin: 30, qCount: 1, scoreMax: 25, desc: '120-150語のエッセイ・テーマ重視' },
+      ],
+      sophia: [
+        { key: 'r_long',  name: '長文読解',         icon: '📖', timeMin: 30, qCount: 8, scoreMax: 40, desc: 'TEAP活用も含めた英語重視' },
+        { key: 'r_grammar', name: '文法・整序',     icon: '🔀', timeMin: 15, qCount: 10, scoreMax: 20, desc: '4択・整序' },
+      ],
+      icu: [
+        { key: 'r_long',     name: 'ATLAS 長文 (リベラルアーツ)', icon: '📖', timeMin: 30, qCount: 10, scoreMax: 40, desc: 'ICU独自・抽象度高' },
+        { key: 'l_listening', name: 'リスニング (講義型)',         icon: '🎧', timeMin: 30, qCount: 10, scoreMax: 30, desc: '長めの講義+設問' },
+      ],
+      kyotsu: [
+        { key: 'r_short',     name: 'Reading 大問1-3 (短文中心)',   icon: '📝', timeMin: 25, qCount: 15, scoreMax: 30, desc: '広告/Eメール/SNS/レビュー 等の実用英語' },
+        { key: 'r_long',      name: 'Reading 大問4-6 (長文)',        icon: '📖', timeMin: 55, qCount: 20, scoreMax: 70, desc: '記事/学術/物語 等の長文' },
+        { key: 'l_part1_2',   name: 'Listening 大問1-2 (短い対話)',  icon: '💬', timeMin: 15, qCount: 10, scoreMax: 25, desc: '日常会話の聞き取り' },
+        { key: 'l_part3_4',   name: 'Listening 大問3-4 (長い対話)',  icon: '🎙', timeMin: 25, qCount: 12, scoreMax: 35, desc: '討論/講義' },
+        { key: 'l_part5_6',   name: 'Listening 大問5-6 (講義+討論)', icon: '🎓', timeMin: 20, qCount: 8, scoreMax: 40, desc: 'グラフ含む情報統合型' },
+      ],
+      center: [
+        { key: 'r_grammar',   name: '発音・アクセント・文法 (大問1-3)', icon: '📝', timeMin: 25, qCount: 20, scoreMax: 50, desc: '2020年廃止のセンター型・基礎重視' },
+        { key: 'r_long',      name: '長文読解 (大問4-6)',               icon: '📖', timeMin: 50, qCount: 20, scoreMax: 100, desc: 'グラフ/評論/物語の3題' },
+        { key: 'l_listening', name: 'リスニング',                       icon: '🎧', timeMin: 30, qCount: 25, scoreMax: 50, desc: '日常会話/講義 (大問1-4)' },
+      ],
+      // 他大学のデフォルト (汎用 4 part)
+      _default: [
+        { key: 'r_long',        name: '長文読解',     icon: '📖', timeMin: 30, qCount: 8, scoreMax: 40, desc: '大学別の出題傾向に応じた長文' },
+        { key: 'r_grammar',     name: '文法・語法',   icon: '🔀', timeMin: 15, qCount: 10, scoreMax: 20, desc: '4択穴埋め・整序' },
+        { key: 'r_translation', name: '和訳',         icon: '🇯🇵', timeMin: 15, qCount: 3, scoreMax: 15, desc: '英文の部分和訳' },
+        { key: 'w_essay',       name: '英作文',       icon: '✍️', timeMin: 20, qCount: 1, scoreMax: 15, desc: '自由英作文 or 和文英訳' },
+      ],
+    },
+    topics: ['Climate change', 'AI ethics', 'Education reform', 'Globalization', 'Aging society', 'Mental health', 'Gender equality', 'Technology impact', 'Cultural identity'],
+  },
+
   eiken: {
     id: 'eiken',
     name: '英検',
@@ -201,6 +295,12 @@ const EXAMS = {
 // 英検: 級から sections を取得 (sectionsByGrade を sections として返す)
 function getEikenSections(gradeKey) {
   return EXAMS.eiken.sectionsByGrade[gradeKey] || EXAMS.eiken.sectionsByGrade.gp1;
+}
+
+// 大学入試: 大学から sections を取得 (大学別の出題形式 / 未定義は _default 汎用4 part)
+function getDaigakuSections(univKey) {
+  const map = EXAMS.daigaku.sectionsByGrade;
+  return map[univKey] || map._default;
 }
 
 // ==========================================================================
@@ -362,29 +462,69 @@ function bindExamCards() {
   });
 }
 
-function showGradePicker() {
+function showGradePicker(examId = 'eiken') {
   document.getElementById('examPickSection').style.display = 'none';
   document.getElementById('examDetailSection').style.display = 'none';
   document.getElementById('gradePickSection').style.display = '';
+  const exam = EXAMS[examId];
+  // 見出しを試験別に切替
+  const head = document.querySelector('#gradePickSection .ee-section-head');
+  if (head) {
+    const eyebrow = head.querySelector('.ee-eyebrow');
+    const h2 = head.querySelector('h2');
+    const desc = head.querySelector('.ee-section-desc');
+    if (examId === 'daigaku') {
+      if (eyebrow) eyebrow.textContent = 'STEP 2 / 大学入試';
+      if (h2) h2.textContent = '🎓 受験する大学を選んでください';
+      if (desc) desc.textContent = '大学ごとの出題傾向 (長文/和訳/英作/要約) と過去問形式に完全準拠。共通テスト・センター試験 (2005年〜) も網羅。';
+    } else {
+      if (eyebrow) eyebrow.textContent = 'STEP 2 / 英検';
+      if (h2) h2.textContent = '🇯🇵 受験する級を選んでください';
+      if (desc) desc.textContent = '級ごとに part 構成・配点・難易度が異なります。各 part 個別対策が可能です。';
+    }
+  }
   const grid = document.getElementById('gradeGrid');
   grid.innerHTML = '';
-  EXAMS.eiken.grades.forEach(g => {
-    const hasSecondary = g.key === 'g1' || g.key === 'gp1' || g.key === 'g2' || g.key === 'gp2' || g.key === 'g3';
+  const items = exam.grades || EXAMS.eiken.grades;
+  items.forEach(g => {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'grade-card';
     btn.dataset.grade = g.key;
-    btn.innerHTML = `
-      ${hasSecondary ? '<span class="grade-card-secondary">+二次面接</span>' : '<span class="grade-card-secondary" style="background:rgba(148,163,184,0.18);color:#94a3b8;">一次のみ</span>'}
-      <div class="grade-card-name">英検 ${escapeHtml(g.name)}</div>
-      <div class="grade-card-cefr">CEFR ${escapeHtml(g.cefr)} 相当</div>
-      <div class="grade-card-target">${escapeHtml(g.target)}</div>
-    `;
-    btn.addEventListener('click', () => {
-      state.eikenGrade = g.key;
-      state.eikenGradeName = g.name;
-      pickExamSections('eiken');
-    });
+    if (examId === 'daigaku') {
+      // 大学カテゴリ別バッジ (国公立/私立/医学部/共通テスト)
+      const k = g.key;
+      let badge = '私立';
+      let badgeColor = '#6366f1';
+      if (['todai','kyodai','osaka','tokoda','hitotsu','nagoya'].includes(k)) { badge = '国公立'; badgeColor = '#0ea5e9'; }
+      else if (['igakubu_kokoritsu','igakubu_shiritsu'].includes(k)) { badge = '医学部'; badgeColor = '#dc2626'; }
+      else if (k === 'kyotsu') { badge = '共通テスト'; badgeColor = '#10b981'; }
+      else if (k === 'center') { badge = 'センター試験'; badgeColor = '#94a3b8'; }
+      btn.innerHTML = `
+        <span class="grade-card-secondary" style="background:${badgeColor}1a;color:${badgeColor};">${badge}</span>
+        <div class="grade-card-name">${escapeHtml(g.name)}</div>
+        <div class="grade-card-cefr">CEFR ${escapeHtml(g.cefr)} 相当</div>
+        <div class="grade-card-target">${escapeHtml(g.target)}</div>
+      `;
+      btn.addEventListener('click', () => {
+        state.eikenGrade = g.key;       // 互換: section 取得時の汎用「級キー」として共有
+        state.eikenGradeName = g.name;
+        pickExamSections('daigaku');
+      });
+    } else {
+      const hasSecondary = g.key === 'g1' || g.key === 'gp1' || g.key === 'g2' || g.key === 'gp2' || g.key === 'g3';
+      btn.innerHTML = `
+        ${hasSecondary ? '<span class="grade-card-secondary">+二次面接</span>' : '<span class="grade-card-secondary" style="background:rgba(148,163,184,0.18);color:#94a3b8;">一次のみ</span>'}
+        <div class="grade-card-name">英検 ${escapeHtml(g.name)}</div>
+        <div class="grade-card-cefr">CEFR ${escapeHtml(g.cefr)} 相当</div>
+        <div class="grade-card-target">${escapeHtml(g.target)}</div>
+      `;
+      btn.addEventListener('click', () => {
+        state.eikenGrade = g.key;
+        state.eikenGradeName = g.name;
+        pickExamSections('eiken');
+      });
+    }
     grid.appendChild(btn);
   });
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -396,9 +536,9 @@ function pickExam(examId) {
   state.examId = examId;
   state.sectionKey = null;
   state.eikenGrade = null;
-  // 英検は級選択を先に挟む
-  if (examId === 'eiken') {
-    showGradePicker();
+  // 英検 / 大学入試 は級・大学選択を先に挟む (requiresGrade=true)
+  if (exam.requiresGrade) {
+    showGradePicker(examId);
     return;
   }
   pickExamSections(examId);
@@ -411,12 +551,14 @@ function pickExamSections(examId) {
   document.getElementById('examPickSection').style.display = 'none';
   document.getElementById('gradePickSection').style.display = 'none';
   document.getElementById('examDetailSection').style.display = '';
-  const gradeLabel = (examId === 'eiken' && state.eikenGradeName) ? ` ${state.eikenGradeName}` : '';
+  const gradeLabel = ((examId === 'eiken' || examId === 'daigaku') && state.eikenGradeName) ? ` ${state.eikenGradeName}` : '';
   document.getElementById('examDetailTitle').textContent = `${exam.flag} ${exam.name}${gradeLabel} 対策`;
 
   // 説明文
   let desc = '';
-  if (exam.scoreMax) {
+  if (examId === 'daigaku') {
+    desc = `${state.eikenGradeName || '大学入試'} の出題傾向に完全準拠 (2005年〜2026年・21年分の過去問パターンを学習済み)・大問別個別対策`;
+  } else if (exam.scoreMax) {
     desc = `スコア範囲: ${exam.scoreMin}〜${exam.scoreMax}${exam.scoreUnit}・出題形式は公式準拠`;
   } else if (exam.grades) {
     desc = `7段階の級別 (5級〜1級) を完全カバー・出題形式は公式準拠`;
@@ -425,15 +567,19 @@ function pickExamSections(examId) {
 
   // 目標スコアのプレースホルダ
   const ts = document.getElementById('targetScore');
-  ts.placeholder = exam.id === 'toefl' ? '例: 100' : exam.id === 'toeic' ? '例: 800' : exam.id === 'ielts' ? '例: 7.0' : '例: 準1級';
+  ts.placeholder = exam.id === 'toefl' ? '例: 100' : exam.id === 'toeic' ? '例: 800' : exam.id === 'ielts' ? '例: 7.0' : exam.id === 'daigaku' ? '例: 80' : '例: 準1級';
   document.getElementById('targetScoreHint').textContent = exam.id === 'eiken'
     ? '受験する級を入力 (例: 準1級)'
-    : `${exam.scoreMin}〜${exam.scoreMax}${exam.scoreUnit}`;
+    : exam.id === 'daigaku'
+      ? '目標得点率/換算点 (大学・年度により配点異なる)'
+      : `${exam.scoreMin}〜${exam.scoreMax}${exam.scoreUnit}`;
 
-  // セクションカード生成 (英検は級別 sectionsByGrade を使う)
+  // セクションカード生成 (英検は級別、大学入試は大学別の sectionsByGrade を使う)
   const sections = (examId === 'eiken' && state.eikenGrade)
     ? getEikenSections(state.eikenGrade)
-    : exam.sections;
+    : (examId === 'daigaku' && state.eikenGrade)
+      ? getDaigakuSections(state.eikenGrade)
+      : exam.sections;
   state.currentSections = sections;
   const grid = document.getElementById('sectionGrid');
   grid.innerHTML = '';
@@ -545,14 +691,15 @@ async function prefetchAutoGenerated(examId, sectionKey, eikenGrade) {
       ? 'http://localhost:8000' : window.location.origin;
     const params = new URLSearchParams({ exam: examId, part: sectionKey, limit: 20 });
     if (eikenGrade) params.set('eiken_grade', eikenGrade);
+    if (examId === 'daigaku' && eikenGrade) params.set('univ', eikenGrade);
     const res = await fetch(`${backend}/api/exam-questions/bank?` + params);
     if (!res.ok) return;
     const data = await res.json();
     if (!data.selected) return;
     window.AUTO_GENERATED_BANKS = window.AUTO_GENERATED_BANKS || {};
     window.AUTO_GENERATED_BANKS[examId] = window.AUTO_GENERATED_BANKS[examId] || {};
-    // 英検は compoundKey で保存
-    const storeKey = (examId === 'eiken' && eikenGrade) ? `${eikenGrade}_${sectionKey}` : sectionKey;
+    // 英検 / 大学入試 は compoundKey で保存
+    const storeKey = ((examId === 'eiken' || examId === 'daigaku') && eikenGrade) ? `${eikenGrade}_${sectionKey}` : sectionKey;
     window.AUTO_GENERATED_BANKS[examId][storeKey] = data.selected;
     console.log(`[exam] Loaded ${data.count} AI-generated questions for ${examId}/${storeKey}`);
   } catch (e) {
@@ -572,17 +719,32 @@ async function generateAndShowQuestions(exam, section, full = false) {
   const isSpeaking = /^s_/.test(section.key) || section.key === 'speaking';
   const isWriting = /^w_/.test(section.key) || section.key === 'writing';
 
-  // 英検級ラベル
-  const eikenGradeLabel = (state.examId === 'eiken' && state.eikenGradeName)
-    ? `（${state.eikenGradeName}・CEFR ${(EXAMS.eiken.grades.find(g => g.key === state.eikenGrade) || {}).cefr || ''} 相当）`
-    : '';
+  // 英検級 / 大学入試 ラベル
+  let eikenGradeLabel = '';
+  if (state.examId === 'eiken' && state.eikenGradeName) {
+    eikenGradeLabel = `（${state.eikenGradeName}・CEFR ${(EXAMS.eiken.grades.find(g => g.key === state.eikenGrade) || {}).cefr || ''} 相当）`;
+  } else if (state.examId === 'daigaku' && state.eikenGradeName) {
+    eikenGradeLabel = `（${state.eikenGradeName}・CEFR ${(EXAMS.daigaku.grades.find(g => g.key === state.eikenGrade) || {}).cefr || ''} 相当）`;
+  }
+
+  // 大学入試: ランダムに 2005-2026 の年度を選んで「○○大学 ○年度入試の類題」スタイルで生成
+  const daigakuYear = (state.examId === 'daigaku') ? (2005 + Math.floor(Math.random() * 22)) : null;
 
   // 試験別の出題ニュアンス
+  const daigakuUniv = state.examId === 'daigaku' ? (state.eikenGradeName || '大学入試') : '';
+  const daigakuTargets = state.examId === 'daigaku' ? ((EXAMS.daigaku.grades.find(g => g.key === state.eikenGrade) || {}).target || '') : '';
   const examFlavor = {
     toefl: '英語圏大学院・学部留学。Reading/Listening は学術 (lecture, journal article 風)。Speaking/Writing は明確なテンプレ運用が高得点の鍵。',
     toeic: 'ビジネス英語。実務シーン (会議/メール/出張/契約) のみ。難解な学術語彙NG。Part固有の典型パターンを必ず再現。',
     ielts: '英国系学術。Reading は T/F/NG・見出し選択など IELTS 独自形式。Writing Task 1 はデータ描写、Task 2 はエッセイで構造重視。Speaking Part 2 は1分準備→2分独白の独特形式。',
     eiken: `日本英検 ${state.eikenGradeName || ''}${eikenGradeLabel ? '' : ''}。級ごとに語彙難易度が大きく異なる。新形式 (2024〜): 準1級以下は要約/Eメール返信が追加。二次は面接形式 (1-3級)。日本人受験者の弱点 (冠詞/前置詞/イディオム) を踏まえて出題。`,
+    daigaku: `日本の大学入試英語 (${daigakuUniv}・${daigakuYear || 2024}年度入試レベル相当)。出題傾向: ${daigakuTargets}。
+重要原則:
+- 過去問の丸写しは著作権上 NG。「${daigakuUniv} ${daigakuYear || 2024}年度の出題形式に完全準拠した類題」を作成すること (テーマ・難度・形式は本物の過去問と同等)。
+- 2005年〜現在 (21年分) の出題傾向を踏まえる: 時事性 (AI/環境/格差/感染症/ジェンダー)・古典的論題 (記憶/言語/科学哲学/教育)・物語/エッセイ系を年度に応じて織り交ぜる。
+- 日本人受験生の典型的弱点 (冠詞・関係詞節・分詞構文・無生物主語の和訳) を必ず踏まえた解説。
+- 共通テストは 2021年〜 (実用英語重視・複数情報源統合)、センター試験は 1990-2020 (発音/アクセント/文法問題が大問1-3に出題)。
+- 東大型は構造把握型和訳/要約 60-80字、京大型は段落丸ごとの和訳、早慶型は学部別テーマ、医学部型は医学/生命科学系英文。`,
   }[exam.id] || '';
 
   const system = `あなたは ${exam.name} 対策の専門コーチで、過去20年の出題傾向と公式採点基準を完全に把握しています。
@@ -968,10 +1130,14 @@ function getPartBank(examId, sectionKey) {
   const autoBank = auto[examId] && auto[examId][sectionKey];
   // 2) 静的サンプル
   const staticBank = SAMPLE_BANKS[examId] && SAMPLE_BANKS[examId][sectionKey];
-  // 英検は g{N}_{key} 形式で sectionsByGrade を区別 (例: gp1_r_q1)
-  if (!autoBank && !staticBank && examId === 'eiken' && state && state.eikenGrade) {
+  // 英検は g{N}_{key}、大学入試は {univ}_{key} の compound key で sectionsByGrade を区別
+  if (!autoBank && !staticBank && (examId === 'eiken' || examId === 'daigaku') && state && state.eikenGrade) {
     const compoundKey = state.eikenGrade + '_' + sectionKey;
-    return SAMPLE_BANKS.eiken && SAMPLE_BANKS.eiken[compoundKey];
+    // AUTO_GENERATED_BANKS にも compound key で問い合わせ
+    const autoCompound = auto[examId] && auto[examId][compoundKey];
+    const staticCompound = SAMPLE_BANKS[examId] && SAMPLE_BANKS[examId][compoundKey];
+    if (autoCompound && staticCompound) return Math.random() < 0.6 ? autoCompound : staticCompound;
+    return autoCompound || staticCompound;
   }
   // ランダム選択 (AI生成があれば優先・無ければ静的)
   if (autoBank && staticBank) {

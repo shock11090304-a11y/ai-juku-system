@@ -7,6 +7,7 @@
   --ee-toeic: #ea580c;
   --ee-ielts: #7c3aed;
   --ee-eiken: #dc2626;
+  --ee-daigaku: #0ea5e9;
   --ee-bg: #0a0e1a;
   --ee-panel: rgba(255,255,255,0.03);
   --ee-panel-border: rgba(255,255,255,0.08);
@@ -142,6 +143,7 @@ body {
 .exam-toeic::before { background: var(--ee-toeic); }
 .exam-ielts::before { background: var(--ee-ielts); }
 .exam-eiken::before { background: var(--ee-eiken); }
+.exam-daigaku::before { background: var(--ee-daigaku); }
 .exam-card:hover {
   transform: translateY(-3px);
   border-color: rgba(255,255,255,0.2);
@@ -151,6 +153,7 @@ body {
 .exam-toeic:hover { border-color: var(--ee-toeic); box-shadow: 0 12px 32px rgba(234,88,12,0.4); }
 .exam-ielts:hover { border-color: var(--ee-ielts); box-shadow: 0 12px 32px rgba(124,58,237,0.4); }
 .exam-eiken:hover { border-color: var(--ee-eiken); box-shadow: 0 12px 32px rgba(220,38,38,0.4); }
+.exam-daigaku:hover { border-color: var(--ee-daigaku); box-shadow: 0 12px 32px rgba(14,165,233,0.4); }
 .exam-card-flag { font-size: 2.5rem; margin-bottom: 0.6rem; }
 .exam-card-name { font-size: 1.3rem; font-weight: 900; margin-bottom: 0.4rem; }
 .exam-card-tagline { font-size: 0.9rem; color: var(--ee-text-dim); margin-bottom: 1rem; line-height: 1.5; }

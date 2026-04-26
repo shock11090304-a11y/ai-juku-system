@@ -193,6 +193,97 @@ window.SAMPLE_BANKS = {
   },
 };
 
+// ============================================================================
+// 🇯🇵 大学入試対策 SAMPLE_BANKS (国公立 + 私立 + 医学部 + 共通テスト)
+// ============================================================================
+// 大学入試の過去問は著作権が大学・出題者に帰属するため、
+// 本サービスでは「○○大学型」AI生成類題を中心に提供する。
+// 過去問そのものを引用する場合は出典 (大学名+年度+問題番号) を必ず明記。
+window.SAMPLE_BANKS.daigaku = {
+  // ========== 東京大学 ==========
+  todai_r_long: {
+    passage: `Memory is often described as a kind of recording device, faithfully preserving experiences for later retrieval. This metaphor, however, is fundamentally misleading. Modern neuroscience reveals that memory is reconstructive rather than reproductive: every act of remembering reshapes the very memory being recalled. When we retrieve a memory, the brain does not play back a stored file; it actively reassembles fragments of sensory, emotional, and contextual information. During this reconstruction, current beliefs, moods, and subsequent experiences seep into the memory, subtly altering it. This explains why eyewitness testimony, once considered the gold standard of evidence, is now known to be remarkably unreliable. Two witnesses to the same event may produce contradictory accounts not because either is lying, but because their reconstructions diverge based on what each individual brings to the act of remembering.\n\nThis discovery has profound implications. If memory is malleable, then identity itself—built upon our remembered experiences—becomes more fluid than we imagine. Yet this fluidity is not a defect but a feature: it allows us to integrate new knowledge with old, to revise our understanding of past events in light of present wisdom, and to maintain a coherent narrative of self despite the constant flux of experience.`,
+    questions: [
+      { stem: '本文の内容に最も近いものを選べ。', choices: ['記憶は録音装置のように忠実に保存される', '記憶は思い出すたびに再構築され変化する', '目撃証言は最も信頼できる証拠である', '記憶の流動性は人格の欠陥である'], answer: '1', explanation: '本文「memory is reconstructive rather than reproductive」「every act of remembering reshapes the very memory」が直接の根拠。東大型は「本文の主旨」を問う設問が頻出。' },
+      { stem: 'なぜ目撃証言は信頼性が低いと現在では考えられているのか?', choices: ['証人が嘘をつくから', '記憶の再構築が個人ごとに異なる方向へ進むから', '事件直後の混乱で記憶が消えるから', '法廷で緊張して言葉が出ないから'], answer: '1', explanation: '本文「their reconstructions diverge based on what each individual brings to the act of remembering」が根拠。' },
+      { stem: '下線部「This fluidity is not a defect but a feature」の意味として最も適切なものは?', choices: ['記憶の流動性は人格の弱点である', '記憶の流動性は本来あるべき機能である', '記憶の流動性は治療すべき症状である', '記憶の流動性は教育で克服すべきものである'], answer: '1', explanation: 'not A but B = AではなくB。defect (欠陥) ではなく feature (機能・特徴)。東大型「下線部解釈」の典型。' },
+    ],
+  },
+  todai_r_summary: {
+    passage: `[要約問題用] Climate change is altering the timing of natural events worldwide. Scientists call this phenomenon "phenological mismatch": when species that depend on each other—predator and prey, pollinator and flower—respond differently to warming temperatures, their life cycles fall out of sync. For instance, in some forests, caterpillars now emerge two weeks before the migratory birds that have historically fed their chicks on these caterpillars arrive. The chicks face starvation, while the unconsumed caterpillars defoliate trees. Such mismatches are accumulating across ecosystems, threatening the intricate webs of dependency built over millennia.`,
+    questions: [
+      { stem: '本文を50字程度で要約しなさい (東大型 大問1B)', choices: ['気候変動による生物間の同期ずれ「フェノロジー・ミスマッチ」が、捕食者と被食者の相互依存を崩し生態系に脅威をもたらしている。', '気候変動は鳥に良い影響を与え、毛虫を減らす。', 'キャタピラーが森を枯らしている。', '生態系は何千年もかけて形成された。'], answer: '0', explanation: '東大型 大問1B は「与えられた英文を所定字数で日本語要約」。本文の主旨「phenological mismatch が生態系の依存関係を脅かす」を簡潔に。' },
+    ],
+  },
+  todai_w_essay: {
+    prompt: `次の意見について、あなたの考えを60-80語の英語で述べよ。 (東大型 大問2A 自由英作)\n\n"Some people believe that traveling abroad is the most effective way to broaden one's perspective. Do you agree?"`,
+    sample: `I partially agree. While traveling abroad does expose us to different cultures, languages, and ways of thinking, it is not the only way to broaden one's perspective. Reading diverse books, engaging in conversations with people from different backgrounds, and exploring new disciplines can be equally transformative. Furthermore, travel itself does not guarantee growth; it depends on one's openness and willingness to engage deeply with unfamiliar experiences. (78 words)\n\n【採点ポイント】60-80語の語数厳守 / 立場明示 (partially agree) / 理由2-3点 / 具体例 / 結論。東大型は「単純Yes/Noではない nuanced な意見」が高得点。`,
+  },
+  todai_r_translation: {
+    prompt: `次の下線部を日本語に訳しなさい。(東大型 大問4B 和訳)\n\nThe widespread adoption of artificial intelligence in education has reignited a debate that has accompanied every technological revolution: <underline>whether the new tool will liberate human potential or merely automate the practices it was meant to enhance, ultimately diminishing the very capacities it promised to develop.</underline>`,
+    sample: `【模範訳】その新しい道具が人間の可能性を解放するのか、それとも本来高めるべきはずだった営みを単に自動化してしまい、結果として、本来育てるはずだった能力そのものを衰えさせてしまうのか、という問題である。\n\n【採点ポイント】whether A or B 構造の正確な把握 / 関係詞節 (it was meant to enhance / it promised to develop) の処理 / ultimately diminishing... の分詞構文の意味取り。東大型和訳は文構造の正確な再現が最優先。`,
+  },
+
+  // ========== 京都大学 ==========
+  kyodai_r_long: {
+    passage: `Philosophy of mind has long grappled with the question of consciousness: how does subjective experience—the feeling of seeing red, tasting coffee, or feeling pain—arise from objective physical processes in the brain? David Chalmers famously distinguished the "easy problems" of consciousness (explaining cognitive functions like attention, memory, and behavior) from the "hard problem" (explaining why these functions are accompanied by subjective experience at all). The easy problems, while technically demanding, are at least tractable through standard scientific methods. The hard problem, however, seems to resist all such approaches. We can describe in exquisite detail the neural activity correlated with seeing red, but no amount of such description seems to explain why there should be any subjective experience accompanying that activity, rather than mere unconscious information processing.`,
+    questions: [
+      { stem: '"the hard problem" とは何か。本文に即して説明せよ。', choices: ['認知機能を解明する技術的困難', '主観的経験がなぜ物理プロセスから生じるのかという問題', '脳の神経活動を観察する難しさ', '哲学者間の意見対立'], answer: '1', explanation: '本文「explaining why these functions are accompanied by subjective experience at all」が定義。京大型は本文を踏まえた説明問題が頻出。' },
+      { stem: '京大型 和訳問題: "no amount of such description seems to explain why there should be any subjective experience accompanying that activity"', choices: ['そのような記述をいくら積み重ねても、なぜその活動に主観的経験が伴うのかを説明することはできないように思われる。', 'このような記述は経験を説明する。', '主観的経験は脳活動と無関係である。', '科学は主観性を証明済みである。'], answer: '0', explanation: '京大型は構造把握型和訳。no amount of X seems to Y = いかに X を重ねても Y することはできないように思われる。' },
+    ],
+  },
+
+  // ========== 早稲田大学 ==========
+  waseda_r_long: {
+    passage: `The proliferation of digital communication has fundamentally altered how humans form and maintain relationships. While previous generations relied on letters, telephone calls, and face-to-face meetings, today's interactions occur predominantly through screens. This shift has produced both democratizing effects—enabling connections across vast distances and social barriers—and unforeseen consequences for the texture of human bonds. Researchers studying online friendships have found that while digital networks can sustain relationships across time and space, they often lack the depth that emerges from shared physical presence. The absence of nonverbal cues—facial expressions, tone of voice, body language—removes layers of meaning that face-to-face conversation conveys effortlessly. Moreover, the curated nature of online self-presentation can create an illusion of intimacy while actually obscuring the messy, contradictory reality of human personality.`,
+    questions: [
+      { stem: 'According to the passage, what is one downside of digital communication?', choices: ['It only works for short distances', 'It lacks nonverbal cues that convey meaning', 'It is too expensive for most people', 'It requires special training'], answer: '1', explanation: '本文「The absence of nonverbal cues...removes layers of meaning」が根拠。' },
+      { stem: 'What does "the curated nature of online self-presentation" suggest?', choices: ['Online identities are always genuine', 'People carefully select what they share online', 'Curators design social media platforms', 'Self-presentation is forbidden online'], answer: '1', explanation: 'curated = 厳選された/編集された。早大型 (政経・社学・国際) では語彙の文脈推定問題が頻出。' },
+      { stem: 'The author\'s overall stance toward digital communication is best described as:', choices: ['Strongly opposed', 'Uncritically enthusiastic', 'Balanced, recognizing both benefits and drawbacks', 'Indifferent'], answer: '2', explanation: '本文「democratizing effects」(肯定面) と「lack the depth」「illusion of intimacy」(否定面) の両論併記が根拠。早大型「筆者の立場」問題。' },
+    ],
+  },
+
+  // ========== 慶應義塾大学 ==========
+  keio_r_long: {
+    passage: `In the field of behavioral economics, scholars have repeatedly demonstrated that humans are not the rational utility-maximizers assumed by classical economic theory. Daniel Kahneman and Amos Tversky's groundbreaking work on cognitive biases revealed systematic patterns in how people deviate from rational decision-making. The "anchoring effect," for instance, shows that initial information disproportionately influences subsequent judgments, even when that information is arbitrary or irrelevant. The "loss aversion" phenomenon demonstrates that the pain of losing something is psychologically about twice as powerful as the pleasure of gaining the equivalent. These findings have transformed not only economics but also public policy, marketing, and even medical decision-making. Governments now design "nudges"—subtle policy interventions that guide citizens toward beneficial choices without restricting freedom—based on behavioral insights. For instance, making organ donation an opt-out rather than opt-in choice has dramatically increased donation rates in countries that have adopted this policy.`,
+    questions: [
+      { stem: 'What does "loss aversion" refer to according to the passage?', choices: ['People prefer to avoid all losses', 'The psychological pain of loss exceeds the pleasure of equivalent gain', 'Losses are mathematically larger than gains', 'Investors should never sell at a loss'], answer: '1', explanation: '本文「the pain of losing... is psychologically about twice as powerful as the pleasure of gaining the equivalent」が根拠。慶應 (経済・商) 頻出テーマ。' },
+      { stem: 'How have governments applied behavioral economics insights?', choices: ['By restricting individual freedom', 'By designing "nudges" that guide choices without coercion', 'By eliminating organ donation programs', 'By ignoring psychological factors'], answer: '1', explanation: '本文「nudges—subtle policy interventions that guide citizens toward beneficial choices without restricting freedom」が根拠。' },
+      { stem: 'The opt-out organ donation policy is mentioned as an example of:', choices: ['A failed government intervention', 'Successful application of behavioral insights', 'Restriction of personal freedom', 'A controversial medical practice'], answer: '1', explanation: 'For instance 直前の文「Governments now design nudges」の具体例として提示されている。' },
+    ],
+  },
+
+  // ========== 共通テスト ==========
+  kyotsu_r_long: {
+    passage: `(共通テスト Reading 大問6型) Sustainable fashion has emerged as a major movement in the textile industry. Traditional fashion production consumes vast amounts of water—producing a single cotton T-shirt requires approximately 2,700 liters, equivalent to one person's drinking water for 2.5 years. Additionally, the industry generates roughly 10% of global carbon emissions, more than international flights and maritime shipping combined. In response, many brands now offer "eco-conscious" collections using recycled materials, organic cotton, and innovative fabrics made from agricultural waste. However, critics argue that "fast fashion" companies engaging in such initiatives often produce these collections in small quantities while continuing to manufacture much larger amounts of conventional, environmentally harmful clothing—a practice known as "greenwashing." True sustainability, experts contend, requires fundamental changes to production volumes, supply chain transparency, and consumer behavior, including embracing concepts like clothing repair, secondhand shopping, and longer garment lifespans.`,
+    questions: [
+      { stem: 'According to the passage, how much water is used to produce one cotton T-shirt?', choices: ['About 270 liters', 'About 2,700 liters', 'About 27,000 liters', 'About 270,000 liters'], answer: '1', explanation: '本文「approximately 2,700 liters」が直接の根拠。共通テスト Reading は数字の正確な聞き取り (Listening) と読み取り (Reading) が必須。' },
+      { stem: 'What is "greenwashing"?', choices: ['Cleaning clothes with eco-friendly detergent', 'Marketing oneself as eco-friendly while continuing harmful practices', 'A new dyeing technique', 'A government certification process'], answer: '1', explanation: '本文「producing these collections in small quantities while continuing to manufacture much larger amounts of conventional, environmentally harmful clothing」が greenwashing の説明。' },
+      { stem: 'According to experts, what does true sustainability require?', choices: ['Only using organic cotton', 'Fundamental changes including consumer behavior', 'Banning all conventional clothing', 'Government subsidies'], answer: '1', explanation: '本文「True sustainability...requires fundamental changes to production volumes, supply chain transparency, and consumer behavior」が根拠。' },
+    ],
+  },
+
+  // ========== 国公立医学部 ==========
+  igakubu_r_long: {
+    passage: `(医学部型) The development of CRISPR-Cas9 gene-editing technology has revolutionized biomedical research and opened unprecedented possibilities for treating genetic diseases. Originally identified as part of bacterial immune systems, CRISPR allows scientists to make precise modifications to DNA sequences in living cells with remarkable efficiency and accuracy. Clinical trials have already demonstrated promising results in treating previously incurable conditions: sickle cell disease, beta-thalassemia, and certain inherited forms of blindness. However, the same technology that promises medical breakthroughs also raises profound ethical questions, particularly regarding germline editing—modifications that would be inherited by future generations. The 2018 case of He Jiankui, a Chinese scientist who created the first gene-edited babies, sparked international condemnation and intensified debates about the boundaries of permissible genetic intervention. Most scientific bodies now advocate for strict regulation of germline modifications, though some researchers argue that complete prohibition would impede medical progress for serious genetic disorders.`,
+    questions: [
+      { stem: 'What is the medical significance of CRISPR-Cas9 technology?', choices: ['It cures all diseases automatically', 'It allows precise modification of DNA to treat genetic diseases', 'It replaces traditional surgery', 'It is only used for research, not treatment'], answer: '1', explanation: '本文「CRISPR allows scientists to make precise modifications to DNA sequences...treating previously incurable conditions」が根拠。医学部入試では先端医療技術の文章が頻出。' },
+      { stem: 'Why is germline editing particularly controversial?', choices: ['It is too expensive', 'Modifications would be inherited by future generations', 'It does not work effectively', 'Only one country can perform it'], answer: '1', explanation: '本文「germline editing—modifications that would be inherited by future generations」が controversial の理由。世代を超えた影響が倫理問題。' },
+      { stem: 'What do most scientific bodies currently recommend regarding germline modifications?', choices: ['Complete unrestricted use', 'Strict regulation', 'Total prohibition with no exceptions', 'No formal position'], answer: '1', explanation: '本文「Most scientific bodies now advocate for strict regulation of germline modifications」が根拠。' },
+    ],
+  },
+
+  // ========== 私立医学部 ==========
+  igakubu_shiritsu_r_long: {
+    passage: `(私立医学部型) Antibiotic resistance has emerged as one of the most pressing global health crises of the 21st century. The widespread overuse and misuse of antibiotics—both in human medicine and in agriculture—has accelerated the evolution of resistant bacterial strains. The World Health Organization estimates that antimicrobial resistance directly causes 1.27 million deaths annually and contributes to nearly 5 million additional deaths worldwide. Common infections that were once easily treatable, such as urinary tract infections and pneumonia, are increasingly difficult to manage. The development of new antibiotics has stagnated for decades because pharmaceutical companies find such drugs commercially unattractive: courses of treatment are short, prices are typically low, and resistance can render investments worthless within years of introduction. Addressing this crisis requires coordinated action across multiple fronts: stricter prescribing practices, improved infection control in healthcare settings, reduced antibiotic use in livestock production, public education about appropriate use, and renewed investment incentives for pharmaceutical research. Without such interventions, experts warn that we may be entering a "post-antibiotic era" in which routine medical procedures, from minor surgery to childbirth, become dangerously risky.`,
+    questions: [
+      { stem: 'How many deaths does antimicrobial resistance directly cause annually according to WHO?', choices: ['127,000', '1.27 million', '5 million', '12.7 million'], answer: '1', explanation: '本文「directly causes 1.27 million deaths annually」が直接の根拠。' },
+      { stem: 'Why has new antibiotic development stagnated?', choices: ['Antibiotics are no longer needed', 'Government regulations are too strict', 'Pharmaceutical companies find them commercially unattractive', 'Scientific knowledge is insufficient'], answer: '2', explanation: '本文「pharmaceutical companies find such drugs commercially unattractive」が根拠。' },
+      { stem: 'What characterizes a "post-antibiotic era"?', choices: ['No antibiotics will be needed', 'Routine medical procedures become dangerous due to untreatable infections', 'Antibiotics will be free for everyone', 'New diseases will emerge'], answer: '1', explanation: '本文「routine medical procedures...become dangerously risky」が根拠。' },
+    ],
+  },
+};
+
 // AI 接続が安定後、バックエンドが生成した問題を window.AUTO_GENERATED_BANKS に格納可能
 // english-exam.js は SAMPLE_BANKS と AUTO_GENERATED_BANKS の両方から出題を試みる
 window.AUTO_GENERATED_BANKS = window.AUTO_GENERATED_BANKS || {};
