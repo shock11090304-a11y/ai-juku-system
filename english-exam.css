@@ -214,6 +214,55 @@ body {
   color: var(--ee-text-dim);
 }
 
+/* ========== 英検 級選択 ========== */
+.grade-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+.grade-card {
+  background: rgba(255,255,255,0.04);
+  border: 2px solid var(--ee-panel-border);
+  border-radius: 12px;
+  padding: 1.2rem 1rem;
+  cursor: pointer;
+  text-align: left;
+  color: var(--ee-text);
+  font-family: inherit;
+  transition: all 0.2s;
+  position: relative;
+}
+.grade-card:hover {
+  background: rgba(220,38,38,0.1);
+  border-color: var(--ee-eiken);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(220,38,38,0.3);
+}
+.grade-card-name {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--ee-eiken);
+  margin-bottom: 0.3rem;
+}
+.grade-card-cefr {
+  display: inline-block;
+  background: rgba(99,102,241,0.18);
+  color: var(--ee-primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  margin-bottom: 0.6rem;
+}
+.grade-card-target { font-size: 0.82rem; color: var(--ee-text-dim); line-height: 1.5; }
+.grade-card-secondary {
+  position: absolute; top: 0.6rem; right: 0.6rem;
+  font-size: 0.65rem; padding: 0.1rem 0.4rem;
+  background: rgba(167,139,250,0.18); color: #a78bfa;
+  border-radius: 3px; font-weight: 700;
+}
+
 /* ========== 試験詳細 ========== */
 .exam-meta-grid {
   display: grid;

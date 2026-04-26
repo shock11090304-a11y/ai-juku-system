@@ -1019,6 +1019,9 @@ def _collect_health_snapshot() -> dict:
             return row[0] if row else 0
         except Exception as e:
             log.warning(f"[Monitor] query failed: {e}")
+            # Postgres transaction abort 状態を解消
+            try: conn.rollback()
+            except Exception: pass
             return 0
 
     # 申込 (trial signup) 数
@@ -1044,9 +1047,9 @@ def _collect_health_snapshot() -> dict:
     else:
         snapshot["conversion_rate_pct"] = 0.0
 
-    # Webhook 処理: 直近 24時間に処理した event 数
+    # Webhook 処理: 直近 24時間に処理した event 数 (processed_events.processed_at)
     snapshot["webhooks_processed_24h"] = safe_count(
-        "SELECT COUNT(*) FROM processed_events WHERE created_at >= ?", (h24,)
+        "SELECT COUNT(*) FROM processed_events WHERE processed_at >= ?", (h24,)
     )
 
     # ファネル (events): page_view → cta_click → form_submit → checkout_initiated → checkout_completed

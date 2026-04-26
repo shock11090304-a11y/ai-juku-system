@@ -18,10 +18,21 @@ const EXAMS = {
     color: '#1e40af',
     scoreMin: 0, scoreMax: 120, scoreUnit: '点',
     sections: [
-      { key: 'reading',   name: 'Reading',   icon: '📖', timeMin: 36, qCount: 10, scoreMax: 30, desc: '学術的長文 1-2 passages、各10問' },
-      { key: 'listening', name: 'Listening', icon: '🎧', timeMin: 41, qCount: 14, scoreMax: 30, desc: '講義3-4 + 会話2-3、各5-6問' },
-      { key: 'speaking',  name: 'Speaking',  icon: '🎙', timeMin: 17, qCount: 4,  scoreMax: 30, desc: 'Independent 1問 + Integrated 3問 (口頭回答)' },
-      { key: 'writing',   name: 'Writing',   icon: '✍️', timeMin: 50, qCount: 2,  scoreMax: 30, desc: 'Integrated (300字程度) + Independent (300語以上)' },
+      // Reading
+      { key: 'r_passage1', name: 'Reading Passage 1', icon: '📖', timeMin: 18, qCount: 10, scoreMax: 15, desc: '学術文 (生物/歴史等) 700語×10問: 詳細・推論・要約' },
+      { key: 'r_passage2', name: 'Reading Passage 2', icon: '📖', timeMin: 18, qCount: 10, scoreMax: 15, desc: '学術文 別ジャンル 10問: 語彙・指示語・修辞目的' },
+      // Listening
+      { key: 'l_conv1',    name: 'Listening Conversation 1', icon: '💬', timeMin: 5, qCount: 5, scoreMax: 7,  desc: '学生×職員/教授の3-5分会話・5問' },
+      { key: 'l_lect1',    name: 'Listening Lecture 1',      icon: '🎓', timeMin: 8, qCount: 6, scoreMax: 8,  desc: '講義3-5分 (専門分野)・6問: 要旨/詳細/態度' },
+      { key: 'l_lect2',    name: 'Listening Lecture 2',      icon: '🎓', timeMin: 8, qCount: 6, scoreMax: 8,  desc: '講義3-5分 別ジャンル・6問: 構成把握/再聴問' },
+      // Speaking
+      { key: 's_task1',    name: 'Speaking Task 1 (Independent)', icon: '🎙', timeMin: 1, qCount: 1, scoreMax: 4, desc: '個人意見 15秒準備+45秒回答 (テンプレ運用が鍵)' },
+      { key: 's_task2',    name: 'Speaking Task 2 (Integrated R+L+S)', icon: '🎙', timeMin: 4, qCount: 1, scoreMax: 4, desc: '読解+講義要約 30秒準備+60秒回答 (大学キャンパス系)' },
+      { key: 's_task3',    name: 'Speaking Task 3 (Integrated R+L+S 学術)', icon: '🎙', timeMin: 4, qCount: 1, scoreMax: 4, desc: '読解+講義要約 30秒準備+60秒回答 (学術概念系)' },
+      { key: 's_task4',    name: 'Speaking Task 4 (Integrated L+S)', icon: '🎙', timeMin: 4, qCount: 1, scoreMax: 4, desc: '講義のみ要約 20秒準備+60秒回答' },
+      // Writing
+      { key: 'w_integrated', name: 'Writing Integrated (R+L+W)', icon: '✍️', timeMin: 20, qCount: 1, scoreMax: 5, desc: '読解+講義の対比 150-225語 20分' },
+      { key: 'w_academic_disc', name: 'Writing Academic Discussion', icon: '✍️', timeMin: 10, qCount: 1, scoreMax: 5, desc: '討論への参加 100語以上 10分 (新形式 2023〜)' },
     ],
     topics: ['Biology', 'Geology', 'History', 'Psychology', 'Astronomy', 'Linguistics', 'Art History', 'Environmental Science'],
   },
@@ -38,7 +49,8 @@ const EXAMS = {
       { key: 'l_part4', name: 'Listening Part 4', icon: '📢', timeMin: 15, qCount: 30, scoreMax: 150, desc: '説明文問題 (4択・3問1セット×10)' },
       { key: 'r_part5', name: 'Reading Part 5',   icon: '📝', timeMin: 10, qCount: 30, scoreMax: 150, desc: '短文穴埋め (語彙・文法 4択)' },
       { key: 'r_part6', name: 'Reading Part 6',   icon: '📄', timeMin: 10, qCount: 16, scoreMax: 80,  desc: '長文穴埋め (4択・4問1セット×4)' },
-      { key: 'r_part7', name: 'Reading Part 7',   icon: '📚', timeMin: 55, qCount: 54, scoreMax: 270, desc: '読解 (1文/2文/3文書式)' },
+      { key: 'r_part7_single', name: 'Reading Part 7 シングル', icon: '📚', timeMin: 25, qCount: 29, scoreMax: 145, desc: '1文書 読解 (29問)' },
+      { key: 'r_part7_multi',  name: 'Reading Part 7 マルチ',   icon: '📚', timeMin: 30, qCount: 25, scoreMax: 125, desc: '2-3文書クロス読解 (5セット×5問)' },
     ],
     topics: ['Business meetings', 'Office communication', 'Travel arrangements', 'Customer service', 'Marketing', 'HR/Hiring', 'Logistics', 'Finance reports'],
   },
@@ -49,10 +61,22 @@ const EXAMS = {
     color: '#7c3aed',
     scoreMin: 0, scoreMax: 9.0, scoreUnit: 'バンド',
     sections: [
-      { key: 'listening', name: 'Listening', icon: '🎧', timeMin: 30, qCount: 40, scoreMax: 9.0, desc: '4セクション (日常会話/モノローグ/学術討論/講義)' },
-      { key: 'reading',   name: 'Reading',   icon: '📖', timeMin: 60, qCount: 40, scoreMax: 9.0, desc: '学術的長文3つ・40問 (穴埋め/T-F-NG/見出し選択など)' },
-      { key: 'writing',   name: 'Writing',   icon: '✍️', timeMin: 60, qCount: 2,  scoreMax: 9.0, desc: 'Task 1 (グラフ150語) + Task 2 (エッセイ250語)' },
-      { key: 'speaking',  name: 'Speaking',  icon: '🎙', timeMin: 14, qCount: 3,  scoreMax: 9.0, desc: 'Part 1-3 (自己紹介/2分スピーチ/ディスカッション)' },
+      // Listening 4 sections
+      { key: 'l_sec1', name: 'Listening Section 1 (社会的会話)', icon: '🎧', timeMin: 8,  qCount: 10, scoreMax: 9.0, desc: '日常的な2人の会話 (予約/手続き等)' },
+      { key: 'l_sec2', name: 'Listening Section 2 (社会的モノローグ)', icon: '🎧', timeMin: 8,  qCount: 10, scoreMax: 9.0, desc: '1人による説明 (観光案内/施設紹介等)' },
+      { key: 'l_sec3', name: 'Listening Section 3 (学術的会話)', icon: '🎧', timeMin: 8,  qCount: 10, scoreMax: 9.0, desc: '学生同士・指導教官との会話' },
+      { key: 'l_sec4', name: 'Listening Section 4 (学術的講義)', icon: '🎧', timeMin: 8,  qCount: 10, scoreMax: 9.0, desc: '大学講義モノローグ (アカデミック)' },
+      // Reading 3 passages
+      { key: 'r_p1', name: 'Reading Passage 1', icon: '📖', timeMin: 20, qCount: 13, scoreMax: 9.0, desc: '一般向け学術文 13問: T/F/NG・穴埋め' },
+      { key: 'r_p2', name: 'Reading Passage 2', icon: '📖', timeMin: 20, qCount: 13, scoreMax: 9.0, desc: '専門学術文 13問: 見出し選択・要約完成' },
+      { key: 'r_p3', name: 'Reading Passage 3', icon: '📖', timeMin: 20, qCount: 14, scoreMax: 9.0, desc: '高難度学術文 14問: 推論・著者の見解' },
+      // Writing
+      { key: 'w_task1', name: 'Writing Task 1 (グラフ/図描写)', icon: '📊', timeMin: 20, qCount: 1, scoreMax: 9.0, desc: 'グラフ/表/図/プロセスを150語で描写' },
+      { key: 'w_task2', name: 'Writing Task 2 (エッセイ)', icon: '✍️', timeMin: 40, qCount: 1, scoreMax: 9.0, desc: '社会的論題に250語で意見論述 (Task1の2倍配点)' },
+      // Speaking
+      { key: 's_p1', name: 'Speaking Part 1 (自己紹介Q&A)', icon: '🎙', timeMin: 5, qCount: 12, scoreMax: 9.0, desc: '個人的トピック (家族/仕事/趣味) 4-5分' },
+      { key: 's_p2', name: 'Speaking Part 2 (2分スピーチ)', icon: '🎙', timeMin: 4, qCount: 1,  scoreMax: 9.0, desc: 'カードのトピックを1分準備→2分独白' },
+      { key: 's_p3', name: 'Speaking Part 3 (ディスカッション)', icon: '🎙', timeMin: 5, qCount: 6,  scoreMax: 9.0, desc: 'Part2の話題を抽象化した議論 4-5分' },
     ],
     topics: ['Climate change', 'Urban planning', 'Education systems', 'Healthcare', 'Technology impact', 'Globalization', 'Social inequality', 'Cultural identity'],
   },
@@ -62,24 +86,122 @@ const EXAMS = {
     flag: '🇯🇵',
     color: '#dc2626',
     scoreMin: 0, scoreMax: 0, scoreUnit: '級',
+    requiresGrade: true,
     grades: [
-      { key: 'g1',  name: '1級',     cefr: 'C1', target: '英字新聞・専門書・国連職員レベル' },
-      { key: 'gp1', name: '準1級',   cefr: 'B2', target: '海外留学・大学入試特典・社会問題に意見' },
-      { key: 'g2',  name: '2級',     cefr: 'B1', target: '高校卒業・海外短期留学・実用英会話' },
-      { key: 'gp2', name: '準2級',   cefr: 'A2-B1', target: '高校在学中・大学入試・身近な英会話' },
-      { key: 'g3',  name: '3級',     cefr: 'A2', target: '中学卒業・短文/対話の理解' },
-      { key: 'g4',  name: '4級',     cefr: 'A1', target: '中学中級・基礎英文の理解' },
-      { key: 'g5',  name: '5級',     cefr: 'A1', target: '中学初級・あいさつ/簡単な質問' },
+      { key: 'g1',  name: '1級',     cefr: 'C1',     target: '英字新聞・専門書・国連職員レベル' },
+      { key: 'gp1', name: '準1級',   cefr: 'B2',     target: '海外留学・大学入試優遇・社会問題に意見' },
+      { key: 'g2',  name: '2級',     cefr: 'B1',     target: '高校卒業・海外短期留学・実用英会話' },
+      { key: 'gp2', name: '準2級',   cefr: 'A2-B1',  target: '高校在学中・大学入試・身近な英会話' },
+      { key: 'g3',  name: '3級',     cefr: 'A2',     target: '中学卒業・短文/対話の理解' },
+      { key: 'g4',  name: '4級',     cefr: 'A1',     target: '中学中級・基礎英文の理解' },
+      { key: 'g5',  name: '5級',     cefr: 'A1',     target: '中学初級・あいさつ/簡単な質問' },
     ],
-    sections: [
-      { key: 'reading',   name: 'Reading',   icon: '📖', timeMin: 30, qCount: 20, scoreMax: 100, desc: '短文穴埋め + 長文読解 + Eメール読解' },
-      { key: 'listening', name: 'Listening', icon: '🎧', timeMin: 25, qCount: 30, scoreMax: 100, desc: '会話 + ナレーション + Real-Life形式' },
-      { key: 'writing',   name: 'Writing',   icon: '✍️', timeMin: 30, qCount: 1,  scoreMax: 100, desc: '英作文 (級により語数が異なる)' },
-      { key: 'speaking',  name: 'Speaking',  icon: '🎙', timeMin: 7,  qCount: 4,  scoreMax: 100, desc: '二次試験 / 面接 (音読+質問4つ)' },
-    ],
+    // 級別の part 構成 (公式準拠 + 2024年新形式反映)
+    sectionsByGrade: {
+      g1: [
+        { key: 'r_q1', name: 'Reading 大問1 (短文穴埋め・語彙)', icon: '📝', timeMin: 25, qCount: 25, scoreMax: 25, desc: '高度な語彙・熟語 (4択)。1級は語彙が最大の関門' },
+        { key: 'r_q2', name: 'Reading 大問2 (長文穴埋め)',       icon: '📄', timeMin: 12, qCount: 6,  scoreMax: 6,  desc: '長文の論理展開を読み取り穴埋め' },
+        { key: 'r_q3', name: 'Reading 大問3 (長文内容一致)',     icon: '📚', timeMin: 30, qCount: 10, scoreMax: 10, desc: '長文の主旨/詳細/推論' },
+        { key: 'w_summary', name: 'Writing 要約 (新形式)',       icon: '📋', timeMin: 20, qCount: 1,  scoreMax: 16, desc: '90-110語の要約' },
+        { key: 'w_essay',   name: 'Writing エッセイ',             icon: '✍️', timeMin: 35, qCount: 1,  scoreMax: 16, desc: '社会問題への意見 200-240語' },
+        { key: 'l_part1', name: 'Listening Part 1 (会話)',       icon: '💬', timeMin: 10, qCount: 12, scoreMax: 12, desc: '会話を聞いて応答' },
+        { key: 'l_part2', name: 'Listening Part 2 (パッセージ)', icon: '🎙', timeMin: 10, qCount: 12, scoreMax: 12, desc: '長めのパッセージ理解' },
+        { key: 'l_part3', name: 'Listening Part 3 (Real-Life)',  icon: '🌐', timeMin: 5,  qCount: 5,  scoreMax: 5,  desc: 'アナウンス等の状況把握' },
+        { key: 'l_part4', name: 'Listening Part 4 (インタビュー)', icon: '🎤', timeMin: 4,  qCount: 2,  scoreMax: 2,  desc: 'インタビュー2問 (1級のみ)' },
+        { key: 's_q1',    name: '二次 自由会話',                  icon: '🗣', timeMin: 1,  qCount: 1,  scoreMax: 5,  desc: '冒頭の自由対話' },
+        { key: 's_q2',    name: '二次 トピックスピーチ',          icon: '🗣', timeMin: 3,  qCount: 1,  scoreMax: 10, desc: '5トピックから1つ選び2分スピーチ' },
+        { key: 's_q3',    name: '二次 Q&A (Q1-Q4)',               icon: '🗣', timeMin: 6,  qCount: 4,  scoreMax: 10, desc: 'スピーチに関する質問4つ' },
+      ],
+      gp1: [
+        { key: 'r_q1', name: 'Reading 大問1 (短文穴埋め)',       icon: '📝', timeMin: 18, qCount: 18, scoreMax: 18, desc: '語彙・熟語の文脈穴埋め (4択)' },
+        { key: 'r_q2', name: 'Reading 大問2 (長文穴埋め)',       icon: '📄', timeMin: 12, qCount: 6,  scoreMax: 6,  desc: '長文の論理展開を読み取り穴埋め' },
+        { key: 'r_q3', name: 'Reading 大問3 (長文内容一致)',     icon: '📚', timeMin: 25, qCount: 7,  scoreMax: 7,  desc: '長文の主旨・詳細・推測' },
+        { key: 'r_q4', name: 'Reading 大問4 (Eメール返信・新形式)', icon: '✉️', timeMin: 5, qCount: 1, scoreMax: 1, desc: 'Eメール内容に応じた質問回答' },
+        { key: 'w_summary', name: 'Writing 要約 (新形式 2024〜)', icon: '📋', timeMin: 15, qCount: 1, scoreMax: 16, desc: 'パッセージを60-70語で要約' },
+        { key: 'w_essay',   name: 'Writing エッセイ',             icon: '✍️', timeMin: 25, qCount: 1, scoreMax: 16, desc: '社会問題に対する意見 120-150語' },
+        { key: 'l_part1', name: 'Listening Part 1 (会話)',       icon: '💬', timeMin: 10, qCount: 12, scoreMax: 12, desc: '会話を聞いて応答' },
+        { key: 'l_part2', name: 'Listening Part 2 (パッセージ)', icon: '🎙', timeMin: 10, qCount: 12, scoreMax: 12, desc: '長めのパッセージ理解' },
+        { key: 'l_part3', name: 'Listening Part 3 (Real-Life)',  icon: '🌐', timeMin: 5,  qCount: 5,  scoreMax: 5,  desc: 'アナウンス等の状況把握' },
+        { key: 's_read',  name: '二次 パッセージ音読',            icon: '🗣', timeMin: 1, qCount: 1, scoreMax: 5,  desc: '示されたパッセージを音読' },
+        { key: 's_q1',    name: '二次 Q1 (パッセージ理解)',       icon: '🗣', timeMin: 1, qCount: 1, scoreMax: 5,  desc: '読んだパッセージへの質問' },
+        { key: 's_qa',    name: '二次 Q2-Q4 (即興回答)',          icon: '🗣', timeMin: 5, qCount: 3, scoreMax: 15, desc: 'トピックに対する即興回答' },
+      ],
+      g2: [
+        { key: 'r_q1',  name: 'Reading 大問1 (短文穴埋め)',  icon: '📝', timeMin: 12, qCount: 17, scoreMax: 17, desc: '語彙・熟語・文法の穴埋め' },
+        { key: 'r_q2',  name: 'Reading 大問2 (長文穴埋め)',  icon: '📄', timeMin: 12, qCount: 6,  scoreMax: 6,  desc: '長文の論理展開' },
+        { key: 'r_q3a', name: 'Reading 大問3A (Eメール)',    icon: '✉️', timeMin: 8,  qCount: 3,  scoreMax: 3,  desc: 'Eメール本文の理解' },
+        { key: 'r_q3b', name: 'Reading 大問3B (長文内容一致)', icon: '📚', timeMin: 18, qCount: 5, scoreMax: 5, desc: '長文の主旨・詳細' },
+        { key: 'w_summary', name: 'Writing 要約 (新形式 2024〜)', icon: '📋', timeMin: 15, qCount: 1, scoreMax: 16, desc: 'パッセージ要約 45-55語' },
+        { key: 'w_opinion', name: 'Writing 意見論述',         icon: '✍️', timeMin: 20, qCount: 1, scoreMax: 16, desc: 'TOPICへの意見 80-100語' },
+        { key: 'l_part1', name: 'Listening Part 1 (会話)',    icon: '💬', timeMin: 12, qCount: 15, scoreMax: 15, desc: '会話の応答' },
+        { key: 'l_part2', name: 'Listening Part 2 (パッセージ)', icon: '🎙', timeMin: 12, qCount: 15, scoreMax: 15, desc: '長めのパッセージ理解' },
+        { key: 's_read',  name: '二次 パッセージ音読',         icon: '🗣', timeMin: 1, qCount: 1, scoreMax: 5,  desc: 'パッセージを音読' },
+        { key: 's_q1',    name: '二次 Q1 (パッセージ理解)',    icon: '🗣', timeMin: 1, qCount: 1, scoreMax: 5,  desc: 'パッセージ内容への質問' },
+        { key: 's_q2_3',  name: '二次 Q2-3 (イラスト)',         icon: '🗣', timeMin: 3, qCount: 2, scoreMax: 10, desc: 'イラスト描写・人物状況説明' },
+        { key: 's_q4',    name: '二次 Q4 (社会問題)',           icon: '🗣', timeMin: 2, qCount: 1, scoreMax: 5,  desc: '社会的トピックへの意見' },
+      ],
+      gp2: [
+        { key: 'r_q1',  name: 'Reading 大問1 (短文穴埋め)', icon: '📝', timeMin: 10, qCount: 15, scoreMax: 15, desc: '基本的な語彙・熟語・文法' },
+        { key: 'r_q2',  name: 'Reading 大問2 (会話穴埋め)', icon: '💬', timeMin: 8,  qCount: 5,  scoreMax: 5,  desc: '会話の自然な流れを完成' },
+        { key: 'r_q3a', name: 'Reading 大問3A (Eメール)',   icon: '✉️', timeMin: 8,  qCount: 3,  scoreMax: 3,  desc: 'Eメール本文の理解' },
+        { key: 'r_q3b', name: 'Reading 大問3B (長文内容一致)', icon: '📚', timeMin: 15, qCount: 7, scoreMax: 7, desc: '長文の主旨・詳細' },
+        { key: 'w_email',   name: 'Writing Eメール返信 (新形式 2024〜)', icon: '✉️', timeMin: 15, qCount: 1, scoreMax: 16, desc: 'Eメールへの返信 40-50語' },
+        { key: 'w_opinion', name: 'Writing 意見論述',         icon: '✍️', timeMin: 15, qCount: 1, scoreMax: 16, desc: '質問への意見 50-60語' },
+        { key: 'l_part1', name: 'Listening Part 1 (会話の応答)', icon: '💬', timeMin: 8,  qCount: 10, scoreMax: 10, desc: '会話の最後の発言を選ぶ' },
+        { key: 'l_part2', name: 'Listening Part 2 (会話の質問)', icon: '👥', timeMin: 10, qCount: 10, scoreMax: 10, desc: '会話を聞いて質問に答える' },
+        { key: 'l_part3', name: 'Listening Part 3 (パッセージ)', icon: '🎙', timeMin: 8, qCount: 10, scoreMax: 10, desc: '短いパッセージ理解' },
+        { key: 's_read',  name: '二次 パッセージ音読',         icon: '🗣', timeMin: 1, qCount: 1, scoreMax: 5,  desc: 'パッセージを音読' },
+        { key: 's_q1',    name: '二次 Q1 (パッセージ理解)',    icon: '🗣', timeMin: 1, qCount: 1, scoreMax: 5,  desc: 'パッセージ内容への質問' },
+        { key: 's_q2_3',  name: '二次 Q2-3 (イラスト)',         icon: '🗣', timeMin: 2, qCount: 2, scoreMax: 10, desc: 'イラスト描写' },
+        { key: 's_q4',    name: '二次 Q4 (個人的意見)',         icon: '🗣', timeMin: 2, qCount: 1, scoreMax: 5,  desc: '日常的トピックへの意見' },
+      ],
+      g3: [
+        { key: 'r_q1',  name: 'Reading 大問1 (短文穴埋め)', icon: '📝', timeMin: 10, qCount: 15, scoreMax: 15, desc: '基本語彙・文法' },
+        { key: 'r_q2',  name: 'Reading 大問2 (会話穴埋め)', icon: '💬', timeMin: 5,  qCount: 5,  scoreMax: 5,  desc: '会話の自然な流れ' },
+        { key: 'r_q3a', name: 'Reading 大問3A (掲示物)',     icon: '📋', timeMin: 4,  qCount: 2,  scoreMax: 2,  desc: '掲示・案内文の読み取り' },
+        { key: 'r_q3b', name: 'Reading 大問3B (Eメール)',    icon: '✉️', timeMin: 6,  qCount: 3,  scoreMax: 3,  desc: 'Eメールの内容理解' },
+        { key: 'r_q3c', name: 'Reading 大問3C (長文)',       icon: '📚', timeMin: 10, qCount: 5,  scoreMax: 5,  desc: '物語・説明文の理解' },
+        { key: 'w_email',   name: 'Writing Eメール返信 (新形式 2024〜)', icon: '✉️', timeMin: 15, qCount: 1, scoreMax: 16, desc: 'Eメール返信 15-25語' },
+        { key: 'w_opinion', name: 'Writing 意見論述',         icon: '✍️', timeMin: 15, qCount: 1, scoreMax: 16, desc: '質問への意見 25-35語' },
+        { key: 'l_part1', name: 'Listening Part 1 (会話の応答)', icon: '💬', timeMin: 6, qCount: 10, scoreMax: 10, desc: '会話最後の応答' },
+        { key: 'l_part2', name: 'Listening Part 2 (会話の質問)', icon: '👥', timeMin: 8, qCount: 10, scoreMax: 10, desc: '会話への質問' },
+        { key: 'l_part3', name: 'Listening Part 3 (パッセージ)', icon: '🎙', timeMin: 6, qCount: 10, scoreMax: 10, desc: '短いパッセージ' },
+        { key: 's_read', name: '二次 パッセージ音読',         icon: '🗣', timeMin: 1, qCount: 1, scoreMax: 5,  desc: '短いパッセージ音読' },
+        { key: 's_q1',   name: '二次 Q1 (パッセージ理解)',    icon: '🗣', timeMin: 1, qCount: 1, scoreMax: 5,  desc: 'パッセージへの質問' },
+        { key: 's_q2',   name: '二次 Q2 (イラスト)',           icon: '🗣', timeMin: 2, qCount: 1, scoreMax: 5,  desc: 'イラストの状況説明' },
+        { key: 's_q3_4', name: '二次 Q3-4 (個人的意見)',       icon: '🗣', timeMin: 2, qCount: 2, scoreMax: 10, desc: '日常質問への回答' },
+      ],
+      g4: [
+        { key: 'r_q1', name: 'Reading 大問1 (短文穴埋め)', icon: '📝', timeMin: 8,  qCount: 15, scoreMax: 15, desc: '中学中級レベルの語彙・文法' },
+        { key: 'r_q2', name: 'Reading 大問2 (会話穴埋め)', icon: '💬', timeMin: 5,  qCount: 5,  scoreMax: 5,  desc: '簡単な会話の流れ' },
+        { key: 'r_q3', name: 'Reading 大問3 (並べ替え)',   icon: '🔀', timeMin: 5,  qCount: 5,  scoreMax: 5,  desc: '日本文に合う英文を完成' },
+        { key: 'r_q4', name: 'Reading 大問4 (掲示+Eメール+長文)', icon: '📚', timeMin: 12, qCount: 7, scoreMax: 7, desc: '3種類の文章を読み取り' },
+        { key: 'w_q',  name: 'Writing 質問への回答 (新形式 2024〜)', icon: '✍️', timeMin: 10, qCount: 1, scoreMax: 16, desc: '簡単な質問に英語で返信 15語以上' },
+        { key: 'l_part1', name: 'Listening Part 1 (会話の応答)', icon: '💬', timeMin: 5, qCount: 10, scoreMax: 10, desc: '会話最後の応答' },
+        { key: 'l_part2', name: 'Listening Part 2 (会話の質問)', icon: '👥', timeMin: 7, qCount: 10, scoreMax: 10, desc: '会話への質問' },
+        { key: 'l_part3', name: 'Listening Part 3 (パッセージ)', icon: '🎙', timeMin: 5, qCount: 10, scoreMax: 10, desc: '短い説明文' },
+        // 4級は二次なし
+      ],
+      g5: [
+        { key: 'r_q1', name: 'Reading 大問1 (短文穴埋め)', icon: '📝', timeMin: 8,  qCount: 15, scoreMax: 15, desc: '中学初級語彙・基本文法' },
+        { key: 'r_q2', name: 'Reading 大問2 (会話穴埋め)', icon: '💬', timeMin: 5,  qCount: 5,  scoreMax: 5,  desc: 'あいさつ・簡単な質問の応答' },
+        { key: 'r_q3', name: 'Reading 大問3 (並べ替え)',   icon: '🔀', timeMin: 5,  qCount: 5,  scoreMax: 5,  desc: '日本文に合う英文を完成' },
+        { key: 'r_q4', name: 'Reading 大問4 (長文)',       icon: '📚', timeMin: 8,  qCount: 5,  scoreMax: 5,  desc: '簡単な掲示・Eメール・物語' },
+        { key: 'w_q',  name: 'Writing Yes/Noと理由 (新形式 2024〜)', icon: '✍️', timeMin: 10, qCount: 1, scoreMax: 16, desc: '質問にYes/Noと理由を1-2文で' },
+        { key: 'l_part1', name: 'Listening Part 1 (会話の応答)', icon: '💬', timeMin: 5, qCount: 10, scoreMax: 10, desc: '簡単な応答選択' },
+        { key: 'l_part2', name: 'Listening Part 2 (会話の質問)', icon: '👥', timeMin: 4, qCount: 5,  scoreMax: 5,  desc: '簡単な会話への質問' },
+        { key: 'l_part3', name: 'Listening Part 3 (イラスト)',   icon: '🖼', timeMin: 4, qCount: 5,  scoreMax: 5,  desc: 'イラストに合う英文選択' },
+        // 5級は二次なし
+      ],
+    },
     topics: ['Daily life', 'School', 'Travel', 'Environment', 'Technology', 'Health', 'Culture', 'Future plans'],
   },
 };
+
+// 英検: 級から sections を取得 (sectionsByGrade を sections として返す)
+function getEikenSections(gradeKey) {
+  return EXAMS.eiken.sectionsByGrade[gradeKey] || EXAMS.eiken.sectionsByGrade.gp1;
+}
 
 // ==========================================================================
 // CEFR ベース スコア換算 (4試験を相互変換)
@@ -198,6 +320,39 @@ function bindExamCards() {
     document.getElementById('examPickSection').style.display = '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
+  document.getElementById('gradeBackBtn')?.addEventListener('click', () => {
+    document.getElementById('gradePickSection').style.display = 'none';
+    document.getElementById('examPickSection').style.display = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+function showGradePicker() {
+  document.getElementById('examPickSection').style.display = 'none';
+  document.getElementById('examDetailSection').style.display = 'none';
+  document.getElementById('gradePickSection').style.display = '';
+  const grid = document.getElementById('gradeGrid');
+  grid.innerHTML = '';
+  EXAMS.eiken.grades.forEach(g => {
+    const hasSecondary = g.key === 'g1' || g.key === 'gp1' || g.key === 'g2' || g.key === 'gp2' || g.key === 'g3';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'grade-card';
+    btn.dataset.grade = g.key;
+    btn.innerHTML = `
+      ${hasSecondary ? '<span class="grade-card-secondary">+二次面接</span>' : '<span class="grade-card-secondary" style="background:rgba(148,163,184,0.18);color:#94a3b8;">一次のみ</span>'}
+      <div class="grade-card-name">英検 ${escapeHtml(g.name)}</div>
+      <div class="grade-card-cefr">CEFR ${escapeHtml(g.cefr)} 相当</div>
+      <div class="grade-card-target">${escapeHtml(g.target)}</div>
+    `;
+    btn.addEventListener('click', () => {
+      state.eikenGrade = g.key;
+      state.eikenGradeName = g.name;
+      pickExamSections('eiken');
+    });
+    grid.appendChild(btn);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function pickExam(examId) {
@@ -205,10 +360,24 @@ function pickExam(examId) {
   if (!exam) return;
   state.examId = examId;
   state.sectionKey = null;
+  state.eikenGrade = null;
+  // 英検は級選択を先に挟む
+  if (examId === 'eiken') {
+    showGradePicker();
+    return;
+  }
+  pickExamSections(examId);
+}
+
+function pickExamSections(examId) {
+  const exam = EXAMS[examId];
+  if (!exam) return;
 
   document.getElementById('examPickSection').style.display = 'none';
+  document.getElementById('gradePickSection').style.display = 'none';
   document.getElementById('examDetailSection').style.display = '';
-  document.getElementById('examDetailTitle').textContent = `${exam.flag} ${exam.name} 対策`;
+  const gradeLabel = (examId === 'eiken' && state.eikenGradeName) ? ` ${state.eikenGradeName}` : '';
+  document.getElementById('examDetailTitle').textContent = `${exam.flag} ${exam.name}${gradeLabel} 対策`;
 
   // 説明文
   let desc = '';
@@ -226,10 +395,14 @@ function pickExam(examId) {
     ? '受験する級を入力 (例: 準1級)'
     : `${exam.scoreMin}〜${exam.scoreMax}${exam.scoreUnit}`;
 
-  // セクションカード生成
+  // セクションカード生成 (英検は級別 sectionsByGrade を使う)
+  const sections = (examId === 'eiken' && state.eikenGrade)
+    ? getEikenSections(state.eikenGrade)
+    : exam.sections;
+  state.currentSections = sections;
   const grid = document.getElementById('sectionGrid');
   grid.innerHTML = '';
-  exam.sections.forEach(sec => {
+  sections.forEach(sec => {
     const card = document.createElement('button');
     card.type = 'button';
     card.className = 'section-card';
@@ -274,7 +447,8 @@ async function startSection(section) {
 
 async function startFullMock(exam) {
   // フル模試: Reading + Listening を抜粋した縮小版
-  const targetSec = exam.sections.find(s => s.key === 'reading' || s.key === 'r_part5' || s.key === 'l_part1') || exam.sections[0];
+  const sections = state.currentSections || exam.sections;
+  const targetSec = sections.find(s => s.key === 'reading' || s.key === 'r_part5' || s.key === 'l_part1' || s.key === 'r_q1') || sections[0];
   state.sectionKey = targetSec.key;
   showRunner(exam, targetSec, /*isMock=*/true);
   await generateAndShowQuestions(exam, targetSec, /*full=*/true);
@@ -333,23 +507,61 @@ async function generateAndShowQuestions(exam, section, full = false) {
   const qCount = full ? Math.min(section.qCount, 8) : Math.min(section.qCount, 6); // ブラウザ実行は短めに
   const topic = exam.topics[Math.floor(Math.random() * exam.topics.length)];
 
-  const system = `あなたは ${exam.name} の試験対策専門コーチで、過去20年の出題傾向を完全に把握しています。
-【厳守】
-- 出題形式は ${exam.name} の公式準拠 (${section.name}, ${section.desc})
-- 難易度は受験者が ${state.currentLevel || 'B1'} レベル想定
-- 設問は本物の試験で出るレベルの英文 (機械翻訳臭NG)
-- 解説は日本語で、なぜその選択肢が正解か / なぜ他の選択肢が誤答か を丁寧に説明
-- TOEFL/IELTS の Reading は学術的、TOEIC の Reading はビジネス・実務的、英検は級に応じた語彙レベル
-- Speaking/Writing は採点ルーブリック (構成/語彙/文法/流暢さ) を意識した模範解答付き`;
+  // part 別のジャンル/形式ヒント
+  const isReading = /^r_/.test(section.key) || section.key === 'reading';
+  const isListening = /^l_/.test(section.key) || section.key === 'listening';
+  const isSpeaking = /^s_/.test(section.key) || section.key === 'speaking';
+  const isWriting = /^w_/.test(section.key) || section.key === 'writing';
 
-  const user = `${exam.name} の ${section.name} セクションの問題を ${qCount} 問生成してください。
+  // 英検級ラベル
+  const eikenGradeLabel = (state.examId === 'eiken' && state.eikenGradeName)
+    ? `（${state.eikenGradeName}・CEFR ${(EXAMS.eiken.grades.find(g => g.key === state.eikenGrade) || {}).cefr || ''} 相当）`
+    : '';
+
+  // 試験別の出題ニュアンス
+  const examFlavor = {
+    toefl: '英語圏大学院・学部留学。Reading/Listening は学術 (lecture, journal article 風)。Speaking/Writing は明確なテンプレ運用が高得点の鍵。',
+    toeic: 'ビジネス英語。実務シーン (会議/メール/出張/契約) のみ。難解な学術語彙NG。Part固有の典型パターンを必ず再現。',
+    ielts: '英国系学術。Reading は T/F/NG・見出し選択など IELTS 独自形式。Writing Task 1 はデータ描写、Task 2 はエッセイで構造重視。Speaking Part 2 は1分準備→2分独白の独特形式。',
+    eiken: `日本英検 ${state.eikenGradeName || ''}${eikenGradeLabel ? '' : ''}。級ごとに語彙難易度が大きく異なる。新形式 (2024〜): 準1級以下は要約/Eメール返信が追加。二次は面接形式 (1-3級)。日本人受験者の弱点 (冠詞/前置詞/イディオム) を踏まえて出題。`,
+  }[exam.id] || '';
+
+  const system = `あなたは ${exam.name} 対策の専門コーチで、過去20年の出題傾向と公式採点基準を完全に把握しています。
+
+【今回の対象 part】
+- 試験: ${exam.name}${eikenGradeLabel}
+- Part: ${section.name}
+- 形式: ${section.desc}
+- 制限時間: ${section.timeMin}分 / 公式問題数: ${section.qCount}問 / 配点上限: ${section.scoreMax}
+- 受験者の自己申告レベル: CEFR ${state.currentLevel || 'B1'}
+
+【試験固有の方針】
+${examFlavor}
+
+【厳守】
+- 公式の出題形式と完全に一致させる (TOEIC Part 2 なら3択、TOEFL Reading なら長文+設問、IELTS Listening Section 1 なら社会的会話のみ、英検準1級 Reading 大問1 なら短文穴埋め4択 18問形式)
+- 設問の英文は ETS / British Council / 英検協会 が出すレベルのナチュラル英語 (機械翻訳臭/不自然な語彙NG)
+- 解説は日本語で、正解の根拠 + 他選択肢の誤りポイント + 関連語彙/文法 を3行以上
+- Speaking / Writing は採点ルーブリック (構成 / 語彙 / 文法 / 流暢さ or 一貫性) に基づく評価コメント付きの模範解答
+- 英検なら級レベルの語彙統制 (1級は CEFR C1 語彙、5級は中学初級語彙)`;
+
+  const user = `${exam.name}${eikenGradeLabel} の **${section.name}** の問題を ${qCount} 問生成してください。
+
 トピック: ${topic}
-ターゲット: 日本人受験者
-出力は以下のJSON形式のみ (他の文字を含めない):
+ターゲット: 日本人受験者 (CEFR ${state.currentLevel || 'B1'})
+
+【part 形式の必須遵守事項】
+- ${section.desc}
+- ${isListening ? 'Listening: audio_script に台本を入れる (英語のみ・自然な会話/講義/ナレーション)。speaker label 付き。' : ''}
+- ${isReading ? 'Reading: passage に本文を入れる (英語のみ・指定 part の典型ジャンル)。' : ''}
+- ${isSpeaking ? 'Speaking: prompt に英語の出題、answer に模範回答 (口頭で60-90秒で言える長さ・テンプレ的構成)。type は "speaking"。' : ''}
+- ${isWriting ? 'Writing: prompt に英語の出題、answer に模範エッセイ (指定語数を満たす完全な英文)。type は "essay"。' : ''}
+
+【出力形式】純粋なJSONのみ (他の文字を含めない):
 {
   "passage": "(Reading の場合は本文、それ以外は空文字)",
   "audio_script": "(Listening の場合はスクリプト、それ以外は空文字)",
-  "prompt": "(Speaking/Writing の場合の出題、それ以外は空文字)",
+  "prompt": "(Speaking/Writing の場合の英語の出題文、それ以外は空文字)",
   "questions": [
     {
       "id": "q1",
@@ -357,11 +569,11 @@ async function generateAndShowQuestions(exam, section, full = false) {
       "stem": "問題文",
       "choices": ["A", "B", "C", "D"],
       "answer": "正解(選択肢index 0始まり、または模範解答テキスト)",
-      "explanation": "解説 (日本語)"
+      "explanation": "解説 (日本語、3行以上)"
     }
   ]
 }
-Speaking/Writing の場合は choices を空配列、answer に模範解答テキスト、type は "essay" または "speaking" にしてください。`;
+Speaking/Writing の場合: choices=[], answer に模範解答テキスト全文 (採点ルーブリック別評価コメント込み), type="essay" or "speaking"。`;
 
   try {
     let payload;
@@ -449,7 +661,8 @@ async function submitAnswers() {
   document.getElementById('submitAnswersBtn').textContent = '⏳ 採点中...';
 
   const exam = EXAMS[state.examId];
-  const section = exam.sections.find(s => s.key === state.sectionKey);
+  const sections = state.currentSections || exam.sections;
+  const section = sections.find(s => s.key === state.sectionKey);
   let result;
   try {
     if (isLiveMode()) {
@@ -656,7 +869,8 @@ function showResult(exam, section, result) {
 
   // ボタン
   document.getElementById('retryBtn').onclick = () => {
-    const sec = exam.sections.find(s => s.key === state.sectionKey);
+    const sections = state.currentSections || exam.sections;
+    const sec = sections.find(s => s.key === state.sectionKey);
     startSection(sec);
   };
   document.getElementById('newExamBtn').onclick = () => {

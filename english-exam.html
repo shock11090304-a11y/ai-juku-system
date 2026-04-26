@@ -129,6 +129,23 @@
     <!-- ========================================================== -->
     <!-- Section 3: 試験詳細 + セクション選択 (試験選択後に表示)   -->
     <!-- ========================================================== -->
+    <!-- ========================================================== -->
+    <!-- Section 2.5: 英検級選択 (英検選択時のみ表示)                -->
+    <!-- ========================================================== -->
+    <section class="ee-section ee-section-grade" id="gradePickSection" style="display:none;">
+      <div class="ee-section-head">
+        <div class="ee-eyebrow">STEP 2 / 英検</div>
+        <h2>🇯🇵 受験する級を選んでください</h2>
+        <p class="ee-section-desc">級ごとに part 構成・配点・難易度が異なります。各 part 個別対策が可能です。</p>
+      </div>
+      <div class="grade-grid" id="gradeGrid">
+        <!-- JS で動的生成 -->
+      </div>
+      <div class="ee-cta-row">
+        <button class="ee-btn ee-btn-ghost" id="gradeBackBtn">← 試験を選び直す</button>
+      </div>
+    </section>
+
     <section class="ee-section ee-section-detail" id="examDetailSection" style="display:none;">
       <div class="ee-section-head">
         <div class="ee-eyebrow">STEP 2</div>
