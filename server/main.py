@@ -120,6 +120,14 @@ DAILY_SNS_TO_EMAIL = os.getenv("DAILY_SNS_TO_EMAIL", "")
 DAILY_SNS_HOUR_JST = int(os.getenv("DAILY_SNS_HOUR_JST", "6"))
 DAILY_SNS_MODEL = os.getenv("DAILY_SNS_MODEL", "claude-sonnet-4-6")
 
+# 申込→決済 常時監視: 5分おきに健全性チェック、異常時のみアラート、朝7時にサマリ
+MONITORING_ENABLED = os.getenv("MONITORING_ENABLED", "1") == "1"
+MONITORING_INTERVAL_MIN = int(os.getenv("MONITORING_INTERVAL_MIN", "5"))
+MONITORING_TO_EMAIL = os.getenv("MONITORING_TO_EMAIL", "") or DAILY_SNS_TO_EMAIL
+MONITORING_DAILY_SUMMARY_HOUR_JST = int(os.getenv("MONITORING_DAILY_SUMMARY_HOUR_JST", "7"))
+MONITORING_ALERT_COOLDOWN_MIN = int(os.getenv("MONITORING_ALERT_COOLDOWN_MIN", "60"))  # 同じアラートは60分に1回まで
+MONITORING_QUIET_HOURS_AFTER_LAUNCH_HOURS = int(os.getenv("MONITORING_QUIET_HOURS", "48"))  # ローンチ後48hは「申込0」を異常としない
+
 # 入塾金を免除するプラン
 ENROLLMENT_FEE_EXEMPT = {"student_addon"}
 
@@ -357,7 +365,7 @@ _BACKGROUND_TASKS: list = []
 
 @app.on_event("startup")
 async def _start_background_tasks():
-    """uvicorn 起動時に呼ばれる。daily SNS scheduler を bg task として起動。"""
+    """uvicorn 起動時に呼ばれる。daily SNS scheduler + 申込決済監視 scheduler を bg task として起動。"""
     if DAILY_SNS_TO_EMAIL and ANTHROPIC_API_KEY and RESEND_API_KEY:
         task = asyncio.create_task(_daily_sns_scheduler())
         _BACKGROUND_TASKS.append(task)
@@ -368,6 +376,18 @@ async def _start_background_tasks():
         if not ANTHROPIC_API_KEY: missing.append("ANTHROPIC_API_KEY")
         if not RESEND_API_KEY: missing.append("RESEND_API_KEY")
         log.warning(f"[Startup] Daily SNS scheduler NOT launched. Missing env: {missing}")
+
+    # 申込→決済 常時監視 scheduler
+    if MONITORING_ENABLED and MONITORING_TO_EMAIL and RESEND_API_KEY:
+        task = asyncio.create_task(_monitor_scheduler())
+        _BACKGROUND_TASKS.append(task)
+        log.info(f"[Startup] Monitor scheduler launched (interval={MONITORING_INTERVAL_MIN}min)")
+    else:
+        missing = []
+        if not MONITORING_ENABLED: missing.append("MONITORING_ENABLED=0")
+        if not MONITORING_TO_EMAIL: missing.append("MONITORING_TO_EMAIL")
+        if not RESEND_API_KEY: missing.append("RESEND_API_KEY")
+        log.warning(f"[Startup] Monitor scheduler NOT launched. Missing: {missing}")
 
 # ==========================================================================
 # Models
@@ -902,6 +922,397 @@ async def _daily_sns_scheduler():
         except Exception as e:
             log.error(f"[DailySNS] Scheduler loop error: {e}", exc_info=True)
             await asyncio.sleep(3600)
+
+
+# ==========================================================================
+# 申込→決済 常時監視: 申込/決済フローが正常に動いているかを5分おきに自己診断
+# ==========================================================================
+# ローンチ日時 (これ以降の申込ゼロ期間が続いたらアラート対象)
+SERVICE_LAUNCH_TS = int(os.getenv("SERVICE_LAUNCH_TS", "1777142400"))  # 2026-04-26 00:00 JST
+
+
+def _record_alert_sent(alert_key: str, payload: dict):
+    """同じアラートの連続送信を防ぐため events に記録"""
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            ("monitor_alert", json.dumps({"key": alert_key, **payload}, ensure_ascii=False), "monitor_scheduler")
+        )
+        conn.commit()
+    except Exception as e:
+        log.error(f"[Monitor] _record_alert_sent failed: {e}")
+    conn.close()
+
+
+def _alert_recently_sent(alert_key: str, cooldown_min: int = None) -> bool:
+    """同じ alert_key が直近 cooldown 内に送信済みかチェック"""
+    if cooldown_min is None:
+        cooldown_min = MONITORING_ALERT_COOLDOWN_MIN
+    since = datetime.now(timezone.utc) - timedelta(minutes=cooldown_min)
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(
+            "SELECT props FROM events WHERE name = 'monitor_alert' AND created_at >= ? ORDER BY created_at DESC LIMIT 50",
+            (since,)
+        )
+        for r in c.fetchall():
+            try:
+                p = json.loads(r["props"] or "{}")
+                if p.get("key") == alert_key:
+                    return True
+            except Exception:
+                pass
+    except Exception as e:
+        log.warning(f"[Monitor] cooldown check failed: {e}")
+    conn.close()
+    return False
+
+
+def _send_monitor_email(subject: str, body_html: str, to_email: str = None) -> dict:
+    """Resend で監視通知メール送信"""
+    to = to_email or MONITORING_TO_EMAIL
+    if not RESEND_API_KEY or not to:
+        log.warning(f"[Monitor] Email skip: RESEND_API_KEY={bool(RESEND_API_KEY)}, to={to}")
+        return {"sent": False}
+    try:
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({"from": FROM_EMAIL, "to": [to], "subject": subject, "html": body_html}).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json",
+                "User-Agent": "ai-juku-monitor/1.0",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode())
+            log.info(f"[Monitor] Email sent: {result.get('id')}")
+            return {"sent": True, "resend_id": result.get("id")}
+    except Exception as e:
+        log.error(f"[Monitor] Email send failed: {type(e).__name__}: {e}")
+        return {"sent": False, "error": str(e)}
+
+
+def _collect_health_snapshot() -> dict:
+    """申込→決済フローの現在の健全性を集計"""
+    now = datetime.now(timezone.utc)
+    h24 = now - timedelta(hours=24)
+    h1 = now - timedelta(hours=1)
+    conn = db()
+    c = conn.cursor()
+    snapshot = {
+        "timestamp": now.isoformat(),
+        "stripe_configured": bool(STRIPE_SECRET_KEY),
+        "anthropic_configured": bool(ANTHROPIC_API_KEY),
+        "email_configured": bool(RESEND_API_KEY),
+        "founder1_price_configured": STRIPE_PRICE_FOUNDER1 != "price_founder1_placeholder",
+    }
+
+    def safe_count(query, params=()):
+        try:
+            c.execute(query, params)
+            row = c.fetchone()
+            return row[0] if row else 0
+        except Exception as e:
+            log.warning(f"[Monitor] query failed: {e}")
+            return 0
+
+    # 申込 (trial signup) 数
+    snapshot["signups_24h"] = safe_count(
+        "SELECT COUNT(*) FROM students WHERE created_at >= ?", (h24,)
+    )
+    snapshot["signups_1h"] = safe_count(
+        "SELECT COUNT(*) FROM students WHERE created_at >= ?", (h1,)
+    )
+    snapshot["signups_total"] = safe_count("SELECT COUNT(*) FROM students")
+
+    # paid (本契約) 数
+    snapshot["paid_total"] = safe_count(
+        "SELECT COUNT(*) FROM students WHERE status='paid' AND plan IS NOT NULL AND plan != ''"
+    )
+    snapshot["paid_24h"] = safe_count(
+        "SELECT COUNT(*) FROM students WHERE status='paid' AND paid_since >= ?", (h24,)
+    )
+
+    # trial → paid 転換率
+    if snapshot["signups_total"] > 0:
+        snapshot["conversion_rate_pct"] = round(100 * snapshot["paid_total"] / snapshot["signups_total"], 1)
+    else:
+        snapshot["conversion_rate_pct"] = 0.0
+
+    # Webhook 処理: 直近 24時間に処理した event 数
+    snapshot["webhooks_processed_24h"] = safe_count(
+        "SELECT COUNT(*) FROM processed_events WHERE created_at >= ?", (h24,)
+    )
+
+    # ファネル (events): page_view → cta_click → form_submit → checkout_initiated → checkout_completed
+    def event_count(name, since):
+        return safe_count(
+            "SELECT COUNT(*) FROM events WHERE name = ? AND created_at >= ?", (name, since)
+        )
+    snapshot["pv_24h"] = event_count("page_view", h24)
+    snapshot["cta_24h"] = event_count("cta_click", h24)
+    snapshot["form_submit_24h"] = event_count("form_submit", h24)
+    snapshot["checkout_initiated_24h"] = event_count("checkout_initiated", h24)
+    snapshot["checkout_completed_24h"] = event_count("checkout_completed", h24)
+
+    # サービスローンチからの経過時間
+    snapshot["hours_since_launch"] = max(0, int((now.timestamp() - SERVICE_LAUNCH_TS) / 3600))
+
+    conn.close()
+    return snapshot
+
+
+def _evaluate_alerts(snapshot: dict) -> list:
+    """snapshot から発動すべきアラートを判定"""
+    alerts = []
+    # 1. Stripe 設定
+    if not snapshot["stripe_configured"]:
+        alerts.append({
+            "key": "stripe_not_configured", "severity": "critical",
+            "title": "🚨 Stripe API キーが未設定",
+            "detail": "STRIPE_SECRET_KEY が空。決済が一切動きません。"
+        })
+    if not snapshot["founder1_price_configured"]:
+        alerts.append({
+            "key": "founder1_price_not_configured", "severity": "critical",
+            "title": "🚨 1期生プランの Stripe Price ID が未設定",
+            "detail": "STRIPE_PRICE_FOUNDER1 が placeholder のまま。本契約フローで500エラー。"
+        })
+    # 2. Email/AI 設定
+    if not snapshot["email_configured"]:
+        alerts.append({
+            "key": "email_not_configured", "severity": "warning",
+            "title": "⚠️ Resend API キーが未設定",
+            "detail": "登録メール・体験終了メール等が送信できません。"
+        })
+    if not snapshot["anthropic_configured"]:
+        alerts.append({
+            "key": "anthropic_not_configured", "severity": "warning",
+            "title": "⚠️ Anthropic API キーが未設定",
+            "detail": "Daily SNS 投稿生成・AI機能が動作しません。"
+        })
+    # 3. 申込フリーズ: ローンチ48h経過後、24時間 申込ゼロ
+    if (snapshot["hours_since_launch"] > MONITORING_QUIET_HOURS_AFTER_LAUNCH_HOURS
+            and snapshot["signups_24h"] == 0):
+        alerts.append({
+            "key": "no_signups_24h", "severity": "warning",
+            "title": "⚠️ 過去24時間 申込ゼロ",
+            "detail": f"ローンチから{snapshot['hours_since_launch']}時間経過。LPアクセス {snapshot['pv_24h']} / CTA {snapshot['cta_24h']}。集客動線を確認してください。"
+        })
+    # 4. ファネル落差: PV はあるが form_submit ゼロ (フォームエラーの兆候)
+    if snapshot["pv_24h"] >= 50 and snapshot["form_submit_24h"] == 0:
+        alerts.append({
+            "key": "funnel_drop_form", "severity": "warning",
+            "title": "⚠️ ファネル詰まり: PV {pv} あるのにフォーム送信0".format(pv=snapshot["pv_24h"]),
+            "detail": "LP へアクセスはあるのに体験申込フォームの送信がゼロ。フォームバリデーションエラーや JS エラーの可能性。",
+        })
+    # 5. checkout 開始 → 完了の落差: 50%以上落ちたら警告
+    if snapshot["checkout_initiated_24h"] >= 5:
+        complete_rate = snapshot["checkout_completed_24h"] / snapshot["checkout_initiated_24h"]
+        if complete_rate < 0.5:
+            alerts.append({
+                "key": "checkout_complete_rate_low", "severity": "warning",
+                "title": f"⚠️ 決済完了率が低い ({int(complete_rate*100)}%)",
+                "detail": f"checkout 開始 {snapshot['checkout_initiated_24h']} 件中、完了は {snapshot['checkout_completed_24h']} 件のみ。Stripe 決済画面でユーザーが詰まっている可能性。",
+            })
+    # 6. Webhook 沈黙: paid_total > 0 なのに 48時間 webhook がゼロ
+    if snapshot["paid_total"] > 0 and snapshot["webhooks_processed_24h"] == 0 and snapshot["paid_24h"] == 0:
+        # paid 顧客がいるなら invoice.paid が月次で来るはず。来ないのは Webhook 不通の兆候
+        # (ただし新規 paid が直近24h 0件なら通常)
+        pass  # 今は判定保留
+    return alerts
+
+
+def _format_alert_email(alerts: list, snapshot: dict) -> tuple:
+    """アラートメールの subject + html を生成"""
+    severity_max = "critical" if any(a["severity"] == "critical" for a in alerts) else "warning"
+    icon = "🚨" if severity_max == "critical" else "⚠️"
+    subject = f"{icon} AI塾 監視アラート ({len(alerts)}件) - {datetime.now(timezone.utc).strftime('%H:%M UTC')}"
+    rows = ""
+    for a in alerts:
+        bg = "#fee2e2" if a["severity"] == "critical" else "#fef3c7"
+        bd = "#dc2626" if a["severity"] == "critical" else "#fbbf24"
+        rows += f"""
+<div style="background:{bg};border-left:4px solid {bd};border-radius:6px;padding:1rem 1.2rem;margin-bottom:0.8rem;">
+  <div style="font-weight:900;font-size:1rem;color:#222;margin-bottom:0.3rem;">{a['title']}</div>
+  <div style="font-size:0.92rem;color:#444;line-height:1.6;">{a['detail']}</div>
+</div>"""
+    snapshot_html = f"""
+<table style="width:100%;border-collapse:collapse;font-size:0.85rem;color:#444;">
+  <tr><td style="padding:0.3rem 0.5rem;">📅 過去24h 申込</td><td style="text-align:right;font-weight:700;">{snapshot['signups_24h']}名</td></tr>
+  <tr><td style="padding:0.3rem 0.5rem;">📅 過去24h 本契約</td><td style="text-align:right;font-weight:700;">{snapshot['paid_24h']}名</td></tr>
+  <tr><td style="padding:0.3rem 0.5rem;">📊 累計申込</td><td style="text-align:right;font-weight:700;">{snapshot['signups_total']}名</td></tr>
+  <tr><td style="padding:0.3rem 0.5rem;">📊 累計本契約</td><td style="text-align:right;font-weight:700;">{snapshot['paid_total']}名</td></tr>
+  <tr><td style="padding:0.3rem 0.5rem;">📈 転換率</td><td style="text-align:right;font-weight:700;">{snapshot['conversion_rate_pct']}%</td></tr>
+  <tr><td style="padding:0.3rem 0.5rem;">👁 過去24h PV</td><td style="text-align:right;">{snapshot['pv_24h']}</td></tr>
+  <tr><td style="padding:0.3rem 0.5rem;">🎯 過去24h CTA</td><td style="text-align:right;">{snapshot['cta_24h']}</td></tr>
+  <tr><td style="padding:0.3rem 0.5rem;">📝 過去24h フォーム送信</td><td style="text-align:right;">{snapshot['form_submit_24h']}</td></tr>
+  <tr><td style="padding:0.3rem 0.5rem;">💳 過去24h checkout 開始</td><td style="text-align:right;">{snapshot['checkout_initiated_24h']}</td></tr>
+  <tr><td style="padding:0.3rem 0.5rem;">✅ 過去24h checkout 完了</td><td style="text-align:right;">{snapshot['checkout_completed_24h']}</td></tr>
+  <tr><td style="padding:0.3rem 0.5rem;">🔁 過去24h Webhook 処理</td><td style="text-align:right;">{snapshot['webhooks_processed_24h']}</td></tr>
+</table>"""
+    html = f"""<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"></head>
+<body style="font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;line-height:1.7;color:#333;max-width:680px;margin:0 auto;padding:1.5rem;background:#f5f5f7;">
+<div style="background:white;border-radius:14px;padding:1.5rem;margin-bottom:1.2rem;">
+  <h1 style="font-size:1.3rem;color:#222;margin:0 0 0.4rem;">{icon} 監視アラート ({len(alerts)}件)</h1>
+  <p style="color:#666;font-size:0.85rem;margin:0;">https://trillion-ai-juku.com 申込→決済フロー監視</p>
+</div>
+<div style="background:white;border-radius:14px;padding:1.5rem;margin-bottom:1.2rem;">
+  <h2 style="font-size:1.05rem;margin:0 0 1rem;border-bottom:2px solid #6366f1;padding-bottom:0.4rem;">🚦 検知された異常</h2>
+  {rows}
+</div>
+<div style="background:white;border-radius:14px;padding:1.5rem;margin-bottom:1.2rem;">
+  <h2 style="font-size:1.05rem;margin:0 0 1rem;border-bottom:2px solid #6366f1;padding-bottom:0.4rem;">📊 現在のスナップショット</h2>
+  {snapshot_html}
+</div>
+<p style="font-size:0.78rem;color:#999;text-align:center;">🤖 ai-juku-api 監視システム / cooldown {MONITORING_ALERT_COOLDOWN_MIN}分 / 同じアラートは1回まで送信</p>
+</body></html>"""
+    return subject, html
+
+
+def _format_daily_summary(snapshot: dict) -> tuple:
+    """毎朝7時のサマリメール"""
+    JST = timezone(timedelta(hours=9))
+    today = datetime.now(JST).strftime("%Y-%m-%d (%a)")
+    subject = f"📊 AI塾 朝のサマリ {today} / 申込{snapshot['signups_24h']}名・契約{snapshot['paid_24h']}名"
+    snapshot_html = _format_alert_email([], snapshot)[1]
+    # _format_alert_email は alerts を中心にするので、サマリ用に整形しなおす
+    body_html = f"""<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"></head>
+<body style="font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;line-height:1.7;color:#333;max-width:680px;margin:0 auto;padding:1.5rem;background:#f5f5f7;">
+<div style="background:white;border-radius:14px;padding:1.5rem;margin-bottom:1.2rem;">
+  <h1 style="font-size:1.3rem;color:#6366f1;margin:0 0 0.4rem;">📊 AI塾 朝のサマリ</h1>
+  <p style="color:#666;font-size:0.85rem;margin:0;">{today} 過去24時間の申込→決済フロー</p>
+</div>
+<div style="background:white;border-radius:14px;padding:1.5rem;margin-bottom:1.2rem;">
+  <table style="width:100%;border-collapse:collapse;font-size:0.92rem;color:#222;">
+    <tr style="background:#eef2ff;"><td style="padding:0.6rem 0.8rem;font-weight:700;">📅 過去24h 申込</td><td style="text-align:right;padding:0.6rem 0.8rem;font-weight:900;font-size:1.2rem;color:#6366f1;">{snapshot['signups_24h']}<span style="font-size:0.78rem;color:#888;">名</span></td></tr>
+    <tr style="background:#ecfdf5;"><td style="padding:0.6rem 0.8rem;font-weight:700;">📅 過去24h 本契約</td><td style="text-align:right;padding:0.6rem 0.8rem;font-weight:900;font-size:1.2rem;color:#10b981;">{snapshot['paid_24h']}<span style="font-size:0.78rem;color:#888;">名</span></td></tr>
+    <tr><td style="padding:0.5rem 0.8rem;">📊 累計申込 / 本契約</td><td style="text-align:right;padding:0.5rem 0.8rem;">{snapshot['signups_total']} / {snapshot['paid_total']}名</td></tr>
+    <tr><td style="padding:0.5rem 0.8rem;">📈 体験→本契約 転換率</td><td style="text-align:right;padding:0.5rem 0.8rem;font-weight:700;">{snapshot['conversion_rate_pct']}%</td></tr>
+    <tr><td style="padding:0.5rem 0.8rem;">👁 過去24h LP アクセス (PV)</td><td style="text-align:right;padding:0.5rem 0.8rem;">{snapshot['pv_24h']}</td></tr>
+    <tr><td style="padding:0.5rem 0.8rem;">🎯 過去24h CTAクリック</td><td style="text-align:right;padding:0.5rem 0.8rem;">{snapshot['cta_24h']}</td></tr>
+    <tr><td style="padding:0.5rem 0.8rem;">📝 過去24h フォーム送信</td><td style="text-align:right;padding:0.5rem 0.8rem;">{snapshot['form_submit_24h']}</td></tr>
+    <tr><td style="padding:0.5rem 0.8rem;">💳 過去24h checkout 開始 / 完了</td><td style="text-align:right;padding:0.5rem 0.8rem;">{snapshot['checkout_initiated_24h']} / {snapshot['checkout_completed_24h']}</td></tr>
+    <tr><td style="padding:0.5rem 0.8rem;">🔁 過去24h Stripe Webhook 処理</td><td style="text-align:right;padding:0.5rem 0.8rem;">{snapshot['webhooks_processed_24h']}</td></tr>
+  </table>
+</div>
+<div style="background:#eef2ff;border-radius:14px;padding:1.2rem;font-size:0.85rem;color:#444;line-height:1.7;">
+  <strong>📌 次にやることヒント</strong><br>
+  ・LP アクセスが10未満 → SNS 投稿頻度を上げる (Threads/Instagram)<br>
+  ・CTAクリックは多いがフォーム送信が少ない → LP の入力負荷を再確認<br>
+  ・本契約ゼロ → checkout-success.html → upgrade.html の動線を確認<br>
+  ・累計本契約 90名超え → 第1期生100名キャンペーンの終了告知準備
+</div>
+<p style="font-size:0.78rem;color:#999;text-align:center;margin-top:1rem;">🤖 ai-juku-api 監視システム / 異常時は別途即時アラート送信</p>
+</body></html>"""
+    return subject, body_html
+
+
+def _run_monitor_check() -> dict:
+    """監視を1回実行: snapshot 取得 → アラート判定 → 必要なら送信"""
+    snapshot = _collect_health_snapshot()
+    alerts = _evaluate_alerts(snapshot)
+    sent_alerts = []
+    skipped_alerts = []
+    for a in alerts:
+        if _alert_recently_sent(a["key"]):
+            skipped_alerts.append(a["key"])
+            continue
+        # 1件ずつ即時送信 (新規アラートのみ)
+        subject, html = _format_alert_email([a], snapshot)
+        result = _send_monitor_email(subject, html)
+        if result.get("sent"):
+            _record_alert_sent(a["key"], {"severity": a["severity"], "title": a["title"]})
+            sent_alerts.append(a["key"])
+    return {
+        "ok": True,
+        "snapshot": snapshot,
+        "alerts_total": len(alerts),
+        "alerts_sent": sent_alerts,
+        "alerts_skipped_cooldown": skipped_alerts,
+    }
+
+
+def _check_daily_summary_sent_today_jst() -> bool:
+    """今日 (JST) 既にデイリーサマリを送ったか"""
+    JST = timezone(timedelta(hours=9))
+    today = datetime.now(JST).date()
+    today_start_utc = datetime.combine(today, time(0, 0), tzinfo=JST).astimezone(timezone.utc)
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(
+            "SELECT COUNT(*) FROM events WHERE name = 'monitor_daily_summary' AND created_at >= ?",
+            (today_start_utc,)
+        )
+        n = c.fetchone()[0]
+    except Exception:
+        n = 0
+    conn.close()
+    return n > 0
+
+
+def _send_daily_summary_if_due() -> dict:
+    """毎朝 MONITORING_DAILY_SUMMARY_HOUR_JST 時に1回だけ送信"""
+    if _check_daily_summary_sent_today_jst():
+        return {"sent": False, "reason": "already_sent_today"}
+    snapshot = _collect_health_snapshot()
+    subject, html = _format_daily_summary(snapshot)
+    result = _send_monitor_email(subject, html)
+    if result.get("sent"):
+        conn = db()
+        c = conn.cursor()
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("monitor_daily_summary", json.dumps({"resend_id": result.get("resend_id")}), "monitor_scheduler")
+            )
+            conn.commit()
+        except Exception:
+            pass
+        conn.close()
+    return {"sent": result.get("sent"), "snapshot": snapshot}
+
+
+async def _monitor_scheduler():
+    """5分おきに監視チェック + 朝7時にデイリーサマリ"""
+    JST = timezone(timedelta(hours=9))
+    log.info(f"[Monitor] Scheduler started, interval={MONITORING_INTERVAL_MIN}min, daily_summary at JST {MONITORING_DAILY_SUMMARY_HOUR_JST}:00")
+    while True:
+        try:
+            # 1. 5分間隔の異常検知
+            try:
+                result = _run_monitor_check()
+                if result.get("alerts_sent"):
+                    log.warning(f"[Monitor] Alerts sent: {result['alerts_sent']}")
+                else:
+                    log.info(f"[Monitor] OK: signups_24h={result['snapshot']['signups_24h']}, paid_total={result['snapshot']['paid_total']}")
+            except Exception as e:
+                log.error(f"[Monitor] check error: {e}", exc_info=True)
+            # 2. JST DAILY_SUMMARY_HOUR_JST 時台 → デイリーサマリ送信判定
+            now_jst = datetime.now(JST)
+            if now_jst.hour == MONITORING_DAILY_SUMMARY_HOUR_JST:
+                try:
+                    summary_result = _send_daily_summary_if_due()
+                    if summary_result.get("sent"):
+                        log.info("[Monitor] Daily summary sent")
+                except Exception as e:
+                    log.error(f"[Monitor] daily summary error: {e}", exc_info=True)
+            # 3. 次のループまで sleep
+            await asyncio.sleep(MONITORING_INTERVAL_MIN * 60)
+        except asyncio.CancelledError:
+            log.info("[Monitor] Scheduler cancelled")
+            raise
+        except Exception as e:
+            log.error(f"[Monitor] scheduler loop error: {e}", exc_info=True)
+            await asyncio.sleep(300)
 
 
 def _create_otp(student_id: int, ttl_seconds: int = 600) -> str:
@@ -1630,6 +2041,59 @@ def admin_sns_history(authorization: Optional[str] = Header(None), days: int = 1
             "posts": props.get("posts", []),
         })
     return {"days": days, "count": len(history), "history": history}
+
+
+@app.post("/api/admin/monitor/run-now")
+def admin_monitor_run_now(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """監視を今すぐ実行 (手動トリガー)。admin Bearer or x-cron-secret 認証。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    return _run_monitor_check()
+
+
+@app.get("/api/admin/monitor/status")
+def admin_monitor_status(authorization: Optional[str] = Header(None)):
+    """現状の health snapshot を返す (アラート判定もまとめて)"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+    snapshot = _collect_health_snapshot()
+    alerts = _evaluate_alerts(snapshot)
+    return {
+        "snapshot": snapshot,
+        "alerts": alerts,
+        "alerts_count": len(alerts),
+        "monitoring_enabled": MONITORING_ENABLED,
+        "monitoring_interval_min": MONITORING_INTERVAL_MIN,
+        "monitoring_to_email": MONITORING_TO_EMAIL[:3] + "***" if MONITORING_TO_EMAIL else "",
+    }
+
+
+@app.post("/api/admin/monitor/daily-summary-now")
+def admin_monitor_daily_summary_now(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """デイリーサマリを今すぐ送信 (手動)。今日既に送信済みでも force=1 で再送可能。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    snapshot = _collect_health_snapshot()
+    subject, html = _format_daily_summary(snapshot)
+    result = _send_monitor_email(subject, html)
+    return {"sent": result.get("sent"), "snapshot": snapshot, "subject": subject}
 
 
 @app.get("/api/auth/me")

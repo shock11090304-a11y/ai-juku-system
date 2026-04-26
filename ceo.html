@@ -428,6 +428,54 @@
       </div>
     </section>
 
+    <!-- 申込→決済 常時監視ヘルス -->
+    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(52,211,153,0.06); border: 1px solid rgba(52,211,153,0.25); border-radius: 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+        <h2 style="font-size:1.15rem;color:#34d399;margin:0;">🩺 申込→決済 常時監視 <span id="monitorUpdated" style="font-size:0.7rem;color:#71717a;font-weight:400;">--</span></h2>
+        <div style="display:flex;gap:0.4rem;">
+          <button id="refreshMonitor" style="background:rgba(52,211,153,0.2);color:#34d399;border:1px solid rgba(52,211,153,0.4);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">🔄 診断</button>
+          <button id="sendDailySummary" style="background:rgba(99,102,241,0.2);color:#a78bfa;border:1px solid rgba(99,102,241,0.4);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">📧 朝サマリ手動送信</button>
+        </div>
+      </div>
+      <!-- 総合ヘルスバッジ -->
+      <div id="monitorHealthBadge" style="margin-bottom:1rem;padding:0.85rem 1rem;border-radius:10px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.4);text-align:center;font-weight:900;color:#34d399;font-size:1.05rem;">
+        ⏳ 診断中...
+      </div>
+      <!-- 設定状況 (4 KPI) -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.6rem;margin-bottom:1rem;font-size:0.78rem;">
+        <div style="background:rgba(0,0,0,0.25);border-radius:8px;padding:0.6rem;text-align:center;">
+          <div style="color:#94a3b8;margin-bottom:0.2rem;">Stripe API</div>
+          <div id="monStripe" style="font-size:1.2rem;font-weight:900;">--</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.25);border-radius:8px;padding:0.6rem;text-align:center;">
+          <div style="color:#94a3b8;margin-bottom:0.2rem;">Founder1 Price</div>
+          <div id="monFounder1" style="font-size:1.2rem;font-weight:900;">--</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.25);border-radius:8px;padding:0.6rem;text-align:center;">
+          <div style="color:#94a3b8;margin-bottom:0.2rem;">Resend Email</div>
+          <div id="monEmail" style="font-size:1.2rem;font-weight:900;">--</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.25);border-radius:8px;padding:0.6rem;text-align:center;">
+          <div style="color:#94a3b8;margin-bottom:0.2rem;">Anthropic API</div>
+          <div id="monAnthropic" style="font-size:1.2rem;font-weight:900;">--</div>
+        </div>
+      </div>
+      <!-- 過去24h ファネル -->
+      <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:0.85rem;margin-bottom:1rem;">
+        <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.5rem;">📈 過去24時間 申込→決済ファネル</div>
+        <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;font-size:0.85rem;">
+          <span>👁 PV <strong id="monPv">0</strong></span><span style="color:#71717a;">→</span>
+          <span>🎯 CTA <strong id="monCta">0</strong></span><span style="color:#71717a;">→</span>
+          <span>📝 フォーム <strong id="monForm">0</strong></span><span style="color:#71717a;">→</span>
+          <span>💳 checkout <strong id="monCheckoutInit">0</strong>/<strong id="monCheckoutDone">0</strong></span><span style="color:#71717a;">→</span>
+          <span>👤 申込 <strong id="monSignup24">0</strong></span><span style="color:#71717a;">→</span>
+          <span>✅ 本契約 <strong id="monPaid24">0</strong></span>
+        </div>
+      </div>
+      <!-- アラート一覧 -->
+      <div id="monAlertsBox"></div>
+    </section>
+
     <!-- アクセス数モニター (LP / CTA / フォーム送信を events から集計) -->
     <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
@@ -1104,20 +1152,111 @@
       }
     }
 
+    // 申込→決済 監視ヘルス
+    async function loadMonitorHealth() {
+      if (!window.AdminAuth || !AdminAuth.getToken()) return;
+      try {
+        const res = await AdminAuth.fetch('/api/admin/monitor/status');
+        if (!res.ok) return;
+        const data = await res.json();
+        const s = data.snapshot || {};
+        const alerts = data.alerts || [];
+        // 設定状況
+        const ok = '<span style="color:#34d399;">✅</span>';
+        const ng = '<span style="color:#f87171;">❌</span>';
+        document.getElementById('monStripe').innerHTML = s.stripe_configured ? ok : ng;
+        document.getElementById('monFounder1').innerHTML = s.founder1_price_configured ? ok : ng;
+        document.getElementById('monEmail').innerHTML = s.email_configured ? ok : ng;
+        document.getElementById('monAnthropic').innerHTML = s.anthropic_configured ? ok : ng;
+        // ファネル
+        document.getElementById('monPv').textContent = fmtNum(s.pv_24h);
+        document.getElementById('monCta').textContent = fmtNum(s.cta_24h);
+        document.getElementById('monForm').textContent = fmtNum(s.form_submit_24h);
+        document.getElementById('monCheckoutInit').textContent = fmtNum(s.checkout_initiated_24h);
+        document.getElementById('monCheckoutDone').textContent = fmtNum(s.checkout_completed_24h);
+        document.getElementById('monSignup24').textContent = fmtNum(s.signups_24h);
+        document.getElementById('monPaid24').textContent = fmtNum(s.paid_24h);
+        // 総合バッジ
+        const badge = document.getElementById('monitorHealthBadge');
+        if (alerts.length === 0) {
+          badge.style.background = 'rgba(52,211,153,0.12)';
+          badge.style.borderColor = 'rgba(52,211,153,0.4)';
+          badge.style.color = '#34d399';
+          badge.innerHTML = '✅ 全システム正常 (異常検知なし)';
+        } else {
+          const critical = alerts.some(a => a.severity === 'critical');
+          if (critical) {
+            badge.style.background = 'rgba(248,113,113,0.18)';
+            badge.style.borderColor = 'rgba(248,113,113,0.5)';
+            badge.style.color = '#fca5a5';
+            badge.innerHTML = `🚨 ${alerts.length} 件の重大な異常`;
+          } else {
+            badge.style.background = 'rgba(251,191,36,0.18)';
+            badge.style.borderColor = 'rgba(251,191,36,0.4)';
+            badge.style.color = '#fbbf24';
+            badge.innerHTML = `⚠️ ${alerts.length} 件の警告`;
+          }
+        }
+        // アラート詳細
+        const box = document.getElementById('monAlertsBox');
+        if (alerts.length === 0) {
+          box.innerHTML = '';
+        } else {
+          let html = '<h3 style="font-size:0.92rem;color:#e4e4e7;margin:0.6rem 0 0.5rem;">🚦 検知された異常</h3>';
+          alerts.forEach(a => {
+            const bd = a.severity === 'critical' ? '#dc2626' : '#fbbf24';
+            const bg = a.severity === 'critical' ? 'rgba(248,113,113,0.08)' : 'rgba(251,191,36,0.08)';
+            html += `<div style="background:${bg};border-left:3px solid ${bd};border-radius:6px;padding:0.7rem 1rem;margin-bottom:0.5rem;">
+              <div style="font-weight:800;font-size:0.92rem;color:#e4e4e7;margin-bottom:0.3rem;">${escapeHtml(a.title)}</div>
+              <div style="font-size:0.82rem;color:#94a3b8;line-height:1.5;">${escapeHtml(a.detail)}</div>
+            </div>`;
+          });
+          box.innerHTML = html;
+        }
+        const now = new Date();
+        document.getElementById('monitorUpdated').textContent = `(更新: ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')})`;
+      } catch (e) {
+        console.warn('[loadMonitorHealth] failed:', e);
+      }
+    }
+
     // 初回読込 + 60秒ごと自動更新
     function start() {
       loadSignupSummary();
       loadLiveRoster();
       loadFoundersDualCount();
       loadAnalyticsDashboard();
+      loadMonitorHealth();
       setInterval(loadSignupSummary, 60000);
       setInterval(loadLiveRoster, 60000);
       setInterval(loadFoundersDualCount, 60000);
       setInterval(loadAnalyticsDashboard, 60000);
+      setInterval(loadMonitorHealth, 60000);
       const btn = document.getElementById('refreshSignupSummary');
       if (btn) btn.addEventListener('click', () => { loadSignupSummary(); loadLiveRoster(); loadFoundersDualCount(); });
       const anaBtn = document.getElementById('refreshAnalytics');
       if (anaBtn) anaBtn.addEventListener('click', loadAnalyticsDashboard);
+      const monBtn = document.getElementById('refreshMonitor');
+      if (monBtn) monBtn.addEventListener('click', async () => {
+        // 「診断」ボタン: monitor を即時実行 (新規アラートがあればGmail送信される) → status を再取得
+        if (window.AdminAuth && AdminAuth.getToken()) {
+          try {
+            await AdminAuth.fetch('/api/admin/monitor/run-now', { method: 'POST' });
+          } catch (e) { console.warn(e); }
+        }
+        loadMonitorHealth();
+      });
+      const sumBtn = document.getElementById('sendDailySummary');
+      if (sumBtn) sumBtn.addEventListener('click', async () => {
+        if (!confirm('本日の朝サマリを今すぐGmailに送信しますか?')) return;
+        sumBtn.disabled = true; sumBtn.textContent = '⏳ 送信中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/monitor/daily-summary-now', { method: 'POST' });
+          const j = await r.json();
+          alert(j.sent ? '✅ 送信しました' : '⚠️ 送信失敗: ' + JSON.stringify(j));
+        } catch (e) { alert('⚠️ ' + e.message); }
+        sumBtn.disabled = false; sumBtn.textContent = '📧 朝サマリ手動送信';
+      });
     }
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => setTimeout(start, 1500));
