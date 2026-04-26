@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>塾月謝 入金管理</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="bg-gradient"></div>
+<div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">¥</div>
+    <div>
+      <div class="logo-title">塾月謝 入金管理</div>
+      <div class="logo-sub">楽天銀行 CSV 連携 / 督促メール</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <label class="month-picker">
+      <span>対象月</span>
+      <input type="month" id="monthInput">
+    </label>
+    <button class="btn btn-ghost" id="exportBtn" title="全データをJSONでバックアップ">💾</button>
+    <button class="btn btn-ghost" id="importBtn" title="JSONバックアップを読み込み">📂</button>
+    <button class="btn btn-ghost" id="settingsBtn" title="設定 (塾名・振込先・メールテンプレ)">⚙</button>
+    <button class="btn btn-ghost" id="reloadBtn" title="data.json を再読込">↻</button>
+    <input type="file" id="importFile" accept=".json" hidden>
+  </div>
+</header>
+
+<section class="stats">
+  <div class="stat-card">
+    <div class="stat-label">通塾生</div>
+    <div class="stat-value" id="statTotal">—</div>
+    <div class="stat-sub">アクティブ生徒数</div>
+  </div>
+  <div class="stat-card stat-success">
+    <div class="stat-label">入金済</div>
+    <div class="stat-value" id="statPaid">—</div>
+    <div class="stat-sub" id="statPaidAmount">¥—</div>
+  </div>
+  <div class="stat-card stat-warning">
+    <div class="stat-label">未払い</div>
+    <div class="stat-value" id="statUnpaid">—</div>
+    <div class="stat-sub" id="statUnpaidAmount">¥—</div>
+  </div>
+  <div class="stat-card stat-primary">
+    <div class="stat-label">入金率</div>
+    <div class="stat-value"><span id="statRate">—</span><span class="unit">%</span></div>
+    <div class="stat-bar"><div class="stat-bar-fill" id="statRateBar"></div></div>
+  </div>
+</section>
+
+<nav class="tabs">
+  <button class="tab tab-active" data-tab="dashboard">📊 ダッシュボード</button>
+  <button class="tab" data-tab="unpaid">⚠ 未払いリスト</button>
+  <button class="tab" data-tab="enrollment">🎓 在籍判定</button>
+  <button class="tab" data-tab="all">👥 全生徒</button>
+  <button class="tab" data-tab="history">📅 月別履歴</button>
+  <button class="tab" data-tab="import">📥 CSV取込</button>
+  <button class="tab" data-tab="invoice">📄 請求書PDF</button>
+</nav>
+
+<main class="content">
+  <!-- ダッシュボード -->
+  <section class="panel" data-panel="dashboard">
+    <div class="panel-head">
+      <h2>ダッシュボード <span class="month-tag" id="dashMonthTag">—</span></h2>
+    </div>
+    <div class="dash-grid">
+      <div class="dash-card dash-card-wide">
+        <h3>月次売上推移 (直近12ヶ月)</h3>
+        <canvas id="chartRevenue" height="120"></canvas>
+      </div>
+      <div class="dash-card">
+        <h3>入金率推移</h3>
+        <canvas id="chartRate" height="160"></canvas>
+      </div>
+      <div class="dash-card">
+        <h3>コース別生徒数 (通塾中)</h3>
+        <canvas id="chartCourse" height="160"></canvas>
+      </div>
+      <div class="dash-card dash-card-wide">
+        <h3>当月入金状況</h3>
+        <div class="dash-paid-row">
+          <div class="dash-mini">
+            <div class="dash-mini-label">通塾</div>
+            <div class="dash-mini-val" id="dashTotal">—</div>
+          </div>
+          <div class="dash-mini dash-mini-success">
+            <div class="dash-mini-label">入金済</div>
+            <div class="dash-mini-val" id="dashPaid">—</div>
+          </div>
+          <div class="dash-mini dash-mini-warning">
+            <div class="dash-mini-label">未払い</div>
+            <div class="dash-mini-val" id="dashUnpaid">—</div>
+          </div>
+          <div class="dash-mini dash-mini-primary">
+            <div class="dash-mini-label">当月売上 (確定)</div>
+            <div class="dash-mini-val" id="dashRevenue">¥—</div>
+          </div>
+          <div class="dash-mini dash-mini-error">
+            <div class="dash-mini-label">未収金</div>
+            <div class="dash-mini-val" id="dashOutstanding">¥—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 未払いリスト -->
+  <section class="panel hidden" data-panel="unpaid">
+    <div class="panel-head">
+      <h2>未払い者 <span class="month-tag" id="unpaidMonthTag">—</span> <span class="count-tag" id="unpaidCountTag"></span></h2>
+      <div class="panel-actions">
+        <select class="select" id="unpaidGradeFilter"><option value="">学年: 全て</option></select>
+        <select class="select" id="unpaidCourseFilter"><option value="">コース: 全て</option></select>
+        <button class="btn btn-ghost btn-sm" id="copyAllBccBtn" title="全員のメアドをBCCコピー">📋 BCC</button>
+        <button class="btn btn-primary" id="bulkMailBtn">📧 一括督促メール</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="table" id="unpaidTable">
+        <thead>
+          <tr>
+            <th>ID</th><th>氏名</th><th>学年</th>
+            <th class="ta-r">月謝</th><th>メール</th>
+            <th class="ta-c">督促状況</th><th class="ta-c">アクション</th>
+          </tr>
+        </thead>
+        <tbody id="unpaidTbody"><tr><td colspan="7" class="empty">読込中…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 全生徒 -->
+  <section class="panel hidden" data-panel="all">
+    <div class="panel-head">
+      <h2>全生徒一覧 <span class="count-tag" id="allCountTag"></span></h2>
+      <div class="panel-actions">
+        <input type="text" class="search-input" id="searchInput" placeholder="🔍 氏名で検索">
+        <select class="select" id="statusFilter">
+          <option value="">ステータス: 全て</option>
+          <option value="通塾" selected>通塾中</option>
+          <option value="休塾">休塾</option>
+          <option value="退塾">退塾</option>
+        </select>
+        <select class="select" id="gradeFilter"><option value="">学年: 全て</option></select>
+        <select class="select" id="courseFilter"><option value="">コース: 全て</option></select>
+        <button class="btn btn-ghost btn-sm" id="resetFilterBtn">↺ リセット</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="table" id="allTable">
+        <thead>
+          <tr>
+            <th>ID</th><th>氏名</th><th>学年</th><th>コース</th>
+            <th class="ta-r">月謝</th><th>メール</th><th>振込人名</th>
+            <th>状態</th><th class="ta-c">当月</th>
+          </tr>
+        </thead>
+        <tbody id="allTbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 在籍判定 -->
+  <section class="panel hidden" data-panel="enrollment">
+    <div class="panel-head">
+      <h2>在籍判定 <span class="month-tag" id="enrollMonthTag">—</span> <span class="count-tag" id="enrollCountTag"></span></h2>
+      <div class="panel-actions">
+        <select class="select" id="enrollCategoryFilter">
+          <option value="">カテゴリ: 全て</option>
+          <option value="healthy">健全</option>
+          <option value="fading">注意 (1-2ヶ月空き)</option>
+          <option value="suspicious">辞めた可能性 (3ヶ月以上空き)</option>
+          <option value="none">振込確認なし</option>
+        </select>
+        <select class="select" id="enrollGradeFilter"><option value="">学年: 全て</option></select>
+        <select class="select" id="enrollCourseFilter"><option value="">コース: 全て</option></select>
+        <button class="btn btn-warning" id="bulkRetireBtn">→ 選択を退塾に変更</button>
+      </div>
+    </div>
+    <div class="enroll-stats">
+      <div class="enroll-stat enroll-stat-success">
+        <span>健全</span><strong id="enrollCntHealthy">—</strong>
+        <small>直近2ヶ月入金あり</small>
+      </div>
+      <div class="enroll-stat enroll-stat-warning">
+        <span>注意</span><strong id="enrollCntFading">—</strong>
+        <small>1-2ヶ月空き</small>
+      </div>
+      <div class="enroll-stat enroll-stat-error">
+        <span>辞めた可能性</span><strong id="enrollCntSuspicious">—</strong>
+        <small>3ヶ月以上入金なし</small>
+      </div>
+      <div class="enroll-stat enroll-stat-muted">
+        <span>振込確認なし</span><strong id="enrollCntNone">—</strong>
+        <small>全期間入金記録なし</small>
+      </div>
+    </div>
+    <div class="hint" style="margin:0 1.5rem 1rem">
+      <strong>判定基準:</strong> 月別 payments の paid フラグから、過去6ヶ月の入金パターンを集計。<br>
+      <strong>振込確認なしが多い場合:</strong> CSV取込タブで5ヶ月分のCSVを取り込んで未マッチを紐付けると、payerNames が学習されて判定精度が大幅UPします。<br>
+      <strong>辞めた可能性</strong>に該当する生徒は、状態列のプルダウン or 一括ボタンで「退塾」に変更してください。
+    </div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="ta-c"><input type="checkbox" id="enrollSelectAll"></th>
+            <th>ID</th><th>氏名</th><th>学年</th><th>コース</th>
+            <th class="ta-r">月謝</th>
+            <th class="ta-c">直近6ヶ月</th>
+            <th>最終入金</th>
+            <th>累計</th>
+            <th>判定</th>
+            <th>状態変更</th>
+          </tr>
+        </thead>
+        <tbody id="enrollTbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 月別履歴 -->
+  <section class="panel hidden" data-panel="history">
+    <div class="panel-head">
+      <h2>月別入金履歴 (直近6ヶ月)</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="table table-history" id="historyTable">
+        <thead><tr id="historyHead"></tr></thead>
+        <tbody id="historyTbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 請求書PDF -->
+  <section class="panel hidden" data-panel="invoice">
+    <div class="panel-head">
+      <h2>請求書PDF生成 <span class="month-tag" id="invoiceMonthTag">—</span></h2>
+      <div class="panel-actions">
+        <button class="btn btn-ghost btn-sm" id="invoicePreviewBtn">👁 プレビュー</button>
+        <button class="btn btn-primary" id="invoiceBulkBtn">📄 全員分一括生成</button>
+      </div>
+    </div>
+    <div class="invoice-controls">
+      <label class="invoice-radio">
+        <input type="radio" name="invoiceTarget" value="all" checked>
+        <span>全通塾生</span>
+      </label>
+      <label class="invoice-radio">
+        <input type="radio" name="invoiceTarget" value="unpaid">
+        <span>当月未払い者のみ</span>
+      </label>
+      <label class="invoice-radio">
+        <input type="radio" name="invoiceTarget" value="select">
+        <span>個別選択</span>
+      </label>
+      <span class="invoice-spacer"></span>
+      <select class="select" id="invoiceGradeFilter"><option value="">学年: 全て</option></select>
+      <select class="select" id="invoiceCourseFilter"><option value="">コース: 全て</option></select>
+    </div>
+    <div class="table-wrap">
+      <table class="table" id="invoiceTable">
+        <thead>
+          <tr>
+            <th class="ta-c"><input type="checkbox" id="invoiceSelectAll"></th>
+            <th>ID</th><th>氏名</th><th>学年</th><th>コース</th>
+            <th class="ta-r">月謝</th><th class="ta-c">入金状況</th><th class="ta-c">個別出力</th>
+          </tr>
+        </thead>
+        <tbody id="invoiceTbody"></tbody>
+      </table>
+    </div>
+    <div class="hint">
+      <strong>出力内容:</strong> A4縦・1ページ／請求書番号・発行日・宛名・コース内訳・月謝額・振込先 (設定モーダルで編集) を記載。<br>
+      <strong>使い方:</strong> 対象を選んで「全員分一括生成」を押すと、ZIPで全請求書PDFをダウンロードします (大量の場合は時間がかかります)。
+    </div>
+  </section>
+
+  <!-- CSV取込 -->
+  <section class="panel hidden" data-panel="import">
+    <div class="panel-head">
+      <h2>楽天銀行 CSV 取込</h2>
+      <div class="panel-actions">
+        <span class="month-tag" id="importMonthTag">対象月: —</span>
+      </div>
+    </div>
+    <div class="upload-area" id="uploadArea">
+      <div class="upload-icon">📂</div>
+      <div class="upload-title">楽天銀行の入出金明細CSVをドラッグ&ドロップ</div>
+      <div class="upload-sub">または クリックして選択 (Shift_JIS 自動デコード対応)</div>
+      <input type="file" id="csvFile" accept=".csv" hidden>
+    </div>
+
+    <div class="import-results hidden" id="importResults">
+      <div class="import-summary">
+        <div class="summary-item"><div class="summary-label">取込行数</div><div class="summary-value" id="sumRows">—</div></div>
+        <div class="summary-item"><div class="summary-label">入金件数</div><div class="summary-value" id="sumIncoming">—</div></div>
+        <div class="summary-item"><div class="summary-label">月謝候補</div><div class="summary-value summary-primary" id="sumCandidates">—</div></div>
+        <div class="summary-item"><div class="summary-label">自動マッチ</div><div class="summary-value summary-success" id="sumMatched">—</div></div>
+        <div class="summary-item"><div class="summary-label">要確認</div><div class="summary-value summary-warning" id="sumPending">—</div></div>
+      </div>
+
+      <div class="match-controls">
+        <div class="match-tabs">
+          <button class="match-tab match-tab-active" data-match-tab="pending">⚠ 要確認</button>
+          <button class="match-tab" data-match-tab="matched">✓ 自動マッチ</button>
+          <button class="match-tab" data-match-tab="ignored">— 除外 (ノイズ)</button>
+        </div>
+        <div>
+          <button class="btn btn-ghost btn-sm" id="resetImportBtn">↺ やり直し</button>
+          <button class="btn btn-primary" id="applyImportBtn" disabled>💾 確定して入金反映</button>
+        </div>
+      </div>
+
+      <div class="match-list" id="matchList"></div>
+    </div>
+
+    <div class="hint">
+      <strong>使い方:</strong> 楽天銀行ビジネス → 入出金明細CSVをDL → ここにD&D → 自動マッチを確認 → 「確定して入金反映」で対象月の payments に書込まれます。<br>
+      <strong>除外パターン:</strong> <code>ラクテンショウケン</code> / <code>カ−ド出金</code> / <code>口座振替</code> / <code>ATM</code> / <code>テレボ</code> など自動でノイズ判定。<br>
+      <strong>振込人名学習:</strong> 一度紐付けると <code>payerNames</code> に保存され、次回CSVでは自動マッチします（親名義↔子供生徒）。
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <span>juku-payment v1.0</span>
+  <span>分離アプリ / juku-manager データ継承</span>
+</footer>
+
+<!-- 設定モーダル -->
+<div class="modal-overlay hidden" id="settingsModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>⚙ 設定</h2>
+      <button class="modal-close" data-modal-close>✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-section">
+        <h3>塾情報</h3>
+        <div class="form-grid">
+          <label class="form-group">
+            <span>塾名</span>
+            <input type="text" id="setJukuName" placeholder="◯◯塾">
+          </label>
+          <label class="form-group">
+            <span>塾長名 (差出人)</span>
+            <input type="text" id="setOwnerName" placeholder="塾長 〇〇">
+          </label>
+          <label class="form-group">
+            <span>連絡先メール</span>
+            <input type="email" id="setOwnerEmail" placeholder="info@example.com">
+          </label>
+          <label class="form-group">
+            <span>連絡先電話</span>
+            <input type="tel" id="setOwnerPhone" placeholder="090-XXXX-XXXX">
+          </label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>振込先 (請求書&メールに記載)</h3>
+        <div class="form-grid">
+          <label class="form-group">
+            <span>銀行名</span>
+            <input type="text" id="setBankName" placeholder="楽天銀行" value="楽天銀行">
+          </label>
+          <label class="form-group">
+            <span>支店名</span>
+            <input type="text" id="setBranchName" placeholder="第一営業支店">
+          </label>
+          <label class="form-group">
+            <span>口座種別</span>
+            <select id="setAccountType">
+              <option>普通</option>
+              <option>当座</option>
+            </select>
+          </label>
+          <label class="form-group">
+            <span>口座番号</span>
+            <input type="text" id="setAccountNumber" placeholder="1234567">
+          </label>
+          <label class="form-group form-group-wide">
+            <span>口座名義 (カナ)</span>
+            <input type="text" id="setAccountHolder" placeholder="アダチ ショウヘイ">
+          </label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>請求 / 督促</h3>
+        <div class="form-grid">
+          <label class="form-group">
+            <span>支払期日 (毎月)</span>
+            <select id="setDeadlineDay"></select>
+          </label>
+          <label class="form-group">
+            <span>督促のトーン</span>
+            <select id="setDunningTone">
+              <option value="soft">柔らかい (確認のお願い)</option>
+              <option value="normal">通常</option>
+              <option value="firm">厳格 (期限超過)</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>カード決済 (Stripe Payment Links)</h3>
+        <p class="form-hint">
+          Stripe Dashboard で <a href="https://dashboard.stripe.com/payment-links" target="_blank" style="color:var(--primary-light)">Payment Links</a> を金額別に作成 → ここに URL を登録すると、督促メールと請求書PDFに自動記載されます。<br>
+          共通リンク (金額自由入力型) を1本作るだけでもOK。空欄の生徒は共通リンクを使用します。
+        </p>
+        <label class="form-group form-group-wide">
+          <span>共通 Payment Link (どの月謝額にも使う)</span>
+          <input type="url" id="setStripeCommon" placeholder="https://buy.stripe.com/xxxxxxxx">
+        </label>
+        <div class="form-grid" id="stripeFeeLinks">
+          <!-- 動的生成: 月謝額別フィールド -->
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>メールテンプレート</h3>
+        <p class="form-hint">使える変数: <code>{{student}}</code> 生徒名 / <code>{{month}}</code> 対象月 / <code>{{fee}}</code> 月謝額 / <code>{{deadline}}</code> 期日 / <code>{{bank}}</code> 振込先 / <code>{{paymentLink}}</code> カード決済URL / <code>{{juku}}</code> 塾名 / <code>{{owner}}</code> 塾長名</p>
+        <label class="form-group form-group-wide">
+          <span>件名</span>
+          <input type="text" id="setMailSubject">
+        </label>
+        <label class="form-group form-group-wide">
+          <span>本文</span>
+          <textarea id="setMailBody" rows="14"></textarea>
+        </label>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-modal-close>キャンセル</button>
+      <button class="btn btn-ghost" id="resetSettingsBtn">↺ 初期テンプレに戻す</button>
+      <button class="btn btn-primary" id="saveSettingsBtn">💾 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- メールプレビューモーダル -->
+<div class="modal-overlay hidden" id="mailPreviewModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>📧 メール内容プレビュー</h2>
+      <button class="modal-close" data-modal-close>✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group form-group-wide">
+        <span>宛先</span>
+        <input type="text" id="mailPrevTo" readonly>
+      </div>
+      <div class="form-group form-group-wide">
+        <span>件名</span>
+        <input type="text" id="mailPrevSubject" readonly>
+      </div>
+      <div class="form-group form-group-wide">
+        <span>本文</span>
+        <textarea id="mailPrevBody" rows="14" readonly></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-modal-close>閉じる</button>
+      <button class="btn btn-ghost" id="mailCopyBtn">📋 本文コピー</button>
+      <button class="btn btn-primary" id="mailSendBtn">📧 メーラーで開く</button>
+    </div>
+  </div>
+</div>
+
+<!-- 一括メール確認モーダル -->
+<div class="modal-overlay hidden" id="bulkMailModal">
+  <div class="modal modal-sm">
+    <div class="modal-head">
+      <h2>📧 一括督促メール</h2>
+      <button class="modal-close" data-modal-close>✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="bulkMailSummary"></p>
+      <div class="bulk-options">
+        <button class="bulk-option" id="bulkSequentialBtn">
+          <strong>🔄 順次メーラーで開く</strong>
+          <span>1人ずつデフォルトメーラーが起動 (確実だが手動)</span>
+        </button>
+        <button class="bulk-option" id="bulkBccBtn">
+          <strong>📋 BCC一括コピー</strong>
+          <span>全員のメアドをBCC形式でコピー (Gmail等に貼って送信)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 請求書プレビューモーダル -->
+<div class="modal-overlay hidden" id="invoicePreviewModal">
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <h2>📄 請求書プレビュー</h2>
+      <button class="modal-close" data-modal-close>✕</button>
+    </div>
+    <div class="modal-body">
+      <iframe id="invoiceIframe" class="invoice-iframe"></iframe>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-modal-close>閉じる</button>
+      <button class="btn btn-primary" id="invoiceDownloadBtn">💾 このPDFをダウンロード</button>
+    </div>
+  </div>
+</div>
+
+<!-- jsPDF + jspdf-autotable + JSZip CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
