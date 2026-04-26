@@ -1480,11 +1480,11 @@ def list_plans():
         "plans": {
             k: {"price": v[1], "name": v[2], "max_students": v[3]}
             for k, v in PRICE_MAP.items()
-            if k in ("standard", "premium", "family", "student_addon")
+            if k in ("founder1", "standard", "premium", "family", "student_addon")
         },
         "enrollment_fee": ENROLLMENT_FEE,
         "trial_fee": FOUNDER_TRIAL_PRICE,
-        "trial_duration_days": 3,
+        "trial_duration_days": FOUNDER_TRIAL_DAYS,
     }
 
 @app.get("/api/founders/count")
