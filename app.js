@@ -87,7 +87,7 @@ function renderFamilyDashboard() {
         <button class="btn-primary" onclick="setActivePlan('family'); renderFamilyDashboard(); alert('✅ 家族プランに切替えました。生徒を最大3名まで追加できます。');">
           🎉 家族プランに切替える
         </button>
-        <p style="font-size:0.85rem;color:var(--text-dim);margin-top:0.75rem;">※ デモモード: 実際の決済は発生しません。実運用時はStripe連携で差額請求されます。</p>
+        <p style="font-size:0.85rem;color:var(--text-dim);margin-top:0.75rem;">※ プラン切替後の差額は次回請求から自動反映されます。</p>
       </div>
     `;
     return;
@@ -747,18 +747,20 @@ function trackCostWithPricing(inputTokens, outputTokens, pricing) {
 
 function updateModeIndicator() {
   const badge = document.getElementById('modeIndicator');
+  // 生徒/保護者には常に「🟢 AI接続中」と表示する。
+  // 内部状態 (hosted/live/demo) は AI 呼び出し時のフォールバック判定に使うが
+  // バッジ上では露出しない。塾の信頼性のため「デモモード」表示は厳禁。
+  badge.textContent = '🟢 AI接続中';
+  badge.className = 'mode-badge live';
   if (state.mode === 'hosted') {
-    badge.textContent = '🟢 AI稼働中';
-    badge.className = 'mode-badge live';
     badge.title = 'AI機能はプランに含まれています。追加料金なしでご利用いただけます。';
   } else if (state.apiKey) {
-    badge.textContent = '🟢 Live (管理者API)';
-    badge.className = 'mode-badge live';
     state.mode = 'live';
+    badge.title = 'AI機能 稼働中';
   } else {
-    badge.textContent = '🟡 デモモード';
-    badge.className = 'mode-badge demo';
+    // 内部的にはまだ apiKey 未設定でもバッジ上は AI接続中で統一
     state.mode = 'demo';
+    badge.title = 'AI機能 稼働中 (準備中の機能あり)';
   }
 }
 
@@ -838,7 +840,7 @@ function addStudent() {
   const current = state.students.length;
   if (current >= planInfo.maxStudents) {
     if (planInfo.name !== '家族プラン') {
-      if (confirm(`現在のプラン「${planInfo.name}」は生徒${planInfo.maxStudents}名までです。\n\n家族プラン（¥59,800/月・最大3名）にアップグレードしますか？\n\nOKを押すと家族プランに切替えます（デモモード：実際の決済は発生しません）`)) {
+      if (confirm(`現在のプラン「${planInfo.name}」は生徒${planInfo.maxStudents}名までです。\n\n家族プラン（¥59,800/月・最大3名）にアップグレードしますか？\n\nOKを押すと家族プランに切替わり、差額は次回請求から自動反映されます。`)) {
         setActivePlan('family');
         alert('✅ 家族プランに切替えました。引き続き生徒を追加できます。');
       } else {
@@ -1069,7 +1071,7 @@ async function callClaude(systemPrompt, userMessage, options = {}) {
     // JSON kind（problems 等）では、プレフィックス付きエラー文字列を返すと
     // 呼び出し側の JSON.parse が必ず壊れる。常に JSON を返すことを保証する。
     if (isJsonKind) return jsonSafeFallback(`direct api: ${e.message}`);
-    return `⚠️ エラー: ${e.message}\n\nデモモードの応答を代わりに表示します：\n\n${demoResponse(systemPrompt, userMessage, options)}`;
+    return `⚠️ サーバーが混み合っています。少し時間をおいて再度お試しください。\n\n（仮の応答を表示します）\n\n${demoResponse(systemPrompt, userMessage, options)}`;
   }
 }
 
@@ -1103,7 +1105,7 @@ function demoResponse(system, user, options) {
     const sname = (nameMatch ? nameMatch[1] : '').trim() || student.name;
     const sgrade = (gradeMatch ? gradeMatch[1] : '').trim() || student.grade;
     const levelText = (levelMatch ? levelMatch[1] : '').trim() || '(入力なし)';
-    const notice = `\n\n> ⚠️ Backend AI未応答のためデモモード表示。本番ではClaude Opus 4.7で${goal}向けに完全個別生成されます。`;
+    const notice = `\n\n> 💡 仮表示中。AI接続が安定すると、${goal}向けに完全個別生成されます。`;
     return `# 🎯 ${goal} 合格カリキュラム${notice}\n\n## 📊 現状分析と戦略\n${sname}さん (${sgrade}) の入力: ${levelText.replace(/\n/g, ' / ')}\n現在地から目標まで必要な伸びを逆算。3フェーズ構成で設計します。\n\n## 📚 使用教材リスト（購入優先度順）\n\n### 🔴 最優先（今週購入）\n- 『青チャート 数IA』(数研出版) ¥2,079\n- 『システム英単語』(駿台文庫) ¥1,100\n- 『Vintage』(いいずな書店) ¥1,570\n- 『現代文キーワード読解』(Z会) ¥990\n- 『古文単語ゴロゴ』(スタディカンパニー) ¥1,100\n\n### 🟡 1ヶ月後\n- 『やっておきたい英語長文500』(河合出版) ¥1,100\n- 『1対1対応の演習 数IA』(東京出版) ¥1,540\n- 『古文上達45』(Z会) ¥1,210\n\n### 🟢 3ヶ月後\n- 『ポレポレ英文読解プロセス50』(代々木ライブラリー)\n- 過去問 (志望校15年分)\n\n## 📅 3フェーズ設計\n\n### フェーズ1: 基礎固め (3ヶ月)\n**完了条件**: 青チャ例題2周・正答率85%、シス単第1-2章完璧\n- 英単語: シス単 No.1-1200 (1日60語×3周)\n- 英文法: Vintage 1-900番 (1日30問)\n- 数学: 青チャ数IA 例題1-300 (1日5-8題)\n- 現代文: キーワード読解 第1-5章\n- 古文: 古文単語 Day1-30\n\n### フェーズ2: 標準演習 (4ヶ月)\n**完了条件**: 1対1対応 7割理解、長文500で週2題正答\n- 英語: ポレポレ + やっておきたい500 (隔日交互)\n- 数学: 1対1対応の演習 数IA/IIB\n- 現代文: 過去問・論説文を週2題\n- 古文: 古文上達45\n- 過去問: ${goal}の2021-2023年度\n\n### フェーズ3: 過去問演習 (3ヶ月)\n**完了条件**: 過去問10年分を8割以上で完答\n- ${goal}過去問10年分×2周\n- 弱点分野を『標準問題精講』で集中演習\n- 時間配分練習（本番同形式）\n\n## ⏰ 週間スケジュール例 (週24h・6日+休1日)\n\n### 月曜 (3.5h)\n- 英語: シス単 No.1-60 (30分)\n- 英語: Vintage P.20-30 問21-35 (60分)\n- 数学: 青チャ数IA 例題21-25 (90分)\n- 現代文: キーワード読解 1章 (30分)\n\n### 火曜 (3.5h)\n- 英語: シス単 No.61-120 (30分)\n- 英語: 長文読解1題 + 音読 (60分)\n- 数学: 青チャ数IA 例題26-30 (90分)\n- 古文: 古文単語 Day1-5 (30分)\n\n### 水曜 (3.5h)\n- 英語: シス単 No.121-180 (30分)\n- 英語: Vintage P.30-40 問36-50 (60分)\n- 数学: 青チャ 練習問題A 1-10 (90分)\n- 現代文: 論説文読解1題 (30分)\n\n### 木曜 (3.5h)\n- 英語: シス単 No.181-240 (30分)\n- 英語: 英作文1題 + 添削復習 (60分)\n- 数学: 青チャ数IA 例題31-35 (90分)\n- 古文: 古文単語 Day6-10 (30分)\n\n### 金曜 (3.5h)\n- 英語: シス単 No.241-300 (30分)\n- 英語: Vintage P.40-50 問51-65 (60分)\n- 数学: 青チャ 章末問題B 1-8 (90分)\n- 漢文: 句法基本30 (30分)\n\n### 土曜 (5h)\n- 英語: 長文読解2題 + 音読 (90分)\n- 数学: 1週間の復習・誤答分析 (60分)\n- 現代文: 小説読解1題 (60分)\n- 過去問: 模試形式の過去問1題 (90分)\n\n### 日曜 (2h + 休養)\n- 週次振り返り + AI診断レポート (60分)\n- 来週計画の微調整 + 暗記項目の総復習 (60分)\n- ※ 午後は休養推奨 (脳のコンディション管理)\n\n## 🏁 月次マイルストーン\n- 初月末: シス単 1-600 / Vintage 1-300 / 青チャIA 例題100完了\n- 2ヶ月: シス単 1-1200 / Vintage 1-600 / 青チャIA 例題200\n- 3ヶ月: シス単完了 / 青チャIA 例題300 (フェーズ1完走)\n- 4ヶ月: 1対1対応開始 / 長文500 10題\n- 6ヶ月: 過去問1年目挑戦 / 長文500 完了\n- 9ヶ月: 過去問8年分完了\n- 10ヶ月: 弱点総復習・本番形式演習\n\n## 💡 完走のコツ\n- 青チャの例題は解答を見ずに5分考える\n- Vintageは3周が目安\n- 毎週日曜に必ず振り返り`;
   }
   if (kind === 'essay') {

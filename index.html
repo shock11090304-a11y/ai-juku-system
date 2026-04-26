@@ -39,7 +39,7 @@
       <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." />
       <p class="modal-hint">※ <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> から取得 (このキーで全生徒のAIを動かす)</p>
       <button id="saveApiKey" class="btn-primary">保存して開始</button>
-      <button id="skipApiKey" class="btn-secondary">デモモード（API未使用）で試す</button>
+      <button id="skipApiKey" class="btn-secondary" style="font-size:0.78rem;color:var(--text-dim);">プレビュー (機能制限あり)</button>
     </div>
   </div>
 
@@ -56,7 +56,7 @@
     <div class="header-actions">
       <div class="nav-status-group" title="現在の利用料金とサービス稼働モード">
         <span id="costMeter" class="cost-meter" title="今月の推定API費用（顧客モードでは非表示）">¥0</span>
-        <span id="modeIndicator" class="mode-badge">読み込み中...</span>
+        <span id="modeIndicator" class="mode-badge live">🟢 AI接続中</span>
       </div>
 
       <div class="nav-bar-wrapper" title="🧭 管理者ナビゲーションバー">

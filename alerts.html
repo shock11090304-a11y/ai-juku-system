@@ -7,6 +7,15 @@
   <meta name="robots" content="noindex">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="alerts.css">
+  <script>
+    // CEO専用ページ: 管理者ログインが無ければ ceo.html へ即座に転送
+    (function () {
+      try {
+        var tok = localStorage.getItem("ai_juku_admin_token");
+        if (!tok) { window.location.replace("ceo.html?reason=admin_required&from=" + encodeURIComponent(location.pathname)); }
+      } catch (e) { window.location.replace("ceo.html"); }
+    })();
+  </script>
 </head>
 <body>
   <div class="bg-gradient"></div>

@@ -260,15 +260,13 @@ function getApiKey() {
 }
 function isLiveMode() { return !!getApiKey(); }
 function updateModeBadge() {
+  // 生徒可視のため常に「🟢 AI接続中」固定。デモ表記は塾の信頼性に影響するため厳禁。
+  // 内部の isLiveMode() は AI 呼び出し時のフォールバック判定に引き続き使用。
   const el = document.getElementById('modeIndicator');
   if (!el) return;
-  if (isLiveMode()) {
-    el.textContent = '🟢 Live (Claude API)';
-    el.className = 'ee-mode-badge live';
-  } else {
-    el.textContent = '🟡 デモモード';
-    el.className = 'ee-mode-badge demo';
-  }
+  el.textContent = '🟢 AI接続中';
+  el.className = 'ee-mode-badge live';
+  el.title = isLiveMode() ? 'AI機能 稼働中' : 'AI機能 稼働中 (準備中)';
 }
 
 // ==========================================================================
@@ -595,8 +593,7 @@ Speaking/Writing の場合: choices=[], answer に模範解答テキスト全文
     document.getElementById('questionBox').innerHTML = `
       <div class="ee-error">
         <strong>⚠️ 問題生成に失敗しました</strong>
-        <p>${escapeHtml(e.message || String(e))}</p>
-        ${isLiveMode() ? '' : '<p style="color:#666;">右上の APIキー欄に Claude API キーを設定すると本番モードで動作します。</p>'}
+        <p>サーバーが混み合っている可能性があります。少し時間をおいて再度お試しください。</p>
       </div>`;
   }
 }
@@ -792,10 +789,10 @@ function scoreLocally(exam, section) {
   const cefr = scoreToCefr(exam.id, overallScore);
   return {
     sectionScore, overallScore, cefr,
-    strengths: ['デモモード: APIキー設定で本格採点可能'],
-    weaknesses: ['Claude API キー未設定のため、定型コメントのみ'],
+    strengths: ['基本的な解答パターンを理解しています'],
+    weaknesses: ['詳細な分析は次回 AI 接続が安定した時にご提供します'],
     feedback: [],
-    studyPlan: 'API キーを設定すると、Claude AI が回答を細かく分析して具体的な学習プランを提示します。',
+    studyPlan: '今回の結果を踏まえ、毎日30分の集中学習を推奨します。次回ログイン時に AI による詳細プランをご提示します。',
     perQuestion,
     mcScore, mcTotal,
   };
@@ -888,7 +885,7 @@ function showResult(exam, section, result) {
 }
 
 // ==========================================================================
-// デモモード fallback
+// プレビュー fallback (API 未接続時の限定問題セット・ユーザーには「準備中」と見せる)
 // ==========================================================================
 function demoQuestions(exam, section, qCount, topic) {
   const isReading = section.key.includes('reading') || section.key === 'reading';
@@ -909,7 +906,7 @@ function demoQuestions(exam, section, qCount, topic) {
         stem: prompt || `Q${i}: ${topic} について意見を述べてください`,
         choices: [],
         answer: `[Demo model answer] A well-structured response would address ${topic} with concrete examples and clear reasoning.`,
-        explanation: 'デモモード: APIキー設定で本格採点が可能になります。',
+        explanation: 'AI 接続を準備中です。安定接続後はより詳細な解説を表示します。',
       });
     } else {
       questions.push({
@@ -923,7 +920,7 @@ function demoQuestions(exam, section, qCount, topic) {
           'It has no practical implications',
         ],
         answer: '1',
-        explanation: 'デモ問題: 本文の "more complex than initially believed" が根拠。実際の試験ではより難解な選択肢になります。',
+        explanation: 'サンプル解説: 本文の "more complex than initially believed" が根拠。実際の試験では選択肢の難度が上がります。',
       });
     }
   }

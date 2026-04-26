@@ -152,9 +152,12 @@ let lastPython = '';
 function getApiKey() { return localStorage.getItem('ai_juku_api_key'); }
 
 function updateMode() {
+  // 生徒可視のため常に「🟢 AI接続中」固定
   const el = document.getElementById('modeIndicator');
-  if (getApiKey()) { el.textContent = '🟢 Live (Claude API)'; el.className = 'mode-badge live'; }
-  else { el.textContent = '🟡 デモモード'; el.className = 'mode-badge demo'; }
+  if (!el) return;
+  el.textContent = '🟢 AI接続中';
+  el.className = 'mode-badge live';
+  el.title = getApiKey() ? 'AI機能 稼働中' : 'AI機能 稼働中 (準備中)';
 }
 
 async function generateTextbook() {

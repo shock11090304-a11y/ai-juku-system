@@ -13,11 +13,12 @@ function getApiKey() {
 function updateMode() {
   const hasKey = !!getApiKey();
   const indicator = document.getElementById('modeIndicator');
+  // CEO専用ページなのでデモ/Live表記は許容するが、視覚的にはシンプルに
   if (hasKey) {
-    indicator.textContent = '🟢 Live (Claude API)';
+    indicator.textContent = '🟢 AI接続中';
     indicator.className = 'mode-badge live';
   } else {
-    indicator.textContent = '🟡 デモモード';
+    indicator.textContent = '⚙️ APIキー未設定';
     indicator.className = 'mode-badge demo';
   }
 }
