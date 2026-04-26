@@ -157,6 +157,57 @@
     </section>
 
     <!-- ========================================================== -->
+    <!-- Section 5: 📚 蓄積問題アーカイブ (AI 自動生成プールから直接ブラウズ) -->
+    <!-- ========================================================== -->
+    <section class="ee-section ee-section-archive" id="archiveSection">
+      <div class="ee-section-head">
+        <div class="ee-eyebrow">📚 QUESTION ARCHIVE</div>
+        <h2>🗄️ 蓄積問題アーカイブ</h2>
+        <p class="ee-section-desc">AI が日々生成して蓄積した問題プール (毎日 6時間おきに増加) を直接ブラウズ。試験 → 大学/級 → 大問 で絞り込んで好きな問題を選べます。同じ問題には2度出会わないよう履歴も記録。</p>
+      </div>
+      <div class="archive-filters">
+        <select id="archExamFilter" class="ee-select-inline">
+          <option value="">📋 試験を選ぶ…</option>
+          <option value="toefl">🇺🇸 TOEFL iBT</option>
+          <option value="toeic">💼 TOEIC L&R</option>
+          <option value="ielts">🇬🇧 IELTS Academic</option>
+          <option value="eiken">🇯🇵 英検</option>
+          <option value="daigaku">🎓 大学入試</option>
+        </select>
+        <select id="archGradeFilter" class="ee-select-inline" style="display:none;">
+          <option value="">大学/級 すべて</option>
+        </select>
+        <select id="archPartFilter" class="ee-select-inline" style="display:none;">
+          <option value="">大問 すべて</option>
+        </select>
+        <input type="number" id="archYearFilter" class="ee-text-input-inline" placeholder="年度 (例: 2023)" min="2005" max="2026" style="display:none;">
+        <button id="archSearchBtn" class="ee-btn ee-btn-primary" style="display:none;">🔍 絞り込む</button>
+      </div>
+      <div class="archive-overview" id="archOverview">
+        <p class="ee-loading">⏳ 蓄積状況を読み込み中…</p>
+      </div>
+      <div class="archive-list" id="archList" style="display:none;"></div>
+    </section>
+
+    <!-- ========================================================== -->
+    <!-- Section 6: 📊 学習履歴 弱点ヒートマップ + AI 推奨次題 -->
+    <!-- ========================================================== -->
+    <section class="ee-section ee-section-heatmap" id="heatmapSection">
+      <div class="ee-section-head">
+        <div class="ee-eyebrow">📊 MY PROGRESS</div>
+        <h2>🎯 私の弱点ヒートマップ + AI 推奨次題</h2>
+        <p class="ee-section-desc">これまでに解いた問題の正答率を「試験 × 大問」で可視化。AI があなたの履歴を分析して「次に取り組むべき part」を推薦します。</p>
+      </div>
+      <div class="heatmap-stats" id="heatmapStats">
+        <p class="ee-loading">⏳ 履歴を分析中…</p>
+      </div>
+      <div class="heatmap-grid" id="heatmapGrid"></div>
+      <div class="heatmap-recommend" id="heatmapRecommend">
+        <button id="aiRecommendBtn" class="ee-btn ee-btn-primary">🤖 AI に「次は何を解くべき?」を聞く</button>
+      </div>
+    </section>
+
+    <!-- ========================================================== -->
     <!-- Section 4: 📰 リアル英字ニュースで読解 (CNN / Japan Times / BBC ...) -->
     <!-- ========================================================== -->
     <section class="ee-section ee-section-news" id="newsReadingSection">

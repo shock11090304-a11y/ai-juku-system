@@ -2803,6 +2803,257 @@ def public_exam_questions_bank(exam: str, part: str, eiken_grade: Optional[str] 
     return {"exam": exam, "part": part, "eiken_grade": eiken_grade, "count": len(items), "selected": selected, "all": items[:5]}
 
 
+@app.get("/api/exam-questions/archive")
+def public_exam_questions_archive(
+    exam: Optional[str] = None,
+    part: Optional[str] = None,
+    eiken_grade: Optional[str] = None,
+    univ: Optional[str] = None,
+    year: Optional[int] = None,
+    limit: int = 50,
+    offset: int = 0,
+):
+    """生徒向けの過去問アーカイブブラウザ。蓄積済み AI 生成問題プールから filter 取得。
+    認証不要 (出題内容公開可)。
+
+    パラメータ全部省略時は試験/大問の組合せ別の蓄積数サマリ (= overview) を返す。
+    パラメータ指定時はその条件に合致する問題リスト (passage 抜粋 + 設問数 + メタ) を返す。"""
+    limit = max(1, min(limit, 100))
+    offset = max(0, offset)
+    # daigaku の場合 univ → eiken_grade として扱う (DBスキーマ共有)
+    if exam == "daigaku" and univ and not eiken_grade:
+        eiken_grade = univ
+
+    conn = db()
+    c = conn.cursor()
+
+    # ===== overview モード (filter なし or exam のみ) =====
+    if not part and not eiken_grade and not year:
+        try:
+            if exam:
+                c.execute(
+                    "SELECT exam_id, part_key, eiken_grade, COUNT(*) as n FROM exam_questions WHERE exam_id = ? GROUP BY exam_id, part_key, eiken_grade ORDER BY exam_id, part_key, eiken_grade",
+                    (exam,),
+                )
+            else:
+                c.execute(
+                    "SELECT exam_id, part_key, eiken_grade, COUNT(*) as n FROM exam_questions GROUP BY exam_id, part_key, eiken_grade ORDER BY exam_id, part_key, eiken_grade"
+                )
+            rows = c.fetchall()
+        except Exception as e:
+            log.error(f"[Archive] overview query failed: {e}")
+            rows = []
+        conn.close()
+        groups = []
+        total = 0
+        for r in rows:
+            n = int(r["n"] if "n" in r.keys() else r[3])
+            groups.append({
+                "exam": r["exam_id"],
+                "part": r["part_key"],
+                "grade": r["eiken_grade"],
+                "count": n,
+            })
+            total += n
+        return {"mode": "overview", "total": total, "groups": groups}
+
+    # ===== list モード (filter あり) =====
+    where = []
+    params = []
+    if exam:
+        where.append("exam_id = ?")
+        params.append(exam)
+    if part:
+        where.append("part_key = ?")
+        params.append(part)
+    if eiken_grade:
+        where.append("eiken_grade = ?")
+        params.append(eiken_grade)
+    where_sql = (" WHERE " + " AND ".join(where)) if where else ""
+
+    try:
+        # SQLite では PostgreSQL の placeholder と異なるため、_Cursor wrapper が ? ↔ %s を吸収する想定
+        c.execute(
+            f"SELECT id, exam_id, part_key, eiken_grade, question_data, created_at FROM exam_questions{where_sql} ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            tuple(params + [limit, offset]),
+        )
+        rows = c.fetchall()
+        # total count for pagination
+        c.execute(f"SELECT COUNT(*) FROM exam_questions{where_sql}", tuple(params))
+        total_row = c.fetchone()
+        total = int(total_row[0] if total_row else 0)
+    except Exception as e:
+        log.error(f"[Archive] list query failed: {e}")
+        rows = []
+        total = 0
+    conn.close()
+
+    items = []
+    for r in rows:
+        try:
+            data = json.loads(r["question_data"])
+            yr = data.get("year_simulated")
+            # year filter (post-fetch・DBに year カラムは無いので JSON 内の年度で判定)
+            if year and yr and int(yr) != int(year):
+                continue
+            items.append({
+                "id": r["id"],
+                "exam": r["exam_id"],
+                "part": r["part_key"],
+                "grade": r["eiken_grade"],
+                "year": yr,
+                "univ_simulated": data.get("univ_simulated"),
+                "passage_preview": (data.get("passage", "") or data.get("audio_script", "") or data.get("prompt", ""))[:200],
+                "question_count": len(data.get("questions", [])),
+                "created_at": str(r["created_at"]),
+            })
+        except Exception:
+            pass
+    return {"mode": "list", "total": total, "limit": limit, "offset": offset, "items": items}
+
+
+@app.get("/api/exam-questions/archive/{question_id}")
+def public_exam_questions_archive_detail(question_id: int):
+    """アーカイブから1問を ID 指定で取得 (生徒が「これを解く」ボタンで呼び出す用)"""
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(
+            "SELECT id, exam_id, part_key, eiken_grade, question_data, created_at FROM exam_questions WHERE id = ?",
+            (question_id,),
+        )
+        row = c.fetchone()
+    except Exception as e:
+        log.error(f"[Archive] detail query failed: {e}")
+        row = None
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="問題が見つかりません")
+    try:
+        data = json.loads(row["question_data"])
+    except Exception:
+        raise HTTPException(status_code=500, detail="問題データ破損")
+    return {
+        "id": row["id"],
+        "exam": row["exam_id"],
+        "part": row["part_key"],
+        "grade": row["eiken_grade"],
+        "created_at": str(row["created_at"]),
+        "question": data,
+    }
+
+
+@app.post("/api/exam-questions/recommend")
+def public_exam_questions_recommend(payload: dict):
+    """生徒の学習履歴 (localStorage の history) から AI で「次に解くべき問題」を推薦する。
+    payload: {
+      "history": [{"exam":"daigaku","part":"r_long","grade":"todai","score":18,"scoreMax":25,"date":"..."},...],
+      "target": {"exam":"daigaku","grade":"todai"} (optional)
+    }
+    """
+    history = payload.get("history") or []
+    target = payload.get("target") or {}
+    if not isinstance(history, list):
+        raise HTTPException(status_code=400, detail="history must be array")
+    # 履歴から正答率を集計
+    by_part = {}
+    for h in history[-50:]:  # 直近50件のみ
+        if not isinstance(h, dict): continue
+        exam_id = h.get("exam") or h.get("examId")
+        part_key = h.get("part") or h.get("sectionKey")
+        grade = h.get("grade") or h.get("eikenGrade")
+        score = h.get("score")
+        score_max = h.get("scoreMax") or h.get("scoreMaxValue")
+        if not exam_id or not part_key: continue
+        key = f"{exam_id}/{part_key}/{grade or '_'}"
+        if key not in by_part:
+            by_part[key] = {"exam": exam_id, "part": part_key, "grade": grade, "attempts": 0, "score_sum": 0, "max_sum": 0}
+        by_part[key]["attempts"] += 1
+        if isinstance(score, (int, float)) and isinstance(score_max, (int, float)) and score_max > 0:
+            by_part[key]["score_sum"] += float(score)
+            by_part[key]["max_sum"] += float(score_max)
+    summary = []
+    for k, v in by_part.items():
+        ratio = (v["score_sum"] / v["max_sum"]) if v["max_sum"] > 0 else None
+        summary.append({**v, "score_ratio": ratio})
+    summary.sort(key=lambda x: (x.get("score_ratio") if x.get("score_ratio") is not None else 1.0, -x["attempts"]))
+
+    # ロジック側で簡易レコメンド (AI 不要のフォールバック)
+    weakest = summary[:3]  # 正答率が低い順 TOP3
+    fallback = []
+    for w in weakest:
+        fallback.append({
+            "exam": w["exam"], "part": w["part"], "grade": w["grade"],
+            "reason_jp": f"このパートの正答率が {int((w.get('score_ratio') or 0)*100)}% (n={w['attempts']}) で最も伸びしろがあるため、もう一度同じ形式で挑戦しましょう。",
+            "score_ratio": w.get("score_ratio"),
+        })
+    # 履歴ゼロ → target ベースで「最も典型的な r_long」を推奨
+    if not fallback and target:
+        ex = target.get("exam") or "daigaku"
+        gr = target.get("grade")
+        fallback.append({
+            "exam": ex, "part": "r_long", "grade": gr,
+            "reason_jp": "まず長文読解 (r_long) でレベル感を測りましょう。",
+            "score_ratio": None,
+        })
+
+    # AI 強化レコメンド (Anthropic key があれば叩く・無ければフォールバックで返す)
+    ai_advice = None
+    if ANTHROPIC_API_KEY and history:
+        try:
+            stats_text = "\n".join([
+                f"- {s['exam']}/{s['part']} (grade={s.get('grade') or '-'}): n={s['attempts']}回・正答率 {int((s.get('score_ratio') or 0)*100)}%"
+                for s in summary[:8]
+            ])
+            target_text = f"目標: {target.get('exam') or '指定なし'} {target.get('grade') or ''}"
+            system = "あなたは英語試験対策の AI コーチです。学習者の履歴から弱点を特定し、次に取り組むべき part を1つ推薦してください。出力は純粋な JSON のみ。"
+            user = f"""【学習履歴サマリ】
+{stats_text or '(履歴なし)'}
+
+【{target_text}】
+
+【出力形式 (純粋な JSON)】
+{{
+  "recommended_exam": "toefl|toeic|ielts|eiken|daigaku",
+  "recommended_part": "r_long など",
+  "recommended_grade": "todai or gp1 or null",
+  "reason_jp": "なぜ次にこれを解くべきか (3行以上、具体的な弱点指摘+伸ばし方)",
+  "study_tip_jp": "今日のうちに取り入れるべき具体的な学習Tip (語彙/文法/構造把握 etc)"
+}}"""
+            req = urllib.request.Request(
+                "https://api.anthropic.com/v1/messages",
+                data=json.dumps({
+                    "model": EXAM_QUESTIONS_MODEL,
+                    "max_tokens": 800,
+                    "system": system,
+                    "messages": [{"role": "user", "content": user}],
+                }).encode("utf-8"),
+                headers={
+                    "x-api-key": ANTHROPIC_API_KEY,
+                    "anthropic-version": "2023-06-01",
+                    "Content-Type": "application/json",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                d = json.loads(resp.read().decode())
+            text = d["content"][0]["text"].strip()
+            if text.startswith("```"):
+                text = text.split("```", 2)[1]
+                if text.startswith("json"): text = text[4:]
+                text = text.strip().rstrip("`").strip()
+            ai_advice = json.loads(text)
+        except Exception as e:
+            log.warning(f"[Recommend] AI advice failed: {e}")
+
+    return {
+        "summary": summary[:10],
+        "weakest": weakest,
+        "fallback_recommendations": fallback,
+        "ai_advice": ai_advice,
+    }
+
+
 @app.get("/api/admin/exam-questions/pool-status")
 def admin_exam_questions_pool_status(authorization: Optional[str] = Header(None)):
     """全 part の pool 蓄積数を返す (CEO ダッシュボード用)。admin Bearer 認証必須。"""

@@ -1459,11 +1459,16 @@ showResult = function(exam, section, result) {
     examFlag: exam.flag,
     sectionKey: state.sectionKey,
     sectionName: section.name,
+    grade: state.eikenGrade || null,        // 英検級 or 大学キー (todai/kyodai/...)
+    gradeName: state.eikenGradeName || null,
     overallScore: result.overallScore,
     sectionScore: result.sectionScore,
+    sectionScoreMax: section.scoreMax || null,
     cefr: result.cefr,
   });
   renderHistorySection();
+  // ヒートマップも自動更新
+  if (typeof renderHeatmap === 'function') renderHeatmap();
 };
 
 function renderHistorySection() {
@@ -1797,6 +1802,354 @@ function renderNewsQuestion(data) {
   qBox.innerHTML = html;
 }
 
+// ==========================================================================
+// 📚 蓄積問題アーカイブ (Phase 5-1: AI 自動生成プールを直接ブラウズ)
+// ==========================================================================
+const ARCH_STATE = { exam: null, grade: null, part: null, year: null };
+
+function getEEBackend() {
+  return (window.location.hostname === 'localhost' && window.location.port === '8090')
+    ? 'http://localhost:8000' : window.location.origin;
+}
+
+async function loadArchiveOverview(examId = null) {
+  const box = document.getElementById('archOverview');
+  const list = document.getElementById('archList');
+  box.style.display = '';
+  list.style.display = 'none';
+  box.innerHTML = '<p class="ee-loading">⏳ 蓄積状況を読み込み中…</p>';
+  try {
+    const url = `${getEEBackend()}/api/exam-questions/archive` + (examId ? `?exam=${encodeURIComponent(examId)}` : '');
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('http_' + res.status);
+    const data = await res.json();
+    if (!data.groups || !data.groups.length) {
+      box.innerHTML = `<p class="ee-empty">📭 ${examId ? 'この試験の' : ''}蓄積問題はまだありません。AI が随時自動生成中です (毎日 6時間おきに増加)。</p>`;
+      return;
+    }
+    // 試験+grade ごとに集計
+    const labels = { toefl: '🇺🇸 TOEFL', toeic: '💼 TOEIC', ielts: '🇬🇧 IELTS', eiken: '🇯🇵 英検', daigaku: '🎓 大学入試' };
+    const byKey = new Map();
+    data.groups.forEach(g => {
+      const k = `${g.exam}/${g.grade || '_'}`;
+      if (!byKey.has(k)) byKey.set(k, { exam: g.exam, grade: g.grade, parts: [], total: 0 });
+      const o = byKey.get(k);
+      o.parts.push({ part: g.part, count: g.count });
+      o.total += g.count;
+    });
+    let html = `<div class="archive-overview-head">📊 蓄積総数: <strong>${data.total}</strong> 問 (試験/級・大学/枠ごと)</div><div class="archive-overview-grid">`;
+    [...byKey.values()].sort((a,b)=>b.total-a.total).forEach(o => {
+      const gradeLabel = o.grade ? ` <span class="arch-grade-tag">${o.grade}</span>` : '';
+      html += `<button type="button" class="archive-group-card" data-exam="${o.exam}" data-grade="${o.grade || ''}">
+        <div class="arch-group-name">${labels[o.exam] || o.exam}${gradeLabel}</div>
+        <div class="arch-group-count">${o.total} 問</div>
+        <div class="arch-group-parts">${o.parts.length} 大問</div>
+      </button>`;
+    });
+    html += '</div>';
+    box.innerHTML = html;
+    box.querySelectorAll('.archive-group-card').forEach(btn => {
+      btn.addEventListener('click', () => {
+        ARCH_STATE.exam = btn.dataset.exam;
+        ARCH_STATE.grade = btn.dataset.grade || null;
+        ARCH_STATE.part = null;
+        ARCH_STATE.year = null;
+        // フィルタ UI を反映
+        document.getElementById('archExamFilter').value = ARCH_STATE.exam;
+        populateArchGradeOptions();
+        document.getElementById('archGradeFilter').value = ARCH_STATE.grade || '';
+        populateArchPartOptions();
+        document.getElementById('archYearFilter').style.display = ARCH_STATE.exam === 'daigaku' ? '' : 'none';
+        document.getElementById('archSearchBtn').style.display = '';
+        loadArchiveList();
+      });
+    });
+  } catch (e) {
+    console.warn('[archive] overview failed:', e);
+    box.innerHTML = `<p class="ee-error">⚠️ 取得失敗: ${escapeHtml(String(e.message || e))}</p>`;
+  }
+}
+
+function populateArchGradeOptions() {
+  const sel = document.getElementById('archGradeFilter');
+  sel.innerHTML = '<option value="">大学/級 すべて</option>';
+  const exam = ARCH_STATE.exam;
+  if (exam === 'eiken') {
+    EXAMS.eiken.grades.forEach(g => {
+      sel.innerHTML += `<option value="${g.key}">${escapeHtml(g.name)}</option>`;
+    });
+    sel.style.display = '';
+  } else if (exam === 'daigaku') {
+    EXAMS.daigaku.grades.forEach(g => {
+      sel.innerHTML += `<option value="${g.key}">${escapeHtml(g.name)}</option>`;
+    });
+    sel.style.display = '';
+  } else {
+    sel.style.display = 'none';
+  }
+}
+
+function populateArchPartOptions() {
+  const sel = document.getElementById('archPartFilter');
+  sel.innerHTML = '<option value="">大問 すべて</option>';
+  const exam = ARCH_STATE.exam;
+  if (!exam) { sel.style.display = 'none'; return; }
+  let secs = [];
+  if (exam === 'eiken' && ARCH_STATE.grade) {
+    secs = getEikenSections(ARCH_STATE.grade);
+  } else if (exam === 'daigaku' && ARCH_STATE.grade) {
+    secs = getDaigakuSections(ARCH_STATE.grade);
+  } else {
+    secs = (EXAMS[exam] && EXAMS[exam].sections) || [];
+  }
+  secs.forEach(s => {
+    sel.innerHTML += `<option value="${s.key}">${escapeHtml(s.icon + ' ' + s.name)}</option>`;
+  });
+  sel.style.display = '';
+}
+
+async function loadArchiveList() {
+  const list = document.getElementById('archList');
+  const overview = document.getElementById('archOverview');
+  list.style.display = '';
+  list.innerHTML = '<p class="ee-loading">⏳ 該当問題を読み込み中…</p>';
+  const params = new URLSearchParams();
+  if (ARCH_STATE.exam) params.set('exam', ARCH_STATE.exam);
+  if (ARCH_STATE.grade) {
+    if (ARCH_STATE.exam === 'daigaku') params.set('univ', ARCH_STATE.grade);
+    else params.set('eiken_grade', ARCH_STATE.grade);
+  }
+  if (ARCH_STATE.part) params.set('part', ARCH_STATE.part);
+  if (ARCH_STATE.year) params.set('year', String(ARCH_STATE.year));
+  params.set('limit', '50');
+  try {
+    const res = await fetch(`${getEEBackend()}/api/exam-questions/archive?${params}`);
+    if (!res.ok) throw new Error('http_' + res.status);
+    const data = await res.json();
+    if (!data.items || !data.items.length) {
+      list.innerHTML = `<p class="ee-empty">📭 条件に該当する問題が見つかりませんでした。</p>
+        <button class="ee-btn ee-btn-ghost" id="archBackBtn">← 全体ビューに戻る</button>`;
+      document.getElementById('archBackBtn').addEventListener('click', () => loadArchiveOverview());
+      return;
+    }
+    let html = `<div class="archive-list-head">
+      <strong>${data.total} 問</strong> 該当 (上位 ${data.items.length} 件表示)
+      <button class="ee-btn ee-btn-ghost ee-btn-mini" id="archBackBtn">← 全体ビューに戻る</button>
+    </div>`;
+    html += '<div class="archive-items">';
+    data.items.forEach(it => {
+      const yearTag = it.year ? `<span class="arch-year-tag">${it.year}年度</span>` : '';
+      const univTag = it.univ_simulated ? `<span class="arch-univ-tag">${escapeHtml(it.univ_simulated)}</span>` : '';
+      html += `<div class="archive-item-card">
+        <div class="arch-item-meta">${yearTag}${univTag}<span class="arch-item-part">${escapeHtml(it.part)}</span><span class="arch-item-q">${it.question_count}問</span></div>
+        <div class="arch-item-preview">${escapeHtml(it.passage_preview || '(プレビュー無し)')}…</div>
+        <button class="ee-btn ee-btn-primary ee-btn-mini" data-qid="${it.id}">📝 これを解く</button>
+      </div>`;
+    });
+    html += '</div>';
+    list.innerHTML = html;
+    document.getElementById('archBackBtn').addEventListener('click', () => loadArchiveOverview());
+    list.querySelectorAll('button[data-qid]').forEach(btn => {
+      btn.addEventListener('click', () => loadArchiveQuestion(parseInt(btn.dataset.qid, 10)));
+    });
+  } catch (e) {
+    console.warn('[archive] list failed:', e);
+    list.innerHTML = `<p class="ee-error">⚠️ 取得失敗: ${escapeHtml(String(e.message || e))}</p>`;
+  }
+}
+
+async function loadArchiveQuestion(qid) {
+  try {
+    const res = await fetch(`${getEEBackend()}/api/exam-questions/archive/${qid}`);
+    if (!res.ok) throw new Error('http_' + res.status);
+    const data = await res.json();
+    const exam = EXAMS[data.exam];
+    if (!exam) throw new Error('unknown_exam:' + data.exam);
+    state.examId = data.exam;
+    state.eikenGrade = data.grade || null;
+    if (data.grade) {
+      const grades = exam.grades || [];
+      const g = grades.find(x => x.key === data.grade);
+      state.eikenGradeName = g ? g.name : data.grade;
+    }
+    let secs = [];
+    if (data.exam === 'eiken' && data.grade) secs = getEikenSections(data.grade);
+    else if (data.exam === 'daigaku' && data.grade) secs = getDaigakuSections(data.grade);
+    else secs = exam.sections || [];
+    state.currentSections = secs;
+    const section = secs.find(s => s.key === data.part) || (secs[0] || { key: data.part, name: data.part, timeMin: 30, qCount: data.question.questions ? data.question.questions.length : 5, scoreMax: 30, desc: '' });
+    state.sectionKey = section.key;
+    // ランナーを開く
+    showRunner(exam, section);
+    // 蓄積済の問題をそのまま使用 (AI 再生成しない)
+    const q = data.question;
+    state.questions = q.questions || [];
+    state.passage = q.passage || '';
+    state.audioScript = q.audio_script || '';
+    state.prompt = q.prompt || '';
+    state.userAnswers = {};
+    renderQuestions();
+    document.getElementById('submitAnswersBtn').disabled = false;
+    document.getElementById('submitAnswersBtn').onclick = submitAnswers;
+  } catch (e) {
+    console.error('[archive] load question failed:', e);
+    alert('問題の読込に失敗しました: ' + (e.message || e));
+  }
+}
+
+// ==========================================================================
+// 📊 弱点ヒートマップ + AI 推奨次題 (Phase 5-3)
+// ==========================================================================
+function buildHeatmapStats(history) {
+  // (examId, sectionKey, grade) で集計
+  const map = new Map();
+  history.forEach(h => {
+    const examId = h.examId; const part = h.sectionKey; const grade = h.grade || '_';
+    if (!examId || !part) return;
+    const key = `${examId}/${part}/${grade}`;
+    if (!map.has(key)) map.set(key, { examId, part, grade: h.grade || null, gradeName: h.gradeName, attempts: 0, scoreSum: 0, maxSum: 0, lastTs: '' });
+    const o = map.get(key);
+    o.attempts += 1;
+    if (typeof h.sectionScore === 'number' && typeof h.sectionScoreMax === 'number' && h.sectionScoreMax > 0) {
+      o.scoreSum += h.sectionScore;
+      o.maxSum += h.sectionScoreMax;
+    } else if (typeof h.overallScore === 'number') {
+      // overall しか無い場合の代替 (CEFR%換算は不正確なのでスコア比は出さない)
+    }
+    if (h.ts > o.lastTs) o.lastTs = h.ts;
+  });
+  const rows = [...map.values()].map(o => ({
+    ...o,
+    ratio: o.maxSum > 0 ? (o.scoreSum / o.maxSum) : null,
+  }));
+  rows.sort((a,b) => {
+    const ra = a.ratio == null ? 1.0 : a.ratio;
+    const rb = b.ratio == null ? 1.0 : b.ratio;
+    return ra - rb; // 弱い順
+  });
+  return rows;
+}
+
+function renderHeatmap() {
+  const hist = loadHistory();
+  const statsBox = document.getElementById('heatmapStats');
+  const gridBox = document.getElementById('heatmapGrid');
+  if (!statsBox || !gridBox) return;
+  if (!hist.length) {
+    statsBox.innerHTML = '<p class="ee-empty">📭 まだ受験記録がありません。模試・大問演習に挑戦すると履歴が蓄積され、ここに弱点が可視化されます。</p>';
+    gridBox.innerHTML = '';
+    return;
+  }
+  const rows = buildHeatmapStats(hist);
+  // KPI
+  const totalAttempts = hist.length;
+  const totalRatio = rows.filter(r => r.ratio != null).reduce((s, r) => s + (r.ratio * (r.maxSum)), 0);
+  const totalMax = rows.reduce((s, r) => s + r.maxSum, 0);
+  const avgRatio = totalMax > 0 ? Math.round(100 * totalRatio / totalMax) : null;
+  statsBox.innerHTML = `
+    <div class="heatmap-kpi-row">
+      <div class="heatmap-kpi"><div class="hm-kpi-label">総受験回数</div><div class="hm-kpi-value">${totalAttempts}</div></div>
+      <div class="heatmap-kpi"><div class="hm-kpi-label">平均得点率</div><div class="hm-kpi-value">${avgRatio != null ? avgRatio + '%' : '—'}</div></div>
+      <div class="heatmap-kpi"><div class="hm-kpi-label">挑戦 part 数</div><div class="hm-kpi-value">${rows.length}</div></div>
+      <div class="heatmap-kpi"><div class="hm-kpi-label">最も伸びしろ</div><div class="hm-kpi-value">${rows[0] ? rows[0].part : '—'}</div></div>
+    </div>`;
+  // grid (rows = exam+grade, cols = part)
+  let html = '<div class="heatmap-rows">';
+  rows.forEach(r => {
+    const ratio = r.ratio;
+    const pct = ratio != null ? Math.round(ratio * 100) : null;
+    const color = pct == null ? '#475569' : (pct >= 80 ? '#22c55e' : pct >= 60 ? '#fbbf24' : '#f87171');
+    const labelMap = { toefl: '🇺🇸 TOEFL', toeic: '💼 TOEIC', ielts: '🇬🇧 IELTS', eiken: '🇯🇵 英検', daigaku: '🎓 大学入試' };
+    const examLabel = labelMap[r.examId] || r.examId;
+    const gradeLabel = r.gradeName || (r.grade ? `[${r.grade}]` : '');
+    html += `<div class="heatmap-row">
+      <div class="hm-row-label">${examLabel} ${escapeHtml(gradeLabel)} <code>${escapeHtml(r.part)}</code></div>
+      <div class="hm-row-bar"><div class="hm-row-fill" style="width:${pct == null ? 0 : pct}%;background:${color};"></div></div>
+      <div class="hm-row-pct" style="color:${color};">${pct != null ? pct + '%' : '—'} <span class="hm-row-n">(n=${r.attempts})</span></div>
+    </div>`;
+  });
+  html += '</div>';
+  gridBox.innerHTML = html;
+}
+
+async function aiRecommendNext() {
+  const btn = document.getElementById('aiRecommendBtn');
+  if (!btn) return;
+  const hist = loadHistory();
+  btn.disabled = true; btn.textContent = '⏳ AI が分析中...';
+  try {
+    const res = await fetch(`${getEEBackend()}/api/exam-questions/recommend`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        history: hist.map(h => ({
+          exam: h.examId, part: h.sectionKey, grade: h.grade,
+          score: h.sectionScore, scoreMax: h.sectionScoreMax,
+          date: h.ts,
+        })),
+        target: { exam: state.examId || null, grade: state.eikenGrade || null },
+      }),
+    });
+    if (!res.ok) throw new Error('http_' + res.status);
+    const data = await res.json();
+    const wrap = document.getElementById('heatmapRecommend');
+    let html = '<div class="recommend-card">';
+    if (data.ai_advice) {
+      const a = data.ai_advice;
+      html += `<div class="recommend-head">🤖 AI からの推薦</div>
+        <div class="recommend-target">📌 次に解くべき part: <strong>${escapeHtml(a.recommended_exam || '')}/${escapeHtml(a.recommended_part || '')}${a.recommended_grade ? ' [' + escapeHtml(a.recommended_grade) + ']' : ''}</strong></div>
+        <div class="recommend-reason">💡 理由: ${escapeHtml(a.reason_jp || '')}</div>
+        <div class="recommend-tip">📚 今日のヒント: ${escapeHtml(a.study_tip_jp || '')}</div>`;
+    } else if (data.fallback_recommendations && data.fallback_recommendations.length) {
+      const f = data.fallback_recommendations[0];
+      html += `<div class="recommend-head">📊 履歴ベース推薦</div>
+        <div class="recommend-target">📌 次に解くべき part: <strong>${escapeHtml(f.exam)}/${escapeHtml(f.part)}${f.grade ? ' [' + escapeHtml(f.grade) + ']' : ''}</strong></div>
+        <div class="recommend-reason">💡 ${escapeHtml(f.reason_jp || '')}</div>`;
+    } else {
+      html += '<div class="recommend-head">まだ履歴が不足しています</div><div>いくつか問題を解いてから再度お試しください。</div>';
+    }
+    html += `<button class="ee-btn ee-btn-ghost" id="aiRecommendBtn">🔁 もう一度 AI に聞く</button></div>`;
+    wrap.innerHTML = html;
+    document.getElementById('aiRecommendBtn').addEventListener('click', aiRecommendNext);
+  } catch (e) {
+    console.error('[recommend] failed:', e);
+    btn.disabled = false; btn.textContent = '🤖 AI に「次は何を解くべき?」を聞く';
+    alert('推薦の取得に失敗しました: ' + (e.message || e));
+  }
+}
+
+function bindArchiveFilters() {
+  const examSel = document.getElementById('archExamFilter');
+  const gradeSel = document.getElementById('archGradeFilter');
+  const partSel = document.getElementById('archPartFilter');
+  const yearInp = document.getElementById('archYearFilter');
+  const searchBtn = document.getElementById('archSearchBtn');
+  if (!examSel) return;
+  examSel.addEventListener('change', () => {
+    ARCH_STATE.exam = examSel.value || null;
+    ARCH_STATE.grade = null;
+    ARCH_STATE.part = null;
+    ARCH_STATE.year = null;
+    populateArchGradeOptions();
+    populateArchPartOptions();
+    yearInp.style.display = ARCH_STATE.exam === 'daigaku' ? '' : 'none';
+    searchBtn.style.display = ARCH_STATE.exam ? '' : 'none';
+    loadArchiveOverview(ARCH_STATE.exam);
+  });
+  gradeSel.addEventListener('change', () => {
+    ARCH_STATE.grade = gradeSel.value || null;
+    ARCH_STATE.part = null;
+    populateArchPartOptions();
+  });
+  partSel.addEventListener('change', () => {
+    ARCH_STATE.part = partSel.value || null;
+  });
+  yearInp.addEventListener('change', () => {
+    const y = parseInt(yearInp.value, 10);
+    ARCH_STATE.year = (y >= 2005 && y <= 2026) ? y : null;
+  });
+  searchBtn.addEventListener('click', loadArchiveList);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   updateModeBadge();
   bindExamCards();
@@ -1809,6 +2162,11 @@ document.addEventListener('DOMContentLoaded', () => {
   renderHistorySection();
   // ニュースフィード選択 UI
   renderNewsFeedGrid();
+  // アーカイブ + ヒートマップ
+  bindArchiveFilters();
+  loadArchiveOverview();
+  renderHeatmap();
+  document.getElementById('aiRecommendBtn')?.addEventListener('click', aiRecommendNext);
   // 音声合成の voices ロードを待つ (Chrome は遅延ロード)
   if ('speechSynthesis' in window) {
     window.speechSynthesis.onvoiceschanged = () => {};
