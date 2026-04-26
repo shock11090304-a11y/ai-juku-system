@@ -4,6 +4,7 @@ const API_BASE = window.location.origin.includes(':8090')
   : window.location.origin;  // prod: same origin
 
 const PLAN_INFO = {
+  founder1:  { name: '🎁 1期生プラン (永年¥25,000)', price: 25000 },
   standard:  { name: 'スタンダード',     price: 24980 },
   premium:   { name: 'プレミアム',       price: 39800 },
   family:    { name: '家族プラン（最大3名）', price: 59800 },

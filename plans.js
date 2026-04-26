@@ -6,6 +6,31 @@
 const PLAN_CONFIG = {
   // 新規向け3プラン
   plans: {
+    // 🎁 1期生100名限定 永年¥25,000 (体験 → 本契約への目玉プラン)
+    // 一度契約すれば永年この価格 (値上げなし)。100名到達で募集終了。
+    founder1: {
+      id: 'founder1',
+      name: '1期生プラン (永年特典)',
+      price: 25000,
+      priceLabel: '¥25,000',
+      tagline: '100名限定・契約後は永年この価格',
+      maxStudents: 1,
+      aiModel: 'opus',
+      color: '#fbbf24',
+      recommended: true,
+      badge: '🎁 100名限定',
+      quotas: { problems: null, essays: null, textbooks: null },
+      features: [
+        { name: '24時間AIチューター（無制限）', included: true, highlight: true },
+        { name: 'AI問題自動生成（無制限）', included: true, highlight: true },
+        { name: '英作文・記述添削（無制限）', included: true, highlight: true },
+        { name: '学習診断・カリキュラム生成', included: true },
+        { name: 'オリジナル参考書生成（無制限）', included: true, highlight: true },
+        { name: '保護者向け詳細レポート（週次・月次）', included: true },
+        { name: '🎁 一度契約すれば永年¥25,000（値上げ対象外）', included: true, highlight: true, note: true },
+        { name: '優先処理（AI応答の速度優先）', included: true },
+      ],
+    },
     standard: {
       id: 'standard',
       name: 'スタンダード',
@@ -80,12 +105,12 @@ const PLAN_CONFIG = {
     },
   },
 
-  // トライアル・アドオン
+  // 完全無料 7日間体験 (GW長期休みに集中体験 → 休み明け本契約戦略)
   trial: {
-    price: 1980,
-    priceLabel: '¥1,980',
-    duration: '3日間',
-    description: '体験料（単発）',
+    price: 0,
+    priceLabel: '完全無料',
+    duration: '7日間',
+    description: 'クレジットカード登録不要・自動課金なし・解約手続き不要',
   },
 
   enrollment: {
