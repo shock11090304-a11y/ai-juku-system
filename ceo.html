@@ -514,6 +514,29 @@
       </div>
       <!-- アラート一覧 -->
       <div id="monAlertsBox"></div>
+
+      <!-- 🔧 セルフヒーリング ツールパネル (Phase 9: 一括解決系の admin 操作) -->
+      <div style="margin-top:1rem;padding:0.9rem;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.08);border-radius:10px;">
+        <div style="font-size:0.85rem;font-weight:800;color:#94a3b8;margin-bottom:0.7rem;">🔧 セルフヒーリング ツール (異常時の 1 クリック修復)</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.5rem;">
+          <button id="reconcileStripeBtn" type="button" style="background:rgba(99,102,241,0.18);color:#818cf8;border:1px solid rgba(99,102,241,0.4);padding:0.6rem 0.7rem;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;text-align:left;">
+            <div>🔄 Stripe ↔ DB 同期</div>
+            <div style="font-size:0.7rem;color:#71717a;font-weight:400;margin-top:0.2rem;">Webhook 失敗で取りこぼした paid 顧客を救済</div>
+          </button>
+          <button id="cachePurgeBtn" type="button" style="background:rgba(248,113,113,0.18);color:#fca5a5;border:1px solid rgba(248,113,113,0.4);padding:0.6rem 0.7rem;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;text-align:left;">
+            <div>🧹 全生徒キャッシュ強制パージ</div>
+            <div style="font-size:0.7rem;color:#71717a;font-weight:400;margin-top:0.2rem;">古い HTML/CSS/JS が残っているとき緊急実行</div>
+          </button>
+          <button id="waiverResetBtn" type="button" style="background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);padding:0.6rem 0.7rem;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;text-align:left;">
+            <div>💰 入塾金免除キャンペーン リセット</div>
+            <div style="font-size:0.7rem;color:#71717a;font-weight:400;margin-top:0.2rem;">月初に枠カウンタをリセット</div>
+          </button>
+          <button id="poolPurgeBtn" type="button" style="background:rgba(14,165,233,0.18);color:#38bdf8;border:1px solid rgba(14,165,233,0.4);padding:0.6rem 0.7rem;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;text-align:left;">
+            <div>🗑️ 古い問題プールを削除</div>
+            <div style="font-size:0.7rem;color:#71717a;font-weight:400;margin-top:0.2rem;">30日以上経過した問題を削除→自動再蓄積</div>
+          </button>
+        </div>
+      </div>
     </section>
 
     <!-- 🎓 問題プール状況 (随時自動追加スケジューラの可視化) -->
@@ -1495,6 +1518,96 @@
           }
         } catch (e) { alert('⚠️ ' + e.message); }
         setupFsBtn.disabled = false; setupFsBtn.textContent = '⚡ Stripe Price 自動作成';
+      });
+
+      // 🔧 セルフヒーリング ツール (4 ボタン)
+      const reconcileBtn = document.getElementById('reconcileStripeBtn');
+      if (reconcileBtn) reconcileBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        if (!confirm('Stripe API から現在 active な subscription を取得し、DB と差分があれば DB を Stripe に合わせて更新します。\n\n失敗 webhook で取りこぼした paid 顧客を救済する操作 (冪等)。続行?')) return;
+        reconcileBtn.disabled = true; const orig = reconcileBtn.innerHTML;
+        reconcileBtn.innerHTML = '⏳ 同期中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/stripe/reconcile', { method: 'POST' });
+          const j = await r.json();
+          if (r.ok) {
+            const lines = [
+              `Stripe 側 active subscription: ${j.stripe_active_subscriptions}件`,
+              `更新: ${j.reconciled}件`,
+              `孤立 (Stripe にあるが DB に該当生徒なし): ${j.orphans}件`,
+              `エラー: ${j.errors}件`,
+            ];
+            alert('✅ ' + j.message + '\n\n' + lines.join('\n'));
+            console.log('[reconcile] details:', j.details);
+            loadMonitorHealth();
+          } else {
+            alert('⚠️ エラー: ' + JSON.stringify(j));
+          }
+        } catch (e) { alert('⚠️ ' + e.message); }
+        reconcileBtn.disabled = false; reconcileBtn.innerHTML = orig;
+      });
+
+      const cachePurgeBtn = document.getElementById('cachePurgeBtn');
+      if (cachePurgeBtn) cachePurgeBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        if (!confirm('全生徒のブラウザキャッシュを強制パージします。\n\n発行後、各生徒の次回アクセス時に caches が削除され強制リロードされます。\n古い HTML/CSS/JS で表示されている問題が報告された時の最終手段。続行?')) return;
+        cachePurgeBtn.disabled = true; const orig = cachePurgeBtn.innerHTML;
+        cachePurgeBtn.innerHTML = '⏳ 発行中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/cache/force-purge', { method: 'POST' });
+          const j = await r.json();
+          if (r.ok) alert('✅ ' + j.message);
+          else alert('⚠️ エラー: ' + JSON.stringify(j));
+        } catch (e) { alert('⚠️ ' + e.message); }
+        cachePurgeBtn.disabled = false; cachePurgeBtn.innerHTML = orig;
+      });
+
+      const waiverResetBtn = document.getElementById('waiverResetBtn');
+      if (waiverResetBtn) waiverResetBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        const newLimit = prompt('入塾金免除キャンペーンの新上限 (空欄で現在値維持)', '');
+        if (newLimit === null) return;
+        const limit = newLimit.trim() ? parseInt(newLimit.trim(), 10) : null;
+        if (newLimit.trim() && (!limit || limit < 0)) return alert('数値で入力してください');
+        if (!confirm(`入塾金免除キャンペーンをリセットします${limit ? ` (新上限: ${limit}名)` : ''}。\nリセット時刻以降の paid 生徒のみで枠を再カウントします。続行?`)) return;
+        waiverResetBtn.disabled = true; const orig = waiverResetBtn.innerHTML;
+        waiverResetBtn.innerHTML = '⏳ リセット中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/campaigns/enrollment-waiver/reset', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(limit ? { new_limit: limit } : {})
+          });
+          const j = await r.json();
+          if (r.ok) alert('✅ ' + j.message);
+          else alert('⚠️ エラー: ' + JSON.stringify(j));
+        } catch (e) { alert('⚠️ ' + e.message); }
+        waiverResetBtn.disabled = false; waiverResetBtn.innerHTML = orig;
+      });
+
+      const poolPurgeBtn = document.getElementById('poolPurgeBtn');
+      if (poolPurgeBtn) poolPurgeBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        const days = prompt('何日以前の問題を削除しますか? (デフォルト: 30日以前)', '30');
+        if (days === null) return;
+        const olderThanDays = parseInt(days, 10);
+        if (!olderThanDays || olderThanDays < 1) return alert('1以上の数値で入力してください');
+        if (!confirm(`${olderThanDays}日以上経過した問題プールを削除します。\n\n削除後、interval scheduler が次の tick で薄い part から自動再蓄積します。Anthropic 課金が発生する可能性があります。続行?`)) return;
+        poolPurgeBtn.disabled = true; const orig = poolPurgeBtn.innerHTML;
+        poolPurgeBtn.innerHTML = '⏳ 削除中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/exam-questions/purge', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ older_than_days: olderThanDays })
+          });
+          const j = await r.json();
+          if (r.ok) {
+            alert('✅ ' + j.message);
+            if (typeof loadPoolStatus === 'function') loadPoolStatus();
+          } else {
+            alert('⚠️ エラー: ' + JSON.stringify(j));
+          }
+        } catch (e) { alert('⚠️ ' + e.message); }
+        poolPurgeBtn.disabled = false; poolPurgeBtn.innerHTML = orig;
       });
 
       const poolRefreshBtn = document.getElementById('poolRefreshBtn');

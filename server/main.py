@@ -2845,6 +2845,275 @@ def admin_stripe_setup_founder_special(authorization: Optional[str] = Header(Non
     }
 
 
+# ============================================================================
+# 🔧 セルフヒーリング系 admin endpoints (Phase 9)
+# 設計原則: monitor が検知できる異常は CEO ダッシュ 1 クリックで解決可能にする
+# ============================================================================
+
+@app.post("/api/admin/stripe/reconcile")
+def admin_stripe_reconcile(authorization: Optional[str] = Header(None)):
+    """🔄 Stripe ↔ DB 整合性同期 (失敗 webhook 取りこぼし救済)
+
+    Stripe API から現在 active な subscription を全て取得し、DB と差分があれば
+    DB を Stripe に合わせて更新する。webhook 配信失敗で「Stripe では課金中・
+    DB では trial」というゴースト顧客を救済できる。冪等。
+
+    返り値: {reconciled: N, details: [...]}"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="未認証")
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="STRIPE_SECRET_KEY が未設定")
+
+    s = get_stripe()
+    reconciled = []
+    orphans = []
+    errors = []
+    try:
+        subs = s.Subscription.list(status="active", limit=100)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Stripe Subscription.list 失敗: {e}")
+
+    conn = db()
+    c = conn.cursor()
+    for sub in subs.data:
+        try:
+            customer = sub.customer
+            plan = (sub.metadata or {}).get("plan", "")
+            email = None
+            try:
+                cust_obj = s.Customer.retrieve(customer)
+                email = cust_obj.email
+            except Exception:
+                pass
+            # DB 検索: stripe_customer_id 優先・無ければ email
+            c.execute("SELECT id, status, plan FROM students WHERE stripe_customer_id = ?", (customer,))
+            row = c.fetchone()
+            if not row and email:
+                c.execute("SELECT id, status, plan FROM students WHERE email = ?", (email,))
+                row = c.fetchone()
+            if not row:
+                # Stripe 側に sub があるが DB に該当生徒なし → orphan
+                orphans.append({"customer": customer, "email": email, "subscription": sub.id, "plan": plan})
+                continue
+            sid, status, db_plan = row[0], row[1], row[2]
+            if status != "paid":
+                c.execute(
+                    """UPDATE students SET status='paid', stripe_customer_id=?, stripe_subscription_id=?,
+                           plan=?, paid_since=COALESCE(paid_since, CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP
+                       WHERE id=?""",
+                    (customer, sub.id, plan or db_plan, sid),
+                )
+                conn.commit()
+                reconciled.append({"student_id": sid, "email": email, "old_status": status, "new_status": "paid", "plan": plan or db_plan})
+            elif db_plan != plan and plan:
+                # plan だけ違う → 更新
+                c.execute(
+                    "UPDATE students SET plan=?, stripe_subscription_id=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                    (plan, sub.id, sid),
+                )
+                conn.commit()
+                reconciled.append({"student_id": sid, "email": email, "plan_change": f"{db_plan} → {plan}"})
+        except Exception as e:
+            errors.append({"sub_id": sub.id, "error": str(e)})
+            try: conn.rollback()
+            except Exception: pass
+    conn.close()
+
+    return {
+        "ok": True,
+        "stripe_active_subscriptions": len(subs.data),
+        "reconciled": len(reconciled),
+        "orphans": len(orphans),
+        "errors": len(errors),
+        "details": {"reconciled": reconciled, "orphans": orphans, "errors": errors},
+        "message": f"✅ {len(reconciled)} 件を Stripe に合わせて更新。orphan {len(orphans)} 件は手動確認推奨。",
+    }
+
+
+@app.post("/api/admin/cache/force-purge")
+def admin_cache_force_purge(authorization: Optional[str] = Header(None)):
+    """🧹 全生徒のブラウザキャッシュを強制パージ。
+
+    DB に CACHE_VERSION を bump して保存。フロントの cache-purge.js が起動時に
+    /api/cache-version を叩き、保存値より新しければ caches を全削除 + 強制リロード。
+    バージョン文字列は ISO timestamp で生成。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="未認証")
+
+    new_version = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    conn = db()
+    c = conn.cursor()
+    try:
+        # kv_settings テーブルが無ければ作る
+        c.execute(
+            """CREATE TABLE IF NOT EXISTS kv_settings (
+                key TEXT PRIMARY KEY,
+                value TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )"""
+        )
+        # UPSERT
+        c.execute("DELETE FROM kv_settings WHERE key = ?", ("cache_version",))
+        c.execute("INSERT INTO kv_settings (key, value) VALUES (?, ?)", ("cache_version", new_version))
+        conn.commit()
+    except Exception as e:
+        try: conn.rollback()
+        except Exception: pass
+        raise HTTPException(status_code=500, detail=f"DB 書込失敗: {e}")
+    finally:
+        conn.close()
+
+    return {
+        "ok": True,
+        "cache_version": new_version,
+        "message": f"✅ cache_version={new_version} を発行。次回アクセス時に全生徒のブラウザがキャッシュ削除+強制リロードします。",
+    }
+
+
+@app.get("/api/cache-version")
+def public_cache_version():
+    """全フロントが起動時に呼ぶ。新しい version が来ていたら caches 削除 + reload。"""
+    conn = db()
+    c = conn.cursor()
+    version = ""
+    try:
+        c.execute("CREATE TABLE IF NOT EXISTS kv_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)")
+        c.execute("SELECT value FROM kv_settings WHERE key = ?", ("cache_version",))
+        row = c.fetchone()
+        if row:
+            version = row[0] if not hasattr(row, "keys") else row["value"]
+    except Exception:
+        try: conn.rollback()
+        except Exception: pass
+    finally:
+        conn.close()
+    return {"version": version or "initial"}
+
+
+@app.post("/api/admin/campaigns/enrollment-waiver/reset")
+def admin_enrollment_waiver_reset(payload: dict = None, authorization: Optional[str] = Header(None)):
+    """💰 入塾金免除キャンペーンの枠カウンタをリセット (月初リセット用)。
+    既存の status='paid' の中で enrollment_waiver_applied=1 だった生徒数 = 消費済み枠。
+    本 endpoint は events テーブルに「リセット時刻」を記録し、それ以降の paid 生徒のみを
+    「消費済み」としてカウントする方式に切替える。
+    optional payload: {"new_limit": 100} で上限も同時に更新可能 (env 上書き)。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="未認証")
+
+    payload = payload or {}
+    new_limit = payload.get("new_limit")
+    now = datetime.now(timezone.utc)
+
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute("CREATE TABLE IF NOT EXISTS kv_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)")
+        c.execute("DELETE FROM kv_settings WHERE key = ?", ("enrollment_waiver_reset_at",))
+        c.execute("INSERT INTO kv_settings (key, value) VALUES (?, ?)", ("enrollment_waiver_reset_at", now.isoformat()))
+        if new_limit:
+            c.execute("DELETE FROM kv_settings WHERE key = ?", ("enrollment_waiver_limit",))
+            c.execute("INSERT INTO kv_settings (key, value) VALUES (?, ?)", ("enrollment_waiver_limit", str(int(new_limit))))
+        conn.commit()
+        # events に記録
+        c.execute(
+            "INSERT INTO events (name, data, source) VALUES (?, ?, ?)",
+            ("enrollment_waiver_reset", json.dumps({"reset_at": now.isoformat(), "new_limit": new_limit}, ensure_ascii=False), "admin"),
+        )
+        conn.commit()
+    except Exception as e:
+        try: conn.rollback()
+        except Exception: pass
+        raise HTTPException(status_code=500, detail=f"リセット失敗: {e}")
+    finally:
+        conn.close()
+
+    return {
+        "ok": True,
+        "reset_at": now.isoformat(),
+        "new_limit": new_limit or ENROLLMENT_WAIVER_LIMIT,
+        "message": f"✅ 入塾金免除キャンペーンを {now.strftime('%Y-%m-%d %H:%M')} にリセット。以降の paid 生徒で枠を再カウント開始。",
+    }
+
+
+@app.post("/api/admin/exam-questions/purge")
+def admin_exam_questions_purge(payload: dict, authorization: Optional[str] = Header(None)):
+    """🗑️ 蓄積問題プールの選択削除 (品質悪い問題を一括削除→次 tick で再蓄積)。
+    payload: {
+      "exam_id": "daigaku" (optional),
+      "part_key": "r_long" (optional),
+      "eiken_grade": "todai" (optional),
+      "older_than_days": 30 (optional, 指定日数より古いものだけ削除)
+    }
+    引数なしの場合は安全のため 422 (誤爆防止)。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="未認証")
+    if not isinstance(payload, dict) or not payload:
+        raise HTTPException(status_code=422, detail="filter parameter が必須 (exam_id/part_key/eiken_grade/older_than_days のいずれか)")
+
+    where = []
+    params = []
+    if payload.get("exam_id"):
+        where.append("exam_id = ?")
+        params.append(payload["exam_id"])
+    if payload.get("part_key"):
+        where.append("part_key = ?")
+        params.append(payload["part_key"])
+    if payload.get("eiken_grade"):
+        where.append("eiken_grade = ?")
+        params.append(payload["eiken_grade"])
+    older_than = payload.get("older_than_days")
+    if older_than:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=int(older_than))
+        where.append("created_at < ?")
+        params.append(cutoff.isoformat())
+    if not where:
+        raise HTTPException(status_code=422, detail="少なくとも 1 つの filter が必要")
+
+    where_sql = " WHERE " + " AND ".join(where)
+    conn = db()
+    c = conn.cursor()
+    deleted = 0
+    try:
+        # まず削除対象数をカウント (返却用)
+        c.execute(f"SELECT COUNT(*) FROM exam_questions{where_sql}", tuple(params))
+        row = c.fetchone()
+        deleted = int(row[0] if row else 0)
+        # DELETE
+        c.execute(f"DELETE FROM exam_questions{where_sql}", tuple(params))
+        conn.commit()
+        # events に記録
+        c.execute(
+            "INSERT INTO events (name, data, source) VALUES (?, ?, ?)",
+            ("exam_questions_purge", json.dumps({"filter": payload, "deleted": deleted}, ensure_ascii=False), "admin"),
+        )
+        conn.commit()
+    except Exception as e:
+        try: conn.rollback()
+        except Exception: pass
+        raise HTTPException(status_code=500, detail=f"削除失敗: {e}")
+    finally:
+        conn.close()
+
+    return {
+        "ok": True,
+        "deleted": deleted,
+        "filter": payload,
+        "message": f"✅ {deleted} 問を削除。次の tick (interval scheduler) で薄い part から自動再蓄積されます。",
+    }
+
+
 @app.post("/api/admin/exam-questions/generate")
 def admin_exam_questions_generate(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """指定パート (or ローテ全件) の問題を生成。手動トリガー。
