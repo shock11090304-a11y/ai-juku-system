@@ -1241,10 +1241,25 @@ body {
 .ee-toggle-text { font-size: 0.85rem; color: var(--ee-text); }
 
 /* ========== Responsive ========== */
+/* タブレット以下 */
+@media (max-width: 768px) {
+  .ee-header-inner { flex-wrap: wrap; gap: 0.6rem; }
+  .ee-brand { flex: 1 1 auto; min-width: 0; }
+  .ee-brand > div { flex: 1; min-width: 0; }
+  .ee-title { word-break: keep-all; overflow-wrap: anywhere; }
+  .ee-subtitle { word-break: keep-all; overflow-wrap: anywhere; line-height: 1.5; }
+  .ee-header-actions { flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+}
+
+/* モバイル */
 @media (max-width: 640px) {
   .ee-header { padding: 0.7rem 1rem 0; }
-  .ee-title { font-size: 1.1rem; }
-  .ee-subtitle { font-size: 0.75rem; }
+  .ee-header-inner { gap: 0.5rem 0.7rem; }
+  .ee-logo { font-size: 1.6rem; }
+  .ee-title { font-size: 1.05rem; line-height: 1.25; }
+  .ee-subtitle { font-size: 0.7rem; line-height: 1.4; }
+  .ee-mode-badge { padding: 0.2rem 0.5rem; font-size: 0.7rem; }
+  .ee-icon-btn { width: 32px; height: 32px; font-size: 1rem; }
   .ee-trust-bar { gap: 0.4rem 1rem; font-size: 0.72rem; }
   .ee-main { padding: 1.5rem 1rem 3rem; }
   .ee-section { padding: 1.5rem 1rem; }
@@ -1254,4 +1269,19 @@ body {
   .exam-card-name { font-size: 1.1rem; }
   .ee-cta-title { font-size: 1.5rem; }
   .result-hero-num { font-size: 3rem; }
+  /* 設定 UI のレイアウト調整 */
+  .exam-meta-grid { grid-template-columns: 1fr 1fr !important; }
+  /* 4択ボタン: モバイルでも幅余裕 */
+  .ee-choice-btn { padding: 0.8rem 0.7rem; font-size: 0.9rem; min-height: 52px; }
+  .ee-choice-btn .ee-choice-letter { width: 28px; height: 28px; font-size: 0.85rem; }
+}
+
+/* 超狭幅 (375px 以下 = iPhone SE) */
+@media (max-width: 380px) {
+  .ee-title { font-size: 0.95rem; }
+  .ee-subtitle { font-size: 0.65rem; }
+  .ee-brand { gap: 0.5rem; }
+  .ee-logo { font-size: 1.4rem; }
+  .ee-header-actions { gap: 0.3rem; }
+  .ee-mode-badge { font-size: 0.65rem; padding: 0.15rem 0.4rem; }
 }
