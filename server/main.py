@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional, List
-from datetime import datetime, timezone, timedelta, time
+from datetime import datetime, timezone, timedelta, time as dt_time
 import os
 import json
 import sqlite3
@@ -899,7 +899,7 @@ def _check_daily_sns_sent_today_jst() -> bool:
     """今日(JST)のdaily_sns_postが既に events に記録されているか確認"""
     JST = timezone(timedelta(hours=9))
     today_jst = datetime.now(JST).date()
-    today_start_utc = datetime.combine(today_jst, time(0, 0), tzinfo=JST).astimezone(timezone.utc)
+    today_start_utc = datetime.combine(today_jst, dt_time(0, 0), tzinfo=JST).astimezone(timezone.utc)
     conn = db()
     c = conn.cursor()
     try:
@@ -1464,7 +1464,7 @@ def _check_daily_summary_sent_today_jst() -> bool:
     """今日 (JST) 既にデイリーサマリを送ったか"""
     JST = timezone(timedelta(hours=9))
     today = datetime.now(JST).date()
-    today_start_utc = datetime.combine(today, time(0, 0), tzinfo=JST).astimezone(timezone.utc)
+    today_start_utc = datetime.combine(today, dt_time(0, 0), tzinfo=JST).astimezone(timezone.utc)
     conn = db()
     c = conn.cursor()
     try:
@@ -2535,7 +2535,7 @@ def admin_revenue_timeline(authorization: Optional[str] = Header(None), days: in
     cumulative_revenue = 0
     # まず累計の起点を取得 (集計範囲開始日より前の累計)
     start_date = today - timedelta(days=days - 1)
-    start_utc = datetime.combine(start_date, time(0, 0), tzinfo=JST).astimezone(timezone.utc)
+    start_utc = datetime.combine(start_date, dt_time(0, 0), tzinfo=JST).astimezone(timezone.utc)
     try:
         c.execute(
             "SELECT COUNT(*) FROM students WHERE status='paid' AND paid_since IS NOT NULL AND paid_since < ?",
@@ -2557,7 +2557,7 @@ def admin_revenue_timeline(authorization: Optional[str] = Header(None), days: in
 
     for i in range(days):
         d = start_date + timedelta(days=i)
-        d_start_utc = datetime.combine(d, time(0, 0), tzinfo=JST).astimezone(timezone.utc)
+        d_start_utc = datetime.combine(d, dt_time(0, 0), tzinfo=JST).astimezone(timezone.utc)
         d_end_utc = d_start_utc + timedelta(days=1)
         # 当日の新規 paid 数
         try:
