@@ -3183,6 +3183,214 @@ def public_exam_questions_recommend(payload: dict):
     }
 
 
+@app.post("/api/curriculum/generate")
+def public_curriculum_generate(payload: dict):
+    """🎯 受験日逆算 個別 AI カリキュラム生成。
+    payload: {
+      "exam_id": "daigaku|toefl|toeic|ielts|eiken",
+      "target_grade": "todai|gp1|null"  (大学キー or 英検級),
+      "target_grade_name": "東京大学" (表示用),
+      "exam_date": "2027-02-25" (ISO date string),
+      "current_level": "B1" (CEFR),
+      "daily_minutes": 60,
+      "weak_parts": ["r_translation", "w_essay"] (Phase 5 recommend で判明した弱点),
+      "history_summary": [...] (任意・Phase 5 のサマリ流用)
+    }
+
+    出力: {
+      "days_remaining": 365,
+      "weeks_remaining": 52,
+      "phases": [
+        {"phase": "基礎固め", "weeks": [...], "weeks_count": 12},
+        {"phase": "応用強化", "weeks_count": 26},
+        {"phase": "直前期", "weeks_count": 14}
+      ],
+      "weekly_roadmap": [
+        {"week": 1, "phase": "基礎固め", "focus": "...", "tasks": [...], "estimated_minutes": 420}
+      ],
+      "study_principles": ["...", "..."],
+      "milestone_assessments": [...],
+    }
+    """
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="invalid payload")
+    exam_id = payload.get("exam_id") or "daigaku"
+    target_grade = payload.get("target_grade")
+    target_grade_name = payload.get("target_grade_name") or target_grade or "受験対象"
+    exam_date = payload.get("exam_date")
+    current_level = payload.get("current_level") or "B1"
+    daily_minutes = int(payload.get("daily_minutes") or 60)
+    weak_parts = payload.get("weak_parts") or []
+    history_summary = payload.get("history_summary") or []
+
+    # 残日数計算
+    if not exam_date:
+        raise HTTPException(status_code=400, detail="exam_date is required")
+    try:
+        target_date = datetime.fromisoformat(exam_date.replace("Z", "+00:00"))
+        if target_date.tzinfo is None:
+            target_date = target_date.replace(tzinfo=timezone.utc)
+    except Exception:
+        raise HTTPException(status_code=400, detail="exam_date must be ISO date format (YYYY-MM-DD)")
+    now = datetime.now(timezone.utc)
+    days_remaining = max(1, int((target_date - now).total_seconds() / 86400))
+    weeks_remaining = max(1, days_remaining // 7)
+
+    if not ANTHROPIC_API_KEY:
+        # フォールバック: 簡易ロジック生成
+        return _curriculum_fallback(
+            exam_id, target_grade_name, days_remaining, weeks_remaining,
+            current_level, daily_minutes, weak_parts
+        )
+
+    weak_parts_text = ", ".join(weak_parts) if weak_parts else "履歴未提供 (汎用最適化)"
+    history_text = "\n".join([
+        f"- {h.get('exam')}/{h.get('part')} ({h.get('grade') or '-'}): n={h.get('attempts')}・正答率{int((h.get('score_ratio') or 0)*100)}%"
+        for h in history_summary[:8]
+    ]) if history_summary else "(履歴なし)"
+
+    system = """あなたは英語試験対策の専門学習コーチです。日本人受験者向けに、受験日逆算の個別カリキュラムを設計してください。
+
+【設計指針】
+- 残日数を 3 フェーズに分割: 基礎固め (前半 30-50%) / 応用強化 (中盤 30-40%) / 直前期 (後半 15-25%)
+- 1日あたりの学習時間を厳守 (オーバーフロー禁止)
+- 弱点 part を「直前期で克服」ではなく「基礎固め後半～応用強化」で集中対策する
+- 週ごとに具体的なタスク (問題演習回数・単語数・模試予定) を割り振る
+- 日本人特有の弱点 (冠詞・関係詞・分詞構文・無生物主語の和訳・コロケーション) を必ず織り込む
+- 出力は純粋な JSON のみ (前後に文章を付けない)"""
+
+    user = f"""【学習者プロファイル】
+- 受験予定: {target_grade_name} ({exam_id})
+- 受験日: {exam_date}
+- 残日数: {days_remaining}日 (約{weeks_remaining}週間)
+- 現在レベル: CEFR {current_level}
+- 1日学習可能時間: {daily_minutes}分
+- 弱点 part (直近履歴より): {weak_parts_text}
+- 履歴サマリ:
+{history_text}
+
+【出力形式 (純粋な JSON)】
+{{
+  "days_remaining": {days_remaining},
+  "weeks_remaining": {weeks_remaining},
+  "phases": [
+    {{"phase": "基礎固め", "weeks_count": <数値>, "objective_jp": "このフェーズで達成すること"}},
+    {{"phase": "応用強化", "weeks_count": <数値>, "objective_jp": "..."}},
+    {{"phase": "直前期", "weeks_count": <数値>, "objective_jp": "..."}}
+  ],
+  "weekly_roadmap": [
+    {{
+      "week": 1,
+      "phase": "基礎固め",
+      "focus_jp": "今週のフォーカス (具体的に1行)",
+      "tasks": [
+        {{"category": "vocab|reading|grammar|listening|speaking|writing|mock|review", "title_jp": "タスク名", "detail_jp": "具体的な内容", "minutes": <数値>}}
+      ],
+      "estimated_total_minutes": <週合計>,
+      "milestone_jp": "今週末に達成すべき指標 (例: r_long で 70%以上)"
+    }}
+    // 全 {weeks_remaining} 週分を生成 (簡略化のため最大 16 週まで・残りは "applies_remaining_weeks" でまとめる)
+  ],
+  "study_principles": [
+    "学習者へのコーチング指針 1",
+    "学習者へのコーチング指針 2",
+    "..."
+  ],
+  "milestone_assessments": [
+    {{"week": <週番号>, "type": "模試", "target_jp": "目標値"}},
+    {{"week": <週番号>, "type": "弱点再評価", "target_jp": "..."}}
+  ],
+  "estimated_score_at_exam": "目標スコア予測 (現状 + 投下時間から逆算・楽観的すぎず保守的すぎず)"
+}}
+
+【厳守】
+- weekly_roadmap は最初の 12-16 週を必ず詳細化、それ以降は "phase 名" + "代表的なタスクパターン" でまとめてOK (週単位のテンプレ化)
+- minutes 合計は daily_minutes × 7 を超えない (週上限 = {daily_minutes * 7})
+- estimated_score_at_exam は具体的な数値 (例: 「東大英語 78/120 → 88/120 (+10)」)"""
+
+    try:
+        req = urllib.request.Request(
+            "https://api.anthropic.com/v1/messages",
+            data=json.dumps({
+                "model": EXAM_QUESTIONS_MODEL,
+                "max_tokens": 8000,
+                "system": system,
+                "messages": [{"role": "user", "content": user}],
+            }).encode("utf-8"),
+            headers={
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            d = json.loads(resp.read().decode())
+        text = d["content"][0]["text"].strip()
+        if text.startswith("```"):
+            text = text.split("```", 2)[1]
+            if text.startswith("json"): text = text[4:]
+            text = text.strip().rstrip("`").strip()
+        result = json.loads(text)
+        # 保険で server-side computed values を上書き
+        result["days_remaining"] = days_remaining
+        result["weeks_remaining"] = weeks_remaining
+        result["target_grade_name"] = target_grade_name
+        result["exam_id"] = exam_id
+        result["exam_date"] = exam_date
+        result["generated_at"] = now.isoformat()
+        return result
+    except Exception as e:
+        log.error(f"[Curriculum] AI generation failed: {type(e).__name__}: {e}")
+        return _curriculum_fallback(
+            exam_id, target_grade_name, days_remaining, weeks_remaining,
+            current_level, daily_minutes, weak_parts
+        )
+
+
+def _curriculum_fallback(exam_id, target_grade_name, days_remaining, weeks_remaining,
+                          current_level, daily_minutes, weak_parts):
+    """AI が使えない時の汎用フォールバック・3フェーズ均等分割"""
+    base_phase = max(1, weeks_remaining // 3)
+    return {
+        "days_remaining": days_remaining,
+        "weeks_remaining": weeks_remaining,
+        "target_grade_name": target_grade_name,
+        "exam_id": exam_id,
+        "phases": [
+            {"phase": "基礎固め", "weeks_count": base_phase, "objective_jp": f"CEFR {current_level} レベルの基礎を固める"},
+            {"phase": "応用強化", "weeks_count": base_phase, "objective_jp": "弱点 part の集中対策と応用問題への移行"},
+            {"phase": "直前期", "weeks_count": max(1, weeks_remaining - 2 * base_phase), "objective_jp": "本番形式の演習・最終調整"},
+        ],
+        "weekly_roadmap": [
+            {
+                "week": w,
+                "phase": "基礎固め" if w <= base_phase else ("応用強化" if w <= 2 * base_phase else "直前期"),
+                "focus_jp": "週ごとの学習に集中",
+                "tasks": [
+                    {"category": "vocab", "title_jp": "語彙学習", "detail_jp": "頻出語彙 50語/週", "minutes": daily_minutes * 2},
+                    {"category": "reading", "title_jp": "長文読解", "detail_jp": "1問/日", "minutes": daily_minutes * 3},
+                    {"category": "review", "title_jp": "復習", "detail_jp": "前週の弱点復習", "minutes": daily_minutes * 2},
+                ],
+                "estimated_total_minutes": daily_minutes * 7,
+                "milestone_jp": "週末に進捗確認",
+            }
+            for w in range(1, min(weeks_remaining, 12) + 1)
+        ],
+        "study_principles": [
+            "毎日の学習時間を厳守する (休日も例外なく)",
+            "弱点を見つけたら即座に類題で克服する",
+            "模試は週1で必ず実施し、結果を可視化する",
+        ],
+        "milestone_assessments": [
+            {"week": base_phase, "type": "中間模試", "target_jp": "現状から +10% スコア"},
+            {"week": base_phase * 2, "type": "応用模試", "target_jp": "目標スコアの 80% 到達"},
+        ],
+        "estimated_score_at_exam": "履歴データが充実すると AI が具体的なスコア予測を返します",
+        "fallback": True,
+    }
+
+
 @app.get("/api/admin/exam-questions/pool-status")
 def admin_exam_questions_pool_status(authorization: Optional[str] = Header(None)):
     """全 part の pool 蓄積数を返す (CEO ダッシュボード用)。admin Bearer 認証必須。"""

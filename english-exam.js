@@ -2150,6 +2150,221 @@ function bindArchiveFilters() {
   searchBtn.addEventListener('click', loadArchiveList);
 }
 
+// ==========================================================================
+// 🎯 受験日カウントダウン + 個別 AI カリキュラム (Phase 7)
+// ==========================================================================
+const CURRICULUM_KEY = 'ee_curriculum_v1';
+
+function loadCurriculumState() {
+  try { return JSON.parse(localStorage.getItem(CURRICULUM_KEY) || 'null'); } catch { return null; }
+}
+function saveCurriculumState(data) {
+  try { localStorage.setItem(CURRICULUM_KEY, JSON.stringify(data)); } catch {}
+}
+
+function bindCurriculumForm() {
+  const examSel = document.getElementById('curExamSelect');
+  const gradeSel = document.getElementById('curGradeSelect');
+  const dateInp = document.getElementById('curExamDate');
+  const daysHint = document.getElementById('curDaysRemaining');
+  const genBtn = document.getElementById('curGenerateBtn');
+  if (!examSel) return;
+
+  // 日付の min/max を today / +5年 に
+  const today = new Date();
+  dateInp.min = today.toISOString().slice(0, 10);
+  dateInp.max = new Date(today.getTime() + 365 * 5 * 86400000).toISOString().slice(0, 10);
+
+  examSel.addEventListener('change', () => {
+    const ex = examSel.value;
+    if (!ex) { gradeSel.style.display = 'none'; return; }
+    if (ex === 'eiken' || ex === 'daigaku') {
+      gradeSel.innerHTML = '<option value="">大学/級を選ぶ…</option>';
+      const grades = (EXAMS[ex] && EXAMS[ex].grades) || [];
+      grades.forEach(g => {
+        gradeSel.innerHTML += `<option value="${g.key}">${escapeHtml(g.name)}</option>`;
+      });
+      gradeSel.style.display = '';
+    } else {
+      gradeSel.style.display = 'none';
+    }
+  });
+
+  dateInp.addEventListener('change', () => {
+    if (!dateInp.value) { daysHint.textContent = '--'; return; }
+    const d = new Date(dateInp.value);
+    const diff = Math.ceil((d - new Date()) / 86400000);
+    daysHint.textContent = diff > 0 ? `あと ${diff} 日 (約${Math.ceil(diff/7)}週間)` : '受験日を未来日付に';
+  });
+
+  genBtn.addEventListener('click', generateCurriculum);
+
+  // 既存のカリキュラムがあれば復元
+  const saved = loadCurriculumState();
+  if (saved && saved.exam_id) {
+    examSel.value = saved.exam_id;
+    examSel.dispatchEvent(new Event('change'));
+    if (saved.target_grade) gradeSel.value = saved.target_grade;
+    if (saved.exam_date) {
+      dateInp.value = saved.exam_date.slice(0, 10);
+      dateInp.dispatchEvent(new Event('change'));
+    }
+    if (saved.current_level) document.getElementById('curCurrentLevel').value = saved.current_level;
+    if (saved.daily_minutes) document.getElementById('curDailyMinutes').value = saved.daily_minutes;
+    renderCurriculum(saved);
+  }
+}
+
+async function generateCurriculum() {
+  const examSel = document.getElementById('curExamSelect');
+  const gradeSel = document.getElementById('curGradeSelect');
+  const dateInp = document.getElementById('curExamDate');
+  const lvSel = document.getElementById('curCurrentLevel');
+  const minInp = document.getElementById('curDailyMinutes');
+  const genBtn = document.getElementById('curGenerateBtn');
+  const resultBox = document.getElementById('curriculumResult');
+  if (!examSel.value) return alert('試験を選択してください');
+  if (!dateInp.value) return alert('受験日を選択してください');
+  // 弱点 part を Phase 5 history から自動抽出
+  const hist = loadHistory();
+  const stats = buildHeatmapStats(hist);
+  const weak_parts = stats.filter(s => (s.ratio || 1.0) < 0.7).slice(0, 3).map(s => s.part);
+  const history_summary = stats.slice(0, 8).map(s => ({
+    exam: s.examId, part: s.part, grade: s.grade,
+    attempts: s.attempts, score_ratio: s.ratio,
+  }));
+  const grade = gradeSel.value || null;
+  const grade_name = gradeSel.value ? gradeSel.options[gradeSel.selectedIndex].text : null;
+  const payload = {
+    exam_id: examSel.value,
+    target_grade: grade,
+    target_grade_name: grade_name,
+    exam_date: dateInp.value,
+    current_level: lvSel.value,
+    daily_minutes: parseInt(minInp.value, 10) || 60,
+    weak_parts,
+    history_summary,
+  };
+  resultBox.innerHTML = '<p class="ee-loading">⏳ AI が個別カリキュラムを設計中… (30〜90秒)</p>';
+  resultBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  genBtn.disabled = true; genBtn.textContent = '⏳ 生成中...';
+  try {
+    const backend = (window.location.hostname === 'localhost' && window.location.port === '8090')
+      ? 'http://localhost:8000' : window.location.origin;
+    const res = await fetch(`${backend}/api/curriculum/generate`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error('http_' + res.status + ' ' + err.slice(0, 100));
+    }
+    const data = await res.json();
+    // 永続化
+    saveCurriculumState({ ...data, ...payload, saved_at: new Date().toISOString() });
+    renderCurriculum(data);
+  } catch (e) {
+    console.error('[curriculum] failed', e);
+    resultBox.innerHTML = `<p class="ee-error">⚠️ 生成失敗: ${escapeHtml(String(e.message || e))}</p>`;
+  } finally {
+    genBtn.disabled = false; genBtn.textContent = '🤖 AI に学習プランを生成してもらう';
+  }
+}
+
+function renderCurriculum(data) {
+  const box = document.getElementById('curriculumResult');
+  if (!box || !data) return;
+  const phases = data.phases || [];
+  const roadmap = data.weekly_roadmap || [];
+  const principles = data.study_principles || [];
+  const milestones = data.milestone_assessments || [];
+
+  // 進捗チェック (localStorage の completed_weeks)
+  const progress = loadCurriculumState() || {};
+  const completed = new Set(progress.completed_weeks || []);
+
+  let html = `<div class="cur-result-card">`;
+  html += `<div class="cur-head">
+    <div class="cur-head-title">🎯 ${escapeHtml(data.target_grade_name || '受験対策')} (${escapeHtml(data.exam_id || '')})</div>
+    <div class="cur-head-meta">📅 残 <strong>${data.days_remaining}</strong> 日 (約 <strong>${data.weeks_remaining}</strong> 週間) ${data.fallback ? '<span class="cur-fallback-tag">⚠ AI不調・簡易版</span>' : ''}</div>
+    ${data.estimated_score_at_exam ? `<div class="cur-head-pred">🎯 予測到達: <strong>${escapeHtml(data.estimated_score_at_exam)}</strong></div>` : ''}
+  </div>`;
+
+  // フェーズ
+  if (phases.length) {
+    html += '<div class="cur-phases">';
+    const colors = ['#22c55e', '#fbbf24', '#f87171'];
+    phases.forEach((p, i) => {
+      html += `<div class="cur-phase-card" style="border-color:${colors[i] || '#94a3b8'}33;">
+        <div class="cur-phase-name" style="color:${colors[i] || '#94a3b8'};">${escapeHtml(p.phase || `Phase ${i+1}`)}</div>
+        <div class="cur-phase-weeks">${p.weeks_count || 0} 週間</div>
+        <div class="cur-phase-obj">${escapeHtml(p.objective_jp || '')}</div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  // 学習原則
+  if (principles.length) {
+    html += '<details class="cur-principles" open><summary>📚 コーチング指針</summary><ul>';
+    principles.forEach(p => { html += `<li>${escapeHtml(p)}</li>`; });
+    html += '</ul></details>';
+  }
+
+  // 週次ロードマップ
+  if (roadmap.length) {
+    html += '<div class="cur-roadmap-head">📋 週次ロードマップ (チェックを入れて進捗管理)</div>';
+    html += '<div class="cur-roadmap">';
+    roadmap.forEach(w => {
+      const isDone = completed.has(w.week);
+      const phaseColor = w.phase === '基礎固め' ? '#22c55e' : w.phase === '応用強化' ? '#fbbf24' : '#f87171';
+      html += `<div class="cur-week-card${isDone ? ' done' : ''}" data-week="${w.week}">
+        <div class="cur-week-head">
+          <label class="cur-week-check">
+            <input type="checkbox" ${isDone ? 'checked' : ''} data-week="${w.week}">
+            <span>Week ${w.week}</span>
+          </label>
+          <span class="cur-week-phase" style="background:${phaseColor}22;color:${phaseColor};">${escapeHtml(w.phase || '')}</span>
+          <span class="cur-week-min">${w.estimated_total_minutes || 0} 分</span>
+        </div>
+        <div class="cur-week-focus">🎯 ${escapeHtml(w.focus_jp || '')}</div>
+        ${(w.tasks || []).length ? '<ul class="cur-week-tasks">' + (w.tasks).map(t => `<li><span class="cur-task-cat">${escapeHtml(t.category || '')}</span> <strong>${escapeHtml(t.title_jp || '')}</strong> <span class="cur-task-min">${t.minutes || 0}分</span><div class="cur-task-detail">${escapeHtml(t.detail_jp || '')}</div></li>`).join('') + '</ul>' : ''}
+        ${w.milestone_jp ? `<div class="cur-week-mile">📌 ${escapeHtml(w.milestone_jp)}</div>` : ''}
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  // マイルストーン
+  if (milestones.length) {
+    html += '<details class="cur-milestones"><summary>🏁 マイルストーン</summary><ul>';
+    milestones.forEach(m => {
+      html += `<li>Week ${m.week} · ${escapeHtml(m.type || '')}: ${escapeHtml(m.target_jp || '')}</li>`;
+    });
+    html += '</ul></details>';
+  }
+
+  html += '<div class="cur-actions"><button id="curRegenBtn" class="ee-btn ee-btn-ghost">🔁 別の条件で再生成</button></div>';
+  html += '</div>';
+  box.innerHTML = html;
+
+  // 進捗チェック バインド
+  box.querySelectorAll('input[type="checkbox"][data-week]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const w = parseInt(cb.dataset.week, 10);
+      const cur = loadCurriculumState() || {};
+      const list = new Set(cur.completed_weeks || []);
+      if (cb.checked) list.add(w); else list.delete(w);
+      cur.completed_weeks = [...list];
+      saveCurriculumState(cur);
+      cb.closest('.cur-week-card').classList.toggle('done', cb.checked);
+    });
+  });
+  document.getElementById('curRegenBtn')?.addEventListener('click', () => {
+    document.getElementById('curriculumForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   updateModeBadge();
   bindExamCards();
@@ -2167,6 +2382,8 @@ document.addEventListener('DOMContentLoaded', () => {
   loadArchiveOverview();
   renderHeatmap();
   document.getElementById('aiRecommendBtn')?.addEventListener('click', aiRecommendNext);
+  // カリキュラム
+  bindCurriculumForm();
   // 音声合成の voices ロードを待つ (Chrome は遅延ロード)
   if ('speechSynthesis' in window) {
     window.speechSynthesis.onvoiceschanged = () => {};

@@ -208,6 +208,57 @@
     </section>
 
     <!-- ========================================================== -->
+    <!-- Section 7: 🎯 受験日カウントダウン + 個別 AI カリキュラム -->
+    <!-- ========================================================== -->
+    <section class="ee-section ee-section-curriculum" id="curriculumSection">
+      <div class="ee-section-head">
+        <div class="ee-eyebrow">🎯 PERSONALIZED CURRICULUM</div>
+        <h2>📅 受験日カウントダウン + 個別 AI カリキュラム</h2>
+        <p class="ee-section-desc">受験日と現在のレベルを入れると、Claude が残日数を逆算して week-by-week のロードマップを生成します。基礎固め/応用強化/直前期の 3フェーズで、毎週「今やるべきこと」が明確に。</p>
+      </div>
+      <!-- 入力フォーム -->
+      <div class="curriculum-form" id="curriculumForm">
+        <div class="cf-row">
+          <label class="cf-label">📋 受験予定</label>
+          <select id="curExamSelect" class="ee-select-inline">
+            <option value="">選択…</option>
+            <option value="daigaku">🎓 大学入試</option>
+            <option value="toefl">🇺🇸 TOEFL iBT</option>
+            <option value="toeic">💼 TOEIC L&R</option>
+            <option value="ielts">🇬🇧 IELTS Academic</option>
+            <option value="eiken">🇯🇵 英検</option>
+          </select>
+          <select id="curGradeSelect" class="ee-select-inline" style="display:none;">
+            <option value="">大学/級…</option>
+          </select>
+        </div>
+        <div class="cf-row">
+          <label class="cf-label">📅 受験日</label>
+          <input type="date" id="curExamDate" class="ee-text-input-inline" min="" max="">
+          <span class="cf-hint" id="curDaysRemaining">--</span>
+        </div>
+        <div class="cf-row">
+          <label class="cf-label">📊 現在レベル</label>
+          <select id="curCurrentLevel" class="ee-select-inline">
+            <option value="A1">A1 (入門)</option>
+            <option value="A2">A2 (初級)</option>
+            <option value="B1" selected>B1 (中級)</option>
+            <option value="B2">B2 (中上級)</option>
+            <option value="C1">C1 (上級)</option>
+            <option value="C2">C2 (母語話者級)</option>
+          </select>
+          <label class="cf-label">⏱ 1日学習時間 (分)</label>
+          <input type="number" id="curDailyMinutes" class="ee-text-input-inline" value="60" min="15" max="600" step="15">
+        </div>
+        <div class="cf-row">
+          <button id="curGenerateBtn" class="ee-btn ee-btn-primary">🤖 AI に学習プランを生成してもらう</button>
+        </div>
+      </div>
+      <!-- 結果表示 -->
+      <div class="curriculum-result" id="curriculumResult"></div>
+    </section>
+
+    <!-- ========================================================== -->
     <!-- Section 4: 📰 リアル英字ニュースで読解 (CNN / Japan Times / BBC ...) -->
     <!-- ========================================================== -->
     <section class="ee-section ee-section-news" id="newsReadingSection">

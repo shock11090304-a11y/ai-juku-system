@@ -953,6 +953,83 @@ body {
 .recommend-reason { font-size: 0.9rem; line-height: 1.7; margin-bottom: 0.5rem; color: var(--ee-text); }
 .recommend-tip { font-size: 0.88rem; color: var(--ee-text-dim); padding: 0.6rem 0.8rem; background: rgba(255,255,255,0.03); border-left: 3px solid var(--ee-success); border-radius: 4px; margin-top: 0.7rem; }
 
+/* ========== 🎯 Curriculum Section ========== */
+.ee-section-curriculum { border-color: rgba(251,191,36,0.2); }
+.curriculum-form {
+  background: rgba(251,191,36,0.04);
+  border: 1px solid rgba(251,191,36,0.18);
+  border-radius: 12px;
+  padding: 1.2rem;
+  margin-bottom: 1rem;
+}
+.cf-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0.7rem; margin-bottom: 0.8rem; }
+.cf-label { font-weight: 700; min-width: 110px; font-size: 0.88rem; color: var(--ee-text); }
+.cf-hint { color: var(--ee-warning); font-weight: 800; font-size: 0.85rem; }
+.curriculum-result { margin-top: 1rem; }
+.cur-result-card {
+  background: rgba(251,191,36,0.06);
+  border: 1px solid rgba(251,191,36,0.3);
+  border-radius: 14px;
+  padding: 1.5rem;
+}
+.cur-head { margin-bottom: 1.2rem; padding-bottom: 1rem; border-bottom: 1px dashed rgba(255,255,255,0.1); }
+.cur-head-title { font-size: 1.2rem; font-weight: 900; color: var(--ee-warning); margin-bottom: 0.4rem; }
+.cur-head-meta { font-size: 0.95rem; color: var(--ee-text-dim); margin-bottom: 0.4rem; }
+.cur-head-pred { font-size: 1rem; color: var(--ee-success); }
+.cur-fallback-tag { display:inline-block; padding: 0.1rem 0.4rem; background: rgba(248,113,113,0.15); color: #f87171; border-radius: 4px; font-size: 0.7rem; margin-left: 0.5rem; }
+
+.cur-phases { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.7rem; margin-bottom: 1.2rem; }
+.cur-phase-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid;
+  border-radius: 10px;
+  padding: 0.9rem;
+}
+.cur-phase-name { font-weight: 900; font-size: 1.05rem; margin-bottom: 0.4rem; }
+.cur-phase-weeks { font-size: 1.5rem; font-weight: 900; color: var(--ee-text); margin-bottom: 0.4rem; }
+.cur-phase-obj { font-size: 0.82rem; color: var(--ee-text-dim); line-height: 1.5; }
+
+.cur-principles { margin-bottom: 1.2rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 0.7rem 1rem; }
+.cur-principles summary { cursor: pointer; font-weight: 800; font-size: 0.92rem; }
+.cur-principles ul { margin: 0.5rem 0 0 1.2rem; padding: 0; }
+.cur-principles li { margin-bottom: 0.4rem; line-height: 1.6; font-size: 0.88rem; }
+
+.cur-roadmap-head { font-size: 0.95rem; font-weight: 800; margin: 1rem 0 0.7rem; color: var(--ee-text); }
+.cur-roadmap { display: flex; flex-direction: column; gap: 0.7rem; max-height: 600px; overflow-y: auto; padding-right: 0.5rem; }
+.cur-week-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  transition: all 0.2s;
+}
+.cur-week-card.done { background: rgba(34,197,94,0.06); border-color: rgba(34,197,94,0.3); opacity: 0.8; }
+.cur-week-head { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+.cur-week-check { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-weight: 800; }
+.cur-week-check input { width: 18px; height: 18px; cursor: pointer; }
+.cur-week-phase { padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.78rem; font-weight: 700; }
+.cur-week-min { color: var(--ee-text-muted); font-size: 0.85rem; margin-left: auto; }
+.cur-week-focus { font-size: 0.92rem; margin-bottom: 0.6rem; line-height: 1.5; }
+.cur-week-tasks { list-style: none; padding: 0; margin: 0 0 0.5rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.cur-week-tasks li {
+  background: rgba(0,0,0,0.15);
+  border-radius: 6px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+.cur-task-cat { display: inline-block; padding: 0.05rem 0.4rem; background: rgba(167,139,250,0.18); color: #a78bfa; border-radius: 3px; font-size: 0.7rem; margin-right: 0.4rem; font-family: ui-monospace, monospace; }
+.cur-task-min { float: right; color: var(--ee-text-muted); font-size: 0.78rem; }
+.cur-task-detail { font-size: 0.78rem; color: var(--ee-text-dim); margin-top: 0.2rem; }
+.cur-week-mile { background: rgba(34,197,94,0.08); border-left: 3px solid var(--ee-success); padding: 0.4rem 0.7rem; font-size: 0.85rem; border-radius: 4px; margin-top: 0.5rem; }
+
+.cur-milestones { margin-top: 1rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 0.7rem 1rem; }
+.cur-milestones summary { cursor: pointer; font-weight: 800; font-size: 0.92rem; }
+.cur-milestones ul { margin: 0.5rem 0 0 1.2rem; padding: 0; }
+.cur-milestones li { margin-bottom: 0.4rem; line-height: 1.6; font-size: 0.88rem; }
+
+.cur-actions { margin-top: 1rem; display: flex; justify-content: flex-end; }
+
 /* ========== Responsive ========== */
 @media (max-width: 640px) {
   .ee-header { padding: 0.7rem 1rem 0; }

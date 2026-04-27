@@ -244,6 +244,7 @@
       </p>
       <div id="lbTodayReview"></div>
       <div id="lbStudyTimeWidget" style="margin-top:1rem;"></div>
+      <div id="curriculumWeekWidget" style="margin-top:1rem;"></div>
       <div id="usageQuotaWidget" style="margin-top:1rem;"></div>
       <div id="examPrepWidget" style="margin-top:1rem;"></div>
       <div id="referralWidget" style="margin-top:1rem;"></div>
@@ -316,6 +317,7 @@
         ExamPrep.renderUpcomingWidget('examPrepWidget');
         ReferralProgram.renderReferralWidget('referralWidget', student);
         renderUsageQuotaWidget('usageQuotaWidget');
+        renderCurriculumWeekWidget('curriculumWeekWidget');
       }
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initWidgets);
@@ -377,6 +379,49 @@
         console.warn('Usage quota widget fetch failed:', e);
         el.innerHTML = '';
       }
+    }
+
+    // 🎯 今週のタスク (english-exam.js が localStorage に保存した curriculum data から表示)
+    function renderCurriculumWeekWidget(containerId) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      let cur = null;
+      try { cur = JSON.parse(localStorage.getItem('ee_curriculum_v1') || 'null'); } catch {}
+      if (!cur || !cur.weekly_roadmap || !cur.weekly_roadmap.length) {
+        el.innerHTML = `
+          <div style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.25);border-radius:10px;padding:0.85rem;">
+            <div style="font-weight:800;color:#fbbf24;margin-bottom:0.4rem;">🎯 個別 AI カリキュラム</div>
+            <div style="font-size:0.85rem;color:#cbd5e1;line-height:1.55;">受験日と現在レベルを入れると、AI が残日数で逆算して week-by-week のロードマップを作ります。</div>
+            <a href="english-exam.html#curriculumSection" style="display:inline-block;margin-top:0.6rem;background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);padding:0.4rem 0.8rem;border-radius:6px;font-size:0.82rem;font-weight:700;text-decoration:none;">→ 学習プランを作成</a>
+          </div>`;
+        return;
+      }
+      // 経過週を概算: saved_at からの経過日 / 7
+      const savedAt = cur.saved_at ? new Date(cur.saved_at) : new Date();
+      const daysSince = Math.max(0, Math.floor((Date.now() - savedAt.getTime()) / 86400000));
+      const currentWeek = Math.min(cur.weekly_roadmap.length, daysSince / 7 + 1 | 0);
+      const w = cur.weekly_roadmap[Math.max(0, currentWeek - 1)] || cur.weekly_roadmap[0];
+      const completed = new Set(cur.completed_weeks || []);
+      const isDone = completed.has(w.week);
+      const phaseColor = w.phase === '基礎固め' ? '#22c55e' : w.phase === '応用強化' ? '#fbbf24' : '#f87171';
+      const tasksHtml = (w.tasks || []).slice(0, 4).map(t =>
+        `<li style="margin-bottom:0.3rem;font-size:0.82rem;line-height:1.5;"><strong>${(t.title_jp || '').replace(/</g,'&lt;')}</strong> <span style="color:#94a3b8;">(${t.minutes || 0}分)</span></li>`
+      ).join('');
+      const remainingDays = cur.days_remaining ?? '--';
+      el.innerHTML = `
+        <div style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.3);border-radius:10px;padding:0.85rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.4rem;">
+            <div style="font-weight:800;color:#fbbf24;">🎯 今週のタスク (Week ${w.week})</div>
+            <div style="font-size:0.78rem;color:#94a3b8;">📅 受験日まで <strong style="color:#fbbf24;">${remainingDays}日</strong></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;flex-wrap:wrap;">
+            <span style="background:${phaseColor}22;color:${phaseColor};padding:0.15rem 0.5rem;border-radius:4px;font-size:0.72rem;font-weight:700;">${w.phase || ''}</span>
+            <span style="font-size:0.85rem;color:#e4e4e7;">${(w.focus_jp || '').replace(/</g,'&lt;')}</span>
+          </div>
+          <ul style="list-style:disc inside;padding:0;margin:0 0 0.5rem 0;">${tasksHtml}</ul>
+          ${isDone ? '<div style="color:#22c55e;font-size:0.85rem;font-weight:700;">✅ Week完了済</div>' : ''}
+          <a href="english-exam.html#curriculumSection" style="display:inline-block;margin-top:0.4rem;background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);padding:0.35rem 0.7rem;border-radius:6px;font-size:0.78rem;font-weight:700;text-decoration:none;">→ 全週ロードマップを見る</a>
+        </div>`;
     }
   </script>
   <script>
