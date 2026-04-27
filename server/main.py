@@ -481,6 +481,89 @@ async def _start_background_tasks():
         if not ANTHROPIC_API_KEY: missing.append("ANTHROPIC_API_KEY")
         log.warning(f"[Startup] Exam questions scheduler NOT launched. Missing: {missing}")
 
+    # 🛡️ deploy 完了直後の自動 smoke test (post-deploy verification)
+    # Railway / Vercel 再 deploy のたびに必ず合成テスト + JS エラー状況チェックを走らせ、
+    # 結果を events に記録 + 失敗時は monitor email で即時アラート。
+    # 「更新のたびにエラー有無をチェック」を自動化する仕組み (2026-04-27 追加)。
+    task = asyncio.create_task(_post_deploy_smoke_test())
+    _BACKGROUND_TASKS.append(task)
+    log.info("[Startup] Post-deploy smoke test scheduled (will run in 30 seconds)")
+
+
+async def _post_deploy_smoke_test():
+    """uvicorn 起動から 30 秒後に 1 回だけ実行される自動 smoke test。
+
+    deploy 完了 → 30s 待機 (app fully ready) → 合成 E2E テスト + JS エラー集計 →
+    結果を events に記録、失敗なら monitor email で塾長に即時通知。
+    Railway / Vercel が再 deploy するたびに自動実行される (=「更新のたびにチェック」)。
+    """
+    try:
+        # アプリが完全に立ち上がるまで猶予
+        await asyncio.sleep(30)
+        started_iso = datetime.now(timezone(timedelta(hours=9))).isoformat()
+        log.info(f"[PostDeploy] running smoke test at {started_iso}")
+
+        # 1. 合成 E2E テスト
+        synth = await _run_synthetic_checkout_test()
+        _SYNTHETIC_CHECKOUT_LAST.update(synth)
+
+        # 2. 直近 5 分の JS エラー件数集計
+        try:
+            conn = db()
+            c = conn.cursor()
+            ts_5m = "created_at > NOW() - INTERVAL '5 minutes'" if USE_POSTGRES else "created_at > datetime('now', '-5 minutes')"
+            c.execute(f"SELECT COUNT(*) FROM events WHERE name='js_error' AND {ts_5m}")
+            js_err_5m = c.fetchone()[0] or 0
+            conn.close()
+        except Exception:
+            js_err_5m = 0
+
+        # 3. 結果 record
+        result = {
+            "ts": started_iso,
+            "synthetic_ok": synth.get("ok"),
+            "synthetic_duration_ms": synth.get("duration_ms"),
+            "synthetic_failures": synth.get("failures", []),
+            "js_errors_last_5min": js_err_5m,
+        }
+        try:
+            conn = db()
+            c = conn.cursor()
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("post_deploy_smoke_test", json.dumps(result, ensure_ascii=False)[:4000], "monitor")
+            )
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+
+        # 4. 失敗時のみ即時アラート (成功時はログのみで沈黙)
+        if not synth.get("ok") or js_err_5m >= 3:
+            log.warning(f"[PostDeploy] FAILED: synth_ok={synth.get('ok')} / js_err_5m={js_err_5m}")
+            try:
+                fails_html = "<ul>" + "".join(f"<li>{html_escape_safe(str(f))}</li>" for f in synth.get('failures', [])[:10]) + "</ul>"
+                body_html = (
+                    f"<h2>🚨 deploy 直後の自動 smoke test 失敗</h2>"
+                    f"<p>Railway/Vercel の再 deploy 完了 30 秒後に自動チェックを行いましたが、異常を検出しました。</p>"
+                    f"<h3>結果</h3>"
+                    f"<ul>"
+                    f"<li>合成 E2E テスト: {'✅ OK' if synth.get('ok') else '🚨 NG'}</li>"
+                    f"<li>所要時間: {synth.get('duration_ms')} ms</li>"
+                    f"<li>直近 5 分の JS エラー件数: {js_err_5m}</li>"
+                    f"</ul>"
+                    f"<h3>合成テスト失敗詳細</h3>{fails_html}"
+                    f"<p>このまま放置すると顧客が壊れたフォームを踏み続けます。今すぐ確認してください。</p>"
+                    f"<p>2 連続失敗で自動 rollback が発火する仕組みになっていますが、deploy 直後の最初の失敗時は通知のみです。</p>"
+                )
+                _send_monitor_email("🚨 deploy 直後の自動 smoke test 失敗", body_html)
+            except Exception as e:
+                log.warning(f"[PostDeploy] alert email failed: {e}")
+        else:
+            log.info(f"[PostDeploy] ✅ smoke test OK ({synth.get('duration_ms')}ms, js_err_5m={js_err_5m})")
+    except Exception as e:
+        log.error(f"[PostDeploy] smoke test crashed: {e}", exc_info=True)
+
 # ==========================================================================
 # Models
 # ==========================================================================
