@@ -8,6 +8,7 @@
   --ee-ielts: #7c3aed;
   --ee-eiken: #dc2626;
   --ee-daigaku: #0ea5e9;
+  --ee-rikei: #10b981;
   --ee-bg: #0a0e1a;
   --ee-panel: rgba(255,255,255,0.03);
   --ee-panel-border: rgba(255,255,255,0.08);
@@ -1029,6 +1030,51 @@ body {
 .cur-milestones li { margin-bottom: 0.4rem; line-height: 1.6; font-size: 0.88rem; }
 
 .cur-actions { margin-top: 1rem; display: flex; justify-content: flex-end; }
+
+/* ========== ⚠️ Fallback Warning Box ========== */
+.ee-warning-box {
+  background: rgba(251,191,36,0.08);
+  border: 1px solid rgba(251,191,36,0.4);
+  border-left: 4px solid var(--ee-warning);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  font-size: 0.88rem;
+  color: var(--ee-text);
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+/* ========== 🔬 Figure (理系 SVG 図表) ========== */
+.ee-figure {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  margin: 1rem 0;
+}
+.ee-figure h3 { font-size: 0.95rem; font-weight: 800; color: var(--ee-rikei); margin: 0 0 0.7rem; }
+.ee-figure-svg {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0,0,0,0.25);
+  border-radius: 8px;
+  padding: 1rem;
+  overflow-x: auto;
+}
+.ee-figure-svg svg {
+  max-width: 100%;
+  height: auto;
+  color: var(--ee-text);  /* SVG が currentColor を使う場合 */
+}
+
+/* ========== 🔬 理系試験カード ========== */
+.exam-rikei::before { background: var(--ee-rikei); }
+.exam-rikei:hover { border-color: var(--ee-rikei); box-shadow: 0 12px 32px rgba(16,185,129,0.4); }
+
+/* KaTeX のフォントサイズ調整 (UI に馴染ませる) */
+.katex { font-size: 1em !important; color: inherit; }
+.katex-display { margin: 0.7rem 0 !important; }
 
 /* ========== 🎯 ボタン式 4択 (Phase 8) ========== */
 .ee-choices-btn {

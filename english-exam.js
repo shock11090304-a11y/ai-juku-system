@@ -251,6 +251,105 @@ const EXAMS = {
     topics: ['Climate change', 'AI ethics', 'Education reform', 'Globalization', 'Aging society', 'Mental health', 'Gender equality', 'Technology impact', 'Cultural identity'],
   },
 
+  // 🔬 理系科目 (数学/物理/化学/生物/地学) — KaTeX 数式 + SVG 図表対応
+  rikei: {
+    id: 'rikei',
+    name: '理系科目',
+    flag: '🔬',
+    color: '#10b981',
+    scoreMin: 0, scoreMax: 100, scoreUnit: '点',
+    requiresGrade: true,  // 大学/レベル選択を挟む
+    grades: [
+      // 共通テスト・基礎
+      { key: 'kyotsu_rikei', name: '共通テスト 理系',  cefr: '基礎',   target: '共通テスト 数学IA/IIB・物理基礎/化学基礎/生物基礎/地学基礎' },
+      // 国公立トップ
+      { key: 'todai_rikei',   name: '東京大学 理系',    cefr: '最難関', target: '東大 数学(理系)・物理・化学・生物' },
+      { key: 'kyodai_rikei',  name: '京都大学 理系',    cefr: '最難関', target: '京大 数学(理系)・物理・化学・生物' },
+      { key: 'osaka_rikei',   name: '大阪大学 理系',    cefr: '難関',   target: '阪大 理系 (理工/医)' },
+      { key: 'tokoda_rikei',  name: '東京工業大学',     cefr: '難関',   target: '東工大 数学/物理/化学 (情報・電気・機械系)' },
+      { key: 'nagoya_rikei',  name: '名古屋大学 理系',  cefr: '難関',   target: '名大 理系' },
+      // 私立 早慶上智
+      { key: 'waseda_rikei',  name: '早稲田大学 理工',  cefr: '上級',   target: '早稲田 基幹/創造/先進理工' },
+      { key: 'keio_rikei',    name: '慶應義塾大学 理工/医', cefr: '上級', target: '慶應 理工・医・看護医療' },
+      { key: 'sophia_rikei',  name: '上智大学 理工',    cefr: '上級',   target: '上智 理工 (機能創造・情報理工)' },
+      // 医学部
+      { key: 'igakubu_kokoritsu_rikei', name: '国公立医学部', cefr: '最難関', target: '東大理三/京大医/阪大医/医歯/慈恵 等' },
+      { key: 'igakubu_shiritsu_rikei',  name: '私立医学部',   cefr: '上級',   target: '東医/日医/慶應医/慈恵/順天堂 等' },
+      // MARCH 理工
+      { key: 'march_rikei',   name: 'MARCH 理工',      cefr: '中上級', target: '明治/青学/立教/中央/法政 理工系' },
+    ],
+    sectionsByGrade: {
+      // 共通テスト 理系: 数IA/IIB + 物理/化学/生物/地学 基礎
+      kyotsu_rikei: [
+        { key: 'math_1a',     name: '数学 IA (大問1-5)',      icon: '📐', timeMin: 70, qCount: 8, scoreMax: 100, desc: '二次関数・図形と計量・データ・確率・整数' },
+        { key: 'math_2b',     name: '数学 IIB (大問1-5)',     icon: '📐', timeMin: 70, qCount: 8, scoreMax: 100, desc: '三角関数・指数対数・微積・数列・ベクトル' },
+        { key: 'phys_basic',  name: '物理基礎',               icon: '⚛️', timeMin: 30, qCount: 5, scoreMax: 50, desc: '力学・熱・波・電気の基礎' },
+        { key: 'chem_basic',  name: '化学基礎',               icon: '🧪', timeMin: 30, qCount: 5, scoreMax: 50, desc: '物質量・酸塩基・酸化還元の基礎' },
+        { key: 'bio_basic',   name: '生物基礎',               icon: '🧬', timeMin: 30, qCount: 5, scoreMax: 50, desc: '細胞・遺伝・生態系の基礎' },
+        { key: 'earth_basic', name: '地学基礎',               icon: '🌍', timeMin: 30, qCount: 5, scoreMax: 50, desc: '地球・宇宙・地震・気象の基礎' },
+      ],
+      // 東大 理系: 数学+物理+化学+生物 (各 大問構成)
+      todai_rikei: [
+        { key: 'math_q1', name: '数学 大問1',  icon: '📐', timeMin: 30, qCount: 1, scoreMax: 20, desc: '微積分/数列/確率 等の融合問題' },
+        { key: 'math_q2', name: '数学 大問2',  icon: '📐', timeMin: 30, qCount: 1, scoreMax: 20, desc: '図形と方程式/ベクトル/複素数平面' },
+        { key: 'math_q3', name: '数学 大問3',  icon: '📐', timeMin: 30, qCount: 1, scoreMax: 20, desc: '微積分/極限の応用' },
+        { key: 'phys_q1', name: '物理 大問1 (力学)', icon: '⚛️', timeMin: 30, qCount: 1, scoreMax: 20, desc: '剛体/単振動/万有引力 等' },
+        { key: 'phys_q2', name: '物理 大問2 (電磁気)', icon: '⚛️', timeMin: 30, qCount: 1, scoreMax: 20, desc: '回路/電磁誘導/コイル' },
+        { key: 'phys_q3', name: '物理 大問3 (波/熱)', icon: '⚛️', timeMin: 30, qCount: 1, scoreMax: 20, desc: '光波/音波/熱力学' },
+        { key: 'chem_q1', name: '化学 大問1 (理論)', icon: '🧪', timeMin: 30, qCount: 1, scoreMax: 20, desc: '熱化学/平衡/電気化学' },
+        { key: 'chem_q2', name: '化学 大問2 (無機)', icon: '🧪', timeMin: 30, qCount: 1, scoreMax: 20, desc: '無機物質/沈殿反応/錯体' },
+        { key: 'chem_q3', name: '化学 大問3 (有機)', icon: '🧪', timeMin: 30, qCount: 1, scoreMax: 20, desc: '構造決定/高分子' },
+      ],
+      // 京大 理系: シンプル (大問少なめ・記述深掘り)
+      kyodai_rikei: [
+        { key: 'math_q1', name: '数学 大問1',  icon: '📐', timeMin: 30, qCount: 1, scoreMax: 30, desc: '骨太な解析・抽象的思考' },
+        { key: 'math_q2', name: '数学 大問2',  icon: '📐', timeMin: 30, qCount: 1, scoreMax: 30, desc: '京大型 整数論・確率' },
+        { key: 'phys_q1', name: '物理 (力学)',  icon: '⚛️', timeMin: 30, qCount: 1, scoreMax: 30, desc: '記述重視・物理的考察' },
+        { key: 'phys_q2', name: '物理 (電磁気)', icon: '⚛️', timeMin: 30, qCount: 1, scoreMax: 30, desc: '回路・磁場・電磁誘導' },
+        { key: 'chem_q1', name: '化学 (理論+無機)', icon: '🧪', timeMin: 30, qCount: 1, scoreMax: 30, desc: '京大型 反応速度/平衡' },
+        { key: 'chem_q2', name: '化学 (有機)', icon: '🧪', timeMin: 30, qCount: 1, scoreMax: 30, desc: '構造推定・合成経路' },
+      ],
+      // 国公立医学部
+      igakubu_kokoritsu_rikei: [
+        { key: 'math_q1',  name: '数学 大問1', icon: '📐', timeMin: 30, qCount: 1, scoreMax: 25, desc: '医学部レベルの解析・確率' },
+        { key: 'math_q2',  name: '数学 大問2', icon: '📐', timeMin: 30, qCount: 1, scoreMax: 25, desc: 'ベクトル/複素数/数列' },
+        { key: 'phys_q1',  name: '物理 (力学)', icon: '⚛️', timeMin: 30, qCount: 1, scoreMax: 25, desc: '医学部頻出: 振動/円運動' },
+        { key: 'chem_q1',  name: '化学 (理論)', icon: '🧪', timeMin: 30, qCount: 1, scoreMax: 25, desc: '反応熱/電気分解/平衡' },
+        { key: 'bio_q1',   name: '生物 (生化学/医学)', icon: '🧬', timeMin: 30, qCount: 1, scoreMax: 25, desc: 'DNA/タンパク質/免疫/代謝' },
+      ],
+      // 東工大 (情報・電気重視)
+      tokoda_rikei: [
+        { key: 'math_q1',  name: '数学 大問1', icon: '📐', timeMin: 35, qCount: 1, scoreMax: 30, desc: '微積分の応用・極限' },
+        { key: 'math_q2',  name: '数学 大問2', icon: '📐', timeMin: 35, qCount: 1, scoreMax: 30, desc: 'ベクトル/行列/複素数' },
+        { key: 'phys_q1',  name: '物理 (電磁気)', icon: '⚛️', timeMin: 30, qCount: 1, scoreMax: 30, desc: '工学系: 回路解析・コイル' },
+        { key: 'phys_q2',  name: '物理 (力学)',  icon: '⚛️', timeMin: 30, qCount: 1, scoreMax: 30, desc: '剛体/振動/慣性モーメント' },
+        { key: 'chem_q1',  name: '化学 (材料系)', icon: '🧪', timeMin: 30, qCount: 1, scoreMax: 30, desc: '材料/触媒/工業化学' },
+      ],
+      // 早慶上智 理系
+      waseda_rikei: [
+        { key: 'math_q1',  name: '数学 大問1', icon: '📐', timeMin: 25, qCount: 1, scoreMax: 25, desc: '基幹/創造/先進理工 数学' },
+        { key: 'math_q2',  name: '数学 大問2', icon: '📐', timeMin: 25, qCount: 1, scoreMax: 25, desc: '微積/ベクトル/数列' },
+        { key: 'phys_q1',  name: '物理 大問1', icon: '⚛️', timeMin: 25, qCount: 1, scoreMax: 25, desc: '力学/電磁気' },
+        { key: 'chem_q1',  name: '化学 大問1', icon: '🧪', timeMin: 25, qCount: 1, scoreMax: 25, desc: '理論/有機 標準型' },
+      ],
+      keio_rikei: [
+        { key: 'math_q1',  name: '数学 大問1', icon: '📐', timeMin: 30, qCount: 1, scoreMax: 30, desc: '理工/医 数学' },
+        { key: 'math_q2',  name: '数学 大問2', icon: '📐', timeMin: 30, qCount: 1, scoreMax: 30, desc: '微積分/数列' },
+        { key: 'phys_q1',  name: '物理 大問1', icon: '⚛️', timeMin: 30, qCount: 1, scoreMax: 25, desc: '理工 物理' },
+        { key: 'chem_q1',  name: '化学 大問1', icon: '🧪', timeMin: 30, qCount: 1, scoreMax: 25, desc: '理工 化学' },
+        { key: 'bio_q1',   name: '生物 (医学部)', icon: '🧬', timeMin: 30, qCount: 1, scoreMax: 25, desc: '医学部 生物' },
+      ],
+      // 汎用 (デフォルト)
+      _default: [
+        { key: 'math_basic',   name: '数学 (基礎演習)', icon: '📐', timeMin: 25, qCount: 5, scoreMax: 50, desc: '微積分/ベクトル/確率/数列' },
+        { key: 'phys_basic_q', name: '物理 (基礎演習)', icon: '⚛️', timeMin: 25, qCount: 5, scoreMax: 50, desc: '力学/電磁気/波動/熱' },
+        { key: 'chem_basic_q', name: '化学 (基礎演習)', icon: '🧪', timeMin: 25, qCount: 5, scoreMax: 50, desc: '理論/無機/有機' },
+        { key: 'bio_basic_q',  name: '生物 (基礎演習)', icon: '🧬', timeMin: 25, qCount: 5, scoreMax: 50, desc: '細胞/遺伝/生態' },
+      ],
+    },
+    topics: ['二次関数', '微積分', 'ベクトル', '確率', '整数', '力学', '電磁気', '波動', '熱力学', '化学平衡', '酸化還元', '有機化学', '遺伝子発現', '生態系'],
+  },
+
   eiken: {
     id: 'eiken',
     name: '英検',
@@ -378,6 +477,12 @@ function getEikenSections(gradeKey) {
 function getDaigakuSections(univKey) {
   const map = EXAMS.daigaku.sectionsByGrade;
   return map[univKey] || map._default;
+}
+
+// 🔬 理系: 大学/レベルから sections を取得
+function getRikeiSections(gradeKey) {
+  const map = EXAMS.rikei.sectionsByGrade;
+  return map[gradeKey] || map._default;
 }
 
 // ==========================================================================
@@ -554,6 +659,10 @@ function showGradePicker(examId = 'eiken') {
       if (eyebrow) eyebrow.textContent = 'STEP 2 / 大学入試';
       if (h2) h2.textContent = '🎓 受験する大学を選んでください';
       if (desc) desc.textContent = '大学ごとの出題傾向 (長文/和訳/英作/要約) と過去問形式に完全準拠。共通テスト・センター試験 (2005年〜) も網羅。';
+    } else if (examId === 'rikei') {
+      if (eyebrow) eyebrow.textContent = 'STEP 2 / 理系科目';
+      if (h2) h2.textContent = '🔬 大学/レベルを選んでください';
+      if (desc) desc.textContent = '大学ごとの数学/物理/化学/生物の出題傾向に準拠。図やグラフ・数式 (LaTeX) を含む本格問題を AI が即時生成。';
     } else {
       if (eyebrow) eyebrow.textContent = 'STEP 2 / 英検';
       if (h2) h2.textContent = '🇯🇵 受験する級を選んでください';
@@ -587,6 +696,25 @@ function showGradePicker(examId = 'eiken') {
         state.eikenGrade = g.key;       // 互換: section 取得時の汎用「級キー」として共有
         state.eikenGradeName = g.name;
         pickExamSections('daigaku');
+      });
+    } else if (examId === 'rikei') {
+      const k = g.key;
+      let badge = '私立';
+      let badgeColor = '#6366f1';
+      if (['todai_rikei','kyodai_rikei','osaka_rikei','tokoda_rikei','nagoya_rikei'].includes(k)) { badge = '国公立'; badgeColor = '#0ea5e9'; }
+      else if (['igakubu_kokoritsu_rikei','igakubu_shiritsu_rikei'].includes(k)) { badge = '医学部'; badgeColor = '#dc2626'; }
+      else if (k === 'kyotsu_rikei') { badge = '共通テスト'; badgeColor = '#10b981'; }
+      else if (k === 'march_rikei') { badge = 'MARCH'; badgeColor = '#a78bfa'; }
+      btn.innerHTML = `
+        <span class="grade-card-secondary" style="background:${badgeColor}1a;color:${badgeColor};">${badge}</span>
+        <div class="grade-card-name">${escapeHtml(g.name)}</div>
+        <div class="grade-card-cefr">${escapeHtml(g.cefr)}</div>
+        <div class="grade-card-target">${escapeHtml(g.target)}</div>
+      `;
+      btn.addEventListener('click', () => {
+        state.eikenGrade = g.key;
+        state.eikenGradeName = g.name;
+        pickExamSections('rikei');
       });
     } else {
       const hasSecondary = g.key === 'g1' || g.key === 'gp1' || g.key === 'g2' || g.key === 'gp2' || g.key === 'g3';
@@ -651,12 +779,14 @@ function pickExamSections(examId) {
       ? '目標得点率/換算点 (大学・年度により配点異なる)'
       : `${exam.scoreMin}〜${exam.scoreMax}${exam.scoreUnit}`;
 
-  // セクションカード生成 (英検は級別、大学入試は大学別の sectionsByGrade を使う)
+  // セクションカード生成 (英検は級別、大学入試・理系は大学別の sectionsByGrade を使う)
   const sections = (examId === 'eiken' && state.eikenGrade)
     ? getEikenSections(state.eikenGrade)
     : (examId === 'daigaku' && state.eikenGrade)
       ? getDaigakuSections(state.eikenGrade)
-      : exam.sections;
+      : (examId === 'rikei' && state.eikenGrade)
+        ? getRikeiSections(state.eikenGrade)
+        : exam.sections;
   state.currentSections = sections;
   const grid = document.getElementById('sectionGrid');
   grid.innerHTML = '';
@@ -807,14 +937,22 @@ async function generateAndShowQuestions(exam, section, full = false) {
     eikenGradeLabel = `（${state.eikenGradeName}・CEFR ${(EXAMS.eiken.grades.find(g => g.key === state.eikenGrade) || {}).cefr || ''} 相当）`;
   } else if (state.examId === 'daigaku' && state.eikenGradeName) {
     eikenGradeLabel = `（${state.eikenGradeName}・CEFR ${(EXAMS.daigaku.grades.find(g => g.key === state.eikenGrade) || {}).cefr || ''} 相当）`;
+  } else if (state.examId === 'rikei' && state.eikenGradeName) {
+    eikenGradeLabel = `（${state.eikenGradeName}・${(EXAMS.rikei.grades.find(g => g.key === state.eikenGrade) || {}).cefr || ''}）`;
   }
 
   // 大学入試: ランダムに 2005-2026 の年度を選んで「○○大学 ○年度入試の類題」スタイルで生成
-  const daigakuYear = (state.examId === 'daigaku') ? (2005 + Math.floor(Math.random() * 22)) : null;
+  const daigakuYear = (state.examId === 'daigaku' || state.examId === 'rikei') ? (2005 + Math.floor(Math.random() * 22)) : null;
 
   // 試験別の出題ニュアンス
   const daigakuUniv = state.examId === 'daigaku' ? (state.eikenGradeName || '大学入試') : '';
   const daigakuTargets = state.examId === 'daigaku' ? ((EXAMS.daigaku.grades.find(g => g.key === state.eikenGrade) || {}).target || '') : '';
+  const rikeiUniv = state.examId === 'rikei' ? (state.eikenGradeName || '大学入試 理系') : '';
+  const rikeiTargets = state.examId === 'rikei' ? ((EXAMS.rikei.grades.find(g => g.key === state.eikenGrade) || {}).target || '') : '';
+  // 科目判定 (section.key の prefix から: math_/phys_/chem_/bio_/earth_)
+  const subjectMap = { math: '数学', phys: '物理', chem: '化学', bio: '生物', earth: '地学' };
+  const subjectKey = (section.key.match(/^(math|phys|chem|bio|earth)/) || [])[1] || '';
+  const rikeiSubject = subjectMap[subjectKey] || '理系';
   const examFlavor = {
     toefl: '英語圏大学院・学部留学。Reading/Listening は学術 (lecture, journal article 風)。Speaking/Writing は明確なテンプレ運用が高得点の鍵。',
     toeic: 'ビジネス英語。実務シーン (会議/メール/出張/契約) のみ。難解な学術語彙NG。Part固有の典型パターンを必ず再現。',
@@ -827,6 +965,24 @@ async function generateAndShowQuestions(exam, section, full = false) {
 - 日本人受験生の典型的弱点 (冠詞・関係詞節・分詞構文・無生物主語の和訳) を必ず踏まえた解説。
 - 共通テストは 2021年〜 (実用英語重視・複数情報源統合)、センター試験は 1990-2020 (発音/アクセント/文法問題が大問1-3に出題)。
 - 東大型は構造把握型和訳/要約 60-80字、京大型は段落丸ごとの和訳、早慶型は学部別テーマ、医学部型は医学/生命科学系英文。`,
+    rikei: `日本の大学入試 理系科目 (${rikeiUniv}・${rikeiSubject}・${daigakuYear || 2024}年度入試レベル相当)。出題傾向: ${rikeiTargets}。
+重要原則:
+- 過去問の丸写しは著作権上 NG。「${rikeiUniv} ${daigakuYear || 2024}年度の${rikeiSubject}の出題形式に完全準拠した類題」を作成すること。
+- **必ず数式は LaTeX 構文** で出力 (\\(x^2 + y^2 = r^2\\) のインライン形式・\\[\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}\\] のディスプレイ形式)。フロントは KaTeX で自動レンダリング。
+- **図やグラフが必要な問題は figure_svg フィールドに inline SVG を出力** (viewBox 0 0 400 300 推奨・stroke="white" stroke-width="2" fill="none"・暗背景に映える色)。<script> タグや on* 属性は禁止 (XSS)。
+  - 数学: 関数のグラフ (放物線/三角関数/円・座標軸)・図形問題 (三角形/円/立体)・ベクトル (矢印)
+  - 物理: 力の図 (矢印 + 物体)・回路 (抵抗・電池・コンデンサ記号)・運動軌道・波形
+  - 化学: 構造式 (Skeletal formula)・実験装置・反応式
+  - 生物: 細胞模式図・遺伝子発現フロー・代謝経路
+- ${rikeiSubject} 特有の頻出パターン: ${
+      rikeiSubject === '数学' ? '微積分(極限/連続性)・ベクトル・確率(条件付/独立)・整数論・複素数平面・図形と方程式。京大型なら抽象的・東大型なら計算量多め。'
+      : rikeiSubject === '物理' ? '力学(運動方程式/エネルギー保存/円運動/単振動)・電磁気(キルヒホッフ/誘導起電力)・波動(干渉/反射屈折)・熱力学(状態方程式/熱効率)。図解必須。'
+      : rikeiSubject === '化学' ? '理論化学(平衡定数/反応速度/熱化学)・無機(沈殿生成/錯体)・有機(構造決定/反応経路/高分子)。構造式 SVG 必須。'
+      : rikeiSubject === '生物' ? '遺伝(メンデル/連鎖/分子遺伝)・代謝(光合成/呼吸/酵素)・神経/筋肉・進化・生態系。模式図あれば SVG。'
+      : '地学(地震波/プレート/天体運動/気象)。図やグラフ必須。'
+    }
+- 解答は記述式 (途中式 + 計算過程 + 答え) または 4択 (プレ計算済み)。choices には LaTeX を使う。
+- 解説は日本語で「考え方→立式→計算→答え→補足」を必ず段階分け (3行以上)。`,
   }[exam.id] || '';
 
   const system = `あなたは ${exam.name} 対策の専門コーチで、過去20年の出題傾向と公式採点基準を完全に把握しています。
@@ -862,21 +1018,23 @@ ${examFlavor}
 
 【出力形式】純粋なJSONのみ (他の文字を含めない):
 {
-  "passage": "(Reading の場合は本文、それ以外は空文字)",
+  "passage": "(Reading の場合は本文、それ以外は空文字。理系の場合は前提条件・問題設定の文章)",
   "audio_script": "(Listening の場合はスクリプト、それ以外は空文字)",
   "prompt": "(Speaking/Writing の場合の英語の出題文、それ以外は空文字)",
+  "figure_svg": "(理系で図/グラフ/構造式が必要な時のみ inline SVG 文字列。<svg viewBox=\\"0 0 400 300\\" xmlns=\\"http://www.w3.org/2000/svg\\">...</svg> 形式。<script> や on* 属性は禁止)",
   "questions": [
     {
       "id": "q1",
       "type": "multiple_choice|short_answer|essay|speaking",
-      "stem": "問題文",
+      "stem": "問題文 (理系の数式は LaTeX: \\\\(x^2\\\\) インライン / \\\\[\\\\int_0^1 f(x)dx\\\\] ディスプレイ)",
       "choices": ["A", "B", "C", "D"],
-      "answer": "正解(選択肢index 0始まり、または模範解答テキスト)",
-      "explanation": "解説 (日本語、3行以上)"
+      "answer": "正解(選択肢index 0始まり、または模範解答テキスト・記述式は完全解答)",
+      "explanation": "解説 (日本語、3行以上、LaTeX 数式可)"
     }
   ]
 }
-Speaking/Writing の場合: choices=[], answer に模範解答テキスト全文 (採点ルーブリック別評価コメント込み), type="essay" or "speaking"。`;
+Speaking/Writing の場合: choices=[], answer に模範解答テキスト全文, type="essay" or "speaking"。
+理系の場合: 数式はすべて LaTeX 構文。図が必要なら figure_svg に SVG を必ず入れる (空文字 NG)。`;
 
   let payload;
   // 1) Live モード優先 (backend AI proxy or 直接APIキー)
@@ -897,6 +1055,8 @@ Speaking/Writing の場合: choices=[], answer に模範解答テキスト全文
     state.passage = payload.passage || '';
     state.audioScript = payload.audio_script || '';
     state.prompt = payload.prompt || '';
+    state.figureSvg = payload.figure_svg || '';
+    state.warning = payload._warning || '';  // フォールバック警告 (偽問題なし設計)
     state.userAnswers = {};
     renderQuestions();
     document.getElementById('submitAnswersBtn').disabled = false;
@@ -928,31 +1088,87 @@ function saveUserPref(patch) {
   localStorage.setItem(QPREF_KEY, JSON.stringify(cur));
 }
 
+// 🛡️ SVG sanitizer (XSS 防止): <script>, on*, javascript: を除去
+function sanitizeSvg(svgStr) {
+  if (typeof svgStr !== 'string' || !svgStr.trim()) return '';
+  // <svg ...> から始まらない場合は無視
+  if (!/^\s*<svg[\s>]/.test(svgStr)) return '';
+  // 既知の危険パターンを除去
+  let s = svgStr;
+  s = s.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  s = s.replace(/\s+on[a-z]+\s*=\s*"[^"]*"/gi, '');
+  s = s.replace(/\s+on[a-z]+\s*=\s*'[^']*'/gi, '');
+  s = s.replace(/\s+on[a-z]+\s*=\s*[^\s>]+/gi, '');
+  s = s.replace(/javascript:/gi, '');
+  s = s.replace(/<foreignObject\b[\s\S]*?<\/foreignObject>/gi, '');
+  return s;
+}
+
+// 🧮 KaTeX で要素内の数式を自動レンダリング (CDN ロード後に呼出)
+function applyKatex(rootEl) {
+  if (!rootEl || typeof window.renderMathInElement !== 'function') return;
+  try {
+    window.renderMathInElement(rootEl, {
+      delimiters: [
+        { left: '\\[', right: '\\]', display: true },
+        { left: '\\(', right: '\\)', display: false },
+        { left: '$$', right: '$$', display: true },
+      ],
+      throwOnError: false,
+      errorColor: '#f87171',
+    });
+  } catch (e) { console.warn('[katex] render failed', e); }
+}
+
+// 数式を含むテキストの安全レンダリング: HTML escape → \(...\) のバックスラッシュは保持
+function escapeTextWithMath(s) {
+  if (s == null) return '';
+  // HTML escape
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/\n/g, '<br>');
+}
+
 function renderQuestions() {
   const box = document.getElementById('questionBox');
   const instant = getUserInstantPref();
   let html = '';
+  // ⚠️ AI 接続失敗・問題不足時の明示警告 (偽プレースホルダ廃止に伴う)
+  if (state.warning) {
+    html += `<div class="ee-warning-box">${escapeHtml(state.warning)}</div>`;
+  }
   if (state.passage) {
-    html += `<div class="ee-passage"><h3>📖 Passage</h3><p>${escapeHtml(state.passage).replace(/\n/g,'<br>')}</p></div>`;
+    html += `<div class="ee-passage"><h3>📖 ${state.examId === 'rikei' ? '問題設定' : 'Passage'}</h3><p>${escapeTextWithMath(state.passage)}</p></div>`;
+  }
+  // 🔬 理系: figure_svg を表示 (sanitize 後 inline)
+  if (state.figureSvg) {
+    const safe = sanitizeSvg(state.figureSvg);
+    if (safe) {
+      html += `<div class="ee-figure"><h3>📐 図</h3><div class="ee-figure-svg">${safe}</div></div>`;
+    }
   }
   if (state.audioScript) {
-    html += `<div class="ee-passage ee-audio"><h3>🎧 Listening Script (本来は音声)</h3><p>${escapeHtml(state.audioScript).replace(/\n/g,'<br>')}</p>
+    html += `<div class="ee-passage ee-audio"><h3>🎧 Listening Script (本来は音声)</h3><p>${escapeTextWithMath(state.audioScript)}</p>
       <p class="ee-note">💡 本物の試験では音声のみ。ここではスクリプトを表示しています。</p></div>`;
   }
   if (state.prompt) {
-    html += `<div class="ee-passage"><h3>✍️ Prompt</h3><p>${escapeHtml(state.prompt).replace(/\n/g,'<br>')}</p></div>`;
+    html += `<div class="ee-passage"><h3>✍️ Prompt</h3><p>${escapeTextWithMath(state.prompt)}</p></div>`;
   }
   state.questions.forEach((q, idx) => {
     html += `<div class="ee-question" data-qid="${q.id}">
       <div class="ee-question-num">Q${idx + 1}</div>
-      <div class="ee-question-stem">${escapeHtml(q.stem || '')}</div>`;
+      <div class="ee-question-stem">${escapeTextWithMath(q.stem || '')}</div>`;
     if (q.type === 'multiple_choice' && Array.isArray(q.choices) && q.choices.length) {
       // 🎯 ボタン式 4択 (radio は隠して label をボタンに)
       html += `<div class="ee-choices ee-choices-btn" role="radiogroup" aria-label="Q${idx + 1} の選択肢">`;
       q.choices.forEach((c, ci) => {
         html += `<button type="button" class="ee-choice-btn" data-qid="${q.id}" data-choice="${ci}" role="radio" aria-checked="false">
           <span class="ee-choice-letter">${String.fromCharCode(65 + ci)}</span>
-          <span class="ee-choice-text">${escapeHtml(c)}</span>
+          <span class="ee-choice-text">${escapeTextWithMath(c)}</span>
           <span class="ee-choice-icon"></span>
         </button>`;
       });
@@ -1005,8 +1221,10 @@ function renderQuestions() {
           explainBox.classList.add('locked');
           explainBox.classList.add(isCorrect ? 'correct' : 'wrong');
           explainBox.innerHTML = `
-            <div class="ee-instant-head">${isCorrect ? '✅ 正解!' : '❌ 不正解'} <span class="ee-instant-correct">正解: ${String.fromCharCode(65 + correct)} (${escapeHtml(q.choices[correct] || '')})</span></div>
-            <div class="ee-instant-body">${escapeHtml(q.explanation || '').replace(/\n/g,'<br>')}</div>`;
+            <div class="ee-instant-head">${isCorrect ? '✅ 正解!' : '❌ 不正解'} <span class="ee-instant-correct">正解: ${String.fromCharCode(65 + correct)} (${escapeTextWithMath(q.choices[correct] || '')})</span></div>
+            <div class="ee-instant-body">${escapeTextWithMath(q.explanation || '')}</div>`;
+          // 解説に LaTeX が含まれていたら再レンダリング
+          applyKatex(explainBox);
         }
       }
     });
@@ -1020,6 +1238,23 @@ function renderQuestions() {
       inp.addEventListener('input', () => { state.userAnswers[q.id] = inp.value; });
     });
   });
+
+  // 🧮 KaTeX 全体レンダリング (理系問題の数式を一括変換)
+  // CDN 読込が遅延の場合は loaded 後に再実行
+  if (typeof window.renderMathInElement === 'function') {
+    applyKatex(box);
+  } else {
+    let tries = 0;
+    const id = setInterval(() => {
+      tries++;
+      if (typeof window.renderMathInElement === 'function') {
+        clearInterval(id);
+        applyKatex(box);
+      } else if (tries > 20) {
+        clearInterval(id);
+      }
+    }, 200);
+  }
 }
 
 // ==========================================================================
@@ -1301,8 +1536,10 @@ function demoQuestions(exam, section, qCount, topic) {
 
   if (partBank) {
     if (partBank.questions) {
-      // multiple_choice 系
-      const qs = partBank.questions.slice(0, qCount).map((q, i) => ({
+      // multiple_choice 系: 偽プレースホルダで埋めず、実問題数だけ返す
+      const available = partBank.questions.length;
+      const limit = Math.min(qCount, available);
+      const qs = partBank.questions.slice(0, limit).map((q, i) => ({
         id: `q${i + 1}`,
         type: 'multiple_choice',
         stem: q.stem,
@@ -1310,23 +1547,15 @@ function demoQuestions(exam, section, qCount, topic) {
         answer: q.answer,
         explanation: q.explanation,
       }));
-      // qCount に足りない分は generic で埋める
-      while (qs.length < qCount) {
-        const i = qs.length + 1;
-        qs.push({
-          id: `q${i}`,
-          type: 'multiple_choice',
-          stem: `Q${i}: ${section.name} のサンプル問題 (本文に基づき推論せよ)`,
-          choices: ['Option A', 'Option B', 'Option C', 'Option D'],
-          answer: '1',
-          explanation: 'AI 接続が安定すると、より詳細なオリジナル問題と解説をご提供します。',
-        });
-      }
+      const warning = (qCount > available)
+        ? `📝 表示中: ${available}問 (リクエスト ${qCount}問)・残りは AI バックエンド接続後に自動生成されます`
+        : '';
       return {
         passage: partBank.passage || '',
         audio_script: partBank.audio_script || '',
         prompt: partBank.prompt || '',
         questions: qs,
+        _warning: warning,
       };
     }
     if (partBank.prompt) {
@@ -1347,38 +1576,15 @@ function demoQuestions(exam, section, qCount, topic) {
     }
   }
 
-  // 2) フォールバック: generic な汎用問題
-  const passage = isReading ? `[Sample passage] In recent decades, researchers have observed significant changes in ${topic}. Multiple studies suggest that the underlying mechanisms are far more complex than initially believed. The implications extend across various disciplines.` : '';
-  const audioScript = isListening ? `[Sample listening on ${topic}] Speaker A: I noticed something interesting about this in our recent study. Speaker B: Really? What did you find? Speaker A: The data suggests we need to reconsider our assumptions.` : '';
-  const prompt = isSpeaking ? `Talk about your experience related to ${topic}. You have 45 seconds to prepare and 60 seconds to speak.` : isWriting ? `Some people believe ${topic} should be a priority in modern education. Others disagree. Discuss both views and give your opinion. (250+ words)` : '';
-  const questions = [];
-  for (let i = 1; i <= qCount; i++) {
-    if (isSpeaking || isWriting) {
-      questions.push({
-        id: `q${i}`,
-        type: isSpeaking ? 'speaking' : 'essay',
-        stem: prompt || `Q${i}: ${topic} について意見を述べてください`,
-        choices: [],
-        answer: `A well-structured response would address ${topic} with concrete examples and clear reasoning, demonstrating mastery of vocabulary, grammar, and logical organization.`,
-        explanation: 'AI 接続を準備中です。安定接続後はより詳細な解説を表示します。',
-      });
-    } else {
-      questions.push({
-        id: `q${i}`,
-        type: 'multiple_choice',
-        stem: `Q${i}: According to the passage, what is the main point about ${topic}?`,
-        choices: [
-          'It has remained unchanged for decades',
-          'It is more complex than once thought',
-          'It is unrelated to other disciplines',
-          'It has no practical implications',
-        ],
-        answer: '1',
-        explanation: 'サンプル解説: 本文の "more complex than initially believed" が根拠。実際の試験では選択肢の難度が上がります。',
-      });
-    }
-  }
-  return { passage, audio_script: audioScript, prompt, questions };
+  // 2) フォールバック: バンクが完全になく AI も使えない時
+  // 偽の placeholder ではなく、ユーザーへの明示メッセージを返す
+  return {
+    passage: '',
+    audio_script: '',
+    prompt: '',
+    questions: [],
+    _warning: `⚠️ AI バックエンドに接続できませんでした。問題プールの蓄積も該当 part にありません。${exam.name} ${section.name} の問題は本番環境で AI が即時生成します (ローカル環境では preview のみ)。`,
+  };
 }
 
 // ==========================================================================

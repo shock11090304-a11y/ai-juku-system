@@ -3,11 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🎓 英語試験対策スタジオ | TOEFL・TOEIC・IELTS・英検 4試験完全対応 | AI学習コーチ塾</title>
-  <meta name="description" content="TOEFL iBT・TOEIC L&R・IELTS Academic・英検の4試験を AI が完全対応。模試生成・スコア予測・CEFR換算・弱点分析まで一気通貫。Claude AI による個別最適化で、英語学習の専門塾として国内最高水準。">
+  <title>🎓 試験対策スタジオ | TOEFL・TOEIC・IELTS・英検・大学入試・理系 6試験完全対応 | AI学習コーチ塾</title>
+  <meta name="description" content="TOEFL iBT・TOEIC L&R・IELTS Academic・英検・大学入試英語・理系科目 (数学/物理/化学/生物/地学) を AI が完全対応。模試生成・スコア予測・CEFR換算・弱点分析・図やグラフを含む理系問題まで一気通貫。Claude AI による個別最適化。">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="english-exam.css">
   <script src="cache-purge.js"></script>
+  <!-- KaTeX: 数式レンダリング (理系科目用・auto-render で\(...\) \[...\] を自動変換) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css" integrity="sha384-FkVqFIbwa8a2btlR4q4ji6ow7+ANMDbDIlRPYgF1AcswPM3Zd/4i0w0p2kJZUO+x" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js" integrity="sha384-cMkvdD8LoxVzGF/RPUKAcvmm49FQ0oxwDF3BGKtDXcEc+T1b2N+teh/OJfpU0jr6" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous"></script>
 </head>
 <body>
   <div class="bg-gradient"></div>
@@ -18,8 +22,8 @@
       <div class="ee-brand">
         <span class="ee-logo">🎓</span>
         <div>
-          <h1 class="ee-title">英語試験対策<span class="ee-title-accent">スタジオ</span></h1>
-          <p class="ee-subtitle">TOEFL iBT・TOEIC L&R・IELTS Academic・英検 — <strong>4試験完全対応</strong></p>
+          <h1 class="ee-title">試験対策<span class="ee-title-accent">スタジオ</span></h1>
+          <p class="ee-subtitle">TOEFL・TOEIC・IELTS・英検・大学入試・理系科目 — <strong>6試験完全対応</strong></p>
         </div>
       </div>
       <div class="ee-header-actions">
@@ -91,12 +95,22 @@
 
         <button class="exam-card exam-daigaku" data-exam="daigaku" type="button">
           <div class="exam-card-flag">🎓</div>
-          <div class="exam-card-name">大学入試対策</div>
+          <div class="exam-card-name">大学入試英語</div>
           <div class="exam-card-tagline">東大・京大・早慶〜MARCH・医学部・共通テスト・センター試験</div>
           <div class="exam-card-spec">
             <span>23大学/枠</span><span>2005-2026 全網羅</span><span>大問別個別対策</span>
           </div>
           <div class="exam-card-target">🎯 大学受験生・浪人生・推薦/AO 対策</div>
+        </button>
+
+        <button class="exam-card exam-rikei" data-exam="rikei" type="button">
+          <div class="exam-card-flag">🔬</div>
+          <div class="exam-card-name">理系科目</div>
+          <div class="exam-card-tagline">数学・物理・化学・生物・地学 — 図/グラフ/数式に完全対応</div>
+          <div class="exam-card-spec">
+            <span>5科目</span><span>KaTeX 数式</span><span>SVG 図表</span>
+          </div>
+          <div class="exam-card-target">🎯 大学受験 理系志望・医学部・国公立2次</div>
         </button>
       </div>
     </section>
