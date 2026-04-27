@@ -1,0 +1,200 @@
+{
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "waseda",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Persistence of Local Cuisines\n\nDespite decades of warnings about cultural homogenization in our globalized world, local food traditions have shown remarkable resilience. While McDonald's, Starbucks, and other multinational chains have spread to every continent, regional cuisines continue to flourish—often, paradoxically, strengthened by the very globalization that was supposed to threaten them.\n\nSeveral factors explain this persistence. First, food is deeply tied to identity in ways that resist easy substitution. People carry powerful associations between particular dishes and family memories, regional pride, and cultural belonging. Even amid significant social change, these emotional connections preserve traditional foods as markers of who we are.\n\nSecond, globalization has created new audiences for previously local cuisines. Italian pasta, Japanese sushi, Mexican tacos, and Thai curries—all once provincial—are now consumed worldwide, often by people far from their countries of origin. This international demand has reinforced the economic viability of traditional cooking and given practitioners new pride in their heritage.\n\nThird, the very experience of global travel has made people more curious about authentic regional foods rather than less. Tourists increasingly seek out neighborhood restaurants and street food rather than international chains, treating culinary distinctiveness as a key part of place identity worth preserving.\n\nThis is not to suggest that food cultures are static. They evolve constantly through contact, adaptation, and innovation. But the evolution proceeds differently than simple homogenization theories predicted. Rather than converging on a single global cuisine, the world's food traditions seem to be entering a more dynamic state of mutual influence while retaining distinctive character. The future of food, like much else in our globalized world, may involve greater diversity rather than less.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What paradox does the author identify regarding globalization and local cuisines?", "choices": ["Local cuisines have entirely disappeared.", "Globalization, supposedly threatening local cuisines, may have actually strengthened them.", "Multinational chains have failed everywhere.", "Food has become irrelevant to identity."], "answer": "1", "explanation": "第1段落「strengthened by the very globalization that was supposed to threaten them」が根拠。早稲田は対比構造の把握が頻出。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "Why are emotional connections to traditional foods important?", "choices": ["They make people choose only international foods.", "They preserve traditional foods as markers of identity, resisting easy substitution.", "They eliminate cultural change.", "They have no effect on food choices."], "answer": "1", "explanation": "第2段落「food is deeply tied to identity ... preserve traditional foods as markers of who we are」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What does the author conclude about the future of food cultures?", "choices": ["They will become identical worldwide.", "They will entirely disappear.", "They will involve greater diversity through dynamic mutual influence rather than simple homogenization.", "They will revert to ancient practices."], "answer": "2", "explanation": "最終段落「entering a more dynamic state of mutual influence while retaining distinctive character ... greater diversity rather than less」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "keio",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Behavioral Insights and Public Policy\n\nFor much of modern history, public policy was designed on the assumption that citizens are rational decision-makers who weigh costs and benefits and choose accordingly. Recent decades have seen a substantial revision of this view, as research in behavioral economics and psychology has demonstrated systematic patterns in how people actually make decisions—patterns that often diverge from the predictions of rational choice models.\n\nThis empirical knowledge has begun to reshape policy design. 'Nudge' approaches, popularized by economist Richard Thaler and legal scholar Cass Sunstein, suggest that small modifications to choice architecture can produce significant changes in behavior without restricting freedom of choice. The classic example involves retirement savings: when employees must opt in to retirement plans, participation rates remain low; when they must opt out, participation soars. The actual choice remains in the citizen's hands, but the default option dramatically influences outcomes.\n\nGovernments worldwide have established 'behavioral insights' units to apply such findings. The United Kingdom's Behavioural Insights Team, sometimes called the 'Nudge Unit,' was an early pioneer; similar offices now exist in dozens of countries. These units have produced documented improvements in tax compliance, organ donation rates, energy efficiency, and many other policy domains.\n\nYet the approach has provoked significant debate. Defenders argue that nudges are minimally intrusive—they help people make decisions consistent with their own deeper preferences, while leaving them free to choose otherwise. Critics raise concerns about manipulation: if government designs choice architectures to produce particular outcomes, has citizen autonomy been respected, even nominally? More radical critics argue that focusing on individual decisions distracts from structural problems—poverty, unequal power relationships, broken institutions—that no amount of clever choice architecture can address.\n\nThis debate is unlikely to be definitively resolved. Both proponents and critics raise legitimate points, and the appropriate scope for behavioral approaches probably differs across policy areas. What seems undeniable is that any plausible account of public policy must now grapple with the realities of human decision-making rather than presupposing rationality that does not exist. Whether through nudges or other means, this empirical foundation will shape policy thinking for the foreseeable future.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What insight from behavioral economics does the passage emphasize?", "choices": ["People are perfectly rational decision-makers.", "Real human decisions show systematic patterns that diverge from rational choice predictions.", "All decisions are completely random.", "Only economists can predict decisions."], "answer": "1", "explanation": "第1段落「systematic patterns in how people actually make decisions—patterns that often diverge from the predictions of rational choice models」が根拠。慶應経済型は理論と実証の対比把握が頻出。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What is the classic 'nudge' example involving retirement savings?", "choices": ["Forcing all citizens to save mandatory amounts.", "Default opt-in vs opt-out: making participation the default dramatically increases enrollment.", "Banning retirement plans.", "Subsidizing all savings equally."], "answer": "1", "explanation": "第2段落「when employees must opt in to retirement plans, participation rates remain low; when they must opt out, participation soars」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What is one of the more radical critiques of behavioral approaches?", "choices": ["They are too expensive.", "They distract from structural problems like poverty and unequal power that clever choice architecture cannot address.", "They are illegal.", "They only work for wealthy citizens."], "answer": "1", "explanation": "第4段落「focusing on individual decisions distracts from structural problems—poverty, unequal power relationships, broken institutions」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "kyodai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "There is something curious about the way human beings think about time. We speak of 'spending' time, 'saving' time, 'wasting' time, 'investing' time—as though it were money or some other commodity that could be accumulated, exchanged, or stored. The very ubiquity of these expressions tends to obscure how strange they are. After all, time is not actually like money; it cannot be saved for later use, lent to a friend, or invested for compound returns. Each moment passes, and what one does with it cannot be retrieved.\n\nWhy do we persist in talking about time as if it were a thing we possess? The answer may lie in the practical demands of modern industrial life. Wages tied to hours, schedules driving production, deadlines structuring activity—all encourage thinking of time as a quantifiable resource to be managed efficiently. The metaphor may be inaccurate philosophically, but it serves real purposes in coordinating human activity at scale.\n\nYet the metaphor exacts costs we rarely notice. When we treat time as a resource to be saved or spent, we begin to evaluate experiences according to their efficiency rather than their meaning. Conversations become productive or wasteful. Walks become opportunities for exercise or 'time fillers.' Even relationships can be assessed by whether they offer 'good returns' on the time we invest in them. Such language subtly transforms how we live.\n\nA different way of thinking about time, attested in many traditional cultures and contemplative traditions, treats time not as a possession but as a medium in which we exist. From this perspective, the question is not how to save time but how to inhabit it—how to be fully present in the moments of our lives rather than perpetually optimizing for some future payoff. Such reorientation is difficult precisely because the dominant metaphor is so deeply embedded. But it may offer something the metaphor cannot: a relationship to time that is not relentlessly transactional.",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "下線部 'When we treat time as a resource to be saved or spent, we begin to evaluate experiences according to their efficiency rather than their meaning.' を日本語に訳しなさい。", "answer": "時間を節約したり費やしたりすべき資源として扱うとき、我々は経験をその意味によってではなく、効率によって評価し始めるのである。", "explanation": "【京大型和訳】① treat A as B = A を B として扱う ② to be saved or spent = 節約されるか費やされるべき (受動 to-不定詞による限定修飾) ③ evaluate A according to B = A を B によって評価する ④ rather than = 〜よりむしろ・〜ではなく ⑤ efficiency / meaning = 効率 / 意味。京大型は構文の入れ子と to be Vpp の処理が問われる。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What alternative view of time does the passage describe?", "choices": ["Time as money to be invested.", "Time as a medium in which we exist, in which the question is how to inhabit it rather than save it.", "Time as illusion that does not exist.", "Time as enemy to be defeated."], "answer": "1", "explanation": "最終段落「treats time not as a possession but as a medium in which we exist ... how to inhabit it ... rather than perpetually optimizing for some future payoff」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "sophia",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Power of Volunteering\n\nVolunteering—giving one's time and skills without monetary compensation—has long been recognized as a valuable activity. Whether helping at food banks, mentoring children, or assisting elderly neighbors, volunteers contribute substantially to community well-being. Yet research increasingly suggests that volunteering benefits volunteers themselves as much as those they serve.\n\nMultiple studies have linked regular volunteering to improved physical and mental health. Volunteers tend to report lower levels of depression, greater life satisfaction, and—remarkably—even longer lifespans on average. While the exact mechanisms are debated, researchers suggest that volunteering provides a sense of purpose, builds social connections, and offers physical and mental engagement that promotes overall wellbeing.\n\nThe benefits appear to be especially significant for older adults. Retirement, while often anticipated as a relief from work demands, can sometimes lead to social isolation and loss of identity. Volunteering offers a structured way to maintain meaningful activity and social engagement after leaving full-time employment. Some retirement communities now actively promote volunteer opportunities as a key element of healthy aging.\n\nHowever, the experience matters as much as the activity itself. Forced or obligatory volunteering—as when students must complete service hours for graduation—often produces fewer benefits than freely chosen engagement. The sense of meaningful contribution, rather than mere participation, appears to be central to volunteering's positive effects.\n\nIncreasingly, organizations are recognizing that volunteer programs work best when they create genuine reciprocity. The most successful programs treat volunteers as valued partners rather than free labor, providing meaningful work, appropriate training, and recognition. As more people seek meaning beyond their paid careers, well-designed volunteer opportunities offer one of the more promising paths to engaged, healthy lives connected to broader communities.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What surprising finding about volunteering does the passage describe?", "choices": ["It causes physical injuries.", "It is associated with longer lifespans, greater life satisfaction, and lower depression rates.", "It only benefits children.", "It has no measurable effects."], "answer": "1", "explanation": "第2段落「lower levels of depression, greater life satisfaction, and—remarkably—even longer lifespans on average」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "Why is volunteering particularly beneficial for older adults?", "choices": ["It pays them more than work did.", "It provides structured meaningful activity and social engagement that prevents isolation after retirement.", "It replaces all medical care.", "It is required by law."], "answer": "1", "explanation": "第3段落「Volunteering offers a structured way to maintain meaningful activity and social engagement after leaving full-time employment」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What kind of volunteering produces the most benefits?", "choices": ["Forced or obligatory service.", "Freely chosen engagement involving meaningful contribution rather than mere participation.", "Activities done alone in isolation.", "Only highly technical work."], "answer": "1", "explanation": "第4段落「Forced or obligatory volunteering ... often produces fewer benefits than freely chosen engagement」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "icu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Knowledge and Its Discontents\n\nThe ancient ideal of universal knowledge—of a single mind capable of mastering all that is known about the world—has not survived the explosion of human inquiry over recent centuries. Where Renaissance thinkers might plausibly aspire to comprehensive learning across philosophy, science, art, and practical affairs, today no individual can hope to deeply understand even a single major scientific field, let alone the full range of human inquiry. We are inevitably specialists now, drawing on what others have learned in domains we cannot ourselves master.\n\nThis specialization has been remarkably productive. The depth required to make new discoveries in physics, biology, medicine, or computer science cannot be achieved by dilettantes. Specialists develop methods, vocabularies, and intuitions inaccessible to outsiders, and these tools enable kinds of progress that broader-but-shallower learning cannot match. The achievements of modern technology—from smartphones to vaccines to space exploration—rest on the cumulative work of millions of specialists across thousands of subfields.\n\nYet specialization brings its own difficulties. As fields become more technical, communication across disciplinary boundaries grows harder. Solutions to complex real-world problems—from climate change to public health crises to economic inequality—typically require integrating insights from many fields, but specialists often struggle to talk meaningfully across these divides. Furthermore, narrow expertise can produce technical capability without wisdom about how that capability should be used. The most consequential problems of our time often involve technical questions intertwined with ethical, political, and human dimensions that specialized training does not address.\n\nThe response to this situation is not, of course, to abandon specialization—the costs would be catastrophic. Rather, what seems needed is some combination of deep specialty with what Bertrand Russell called 'the broader vision': education that nurtures both technical competence and the capacity to see beyond one's own field. Universities, professional schools, and research institutions face the difficult challenge of cultivating this combination in graduates who can both do specialized work well and engage thoughtfully with questions extending beyond their specialties.\n\nWhether contemporary education succeeds at this dual task is doubtful. Pressures toward narrow technical training intensify as competition for scarce positions grows, and broad humanistic education increasingly looks like a luxury. Yet the costs of producing technically capable but humanistically empty specialists—people who can build powerful tools without thinking carefully about the ends those tools should serve—are also growing. The challenge of balanced education thus becomes one of the central problems of our intellectual life.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "Why has the Renaissance ideal of universal knowledge become impossible?", "choices": ["Because Renaissance thinkers were dishonest.", "Because the explosion of human inquiry now exceeds what any individual can deeply master.", "Because knowledge has been forbidden.", "Because computers have replaced human learning."], "answer": "1", "explanation": "第1段落「The ancient ideal ... has not survived the explosion of human inquiry ... no individual can hope to deeply understand even a single major scientific field」が根拠。ICU 型は知的歴史の俯瞰的把握が頻出。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What problems arise from increasing specialization?", "choices": ["Communication across fields grows harder, narrow expertise can produce capability without wisdom, and complex problems requiring integration become difficult.", "Specialists become wealthier than non-specialists.", "All fields disappear.", "Universities close down."], "answer": "0", "explanation": "第3段落「communication across disciplinary boundaries grows harder ... specialists often struggle to talk meaningfully across these divides ... narrow expertise can produce technical capability without wisdom」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What does the author propose as a response?", "choices": ["Abandon all specialization.", "Combine deep specialty with what Russell called 'the broader vision'—education cultivating both technical competence and capacity to see beyond one's field.", "Eliminate all general education.", "Limit knowledge to one approved field."], "answer": "1", "explanation": "第4段落「some combination of deep specialty with what Bertrand Russell called 'the broader vision': education that nurtures both technical competence and the capacity to see beyond one's own field」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "meiji",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Climate Change and the Future of Coastal Cities\n\nApproximately 40% of the world's population lives within 100 kilometers of a coast, and this proportion includes many of the world's largest and most economically important cities: New York, Tokyo, Shanghai, Mumbai, London, and many others. Climate change poses substantial risks to these coastal regions through rising sea levels and increasingly severe storm events.\n\nSea level has already risen approximately 20 centimeters since pre-industrial times, and projections suggest at least another 30-100 centimeters by 2100, depending on emissions trajectories. While these numbers may sound modest, they translate into substantial impacts. A few centimeters of higher sea level can dramatically increase the inland reach of storm surges, flooding low-lying neighborhoods that previous storms left untouched. Salt water intrusion into freshwater supplies and agricultural land creates additional challenges.\n\nMost vulnerable are densely populated cities in low-lying coastal areas. Bangladesh, parts of Vietnam, the Maldives, and many Pacific islands face existential challenges. Wealthier coastal cities can invest in flood defenses—New York and Shanghai have begun major projects—but the costs are enormous and the timescales for completion are long. Smaller coastal communities may not be able to afford comparable measures.\n\nResponses to these challenges generally fall into three categories. First, mitigation: reducing greenhouse gas emissions to limit further warming. Second, adaptation: building protective infrastructure, raising buildings, restoring natural barriers like mangroves. Third, retreat: relocating populations and infrastructure away from the most vulnerable areas. Each approach has costs and limitations, and effective response requires combining all three.\n\nDifficult decisions await coastal nations and cities. Investment levels, equity considerations between richer and poorer regions, and the political will to begin major projects before crises become acute will all shape how well humanity navigates this challenge. While the scale of the problem is daunting, decisions made in coming decades will determine whether coastal civilization adapts successfully or faces increasingly catastrophic disruptions.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "Why does even modest sea level rise create substantial impacts?", "choices": ["Because coastal areas are uninhabited.", "Because higher sea levels dramatically increase the inland reach of storm surges and salt water intrusion.", "Because sea level rise has no real consequences.", "Because all coastal cities are equally protected."], "answer": "1", "explanation": "第2段落「A few centimeters of higher sea level can dramatically increase the inland reach of storm surges, flooding low-lying neighborhoods ... Salt water intrusion」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What are the three categories of response mentioned?", "choices": ["Resistance, retaliation, retreat.", "Mitigation (reducing emissions), adaptation (building protections), and retreat (relocating populations).", "Surrender, surveillance, and survival.", "Innovation, isolation, and intervention."], "answer": "1", "explanation": "第4段落「First, mitigation: reducing greenhouse gas emissions ... Second, adaptation: building protective infrastructure ... Third, retreat: relocating populations and infrastructure」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What does the author identify as key factors shaping outcomes?", "choices": ["Investment levels, equity considerations, and political will to act before crises become acute.", "Only the weather conditions.", "Only the population sizes.", "The decisions of single individuals."], "answer": "0", "explanation": "最終段落「Investment levels, equity considerations between richer and poorer regions, and the political will to begin major projects before crises become acute」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "ielts",
+      "part_key": "l_sec1",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[IELTS Listening Section 1 - Fitness Club Membership Inquiry]\n\nReceptionist: Good morning, City Sports Club, how can I help?\n\nCaller: Hi, I'm interested in joining your club. Could you tell me about the membership options?\n\nReceptionist: Of course. We offer three types of memberships. The Basic membership at £35 per month gives you access to the gym and group fitness classes. The Premium membership at £55 per month adds the swimming pool and sauna. The Platinum membership at £85 per month includes all facilities plus personal training sessions—two per month.\n\nCaller: I see. What about the gym hours?\n\nReceptionist: We're open 6 AM to 11 PM weekdays, and 7 AM to 9 PM on weekends.\n\nCaller: And do you have any current promotions?\n\nReceptionist: Yes, if you sign up before the end of this month, you'll receive your first month half price and a free fitness assessment.\n\nCaller: That sounds attractive. Can I drop by tomorrow at 3 PM to take a tour and possibly sign up?\n\nReceptionist: Absolutely. Could I get your name for the booking?\n\nCaller: Yes, it's Emma Thompson. T-H-O-M-P-S-O-N.\n\nReceptionist: Thank you, Emma. We'll see you tomorrow at 3 PM.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "How much is the Premium membership per month?", "choices": ["£35", "£55", "£75", "£85"], "answer": "1", "explanation": "「The Premium membership at £55 per month」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What does the Platinum membership additionally include over Premium?", "choices": ["Free meals.", "Personal training sessions—two per month.", "Free transportation.", "Yoga classes."], "answer": "1", "explanation": "「The Platinum membership at £85 per month includes all facilities plus personal training sessions—two per month」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What is the current promotion?", "choices": ["50% off your first month + free fitness assessment", "Free t-shirt", "Free meal", "10% off all memberships"], "answer": "0", "explanation": "「your first month half price and a free fitness assessment」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "ielts",
+      "part_key": "l_sec3",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[IELTS Listening Section 3 - Two Students Discussing Their Group Project]\n\nMan (Kenta): So we need to finalize our presentation on renewable energy in Asia. Have you started the section on solar power in Japan?\n\nWoman (Sarah): Yes, I've drafted it. Did you know Japan has been investing heavily in solar since the Fukushima nuclear disaster in 2011? They're now in the top five globally for solar capacity.\n\nKenta: That's interesting. I've been working on the wind power section, focusing on China. China actually leads the world in installed wind capacity, but there are problems with grid integration—a lot of their wind power is wasted because the grid can't always absorb it.\n\nSarah: That's an important point. Maybe we should add a section on the challenges, not just the achievements. Many of our classmates probably don't realize that having lots of capacity doesn't automatically mean lots of usable energy.\n\nKenta: Good idea. What about hydroelectric power? Should we cover that too?\n\nSarah: Let's keep it manageable. Our presentation is only 15 minutes. I think solar and wind are enough, with a brief mention of how Asia overall is leading certain renewable sectors.\n\nKenta: Agreed. By when should we have our slides ready?\n\nSarah: The presentation is on Friday. Let's exchange drafts by Tuesday so we have time to give each other feedback and revise.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What spurred Japan's investment in solar power?", "choices": ["The 2008 financial crisis.", "The 2011 Fukushima nuclear disaster.", "The 2020 Olympics.", "Government tax incentives."], "answer": "1", "explanation": "「Japan has been investing heavily in solar since the Fukushima nuclear disaster in 2011」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What problem does China face with its wind power?", "choices": ["Wind speeds are decreasing.", "A lot of wind power is wasted because the grid can't always absorb it.", "There are too few turbines.", "Wind farms are illegal."], "answer": "1", "explanation": "「a lot of their wind power is wasted because the grid can't always absorb it」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What do they decide to NOT include in detail?", "choices": ["Solar power", "Wind power", "Hydroelectric power", "Nuclear power"], "answer": "2", "explanation": "「Should we cover that too? - Let's keep it manageable. Our presentation is only 15 minutes. I think solar and wind are enough」が根拠。"},
+          {"id": "q4", "type": "multiple_choice", "stem": "By when should they exchange drafts?", "choices": ["Tomorrow", "Tuesday", "Wednesday", "Friday"], "answer": "1", "explanation": "「Let's exchange drafts by Tuesday」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "g4",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "Are you good ( ) playing the guitar?", "choices": ["at", "in", "of", "with"], "answer": "0", "explanation": "be good at = 〜が得意。前置詞 at 固定。英検4級では be 動詞+形容詞+前置詞のセットが頻出。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "I went to the library ( ) study for the test.", "choices": ["to", "for", "at", "in"], "answer": "0", "explanation": "to不定詞の副詞用法 (目的: 〜するために)。「テスト勉強のために図書館に行った」。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "Would you like ( ) tea?", "choices": ["any", "some", "a", "the"], "answer": "1", "explanation": "Would you like ...? の勧誘文では肯定的な some を使う (例外的)。「お茶はいかが?」。any は通常 if/否定/疑問だが勧誘の Would you...? は肯定的扱い。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "g5",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "I'm hungry. Let's ( ) lunch!", "choices": ["have", "having", "to have", "had"], "answer": "0", "explanation": "Let's + 動詞原形 = 〜しよう。「お昼を食べよう」"},
+          {"id": "q2", "type": "multiple_choice", "stem": "( ) you swim well? -Yes, I can.", "choices": ["Are", "Do", "Can", "Is"], "answer": "2", "explanation": "Can you ...? = 〜できますか? (能力)。Yes, I can. が応答セット。英検5級は can/be/do の使い分けが必修。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "How ( ) is this pencil? -It's 100 yen.", "choices": ["old", "tall", "much", "long"], "answer": "2", "explanation": "How much = いくら? (値段)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "gp2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "We need to ( ) up with new ideas for the project.", "choices": ["come", "go", "take", "give"], "answer": "0", "explanation": "come up with = (アイデアを) 思いつく。「新しいアイデアを思いつく必要がある」。準2級頻出の句動詞。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "She is ( ) able to speak three languages fluently.", "choices": ["able", "capable", "possible", "successful"], "answer": "1", "explanation": "be capable of doing = 〜することができる。「彼女は3言語を流暢に話すことができる」。Be able to do (能力一般)、be capable of doing (具体的能力) の使い分け。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "I ( ) have studied harder for the exam. Now I regret it.", "choices": ["should", "can", "may", "will"], "answer": "0", "explanation": "should have + 過去分詞 = 〜すべきだった (過去への後悔)。「もっと勉強すべきだった」。準2級では助動詞+完了形が頻出。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "g1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "The legislation has been criticized for being too ( ), failing to address the underlying causes of inequality.", "choices": ["palliative", "perfunctory", "pernicious", "perspicacious"], "answer": "0", "explanation": "palliative = 一時しのぎの/対症療法的な (根本治療ではない緩和策)。「根本原因に対処しない一時しのぎの法案」。perfunctory = おざなりな、pernicious = 有害な、perspicacious = 洞察力ある。1級は政治・社会論説で頻出。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "Despite the project's setbacks, the team's ( ) commitment ensured eventual success.", "choices": ["unwavering", "unfeigned", "unfettered", "unctuous"], "answer": "0", "explanation": "unwavering = 揺るぎない/一貫した。「揺るぎないコミットメント」。unfeigned = 偽りのない、unfettered = 束縛のない、unctuous = 油っぽい/猫なで声の。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "The historian's revisionist account ( ) long-held assumptions about the period.", "choices": ["upended", "upheld", "underpinned", "undertook"], "answer": "0", "explanation": "upend = 覆す/転覆させる。「修正主義的な記述が長年の前提を覆した」。uphold = 支持する、underpin = 支える、undertake = 引き受ける。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "toeic",
+      "part_key": "l_part2",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "TOEIC Part 2 (続・3問):\n1. Why hasn't the report been finished yet?\n2. Where can I find the cleaning supplies?\n3. Could you possibly take over my shift on Saturday?",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "Why hasn't the report been finished yet?", "choices": ["Yes, it has been very busy.", "Some data is still missing.", "The report is in your office."], "answer": "1", "explanation": "Why → 理由で答える。「データがまだ不足している」。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "Where can I find the cleaning supplies?", "choices": ["In the storage room down the hall.", "Yesterday afternoon.", "I cleaned them yesterday."], "answer": "0", "explanation": "Where → 場所で答える。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "Could you possibly take over my shift on Saturday?", "choices": ["I'm sorry, I have a family event that day.", "The shift starts at 9 AM.", "Yes, the assignment was challenging."], "answer": "0", "explanation": "依頼に対する応答 → 断る or 受ける。「家族のイベントがあるので無理」が自然な断りパターン。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "toeic",
+      "part_key": "l_part3",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "TOEIC Part 3 (続・1セット3問):\n\n[Two coworkers in the breakroom]\n\nWoman: Hey, did you see the email about the new vacation policy?\nMan: I haven't checked my email today. What changed?\nWoman: Starting next month, all vacation requests need to be submitted at least four weeks in advance, instead of two weeks.\nMan: That's quite a change. Is there a reason for it?\nWoman: HR mentioned it's because of staffing issues. They want more time to find coverage.\nMan: That makes sense, I guess. Although it'll be harder to take last-minute trips.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What is the topic of the conversation?", "choices": ["A new policy on vacation requests.", "An IT system upgrade.", "A pay raise.", "An office relocation."], "answer": "0", "explanation": "「the new vacation policy」が冒頭で示される。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "How is the policy changing?", "choices": ["From 4 weeks to 2 weeks advance notice.", "From 2 weeks to 4 weeks advance notice.", "From 1 week to 2 weeks advance notice.", "Eliminating advance notice entirely."], "answer": "1", "explanation": "「at least four weeks in advance, instead of two weeks」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What reason did HR give for the change?", "choices": ["Cost reduction.", "Staffing issues - more time needed to find coverage.", "Legal requirements.", "Employee complaints."], "answer": "1", "explanation": "「because of staffing issues. They want more time to find coverage」が根拠。"}
+        ]
+      }
+    }
+  ]
+}

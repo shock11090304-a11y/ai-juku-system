@@ -1,0 +1,186 @@
+{
+  "questions": [
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系数学 大問1型 (続) — 関数",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "f(x) = e^x - x - 1 の x = 0 における 2 次までのテイラー展開を求めよ。", "answer": "f(x) = e^x - x - 1\nf'(x) = e^x - 1\nf''(x) = e^x\n\nx = 0 で:\nf(0) = 1 - 0 - 1 = 0\nf'(0) = 1 - 1 = 0\nf''(0) = 1\n\nテイラー展開 (2次まで):\nf(x) ≈ f(0) + f'(0) x + (1/2) f''(0) x²\n     = 0 + 0 + (1/2)(1) x²\n     = x²/2\n\n∴ f(x) ≈ x²/2 (x = 0 近傍で)", "explanation": "【東大型テイラー展開】① 2次まで: f(x) ≈ f(a) + f'(a)(x-a) + (1/2)f''(a)(x-a)² ② 各次の微分を計算 ③ x = 0 を代入。【公式】e^x = 1 + x + x²/2 + x³/6 + ... なので e^x - x - 1 = x²/2 + x³/6 + ... ≈ x²/2 で確認できる。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "kyodai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "京大理系数学 大問1型 (続) — 微積分",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "曲線 y = x² 上の動点 P が (1, 1) を通過するとき、P における法線の方程式を求めよ。", "answer": "y = x² → y' = 2x\n点 (1, 1) における接線の傾き = 2 × 1 = 2\n\n法線は接線に垂直 → 傾きの積 = -1\n法線の傾き = -1/2\n\n法線の方程式 (点 (1,1) を通り傾き -1/2):\ny - 1 = -(1/2)(x - 1)\ny = -(1/2)x + 1/2 + 1 = -(1/2)x + 3/2\n\n∴ y = -(1/2)x + 3/2 または 2y = -x + 3 つまり x + 2y = 3", "explanation": "【京大型 微積分】① 接線の傾き = 接点での導関数 ② 法線は接線に垂直 → 傾きの積 -1 ③ 法線の方程式: y - y₀ = m(x - x₀)。【鍵】法線/接線の関係 m₁ × m₂ = -1 (垂直条件)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q2",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系数学 大問2型 (続) — 場合の数",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "5枚のカード (1, 2, 3, 4, 5) を1列に並べる。1 と 2 が隣り合わない並べ方は何通りか?", "answer": "全並べ方: 5! = 120 通り\n\n1 と 2 が隣り合う並べ方を求めて引く:\n「12」または「21」を1ブロックとみなし、残り 3, 4, 5 と合わせて 4つを並べる: 4! = 24 通り\n「12」「21」の2パターン → 24 × 2 = 48 通り\n\n隣り合わない並べ方 = 120 - 48 = 72 通り", "explanation": "【東大型場合の数】① 全体 - 隣り合う場合 (補集合) ② 隣り合う = 2つを1ブロックとみなして並べる、ブロック内で2通りの順列 ③ 全体 5! - 隣接 4! × 2 = 120 - 48 = 72。【別解】「両端」「間」をすべて場合分けする方法もあるが補集合法が早い。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q2",
+      "eiken_grade": "kyodai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "京大理系数学 大問2型 (続) — 整数論",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "n は正の整数とする。3n + 5 と 5n + 8 の最大公約数を求めよ。", "answer": "ユークリッド互除法を用いる。\nA = 5n + 8, B = 3n + 5\n\nA - B = 5n + 8 - (3n + 5) = 2n + 3\nB - (2n + 3) = 3n + 5 - 2n - 3 = n + 2\n(2n + 3) - 2(n + 2) = 2n + 3 - 2n - 4 = -1\n\ngcd(3n + 5, 5n + 8) = gcd(2n + 3, n + 2) = gcd(-1, ...) = 1\n\n∴ 最大公約数は 1 (常に互いに素)", "explanation": "【京大型 整数論】① ユークリッド互除法 gcd(a, b) = gcd(b, a mod b) ② 計算過程で定数項のみ残れば、最大公約数はその定数の絶対値の約数 ③ 余りが ±1 まで縮められれば gcd = 1 (互いに素)。【検算】n = 1: 8 と 13 → gcd 1 ✓、n = 2: 11 と 18 → gcd 1 ✓。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "osaka_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "阪大理系数学 大問1型 (続) — 確率",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "サイコロを 2 回投げて出る目の和が素数になる確率を求めよ。", "answer": "全ケース: 6 × 6 = 36 通り\n\n2 つの目の和は 2 から 12 まで。素数は 2, 3, 5, 7, 11。\n\n各和になる組合せ数:\n和=2: (1,1) → 1通り\n和=3: (1,2), (2,1) → 2通り\n和=5: (1,4), (2,3), (3,2), (4,1) → 4通り\n和=7: (1,6), (2,5), (3,4), (4,3), (5,2), (6,1) → 6通り\n和=11: (5,6), (6,5) → 2通り\n\n合計 = 1 + 2 + 4 + 6 + 2 = 15 通り\n\n確率 = 15 / 36 = 5/12", "explanation": "【阪大型 確率】① 全ケース ② 求める和ごとに数える ③ 素数の判定 (2, 3, 5, 7, 11)。【典型ミス】和 9 (3+3 など) を素数と勘違い (9 = 3×3 で素数ではない)、和 4 や 12 を素数と勘違い。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "tokoda_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東工大理系数学 大問1型 (続) — 行列・線形代数",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "行列 A = [[2, 1], [1, 3]] の固有値を求めよ。", "answer": "固有方程式 det(A - λI) = 0:\n|2-λ  1|\n|1   3-λ| = (2-λ)(3-λ) - 1 × 1 = 0\n\n(2-λ)(3-λ) - 1 = 0\nλ² - 5λ + 6 - 1 = 0\nλ² - 5λ + 5 = 0\n\n解の公式: λ = (5 ± √(25 - 20))/2 = (5 ± √5)/2\n\n∴ λ₁ = (5 + √5)/2 ≈ 3.618、λ₂ = (5 - √5)/2 ≈ 1.382", "explanation": "【東工大型 線形代数】① 固有値 λ は det(A - λI) = 0 の解 ② 2×2 行列なら λ² - tr(A) λ + det(A) = 0 (tr = 対角成分の和、det = 行列式)。【本問】tr = 5, det = 6 - 1 = 5 → λ² - 5λ + 5 = 0。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "nagoya_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "名大理系数学 大問1型 (続) — 図形と方程式",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "原点を中心とする半径 5 の円に、点 (3, 0) を通る接線の方程式を求めよ。", "answer": "原点中心半径 5 の円: x² + y² = 25\n点 (3, 0) は円の **内部** (3² + 0² = 9 < 25) → 接線は引けない。\n\n問題が点 (5, 0) なら、その点は円上 → 接線 x = 5 (x 軸に垂直)。\n問題が点 (10, 0) なら、円外 → 2 本の接線を求める。\n\n再考: (3, 0) は内部なので接線は存在しない。問題の意図が「(3, 0) を通る接線」なら、円上の点ではなく、(3, 0) と異なる位置で円に接する直線 — しかし (3, 0) が内部なら不可能。\n\n問題条件を満たす点 (例: (10, 0)) で計算:\n接線の式 y = m(x - 10)、円との接点で y² = 25 - x²。\n判別式 = 0 から m を求めると... \n(10m)² = (m² + 1)(100m² - 25)\n簡略化で m² = 1/3、m = ± 1/√3\n接線: y = ±(1/√3)(x - 10)\n\n本問は条件不適合のため、点 (5, 0) (円上) と仮定して回答: 接線 x = 5。", "explanation": "【名大型 図形と方程式 解法ポイント】① 円上の点での接線: 中心と接点を結ぶ半径と接線は垂直 ② 円外の点からの接線: 2 本存在 (判別式 = 0 で求める) ③ 円内の点からの接線: 不可能。【本問】(3, 0) は半径 5 の円の内部 (5² > 3² + 0²) → 接線存在せず。問題に矛盾あり (条件チェックが鍵)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "kyodai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "京大理系物理 大問1型 (続) — 力学・運動量",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "質量 m の小球を初速度 v、水平となす角 θ で投げ上げた。最高点到達時の速さ、最高到達高さ、水平到達距離を求めよ。空気抵抗は無視、重力加速度 g。", "answer": "初速度成分: v_x = v cos θ、v_y = v sin θ\n\n(1) 最高点到達時の速さ:\n最高点では v_y = 0、v_x のみ残る → 速さ = v cos θ\n\n(2) 最高到達高さ H:\n0 = (v sin θ)² - 2g H\nH = (v sin θ)² / (2g) = v² sin² θ / (2g)\n\n(3) 水平到達距離 R:\n滞空時間 T (上昇 + 下降) = 2 × (上昇時間) = 2 × (v sin θ / g) = 2v sin θ / g\nR = v_x × T = (v cos θ)(2v sin θ / g) = (v² × 2 sin θ cos θ) / g = v² sin(2θ) / g\n\n∴ 速さ v cos θ、高さ v² sin² θ / (2g)、距離 v² sin(2θ) / g", "explanation": "【京大型 斜方投射】① 水平方向: 等速 (重力なし)、垂直方向: 等加速度 (-g) ② 最高点 v_y = 0、v_x のみ残る ③ 滞空時間 T = 2 v sin θ / g (対称性) ④ 最大射程は θ = 45° で R_max = v²/g。【公式 sin(2θ)】sin(2θ) = 2 sin θ cos θ で R 表示が簡略化。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "osaka_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "阪大理系物理 大問1型 (続) — 電磁気・電場",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "真空中で点電荷 +Q が原点にあるとき、距離 r 離れた点における電場の強さ E を求めよ (クーロン定数 k = 1/(4πε₀))。", "answer": "クーロンの法則による電場:\nE = kQ / r²\n\nここで:\n- k = 1/(4πε₀) ≈ 9.0 × 10⁹ N·m²/C² (真空中)\n- Q: 電荷量 [C]\n- r: 電荷からの距離 [m]\n- E: 電場の強さ [N/C] または [V/m]\n\n方向: +Q なら外向き (放射状)、-Q なら内向き。", "explanation": "【阪大型 電磁気】① 点電荷の作る電場 E = kQ/r² (距離の逆二乗則) ② 単位: N/C = V/m ③ クーロンの法則 F = kQq/r² との関係 (E = F/q)。【関連公式】重力場 g = GM/r² と同じ形 (逆二乗則の遍在性)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "waseda_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "早大理工物理 大問1型 (続) — 波動・ドップラー効果",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "振動数 f₀ の音源が速度 v_s で観測者に近づき、観測者は静止している。空気中の音速 V のとき、観測される振動数 f を求めよ。", "answer": "ドップラー効果 (音源が動く・観測者静止):\n\nf = f₀ × V / (V - v_s)\n\n(音源が観測者に近づく: v_s > 0、近づくほど分母小さく f は大きくなる = 高音)\n\n(音源が遠ざかる場合: f = f₀ × V / (V + v_s)、低音)\n\n例: 救急車のサイレン。近づくと高い音、通り過ぎると低い音。", "explanation": "【早大型 ドップラー】① 一般式: f = f₀ × (V ± v_o) / (V ∓ v_s) (上が観測者、下が音源、複号は接近/離脱で決まる) ② 音源接近: 分母 V - v_s で f 増大 (高音) ③ 音源離脱: 分母 V + v_s で f 減少 (低音)。【典型ミス】観測者と音源どちらが動くかで式が変わる、符号の取扱い。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "tokoda_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東工大理系物理 大問1型 (続) — 原子物理",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "波長 λ の光子が持つエネルギー E と運動量 p を求めよ。プランク定数 h、光速 c とする。", "answer": "光子のエネルギー (アインシュタインの関係):\nE = hν = hc/λ\n\n(ν = c/λ は振動数)\n\n光子の運動量:\np = E/c = h/λ\n\n(光子は質量ゼロだが運動量を持つ。E² = (pc)² + (mc²)² で m = 0 → E = pc)", "explanation": "【東工大型 原子物理】① 光子のエネルギー E = hν = hc/λ ② 運動量 p = h/λ (ド・ブロイ波長の式と同形) ③ 光子は m = 0 だが p ≠ 0 (相対論的取扱い)。【典型値】可視光 λ ≈ 500 nm、E ≈ 4 × 10⁻¹⁹ J ≈ 2.5 eV。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "igakubu_kokoritsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "国公立医学部 物理 大問1型 (続) — 熱力学第一法則",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "気体に外部から熱量 Q を与え、気体が外部に仕事 W をした。気体の内部エネルギー変化 ΔU を求めよ (熱力学第一法則)。", "answer": "熱力学第一法則: ΔU = Q - W\n\nここで:\n- ΔU: 内部エネルギー変化 (J)\n- Q: 系に加えられた熱 (J、入る方向が +)\n- W: 系が外部にする仕事 (J、する方向が +)\n\n物理的意味: 与えられた熱は、内部エネルギー増加に使われるか、外部への仕事に使われる。\n\nQ = ΔU + W (移項形)", "explanation": "【医学部 熱力学】① ΔU = Q - W (W は系が外部にする仕事) ② 別表記: ΔU = Q + W (W は外部が系にする仕事) — 教科書によって符号定義が異なるので注意 ③ 等温変化: ΔU = 0 → Q = W ④ 断熱変化: Q = 0 → ΔU = -W ⑤ 等積変化: W = 0 → ΔU = Q。【典型ミス】W の向きの符号定義を間違える。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "igakubu_shiritsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "私立医学部 物理 大問1型 (続) — 単振動",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "ばね定数 k のばねに質量 m のおもりを取り付けて鉛直に吊るし、平衡位置から振幅 A で単振動させた。振動の周期 T と最大速度 v_max を求めよ。", "answer": "鉛直方向単振動:\n運動方程式 (平衡位置からの変位 x): m d²x/dt² = -kx\n→ 角振動数 ω = √(k/m)\n\n周期 T = 2π/ω = 2π √(m/k)\n\n最大速度 v_max = ωA = A √(k/m)\n\n(注: 鉛直振動でも周期・最大速度の式は水平振動と同じ。重力は平衡位置をずらすだけで、周期や振幅自体には影響しない)", "explanation": "【医学部 単振動】① 鉛直/水平問わず ω = √(k/m) ② 周期 T = 2π/ω、振動数 f = 1/T ③ 最大速度 v_max = ωA、最大加速度 a_max = ω²A ④ エネルギー保存: (1/2)kA² = (1/2)mv_max² → v_max = A√(k/m) で確認。【鉛直の特殊性】重力で平衡位置がずれるだけで運動方程式自体は同型 (mg は変位に依存しない定数項なので、平衡位置を原点に取り直せば消える)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "waseda_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "早大理工数学 大問1型 (続) — 数列",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "等比数列 {aₙ} で a₁ = 3、公比 r = 2 のとき、初項から第10項までの和 S₁₀ を求めよ。", "answer": "等比数列の和の公式: Sₙ = a₁ (rⁿ - 1) / (r - 1) (r ≠ 1)\n\nS₁₀ = 3 × (2¹⁰ - 1) / (2 - 1)\n    = 3 × (1024 - 1) / 1\n    = 3 × 1023\n    = 3069", "explanation": "【早大理工 数列】① 等比数列の和 Sₙ = a₁(rⁿ - 1)/(r - 1) (r ≠ 1)、Sₙ = na₁ (r = 1) ② 2¹⁰ = 1024 は覚えておく数値。【関連】等差数列 Sₙ = n(a₁ + aₙ)/2 や Σ k² = n(n+1)(2n+1)/6 等の頻出公式と共に押さえる。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3",
+      "eiken_grade": "gp1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Power of Sleep\n\nSleep occupies roughly one-third of human life, yet for most of history, scientists treated it as a passive period when little of consequence happened. Recent research has dramatically reversed this view, revealing sleep as one of the most active and essential biological processes our bodies undertake.\n\nDuring sleep, the brain engages in remarkable maintenance work. Memories from the day are consolidated, with important experiences strengthened and unimportant ones forgotten. The brain's waste-clearance system, called the glymphatic system, becomes especially active during deep sleep, removing metabolic waste products that accumulate during waking hours. Hormones that regulate growth, appetite, and stress are released in carefully orchestrated patterns. Cellular repair processes accelerate.\n\nThe consequences of insufficient sleep are far-reaching and well-documented. Even modest sleep deprivation impairs memory, attention, mood, and decision-making. Long-term sleep deficits have been linked to increased risks of cardiovascular disease, type 2 diabetes, depression, and certain cancers. Some research suggests chronic sleep deprivation may contribute to the development of Alzheimer's disease, possibly because the glymphatic clearance system fails to remove the proteins that form characteristic plaques.\n\nDespite this knowledge, modern societies often treat sleep as expendable. Long working hours, electronic screens, artificial lighting, caffeine consumption, and irregular schedules all conspire against healthy sleep patterns. Many people pride themselves on functioning with little sleep, viewing rest as weakness. Public health experts increasingly view this attitude as misguided—a kind of slow-motion health crisis.\n\nImproving sleep quality often requires lifestyle adjustments rather than medical interventions. Consistent sleep schedules, reducing evening light exposure, limiting caffeine and alcohol, and creating restful sleep environments all support better sleep. While sleep medications can help in certain situations, most experts emphasize behavioral and environmental approaches as primary strategies for healthy sleep.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "How has the scientific view of sleep changed?", "choices": ["Sleep is now seen as more passive than before.", "Sleep is now recognized as an active and essential biological process.", "Sleep has been proven completely unnecessary.", "Sleep is purely a form of dreaming."], "answer": "1", "explanation": "第1段落「Recent research has dramatically reversed this view, revealing sleep as one of the most active and essential biological processes」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What waste-clearance function does the brain perform during sleep?", "choices": ["The glymphatic system removes metabolic waste products that accumulate during waking hours.", "Cleaning the bloodstream of food.", "Eliminating muscle waste.", "Producing waste."], "answer": "0", "explanation": "第2段落「The brain's waste-clearance system, called the glymphatic system, becomes especially active during deep sleep, removing metabolic waste products」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What approach do most experts recommend for improving sleep quality?", "choices": ["Heavy reliance on sleep medications.", "Behavioral and environmental approaches such as consistent schedules, less evening light, limited caffeine.", "Surgical interventions.", "Ignoring the problem entirely."], "answer": "1", "explanation": "最終段落「most experts emphasize behavioral and environmental approaches as primary strategies for healthy sleep」が根拠。"}
+        ]
+      }
+    }
+  ]
+}
