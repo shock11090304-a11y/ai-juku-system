@@ -1,0 +1,267 @@
+{
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "osaka",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Sport and Society\n\nSports occupy a curious position in modern society. While ostensibly mere games—organized contests with arbitrary rules—they consume vast resources, generate enormous emotional intensity, and shape national identities in ways that purely instrumental analysis fails to capture.\n\nProfessional sports have become major economic enterprises. Top-level football clubs employ thousands; the Olympics involve billions in expenditure; sponsorship and broadcasting contracts redirect substantial wealth. These economic dimensions matter, but they cannot fully explain why sports captivate so many people. Few activities transcend economic logic so completely.\n\nThe deeper question concerns what sports provide that other activities do not. They offer narratives with clear stakes and resolutions—rare in messy ordinary life. They create temporary communities of strangers united in support of arbitrary causes. They allow vicarious participation in physical excellence most spectators cannot achieve themselves. And they provide ritual occasions structuring the calendar.\n\nSome critics argue these functions are not entirely benign. Competitive nationalism in international sports can intensify rather than ease tensions. The emotional intensity sports generate has sometimes been mobilized for political purposes. The vast resources directed at sports might be argued to serve more pressing human needs.\n\nYet defenders point out that sports also create cross-cultural exchange, model peaceful competition between nations, and provide widely accessible aspiration. Athletes from disadvantaged backgrounds have often found pathways to recognition through sports unavailable elsewhere.\n\nWhatever one's evaluation, sports clearly answer to deep human needs—for community, meaning, embodiment, and shared narrative. Understanding why sports matter requires going beyond instrumental categories of economics or politics, asking instead what role they play in the broader project of living meaningful collective lives.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What does the author suggest about the value of sports?", "choices": ["Pure economic value", "Purely instrumental analysis fails to capture their full significance—they answer to deep human needs for community, meaning, and shared narrative", "No value at all", "Only entertainment value"], "answer": "1", "explanation": "本文「purely instrumental analysis fails to capture」「sports clearly answer to deep human needs—for community, meaning, embodiment, and shared narrative」が根拠。"},
+          {"id": "q2", "type": "essay", "stem": "下線部 'Understanding why sports matter requires going beyond instrumental categories of economics or politics, asking instead what role they play in the broader project of living meaningful collective lives.' を日本語に訳しなさい。", "answer": "なぜスポーツが重要なのかを理解するには、経済や政治といった道具的なカテゴリーを超え、それらが意味のある集団的生を生きるという、より広い営為においてどのような役割を果たしているのかを問う必要があるのである。", "explanation": "【阪大型】① Understanding why X requires Y = X を理解するには Y が必要 ② go beyond instrumental categories of A = A という道具的カテゴリーを超える ③ ask what role they play in B = B における役割を問う ④ broader project of living meaningful collective lives = 意味のある集団的生を生きるというより広い営為。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "tokoda",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Future of Space Exploration\n\nThe past decade has seen a remarkable revival of interest in space exploration. Government space agencies, joined by ambitious private companies, are pursuing missions that would have seemed implausible just a generation ago: returning humans to the Moon, sending crews to Mars, mining asteroids, building permanent stations in low-Earth orbit and beyond.\n\nThis revival reflects multiple converging factors. Reusable rockets, pioneered by SpaceX and now used by other companies, have dramatically reduced launch costs. Miniaturization has made satellites and probes more capable per unit mass. International competition between major powers—particularly the United States and China—has injected new urgency into space programs. And the long-term aspirations of figures like Elon Musk to make humanity 'multi-planetary' have captured public imagination.\n\nThe scientific potential is significant. Permanent lunar bases would enable astronomy from the dark side of the Moon, free from Earth's atmospheric and electromagnetic interference. Mars exploration could reveal whether life ever existed there, with profound implications for biology and astrobiology. Asteroid sampling has already returned material providing insights into the early solar system.\n\nYet questions persist about priorities. Critics argue that vast resources directed at space might better address pressing terrestrial problems—climate change, poverty, inequality. They note that human spaceflight in particular costs enormously per scientific result compared to robotic missions. Defenders counter that space exploration drives technological innovation with broader applications, inspires scientific careers, and addresses fundamentally human aspirations beyond mere problem-solving.\n\nWhatever the right balance, the next decade will likely see substantial progress. Lunar exploration is again imminent. Mars missions are advancing. Commercial space activities are growing rapidly. Whether humanity becomes truly multi-planetary remains uncertain, but the conversations and capabilities developed in this generation will substantially shape humanity's long-term relationship with space.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What factors have driven the recent revival of space exploration?", "choices": ["No specific factors", "Reusable rockets reducing costs, miniaturization, international competition (US-China), and aspirational figures like Elon Musk", "Only one company's efforts", "Government regulation only"], "answer": "1", "explanation": "第2段落「Reusable rockets ... dramatically reduced launch costs. Miniaturization ... International competition ... aspirations of figures like Elon Musk」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What is the author's overall view of space exploration's future?", "choices": ["It will fail completely", "Substantial progress likely in the next decade; whether humanity becomes multi-planetary remains uncertain but capabilities and conversations developed will shape long-term relationship with space", "Should be banned", "Has no relevance to humanity"], "answer": "1", "explanation": "最終段落「Whatever the right balance, the next decade will likely see substantial progress ... the conversations and capabilities developed in this generation will substantially shape humanity's long-term relationship with space」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "hitotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Trust and Economic Performance\n\nEconomists have increasingly recognized that levels of trust within societies correlate strongly with economic performance. Countries where citizens generally trust strangers, institutions, and contractual partners tend to have higher GDP per capita, more efficient markets, and greater social cohesion than countries with lower trust levels.\n\nThe causal mechanisms are intuitive once stated. Where trust is high, transactions can occur with less verification, contracting, and enforcement overhead. Strangers can collaborate productively without elaborate guarantees. Public institutions can function with less corruption monitoring. Financial systems can extend credit more readily. The cumulative effect across millions of daily interactions substantially shapes economic outcomes.\n\nWhat builds or erodes trust is harder to specify. Cultural traditions, institutional quality, historical experiences with trustworthy or untrustworthy authorities, levels of inequality, demographic homogeneity—all appear to matter, in patterns scholars have not fully unraveled. Trust seems easier to lose than to build, with corruption scandals or institutional failures producing lasting damage even after corrective reforms.\n\nThis recognition has policy implications. Investments in institutional integrity—courts, regulators, electoral systems—pay returns not merely in their direct functions but in the broader trust infrastructure they support. Programs strengthening community bonds, promoting transparency, and reducing inequality may have economic dividends beyond their direct effects. Conversely, policies eroding institutional trust—even when politically expedient short-term—may impose substantial long-term economic costs.\n\nFor individual societies considering reform, the trust dimension cuts in interesting directions. Highly trusting societies may face less pressure to reform institutions that nonetheless need updating. Low-trust societies face the harder task of building both better institutions and the trust that allows institutions to function. Both situations require leaders who recognize that institutional and cultural changes are deeply intertwined.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What correlation does economic research identify?", "choices": ["No correlation between trust and economy", "Higher social trust correlates with higher GDP, more efficient markets, and greater cohesion", "Trust is harmful to markets", "Only price-controls matter"], "answer": "1", "explanation": "第1段落「Countries where citizens generally trust strangers, institutions, and contractual partners tend to have higher GDP per capita, more efficient markets, and greater social cohesion」が根拠。"},
+          {"id": "q2", "type": "essay", "stem": "下線部 'Trust seems easier to lose than to build, with corruption scandals or institutional failures producing lasting damage even after corrective reforms.' を日本語に訳しなさい。", "answer": "信頼は築くよりも失う方がたやすいように見える。汚職スキャンダルや制度的破綻は、是正改革後でさえも長期的な損害を生むのである。", "explanation": "【一橋型和訳】① X seems easier to lose than to build = X は築くより失う方がたやすい (比較構文) ② with X producing Y = X が Y を生む (with + O + V-ing 付帯状況) ③ corruption scandals or institutional failures = 汚職スキャンダルや制度的破綻 ④ even after corrective reforms = 是正改革後でさえも。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "nagoya",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Quiet Revolution in Materials Science\n\nWhile attention focuses on more visible technological transformations, materials science has been undergoing a quiet revolution with profound implications. New materials with carefully engineered properties are enabling advances in fields from electronics to medicine that would have seemed magical to earlier generations.\n\nGraphene illustrates the possibilities. A single layer of carbon atoms arranged in a hexagonal lattice, graphene combines unprecedented strength, electrical conductivity, and thermal properties in ways that defy intuition. Discovered through almost playful experiments in 2004, it earned its discoverers the Nobel Prize in 2010. Practical applications are now emerging in electronics, batteries, and composite materials.\n\nMetamaterials—materials whose internal structure is engineered at scales smaller than the wavelengths of light or sound they interact with—offer abilities once considered impossible. Materials that bend light around objects, creating partial invisibility cloaks. Acoustic materials that channel sound waves in counterintuitive directions. Electromagnetic materials with negative refractive indices. These are no longer science fiction.\n\nIn medicine, materials science is enabling new treatments. Scaffolds that guide tissue regeneration. Targeted drug delivery systems that release medicines at precise locations. Bone-substitute materials that integrate seamlessly with living tissue. Biocompatible electronics that interface with the nervous system.\n\nThe pace of advance is accelerating. Computational tools allow researchers to predict properties of novel materials before synthesizing them. Machine learning identifies promising compounds in vast chemical space. International collaboration shares insights across institutions. The next decade may see materials enabling capabilities we cannot fully anticipate today.\n\nThe quiet revolution highlights how scientific progress works. Spectacular advances often arise not from dramatic breakthroughs but from sustained accumulation of detailed knowledge across many laboratories. Materials science—patient, technical, often invisible—reminds us that civilization's deepest progress sometimes happens in directions less celebrated but no less consequential than more visible transformations.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What examples of materials science advances does the passage describe?", "choices": ["Only graphene", "Graphene, metamaterials (invisibility cloaks, negative refractive index), medical scaffolds, drug delivery, bone substitutes", "Only ceramics", "Only metals"], "answer": "1", "explanation": "第2-4段落で graphene / metamaterials / 医療応用 (scaffolds, drug delivery, bone-substitute, biocompatible electronics) が列挙される。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What broader insight about scientific progress does the author draw?", "choices": ["Progress always comes from dramatic breakthroughs", "Spectacular advances often arise from sustained accumulation of detailed knowledge across many laboratories—deepest progress often happens in less-celebrated directions", "Science is irrelevant", "Only single inventors matter"], "answer": "1", "explanation": "最終段落「Spectacular advances often arise not from dramatic breakthroughs but from sustained accumulation of detailed knowledge across many laboratories ... civilization's deepest progress sometimes happens in directions less celebrated」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "aogaku",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Persistence of Poetry\n\nIn an age dominated by rapid information consumption, poetry might seem an anachronism. Why read carefully crafted lines, attending to rhythm and image, when faster forms of communication abound? Yet poetry persists, and not merely as cultural museum piece. New poets continue to emerge. Poetry collections still find publishers. Lines of verse still circulate widely. What needs does poetry meet that other forms cannot?\n\nPoetry's distinctive feature is concentrated language. Where prose typically aims for clarity through expansion, poetry achieves intensity through compression. A few words may carry more meaning than entire chapters of prose, with each syllable working harder to evoke, suggest, and resonate. The poetic line forces readers to slow down, to attend to nuance and ambiguity that ordinary prose smooths over.\n\nThis attention to language itself, characteristic of poetry, may matter beyond mere aesthetic pleasure. By foregrounding how language works—its sounds, its associations, its capacity for surprise—poetry develops capacities that all uses of language depend upon. The careful reader of poetry may also become a more careful reader of journalism, contracts, and political speeches, attentive to choices and silences other readers miss.\n\nPoetry also offers something difficult to find elsewhere: emotional precision. Where ordinary discourse tends toward bland generalization or overwrought drama, the best poetry captures specific emotional states with surgical accuracy. Reading a poem that articulates exactly what one has felt, but never been able to say, can produce a kind of recognition rarely available through other media.\n\nNone of this argues that poetry is for everyone. Some readers find it uncongenial; others lack the patience its conventions require. But the persistence of poetry across millennia, in radically different cultures, suggests it answers to something that cannot easily be replaced. As communication accelerates and language is asked to do more work in less space, poetry's careful, slow, intense attention to language may become more rather than less valuable.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What distinctive feature of poetry does the author identify?", "choices": ["Poetry is always rhymed", "Concentrated language—achieving intensity through compression rather than clarity through expansion", "Poetry must be sad", "Poetry is for elites only"], "answer": "1", "explanation": "第2段落「Poetry's distinctive feature is concentrated language. Where prose typically aims for clarity through expansion, poetry achieves intensity through compression」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "How does the author argue poetry might matter in our communication-accelerated age?", "choices": ["It will disappear", "Its careful, slow, intense attention to language may become more rather than less valuable", "It is irrelevant", "It must be replaced by AI"], "answer": "1", "explanation": "最終段落「As communication accelerates ... poetry's careful, slow, intense attention to language may become more rather than less valuable」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "bio_basic",
+      "eiken_grade": "kyotsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "生物基礎 共通テスト型 (3) — 生態系",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "光合成を行う生物は生態系のどの位置にあるか?", "choices": ["分解者", "生産者", "二次消費者", "三次消費者"], "answer": "1", "explanation": "光合成生物 (植物・藻類・シアノバクテリアなど) は無機物 (CO₂, H₂O) から有機物を生産 → 生産者 (一次生産者)。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "炭素循環において、大気中の CO₂ を有機物として固定する過程はどれか?", "choices": ["呼吸", "光合成", "分解", "燃焼"], "answer": "1", "explanation": "光合成: 6 CO₂ + 6 H₂O + 光エネルギー → C₆H₁₂O₆ + 6 O₂。CO₂ を有機物 (グルコース) として固定。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "外来生物が在来生態系に与える影響として最も典型的なのは?", "choices": ["影響なし", "在来種との競合・捕食・交雑による在来種の減少や絶滅", "在来種を増加させる", "気候を変える"], "answer": "1", "explanation": "外来生物の影響: 在来種との競合 (例: ブルーギル)、捕食 (アメリカザリガニ)、交雑 (タイワンザル × ニホンザル)。共通テスト生物基礎では生態系保全が頻出。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "bio_q1",
+      "eiken_grade": "keio_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "慶大理工生物 大問1 (3)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "メンデルの遺伝の法則 (3 つ) を簡潔に説明せよ。", "answer": "(1) 優性の法則: 純系の対立形質を持つ親 (例: 丸×しわ) を交配すると、F₁ は一方の形質 (優性形質) のみが現れる。\n\n(2) 分離の法則: F₁ 同士の交配 (F₂) では、優性:劣性 = 3:1 の比で形質が分離する。配偶子形成時に対立遺伝子が独立に分離するため。\n\n(3) 独立の法則: 2 対以上の対立遺伝子が異なる染色体上にある場合、それぞれ独立に遺伝し、F₂ で 9:3:3:1 の比となる (二遺伝子雑種)。\n\n注: 同一染色体上の遺伝子は連鎖により独立の法則が成立しない場合あり (組換え価で測定)。", "explanation": "【慶應理工生物】① メンデル 3 法則の名称と内容を正確に ② 用語: 優性 (現代では「顕性」)、劣性 (「潜性」)、対立遺伝子 (アレル) ③ 例外: 連鎖、不完全優性、共優性。【医学部頻出】Hardy-Weinberg 法則、ABO 血液型 (共優性) も関連。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "bio_q1",
+      "eiken_grade": "igakubu_kokoritsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "国公立医学部生物 大問1 (3)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "ATP の構造と生体内でのエネルギー運搬の仕組みを説明せよ。", "answer": "(1) ATP (アデノシン三リン酸) の構造:\nアデニン (塩基) + リボース (糖) + 3 つのリン酸基 (三リン酸鎖)\n→ 「アデノシン-P~P~P」(P~P 結合は高エネルギーリン酸結合)\n\n(2) エネルギー運搬の仕組み:\n ATP → ADP + Pi (リン酸) + エネルギー (約 30 kJ/mol)\n 高エネルギーリン酸結合 (~) の加水分解で放出されたエネルギーが筋収縮・能動輸送・生合成などに使われる。\n\n(3) ATP の再生:\n 細胞呼吸 (グルコース酸化) や光合成によって ADP + Pi → ATP の再合成が行われる。\n 1分子のグルコースから最大 38 ATP が生成 (有酸素呼吸時)。\n\n(4) 生体内の ATP 量:\n 成人の体内 ATP は約 250 g だが、1 日に作られて消費される総量は約 65 kg (体重に匹敵)。回転率が極めて高い。", "explanation": "【医学部生物 ATP】① ATP は「エネルギー通貨」(currency of energy) ② 高エネルギーリン酸結合 ~P の加水分解で 30 kJ/mol 放出 ③ ATP ↔ ADP の循環で生体エネルギー需要を満たす ④ 1日 65 kg の回転は記憶しておく数値。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_basic",
+      "eiken_grade": "kyotsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "化学基礎 共通テスト型 (3) — 中和滴定",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "0.10 mol/L の NaOH 水溶液 50 mL を完全中和するのに必要な 0.10 mol/L の HCl の体積 [mL] は?", "choices": ["25", "50", "75", "100"], "answer": "1", "explanation": "NaOH + HCl → NaCl + H₂O (1:1 中和)。同濃度なので同体積 = 50 mL。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "次のうち pH < 7 を示す水溶液はどれか?", "choices": ["NaOH 水溶液", "NaCl 水溶液", "HCl 水溶液", "純水"], "answer": "2", "explanation": "酸性 = pH < 7。HCl は強酸 → pH < 7。NaOH は塩基性、NaCl は中性、純水は pH 7。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "pH = 2 の溶液中の [H⁺] [mol/L] は?", "choices": ["10⁻², 0.01", "10⁻⁴", "10⁻⁷", "10⁻¹²"], "answer": "0", "explanation": "pH = -log[H⁺] → [H⁺] = 10⁻ᵖᴴ = 10⁻² = 0.01 mol/L。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_basic_q",
+      "eiken_grade": "march_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "MARCH 理工系化学 (3)",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "標準状態で 5.6 L の酸素 O₂ の物質量は?", "choices": ["0.125 mol", "0.25 mol", "0.5 mol", "1 mol"], "answer": "1", "explanation": "n = V / 22.4 = 5.6 / 22.4 = 0.25 mol。標準状態気体 1 mol = 22.4 L。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "次のうち酸化還元反応はどれか?", "choices": ["NaCl + AgNO₃ → AgCl + NaNO₃", "Mg + 2 HCl → MgCl₂ + H₂", "HCl + NaOH → NaCl + H₂O", "CaCO₃ → CaO + CO₂"], "answer": "1", "explanation": "Mg (0) → Mg²⁺ (+2) で酸化、H⁺ (+1) → H₂ (0) で還元 → 酸化還元。他は中和、複分解、熱分解。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "電気分解で陰極に金属が析出するイオンはどれか?", "choices": ["Na⁺", "Cu²⁺", "K⁺", "Ca²⁺"], "answer": "1", "explanation": "イオン化傾向の小さい金属イオン (Cu²⁺、Ag⁺ 等) は陰極で還元され金属として析出。Na⁺、K⁺、Ca²⁺ などイオン化傾向大のものは陰極で析出せず、代わりに水が還元される (H₂ 発生)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_1a",
+      "eiken_grade": "kyotsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "数学I・A 共通テスト型 (3) — データの分析",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "データ {2, 4, 6, 8, 10} の平均値と分散は?", "choices": ["平均 6, 分散 8", "平均 6, 分散 10", "平均 5, 分散 8", "平均 6, 分散 4"], "answer": "0", "explanation": "平均 = (2+4+6+8+10)/5 = 30/5 = 6。\n偏差: -4, -2, 0, 2, 4 → 偏差の二乗: 16, 4, 0, 4, 16 → 和 40 → 分散 = 40/5 = 8。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "上記データの標準偏差は?", "choices": ["√8 = 2√2", "8", "4", "2"], "answer": "0", "explanation": "標準偏差 = √分散 = √8 = 2√2 ≈ 2.83。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "順列 ₅P₂ の値は?", "choices": ["10", "20", "60", "120"], "answer": "1", "explanation": "₅P₂ = 5 × 4 = 20 (順列・順序考慮)。組合せ ₅C₂ = 10 (順序無視)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_2b",
+      "eiken_grade": "kyotsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "数学II・B 共通テスト型 (3) — ベクトル",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "ベクトル a = (3, 4) の大きさは?", "choices": ["5", "7", "12", "25"], "answer": "0", "explanation": "|a| = √(3² + 4²) = √25 = 5。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "ベクトル a = (1, 2) と b = (3, -1) の内積 a · b は?", "choices": ["1", "5", "-1", "5"], "answer": "0", "explanation": "a · b = 1·3 + 2·(-1) = 3 - 2 = 1。【公式】a · b = a₁b₁ + a₂b₂。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "等差数列 5, 8, 11, ... の第 100 項は?", "choices": ["302", "305", "308", "311"], "answer": "0", "explanation": "公差 d = 3、a₁ = 5。a_n = a₁ + (n-1)d = 5 + 99·3 = 5 + 297 = 302。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_basic",
+      "eiken_grade": "march_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "MARCH 理工系数学 (3)",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "y = x² - 4x + 5 の最小値は?", "choices": ["1", "3", "5", "9"], "answer": "0", "explanation": "平方完成: y = (x - 2)² + 1。最小値 1 (x = 2 のとき)。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "lim(x→2) (x² - 4) / (x - 2) の値は?", "choices": ["0", "2", "4", "∞"], "answer": "2", "explanation": "x² - 4 = (x+2)(x-2) → (x² - 4)/(x - 2) = x + 2。x → 2 で 4。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "確率変数 X が一様分布 [0, 10] に従うとき、E[X] は?", "choices": ["0", "5", "10", "100"], "answer": "1", "explanation": "一様分布 [a, b] の期待値 = (a+b)/2 = (0+10)/2 = 5。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "keio_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "慶大理工数学 大問1 (3)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "f(x) = ln(1 + x) (x > -1) の x = 0 における 2次までのテイラー展開を求めよ。", "answer": "f(x) = ln(1 + x)\nf'(x) = 1/(1 + x)\nf''(x) = -1/(1 + x)²\n\nx = 0 で:\nf(0) = ln 1 = 0\nf'(0) = 1\nf''(0) = -1\n\nテイラー展開 (2次):\nf(x) ≈ f(0) + f'(0) x + (1/2) f''(0) x²\n     = 0 + x + (1/2)(-1) x²\n     = x - x²/2\n\n∴ ln(1 + x) ≈ x - x²/2 (x = 0 近傍)", "explanation": "【慶大理工微積】① テイラー展開 ② ln(1+x) = x - x²/2 + x³/3 - x⁴/4 + ... (Mercator 級数) ③ x が小さいとき近似 ln(1+x) ≈ x が頻用される。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "sophia_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "上智大理工数学 大問1 (3)",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "正六角形の内角の和は?", "choices": ["360°", "540°", "720°", "900°"], "answer": "2", "explanation": "n 角形の内角の和 = 180°(n - 2)。正六角形 (n = 6) → 180° × 4 = 720°。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "5! (5 の階乗) の値は?", "choices": ["20", "60", "120", "720"], "answer": "2", "explanation": "5! = 5 × 4 × 3 × 2 × 1 = 120。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "tan 30° の値は?", "choices": ["1/2", "1/√3 = √3/3", "√3", "1"], "answer": "1", "explanation": "tan 30° = sin 30° / cos 30° = (1/2) / (√3/2) = 1/√3 = √3/3 ≈ 0.577。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "igakubu_kokoritsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "国公立医学部数学 大問1 (3)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "確率変数 X が標準正規分布 N(0, 1) に従うとき、P(-1 < X < 1) を標準正規分布表 (Φ(1) ≈ 0.8413) を用いて求めよ。", "answer": "標準正規分布の対称性により:\nP(-1 < X < 1) = P(X < 1) - P(X < -1)\n          = Φ(1) - Φ(-1)\n          = Φ(1) - (1 - Φ(1)) (対称性: Φ(-x) = 1 - Φ(x))\n          = 2Φ(1) - 1\n          = 2 × 0.8413 - 1\n          = 0.6826 ≈ 68.3%\n\n∴ P(-1 < X < 1) ≈ 0.683 (= 68.3%)\n\n【参考】これが「68-95-99.7 ルール」の最初の数値: 標準偏差 ±1σ 内に 68%、±2σ 内に 95%、±3σ 内に 99.7% が分布。", "explanation": "【医学部数学・統計】① 標準正規分布 N(0,1) の累積関数 Φ ② 対称性 Φ(-x) = 1 - Φ(x) ③ 68-95-99.7 ルールは医学統計で頻用 (信頼区間・偏差値の根拠)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "igakubu_shiritsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "私立医学部数学 大問1 (3)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "サイコロを 100 回投げて、6 の目が出る回数 X の期待値 E[X] と分散 V[X] を求めよ。", "answer": "X ~ Binomial(n=100, p=1/6) (二項分布)\n\nE[X] = np = 100 × (1/6) = 100/6 ≈ 16.67\n\nV[X] = np(1-p) = 100 × (1/6) × (5/6) = 500/36 ≈ 13.89\n\n標準偏差 σ = √V ≈ 3.73\n\n意味: 100 回のうち平均 16-17 回 6 が出ると期待され、標準偏差 ±3.7 程度のばらつきがある。", "explanation": "【医学部統計】① 二項分布 X ~ B(n,p) の公式: E[X] = np、V[X] = np(1-p) ② 「成功」確率 p の試行を n 回独立に行ったとき、成功回数の分布 ③ n 大かつ p 中程度 → 正規分布で近似可能 (中心極限定理)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q2",
+      "eiken_grade": "keio_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "慶大理工数学 大問2 (3)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "極座標系で r = 1 + cos θ (0 ≤ θ < 2π) のグラフ (カージオイド・心臓形) で囲まれた領域の面積 S を求めよ。", "answer": "極座標の面積公式: S = (1/2) ∫₀^(2π) r² dθ\n\nS = (1/2) ∫₀^(2π) (1 + cos θ)² dθ\n  = (1/2) ∫₀^(2π) (1 + 2 cos θ + cos²θ) dθ\n\ncos²θ = (1 + cos 2θ)/2 (半角公式)\n\n= (1/2) ∫₀^(2π) (1 + 2 cos θ + (1 + cos 2θ)/2) dθ\n= (1/2) ∫₀^(2π) (3/2 + 2 cos θ + (cos 2θ)/2) dθ\n\n各項の積分 (0 → 2π):\n∫(3/2) dθ = 3π\n∫2 cos θ dθ = 0 (周期完了)\n∫(cos 2θ)/2 dθ = 0 (周期完了)\n\nS = (1/2) × 3π = 3π/2\n\n∴ S = 3π/2", "explanation": "【慶大理工微積】① 極座標面積公式 S = (1/2)∫r²dθ ② cos²θ の積分は半角公式で簡略化 ③ cos の周期積分は 0 ④ カージオイド面積 3π/2 は記憶しておく結果。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_basic",
+      "eiken_grade": "kyotsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "物理基礎 共通テスト型 (3)",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "電圧 100 V、抵抗 50 Ω の回路に流れる電流は?", "choices": ["0.5 A", "1 A", "2 A", "5 A"], "answer": "2", "explanation": "I = V/R = 100/50 = 2 A。オームの法則。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "上記回路の消費電力は?", "choices": ["50 W", "100 W", "150 W", "200 W"], "answer": "3", "explanation": "P = VI = 100 × 2 = 200 W。または P = I²R = 4 × 50 = 200 W。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "1 atm = 1.013 × 10⁵ Pa は何 hPa か?", "choices": ["10.13", "101.3", "1013", "10130"], "answer": "2", "explanation": "1 hPa = 100 Pa → 1.013 × 10⁵ Pa = 1013 hPa。気象 (天気予報) で使う単位。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_basic_q",
+      "eiken_grade": "march_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "MARCH 理工系物理 (3)",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "周波数 50 Hz の交流の周期は?", "choices": ["0.001 s", "0.02 s", "0.1 s", "1 s"], "answer": "1", "explanation": "T = 1/f = 1/50 = 0.02 s。日本東日本の標準商用電源は 50 Hz、西日本は 60 Hz。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "凸レンズの焦点距離 f = 20 cm。物体距離 a = 40 cm のとき像距離 b は?", "choices": ["20 cm", "40 cm", "60 cm", "80 cm"], "answer": "1", "explanation": "1/a + 1/b = 1/f → 1/40 + 1/b = 1/20 → 1/b = 1/20 - 1/40 = 1/40 → b = 40 cm。倍率 m = b/a = 1 (実像同寸)。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "0°C の氷 100 g を 0°C の水にするのに必要な熱量 (融解熱 = 334 J/g)?", "choices": ["3340 J", "33400 J", "334 J", "100 J"], "answer": "1", "explanation": "Q = m × L = 100 × 334 = 33400 J ≈ 33.4 kJ。融解時は温度変化なし (相変化のみ)。"}
+        ]
+      }
+    }
+  ]
+}

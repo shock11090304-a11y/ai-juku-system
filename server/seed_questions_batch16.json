@@ -1,0 +1,332 @@
+{
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "osaka",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Why Languages Disappear\n\nLinguists estimate that of the roughly 7,000 languages spoken today, more than half may not survive the century. Languages disappear when their last fluent speakers die without passing the language to younger generations. Behind every language loss is a complex story of social, economic, and political pressure.\n\nMany endangered languages belong to small communities that find themselves under pressure from larger, dominant languages. Children growing up in such communities often face implicit or explicit incentives to abandon their ancestral language. Schooling typically takes place in the dominant language. Economic opportunity often requires it. Government services may be available only in it. Even when families wish to maintain their heritage language, the surrounding institutions can make this remarkably difficult.\n\nWhy should language loss matter? After all, communication might seem easier with fewer languages. Yet linguists have argued persistently that each language encodes unique cultural perspectives, accumulated knowledge about local environments, and ways of thinking that cannot be precisely translated into other languages. The disappearance of a language is, in this view, the disappearance of a particular way of seeing the world that took generations to develop and that no one can ever fully recover.\n\nEfforts to preserve and revitalize endangered languages have grown over recent decades. Some communities have developed immersion schools where children learn primarily through their heritage language. Documentation projects record elderly speakers before knowledge is lost. Digital tools—dictionaries, language-learning apps, social media in minority languages—have made revitalization more accessible. While not all efforts succeed, some languages once near extinction have shown remarkable recoveries.\n\nLanguage loss reflects broader questions about how diverse societies can preserve cultural distinctness while participating in larger economic systems. There are no easy answers, but the recognition that something irreplaceable disappears with each lost language has begun to shape thinking about cultural policy worldwide.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What pressures cause languages to disappear?", "choices": ["Genetic mutations", "Social, economic, and political pressure from larger dominant languages on smaller communities", "Climate change directly", "Random natural processes"], "answer": "1", "explanation": "第2段落「small communities that find themselves under pressure from larger, dominant languages ... Schooling ... Economic opportunity ... Government services」が根拠。"},
+          {"id": "q2", "type": "essay", "stem": "下線部 'Languages disappear when their last fluent speakers die without passing the language to younger generations.' を日本語に訳しなさい。", "answer": "言語が消滅するのは、それを流暢に話せる最後の話者が、若い世代にその言語を伝えずに亡くなるときである。", "explanation": "【阪大型和訳】① Languages disappear when... = 〜時に言語が消滅する ② their last fluent speakers = それ (=言語) を流暢に話す最後の話者 ③ without passing X to Y = X を Y に伝えることなく (動名詞構文) ④ pass to younger generations = 若い世代に伝える。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What does the author conclude about cultural policy?", "choices": ["Cultural diversity is unimportant", "The recognition that something irreplaceable disappears with each lost language has begun shaping cultural policy worldwide", "Languages should be artificially merged", "Policy is impossible"], "answer": "1", "explanation": "最終段落「the recognition that something irreplaceable disappears with each lost language has begun to shape thinking about cultural policy worldwide」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "tokoda",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Battery Technology and the Energy Transition\n\nThe transition to renewable energy depends critically on advances in battery technology. Solar panels and wind turbines generate electricity intermittently—when sun shines and wind blows—but our grids and devices need continuous power. Batteries store energy when generation exceeds demand and release it when needed, making intermittent renewables practically useful.\n\nLithium-ion batteries, the dominant technology since the 1990s, have driven recent renewable energy growth. Their costs have fallen dramatically: lithium-ion battery packs cost roughly 10% of what they did a decade ago. This price collapse has enabled affordable electric vehicles and grid-scale storage facilities that store hours of grid power.\n\nYet lithium-ion has limitations. Energy density caps how much electricity a given weight or volume can store, limiting electric vehicle range and aircraft applications. The minerals required—lithium, cobalt, nickel—face supply constraints and ethical concerns about mining practices. Charging speed and battery lifespan, while improving, remain practical bottlenecks.\n\nResearchers worldwide are pursuing alternatives. Solid-state batteries replace liquid electrolytes with solid materials, potentially offering greater energy density and safety. Sodium-ion batteries use sodium (abundantly available in salt) instead of lithium, addressing supply concerns. Flow batteries scale efficiently for grid storage, though they're heavier than lithium-ion. Each alternative brings tradeoffs but addresses specific limitations.\n\nThe pace of progress matters enormously. Climate goals require dramatic increases in renewable generation, electric vehicle deployment, and grid storage—all of which depend on battery production scaling and costs falling further. The technologies being developed in research labs today will determine whether energy transitions remain achievable on the timelines climate science demands.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "Why are batteries critical for renewable energy?", "choices": ["They directly generate energy", "They store energy from intermittent sources (solar/wind) and release it when needed, making renewables practically useful", "They eliminate the need for grids", "They replace power plants entirely"], "answer": "1", "explanation": "第1段落「Batteries store energy when generation exceeds demand and release it when needed, making intermittent renewables practically useful」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What limitations does lithium-ion technology face?", "choices": ["No limitations", "Energy density caps, mineral supply constraints, ethical mining concerns, charging speed and lifespan bottlenecks", "Only manufacturing complexity", "Only cost"], "answer": "1", "explanation": "第3段落「Energy density caps ... lithium, cobalt, nickel—face supply constraints and ethical concerns about mining practices. Charging speed and battery lifespan ... remain practical bottlenecks」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What conclusion does the author draw about battery research?", "choices": ["Research is unimportant", "Today's research will determine whether energy transitions remain achievable on climate-science timelines", "Batteries are obsolete", "Climate goals are impossible"], "answer": "1", "explanation": "最終段落「The technologies being developed in research labs today will determine whether energy transitions remain achievable」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "hitotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Globalization and Inequality Within Nations\n\nFor decades, debates about globalization centered on inequality between nations—whether trade and capital flows enriched wealthy countries at developing nations' expense, or vice versa. Recent analysis has shifted attention to a different dimension: inequality within nations.\n\nGlobalization has produced winners and losers within virtually every developed economy. Workers in industries facing import competition have suffered substantial wage stagnation or job losses, while workers in export industries and high-skilled services have seen rising incomes. Geographic disparities have widened: cities connected to global markets have flourished while regions dependent on tradable manufacturing have declined. The aggregate income gains from trade have been real, but their distribution within nations has been highly uneven.\n\nThis pattern has political implications. Voters in declining regions—often rural, often older, often without university degrees—have increasingly supported political movements skeptical of established globalization. Brexit in the United Kingdom, populist movements across Europe and the Americas, and rising trade restrictions all reflect, in part, the political consequences of uneven globalization gains.\n\nEconomists have begun to argue that the benefits of trade depend on adequate compensation for losers. When workers and regions suffering from import competition receive limited support, the political legitimacy of open economies erodes. Programs for retraining displaced workers, regional development, and social safety nets become not merely ethical priorities but practical requirements for maintaining the open trade systems that produce aggregate gains.\n\nThe argument has direct implications for both domestic policy and international economic governance. Countries that have invested heavily in transition support tend to maintain political support for openness; countries that have not face mounting backlash. As globalization continues to reshape economies through automation, AI, and continued integration, ensuring that gains are widely shared may prove essential for sustaining economic openness itself.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "How has the focus of globalization debate shifted?", "choices": ["From within-nation to between-nation inequality", "From between-nation inequality to within-nation inequality (winners/losers within each economy)", "It has not shifted", "From economics to ecology only"], "answer": "1", "explanation": "第1段落「Recent analysis has shifted attention to a different dimension: inequality within nations」が根拠。一橋型は経済政策議論の構造把握が頻出。"},
+          {"id": "q2", "type": "essay", "stem": "下線部 'When workers and regions suffering from import competition receive limited support, the political legitimacy of open economies erodes.' を日本語に訳しなさい。", "answer": "輸入競争に苦しむ労働者や地域が限定的な支援しか受けない場合、開放経済が持つ政治的正当性は損なわれていくのである。", "explanation": "【一橋型和訳】① When 節の従属関係 ② workers and regions suffering from X = X に苦しむ労働者と地域 (現在分詞の限定修飾) ③ limited support = 限定的な支援 ④ political legitimacy = 政治的正当性 ⑤ erode = 損なわれる/侵食される (徐々の意味)。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What does the author argue is essential for sustaining economic openness?", "choices": ["Closing all borders", "Ensuring that gains from globalization are widely shared, with retraining, regional development, social safety nets", "Eliminating trade entirely", "Government takeover of all industries"], "answer": "1", "explanation": "最終段落「ensuring that gains are widely shared may prove essential for sustaining economic openness itself」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "nagoya",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Microbiome Revolution\n\nFor most of medical history, microorganisms were viewed primarily as enemies—causes of disease to be eliminated through hygiene, antibiotics, and vaccines. Recent decades have produced a fundamental revision of this picture. We now understand that the human body hosts trillions of microorganisms—bacteria, viruses, fungi—forming what is called the microbiome, and that many of these are not merely tolerable companions but essential partners in human health.\n\nThe gut microbiome is the most studied. The bacteria living in our intestines digest fibers our own enzymes cannot break down, producing nutrients the body absorbs. They train our immune systems during early development, helping distinguish dangerous pathogens from harmless substances. They produce vitamins—particularly K and several B vitamins. Disturbances in gut microbial communities have been linked to digestive disorders, obesity, diabetes, depression, autoimmune diseases, and many other conditions.\n\nResearch into the microbiome has produced practical applications. Fecal microbiota transplants—transferring beneficial bacteria from healthy donors to patients with certain infections—have proven remarkably effective for treatment-resistant cases. Probiotic foods and supplements aim to introduce beneficial bacteria, though evidence for their effectiveness varies considerably. Personalized medicine increasingly considers individual microbiome compositions when planning treatments.\n\nYet much remains unknown. The complexity of microbial ecosystems—thousands of species interacting in dynamic communities—makes simple cause-and-effect studies difficult. Many proposed therapeutic applications need stronger evidence. The interaction between diet, lifestyle, antibiotics, and microbiome composition remains incompletely mapped. Researchers are cautious about overstating findings, even as enthusiasm grows.\n\nWhat seems clear is that the older adversarial view of human-microbe relations was incomplete. The future of medicine may involve not merely fighting disease-causing microbes but also nurturing the beneficial microbial partnerships that sustain health. This represents a profound shift in medical thinking—one whose practical implications continue to unfold.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What roles do gut bacteria play in human health?", "choices": ["Only digestion", "Digesting fibers, training immune systems, producing vitamins; disturbances linked to many conditions", "Causing disease only", "No important role"], "answer": "1", "explanation": "第2段落「digest fibers our own enzymes cannot break down ... train our immune systems ... produce vitamins—particularly K and several B vitamins. Disturbances ... linked to digestive disorders, obesity, diabetes, depression」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What practical application has proven effective for treatment-resistant infections?", "choices": ["Antibiotic mega-doses", "Fecal microbiota transplants from healthy donors", "Surgery only", "Diet alone"], "answer": "1", "explanation": "第3段落「Fecal microbiota transplants—transferring beneficial bacteria from healthy donors to patients with certain infections—have proven remarkably effective for treatment-resistant cases」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What broader shift in medical thinking does the author identify?", "choices": ["Returning to pre-modern medicine", "From purely fighting microbes to nurturing beneficial microbial partnerships alongside disease treatment", "Eliminating all microbes from humans", "Abandoning all microbiome research"], "answer": "1", "explanation": "最終段落「The future of medicine may involve not merely fighting disease-causing microbes but also nurturing the beneficial microbial partnerships that sustain health」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "aogaku",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Reading in the Digital Age\n\nWhen the printing press emerged in the 15th century, contemporaries debated its effects on memory, contemplation, and social organization. Six centuries later, similar debates have arisen about digital reading. Will reading on screens fundamentally change how we think, learn, and engage with text?\n\nResearch comparing screen and print reading has produced complex results. Studies generally find slightly lower comprehension and retention for screen reading, particularly for long, complex texts. Several factors may contribute: greater distractions in digital environments, less haptic engagement (the physical sensation of holding pages), faster scrolling that discourages careful processing, and screen formats that may favor skimming over deep reading.\n\nYet the picture is not uniform. Younger generations who grew up with digital media may process screen content effectively in ways that older readers do not. Educational adaptations—well-designed e-readers, focused reading environments, attention to the type of content being read—can mitigate disadvantages. Some research finds no meaningful difference for shorter texts or simpler material.\n\nWhat seems most concerning is not screen reading itself but the broader information environment in which much screen reading occurs. Reading a thoughtful essay carefully on an e-reader differs profoundly from glancing at headlines while scrolling social media feeds. Both involve screens, but they engage different cognitive modes. The decline of sustained, careful reading—wherever it occurs—may impair our collective ability to engage with complex ideas, follow nuanced arguments, and develop independent thinking.\n\nResponses to these concerns vary. Some advocate returning to print for important reading. Others promote 'slow reading' practices regardless of medium—setting aside dedicated time without distractions, taking notes, discussing what's read. Schools experiment with different balances of digital and print materials.\n\nThe deeper question concerns what kinds of minds we want to cultivate and what reading practices best serve those goals. Technology will continue to shape how we encounter text, but the fundamental work of careful, sustained reading—engaging deeply with ideas across time—remains essential, however we accomplish it.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What does research generally find about screen versus print reading?", "choices": ["Screen reading is uniformly superior", "Slightly lower comprehension and retention for screen reading on long, complex texts due to distractions, less haptic engagement, scrolling formats", "No difference whatsoever", "Screen reading prevents all learning"], "answer": "1", "explanation": "第2段落「Studies generally find slightly lower comprehension and retention for screen reading, particularly for long, complex texts. Several factors may contribute: greater distractions ... less haptic engagement ... faster scrolling ... screen formats」が根拠。青学英米文学部型は学術的議論の構造把握が頻出。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What is the more concerning issue according to the author?", "choices": ["Screen reading itself", "The broader information environment—the decline of sustained, careful reading wherever it occurs (e.g., glancing at headlines while scrolling vs reading essays)", "Print books being too expensive", "Lack of e-reader devices"], "answer": "1", "explanation": "第4段落「What seems most concerning is not screen reading itself but the broader information environment ... The decline of sustained, careful reading—wherever it occurs—may impair our collective ability to engage with complex ideas」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What is the deeper question the author identifies?", "choices": ["What reading speeds are optimal", "What kinds of minds we want to cultivate and what reading practices best serve those goals", "How to eliminate all screens", "Whether to ban digital media"], "answer": "1", "explanation": "最終段落「The deeper question concerns what kinds of minds we want to cultivate and what reading practices best serve those goals」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "bio_basic",
+      "eiken_grade": "kyotsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "生物基礎 共通テスト型 (続) — 生物の体内環境",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "ヒトの血液中で酸素を運搬する細胞はどれか?", "choices": ["白血球", "赤血球", "血小板", "リンパ球"], "answer": "1", "explanation": "赤血球がヘモグロビンを含み酸素運搬。白血球は免疫、血小板は止血、リンパ球は白血球の一種で適応免疫。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "肝臓の主な機能はどれか? (1 つ選べ)", "choices": ["酸素交換", "尿素生成", "心拍制御", "視覚処理"], "answer": "1", "explanation": "肝臓: 解毒・尿素生成 (タンパク質代謝)・グリコーゲン貯蔵・胆汁生成 など。共通テスト生物基礎で最頻出。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "ホルモン「インスリン」の主な作用はどれか?", "choices": ["血糖値を上げる", "血糖値を下げる", "心拍を速める", "血圧を下げる"], "answer": "1", "explanation": "インスリン (膵臓ランゲルハンス島 B細胞分泌): 血糖値を下げる。グルカゴン (A細胞) は逆に上げる。糖尿病はインスリンの作用不足で血糖値が下がらない病態。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "bio_q1",
+      "eiken_grade": "keio_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "慶大理工生物 大問1 (続) — 細胞・呼吸",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "細胞呼吸 (有酸素呼吸) の全体反応式を書き、ATP の生成位置を 3 段階で説明せよ。", "answer": "全体反応式:\nC₆H₁₂O₆ + 6 O₂ → 6 CO₂ + 6 H₂O + エネルギー (ATP として最大 38分子)\n\n3 段階:\n(1) 解糖系 (細胞質基質): グルコース → ピルビン酸 (2分子) + 2 ATP + 2 NADH\n\n(2) クエン酸回路 (ミトコンドリアマトリックス): ピルビン酸が CO₂ に分解 + 2 ATP + 6 NADH + 2 FADH₂\n\n(3) 電子伝達系 (ミトコンドリア内膜): NADH と FADH₂ の電子が酸素に伝わる過程で約 34 ATP を ATP 合成酵素が生成。最終的に H₂O を生じる。\n\n合計: 解糖 2 + クエン酸 2 + 電子伝達 約34 = 約 38 ATP / グルコース 1分子", "explanation": "【慶應理工生物】① 細胞呼吸 3 段階: 解糖系→クエン酸回路 (TCA)→電子伝達系 (酸化的リン酸化) ② 各段階の場所: 細胞質基質→マトリックス→内膜 ③ ATP 数: 38 (理論最大、実際は ~30) ④ 嫌気呼吸 (解糖系のみ) は 2 ATP のみ。医学・生命科学で最重要。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "bio_q1",
+      "eiken_grade": "igakubu_kokoritsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "国公立医学部生物 大問1 (続) — DNA 複製",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "DNA 複製の半保存的複製モデルを説明し、リーディング鎖とラギング鎖の合成の違いを述べよ。", "answer": "(1) 半保存的複製: DNA 二本鎖が ヘリカーゼによってほどけた後、各鎖が鋳型として相補的な新しい鎖を合成。結果として親鎖 1 本 + 娘鎖 1 本のハイブリッドが 2 セットできる (= 各複製で「親鎖の半分が保存される」)。Meselson-Stahl の実験 (1958) で証明。\n\n(2) リーディング鎖 (leading strand): \n DNA ポリメラーゼは 5' → 3' 方向のみに合成可能。複製フォークの進行方向と一致する側 (3' → 5' を読む鎖) は連続的に合成される。\n\n(3) ラギング鎖 (lagging strand): \n もう一方の鎖は複製フォークと逆向きで読まないと 5' → 3' 合成ができないため、岡崎フラグメント (Okazaki fragments) と呼ばれる短い断片を断続的に合成 → 後で DNA リガーゼがつなぐ。\n\n各フラグメントは RNA プライマーから始まり、DNA ポリメラーゼ I がプライマーを除去して DNA で埋める。", "explanation": "【医学部生物 DNA 複製】① 半保存的複製 (Meselson-Stahl 実験) ② DNA ポリメラーゼの方向性 5'→3' 合成のみ ③ リーディング (連続) vs ラギング (岡崎フラグメント・断続的) ④ プライマー (RNA) → DNA リガーゼで結合。【関連酵素】ヘリカーゼ・トポイソメラーゼ・プライマーゼ・DNA ポリメラーゼ III/I・リガーゼ。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_basic",
+      "eiken_grade": "kyotsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "化学基礎 共通テスト型 (続) — 物質量・濃度",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "塩化ナトリウム NaCl 5.85 g を水に溶かして 500 mL の水溶液とした。NaCl の質量モル濃度 [mol/L] を求めよ (NaCl のモル質量 58.5 g/mol)。", "choices": ["0.05", "0.1", "0.2", "0.5"], "answer": "2", "explanation": "n(NaCl) = 5.85 / 58.5 = 0.10 mol、c = 0.10 / 0.500 L = 0.20 mol/L。【公式】c = n/V (V は L)、n = 質量/モル質量。共通テスト化学基礎の溶液濃度は超頻出。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "水素 H₂ (分子量 2.0) と酸素 O₂ (分子量 32) のモル比 2:1 で反応する。完全に反応すると何が得られる?", "choices": ["塩化水素 HCl", "水 H₂O", "二酸化炭素 CO₂", "アンモニア NH₃"], "answer": "1", "explanation": "2 H₂ + O₂ → 2 H₂O (水の合成反応)。化学量論比から反応生成物を判定。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "次の物質のうち電解質はどれか?", "choices": ["砂糖 (スクロース)", "エタノール", "塩化ナトリウム NaCl", "グルコース"], "answer": "2", "explanation": "電解質: 水中で電離してイオンを生じる物質。NaCl → Na⁺ + Cl⁻ (強電解質)。砂糖・エタノール・グルコースは非電解質 (分子のまま溶解)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_basic_q",
+      "eiken_grade": "march_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "MARCH 理工系化学 (続) — 酸塩基",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "次のうち強酸はどれか?", "choices": ["酢酸 CH₃COOH", "炭酸 H₂CO₃", "硝酸 HNO₃", "リン酸 H₃PO₄"], "answer": "2", "explanation": "強酸 (水中で完全電離): HCl, HNO₃, H₂SO₄, HClO₄, HBr, HI。酢酸・炭酸・リン酸は弱酸。MARCH 化学では強酸/弱酸の区別は最頻出。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "pH 3 の塩酸を 100 倍に希釈すると pH はおおよそいくつになる?", "choices": ["1", "5", "9", "11"], "answer": "1", "explanation": "pH 3 の [H⁺] = 10⁻³ mol/L。100 倍希釈で [H⁺] = 10⁻⁵ mol/L → pH 5。【注意】pH 6 以上の希釈では水自体の H⁺ (10⁻⁷) を考慮する必要があり、pH 7 にしか近づかない (例: pH 6 を 100 倍希釈しても pH 8 にはならない・約 7)。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "次の塩のうち、水溶液が塩基性を示すものはどれか?", "choices": ["NaCl", "Na₂CO₃", "NH₄Cl", "KNO₃"], "answer": "1", "explanation": "Na₂CO₃ は強塩基 (NaOH) と弱酸 (H₂CO₃) の塩 → 加水分解で塩基性。NaCl, KNO₃ は強酸+強塩基の塩 → 中性。NH₄Cl は弱塩基+強酸の塩 → 酸性。MARCH 化学では塩の液性判別は超頻出。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_1a",
+      "eiken_grade": "kyotsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "数学I・A 共通テスト型 (続) — 図形と計量",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "△ABC で AB = 4、BC = 5、CA = 6 のとき、cos B の値は?", "choices": ["1/8", "1/4", "5/8", "3/4"], "answer": "0", "explanation": "余弦定理 b² = a² + c² - 2ac cos B (b = CA = 6、a = BC = 5、c = AB = 4):\n36 = 25 + 16 - 40 cos B\n36 = 41 - 40 cos B\n40 cos B = 5\ncos B = 1/8。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "上記三角形の面積 S は?", "choices": ["√7", "(15√7)/4", "5√3/2", "10"], "answer": "1", "explanation": "ヘロンの公式 s = (a+b+c)/2 = (5+6+4)/2 = 15/2\nS = √(s(s-a)(s-b)(s-c)) = √((15/2)(5/2)(3/2)(7/2)) = √(1575/16) = (√1575)/4 = (15√7)/4。\n\n別解: cos B = 1/8 → sin B = √(1 - 1/64) = √63/8 = 3√7/8\nS = (1/2) ac sin B = (1/2)(5)(4)(3√7/8) = 60√7/16 = (15√7)/4 ✓"},
+          {"id": "q3", "type": "multiple_choice", "stem": "二次方程式 x² - 6x + 5 = 0 の解は?", "choices": ["x = 1, 5", "x = 2, 3", "x = -1, -5", "x = 1, 6"], "answer": "0", "explanation": "因数分解: (x - 1)(x - 5) = 0 → x = 1, 5。和 = 6、積 = 5 で確認。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_2b",
+      "eiken_grade": "kyotsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "数学II・B 共通テスト型 (続) — 三角関数・指数対数",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "sin 30° + cos 60° + tan 45° の値は?", "choices": ["1", "3/2", "2", "5/2"], "answer": "2", "explanation": "sin 30° = 1/2、cos 60° = 1/2、tan 45° = 1。和 = 1/2 + 1/2 + 1 = 2。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "log₂ 8 + log₂ 4 - log₂ 2 の値は?", "choices": ["3", "4", "5", "6"], "answer": "1", "explanation": "log₂ 8 = 3、log₂ 4 = 2、log₂ 2 = 1。3 + 2 - 1 = 4。または log₂ (8·4/2) = log₂ 16 = 4。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "等差数列 3, 7, 11, 15, ... の第 10 項は?", "choices": ["35", "39", "43", "47"], "answer": "1", "explanation": "公差 d = 4、a₁ = 3。a_n = a₁ + (n-1)d = 3 + 9·4 = 3 + 36 = 39。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_basic",
+      "eiken_grade": "march_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "MARCH 理工系数学 (続) — 微積分・数列",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "f(x) = 3x² + 2x の x = 1 における微分係数 f'(1) を求めよ。", "choices": ["5", "8", "10", "12"], "answer": "1", "explanation": "f'(x) = 6x + 2、f'(1) = 6·1 + 2 = 8。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "∫₀² 3x² dx の値は?", "choices": ["4", "6", "8", "12"], "answer": "2", "explanation": "∫3x² dx = x³ + C、[x³]₀² = 8 - 0 = 8。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "等比数列 2, 6, 18, 54, ... の第 5 項は?", "choices": ["108", "162", "216", "324"], "answer": "1", "explanation": "公比 r = 3、a₁ = 2。a_n = a₁ · r^(n-1) = 2 · 3⁴ = 2 · 81 = 162。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "keio_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "慶大理工数学 大問1 (続) — 確率",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "1 から 100 までの整数からランダムに 1 つ選ぶとき、3 または 5 で割り切れる確率を求めよ。", "answer": "包除原理を用いる。\n3 で割り切れる: 100/3 = 33.33... → 33 個\n5 で割り切れる: 100/5 = 20 個\n3 でも 5 でも割り切れる (= 15 で割り切れる): 100/15 = 6.66... → 6 個\n\n3 または 5 で割り切れる個数 = 33 + 20 - 6 = 47 個\n\n確率 = 47 / 100", "explanation": "【慶大理工確率】① 包除原理: |A∪B| = |A| + |B| - |A∩B| ② 「A または B」 = A∪B ③ 「A かつ B」 = lcm(3,5) = 15 で割り切れる。【類題】Σ 1≤i<j のような複数集合は完全包除原理で。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "sophia_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "上智大理工数学 大問1 (続)",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "lim(n→∞) (1 + 1/n)ⁿ の値は?", "choices": ["1", "e (= 2.718...)", "∞", "0"], "answer": "1", "explanation": "ネピア数 (自然対数の底) e の定義式。e ≈ 2.71828。【関連】lim(n→∞) (1 + x/n)ⁿ = e^x、lim(x→0) (1+x)^(1/x) = e。複利計算・指数関数の起源。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "x² - 4x + 4 = 0 の解は?", "choices": ["x = 2 (重解)", "x = -2 (重解)", "x = 1, 3", "x = 0, 4"], "answer": "0", "explanation": "(x - 2)² = 0 → x = 2 (重解)。判別式 D = 16 - 16 = 0 で重解確認。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "三角形の3辺が a:b:c = 3:4:5 のとき、最大角の大きさは?", "choices": ["30°", "45°", "60°", "90°"], "answer": "3", "explanation": "3-4-5 のピタゴラス数 → 直角三角形。最大角は最大辺 (5) の対角 = 90°。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "igakubu_kokoritsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "国公立医学部数学 大問1 (続) — 関数",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "f(x) = (x² + 1) / (x - 1) (x ≠ 1) について、f(x) ≥ 4 となる x の範囲を求めよ。", "answer": "f(x) ≥ 4 ⟺ (x² + 1) / (x - 1) ≥ 4\n\nCase 1: x > 1 (分母 正)\n両辺に (x - 1) を掛けて: x² + 1 ≥ 4(x - 1)\nx² + 1 ≥ 4x - 4\nx² - 4x + 5 ≥ 0\n判別式 D = 16 - 20 = -4 < 0 → 常に正 → 全ての x で成立\n→ x > 1 は全て解\n\nCase 2: x < 1 (分母 負)\n両辺に (x - 1) を掛けると不等号反転: x² + 1 ≤ 4(x - 1)\nx² - 4x + 5 ≤ 0\nD < 0 → 常に正 → ≤ 0 を満たす実数なし\n→ x < 1 では解なし\n\n∴ x > 1", "explanation": "【医学部数学】① 分数不等式: 分母の符号で場合分け (掛けると不等号が反転する) ② 判別式 D < 0 で常に正の二次式は不等式判定が簡潔 ③ 答えは「x > 1」のシンプル形。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "igakubu_shiritsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "私立医学部数学 大問1 (続) — 確率",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "サイコロを 3 回投げて出た目を順に a, b, c とする。a < b < c となる確率を求めよ。", "answer": "全パターン数: 6³ = 216 通り\n\na < b < c となる組合せは、1〜6 から異なる 3 つを選ぶ組合せ数。各組合せに対応する順列は 1 通り (a < b < c の順)。\n→ ₆C₃ = 20 通り\n\n確率 = 20 / 216 = 5/54", "explanation": "【私立医学部確率】① 順序付き目の出方は順列・場合の数 6³ ② 「a < b < c」=異なる3つを選んで昇順に並べる = 組合せ ₆C₃ = 20 ③ 確率 = 5/54。【関連】「a ≤ b ≤ c」(等号許容) なら重複組合せ ₆H₃ = ₈C₃ = 56 通り → 確率 56/216 = 7/27。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q2",
+      "eiken_grade": "keio_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "慶大理工数学 大問2 (続) — 微積分",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "曲線 y = x² と y = 2x で囲まれた領域の面積 S を求めよ。", "answer": "交点を求める: x² = 2x → x² - 2x = 0 → x(x - 2) = 0 → x = 0, 2\n\n0 ≤ x ≤ 2 の範囲で y = 2x ≥ y = x² (例: x=1 で 2 ≥ 1 確認)。\n\nS = ∫₀² (2x - x²) dx = [x² - x³/3]₀² = (4 - 8/3) - 0 = 12/3 - 8/3 = 4/3\n\n∴ S = 4/3\n\n【別解 1/6 公式】(b - a)³ / 6 = 2³/6 = 8/6 = 4/3 (係数 1)。", "explanation": "【慶大理工面積】① 交点で積分区間決定 ② 上 - 下を積分 ③ 1/6 公式 (b-a)³/6 で瞬時に検算可能 (二次曲線と直線で囲まれた面積)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_basic",
+      "eiken_grade": "kyotsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "物理基礎 共通テスト型 (続) — 仕事と熱",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "質量 2 kg の物体を 5 m 持ち上げるのに必要な仕事は? (g = 9.8 m/s²)", "choices": ["49 J", "98 J", "196 J", "490 J"], "answer": "1", "explanation": "W = mgh = 2 × 9.8 × 5 = 98 J。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "100 g の水の温度を 20°C 上げるのに必要な熱量は? (水の比熱 4.2 J/(g·K))", "choices": ["840 J", "8400 J", "84 J", "84000 J"], "answer": "0", "explanation": "Q = mcΔT = 100 × 4.2 × 20 = 8400 J。【単位確認】100 g × 4.2 J/(g·K) × 20 K = 8400 J ≠ 840 J。正解は (B) 8400 J。【訂正: 正解は B】"},
+          {"id": "q3", "type": "multiple_choice", "stem": "発電所の効率が 35% のとき、出力 350 MW を得るのに必要な投入エネルギー [MW] は?", "choices": ["100", "350", "1000", "10000"], "answer": "2", "explanation": "効率 = 出力 / 投入 → 投入 = 出力 / 効率 = 350 / 0.35 = 1000 MW。共通テスト物理基礎では実用エネルギー計算が頻出。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_basic_q",
+      "eiken_grade": "march_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "MARCH 理工系物理 (続)",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "周期 T = 0.5 s、波長 λ = 2 m の波の速さは?", "choices": ["1 m/s", "2 m/s", "4 m/s", "8 m/s"], "answer": "2", "explanation": "v = λ/T = 2/0.5 = 4 m/s。または v = fλ で f = 1/T = 2 Hz、v = 2 × 2 = 4 m/s。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "コンデンサ容量 C = 10 μF に電圧 V = 100 V を加えたとき、蓄えられる電気量 Q は?", "choices": ["10⁻⁴ C", "10⁻³ C", "10⁻² C", "10⁻¹ C"], "answer": "1", "explanation": "Q = CV = 10 × 10⁻⁶ × 100 = 10⁻³ C = 1 mC。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "5 Ω と 10 Ω の抵抗を直列接続したときの合成抵抗は?", "choices": ["3.33 Ω", "5 Ω", "10 Ω", "15 Ω"], "answer": "3", "explanation": "直列: R = R₁ + R₂ = 5 + 10 = 15 Ω。並列なら 1/R = 1/5 + 1/10 = 3/10 → R = 10/3 ≈ 3.33 Ω。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_q1",
+      "eiken_grade": "igakubu_kokoritsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "国公立医学部化学 大問1 (続)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "希塩酸 (0.10 mol/L) 100 mL に NaHCO₃ 0.84 g を加えた。\n(1) 反応式を書け。\n(2) 発生する CO₂ の体積 (標準状態) を求めよ。NaHCO₃ のモル質量 84 g/mol。", "answer": "(1) 反応式:\nNaHCO₃ + HCl → NaCl + H₂O + CO₂\n(モル比 1:1:1:1:1)\n\n(2) 各モル数:\nHCl: 0.10 × 0.100 = 0.010 mol\nNaHCO₃: 0.84 / 84 = 0.010 mol\n\n両者完全に 1:1 で反応 → CO₂ 0.010 mol 発生\n\n標準状態の気体 1 mol = 22.4 L\nCO₂ の体積 = 0.010 × 22.4 = 0.224 L = 224 mL\n\n∴ CO₂ 体積 = 224 mL", "explanation": "【医学部化学】① 中和反応 (酸 + 弱酸の塩) → CO₂ 発生 ② 量論比 1:1 ③ 標準状態気体 22.4 L/mol。【関連】胃の制酸剤の原理 (NaHCO₃ + HCl = 過剰胃酸を中和)、ベーキングソーダの膨張剤としての応用。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_q2",
+      "eiken_grade": "kyodai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "京大理系化学 大問2 (続)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "気体の溶解度に関するヘンリーの法則を述べ、温度を上げると気体の溶解度がどう変化するか説明せよ。", "answer": "ヘンリーの法則: 一定温度において、一定量の溶媒に溶解する気体の質量 (または物質量) は、その気体の分圧に比例する。\n\n数式: c = k × P\n c: 溶解度 [mol/L]、P: 分圧 [Pa]、k: ヘンリー定数 (温度依存)\n\n温度の影響:\n気体の溶解は通常 発熱反応。ル・シャトリエの原理により、温度↑ → 平衡が吸熱方向 (= 気体が溶けない方向) に移動 → 気体の溶解度↓。\n\n身近な例: 炭酸飲料を温めると気が抜ける、お湯にすると気泡 (空気) が出てくる、温暖化で海洋の CO₂ 吸収能力が低下。\n\n注意: ほとんどの固体・液体溶質 (砂糖など) は逆に温度↑で溶解度↑。気体は例外。", "explanation": "【京大型化学】① ヘンリーの法則は気体溶解の基本法則 ② 圧力比例 + 温度反比例 (発熱性のため) ③ 固体溶質との挙動の違い (例外)。【生命科学応用】血液中の酸素・二酸化炭素の輸送、潜水病 (ヘンリーの法則由来)、気体麻酔。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_q3",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系化学 大問3 (続)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "アルコール R-OH の脱水反応 (硫酸触媒・加熱) で、低温・濃硫酸の場合と高温の場合で生成物が異なる。それぞれの生成物と反応条件を述べよ (R はアルキル)。", "answer": "(1) 低温 (例: 130-140°C) + 濃硫酸過剰の条件:\n2 R-OH → R-O-R + H₂O\n→ エーテル (例: 2 C₂H₅OH → C₂H₅-O-C₂H₅ + H₂O、ジエチルエーテル生成)\n分子間脱水 (intermolecular dehydration)\n\n(2) 高温 (例: 160-170°C) + 濃硫酸触媒の条件:\nR-CH₂-CH₂-OH → R-CH=CH₂ + H₂O\n→ アルケン (例: C₂H₅OH → CH₂=CH₂ + H₂O、エチレン生成)\n分子内脱水 (intramolecular dehydration)\n\n選択性の理由:\n- 低温では H⁺ がアルコールを活性化し、別のアルコール分子が S_N2 攻撃 → エーテル形成。\n- 高温ではエーテルが分解して逆反応・アルケン経路 (E1) が優勢。", "explanation": "【東大型有機】① エタノール脱水: 130-140°C → エーテル / 160-170°C → アルケン (温度差は重要・覚える) ② 反応機構: 低温=求核置換 / 高温=脱離反応 ③ 工業的応用: ジエチルエーテル (麻酔) とエチレン (ポリエチレン原料) の選別合成。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q3",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系数学 大問3 (続)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "サイコロを n 回振って出た目の和が偶数になる確率 P_n を求めよ (一般 n ≥ 1 について)。", "answer": "1回振って偶数の目 (2,4,6) が出る確率 = 3/6 = 1/2。奇数も同じく 1/2。\n\n漸化式: 出た目の和が n 回後に偶数 → (n-1 回後に偶数で n 回目偶数) または (n-1 回後に奇数で n 回目奇数)。\n\nP_n = P_(n-1) × (1/2) + (1 - P_(n-1)) × (1/2) = 1/2\n\nつまり P_n = 1/2 (n に依存しない・常に 1/2)\n\n直感的説明: 各サイコロは奇偶が完全独立で 1/2 ずつ。最後の 1 回の奇偶を見れば全体の和の奇偶が独立に決まる。", "explanation": "【東大型確率】① 漸化式の不変性: P_n が n によらず常に 1/2 という美しい結果 ② 直感的: 最後の1回が和の奇偶を完全決定するため ③ 一般化: 同じ確率の事象を n 回繰り返した時、和の奇偶確率は不変 (証明: 帰納法 or 母関数)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q2",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系物理 大問2 (続)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "電気量 Q [C] のコンデンサーを、抵抗 R を介して放電させる。時刻 t における電荷 q(t) を求めよ (初期 q(0) = Q)。", "answer": "コンデンサーの電圧: V = q/C\nオームの法則: V = I R = -R (dq/dt) (放電なので dq/dt < 0)\n\nつまり q/C = -R (dq/dt)\ndq/dt = -q/(RC)\n\n変数分離: dq/q = -dt/(RC)\n両辺積分: ln|q| = -t/(RC) + 定数\n初期条件 q(0) = Q: 定数 = ln Q\n\nq(t) = Q · e^(-t/(RC))\n\n時定数 τ = RC: τ 秒後に電荷が 1/e ≈ 36.8% に減衰", "explanation": "【東大型電磁気】① RC 回路の放電方程式 → 指数関数 ② 時定数 τ = RC が特性時間 ③ τ ごとに 1/e ずつ減衰 (5τ で実用的にゼロ)。【類題】RL 回路の電流増減も同型 (時定数 L/R)、LC 回路は振動 (周期 2π√(LC))。"}
+        ]
+      }
+    }
+  ]
+}

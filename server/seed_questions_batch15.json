@@ -1,0 +1,405 @@
+{
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "center",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The History of Pencils\n\nThe pencil, one of the simplest and most useful writing instruments, has a surprisingly complex history. While people had used various materials for marking surfaces for thousands of years, the modern pencil emerged only in the 16th century.\n\nThe story begins in 1564, when a large deposit of pure graphite was discovered in Borrowdale, England. People found that this soft, dark material made excellent marks on paper. However, graphite breaks easily, so users wrapped sticks of it in string or sheepskin to keep them from crumbling.\n\nIn the late 1700s, two important advances changed the pencil forever. First, French inventor Nicolas-Jacques Conté developed a method of mixing powdered graphite with clay and baking it into a hard rod. By varying the proportions, he could control the hardness and darkness of the resulting marks—the basis of the modern grading system from soft 6B to hard 9H. Second, manufacturers began encasing graphite cores in wooden shafts, creating the recognizable pencil shape we still use today.\n\nThe industrial revolution made pencils available to ordinary people. By the 19th century, factories in Germany, England, and the United States were producing millions of pencils annually. The classic yellow color of many pencils originated as a marketing strategy in the 1890s, when American manufacturers wanted to associate their pencils with high-quality Asian graphite.\n\nDespite the digital age, pencils remain remarkably popular. They work without electricity, never run out of ink, and can write on almost any surface. Each year, billions of pencils are still produced worldwide, proof that even simple inventions can endure across centuries.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "Where was the large graphite deposit discovered in 1564?", "choices": ["France", "Borrowdale, England", "Germany", "America"], "answer": "1", "explanation": "本文「a large deposit of pure graphite was discovered in Borrowdale, England」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What did Conté's method allow manufacturers to control?", "choices": ["The color of the wood", "The hardness and darkness of marks (basis of 6B to 9H grading)", "The size of the pencil", "The smell of graphite"], "answer": "1", "explanation": "本文「he could control the hardness and darkness of the resulting marks—the basis of the modern grading system from soft 6B to hard 9H」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "Why are pencils still popular in the digital age?", "choices": ["They are very expensive", "They work without electricity, never run out of ink, and write on almost any surface", "They are all made of gold", "They smell good"], "answer": "1", "explanation": "本文「They work without electricity, never run out of ink, and can write on almost any surface」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_translation",
+      "eiken_grade": "hitotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "It is precisely because economic theory aspires to a kind of mathematical exactness that its predictions, when applied to actual societies whose members refuse to behave with mathematical regularity, so often disappoint.",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "上記英文を日本語に訳しなさい。", "answer": "経済理論はある種の数学的厳密さを志向するからこそ、構成員が数学的規則性に従って振る舞うことを拒む現実の社会に適用されたとき、その予測はかくも頻繁に失望をもたらすのである。", "explanation": "【一橋型和訳】① It is precisely because A that B = まさに A だからこそ B である (強調構文 + 因果) ② aspire to X = X を志向する/求める ③ a kind of mathematical exactness = ある種の数学的厳密さ ④ when applied to A = A に適用されたとき (受動分詞構文) ⑤ refuse to behave with X = X をもって振る舞うことを拒む ⑥ so often disappoint = かくも頻繁に失望をもたらす (副詞 so の強調)。一橋は強調構文 + 関係詞節の重なりが頻出。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_translation",
+      "eiken_grade": "igakubu_kokoritsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "What distinguishes contemporary medicine from its predecessors is not so much the discovery of new diseases as the recognition that conditions long dismissed as inevitable consequences of aging are in fact tractable problems whose careful management can substantially extend healthy life.",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "上記英文を日本語に訳しなさい。", "answer": "現代医学を以前のそれから区別するものは、新たな疾患の発見であるよりむしろ、長らく加齢の必然的帰結として片づけられてきた状態が実は取り組み可能な問題であり、その丁寧な管理によって健康な人生を大幅に延ばしうるという認識なのである。", "explanation": "【医学部和訳】① What distinguishes A from B = A を B から区別するもの (関係詞 what) ② not so much A as B = A というよりむしろ B (構文) ③ long dismissed as X = 長らく X として片づけられてきた (受動過去分詞) ④ inevitable consequences of aging = 加齢の必然的帰結 ⑤ tractable problems = 取り組み可能な問題 ⑥ whose careful management can extend life = その丁寧な管理が人生を延ばしうる (関係詞 whose)。医学部は public health 系の抽象構文が頻出。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "w_essay",
+      "eiken_grade": "osaka",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "Write a 70-100 word essay (阪大型 大問4):\n\nMany governments are debating whether to introduce a four-day workweek. What are the potential benefits and drawbacks, and which view do you find more persuasive?",
+        "sample": "I find the case for a four-day workweek persuasive, despite its costs. The benefits include improved employee well-being, reduced burnout, and—surprisingly—often comparable or higher productivity, as workers focus more during available hours. Environmental benefits also follow from less commuting. The drawbacks involve transition challenges and uneven applicability across industries. However, pilot programs in Iceland and elsewhere have demonstrated that thoughtful implementation can manage these difficulties. The accumulated evidence suggests four-day weeks are not merely viable but increasingly desirable for sustainable modern work. (90 words)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "Above prompt — write 70-100 word essay.", "answer": "see sample", "explanation": "【阪大型】① 立場明示 + cost/benefit 両論検討 ② Iceland パイロットの具体例で実証性確保 ③ 結論で nuance ④ 高度語彙: comparable productivity / pilot programs / sustainable modern work。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "w_essay",
+      "eiken_grade": "waseda",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "Read the following statement and write 100-150 words explaining your view:\n\n\"Universities should require all undergraduates to complete a course in personal finance.\"",
+        "sample": "I strongly agree that universities should require personal finance courses. Many graduates enter adulthood unprepared for fundamental financial decisions—student loans, retirement savings, investment risks, insurance, taxes—because secondary education rarely covers these topics seriously. The consequences are predictable and damaging: accumulated debt, inadequate retirement preparation, and vulnerability to predatory financial products. While university curricula are already crowded, financial literacy fits well alongside general education requirements that produce informed citizens. The case becomes stronger considering that financial decisions made in early adulthood compound over lifetimes. A semester-long course requiring perhaps thirty hours of focused study could substantially reduce these costs while equipping graduates with skills genuinely useful regardless of their major. The opposition that this 'practical' content does not belong in higher education seems unconvincing when financial illiteracy demonstrably damages graduate outcomes. (132 words)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "Above prompt — write 100-150 word essay.", "answer": "see sample", "explanation": "【早稲田型】① 立場明示 (strongly agree) ② 実証論拠 (具体的な金融意思決定リスト) ③ 反論への応答 (curricula crowded → fits alongside general education) ④ 結論で再強調 ⑤ 高度語彙: predatory financial products / financial literacy / compound over lifetimes。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "w_essay",
+      "eiken_grade": "keio",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "Read the following statement and write 120-150 words explaining whether you agree or disagree:\n\n\"In the long run, automation will create more jobs than it destroys.\"",
+        "sample": "I disagree with the unqualified claim that automation will create more jobs than it destroys. While historically new technologies have generated employment, the empirical pattern is more nuanced than this optimistic narrative suggests. Past automations—agricultural mechanization, industrial machines, computers—did create new categories of work, but transitions imposed substantial costs on workers in disrupted industries, costs that often persisted across generations. Contemporary AI automation differs in important respects: it can perform cognitive tasks previously thought safe from automation, the speed of capability advancement may outpace workforce adaptation, and the new jobs created may be fewer or require qualifications that displaced workers cannot easily acquire. Even if aggregate employment eventually recovers, the meaningful question concerns distribution and transition: who bears the costs, and over what timeframe? The honest answer is that we genuinely do not know, and assuming benign outcomes risks complacency about a transition requiring active management. (149 words)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "Above prompt — write 120-150 word essay.", "answer": "see sample", "explanation": "【慶應経済型】① 立場明示 + 反論的視点を組込 ② 経済史的証拠 (agricultural/industrial/computer 各転換期) ③ 現代固有の差異 (AI の cognitive task 侵食) ④ 分配・移行コストの問題提起 ⑤ 高度語彙: empirical pattern / aggregate employment / risks complacency。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "w_essay",
+      "eiken_grade": "gp1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "TOPIC: Should the government provide financial support for parents with young children?\n\nPOINTS to consider (use 2 of 4): - Birth rate - Family stress - Tax burden - Child development\n\nRequirements: 120-150 words.",
+        "sample": "I strongly believe the government should provide financial support for parents with young children. I will support this view with two main reasons: improving birth rates and supporting child development.\n\nFirst, financial support encourages families to have children. In Japan and many developed countries, low birth rates threaten future economic stability. Many young couples cite the cost of raising children as a major reason for limiting family size. Government assistance—through child allowances, subsidized childcare, and tax credits—can meaningfully address this concern.\n\nSecond, early childhood is critical for development. Children who receive adequate nutrition, healthcare, and educational stimulation in their first years tend to do better academically and socially throughout life. Government programs that ensure these resources reach all families, regardless of income, produce substantial long-term benefits for both individual children and society.\n\nIn conclusion, despite tax implications, supporting families with young children is a wise investment. (148 words)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "Above prompt — write 120-150 word essay.", "answer": "see sample", "explanation": "【英検準1級採点】① 4段落構成 ② 指定 2 ポイント明示 (Birth rate + Child development) ③ 各 body は具体例で補強 ④ 結論で要約 + 反対視点への触れ込み (tax implications)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "w_opinion",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "TOPIC: Do you think it is good for elementary school students to have homework every day?\n\nRequirements: 80-100 words with 2 reasons.",
+        "sample": "I think it is good for elementary school students to have homework every day. I have two reasons.\n\nFirst, daily homework helps students develop good study habits. By practicing regularly, children learn to manage their time and take responsibility for their own learning. These skills become very important as they get older.\n\nSecond, homework reinforces what students learn in class. By doing exercises at home, children remember lessons better and identify topics they need help with. This makes their classroom learning more effective.\n\nFor these reasons, I believe daily homework benefits elementary school students. (97 words)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "Above prompt — write 80-100 word opinion essay.", "answer": "see sample", "explanation": "【英検2級新形式】① 立場明示 ② 理由2つ (First/Second) ③ 各理由の具体例 ④ 結論で再強調 ⑤ 語数 80-100。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "ielts",
+      "part_key": "l_sec1",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[IELTS Listening Section 1 - Hotel Reservation]\n\nReceptionist: Good morning, Bayview Hotel. How can I help?\n\nCaller: Hello, I'd like to make a reservation for next month.\n\nReceptionist: Of course. What dates were you thinking?\n\nCaller: From the 15th to the 18th of June. Three nights.\n\nReceptionist: Let me check availability... yes, we have rooms available. Would you prefer a standard double, a deluxe double, or a sea-view suite?\n\nCaller: What's the difference in price?\n\nReceptionist: The standard double is £95 per night, deluxe is £140, and the sea-view suite is £210.\n\nCaller: I'll go with the deluxe double, please.\n\nReceptionist: Excellent choice. That comes to £420 for three nights. Would you like breakfast included? It's an extra £15 per person per day.\n\nCaller: Yes please, for two people. I'm traveling with my wife.\n\nReceptionist: So that's two breakfasts daily for three days—£90 in total. Your final amount is £510. Could I have your name and contact information?\n\nCaller: My name is David Carter—C-A-R-T-E-R. Phone is 07956-432-118.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "When does the caller want to stay?", "choices": ["June 5-8", "June 15-18", "June 18-21", "May 15-18"], "answer": "1", "explanation": "「From the 15th to the 18th of June」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "How much is the deluxe double per night?", "choices": ["£95", "£140", "£210", "£420"], "answer": "1", "explanation": "「deluxe is £140」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What is the final total amount including breakfast?", "choices": ["£420", "£90", "£510", "£140"], "answer": "2", "explanation": "「Your final amount is £510」が根拠 (deluxe×3 + breakfast×6)。"},
+          {"id": "q4", "type": "multiple_choice", "stem": "What is the caller's last name?", "choices": ["Carter", "Cartar", "Cantor", "Carver"], "answer": "0", "explanation": "「C-A-R-T-E-R」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "ielts",
+      "part_key": "l_sec3",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[IELTS Listening Section 3 - Tutor and student discuss research methodology]\n\nTutor: So Sarah, how's your research project on remote work coming along?\n\nSarah: Pretty well, but I'm struggling with the methodology. I want to compare productivity between in-office and remote workers, but I can't decide between surveys and direct observation.\n\nTutor: That's a common dilemma. What's drawing you to each approach?\n\nSarah: Surveys would let me reach a much larger sample—maybe 500 workers across multiple companies. But I'm worried that self-reported productivity isn't reliable.\n\nTutor: A valid concern. Self-report bias is well documented. People tend to overestimate their own productivity, and the bias might differ systematically between remote and office workers.\n\nSarah: Exactly. Direct observation would be more accurate, but it's much more time-intensive. I could probably only observe maybe 20-30 workers thoroughly.\n\nTutor: Have you considered a mixed-methods approach? You could use surveys for breadth, then verify findings with detailed observation of a smaller subset.\n\nSarah: That sounds great in theory, but the timeline... my dissertation deadline is in six months.\n\nTutor: Then I'd suggest leaning more on surveys for primary data, but include some objective measures—task completion rates, output volumes, error rates—to triangulate against self-reports. That way you get both scale and accuracy without doubling your work.\n\nSarah: That's helpful. I'll restructure my proposal around that approach.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What is Sarah's research project about?", "choices": ["Cooking habits during lockdown", "Comparing productivity between in-office and remote workers", "Educational outcomes of online classes", "Health effects of working from home"], "answer": "1", "explanation": "「I want to compare productivity between in-office and remote workers」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What concern does the tutor raise about surveys?", "choices": ["They are illegal", "Self-report bias is well documented; bias might differ between remote and office workers", "They cost too much", "They are too short"], "answer": "1", "explanation": "「Self-report bias is well documented. People tend to overestimate their own productivity, and the bias might differ systematically between remote and office workers」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What approach does the tutor finally recommend?", "choices": ["Pure observation only", "Surveys with objective measures (task completion, output, error rates) to triangulate against self-reports", "Abandoning the project", "Switching to a different topic"], "answer": "1", "explanation": "「include some objective measures—task completion rates, output volumes, error rates—to triangulate against self-reports」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "toefl",
+      "part_key": "w_integrated",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "Reading: Some experts argue that early college admissions decisions are unfair because they pressure students to commit prematurely. The reading lists three main concerns.\n\nLecture: The professor challenges each of the reading's three concerns, arguing that early admissions actually serve students better than the reading suggests.\n\nWrite a 150-225 word response summarizing how the lecture challenges the reading's arguments.",
+        "sample": "The reading argues that early college admissions decisions create three problems for students. However, the lecture systematically challenges each claim.\n\nFirst, while the reading suggests early admissions force premature commitment, the professor counters that students applying early have typically already done substantial self-reflection about their goals. Forcing prolonged decision-making does not necessarily produce better choices and may extend stress unnecessarily.\n\nSecond, the reading claims early admissions disadvantage students from less affluent backgrounds. The lecture refutes this by noting that recent reforms have made early admissions more accessible: many top universities now offer financial aid packages with their early decisions, removing the previous concern that families couldn't compare offers.\n\nFinally, regarding the reading's argument that early admissions reduce college choice, the professor argues this concern misses how early admissions actually work. Students whose early-admission school doesn't fit their evolved priorities can still decline and apply elsewhere through regular admissions—something that happens in roughly 5-10% of cases without significant penalty.\n\nThus, the lecture demonstrates that what the reading frames as systemic problems with early admissions are either overstated, addressed by recent reforms, or based on misunderstanding the actual flexibility of these programs. (199 words)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "Above prompt — write 150-225 word integrated response.", "answer": "see sample", "explanation": "【TOEFL Writing Integrated】① 構成: intro + 3 challenge + conclusion ② Reading の3点を順序通り反論 ③ Linguistic markers: 'while' / 'however' / 'finally' / 'thus' で論理関係明示 ④ 高度語彙: substantial self-reflection / financial aid packages / systemic problems。Band 24-30 を狙うなら 200 語前後が安全。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "toeic",
+      "part_key": "r_part6",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "MEMO\nTo: All Office Staff\nFrom: Linda Park, Office Manager\nSubject: New Coffee Machine Installation\n\nWe're pleased to announce that a new high-capacity coffee machine ( q1 ) in the break room next Monday. The installation will take approximately three hours, ( q2 ) which time the break room will be temporarily closed.\n\nAfter installation, the new machine will offer a wider variety of beverages including espresso, cappuccino, and herbal teas. Initial supplies of coffee beans and tea will be provided by the company, but ( q3 ) the first month, departments will be expected to order their own supplies.\n\nIf you have questions, please contact me at extension 4521.\n\nThank you,\nLinda",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "(q1)", "choices": ["installs", "will be installed", "is installing", "to install"], "answer": "1", "explanation": "受動態 + 未来 (next Monday) → will be installed。Part 6 の受動態+時制問題は頻出。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "(q2)", "choices": ["during", "after", "before", "until"], "answer": "0", "explanation": "during which time = 「その時間中」(関係詞+前置詞)。「設置中3時間、break room は閉鎖」という連続的時間関係。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "(q3)", "choices": ["before", "in", "after", "during"], "answer": "2", "explanation": "after the first month = 1ヶ月後 (= 最初の1ヶ月は会社負担、その後は部署負担)。文意整合の前置詞選択。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "toeic",
+      "part_key": "r_part7_single",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Customer Service Notice — TechFlow Mobile\n\nDear Valued Customer,\n\nWe regret to inform you that our mobile network will undergo scheduled maintenance on Saturday, November 15th, from 2:00 AM to 5:00 AM EST. During this time, you may experience:\n\n• Brief interruptions in voice service\n• Delayed text message delivery\n• Reduced data speeds in some areas\n\nAll services will return to normal operation by 5:00 AM. We apologize for any inconvenience this may cause.\n\nIf you experience persistent issues after the maintenance window, please contact our 24-hour customer support line at 1-800-TECHFLOW or email support@techflow.com.\n\nWe appreciate your patience as we work to improve network performance.\n\n— TechFlow Customer Service Team",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "When will the maintenance occur?", "choices": ["November 14th, 2-5 PM", "November 15th, 2-5 AM EST", "November 16th, all day", "December 15th, evening"], "answer": "1", "explanation": "「Saturday, November 15th, from 2:00 AM to 5:00 AM EST」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What is NOT mentioned as a possible disruption?", "choices": ["Voice service interruptions", "Delayed text messages", "Complete loss of internet for 24 hours", "Reduced data speeds"], "answer": "2", "explanation": "本文に挙げられた 3 つは brief interruptions / delayed text / reduced data。「24時間完全な loss」は記述なし → NOT mentioned。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What should customers do if problems persist after the maintenance?", "choices": ["Wait another 24 hours", "Contact 24-hour customer support at 1-800-TECHFLOW or email support@techflow.com", "Visit the company website", "Switch to a competitor"], "answer": "1", "explanation": "「contact our 24-hour customer support line at 1-800-TECHFLOW or email support@techflow.com」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "kyodai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "京大理系数学 大問1 (3) — 不等式",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "x > 0、y > 0 のとき、(x + 1/x)(y + 1/y) ≥ 4 が成立することを示し、等号成立条件を求めよ。", "answer": "相加・相乗平均より x > 0 で x + 1/x ≥ 2√(x · 1/x) = 2、等号 x = 1。同様に y + 1/y ≥ 2、等号 y = 1。\n\n両辺正なので積の不等式: (x + 1/x)(y + 1/y) ≥ 2 × 2 = 4。\n\n等号成立: x = 1 かつ y = 1。", "explanation": "【京大型不等式】① 相加・相乗平均不等式 a + b ≥ 2√(ab) (a, b > 0) ② 等号成立 a = b ③ 正数の積で不等式が保たれる。【典型ミス】等号条件で x または y のどちらか一方のみ書く (両方必要)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "osaka_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "阪大理系数学 大問1 (3) — 数列",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "Σ(k=1, n) k(k+1) を求めよ。", "answer": "k(k+1) = k² + k\nΣk(k+1) = Σk² + Σk = n(n+1)(2n+1)/6 + n(n+1)/2\n\n通分:\n= n(n+1)(2n+1)/6 + 3n(n+1)/6\n= n(n+1)[(2n+1) + 3]/6\n= n(n+1)(2n+4)/6\n= n(n+1) · 2(n+2)/6\n= n(n+1)(n+2)/3\n\n∴ Σ(k=1, n) k(k+1) = n(n+1)(n+2)/3", "explanation": "【阪大型数列】① 公式 Σk = n(n+1)/2、Σk² = n(n+1)(2n+1)/6 ② 共通因数 n(n+1)/6 をくくる ③ 結果が n(n+1)(n+2)/3 と簡潔になる「連続3整数の積/3」型 (覚えておく)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "tokoda_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東工大理系数学 大問1 (3) — 微分",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "f(x) = x e^(-x) の最大値を求めよ (x ∈ ℝ)。", "answer": "f'(x) = e^(-x) + x · (-e^(-x)) = e^(-x)(1 - x)\nf'(x) = 0 → 1 - x = 0 (e^(-x) ≠ 0) → x = 1\n\n増減:\nx < 1 で f'(x) > 0 (増加)\nx > 1 で f'(x) < 0 (減少)\n→ x = 1 で極大 = 最大\n\n最大値 f(1) = 1 · e^(-1) = 1/e", "explanation": "【東工大型微分】① 積の微分 (uv)' = u'v + uv' ② f' = 0 で停留点 ③ 増減表で極大 / 最大判定。【関連】x e^(-x) は確率分布や物理学で頻出 (例: シュレーディンガー方程式の解)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "nagoya_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "名大理系数学 大問1 (3) — 積分",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "∫(0→π/2) sin x · cos x dx を求めよ。", "answer": "倍角公式 sin x cos x = (1/2) sin(2x):\n\n∫(0→π/2) (1/2) sin(2x) dx = (1/2) · [-(1/2) cos(2x)]₀^(π/2)\n= -(1/4) [cos(π) - cos(0)]\n= -(1/4) [(-1) - 1]\n= -(1/4) · (-2)\n= 1/2\n\n∴ ∫(0→π/2) sin x cos x dx = 1/2", "explanation": "【名大型積分】① 倍角公式: sin(2x) = 2 sin x cos x → sin x cos x = (1/2) sin(2x) ② 置換積分 t = sin x でも可: dt = cos x dx → ∫t dt = [t²/2] = 1/2 - 0 = 1/2 (より直接的)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "waseda_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "早大理工数学 大問1 (3) — ベクトル",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "三角形 ABC の重心を G、辺 BC の中点を M とする。AG : GM の比を求めよ。", "answer": "重心の性質: 各中線を 2:1 に内分する (頂点から見て 2、対辺中点から見て 1)。\n\nA から M (BC の中点) を結ぶ中線において:\nAG : GM = 2 : 1\n\n∴ AG : GM = 2 : 1\n\n(検証: G = (A + B + C)/3、M = (B + C)/2 → AG = G - A = (B + C - 2A)/3、GM = M - G = (B + C)/2 - (A+B+C)/3 = (3(B+C) - 2(A+B+C))/6 = (B + C - 2A)/6 = AG/2 → AG = 2 GM)", "explanation": "【早大理工ベクトル】① 三角形の重心の中線分割性質 (2:1) ② 頂点から重心までが 2、重心から対辺中点までが 1 ③ ベクトルでの厳密証明。【関連】重心は3つの中線の交点で、各中線を 2:1 に内分する点。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q2",
+      "eiken_grade": "kyodai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "京大理系数学 大問2 (3) — 確率",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "袋の中に当たり 3 本、外れ 5 本のくじが入っている。同時に 2 本引いたとき、少なくとも 1 本が当たりである確率を求めよ。", "answer": "余事象「2本とも外れ」の確率を求めて 1 から引く。\n\n全引き方: ₈C₂ = 28 通り\n2本とも外れ: ₅C₂ = 10 通り\nP(2本とも外れ) = 10/28 = 5/14\n\nP(少なくとも 1 本当たり) = 1 - 5/14 = 9/14", "explanation": "【京大型確率】① 「少なくとも 1 つ」型は余事象「全部外れ」が常套手段 ② 直接計算: P(1本当たり) + P(2本当たり) = (3·5)/28 + ₃C₂/28 = 15/28 + 3/28 = 18/28 = 9/14 (検算一致)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系物理 大問1 (3) — 力学・仕事率",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "質量 m の物体を高さ h まで時間 t で持ち上げるのに必要な平均仕事率 P を求めよ (重力加速度 g)。", "answer": "重力に逆らってする仕事 W = mgh (位置エネルギーの増加)\n\n平均仕事率 P = W / t = mgh / t\n\n単位: [W] = [J/s] = [kg · m²/s³]", "explanation": "【東大型力学】① 仕事 W = 力 × 距離 ② 重力に逆らう仕事 = mg × h = mgh ③ 仕事率 = 仕事/時間。【関連】瞬間仕事率 P = F · v (力と速度のドット積)、本問は等速で持ち上げる場合と等価。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "kyodai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "京大理系物理 大問1 (3) — 力学・摩擦",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "水平な床に質量 m の物体が置かれている。静止摩擦係数 μ。物体を水平方向に F の力で押すとき、F が μmg を超えなければ物体は動かない。これを示せ。", "answer": "物体に働く力:\n- 加える力 F (水平方向)\n- 重力 mg (鉛直下向き)\n- 垂直抗力 N (鉛直上向き)\n- 静止摩擦力 f (水平方向、F の逆向き、最大 μN)\n\n鉛直方向のつりあい: N = mg\n\n静止摩擦力の最大値: f_max = μN = μmg\n\n物体が動かない条件: F ≤ f_max\n→ F ≤ μmg\n\n言い換え: F が μmg を超えると f は最大値を超える摩擦力を発揮できず、超過分が運動方程式の正味力となり物体が動き始める。", "explanation": "【京大型力学】① 静止摩擦は変動値: f = F (動かない範囲では加力に応じて変化) ② 上限が f_max = μN ③ N = mg (水平面・摩擦のみ)。【関連】動摩擦は速さに依存せず一定 (μ' < μ が一般に成立)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "osaka_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "阪大理系物理 大問1 (3) — エネルギー保存",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "高さ h から滑り出した質量 m の物体が、水平面に到達したときの速さ v を求めよ。途中の摩擦は無視・重力加速度 g。", "answer": "力学的エネルギー保存則 (摩擦なし):\n初期 (高さ h、速さ 0): E = mgh\n終了 (水平面、速さ v): E = (1/2) mv²\n\nmgh = (1/2) mv²\nv² = 2gh\nv = √(2gh)\n\n∴ v = √(2gh) (経路の形状に依存しない・保存力場の特性)", "explanation": "【阪大型エネルギー】① 力学的エネルギー保存 (運動 + 位置 = 一定) ② 重力場は保存力場 → 経路に依存しない ③ 答えは形状によらず √(2gh)。【関連】斜面・カーブを含む滑り台でも同じ式 (摩擦なしの場合)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "tokoda_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東工大理系物理 大問1 (3) — 電磁気・コイル",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "自己インダクタンス L = 0.5 H のコイルに、電流 I = 2 A が流れている。コイルに蓄えられているエネルギー U を求めよ。", "answer": "コイルのエネルギー公式: U = (1/2) L I²\n\nU = (1/2) × 0.5 × 2² = (1/2) × 0.5 × 4 = 1.0 J\n\n∴ U = 1.0 J", "explanation": "【東工大型電磁気】① コイルのエネルギー U = (1/2) L I² (磁場エネルギー) ② コンデンサーは U = (1/2) C V² または (1/2) Q²/C (電場エネルギー)。【関連】LC 振動回路では電場エネルギーと磁場エネルギーが交互に変換される (合計は保存)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "waseda_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "早大理工物理 大問1 (3) — 波動・音速",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "気温 15°C のときの空気中の音速 c を求めよ。気温 t [°C] のときの音速の近似式 c = 331.5 + 0.6t [m/s] を使ってよい。", "answer": "c = 331.5 + 0.6 × 15 = 331.5 + 9 = 340.5 m/s\n\n∴ c ≈ 340.5 m/s (= よく使われる「常温の音速 約 340 m/s」)", "explanation": "【早大理工波動】① 空気中の音速は気温に正比例的に変化 ② 0°C で約 331.5 m/s、20°C で約 343.5 m/s、35°C で約 352.5 m/s ③ 媒質によって音速が大きく異なる (水中 約 1500 m/s、鉄中 約 5950 m/s)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "igakubu_kokoritsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "国公立医学部物理 大問1 (3) — 流体力学",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "深さ h の水の中の圧力 p を求めよ (水面の大気圧 p₀、水の密度 ρ、重力加速度 g)。", "answer": "深さ h での水の重みによる圧力増加 = ρgh\n\np = p₀ + ρgh\n\n∴ p = p₀ + ρgh\n\n例: 大気圧 p₀ = 1.013 × 10⁵ Pa、ρ = 1000 kg/m³、g = 9.8 m/s²、h = 10 m\n→ p = 1.013 × 10⁵ + 1000 × 9.8 × 10 = 1.013 × 10⁵ + 9.8 × 10⁴ ≈ 2 × 10⁵ Pa (約 2 気圧)", "explanation": "【医学部物理】① 静水圧の式 p = p₀ + ρgh ② 水中 10 m ごとに 1 気圧追加 (覚えておくと便利) ③ 血圧計算でも応用 (心臓位置で測定する理由)。【関連】パスカルの原理、アルキメデスの原理。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "igakubu_shiritsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "私立医学部物理 大問1 (3) — レンズ",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "焦点距離 f = 10 cm の凸レンズの前 30 cm に物体を置いた。像の位置 b と倍率 m を求めよ。", "answer": "レンズの公式: 1/a + 1/b = 1/f\n\nここで a = 30 cm (物体距離)、f = 10 cm (焦点距離)。\n\n1/30 + 1/b = 1/10\n1/b = 1/10 - 1/30 = 3/30 - 1/30 = 2/30 = 1/15\nb = 15 cm (実像、レンズの後方)\n\n倍率 m = b/a = 15/30 = 1/2\n→ 像は実物の半分 (倒立実像)\n\n∴ 像位置 b = 15 cm、倍率 m = 1/2", "explanation": "【医学部物理レンズ】① 公式 1/a + 1/b = 1/f (符号規則: 凸レンズ f > 0、実物体 a > 0、実像 b > 0、虚像 b < 0) ② 倍率 |m| = b/a、負なら倒立 ③ 焦点距離より遠い物体 → 倒立実像。【関連】顕微鏡・望遠鏡の原理。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_q1",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系化学 大問1 (3) — モル計算",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "標準状態 (0°C、1.013 × 10⁵ Pa) で気体 22.4 L の物質量 [mol] と、その気体が酸素 O₂ である場合の質量 [g] を求めよ。", "answer": "標準状態で 1 mol の気体は 22.4 L を占める (アボガドロの法則)。\n\n物質量 = 22.4 L / 22.4 L/mol = 1.0 mol\n\nO₂ のモル質量 = 16 × 2 = 32 g/mol\n質量 = 1.0 × 32 = 32 g\n\n∴ 物質量 = 1.0 mol、質量 = 32 g", "explanation": "【東大型モル】① 標準状態の気体 1 mol = 22.4 L は基本 ② 酸素 O₂ のモル質量 32 g/mol も標準値。【関連】1 mol 中の分子数 = アボガドロ定数 N_A = 6.02 × 10²³ /mol。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_q1",
+      "eiken_grade": "igakubu_kokoritsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "国公立医学部化学 大問1 (3) — 緩衝液",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "緩衝液とは何か、その仕組みを酢酸 + 酢酸ナトリウム系で説明せよ。", "answer": "緩衝液 (buffer): 強酸・強塩基を少量加えても pH が大きく変動しない性質を持つ溶液。弱酸とその共役塩基 (または弱塩基とその共役酸) の混合で作られる。\n\n酢酸 + 酢酸ナトリウム緩衝系の仕組み:\n CH₃COOH ⇌ CH₃COO⁻ + H⁺ (酢酸の電離平衡)\n\n強酸 (H⁺) を加えた場合:\n 共役塩基 CH₃COO⁻ が H⁺ を吸収 → CH₃COOH に戻る → pH 変化を抑制\n\n強塩基 (OH⁻) を加えた場合:\n 弱酸 CH₃COOH が OH⁻ と反応 → CH₃COO⁻ + H₂O → pH 変化を抑制\n\n結果として pH ≈ pKa + log([塩基] / [酸]) (Henderson-Hasselbalch 式) でほぼ一定。\n\n生体の応用: 血液の pH 緩衝 (重炭酸イオン HCO₃⁻ + 炭酸 H₂CO₃) によって pH 7.35-7.45 が厳密に維持される。", "explanation": "【医学部化学・生命科学】① 緩衝液 = 弱酸 + 共役塩基 (またはその逆) ② 酸/塩基の追加に対し共役対が反応して pH を維持 ③ Henderson-Hasselbalch 式で計算可能 ④ 生体の pH 維持機構 (アシドーシス/アルカローシスの原理)。医学部生命科学では絶対必修。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_q3",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系化学 大問3 (続) — 有機化学",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "ベンゼンの一置換体 C₆H₅-X で X = NH₂ (アニリン)、X = NO₂ (ニトロベンゼン)、X = CH₃ (トルエン)、X = OH (フェノール) について、芳香族求電子置換反応 (例: ニトロ化) における反応性 (速度) を比較せよ。", "answer": "芳香族求電子置換反応の反応性は置換基の電子供与性/吸引性で決まる。\n\n電子供与基 → 反応性向上 (環の電子密度↑):\n  NH₂ (強供与) > OH (強供与) > CH₃ (弱供与)\n\n電子吸引基 → 反応性低下 (環の電子密度↓):\n  NO₂ (強吸引)\n\n反応速度の順序:\nアニリン (C₆H₅-NH₂) > フェノール (C₆H₅-OH) > トルエン (C₆H₅-CH₃) > ベンゼン > ニトロベンゼン (C₆H₅-NO₂)\n\n(注: アニリンはニトロ化条件下で NH₂ がプロトン化されると -NH₃⁺ となり吸引基化するため、実際はフェノールより遅くなる場合あり。配向性は別問題: NH₂/OH/CH₃ は ortho/para 配向、NO₂ は meta 配向。)", "explanation": "【東大型有機】① 芳香環の置換基効果 = 共鳴 + 誘起効果 ② 電子供与基 (NH₂, OH, OR, NHR, alkyl): 反応性↑ + ortho/para 配向 ③ 電子吸引基 (NO₂, CN, COOH, SO₃H): 反応性↓ + meta 配向 ④ ハロゲンは特殊 (反応性↓だが ortho/para 配向)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_q2",
+      "eiken_grade": "kyodai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "京大理系化学 大問2 (続) — 結晶構造",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "面心立方格子 (FCC) の単位格子に含まれる原子数を求め、原子半径 r と格子定数 a (一辺の長さ) の関係を導け。", "answer": "(1) 単位格子内の原子数:\n 角の原子: 8個 × (1/8) = 1個\n 面の中心の原子: 6個 × (1/2) = 3個\n 合計: 1 + 3 = 4個\n\n(2) 原子半径と格子定数の関係:\n 面心立方では面の対角線方向に原子が接触している。\n 面の対角線 = √2 a (一辺 a の正方形の対角線)\n 面の対角線 = 4r (4個の原子半径分: 角の原子 r + 面中心の原子 2r + 反対側の角 r)\n\n √2 a = 4r\n a = 4r / √2 = 2√2 r\n\n または r = a√2 / 4 = a / (2√2)", "explanation": "【京大型結晶】① 面心立方 (FCC): Cu, Al, Ag, Au など、配位数 12、最密充填 ② 体心立方 (BCC): Fe (常温), Cr など、配位数 8 ③ 六方最密充填 (HCP): Mg, Zn など、配位数 12。【FCC の特徴】単位格子原子数 4、充填率 0.74 (最密)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q3",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系数学 大問3 (3) — 立体図形",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "半径 r の球の体積 V と表面積 S を求めよ (公式の暗記でなく、回転体としての導出を示せ)。", "answer": "(1) 体積 V (回転体として):\n半円 y = √(r² - x²) (-r ≤ x ≤ r) を x 軸の周りに回転させる。\n\nV = ∫(-r→r) π y² dx = π ∫(-r→r) (r² - x²) dx\n = π [r²x - x³/3] from -r to r\n = π [(r³ - r³/3) - (-r³ + r³/3)]\n = π [(2r³/3) - (-2r³/3)]\n = π · (4r³/3)\n = (4/3) π r³\n\n(2) 表面積 S (回転体表面の公式):\nS = ∫(-r→r) 2π y √(1 + (dy/dx)²) dx\n\ny = √(r² - x²)、dy/dx = -x/√(r² - x²)\n1 + (dy/dx)² = 1 + x²/(r² - x²) = r²/(r² - x²)\n\n2π y √(1 + (dy/dx)²) = 2π · √(r² - x²) · r/√(r² - x²) = 2π r\n\nS = ∫(-r→r) 2π r dx = 2π r · 2r = 4π r²\n\n∴ V = (4/3) π r³、S = 4π r²", "explanation": "【東大型立体図形】① 体積: 円板積分 ∫π y² dx で機械的に出る ② 表面積: 回転体表面公式 S = ∫2π y √(1 + (y')²) dx ③ 球の場合 √(1+(y')²) = r/√(r²-x²) で y と打ち消し合い → 2πr が x によらず一定 → 円柱表面と同じ計算に。これがアルキメデスが「球の表面 = 外接円柱の側面」と見抜いた根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q2",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系物理 大問2 (3) — 電磁気・キルヒホッフ",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "起電力 E、内部抵抗 r の電池に外部抵抗 R を接続した。回路に流れる電流 I と、外部抵抗での消費電力 P_R を求めよ。", "answer": "(1) 電流:\n キルヒホッフの第二法則 (電圧則): E = I r + I R = I (r + R)\n → I = E / (r + R)\n\n(2) 外部抵抗での消費電力:\n P_R = I² R = E² R / (r + R)²\n\n(3) (発展) P_R が最大となる R の値:\n dP_R/dR = E² · [(r + R)² - R · 2(r + R)] / (r + R)⁴ = 0\n → (r + R) - 2R = 0 → R = r\n\n つまり R = r (= 内部抵抗) のとき外部消費電力最大。これが「最大電力伝送定理」。\n 最大値 P_max = E²r / (2r)² = E² / (4r)", "explanation": "【東大型電磁気】① キルヒホッフ第一 (電流則・接合点) と第二 (電圧則・閉路) ② 内部抵抗 r による電圧降下を考慮 ③ 最大電力伝送条件 R = r (オーディオアンプ・電源設計の基礎)。"}
+        ]
+      }
+    }
+  ]
+}
