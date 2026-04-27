@@ -3284,6 +3284,132 @@ def admin_exam_questions_purge(payload: dict, authorization: Optional[str] = Hea
     }
 
 
+@app.post("/api/admin/exam-questions/burst-seed")
+async def admin_exam_questions_burst_seed(payload: dict = None, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """🚀 全 ROTATION 枠を最低 N 問まで一括生成 (初期投入・サービスローンチ前用)。
+
+    payload (任意):
+      {"target_per_part": 5, "max_total": 100, "concurrency": 3}
+    省略時のデフォルト: target=5, max_total=100, concurrency=3
+
+    動作:
+    - EXAM_QUESTION_ROTATION 全枠を読み、現在 count < target_per_part の枠を抽出
+    - 不足分の合計 (cap max_total) を asyncio で並列生成
+    - DAILY_MAX 制約はバイパス (CEO 判断・1回限りの一括投入)
+    - 完了時に詳細サマリ返却
+
+    レスポンス:
+    {ok, target_per_part, scanned_parts, parts_under_target, generated, failed, duration_sec, details: [...]}
+    """
+    # 認証 (admin Bearer or x-cron-secret)
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    if not ANTHROPIC_API_KEY:
+        raise HTTPException(status_code=503, detail="ANTHROPIC_API_KEY 未設定")
+
+    payload = payload or {}
+    target = int(payload.get("target_per_part", 5))
+    max_total = int(payload.get("max_total", 100))
+    concurrency = max(1, min(int(payload.get("concurrency", 3)), 5))  # 1-5 並列
+
+    counts = _exam_pool_counts()
+    # 不足枠を抽出 (count < target)
+    needs = []
+    for (exam_id, part_key, grade), n in counts.items():
+        deficit = max(0, target - n)
+        if deficit > 0:
+            for _ in range(deficit):
+                needs.append((exam_id, part_key, grade))
+    parts_under_target = sum(1 for (_, _, _), n in counts.items() if n < target)
+    # max_total キャップ
+    if len(needs) > max_total:
+        needs = needs[:max_total]
+
+    if not needs:
+        return {
+            "ok": True,
+            "target_per_part": target,
+            "scanned_parts": len(counts),
+            "parts_under_target": 0,
+            "generated": 0,
+            "failed": 0,
+            "duration_sec": 0,
+            "message": f"全 {len(counts)} 枠が target={target} に到達済み。生成不要。",
+        }
+
+    started = datetime.now(timezone.utc)
+    log.info(f"[BurstSeed] starting: target={target}, max_total={max_total}, concurrency={concurrency}, queue={len(needs)}")
+
+    # 並列実行用 semaphore
+    sem = asyncio.Semaphore(concurrency)
+    generated = []
+    failed = []
+    lock = asyncio.Lock()
+
+    async def gen_one(exam_id, part_key, grade):
+        async with sem:
+            loop = asyncio.get_event_loop()
+            q = await loop.run_in_executor(None, _generate_exam_question, exam_id, part_key, grade)
+            if q:
+                await loop.run_in_executor(None, _save_exam_question, exam_id, part_key, q, grade)
+                async with lock:
+                    generated.append({"exam": exam_id, "part": part_key, "grade": grade})
+            else:
+                async with lock:
+                    failed.append({"exam": exam_id, "part": part_key, "grade": grade})
+
+    try:
+        # 全タスクを並列で起動 (concurrency=3 で sem 制御)
+        await asyncio.wait_for(
+            asyncio.gather(*[gen_one(*n) for n in needs], return_exceptions=True),
+            timeout=600,  # 10分タイムアウト
+        )
+    except asyncio.TimeoutError:
+        log.warning("[BurstSeed] timeout reached at 10min")
+
+    duration = (datetime.now(timezone.utc) - started).total_seconds()
+
+    # events ログ
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO events (name, data, source) VALUES (?, ?, ?)",
+            ("exam_questions_burst_seed", json.dumps({
+                "target": target, "max_total": max_total, "concurrency": concurrency,
+                "queued": len(needs), "generated": len(generated), "failed": len(failed),
+                "duration_sec": int(duration),
+            }, ensure_ascii=False), "admin"),
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        log.warning(f"[BurstSeed] event log failed: {e}")
+
+    log.info(f"[BurstSeed] done: generated={len(generated)} failed={len(failed)} duration={int(duration)}s")
+    # 概算コスト (Sonnet 4.6 $3/$15 per 1M tokens, ~3500 tokens output avg per question = $0.053)
+    est_cost_usd = round(len(generated) * 0.06, 2)
+    return {
+        "ok": True,
+        "target_per_part": target,
+        "scanned_parts": len(counts),
+        "parts_under_target": parts_under_target,
+        "queued": len(needs),
+        "generated": len(generated),
+        "failed": len(failed),
+        "duration_sec": int(duration),
+        "estimated_cost_usd": est_cost_usd,
+        "message": f"✅ {len(generated)} 問生成 (失敗 {len(failed)}・所要 {int(duration)}秒・推定 ${est_cost_usd}≈¥{int(est_cost_usd * 150)})",
+    }
+
+
 @app.post("/api/admin/exam-questions/generate")
 def admin_exam_questions_generate(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """指定パート (or ローテ全件) の問題を生成。手動トリガー。
