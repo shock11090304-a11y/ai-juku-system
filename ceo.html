@@ -489,6 +489,7 @@
         <div style="background:rgba(0,0,0,0.25);border-radius:8px;padding:0.6rem;text-align:center;">
           <div style="color:#94a3b8;margin-bottom:0.2rem;">Founder Special Price</div>
           <div id="monFounderSpecial" style="font-size:1.2rem;font-weight:900;">--</div>
+          <button id="setupFounderSpecialBtn" style="margin-top:0.4rem;background:rgba(34,197,94,0.2);color:#22c55e;border:1px solid rgba(34,197,94,0.4);padding:0.25rem 0.5rem;border-radius:6px;font-size:0.7rem;font-weight:700;cursor:pointer;display:none;">⚡ Stripe Price 自動作成</button>
         </div>
         <div style="background:rgba(0,0,0,0.25);border-radius:8px;padding:0.6rem;text-align:center;">
           <div style="color:#94a3b8;margin-bottom:0.2rem;">Resend Email</div>
@@ -1340,6 +1341,9 @@
         const ng = '<span style="color:#f87171;">❌</span>';
         document.getElementById('monStripe').innerHTML = s.stripe_configured ? ok : ng;
         document.getElementById('monFounderSpecial').innerHTML = s.founder_special_price_configured ? ok : ng;
+        // 未設定なら「Stripe Price 自動作成」ボタンを出す (1クリックでセットアップ完結)
+        const setupBtn = document.getElementById('setupFounderSpecialBtn');
+        if (setupBtn) setupBtn.style.display = s.founder_special_price_configured ? 'none' : '';
         document.getElementById('monEmail').innerHTML = s.email_configured ? ok : ng;
         document.getElementById('monAnthropic').innerHTML = s.anthropic_configured ? ok : ng;
         // ファネル
@@ -1475,6 +1479,24 @@
         }
         loadMonitorHealth();
       });
+      const setupFsBtn = document.getElementById('setupFounderSpecialBtn');
+      if (setupFsBtn) setupFsBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        if (!confirm('Stripe livemode に「創設メンバー (¥14,500/月・lookup_key=founder_special)」の Product+Price を自動作成します。冪等なので重複作成されません。続行?')) return;
+        setupFsBtn.disabled = true; setupFsBtn.textContent = '⏳ 作成中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/stripe/setup-founder-special', { method: 'POST' });
+          const j = await r.json();
+          if (r.ok) {
+            alert(`✅ ${j.already_exists ? '既に存在: ' : '作成完了: '}${j.price_id}\nlookup_key=${j.lookup_key} で永続検索可能です。env 設定不要。`);
+            loadMonitorHealth();
+          } else {
+            alert('⚠️ エラー: ' + JSON.stringify(j));
+          }
+        } catch (e) { alert('⚠️ ' + e.message); }
+        setupFsBtn.disabled = false; setupFsBtn.textContent = '⚡ Stripe Price 自動作成';
+      });
+
       const poolRefreshBtn = document.getElementById('poolRefreshBtn');
       if (poolRefreshBtn) poolRefreshBtn.addEventListener('click', loadPoolStatus);
       const poolGenBtn = document.getElementById('poolGenerateBtn');
