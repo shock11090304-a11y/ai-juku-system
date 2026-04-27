@@ -1170,6 +1170,13 @@ def _collect_health_snapshot() -> dict:
     snapshot["checkout_initiated_24h"] = event_count("checkout_initiated", h24)
     snapshot["checkout_completed_24h"] = event_count("checkout_completed", h24)
 
+    # 🔧 ファネル詰まり警告は 6h ローリング窓で判定 (24h 窓だと修正後も警告が消えない問題対応)
+    h6 = now - timedelta(hours=6)
+    snapshot["pv_6h"] = event_count("page_view", h6)
+    snapshot["form_submit_6h"] = event_count("form_submit", h6)
+    snapshot["page_loaded_ok_6h"] = event_count("page_loaded_ok", h6)
+    snapshot["js_error_6h"] = event_count("js_error", h6)
+
     # サービスローンチからの経過時間
     snapshot["hours_since_launch"] = max(0, int((now.timestamp() - SERVICE_LAUNCH_TS) / 3600))
 
@@ -1214,13 +1221,33 @@ def _evaluate_alerts(snapshot: dict) -> list:
             "title": "⚠️ 過去24時間 申込ゼロ",
             "detail": f"ローンチから{snapshot['hours_since_launch']}時間経過。LPアクセス {snapshot['pv_24h']} / CTA {snapshot['cta_24h']}。集客動線を確認してください。"
         })
-    # 4. ファネル落差: PV はあるが form_submit ゼロ (フォームエラーの兆候)
-    if snapshot["pv_24h"] >= 50 and snapshot["form_submit_24h"] == 0:
-        alerts.append({
-            "key": "funnel_drop_form", "severity": "warning",
-            "title": "⚠️ ファネル詰まり: PV {pv} あるのにフォーム送信0".format(pv=snapshot["pv_24h"]),
-            "detail": "LP へアクセスはあるのに体験申込フォームの送信がゼロ。フォームバリデーションエラーや JS エラーの可能性。",
-        })
+    # 4. ファネル落差: 直近6h で PV はあるが form_submit ゼロ (フォームエラーの兆候)
+    #    24h 窓だと「壊れていた期間」のデータが残り続けて修正後も警告が出続ける。
+    #    6h ローリングなら修正反映後は自然に解除される。
+    #    判定強化: JS エラー or 合成テスト失敗が併発していれば critical、無ければ info 扱い。
+    if snapshot.get("pv_6h", 0) >= 20 and snapshot.get("form_submit_6h", 0) == 0:
+        synth_failing = bool(_SYNTHETIC_CHECKOUT_LAST.get("ok") is False)
+        js_storm = snapshot.get("js_error_6h", 0) >= 5
+        if synth_failing or js_storm:
+            alerts.append({
+                "key": "funnel_drop_form", "severity": "critical",
+                "title": "🚨 ファネル詰まり (確定): 直近6h PV {pv} / フォーム送信 0".format(pv=snapshot["pv_6h"]),
+                "detail": (
+                    f"E2E 合成テスト{'失敗' if synth_failing else 'OK'} / 直近6h JS エラー {snapshot.get('js_error_6h',0)}件。"
+                    "フォームエラーで顧客が離脱している可能性が高い。"
+                ),
+            })
+        else:
+            # E2E OK + JS エラーなしでフォーム送信ゼロは「LP閲覧者がそもそも申し込まなかった」可能性
+            # → 警告レベルを下げる (バナー表示のみで critical email は送らない)
+            alerts.append({
+                "key": "funnel_drop_form", "severity": "info",
+                "title": "📊 ファネル観察: 直近6h PV {pv} / フォーム送信 0".format(pv=snapshot["pv_6h"]),
+                "detail": (
+                    "E2E 合成テスト OK + JS エラー無し → フォーム自体は機能しているが、"
+                    "LP 訪問者が申込まで進んでいません。コンバージョン改善 (CTA 見直し / LP コピー強化 / FOMO 表示) を検討してください。"
+                ),
+            })
     # 5. checkout 開始 → 完了の落差: 50%以上落ちたら警告
     if snapshot["checkout_initiated_24h"] >= 5:
         complete_rate = snapshot["checkout_completed_24h"] / snapshot["checkout_initiated_24h"]
