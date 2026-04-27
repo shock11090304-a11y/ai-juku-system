@@ -24,6 +24,7 @@ import sqlite3
 import hmac
 import hashlib
 import asyncio
+import time
 import urllib.request
 import urllib.error
 import base64
@@ -561,6 +562,20 @@ class EventTrack(BaseModel):
     name: str
     props: Optional[dict] = {}
     session_id: Optional[str] = None
+
+
+class JSErrorReport(BaseModel):
+    """フロントエンド frontend-error-monitor.js が送信する uncaught JS error。"""
+    kind: Optional[str] = "js_error"  # js_error / promise_rejection / resource_error
+    message: str = ""
+    source: Optional[str] = ""
+    lineno: Optional[int] = 0
+    colno: Optional[int] = 0
+    stack: Optional[str] = ""
+    page: Optional[str] = ""
+    user_agent: Optional[str] = ""
+    session_id: Optional[str] = ""
+    ts: Optional[str] = ""
 
 # ==========================================================================
 # Routes: Health & Status
@@ -1391,6 +1406,16 @@ async def _monitor_scheduler():
                     log.info(f"[Monitor] OK: signups_24h={result['snapshot']['signups_24h']}, paid_total={result['snapshot']['paid_total']}")
             except Exception as e:
                 log.error(f"[Monitor] check error: {e}", exc_info=True)
+            # 1-B. 🛡️ 申込→決済 フロー E2E 合成テスト (revenue critical)
+            try:
+                synth = await _run_synthetic_checkout_test()
+                _SYNTHETIC_CHECKOUT_LAST.update(synth)
+                if not synth.get("ok"):
+                    log.warning(f"[Monitor:Synth] FAILED: {synth.get('failures')}")
+                else:
+                    log.info(f"[Monitor:Synth] OK ({synth.get('duration_ms')}ms)")
+            except Exception as e:
+                log.error(f"[Monitor:Synth] test error: {e}", exc_info=True)
             # 2. JST DAILY_SUMMARY_HOUR_JST 時台 → デイリーサマリ送信判定
             now_jst = datetime.now(JST)
             if now_jst.hour == MONITORING_DAILY_SUMMARY_HOUR_JST:
@@ -1408,6 +1433,185 @@ async def _monitor_scheduler():
         except Exception as e:
             log.error(f"[Monitor] scheduler loop error: {e}", exc_info=True)
             await asyncio.sleep(300)
+
+
+# ==========================================================================
+# 🛡️ 申込→決済 フロー E2E 合成テスト (2026-04-27 追加)
+# 5分おきに以下を全自動チェックし、退化 (regression) があれば即時アラート:
+#   1. /lp.html が 200 を返し、checkout.html へのリンクを含む
+#   2. /checkout.html が 200 を返し、checkout.js?v=...（cache-busting 付き）を読込んでいる
+#   3. /checkout.js が 200 を返し、修正済 fix marker (`if (target)` + `urlPlanOverride`) を含む
+#   4. /api/trial/signup に sentinel データを POST し student_id を取得 (404/500 を回避)
+# 失敗時は monitor email 即送信 + ダッシュ赤バナー表示。
+# ==========================================================================
+_SYNTHETIC_CHECKOUT_LAST = {
+    "ok": None, "ts": None, "duration_ms": None, "failures": [], "details": {},
+}
+_SYNTHETIC_CHECKOUT_FIX_MARKERS = ["if (target)", "__urlPlanOverride"]
+_SYNTHETIC_CHECKOUT_ALERTED_AT = {"ts": 0.0}
+
+
+async def _run_synthetic_checkout_test() -> dict:
+    """申込フロー全体を 5 分おきに自動回帰テスト。失敗時は alert を発火。"""
+    started = time.time()
+    failures = []
+    details = {}
+    base = (BASE_URL or "https://ai-juku-api-production.up.railway.app").rstrip("/")
+
+    def _http_get(path: str, timeout: int = 8) -> dict:
+        url = path if path.startswith("http") else (base + path)
+        req = urllib.request.Request(url, headers={
+            "User-Agent": "ai-juku-synth-monitor/1.0",
+            "Accept": "text/html,application/json",
+        })
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                body = resp.read().decode("utf-8", errors="replace")
+                return {"status": resp.status, "body": body, "url": url}
+        except urllib.error.HTTPError as e:
+            return {"status": e.code, "body": "", "url": url, "error": str(e)}
+        except Exception as e:
+            return {"status": 0, "body": "", "url": url, "error": f"{type(e).__name__}: {e}"}
+
+    loop = asyncio.get_event_loop()
+
+    # 1. lp.html
+    r1 = await loop.run_in_executor(None, _http_get, "/lp.html")
+    details["lp_status"] = r1["status"]
+    if r1["status"] != 200:
+        failures.append(f"lp.html status={r1['status']}")
+    elif "checkout.html" not in r1["body"]:
+        failures.append("lp.html does not link to checkout.html")
+
+    # 2. checkout.html
+    r2 = await loop.run_in_executor(None, _http_get, "/checkout.html")
+    details["checkout_html_status"] = r2["status"]
+    checkout_js_match = ""
+    if r2["status"] != 200:
+        failures.append(f"checkout.html status={r2['status']}")
+    else:
+        # checkout.js の version 付き script を抽出
+        import re as _re
+        m = _re.search(r'src="(checkout\.js[^"]*)"', r2["body"])
+        if not m:
+            failures.append("checkout.html does not include checkout.js script tag")
+        else:
+            checkout_js_match = m.group(1)
+            details["checkout_js_path"] = checkout_js_match
+            if "?v=" not in checkout_js_match:
+                failures.append("checkout.js script tag has no cache-busting ?v= (regressions could persist via cache)")
+
+    # 3. checkout.js fix marker check
+    if r2["status"] == 200 and checkout_js_match:
+        r3 = await loop.run_in_executor(None, _http_get, "/" + checkout_js_match)
+        details["checkout_js_status"] = r3["status"]
+        if r3["status"] != 200:
+            failures.append(f"checkout.js status={r3['status']}")
+        else:
+            for marker in _SYNTHETIC_CHECKOUT_FIX_MARKERS:
+                if marker not in r3["body"]:
+                    failures.append(f"checkout.js missing fix marker: {marker!r}")
+            # form submit listener が attach される直前の textContent が壊れていないか粗チェック
+            if "addEventListener('submit'" not in r3["body"] and 'addEventListener("submit"' not in r3["body"]:
+                failures.append("checkout.js no longer registers form submit listener")
+
+    # 4. POST /api/trial/signup (sentinel)
+    sentinel_email = f"synth_monitor_{int(time.time())}@trillion-ai-juku.local"
+    sentinel_payload = {
+        "plan": "founder_special",
+        "name": "合成監視テスト",
+        "email": sentinel_email,
+        "grade": "高校3年",
+        "goal": "[synthetic monitor]",
+    }
+    def _http_post_json(path: str, payload: dict, timeout: int = 8) -> dict:
+        url = base + path
+        body_bytes = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(url, data=body_bytes, method="POST", headers={
+            "Content-Type": "application/json",
+            "User-Agent": "ai-juku-synth-monitor/1.0",
+            "Origin": base,  # _origin_allowed を通す
+            "Referer": base + "/checkout.html",
+        })
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return {"status": resp.status, "body": resp.read().decode("utf-8", errors="replace")}
+        except urllib.error.HTTPError as e:
+            return {"status": e.code, "body": e.read().decode("utf-8", errors="replace") if hasattr(e, "read") else ""}
+        except Exception as e:
+            return {"status": 0, "body": "", "error": f"{type(e).__name__}: {e}"}
+
+    r4 = await loop.run_in_executor(None, _http_post_json, "/api/trial/signup", sentinel_payload)
+    details["signup_status"] = r4["status"]
+    sentinel_student_id = None
+    if r4["status"] != 200:
+        failures.append(f"/api/trial/signup status={r4['status']} body={r4.get('body','')[:200]}")
+    else:
+        try:
+            j = json.loads(r4["body"])
+            sentinel_student_id = j.get("student_id")
+            details["signup_student_id"] = sentinel_student_id
+        except Exception as e:
+            failures.append(f"/api/trial/signup non-JSON body: {e}")
+
+    # 5. cleanup: sentinel student を DB から消す
+    if sentinel_student_id:
+        try:
+            conn = db()
+            c = conn.cursor()
+            c.execute("DELETE FROM students WHERE id = ? AND email = ?", (sentinel_student_id, sentinel_email))
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            log.warning(f"[Monitor:Synth] sentinel cleanup failed: {e}")
+
+    duration_ms = int((time.time() - started) * 1000)
+    ok = len(failures) == 0
+    result = {
+        "ok": ok,
+        "ts": datetime.now(timezone(timedelta(hours=9))).isoformat(),
+        "duration_ms": duration_ms,
+        "failures": failures,
+        "details": details,
+    }
+
+    # 失敗時、cooldown 30 分でアラートメール送信
+    if not ok:
+        now_ts = time.time()
+        if now_ts - _SYNTHETIC_CHECKOUT_ALERTED_AT["ts"] > 1800:
+            _SYNTHETIC_CHECKOUT_ALERTED_AT["ts"] = now_ts
+            try:
+                subj = "🚨 申込→決済 E2E 監視 失敗 — 即時対応必要"
+                fail_html = "<ul>" + "".join(f"<li>{html_escape_safe(f)}</li>" for f in failures) + "</ul>"
+                body_html = (
+                    f"<h2>🚨 5分おき自動 E2E 監視で失敗を検知しました</h2>"
+                    f"<p>申込→決済フローが壊れている可能性があります。<strong>機会損失中です。即時対応必要。</strong></p>"
+                    f"<h3>失敗内容</h3>{fail_html}"
+                    f"<h3>詳細</h3><pre>{html_escape_safe(json.dumps(details, ensure_ascii=False, indent=2))}</pre>"
+                    f"<p><a href='{base}/ceo.html'>CEO ダッシュボードを開く</a></p>"
+                )
+                _send_monitor_email(subj, body_html)
+            except Exception as e:
+                log.warning(f"[Monitor:Synth] alert email failed: {e}")
+
+    # events に結果を記録 (ダッシュ表示用)
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            ("synthetic_checkout_test", json.dumps(result, ensure_ascii=False)[:4000], "monitor")
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+    return result
+
+
+def html_escape_safe(s: str) -> str:
+    return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
 
 def _create_otp(student_id: int, ttl_seconds: int = 600) -> str:
@@ -4383,7 +4587,25 @@ def admin_monitor_status(authorization: Optional[str] = Header(None)):
         "monitoring_enabled": MONITORING_ENABLED,
         "monitoring_interval_min": MONITORING_INTERVAL_MIN,
         "monitoring_to_email": MONITORING_TO_EMAIL[:3] + "***" if MONITORING_TO_EMAIL else "",
+        "synthetic_checkout": _SYNTHETIC_CHECKOUT_LAST,
     }
+
+
+@app.post("/api/admin/monitor/synthetic-checkout-now")
+async def admin_synthetic_checkout_now(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """E2E 合成チェックを今すぐ実行 (手動トリガー)。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    result = await _run_synthetic_checkout_test()
+    _SYNTHETIC_CHECKOUT_LAST.update(result)
+    return result
 
 
 @app.post("/api/admin/monitor/daily-summary-now")
@@ -6042,6 +6264,152 @@ def track_event(event: EventTrack, request: Request):
     conn.commit()
     conn.close()
     return {"ok": True}
+
+
+# ==========================================================================
+# 🛡️ Frontend エラー受信エンドポイント (2026-04-27)
+# 全顧客接触ページの window.onerror / unhandledrejection で発生したエラーを
+# events テーブルに name='js_error' として記録。CEO ダッシュからリアルタイム閲覧可能。
+# ==========================================================================
+_JS_ERROR_RATE_LIMIT = {}  # {ip: (count, window_start_ts)} - IP単位で50/min まで
+
+@app.post("/api/js-error")
+def js_error_report(report: JSErrorReport, request: Request):
+    """フロントエンド uncaught JS error を受信し events に記録。
+    Origin 検査 + IP rate limit (50/min) でスパム防止。"""
+    if not _origin_allowed(request):
+        # 念のため受け付ける (Origin が不明でも自社ドメイン外 referer なら拒否済)
+        raise HTTPException(status_code=403, detail="Origin not allowed")
+    ip = (request.headers.get("x-forwarded-for") or request.client.host or "?").split(",")[0].strip()
+    nowts = time.time()
+    cnt, win = _JS_ERROR_RATE_LIMIT.get(ip, (0, nowts))
+    if nowts - win > 60:
+        cnt, win = 0, nowts
+    cnt += 1
+    _JS_ERROR_RATE_LIMIT[ip] = (cnt, win)
+    if cnt > 50:
+        raise HTTPException(status_code=429, detail="too many errors")
+
+    # message / stack / page を切り詰めて DB に保存
+    props = {
+        "kind": (report.kind or "js_error")[:32],
+        "message": (report.message or "")[:500],
+        "source": (report.source or "")[:300],
+        "lineno": int(report.lineno or 0),
+        "colno": int(report.colno or 0),
+        "stack": (report.stack or "")[:2000],
+        "page": (report.page or "")[:300],
+        "user_agent": (report.user_agent or "")[:200],
+        "client_ts": (report.ts or "")[:64],
+        "ip": ip[:64],
+    }
+    props_str = json.dumps(props, ensure_ascii=False)[:4000]
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            ("js_error", props_str, (report.session_id or "")[:64])
+        )
+        conn.commit()
+        conn.close()
+        # critical: 直近5分で同一エラーが10件以上来たら monitor 経由で即時アラート
+        # (重大なリリース起因バグ・全ユーザーが踏んでいる状態を想定)
+        try:
+            conn2 = db()
+            c2 = conn2.cursor()
+            c2.execute(
+                "SELECT COUNT(*) FROM events WHERE name='js_error' AND created_at > "
+                + ("NOW() - INTERVAL '5 minutes'" if USE_POSTGRES else "datetime('now', '-5 minutes')")
+            )
+            recent = c2.fetchone()[0] or 0
+            conn2.close()
+            if recent >= 10:
+                # 既存 monitor のメール送信機構に乗せて即時アラート (cooldown 60min は Resend 側 dedup で実装)
+                try:
+                    subject = f"🚨 JS エラー多発 ({recent}件/5分) — 即時対応必要"
+                    body_html = (
+                        f"<h2>🚨 直近5分で JS エラーが {recent} 件発生</h2>"
+                        f"<p><strong>最新メッセージ:</strong> {props.get('message','')[:200]}</p>"
+                        f"<p><strong>page:</strong> {props.get('page','')[:200]}</p>"
+                        f"<p><strong>source:</strong> {props.get('source','')[:200]}:{props.get('lineno',0)}</p>"
+                        f"<p>全ユーザーが踏んでいるリリース起因の致命バグの可能性が高い。"
+                        f"<a href='{BASE_URL}/ceo.html#js-errors'>CEO ダッシュ → JS エラーログ</a> を今すぐ確認してください。</p>"
+                    )
+                    _send_monitor_email(subject, body_html)
+                except Exception as e2:
+                    log.warning(f"[js_error] alert email failed: {e2}")
+        except Exception:
+            pass
+    except Exception as e:
+        log.warning(f"[js_error] insert failed: {e}")
+    return {"ok": True}
+
+
+@app.get("/api/admin/js-errors")
+def admin_list_js_errors(authorization: Optional[str] = Header(None), limit: int = 50, hours: int = 24):
+    """admin Bearer 認証必須。直近 hours 時間内の JS エラーを最新順で limit 件返す。
+    重複圧縮 (同一 message+source+lineno) で一覧化、CEO ダッシュ表示用。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="未認証")
+    limit = max(1, min(limit, 200))
+    hours = max(1, min(hours, 168))
+    conn = db()
+    c = conn.cursor()
+    try:
+        ts_clause = (
+            "created_at > NOW() - INTERVAL '%d hours'" % hours if USE_POSTGRES
+            else "created_at > datetime('now', '-%d hours')" % hours
+        )
+        c.execute(f"SELECT props, session_id, created_at FROM events WHERE name='js_error' AND {ts_clause} ORDER BY created_at DESC LIMIT ?", (limit,))
+        rows = c.fetchall()
+        # 重複圧縮: signature = message+source+lineno
+        groups = {}
+        latest = []
+        for row in rows:
+            try:
+                p = json.loads(row["props"]) if isinstance(row, dict) or hasattr(row, "keys") else json.loads(row[0])
+            except Exception:
+                p = {}
+            sig = f"{p.get('message','')[:120]}|{p.get('source','')[:60]}:{p.get('lineno',0)}"
+            if sig not in groups:
+                ca = row["created_at"] if "created_at" in (row.keys() if hasattr(row, "keys") else []) else row[2]
+                groups[sig] = {
+                    "message": p.get("message", ""),
+                    "source": p.get("source", ""),
+                    "lineno": p.get("lineno", 0),
+                    "page": p.get("page", ""),
+                    "kind": p.get("kind", ""),
+                    "user_agent": p.get("user_agent", ""),
+                    "stack_excerpt": (p.get("stack", "") or "")[:300],
+                    "first_seen": str(ca) if ca else "",
+                    "count": 1,
+                }
+            else:
+                groups[sig]["count"] += 1
+
+        # count 多い順
+        result = sorted(groups.values(), key=lambda x: -x["count"])
+        # 5分以内の最新発生件数 (緊急バナー判定用)
+        ts_clause_5m = (
+            "created_at > NOW() - INTERVAL '5 minutes'" if USE_POSTGRES
+            else "created_at > datetime('now', '-5 minutes')"
+        )
+        c.execute(f"SELECT COUNT(*) FROM events WHERE name='js_error' AND {ts_clause_5m}")
+        recent_5min = c.fetchone()[0] or 0
+    finally:
+        conn.close()
+    return {
+        "ok": True,
+        "hours": hours,
+        "unique_signatures": len(result),
+        "total_in_window": sum(g["count"] for g in result),
+        "recent_5min": recent_5min,
+        "errors": result,
+    }
 
 # ==========================================================================
 # Static file serving (frontend)
