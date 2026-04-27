@@ -9,10 +9,10 @@ const KEYS = {
 };
 
 const PHASES = [
-  { id: 1, name: '第1期生 (永年¥25,000/月)', price: 25000, start: 0,   end: 100, discount: '永年' },
-  { id: 2, name: '第2期生',                  price: 29800, start: 100, end: 300, discount: '値上げ' },
-  { id: 3, name: '第3期生',                  price: 34800, start: 300, end: 500, discount: '値上げ' },
-  { id: 4, name: '通常',                     price: null,  start: 500, end: Infinity, discount: null },
+  { id: 1, name: '創設メンバー (永年¥14,500/月)', price: 14500, start: 0,  end: 50,  discount: '永年' },
+  { id: 2, name: '第2期生',                       price: 29800, start: 50, end: 250, discount: '値上げ' },
+  { id: 3, name: '第3期生',                       price: 34800, start: 250, end: 450, discount: '値上げ' },
+  { id: 4, name: '通常',                          price: null,  start: 450, end: Infinity, discount: null },
 ];
 
 function getCurrentCount() {
@@ -55,7 +55,7 @@ function render() {
   });
 
   // KPIs
-  const remaining = Math.max(0, 100 - count);
+  const remaining = Math.max(0, 50 - count);
   document.getElementById('kpiRemaining').textContent = remaining;
 
   const stats = JSON.parse(localStorage.getItem(KEYS.CAMPAIGN_STATS) || '{}');
@@ -70,11 +70,11 @@ function render() {
   document.getElementById('kpiWeek').textContent = weekCount;
 
   // Revenue calculations
-  // 体験は完全無料なので体験売上はゼロ。本契約 (founder1) ベースで月次収益を試算する。
+  // 体験は完全無料なので体験売上はゼロ。本契約 (founder_special) ベースで月次収益を試算する。
   const expectedPaid = Math.round(count * 0.4); // 体験→本契約の想定転換率 40%
-  const founder1Mrr = expectedPaid * 25000;     // 1期生プラン永年¥25,000/月
+  const founderSpecialMrr = expectedPaid * 14500; // 創設メンバープラン永年¥14,500/月
   document.getElementById('kpiRevenue').textContent = '¥0';
-  document.getElementById('kpiMrr').textContent = `¥${founder1Mrr.toLocaleString()}`;
+  document.getElementById('kpiMrr').textContent = `¥${founderSpecialMrr.toLocaleString()}`;
 
   // Checklist
   const ck = JSON.parse(localStorage.getItem(KEYS.CK) || '{}');

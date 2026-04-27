@@ -4,7 +4,7 @@ const API_BASE = window.location.origin.includes(':8090')
   : window.location.origin;  // prod: same origin
 
 const PLAN_INFO = {
-  founder1:  { name: '🎁 1期生プラン (永年¥25,000)', price: 25000 },
+  founder_special:  { name: '🎁 創設メンバープラン (永年¥14,500)', price: 14500 },
   standard:  { name: 'スタンダード',     price: 24980 },
   premium:   { name: 'プレミアム',       price: 39800 },
   family:    { name: '家族プラン（最大3名）', price: 59800 },
@@ -92,10 +92,10 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: payload.email, name: payload.name, student_id: signupData.student_id }),
     });
-    // 第1期生100名達成時は403で停止する。URL直打ち経由の101名目以降をブロック。
+    // 創設メンバー50名達成時は403で停止する。URL直打ち経由の51名目以降をブロック。
     if (checkoutRes.status === 403) {
       const errData = await checkoutRes.json().catch(() => ({ detail: '募集終了' }));
-      throw new Error(errData.detail || '第1期生の募集は終了しました');
+      throw new Error(errData.detail || '創設メンバーの募集は終了しました');
     }
     const checkoutData = await checkoutRes.json();
 

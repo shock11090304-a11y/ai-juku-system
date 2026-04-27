@@ -128,7 +128,7 @@ def slide_1_hero(img):
 
     # サブテキスト
     draw = ImageDraw.Draw(img)  # re-fetch (paste した後)
-    draw.text((PADDING, 660), "第1期生100名限定", font=f_sub, fill=TEXT_DIM)
+    draw.text((PADDING, 660), "創設メンバー50名限定", font=f_sub, fill=TEXT_DIM)
     draw.text((PADDING, 730), "販売開始しました", font=f_sub, fill=TEXT_DIM)
 
     # 下部CTA
@@ -267,7 +267,7 @@ def slide_5_cta(img):
     # サブ
     draw = ImageDraw.Draw(img)
     draw.text((PADDING, 600), "月¥24,980〜", font=f_sub, fill=TEXT_DIM)
-    draw.text((PADDING, 660), "第1期生100名限定", font=f_sub, fill=TEXT_DIM)
+    draw.text((PADDING, 660), "創設メンバー50名限定", font=f_sub, fill=TEXT_DIM)
 
     # 大きなCTAボックス
     box_x = PADDING

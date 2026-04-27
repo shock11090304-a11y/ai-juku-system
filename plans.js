@@ -6,19 +6,21 @@
 const PLAN_CONFIG = {
   // 新規向け3プラン
   plans: {
-    // 🎁 1期生100名限定 永年¥25,000 (体験 → 本契約への目玉プラン)
-    // 一度契約すれば永年この価格 (値上げなし)。100名到達で募集終了。
-    founder1: {
-      id: 'founder1',
-      name: '1期生プラン (永年特典)',
-      price: 25000,
-      priceLabel: '¥25,000',
-      tagline: '100名限定・契約後は永年この価格',
+    // 🎁 創設メンバー 50名限定 永年¥14,500 (体験 → 本契約への目玉プラン)
+    // 一度契約すれば永年この価格 (値上げなし)。50名到達で募集終了。
+    // 旧 founder1 (¥25,000・100名) は 2026-04-28 廃止 → 本プランに置換。
+    // server 側 PRICE_MAP では 'founder1' エイリアスも本プランに紐付け済 (後方互換)。
+    founder_special: {
+      id: 'founder_special',
+      name: '創設メンバー (永年特典)',
+      price: 14500,
+      priceLabel: '¥14,500',
+      tagline: '50名限定・契約後は永年この価格・全機能無制限',
       maxStudents: 1,
       aiModel: 'opus',
       color: '#fbbf24',
       recommended: true,
-      badge: '🎁 100名限定',
+      badge: '🎁 50名限定',
       quotas: { problems: null, essays: null, textbooks: null },
       features: [
         { name: '24時間AIチューター（無制限）', included: true, highlight: true },
@@ -26,8 +28,10 @@ const PLAN_CONFIG = {
         { name: '英作文・記述添削（無制限）', included: true, highlight: true },
         { name: '学習診断・カリキュラム生成', included: true },
         { name: 'オリジナル参考書生成（無制限）', included: true, highlight: true },
+        { name: '5試験対応 (TOEFL/TOEIC/IELTS/英検/大学入試)', included: true, highlight: true },
+        { name: '英字ニュース読解 (CNN/Japan Times/BBC ほか)', included: true, highlight: true },
         { name: '保護者向け詳細レポート（週次・月次）', included: true },
-        { name: '🎁 一度契約すれば永年¥25,000（値上げ対象外）', included: true, highlight: true, note: true },
+        { name: '🎁 一度契約すれば永年¥14,500（値上げ対象外）', included: true, highlight: true, note: true },
         { name: '優先処理（AI応答の速度優先）', included: true },
       ],
     },

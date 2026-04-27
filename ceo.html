@@ -407,21 +407,21 @@
       </div>
     </section>
 
-    <!-- 第1期生残枠 (実数値 vs 顧客表示値) -->
+    <!-- 創設メンバー残枠 (実数値 vs 顧客表示値) -->
     <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
-        <h2 style="font-size:1.15rem;color:#fbbf24;margin:0;">🎁 第1期生 残り枠 (内部 vs 公開)</h2>
+        <h2 style="font-size:1.15rem;color:#fbbf24;margin:0;">🎁 創設メンバー 残り枠 (内部 vs 公開)</h2>
         <span id="foundersUpdated" style="font-size:0.7rem;color:#71717a;">--</span>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.7rem;">
         <div style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
           <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.3rem;">📊 実残枠 (内部)</div>
-          <div style="font-size:1.8rem;font-weight:900;color:#34d399;"><span id="foundersRealRemaining">--</span><span style="font-size:0.9rem;color:#71717a;"> / 100</span></div>
+          <div style="font-size:1.8rem;font-weight:900;color:#34d399;"><span id="foundersRealRemaining">--</span><span style="font-size:0.9rem;color:#71717a;"> / 50</span></div>
           <div style="font-size:0.7rem;color:#71717a;">実申込: <span id="foundersRealTaken">--</span>名</div>
         </div>
         <div style="background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);border-radius:10px;padding:0.85rem;text-align:center;">
           <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.3rem;">👁 顧客に見せている残枠</div>
-          <div style="font-size:1.8rem;font-weight:900;color:#fbbf24;"><span id="foundersPublicRemaining">--</span><span style="font-size:0.9rem;color:#71717a;"> / 100</span></div>
+          <div style="font-size:1.8rem;font-weight:900;color:#fbbf24;"><span id="foundersPublicRemaining">--</span><span style="font-size:0.9rem;color:#71717a;"> / 50</span></div>
           <div style="font-size:0.7rem;color:#71717a;">表示申込: <span id="foundersPublicTaken">--</span>名 (オフセット +<span id="foundersOffset">--</span>)</div>
         </div>
         <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:0.85rem;text-align:center;">
@@ -487,8 +487,8 @@
           <div id="monStripe" style="font-size:1.2rem;font-weight:900;">--</div>
         </div>
         <div style="background:rgba(0,0,0,0.25);border-radius:8px;padding:0.6rem;text-align:center;">
-          <div style="color:#94a3b8;margin-bottom:0.2rem;">Founder1 Price</div>
-          <div id="monFounder1" style="font-size:1.2rem;font-weight:900;">--</div>
+          <div style="color:#94a3b8;margin-bottom:0.2rem;">Founder Special Price</div>
+          <div id="monFounderSpecial" style="font-size:1.2rem;font-weight:900;">--</div>
         </div>
         <div style="background:rgba(0,0,0,0.25);border-radius:8px;padding:0.6rem;text-align:center;">
           <div style="color:#94a3b8;margin-bottom:0.2rem;">Resend Email</div>
@@ -830,7 +830,7 @@
               <td>${trial.priceLabel}</td>
               <td>1名</td>
               <td>全機能</td>
-              <td>クレカ登録不要・第1期生向け</td>
+              <td>クレカ登録不要・創設メンバー向け</td>
             </tr>
             <tr>
               <td>初回費用</td>
@@ -1149,7 +1149,7 @@
     // 旧名関数を残してロード順序の安全性確保
     const loadLiveRoster = loadLiveMetrics;
 
-    // 第1期生 残枠 (実数値 vs 公開カモフラージュ値) を並べて表示
+    // 創設メンバー 残枠 (実数値 vs 公開カモフラージュ値) を並べて表示
     async function loadFoundersDualCount() {
       try {
         const BACKEND = (window.location.hostname === 'localhost' && window.location.port === '8090')
@@ -1339,7 +1339,7 @@
         const ok = '<span style="color:#34d399;">✅</span>';
         const ng = '<span style="color:#f87171;">❌</span>';
         document.getElementById('monStripe').innerHTML = s.stripe_configured ? ok : ng;
-        document.getElementById('monFounder1').innerHTML = s.founder1_price_configured ? ok : ng;
+        document.getElementById('monFounderSpecial').innerHTML = s.founder_special_price_configured ? ok : ng;
         document.getElementById('monEmail').innerHTML = s.email_configured ? ok : ng;
         document.getElementById('monAnthropic').innerHTML = s.anthropic_configured ? ok : ng;
         // ファネル

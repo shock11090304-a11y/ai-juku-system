@@ -396,19 +396,19 @@ def scene_price_comparison(out_path):
 
 
 def scene_urgency(out_path):
-    """50-55s: 100名限定"""
+    """50-55s: 50名限定"""
     img = gradient_bg()
     draw = ImageDraw.Draw(img)
     f_top = font(FONT_BOLD, 60)
     f_huge = font(FONT_BLACK, 400)
     f_sub = font(FONT_BOLD, 64)
 
-    center_text(draw, "第1期生", f_top, 300, WARNING)
+    center_text(draw, "創設メンバー", f_top, 300, WARNING)
 
-    # 巨大な 100
-    grad_text(img, "100", f_huge, (100, 500), GRAD_P1, GRAD_P2)
+    # 巨大な 50
+    grad_text(img, "50", f_huge, (100, 500), GRAD_P1, GRAD_P2)
 
-    # 100 の右に "名限定"
+    # 50 の右に "名限定"
     draw = ImageDraw.Draw(img)
     center_text(draw, "名限定", f_sub, 950, TEXT)
 

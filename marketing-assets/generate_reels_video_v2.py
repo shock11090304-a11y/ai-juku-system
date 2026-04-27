@@ -415,7 +415,7 @@ def scene_cta(out_path):
     badge_x = (W - badge_w) // 2
     draw.rounded_rectangle([badge_x, 770, badge_x + badge_w, 850], radius=20,
                            fill=(60, 30, 40), outline=RED, width=3)
-    draw.text((badge_x + 25, 788), "第1期生100名限定・早い者勝ち", font=font(FONT_BLACK, 30), fill=RED)
+    draw.text((badge_x + 25, 788), "創設メンバー50名限定・早い者勝ち", font=font(FONT_BLACK, 30), fill=RED)
 
     center_text(draw, "継続は月額¥24,980〜 (自動課金なし)", f_hint, 880, WARNING)
 
