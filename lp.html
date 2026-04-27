@@ -734,10 +734,14 @@
       window.location.href = `checkout.html?${params.toString()}`;
     });
 
-    // Smooth scroll
+    // Smooth scroll (空ハッシュ "#" / "#!" は SyntaxError を起こすので skip)
     document.querySelectorAll('a[href^="#"]').forEach(a => {
       a.addEventListener('click', e => {
-        const target = document.querySelector(a.getAttribute('href'));
+        const href = a.getAttribute('href');
+        if (!href || href === '#' || href === '#!') return;
+        let target;
+        try { target = document.querySelector(href); }
+        catch (_) { return; }
         if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
       });
     });
