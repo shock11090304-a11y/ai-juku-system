@@ -3195,7 +3195,7 @@ def admin_enrollment_waiver_reset(payload: dict = None, authorization: Optional[
         conn.commit()
         # events に記録
         c.execute(
-            "INSERT INTO events (name, data, source) VALUES (?, ?, ?)",
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
             ("enrollment_waiver_reset", json.dumps({"reset_at": now.isoformat(), "new_limit": new_limit}, ensure_ascii=False), "admin"),
         )
         conn.commit()
@@ -3265,7 +3265,7 @@ def admin_exam_questions_purge(payload: dict, authorization: Optional[str] = Hea
         conn.commit()
         # events に記録
         c.execute(
-            "INSERT INTO events (name, data, source) VALUES (?, ?, ?)",
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
             ("exam_questions_purge", json.dumps({"filter": payload, "deleted": deleted}, ensure_ascii=False), "admin"),
         )
         conn.commit()
@@ -3381,7 +3381,7 @@ async def admin_exam_questions_burst_seed(payload: dict = None, authorization: O
         conn = db()
         c = conn.cursor()
         c.execute(
-            "INSERT INTO events (name, data, source) VALUES (?, ?, ?)",
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
             ("exam_questions_burst_seed", json.dumps({
                 "target": target, "max_total": max_total, "concurrency": concurrency,
                 "queued": len(needs), "generated": len(generated), "failed": len(failed),
@@ -3407,6 +3407,92 @@ async def admin_exam_questions_burst_seed(payload: dict = None, authorization: O
         "duration_sec": int(duration),
         "estimated_cost_usd": est_cost_usd,
         "message": f"✅ {len(generated)} 問生成 (失敗 {len(failed)}・所要 {int(duration)}秒・推定 ${est_cost_usd}≈¥{int(est_cost_usd * 150)})",
+    }
+
+
+@app.post("/api/admin/exam-questions/import")
+def admin_exam_questions_import(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """🆓 Claude Max プラン経由で生成した問題 JSON を一括インサート ($0 運用用)。
+
+    payload:
+      {
+        "questions": [
+          {"exam_id": "toefl", "part_key": "r_passage1", "eiken_grade": null,
+           "question_data": {...}, "model": "claude-max-plan"}
+        ],
+        "skip_full": true  // 任意・true なら TARGET_POOL 到達 part を skip
+      }
+
+    認証: admin Bearer or x-cron-secret"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    questions = payload.get("questions") or []
+    if not isinstance(questions, list) or not questions:
+        raise HTTPException(status_code=400, detail="questions が空 or 配列ではありません")
+
+    skip_full = bool(payload.get("skip_full", False))
+    counts = _exam_pool_counts() if skip_full else {}
+
+    valid_rotation = {(e, p, g) for (e, p, g) in EXAM_QUESTION_ROTATION}
+
+    inserted = 0
+    skipped = 0
+    failed = []
+    conn = db()
+    c = conn.cursor()
+    try:
+        for i, q in enumerate(questions):
+            try:
+                exam_id = q.get("exam_id")
+                part_key = q.get("part_key")
+                eiken_grade = q.get("eiken_grade")
+                question_data = q.get("question_data")
+                model = q.get("model") or "claude-max-plan"
+
+                if not exam_id or not part_key or not question_data:
+                    failed.append({"i": i, "reason": "missing required fields"})
+                    continue
+                if (exam_id, part_key, eiken_grade) not in valid_rotation:
+                    failed.append({"i": i, "reason": f"invalid rotation: {exam_id}/{part_key}/{eiken_grade}"})
+                    continue
+                if skip_full and counts.get((exam_id, part_key, eiken_grade), 0) >= EXAM_QUESTIONS_TARGET_POOL:
+                    skipped += 1
+                    continue
+
+                c.execute(
+                    "INSERT INTO exam_questions (exam_id, part_key, eiken_grade, question_data, model) VALUES (?, ?, ?, ?, ?)",
+                    (exam_id, part_key, eiken_grade,
+                     json.dumps(question_data, ensure_ascii=False) if not isinstance(question_data, str) else question_data,
+                     model),
+                )
+                inserted += 1
+                if skip_full:
+                    counts[(exam_id, part_key, eiken_grade)] = counts.get((exam_id, part_key, eiken_grade), 0) + 1
+            except Exception as e:
+                failed.append({"i": i, "reason": f"{type(e).__name__}: {e}"})
+                try: conn.rollback()
+                except Exception: pass
+        conn.commit()
+    finally:
+        conn.close()
+
+    log.info(f"[ExamQ:Import] inserted={inserted} skipped={skipped} failed={len(failed)}")
+    return {
+        "ok": True,
+        "received": len(questions),
+        "inserted": inserted,
+        "skipped_full": skipped,
+        "failed": len(failed),
+        "failed_details": failed[:20],
+        "message": f"✅ {inserted}問 import (skip {skipped}・失敗 {len(failed)})",
     }
 
 
