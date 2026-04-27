@@ -238,6 +238,16 @@ def _lookup_founder_special_price_id() -> str:
 # ==========================================================================
 # Database Setup (SQLite / Postgres 両対応)
 # ==========================================================================
+class _Row(dict):
+    """dict 形式の row に対して整数 index アクセス (row[0]) を可能にするラッパ。
+    sqlite3.Row は両方サポートするので、Postgres 側 (psycopg dict_row) も同等に振る舞わせる。
+    これにより c.fetchone()[0] と c.fetchone()["col"] が両方通る。"""
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return list(self.values())[key]
+        return super().__getitem__(key)
+
+
 class _Cursor:
     """sqlite3/psycopg 両対応のカーソル薄いラッパ。
     `?` プレースホルダを Postgres 用に `%s` へ変換し、fetchone/fetchall の
@@ -266,10 +276,15 @@ class _Cursor:
         row = self._cur.fetchone()
         if row is None:
             return None
+        if self._is_pg and isinstance(row, dict) and not isinstance(row, _Row):
+            return _Row(row)
         return row
 
     def fetchall(self):
-        return self._cur.fetchall()
+        rows = self._cur.fetchall()
+        if self._is_pg:
+            return [_Row(r) if isinstance(r, dict) and not isinstance(r, _Row) else r for r in rows]
+        return rows
 
 
 class _Connection:
