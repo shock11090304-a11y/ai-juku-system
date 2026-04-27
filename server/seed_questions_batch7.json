@@ -1,0 +1,521 @@
+{
+  "questions": [
+    {
+      "exam_id": "rikei",
+      "part_key": "bio_basic",
+      "eiken_grade": "kyotsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "生物基礎 共通テスト型 — 細胞・遺伝情報",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "次のうち、原核細胞の特徴として正しいのはどれか?",
+            "choices": ["核膜に包まれた核を持つ", "ミトコンドリアを持つ", "葉緑体を持つ", "核膜に包まれた核を持たず、DNA は細胞質内に存在する"],
+            "answer": "3",
+            "explanation": "原核細胞 (大腸菌など細菌) は核膜なし・DNA は細胞質内。真核細胞 (動植物) は核膜+ミトコンドリア+葉緑体 (植物のみ) を持つ。共通テスト生物基礎の細胞構造は最頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "DNA の塩基 A (アデニン) と相補的に結合する塩基はどれか?",
+            "choices": ["G (グアニン)", "C (シトシン)", "T (チミン)", "U (ウラシル)"],
+            "answer": "2",
+            "explanation": "DNA の相補塩基対: A-T、G-C。RNA では A-U。共通テスト生物基礎では塩基対が必修。【記憶】「アテ・グシ」(A-T, G-C) で覚える。U はチミンの代わりに RNA に存在 (DNA には U なし)。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "ヒトの体細胞分裂で、染色体数が娘細胞でどう変化するか?",
+            "choices": ["半分になる", "同じになる (46本のまま)", "2倍になる", "ランダムに変動する"],
+            "answer": "1",
+            "explanation": "体細胞分裂は同数 (46本→46本)。減数分裂は半数 (46本→23本) で配偶子形成。共通テスト生物基礎は体細胞分裂と減数分裂の混同に注意。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_basic",
+      "eiken_grade": "march_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "MARCH 理工系 数学・基礎問題型",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "log₂ 12 - log₂ 3 の値を求めよ。",
+            "choices": ["log₂ 9", "log₂ 4 = 2", "log₂ 15", "1/4"],
+            "answer": "1",
+            "explanation": "log の引き算は割り算: log₂ 12 - log₂ 3 = log₂ (12/3) = log₂ 4 = 2。【公式】logₐM - logₐN = logₐ(M/N)。MARCH 理工は対数の基本公式が頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "ベクトル a = (2, 1)、b = (1, 3) のとき、a · b の値は?",
+            "choices": ["3", "5", "7", "9"],
+            "answer": "1",
+            "explanation": "内積 a · b = 2×1 + 1×3 = 2 + 3 = 5。【公式】a·b = a₁b₁ + a₂b₂ (成分計算)。MARCH 理工はベクトルの基本演算が基礎問題で頻出。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "lim(x→0) (sin 3x) / x の値は?",
+            "choices": ["0", "1", "3", "∞"],
+            "answer": "2",
+            "explanation": "lim(x→0) (sin x)/x = 1 を利用。(sin 3x)/x = 3 × (sin 3x)/(3x) → 3 × 1 = 3。【公式】lim(x→0) sin(kx)/x = k。MARCH 理工は標準的な極限計算が頻出。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_basic_q",
+      "eiken_grade": "march_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "MARCH 理工系 物理・基礎問題型",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "質量 2 kg の物体が等速直線運動をしている。物体に働く合力は?",
+            "choices": ["0 N", "2 N", "9.8 N", "19.6 N"],
+            "answer": "0",
+            "explanation": "等速直線運動 = 加速度 0 → ニュートンの第1法則 (慣性の法則) により合力 = 0。【典型ミス】重力 mg や慣性力に惑わされる。MARCH 理工は基本概念の理解確認問題が頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "電圧 12 V、抵抗 3 Ω の回路に流れる電流は?",
+            "choices": ["3 A", "4 A", "9 A", "36 A"],
+            "answer": "1",
+            "explanation": "オームの法則 V = IR → I = V/R = 12/3 = 4 A。【公式】電流 I = V/R。MARCH 理工は電気回路の基本計算が頻出。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "波長 0.5 m、振動数 600 Hz の波の速さは?",
+            "choices": ["120 m/s", "300 m/s", "600 m/s", "1200 m/s"],
+            "answer": "1",
+            "explanation": "波の式 v = fλ → v = 600 × 0.5 = 300 m/s。【公式】v = fλ (速さ = 振動数 × 波長)。MARCH 理工は波動の基本公式が必修。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_basic_q",
+      "eiken_grade": "march_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "MARCH 理工系 化学・基礎問題型",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "0.10 mol/L の塩酸 HCl 100 mL に含まれる H⁺ の物質量は?",
+            "choices": ["0.001 mol", "0.01 mol", "0.1 mol", "1 mol"],
+            "answer": "1",
+            "explanation": "n = c × V (L) = 0.10 × 0.100 = 0.010 mol。HCl は強酸で完全電離 → H⁺ 物質量 = HCl 物質量。【単位】mol/L × L = mol、mL → L 換算 (1000で割る) に注意。MARCH 化学は溶液濃度計算が頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "次のうち、酸化還元反応はどれか?",
+            "choices": ["NaOH + HCl → NaCl + H₂O", "Zn + 2HCl → ZnCl₂ + H₂", "Na₂CO₃ + 2HCl → 2NaCl + H₂O + CO₂", "NH₃ + HCl → NH₄Cl"],
+            "answer": "1",
+            "explanation": "Zn + 2HCl → ZnCl₂ + H₂: Zn の酸化数 0 → +2 (酸化)、H の酸化数 +1 → 0 (還元)。他は中和や複分解で酸化数変化なし。【判別】単体 (Zn, H₂) を含む反応は酸化還元の可能性が高い。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "メタノール CH₃OH (分子量 32) 16 g 中に含まれる分子数は? アボガドロ定数 = 6.0 × 10²³ /mol。",
+            "choices": ["1.5 × 10²³", "3.0 × 10²³", "6.0 × 10²³", "1.2 × 10²⁴"],
+            "answer": "1",
+            "explanation": "n = 16 / 32 = 0.50 mol。分子数 = 0.50 × 6.0 × 10²³ = 3.0 × 10²³。【公式】物質量 = 質量 / モル質量、分子数 = 物質量 × Nₐ。MARCH 化学はモル計算の基礎が頻出。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "tokoda_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東工大理系数学 大問1型 — 複素数平面",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "複素数 z が |z| = 1 を満たすとき、|z + 1| の最大値と最小値を求めよ。",
+            "answer": "|z| = 1 → z は単位円上の点。\n\n|z + 1| = |z - (-1)| → 点 z と点 -1 の距離。\n\n単位円上の点と -1 (これも単位円上の点) との距離:\n最大値: 直径方向 (z = 1 のとき) → |1 - (-1)| = 2\n最小値: z = -1 のとき → |(-1) - (-1)| = 0\n\n∴ 最大値 2、最小値 0",
+            "explanation": "【東工大型複素数 解法ポイント】① 複素数の幾何学的解釈 (絶対値 = 距離) ② |z| = r は z が原点中心半径 r の円上 ③ |z - α| = z と α の距離。【典型解法】複素数問題は計算より幾何学的イメージで解く方が早い。東工大は「実は単純」な問題を出すことが多い。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "tokoda_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東工大理系物理 大問1型 — 電磁気・コンデンサー",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "電気容量 C のコンデンサーが電圧 V₀ で充電されている。これを抵抗 R を介して別の電気容量 C の(放電してある)コンデンサーに接続した。十分時間後の各コンデンサーの電圧と、放電中に R で消費されたエネルギーを求めよ。",
+            "answer": "充電前の電荷: Q₀ = C V₀ (右側のコンデンサーは 0)\n\n十分時間後 (定常状態): 両コンデンサーの電圧が等しくなる。電荷保存則より:\nQ₁ + Q₂ = Q₀\nQ₁ = Q₂ (両コンデンサー C 同じ・電圧同じ)\n→ Q₁ = Q₂ = Q₀/2 = C V₀ / 2\n各電圧 V = Q/C = V₀/2\n\n初期エネルギー: E_initial = (1/2) C V₀²\n最終エネルギー: E_final = 2 × (1/2) C (V₀/2)² = C V₀² / 4\n消費エネルギー (= R で発熱): E_R = E_initial - E_final = (1/2)CV₀² - (1/4)CV₀² = (1/4) C V₀²",
+            "explanation": "【東工大型 コンデンサー 解法ポイント】① 定常状態は電圧均等 + 電荷保存 ② エネルギー保存 (初期エネルギー = 最終エネルギー + 抵抗での消費) ③ 半分ルール: 同容量の充電/放電コンデンサー接続では必ずエネルギーの半分が抵抗で消費される (R の値や接続時間に依らない・有名な結果)。【典型ミス】電圧均等を電荷均等と混同、初期/最終エネルギーの計算ミス。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "nagoya_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "名大理系数学 大問1型 — 三角関数",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "0 ≤ x ≤ π のとき、関数 f(x) = sin x + cos x の最大値・最小値を求めよ。",
+            "answer": "f(x) = sin x + cos x = √2 sin(x + π/4) (合成公式)\n\n0 ≤ x ≤ π → π/4 ≤ x + π/4 ≤ 5π/4\n\nこの範囲で sin の値域を調べる:\nx + π/4 = π/2 のとき (x = π/4) → sin = 1 (最大)\nx + π/4 = 5π/4 のとき (x = π) → sin = -√2/2\nx + π/4 = π/4 のとき (x = 0) → sin = √2/2\n\n最大値: f(π/4) = √2 × 1 = √2\n最小値: f(π) = √2 × (-√2/2) = -1\n\n(※ 最小値の候補は端点 x = π のみ。x = 0 のとき f = 1 > -1 なので x = π が最小)",
+            "explanation": "【名大型三角関数 解法ポイント】① a sin x + b cos x = √(a²+b²) sin(x + α) (合成公式) で単一三角関数に帰着 ② 引数の範囲を変換 ③ sin/cos の単純な値域問題に変換。【公式】合成: a sin x + b cos x = R sin(x + α), R = √(a²+b²), tan α = b/a。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "waseda_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "早大理工数学 大問1型 — 確率",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "袋の中に赤玉 3個、白玉 2個、青玉 1個が入っている。袋から 3個を同時に取り出すとき、3色がすべて含まれる確率を求めよ。",
+            "answer": "全体の取り出し方: ₆C₃ = 20 通り\n\n3色が含まれる = 赤 1 + 白 1 + 青 1\n組合せ数: ₃C₁ × ₂C₁ × ₁C₁ = 3 × 2 × 1 = 6 通り\n\n確率 = 6 / 20 = 3/10",
+            "explanation": "【早大理工確率 解法ポイント】① 同時に取り出す → 組合せ ₆C₃ で全体を計算 ② 各色から1個ずつの選び方を独立に積で計算 ③ (求める) / (全体)。【典型ミス】順序を考慮 (順列) してしまう、3色のうち1色が複数個になる場合を含めてしまう。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "waseda_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "早大理工物理 大問1型 — 力学・運動量保存",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "質量 m の物体 A が速度 v で、静止している質量 2m の物体 B に弾性衝突した。衝突後の A と B の速度を求めよ。",
+            "answer": "弾性衝突 → 運動量保存 + 運動エネルギー保存。\n衝突後 A の速度を v_A、B の速度を v_B とする (右向きを正)。\n\n運動量保存: m v + 2m × 0 = m v_A + 2m v_B\n→ v = v_A + 2 v_B  ...①\n\n反発係数 e = 1 (弾性):\n(v_B - v_A) / (v - 0) = 1\n→ v_B - v_A = v  ...②\n\n①+②: 3 v_B = 2 v → v_B = 2v/3\n② に代入: v_A = v_B - v = 2v/3 - v = -v/3\n\n∴ v_A = -v/3 (反対向きに v/3 で跳ね返る)、v_B = 2v/3\n\n検算: 運動量 m(-v/3) + 2m(2v/3) = -mv/3 + 4mv/3 = mv ✓\n運動エネルギー (1/2)m(v/3)² + (1/2)(2m)(2v/3)² = mv²/18 + 4mv²/9 = mv²/18 + 8mv²/18 = 9mv²/18 = mv²/2 ✓",
+            "explanation": "【早大理工 衝突問題 解法ポイント】① 弾性衝突 = 運動量保存 + 反発係数 e = 1 ② 反発係数 e = (v_B' - v_A')/(v_A - v_B) (衝突前の相対速度と衝突後の相対速度の比) ③ 連立方程式で解く ④ 最後に運動エネルギー保存で検算。【公式】e = 1: 弾性衝突、e = 0: 完全非弾性 (一体化)、0 < e < 1: 非弾性。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "keio_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "慶大理工数学 大問1型 — 微分・接線",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "曲線 y = x² + 1 上の点 (1, 2) における接線の方程式を求めよ。",
+            "answer": "y = x² + 1 → y' = 2x\n\n点 (1, 2) における接線の傾き: y'(1) = 2 × 1 = 2\n\n接線の方程式 (公式 y - y₀ = m(x - x₀)):\ny - 2 = 2(x - 1)\ny = 2x - 2 + 2 = 2x\n\n∴ y = 2x",
+            "explanation": "【慶大理工 微分・接線 解法ポイント】① 接線の傾き = 接点での導関数の値 ② 点 (x₀, y₀) で傾き m の直線: y - y₀ = m(x - x₀) ③ 整理して標準形に。【検算】曲線 y = x² + 1 と接線 y = 2x の交点を求める: x² + 1 = 2x → x² - 2x + 1 = (x-1)² = 0 (重解) → 接している ✓。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q2",
+      "eiken_grade": "keio_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "慶大理工数学 大問2型 — 積分・面積",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "曲線 y = x² と直線 y = x で囲まれた領域の面積 S を求めよ。",
+            "answer": "交点を求める: x² = x → x² - x = 0 → x(x - 1) = 0 → x = 0, 1\n\n0 ≤ x ≤ 1 の範囲で y = x ≥ y = x² (接点や端点で等号)。\n例: x = 0.5 のとき x = 0.5, x² = 0.25 → x ≥ x² 確認。\n\nS = ∫₀¹ (x - x²) dx = [x²/2 - x³/3]₀¹ = (1/2 - 1/3) - 0 = 3/6 - 2/6 = 1/6\n\n∴ S = 1/6",
+            "explanation": "【慶大理工 積分・面積 解法ポイント】① 交点で積分区間を決定 ② 上の関数 - 下の関数を積分 ③ ∫(x - x²)dx = x²/2 - x³/3。【典型公式】∫(x-α)(x-β)dx = -(β-α)³/6 (1/6 公式)。本問は 0~1 の差なので 1/6 一発で出る (1/6 × 1³ = 1/6)。慶大理工は 1/6 公式の応用が頻出。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "bio_q1",
+      "eiken_grade": "keio_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "慶大理工 (生物選択者) 大問1型 — 遺伝・分子生物学",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "ある DNA の鎖が 5'-AGCTGAATTC-3' のとき、(1) その相補鎖の塩基配列を 5'→3' で書け。(2) 転写されてできる mRNA の塩基配列を 5'→3' で書け (テンプレート鎖が問題で示された鎖の場合)。",
+            "answer": "(1) 相補鎖は逆平行・相補的 (A-T、G-C):\nもとの鎖 (5'→3'): A G C T G A A T T C\n相補鎖 (3'→5'): T C G A C T T A A G\n相補鎖を 5'→3' で書くと: G A A T T C A G C T\n\n(2) テンプレート鎖が 5'-AGCTGAATTC-3' のとき、mRNA は逆平行・相補・T→U:\nテンプレート鎖 (5'→3'): A G C T G A A T T C\nテンプレート鎖 (3'→5'): C T T A A G T C G A\nmRNA (5'→3') (相補・T→U): G A A U U C A G C U\n\n(注: 慣習的にテンプレート鎖は 3'→5' 方向で読み、mRNA は 5'→3' 方向に合成される)",
+            "explanation": "【慶大理工生物 解法ポイント】① DNA 二本鎖は逆平行 (5'→3' と 3'→5') かつ相補的 (A-T、G-C) ② 配列を書く時は方向を明示 ③ 転写: テンプレート鎖を 3'→5' 方向に読み、mRNA を 5'→3' に合成・T → U 置換。【典型ミス】方向の指定を逆にする、A-U / T-U の混乱、転写と複製の混同。慶大医学部・理工生物では分子生物学の基本配列操作が頻出。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "sophia_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "上智大理工数学 大問1型 — 二項定理",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "(1 + x)¹⁰ の展開における x³ の係数を求めよ。",
+            "choices": ["30", "120", "210", "720"],
+            "answer": "1",
+            "explanation": "二項定理: (1 + x)ⁿ = Σ ₙCₖ xᵏ。\nx³ の係数 = ₁₀C₃ = (10 × 9 × 8) / (3 × 2 × 1) = 720/6 = 120。\n【公式】ₙCₖ = n! / (k!(n-k)!)。上智理工は二項係数の計算が頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "三角形の3辺の長さが a = 5、b = 7、c = 8 のとき、cos C の値は (C は辺 c の対角)?",
+            "choices": ["1/7", "1/2", "√3/2", "5/14"],
+            "answer": "0",
+            "explanation": "余弦定理 c² = a² + b² - 2ab cos C\n8² = 5² + 7² - 2×5×7×cos C\n64 = 25 + 49 - 70 cos C\n64 = 74 - 70 cos C\n70 cos C = 10\ncos C = 1/7。【公式】余弦定理は中学の三平方の一般化。3辺がわかれば cos が出る。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "log₃ 5 + log₃ 9 - log₃ 15 を簡略化せよ。",
+            "choices": ["log₃ 3 = 1", "log₃ 5", "log₃ 9 = 2", "0"],
+            "answer": "0",
+            "explanation": "log の和差 → 真数の積商: log₃ (5 × 9 / 15) = log₃ 3 = 1。【公式】log + log = log(積)、log - log = log(商)、log_a a = 1。上智理工は対数の組合せ計算が頻出。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "igakubu_kokoritsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "国公立医学部 数学 大問1型 — 数列・漸化式",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "数列 {aₙ} が a₁ = 2, aₙ₊₁ = 2aₙ + 1 で定義されるとき、一般項 aₙ を求めよ。",
+            "answer": "漸化式 aₙ₊₁ = 2aₙ + 1。\n特性方程式: α = 2α + 1 → α = -1。\n変形: aₙ₊₁ - (-1) = 2(aₙ - (-1))\nつまり aₙ₊₁ + 1 = 2(aₙ + 1)\n\n数列 {aₙ + 1} は初項 a₁ + 1 = 3、公比 2 の等比数列。\naₙ + 1 = 3 × 2^(n-1)\n∴ aₙ = 3 × 2^(n-1) - 1",
+            "explanation": "【医学部数学 漸化式 解法ポイント】① aₙ₊₁ = paₙ + q (p ≠ 1) 型 → 特性方程式 α = pα + q で固定点を求める ② aₙ₊₁ - α = p(aₙ - α) → 等比数列に帰着 ③ 一般項を求めて α を引いて元に戻す。【検算】a₁ = 3 × 1 - 1 = 2 ✓、a₂ = 2×2+1 = 5、公式 a₂ = 3×2 - 1 = 5 ✓。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "igakubu_kokoritsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "国公立医学部 物理 大問1型 — 波動・干渉",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "ヤングの実験で、スリット間隔 d、スリットからスクリーンまでの距離 L、波長 λ のとき、スクリーン上で隣接する明線の間隔 Δy を求めよ。L >> d とする。",
+            "answer": "明線条件: 経路差 = mλ (m: 整数)\n経路差 ≈ d sin θ ≈ d × (y/L)  (L >> d、近似)\n\n第 m 次明線の位置: y_m = mλL/d\n\n隣接明線間隔: Δy = y_(m+1) - y_m = λL/d",
+            "explanation": "【医学部物理 ヤングの実験 解法ポイント】① 経路差 = (光路1) - (光路2) ≈ d sin θ (近似) ② 明線: 経路差 = mλ、暗線: 経路差 = (m + 1/2)λ ③ 微小角近似 sin θ ≈ tan θ = y/L ④ 隣接間隔 Δy = λL/d (覚えておく公式)。【典型ミス】sin と tan の近似の混同、波長と振動数の取違い。医学部物理は波動の基本公式が必修。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_q1",
+      "eiken_grade": "igakubu_kokoritsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "国公立医学部 化学 大問1型 — 酸塩基・pH",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "0.10 mol/L の塩酸 HCl 100 mL に、0.10 mol/L の水酸化ナトリウム NaOH 50 mL を加えたとき、混合液の pH を求めよ。混合後の体積は 150 mL とし、log 2 = 0.30 とする。",
+            "answer": "HCl: n(H⁺) = 0.10 × 0.100 = 0.0100 mol\nNaOH: n(OH⁻) = 0.10 × 0.050 = 0.0050 mol\n\n中和反応 H⁺ + OH⁻ → H₂O により残存 H⁺:\nn(H⁺残) = 0.0100 - 0.0050 = 0.0050 mol\n\n混合後の体積 = 150 mL = 0.150 L\n[H⁺] = 0.0050 / 0.150 = 1/30 mol/L = 3.33 × 10⁻² mol/L\n\npH = -log[H⁺] = -log(3.33 × 10⁻²) = -log(10/300) = -log(10/3 × 10⁻²) = 2 - log(10/3) = 2 - (1 - log 3) = 1 + log 3\nlog 3 = log(10/3.33) ... 実際の log 3 ≈ 0.48\n→ pH ≈ 1 + 0.48 = 1.48 ≈ 1.5\n\n別計算: 1/30 = 10/300 = 10⁻¹/3 → pH = -log(10⁻¹/3) = 1 + log 3 ≈ 1.48\n\n【簡単な近似】問題が log 2 = 0.30 のみ与える場合は厳密値が出ないが、概ね pH ≈ 1.5 とする。",
+            "explanation": "【医学部化学 中和・pH 解法ポイント】① 各 mol を計算 ② 中和反応で残った H⁺ または OH⁻ を求める ③ 混合後の体積で割って濃度を計算 ④ pH = -log[H⁺]。【典型ミス】体積の単位 (mL → L)、混合後の体積を元の HCl の体積で計算してしまう、log の計算ミス。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "bio_q1",
+      "eiken_grade": "igakubu_kokoritsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "国公立医学部 生物 大問1型 — 免疫",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "(1) 体液性免疫と細胞性免疫の主要なエフェクター細胞をそれぞれ答えよ。\n(2) ワクチン接種の原理を、免疫記憶の観点から説明せよ。",
+            "answer": "(1) 体液性免疫: B 細胞 (形質細胞・プラズマ細胞) が抗体を産生して病原体に結合・無力化する。\n細胞性免疫: キラー T 細胞 (細胞傷害性 T 細胞・CD8⁺ T 細胞) が感染細胞を直接攻撃して破壊する。\n\n(2) ワクチン接種は弱毒化・不活化された病原体や病原体の一部 (抗原) を体内に投与し、免疫系を活性化させる。初回接種時に B 細胞・T 細胞が抗原を認識・増殖し、一部がメモリー細胞として長期間体内に残る。\n後に同じ病原体に感染した際、メモリー細胞が抗原を素早く認識し、二次応答として大量の抗体産生・キラー T 細胞活性化を初回より迅速かつ強力に実行できる。これにより病原体が増殖する前に駆除でき、発症が防止される (= 獲得免疫の記憶機能)。",
+            "explanation": "【医学部生物 免疫 解法ポイント】① 体液性免疫 = 抗体 (B 細胞→形質細胞)、細胞性免疫 = キラー T 細胞 + ヘルパー T 細胞 ② 一次応答と二次応答の違い (二次は速く強い) ③ メモリー B/T 細胞の役割。【医学部頻出】ワクチンの種類 (生・不活化・トキソイド・mRNA)、抗原提示細胞 (樹状細胞)、MHC クラス I/II、T 細胞活性化のシグナル経路。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "igakubu_shiritsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "私立医学部 数学 大問1型 — 確率分布",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "サイコロを 4 回投げるとき、6 の目がちょうど 1 回出る確率を求めよ。",
+            "answer": "二項分布の問題。\n試行回数 n = 4、成功確率 (6が出る) p = 1/6、失敗確率 q = 5/6。\nちょうど k = 1 回成功する確率:\nP(X = 1) = ₄C₁ × (1/6)¹ × (5/6)³\n         = 4 × (1/6) × (125/216)\n         = 4 × 125 / (6 × 216)\n         = 500 / 1296\n         = 125 / 324",
+            "explanation": "【私立医学部 確率 解法ポイント】① 独立試行 → 二項分布 P(X=k) = ₙCₖ p^k (1-p)^(n-k) ② サイコロ 6 の確率は 1/6 ③ 約分し忘れに注意 (500/1296 → 分子分母を 4 で割って 125/324)。【別解】4 つの事象 (1回目だけ 6・2回目だけ 6・…) の和。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "igakubu_shiritsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "私立医学部 物理 大問1型 — 熱力学",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "ある気体 1 mol が状態 A (圧力 P, 体積 V, 温度 T) から状態 B (圧力 2P, 体積 V, 温度 T') へ等積変化した。\n(1) T' を求めよ。\n(2) 気体が外部にした仕事 W を求めよ。",
+            "answer": "(1) 等積変化 (V 一定) → ボイル・シャルルの法則 (P一定でなくV一定):\nPV/T = (2P)V/T' → T' = 2T\n\n(2) 等積変化では体積変化 ΔV = 0 → 仕事 W = P_external × ΔV = 0\n\n∴ T' = 2T、W = 0",
+            "explanation": "【私立医学部 熱力学 解法ポイント】① 状態方程式 PV = nRT を変形 ② 等積 (V一定): P/T = 一定、等温 (T一定): PV = 一定、等圧 (P一定): V/T = 一定 ③ 仕事 W = ∫P dV = 0 (等積)、W = PΔV (等圧)、W = nRT ln(V₂/V₁) (等温)。【典型ミス】等積で「内部エネルギー変化と仕事を混同」、等温で対数の引数を逆転。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "osaka_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "阪大理系物理 大問1型 — 力学・円運動",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "長さ L の軽いひもの先に質量 m のおもりをつけ、なめらかな水平面上で半径 L の円運動させる。おもりの速さが v のとき、ひもの張力 T を求めよ。",
+            "answer": "等速円運動の向心力 = 張力 (水平面・摩擦なし・重力は鉛直方向で円運動と無関係)\n\n向心加速度 a = v²/L\n運動方程式 (向心方向): T = m × v²/L\n\n∴ T = mv²/L",
+            "explanation": "【阪大型 円運動 解法ポイント】① 円運動 → 向心力が必要 ② 向心力の正体は何か (張力、垂直抗力、摩擦力、重力成分) を見極める ③ 水平面上の円運動では張力 = 向心力。【公式】向心加速度 a = v²/r = ω²r、向心力 F = mv²/r = mω²r。【典型ミス】鉛直面 (振り子) と水平面の混同、重力の向心成分を含めるべきか。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q3",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系数学 大問3型 — 空間ベクトル",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "空間に 4 点 O(0,0,0)、A(1,0,0)、B(0,1,0)、C(0,0,1) がある。三角形 ABC の重心 G の座標を求めよ。また OG の長さを求めよ。",
+            "answer": "重心 G = ((1+0+0)/3, (0+1+0)/3, (0+0+1)/3) = (1/3, 1/3, 1/3)\n\nOG = √((1/3)² + (1/3)² + (1/3)²) = √(3/9) = √(1/3) = 1/√3 = √3/3",
+            "explanation": "【東大理系 空間ベクトル 解法ポイント】① 重心の座標は3頂点の平均 ② ベクトルの大きさ (長さ) は √(x² + y² + z²) ③ 分母の有理化 (1/√3 → √3/3)。【発展】三角形 ABC は正三角形 (各辺 √2)、重心 G は中心。OG は対称性により x = y = z で正三角形 ABC の中心方向。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q2",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系物理 大問2型 — 電磁気・コイル/自己誘導",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "自己インダクタンス L のコイルに、電流 I(t) = I₀ sin(ωt) が流れている。コイルに生じる誘導起電力 V(t) を求めよ。",
+            "answer": "誘導起電力 V = -L (dI/dt) (レンツの法則・自己誘導)\n\nI(t) = I₀ sin(ωt)\ndI/dt = I₀ ω cos(ωt)\n\nV(t) = -L × I₀ ω cos(ωt) = -L I₀ ω cos(ωt)\n\n大きさ: V_max = L I₀ ω\n位相: 電流 sin(ωt) に対して -cos(ωt) は π/2 だけ進んでいる (V が I より 90° 進相)。",
+            "explanation": "【東大型 自己誘導 解法ポイント】① V = -L (dI/dt) (符号は電流増加を妨げる向き) ② sin → cos の微分で位相が π/2 進む ③ コイルでは電圧は電流より 90° 進相 (LC 共振の基礎)。【関連】コンデンサーでは電圧は電流より 90° 遅相。R は同位相。これらが交流回路の三大関係。【別形】複素表示 V = jωL I (j は虚数単位) でも同じ。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_q3",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系化学 大問3型 — 有機化学・構造決定",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "分子式 C₃H₆O で表される化合物の構造異性体をすべて書け (簡単な構造式で示す)。",
+            "answer": "C₃H₆O の不飽和度 = (2×3 + 2 - 6)/2 = 1 → 二重結合または環構造を 1 つ含む。\n\n主な構造異性体:\n\n1. プロパナール CH₃-CH₂-CHO (アルデヒド)\n2. アセトン CH₃-CO-CH₃ (ケトン)\n3. アリルアルコール CH₂=CH-CH₂-OH (アルコール+二重結合)\n4. メチルビニルエーテル CH₂=CH-O-CH₃ (エーテル+二重結合)\n5. プロペノール CH₃-CH=CH-OH (エノール・不安定・アセトンに互変異性)\n6. オキセタン (環状エーテル・3員環): 環状の C-O-C-C\n7. メチルオキシラン (プロピレンオキシド・環状エーテル): \n\n主要4つ: プロパナール、アセトン、アリルアルコール、メチルビニルエーテル。",
+            "explanation": "【東大型 有機構造決定 解法ポイント】① 不飽和度の計算 (2C + 2 - H)/2 ② 不飽和度 1 → π結合 1 個 (=) または環 1 個 ③ 官能基ごとに整理: アルデヒド・ケトン・エーテル・アルコール (+ 二重結合)・環状構造 ④ 互変異性体 (エノール ⇄ ケト) は注意。【典型ミス】環構造を見落とす、互変異性体を別物としてカウントするかしないか (通常は安定形のみ)。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_q2",
+      "eiken_grade": "kyodai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "京大理系化学 大問2型 — 化学平衡",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "可逆反応 N₂ + 3H₂ ⇌ 2NH₃ について、温度を上げると平衡はどちらに移動するか? 反応は発熱反応 (ΔH < 0) であるとする。理由とともに答えよ。",
+            "answer": "温度を上げると平衡は **左 (N₂, H₂) 側に移動** する。\n\n理由 (ル・シャトリエの原理):\n発熱反応 (ΔH < 0) では、正反応で熱が放出される。逆反応は吸熱反応となる。\n温度を上げる = 系に熱を加える刺激 → 系はその熱を消費する方向に移動する → 吸熱方向 (= 逆反応・左方向) へ移動。\n結果として N₂ と H₂ が増え、NH₃ が減少する。\n\n【補足】これは工業的なハーバー・ボッシュ法 (NH₃ 合成) で温度を高すぎず (ただし反応速度のため低すぎず)・圧力を高くする条件を選ぶ理由。",
+            "explanation": "【京大型 化学平衡 解法ポイント】① ル・シャトリエの原理: 系は刺激を緩和する方向に移動 ② 温度: 上昇 → 吸熱方向、下降 → 発熱方向 ③ 圧力: 上昇 → 気体分子数の少ない側、下降 → 多い側 ④ 濃度: 増加させた成分を消費する方向 ⑤ 触媒は平衡位置を変えない (速度のみ)。【ハーバー法の最適化】温度・圧力・触媒のトレードオフが超頻出のテーマ。"
+          }
+        ]
+      }
+    }
+  ]
+}

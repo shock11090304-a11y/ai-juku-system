@@ -1,0 +1,411 @@
+{
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "aogaku",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Allure of the Unfinished\n\nThere is a particular kind of beauty in the unfinished work of art. The half-completed sculpture revealing both the polished form and the rough block from which it emerges. The architectural ruin where centuries of weathering have added textures no architect could have planned. The novel manuscript whose final chapters were lost or abandoned, leaving readers to imagine what might have been. Such works seem to invite our minds to participate in their completion in ways that finished pieces do not.\n\nWhy should incompleteness exert such fascination? Part of the answer surely lies in the active engagement that unfinished work demands. A finished piece presents itself as a closed system, asking us essentially to receive it. An unfinished piece, by contrast, opens space for our imagination, requiring us to extend the artist's vision through our own. We become, in a small way, collaborators rather than mere audience members.\n\nThere may also be something philosophically appropriate about incompleteness. Human existence itself is fundamentally incomplete: we are works in progress, never quite finishing the project of becoming who we are. The unfinished artwork mirrors this condition more honestly than the polished masterpiece, which can mislead us into imagining that perfection is somehow attainable. To stand before Michelangelo's unfinished slaves struggling free of their stone is to glimpse our own perpetual emergence from circumstances we did not choose.\n\nThis is not to dismiss completed works of art, which have their own profound virtues. It is rather to suggest that incompleteness, far from being merely a regrettable accident, may itself be a legitimate aesthetic dimension—one that contemporary art increasingly recognizes through deliberately unfinished or open-ended works.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is the author's central claim about unfinished works of art?",
+            "choices": ["They are always inferior to finished works.", "They invite active imaginative participation from viewers and may legitimately constitute their own aesthetic dimension.", "They are merely incomplete and have no value.", "They prove that art is meaningless."],
+            "answer": "1",
+            "explanation": "本文構造は「不完全さの魅力 → 想像力の参加 → 哲学的妥当性 → 美学的次元として正当」。最終段落「incompleteness ... may itself be a legitimate aesthetic dimension」が thesis。青学英米文学部型は文学的・美学的議論の thesis 把握が必須。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Why does an unfinished work invite different engagement than a finished one?",
+            "choices": ["Because it is always more colorful.", "Because it opens space for imagination, making the viewer a kind of collaborator rather than mere audience.", "Because it is always older.", "Because it is always smaller in size."],
+            "answer": "1",
+            "explanation": "第2段落「opens space for our imagination ... collaborators rather than mere audience members」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What philosophical resonance does the author find in incompleteness?",
+            "choices": ["It mirrors human existence as fundamentally incomplete, works in progress.", "It proves humans are perfect.", "It has no philosophical meaning.", "It only relates to ancient Greek philosophy."],
+            "answer": "0",
+            "explanation": "第3段落「Human existence itself is fundamentally incomplete: we are works in progress」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "hosei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Urban Wildlife\n\nWhen most people think of wildlife, they imagine remote forests, prairies, or mountains far from human settlements. Yet a remarkable variety of animals has adapted to thrive in cities. Pigeons, raccoons, foxes, peregrine falcons, and many smaller creatures have made urban environments their home, often in greater numbers than their wild counterparts in pristine habitats.\n\nThis urban wildlife phenomenon reveals important truths about animal adaptability. Cities offer certain advantages that compensate for their human-dominated character: abundant food from gardens, garbage, and waste; warm shelter in buildings; relatively few predators; and warmer microclimates than surrounding regions. Animals capable of tolerating human presence and exploiting these resources can flourish.\n\nDifferent species have adapted in different ways. Peregrine falcons, once endangered by pesticide use, now nest on skyscrapers that resemble their natural cliff habitats and hunt the abundant pigeons of city centers. Raccoons have become notorious problem-solvers, learning to open garbage containers, navigate complex urban environments, and even traverse bridges and streets safely. Some bird species in cities sing at higher frequencies than their rural counterparts, apparently to be heard above traffic noise.\n\nUrban wildlife also raises management challenges. Conflicts between humans and animals are common—from raccoons damaging property to coyotes occasionally threatening pets. Some cities have responded with lethal control programs, while others emphasize coexistence strategies such as wildlife-proof garbage containers, public education, and habitat planning that accommodates animals while reducing conflicts.\n\nFor city dwellers, urban wildlife offers unique opportunities for connection with the natural world. Watching falcons hunt from a downtown office, observing fox families in a park, or simply listening to birds adapting their songs to urban soundscapes can provide moments of genuine wildness in the midst of human-built environments. As cities continue to expand worldwide, thoughtful coexistence with wildlife may become an increasingly important aspect of urban life.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What advantages do cities offer to certain wildlife?",
+            "choices": ["Quieter environments than rural areas.", "Abundant food, warm shelter, fewer predators, and warmer microclimates.", "Untouched natural habitat.", "Strict enforcement of wildlife laws."],
+            "answer": "1",
+            "explanation": "第2段落「abundant food from gardens, garbage, and waste; warm shelter in buildings; relatively few predators; and warmer microclimates」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "How have peregrine falcons adapted to city life?",
+            "choices": ["They have become extinct in cities.", "They nest on skyscrapers resembling natural cliffs and hunt urban pigeons.", "They have learned to drive cars.", "They survive only on garbage."],
+            "answer": "1",
+            "explanation": "第3段落「Peregrine falcons ... now nest on skyscrapers that resemble their natural cliff habitats and hunt the abundant pigeons」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What management approach does the passage suggest is preferable?",
+            "choices": ["Lethal control of all urban wildlife.", "Coexistence strategies such as wildlife-proof containers, public education, and accommodating habitat planning.", "Removing all parks from cities.", "Ignoring urban wildlife completely."],
+            "answer": "1",
+            "explanation": "第4段落「others emphasize coexistence strategies such as wildlife-proof garbage containers, public education, and habitat planning」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "kangaku",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Power of Storytelling\n\nFrom ancient cave paintings to modern streaming services, storytelling has been a constant feature of human cultures across all times and places. While we tend to think of stories primarily as entertainment, recent research suggests that storytelling may be one of humanity's most important cognitive technologies—a tool for transmitting information, building community, and shaping behavior.\n\nNeuroscientific studies reveal that listening to or reading a compelling story activates many of the same brain regions that would be engaged if we were actually experiencing the story's events. This 'narrative immersion' allows us to learn from situations we have never encountered firsthand. A story about a character making a difficult choice teaches us about the consequences of similar choices in our own lives, often more effectively than abstract instruction could.\n\nStories also serve as powerful social bonding tools. Communities that share common stories develop common values and identities. Religious traditions, national myths, family histories, and shared cultural narratives all play this role. The decline of shared media in our fragmented modern landscape has contributed, some sociologists argue, to declining social cohesion in many societies.\n\nIn business and education, the application of narrative principles has gained prominence. Companies use storytelling to communicate values, motivate employees, and connect with customers. Teachers find that information embedded in narratives is remembered better than the same information presented as facts to be memorized. Public health campaigns increasingly use story-based communication to influence behavior more effectively than statistical data alone.\n\nYet storytelling has dangers as well as benefits. Compelling narratives can spread misinformation as effectively as truth. Stories that simplify complex realities can mislead even when individual facts are accurate. The very emotional power that makes stories effective can also bypass critical thinking, leading audiences to accept ideas they would otherwise question. As stories become an increasingly central tool in commerce, politics, and education, learning to evaluate narratives critically may become as important as the ability to be moved by them.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What does neuroscientific research reveal about how we process stories?",
+            "choices": ["Stories have no effect on the brain.", "Stories activate brain regions that would be engaged if we were actually experiencing the events, allowing learning from unfamiliar situations.", "Stories only affect children's brains.", "Stories make us less intelligent."],
+            "answer": "1",
+            "explanation": "第2段落「listening to or reading a compelling story activates many of the same brain regions that would be engaged if we were actually experiencing the story's events ... 'narrative immersion' allows us to learn from situations we have never encountered firsthand」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What danger does the author identify in storytelling?",
+            "choices": ["Stories make people too educated.", "Compelling narratives can spread misinformation, simplify complex realities, and bypass critical thinking due to their emotional power.", "Stories use too much paper.", "Stories are too entertaining."],
+            "answer": "1",
+            "explanation": "最終段落「Compelling narratives can spread misinformation as effectively as truth ... bypass critical thinking」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What does the author conclude about modern engagement with stories?",
+            "choices": ["We should stop telling stories.", "Learning to evaluate narratives critically may become as important as the ability to be moved by them.", "All stories should be banned.", "Stories have no role in modern life."],
+            "answer": "1",
+            "explanation": "最終文「learning to evaluate narratives critically may become as important as the ability to be moved by them」が直接の結論。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "center",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The History of Bicycles\n\nThe bicycle, now a common form of transportation in many parts of the world, has a surprisingly recent history. The earliest version of the bicycle was developed in Germany in 1817 by Baron Karl von Drais. His invention, called the 'running machine' or 'Draisine,' had two wheels in line and a frame to sit on, but no pedals. Riders moved by pushing their feet against the ground.\n\nIt was not until the 1860s that the first pedals appeared on bicycles. Pierre Michaux, a French inventor, attached pedals directly to the front wheel of a bicycle, creating the 'velocipede' or 'boneshaker'—so called because the iron-bound wheels and rough roads made riding extremely uncomfortable.\n\nThe 1870s saw the development of the high-wheel bicycle, also called the 'penny-farthing' because its large front wheel and small back wheel resembled the British penny and farthing coins. While faster than earlier bicycles, the high-wheel was difficult to mount and dangerous to ride. Riders sat high above the ground and could be thrown forward over the handlebars in any sudden stop.\n\nThe modern 'safety bicycle,' with two wheels of equal size, a chain drive, and pneumatic tires, emerged in the 1880s and 1890s. This design made cycling accessible to ordinary people, including women, and triggered an enormous bicycle boom. By 1900, millions of bicycles were in use worldwide. The bicycle had transformed from an experimental curiosity into a practical and democratic form of transportation.\n\nToday, bicycles continue to evolve, with electric assistance, advanced materials, and specialized designs for various purposes. Yet the basic concept introduced over two centuries ago remains remarkably effective: a simple, human-powered machine that can carry a rider farther and faster than walking, while requiring no fuel and producing no emissions.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "When was the earliest version of the bicycle invented?",
+            "choices": ["In 1717", "In 1817", "In 1917", "In 1817 in France"],
+            "answer": "1",
+            "explanation": "第1段落「The earliest version of the bicycle was developed in Germany in 1817」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Why was the velocipede also called the 'boneshaker'?",
+            "choices": ["Because it had bones in its design.", "Because the iron-bound wheels and rough roads made riding extremely uncomfortable.", "Because riders had to lie down.", "Because it was made of bone-shaped metal."],
+            "answer": "1",
+            "explanation": "第2段落「the iron-bound wheels and rough roads made riding extremely uncomfortable」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What three innovations defined the modern 'safety bicycle'?",
+            "choices": ["Electric motors, GPS, and helmets.", "Two equal-size wheels, a chain drive, and pneumatic tires.", "Wooden frames and leather seats only.", "Triple wheels for stability."],
+            "answer": "1",
+            "explanation": "第4段落「The modern 'safety bicycle,' with two wheels of equal size, a chain drive, and pneumatic tires」が直接の根拠。センター試験型は具体的特徴の正確な照合が頻出。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_grammar",
+      "eiken_grade": "center",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "センター試験型 文法・語法 (大問2型)",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "I'm sorry I'm late. I should ( ) earlier.",
+            "choices": ["leave", "have left", "be leaving", "have leaving"],
+            "answer": "1",
+            "explanation": "should have + 過去分詞 = 〜すべきだった (過去への後悔/批判)。「もっと早く出るべきだった」。leave (原形) は単純な should + 動詞、be leaving は進行、have leaving は文法的に成立しない。センター試験文法では助動詞+完了形の用法が頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "( ) hard he tried, he could not solve the problem.",
+            "choices": ["However", "Whatever", "Whenever", "Wherever"],
+            "answer": "0",
+            "explanation": "However + 形容詞/副詞 + S V = どんなに〜しても。「どんなに頑張っても解けなかった」。Whatever は名詞節を導く、Whenever は時、Wherever は場所。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "Hardly ( ) the door when the phone started ringing.",
+            "choices": ["I had opened", "had I opened", "I opened", "did I open"],
+            "answer": "1",
+            "explanation": "Hardly/Scarcely had S Vpp ... when/before S V (過去) = 〜するや否や。否定の副詞 hardly が文頭に来ると倒置 (had I opened)。「ドアを開けるや否や電話が鳴り出した」。センター試験では否定副詞の倒置構文が頻出。"
+          },
+          {
+            "id": "q4",
+            "type": "multiple_choice",
+            "stem": "The book ( ) you lent me yesterday is very interesting.",
+            "choices": ["who", "which", "whose", "what"],
+            "answer": "1",
+            "explanation": "先行詞 The book (物) + 関係詞節内で目的語が欠けている (lent me what) → 目的格関係代名詞 which (or that)。who は人、whose は所有格、what は先行詞を含むため不可。"
+          },
+          {
+            "id": "q5",
+            "type": "multiple_choice",
+            "stem": "It is necessary that he ( ) immediately.",
+            "choices": ["comes", "came", "come", "will come"],
+            "answer": "2",
+            "explanation": "It is necessary/important/essential that S (should) + 動詞原形 = 仮定法現在 (英・米とも書面では原形を用いる)。「彼が直ちに来ることが必要だ」。三単現の s や時制の影響を受けない原形。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "l_listening",
+      "eiken_grade": "center",
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[センター試験型 リスニング 大問1B - 短い対話 + 質問]\n\nDialogue 1:\nWoman: Excuse me, do you know when the next bus to Shinjuku will arrive?\nMan: It usually comes every fifteen minutes. The last one just left about five minutes ago.\nWoman: I see. Thank you.\n\nQuestion: How long will the woman likely have to wait for the next bus?\n\nDialogue 2:\nMan: I can't believe how cold it is today. Last week it was so warm I went out in just a T-shirt.\nWoman: I know! The weather changes so much in spring. I had to put my winter coat back on this morning.\n\nQuestion: What season are the speakers most likely talking about?",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "[Dialogue 1] How long will the woman likely have to wait for the next bus?",
+            "choices": ["About 5 minutes", "About 10 minutes", "About 15 minutes", "About 20 minutes"],
+            "answer": "1",
+            "explanation": "バスは 15分間隔 + 5分前に最終バス出発 → 次まで 15 - 5 = 10分。センター試験リスニングは数値計算問題が頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "[Dialogue 2] What season are the speakers most likely talking about?",
+            "choices": ["Summer", "Winter", "Spring", "Autumn"],
+            "answer": "2",
+            "explanation": "「The weather changes so much in spring」と直接言及されている。センター試験は明示的な手がかりを聞き取る訓練が必須。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_translation",
+      "eiken_grade": "kyodai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "What appears to be common sense is, more often than we realize, simply the worldview of one's own time and place rendered invisible by familiarity. The conventions of dress and address that strike us as natural would seem strange or even bizarre to people of other eras or other cultures. The fact that we cannot see the strangeness of our own assumptions is, paradoxically, itself one of the most universal features of human experience.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "下線部 'The fact that we cannot see the strangeness of our own assumptions is, paradoxically, itself one of the most universal features of human experience.' を日本語に訳しなさい。",
+            "answer": "我々が自らの前提の奇異さに気づくことができないという事実こそが、逆説的にも、人間経験の最も普遍的な特徴の一つなのである。",
+            "explanation": "【京大型和訳のポイント】① The fact that ... is X = 〜という事実が X だ (同格の that) ② cannot see the strangeness of A = A の奇異さに気づくことができない (see を「気づく/認識する」と訳出) ③ paradoxically = 逆説的にも (副詞挿入の処理) ④ itself = それ自体・〜こそ (強調) ⑤ one of the most universal features of human experience = 人間経験の最も普遍的な特徴の一つ。【失点パターン】strangeness の訳語選び (奇妙さ/奇異さ/異質さ)、paradoxically の訳出位置、itself の強調訳。京大型は副詞挿入と同格構文の組み合わせが頻出。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_translation",
+      "eiken_grade": "igakubu_kokoritsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Modern medical practice increasingly recognizes that effective treatment requires more than the technical application of biomedical knowledge. The relationship between physician and patient, the social and economic circumstances in which patients live, and the psychological dimensions of illness all profoundly affect both the experience of disease and the effectiveness of medical interventions. To ignore these dimensions—to treat medicine as if it were a purely technical enterprise—is to limit medicine's healing potential and to risk reducing patients to mere bodies awaiting repair.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "下線部 'To ignore these dimensions—to treat medicine as if it were a purely technical enterprise—is to limit medicine's healing potential and to risk reducing patients to mere bodies awaiting repair.' を日本語に訳しなさい。",
+            "answer": "これらの次元を無視すること、すなわち医療をあたかも純粋に技術的な営みであるかのように扱うことは、医療が持つ治癒の可能性を制限し、患者を単に修理を待つ身体へと貶めてしまう危険を冒すことになるのである。",
+            "explanation": "【国公立医学部型和訳のポイント】① To do is to do = 〜することは〜することだ (to-不定詞の対応) ② as if it were = あたかも〜であるかのように (仮定法過去) ③ a purely technical enterprise = 純粋に技術的な営み ④ healing potential = 治癒の可能性 ⑤ risk reducing patients to A = 患者を A へと貶めてしまう危険を冒す ⑥ awaiting repair = 修理を待つ (現在分詞による限定修飾)。【失点パターン】挿入の dash の訳出 (「すなわち」または同格処理)、enterprise の訳語 (営み/事業/企て)、reducing X to Y の構文 (X を Y に格下げする)。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "w_essay",
+      "eiken_grade": "osaka",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "次のテーマについて、英語で 70-100語のエッセイを書きなさい (阪大型・大問4 自由英作文)。\n\nTheme: Some people believe that international travel broadens one's mind. Others argue that the same can be achieved by reading books from different cultures. Which view do you find more persuasive, and why?",
+        "sample": "While both travel and reading can expand one's perspective, I find international travel more persuasive as a means of broadening the mind. Reading offers carefully curated insights, but travel provides direct, embodied encounters with unfamiliar customs, languages, and rhythms of life. Walking through streets where one cannot read the signs, eating foods one has never tasted, and adapting to social conventions one does not yet understand—these experiences engage the whole person, not just the intellect. Books deepen understanding, but they cannot fully replace the discomfort and growth of personally navigating a foreign world. (89 words)",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "上記テーマで 70-100語の自由英作文を書きなさい。",
+            "answer": "see sample",
+            "explanation": "【阪大型自由英作文 採点ポイント】① 語数 70-100 ② 立場明示 (which view do you find more persuasive) ③ 抽象論+具体例の組合せ ④ 比較構造の使い分け (while ... I find ...) ⑤ 抽象語彙: broaden one's mind / curated insights / embodied encounters / rhythms of life / engage the whole person。阪大は意見論述+構造化された段落構成が採点軸。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "w_essay",
+      "eiken_grade": "keio",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "Read the following statement and write an essay of approximately 120-150 words explaining whether you agree or disagree, supporting your view with reasoning and examples.\n\n\"In an era of artificial intelligence, traditional liberal arts education will become increasingly irrelevant.\"",
+        "sample": "I disagree with the claim that liberal arts education will become irrelevant in the AI era; on the contrary, it will likely become more important than ever. As AI systems take over routine cognitive tasks, the distinctly human capacities for ethical reasoning, cultural interpretation, and creative synthesis—precisely what liberal arts cultivate—will grow in economic and social value. Furthermore, the responsible deployment of AI requires citizens and leaders capable of weighing complex tradeoffs, recognizing biases, and engaging with diverse perspectives. These capacities cannot be reduced to programmable rules. While technical skills remain vital, the broader judgment fostered by liberal arts education provides exactly the qualities that distinguish thoughtful human contribution from mere computation. The question is not whether liberal arts will remain relevant, but whether educational institutions will rise to meet their new and urgent significance. (135 words)",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "Above prompt — write 120-150 word agree/disagree essay.",
+            "answer": "see sample",
+            "explanation": "【慶應経済型 採点ポイント】① 語数 120-150 ② 立場明示+反論への対応 (on the contrary) ③ 経済学的論点の組み込み (economic and social value, programmable rules) ④ 構造化 (intro→reasoning→counter-acknowledgment→conclusion) ⑤ 高度な抽象語彙: ethical reasoning / cultural interpretation / creative synthesis / responsible deployment / cannot be reduced to / programmable rules。慶應経済は経済合理性+人文的価値の両立議論が高評価される。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "ielts",
+      "part_key": "l_sec3",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[IELTS Listening Section 3 - Academic discussion between two students and a tutor]\n\nTutor: So, Maya, James—I'd like to discuss your research proposals on sustainable urban planning today. Maya, would you like to start?\n\nMaya: Sure. My proposal focuses on green roofs in dense urban areas. I want to investigate how widespread adoption could affect city temperatures and stormwater runoff in Manchester.\n\nTutor: Interesting topic. What's your methodology?\n\nMaya: I'm planning to combine GIS mapping of suitable rooftops with thermal modeling. I'll also conduct interviews with city planners about implementation barriers.\n\nTutor: That's quite ambitious. Have you considered the timeline carefully? GIS analysis alone could take months for a city the size of Manchester.\n\nMaya: I have. I'm planning to focus on three representative neighborhoods rather than the entire city. That should make the GIS work manageable.\n\nTutor: Smart approach. James, what about you?\n\nJames: My research focuses on cycling infrastructure. Specifically, I want to evaluate how protected bike lanes affect both cycling rates and small business revenue along the affected streets.\n\nTutor: That sounds focused. What's prompting that question?\n\nJames: There's a common claim from business owners that bike lanes hurt their sales by reducing parking. But the actual evidence is mixed. I want to add to that empirical literature.\n\nTutor: How will you measure business impact?\n\nJames: I'm working with the local business association to access aggregated sales data, with appropriate anonymization. I'll compare three streets before and after bike lane installation, controlling for season and broader economic trends.\n\nTutor: Both proposals are promising. Maya, I'd push you to think more about whether your three neighborhoods are truly representative—you don't want to overgeneralize. James, your access to business data is impressive but think carefully about how you'll handle businesses that closed during your study period for unrelated reasons.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is the focus of Maya's research proposal?",
+            "choices": ["Public transportation efficiency", "Green roofs in dense urban areas and their effects on temperature and stormwater runoff", "Air quality monitoring", "Solar panel installation"],
+            "answer": "1",
+            "explanation": "Maya 発言「My proposal focuses on green roofs in dense urban areas. I want to investigate how widespread adoption could affect city temperatures and stormwater runoff」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What concern does the tutor raise about Maya's methodology?",
+            "choices": ["Her methodology is too narrow.", "GIS analysis alone could take months for a city the size of Manchester—the timeline may be too ambitious.", "She doesn't have permission to do the research.", "Her topic is uninteresting."],
+            "answer": "1",
+            "explanation": "tutor 発言「Have you considered the timeline carefully? GIS analysis alone could take months」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What is James's specific research question?",
+            "choices": ["Whether bike lanes are popular.", "How protected bike lanes affect both cycling rates and small business revenue along affected streets.", "Whether cars should be banned.", "How many bicycles are sold per year."],
+            "answer": "1",
+            "explanation": "James 発言「My research focuses on cycling infrastructure. Specifically, I want to evaluate how protected bike lanes affect both cycling rates and small business revenue」が根拠。"
+          },
+          {
+            "id": "q4",
+            "type": "multiple_choice",
+            "stem": "What suggestion does the tutor give James at the end?",
+            "choices": ["He should change his topic entirely.", "He should think carefully about how to handle businesses that closed during the study period for unrelated reasons.", "He should not work with the business association.", "He should focus on a different city."],
+            "answer": "1",
+            "explanation": "tutor 最後の発言「think carefully about how you'll handle businesses that closed during your study period for unrelated reasons」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "kyodai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "京大理系数学 大問1型 — 整数論",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "n を正の整数とする。n² + 5n + 6 が 7 の倍数となる n をすべて求めよ。ただし 0 < n ≤ 20 とする。",
+            "answer": "n² + 5n + 6 = (n + 2)(n + 3)\n\n7 の倍数 ⟺ (n + 2)(n + 3) ≡ 0 (mod 7)\n⟺ n + 2 ≡ 0 (mod 7) または n + 3 ≡ 0 (mod 7)\n⟺ n ≡ -2 ≡ 5 (mod 7) または n ≡ -3 ≡ 4 (mod 7)\n\n0 < n ≤ 20 で:\nn ≡ 5 (mod 7): 5, 12, 19\nn ≡ 4 (mod 7): 4, 11, 18\n\n∴ n = 4, 5, 11, 12, 18, 19 (6個)",
+            "explanation": "【京大理系数学 整数論 解法ポイント】① 因数分解 n² + 5n + 6 = (n+2)(n+3) ② 7 を法とする合同式に変換 ③ 積が 0 mod p ⟺ 少なくとも一方が 0 mod p (p が素数なら) ④ 各合同式の解を範囲内で列挙。【典型ミス】因数分解の見落とし、負の合同 -2 ≡ 5 mod 7 の処理ミス。京大整数論は modular arithmetic の運用が必須。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q2",
+      "eiken_grade": "kyodai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "京大理系数学 大問2型 — 数列・極限",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "数列 {aₙ} が a₁ = 1, aₙ₊₁ = (aₙ + 2) / 3 で定義されるとき、(1) 一般項 aₙ を求めよ。(2) lim(n→∞) aₙ を求めよ。",
+            "answer": "(1) 漸化式 aₙ₊₁ = (1/3)aₙ + 2/3。\n特性方程式 α = (1/3)α + 2/3 → (2/3)α = 2/3 → α = 1。\n変形: aₙ₊₁ - 1 = (1/3)(aₙ - 1)。\n数列 {aₙ - 1} は初項 a₁ - 1 = 0、公比 1/3 の等比数列。\n(注) 初項 0 のため aₙ - 1 = 0 つまり aₙ = 1 (定数列)。\n\n→ aₙ = 1 (すべての n で)\n\n(2) lim(n→∞) aₙ = 1。\n\n【補足】もし a₁ ≠ 1 (例: a₁ = 4) なら aₙ - 1 = (a₁ - 1)(1/3)^(n-1) → aₙ = 1 + (a₁-1)(1/3)^(n-1)、極限 lim aₙ = 1 (公比の絶対値 < 1 のため収束)。",
+            "explanation": "【京大型数列 解法ポイント】① 漸化式 aₙ₊₁ = pa_n + q 型 → 特性方程式で固定点 α を求める ② aₙ₊₁ - α = p(aₙ - α) と変形 → 等比数列に帰着 ③ 一般項 aₙ - α = (a₁ - α)p^(n-1) ④ 極限は |p| < 1 なら α に収束。【本問の罠】a₁ = 1 = α なので最初から定数列 (見落としやすい)。一般式を立てる前に「a₁ = α なら aₙ ≡ α」と気づくと早い。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "kyodai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "京大理系物理 大問1型 — 力学・単振動",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "ばね定数 k のばねに質量 m の物体を取り付け、なめらかな水平面上で自然長から x₀ だけ伸ばして静かに離した。\n(1) 物体の角振動数 ω を k, m で表せ。\n(2) 周期 T を k, m で表せ。\n(3) 物体が初期位置から x₀/2 だけ縮んだ位置を通過するときの速さ v を求めよ。",
+            "answer": "(1) 単振動の運動方程式: m d²x/dt² = -kx。\nω² = k/m → ω = √(k/m)\n\n(2) T = 2π/ω = 2π √(m/k)\n\n(3) エネルギー保存則:\n初期位置 (伸び x₀, 速度 0): E = (1/2) k x₀² (運動 0 + 弾性 (1/2)k x₀²)\n問題位置 (伸び x₀/2, 速度 v):  E = (1/2) m v² + (1/2) k (x₀/2)²\n\n等式: (1/2) k x₀² = (1/2) m v² + (1/2) k (x₀²/4)\n両辺を 2 倍: k x₀² = m v² + k x₀²/4\nm v² = k x₀² - k x₀²/4 = (3/4) k x₀²\nv² = (3k x₀²) / (4m)\nv = (x₀ / 2) √(3k / m)",
+            "explanation": "【京大型単振動 解法ポイント】① 運動方程式から ω = √(k/m) を導出 ② 周期 T = 2π/ω ③ 速度はエネルギー保存 (運動エネルギー + 弾性エネルギー = 一定) を使う。【公式 vs 導出】単振動の速度は v = ω √(A² - x²) (A: 振幅、x: 変位) でも求められる: v = √(k/m) × √(x₀² - (x₀/2)²) = √(k/m) × √(3 x₀²/4) = (x₀/2)√(3k/m)。京大型は公式暗記より導出プロセス重視。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "osaka_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "阪大理系数学 大問1型 — ベクトル",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "三角形 OAB において、|OA| = 3、|OB| = 4、OA · OB = 6 とする。\n(1) cos(∠AOB) を求めよ。\n(2) 三角形 OAB の面積 S を求めよ。",
+            "answer": "(1) OA · OB = |OA||OB| cos(∠AOB)\n6 = 3 × 4 × cos(∠AOB)\ncos(∠AOB) = 6/12 = 1/2\n\n(2) sin(∠AOB) = √(1 - cos²) = √(1 - 1/4) = √(3/4) = √3/2 (∠AOB は鋭角・正)\n\nS = (1/2) |OA||OB| sin(∠AOB) = (1/2) × 3 × 4 × (√3/2) = 3√3\n\n別解: S = (1/2)√(|OA|²|OB|² - (OA·OB)²) = (1/2)√(9·16 - 36) = (1/2)√108 = (1/2)·6√3 = 3√3",
+            "explanation": "【阪大理系ベクトル 解法ポイント】① 内積の定義 OA·OB = |OA||OB|cos θ から角度を求める ② 三角形の面積公式 S = (1/2)|OA||OB|sin θ ③ 別解として S = (1/2)√(|OA|²|OB|² - (OA·OB)²) も覚えておく。【公式の使い分け】数値計算は別解の方が cos / sin 経由のミスを避けやすい。阪大は公式の柔軟な運用が頻出。"
+          }
+        ]
+      }
+    }
+  ]
+}

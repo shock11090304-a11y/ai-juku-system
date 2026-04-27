@@ -1,0 +1,208 @@
+{
+  "questions": [
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "g3",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "A: Excuse me, ( ) is the post office?\nB: It's near the station.", "choices": ["who", "what", "where", "when"], "answer": "2", "explanation": "場所を尋ねる where。「郵便局はどこ?」"},
+          {"id": "q2", "type": "multiple_choice", "stem": "She is the best singer ( ) I have ever heard.", "choices": ["who", "which", "that", "whose"], "answer": "2", "explanation": "最上級 the best + 関係詞節 → that が好まれる (制限用法)。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "I'm interested ( ) Japanese culture and history.", "choices": ["in", "on", "at", "with"], "answer": "0", "explanation": "be interested in = 〜に興味がある。前置詞は in 固定。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "g4",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "I ( ) my homework yet, so I can't go out.", "choices": ["don't finish", "didn't finish", "haven't finished", "won't finish"], "answer": "2", "explanation": "yet = (現在完了否定で) まだ。have/has not + 過去分詞 = 現在完了否定。「まだ宿題が終わっていないので外出できない」。英検4級では現在完了の基本を問う。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "How ( ) are you? I'm 165 cm.", "choices": ["old", "tall", "long", "many"], "answer": "1", "explanation": "身長を尋ねる: How tall。「How tall are you? = どれくらい背が高い?」。old は年齢、long は長さ、many は数。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "Don't run ( ) the classroom!", "choices": ["in", "to", "at", "on"], "answer": "0", "explanation": "run in the classroom = 教室の中で走る (場所内での動作)。to は方向 (〜へ)、at は地点、on は表面。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "g5",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "( ) is your name? -My name is Ken.", "choices": ["Who", "What", "Where", "How"], "answer": "1", "explanation": "名前を尋ねる: What is your name? が定型。Who は「誰」(人を聞く)、Where は場所、How は方法・状態。英検5級は基本疑問文の決まり文句。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "I have ( ) sister. Her name is Yumi.", "choices": ["a", "an", "the", "some"], "answer": "0", "explanation": "sister は単数の可算名詞 → 不定冠詞 a (子音から始まる)。an は母音始まり (an apple)。the は特定、some は複数/不可算。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "Tom and Mary are good friends. ( ) like soccer.", "choices": ["He", "She", "They", "It"], "answer": "2", "explanation": "Tom and Mary (2人) → 複数代名詞 They。He / She は単数、It は物。英検5級は人称代名詞の数の一致が必修。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "gp2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "If I ( ) more time, I would travel around the world.", "choices": ["have", "had", "will have", "had had"], "answer": "1", "explanation": "仮定法過去: If S 過去形, S would 動詞原形 = 現在の事実に反する仮定。「もし時間があれば (ないけど) 世界一周したい」。準2級では基本仮定法は出題範囲。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "I'm not sure ( ) Tom will come to the party tonight.", "choices": ["that", "what", "whether", "which"], "answer": "2", "explanation": "whether = 〜かどうか (yes/no を含む不確定)。「Tom が来るかどうか確信がない」。that は確定的事実、what は何、which は選択。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "The boy ( ) wearing a red cap is my brother.", "choices": ["who is", "which is", "whose", "what is"], "answer": "0", "explanation": "先行詞 The boy (人) + 関係詞節 (wearing 進行) → who is wearing。which は物、whose は所有格、what は先行詞内包。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "w_essay",
+      "eiken_grade": "gp1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "TOPIC: Should companies allow employees to work from home permanently?\n\nPOINTS to consider (use 2 of 4): - Productivity - Health - Communication - Cost\n\nRequirements: 120-150 words.",
+        "sample": "I strongly believe that companies should allow employees to work from home permanently. I will support this view with two main reasons: improved productivity and reduced costs.\n\nFirst, working from home often increases productivity. Without daily commutes and frequent office interruptions, many employees can focus more deeply on their tasks. Studies during the COVID-19 pandemic demonstrated that productivity actually rose for many remote workers, suggesting traditional office environments may not be optimal for all types of work.\n\nSecond, remote work substantially reduces costs for both employees and employers. Employees save money on commuting, work clothes, and meals away from home. Companies can reduce expenses on office space, utilities, and equipment. These savings can be invested in better training, salaries, or technology.\n\nIn conclusion, despite some challenges, allowing permanent remote work offers significant benefits in productivity and cost savings, making it a reasonable choice for many companies. (140 words)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "Above prompt — write 120-150 word essay using 2 of 4 points.", "answer": "see sample", "explanation": "【英検準1級 採点ポイント】① 4段落構成 ② 指定 2 ポイント明示 (本サンプルは Productivity と Cost) ③ 各 body は理由+具体例 ④ 結論で要約 ⑤ 語数 120-150。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "w_opinion",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "TOPIC: Do you think students should learn to cook at school?\n\nRequirements: 80-100 words with 2 reasons.",
+        "sample": "I think students should learn to cook at school. I have two reasons to support my opinion.\n\nFirst, cooking is an essential life skill. Many students leave home for university or work without knowing how to prepare basic meals, which leads to unhealthy eating habits and unnecessary spending on takeout food. Schools could prevent this by providing practical cooking instruction.\n\nSecond, learning to cook helps students appreciate diverse cultures. Through cooking various dishes, students can learn about different countries, traditions, and ingredients, broadening their cultural understanding.\n\nFor these reasons, I believe schools should include cooking education in their curriculum. (95 words)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "Above prompt — write 80-100 word opinion essay.", "answer": "see sample", "explanation": "【英検2級新形式 採点ポイント】① 立場明示 ② 理由 2 つ (First / Second) ③ 各理由は具体例で補強 ④ 結論で再強調 ⑤ 語数 80-100。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3",
+      "eiken_grade": "gp1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Rise of Plant-Based Diets\n\nIn recent years, plant-based diets have gained tremendous popularity worldwide. What was once considered a niche choice for vegetarians and vegans has become mainstream, with grocery store shelves featuring an expanding array of plant-based meat alternatives, dairy substitutes, and prepared foods. Restaurants increasingly offer plant-based options, and even fast food chains have introduced plant-based burgers and sandwiches.\n\nThis shift reflects multiple converging factors. Growing awareness of climate change has highlighted the substantial environmental impact of animal agriculture, which is responsible for significant greenhouse gas emissions and accounts for considerable land and water use. Many people, especially younger generations, see reducing meat consumption as a tangible way to lower their environmental footprint.\n\nHealth considerations also drive this trend. Research consistently associates diets rich in plant foods with reduced risks of heart disease, certain cancers, and other chronic conditions. Additionally, animal welfare concerns have led many consumers to question conventional meat production practices, particularly in industrial-scale operations.\n\nDespite these motivations, plant-based diets face challenges. Some plant-based products are highly processed and may not be as healthy as their natural counterparts. Cost can also be a barrier, as specialty plant-based products are sometimes more expensive than conventional foods. Cultural and culinary traditions in many parts of the world remain deeply tied to animal products, making widespread dietary change a complex social transition.\n\nNevertheless, the trend continues to grow. Whether driven by environmental concern, health awareness, or ethical commitments, increasing numbers of people are reducing animal product consumption—creating a fundamental shift in global food systems whose long-term consequences are still unfolding.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What environmental concern has driven interest in plant-based diets?", "choices": ["The decline of farmland fertility.", "The substantial greenhouse gas emissions and resource use of animal agriculture.", "The disappearance of plant species.", "Concerns about pesticide use only."], "answer": "1", "explanation": "第2段落「animal agriculture, which is responsible for significant greenhouse gas emissions and accounts for considerable land and water use」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What health benefits are associated with plant-rich diets?", "choices": ["Increased risk of cancer.", "Reduced risks of heart disease, certain cancers, and other chronic conditions.", "Faster weight gain.", "No measurable health effects."], "answer": "1", "explanation": "第3段落「diets rich in plant foods with reduced risks of heart disease, certain cancers, and other chronic conditions」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What challenge does the passage mention regarding some plant-based products?", "choices": ["They are always cheaper than meat.", "They are sometimes highly processed and may be expensive specialty items.", "They are illegal in many countries.", "They taste exactly like meat."], "answer": "1", "explanation": "第4段落「Some plant-based products are highly processed ... Cost can also be a barrier, as specialty plant-based products are sometimes more expensive」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Why We Procrastinate\n\nMost of us have experienced procrastination—the act of delaying important tasks despite knowing we should do them. While procrastination is often dismissed as simple laziness, psychological research suggests the truth is far more complex.\n\nResearchers now understand procrastination primarily as a problem with managing emotions, not time. When we face a task that triggers negative feelings—anxiety about failure, boredom, frustration, or self-doubt—our brains naturally seek to escape those feelings. Putting off the task provides immediate emotional relief, even though it creates more stress later. This pattern explains why people often procrastinate on tasks they consider important: the more important the task, the more anxiety it can trigger.\n\nUnderstanding this dynamic suggests new approaches to overcoming procrastination. Traditional advice has focused on time management techniques: making schedules, breaking tasks into smaller pieces, eliminating distractions. While these strategies can help, they often fail when the underlying emotional issues are not addressed.\n\nMore effective approaches focus on managing emotions directly. Self-compassion—treating ourselves with the same kindness we would offer a friend—has been shown to reduce procrastination. People who forgive themselves for past procrastination are less likely to procrastinate in the future. Mindfulness practices that help people observe their feelings without being overwhelmed by them also appear effective.\n\nProcrastination is not a moral failing; it is a common human response to emotional discomfort. Understanding this can transform our approach—from harsh self-criticism to more compassionate and ultimately more effective strategies for getting things done.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "How do researchers now primarily understand procrastination?", "choices": ["As simple laziness.", "As a problem with managing emotions, not time.", "As a sign of low intelligence.", "As an unavoidable human trait."], "answer": "1", "explanation": "第2段落「Researchers now understand procrastination primarily as a problem with managing emotions, not time」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "Why do people often procrastinate on important tasks?", "choices": ["Because important tasks are easier.", "Because important tasks trigger more anxiety, which the brain seeks to escape.", "Because important tasks are unnecessary.", "Because important tasks are always boring."], "answer": "1", "explanation": "第2段落「the more important the task, the more anxiety it can trigger」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What approach to procrastination has been shown to be effective?", "choices": ["Harsh self-criticism.", "Self-compassion and mindfulness practices that address emotional discomfort.", "Ignoring the issue entirely.", "Eliminating all enjoyable activities."], "answer": "1", "explanation": "第4段落「Self-compassion ... has been shown to reduce procrastination ... Mindfulness practices ... also appear effective」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_short",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "[Email]\n\nFrom: Sarah Mitchell <s.mitchell@university.edu>\nTo: All Computer Science Students\nSubject: Career Fair Reminder\nDate: November 8, 2026\n\nDear Students,\n\nThis is a reminder that our annual Computer Science Career Fair will be held next Friday, November 14th, from 1:00 PM to 5:00 PM in the Main Hall. Over 30 technology companies will be participating, including major firms and exciting startups.\n\nTo make the most of this opportunity, please:\n1. Update your resume and bring at least 20 copies\n2. Research the participating companies in advance (full list attached)\n3. Prepare a brief 'elevator pitch' about yourself (60-90 seconds)\n4. Dress in business casual attire\n\nThe career fair is open to all Computer Science majors, regardless of year. Many companies are looking for both interns and full-time hires, so even first-year students should consider attending.\n\nIf you have questions, please visit the Career Services office in Building 3 or email careers@university.edu.\n\nBest regards,\nSarah Mitchell\nCareer Services Coordinator",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "When and where is the career fair?", "choices": ["November 14th from 9:00 AM to noon in Building 3.", "November 14th from 1:00 PM to 5:00 PM in the Main Hall.", "November 8th from 1:00 PM to 5:00 PM in the Main Hall.", "Online via video conference."], "answer": "1", "explanation": "本文「next Friday, November 14th, from 1:00 PM to 5:00 PM in the Main Hall」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "How many resume copies should students bring?", "choices": ["About 5", "About 10", "At least 20", "At least 50"], "answer": "2", "explanation": "本文「bring at least 20 copies」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "Who is the career fair open to?", "choices": ["Only senior-year Computer Science majors.", "All Computer Science majors regardless of year.", "Only Computer Engineering majors.", "Only graduate students."], "answer": "1", "explanation": "本文「open to all Computer Science majors, regardless of year」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "l_part1_2",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[共通テスト Part 2型 - 短い対話]\n\nDialogue 1:\nMan: Excuse me, I'd like to return this shirt. It's the wrong size.\nWoman: I'm sorry to hear that. Do you have your receipt?\nMan: Yes, here you are.\nWoman: Would you like a refund or would you prefer to exchange it for the right size?\n\nDialogue 2:\nGirl: Mom, can I go to the movies with Sarah this weekend?\nMother: When were you planning to go?\nGirl: Saturday afternoon. The movie starts at 2:30.\nMother: Have you finished your homework?\nGirl: Almost. I just have one math exercise left.\nMother: Finish it tonight, and you can go.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "[Dialogue 1] What is the man trying to do?", "choices": ["Buy a new shirt.", "Return a shirt because it's the wrong size.", "Complain about a defective shirt.", "Get a discount on a shirt."], "answer": "1", "explanation": "「I'd like to return this shirt. It's the wrong size」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "[Dialogue 2] What condition does the mother set for the girl going to the movies?", "choices": ["She must clean her room first.", "She must finish her math homework tonight.", "She must invite her brother along.", "She must come home before 5 PM."], "answer": "1", "explanation": "「Finish it tonight, and you can go」(it = math exercise) が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "l_part3_4",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[共通テスト Part 4型 - グループディスカッション]\n\n[Three students discussing how to reduce plastic waste at their school]\n\nMan 1 (Kenji): Let's think about ways to reduce plastic waste here at school. The cafeteria still uses a lot of disposable plastics.\n\nWoman (Mai): I've been thinking about this too. The biggest issue is that everyone uses plastic bottles, plastic cups, and plastic straws. Maybe we should encourage students to bring their own water bottles.\n\nMan 2 (Takashi): That's a good start, but I think we need a bigger system. What if the school provided water refill stations and reusable cups for purchase?\n\nKenji: Reusable cups are nice, but they cost money. Some students might not want to pay.\n\nMai: True. Maybe the school could subsidize them, or organizations could donate them.\n\nTakashi: Or we could organize a 'bring your own bottle' campaign with prizes for students who participate consistently. That would build a habit without requiring money from students.\n\nKenji: I like that. Let's also push for the cafeteria to switch from plastic straws to paper or no straws at all. That should be easy.\n\nMai: Agreed. Let's draft a proposal to the principal next week.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What is the main problem the students are discussing?", "choices": ["School lunch quality.", "Plastic waste at their school.", "Recycling collection schedules.", "Transportation issues."], "answer": "1", "explanation": "Kenji 冒頭「ways to reduce plastic waste here at school」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What does Takashi suggest as a system-level solution?", "choices": ["Banning all drinks at school.", "Water refill stations and reusable cups for purchase.", "Closing the cafeteria.", "Moving to a different school."], "answer": "1", "explanation": "Takashi 発言「the school provided water refill stations and reusable cups for purchase」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What is the final action the students agree on?", "choices": ["Doing nothing.", "Drafting a proposal to the principal next week.", "Writing letters to the government.", "Quitting school."], "answer": "1", "explanation": "Mai 最後「Let's draft a proposal to the principal next week」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "l_listening",
+      "eiken_grade": "center",
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[センター試験型 リスニング 大問4型 - モノローグ]\n\nGood morning, everyone. Welcome to today's introductory tour of our science museum. Before we begin, let me give you some practical information.\n\nThe museum has four main floors. The first floor contains our gift shop and information desk. The second floor focuses on space exploration and astronomy. The third floor has exhibits on human biology and medical history. And the top floor, which is my personal favorite, is dedicated to environmental science and climate change.\n\nWe have several special activities today. At 11 AM, there's a planetarium show on the second floor. At 1 PM, we'll have a hands-on workshop about renewable energy on the fourth floor. And at 3 PM, there's a guided tour of our newest exhibition on artificial intelligence, which is also on the fourth floor.\n\nPlease note that food and drinks are not allowed inside the exhibits. There's a cafeteria on the first floor where you can take breaks. Photography is allowed throughout the museum, but please turn off your camera flash.\n\nThe museum closes at 6 PM today. Enjoy your visit, and don't hesitate to ask our staff if you have any questions!",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "Where is the human biology exhibit located?", "choices": ["First floor", "Second floor", "Third floor", "Fourth floor"], "answer": "2", "explanation": "「The third floor has exhibits on human biology and medical history」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What is the speaker's personal favorite floor?", "choices": ["The first floor (gift shop).", "The second floor (space exploration).", "The third floor (human biology).", "The fourth floor (environmental science)."], "answer": "3", "explanation": "「the top floor, which is my personal favorite, is dedicated to environmental science」が根拠。top floor は4階。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "When does the planetarium show start?", "choices": ["10 AM", "11 AM", "1 PM", "3 PM"], "answer": "1", "explanation": "「At 11 AM, there's a planetarium show」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_grammar",
+      "eiken_grade": "center",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "センター型 文法・語法 (続)",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "I am looking forward to ( ) you again.", "choices": ["see", "seeing", "saw", "have seen"], "answer": "1", "explanation": "look forward to + 動名詞 (to は前置詞)。seeing が正解。see (原形) は不定詞 to see と混同しやすい引っかけ。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "If it ( ) tomorrow, we will cancel the picnic.", "choices": ["will rain", "rains", "rained", "would rain"], "answer": "1", "explanation": "条件節の if 文では未来の内容も現在形で書く。「もし明日雨が降ったら」 → if it rains。主節は will + 動詞原形。センター頻出。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "He apologized ( ) being late for the meeting.", "choices": ["for", "of", "to", "with"], "answer": "0", "explanation": "apologize for + 名詞/動名詞 = 〜について謝る。前置詞 for 固定。apologize to + 人 (謝る相手) と混同しないこと。"},
+          {"id": "q4", "type": "multiple_choice", "stem": "It is no use ( ) over spilt milk.", "choices": ["to cry", "crying", "cried", "cry"], "answer": "1", "explanation": "It is no use + 動名詞 = 〜しても無駄だ (慣用句)。「覆水盆に返らず (こぼれた牛乳のことで泣いても無駄)」。センターはことわざ慣用句が頻出。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q2",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系数学 大問2型 (続) — 確率",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "コインを 5 回投げる。表が 3 回以上出る確率を求めよ。", "answer": "二項分布 (n = 5, p = 1/2)。\nP(X ≥ 3) = P(X=3) + P(X=4) + P(X=5)\n\nP(X=3) = ₅C₃ × (1/2)⁵ = 10 × 1/32 = 10/32\nP(X=4) = ₅C₄ × (1/2)⁵ = 5 × 1/32 = 5/32\nP(X=5) = ₅C₅ × (1/2)⁵ = 1 × 1/32 = 1/32\n\nP(X ≥ 3) = (10 + 5 + 1)/32 = 16/32 = 1/2\n\n別解: コインの対称性により P(X ≥ 3) = P(X ≤ 2)、和 = 1 → 各 1/2 (X=2.5 が境界・整数 X では 0~2 と 3~5 がそれぞれ 1/2)。", "explanation": "【東大型確率 解法ポイント】① 独立試行の二項分布 ② 求める範囲を分解 ③ ₅Cₖ を使って計算。【別解の発見】コインのように対称な確率では P(X≥3) = P(X≤2) = 1/2 が瞬時に出る。東大は対称性を使った省略解法を評価する。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_q1",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系化学 大問1型 (続) — 中和滴定",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "0.10 mol/L の酢酸 CH₃COOH 20 mL を 0.10 mol/L の水酸化ナトリウム NaOH で完全中和するとき、必要な NaOH の体積を求めよ。また、中和点での溶液の液性 (酸性/中性/塩基性) を答えよ。", "answer": "中和反応: CH₃COOH + NaOH → CH₃COONa + H₂O\n1 : 1 の物質量で反応。\n\n酢酸の物質量: n_acid = 0.10 × 0.020 = 0.0020 mol\n必要な NaOH: 同じく 0.0020 mol が必要\n体積 V = 0.0020 / 0.10 = 0.020 L = 20 mL\n\n中和点での液性: **塩基性**\n理由: 弱酸 (酢酸) と強塩基 (NaOH) の塩 CH₃COONa は加水分解し、CH₃COO⁻ + H₂O ⇌ CH₃COOH + OH⁻ により OH⁻ を生じるため、塩基性 (pH > 7) になる。", "explanation": "【東大型 中和滴定 解法ポイント】① 反応の量論比 (1:1 / 1:2 など) を確認 ② 物質量で計算 ③ 中和点の液性は弱酸・弱塩基の組合せで決まる: 強酸+強塩基→中性、弱酸+強塩基→塩基性、強酸+弱塩基→酸性、弱酸+弱塩基→塩の性質次第。【典型ミス】中和点 = 中性と短絡する (これは強酸+強塩基のみ)。"}
+        ]
+      }
+    }
+  ]
+}

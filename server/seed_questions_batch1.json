@@ -1,0 +1,322 @@
+{
+  "questions": [
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "Although the new policy was ( ) to improve worker safety, many employees felt it created additional bureaucratic burdens.",
+            "choices": ["intended", "intending", "intent", "intention"],
+            "answer": "0",
+            "explanation": "be intended to do = 〜することを目的としている (受動態+to不定詞)。was の後ろなので過去分詞 intended が正解。intending (動名詞・現在分詞) は能動の意味になり不適切。intent / intention は名詞で文法的に成立しない。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "The committee will ( ) the proposal at next week's meeting before making a final decision.",
+            "choices": ["look forward to", "go through", "put off", "come across"],
+            "answer": "1",
+            "explanation": "go through = 〜を詳しく検討する/精査する。提案を会議で精査する文脈に合致。look forward to = 楽しみにする、put off = 延期する、come across = 偶然出会う、はいずれも文脈に合わない。英検2級の句動詞頻出。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "( ) the heavy rain, the outdoor festival was canceled and rescheduled for the following weekend.",
+            "choices": ["Although", "Despite", "Because of", "Even though"],
+            "answer": "2",
+            "explanation": "Because of + 名詞句 = 〜が原因で。後続が the heavy rain (名詞句) で「悪天候 → 中止」という因果関係。Despite + 名詞句もあるが「〜にもかかわらず」で意味が逆。Although / Even though は接続詞 (節を率いる) で名詞句を取れない。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "The scientist's research has ( ) significant attention from international journals due to its innovative approach.",
+            "choices": ["received", "rejected", "removed", "reduced"],
+            "answer": "0",
+            "explanation": "receive attention = 注目を集める、はコロケーション (定型表現)。文意「研究が国際誌から注目を集めた」に合致。reject = 拒絶、remove = 取り除く、reduce = 減らす はいずれも attention との組合せが不自然。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "If I ( ) about the traffic jam earlier, I would have taken a different route.",
+            "choices": ["knew", "had known", "would know", "would have known"],
+            "answer": "1",
+            "explanation": "仮定法過去完了: If S had Vpp, S would have Vpp。「もし(過去に)知っていたら、(過去に)別のルートを取っていた」。主節が would have taken なので、if 節は had known が正解。英検2級頻出文法。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "Sarah is the only student in her class ( ) speaks three languages fluently.",
+            "choices": ["who", "whom", "whose", "which"],
+            "answer": "0",
+            "explanation": "先行詞 the only student (人) + 関係詞節内で主語が欠けている → 主格 who。whom は目的格、whose は所有格、which は人以外。「3言語を流暢に話す唯一の生徒」"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "The library offers a wide ( ) of books, from classic literature to modern science fiction.",
+            "choices": ["range", "amount", "number", "quantity"],
+            "answer": "0",
+            "explanation": "a wide range of = 幅広い〜、は定型表現で「種類の豊富さ」を表す。本問は「古典文学から現代SFまで」という多様性を強調しており range が適切。amount / quantity は不可算名詞の量、number は可算名詞の数で、いずれも「種類の幅」のニュアンスは出せない。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Despite working overtime for weeks, the team ( ) to meet the project deadline.",
+            "choices": ["managed", "succeeded", "achieved", "accomplished"],
+            "answer": "0",
+            "explanation": "manage to do = (努力して/苦労して) なんとか〜する。「数週間残業したにも関わらず、なんとか締切に間に合った」という困難克服の文脈に最適。succeed in doing (前置詞 in が必要)、achieve / accomplish は他動詞で目的語に名詞 (a goal 等) を取り to不定詞は不可。英検2級の動詞語法頻出。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "The teacher asked the students to ( ) their reports by Friday afternoon.",
+            "choices": ["hand in", "hand out", "hand over", "hand down"],
+            "answer": "0",
+            "explanation": "hand in = 提出する (= submit)。レポートを締切までに提出する文脈。hand out = 配布する、hand over = (権限などを) 引き渡す、hand down = (代々) 伝える/言い渡す。英検2級の hand 系句動詞は頻出 4つセットで覚えるべし。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "gp1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "The government's new environmental regulations have ( ) considerable opposition from manufacturing industries that fear increased operational costs.",
+            "choices": ["provoked", "protected", "predicted", "prevented"],
+            "answer": "0",
+            "explanation": "provoke opposition = 反発を引き起こす、は英検準1級頻出のコロケーション。「規制が製造業からの反発を引き起こした」。protect = 守る、predict = 予測する、prevent = 防ぐ、は文意と矛盾。provoke は他に anger / debate / criticism などとも結合する。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Recent studies have ( ) the long-held assumption that humans are the only species capable of using tools.",
+            "choices": ["challenged", "channeled", "charted", "chartered"],
+            "answer": "0",
+            "explanation": "challenge an assumption = 仮定/前提に異議を唱える。最近の研究 (霊長類・カラス科の道具使用研究) が人間以外の種も道具を使うことを示し、従来の前提を覆した、という文脈。準1級頻出の動詞 challenge は「挑戦する」よりも「異議を唱える」の用法が学術文で多用される。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "The company implemented strict measures to ( ) data breaches and protect customer privacy.",
+            "choices": ["mitigate", "magnify", "manipulate", "modify"],
+            "answer": "0",
+            "explanation": "mitigate = 軽減する/緩和する。情報漏洩を「軽減する」措置という文脈。magnify = 拡大する、manipulate = 巧妙に操作する、modify = 修正する、はいずれも文意に合わない。準1級ではリスクや影響を「mitigate」する語法が頻出 (mitigate risk / damage / impact)。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "gp1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "The CEO emphasized that the company's success was ( ) on the dedication and creativity of its employees.",
+            "choices": ["contingent", "consequent", "consistent", "convenient"],
+            "answer": "0",
+            "explanation": "be contingent on = 〜次第である/〜に左右される。「企業の成功は従業員の献身と創造性次第」という文脈。consequent on = 〜の結果として生じる (受動的)、consistent with = 〜と一致する、convenient for = 〜に便利な。準1級では contingent on ≒ depend on の言い換えとしてビジネス文書で頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Critics argue that the new tax policy will ( ) the gap between wealthy and middle-class households.",
+            "choices": ["widen", "withdraw", "withhold", "withstand"],
+            "answer": "0",
+            "explanation": "widen the gap = 格差を広げる、は政治・社会論説で頻出のコロケーション。「税制が貧富の差を拡大させる」。withdraw = 撤回/引き出す、withhold = 差し控える/源泉徴収する、withstand = 耐える、は文脈に合わない。準1級では widen / narrow the gap 両方覚えるべし。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "Despite the harsh weather, the rescue team ( ) in locating the missing climbers within 48 hours.",
+            "choices": ["prevailed", "persisted", "prospered", "proceeded"],
+            "answer": "0",
+            "explanation": "prevail = 勝利する/打ち勝つ。「悪天候にも関わらず救助隊は登山者を48時間以内に見つけ出すことに成功」。persist = 継続する/しつこく主張する (in doing は意味は近いが「困難の克服」のニュアンスが弱い)、prosper = 繁栄する、proceed = 進行する。準1級では prevail over / against (打ち勝つ) も頻出。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "w_essay",
+      "eiken_grade": "gp1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "TOPIC: Should the Japanese government invest more in renewable energy sources?\n\nPOINTS to consider (use 2 of 4):\n- Cost\n- Environment\n- Job creation\n- Energy security\n\nRequirements: 120-150 words, with introduction, two body paragraphs, and conclusion.",
+        "sample": "I strongly believe that the Japanese government should invest more in renewable energy sources. I will support this view with two main reasons: environmental protection and energy security.\n\nFirst, renewable energy is essential for combating climate change. Japan currently relies heavily on imported fossil fuels, which release significant amounts of carbon dioxide. By expanding solar, wind, and geothermal power, Japan can dramatically reduce its greenhouse gas emissions and fulfill its international climate commitments under the Paris Agreement.\n\nSecond, investing in renewables enhances Japan's energy security. Following the 2011 Fukushima disaster, Japan's vulnerability to energy supply disruptions became evident. Renewable sources, generated domestically, reduce dependence on volatile global oil and gas markets and protect the country from geopolitical instability.\n\nIn conclusion, despite the initial costs, increased investment in renewable energy is crucial for both environmental sustainability and national security. (138 words)",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "Above prompt — write your own 120-150 word essay using 2 of the 4 points.",
+            "answer": "see sample",
+            "explanation": "【採点ポイント】① 構成 (intro / body×2 / conclusion 4段落) ② 指定2ポイントの明示 (本サンプルは Environment と Energy security) ③ 各 body は理由+具体例+補強 ④ 語数 120-150 ⑤ 結論で intro の言い換え。【模範のキー表現】combat climate change / fulfill international commitments / vulnerability / volatile markets / geopolitical instability。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "w_opinion",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "TOPIC: Do you think it is good for high school students to use smartphones during class?\n\nRequirements: 80-100 words, with reasons (2) supporting your opinion.",
+        "sample": "I do not think it is good for high school students to use smartphones during class. I have two reasons to support my opinion.\n\nFirst, smartphones can easily distract students from their lessons. Many students may check social media, play games, or send messages to friends instead of paying attention to the teacher.\n\nSecond, smartphones make it easier to cheat on tests. Students could quickly search for answers online or share answers with classmates, which prevents fair evaluation of their abilities.\n\nFor these reasons, I believe smartphones should not be used during class. (92 words)",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "Above prompt — write your own 80-100 word opinion essay with 2 reasons.",
+            "answer": "see sample",
+            "explanation": "【英検2級新形式採点ポイント】① 意見明示 (I do not think... / I think...) ② 理由2つ (First / Second の signposting) ③ 各理由は具体例で補強 ④ 結論で intro の言い換え ⑤ 語数 80-100。【書きやすいテンプレ】I do/do not think... I have two reasons. First, [reason1]. [example]. Second, [reason2]. [example]. For these reasons, [conclusion]."
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "toeic",
+      "part_key": "r_part5",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "The new accounting software will allow employees to process invoices ( ) than before.",
+            "choices": ["efficient", "efficiently", "more efficiently", "most efficient"],
+            "answer": "2",
+            "explanation": "than があるので比較級。process (動詞) を修飾するので副詞。比較級の副詞 → more efficiently。efficient (形容詞原級)、efficiently (副詞原級・than と合わない)、most efficient (最上級・than と合わない)。TOEIC Part 5 品詞×比較の典型問題。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "All employees must submit their expense reports ( ) the end of each month.",
+            "choices": ["by", "until", "from", "in"],
+            "answer": "0",
+            "explanation": "by = 〜までに (期限・締切)、until = 〜までずっと (継続)。「月末までに提出」は期限なので by。TOEIC では by/until の使い分けは超頻出。submit / complete / finish + by + 時点 を覚えるべし。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "Mr. Tanaka's presentation was ( ) informative that several attendees requested copies of his slides.",
+            "choices": ["so", "such", "very", "too"],
+            "answer": "0",
+            "explanation": "so + 形容詞 + that 節 = とても〜なので…。informative は形容詞なので so が正解。such + a/an + 形容詞 + 名詞 + that...、very は that 節を取らない、too は that 節 (...for to do) になり構文が異なる。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "toeic",
+      "part_key": "r_part5",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "The marketing department has ( ) a 15% increase in sales since launching the new campaign.",
+            "choices": ["report", "reported", "reporting", "to report"],
+            "answer": "1",
+            "explanation": "has + 過去分詞 = 現在完了。has reported が正解。report (原形)、reporting (動名詞・現在分詞)、to report (不定詞) はいずれも has の後ろに来ない。「キャンペーン開始以降15%増を報告した」。TOEIC では時制問題は頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Please contact the IT department if you experience ( ) difficulties with the new software.",
+            "choices": ["any", "some", "much", "every"],
+            "answer": "0",
+            "explanation": "if 節 (条件) では any が原則。「もし何らかの問題が生じたら」。some は肯定文/確実な文脈、much は不可算名詞、every は単数名詞 + 可算。difficulties (複数形) なので any difficulties。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "The annual conference will be held at the Hilton Hotel, ( ) is conveniently located near the airport.",
+            "choices": ["where", "which", "that", "what"],
+            "answer": "1",
+            "explanation": "先行詞 the Hilton Hotel (物・固有名詞) + コンマ付き非制限用法 → which。where は場所を表すが関係副詞で動詞 (is) の主語になれない、that は非制限用法不可、what は先行詞を含むので不可。「ヒルトンホテルで、そこは空港近くで便利」"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "toeic",
+      "part_key": "l_part2",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "TOEIC Part 2 応答問題セット (3問・スクリプト):\n1. When will the conference room be available?\n2. Who's responsible for the quarterly report?\n3. The meeting has been postponed, hasn't it?",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "When will the conference room be available?",
+            "choices": ["After 3 PM today.", "It's on the third floor.", "Yes, I reserved it."],
+            "answer": "0",
+            "explanation": "When → 時刻で答える。(A) After 3 PM today が正解。(B) Where への答え (場所)、(C) Did you reserve...? への Yes/No 応答で、いずれも問いに対応しない。TOEIC Part 2 では類音語 (conference / conferences) を使った引っかけが頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Who's responsible for the quarterly report?",
+            "choices": ["It's due next Friday.", "Ms. Suzuki from accounting.", "Every three months."],
+            "answer": "1",
+            "explanation": "Who → 人で答える。(B) Ms. Suzuki from accounting が正解。(A) When の答え、(C) How often の答え。Part 2 では人名+部署名の典型応答パターン。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "The meeting has been postponed, hasn't it?",
+            "choices": ["Yes, until next Monday.", "In conference room B.", "About thirty people."],
+            "answer": "0",
+            "explanation": "付加疑問文 → Yes/No + 詳細。Yes, until next Monday (はい、来週月曜まで延期) が完璧。(B) Where、(C) How many への答えで内容無関連。Part 2 では付加疑問文の Yes/No に続く詳細情報を聞き取れるかが鍵。"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,632 @@
+{
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_translation",
+      "eiken_grade": "todai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "What we call common sense is, in fact, anything but common across cultures. The standards by which we judge the appropriate distance to stand from a stranger, the proper volume at which to speak in public, or the degree to which one should defer to authority figures all vary substantially between societies. Travelers who venture beyond their familiar surroundings often experience a kind of vertigo when they discover that behaviors they had assumed to be universally human are in fact specific to the cultures in which they were raised. This recognition, far from being merely an intellectual curiosity, can fundamentally reshape one's sense of self—revealing that much of what we take to be 'natural' or 'inevitable' in our own conduct is actually the product of historical accident and social conditioning.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "下線部 'much of what we take to be 'natural' or 'inevitable' in our own conduct is actually the product of historical accident and social conditioning.' を日本語に訳しなさい。",
+            "answer": "我々が自らの行動において「自然」あるいは「必然」とみなしているものの大部分が、実は歴史上の偶然と社会的条件付けの産物なのだ。",
+            "explanation": "【東大型和訳のポイント】① much of what we take to be X = 我々が X とみなすものの大部分 (関係詞 what + take A to be B) ② natural/inevitable は引用符付きなので「 」を付けるか斜体強調 ③ in our own conduct = 自らの行動において (in our conduct を後ろに付ける) ④ the product of A and B = A と B の産物 (the product 単数形に注意) ⑤ historical accident = 歴史上の偶然 / social conditioning = 社会的条件付け。【失点パターン】take ... to be ... の構文把握、accident を「事故」と誤訳、conditioning の訳出 (「条件付け」 vs 「形成」)。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "w_essay",
+      "eiken_grade": "todai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "次のテーマについて、60-80語の英文で自分の意見を述べなさい (東大型 大問2A・自由英作文)。\n\nTheme: Should universities place greater emphasis on practical job skills, or should they continue to prioritize broad liberal education?",
+        "sample": "I believe universities should continue to prioritize broad liberal education over narrow job training. While practical skills can be acquired through internships and on-the-job experience, the analytical thinking, cultural awareness, and ethical reasoning fostered by liberal education provide a foundation that becomes more valuable as careers evolve. Specific job skills quickly become obsolete in our rapidly changing economy, but the capacity for lifelong learning developed through liberal study remains permanently useful. (72 words)",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "上記テーマで 60-80語の自由英作文を書きなさい。",
+            "answer": "see sample",
+            "explanation": "【東大型2A 採点ポイント】① 語数厳守 60-80 (オーバー大幅減点) ② 立場明示 (I believe / In my view) ③ 1-2の理由+具体例で論証 ④ 結論文で意見を再強調。【模範のキー表現】prioritize over / acquire through / foster A / become obsolete / capacity for lifelong learning。東大型は抽象的論題に対し短文で論理的に意見を組み立てる訓練が必須。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "w_essay",
+      "eiken_grade": "waseda",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "Read the following statement and write an essay of approximately 100-150 words explaining whether you agree or disagree.\n\n\"Social media platforms have done more harm than good to modern society.\"",
+        "sample": "I largely agree that social media platforms have done more harm than good, though the picture is complex. On the positive side, these platforms have democratized communication, enabled grassroots movements, and connected diaspora communities across continents. However, the harms appear to be more pervasive and structural. Algorithmic amplification of outrage and misinformation has eroded the shared factual basis necessary for democratic discourse. The performance-driven nature of these platforms has contributed to documented increases in anxiety and depression, particularly among adolescents. Furthermore, the commercial logic that prioritizes engagement above wellbeing seems unlikely to self-correct without external regulation. While individual users derive genuine value from social media, the cumulative societal effects appear to be predominantly negative. (118 words)",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "Above prompt — write 100-150 word agree/disagree essay.",
+            "answer": "see sample",
+            "explanation": "【早稲田型 採点ポイント】① 語数 100-150 (政経・国際教養レベル) ② 立場明示+両論の認識 (largely agree though...) ③ 構造化された段落 (positive→negative→conclusion) ④ 抽象語彙: pervasive / structural / algorithmic amplification / democratic discourse / performance-driven / cumulative effects。早稲田は語彙レベルが高い + 論理構成の明確さが採点される。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "kyodai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "There exists a curious paradox at the heart of human creativity: the works that strike us as most original often turn out, on closer inspection, to be the most deeply embedded in tradition. The painter who appears to break decisively with all that came before is, more often than not, an artist who has so thoroughly absorbed previous styles that he or she can transform them with apparent ease. The writer whose voice seems entirely her own typically reveals, when read with care, a vast network of literary debts. What we call originality, then, is rarely a matter of generating something from nothing; it is rather the capacity to take what one has inherited and to recombine it in ways that no one had quite imagined before. This understanding has profound implications for education. If creativity emerges from deep familiarity with tradition rather than from rebellion against it, then the cultivation of creative individuals requires precisely the kind of patient immersion in established knowledge that is sometimes dismissed as merely conformist or stifling.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "下線部 'the cultivation of creative individuals requires precisely the kind of patient immersion in established knowledge that is sometimes dismissed as merely conformist or stifling.' を日本語に訳しなさい。",
+            "answer": "創造的な個人を育むためには、時に単なる迎合や束縛に過ぎないとして退けられがちな、確立された知識への忍耐強い没頭こそが必要なのである。",
+            "explanation": "【京大型和訳のポイント】① cultivation of X = X を育むこと (動名詞構文化) ② precisely the kind of A that is B = まさに B であるような A (関係詞 that の修飾範囲) ③ immersion in established knowledge = 確立された知識への没頭 ④ dismissed as merely C or D = 単なる C あるいは D として退けられる (受動構文) ⑤ stifling = 束縛する/息苦しくさせる (動名詞形容詞)。【失点パターン】dismissed の訳出 (片付けられる/退けられる)、conformist の訳語 (迎合主義者→形容詞では「迎合的」)、stifling の語感 (圧迫/抑圧)。京大型は構文の入れ子と否定的形容詞の連鎖把握が頻出。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "keio",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Globalization and the Question of Cultural Authenticity\n\nIn an era of unprecedented global connectivity, the question of what counts as 'authentic' culture has become both more pressing and more complicated. When sushi is sold at gas stations in Iowa, when K-pop fills stadiums in Brazil, when Bollywood films draw audiences in Africa, the older idea that cultures are bounded entities tied to particular places begins to lose its grip. Yet calls for cultural authenticity have if anything intensified in this same period, as communities mobilize to protect what they view as their distinctive heritage from the homogenizing forces of global commerce.\n\nSome scholars argue that the very concept of cultural authenticity has always been somewhat illusory. Cultures, they point out, have always been hybrid and dynamic, borrowing from neighbors, adapting to circumstances, and changing over generations. The 'pure' Japanese culture that nationalists wish to defend is itself the product of centuries of selective borrowing from China, Korea, and the West. Italian cuisine as we know it would be unrecognizable without the tomato, a New World import. Even seemingly indigenous traditions are typically the result of complex processes of adaptation and exchange.\n\nOthers, however, caution against overstating this point. While it may be true that no culture is hermetically sealed, the pace and asymmetry of contemporary globalization differ qualitatively from past exchanges. Today's cultural flows often follow channels carved by economic power, with American or other Western forms achieving global reach while less commercially viable traditions struggle to survive. The question is not whether cultures change—they always have—but whether the conditions of change are equitable and whether vulnerable communities have meaningful capacity to shape their own cultural futures.\n\nThis debate matters beyond academia. Policy decisions about everything from language preservation to trade negotiations to museum repatriation rest on contested ideas about what culture is and how it should be protected. The most thoughtful response, perhaps, neither denies the reality of cultural distinctiveness nor essentializes it as something fixed and bounded. Cultures are real, but they are not what people sometimes imagine them to be: they are processes rather than objects, ongoing collective achievements rather than ancient inheritances passively received.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What does the author cite as evidence that 'cultural authenticity' is somewhat illusory?",
+            "choices": ["The disappearance of regional dialects worldwide", "The fact that 'pure' cultures historically borrowed extensively from neighbors", "The popularity of social media platforms", "The decline of traditional festivals"],
+            "answer": "1",
+            "explanation": "第2段落「Cultures ... have always been hybrid and dynamic, borrowing from neighbors」「The 'pure' Japanese culture ... is itself the product of centuries of selective borrowing from China, Korea, and the West」が根拠。慶應経済型は本文の例証構造把握が頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What concern do critics of pure 'globalist' optimism raise?",
+            "choices": ["Cultural exchange has been entirely positive throughout history.", "Today's cultural flows are asymmetric, following channels of economic power.", "All cultures are essentially identical.", "Globalization has been completely halted."],
+            "answer": "1",
+            "explanation": "第3段落「Today's cultural flows often follow channels carved by economic power, with American or other Western forms achieving global reach」が根拠。慶應では複数視点の対比把握が必須。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "How does the author ultimately characterize cultures?",
+            "choices": ["As fixed, ancient inheritances", "As processes and ongoing collective achievements", "As completely arbitrary inventions", "As determined entirely by economic forces"],
+            "answer": "1",
+            "explanation": "最終文「processes rather than objects, ongoing collective achievements rather than ancient inheritances passively received」が直接の根拠。慶應型は最終段落の thesis 把握が頻出。"
+          },
+          {
+            "id": "q4",
+            "type": "multiple_choice",
+            "stem": "The author's tone toward both extremes (pure relativism and rigid essentialism) is best described as:",
+            "choices": ["Equally enthusiastic", "Critical of both, advocating a more nuanced middle position", "Indifferent", "Supportive of rigid essentialism only"],
+            "answer": "1",
+            "explanation": "本文構造は「両極端の批判→中道的提言」。最終段落「neither denies ... nor essentializes」が中道スタンスの直接表明。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "sophia",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Vanishing Languages\n\nLinguists estimate that approximately 7,000 languages are currently spoken around the world, but more than half of these may disappear by the end of this century. Every two weeks, somewhere on Earth, the last fluent speaker of a language passes away, and with them, an entire way of seeing the world is lost forever.\n\nThe causes of language loss are complex. Historically, colonialism imposed dominant languages on subordinate populations through schools, churches, and government. More recently, economic globalization and digital media have intensified pressure on smaller languages, as parents increasingly choose to raise their children in languages they believe will offer better economic opportunities.\n\nWhy should this matter? After all, communication seems easier when fewer languages compete for attention. Yet linguists argue that each language encodes a unique cultural perspective developed over centuries. Indigenous languages often contain extensive vocabularies for local plants, animals, and ecological relationships—knowledge that disappears when the language dies. Some languages capture distinctions and concepts that simply cannot be translated cleanly into widely-spoken tongues.\n\nFortunately, many communities are now mobilizing to revitalize endangered languages. Hawaiian, once nearly extinct, is now taught in immersion schools across Hawaii. Welsh has gained renewed strength through Welsh-language television and education. Maori is increasingly visible in New Zealand public life. These efforts demonstrate that language loss is not inevitable—but they require sustained commitment from speakers, governments, and educational institutions.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "According to the passage, how often does a language lose its last fluent speaker?",
+            "choices": ["Every two weeks", "Every two months", "Every two years", "Every two decades"],
+            "answer": "0",
+            "explanation": "本文「Every two weeks, somewhere on Earth, the last fluent speaker of a language passes away」が直接の根拠。上智 TEAP 型は数値・頻度情報の精密把握が必須。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Why do parents sometimes choose not to teach their heritage language to their children?",
+            "choices": ["Because heritage languages are too difficult.", "Because they believe dominant languages offer better economic opportunities.", "Because governments have banned heritage languages everywhere.", "Because heritage languages have no written form."],
+            "answer": "1",
+            "explanation": "第2段落「parents increasingly choose to raise their children in languages they believe will offer better economic opportunities」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What does the passage suggest is lost when an indigenous language dies?",
+            "choices": ["Only basic vocabulary", "Detailed ecological knowledge and unique cultural perspectives", "All written records", "Only religious traditions"],
+            "answer": "1",
+            "explanation": "第3段落「extensive vocabularies for local plants, animals, and ecological relationships—knowledge that disappears」「distinctions and concepts that simply cannot be translated cleanly」が根拠。"
+          },
+          {
+            "id": "q4",
+            "type": "multiple_choice",
+            "stem": "What examples does the passage give of successful language revitalization?",
+            "choices": ["Latin and Ancient Greek", "Hawaiian, Welsh, and Maori", "French and Spanish", "Esperanto and Klingon"],
+            "answer": "1",
+            "explanation": "最終段落「Hawaiian ... taught in immersion schools / Welsh has gained renewed strength / Maori is increasingly visible」が根拠。上智型は具体例の正確な照合が頻出。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "meiji",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Science and Ethics of Lab-Grown Meat\n\nFor most of human history, eating meat has required the slaughter of animals. Recent advances in cellular agriculture, however, are challenging this ancient practice. Lab-grown meat, also called cultivated or cultured meat, is produced by taking a small sample of animal cells and growing them in nutrient-rich solutions until they form muscle tissue indistinguishable from conventional meat. The first lab-grown burger, unveiled in 2013, cost over $300,000 to produce. Today, costs have dropped dramatically, and several companies have begun selling cultivated chicken and beef in select markets.\n\nProponents of lab-grown meat point to its potential environmental and ethical benefits. Conventional livestock farming is responsible for an estimated 14.5% of global greenhouse gas emissions. It requires vast amounts of land and water and contributes significantly to deforestation, particularly in tropical regions. Lab-grown meat, in theory, could produce protein with a fraction of these environmental costs. Additionally, it eliminates the need to confine and slaughter sentient animals, addressing a major moral concern raised by animal welfare advocates.\n\nHowever, lab-grown meat faces substantial challenges. Production currently requires expensive equipment and specialized inputs, and questions remain about whether it can ever achieve cost parity with conventional meat at scale. Some scientists also dispute the environmental claims, noting that energy-intensive bioreactors might offset much of the carbon savings, especially if they run on fossil fuels. Furthermore, consumer acceptance remains uncertain. Surveys suggest that many people feel an instinctive resistance to eating meat that did not come from a living animal—a reaction that proponents must overcome through education and gradual exposure.\n\nThe future of lab-grown meat will likely depend on technological progress, regulatory decisions, and shifting cultural attitudes. Whether or not it becomes a mainstream alternative to conventional meat, the existence of this technology forces us to reconsider deep assumptions about the relationship between food, ethics, and the natural world.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is lab-grown meat?",
+            "choices": ["Meat from genetically modified animals", "Meat produced from animal cells grown in nutrient solutions", "Plant-based meat substitutes", "Meat from animals raised in laboratories"],
+            "answer": "1",
+            "explanation": "第1段落「produced by taking a small sample of animal cells and growing them in nutrient-rich solutions」が直接の定義。明治型は本文の定義部分の正確な把握が頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What percentage of global greenhouse gas emissions does conventional livestock farming account for?",
+            "choices": ["About 5%", "About 14.5%", "About 30%", "About 50%"],
+            "answer": "1",
+            "explanation": "第2段落「14.5% of global greenhouse gas emissions」が根拠。具体的数値情報は明治型の頻出問題。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What environmental concern do some scientists raise about lab-grown meat?",
+            "choices": ["It produces too much waste plastic.", "Bioreactors are energy-intensive and may offset carbon savings.", "It uses up too much fresh water.", "It destroys forest habitats."],
+            "answer": "1",
+            "explanation": "第3段落「energy-intensive bioreactors might offset much of the carbon savings, especially if they run on fossil fuels」が根拠。"
+          },
+          {
+            "id": "q4",
+            "type": "multiple_choice",
+            "stem": "What does the author conclude about the future of lab-grown meat?",
+            "choices": ["It will definitely replace conventional meat.", "Its future depends on technology, regulation, and culture, regardless of which it forces ethical reflection.", "It is doomed to fail.", "It is irrelevant to ethical questions."],
+            "answer": "1",
+            "explanation": "最終段落「The future ... will likely depend on technological progress, regulatory decisions, and shifting cultural attitudes. Whether or not it becomes mainstream ... forces us to reconsider」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "doshisha",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Hidden Cost of Convenience\n\nWe live in an age that worships convenience. From one-day delivery to instant communication, from ready-made meals to streaming entertainment available at any hour, modern life systematically eliminates friction from the experience of getting what we want. Few people would willingly return to a world without these conveniences—and yet, a growing chorus of critics suggests that our pursuit of frictionlessness has come at significant hidden costs.\n\nThe most obvious cost is environmental. Same-day delivery, while convenient for consumers, requires fleets of trucks making frequent partial-load trips, dramatically increasing carbon emissions per package compared to consolidated shipping. The disposable culture that convenience encourages—from single-use plastics to fast fashion—generates staggering amounts of waste, much of which ends up in landfills or oceans. Meanwhile, the energy demands of always-on digital services contribute to growing electricity consumption that strains global power grids.\n\nLess visible but equally important are the social and psychological costs. Convenience economies tend to atomize daily life. Where once a trip to the bakery or hardware store offered chances for social interaction, online ordering eliminates these moments of casual community contact. Some sociologists argue that the resulting isolation contributes to the loneliness epidemic that public health officials increasingly recognize as a serious problem in many wealthy societies. Furthermore, by removing minor difficulties from daily life, convenience may inadvertently weaken our capacity to handle larger challenges. Resilience, like physical strength, may require regular exercise.\n\nFinally, convenience often involves hidden human costs that consumers rarely see. The remarkable speed of modern delivery networks depends on workers in warehouses and on roads who labor under demanding conditions for relatively low wages. The cheap goods that fill our homes are frequently produced in factories where labor protections are weak. When we celebrate the magic of pressing a button and receiving anything we want, we often forget the complex, sometimes troubling human systems that make such magic possible.\n\nNone of this argues for rejecting convenience entirely—an unrealistic and probably unwise prescription. Rather, it suggests the need for what we might call 'thoughtful inconvenience': deliberately choosing, in some areas of life, to embrace small frictions for the sake of larger goods. Walking to a local shop instead of ordering online, cooking from scratch occasionally, or choosing reusable items over disposable ones can reconnect us with ourselves, our communities, and the wider human and natural systems on which our lives depend.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is the main thesis of the passage?",
+            "choices": ["Convenience should be entirely abandoned.", "While convenience has benefits, it carries hidden environmental, social, and human costs that warrant 'thoughtful inconvenience' as response.", "Modern technology is uniformly beneficial.", "Convenience and friction are unrelated to ethics."],
+            "answer": "1",
+            "explanation": "本文構造は「導入→環境/社会/人的コスト→thoughtful inconvenience の提言」。最終段落「the need for what we might call 'thoughtful inconvenience'」が直接の thesis。同志社型は段落構造の thesis 把握が頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What environmental issue is associated with same-day delivery?",
+            "choices": ["It eliminates greenhouse gas emissions.", "It increases carbon emissions per package compared to consolidated shipping.", "It uses only renewable energy.", "It has no environmental impact."],
+            "answer": "1",
+            "explanation": "第2段落「fleets of trucks making frequent partial-load trips, dramatically increasing carbon emissions per package compared to consolidated shipping」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "How might convenience affect human resilience, according to the passage?",
+            "choices": ["It strengthens resilience by eliminating stress.", "It may weaken resilience by removing the daily 'exercise' of handling minor difficulties.", "It has no relationship to resilience.", "It only affects physical resilience, not psychological."],
+            "answer": "1",
+            "explanation": "第3段落「Resilience, like physical strength, may require regular exercise」「removing minor difficulties ... may inadvertently weaken our capacity」が根拠。"
+          },
+          {
+            "id": "q4",
+            "type": "multiple_choice",
+            "stem": "What does the author suggest as a constructive response?",
+            "choices": ["Rejecting all modern conveniences.", "'Thoughtful inconvenience'—deliberately choosing small frictions in some areas of life.", "Ignoring the issue entirely.", "Returning to a pre-industrial lifestyle."],
+            "answer": "1",
+            "explanation": "最終段落「'thoughtful inconvenience': deliberately choosing, in some areas of life, to embrace small frictions for the sake of larger goods」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_short",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "★ Lost & Found Notice ★\n\nLost: A black laptop bag containing a 13-inch MacBook, a notebook, and several USB cables. Lost on the morning of October 14th, somewhere between the campus library and Building C.\n\nIf found, please contact:\nKenji Watanabe\nEmail: k.watanabe@university.ac.jp\nPhone: 080-XXXX-XXXX\n\nReward offered for safe return: ¥3,000\n\nAdditional details:\n- The bag has a small red keychain attached to the zipper.\n- The MacBook is locked but contains important research data.\n- Please do NOT open the laptop; please return as is.\n\nThank you for your kindness!",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is being looked for?",
+            "choices": ["A red keychain only", "A black laptop bag with a MacBook and accessories", "Research papers", "A USB cable"],
+            "answer": "1",
+            "explanation": "本文 'A black laptop bag containing a 13-inch MacBook, a notebook, and several USB cables' が根拠。共通テスト型は文書の主目的把握が頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What is the reward for returning the bag?",
+            "choices": ["¥1,000", "¥3,000", "¥5,000", "No reward"],
+            "answer": "1",
+            "explanation": "本文 'Reward offered for safe return: ¥3,000' が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What does the owner specifically request?",
+            "choices": ["To open the laptop and check the data.", "Not to open the laptop; please return it as is.", "To delete the data on the laptop.", "To bring the bag to the library directly."],
+            "answer": "1",
+            "explanation": "本文 'Please do NOT open the laptop; please return as is' が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "icu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Memory and the Reconstruction of the Past\n\nIt is tempting to think of human memory as something like a recording: an experience occurs, the brain captures it, and we later replay this captured information when we remember. Yet decades of research in cognitive psychology have demonstrated that memory operates in a fundamentally different way. Rather than playing back stored recordings, the brain reconstructs memories each time we retrieve them, drawing on stored fragments and filling in gaps with inference, expectation, and sometimes confabulation.\n\nThis reconstructive view of memory has profound implications. Most striking is the discovery that memories are malleable—they can be altered by what we hear and read after the original event. In a famous series of experiments, Elizabeth Loftus demonstrated that subjects shown a video of a car accident could be made to 'remember' details that never appeared in the video, simply through suggestive questioning. Some subjects even confidently reported entire events that never occurred, including being lost in shopping malls as children—a memory implanted entirely through the suggestion of a trusted family member.\n\nThe implications extend well beyond psychology laboratories. Eyewitness testimony, long considered among the most reliable forms of evidence in criminal trials, now appears far less trustworthy than was previously assumed. Numerous wrongful convictions have been traced to confidently delivered but objectively false eyewitness accounts. Reform efforts in the legal system have begun to address these issues through improved interview protocols and jury instructions, though progress has been uneven.\n\nThere is also a deeper philosophical dimension. If memory is reconstructive rather than reproductive, then our sense of personal identity—built so substantially on our remembered past—rests on shakier foundations than we might like to admit. The autobiographical narratives we tell ourselves are not transparent windows onto our histories but actively constructed accounts that may differ in important ways from what actually occurred. This recognition need not lead to nihilism about identity; it should, however, foster a certain humility about the certainty of our memories and openness to perspectives that may correct our recollections.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "How does cognitive psychology characterize human memory, according to the passage?",
+            "choices": ["As a perfect recording of past events.", "As a reconstructive process that fills gaps with inference and may include confabulation.", "As an unreliable hallucination with no basis in reality.", "As identical to computer storage."],
+            "answer": "1",
+            "explanation": "第1段落「the brain reconstructs memories each time we retrieve them, drawing on stored fragments and filling in gaps with inference, expectation, and sometimes confabulation」が根拠。ICU リベラルアーツ型は概念定義の精密把握が頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What did Elizabeth Loftus's experiments demonstrate?",
+            "choices": ["Memories cannot be altered after the original event.", "Memories can be altered by suggestive questioning, sometimes leading subjects to 'remember' fictional events.", "Memory is perfectly reliable.", "Children have better memories than adults."],
+            "answer": "1",
+            "explanation": "第2段落の Loftus 実験記述「could be made to 'remember' details that never appeared in the video」「memory implanted entirely through the suggestion」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What practical implication does the passage draw for the legal system?",
+            "choices": ["Eyewitness testimony should be the sole basis of conviction.", "Eyewitness testimony is far less trustworthy than previously assumed and reforms are needed.", "Memory is irrelevant to criminal trials.", "All criminal cases should be retried."],
+            "answer": "1",
+            "explanation": "第3段落「Eyewitness testimony ... now appears far less trustworthy than was previously assumed. Numerous wrongful convictions have been traced ... Reform efforts ... have begun to address these issues」が根拠。"
+          },
+          {
+            "id": "q4",
+            "type": "multiple_choice",
+            "stem": "What philosophical implication does the author draw?",
+            "choices": ["Personal identity is entirely fictional and meaningless.", "Personal identity rests on shakier foundations than commonly assumed, requiring humility about memory's certainty.", "Memory has no connection to identity.", "All philosophical questions about identity have been settled."],
+            "answer": "1",
+            "explanation": "最終段落「our sense of personal identity ... rests on shakier foundations than we might like to admit ... should ... foster a certain humility about the certainty of our memories」が根拠。ICU 型は哲学的含意の把握が必須。"
+          },
+          {
+            "id": "q5",
+            "type": "multiple_choice",
+            "stem": "What is the author's overall stance toward this 'reconstructive memory' view?",
+            "choices": ["Pure skepticism—memory is useless.", "Cautious endorsement—memory is real but more fallible than commonly believed.", "Complete dismissal of cognitive psychology.", "Indifference to the philosophical implications."],
+            "answer": "1",
+            "explanation": "最終文「This recognition need not lead to nihilism about identity; it should, however, foster a certain humility」が著者の中道的スタンス。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "School Lunch Programs Around the World\n\nWhile most countries provide some form of school meals, the way these programs operate varies dramatically. In Japan, school lunches are carefully designed to be both nutritious and educational. Students typically eat together in their classrooms, taking turns serving food and cleaning up afterward. The meals follow strict nutritional guidelines and often feature traditional Japanese cuisine, helping students develop healthy eating habits and cultural awareness. Many Japanese schools even include 'food education' classes where children learn about ingredients, agriculture, and proper table manners.\n\nIn contrast, school lunch programs in the United States face different challenges. Many American schools serve lunches that have been criticized for being too high in processed foods, sugar, and salt. Several initiatives have aimed to improve the situation, including programs to add more fresh fruits and vegetables to school menus and to teach children about healthy eating. However, budget constraints often make it difficult for schools to consistently serve fresh, high-quality meals.\n\nFinland represents another model worth examining. Since 1948, Finland has provided free school meals to all students, regardless of their family's income. The meals are designed by nutritionists and emphasize whole grains, vegetables, and lean proteins. This universal program is seen as part of Finland's broader commitment to equality and child welfare.\n\nResearch consistently shows that well-designed school lunch programs benefit students in multiple ways. Children who eat balanced meals tend to perform better academically, miss fewer school days, and develop healthier eating habits that last into adulthood. As more countries recognize these benefits, debates about how best to fund and structure school lunch programs continue to grow in importance.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "According to the passage, what is unique about Japanese school lunches?",
+            "choices": ["They are eaten in a separate cafeteria.", "Students take turns serving and cleaning, and lunches include educational components.", "They are entirely vegetarian.", "They are imported from other countries."],
+            "answer": "1",
+            "explanation": "第1段落「Students typically eat together in their classrooms, taking turns serving food and cleaning up」「food education classes」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What criticism is mentioned regarding many American school lunches?",
+            "choices": ["They are too expensive for students.", "They contain too much processed food, sugar, and salt.", "They are not available in all schools.", "They are too small in portion size."],
+            "answer": "1",
+            "explanation": "第2段落「criticized for being too high in processed foods, sugar, and salt」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What is special about Finland's school lunch program?",
+            "choices": ["It is the most expensive in the world.", "Free school meals are provided to all students regardless of income, since 1948.", "It serves only traditional Finnish food.", "It is offered only to elementary school students."],
+            "answer": "1",
+            "explanation": "第3段落「Since 1948, Finland has provided free school meals to all students, regardless of their family's income」が根拠。"
+          },
+          {
+            "id": "q4",
+            "type": "multiple_choice",
+            "stem": "What benefits of well-designed school lunches does the passage mention?",
+            "choices": ["They reduce the cost of education.", "Students perform better academically, miss fewer school days, and develop healthy eating habits.", "They eliminate the need for breakfast.", "They are quicker to prepare than home meals."],
+            "answer": "1",
+            "explanation": "第4段落「perform better academically, miss fewer school days, and develop healthier eating habits」が直接の根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3",
+      "eiken_grade": "g3",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "My Trip to Hokkaido\n\nLast summer, I went to Hokkaido with my family. Hokkaido is the northernmost island of Japan, and it is famous for its beautiful nature, delicious food, and cool weather. We stayed in Sapporo, the largest city in Hokkaido, for three nights.\n\nOn the first day, we visited Odori Park in the center of Sapporo. The park has many flowers and trees, and we could see the famous Sapporo TV Tower from there. We also tried fresh corn from a food stand. It was very sweet and tasty.\n\nOn the second day, we took a train to Otaru, a small port city near Sapporo. Otaru is famous for its historic canal and glass-making shops. We bought beautiful glass cups as souvenirs for our grandparents. For lunch, we ate sushi at a popular restaurant. Hokkaido is known for fresh seafood, and the sushi was the best I have ever tasted.\n\nOn the third day, we visited a dairy farm. We saw cows, learned how milk is made, and even tried making butter ourselves. The farm staff explained that Hokkaido produces about half of all the milk in Japan. We also enjoyed delicious soft-serve ice cream made from local milk.\n\nThe trip was unforgettable. I learned a lot about Hokkaido's culture, food, and nature. I want to visit again in winter to see the snow festival.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "Where did the writer's family stay during their trip?",
+            "choices": ["In Otaru", "In Sapporo for three nights", "On the dairy farm", "In Tokyo"],
+            "answer": "1",
+            "explanation": "本文 'We stayed in Sapporo, the largest city in Hokkaido, for three nights' が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What did they buy as souvenirs in Otaru?",
+            "choices": ["Fresh corn", "Sushi", "Beautiful glass cups", "Ice cream"],
+            "answer": "2",
+            "explanation": "第3段落 'We bought beautiful glass cups as souvenirs for our grandparents' が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "About how much of Japan's milk does Hokkaido produce?",
+            "choices": ["About 25%", "About half (50%)", "About 75%", "Almost all of it"],
+            "answer": "1",
+            "explanation": "第4段落 'Hokkaido produces about half of all the milk in Japan' が根拠。"
+          },
+          {
+            "id": "q4",
+            "type": "multiple_choice",
+            "stem": "When does the writer want to visit Hokkaido again?",
+            "choices": ["Next summer", "In winter to see the snow festival", "In spring", "Never again"],
+            "answer": "1",
+            "explanation": "最終段落 'I want to visit again in winter to see the snow festival' が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_1a",
+      "eiken_grade": "kyotsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "数学I・A 共通テスト型 — 二次関数",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "二次関数 y = x² - 4x + 6 のグラフの頂点の座標は?",
+            "choices": ["(2, 2)", "(-2, 2)", "(2, 6)", "(-2, 6)"],
+            "answer": "0",
+            "explanation": "平方完成: y = x² - 4x + 6 = (x - 2)² - 4 + 6 = (x - 2)² + 2。頂点は (2, 2)。共通テスト数Iの定型問題。【公式】y = ax² + bx + c の頂点は x = -b/(2a)、y は代入して求める。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "0 < x < 4 で、関数 y = x² - 4x + 6 の最小値は?",
+            "choices": ["1", "2", "4", "6"],
+            "answer": "1",
+            "explanation": "頂点 (2, 2) は定義域 0 < x < 4 内なので、頂点での値が最小値。最小値 = 2。【注意】開区間 0 < x < 4 と閉区間の場合で端点比較が必要かどうかが変わる。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "AB = 5、BC = 4、CA = 3 の三角形 ABC において、角 C の大きさは?",
+            "choices": ["30°", "45°", "60°", "90°"],
+            "answer": "3",
+            "explanation": "AB² = BC² + CA² → 25 = 16 + 9 → 三平方の定理が成立 → 角 C = 90°。【共通テスト】3-4-5 のピタゴラス数は超頻出パターン。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_2b",
+      "eiken_grade": "kyotsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "数学II・B 共通テスト型 — 微分・積分",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "関数 f(x) = x³ - 3x² + 2 の導関数 f'(x) を求めよ。",
+            "choices": ["3x² - 6x", "3x² + 6x", "x² - 3x", "3x³ - 6x²"],
+            "answer": "0",
+            "explanation": "f'(x) = 3x² - 6x。【公式】(xⁿ)' = nx^(n-1)、(c)' = 0、和の微分は項ごと。共通テスト数IIの基礎。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "f(x) = x³ - 3x² + 2 の極値を取る x の値は?",
+            "choices": ["x = 0 と x = 2", "x = 1 と x = 3", "x = 0 のみ", "極値を持たない"],
+            "answer": "0",
+            "explanation": "f'(x) = 3x² - 6x = 3x(x - 2) = 0 → x = 0, 2。f''(x) = 6x - 6 で f''(0) = -6 < 0 (極大)、f''(2) = 6 > 0 (極小)。【共通テスト】極値判定は f' = 0 の解 + 増減表。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "∫₀¹ (3x² + 2x) dx を計算せよ。",
+            "choices": ["1", "2", "3", "5"],
+            "answer": "1",
+            "explanation": "∫(3x² + 2x)dx = x³ + x² + C。[x³ + x²]₀¹ = (1 + 1) - 0 = 2。【公式】∫xⁿdx = x^(n+1)/(n+1) + C。共通テストの定積分は計算ミスに注意。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_basic",
+      "eiken_grade": "kyotsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "物理基礎 共通テスト型 — 力学・等加速度運動",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "初速度 0 m/s から一定の加速度 a = 2 m/s² で 5 秒間運動した物体の速度は?",
+            "choices": ["5 m/s", "10 m/s", "25 m/s", "50 m/s"],
+            "answer": "1",
+            "explanation": "v = v₀ + at = 0 + 2 × 5 = 10 m/s。【公式】等加速度運動: v = v₀ + at, x = v₀t + (1/2)at², v² - v₀² = 2ax。共通テスト物理基礎の必修公式。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "上記の物体が 5 秒間に進んだ距離は?",
+            "choices": ["10 m", "25 m", "50 m", "100 m"],
+            "answer": "1",
+            "explanation": "x = v₀t + (1/2)at² = 0 × 5 + (1/2) × 2 × 25 = 25 m。または x = (1/2)(v₀ + v)t = (1/2)(0 + 10)(5) = 25 m。【共通テスト】等加速度の3公式は瞬時に思い出せるよう。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "質量 2 kg の物体に水平方向に 10 N の力を加えると、生じる加速度は?重力加速度 g = 9.8 m/s² とする。",
+            "choices": ["2 m/s²", "5 m/s²", "10 m/s²", "20 m/s²"],
+            "answer": "1",
+            "explanation": "ニュートンの運動方程式 F = ma → a = F/m = 10/2 = 5 m/s²。【共通テスト】重力加速度 g は今回の問題には無関係 (水平面 + 摩擦なし)。引っかけに注意。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_basic",
+      "eiken_grade": "kyotsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "化学基礎 共通テスト型 — 物質の構成・反応式",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "次のうち化合物はどれか?",
+            "choices": ["酸素 O₂", "鉄 Fe", "水 H₂O", "ヘリウム He"],
+            "answer": "2",
+            "explanation": "化合物 = 2種類以上の元素から成る物質。水 H₂O は水素 H と酸素 O の化合物。酸素 O₂ と鉄 Fe とヘリウム He は単体 (1種類の元素)。【共通テスト化学基礎】単体・化合物・混合物の分類は超頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "炭素 C が酸素 O₂ と反応して二酸化炭素 CO₂ になる反応式として正しいのは?",
+            "choices": ["C + O → CO₂", "C + O₂ → CO₂", "2C + O₂ → 2CO₂", "C + 2O₂ → CO₂"],
+            "answer": "1",
+            "explanation": "両辺の原子数のバランス: 左辺 C 1個・O 2個、右辺 C 1個・O 2個 → C + O₂ → CO₂ で釣り合う。【共通テスト】反応式の係数調整は鉄則 (両辺の原子数を等しく)。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "水素原子 ¹H₁ について正しい記述はどれか?",
+            "choices": ["陽子 1 個・中性子 1 個・電子 1 個を持つ。", "陽子 1 個・中性子 0 個・電子 1 個を持つ。", "陽子 0 個・中性子 1 個・電子 1 個を持つ。", "陽子 1 個・中性子 1 個・電子 0 個を持つ。"],
+            "answer": "1",
+            "explanation": "¹H₁: 質量数 1、原子番号 1。原子番号 = 陽子数 = 電子数 (中性原子) → 陽子 1、電子 1。中性子数 = 質量数 - 陽子数 = 1 - 1 = 0。【共通テスト化学基礎】原子の構成 (陽子・中性子・電子の関係) は最頻出。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "l_part1_2",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[共通テスト リスニング Part 1B 型 — グラフ/情報読み取り]\n\nスクリプト:\nWelcome to the school's after-school activity orientation. We have four clubs available this term: the Photography Club meets on Mondays from 4 to 5:30 PM in the art room. The Coding Club meets on Tuesdays and Thursdays from 4 to 6 PM in the computer lab. The Debate Club meets on Wednesdays from 4 to 5 PM in classroom 201. Finally, the Art Club meets every Friday from 3:30 to 5:30 PM, also in the art room.\n\nIf you're interested in any of these, please sign up at the student affairs office by Friday this week.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "Which club meets twice a week?",
+            "choices": ["Photography Club", "Coding Club", "Debate Club", "Art Club"],
+            "answer": "1",
+            "explanation": "Coding Club: 'Tuesdays and Thursdays' = 週2回。共通テスト Part 1B (情報読み取り型) は曜日・時刻の正確な聞き取りが鍵。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Which club meets in the art room?",
+            "choices": ["Only the Photography Club", "Only the Art Club", "Both the Photography Club and the Art Club", "Only the Debate Club"],
+            "answer": "2",
+            "explanation": "Photography Club 'in the art room'、Art Club 'also in the art room' の両方。複数クラブが同じ場所を使う情報統合問題は共通テストの典型。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "By when must students sign up?",
+            "choices": ["By Monday next week", "By Friday this week", "By the end of the month", "Sign-ups are not required"],
+            "answer": "1",
+            "explanation": "'please sign up at the student affairs office by Friday this week' が根拠。期限の聞き取りは共通テスト頻出。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "l_part3_4",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[共通テスト リスニング Part 6 型 — 議論型]\n\n[Two students are discussing whether high schools should require uniforms]\n\nMan: I really think uniforms should be required. They make everyone look equal, regardless of their family's income. No one feels embarrassed about not having expensive clothes.\n\nWoman: I see your point, but I think requiring uniforms takes away students' freedom to express themselves through clothing. Self-expression is an important part of growing up.\n\nMan: Maybe, but uniforms also save time in the morning. Students don't have to think about what to wear each day.\n\nWoman: That's true, but I think students should learn how to make those choices themselves. It's a small but meaningful life skill.\n\nMan: Hmm, you have some good points too. Maybe schools could offer some choice within a uniform code—like several styles of uniforms students could pick from.\n\nWoman: Now that I might agree with! A flexible uniform policy could combine the benefits of both approaches.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is the man's main argument FOR uniforms?",
+            "choices": ["They are cheap.", "They make all students look equal regardless of income.", "They are colorful.", "They are required by law."],
+            "answer": "1",
+            "explanation": "男性発言「They make everyone look equal, regardless of their family's income」が根拠。共通テスト Part 6 (議論型) は両者の主張の正確な区別が必須。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What is the woman's main concern about required uniforms?",
+            "choices": ["They are too uncomfortable.", "They take away students' freedom to express themselves through clothing.", "They are too expensive.", "They look unattractive."],
+            "answer": "1",
+            "explanation": "女性発言「requiring uniforms takes away students' freedom to express themselves through clothing」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What compromise do the two speakers suggest at the end?",
+            "choices": ["Banning uniforms entirely.", "A flexible uniform policy with several styles to choose from.", "Letting only some students wear uniforms.", "Requiring uniforms only on special occasions."],
+            "answer": "1",
+            "explanation": "結末「offer some choice within a uniform code—like several styles of uniforms」「A flexible uniform policy」が根拠。共通テスト Part 6 は議論の収束 (合意点) 把握が頻出。"
+          }
+        ]
+      }
+    }
+  ]
+}

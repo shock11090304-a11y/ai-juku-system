@@ -1,0 +1,578 @@
+{
+  "questions": [
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3",
+      "eiken_grade": "gp1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Origins of Coffee Culture\n\nCoffee, now consumed by billions of people worldwide, has a fascinating origin story that spans continents and centuries. The earliest reliable accounts trace coffee's discovery to the highlands of Ethiopia, where, according to legend, a goat herder named Kaldi observed his goats becoming unusually energetic after eating berries from a particular shrub. While this charming story may be largely fictional, archaeological and historical evidence does support coffee's Ethiopian origins, with wild coffee plants still growing in the region today.\n\nFrom Ethiopia, coffee made its way across the Red Sea to Yemen by the 15th century, where Sufi monks brewed it as a beverage to help them stay alert during long evening prayers. The first commercial coffee houses, known as 'qahveh khaneh,' appeared in Mecca and Constantinople, quickly becoming hubs for political discussion, intellectual exchange, and entertainment. Authorities periodically attempted to ban these establishments, fearing that the conversations within might foment dissent, but coffee's popularity proved unstoppable.\n\nCoffee reached Europe in the 17th century, initially viewed with suspicion by religious authorities. Some clergy reportedly urged Pope Clement VIII to declare it the 'devil's drink' due to its Muslim origins. However, after tasting the beverage himself, the Pope is said to have remarked that something so delicious could not possibly be the work of Satan, and he gave coffee his blessing. Within decades, coffee houses spread across major European cities, where they served as 'penny universities'—places where, for the price of a cup of coffee, anyone could engage in intellectual conversation with merchants, scholars, and politicians.\n\nThe global coffee trade has had complex consequences. Coffee plantations in colonial South America and Southeast Asia transformed local economies and ecosystems, often through exploitative labor practices including slavery. Today, coffee remains the second most traded commodity in the world after crude oil, supporting the livelihoods of approximately 25 million farmers, primarily in developing nations. Modern movements for fair trade and sustainable cultivation seek to address the historical injustices and environmental challenges that continue to shape this beloved global beverage.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "According to the passage, what role did coffee play in early Yemeni religious practice?",
+            "choices": ["It was offered as a sacrifice to deities.", "It helped Sufi monks stay awake during evening prayers.", "It was consumed only during Ramadan.", "It replaced wine in religious ceremonies."],
+            "answer": "1",
+            "explanation": "第2段落「Sufi monks brewed it as a beverage to help them stay alert during long evening prayers」が直接の根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Why did some authorities attempt to ban early coffee houses?",
+            "choices": ["They were unprofitable.", "They feared the conversations within might encourage political dissent.", "Coffee was too expensive for ordinary citizens.", "Religious leaders considered the buildings impure."],
+            "answer": "1",
+            "explanation": "第2段落「fearing that the conversations within might foment dissent」が根拠。foment dissent = 反発/不満を煽る、は準1級頻出。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "How did Pope Clement VIII reportedly respond to coffee?",
+            "choices": ["He banned it from all Christian nations.", "He approved it after tasting it himself.", "He encouraged its replacement with wine.", "He ignored all discussion of the matter."],
+            "answer": "1",
+            "explanation": "第3段落「after tasting the beverage himself, the Pope is said to have remarked that something so delicious could not possibly be the work of Satan, and he gave coffee his blessing」が根拠。"
+          },
+          {
+            "id": "q4",
+            "type": "multiple_choice",
+            "stem": "What does the passage suggest about modern coffee production?",
+            "choices": ["It has eliminated all historical injustices.", "It still faces challenges related to labor and environmental sustainability.", "It is no longer economically significant.", "It is dominated by European producers."],
+            "answer": "1",
+            "explanation": "最終段落「historical injustices and environmental challenges that continue to shape this beloved global beverage」が根拠。fair trade と sustainable cultivation 運動の存在も傍証。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "g1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "The economist's analysis ( ) the prevailing assumption that increased automation will inevitably lead to widespread unemployment, suggesting instead that new categories of jobs may emerge.",
+            "choices": ["substantiates", "contravenes", "exacerbates", "elucidates"],
+            "answer": "1",
+            "explanation": "contravene = (規則・原則に) 反する/異議を唱える。「自動化が必然的に失業を招く」という前提に反論する文脈。substantiate = 実証する、exacerbate = 悪化させる、elucidate = 説明する。1級は formal な動詞の精密な使い分けが核心。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Despite the company's repeated denials, evidence of financial misconduct continued to ( ), eventually leading to a government investigation.",
+            "choices": ["accumulate", "abdicate", "ameliorate", "annotate"],
+            "answer": "0",
+            "explanation": "accumulate = 蓄積される。「不正の証拠が積み重なっていった」。abdicate = 放棄する、ameliorate = 改善する、annotate = 注釈をつける。1級では evidence / debt / wealth + accumulate のコロケーションが頻出。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "The diplomat's ( ) handling of the negotiation prevented what could have been a serious international crisis.",
+            "choices": ["adroit", "abrupt", "abject", "abrasive"],
+            "answer": "0",
+            "explanation": "adroit = 巧みな/手際の良い。「外交官の巧みな交渉処理が国際危機を回避した」。abrupt = 唐突な、abject = 惨めな/卑屈な、abrasive = 不快な/角の立つ。1級では adroit / deft / adept (いずれも「巧み」) の語感差を問う問題が頻出。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "gp2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "The new park ( ) by the city council last year has become a popular spot for families.",
+            "choices": ["build", "built", "building", "to build"],
+            "answer": "1",
+            "explanation": "The park (was) built by the city council = 受動の意味の過去分詞による後置修飾。「市議会によって作られた公園」。build (原形)、building (能動の現在分詞)、to build (不定詞・未来) はいずれも文法的に成立しない。準2級では分詞の限定用法は頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "I'm looking forward ( ) my old friends at the reunion next month.",
+            "choices": ["to see", "to seeing", "see", "seeing"],
+            "answer": "1",
+            "explanation": "look forward to + 動名詞 (この to は前置詞)。「再会を楽しみにしている」。to see (不定詞) は誤りの典型的引っかけ。準2級では to の品詞 (前置詞 vs 不定詞) を見極める問題が頻出。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "Could you tell me ( )?",
+            "choices": ["where is the station", "where the station is", "the station where is", "is where the station"],
+            "answer": "1",
+            "explanation": "間接疑問文では「疑問詞 + 主語 + 動詞」の語順 (倒置しない)。Could you tell me where the station is? が正解。準2級では間接疑問文の語順は超頻出。直接疑問文 Where is the station? とは語順が異なる。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "g4",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "A: What time ( ) you go to bed last night?\nB: Around 11 o'clock.",
+            "choices": ["do", "did", "are", "were"],
+            "answer": "1",
+            "explanation": "last night = 過去 → 過去形。一般動詞 go の過去疑問文は did + 主語 + 動詞原形。「昨夜何時に寝た?」。英検4級は時制の基礎が中心。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "There ( ) many beautiful flowers in the garden.",
+            "choices": ["is", "are", "have", "has"],
+            "answer": "1",
+            "explanation": "There + be 動詞 + 主語の構文。主語 many beautiful flowers (複数) → are。have / has は There 構文では使わない。英検4級は be 動詞と主語の数の一致が必修。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "My brother is taller ( ) my father.",
+            "choices": ["as", "than", "from", "of"],
+            "answer": "1",
+            "explanation": "比較級 (taller) + than + 比較対象。「兄は父より背が高い」。as は同等比較 (as tall as)、from / of は比較構文では使わない。英検4級では比較級の基本形が頻出。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "g5",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "A: ( ) is your favorite color?\nB: Blue.",
+            "choices": ["Who", "What", "Where", "When"],
+            "answer": "1",
+            "explanation": "色を尋ねる疑問詞は What。「あなたの好きな色は何?」。Who = 誰、Where = どこ、When = いつ。英検5級は基本疑問詞の使い分けが必修。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "I ( ) tennis every Sunday.",
+            "choices": ["play", "plays", "playing", "played"],
+            "answer": "0",
+            "explanation": "every Sunday = 毎週日曜 → 現在の習慣 → 現在形。主語 I なので原形 play (三単現の s 不要)。plays は he/she、playing は単独で動詞にならない、played は過去形。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "Look at ( ) cute cats!",
+            "choices": ["this", "that", "these", "those"],
+            "answer": "2",
+            "explanation": "cats (複数形) → these / those。「これらの可愛い猫を見て!」近距離は these、遠距離は those。look at の対象として近い感じなら these が自然。英検5級では this/that/these/those の単数複数を間違えやすい。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "toeic",
+      "part_key": "l_part3",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "TOEIC Part 3 会話問題 (1セット・3問):\n\n[Scene: Office, two colleagues talking]\n\nMan: Hi Susan, I just got an email from the printing company. They're saying our brochures won't be ready until next Friday because of a paper shortage.\n\nWoman: That's a problem. The trade show starts on Wednesday. We absolutely need them for the booth.\n\nMan: I know. Should I look for another printer? There's one downtown that says they can deliver in three business days.\n\nWoman: Let's do that, but get a quote first. Our budget for promotional materials is already tight.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is the problem the speakers are discussing?",
+            "choices": ["A budget shortage", "A delay in printing brochures", "A canceled trade show", "An employee resignation"],
+            "answer": "1",
+            "explanation": "冒頭 the printing company / our brochures won't be ready until next Friday because of a paper shortage が根拠。Part 3 の問1は通常「主題/問題は何か」で、会話冒頭に手がかり。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "When does the trade show start?",
+            "choices": ["Monday", "Wednesday", "Friday", "Next month"],
+            "answer": "1",
+            "explanation": "女性発言「The trade show starts on Wednesday」が根拠。Part 3 では曜日・時刻情報の聞き取りが必須。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What does the woman ask the man to do?",
+            "choices": ["Cancel the trade show booth", "Get a price quote from another printer", "Negotiate with the original printer", "Print the brochures himself"],
+            "answer": "1",
+            "explanation": "女性最後の発言「Let's do that, but get a quote first」が根拠。Part 3 の問3は通常「次のアクション/依頼」で会話末尾に手がかり。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "toeic",
+      "part_key": "r_part6",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "MEMO\nTo: All Sales Department Staff\nFrom: David Chen, Sales Director\nSubject: Updated Travel Expense Policy\n\nEffective May 1, the company is implementing a revised travel expense policy. The maximum daily allowance for meals will be ( q1 ) from $50 to $65 to reflect current restaurant prices. However, all expenses ( q2 ) $25 will now require itemized receipts. We are also asking all staff to use the new online expense tracking system, ( q3 ) automatically categorizes expenses and integrates with our accounting software.\n\nIf you have any questions, please contact the finance department.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "(q1) — choose the best word",
+            "choices": ["increased", "increasing", "increase", "increases"],
+            "answer": "0",
+            "explanation": "will be + 過去分詞 = 受動態 (未来)。「日当が引き上げられる」→ increased が正解。Part 6 では文法問題と語彙問題が混在。受動態の見極めは超頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "(q2) — choose the best word",
+            "choices": ["under", "over", "between", "within"],
+            "answer": "1",
+            "explanation": "「$25を超える支出」=明細書要、という流れ。over $25 = $25超。文意 (上限引き上げと厳格化のセット) から判断。Part 6 は文脈整合性で前置詞を選ぶ問題が頻出。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "(q3) — choose the best word",
+            "choices": ["that", "what", "where", "whose"],
+            "answer": "0",
+            "explanation": "先行詞 the new online expense tracking system (物) + 関係詞節内で主語が欠けている → 主格関係代名詞 that または which (制限用法)。what は先行詞を含むので不可、where は場所、whose は所有格。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "toeic",
+      "part_key": "r_part7_single",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "ATTENTION CUSTOMERS\n\nGreenLeaf Café will be temporarily closed for renovations from Monday, June 3rd through Friday, June 14th. During this time, we will be installing a new kitchen, expanding our seating area, and refreshing our interior decor.\n\nWe deeply appreciate your patience and continued support. To thank our loyal customers, we will be hosting a grand reopening event on Saturday, June 15th, featuring 20% off all menu items, complimentary appetizers, and live acoustic music from 6 PM.\n\nGift card holders: All gift cards remain valid and will not expire during the renovation period. We also encourage you to follow us on social media @GreenLeafCafe for renovation progress updates and special promotions.\n\nWe look forward to welcoming you back to a beautifully refreshed space!\n\n— The GreenLeaf Café Team",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "Why is GreenLeaf Café being closed?",
+            "choices": ["Due to financial difficulties", "For renovations", "Because of staff training", "Due to a change in ownership"],
+            "answer": "1",
+            "explanation": "冒頭「temporarily closed for renovations」が直接の根拠。Part 7 シングルパッセージの「目的」問題は通常文書冒頭・件名に手がかり。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What special event is planned for June 15th?",
+            "choices": ["A staff appreciation dinner", "A grand reopening event with discounts and live music", "A cooking class", "A charity fundraiser"],
+            "answer": "1",
+            "explanation": "第2段落「a grand reopening event on Saturday, June 15th, featuring 20% off all menu items, complimentary appetizers, and live acoustic music」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What is mentioned about gift cards in the announcement?",
+            "choices": ["They will be replaced with new ones.", "They cannot be used during renovations.", "They remain valid and will not expire.", "They are no longer available for purchase."],
+            "answer": "2",
+            "explanation": "第3段落「All gift cards remain valid and will not expire during the renovation period」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "toefl",
+      "part_key": "l_lect1",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "Professor: Today I want to discuss a fascinating concept in evolutionary biology called the Red Queen Hypothesis. The name comes from Lewis Carroll's 'Through the Looking-Glass,' where the Red Queen tells Alice that 'it takes all the running you can do, to keep in the same place.' This perfectly captures what evolutionary biologist Leigh Van Valen proposed in 1973.\n\nThe basic idea is this: species don't just evolve in response to changes in their physical environment—climate, geology, and so on. They also evolve in response to other species. Predators and prey, parasites and hosts, competitors for resources—all are locked in continuous evolutionary arms races. A rabbit develops faster legs to escape foxes; foxes evolve sharper senses to catch rabbits. Neither species 'wins' in any final sense. They both have to keep evolving just to maintain their relative position.\n\nThis hypothesis explains some otherwise puzzling phenomena. Consider sexual reproduction. From a purely energetic standpoint, asexual reproduction would seem more efficient—you don't waste energy finding a mate. Yet sexual reproduction dominates in complex organisms. Why? The Red Queen Hypothesis suggests that constantly shuffling genes through sexual reproduction helps species stay ahead of rapidly evolving parasites. Asexual organisms, with their genetically identical offspring, become easy targets once parasites adapt to their defenses.\n\nRecent research using rapidly reproducing organisms—snails infected with parasitic worms, for instance—has provided strong empirical support. Populations of asexual snails were systematically wiped out by parasites, while sexually reproducing populations persisted. The Red Queen, it seems, runs in our DNA.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is the main topic of the lecture?",
+            "choices": ["Lewis Carroll's literary contributions to science", "An evolutionary hypothesis about species in continuous coevolution", "The decline of asexual reproduction", "Predator-prey dynamics in rabbits"],
+            "answer": "1",
+            "explanation": "冒頭「I want to discuss a fascinating concept in evolutionary biology called the Red Queen Hypothesis」と、その後の説明が「種が他種との関係で常に進化し続ける」仮説の解説。(A) 文学言及は比喩のみ、(C)(D) は具体例の一部。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What does the 'Red Queen' metaphor illustrate?",
+            "choices": ["Most species eventually go extinct.", "Species must continuously evolve just to maintain their relative position.", "Evolution always produces winners and losers.", "Genetic mutations occur randomly."],
+            "answer": "1",
+            "explanation": "教授の「it takes all the running you can do, to keep in the same place ... They both have to keep evolving just to maintain their relative position」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "According to the lecture, why does sexual reproduction persist despite its energetic costs?",
+            "choices": ["It produces more offspring than asexual reproduction.", "It allows constant gene shuffling to stay ahead of parasites.", "It eliminates competition between species.", "It requires less energy than asexual reproduction."],
+            "answer": "1",
+            "explanation": "第3段落「constantly shuffling genes through sexual reproduction helps species stay ahead of rapidly evolving parasites」が根拠。"
+          },
+          {
+            "id": "q4",
+            "type": "multiple_choice",
+            "stem": "What evidence does the professor cite to support the hypothesis?",
+            "choices": ["Fossil records from millions of years ago", "Studies of rabbits and foxes in Europe", "Experiments with snails and parasitic worms", "Mathematical models alone"],
+            "answer": "2",
+            "explanation": "最終段落「snails infected with parasitic worms ... Populations of asexual snails were systematically wiped out」が根拠。"
+          },
+          {
+            "id": "q5",
+            "type": "multiple_choice",
+            "stem": "What does the professor mean by 'The Red Queen runs in our DNA'?",
+            "choices": ["Lewis Carroll was a biologist.", "The mechanism described operates within our own genetic processes.", "Humans evolve faster than other species.", "Sexual reproduction is unique to humans."],
+            "answer": "1",
+            "explanation": "比喩的表現で「Red Queen Hypothesis のメカニズムは我々の遺伝子レベルでも作動している」=性的繁殖を通じた parasite との進化的軍拡競争は人間の DNA でも続いている、という結論。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "ielts",
+      "part_key": "w_task2",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "Some people believe that universities should only offer places to students with the highest academic results. Others argue that universities should accept students from all backgrounds, regardless of their academic performance.\n\nDiscuss both views and give your own opinion.\n\nWrite at least 250 words.",
+        "sample": "The question of who should gain admission to universities continues to provoke debate worldwide. While some maintain that admissions should be strictly merit-based according to academic performance, others advocate for a more inclusive approach that considers diverse backgrounds. Both perspectives have merit, but I believe that a balanced approach—one that values academic achievement while also recognizing potential and diversity—is most beneficial for higher education.\n\nThose who support strict academic-based admissions argue that universities should be reserved for students who have demonstrated the strongest aptitude for advanced study. From this perspective, university resources are limited and should go to those most likely to benefit from rigorous academic challenges. Furthermore, allowing only top performers helps maintain the prestige and quality of degree programs, ensuring that graduates meet the high standards expected by employers and society.\n\nOn the other hand, proponents of inclusive admissions emphasize that academic results often reflect socioeconomic privilege rather than innate ability. Students from disadvantaged backgrounds may have lower test scores not because they lack potential, but because they had fewer educational resources. Restricting university access to top scorers therefore perpetuates existing inequalities. Moreover, diverse student bodies enrich the learning environment, exposing all students to varied perspectives that better prepare them for an increasingly globalized workforce.\n\nIn my view, the ideal admissions system combines both principles. Universities should set reasonable academic baselines to ensure students can succeed in their programs, but should also consider contextual factors such as the educational opportunities a student has had access to, demonstrated leadership, and personal challenges overcome. This approach maintains academic standards while actively addressing the inequalities that pure merit-based systems can entrench.\n\nIn conclusion, while academic excellence should remain a key consideration in university admissions, it should not be the only one. A holistic system that acknowledges both achievement and circumstance produces graduates who are not only academically capable but also reflective of the diverse societies they will serve. (332 words)",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "Above prompt — write your own 250+ word Discussion-type essay (両論+自分の意見).",
+            "answer": "see sample",
+            "explanation": "【IELTS Task 2 採点基準】① Task Response: 両論ディスカッション+自分の意見明示 ② Coherence/Cohesion: 4-5段落構成 (intro / view1 / view2 / opinion / conclusion) ③ Lexical Resource: 同義語の使い分け (e.g., believe / argue / contend / maintain) ④ Grammatical Range: 仮定法・関係詞・分詞構文。【模範のキー表現】provoke debate / merit-based / perpetuate inequalities / holistic approach / entrench / contextual factors。Band 7+ を狙うなら 250-350語が無難。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "ielts",
+      "part_key": "l_sec1",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[Phone conversation between a customer and a community center receptionist]\n\nReceptionist: Riverside Community Center, this is Helen speaking.\n\nCaller: Hi, I'm calling about your upcoming pottery classes. I saw an advertisement at the library.\n\nReceptionist: Of course! We have several pottery courses starting next month. Are you a beginner or do you have some experience?\n\nCaller: Complete beginner, I'm afraid.\n\nReceptionist: Then I'd recommend our 'Introduction to Pottery' course. It runs for eight weeks, every Tuesday evening from 6:30 to 8:30 PM. The cost is £120 for the full course, which includes all materials.\n\nCaller: That sounds great. And where exactly is the class held?\n\nReceptionist: In Studio B, on the second floor of our main building.\n\nCaller: Perfect. Do I need to bring anything to the first session?\n\nReceptionist: Just comfortable clothes you don't mind getting clay on, and an apron if you have one. We provide everything else.\n\nCaller: Wonderful. Can I reserve a place now?\n\nReceptionist: Yes, I just need your name and contact number. Could you give me your full name please?\n\nCaller: It's Sarah Thompson—T-H-O-M-P-S-O-N.\n\nReceptionist: Thank you, Sarah. And a contact number?\n\nCaller: My mobile is 07700 900-432.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "How long does the 'Introduction to Pottery' course run?",
+            "choices": ["Six weeks", "Eight weeks", "Ten weeks", "Twelve weeks"],
+            "answer": "1",
+            "explanation": "「It runs for eight weeks」が直接の根拠。IELTS Section 1 では数値情報 (期間・料金・時間) の聞き取りが頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "How much does the course cost?",
+            "choices": ["£100", "£110", "£120", "£140"],
+            "answer": "2",
+            "explanation": "「The cost is £120 for the full course」が根拠。Section 1 は具体的金額・住所・電話番号などの情報伝達が中心。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "Where is the class held?",
+            "choices": ["Studio A on the first floor", "Studio B on the second floor", "Studio C on the third floor", "The main hall on the ground floor"],
+            "answer": "1",
+            "explanation": "「In Studio B, on the second floor of our main building」が根拠。"
+          },
+          {
+            "id": "q4",
+            "type": "multiple_choice",
+            "stem": "What does the caller need to bring to the first session?",
+            "choices": ["Their own clay", "A pottery wheel", "Comfortable clothes and an apron if available", "A complete tool kit"],
+            "answer": "2",
+            "explanation": "「comfortable clothes you don't mind getting clay on, and an apron if you have one. We provide everything else」が根拠。"
+          },
+          {
+            "id": "q5",
+            "type": "multiple_choice",
+            "stem": "What is the caller's mobile number?",
+            "choices": ["07700 900-432", "07770 900-423", "07700 900-423", "07770 900-432"],
+            "answer": "0",
+            "explanation": "「07700 900-432」が根拠。Section 1 では電話番号・郵便番号の聞き取りでミスしやすい。最後に復唱されることが多いので最終確認を聞き逃さないこと。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_summary",
+      "eiken_grade": "todai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The notion that human beings possess unique reasoning capabilities has long served as a cornerstone of Western philosophy, distinguishing our species from all other forms of life. Yet recent research in animal cognition is challenging this assumption with remarkable consistency. Crows have been observed crafting hooked tools to extract grubs from logs, an activity once considered uniquely human. Dolphins exhibit signs of self-recognition in mirrors and develop distinctive whistles that function much like names. Octopuses, with their distributed nervous systems, solve novel puzzles through what appears to be genuine insight rather than trial and error.\n\nThese discoveries do not merely add interesting facts to our knowledge of the natural world. They demand a fundamental reconsideration of what intelligence means and how it evolved. If reasoning capacities have emerged independently across taxonomic groups as different as mammals, birds, and cephalopods, then perhaps cognition is less a single evolutionary achievement and more a recurring solution to common ecological problems. The implications extend beyond biology into ethics: if many species share rudimentary forms of what we have called 'thought,' our treatment of them may require fundamental revision.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "上記英文の内容を 60-80字の日本語で要約しなさい (東大型・大問1B)。",
+            "answer": "従来人間特有とされた理性能力が、カラスの道具製作・イルカの自己認識・タコの問題解決など他種にも見られ、知能観の根本的見直しと動物倫理の再考が迫られている。(78字)",
+            "explanation": "【東大型要約のポイント】① 60-80字厳守 (字数オーバーは大幅減点) ② 段落ごとの主旨を抽出: 段1「他種にも理性能力の発見」段2「知能観と倫理の再考」 ③ 具体例は複数羅列せず代表例 (カラス・イルカ・タコ) を簡潔に列挙 ④ 著者の主張 (再考が迫られている) を必ず含める ⑤ 「〜と思われる」のような曖昧表現は避け、本文の論理を明示。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "kyodai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "It is often supposed that the value of a translation depends on its fidelity to the original—that a good translation is one that preserves, as closely as possible, the meaning, tone, and structure of the source text. Yet this familiar assumption breaks down under closer examination. Languages differ not merely in their vocabularies and grammars but in the conceptual frameworks they encode and the cultural assumptions they presuppose. A word in Japanese may carry connotations entirely absent from its closest English equivalent, or invoke historical associations that no foreign reader could be expected to recognize without extensive context. The translator who attempts perfect fidelity to such a word will inevitably fail; what is needed instead is a creative act of negotiation, in which the translator decides which dimensions of meaning to preserve and which to sacrifice.\n\nThis insight forces us to reconsider what translation actually is. Rather than the mechanical transfer of meaning from one linguistic vehicle to another, translation emerges as a fundamentally interpretive enterprise—closer to literary criticism than to clerical transcription. Every translation embodies a particular reading of the source text, foregrounding certain aspects while necessarily relegating others to the background. From this perspective, the question is not whether a translation is 'faithful'—since perfect fidelity is impossible—but rather whether the translator's interpretive choices serve the work and its new readers in illuminating ways.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "下線部 'A word in Japanese may carry connotations entirely absent from its closest English equivalent, or invoke historical associations that no foreign reader could be expected to recognize without extensive context.' を日本語に訳しなさい。",
+            "answer": "日本語のある語が、最も近い英語の対応語には全く存在しない含意を帯びている場合や、外国の読者が広範な文脈情報なしには認識できないような歴史的連想を呼び起こす場合があるのである。",
+            "explanation": "【京大型和訳のポイント】① 名詞構文の動詞的訳出: connotations entirely absent from = 全く存在しない含意 ② 関係代名詞 that の修飾範囲: associations that no foreign reader could be expected to recognize → 「外国の読者が認識できない連想」 ③ without extensive context = 広範な文脈情報なしには (条件・否定の絡み) ④ A or B 構造の保持。京大型は構文の正確な把握 (どの語がどこに係るか) が最重要。【失点パターン】connotations の訳語選び (含意/含み/ニュアンス)、be expected to の訳出 (期待される/予想される)、without の二重否定的処理。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "本文によれば、翻訳とは何か。最も適切な選択肢を選びなさい。",
+            "choices": ["原文の意味を機械的に他言語に移し替える作業", "原文への忠実度を最大化する技術的作業", "翻訳者が解釈的選択を行う創造的・批評的営為", "文化的差異を完全に消去する政治的行為"],
+            "answer": "2",
+            "explanation": "本文「translation emerges as a fundamentally interpretive enterprise—closer to literary criticism than to clerical transcription」「the translator's interpretive choices」が根拠。京大型は文の論理展開 (前提→反論→結論) の追跡が必須。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "w_essay",
+      "eiken_grade": "kyodai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "次の日本語を英訳しなさい。\n\n「私たちは、自分が生まれ育った文化の見方を、しばしば自然なものと思い込みがちである。しかし、ひとたび異なる文化に身を置いてみれば、これまで当然視してきた価値観が、決して普遍的なものではなく、多くの可能な見方の一つに過ぎないことに気づかされる。」",
+        "sample": "We tend to assume that the perspectives of the culture in which we were born and raised are entirely natural. However, once we immerse ourselves in a different culture, we are forced to realize that the values we had previously taken for granted are by no means universal but merely one among many possible viewpoints.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "上記日本語を英訳しなさい (京大型・新傾向 大問4B)。",
+            "answer": "see sample",
+            "explanation": "【京大型英作文のポイント】① 抽象的表現の英訳: 「思い込みがち」 = tend to assume / be inclined to think ② 「身を置く」 = immerse oneself in / find oneself in ③ 「当然視する」 = take for granted ④ 「決して〜ではなく」 = by no means... but rather... ⑤ 「一つに過ぎない」 = merely one among many。【頻出失点】「自然な」を natural/normal/spontaneous の中から文脈で選別、「気づかされる」の使役受動 (be forced to realize / come to realize)。京大では構文の正確さ + 抽象語彙の精度 = 高得点。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "waseda",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Promise and Peril of Generative AI in Education\n\nThe rapid emergence of generative AI tools, capable of producing essays, solving complex problems, and engaging in sophisticated conversation, has thrown the educational establishment into a state of urgent debate. Some educators view these technologies as transformative, comparable to the introduction of the printing press or the calculator. Others express grave concerns that AI may erode fundamental learning skills and undermine academic integrity in ways from which we may never recover.\n\nProponents of integrating AI into education emphasize its potential to personalize learning at unprecedented scale. A single teacher cannot tailor explanations, exercises, and feedback to each individual student in a class of thirty. AI tutors, however, can adapt instantaneously to each student's strengths, weaknesses, and learning pace. Furthermore, AI can democratize access to high-quality education by providing students in underserved regions with the equivalent of a personal expert tutor in any subject—an opportunity historically reserved for those who could afford private tutoring.\n\nCritics, however, point to deeply troubling issues. When students use AI to generate essays or solve problems, are they actually learning, or merely producing output? Some studies suggest that students who rely heavily on AI may struggle to develop the metacognitive skills—thinking about their own thinking—that lie at the heart of genuine education. Moreover, AI systems can produce confidently wrong answers, presenting fabricated information in authoritative tones. Without sufficient knowledge to evaluate these outputs critically, students may come to trust them uncritically, weakening rather than strengthening their reasoning capacities.\n\nThe wisest response, perhaps, is neither uncritical embrace nor reflexive rejection but thoughtful integration. Educational institutions need to redesign assessments to evaluate genuine understanding rather than easily-AI-generated output, while also teaching students to use AI as a tool for inquiry rather than a substitute for thinking. The challenge is significant, but rising to meet it may produce a generation of learners better equipped than any before them to navigate a world increasingly shaped by intelligent machines.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "According to the passage, what is one of the main potential benefits of AI in education?",
+            "choices": ["It can completely replace human teachers.", "It can provide personalized learning at unprecedented scale.", "It eliminates the need for schools.", "It is significantly cheaper than traditional education."],
+            "answer": "1",
+            "explanation": "第2段落「personalize learning at unprecedented scale」が直接の根拠。早稲田型は本文の主張と選択肢の対応関係を厳密に問う。(A)(C) は誇張、(D) は記述なし。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What is the author's primary concern about students relying heavily on AI?",
+            "choices": ["The cost of AI subscriptions", "Potential weakening of metacognitive and critical reasoning skills", "AI systems consuming too much electricity", "The threat to teachers' employment"],
+            "answer": "1",
+            "explanation": "第3段落「struggle to develop the metacognitive skills」「weakening rather than strengthening their reasoning capacities」が根拠。早稲田は批判の論点把握を頻出。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What does the author suggest as the best response to AI in education?",
+            "choices": ["Banning AI tools entirely from schools", "Allowing students unrestricted access to AI", "Thoughtful integration with redesigned assessments", "Waiting until AI technology matures further"],
+            "answer": "2",
+            "explanation": "最終段落「neither uncritical embrace nor reflexive rejection but thoughtful integration」が直接の根拠。"
+          },
+          {
+            "id": "q4",
+            "type": "multiple_choice",
+            "stem": "The phrase 'confidently wrong answers' in paragraph 3 implies that AI:",
+            "choices": ["Always knows when it makes mistakes.", "Can present false information as if it were true with apparent certainty.", "Refuses to answer difficult questions.", "Is more accurate than human teachers."],
+            "answer": "1",
+            "explanation": "「presenting fabricated information in authoritative tones」が直接の解説。AI hallucination の表現。"
+          },
+          {
+            "id": "q5",
+            "type": "multiple_choice",
+            "stem": "What is the overall structure of the passage?",
+            "choices": ["Pure advocacy for AI in education", "Pure rejection of AI in education", "Presentation of opposing views followed by a balanced recommendation", "Historical comparison without conclusion"],
+            "answer": "2",
+            "explanation": "段落構造は: 段1 両論紹介 → 段2 賛成派 → 段3 批判派 → 段4 著者の中道的提言。早稲田は文章構造把握問題が定番。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "keio",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Behavioral Economics and the Limits of Rational Choice Theory\n\nFor most of the twentieth century, economic models rested on the assumption that human beings are essentially rational agents—that we systematically evaluate options, weigh costs and benefits, and select the choice that maximizes our expected utility. This 'homo economicus' framework, while elegant in its mathematical tractability, increasingly came under fire from the late 1970s onward, as psychologists and economists accumulated evidence that real human decision-making frequently departs from the predictions of rational choice theory in systematic and predictable ways.\n\nDaniel Kahneman and Amos Tversky's pioneering work on cognitive biases revealed that we routinely succumb to mental shortcuts—heuristics—that, while often useful, lead to characteristic errors in judgment. The 'availability heuristic,' for instance, leads us to overestimate the frequency of vivid or emotionally charged events; people consistently rate dying in plane crashes as more likely than dying in car accidents, despite statistics showing the opposite. The 'anchoring effect' demonstrates that even arbitrary numbers can profoundly influence subsequent judgments, as when shoppers presented with a high 'original price' perceive a discounted price as more attractive than the same price encountered without an anchor.\n\nPerhaps most provocatively, behavioral economists have shown that we exhibit 'loss aversion'—a tendency to feel the pain of losses roughly twice as intensely as we feel the pleasure of equivalent gains. This asymmetry helps explain phenomena that pure rational choice theory cannot, such as why investors hold onto declining stocks far longer than is financially sensible, or why people fail to demand recently-purchased products to which they have no real attachment.\n\nThe implications extend well beyond academic economics. Public policy designs increasingly draw on behavioral insights, employing 'nudges'—subtle changes in choice architecture—to guide citizens toward beneficial behaviors without restricting their freedom. Whether default options in retirement plans or the placement of healthier foods in cafeterias, these interventions exploit the same systematic deviations from rationality that bedevil pure economic models. Critics, however, raise concerns about the ethical limits of nudging: when does helpful guidance become paternalistic manipulation? The debate remains lively, but few now defend the original homo economicus model in its strongest form.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is the primary critique of the 'homo economicus' model presented in the passage?",
+            "choices": ["It is too mathematically complex for practical use.", "It assumes rationality that real human decisions frequently violate in systematic ways.", "It was developed too recently to be reliable.", "It applies only to economists, not ordinary people."],
+            "answer": "1",
+            "explanation": "第1段落「real human decision-making frequently departs from the predictions of rational choice theory in systematic and predictable ways」が根拠。慶應経済型は経済理論への批判構造の把握が必須。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What does the 'availability heuristic' cause people to do?",
+            "choices": ["Make decisions based purely on financial data.", "Overestimate the frequency of vivid or emotionally charged events.", "Avoid making any decisions at all.", "Prefer cheaper options regardless of quality."],
+            "answer": "1",
+            "explanation": "第2段落「leads us to overestimate the frequency of vivid or emotionally charged events」が根拠。具体例: 飛行機事故 vs 自動車事故。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "According to the passage, loss aversion means that:",
+            "choices": ["People dislike losing money so much that they refuse to invest at all.", "People feel losses about twice as intensely as equivalent gains.", "People are completely rational about losses but irrational about gains.", "Losses and gains are weighed equally in human judgment."],
+            "answer": "1",
+            "explanation": "第3段落「a tendency to feel the pain of losses roughly twice as intensely as we feel the pleasure of equivalent gains」が根拠。慶應では具体的数値情報の聞き取りも頻出。"
+          },
+          {
+            "id": "q4",
+            "type": "multiple_choice",
+            "stem": "What concern do critics raise about 'nudging' as a policy tool?",
+            "choices": ["It is too expensive to implement.", "It may cross the line from helpful guidance into paternalistic manipulation.", "It restricts individual freedom directly.", "It only works for wealthy citizens."],
+            "answer": "1",
+            "explanation": "最終段落「when does helpful guidance become paternalistic manipulation?」が根拠。"
+          },
+          {
+            "id": "q5",
+            "type": "multiple_choice",
+            "stem": "The passage's overall view of homo economicus is best described as:",
+            "choices": ["A continuing pillar of modern economics.", "An influential model now largely abandoned in its strongest form.", "A purely fictional construct never taken seriously.", "A perfect description of human behavior."],
+            "answer": "1",
+            "explanation": "最終文「few now defend the original homo economicus model in its strongest form」が直接の根拠。慶應型は最終文での結論断定が頻出パターン。"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,200 @@
+{
+  "questions": [
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "g3",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "Mary often ( ) to the gym after school.", "choices": ["go", "goes", "going", "to go"], "answer": "1", "explanation": "三人称単数 Mary + 現在の習慣 (often) → goes (三単現の s)。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "There ( ) some milk in the fridge.", "choices": ["is", "are", "be", "have"], "answer": "0", "explanation": "milk は不可算 → is。there is + 単数/不可算、there are + 複数。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "I want to be a doctor when I ( ) up.", "choices": ["grow", "grew", "growing", "grown"], "answer": "0", "explanation": "when 節 (時の副詞節) で未来の内容も現在形。「大人になったら」は I grow up。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "gp1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "The committee was unable to ( ) a unanimous decision after hours of heated debate.", "choices": ["reach", "reaches", "reaching", "reached"], "answer": "0", "explanation": "be unable to + 動詞原形 = 〜できない。reach a decision = 結論に達する。準1級頻出のコロケーション。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "Despite the company's ( ) efforts, sales continued to decline throughout the quarter.", "choices": ["frantic", "fraught", "fragmented", "fraudulent"], "answer": "0", "explanation": "frantic efforts = 必死の努力。「必死の努力にもかかわらず売上は減少」。fraught = 不安に満ちた、fragmented = 分散した、fraudulent = 詐欺的な。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "The professor's lecture was so dense that students struggled to ( ) the main points.", "choices": ["grasp", "graze", "grunt", "grovel"], "answer": "0", "explanation": "grasp = 把握する/理解する。「要点を把握する」。graze = (家畜が) 草を食む、grunt = うなる、grovel = ひれ伏す。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_short",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "[Restaurant Menu Excerpt]\n\n=== HARVEST GRILL ===\nLunch Special (11:30 AM - 2:30 PM)\n\nALL LUNCH SETS INCLUDE: Soup of the Day, Garden Salad, and Choice of Coffee or Tea\n\n--- MAINS ---\n• Grilled Salmon with Lemon Butter Sauce ......... ¥1,580\n• Roast Chicken with Herbs ......... ¥1,380\n• Pasta Primavera (Vegetarian) ......... ¥1,180\n• Beef Burger with Cheese and Bacon ......... ¥1,480\n\n--- DESSERTS (extra +¥300) ---\n• Cheesecake / Chocolate Cake / Fresh Fruit\n\nNOTES:\n* Service charge of 10% added to all bills\n* Children's menu available (¥780 - includes a small main, juice, and ice cream)\n* Allergies? Please inform our staff—we accommodate most dietary needs\n* Free Wi-Fi available; password at the counter",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What is included in all lunch sets?", "choices": ["Only the main dish.", "Soup, salad, and coffee or tea.", "Dessert and a drink only.", "Only the main and a drink."], "answer": "1", "explanation": "本文「ALL LUNCH SETS INCLUDE: Soup of the Day, Garden Salad, and Choice of Coffee or Tea」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "How much does the Children's menu cost?", "choices": ["¥780", "¥1,180", "¥1,580", "It is free"], "answer": "0", "explanation": "「Children's menu available (¥780)」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What additional charge is added to all bills?", "choices": ["A 5% tax", "A 10% service charge", "A 20% tip", "No additional charge"], "answer": "1", "explanation": "「Service charge of 10% added to all bills」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "l_part1_2",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[共通テスト Part 2型 (続) - 短い対話]\n\nDialogue:\nWoman: Hello, I'd like to make a reservation for two people on Saturday evening at 7 PM.\nMan: Let me check... I'm sorry, we're fully booked at 7 PM. We have availability at 6 PM or 8:30 PM.\nWoman: 8:30 would work for us. Can I get a window table if possible?\nMan: I'll do my best to arrange that. May I have your name and phone number, please?",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What time will the woman dine?", "choices": ["6:00 PM", "7:00 PM", "8:30 PM", "9:00 PM"], "answer": "2", "explanation": "「8:30 would work for us」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What special request did the woman make?", "choices": ["A vegetarian menu.", "A window table.", "A private room.", "A children's menu."], "answer": "1", "explanation": "「Can I get a window table if possible?」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "l_part3_4",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[共通テスト Part 5型 - 講義]\n\nProfessor: Good morning, everyone. Today's lecture is about the history of paper. Paper, as we know it, was invented in China around 105 CE by a court official named Cai Lun. Before paper, people wrote on materials like bamboo strips, silk, papyrus, and parchment, but each had drawbacks: bamboo was bulky, silk was expensive, and papyrus and parchment required complex preparation.\n\nCai Lun's innovation was to create a thin, flexible sheet by mixing plant fibers—including mulberry bark, hemp, and old fishing nets—with water, then pressing the mixture into a screen to dry. This method was much cheaper and more practical than earlier writing materials.\n\nFor centuries, China kept the papermaking process secret. Knowledge gradually spread along the Silk Road, reaching the Islamic world by the 8th century, and finally Europe by the 12th century. The introduction of paper to Europe combined with Gutenberg's printing press in the 15th century revolutionized European society—accelerating the spread of literacy, scientific knowledge, and political ideas.\n\nIn modern times, paper continues to be essential despite digital alternatives. Each year, the world produces about 400 million tons of paper. While environmental concerns have led to recycling efforts and reduced paper use in some areas, paper remains a vital technology with a 2,000-year history of transforming human civilization.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "Who is credited with inventing paper?", "choices": ["Gutenberg", "Cai Lun", "An anonymous Egyptian", "An ancient Roman"], "answer": "1", "explanation": "「invented in China around 105 CE by a court official named Cai Lun」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "When did paper reach Europe?", "choices": ["8th century", "12th century", "15th century", "20th century"], "answer": "1", "explanation": "「reaching the Islamic world by the 8th century, and finally Europe by the 12th century」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What was the impact of paper combined with the printing press?", "choices": ["It made writing more expensive.", "It revolutionized European society by accelerating the spread of literacy, science, and political ideas.", "It eliminated all other forms of communication.", "It had no significant impact."], "answer": "1", "explanation": "「revolutionized European society—accelerating the spread of literacy, scientific knowledge, and political ideas」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "todai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Reflecting on the role of art in human life, one quickly encounters a paradox. On one hand, art seems eminently dispensable: societies can survive, indeed flourish, while devoting only modest resources to artistic production. Food, shelter, security, and basic medical care are obvious necessities; the cultivation of paintings, novels, music, and dance might seem a luxury that prosperous societies happen to afford. On the other hand, no human society of which we have record has actually done without art. Cave paintings predate agriculture; songs and stories accompany every culture from the simplest gathering bands to the most complex civilizations. If art were merely an optional ornament, this universality would be deeply puzzling.\n\nThe puzzle dissolves, however, when we recognize that art performs functions that are real even if not immediately practical. Through art, communities articulate values that would otherwise remain inchoate, individuals process experiences too complex for ordinary discourse, and abstract patterns of meaning find tangible expression. To grow up without exposure to art is, in a meaningful sense, to grow up culturally impoverished, regardless of how well one's other needs are met. The capacity to make and respond to art may not be biologically necessary in the way breathing is, but it appears to be psychologically and socially fundamental in ways that go beyond mere ornament.\n\nThis perspective has implications for how societies should treat art. Educational systems that treat art as an optional add-on rather than a core curriculum convey a misleading message about its significance. Public funding decisions that protect arts only when budgets allow assume that art's value is contingent rather than constitutive. While reasonable people may disagree about specific allocations, the underlying recognition—that human flourishing involves more than the satisfaction of practical needs—deserves greater weight in our collective decisions.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What paradox does the author identify regarding art?", "choices": ["Art is universal yet seems dispensable.", "Art is illegal in most countries yet popular.", "Art is impossibly expensive yet free.", "Art is recent yet ancient."], "answer": "0", "explanation": "第1段落「art seems eminently dispensable ... no human society of which we have record has actually done without art」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "How does the author resolve this paradox?", "choices": ["By concluding that art is purely decorative.", "By recognizing that art performs real (though not immediately practical) functions like articulating values, processing complex experiences, and giving form to abstract meaning.", "By dismissing art as biologically unnecessary.", "By arguing that art is a recent invention."], "answer": "1", "explanation": "第2段落「art performs functions that are real even if not immediately practical ... communities articulate values ... individuals process experiences ... abstract patterns of meaning find tangible expression」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "What practical conclusion does the author draw?", "choices": ["Art education should be optional.", "Educational systems and public funding should treat art as constitutive of human flourishing rather than as a contingent add-on.", "Public funding for art should be eliminated.", "Art should be left entirely to private markets."], "answer": "1", "explanation": "第3段落「art's value is contingent rather than constitutive ... human flourishing involves more than the satisfaction of practical needs—deserves greater weight in our collective decisions」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_summary",
+      "eiken_grade": "todai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Modern democracies face a curious challenge in the digital age. Social media platforms have democratized public expression, allowing ordinary citizens to share opinions and information at unprecedented scale. Yet these same platforms have also enabled the rapid spread of misinformation, the formation of insular ideological communities, and the targeting of voters with personalized political messages whose underlying logic is hidden from public view. The technologies that promised to enhance democratic participation may, in some respects, be undermining the conditions on which democracy depends—shared facts, deliberate reasoning, and the capacity to recognize the legitimacy of opposing views. Reform proposals abound, but no consensus has emerged about how to preserve democracy's benefits while addressing its new vulnerabilities.",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "上記英文の内容を 60-80字の日本語で要約しなさい (東大型・大問1B)。", "answer": "ソーシャルメディアは大衆の発言機会を拡大した一方、誤情報の拡散・閉鎖的集団形成・隠れた個別政治広告により、民主主義が依存する共通事実・熟議・対立意見の正当性認識を損なう懸念があり、対応策の合意は得られていない。(102字 → 80字以内例: ソーシャルメディアは発言機会を拡大した反面、誤情報や閉鎖的集団形成によって民主主義の前提を侵食しており、対応策の合意も得られていない。)", "explanation": "【東大型要約】① 60-80字厳守 ② 段落構造: ベネフィット→脅威→現状認識 ③ メイン主張: 「democracyの前提を損なう」 ④ 「合意なし」も含める。最終チェックで字数確認。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_translation",
+      "eiken_grade": "todai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "What is most striking about the contemporary scientific enterprise is not the rapidity of its discoveries, impressive though that is, but rather the way these discoveries continue to require revisions of categories that previous generations took to be settled.",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "上記英文を日本語に訳しなさい。", "answer": "現代の科学的営為について最も顕著なのは、たしかにその発見の速さも目を見張るほどではあるが、それよりむしろ、これらの発見が、以前の世代によって確定済みとみなされていた諸概念の見直しを次々と要求してくるあり方である。", "explanation": "【東大型和訳のポイント】① What is most striking about A is not B, but rather C = A について最も顕著なのは B ではなく C だ ② impressive though that is = それも目を見張るほどではあるが (倒置構文・although that is impressive) ③ require revisions of categories = 諸概念の見直しを要求する ④ took A to be B = A を B とみなす (S V O to be C) ⑤ settled = 確定済み・決着済み。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "w_essay",
+      "eiken_grade": "todai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "次のテーマについて、60-80語の英文で意見を述べなさい (東大型 2A)。\n\nTheme: Some people believe that schools should teach financial literacy to all students. Do you agree or disagree?",
+        "sample": "I strongly agree that schools should teach financial literacy to all students. Many adults struggle with personal finance—accumulating debt, failing to save for retirement, or falling for predatory loans—because they never learned basic financial concepts during their education. By teaching budgeting, investment basics, and how to evaluate financial decisions, schools could empower students to make informed choices throughout their lives. Financial literacy is as practically important as reading and arithmetic, yet remains absent from most curricula. (78 words)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "Above prompt — 60-80語自由英作文。", "answer": "see sample", "explanation": "【東大2A 採点ポイント】① 語数厳守 60-80 ② 立場明示 (strongly agree) ③ 理由+具体例 ④ 結論で intro 強化 ⑤ 高度語彙: predatory loans / empower / informed choices / curricula。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "w_essay",
+      "eiken_grade": "todai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "Theme: Should universities require students to study a foreign language?\n\n60-80語で意見を述べなさい。",
+        "sample": "I agree that universities should require foreign language study. Beyond practical communication benefits, learning a foreign language fundamentally reshapes how students think—exposing them to different conceptual frameworks, encouraging cognitive flexibility, and building empathy through engagement with unfamiliar cultures. In an increasingly interconnected world, this kind of intellectual openness is itself a form of education that pure technical training cannot provide. Therefore, language requirements serve both vocational and humanistic purposes. (72 words)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "Above prompt — 60-80語自由英作文。", "answer": "see sample", "explanation": "【東大2A 採点ポイント】① 立場明示 ② 単純な実用論を超えた深い議論 (cognitive flexibility / empathy) ③ 結論で2 つの purpose を統合 ④ 語数 60-80。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "kyodai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "There is a tendency, especially in technologically advanced societies, to suppose that progress moves in a single direction—that what is newer is therefore better, and that older ways of doing things must inevitably yield to more efficient successors. This assumption is so deeply embedded in modern thinking that it operates almost invisibly, shaping our judgments about everything from manufacturing techniques to educational methods to social arrangements.\n\nYet careful examination reveals that this picture of unilinear progress is profoundly misleading. The history of technology and culture is full of cases in which older practices preserved values or capabilities that newer alternatives abandoned. Mechanical typewriters required slower, more deliberate composition than word processors, and some writers report that the constraints of the typewriter actually fostered better prose. Hand-copied manuscripts, preserved through medieval monasteries, embedded forms of attentive reading and contemplation that the speed of printing tended to displace. Traditional craftsmanship in many fields produced objects whose durability, beauty, and individual character mass production cannot match.\n\nNone of this argues for nostalgic return to the past. Modern technologies and social arrangements offer real benefits that should not be dismissed. The point is rather that judging progress requires criteria that go beyond efficiency or novelty. What capabilities, relationships, and forms of human engagement does each new development enable, and which does it foreclose? Only by asking such questions can we evaluate change in ways that are honest about both gains and losses.",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "下線部 'judging progress requires criteria that go beyond efficiency or novelty.' を日本語に訳しなさい。", "answer": "進歩を判断するには、効率や新奇さを超える基準が必要なのである。", "explanation": "【京大型和訳】① judging progress = 進歩を判断する (動名詞主語) ② criteria = 基準 (criterion の複数) ③ go beyond X = X を超える/X 以上の ④ efficiency or novelty = 効率や新奇さ。京大は短文だが構文+語彙の精度を問う。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What is the author's primary claim?", "choices": ["Older technologies are always better than newer ones.", "Progress is unilinear and uniformly beneficial.", "Judging progress requires criteria beyond efficiency or novelty, recognizing both gains and losses.", "Modernity should be entirely rejected."], "answer": "2", "explanation": "最終段落「judging progress requires criteria that go beyond efficiency or novelty ... evaluate change in ways that are honest about both gains and losses」が直接の根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_translation",
+      "eiken_grade": "kyodai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "What we are willing to call common sense varies in extraordinary ways across times and places, yet it is precisely the universal claim of common sense to which we instinctively appeal when we wish to dismiss the unfamiliar without examining it carefully.",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "上記英文を日本語に訳しなさい。", "answer": "我々が常識と呼ぶことを厭わないものは、時代や場所によって驚くほど多様に変化するものであるが、にもかかわらず、馴染みのないものを十分に吟味することなく退けようとする時、我々が本能的に訴えかけるのは、まさに常識のもつ普遍性の主張なのである。", "explanation": "【京大型和訳】① What we are willing to call X = 我々が X と呼ぶことを厭わないもの ② vary in extraordinary ways = 驚くほど多様に変化する ③ it is X to which we instinctively appeal when... = 本能的に訴えるのは X だ (強調構文 + 関係詞 to which) ④ wish to dismiss the unfamiliar without examining it carefully = 馴染みのないものを十分に吟味することなく退けようとする。京大は強調構文 + 関係詞 + 否定的副詞句の連鎖が頻出。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_translation",
+      "eiken_grade": "kyodai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Whether or not the proposed reforms succeed depends less on the technical adequacy of their design than on whether the various stakeholders affected can find ways to resolve their conflicting interests through deliberation rather than open conflict.",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "上記英文を日本語に訳しなさい。", "answer": "提案された改革が成功するかどうかは、その設計の技術的妥当性よりも、影響を受ける様々な関係者が、公然たる対立ではなく熟議を通じて、自らの相反する利害を解決する方法を見出すことができるかどうかにかかっているのである。", "explanation": "【京大型和訳】① Whether or not S V = S V するかどうか ② depend less on A than on B = A よりも B に依存する (比較構文) ③ stakeholders affected = 影響を受ける関係者 (過去分詞の後置修飾) ④ resolve conflicting interests = 相反する利害を解決する ⑤ through deliberation rather than open conflict = 公然たる対立ではなく熟議を通じて。京大は depend less ... than ... の比較構文が頻出。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "w_essay",
+      "eiken_grade": "kyodai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "次の日本語を英訳しなさい (京大型・新傾向)。\n\n「真に困難な問題に直面した時、我々はしばしば最も単純な解決策に飛びつきたくなる。しかし、複雑な状況に対して安易な答えを求めることは、たいていの場合、問題をさらに悪化させる結果を招くだけである。」",
+        "sample": "When faced with truly difficult problems, we are often tempted to jump at the simplest solution. However, seeking easy answers to complex situations usually only ends up making the problem worse.",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "上記日本語を英訳しなさい。", "answer": "see sample", "explanation": "【京大型英訳のポイント】① 「真に困難な問題に直面した時」 = When faced with truly difficult problems (分詞構文/受動)、② 「飛びつきたくなる」 = be tempted to jump at (受動感情)、③ 「安易な答えを求めること」 = seeking easy answers (動名詞主語)、④ 「たいていの場合〜結果を招くだけだ」 = usually only ends up V-ing。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "w_essay",
+      "eiken_grade": "kyodai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "「人は他人を理解しようとする時、どうしても自分自身の経験から類推することになりがちである。しかし、その類推こそが、相手の本当の苦しみを見えなくしてしまうこともあるのだ。」を英訳しなさい。",
+        "sample": "When trying to understand others, we cannot help but rely on inferences drawn from our own experiences. Yet such inferences themselves can be precisely what blinds us to the genuine suffering of those we are trying to understand.",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "上記日本語を英訳しなさい。", "answer": "see sample", "explanation": "【京大型英訳】① 「〜しようとする時」 = When trying to ② 「どうしても〜になりがちである」 = cannot help but / inevitably / be inclined to ③ 「自分自身の経験から類推する」 = draw inferences from one's own experiences ④ 「その類推こそが〜してしまう」 = such inferences themselves can be precisely what... (関係詞節を使った強調)。"}
+        ]
+      }
+    }
+  ]
+}

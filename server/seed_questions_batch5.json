@@ -1,0 +1,435 @@
+{
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "osaka",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Among the most striking features of contemporary scientific practice is its reliance on collaboration across vast distances and disciplines. The papers that announce major discoveries today are rarely written by one or two scientists working in isolation; they often list dozens, sometimes hundreds, of authors from institutions scattered across multiple continents. Major experiments at facilities like CERN or large astronomical observatories involve coordinated efforts by thousands of researchers. This is a remarkable departure from the romantic image of the lone genius—the Newton or Einstein working out fundamental truths in solitary contemplation—that still dominates popular conceptions of science.\n\nWhile this collaborative turn has unquestionably enabled discoveries that no individual could have made, it raises difficult questions about credit, responsibility, and even the meaning of authorship. When a thousand people contribute to a paper, what does it mean to say that any one of them is its 'author'? When something goes wrong—when data is fabricated or analysis flawed—how is responsibility distributed? Universities still tend to evaluate scholars largely on individual contributions, creating tensions with collaborative norms. Some institutions are experimenting with new forms of credit allocation, but no consensus has emerged. The challenge is to develop systems of recognition that match the genuinely social character of modern research.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What contrast does the author draw in the first paragraph?",
+            "choices": ["Between modern collaborative science and the romantic image of solitary scientific genius.", "Between European and American science.", "Between physics and biology.", "Between historical and modern scientific instruments."],
+            "answer": "0",
+            "explanation": "「This is a remarkable departure from the romantic image of the lone genius」が直接の対比表現。阪大型は段落主旨の対比把握を頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "essay",
+            "stem": "下線部 'no consensus has emerged. The challenge is to develop systems of recognition that match the genuinely social character of modern research.' を日本語に訳しなさい。",
+            "answer": "合意は得られていない。求められているのは、現代の研究が真に社会的な性格を持つことに見合う、評価の仕組みを構築することなのである。",
+            "explanation": "【阪大型和訳のポイント】① no consensus has emerged = 合意は得られていない (現在完了の継続的否定) ② The challenge is to do = 課題は〜することだ (構文化) ③ systems of recognition = 評価/承認の仕組み ④ that match A = A に見合う (関係詞 that) ⑤ genuinely social character = 真に社会的な性格。【失点パターン】recognition の訳出 (認識ではなく評価/承認)、character の訳語 (性格/特性)、match の動詞用法 (合致する/見合う)。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "hitotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Economic Inequality and Social Mobility\n\nThe relationship between economic inequality and social mobility is one of the most contested questions in contemporary economics. Conventional wisdom long held that the United States, with its tradition of meritocratic individualism, offered greater opportunities for upward mobility than European societies with their stronger welfare states and more compressed income distributions. Recent empirical research, however, has substantially complicated this picture.\n\nStudies comparing intergenerational income mobility across countries reveal a striking pattern: nations with higher inequality tend to have lower mobility, not higher. Children born into low-income families in the United States are less likely to reach the top of the income distribution than their counterparts in countries like Denmark, Norway, or even Canada. The 'Great Gatsby curve,' as economists have come to call this relationship, suggests that the steeper the income gradient in a society, the more difficult it becomes for individuals to move between economic classes.\n\nWhy might this be? Several mechanisms have been proposed. In highly unequal societies, wealthy families can purchase educational and developmental advantages—from private tutoring to access to social networks—that ordinary families cannot afford. Public goods like quality schools and healthcare may also deteriorate when wealthy citizens segregate themselves into private alternatives, leaving fewer resources and less political support for institutions serving everyone else. Meanwhile, neighborhoods become increasingly segregated by income, exposing children to vastly different sets of opportunities depending on where they happen to be born.\n\nThese findings have provoked considerable debate. Some scholars argue that the data, while suggestive, cannot establish causation; perhaps unmeasured cultural or institutional factors explain both inequality and immobility. Others note that the focus on inequality may distract from absolute poverty, which has different policy implications. Yet the broader implication—that high inequality may itself reduce the mobility on which meritocratic ideologies depend—has gained substantial traction in policy discussions worldwide. Whether or not it persuades skeptics, it has reframed the terms of the inequality debate.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is the 'Great Gatsby curve'?",
+            "choices": ["A measure of consumer spending.", "The empirical relationship suggesting that higher inequality correlates with lower social mobility.", "A historical chart of stock prices.", "A theory about literary trends."],
+            "answer": "1",
+            "explanation": "第2段落「The 'Great Gatsby curve,' as economists have come to call this relationship, suggests that the steeper the income gradient in a society, the more difficult it becomes for individuals to move between economic classes」が直接の根拠。一橋型は経済学概念の正確な定義把握が頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What mechanism does the passage cite to explain reduced mobility in unequal societies?",
+            "choices": ["Government interference with markets.", "Wealthy families purchasing educational and developmental advantages, plus deterioration of public goods.", "Lack of natural resources.", "Climate change."],
+            "answer": "1",
+            "explanation": "第3段落「wealthy families can purchase educational and developmental advantages ... Public goods like quality schools and healthcare may also deteriorate」が根拠。一橋型は因果メカニズムの把握問題が頻出。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What broader implication of the research has gained traction?",
+            "choices": ["High inequality has no effect on opportunity.", "High inequality may itself reduce the mobility on which meritocratic ideologies depend.", "Mobility cannot be measured.", "All countries have identical mobility patterns."],
+            "answer": "1",
+            "explanation": "最終段落「the broader implication—that high inequality may itself reduce the mobility on which meritocratic ideologies depend—has gained substantial traction」が根拠。一橋型は段階的論理展開の終着点把握が必須。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_translation",
+      "eiken_grade": "hitotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "It would be a mistake to suppose that economic forces alone determine the shape of human societies. Cultural traditions, religious beliefs, and political institutions all exert their own profound influences, sometimes reinforcing economic patterns and sometimes counteracting them. The relationship between markets and the social fabric in which they are embedded is far more complex than simple models of rational choice would suggest, and economists who ignore this complexity do so at the peril of their predictive accuracy.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "下線部 'The relationship between markets and the social fabric in which they are embedded is far more complex than simple models of rational choice would suggest, and economists who ignore this complexity do so at the peril of their predictive accuracy.' を日本語に訳しなさい。",
+            "answer": "市場と、それが組み込まれている社会的構造との関係は、合理的選択の単純なモデルが示唆するよりもはるかに複雑であり、この複雑さを無視する経済学者は、自らの予測精度を危うくしてしまうのである。",
+            "explanation": "【一橋型和訳のポイント】① the social fabric in which they are embedded = それ (=markets) が組み込まれている社会的構造 (関係詞 in which) ② far more complex than... = 〜よりはるかに複雑 (比較構文の強調) ③ simple models of rational choice would suggest = 合理的選択の単純なモデルが示唆するよりも (would は控えめな推量) ④ do so at the peril of A = A を危うくする形でそれを行う (慣用表現) ⑤ predictive accuracy = 予測精度。【失点パターン】fabric の訳語 (構造/織物→比喩的)、embed の受動構文、at the peril of の慣用句訳出。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "nagoya",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Limits of Predictive Models\n\nIn the age of big data and machine learning, prediction has become a central activity of modern science and commerce. Algorithms now predict everything from credit risk to disease outbreaks, from criminal recidivism to climate trajectories. The remarkable accuracy of these systems has produced widespread enthusiasm—and, increasingly, deep concern.\n\nThe enthusiasm is understandable. Predictive systems can detect patterns invisible to human analysts, process information at superhuman speeds, and apply consistent criteria where human judgment varies unpredictably. In medicine, AI systems sometimes detect cancers earlier than experienced radiologists. In meteorology, models predict severe weather events with lifesaving precision. The benefits, in many domains, are real and substantial.\n\nYet prediction has limits that deserve careful consideration. Most fundamentally, prediction does not equal explanation. A system that accurately forecasts an event need not understand why the event occurs—and prediction without understanding can be brittle, failing in unfamiliar circumstances. Furthermore, predictive models trained on historical data inevitably encode the biases of that data. When historical decisions reflected prejudice or systematic error, models learn to reproduce those patterns under a veneer of mathematical objectivity. A predictive system used in criminal justice might recommend longer sentences for groups historically over-policed, perpetuating injustice while appearing to be neutral.\n\nThere is also a deeper philosophical concern. As predictive systems become more pervasive, they reshape the very environments they predict. A model that predicts who will succeed in school, used to allocate resources, can become self-fulfilling: students predicted to succeed receive support, while those predicted to fail are written off. The prediction creates the future it claims merely to forecast. This recursive quality is rarely acknowledged in technical discussions of model accuracy.\n\nNone of this argues against the use of predictive systems, which offer too many benefits to abandon. It does suggest, however, the need for humility about their limitations and active engagement with their social effects. The challenge is not to perfect prediction but to integrate it thoughtfully with the human values that should guide our decisions.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "Why does the author say 'prediction does not equal explanation'?",
+            "choices": ["Because prediction is always less accurate than explanation.", "Because a system can accurately forecast events without understanding their causes, leading to brittle behavior in new circumstances.", "Because explanations are unnecessary in modern science.", "Because computers cannot make predictions."],
+            "answer": "1",
+            "explanation": "第3段落「prediction does not equal explanation. A system that accurately forecasts an event need not understand why the event occurs—and prediction without understanding can be brittle」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "How can predictive models perpetuate injustice?",
+            "choices": ["By being too slow to make decisions.", "By learning historical biases from training data and reproducing them under a veneer of objectivity.", "By being too expensive to use.", "By replacing all human workers."],
+            "answer": "1",
+            "explanation": "第3段落「predictive models trained on historical data inevitably encode the biases of that data ... models learn to reproduce those patterns under a veneer of mathematical objectivity」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What is the 'recursive quality' the author describes?",
+            "choices": ["Predictions becoming self-fulfilling by reshaping the environments they predict.", "Predictions becoming randomly inaccurate.", "Predictions occurring repeatedly each second.", "Predictions consuming too much electricity."],
+            "answer": "0",
+            "explanation": "第4段落「The prediction creates the future it claims merely to forecast」が根拠。自己成就予言の記述。名古屋型は哲学的概念の把握が頻出。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "tokoda",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Future of Quantum Computing\n\nQuantum computers—machines that exploit the strange rules of quantum mechanics to perform certain calculations—have captured the imagination of researchers, investors, and policymakers worldwide. Where traditional computers manipulate bits that can take values of 0 or 1, quantum computers use 'qubits' that can exist in superpositions of both states simultaneously. When properly orchestrated, this property allows quantum machines to solve certain problems exponentially faster than any classical computer ever could.\n\nThe potential applications are profound. In cryptography, sufficiently powerful quantum computers could break widely-used encryption schemes, requiring a fundamental rethinking of digital security. In chemistry and materials science, quantum simulations could accelerate the discovery of new pharmaceuticals, batteries, and catalysts. In optimization problems—from logistics to financial portfolios—quantum approaches may find solutions that classical methods cannot.\n\nDespite these tantalizing prospects, building practical quantum computers has proven extraordinarily difficult. Qubits are notoriously fragile, easily disrupted by tiny environmental fluctuations in temperature or electromagnetic fields. Maintaining the delicate quantum states required for computation typically demands cooling to near absolute zero and elaborate isolation from outside interference. Error correction remains a fundamental challenge: roughly a thousand 'physical' qubits may be needed to construct a single 'logical' qubit reliable enough for practical computation.\n\nProgress has nonetheless been substantial. Several research groups have demonstrated 'quantum supremacy' on carefully chosen problems, performing calculations that would take the most powerful classical supercomputers thousands of years. Major technology companies and governments are investing billions of dollars in quantum research. National security implications have prompted concern about a possible 'quantum arms race.'\n\nYet caution about timelines remains warranted. Even optimistic experts believe that quantum computers capable of breaking current encryption are likely a decade or more away. Some applications—particularly in chemistry and optimization—may arrive sooner. Others may prove permanently impractical. As with many transformative technologies, the path from laboratory demonstration to widespread practical impact is rarely straightforward, and predictions of revolutionary impact must be tempered with realistic assessment of remaining engineering challenges.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What makes quantum computers fundamentally different from classical computers?",
+            "choices": ["They are much smaller in physical size.", "They use qubits that can exist in superpositions of 0 and 1 simultaneously, enabling exponential speedup on certain problems.", "They use solar power.", "They are programmed in different languages."],
+            "answer": "1",
+            "explanation": "第1段落「qubits that can exist in superpositions of both states simultaneously」「solve certain problems exponentially faster」が根拠。東工大型は科学技術系英文の概念把握が必須。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What technical challenge does the passage emphasize?",
+            "choices": ["Quantum computers are too expensive.", "Qubits are fragile, easily disrupted, requiring extreme cooling and isolation; error correction is also difficult.", "Quantum software is hard to write.", "There is no demand for quantum computing."],
+            "answer": "1",
+            "explanation": "第3段落「Qubits are notoriously fragile, easily disrupted by tiny environmental fluctuations ... cooling to near absolute zero」「Error correction remains a fundamental challenge」が根拠。東工大型は技術的課題の正確な把握が頻出。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What is the author's overall stance toward quantum computing's near-term impact?",
+            "choices": ["Pure enthusiasm—revolutionary impact is imminent.", "Cautious optimism, tempered by recognition of significant remaining engineering challenges.", "Pure pessimism—quantum computing will never work.", "Indifference."],
+            "answer": "1",
+            "explanation": "最終段落「caution about timelines remains warranted ... predictions of revolutionary impact must be tempered with realistic assessment」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系数学 大問1型 — 微分・関数の最大最小",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "関数 f(x) = x³ - 3x² - 9x + 12 (-2 ≤ x ≤ 4) の最大値と最小値を求めよ。",
+            "answer": "f'(x) = 3x² - 6x - 9 = 3(x - 3)(x + 1) = 0 → x = -1, 3。\n\n増減表:\nx     | -2  -1  3   4\nf'(x) | +   0   -   0   +\nf(x)  | 6   17  -15 -8\n\n端点・極値での値:\nf(-2) = -8 - 12 + 18 + 12 = 6\nf(-1) = -1 - 3 + 9 + 12 = 17 (極大)\nf(3) = 27 - 27 - 27 + 12 = -15 (極小)\nf(4) = 64 - 48 - 36 + 12 = -8\n\n∴ 最大値 17 (x = -1)、最小値 -15 (x = 3)。",
+            "explanation": "【東大理系数学 解法のポイント】① 微分して f'(x) = 0 の解を求める ② 増減表を描く (極値の x 候補 + 端点) ③ 各候補での f(x) を計算 ④ 比較して最大・最小を決定。【典型ミス】端点を忘れる、極値の最大最小と区間内最大最小を混同する。東大理系では計算量よりも論理の正確さが重視される。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q2",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系数学 大問2型 — 確率・場合の数",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "サイコロを 3 回投げる。出た目を順に a, b, c とするとき、a + b + c = 9 となる場合の数を求めよ。",
+            "answer": "a + b + c = 9 (1 ≤ a, b, c ≤ 6)\n\nまず a + b + c = 9 (1 ≤ 各々) の総数を求める。\n変数変換 a' = a-1, b' = b-1, c' = c-1 (0 ≤ a', b', c') として a' + b' + c' = 6。\n非負整数解の数 = ₆₊₂C₂ = ₈C₂ = 28。\n\nここから 7 以上の値を含む解を除外する (重複を避ける)。\nもし a ≥ 7 なら a' ≥ 6、a' + b' + c' = 6 → b' = c' = 0、a' = 6 のみ。よって a = 7、b = c = 1 の 1通り。\nb ≥ 7、c ≥ 7 も同様に各 1 通り。\n2変数同時に 7 以上は和 9 を超え不可能。\n\n∴ 求める場合の数 = 28 - 3 = 25 通り。",
+            "explanation": "【東大型場合の数 解法ポイント】① 重複組合せ (非負整数解) を求める公式 H(n,r) = ₍ₙ₊ᵣ₋₁₎Cᵣ₋₁ ② 上限制約は『〜以上を含む集合』を除外で処理 (包除原理) ③ サイコロは 1-6 の制約に注意。【別解】数珠つなぎで全列挙: (1,2,6), (1,3,5), (1,4,4), (2,2,5), (2,3,4), (3,3,3) の各順列パターン数を計算 → 6 + 6 + 3 + 3 + 6 + 1 = 25。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系物理 大問1型 — 力学・斜面と摩擦",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "傾斜角 θ の斜面上に質量 m の物体がある。物体と斜面の間の動摩擦係数を μ' とする。\n(1) 物体に働く垂直抗力 N を求めよ。\n(2) 物体が斜面下方に滑るときの加速度 a を、重力加速度 g、θ、μ' を用いて表せ。",
+            "answer": "(1) 斜面に垂直な方向の力のつりあい:\nN = mg cos θ\n\n(2) 物体は斜面下方へ滑る → 摩擦力は斜面上向き。\n斜面方向の運動方程式 (下向きを正):\nma = mg sin θ - μ' N\nma = mg sin θ - μ' mg cos θ\n両辺を m で割って:\na = g(sin θ - μ' cos θ)\n\n【μ' が大きすぎて静止する条件】\nsin θ ≤ μ' cos θ → tan θ ≤ μ' のとき物体は滑らない。\n問題文「滑るとき」より tan θ > μ' の場合のみ意味を持つ。",
+            "explanation": "【東大理系物理 解法ポイント】① 力の分解: 重力を斜面平行成分 mg sin θ と垂直成分 mg cos θ に分解 ② 垂直抗力は斜面垂直方向の力のつりあいから N = mg cos θ ③ 動摩擦力 = μ' N、向きは運動方向の逆 ④ 斜面方向の運動方程式 ma = (合力) を立てる。【典型ミス】摩擦力の向きを誤る、垂直抗力に重力垂直成分以外を含める、sin と cos の取り違え。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_q1",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系化学 大問1型 — 理論化学・気体の法則",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "27°C、1.0 × 10⁵ Pa において、ある気体 X は体積 24.0 L を占めるとき質量 32.0 g であった。気体定数 R = 8.31 × 10³ Pa·L/(K·mol) とする。\n(1) 気体 X の物質量 [mol] を求めよ。\n(2) 気体 X のモル質量 [g/mol] を求めよ。気体 X は何だと推定されるか。",
+            "answer": "(1) 理想気体の状態方程式 PV = nRT より:\nT = 27 + 273 = 300 K\nn = PV / (RT) = (1.0 × 10⁵ × 24.0) / (8.31 × 10³ × 300)\n  = 2.4 × 10⁶ / 2.493 × 10⁶\n  ≈ 0.96 mol ≈ 1.0 mol (有効数字 2桁)\n\n(2) モル質量 M = 質量 / 物質量 = 32.0 / 1.0 = 32.0 g/mol。\n\nモル質量 32 g/mol の気体 → 酸素 O₂ (32 g/mol) または メタノール CH₃OH (32 g/mol)。\n常温常圧で気体である条件から → 酸素 O₂ と推定される。",
+            "explanation": "【東大理系化学 解法ポイント】① 単位を SI 系に揃える (温度は K) ② PV=nRT の代入 ③ モル質量から物質を推定 (主要な気体のモル質量を覚えておく: H₂=2, He=4, CH₄=16, NH₃=17, H₂O=18, CO=28, N₂=28, NO=30, O₂=32, CO₂=44, SO₂=64 など)。【典型ミス】温度の℃→K 変換忘れ、有効数字のミス、単位 (Pa·L vs J) の混同。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "rikkyo",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Music and the Human Brain\n\nMusic is one of the few human universals: every documented culture creates and values some form of music, and humans across all backgrounds respond to music with emotion and movement. This universality has long puzzled scientists. Why should organized sound have such powerful effects on creatures whose primary survival challenges have nothing obvious to do with melody and rhythm?\n\nRecent neuroscientific research has begun to unravel this mystery. Brain imaging studies show that music activates an extraordinarily wide network of brain regions, engaging areas associated with memory, emotion, language, and motor control all at once. This whole-brain engagement may explain music's remarkable capacity to evoke vivid memories, alter mood, and even temporarily relieve symptoms of various neurological conditions.\n\nOne particularly striking finding is the role of music in dementia care. Patients with advanced Alzheimer's disease, who may struggle to recognize their own family members, often retain the ability to recognize and respond to familiar music from their youth. This phenomenon has inspired innovative therapeutic approaches that use personalized playlists to reach patients otherwise lost to verbal communication.\n\nMusic also appears to enhance cognitive development in children. Studies suggest that musical training in childhood is associated with improvements in language skills, executive function, and even mathematical reasoning. While correlation does not prove causation, the breadth of these associations has led many researchers to advocate for music education as a foundational element of childhood learning.\n\nDespite these promising findings, much remains mysterious about music and the brain. Why do some musical patterns evoke universal emotional responses while others remain culturally specific? How does music achieve such powerful effects with no obvious survival value? These questions continue to drive research at the intersection of neuroscience, psychology, and the arts—suggesting that music may be one of the most revealing windows into how the human mind works.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What does brain imaging reveal about how music affects the brain?",
+            "choices": ["Music activates only the auditory cortex.", "Music activates an extraordinarily wide network of brain regions including memory, emotion, language, and motor areas.", "Music has no measurable effect on the brain.", "Music only affects children's brains."],
+            "answer": "1",
+            "explanation": "第2段落「music activates an extraordinarily wide network of brain regions, engaging areas associated with memory, emotion, language, and motor control all at once」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What striking finding about dementia care does the passage describe?",
+            "choices": ["Music has no effect on dementia patients.", "Patients with advanced Alzheimer's often retain the ability to recognize and respond to familiar music from their youth, even when verbal communication is lost.", "Music makes dementia worse.", "Only classical music helps dementia."],
+            "answer": "1",
+            "explanation": "第3段落「Patients with advanced Alzheimer's disease, who may struggle to recognize their own family members, often retain the ability to recognize and respond to familiar music from their youth」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "How is music education characterized in the passage?",
+            "choices": ["As an optional extra with little measurable benefit.", "As potentially foundational to childhood learning, associated with improvements in language, executive function, and mathematical reasoning.", "As only useful for future musicians.", "As harmful to academic performance."],
+            "answer": "1",
+            "explanation": "第4段落「musical training in childhood is associated with improvements in language skills, executive function, and even mathematical reasoning ... advocate for music education as a foundational element of childhood learning」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "chuo",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Constitutional Interpretation: Fixed Meaning or Living Document?\n\nOne of the most enduring debates in legal philosophy concerns how the meaning of a constitutional text should be determined. Two broad camps have emerged. Originalists argue that constitutional provisions should be interpreted according to the meaning they were understood to have at the time of their adoption. According to this view, the role of judges is to apply that historically fixed meaning faithfully, regardless of how social attitudes or circumstances may have evolved. Anything else, originalists contend, allows judges to substitute their own preferences for the democratic decisions enshrined in the constitutional text.\n\nProponents of the 'living constitution' approach argue, by contrast, that the meaning of constitutional provisions necessarily evolves as society changes. The drafters of the United States Constitution, for instance, could not have anticipated electronic surveillance, genetic engineering, or any number of other contemporary issues. To freeze constitutional meaning at the moment of adoption, they argue, is to commit the present and future to the limited understanding of the past. Better to read general principles—'equal protection,' 'cruel and unusual punishment,' 'unreasonable searches'—as evolving standards informed by current knowledge and values.\n\nBoth approaches face serious challenges. Originalism encounters difficulties when historical evidence is ambiguous or when applying historical meanings to genuinely novel circumstances. The framers' intent regarding modern issues is often itself a contested interpretation rather than a settled historical fact. Living constitutionalism, meanwhile, raises legitimacy questions: if judges can update constitutional meaning based on contemporary values, how is this different from policy-making that should belong to elected representatives? Without anchoring in original meaning, what constrains judicial activism?\n\nIn practice, most judges do not adhere strictly to either approach. They typically combine attention to historical understanding with consideration of evolving circumstances, applying different emphases in different cases. While intellectually unsatisfying to purists on both sides, this pragmatic approach may reflect the genuine complexity of interpreting general principles across historical change.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is the originalist approach to constitutional interpretation?",
+            "choices": ["Judges should freely update constitutional meaning based on current values.", "Constitutional provisions should be interpreted according to their meaning at the time of adoption.", "The constitution should be ignored.", "Only legislators may interpret the constitution."],
+            "answer": "1",
+            "explanation": "第1段落「Originalists argue that constitutional provisions should be interpreted according to the meaning they were understood to have at the time of their adoption」が根拠。中央法学部型は法解釈論の精密な定義把握が必須。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What concern do living constitutionalists raise about originalism?",
+            "choices": ["It is too easy to apply.", "It freezes constitutional meaning at the limited understanding of the past, unable to handle genuinely novel circumstances.", "It gives too much power to elected officials.", "It is rejected by all judges."],
+            "answer": "1",
+            "explanation": "第2段落「could not have anticipated electronic surveillance, genetic engineering ... To freeze constitutional meaning at the moment of adoption ... is to commit the present and future to the limited understanding of the past」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "According to the passage, what do most judges actually do in practice?",
+            "choices": ["Adhere strictly to originalism.", "Adhere strictly to living constitutionalism.", "Combine attention to historical understanding with consideration of evolving circumstances pragmatically.", "Refuse to interpret the constitution at all."],
+            "answer": "2",
+            "explanation": "最終段落「most judges do not adhere strictly to either approach. They typically combine attention to historical understanding with consideration of evolving circumstances」が根拠。中央型は実務的妥協の認識問題が頻出。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "ritsumei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Microbiome Revolution\n\nFor most of medical history, microbes were viewed primarily as enemies—agents of disease to be eliminated. The development of antibiotics in the twentieth century reinforced this adversarial framing, presenting microbes as foes to be defeated through chemical warfare. Yet a quiet revolution in microbiology over the past two decades has transformed our understanding of the relationship between humans and the microbial world.\n\nWe now know that the human body hosts trillions of microorganisms—bacteria, viruses, fungi, and others—that collectively constitute what is called the microbiome. These microbes outnumber human cells in our bodies and contain dozens of times more genetic material than our own genome. Far from being mere passengers or parasites, many of these microbes perform essential functions: digesting nutrients we cannot break down ourselves, producing vitamins, training our immune systems, and even influencing brain function and mood.\n\nResearch into the microbiome has yielded astonishing findings. Disturbances in gut bacteria have been linked to conditions ranging from inflammatory bowel disease to obesity, diabetes, and even depression. Fecal microbiota transplants—essentially transferring beneficial bacteria from healthy donors to ill patients—have proven remarkably effective for certain treatment-resistant infections. The skin, lungs, mouth, and other body sites each host distinctive microbial communities whose disruption may contribute to a wide range of health problems.\n\nThis emerging understanding has practical implications. Excessive antibiotic use, while sometimes lifesaving, is now recognized as potentially harmful to long-term health when it disrupts beneficial microbial communities. Probiotics, prebiotics, and dietary diversity are being studied for their potential to nurture healthy microbiomes. Personalized medicine increasingly incorporates microbiome analysis as a factor in disease risk and treatment response.\n\nDespite remarkable progress, microbiome research is still in relatively early stages. Many proposed therapeutic applications require further validation, and the complexity of microbial ecosystems means that simple interventions may produce unexpected effects. What is clear is that the old adversarial view of human-microbe relations was profoundly incomplete. The future of medicine will likely involve managing our microbial partnerships at least as much as combating microbial threats.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "How has our understanding of microbes changed?",
+            "choices": ["Microbes are now seen as entirely harmless.", "While some microbes cause disease, many are now recognized as essential partners performing vital functions in our bodies.", "Microbes have been completely eliminated from human bodies.", "Microbes have no relationship to human health."],
+            "answer": "1",
+            "explanation": "第1-2段落「primarily as enemies ... transformed our understanding ... many of these microbes perform essential functions」が根拠。立命館型は概念変化の対比把握が頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What conditions have been linked to disturbances in gut bacteria?",
+            "choices": ["Only digestive problems.", "Inflammatory bowel disease, obesity, diabetes, and depression among others.", "No human conditions.", "Only rare genetic disorders."],
+            "answer": "1",
+            "explanation": "第3段落「Disturbances in gut bacteria have been linked to conditions ranging from inflammatory bowel disease to obesity, diabetes, and even depression」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What practical implication is drawn for antibiotic use?",
+            "choices": ["Antibiotics should never be used.", "While sometimes lifesaving, excessive antibiotic use is potentially harmful when it disrupts beneficial microbial communities.", "Antibiotics are always beneficial.", "Antibiotics have no effect on the microbiome."],
+            "answer": "1",
+            "explanation": "第4段落「Excessive antibiotic use, while sometimes lifesaving, is now recognized as potentially harmful to long-term health」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "kandai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Why We Sleep\n\nFor centuries, sleep was largely seen as a passive state—a kind of unproductive downtime when nothing important happened. Recent decades of scientific research have dramatically overturned this view, revealing sleep as one of the most active and essential biological processes our bodies undertake.\n\nDuring sleep, our brains do not simply switch off. Instead, they engage in remarkable maintenance work. Memories from the day are consolidated, with important experiences strengthened and unimportant ones forgotten. The brain's waste-clearance system, called the glymphatic system, becomes especially active during deep sleep, removing metabolic waste products that accumulate during waking hours. Hormones that regulate growth, appetite, and stress are released in carefully orchestrated patterns. Cellular repair processes accelerate.\n\nThe consequences of insufficient sleep are far-reaching. Even modest sleep deprivation impairs memory, attention, mood, and decision-making. Long-term sleep deficits have been associated with increased risk of cardiovascular disease, type 2 diabetes, depression, and even certain cancers. Some research suggests that chronic sleep deprivation may contribute to the development of Alzheimer's disease, possibly because the glymphatic clearance system fails to remove the proteins that form amyloid plaques.\n\nDespite this knowledge, modern societies often treat sleep as expendable. Long working hours, electronic screens, artificial lighting, caffeine consumption, and irregular schedules all conspire against healthy sleep patterns. Many people pride themselves on functioning with little sleep, viewing rest as weakness. Public health experts increasingly view this attitude as misguided—a kind of slow-motion health crisis playing out across populations.\n\nImproving sleep quality often requires lifestyle adjustments rather than medical interventions. Consistent sleep schedules, reducing evening light exposure, limiting caffeine and alcohol, and creating restful sleep environments all support better sleep. While sleep medications can be helpful in certain situations, most experts emphasize behavioral and environmental approaches as primary strategies for healthy sleep.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "How has the scientific view of sleep changed?",
+            "choices": ["Sleep is now seen as a more passive state than before.", "Sleep is now recognized as one of the most active and essential biological processes, involving memory consolidation, waste clearance, and hormone regulation.", "Sleep has been proven to be unnecessary.", "Sleep is now considered a form of dreaming only."],
+            "answer": "1",
+            "explanation": "第1-2段落「sleep was largely seen as a passive state ... revealing sleep as one of the most active and essential biological processes ... Memories ... consolidated ... glymphatic system ... waste products ... Hormones」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What long-term health risks are associated with sleep deficits?",
+            "choices": ["No long-term effects.", "Increased risk of cardiovascular disease, type 2 diabetes, depression, certain cancers, and possibly Alzheimer's.", "Only mild fatigue.", "Improved cognitive function."],
+            "answer": "1",
+            "explanation": "第3段落「Long-term sleep deficits have been associated with increased risk of cardiovascular disease, type 2 diabetes, depression, and even certain cancers」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What approach do most experts emphasize for improving sleep quality?",
+            "choices": ["Heavy reliance on sleep medications.", "Behavioral and environmental approaches such as consistent schedules, reducing evening light exposure, and limiting caffeine.", "Surgical interventions.", "Ignoring the problem."],
+            "answer": "1",
+            "explanation": "最終段落「most experts emphasize behavioral and environmental approaches as primary strategies for healthy sleep」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "igakubu_kokoritsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "CRISPR and the Ethics of Human Genetic Modification\n\nThe development of CRISPR-Cas9 gene editing has revolutionized biomedical research and raised profound ethical questions. With unprecedented precision and accessibility, scientists can now make targeted changes to DNA sequences in living cells. While this technology promises to transform the treatment of genetic diseases, its potential application to human reproduction has provoked intense debate.\n\nIn 2018, a Chinese scientist announced that he had used CRISPR to edit the genomes of human embryos, resulting in the birth of two children with engineered resistance to HIV. The international scientific community condemned this action almost universally, citing both the unproven safety of the technology and the absence of ethical consensus regarding such interventions. The scientist was subsequently imprisoned, but the underlying ethical and policy questions remain largely unresolved.\n\nProponents of cautiously developing reproductive applications of gene editing argue that, properly regulated, the technology could prevent devastating genetic diseases such as Huntington's disease, certain cancers, or sickle cell anemia. Parents who carry such mutations could have biological children free from these conditions. The technology might eventually allow correction of complex genetic risks that contribute to common diseases.\n\nCritics raise multiple objections. Safety concerns are paramount: off-target effects of gene editing remain incompletely understood, and any unintended consequences would be transmitted to all future generations of edited individuals. Ethical concerns extend beyond safety. The line between preventing disease and 'enhancement' is difficult to draw, raising fears of a future in which genetic modification becomes routine for non-medical traits—creating new forms of inequality between those who can afford genetic improvements and those who cannot. Religious and philosophical traditions have also raised concerns about humans claiming authority over the genetic constitution of future generations.\n\nMost scientists and ethicists currently favor a moratorium on heritable human genome editing while these issues are deliberated. Yet the technology is becoming more accessible, and pressure for clinical applications continues to grow. The international community faces the challenge of developing governance frameworks that can keep pace with rapid scientific progress while reflecting genuine ethical consensus across diverse societies.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What was the international scientific community's response to the 2018 Chinese gene editing of human embryos?",
+            "choices": ["Universal celebration.", "Almost universal condemnation, citing unproven safety and lack of ethical consensus.", "Indifference.", "Strong support."],
+            "answer": "1",
+            "explanation": "第2段落「The international scientific community condemned this action almost universally, citing both the unproven safety of the technology and the absence of ethical consensus」が根拠。医学部受験では生命倫理の最新議論把握が必須。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What 'enhancement' concern do critics raise about gene editing?",
+            "choices": ["No such concerns exist.", "The line between preventing disease and enhancing non-medical traits is difficult to draw, raising fears of new genetic inequalities.", "Enhancement is impossible.", "Enhancement only affects physical strength."],
+            "answer": "1",
+            "explanation": "第4段落「The line between preventing disease and 'enhancement' is difficult to draw ... new forms of inequality between those who can afford genetic improvements and those who cannot」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What position do most scientists and ethicists currently take?",
+            "choices": ["Aggressive deployment of heritable gene editing.", "A moratorium on heritable human genome editing while issues are deliberated.", "Complete prohibition forever.", "Indifference to the question."],
+            "answer": "1",
+            "explanation": "最終段落「Most scientists and ethicists currently favor a moratorium on heritable human genome editing while these issues are deliberated」が根拠。医学部型は科学者コミュニティの合意点把握が頻出。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "igakubu_shiritsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Burden of Antibiotic Resistance\n\nThe discovery of penicillin in the late 1920s and the subsequent development of antibiotics ranks among medicine's greatest achievements. These drugs transformed previously fatal infections into routinely treatable conditions, enabling complex surgeries, cancer chemotherapy, and organ transplantation that would otherwise be impossibly dangerous. Yet today, the medical community faces a slow-motion crisis: the bacteria that antibiotics target are increasingly developing resistance to these life-saving drugs.\n\nAntibiotic resistance arises through evolutionary processes well understood in principle. When antibiotics are used, susceptible bacteria die, while occasional bacteria with resistance-conferring mutations survive and reproduce. Over time, populations of resistant bacteria emerge. The more antibiotics are used, the stronger the selection pressure favoring resistance.\n\nMultiple factors have accelerated this problem. Overprescription of antibiotics for viral infections—against which they are useless—remains widespread despite decades of educational efforts. Patients sometimes fail to complete prescribed courses, leaving partially-treated infections to evolve resistance. The agricultural use of antibiotics in livestock, often as growth promoters rather than disease treatments, has been particularly controversial; the antibiotic-rich environment of industrial farms accelerates resistance evolution that subsequently affects human medicine. Travel and global trade rapidly spread resistant strains across borders.\n\nThe consequences are increasingly severe. Some bacteria have become resistant to nearly all available antibiotics, returning to the pre-antibiotic era's helplessness for affected patients. Common infections—urinary tract infections, pneumonia, sepsis—are becoming harder to treat. Surgical procedures that depend on prophylactic antibiotics may become too risky to perform routinely. The World Health Organization has called antibiotic resistance one of the greatest threats to global health.\n\nResponses to this challenge require coordinated action at multiple levels. Individual physicians must prescribe more judiciously. Hospitals must implement strict infection control. Agricultural use of antibiotics must be restricted. Pharmaceutical research into new antibiotics must be revitalized through changes in incentive structures, since current pricing makes antibiotic development economically unattractive compared to drugs for chronic conditions. Public education must continue. Most fundamentally, recognition of antibiotics as a precious shared resource—a global commons whose preservation requires collective discipline—may need to replace the casual attitudes that contributed to the current predicament.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "How does antibiotic resistance arise?",
+            "choices": ["Bacteria simply choose to become resistant.", "Through evolutionary processes: susceptible bacteria die, while bacteria with resistance-conferring mutations survive and reproduce, increasing resistance under continued antibiotic use.", "Resistance is purely random.", "Resistance arises only in laboratories."],
+            "answer": "1",
+            "explanation": "第2段落「Antibiotic resistance arises through evolutionary processes ... susceptible bacteria die, while occasional bacteria with resistance-conferring mutations survive and reproduce」が根拠。私立医学部型は機序の正確な把握が頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What agricultural practice has accelerated antibiotic resistance?",
+            "choices": ["Use of antibiotics in livestock as growth promoters and the resulting antibiotic-rich farm environments.", "Refusing to use any antibiotics in animals.", "Use of plant-based fertilizers.", "Use of organic feed."],
+            "answer": "0",
+            "explanation": "第3段落「The agricultural use of antibiotics in livestock, often as growth promoters rather than disease treatments ... antibiotic-rich environment of industrial farms accelerates resistance evolution」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What 'most fundamentally' may be needed according to the author?",
+            "choices": ["More aggressive antibiotic prescribing.", "Recognition of antibiotics as a precious shared resource—a global commons—whose preservation requires collective discipline.", "Banning all antibiotics worldwide.", "Returning to pre-medical era practices."],
+            "answer": "1",
+            "explanation": "最終段落「recognition of antibiotics as a precious shared resource—a global commons whose preservation requires collective discipline—may need to replace the casual attitudes」が根拠。私立医学部型は政策的提言の把握が頻出。"
+          }
+        ]
+      }
+    }
+  ]
+}

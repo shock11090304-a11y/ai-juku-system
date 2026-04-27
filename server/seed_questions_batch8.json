@@ -1,0 +1,206 @@
+{
+  "questions": [
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "g3",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "I'm looking ( ) my old photo album. I think I left it in the living room.", "choices": ["at", "after", "for", "into"], "answer": "2", "explanation": "look for = 〜を探す。文意「アルバムを探している」。look at = 見る、look after = 世話をする、look into = 調査する。英検3級で句動詞 look 系は超頻出。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "Tomoko ( ) breakfast every morning before going to school.", "choices": ["eat", "eats", "eating", "ate"], "answer": "1", "explanation": "every morning = 現在の習慣 → 現在形。主語 Tomoko (三人称単数) なので eats (三単現の s)。eating は単独で動詞にならない、ate は過去形。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "I have two brothers. The older ( ) is named Ken.", "choices": ["one", "two", "ones", "person"], "answer": "0", "explanation": "「年上の方」を表す代名詞は one (前出の名詞 brother を指す)。two は数値、ones は複数形 (本問は単数)、person は冠詞 the と相性悪い。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "g3",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "It started ( ) heavily during our picnic, so we hurried home.", "choices": ["rain", "rains", "raining", "to rained"], "answer": "2", "explanation": "start + 動名詞 (-ing) または不定詞 (to do)。raining が正解。to rained は文法的に成立しない (to + 原形)。「ピクニック中に激しく雨が降り出した」。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "Could you tell me how ( ) to the post office?", "choices": ["go", "going", "to go", "went"], "answer": "2", "explanation": "how to do = 〜の仕方。間接疑問の how + to不定詞構文。「郵便局への行き方を教えていただけますか?」英検3級では how/what/where + to不定詞は頻出。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "Ken is much taller ( ) his younger brother.", "choices": ["as", "than", "to", "of"], "answer": "1", "explanation": "比較級 taller + than + 比較対象。much は比較級を強調 (= はるかに〜)。as は同等比較、to / of は比較構文では不可。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "g1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "The CEO's decision to dramatically expand operations into untested markets was widely regarded as ( ), though ultimately it proved prescient.", "choices": ["audacious", "auspicious", "ambivalent", "amenable"], "answer": "0", "explanation": "audacious = 大胆な/向こう見ずな。「大胆な決断と見られたが結果的に先見の明があった」という対比構造。auspicious = 縁起の良い、ambivalent = 相反する感情の、amenable = 従順な。1級は au- 接頭の派生語の語感差を問う問題が頻出。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "Critics argued that the policy would ( ) existing inequalities rather than ameliorate them.", "choices": ["entrench", "embellish", "encroach", "encompass"], "answer": "0", "explanation": "entrench = 定着させる/根付かせる (悪しきものに使うことが多い)。「不平等を是正するどころか定着させる」と批判。embellish = 美化する、encroach = 侵害する (on)、encompass = 包含する。1級は entrench + inequalities / poverty / privilege のコロケーションが頻出。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "Despite widespread skepticism, the scientist's hypothesis has gradually gained ( ) within the academic community.", "choices": ["currency", "currents", "curators", "curtsies"], "answer": "0", "explanation": "gain currency = 通用するようになる/普及する (アイデア・主張・通貨など)。「学界で次第に受け入れられた」。currency は文脈で「通貨」以外に「通用度・普及度」の意味で 1級では頻出。currents = 流れ (複数形・誤り)、curators = 学芸員、curtsies = (女性の) お辞儀。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Sustainable Tourism: A Modern Challenge\n\nTourism is one of the world's largest industries, providing jobs for millions of people and supporting local economies in many countries. However, as more people travel each year, the negative impacts of tourism have become harder to ignore. Popular destinations like Venice, Kyoto, and Barcelona have struggled with overcrowding, environmental damage, and rising tensions between visitors and local residents.\n\nThe concept of 'sustainable tourism' has emerged as one possible solution. The idea is to manage tourism in ways that benefit local communities, protect the environment, and provide meaningful experiences for travelers—all without overwhelming the places visitors come to see. This approach often involves limits on visitor numbers, careful planning of tourism infrastructure, and active involvement of local people in tourism decisions.\n\nSeveral places have begun experimenting with new policies. Some Japanese temples now require advance reservations to manage crowds. Bhutan charges visitors a high daily fee to limit the volume of tourism while supporting local development. Some Italian cities are restricting cruise ship access to protect historic centers. These approaches differ in detail but share a common goal: shifting from 'more is always better' to 'better is always better' when it comes to tourism.\n\nIndividual travelers can also contribute to sustainable tourism. Choosing local accommodations, eating at locally-owned restaurants, traveling outside peak seasons, and respecting local customs all help reduce negative impacts. While such individual choices cannot solve systemic problems alone, they can contribute to a culture of more thoughtful travel that benefits everyone involved.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What problem has tourism created in popular destinations?", "choices": ["No tourists are visiting anymore.", "Overcrowding, environmental damage, and tensions between visitors and locals.", "Tourism has been completely banned everywhere.", "Hotels have become too cheap."], "answer": "1", "explanation": "第1段落「overcrowding, environmental damage, and rising tensions between visitors and local residents」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What is the goal of 'sustainable tourism'?", "choices": ["To eliminate all tourism.", "To manage tourism in ways that benefit communities, protect the environment, and avoid overwhelming destinations.", "To make tourism cheaper.", "To replace tourism with industry."], "answer": "1", "explanation": "第2段落「manage tourism in ways that benefit local communities, protect the environment, and provide meaningful experiences ... without overwhelming the places」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "How does Bhutan limit tourism's volume?", "choices": ["By banning all foreign visitors.", "By charging visitors a high daily fee while supporting local development.", "By requiring all tourists to learn the local language.", "By only allowing visitors during winter."], "answer": "1", "explanation": "第3段落「Bhutan charges visitors a high daily fee to limit the volume of tourism while supporting local development」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_short",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "[Online Customer Review]\n\nProduct: Pacific Wireless Earbuds X3\nRating: ★★★★☆ (4 out of 5)\nReviewer: Music_Lover_42\n\nI've been using these earbuds for about three weeks now, and overall, I'm impressed. The sound quality is excellent—rich bass, clear highs, and surprisingly good noise cancellation for the price range. Battery life is also impressive: I can usually go a full day without needing to recharge, and the case provides several additional charges.\n\nMy main complaints are about the fit. The earbuds tend to slip out during exercise, even with the included silicone tips. I've had to switch to over-ear headphones for the gym. Also, the touch controls are sometimes too sensitive—I accidentally pause my music when adjusting them in my ears.\n\nDespite these minor issues, I'd recommend these earbuds for casual listening, commuting, and office use. At this price point, they offer excellent value. Just don't expect them to stay put during intense workouts.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What did the reviewer like most about the earbuds?", "choices": ["Their flashy design.", "Sound quality and battery life.", "Their low price only.", "Their water resistance."], "answer": "1", "explanation": "第1段落「sound quality is excellent ... Battery life is also impressive」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What was the main complaint?", "choices": ["The earbuds slip out during exercise and the touch controls are too sensitive.", "The battery dies quickly.", "The sound quality is poor.", "The price is too high."], "answer": "0", "explanation": "第2段落「earbuds tend to slip out during exercise」「touch controls are sometimes too sensitive」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "For which use does the reviewer recommend these earbuds?", "choices": ["Intense workouts and competitive sports.", "Casual listening, commuting, and office use.", "Underwater swimming.", "Professional music production."], "answer": "1", "explanation": "最終段落「I'd recommend these earbuds for casual listening, commuting, and office use」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "todai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "There is a peculiar feature of human cognition that has long puzzled philosophers and now interests scientists: we are capable of recognizing the existence of phenomena we cannot directly experience. We can think coherently about events occurring billions of years ago or billions of light-years away, despite having no sensory access to them. We can reason about quantum mechanical phenomena that defy our intuitive expectations, or about mathematical structures of dimensions our perception cannot encompass. This ability to think beyond what we can directly perceive is, in a certain sense, the foundation of all theoretical knowledge.\n\nThis capacity raises a deep question: what makes such knowledge reliable? If our minds evolved to navigate the practical demands of human-scale life, why should we trust them when they reach toward realms of experience to which natural selection had no access? Some philosophers have argued that our success here is something of a mystery—that the deep order of nature happens to be expressible in mathematical and logical forms that our minds can grasp, but that there is no guarantee this should be so. Others suggest that the very capacities that allow us to navigate practical life are sufficiently general to extend, with effort and care, to domains far beyond the everyday.\n\nWhatever its source, this capacity has enabled remarkable achievements. Without it, we could not predict eclipses, design semiconductors, or understand the origins of the universe. Yet the same capacity has limits. Even our best theoretical frameworks may be incomplete, capturing some aspects of reality while missing others entirely. The history of science teaches that confident assumptions about the structure of nature have repeatedly required revision. The proper attitude toward our most successful theories may therefore combine intellectual humility with bold engagement: take them seriously without taking them as final.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What 'peculiar feature' of human cognition does the author emphasize?", "choices": ["The ability to forget unimportant information quickly.", "The ability to think coherently about phenomena we cannot directly experience.", "The ability to learn languages easily.", "The ability to recognize faces."], "answer": "1", "explanation": "第1段落「we are capable of recognizing the existence of phenomena we cannot directly experience」が根拠。東大型は冒頭の central claim 把握が頻出。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "What philosophical question does this capacity raise?", "choices": ["Why people are so creative.", "Why minds evolved for practical human-scale life can reliably reach beyond it, into realms natural selection never accessed.", "Why some people are smarter than others.", "Why scientific theories are sometimes wrong."], "answer": "1", "explanation": "第2段落「If our minds evolved to navigate the practical demands of human-scale life, why should we trust them when they reach toward realms of experience to which natural selection had no access?」が根拠。"},
+          {"id": "q3", "type": "essay", "stem": "下線部 'The proper attitude toward our most successful theories may therefore combine intellectual humility with bold engagement: take them seriously without taking them as final.' を日本語に訳しなさい。", "answer": "我々が最も成功を収めた理論に対する適切な姿勢とは、それゆえ知的謙虚さと大胆な関与とを組み合わせるものとなろう。すなわち、それらの理論を真剣に受け止めつつも最終的なものとは見なさない、ということである。", "explanation": "【東大型和訳のポイント】① The proper attitude toward A may combine X with Y = A に対する適切な姿勢は X と Y を組み合わせる ② intellectual humility = 知的謙虚さ ③ bold engagement = 大胆な関与/取組み ④ take A seriously = A を真剣に受け止める ⑤ without taking them as final = 最終的なものと見なすことなく ⑥ コロン (:) の処理 = 「すなわち」「つまり」で繋ぐ。【失点パターン】attitude の訳語、bold engagement の訳出 (積極的取組/大胆な参与)、final の訳語 (最終/絶対)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_translation",
+      "eiken_grade": "todai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "It would be a serious error to suppose that scientific progress occurs simply through the accumulation of facts. Major scientific advances have typically required not just new observations but new ways of seeing—new conceptual frameworks within which familiar facts take on previously unimagined significance. The crucial transformations in our understanding of nature have often involved as much philosophical reorientation as empirical discovery.",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "下線部 'Major scientific advances have typically required not just new observations but new ways of seeing—new conceptual frameworks within which familiar facts take on previously unimagined significance.' を日本語に訳しなさい。", "answer": "主要な科学的進歩は、これまで通常、新たな観察結果だけでなく、新たなものの見方をも必要としてきたのである。すなわち、その中において馴染み深い事実が、従来では想像もできなかった意義を帯びるような、新たな概念枠組みである。", "explanation": "【東大型和訳のポイント】① not just A but (also) B = A だけでなく B も ② new ways of seeing = 新たなものの見方 (動名詞 seeing) ③ ダッシュ (—) の処理: 言い換え/補足説明 ④ within which = その中で (関係詞 in which) ⑤ take on significance = 意義を帯びる/獲得する ⑥ previously unimagined = 従来では想像もできなかった (副詞+過去分詞)。【失点パターン】not just A but B のセットを認識する、ways of seeing の seeing は動名詞 (見ること)、within which の指示先把握。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_summary",
+      "eiken_grade": "todai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Scientists once thought that babies were simply blank slates, with little understanding of the world until they began to acquire language. Recent research, however, has dramatically revised this picture. Even infants only a few months old have been shown to possess sophisticated cognitive capacities. They can distinguish between physical events that are causally possible and those that violate basic physical laws. They can recognize the difference between agents that act with apparent intention and objects that move passively. They can perform basic arithmetic-like operations, noticing when one object is added to or removed from a small group. These findings suggest that the human mind comes equipped with a substantial 'starter kit' of intuitive understanding—an evolutionary endowment that helps infants make sense of the world long before formal education begins.",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "上記英文の内容を 60-80字の日本語で要約しなさい (東大型・大問1B)。", "answer": "近年の研究により、乳児は言語獲得以前から物理法則・行為主体・基本的な算術操作を区別する高度な認知能力を持つことが判明し、人間の心は進化的に与えられた直観的理解の素地を有することが示唆されている。(94字 → 80字以内に短縮例: 近年の研究により、乳児は物理法則・行為主体・算術操作を区別する高度な認知能力を持ち、人間の心が進化的に与えられた直観的理解を備えることが判明した。)", "explanation": "【東大型要約のポイント】① 60-80字厳守 ② 段落構造の把握: 旧説「白紙」→新発見「3種の認知能力」→結論「進化的素地」 ③ 具体例 (物理・行為主体・算術) は3つを簡潔に列挙 ④ 結論 (starter kit / 進化的素地) を必ず含める ⑤ 「近年の研究により」「〜が判明した」など要約定型句で締める。【失点回避】字数オーバー大幅減点なので、最終チェックで 60-80 内に収まっているか確認。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "ielts",
+      "part_key": "r_p1",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The History of Tea\n\nTea is one of the world's most consumed beverages, second only to water. Its history spans thousands of years and connects cultures across continents. According to legend, tea was discovered in China nearly 5,000 years ago when leaves accidentally fell into the boiling water of Emperor Shen Nung. While this origin story is likely mythological, archaeological evidence does confirm that tea drinking has ancient roots in China.\n\nFor centuries, tea remained primarily a Chinese beverage. Buddhist monks were among the earliest enthusiasts, valuing tea for its ability to keep them alert during long meditation sessions. Tea gradually spread to Japan, Korea, and other East Asian countries, where it developed into elaborate ceremonial traditions—most famously the Japanese tea ceremony, which transformed tea preparation into a meditative art form.\n\nEuropean contact with tea came much later. Portuguese and Dutch traders brought tea to Europe in the 17th century, and it quickly became fashionable, particularly in Britain. The British became so attached to tea that they were willing to fight wars over it. The Opium Wars of the 19th century were sparked partly by Britain's enormous trade deficit with China, caused largely by tea imports.\n\nAttempts to grow tea outside Asia eventually succeeded in India, where the British established large plantations in the Assam and Darjeeling regions. These efforts dramatically reshaped Indian agriculture and labor systems. Today, India remains one of the world's largest tea producers and consumers, and Indian-style chai—tea brewed with milk and spices—has become popular worldwide.\n\nIn the modern era, tea continues to evolve. Specialty teas, organic varieties, and innovative beverages like bubble tea have created new markets. Health research has also boosted tea's reputation, with studies suggesting various potential benefits from regular consumption. Despite these modern developments, the basic ritual of brewing leaves in hot water remains essentially unchanged from practices established thousands of years ago.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "TRUE / FALSE / NOT GIVEN — Tea is the most consumed beverage in the world.", "choices": ["TRUE", "FALSE", "NOT GIVEN"], "answer": "1", "explanation": "本文「Tea is one of the world's most consumed beverages, second only to water」 — 水に次いで2番目 → FALSE。極端な「最」は要警戒。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "TRUE / FALSE / NOT GIVEN — Buddhist monks were among the earliest enthusiasts of tea, valuing it for keeping them alert during meditation.", "choices": ["TRUE", "FALSE", "NOT GIVEN"], "answer": "0", "explanation": "本文「Buddhist monks were among the earliest enthusiasts, valuing tea for its ability to keep them alert during long meditation sessions」が直接の根拠 → TRUE。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "TRUE / FALSE / NOT GIVEN — Tea was first introduced to Europe by Italian explorers in the 15th century.", "choices": ["TRUE", "FALSE", "NOT GIVEN"], "answer": "1", "explanation": "本文「Portuguese and Dutch traders brought tea to Europe in the 17th century」と矛盾 → FALSE。"},
+          {"id": "q4", "type": "multiple_choice", "stem": "TRUE / FALSE / NOT GIVEN — All tea grown in India is exported to Britain.", "choices": ["TRUE", "FALSE", "NOT GIVEN"], "answer": "2", "explanation": "「India remains one of the world's largest tea producers and consumers」=インドは消費者でもある。輸出の割合や行先は記述なし → NOT GIVEN。"},
+          {"id": "q5", "type": "multiple_choice", "stem": "TRUE / FALSE / NOT GIVEN — Modern bubble tea has changed the basic ritual of brewing leaves in hot water.", "choices": ["TRUE", "FALSE", "NOT GIVEN"], "answer": "1", "explanation": "本文「the basic ritual of brewing leaves in hot water remains essentially unchanged」と矛盾 → FALSE。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "ielts",
+      "part_key": "w_task2",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "Some people think that governments should ban dangerous extreme sports, while others believe individuals should be free to choose any activity, regardless of risk.\n\nDiscuss both views and give your own opinion.\n\nWrite at least 250 words.",
+        "sample": "Whether governments should restrict dangerous extreme sports has become an increasingly contested issue. Some advocate for outright bans on activities they consider too risky, while others insist that adult individuals should retain the right to choose their own activities. While both arguments have merit, I believe the better approach combines individual freedom with reasonable safety regulation rather than outright prohibition.\n\nProponents of banning dangerous sports raise legitimate concerns. Activities like base jumping, wingsuit flying, and free solo climbing have produced significant fatality rates. Beyond direct harm to participants, accidents impose costs on emergency services, search and rescue operations, and grieving families. From this perspective, society has reasonable grounds to discourage activities whose risks substantially exceed their benefits.\n\nHowever, advocates of personal freedom counter that banning chosen activities involves serious encroachment on individual autonomy. Adults routinely accept risks—from driving to dietary choices to recreational drinking—without government intervention. To single out extreme sports for prohibition while allowing equally or more dangerous everyday activities seems inconsistent. Furthermore, extreme sports often serve genuine human needs for challenge, mastery, and connection with nature. The character traits these pursuits develop—courage, focus, decision-making under pressure—have value extending beyond the sports themselves.\n\nMy view is that the appropriate response lies between these extremes. Governments should not generally ban extreme sports, but they can reasonably require safety standards, professional certification, insurance requirements, and clear waivers acknowledging risk. Such regulations preserve individual freedom while reducing preventable harm and externalized costs. Children should be subject to greater protection than adults.\n\nIn conclusion, while the impulse to protect people from dangerous activities is understandable, blanket prohibitions on adult choices represent an inappropriate use of government power. A regulatory approach respecting both safety and freedom offers the better path. (290 words)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "Above prompt — write your own 250+ word Discussion-type essay.", "answer": "see sample", "explanation": "【IELTS Task 2 Discussion 採点ポイント】① Task Response: 両論+自分の意見明示 (この場合 'better approach' を提示) ② Coherence/Cohesion: 5段落構成 (intro / view1 / view2 / opinion / conclusion) ③ Lexical Resource: 同義語使い分け (advocate / proponent / counter / encroach) ④ Grammatical Range: 仮定法・複文・名詞構文。【模範のキー表現】legitimate concerns / encroachment on autonomy / inconsistent / preserve individual freedom / externalized costs。Band 7+ 狙うなら 270-330 語が安全圏。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系数学 大問1型 (続) — 場合の数",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "1から9までの数字から異なる3つを選んで3桁の数を作る。それが偶数になる場合の数を求めよ。", "answer": "3桁の偶数 = 一の位が偶数 (2, 4, 6, 8 の4つ)\n\n手順:\n一の位を決める: 4 通り (2, 4, 6, 8)\n百の位を決める: 残り 8 個から 1 つ → 8 通り\n十の位を決める: 残り 7 個から 1 つ → 7 通り\n\n総数 = 4 × 8 × 7 = 224 通り\n\n(注: 1〜9 の数字なので 0 はなく、百の位の制約は不要)", "explanation": "【東大型 場合の数 解法ポイント】① 制約付き選択 → 制約が厳しい桁から決める ② 1〜9 のみ (0 なし) なので百の位の特別処理不要 ③ 一の位 4 通り × 残り 8 から百の位 1 つ × 残り 7 から十の位 1 つ。【典型ミス】1〜9 と 0〜9 の混同で「0 が百の位に来ない」処理を入れてしまう。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "東大理系物理 大問1型 (続) — 力学・エネルギー保存",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "高さ h の地点から質量 m の物体を初速度 0 で落下させた。地面に到達したときの速さ v を求めよ。空気抵抗は無視し、重力加速度を g とする。", "answer": "エネルギー保存則:\n初期エネルギー (高さ h、静止) = 終了エネルギー (高さ 0、速さ v)\nmgh + 0 = 0 + (1/2)mv²\nmgh = (1/2)mv²\n両辺を m で割る: gh = (1/2)v²\nv² = 2gh\n\n∴ v = √(2gh)\n\n別解: 等加速度運動の公式 v² = v₀² + 2as (a = g, s = h, v₀ = 0)\nv² = 2gh\nv = √(2gh)", "explanation": "【東大理系 力学 解法ポイント】① エネルギー保存則 = 力学的エネルギー (運動 + 位置) は一定 (保存力のみ作用時) ② 自由落下: 位置エネルギー → 運動エネルギーへ完全転換 ③ 検算: 等加速度公式 v² = v₀² + 2as でも同じ結果。【公式まとめ】自由落下: v = gt、s = (1/2)gt²、v² = 2gs。覚えやすいのは v = √(2gh)。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "toeic",
+      "part_key": "r_part6",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "ANNOUNCEMENT\n\nDear All Staff,\n\nWe are pleased to announce that our annual company picnic will be held on Saturday, August 19th, at Riverside Park. The event will run from 11:00 AM to 4:00 PM.\n\nFood and drinks ( q1 ) by the company. Please bring only yourselves and any family members you wish to invite. We have arranged a variety of activities, including team games, a barbecue, and live music ( q2 ) the local band Sunset Echoes.\n\nIf you ( q3 ) attending, please notify the HR department by August 10th so we can finalize arrangements. We look forward to seeing you there!\n\nBest regards,\nThe Management Team",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "(q1)", "choices": ["will provide", "will be providing", "will be provided", "have provided"], "answer": "2", "explanation": "Food and drinks (主語) は受動態 → will be provided。「会社によって食事が提供される」。Part 6 では主語が物 vs 人で能動 / 受動の判別が頻出。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "(q2)", "choices": ["with", "by", "for", "from"], "answer": "1", "explanation": "live music by + バンド名 = 〜による生演奏。「Sunset Echoes による生演奏」。with は伴う・所有、for は目的、from は出所。Part 6 は前置詞の文脈整合性が重要。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "(q3)", "choices": ["plan", "planned", "are planning on", "will plan"], "answer": "2", "explanation": "「もし参加を予定しているなら」という条件文 + 進行的状態 → are planning on。If you are planning on doing は TOEIC 頻出表現。plan / planned / will plan は文脈と時制が合わない。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "toeic",
+      "part_key": "r_part7_single",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "PRESS RELEASE\n\nFor Immediate Release: October 15, 2026\n\nGreenTech Industries Announces Major Solar Panel Innovation\n\nGreenTech Industries today announced a breakthrough in solar panel technology that could significantly reduce the cost of renewable energy. The new panels, called SunMax 3000, achieve 25% greater efficiency than previous models while reducing manufacturing costs by approximately 15%.\n\n'This represents years of dedicated research,' said CEO Maria Rodriguez. 'Our team has developed a new cell structure that captures more sunlight while requiring less expensive raw materials.'\n\nThe SunMax 3000 will begin commercial production in January 2027, with initial focus on residential and small business installations. GreenTech expects to expand to large-scale industrial applications by mid-2027.\n\nThis innovation comes at a crucial time as governments worldwide push for faster transitions to renewable energy. Industry analysts predict the new technology could accelerate solar adoption, particularly in markets where cost has been a barrier.\n\nFor more information, visit www.greentech-industries.com or contact our media relations team at media@greentech-industries.com.",
+        "questions": [
+          {"id": "q1", "type": "multiple_choice", "stem": "What is the main topic of the press release?", "choices": ["A merger between two companies.", "A breakthrough in solar panel technology that improves efficiency and reduces cost.", "A change in company leadership.", "A new corporate office opening."], "answer": "1", "explanation": "本文「GreenTech Industries today announced a breakthrough in solar panel technology」「achieve 25% greater efficiency ... reducing manufacturing costs by approximately 15%」が根拠。"},
+          {"id": "q2", "type": "multiple_choice", "stem": "When will commercial production begin?", "choices": ["October 2026", "January 2027", "Mid-2027", "End of 2027"], "answer": "1", "explanation": "本文「SunMax 3000 will begin commercial production in January 2027」が根拠。"},
+          {"id": "q3", "type": "multiple_choice", "stem": "Which markets will the panels target initially?", "choices": ["Large-scale industrial applications.", "Residential and small business installations.", "Government buildings only.", "Educational institutions."], "answer": "1", "explanation": "本文「initial focus on residential and small business installations」が根拠。large-scale industrial は mid-2027 以降。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "toefl",
+      "part_key": "w_integrated",
+      "eiken_grade": null,
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "Reading: Some scientists propose that asteroid mining could provide humanity with vast quantities of rare minerals, alleviating Earth's resource constraints. The reading offers three potential benefits.\n\nLecture: The professor casts doubt on each of the three benefits mentioned in the reading.\n\nWrite a 150-225 word response summarizing how the lecture challenges the reading's arguments.",
+        "sample": "The reading argues that asteroid mining could solve Earth's resource constraints through three benefits. However, the lecture systematically challenges each claim.\n\nFirst, while the reading suggests asteroids contain abundant rare minerals, the professor counters that the actual concentrations of valuable elements may be far lower than optimistic estimates suggest. Initial surveys have shown highly variable mineral content, and easily accessible asteroids may not contain the most valuable resources.\n\nSecond, the reading praises the technological feasibility of asteroid mining within decades. The lecture refutes this by noting the enormous engineering challenges that remain unsolved, including reliable autonomous mining systems, efficient return-to-Earth transport, and the costs of extended space operations. Each of these problems has resisted decades of research.\n\nFinally, regarding the reading's economic argument that mining will become commercially viable, the professor argues this assumption ignores fundamental cost-benefit analysis. The capital required to launch mining operations could exceed the value of recovered materials for decades, while terrestrial alternatives—including improved recycling and substitution—may meet most resource needs at far lower cost.\n\nThus, the lecture demonstrates that what appear to be solid prospects in the reading actually mask significant scientific, engineering, and economic obstacles, making asteroid mining a far less promising near-term solution than the reading suggests. (208 words)",
+        "questions": [
+          {"id": "q1", "type": "essay", "stem": "Above prompt — write 150-225 word integrated response.", "answer": "see sample", "explanation": "【TOEFL Writing Integrated 採点ポイント】① 構成: intro + 3つの challenge を順に記述 + conclusion ② 語数 150-225 ③ Reading と Lecture の対比を明示 (while ... however ...) ④ 専門語彙: counter / refute / cast doubt / engineering challenges。【高得点表現】The reading X argues that... however the lecture systematically challenges / refutes / undermines each claim。"}
+        ]
+      }
+    }
+  ]
+}
