@@ -1541,13 +1541,16 @@ async def _run_synthetic_checkout_test() -> dict:
                 failures.append("checkout.js no longer registers form submit listener")
 
     # 4. POST /api/trial/signup (sentinel) — Railway 直接 (Vercel 経由は 307/checkpoint で不安定)
-    sentinel_email = f"synth_monitor_{int(time.time())}@trillion-ai-juku.local"
+    # 名前バリデーション: 「テスト」を含むと拒否されるので、実在風 + 専用ドメインのメールを使用。
+    # ドメイン .invalid は RFC2606 で予約済 = 絶対に実在しない → 安全な sentinel
+    ts_int = int(time.time())
+    sentinel_email = f"synth-monitor-{ts_int}@monitor.invalid"
     sentinel_payload = {
         "plan": "founder_special",
-        "name": "合成監視テスト",
+        "name": "監視　守",  # 監視 (last) + 守 (first) の合成 sentinel 名
         "email": sentinel_email,
         "grade": "高校3年",
-        "goal": "[synthetic monitor]",
+        "goal": "[E2E synthetic monitor / auto-cleanup]",
     }
     def _http_post_json(url: str, payload: dict, timeout: int = 8) -> dict:
         body_bytes = json.dumps(payload).encode("utf-8")
