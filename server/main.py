@@ -1468,17 +1468,26 @@ _SYNTHETIC_CHECKOUT_ALERTED_AT = {"ts": 0.0}
 
 
 async def _run_synthetic_checkout_test() -> dict:
-    """申込フロー全体を 5 分おきに自動回帰テスト。失敗時は alert を発火。"""
+    """申込フロー全体を 5 分おきに自動回帰テスト。失敗時は alert を発火。
+
+    エンドポイント設計:
+      - フロントエンド HTML/JS: BASE_URL (Vercel) 経由でユーザーと同じ取得経路を検証
+      - バックエンド API: Railway 直接 URL を使用 (Vercel の Security Checkpoint や
+        307 redirect に翻弄されないため)
+    """
     started = time.time()
     failures = []
     details = {}
-    base = (BASE_URL or "https://ai-juku-api-production.up.railway.app").rstrip("/")
+    # フロント検証用 (ユーザー体験を再現)
+    frontend_base = (BASE_URL or "https://www.trillion-ai-juku.com").rstrip("/")
+    # バックエンド API 検証用 (Vercel 経由を回避)
+    backend_base = "https://ai-juku-api-production.up.railway.app"
 
-    def _http_get(path: str, timeout: int = 8) -> dict:
-        url = path if path.startswith("http") else (base + path)
+    def _http_get(url: str, timeout: int = 8) -> dict:
         req = urllib.request.Request(url, headers={
-            "User-Agent": "ai-juku-synth-monitor/1.0",
-            "Accept": "text/html,application/json",
+            # ブラウザ系 UA を装って Vercel Security Checkpoint をパス
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 ai-juku-synth-monitor",
+            "Accept": "text/html,application/json,*/*",
         })
         try:
             with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -1491,16 +1500,16 @@ async def _run_synthetic_checkout_test() -> dict:
 
     loop = asyncio.get_event_loop()
 
-    # 1. lp.html
-    r1 = await loop.run_in_executor(None, _http_get, "/lp.html")
+    # 1. lp.html (Vercel 経由 — ユーザーが見る形で取得)
+    r1 = await loop.run_in_executor(None, _http_get, frontend_base + "/lp.html")
     details["lp_status"] = r1["status"]
     if r1["status"] != 200:
         failures.append(f"lp.html status={r1['status']}")
     elif "checkout.html" not in r1["body"]:
         failures.append("lp.html does not link to checkout.html")
 
-    # 2. checkout.html
-    r2 = await loop.run_in_executor(None, _http_get, "/checkout.html")
+    # 2. checkout.html (Vercel 経由)
+    r2 = await loop.run_in_executor(None, _http_get, frontend_base + "/checkout.html")
     details["checkout_html_status"] = r2["status"]
     checkout_js_match = ""
     if r2["status"] != 200:
@@ -1517,9 +1526,9 @@ async def _run_synthetic_checkout_test() -> dict:
             if "?v=" not in checkout_js_match:
                 failures.append("checkout.js script tag has no cache-busting ?v= (regressions could persist via cache)")
 
-    # 3. checkout.js fix marker check
+    # 3. checkout.js fix marker check (Vercel 経由)
     if r2["status"] == 200 and checkout_js_match:
-        r3 = await loop.run_in_executor(None, _http_get, "/" + checkout_js_match)
+        r3 = await loop.run_in_executor(None, _http_get, frontend_base + "/" + checkout_js_match)
         details["checkout_js_status"] = r3["status"]
         if r3["status"] != 200:
             failures.append(f"checkout.js status={r3['status']}")
@@ -1531,7 +1540,7 @@ async def _run_synthetic_checkout_test() -> dict:
             if "addEventListener('submit'" not in r3["body"] and 'addEventListener("submit"' not in r3["body"]:
                 failures.append("checkout.js no longer registers form submit listener")
 
-    # 4. POST /api/trial/signup (sentinel)
+    # 4. POST /api/trial/signup (sentinel) — Railway 直接 (Vercel 経由は 307/checkpoint で不安定)
     sentinel_email = f"synth_monitor_{int(time.time())}@trillion-ai-juku.local"
     sentinel_payload = {
         "plan": "founder_special",
@@ -1540,14 +1549,14 @@ async def _run_synthetic_checkout_test() -> dict:
         "grade": "高校3年",
         "goal": "[synthetic monitor]",
     }
-    def _http_post_json(path: str, payload: dict, timeout: int = 8) -> dict:
-        url = base + path
+    def _http_post_json(url: str, payload: dict, timeout: int = 8) -> dict:
         body_bytes = json.dumps(payload).encode("utf-8")
+        # Origin / Referer は本物のブラウザ訪問に近づける (CORS / _origin_allowed を通す)
         req = urllib.request.Request(url, data=body_bytes, method="POST", headers={
             "Content-Type": "application/json",
             "User-Agent": "ai-juku-synth-monitor/1.0",
-            "Origin": base,  # _origin_allowed を通す
-            "Referer": base + "/checkout.html",
+            "Origin": frontend_base,
+            "Referer": frontend_base + "/checkout.html",
         })
         try:
             with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -1557,7 +1566,7 @@ async def _run_synthetic_checkout_test() -> dict:
         except Exception as e:
             return {"status": 0, "body": "", "error": f"{type(e).__name__}: {e}"}
 
-    r4 = await loop.run_in_executor(None, _http_post_json, "/api/trial/signup", sentinel_payload)
+    r4 = await loop.run_in_executor(None, _http_post_json, backend_base + "/api/trial/signup", sentinel_payload)
     details["signup_status"] = r4["status"]
     sentinel_student_id = None
     if r4["status"] != 200:
