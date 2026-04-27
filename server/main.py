@@ -1412,7 +1412,23 @@ async def _monitor_scheduler():
                 _SYNTHETIC_CHECKOUT_LAST.update(synth)
                 if not synth.get("ok"):
                     log.warning(f"[Monitor:Synth] FAILED: {synth.get('failures')}")
+                    _SYNTHETIC_CONSECUTIVE_FAILS["count"] += 1
+                    _SYNTHETIC_CONSECUTIVE_FAILS["last_failure_ts"] = time.time()
+                    # 🚨 2連続失敗 (= 10分間連続して壊れている) → 自動 rollback 試行
+                    if _SYNTHETIC_CONSECUTIVE_FAILS["count"] >= 2 and AUTO_ROLLBACK_ENABLED:
+                        log.warning(f"[Monitor:Synth] 2 consecutive failures detected - attempting auto-rollback")
+                        rb = await _attempt_auto_rollback(reason="synthetic checkout test 2x failure", failures=synth.get("failures", []))
+                        if rb.get("ok"):
+                            log.warning(f"[Monitor:Synth] auto-rollback SUCCESS: reverted to {rb.get('reverted_to_sha','')[:8]}")
+                            # rollback 後はカウンタリセット (deploy 完了待ち + 次の合成テストで真の状態を再評価)
+                            _SYNTHETIC_CONSECUTIVE_FAILS["count"] = 0
+                            _SYNTHETIC_CONSECUTIVE_FAILS["last_rollback_ts"] = time.time()
+                        else:
+                            log.error(f"[Monitor:Synth] auto-rollback FAILED: {rb.get('error')}")
                 else:
+                    if _SYNTHETIC_CONSECUTIVE_FAILS["count"] > 0:
+                        log.info(f"[Monitor:Synth] recovered after {_SYNTHETIC_CONSECUTIVE_FAILS['count']} failure(s)")
+                    _SYNTHETIC_CONSECUTIVE_FAILS["count"] = 0
                     log.info(f"[Monitor:Synth] OK ({synth.get('duration_ms')}ms)")
             except Exception as e:
                 log.error(f"[Monitor:Synth] test error: {e}", exc_info=True)
@@ -1612,6 +1628,216 @@ async def _run_synthetic_checkout_test() -> dict:
 
 def html_escape_safe(s: str) -> str:
     return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+
+
+# ==========================================================================
+# 🚨 即時自動修復 (Auto-Rollback) — 2026-04-27 追加
+# 2 連続合成テスト失敗時に直前 commit を GitHub API 経由で revert → Vercel 自動再deploy
+# 通知メールだけでなく実際にコードを直前バージョンに戻すことで顧客損失を最小化
+#
+# 必須環境変数 (Railway側):
+#   GITHUB_REVERT_PAT: contents:write 権限の GitHub Personal Access Token (or fine-grained token)
+#   GITHUB_REPO: 対象リポジトリ "owner/repo" 形式 (default: 既知の repo)
+#   AUTO_ROLLBACK_ENABLED: "1" で有効化 (default: 1 = 有効)
+#
+# Safety guardrails:
+#   - 1 時間 cooldown (rollback 連発防止)
+#   - 24h 内 max 3 回 (それ以上は人間判断必要)
+#   - 既に同じ commit に rollback 済みなら skip (loop 防止)
+# ==========================================================================
+GITHUB_REVERT_PAT = os.getenv("GITHUB_REVERT_PAT", "")
+GITHUB_REPO = os.getenv("GITHUB_REPO", "shock11090304-a11y/ai-juku-system")
+AUTO_ROLLBACK_ENABLED = os.getenv("AUTO_ROLLBACK_ENABLED", "1") == "1"
+AUTO_ROLLBACK_BRANCH = os.getenv("AUTO_ROLLBACK_BRANCH", "main")
+_SYNTHETIC_CONSECUTIVE_FAILS = {"count": 0, "last_failure_ts": 0.0, "last_rollback_ts": 0.0}
+_AUTO_ROLLBACK_HISTORY = []  # [{ts, from_sha, to_sha, reason}]
+
+
+def _github_api(method: str, path: str, body: dict = None, timeout: int = 15) -> dict:
+    """GitHub REST API ヘルパ。{ok, status, json, error} を返す。"""
+    if not GITHUB_REVERT_PAT:
+        return {"ok": False, "status": 0, "error": "GITHUB_REVERT_PAT not configured"}
+    url = "https://api.github.com" + (path if path.startswith("/") else "/" + path)
+    data = json.dumps(body).encode("utf-8") if body is not None else None
+    req = urllib.request.Request(url, data=data, method=method, headers={
+        "Authorization": f"Bearer {GITHUB_REVERT_PAT}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "ai-juku-auto-rollback/1.0",
+        "Content-Type": "application/json",
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            body_text = resp.read().decode("utf-8", errors="replace")
+            try:
+                j = json.loads(body_text) if body_text else {}
+            except Exception:
+                j = {"_raw": body_text[:500]}
+            return {"ok": True, "status": resp.status, "json": j}
+    except urllib.error.HTTPError as e:
+        try:
+            err_body = e.read().decode("utf-8", errors="replace")
+        except Exception:
+            err_body = ""
+        return {"ok": False, "status": e.code, "error": f"HTTP {e.code}: {err_body[:300]}"}
+    except Exception as e:
+        return {"ok": False, "status": 0, "error": f"{type(e).__name__}: {e}"}
+
+
+async def _attempt_auto_rollback(reason: str, failures: list = None, force: bool = False) -> dict:
+    """直前 commit を GitHub branch HEAD から revert (= 1 つ前の SHA に branch を更新)。
+    Vercel が main branch を監視している場合、自動的に旧コードで再 deploy される。
+
+    挙動:
+      1. 環境変数 / cooldown / 24h 上限の事前チェック
+      2. GET refs/heads/{branch} で現在 SHA 取得
+      3. GET commits/{sha} で parent SHA 取得 (1 つ前のコミット)
+      4. PATCH refs/heads/{branch} で branch HEAD を parent SHA へ巻き戻し (force)
+      5. 成功時 monitor email + dashboard event 送信、history 記録
+    """
+    failures = failures or []
+    nowts = time.time()
+
+    # ---- 安全装置 ----
+    if not AUTO_ROLLBACK_ENABLED and not force:
+        return {"ok": False, "error": "AUTO_ROLLBACK_ENABLED=0 (kill-switch active)"}
+    if not GITHUB_REVERT_PAT:
+        return {"ok": False, "error": "GITHUB_REVERT_PAT not configured. Railway env で設定してください"}
+    # 1 時間 cooldown
+    if not force and nowts - _SYNTHETIC_CONSECUTIVE_FAILS.get("last_rollback_ts", 0) < 3600:
+        return {"ok": False, "error": "cooldown: 直近 1 時間以内に rollback 実行済み (force=true で強制可)"}
+    # 24h max 3
+    recent_24h = [r for r in _AUTO_ROLLBACK_HISTORY if nowts - r["ts"] < 86400]
+    if not force and len(recent_24h) >= 3:
+        return {"ok": False, "error": f"24h 内に既に {len(recent_24h)} 回 rollback 済み (上限 3)。人間判断が必要です"}
+
+    loop = asyncio.get_event_loop()
+
+    # ---- 1. 現在の HEAD SHA ----
+    r_head = await loop.run_in_executor(None, _github_api, "GET", f"/repos/{GITHUB_REPO}/git/refs/heads/{AUTO_ROLLBACK_BRANCH}")
+    if not r_head.get("ok"):
+        return {"ok": False, "error": f"failed to fetch HEAD: {r_head.get('error')}"}
+    current_sha = (r_head.get("json") or {}).get("object", {}).get("sha")
+    if not current_sha:
+        return {"ok": False, "error": "could not parse current HEAD sha"}
+
+    # ---- 2. parent SHA (1 つ前のコミット) ----
+    r_commit = await loop.run_in_executor(None, _github_api, "GET", f"/repos/{GITHUB_REPO}/commits/{current_sha}")
+    if not r_commit.get("ok"):
+        return {"ok": False, "error": f"failed to fetch commit info: {r_commit.get('error')}"}
+    parents = (r_commit.get("json") or {}).get("parents", [])
+    if not parents:
+        return {"ok": False, "error": "current commit has no parent (initial commit?). Cannot rollback."}
+    parent_sha = parents[0].get("sha")
+    if not parent_sha:
+        return {"ok": False, "error": "parent commit sha not found"}
+
+    # ---- 3. branch HEAD を parent SHA に force update ----
+    r_update = await loop.run_in_executor(
+        None, _github_api,
+        "PATCH",
+        f"/repos/{GITHUB_REPO}/git/refs/heads/{AUTO_ROLLBACK_BRANCH}",
+        {"sha": parent_sha, "force": True},
+    )
+    if not r_update.get("ok"):
+        return {"ok": False, "error": f"failed to update branch HEAD: {r_update.get('error')}"}
+
+    # ---- 4. 履歴記録 + メール通知 ----
+    rb_record = {
+        "ts": nowts,
+        "iso": datetime.now(timezone(timedelta(hours=9))).isoformat(),
+        "from_sha": current_sha,
+        "to_sha": parent_sha,
+        "reason": reason,
+        "failures": failures[:5],
+    }
+    _AUTO_ROLLBACK_HISTORY.append(rb_record)
+    if len(_AUTO_ROLLBACK_HISTORY) > 50:
+        del _AUTO_ROLLBACK_HISTORY[:-50]
+
+    try:
+        commit_msg = (r_commit.get("json") or {}).get("commit", {}).get("message", "")[:200]
+        commit_author = (r_commit.get("json") or {}).get("commit", {}).get("author", {}).get("name", "")
+        body_html = (
+            f"<h2>🚨 自動 ROLLBACK 実行 — 顧客接触は復旧します (Vercel 再 deploy 待ち)</h2>"
+            f"<p><strong>理由:</strong> {html_escape_safe(reason)}</p>"
+            f"<p><strong>2連続失敗のため、直前 commit を巻き戻しました。</strong></p>"
+            f"<h3>巻き戻された commit (壊れていた疑い)</h3>"
+            f"<ul><li>SHA: <code>{current_sha[:8]}</code></li>"
+            f"<li>Author: {html_escape_safe(commit_author)}</li>"
+            f"<li>Message: {html_escape_safe(commit_msg)}</li></ul>"
+            f"<h3>現在の HEAD (戻された安全な commit)</h3>"
+            f"<ul><li>SHA: <code>{parent_sha[:8]}</code></li></ul>"
+            f"<h3>失敗詳細</h3>"
+            "<ul>" + "".join(f"<li>{html_escape_safe(str(f))}</li>" for f in failures[:10]) + "</ul>"
+            f"<p>Vercel の自動再 deploy で 2-3 分以内に旧コードが再公開されます。次の合成テストで OK が出れば自動修復成功です。</p>"
+            f"<p><strong>本格修正:</strong> 巻き戻された commit のバグを直し、新しい commit として再 push してください。</p>"
+        )
+        _send_monitor_email("🚨 申込フロー auto-rollback 実行", body_html)
+    except Exception as e:
+        log.warning(f"[auto-rollback] notification email failed: {e}")
+
+    # ---- 5. events 記録 ----
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            ("auto_rollback", json.dumps(rb_record, ensure_ascii=False)[:4000], "monitor")
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+    return {
+        "ok": True,
+        "rolled_back_from": current_sha,
+        "reverted_to_sha": parent_sha,
+        "reason": reason,
+        "rb_record": rb_record,
+    }
+
+
+@app.post("/api/admin/monitor/auto-rollback")
+async def admin_auto_rollback_now(payload: dict = None, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """🚨 直前 commit を auto-rollback (admin Bearer or x-cron-secret 認証必須)。
+    payload: {force: bool, reason: str}
+    force=true なら cooldown / 24h 上限を無視。
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    payload = payload or {}
+    force = bool(payload.get("force", False))
+    reason = (payload.get("reason") or "manual")[:200]
+    result = await _attempt_auto_rollback(reason=reason, failures=["manual trigger"], force=force)
+    return result
+
+
+@app.get("/api/admin/monitor/rollback-history")
+def admin_rollback_history(authorization: Optional[str] = Header(None)):
+    """auto-rollback 実行履歴を返す (admin Bearer)"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="未認証")
+    return {
+        "ok": True,
+        "auto_rollback_enabled": AUTO_ROLLBACK_ENABLED,
+        "github_repo": GITHUB_REPO,
+        "branch": AUTO_ROLLBACK_BRANCH,
+        "pat_configured": bool(GITHUB_REVERT_PAT),
+        "consecutive_fails": _SYNTHETIC_CONSECUTIVE_FAILS,
+        "history": _AUTO_ROLLBACK_HISTORY[-20:],
+    }
 
 
 def _create_otp(student_id: int, ttl_seconds: int = 600) -> str:
