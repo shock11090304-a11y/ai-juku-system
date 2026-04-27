@@ -547,6 +547,7 @@
           <button id="poolRefreshBtn" style="background:rgba(14,165,233,0.2);color:#0ea5e9;border:1px solid rgba(14,165,233,0.4);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">🔄 更新</button>
           <button id="poolGenerateBtn" style="background:rgba(34,197,94,0.2);color:#22c55e;border:1px solid rgba(34,197,94,0.4);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">⚡ 今すぐ生成</button>
           <button id="poolBurstBtn" style="background:linear-gradient(135deg,#7c3aed,#ec4899);color:#fff;border:none;padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(124,58,237,0.4);">🚀 一括 burst seed</button>
+          <button id="poolMaxFillBtn" style="background:linear-gradient(135deg,#dc2626,#f59e0b);color:#fff;border:none;padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(220,38,38,0.4);">🔥 全枠 30問 満杯</button>
         </div>
       </div>
 
@@ -1630,37 +1631,57 @@
         poolGenBtn.disabled = false; poolGenBtn.textContent = '⚡ 今すぐ生成';
       });
 
-      // 🚀 一括 burst seed: 全 ROTATION 枠を最低 N 問まで一気に蓄積
+      // 共通: burst seed 実行関数
+      async function runBurstSeed(target, maxTotal, concurrency, btnEl) {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        const orig = btnEl.innerHTML;
+        btnEl.disabled = true;
+        btnEl.innerHTML = '⏳ 大量生成中...';
+        try {
+          // 進捗インジケータ (60秒おきに pool-status 更新)
+          const progressTimer = setInterval(() => {
+            if (typeof loadPoolStatus === 'function') loadPoolStatus();
+          }, 60000);
+          const r = await AdminAuth.fetch('/api/admin/exam-questions/burst-seed', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target_per_part: target, max_total: maxTotal, concurrency: concurrency })
+          });
+          clearInterval(progressTimer);
+          const j = await r.json();
+          if (r.ok) {
+            alert(`✅ ${j.message}\n\n対象 part: ${j.scanned_parts}\n不足枠: ${j.parts_under_target}\nキュー: ${j.queued || 0}\n生成: ${j.generated} / 失敗: ${j.failed}\n所要: ${j.duration_sec}秒\n推定費用: $${j.estimated_cost_usd}`);
+            loadPoolStatus();
+          } else {
+            alert('⚠️ エラー: ' + JSON.stringify(j));
+          }
+        } catch (e) { alert('⚠️ ' + e.message + '\n\nタイムアウトした場合でも generated 数は途中まで保存済。CEO ダッシュの 🔄 更新で実数を確認してください。'); }
+        btnEl.disabled = false; btnEl.innerHTML = orig;
+      }
+
+      // 🚀 一括 burst seed: 各値を CEO が指定 (柔軟運用)
       const poolBurstBtn = document.getElementById('poolBurstBtn');
       if (poolBurstBtn) poolBurstBtn.addEventListener('click', async () => {
         if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
-        const targetStr = prompt('各 part を何問まで一括蓄積しますか? (推奨: 5)', '5');
+        const targetStr = prompt('各 part を何問まで蓄積しますか? (推奨: 30=満杯)', '30');
         if (targetStr === null) return;
         const target = parseInt(targetStr, 10);
-        if (!target || target < 1 || target > 30) return alert('1〜30 の数値で入力してください');
-        const maxStr = prompt('1回あたりの最大生成数 (コスト上限・推奨: 100=約¥1000)', '100');
+        if (!target || target < 1 || target > 100) return alert('1〜100 の数値で入力してください');
+        const maxStr = prompt('1回あたりの最大生成数 (推奨: 3000=全枠 30問満杯)', '3000');
         if (maxStr === null) return;
         const maxTotal = parseInt(maxStr, 10);
         if (!maxTotal || maxTotal < 1) return alert('1以上の数値で入力してください');
         const estCostUsd = (maxTotal * 0.06).toFixed(2);
         const estCostJpy = Math.ceil(maxTotal * 0.06 * 150);
-        if (!confirm(`🚀 一括 burst seed:\n\n各 part を${target}問まで埋める (上限 ${maxTotal}問・3並列)。\n推定: 5-10分・$${estCostUsd}≈¥${estCostJpy} の Anthropic 課金。\n\n続行?`)) return;
-        poolBurstBtn.disabled = true; const orig = poolBurstBtn.innerHTML;
-        poolBurstBtn.innerHTML = '⏳ 大量生成中... (5-10分)';
-        try {
-          const r = await AdminAuth.fetch('/api/admin/exam-questions/burst-seed', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ target_per_part: target, max_total: maxTotal, concurrency: 3 })
-          });
-          const j = await r.json();
-          if (r.ok) {
-            alert(`✅ ${j.message}\n\n対象 part: ${j.scanned_parts}\n不足枠: ${j.parts_under_target}\n生成: ${j.generated} / 失敗: ${j.failed}\n所要: ${j.duration_sec}秒`);
-            loadPoolStatus();
-          } else {
-            alert('⚠️ エラー: ' + JSON.stringify(j));
-          }
-        } catch (e) { alert('⚠️ ' + e.message + '\n\n10分超過の場合は generated 数を CEO ダッシュ更新で確認してください (実行は完了しているはず)'); }
-        poolBurstBtn.disabled = false; poolBurstBtn.innerHTML = orig;
+        if (!confirm(`🚀 一括 burst seed:\n\n各 part を${target}問まで埋める\n上限 ${maxTotal}問・5並列・最大1時間\n推定費用: $${estCostUsd}≈¥${estCostJpy}\n\n続行?`)) return;
+        runBurstSeed(target, maxTotal, 5, poolBurstBtn);
+      });
+
+      // 🔥 全枠 30問 満杯 (ワンクリック・MAX 設定)
+      const poolMaxFillBtn = document.getElementById('poolMaxFillBtn');
+      if (poolMaxFillBtn) poolMaxFillBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        if (!confirm(`🔥 全 ROTATION 枠を 30問 (TARGET_POOL 上限) まで一気に満杯にします。\n\n推定: 全枠埋まるまで生成・最大3000問・所要 30-60分・推定費用 約 $180≈¥27,000\n\n(課金許可済み前提・続行?)`)) return;
+        runBurstSeed(30, 3000, 8, poolMaxFillBtn);  // 並列8 で速度最大
       });
 
       const sumBtn = document.getElementById('sendDailySummary');

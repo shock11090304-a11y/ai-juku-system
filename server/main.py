@@ -2286,7 +2286,7 @@ EXAM_QUESTIONS_INTERVAL_HOURS = float(os.getenv("EXAM_QUESTIONS_INTERVAL_HOURS",
 EXAM_QUESTIONS_PER_TICK = int(os.getenv("EXAM_QUESTIONS_PER_TICK", "5"))            # interval モード時の1 tick あたり生成数
 EXAM_QUESTIONS_TARGET_POOL = int(os.getenv("EXAM_QUESTIONS_TARGET_POOL", "30"))     # 各 part の目標蓄積数 (これに達したら以降生成スキップ・暴走防止)
 EXAM_QUESTIONS_MIN_POOL = int(os.getenv("EXAM_QUESTIONS_MIN_POOL", "3"))            # この数を下回る part を最優先補充
-EXAM_QUESTIONS_DAILY_MAX = int(os.getenv("EXAM_QUESTIONS_DAILY_MAX", "60"))         # 1日の総生成数のハードリミット (Anthropic 課金暴走防止)
+EXAM_QUESTIONS_DAILY_MAX = int(os.getenv("EXAM_QUESTIONS_DAILY_MAX", "500"))       # 1日の総生成数のハードリミット (デフォ 500・上限引き上げ。CEO の課金許可済み)
 EXAM_QUESTIONS_MODEL = os.getenv("EXAM_QUESTIONS_MODEL", "claude-sonnet-4-6")
 
 # ローテーション対象の (exam_id, part_key, eiken_grade) リスト
@@ -3315,9 +3315,9 @@ async def admin_exam_questions_burst_seed(payload: dict = None, authorization: O
         raise HTTPException(status_code=503, detail="ANTHROPIC_API_KEY 未設定")
 
     payload = payload or {}
-    target = int(payload.get("target_per_part", 5))
-    max_total = int(payload.get("max_total", 100))
-    concurrency = max(1, min(int(payload.get("concurrency", 3)), 5))  # 1-5 並列
+    target = int(payload.get("target_per_part", 30))    # CEO 課金許可済 → デフォを TARGET_POOL=30 に
+    max_total = int(payload.get("max_total", 3000))     # 全枠 30問満杯まで届く上限
+    concurrency = max(1, min(int(payload.get("concurrency", 5)), 8))  # 1-8 並列 (5 デフォ・速度優先)
 
     counts = _exam_pool_counts()
     # 不足枠を抽出 (count < target)
@@ -3369,7 +3369,7 @@ async def admin_exam_questions_burst_seed(payload: dict = None, authorization: O
         # 全タスクを並列で起動 (concurrency=3 で sem 制御)
         await asyncio.wait_for(
             asyncio.gather(*[gen_one(*n) for n in needs], return_exceptions=True),
-            timeout=600,  # 10分タイムアウト
+            timeout=3600,  # 1時間タイムアウト (大量蓄積モード対応・generated 数は途中まででも保存される)
         )
     except asyncio.TimeoutError:
         log.warning("[BurstSeed] timeout reached at 10min")
