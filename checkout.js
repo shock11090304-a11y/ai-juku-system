@@ -31,7 +31,18 @@ function updateSummary() {
 // Pre-fill from URL params (from LP link)
 const params = new URLSearchParams(window.location.search);
 if (params.get('plan') && PLAN_INFO[params.get('plan')]) {
-  document.querySelector(`input[value="${params.get('plan')}"]`).checked = true;
+  // ⚠️ checkout.html には standard/premium/family の 3 ラジオしか無いので、
+  // founder_special など radio が無いプラン名で来ると querySelector が null を返す。
+  // 旧コードは null.checked = true で TypeError 発生 → 以下の updateSummary と form
+  // submit listener の登録が走らずフォームが完全に沈黙していた致命バグ (2026-04-27 修正)。
+  const target = document.querySelector(`input[value="${params.get('plan')}"]`);
+  if (target) {
+    target.checked = true;
+  }
+  // founder_special など対応 radio 無しの URL plan は submit 時に上書き利用。
+  if (!target && params.get('plan') === 'founder_special') {
+    window.__urlPlanOverride = 'founder_special';
+  }
 }
 if (params.get('email')) document.getElementById('email').value = params.get('email');
 if (params.get('lastName')) document.getElementById('lastName').value = params.get('lastName');
@@ -48,7 +59,8 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
   const errorBox = document.getElementById('errorBox');
   const loadingBox = document.getElementById('loadingBox');
 
-  const plan = document.querySelector('input[name="plan"]:checked').value;
+  // URL ?plan=founder_special で来た場合は radio に対応無しのため override を優先
+  const plan = window.__urlPlanOverride || document.querySelector('input[name="plan"]:checked').value;
   const lastName = (document.getElementById('lastName').value || '').trim();
   const firstName = (document.getElementById('firstName').value || '').trim();
   if (!lastName || !firstName) {
