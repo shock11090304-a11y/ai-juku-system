@@ -308,6 +308,27 @@
           </select>
           <div class="exam-meta-hint" id="levelHint">CEFR ベース自己申告</div>
         </div>
+        <div class="exam-meta-card">
+          <div class="exam-meta-label">📝 1回の問題数</div>
+          <select id="qCountPref" class="exam-meta-input">
+            <option value="">公式どおり (大問の規定数)</option>
+            <option value="5">5問 (短時間)</option>
+            <option value="10">10問</option>
+            <option value="15">15問</option>
+            <option value="20">20問 (本格)</option>
+            <option value="30">30問 (徹底)</option>
+          </select>
+          <div class="exam-meta-hint">多いほど精度UP・少ないほどテンポUP</div>
+        </div>
+        <div class="exam-meta-card">
+          <div class="exam-meta-label">⚡ 即時採点モード</div>
+          <label class="ee-toggle-label">
+            <input type="checkbox" id="instantGradingPref">
+            <span class="ee-toggle-slider"></span>
+            <span class="ee-toggle-text" id="instantGradingText">OFF (まとめて採点)</span>
+          </label>
+          <div class="exam-meta-hint">タップした瞬間に正誤+解説</div>
+        </div>
       </div>
 
       <div class="section-grid" id="sectionGrid">
