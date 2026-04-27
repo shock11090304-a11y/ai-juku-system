@@ -2366,6 +2366,50 @@ EXAM_QUESTION_ROTATION = [
     ("daigaku", "r_long",        "center"),
     ("daigaku", "r_grammar",     "center"),
     ("daigaku", "l_listening",   "center"),
+    # 🔬 大学入試 理系科目 (数学/物理/化学/生物/地学・eiken_grade に大学キー)
+    # 共通テスト 理系
+    ("rikei", "math_1a",      "kyotsu_rikei"),
+    ("rikei", "math_2b",      "kyotsu_rikei"),
+    ("rikei", "phys_basic",   "kyotsu_rikei"),
+    ("rikei", "chem_basic",   "kyotsu_rikei"),
+    ("rikei", "bio_basic",    "kyotsu_rikei"),
+    # 東大 理系
+    ("rikei", "math_q1",      "todai_rikei"),
+    ("rikei", "math_q2",      "todai_rikei"),
+    ("rikei", "math_q3",      "todai_rikei"),
+    ("rikei", "phys_q1",      "todai_rikei"),
+    ("rikei", "phys_q2",      "todai_rikei"),
+    ("rikei", "chem_q1",      "todai_rikei"),
+    ("rikei", "chem_q3",      "todai_rikei"),
+    # 京大 理系
+    ("rikei", "math_q1",      "kyodai_rikei"),
+    ("rikei", "math_q2",      "kyodai_rikei"),
+    ("rikei", "phys_q1",      "kyodai_rikei"),
+    ("rikei", "chem_q2",      "kyodai_rikei"),
+    # 阪大/東工大/名大
+    ("rikei", "math_q1",      "osaka_rikei"),
+    ("rikei", "phys_q1",      "osaka_rikei"),
+    ("rikei", "math_q1",      "tokoda_rikei"),
+    ("rikei", "phys_q1",      "tokoda_rikei"),
+    ("rikei", "math_q1",      "nagoya_rikei"),
+    # 早慶上智
+    ("rikei", "math_q1",      "waseda_rikei"),
+    ("rikei", "phys_q1",      "waseda_rikei"),
+    ("rikei", "math_q1",      "keio_rikei"),
+    ("rikei", "math_q2",      "keio_rikei"),
+    ("rikei", "bio_q1",       "keio_rikei"),
+    ("rikei", "math_q1",      "sophia_rikei"),
+    # 医学部
+    ("rikei", "math_q1",      "igakubu_kokoritsu_rikei"),
+    ("rikei", "phys_q1",      "igakubu_kokoritsu_rikei"),
+    ("rikei", "chem_q1",      "igakubu_kokoritsu_rikei"),
+    ("rikei", "bio_q1",       "igakubu_kokoritsu_rikei"),
+    ("rikei", "math_q1",      "igakubu_shiritsu_rikei"),
+    ("rikei", "phys_q1",      "igakubu_shiritsu_rikei"),
+    # MARCH 理工 (汎用)
+    ("rikei", "math_basic",   "march_rikei"),
+    ("rikei", "phys_basic_q", "march_rikei"),
+    ("rikei", "chem_basic_q", "march_rikei"),
 ]
 
 
@@ -2409,6 +2453,53 @@ DAIGAKU_PART_HINTS = {
     "l_part1_2":     "Listening 大問1-2 (短い対話・共通テスト型)",
     "l_part3_4":     "Listening 大問3-4 (長い対話/討論・共通テスト型)",
     "l_part5_6":     "Listening 大問5-6 (講義+討論・グラフ含む情報統合)",
+}
+
+
+# 🔬 大学入試 理系科目 (数学/物理/化学/生物/地学) 大学×レベル スタイル定義
+RIKEI_UNIV_STYLES = {
+    "kyotsu_rikei":    {"name": "共通テスト 理系", "style": "数IA/IIB の標準難度・物理基礎/化学基礎/生物基礎/地学基礎の出題範囲。マーク式・基本公式の運用が中心。"},
+    "todai_rikei":     {"name": "東京大学 理系",   "style": "計算量多め・数学は微積/確率/整数論の融合・物理は力学/電磁気の本格的な記述・化学は理論+無機+有機の各大問・記述式採点 (途中式重視)。"},
+    "kyodai_rikei":    {"name": "京都大学 理系",   "style": "抽象的・骨太な解析。数学は整数論/確率の独自性・物理は物理的考察重視 (公式適用より概念理解)・化学は反応速度/平衡。"},
+    "osaka_rikei":     {"name": "大阪大学 理系",   "style": "標準〜やや難。数学はベクトル/微積・物理は力学+電磁気・化学は理論+有機・解答プロセスを論理的に書ききる力。"},
+    "tokoda_rikei":    {"name": "東京工業大学",   "style": "工学系特化: 数学は微積/極限/ベクトル空間・物理は回路解析/電磁気/振動・化学は材料/触媒/工業化学。情報科学系の問題も。"},
+    "nagoya_rikei":    {"name": "名古屋大学 理系", "style": "微積分の応用・確率・物理(力学/電磁気)・化学(理論+有機)。標準的な記述式。"},
+    "waseda_rikei":    {"name": "早稲田大学 理工", "style": "基幹/創造/先進理工の標準型。数学は微積/ベクトル/数列・物理は力学+電磁気・化学は理論+有機。"},
+    "keio_rikei":      {"name": "慶應義塾大学 理工/医", "style": "理工=数学/物理/化学/生物の幅広対応・医=生物が記述式中心 (DNA/タンパク質/免疫/医学関連)。"},
+    "sophia_rikei":    {"name": "上智大学 理工",   "style": "機能創造/情報理工。数学+物理+化学の標準型・記述部分あり。"},
+    "igakubu_kokoritsu_rikei": {"name": "国公立医学部 (東大理三/京大医/阪大医)", "style": "医学部受験者に求められる高難度: 数学(全分野)・物理(力学/電磁気/熱)・化学(理論/有機)・生物 (生化学/医学/遺伝/免疫)。"},
+    "igakubu_shiritsu_rikei":  {"name": "私立医学部 (慈恵/順天堂/日医)", "style": "医療現場で必要な化学/生物の知識+標準的な数学/物理。"},
+    "march_rikei":     {"name": "MARCH 理工",      "style": "明治/青学/立教/中央/法政 理工。標準難度の数学/物理/化学。微積/ベクトル/力学/電磁気/理論化学+有機。"},
+}
+
+
+# 🔬 理系大問キー → 形式説明 (科目+大問内容)
+RIKEI_PART_HINTS = {
+    # 数学
+    "math_1a":     "数学 IA (大問1-5・共通テスト型・マーク式・二次関数/図形と計量/データ/確率/整数 60-70分)",
+    "math_2b":     "数学 IIB (共通テスト型・三角関数/指数対数/微積/数列/ベクトル 60-70分)",
+    "math_q1":     "数学 大問1 (記述式・大学2次型・微積/確率/数列/整数論/複素数平面の融合)",
+    "math_q2":     "数学 大問2 (記述式・大学2次型・図形と方程式/ベクトル/複素数平面)",
+    "math_q3":     "数学 大問3 (記述式・大学2次型・微積分/極限の応用)",
+    "math_basic":  "数学 (基礎演習・微積/ベクトル/確率/数列を 5問・標準的記述)",
+    # 物理
+    "phys_basic":  "物理基礎 (共通テスト型・力学/熱/波/電気の基礎・5問・マーク式)",
+    "phys_q1":     "物理 大問1 (力学・記述式・運動方程式/エネルギー保存/円運動/単振動・図解必須)",
+    "phys_q2":     "物理 大問2 (電磁気・記述式・回路解析/キルヒホッフ/電磁誘導/コンデンサ・回路図 SVG 必須)",
+    "phys_q3":     "物理 大問3 (波/熱・記述式・干渉/反射屈折/熱力学/状態方程式)",
+    "phys_basic_q": "物理 (基礎演習・力学/電磁気/波動/熱の標準問題 5問)",
+    # 化学
+    "chem_basic":  "化学基礎 (共通テスト型・物質量/酸塩基/酸化還元の基礎・5問)",
+    "chem_q1":     "化学 大問1 (理論化学・記述式・熱化学/平衡/電気化学/反応速度・計算式必須)",
+    "chem_q2":     "化学 大問2 (無機化学・記述式・無機物質/沈殿反応/錯体・反応式必須)",
+    "chem_q3":     "化学 大問3 (有機化学・記述式・構造決定/合成経路/高分子・構造式 SVG 必須)",
+    "chem_basic_q": "化学 (基礎演習・理論+無機+有機の標準問題 5問)",
+    # 生物
+    "bio_basic":   "生物基礎 (共通テスト型・細胞/遺伝/生態系の基礎・5問)",
+    "bio_q1":      "生物 大問1 (記述式・DNA/タンパク質/免疫/代謝/遺伝子発現・模式図 SVG 推奨)",
+    "bio_basic_q": "生物 (基礎演習・細胞/遺伝/生態の標準問題 5問)",
+    # 地学
+    "earth_basic": "地学基礎 (共通テスト型・地球/宇宙/地震/気象の基礎・5問)",
 }
 
 
@@ -2502,6 +2593,85 @@ def _generate_exam_question(exam_id: str, part_key: str, eiken_grade: Optional[s
     }}
   ]
 }}"""
+
+    # ===== 🔬 理系科目: 数学/物理/化学/生物/地学 (図/数式必須) =====
+    elif exam_id == "rikei":
+        import random
+        univ_key = eiken_grade or "kyotsu_rikei"
+        univ_info = RIKEI_UNIV_STYLES.get(univ_key, {"name": univ_key, "style": "汎用大学入試 理系"})
+        univ_name = univ_info["name"]
+        univ_style = univ_info["style"]
+        part_label = RIKEI_PART_HINTS.get(part_key, part_key)
+        # 科目判定
+        subject_map = {"math": "数学", "phys": "物理", "chem": "化学", "bio": "生物", "earth": "地学"}
+        subj_prefix = ""
+        for k in subject_map:
+            if part_key.startswith(k):
+                subj_prefix = k
+                break
+        subject = subject_map.get(subj_prefix, "理系")
+        # 年度
+        if univ_key == "kyotsu_rikei":
+            year = random.randint(2021, 2026)  # 共通テスト
+        else:
+            year = random.randint(2010, 2026)
+        exam_label = f"{univ_name} {year}年度入試 ({subject})"
+
+        # 科目別の追加指示
+        subject_specific = {
+            "数学": """- 数式は **必ず LaTeX 構文** で出力 (\\\\(x^2 + y^2 = r^2\\\\) インライン / \\\\[\\\\int_0^1 f(x)dx\\\\] ディスプレイ)
+- 関数のグラフ・図形問題・ベクトル等の図示が必要な場合は figure_svg に inline SVG (viewBox 0 0 400 300・stroke="currentColor"・暗背景に映える色)
+- 確率・整数論・微積分の融合問題などで実力を測る""",
+            "物理": """- 数式は **必ず LaTeX 構文** で出力 (\\\\(F = ma\\\\)・\\\\[E_k = \\\\frac{1}{2}mv^2\\\\])
+- **物理は figure_svg ほぼ必須**: 力の図 (矢印 + 物体)、回路図 (抵抗・電池・コンデンサ・コイル記号)、運動軌道、波形、レンズ図
+- 単位を厳密に (SI 単位系)・近似や仮定を明示
+- 力学/電磁気/波動/熱の典型パターンを再現""",
+            "化学": """- 化学反応式は **LaTeX で表記** (\\\\(\\\\text{2H}_2 + \\\\text{O}_2 \\\\to \\\\text{2H}_2\\\\text{O}\\\\))
+- **有機化学では構造式 SVG が必須**: 骨格表示 (skeletal formula) で分子を描画
+- 反応経路・実験装置の模式図も figure_svg で
+- 物質量・濃度・熱化学・平衡の計算は単位を厳密に""",
+            "生物": """- 模式図 (細胞・遺伝子発現フロー・代謝経路・神経回路) があれば figure_svg
+- 数式は標準遺伝・酵素反応速度などで LaTeX (\\\\(K_m = \\\\frac{[S]}{2}\\\\))
+- 用語の定義を厳密に (細胞内小器官・核酸・タンパク質名)""",
+            "地学": """- 地震波の伝播図・気象前線図・天体運動図 (惑星軌道) は figure_svg
+- 計算問題は単位 (km, hPa, %, 年代) を厳密に""",
+        }.get(subject, "")
+
+        system = f"""あなたは日本の大学入試 理系科目 (特に {subject}) の出題傾向に精通した専門家です。
+**{univ_name}** の **{year}年度** 入試 (科目: {subject}) の出題形式・難易度・テーマ傾向に完全準拠した類題を生成してください。
+
+【絶対遵守】
+- 過去問の丸写しは著作権上禁止。**「{univ_name} {year}年度の {subject} の出題形式に完全準拠した類題」** を新規作成すること。
+- {univ_name} の出題スタイル: {univ_style}
+- 対象 大問形式: {part_label}
+- 解説は日本語で「考え方→立式→計算→答え→補足」を必ず段階分け (3行以上)
+{subject_specific}
+
+【出力形式 (純粋な JSON のみ・前後に説明文NG)】
+{{
+  "passage": "(前提条件・問題設定の文章。空文字でもOK)",
+  "audio_script": "",
+  "prompt": "",
+  "figure_svg": "(図/グラフ/構造式が必要な場合のみ inline SVG 文字列・<svg viewBox=\\"0 0 400 300\\" xmlns=\\"http://www.w3.org/2000/svg\\">...</svg>・<script> や on* 属性は禁止)",
+  "year_simulated": {year},
+  "univ_simulated": "{univ_name}",
+  "subject": "{subject}",
+  "questions": [
+    {{
+      "id": "q1",
+      "type": "multiple_choice|short_answer|essay",
+      "stem": "問題文 (LaTeX 数式可)",
+      "choices": ["LaTeX 含む選択肢"],
+      "answer": "正解 (4択なら 0始まり index・記述式なら完全解答テキスト)",
+      "explanation": "解説 (日本語・LaTeX 数式可・3行以上で段階分け)"
+    }}
+  ]
+}}"""
+
+        user = f"""**{univ_name} {year}年度** 形式の **{subject}** ({part_label}) の類題を1セット生成してください。
+
+【出力】上記の system に従い純粋な JSON のみ。{subject} で図が必要な問題は figure_svg を必ず埋めること (空文字 NG)。"""
+
     else:
         exam_label = exam_hints.get(exam_id, exam_id)
         part_label = part_hints.get(part_key, part_key)
