@@ -1541,13 +1541,15 @@ async def _run_synthetic_checkout_test() -> dict:
                 failures.append("checkout.js no longer registers form submit listener")
 
     # 4. POST /api/trial/signup (sentinel) — Railway 直接 (Vercel 経由は 307/checkpoint で不安定)
-    # 名前バリデーション: 「テスト」を含むと拒否されるので、実在風 + 専用ドメインのメールを使用。
-    # ドメイン .invalid は RFC2606 で予約済 = 絶対に実在しない → 安全な sentinel
+    # 名前: 「テスト」を含むと拒否されるので「監視 守」でパス。
+    # email: Pydantic email-validator が .invalid/.test/.example を拒否するため、
+    #   自社ドメインの専用サブドメイン synthetic-monitor.trillion-ai-juku.com を使用。
+    #   この sub には MX レコード無し = 実害ゼロ + 構文検証は確実にパス。
     ts_int = int(time.time())
-    sentinel_email = f"synth-monitor-{ts_int}@monitor.invalid"
+    sentinel_email = f"synth-monitor-{ts_int}@synthetic-monitor.trillion-ai-juku.com"
     sentinel_payload = {
         "plan": "founder_special",
-        "name": "監視　守",  # 監視 (last) + 守 (first) の合成 sentinel 名
+        "name": "監視　守",
         "email": sentinel_email,
         "grade": "高校3年",
         "goal": "[E2E synthetic monitor / auto-cleanup]",
