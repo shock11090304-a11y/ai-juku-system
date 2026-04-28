@@ -31,17 +31,35 @@
         });
       }
     }).then(function () {
-      var FLAG = 'ai_juku_sw_purged_v1';
-      if (sessionStorage.getItem(FLAG)) return;
-      sessionStorage.setItem(FLAG, '1');
-      // navigation entry の transferSize が 0 = ディスク/SWキャッシュからのロード
-      // → 古いコードを表示していた可能性が高いので強制リロード
+      // 🔒 リロードループ防止 (2026-04-28 強化):
+      //  - sessionStorage は Safari private mode / タブ切替で消える → localStorage に変更
+      //  - bfcache/prefetch でも transferSize=0 → 誤検知の主因。nav.type で除外
+      //  - 一定期間 (10分) 内に 1 回までに制限
       try {
         var nav = performance.getEntriesByType('navigation')[0];
-        if (nav && nav.transferSize === 0) {
-          console.warn('[cache-purge] Stale render detected — reloading');
-          location.reload();
+        if (!nav) return;
+        // bfcache (back_forward) / prerender は transferSize=0 が正常 → スキップ
+        if (nav.type === 'back_forward' || nav.type === 'prerender') return;
+        if (nav.transferSize !== 0) return;
+        // navigation が成功している (200 系応答) かを確認
+        // duration が極端に短い (=0) の場合は計測未対応 → スキップ
+        if (nav.duration === 0) return;
+
+        var KEY = 'ai_juku_sw_purge_log_v2';
+        var WINDOW_MS = 10 * 60 * 1000; // 10分
+        var MAX_RELOADS = 1;
+        var now = Date.now();
+        var log = [];
+        try { log = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (_) {}
+        log = log.filter(function (t) { return (now - t) < WINDOW_MS; });
+        if (log.length >= MAX_RELOADS) {
+          console.warn('[cache-purge] Reload throttled (already reloaded ' + log.length + ' time(s) in last 10min)');
+          return;
         }
+        log.push(now);
+        localStorage.setItem(KEY, JSON.stringify(log));
+        console.warn('[cache-purge] Stale render suspected (transferSize=0, type=' + nav.type + ') — reloading');
+        location.reload();
       } catch (e) { /* iOS 古いバージョンで fail しても無視 */ }
     }).then(function () {
       // 🆕 サーバー側 cache_version との照合 (CEO ダッシュ「全生徒キャッシュ強制パージ」と連動)

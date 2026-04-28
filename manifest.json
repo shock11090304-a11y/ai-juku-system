@@ -2,7 +2,7 @@
   "name": "AI学習コーチ塾",
   "short_name": "AI塾",
   "description": "24時間AIチューター付き・完全個別最適化学習プラットフォーム",
-  "start_url": "/index.html",
+  "start_url": "/lp.html",
   "display": "standalone",
   "orientation": "portrait-primary",
   "theme_color": "#6366f1",

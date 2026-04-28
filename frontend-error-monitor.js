@@ -63,10 +63,23 @@
   window.addEventListener('error', function(e) {
     // resource load error (img, script の 404 等) は除外
     if (e.target && e.target !== window && (e.target.tagName === 'IMG' || e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
-      // resource error として軽く記録するが優先度は低
+      var url = e.target.src || e.target.href || 'unknown';
+      // 重要度の分類:
+      //  - critical: 同一 origin の HTML/main JS/CSS が読めない (= ユーザが画面を見られない)
+      //  - low:     CDN リソース (KaTeX等) や img の遅延読み込み失敗 (ユーザ影響限定的)
+      var severity = 'low';
+      try {
+        var sameOrigin = url.indexOf(location.origin) === 0 || url.charAt(0) === '/';
+        var isHtml = /\.html(\?|$)/i.test(url);
+        var isMainCss = /\/(lp|app|index|mypage|english-exam)\.css(\?|$)/i.test(url);
+        var isMainJs = e.target.tagName === 'SCRIPT' && sameOrigin && /\/(app|index|checkout|mypage)\.js(\?|$)/i.test(url);
+        if (sameOrigin && (isHtml || isMainCss || isMainJs)) severity = 'critical';
+      } catch (_) {}
       reportError({
         kind: 'resource_error',
-        message: 'Failed to load: ' + (e.target.src || e.target.href || 'unknown'),
+        severity: severity,
+        message: 'Failed to load: ' + url,
+        tag: e.target.tagName,
         page: location.pathname + location.search,
         user_agent: (navigator.userAgent || '').slice(0, 200),
         session_id: sessionId,
