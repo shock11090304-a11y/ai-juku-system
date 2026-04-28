@@ -1589,7 +1589,7 @@ async def _run_synthetic_checkout_test() -> dict:
     failures = []
     details = {}
     # フロント検証用 (ユーザー体験を再現)
-    frontend_base = (BASE_URL or "https://www.trillion-ai-juku.com").rstrip("/")
+    frontend_base = (BASE_URL or "https://trillion-ai-juku.com").rstrip("/")
     # バックエンド API 検証用 (Vercel 経由を回避)
     backend_base = "https://ai-juku-api-production.up.railway.app"
 
