@@ -568,6 +568,42 @@
       </div>
     </section>
 
+    <!-- ========================================== -->
+    <!-- 📨 通塾生 招待 URL 発行 (DM 受付運用) -->
+    <!-- ========================================== -->
+    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(217,70,239,0.06); border: 1px solid rgba(217,70,239,0.25); border-radius: 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7rem;flex-wrap:wrap;gap:0.5rem;">
+        <h2 style="font-size:1.15rem;color:#d946ef;margin:0;">📨 通塾生 招待URL発行</h2>
+        <span style="font-size:0.7rem;color:#71717a;">DM 受付 → 個別発行 → DM 返信</span>
+      </div>
+      <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.9rem;line-height:1.6;">
+        既存生徒/保護者から DM「AI塾アドオンの招待ください」が来たら、メールアドレスを入れて発行 → コピペで返信。<br>
+        URL は <strong style="color:#d946ef;">HMAC 署名 + 30日期限</strong> で改ざん不可。新規が直叩きすると LP に redirect される。
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.6rem;margin-bottom:0.7rem;">
+        <input id="invEmail" type="email" placeholder="生徒/保護者の email *" style="background:rgba(0,0,0,0.4);border:1px solid rgba(217,70,239,0.35);color:#fff;padding:0.6rem 0.8rem;border-radius:8px;font-size:0.88rem;">
+        <input id="invName" type="text" placeholder="お名前 (任意・DM テンプレに入る)" style="background:rgba(0,0,0,0.4);border:1px solid rgba(217,70,239,0.35);color:#fff;padding:0.6rem 0.8rem;border-radius:8px;font-size:0.88rem;">
+        <input id="invDays" type="number" min="1" max="365" value="30" placeholder="期限 (日)" style="background:rgba(0,0,0,0.4);border:1px solid rgba(217,70,239,0.35);color:#fff;padding:0.6rem 0.8rem;border-radius:8px;font-size:0.88rem;">
+        <button id="invGenBtn" style="background:linear-gradient(135deg,#d946ef,#a855f7);color:#fff;border:none;padding:0.6rem 0.8rem;border-radius:8px;font-size:0.88rem;font-weight:800;cursor:pointer;">🔑 招待 URL 発行</button>
+      </div>
+
+      <div id="invResult" style="display:none;background:rgba(0,0,0,0.35);border:1px solid rgba(217,70,239,0.3);border-radius:10px;padding:1rem;">
+        <div style="font-size:0.78rem;color:#a78bfa;font-weight:800;margin-bottom:0.5rem;">✅ <span id="invResultTo"></span> 宛に発行 (期限: <span id="invResultExp"></span>)</div>
+        <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.3rem;">🔗 招待 URL</div>
+        <div style="display:flex;gap:0.4rem;margin-bottom:0.8rem;">
+          <input id="invResultUrl" readonly style="flex:1;background:#0f172a;color:#fbbf24;border:1px solid rgba(251,191,36,0.3);padding:0.5rem 0.7rem;border-radius:6px;font-size:0.78rem;font-family:ui-monospace,monospace;">
+          <button id="invCopyUrlBtn" style="background:rgba(251,191,36,0.2);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);padding:0.5rem 0.9rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;white-space:nowrap;">📋 URL</button>
+        </div>
+        <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.3rem;">💬 DM 返信テンプレ (コピペで Threads/LINE に貼れます)</div>
+        <textarea id="invResultDm" readonly rows="9" style="width:100%;background:#0f172a;color:#e4e4e7;border:1px solid rgba(217,70,239,0.3);padding:0.7rem;border-radius:6px;font-size:0.82rem;line-height:1.55;resize:vertical;font-family:'Hiragino Sans','Yu Gothic',sans-serif;"></textarea>
+        <div style="display:flex;gap:0.4rem;margin-top:0.5rem;">
+          <button id="invCopyDmBtn" style="flex:1;background:linear-gradient(135deg,#d946ef,#a855f7);color:#fff;border:none;padding:0.6rem;border-radius:8px;font-size:0.88rem;font-weight:800;cursor:pointer;">📋 DM テンプレをコピー</button>
+        </div>
+      </div>
+      <div id="invError" style="display:none;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.4);border-radius:10px;padding:0.7rem;color:#fca5a5;font-size:0.82rem;"></div>
+    </section>
+
     <!-- 🎓 問題プール状況 (随時自動追加スケジューラの可視化) -->
     <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(14,165,233,0.06); border: 1px solid rgba(14,165,233,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
@@ -1641,6 +1677,82 @@
       setInterval(loadE2ESyntheticStatus, 60000);
       setInterval(loadRevenueTimeline, 60000);
       setInterval(loadPoolStatus, 60000);
+      // 📨 通塾生 招待 URL 発行
+      (function setupInviteGenUI(){
+        const btn = document.getElementById('invGenBtn');
+        const emailEl = document.getElementById('invEmail');
+        const nameEl = document.getElementById('invName');
+        const daysEl = document.getElementById('invDays');
+        const result = document.getElementById('invResult');
+        const errEl = document.getElementById('invError');
+        const resTo = document.getElementById('invResultTo');
+        const resExp = document.getElementById('invResultExp');
+        const resUrl = document.getElementById('invResultUrl');
+        const resDm = document.getElementById('invResultDm');
+        const copyUrlBtn = document.getElementById('invCopyUrlBtn');
+        const copyDmBtn = document.getElementById('invCopyDmBtn');
+        if (!btn) return;
+
+        async function copyText(text, button, originalLabel) {
+          try {
+            await navigator.clipboard.writeText(text);
+            const orig = button.textContent;
+            button.textContent = '✅ コピー完了';
+            setTimeout(() => { button.textContent = orig; }, 1500);
+          } catch (e) {
+            // fallback
+            const ta = document.createElement('textarea');
+            ta.value = text; document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); } catch (_){}
+            document.body.removeChild(ta);
+            button.textContent = '✅ コピー完了';
+            setTimeout(() => { button.textContent = originalLabel; }, 1500);
+          }
+        }
+
+        btn.addEventListener('click', async () => {
+          errEl.style.display = 'none';
+          result.style.display = 'none';
+          const email = (emailEl.value || '').trim();
+          const name = (nameEl.value || '').trim();
+          const days = parseInt(daysEl.value || '30', 10) || 30;
+          if (!email || !email.includes('@')) {
+            errEl.textContent = '⚠️ 正しいメールアドレスを入力してください';
+            errEl.style.display = 'block';
+            return;
+          }
+          btn.disabled = true; const origLabel = btn.textContent; btn.textContent = '⏳ 発行中...';
+          try {
+            const res = await window.AdminAuth.fetch('/api/admin/marketing/generate-student-invite', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, name, expires_days: days, base_url: 'https://trillion-ai-juku.com' }),
+            });
+            if (!res.ok) {
+              const txt = await res.text().catch(() => '');
+              throw new Error('HTTP ' + res.status + ': ' + (txt || res.statusText));
+            }
+            const data = await res.json();
+            resTo.textContent = data.email || email;
+            resExp.textContent = data.expires_at_jst || '';
+            resUrl.value = data.invite_url || '';
+            resDm.value = data.dm_template || '';
+            result.style.display = 'block';
+            // 自動でURLをクリップボードへ (UX 高速化)
+            try { await navigator.clipboard.writeText(data.invite_url || ''); } catch(_){}
+          } catch (e) {
+            console.error('[invite-gen]', e);
+            errEl.textContent = '❌ 発行失敗: ' + (e.message || e);
+            errEl.style.display = 'block';
+          } finally {
+            btn.disabled = false; btn.textContent = origLabel;
+          }
+        });
+
+        copyUrlBtn?.addEventListener('click', () => copyText(resUrl.value, copyUrlBtn, '📋 URL'));
+        copyDmBtn?.addEventListener('click', () => copyText(resDm.value, copyDmBtn, '📋 DM テンプレをコピー'));
+      })();
+
       // 🛡️ 「今すぐ合成テスト」ボタン
       const synthBtn = document.getElementById('runSyntheticNowBtn');
       if (synthBtn) synthBtn.addEventListener('click', async () => {
