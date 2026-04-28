@@ -1832,10 +1832,14 @@
   <!-- ============================================================ -->
   <!-- 📋 申込者詳細モーダル (生徒名クリックで開く)                     -->
   <!-- ============================================================ -->
-  <div id="studentDetailModal" class="student-detail-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+  <style>
+    .student-name-link { transition: color 0.15s, background 0.15s; padding: 1px 4px; border-radius: 4px; }
+    .student-name-link:hover { color: #fbbf24 !important; background: rgba(251,191,36,0.08); }
+  </style>
+  <div id="studentDetailModal" class="student-detail-overlay" role="dialog" aria-modal="true" aria-labelledby="studentDetailTitle" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:20px;">
     <div style="background:linear-gradient(160deg,#1e1b4b 0%,#0a0a1a 70%);border:1px solid rgba(167,139,250,0.4);border-radius:16px;max-width:640px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 30px 80px rgba(99,102,241,0.4);">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.1);">
-        <h3 style="margin:0;font-size:1.15rem;color:#a78bfa;">📋 申込内容詳細</h3>
+        <h3 id="studentDetailTitle" style="margin:0;font-size:1.15rem;color:#a78bfa;">📋 申込内容詳細</h3>
         <button id="studentDetailClose" style="background:rgba(255,255,255,0.08);color:#e4e4e7;border:1px solid rgba(255,255,255,0.15);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;line-height:1;">✕</button>
       </div>
       <div id="studentDetailBody" style="padding:24px;color:#e4e4e7;font-size:0.92rem;line-height:1.7;">
@@ -1876,6 +1880,11 @@
         return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
       } catch (e) { return esc(s); }
     }
+    function safeMailtoHref(email) {
+      // email 値そのものを URL に埋める前に encodeURIComponent でガード
+      // (mailto: 固定 prefix なので javascript: 注入は構造上不可だが、二重防御)
+      return 'mailto:' + encodeURIComponent(String(email || ''));
+    }
     function row(label, value, valColor) {
       return `<div style="display:grid;grid-template-columns:140px 1fr;gap:14px;padding:10px 0;border-bottom:1px dashed rgba(255,255,255,0.08);">
         <div style="color:#a78bfa;font-weight:600;font-size:0.85rem;">${esc(label)}</div>
@@ -1895,7 +1904,7 @@
       const statusLabel = STATUS_LABEL[st.status] || (st.status || '不明');
       const planLabel   = st.plan ? (PLAN_LABEL[st.plan] || st.plan) : '<span style="color:#71717a;">未契約 (トライアル中など)</span>';
       const emailHtml = st.email
-        ? `<a href="mailto:${esc(st.email)}" style="color:#34d399;text-decoration:underline;">${esc(st.email)}</a>`
+        ? `<a href="${esc(safeMailtoHref(st.email))}" style="color:#34d399;text-decoration:underline;">${esc(st.email)}</a>`
         : '<span style="color:#71717a;">登録なし</span>';
       body.innerHTML = [
         row('申込日時',     fmtDate(st.created_at)),
@@ -1913,15 +1922,26 @@
     }
     window.showStudentDetail = showStudentDetail;
 
-    // 閉じるイベント
+    // 全クリックを1箇所で処理 (closest で子要素クリックも安全に拾う)
     document.addEventListener('click', (e) => {
       const modal = document.getElementById('studentDetailModal');
       if (!modal) return;
-      if (e.target.id === 'studentDetailClose') {
+      // ✕ ボタン (子要素クリックも closest で拾えるように)
+      if (e.target.closest && e.target.closest('#studentDetailClose')) {
         modal.style.display = 'none';
-      } else if (e.target.id === 'studentDetailModal') {
-        // overlay (背景) クリックで閉じる
+        return;
+      }
+      // 背景 overlay クリック (モーダル本体のクリックでは閉じない)
+      if (e.target.id === 'studentDetailModal') {
         modal.style.display = 'none';
+        return;
+      }
+      // 名前リンク → モーダル開く
+      const link = e.target.closest && e.target.closest('.student-name-link');
+      if (link) {
+        e.preventDefault();
+        const id = link.getAttribute('data-student-id');
+        if (id) showStudentDetail(id);
       }
     });
     // ESC キーで閉じる
@@ -1930,14 +1950,6 @@
         const modal = document.getElementById('studentDetailModal');
         if (modal && modal.style.display === 'flex') modal.style.display = 'none';
       }
-    });
-    // 名前リンクのクリックを delegation で拾う
-    document.addEventListener('click', (e) => {
-      const link = e.target.closest && e.target.closest('.student-name-link');
-      if (!link) return;
-      e.preventDefault();
-      const id = link.getAttribute('data-student-id');
-      if (id) showStudentDetail(id);
     });
   })();
   </script>
