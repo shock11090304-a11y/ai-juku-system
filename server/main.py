@@ -7310,6 +7310,39 @@ def admin_sweep_js_errors(authorization: Optional[str] = Header(None)):
     return {"ok": True, "cleared_count": cleared_count, "message": f"{cleared_count} 件の JS エラーを sweep しました。新しいエラーが発生したら再度カウント開始されます。"}
 
 
+@app.get("/api/admin/realtime-visitors")
+def admin_realtime_visitors(authorization: Optional[str] = Header(None)):
+    """admin Bearer 認証必須。今この瞬間サイトを見ているユニーク session 数。
+    塾長要望「何人見ているかの数字が見えない」(2026-04-29) への対応。
+    page_view イベントのユニーク session_id を 1分 / 5分 / 30分 / 1時間 で集計。
+    1分の数値が「LIVE で今閲覧中」の指標として最も鋭敏。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="未認証")
+    now = datetime.now(timezone.utc)
+    windows = {
+        "now": now - timedelta(minutes=1),
+        "last_5min": now - timedelta(minutes=5),
+        "last_30min": now - timedelta(minutes=30),
+        "last_1h": now - timedelta(hours=1),
+    }
+    conn = db()
+    c = conn.cursor()
+    result = {}
+    try:
+        for key, since in windows.items():
+            c.execute(
+                "SELECT COUNT(DISTINCT session_id) FROM events WHERE name = 'page_view' AND created_at >= ?",
+                (since,)
+            )
+            result[key] = c.fetchone()[0] or 0
+    finally:
+        conn.close()
+    return {"ok": True, **result}
+
+
 @app.get("/api/admin/js-errors")
 def admin_list_js_errors(authorization: Optional[str] = Header(None), limit: int = 50, hours: int = 24):
     """admin Bearer 認証必須。直近 hours 時間内の JS エラーを最新順で limit 件返す。

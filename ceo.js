@@ -99,10 +99,10 @@ function calculateMetrics() {
     planCount[classifyPlan(s.fee)]++;
   });
 
-  // Grade distribution
+  // Grade distribution (正規化: 「高3」「高校3年」「高校3」を「高校3年」に統一)
   const gradeCount = {};
   students.forEach(s => {
-    const grade = s.grade || '未設定';
+    const grade = normalizeGrade(s.grade);
     gradeCount[grade] = (gradeCount[grade] || 0) + 1;
   });
 
@@ -424,6 +424,36 @@ function initPlanChart(m) {
     }
   });
 }
+
+// 学年表記の正規化 (2026-04-29 塾長指示「同じ学年は同じ項目に入れる」)
+// - 「高3」「高校3年」「高校3」 → 「高校3年」
+// - 「中3」「中学3年」「中学3」 → 「中学3年」
+// - 「小6」「小学6年」「小学6」 → 「小学6年」
+// - 全角数字は半角に変換
+// - 空白 / 未設定 / - は「未設定」
+function normalizeGrade(raw) {
+  if (raw == null) return '未設定';
+  let g = String(raw).trim();
+  if (!g || g === '未設定' || g === '未登録' || g === '-') return '未設定';
+  // 全角数字 → 半角
+  g = g.replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
+  // 高3 / 高校3 / 高校3年 → 高校3年
+  let m = g.match(/^高(?:校)?([1-3])(?:年)?$/);
+  if (m) return `高校${m[1]}年`;
+  // 中3 / 中学3 / 中学3年 → 中学3年
+  m = g.match(/^中(?:学)?([1-3])(?:年)?$/);
+  if (m) return `中学${m[1]}年`;
+  // 小6 / 小学6 / 小学6年 → 小学6年
+  m = g.match(/^小(?:学)?([1-6])(?:年)?$/);
+  if (m) return `小学${m[1]}年`;
+  // 浪人 / 既卒 / 高卒
+  if (/^(浪人|浪|既卒|高卒)/.test(g)) return '浪人・既卒';
+  // 大学生 (大1〜大6)
+  m = g.match(/^大(?:学)?([1-6])(?:年)?$/);
+  if (m) return `大学${m[1]}年`;
+  return g;  // それ以外はそのまま (塾長 / テスト 等は別カテゴリで残す)
+}
+window.normalizeGrade = normalizeGrade;
 
 function initGradeChart(m) {
   const ctx = document.getElementById('gradeChart');
