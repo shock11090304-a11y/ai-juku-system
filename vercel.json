@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/payment-api/stripe-charges",
+      "destination": "/api/stripe-charges"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://ai-juku-api-production.up.railway.app/api/:path*"
     }

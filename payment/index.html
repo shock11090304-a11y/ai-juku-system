@@ -298,6 +298,17 @@
       <input type="file" id="csvFile" accept=".csv" hidden>
     </div>
 
+    <div class="stripe-import-area" style="margin-top:1rem;padding:1rem;border:1px solid var(--border);border-radius:12px;background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(236,72,153,0.04))">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem">
+        <div>
+          <div style="font-weight:600;font-size:0.95rem">💳 Stripe カード決済 を自動取込</div>
+          <div style="font-size:0.82rem;color:var(--text-muted);margin-top:0.2rem">対象月: <span id="stripeMonthTag">—</span> / Stripe Charges API 経由で当月の成功した決済を取得します</div>
+        </div>
+        <button class="btn btn-primary" id="stripeImportBtn">📥 Stripe API から取込</button>
+      </div>
+      <div id="stripeImportStatus" style="margin-top:0.6rem;font-size:0.85rem;color:var(--text-muted);min-height:1em"></div>
+    </div>
+
     <div class="import-results hidden" id="importResults">
       <div class="import-summary">
         <div class="summary-item"><div class="summary-label">取込行数</div><div class="summary-value" id="sumRows">—</div></div>

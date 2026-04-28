@@ -858,6 +858,74 @@ async function handleFile(file) {
   }
 }
 
+// === Stripe Charges API 取込 (CSV と同じ rows 形式に変換 → processImport で再利用) ===
+
+function chargesToRows(charges) {
+  return charges.map(c => {
+    const d = new Date((c.created || 0) * 1000);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const dateInt = parseInt(`${yyyy}${mm}${dd}`, 10);
+    const payer = (c.customer_name || c.customer_email || c.receipt_email || c.description || '(Stripe決済)').trim();
+    return {
+      date: dateInt,
+      amount: Number(c.amount) || 0,
+      content: payer,
+      _source: 'stripe',
+      _stripeId: c.id,
+    };
+  });
+}
+
+async function importFromStripe() {
+  const status = document.getElementById('stripeImportStatus');
+  const btn = document.getElementById('stripeImportBtn');
+  const month = STATE.currentMonth;
+  if (!month || !/^\d{4}-\d{2}$/.test(month)) {
+    status.innerHTML = '<span style="color:var(--error)">⚠ 対象月が選択されていません (画面上部の月セレクタで選んでください)</span>';
+    return;
+  }
+  btn.disabled = true;
+  status.textContent = '🔄 Stripe API から取得中...';
+  try {
+    const url = `/payment-api/stripe-charges?month=${encodeURIComponent(month)}`;
+    const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    let data = null;
+    try { data = await r.json(); } catch (e) { /* fallthrough: 非JSON応答 */ }
+    if (!r.ok) {
+      const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.startsWith('192.168.');
+      const msg = (data && (data.message || data.error)) || `HTTP ${r.status}`;
+      const hint = data && data.hint
+        ? `<br><span style="color:var(--text-muted);font-size:0.82rem">${escapeHtml(data.hint)}</span>`
+        : (r.status === 404 && isLocalhost
+            ? '<br><span style="color:var(--text-muted);font-size:0.82rem">ℹ ローカル開発環境では Stripe 取込は動作しません。本番 (https://www.trillion-ai-juku.com/payment/) で試してください。</span>'
+            : (r.status === 404
+                ? '<br><span style="color:var(--text-muted);font-size:0.82rem">ℹ /payment-api/stripe-charges が見つかりません。Vercel への最新版デプロイをご確認ください。</span>'
+                : ''));
+      const link = data && data.dashboard ? `<br><a href="${escapeHtml(data.dashboard)}" target="_blank" style="color:var(--primary-light)">→ Vercel Dashboard を開く</a>` : '';
+      status.innerHTML = `<span style="color:var(--error)">⚠ ${escapeHtml(msg)}</span>${hint}${link}`;
+      return;
+    }
+    if (!data || data.count === 0) {
+      status.innerHTML = `<span style="color:var(--text-muted)">✓ ${escapeHtml(month)} の Stripe 入金は 0 件でした (テスト環境キーの場合は本番キーに切替えてください)</span>`;
+      return;
+    }
+    const rows = chargesToRows(data.charges);
+    processImport(rows);
+    status.innerHTML = `<span style="color:var(--success,#10b981)">✓ Stripe ${data.count} 件取込み完了。下の「要確認」リストでマッチを確認 → 「💾 確定して入金反映」を押してください</span>`;
+  } catch (err) {
+    console.error(err);
+    const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.startsWith('192.168.');
+    const localhostHint = isLocalhost
+      ? '<br><span style="color:var(--text-muted);font-size:0.82rem">ローカル開発時は Stripe 取込は本番 (https://www.trillion-ai-juku.com/payment/) でのみ動作します</span>'
+      : '';
+    status.innerHTML = `<span style="color:var(--error)">⚠ 通信エラー: ${escapeHtml(err.message)}</span>${localhostHint}`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 // === Phase 3: Mail (mailto + template + history) ===
 
 function bankInfoText() {
@@ -1684,6 +1752,10 @@ async function init() {
 
   document.getElementById('monthInput').addEventListener('change', (e) => {
     STATE.currentMonth = e.target.value;
+    const tag = document.getElementById('stripeMonthTag');
+    if (tag) tag.textContent = STATE.currentMonth;
+    const itag = document.getElementById('importMonthTag');
+    if (itag) itag.textContent = `対象月: ${STATE.currentMonth}`;
     refresh();
   });
   document.getElementById('reloadBtn').addEventListener('click', async () => {
@@ -1722,6 +1794,10 @@ async function init() {
   setupImportUI();
   setupModals();
   document.getElementById('importMonthTag').textContent = `対象月: ${STATE.currentMonth}`;
+  const stripeMonthTag = document.getElementById('stripeMonthTag');
+  if (stripeMonthTag) stripeMonthTag.textContent = STATE.currentMonth;
+  const stripeBtn = document.getElementById('stripeImportBtn');
+  if (stripeBtn) stripeBtn.addEventListener('click', importFromStripe);
 }
 
 init().then(() => {
