@@ -1028,6 +1028,11 @@
           trial_end: st.trial_end,
           plan: st.plan,
         }));
+        // 申込詳細モーダル用に完全フィールドを保持 (id => student)
+        window.__studentsById = (data.students || []).reduce((acc, st) => {
+          if (st && st.id != null) acc[String(st.id)] = st;
+          return acc;
+        }, {});
         if (typeof renderRoster === 'function') {
           renderRoster(apiStudents);
         }
@@ -1821,6 +1826,119 @@
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => setTimeout(start, 1500));
     } else { setTimeout(start, 1500); }
+  })();
+  </script>
+
+  <!-- ============================================================ -->
+  <!-- 📋 申込者詳細モーダル (生徒名クリックで開く)                     -->
+  <!-- ============================================================ -->
+  <div id="studentDetailModal" class="student-detail-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:linear-gradient(160deg,#1e1b4b 0%,#0a0a1a 70%);border:1px solid rgba(167,139,250,0.4);border-radius:16px;max-width:640px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 30px 80px rgba(99,102,241,0.4);">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.1);">
+        <h3 style="margin:0;font-size:1.15rem;color:#a78bfa;">📋 申込内容詳細</h3>
+        <button id="studentDetailClose" style="background:rgba(255,255,255,0.08);color:#e4e4e7;border:1px solid rgba(255,255,255,0.15);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;line-height:1;">✕</button>
+      </div>
+      <div id="studentDetailBody" style="padding:24px;color:#e4e4e7;font-size:0.92rem;line-height:1.7;">
+        <!-- JS で埋める -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 申込詳細モーダル script -->
+  <script>
+  (function() {
+    const STATUS_LABEL = {
+      trial: '🎖 体験中',
+      paid:  '✅ 月額契約中',
+      canceled: '⏹ 解約済',
+      expired: '⏱ 体験終了',
+    };
+    const PLAN_LABEL = {
+      standard: 'スタンダード (¥24,980/月)',
+      premium:  'プレミアム (¥39,800/月)',
+      family:   '家族プラン (¥59,800/月)',
+      student_addon: '塾生アドオン (¥15,000/月)',
+      founder_special: '創設メンバー (永年¥14,500/月)',
+      founder1: '創設メンバー (永年¥14,500/月)',
+      trial: 'トライアル',
+    };
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+    function fmtDate(s) {
+      if (!s) return '<span style="color:#71717a;">未設定</span>';
+      try {
+        // ISO / "YYYY-MM-DD HH:MM:SS" 両方を許容
+        const d = new Date(s.replace(' ', 'T'));
+        if (isNaN(d.getTime())) return esc(s);
+        const yyyy = d.getFullYear(), mm = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+        const hh = String(d.getHours()).padStart(2,'0'), mi = String(d.getMinutes()).padStart(2,'0');
+        return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+      } catch (e) { return esc(s); }
+    }
+    function row(label, value, valColor) {
+      return `<div style="display:grid;grid-template-columns:140px 1fr;gap:14px;padding:10px 0;border-bottom:1px dashed rgba(255,255,255,0.08);">
+        <div style="color:#a78bfa;font-weight:600;font-size:0.85rem;">${esc(label)}</div>
+        <div style="color:${valColor || '#e4e4e7'};">${value}</div>
+      </div>`;
+    }
+    function showStudentDetail(id) {
+      const map = window.__studentsById || {};
+      const st = map[String(id)];
+      const modal = document.getElementById('studentDetailModal');
+      const body = document.getElementById('studentDetailBody');
+      if (!st) {
+        body.innerHTML = '<div style="color:#fbbf24;">⚠️ この生徒の詳細データが見つかりません (再読み込みしてみてください)</div>';
+        modal.style.display = 'flex';
+        return;
+      }
+      const statusLabel = STATUS_LABEL[st.status] || (st.status || '不明');
+      const planLabel   = st.plan ? (PLAN_LABEL[st.plan] || st.plan) : '<span style="color:#71717a;">未契約 (トライアル中など)</span>';
+      const emailHtml = st.email
+        ? `<a href="mailto:${esc(st.email)}" style="color:#34d399;text-decoration:underline;">${esc(st.email)}</a>`
+        : '<span style="color:#71717a;">登録なし</span>';
+      body.innerHTML = [
+        row('申込日時',     fmtDate(st.created_at)),
+        row('お名前',       `<strong style="font-size:1.05rem;color:#fff;">${esc(st.name || '(未登録)')}</strong>`),
+        row('保護者メール', emailHtml),
+        row('学年',         esc(st.grade || '未登録')),
+        row('志望校・目標', esc(st.goal || '未登録')),
+        row('選択プラン',   planLabel),
+        row('現在の状態',   `<strong>${esc(statusLabel)}</strong>`),
+        row('体験終了日',   fmtDate(st.trial_end)),
+        row('本契約開始日', fmtDate(st.paid_since)),
+        row('生徒ID',       `<code style="color:#71717a;font-size:0.78rem;">${esc(st.id)}</code>`),
+      ].join('');
+      modal.style.display = 'flex';
+    }
+    window.showStudentDetail = showStudentDetail;
+
+    // 閉じるイベント
+    document.addEventListener('click', (e) => {
+      const modal = document.getElementById('studentDetailModal');
+      if (!modal) return;
+      if (e.target.id === 'studentDetailClose') {
+        modal.style.display = 'none';
+      } else if (e.target.id === 'studentDetailModal') {
+        // overlay (背景) クリックで閉じる
+        modal.style.display = 'none';
+      }
+    });
+    // ESC キーで閉じる
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('studentDetailModal');
+        if (modal && modal.style.display === 'flex') modal.style.display = 'none';
+      }
+    });
+    // 名前リンクのクリックを delegation で拾う
+    document.addEventListener('click', (e) => {
+      const link = e.target.closest && e.target.closest('.student-name-link');
+      if (!link) return;
+      e.preventDefault();
+      const id = link.getAttribute('data-student-id');
+      if (id) showStudentDetail(id);
+    });
   })();
   </script>
 </body>

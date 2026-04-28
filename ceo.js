@@ -241,10 +241,15 @@ function renderRoster(students) {
     const nameWarning = sus.suspicious
       ? ` <span style="color:#fbbf24;font-size:0.85em;cursor:help;" title="${escapeHtml(sus.reason)}（実在生徒の正しいフルネームに更新してください）">⚠️</span>`
       : '';
+    // 名前を clickable に: クリックで申込詳細モーダルを開く (showStudentDetail(id))
+    const idAttr = s.id != null ? `data-student-id="${escapeHtml(String(s.id))}"` : '';
+    const nameClickable = idAttr
+      ? `<a class="student-name-link" ${idAttr} style="cursor:pointer;color:var(--primary-light);text-decoration:underline;font-weight:700;" title="クリックで申込内容を表示">${escapeHtml(s.name || '-')}</a>`
+      : `<strong>${escapeHtml(s.name || '-')}</strong>`;
     return `
       <tr>
         <td>${i + 1}</td>
-        <td><strong>${escapeHtml(s.name || '-')}</strong>${nameWarning}</td>
+        <td>${nameClickable}${nameWarning}</td>
         <td>${escapeHtml(s.grade || '-')}</td>
         <td style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(courses)}">
           ${fee > 0 ? `<span style="color:var(--primary-light);font-weight:700;">${planName}</span> / ` : ''}${escapeHtml(courses)}
