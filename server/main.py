@@ -932,13 +932,22 @@ def _generate_daily_sns_posts() -> list:
 {types_section}
 {avoid_section}
 
+【🔗 LP誘導リンクの自動挿入】
+以下の 2 type の本文末尾には、必ず空行を挟んで誘導リンクを含めてください:
+
+- **数字×権威型**: 末尾に「→ https://trillion-ai-juku.com/lp.html?utm_source=threads&utm_content=authority」
+- **体験談ストーリー型**: 末尾に「→ https://trillion-ai-juku.com/lp.html?utm_source=threads&utm_content=testimonial」
+
+リンク前には「気になる方は」「詳細はこちら」「7日間無料体験」などの自然な導入文を1行で書いてください。
+他の3 type (逆説型/保護者あるある共感型/二択問いかけ型) はリンクを含めないこと。
+
 【出力形式】純粋なJSONのみ、他のテキストは含めない:
 {{
   "posts": [
     {{"type": "逆説型", "text": "本文(改行は\\n)"}},
     {{"type": "保護者あるある共感型", "text": "本文"}},
-    {{"type": "数字×権威型", "text": "本文"}},
-    {{"type": "体験談ストーリー型", "text": "本文"}},
+    {{"type": "数字×権威型", "text": "本文(末尾にリンク必須)"}},
+    {{"type": "体験談ストーリー型", "text": "本文(末尾にリンク必須)"}},
     {{"type": "二択問いかけ型", "text": "本文"}}
   ]
 }}"""
@@ -3936,6 +3945,103 @@ async def admin_send_ig_carousel(
     return {"ok": True, "to": to_email, "slides": count, "prefix": prefix, **result}
 
 
+@app.post("/api/admin/stripe/setup-threads6k-coupon")
+def admin_stripe_setup_threads6k_coupon(
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🎟 Threads フォロワー限定クーポン THREADS6K (永年¥2,500/月引き) を Stripe で自動作成。
+    冪等: 既存があれば取得のみ。admin Bearer or x-cron-secret 認証必須。
+
+    結果:
+    - Coupon: 月額¥2,500 forever 引き (founder_special ¥14,500 → ¥12,000)
+    - Promotion Code: THREADS6K (顧客が決済画面で入力)
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="STRIPE_SECRET_KEY が未設定")
+
+    s = get_stripe()
+    COUPON_ID = "threads6k_2500jpy_forever"
+    PROMO_CODE = "THREADS6K"
+
+    # 1. 既存 Coupon チェック
+    coupon_id = None
+    try:
+        existing = s.Coupon.retrieve(COUPON_ID)
+        if existing and existing.id:
+            coupon_id = existing.id
+            log.info(f"[Stripe Coupon] already exists: {coupon_id}")
+    except Exception as e:
+        if "No such coupon" not in str(e) and "resource_missing" not in str(e):
+            log.warning(f"[Stripe Coupon] retrieve check err (continuing): {e}")
+
+    # 2. 無ければ Coupon 作成 (¥2,500 / forever)
+    if not coupon_id:
+        try:
+            coupon = s.Coupon.create(
+                id=COUPON_ID,
+                amount_off=2500,
+                currency="jpy",
+                duration="forever",
+                name="Threads フォロワー6,000人 感謝クーポン",
+                metadata={"campaign": "threads_followers_6k", "discount_jpy": "2500", "duration": "forever"},
+            )
+            coupon_id = coupon.id
+            log.info(f"[Stripe Coupon] created: {coupon_id}")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Coupon 作成失敗: {e}")
+
+    # 3. 既存 Promotion Code チェック (code=THREADS6K)
+    promo_id = None
+    promo_active = False
+    try:
+        promos = s.PromotionCode.list(code=PROMO_CODE, active=True, limit=1)
+        if promos and promos.data:
+            p = promos.data[0]
+            promo_id = p.id
+            promo_active = p.active
+            log.info(f"[Stripe PromoCode] already exists: {promo_id} active={promo_active}")
+    except Exception as e:
+        log.warning(f"[Stripe PromoCode] list err (continuing): {e}")
+
+    # 4. 無ければ Promotion Code 作成
+    if not promo_id:
+        try:
+            promo = s.PromotionCode.create(
+                coupon=coupon_id,
+                code=PROMO_CODE,
+                metadata={"campaign": "threads_followers_6k"},
+            )
+            promo_id = promo.id
+            promo_active = True
+            log.info(f"[Stripe PromoCode] created: {promo_id} (code={PROMO_CODE})")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"PromotionCode 作成失敗: {e}")
+
+    return {
+        "ok": True,
+        "coupon_id": coupon_id,
+        "coupon_amount_jpy": 2500,
+        "coupon_duration": "forever",
+        "promotion_code_id": promo_id,
+        "promotion_code": PROMO_CODE,
+        "active": promo_active,
+        "message": (
+            f"クーポン {PROMO_CODE} 発行完了。決済画面で『プロモーションコードを使用』に "
+            f"{PROMO_CODE} を入力すると永年¥2,500/月引き = ¥12,000/月 になります。"
+        ),
+    }
+
+
 @app.post("/api/admin/marketing/send-link-email")
 async def admin_send_link_email(
     payload: dict = None,
@@ -5562,6 +5668,7 @@ def create_checkout_session(payload: CheckoutRequest):
             customer_email=payload.email,
             success_url=f"{BASE_URL}/checkout-success.html?session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{BASE_URL}/checkout-cancel.html",
+            allow_promotion_codes=True,
             subscription_data={
                 "metadata": {"plan": payload.plan, "student_id": str(payload.student_id or ""), "type": "student_addon"}
             },

@@ -886,6 +886,76 @@ body {
 }
 
 /* ============================================ */
+/* 🟣 Threads 6,000 フォロワー 信頼バッジ + クーポン告知 */
+/* ============================================ */
+.threads-trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px auto 8px;
+  padding: 8px 18px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(99, 102, 241, 0.12));
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 999px;
+  font-size: 0.88rem;
+  color: #ddd6fe;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.threads-trust-badge .ttb-icon { font-size: 1.05rem; }
+.threads-trust-badge strong { color: #fff; font-weight: 800; }
+
+.threads-coupon-badge {
+  margin: 6px auto 18px;
+  display: inline-block;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.16), rgba(236, 72, 153, 0.12));
+  border: 1.5px dashed rgba(251, 191, 36, 0.55);
+  border-radius: 14px;
+  font-size: 0.9rem;
+  color: #fde68a;
+  font-weight: 600;
+  line-height: 1.6;
+  text-align: center;
+}
+.threads-coupon-badge strong { color: #fff; }
+.threads-coupon-badge code {
+  display: inline-block;
+  background: #0f172a;
+  color: #fbbf24;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  margin: 0 2px;
+}
+.threads-coupon-badge .ttb-price {
+  display: inline-block;
+  margin-top: 4px;
+}
+.threads-coupon-badge .ttb-strike {
+  color: rgba(255,255,255,0.5);
+  text-decoration: line-through;
+  text-decoration-color: rgba(236, 72, 153, 0.7);
+  font-weight: 700;
+}
+.threads-coupon-badge .ttb-new {
+  background: linear-gradient(135deg, #fbbf24, #f97316);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 900;
+  font-size: 1.05rem;
+}
+@media (max-width: 480px) {
+  .threads-trust-badge { font-size: 0.78rem; padding: 7px 14px; }
+  .threads-coupon-badge { font-size: 0.8rem; padding: 10px 16px; }
+  .threads-coupon-badge .ttb-new { font-size: 0.95rem; }
+}
+
+/* ============================================ */
 /* 📲 Sticky CTA (画面下部固定 — Instagram 流入向け) */
 /* ============================================ */
 .sticky-cta {
