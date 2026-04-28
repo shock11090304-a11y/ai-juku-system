@@ -886,6 +886,29 @@ body {
 }
 
 /* ============================================ */
+/* 🟣 Threads 6,000 フォロワー 信頼バッジ (社会的証明) */
+/* ============================================ */
+.threads-trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px auto 8px;
+  padding: 8px 18px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(99, 102, 241, 0.12));
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 999px;
+  font-size: 0.88rem;
+  color: #ddd6fe;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.threads-trust-badge .ttb-icon { font-size: 1.05rem; }
+.threads-trust-badge strong { color: #fff; font-weight: 800; }
+@media (max-width: 480px) {
+  .threads-trust-badge { font-size: 0.78rem; padding: 7px 14px; }
+}
+
+/* ============================================ */
 /* 📲 Sticky CTA (画面下部固定 — Instagram 流入向け) */
 /* ============================================ */
 .sticky-cta {
