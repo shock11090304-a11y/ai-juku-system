@@ -519,7 +519,10 @@
       <div style="margin-top:1rem;padding:0.9rem;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.3);border-radius:10px;">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.6rem;">
           <div style="font-size:0.85rem;font-weight:800;color:#86efac;">🛡️ 申込フロー E2E 監視 (5分おき) + JS エラー実時間収集</div>
-          <button id="runSyntheticNowBtn" type="button" style="background:rgba(34,197,94,0.18);color:#86efac;border:1px solid rgba(34,197,94,0.4);padding:0.35rem 0.7rem;border-radius:6px;font-size:0.72rem;font-weight:700;cursor:pointer;">⚡ 今すぐ合成テスト</button>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+            <button id="sweepJsErrorsBtn" type="button" title="既に対応済 / 監視ノイズと判断した JS エラーを一括 sweep。新しいエラーが発生したら再カウント開始" style="background:rgba(167,139,250,0.18);color:#c4b5fd;border:1px solid rgba(167,139,250,0.4);padding:0.35rem 0.7rem;border-radius:6px;font-size:0.72rem;font-weight:700;cursor:pointer;">⚡ JS エラー一括解決</button>
+            <button id="runSyntheticNowBtn" type="button" style="background:rgba(34,197,94,0.18);color:#86efac;border:1px solid rgba(34,197,94,0.4);padding:0.35rem 0.7rem;border-radius:6px;font-size:0.72rem;font-weight:700;cursor:pointer;">⚡ 今すぐ合成テスト</button>
+          </div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.6rem;font-size:0.78rem;">
           <div style="padding:0.6rem;background:rgba(0,0,0,0.25);border-radius:8px;">
@@ -1752,6 +1755,26 @@
         copyUrlBtn?.addEventListener('click', () => copyText(resUrl.value, copyUrlBtn, '📋 URL'));
         copyDmBtn?.addEventListener('click', () => copyText(resDm.value, copyDmBtn, '📋 DM テンプレをコピー'));
       })();
+
+      // ⚡ 「JS エラー一括解決」ボタン (2026-04-28 self-healing)
+      const sweepBtn = document.getElementById('sweepJsErrorsBtn');
+      if (sweepBtn) sweepBtn.addEventListener('click', async () => {
+        if (!confirm('現時点までに発生した JS エラーを「対応済 / 監視ノイズ」として一括 sweep します。\n\n新しい signature が後で発生すれば再カウント開始されます (本物の新規問題は引き続き検知)。\n\n実行しますか?')) return;
+        sweepBtn.disabled = true; const orig = sweepBtn.textContent; sweepBtn.textContent = '⏳ 実行中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/js-errors/sweep', { method: 'POST' });
+          const j = await r.json();
+          if (j.ok) {
+            alert(`✅ ${j.cleared_count} 件の JS エラーを sweep しました。\n\n新しいエラーが発生したら再度カウント開始されます。`);
+            // monitor / 一覧を再読込してアラートが消えたことを確認
+            if (typeof loadMonitorHealth === 'function') loadMonitorHealth();
+            if (typeof loadE2ESyntheticStatus === 'function') loadE2ESyntheticStatus();
+          } else {
+            alert('🚨 sweep 失敗: ' + (j.detail || JSON.stringify(j)));
+          }
+        } catch (e) { alert('⚠️ ' + e.message); }
+        sweepBtn.disabled = false; sweepBtn.textContent = orig;
+      });
 
       // 🛡️ 「今すぐ合成テスト」ボタン
       const synthBtn = document.getElementById('runSyntheticNowBtn');

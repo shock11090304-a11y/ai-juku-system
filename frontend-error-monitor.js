@@ -91,6 +91,26 @@
       });
       return;
     }
+
+    // 自分由来でない JS エラーを除外 (2026-04-28 self-healing 強化):
+    //  - ブラウザ拡張: chrome-extension:// / moz-extension:// / safari-web-extension://
+    //  - In-app browser injection (Threads/Instagram/Twitter 等): window.webkit.messageHandlers 等
+    //  - サードパーティ analytics スクリプトの内部 try/catch 漏れ
+    // これらは自分のコードを直しても消えないため、監視ノイズとして除外する。
+    try {
+      var msg = (e.message || '') + '';
+      var src = (e.filename || '') + '';
+      // browser extension からのエラー: src が extension スキーム
+      if (/^(chrome-extension|moz-extension|safari-(web-)?extension|edge-extension):\/\//i.test(src)) return;
+      // in-app browser injection の典型 signature:
+      //  - "window.webkit.messageHandlers" (iOS in-app)
+      //  - "ReactNativeWebView" (Android in-app)
+      //  - "AndroidWebInterface" 等
+      if (/webkit\.messageHandlers|ReactNativeWebView|AndroidWebInterface|window\.flutter_/i.test(msg)) return;
+      // src が空文字 = inline script だが、それが extension injection の場合もある
+      // → メッセージで除外できなければそのまま記録 (本物の自分のバグの可能性も残す)
+    } catch (_) {}
+
     reportError({
       kind: 'js_error',
       message: (e.message || '') + '',

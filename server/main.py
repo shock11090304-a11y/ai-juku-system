@@ -1267,7 +1267,31 @@ def _collect_health_snapshot() -> dict:
     snapshot["pv_6h"] = event_count("page_view", h6)
     snapshot["form_submit_6h"] = event_count("form_submit", h6)
     snapshot["page_loaded_ok_6h"] = event_count("page_loaded_ok", h6)
-    snapshot["js_error_6h"] = event_count("js_error", h6)
+
+    # 🔧 JS エラー 6h カウントは「最後の sweep 以降」のみ集計 (2026-04-28 self-healing 強化)。
+    # CEO ダッシュ「JS エラー一括解決」ボタンで sweep event を打つと、それ以前のエラー
+    # (既に修正済み or 監視ノイズと判断したもの) は count から除外され、誤アラートが消える。
+    # 新しい signature が出れば再カウント開始されるため、本物の新規問題は引き続き検知される。
+    try:
+        c2 = conn.cursor()
+        c2.execute("SELECT MAX(created_at) FROM events WHERE name = 'js_error_sweep'")
+        sweep_row = c2.fetchone()
+        last_sweep = sweep_row[0] if sweep_row else None
+    except Exception:
+        last_sweep = None
+    js_err_lower_bound = h6
+    if last_sweep is not None:
+        # last_sweep が naive datetime か aware か揃える
+        try:
+            if hasattr(last_sweep, 'tzinfo') and last_sweep.tzinfo is None:
+                from datetime import timezone as _tz
+                last_sweep = last_sweep.replace(tzinfo=_tz.utc)
+            if last_sweep > h6:
+                js_err_lower_bound = last_sweep
+        except Exception:
+            pass
+    snapshot["js_error_6h"] = event_count("js_error", js_err_lower_bound)
+    snapshot["js_error_last_sweep"] = str(last_sweep) if last_sweep else None
 
     # サービスローンチからの経過時間
     snapshot["hours_since_launch"] = max(0, int((now.timestamp() - SERVICE_LAUNCH_TS) / 3600))
@@ -7252,6 +7276,38 @@ def js_error_report(report: JSErrorReport, request: Request):
     except Exception as e:
         log.warning(f"[js_error] insert failed: {e}")
     return {"ok": True}
+
+
+@app.post("/api/admin/js-errors/sweep")
+def admin_sweep_js_errors(authorization: Optional[str] = Header(None)):
+    """admin Bearer 認証必須。「JS エラー一括解決」ボタン用 (2026-04-28 self-healing)。
+    js_error_sweep event を打つことで、それ以前のエラーは js_error_6h カウントから除外される。
+    新しい signature が後で発生すれば再カウント開始 → 本物の新規問題は引き続き検知される。
+    冪等: 何度押しても直近 sweep の timestamp が更新されるだけで破綻しない。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="未認証")
+    conn = db()
+    c = conn.cursor()
+    try:
+        # sweep 直前のエラー件数を記録 (操作ログに残す)
+        h6 = datetime.now(timezone.utc) - timedelta(hours=6)
+        c.execute(
+            "SELECT COUNT(*) FROM events WHERE name = 'js_error' AND created_at >= ?",
+            (h6,)
+        )
+        cleared_count = c.fetchone()[0] or 0
+        # sweep event を記録
+        c.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            ("js_error_sweep", json.dumps({"cleared_count": cleared_count}), "admin_sweep")
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True, "cleared_count": cleared_count, "message": f"{cleared_count} 件の JS エラーを sweep しました。新しいエラーが発生したら再度カウント開始されます。"}
 
 
 @app.get("/api/admin/js-errors")
