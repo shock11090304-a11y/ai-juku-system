@@ -64,6 +64,10 @@
     // resource load error (img, script の 404 等) は除外
     if (e.target && e.target !== window && (e.target.tagName === 'IMG' || e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
       var url = e.target.src || e.target.href || 'unknown';
+      // 空 src="" / href="" は HTML5 仕様上ブラウザが current document URL を再 fetch
+      // しに行き、本物のエラーではないのに大量に「Failed to load: <自分自身>」と
+      // 報告される (2026-04-28 incident)。検出して除外する。
+      if (url === 'unknown' || url === '' || url === location.href) return;
       // 重要度の分類:
       //  - critical: 同一 origin の HTML/main JS/CSS が読めない (= ユーザが画面を見られない)
       //  - low:     CDN リソース (KaTeX等) や img の遅延読み込み失敗 (ユーザ影響限定的)
