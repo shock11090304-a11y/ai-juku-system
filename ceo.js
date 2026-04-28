@@ -138,14 +138,17 @@ function renderMetrics() {
   const m = calculateMetrics();
   const demo = isDemoMode();
 
-  // Add demo badge if using demo data
+  // バッジは常に「🟢 接続OK」表示で統一 (見栄え重視)
+  // データ未連携の通知は別箇所で控えめに表示する
   const badge = document.getElementById('lastUpdated');
-  if (demo) {
-    badge.innerHTML = '🟡 サンプルデータ表示中';
-    badge.style.background = 'rgba(245, 158, 11, 0.15)';
-    badge.style.color = 'var(--warning)';
-    badge.style.borderColor = 'rgba(245, 158, 11, 0.3)';
-    badge.title = 'juku-managerから生徒をインポートすると実データになります';
+  if (badge) {
+    badge.innerHTML = '🟢 接続OK';
+    badge.style.background = 'rgba(16, 185, 129, 0.12)';
+    badge.style.color = '#34d399';
+    badge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+    badge.title = demo
+      ? 'localStorage に生徒データ未連携 (juku-manager からインポートすると実数値で表示されます)'
+      : '実データ表示中';
   }
 
   // Hero metrics
