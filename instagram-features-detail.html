@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Instagram Carousel — 16機能詳細 | トリリオン AI塾</title>
+<script src="cache-purge.js"></script>
+<style>
+  :root {
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #ec4899;
+    --bg: #0a0a1a;
+    --bg-2: #14142b;
+    --text: #ffffff;
+    --text-dim: rgba(255,255,255,0.7);
+    --text-mute: rgba(255,255,255,0.45);
+    --gold: #fbbf24;
+    --gold-2: #f97316;
+    --green: #10b981;
+    --cyan: #22d3ee;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+
+  html, body {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic Medium', 'Noto Sans JP', sans-serif;
+    background: #0a0a1a;
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  body {
+    padding: 32px 16px;
+  }
+
+  .toolbar {
+    max-width: 1100px;
+    margin: 0 auto 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text-dim);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .toolbar h1 { font-size: 1.1rem; color: var(--text); font-weight: 700; }
+  .toolbar .hint { font-size: 0.85rem; }
+  .toolbar .actions { display: flex; gap: 8px; }
+  .toolbar button {
+    background: var(--primary); color: white; border: none;
+    padding: 8px 14px; border-radius: 8px; cursor: pointer;
+    font-size: 0.85rem; font-weight: 600;
+  }
+  .toolbar button:hover { background: var(--primary-light); }
+
+  .gallery {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  /* === 1080 × 1350 縦長スライド === */
+  .slide {
+    width: 1080px;
+    height: 1350px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 24px;
+    box-shadow: 0 30px 80px rgba(99, 102, 241, 0.3);
+    background: linear-gradient(160deg, #0f172a 0%, #1e1b4b 60%, #312e81 100%);
+    color: var(--text);
+    page-break-after: always;
+  }
+
+  /* 装飾オーブ (各スライド共通の柔らかい光) */
+  .slide::before,
+  .slide::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .slide::before {
+    width: 700px; height: 700px;
+    background: var(--primary);
+    top: -250px; right: -250px;
+  }
+  .slide::after {
+    width: 600px; height: 600px;
+    background: var(--accent);
+    bottom: -200px; left: -200px;
+  }
+
+  /* グレインノイズ */
+  .slide .grain {
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E");
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* セーフゾーン */
+  .slide .safe {
+    position: absolute;
+    inset: 60px 72px;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 共通: 右上ページャ */
+  .pager {
+    position: absolute;
+    top: 36px; right: 48px;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-mute);
+    letter-spacing: 0.05em;
+    z-index: 3;
+  }
+
+  /* 共通: 左下ロゴ */
+  .brand-tag {
+    position: absolute;
+    bottom: 32px; left: 48px;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-dim);
+    letter-spacing: 0.02em;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .brand-tag::before {
+    content: '';
+    display: inline-block;
+    width: 26px; height: 26px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+  }
+
+  /* 共通: 右下 URL */
+  .url-tag {
+    position: absolute;
+    bottom: 32px; right: 48px;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text-mute);
+    z-index: 3;
+  }
+
+  /* 共通: 上部バッジ */
+  .badge-top {
+    align-self: flex-start;
+    background: linear-gradient(135deg, var(--gold), var(--gold-2));
+    color: #1e1b4b;
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  /* 共通: 大キャッチ */
+  .catch {
+    font-size: 88px;
+    font-weight: 900;
+    line-height: 1.18;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  .catch .grad {
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .catch .grad2 {
+    background: linear-gradient(135deg, var(--primary-light), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* 共通: バッジリスト */
+  .badges {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+  }
+  .badge {
+    background: rgba(99, 102, 241, 0.25);
+    border: 1.5px solid rgba(99, 102, 241, 0.5);
+    color: white;
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 22px;
+    font-weight: 600;
+  }
+  .badge.pink {
+    background: rgba(236, 72, 153, 0.2);
+    border-color: rgba(236, 72, 153, 0.5);
+  }
+  .badge.gold {
+    background: rgba(251, 191, 36, 0.2);
+    border-color: rgba(251, 191, 36, 0.5);
+    color: #fde68a;
+  }
+
+  /* iPhone モック */
+  .phone {
+    width: 380px;
+    height: 720px;
+    background: #000;
+    border-radius: 56px;
+    padding: 12px;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(255,255,255,0.1);
+    position: relative;
+    flex-shrink: 0;
+  }
+  .phone::before {
+    content: '';
+    position: absolute;
+    top: 24px; left: 50%;
+    transform: translateX(-50%);
+    width: 110px; height: 32px;
+    background: #000;
+    border-radius: 16px;
+    z-index: 2;
+  }
+  .phone-screen {
+    width: 100%;
+    height: 100%;
+    border-radius: 44px;
+    overflow: hidden;
+    background: #0a0a1a;
+    position: relative;
+  }
+  .phone-screen img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    display: block;
+  }
+
+  /* 大きい iPhone モック (中央配置スライド用) */
+  .phone-lg {
+    width: 460px;
+    height: 920px;
+  }
+
+  /* 具体例カード3つ */
+  .examples {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 28px;
+  }
+  .example-card {
+    background: rgba(99, 102, 241, 0.18);
+    border: 1.5px solid rgba(99, 102, 241, 0.35);
+    border-radius: 20px;
+    padding: 22px 26px;
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .example-card .num {
+    flex-shrink: 0;
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--primary));
+    color: white;
+    font-size: 20px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .example-card .text {
+    flex: 1;
+    color: var(--text-dim);
+  }
+  .example-card .text b { color: var(--text); font-weight: 700; }
+
+  /* 数字インパクト */
+  .stat-row {
+    display: flex;
+    gap: 20px;
+    margin-top: 24px;
+  }
+  .stat {
+    flex: 1;
+    text-align: center;
+    padding: 16px 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .stat .num {
+    font-size: 56px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--gold), var(--gold-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+  .stat .label {
+    font-size: 20px;
+    color: var(--text-mute);
+    margin-top: 8px;
+    font-weight: 600;
+  }
+
+  /* === スライド1 (表紙) === */
+  .slide-1 .safe {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .slide-1 .badge-top {
+    margin-bottom: 32px;
+  }
+  .slide-1 .hero-num {
+    font-size: 220px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--gold), var(--gold-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    margin: 0;
+  }
+  .slide-1 .hero-sub {
+    font-size: 36px;
+    color: var(--text-mute);
+    margin-top: 8px;
+    font-weight: 600;
+  }
+  .slide-1 .strike-list {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    margin: 32px 0;
+    flex-wrap: wrap;
+  }
+  .slide-1 .strike {
+    font-size: 28px;
+    color: rgba(255,255,255,0.4);
+    text-decoration: line-through;
+    text-decoration-color: rgba(236, 72, 153, 0.7);
+    text-decoration-thickness: 3px;
+    font-weight: 700;
+  }
+  .slide-1 .main-catch {
+    font-size: 96px;
+    font-weight: 900;
+    line-height: 1.15;
+    margin-top: 24px;
+    letter-spacing: -0.02em;
+  }
+  .slide-1 .main-catch .grad {
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .slide-1 .guarantee {
+    margin-top: 36px;
+    background: rgba(251, 191, 36, 0.12);
+    border: 1.5px solid rgba(251, 191, 36, 0.4);
+    color: #fde68a;
+    padding: 16px 32px;
+    border-radius: 999px;
+    font-size: 26px;
+    font-weight: 700;
+  }
+  .slide-1 .free-note {
+    margin-top: 24px;
+    font-size: 24px;
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+
+  /* === スライド2 - 9 (機能) === */
+  .slide-feature .safe {
+    justify-content: space-between;
+  }
+  .slide-feature .top { display: flex; flex-direction: column; gap: 14px; }
+  .slide-feature .body {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    margin: 24px 0;
+    flex: 1;
+  }
+  .slide-feature .body.center { justify-content: center; }
+  .slide-feature .text-col { flex: 1; }
+  .slide-feature .bottom-stats { margin-top: auto; }
+
+  /* === スライド10 CTA === */
+  .slide-10 .safe {
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+  }
+  .slide-10 .seats-warning {
+    background: linear-gradient(135deg, #ef4444, #ec4899);
+    color: white;
+    padding: 14px 32px;
+    border-radius: 999px;
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 28px;
+    letter-spacing: 0.02em;
+  }
+  .slide-10 .cta-headline {
+    font-size: 100px;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+  }
+  .slide-10 .cta-headline .grad {
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .slide-10 .cta-sub {
+    font-size: 32px;
+    color: var(--text-dim);
+    margin-bottom: 36px;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+  .slide-10 .cta-button {
+    background: linear-gradient(135deg, var(--accent), var(--primary));
+    color: white;
+    width: 720px;
+    padding: 38px 0;
+    border-radius: 999px;
+    font-size: 56px;
+    font-weight: 900;
+    box-shadow: 0 20px 50px rgba(236, 72, 153, 0.4);
+    margin-bottom: 36px;
+  }
+  .slide-10 .price-box {
+    display: flex;
+    gap: 16px;
+    align-items: baseline;
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+  .slide-10 .price-main {
+    font-size: 84px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--gold), var(--gold-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.02em;
+  }
+  .slide-10 .price-strike {
+    font-size: 36px;
+    color: rgba(255,255,255,0.4);
+    text-decoration: line-through;
+    font-weight: 700;
+  }
+  .slide-10 .guarantee-bar {
+    background: rgba(251, 191, 36, 0.12);
+    border: 1.5px solid rgba(251, 191, 36, 0.4);
+    color: #fde68a;
+    padding: 14px 28px;
+    border-radius: 999px;
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+  .slide-10 .footer-notes {
+    font-size: 24px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    font-weight: 500;
+  }
+  .slide-10 .url-final {
+    margin-top: 24px;
+    font-size: 28px;
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  /* === スライド9 (3人検閲チーム) 専用 === */
+  .slide-team .quality-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin-top: 28px;
+  }
+  .slide-team .person-card {
+    background: rgba(99, 102, 241, 0.18);
+    border: 1.5px solid rgba(99, 102, 241, 0.35);
+    border-radius: 20px;
+    padding: 24px 18px;
+    text-align: center;
+  }
+  .slide-team .person-card .role {
+    font-size: 22px;
+    color: var(--gold);
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+  .slide-team .person-card .name {
+    font-size: 28px;
+    font-weight: 900;
+    margin-bottom: 12px;
+  }
+  .slide-team .person-card .desc {
+    font-size: 20px;
+    color: var(--text-dim);
+    font-weight: 500;
+    line-height: 1.5;
+  }
+  .slide-team .arrow-flow {
+    margin: 24px 0 16px;
+    text-align: center;
+    font-size: 24px;
+    color: var(--text-mute);
+    font-weight: 600;
+  }
+  .slide-team .arrow-flow b { color: var(--gold); font-weight: 800; }
+
+  /* 5試験対応スライド: 試験ロゴ円形 */
+  .exam-circle-row {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 28px;
+  }
+  .exam-circle {
+    width: 130px; height: 130px;
+    background: white;
+    border-radius: 999px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #1e1b4b;
+    font-weight: 900;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+  }
+  .exam-circle .ec-name { font-size: 22px; }
+  .exam-circle .ec-sub { font-size: 14px; color: #6b7280; margin-top: 2px; font-weight: 600; }
+  .exam-circle.eiken { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: white; }
+  .exam-circle.toefl { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; }
+  .exam-circle.toeic { background: linear-gradient(135deg, #ec4899, #be185d); color: white; }
+  .exam-circle.ielts { background: linear-gradient(135deg, #22d3ee, #0891b2); color: white; }
+  .exam-circle.daigaku { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+
+  /* 大学タグ集合 */
+  .uni-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 24px;
+    justify-content: center;
+  }
+  .uni-tag {
+    background: rgba(251, 191, 36, 0.15);
+    border: 1.5px solid rgba(251, 191, 36, 0.4);
+    color: #fde68a;
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  /* メディアタグ */
+  .media-tags {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 28px;
+    flex-wrap: wrap;
+  }
+  .media-tag {
+    background: rgba(255,255,255,0.95);
+    color: #1e1b4b;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  }
+
+  /* 印刷時各スライド単独 PNG 化 */
+  @media print {
+    body { background: #0a0a1a; padding: 0; }
+    .toolbar { display: none; }
+    .gallery { gap: 0; }
+    .slide { page-break-after: always; box-shadow: none; border-radius: 0; }
+  }
+
+  /* PNG エクスポートモード (URL に ?slide=N で単独表示) */
+  body.export-mode {
+    background: transparent !important;
+    padding: 0 !important;
+  }
+  body.export-mode .toolbar { display: none !important; }
+  body.export-mode .gallery { gap: 0 !important; }
+  body.export-mode .slide { display: none !important; box-shadow: none !important; border-radius: 0 !important; }
+  body.export-mode .slide.export-active { display: block !important; }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>📸 トリリオン AI塾 — 16機能詳細カルーセル (1080×1350 / 10枚)</h1>
+  <div class="hint">Cmd+P で PDF / または ?slide=N で単独 PNG export</div>
+  <div class="actions">
+    <button onclick="window.print()">印刷 / PDF</button>
+    <button onclick="copyCaptions()">キャプションコピー</button>
+  </div>
+</div>
+
+<div class="gallery">
+
+  <!-- ============================================ -->
+  <!-- スライド 1 : 表紙 -->
+  <!-- ============================================ -->
+  <section class="slide slide-1" id="slide-1">
+    <div class="grain"></div>
+    <div class="pager">1 / 10</div>
+    <div class="safe">
+      <div class="badge-top">🏆 創設メンバー 50名限定 募集中</div>
+
+      <div class="strike-list">
+        <span class="strike">家庭教師 ¥100,000</span>
+        <span class="strike">個別塾 ¥50,000</span>
+        <span class="strike">大手塾 ¥40,000</span>
+      </div>
+
+      <div class="main-catch">
+        子の月10万、<br>
+        <span class="grad">もう要らない。</span>
+      </div>
+
+      <div class="hero-num">¥14,500</div>
+      <div class="hero-sub">永年 / 月額 / 全教科対応</div>
+
+      <div class="guarantee">⚡ 永年¥14,500保証 — 契約後の値上げなし</div>
+      <div class="free-note">7日間 完全無料 / クレカ登録不要 / 自動課金なし</div>
+    </div>
+    <div class="brand-tag">@trillion_ai</div>
+    <div class="url-tag">スワイプで詳細 →</div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- スライド 2 : 24h AIチューター -->
+  <!-- ============================================ -->
+  <section class="slide slide-feature" id="slide-2">
+    <div class="grain"></div>
+    <div class="pager">2 / 10</div>
+    <div class="safe">
+      <div class="top">
+        <div class="badges">
+          <span class="badge pink">🌙 24時間365日</span>
+          <span class="badge">📷 写真もOK</span>
+        </div>
+        <div class="catch">深夜3時の<br>「わからない」、<br><span class="grad">もう詰まない。</span></div>
+      </div>
+
+      <div class="body">
+        <div class="text-col">
+          <div class="examples">
+            <div class="example-card"><span class="num">1</span><span class="text">テスト前日23時、<b>解けない数学を写真で送る</b> → 30秒で解説が返る</span></div>
+            <div class="example-card"><span class="num">2</span><span class="text">英語長文の<b>知らない単語をタップ</b>するだけで文脈和訳</span></div>
+            <div class="example-card"><span class="num">3</span><span class="text">紙の参考書を撮影 → <b>類題を10問自動生成</b>して練習</span></div>
+          </div>
+        </div>
+        <div class="phone">
+          <div class="phone-screen"><img src="marketing-assets/ig-shots/material_scan.png" alt=""></div>
+        </div>
+      </div>
+
+      <div class="bottom-stats stat-row">
+        <div class="stat"><div class="num">24h</div><div class="label">365日 応答</div></div>
+        <div class="stat"><div class="num">秒速</div><div class="label">即時返答</div></div>
+        <div class="stat"><div class="num">写真</div><div class="label">Vision AI 対応</div></div>
+      </div>
+    </div>
+    <div class="brand-tag">@trillion_ai</div>
+    <div class="url-tag">trillion-ai-juku.com</div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- スライド 3 : リアル英字ニュース読解 (差別化機能を前倒し) -->
+  <!-- ============================================ -->
+  <section class="slide slide-feature" id="slide-3">
+    <div class="grain"></div>
+    <div class="pager">3 / 10</div>
+    <div class="safe">
+      <div class="top">
+        <div class="badges">
+          <span class="badge">📰 10フィード</span>
+          <span class="badge pink">毎日自動更新</span>
+        </div>
+        <div class="catch">ニュースを<br>読むほど、<br><span class="grad">英語が伸びる人。</span></div>
+      </div>
+
+      <div class="body">
+        <div class="text-col">
+          <div class="examples">
+            <div class="example-card"><span class="num">1</span><span class="text"><b>CNN の今朝の見出し</b>から、長文読解問題が即生成</span></div>
+            <div class="example-card"><span class="num">2</span><span class="text">BBC の経済記事 → <b>関連単語50語を抽出</b>してミニテスト</span></div>
+            <div class="example-card"><span class="num">3</span><span class="text">NYT・Japan Times の社説で、<b>英作文のお題を毎日支給</b></span></div>
+          </div>
+          <div class="media-tags">
+            <span class="media-tag">CNN</span>
+            <span class="media-tag">BBC</span>
+            <span class="media-tag">NYT</span>
+            <span class="media-tag">Japan Times</span>
+          </div>
+        </div>
+        <div class="phone">
+          <div class="phone-screen"><img src="marketing-assets/ig-shots/exam_top.png" alt=""></div>
+        </div>
+      </div>
+    </div>
+    <div class="brand-tag">@trillion_ai</div>
+    <div class="url-tag">trillion-ai-juku.com</div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- スライド 4 : 個別カリキュラム自動生成 -->
+  <!-- ============================================ -->
+  <section class="slide slide-feature" id="slide-4">
+    <div class="grain"></div>
+    <div class="pager">4 / 10</div>
+    <div class="safe">
+      <div class="top">
+        <div class="badges">
+          <span class="badge">🎯 志望校から逆算</span>
+          <span class="badge pink">週次 自動更新</span>
+        </div>
+        <div class="catch">志望校から<br><span class="grad">逆算、毎週更新。</span></div>
+      </div>
+
+      <div class="body">
+        <div class="text-col">
+          <div class="examples">
+            <div class="example-card"><span class="num">1</span><span class="text">「<b>早稲田商まで残り18ヶ月</b>」と入力 → 週次・日次メニューが即時出力</span></div>
+            <div class="example-card"><span class="num">2</span><span class="text">模試結果を入れると、<b>苦手分野が翌週のメニューに自動追加</b></span></div>
+            <div class="example-card"><span class="num">3</span><span class="text">部活で時間が足りない週は、<b>優先度上位だけに自動圧縮</b></span></div>
+          </div>
+        </div>
+        <div class="phone">
+          <div class="phone-screen"><img src="marketing-assets/ig-shots/exam_prep.png" alt=""></div>
+        </div>
+      </div>
+
+      <div class="bottom-stats stat-row">
+        <div class="stat"><div class="num">週次</div><div class="label">自動編成</div></div>
+        <div class="stat"><div class="num">日次</div><div class="label">15分単位</div></div>
+        <div class="stat"><div class="num">全教科</div><div class="label">英数国理社</div></div>
+      </div>
+    </div>
+    <div class="brand-tag">@trillion_ai</div>
+    <div class="url-tag">trillion-ai-juku.com</div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- スライド 5 : Learning Brain (記憶最適化) -->
+  <!-- ============================================ -->
+  <section class="slide slide-feature" id="slide-5">
+    <div class="grain"></div>
+    <div class="pager">5 / 10</div>
+    <div class="safe">
+      <div class="top">
+        <div class="badges">
+          <span class="badge">🧠 記憶最適化AI</span>
+          <span class="badge pink">躓きセンサー搭載</span>
+        </div>
+        <div class="catch">忘れる直前に、<br><span class="grad">もう1度。</span></div>
+        <div style="font-size:30px;color:var(--text-dim);font-weight:600;line-height:1.55;margin-top:10px;">
+          = 一度間違えた問題を、忘れる前にAIが出し直す仕組み
+        </div>
+      </div>
+
+      <div class="body">
+        <div class="text-col">
+          <div class="examples">
+            <div class="example-card"><span class="num">1</span><span class="text">3日前に覚えた英単語、<b>忘れかけた瞬間に通知</b>が来て復習</span></div>
+            <div class="example-card"><span class="num">2</span><span class="text">連続正解したら<b>難易度が自動で1段アップ</b>、退屈しない</span></div>
+            <div class="example-card"><span class="num">3</span><span class="text">小テスト2連続ミス → 「ここ、つまずいてます」と<b>原因単元をAIが提示</b></span></div>
+          </div>
+        </div>
+        <div class="phone">
+          <div class="phone-screen"><img src="marketing-assets/ig-shots/demo_features.png" alt=""></div>
+        </div>
+      </div>
+
+      <div class="bottom-stats stat-row">
+        <div class="stat"><div class="num">SM-2</div><div class="label">エビングハウス</div></div>
+        <div class="stat"><div class="num">適応</div><div class="label">難易度</div></div>
+        <div class="stat"><div class="num">早期</div><div class="label">躓き検知</div></div>
+      </div>
+    </div>
+    <div class="brand-tag">@trillion_ai</div>
+    <div class="url-tag">trillion-ai-juku.com</div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- スライド 6 : 5試験完全対応 -->
+  <!-- ============================================ -->
+  <section class="slide slide-feature" id="slide-6">
+    <div class="grain"></div>
+    <div class="pager">6 / 10</div>
+    <div class="safe">
+      <div class="top">
+        <div class="badges">
+          <span class="badge gold">🏆 5試験 ALL-IN-ONE</span>
+        </div>
+        <div class="catch">英検準1級 〜<br>TOEIC 900まで、<br><span class="grad">1アプリ。</span></div>
+      </div>
+
+      <div class="body" style="flex-direction:column;">
+        <div class="exam-circle-row">
+          <div class="exam-circle eiken"><div class="ec-name">英検</div><div class="ec-sub">1級〜5級</div></div>
+          <div class="exam-circle toefl"><div class="ec-name">TOEFL</div><div class="ec-sub">iBT</div></div>
+          <div class="exam-circle toeic"><div class="ec-name">TOEIC</div><div class="ec-sub">L&R</div></div>
+          <div class="exam-circle ielts"><div class="ec-name">IELTS</div><div class="ec-sub">Academic</div></div>
+          <div class="exam-circle daigaku"><div class="ec-name">大学入試</div><div class="ec-sub">23大学/枠</div></div>
+        </div>
+
+        <div class="examples" style="margin-top: 32px;">
+          <div class="example-card"><span class="num">1</span><span class="text">英検準1級の二次面接、<b>AIと毎日10分シミュレーション</b></span></div>
+          <div class="example-card"><span class="num">2</span><span class="text">TOEIC Part5 を1日30問、<b>間違えた文法だけ集中演習</b></span></div>
+          <div class="example-card"><span class="num">3</span><span class="text">IELTS Writing を提出 → <b>Band Score 推定と改善コメント</b></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="brand-tag">@trillion_ai</div>
+    <div class="url-tag">trillion-ai-juku.com</div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- スライド 7 : 大学入試 23大学 (中堅包摂) -->
+  <!-- ============================================ -->
+  <section class="slide slide-feature" id="slide-7">
+    <div class="grain"></div>
+    <div class="pager">7 / 10</div>
+    <div class="safe">
+      <div class="top">
+        <div class="badges">
+          <span class="badge gold">🎓 23大学 / 枠 対応</span>
+        </div>
+        <div class="catch">23大学。<br>1人のAIが、<br><span class="grad">全部知ってる。</span></div>
+      </div>
+
+      <div class="body" style="flex-direction:column;">
+        <div class="uni-tags">
+          <span class="uni-tag">東京大学</span>
+          <span class="uni-tag">京都大学</span>
+          <span class="uni-tag">早稲田大学</span>
+          <span class="uni-tag">慶應義塾大学</span>
+          <span class="uni-tag">医学部 (国公立)</span>
+          <span class="uni-tag">医学部 (私立)</span>
+          <span class="uni-tag">大阪大学</span>
+          <span class="uni-tag">東北大学</span>
+          <span class="uni-tag">名古屋大学</span>
+          <span class="uni-tag">一橋大学</span>
+          <span class="uni-tag">東京科学大学</span>
+          <span class="uni-tag">上智大学</span>
+          <span class="uni-tag">ICU</span>
+          <span class="uni-tag">明治大学</span>
+          <span class="uni-tag">青山学院大学</span>
+          <span class="uni-tag">立教大学</span>
+          <span class="uni-tag">中央大学</span>
+          <span class="uni-tag">法政大学</span>
+          <span class="uni-tag">関西大学</span>
+          <span class="uni-tag">関西学院大学</span>
+          <span class="uni-tag">同志社大学</span>
+          <span class="uni-tag">立命館大学</span>
+          <span class="uni-tag">共通テスト</span>
+        </div>
+        <div class="examples" style="margin-top: 24px;">
+          <div class="example-card"><span class="num">1</span><span class="text">過去問の<b>傾向分析と本番までの逆算スケジュール</b></span></div>
+          <div class="example-card"><span class="num">2</span><span class="text">偏差値・判定から、<b>最適な滑り止め校をAIが提案</b></span></div>
+          <div class="example-card"><span class="num">3</span><span class="text">共通テスト後の出願校、<b>AIが期待値で優先順位付け</b></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="brand-tag">@trillion_ai</div>
+    <div class="url-tag">trillion-ai-juku.com</div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- スライド 8 : スピーキング & 英作文添削 -->
+  <!-- ============================================ -->
+  <section class="slide slide-feature" id="slide-8">
+    <div class="grain"></div>
+    <div class="pager">8 / 10</div>
+    <div class="safe">
+      <div class="top">
+        <div class="badges">
+          <span class="badge">🎙 音声採点AI</span>
+          <span class="badge pink">100点満点添削</span>
+        </div>
+        <div class="catch">英会話、<br>誰にも見られず、<br><span class="grad">練習できる。</span></div>
+      </div>
+
+      <div class="body">
+        <div class="text-col">
+          <div class="examples">
+            <div class="example-card"><span class="num">1</span><span class="text">朝の登校前、<b>5分で発音練習</b> → 即座にスコア表示</span></div>
+            <div class="example-card"><span class="num">2</span><span class="text">英作文を投稿 → <b>文法・語彙・論理構成を100点満点で採点</b></span></div>
+            <div class="example-card"><span class="num">3</span><span class="text">添削後、<b>改善版エッセイをAIが書き直して提示</b></span></div>
+          </div>
+        </div>
+        <div class="phone">
+          <div class="phone-screen"><img src="marketing-assets/ig-shots/textbook.png" alt=""></div>
+        </div>
+      </div>
+
+      <div class="bottom-stats stat-row">
+        <div class="stat"><div class="num">音声</div><div class="label">即時採点</div></div>
+        <div class="stat"><div class="num">100点</div><div class="label">満点添削</div></div>
+        <div class="stat"><div class="num">即時</div><div class="label">書き直し</div></div>
+      </div>
+    </div>
+    <div class="brand-tag">@trillion_ai</div>
+    <div class="url-tag">trillion-ai-juku.com</div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- スライド 9 : 3人検閲チーム (人間関与の代替・保護者目線の安心) -->
+  <!-- ============================================ -->
+  <section class="slide slide-feature slide-team" id="slide-9">
+    <div class="grain"></div>
+    <div class="pager">9 / 10</div>
+    <div class="safe">
+      <div class="top">
+        <div class="badges">
+          <span class="badge gold">🎓 東大・京大生 監修</span>
+          <span class="badge pink">3人1組 検閲</span>
+        </div>
+        <div class="catch">問題1問につき、<br><span class="grad">専門家3人が確認。</span></div>
+        <div style="font-size:30px;color:var(--text-dim);font-weight:600;line-height:1.55;margin-top:10px;">
+          AIが作って、人間が必ず最終チェック。だから安心。
+        </div>
+      </div>
+
+      <div class="body" style="flex-direction:column;justify-content:flex-start;">
+        <div class="quality-grid">
+          <div class="person-card">
+            <div class="role">作成者</div>
+            <div class="name">専門家 A</div>
+            <div class="desc">現役講師として問題を執筆。教材300題と過去問傾向に準拠。</div>
+          </div>
+          <div class="person-card">
+            <div class="role">第1検閲</div>
+            <div class="name">専門家 B</div>
+            <div class="desc">別講師の視点で正答性・解説の論理を徹底レビュー。</div>
+          </div>
+          <div class="person-card">
+            <div class="role">第2検閲</div>
+            <div class="name">専門家 C</div>
+            <div class="desc">教科書編集者の視点で、難易度・形式・可読性を最終点検。</div>
+          </div>
+        </div>
+
+        <div class="arrow-flow">
+          作成 → <b>第1次検閲</b> → 修正 → <b>第2次検閲</b> → 最終承認
+        </div>
+
+        <div class="bottom-stats stat-row">
+          <div class="stat"><div class="num">1,000問</div><div class="label">近く 毎週増加</div></div>
+          <div class="stat"><div class="num">3人</div><div class="label">必ず検閲</div></div>
+          <div class="stat"><div class="num">5段階</div><div class="label">品質サイクル</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="brand-tag">@trillion_ai</div>
+    <div class="url-tag">trillion-ai-juku.com</div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- スライド 10 : CTA -->
+  <!-- ============================================ -->
+  <section class="slide slide-10" id="slide-10">
+    <div class="grain"></div>
+    <div class="pager">10 / 10</div>
+    <div class="safe">
+      <div class="seats-warning">⏰ 50席のうち、残り 20席</div>
+
+      <div class="cta-headline">
+        まず、<br>
+        <span class="grad">7日間ゼロ円。</span>
+      </div>
+
+      <div class="cta-sub">
+        クレカ登録なし。自動課金なし。<br>
+        合わなければ、何もせず終了でOK。
+      </div>
+
+      <div class="cta-button">▶ 席を確保する</div>
+
+      <div class="price-box">
+        <span class="price-strike">¥39,800</span>
+        <span class="price-main">¥14,500/月</span>
+      </div>
+      <div style="font-size:26px;color:var(--text-dim);margin-bottom:16px;font-weight:600;">永年 / 月額 / 全教科対応</div>
+
+      <div class="guarantee-bar">⚡ 永年¥14,500保証 — 契約後の値上げ対象外</div>
+
+      <div class="footer-notes">
+        家庭教師月10万も、塾月5万も、もう要らない。<br>
+        家計を守りながら、子の進路は妥協しない。
+      </div>
+
+      <div class="url-final">→ trillion-ai-juku.com/lp.html</div>
+    </div>
+    <div class="brand-tag">@trillion_ai</div>
+  </section>
+
+</div>
+
+<script>
+// URL ?slide=N で単独表示モード (PNG export 用)
+(function(){
+  const params = new URLSearchParams(location.search);
+  const slideParam = params.get('slide');
+  if (slideParam) {
+    document.body.classList.add('export-mode');
+    const target = document.getElementById('slide-' + slideParam);
+    if (target) target.classList.add('export-active');
+  }
+})();
+
+function copyCaptions() {
+  const captions = document.getElementById('captionsText')?.textContent || '';
+  navigator.clipboard.writeText(captions).then(() => alert('コピーしました'));
+}
+</script>
+
+<!-- 隠しキャプションテキスト (コピー用) -->
+<pre id="captionsText" style="display:none;">
+中3の息子に、家庭教師を月10万払っていた。
+AIに切り替えて3ヶ月、模試の偏差値が8上がった。
+月¥14,500。それが現実。
+
+―――
+
+▼ 何ができるのか (16機能 ALL-IN-ONE)
+
+✓ 24時間 AIチューター (深夜3時の数学も秒で返答)
+✓ 紙の参考書を撮影 → 類題10問を即生成
+✓ 志望校から逆算した週次カリキュラム自動編成
+✓ 1度間違えた問題を、忘れる前にAIが出し直す
+✓ 英検準1級〜TOEIC 900まで、1アプリで対策
+✓ 23大学の入試対策 (MARCH・関関同立 〜 東大・医学部)
+✓ AIスピーキング採点 + 英作文100点満点添削
+✓ 今朝のCNN・NYTから即興読解問題
+✓ 滑り止め校をAIが偏差値・判定から提案
+✓ 東大生3人が問題を検閲し続ける品質保証
+
+―――
+
+【¥14,500/月 永年保証】
+創設メンバー50名限定。契約後も値上げ対象外。
+通常¥39,800のところ、永年この価格。
+
+【7日間 完全無料】
+クレカ登録なし。自動課金なし。
+合わなければ何もせず終了でOK。
+
+【お申込み】
+プロフィールのURL、または
+trillion-ai-juku.com/lp.html
+
+家庭教師月10万も、塾月5万も、もう要らない。
+家計を守りながら、子の進路は妥協しない。
+そんな第3の選択肢、7日間タダで試してみてください。
+
+#ai塾 #トリリオンai塾 #大学受験 #高校受験 #英検準1級 #英検2級 #toeic #塾選び #家庭教師 #オンライン塾 #自宅学習 #保護者の悩み #早慶 #march #関関同立 #医学部受験 #共通テスト #生成ai
+</pre>
+
+</body>
+</html>
