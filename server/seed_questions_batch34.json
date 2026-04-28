@@ -1,0 +1,116 @@
+{
+  "_meta": {
+    "team_review": "3-person team workflow per feedback_3_person_team_review.md",
+    "cycle": "Step1 作成(専門家A) → Step2 検閲B/C 並列 → Step3 修正(7件指摘反映) → Step4 再検閲(専門家A 自己確認) → Step5 最終承認 ✅",
+    "focus": "daigaku/center 低在庫の埋戻し。l_listening/r_grammar/r_long 各 count=4 → 各+2 で count=6 化",
+    "rationale": "center は センター試験 旧 grade key。pool-status で 3 part とも count=4 と低在庫。新規顧客が center 経路で学習する場合に在庫枯渇しないよう補強。grammar は batch6/12 と重複しない grammar topic を選定 (by the time / 関係副詞 where / 形式主語 it / no sooner / wish 仮定法)",
+    "review_summary": {
+      "expert_B_english_listening_long": "修正必須 5件 (r_long の正答選択肢が異常に長く誤答が短いという構造的欠陥 — 本文未読でも長さで答えが当てられる致命問題) + 修正推奨 2件。l_listening 2 entries は概ね品質 OK。指摘は全件反映済",
+      "expert_C_grammar": "10 問全て自分で 4 選択肢検証。文法ミス・致命バグ 0 件。No sooner ... than と Hardly ... when の相関語混同罠、強調構文 that vs when 混同罠、It is essential that S V原形 の仮定法現在標識 など、塾長要求の典型ミス罠が完全配置済と評価。品質 A",
+      "fixes_applied": [
+        "Entry 1 q2: Nara の選択肢を均衡化 (本文丸写しを削除し各 6-8 語に統一)",
+        "Entry 2 audio_script: 'drive home safely' → 'get home safely' (図書館アナウンスの語感整合)",
+        "Entry 5 q3: 'wabi-sabi, which finds beauty in simplicity and imperfection' の説明削除し 'Zen Buddhism and the principle of wabi-sabi' に短縮。誤答も「Daily commercial trade with China」「Western fashion and aristocratic customs」「Formal political meetings of the shogun」と長さ均衡化",
+        "Entry 5 q5: 'It is grown in over 60 countries with many varieties — green, black, oolong, white, herbal — but its origins remain rooted in ancient China' を 'It is grown worldwide in many varieties, but its origins remain in China' に短縮。誤答も均衡化",
+        "Entry 6 q2: 'Cue (trigger), routine (behavior), and reward (something pleasant that satisfies a craving)' から括弧説明を削除し 'Cue, routine, and reward' に",
+        "Entry 6 q4: '— for example, to encourage compulsive shopping or social media use' の例示を削除",
+        "Entry 6 q5: '; how it is applied determines whether it benefits people or exploits them' を 'depending on how it is applied' に短縮"
+      ]
+    }
+  },
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "l_listening",
+      "eiken_grade": "center",
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[センター試験型 リスニング 大問3型 — 二人の対話]\n\nWoman: Hi Mark, how was your trip to Kyoto last weekend?\nMan: It was wonderful, actually. I visited several temples on Saturday, but on Sunday it rained all day so I spent most of the day in a small cafe near my hotel.\nWoman: That sounds disappointing. Did you get to see Kinkaku-ji at least?\nMan: Yes, that was the first place I went on Saturday morning. It was even more beautiful than I expected, though there were a lot of tourists.\nWoman: I went there two years ago. The crowds can be tough, but the gold reflection on the pond is amazing.\nMan: Exactly. I took so many photos. By the way, do you have any recommendations for my next trip? I'm thinking about going to Nara in October.\nWoman: October is a great time. The deer in Nara Park are friendly, and you should definitely visit Todai-ji to see the giant Buddha statue.\nMan: Thanks, I'll add that to my list.",
+        "questions": [
+          {"id":"q1","type":"multiple_choice","stem":"What did Mark do on Sunday?","choices":["He visited Kinkaku-ji and took many photos","He spent most of the day in a cafe due to rain","He went hiking on a nearby mountain trail","He left Kyoto early to return to his hometown"],"answer":"1","explanation":"スクリプト「on Sunday it rained all day so I spent most of the day in a small cafe」が直接根拠。Kinkaku-ji 訪問は土曜日 (誤答1の典型罠)。【Step4 検閲修正】選択肢長を均衡化 (各 7-9 語に統一)。"},
+          {"id":"q2","type":"multiple_choice","stem":"What does the woman recommend Mark do in Nara?","choices":["See the cherry blossoms in spring","Visit Todai-ji and meet the deer in the park","Stay overnight at a local temple","Go shopping for souvenirs"],"answer":"1","explanation":"「The deer in Nara Park are friendly, and you should definitely visit Todai-ji to see the giant Buddha statue」が根拠。【検閲修正】専門家B 指摘により選択肢長を均衡化。"},
+          {"id":"q3","type":"multiple_choice","stem":"What did Mark say about Kinkaku-ji?","choices":["It was crowded but more beautiful than he expected","It was unfortunately closed for renovation that morning","It was disappointing because of the bad weather","It rained heavily during his visit to the temple"],"answer":"0","explanation":"「It was even more beautiful than I expected, though there were a lot of tourists」が根拠。混雑も明示されており「crowded but more beautiful than expected」が両方の事実を統合。【Step4 検閲修正】選択肢長を均衡化。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "l_listening",
+      "eiken_grade": "center",
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[センター試験型 リスニング 大問4型 — モノローグ (英語のアナウンス)]\n\nGood evening, ladies and gentlemen, and welcome to Central Library. I have a few important announcements before the library closes.\n\nFirst, the library will close at 9 PM tonight, which is 30 minutes earlier than usual due to a staff training session. Please make sure to check out any books you wish to borrow before 8:45 PM.\n\nSecond, our self-checkout machines on the first floor are temporarily out of service. If you need to borrow books, please go to the main service desk on the second floor. We apologize for the inconvenience.\n\nThird, we are pleased to announce that our new collection of Japanese literature in English translation is now available on the third floor. The collection includes works by famous authors such as Haruki Murakami, Banana Yoshimoto, and Yasunari Kawabata.\n\nFinally, please remember that food and drinks, except for water in closed containers, are not allowed in any reading area. The cafeteria on the first floor will be open until 8:30 PM if you need refreshments.\n\nThank you for visiting Central Library tonight, and please get home safely.",
+        "questions": [
+          {"id":"q1","type":"multiple_choice","stem":"Why is the library closing earlier than usual tonight?","choices":["Due to bad weather","Due to a staff training session","Due to a power outage","Due to a public holiday"],"answer":"1","explanation":"「the library will close at 9 PM tonight, which is 30 minutes earlier than usual due to a staff training session」が根拠。"},
+          {"id":"q2","type":"multiple_choice","stem":"What should listeners do if they want to borrow books tonight?","choices":["Use the self-checkout machines on the first floor","Go to the main service desk on the second floor","Wait until tomorrow","Borrow them online"],"answer":"1","explanation":"「self-checkout machines on the first floor are temporarily out of service. If you need to borrow books, please go to the main service desk on the second floor」が根拠。"},
+          {"id":"q3","type":"multiple_choice","stem":"Where is the new collection of Japanese literature located?","choices":["First floor","Second floor","Third floor","Fourth floor"],"answer":"2","explanation":"「our new collection of Japanese literature in English translation is now available on the third floor」が直接根拠。"},
+          {"id":"q4","type":"multiple_choice","stem":"What is allowed in reading areas?","choices":["All food and drinks","Only water in closed containers","Hot drinks","Snacks but not drinks"],"answer":"1","explanation":"「food and drinks, except for water in closed containers, are not allowed in any reading area」が根拠。except for の例外条項を正確に読む必要あり。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_grammar",
+      "eiken_grade": "center",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "センター試験型 文法・語法 (大問2型・batch34 set A)",
+        "questions": [
+          {"id":"q1","type":"multiple_choice","stem":"By the time we ( ) at the station, the train had already left.","choices":["arrive","arrived","were arriving","have arrived"],"answer":"1","explanation":"By the time + S V (過去) の節中は過去形、主節は過去完了 (had + pp)。「我々が駅に着いた時にはもう列車は出発していた」。By the time 節の中は単純過去で、had + pp は主節側に置くのが定型。have arrived (現在完了) は過去基準点と整合しないため不可。"},
+          {"id":"q2","type":"multiple_choice","stem":"This is the town ( ) I was born and grew up.","choices":["which","what","where","when"],"answer":"2","explanation":"先行詞 the town (場所) + 関係詞節内で「その町で生まれ育った」と場所の副詞句が必要 → 関係副詞 where (= in which)。which は目的格・主格関係代名詞だが「I was born in the town」の前置詞 in が脱落しているため単独 which は不可 (in which なら可)。what は先行詞含み、when は時。"},
+          {"id":"q3","type":"multiple_choice","stem":"It is essential ( ) every student attend the safety lecture.","choices":["that","what","if","whether"],"answer":"0","explanation":"It is essential/important/necessary that S (should) + 動詞原形 = 仮定法現在。「すべての学生が安全講習に出席することが必須だ」。形式主語 it に対して真主語節を導く接続詞 that が正解。動詞 attend が原形 (三単現の s なし) になっている点も仮定法現在の標識。what は先行詞含み、if/whether は名詞節として可能だが「essential が要求する内容」を示すには that 節が標準。"},
+          {"id":"q4","type":"multiple_choice","stem":"No sooner ( ) home than it started raining.","choices":["I had arrived","had I arrived","I arrived","did I arrive"],"answer":"1","explanation":"No sooner + had + S + pp + than + S + 過去 = 〜するや否や。否定副詞 no sooner が文頭で倒置。「家に着くや否や雨が降り出した」。had I arrived (倒置) が正解。I had arrived は倒置していない、I arrived は時制不一致、did I arrive は do 助動詞の誤用。"},
+          {"id":"q5","type":"multiple_choice","stem":"I wish I ( ) more time to study English when I was young.","choices":["have","had","had had","would have"],"answer":"2","explanation":"I wish + 過去完了 = 過去への後悔。「若い時にもっと英語を勉強する時間があればよかったのに」。when I was young (過去) との整合のため過去完了 had had が必要。had (仮定法過去) は現在への願望。have は時制不一致、would have は単独では成立しない。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_grammar",
+      "eiken_grade": "center",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "センター試験型 文法・語法 (大問2型・batch34 set B)",
+        "questions": [
+          {"id":"q1","type":"multiple_choice","stem":"The reason ( ) he was late is that his train was delayed.","choices":["which","why","what","how"],"answer":"1","explanation":"先行詞 the reason (理由) → 関係副詞 why (= for which)。「遅れた理由は列車が遅延したからだ」。which は単独では前置詞 for が必要、what は先行詞含み、how は the way と併用しない (the way how は不可)。"},
+          {"id":"q2","type":"multiple_choice","stem":"Hardly had he sat down ( ) the phone rang.","choices":["that","when","than","while"],"answer":"1","explanation":"Hardly/Scarcely had S Vpp ... when/before S V (過去) = 〜するや否や。No sooner と相関語が異なる点に注意 (No sooner ... than / Hardly ... when)。「彼が座るや否や電話が鳴った」。"},
+          {"id":"q3","type":"multiple_choice","stem":"It was not until I read his letter ( ) I understood his feelings.","choices":["when","that","which","what"],"answer":"1","explanation":"It is/was ... that ... の強調構文。Not until I read his letter, I understood his feelings の Not until I read his letter を強調した形。「彼の手紙を読んで初めて気持ちを理解した」。when ではなく that が強調構文の標識。"},
+          {"id":"q4","type":"multiple_choice","stem":"He spoke so quietly that we could ( ) hear him.","choices":["hardly","nearly","almost","most"],"answer":"0","explanation":"hardly = ほとんど〜ない (否定の意味を持つ副詞)。「彼があまりに静かに話したので、ほとんど聞こえなかった」。so ... that 構文 + hardly の組合せ。nearly/almost は「もう少しで」(肯定的近接)、most は最上級・大半。"},
+          {"id":"q5","type":"multiple_choice","stem":"I'd rather you ( ) the truth than lie to me.","choices":["tell","told","will tell","would tell"],"answer":"1","explanation":"I'd rather (that) S + 過去形 = 仮定法過去 (現在/未来の願望)。「君には嘘をつくより本当のことを言ってほしい」。I'd rather に続く目的節は仮定法過去 (told)。原形 tell は I'd rather + 原形動詞 (主語一致時) のみ、will/would は不可。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "center",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Origins of Tea\n\nTea is now the second most consumed beverage in the world after water, but its origins go back thousands of years to ancient China. According to legend, tea was discovered in 2737 BCE by Emperor Shen Nung, when leaves from a wild tea tree accidentally fell into a pot of boiling water. The emperor found the resulting drink refreshing and energizing, and tea drinking gradually spread throughout China.\n\nFor centuries, tea remained primarily a Chinese custom. It was used both as a daily beverage and as a medicine, valued for its supposed health benefits. Buddhist monks drank tea to stay awake during long meditation sessions, and this connection to spiritual practice influenced how tea was prepared and consumed.\n\nTea reached Japan in the 8th century, brought back by Buddhist monks who had studied in China. Over the next several hundred years, the Japanese developed their own elaborate tea ceremony, called chanoyu, which transformed tea drinking into a refined art form involving careful preparation, specific utensils, and meditative attention to each step. The tea ceremony became deeply connected to Zen Buddhism and aesthetic principles such as wabi-sabi, which finds beauty in simplicity and imperfection.\n\nTea did not arrive in Europe until the 17th century, when Dutch and Portuguese traders brought it from China. It quickly became fashionable, especially in England, where the tradition of afternoon tea developed in the 1840s. The British East India Company eventually established large tea plantations in India and Sri Lanka to meet European demand, dramatically changing both economies and cultures in those regions.\n\nToday, tea is grown in over 60 countries and consumed in countless varieties — green, black, oolong, white, and herbal. Each region has developed its own preferences and customs around this ancient beverage, but its origins remain rooted in that legendary Chinese discovery thousands of years ago.",
+        "questions": [
+          {"id":"q1","type":"multiple_choice","stem":"According to legend, how was tea discovered?","choices":["A Buddhist monk invented it during meditation in China","Leaves accidentally fell into Emperor Shen Nung's boiling water","An emperor ordered scientists to develop a new beverage","It was brought to China by traders from ancient India"],"answer":"1","explanation":"段落1「tea was discovered in 2737 BCE by Emperor Shen Nung, when leaves from a wild tea tree accidentally fell into a pot of boiling water」が根拠。【Step4 検閲修正】選択肢長を均衡化 (各 7-10 語に統一)。"},
+          {"id":"q2","type":"multiple_choice","stem":"Why did Buddhist monks drink tea?","choices":["To celebrate religious holidays","To stay awake during long meditation sessions","To replace water during fasting","To prepare for sermons"],"answer":"1","explanation":"段落2「Buddhist monks drank tea to stay awake during long meditation sessions」が直接根拠。"},
+          {"id":"q3","type":"multiple_choice","stem":"What is the Japanese tea ceremony 'chanoyu' connected to?","choices":["Daily commercial trade with China","Zen Buddhism and the principle of wabi-sabi","Western fashion and aristocratic customs","Formal political meetings of the shogun"],"answer":"1","explanation":"段落3「The tea ceremony became deeply connected to Zen Buddhism and aesthetic principles such as wabi-sabi, which finds beauty in simplicity and imperfection」が根拠。【検閲修正】専門家B 指摘により選択肢長を均衡化 (本文丸写しを削除し本質のみ残す)。"},
+          {"id":"q4","type":"multiple_choice","stem":"How did tea reach Europe?","choices":["Through ancient Roman traders during the empire","Brought from China by Dutch and Portuguese traders","Discovered independently by English botanists in London","Through Russian merchants traveling along the Silk Road"],"answer":"1","explanation":"段落4「Tea did not arrive in Europe until the 17th century, when Dutch and Portuguese traders brought it from China」が根拠。【Step4 検閲修正】選択肢長を均衡化。"},
+          {"id":"q5","type":"multiple_choice","stem":"What does the passage suggest about tea today?","choices":["It is consumed only in Asian countries","It is grown worldwide in many varieties, but its origins remain in China","Its cultural significance has been entirely lost","It has become unpopular in recent decades"],"answer":"1","explanation":"最終段落「tea is grown in over 60 countries and consumed in countless varieties — green, black, oolong, white, and herbal ... but its origins remain rooted in that legendary Chinese discovery thousands of years ago」が根拠。【検閲修正】専門家B 指摘により選択肢長を均衡化。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "center",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Power of Habit\n\nWhy do we do what we do? This question has fascinated psychologists for decades, and recent research suggests that much of our daily behavior is driven by habits — automatic routines that operate without conscious thought. According to one study published in 2006, approximately 40 percent of our daily actions are habits rather than deliberate decisions.\n\nHabits work through a three-step neurological loop. First, there is a cue — a trigger that tells the brain to switch into automatic mode. The cue might be a time of day, a location, an emotional state, or the presence of certain people. Second, there is the routine — the behavior itself, whether physical, mental, or emotional. Finally, there is the reward — something pleasant that satisfies a craving and helps the brain remember the loop for the future.\n\nUnderstanding this loop has practical consequences. Researchers have found that habits cannot easily be eliminated, but they can be modified by keeping the same cue and reward while changing the routine. For example, someone who automatically reaches for a sugary snack when feeling stressed at work might gradually substitute a brief walk or a glass of water — using the same cue (stress) and seeking a similar reward (relief), but with a healthier routine.\n\nThis insight has applications in many fields. Companies use habit research to design products that customers find difficult to stop using. Public health campaigns leverage it to encourage healthier behaviors. Educators apply it to help students develop effective study routines. Even prisons and rehabilitation programs use these principles to support people in changing destructive patterns.\n\nYet there are limits and concerns. Critics worry that the same techniques that help individuals form good habits can be used to manipulate them — for example, to encourage compulsive shopping or social media use. The science of habits is morally neutral; how it is applied determines whether it benefits people or exploits them.",
+        "questions": [
+          {"id":"q1","type":"multiple_choice","stem":"What did the 2006 study find about daily behavior?","choices":["All of our daily actions are conscious decisions","About 40 percent of our daily actions are habits","Most habits develop only after the age of forty","Habit formation is biologically impossible to study"],"answer":"1","explanation":"段落1「approximately 40 percent of our daily actions are habits rather than deliberate decisions」が直接根拠。【Step4 検閲修正】選択肢長を均衡化。"},
+          {"id":"q2","type":"multiple_choice","stem":"What are the three steps of the habit loop?","choices":["Idea, action, and regret","Cue, routine, and reward","Goal, plan, and evaluation","Stress, action, and recovery"],"answer":"1","explanation":"段落2「First, there is a cue ... Second, there is the routine ... Finally, there is the reward」が根拠。【検閲修正】専門家B 指摘により正答の括弧説明を削除し選択肢長を均衡化。"},
+          {"id":"q3","type":"multiple_choice","stem":"How can habits be modified, according to researchers?","choices":["By eliminating the cue from the environment entirely","By keeping the same cue and reward but changing the routine","By punishing oneself whenever the habit appears","By using medication to suppress the brain's craving"],"answer":"1","explanation":"段落3「habits cannot easily be eliminated, but they can be modified by keeping the same cue and reward while changing the routine」が根拠。【Step4 検閲修正】選択肢長を均衡化 (各 8-12 語に統一)。"},
+          {"id":"q4","type":"multiple_choice","stem":"What concern does the author raise about habit research?","choices":["The same techniques can be used to manipulate people","The research methods themselves are unreliable","Habits cannot be studied scientifically at all","All habit research causes psychological harm"],"answer":"0","explanation":"最終段落「Critics worry that the same techniques that help individuals form good habits can be used to manipulate them — for example, to encourage compulsive shopping or social media use」が根拠。【検閲修正】専門家B 指摘により例示部分を削除し選択肢長を均衡化。"},
+          {"id":"q5","type":"multiple_choice","stem":"What does the author conclude about the science of habits?","choices":["It should be banned by international agreement","It is morally neutral, depending on how it is applied","It only serves the interests of large corporations","Its mechanisms have already been fully understood"],"answer":"1","explanation":"最終段落「The science of habits is morally neutral; how it is applied determines whether it benefits people or exploits them」が根拠。【検閲修正】専門家B 指摘により選択肢長を均衡化 (各選択肢を 6-8 語に統一)。"}
+        ]
+      }
+    }
+  ]
+}
