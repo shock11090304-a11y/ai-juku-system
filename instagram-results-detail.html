@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Instagram Carousel — 実画面スクショ7枚 | トリリオン AI塾</title>
+<script src="cache-purge.js"></script>
+<style>
+  :root {
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #ec4899;
+    --bg: #0a0a1a;
+    --bg-2: #14142b;
+    --text: #ffffff;
+    --text-dim: rgba(255,255,255,0.7);
+    --text-mute: rgba(255,255,255,0.45);
+    --gold: #fbbf24;
+    --gold-2: #f97316;
+    --green: #10b981;
+    --red: #ef4444;
+    --orange: #f97316;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+
+  html, body {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic Medium', 'Noto Sans JP', sans-serif;
+    background: #0a0a1a;
+    color: var(--text);
+    min-height: 100vh;
+  }
+  body { padding: 32px 16px; }
+
+  .toolbar {
+    max-width: 1100px;
+    margin: 0 auto 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text-dim);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .toolbar h1 { font-size: 1.1rem; color: var(--text); font-weight: 700; }
+  .toolbar .hint { font-size: 0.85rem; }
+  .toolbar button {
+    background: var(--primary); color: white; border: none;
+    padding: 8px 14px; border-radius: 8px; cursor: pointer;
+    font-size: 0.85rem; font-weight: 600;
+  }
+
+  .gallery {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  /* === 1080 × 1350 縦長スライド === */
+  .slide {
+    width: 1080px;
+    height: 1350px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 24px;
+    box-shadow: 0 30px 80px rgba(99, 102, 241, 0.3);
+    background: linear-gradient(160deg, #0f172a 0%, #1e1b4b 60%, #312e81 100%);
+    color: var(--text);
+    page-break-after: always;
+  }
+  .slide::before, .slide::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .slide::before {
+    width: 700px; height: 700px;
+    background: var(--primary);
+    top: -250px; right: -250px;
+  }
+  .slide::after {
+    width: 600px; height: 600px;
+    background: var(--accent);
+    bottom: -200px; left: -200px;
+  }
+  .slide .grain {
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E");
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .slide .safe {
+    position: absolute;
+    inset: 60px 72px;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+  }
+  .pager {
+    position: absolute;
+    top: 36px; right: 48px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+    z-index: 3;
+  }
+  .brand-tag {
+    position: absolute;
+    bottom: 32px; left: 48px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-dim);
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .brand-tag::before {
+    content: '';
+    display: inline-block;
+    width: 24px; height: 24px;
+    border-radius: 7px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+  }
+  .url-tag {
+    position: absolute;
+    bottom: 32px; right: 48px;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text-mute);
+    z-index: 3;
+  }
+  .badge-top {
+    align-self: flex-start;
+    background: linear-gradient(135deg, var(--gold), var(--gold-2));
+    color: #1e1b4b;
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+  }
+  .catch {
+    font-size: 80px;
+    font-weight: 900;
+    line-height: 1.18;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  .catch .grad {
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .what {
+    font-size: 22px;
+    color: var(--text-mute);
+    font-weight: 600;
+    margin-top: 12px;
+    letter-spacing: 0.05em;
+  }
+  .what::before { content: '▸ '; color: var(--gold); }
+
+  /* iPhone モック (大型) */
+  .phone {
+    width: 460px;
+    height: 920px;
+    background: #000;
+    border-radius: 60px;
+    padding: 12px;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.6), inset 0 0 0 2px #2a2a3e;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .phone::before {
+    content: '';
+    position: absolute;
+    top: 22px; left: 50%;
+    transform: translateX(-50%);
+    width: 130px; height: 36px;
+    background: #000;
+    border-radius: 18px;
+    z-index: 5;
+  }
+  .phone-screen {
+    width: 100%;
+    height: 100%;
+    border-radius: 48px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #0a0a14 0%, #14142b 100%);
+    position: relative;
+    color: white;
+  }
+  .status-bar {
+    height: 56px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 32px 0 36px;
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.02em;
+  }
+  .status-bar .icons {
+    display: flex; gap: 6px; align-items: center;
+    font-size: 14px;
+  }
+
+  /* 補助テキスト (iPhone 横) */
+  .side-notes {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    justify-content: center;
+  }
+  .side-note {
+    background: rgba(99, 102, 241, 0.18);
+    border: 1.5px solid rgba(99, 102, 241, 0.4);
+    border-radius: 18px;
+    padding: 22px 24px;
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--text);
+  }
+  .side-note .num {
+    display: inline-block;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--primary));
+    color: white;
+    font-size: 18px;
+    font-weight: 800;
+    text-align: center;
+    line-height: 32px;
+    margin-right: 12px;
+  }
+  .side-note b { color: var(--gold); font-weight: 800; }
+
+  /* 機能スライドのレイアウト */
+  .slide-feature .safe {
+    justify-content: flex-start;
+  }
+  .slide-feature .top {
+    margin-bottom: 24px;
+  }
+  .slide-feature .body {
+    display: flex;
+    gap: 32px;
+    align-items: center;
+    flex: 1;
+  }
+  .slide-feature .badges {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .badge {
+    background: rgba(99, 102, 241, 0.25);
+    border: 1.5px solid rgba(99, 102, 241, 0.5);
+    color: white;
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .badge.pink { background: rgba(236, 72, 153, 0.2); border-color: rgba(236, 72, 153, 0.5); }
+  .badge.gold { background: rgba(251, 191, 36, 0.2); border-color: rgba(251, 191, 36, 0.5); color: #fde68a; }
+
+  /* === Slide 1 (表紙) === */
+  .slide-1 .safe { align-items: center; justify-content: center; text-align: center; }
+  .slide-1 .badge-top { margin-bottom: 24px; }
+  .slide-1 .sub-top {
+    font-size: 28px; font-weight: 600; color: var(--text-dim);
+    margin-bottom: 32px; line-height: 1.4;
+  }
+  .slide-1 .main-catch {
+    font-size: 110px; font-weight: 900; line-height: 1.08;
+    letter-spacing: -0.03em; margin-bottom: 24px;
+  }
+  .slide-1 .main-catch .grad {
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .slide-1 .preview-wrap {
+    margin: 16px 0;
+    position: relative;
+    height: 480px;
+    width: 600px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .slide-1 .preview-wrap .pcard {
+    position: absolute;
+    width: 200px; height: 360px;
+    background: linear-gradient(160deg, #1e1b4b, #312e81);
+    border-radius: 24px;
+    border: 2px solid rgba(255,255,255,0.1);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+    padding: 16px;
+    opacity: 0.5;
+    filter: blur(1px);
+  }
+  .slide-1 .preview-wrap .pcard:nth-child(1) { transform: rotate(-12deg) translateX(-220px); }
+  .slide-1 .preview-wrap .pcard:nth-child(2) { transform: rotate(-6deg) translateX(-110px); opacity: 0.7; filter: blur(0.5px); }
+  .slide-1 .preview-wrap .pcard:nth-child(3) { transform: rotate(0deg); opacity: 0.95; filter: none; z-index: 5; box-shadow: 0 30px 80px rgba(99,102,241,0.4); }
+  .slide-1 .preview-wrap .pcard:nth-child(4) { transform: rotate(6deg) translateX(110px); opacity: 0.7; filter: blur(0.5px); }
+  .slide-1 .preview-wrap .pcard:nth-child(5) { transform: rotate(12deg) translateX(220px); }
+
+  .slide-1 .footer-promo {
+    margin-top: 24px;
+    font-size: 24px;
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  /* === Slide 7 (CTA) === */
+  .slide-7 .safe { align-items: center; text-align: center; justify-content: center; }
+  .slide-7 .seats-warning {
+    background: linear-gradient(135deg, #ef4444, #ec4899);
+    color: white;
+    padding: 12px 28px;
+    border-radius: 999px;
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 24px;
+    letter-spacing: 0.02em;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(236,72,153,0.5); }
+    50% { transform: scale(1.05); box-shadow: 0 0 0 16px rgba(236,72,153,0); }
+  }
+  .slide-7 .cta-headline {
+    font-size: 130px; font-weight: 900; line-height: 1; letter-spacing: -0.04em;
+    margin-bottom: 32px;
+  }
+  .slide-7 .cta-headline .grad {
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .slide-7 .cta-sub {
+    font-size: 30px; color: var(--text-dim); margin-bottom: 36px;
+    font-weight: 600; line-height: 1.5;
+  }
+  .slide-7 .cta-button {
+    background: linear-gradient(135deg, var(--accent), var(--primary));
+    color: white;
+    width: 720px;
+    padding: 36px 0;
+    border-radius: 999px;
+    font-size: 52px;
+    font-weight: 900;
+    box-shadow: 0 20px 60px rgba(236, 72, 153, 0.5);
+    margin-bottom: 36px;
+  }
+  .slide-7 .price-box {
+    display: flex; gap: 16px; align-items: baseline;
+    justify-content: center; margin-bottom: 8px;
+  }
+  .slide-7 .price-main {
+    font-size: 84px; font-weight: 900;
+    background: linear-gradient(135deg, var(--gold), var(--gold-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.02em;
+  }
+  .slide-7 .price-strike {
+    font-size: 36px; color: rgba(255,255,255,0.4);
+    text-decoration: line-through; font-weight: 700;
+  }
+  .slide-7 .guarantee-bar {
+    background: rgba(251, 191, 36, 0.12);
+    border: 1.5px solid rgba(251, 191, 36, 0.4);
+    color: #fde68a;
+    padding: 14px 32px;
+    border-radius: 999px;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+  .slide-7 .url-final {
+    margin-top: 20px;
+    font-size: 28px;
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  /* ============================================ */
+  /* iPhone 内部のアプリ画面 mocks */
+  /* ============================================ */
+
+  /* ====== Slide 2: 学習管理画面 ====== */
+  .app-mypage { padding: 0 20px; }
+  .app-mypage .greeting {
+    font-size: 22px; font-weight: 700; margin-top: 8px;
+  }
+  .app-mypage .greeting .name { color: var(--gold); }
+  .app-mypage .info-line {
+    font-size: 14px; color: rgba(255,255,255,0.6);
+    margin-top: 4px;
+  }
+  .app-mypage .stats-row {
+    display: flex; gap: 8px; margin-top: 14px;
+  }
+  .app-mypage .stat-card {
+    flex: 1;
+    background: rgba(99,102,241,0.2);
+    border: 1px solid rgba(99,102,241,0.3);
+    border-radius: 12px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .app-mypage .stat-card .v { font-size: 20px; font-weight: 900; color: var(--gold); }
+  .app-mypage .stat-card .l { font-size: 11px; color: rgba(255,255,255,0.7); }
+  .app-mypage .stat-card.streak .v { color: #f97316; }
+  .app-mypage .stat-card.streak .v::before { content: '🔥 '; }
+
+  .app-mypage .section-title {
+    font-size: 16px; font-weight: 800;
+    margin-top: 20px; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .app-mypage .section-title .tag {
+    font-size: 11px; color: var(--gold);
+    background: rgba(251,191,36,0.15);
+    padding: 3px 8px; border-radius: 999px;
+    font-weight: 700;
+  }
+  .app-mypage .task-list { display: flex; flex-direction: column; gap: 8px; }
+  .app-mypage .task-item {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 14px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .app-mypage .task-item .check {
+    width: 20px; height: 20px;
+    border-radius: 6px;
+    border: 2px solid #94a3b8;
+    flex-shrink: 0;
+  }
+  .app-mypage .task-item.done {
+    background: rgba(16,185,129,0.1);
+    border-color: rgba(16,185,129,0.3);
+  }
+  .app-mypage .task-item.done .check {
+    background: var(--green); border-color: var(--green);
+    position: relative;
+  }
+  .app-mypage .task-item.done .check::after {
+    content: '✓'; color: white;
+    font-size: 14px; font-weight: 900;
+    position: absolute; top: -2px; left: 3px;
+  }
+  .app-mypage .task-item .body { flex: 1; }
+  .app-mypage .task-item .body .subj {
+    font-size: 11px; color: var(--primary-light); font-weight: 700;
+  }
+  .app-mypage .task-item .body .text {
+    font-size: 13px; font-weight: 600; color: white;
+    margin-top: 2px;
+  }
+  .app-mypage .task-item.done .body .text {
+    text-decoration: line-through; opacity: 0.6;
+  }
+  .app-mypage .task-item .time {
+    font-size: 11px; color: rgba(255,255,255,0.5);
+    flex-shrink: 0;
+  }
+
+  .app-mypage .progress-list { display: flex; flex-direction: column; gap: 10px; }
+  .app-mypage .progress-item {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .app-mypage .progress-item .label {
+    font-size: 12px; font-weight: 700; width: 56px; flex-shrink: 0;
+  }
+  .app-mypage .progress-item .bar {
+    flex: 1; height: 8px; background: #1e293b; border-radius: 4px;
+    overflow: hidden;
+  }
+  .app-mypage .progress-item .bar > div {
+    height: 100%; border-radius: 4px;
+  }
+  .app-mypage .progress-item .pct {
+    font-size: 12px; font-weight: 700; width: 36px; text-align: right;
+  }
+
+  .app-mypage .rank-card {
+    margin-top: 14px;
+    background: linear-gradient(135deg, rgba(251,191,36,0.15), rgba(236,72,153,0.15));
+    border: 1px solid rgba(251,191,36,0.3);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .app-mypage .rank-card .l { flex: 1; }
+  .app-mypage .rank-card .l .label { font-size: 11px; color: rgba(255,255,255,0.7); }
+  .app-mypage .rank-card .l .v { font-size: 22px; font-weight: 900; color: var(--gold); }
+  .app-mypage .rank-card .arrow { font-size: 22px; color: var(--green); font-weight: 900; }
+
+  /* ====== Slide 3: AI 教材ジェネレータ ====== */
+  .app-textgen { padding: 0 16px; color: white; }
+  .app-textgen .input-bar {
+    margin-top: 12px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 13px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .app-textgen .input-bar::before { content: '🔍'; font-size: 14px; }
+  .app-textgen .input-bar .text { flex: 1; color: white; font-weight: 600; }
+  .app-textgen .gen-button {
+    margin-top: 10px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white;
+    text-align: center;
+    padding: 12px 0;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 800;
+    box-shadow: 0 6px 16px rgba(99,102,241,0.4);
+  }
+  .app-textgen .meta-row {
+    display: flex; justify-content: space-between;
+    margin-top: 14px; font-size: 11px;
+  }
+  .app-textgen .meta-row .left { color: rgba(255,255,255,0.6); }
+  .app-textgen .difficulty { color: var(--gold); font-weight: 700; }
+
+  .app-textgen .content-area {
+    margin-top: 16px;
+    position: relative;
+    height: 540px;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+  }
+  .app-textgen h1 {
+    font-size: 18px; font-weight: 900;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, white, #fde68a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .app-textgen h2 {
+    font-size: 14px; font-weight: 800;
+    color: var(--gold);
+    margin-top: 14px; margin-bottom: 6px;
+  }
+  .app-textgen p {
+    font-size: 12px; line-height: 1.7;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 8px;
+  }
+  .app-textgen .point-box {
+    background: rgba(251,191,36,0.12);
+    border-left: 3px solid var(--gold);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin: 10px 0;
+    font-size: 12px;
+    color: white;
+  }
+  .app-textgen .point-box .label {
+    color: var(--gold); font-weight: 800;
+    font-size: 11px;
+  }
+  .app-textgen .formula {
+    background: rgba(99,102,241,0.15);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    margin: 8px 0;
+    font-family: 'Times New Roman', serif;
+    font-size: 16px;
+    font-style: italic;
+    color: white;
+  }
+
+  /* ====== Slide 4: 問題演習プリント (印刷風) ====== */
+  .app-print { padding: 0; height: 100%; background: #f5f3ee; color: #1f2937; position: relative; }
+  .app-print::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n2'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n2)' opacity='0.3'/%3E%3C/svg%3E");
+    opacity: 0.04;
+    pointer-events: none;
+  }
+  .app-print .doc {
+    padding: 30px 24px;
+    font-family: 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  }
+  .app-print .header {
+    border-top: 2px solid #1f2937;
+    border-bottom: 1px solid #1f2937;
+    padding: 10px 0;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .app-print .header .h1 { font-size: 16px; font-weight: 900; }
+  .app-print .header .sub { font-size: 11px; color: #475569; margin-top: 4px; }
+  .app-print .meta-table {
+    border: 1px solid #1f2937;
+    width: 100%;
+    margin-bottom: 14px;
+    font-size: 11px;
+  }
+  .app-print .meta-table td {
+    border: 1px solid #1f2937;
+    padding: 6px 8px;
+  }
+  .app-print .meta-table td.label {
+    background: #e5e7eb;
+    font-weight: 700;
+    width: 30%;
+  }
+  .app-print .problem {
+    margin-bottom: 14px;
+  }
+  .app-print .problem .pq {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.6;
+    margin-bottom: 4px;
+  }
+  .app-print .problem .pq .pn {
+    color: var(--accent);
+    margin-right: 4px;
+  }
+  .app-print .problem .pq .pt {
+    font-size: 10px; color: #6b7280; margin-left: 6px;
+  }
+  .app-print .problem .ans {
+    height: 36px;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 17px,
+      #94a3b8 17px,
+      #94a3b8 18px
+    );
+  }
+  .app-print .footer {
+    text-align: center;
+    font-size: 9px;
+    color: #6b7280;
+    margin-top: 20px;
+    padding-top: 10px;
+    border-top: 1px dashed #94a3b8;
+  }
+
+  /* ====== Slide 5: 弱点補強 ====== */
+  .app-weak { padding: 0 16px; color: white; }
+  .app-weak .title {
+    font-size: 18px; font-weight: 900;
+    margin-top: 12px;
+  }
+  .app-weak .ai-msg {
+    background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(236,72,153,0.12));
+    border: 1px solid rgba(99,102,241,0.4);
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-top: 10px;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .app-weak .ai-msg .label {
+    color: var(--gold); font-weight: 800; font-size: 11px;
+    margin-bottom: 4px; display: block;
+  }
+  .app-weak .ai-msg b { color: var(--gold); font-weight: 800; }
+
+  .app-weak .section-title {
+    font-size: 14px; font-weight: 800;
+    margin-top: 18px; margin-bottom: 10px;
+  }
+  .app-weak .weak-list { display: flex; flex-direction: column; gap: 10px; }
+  .app-weak .weak-item {
+    display: flex; gap: 10px; align-items: center;
+  }
+  .app-weak .weak-item .rank {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    font-size: 11px;
+    font-weight: 900;
+    text-align: center;
+    line-height: 24px;
+    flex-shrink: 0;
+  }
+  .app-weak .weak-item.r1 .rank { background: var(--gold); color: #1e1b4b; }
+  .app-weak .weak-item .info { flex: 1; min-width: 0; }
+  .app-weak .weak-item .info .topic {
+    font-size: 11px; font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .app-weak .weak-item .info .bar-wrap {
+    display: flex; gap: 6px; align-items: center;
+  }
+  .app-weak .weak-item .info .bar {
+    flex: 1; height: 8px;
+    background: #1e293b;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .app-weak .weak-item .info .bar > div {
+    height: 100%;
+    border-radius: 4px;
+  }
+  .app-weak .weak-item .info .pct {
+    font-size: 11px; font-weight: 800;
+    width: 32px; text-align: right;
+  }
+  .app-weak .weak-item .cta {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    font-size: 14px; font-weight: 900;
+    text-align: center; line-height: 28px;
+    flex-shrink: 0;
+  }
+
+  .app-weak .info-card {
+    margin-top: 14px;
+    background: rgba(251,191,36,0.15);
+    border: 1px solid rgba(251,191,36,0.4);
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fde68a;
+  }
+  .app-weak .info-card b {
+    font-size: 18px; font-weight: 900;
+    color: var(--gold);
+  }
+
+  /* ====== Slide 6: 模試取り込みビフォーアフター ====== */
+  .app-scan {
+    height: 100%;
+    color: white;
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    position: relative;
+  }
+  .app-scan .divider {
+    position: absolute;
+    top: 50%; left: 0; right: 0;
+    height: 2px;
+    background: var(--gold);
+    z-index: 5;
+  }
+  .app-scan .divider::after {
+    content: '↓';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px; height: 40px;
+    background: var(--gold);
+    color: #1e1b4b;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 40px;
+    font-size: 22px;
+    font-weight: 900;
+    box-shadow: 0 0 0 4px #14142b;
+  }
+  .app-scan .before { padding: 14px 16px; overflow: hidden; }
+  .app-scan .label {
+    font-size: 11px; color: var(--gold);
+    font-weight: 800; letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .app-scan .photo-wrap {
+    background: linear-gradient(135deg, #1f2937, #111827);
+    border-radius: 12px;
+    padding: 14px;
+    height: 240px;
+    position: relative;
+  }
+  .app-scan .photo-paper {
+    background: #fafaf2;
+    height: 100%;
+    border-radius: 6px;
+    transform: rotate(-2deg);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+    padding: 14px 18px;
+    position: relative;
+    color: #0f172a;
+    font-family: 'Yu Mincho', serif;
+  }
+  .app-scan .photo-paper .test-title {
+    font-size: 11px; font-weight: 700;
+    border-bottom: 1px solid #374151;
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+  }
+  .app-scan .photo-paper .answers {
+    font-size: 9px;
+    line-height: 1.7;
+  }
+  .app-scan .photo-paper .answers div {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .app-scan .red-x {
+    color: #dc2626;
+    font-size: 18px;
+    font-weight: 900;
+    transform: rotate(15deg);
+    display: inline-block;
+  }
+  .app-scan .photo-meta {
+    font-size: 10px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 8px;
+  }
+
+  .app-scan .after { padding: 14px 16px; overflow: hidden; }
+  .app-scan .summary-card {
+    background: rgba(99,102,241,0.18);
+    border: 1px solid rgba(99,102,241,0.4);
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    font-size: 11px;
+    text-align: center;
+  }
+  .app-scan .summary-card .num-err {
+    color: var(--red);
+    font-size: 18px;
+    font-weight: 900;
+    margin-right: 6px;
+  }
+  .app-scan .err-list { display: flex; flex-direction: column; gap: 6px; }
+  .app-scan .err-item {
+    background: rgba(255,255,255,0.05);
+    border-left: 2px solid var(--red);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 10px;
+    line-height: 1.4;
+  }
+  .app-scan .err-item .topic {
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .app-scan .err-item .tag {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 700;
+  }
+  .app-scan .scan-cta {
+    margin-top: 8px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white;
+    text-align: center;
+    padding: 8px 0;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  /* PNG エクスポートモード */
+  body.export-mode { background: transparent !important; padding: 0 !important; }
+  body.export-mode .toolbar { display: none !important; }
+  body.export-mode .gallery { gap: 0 !important; }
+  body.export-mode .slide { display: none !important; box-shadow: none !important; border-radius: 0 !important; }
+  body.export-mode .slide.export-active { display: block !important; }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>📸 第2弾 — 実画面スクショ7枚 (1080×1350)</h1>
+  <div class="hint">?slide=N で単独 export</div>
+  <button onclick="window.print()">印刷 / PDF</button>
+</div>
+
+<div class="gallery">
+
+  <!-- =========================================== -->
+  <!-- スライド 1 : 表紙 -->
+  <!-- =========================================== -->
+  <section class="slide slide-1" id="slide-1">
+    <div class="grain"></div>
+    <div class="pager">1 / 7</div>
+    <div class="safe">
+      <div class="badge-top">📸 全 5 画面 公開</div>
+      <div class="sub-top">機能リストでは、もう驚かない。<br>だから、画面そのものを置きます。</div>
+
+      <div class="main-catch">
+        ¥14,500の中身、<br>
+        <span class="grad">ぜんぶ見せます。</span>
+      </div>
+
+      <div class="preview-wrap">
+        <div class="pcard">学習管理</div>
+        <div class="pcard">AI教材</div>
+        <div class="pcard">演習プリント</div>
+        <div class="pcard">弱点補強</div>
+        <div class="pcard">模試取り込み</div>
+      </div>
+
+      <div class="footer-promo">→ スワイプで全画面を見る</div>
+    </div>
+    <div class="brand-tag">@trillion_ai</div>
+    <div class="url-tag">trillion-ai-juku.com</div>
+  </section>
+
+  <!-- =========================================== -->
+  <!-- スライド 2 : 学習管理画面 -->
+  <!-- =========================================== -->
+  <section class="slide slide-feature" id="slide-2">
+    <div class="grain"></div>
+    <div class="pager">2 / 7</div>
+    <div class="safe">
+      <div class="top">
+        <div class="badges">
+          <span class="badge gold">🌅 毎朝 6時 自動更新</span>
+        </div>
+        <div class="catch">机に向かう前に、<br>今日の<span class="grad">"正解"</span>が決まっている。</div>
+        <div class="what">学習管理画面 — 毎朝ここから始まる</div>
+      </div>
+
+      <div class="body">
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span class="icons">●●● 📶 🔋</span></div>
+            <div class="app-mypage">
+              <div class="greeting"><span class="name">山田 翔太</span> さん おはよう</div>
+              <div class="info-line">高2 / 早稲田大学 商学部 志望</div>
+
+              <div class="stats-row">
+                <div class="stat-card"><div class="v">Lv.23</div><div class="l">XP 4,820</div></div>
+                <div class="stat-card streak"><div class="v">47日</div><div class="l">連続学習</div></div>
+                <div class="stat-card"><div class="v">12位</div><div class="l">学年▲5</div></div>
+              </div>
+
+              <div class="section-title">📋 今日のタスク <span class="tag">AI 自動生成</span></div>
+              <div class="task-list">
+                <div class="task-item">
+                  <div class="check"></div>
+                  <div class="body">
+                    <div class="subj">英語</div>
+                    <div class="text">比較構文 例題演習</div>
+                  </div>
+                  <div class="time">15分</div>
+                </div>
+                <div class="task-item">
+                  <div class="check"></div>
+                  <div class="body">
+                    <div class="subj">数学II</div>
+                    <div class="text">三角関数 加法定理 復習</div>
+                  </div>
+                  <div class="time">20分</div>
+                </div>
+                <div class="task-item done">
+                  <div class="check"></div>
+                  <div class="body">
+                    <div class="subj">現代文</div>
+                    <div class="text">評論「環境と倫理」</div>
+                  </div>
+                  <div class="time">12分</div>
+                </div>
+                <div class="task-item">
+                  <div class="check"></div>
+                  <div class="body">
+                    <div class="subj">日本史</div>
+                    <div class="text">江戸後期 政治改革 一問一答</div>
+                  </div>
+                  <div class="time">10分</div>
+                </div>
+              </div>
+
+              <div class="section-title">📊 教科別 正答率 <span class="tag">今週</span></div>
+              <div class="progress-list">
+                <div class="progress-item"><div class="label">英語</div><div class="bar"><div style="width:72%;background:#6366f1;"></div></div><div class="pct">72%</div></div>
+                <div class="progress-item"><div class="label">数学</div><div class="bar"><div style="width:54%;background:#ef4444;"></div></div><div class="pct" style="color:#ef4444;">54%</div></div>
+                <div class="progress-item"><div class="label">国語</div><div class="bar"><div style="width:68%;background:#fbbf24;"></div></div><div class="pct">68%</div></div>
+                <div class="progress-item"><div class="label">日本史</div><div class="bar"><div style="width:71%;background:#10b981;"></div></div><div class="pct">71%</div></div>
+                <div class="progress-item"><div class="label">政経</div><div class="bar"><div style="width:63%;background:#22d3ee;"></div></div><div class="pct">63%</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="side-notes">
+          <div class="side-note"><span class="num">1</span>タスクは AI が前日の学習量から<b>自動生成</b></div>
+          <div class="side-note"><span class="num">2</span>「数学 54%」のような<b>苦手の発見</b>もこの画面で</div>
+          <div class="side-note"><span class="num">3</span>親の LINE にも<b>進捗が日次レポート</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="brand-tag">@trillion_ai</div>
+    <div class="url-tag">trillion-ai-juku.com</div>
+  </section>
+
+  <!-- =========================================== -->
+  <!-- スライド 3 : 生成AIテキスト -->
+  <!-- =========================================== -->
+  <section class="slide slide-feature" id="slide-3">
+    <div class="grain"></div>
+    <div class="pager">3 / 7</div>
+    <div class="safe">
+      <div class="top">
+        <div class="badges">
+          <span class="badge">⚡ 平均 18秒で生成</span>
+          <span class="badge pink">難易度指定可</span>
+        </div>
+        <div class="catch">参考書1冊分の解説が、<br>AIから、<span class="grad">その場で出る。</span></div>
+        <div class="what">AI 教材ジェネレータ — 単元を打つだけ</div>
+      </div>
+
+      <div class="body">
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="status-bar"><span>20:47</span><span class="icons">●●● 📶 🔋</span></div>
+            <div class="app-textgen">
+              <div class="input-bar">
+                <div class="text">物理 電磁誘導 ファラデーの法則</div>
+              </div>
+              <div class="gen-button">⚡ 解説を生成</div>
+              <div class="meta-row">
+                <div class="left">推定読了 8分 / 山田さん向け</div>
+                <div class="difficulty">★★★☆☆</div>
+              </div>
+
+              <div class="content-area">
+                <h1>ファラデーの電磁誘導の法則</h1>
+
+                <h2>① 現象のイメージ</h2>
+                <p>棒磁石をコイルに近づけると、コイルに電流が流れます。これが電磁誘導です。では「なぜ」流れるのか。ポイントはコイルが「現状維持を望む」ことです。</p>
+
+                <div class="point-box">
+                  <div class="label">▼ ここがポイント</div>
+                  「変化を妨げる向き」=「磁束を打ち消す向き」
+                </div>
+
+                <h2>② 数式の意味</h2>
+                <p>誘導起電力 ε は、コイルを貫く磁束 Φ の時間変化に等しい (符号は逆)。</p>
+                <div class="formula">ε = -dΦ/dt</div>
+                <p>マイナス符号は「変化を妨げる向き」を表す。ここを誤解する高校生が多い。</p>
+
+                <h2>③ よく出る誤解</h2>
+                <p>「マイナス符号は何を意味するか」を口頭で説明できれば合格。式を覚えるだけでは入試で落とせます。</p>
+
+                <h2>④ 例題</h2>
+                <p>N極を下にして上から落とすと、コイル上面が「N極になるような向き」に電流が流れる…</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="side-notes">
+          <div class="side-note"><span class="num">1</span><b>英語長文 / 現代文 / 古典</b>の精読サポートも同じ画面で</div>
+          <div class="side-note"><span class="num">2</span>「<b>高校生の語彙で</b>」「<b>東大レベルで</b>」など難易度も指定可</div>
+          <div class="side-note"><span class="num">3</span>ノート保存 + 読み上げで<b>通学中の音声学習</b>も</div>
+        </div>
+      </div>
+    </div>
+    <div class="brand-tag">@trillion_ai</div>
+    <div class="url-tag">trillion-ai-juku.com</div>
+  </section>
+
+  <!-- =========================================== -->
+  <!-- スライド 4 : 問題演習プリント -->
+  <!-- =========================================== -->
+  <section class="slide slide-feature" id="slide-4">
+    <div class="grain"></div>
+    <div class="pager">4 / 7</div>
+    <div class="safe">
+      <div class="top">
+        <div class="badges">
+          <span class="badge">🖨 A4 / B5 両対応</span>
+          <span class="badge pink">解答解説 PDF も同時生成</span>
+        </div>
+        <div class="catch">PDF で 30 問。<br>今すぐ印刷、<span class="grad">今すぐ机へ。</span></div>
+        <div class="what">印刷可能 問題集ジェネレータ</div>
+      </div>
+
+      <div class="body">
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="status-bar" style="color:#1f2937;background:#e5e7eb;"><span>21:08</span><span class="icons">●●● 📶 🔋</span></div>
+            <div class="app-print">
+              <div class="doc">
+                <div class="header">
+                  <div class="h1">数学 II 演習プリント</div>
+                  <div class="sub">三角関数 (加法定理・合成) / No.0428-S</div>
+                </div>
+
+                <table class="meta-table">
+                  <tr>
+                    <td class="label">生徒名</td><td>山田 翔太</td>
+                  </tr>
+                  <tr>
+                    <td class="label">対象</td><td>早稲田大学 商学部</td>
+                  </tr>
+                  <tr>
+                    <td class="label">制限時間</td><td>30分 / 100点満点</td>
+                  </tr>
+                </table>
+
+                <div class="problem">
+                  <div class="pq"><span class="pn">問1</span>sin75° の値を加法定理を用いて求めよ。<span class="pt">(20点 / 5分)</span></div>
+                  <div class="ans"></div>
+                </div>
+
+                <div class="problem">
+                  <div class="pq"><span class="pn">問2</span>0 ≦ θ &lt; 2π のとき、<br>sinθ + √3 cosθ = 1 を解け。<span class="pt">(25点 / 7分)</span></div>
+                  <div class="ans"></div>
+                </div>
+
+                <div class="problem">
+                  <div class="pq"><span class="pn">問3</span>関数 f(θ) = 2sinθ cos(θ + π/6) の<br>最大値および最小値を求めよ。<span class="pt">(25点 / 8分)</span></div>
+                  <div class="ans"></div>
+                </div>
+
+                <div class="problem">
+                  <div class="pq"><span class="pn">問4</span>tan(α+β)=3, tanα=2 のとき、<br>tanβ の値を求めよ。<span class="pt">(30点 / 10分)</span></div>
+                  <div class="ans"></div>
+                </div>
+
+                <div class="footer">トリリオン AI塾 / 自動生成 2026.04.28 21:08</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="side-notes">
+          <div class="side-note"><span class="num">1</span><b>全教科・全単元</b>で生成可、難易度3段階</div>
+          <div class="side-note"><span class="num">2</span><b>氏名欄・日付欄つき</b>で塾配布物そのもの</div>
+          <div class="side-note"><span class="num">3</span><b>解答解説 PDF</b>も別ファイルで同時生成</div>
+        </div>
+      </div>
+    </div>
+    <div class="brand-tag">@trillion_ai</div>
+    <div class="url-tag">trillion-ai-juku.com</div>
+  </section>
+
+  <!-- =========================================== -->
+  <!-- スライド 5 : 弱点補強プリント -->
+  <!-- =========================================== -->
+  <section class="slide slide-feature" id="slide-5">
+    <div class="grain"></div>
+    <div class="pager">5 / 7</div>
+    <div class="safe">
+      <div class="top">
+        <div class="badges">
+          <span class="badge">🎯 過去30日の躓きから抽出</span>
+          <span class="badge gold">📅 週1 自動配信</span>
+        </div>
+        <div class="catch">"なんとなく苦手" を、<br>AI が <span class="grad">5単元に絞る。</span></div>
+        <div class="what">弱点分析レポート — 期間 03/29 - 04/28</div>
+      </div>
+
+      <div class="body">
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="status-bar"><span>21:23</span><span class="icons">●●● 📶 🔋</span></div>
+            <div class="app-weak">
+              <div class="title">山田さんの弱点 トップ5</div>
+              <div class="ai-msg">
+                <span class="label">🤖 AI からのメッセージ</span>
+                直近5回の演習データから、<b>加法定理</b>と<b>微分の接線</b>が突出して低い結果でした。この2週間で <b>38% → 60%以上</b> に引き上げるプランを組みました。
+              </div>
+
+              <div class="section-title">📉 苦手 上位5単元</div>
+              <div class="weak-list">
+                <div class="weak-item r1">
+                  <div class="rank">1</div>
+                  <div class="info">
+                    <div class="topic">数学II 三角関数・加法定理</div>
+                    <div class="bar-wrap">
+                      <div class="bar"><div style="width:38%;background:#ef4444;"></div></div>
+                      <div class="pct" style="color:#ef4444;">38%</div>
+                    </div>
+                  </div>
+                  <div class="cta">→</div>
+                </div>
+                <div class="weak-item">
+                  <div class="rank">2</div>
+                  <div class="info">
+                    <div class="topic">数学II 微分・接線の方程式</div>
+                    <div class="bar-wrap">
+                      <div class="bar"><div style="width:41%;background:#f97316;"></div></div>
+                      <div class="pct" style="color:#f97316;">41%</div>
+                    </div>
+                  </div>
+                  <div class="cta">→</div>
+                </div>
+                <div class="weak-item">
+                  <div class="rank">3</div>
+                  <div class="info">
+                    <div class="topic">英語 長文読解・抽象論型</div>
+                    <div class="bar-wrap">
+                      <div class="bar"><div style="width:49%;background:#f97316;"></div></div>
+                      <div class="pct" style="color:#f97316;">49%</div>
+                    </div>
+                  </div>
+                  <div class="cta">→</div>
+                </div>
+                <div class="weak-item">
+                  <div class="rank">4</div>
+                  <div class="info">
+                    <div class="topic">政経 金融政策</div>
+                    <div class="bar-wrap">
+                      <div class="bar"><div style="width:52%;background:#eab308;"></div></div>
+                      <div class="pct" style="color:#eab308;">52%</div>
+                    </div>
+                  </div>
+                  <div class="cta">→</div>
+                </div>
+                <div class="weak-item">
+                  <div class="rank">5</div>
+                  <div class="info">
+                    <div class="topic">数学II ベクトル・内積</div>
+                    <div class="bar-wrap">
+                      <div class="bar"><div style="width:56%;background:#eab308;"></div></div>
+                      <div class="pct" style="color:#eab308;">56%</div>
+                    </div>
+                  </div>
+                  <div class="cta">→</div>
+                </div>
+              </div>
+
+              <div class="info-card">
+                💡 この5単元だけで<br><b>模試 +18点</b> 見込み (AI試算)
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="side-notes">
+          <div class="side-note"><span class="num">1</span>過去の誤答ログを<b>毎晩 AI が再分析</b></div>
+          <div class="side-note"><span class="num">2</span>「<b>なぜ間違えたか</b>」原因タグも自動付与</div>
+          <div class="side-note"><span class="num">3</span>各単元から<b>1タップで補強プリント生成</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="brand-tag">@trillion_ai</div>
+    <div class="url-tag">trillion-ai-juku.com</div>
+  </section>
+
+  <!-- =========================================== -->
+  <!-- スライド 6 : 模試取り込み -->
+  <!-- =========================================== -->
+  <section class="slide slide-feature" id="slide-6">
+    <div class="grain"></div>
+    <div class="pager">6 / 7</div>
+    <div class="safe">
+      <div class="top">
+        <div class="badges">
+          <span class="badge">📷 写真1枚で完結</span>
+          <span class="badge pink">進研/駿台/河合/東進対応</span>
+        </div>
+        <div class="catch">紙の模試を撮るだけ。<br>AIが誤答の<span class="grad">"原因"まで言う。</span></div>
+        <div class="what">模試スキャン解析 — 撮影 → 解析 30秒</div>
+      </div>
+
+      <div class="body">
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="status-bar"><span>21:42</span><span class="icons">●●● 📶 🔋</span></div>
+            <div class="app-scan">
+              <div class="divider"></div>
+
+              <div class="before">
+                <div class="label">Before — 撮影</div>
+                <div class="photo-wrap">
+                  <div class="photo-paper">
+                    <div class="test-title">河合塾 全統記述模試 数学II・B</div>
+                    <div class="answers">
+                      <div>大問2(2): 加法定理 <span class="red-x">✗</span></div>
+                      <div>大問3(1): ベクトル内積 <span class="red-x">✗</span></div>
+                      <div>大問3(3): 平面の方程式</div>
+                      <div>大問4(2): 接線の方程式 <span class="red-x">✗</span></div>
+                      <div>大問4(3): 法線と面積</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="photo-meta">アップロード完了 (3.2MB) / OCR解析 8.4秒</div>
+              </div>
+
+              <div class="after">
+                <div class="label">After — AI 解析</div>
+                <div class="summary-card">
+                  全14問中 <span class="num-err">誤答 5問</span> / 64点 (偏差値 58.4)
+                </div>
+                <div class="err-list">
+                  <div class="err-item">
+                    <div class="topic">大問2(2) 加法定理</div>
+                    <span class="tag">平方完成の符号ミス</span>
+                  </div>
+                  <div class="err-item">
+                    <div class="topic">大問4(2) 接線の方程式</div>
+                    <span class="tag">微分後の符号取り違え</span>
+                  </div>
+                  <div class="err-item">
+                    <div class="topic">大問3(1) ベクトル内積</div>
+                    <span class="tag">計算過程の単位ミス</span>
+                  </div>
+                </div>
+                <div class="scan-cta">→ 2週間 補強プランを自動生成</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="side-notes">
+          <div class="side-note"><span class="num">1</span>模試 1 回 = <b>弱点プリント 1 セット</b>自動生成</div>
+          <div class="side-note"><span class="num">2</span><b>「なぜ間違えたか」</b>を AI が原因タグ化</div>
+          <div class="side-note"><span class="num">3</span>河合・駿台・進研・東進<b>全模試対応</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="brand-tag">@trillion_ai</div>
+    <div class="url-tag">trillion-ai-juku.com</div>
+  </section>
+
+  <!-- =========================================== -->
+  <!-- スライド 7 : CTA -->
+  <!-- =========================================== -->
+  <section class="slide slide-7" id="slide-7">
+    <div class="grain"></div>
+    <div class="pager">7 / 7</div>
+    <div class="safe">
+      <div class="seats-warning">⏰ 創設メンバー 残り 18席</div>
+
+      <div class="cta-headline">
+        見たら、<br>
+        <span class="grad">止まらない。</span>
+      </div>
+
+      <div class="cta-sub">
+        まず7日、無料で。<br>
+        クレカ登録なし。本当に0円で全画面を触れます。
+      </div>
+
+      <div class="cta-button">▶ 席を確保する</div>
+
+      <div class="price-box">
+        <span class="price-strike">¥39,800</span>
+        <span class="price-main">¥14,500/月</span>
+      </div>
+      <div style="font-size:24px;color:var(--text-dim);margin-bottom:16px;font-weight:600;">永年 / 全教科 / 全機能</div>
+
+      <div class="guarantee-bar">⚡ 創設メンバー 50名限定 / 永年¥14,500保証</div>
+
+      <div style="font-size:22px;color:var(--text-dim);line-height:1.6;font-weight:500;margin-top:16px;">
+        家庭教師月10万も、塾月5万も、もう要らない。<br>
+        家計を守りながら、子の進路は妥協しない。
+      </div>
+
+      <div class="url-final">→ trillion-ai-juku.com/lp.html</div>
+    </div>
+    <div class="brand-tag">@trillion_ai</div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  const params = new URLSearchParams(location.search);
+  const slideParam = params.get('slide');
+  if (slideParam) {
+    document.body.classList.add('export-mode');
+    const target = document.getElementById('slide-' + slideParam);
+    if (target) target.classList.add('export-active');
+  }
+})();
+</script>
+
+</body>
+</html>

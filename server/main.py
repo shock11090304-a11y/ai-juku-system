@@ -3703,8 +3703,10 @@ async def admin_send_ig_carousel(
     payload = payload or {}
     to_email = payload.get("to") or os.getenv("DAILY_SNS_TO_EMAIL", "shock11090304@gmail.com")
     base_url = (payload.get("base_url") or "https://trillion-ai-juku.com").rstrip("/")
+    prefix = payload.get("prefix", "ig-detail")
+    count = int(payload.get("count", 10))
 
-    titles = {
+    DEFAULT_TITLES_DETAIL = {
         1: "01 表紙 — 子の月10万、もう要らない。",
         2: "02 24時間 AIチューター",
         3: "03 リアル英字ニュース読解",
@@ -3716,8 +3718,16 @@ async def admin_send_ig_carousel(
         9: "09 東大生3人が問題を検閲",
         10: "10 CTA — 席を確保する",
     }
-
-    caption = (
+    DEFAULT_TITLES_RESULTS = {
+        1: "01 表紙 — ¥14,500の中身、ぜんぶ見せます。",
+        2: "02 学習管理画面 — 今日のタスクが決まっている",
+        3: "03 生成AIテキスト — 参考書1冊分が18秒で",
+        4: "04 問題演習プリント — 印刷可能、氏名欄つき",
+        5: "05 弱点補強プリント — AIが弱点を5単元に絞る",
+        6: "06 模試取り込み — 紙を撮るだけで原因タグ化",
+        7: "07 CTA — 見たら、止まらない。",
+    }
+    DEFAULT_CAPTION_DETAIL = (
         "中3の息子に、家庭教師を月10万払っていた。\n"
         "AIに切り替えて3ヶ月、模試の偏差値が8上がった。\n"
         "月¥14,500。それが現実。\n\n"
@@ -3745,10 +3755,54 @@ async def admin_send_ig_carousel(
         "家計を守りながら、子の進路は妥協しない。\n\n"
         "#ai塾 #大学受験 #高校受験 #英検準1級 #toeic #塾選び #家庭教師 #オンライン塾 #自宅学習 #生成ai"
     )
+    DEFAULT_CAPTION_RESULTS = (
+        "うちの子の机に、今こんなプリントが置いてあります。\n\n"
+        "数学Ⅱ・三角関数 30問。AI が昨夜のうちに自動で作ったやつです。\n\n"
+        "正直、最初は半信半疑でした。「AI塾」って響きだけで中身ペラペラなんじゃないかって。だから今回は、機能を語るのをやめて、画面そのものを置きます。\n\n"
+        "━━━━━━━━━━━━━━━\n\n"
+        "▼ Slide 2 / 学習管理画面\n"
+        "朝、子どもがスマホを開くと「今日のタスク」が3つ並んでいる。連続学習47日。校内ランキング学年12位、5つ上昇。これだけで「今日もやるか」になる。親の LINE にも日次レポート。\n\n"
+        "▼ Slide 3 / 生成AIテキスト\n"
+        "「物理 電磁誘導」と打つだけで、参考書1冊分の解説が出てくる。日常イメージ→数式→よくある誤解の順。「高校生の語彙で」「東大レベルで」と難易度指定もできる。生成は平均18秒。\n\n"
+        "▼ Slide 4 / 問題演習プリント\n"
+        "本気で印刷できる。氏名欄も日付欄もある、塾でもらうのと同じ体裁。30問+解答解説 PDF が同時に出る。これが本当に効きました。机に紙があるとスマホを置く。\n\n"
+        "▼ Slide 5 / 弱点補強プリント\n"
+        "過去30日の誤答を AI が分析して「あなたの弱点トップ5」を出す。即その単元だけのプリントを生成。「この5単元だけで模試+18点見込み」のメッセージが、子どもより先に親に刺さる。\n\n"
+        "▼ Slide 6 / 模試取り込み\n"
+        "紙の模試をスマホで撮るだけ。AI が誤答1つ1つに「平方完成の符号ミス」「時制の認識不足」と原因タグを付ける。模試1回でその子専用の弱点プリントが1セット出来上がる。\n\n"
+        "━━━━━━━━━━━━━━━\n\n"
+        "ここまでの5機能を全部回すと、市販の参考書+個別塾+添削サービスを足したくらいの体験になります。\n\n"
+        "それを月¥14,500。通常 ¥39,800 のところ、創設メンバー50名は永年¥14,500で固定。残り18席。\n\n"
+        "「説明されて納得する」より「画面を見て確信する」ほうが、たぶん早い。\n\n"
+        "7日間、完全無料で全機能触れます。クレカ登録なし。MARCH・関関同立から東大まで対応。中堅大学を切り捨てた塾ではありません。\n\n"
+        "見たら、止まらないです。\n\n"
+        "trillion-ai-juku.com/lp.html\n\n"
+        "#ai塾 #大学受験 #高校受験 #塾選び #家庭教師 #英検 #自宅学習 #生成ai #高校生勉強垢 #中学生勉強垢"
+    )
+
+    if prefix == "ig-results":
+        default_titles = DEFAULT_TITLES_RESULTS
+        default_caption = DEFAULT_CAPTION_RESULTS
+        default_subject = "📸 Instagram カルーセル 第2弾(実画面スクショ7枚) + 投稿文"
+        default_h1 = "📸 第2弾 — 実画面スクショ7枚"
+        default_p = "学習管理 / AI教材 / 演習プリント / 弱点補強 / 模試取り込み"
+    else:
+        default_titles = DEFAULT_TITLES_DETAIL
+        default_caption = DEFAULT_CAPTION_DETAIL
+        default_subject = "📸 Instagram カルーセル(16機能詳細) — 完成版 + 投稿文"
+        default_h1 = "📸 Instagram カルーセル投稿(完成版)"
+        default_p = "16機能詳細 / 1080×1350 / 10枚"
+
+    titles_override = payload.get("titles") or {}
+    titles = {**default_titles, **{int(k): v for k, v in titles_override.items()}}
+    caption = payload.get("caption") or default_caption
+    subject = payload.get("subject") or default_subject
+    header_h1 = payload.get("header_h1") or default_h1
+    header_p = payload.get("header_p") or default_p
 
     slides_html = ""
-    for i in range(1, 11):
-        url = f"{base_url}/marketing-assets/ig-detail-{i}.png"
+    for i in range(1, count + 1):
+        url = f"{base_url}/marketing-assets/{prefix}-{i}.png"
         title = titles.get(i, f"Slide {i}")
         slides_html += (
             f'<div style="margin-bottom:20px;padding:16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">'
@@ -3765,12 +3819,12 @@ async def admin_send_ig_carousel(
     body_html = (
         '<!DOCTYPE html><html><body style="font-family:\'Hiragino Sans\',\'Yu Gothic\',sans-serif;max-width:640px;margin:0 auto;padding:24px;background:#f8fafc;color:#0f172a;">'
         '<div style="background:linear-gradient(135deg,#6366f1,#ec4899);color:white;padding:28px;border-radius:16px;margin-bottom:24px;">'
-        '<h1 style="margin:0;font-size:22px;">📸 Instagram カルーセル投稿(完成版)</h1>'
-        '<p style="margin:8px 0 0;font-size:14px;opacity:0.9;">16機能詳細 / 1080×1350 / 10枚 / 3人体制レビュー反映</p>'
+        f'<h1 style="margin:0;font-size:22px;">{header_h1}</h1>'
+        f'<p style="margin:8px 0 0;font-size:14px;opacity:0.9;">{header_p}</p>'
         '</div>'
         '<div style="background:white;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.06);margin-bottom:20px;">'
-        '<h2 style="font-size:17px;color:#1e1b4b;margin-top:0;margin-bottom:12px;">📥 投稿用 PNG 10枚</h2>'
-        '<p style="margin:0 0 16px;font-size:13px;color:#475569;">各画像をタップして大きく表示 → 「画像を保存」でダウンロード。Instagram の「+ 投稿」で 10枚を順番に選択してください。</p>'
+        f'<h2 style="font-size:17px;color:#1e1b4b;margin-top:0;margin-bottom:12px;">📥 投稿用 PNG {count}枚</h2>'
+        f'<p style="margin:0 0 16px;font-size:13px;color:#475569;">各画像をタップして大きく表示 → 「画像を保存」でダウンロード。Instagram の「+ 投稿」で {count}枚を順番に選択してください。</p>'
         f'{slides_html}'
         '</div>'
         '<div style="background:white;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.06);margin-bottom:20px;">'
@@ -3795,11 +3849,11 @@ async def admin_send_ig_carousel(
     )
 
     result = _send_monitor_email(
-        subject="📸 Instagram カルーセル(16機能詳細) — 完成版 + 投稿文",
+        subject=subject,
         body_html=body_html,
         to_email=to_email,
     )
-    return {"ok": True, "to": to_email, "slides": 10, **result}
+    return {"ok": True, "to": to_email, "slides": count, "prefix": prefix, **result}
 
 
 @app.post("/api/admin/cache/force-purge")
