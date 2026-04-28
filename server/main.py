@@ -2702,6 +2702,66 @@ def admin_analytics(authorization: Optional[str] = Header(None)):
         "form_rate": round(100 * form_24h / pv_24h, 1) if pv_24h > 0 else 0.0,
     }
 
+    # ============================================
+    # referrer / utm_source 別 PV 集計 (Instagram 流入計測)
+    # ============================================
+    def _classify_referrer(props_text: str) -> tuple[str, str]:
+        """props JSON から referrer と utm_source を抽出し、(source_label, raw_url) を返す"""
+        try:
+            props = json.loads(props_text or "{}")
+        except Exception:
+            return ("(parse error)", "")
+        ref = (props.get("referrer") or "").strip()
+        utm = (props.get("utm_source") or props.get("utmSource") or "").strip().lower()
+        # page_path に utm_source が QS で入っている場合も拾う
+        page_path = props.get("page_path") or ""
+        if not utm and "utm_source=" in page_path:
+            try:
+                from urllib.parse import urlparse, parse_qs
+                qs = parse_qs(urlparse(page_path).query)
+                utm = (qs.get("utm_source", [""])[0] or "").lower()
+            except Exception:
+                pass
+        # 分類
+        if utm:
+            return (f"utm:{utm}", ref)
+        if not ref:
+            return ("Direct / Bookmark", "")
+        try:
+            from urllib.parse import urlparse
+            host = urlparse(ref).hostname or ""
+            host = host.lower().replace("www.", "")
+            if "instagram" in host: return ("Instagram", ref)
+            if "facebook" in host or "fb.com" in host: return ("Facebook", ref)
+            if "twitter" in host or "t.co" in host or "x.com" in host: return ("Twitter / X", ref)
+            if "tiktok" in host: return ("TikTok", ref)
+            if "threads" in host: return ("Threads", ref)
+            if "youtube" in host or "youtu.be" in host: return ("YouTube", ref)
+            if "google" in host: return ("Google", ref)
+            if "yahoo" in host: return ("Yahoo!", ref)
+            if "bing" in host: return ("Bing", ref)
+            if "trillion-ai-juku" in host: return ("Internal", ref)
+            return (host or "(unknown)", ref)
+        except Exception:
+            return ("(parse error)", ref)
+
+    def _aggregate_referrers(since) -> list:
+        c.execute(
+            "SELECT props FROM events WHERE name='page_view' AND created_at >= ?",
+            (since,)
+        )
+        bucket: dict = {}
+        for row in c.fetchall():
+            label, _ = _classify_referrer(row["props"] or "{}")
+            bucket[label] = bucket.get(label, 0) + 1
+        return sorted(
+            [{"source": k, "count": v} for k, v in bucket.items()],
+            key=lambda x: x["count"], reverse=True
+        )[:15]
+
+    referrers_24h = _aggregate_referrers(h24)
+    referrers_7d = _aggregate_referrers(d7)
+
     conn.close()
     return {
         "summary": {
@@ -2716,6 +2776,8 @@ def admin_analytics(authorization: Optional[str] = Header(None)):
         "daily_pv": daily_pv,
         "top_pages_24h": [{"path": p, "count": n} for p, n in top_pages],
         "top_ctas_24h": [{"text": t, "count": n} for t, n in top_ctas],
+        "referrers_24h": referrers_24h,
+        "referrers_7d": referrers_7d,
         "founders_public_offset": FOUNDER_PUBLIC_FAKE_TAKEN,
     }
 

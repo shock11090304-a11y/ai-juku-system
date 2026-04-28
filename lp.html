@@ -802,5 +802,51 @@
       } catch (e) { /* noop */ }
     })();
   </script>
+
+  <!-- ============================================ -->
+  <!-- 📲 Sticky CTA (画面下部固定・スクロール 600px 以降表示) -->
+  <!-- ============================================ -->
+  <div id="stickyCta" class="sticky-cta" aria-hidden="true">
+    <div class="sticky-cta-inner">
+      <div class="sticky-cta-text">
+        <div class="sticky-cta-line1">🎁 7日間 完全無料</div>
+        <div class="sticky-cta-line2">クレカ登録不要 / 創設メンバー残席</div>
+      </div>
+      <a href="checkout.html?plan=founder_special&utm_source=sticky_cta" class="sticky-cta-btn" data-founder-cta>席を確保する →</a>
+    </div>
+    <button id="stickyCtaClose" class="sticky-cta-close" aria-label="閉じる">×</button>
+  </div>
+  <script>
+    (function() {
+      const cta = document.getElementById('stickyCta');
+      const closeBtn = document.getElementById('stickyCtaClose');
+      if (!cta) return;
+
+      // 閉じる: localStorage に記録、24時間表示しない
+      const HIDE_KEY = 'ai_juku_sticky_cta_hidden_until';
+      const hideUntil = parseInt(localStorage.getItem(HIDE_KEY) || '0', 10);
+      const isHidden = hideUntil > Date.now();
+
+      if (isHidden) return;
+
+      // スクロール 600px で表示
+      let shown = false;
+      const onScroll = () => {
+        if (window.scrollY > 600 && !shown) {
+          cta.classList.add('show');
+          shown = true;
+        } else if (window.scrollY <= 600 && shown) {
+          cta.classList.remove('show');
+          shown = false;
+        }
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+
+      closeBtn?.addEventListener('click', () => {
+        cta.classList.remove('show');
+        localStorage.setItem(HIDE_KEY, String(Date.now() + 24 * 3600 * 1000));
+      });
+    })();
+  </script>
 </body>
 </html>
