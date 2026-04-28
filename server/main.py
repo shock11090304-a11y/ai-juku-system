@@ -3100,14 +3100,24 @@ def _generate_exam_question(exam_id: str, part_key: str, eiken_grade: Optional[s
         "l_lect2": "Listening Lecture 2: 講義スクリプト + 5問",
         "s_task1": "Speaking Task 1 (Independent): prompt + 模範回答",
         "w_integrated": "Writing Integrated: prompt + 200語模範",
+        # TOEIC
+        "l_part1": "Listening Part 1 写真描写問題 6問 (4択・1枚の写真を描写する短文を選ぶ・空港/オフィス/工場等の典型シーン)",
         "l_part2": "Listening Part 2 応答問題 5問 (3択)",
         "l_part3": "Listening Part 3 会話問題 6問 (3問1セット×2)",
+        "l_part4": "Listening Part 4 説明文問題 6問 (3問1セット×2・アナウンス/留守電/講演形式の独白)",
         "r_part5": "Reading Part 5 短文穴埋め 8問 (4択・品詞文法語彙)",
         "r_part6": "Reading Part 6 長文穴埋め (4問1セット)",
         "r_part7_single": "Reading Part 7 シングルパッセージ (3問)",
+        "r_part7_multi": "Reading Part 7 マルチプルパッセージ (5問・メール+広告/通知+返信などの複数文書を関連付けて解く)",
+        # IELTS
         "l_sec1": "Listening Section 1 社会的会話 + 5問",
+        "l_sec2": "Listening Section 2 単独スピーチ (観光案内/施設説明型) + 5問",
         "l_sec3": "Listening Section 3 学術会話 + 5問",
+        "l_sec4": "Listening Section 4 大学講義独白 + 5問 (全 Section で最も難度高)",
         "r_p1": "Reading Passage 1 + 6問 (TFNG/穴埋め)",
+        "r_p2": "Reading Passage 2 + 6問 (見出し選択/分類/Y-N-NG など多様な設問形式)",
+        "r_p3": "Reading Passage 3 学術論文型 + 6問 (最難パッセージ・抽象論証)",
+        "w_task1": "Writing Task 1: グラフ/図表/プロセス図を 150語で要約描写 (Academic 型)",
         "w_task2": "Writing Task 2: prompt + 250語模範エッセイ",
         "r_q1": "Reading 大問1: 短文穴埋め 5問 (語彙レベル統制)",
         "r_q3": "Reading 大問3: 長文内容一致 3問",
@@ -3305,6 +3315,14 @@ def _generate_exam_question(exam_id: str, part_key: str, eiken_grade: Optional[s
                 text = text[4:]
             text = text.strip().rstrip("`").strip()
         return json.loads(text)
+    except urllib.error.HTTPError as e:
+        body = ""
+        try:
+            body = e.read().decode("utf-8", errors="replace")[:500]
+        except Exception:
+            pass
+        log.error(f"[ExamQ] Generation failed for {exam_id}/{part_key}: HTTPError {e.code}: {body}")
+        return None
     except Exception as e:
         log.error(f"[ExamQ] Generation failed for {exam_id}/{part_key}: {type(e).__name__}: {e}")
         return None
