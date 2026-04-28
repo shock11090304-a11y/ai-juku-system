@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Instagram Carousel — カリキュラム詳細 | トリリオン AI塾</title>
+<script src="cache-purge.js"></script>
+<style>
+  :root {
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #ec4899;
+    --bg: #0a0a1a;
+    --bg-2: #14142b;
+    --text: #f1f5f9;
+    --text-dim: #94a3b8;
+    --gold: #fbbf24;
+    --green: #10b981;
+    --cyan: #22d3ee;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif;
+    background: #1a1a2e;
+    color: var(--text);
+    padding: 40px 20px;
+    min-height: 100vh;
+  }
+
+  .toolbar {
+    max-width: 1100px;
+    margin: 0 auto 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text-dim);
+  }
+  .toolbar h1 { font-size: 1.2rem; color: var(--text); }
+  .toolbar .hint { font-size: 0.85rem; }
+
+  .gallery {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+  }
+
+  .slide {
+    width: 1080px;
+    height: 1080px;
+    background: linear-gradient(160deg, #1e1b4b 0%, #0a0a1a 60%, #0f0f23 100%);
+    border-radius: 24px;
+    box-shadow: 0 30px 80px rgba(99, 102, 241, 0.3);
+    overflow: hidden;
+    position: relative;
+    page-break-after: always;
+    color: var(--text);
+  }
+
+  .slide::before,
+  .slide::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.40;
+    pointer-events: none;
+  }
+  .slide::before {
+    width: 600px; height: 600px;
+    background: var(--primary);
+    top: -200px; right: -200px;
+  }
+  .slide::after {
+    width: 500px; height: 500px;
+    background: var(--accent);
+    bottom: -150px; left: -150px;
+  }
+
+  .slide-num {
+    position: absolute;
+    top: 40px;
+    right: 40px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    backdrop-filter: blur(20px);
+    padding: 8px 18px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+    z-index: 10;
+  }
+
+  .brand-pill {
+    position: absolute;
+    top: 40px;
+    left: 40px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(129, 140, 248, 0.3);
+    padding: 10px 18px;
+    border-radius: 100px;
+    z-index: 10;
+  }
+  .brand-pill .dot {
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--green);
+  }
+  .brand-pill .label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.05em;
+  }
+
+  .slide-body {
+    position: relative;
+    z-index: 5;
+    width: 100%;
+    height: 100%;
+    padding: 130px 80px 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  /* Cover */
+  .cover .badge {
+    display: inline-block;
+    background: rgba(251, 191, 36, 0.15);
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    padding: 8px 20px;
+    border-radius: 100px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    margin-bottom: 40px;
+    width: fit-content;
+  }
+  .cover h1 {
+    font-size: 88px;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 32px;
+  }
+  .cover h1 .em {
+    background: linear-gradient(135deg, #818cf8, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .cover .lead {
+    font-size: 28px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    font-weight: 500;
+  }
+  .cover .signature {
+    position: absolute;
+    bottom: 90px;
+    left: 90px;
+    right: 90px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text-dim);
+    font-size: 18px;
+  }
+
+  .slide h2 {
+    font-size: 64px;
+    font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+  }
+  .slide h2 .em {
+    background: linear-gradient(135deg, #fbbf24, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .slide h2 .em-cyan {
+    background: linear-gradient(135deg, #22d3ee, #818cf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .slide .sub {
+    font-size: 24px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    margin-bottom: 40px;
+    max-width: 820px;
+  }
+
+  /* === Grade ladder (slide 2) === */
+  .grade-ladder {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 20px;
+  }
+  .grade-row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    align-items: center;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(129, 140, 248, 0.2);
+    border-radius: 16px;
+    padding: 18px 24px;
+  }
+  .grade-row .grade-label {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--primary-light);
+  }
+  .grade-row .subjects {
+    font-size: 19px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  /* === Weekly cycle (slide 3) === */
+  .weekly {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 12px;
+    margin-top: 30px;
+  }
+  .weekly .day {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(129, 140, 248, 0.2);
+    border-radius: 14px;
+    padding: 18px 10px;
+    text-align: center;
+  }
+  .weekly .day.highlight {
+    background: linear-gradient(160deg, rgba(99, 102, 241, 0.25), rgba(236, 72, 153, 0.2));
+    border: 1px solid var(--accent);
+  }
+  .weekly .day .label {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .weekly .day .icon {
+    font-size: 36px;
+    margin-bottom: 8px;
+  }
+  .weekly .day .title {
+    font-size: 14px;
+    color: var(--primary-light);
+    font-weight: 700;
+    margin-bottom: 4px;
+    line-height: 1.2;
+  }
+  .weekly .day .min {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  /* Subject coverage grid (slide 4) */
+  .subjects-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-top: 30px;
+  }
+  .subject-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(129, 140, 248, 0.25);
+    border-radius: 18px;
+    padding: 24px 20px;
+  }
+  .subject-card .icon { font-size: 40px; margin-bottom: 10px; }
+  .subject-card h3 {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--primary-light);
+    margin-bottom: 8px;
+  }
+  .subject-card ul {
+    list-style: none;
+    padding: 0;
+  }
+  .subject-card li {
+    font-size: 15px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    padding-left: 18px;
+    position: relative;
+  }
+  .subject-card li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+  }
+
+  /* Flow steps (slide 5) */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .flow-step {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    align-items: center;
+    gap: 24px;
+    background: rgba(255,255,255,0.04);
+    border-left: 5px solid var(--primary-light);
+    border-radius: 14px;
+    padding: 20px 28px;
+  }
+  .flow-step .num {
+    font-size: 64px;
+    font-weight: 900;
+    line-height: 1;
+    background: linear-gradient(135deg, #818cf8, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .flow-step h3 {
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+  .flow-step p {
+    font-size: 17px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* Routes (slide 6/7) */
+  .route {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 20px;
+  }
+  .route-step {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(129, 140, 248, 0.2);
+    border-radius: 14px;
+    padding: 20px 26px;
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    align-items: center;
+    gap: 24px;
+  }
+  .route-step .level {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white;
+    font-size: 18px;
+    font-weight: 800;
+    padding: 8px 12px;
+    border-radius: 10px;
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+  .route-step .level.gold {
+    background: linear-gradient(135deg, var(--gold), #f97316);
+  }
+  .route-step h4 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .route-step p {
+    font-size: 16px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* University grid (slide 8) */
+  .univ-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .univ-cat {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(129, 140, 248, 0.25);
+    border-radius: 16px;
+    padding: 20px 24px;
+  }
+  .univ-cat h3 {
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 10px;
+    color: var(--primary-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .univ-cat .badge {
+    background: rgba(129, 140, 248, 0.2);
+    color: var(--primary-light);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+  }
+  .univ-cat .list {
+    font-size: 17px;
+    color: var(--text);
+    line-height: 1.7;
+  }
+
+  /* Daily schedule (slide 9) */
+  .schedule {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 20px;
+  }
+  .schedule .col {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(129, 140, 248, 0.25);
+    border-radius: 18px;
+    padding: 24px;
+  }
+  .schedule .col .person {
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    background: linear-gradient(135deg, #fbbf24, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .schedule .col .goal {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+  }
+  .schedule .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .timeline-row {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 14px;
+    font-size: 16px;
+    line-height: 1.4;
+    padding: 8px 0;
+    border-bottom: 1px dashed rgba(255,255,255,0.08);
+  }
+  .timeline-row:last-child { border-bottom: none; }
+  .timeline-row .time {
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .timeline-row .activity {
+    color: var(--text);
+  }
+  .timeline-row .activity .desc {
+    color: var(--text-dim);
+    font-size: 14px;
+    display: block;
+    margin-top: 2px;
+  }
+
+  /* CTA */
+  .cta {
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+  }
+  .cta .super {
+    display: inline-block;
+    font-size: 22px;
+    color: var(--gold);
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    margin-bottom: 20px;
+  }
+  .cta h2 {
+    font-size: 96px;
+    margin-bottom: 24px;
+  }
+  .cta .sub {
+    font-size: 26px;
+    color: var(--text-dim);
+    margin: 0 auto 40px;
+    line-height: 1.6;
+  }
+  .cta .btn {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white;
+    padding: 26px 56px;
+    border-radius: 100px;
+    font-size: 30px;
+    font-weight: 800;
+    box-shadow: 0 20px 50px rgba(236, 72, 153, 0.4);
+    margin-bottom: 24px;
+  }
+  .cta .url {
+    font-size: 26px;
+    color: var(--text);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+  .cta .url .at { color: var(--primary-light); margin-right: 6px; }
+
+  .footer-strip {
+    position: absolute;
+    bottom: 36px;
+    left: 90px;
+    right: 90px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text-dim);
+    font-size: 16px;
+    z-index: 5;
+  }
+  .footer-strip .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .footer-strip .url-tag {
+    color: var(--primary-light);
+    font-weight: 600;
+  }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .toolbar { display: none; }
+    .gallery { gap: 0; }
+    .slide {
+      width: 1080px;
+      height: 1080px;
+      box-shadow: none;
+      border-radius: 0;
+      margin: 0;
+    }
+    @page { size: 1080px 1080px; margin: 0; }
+  }
+
+  @media (max-width: 1180px) {
+    body { padding: 16px; }
+    .slide {
+      transform: scale(calc((100vw - 32px) / 1080));
+      transform-origin: top center;
+      margin-bottom: calc((100vw - 32px) / 1080 * 1080 - 1080px + 32px);
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>📚 トリリオン AI塾 — カリキュラム詳細カルーセル (1080×1080 × 10枚)</h1>
+  <div class="hint">⌘+P で PDF 化 / 各スライドをスクショして 1 枚ずつアップロード</div>
+</div>
+
+<div class="gallery">
+
+  <!-- ========================= 1: COVER ========================= -->
+  <section class="slide cover">
+    <div class="brand-pill"><span class="dot"></span><span class="label">TRILLION AI塾 / カリキュラム</span></div>
+    <div class="slide-num">1 / 10</div>
+    <div class="slide-body">
+      <span class="badge">📚 CURRICULUM 2026</span>
+      <h1>学年×目標×個別最適。<br><span class="em">迷わないAI塾の<br>カリキュラム。</span></h1>
+      <p class="lead">小4から高3・社会人英語まで全教科対応。<br>その子だけの「次の1問」が、毎日 AI から届きます。</p>
+    </div>
+    <div class="signature">
+      <span>👉 スワイプして全カリキュラムを見る</span>
+      <span>trillion-ai-juku.com</span>
+    </div>
+  </section>
+
+  <!-- ========================= 2: GRADE COVERAGE ========================= -->
+  <section class="slide">
+    <div class="brand-pill"><span class="dot"></span><span class="label">TRILLION AI塾 / カリキュラム</span></div>
+    <div class="slide-num">2 / 10</div>
+    <div class="slide-body">
+      <h2>対応学年は<br><span class="em">小4 〜 高3 + 社会人</span></h2>
+      <p class="sub">公立・私立・中高一貫・通信制 — どの環境でも対応可能。<br>1人ひとりの「いま」に合わせた個別カリキュラムを生成します。</p>
+      <div class="grade-ladder">
+        <div class="grade-row">
+          <div class="grade-label">小学 4-6年</div>
+          <div class="subjects">算数 / 国語 / 英語 (英検5〜3級) / 中学受験準備</div>
+        </div>
+        <div class="grade-row">
+          <div class="grade-label">中学 1-3年</div>
+          <div class="subjects">英・数・国・理・社 / 英検準2〜2級 / 公立&私立高校受験</div>
+        </div>
+        <div class="grade-row">
+          <div class="grade-label">高校 1-2年</div>
+          <div class="subjects">5教科 + 古文漢文 / 数IA-IIB / 英検準1級 / 定期テスト対策</div>
+        </div>
+        <div class="grade-row">
+          <div class="grade-label">高校 3年</div>
+          <div class="subjects">大学入試 23大学/枠 / 共通テスト / 国公立医学部 / 私立医学部</div>
+        </div>
+        <div class="grade-row">
+          <div class="grade-label">社会人 / 大学生</div>
+          <div class="subjects">TOEFL / TOEIC / IELTS / 英検1級 / 学び直し</div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-strip">
+      <div class="logo">🟢 TRILLION AI塾</div>
+      <div class="url-tag">trillion-ai-juku.com</div>
+    </div>
+  </section>
+
+  <!-- ========================= 3: WEEKLY CYCLE ========================= -->
+  <section class="slide">
+    <div class="brand-pill"><span class="dot"></span><span class="label">TRILLION AI塾 / カリキュラム</span></div>
+    <div class="slide-num">3 / 10</div>
+    <div class="slide-body">
+      <h2>1週間の<br><span class="em-cyan">学習サイクル</span></h2>
+      <p class="sub">月〜金は積み上げ・週末は復習と模試。<br>AI が自動でその日の最適な学習メニューを配信します。</p>
+      <div class="weekly">
+        <div class="day">
+          <div class="label">月</div>
+          <div class="icon">📘</div>
+          <div class="title">新規学習</div>
+          <div class="min">60分</div>
+        </div>
+        <div class="day">
+          <div class="label">火</div>
+          <div class="icon">✏️</div>
+          <div class="title">演習</div>
+          <div class="min">45分</div>
+        </div>
+        <div class="day">
+          <div class="label">水</div>
+          <div class="icon">🔁</div>
+          <div class="title">復習 (SM-2)</div>
+          <div class="min">30分</div>
+        </div>
+        <div class="day">
+          <div class="label">木</div>
+          <div class="icon">🎙</div>
+          <div class="title">スピーキング</div>
+          <div class="min">30分</div>
+        </div>
+        <div class="day">
+          <div class="label">金</div>
+          <div class="icon">📝</div>
+          <div class="title">作文/小論</div>
+          <div class="min">45分</div>
+        </div>
+        <div class="day highlight">
+          <div class="label">土</div>
+          <div class="icon">📊</div>
+          <div class="title">週末模試</div>
+          <div class="min">90分</div>
+        </div>
+        <div class="day highlight">
+          <div class="label">日</div>
+          <div class="icon">📈</div>
+          <div class="title">レポート確認</div>
+          <div class="min">15分</div>
+        </div>
+      </div>
+      <p style="font-size:18px;color:var(--text-dim);margin-top:30px;line-height:1.6;">※ 学年・目標・部活時間に応じて分量と曜日は AI が自動最適化します。</p>
+    </div>
+    <div class="footer-strip">
+      <div class="logo">🟢 TRILLION AI塾</div>
+      <div class="url-tag">trillion-ai-juku.com</div>
+    </div>
+  </section>
+
+  <!-- ========================= 4: SUBJECT COVERAGE ========================= -->
+  <section class="slide">
+    <div class="brand-pill"><span class="dot"></span><span class="label">TRILLION AI塾 / カリキュラム</span></div>
+    <div class="slide-num">4 / 10</div>
+    <div class="slide-body">
+      <h2>全教科を<br><span class="em">1つの塾で。</span></h2>
+      <p class="sub">追加料金は一切なし。月額¥14,500で全教科・全機能が解放されます。</p>
+      <div class="subjects-grid">
+        <div class="subject-card">
+          <div class="icon">📕</div>
+          <h3>英語</h3>
+          <ul>
+            <li>英検 5級〜1級</li>
+            <li>大学入試 (23校)</li>
+            <li>TOEFL/TOEIC/IELTS</li>
+            <li>4技能 (R/L/W/S)</li>
+          </ul>
+        </div>
+        <div class="subject-card">
+          <div class="icon">📘</div>
+          <h3>数学</h3>
+          <ul>
+            <li>中学数学 全範囲</li>
+            <li>数IA / IIB / III</li>
+            <li>共通テスト対策</li>
+            <li>国公立2次/医学部</li>
+          </ul>
+        </div>
+        <div class="subject-card">
+          <div class="icon">📗</div>
+          <h3>国語</h3>
+          <ul>
+            <li>現代文 (評論/小説)</li>
+            <li>古文 / 漢文</li>
+            <li>記述・小論文添削</li>
+            <li>語彙・文法演習</li>
+          </ul>
+        </div>
+        <div class="subject-card">
+          <div class="icon">📙</div>
+          <h3>理科</h3>
+          <ul>
+            <li>物理 / 化学 / 生物</li>
+            <li>地学 (共通テスト)</li>
+            <li>東大型・京大型問題</li>
+            <li>医学部理科</li>
+          </ul>
+        </div>
+        <div class="subject-card">
+          <div class="icon">📒</div>
+          <h3>社会</h3>
+          <ul>
+            <li>日本史 / 世界史</li>
+            <li>地理 / 公民</li>
+            <li>共通テスト対策</li>
+            <li>記述論述</li>
+          </ul>
+        </div>
+        <div class="subject-card">
+          <div class="icon">✍️</div>
+          <h3>作文/小論</h3>
+          <ul>
+            <li>英作文添削 (Claude)</li>
+            <li>志望理由書</li>
+            <li>大学小論</li>
+            <li>記述問題対策</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer-strip">
+      <div class="logo">🟢 TRILLION AI塾</div>
+      <div class="url-tag">trillion-ai-juku.com</div>
+    </div>
+  </section>
+
+  <!-- ========================= 5: PERSONALIZATION FLOW ========================= -->
+  <section class="slide">
+    <div class="brand-pill"><span class="dot"></span><span class="label">TRILLION AI塾 / カリキュラム</span></div>
+    <div class="slide-num">5 / 10</div>
+    <div class="slide-body">
+      <h2>"その子だけの"<br>カリキュラムが<br><span class="em-cyan">毎日生成。</span></h2>
+      <p class="sub">入塾時の診断 → 学習データ蓄積 → 弱点検知 → 翌日のメニュー更新。<br>このサイクルが毎日自動で回ります。</p>
+      <div class="flow">
+        <div class="flow-step">
+          <div class="num">1</div>
+          <div>
+            <h3>🩺 学習診断</h3>
+            <p>過去の成績・志望校・部活時間から、最初の30分で「今のレベル」を測定。</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="num">2</div>
+          <div>
+            <h3>🎯 個別カリキュラム生成</h3>
+            <p>志望校までの逆算で、週次・日次の目標と教材を AI が自動編成。</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="num">3</div>
+          <div>
+            <h3>🔁 エビングハウス自動復習</h3>
+            <p>忘却タイミングで自動再出題。SM-2 アルゴリズムで定着率最大化。</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="num">4</div>
+          <div>
+            <h3>🔍 躓きセンサー → 即時改善</h3>
+            <p>同じ単元での反復ミスを検知 → 翌日のメニューに自動補強を追加。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-strip">
+      <div class="logo">🟢 TRILLION AI塾</div>
+      <div class="url-tag">trillion-ai-juku.com</div>
+    </div>
+  </section>
+
+  <!-- ========================= 6: ENGLISH ROUTE ========================= -->
+  <section class="slide">
+    <div class="brand-pill"><span class="dot"></span><span class="label">TRILLION AI塾 / カリキュラム</span></div>
+    <div class="slide-num">6 / 10</div>
+    <div class="slide-body">
+      <h2>英語<br><span class="em">レベル別ルート</span></h2>
+      <p class="sub">英検 5級〜1級 + 大学入試までを一気通貫。<br>各 part 別の本格問題プールから AI が出題します。</p>
+      <div class="route">
+        <div class="route-step">
+          <div class="level">5級〜4級</div>
+          <div>
+            <h4>📚 基礎文法 + 語彙500〜800</h4>
+            <p>be動詞・一般動詞・過去形・現在進行形 / 中1英文法の総ざらい。</p>
+          </div>
+        </div>
+        <div class="route-step">
+          <div class="level">3級〜準2級</div>
+          <div>
+            <h4>📖 中学英語完成 + 4技能導入</h4>
+            <p>リスニング・ライティング・スピーキング練習を本格化。語彙1,500〜2,800。</p>
+          </div>
+        </div>
+        <div class="route-step">
+          <div class="level">2級</div>
+          <div>
+            <h4>🎓 高校基礎 + 共通テスト基礎</h4>
+            <p>長文読解・要約・Eメール返信 (新形式)。語彙3,800〜5,100。</p>
+          </div>
+        </div>
+        <div class="route-step">
+          <div class="level">準1級</div>
+          <div>
+            <h4>🌐 難関大水準・社会人英語</h4>
+            <p>抽象的な評論文読解 / Essay (120-150 words)。語彙7,500〜9,000。</p>
+          </div>
+        </div>
+        <div class="route-step">
+          <div class="level gold">1級</div>
+          <div>
+            <h4>🏆 ネイティブレベル / 通訳実用</h4>
+            <p>専門分野の英文 / 200words エッセイ / 2分スピーチ。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-strip">
+      <div class="logo">🟢 TRILLION AI塾</div>
+      <div class="url-tag">trillion-ai-juku.com</div>
+    </div>
+  </section>
+
+  <!-- ========================= 7: MATH ROUTE ========================= -->
+  <section class="slide">
+    <div class="brand-pill"><span class="dot"></span><span class="label">TRILLION AI塾 / カリキュラム</span></div>
+    <div class="slide-num">7 / 10</div>
+    <div class="slide-body">
+      <h2>数学<br><span class="em-cyan">中1〜大学入試まで</span></h2>
+      <p class="sub">基礎の取りこぼしを AI が検知し、必要な単元を自動で前学年に戻します。</p>
+      <div class="route">
+        <div class="route-step">
+          <div class="level">中1〜中3</div>
+          <div>
+            <h4>📐 中学数学 全領域</h4>
+            <p>正負の数 / 方程式 / 関数 / 図形 / 確率 / 三平方の定理 / 円周角。</p>
+          </div>
+        </div>
+        <div class="route-step">
+          <div class="level">高1: 数IA</div>
+          <div>
+            <h4>📊 数と式・二次関数・三角比・確率・整数</h4>
+            <p>典型問題300題 + 共通テスト型演習。MARCH レベルまでカバー。</p>
+          </div>
+        </div>
+        <div class="route-step">
+          <div class="level">高2: 数IIB</div>
+          <div>
+            <h4>📈 三角関数・指数対数・微積入門・数列・ベクトル</h4>
+            <p>関関同立・MARCH・地方国公立 2次までカバー。</p>
+          </div>
+        </div>
+        <div class="route-step">
+          <div class="level">高3: 数III</div>
+          <div>
+            <h4>🔬 極限・微分積分・複素数平面</h4>
+            <p>東大・京大・東工大・国公立医学部の過去問類題まで。</p>
+          </div>
+        </div>
+        <div class="route-step">
+          <div class="level gold">難関対策</div>
+          <div>
+            <h4>🏆 東大型・京大型・医学部型 演習</h4>
+            <p>part 別 (math_q1〜q3) で大学スタイル準拠の類題を AI 生成。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-strip">
+      <div class="logo">🟢 TRILLION AI塾</div>
+      <div class="url-tag">trillion-ai-juku.com</div>
+    </div>
+  </section>
+
+  <!-- ========================= 8: UNIVERSITY COVERAGE ========================= -->
+  <section class="slide">
+    <div class="brand-pill"><span class="dot"></span><span class="label">TRILLION AI塾 / カリキュラム</span></div>
+    <div class="slide-num">8 / 10</div>
+    <div class="slide-body">
+      <h2>大学入試<br><span class="em">23校 / 枠</span></h2>
+      <p class="sub">各大学の出題スタイル・年度別頻出テーマを学習し、<br>本格的な類題を AI が無限生成します。</p>
+      <div class="univ-grid">
+        <div class="univ-cat">
+          <h3>🏛 国公立 <span class="badge">7枠</span></h3>
+          <p class="list">東大 / 京大 / 阪大 / 一橋大 / 名大<br>東工大 / 共通テスト</p>
+        </div>
+        <div class="univ-cat">
+          <h3>🏆 私立難関 <span class="badge">4枠</span></h3>
+          <p class="list">早稲田 / 慶應義塾<br>上智 / ICU</p>
+        </div>
+        <div class="univ-cat">
+          <h3>📚 MARCH <span class="badge">5枠</span></h3>
+          <p class="list">明治 / 青学 / 立教<br>中央 / 法政</p>
+        </div>
+        <div class="univ-cat">
+          <h3>📖 関関同立 <span class="badge">4枠</span></h3>
+          <p class="list">関西 / 関学<br>同志社 / 立命館</p>
+        </div>
+        <div class="univ-cat">
+          <h3>⚕️ 医学部 <span class="badge">2枠</span></h3>
+          <p class="list">国公立医学部<br>私立医学部</p>
+        </div>
+        <div class="univ-cat">
+          <h3>🎯 共通系 <span class="badge">1枠</span></h3>
+          <p class="list">センター試験<br>(過去問演習)</p>
+        </div>
+      </div>
+    </div>
+    <div class="footer-strip">
+      <div class="logo">🟢 TRILLION AI塾</div>
+      <div class="url-tag">trillion-ai-juku.com</div>
+    </div>
+  </section>
+
+  <!-- ========================= 9: DAILY SCHEDULE EXAMPLE ========================= -->
+  <section class="slide">
+    <div class="brand-pill"><span class="dot"></span><span class="label">TRILLION AI塾 / カリキュラム</span></div>
+    <div class="slide-num">9 / 10</div>
+    <div class="slide-body">
+      <h2>1日の例<br><span class="em-cyan">学年別スケジュール</span></h2>
+      <p class="sub">部活・学校行事と両立できる「無理のない設計」。<br>AI が日々の予定からスキマ時間に最適化します。</p>
+      <div class="schedule">
+        <div class="col">
+          <div class="person">中3・男子</div>
+          <div class="goal">🎯 公立トップ高合格</div>
+          <div class="timeline">
+            <div class="timeline-row"><div class="time">17:00</div><div class="activity">数学 演習40分<span class="desc">関数 + 図形 (中3範囲)</span></div></div>
+            <div class="timeline-row"><div class="time">19:00</div><div class="activity">英語 30分<span class="desc">英検3級 R + L</span></div></div>
+            <div class="timeline-row"><div class="time">20:30</div><div class="activity">復習 20分<span class="desc">忘却タイミング再出題</span></div></div>
+            <div class="timeline-row"><div class="time">21:00</div><div class="activity">AI質問 5分<span class="desc">分からなかった問題を質問</span></div></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="person">高2・女子</div>
+          <div class="goal">🎯 早稲田 文学部 志望</div>
+          <div class="timeline">
+            <div class="timeline-row"><div class="time">18:30</div><div class="activity">英語 60分<span class="desc">準1級長文 + 単語1000語</span></div></div>
+            <div class="timeline-row"><div class="time">20:00</div><div class="activity">国語 40分<span class="desc">現代文評論 + 古文</span></div></div>
+            <div class="timeline-row"><div class="time">21:30</div><div class="activity">日本史 30分<span class="desc">江戸後期 単元別演習</span></div></div>
+            <div class="timeline-row"><div class="time">22:30</div><div class="activity">スピーキング 15分<span class="desc">AI と対話練習</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-strip">
+      <div class="logo">🟢 TRILLION AI塾</div>
+      <div class="url-tag">trillion-ai-juku.com</div>
+    </div>
+  </section>
+
+  <!-- ========================= 10: CTA ========================= -->
+  <section class="slide">
+    <div class="brand-pill"><span class="dot"></span><span class="label">TRILLION AI塾 / カリキュラム</span></div>
+    <div class="slide-num">10 / 10</div>
+    <div class="slide-body cta">
+      <span class="super">⏰ まずはノーリスクで試す</span>
+      <h2>7日間<br><span class="em">完全無料体験</span></h2>
+      <p class="sub">クレジットカード登録不要・自動課金なし。<br>体験期間に「あなたの子専用カリキュラム」を AI が生成します。</p>
+      <div class="btn">▶ いますぐ無料で始める</div>
+      <p class="url"><span class="at">@</span>trillion-ai-juku.com</p>
+      <p style="margin-top:20px;font-size:18px;color:var(--text-dim);">プロフィールリンクから30秒で登録できます</p>
+    </div>
+  </section>
+
+</div>
+
+</body>
+</html>

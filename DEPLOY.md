@@ -123,7 +123,7 @@ https://dashboard.stripe.com/products にて以下を作成:
 | スタンダード | ¥24,980 | Recurring monthly |
 | プレミアム | ¥39,800 | Recurring monthly |
 | 家族プラン | ¥59,800 | Recurring monthly |
-| 塾生アドオン | ¥15,000 | Recurring monthly |
+| 塾生アドオン | ¥9,800 | Recurring monthly |
 | 入塾金 | ¥20,000 | One-time |
 | 3日間体験 | ¥1,980 | One-time |
 

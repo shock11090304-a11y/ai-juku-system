@@ -956,7 +956,7 @@
     }
     // 申込時 (DB 上) の plan 値からフロント表示用の月額・コース名を導出
     function planFee(plan) {
-      const map = { standard: 24980, premium: 39800, family: 59800, student_addon: 15000 };
+      const map = { standard: 24980, premium: 39800, family: 59800, student_addon: 9800 };
       return map[plan] || 0;
     }
     function planLabel(plan) {
@@ -1175,7 +1175,7 @@
           const fee = planFee(st.plan);
           if (fee >= 60000) planCount.intensive++;
           else if (fee >= 30000) planCount.hybrid++;
-          else if (fee >= 15000) planCount.ai++;
+          else if (fee >= 9800) planCount.ai++;
           else planCount.other++;
         }
 
@@ -1898,7 +1898,7 @@
       standard: 'スタンダード (¥24,980/月)',
       premium:  'プレミアム (¥39,800/月)',
       family:   '家族プラン (¥59,800/月)',
-      student_addon: '塾生アドオン (¥15,000/月)',
+      student_addon: '塾生アドオン (¥9,800/月)',
       founder_special: '創設メンバー (永年¥14,500/月)',
       founder1: '創設メンバー (永年¥14,500/月)',
       trial: 'トライアル',

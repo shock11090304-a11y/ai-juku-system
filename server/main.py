@@ -94,7 +94,7 @@ PRICE_MAP = {
     "standard": (STRIPE_PRICE_STANDARD, 24980, "スタンダード", 1),
     "premium": (STRIPE_PRICE_PREMIUM, 39800, "プレミアム", 1),
     "family": (STRIPE_PRICE_FAMILY, 59800, "家族プラン（最大3名）", 3),
-    "student_addon": (STRIPE_PRICE_STUDENT_ADDON, 15000, "塾生アドオン", 1),
+    "student_addon": (STRIPE_PRICE_STUDENT_ADDON, 9800, "塾生アドオン", 1),
     # 後方互換 (founder1 は 2026-04-28 廃止・新 founder_special に置換)
     "founder1": (STRIPE_PRICE_FOUNDER_SPECIAL, 14500, "創設メンバー (永年¥14,500)", 1),
     "ai": (STRIPE_PRICE_STANDARD, 24980, "スタンダード", 1),
@@ -2492,7 +2492,7 @@ def admin_stats(authorization: Optional[str] = Header(None)):
 
     conn.close()
 
-    plan_fees = {"standard": 24980, "premium": 39800, "family": 59800, "student_addon": 15000}
+    plan_fees = {"standard": 24980, "premium": 39800, "family": 59800, "student_addon": 9800}
     paid_students = [s for s in students if s["status"] == "paid"]
     mrr = sum(plan_fees.get(s.get("plan") or "", 0) for s in paid_students)
 
@@ -5592,7 +5592,7 @@ def create_checkout_session(payload: CheckoutRequest):
     新プラン構造でのチェックアウト:
     - 創設メンバープラン (founder_special): 永年¥14,500/月 (50名限定・全機能無制限) + 入塾金 ¥10,000
     - 通常プラン (standard/premium/family): 月額サブスク + 初回請求に入塾金 ¥10,000 を追加
-    - 塾生アドオン (student_addon): 入塾金なし、月額 ¥15,000 のみ
+    - 塾生アドオン (student_addon): 入塾金なし、月額 ¥9,800 のみ
     - 体験は別途 /api/stripe/trial-checkout で 7日間 完全無料 (Stripe を経由しない)
     """
     price_info = PRICE_MAP.get(payload.plan)

@@ -66,7 +66,7 @@
   - [ ] スタンダード ¥24,980/月（Recurring）
   - [ ] プレミアム ¥39,800/月（Recurring）
   - [ ] 家族プラン ¥59,800/月（Recurring）
-  - [ ] 塾生アドオン ¥15,000/月（Recurring）
+  - [ ] 塾生アドオン ¥9,800/月（Recurring）
 - [ ] 各商品の Price ID を環境変数に設定
 
 ### Webhook設定
