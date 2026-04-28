@@ -2,6 +2,44 @@
 <html lang="ja">
 <head>
   <script src="cache-purge.js"></script>
+  <script>
+  // 🎓 招待リンク gate: ?invite=<token> 必須。HMAC 検証 NG なら LP に redirect。
+  // 塾長 DM 経由でしか student-upgrade.html を開けないようにする (新規の URL 直叩き対策)。
+  (async function inviteGate(){
+    try {
+      const params = new URLSearchParams(location.search);
+      const token = params.get('invite');
+      // 開発時 (localhost) は gate スキップ可
+      const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+      if (!token) {
+        if (!isLocal) location.replace('/lp.html?reason=invite_required');
+        return;
+      }
+      // HMAC 検証 (公開 endpoint)
+      const r = await fetch('/api/marketing/verify-invite?token=' + encodeURIComponent(token));
+      const data = await r.json();
+      if (!data || !data.valid) {
+        if (!isLocal) {
+          // HTML を一瞬も見せずに redirect (admin-only.js と同じパターン)
+          try { document.documentElement.innerHTML = ''; } catch(e){}
+          location.replace('/lp.html?reason=invite_' + (data && data.reason ? data.reason : 'invalid'));
+        } else {
+          console.warn('[invite-gate] localhost 開発: token 検証 NG だが続行', data);
+        }
+        return;
+      }
+      // valid → email を保持 (checkout autofill 用)
+      try {
+        sessionStorage.setItem('invite_email', data.email);
+        sessionStorage.setItem('invite_expires_at', String(data.expires_at || ''));
+      } catch(e){}
+      window.__inviteEmail = data.email;
+    } catch (e) {
+      console.error('[invite-gate] verify error', e);
+      // ネットワークエラーは UX 優先で続行 (DDoS じゃなければ)
+    }
+  })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🎓 塾生限定・AI学習アドオン | AI学習コーチ塾</title>

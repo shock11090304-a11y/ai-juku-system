@@ -3945,6 +3945,135 @@ async def admin_send_ig_carousel(
     return {"ok": True, "to": to_email, "slides": count, "prefix": prefix, **result}
 
 
+# ==========================================================================
+# 🎓 通塾生 招待リンク (HMAC 署名付き・期限付き)
+# ==========================================================================
+# 塾長運用: 既存通塾生から「DM で AI塾アドオンの招待ください」と来たら、
+# CEO ダッシュ or admin endpoint で email 1件 → invite URL 発行 → DM 返信。
+# student-upgrade.html は invite gate で未認可訪問を LP に redirect する。
+# ==========================================================================
+
+def _b64url_encode(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b'=').decode('ascii')
+
+def _b64url_decode(s: str) -> bytes:
+    pad = '=' * (-len(s) % 4)
+    return base64.urlsafe_b64decode(s + pad)
+
+def _sign_invite_token(email: str, expires_days: int = 30) -> str:
+    """既存通塾生向け招待トークン生成。形式: <payload_b64>.<sig_b64>"""
+    if not APP_SECRET:
+        raise HTTPException(status_code=503, detail="APP_SECRET 未設定 (Railway env を確認)")
+    payload = {
+        "e": (email or "").strip().lower(),
+        "exp": int((datetime.now(timezone.utc) + timedelta(days=expires_days)).timestamp()),
+        "k": "student_addon",
+    }
+    payload_json = json.dumps(payload, separators=(',', ':'), ensure_ascii=False).encode('utf-8')
+    payload_b64 = _b64url_encode(payload_json)
+    sig = hmac.new(APP_SECRET.encode('utf-8'), payload_b64.encode('utf-8'), hashlib.sha256).digest()
+    sig_b64 = _b64url_encode(sig)
+    return f"{payload_b64}.{sig_b64}"
+
+
+def _verify_invite_token(token: str) -> dict:
+    """招待トークン検証。{valid, email?, expires_at?, reason?} を返す。"""
+    if not APP_SECRET:
+        return {"valid": False, "reason": "server_misconfigured"}
+    if not token or "." not in token:
+        return {"valid": False, "reason": "malformed"}
+    try:
+        payload_b64, sig_b64 = token.split(".", 1)
+        expected_sig = hmac.new(APP_SECRET.encode('utf-8'), payload_b64.encode('utf-8'), hashlib.sha256).digest()
+        provided_sig = _b64url_decode(sig_b64)
+        if not hmac.compare_digest(expected_sig, provided_sig):
+            return {"valid": False, "reason": "signature_mismatch"}
+        payload = json.loads(_b64url_decode(payload_b64).decode('utf-8'))
+        exp = payload.get("exp", 0)
+        if exp < datetime.now(timezone.utc).timestamp():
+            return {"valid": False, "reason": "expired"}
+        return {
+            "valid": True,
+            "email": payload.get("e", ""),
+            "expires_at": exp,
+            "kind": payload.get("k", ""),
+        }
+    except Exception as e:
+        return {"valid": False, "reason": f"parse_error_{type(e).__name__}"}
+
+
+@app.post("/api/admin/marketing/generate-student-invite")
+async def admin_generate_student_invite(
+    payload: dict = None,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🎓 既存通塾生 向け 招待 URL を 1件発行 (HMAC 署名 / 30日期限デフォルト)。
+    塾長運用: 生徒/保護者から DM で「招待ください」が来たら 1 email を入れて URL を返信。
+    認証: admin Bearer or x-cron-secret
+    payload: {email: str, expires_days?: 30, base_url?, name?}
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    payload = payload or {}
+    email = (payload.get("email") or "").strip().lower()
+    expires_days = int(payload.get("expires_days", 30))
+    base_url = (payload.get("base_url") or "https://trillion-ai-juku.com").rstrip("/")
+    name = (payload.get("name") or "").strip()
+
+    if not email or "@" not in email or "." not in email.split("@", 1)[1]:
+        raise HTTPException(status_code=400, detail="email が不正")
+    if expires_days < 1 or expires_days > 365:
+        raise HTTPException(status_code=400, detail="expires_days は 1〜365 の範囲")
+
+    token = _sign_invite_token(email, expires_days)
+    invite_url = f"{base_url}/student-upgrade.html?invite={token}"
+    expires_at_jst = (datetime.now(timezone.utc) + timedelta(days=expires_days)).astimezone(timezone(timedelta(hours=9)))
+
+    name_part = f"{name}さん " if name else ""
+    dm_template = (
+        f"{name_part}いつもありがとうございます！\n"
+        f"\n"
+        f"AI学習アドオンの招待URLをお送りします。\n"
+        f"通塾生限定・永年¥9,800/月 (入塾金免除) です。\n"
+        f"\n"
+        f"👇 こちらから\n"
+        f"{invite_url}\n"
+        f"\n"
+        f"※ {expires_at_jst.strftime('%Y/%m/%d')} までに開いてください。\n"
+        f"※ 不明点はこちらの DM にどうぞ。"
+    )
+
+    return {
+        "ok": True,
+        "email": email,
+        "invite_url": invite_url,
+        "token": token,
+        "expires_days": expires_days,
+        "expires_at_iso": expires_at_jst.isoformat(),
+        "expires_at_jst": expires_at_jst.strftime("%Y-%m-%d %H:%M JST"),
+        "dm_template": dm_template,
+    }
+
+
+@app.get("/api/marketing/verify-invite")
+def public_verify_invite(token: str):
+    """招待 URL の token を公開検証。frontend の student-upgrade.html が <head> で叩く。
+    valid なら {valid: true, email, expires_at} を返す。invalid なら redirect すべき。
+    """
+    if not token:
+        return {"valid": False, "reason": "missing_token"}
+    return _verify_invite_token(token)
+
+
 @app.post("/api/admin/stripe/setup-threads6k-coupon")
 def admin_stripe_setup_threads6k_coupon(
     authorization: Optional[str] = Header(None),
