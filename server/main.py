@@ -2868,16 +2868,24 @@ EXAM_QUESTION_ROTATION = [
     ("toefl", "l_lect2", None),
     ("toefl", "s_task1", None),
     ("toefl", "w_integrated", None),
-    # TOEIC
+    # TOEIC (Phase 14-I で l_part1 / l_part4 / r_part7_multi を追加)
+    ("toeic", "l_part1", None),
     ("toeic", "l_part2", None),
     ("toeic", "l_part3", None),
+    ("toeic", "l_part4", None),
     ("toeic", "r_part5", None),
     ("toeic", "r_part6", None),
     ("toeic", "r_part7_single", None),
-    # IELTS
+    ("toeic", "r_part7_multi", None),
+    # IELTS (Phase 14-I で l_sec2 / l_sec4 / r_p2 / r_p3 / w_task1 を追加)
     ("ielts", "l_sec1", None),
+    ("ielts", "l_sec2", None),
     ("ielts", "l_sec3", None),
+    ("ielts", "l_sec4", None),
     ("ielts", "r_p1", None),
+    ("ielts", "r_p2", None),
+    ("ielts", "r_p3", None),
+    ("ielts", "w_task1", None),
     ("ielts", "w_task2", None),
     # 英検 (受験者多い順: 準1級, 2級, 3級, 準2級, 1級, 4級, 5級)
     ("eiken", "r_q1", "gp1"),
