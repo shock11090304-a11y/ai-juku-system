@@ -133,11 +133,11 @@ const PLAN_CONFIG = {
     apiPath: '/api/campaigns/enrollment-waiver/status',
   },
 
-  // 既存塾生向けアドオン
+  // 既存塾生向けアドオン (2026-04-26 値下げ ¥15,000 → 永年¥9,800・招待リンク方式で月額固定運用)
   studentAddon: {
-    price: 15000,
-    priceLabel: '¥15,000',
-    description: '塾生限定アドオン（月謝に追加）',
+    price: 9800,
+    priceLabel: '¥9,800',
+    description: '塾生限定アドオン（月謝に追加・永年この価格）',
     features: [
       '全AI機能無制限',
       '問題生成・添削・教材作成すべて無制限',
@@ -148,12 +148,11 @@ const PLAN_CONFIG = {
     ],
   },
 
-  // 年間先払い割引
+  // 年間先払い割引 (通塾生アドオンは月額固定運用のため除外)
   annualDiscount: {
     standardAnnual: { monthly: 24980, annual: 249800, saved: 49960, label: '年間¥249,800（2ヶ月分お得）' },
     premiumAnnual: { monthly: 39800, annual: 398000, saved: 79600, label: '年間¥398,000（2ヶ月分お得）' },
     familyAnnual: { monthly: 59800, annual: 598000, saved: 119600, label: '年間¥598,000（2ヶ月分お得）' },
-    studentAddonAnnual: { monthly: 15000, annual: 150000, saved: 30000, label: '年間¥150,000（¥30,000お得）' },
   },
 };
 
