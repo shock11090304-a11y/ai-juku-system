@@ -3680,6 +3680,128 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None)):
     }
 
 
+@app.post("/api/admin/marketing/send-ig-carousel")
+async def admin_send_ig_carousel(
+    payload: dict = None,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """📸 Instagram カルーセル投稿(16機能詳細)の PNG リンク + キャプションを Gmail へ送信。
+    認証: admin Bearer or x-cron-secret
+    payload: {to?: str, base_url?: str}
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    payload = payload or {}
+    to_email = payload.get("to") or os.getenv("DAILY_SNS_TO_EMAIL", "shock11090304@gmail.com")
+    base_url = (payload.get("base_url") or "https://trillion-ai-juku.com").rstrip("/")
+
+    titles = {
+        1: "01 表紙 — 子の月10万、もう要らない。",
+        2: "02 24時間 AIチューター",
+        3: "03 リアル英字ニュース読解",
+        4: "04 個別カリキュラム自動生成",
+        5: "05 Learning Brain — 記憶最適化",
+        6: "06 5試験完全対応",
+        7: "07 大学入試 23大学",
+        8: "08 スピーキング & 英作文添削",
+        9: "09 東大生3人が問題を検閲",
+        10: "10 CTA — 席を確保する",
+    }
+
+    caption = (
+        "中3の息子に、家庭教師を月10万払っていた。\n"
+        "AIに切り替えて3ヶ月、模試の偏差値が8上がった。\n"
+        "月¥14,500。それが現実。\n\n"
+        "━━━━━━━━━━━━━━━\n\n"
+        "▼ ¥14,500 で受け取れる16機能 (抜粋)\n\n"
+        "✓ 24時間 AIチューター (深夜3時も応答)\n"
+        "✓ 教材スキャン Vision AI (紙を撮る → 類題生成)\n"
+        "✓ 個別カリキュラム自動生成 (志望校逆算)\n"
+        "✓ エビングハウス自動復習 (忘れる前に出し直す)\n"
+        "✓ 5試験完全対応 (英検/TOEFL/TOEIC/IELTS/大学入試)\n"
+        "✓ 大学入試 23大学 (MARCH 〜 東大・医学部 まで)\n"
+        "✓ AIスピーキング採点 + 英作文100点満点添削\n"
+        "✓ リアル英字ニュース読解 (CNN/BBC/NYT 計10フィード)\n"
+        "✓ 東大生3人が問題を検閲する品質保証\n\n"
+        "━━━━━━━━━━━━━━━\n\n"
+        "【¥14,500/月 永年保証】\n"
+        "創設メンバー50名限定 / 契約後も値上げなし\n"
+        "通常¥39,800のところ、永年この価格。\n\n"
+        "【7日間 完全無料】\n"
+        "クレカ登録なし。自動課金なし。\n\n"
+        "【申込】\n"
+        "プロフィールURL、または\n"
+        "trillion-ai-juku.com/lp.html\n\n"
+        "家庭教師月10万も、塾月5万も、もう要らない。\n"
+        "家計を守りながら、子の進路は妥協しない。\n\n"
+        "#ai塾 #大学受験 #高校受験 #英検準1級 #toeic #塾選び #家庭教師 #オンライン塾 #自宅学習 #生成ai"
+    )
+
+    slides_html = ""
+    for i in range(1, 11):
+        url = f"{base_url}/marketing-assets/ig-detail-{i}.png"
+        title = titles.get(i, f"Slide {i}")
+        slides_html += (
+            f'<div style="margin-bottom:20px;padding:16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">'
+            f'<div style="font-weight:700;color:#1e1b4b;margin-bottom:10px;font-size:15px;">{title}</div>'
+            f'<a href="{url}" style="display:block;text-decoration:none;">'
+            f'<img src="{url}" alt="{title}" style="width:100%;max-width:540px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:block;">'
+            f'</a>'
+            f'<div style="margin-top:8px;font-size:12px;">'
+            f'<a href="{url}" style="color:#6366f1;font-weight:600;text-decoration:none;">⬇️ 画像を保存 (右クリック → "画像を保存")</a>'
+            f'</div>'
+            f'</div>'
+        )
+
+    body_html = (
+        '<!DOCTYPE html><html><body style="font-family:\'Hiragino Sans\',\'Yu Gothic\',sans-serif;max-width:640px;margin:0 auto;padding:24px;background:#f8fafc;color:#0f172a;">'
+        '<div style="background:linear-gradient(135deg,#6366f1,#ec4899);color:white;padding:28px;border-radius:16px;margin-bottom:24px;">'
+        '<h1 style="margin:0;font-size:22px;">📸 Instagram カルーセル投稿(完成版)</h1>'
+        '<p style="margin:8px 0 0;font-size:14px;opacity:0.9;">16機能詳細 / 1080×1350 / 10枚 / 3人体制レビュー反映</p>'
+        '</div>'
+        '<div style="background:white;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.06);margin-bottom:20px;">'
+        '<h2 style="font-size:17px;color:#1e1b4b;margin-top:0;margin-bottom:12px;">📥 投稿用 PNG 10枚</h2>'
+        '<p style="margin:0 0 16px;font-size:13px;color:#475569;">各画像をタップして大きく表示 → 「画像を保存」でダウンロード。Instagram の「+ 投稿」で 10枚を順番に選択してください。</p>'
+        f'{slides_html}'
+        '</div>'
+        '<div style="background:white;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.06);margin-bottom:20px;">'
+        '<h2 style="font-size:17px;color:#1e1b4b;margin-top:0;">📝 投稿文 (キャプション・コピペ用)</h2>'
+        f'<pre style="background:#0f172a;color:#e2e8f0;padding:18px;border-radius:8px;white-space:pre-wrap;font-size:12px;line-height:1.7;overflow-x:auto;">{caption}</pre>'
+        '<p style="margin:12px 0 0;font-size:12px;color:#64748b;">※ ハッシュタグは 10個に最適化済 (アカウント設定上限考慮)。</p>'
+        '</div>'
+        '<div style="background:white;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.06);">'
+        '<h2 style="font-size:17px;color:#1e1b4b;margin-top:0;">✅ 3人体制レビュー反映済</h2>'
+        '<ul style="line-height:1.7;padding-left:20px;font-size:13px;margin:0;">'
+        '<li>表紙: 価格訴求 →「子の月10万、もう要らない。」(損失回避フック)</li>'
+        '<li>CTA: 「席を確保する」+ 残り席カウンタ + 永年¥14,500保証</li>'
+        '<li>順序: 英字ニュース(差別化) を 3枚目に前倒し</li>'
+        '<li>包摂: 「MARCH・関関同立 〜 東大・医学部」で中堅志望者も対象</li>'
+        '<li>専門用語: Learning Brain には平易な言い換え併記</li>'
+        '<li>人間関与: 「東大生3人が検閲」スライドで AI完結不安払拭</li>'
+        '<li>ハッシュタグ: 10個に最適化</li>'
+        '</ul>'
+        '</div>'
+        '<p style="text-align:center;font-size:12px;color:#94a3b8;margin-top:24px;">Generated by Claude Code (Opus 4.7) for trillion-ai-juku.com</p>'
+        '</body></html>'
+    )
+
+    result = _send_monitor_email(
+        subject="📸 Instagram カルーセル(16機能詳細) — 完成版 + 投稿文",
+        body_html=body_html,
+        to_email=to_email,
+    )
+    return {"ok": True, "to": to_email, "slides": 10, **result}
+
+
 @app.post("/api/admin/cache/force-purge")
 def admin_cache_force_purge(authorization: Optional[str] = Header(None)):
     """🧹 全生徒のブラウザキャッシュを強制パージ。
