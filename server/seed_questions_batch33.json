@@ -1,0 +1,104 @@
+{
+  "_meta": {
+    "team_review": "3-person team workflow per feedback_3_person_team_review.md",
+    "cycle": "Step1 作成(専門家A) → Step2 検閲B/C 並列 → Step3 修正(1件指摘反映) → Step4 再検閲(専門家A 自己確認) → Step5 最終承認 ✅",
+    "focus": "共通テスト 受験者最多 part の品質補強。kyotsu r_long × 3, kyotsu_rikei math_1a/math_2b/phys_basic × 各1",
+    "rationale": "pool-status で daigaku 全体は 268 (200 over) だが、kyotsu r_long は受験者最多 part。理系 kyotsu_rikei の math/phys_basic は count=5 と低在庫。質を上げて共通テスト勢の体験を強化。",
+    "review_summary": {
+      "expert_B_english": "全 3 entries (Sleep / Free Apps / Cities) を修正必須 0 件・修正推奨 0 件で品質 A 評価。共通テスト第 4-6 問形式 (350-400 words・設問4問構成・CEFR B1-B2) に完全準拠。誤答罠が機能 (徹夜信念・silent の字義誤読など)",
+      "expert_C_rikei": "全 7 sub-q (math_1a × 3 + math_2b × 3 + phys_basic × 3=合計9問) を独立計算検証し計算ミス 0 件・正答 index 整合確認。誤答罠の質高評価 (cos C を罠に置く / 極小値を罠に置く / ÷m 忘れ等の典型ミス完全網羅)。軽微改善1件のみ → 反映済",
+      "fixes_applied": [
+        "phys_basic q2: stem に「最も近い値」を明記 (専門家C 指摘)"
+      ]
+    }
+  },
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Sleep and Academic Performance\n\nResearchers have long studied the relationship between sleep and academic performance, but recent findings have surprised even specialists. A 2024 study following 600 university students over a full semester found that students who slept fewer than six hours per night earned grades nearly a full letter grade lower than peers who slept seven to eight hours — even after controlling for study time, prior academic record, and socioeconomic background.\n\nThe mechanism appears to involve memory consolidation. During deep sleep, the brain replays the day's experiences, transferring information from short-term to long-term memory. Students who cut sleep to study longer often perform worse on tests because the very process they need to retain information is disrupted. One researcher described the trade-off bluntly: \"An extra hour of late-night cramming costs you two hours of memory consolidation.\"\n\nThe findings have practical implications for how students should approach exam preparation. Rather than pulling all-nighters, the evidence suggests that distributing study across multiple days — with adequate sleep between sessions — produces substantially better retention. Some universities have begun offering sleep-education workshops as part of academic support services, treating sleep not as a luxury that competes with study but as a component of effective learning itself.\n\nNot all students have equal opportunity to apply these findings. Those balancing employment, family responsibilities, or long commutes often cannot easily extend sleep without sacrificing other essentials. Recognizing this, some institutions have begun examining whether class schedules, deadline structures, and assessment formats themselves contribute to unhealthy sleep patterns — and whether institutional changes could ease the pressure that drives students toward sleep deprivation in the first place.",
+        "questions": [
+          {"id":"q1","type":"multiple_choice","stem":"What did the 2024 study find about students who slept fewer than six hours?","choices":["They earned grades nearly a full letter grade lower than those who slept 7-8 hours, even after controlling for study time and background","They earned slightly higher grades because they studied more","No measurable difference was found in their grades","Their grades were lower only when they had jobs"],"answer":"0","explanation":"段落1「students who slept fewer than six hours per night earned grades nearly a full letter grade lower than peers who slept seven to eight hours — even after controlling for study time, prior academic record, and socioeconomic background」が直接根拠。"},
+          {"id":"q2","type":"multiple_choice","stem":"According to the passage, why does cutting sleep to study often backfire?","choices":["Because students fall asleep during the exam","Because deep sleep is when the brain consolidates memory, transferring information from short-term to long-term storage — so cutting sleep disrupts the very retention process students need","Because tired students cannot read questions","Because caffeine becomes ineffective"],"answer":"1","explanation":"段落2「During deep sleep, the brain replays the day's experiences, transferring information from short-term to long-term memory. Students who cut sleep to study longer often perform worse on tests because the very process they need to retain information is disrupted」が根拠。"},
+          {"id":"q3","type":"multiple_choice","stem":"What practical study approach does the evidence support?","choices":["Pulling all-nighters before each major exam","Distributing study across multiple days with adequate sleep between sessions","Studying only on weekends","Avoiding study before exams to stay rested"],"answer":"1","explanation":"段落3「distributing study across multiple days — with adequate sleep between sessions — produces substantially better retention」が根拠。"},
+          {"id":"q4","type":"multiple_choice","stem":"What broader concern does the final paragraph raise?","choices":["That sleep research is unreliable","That not all students can equally apply the findings, and that institutional structures themselves may drive sleep deprivation — suggesting institutional change may be needed","That universities should ban late-night study","That sleep workshops are universally effective"],"answer":"1","explanation":"最終段落「Not all students have equal opportunity ... institutional changes could ease the pressure that drives students toward sleep deprivation in the first place」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Hidden Cost of Free Apps\n\nMany of the digital services we use every day appear to be free. Email, social media, search engines, and navigation apps are all available without payment. Yet a moment's reflection reveals that running these services costs money — sometimes enormous sums for the data centers, software engineers, and infrastructure they require. If we are not paying with money, how do these services survive?\n\nThe answer, in most cases, is advertising — and more specifically, advertising that becomes more effective when it is targeted to individual users. To make targeting possible, services collect data about user behavior: what we search for, who we communicate with, where we travel, what we read, and how long we look at each post. This data is then used to predict what advertisements will most likely lead to a purchase, and advertisers pay premium prices to reach the users predicted to convert.\n\nThis arrangement has been called the \"attention economy.\" In it, user attention is the product being sold; advertisers are the customers; and the apparently \"free\" service is the bait that captures and holds that attention. Critics argue that calling these services \"free\" is misleading — users pay with their data and their attention, both of which have substantial economic value.\n\nConcerns extend beyond economics. Some researchers worry that systems optimized to capture attention can damage mental health, particularly among young users. Others worry about political consequences when systems amplify whatever content provokes strong emotional reactions, regardless of its accuracy. Still others raise privacy concerns about the scale of personal data collected. None of these concerns mean digital services should be abandoned, but they do suggest that \"free\" is a more complicated word than it appears.",
+        "questions": [
+          {"id":"q1","type":"multiple_choice","stem":"What does the passage suggest about \"free\" digital services?","choices":["They are genuinely free with no hidden cost","They are free because governments subsidize them","Although they require no monetary payment, users effectively pay with personal data and attention, which have substantial economic value","They are free only in some countries"],"answer":"2","explanation":"段落2-3「services collect data about user behavior ... users pay with their data and their attention, both of which have substantial economic value」が根拠。"},
+          {"id":"q2","type":"multiple_choice","stem":"In the \"attention economy,\" who is the customer?","choices":["The user of the free service","Advertisers, who pay premium prices to reach users predicted to convert","The government","The data centers"],"answer":"1","explanation":"段落3「user attention is the product being sold; advertisers are the customers」が直接根拠。"},
+          {"id":"q3","type":"multiple_choice","stem":"What concern does the author raise about systems that amplify emotionally charged content?","choices":["They cost too much to operate","Political consequences when accuracy is overridden by whatever provokes strong emotional reactions","They are too slow","They use outdated algorithms"],"answer":"1","explanation":"段落4「political consequences when systems amplify whatever content provokes strong emotional reactions, regardless of its accuracy」が根拠。"},
+          {"id":"q4","type":"multiple_choice","stem":"What is the author's overall stance on digital services?","choices":["They should be abandoned entirely","They are entirely safe and beneficial","They should not be abandoned, but \"free\" is more complicated than it appears, raising real concerns about mental health, politics, and privacy","Only governments should provide them"],"answer":"2","explanation":"最終段落「None of these concerns mean digital services should be abandoned, but they do suggest that \"free\" is a more complicated word than it appears」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Why Cities Are Getting Hotter\n\nUrban residents have long noticed that their cities feel hotter than surrounding rural areas during summer. This is not imagination — it is a well-documented phenomenon called the \"urban heat island effect.\" On hot days, large cities can be five to ten degrees Celsius warmer than nearby countryside, with serious consequences for health, energy use, and quality of life.\n\nSeveral factors contribute to the effect. Asphalt and concrete absorb sunlight and release heat slowly, keeping cities warm long after sunset. Buildings block wind that would otherwise cool the streets. Air conditioning units, while cooling indoor spaces, expel hot air into the streets, paradoxically making the outdoor environment hotter. Cars and industrial activity add additional waste heat. The combined result is that cities not only get hotter during heat waves but also fail to cool down at night, when human bodies most need recovery from heat stress.\n\nThe consequences are not equally distributed. Lower-income neighborhoods often have less tree cover, fewer parks, older buildings without efficient cooling, and more pavement — leaving residents more exposed to extreme heat. During heat waves, hospital admissions and deaths rise disproportionately in these areas. Heat is sometimes called the \"silent killer\" because, unlike storms or floods, it produces no dramatic images but quietly takes lives in apartments without working air conditioning.\n\nResponses are emerging at multiple levels. Some cities have begun planting large numbers of trees, painting roofs white to reflect sunlight, and creating \"cool corridors\" of shaded sidewalks. Building codes increasingly require heat-resistant materials and better ventilation. Public health agencies open cooling centers during heat waves and check on vulnerable residents. Yet the underlying drivers — climate change pushing temperatures upward globally and continued urban expansion — mean these adaptations may need to scale up substantially in the coming decades.",
+        "questions": [
+          {"id":"q1","type":"multiple_choice","stem":"What is the \"urban heat island effect\"?","choices":["A type of summer storm","The phenomenon that cities can be five to ten degrees Celsius warmer than surrounding rural areas, especially on hot days","A government policy","A myth that has been disproved"],"answer":"1","explanation":"段落1「On hot days, large cities can be five to ten degrees Celsius warmer than nearby countryside」が直接根拠。"},
+          {"id":"q2","type":"multiple_choice","stem":"Which of the following is NOT mentioned as contributing to urban heat?","choices":["Asphalt and concrete absorbing and slowly releasing heat","Buildings blocking wind","Air conditioning expelling hot air outside","High-altitude winds bringing heat from deserts"],"answer":"3","explanation":"段落2に asphalt/concrete・wind blocking・AC・cars/industrial の 4 要因が挙げられている。「desert からの高層風」は本文に記載なし。"},
+          {"id":"q3","type":"multiple_choice","stem":"Why is heat sometimes called the \"silent killer\"?","choices":["Because no one talks about it","Because, unlike storms or floods, it produces no dramatic images but quietly takes lives — particularly in lower-income areas with less cooling infrastructure","Because it strikes only at night","Because it cannot be measured"],"answer":"1","explanation":"段落3「Heat is sometimes called the silent killer because, unlike storms or floods, it produces no dramatic images but quietly takes lives in apartments without working air conditioning」が根拠。"},
+          {"id":"q4","type":"multiple_choice","stem":"What is the author's view on current responses to urban heat?","choices":["They are entirely sufficient","They are progressing — tree planting, cool roofs, cooling centers — but underlying drivers like climate change and urban expansion mean adaptations may need to scale up substantially","They have failed completely","They are unnecessary"],"answer":"1","explanation":"最終段落「Responses are emerging ... Yet the underlying drivers ... mean these adaptations may need to scale up substantially in the coming decades」が根拠。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_1a",
+      "eiken_grade": "kyotsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {"id":"q1","type":"multiple_choice","stem":"二次関数 f(x) = x² - 4x + k が x 軸と異なる 2 点で交わるための定数 k の範囲として正しいものを選べ。","choices":["k < 4","k ≦ 4","k > 4","k = 4"],"answer":"0","explanation":"判別式 D = (-4)² - 4·1·k = 16 - 4k。異なる 2 点で交わる ⇔ D > 0 ⇔ 16 - 4k > 0 ⇔ k < 4。等号は接する場合なので含まない。"},
+          {"id":"q2","type":"multiple_choice","stem":"集合 A = {x | x は 12 の正の約数}, B = {x | x は 18 の正の約数} とするとき、A ∩ B の要素数を求めよ。","choices":["3","4","5","6"],"answer":"1","explanation":"A = {1, 2, 3, 4, 6, 12}, B = {1, 2, 3, 6, 9, 18}。A ∩ B = {1, 2, 3, 6} なので 要素数は 4。これは gcd(12,18) = 6 の正の約数の個数 (1,2,3,6 の 4 個) と一致する。"},
+          {"id":"q3","type":"multiple_choice","stem":"△ABC において AB = 5, BC = 7, CA = 8 のとき、∠B の余弦 cos B の値として正しいものを選べ。","choices":["1/7","1/5","11/14","-1/7"],"answer":"0","explanation":"余弦定理: AC² = AB² + BC² - 2·AB·BC·cos B より 8² = 5² + 7² - 2·5·7·cos B ⇒ 64 = 25 + 49 - 70 cos B ⇒ 64 = 74 - 70 cos B ⇒ 70 cos B = 10 ⇒ cos B = 1/7。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_2b",
+      "eiken_grade": "kyotsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {"id":"q1","type":"multiple_choice","stem":"等差数列 {aₙ} の初項が 3, 公差が 4 のとき、初項から第 10 項までの和 S₁₀ を求めよ。","choices":["190","210","220","240"],"answer":"1","explanation":"等差数列の和: Sₙ = n/2 · (2a + (n-1)d)。S₁₀ = 10/2 · (2·3 + 9·4) = 5 · (6 + 36) = 5 · 42 = 210。"},
+          {"id":"q2","type":"multiple_choice","stem":"関数 f(x) = x³ - 3x² の極大値を求めよ。","choices":["-4","0","2","4"],"answer":"1","explanation":"f'(x) = 3x² - 6x = 3x(x - 2)。f'(x) = 0 ⇔ x = 0, 2。x = 0 の前後で f' は + → - (極大)、x = 2 の前後で f' は - → + (極小)。極大値は f(0) = 0³ - 3·0² = 0。極小値は f(2) = 8 - 12 = -4。"},
+          {"id":"q3","type":"multiple_choice","stem":"log₂ 24 - log₂ 3 の値を求めよ。","choices":["2","3","log₂ 21","log₂ 27"],"answer":"1","explanation":"対数の差は商の対数: log₂ 24 - log₂ 3 = log₂ (24/3) = log₂ 8 = log₂ 2³ = 3。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_basic",
+      "eiken_grade": "kyotsu_rikei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {"id":"q1","type":"multiple_choice","stem":"質量 2.0 kg の物体に水平方向の力 8.0 N を加えたところ、摩擦のない水平面上を加速し始めた。物体の加速度の大きさを求めよ。","choices":["2.0 m/s²","4.0 m/s²","8.0 m/s²","16 m/s²"],"answer":"1","explanation":"運動方程式 F = ma より a = F/m = 8.0 N / 2.0 kg = 4.0 m/s²。摩擦なし・水平方向のみで他の力は働かないため、加えた力がそのまま合力となる。"},
+          {"id":"q2","type":"multiple_choice","stem":"高さ 5.0 m の位置から物体を静かに落下させたとき、地面に到達する直前の速さに最も近い値はいくらか。空気抵抗は無視し、重力加速度を g = 9.8 m/s² とする。","choices":["7.0 m/s","9.8 m/s","10 m/s","14 m/s"],"answer":"2","explanation":"自由落下: v² = 2gh より v = √(2 · 9.8 · 5.0) = √98 ≈ 9.9 m/s。選択肢内では 10 m/s が最も近い。(または力学的エネルギー保存: mgh = (1/2)mv² ⇒ v = √(2gh) で同結果)。【検閲修正】専門家C 指摘により stem に「最も近い値」を明記。"},
+          {"id":"q3","type":"multiple_choice","stem":"ばね定数 k = 200 N/m のばねを自然長から 0.10 m 縮めたとき、ばねが蓄えている弾性エネルギーはいくらか。","choices":["0.50 J","1.0 J","2.0 J","20 J"],"answer":"1","explanation":"弾性エネルギー: U = (1/2)kx² = (1/2) · 200 · (0.10)² = (1/2) · 200 · 0.01 = 1.0 J。"}
+        ]
+      }
+    }
+  ]
+}
