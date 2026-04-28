@@ -3874,6 +3874,64 @@ async def admin_send_ig_carousel(
     return {"ok": True, "to": to_email, "slides": count, "prefix": prefix, **result}
 
 
+@app.post("/api/admin/marketing/send-link-email")
+async def admin_send_link_email(
+    payload: dict = None,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🔗 任意の URL リスト + メモ を Gmail 送信する汎用 endpoint。
+    認証: admin Bearer or x-cron-secret
+    payload: {to?, subject?, intro?, links: [{label, url, note?}]}
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    payload = payload or {}
+    to_email = payload.get("to") or os.getenv("DAILY_SNS_TO_EMAIL", "shock11090304@gmail.com")
+    subject = payload.get("subject") or "🔗 URL お送りします"
+    intro = payload.get("intro") or ""
+    links = payload.get("links") or []
+
+    links_html = ""
+    for ln in links:
+        label = ln.get("label", "リンク")
+        url = ln.get("url", "")
+        note = ln.get("note", "")
+        links_html += (
+            '<div style="margin-bottom:18px;padding:18px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">'
+            f'<div style="font-weight:700;color:#1e1b4b;margin-bottom:8px;font-size:15px;">{label}</div>'
+            f'<div style="background:#0f172a;color:#a5b4fc;padding:14px 16px;border-radius:8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;word-break:break-all;line-height:1.6;">{url}</div>'
+            + (f'<div style="margin-top:10px;font-size:13px;color:#475569;line-height:1.6;">{note}</div>' if note else '')
+            + '</div>'
+        )
+
+    intro_html = f'<p style="font-size:14px;color:#334155;line-height:1.7;margin:0 0 16px;">{intro}</p>' if intro else ''
+
+    body_html = (
+        '<!DOCTYPE html><html><body style="font-family:\'Hiragino Sans\',\'Yu Gothic\',sans-serif;max-width:640px;margin:0 auto;padding:24px;background:#f8fafc;color:#0f172a;">'
+        '<div style="background:linear-gradient(135deg,#6366f1,#ec4899);color:white;padding:24px;border-radius:14px;margin-bottom:20px;">'
+        f'<h1 style="margin:0;font-size:20px;">{subject}</h1>'
+        '</div>'
+        '<div style="background:white;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.06);">'
+        f'{intro_html}'
+        f'{links_html}'
+        '</div>'
+        '<p style="text-align:center;font-size:12px;color:#94a3b8;margin-top:20px;">trillion-ai-juku.com</p>'
+        '</body></html>'
+    )
+
+    result = _send_monitor_email(subject=subject, body_html=body_html, to_email=to_email)
+    return {"ok": True, "to": to_email, "links": len(links), **result}
+
+
 @app.post("/api/admin/cache/force-purge")
 def admin_cache_force_purge(authorization: Optional[str] = Header(None)):
     """🧹 全生徒のブラウザキャッシュを強制パージ。
