@@ -302,73 +302,106 @@ ${/数学/.test(subject) ? `
 上記条件で、${topic}に関する${getTypeLabel(type)}を指定のJSON形式で生成してください。`;
 
   let json;
-  // 1) ログイン済みユーザーは backend AI proxy 経由 (生徒ブラウザにキー不要)
-  // 2) 管理者は localStorage の APIキー直叩き
-  // 3) どちらも無ければ demo
+  // 優先順序 ($0 運用 + Railway ルータータイムアウト回避):
+  //  1) textbook_pool DB を検索 → ヒットしたら即取り出し (待ち時間ゼロ・Anthropic 不要)
+  //  2) ログイン済みユーザーは backend AI proxy 経由 (リアルタイム生成・最終手段)
+  //  3) 管理者は localStorage の APIキー直叩き
+  //  4) どれも無理なら demo
   const sessionToken = localStorage.getItem('ai_juku_session_token')
     || localStorage.getItem('ai_juku_admin_token');
   const backend = (window.location.hostname === 'localhost' && window.location.port === '8090')
     ? 'http://localhost:8000' : window.location.origin;
   const apiKey = getApiKey();
+  let poolHitInfo = null;
 
-  if (!sessionToken && !apiKey) {
-    await new Promise(r => setTimeout(r, 1500));
-    json = generateDemo(subject, topic, level);
-  } else {
+  // ----- Step 1: 教材プール検索 (Anthropic クレジット消費ゼロ・即取り出し) -----
+  if (sessionToken) {
     try {
-      const body = {
-        model: MODEL_PREMIUM,
-        max_tokens: 16000,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userMsg }],
-      };
-      let res;
-      if (sessionToken) {
-        // backend proxy 経由 (生徒も使える)
-        res = await fetch(`${backend}/api/ai/messages`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + sessionToken,
-          },
-          body: JSON.stringify(body),
-        });
-      } else {
-        // 管理者: 直叩き (Anthropic 直接、thinking 設定込み)
-        const isOpus47 = (MODEL_PREMIUM || '').startsWith('claude-opus-4-7');
-        const directBody = { ...body, temperature: 1.0 };
-        if (isOpus47) {
-          directBody.thinking = { type: 'adaptive' };
-          directBody.output_config = { effort: 'high' };
-        } else {
-          directBody.thinking = { type: 'enabled', budget_tokens: 5000 };
+      const params = new URLSearchParams({ subject, topic, level, type, limit: '1' });
+      const poolRes = await fetch(`${backend}/api/textbooks/search?${params}`, {
+        headers: { 'Authorization': 'Bearer ' + sessionToken },
+      });
+      if (poolRes.ok) {
+        const poolData = await poolRes.json();
+        if (poolData.results && poolData.results.length > 0) {
+          const hit = poolData.results[0];
+          if (hit.content && typeof hit.content === 'object') {
+            json = hit.content;
+            poolHitInfo = { id: hit.id, title: hit.title, source: 'textbook_pool' };
+            console.log('[textbook] プール命中:', hit.title);
+          }
         }
-        res = await fetch(API_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true'
-          },
-          body: JSON.stringify(directBody),
-        });
       }
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`API ${res.status}: ${errText.slice(0, 200)}`);
-      }
-      const data = await res.json();
-      // Extended Thinking有効時、contentには複数のブロックが返る（thinking + text）
-      // text block を見つけてパース
-      const textBlock = (data.content || []).find(b => b.type === 'text');
-      const text = textBlock?.text || '{}';
-      // Strip markdown code fences if present
-      const clean = text.trim().replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
-      json = JSON.parse(clean);
     } catch (e) {
-      alert(`エラー: ${e.message}\nデモ応答を表示します。`);
+      console.warn('[textbook] pool 検索失敗 (続行):', e);
+    }
+  }
+
+  // ----- Step 2-4: プール miss なら従来の生成ロジックへ -----
+  if (!json) {
+    if (!sessionToken && !apiKey) {
+      await new Promise(r => setTimeout(r, 1500));
       json = generateDemo(subject, topic, level);
+    } else {
+      try {
+        const body = {
+          model: MODEL_PREMIUM,
+          max_tokens: 16000,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userMsg }],
+        };
+        let res;
+        if (sessionToken) {
+          // backend proxy 経由 (生徒も使える)
+          res = await fetch(`${backend}/api/ai/messages`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + sessionToken,
+            },
+            body: JSON.stringify(body),
+          });
+        } else {
+          // 管理者: 直叩き (Anthropic 直接、thinking 設定込み)
+          const isOpus47 = (MODEL_PREMIUM || '').startsWith('claude-opus-4-7');
+          const directBody = { ...body, temperature: 1.0 };
+          if (isOpus47) {
+            directBody.thinking = { type: 'adaptive' };
+            directBody.output_config = { effort: 'high' };
+          } else {
+            directBody.thinking = { type: 'enabled', budget_tokens: 5000 };
+          }
+          res = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': apiKey,
+              'anthropic-version': '2023-06-01',
+              'anthropic-dangerous-direct-browser-access': 'true'
+            },
+            body: JSON.stringify(directBody),
+          });
+        }
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`API ${res.status}: ${errText.slice(0, 200)}`);
+        }
+        const data = await res.json();
+        // Extended Thinking有効時、contentには複数のブロックが返る（thinking + text）
+        // text block を見つけてパース
+        const textBlock = (data.content || []).find(b => b.type === 'text');
+        const text = textBlock?.text || '{}';
+        // Strip markdown code fences if present
+        const clean = text.trim().replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+        json = JSON.parse(clean);
+      } catch (e) {
+        // フェイルセーフ最終層: プール miss + Anthropic 失敗 → 親切な案内 + demo
+        const friendlyMsg = String(e.message || '').includes('ROUTER_EXTERNAL') || String(e.message || '').includes('502')
+          ? 'AI 生成が混雑しています。教材プールにこの単元を事前収録すると次回から待ち時間ゼロで取り出せます。塾長に追加収録依頼してください。'
+          : `AI 生成が一時的に失敗しました: ${e.message}`;
+        alert(`${friendlyMsg}\n\nサンプル教材を表示します。`);
+        json = generateDemo(subject, topic, level);
+      }
     }
   }
 

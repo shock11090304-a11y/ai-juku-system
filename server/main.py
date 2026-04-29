@@ -382,6 +382,22 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     CREATE INDEX IF NOT EXISTS idx_exam_questions ON exam_questions(exam_id, part_key, created_at);
+    CREATE TABLE IF NOT EXISTS textbook_pool (
+        id {pk},
+        subject TEXT NOT NULL,
+        topic TEXT NOT NULL,
+        level TEXT NOT NULL,
+        length TEXT,
+        type TEXT,
+        title TEXT,
+        tags TEXT,
+        content TEXT NOT NULL,
+        status TEXT DEFAULT 'published',
+        source TEXT DEFAULT 'claude_max',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_textbook_pool ON textbook_pool(subject, level, status, created_at);
+    CREATE INDEX IF NOT EXISTS idx_textbook_pool_topic ON textbook_pool(topic);
     CREATE TABLE IF NOT EXISTS processed_events (
         event_id TEXT PRIMARY KEY,
         event_type TEXT,
@@ -4815,6 +4831,224 @@ def admin_exam_questions_import(payload: dict, authorization: Optional[str] = He
         "failed_details": failed[:20],
         "message": f"✅ {inserted}問 import (skip {skipped}・失敗 {len(failed)})",
     }
+
+
+# ==========================================================================
+# 教材プール ($0 運用): Claude Max プラン経由で事前生成した教材 JSON を DB に貯め、
+# 生徒の textbook-generator 押下時はまずこの DB を検索して即取り出す。
+# Anthropic API クレジット消費ゼロで教材配信が成立する。
+# ==========================================================================
+
+@app.post("/api/admin/textbooks/import")
+def admin_textbook_pool_import(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """🆓 Claude Max プラン経由で生成した教材 JSON を textbook_pool に一括投入。
+    payload:
+      {
+        "textbooks": [
+          {"subject": "数学IA", "topic": "二次関数", "level": "高1〜高2",
+           "length": "medium", "type": "unit_lesson",
+           "title": "...", "tags": ["二次関数","頂点"],
+           "content": {...教材JSON全体...}}
+        ]
+      }
+    認証: admin Bearer or x-cron-secret"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    textbooks = payload.get("textbooks") or []
+    if not isinstance(textbooks, list) or not textbooks:
+        raise HTTPException(status_code=400, detail="textbooks が空 or 配列ではありません")
+
+    inserted = 0
+    failed = []
+    conn = db()
+    c = conn.cursor()
+    try:
+        for i, t in enumerate(textbooks):
+            try:
+                subject = (t.get("subject") or "").strip()
+                topic = (t.get("topic") or "").strip()
+                level = (t.get("level") or "").strip()
+                content = t.get("content")
+                if not subject or not topic or not level or not content:
+                    failed.append({"i": i, "reason": "subject/topic/level/content いずれかが空"})
+                    continue
+                length = t.get("length") or "medium"
+                ttype = t.get("type") or "unit_lesson"
+                title = t.get("title") or f"{subject} - {topic}"
+                tags = t.get("tags") or []
+                if isinstance(tags, list):
+                    tags_str = ",".join(str(x) for x in tags)
+                else:
+                    tags_str = str(tags)
+                content_str = json.dumps(content, ensure_ascii=False) if not isinstance(content, str) else content
+
+                c.execute(
+                    """INSERT INTO textbook_pool
+                       (subject, topic, level, length, type, title, tags, content, status, source)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (subject, topic, level, length, ttype, title, tags_str, content_str,
+                     t.get("status") or "published", t.get("source") or "claude_max"),
+                )
+                inserted += 1
+            except Exception as e:
+                failed.append({"i": i, "reason": f"{type(e).__name__}: {e}"})
+                try: conn.rollback()
+                except Exception: pass
+        conn.commit()
+    finally:
+        conn.close()
+
+    log.info(f"[TextbookPool:Import] inserted={inserted} failed={len(failed)}")
+    return {
+        "ok": True,
+        "received": len(textbooks),
+        "inserted": inserted,
+        "failed": len(failed),
+        "failed_details": failed[:20],
+        "message": f"✅ {inserted}教材 import (失敗 {len(failed)})",
+    }
+
+
+@app.get("/api/textbooks/search")
+def public_textbook_search(
+    subject: Optional[str] = None,
+    topic: Optional[str] = None,
+    level: Optional[str] = None,
+    type: Optional[str] = None,
+    limit: int = 5,
+    authorization: Optional[str] = Header(None),
+):
+    """生徒/管理者から呼ばれる教材検索。
+    subject + topic + level の段階マッチで最も近いものを返す。
+    認証: 生徒 magic-link Bearer or admin Bearer"""
+    # 認証 (生徒 or admin)
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+        else:
+            try:
+                stu = _get_current_student(authorization)
+                if stu:
+                    authed = True
+            except Exception:
+                pass
+    if not authed:
+        raise HTTPException(status_code=401, detail="Login required")
+
+    if not subject:
+        raise HTTPException(status_code=400, detail="subject required")
+
+    limit = max(1, min(int(limit or 5), 20))
+    conn = db()
+    c = conn.cursor()
+    try:
+        results = []
+        # Stage 1: subject + topic + level 完全一致
+        if topic and level:
+            c.execute(
+                """SELECT id, subject, topic, level, length, type, title, tags, content, created_at
+                   FROM textbook_pool
+                   WHERE status = 'published' AND subject = ? AND topic = ? AND level = ?
+                   ORDER BY created_at DESC LIMIT ?""",
+                (subject, topic, level, limit),
+            )
+            results = [dict(r) for r in c.fetchall()]
+
+        # Stage 2: subject + topic LIKE (level は問わず)
+        if not results and topic:
+            c.execute(
+                """SELECT id, subject, topic, level, length, type, title, tags, content, created_at
+                   FROM textbook_pool
+                   WHERE status = 'published' AND subject = ? AND topic LIKE ?
+                   ORDER BY created_at DESC LIMIT ?""",
+                (subject, f"%{topic}%", limit),
+            )
+            results = [dict(r) for r in c.fetchall()]
+
+        # Stage 3: subject + level
+        if not results and level:
+            c.execute(
+                """SELECT id, subject, topic, level, length, type, title, tags, content, created_at
+                   FROM textbook_pool
+                   WHERE status = 'published' AND subject = ? AND level = ?
+                   ORDER BY created_at DESC LIMIT ?""",
+                (subject, level, limit),
+            )
+            results = [dict(r) for r in c.fetchall()]
+
+        # Stage 4: subject だけ
+        if not results:
+            c.execute(
+                """SELECT id, subject, topic, level, length, type, title, tags, content, created_at
+                   FROM textbook_pool
+                   WHERE status = 'published' AND subject = ?
+                   ORDER BY created_at DESC LIMIT ?""",
+                (subject, limit),
+            )
+            results = [dict(r) for r in c.fetchall()]
+    finally:
+        conn.close()
+
+    # content は JSON 文字列で保存しているのでパースして返す
+    out = []
+    for r in results:
+        content = r.get("content")
+        if isinstance(content, str):
+            try:
+                content = json.loads(content)
+            except Exception:
+                pass
+        out.append({
+            "id": r.get("id"),
+            "subject": r.get("subject"),
+            "topic": r.get("topic"),
+            "level": r.get("level"),
+            "length": r.get("length"),
+            "type": r.get("type"),
+            "title": r.get("title"),
+            "tags": (r.get("tags") or "").split(",") if r.get("tags") else [],
+            "content": content,
+            "created_at": str(r.get("created_at")) if r.get("created_at") else None,
+        })
+    return {"ok": True, "count": len(out), "results": out}
+
+
+@app.get("/api/admin/textbooks/list")
+def admin_textbook_pool_list(authorization: Optional[str] = Header(None)):
+    """admin: textbook_pool 一覧 (CEO ダッシュ表示用)"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(
+            """SELECT id, subject, topic, level, length, type, title, tags, status, source, created_at
+               FROM textbook_pool ORDER BY created_at DESC LIMIT 200"""
+        )
+        rows = [dict(r) for r in c.fetchall()]
+        c.execute("SELECT COUNT(*) AS n FROM textbook_pool")
+        total_row = c.fetchone()
+        total = total_row["n"] if total_row else 0
+    finally:
+        conn.close()
+    for r in rows:
+        if r.get("created_at"):
+            r["created_at"] = str(r["created_at"])
+        r["tags"] = (r.get("tags") or "").split(",") if r.get("tags") else []
+    return {"ok": True, "total": total, "items": rows}
 
 
 @app.post("/api/admin/exam-questions/generate")
