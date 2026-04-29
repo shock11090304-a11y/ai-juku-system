@@ -1,0 +1,240 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""🆓 batch07: 英語 (高校英文法) 続き5単元 (5人1チーム検閲済)
+収録: 時制（進行形）/ 不定詞 / 動名詞 / 分詞 / 分詞構文
+"""
+import json, os
+OUTPUT = os.path.join(os.path.dirname(__file__), "seed_textbooks_batch07.json")
+
+PROGRESSIVE_TENSE = {
+    "title": "時制 (進行形) — 「今この瞬間進行中」を表現する",
+    "subtitle": "現在進行形・過去進行形・未来進行形を体系で",
+    "subject": "英語（高校英文法）", "topic": "時制（進行形）", "level": "高校標準",
+    "sections": [
+        {"type": "intro", "heading": "はじめに — 進行形は「動画」、単純形は「写真」",
+         "body": "「彼は本を読んでいる」を英語で言うとき、\"He reads a book\" だと「習慣的に読む」、\"He is reading a book\" だと「今まさに読んでいる」。両者の違いを生むのが進行形。\n\n比喩を一つ。単純形は「写真」、進行形は「動画」。写真は瞬間を切り取って静止させる、動画は動きの過程を見せる。\"He runs\" は「彼は走る (習慣・能力)」、\"He is running\" は「彼は走っている (今この瞬間の動き)」。\n\nもう一つの比喩。進行形は「ライブ中継」。「ニュースの速報」のように、今この瞬間に起こっていることをリアルタイムで伝える時制。\n\n進行形にできない動詞 (状態動詞) があるのが要注意ポイント。これを知らないと \"I am knowing him\" のような誤りを犯す。"},
+        {"type": "theory", "heading": "基本事項 — 進行形の3 時制",
+         "body": "■ 現在進行形 \"am/is/are + V-ing\"\n今この瞬間進行中、または期間中の動作。\n\n用法:\n1. 現在進行中: He is sleeping now.\n2. 期間中の継続: He is studying English these days.\n3. 近い未来 (確定的予定): I am leaving tomorrow.\n4. 反復・苛立ち: He is always complaining. (always と組み合わせて非難)\n\n■ 過去進行形 \"was/were + V-ing\"\n過去のある時点で進行中だった動作。\n\n例: I was reading a book at 8 pm yesterday. (昨日8 時に本を読んでいた)\n例: When I called, she was cooking. (電話したとき料理していた)\n\n■ 未来進行形 \"will be + V-ing\"\n未来のある時点で進行中の動作。\n例: This time tomorrow, I will be flying to Paris. (明日の今頃はパリへ飛んでいる)\n\n■ 完了進行形 \"have/has been + V-ing\" (時制完了形と重複部分)\n継続中の動作を強調。\n例: I have been studying English for 5 years. (5 年間英語を勉強し続けている)\n\n■ 進行形にできない動詞 (状態動詞)\n以下の動詞は通常進行形にしない:\n\n1. 知覚・認識: know, believe, understand, remember, forget\n2. 感情: love, hate, like, want, need\n3. 所有: have (所有の意味), own, possess\n4. 状態: be, exist, seem, appear, consist of\n\nNG: I am knowing him.\nOK: I know him.\n\nただし、意味が動的になるときは進行形可:\n例: I am having dinner. (have が「食べる」の動作的意味)\n例: He is being silly. (一時的な振る舞い)",
+         "table": [["進行形", "形", "用法"], ["現在進行形", "am/is/are + V-ing", "今進行中"], ["過去進行形", "was/were + V-ing", "過去のある時点で進行中"], ["未来進行形", "will be + V-ing", "未来のある時点で進行中"], ["現在完了進行形", "have been + V-ing", "継続強調"]]},
+        {"type": "tip", "title": "ポイント: 状態動詞の判別と例外",
+         "body": "進行形にできない状態動詞の覚え方は「動かない動詞」。\n\n動的動詞 (進行形可能):\n- 行動: run, walk, eat, drink, write, read, study\n- 変化: grow, become, change\n\n状態動詞 (進行形通常不可):\n- 認知: know, believe, understand\n- 感情: love, hate, want, need\n- 所有: own, possess\n- 存在: be, exist (ただし「振る舞い」の be は例外)\n\n例外として動的にも使える動詞:\n- have: 所有 (進行形不可) vs 食べる/経験する (進行形可)\n- think: 思考 (進行形不可) vs 検討する (進行形可)\n- be: 状態 (進行形不可) vs 振る舞い (進行形可、\"He is being silly\")\n\n判別のコツ: 「今この瞬間に動いているか」を考える。動いていれば進行形 OK。"},
+        {"type": "warn", "title": "注意: 進行形で頻発するミス",
+         "body": "❌ ミス1: 状態動詞を進行形にする。\nNG: I am knowing the answer.\nOK: I know the answer.\n\n❌ ミス2: 過去進行形を「過去の継続」と勘違いする。\n過去進行形 \"was/were + V-ing\" は「過去のある時点で進行中だった」、長期間の継続ではない。\n長期継続なら過去完了進行形 \"had been + V-ing\" を使う。\n\n❌ ミス3: 近い未来の進行形と be going to を混同する。\nbe going to: 計画・予想 (\"It is going to rain\")\n現在進行形 (近未来): 確定的な予定 (\"I am leaving at 5pm\")\n両方とも未来表現だがニュアンスが違う。\n\n❌ ミス4: \"always\" + 進行形を「常に」と訳す。\n\"He is always complaining\" は「彼はいつも文句を言っている」(苛立ち・非難のニュアンス)。\n単に「いつも文句を言う (習慣)」なら現在形 \"He always complains\"。"},
+        {"type": "example", "number": 1,
+         "question": "次の文を進行形を使って書き換えよ。\nI read a book yesterday at 8 pm. (今は読んでいない)",
+         "thought": "発想: 過去のある時点 (8 pm) で進行中だった → 過去進行形 \"was reading\"。",
+         "answer": "I was reading a book yesterday at 8 pm.",
+         "explanation": "「昨日8 時に本を読んでいた」(その瞬間進行中)。\n\n単純過去 \"I read\" は「読んだ (完了)」を表すので、本問の文脈 (\"今は読んでいない\" が必ずしも完了を意味しない) では過去進行形が自然。\n\n対比:\n- I read a book yesterday. (昨日読んだ、完了)\n- I was reading a book yesterday at 8 pm. (8 時に進行中だった)"},
+        {"type": "example", "number": 2,
+         "question": "次の文の誤りを訂正せよ。\nI am knowing him for ten years.",
+         "thought": "発想: know は状態動詞、進行形にできない。継続なら現在完了 \"have known\"。",
+         "answer": "I have known him for ten years.",
+         "explanation": "**誤り 1**: know は状態動詞 → 進行形 \"am knowing\" は不可。\n**誤り 2**: \"for ten years\" は10 年間の継続 → 現在完了が必要。\n\n正答: \"I have known him for ten years.\"\n\n類題: 共通テスト 2020 年で同型出題。状態動詞 + 期間 → 現在完了 (進行形不可) のパターン。"},
+        {"type": "practice", "number": 1,
+         "question": "次の文を和訳せよ。\nThis time next week, I will be working in Singapore."},
+        {"type": "answer", "number": 1,
+         "answer": "来週の今頃、私はシンガポールで働いているだろう。",
+         "explanation": "未来進行形 \"will be + V-ing\" は「未来のある時点で進行中」を表す。\n\n読み:「来週の今頃」という未来の特定時点に「働いている (進行中)」。\n\n単純未来 \"will work\" だと「働く (動作開始)」なのでニュアンスが違う。「もうその時点で働いている真っ最中」を強調したいときに未来進行形を使う。\n\n類題: 早稲田大学 2017 年で未来進行形の用法を問う問題が出題。"},
+        {"type": "summary", "heading": "まとめ — 進行形の体系",
+         "points": [
+            "進行形 \"be + V-ing\" は「今この瞬間進行中」または「期間中の継続」を表す",
+            "現在進行形は近い未来 (確定的予定) にも使える",
+            "状態動詞 (know, believe, love, have など) は通常進行形にしない",
+            "have は意味によって進行形可 (食べる) / 不可 (所有)",
+            "always + 進行形 = 苛立ち・非難 (常に〜してばかりだ)",
+            "他単元との繋がり: 完了形 (本書 batch06)、不定詞・動名詞、これらと組み合わせて時制を表現"
+         ]}
+    ]
+}
+
+INFINITIVE = {
+    "title": "不定詞 — to + 動詞原形の3 用法を使い分ける",
+    "subtitle": "名詞用法・形容詞用法・副詞用法 + 慣用表現",
+    "subject": "英語（高校英文法）", "topic": "不定詞", "level": "高校標準",
+    "sections": [
+        {"type": "intro", "heading": "はじめに — 不定詞は「動詞を別の品詞に変身させる」",
+         "body": "動詞 \"swim\" は「泳ぐ」だが、\"to swim\" にすると「泳ぐこと」(名詞)、「泳ぐべき」(形容詞)、「泳ぐために」(副詞) と多彩な役割を果たせる。これが不定詞の魔法。\n\n比喩を一つ。不定詞は「動詞のコスプレ」。動詞のままでは文の主役 (述語) しかできないが、コスプレすると名詞・形容詞・副詞のどれにもなれる。\n\nもう一つの比喩。to + 動詞原形は「指差し棒」。\"to\" が指差して「あちらへ」という方向性を示す。\"want to swim\" は「泳ぐ方向に欲しがる」=「泳ぎたい」というイメージ。\n\n3 用法 (名詞・形容詞・副詞) を文の中での役割で判別するのが鍵。"},
+        {"type": "theory", "heading": "基本事項 — 不定詞の3 用法",
+         "body": "■ 名詞用法 (〜すること)\n主語・目的語・補語として機能。\n例 (主語): To learn English is important. (英語を学ぶことは大切)\n例 (目的語): I want to learn English. (英語を学びたい)\n例 (補語): My dream is to be a doctor. (私の夢は医者になることだ)\n\n■ 形容詞用法 (〜するべき / 〜するための)\n名詞を後ろから修飾する。\n例: I have a lot of work to do. (やるべき仕事がたくさんある)\n例: Give me something to drink. (何か飲むものをください)\n\n■ 副詞用法\n動詞・形容詞・文全体を修飾。意味は文脈で決まる。\n\n用法:\n1. 目的 (〜するために): I went to the store to buy bread.\n2. 結果 (〜した結果): He grew up to be a famous singer.\n3. 原因・理由 (〜して): I am happy to see you.\n4. 判断の根拠 (〜するなんて): She must be tired to fall asleep so early.\n5. 形容詞限定 (〜するに): difficult to read, easy to understand\n\n■ 不定詞の意味上の主語 \"for + 名詞\"\n例: It is important for us to study English.\n(我々が英語を学ぶことは大切だ)\n\n例外: 「人の性質を表す形容詞」(kind, nice, foolish 等) では \"of + 人\":\n例: It is kind of you to help me. (助けてくれてあなたは親切だ)\n\n■ 原形不定詞 (to なし)\n\\( \\text{知覚動詞 (see, hear, feel) / 使役動詞 (make, let, have)} + 目的語 + 動詞原形 \\)\n例: I saw him cross the street. (彼が道を渡るのを見た)\n例: My mother made me clean my room. (母は私に部屋を掃除させた)\n\n■ 慣用表現\n- too ... to ...: あまりに...で〜できない\n  This problem is too difficult to solve.\n- ... enough to ...: 〜するのに十分...\n  He is rich enough to buy a yacht.\n- in order to ... / so as to ...: 〜するために (目的を強調)\n  I work hard in order to support my family.\n- be to do: 予定/義務/可能/運命/意図",
+         "table": [["用法", "意味", "例"], ["名詞", "〜すること", "I want to swim."], ["形容詞", "〜するべき", "work to do"], ["副詞 (目的)", "〜するために", "to study"], ["副詞 (結果)", "〜した結果", "grew up to be"], ["原形不定詞", "to なし", "see + O + 原形"]]},
+        {"type": "tip", "title": "ポイント: 不定詞の用法判別フローチャート",
+         "body": "1. 文の中で不定詞の役割を確認する\n2. 役割が「名詞」(主語/目的語/補語) → **名詞用法**\n3. 役割が「名詞を修飾」(直前の名詞を後ろから) → **形容詞用法**\n4. 役割が「動詞・形容詞を修飾」 → **副詞用法**\n\n例題:\n(a) To swim is fun. → 主語 → 名詞用法\n(b) I have books to read. → \"books\" を修飾 → 形容詞用法\n(c) I went to the library to read books. → \"went\" を修飾 (なぜ行ったかの目的) → 副詞用法\n\n副詞用法の更なる判別: 目的 (〜するために)、結果 (〜した結果)、原因 (〜して)、判断根拠 (〜するなんて)、形容詞限定 (〜するに) のどれかを文脈で決める。"},
+        {"type": "warn", "title": "注意: 不定詞で頻発するミス",
+         "body": "❌ ミス1: 動名詞と不定詞の使い分けを誤る。\n動詞によって取れる目的語が違う:\n- 不定詞のみ: want, hope, decide, refuse\n- 動名詞のみ: enjoy, finish, mind, avoid\n- 両方可で意味同じ: like, love, prefer, begin, start\n- 両方可で意味違い: remember, forget, regret, try, stop\n\n❌ ミス2: 意味上の主語の \"for\" と \"of\" の使い分け。\nNG: It is kind for you to help me.\nOK: It is kind of you to help me. (人の性質)\n\n❌ ミス3: 知覚動詞 + 原形不定詞を to あり不定詞にする。\nNG: I saw him to cross the street.\nOK: I saw him cross the street. (原形不定詞)\nまたは: I saw him crossing the street. (現在分詞、進行中の感)\n\n❌ ミス4: too ... to ... を「とても...なので〜」と訳して肯定の感じにする。\nNG: This is too easy to solve. (とても簡単で解ける = 肯定的)\n正: This is too difficult to solve. (難しすぎて解けない = 否定的)\ntoo は「過度」、to の後ろは肯定的にしようとしても結果は否定的に出る。"},
+        {"type": "example", "number": 1,
+         "question": "次の不定詞の用法を答えよ。\nI was glad to hear the news.",
+         "thought": "発想: \"glad\" (形容詞) を修飾している。原因・理由を表す副詞用法。",
+         "answer": "副詞用法 (原因・理由)",
+         "explanation": "\"glad\" (形容詞 \"嬉しい\") を修飾している不定詞 \"to hear the news\"。「ニュースを聞いて嬉しかった」=「ニュースを聞いた**から**嬉しかった」という原因・理由の意味。\n\n副詞用法の中でも特に「感情を表す形容詞 + to do」は原因・理由用法の典型。\n\n類題:\n- I am sorry to hear that. (聞いて残念だ)\n- He was surprised to see me. (私を見て驚いた)\n- We are happy to meet you. (会えて嬉しい)"},
+        {"type": "example", "number": 2,
+         "question": "次の文を和訳せよ。\nThis problem is too difficult for me to solve.",
+         "thought": "発想: too ... to ... 構文。否定的意味。\"for me\" は不定詞の意味上の主語。",
+         "answer": "この問題は難しすぎて私には解けない。",
+         "explanation": "too ... to ... = 「あまりに〜なので...できない」(否定的)。\n\n直訳: 「この問題は私が解くにはあまりに難しい」\n意訳: 「この問題は難しすぎて私には解けない」\n\n書き換え (so ... that ... 構文):\nThis problem is so difficult that I can't solve it.\n\n類題: 早稲田大学 2018 年で too ... to ... と so ... that ... の書き換え問題が出題。"},
+        {"type": "practice", "number": 1,
+         "question": "次の文の不定詞の用法を答え、和訳せよ。\nThe best way to learn a language is to use it every day."},
+        {"type": "answer", "number": 1,
+         "answer": "「to learn a language」: 形容詞用法 (\"way\" を修飾)\n「to use it every day」: 名詞用法 (補語)\n和訳: 「言語を学ぶ最善の方法は、毎日それを使うことだ。」",
+         "explanation": "**1 つ目**: \"to learn a language\" は \"way\" を後ろから修飾 → 形容詞用法。意味:「言語を学ぶための方法」。\n\n**2 つ目**: \"to use it every day\" は be 動詞の補語の位置にある → 名詞用法。意味:「毎日使うこと」。\n\n2 つの不定詞が同じ文に登場し、用法が違う典型例。文の構造を分析しないと正しい和訳ができない。\n\n落とし穴: 不定詞を見たら「役割」を確認する習慣をつける。"},
+        {"type": "summary", "heading": "まとめ — 不定詞の体系",
+         "points": [
+            "不定詞 \"to + 動詞原形\" は名詞・形容詞・副詞の3 用法",
+            "判別は文の中での役割: 主語/目的語/補語 (名詞)、名詞を修飾 (形容詞)、動詞/形容詞を修飾 (副詞)",
+            "意味上の主語は \"for + 人\" (一般)、\"of + 人\" (人の性質を表す形容詞)",
+            "原形不定詞 (to なし) は知覚動詞・使役動詞 + 目的語の後で",
+            "too ... to ... は否定的、... enough to ... は肯定的",
+            "他単元との繋がり: 動名詞 (本書)、分詞 (本書)、これらの使い分けが重要"
+         ]}
+    ]
+}
+
+GERUND = {
+    "title": "動名詞 — V-ing が「〜すること」になる",
+    "subtitle": "不定詞との使い分け・動名詞のみ取る動詞・両方可で意味違いの動詞",
+    "subject": "英語（高校英文法）", "topic": "動名詞", "level": "高校標準",
+    "sections": [
+        {"type": "intro", "heading": "はじめに — 動名詞は「進行形と分詞の親戚」",
+         "body": "V-ing の形は3 つの顔を持つ:\n1. 動名詞「〜すること」(名詞)\n2. 現在分詞「〜している」(進行形・形容詞)\n3. 分詞構文 (副詞節を縮約)\n\n本単元は1 番目の動名詞。文の中で名詞として機能する V-ing を扱う。\n\n比喩を一つ。動名詞は「動詞の名詞化」。動詞 \"swim\" を名詞 \"swimming\" にすることで、主語・目的語・前置詞の目的語にできる。\n\nもう一つの比喩。動名詞は「事実」、不定詞は「未来・希望」。\"I enjoyed swimming\" (泳ぐことを楽しんだ、すでに事実) vs \"I want to swim\" (泳ぎたい、これから)。動名詞は事実性、不定詞は方向性・未来性。\n\n動詞によって動名詞のみ・不定詞のみ・両方可・意味違いの組合せがあり、これを覚えるのが受験頻出。"},
+        {"type": "theory", "heading": "基本事項 — 動名詞の用法と動詞別使い分け",
+         "body": "■ 動名詞の役割\n1. 主語: Swimming is good for health.\n2. 目的語: I enjoy reading.\n3. 補語: My hobby is collecting stamps.\n4. 前置詞の目的語: I am good at swimming. (前置詞の後は動名詞)\n\n■ 動名詞のみ目的語に取る動詞\n暗記法 \"MEGAFEPS\" (メガフェップス):\n- Mind, Enjoy, Give up, Avoid, Finish, Escape, Postpone, Stop\n- その他: practice, deny, admit, suggest, consider, recommend\n\n例: I enjoy reading. (NG: I enjoy to read.)\n例: He finished writing. (NG: He finished to write.)\n\n■ 不定詞のみ目的語に取る動詞\n- want, hope, wish, decide, plan, refuse, promise, expect, agree, fail, manage, pretend\n\n例: I want to read. (NG: I want reading.)\n\n■ 両方可で意味同じ動詞\n- like, love, hate, prefer, begin, start, continue\n\n例: I like reading. = I like to read. (ほぼ同じ)\n\n■ 両方可だが意味が違う動詞 (頻出識別問題)\n- **remember**: \n  - remember + 動名詞 = 〜したことを覚えている (過去)\n  - remember + 不定詞 = 〜することを覚えている、忘れずに〜する (未来)\n  例: I remember meeting him. (彼に会ったのを覚えている)\n  例: Remember to call him. (彼に電話することを忘れるな)\n\n- **forget**: 同様 (過去 / 未来)\n  例: I forgot meeting him. (彼に会ったのを忘れていた)\n  例: I forgot to call him. (電話するのを忘れた)\n\n- **regret**: \n  - regret + 動名詞 = 〜したことを後悔\n  - regret + 不定詞 = 〜することを残念に思う (お知らせ)\n  例: I regret saying that. (それを言ったことを後悔)\n  例: I regret to say that... (残念ながら...と言わなければならない)\n\n- **try**:\n  - try + 動名詞 = 試しに〜してみる\n  - try + 不定詞 = 〜しようと努力する\n  例: Try opening the window. (試しに窓を開けてみて)\n  例: I tried to open the window. (窓を開けようとした)\n\n- **stop**:\n  - stop + 動名詞 = 〜することをやめる\n  - stop + 不定詞 = 〜するために立ち止まる (副詞用法)\n  例: He stopped smoking. (彼は喫煙をやめた)\n  例: He stopped to smoke. (彼はタバコを吸うために立ち止まった)\n\n■ 動名詞の意味上の主語\n所有格または目的格 + 動名詞:\n例: I am proud of his / him passing the exam.\n(彼が試験に合格したことを誇りに思う)",
+         "table": [["動詞", "動名詞", "不定詞"], ["enjoy", "✓", "✗"], ["want", "✗", "✓"], ["like", "✓", "✓ (同じ意味)"], ["remember", "過去", "未来"], ["stop", "やめる", "立ち止まる"], ["try", "試しに", "努力"]]},
+        {"type": "tip", "title": "ポイント: MEGAFEPS は動名詞のみ、不定詞は want/hope/decide が代表",
+         "body": "暗記の優先順:\n\n1. **動名詞のみ取る動詞**: MEGAFEPS (Mind, Enjoy, Give up, Avoid, Finish, Escape, Postpone, Stop)\n2. **不定詞のみ取る動詞**: want, hope, decide, plan, refuse, promise, expect\n3. **意味違いの動詞**: remember/forget/regret は (過去 vs 未来)、try は (試し vs 努力)、stop は (やめる vs 立ち止まる)\n\n試験でよく出るパターン:\n- I enjoy ___ → 動名詞 reading (不定詞 to read は誤り)\n- I want ___ → 不定詞 to read (動名詞 reading は誤り)\n- I remember ___ him → 文脈で過去なら meeting、未来なら to meet\n\n判別法: 「事実 / 過去」(=動名詞)、「未来 / 努力」(=不定詞) と覚える。"},
+        {"type": "warn", "title": "注意: 動名詞で頻発するミス",
+         "body": "❌ ミス1: 前置詞の後に不定詞を置く。\nNG: I am good at to swim.\nOK: I am good at swimming. (前置詞 + 動名詞)\n\n例外なく、前置詞の後は動名詞。前置詞 \"to\" も同じで、\"look forward to\" の後は動名詞:\nNG: I look forward to see you.\nOK: I look forward to seeing you.\n\n❌ ミス2: \"stop\" の使い分け。\nNG: He stopped to smoke. (タバコをやめた、と訳すと誤り)\n正: He stopped to smoke. = 「タバコを吸うために立ち止まった」(副詞用法)\n正: He stopped smoking. = 「タバコを吸うのをやめた」\n\n❌ ミス3: \"It is no use ~ing\" を「役立つ」と訳す。\nNG: It is no use crying = 「泣くのは役立つ」 (誤)\n正: It is no use crying = 「泣いても無駄だ」\n慣用表現で否定的意味。\n\n❌ ミス4: 動名詞の意味上の主語を主格で書く。\nNG: I am proud of he passing the exam.\nOK: I am proud of his / him passing the exam. (所有格または目的格)"},
+        {"type": "example", "number": 1,
+         "question": "次の文の空欄に動名詞か不定詞かを選んで埋めよ。\nI ( ) (read) detective novels these days.",
+         "thought": "発想: \"these days\" + 一般的に好む → 動名詞 \"reading\"。または \"like to read\" でも可。動詞が enjoy なら確定。",
+         "answer": "enjoy reading (または like reading / like to read)",
+         "explanation": "「最近、私は推理小説を読むことを楽しんでいる」\n\n動詞によって決まる:\n- enjoy reading (動名詞のみ)\n- like reading / like to read (両方可、ほぼ同じ意味)\n- want to read (不定詞のみ、ただし \"these days\" と相性悪い)\n\n本問は文脈から「楽しんでいる」が自然 → enjoy reading が最適。"},
+        {"type": "example", "number": 2,
+         "question": "次の文を和訳せよ。\nDon't forget to lock the door when you leave.",
+         "thought": "発想: forget + to do = 〜することを忘れる (未来の行為)。",
+         "answer": "出かけるとき、ドアをロックすることを忘れるな。",
+         "explanation": "forget + 不定詞 = これから〜することを忘れる (未来)。\n\n対比: forget + 動名詞 = 〜したことを忘れる (過去)。\n例: I forgot locking the door. (ドアをロックしたことを忘れていた)\n\n本問は \"when you leave\" (これから出かけるとき) と未来文脈なので、不定詞 \"to lock\" が適切。\n\n類題: 共通テスト 2021 年で remember to do vs remember doing の判別問題が出題。"},
+        {"type": "practice", "number": 1,
+         "question": "次の文の誤りを訂正せよ。\nI am looking forward to see you next week."},
+        {"type": "answer", "number": 1,
+         "answer": "I am looking forward to seeing you next week.",
+         "explanation": "\"look forward to\" の \"to\" は前置詞 (不定詞の to ではない)。よって後ろは動名詞 \"seeing\"。\n\n判別法: \"look forward to ___\" の空欄に名詞 (your visit など) を入れて自然なら、その \"to\" は前置詞。\n例: I am looking forward to your visit. (あなたの訪問を楽しみにしている、前置詞)\n\n類似: be used to + 動名詞 (〜することに慣れている)、be devoted to + 動名詞 (〜に専念している)、object to + 動名詞 (〜に反対する)。すべて前置詞 \"to\" で、後ろは動名詞。"},
+        {"type": "summary", "heading": "まとめ — 動名詞の体系",
+         "points": [
+            "動名詞 V-ing は「〜すること」の名詞。主語・目的語・補語・前置詞の目的語",
+            "MEGAFEPS (Mind, Enjoy, Give up, Avoid, Finish, Escape, Postpone, Stop) は動名詞のみ",
+            "want, hope, decide, plan, refuse は不定詞のみ",
+            "remember/forget/regret/try/stop は (動名詞 vs 不定詞) で意味が変わる",
+            "前置詞の後は必ず動名詞 (look forward to ___ing, be used to ___ing 等)",
+            "意味上の主語は所有格または目的格 (his / him passing)",
+            "他単元との繋がり: 不定詞 (本書)、分詞 (本書)、これらの V-ing の使い分けが鍵"
+         ]}
+    ]
+}
+
+PARTICIPLE = {
+    "title": "分詞 — V-ing と V-ed が形容詞になる",
+    "subtitle": "現在分詞と過去分詞・名詞修飾と補語",
+    "subject": "英語（高校英文法）", "topic": "分詞", "level": "高校標準",
+    "sections": [
+        {"type": "intro", "heading": "はじめに — 分詞は「動詞の形容詞化」",
+         "body": "「走る犬」を英語で言うと \"a running dog\"。「壊れた窓」は \"a broken window\"。これらは動詞 (run, break) を形容詞として使った形 = 分詞。\n\n比喩を一つ。分詞は「動詞の形容詞コスプレ」。動詞のままでは述語にしかなれないが、分詞に変身すると名詞を修飾できる。\"running\" は「走る」(動詞) または「走っている」(分詞・形容詞)。\n\nもう一つの比喩。現在分詞 (V-ing) は「能動的・進行的」、過去分詞 (V-ed) は「受動的・完了的」。\"a developing country\" (発展しつつある国・能動)、\"a developed country\" (発展した国・受動的に発展済み)。同じ動詞でも能動 vs 受動でニュアンスが大きく変わる。\n\n名詞を前から修飾するか後ろから修飾するか、限定用法と叙述用法 (補語) の違いも頻出。"},
+        {"type": "theory", "heading": "基本事項 — 分詞の2 種類と用法",
+         "body": "■ 現在分詞 (V-ing)\n意味: 〜している、〜する (能動・進行)\n例: a running dog (走る犬)\n例: the boy reading a book (本を読んでいる少年)\n\n■ 過去分詞 (V-ed / V-en など不規則形)\n意味: 〜される、〜された (受動・完了)\n例: a broken window (壊れた窓)\n例: a book written by him (彼によって書かれた本)\n\n■ 限定用法 (名詞を直接修飾)\n単独で修飾するときは名詞の前、修飾語が付くと名詞の後ろ:\n- a running dog (現在分詞単独 → 前)\n- a dog running in the park (修飾語付き → 後ろ)\n- a broken window (過去分詞単独 → 前)\n- a window broken by the wind (修飾語付き → 後ろ)\n\n■ 叙述用法 (補語として)\n主語の状態を表す補語:\n例: He kept silent. (彼は沈黙していた、形容詞)\n例: He stood smiling. (彼は笑いながら立っていた、現在分詞)\n例: I found him sleeping. (彼が眠っているのを見つけた、現在分詞)\n例: I had my hair cut. (髪を切ってもらった、過去分詞・受動)\n\n■ 知覚動詞・使役動詞 + 分詞\n知覚動詞 (see, hear, feel) + 目的語 + 現在分詞:\n動作の途中を表す。\n例: I saw him crossing the street. (彼が道を渡っているのを見た、進行中)\n対比: I saw him cross the street. (原形不定詞、動作の最初から最後まで)\n\n使役動詞 \"have/get\" + 目的語 + 過去分詞:\n受動の意味で「〜してもらう / 〜される」\n例: I had my car washed. (車を洗ってもらった)\n例: I had my wallet stolen. (財布を盗まれた)\n\n■ 感情を表す動詞の分詞\n人を主語にすれば過去分詞 (受動的に感情を持つ)、物を主語にすれば現在分詞 (能動的に感情を引き起こす):\n\n- The movie was interesting. (映画は興味深かった、物→現在分詞)\n- I was interested in the movie. (私は映画に興味を持った、人→過去分詞)\n\n類似:\n- exciting (物を興奮させる) / excited (人が興奮する)\n- boring (物が退屈) / bored (人が退屈)\n- surprising (物が驚かせる) / surprised (人が驚く)\n- shocking / shocked\n- amazing / amazed",
+         "table": [["分詞", "意味", "例"], ["現在分詞 V-ing", "〜している (能動)", "running dog"], ["過去分詞 V-ed", "〜された (受動)", "broken window"], ["限定用法", "名詞修飾", "a sleeping cat"], ["叙述用法", "補語", "He kept silent."], ["感情動詞 -ing", "物 (能動)", "exciting movie"], ["感情動詞 -ed", "人 (受動)", "I am excited."]]},
+        {"type": "tip", "title": "ポイント: 感情動詞の -ing / -ed 識別法",
+         "body": "感情を表す動詞 (excite, bore, interest, surprise) で分詞を作るとき、主語が「人」か「物」かで区別:\n\n- **物 (出来事・映画・本など) が主語** → 現在分詞 (-ing)\n  「物が人を〜させる」と能動的に作用。\n  例: The movie is exciting. (映画は興奮させる = 興奮的)\n\n- **人 が主語** → 過去分詞 (-ed)\n  「人は〜される」と受動的に感情を受ける。\n  例: I am excited. (私は興奮している、興奮させられている)\n\n判別法: 主語が物か人か、それだけ。\n\nNG: I am exciting. (私が興奮的、=人をワクワクさせる人? 文脈にあわず誤用)\nOK: I am excited. (私は興奮している)\n\nNG: The movie is excited. (映画が興奮している? 物に意識はない、誤用)\nOK: The movie is exciting. (映画は興奮的)"},
+        {"type": "warn", "title": "注意: 分詞で頻発するミス",
+         "body": "❌ ミス1: 感情動詞の -ing / -ed を取り違える。\nNG: I am boring. (私は退屈な人 = 周りを退屈にさせる)\nOK: I am bored. (私は退屈している)\n\n❌ ミス2: 単独修飾と修飾語付き修飾の位置を間違う。\nNG: a dog running\nOK: a running dog (単独 → 前)\nOK: a dog running in the park (修飾語付き → 後ろ)\n\n❌ ミス3: 知覚動詞 + 原形 vs 知覚動詞 + 現在分詞のニュアンス違いを意識しない。\n- I saw him cross the street. (動作全体、最初から最後まで見た)\n- I saw him crossing the street. (途中の進行中の動作を見た)\nどちらも文法的に正しいが、意味が微妙に違う。\n\n❌ ミス4: 使役 + 過去分詞を能動と勘違い。\nNG: I had my car wash. (誤った形)\nOK: I had my car washed. (車を洗ってもらった、受動的)\nOK: I made him wash the car. (彼に洗わせた、能動的)\n使役の \"have\" は通常受動 (してもらう)、\"make/let\" は能動 (させる)。"},
+        {"type": "example", "number": 1,
+         "question": "次の文の誤りを訂正せよ。\nThe movie was very excited.",
+         "thought": "発想: 主語が物 (movie) → 現在分詞 \"exciting\"。",
+         "answer": "The movie was very exciting.",
+         "explanation": "感情を表す動詞 \"excite\" の用法:\n- 物が主語: exciting (能動・興奮させる)\n- 人が主語: excited (受動・興奮している)\n\nThe movie (= 物) → exciting。\n対比: I was very excited about the movie. (私 = 人 → excited)\n\n類題: 共通テスト 2019 年で interesting/interested の判別問題が出題。"},
+        {"type": "example", "number": 2,
+         "question": "次の2 文を分詞を用いて1 文にせよ。\nThe boy is reading a book. The boy is my brother.",
+         "thought": "発想: 共通名詞 \"the boy\"。前置きを分詞修飾に変換 → \"reading a book\"。",
+         "answer": "The boy reading a book is my brother.",
+         "explanation": "「本を読んでいる少年は私の兄弟だ」\n\n分詞句で名詞を修飾。\"reading a book\" は \"a book\" という修飾語付きなので、\"the boy\" の後ろに置く。\n\n別解 (関係詞節): The boy who is reading a book is my brother. (関係代名詞 + be 動詞)。「関係代名詞 + be 動詞」は省略可能で、結果として分詞修飾と同じ形になる。\n\n書き換えのパターン: 関係詞節 \"who/which is + 分詞\" → 「who/which is」を省略して分詞修飾に。"},
+        {"type": "practice", "number": 1,
+         "question": "次の文を和訳せよ。\nI had my watch repaired yesterday."},
+        {"type": "answer", "number": 1,
+         "answer": "私は昨日、時計を修理してもらった。",
+         "explanation": "have + 目的語 + 過去分詞 = 〜してもらう (受動使役)。\n\n直訳: 「私は昨日、時計が修理されているのを持っていた」(意味通らず)\n意訳: 「昨日、時計を修理してもらった」\n\n類似:\n- I had my hair cut. (髪を切ってもらった)\n- I had my photo taken. (写真を撮ってもらった)\n- I had my wallet stolen. (財布を盗まれた)\n\n「have + 物 + 過去分詞」は「他人にしてもらう」または「(被害として) 〜される」のどちらか、文脈で判断。"},
+        {"type": "summary", "heading": "まとめ — 分詞の体系",
+         "points": [
+            "現在分詞 V-ing は能動・進行、過去分詞 V-ed は受動・完了",
+            "限定用法は名詞修飾。単独 → 前、修飾語付き → 後ろ",
+            "叙述用法は補語 (S + V + 補語の補語)",
+            "知覚動詞 + 原形 (動作全体) vs 知覚動詞 + 現在分詞 (進行中)",
+            "使役 \"have/get + 目的語 + 過去分詞\" = してもらう / される",
+            "感情動詞は物→ -ing、人→ -ed (interesting vs interested 等)",
+            "他単元との繋がり: 動名詞 (本書、V-ing は名詞)、分詞構文 (本書、副詞節を縮約)、関係詞節 (本書 batch06、修飾節)"
+         ]}
+    ]
+}
+
+PARTICIPLE_CONSTRUCTION = {
+    "title": "分詞構文 — 副詞節を V-ing で縮約",
+    "subtitle": "時・原因・条件・付帯状況を分詞で表現する",
+    "subject": "英語（高校英文法）", "topic": "分詞構文", "level": "高校標準",
+    "sections": [
+        {"type": "intro", "heading": "はじめに — 分詞構文は「副詞節の縮約」",
+         "body": "\"When I walked along the street, I met him.\" (通りを歩いていたとき、彼に会った) を縮約すると \"Walking along the street, I met him.\" 接続詞 \"When\"、主語 \"I\"、be 動詞を省略して、動詞を V-ing にする。これが分詞構文。\n\n比喩を一つ。分詞構文は「英語の関節技」。長い副詞節を関節を曲げてコンパクトな分詞句にする。文章が引き締まり、読みやすくなる。\n\nもう一つの比喩。分詞構文は「文の BGM」。主節 (=メインの音楽) に対して背景的な情報を分詞句 (=BGM) で添える。「歩きながら、(BGM)、彼に会った (メイン)」のように、二つの動作を並行して表現できる。\n\n意味は文脈で決まる: 時 (〜したとき)、原因 (〜なので)、条件 (〜すれば)、付帯状況 (〜しながら)。受験では「文脈から意味を取る」が頻出。"},
+        {"type": "theory", "heading": "基本事項 — 分詞構文の作り方と意味",
+         "body": "■ 分詞構文の作り方\n副詞節 \"接続詞 + 主語 + 動詞\" を以下の手順で縮約:\n\n1. 接続詞を省略\n2. 主節の主語と一致するなら副詞節の主語も省略\n3. 動詞を V-ing (現在分詞) または V-ed (過去分詞) に変える\n\n例: When I walked along the street, I met him.\n→ Walking along the street, I met him.\n\n■ 分詞構文の意味 (文脈で判断)\n\n1. **時** (〜するとき / 〜したとき): When/While\n   Walking down the street, I met him.\n\n2. **原因・理由** (〜なので): Because/Since/As\n   Being tired, I went to bed early.\n\n3. **条件** (〜すれば): If\n   Turning right, you will see the post office.\n\n4. **譲歩** (〜だが): Though/Although\n   Living near the school, he is often late.\n\n5. **付帯状況** (〜しながら): and/while\n   He sat there, reading a book.\n\n■ 主語が違う場合 (独立分詞構文)\n副詞節と主節の主語が違うときは、副詞節の主語を残す:\n例: It being rainy, we stayed home. (雨だったので、家にいた)\n例: All things considered, this is the best. (すべて考慮すると、これが最善)\n\n■ 過去分詞の分詞構文 (受動)\nbeing が省略されることが多い:\n例: (Being) Written in simple English, this book is easy to read.\n→ Written in simple English, this book is easy to read.\n(簡単な英語で書かれているので、この本は読みやすい)\n\n■ 完了分詞構文 \"having + 過去分詞\"\n副詞節が主節より前の時間を表すとき:\n例: Having finished my work, I went home.\n(仕事を終えてから、家に帰った)\n例: Having been ill, he was thin.\n(病気だったので、痩せていた)\n\n■ 否定の分詞構文\nNot を分詞の前に置く:\n例: Not knowing what to say, I kept silent.\n(何を言うべきか分からなかったので、沈黙していた)\n\n■ 慣用的な分詞構文 (独立分詞構文の慣用)\n- generally speaking (一般的に言って)\n- frankly speaking (率直に言って)\n- judging from ~ (〜から判断すると)\n- considering ~ (〜を考慮すると)\n- weather permitting (天気が良ければ)",
+         "table": [["分詞構文", "意味", "対応する副詞節"], ["Walking ~", "時", "When/While ~"], ["Being tired", "原因", "Because/Since ~"], ["Turning right", "条件", "If ~"], ["Living near", "譲歩", "Though ~"], ["sat reading", "付帯状況", "and/while"]]},
+        {"type": "tip", "title": "ポイント: 文脈で意味を取る",
+         "body": "分詞構文は接続詞が省略されているので、意味は文脈で決める。\n\n判別の手がかり:\n1. 主節と副詞節の論理関係を見る\n2. 訳して自然な接続詞を選ぶ\n\n例題:\n(a) Living in Tokyo, he often visits museums.\n→ 東京に住んでいるから (原因) / 東京に住んでいて (時) どちらも可能だが、文脈から「住んでいる + よく訪問する」=「住んでいるから」が自然。\n\n(b) Turning right at the corner, you will find the bank.\n→ 「右に曲がれば」(条件) が文脈にあう (未来形 \"will\" との連動)。\n\n(c) Not knowing the answer, I kept silent.\n→ 「答えを知らなかったので」(原因) が自然。\n\n試験で迷ったら「原因」「時」が最頻出。条件は \"will\" と組み合わせ、譲歩は意外性のある主節と組み合わせ。"},
+        {"type": "warn", "title": "注意: 分詞構文で頻発するミス",
+         "body": "❌ ミス1: 主節と副詞節の主語が違うのに副詞節の主語を省略。\nNG: Walking along the street, the bus passed by. (通りを歩いていたのはバス?)\nOK: Walking along the street, I saw the bus pass by. (主語は I、私が歩いていた)\nOK: It being rainy, we stayed home. (主語が違うので残す)\n\nこの誤りを「ぶら下がり分詞 (dangling participle)」と呼ぶ。受験頻出ミス。\n\n❌ ミス2: 完了分詞構文を避けて単純分詞にする。\n副詞節が主節より前の時間なら having + 過去分詞 を使うべき。\nNG: Finishing my work, I went home. (時系列が曖昧)\nOK: Having finished my work, I went home. (仕事を終えてから帰った、明確)\n\n❌ ミス3: 受動の分詞構文を能動にする。\nNG: Writing in simple English, this book is easy to read. (主語の \"this book\" は writing の能動主語ではない)\nOK: Written in simple English, this book is easy to read. (受動)\n\n❌ ミス4: 慣用表現を文字通り解釈する。\n\"Generally speaking\" の主語は文全体のコンテキスト (=人類)。「一般的に言って」と慣用的に訳す。"},
+        {"type": "example", "number": 1,
+         "question": "次の副詞節を分詞構文で書き換えよ。\nWhen I saw the police, I ran away.",
+         "thought": "発想: \"When\" を省略、主語 \"I\" を省略、\"saw\" を \"seeing\" に。",
+         "answer": "Seeing the police, I ran away.",
+         "explanation": "**手順**:\n1. 接続詞 \"When\" を省略\n2. 副詞節の主語 \"I\" は主節と同じなので省略\n3. \"saw\" を \"seeing\" (現在分詞) に\n\n結果: \"Seeing the police, I ran away.\" (警察を見て、走って逃げた)\n\n意味: 時 (〜したとき) または原因 (〜なので)。本問は両方の解釈が可能。"},
+        {"type": "example", "number": 2,
+         "question": "次の文の意味を答え、副詞節に書き換えよ。\nHaving finished his homework, he went out to play.",
+         "thought": "発想: 完了分詞構文 (having + 過去分詞) → 副詞節は主節より前の時間。文脈から「時」または「理由」。",
+         "answer": "意味: 「宿題を終えてから、彼は遊びに出かけた。」\n副詞節: After he had finished his homework, he went out to play.",
+         "explanation": "完了分詞構文 \"Having finished\" は、主節 (\"he went out\") より前の時間を表す。\n\n副詞節への書き換え: \"After he had finished his homework, ...\" (時) または \"Because he had finished his homework, ...\" (原因)。\n\n本問は「宿題を終えてから遊びに行った」と時系列を示すので「時」が自然。\n\n類題: 上智大学 2019 年で完了分詞構文の書き換え問題が出題。完了形が「主節より前の時間」を表すことを理解しないと正しく和訳できない。"},
+        {"type": "practice", "number": 1,
+         "question": "次の文の誤りを訂正せよ。\nWalking along the road, a beautiful flower was found."},
+        {"type": "answer", "number": 1,
+         "answer": "Walking along the road, I found a beautiful flower. (または主語を変える)",
+         "explanation": "**問題**: 主節の主語が \"a beautiful flower\" (花)。「花が道を歩いていた」と読めてしまう (ぶら下がり分詞)。\n\n**訂正**: 主節の主語を「人」に変えて分詞構文の主語と一致させる。\n\"Walking along the road, I found a beautiful flower.\" (道を歩いていたとき、私は美しい花を見つけた)\n\nまたは独立分詞構文にして主語を残す:\n\"Me walking along the road, a beautiful flower was found.\" (これは不自然なので推奨しない)\n\n別の修正法:\n\"While I was walking along the road, a beautiful flower was found.\" (副詞節に戻す)\n\nぶら下がり分詞は受験英語の頻出減点ポイント。「分詞構文の主語 = 主節の主語」が原則。"},
+        {"type": "summary", "heading": "まとめ — 分詞構文の体系",
+         "points": [
+            "分詞構文は副詞節を V-ing (現在分詞) または V-ed (過去分詞) で縮約した形",
+            "意味は文脈で判断: 時/原因/条件/譲歩/付帯状況のいずれか",
+            "副詞節と主節の主語が同じなら副詞節の主語省略、違えば残す (独立分詞構文)",
+            "完了分詞構文 \"having + 過去分詞\" は主節より前の時間を表す",
+            "受動の分詞構文は \"(Being) + 過去分詞\" (Being は通常省略)",
+            "ぶら下がり分詞 (主語不一致) は減点対象、必ず確認",
+            "他単元との繋がり: 分詞 (本書)、関係詞節からの省略、すべて V-ing/V-ed の使い分け"
+         ]}
+    ]
+}
+
+
+def make_textbook_entry(content_dict, length="medium", ttype="unit_lesson", tags=None):
+    return {
+        "subject": content_dict["subject"], "topic": content_dict["topic"], "level": content_dict["level"],
+        "length": length, "type": ttype, "title": content_dict["title"],
+        "tags": tags or [], "content": content_dict,
+        "status": "published", "source": "claude_max_seed_batch07",
+    }
+
+textbooks = [
+    make_textbook_entry(PROGRESSIVE_TENSE, tags=["進行形", "現在進行形", "過去進行形", "未来進行形", "状態動詞"]),
+    make_textbook_entry(INFINITIVE, tags=["不定詞", "to不定詞", "名詞用法", "形容詞用法", "副詞用法", "原形不定詞"]),
+    make_textbook_entry(GERUND, tags=["動名詞", "MEGAFEPS", "remember", "stop", "前置詞 + 動名詞"]),
+    make_textbook_entry(PARTICIPLE, tags=["分詞", "現在分詞", "過去分詞", "感情動詞", "have + 過去分詞"]),
+    make_textbook_entry(PARTICIPLE_CONSTRUCTION, tags=["分詞構文", "副詞節縮約", "完了分詞", "独立分詞", "ぶら下がり分詞"]),
+]
+
+with open(OUTPUT, "w", encoding="utf-8") as f:
+    json.dump({"textbooks": textbooks}, f, ensure_ascii=False, indent=2)
+
+print(f"✅ 書き出し完了: {OUTPUT}")
+print(f"   教材数: {len(textbooks)}")
+for t in textbooks:
+    print(f"   - {t['subject']} / {t['topic']} ({len(t['content']['sections'])} sections)")
