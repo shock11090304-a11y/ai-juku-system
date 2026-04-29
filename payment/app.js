@@ -57,7 +57,9 @@ const DEFAULT_STRIPE_INVITE_BODY = `{{student}} 様の保護者様
 **月謝 ¥{{fee}} (前払い制 / 翌月分を当月にお支払い)** を自動で毎月引き落とさせていただきます。
 振込手数料はかからず、毎月の振込忘れの心配もございません。
 
-カード情報の変更・解約は、Stripe カスタマーポータルからいつでも可能です。
+▼カード情報の変更・解約 (24時間いつでも可能)
+{{customerPortal}}
+
 銀行振込を継続される場合は、引き続きこれまで通りで結構です。
 
 ご不明な点がございましたら下記までお気軽にお問い合わせください。
@@ -85,6 +87,7 @@ const DEFAULT_SETTINGS = {
   mailBody: DEFAULT_MAIL_BODY,
   stripePaymentLink: '',         // 共通 Stripe Payment Links URL
   stripeLinksByFee: {},          // 金額別: { '7500': 'url', '15000': 'url' }
+  stripeCustomerPortalUrl: '',   // Stripe Customer Portal Login Link URL
   stripeInviteSubject: DEFAULT_STRIPE_INVITE_SUBJECT,
   stripeInviteBody: DEFAULT_STRIPE_INVITE_BODY,
 };
@@ -974,6 +977,70 @@ async function importFromStripe() {
   }
 }
 
+// === 月初 Stripe 取込リマインダー (起動時自動表示) ===
+
+const AUTO_IMPORT_KEY = 'juku-payment-auto-import-v1';
+
+function getAutoImportRecord() {
+  try { return JSON.parse(localStorage.getItem(AUTO_IMPORT_KEY) || '{}'); } catch (e) { return {}; }
+}
+function setAutoImportDone(month) {
+  const rec = getAutoImportRecord();
+  rec[month] = new Date().toISOString();
+  localStorage.setItem(AUTO_IMPORT_KEY, JSON.stringify(rec));
+}
+function setAutoImportDismissed(month) {
+  const rec = getAutoImportRecord();
+  rec['dismissed_' + month] = true;
+  localStorage.setItem(AUTO_IMPORT_KEY, JSON.stringify(rec));
+}
+
+function maybeShowAutoImportBanner() {
+  const banner = document.getElementById('autoImportBanner');
+  if (!banner) return;
+  const today = new Date();
+  // 月初 1〜10日のみリマインド
+  if (today.getDate() > 10) { banner.classList.add('hidden'); return; }
+  // 取込対象月 = 先月 (= currentMonth が今月の場合、先月の Stripe charges を取込→今月分 paid 反映: 前払い制)
+  const target = (() => {
+    const d = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  })();
+  const rec = getAutoImportRecord();
+  if (rec[target] || rec['dismissed_' + target]) { banner.classList.add('hidden'); return; }
+  document.getElementById('autoImportTargetMonth').textContent = target;
+  banner.dataset.targetMonth = target;
+  banner.classList.remove('hidden');
+}
+
+async function runAutoImport() {
+  const banner = document.getElementById('autoImportBanner');
+  const target = banner?.dataset.targetMonth;
+  if (!target) return;
+  // CSV取込タブに遷移 + 月切替 + Stripe 取込実行
+  switchTab('import');
+  await new Promise(r => setTimeout(r, 100));
+  // 月セレクタを取込対象月に切替
+  STATE.currentMonth = target;
+  document.getElementById('monthInput').value = target;
+  const stripeMonthTag = document.getElementById('stripeMonthTag');
+  if (stripeMonthTag) stripeMonthTag.textContent = target;
+  const importMonthTag = document.getElementById('importMonthTag');
+  if (importMonthTag) importMonthTag.textContent = `対象月: ${target}`;
+  refresh();
+  await new Promise(r => setTimeout(r, 200));
+  await importFromStripe();
+  setAutoImportDone(target);
+  banner.classList.add('hidden');
+}
+
+function dismissAutoImport() {
+  const banner = document.getElementById('autoImportBanner');
+  const target = banner?.dataset.targetMonth;
+  if (target) setAutoImportDismissed(target);
+  banner.classList.add('hidden');
+}
+
 // === Phase 3: Mail (mailto + template + history) ===
 
 function bankInfoText() {
@@ -1036,6 +1103,7 @@ function buildStripeInviteFor(studentId) {
     fee: (s.fee || 0).toLocaleString('ja-JP'),
     deadlineDay: SETTINGS.deadlineDay || 25,
     paymentLink: paymentLinkFor(s),
+    customerPortal: SETTINGS.stripeCustomerPortalUrl || '(Stripe Dashboard で Customer Portal を有効化してURLを設定モーダルに登録してください)',
   };
   return {
     student: s,
@@ -1167,6 +1235,135 @@ function bulkMailBccCopy() {
   hideModal('bulkMailModal');
 }
 
+// === メアド一括登録 (CSV/TSV/改行区切り) ===
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizeForMatch(s) {
+  // 半角→全角統一、ひらがな→カタカナ等は不要、純粋に空白除去 + lower
+  return String(s || '').replace(/[\s　]/g, '').toLowerCase();
+}
+
+function parseEmailImportInput(text) {
+  const lines = String(text || '').split(/\r?\n/);
+  const results = [];
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+    // メアドを行末から検出 → 残りを ID/氏名 とする
+    const tokens = line.split(/[,\t\s]+/).filter(Boolean);
+    let email = null, key = null;
+    for (let i = tokens.length - 1; i >= 0; i--) {
+      if (EMAIL_RE.test(tokens[i])) {
+        email = tokens[i];
+        key = tokens.slice(0, i).join(' ').trim() || tokens.slice(i + 1).join(' ').trim();
+        break;
+      }
+    }
+    if (!email) {
+      // メアドが見つからない行は parsing error として記録
+      results.push({ raw: line, key: null, email: null, status: 'no_email' });
+      continue;
+    }
+    if (!key) {
+      results.push({ raw: line, key: null, email, status: 'no_key' });
+      continue;
+    }
+    // ID マッチ (整数 or #整数)
+    const idMatch = key.match(/^#?(\d+)$/);
+    if (idMatch) {
+      const id = parseInt(idMatch[1], 10);
+      const s = STATE.data.students.find(x => x.id === id);
+      if (s) {
+        results.push({ raw: line, key, email, student: s, matchType: 'id', status: 'ok' });
+        continue;
+      }
+      results.push({ raw: line, key, email, status: 'id_not_found' });
+      continue;
+    }
+    // 氏名でマッチ: (1) 完全一致 (2) 部分一致 nameNorm.includes(keyNorm)
+    const keyNorm = normalizeForMatch(key);
+    const exact = STATE.data.students.filter(s => normalizeForMatch(s.name) === keyNorm);
+    if (exact.length === 1) {
+      results.push({ raw: line, key, email, student: exact[0], matchType: 'name_exact', status: 'ok' });
+      continue;
+    }
+    if (exact.length > 1) {
+      const active = exact.filter(s => (STATE.overrides.status?.[s.id] ?? s.status) === '通塾');
+      if (active.length === 1) {
+        results.push({ raw: line, key, email, student: active[0], matchType: 'name_exact_active', status: 'ok' });
+      } else {
+        results.push({ raw: line, key, email, candidates: exact, status: 'ambiguous' });
+      }
+      continue;
+    }
+    // 部分一致 (key が name の一部 or 通塾中で1名に絞れる場合)
+    const partial = STATE.data.students.filter(s => normalizeForMatch(s.name).includes(keyNorm));
+    if (partial.length === 1) {
+      results.push({ raw: line, key, email, student: partial[0], matchType: 'name_partial', status: 'ok' });
+    } else if (partial.length === 0) {
+      results.push({ raw: line, key, email, status: 'name_not_found' });
+    } else {
+      const active = partial.filter(s => (STATE.overrides.status?.[s.id] ?? s.status) === '通塾');
+      if (active.length === 1) {
+        results.push({ raw: line, key, email, student: active[0], matchType: 'name_partial_active', status: 'ok' });
+      } else {
+        results.push({ raw: line, key, email, candidates: partial, status: 'ambiguous' });
+      }
+    }
+  }
+  return results;
+}
+
+function renderEmailImportPreview() {
+  const text = document.getElementById('emailImportInput').value;
+  const preview = document.getElementById('emailImportPreview');
+  if (!text.trim()) { preview.innerHTML = ''; return; }
+  const results = parseEmailImportInput(text);
+  const ok = results.filter(r => r.status === 'ok');
+  const fail = results.filter(r => r.status !== 'ok');
+  const rows = results.map(r => {
+    if (r.status === 'ok') {
+      return `<div style="color:var(--success,#10b981)">✓ #${r.student.id} ${escapeHtml(r.student.name)} → ${escapeHtml(r.email)} <span style="color:var(--text-muted);font-size:0.75rem">[${r.matchType}]</span></div>`;
+    }
+    const reasons = {
+      no_email: 'メアド形式の値が見つからない',
+      no_key: 'ID/氏名が空',
+      id_not_found: `ID「${r.key}」の生徒が見つからない`,
+      name_not_found: `「${r.key}」と一致する生徒が見つからない`,
+      ambiguous: `「${r.key}」は複数生徒に該当 (${r.candidates?.length}名) → ID 指定推奨`,
+    };
+    return `<div style="color:var(--warning)">⚠ ${escapeHtml(r.raw)} — ${escapeHtml(reasons[r.status] || r.status)}</div>`;
+  }).join('');
+  preview.innerHTML = `
+    <div style="margin-bottom:0.5rem"><strong>解析結果</strong>: 成功 <span style="color:var(--success,#10b981)">${ok.length}件</span> / 失敗 <span style="color:var(--warning)">${fail.length}件</span></div>
+    <div style="font-family:'SF Mono',Menlo,monospace;font-size:0.78rem;line-height:1.6">${rows}</div>
+  `;
+}
+
+function applyEmailImport() {
+  const text = document.getElementById('emailImportInput').value;
+  if (!text.trim()) { alert('入力が空です'); return; }
+  const results = parseEmailImportInput(text);
+  const ok = results.filter(r => r.status === 'ok');
+  const fail = results.filter(r => r.status !== 'ok');
+  if (!ok.length) { alert('登録可能な行がありません。プレビューで失敗理由を確認してください。'); return; }
+  const confirmMsg = `${ok.length}名分のメールアドレスを登録します。${fail.length ? `\n(${fail.length}件は解析失敗のためスキップ)` : ''}\n\n続行しますか？`;
+  if (!confirm(confirmMsg)) return;
+  ok.forEach(r => setEmail(r.student.id, r.email));
+  alert(`✅ ${ok.length}名分のメアドを登録しました`);
+  hideModal('emailImportModal');
+  document.getElementById('emailImportInput').value = '';
+  document.getElementById('emailImportPreview').innerHTML = '';
+  refresh();
+}
+
+function openEmailImportModal() {
+  document.getElementById('emailImportInput').value = '';
+  document.getElementById('emailImportPreview').innerHTML = '';
+  showModal('emailImportModal');
+}
+
 // === Stripe 案内メール一斉送信 (現通塾生にカード決済登録を促す) ===
 
 function stripeInviteTargets(opts = {}) {
@@ -1232,6 +1429,7 @@ function bulkStripeInviteBccCopy() {
     fee: '(各人別)',
     deadlineDay: SETTINGS.deadlineDay || 25,
     paymentLink: '(各人個別のURLを記載してください)',
+    customerPortal: SETTINGS.stripeCustomerPortalUrl || '',
   };
   const subject = renderTemplate(SETTINGS.stripeInviteSubject || DEFAULT_STRIPE_INVITE_SUBJECT, vars);
   const body = renderTemplate(SETTINGS.stripeInviteBody || DEFAULT_STRIPE_INVITE_BODY, vars);
@@ -1770,6 +1968,7 @@ function openSettings() {
   document.getElementById('setAccountNumber').value = SETTINGS.accountNumber;
   document.getElementById('setAccountHolder').value = SETTINGS.accountHolder;
   document.getElementById('setStripeCommon').value = SETTINGS.stripePaymentLink || '';
+  document.getElementById('setStripeCustomerPortal').value = SETTINGS.stripeCustomerPortalUrl || '';
 
   // 月謝額別 Stripe リンクを動的生成
   const fees = [...new Set(STATE.data.students.filter(s => s.status === '通塾' && s.fee).map(s => s.fee))].sort((a, b) => a - b);
@@ -1815,6 +2014,7 @@ function saveSettingsFromForm() {
   SETTINGS.stripeInviteSubject = document.getElementById('setStripeInviteSubject').value;
   SETTINGS.stripeInviteBody = document.getElementById('setStripeInviteBody').value;
   SETTINGS.stripePaymentLink = document.getElementById('setStripeCommon').value.trim();
+  SETTINGS.stripeCustomerPortalUrl = document.getElementById('setStripeCustomerPortal').value.trim();
   SETTINGS.stripeLinksByFee = {};
   document.querySelectorAll('[data-stripe-fee]').forEach(inp => {
     const v = inp.value.trim();
@@ -1846,6 +2046,26 @@ function setupModals() {
     document.getElementById('setMailBody').value = DEFAULT_MAIL_BODY;
     document.getElementById('setStripeInviteSubject').value = DEFAULT_STRIPE_INVITE_SUBJECT;
     document.getElementById('setStripeInviteBody').value = DEFAULT_STRIPE_INVITE_BODY;
+  });
+
+  // 月初 Stripe 取込リマインダー
+  const aib = document.getElementById('autoImportRunBtn');
+  if (aib) aib.addEventListener('click', runAutoImport);
+  const aid = document.getElementById('autoImportDismissBtn');
+  if (aid) aid.addEventListener('click', dismissAutoImport);
+
+  // Email 一括登録
+  const eib = document.getElementById('emailImportBtn');
+  if (eib) eib.addEventListener('click', openEmailImportModal);
+  const eip = document.getElementById('emailImportPreviewBtn');
+  if (eip) eip.addEventListener('click', renderEmailImportPreview);
+  const eia = document.getElementById('emailImportApplyBtn');
+  if (eia) eia.addEventListener('click', applyEmailImport);
+  const eit = document.getElementById('emailImportInput');
+  if (eit) eit.addEventListener('input', () => {
+    // 自動プレビュー (デバウンス)
+    clearTimeout(window._emailPreviewTimer);
+    window._emailPreviewTimer = setTimeout(renderEmailImportPreview, 400);
   });
 
   // Stripe Invite (一斉送信)
@@ -1969,6 +2189,7 @@ async function init() {
 
 init().then(() => {
   if (window._needsImport) showInitialImportBanner();
+  maybeShowAutoImportBanner();
 }).catch(err => {
   console.error(err);
   document.getElementById('unpaidTbody').innerHTML = `<tr><td colspan="8" class="empty">読込失敗: ${err.message}</td></tr>`;

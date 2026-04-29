@@ -70,6 +70,18 @@
     <div class="panel-head">
       <h2>ダッシュボード <span class="month-tag" id="dashMonthTag">—</span></h2>
     </div>
+
+    <!-- 月初の Stripe 取込リマインドバナー (自動表示) -->
+    <div id="autoImportBanner" class="hidden" style="margin-bottom:1rem;padding:1rem 1.2rem;border-radius:12px;background:linear-gradient(135deg,rgba(99,102,241,0.18),rgba(236,72,153,0.12));border:1px solid rgba(99,102,241,0.4);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.8rem">
+      <div>
+        <div style="font-weight:700;font-size:1rem">💳 月初リマインド: <span id="autoImportTargetMonth"></span> 分の Stripe 取込が未実行です</div>
+        <div style="font-size:0.85rem;color:var(--text-muted);margin-top:0.3rem">前払い制 / Stripe Recurring サブスクが先月課金した分を取り込みます</div>
+      </div>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" id="autoImportRunBtn">📥 今すぐ取込実行</button>
+        <button class="btn btn-ghost btn-sm" id="autoImportDismissBtn">✕ 今月は表示しない</button>
+      </div>
+    </div>
     <div class="dash-grid">
       <div class="dash-card dash-card-wide">
         <h3>月次売上推移 (直近12ヶ月)</h3>
@@ -151,6 +163,7 @@
         <select class="select" id="gradeFilter"><option value="">学年: 全て</option></select>
         <select class="select" id="courseFilter"><option value="">コース: 全て</option></select>
         <button class="btn btn-ghost btn-sm" id="resetFilterBtn">↺ リセット</button>
+        <button class="btn btn-ghost btn-sm" id="emailImportBtn" title="メアド一括登録 (CSV/TSV)">📧 メアド一括登録</button>
         <button class="btn btn-primary btn-sm" id="stripeInviteBtn" title="現通塾生に Stripe カード決済 (毎月自動引き落とし) の案内メールを一斉送信">💳 Stripe案内メール一斉送信</button>
       </div>
     </div>
@@ -438,6 +451,14 @@
         <div class="form-grid" id="stripeFeeLinks">
           <!-- 動的生成: 月謝額別フィールド -->
         </div>
+
+        <p class="form-hint" style="margin-top:1rem">
+          <strong>Customer Portal (生徒側のセルフサービス)</strong>: <a href="https://dashboard.stripe.com/settings/billing/portal" target="_blank" style="color:var(--primary-light)">Stripe Dashboard → Settings → Customer Portal</a> を有効化 → 「Login Link」をコピー → 下記に貼付けると、Stripe案内メール本文に自動挿入されます。生徒/親が自分でカード変更・解約できるようになります。
+        </p>
+        <label class="form-group form-group-wide">
+          <span>Customer Portal Login Link</span>
+          <input type="url" id="setStripeCustomerPortal" placeholder="https://billing.stripe.com/p/login/...">
+        </label>
       </div>
 
       <div class="form-section">
@@ -455,7 +476,7 @@
 
       <div class="form-section">
         <h3>Stripe カード決済 案内メールテンプレート</h3>
-        <p class="form-hint">「全生徒タブ → 💳 Stripe案内メール一斉送信」で使われるテンプレートです。<br>使える変数: <code>{{student}}</code> 生徒名 / <code>{{fee}}</code> 月謝額 / <code>{{deadlineDay}}</code> 引落日 / <code>{{paymentLink}}</code> カード決済URL / <code>{{juku}}</code> 塾名 / <code>{{owner}}</code> 塾長名</p>
+        <p class="form-hint">「全生徒タブ → 💳 Stripe案内メール一斉送信」で使われるテンプレートです。<br>使える変数: <code>{{student}}</code> 生徒名 / <code>{{fee}}</code> 月謝額 / <code>{{deadlineDay}}</code> 引落日 / <code>{{paymentLink}}</code> カード決済URL / <code>{{customerPortal}}</code> 解約・カード変更ポータル / <code>{{juku}}</code> 塾名 / <code>{{owner}}</code> 塾長名</p>
         <label class="form-group form-group-wide">
           <span>件名</span>
           <input type="text" id="setStripeInviteSubject">
@@ -522,6 +543,37 @@
           <span>全員のメアドをBCC形式でコピー (Gmail等に貼って送信)</span>
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- メアド一括登録モーダル -->
+<div class="modal-overlay hidden" id="emailImportModal">
+  <div class="modal modal-md">
+    <div class="modal-head">
+      <h2>📧 メアド一括登録 (CSV / TSV / 改行区切り)</h2>
+      <button class="modal-close" data-modal-close>✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="form-hint" style="margin-bottom:0.6rem">
+        以下の形式で生徒のメールアドレスをまとめて登録できます。<br>
+        各行 1 生徒、<strong>ID または氏名 (部分一致)</strong> + メアドの形式で貼り付けてください。
+      </p>
+      <details style="margin-bottom:0.8rem">
+        <summary style="cursor:pointer;color:var(--primary-light)">📋 入力フォーマット例 (クリックで展開)</summary>
+        <pre style="background:rgba(0,0,0,0.3);padding:0.6rem;border-radius:6px;font-size:0.78rem;margin-top:0.5rem;overflow-x:auto">2,parent2@example.com
+8,parent8@example.com
+あさやまさなえ,asayama-parent@example.com
+下田	shimoda-parent@example.com
+#26 ヒズメセリ,hizume@example.com</pre>
+      </details>
+      <textarea id="emailImportInput" rows="12" style="width:100%;padding:0.7rem;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'SF Mono',Menlo,monospace;font-size:0.85rem" placeholder="ID または氏名 + 区切り文字(カンマ/タブ/スペース) + メアド を改行区切りで貼り付け"></textarea>
+      <div id="emailImportPreview" style="margin-top:0.8rem;font-size:0.85rem;max-height:200px;overflow-y:auto"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-modal-close>キャンセル</button>
+      <button class="btn btn-ghost" id="emailImportPreviewBtn">👁 プレビュー (マッチ確認)</button>
+      <button class="btn btn-primary" id="emailImportApplyBtn">💾 全件登録</button>
     </div>
   </div>
 </div>
