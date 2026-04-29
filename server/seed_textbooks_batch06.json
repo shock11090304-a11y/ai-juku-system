@@ -1,0 +1,583 @@
+{
+  "textbooks": [
+    {
+      "subject": "英語（高校英文法）",
+      "topic": "関係代名詞",
+      "level": "高校標準",
+      "length": "medium",
+      "type": "unit_lesson",
+      "title": "関係代名詞 — 2文を1文にまとめる接着剤",
+      "tags": [
+        "関係代名詞",
+        "who",
+        "which",
+        "that",
+        "whose",
+        "目的格省略"
+      ],
+      "content": {
+        "title": "関係代名詞 — 2文を1文にまとめる接着剤",
+        "subtitle": "who/which/that/whose を「2 文 → 1 文」の発想で完全攻略",
+        "subject": "英語（高校英文法）",
+        "topic": "関係代名詞",
+        "level": "高校標準",
+        "sections": [
+          {
+            "type": "intro",
+            "heading": "はじめに — 関係代名詞は「接着剤+穴埋め」",
+            "body": "関係代名詞は2 つの文を1 つにまとめる接着剤と、先行詞の代わりに置かれる代名詞の2 役を同時に果たす。多くの参考書は「人なら who、物なら which」と機械的に分類するだけだが、それでは「なぜそこに必要か」「なぜ目的格は省略できるか」が見えない。\n\n比喩を一つ。関係代名詞は「2 本のレゴブロックを連結するピン」。先行詞 (連結ポイント A) と関係詞節内の空白 (連結ポイント B) を物理的につなぐピンが関係代名詞。だから「2 文を書いて、共通の名詞を見つけ、片方を関係代名詞に置き換える」という手順で必ず作れる。\n\nもう一つの比喩。関係代名詞は「指差し棒」。先行詞を後ろから振り返って指差している。who, which, that は指差す対象が人か物か (=先行詞) で決まり、その指差し棒が節の中で「誰がする (主語)」「誰にする (目的語)」「誰の (所有)」のどの役割かで主格/目的格/所有格が決まる。"
+          },
+          {
+            "type": "theory",
+            "heading": "基本事項 — 2 文を1 文にまとめる手順",
+            "body": "■ 関係代名詞の選び方マトリクス\n| 先行詞 | 主格 | 目的格 | 所有格 |\n|----|----|----|----|\n| 人 | who / that | whom / who / that | whose |\n| 物・動物 | which / that | which / that | whose / of which |\n| 人 + 物 | that のみ | that のみ | — |\n\n■ 2 文 → 1 文の手順 (50 回練習で完全定着)\n\n例: I know a girl. She lives in Kyoto. → I know a girl who lives in Kyoto.\n\n1. 共通名詞を探す: \"a girl\" と \"she\" は同一人物 (連結ポイント)\n2. 後ろの文の代名詞 (\"she\") を関係代名詞に置き換える: 人 + 主語 → \"who\"\n3. 関係詞節を共通名詞 (=先行詞) の直後にくっつける\n\n■ 目的格は省略可、主格は不可\n- The book (which) I bought is interesting. ← which 省略可\n- The man who lives next door is a doctor. ← who 省略不可\n\n理由: 目的格を省略すると「先行詞 + 主語 + 動詞」の語順から復元できる。主格を省略すると「先行詞 + 動詞」になり関係が消滅。\n\n■ 非制限用法 (コンマ付き) で that は使えない\n- My mother, who lives in Osaka, is a teacher. ✓\n- My mother, that lives in Osaka, is a teacher. ✗\n\n非制限用法 = 先行詞についての「ついでの追加情報」。\n\n■ 前置詞 + 関係代名詞\n- This is the house in which I was born. ✓ (フォーマル)\n- This is the house (which) I was born in. ✓ (口語、that も可)\n- This is the house in that I was born. ✗ (前置詞直後の that 禁止)",
+            "table": [
+              [
+                "役割",
+                "人",
+                "物・動物",
+                "省略可否"
+              ],
+              [
+                "主格",
+                "who/that",
+                "which/that",
+                "省略 ✗"
+              ],
+              [
+                "目的格",
+                "whom/who/that",
+                "which/that",
+                "省略 ✓"
+              ],
+              [
+                "所有格",
+                "whose",
+                "whose/of which",
+                "省略 ✗"
+              ]
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "ポイント: 「名詞 + 主語 + 動詞」を見たら目的格省略を疑う",
+            "body": "長文読解の頻出パターン:\n「The book I bought yesterday was interesting.」\n→ \"The book\" の直後に「I bought yesterday」が来る不自然さ。これは目的格関係代名詞 \"which/that\" の省略形。\n\n判別法:\n1. 名詞の直後に「主語 + 動詞」が並ぶ\n2. その動詞には目的語が無い (= 名詞が動詞の目的語の役割)\n3. → 目的格関係代名詞が省略されている\n\n例: \"The man I met yesterday is a doctor.\" → \"The man (whom/that) I met yesterday\"\n\nこのパターンを見抜けないと、英文構造が壊れて意味が取れない。早稲田・慶應・京大の長文では確実に出題される。"
+          },
+          {
+            "type": "warn",
+            "title": "注意: 関係代名詞で頻発するミス",
+            "body": "❌ ミス1: 非制限用法 (コンマ付き) で that を使う。\nNG: My mother, that lives in Osaka, is a teacher.\nOK: My mother, who lives in Osaka, is a teacher.\n\n❌ ミス2: 前置詞 + that を書く。\nNG: This is the house in that I was born.\nOK: This is the house in which I was born. / ... I was born in.\n\n❌ ミス3: whose を which / who と混同する。\nNG: I have a friend who father is a doctor.\nOK: I have a friend whose father is a doctor.\n「友達の父」のように先行詞の所有物を表すのは whose。\n\n❌ ミス4: 主格関係代名詞を省略する。\nNG: The man lives next door is a doctor.\nOK: The man who lives next door is a doctor."
+          },
+          {
+            "type": "example",
+            "number": 1,
+            "question": "次の2 文を、関係代名詞を用いて1 文にせよ。\nThe novel is famous all over the world. The novel was written by Murakami Haruki in 1987.",
+            "thought": "発想: 共通名詞「the novel」。後ろの文の主語 \"The novel\" を関係代名詞に置き換える。物 + 主格 → which (or that)。",
+            "answer": "The novel which was written by Murakami Haruki in 1987 is famous all over the world.",
+            "explanation": "「村上春樹によって1987 年に書かれたその小説は、世界中で有名だ」。先行詞 The novel が文の主語、関係詞節が主語を修飾、述語動詞は is famous。\n\nthat も使える: The novel that was written by Murakami Haruki in 1987 is famous all over the world.\n\n別解 (受動態を分詞構文に縮約): The novel written by Murakami Haruki in 1987 is famous all over the world. これは早稲田大学法学部 2018 年で頻出。"
+          },
+          {
+            "type": "example",
+            "number": 2,
+            "question": "次の2 文を、関係代名詞を用いて1 文にせよ。\nI met a man yesterday. I had not seen him for ten years.",
+            "thought": "発想: 共通名詞は \"a man\" = \"him\"。\"him\" は節の中で目的語。よって目的格、人 → whom (口語では who/that も可、省略可)。",
+            "answer": "I met a man (whom) I had not seen for ten years yesterday.",
+            "explanation": "「私は10 年間会っていなかったある男に昨日出会った」。yesterday の位置は文末でも、met の直後でも可。\n\nwhom は文語、口語では who or that、または省略形が一般的。京都大学 2019 年の長文で目的格関係代名詞の省略を見抜く問題が出題された。\"名詞 + 主語 + 動詞\" を見たら省略を即断する習慣をつける。"
+          },
+          {
+            "type": "practice",
+            "number": 1,
+            "question": "次の2 文を関係代名詞 whose を用いて1 文にせよ。\nI know a writer. His novels have been translated into 20 languages."
+          },
+          {
+            "type": "answer",
+            "number": 1,
+            "answer": "I know a writer whose novels have been translated into 20 languages.",
+            "explanation": "共通要素は \"a writer\" と \"his (= the writer's)\"。所有格代名詞 his を関係代名詞 whose に置き換える。\n\nwhose の後ろは無冠詞の名詞 (novels) が直接続く。「whose + 名詞」のセットで節を作る。"
+          },
+          {
+            "type": "summary",
+            "heading": "まとめ — 関係代名詞の体系",
+            "points": [
+              "関係代名詞は「2 文の共通名詞のうち後ろの文の代名詞を置き換えて節を作り、先行詞の直後に貼り付ける接着剤」",
+              "選択基準: 先行詞 (人/物) × 節内の役割 (主語/目的語/所有格) の組合せで決まる",
+              "目的格 (whom/which/that) は省略可、主格 (who/which/that) は省略不可",
+              "非制限用法 (コンマ付き) と前置詞直後では that 使用禁止",
+              "目的格の省略を見抜けないと長文構造が崩れる。「名詞 + 主語 + 動詞」を見たら省略を疑う",
+              "他単元との繋がり: 関係副詞 (本書 batch06)、分詞構文への縮約、すべて本単元の発展"
+            ]
+          }
+        ]
+      },
+      "status": "published",
+      "source": "claude_max_seed_batch06"
+    },
+    {
+      "subject": "英語（高校英文法）",
+      "topic": "関係副詞",
+      "level": "高校標準",
+      "length": "medium",
+      "type": "unit_lesson",
+      "title": "関係副詞 — 場所・時・理由・方法を関係代名詞風に修飾する",
+      "tags": [
+        "関係副詞",
+        "where",
+        "when",
+        "why",
+        "how"
+      ],
+      "content": {
+        "title": "関係副詞 — 場所・時・理由・方法を関係代名詞風に修飾する",
+        "subtitle": "where / when / why / how の使い分けと関係代名詞との違い",
+        "subject": "英語（高校英文法）",
+        "topic": "関係副詞",
+        "level": "高校標準",
+        "sections": [
+          {
+            "type": "intro",
+            "heading": "はじめに — 関係副詞は「前置詞+関係代名詞」の縮約形",
+            "body": "「私が生まれた家」を英語で言うとき、関係代名詞では「the house in which I was born」、関係副詞では「the house where I was born」。意味は同じだが、関係副詞は前置詞 + 関係代名詞をワンセットで置き換える便利な形。\n\n比喩を一つ。関係副詞は「圧縮ファイル」。前置詞 + 関係代名詞を1 語に圧縮したのが関係副詞。展開すると元の形に戻せる。\n\nもう一つの比喩。関係副詞は「役割の特化」。場所なら where、時なら when、理由なら why、方法なら how。それぞれ専用の意味を持つ。\n\n関係代名詞との混同が頻発する単元。判別法は「節の中で名詞か副詞か」。"
+          },
+          {
+            "type": "theory",
+            "heading": "基本事項 — 関係副詞の使い分け",
+            "body": "■ 4 つの関係副詞\n| 関係副詞 | 先行詞 | 例 | 元の形 |\n|---|---|---|---|\n| where | 場所 | the place where ... | the place at which ... |\n| when | 時 | the day when ... | the day on which ... |\n| why | 理由 | the reason why ... | the reason for which ... |\n| how | 方法 | (the way) how ... | the way in which ... |\n\n■ how の特殊ルール\n\"the way how\" という言い方は通常しない。「the way + 節」または「how + 節」のどちらかを使う。\n- The way I solved the problem is simple. ✓\n- How I solved the problem is simple. ✓\n- The way how I solved the problem ... ✗\n\n■ 関係代名詞 vs 関係副詞の判別\n節の中で「名詞」が抜けている → 関係代名詞 (主格/目的格)\n節の中で「副詞 (場所/時/理由/方法)」が抜けている → 関係副詞\n\n例: This is the house where I was born.\n→ 「I was born」は「I was born **(somewhere)**」と副詞の場所が抜けている → where (関係副詞)\n\n例: This is the house which I bought.\n→ 「I bought」は「I bought **(something)**」と目的語が抜けている → which (関係代名詞)\n\n■ 関係副詞 = 前置詞 + 関係代名詞\n- where = at/in/on which\n- when = on/in/at which\n- why = for which\n- how = in which (ただし the way how は不可)",
+            "table": [
+              [
+                "関係副詞",
+                "先行詞",
+                "前置詞+関係代名詞"
+              ],
+              [
+                "where",
+                "場所",
+                "in/at which"
+              ],
+              [
+                "when",
+                "時",
+                "on/in which"
+              ],
+              [
+                "why",
+                "理由",
+                "for which"
+              ],
+              [
+                "how",
+                "方法",
+                "in which (the way how は不可)"
+              ]
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "ポイント: 関係代名詞 vs 関係副詞の判別フローチャート",
+            "body": "1. 関係詞節の中で、関係詞を埋めた元の文を作る\n2. その節で抜けているのは何か?\n   - 名詞 (主語/目的語/補語) → 関係代名詞\n   - 副詞 (場所/時/理由/方法) → 関係副詞\n\n例題:\n(a) The hotel where we stayed was clean.\n→ 「we stayed (at some place)」の場所が抜けている → 関係副詞 where\n\n(b) The hotel which we recommended was clean.\n→ 「we recommended (something)」の目的語が抜けている → 関係代名詞 which\n\nミス防止: 同じ「ホテル」でも、節の中で「ホテル」が場所として機能するか、目的語として機能するかで使い分ける。"
+          },
+          {
+            "type": "warn",
+            "title": "注意: 関係副詞で頻発するミス",
+            "body": "❌ ミス1: 関係代名詞 which と関係副詞 where を取り違える。\nNG: This is the city which I was born.\nOK: This is the city where I was born. (場所として機能、副詞節)\nOK: This is the city which I visited. (目的語として機能、名詞節)\n\n❌ ミス2: \"the way how\" を使う。\nNG: This is the way how I solved it.\nOK: This is the way I solved it. / This is how I solved it.\n2 つを同時に使うことはできない。\n\n❌ ミス3: when と while を混同する。\nwhen は関係副詞、while は接続詞。\nNG: I will call you while I arrive. (関係詞ではない)\nOK: I will call you when I arrive. (接続詞、〜したとき)\nOK: He read a book while he was waiting. (接続詞、〜の間)\n\n❌ ミス4: 関係副詞の前置詞復元を間違う。\nwhere ≠ from which (× from where とは言わない、where 自体に前置詞が含まれている感覚)。"
+          },
+          {
+            "type": "example",
+            "number": 1,
+            "question": "次の文の関係詞を選択せよ。\nThis is the school ( ) my mother taught for 30 years.",
+            "thought": "発想: 節の中で「my mother taught (somewhere)」と場所が抜けている → 関係副詞 where。",
+            "answer": "where",
+            "explanation": "「これは私の母が30 年間教えていた学校だ」\n\n節の中: \"my mother taught (at the school)\"。「at the school」が抜けている = 場所の副詞が抜けている → where が正解。\n\n別解 (関係代名詞を使う場合): This is the school **at which** my mother taught for 30 years. (フォーマル、同じ意味)\n\n類題: 共通テスト 2022 年で同じ判別問題が出題。「学校」を場所と捉えるか目的語と捉えるかで関係詞が変わる。"
+          },
+          {
+            "type": "example",
+            "number": 2,
+            "question": "次の文を関係副詞を使って書き換えよ。\nI remember the day on which I first met her.",
+            "thought": "発想: 「on which (時)」 = when。",
+            "answer": "I remember the day when I first met her.",
+            "explanation": "「on which」は「the day on which (= on the day)」=「その日に」という時の副詞表現。これを関係副詞 when で置き換える。\n\n意味: 「彼女と初めて会った日を覚えている」\n\n注意: \"in which\" (年・月) も when で置き換え可。例: the year in which (= the year when)。"
+          },
+          {
+            "type": "practice",
+            "number": 1,
+            "question": "次の文の空欄に入る関係詞を選択せよ。\n( ) 1. This is the reason ( ) he was angry.\n( ) 2. The way ( ) he speaks reminds me of his father.\n選択肢: where, when, why, how, which, that"
+          },
+          {
+            "type": "answer",
+            "number": 1,
+            "answer": "1: why\n2: he speaks (関係詞なし) または in which",
+            "explanation": "1: 「これが彼が怒った理由だ」。理由 → why。\n別解 (前置詞 + 関係代名詞): the reason for which he was angry。\n\n2: 「彼の話し方は彼の父親を思い出させる」。方法 → 通常は \"the way he speaks\" (関係詞なし) または \"the way in which he speaks\"。「the way how」は誤用なので注意。\n\n落とし穴: how を the way の後に置くのは現代英語では一般的に避けられる。「the way」のみ、または「how」のみを単独で使う。"
+          },
+          {
+            "type": "summary",
+            "heading": "まとめ — 関係副詞の体系",
+            "points": [
+              "関係副詞は「前置詞 + 関係代名詞」の縮約形。where = in/at which, when = on/in which, why = for which",
+              "判別フローチャート: 関係詞節の中で抜けているのが名詞 → 関係代名詞、副詞 → 関係副詞",
+              "「the way how」は誤用。「the way」または「how」のどちらかを単独で使う",
+              "場所でも目的語として機能するなら関係代名詞 (which/that)、副詞として機能するなら関係副詞 (where)",
+              "while / when の使い分けは別カテゴリ (接続詞 vs 関係副詞)",
+              "他単元との繋がり: 関係代名詞 (本書)、複合関係詞 wherever/whenever/however、すべて本単元の発展"
+            ]
+          }
+        ]
+      },
+      "status": "published",
+      "source": "claude_max_seed_batch06"
+    },
+    {
+      "subject": "英語（高校英文法）",
+      "topic": "仮定法",
+      "level": "高校標準",
+      "length": "medium",
+      "type": "unit_lesson",
+      "title": "仮定法 — 「現実とは違う仮定」を表現する",
+      "tags": [
+        "仮定法",
+        "If節",
+        "I wish",
+        "as if",
+        "but for"
+      ],
+      "content": {
+        "title": "仮定法 — 「現実とは違う仮定」を表現する",
+        "subtitle": "仮定法過去・過去完了・I wish を体系で押さえる",
+        "subject": "英語（高校英文法）",
+        "topic": "仮定法",
+        "level": "高校標準",
+        "sections": [
+          {
+            "type": "intro",
+            "heading": "はじめに — 仮定法は「もしも〜だったら」の世界を作る",
+            "body": "「もし私が鳥だったら、空を飛べるのに」これは現実には鳥ではない、つまり「現実と反する仮定」を表現している。これを文法用語で「仮定法」と呼ぶ。\n\n比喩を一つ。仮定法は「映画のパラレルワールド」。「もし第二次世界大戦で日本が勝っていたら」「もし宝くじが当たっていたら」。実際にはそうならなかった世界線を仮想的に語る。\n\nもう一つの比喩。仮定法は「時制を1 段階ずらす」装置。現在の事実反する → 過去形、過去の事実反する → 過去完了形。「過去」の形を使って「現実ではない」感を出す。これが英語の妙。\n\n受験では「If 節」の形と帰結節 (主節) の助動詞が連動するルールを暗記。さらに I wish, as if, but for などの応用形が頻出。"
+          },
+          {
+            "type": "theory",
+            "heading": "基本事項 — 仮定法の3 大形式",
+            "body": "■ 仮定法過去 (現在の事実反する仮定)\n\\[ \\text{If + 主語 + 動詞の過去形} \\sim, \\text{主語 + would/could/might + 動詞の原形} \\sim \\]\n例: If I were rich, I would buy a car. (もし金持ちなら車を買うのに)\n注: be 動詞は人称に関わらず were を使う (口語では was も許容)。\n\n■ 仮定法過去完了 (過去の事実反する仮定)\n\\[ \\text{If + 主語 + had + 過去分詞} \\sim, \\text{主語 + would/could/might + have + 過去分詞} \\sim \\]\n例: If I had studied harder, I would have passed the exam. (もしもっと勉強していたら試験に合格していたのに)\n\n■ 混合型 (過去の仮定 → 現在の結果)\n\\[ \\text{If + had + 過去分詞} \\sim, \\text{would + 動詞の原形} \\sim \\]\n例: If you had taken my advice, you would be successful now. (もし私の助言を聞いていたら、今頃成功しているのに)\n\n■ I wish 構文\n\\[ \\text{I wish + 主語 + 動詞の過去形} \\] (現在の願望、現実反する)\n\\[ \\text{I wish + 主語 + had + 過去分詞} \\] (過去の願望、過去の事実反する)\n例:\n- I wish I knew the answer. (答を知っていればなあ)\n- I wish I had told her the truth. (彼女に真実を話しておけばよかった)\n\n■ as if / as though 構文\n\\[ \\text{as if + 主語 + 動詞の過去形} \\] (現在についてあたかも〜のように)\n\\[ \\text{as if + 主語 + had + 過去分詞} \\] (過去についてあたかも〜のように)\n例: He talks as if he were a doctor. (彼は医者であるかのように話す)\n\n■ But for / Without 構文 (= If it were not for / If it had not been for)\n例:\n- But for your help, I couldn't have succeeded. (君の助けがなかったら成功できなかった)\n- Without water, no living thing could survive. (水がなければ生き物は生きられない)",
+            "table": [
+              [
+                "状況",
+                "If 節",
+                "帰結節"
+              ],
+              [
+                "現在の事実反する",
+                "動詞の過去形",
+                "would/could + 原形"
+              ],
+              [
+                "過去の事実反する",
+                "had + 過去分詞",
+                "would have + 過去分詞"
+              ],
+              [
+                "混合型",
+                "had + 過去分詞",
+                "would + 原形"
+              ],
+              [
+                "I wish (現在)",
+                "—",
+                "主語 + 動詞の過去形"
+              ],
+              [
+                "I wish (過去)",
+                "—",
+                "主語 + had + 過去分詞"
+              ]
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "ポイント: 「もし」を見たら直接法か仮定法かを判別",
+            "body": "If 節は仮定法とは限らない。直接法 (= 普通の条件文) もある。\n\n直接法 (条件): If it rains tomorrow, we will stay home. (もし明日雨が降ったら家にいる)\n→ 雨が降る可能性は普通にある。仮定法ではない。\n\n仮定法: If I were a bird, I would fly. (もし鳥だったら飛ぶのに)\n→ 鳥ではない事実が前提。仮定法。\n\n判別法: 仮定する内容が「現実の可能性のある未来」か「現実反する世界」か。\n\n受験頻出パターン: \n- 「If + 動詞の過去形」 (現在反する) → \"would\"\n- 「If + had + 過去分詞」 (過去反する) → \"would have + 過去分詞\"\n\nこの形を見たら即座に「仮定法だ」と認識して対応する助動詞を選ぶ。"
+          },
+          {
+            "type": "warn",
+            "title": "注意: 仮定法で頻発するミス",
+            "body": "❌ ミス1: 仮定法過去で「動詞の現在形」を使う。\nNG: If I am rich, I would buy a car.\nOK: If I were rich, I would buy a car. (be 動詞は were)\nOK: If I had money, I would buy a car. (一般動詞は過去形)\n\n❌ ミス2: 帰結節と If 節の時制をバラバラにする。\nNG: If I had studied harder, I would pass.\nOK: If I had studied harder, I would have passed.\n両方の節で時制を一致させる (過去完了と would have + 過去分詞、または現在の過去形と would + 原形)。\n\n❌ ミス3: I wish の後に I am などの現在形を使う。\nNG: I wish I am taller.\nOK: I wish I were taller. (現在の願望は過去形)\n\n❌ ミス4: should have done を仮定法でない場面で使う。\n\"should have + 過去分詞\" は「〜すべきだったのに (実際はしなかった)」で仮定法的ニュアンス。\n例: I should have studied harder. (もっと勉強しておくべきだった)\nこれは仮定法の if 節と組み合わせて使うことが多い。"
+          },
+          {
+            "type": "example",
+            "number": 1,
+            "question": "次の日本語を仮定法を用いて英訳せよ。\n「もし私が彼の電話番号を知っていたら、今すぐ電話するのに。」",
+            "thought": "発想: 「現在の事実反する」(知らない事実) → 仮定法過去。\nIf + 動詞の過去形, 主語 + would + 動詞の原形。",
+            "answer": "If I knew his phone number, I would call him right now.",
+            "explanation": "現在の事実: 私は彼の電話番号を知らない。\n仮定: 知っていれば。\nよって仮定法過去: If + knew (過去形)、帰結 = would call (would + 原形)。\n\n別解: If I had his phone number, I would call him now. (had を使う方が自然な場合も)\n\n注意: 帰結節の時間表現に \"now\" を入れることで「現在の話」を強調。"
+          },
+          {
+            "type": "example",
+            "number": 2,
+            "question": "次の文の空欄を埋めよ。\nIf I ( ) (study) harder, I ( ) (pass) the exam last week.",
+            "thought": "発想: \"last week\" で過去の事実反する → 仮定法過去完了。\nIf + had + 過去分詞, would have + 過去分詞。",
+            "answer": "had studied / would have passed",
+            "explanation": "過去の事実: 先週試験に合格しなかった。\n仮定: もっと勉強していたら。\nIf I had studied harder, I would have passed the exam last week.\n\n読み: 「もし先週もっと勉強していたら、試験に合格していたのに」(でも実際は合格しなかった、勉強もしなかった)。\n\n類題: 早稲田大学 2018 年で同じ仮定法過去完了の文法問題が出題。"
+          },
+          {
+            "type": "practice",
+            "number": 1,
+            "question": "次の文を I wish 構文で書き換えよ。\nI am sorry that I am not good at math."
+          },
+          {
+            "type": "answer",
+            "number": 1,
+            "answer": "I wish I were good at math.",
+            "explanation": "「数学が得意でないことが残念だ」 → 「数学が得意ならなあ」(現在の願望、事実反する)。\n\nI wish の後ろは「主語 + 動詞の過去形」。be 動詞は were (口語では was も許容)。\n\n別パターン:\n- I am sorry I didn't study harder. → I wish I had studied harder. (過去の願望)\n\nI wish 系は受験英語頻出。「現在の願望は過去形、過去の願望は過去完了形」と覚える。"
+          },
+          {
+            "type": "summary",
+            "heading": "まとめ — 仮定法の体系",
+            "points": [
+              "仮定法 = 「現実と反する仮定」を表現する。If 節と帰結節の時制が連動",
+              "現在反する: If + 過去形, would + 原形 (仮定法過去)",
+              "過去反する: If + had + 過去分詞, would have + 過去分詞 (仮定法過去完了)",
+              "be 動詞は人称に関わらず were (口語では was も許容)",
+              "I wish + 過去形 = 現在の願望、I wish + had + 過去分詞 = 過去の願望",
+              "But for / Without は If it were not for / If it had not been for の縮約",
+              "他単元との繋がり: 助動詞 (本書)、時制 (完了形)、これらと組み合わせて高度な仮定表現が作れる"
+            ]
+          }
+        ]
+      },
+      "status": "published",
+      "source": "claude_max_seed_batch06"
+    },
+    {
+      "subject": "英語（高校英文法）",
+      "topic": "時制（完了形）",
+      "level": "高校標準",
+      "length": "medium",
+      "type": "unit_lesson",
+      "title": "時制 (完了形) — 「過去 → 現在」を結びつける時制",
+      "tags": [
+        "完了形",
+        "現在完了",
+        "過去完了",
+        "未来完了",
+        "完了進行形"
+      ],
+      "content": {
+        "title": "時制 (完了形) — 「過去 → 現在」を結びつける時制",
+        "subtitle": "現在完了・過去完了・未来完了・完了進行形を体系で",
+        "subject": "英語（高校英文法）",
+        "topic": "時制（完了形）",
+        "level": "高校標準",
+        "sections": [
+          {
+            "type": "intro",
+            "heading": "はじめに — 完了形は「日本語に無い時制」",
+            "body": "現在完了 \"have done\" は日本語にはない時制。「私はその本を読んだ」と日本語で言うと過去形だが、英語では場面によって過去形 \"I read\" にも現在完了 \"I have read\" にもなる。これらの違いを理解するのが完了形の鍵。\n\n比喩を一つ。完了形は「橋」。過去のある時点と現在を結ぶ橋。「過去から現在まで継続している」「過去の経験が今に残っている」「過去の動作が今完了している」という現在との結びつきを表す。\n\nもう一つの比喩。過去形は「写真」、現在完了は「動画」。過去形は「過去のある瞬間」だけを切り取る (例: 昨日、本を読んだ)。現在完了は「過去から今までの流れ」を表す (例: 5 年間、本を読み続けている)。\n\n4 つの用法 (継続・経験・完了・結果) を場面で使い分けるのが受験頻出。"
+          },
+          {
+            "type": "theory",
+            "heading": "基本事項 — 完了形の4 用法",
+            "body": "■ 現在完了 \"have/has + 過去分詞\"\n4 つの用法:\n\n1. **継続** (過去から現在まで〜している)\n   I have lived in Tokyo for 10 years.\n   キーワード: for, since, how long\n\n2. **経験** (今までに〜したことがある)\n   I have visited Paris three times.\n   キーワード: ever, never, before, three times\n\n3. **完了** (ちょうど〜したところだ)\n   I have just finished my homework.\n   キーワード: just, already, yet\n\n4. **結果** (〜してしまって今こうだ)\n   I have lost my key. (今も鍵がない状態)\n   キーワード: lose, go, come, leave\n\n■ 過去完了 \"had + 過去分詞\"\n過去のある時点よりさらに過去の出来事を表す。\n例: When I arrived at the station, the train had already left. (駅に着いたとき、電車はすでに発車していた)\n\n■ 未来完了 \"will have + 過去分詞\"\n未来のある時点で完了している事柄。\n例: By next year, I will have lived here for 10 years. (来年で10 年住んだことになる)\n\n■ 完了進行形 \"have/has been + V-ing\"\n継続している動作を進行形で強調。\n例: I have been studying English for 5 years. (5 年間英語を勉強している、まだ続いている)\n\n■ 現在完了 vs 過去形の決定的違い\n現在完了は「現在との結びつき」、過去形は「過去のある時点」。\n- I lost my key yesterday. (昨日鍵を失くした、今は見つかっているかも)\n- I have lost my key. (鍵を失くしてしまって、今もない)",
+            "table": [
+              [
+                "時制",
+                "形",
+                "用法",
+                "例"
+              ],
+              [
+                "現在完了",
+                "have+pp",
+                "継続/経験/完了/結果",
+                "I have lived..."
+              ],
+              [
+                "過去完了",
+                "had+pp",
+                "過去より前",
+                "I had finished..."
+              ],
+              [
+                "未来完了",
+                "will have+pp",
+                "未来までに",
+                "I will have done..."
+              ],
+              [
+                "現在完了進行形",
+                "have been+ing",
+                "継続強調",
+                "I have been studying..."
+              ]
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "ポイント: キーワードで4 用法を即判定",
+            "body": "現在完了の4 用法はキーワードでほぼ即判定できる:\n\n| キーワード | 用法 | 例 |\n|---|---|---|\n| for, since, how long | 継続 | I have known him for 5 years. |\n| ever, never, before, ~ times | 経験 | Have you ever been to Paris? |\n| just, already, yet (疑問・否定) | 完了 | I have just arrived. |\n| (動詞自体が結果性) lost, gone, come | 結果 | He has gone to America. |\n\n判別法:\n1. キーワードを見つける\n2. キーワードから用法を確定\n3. 訳出: 継続「〜している」、経験「したことがある」、完了「したところだ」、結果「してしまった」\n\n例題: I have read this book three times. → \"three times\" → 経験 → 「この本を3 回読んだことがある」"
+          },
+          {
+            "type": "warn",
+            "title": "注意: 完了形で頻発するミス",
+            "body": "❌ ミス1: 過去の特定時点を表す副詞と現在完了を併用する。\nNG: I have visited Paris yesterday.\nOK: I visited Paris yesterday. (過去形)\nOK: I have visited Paris before. (現在完了)\nyesterday, last year, ago など過去の特定時点 → 過去形のみ。\n\n❌ ミス2: 過去完了を「過去の過去」以外で使う。\n過去完了は「過去より前」を表す。「単に過去のことを長々と説明したい」では使わない。\n\n❌ ミス3: \"since\" の後に「期間」を置く。\nNG: I have known him since 5 years.\nOK: I have known him for 5 years. (期間 → for)\nOK: I have known him since 2020. (時点 → since)\n\n❌ ミス4: 完了進行形を「すでに終わった動作」で使う。\nNG: I have been reading this book. (すでに読み終わったなら誤り)\nOK: I have read this book three times. (経験、すでに完了)\n完了進行形は「まだ続いている」が前提。"
+          },
+          {
+            "type": "example",
+            "number": 1,
+            "question": "次の文の空欄を適切な時制で埋めよ。\nI ( ) (live) in this town since 2010.",
+            "thought": "発想: \"since 2010\" → 継続 → 現在完了。",
+            "answer": "have lived",
+            "explanation": "「2010 年からこの町に住んでいる」(現在も住んでいる継続)。\n\nsince + 時点 → 現在完了 (継続)。\n\n進行形でも可: I have been living in this town since 2010. (2 つの差はほぼなく、進行形の方が「今この瞬間も住んでいる」感が強い)\n\n落とし穴: \"I lived in this town since 2010\" は誤り (過去形 + since の違反)。"
+          },
+          {
+            "type": "example",
+            "number": 2,
+            "question": "次の日本語を英訳せよ。\n「私が駅に着いたとき、電車はすでに出発していた。」",
+            "thought": "発想: 「電車が出発した」のが「私が駅に着いた」より前 → 過去完了。",
+            "answer": "When I arrived at the station, the train had already left.",
+            "explanation": "時系列:\n1. 電車が出発した (より過去)\n2. 私が駅に着いた (過去)\n\n2 番目の出来事より前の出来事は過去完了 \"had + 過去分詞\" で表す。よって \"the train had already left\"。\n\nalready の位置は \"had\" と過去分詞の間。\n\n類題: 早稲田大学 2019 年で過去完了の時系列を問う問題が出題。「過去の過去」を表す表現として頻出。"
+          },
+          {
+            "type": "practice",
+            "number": 1,
+            "question": "次の英文を和訳せよ。\nI have been waiting for him for two hours, but he has not come yet."
+          },
+          {
+            "type": "answer",
+            "number": 1,
+            "answer": "私は彼を2 時間待っているが、彼はまだ来ていない。",
+            "explanation": "前半 \"have been waiting\" = 現在完了進行形 (継続)、「2 時間待ち続けている」。\n後半 \"has not come yet\" = 現在完了否定 + yet (まだ完了していない)、「まだ来ていない」。\n\n2 つの完了形が両立しているのは、前半が「動作の継続」、後半が「動作の未完了」を表すため。完了進行形と現在完了の使い分けが明確に出ている文。"
+          },
+          {
+            "type": "summary",
+            "heading": "まとめ — 完了形の体系",
+            "points": [
+              "現在完了 \"have/has + 過去分詞\" は4 用法 (継続・経験・完了・結果)",
+              "過去完了 \"had + 過去分詞\" は「過去より前」、未来完了 \"will have + 過去分詞\" は「未来までに完了」",
+              "完了進行形 \"have been + V-ing\" は継続を強調 (まだ続いている)",
+              "キーワード判別: for/since=継続、ever/never=経験、just/already/yet=完了、lost/gone=結果",
+              "yesterday, last year など過去の特定時点 → 過去形のみ、現在完了とは併用不可",
+              "since の後ろは時点、for の後ろは期間",
+              "他単元との繋がり: 仮定法 (本書)、関係詞節の中での時制、英作文での時制一致"
+            ]
+          }
+        ]
+      },
+      "status": "published",
+      "source": "claude_max_seed_batch06"
+    },
+    {
+      "subject": "英語（高校英文法）",
+      "topic": "助動詞",
+      "level": "高校標準",
+      "length": "medium",
+      "type": "unit_lesson",
+      "title": "助動詞 — 動詞に「話者の判断」を加える",
+      "tags": [
+        "助動詞",
+        "must",
+        "should",
+        "would",
+        "used to",
+        "have to"
+      ],
+      "content": {
+        "title": "助動詞 — 動詞に「話者の判断」を加える",
+        "subtitle": "can/may/must/should/would の使い分けと完了形との組合せ",
+        "subject": "英語（高校英文法）",
+        "topic": "助動詞",
+        "level": "高校標準",
+        "sections": [
+          {
+            "type": "intro",
+            "heading": "はじめに — 助動詞は「話者の主観」を加える装置",
+            "body": "「彼は来る」と「彼は来るかもしれない」「彼は来るはずだ」は、起こる事実は同じでも話者の確信度が違う。この確信度・可能性・義務などを表すのが助動詞。\n\n比喩を一つ。助動詞は「料理の調味料」。動詞 (=素材) に塩・砂糖・醤油 (=助動詞) を加えると、味 (=ニュアンス) が変わる。\"go\" だけだと「行く」という事実、\"can go\" なら「行ける (能力)」、\"may go\" なら「行くかもしれない (可能性)」、\"should go\" なら「行くべきだ (義務)」、\"must go\" なら「行かなければならない (強い義務)」。\n\nもう一つの比喩。助動詞は「色フィルター」。同じ景色でも色フィルターを通すと印象が変わる。動詞は素の事実、助動詞は話者の主観的判断。\n\n受験では \"must\" vs \"have to\"、\"should\" vs \"ought to\"、\"used to\" vs \"would\" の使い分けが頻出。さらに完了形と組み合わせた \"must have done\" などの過去推量も重要。"
+          },
+          {
+            "type": "theory",
+            "heading": "基本事項 — 主要助動詞と完了形組合せ",
+            "body": "■ 主要助動詞の意味\n| 助動詞 | 意味 | 例 |\n|---|---|---|\n| can | 能力、可能 | I can swim. |\n| could | can の過去、丁寧 | I could swim then. / Could you help me? |\n| may | 可能性、許可 | It may rain. / You may go. |\n| might | may の弱化、丁寧 | It might rain. |\n| must | 強い義務、強い推量 | You must study. / He must be tired. |\n| have to | 義務 (must とほぼ同じ) | I have to go. |\n| should | 義務、当然 | You should study. |\n| ought to | 義務 (should と同じ) | You ought to study. |\n| would | will の過去、丁寧、習慣 | He said he would come. / Would you mind? |\n| used to | 過去の習慣 (今は違う) | I used to play tennis. |\n| had better | 〜したほうがよい (警告含む) | You had better leave now. |\n\n■ must vs have to の違い\n- must: 内的義務 (話者の意志・命令)、過去形なし\n- have to: 外的義務 (規則・状況)、過去形 had to あり\n\n例: I must finish this. (内側からの強い意志)\n例: I have to finish this by 5pm. (締切などの外的事情)\n\n否定形は意味が違う:\n- must not: 〜してはいけない (禁止)\n- don't have to: 〜する必要はない (不要)\n\n■ 助動詞 + have + 過去分詞 (過去推量・過去後悔)\n| 形 | 意味 | 例 |\n|---|---|---|\n| must have done | 〜したに違いない | He must have left. |\n| may have done | 〜したかもしれない | She may have forgotten. |\n| might have done | may have done より弱 | He might have known. |\n| can't have done | 〜したはずがない | He can't have lied. |\n| should have done | 〜すべきだった (実際はしなかった) | I should have studied. |\n| would have done | 〜していただろう (実際は違う) | I would have helped him. |\n\n■ used to vs would (過去の習慣)\n- used to: 過去の習慣・状態 (今は違う)、状態にも使える\n- would: 過去の習慣的動作 (情景描写、状態には使わない)\n\n例: I used to live in Tokyo. (過去に東京に住んでいた、今は違う)\n例: When I was young, I would walk to school every day. (毎日通学した習慣)\nNG: When I was young, I would live in Tokyo. (状態には would 不可)",
+            "table": [
+              [
+                "助動詞",
+                "主な意味",
+                "完了形 (過去)"
+              ],
+              [
+                "must",
+                "強い義務/推量",
+                "must have done = したに違いない"
+              ],
+              [
+                "may",
+                "可能性/許可",
+                "may have done = したかもしれない"
+              ],
+              [
+                "can't",
+                "不可能",
+                "can't have done = したはずがない"
+              ],
+              [
+                "should",
+                "義務",
+                "should have done = すべきだった"
+              ],
+              [
+                "would",
+                "過去/丁寧",
+                "would have done = していただろう"
+              ]
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "ポイント: must have done と should have done の決定的違い",
+            "body": "「must have done」と「should have done」はどちらも完了形を含むが意味が全く違う:\n\n- **must have done** (推量): 「(過去に) 〜したに違いない」 — 確信を持った推量\n  例: He must have left already. (彼はもう帰ったに違いない)\n\n- **should have done** (後悔・非難): 「(過去に) 〜すべきだったのに (しなかった)」 — 後悔や非難\n  例: I should have studied harder. (もっと勉強すべきだった = しなかった)\n\n判別法:\n- 過去の事実を推量しているなら must have done\n- 「すべきだったのに、実はしなかった」なら should have done\n\n受験での超頻出識別問題。これを混同するとマーク式で大きく失点する。"
+          },
+          {
+            "type": "warn",
+            "title": "注意: 助動詞で頻発するミス",
+            "body": "❌ ミス1: must の否定形を don't have to と同じだと思う。\nNG: \"You must not go\" = \"You don't have to go\" (誤)\n正: must not = 禁止 (してはいけない)、don't have to = 不要 (する必要なし)。意味が真逆。\n\n❌ ミス2: 助動詞の後に動詞の三人称単数 s を付ける。\nNG: He cans swim. / He shoulds study.\n正: He can swim. / He should study. (助動詞の後は必ず動詞の原形)\n\n❌ ミス3: would と used to の置き換え可能性を誤解。\n動作は両方使えるが、状態には used to のみ。\nNG: I would be a teacher. (状態に would は不可)\nOK: I used to be a teacher.\n\n❌ ミス4: had better の否定形を間違う。\nNG: You had not better do that.\nOK: You had better not do that. (had better not + 動詞原形)"
+          },
+          {
+            "type": "example",
+            "number": 1,
+            "question": "次の文の空欄に入る最も適切な語句を選べ。\nHe ( ) the test, because he didn't study at all.\n選択肢: a) must have failed   b) should have failed   c) can't have failed   d) may have failed",
+            "thought": "発想: 「全く勉強しなかったので、テストに〜したに違いない」。文脈から強い確信の推量 → must have failed。",
+            "answer": "a) must have failed",
+            "explanation": "「彼は全く勉強しなかったので、テストに落ちたに違いない」\n\n選択肢の意味:\na) must have failed: 落ちたに違いない (強い推量) ← 正解\nb) should have failed: 落ちるべきだった (意味通らず)\nc) can't have failed: 落ちたはずがない (文脈に矛盾)\nd) may have failed: 落ちたかもしれない (確信が弱い、文脈の \"didn't study at all\" とミスマッチ)\n\n「at all」が強調されているので強い推量 must have done が最適。"
+          },
+          {
+            "type": "example",
+            "number": 2,
+            "question": "次の文を和訳せよ。\nYou should have told me the truth earlier.",
+            "thought": "発想: should have done = 〜すべきだったのに (実際はしなかった)。",
+            "answer": "もっと早く真実を話してくれるべきだったのに。",
+            "explanation": "should have done は「すべきだったのに (しなかった)」の後悔・非難。\n\n「もっと早く真実を話すべきだった (実際は遅かった or 話さなかった)」というニュアンス。\n\n対比: \"You must have told me the truth earlier\" → 「もっと早く真実を話したに違いない」(意味全く違う)。"
+          },
+          {
+            "type": "practice",
+            "number": 1,
+            "question": "次の文を used to または would で書き換えよ (両方可能ならその旨記す)。\n「子供のころ、私は毎日3 時間ピアノを練習した。」"
+          },
+          {
+            "type": "answer",
+            "number": 1,
+            "answer": "When I was a child, I would practice the piano for three hours every day. / When I was a child, I used to practice the piano for three hours every day. (両方可能)",
+            "explanation": "「ピアノを練習した」は習慣的な動作 → would でも used to でもどちらでも可能。\n\n微妙な違い:\n- would: 「毎日のように〜したものだ」と情景描写の感じ\n- used to: 「以前は〜していた、今は違う」と現在との対比\n\n本問は \"every day\" があるので習慣的動作、両方使える。\n\nもし「子供のころ、私は内気だった」なら、状態 → used to のみ (would 不可)。"
+          },
+          {
+            "type": "summary",
+            "heading": "まとめ — 助動詞の体系",
+            "points": [
+              "助動詞は動詞に「話者の主観 (確信度・義務・可能性)」を加える",
+              "must (内的義務/強い推量) と have to (外的義務、過去 had to) の使い分け",
+              "must not = 禁止、don't have to = 不要 (意味真逆)",
+              "must have done = 〜したに違いない (推量)、should have done = 〜すべきだった (後悔)",
+              "used to は状態にも使える、would は動作のみ (過去の習慣)",
+              "had better は 〜したほうがよい (警告含む)、否定は had better not + 原形",
+              "他単元との繋がり: 時制 (本書)、仮定法 (本書)、これらと組み合わせて高度な表現"
+            ]
+          }
+        ]
+      },
+      "status": "published",
+      "source": "claude_max_seed_batch06"
+    }
+  ]
+}
