@@ -967,6 +967,10 @@ function renderView(view) {
     bindRevealButtons();
     // ツールバー: hidden モードの時だけ表示
     if (toolbar) toolbar.style.display = getLayoutMode() === 'hidden' ? 'flex' : 'none';
+    // インライン markup 復元 (escapeHtml で &lt; に変換された限定タグ + Markdown 太字)
+    applyInlineMarkup(el);
+    // 簡易 Markdown テーブルレンダリング (body 内に | 強酸 | 弱酸 | のような表が来た場合)
+    renderInlineMarkdownTables(el);
     // KaTeX で LaTeX 数式を描画 (\( ... \) インライン、\[ ... \] ディスプレイ)
     // auto-render.js が読み込まれていれば renderMathInElement が定義される
     if (typeof renderMathInElement === 'function') {
@@ -984,8 +988,6 @@ function renderView(view) {
         console.warn('[KaTeX] レンダリング失敗:', e);
       }
     }
-    // 簡易 Markdown テーブルレンダリング (body 内に | 強酸 | 弱酸 | のような表が来た場合)
-    renderInlineMarkdownTables(el);
   } else if (view === 'markdown') {
     el.className = 'tb-result raw';
     el.innerHTML = `<pre>${escapeHtml(lastMd)}</pre>`;
@@ -1000,6 +1002,28 @@ function renderView(view) {
 
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+// escapeHtml された innerHTML 内の限定的な装飾タグと Markdown 記法を復元する。
+// subagent や AI が body 内に <u>下線</u> や **太字** を直接書いた場合の救済。
+// 許可タグ: u, strong, em, b, i, sub, sup, mark, code, br
+// Markdown: **太字**, *斜体* (シングル `*` は誤検出を避けるため周囲に空白要件あり)
+function applyInlineMarkup(rootEl) {
+  if (!rootEl) return;
+  const allowedTags = ['u', 'strong', 'em', 'b', 'i', 'sub', 'sup', 'mark', 'code', 'br'];
+  let html = rootEl.innerHTML;
+  allowedTags.forEach(tag => {
+    const open = new RegExp('&lt;' + tag + '&gt;', 'gi');
+    const close = new RegExp('&lt;/' + tag + '&gt;', 'gi');
+    const selfClose = new RegExp('&lt;' + tag + '\\s*/&gt;', 'gi');
+    html = html.replace(open, '<' + tag + '>')
+               .replace(close, '</' + tag + '>')
+               .replace(selfClose, '<' + tag + '>');
+  });
+  // Markdown 太字 **...** → <strong>...</strong>
+  // 同行内の閉じ ** が必須、間に < > * \n が無いこと
+  html = html.replace(/\*\*([^*\n<>]+?)\*\*/g, '<strong>$1</strong>');
+  rootEl.innerHTML = html;
 }
 
 // 本文中に Markdown 形式の表 (| 列1 | 列2 | / |---|---| ) が含まれている場合に
