@@ -1,0 +1,619 @@
+{
+  "textbooks": [
+    {
+      "subject": "英語（中学英文法）",
+      "topic": "be動詞",
+      "level": "中学標準",
+      "length": "medium",
+      "type": "unit_lesson",
+      "title": "be動詞 — am / is / are の世界",
+      "tags": [
+        "be動詞",
+        "am",
+        "is",
+        "are",
+        "was",
+        "were",
+        "中学英文法",
+        "肯定否定疑問"
+      ],
+      "content": {
+        "title": "be動詞 — am / is / are の世界",
+        "subtitle": "肯定文・否定文・疑問文・過去形 was/were",
+        "subject": "英語（中学英文法）",
+        "topic": "be動詞",
+        "level": "中学標準",
+        "sections": [
+          {
+            "type": "intro",
+            "heading": "はじめに — be動詞は『イコール (=)』の動詞",
+            "body": "英語の中学英文法で最初に学ぶのが be動詞 (am / is / are)。日本語にすると「〜です」「〜だ」「〜である」「〜にいる」「〜にある」のいずれかにあたる。\n\n比喩を一つ。be動詞は『等号 (=)』。「I am Tom.」は「私 = トム」、「She is a teacher.」は「彼女 = 先生」、「The cat is on the table.」は「猫の場所 = テーブルの上」。主語と、その主語の状態・正体・場所を結びつけるのが be動詞の役目。\n\nもう一つの比喩。be動詞は『接着剤』。主語 (I, you, he…) と、その人・物の説明 (a student, happy, in Tokyo…) を貼り合わせる。一般動詞 (run, eat, study…) のように『動作』を表すのではなく、『状態』を表す。\n\n受験では (1) 主語ごとの am / is / are の使い分け、(2) 否定文 am not / isn't / aren't、(3) 疑問文の語順 (Are you 〜? の倒置)、(4) 過去形 was / were、(5) 一般動詞との混同を避けることが頻出。中1の最初に習う基本中の基本だが、高校受験まで毎年問われる土台。"
+          },
+          {
+            "type": "theory",
+            "heading": "基本事項 — be動詞の使い分けと文型",
+            "body": "■ 主語に応じた be動詞の使い分け\n\n| 主語 | be動詞 (現在) | 短縮形 |\n|---|---|---|\n| I (私) | am | I'm |\n| you (あなた・あなたたち) | are | you're |\n| he / she / it (彼・彼女・それ) | is | he's / she's / it's |\n| we (私たち) | are | we're |\n| they (彼ら・それら) | are | they're |\n| 単数名詞 (Tom, my dog, this book…) | is | — |\n| 複数名詞 (Tom and Mary, my dogs…) | are | — |\n\n覚え方:\n- I → am (I am のセット)\n- you / 複数 → are\n- それ以外の単数 (he, she, it, 単数名詞) → is\n\n■ 肯定文の作り方\n\n型: 主語 + be動詞 + 状態・正体・場所\n\n例:\n- I am a student. (私は学生です)\n- She is happy. (彼女は嬉しい)\n- We are in Japan. (私たちは日本にいます)\n- This book is interesting. (この本は面白い)\n\n■ 否定文の作り方 (be動詞の後に not)\n\n型: 主語 + be動詞 + not + …\n\n短縮形:\n- am not → 短縮形なし (I'm not の形)\n- is not → isn't\n- are not → aren't\n\n例:\n- I am not a teacher. = I'm not a teacher. (私は先生ではない)\n- He is not busy. = He isn't busy. (彼は忙しくない)\n- They are not students. = They aren't students. (彼らは学生ではない)\n\n■ 疑問文の作り方 (be動詞を主語の前へ)\n\n型: be動詞 + 主語 + …?\n\n答え方:\n- Yes, 主語 + be動詞.\n- No, 主語 + be動詞 + not.\n\n例:\n- Are you a student? — Yes, I am. / No, I am not. (No, I'm not.)\n- Is he kind? — Yes, he is. / No, he isn't.\n- Are they tired? — Yes, they are. / No, they aren't.\n\n注意: 答えの『Yes, I am.』『No, he isn't.』では短縮しない場面 (Yes の場合) と短縮する場面 (No の場合) がある。Yes の答えは短縮しない (× Yes, I'm. は不可)。\n\n■ 過去形 was / were\n\n| 主語 | 過去形 |\n|---|---|\n| I / he / she / it / 単数名詞 | was |\n| you / we / they / 複数名詞 | were |\n\n否定形: was not = wasn't、were not = weren't\n疑問形: Was 主語 〜? / Were 主語 〜?\n\n例:\n- I was tired yesterday. (昨日は疲れていた)\n- They were in Tokyo last week. (彼らは先週東京にいた)\n- Were you happy? — Yes, I was. / No, I wasn't.\n\n■ be動詞の3つの意味\n\n1. **〜です / 〜だ** (正体・身分): I am a doctor.\n2. **〜である** (状態・性質): She is kind.\n3. **〜にいる / 〜にある** (場所): The cat is under the bed.",
+            "table": [
+              [
+                "主語",
+                "現在形",
+                "過去形",
+                "短縮形 (現在)",
+                "否定の短縮形"
+              ],
+              [
+                "I",
+                "am",
+                "was",
+                "I'm",
+                "(I'm not)"
+              ],
+              [
+                "you",
+                "are",
+                "were",
+                "you're",
+                "aren't"
+              ],
+              [
+                "he/she/it",
+                "is",
+                "was",
+                "he's/she's/it's",
+                "isn't"
+              ],
+              [
+                "we/they",
+                "are",
+                "were",
+                "we're/they're",
+                "aren't"
+              ]
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "ポイント: be動詞は主語に応じて『機械的に』選ぶ",
+            "body": "be動詞の使い分けは『理屈』ではなく『主語との組み合わせ』で覚えるのが速い。\n\n機械的なルール:\n- 主語が I → am (絶対!)\n- 主語が You / We / They / 複数の名詞 → are\n- それ以外の単数 (He, She, It, Tom, my dog…) → is\n\n比喩: be動詞は『靴のサイズ』。主語 (足) に合わせて自動的に決まる。「I に am、you に are」と何度も口に出して、考えずに出るようにする。\n\n練習法 (中1夏休みまでに完成):\n1. 主語カード (I / You / He / She / We / They) を 6 枚作る\n2. 1 枚引いて 2 秒以内に am / is / are を答える\n3. 慣れたら否定文・疑問文も即答\n\n試験の落とし穴: 「Tom and I」は『私と Tom』で複数 → are。「My family」は『家族』で集合体だが英語では複数扱いが普通 → are (アメリカ英語) / is (イギリス英語、家族をひとつの集合と見る場合)。\n\n中学では原則『My family is 〜』(教科書で is が標準)。"
+          },
+          {
+            "type": "warn",
+            "title": "注意: be動詞でよくある間違い",
+            "body": "❌ ミス1: be動詞と一般動詞を両方使ってしまう。\nNG: I am play tennis. (am と play の二重 → 不可)\nOK: I play tennis. (現在形は一般動詞のみ) / I am playing tennis. (進行形は『be動詞 + V-ing』)\n\n❌ ミス2: 主語が単数複数か見間違える。\nNG: My books is on the desk. (books は複数 → are)\nOK: My books are on the desk.\n\n❌ ミス3: 否定文で don't / doesn't を使ってしまう。\nNG: I don't am a teacher. (be動詞の否定は『not』のみ)\nOK: I am not a teacher. = I'm not a teacher.\n\n❌ ミス4: 疑問文で Do を使ってしまう。\nNG: Do you are happy? (be動詞の疑問は『be動詞を前に』)\nOK: Are you happy?\n\n❌ ミス5: Yes の答えで短縮形を使う。\nNG: Yes, I'm. / Yes, he's. (Yes の答えでは短縮不可)\nOK: Yes, I am. / Yes, he is.\n\n❌ ミス6: am の短縮形『amn't』はない (× I amn't)。\nOK: I'm not (= I am not の短縮)。am の否定だけは『主語と am の短縮 + not』しかない。\n\n❌ ミス7: 過去形で『was you』と言ってしまう。\nNG: Was you tired? (you の過去は were)\nOK: Were you tired?"
+          },
+          {
+            "type": "example",
+            "number": 1,
+            "question": "次の英文の (  ) に入る be動詞 (am / is / are / was / were) を答えよ。(1) I (  ) a junior high school student. (2) My brother and I (  ) good friends. (3) That cat (  ) cute. (4) (  ) you busy yesterday? (5) They (  ) not in the classroom now.",
+            "thought": "発想: 主語と時制 (現在/過去) を確認。(1) I=am。(2) 複数=are。(3) 単数 cat=is。(4) you+yesterday=were。(5) they+now=are。",
+            "answer": "(1) am  (2) are  (3) is  (4) Were  (5) are",
+            "explanation": "**(1) I (  ) a junior high school student.**\n主語が I → am。\n答: I am a junior high school student. (私は中学生です)\n\n**(2) My brother and I (  ) good friends.**\n主語が「My brother and I」=『私と兄』=複数 → are。\n答: My brother and I are good friends. (兄と私は親友です)\n\n**(3) That cat (  ) cute.**\n主語が「That cat」=単数 → is。\n答: That cat is cute. (あの猫はかわいい)\n\n**(4) (  ) you busy yesterday?**\n主語が you、yesterday があるので過去形 → were。\n答: Were you busy yesterday? (昨日は忙しかった?)\n\n**(5) They (  ) not in the classroom now.**\n主語が they、now があるので現在形 → are。\n答: They are not in the classroom now. (彼らは今教室にいない)\n\n**頻出ポイント**\n- 「Tom and I」「You and Tom」は複数 → are\n- 「yesterday」「last week」は過去 → was/were\n- 「now」「today (今)」は現在 → am/is/are\n- 「This / That + 単数」=単数 → is\n- 「These / Those + 複数」=複数 → are\n\n類題: 高校受験で頻出 (神奈川 2024、千葉 2023 等)。"
+          },
+          {
+            "type": "example",
+            "number": 2,
+            "question": "次の英文を (1) 否定文に、(2) 疑問文に書き換え、疑問文には『Yes』で答えよ。「She is from Canada.」",
+            "thought": "発想: be動詞 is の文。否定は『is not = isn't』、疑問は『Is + 主語』で倒置、Yes の答えは『Yes, she is.』(短縮なし)。",
+            "answer": "(1) 否定文: She is not from Canada. (= She isn't from Canada.) (2) 疑問文: Is she from Canada? — Yes, she is.",
+            "explanation": "**元の文**\nShe is from Canada. (彼女はカナダ出身です)\n\n**(1) 否定文への書き換え**\n型: 主語 + be動詞 + not + …\n\nis の後ろに not を置く:\n→ She is not from Canada.\n\n短縮形: is not = isn't\n→ She isn't from Canada.\n\n注意: 主語と be動詞を短縮する形 (She's not) も会話では可能だが、中学では『isn't』のほうが標準的。\n\n**(2) 疑問文への書き換え**\n型: be動詞 + 主語 + …?\n\nis を主語の前へ移動:\n→ Is she from Canada?\n\n**Yes の答え方**\n型: Yes, 主語 + be動詞.\n\n→ Yes, she is.\n\n注意: 答えでは『Yes, she is.』と短縮しない。Yes の答えで『Yes, she's.』は不可。\n\n**No の場合**\nNo, she is not. = No, she isn't.\n→ No の答えは短縮形 (isn't) が自然。\n\n**応用**\n- 元の文「I am a student.」\n  - 否定: I am not a student. = I'm not a student.\n  - 疑問: Are you a student? — Yes, I am. (主語 I が you に変わることに注意 — 『私は学生?』ではなく『あなたは学生?』と相手に聞く)\n- 元の文「They were tired.」(過去)\n  - 否定: They were not tired. = They weren't tired.\n  - 疑問: Were they tired? — Yes, they were.\n\n類題: 高校受験で『書き換え問題』として頻出。東京都立 2023 年、大阪府公立 2024 年で類題が出題。"
+          },
+          {
+            "type": "practice",
+            "number": 1,
+            "question": "次の (1)〜(5) の (  ) に am / is / are / was / were のいずれかを入れて文を完成せよ。(1) Tom and Bob (  ) my classmates. (2) That (  ) my new bicycle. (3) (  ) you a soccer player? (4) The students (  ) in the gym last Sunday. (5) I (  ) not hungry now."
+          },
+          {
+            "type": "answer",
+            "number": 1,
+            "answer": "(1) are  (2) is  (3) Are  (4) were  (5) am",
+            "explanation": "**(1) Tom and Bob (  ) my classmates.**\n主語が「Tom and Bob」(2人) =複数 → are。\n答: Tom and Bob are my classmates. (トムとボブは私のクラスメイトです)\n\n**(2) That (  ) my new bicycle.**\n主語が That (=あれ、単数の代名詞) → is。\n答: That is my new bicycle. (あれは私の新しい自転車です)\n短縮形: That's my new bicycle.\n\n**(3) (  ) you a soccer player?**\n主語が you → are。文頭なので Are と大文字始まり。\n答: Are you a soccer player? (あなたはサッカー選手ですか?)\n答え方: Yes, I am. / No, I'm not.\n\n**(4) The students (  ) in the gym last Sunday.**\n主語が「The students」=複数、last Sunday があるので過去 → were。\n答: The students were in the gym last Sunday. (生徒たちは先週日曜日、体育館にいました)\n\n**(5) I (  ) not hungry now.**\n主語が I、now があるので現在 → am。\n答: I am not hungry now. = I'm not hungry now. (今、お腹は空いていません)\n注意: am not に短縮形なし → 「I'm not」が短縮形。「I amn't」は不可。\n\n**間違いやすいポイント**\n- (1) Tom and Bob は『2人』なので複数 → are。「Tom is …」だけだと is だが、『and Bob』が加わると are。\n- (2) 「That + 単数名詞」は is。「Those + 複数」は are。\n- (4) last Sunday があれば過去形。\n- (5) 主語が I なら現在は am、過去は was。「I are」「I is」は完全な誤り。\n\n類題: 高校受験『be動詞の選択問題』は毎年多数出題 (栃木 2024、福岡 2023 等)。"
+          },
+          {
+            "type": "summary",
+            "heading": "まとめ — be動詞の体系",
+            "points": [
+              "be動詞は『= (イコール)』を表す: 主語の正体・状態・場所を結ぶ",
+              "現在形: I→am、you/複数→are、その他単数 (he/she/it)→is",
+              "過去形: I/he/she/it/単数→was、you/we/they/複数→were",
+              "否定文: be動詞 + not (am not に短縮形なし、isn't/aren't/wasn't/weren't はあり)",
+              "疑問文: be動詞を主語の前へ。答えは『Yes, 主語 + be動詞.』(短縮しない)",
+              "be動詞と一般動詞は同じ文に共存しない (am play は誤り)",
+              "他単元との繋がり: 進行形 (本書、be + V-ing)、未来形 (本書、be going to)"
+            ]
+          }
+        ]
+      },
+      "status": "published",
+      "source": "claude_max_seed_batch32"
+    },
+    {
+      "subject": "英語（中学英文法）",
+      "topic": "一般動詞",
+      "level": "中学標準",
+      "length": "medium",
+      "type": "unit_lesson",
+      "title": "一般動詞 — 動作と状態を表す",
+      "tags": [
+        "一般動詞",
+        "三単現",
+        "doesn't",
+        "Does",
+        "過去形",
+        "不規則動詞",
+        "中学英文法"
+      ],
+      "content": {
+        "title": "一般動詞 — 動作と状態を表す",
+        "subtitle": "三単現の s・do/does の否定疑問・過去形",
+        "subject": "英語（中学英文法）",
+        "topic": "一般動詞",
+        "level": "中学標準",
+        "sections": [
+          {
+            "type": "intro",
+            "heading": "はじめに — 一般動詞は『動き』の動詞",
+            "body": "一般動詞 (general verb) は、be動詞 (am/is/are) 以外のすべての動詞。play, study, eat, run, like, have, want… 数え切れないほどある。\n\n日本語の動詞 (走る・食べる・好む) にあたる言葉が、英語の一般動詞。\n\n比喩を一つ。一般動詞は『動詞の本体』。be動詞が『繋ぎ言葉 (=)』なのに対し、一般動詞は『動作・行為・所有・感情』そのものを表す。「走る」「食べる」「好む」「持つ」「考える」 — 主語が何をするか、何を感じるかを直接示す。\n\nもう一つの比喩。一般動詞は『主役の演技』。be動詞は舞台 (背景) を整えるだけだが、一般動詞は実際に主語が動く・する・感じる演技。「I run.」(私は走る) と一語で文が成立するのは、一般動詞が動作を表すから。\n\n受験では (1) 三人称単数現在形の s (he plays、she likes…)、(2) 否定文の don't / doesn't、(3) 疑問文の Do / Does、(4) 過去形 (規則変化 -ed と不規則変化 went, ate, came…) が頻出。be動詞の文との混同を避けることが鉄則。"
+          },
+          {
+            "type": "theory",
+            "heading": "基本事項 — 一般動詞の使い方",
+            "body": "■ 肯定文の基本\n\n型: 主語 + 一般動詞 + …\n\n- I play tennis. (私はテニスをする)\n- You like music. (あなたは音楽が好き)\n- We study English. (私たちは英語を勉強する)\n- They eat sushi. (彼らは寿司を食べる)\n\n注意: 主語が一人称・二人称・複数のときは原形 (動詞の元の形) のまま。\n\n■ 三人称単数現在形の s (= 三単現の s)\n\n主語が he / she / it / 単数名詞 (Tom, my dog, this book…) で、現在形のとき、動詞の最後に s をつける。\n\n基本: 動詞 + s → plays, likes, runs, knows\n\n特殊変化:\n- 語尾 -s, -sh, -ch, -x, -o → es: goes, washes, watches, mixes, does\n- 語尾 子音字 + y → y を i に変えて es: study → studies, try → tries, cry → cries\n- 語尾 母音字 + y → そのまま s: play → plays, enjoy → enjoys\n- have → has (不規則!)\n\n例:\n- He plays tennis. (○) / He play tennis. (×)\n- She studies English. (study + ies)\n- It has four legs. (have → has)\n- My brother goes to school. (go + es)\n\n■ 否定文 (do not / does not)\n\n型: 主語 + don't / doesn't + 動詞の原形 + …\n\n- I don't play tennis. (= I do not play tennis.)\n- You don't like music.\n- We don't study English.\n- He doesn't play tennis. ← 三単現の主語は doesn't、動詞は原形 (× plays)\n- She doesn't study English. ← × studies、原形 study に戻す\n- It doesn't have wings. (× hasn't)\n\n注意: doesn't の後ろの動詞は原形に戻る (s を取る)。\n\n■ 疑問文 (Do / Does)\n\n型: Do / Does + 主語 + 動詞の原形 + …?\n\n答え方:\n- Yes, 主語 + do / does.\n- No, 主語 + don't / doesn't.\n\n例:\n- Do you play tennis? — Yes, I do. / No, I don't.\n- Does he play tennis? — Yes, he does. / No, he doesn't.\n- Does she study English? (× studies、原形 study)\n\n注意: Does の後ろの動詞も原形 (s を取る)。\n\n■ 過去形 (規則変化と不規則変化)\n\n● **規則変化 (-ed)**\n基本: 動詞 + ed\n- play → played\n- watch → watched\n- visit → visited\n\n特殊:\n- 語尾 e → d だけ: like → liked, live → lived, hope → hoped\n- 語尾 子音 + y → y を i に変えて ed: study → studied, try → tried, cry → cried\n- 語尾 母音 + y → そのまま ed: play → played, enjoy → enjoyed\n- 短い動詞で『母音1つ + 子音1つ』: 子音を重ねて ed: stop → stopped, plan → planned\n\n● **不規則変化** (中学頻出 30 個ほど暗記必須)\n\n| 原形 | 過去形 | 意味 |\n|---|---|---|\n| go | went | 行く |\n| come | came | 来る |\n| have | had | 持つ |\n| do | did | する |\n| see | saw | 見る |\n| eat | ate | 食べる |\n| get | got | 得る |\n| make | made | 作る |\n| take | took | 取る |\n| give | gave | 与える |\n| say | said | 言う |\n| read | read (発音 red) | 読む |\n| write | wrote | 書く |\n| know | knew | 知る |\n| think | thought | 思う |\n| buy | bought | 買う |\n| bring | brought | 持ってくる |\n| catch | caught | 捕まえる |\n| run | ran | 走る |\n| swim | swam | 泳ぐ |\n| sing | sang | 歌う |\n| put | put | 置く |\n| cut | cut | 切る |\n| meet | met | 会う |\n| stand | stood | 立つ |\n\n● **過去の否定・疑問**\n- 過去の否定: didn't + 動詞の原形\n- 過去の疑問: Did + 主語 + 動詞の原形 + ?\n\n例:\n- I didn't play tennis yesterday. (× didn't played)\n- Did you play tennis yesterday? — Yes, I did. / No, I didn't.\n- He didn't go to school. (× didn't went、go の原形)\n- Did she study English? — Yes, she did.\n\n注意: didn't / Did の後の動詞は必ず原形。三単現の s も過去形の -ed もつかない。",
+            "table": [
+              [
+                "主語",
+                "現在 (肯定)",
+                "現在 (否定)",
+                "現在 (疑問)",
+                "過去 (肯定)",
+                "過去 (否定)"
+              ],
+              [
+                "I/you/we/they",
+                "play",
+                "don't play",
+                "Do … play?",
+                "played",
+                "didn't play"
+              ],
+              [
+                "he/she/it",
+                "plays",
+                "doesn't play",
+                "Does … play?",
+                "played",
+                "didn't play"
+              ]
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "ポイント: 三単現 s と『doesn't / Does の後は原形』を一緒に覚える",
+            "body": "中1の最大の山場は『三単現の s』。次の3点をセットで覚えると確実。\n\n● 規則1: 主語が he/she/it/単数名詞 で現在形 → 動詞に s/es\n例: He plays. / She studies. / Tom watches.\n\n● 規則2: 否定文では doesn't を使い、動詞は原形 (s を取る)\n例: He doesn't play. (× doesn't plays)\n\n● 規則3: 疑問文では Does を使い、動詞は原形 (s を取る)\n例: Does she play? (× Does she plays?)\n\n比喩: 三単現の s は『主語の代行人』。s が doesn't / Does に化けて文の前に出る。一つの文に s は一個だけ — 動詞か doesn't/Does のどちらかに残るが、両方には残らない。\n\n暗唱フレーズ (毎日3回唱える):\n『He plays. 彼はする (s あり)。He doesn't play. 彼はしない (s 消える)。Does he play? 彼はする? (s 消える)』\n\nこの3行を口で言える状態にすれば、中1の英語は8割安心。\n\n試験の落とし穴: 主語が『my friend』『a boy』など三人称単数の名詞のときも s が必要。「My friend like soccer.」は誤り、「My friend likes soccer.」が正解。"
+          },
+          {
+            "type": "warn",
+            "title": "注意: 一般動詞でよくある間違い",
+            "body": "❌ ミス1: be動詞と一般動詞を両方入れる。\nNG: I am play tennis. (am と play の二重)\nOK: I play tennis. (現在形は一般動詞のみ)\n注意: 進行形『I am playing tennis.』は別 (be動詞 + V-ing は決まり文句)。\n\n❌ ミス2: doesn't の後に s をつける。\nNG: He doesn't plays tennis.\nOK: He doesn't play tennis. (doesn't の後は原形)\n\n❌ ミス3: Does の後に s をつける。\nNG: Does she likes music?\nOK: Does she like music?\n\n❌ ミス4: didn't / Did の後に過去形を使う。\nNG: I didn't went to school. / Did you went?\nOK: I didn't go to school. / Did you go?\n\n❌ ミス5: 三単現の s の特殊変化を忘れる。\nNG: He studys English. / He gos to school. / He havs a car.\nOK: He studies English. / He goes to school. / He has a car.\n\n❌ ミス6: 不規則動詞の過去形を ed にする。\nNG: He goed to Tokyo. / I eated lunch. / She comed home.\nOK: He went to Tokyo. / I ate lunch. / She came home.\n\n不規則動詞は丸暗記 (上の 25 個は必須)。\n\n❌ ミス7: 規則変化の過去形を間違える。\nNG: I studied → studyed (誤り)、I stopped → stoped (誤り)\nOK: studied (study → studi + ed)、stopped (stop の p を重ねる)\n\n❌ ミス8: 過去形の文に『yesterday』『last week』などが必要なのを忘れる。\n→ 過去形を使うと自然と過去の時間表現が必要。日本語的に「昨日テニスをした」と言うとき yesterday を入れる。"
+          },
+          {
+            "type": "example",
+            "number": 1,
+            "question": "次の英文の (  ) 内の動詞を適切な形に直せ。(1) She often (read) books in the library. (2) My brother (not, like) carrots. (3) (Do/Does) Tom (play/plays) baseball? (4) I (go) to Kyoto last summer. (5) They (not, eat) breakfast yesterday.",
+            "thought": "発想: 主語と時制を確認。(1) She+現在=reads。(2) My brother+現在の否定=doesn't like。(3) Tom=三単現=Does + play (原形)。(4) last summer=過去=went (不規則)。(5) yesterday=過去の否定=didn't eat (原形)。",
+            "answer": "(1) reads  (2) doesn't like  (3) Does Tom play  (4) went  (5) didn't eat",
+            "explanation": "**(1) She often (read) books in the library.**\n主語 She = 三人称単数、時制は現在 (often は頻度副詞、時制は変えない)。\n→ read + s = reads\n答: She often reads books in the library. (彼女はよく図書館で本を読む)\n\n**(2) My brother (not, like) carrots.**\n主語 My brother = 三人称単数、否定形。\n→ doesn't + 原形 like = doesn't like\n答: My brother doesn't like carrots. (兄はにんじんが好きではない)\n注意: × doesn't likes (s をつけない)\n\n**(3) (Do/Does) Tom (play/plays) baseball?**\n主語 Tom = 三人称単数 → Does\nDoes の後の動詞は原形 → play (× plays)\n答: Does Tom play baseball? (トムは野球をしますか?)\n答え方: Yes, he does. / No, he doesn't.\n\n**(4) I (go) to Kyoto last summer.**\nlast summer があるので過去形。go の過去は went (不規則)。\n答: I went to Kyoto last summer. (私はこの前の夏、京都に行った)\n× goed は誤り。\n\n**(5) They (not, eat) breakfast yesterday.**\nyesterday があるので過去形、否定。\n→ didn't + 原形 eat = didn't eat\n答: They didn't eat breakfast yesterday. (彼らは昨日、朝食を食べなかった)\n× didn't ate は誤り (didn't の後は原形)。\n\n**頻出パターン**\n- 現在の三単現: he/she/it + V + s\n- 現在の否定 (三単現): doesn't + 原形\n- 現在の疑問 (三単現): Does + 主語 + 原形 + ?\n- 過去: V + ed (規則) or 不規則変化\n- 過去の否定: didn't + 原形\n- 過去の疑問: Did + 主語 + 原形 + ?\n\n類題: 高校受験で必出 (神奈川県 2024、京都府 2023、兵庫県 2024 等)。"
+          },
+          {
+            "type": "example",
+            "number": 2,
+            "question": "次の英文を (1) 否定文、(2) 疑問文に書き換え、疑問文には『No』で答えよ。「Lisa speaks French.」",
+            "thought": "発想: Lisa = 三単現 → 否定は doesn't speak (原形)、疑問は Does Lisa speak (原形)、No の答えは Lisa→she で受け、she doesn't (= No, she doesn't.)。",
+            "answer": "(1) 否定文: Lisa doesn't speak French. (= Lisa does not speak French.) (2) 疑問文: Does Lisa speak French? — No, she doesn't.",
+            "explanation": "**元の文**\nLisa speaks French. (リサはフランス語を話す)\n→ Lisa は三人称単数、speak の三単現 → speaks\n\n**(1) 否定文への書き換え**\n型: 主語 + doesn't + 動詞の原形 + …\n\n- doesn't を主語の後に追加\n- speaks → speak (s を取って原形に)\n\n→ Lisa doesn't speak French. (リサはフランス語を話さない)\n\n短縮しない形: Lisa does not speak French.\n\n**(2) 疑問文への書き換え**\n型: Does + 主語 + 動詞の原形 + …?\n\n- Does を文頭に\n- speaks → speak (原形)\n\n→ Does Lisa speak French?\n\n**No の答え方**\n型: No, 主語 (代名詞) + doesn't.\n\n- Lisa は女性 → 代名詞 she で受ける\n- doesn't を使う\n\n→ No, she doesn't.\n\n**Yes の場合 (参考)**\n→ Yes, she does. (短縮しない)\n\n**ポイントの整理**\n1. 主語 Lisa は三人称単数 → doesn't / Does を使う\n2. doesn't / Does の後の動詞は原形 (s を取る!) — 最頻出のミスポイント\n3. 答えでは Lisa を代名詞 she に置き換え\n4. Yes の答えは短縮しない (Yes, she does.)、No は短縮可 (No, she doesn't.)\n\n**応用**\n- 現在の三単現以外: He plays → 否定 He doesn't play / 疑問 Does he play?\n- 過去形の場合: She played → 否定 She didn't play / 疑問 Did she play?\n- 主語が複数: They play → 否定 They don't play / 疑問 Do they play?\n\n類題: 高校受験『書き換え問題』として頻出 (大阪府 2024、千葉県 2023 等)。"
+          },
+          {
+            "type": "practice",
+            "number": 1,
+            "question": "次の (1)〜(5) の (  ) 内の動詞を適切な形に直せ。(1) My sister (have) a beautiful doll. (2) (Do/Does) you (study/studies) math every day? (3) He (not, watch) TV last night. (4) The girls (run) in the park yesterday. (5) (Do/Does) Mr. Brown (teach/teaches) English at our school?"
+          },
+          {
+            "type": "answer",
+            "number": 1,
+            "answer": "(1) has  (2) Do you study  (3) didn't watch  (4) ran  (5) Does Mr. Brown teach",
+            "explanation": "**(1) My sister (have) a beautiful doll.**\n主語 My sister = 三人称単数、現在 → have の三単現は has (不規則!)。\n答: My sister has a beautiful doll. (姉/妹は美しい人形を持っている)\n注意: × haves は誤り。have の三単現は『has』(覚える)。\n\n**(2) (Do/Does) you (study/studies) math every day?**\n主語 you → Do (× Does)\nDo の後の動詞は原形 → study\n答: Do you study math every day? (あなたは毎日数学を勉強しますか?)\n答え方: Yes, I do. / No, I don't.\n\n**(3) He (not, watch) TV last night.**\nlast night があるので過去形、否定。\n→ didn't + 原形 watch = didn't watch\n答: He didn't watch TV last night. (彼は昨夜テレビを見なかった)\n× didn't watched は誤り。\n\n**(4) The girls (run) in the park yesterday.**\nyesterday があるので過去形。run の過去は ran (不規則!)。\n答: The girls ran in the park yesterday. (女の子たちは昨日公園で走った)\n× runned は誤り。run → ran は要暗記の不規則動詞。\n\n**(5) (Do/Does) Mr. Brown (teach/teaches) English at our school?**\n主語 Mr. Brown = 三人称単数 → Does\nDoes の後は原形 → teach\n答: Does Mr. Brown teach English at our school? (ブラウン先生は私たちの学校で英語を教えていますか?)\n答え方: Yes, he does. / No, he doesn't.\n\n**間違いやすいポイント**\n- (1) have の三単現は has (不規則、最頻出ミス)\n- (2) you は二人称、Do を使う (Does ではない)\n- (3) didn't の後は原形 (× didn't watched)\n- (4) run の過去は ran (× runned)、不規則動詞リストで暗記\n- (5) Does の後は原形 (× Does … teaches)\n\n**不規則動詞の必須暗記リスト (再掲)**\nhave→had、go→went、come→came、do→did、see→saw、eat→ate、get→got、make→made、take→took、give→gave、say→said、write→wrote、know→knew、think→thought、buy→bought、run→ran、swim→swam、sing→sang、put→put、cut→cut、meet→met\n\n類題: 高校受験で必出 (栃木県 2024、福岡県 2023 等)。"
+          },
+          {
+            "type": "summary",
+            "heading": "まとめ — 一般動詞の体系",
+            "points": [
+              "一般動詞は『動作・行為・所有・感情』を表す動詞 (be動詞以外すべて)",
+              "三単現の s: he/she/it/単数名詞 + 現在形 → 動詞に s/es",
+              "特殊変化: study→studies、go→goes、have→has",
+              "現在の否定: don't / doesn't + 原形 (× s)",
+              "現在の疑問: Do / Does + 主語 + 原形 + ?",
+              "過去形: 規則変化 -ed と不規則変化 (went, ate, came…) を覚える",
+              "過去の否定・疑問: didn't / Did + 原形 (× 過去形を重ねない)",
+              "他単元との繋がり: 進行形 (本書、be + V-ing)、未来形 (本書、will + 原形)、疑問詞 (本書、What do you 〜?)"
+            ]
+          }
+        ]
+      },
+      "status": "published",
+      "source": "claude_max_seed_batch32"
+    },
+    {
+      "subject": "英語（中学英文法）",
+      "topic": "疑問詞",
+      "level": "中学標準",
+      "length": "medium",
+      "type": "unit_lesson",
+      "title": "疑問詞 — 5W1H で情報を尋ねる",
+      "tags": [
+        "疑問詞",
+        "5W1H",
+        "who",
+        "what",
+        "when",
+        "where",
+        "why",
+        "how",
+        "間接疑問"
+      ],
+      "content": {
+        "title": "疑問詞 — 5W1H で情報を尋ねる",
+        "subtitle": "who/what/when/where/why/how と間接疑問",
+        "subject": "英語（中学英文法）",
+        "topic": "疑問詞",
+        "level": "中学標準",
+        "sections": [
+          {
+            "type": "intro",
+            "heading": "はじめに — 疑問詞は『情報を引き出す鍵』",
+            "body": "疑問詞 (interrogative words) は、Yes / No では答えられない『情報』を尋ねる言葉。who (誰), what (何), when (いつ), where (どこ), why (なぜ), how (どのように) — 学校では『5W1H』として習う。\n\n比喩を一つ。疑問詞は『情報のフック (鉤)』。Yes/No 疑問文は『○ か × か』しか引き出せないが、疑問詞は具体的な情報 (人・物・時・場所・理由・方法) を引き出せる。釣り針が違うと釣れる魚が違うように、疑問詞が違うと得られる答えが違う。\n\nもう一つの比喩。疑問詞は『新聞記者の取材』。優れた記者は『誰が・何を・いつ・どこで・なぜ・どう』の 5W1H を全て押さえる。事件の全貌が見えるためには、6 つの疑問詞すべてが必要。英語の会話・読解でも同じで、疑問詞を使いこなせれば情報の取りこぼしがなくなる。\n\n受験では (1) 各疑問詞の使い分け (Who is this? / What is this?)、(2) 疑問詞 + 一般動詞の語順 (What do you study?)、(3) 疑問詞が主語のとき (Who likes soccer?)、(4) how の応用 (how many, how often, how long…)、(5) 間接疑問 (I don't know what he is doing.) が頻出。"
+          },
+          {
+            "type": "theory",
+            "heading": "基本事項 — 疑問詞の使い方",
+            "body": "■ 6 つの基本疑問詞\n\n| 疑問詞 | 意味 | 答えの例 |\n|---|---|---|\n| who | 誰 | Tom. / My mother. |\n| what | 何 | A book. / Soccer. |\n| when | いつ | Yesterday. / At seven. |\n| where | どこ | In Tokyo. / Under the desk. |\n| why | なぜ | Because I'm tired. |\n| how | どのように・どう | By bus. / Fine. |\n\n■ 疑問詞の語順 (基本)\n\n型: 疑問詞 + 通常の疑問文の語順\n\n● be動詞の文:\n型: 疑問詞 + be動詞 + 主語 + ?\n\n例:\n- Who is that boy? — He is Tom. (あの男の子は誰? — トムです)\n- What is this? — It is a book. (これは何? — 本です)\n- Where is your bag? — It is on the chair.\n- When is your birthday? — It is May 5th.\n- Why are you tired? — Because I worked all day.\n- How is the weather? — It is sunny.\n\n● 一般動詞の文 (現在):\n型: 疑問詞 + do/does + 主語 + 動詞の原形 + ?\n\n例:\n- What do you study? — I study English.\n- When do you get up? — I get up at six.\n- Where does she live? — She lives in Osaka.\n- Why does he play tennis? — Because he likes it.\n- How do you go to school? — I go by bus.\n\n● 一般動詞の文 (過去):\n型: 疑問詞 + did + 主語 + 動詞の原形 + ?\n\n例:\n- What did you eat for lunch? — I ate sushi.\n- Where did you go yesterday? — I went to Kyoto.\n\n■ 疑問詞が主語のとき (do/does 不要!)\n\n疑問詞が文の主語になるとき、語順は普通の文と同じ (do/does を使わない)。\n\n型: 疑問詞 + 動詞 + …?\n\n例:\n- Who likes soccer? — Tom does. (× Who do like soccer? は誤り)\n- What happened? — A car accident happened.\n- Who broke the window? — Bob did.\n\n注意: 主語の疑問詞は三単現扱い (Who likes 〜? / What is 〜?) が多い。複数を聞くときは Who like 〜? も可だが、中学では原則三単現で書く。\n\n■ how の応用 (How + 形容詞・副詞)\n\n● **How many + 複数名詞**: いくつの (数)\n- How many books do you have?  — I have ten books.\n- How many students are there in your class?\n\n● **How much + 不可算名詞 / お金**: どれくらい (量・金額)\n- How much money do you have?\n- How much is this T-shirt? — It's 2,000 yen.\n\n● **How long**: どれくらい長く (時間・距離)\n- How long do you study every day?\n- How long is this river?\n\n● **How often**: どれくらい頻繁に\n- How often do you play tennis? — Twice a week.\n\n● **How tall / How old / How far**:\n- How old are you? — I am 14.\n- How tall is he? — He is 170 cm tall.\n- How far is it from here to the station? — About 1 km.\n\n● **How + 形容詞 (一般)**:\n- How big is the box?\n- How fast can you run?\n\n■ 間接疑問 (Indirect question)\n\n疑問文を文の中に組み込むときの語順 — 通常の文の語順 (主語 + 動詞) になる。\n\n● 直接疑問:\n- What is he doing? (彼は何をしているの?)\n\n● 間接疑問:\n- I know what he is doing. (彼が何をしているのか知っている)\n→ 『what is he』ではなく『what he is』 (普通の文の順序)\n\n他の例:\n- Do you know where she lives? (× where does she live)\n- I don't know who that man is. (× who is that man)\n- Tell me when the train comes. (× when does the train come)\n\n注意: 間接疑問では Do/Does/Did を使わない (削除)。動詞は原形ではなく時制に応じた形 (lives, came, etc.)。",
+            "table": [
+              [
+                "疑問詞",
+                "問う対象",
+                "be動詞文",
+                "一般動詞文 (現在)"
+              ],
+              [
+                "who",
+                "人",
+                "Who is …?",
+                "Who does …? / Who 動詞 …?"
+              ],
+              [
+                "what",
+                "物・事",
+                "What is …?",
+                "What do/does … 原形?"
+              ],
+              [
+                "when",
+                "時",
+                "When is …?",
+                "When do/does … 原形?"
+              ],
+              [
+                "where",
+                "場所",
+                "Where is …?",
+                "Where do/does … 原形?"
+              ],
+              [
+                "why",
+                "理由",
+                "Why is …?",
+                "Why do/does … 原形?"
+              ],
+              [
+                "how",
+                "方法・状態",
+                "How is …?",
+                "How do/does … 原形?"
+              ]
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "ポイント: 疑問詞は『最初に何を聞きたいか決める』",
+            "body": "疑問詞を選ぶときの思考順序:\n\n1. **何の情報が欲しい?** → 人・物・時・場所・理由・方法 のどれか?\n2. それに対応する疑問詞を選ぶ\n   - 人 → who\n   - 物 → what\n   - 時 → when (または what time)\n   - 場所 → where\n   - 理由 → why\n   - 方法・状態 → how\n3. 疑問文の語順を組み立てる\n\n比喩: 疑問詞は『質問の表札』。質問の最初に立てる看板で、これから何を尋ねるかを宣言する。看板を間違えると、相手が違う情報を答えてしまう (× Where is your name? は『場所?名前?』と混乱)。\n\n暗唱フレーズ:\n- Who → 誰? (人)\n- What → 何? (物・事)\n- When → いつ? (時)\n- Where → どこ? (場所)\n- Why → なぜ? (理由)\n- How → どう? (方法・状態)\n\n中1のうちに『5W1H 即答できる状態』を作る。授業外で家族に英語で質問する練習を毎日。\n\n試験の落とし穴: who と whose を混同しない。\n- Who is this? = 誰? (人物の正体)\n- Whose pen is this? = 誰の? (所有)\n\nさらに how と why も誤らない。\n- How are you? = 元気?(状態)\n- Why are you 〜? = なぜ?(理由)"
+          },
+          {
+            "type": "warn",
+            "title": "注意: 疑問詞でよくある間違い",
+            "body": "❌ ミス1: 疑問詞の後の語順を間違える。\nNG: What you study? (疑問文の語順なし)\nOK: What do you study?\nNG: Where she lives? \nOK: Where does she live?\n\n❌ ミス2: 一般動詞の疑問詞文で be動詞を使う。\nNG: What is you study? (study は一般動詞)\nOK: What do you study?\n\n❌ ミス3: 三単現や過去形を意識しない。\nNG: What does she likes? (does の後は原形)\nOK: What does she like?\nNG: Where did you went? (did の後は原形)\nOK: Where did you go?\n\n❌ ミス4: 疑問詞主語のときに do/does を入れる。\nNG: Who does likes tennis?\nOK: Who likes tennis? (Who が主語、do/does 不要)\n\n❌ ミス5: How many と How much の使い分けミス。\nNG: How much books do you have? (books は数えられる → many)\nOK: How many books do you have?\nNG: How many money do you have? (money は不可算 → much)\nOK: How much money do you have?\n\n❌ ミス6: 間接疑問で Do/Does/Did を残す。\nNG: I don't know what does he want.\nOK: I don't know what he wants. (does を削除、wants と三単現)\nNG: Tell me where did you go.\nOK: Tell me where you went.\n\n❌ ミス7: 答えるときに疑問詞をそのまま使う。\nNG: Who is that? — Who is Tom.\nOK: Who is that? — He is Tom. (Who を He に置き換え)\n\n❌ ミス8: Why に対して Because を忘れる。\nNG: Why are you tired? — I worked all day.\nOK: Why are you tired? — Because I worked all day."
+          },
+          {
+            "type": "example",
+            "number": 1,
+            "question": "次の答えに合う疑問文を作れ。(1) — He is my brother. (2) — I study English. (3) — I get up at six. (4) — She lives in Tokyo. (5) — Because I like sports.",
+            "thought": "発想: 答えが何の情報を述べているかで疑問詞を決める。(1) 人=Who。(2) 物=What+一般動詞。(3) 時刻=When/What time。(4) 場所=Where+三単現。(5) 理由=Why。",
+            "answer": "(1) Who is he? (2) What do you study? (3) When do you get up? (= What time do you get up?) (4) Where does she live? (5) Why do you like sports? (or Why are you 〜?)",
+            "explanation": "**(1) — He is my brother.**\n答えが人 (my brother) → 疑問詞は Who。\nbe動詞の文なので: Who + is + 主語?\n答: Who is he? (彼は誰?)\n\n**(2) — I study English.**\n答えが物 (English) → What。\n一般動詞 (study) なので: What + do + 主語 + 動詞の原形?\n答: What do you study? (あなたは何を勉強する?)\n\n**(3) — I get up at six.**\n答えが時刻 (at six) → When または What time。\n一般動詞 (get up) なので: When + do + 主語 + 動詞の原形?\n答: When do you get up? = What time do you get up? (あなたはいつ起きる?)\n\n**(4) — She lives in Tokyo.**\n答えが場所 (in Tokyo) → Where。\n主語が she = 三人称単数 → Where + does + 主語 + 動詞の原形?\n答: Where does she live? (彼女はどこに住んでいる?)\n注意: × Where does she lives? (does の後は原形)\n\n**(5) — Because I like sports.**\n答えが理由 (Because 〜) → Why。\n答: Why do you like sports? (なぜスポーツが好き?)\n\n別解: もし「Why are you happy? — Because 〜」のような be動詞文の答えだった場合は『Why are you 〜?』と be動詞で問う。\n\n**思考の流れ**\n1. 答えの情報の種類を見極める (人・物・時・場所・理由・方法)\n2. 対応する疑問詞を選ぶ\n3. 答えの動詞が be動詞か一般動詞か確認\n4. 主語が三単現か複数か (do/does/did 使い分け)\n5. 動詞は原形にする (do/does/did の後)\n\n類題: 高校受験『答えに合う疑問文』は頻出 (神奈川 2024、京都府 2023 等)。"
+          },
+          {
+            "type": "example",
+            "number": 2,
+            "question": "次の英文の (  ) に入る疑問詞 + 関連語を答えよ。(1) (  ) (  ) sisters do you have? — I have two. (2) (  ) (  ) is this hat? — It's 1,500 yen. (3) (  ) (  ) do you watch TV? — Once a week. (4) (  ) (  ) is your school? — It's about 80 years old. (5) I don't know (  ) the meeting starts. (会議がいつ始まるか分からない)",
+            "thought": "発想: (1) 人数=How many+複数名詞。(2) 値段=How much。(3) 頻度=How often。(4) 古さ=How old。(5) 間接疑問=when (時を聞く、語順は通常の文)。",
+            "answer": "(1) How many  (2) How much  (3) How often  (4) How old  (5) when",
+            "explanation": "**(1) (  ) (  ) sisters do you have? — I have two.**\n答えが数 (two) → How many + 複数名詞。\n答: How many sisters do you have? (姉妹は何人いる?) — I have two. (2人)\n注意: How many の後は必ず複数名詞 (sisters、× sister)。\n\n**(2) (  ) (  ) is this hat? — It's 1,500 yen.**\n答えが金額 (1,500 yen) → How much。\n答: How much is this hat? (この帽子はいくら?) — It's 1,500 yen.\n注意: How much は不可算名詞・金額に使う。\n\n**(3) (  ) (  ) do you watch TV? — Once a week.**\n答えが頻度 (once a week=週1回) → How often。\n答: How often do you watch TV? (どのくらいの頻度でテレビを見る?) — Once a week.\n他の答え方: every day (毎日)、twice a week (週2回)、three times a month (月3回)。\n\n**(4) (  ) (  ) is your school? — It's about 80 years old.**\n答えが年齢・年数 (80 years old) → How old。\n答: How old is your school? (あなたの学校は何年の歴史がある?) — It's about 80 years old.\n注意: How old は人だけでなく『建物・国・物』の年齢にも使える。\n\n**(5) I don't know (  ) the meeting starts.**\n意味: 会議がいつ始まるか分からない → 時を尋ねる疑問詞 when。\n注意: 間接疑問なので語順は『when the meeting starts』(普通の文の順)。× 『when does the meeting start』ではない。\n答: I don't know when the meeting starts.\n\n**how + 形容詞・副詞 一覧の復習**\n- How many + 複数: 数\n- How much + 不可算 / 金額: 量・値段\n- How long: 長さ・期間\n- How often: 頻度\n- How old: 年齢・年数\n- How tall: 身長\n- How far: 距離\n- How fast: 速さ\n- How big: 大きさ\n\n**間接疑問のルール (再掲)**\n- 直接疑問: When does the meeting start?\n- 間接疑問: I know when the meeting starts. (主語+動詞、does を削除、starts と三単現)\n\n類題: 共通模試・高校受験で『how + 形容詞』『間接疑問』は頻出 (大阪府 2024、福岡県 2023 等)。"
+          },
+          {
+            "type": "practice",
+            "number": 1,
+            "question": "次の (1)〜(5) の答えに合う疑問文を作れ。(1) — I went to Kyoto last weekend. (2) — Tom does. (= Tom likes baseball.) (3) — She studies for two hours. (4) — There are five chairs in the room. (5) — Because I was sick."
+          },
+          {
+            "type": "answer",
+            "number": 1,
+            "answer": "(1) Where did you go last weekend? (2) Who likes baseball? (3) How long does she study? (4) How many chairs are there in the room? (5) Why were you absent? (= Why didn't you come? など)",
+            "explanation": "**(1) — I went to Kyoto last weekend.**\n答えが場所 (Kyoto) → Where。\n過去形 (went) の文 → Where + did + 主語 + 動詞の原形?\n答: Where did you go last weekend? (先週末どこに行ったの?)\n注意: × Where did you went? (did の後は原形 go)\n\n**(2) — Tom does. (= Tom likes baseball.)**\n答えが人 (Tom) → Who。\n答えが文の主語 (Tom likes 〜 の Tom) → Who が主語の疑問文 = do/does 不要。\n答: Who likes baseball? (誰が野球を好き?)\n答え方: Tom does. (短縮形、または Tom likes baseball.)\n注意: × Who does likes baseball? (Who が主語のときは do/does 不要、動詞は三単現の s で OK)\n\n**(3) — She studies for two hours.**\n答えが時間の長さ (two hours) → How long。\n主語が she → How long + does + 主語 + 動詞の原形?\n答: How long does she study? (彼女はどのくらい勉強する?)\n注意: × How long does she studies? (does の後は原形 study)\n\n**(4) — There are five chairs in the room.**\n答えが数 (five chairs) → How many + 複数名詞。\nThere is/are の文なので: How many + 複数名詞 + are there 〜?\n答: How many chairs are there in the room? (部屋に椅子はいくつある?)\n注意: How many の後は必ず複数 chairs。\n\n**(5) — Because I was sick.**\n答えが理由 (Because 〜) → Why。\n答えの文が be動詞 was → Why + were + 主語 + 〜?\n答: Why were you absent? (なぜ欠席したの?) または Why didn't you come? (なぜ来なかった?)\n別解 (どんな質問でも理由なら成立): Why didn't you come to school? / Why were you not at school? など。\n\n**思考の流れ (5問共通)**\n1. 答えの情報の種類を見極める\n   - 場所 (Kyoto) → Where\n   - 人 (Tom) → Who\n   - 時間の長さ (two hours) → How long\n   - 数 (five) → How many\n   - 理由 (Because 〜) → Why\n2. 答えの動詞が be動詞か一般動詞か確認\n3. 時制 (現在・過去) を確認 → do/does/did を使い分け\n4. 主語の疑問詞 (Who/What) は do/does 不要に注意\n5. 答えで Because を必ず含める (Why の答え)\n\n類題: 高校受験『疑問文を作る問題』は頻出 (栃木県 2024、千葉県 2023 等)。"
+          },
+          {
+            "type": "summary",
+            "heading": "まとめ — 疑問詞の体系",
+            "points": [
+              "5W1H: who (誰)・what (何)・when (いつ)・where (どこ)・why (なぜ)・how (どう)",
+              "be動詞文: 疑問詞 + be動詞 + 主語 + ?",
+              "一般動詞文: 疑問詞 + do/does/did + 主語 + 原形 + ?",
+              "疑問詞が主語のとき do/does 不要 (Who likes 〜? は OK)",
+              "how の応用: How many (数)・How much (量/金額)・How long (時間)・How often (頻度)",
+              "間接疑問: 文中に組み込むときは普通の語順 (I know what he is doing.)",
+              "他単元との繋がり: be動詞 (本書、Who is 〜?)、一般動詞 (本書、Where do you live?)、進行形・未来形 (本書、What are you doing? / What will you do?)"
+            ]
+          }
+        ]
+      },
+      "status": "published",
+      "source": "claude_max_seed_batch32"
+    },
+    {
+      "subject": "英語（中学英文法）",
+      "topic": "進行形",
+      "level": "中学標準",
+      "length": "medium",
+      "type": "unit_lesson",
+      "title": "進行形 — 『今〜している』を表す",
+      "tags": [
+        "進行形",
+        "現在進行形",
+        "過去進行形",
+        "be動詞 + V-ing",
+        "状態動詞",
+        "中学英文法"
+      ],
+      "content": {
+        "title": "進行形 — 『今〜している』を表す",
+        "subtitle": "be動詞 + V-ing・現在進行形と過去進行形",
+        "subject": "英語（中学英文法）",
+        "topic": "進行形",
+        "level": "中学標準",
+        "sections": [
+          {
+            "type": "intro",
+            "heading": "はじめに — 進行形は『動作の現場中継』",
+            "body": "進行形 (progressive form) は『今まさに〜している最中』を表す動詞の形。日本語の『〜している (途中)』にあたる。\n\n比喩を一つ。進行形は『動作の現場中継』。テレビでサッカー選手が今ボールを蹴っている様子を映すように、『今この瞬間に動作が進行中』であることを実況する。普通の現在形『He plays soccer.』が『彼はサッカーをする (習慣・性質)』なのに対し、進行形『He is playing soccer.』は『彼は今サッカーをしている最中』。\n\nもう一つの比喩。進行形は『写真ではなく動画』。普通の現在形は『静止画』(常にそうである状態)、進行形は『動画』(その時点で動いている)。 「I study English.」は普段の習慣 (静止画的な事実)、「I am studying English now.」は今この瞬間の動画。\n\n受験では (1) be動詞 + V-ing の形、(2) 否定・疑問の作り方、(3) ing の作り方 (e 落ち、子音重ね、ie→y)、(4) 進行形にできない『状態動詞』(know, like, have… )、(5) 過去進行形 (was/were + V-ing) が頻出。"
+          },
+          {
+            "type": "theory",
+            "heading": "基本事項 — 進行形の作り方",
+            "body": "■ 現在進行形の基本\n\n型: 主語 + be動詞 (am/is/are) + V-ing\n\n意味: 今〜している (最中)\n\n例:\n- I am studying English. (私は今英語を勉強している)\n- He is reading a book. (彼は本を読んでいる)\n- They are playing soccer. (彼らはサッカーをしている)\n- The cat is sleeping. (猫が寝ている)\n\nbe動詞は主語に応じて am/is/are を使い分ける (be動詞の単元と同じ)。\n\n■ V-ing の作り方 (4 つのパターン)\n\n● **パターン1: 普通の動詞 → そのまま ing**\n- play → playing\n- study → studying\n- read → reading\n- watch → watching\n- eat → eating\n- sleep → sleeping\n\n● **パターン2: e で終わる動詞 → e を落として ing (e 落ち)**\n- come → coming (× comeing)\n- make → making\n- take → taking\n- write → writing\n- live → living\n- have → having\n\n例外: see → seeing (e は残す、二重母音のため)\n\n● **パターン3: 短い動詞で 母音1つ + 子音1つ → 子音を重ねて ing (子音重ね)**\n- run → running (× runing、n を重ねる)\n- swim → swimming\n- sit → sitting\n- get → getting\n- put → putting\n- stop → stopping\n- begin → beginning\n- shop → shopping\n\nルール: 短い動詞 (1 音節) + 母音1つ + 子音1つ → 最後の子音を重ねる。\n\n● **パターン4: -ie で終わる動詞 → ie を y に変えて ing**\n- die → dying\n- lie → lying\n- tie → tying\n\n■ 否定文と疑問文 (be動詞の規則と同じ)\n\n● 否定文: 主語 + be動詞 + not + V-ing\n- I am not studying now.\n- He isn't reading. (= He is not reading.)\n- They aren't playing.\n\n● 疑問文: be動詞 + 主語 + V-ing + ?\n- Are you studying? — Yes, I am. / No, I am not.\n- Is he reading? — Yes, he is. / No, he isn't.\n\n■ 進行形にできない動詞 (状態動詞 = State verbs)\n\n以下の動詞は『状態』を表すので進行形にしない (動作の途中にならない)。\n\n● 知覚: see (見える、look at と違う)、hear (聞こえる)、smell (匂う)、taste (味がする)\n  - × I am seeing the bird. → ○ I see the bird.\n  - 例外: see / hear が『動作 (会う・聞く)』の意味なら可: I am seeing the doctor today. (今日医者に会う = 診察)\n\n● 思考・知識: know, understand, believe, think (信じる)、remember, forget\n  - × I am knowing the answer. → ○ I know the answer.\n  - 例外: think (考えている) は進行形にできる: I am thinking about it.\n\n● 感情: like, love, hate, want, need\n  - × I am liking music. → ○ I like music.\n\n● 所有: have (持っている)、own, belong\n  - × I am having a car. → ○ I have a car.\n  - 例外: have が『食べる・過ごす』の意味なら進行形可: I am having lunch. (昼食を食べている)\n\n■ 現在進行形 vs 現在形 (時制の違い)\n\n| 現在形 (Simple Present) | 現在進行形 (Present Progressive) |\n|---|---|\n| 習慣・性質・事実 | 今まさに進行中の動作 |\n| 一般的真理 | 一時的な状態 |\n| 例: I play tennis. | 例: I am playing tennis (now). |\n| 訳: 私はテニスをする (普段) | 訳: 私は (今) テニスをしている |\n\nよく使われる時の副詞:\n- 現在形と相性: usually, often, always, every day, on Sundays\n- 進行形と相性: now, right now, at the moment, today (今日 = 一時的に)\n\n■ 過去進行形\n\n型: 主語 + was/were + V-ing\n\n意味: (過去のあるとき) 〜していた\n\n例:\n- I was studying at 8 last night. (昨夜8時に勉強していた)\n- They were playing soccer when it started raining. (雨が降り始めたとき彼らはサッカーをしていた)\n\n注意: 過去のある『時点』で進行中だった動作を表す (when 〜 / at 〜 などとセット)。",
+            "table": [
+              [
+                "時制",
+                "型",
+                "例",
+                "訳"
+              ],
+              [
+                "現在進行形",
+                "am/is/are + V-ing",
+                "I am running.",
+                "私は (今) 走っている"
+              ],
+              [
+                "現在形",
+                "原形 / V-s",
+                "I run every day.",
+                "私は毎日走る (習慣)"
+              ],
+              [
+                "過去進行形",
+                "was/were + V-ing",
+                "I was running at 5.",
+                "5時に走っていた"
+              ],
+              [
+                "過去形",
+                "V-ed / 不規則",
+                "I ran yesterday.",
+                "昨日走った"
+              ]
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "ポイント: 進行形は『be動詞 + V-ing』の二点セット",
+            "body": "進行形を間違える人の最大原因は、be動詞か V-ing のどちらかを忘れること。両方そろって初めて進行形。\n\n● 必須要素 (二点セット):\n1. be動詞 (am / is / are / was / were)\n2. V-ing\n\nどちらかが欠けたら進行形ではない。\n\n暗唱フレーズ:\n『進行形は be動詞 + ing。be動詞だけでも、ing だけでも、進行形じゃない』\n\n比喩: 進行形は『左右の靴』。片方だけでは歩けない。be動詞という左の靴と V-ing という右の靴、両方履いて初めて進行形として歩ける。\n\n● よくある間違いの修正:\n- × I am play tennis. (be動詞 am の後は V-ing が必要 → playing)\n- × He plays now. (今を表すには進行形に → He is playing now.)\n- × She studying. (be動詞抜け → She is studying.)\n\n● 状態動詞は進行形にしない\n暗記する 8 個: know, like, love, want, have (所有), see (見える), hear (聞こえる), believe\n\nこれらは『状態』なので、進行形 (動作の途中) になりえない。「I am liking pizza.」(× ピザを好きしている途中) は不自然。\n\n試験の落とし穴: 『have』は所有のとき進行形不可、『食べる/過ごす』のとき進行形可。\n- I have a pen. (持っている = 状態 = ○) / × I am having a pen.\n- I am having dinner. (夕食を食べている = 動作 = ○)"
+          },
+          {
+            "type": "warn",
+            "title": "注意: 進行形でよくある間違い",
+            "body": "❌ ミス1: be動詞を忘れる。\nNG: I studying English. (be動詞抜け)\nOK: I am studying English.\n\n❌ ミス2: V-ing にしない。\nNG: I am study English. (study は原形 → studying)\nOK: I am studying English.\n\n❌ ミス3: ing の作り方を間違える。\nNG: I am writeing. (write は e を落とす → writing)\nOK: I am writing.\nNG: He is runing. (run は n を重ねる → running)\nOK: He is running.\nNG: She is studing. (study は y のまま ing → studying)\nOK: She is studying.\n\n❌ ミス4: 三単現の s を残す。\nNG: He is plays soccer. (be動詞 is + V-ing にする)\nOK: He is playing soccer.\n\n❌ ミス5: 状態動詞を進行形にする。\nNG: I am knowing the answer. (know は状態動詞)\nOK: I know the answer.\nNG: She is having a car. (have が所有のとき)\nOK: She has a car.\n\n❌ ミス6: 否定文・疑問文で語順ミス。\nNG: I don't am studying. (be動詞の否定は not、do は不要)\nOK: I am not studying.\nNG: Do you are studying? (be動詞の疑問は be動詞を前へ)\nOK: Are you studying?\n\n❌ ミス7: 現在形と進行形の使い分けミス。\n『今〜している』(一時的、now/right now) → 進行形\n『普段〜する』(習慣、every day/usually) → 現在形\n\nNG: I am playing tennis every day. (every day は習慣 → 現在形)\nOK: I play tennis every day.\nNG: He plays tennis now. (now は今 → 進行形)\nOK: He is playing tennis now.\n\n❌ ミス8: 過去進行形 vs 過去形の混同。\n『過去のある時点で進行中』 → 過去進行形 (was/were + V-ing)\n『過去に完結した動作』 → 過去形 (V-ed / 不規則)\n\nNG: I was studied at 8. (was と studied の二重)\nOK: I was studying at 8. (進行形) / I studied yesterday. (過去形)"
+          },
+          {
+            "type": "example",
+            "number": 1,
+            "question": "次の動詞を ing 形にせよ。(1) play (2) come (3) run (4) study (5) write (6) sit (7) lie (8) have",
+            "thought": "発想: (1) そのまま ing。(2) e 落ち。(3) n 重ね。(4) y はそのまま+ing。(5) e 落ち。(6) t 重ね。(7) ie→y+ing。(8) e 落ち。",
+            "answer": "(1) playing  (2) coming  (3) running  (4) studying  (5) writing  (6) sitting  (7) lying  (8) having",
+            "explanation": "**(1) play → playing** (パターン1: そのまま ing)\nplay は子音 y で終わるが、y の前が母音 (a) → そのまま ing をつける。\n\n**(2) come → coming** (パターン2: e 落ち)\ncome は e で終わる → e を落として ing。× comeing。\n\n**(3) run → running** (パターン3: 子音重ね)\nrun は『短い動詞 + 母音1つ + 子音1つ』(u + n) → 最後の n を重ねて ing。× runing。\n\n**(4) study → studying** (パターン1: そのまま ing)\nstudy は y で終わるが、現在形の三単現 (studies) と違って ing は y のまま+ing。× studing、× studiing。\n\n**(5) write → writing** (パターン2: e 落ち)\nwrite は e で終わる → e を落として ing。× writeing。\n\n**(6) sit → sitting** (パターン3: 子音重ね)\nsit は『短い動詞 + 母音1つ + 子音1つ』(i + t) → t を重ねて ing。× siting。\n\n**(7) lie → lying** (パターン4: ie→y)\nlie は ie で終わる → ie を y に変えて ing = lying。× lieing、× lieing。\n他: die → dying、tie → tying。\n\n**(8) have → having** (パターン2: e 落ち)\nhave は e で終わる → e を落として ing。× haveing。\n\n**ing の作り方ルール (再掲)**\n- 普通: そのまま+ing (play→playing、watch→watching)\n- e で終わる: e 落ちて+ing (come→coming、make→making、live→living)\n- 短い『母音+子音』: 子音重ね (run→running、swim→swimming、sit→sitting)\n- ie で終わる: ie→y+ing (die→dying、lie→lying、tie→tying)\n\n**注意の必要な動詞**\n- have → having (e 落ち、所有のときは進行形不可)\n- begin → beginning (子音重ね)\n- forget → forgetting (子音重ね)\n- happen → happening (子音重ねしない、強勢が前)\n- visit → visiting (子音重ねしない、母音2つ)\n\n類題: 高校受験で必出 (神奈川 2024、京都府 2023 等で頻出)。"
+          },
+          {
+            "type": "example",
+            "number": 2,
+            "question": "次の英文を進行形に書き換えよ。(1) I read a book. (2) She doesn't watch TV. (3) Do they play soccer? (4) He swam in the pool yesterday. (5) Tom doesn't run in the park.",
+            "thought": "発想: (1) am + reading。(2) is not watching。(3) Are + watching?。(4) was swimming (過去進行形)。(5) is not running (子音重ね)。",
+            "answer": "(1) I am reading a book. (2) She isn't watching TV. (= She is not watching TV.) (3) Are they playing soccer? (4) He was swimming in the pool yesterday. (5) Tom isn't running in the park.",
+            "explanation": "**(1) I read a book. → 進行形**\nI am + reading\n答: I am reading a book. (私は本を読んでいる)\n\n**(2) She doesn't watch TV. → 進行形 (否定形)**\n進行形の否定: be動詞 + not + V-ing\n→ She is not watching TV. = She isn't watching TV.\n注意: doesn't を消し、is not に変える。watch → watching。\n\n**(3) Do they play soccer? → 進行形 (疑問形)**\n進行形の疑問: be動詞 + 主語 + V-ing + ?\n→ Are they playing soccer?\n注意: Do を消し、Are に変える。play → playing。\n答え方: Yes, they are. / No, they aren't.\n\n**(4) He swam in the pool yesterday. → 過去進行形**\n過去進行形: was/were + V-ing\nHe → was、swim → swimming (子音重ね)\n→ He was swimming in the pool yesterday. (彼は昨日プールで泳いでいた)\n\nニュアンス比較:\n- 過去形: He swam yesterday. (昨日泳いだ — 完結した事実)\n- 過去進行形: He was swimming yesterday. (昨日泳いでいた — その時点で進行中)\n\n**(5) Tom doesn't run in the park. → 進行形 (否定形)**\n進行形の否定: be動詞 + not + V-ing\nTom → is、run → running (n 重ね)\n→ Tom isn't running in the park. (トムは公園で走っていない)\n\n**書き換えのチェックポイント**\n1. 元の文の時制を確認 (現在 → 現在進行形、過去 → 過去進行形)\n2. 主語に応じた be動詞を選ぶ\n3. 動詞を ing 形に (e 落ち、子音重ね、ie→y のルール)\n4. 否定形は『be動詞 + not』、疑問形は『be動詞 + 主語』の倒置\n5. doesn't / Doesn't / Did 等は不要 (be動詞だけ)\n\n類題: 高校受験『書き換え問題』で頻出 (大阪府 2024、福岡県 2023 等)。"
+          },
+          {
+            "type": "practice",
+            "number": 1,
+            "question": "次の (  ) 内の語を正しい形に直し、文を完成させよ。(1) Look! The boys (play) baseball in the park. (2) I (not, watch) TV now. I (study) English. (3) (Tom, listen) to music when his mother came home? (4) She (write) a letter when I called her. (5) The baby (sleep) now."
+          },
+          {
+            "type": "answer",
+            "number": 1,
+            "answer": "(1) are playing  (2) am not watching, am studying  (3) Was Tom listening  (4) was writing  (5) is sleeping",
+            "explanation": "**(1) Look! The boys (play) baseball in the park.**\nLook! は『見て!』 = 今まさに目の前で起きている → 現在進行形。\nThe boys (複数) → are\nplay → playing\n答: Look! The boys are playing baseball in the park. (見て! 男の子たちが公園で野球をしている)\n\n**(2) I (not, watch) TV now. I (study) English.**\nnow があるので現在進行形。\n- I (not, watch) → I am not watching\n- I (study) → I am studying\n答: I am not watching TV now. I am studying English. (今テレビを見ていない。英語を勉強している)\n\n**(3) (Tom, listen) to music when his mother came home?**\n『お母さんが帰ってきたとき (過去のある時点) で音楽を聞いていた』 → 過去進行形の疑問。\nTom → was\nlisten → listening\n答: Was Tom listening to music when his mother came home? (お母さんが帰宅したときトムは音楽を聴いていた?)\n答え方: Yes, he was. / No, he wasn't.\n\n**(4) She (write) a letter when I called her.**\n『私が電話したとき手紙を書いていた』 → 過去進行形。\nShe → was\nwrite → writing (e 落ち)\n答: She was writing a letter when I called her. (私が電話したとき、彼女は手紙を書いていた)\n\n**(5) The baby (sleep) now.**\nnow があるので現在進行形。\nThe baby (単数) → is\nsleep → sleeping\n答: The baby is sleeping now. (赤ちゃんは今寝ている)\n\n**頻出パターンの整理**\n- now / right now / at this moment / Look! → 現在進行形\n- when 〜 (過去の動作と同時) / at + 過去の時刻 → 過去進行形\n- 否定: be動詞 + not + V-ing\n- 疑問: be動詞 + 主語 + V-ing + ?\n\n**意味の違い (時制の感覚)**\n- He plays the piano. (彼はピアノを弾く=普段、上手い、習慣)\n- He is playing the piano. (彼はピアノを弾いている=今この瞬間)\n- He played the piano. (彼はピアノを弾いた=過去に完結)\n- He was playing the piano. (彼はピアノを弾いていた=過去のある時点で進行中)\n\n類題: 高校受験で必出 (栃木県 2024、千葉県 2023 等)。"
+          },
+          {
+            "type": "summary",
+            "heading": "まとめ — 進行形の体系",
+            "points": [
+              "進行形は『be動詞 + V-ing』の二点セット (どちらかが欠けたら不可)",
+              "現在進行形『今〜している』、過去進行形『〜していた (過去のある時点)』",
+              "ing の作り方: そのまま (play→playing)、e 落ち (come→coming)、子音重ね (run→running)、ie→y (lie→lying)",
+              "否定文は be動詞 + not + V-ing、疑問文は be動詞 + 主語 + V-ing + ?",
+              "状態動詞 (know, like, have, see, hear…) は進行形にしない",
+              "現在形 (習慣) と進行形 (今) を時の副詞で見分ける: every day vs now",
+              "他単元との繋がり: be動詞 (本書)、一般動詞 (本書、原形と V-ing の対比)、未来形 (本書、will be V-ing も後で)"
+            ]
+          }
+        ]
+      },
+      "status": "published",
+      "source": "claude_max_seed_batch32"
+    },
+    {
+      "subject": "英語（中学英文法）",
+      "topic": "未来形",
+      "level": "中学標準",
+      "length": "medium",
+      "type": "unit_lesson",
+      "title": "未来形 — will と be going to で『未来』を表す",
+      "tags": [
+        "未来形",
+        "will",
+        "be going to",
+        "won't",
+        "中学英文法",
+        "予測",
+        "計画"
+      ],
+      "content": {
+        "title": "未来形 — will と be going to で『未来』を表す",
+        "subtitle": "急に決めた予定 vs 元から計画していた予定",
+        "subject": "英語（中学英文法）",
+        "topic": "未来形",
+        "level": "中学標準",
+        "sections": [
+          {
+            "type": "intro",
+            "heading": "はじめに — 未来形は『これから起きること』",
+            "body": "英語で未来 (これから起きること) を表すには、主に 2 つの方法がある: (1) will + 動詞の原形、(2) be going to + 動詞の原形。日本語の『〜するつもり』『〜だろう』『〜する予定だ』にあたる表現。\n\n比喩を一つ。will と be going to は『未来予報の二種類』。will は『天気予報の予測』(その場で判断)、be going to は『工事計画の発表』(あらかじめ決まっていた予定)。同じ『未来』でも、決定のタイミングが違う。\n\nもう一つの比喩。 will は『反射神経』、be going to は『準備運動』。電話が鳴る → 「I'll get it.」(今決めた、will)。会議があると朝から知っていた → 「I'm going to attend the meeting.」(計画済み、be going to)。\n\n受験では (1) will + 原形 と be going to + 原形 の形、(2) 肯定・否定・疑問の作り方、(3) will (急に決めた・予測) と be going to (元から計画・兆候) の使い分け、(4) 短縮形 I'll, won't, isn't going to が頻出。"
+          },
+          {
+            "type": "theory",
+            "heading": "基本事項 — will と be going to の使い方",
+            "body": "■ will + 動詞の原形\n\n型: 主語 + will + 動詞の原形\n\n意味:\n1. 未来の予測・推測 (〜だろう)\n2. その場で決めた意志 (〜するつもり、〜するよ)\n3. 申し出・依頼 (Will you 〜?)\n\n例:\n- It will rain tomorrow. (明日は雨が降るだろう=予測)\n- I will call you later. (あとで電話するよ=今決めた)\n- The phone is ringing. — I'll get it! (電話が鳴っている — 私が出るよ=即決)\n- Will you help me? (手伝ってくれる?=依頼)\n\n注意: will は主語に関係なく形が変わらない (× He wills)。動詞は必ず原形 (× He will plays)。\n\n● 短縮形:\n- I will → I'll\n- you will → you'll\n- he/she/it will → he'll / she'll / it'll\n- we/they will → we'll / they'll\n- will not → won't (覚える!)\n\n● 否定文: 主語 + will not (won't) + 原形\n- I won't go there. = I will not go there. (そこへ行かないつもり)\n- It won't rain tomorrow. (明日は雨は降らないだろう)\n\n● 疑問文: Will + 主語 + 原形 + ?\n- Will you come to the party? — Yes, I will. / No, I won't.\n- Will it be sunny tomorrow? — Yes, it will. / No, it won't.\n\n■ be going to + 動詞の原形\n\n型: 主語 + be動詞 (am/is/are) + going to + 動詞の原形\n\n意味:\n1. 元から計画していた予定 (〜するつもり、〜する予定)\n2. 兆候から見た予測 (〜しそうだ、確実な未来)\n\n例:\n- I am going to visit Kyoto next week. (来週京都を訪れる予定=計画済み)\n- We are going to have a party tomorrow. (明日パーティーをする予定)\n- Look at those dark clouds! It is going to rain. (あの黒い雲を見て! 雨が降りそうだ=兆候からの予測)\n- She is going to be a doctor. (彼女は医者になるつもり=計画)\n\n● 短縮形:\n- I am going to → I'm going to (口語では gonna も)\n- He/She/It is going to → He's/She's/It's going to\n- We/You/They are going to → We're/You're/They're going to\n\n● 否定文: 主語 + be動詞 + not + going to + 原形\n- I am not going to play tennis tomorrow.\n- He isn't going to come.\n- They aren't going to study.\n\n● 疑問文: be動詞 + 主語 + going to + 原形 + ?\n- Are you going to play tennis? — Yes, I am. / No, I'm not.\n- Is he going to come? — Yes, he is. / No, he isn't.\n\n■ will vs be going to の使い分け\n\n| 状況 | will | be going to |\n|---|---|---|\n| 急に決めた・その場の判断 | ○ | × |\n| あらかじめ計画していた予定 | △ (使えるが be going to が自然) | ○ |\n| 客観的な予測 (天気予報など) | ○ | △ |\n| 兆候・現状からの予測 (黒雲→雨) | △ | ○ |\n| 申し出・依頼 (Will you 〜?) | ○ | × |\n| 強い意志・約束 | ○ | △ |\n\n● 典型例で比較:\n\n[電話が鳴る]\n- I'll get it! (今決めた → will、◎)\n- I am going to get it. (× 不自然 — 計画していなかった)\n\n[来週の予定を聞かれて]\n- I'm going to visit my grandmother next Sunday. (前から決まっていた予定 → be going to、◎)\n- I will visit my grandmother next Sunday. (○ だが、be going to の方が自然)\n\n[黒雲を見て]\n- Look! It's going to rain. (兆候から → be going to、◎)\n- It will rain. (天気予報的な客観予測なら ○)\n\n[相手に頼む]\n- Will you help me? (依頼 → will、◎)\n- Are you going to help me? (× ニュアンスが違う、『手伝う予定?』と聞いている)\n\n■ その他の未来表現 (発展)\n\n● 現在進行形で近い未来: I am leaving tomorrow. (明日出発する=決まった予定)\n● 現在形で確定的な予定: The train leaves at 8. (電車は8時に出発する=スケジュール)\n\n中学では will と be going to の二つを中心に学ぶ。",
+            "table": [
+              [
+                "観点",
+                "will + 原形",
+                "be going to + 原形"
+              ],
+              [
+                "決定のタイミング",
+                "今この場で決定",
+                "前から計画"
+              ],
+              [
+                "典型ニュアンス",
+                "予測・即決・依頼",
+                "予定・兆候からの予測"
+              ],
+              [
+                "否定",
+                "won't (will not)",
+                "be動詞 + not + going to"
+              ],
+              [
+                "疑問",
+                "Will + 主語 + 原形?",
+                "be動詞 + 主語 + going to + 原形?"
+              ],
+              [
+                "代表例",
+                "I'll help you.",
+                "I'm going to study tonight."
+              ]
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "ポイント: will と be going to の使い分けを 3 行で覚える",
+            "body": "中学英語で最大の暗記事項のひとつ。3 行に圧縮して暗唱しよう。\n\n● 暗唱フレーズ (毎日3回唱える):\n1. 「will = 今決めた!」 (反射的、その場の判断)\n2. 「be going to = 前から決めてた」 (計画済み、予定)\n3. 「黒い雲 → be going to (兆候)、天気予報 → will (予測)」\n\n比喩: will は『今、口で言って決まった』、be going to は『手帳に予定が書いてあった』。\n\n● 練習問題で身につける:\n[電話のベル] → I'll get it! (will、即決)\n[誕生日が来週] → I'm going to make a cake. (be going to、計画)\n[黒雲が見える] → It's going to rain. (be going to、兆候)\n[天気予報で聞いた] → It will rain tomorrow. (will、予測)\n[相手に頼む] → Will you help me? (will、依頼の決まり文句)\n\n● 試験の落とし穴:\n- 過去から計画していた → be going to (× will でも一応 OK だが、be going to が自然)\n- その場で決めた意志 → will (× be going to は不可)\n- 短縮形: I'll、won't (= will not)、I'm going to (= I am going to)\n- won't は要暗記の特殊な短縮形 (× willn't は誤り)\n\n● 答え方の規則:\n- Will you 〜? — Yes, I will. / No, I won't.\n- Are you going to 〜? — Yes, I am. / No, I'm not.\n→ 答えは be動詞 / will のどちらを使ったかに合わせる。混ぜない。"
+          },
+          {
+            "type": "warn",
+            "title": "注意: 未来形でよくある間違い",
+            "body": "❌ ミス1: will の後に三単現の s をつける。\nNG: He wills go to school. / He will goes to school.\nOK: He will go to school. (will は形が変わらず、後の動詞は原形)\n\n❌ ミス2: be going to の be動詞を忘れる。\nNG: I going to play tennis.\nOK: I am going to play tennis.\nNG: She going to study.\nOK: She is going to study.\n\n❌ ミス3: be going to の後の動詞を ing にする。\nNG: I am going to playing tennis. (going to の後は原形)\nOK: I am going to play tennis.\n\n❌ ミス4: will not の短縮を間違える。\nNG: I willn't go.\nOK: I won't go. (willn't は存在しない、won't が正しい)\n\n❌ ミス5: 否定文・疑問文で語順ミス。\nNG: I don't will go. (will の否定は not だけ)\nOK: I will not go. = I won't go.\nNG: Do you will come? (will の疑問は will を前に)\nOK: Will you come?\n\n❌ ミス6: be going to の否定で will のような形を使う。\nNG: I won't going to play. (be going to の否定は be動詞 + not)\nOK: I am not going to play.\n\n❌ ミス7: 答え方で be動詞 と will を混同。\nNG: Will you come? — Yes, I am.\nOK: Will you come? — Yes, I will.\nNG: Are you going to come? — Yes, I will.\nOK: Are you going to come? — Yes, I am.\n→ 質問の動詞 (Will / Are) に答えを揃える。\n\n❌ ミス8: 急に決めた意志に be going to を使う。\nNG: [電話が鳴る] I am going to get it.\nOK: I'll get it. (即決には will)\n\n❌ ミス9: 計画済みの予定に will だけ使う。\n△: I will visit Kyoto next week. (○ だが…)\n◎: I am going to visit Kyoto next week. (前から決まっていたなら be going to が自然)"
+          },
+          {
+            "type": "example",
+            "number": 1,
+            "question": "次の英文を肯定文 (現在形) から未来形に書き換えよ。(1) will を使って: 「It rains.」 (2) be going to を使って: 「She studies English.」 (3) will の否定文に: 「He goes to the party.」 (4) be going to の疑問文に: 「They visit Tokyo.」 (5) (適切な未来形を選べ) 「Look at those clouds! It (will / is going to) rain soon.」",
+            "thought": "発想: (1) It will rain. (2) She is going to study English. (3) He won't go = He will not go. (4) Are they going to visit Tokyo? (5) 黒雲=兆候=is going to rain。",
+            "answer": "(1) It will rain. (2) She is going to study English. (3) He will not go to the party. (= He won't go to the party.) (4) Are they going to visit Tokyo? (5) is going to (兆候から → be going to)",
+            "explanation": "**(1) It rains. → It will rain.**\n型: 主語 + will + 動詞の原形\nrains (三単現) → rain (原形に戻す)\n答: It will rain. (雨が降るだろう)\n\n**(2) She studies English. → She is going to study English.**\n型: 主語 + be動詞 + going to + 動詞の原形\nShe → is\nstudies (三単現) → study (原形)\n答: She is going to study English. (彼女は英語を勉強する予定だ)\n\n**(3) He goes to the party. → 否定文 (will)**\n型: 主語 + will not (won't) + 原形\ngoes → go\n答: He will not go to the party. = He won't go to the party. (彼はパーティーに行かないつもりだ)\n\n**(4) They visit Tokyo. → 疑問文 (be going to)**\n型: be動詞 + 主語 + going to + 原形 + ?\nThey → Are\nvisit → visit (原形のまま)\n答: Are they going to visit Tokyo? (彼らは東京を訪れる予定?)\n答え方: Yes, they are. / No, they aren't.\n\n**(5) Look at those clouds! It (will / is going to) rain soon.**\n『黒い雲を見て! まもなく雨が降りそうだ』 — 雲という『兆候』から判断 → be going to\n答: Look at those clouds! It is going to rain soon. (あの雲を見て! まもなく雨が降りそうだ)\n\n比較: 単に天気予報で聞いた予測なら will も可。\n- It will rain tomorrow. (天気予報で聞いた、客観的予測)\n- It is going to rain. (黒雲という今の兆候から)\n\n**変換のチェックポイント**\n1. will の場合: 主語 + will + 原形 (主語によって形が変わらない)\n2. be going to の場合: 主語 + be動詞 (am/is/are) + going to + 原形\n3. 動詞は必ず原形 (× plays、× playing、× played)\n4. 否定: will → won't (will not)、be going to → be動詞 + not + going to\n5. 疑問: will → Will + 主語、be going to → be動詞 + 主語 + going to\n6. 兆候からの予測 → be going to、即決・客観予測 → will\n\n類題: 高校受験で必出 (神奈川県 2024、京都府 2023 等で類題)。"
+          },
+          {
+            "type": "example",
+            "number": 2,
+            "question": "次の場面に合う適切な未来形を選んで英文を完成させよ。(1) [電話が鳴る] A: The phone is ringing. B: OK, I (   ) get it. (2) [来月の旅行を聞かれて] A: What are your plans for next month? B: I (   ) travel to Hokkaido. (3) [黒い雲を見て] Look! The dark clouds (   ) come. (4) [友達に頼む] A: I can't carry these boxes. B: (   ) you help me, please? (5) [天気予報で] The weather report says it (   ) be sunny tomorrow.",
+            "thought": "発想: (1) 即決=I'll。(2) 計画=I'm going to。(3) 兆候=are going to。(4) 依頼=Will。(5) 客観予測=will。",
+            "answer": "(1) I'll (= I will)  (2) I'm going to (= I am going to)  (3) are going to  (4) Will  (5) will",
+            "explanation": "**(1) [電話が鳴る] B: OK, I (   ) get it.**\n電話が鳴って『私が出るよ』 — その場で決めた意志 → will。\n答: OK, I'll get it. (= I will get it.)\nニュアンス: 即決、反射的な応答。be going to は不自然 (前から計画していたわけでない)。\n\n**(2) [来月の旅行] B: I (   ) travel to Hokkaido.**\n来月の旅行は事前に計画されているはず → be going to。\n答: I'm going to travel to Hokkaido. (= I am going to travel to Hokkaido.)\nニュアンス: 既に計画済みの予定。\n\n**(3) [黒い雲を見て] Look! The dark clouds (   ) come.**\n黒い雲が見える=兆候 → be going to。\n答: Look! The dark clouds are going to come. (見て! 黒い雲が来そうだ)\nニュアンス: 今ある兆候 (黒い雲) からの予測。\n\n**(4) [友達に頼む] (   ) you help me, please?**\n依頼の決まり文句 → Will you 〜?\n答: Will you help me, please? (お願い、手伝ってくれる?)\nニュアンス: 丁寧な依頼。「Are you going to help me?」だと『手伝う予定なの?』と尋ねている感じになり、依頼にならない。\n\n**(5) [天気予報] The weather report says it (   ) be sunny tomorrow.**\n天気予報による客観的予測 → will。\n答: The weather report says it will be sunny tomorrow. (天気予報によると明日は晴れるそうだ)\nニュアンス: 第三者 (天気予報) の客観的な予測。\n\n**使い分けの原則 (再掲)**\n- **will**: 即決、客観予測、依頼、強い意志、約束\n- **be going to**: 計画、兆候からの予測、既に決まっている予定\n\n判断のコツ: 『その場で決めた』のか『前から決まっていた』のか? 『今ある兆候』なのか『客観的予測』なのか?\n\n**例外的な使い方**\n- 強い意志の will: 「I will succeed!」(絶対成功するぞ — 強い決意)\n- 約束の will: 「I will marry you.」(あなたと結婚する — 厳粛な約束)\n- 即決でも be going to: 不可 (× I am going to get it. (電話に対して) 不自然)\n\n類題: 高校受験『未来形の使い分け』は頻出 (大阪府 2024、福岡県 2023 等で出題)。"
+          },
+          {
+            "type": "practice",
+            "number": 1,
+            "question": "次の英文の (  ) に適する語を入れよ。(1) I (  ) (  ) (  ) play tennis tomorrow. (be going to を使って『〜する予定』) (2) (  ) you (  ) come to the party? (will を使って疑問文)— No, I (  ). (will を使って否定で) (3) Look at the sky! It (  ) (  ) (  ) snow. (be going to で『雪が降りそうだ』) (4) She (  ) (  ) busy next week. (will を使って『忙しいだろう』) (5) (  ) (  ) (  ) (  ) study after dinner? (be going to で『夕食後に勉強する予定?』、主語は you)"
+          },
+          {
+            "type": "answer",
+            "number": 1,
+            "answer": "(1) am going to  (2) Will, won't (= will not)  (3) is going to  (4) will be  (5) Are you going to",
+            "explanation": "**(1) I (  ) (  ) (  ) play tennis tomorrow.**\n『明日テニスをする予定』(be going to) → I am going to play tennis tomorrow.\n答: I **am going to** play tennis tomorrow.\n3 単語: am + going + to\n\n**(2) (  ) you (  ) come to the party? — No, I (  ).**\n疑問文 (will): Will you come to the party?\n否定の答え: No, I won't. (= No, I will not.)\n答: **Will** you **come** to the party? — No, I **won't**.\n注意: 答えは『主語 + will / won't』(× I'm not、× I don't)。\n\n別解: (  ) you (  ) come の中に『come to the party' を入れたいので、空所が動詞 come (原形) を埋める形なら、Will + you + come の形になる。\n→ Will you come to the party?\n\n**(3) Look at the sky! It (  ) (  ) (  ) snow.**\n空の状態 (兆候) から『雪が降りそう』 → be going to。\n答: Look at the sky! It **is going to** snow.\n3 単語: is + going + to\n\n**(4) She (  ) (  ) busy next week.**\n『来週は忙しいだろう』 (予測) → will。\n答: She **will be** busy next week.\n2 単語: will + be (be動詞の原形 be に注意。× She will is busy)\n\n**(5) (  ) (  ) (  ) (  ) study after dinner?**\n『夕食後に勉強する予定?』 → be going to の疑問文。\n答: **Are you going to** study after dinner?\n4 単語: Are + you + going + to\n\n**頻出パターンの整理**\n- be going to の肯定: am/is/are + going to + 原形\n- be going to の否定: am/is/are + not + going to + 原形\n- be going to の疑問: be動詞 + 主語 + going to + 原形 + ?\n- will の肯定: will + 原形\n- will の否定: will not (won't) + 原形\n- will の疑問: Will + 主語 + 原形 + ?\n\n**間違いやすいポイント**\n1. (1) で『am going to playing』(× ing) は不可、必ず原形 play\n2. (2) で『won't』を『willn't』とする誤りに注意\n3. (3) で『it going to』(be動詞抜け) は不可、必ず is\n4. (4) で『She will busy』(be 抜け) は不可。busy は形容詞なので be動詞の原形 be が必要 → will be busy\n5. (5) で『Do you going to』『Will you going to』は誤り。be going to の疑問は be動詞を前に。\n\n類題: 高校受験『未来形の文法問題』は必出 (栃木県 2024、千葉県 2023 等)。"
+          },
+          {
+            "type": "summary",
+            "heading": "まとめ — 未来形の体系",
+            "points": [
+              "未来表現: (1) will + 原形、(2) be going to + 原形",
+              "will: 即決・客観予測・依頼 (Will you 〜?)・強い意志 (主語に関係なく形不変)",
+              "be going to: 計画済みの予定・兆候からの予測 (be動詞は主語に応じて am/is/are)",
+              "短縮形: I'll、won't (= will not)、I'm going to",
+              "否定: will not (won't) / be動詞 + not + going to",
+              "疑問: Will + 主語 + 原形? / be動詞 + 主語 + going to + 原形?",
+              "答え方は質問の動詞 (Will → I will、Are 〜 going to → I am) に合わせる",
+              "他単元との繋がり: be動詞 (本書、be going to の be)、一般動詞 (本書、原形)、進行形 (本書、be + V-ing と be going to の対比)"
+            ]
+          }
+        ]
+      },
+      "status": "published",
+      "source": "claude_max_seed_batch32"
+    }
+  ]
+}
