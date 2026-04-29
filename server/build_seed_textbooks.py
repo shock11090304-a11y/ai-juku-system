@@ -453,10 +453,10 @@ def make_textbook_entry(content_dict, length="medium", ttype="unit_lesson", tags
 textbooks = [
     make_textbook_entry(MATH_IA_QUADRATIC, length="medium", ttype="unit_lesson",
                         tags=["二次関数", "平方完成", "頂点", "最大値", "最小値", "場合分け"]),
-    make_textbook_entry(ENGLISH_RELATIVE_PRONOUN, length="medium", ttype="unit_lesson",
-                        tags=["関係代名詞", "who", "which", "that", "whose", "目的格省略"]),
-    make_textbook_entry(KOBUN_AUXILIARIES, length="medium", ttype="unit_lesson",
-                        tags=["古文", "助動詞", "む", "べし", "らむ", "推量", "意志"]),
+    # 英語・古文は内容が UI 単元チップと範囲ズレのため batch01 から除外し、
+    # 単元体系を再点検した上で別 batch で書き直す。
+    # - 英語: 「関係代名詞」内容に対し UI チップは「文法・語法 (Vintage / Next Stage レベル)」
+    # - 古文: 「む・べし・らむ」内容に対し UI チップは「助動詞 (む・むず・じ・まし)」「助動詞 (べし)」が分割
     make_textbook_entry(PHYSICS_MECHANICS, length="medium", ttype="unit_lesson",
                         tags=["力学", "運動方程式", "エネルギー保存", "摩擦", "ニュートン"]),
     make_textbook_entry(CHEMISTRY_ALIPHATIC, length="medium", ttype="unit_lesson",
