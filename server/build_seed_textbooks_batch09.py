@@ -1,0 +1,196 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""🆓 batch09: 英語(高校英文法) 残り4単元 ⭐ 英語高校英文法 19/19 完成
+収録: 話法 / 倒置 / 強調 / 省略
+"""
+import json, os
+OUTPUT = os.path.join(os.path.dirname(__file__), "seed_textbooks_batch09.json")
+
+NARRATION = {
+    "title": "話法 — 直接話法と間接話法の転換",
+    "subtitle": "平叙文・疑問文・命令文の話法転換と時制の一致",
+    "subject": "英語（高校英文法）", "topic": "話法", "level": "高校標準",
+    "sections": [
+        {"type": "intro", "heading": "はじめに — 話法は「他人の発言を伝える技術」",
+         "body": "「太郎は『私は東京へ行く』と言った」を英訳するとき、(1) 直接話法 \"Taro said, 'I will go to Tokyo.'\" と (2) 間接話法 \"Taro said that he would go to Tokyo.\" の2 通りがある。後者は時制を1 段過去にずらす (時制の一致)。\n\n比喩を一つ。話法は「録音の再生」。直接話法は録音をそのまま再生 (引用符付き)、間接話法は録音内容を要約して話者の視点で語り直す。\n\nもう一つの比喩。直接話法は「劇のセリフ」、間接話法は「ナレーション」。同じ内容でも、伝え方が違う。\n\n話法転換のルールは機械的だが、人称・時制・指示語・場所/時の表現すべてを変える必要があり、抜けが起きやすい。"},
+        {"type": "theory", "heading": "基本事項 — 直接話法 → 間接話法の転換",
+         "body": "■ 直接話法と間接話法\n直接話法: \"He said, 'I am tired.'\" (彼は「疲れた」と言った)\n間接話法: He said (that) he was tired. (彼は疲れていると言った)\n\n■ 平叙文の転換手順\n1. 引用符を取り、that を加える (省略可)\n2. 人称を変える (I → he, you → I 等)\n3. 時制を1 段過去にずらす (時制の一致)\n4. 指示語・時/場所の語を変える\n\n時制の一致:\n| 直接 | 間接 |\n|---|---|\n| am/is/are | was/were |\n| have/has | had |\n| will | would |\n| can | could |\n| must (必要) | had to |\n| 過去形 | 過去完了 |\n\n指示語・時の語:\n| 直接 | 間接 |\n|---|---|\n| this | that |\n| these | those |\n| now | then |\n| today | that day |\n| tomorrow | the next day |\n| yesterday | the day before |\n| ago | before |\n| here | there |\n\n■ 疑問文の転換\nYes/No 疑問文: if または whether を使う。\n例: He said, \"Are you ready?\" → He asked if I was ready.\n\nWh- 疑問文: 疑問詞をそのまま使う。\n例: He said, \"Where do you live?\" → He asked where I lived.\n\n注意: 間接疑問は「疑問詞 + 主語 + 動詞」の語順 (疑問文の語順 do/does/did は使わない)。\n\n■ 命令文の転換\n\"tell + 目的語 + to do\" の形。\n例: He said, \"Open the door.\" → He told me to open the door.\n例: He said, \"Don't be late.\" → He told me not to be late.\n\n要請なら ask、強い命令なら tell、勧告なら advise を使う。\n\n■ 感嘆文・誘いの表現\n感嘆: He said, \"How beautiful!\" → He exclaimed how beautiful it was.\n誘い: He said, \"Let's go.\" → He suggested going / He suggested that we (should) go.",
+         "table": [["文型", "間接話法"], ["平叙文", "S said that ~"], ["Yes/No 疑問", "S asked if ~"], ["Wh-疑問", "S asked + 疑問詞 + 主語 + 動詞"], ["命令", "S told 人 to do"]]},
+        {"type": "tip", "title": "ポイント: 時制の一致の例外",
+         "body": "原則は「主節が過去なら従属節も過去」だが、例外あり:\n\n1. **不変の真理・科学的事実**: 時制を変えない\n   He said that the earth is round. (\"was\" にしない)\n\n2. **歴史的事実**: 過去のまま\n   He said that World War II ended in 1945.\n\n3. **習慣的事実 (現在も変わらない)**:\n   He said that he gets up at 6. (現在形のまま)\n\n4. **仮定法**: もとの時制を保つ (仮定法は時制をずらさない)\n   He said, \"I would help you if I could.\" → He said he would help me if he could."},
+        {"type": "warn", "title": "注意: 話法で頻発するミス",
+         "body": "❌ ミス1: 間接疑問の語順を疑問文の語順にする。\nNG: He asked where do I live.\nOK: He asked where I lived. (平叙文の語順)\n\n❌ ミス2: 時制の一致を全部適用する。\n例外 (不変の真理など) では時制を保つ。\n\n❌ ミス3: 命令文の転換で to do を抜く。\nNG: He told me open the door.\nOK: He told me to open the door.\n\n❌ ミス4: 指示語/時の語の転換を忘れる。\nNG: He said that he will go tomorrow. (過去なら that day, the next day, etc.)\nOK: He said that he would go the next day."},
+        {"type": "example", "number": 1,
+         "question": "次の直接話法を間接話法に書き換えよ。\nShe said to me, \"I will help you tomorrow.\"",
+         "thought": "発想: 主節 \"said\" (過去) → that 節は時制をずらす。will → would。tomorrow → the next day。",
+         "answer": "She told me that she would help me the next day.",
+         "explanation": "**変換手順**:\n1. \"said to me\" → \"told me\" (人 + 内容を伝える場合 told が自然)\n2. that を加える (省略可)\n3. 人称: I → she, you → me\n4. 時制: will → would\n5. 時: tomorrow → the next day (主節が過去なので)\n\n結果: \"She told me that she would help me the next day.\"\n\n類題: 共通テスト 2021 年で同型の話法転換問題が出題。"},
+        {"type": "example", "number": 2,
+         "question": "次の直接話法を間接話法に書き換えよ。\nHe said to me, \"What are you doing?\"",
+         "thought": "発想: Wh- 疑問文 → asked + 疑問詞 + 主語 + 動詞 (平叙文語順)。",
+         "answer": "He asked me what I was doing.",
+         "explanation": "**変換手順**:\n1. \"said to me\" → \"asked me\" (疑問文)\n2. 疑問詞 \"what\" は残す\n3. 語順を平叙文に: \"are you doing\" → \"I was doing\"\n4. 時制: are → was\n\n結果: \"He asked me what I was doing.\"\n\n間接疑問の語順は \"疑問詞 + 主語 + 動詞\" で、do/does/did の助動詞は使わない (= 平叙文の語順)。"},
+        {"type": "practice", "number": 1,
+         "question": "次の直接話法を間接話法に書き換えよ。\nMother said, \"Don't go out alone at night.\""},
+        {"type": "answer", "number": 1,
+         "answer": "Mother told me not to go out alone at night.",
+         "explanation": "**命令文の転換**: 否定の命令 \"Don't ~\" → \"told 人 not to do\"\n\n手順:\n1. \"said\" → \"told me\"\n2. \"Don't go\" → \"not to go\"\n3. 残りはそのまま\n\n結果: \"Mother told me not to go out alone at night.\"\n\n肯定の命令なら \"told me to go\" (not なし)。"},
+        {"type": "summary", "heading": "まとめ — 話法の体系",
+         "points": [
+            "直接話法 → 間接話法は人称・時制・指示語・時/場所の語をすべて変える",
+            "時制の一致: am→was, will→would, 過去形→過去完了 など 1 段過去へ",
+            "Yes/No 疑問: ask if/whether、Wh- 疑問: ask + 疑問詞 (平叙文語順)",
+            "命令文: tell + 人 + to do、否定は not to do",
+            "例外: 不変の真理・歴史的事実・仮定法は時制を保つ",
+            "他単元との繋がり: 時制 (本書 batch06)、関係詞 (batch06)、すべて文構造を扱う"
+         ]}
+    ]
+}
+
+INVERSION = {
+    "title": "倒置 — 否定語の文頭・仮定法の if 省略",
+    "subtitle": "通常語順を入れ替えて意味を強調する",
+    "subject": "英語（高校英文法）", "topic": "倒置", "level": "高校標準",
+    "sections": [
+        {"type": "intro", "heading": "はじめに — 倒置は「強調のための語順変更」",
+         "body": "通常の英文は \"S + V + O\" の語順だが、否定語や副詞を文頭に置くと、その後の主語と動詞 (助動詞) が逆になる。これが倒置。\n\n比喩を一つ。倒置は「文の見出し化」。新聞の見出しのように、強調したい要素を最前面に置く。\"Never have I seen such beauty.\" (こんな美しさを見たことがない、never が強調)。\n\nもう一つの比喩。倒置は「語順の体操」。普通の語順を意図的に変えることで、文に勢い・劇的さ・文学的な響きを加える。\n\n受験では否定語倒置 (Never, Hardly, Not until) と仮定法 if 省略の倒置が頻出。"},
+        {"type": "theory", "heading": "基本事項 — 倒置の3 パターン",
+         "body": "■ 否定語の文頭 (倒置必須)\n否定的副詞を文頭に出すと、後ろは「助動詞 + 主語 + 動詞」の語順:\n\n例: I have never seen such a thing. → Never have I seen such a thing.\n\n対象副詞: never, hardly, scarcely, seldom, rarely, little, nor, not only, no sooner, not until, in no way\n\n例:\n- Hardly had he arrived when it began to rain. (彼が到着するや否や雨が降り始めた)\n- Not only does he speak English, but also he speaks French.\n- No sooner had he left than the phone rang.\n- Not until I came home did I realize the truth. (家に帰って初めて真実に気づいた)\n\n■ 仮定法の if 省略\n仮定法の if を省略すると倒置が起こる:\n- If I were you → Were I you\n- If I had known → Had I known\n- If it should rain → Should it rain\n\n例: Were I you, I would accept the offer.\n例: Had I known earlier, I would have helped him.\n\n■ 場所・方向の副詞の文頭 (倒置あり)\n場所・方向を表す副詞句を文頭に出すと、主語と動詞 (be 動詞や移動動詞) を倒置:\n\n例: A cat is on the wall. → On the wall is a cat.\n例: She came down the stairs. → Down the stairs came she. (古風)\n\n注意: 主語が代名詞の場合は倒置しない:\n例: Down the stairs she came. (代名詞主語 → 倒置なし)\n例: Down the stairs came the girl. (名詞主語 → 倒置)\n\n■ So/Neither/Nor + 助動詞 + 主語\n相手の発言を受けて「自分も同じだ」と言うとき:\n例: I am tired. — So am I. (私もそうだ)\n例: I don't like coffee. — Neither do I. / Nor do I.\n\n■ 強調の Such / So + 形容詞\n例: So beautiful was the view that we stayed for an hour.\n(あまりに美しい景色だったので、1 時間そこに留まった)",
+         "table": [["倒置パターン", "形", "例"], ["否定語", "助動詞 + S + V", "Never have I seen ~"], ["仮定法 if 省略", "Were/Had/Should + S", "Were I you, ~"], ["場所副詞", "副詞句 + V + S", "On the wall is a cat"], ["So am I", "So + 助動詞 + S", "私もそうだ"]]},
+        {"type": "tip", "title": "ポイント: 否定語倒置のキーワード覚え方",
+         "body": "倒置を起こす否定的副詞:\n- never, hardly, scarcely, rarely, seldom (頻度の否定)\n- not only ~ but also (... だけでなく)\n- no sooner ~ than (~ するや否や)\n- not until (~ になって初めて)\n- little, nor (~ ない)\n- in no way (決して ~ ない)\n\n暗記法: 「否定の意味を持つ副詞・副詞句が文頭」+「助動詞 + 主語」の語順。\n\n例題:\n- I have hardly ever seen such beauty. → Hardly ever have I seen such beauty.\n- He had no sooner arrived than it began to rain. → No sooner had he arrived than it began to rain.\n\n意識的に「倒置の引き金」を文頭で見つける訓練が大切。"},
+        {"type": "warn", "title": "注意: 倒置で頻発するミス",
+         "body": "❌ ミス1: 否定語を文頭に出しても倒置しない。\nNG: Never I have seen ~\nOK: Never have I seen ~ (helping verb が前に出る)\n\n❌ ミス2: 一般動詞の倒置で do を使わない。\nNG: Rarely speaks she English. (古風だが現代ではない)\nOK: Rarely does she speak English. (一般動詞には do を使う)\n\n❌ ミス3: \"Not only\" の倒置を主節と従属節の両方に適用する。\nOK: Not only is he smart, but also he is kind. (Not only 部のみ倒置)\nNG: Not only is he smart, but also is he kind. (but also 部に倒置 = 不要)\n\n❌ ミス4: 仮定法 if 省略の倒置形を覚えない。\nNG: I would help you if I were here. → If I were here, I would help you. (省略しないなら if あり)\nOK: Were I here, I would help you. (省略 + 倒置)\n両方の形に慣れる。"},
+        {"type": "example", "number": 1,
+         "question": "次の文を倒置構文に書き換えよ。\nI have never been to Paris.",
+         "thought": "発想: 否定語 \"never\" を文頭 → 倒置 \"have I been\"。",
+         "answer": "Never have I been to Paris.",
+         "explanation": "「私は一度もパリに行ったことがない」(強調された倒置文)\n\n書き換え手順:\n1. \"never\" を文頭に\n2. 主語 \"I\" と助動詞 \"have\" を倒置\n3. 残りはそのまま\n\n結果: \"Never have I been to Paris.\"\n\n類題: 早稲田大学 2018 年で否定語倒置の書き換え問題が出題。"},
+        {"type": "example", "number": 2,
+         "question": "次の文を倒置構文 (if 省略) に書き換えよ。\nIf I had known about it, I would have told you.",
+         "thought": "発想: 仮定法過去完了の if 省略 → \"Had + 主語\"。",
+         "answer": "Had I known about it, I would have told you.",
+         "explanation": "仮定法過去完了 \"If I had known\" の if 省略形:\n- if を省略\n- had を文頭に出す → \"Had I known\"\n\n結果: \"Had I known about it, I would have told you.\"\n\n他のパターン:\n- If I were you → Were I you\n- If it should rain → Should it rain\n\n仮定法 if 省略の倒置は文語的・フォーマル。受験英語頻出。"},
+        {"type": "practice", "number": 1,
+         "question": "次の文を倒置構文に書き換えよ。\nNot until he arrived did the meeting begin."},
+        {"type": "answer", "number": 1,
+         "answer": "(これはすでに倒置構文)\n通常文に戻すと: The meeting did not begin until he arrived. (= 彼が来るまで会議は始まらなかった = 彼が来て初めて会議が始まった)",
+         "explanation": "本問はすでに倒置構文。通常文に戻して理解する練習。\n\n\"Not until he arrived did the meeting begin.\" = \"The meeting didn't begin until he arrived.\" = 「彼が来るまで会議は始まらなかった」\n\n倒置の意味: not until を文頭に出すことで「彼が来るまでは始まらなかった = 彼が来てから始まった」を強調。\n\n類題: 「Not until」と並び立つ「No sooner ~ than」も同じ倒置パターン:\n- No sooner had he left than the phone rang. (彼が去るや否や電話が鳴った)"},
+        {"type": "summary", "heading": "まとめ — 倒置の体系",
+         "points": [
+            "倒置 = 否定語/副詞句を文頭に出して「助動詞 + 主語 + 動詞」の語順",
+            "倒置の引き金: never, hardly, no sooner, not only, not until, in no way 等",
+            "仮定法 if 省略: Were/Had/Should を文頭に",
+            "場所・方向の副詞句 + 名詞主語 = 倒置 (代名詞主語は倒置しない)",
+            "So/Neither/Nor + 助動詞 + 主語 = 「自分も同じだ」",
+            "他単元との繋がり: 仮定法 (本書 batch06)、強調 (本書)、すべて文の意味を強める技法"
+         ]}
+    ]
+}
+
+EMPHASIS = {
+    "title": "強調 — It is ~ that 構文・do の強調",
+    "subtitle": "重要な要素を「際立たせる」技法",
+    "subject": "英語（高校英文法）", "topic": "強調", "level": "高校標準",
+    "sections": [
+        {"type": "intro", "heading": "はじめに — 強調は「文の中の何を目立たせるか」",
+         "body": "「太郎が昨日東京で太郎に会った」という文で、何を強調するかは話者の意図次第。「(他の誰でもなく) 太郎が」「(他の日でなく) 昨日」「(他の場所でなく) 東京で」のどれを強調するかで、表現を変える。これが強調構文。\n\n比喩を一つ。強調は「スポットライト」。舞台で全員を照らすライトに加えて、特定の俳優にスポットライトを当てると、その俳優が際立つ。It is ~ that 構文は文中の特定要素にスポットライトを当てる装置。\n\nもう一つの比喩。強調は「太字」。普通の文字 (=通常文) の中で重要な部分を太字 (=強調) にすると、読者の注意がそこに集中する。\n\n受験では (1) It is ~ that 構文、(2) do/does/did による動詞強調、(3) 強調副詞 (very, really, even) が頻出。"},
+        {"type": "theory", "heading": "基本事項 — 強調の主要構文",
+         "body": "■ It is ~ that 構文 (強調構文・分裂文)\n文の中の名詞・副詞句を強調するとき:\n\\[ \\text{It is} + \\text{[強調する要素]} + \\text{that + [残りの文]} \\]\n\n基本文: Tom met Mary in the park yesterday.\n\n強調別:\n- 主語強調: It was Tom that met Mary in the park yesterday.\n- 目的語強調: It was Mary that Tom met in the park yesterday.\n- 場所強調: It was in the park that Tom met Mary yesterday.\n- 時の強調: It was yesterday that Tom met Mary in the park.\n\nthat の代わりに人なら who、物なら which も可。\n\n■ do の強調 (動詞の強調)\n肯定文の動詞を強調するとき、do/does/did を加える:\n例: I do believe you. (本当に信じる)\n例: He does work hard. (本当によく働く)\n例: She did call me. (本当に電話してきた)\n\n対比: I believe you. (普通) vs I do believe you. (強調)\n\n注意: do の後の動詞は原形。\n\n■ 名詞の強調 the very, that very\n例: This is the very book I was looking for. (まさに私が探していた本)\n例: At that very moment, the phone rang. (まさにその瞬間、電話が鳴った)\n\n■ 否定の強調 not + 一切 (at all)\n例: I do not understand at all. (全く理解できない)\n例: There is no doubt at all. (一切の疑いがない)\n\n■ 比較級・最上級の強調\n比較級の強調: much, far, even, still, a lot\n例: This is much more difficult. (はるかに難しい)\n\n最上級の強調: by far, much, very + 最上級\n例: He is by far the best. (圧倒的に最高)\n例: This is the very best. (まさに最高)\n\n注意: very + 比較級は不可、much + 最上級も英語によって不可。\n\n■ 強調副詞 \"even / so / really\"\n例: Even a child can do it. (子供でさえできる)\n例: I am so tired. (とても疲れている、口語)\n例: I really mean it. (本当にそう意味している)",
+         "table": [["強調", "形", "用途"], ["It is ~ that", "It is + 強調 + that", "名詞・副詞句"], ["do/does/did", "do + 動詞原形", "動詞の強調"], ["the very", "the very + 名詞", "「まさにその ~」"], ["比較級強調", "much/far + 比較級", "比較の差を強調"]]},
+        {"type": "tip", "title": "ポイント: It is ~ that 構文の判別",
+         "body": "「It is ~ that ...」のパターンには複数の意味がある。区別が必要:\n\n1. **強調構文**: 「~ こそが ...」(分裂文)\n   It is Tom that broke the window. (窓を割ったのは Tom だ)\n\n2. **形式主語**: 「~ であることは ...」\n   It is true that he is honest. (彼が正直なのは事実だ)\n\n3. **天候・時間の it**:\n   It is hot today. (今日は暑い)\n   It is 3 pm now.\n\n判別法: \"It is ~\" を取り除いた文が完全か?\n- 完全 (\"~\" がなくても文が成立) → 強調構文 (~ は文中の要素)\n- 不完全 (\"~\" が必要) → 形式主語\n\n例:\n- It was Tom that met Mary. → \"That met Mary\" は不完全だが、\"Tom met Mary\" として元の文に戻せる → 強調構文\n- It is true that he is honest. → \"that he is honest\" は完全な節 → 形式主語"},
+        {"type": "warn", "title": "注意: 強調で頻発するミス",
+         "body": "❌ ミス1: do の強調を疑問文・否定文と混同。\n肯定文での do/does/did は強調 (\"I do love you\")。\n疑問文 \"Do you love me?\" や否定文 \"I do not love\" の do は文法的に必須 (強調ではない)。\n文脈で区別。\n\n❌ ミス2: It is ~ that 構文で動詞を強調しようとする。\nNG: It is run that I do every morning. (動詞 \"run\" は強調できない)\nOK: I do run every morning. (do の強調を使う)\n動詞は do の強調、それ以外は It is ~ that。\n\n❌ ミス3: very + 比較級を使う。\nNG: This is very better than that.\nOK: This is much better / far better than that. (比較級強調は much/far/even)\n\n❌ ミス4: \"by far\" を比較級で使う。\nNG: This is by far better. (比較級では much/far)\nOK: This is by far the best. (最上級強調)"},
+        {"type": "example", "number": 1,
+         "question": "次の文の主語を It is ~ that 構文で強調せよ。\nMary broke the vase yesterday.",
+         "thought": "発想: 主語 \"Mary\" を強調 → \"It was Mary that broke the vase yesterday.\"",
+         "answer": "It was Mary that broke the vase yesterday.",
+         "explanation": "強調構文の作り方:\n1. \"It was\" + 強調する要素 (Mary)\n2. \"that\" + 残りの文 (broke the vase yesterday)\n\n結果: \"It was Mary that broke the vase yesterday.\" (花瓶を割ったのは Mary だ)\n\nthat の代わりに who も可 (人を強調するとき): \"It was Mary who broke the vase yesterday.\"\n\nニュアンス: 「他の誰でもなく Mary が」と強調。質問 \"Who broke the vase?\" への答えとして自然。"},
+        {"type": "example", "number": 2,
+         "question": "次の文の動詞を強調せよ。\nI study English hard.",
+         "thought": "発想: 動詞 \"study\" を強調 → do の強調 \"do study\"。",
+         "answer": "I do study English hard.",
+         "explanation": "do/does/did による動詞強調:\n- 主語が一人称・二人称・複数 → do + 動詞原形\n- 主語が三人称単数 → does + 動詞原形\n- 過去形なら → did + 動詞原形\n\n本問: \"I study\" → \"I do study\" (一人称単数だが、現在形なので do)\n\nニュアンス: 「(怠けているわけじゃなく) 本当に英語を熱心に勉強している」と弁明・強調。\n\n類題:\n- \"He works hard.\" → \"He does work hard.\"\n- \"She came home.\" → \"She did come home.\""},
+        {"type": "practice", "number": 1,
+         "question": "次の文の意味を答えよ。\nIt was in 1995 that he was born."},
+        {"type": "answer", "number": 1,
+         "answer": "彼が生まれたのは1995 年だ。",
+         "explanation": "強調構文 \"It was ~ that ~\" は時の副詞句 \"in 1995\" を強調。\n\n通常文: He was born in 1995.\n強調: It was in 1995 that he was born.\n\nニュアンス: 「(他の年でなく) 1995 年に」と時を強調。\n\n類題:\n- It was at 8 pm that the meeting ended. (会議が終わったのは8 時だ)\n- It is here that I first met her. (彼女に初めて会ったのはここだ)"},
+        {"type": "summary", "heading": "まとめ — 強調の体系",
+         "points": [
+            "It is ~ that 構文で文中の要素を強調 (主語・目的語・副詞句)",
+            "動詞の強調は do/does/did + 原形",
+            "the very + 名詞 = 「まさにその ~」",
+            "比較級強調: much, far, even / 最上級強調: by far, very",
+            "It is ~ that の3 用途 (強調構文/形式主語/天候時間) を区別",
+            "他単元との繋がり: 倒置 (本書)、関係詞節 (本書 batch06)、これらと組み合わせて文の表現力を高める"
+         ]}
+    ]
+}
+
+OMISSION = {
+    "title": "省略 — 関係詞・接続詞・共通要素の省略",
+    "subtitle": "簡潔さのための省略パターンを体系で",
+    "subject": "英語（高校英文法）", "topic": "省略", "level": "高校標準",
+    "sections": [
+        {"type": "intro", "heading": "はじめに — 省略は「重複を消す英語の経済性」",
+         "body": "英語は同じ要素の繰り返しを嫌う。\"I went to the park, and (I) saw a beautiful flower.\" のように主語が共通なら2 つ目を省略する。これが英語の経済性。\n\n比喩を一つ。省略は「俳句」。最少の言葉で最大の意味を伝える技法。読み手が省略部分を補う前提で、簡潔さを実現する。\n\nもう一つの比喩。省略は「会話の阿吽の呼吸」。共通理解されている部分はあえて言わない。\"Are you coming?\" — \"Yes, I am (coming).\" のように、明白な部分は省略。\n\n受験では (1) 関係詞の省略、(2) 接続詞の省略、(3) 共通要素の省略、(4) 副詞節の省略 (when V-ing 等) が頻出。"},
+        {"type": "theory", "heading": "基本事項 — 主要な省略パターン",
+         "body": "■ 関係代名詞の省略\n目的格関係代名詞は省略可:\n- The book (which) I bought is interesting.\n- The man (whom) I met yesterday is a doctor.\n\n主格関係代名詞 + be 動詞 も省略可 (分詞修飾になる):\n- The boy (who is) reading a book is my brother.\n\n注: 主格単独 (who, which, that だけ) は省略不可。\n\n■ 接続詞 that の省略\nsay, think, know, believe など認識動詞の that 節は省略可:\n- I know (that) he is honest.\n- She said (that) she would come.\n\n■ 副詞節での共通要素省略\n\"when, while, if, though, until\" 等の副詞節で、主語と be 動詞が主節と同じなら省略可:\n- When (he was) young, he was poor. (若い頃、彼は貧しかった)\n- If (it is) possible, please call me.\n- While (I was) walking home, I met him.\n\n■ 共通主語の省略\nand/but で結ばれた文で主語が同じなら省略可:\n- He came home, and (he) had dinner.\n- She studied hard but (she) failed the exam.\n\n■ 動詞の省略 (代動詞 do)\n前文の動詞句を do で受ける:\n- He works hard, and so do I. (= and I work hard too)\n- I like coffee, and she does too. (= and she likes coffee too)\n\n■ 省略構文 \"if any / if ever / if at all\"\n慣用的省略:\n- I have few friends, if any. (もしいたとしても少ない)\n- He rarely calls me, if ever. (もしあるとしてもまれだ)\n\n■ 「to + 動詞」の省略 (代不定詞)\n前文の動詞句を to だけで受ける:\n- I want to swim, but I don't know how to (swim).\n- You can come if you want to (come).\n\n■ 助動詞の省略\n- Yes/No 答えで助動詞だけ残す: \"Are you ready?\" — \"Yes, I am.\" / \"No, I'm not.\"\n- 倒置でも: \"So am I.\" \"Neither do I.\"",
+         "table": [["省略パターン", "省略可な要素", "例"], ["関係代名詞", "目的格 (whom/which/that)", "the book (which) I bought"], ["that 節", "認識動詞の後の that", "I think (that) he is right"], ["副詞節", "主語 + be 動詞", "When (he was) young, ~"], ["共通主語", "and/but の後", "He came and (he) saw"], ["代動詞", "前文の動詞句", "He works, so do I"]]},
+        {"type": "tip", "title": "ポイント: 省略を見抜くコツ",
+         "body": "英文を読むとき、省略があると構造が分かりにくくなる。省略を見抜く訓練:\n\n1. **「名詞 + 主語 + 動詞」を見たら**: 目的格関係代名詞の省略\n   例: \"The book I bought\" → 「I bought」の前に which 省略\n\n2. **「副詞 + V-ing/V-ed」を見たら**: 副詞節の省略\n   例: \"When walking home\" → \"When (I was) walking home\"\n\n3. **\"do/does/did\" 単独**: 代動詞の可能性\n   例: \"I like ~ . He does too.\" → does = likes ~\n\n4. **「to + 単独の動詞抜け」**: 代不定詞\n   例: \"You may if you want to.\" → \"want to (do)\"\n\n省略は「読む力」のテスト。省略部分を補ってこそ正確な意味が取れる。"},
+        {"type": "warn", "title": "注意: 省略で頻発するミス",
+         "body": "❌ ミス1: 主格関係代名詞を省略する。\nNG: The man lives next door is a doctor.\nOK: The man who lives next door is a doctor. (主格は省略不可)\n\n❌ ミス2: 副詞節で主語/be 動詞の片方だけ省略する。\nNG: When he young, he was poor. (be 動詞だけ省略は不自然)\nOK: When (he was) young, he was poor. (両方省略)\nOK: When he was young, he was poor. (省略しない)\n\n❌ ミス3: 副詞節の主語が主節と違うのに省略。\nNG: While walking, the dog barked at me. (歩いていたのは犬?)\nOK: While I was walking, the dog barked at me. (主語が違うので省略不可)\nまたは: While walking, I was barked at by a dog. (主語を一致させる)\n\n❌ ミス4: 代動詞の選び方を誤る。\nNG: He works hard, and so does I.\nOK: He works hard, and so do I. (主語 I なので do)"},
+        {"type": "example", "number": 1,
+         "question": "次の文の省略部分を補え。\nThe car I bought yesterday is broken.",
+         "thought": "発想: \"The car I bought\" → 関係代名詞の目的格 (which/that) が省略されている。",
+         "answer": "The car (which / that) I bought yesterday is broken.",
+         "explanation": "「名詞 + 主語 + 動詞」のパターンで、目的格関係代名詞 \"which\" または \"that\" が省略されている。\n\n復元: The car which I bought yesterday is broken.\n意味: 「私が昨日買った車は壊れている」\n\nこのパターンは長文読解の頻出ポイント。省略を見抜けないと文構造が崩れる。"},
+        {"type": "example", "number": 2,
+         "question": "次の文の省略部分を補え。\nWhen tired, I usually go to bed early.",
+         "thought": "発想: 副詞節 \"When tired\" は \"When I am tired\" の主語 + be 動詞省略。",
+         "answer": "When (I am) tired, I usually go to bed early.",
+         "explanation": "副詞節 \"When tired\" は \"When I am tired\" の省略形。主節と主語が同じ (\"I\") + be 動詞 (\"am\") が省略されている。\n\n意味: 「疲れているとき、私はたいてい早く寝る」\n\n類似:\n- If possible → If (it is) possible\n- While young → While (I was) young\n- Though tired → Though (I am) tired\n\nこの省略は分詞構文と類似 (副詞節を簡略化)、ただし接続詞が残る点が違う。"},
+        {"type": "practice", "number": 1,
+         "question": "次の文の代動詞 \"do\" が指しているものを答えよ。\nMy sister speaks French, but I don't."},
+        {"type": "answer", "number": 1,
+         "answer": "\"don't\" は \"don't speak French\" の省略形。",
+         "explanation": "代動詞 \"do\" は前文の動詞句を受ける。\n\n本問: \"speaks French\" → 否定なら \"don't speak French\" → 省略形 \"don't\"。\n\n復元: My sister speaks French, but I don't (speak French).\n意味: 「姉はフランス語を話すが、私は話さない」\n\n他の例:\n- He likes coffee, and so do I. (= so do I [like coffee])\n- I don't smoke, and neither does he. (= neither does he [smoke])\n- \"Do you play tennis?\" — \"Yes, I do.\" (= Yes, I [play tennis])"},
+        {"type": "summary", "heading": "まとめ — 省略の体系",
+         "points": [
+            "目的格関係代名詞 (whom/which/that) は省略可、主格は不可",
+            "認識動詞 (think, say, know) の that 節は省略可",
+            "副詞節 \"when/while/if/though\" 等は主語 + be 動詞の同時省略 (主節と主語一致時)",
+            "代動詞 do/does/did で前文の動詞句を受ける",
+            "代不定詞 \"to\" 単独で前文の動詞句を受ける",
+            "if any (もしあれば少ない)、if ever (まれにあっても) などの慣用省略",
+            "他単元との繋がり: 関係詞 (本書 batch06)、分詞構文 (batch07)、すべて省略の応用"
+         ]}
+    ]
+}
+
+
+def make_textbook_entry(content_dict, length="medium", ttype="unit_lesson", tags=None):
+    return {
+        "subject": content_dict["subject"], "topic": content_dict["topic"], "level": content_dict["level"],
+        "length": length, "type": ttype, "title": content_dict["title"],
+        "tags": tags or [], "content": content_dict,
+        "status": "published", "source": "claude_max_seed_batch09",
+    }
+
+textbooks = [
+    make_textbook_entry(NARRATION, tags=["話法", "直接話法", "間接話法", "時制の一致"]),
+    make_textbook_entry(INVERSION, tags=["倒置", "否定語倒置", "if省略", "場所副詞"]),
+    make_textbook_entry(EMPHASIS, tags=["強調", "It is that", "do強調", "the very"]),
+    make_textbook_entry(OMISSION, tags=["省略", "関係詞省略", "副詞節省略", "代動詞", "代不定詞"]),
+]
+
+with open(OUTPUT, "w", encoding="utf-8") as f:
+    json.dump({"textbooks": textbooks}, f, ensure_ascii=False, indent=2)
+
+print(f"✅ 書き出し完了: {OUTPUT}")
+print(f"   教材数: {len(textbooks)}")
+for t in textbooks:
+    print(f"   - {t['subject']} / {t['topic']} ({len(t['content']['sections'])} sections)")
