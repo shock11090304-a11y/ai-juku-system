@@ -971,6 +971,8 @@ function renderView(view) {
     applyInlineMarkup(el);
     // 簡易 Markdown テーブルレンダリング (body 内に | 強酸 | 弱酸 | のような表が来た場合)
     renderInlineMarkdownTables(el);
+    // Markdown 風 bullet/番号付きリスト (- ... / 1. ...) を <ul>/<ol> に変換
+    renderInlineMarkdownLists(el);
     // KaTeX で LaTeX 数式を描画 (\( ... \) インライン、\[ ... \] ディスプレイ)
     // auto-render.js が読み込まれていれば renderMathInElement が定義される
     if (typeof renderMathInElement === 'function') {
@@ -1057,6 +1059,54 @@ function renderInlineMarkdownTables(rootEl) {
       } else if (isSeparator && inTable) {
         // ヘッダ区切り行はスキップ
         continue;
+      } else {
+        flush();
+        out.push(raw);
+      }
+    }
+    flush();
+    p.innerHTML = out.join('<br>');
+  });
+}
+
+// 本文中の Markdown 風リストを HTML <ul>/<ol> に変換。
+// 「- 項目」「* 項目」 → bullet list、「1. 項目」 → 番号付きリスト。
+// 行頭以外の - や、数式中の負号 (LaTeX 内) は対象外。
+function renderInlineMarkdownLists(rootEl) {
+  if (!rootEl) return;
+  const targets = rootEl.querySelectorAll('p, .tip-box, .warn-box, .reveal-section, .answer-block');
+  targets.forEach(p => {
+    const html = p.innerHTML;
+    if (!/<br\s*\/?>/i.test(html)) return;  // 改行が無いものは対象外
+    const lines = html.split(/<br\s*\/?>/i);
+    const out = [];
+    let listItems = [];
+    let listType = null;  // 'ul' or 'ol'
+
+    const flush = () => {
+      if (listItems.length > 0 && listType) {
+        out.push('<' + listType + ' style="margin:0.5rem 0 0.5rem 1.5rem;padding-left:1rem;">' +
+                 listItems.map(li => '<li style="margin:0.2rem 0;">' + li + '</li>').join('') +
+                 '</' + listType + '>');
+      }
+      listItems = [];
+      listType = null;
+    };
+
+    for (const raw of lines) {
+      const line = raw.replace(/^\s+/, '');  // 先頭空白除去
+      // bullet list: - / * の後に半角空白 (negative number と区別)
+      const ulMatch = /^[-*]\s+(.+)$/.exec(line);
+      // ordered list: 数字 + . + 半角空白
+      const olMatch = /^(\d+)\.\s+(.+)$/.exec(line);
+      if (ulMatch) {
+        if (listType && listType !== 'ul') flush();
+        listType = 'ul';
+        listItems.push(ulMatch[1]);
+      } else if (olMatch) {
+        if (listType && listType !== 'ol') flush();
+        listType = 'ol';
+        listItems.push(olMatch[2]);
       } else {
         flush();
         out.push(raw);
