@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/payment-api/stripe-charges",
+      "source": "/payment/api/stripe-charges",
       "destination": "/api/stripe-charges"
     },
     {

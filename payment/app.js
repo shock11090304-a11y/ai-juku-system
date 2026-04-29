@@ -940,7 +940,7 @@ async function importFromStripe() {
   btn.disabled = true;
   status.textContent = '🔄 Stripe API から取得中...';
   try {
-    const url = `/payment-api/stripe-charges?month=${encodeURIComponent(month)}`;
+    const url = `/payment/api/stripe-charges?month=${encodeURIComponent(month)}`;
     const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
     let data = null;
     try { data = await r.json(); } catch (e) { /* fallthrough: 非JSON応答 */ }
@@ -952,7 +952,7 @@ async function importFromStripe() {
         : (r.status === 404 && isLocalhost
             ? '<br><span style="color:var(--text-muted);font-size:0.82rem">ℹ ローカル開発環境では Stripe 取込は動作しません。本番 (https://www.trillion-ai-juku.com/payment/) で試してください。</span>'
             : (r.status === 404
-                ? '<br><span style="color:var(--text-muted);font-size:0.82rem">ℹ /payment-api/stripe-charges が見つかりません。Vercel への最新版デプロイをご確認ください。</span>'
+                ? '<br><span style="color:var(--text-muted);font-size:0.82rem">ℹ /payment/api/stripe-charges が見つかりません。Vercel への最新版デプロイをご確認ください。</span>'
                 : ''));
       const link = data && data.dashboard ? `<br><a href="${escapeHtml(data.dashboard)}" target="_blank" style="color:var(--primary-light)">→ Vercel Dashboard を開く</a>` : '';
       status.innerHTML = `<span style="color:var(--error)">⚠ ${escapeHtml(msg)}</span>${hint}${link}`;
