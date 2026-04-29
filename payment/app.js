@@ -917,10 +917,10 @@ function chargesToRows(charges) {
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const dd = String(d.getDate()).padStart(2, '0');
-    const dateInt = parseInt(`${yyyy}${mm}${dd}`, 10);
+    const dateStr = `${yyyy}${mm}${dd}`;  // 楽天CSV と同じ YYYYMMDD 文字列形式に統一
     const payer = (c.customer_name || c.customer_email || c.receipt_email || c.description || '(Stripe決済)').trim();
     return {
-      date: dateInt,
+      date: dateStr,
       amount: Number(c.amount) || 0,
       content: payer,
       _source: 'stripe',
