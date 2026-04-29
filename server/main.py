@@ -5023,6 +5023,62 @@ def public_textbook_search(
     return {"ok": True, "count": len(out), "results": out}
 
 
+@app.post("/api/admin/textbooks/purge")
+def admin_textbook_pool_purge(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """textbook_pool の特定レコードを削除する admin endpoint。
+    payload (いずれか必須):
+      {"source": "claude_max_seed_batch01"}  # source 完全一致で削除
+      {"id": 123}                              # ID 指定削除
+      {"subject": "数学ⅠA", "topic": "2次関数"}  # subject + topic 一致削除
+    認証: admin Bearer or x-cron-secret"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    source = payload.get("source")
+    rec_id = payload.get("id")
+    subject = payload.get("subject")
+    topic = payload.get("topic")
+
+    where = []
+    params = []
+    if source:
+        where.append("source = ?")
+        params.append(source)
+    if rec_id:
+        where.append("id = ?")
+        params.append(int(rec_id))
+    if subject:
+        where.append("subject = ?")
+        params.append(subject)
+    if topic:
+        where.append("topic = ?")
+        params.append(topic)
+    if not where:
+        raise HTTPException(status_code=400, detail="削除条件が空です (source/id/subject/topic のいずれか必須)")
+
+    where_sql = " WHERE " + " AND ".join(where)
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(f"SELECT COUNT(*) AS n FROM textbook_pool{where_sql}", tuple(params))
+        row = c.fetchone()
+        will_delete = row["n"] if row else 0
+        c.execute(f"DELETE FROM textbook_pool{where_sql}", tuple(params))
+        conn.commit()
+    finally:
+        conn.close()
+
+    log.info(f"[TextbookPool:Purge] deleted={will_delete} where={where_sql} params={params}")
+    return {"ok": True, "deleted": will_delete, "where": where_sql, "message": f"✅ {will_delete} 教材を削除しました"}
+
+
 @app.get("/api/admin/textbooks/list")
 def admin_textbook_pool_list(authorization: Optional[str] = Header(None)):
     """admin: textbook_pool 一覧 (CEO ダッシュ表示用)"""

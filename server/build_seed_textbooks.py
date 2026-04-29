@@ -16,9 +16,9 @@ OUTPUT = os.path.join(os.path.dirname(__file__), "seed_textbooks_batch01.json")
 MATH_IA_QUADRATIC = {
     "title": "二次関数 — 平方完成と最大・最小の本質",
     "subtitle": "「軸」と「定義域」の交差で勝負が決まる",
-    "subject": "数学IA",
-    "topic": "二次関数",
-    "level": "高1〜高2 標準",
+    "subject": "数学ⅠA",
+    "topic": "2次関数",
+    "level": "高校標準",
     "sections": [
         {
             "type": "intro",
@@ -94,9 +94,9 @@ MATH_IA_QUADRATIC = {
 ENGLISH_RELATIVE_PRONOUN = {
     "title": "関係代名詞 — 文を1つにまとめる接着剤の正体",
     "subtitle": "who, which, that, whose を「2文 → 1文」の発想で完全攻略",
-    "subject": "英語",
-    "topic": "関係代名詞",
-    "level": "高1〜高2 標準",
+    "subject": "英語（MARCH）",
+    "topic": "文法・語法 (Vintage / Next Stage レベル)",
+    "level": "高校標準",
     "sections": [
         {
             "type": "intro",
@@ -181,9 +181,9 @@ ENGLISH_RELATIVE_PRONOUN = {
 KOBUN_AUXILIARIES = {
     "title": "助動詞「む・べし・らむ」— 推量3兄弟の役割分担を本質から理解する",
     "subtitle": "「未来」「強い未来」「現在のこと」の3つの時間軸",
-    "subject": "古文",
-    "topic": "助動詞 む べし らむ",
-    "level": "高2〜高3 標準",
+    "subject": "国語（古文）",
+    "topic": "助動詞 (む・むず・じ・まし)",
+    "level": "高校標準",
     "sections": [
         {
             "type": "intro",
@@ -268,9 +268,9 @@ KOBUN_AUXILIARIES = {
 PHYSICS_MECHANICS = {
     "title": "運動方程式とエネルギー保存則 — 力学の双璧を使い分ける",
     "subtitle": "「力で攻めるか、エネルギーで攻めるか」の判断基準",
-    "subject": "物理",
-    "topic": "力学 運動方程式 エネルギー保存",
-    "level": "高2〜高3 標準",
+    "subject": "物理基礎・物理",
+    "topic": "運動方程式",
+    "level": "高校標準",
     "sections": [
         {
             "type": "intro",
@@ -348,9 +348,9 @@ PHYSICS_MECHANICS = {
 CHEMISTRY_ALIPHATIC = {
     "title": "脂肪族炭化水素 — アルカン・アルケン・アルキンを反応で見分ける",
     "subtitle": "結合の二重性・三重性が反応性を決める",
-    "subject": "化学",
-    "topic": "有機化学 脂肪族炭化水素",
-    "level": "高2〜高3 標準",
+    "subject": "化学基礎・化学",
+    "topic": "有機 (脂肪族)",
+    "level": "高校標準",
     "sections": [
         {
             "type": "intro",
