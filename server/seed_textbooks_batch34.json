@@ -1,0 +1,582 @@
+{
+  "textbooks": [
+    {
+      "subject": "英語（中学英文法）",
+      "topic": "過去形",
+      "level": "中学標準",
+      "length": "medium",
+      "type": "unit_lesson",
+      "title": "過去形 — 『〜した』を表す動詞の形",
+      "tags": [],
+      "content": {
+        "title": "過去形 — 『〜した』を表す動詞の形",
+        "subtitle": "規則変化 -ed・不規則変化・否定 didn't・疑問 Did",
+        "subject": "英語（中学英文法）",
+        "topic": "過去形",
+        "level": "中学標準",
+        "sections": [
+          {
+            "type": "intro",
+            "heading": "はじめに — 過去形は『時間を遡る動詞』",
+            "body": "過去形 (past tense) は、すでに終わった出来事や動作を表す動詞の形。日本語の『〜した』『〜だった』にあたる。\n\n比喩を一つ。過去形は『動詞のタイムマシン』。普通の現在形『play』が『今・普段』を表すのに対し、過去形『played』は時計を巻き戻して『昨日・先週・10年前』の出来事を表す。動詞が衣替えをして時を旅するイメージ。\n\nもう一つの比喩。過去形は『写真アルバムのページ』。現在形は『今この瞬間のスマホ画面』、過去形は『古いアルバムを開いた瞬間』。動詞の語尾に『-ed』をつけたり、go→went のように形が変わったりするのは、アルバムのページに張り付けられた色あせた写真と同じ。\n\n受験では (1) 規則変化 (-ed の付け方)、(2) 不規則変化 (go-went, eat-ate, see-saw…) の暗記、(3) 過去の否定文 didn't + 動詞の原形、(4) 過去の疑問文 Did + 主語 + 原形、(5) yesterday/last week/ago など過去の時間表現とのセット使用が頻出。中1後半〜中2で必ず固める基礎。"
+          },
+          {
+            "type": "theory",
+            "heading": "基本事項 — 過去形の作り方",
+            "body": "■ 規則変化 (Regular verbs) — 動詞 + ed\n\n● **パターン1: 普通の動詞 → そのまま ed**\n- play → played\n- watch → watched\n- visit → visited\n- want → wanted\n- talk → talked\n- walk → walked\n- help → helped\n\n● **パターン2: e で終わる動詞 → d だけつける**\n- like → liked (× likeed)\n- live → lived\n- love → loved\n- use → used\n- arrive → arrived\n- hope → hoped\n- close → closed\n\n● **パターン3: 子音字 + y で終わる動詞 → y を i に変えて ed**\n- study → studied (× studyed)\n- try → tried\n- cry → cried\n- carry → carried\n- worry → worried\n\n注意: 母音字 + y のときはそのまま ed (play → played, enjoy → enjoyed)。\n\n● **パターン4: 短い動詞 (1音節) で 母音1つ + 子音1つ → 子音を重ねて ed**\n- stop → stopped (× stoped)\n- plan → planned\n- drop → dropped\n- jog → jogged\n- shop → shopped\n\n■ 不規則変化 (Irregular verbs) — 暗記必須\n\n中学で必須の不規則動詞:\n\n| 原形 | 過去形 | 意味 |\n|---|---|---|\n| go | went | 行く |\n| come | came | 来る |\n| see | saw | 見る |\n| eat | ate | 食べる |\n| have | had | 持つ・食べる |\n| do | did | する |\n| get | got | 得る |\n| make | made | 作る |\n| take | took | 取る |\n| give | gave | 与える |\n| say | said | 言う |\n| read | read (発音 red) | 読む |\n| write | wrote | 書く |\n| know | knew | 知る |\n| think | thought | 思う |\n| buy | bought | 買う |\n| run | ran | 走る |\n| swim | swam | 泳ぐ |\n| sing | sang | 歌う |\n| put | put | 置く (同形) |\n| cut | cut | 切る (同形) |\n| meet | met | 会う |\n| drink | drank | 飲む |\n| begin | began | 始める |\n| sleep | slept | 寝る |\n\n■ 否定文 — didn't + 動詞の原形\n\n型: 主語 + didn't (= did not) + 動詞の原形 + …\n\n例:\n- I didn't play tennis yesterday. (昨日テニスをしなかった)\n- He didn't go to school last Monday.\n- They didn't eat breakfast.\n\n注意: didn't の後は『動詞の原形』。過去形 (-ed や不規則) を重ねない。\n× I didn't played. / × He didn't went.\n○ I didn't play. / ○ He didn't go.\n\n■ 疑問文 — Did + 主語 + 動詞の原形\n\n型: Did + 主語 + 動詞の原形 + …?\n\n答え方: Yes, 主語 + did. / No, 主語 + didn't.\n\n例:\n- Did you play tennis yesterday? — Yes, I did. / No, I didn't.\n- Did he go to school? — Yes, he did.\n- Did they eat sushi? — No, they didn't.\n\n注意: Did の後も動詞の原形。\n× Did you played? / × Did he went?\n○ Did you play? / ○ Did he go?\n\n■ 過去を示す時の副詞 (合言葉)\n\n過去形の文には、次のような時間表現がよく一緒に使われる:\n\n- yesterday (昨日)\n- last + 時 (last week 先週、last Sunday 先週日曜、last month 先月、last year 去年)\n- 数 + ago (two days ago 2日前、a week ago 1週間前、ten years ago 10年前)\n- in + 過去の年 (in 2020)\n- when I was a child (子供だった頃)\n- this morning (今朝、もう過ぎた場合)\n- just now (たった今)\n\nこれらの語があれば過去形を使う合図。逆に、これらの語がなくても文脈で過去なら過去形。",
+            "table": [
+              [
+                "タイプ",
+                "規則",
+                "例",
+                "意味"
+              ],
+              [
+                "規則 (普通)",
+                "+ ed",
+                "play → played",
+                "した"
+              ],
+              [
+                "規則 (e終わり)",
+                "+ d",
+                "like → liked",
+                "好きだった"
+              ],
+              [
+                "規則 (子音+y)",
+                "y → ied",
+                "study → studied",
+                "勉強した"
+              ],
+              [
+                "規則 (子音重ね)",
+                "重ねる + ed",
+                "stop → stopped",
+                "止めた"
+              ],
+              [
+                "不規則",
+                "暗記",
+                "go → went",
+                "行った"
+              ]
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "ポイント: 不規則動詞は『毎朝5分の声出し暗唱』で固める",
+            "body": "規則変化は『-ed をつけるだけ』のルールで簡単だが、不規則動詞は『暗記しないとどうにもならない』。中1〜中2で必ず固めるべき土台。\n\n効率的な覚え方:\n\n1. **3 つずつグループにする**\n   - go-went, come-came, see-saw\n   - eat-ate, drink-drank, have-had\n   - get-got, make-made, take-took\n   3 個セットでリズム良く声に出す。\n\n2. **意味グループで覚える**\n   - 移動: go-went, come-came, run-ran, swim-swam\n   - 食事: eat-ate, drink-drank, have-had\n   - 思考: think-thought, know-knew, say-said\n\n3. **同じ形に変わる仲間を覚える**\n   - 過去形が ought 系: think-thought, buy-bought, bring-brought, catch-caught\n   - 過去形が原形と同じ: put-put, cut-cut, read-read (発音は red)\n\n比喩: 不規則動詞は『英語の漢字』。漢字 1 字 1 字を覚えるのと同じで、繰り返し書いて読んで体に入れる。30 個覚えれば中学レベルの 9 割をカバー。\n\n暗唱フレーズ (毎朝 5 分):\n『go went、come came、see saw、eat ate、have had、do did、get got、make made、take took、give gave、say said、read read、write wrote、know knew、think thought、buy bought、run ran、swim swam、sing sang、put put、cut cut、meet met、drink drank、begin began、sleep slept』\n\nこれを口で言える状態にしてから、英作文・読解に進む。\n\n試験の落とし穴: 『read』は原形・過去形・過去分詞すべて『read』だが、過去形・過去分詞は発音が『レッド (red)』に変わる。スペルが同じでも音が違うので注意。"
+          },
+          {
+            "type": "warn",
+            "title": "注意: 過去形でよくある間違い",
+            "body": "❌ ミス1: 不規則動詞を ed にする。\nNG: He goed to Tokyo. / I eated lunch. / She comed home. / They runned.\nOK: He went to Tokyo. / I ate lunch. / She came home. / They ran.\n\n→ 不規則動詞は丸暗記。上の 25 個は必ず覚える。\n\n❌ ミス2: 規則変化のスペルを間違える。\nNG: I studyed → studied (誤り)、I stoped → stopped (誤り)、I likeed → liked (誤り)\nOK: studied / stopped / liked\n\n→ 子音 + y は ied、短い動詞の母音1+子音1は子音を重ねる、e で終わる動詞は d だけ。\n\n❌ ミス3: didn't / Did の後に過去形を使う。\nNG: I didn't went to school. / Did you went?\nOK: I didn't go to school. / Did you go?\n\n→ didn't / Did の後は『動詞の原形』。最頻出ミス。\n\n❌ ミス4: 過去形の文に現在の時間表現を入れる。\nNG: I played tennis tomorrow. (tomorrow は未来 → 過去形と矛盾)\nOK: I played tennis yesterday. / I will play tennis tomorrow.\n\n❌ ミス5: 答えで動詞を繰り返す。\nNG: Did you go? — Yes, I went.\nOK: Did you go? — Yes, I did.\n\n→ 答えは『did / didn't』を使うのが原則。\n\n❌ ミス6: be動詞の過去 (was/were) を一般動詞のように扱う。\nNG: Did you was tired? (was は be動詞 → did 不要)\nOK: Were you tired? (be動詞の疑問は be動詞を前に)\n\n→ be動詞の過去は『be動詞の単元』のルール (was/were)、一般動詞の過去は『did』を使う、と分けて考える。\n\n❌ ミス7: 過去進行形 (was/were + V-ing) と過去形の混同。\nNG: I was studied at 8. (was と studied の二重)\nOK: I studied yesterday. (過去形) / I was studying at 8. (過去進行形)\n\n→ was/were の後ろは V-ing (進行形)、didn't / Did の後ろは原形 (過去形の否定・疑問)。両方を混ぜない。"
+          },
+          {
+            "type": "example",
+            "number": 1,
+            "question": "次の英文の (  ) 内の動詞を過去形に直せ。(1) She (study) English last night. (2) We (go) to the park yesterday. (3) Tom (eat) a big hamburger this morning. (4) My father (buy) a new car last month. (5) The students (run) in the school festival.",
+            "thought": "発想: (1) study=規則 (子音+y) → studied。(2) go=不規則 → went。(3) eat=不規則 → ate。(4) buy=不規則 → bought。(5) run=不規則 → ran。",
+            "answer": "(1) studied  (2) went  (3) ate  (4) bought  (5) ran",
+            "explanation": "**(1) She (study) English last night.**\nstudy は規則変化『子音+y』タイプ → y を i に変えて ed = studied。\n答: She studied English last night. (彼女は昨夜英語を勉強した)\n注意: × studyed は誤り。\n\n**(2) We (go) to the park yesterday.**\ngo は不規則変化 → went。\n答: We went to the park yesterday. (私たちは昨日公園に行った)\n× goed は誤り。go → went は最頻出の不規則動詞。\n\n**(3) Tom (eat) a big hamburger this morning.**\neat は不規則変化 → ate。\n答: Tom ate a big hamburger this morning. (トムは今朝大きなハンバーガーを食べた)\n× eated は誤り。\n\n**(4) My father (buy) a new car last month.**\nbuy は不規則変化 → bought (発音 ボート)。\n答: My father bought a new car last month. (父は先月新しい車を買った)\n× buyed は誤り。bought は『think → thought』『catch → caught』と同じ ought 仲間。\n\n**(5) The students (run) in the school festival.**\nrun は不規則変化 → ran。\n答: The students ran in the school festival. (生徒たちは学校祭で走った)\n× runned は誤り。run → ran も頻出。\n\n**頻出の見分け方**\n- last night, yesterday, last month, this morning (もう過ぎた朝) → 過去の合図\n- 動詞が規則 (study, play, watch…) なら -ed のルールに沿って変化\n- 動詞が不規則 (go, eat, buy, run…) なら暗記した過去形を使う\n\n類題: 高校受験で必出 (神奈川県 2024、京都府 2023、兵庫県 2024 等)。"
+          },
+          {
+            "type": "example",
+            "number": 2,
+            "question": "次の英文を (1) 否定文、(2) 疑問文に書き換え、疑問文には『Yes』で答えよ。「Mike played soccer last Sunday.」",
+            "thought": "発想: 過去形 played の文。否定は『didn't + 原形 play』、疑問は『Did + 主語 + 原形 play』、Yes の答えは Mike → he で受け、『Yes, he did.』。",
+            "answer": "(1) 否定文: Mike didn't play soccer last Sunday. (= Mike did not play soccer last Sunday.) (2) 疑問文: Did Mike play soccer last Sunday? — Yes, he did.",
+            "explanation": "**元の文**\nMike played soccer last Sunday. (マイクは先週日曜日サッカーをした)\n→ play の過去形 played が使われている。\n\n**(1) 否定文への書き換え**\n型: 主語 + didn't + 動詞の原形 + …\n\n- didn't を主語の後に追加\n- played → play (原形に戻す)\n\n→ Mike didn't play soccer last Sunday.\n短縮しない形: Mike did not play soccer last Sunday.\n\n注意: × Mike didn't played soccer. (didn't の後は原形)\n\n**(2) 疑問文への書き換え**\n型: Did + 主語 + 動詞の原形 + …?\n\n- Did を文頭に\n- played → play (原形)\n\n→ Did Mike play soccer last Sunday?\n\n注意: × Did Mike played soccer? (Did の後は原形)\n\n**Yes の答え方**\n型: Yes, 主語 (代名詞) + did.\n\n- Mike は男性 → 代名詞 he で受ける\n\n→ Yes, he did.\n\n**No の場合 (参考)**\n→ No, he didn't. (= No, he did not.)\n\n**ポイントの整理**\n1. 過去形の文は『didn't / Did』を使って否定・疑問を作る\n2. didn't / Did の後の動詞は必ず原形 (played → play)\n3. 答えで Mike を代名詞 he に置き換える\n4. 答えは『did / didn't』を使う (動詞を繰り返さない)\n\n**応用**\n- 不規則動詞の場合: He went → 否定 He didn't go / 疑問 Did he go?\n- be動詞の過去の場合: She was tired → 否定 She wasn't tired / 疑問 Was she tired?\n\n類題: 高校受験『書き換え問題』として頻出 (大阪府 2024、千葉県 2023、東京都立 2024 等)。"
+          },
+          {
+            "type": "practice",
+            "number": 1,
+            "question": "次の (1)〜(5) の (  ) 内の動詞を過去形に直し、必要なら否定形・疑問形にせよ。(1) My mother (cook) curry last Sunday. (2) I (not, see) the movie last week. (3) (Do/Does/Did) you (write/wrote) the letter yesterday? (4) The boys (swim) in the pool two days ago. (5) She (not, come) to school yesterday."
+          },
+          {
+            "type": "answer",
+            "number": 1,
+            "answer": "(1) cooked  (2) didn't see  (3) Did you write  (4) swam  (5) didn't come",
+            "explanation": "**(1) My mother (cook) curry last Sunday.**\ncook は規則変化 → cooked。\n答: My mother cooked curry last Sunday. (母は先週日曜日カレーを作った)\n\n**(2) I (not, see) the movie last week.**\nlast week があるので過去形の否定。\n→ didn't + 原形 see = didn't see\n答: I didn't see the movie last week. (私は先週その映画を見なかった)\n注意: × didn't saw は誤り (didn't の後は原形)。\n\n**(3) (Do/Does/Did) you (write/wrote) the letter yesterday?**\nyesterday があるので過去 → Did。\nDid の後の動詞は原形 → write (× wrote)。\n答: Did you write the letter yesterday? (あなたは昨日その手紙を書きましたか?)\n答え方: Yes, I did. / No, I didn't.\n\n**(4) The boys (swim) in the pool two days ago.**\ntwo days ago (2日前) があるので過去形。swim は不規則 → swam。\n答: The boys swam in the pool two days ago. (男の子たちは2日前プールで泳いだ)\n× swimmed は誤り (これは進行形 swimming のときに m を重ねる規則を混同したもの)。\n\n**(5) She (not, come) to school yesterday.**\nyesterday があるので過去の否定。\n→ didn't + 原形 come = didn't come\n答: She didn't come to school yesterday. (彼女は昨日学校に来なかった)\n注意: × didn't came は誤り。come の過去は came (不規則) だが、didn't の後は原形 come に戻す。\n\n**間違いやすいポイント**\n- (1) cook は普通の規則変化 → ed をつけるだけ\n- (2)(5) didn't の後は『動詞の原形』(過去形を使わない) — 最頻出ミス\n- (3) Did の後も『動詞の原形』(× wrote)\n- (4) swim → swam は不規則。× swimmed や × swimed は誤り\n\n**不規則動詞の必須暗記リスト (再掲)**\ngo→went、come→came、see→saw、eat→ate、have→had、do→did、get→got、make→made、take→took、give→gave、say→said、read→read、write→wrote、know→knew、think→thought、buy→bought、run→ran、swim→swam、sing→sang、put→put、cut→cut、meet→met、drink→drank、begin→began、sleep→slept\n\n類題: 高校受験で必出 (栃木県 2024、福岡県 2023、千葉県 2024 等)。"
+          },
+          {
+            "type": "summary",
+            "heading": "まとめ — 過去形の体系",
+            "points": [
+              "過去形は『〜した』を表す動詞の形 (動作の完了・過去の習慣)",
+              "規則変化: 動詞 + ed (study→studied、stop→stopped、like→liked)",
+              "不規則変化: 暗記必須 (go→went、eat→ate、see→saw、buy→bought、run→ran)",
+              "過去の否定: didn't + 動詞の原形 (× didn't went)",
+              "過去の疑問: Did + 主語 + 動詞の原形 + ? (× Did you went?)",
+              "答え方: Yes, 主語 + did. / No, 主語 + didn't.",
+              "過去の合図: yesterday、last 〜、〜 ago、in + 過去の年",
+              "be動詞の過去 (was/were) は別ルール (didn't を使わず not で否定、be動詞を前に出して疑問)",
+              "他単元との繋がり: 助動詞 (本書、過去の could/would)、受動態 (本書、was/were + 過去分詞)、現在完了 (本書、過去形との違い)"
+            ]
+          }
+        ]
+      },
+      "status": "published",
+      "source": "claude_max_seed_batch34"
+    },
+    {
+      "subject": "英語（中学英文法）",
+      "topic": "助動詞 (can/will/must)",
+      "level": "中学標準",
+      "length": "medium",
+      "type": "unit_lesson",
+      "title": "助動詞 — can / will / must で動詞に色を加える",
+      "tags": [],
+      "content": {
+        "title": "助動詞 — can / will / must で動詞に色を加える",
+        "subtitle": "能力・許可・未来・意志・義務・必要",
+        "subject": "英語（中学英文法）",
+        "topic": "助動詞 (can/will/must)",
+        "level": "中学標準",
+        "sections": [
+          {
+            "type": "intro",
+            "heading": "はじめに — 助動詞は『動詞のスパイス』",
+            "body": "助動詞 (auxiliary verb) は、動詞の前に置いて『可能』『未来』『義務』などの意味を加える単語。中学では can (〜できる)、will (〜するつもり・〜するだろう)、must (〜しなければならない) の 3 つが中心。\n\n比喩を一つ。助動詞は『動詞のスパイス』。普通の動詞『play tennis』は『テニスをする』という素材だけ。そこに can をふりかければ『can play tennis = テニスができる』、will をふりかければ『will play tennis = テニスをするつもり』、must をふりかければ『must play tennis = テニスをしなければならない』。同じ動詞でも、振りかけるスパイスで意味の風味が大きく変わる。\n\nもう一つの比喩。助動詞は『動詞の帽子』。動詞という人物の上に帽子を被せると、その人の役割が変わる。野球帽 (can) を被れば『〜できる人』、王冠 (will) を被れば『〜するつもりの人』、戦士の兜 (must) を被れば『〜しなければならない人』。帽子を変えるだけで、動詞の表す意味の幅が広がる。\n\n受験では (1) 各助動詞の意味の使い分け、(2) 助動詞の後は『動詞の原形』、(3) 否定形 cannot / can't / won't / mustn't、(4) 疑問形の語順 Can you 〜?、(5) can = be able to、will = be going to、must = have to の書き換えが頻出。"
+          },
+          {
+            "type": "theory",
+            "heading": "基本事項 — 助動詞の使い方",
+            "body": "■ 助動詞の鉄則 (3 つ)\n\n1. **助動詞の後は動詞の原形**\n   - I can play tennis. (○) / × I can plays tennis. / × I can played tennis.\n   - He will go to school. (○) / × He will goes to school.\n\n2. **助動詞は主語によって形が変わらない**\n   - I can / You can / He can / She can / They can — 全部 can (× cans, × canes)\n   - I will / He will / They will — 全部 will (× wills)\n\n3. **助動詞の否定は not を後ろに、疑問は助動詞を前に出す**\n   - 否定: 主語 + 助動詞 + not + 原形\n   - 疑問: 助動詞 + 主語 + 原形 + ?\n\n■ can — 〜できる (能力) / 〜してもよい (許可)\n\n● 肯定文: 主語 + can + 動詞の原形\n- I can swim. (私は泳げる)\n- He can speak English. (彼は英語を話せる)\n- You can use my pen. (私のペンを使ってもいい — 許可)\n\n● 否定文: 主語 + cannot (= can't) + 原形\n- I cannot swim. = I can't swim. (泳げない)\n- He can't speak French.\n注意: cannot は 1 語で書くのが正式 (× can not は不可ではないが推奨されない)。短縮形 can't が口語では普通。\n\n● 疑問文: Can + 主語 + 原形 + ?\n- Can you swim? — Yes, I can. / No, I can't. (泳げる?)\n- Can he play the guitar? — Yes, he can.\n\n● 依頼・許可の Can\n- Can you help me? (手伝ってくれる? — 依頼)\n- Can I open the window? (窓を開けてもいい? — 許可)\n\n● 過去の能力: could (can の過去形)\n- I could swim when I was a child. (子供のとき泳げた)\n\n● 書き換え: can = be able to (〜できる)\n- I can swim. = I am able to swim.\n- He could swim. = He was able to swim.\n\n■ will — 〜するつもり (意志) / 〜するだろう (未来予測)\n\n● 肯定文: 主語 + will + 動詞の原形\n- I will go to Tokyo tomorrow. (明日東京に行く — 意志)\n- It will rain tomorrow. (明日雨が降るだろう — 予測)\n- He will be 15 next year. (彼は来年 15 歳になる — 未来)\n\n● 否定文: 主語 + will not (= won't) + 原形\n- I will not (= won't) go to Tokyo.\n- It won't rain tomorrow.\n注意: 短縮形は won't (× willn't)。スペル注意。\n\n● 疑問文: Will + 主語 + 原形 + ?\n- Will you come to my party? — Yes, I will. / No, I won't.\n- Will it be sunny tomorrow? — Yes, it will.\n\n● 依頼の Will\n- Will you open the door? (ドアを開けてくれる?)\n→ Can you 〜? と同じく依頼を表すが、Can you の方がカジュアル。\n\n● 書き換え: will = be going to (〜する予定)\n- I will visit Kyoto. = I am going to visit Kyoto.\n- 微妙な違い: will は『その場で決めた意志』、be going to は『前から決めていた予定』のニュアンスがあるが、中学では両者を交換可能とすることが多い。\n\n■ must — 〜しなければならない (義務) / 〜にちがいない (推量)\n\n● 肯定文 (義務): 主語 + must + 動詞の原形\n- I must study English. (私は英語を勉強しなければならない)\n- You must be quiet in the library. (図書館では静かにしなければならない)\n- We must finish the work today.\n\n● 否定文: 主語 + must not (= mustn't) + 原形 = 〜してはいけない (強い禁止)\n- You must not (= mustn't) eat in the classroom. (教室で食べてはいけない)\n注意: must not は『義務がない』ではなく『してはいけない (禁止)』の意味。\n\n● 疑問文: Must + 主語 + 原形 + ?\n- Must I go? — Yes, you must. / No, you don't have to. (行かなければならない? — はい / いいえ、行かなくていい)\n注意: 否定の答えは『don't have to』(〜しなくてよい) を使う。\n\n● 推量の must (〜にちがいない)\n- He must be tired. (彼は疲れているにちがいない)\n- She must be a teacher. (彼女は先生にちがいない)\n\n● 書き換え: must = have to (〜しなければならない、義務)\n- I must study. = I have to study.\n- He must go. = He has to go. (主語が三単現なら has to)\n- 過去: had to (must に過去形なし)\n  - I had to study. (勉強しなければならなかった)\n\n注意: 否定形は意味が違う!\n- must not = してはいけない (禁止)\n- don't have to = しなくてよい (不要)",
+            "table": [
+              [
+                "助動詞",
+                "意味",
+                "否定形",
+                "書き換え"
+              ],
+              [
+                "can",
+                "できる/許可",
+                "cannot / can't",
+                "be able to"
+              ],
+              [
+                "will",
+                "つもり/だろう",
+                "will not / won't",
+                "be going to"
+              ],
+              [
+                "must",
+                "ねばならない",
+                "must not / mustn't (禁止)",
+                "have to (否定は意味が変わる)"
+              ]
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "ポイント: 助動詞の鉄則『後ろは原形・主語で変えない』",
+            "body": "助動詞を使うときの最重要ルールは 2 つ。\n\n● 鉄則1: 助動詞の後は『動詞の原形』(必ず!)\n- × He can plays. → ○ He can play.\n- × She will goes. → ○ She will go.\n- × I must studied. → ○ I must study.\n\n三単現の s も過去形の ed も、助動詞の後では消える。\n\n● 鉄則2: 助動詞は主語で形が変わらない\n- I can / You can / He can / She can / They can — 全部 can\n- I will / He will / They will — 全部 will\n\n× He cans / × She wills / × They musts などはすべて誤り。\n\n比喩: 助動詞は『絶対的な君主』。誰が来ても自分の形を変えない。普通の動詞 (play, study, go…) は主語に応じて『plays, studies, went』と変身するが、助動詞は変身しない。\n\n暗唱フレーズ:\n『助動詞 + 原形。He can play、She will go、I must study。三単現の s なし、ed なし』\n\n● must と have to の使い分け (実用)\n- 中学では基本『must = have to』として書き換え可能と教える\n- ただし否定だけ意味が違う\n  - You must not swim. = 泳いではいけない (禁止)\n  - You don't have to swim. = 泳がなくてよい (不要)\n  → 真逆!\n\n● 過去や未来の表現\n- can の過去 → could (使える)\n- must の過去 → had to (must に過去形なし → have to の過去 had to を借りる)\n- will の未来 → will (そのまま)\n- 未来の『〜できるだろう』 → will be able to (× will can は不可、助動詞は連続できない)\n\n試験の落とし穴: 『助動詞 2 つ並べる』のは原則禁止。\n× He will can swim. (will + can はダメ)\n○ He will be able to swim. (can を be able to に変える)"
+          },
+          {
+            "type": "warn",
+            "title": "注意: 助動詞でよくある間違い",
+            "body": "❌ ミス1: 助動詞の後に三単現の s をつける。\nNG: He can plays soccer. (can の後は原形)\nOK: He can play soccer.\n\n❌ ミス2: 助動詞の後に過去形を使う。\nNG: I will went to Kyoto. (will の後は原形)\nOK: I will go to Kyoto.\n\n❌ ミス3: 助動詞を主語で変化させる。\nNG: He cans swim. / She wills come.\nOK: He can swim. / She will come.\n\n→ 助動詞は主語によらず同じ形。三単現の s をつけない。\n\n❌ ミス4: 否定文で do not / does not を使う。\nNG: He doesn't can swim. (助動詞の否定は not だけ、do は不要)\nOK: He cannot swim. = He can't swim.\n\n❌ ミス5: 疑問文で Do を使う。\nNG: Do you can swim? (助動詞の疑問は助動詞を前に)\nOK: Can you swim?\n\n❌ ミス6: cannot のスペルを間違える。\nNG: He can not swim. (1 語が正式)\nNG: He cant swim. (アポストロフィ抜け)\nOK: He cannot swim. = He can't swim.\n\n❌ ミス7: won't のスペルを間違える。\nNG: He willn't come. (× willn't は存在しない)\nOK: He won't come. (won't が短縮形)\n\n❌ ミス8: must not と don't have to を混同する。\nNG: 『泳がなくてよい』を You must not swim. と訳す\nOK: 『泳がなくてよい』 = You don't have to swim.\n\n→ must not = 禁止 (してはいけない)、don't have to = 不要 (しなくてよい) で意味が真逆。\n\n❌ ミス9: 助動詞を 2 つ並べる。\nNG: He will can swim. / She must can speak French.\nOK: He will be able to swim. / She must be able to speak French.\n\n→ 助動詞は 1 文に 1 つだけ。重ねたいときは be able to / have to に書き換える。\n\n❌ ミス10: must の過去形を作ろうとする。\nNG: I musted go. (must に過去形なし)\nOK: I had to go. (have to の過去 had to で代用)"
+          },
+          {
+            "type": "example",
+            "number": 1,
+            "question": "次の英文の (  ) に入る語を選べ。(1) She (can / cans / can to) play the piano well. (2) I (will / will to / wills) go shopping tomorrow. (3) You (must / must to / musts) be quiet in the library. (4) He (cannot / don't can / not can) swim. (5) (Can / Do / Will) you help me with my homework? — Sure.",
+            "thought": "発想: (1) 助動詞は主語で変えず、後ろは原形 → can。(2) 同じく → will。(3) 同じく → must。(4) 助動詞の否定は not 直結 → cannot。(5) 依頼の助動詞 (どれも可能だが Sure と答えるなら Can が自然)。",
+            "answer": "(1) can  (2) will  (3) must  (4) cannot  (5) Can",
+            "explanation": "**(1) She (can / cans / can to) play the piano well.**\nshe (三単現) でも助動詞は形を変えない → can。\nまた、help は『can to play』のように to を間に挟まない (助動詞の直後は原形)。\n答: She can play the piano well. (彼女はピアノを上手に弾ける)\n注意: × cans (助動詞は主語で変わらない)、× can to play (to は不要、原形のみ)。\n\n**(2) I (will / will to / wills) go shopping tomorrow.**\n助動詞 will は主語で変わらず、後ろは原形 → will。\n答: I will go shopping tomorrow. (明日買い物に行く)\n注意: × wills、× will to go (to なし)。\n\n**(3) You (must / must to / musts) be quiet in the library.**\nmust + 原形。to は不要。\n答: You must be quiet in the library. (図書館では静かにしなければならない)\n注意: be は『be動詞の原形』。must の後ろは『be動詞でも一般動詞でも原形』が来る。\n\n**(4) He (cannot / don't can / not can) swim.**\n助動詞の否定は『助動詞 + not』で直結 → cannot (= can't)。\n答: He cannot swim. = He can't swim. (彼は泳げない)\n注意: × don't can (助動詞には do を使わない)、× not can (語順が誤り)。\n\n**(5) (Can / Do / Will) you help me with my homework? — Sure.**\n依頼の助動詞は Can / Will どちらも可。Sure (もちろん) という気軽な答えなら Can you の方が自然 (Will you はやや改まった依頼)。\n答: Can you help me with my homework? (宿題を手伝ってくれる?) — Sure. (もちろん)\n注意: Will you も正解扱いの場合あり。文脈と答え方で決める。\n\n**頻出パターン**\n- 助動詞 + 動詞の原形\n- 助動詞は主語で変わらない (× cans, × wills)\n- 否定は『助動詞 + not』(× don't 助動詞)\n- 疑問は『助動詞 + 主語 + 原形』(× Do 助動詞)\n\n類題: 高校受験で必出 (神奈川県 2024、福岡県 2023、栃木県 2024 等)。"
+          },
+          {
+            "type": "example",
+            "number": 2,
+            "question": "次の英文を書き換えよ。(1) I can speak Chinese. → I (be able to を使って) speak Chinese. (2) He will visit Osaka. → He (be going to を使って) visit Osaka. (3) You must clean your room. → You (have to を使って) clean your room. (4) She can't drive a car. (be able to を使って書き換え)",
+            "thought": "発想: (1) can = be able to → am able to。(2) will = be going to → is going to。(3) must = have to → have to (主語 you なら have)。(4) can't = is/are not able to → isn't able to。",
+            "answer": "(1) I am able to speak Chinese.  (2) He is going to visit Osaka.  (3) You have to clean your room.  (4) She isn't (= is not) able to drive a car.",
+            "explanation": "**(1) I can speak Chinese. → I am able to speak Chinese.**\ncan = be able to。be 動詞は主語に応じて am/is/are。\n主語 I → am able to。\n答: I am able to speak Chinese. (私は中国語が話せる)\n\n**(2) He will visit Osaka. → He is going to visit Osaka.**\nwill = be going to。\n主語 he → is going to。\n答: He is going to visit Osaka. (彼は大阪を訪れる予定だ)\n注意: 微妙なニュアンスは『will = その場の意志/未来予測』『be going to = 前から決まっていた予定』だが、中学では交換可。\n\n**(3) You must clean your room. → You have to clean your room.**\nmust = have to。\n主語 you → have to (× has to は he/she/it のとき)。\n答: You have to clean your room. (部屋を掃除しなければならない)\n注意: 三単現なら has to (He has to clean his room.)。過去なら had to (He had to clean.)。\n\n**(4) She can't drive a car. → She isn't able to drive a car.**\ncan't = is/are not able to。\n主語 she → is not (= isn't) able to。\n答: She isn't able to drive a car. (彼女は車を運転できない)\n\n**書き換えのまとめ**\n| 助動詞 | 書き換え | 主語による形 |\n|---|---|---|\n| can | be able to | am/is/are able to |\n| can't | not be able to | am not / isn't / aren't able to |\n| could | was/were able to | was/were able to |\n| will | be going to | am/is/are going to |\n| won't | not be going to | am not / isn't / aren't going to |\n| must | have to | have / has to |\n| must not | (※意味が異なる) | (× don't have to は『不要』) |\n\n**応用 (must not と don't have to の違い)**\n- You must not eat. = 食べてはいけない (禁止)\n- You don't have to eat. = 食べなくてよい (不要)\n→ 否定だけは must と have to で意味が真逆になる。書き換え問題でも引っかかりやすい。\n\n類題: 高校受験『助動詞の書き換え』は頻出 (大阪府 2024、千葉県 2023、京都府 2024 等)。"
+          },
+          {
+            "type": "practice",
+            "number": 1,
+            "question": "次の (1)〜(5) の (  ) に適切な語を入れよ。(1) Tom (  ) (  ) (= can) play tennis well. (be able to の現在形で) (2) I (  ) (  ) (= will) study English tomorrow. (be going to の現在形で) (3) We (  ) (  ) (= must) wear a school uniform. (have to の現在形で) (4) She (  ) (= cannot) come to the party tonight. (5) (  ) (= Will) you open the window?"
+          },
+          {
+            "type": "answer",
+            "number": 1,
+            "answer": "(1) is able to  (2) am going to  (3) have to  (4) cannot (= can't)  (5) Will",
+            "explanation": "**(1) Tom (  ) (  ) (= can) play tennis well.**\ncan = be able to。主語 Tom (三単現) → is able to。\n答: Tom is able to play tennis well. (= Tom can play tennis well.) (トムはテニスが上手にできる)\n注意: × are able to (主語が単数のため is)。\n\n**(2) I (  ) (  ) (= will) study English tomorrow.**\nwill = be going to。主語 I → am going to。\n答: I am going to study English tomorrow. (= I will study English tomorrow.) (明日英語を勉強する予定)\n\n**(3) We (  ) (  ) (= must) wear a school uniform.**\nmust = have to。主語 we (複数) → have to (× has to は三単現)。\n答: We have to wear a school uniform. (= We must wear a school uniform.) (制服を着なければならない)\n\n**(4) She (  ) (= cannot) come to the party tonight.**\n( ) 内に 1 つ入れる: cannot (= can't)。\n答: She cannot come to the party tonight. = She can't come to the party tonight. (今夜彼女はパーティーに来られない)\n注意: cannot は 1 語で書く。書き換えれば She isn't able to come 〜 となる。\n\n**(5) (  ) (= Will) you open the window?**\n依頼の助動詞 → Will (= Can でも可だが、ここでは Will を答える指示)。\n答: Will you open the window? (窓を開けてくれませんか?)\n答え方: Sure. / Of course. / OK.\n\n**間違いやすいポイント**\n- (1) be able to の be 動詞は主語に応じて am/is/are\n- (2) be going to も同じく主語に合わせる\n- (3) have to は主語が三単現なら has to (We → have、He → has、They → have)\n- (4) cannot は 1 語\n- (5) 依頼の Will you は『〜してくれる?』の意味\n\n**助動詞と書き換えの対応表 (再掲)**\n| 元 | 書き換え | 主語 I/We/You/They | 主語 He/She/It |\n|---|---|---|---|\n| can | be able to | am / are able to | is able to |\n| will | be going to | am / are going to | is going to |\n| must | have to | have to | has to |\n\n**過去の場合**\n- could = was/were able to\n- must の過去 → had to (主語に関わらず had to)\n- will の過去はない (would は仮定法)\n\n類題: 高校受験で必出 (栃木県 2024、千葉県 2023、福岡県 2024 等)。"
+          },
+          {
+            "type": "summary",
+            "heading": "まとめ — 助動詞の体系",
+            "points": [
+              "助動詞は動詞の前に置いて意味を加える: can (できる)・will (つもり/だろう)・must (ねばならない)",
+              "鉄則1: 助動詞の後は『動詞の原形』(× 三単現の s、× 過去形)",
+              "鉄則2: 助動詞は主語で形が変わらない (× cans, × wills)",
+              "否定: 助動詞 + not (cannot/can't、will not/won't、must not/mustn't)",
+              "疑問: 助動詞 + 主語 + 原形 + ?",
+              "書き換え: can = be able to、will = be going to、must = have to",
+              "must not = 禁止 (してはいけない) ⇄ don't have to = 不要 (しなくてよい) — 意味が真逆!",
+              "助動詞は 2 つ重ねない (× will can swim → ○ will be able to swim)",
+              "他単元との繋がり: 受動態 (本書、can be 過去分詞)、現在完了 (本書、must have 過去分詞)、過去形 (本書、could/had to)"
+            ]
+          }
+        ]
+      },
+      "status": "published",
+      "source": "claude_max_seed_batch34"
+    },
+    {
+      "subject": "英語（中学英文法）",
+      "topic": "比較",
+      "level": "中学標準",
+      "length": "medium",
+      "type": "unit_lesson",
+      "title": "比較 — 『〜より/最も』を表す",
+      "tags": [],
+      "content": {
+        "title": "比較 — 『〜より/最も』を表す",
+        "subtitle": "比較級・最上級・as ~ as と不規則変化",
+        "subject": "英語（中学英文法）",
+        "topic": "比較",
+        "level": "中学標準",
+        "sections": [
+          {
+            "type": "intro",
+            "heading": "はじめに — 比較は『ものさしの言葉』",
+            "body": "比較 (comparison) は、2 つ以上のものや人の性質・程度を比べて表現する言い方。日本語の『A は B より大きい (比較級)』『A は最も大きい (最上級)』『A は B と同じくらい大きい (同等)』の 3 つに対応する。\n\n比喩を一つ。比較は『ものさし』。普通の文『He is tall.』(彼は背が高い) では身長の絶対値が分からないが、比較を使えば『He is taller than I.』(彼は私より背が高い)、『He is the tallest in the class.』(彼はクラスで最も背が高い) と、ものさしを当てて他者との位置関係を示せる。\n\nもう一つの比喩。比較は『順位表』。スポーツの大会で『1 位、2 位、3 位』と順位が決まるように、比較級は『2 人並べてどちらが上か』、最上級は『複数並べて誰が頂点か』を示す。as 〜 as は『同タイム決勝』で『2 人とも同じ順位』。\n\n受験では (1) 比較級 -er / more 〜 の使い分け、(2) 最上級 -est / most 〜 の使い分け、(3) 不規則変化 (good-better-best, bad-worse-worst, many/much-more-most)、(4) as 〜 as 同等比較、(5) 否定 not as 〜 as / less 〜 than が頻出。"
+          },
+          {
+            "type": "theory",
+            "heading": "基本事項 — 比較の作り方",
+            "body": "■ 比較級と最上級の作り方\n\n● **パターン1: 短い形容詞・副詞 (1 音節 + 一部の 2 音節) → -er / -est**\n\n| 原級 | 比較級 | 最上級 |\n|---|---|---|\n| tall (背が高い) | taller | tallest |\n| old (古い・年上) | older | oldest |\n| short (短い) | shorter | shortest |\n| young (若い) | younger | youngest |\n| fast (速い) | faster | fastest |\n| long (長い) | longer | longest |\n| small (小さい) | smaller | smallest |\n| high (高い) | higher | highest |\n\n● **パターン2: e で終わる単語 → -r / -st**\n- large → larger / largest\n- nice → nicer / nicest\n- wise → wiser / wisest\n\n● **パターン3: 短くて『母音1+子音1』→ 子音を重ねる**\n- big → bigger / biggest\n- hot → hotter / hottest\n- thin → thinner / thinnest\n\n● **パターン4: 子音 + y で終わる → y を i に変えて -er/-est**\n- happy → happier / happiest\n- easy → easier / easiest\n- pretty → prettier / prettiest\n- busy → busier / busiest\n- early → earlier / earliest (副詞)\n\n● **パターン5: 長い形容詞・副詞 (3 音節以上、または -ful, -ous, -ing, -ly などの 2 音節) → more / most**\n\n| 原級 | 比較級 | 最上級 |\n|---|---|---|\n| beautiful (美しい) | more beautiful | most beautiful |\n| difficult (難しい) | more difficult | most difficult |\n| important (重要な) | more important | most important |\n| popular (人気の) | more popular | most popular |\n| interesting (面白い) | more interesting | most interesting |\n| famous (有名な) | more famous | most famous |\n| careful (注意深い) | more careful | most careful |\n| slowly (ゆっくり) | more slowly | most slowly |\n\n● **パターン6: 不規則変化 (暗記必須)**\n\n| 原級 | 比較級 | 最上級 | 意味 |\n|---|---|---|---|\n| good / well | better | best | よい/上手に |\n| bad / badly | worse | worst | 悪い/下手に |\n| many / much | more | most | 多くの |\n| little | less | least | 少ない |\n| far | farther / further | farthest / furthest | 遠い |\n\n■ 比較級の文 — 〜 than 〜 (〜 より)\n\n型: A is + 比較級 + than + B\n\n例:\n- Tom is taller than Jim. (トムはジムより背が高い)\n- This book is more interesting than that one. (この本はあの本より面白い)\n- I run faster than my brother.\n- She is younger than I (am).\n\n注意:\n- than の後の代名詞は主格 (I, he, she) が正式。口語では目的格 (me, him) も使う。\n- 中学では『than I』と教える。\n\n■ 最上級の文 — the + 最上級 + in / of (最も〜)\n\n型: A is the + 最上級 + in / of …\n\n例:\n- Tom is the tallest in his class. (トムはクラスで最も背が高い)\n- This is the most interesting book of the three. (これは 3 冊の中で最も面白い本だ)\n- Mt. Fuji is the highest mountain in Japan. (富士山は日本で最も高い山)\n- He is the fastest runner of all the boys.\n\n● in と of の使い分け\n- **in + 場所・集団 (単数)**: in Japan, in the world, in his class, in my family\n- **of + 複数の対象**: of the three, of all, of all the students\n\n● the の付け忘れに注意\n最上級には基本的に the が必要。\n× Tom is tallest in his class. → ○ Tom is the tallest 〜.\n\n■ 同等比較 — as + 原級 + as (同じくらい)\n\n型: A is as + 原級 + as B (A は B と同じくらい〜)\n\n例:\n- Tom is as tall as Jim. (トムはジムと同じくらい背が高い)\n- This book is as interesting as that one.\n- I run as fast as my brother.\n- She is as old as I (am).\n\n注意: as 〜 as の間は『原級』(比較級・最上級ではない)。× as taller as は誤り。\n\n■ 否定の同等比較 — not as 〜 as = less 〜 than\n\n型: A is not as + 原級 + as B (A は B ほど〜ではない)\n\n例:\n- Tom is not as tall as Jim. (トムはジムほど背が高くない) = Tom is shorter than Jim. = Jim is taller than Tom.\n- This book is not as interesting as that one.\n\n● less 〜 than (より〜でない)\n- This book is less interesting than that one. = This book is not as interesting as that one.\n→ less は more の反対。中学では not as 〜 as の方が頻出。\n\n■ 比較を強める語\n\n● much / a lot + 比較級 (ずっと〜)\n- Tom is much taller than Jim. (トムはジムよりずっと背が高い)\n- This book is much more interesting than that one.\n注意: × very taller は誤り。very は原級につく (very tall)、much は比較級を強める (much taller)。\n\n● the + 序数 + 最上級 (〜番目に最も〜)\n- This is the second tallest tree in the park. (この木は公園で 2 番目に高い)\n- Mt. K2 is the second highest mountain in the world.",
+            "table": [
+              [
+                "タイプ",
+                "比較級",
+                "最上級",
+                "例"
+              ],
+              [
+                "短い + er/est",
+                "-er",
+                "-est",
+                "tall→taller→tallest"
+              ],
+              [
+                "e終わり",
+                "-r",
+                "-st",
+                "large→larger→largest"
+              ],
+              [
+                "子音+y",
+                "y→ied/iest",
+                "y→ier/iest",
+                "happy→happier→happiest"
+              ],
+              [
+                "長い",
+                "more",
+                "most",
+                "beautiful→more beautiful→most beautiful"
+              ],
+              [
+                "不規則",
+                "暗記",
+                "暗記",
+                "good→better→best"
+              ]
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "ポイント: 比較級・最上級の選び方は『音節の数』",
+            "body": "-er/-est と more/most のどちらを使うかで迷うのが中学生の最大の壁。判断基準は『単語の音節 (シラブル) の数』。\n\n● 1 音節 (短い) → -er/-est\n- tall (1 音節) → taller / tallest\n- short (1 音節) → shorter / shortest\n- big (1 音節) → bigger / biggest\n\n● 2 音節 (中くらい) → どちらか分かれる\n- 子音+y で終わる → -er/-est: happy → happier、easy → easier\n- それ以外の 2 音節 → more/most: useful → more useful、famous → more famous\n\n● 3 音節以上 (長い) → more/most\n- beautiful (3 音節) → more beautiful / most beautiful\n- interesting (4 音節) → more interesting / most interesting\n- difficult (3 音節) → more difficult / most difficult\n\n比喩: 短い単語は『身軽』なので語尾に -er/-est を背負える。長い単語は『重い』ので、自分は変わらず more/most を従えてもらう。\n\n暗唱フレーズ:\n『短い→ -er/-est、長い→ more/most。tall は taller、beautiful は more beautiful』\n\n● 不規則変化の暗記 (5 セット)\n1. good/well → better → best (よい/上手)\n2. bad/badly → worse → worst (悪い/下手)\n3. many/much → more → most (多い)\n4. little → less → least (少ない)\n5. far → farther/further → farthest/furthest (遠い)\n\n5 セットを毎日声に出して暗唱する。\n\n試験の落とし穴:\n- much と many の比較級は両方 more (much money / many books → both more)\n- well の比較級は better (✕ weller、speak well → speak better)\n- famous や important は『2 音節〜 3 音節』だが more/most を使う。語尾が -ous, -ant の語は more/most と覚える。"
+          },
+          {
+            "type": "warn",
+            "title": "注意: 比較でよくある間違い",
+            "body": "❌ ミス1: -er/-est と more/most を混同する。\nNG: This book is more easier. (易しい = easy は 2 音節 + y → easier、more 不要)\nOK: This book is easier.\nNG: Tom is taller more than Jim. (taller だけで OK)\nOK: Tom is taller than Jim.\n\n→ -er/-est と more/most は重ねない。-er/-est を使うか more/most を使うかどちらか一方。\n\n❌ ミス2: 比較級・最上級のスペルミス。\nNG: happyer / happyest (子音+y → ier/iest)\nOK: happier / happiest\nNG: bigest (短い+母音1+子音1 → 子音を重ねる)\nOK: biggest\nNG: largeer (e で終わる → r/st だけ)\nOK: larger\n\n❌ ミス3: 不規則変化を規則化する。\nNG: gooder / goodest, badder / baddest, manyer / manyest\nOK: better / best, worse / worst, more / most\n\n❌ ミス4: than と as の混同。\nNG: Tom is taller as Jim. (比較級は than)\nOK: Tom is taller than Jim.\nNG: Tom is as taller as Jim. (as 〜 as の間は原級)\nOK: Tom is as tall as Jim.\n\n❌ ミス5: 最上級に the をつけ忘れる。\nNG: Tom is tallest in his class. (最上級には the が必要)\nOK: Tom is the tallest in his class.\n\n例外: 副詞の最上級では the を省略可 (He runs (the) fastest)。中学では the をつけるのが基本。\n\n❌ ミス6: in と of の使い分けミス。\nNG: Tom is the tallest of his class. (class は集団の中 → in)\nOK: Tom is the tallest in his class.\nNG: This is the best in the three. (the three は複数の対象 → of)\nOK: This is the best of the three.\n\n→ in + 場所・集団 (in Japan, in his class)、of + 複数の対象 (of the three, of all)\n\n❌ ミス7: very と much を混同する。\nNG: Tom is very taller than Jim. (very は原級につく)\nOK: Tom is much taller than Jim. (much は比較級を強める) / Tom is very tall. (very は原級)\n\n❌ ミス8: as 〜 as の間に比較級を入れる。\nNG: Tom is as taller as Jim.\nOK: Tom is as tall as Jim. (as 〜 as の間は原級)\n\n❌ ミス9: 否定の as 〜 as の意味を反対にする。\nNG: Tom is not as tall as Jim. を『トムはジムより背が高くない』と訳す\nOK: 『トムはジムほど背が高くない』(= Jim の方が高い)\n\n→ not as 〜 as B の解釈は『B ほど〜でない』(B の方が上、A は下)。"
+          },
+          {
+            "type": "example",
+            "number": 1,
+            "question": "次の英文の (  ) 内の語を比較級または最上級に直せ。(1) This box is (heavy) than that one. (2) Mt. Fuji is the (high) mountain in Japan. (3) Math is (difficult) than English for me. (4) Tom is the (good) student in our class. (5) Today is (hot) than yesterday.",
+            "thought": "発想: (1) heavy = 子音+y → heavier。(2) high = 短い → highest、最上級なので the highest。(3) difficult = 長い → more difficult。(4) good = 不規則 → best、最上級なので the best。(5) hot = 短い+母音1+子音1 → hotter (子音を重ねる)。",
+            "answer": "(1) heavier  (2) highest  (3) more difficult  (4) best  (5) hotter",
+            "explanation": "**(1) This box is (heavy) than that one.**\nthan があるので比較級。heavy は『子音+y』タイプ → y を i に変えて er = heavier。\n答: This box is heavier than that one. (この箱はあの箱より重い)\n注意: × heavyer は誤り。\n\n**(2) Mt. Fuji is the (high) mountain in Japan.**\nthe + 〜 in Japan の形 → 最上級。high は短い → -est = highest。\n答: Mt. Fuji is the highest mountain in Japan. (富士山は日本で最も高い山)\n\n**(3) Math is (difficult) than English for me.**\nthan があるので比較級。difficult は 3 音節 (長い) → more difficult。\n答: Math is more difficult than English for me. (数学は私にとって英語より難しい)\n注意: × difficulter は誤り (長い形容詞は -er を使わない)。\n\n**(4) Tom is the (good) student in our class.**\nthe + 〜 in our class → 最上級。good は不規則 → best。\n答: Tom is the best student in our class. (トムは私たちのクラスで最高の生徒)\n注意: × goodest, × the most good は誤り。good の最上級は best (不規則)。\n\n**(5) Today is (hot) than yesterday.**\nthan があるので比較級。hot は『短い + 母音1+子音1』→ 子音を重ねて er = hotter。\n答: Today is hotter than yesterday. (今日は昨日より暑い)\n注意: × hoter は誤り (t を重ねる)。\n\n**頻出の見分け方**\n- than があれば比較級\n- the 〜 in/of があれば最上級\n- 短い (1 音節) → -er/-est\n- 子音+y → ier/iest\n- 長い (3 音節以上) → more/most\n- 不規則 (good/bad/many/little/far) → 暗記\n\n類題: 高校受験で必出 (神奈川県 2024、京都府 2023、千葉県 2024 等)。"
+          },
+          {
+            "type": "example",
+            "number": 2,
+            "question": "次の (1)(2) を書き換えよ。(3) は日本語に合うように英文を完成。 (1) Tom is taller than Jim. (Jim を主語にして書き換え) (2) Tom is taller than Jim. (as 〜 as の否定文に書き換え) (3) この本は 3 冊の中で最も面白い。This book is (    ) (    ) interesting (    ) the three.",
+            "thought": "発想: (1) Jim を主語にすると Tom と立場が逆 → Jim is shorter than Tom。(2) not as tall as = ほど背が高くない → Jim is not as tall as Tom (Jim から見て Tom より低い、つまり同じ意味)。(3) 最上級 the most interesting + of the three。",
+            "answer": "(1) Jim is shorter than Tom.  (2) Jim is not as tall as Tom.  (3) the / most / of",
+            "explanation": "**(1) Tom is taller than Jim. → Jim is shorter than Tom.**\nTom は Jim より背が高い → 逆に言えば Jim は Tom より背が低い。\nshort の比較級 → shorter。\n答: Jim is shorter than Tom. (ジムはトムより背が低い)\n別解: Jim is not as tall as Tom. (同じ意味、否定の同等比較で表現)\n\n**(2) Tom is taller than Jim. → Jim is not as tall as Tom.**\nTom は Jim より背が高い → Jim は Tom ほど背が高くない (= Jim < Tom)。\n型: A is not as 原級 as B (A は B ほど〜でない)\n→ Jim is not as tall as Tom.\n答: Jim is not as tall as Tom.\n注意: × Tom is not as tall as Jim. では『Tom は Jim ほど高くない』= 元の文と矛盾。\n\n**(3) この本は 3 冊の中で最も面白い。This book is (    ) (    ) interesting (    ) the three.**\n『最も面白い』= 最上級。\ninteresting は長い (4 音節) → most interesting (前に the)。\n『3 冊の中で』= of the three (複数の対象なので of)。\n答: This book is the most interesting of the three.\n空欄: the / most / of\n\n**ポイントの整理**\n1. 『〜より』 → than\n2. 『〜と同じくらい』 → as 〜 as\n3. 『〜ほど〜でない』 → not as 〜 as (= less 〜 than)\n4. 『最も〜』 → the + 最上級 + in/of\n5. in + 場所・集団、of + 複数の対象\n\n**応用 (書き換えのまとめ)**\n- A is taller than B. = B is shorter than A. = B is not as tall as A.\n- A is the tallest of all. = No one is taller than A. = No one is as tall as A.\n→ 『最上級』は『他の誰も A より〜ない』『他の誰も A ほど〜ない』とも書き換え可能 (高校で詳しく学ぶ)。\n\n類題: 高校受験『書き換え問題』として頻出 (大阪府 2024、福岡県 2023、東京都立 2024 等)。"
+          },
+          {
+            "type": "practice",
+            "number": 1,
+            "question": "次の (1)〜(5) の (  ) 内の語を比較級または最上級に直すか、文を完成せよ。(1) She is (young) than her sister. (2) This is (interesting) book in the library. (the も含めて答えよ) (3) Health is (important) than money. (4) Ken can run as (fast) as Tom. (適切な形に) (5) Of all the students, John is (tall)."
+          },
+          {
+            "type": "answer",
+            "number": 1,
+            "answer": "(1) younger  (2) the most interesting  (3) more important  (4) fast (原級のまま)  (5) the tallest",
+            "explanation": "**(1) She is (young) than her sister.**\nthan があるので比較級。young は短い → -er = younger。\n答: She is younger than her sister. (彼女は姉/妹より若い)\n\n**(2) This is (interesting) book in the library.**\nin the library があるので最上級。interesting は長い → most interesting。\n最上級には the が必要。\n答: This is the most interesting book in the library. (これは図書館で最も面白い本)\n注意: × interestinger, × most interesting (the なし) は誤り。\n\n**(3) Health is (important) than money.**\nthan があるので比較級。important は長い (3 音節) → more important。\n答: Health is more important than money. (健康はお金より重要)\n注意: × importanter は誤り。\n\n**(4) Ken can run as (fast) as Tom.**\nas 〜 as の間は『原級』。fast はそのまま (原級)。\n答: Ken can run as fast as Tom. (ケンはトムと同じくらい速く走れる)\n注意: × as faster as, × as fastest as は誤り (原級を使う)。\n\n**(5) Of all the students, John is (tall).**\nOf all the students があるので最上級。tall は短い → -est = tallest。\n最上級には the が必要。\n答: Of all the students, John is the tallest. (生徒全員の中で、ジョンが最も背が高い)\n\n**間違いやすいポイント**\n- (1) 主語が she (女性) でも比較級の形は変わらない\n- (2) interesting は長い → more/most、最上級には the\n- (3) important は『-ant』で終わる長い形容詞 → more important\n- (4) as 〜 as の間は『原級』(× faster, × fastest)\n- (5) 文頭の Of all 〜 は『〜の中で』を強調する位置 (普通は文末)、最上級には the が必要\n\n**比較級・最上級のスペル ルール (再掲)**\n| タイプ | 比較級 | 最上級 |\n|---|---|---|\n| 普通 | -er | -est |\n| e で終わる | -r | -st |\n| 子音+y | y→ier | y→iest |\n| 短い+母+子1つ | 子音重ね+er | 子音重ね+est |\n| 長い (3 音節以上) | more 〜 | most 〜 |\n| 不規則 | better/worse/more/less/farther | best/worst/most/least/farthest |\n\n類題: 高校受験で必出 (栃木県 2024、千葉県 2023、福岡県 2024 等)。"
+          },
+          {
+            "type": "summary",
+            "heading": "まとめ — 比較の体系",
+            "points": [
+              "比較級 + than: A は B より〜 (Tom is taller than Jim.)",
+              "the + 最上級 + in/of: A は最も〜 (Tom is the tallest in his class.)",
+              "as + 原級 + as: A は B と同じくらい〜 (Tom is as tall as Jim.)",
+              "not as 〜 as: A は B ほど〜でない (Tom is not as tall as Jim. = Tom < Jim)",
+              "短い (1 音節) → -er/-est、長い (3 音節以上) → more/most",
+              "不規則: good→better→best、bad→worse→worst、many/much→more→most、little→less→least、far→farther/further→farthest/furthest",
+              "in + 場所・集団 (in Japan, in my class)、of + 複数の対象 (of the three, of all)",
+              "比較級を強める: much / a lot (× very) — much taller、very tall",
+              "他単元との繋がり: 形容詞・副詞 (本書、原級が比較の出発点)、関係代名詞 (高校範囲、This is the best book that I have ever read.)"
+            ]
+          }
+        ]
+      },
+      "status": "published",
+      "source": "claude_max_seed_batch34"
+    },
+    {
+      "subject": "英語（中学英文法）",
+      "topic": "受動態",
+      "level": "中学標準",
+      "length": "medium",
+      "type": "unit_lesson",
+      "title": "受動態 — 『〜される』を表す",
+      "tags": [],
+      "content": {
+        "title": "受動態 — 『〜される』を表す",
+        "subtitle": "be 動詞 + 過去分詞・能動態と受動態の書き換え",
+        "subject": "英語（中学英文法）",
+        "topic": "受動態",
+        "level": "中学標準",
+        "sections": [
+          {
+            "type": "intro",
+            "heading": "はじめに — 受動態は『動作の受け手』を主役に",
+            "body": "受動態 (passive voice) は、『動作される側』を主語にして『〜される』『〜された』と表現する文。能動態 (active voice、〜する) と対をなす。\n\n比喩を一つ。能動態と受動態は『カメラの視点』。「Tom broke the window.」(トムが窓を割った) は『割った人』(Tom) にカメラを向けた能動態。「The window was broken by Tom.」(窓はトムに割られた) は『割られた物』(window) にカメラを向けた受動態。同じ事実でも、誰を主役にするかでカメラのアングルが変わる。\n\nもう一つの比喩。受動態は『手紙の差出人欠落』。「The letter was sent.」(手紙が送られた) と言うと『誰が送ったか』を言わなくても文が成立する。能動態だと『誰がした』を必ず主語に立てる必要があるが、受動態は『誰がしたかは重要じゃない・分からない・言いたくない』場面で便利。\n\n受験では (1) be動詞 + 過去分詞 (p.p.) の形、(2) 能動態 → 受動態の書き換え (目的語が主語に、by 〜 で動作主)、(3) 過去分詞の作り方 (規則変化 -ed、不規則 break-broken-broken など)、(4) by の省略 (一般人や不明の場合)、(5) 助動詞の受動態 (can be 過去分詞)、(6) 進行形の受動態 (being 過去分詞) が頻出。"
+          },
+          {
+            "type": "theory",
+            "heading": "基本事項 — 受動態の作り方",
+            "body": "■ 受動態の基本形\n\n型: 主語 (動作される側) + be動詞 + 過去分詞 (+ by + 動作主)\n\n意味: 〜される / 〜された\n\n例:\n- This book is read by many students. (この本は多くの生徒に読まれる)\n- The window was broken by Tom. (窓はトムに割られた)\n- English is spoken in many countries. (英語は多くの国で話される)\n- The letter was written by my mother. (手紙は母によって書かれた)\n\n■ 過去分詞 (Past Participle, p.p.) の作り方\n\n● **規則変化** — 動詞 + ed (過去形と同じ)\n- play → played → played (過去・過去分詞)\n- watch → watched → watched\n- visit → visited → visited\n- like → liked → liked\n- study → studied → studied\n\n● **不規則変化** (中学頻出)\n\n| 原形 | 過去形 | 過去分詞 | 意味 |\n|---|---|---|---|\n| break | broke | broken | 壊す |\n| write | wrote | written | 書く |\n| read | read | read (発音 red) | 読む |\n| see | saw | seen | 見る |\n| eat | ate | eaten | 食べる |\n| speak | spoke | spoken | 話す |\n| make | made | made | 作る |\n| build | built | built | 建てる |\n| find | found | found | 見つける |\n| take | took | taken | 取る |\n| give | gave | given | 与える |\n| know | knew | known | 知る |\n| sing | sang | sung | 歌う |\n| do | did | done | する |\n| go | went | gone | 行く |\n| come | came | come | 来る |\n| run | ran | run | 走る |\n| put | put | put | 置く |\n| send | sent | sent | 送る |\n| teach | taught | taught | 教える |\n| buy | bought | bought | 買う |\n| catch | caught | caught | 捕まえる |\n\n● **AAA タイプ** (3 つとも同じ): put-put-put, cut-cut-cut, set-set-set, hurt-hurt-hurt\n● **ABB タイプ** (過去・過去分詞が同じ): make-made-made, send-sent-sent, buy-bought-bought, find-found-found, teach-taught-taught\n● **ABC タイプ** (3 つとも異なる): break-broke-broken, write-wrote-written, see-saw-seen, eat-ate-eaten, speak-spoke-spoken, take-took-taken, give-gave-given, sing-sang-sung\n\n■ 能動態 → 受動態の書き換え\n\n型変換:\n- 能動態: A (主語) + 動詞 + B (目的語)\n- 受動態: B (主語) + be動詞 + 過去分詞 + by + A\n\nステップ:\n1. 能動態の目的語 (B) を受動態の主語に\n2. 動詞を『be動詞 + 過去分詞』に変える\n3. 元の主語 (A) を『by + A』として後ろに置く\n4. 時制は元の能動態と同じに合わせる (be動詞の時制で表現)\n\n例:\n● 現在:\nTom likes Mary. (能動態) → Mary is liked by Tom. (受動態)\n→ Mary が主語、likes → is liked、Tom は by Tom\n\n● 過去:\nTom broke the window. (能動態) → The window was broken by Tom. (受動態)\n→ window が主語、broke → was broken、Tom は by Tom\n\n● 現在 (主語が複数):\nMany students read this book. → This book is read by many students.\n→ 主語が単数 (this book) なので be動詞は is\n\n● 過去 (主語が複数):\nThe boys broke the windows. → The windows were broken by the boys.\n→ 主語が複数 (windows) なので be動詞は were\n\n■ by の省略\n\n以下の場合 by 〜 を省略する:\n\n1. **一般の人々が動作主の場合** (we, they, people)\n- They speak English in this country. → English is spoken in this country. (by them を省略)\n- People believe the story. → The story is believed. (by people を省略)\n\n2. **動作主が不明・不重要な場合**\n- Someone broke the window. → The window was broken. (by someone を省略)\n- The letter was sent yesterday. (誰が送ったか不明)\n\n3. **動作主が文脈から明らか**\n- The book was published in 1990. (誰が出版したかは不明 or 不重要)\n\n■ 助動詞の受動態\n\n型: 助動詞 + be + 過去分詞\n\n例:\n- This problem can be solved. (この問題は解ける)\n- English will be spoken at the meeting. (会議では英語が話されるだろう)\n- The work must be done by tomorrow. (この仕事は明日までにされなければならない)\n- Cars should not be parked here. (ここに車を駐車してはいけない)\n\n■ 否定文と疑問文\n\n● 否定文: 主語 + be動詞 + not + 過去分詞\n- This book is not read by many students.\n- The window was not broken by Tom.\n\n● 疑問文: be動詞 + 主語 + 過去分詞 + ?\n- Is this book read by many students?\n- Was the window broken by Tom?\n答え方: Yes, it is. / No, it isn't. / Yes, it was. / No, it wasn't.\n\n■ よく使う by 以外の前置詞\n\n受動態で動作主や手段を表すとき、by 以外の前置詞を使う場合:\n- be known to (〜に知られている): He is known to everyone.\n- be made of/from (〜で作られている): The desk is made of wood. (材料の性質が見える) / The wine is made from grapes. (材料の性質が見えなくなる)\n- be covered with (〜で覆われている): The mountain is covered with snow.\n- be filled with (〜で満たされている): The bottle is filled with water.\n- be interested in (〜に興味がある): I am interested in music.\n- be surprised at (〜に驚く): I was surprised at the news.",
+            "table": [
+              [
+                "時制",
+                "能動態",
+                "受動態",
+                "be動詞"
+              ],
+              [
+                "現在",
+                "Tom likes Mary.",
+                "Mary is liked by Tom.",
+                "is/are"
+              ],
+              [
+                "過去",
+                "Tom broke the window.",
+                "The window was broken by Tom.",
+                "was/were"
+              ],
+              [
+                "未来",
+                "Tom will read the book.",
+                "The book will be read by Tom.",
+                "will be"
+              ],
+              [
+                "助動詞",
+                "Tom can do it.",
+                "It can be done by Tom.",
+                "can be"
+              ]
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "ポイント: 受動態の鉄則は『be動詞 + 過去分詞』",
+            "body": "受動態を間違える人の最大原因は、『be動詞』か『過去分詞』のどちらかが欠けること。両方そろって初めて受動態。\n\n● 必須要素 (二点セット):\n1. be動詞 (am / is / are / was / were / be / been)\n2. 過去分詞 (p.p.)\n\nどちらかが欠けたら受動態ではない。\n\n暗唱フレーズ:\n『受動態は be動詞 + 過去分詞。be動詞だけでも、過去分詞だけでも、受動態じゃない』\n\n比喩: 受動態は『二人三脚』。be動詞と過去分詞が足を結んで一緒に進む。片方だけでは前に進めない。\n\n● 過去分詞の作り方の習得 (3 ステップ)\n\n1. **規則変化は過去形と同じ** — play → played (過去) → played (過去分詞)\n2. **不規則変化を 3 形セットで暗記** — break-broke-broken、write-wrote-written\n3. **AAA / ABB / ABC のタイプ別に整理**\n   - AAA: put-put-put, cut-cut-cut\n   - ABB: make-made-made, buy-bought-bought\n   - ABC: break-broke-broken, write-wrote-written\n\n毎朝 5 分の暗唱:\n『break broke broken、write wrote written、see saw seen、eat ate eaten、speak spoke spoken、make made made、build built built、find found found、take took taken、give gave given、know knew known、sing sang sung、do did done、go went gone、come came come、run ran run、put put put、send sent sent、teach taught taught、buy bought bought』\n\n● 能動態 ⇄ 受動態の判断\n\n『誰が』を主役にしたい → 能動態\n『誰に / 何に』を主役にしたい → 受動態\n\n試験の落とし穴:\n- 受動態の文には目的語 (動作の対象) を持つ動詞しか使えない (= 他動詞)。go, come, sleep などの自動詞は受動態にできない。\n  × Kyoto is gone by me. (go は自動詞 → 受動態不可)\n  ○ Kyoto is visited by me. (visit は他動詞 → 可)\n\n- be made of (材料が見える) と be made from (材料が見えない) の使い分け。\n  - This desk is made of wood. (机を見て『木でできている』と分かる)\n  - This wine is made from grapes. (ワインを見ても『ぶどう』とは分からない、変質している)"
+          },
+          {
+            "type": "warn",
+            "title": "注意: 受動態でよくある間違い",
+            "body": "❌ ミス1: be動詞を忘れる。\nNG: This book read by many students. (be動詞抜け → is が必要)\nOK: This book is read by many students.\n\n❌ ミス2: 過去分詞ではなく原形や過去形を使う。\nNG: The window was break by Tom. (break は原形)\nOK: The window was broken by Tom.\nNG: This book is read by many. (read の過去分詞は read だが、ここでは原形と区別がつかない例。書き換えで生じやすい誤り)\n\n→ 過去分詞を確実に覚える。break-broke-broken、write-wrote-written のように 3 形セットで暗記。\n\n❌ ミス3: 不規則動詞の過去分詞を ed にする。\nNG: The letter was writed by Tom. → 正解: written\nNG: The window was breaked. → 正解: broken\nNG: The cake was eated. → 正解: eaten\n\n❌ ミス4: 時制を合わせない。\nNG: Tom broke the window. → The window is broken by Tom. (元が過去なら受動態も過去)\nOK: The window was broken by Tom.\n\n→ 能動態の動詞時制を、受動態の be動詞の時制に反映させる。\n\n❌ ミス5: 主語と be動詞の数を合わせない。\nNG: This book are read. (book は単数 → is)\nOK: This book is read.\nNG: These books is read. (books は複数 → are)\nOK: These books are read.\n\n❌ ミス6: 助動詞 + 受動態の形を間違える。\nNG: This problem can solved.\nOK: This problem can be solved. (助動詞 + be + 過去分詞)\nNG: The work must done.\nOK: The work must be done.\n\n→ 助動詞の後は『be + 過去分詞』(be動詞は原形 be、過去形 was/were ではない)。\n\n❌ ミス7: 自動詞を受動態にする。\nNG: Kyoto is gone by me. (go は自動詞 → 目的語を持たないので受動態不可)\nOK: I went to Kyoto. (能動態のまま) / I visited Kyoto. → Kyoto was visited by me. (visit は他動詞 → 可)\n\n→ 受動態にできるのは『他動詞』(目的語を持つ動詞) だけ。go, come, sleep, run, swim 等の自動詞は受動態不可。\n\n❌ ミス8: by の省略を忘れる。\nNG: English is spoken by them in many countries. (一般の人 → by them を省略)\nOK: English is spoken in many countries.\n\n→ 一般人 (we/they/people) が動作主の場合は by 〜 を省略するのが自然。\n\n❌ ミス9: by 以外の前置詞を by にしてしまう。\nNG: The mountain is covered by snow.\nOK: The mountain is covered with snow.\n→ be covered with、be filled with、be interested in、be made of/from など、特定の前置詞を取る決まり文句がある。"
+          },
+          {
+            "type": "example",
+            "number": 1,
+            "question": "次の能動態の文を受動態に書き換えよ。(1) Tom writes a letter every day. (2) Many people speak English in the world. (3) Mike broke the window yesterday. (4) Shakespeare wrote this play. (5) People love Mt. Fuji.",
+            "thought": "発想: (1) 主語 a letter、be動詞は is (現在・単数)、write の過去分詞 written → A letter is written by Tom every day。(2) 主語 English、is spoken、by people 省略可。(3) 主語 the window、was (過去・単数)、broken → The window was broken by Mike yesterday。(4) 主語 this play、was written by Shakespeare。(5) 主語 Mt. Fuji、is loved、by people 省略可。",
+            "answer": "(1) A letter is written by Tom every day.  (2) English is spoken (by people) in the world.  (3) The window was broken by Mike yesterday.  (4) This play was written by Shakespeare.  (5) Mt. Fuji is loved (by people).",
+            "explanation": "**(1) Tom writes a letter every day. → A letter is written by Tom every day.**\n- 目的語 a letter を受動態の主語に\n- 時制は現在、主語は単数 → is\n- write の過去分詞は written\n- 元の主語 Tom を by Tom として後ろに\n答: A letter is written by Tom every day. (手紙は毎日トムによって書かれる)\n\n**(2) Many people speak English in the world. → English is spoken (by people) in the world.**\n- 目的語 English を主語に\n- 時制は現在、English は単数 → is\n- speak の過去分詞は spoken\n- 動作主 many people は『一般の人』なので by 〜 省略可\n答: English is spoken in the world. (英語は世界中で話される)\n\n**(3) Mike broke the window yesterday. → The window was broken by Mike yesterday.**\n- 目的語 the window を主語に\n- 時制は過去、主語は単数 → was\n- break の過去分詞は broken\n- 元の主語 Mike を by Mike として後ろに\n答: The window was broken by Mike yesterday. (窓は昨日マイクに割られた)\n\n**(4) Shakespeare wrote this play. → This play was written by Shakespeare.**\n- 目的語 this play を主語に\n- 時制は過去、主語は単数 → was\n- write の過去分詞は written\n答: This play was written by Shakespeare. (この劇はシェイクスピアによって書かれた)\n注意: × was wrote は誤り。write の過去分詞は written。\n\n**(5) People love Mt. Fuji. → Mt. Fuji is loved (by people).**\n- 目的語 Mt. Fuji を主語に\n- 時制は現在、Mt. Fuji は単数 → is\n- love の過去分詞は loved\n- 一般人なので by people 省略可\n答: Mt. Fuji is loved. (富士山は愛されている)\n\n**書き換えの 4 ステップ (再掲)**\n1. 目的語 → 主語に\n2. 動詞 → be動詞 + 過去分詞 (時制を合わせる)\n3. 元の主語 → by 〜 (一般人なら省略)\n4. be動詞は新しい主語の数に合わせる\n\n類題: 高校受験で必出 (神奈川県 2024、福岡県 2023、大阪府 2024 等)。"
+          },
+          {
+            "type": "example",
+            "number": 2,
+            "question": "次の英文の (  ) 内の動詞を適切な形に直し、必要なら be動詞を補え。(1) This book (write) by a famous author. (現在) (2) The room (clean) by the students every day. (現在) (3) The cake (make) by my mother yesterday. (4) This problem can (solve) easily. (助動詞 + 受動態) (5) The song (sing) by him at the party last night.",
+            "thought": "発想: (1) 主語 book、現在 → is + written (write の過去分詞)。(2) 主語 the room、現在 → is + cleaned (規則)。(3) 主語 the cake、過去 → was + made (make の過去分詞)。(4) 助動詞 can + be + 過去分詞 → can be solved。(5) 主語 the song、過去 → was + sung (sing の過去分詞)。",
+            "answer": "(1) is written  (2) is cleaned  (3) was made  (4) be solved  (5) was sung",
+            "explanation": "**(1) This book (write) by a famous author. (現在)**\n受動態 → be動詞 + 過去分詞。\n主語 This book = 単数、現在 → is。\nwrite の過去分詞 → written。\n答: This book is written by a famous author. (この本は有名な作家に書かれている)\n\n**(2) The room (clean) by the students every day. (現在)**\n主語 The room = 単数、現在 → is。\nclean は規則動詞、過去分詞は cleaned。\n答: The room is cleaned by the students every day. (部屋は毎日生徒たちに掃除される)\n\n**(3) The cake (make) by my mother yesterday.**\nyesterday があるので過去。主語 The cake = 単数 → was。\nmake の過去分詞 → made。\n答: The cake was made by my mother yesterday. (ケーキは昨日母によって作られた)\n注意: × was making は進行形 (作っている最中)、× was makes は誤り。\n\n**(4) This problem can (solve) easily.**\n助動詞 can + be + 過去分詞 (受動態の決まり)。\nsolve の過去分詞 → solved。\n答: This problem can be solved easily. (この問題は簡単に解ける)\n注意: × can solved (be が必要)、× can is solved (助動詞の後は be 原形)。\n\n**(5) The song (sing) by him at the party last night.**\nlast night があるので過去。主語 The song = 単数 → was。\nsing の過去分詞 → sung (× sang は過去形)。\n答: The song was sung by him at the party last night. (その歌は昨夜パーティーで彼によって歌われた)\n\n**頻出パターン (再掲)**\n- 主語 + be動詞 + 過去分詞 + (by 〜)\n- be動詞は時制と主語の数に合わせる\n- 過去分詞は規則 (-ed) または不規則 (3 形セットで暗記)\n- 助動詞: 助動詞 + be + 過去分詞 (be は原形)\n\n**過去分詞の確認 (頻出 20 個)**\nbreak-broken、write-written、speak-spoken、see-seen、eat-eaten、take-taken、give-given、know-known、sing-sung、make-made、build-built、find-found、send-sent、teach-taught、buy-bought、catch-caught、do-done、go-gone、come-come、run-run\n\n類題: 高校受験で必出 (栃木県 2024、千葉県 2023、京都府 2024 等)。"
+          },
+          {
+            "type": "practice",
+            "number": 1,
+            "question": "次の (1)〜(5) を受動態または適切な形に書き換えよ。(1) Many students read this magazine. → This magazine ( ) ( ) ( ) ( ) students. (2) Tom didn't break the window. → The window ( ) ( ) ( ) ( ) Tom. (3) People speak French in this country. → French ( ) ( ) in this country. (by 省略) (4) Did Mike take this picture? → ( ) this picture ( ) ( ) Mike? (5) The mountain (cover) ( ) snow. (be covered with の現在形)"
+          },
+          {
+            "type": "answer",
+            "number": 1,
+            "answer": "(1) is read by many  (2) wasn't broken by  (3) is spoken  (4) Was / taken by  (5) is covered with",
+            "explanation": "**(1) Many students read this magazine. → This magazine is read by many students.**\n目的語 this magazine を主語に。現在、単数 → is。read の過去分詞は read (発音 red)。\n答: This magazine is read by many students. (この雑誌は多くの生徒に読まれる)\n空欄に入る語: is / read / by / many\n\n**(2) Tom didn't break the window. → The window wasn't broken by Tom.**\n目的語 the window を主語に。過去の否定 → wasn't (= was not)。break の過去分詞は broken。\n答: The window wasn't broken by Tom. = The window was not broken by Tom. (窓はトムに割られなかった)\n空欄に入る語: wasn't / broken / by\n\n**(3) People speak French in this country. → French is spoken in this country.**\n目的語 French を主語に。現在、単数 → is。speak の過去分詞は spoken。\nPeople (一般人) なので by 〜 を省略。\n答: French is spoken in this country. (この国ではフランス語が話される)\n空欄に入る語: is / spoken\n\n**(4) Did Mike take this picture? → Was this picture taken by Mike?**\n受動態の疑問文: be動詞 + 主語 + 過去分詞 + by 〜 + ?\nthis picture = 単数、過去 → Was。take の過去分詞は taken。\n答: Was this picture taken by Mike? (この写真はマイクによって撮られましたか?)\n答え方: Yes, it was. / No, it wasn't.\n空欄に入る語: Was / taken by\n\n**(5) The mountain (cover) ( ) snow. (be covered with の現在形)**\nbe covered with = 〜で覆われている (前置詞は with、× by ではない!)。\n主語 The mountain = 単数、現在 → is。covered (過去分詞)。\n答: The mountain is covered with snow. (山は雪で覆われている)\n空欄に入る語: is covered with\n\n**間違いやすいポイント**\n- (1)(2)(3)(4) すべて『be動詞 + 過去分詞』の形を守る\n- (1) read の過去分詞は read (スペル同じ、発音 red に変わる)\n- (2) didn't は過去 → was/were not で表現\n- (3) People (一般人) は by 省略\n- (4) 受動態の疑問は be動詞を主語の前に\n- (5) be covered with は決まり文句、前置詞は by ではなく with\n\n**by 以外の前置詞 (まとめ)**\n- be known to (〜に知られている)\n- be covered with (〜で覆われている)\n- be filled with (〜で満たされている)\n- be made of (〜でできている、材料が見える)\n- be made from (〜から作られる、材料が見えない)\n- be interested in (〜に興味がある)\n- be surprised at (〜に驚く)\n- be pleased with (〜に喜ぶ)\n\n類題: 高校受験で必出 (大阪府 2024、千葉県 2023、福岡県 2024 等)。"
+          },
+          {
+            "type": "summary",
+            "heading": "まとめ — 受動態の体系",
+            "points": [
+              "受動態は『〜される/〜された』 = be動詞 + 過去分詞",
+              "be動詞は時制と主語の数に合わせる (am/is/are/was/were)",
+              "能動態 → 受動態の書き換え: 目的語 → 主語、動詞 → be + p.p.、元の主語 → by 〜",
+              "過去分詞: 規則 (-ed) と不規則 (break-broken、write-written 等を暗記)",
+              "by の省略: 一般人 (people, they) や動作主が不明・不重要なとき",
+              "助動詞の受動態: 助動詞 + be + 過去分詞 (can be solved, will be done)",
+              "否定文・疑問文は be動詞を使う通常のルール",
+              "自動詞 (go, come, sleep) は受動態にできない (目的語を持たないため)",
+              "by 以外の前置詞: be covered with、be filled with、be interested in、be made of/from",
+              "他単元との繋がり: be動詞 (本書、be 動詞の活用が基礎)、過去形 (本書、was/were)、現在完了 (本書、have been + 過去分詞 = 受動態完了)"
+            ]
+          }
+        ]
+      },
+      "status": "published",
+      "source": "claude_max_seed_batch34"
+    },
+    {
+      "subject": "英語（中学英文法）",
+      "topic": "現在完了",
+      "level": "中学標準",
+      "length": "medium",
+      "type": "unit_lesson",
+      "title": "現在完了 — 過去から現在を結ぶ時制",
+      "tags": [],
+      "content": {
+        "title": "現在完了 — 過去から現在を結ぶ時制",
+        "subtitle": "have/has + 過去分詞・継続/経験/完了/結果",
+        "subject": "英語（中学英文法）",
+        "topic": "現在完了",
+        "level": "中学標準",
+        "sections": [
+          {
+            "type": "intro",
+            "heading": "はじめに — 現在完了は『過去から現在に伸びる線』",
+            "body": "現在完了 (present perfect) は、『過去のある時点から現在まで』をひとつの線でつなぐ時制。日本語に直訳できないため、中学生にとって最大の山場のひとつ。\n\n比喩を一つ。現在完了は『過去から現在へ伸びる矢印 (←—→)』。普通の過去形『I lived in Tokyo.』は『過去のある時点でだけ』東京に住んだことを示すが、現在完了『I have lived in Tokyo for ten years.』は『10 年前から今まで』ずっと東京に住んでいる、と過去から現在を矢印で結ぶ。点ではなく線。\n\nもう一つの比喩。現在完了は『録画と現在の二画面』。テレビで『過去の試合録画』(過去形) を見るのと、『録画とライブ映像を二画面で同時に見る』(現在完了) の違い。現在完了は『過去のことを語りつつ、今もその影響が残っている』のがポイント。\n\n受験では (1) have/has + 過去分詞の形、(2) 4 用法 (継続・経験・完了・結果) の見分け、(3) for/since (継続)、ever/never (経験)、just/already/yet (完了) との組合せ、(4) 過去形との違い (現在完了は明確な過去の時点 yesterday/last 〜/ago と一緒に使えない)、(5) 否定・疑問文 (have not = haven't、Have you 〜?) が頻出。"
+          },
+          {
+            "type": "theory",
+            "heading": "基本事項 — 現在完了の使い方",
+            "body": "■ 基本形\n\n型: 主語 + have / has + 過去分詞 (p.p.)\n\n● 主語による have / has の使い分け\n- I / You / We / They / 複数 → have\n- He / She / It / 単数の名詞 → has\n\n● 過去分詞は受動態と同じ (規則 -ed、不規則 break-broken-broken)\n\n■ 4 つの用法\n\n● **用法1: 継続 (〜ずっと〜している)**\n\n意味: 過去のある時から現在までずっと続いている状態・動作\nよく使う語句: for + 期間 (〜の間)、since + 起点 (〜以来)\n\n例:\n- I have lived in Tokyo for ten years. (10 年間ずっと東京に住んでいる)\n- He has been busy since last week. (先週からずっと忙しい)\n- They have known each other since 2010. (2010 年から知り合っている)\n- We have studied English for three years. (3 年間英語を勉強し続けている)\n\nfor と since の違い:\n- for + 期間の長さ: for ten years、for a week、for two months\n- since + 起点 (時点): since 2010、since last week、since I was a child\n\n● **用法2: 経験 (〜したことがある)**\n\n意味: 過去から現在までの間に経験したこと (回数も問える)\nよく使う語句: ever (これまでに、疑問文)、never (一度も〜ない、否定)、once (一度)、twice (二度)、three times (三度)、before (以前)\n\n例:\n- I have visited Kyoto three times. (京都に 3 回行ったことがある)\n- Have you ever been to America? — Yes, I have. / No, I have never been there. (アメリカに行ったことがある? — はい / 一度もない)\n- He has read this book twice. (この本を 2 回読んだことがある)\n- I have never seen such a beautiful sunset. (こんな美しい夕日を一度も見たことがない)\n\n注意: 『〜に行ったことがある』は have been to を使う。\n- × I have gone to Kyoto. (これは『京都に行ってしまった』= 結果用法、今ここにいない)\n- ○ I have been to Kyoto. (京都に行ったことがある = 経験用法)\n\n● **用法3: 完了 (ちょうど〜したところ / もう〜してしまった)**\n\n意味: 過去に始まった動作が現在ちょうど完了した\nよく使う語句: just (ちょうど)、already (もう、肯定文)、yet (まだ、否定文 / もう、疑問文)\n\n例:\n- I have just finished my homework. (ちょうど宿題を終えたところ)\n- She has already eaten breakfast. (もう朝食を食べてしまった)\n- Have you finished your homework yet? — No, not yet. (宿題はもう終わった? — いや、まだ)\n- He hasn't read the book yet. (彼はまだその本を読んでいない)\n\nyet の使い分け:\n- 否定文: まだ〜ない (not yet)\n- 疑問文: もう〜した? (Have you 〜 yet?)\n- 文末に置くのが基本\n\n● **用法4: 結果 (〜してしまった、その結果〜)**\n\n意味: 過去の動作の結果が現在に残っている\nよく使う語句: 特定の決まり文句 (have been to / have gone to)、文脈で判断\n\n例:\n- Tom has gone to America. (トムはアメリカに行ってしまった = 今ここにいない)\n- I have lost my key. (鍵を失くしてしまった = 今もない)\n- She has just arrived. (ちょうど着いたところ = 今ここにいる)\n\nhave been to vs have gone to:\n- have been to = 〜に行ったことがある (経験) / 行ってきた (帰ってきている)\n- have gone to = 〜に行ってしまった (まだ帰っていない、結果)\n\n■ 否定文と疑問文\n\n● 否定文: 主語 + have / has + not + 過去分詞\n- I have not (= haven't) lived in Tokyo for ten years. (10 年間東京に住んでいるわけではない)\n- He has not (= hasn't) finished his homework yet.\n\n● 疑問文: Have / Has + 主語 + 過去分詞 + ?\n- Have you ever been to Kyoto? — Yes, I have. / No, I haven't.\n- Has he finished his homework? — Yes, he has. / No, he hasn't.\n\n答え方: Yes, 主語 + have / has. / No, 主語 + haven't / hasn't.\n\n■ 現在完了と過去形の違い (重要!)\n\n| 項目 | 過去形 | 現在完了 |\n|---|---|---|\n| 表す内容 | 過去の一時点で終わった | 過去から現在につながる |\n| 例 | I lived in Tokyo. | I have lived in Tokyo for 10 years. |\n| 訳 | 東京に住んでいた | 10 年間ずっと住んでいる |\n| 一緒に使う語 | yesterday, last 〜, 〜 ago, in 2020 | for, since, ever, never, just, already, yet |\n\n重要ルール: **現在完了は、明確な過去の時点を示す語 (yesterday、last week、〜 ago、in 2020) と一緒に使えない!**\n\n× I have visited Kyoto yesterday. (yesterday があるので過去形のみ)\n○ I visited Kyoto yesterday. (過去形)\n○ I have visited Kyoto. (経験、いつかは不問)\n○ I have visited Kyoto three times. (経験、回数 OK)\n\n● 期間を聞くとき (継続): How long have you 〜?\n- How long have you lived in Tokyo? — For ten years. / Since 2014.\n\n● 経験を聞くとき: Have you ever 〜?\n- Have you ever been to America? — Yes, I have. / No, I haven't.\n\n● 完了を聞くとき: Have you 〜 yet?\n- Have you finished your homework yet? — Yes, I have. / Not yet.",
+            "table": [
+              [
+                "用法",
+                "意味",
+                "代表的な語句",
+                "例"
+              ],
+              [
+                "継続",
+                "ずっと〜している",
+                "for / since / How long",
+                "I have lived here for 10 years."
+              ],
+              [
+                "経験",
+                "〜したことがある",
+                "ever / never / once / twice",
+                "I have been to Kyoto."
+              ],
+              [
+                "完了",
+                "ちょうど〜した",
+                "just / already / yet",
+                "I have just finished it."
+              ],
+              [
+                "結果",
+                "〜してしまった",
+                "(文脈で判断)",
+                "He has gone to America."
+              ]
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "ポイント: 4 用法は『相棒の語句』で見分ける",
+            "body": "現在完了の最大の難所は、4 用法 (継続・経験・完了・結果) のどれかを見分けること。判断のコツは『一緒に使われる語句』。\n\n● 相棒チェックリスト:\n\n1. **継続**: for / since / How long → 『ずっと〜している』\n   - I have known him for 5 years. (継続)\n   - He has been busy since Monday. (継続)\n\n2. **経験**: ever / never / once / twice / three times / before → 『〜したことがある』\n   - I have visited Kyoto twice. (経験)\n   - Have you ever seen this movie? (経験)\n\n3. **完了**: just / already / yet → 『ちょうど・もう・まだ』\n   - I have just finished. (完了)\n   - She has already left. (完了)\n   - Have you finished yet? (完了の疑問)\n\n4. **結果**: 文脈 (have gone to、have lost、have broken 等)\n   - He has gone to America. (結果 = 今いない)\n   - I have lost my wallet. (結果 = 今もない)\n\n比喩: 4 用法は『時計の 4 つの針』。同じ have/has + 過去分詞でも、相棒の語句 (for / ever / just / 文脈) で示している時間の意味が変わる。\n\n暗唱フレーズ:\n『for since 継続、ever never 経験、just already yet 完了、文脈で結果』\n\n● 過去形か現在完了かの判断\n\n判断基準: 文に明確な過去の時点 (yesterday, last 〜, 〜 ago, in 2020) があるか?\n- ある → 過去形\n- ない → 現在完了 (期間 for / 起点 since / 経験 ever / 完了 just/already/yet があれば確実)\n\n試験の落とし穴:\n- have been to (経験・行ってきた) と have gone to (結果・行って戻っていない) を混同しない。\n- yesterday, last week は現在完了と共起しない (× I have read this book yesterday.)\n- 『in + 過去の年』も基本は過去形 (× I have written it in 2010.)\n- since の後ろは『時点』(since 2010, since last week, since I was a child)、for の後ろは『期間』(for 10 years, for a week)。"
+          },
+          {
+            "type": "warn",
+            "title": "注意: 現在完了でよくある間違い",
+            "body": "❌ ミス1: have/has を主語で使い分けない。\nNG: He have lived here for 10 years. (he は三単現 → has)\nOK: He has lived here for 10 years.\nNG: They has finished. (they は複数 → have)\nOK: They have finished.\n\n❌ ミス2: 過去分詞ではなく過去形を使う。\nNG: I have went to Kyoto. (go の過去分詞は gone、went は過去形)\nOK: I have been to Kyoto. (経験) / He has gone to Kyoto. (結果)\nNG: She has wrote a letter. (write の過去分詞は written)\nOK: She has written a letter.\n\n→ 過去分詞を確実に覚える (受動態と同じ形)。\n\n❌ ミス3: 現在完了に明確な過去の時点を加える。\nNG: I have visited Kyoto yesterday.\nOK: I visited Kyoto yesterday. (過去形) / I have visited Kyoto. (経験)\nNG: He has gone to America in 2020.\nOK: He went to America in 2020. (過去形)\n\n→ yesterday、last 〜、〜 ago、in + 過去の年 は過去形と組合せる。\n\n❌ ミス4: have been to と have gone to を混同する。\nNG: 『京都に行ったことがある』を I have gone to Kyoto. と言う\nOK: I have been to Kyoto. (経験)\nNG: 『彼はアメリカに行ったまま戻っていない』を He has been to America. と言う\nOK: He has gone to America. (結果)\n\n→ have been to = 経験 (戻ってきている)、have gone to = 結果 (まだ向こうにいる)。\n\n❌ ミス5: for と since の使い分けミス。\nNG: I have lived here since 10 years. (10 years は期間 → for)\nOK: I have lived here for 10 years.\nNG: I have lived here for 2010. (2010 は時点 → since)\nOK: I have lived here since 2010.\n\n→ for + 期間 (5 years, a week)、since + 時点 (2010, last Monday)。\n\n❌ ミス6: 否定の haven't と hasn't を混同。\nNG: He haven't finished. (he は三単現 → hasn't)\nOK: He hasn't finished.\nNG: They hasn't seen the movie. (they は複数 → haven't)\nOK: They haven't seen the movie.\n\n❌ ミス7: 疑問文の語順ミス。\nNG: Do you have ever been to Kyoto? (現在完了の疑問は have/has を前に)\nOK: Have you ever been to Kyoto?\nNG: Has he gone yet? を 『He has gone yet?』 と語順を変えずに書く\nOK: Has he gone yet? (疑問文は Has を前に出す)\n\n❌ ミス8: yet と already の使い方を間違える。\nNG: I have already finished it. を I have yet finished it. と書く (yet は否定・疑問)\nOK: 肯定: I have already finished it. (もう終えた)\nOK: 否定: I have not finished it yet. (まだ終えていない)\nOK: 疑問: Have you finished it yet? (もう終えた?)\n\n→ already は肯定文、yet は否定文と疑問文。"
+          },
+          {
+            "type": "example",
+            "number": 1,
+            "question": "次の英文の (  ) に入る適切な語を答えよ (have/has + 過去分詞の形)。 (1) I (have / has) lived in Osaka for five years. (2) She (have / has) just (eat) lunch. (3) They (have / has) never (see) such a big dog. (4) (Have / Has) you (be) to Kyoto before? (5) He (have / has) (go) to America, and he is not here now.",
+            "thought": "発想: (1) I → have、live は規則 → lived。(2) she → has、just (完了)、eat の過去分詞 → eaten。(3) they → have、never (経験)、see の過去分詞 → seen。(4) you → Have、before (経験)、be の過去分詞 → been。(5) he → has、結果 (now いない)、go の過去分詞 → gone。",
+            "answer": "(1) have lived  (2) has just eaten  (3) have never seen  (4) Have you been  (5) has gone",
+            "explanation": "**(1) I (have / has) lived in Osaka for five years.**\n主語 I → have。live は規則動詞、過去分詞 → lived。\nfor five years (5 年間) → 継続用法。\n答: I have lived in Osaka for five years. (5 年間大阪に住んでいる)\n\n**(2) She (have / has) just (eat) lunch.**\n主語 She (三単現) → has。just は完了用法の合図。\neat は不規則動詞、過去分詞は eaten (× ate は過去形)。\n答: She has just eaten lunch. (彼女はちょうど昼食を食べたところ)\n\n**(3) They (have / has) never (see) such a big dog.**\n主語 They (複数) → have。never は経験用法の合図。\nsee は不規則動詞、過去分詞は seen (× saw は過去形)。\n答: They have never seen such a big dog. (彼らはこんなに大きな犬を一度も見たことがない)\n\n**(4) (Have / Has) you (be) to Kyoto before?**\n疑問文 → 文頭は Have (主語 you)。before (これまでに) は経験の合図。\n『〜に行ったことがある』 = have been to (× have gone to は『行ってしまった』結果用法)。\nbe の過去分詞は been。\n答: Have you been to Kyoto before? (これまでに京都に行ったことはありますか?)\n答え方: Yes, I have. / No, I haven't.\n\n**(5) He (have / has) (go) to America, and he is not here now.**\n主語 He (三単現) → has。『今ここにいない』(is not here now) という結果用法。\ngo の過去分詞は gone (× went は過去形)。\n答: He has gone to America, and he is not here now. (彼はアメリカに行ってしまい、今ここにいない)\n注意: have/has been to (経験・行ってきた) と have/has gone to (結果・行ったまま) の使い分けを間違えない。\n\n**頻出パターン**\n- 継続 (for/since): I have lived 〜 for/since 〜\n- 経験 (ever/never/before): Have you ever 〜? / I have never 〜\n- 完了 (just/already/yet): I have just finished 〜\n- 結果 (have gone to): He has gone to 〜 (今いない)\n\n類題: 高校受験で必出 (神奈川県 2024、京都府 2023、兵庫県 2024 等)。"
+          },
+          {
+            "type": "example",
+            "number": 2,
+            "question": "次の英文を (  ) 内の指示に従って書き換えよ。(1) I started playing the piano five years ago. (現在まで続いている = 継続用法に) (2) Tom has just finished his homework. (否定文に → まだ終えていない) (3) Have you ever been to Hokkaido? の質問に Yes で答え、その後『3 回行ったことがある』を加えよ。",
+            "thought": "発想: (1) 5 年前から始めて今も続く → I have played the piano for five years。(2) just → yet に変えて否定 → Tom hasn't finished his homework yet。(3) Yes, I have. + I have been there three times。",
+            "answer": "(1) I have played the piano for five years.  (2) Tom hasn't finished his homework yet. (= Tom has not finished his homework yet.)  (3) Yes, I have. I have been there three times.",
+            "explanation": "**(1) I started playing the piano five years ago. → I have played the piano for five years.**\n元の文『5 年前にピアノを始めた』(過去形) を『5 年間ピアノを弾いている』(現在完了の継続用法) に書き換える。\n- 主語 I → have\n- play の過去分詞 → played\n- five years ago (5 年前) → for five years (5 年間)\n答: I have played the piano for five years. (5 年間ピアノを弾いている)\n別解: I have been playing the piano for five years. (現在完了進行形、より動作の継続を強調) — 中学では現在完了で十分。\n\n**(2) Tom has just finished his homework. → Tom hasn't finished his homework yet.**\n肯定 (just で完了) → 否定 (yet でまだ) に変換。\n- has → hasn't (= has not)\n- just → yet (文末に移動)\n答: Tom hasn't finished his homework yet. (トムはまだ宿題を終えていない)\n注意: yet は否定文・疑問文で使う。just と already は肯定文。\n\n**(3) Have you ever been to Hokkaido? — Yes, I have. I have been there three times.**\n質問: 『北海道に行ったことがありますか?』 (経験用法)\n答え: 『はい、行ったことがあります。3 回行ったことがあります』\n- Yes の答え: Yes, I have. (主語 + have)\n- 『3 回』 = three times\n- there は to Hokkaido を受ける副詞 (× to there は不要)\n答: Yes, I have. I have been there three times. (はい、3 回行ったことがあります)\n注意: 『3 回行ったことがある』は経験用法 → have been to (× have gone to は結果)。\n\n**ポイントの整理**\n1. ago と for/since: 過去形 (ago) ⇄ 現在完了 (for/since)\n2. just/already (肯定) ⇄ yet (否定/疑問)\n3. have/has been to (経験・戻ってきた) ⇄ have/has gone to (結果・戻っていない)\n4. 経験の回数: once (1 回), twice (2 回), three times (3 回), many times (何度も)\n\n**応用 (現在完了 ⇄ 過去形 ⇄ 現在進行形)**\n- 過去形: I lived in Tokyo for 5 years. (もう東京には住んでいない)\n- 現在完了 (継続): I have lived in Tokyo for 5 years. (今も東京に住んでいる)\n- 現在進行形: I am living in Tokyo. (今、東京に住んでいる、一時的)\n\n類題: 高校受験『書き換え問題』として頻出 (大阪府 2024、千葉県 2023、東京都立 2024 等)。"
+          },
+          {
+            "type": "practice",
+            "number": 1,
+            "question": "次の (1)〜(5) の (  ) 内に適切な語を入れよ (have/has + 過去分詞の形)。(1) I (    ) (    ) this book three times. (read の経験) (2) She (    ) (    ) (    ) Australia. (be の経験『〜に行ったことがある』) (3) (    ) you (    ) your homework yet? (do の完了の疑問) (4) We (    ) (    ) each other since 2020. (know の継続) (5) He (    ) (    ) lost his wallet, so he is sad now. (lose の結果)"
+          },
+          {
+            "type": "answer",
+            "number": 1,
+            "answer": "(1) have read  (2) has been to  (3) Have / done  (4) have known  (5) has just (もしくは has already)",
+            "explanation": "**(1) I (    ) (    ) this book three times. (read の経験)**\n主語 I → have、read の過去分詞は read (スペル同じ、発音 red)。three times は経験の合図。\n答: I have read this book three times. (この本を 3 回読んだことがある)\n\n**(2) She (    ) (    ) (    ) Australia. (be の経験『〜に行ったことがある』)**\n主語 She (三単現) → has、be の過去分詞は been、『〜に行ったことがある』 = have/has been to。\n答: She has been to Australia. (彼女はオーストラリアに行ったことがある)\n注意: × has gone to は『行ってしまって戻っていない』(結果)。\n\n**(3) (    ) you (    ) your homework yet? (do の完了の疑問)**\n疑問文 → Have you。do の過去分詞は done。yet は完了の疑問の合図。\n答: Have you done your homework yet? (もう宿題を終えましたか?)\n答え方: Yes, I have. / No, not yet. (= No, I haven't.)\n\n**(4) We (    ) (    ) each other since 2020. (know の継続)**\n主語 We (複数) → have、know の過去分詞は known。since 2020 は継続の合図。\n答: We have known each other since 2020. (私たちは 2020 年から知り合っている)\n注意: know は状態動詞なので進行形にできない (× We have been knowing each other は誤り)。\n\n**(5) He (    ) (    ) lost his wallet, so he is sad now. (lose の結果)**\n主語 He (三単現) → has、lose の過去分詞は lost。\n『今悲しんでいる』 = 結果用法 (財布を失くした結果が今に残る)。\njust (ちょうど) または already (もう) を入れて完了・結果の意味を強調。\n答: He has just lost his wallet, so he is sad now. (彼はちょうど財布を失くしてしまい、今悲しんでいる)\n別解: He has already lost his wallet 〜 / He has lost his wallet 〜 (just/already なしでも可)\n\n**間違いやすいポイント**\n- (1) read の過去分詞は read (発音 red)、× readed は誤り\n- (2) 『行ったことがある』 = have/has been to (× gone to)\n- (3) yet は否定文・疑問文で使う、肯定文では already\n- (4) know の過去分詞は known、× knewed は誤り\n- (5) lose の過去分詞は lost、× losed は誤り\n\n**現在完了 4 用法の合言葉 (再掲)**\n| 用法 | 合図の語 | 例 |\n|---|---|---|\n| 継続 | for / since / How long | I have lived here for 10 years. |\n| 経験 | ever / never / once / twice / three times | I have visited Kyoto twice. |\n| 完了 | just / already / yet | I have just finished it. |\n| 結果 | have gone to / 文脈で判断 | He has gone to America. |\n\n**過去分詞 (頻出 30 個) 再確認**\nbreak-broken、write-written、speak-spoken、see-seen、eat-eaten、take-taken、give-given、know-known、sing-sung、make-made、build-built、find-found、send-sent、teach-taught、buy-bought、catch-caught、do-done、go-gone、come-come、run-run、put-put、cut-cut、read-read、be-been、lose-lost、leave-left、meet-met、hear-heard、feel-felt、tell-told\n\n類題: 高校受験で必出 (栃木県 2024、千葉県 2023、福岡県 2024 等)。"
+          },
+          {
+            "type": "summary",
+            "heading": "まとめ — 現在完了の体系",
+            "points": [
+              "現在完了 = have/has + 過去分詞 (過去から現在につながる時制)",
+              "have/has の使い分け: I/you/we/they → have、he/she/it → has",
+              "4 用法: 継続 (for/since)、経験 (ever/never/回数)、完了 (just/already/yet)、結果 (have gone to 等)",
+              "for + 期間 (5 years)、since + 時点 (2010)",
+              "ever / never (経験)、once/twice/three times (回数)",
+              "just (ちょうど)、already (もう、肯定)、yet (まだ、否定 / もう、疑問)",
+              "have been to (経験・戻ってきた) ⇄ have gone to (結果・戻っていない)",
+              "現在完了は明確な過去の時点 (yesterday/last 〜/〜 ago/in 2020) と一緒に使えない",
+              "否定: haven't/hasn't + 過去分詞、疑問: Have/Has + 主語 + 過去分詞 + ?",
+              "他単元との繋がり: 過去形 (本書、明確な過去 vs つながる過去)、受動態 (本書、過去分詞)、be動詞 (本書、been は be の過去分詞)"
+            ]
+          }
+        ]
+      },
+      "status": "published",
+      "source": "claude_max_seed_batch34"
+    }
+  ]
+}
