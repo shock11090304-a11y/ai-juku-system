@@ -967,6 +967,25 @@ function renderView(view) {
     bindRevealButtons();
     // ツールバー: hidden モードの時だけ表示
     if (toolbar) toolbar.style.display = getLayoutMode() === 'hidden' ? 'flex' : 'none';
+    // KaTeX で LaTeX 数式を描画 (\( ... \) インライン、\[ ... \] ディスプレイ)
+    // auto-render.js が読み込まれていれば renderMathInElement が定義される
+    if (typeof renderMathInElement === 'function') {
+      try {
+        renderMathInElement(el, {
+          delimiters: [
+            { left: '\\(', right: '\\)', display: false },
+            { left: '\\[', right: '\\]', display: true },
+            { left: '$$', right: '$$', display: true }
+          ],
+          throwOnError: false,
+          errorColor: '#cc0000',
+        });
+      } catch (e) {
+        console.warn('[KaTeX] レンダリング失敗:', e);
+      }
+    }
+    // 簡易 Markdown テーブルレンダリング (body 内に | 強酸 | 弱酸 | のような表が来た場合)
+    renderInlineMarkdownTables(el);
   } else if (view === 'markdown') {
     el.className = 'tb-result raw';
     el.innerHTML = `<pre>${escapeHtml(lastMd)}</pre>`;
@@ -981,6 +1000,62 @@ function renderView(view) {
 
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+// 本文中に Markdown 形式の表 (| 列1 | 列2 | / |---|---| ) が含まれている場合に
+// HTML <table> へ変換する。subagent 等が body 内に表を埋めてしまったケースの救済。
+function renderInlineMarkdownTables(rootEl) {
+  if (!rootEl) return;
+  const targets = rootEl.querySelectorAll('p, .tip-box, .warn-box, .reveal-section, .answer-block');
+  targets.forEach(p => {
+    const html = p.innerHTML;
+    if (!html.includes('|')) return;
+    // <br> で行に分割 (renderHTML 内で \n → <br> 変換しているため)
+    const lines = html.split(/<br\s*\/?>/i);
+    const out = [];
+    let table = [];
+    let inTable = false;
+    const flush = () => {
+      if (table.length > 0) {
+        out.push(buildMdTableHtml(table));
+        table = [];
+      }
+      inTable = false;
+    };
+    for (const raw of lines) {
+      const line = raw.trim();
+      const isSeparator = /^\|[\s\-:|]+\|?$/.test(line) && /-/.test(line);
+      const isPipeRow = !isSeparator && /^\|.*\|/.test(line);
+      if (isPipeRow) {
+        const cells = line.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+        table.push(cells);
+        inTable = true;
+      } else if (isSeparator && inTable) {
+        // ヘッダ区切り行はスキップ
+        continue;
+      } else {
+        flush();
+        out.push(raw);
+      }
+    }
+    flush();
+    p.innerHTML = out.join('<br>');
+  });
+}
+
+function buildMdTableHtml(rows) {
+  if (rows.length === 0) return '';
+  let h = '<table class="md-table" style="margin:0.75rem 0;border-collapse:collapse;">';
+  h += '<thead><tr>';
+  rows[0].forEach(c => h += `<th style="border:1px solid #4b5563;padding:0.4rem 0.7rem;background:#1f2937;">${c}</th>`);
+  h += '</tr></thead><tbody>';
+  rows.slice(1).forEach(row => {
+    h += '<tr>';
+    row.forEach(c => h += `<td style="border:1px solid #4b5563;padding:0.4rem 0.7rem;">${c}</td>`);
+    h += '</tr>';
+  });
+  h += '</tbody></table>';
+  return h;
 }
 
 function download(content, filename, mime) {
