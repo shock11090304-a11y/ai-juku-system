@@ -62,6 +62,7 @@
   <button class="tab" data-tab="history">📅 月別履歴</button>
   <button class="tab" data-tab="import">📥 CSV取込</button>
   <button class="tab" data-tab="invoice">📄 請求書PDF</button>
+  <button class="tab" data-tab="communication">📨 連絡</button>
 </nav>
 
 <main class="content">
@@ -352,6 +353,110 @@
       <strong>使い方:</strong> 楽天銀行ビジネス → 入出金明細CSVをDL → ここにD&D → 自動マッチを確認 → 「確定して入金反映」で <strong>翌月分</strong> の payments に書込まれます。<br>
       <strong>除外パターン:</strong> <code>ラクテンショウケン</code> / <code>カ−ド出金</code> / <code>口座振替</code> / <code>ATM</code> / <code>テレボ</code> など自動でノイズ判定。<br>
       <strong>振込人名学習:</strong> 一度紐付けると <code>payerNames</code> に保存され、次回CSVでは自動マッチします（親名義↔子供生徒）。
+    </div>
+  </section>
+
+  <!-- 連絡 (一斉/個別/履歴) -->
+  <section class="panel hidden" data-panel="communication">
+    <div class="panel-head">
+      <h2>📨 連絡センター</h2>
+      <div class="panel-actions">
+        <span class="count-tag" id="commActiveCountTag"></span>
+      </div>
+    </div>
+
+    <!-- サブタブ -->
+    <div class="match-tabs" style="margin-bottom:1rem">
+      <button class="match-tab match-tab-active" data-comm-tab="broadcast">📢 一斉送信</button>
+      <button class="match-tab" data-comm-tab="individual">📨 個別送信</button>
+      <button class="match-tab" data-comm-tab="history">📜 送信履歴</button>
+    </div>
+
+    <!-- 一斉送信 -->
+    <div class="comm-sub" data-comm-sub="broadcast">
+      <div class="form-section" style="background:rgba(0,0,0,0.2);padding:1rem;border-radius:12px;margin-bottom:1rem">
+        <h3 style="margin-top:0">🎯 送信対象フィルタ</h3>
+        <div class="form-grid">
+          <label class="form-group">
+            <span>ステータス</span>
+            <select id="commFilterStatus">
+              <option value="通塾">通塾中のみ</option>
+              <option value="">全員 (休塾/退塾含む)</option>
+              <option value="休塾">休塾のみ</option>
+            </select>
+          </label>
+          <label class="form-group">
+            <span>学年</span>
+            <select id="commFilterGrade"><option value="">全学年</option></select>
+          </label>
+          <label class="form-group">
+            <span>コース</span>
+            <select id="commFilterCourse"><option value="">全コース</option></select>
+          </label>
+          <label class="form-group">
+            <span>未払いフィルタ</span>
+            <select id="commFilterUnpaid">
+              <option value="">全員</option>
+              <option value="unpaid">当月未払いのみ</option>
+              <option value="paid">当月入金済のみ</option>
+            </select>
+          </label>
+        </div>
+        <div id="commTargetPreview" style="margin-top:0.8rem;padding:0.7rem;background:rgba(99,102,241,0.08);border-radius:8px;font-size:0.88rem"></div>
+      </div>
+
+      <div class="form-section" style="background:rgba(0,0,0,0.2);padding:1rem;border-radius:12px">
+        <h3 style="margin-top:0">✉️ メール内容</h3>
+        <p class="form-hint" style="margin-bottom:0.5rem">使える変数: <code>{{student}}</code> 生徒名 / <code>{{juku}}</code> 塾名 / <code>{{owner}}</code> 塾長 / <code>{{month}}</code> 当月 / <code>{{fee}}</code> 月謝額 / <code>{{deadline}}</code> 期日 / <code>{{bank}}</code> 振込先 / <code>{{paymentLink}}</code> カード決済URL / <code>{{customerPortal}}</code> 解約ポータル</p>
+        <label class="form-group form-group-wide">
+          <span>件名</span>
+          <input type="text" id="commBroadcastSubject" placeholder="【{{juku}}】お知らせ">
+        </label>
+        <label class="form-group form-group-wide">
+          <span>本文</span>
+          <textarea id="commBroadcastBody" rows="14" placeholder="{{student}} 様の保護者様&#10;&#10;いつもありがとうございます。{{juku}}より..."></textarea>
+        </label>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.8rem">
+          <button class="btn btn-ghost btn-sm" id="commBroadcastPreviewBtn">👁 1名分プレビュー</button>
+          <button class="btn btn-ghost btn-sm" id="commBroadcastSaveTplBtn">💾 テンプレ保存</button>
+          <button class="btn btn-ghost btn-sm" id="commBroadcastLoadTplBtn">📂 テンプレ呼出</button>
+          <span style="flex:1"></span>
+          <button class="btn btn-ghost" id="commBroadcastBccBtn">📋 BCC一括コピー</button>
+          <button class="btn btn-primary" id="commBroadcastSendBtn">📤 順次メーラーで送信</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 個別送信 -->
+    <div class="comm-sub hidden" data-comm-sub="individual">
+      <div style="display:grid;grid-template-columns:300px 1fr;gap:1rem;align-items:start">
+        <div style="background:rgba(0,0,0,0.2);border-radius:12px;padding:0.8rem;max-height:600px;overflow-y:auto">
+          <input type="text" class="search-input" id="commIndividualSearch" placeholder="🔍 氏名/学年で検索" style="width:100%;margin-bottom:0.6rem">
+          <div id="commIndividualList"></div>
+        </div>
+        <div id="commIndividualEditor" style="background:rgba(0,0,0,0.2);border-radius:12px;padding:1rem">
+          <div style="text-align:center;color:var(--text-muted);padding:3rem 0">← 左から生徒を選択してください</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 送信履歴 -->
+    <div class="comm-sub hidden" data-comm-sub="history">
+      <div style="background:rgba(0,0,0,0.2);border-radius:12px;padding:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem">
+          <h3 style="margin:0">📜 送信履歴</h3>
+          <button class="btn btn-ghost btn-sm" id="commHistoryClearBtn" title="ローカル履歴クリア">🗑 全削除</button>
+        </div>
+        <div id="commHistoryList"></div>
+      </div>
+    </div>
+
+    <div class="hint" style="margin-top:1rem">
+      <strong>📨 連絡センターの使い方:</strong><br>
+      <strong>一斉送信</strong>: フィルタで対象を絞込 → 件名/本文編集 → 「順次メーラー」で1人ずつ Mail.app 起動 (800ms間隔) or 「BCC一括コピー」で全員のメアドを Gmail 等にペースト<br>
+      <strong>個別送信</strong>: 生徒を選んで履歴を確認しながら個別メール作成 (Cmd+Enter で送信)<br>
+      <strong>送信履歴</strong>: 過去30日のメール送信履歴 (件名・対象・送信日時) を表示<br>
+      <strong>BCC漏れ防止</strong>: 一斉送信は必ず BCC 形式 (CC ではない) なので保護者間で他人のメアドが見えません。
     </div>
   </section>
 </main>

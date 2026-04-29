@@ -578,6 +578,7 @@ function switchTab(name) {
   else if (name === 'dashboard') renderDashboard();
   else if (name === 'invoice') renderInvoiceTab();
   else if (name === 'enrollment') renderEnrollment();
+  else if (name === 'communication') renderCommunication();
 }
 
 // === Refresh all visible ===
@@ -590,6 +591,7 @@ function refresh() {
   else if (active === 'dashboard') renderDashboard();
   else if (active === 'invoice') renderInvoiceTab();
   else if (active === 'enrollment') renderEnrollment();
+  else if (active === 'communication') renderCommunication();
 }
 
 // === Phase 2: CSV Import ===
@@ -1745,6 +1747,440 @@ function categoryTag(c) {
   return '<span class="status-tag status-quit">未確認</span>';
 }
 
+// === 連絡センター (Communication: 一斉/個別/履歴) ===
+
+const COMM_STATE = {
+  subTab: 'broadcast',          // 'broadcast'|'individual'|'history'
+  selectedStudentId: null,      // 個別送信用
+};
+
+function getCommHistory() {
+  return STATE.overrides.commHistory || [];
+}
+function appendCommHistory(entry) {
+  if (!STATE.overrides.commHistory) STATE.overrides.commHistory = [];
+  STATE.overrides.commHistory.unshift({
+    ...entry,
+    sentAt: new Date().toISOString(),
+  });
+  // 最大 500 件で trim
+  if (STATE.overrides.commHistory.length > 500) {
+    STATE.overrides.commHistory = STATE.overrides.commHistory.slice(0, 500);
+  }
+  saveOverrides();
+}
+
+// CRLF/制御文字注入対策 (件名 = ヘッダ位置で危険)
+function sanitizeSubject(s) {
+  return String(s || '').replace(/[\r\n\t\x00-\x1F]/g, ' ').trim().slice(0, 200);
+}
+
+function commFilteredTargets() {
+  const status = document.getElementById('commFilterStatus')?.value ?? '通塾';
+  const grade = document.getElementById('commFilterGrade')?.value || '';
+  const course = document.getElementById('commFilterCourse')?.value || '';
+  const unpaid = document.getElementById('commFilterUnpaid')?.value || '';
+  const month = STATE.currentMonth;
+  return STATE.data.students.filter(s => {
+    const st = STATE.overrides.status?.[s.id] ?? s.status;
+    if (status && st !== status) return false;
+    if (grade && s.grade !== grade) return false;
+    if (course && !(s.courses || []).includes(course)) return false;
+    if (unpaid === 'unpaid') {
+      const p = getPayment(month, s.id);
+      if (p && p.paid) return false;
+    } else if (unpaid === 'paid') {
+      const p = getPayment(month, s.id);
+      if (!p || !p.paid) return false;
+    }
+    return true;
+  });
+}
+
+function renderCommunication() {
+  // フィルタ プルダウン populate
+  const grades = uniqueGrades();
+  const courses = uniqueCourses();
+  const gradeSel = document.getElementById('commFilterGrade');
+  const courseSel = document.getElementById('commFilterCourse');
+  if (gradeSel && gradeSel.children.length <= 1) {
+    grades.forEach(g => {
+      const o = document.createElement('option');
+      o.value = g; o.textContent = g; gradeSel.appendChild(o);
+    });
+  }
+  if (courseSel && courseSel.children.length <= 1) {
+    courses.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c; o.textContent = c; courseSel.appendChild(o);
+    });
+  }
+  // 通塾生数
+  const activeCnt = activeStudents().length;
+  const tag = document.getElementById('commActiveCountTag');
+  if (tag) tag.textContent = `通塾 ${activeCnt}名`;
+  // 各サブタブ初期描画
+  renderCommBroadcastPreview();
+  renderCommIndividualList();
+  renderCommHistory();
+  // テンプレ初期値 (空なら督促テンプレ流用)
+  const subj = document.getElementById('commBroadcastSubject');
+  const body = document.getElementById('commBroadcastBody');
+  if (subj && !subj.value) subj.value = SETTINGS.commBroadcastSubject || '【{{juku}}】お知らせ';
+  if (body && !body.value) body.value = SETTINGS.commBroadcastBody || `{{student}} 様の保護者様
+
+いつも{{juku}}をご利用いただきありがとうございます。
+
+(ここに本文を入力してください)
+
+────────────────────
+{{juku}}
+{{owner}}
+{{ownerEmail}}
+{{ownerPhone}}
+────────────────────`;
+}
+
+function switchCommSub(name) {
+  COMM_STATE.subTab = name;
+  document.querySelectorAll('[data-comm-tab]').forEach(t => {
+    t.classList.toggle('match-tab-active', t.dataset.commTab === name);
+  });
+  document.querySelectorAll('[data-comm-sub]').forEach(p => {
+    p.classList.toggle('hidden', p.dataset.commSub !== name);
+  });
+  if (name === 'history') renderCommHistory();
+  if (name === 'individual') renderCommIndividualList();
+  if (name === 'broadcast') renderCommBroadcastPreview();
+}
+
+function renderCommBroadcastPreview() {
+  const targets = commFilteredTargets();
+  const withEmail = targets.filter(s => getEmail(s.id));
+  const noEmail = targets.length - withEmail.length;
+  const sample = withEmail.slice(0, 5).map(s => escapeHtml(s.name)).join(', ');
+  const previewEl = document.getElementById('commTargetPreview');
+  if (!previewEl) return;
+  previewEl.innerHTML = `
+    <strong>送信対象</strong>: <span style="color:var(--success,#10b981);font-weight:700">${withEmail.length}名</span>
+    ${noEmail > 0 ? `<span style="color:var(--warning);margin-left:0.6rem">(メアド未登録 ${noEmail}名はスキップ)</span>` : ''}
+    ${sample ? `<br><span style="color:var(--text-muted);font-size:0.82rem">先頭: ${sample}${withEmail.length > 5 ? ' …' : ''}</span>` : ''}
+  `;
+}
+
+function buildBroadcastFor(studentId, subjectTpl, bodyTpl) {
+  const s = STATE.data.students.find(x => x.id === studentId);
+  if (!s) return null;
+  const month = STATE.currentMonth;
+  const vars = {
+    student: s.name,
+    juku: SETTINGS.jukuName,
+    owner: SETTINGS.ownerName,
+    ownerEmail: SETTINGS.ownerEmail,
+    ownerPhone: SETTINGS.ownerPhone,
+    month: month,
+    fee: (s.fee || 0).toLocaleString('ja-JP'),
+    deadline: deadlineForMonth(month),
+    bank: bankInfoText().split('　').join('\n'),
+    paymentLink: paymentLinkFor(s),
+    customerPortal: SETTINGS.stripeCustomerPortalUrl || '',
+  };
+  return {
+    student: s,
+    to: getEmail(studentId),
+    subject: sanitizeSubject(renderTemplate(subjectTpl, vars)),
+    body: renderTemplate(bodyTpl, vars),
+  };
+}
+
+function commBroadcastPreview() {
+  const subjectTpl = document.getElementById('commBroadcastSubject').value;
+  const bodyTpl = document.getElementById('commBroadcastBody').value;
+  const targets = commFilteredTargets().filter(s => getEmail(s.id));
+  if (!targets.length) { alert('送信対象がいません (フィルタ条件 or メアド未登録)'); return; }
+  const m = buildBroadcastFor(targets[0].id, subjectTpl, bodyTpl);
+  if (!m) return;
+  alert(`【プレビュー: ${m.student.name} 様】\n\n宛先: ${m.to}\n件名: ${m.subject}\n\n${m.body}`);
+}
+
+function commBroadcastSendSequential() {
+  const subjectTpl = document.getElementById('commBroadcastSubject').value;
+  const bodyTpl = document.getElementById('commBroadcastBody').value;
+  if (!subjectTpl.trim() || !bodyTpl.trim()) { alert('件名と本文を入力してください'); return; }
+  const targets = commFilteredTargets().filter(s => getEmail(s.id));
+  if (!targets.length) { alert('送信対象がいません'); return; }
+  if (!confirm(`${targets.length}名のメーラーを順次開きます (800ms間隔)。\nブラウザのポップアップブロックを解除してください。続行しますか？`)) return;
+  let i = 0;
+  let succeeded = 0;
+  const next = () => {
+    if (i >= targets.length) {
+      appendCommHistory({
+        type: 'broadcast',
+        method: 'mailto_sequential',
+        subject: sanitizeSubject(subjectTpl),
+        bodyTpl,
+        recipients: targets.map(s => ({ id: s.id, name: s.name, email: getEmail(s.id) })),
+        recipientCount: succeeded,
+      });
+      alert(`✅ ${succeeded}/${targets.length} 名分のメーラーを開きました\n送信履歴に記録されました`);
+      switchCommSub('history');
+      return;
+    }
+    const s = targets[i];
+    const m = buildBroadcastFor(s.id, subjectTpl, bodyTpl);
+    if (m && m.to && mailtoSafetyCheck(m.to, m.subject, m.body)) {
+      window.open(mailtoUrl(m.to, m.subject, m.body), '_blank');
+      succeeded++;
+    }
+    i++;
+    setTimeout(next, 800);
+  };
+  next();
+}
+
+function commBroadcastBccCopy() {
+  const subjectTpl = document.getElementById('commBroadcastSubject').value;
+  const bodyTpl = document.getElementById('commBroadcastBody').value;
+  if (!subjectTpl.trim() || !bodyTpl.trim()) { alert('件名と本文を入力してください'); return; }
+  const targets = commFilteredTargets().filter(s => getEmail(s.id));
+  if (!targets.length) { alert('送信対象がいません'); return; }
+  // 共通テンプレ展開 (生徒名は「保護者各位」)
+  const genericVars = {
+    student: '保護者各位',
+    juku: SETTINGS.jukuName, owner: SETTINGS.ownerName,
+    ownerEmail: SETTINGS.ownerEmail, ownerPhone: SETTINGS.ownerPhone,
+    month: STATE.currentMonth,
+    fee: '(各人別)',
+    deadline: deadlineForMonth(STATE.currentMonth),
+    bank: bankInfoText().split('　').join('\n'),
+    paymentLink: '(各人個別の URL を記載してください)',
+    customerPortal: SETTINGS.stripeCustomerPortalUrl || '',
+  };
+  const subject = sanitizeSubject(renderTemplate(subjectTpl, genericVars));
+  const body = renderTemplate(bodyTpl, genericVars);
+  const bcc = targets.map(s => getEmail(s.id)).join(', ');
+  const text = `BCC: ${bcc}\n\n件名: ${subject}\n\n${body}`;
+  copyToClipboard(text);
+  appendCommHistory({
+    type: 'broadcast',
+    method: 'bcc_copy',
+    subject,
+    bodyTpl,
+    recipients: targets.map(s => ({ id: s.id, name: s.name, email: getEmail(s.id) })),
+    recipientCount: targets.length,
+  });
+  alert(`📋 ${targets.length}名分のBCC・件名・本文をクリップボードにコピーしました\n\nGmail等の新規メール作成画面に貼付けてください。`);
+  switchCommSub('history');
+}
+
+function commBroadcastSaveTemplate() {
+  SETTINGS.commBroadcastSubject = document.getElementById('commBroadcastSubject').value;
+  SETTINGS.commBroadcastBody = document.getElementById('commBroadcastBody').value;
+  saveSettings();
+  alert('✅ 一斉送信テンプレを保存しました (件名+本文)');
+}
+
+function commBroadcastLoadTemplate() {
+  document.getElementById('commBroadcastSubject').value = SETTINGS.commBroadcastSubject || '【{{juku}}】お知らせ';
+  document.getElementById('commBroadcastBody').value = SETTINGS.commBroadcastBody || '';
+  alert('📂 保存済テンプレを呼び出しました');
+}
+
+// ===== 個別送信 =====
+
+function renderCommIndividualList() {
+  const q = document.getElementById('commIndividualSearch')?.value?.trim().toLowerCase() || '';
+  const list = document.getElementById('commIndividualList');
+  if (!list) return;
+  const candidates = activeStudents().filter(s => {
+    if (!q) return true;
+    return s.name.toLowerCase().includes(q) || (s.grade || '').toLowerCase().includes(q);
+  }).slice(0, 200);
+  list.innerHTML = candidates.map(s => {
+    const email = getEmail(s.id);
+    const sel = COMM_STATE.selectedStudentId === s.id ? 'background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.5)' : 'background:rgba(255,255,255,0.03);border:1px solid transparent';
+    return `
+      <div class="comm-stu-row" data-stu-id="${s.id}" style="padding:0.6rem 0.8rem;margin-bottom:0.3rem;border-radius:8px;cursor:pointer;${sel}">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:0.5rem">
+          <div style="font-weight:600;font-size:0.9rem">${escapeHtml(s.name)}</div>
+          <div style="font-size:0.75rem;color:var(--text-muted)">${escapeHtml(s.grade || '')}</div>
+        </div>
+        <div style="font-size:0.75rem;color:${email ? 'var(--text-muted)' : 'var(--warning)'};margin-top:0.2rem">${email ? escapeHtml(email) : '✗ メアド未登録'}</div>
+      </div>
+    `;
+  }).join('');
+  list.onclick = (e) => {
+    const row = e.target.closest('.comm-stu-row');
+    if (!row) return;
+    COMM_STATE.selectedStudentId = parseInt(row.dataset.stuId, 10);
+    renderCommIndividualList();
+    renderCommIndividualEditor();
+  };
+}
+
+function renderCommIndividualEditor() {
+  const editor = document.getElementById('commIndividualEditor');
+  if (!editor) return;
+  const id = COMM_STATE.selectedStudentId;
+  if (!id) {
+    editor.innerHTML = `<div style="text-align:center;color:var(--text-muted);padding:3rem 0">← 左から生徒を選択してください</div>`;
+    return;
+  }
+  const s = STATE.data.students.find(x => x.id === id);
+  if (!s) return;
+  const email = getEmail(id);
+  const history = getCommHistory().filter(h => {
+    if (h.type === 'individual') return h.studentId === id;
+    if (h.type === 'broadcast') return (h.recipients || []).some(r => r.id === id);
+    return false;
+  }).slice(0, 30);
+  editor.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.8rem;border-bottom:1px solid var(--border);padding-bottom:0.6rem">
+      <div>
+        <div style="font-size:1.1rem;font-weight:700">${escapeHtml(s.name)}</div>
+        <div style="font-size:0.82rem;color:var(--text-muted)">${escapeHtml(s.grade || '')} / ${escapeHtml((s.courses||[]).join(', ') || '(コースなし)')}</div>
+        <div style="font-size:0.82rem;color:${email ? 'var(--success,#10b981)' : 'var(--warning)'};margin-top:0.2rem">${email ? '✉ ' + escapeHtml(email) : '⚠ メアド未登録 — 全生徒タブで登録してください'}</div>
+      </div>
+      <div style="font-size:0.82rem;color:var(--text-muted);text-align:right">月謝 ¥${(s.fee || 0).toLocaleString('ja-JP')}<br>当月: ${getPayment(STATE.currentMonth, id)?.paid ? '✓ 入金済' : '✗ 未払'}</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;align-items:start">
+      <div>
+        <label class="form-group form-group-wide">
+          <span>件名</span>
+          <input type="text" id="commIndSubject" placeholder="件名を入力">
+        </label>
+        <label class="form-group form-group-wide">
+          <span>本文 (Cmd+Enter で送信)</span>
+          <textarea id="commIndBody" rows="14" placeholder="本文を入力..."></textarea>
+        </label>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem">
+          <button class="btn btn-ghost btn-sm" id="commIndDunningTplBtn">📝 督促テンプレ</button>
+          <button class="btn btn-ghost btn-sm" id="commIndStripeTplBtn">💳 Stripe案内テンプレ</button>
+          <button class="btn btn-ghost btn-sm" id="commIndPreviewBtn">👁 プレビュー</button>
+          <span style="flex:1"></span>
+          <button class="btn btn-primary btn-sm" id="commIndSendBtn" ${email ? '' : 'disabled'}>📤 送信</button>
+        </div>
+      </div>
+      <div>
+        <h4 style="margin:0 0 0.5rem 0">📜 送信履歴 (${history.length})</h4>
+        <div style="max-height:500px;overflow-y:auto;font-size:0.82rem">
+          ${history.length === 0 ? '<div style="color:var(--text-muted);padding:1rem;text-align:center">履歴なし</div>' :
+            history.map(h => `
+              <div style="padding:0.5rem;margin-bottom:0.3rem;background:rgba(255,255,255,0.03);border-radius:6px;border-left:3px solid ${h.type === 'broadcast' ? 'var(--accent)' : 'var(--primary)'}">
+                <div style="font-weight:600">${escapeHtml(h.subject || '(件名なし)')}</div>
+                <div style="color:var(--text-muted);font-size:0.75rem;margin-top:0.2rem">${h.type === 'broadcast' ? `📢 一斉 (${h.recipientCount}名)` : '📨 個別'} · ${new Date(h.sentAt).toLocaleString('ja-JP')}</div>
+              </div>
+            `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+
+  // 各ボタン bind
+  document.getElementById('commIndPreviewBtn')?.addEventListener('click', () => {
+    const subj = sanitizeSubject(document.getElementById('commIndSubject').value);
+    const body = document.getElementById('commIndBody').value;
+    alert(`【プレビュー】\n\n宛先: ${email || '(未登録)'}\n件名: ${subj}\n\n${body}`);
+  });
+  document.getElementById('commIndSendBtn')?.addEventListener('click', () => commIndividualSend());
+  document.getElementById('commIndDunningTplBtn')?.addEventListener('click', () => loadIndividualTemplate('dunning'));
+  document.getElementById('commIndStripeTplBtn')?.addEventListener('click', () => loadIndividualTemplate('stripe_invite'));
+  // Cmd+Enter で送信
+  document.getElementById('commIndBody')?.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); commIndividualSend(); }
+  });
+}
+
+function loadIndividualTemplate(type) {
+  const id = COMM_STATE.selectedStudentId;
+  if (!id) return;
+  if (type === 'dunning') {
+    const m = buildMailFor(id);
+    if (m) {
+      document.getElementById('commIndSubject').value = m.subject;
+      document.getElementById('commIndBody').value = m.body;
+    }
+  } else if (type === 'stripe_invite') {
+    const m = buildStripeInviteFor(id);
+    if (m) {
+      document.getElementById('commIndSubject').value = m.subject;
+      document.getElementById('commIndBody').value = m.body;
+    }
+  }
+}
+
+function commIndividualSend() {
+  const id = COMM_STATE.selectedStudentId;
+  if (!id) return;
+  const s = STATE.data.students.find(x => x.id === id);
+  if (!s) return;
+  const email = getEmail(id);
+  if (!email) { alert('メアドが未登録です'); return; }
+  const subject = sanitizeSubject(document.getElementById('commIndSubject').value);
+  const body = document.getElementById('commIndBody').value;
+  if (!subject.trim() || !body.trim()) { alert('件名と本文を入力してください'); return; }
+  if (!mailtoSafetyCheck(email, subject, body)) return;
+  window.open(mailtoUrl(email, subject, body), '_blank');
+  appendCommHistory({
+    type: 'individual',
+    studentId: id,
+    studentName: s.name,
+    email,
+    subject,
+    body,
+  });
+  alert(`✉ ${s.name} 様のメーラーを開きました`);
+  // 履歴反映のため再描画
+  renderCommIndividualEditor();
+}
+
+// ===== 送信履歴 =====
+
+function renderCommHistory() {
+  const list = document.getElementById('commHistoryList');
+  if (!list) return;
+  const history = getCommHistory().slice(0, 100);
+  if (!history.length) {
+    list.innerHTML = `<div style="color:var(--text-muted);text-align:center;padding:2rem">送信履歴がまだありません</div>`;
+    return;
+  }
+  list.innerHTML = history.map(h => {
+    const dt = new Date(h.sentAt).toLocaleString('ja-JP');
+    if (h.type === 'broadcast') {
+      const recipientNames = (h.recipients || []).slice(0, 5).map(r => escapeHtml(r.name)).join(', ');
+      const more = (h.recipients || []).length > 5 ? ` 他${h.recipients.length - 5}名` : '';
+      return `
+        <div style="padding:0.7rem;margin-bottom:0.5rem;background:rgba(236,72,153,0.06);border-left:3px solid var(--accent);border-radius:6px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:0.5rem">
+            <div style="font-weight:600">📢 ${escapeHtml(h.subject || '(件名なし)')}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted)">${dt}</div>
+          </div>
+          <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.3rem">${h.recipientCount}名に送信 (${h.method === 'bcc_copy' ? 'BCC一括コピー' : '順次メーラー'})</div>
+          <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.2rem">${recipientNames}${more}</div>
+        </div>
+      `;
+    }
+    return `
+      <div style="padding:0.7rem;margin-bottom:0.5rem;background:rgba(99,102,241,0.06);border-left:3px solid var(--primary);border-radius:6px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:0.5rem">
+          <div style="font-weight:600">📨 ${escapeHtml(h.subject || '(件名なし)')}</div>
+          <div style="font-size:0.75rem;color:var(--text-muted)">${dt}</div>
+        </div>
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.3rem">→ ${escapeHtml(h.studentName || '(不明)')} (${escapeHtml(h.email || '')})</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function commHistoryClear() {
+  if (!confirm('送信履歴を全削除します。この操作は取り消せません。続行しますか？')) return;
+  STATE.overrides.commHistory = [];
+  saveOverrides();
+  renderCommHistory();
+  alert('🗑 送信履歴を全削除しました');
+}
+
 function renderEnrollment() {
   const month = STATE.currentMonth;
   document.getElementById('enrollMonthTag').textContent = `基準: ${month}`;
@@ -2053,6 +2489,24 @@ function setupModals() {
   if (aib) aib.addEventListener('click', runAutoImport);
   const aid = document.getElementById('autoImportDismissBtn');
   if (aid) aid.addEventListener('click', dismissAutoImport);
+
+  // 連絡センター (Communication)
+  document.querySelectorAll('[data-comm-tab]').forEach(t => {
+    t.addEventListener('click', () => switchCommSub(t.dataset.commTab));
+  });
+  ['commFilterStatus','commFilterGrade','commFilterCourse','commFilterUnpaid'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', renderCommBroadcastPreview);
+  });
+  document.getElementById('commBroadcastPreviewBtn')?.addEventListener('click', commBroadcastPreview);
+  document.getElementById('commBroadcastSendBtn')?.addEventListener('click', commBroadcastSendSequential);
+  document.getElementById('commBroadcastBccBtn')?.addEventListener('click', commBroadcastBccCopy);
+  document.getElementById('commBroadcastSaveTplBtn')?.addEventListener('click', commBroadcastSaveTemplate);
+  document.getElementById('commBroadcastLoadTplBtn')?.addEventListener('click', commBroadcastLoadTemplate);
+  document.getElementById('commIndividualSearch')?.addEventListener('input', () => {
+    clearTimeout(window._commSearchTimer);
+    window._commSearchTimer = setTimeout(renderCommIndividualList, 200);
+  });
+  document.getElementById('commHistoryClearBtn')?.addEventListener('click', commHistoryClear);
 
   // Email 一括登録
   const eib = document.getElementById('emailImportBtn');
