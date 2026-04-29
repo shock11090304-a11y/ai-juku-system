@@ -9,6 +9,10 @@
       "destination": "/api/chat"
     },
     {
+      "source": "/payment/api/mail-send",
+      "destination": "/api/mail-send"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://ai-juku-api-production.up.railway.app/api/:path*"
     }

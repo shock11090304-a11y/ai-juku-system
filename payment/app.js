@@ -1940,6 +1940,119 @@ function commBroadcastSendSequential() {
   next();
 }
 
+async function commBroadcastSendResend() {
+  // CHAT_ADMIN_PASSWORD を再利用 (chat と同じ管理者認証)
+  const pw = (CHAT_STATE && CHAT_STATE.pw) || localStorage.getItem(CHAT_PW_KEY) || '';
+  if (!pw) {
+    if (!confirm('Resend 直送には管理パスワードが必要です。\n\n💬 チャットタブを開いて管理パスワードを入力 → 戻ってきて再度送信してください。\n\nチャットタブに移動しますか?')) return;
+    switchTab('chat');
+    return;
+  }
+  const subjectTpl = document.getElementById('commBroadcastSubject').value;
+  const bodyTpl = document.getElementById('commBroadcastBody').value;
+  if (!subjectTpl.trim() || !bodyTpl.trim()) { alert('件名と本文を入力してください'); return; }
+  const targets = commFilteredTargets().filter(s => getEmail(s.id));
+  if (!targets.length) { alert('送信対象がいません (フィルタ条件 or メアド未登録)'); return; }
+  if (!confirm(`Resend API 経由で ${targets.length}名 に直接メール送信します。\n\n✓ Mac メーラー起動なし\n✓ BCC 漏れ事故ゼロ (1通ずつ to で送信)\n✓ サーバ側で送信\n\n送信元: ${SETTINGS.jukuName || ''} <info@trillion-ai-juku.com>\n\n続行しますか？`)) return;
+
+  // recipients を構築 (テンプレ変数も per-student で渡す)
+  const recipients = targets.map(s => ({
+    email: getEmail(s.id),
+    name: s.name,
+    vars: {
+      student: s.name,
+      juku: SETTINGS.jukuName,
+      owner: SETTINGS.ownerName,
+      ownerEmail: SETTINGS.ownerEmail,
+      ownerPhone: SETTINGS.ownerPhone,
+      month: STATE.currentMonth,
+      fee: (s.fee || 0).toLocaleString('ja-JP'),
+      deadline: deadlineForMonth(STATE.currentMonth),
+      bank: bankInfoText().split('　').join('\n'),
+      paymentLink: paymentLinkFor(s),
+      customerPortal: SETTINGS.stripeCustomerPortalUrl || '',
+    },
+  }));
+
+  const btn = document.getElementById('commBroadcastResendBtn');
+  const originalText = btn?.textContent;
+  if (btn) { btn.disabled = true; btn.textContent = '📤 送信中...'; }
+
+  try {
+    const r = await fetch('/payment/api/mail-send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Password': pw,
+      },
+      body: JSON.stringify({
+        type: 'broadcast',
+        subject: subjectTpl,
+        body: bodyTpl,
+        from_name: SETTINGS.jukuName || '',
+        reply_to: SETTINGS.ownerEmail || '',
+        recipients,
+      }),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      if (r.status === 401) {
+        alert(`⚠ 認証失敗。チャットタブで管理パスワード再設定してください。`);
+      } else if (r.status === 503) {
+        alert(`⚠ Resend API キーが Vercel に未設定です。\n${data.hint || ''}`);
+      } else {
+        alert(`⚠ ${data.message || data.error || r.status}`);
+      }
+      return;
+    }
+    appendCommHistory({
+      type: 'broadcast',
+      method: 'resend_api',
+      subject: sanitizeSubject(subjectTpl),
+      bodyTpl,
+      recipients: targets.map(s => ({ id: s.id, name: s.name, email: getEmail(s.id) })),
+      recipientCount: data.sent,
+      failed: data.failed,
+    });
+    let msg = `✅ Resend 直送完了\n\n成功: ${data.sent}名\n失敗: ${data.failed}名`;
+    if (data.failed > 0) {
+      const failedList = data.results.filter(x => !x.ok).slice(0, 5).map(x => `  ・${x.email}: ${x.error || ''}`).join('\n');
+      msg += `\n\n失敗詳細 (先頭5件):\n${failedList}`;
+    }
+    alert(msg);
+    switchCommSub('history');
+  } catch (e) {
+    alert('通信エラー: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = originalText; }
+  }
+}
+
+async function commIndividualSendResend(s, subject, body) {
+  const pw = (CHAT_STATE && CHAT_STATE.pw) || localStorage.getItem(CHAT_PW_KEY) || '';
+  if (!pw) { return null; }  // フォールバック (mailto に流す用)
+  const r = await fetch('/payment/api/mail-send', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Admin-Password': pw,
+    },
+    body: JSON.stringify({
+      type: 'individual',
+      subject,
+      body,
+      from_name: SETTINGS.jukuName || '',
+      reply_to: SETTINGS.ownerEmail || '',
+      recipients: [{
+        email: getEmail(s.id),
+        name: s.name,
+        vars: {},  // 既に展開済の subject/body が渡されてくる
+      }],
+    }),
+  });
+  return r.ok ? await r.json() : null;
+}
+
 function commBroadcastBccCopy() {
   const subjectTpl = document.getElementById('commBroadcastSubject').value;
   const bodyTpl = document.getElementById('commBroadcastBody').value;
@@ -2825,6 +2938,7 @@ function setupModals() {
   document.getElementById('commBroadcastPreviewBtn')?.addEventListener('click', commBroadcastPreview);
   document.getElementById('commBroadcastSendBtn')?.addEventListener('click', commBroadcastSendSequential);
   document.getElementById('commBroadcastBccBtn')?.addEventListener('click', commBroadcastBccCopy);
+  document.getElementById('commBroadcastResendBtn')?.addEventListener('click', commBroadcastSendResend);
   document.getElementById('commBroadcastSaveTplBtn')?.addEventListener('click', commBroadcastSaveTemplate);
   document.getElementById('commBroadcastLoadTplBtn')?.addEventListener('click', commBroadcastLoadTemplate);
   document.getElementById('commIndividualSearch')?.addEventListener('input', () => {
