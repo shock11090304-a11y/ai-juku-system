@@ -2827,6 +2827,176 @@ def admin_analytics(authorization: Optional[str] = Header(None)):
 
 _AI_PROXY_RATE = {}  # session_id → [unix timestamps]
 
+# ==========================================================================
+# AI never-fail フェイルセーフ (塾長指示 2026-04-29):
+# AI 関連機能はミスやエラーでシステムが止まることは絶対にあってはならない。
+# 全 Anthropic 呼び出しはこの _call_anthropic_safe() 経由で実行する。
+# - 3 段モデルフォールバック (要求モデル → Sonnet → Haiku)
+# - 指数バックオフリトライ (5xx/timeout/network)
+# - credit 不足検知時は ai_credit_low イベント発火 (CEO ダッシュ緊急バナー)
+# ==========================================================================
+_AI_CIRCUIT_BREAKER = {"credit_low_until": 0.0, "last_error": None}
+
+
+def _record_ai_critical_event(event_name: str, props: dict):
+    """ai_credit_low / ai_total_failure 等の critical event を events に記録。
+    CEO ダッシュ monitor がここを見て緊急バナー表示する。"""
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            (event_name, json.dumps(props), "ai_failsafe"),
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        log.error(f"[AI failsafe] failed to record critical event {event_name}: {e}")
+
+
+def _anthropic_max_tokens_cap(model: str, requested: int) -> int:
+    """モデルごとの安全な max_tokens 上限。降格時に元の値が大きすぎる場合 clamp。"""
+    if model.startswith("claude-opus-4-7"):
+        return min(requested, 24000)
+    if model.startswith("claude-sonnet-4"):
+        return min(requested, 16000)
+    if model.startswith("claude-haiku-4"):
+        return min(requested, 8000)
+    return min(requested, 8000)
+
+
+def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = None) -> dict:
+    """全 Anthropic API 呼び出しの統一エントリ。絶対に止まらない設計。
+    - 3 段モデルフォールバック (要求 → Sonnet 4.6 → Haiku 4.5)
+    - 各 tier で指数バックオフリトライ (1s/2s/4s)
+    - credit 不足は即 critical イベント発火 → CEO ダッシュ緊急バナー
+    - 全滅時は HTTPException(503) で raise (caller 側で問題プール等の最終フォールバック)
+    body には少なくとも model, max_tokens, messages を含めること。
+    """
+    import time as _t
+    if not ANTHROPIC_API_KEY:
+        raise HTTPException(status_code=503, detail="AI service not configured")
+
+    requested_model = body.get("model") or "claude-sonnet-4-6"
+    # フォールバック chain: 重複除去
+    chain = []
+    seen = set()
+    for m in (requested_model, "claude-sonnet-4-6", "claude-haiku-4-5"):
+        if m not in seen:
+            seen.add(m)
+            chain.append(m)
+
+    last_error_code = None
+    last_error_body = ""
+
+    for tier_idx, model in enumerate(chain):
+        # tier ごとに body を再構築 (Opus 4.7 専用パラメータは降格時に外す)
+        tier_body = dict(body)
+        tier_body["model"] = model
+        tier_body["max_tokens"] = _anthropic_max_tokens_cap(model, int(body.get("max_tokens") or 4000))
+        if not model.startswith("claude-opus-4-7"):
+            tier_body.pop("thinking", None)
+            tier_body.pop("output_config", None)
+            # temperature は Sonnet/Haiku でもデフォ削除 (caller が明示してきた場合のみ残す想定だが
+            # ここでは body にあれば残す)
+
+        for attempt in range(3):  # 0, 1, 2 → 最大 3 回試行
+            try:
+                req = urllib.request.Request(
+                    "https://api.anthropic.com/v1/messages",
+                    data=json.dumps(tier_body).encode("utf-8"),
+                    headers={
+                        "x-api-key": ANTHROPIC_API_KEY,
+                        "anthropic-version": "2023-06-01",
+                        "Content-Type": "application/json",
+                    },
+                    method="POST",
+                )
+                with urllib.request.urlopen(req, timeout=180) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    if tier_idx > 0 or attempt > 0:
+                        log.warning(
+                            f"[AI failsafe] succeeded with {model} (tier {tier_idx}, attempt {attempt + 1}) "
+                            f"after requested={requested_model}"
+                        )
+                        # 降格成功も events に記録 (CEO ダッシュで監視)
+                        _record_ai_critical_event("ai_fallback_used", {
+                            "requested_model": requested_model,
+                            "actual_model": model,
+                            "tier": tier_idx,
+                            "attempt": attempt + 1,
+                            "kind": kind,
+                            "student_id": student_id,
+                        })
+                    data["_actual_model"] = model  # caller に降格情報を渡す
+                    return data
+            except urllib.error.HTTPError as e:
+                err_body = e.read().decode("utf-8", errors="ignore")
+                last_error_code = e.code
+                last_error_body = err_body
+                err_lower = err_body.lower()
+
+                # credit 不足は致命イベント。circuit breaker 起動 + critical event 発火。
+                if "credit balance is too low" in err_lower or "credit_balance" in err_lower:
+                    _AI_CIRCUIT_BREAKER["credit_low_until"] = _t.time() + 300  # 5 min
+                    _AI_CIRCUIT_BREAKER["last_error"] = "credit_low"
+                    _record_ai_critical_event("ai_credit_low", {
+                        "model": model,
+                        "kind": kind,
+                        "raw": err_body[:300],
+                    })
+                    log.error(f"[AI failsafe] CREDIT LOW detected: {err_body[:200]}")
+                    # credit 不足は他モデルでも同じ Anthropic アカウントなので fallback しても無駄
+                    raise HTTPException(
+                        status_code=503,
+                        detail="AI_CREDIT_LOW: Anthropic クレジット枯渇。塾長に補充依頼してください。"
+                    )
+
+                # 4xx (validation) → リトライ無駄、次の tier
+                if 400 <= e.code < 500 and e.code != 429:
+                    log.warning(f"[AI failsafe] {model} returned {e.code}, advancing to next tier: {err_body[:200]}")
+                    break
+
+                # 429 / 5xx → 指数バックオフリトライ
+                if attempt < 2:
+                    sleep_s = 2 ** attempt
+                    log.warning(f"[AI failsafe] {model} returned {e.code}, retrying in {sleep_s}s (attempt {attempt + 1}/3)")
+                    _t.sleep(sleep_s)
+                    continue
+                # 3 回全部 5xx → 次の tier
+                log.warning(f"[AI failsafe] {model} exhausted {attempt + 1} attempts with {e.code}, advancing to next tier")
+                break
+            except (urllib.error.URLError, OSError) as e:
+                last_error_code = "network"
+                last_error_body = str(e)[:300]
+                if attempt < 2:
+                    sleep_s = 2 ** attempt
+                    log.warning(f"[AI failsafe] {model} network error, retrying in {sleep_s}s: {e}")
+                    _t.sleep(sleep_s)
+                    continue
+                log.warning(f"[AI failsafe] {model} exhausted retries on network error, advancing to next tier")
+                break
+
+    # 全 tier 全 attempt 失敗
+    _record_ai_critical_event("ai_total_failure", {
+        "requested_model": requested_model,
+        "last_error_code": last_error_code,
+        "last_error_body": last_error_body[:300],
+        "kind": kind,
+        "student_id": student_id,
+    })
+    log.error(f"[AI failsafe] ALL TIERS FAILED. last={last_error_code}: {last_error_body[:200]}")
+    raise HTTPException(
+        status_code=503,
+        detail=f"AI temporarily unavailable. Last error: {last_error_code}"
+    )
+
+
+def _ai_credit_low_active() -> bool:
+    """CEO ダッシュ等で credit 不足バナーを出すかの判定。"""
+    import time as _t
+    return _AI_CIRCUIT_BREAKER.get("credit_low_until", 0) > _t.time()
+
 
 def _ai_proxy_rate_limit(session_id: str, max_per_min: int = 20) -> bool:
     """True なら通過、False なら制限超過"""
@@ -2908,30 +3078,10 @@ def ai_messages_proxy(payload: dict, authorization: Optional[str] = Header(None)
         if payload.get("temperature") is not None:
             body["temperature"] = float(payload.get("temperature"))
 
-    # Anthropic 呼び出し
-    try:
-        req = urllib.request.Request(
-            "https://api.anthropic.com/v1/messages",
-            data=json.dumps(body).encode("utf-8"),
-            headers={
-                "x-api-key": ANTHROPIC_API_KEY,
-                "anthropic-version": "2023-06-01",
-                "Content-Type": "application/json",
-            },
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=180) as resp:
-            data = json.loads(resp.read().decode())
-    except urllib.error.HTTPError as e:
-        body_err = e.read().decode("utf-8", errors="ignore")
-        log.error(f"[AI proxy] Anthropic HTTP {e.code} (model={model}, max_tokens={max_tokens}): {body_err[:500]}")
-        # 400 の場合は upstream のエラー本文も伝搬し、フロントの alert で原因が分かるようにする。
-        if e.code == 400:
-            raise HTTPException(status_code=502, detail=f"AI upstream 400: {body_err[:200]}")
-        raise HTTPException(status_code=502, detail=f"AI upstream error: {e.code}")
-    except Exception as e:
-        log.error(f"[AI proxy] error: {type(e).__name__}: {e}")
-        raise HTTPException(status_code=500, detail="AI request failed")
+    # Anthropic 呼び出し (フェイルセーフ経由・3段モデル降格 + リトライ込み)
+    student_id = student.get("id") if student else None
+    data = _call_anthropic_safe(body, kind="proxy_messages", student_id=student_id)
+    actual_model = data.get("_actual_model") or model
 
     # 使用ログ (events に記録、CEO ダッシュボード analytics で見える)
     try:
@@ -2943,10 +3093,12 @@ def ai_messages_proxy(payload: dict, authorization: Optional[str] = Header(None)
             (
                 "ai_proxy_call",
                 json.dumps({
-                    "model": model,
+                    "model": actual_model,
+                    "requested_model": model,
                     "input_tokens": usage.get("input_tokens", 0),
                     "output_tokens": usage.get("output_tokens", 0),
                     "is_admin": is_admin,
+                    "fallback_used": actual_model != model,
                 }),
                 rate_key,
             ),
@@ -5538,6 +5690,22 @@ def admin_monitor_status(authorization: Optional[str] = Header(None)):
         "monitoring_interval_min": MONITORING_INTERVAL_MIN,
         "monitoring_to_email": MONITORING_TO_EMAIL[:3] + "***" if MONITORING_TO_EMAIL else "",
         "synthetic_checkout": _SYNTHETIC_CHECKOUT_LAST,
+        "ai_credit_low": _ai_credit_low_active(),
+        "ai_circuit_breaker": _AI_CIRCUIT_BREAKER,
+    }
+
+
+@app.get("/api/ai/health")
+def public_ai_health():
+    """フロントから素早く AI 状態を確認できる public endpoint。
+    認証不要。CEO ダッシュ・LP・教材生成画面が事前チェックに使う。
+    credit_low なら true を返し、フロントは「AI 一時的に混雑中」表示に切り替える。"""
+    import time as _t
+    return {
+        "available": ANTHROPIC_API_KEY is not None and not _ai_credit_low_active(),
+        "credit_low": _ai_credit_low_active(),
+        "credit_low_until": _AI_CIRCUIT_BREAKER.get("credit_low_until", 0),
+        "now": _t.time(),
     }
 
 
