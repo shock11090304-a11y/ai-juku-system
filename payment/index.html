@@ -63,6 +63,7 @@
   <button class="tab" data-tab="import">📥 CSV取込</button>
   <button class="tab" data-tab="invoice">📄 請求書PDF</button>
   <button class="tab" data-tab="communication">📨 連絡</button>
+  <button class="tab" data-tab="chat">💬 チャット<span id="chatGlobalUnread" class="chat-global-badge hidden">0</span></button>
 </nav>
 
 <main class="content">
@@ -457,6 +458,61 @@
       <strong>個別送信</strong>: 生徒を選んで履歴を確認しながら個別メール作成 (Cmd+Enter で送信)<br>
       <strong>送信履歴</strong>: 過去30日のメール送信履歴 (件名・対象・送信日時) を表示<br>
       <strong>BCC漏れ防止</strong>: 一斉送信は必ず BCC 形式 (CC ではない) なので保護者間で他人のメアドが見えません。
+    </div>
+  </section>
+
+  <!-- チャット (CEO 側) -->
+  <section class="panel hidden" data-panel="chat">
+    <div class="panel-head">
+      <h2>💬 チャット</h2>
+      <div class="panel-actions">
+        <input type="password" class="search-input" id="chatAdminPw" placeholder="🔒 管理パスワード" style="width:200px" autocomplete="current-password">
+        <button class="btn btn-ghost btn-sm" id="chatRefreshBtn" title="再読込">🔄</button>
+        <span class="count-tag" id="chatThreadCountTag"></span>
+      </div>
+    </div>
+
+    <div id="chatSetupHint" class="hint" style="margin-bottom:1rem;display:none">
+      <strong>💡 初回セットアップが必要です</strong><br>
+      Vercel Dashboard → Storage タブ → Marketplace → <strong>Upstash for Redis</strong> を「juku-chat」名で Connect。<br>
+      その後 Settings → Environment Variables で <code>CHAT_SIGNING_SECRET</code> (32文字以上のランダム文字列) と <code>CHAT_ADMIN_PASSWORD</code> (任意のパスワード) を追加 → Redeploy。<br>
+      <button class="btn btn-ghost btn-sm" id="chatGenSecretBtn" style="margin-top:0.5rem">🎲 SIGNING_SECRET を生成</button>
+      <span id="chatGeneratedSecret" style="margin-left:0.5rem;font-family:monospace;color:var(--primary-light)"></span>
+    </div>
+
+    <div class="chat-layout" id="chatLayout">
+      <!-- 左: スレッド一覧 -->
+      <aside class="chat-sidebar">
+        <div style="padding:0.6rem;border-bottom:1px solid var(--border)">
+          <input type="text" class="search-input" id="chatThreadSearch" placeholder="🔍 生徒名で検索" style="width:100%">
+        </div>
+        <div id="chatThreadList" class="chat-thread-list">
+          <div style="padding:2rem;text-align:center;color:var(--text-muted);font-size:0.85rem">
+            管理パスワードを入力 → 🔄 で読込
+          </div>
+        </div>
+      </aside>
+
+      <!-- 右: 会話エリア -->
+      <main class="chat-main">
+        <div class="chat-header" id="chatHeader">
+          <div style="color:var(--text-muted);font-size:0.9rem">← 左からスレッドを選択してください</div>
+        </div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input" id="chatInputArea" style="display:none">
+          <textarea id="chatInputBody" rows="1" placeholder="メッセージを入力 (Enter で送信、Shift+Enter で改行)"></textarea>
+          <button id="chatSendBtn" disabled>▶</button>
+        </div>
+      </main>
+    </div>
+
+    <div class="hint" style="margin-top:1rem">
+      <strong>💬 チャットの使い方:</strong><br>
+      <strong>1.</strong> 個別送信タブで生徒を選び、「💬 チャット招待リンク発行」ボタンで保護者専用 URL を生成<br>
+      <strong>2.</strong> 個別送信メールに招待 URL を貼付けて送信 (本文テンプレに <code>{{chatLink}}</code> 変数も使えます)<br>
+      <strong>3.</strong> 保護者が URL からアクセス → このタブで会話<br>
+      <strong>リアルタイム性</strong>: 5秒間隔で自動 polling、未読バッジ自動更新<br>
+      <strong>セキュリティ</strong>: 招待 URL は HMAC 署名付き、塾長は管理パスワード必須 (URL 漏洩しても塾長アクセスは別系統)
     </div>
   </section>
 </main>

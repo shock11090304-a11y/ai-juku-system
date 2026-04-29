@@ -579,6 +579,7 @@ function switchTab(name) {
   else if (name === 'invoice') renderInvoiceTab();
   else if (name === 'enrollment') renderEnrollment();
   else if (name === 'communication') renderCommunication();
+  else if (name === 'chat') renderChat();
 }
 
 // === Refresh all visible ===
@@ -592,6 +593,7 @@ function refresh() {
   else if (active === 'invoice') renderInvoiceTab();
   else if (active === 'enrollment') renderEnrollment();
   else if (active === 'communication') renderCommunication();
+  else if (active === 'chat') renderChat();
 }
 
 // === Phase 2: CSV Import ===
@@ -2057,6 +2059,7 @@ function renderCommIndividualEditor() {
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem">
           <button class="btn btn-ghost btn-sm" id="commIndDunningTplBtn">📝 督促テンプレ</button>
           <button class="btn btn-ghost btn-sm" id="commIndStripeTplBtn">💳 Stripe案内テンプレ</button>
+          <button class="btn btn-ghost btn-sm" id="commIndChatInviteBtn">💬 チャット招待 URL</button>
           <button class="btn btn-ghost btn-sm" id="commIndPreviewBtn">👁 プレビュー</button>
           <span style="flex:1"></span>
           <button class="btn btn-primary btn-sm" id="commIndSendBtn" ${email ? '' : 'disabled'}>📤 送信</button>
@@ -2086,6 +2089,7 @@ function renderCommIndividualEditor() {
   document.getElementById('commIndSendBtn')?.addEventListener('click', () => commIndividualSend());
   document.getElementById('commIndDunningTplBtn')?.addEventListener('click', () => loadIndividualTemplate('dunning'));
   document.getElementById('commIndStripeTplBtn')?.addEventListener('click', () => loadIndividualTemplate('stripe_invite'));
+  document.getElementById('commIndChatInviteBtn')?.addEventListener('click', copyChatInviteForCurrentStudent);
   // Cmd+Enter で送信
   document.getElementById('commIndBody')?.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); commIndividualSend(); }
@@ -2179,6 +2183,327 @@ function commHistoryClear() {
   saveOverrides();
   renderCommHistory();
   alert('🗑 送信履歴を全削除しました');
+}
+
+// === v2 チャット (CEO 側) ===
+
+const CHAT_API = '/payment/api/chat';
+const CHAT_PW_KEY = 'juku-payment-chat-pw-v1';
+
+const CHAT_STATE = {
+  threads: [],
+  currentThread: null,        // selected thread_id
+  currentStudent: null,       // selected student name
+  lastTs: 0,
+  pollTimer: null,
+  threadsTimer: null,
+  pw: '',
+  setupRequired: false,
+};
+
+function chatHeaders() {
+  return CHAT_STATE.pw ? { 'X-Admin-Password': CHAT_STATE.pw } : {};
+}
+
+async function chatApi(method, params = {}, body = null) {
+  const url = method === 'GET'
+    ? `${CHAT_API}?${new URLSearchParams(params).toString()}`
+    : CHAT_API;
+  const opts = {
+    method,
+    headers: { 'Accept': 'application/json', ...chatHeaders() },
+  };
+  if (body) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const r = await fetch(url, opts);
+  let data = null;
+  try { data = await r.json(); } catch (e) {}
+  if (!r.ok) {
+    if (r.status === 503) CHAT_STATE.setupRequired = true;
+    const msg = (data && (data.message || data.error)) || `HTTP ${r.status}`;
+    const err = new Error(msg);
+    err.status = r.status;
+    err.data = data;
+    throw err;
+  }
+  CHAT_STATE.setupRequired = false;
+  return data;
+}
+
+function renderChat() {
+  // パスワード保存値を反映
+  CHAT_STATE.pw = localStorage.getItem(CHAT_PW_KEY) || '';
+  const pwEl = document.getElementById('chatAdminPw');
+  if (pwEl && !pwEl.value) pwEl.value = CHAT_STATE.pw;
+  // パスワードあれば即読込
+  if (CHAT_STATE.pw) {
+    fetchThreads().catch(() => {});
+    if (!CHAT_STATE.threadsTimer) {
+      CHAT_STATE.threadsTimer = setInterval(() => {
+        if (document.querySelector('.tab-active')?.dataset.tab === 'chat') {
+          fetchThreads().catch(() => {});
+        }
+      }, 7000);
+    }
+  } else {
+    document.getElementById('chatThreadList').innerHTML = `
+      <div style="padding:2rem;text-align:center;color:var(--text-muted);font-size:0.85rem">
+        管理パスワードを入力 → 🔄 で読込
+      </div>
+    `;
+  }
+}
+
+async function fetchThreads() {
+  try {
+    const data = await chatApi('GET', { action: 'threads' });
+    CHAT_STATE.threads = data.threads || [];
+    document.getElementById('chatSetupHint').style.display = 'none';
+    renderThreadList();
+    updateGlobalUnread();
+  } catch (e) {
+    if (e.status === 503) {
+      document.getElementById('chatSetupHint').style.display = 'block';
+      document.getElementById('chatThreadList').innerHTML = `
+        <div style="padding:1.5rem;text-align:center;color:var(--warning);font-size:0.85rem">
+          🔧 セットアップ未完了
+        </div>
+      `;
+    } else if (e.status === 401) {
+      document.getElementById('chatThreadList').innerHTML = `
+        <div style="padding:1.5rem;text-align:center;color:var(--error);font-size:0.85rem">
+          🔒 認証失敗 (パスワード違い)
+        </div>
+      `;
+    } else {
+      document.getElementById('chatThreadList').innerHTML = `
+        <div style="padding:1.5rem;text-align:center;color:var(--error);font-size:0.85rem">
+          ⚠ ${escapeHtml(e.message)}
+        </div>
+      `;
+    }
+  }
+}
+
+function updateGlobalUnread() {
+  const total = CHAT_STATE.threads.reduce((sum, t) => sum + (t.unread_admin || 0), 0);
+  const badge = document.getElementById('chatGlobalUnread');
+  if (!badge) return;
+  if (total > 0) {
+    badge.textContent = total > 99 ? '99+' : String(total);
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+function renderThreadList() {
+  const q = document.getElementById('chatThreadSearch')?.value?.trim().toLowerCase() || '';
+  const list = document.getElementById('chatThreadList');
+  if (!list) return;
+  let threads = CHAT_STATE.threads.slice();
+  if (q) {
+    threads = threads.filter(t => (t.student_name || '').toLowerCase().includes(q) || t.thread_id.includes(q));
+  }
+  // 未読降順 + 最終時刻降順
+  threads.sort((a, b) => {
+    if ((b.unread_admin || 0) !== (a.unread_admin || 0)) return (b.unread_admin || 0) - (a.unread_admin || 0);
+    return (b.last_msg_at || 0) - (a.last_msg_at || 0);
+  });
+  document.getElementById('chatThreadCountTag').textContent = `${CHAT_STATE.threads.length} スレッド`;
+  if (!threads.length) {
+    list.innerHTML = `<div style="padding:2rem;text-align:center;color:var(--text-muted);font-size:0.85rem">スレッドがまだありません<br><br>個別送信タブで「💬 チャット招待」ボタンから招待 URL を発行してください。</div>`;
+    return;
+  }
+  list.innerHTML = threads.map(t => {
+    const sid = t.thread_id;
+    const isActive = CHAT_STATE.currentThread === sid;
+    const dt = t.last_msg_at ? new Date(t.last_msg_at) : null;
+    const time = dt ? `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}` : '';
+    const unread = t.unread_admin || 0;
+    return `
+      <div class="chat-thread-row${isActive ? ' active' : ''}" data-thread="${escapeHtml(sid)}" data-name="${escapeHtml(t.student_name || '')}">
+        <div class="chat-thread-name">${escapeHtml(t.student_name || `#${sid}`)}</div>
+        <div class="chat-thread-preview">${escapeHtml(t.last_msg_preview || '(メッセージなし)')}</div>
+        <div class="chat-thread-meta">
+          <span class="chat-thread-time">${time}</span>
+          ${unread > 0 ? `<span class="chat-unread-badge">${unread}</span>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+  list.onclick = (e) => {
+    const row = e.target.closest('.chat-thread-row');
+    if (!row) return;
+    selectThread(row.dataset.thread, row.dataset.name);
+  };
+}
+
+async function selectThread(threadId, studentName) {
+  CHAT_STATE.currentThread = threadId;
+  CHAT_STATE.currentStudent = studentName;
+  CHAT_STATE.lastTs = 0;
+  document.getElementById('chatHeader').innerHTML = `
+    <div style="display:flex;align-items:center;gap:0.6rem">
+      <div style="font-weight:700;font-size:1rem">${escapeHtml(studentName || `#${threadId}`)}</div>
+      <span style="color:var(--text-muted);font-size:0.78rem">スレッド ID: ${escapeHtml(threadId)}</span>
+    </div>
+  `;
+  document.getElementById('chatMessages').innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-muted)">読込中…</div>';
+  document.getElementById('chatInputArea').style.display = 'flex';
+  renderThreadList();  // active 強調
+  await fetchChatMessages(true);
+  await markThreadRead(threadId);
+  startMessagePolling();
+}
+
+async function fetchChatMessages(initial) {
+  if (!CHAT_STATE.currentThread) return;
+  try {
+    const data = await chatApi('GET', {
+      action: 'messages',
+      thread: CHAT_STATE.currentThread,
+      since: String(CHAT_STATE.lastTs),
+    });
+    const msgs = data.messages || [];
+    const container = document.getElementById('chatMessages');
+    if (initial) container.innerHTML = '';
+    if (msgs.length === 0 && initial) {
+      container.innerHTML = `<div style="padding:2rem;text-align:center;color:var(--text-muted);font-size:0.9rem">まだメッセージはありません</div>`;
+    } else if (msgs.length > 0) {
+      // empty state クリア
+      if (initial && container.querySelector('div[style*="text-align:center"]')) {
+        container.innerHTML = '';
+      }
+      appendChatMessages(msgs);
+      CHAT_STATE.lastTs = data.next_since || msgs[msgs.length - 1].ts;
+    }
+  } catch (e) {
+    console.error('[chat] fetch failed', e);
+  }
+}
+
+function appendChatMessages(msgs) {
+  const container = document.getElementById('chatMessages');
+  let lastDay = container.dataset.lastDay || '';
+  msgs.forEach(m => {
+    const d = new Date(m.ts);
+    const day = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+    if (day !== lastDay) {
+      const div = document.createElement('div');
+      div.className = 'chat-day-divider';
+      div.textContent = day;
+      container.appendChild(div);
+      lastDay = day;
+    }
+    const time = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const isMe = m.sender === 'admin';
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble ' + (isMe ? 'me' : 'peer');
+    bubble.innerHTML = escapeHtml(m.body) + `<div class="chat-bubble-meta">${isMe ? '塾長' : (CHAT_STATE.currentStudent || '相手')} ${time}</div>`;
+    container.appendChild(bubble);
+  });
+  container.dataset.lastDay = lastDay;
+  setTimeout(() => container.scrollTop = container.scrollHeight, 30);
+}
+
+function startMessagePolling() {
+  if (CHAT_STATE.pollTimer) clearInterval(CHAT_STATE.pollTimer);
+  CHAT_STATE.pollTimer = setInterval(() => {
+    if (document.hidden) return;
+    if (document.querySelector('.tab-active')?.dataset.tab !== 'chat') return;
+    if (!CHAT_STATE.currentThread) return;
+    fetchChatMessages(false).catch(() => {});
+    markThreadRead(CHAT_STATE.currentThread).catch(() => {});
+  }, 5000);
+}
+
+async function markThreadRead(threadId) {
+  try {
+    await chatApi('POST', {}, { action: 'read', thread: threadId, reader: 'admin' });
+    // ローカル状態更新
+    const t = CHAT_STATE.threads.find(x => x.thread_id === threadId);
+    if (t) t.unread_admin = 0;
+    updateGlobalUnread();
+    renderThreadList();
+  } catch (e) {}
+}
+
+async function chatSendFromAdmin() {
+  if (!CHAT_STATE.currentThread) return;
+  const input = document.getElementById('chatInputBody');
+  const body = input.value.trim();
+  if (!body) return;
+  const btn = document.getElementById('chatSendBtn');
+  btn.disabled = true;
+  try {
+    const data = await chatApi('POST', {}, {
+      action: 'send',
+      thread: CHAT_STATE.currentThread,
+      sender: 'admin',
+      body,
+      student_name: CHAT_STATE.currentStudent || '',
+    });
+    input.value = '';
+    chatAutosize(input);
+    appendChatMessages([data.message]);
+    CHAT_STATE.lastTs = data.message.ts;
+    fetchThreads().catch(() => {});  // スレッド一覧の last_msg_preview 更新
+  } catch (e) {
+    alert('送信失敗: ' + (e.message || ''));
+  } finally {
+    btn.disabled = input.value.trim().length === 0;
+  }
+}
+
+function chatAutosize(ta) {
+  ta.style.height = '42px';
+  ta.style.height = Math.min(ta.scrollHeight, 140) + 'px';
+}
+
+async function generateChatInvite(studentId, studentName) {
+  if (!CHAT_STATE.pw) {
+    alert('チャットタブで管理パスワードを設定してください');
+    return null;
+  }
+  try {
+    const data = await chatApi('POST', {}, {
+      action: 'invite',
+      thread: String(studentId),
+      student_name: studentName,
+      expiry_days: 365,
+    });
+    const url = `${location.origin}/payment/chat.html?token=${encodeURIComponent(data.token)}`;
+    return url;
+  } catch (e) {
+    alert('招待 URL 発行失敗: ' + (e.message || ''));
+    return null;
+  }
+}
+
+function copyChatInviteForCurrentStudent() {
+  const id = COMM_STATE.selectedStudentId;
+  if (!id) { alert('生徒を選択してください'); return; }
+  const s = STATE.data.students.find(x => x.id === id);
+  if (!s) return;
+  generateChatInvite(s.id, s.name).then(url => {
+    if (!url) return;
+    copyToClipboard(url);
+    // 本文に「{{chatLink}}」プレースホルダがあれば置換
+    const bodyEl = document.getElementById('commIndBody');
+    if (bodyEl && bodyEl.value.includes('{{chatLink}}')) {
+      bodyEl.value = bodyEl.value.replaceAll('{{chatLink}}', url);
+    } else if (bodyEl && bodyEl.value && !bodyEl.value.includes(url)) {
+      // 末尾に追記の選択肢
+      if (confirm(`✅ 招待 URL をクリップボードにコピーしました\n${url.slice(0, 60)}...\n\nメール本文の末尾にも追加しますか?`)) {
+        bodyEl.value += `\n\n▼ チャット (アプリ内で塾長と直接やり取り)\n${url}\n※ このリンクはご家庭専用です。第三者に共有しないでください。`;
+      }
+    } else {
+      alert(`✅ 招待 URL をクリップボードにコピーしました\n${url}\n\nメール本文に貼付けて保護者に送信してください。`);
+    }
+  });
 }
 
 function renderEnrollment() {
@@ -2507,6 +2832,45 @@ function setupModals() {
     window._commSearchTimer = setTimeout(renderCommIndividualList, 200);
   });
   document.getElementById('commHistoryClearBtn')?.addEventListener('click', commHistoryClear);
+
+  // チャット (CEO 側)
+  const pwEl = document.getElementById('chatAdminPw');
+  if (pwEl) {
+    pwEl.addEventListener('change', (e) => {
+      CHAT_STATE.pw = e.target.value.trim();
+      localStorage.setItem(CHAT_PW_KEY, CHAT_STATE.pw);
+      fetchThreads().catch(() => {});
+    });
+  }
+  document.getElementById('chatRefreshBtn')?.addEventListener('click', () => fetchThreads().catch(() => {}));
+  document.getElementById('chatThreadSearch')?.addEventListener('input', () => {
+    clearTimeout(window._chatSearchTimer);
+    window._chatSearchTimer = setTimeout(renderThreadList, 200);
+  });
+  const chatInput = document.getElementById('chatInputBody');
+  if (chatInput) {
+    chatInput.addEventListener('input', (e) => {
+      document.getElementById('chatSendBtn').disabled = e.target.value.trim().length === 0;
+      chatAutosize(e.target);
+    });
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+        e.preventDefault();
+        chatSendFromAdmin();
+      }
+    });
+  }
+  document.getElementById('chatSendBtn')?.addEventListener('click', chatSendFromAdmin);
+  // SIGNING_SECRET 生成ヘルパ (Vercel 設定用)
+  document.getElementById('chatGenSecretBtn')?.addEventListener('click', () => {
+    const arr = new Uint8Array(32);
+    crypto.getRandomValues(arr);
+    const secret = Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+    const out = document.getElementById('chatGeneratedSecret');
+    out.textContent = secret;
+    copyToClipboard(secret);
+    setTimeout(() => alert(`✅ 生成 + クリップボードにコピーしました\n\nVercel Dashboard → Settings → Environment Variables で\n  Name: CHAT_SIGNING_SECRET\n  Value: (貼付け)\nを追加してください。`), 100);
+  });
 
   // Email 一括登録
   const eib = document.getElementById('emailImportBtn');

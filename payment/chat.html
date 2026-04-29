@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a1a">
+<title>塾とチャット</title>
+<style>
+:root {
+  --bg: #0a0a1a;
+  --panel: rgba(20,20,40,0.6);
+  --border: rgba(255,255,255,0.08);
+  --text: #e5e7eb;
+  --text-muted: #9ca3af;
+  --primary: #6366f1;
+  --primary-light: #818cf8;
+  --accent: #ec4899;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0; padding: 0;
+  height: 100%;
+  font-family: 'Inter','Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  overflow: hidden;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(99,102,241,0.15) 0%, transparent 40%),
+    radial-gradient(circle at 90% 100%, rgba(236,72,153,0.12) 0%, transparent 40%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: env(safe-area-inset-top) 1rem 0.6rem 1rem;
+  padding-top: max(0.6rem, env(safe-area-inset-top));
+  background: rgba(10,10,26,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.header h1 {
+  font-size: 1.05rem;
+  margin: 0;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary-light), var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.header .sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.1rem;
+}
+.status-pill {
+  font-size: 0.72rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+.status-pill.online { color: var(--success); border-color: rgba(16,185,129,0.4); }
+.status-pill.error { color: var(--error); border-color: rgba(239,68,68,0.4); }
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-height: 0;
+}
+.empty-state {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 3rem 1rem;
+  font-size: 0.9rem;
+}
+.empty-state .icon { font-size: 2.5rem; margin-bottom: 0.6rem; }
+
+.bubble {
+  max-width: 78%;
+  padding: 0.7rem 0.9rem;
+  border-radius: 18px;
+  font-size: 0.93rem;
+  line-height: 1.5;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  animation: bubbleIn 0.18s ease-out;
+}
+@keyframes bubbleIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.bubble .meta {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+  opacity: 0.7;
+}
+.bubble.me {
+  align-self: flex-end;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: white;
+  border-bottom-right-radius: 6px;
+}
+.bubble.me .meta { color: rgba(255,255,255,0.8); }
+.bubble.peer {
+  align-self: flex-start;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 6px;
+}
+.day-divider {
+  align-self: center;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  background: rgba(0,0,0,0.3);
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  margin: 0.4rem 0;
+}
+
+.input-area {
+  flex-shrink: 0;
+  padding: 0.6rem 0.8rem;
+  padding-bottom: max(0.6rem, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: rgba(10,10,26,0.95);
+  backdrop-filter: blur(20px);
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+.input-area textarea {
+  flex: 1;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 0.7rem 0.95rem;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  resize: none;
+  min-height: 42px;
+  max-height: 140px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.input-area textarea:focus {
+  border-color: var(--primary-light);
+  background: rgba(255,255,255,0.06);
+}
+.input-area button {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, opacity 0.15s;
+}
+.input-area button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.input-area button:not(:disabled):active {
+  transform: scale(0.92);
+}
+
+.error-banner {
+  background: rgba(239,68,68,0.15);
+  border: 1px solid rgba(239,68,68,0.4);
+  color: #fca5a5;
+  padding: 0.7rem 1rem;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+@media (max-width: 480px) {
+  .bubble { max-width: 84%; font-size: 0.92rem; }
+  .header h1 { font-size: 0.98rem; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div>
+      <h1 id="hdrTitle">💬 塾とチャット</h1>
+      <div class="sub" id="hdrSub">読込中...</div>
+    </div>
+    <div class="status-pill" id="statusPill">接続中…</div>
+  </header>
+  <div id="errorBanner" class="error-banner" style="display:none"></div>
+  <div class="messages" id="messages">
+    <div class="empty-state">
+      <div class="icon">💬</div>
+      <div>メッセージを読み込んでいます…</div>
+    </div>
+  </div>
+  <div class="input-area">
+    <textarea id="inputBody" placeholder="メッセージを入力 (Enter で送信、Shift+Enter で改行)" rows="1"></textarea>
+    <button id="sendBtn" title="送信" disabled>▶</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// URL から token を取得
+const PARAMS = new URLSearchParams(location.search);
+const TOKEN = PARAMS.get('token') || '';
+let THREAD_ID = '';
+let LAST_TS = 0;
+let POLL_TIMER = null;
+let SENDING = false;
+let STUDENT_NAME = '';
+
+const API = '/payment/api/chat';
+
+const $ = (id) => document.getElementById(id);
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function showError(msg) {
+  const el = $('errorBanner');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+}
+function clearError() { $('errorBanner').style.display = 'none'; }
+function setStatus(text, klass) {
+  const el = $('statusPill');
+  el.textContent = text;
+  el.className = 'status-pill' + (klass ? ' ' + klass : '');
+}
+
+if (!TOKEN) {
+  showError('招待リンクが無効です。塾長から受け取った URL を再度ご確認ください。');
+  $('inputBody').disabled = true;
+  $('sendBtn').disabled = true;
+  setStatus('未認証', 'error');
+} else {
+  // token から thread_id を decode (検証はサーバー側)
+  const parts = TOKEN.split('.');
+  if (parts.length === 3) {
+    THREAD_ID = parts[0];
+    init();
+  } else {
+    showError('招待リンクの形式が不正です。');
+  }
+}
+
+async function init() {
+  setStatus('接続中…');
+  try {
+    await fetchMessages();
+    setStatus('接続中', 'online');
+    clearError();
+    startPolling();
+    markRead();
+  } catch (e) {
+    setStatus('接続失敗', 'error');
+    showError(e.message || '通信エラー');
+  }
+}
+
+async function fetchMessages() {
+  const url = `${API}?action=messages&thread=${encodeURIComponent(THREAD_ID)}&since=${LAST_TS}&token=${encodeURIComponent(TOKEN)}`;
+  const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+  let data = null;
+  try { data = await r.json(); } catch(e) {}
+  if (!r.ok) {
+    const msg = (data && (data.message || data.error)) || `HTTP ${r.status}`;
+    if (r.status === 503) {
+      throw new Error('チャットサーバーがまだ準備中です。塾長による Vercel KV セットアップ待ち。');
+    }
+    if (r.status === 401 || r.status === 403) {
+      throw new Error('招待リンクの有効期限が切れた可能性があります。塾長に再発行を依頼してください。');
+    }
+    throw new Error(msg);
+  }
+  if (data.meta && data.meta.student_name) {
+    STUDENT_NAME = data.meta.student_name;
+    $('hdrSub').textContent = STUDENT_NAME + ' さん';
+  }
+  if (data.messages && data.messages.length > 0) {
+    appendMessages(data.messages);
+    LAST_TS = data.next_since;
+  } else if (LAST_TS === 0) {
+    // 初回 + 0件 → empty state を維持
+    if (data.messages.length === 0) {
+      $('messages').innerHTML = `
+        <div class="empty-state">
+          <div class="icon">💬</div>
+          <div>まだメッセージはありません。<br>下から塾長にメッセージを送ってみましょう。</div>
+        </div>
+      `;
+    }
+  }
+  $('inputBody').disabled = false;
+  $('sendBtn').disabled = $('inputBody').value.trim().length === 0;
+  return data;
+}
+
+function appendMessages(msgs) {
+  const container = $('messages');
+  // empty state クリア
+  if (container.querySelector('.empty-state')) {
+    container.innerHTML = '';
+  }
+  let lastDay = container.dataset.lastDay || '';
+  msgs.forEach(m => {
+    const d = new Date(m.ts);
+    const day = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+    if (day !== lastDay) {
+      const div = document.createElement('div');
+      div.className = 'day-divider';
+      div.textContent = day;
+      container.appendChild(div);
+      lastDay = day;
+    }
+    const time = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const isMe = m.sender === 'participant';
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble ' + (isMe ? 'me' : 'peer');
+    bubble.innerHTML = escapeHtml(m.body) + `<div class="meta">${isMe ? '送信済' : '塾長'} ${time}</div>`;
+    container.appendChild(bubble);
+  });
+  container.dataset.lastDay = lastDay;
+  // 末尾へスクロール
+  setTimeout(() => container.scrollTop = container.scrollHeight, 30);
+}
+
+function startPolling() {
+  if (POLL_TIMER) clearInterval(POLL_TIMER);
+  POLL_TIMER = setInterval(async () => {
+    if (document.hidden) return;
+    try {
+      await fetchMessages();
+      markRead();
+      setStatus('接続中', 'online');
+    } catch (e) {
+      setStatus('接続失敗', 'error');
+    }
+  }, 5000);
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    fetchMessages().catch(() => {});
+    markRead();
+  }
+});
+
+async function markRead() {
+  try {
+    await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'read',
+        thread: THREAD_ID,
+        reader: 'participant',
+        token: TOKEN,
+      }),
+    });
+  } catch (e) {}
+}
+
+async function sendMessage() {
+  if (SENDING) return;
+  const input = $('inputBody');
+  const body = input.value.trim();
+  if (!body) return;
+  SENDING = true;
+  $('sendBtn').disabled = true;
+  try {
+    const r = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'send',
+        thread: THREAD_ID,
+        sender: 'participant',
+        body,
+        token: TOKEN,
+      }),
+    });
+    let data = null;
+    try { data = await r.json(); } catch(e) {}
+    if (!r.ok) {
+      throw new Error((data && (data.message || data.error)) || `HTTP ${r.status}`);
+    }
+    input.value = '';
+    autosize(input);
+    appendMessages([data.message]);
+    LAST_TS = data.message.ts;
+    clearError();
+  } catch (e) {
+    showError('送信失敗: ' + (e.message || ''));
+  } finally {
+    SENDING = false;
+    $('sendBtn').disabled = $('inputBody').value.trim().length === 0;
+  }
+}
+
+function autosize(ta) {
+  ta.style.height = '42px';
+  ta.style.height = Math.min(ta.scrollHeight, 140) + 'px';
+}
+
+$('inputBody').addEventListener('input', (e) => {
+  $('sendBtn').disabled = e.target.value.trim().length === 0 || SENDING;
+  autosize(e.target);
+});
+$('inputBody').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+$('sendBtn').addEventListener('click', sendMessage);
+</script>
+</body>
+</html>

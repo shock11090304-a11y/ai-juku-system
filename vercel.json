@@ -5,6 +5,10 @@
       "destination": "/api/stripe-charges"
     },
     {
+      "source": "/payment/api/chat",
+      "destination": "/api/chat"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://ai-juku-api-production.up.railway.app/api/:path*"
     }
