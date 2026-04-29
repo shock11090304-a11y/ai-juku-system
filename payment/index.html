@@ -303,7 +303,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem">
         <div>
           <div style="font-weight:600;font-size:0.95rem">💳 Stripe カード決済 を自動取込</div>
-          <div style="font-size:0.82rem;color:var(--text-muted);margin-top:0.2rem">対象月: <span id="stripeMonthTag">—</span> / Stripe Charges API 経由で当月の成功した決済を取得します</div>
+          <div style="font-size:0.82rem;color:var(--text-muted);margin-top:0.2rem">取込対象月: <span id="stripeMonthTag">—</span> / Stripe Charges API 経由で当月の決済を取得 → <strong>翌月分</strong> として paid 反映 (前払い制)</div>
         </div>
         <button class="btn btn-primary" id="stripeImportBtn">📥 Stripe API から取込</button>
       </div>
@@ -335,7 +335,8 @@
     </div>
 
     <div class="hint">
-      <strong>使い方:</strong> 楽天銀行ビジネス → 入出金明細CSVをDL → ここにD&D → 自動マッチを確認 → 「確定して入金反映」で対象月の payments に書込まれます。<br>
+      <strong>📌 前払い制ルール:</strong> 入金日の<strong>翌月分</strong>として paid 反映されます (例: 4/15 入金 → 5月分、4/30 入金 → 5月分、5/1 入金 → 6月分)。<br>
+      <strong>使い方:</strong> 楽天銀行ビジネス → 入出金明細CSVをDL → ここにD&D → 自動マッチを確認 → 「確定して入金反映」で <strong>翌月分</strong> の payments に書込まれます。<br>
       <strong>除外パターン:</strong> <code>ラクテンショウケン</code> / <code>カ−ド出金</code> / <code>口座振替</code> / <code>ATM</code> / <code>テレボ</code> など自動でノイズ判定。<br>
       <strong>振込人名学習:</strong> 一度紐付けると <code>payerNames</code> に保存され、次回CSVでは自動マッチします（親名義↔子供生徒）。
     </div>

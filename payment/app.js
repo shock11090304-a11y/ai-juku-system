@@ -54,7 +54,7 @@ const DEFAULT_STRIPE_INVITE_BODY = `{{student}} 様の保護者様
 {{paymentLink}}
 
 上記URLよりカード情報を一度ご登録いただきますと、
-毎月{{deadlineDay}}日頃に **月謝 ¥{{fee}}** を自動で引き落とさせていただきます。
+**月謝 ¥{{fee}} (前払い制 / 翌月分を当月にお支払い)** を自動で毎月引き落とさせていただきます。
 振込手数料はかからず、毎月の振込忘れの心配もございません。
 
 カード情報の変更・解約は、Stripe カスタマーポータルからいつでも可能です。
@@ -695,6 +695,15 @@ function csvDateToMonth(d) {
   if (!d || d.length < 6) return STATE.currentMonth;
   return `${d.slice(0, 4)}-${d.slice(4, 6)}`;
 }
+
+// 前払い制: 入金月 → 翌月分として扱う (e.g. 2026-04 → 2026-05)
+function nextMonth(ym) {
+  if (!ym || !/^\d{4}-\d{2}$/.test(ym)) return ym;
+  let [y, m] = ym.split('-').map(Number);
+  m += 1;
+  if (m > 12) { y += 1; m = 1; }
+  return `${y}-${String(m).padStart(2, '0')}`;
+}
 function csvDateToISO(d) {
   if (!d || d.length < 8) return '';
   return `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
@@ -722,7 +731,7 @@ function processImport(rows) {
     return {
       idx: i,
       date: r.date,
-      month: csvDateToMonth(r.date),
+      month: nextMonth(csvDateToMonth(r.date)),  // 前払い制: 入金月の翌月分
       iso: csvDateToISO(r.date),
       amount: r.amount,
       payer: r.content,
