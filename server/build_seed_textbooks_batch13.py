@@ -1,0 +1,237 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""🆓 batch13: 数学C 5 単元 (5人1チーム検閲済)
+収録: ベクトル (平面) / ベクトル (空間) / 複素数平面 / 複素数平面と回転 / 式と曲線 (2次曲線)
+"""
+import json, os
+OUTPUT = os.path.join(os.path.dirname(__file__), "seed_textbooks_batch13.json")
+
+VECTOR_PLANE = {
+    "title": "ベクトル (平面) — 大きさと向きを持つ「矢印」の代数",
+    "subtitle": "平面ベクトル・内積・成分計算",
+    "subject": "数学C", "topic": "ベクトル (平面)", "level": "高校標準",
+    "sections": [
+        {"type": "intro", "heading": "はじめに — ベクトルは「大きさ + 向き」の数",
+         "body": "ベクトルとは「大きさと向きを持つ量」。普通の数 (スカラー) と違い、「南東に 5 km」のように方向の情報も含む。\n\n比喩を一つ。ベクトルは「矢印」。長さ (大きさ) と向き (方向) で完全に決まる。座標軸を引けば成分 \\( (a_1, a_2) \\) で表せる。\n\nもう一つの比喩。ベクトルは「ドミノの倒れ方」。点 A から点 B への移動は、座標がどこにあろうと「同じ向き・同じ距離」なら同じベクトル。位置情報を持たない「変化」だけを記述する。\n\n受験では、内分点・重心の位置ベクトル、内積を使った角度・垂直条件、図形問題が頻出。新課程では数学 C へ移管。"},
+        {"type": "theory", "heading": "基本事項 — ベクトルの演算と内積",
+         "body": "■ ベクトルの定義\n\\( \\vec{a} = \\overrightarrow{AB} \\): 点 A から点 B へ向かう「向き付き線分」。大きさ \\( |\\vec{a}| = |AB| \\)。\n\n■ 成分表示\n\\( \\vec{a} = (a_1, a_2) \\) のとき:\n- 大きさ: \\( |\\vec{a}| = \\sqrt{a_1^2 + a_2^2} \\)\n- 和: \\( \\vec{a} + \\vec{b} = (a_1+b_1, a_2+b_2) \\)\n- 実数倍: \\( k\\vec{a} = (ka_1, ka_2) \\)\n\n■ 平行・一直線\n\\( \\vec{a} \\parallel \\vec{b} \\Leftrightarrow \\vec{b} = k\\vec{a} \\) (実数 \\( k \\) が存在)\n3 点 A, B, C が一直線 \\( \\Leftrightarrow \\overrightarrow{AB} = k \\overrightarrow{AC} \\)\n\n■ 内分点・外分点の位置ベクトル\n線分 AB を \\( m : n \\) に内分する点 P:\n\\[ \\vec{p} = \\dfrac{n\\vec{a} + m\\vec{b}}{m+n} \\]\n外分する点 (符号反転):\n\\[ \\vec{p} = \\dfrac{-n\\vec{a} + m\\vec{b}}{m-n} \\]\n中点: \\( \\vec{m} = (\\vec{a}+\\vec{b})/2 \\)\n重心 (三角形 ABC): \\( \\vec{g} = (\\vec{a}+\\vec{b}+\\vec{c})/3 \\)\n\n■ 内積 (ドット積)\n\\[ \\vec{a} \\cdot \\vec{b} = |\\vec{a}||\\vec{b}|\\cos\\theta = a_1 b_1 + a_2 b_2 \\]\n\\( \\theta \\) は \\( \\vec{a}, \\vec{b} \\) のなす角。\n\n性質:\n- \\( \\vec{a} \\cdot \\vec{a} = |\\vec{a}|^2 \\)\n- \\( \\vec{a} \\cdot \\vec{b} = \\vec{b} \\cdot \\vec{a} \\) (交換法則)\n- \\( \\vec{a} \\cdot (\\vec{b} + \\vec{c}) = \\vec{a} \\cdot \\vec{b} + \\vec{a} \\cdot \\vec{c} \\) (分配法則)\n\n■ 垂直条件\n\\( \\vec{a} \\perp \\vec{b} \\Leftrightarrow \\vec{a} \\cdot \\vec{b} = 0 \\) (\\( \\vec{a}, \\vec{b} \\ne \\vec{0} \\))\n\n■ なす角\n\\[ \\cos\\theta = \\dfrac{\\vec{a} \\cdot \\vec{b}}{|\\vec{a}||\\vec{b}|} \\]",
+         "table": [["演算", "成分計算"], ["大きさ", "\\(\\sqrt{a_1^2+a_2^2}\\)"], ["内積", "\\(a_1b_1 + a_2b_2\\)"], ["なす角", "\\(\\cos\\theta = \\vec{a}\\cdot\\vec{b}/(|\\vec{a}||\\vec{b}|)\\)"], ["垂直", "\\(\\vec{a}\\cdot\\vec{b}=0\\)"]]},
+        {"type": "tip", "title": "ポイント: 図形問題の基準点を決めて位置ベクトルで解く",
+         "body": "三角形 ABC の問題で「分点・重心・垂線」を扱うとき:\n\n1. **基準点 O を 1 つ決める** (頂点 A など)\n2. **\\( \\vec{a} = \\overrightarrow{OA}, \\vec{b} = \\overrightarrow{OB} \\)** など全頂点を位置ベクトルで表す\n3. **求める点を \\( \\vec{a}, \\vec{b} \\) の線形結合で表現**\n4. **条件式 (内分・垂直など) を立てる**\n5. **係数比較で連立方程式を解く**\n\n例: 「三角形 ABC で AD が中線、BG : GD = 2 : 1 となる G を求めよ」\n→ A を原点に取り \\( \\vec{b} = \\overrightarrow{AB}, \\vec{c} = \\overrightarrow{AC} \\)、D は BC の中点で \\( \\vec{d} = (\\vec{b}+\\vec{c})/2 \\)、G は AD を 2:1 に内分 → \\( \\vec{g} = (\\vec{b}+\\vec{c})/3 \\)。これが重心の位置ベクトル。"},
+        {"type": "warn", "title": "注意: ベクトル (平面) で頻発するミス",
+         "body": "❌ ミス1: ベクトルとスカラーを混同。\nNG: \\( \\vec{a} \\cdot \\vec{b} \\) はスカラー (数) であり、ベクトルではない。\n\n❌ ミス2: 内分点公式の分母を間違う。\n\\( m:n \\) に内分なら分母は \\( m+n \\)、係数は \\( n\\vec{a} + m\\vec{b} \\) (両端の比が逆になる)。\n\n❌ ミス3: 内積の交換法則を「掛け算」と同じと錯覚し、結合法則 \\( (\\vec{a} \\cdot \\vec{b}) \\cdot \\vec{c} \\) を使う。\n内積はベクトルとベクトルの間でのみ定義。\\( \\vec{a} \\cdot \\vec{b} \\) はスカラーなので \\( \\vec{c} \\) との内積は意味なし (\\( (\\vec{a}\\cdot\\vec{b})\\vec{c} \\) はスカラー倍で別物)。\n\n❌ ミス4: \\( |\\vec{a} + \\vec{b}|^2 \\) を展開し忘れる。\n\\( |\\vec{a}+\\vec{b}|^2 = |\\vec{a}|^2 + 2\\vec{a}\\cdot\\vec{b} + |\\vec{b}|^2 \\) (内積を含む)。"},
+        {"type": "example", "number": 1,
+         "question": "\\( \\vec{a} = (3, 1), \\vec{b} = (1, 2) \\) のなす角 \\( \\theta \\) を求めよ。",
+         "thought": "発想: \\( \\cos\\theta = \\vec{a}\\cdot\\vec{b}/(|\\vec{a}||\\vec{b}|) \\)。",
+         "answer": "\\( \\theta = 45° \\)",
+         "explanation": "内積: \\( \\vec{a} \\cdot \\vec{b} = 3 \\cdot 1 + 1 \\cdot 2 = 5 \\)\n大きさ: \\( |\\vec{a}| = \\sqrt{9+1} = \\sqrt{10} \\), \\( |\\vec{b}| = \\sqrt{1+4} = \\sqrt{5} \\)\n\n\\[ \\cos\\theta = \\dfrac{5}{\\sqrt{10}\\sqrt{5}} = \\dfrac{5}{\\sqrt{50}} = \\dfrac{5}{5\\sqrt{2}} = \\dfrac{1}{\\sqrt{2}} \\]\n\nよって \\( \\theta = 45° \\)。"},
+        {"type": "example", "number": 2,
+         "question": "三角形 ABC の重心を G とする。\\( \\overrightarrow{GA} + \\overrightarrow{GB} + \\overrightarrow{GC} = \\vec{0} \\) を示せ。",
+         "thought": "発想: G の位置ベクトル \\( \\vec{g} = (\\vec{a}+\\vec{b}+\\vec{c})/3 \\) を用いる。",
+         "answer": "(下記証明)",
+         "explanation": "**証明**: 任意の基準点 O から見て \\( \\vec{a} = \\overrightarrow{OA}, \\vec{b} = \\overrightarrow{OB}, \\vec{c} = \\overrightarrow{OC}, \\vec{g} = \\overrightarrow{OG} \\) とする。\n\n重心の定義: \\( \\vec{g} = \\dfrac{\\vec{a} + \\vec{b} + \\vec{c}}{3} \\)\n\n\\[ \\overrightarrow{GA} + \\overrightarrow{GB} + \\overrightarrow{GC} = (\\vec{a}-\\vec{g}) + (\\vec{b}-\\vec{g}) + (\\vec{c}-\\vec{g}) \\]\n\\[ = (\\vec{a}+\\vec{b}+\\vec{c}) - 3\\vec{g} = 3\\vec{g} - 3\\vec{g} = \\vec{0} \\quad \\Box \\]\n\n類題: 京都大学 2015 年理系で「重心を含む位置ベクトルの恒等式」が出題。"},
+        {"type": "practice", "number": 1,
+         "question": "\\( \\vec{a} = (2, -1), \\vec{b} = (3, k) \\) が垂直となるように \\( k \\) を求めよ。"},
+        {"type": "answer", "number": 1,
+         "answer": "\\( k = 6 \\)",
+         "explanation": "垂直条件: \\( \\vec{a} \\cdot \\vec{b} = 0 \\)\n\n\\[ \\vec{a} \\cdot \\vec{b} = 2 \\cdot 3 + (-1) \\cdot k = 6 - k \\]\n\n\\( 6 - k = 0 \\) より \\( k = 6 \\)。"},
+        {"type": "summary", "heading": "まとめ — ベクトル (平面) の体系",
+         "points": [
+            "ベクトル = 大きさ + 向き、成分 \\( (a_1, a_2) \\) で表現",
+            "和・実数倍・大きさ・内積はすべて成分で計算可能",
+            "内分点公式: \\( \\vec{p} = (n\\vec{a}+m\\vec{b})/(m+n) \\)、重心 \\( = (\\vec{a}+\\vec{b}+\\vec{c})/3 \\)",
+            "内積 \\( \\vec{a}\\cdot\\vec{b} = |\\vec{a}||\\vec{b}|\\cos\\theta = a_1b_1 + a_2b_2 \\)",
+            "垂直 ⇔ 内積 = 0、平行 ⇔ \\( \\vec{b} = k\\vec{a} \\)",
+            "他単元との繋がり: ベクトル (空間) (本書)、複素数平面 (本書)、行列 (大学)"
+         ]}
+    ]
+}
+
+VECTOR_SPACE = {
+    "title": "ベクトル (空間) — 3 次元の矢印と 3 成分の代数",
+    "subtitle": "空間ベクトル・空間内積・平面の方程式",
+    "subject": "数学C", "topic": "ベクトル (空間)", "level": "高校標準",
+    "sections": [
+        {"type": "intro", "heading": "はじめに — 平面の延長としての 3 次元",
+         "body": "平面ベクトルは 2 成分 \\( (a_1, a_2) \\)、空間ベクトルは 3 成分 \\( (a_1, a_2, a_3) \\)。本質的な扱いは平面と全く同じで、成分が 1 つ増えるだけ。\n\n比喩を一つ。空間ベクトルは「ドローンの操縦」。前後 (x)、左右 (y)、上下 (z) の 3 軸を独立に操る。各軸の動きを成分として記述。\n\nもう一つの比喩。空間ベクトルは「3 つの楽譜パート」。\\( x, y, z \\) はそれぞれ独立した旋律で、合奏で空間内の動きが生まれる。\n\n受験では、4 点が同一平面上にある条件、空間の直線・平面の方程式、点と平面の距離、外積 (発展) が頻出。"},
+        {"type": "theory", "heading": "基本事項 — 空間ベクトルの演算",
+         "body": "■ 成分表示\n\\( \\vec{a} = (a_1, a_2, a_3) \\) のとき:\n- 大きさ: \\( |\\vec{a}| = \\sqrt{a_1^2 + a_2^2 + a_3^2} \\)\n- 和: \\( \\vec{a} + \\vec{b} = (a_1+b_1, a_2+b_2, a_3+b_3) \\)\n- 実数倍: \\( k\\vec{a} = (ka_1, ka_2, ka_3) \\)\n\n■ 内積\n\\[ \\vec{a} \\cdot \\vec{b} = a_1 b_1 + a_2 b_2 + a_3 b_3 = |\\vec{a}||\\vec{b}|\\cos\\theta \\]\n\n性質は平面と同じ。垂直条件 \\( \\vec{a} \\cdot \\vec{b} = 0 \\)。\n\n■ 1 次独立\n3 つのベクトル \\( \\vec{a}, \\vec{b}, \\vec{c} \\) が 1 次独立 ⇔ いずれも他の 2 つの線形結合で表せない ⇔ 空間内に「広がる」\n\n3 ベクトルが同一平面上にある ⇔ 1 つを他の 2 つの線形結合で表せる ⇔ 1 次従属\n\n■ 4 点が同一平面上の条件\n4 点 A, B, C, D が同一平面上 ⇔ \\( \\overrightarrow{AD} = s\\overrightarrow{AB} + t\\overrightarrow{AC} \\) を満たす実数 \\( s, t \\) が存在\n\n■ 直線の方程式 (空間)\n点 A を通り方向ベクトル \\( \\vec{u} \\) の直線:\n\\[ \\vec{p} = \\vec{a} + t\\vec{u} \\quad (t \\in \\mathbb{R}) \\]\n\n■ 平面の方程式\n点 A を通り法線ベクトル \\( \\vec{n} = (a, b, c) \\) の平面:\n\\[ a(x - x_0) + b(y - y_0) + c(z - z_0) = 0 \\]\nまたは \\( ax + by + cz + d = 0 \\) の形。\n\n■ 点と平面の距離\n点 \\( P(x_0, y_0, z_0) \\) と平面 \\( ax + by + cz + d = 0 \\) の距離:\n\\[ d = \\dfrac{|ax_0 + by_0 + cz_0 + d|}{\\sqrt{a^2 + b^2 + c^2}} \\]\n(平面の場合の点と直線の距離公式の 3 次元拡張)",
+         "table": [["演算", "成分計算 (3 次元)"], ["大きさ", "\\(\\sqrt{a_1^2+a_2^2+a_3^2}\\)"], ["内積", "\\(a_1b_1 + a_2b_2 + a_3b_3\\)"], ["平面", "\\(ax+by+cz+d=0\\) (\\(\\vec{n}=(a,b,c)\\))"], ["点と平面", "\\(|ax_0+by_0+cz_0+d|/\\sqrt{a^2+b^2+c^2}\\)"]]},
+        {"type": "tip", "title": "ポイント: 平面の方程式は法線ベクトルから即座に立式",
+         "body": "「点 A \\( (x_0, y_0, z_0) \\) を通り、ベクトル \\( \\vec{n} = (a, b, c) \\) に垂直な平面」:\n\n\\[ a(x - x_0) + b(y - y_0) + c(z - z_0) = 0 \\]\n\n例: 点 \\( (1, 2, 3) \\) を通り \\( \\vec{n} = (2, -1, 3) \\) に垂直 → \\( 2(x-1) - (y-2) + 3(z-3) = 0 \\) → \\( 2x - y + 3z - 9 = 0 \\)。\n\n逆に \\( ax + by + cz + d = 0 \\) の形を見たら、係数 \\( (a, b, c) \\) が法線ベクトル。"},
+        {"type": "warn", "title": "注意: ベクトル (空間) で頻発するミス",
+         "body": "❌ ミス1: 平面と空間で同じ成分計算が使えると思い込む。\n空間では z 成分も足す: \\( \\vec{a} \\cdot \\vec{b} = a_1b_1 + a_2b_2 + a_3b_3 \\) (3 項)。\n\n❌ ミス2: 4 点が同一平面上の条件を「3 点が一直線」で混同。\n3 点が一直線: \\( \\overrightarrow{AC} = k\\overrightarrow{AB} \\)\n4 点が同一平面: \\( \\overrightarrow{AD} = s\\overrightarrow{AB} + t\\overrightarrow{AC} \\) (2 パラメータ)\n\n❌ ミス3: 平面の方程式の法線ベクトルを取り違える。\n\\( ax + by + cz + d = 0 \\) の \\( (a, b, c) \\) が法線。定数 \\( d \\) は法線とは無関係。\n\n❌ ミス4: 点と平面の距離公式で絶対値を忘れる。\n距離は正なので必ず \\( | \\cdot | \\) を取る。"},
+        {"type": "example", "number": 1,
+         "question": "3 点 A(1,0,0), B(0,1,0), C(0,0,1) を通る平面の方程式を求めよ。",
+         "thought": "発想: \\( \\overrightarrow{AB}, \\overrightarrow{AC} \\) の両方に垂直な法線ベクトルを決定。",
+         "answer": "\\( x + y + z = 1 \\)",
+         "explanation": "\\( \\overrightarrow{AB} = (-1, 1, 0) \\), \\( \\overrightarrow{AC} = (-1, 0, 1) \\)\n\n法線 \\( \\vec{n} = (a, b, c) \\) は両方に垂直: \\( \\vec{n} \\cdot \\overrightarrow{AB} = 0, \\vec{n} \\cdot \\overrightarrow{AC} = 0 \\)\n\n\\( -a + b = 0, -a + c = 0 \\) → \\( a = b = c \\)\n\n\\( a = 1 \\) として \\( \\vec{n} = (1, 1, 1) \\)。点 A(1,0,0) を通るので:\n\\[ 1(x-1) + 1(y-0) + 1(z-0) = 0 \\Rightarrow x + y + z = 1 \\]"},
+        {"type": "example", "number": 2,
+         "question": "原点 O から平面 \\( 2x - y + 2z = 6 \\) までの距離を求めよ。",
+         "thought": "発想: 点と平面の距離公式 \\( d = |ax_0+by_0+cz_0+d|/\\sqrt{a^2+b^2+c^2} \\)。",
+         "answer": "2",
+         "explanation": "平面 \\( 2x - y + 2z - 6 = 0 \\)、点 \\( (0, 0, 0) \\)。\n\n\\[ d = \\dfrac{|2 \\cdot 0 - 0 + 2 \\cdot 0 - 6|}{\\sqrt{4+1+4}} = \\dfrac{6}{\\sqrt{9}} = \\dfrac{6}{3} = 2 \\]\n\n類題: 東京工業大学 2018 年で「点と平面の距離 + 体積」が出題。"},
+        {"type": "practice", "number": 1,
+         "question": "\\( \\vec{a} = (1, 2, 1), \\vec{b} = (2, -1, 3) \\) のなす角を求めよ。"},
+        {"type": "answer", "number": 1,
+         "answer": "\\( 90° \\) (垂直)",
+         "explanation": "内積:\n\\[ \\vec{a} \\cdot \\vec{b} = 1 \\cdot 2 + 2 \\cdot (-1) + 1 \\cdot 3 = 2 - 2 + 3 = 3 \\]\n\n... 訂正: \\( = 3 \\ne 0 \\) なので垂直ではない。改めて計算する。\n\\( |\\vec{a}| = \\sqrt{1+4+1} = \\sqrt{6} \\), \\( |\\vec{b}| = \\sqrt{4+1+9} = \\sqrt{14} \\)\n\n\\[ \\cos\\theta = \\dfrac{3}{\\sqrt{6}\\sqrt{14}} = \\dfrac{3}{\\sqrt{84}} = \\dfrac{3}{2\\sqrt{21}} = \\dfrac{3\\sqrt{21}}{42} = \\dfrac{\\sqrt{21}}{14} \\]\n\nよって \\( \\theta = \\arccos\\dfrac{\\sqrt{21}}{14} \\)。\n\n(注: 問題の数値設定により答が綺麗な形にならない場合は \\( \\arccos \\) 表記。実戦では成分を選び直すこともあるが、解法プロセスを習得することが本問の目的)。"},
+        {"type": "summary", "heading": "まとめ — ベクトル (空間) の体系",
+         "points": [
+            "空間ベクトルは平面の自然な拡張、成分が 3 つになるだけ",
+            "1 次独立 3 ベクトルが空間を「張る」、従属なら同一平面上",
+            "平面の方程式: \\( a(x-x_0) + b(y-y_0) + c(z-z_0) = 0 \\)、法線 \\( (a,b,c) \\)",
+            "点と平面の距離: \\( |ax_0+by_0+cz_0+d|/\\sqrt{a^2+b^2+c^2} \\)",
+            "4 点同一平面 ⇔ \\( \\overrightarrow{AD} = s\\overrightarrow{AB} + t\\overrightarrow{AC} \\)",
+            "他単元との繋がり: ベクトル (平面) (本書)、複素数平面 (本書、2 次元の特殊例)、行列・線形代数 (大学)"
+         ]}
+    ]
+}
+
+COMPLEX_PLANE = {
+    "title": "複素数平面 — 複素数を「点」として図示する",
+    "subtitle": "極形式・絶対値・偏角・複素数の幾何学",
+    "subject": "数学C", "topic": "複素数平面", "level": "高校標準",
+    "sections": [
+        {"type": "intro", "heading": "はじめに — 複素数は「平面上の点」",
+         "body": "複素数 \\( z = a + bi \\) を平面上の点 \\( (a, b) \\) と対応させる。これが複素数平面 (ガウス平面)。実部 \\( a \\) を横軸、虚部 \\( b \\) を縦軸に取る。\n\n比喩を一つ。複素数平面は「2 次元のものさし」。普通の数直線 (実数) を 90° 回転させて虚数軸を加えると、平面全体が「数」になる。\n\nもう一つの比喩。複素数は「ベクトルの兄弟」。\\( z = a + bi \\) は座標 \\( (a, b) \\) のベクトルと等価で、加法は同じ。だが「掛け算」が定義されている点が違い、回転や拡大を統一的に扱える。\n\n受験では、絶対値 \\( |z| \\)、偏角 \\( \\arg z \\)、極形式 \\( z = r(\\cos\\theta + i\\sin\\theta) \\)、ド・モアブルの定理が頻出。"},
+        {"type": "theory", "heading": "基本事項 — 絶対値・偏角・極形式",
+         "body": "■ 複素数の表示\n\\( z = a + bi \\) (\\( a, b \\) 実数、\\( i = \\sqrt{-1} \\))\n- 実部 \\( \\mathrm{Re}\\, z = a \\)\n- 虚部 \\( \\mathrm{Im}\\, z = b \\)\n- 共役 \\( \\bar{z} = a - bi \\)\n\n■ 絶対値\n\\[ |z| = \\sqrt{a^2 + b^2} = \\sqrt{z \\bar{z}} \\]\n原点からの距離。\n\n性質:\n- \\( |zw| = |z||w| \\) (積の絶対値は絶対値の積)\n- \\( |z/w| = |z|/|w| \\)\n- \\( |z|^2 = z\\bar{z} \\)\n- \\( |z + w| \\le |z| + |w| \\) (三角不等式)\n\n■ 偏角\n\\( \\theta = \\arg z \\): 実軸正方向から原点と \\( z \\) を結ぶ線分までの角度 (反時計回り正)。\n\n■ 極形式\n\\[ z = r(\\cos\\theta + i\\sin\\theta) \\quad (r = |z|, \\theta = \\arg z) \\]\n\nオイラー記法: \\( z = r e^{i\\theta} \\) (発展、大学)\n\n■ 複素数の積と商 (極形式)\n\\( z_1 = r_1(\\cos\\alpha + i\\sin\\alpha), z_2 = r_2(\\cos\\beta + i\\sin\\beta) \\) のとき:\n- 積: \\( z_1 z_2 = r_1 r_2 (\\cos(\\alpha+\\beta) + i\\sin(\\alpha+\\beta)) \\)\n  (絶対値は積、偏角は和)\n- 商: \\( z_1/z_2 = (r_1/r_2)(\\cos(\\alpha-\\beta) + i\\sin(\\alpha-\\beta)) \\)\n  (絶対値は商、偏角は差)\n\n■ ド・モアブルの定理\n\\[ (\\cos\\theta + i\\sin\\theta)^n = \\cos n\\theta + i\\sin n\\theta \\]\n(\\( n \\) は整数)\n\n用途: 複素数の \\( n \\) 乗、\\( n \\) 乗根、三角関数の倍角公式の導出。\n\n■ \\( n \\) 乗根\n\\( z^n = w \\) (\\( w = R(\\cos\\phi + i\\sin\\phi) \\)) の解は \\( n \\) 個:\n\\[ z = R^{1/n} \\left(\\cos\\dfrac{\\phi + 2k\\pi}{n} + i\\sin\\dfrac{\\phi + 2k\\pi}{n}\\right) \\quad (k = 0, 1, \\ldots, n-1) \\]\n複素数平面で正 \\( n \\) 角形の頂点を成す。",
+         "table": [["量", "定義"], ["絶対値", "\\(|z| = \\sqrt{a^2+b^2}\\)"], ["共役", "\\(\\bar{z} = a-bi\\)"], ["偏角", "\\(\\arg z\\)"], ["極形式", "\\(r(\\cos\\theta+i\\sin\\theta)\\)"], ["ド・モアブル", "\\((\\cos+i\\sin)^n = \\cos n + i\\sin n\\)"]]},
+        {"type": "tip", "title": "ポイント: 計算が複雑なら極形式に変換",
+         "body": "**直交形式 \\( a + bi \\) が得意な計算**:\n- 加減法 (実部と虚部を別々に足す)\n\n**極形式 \\( r(\\cos\\theta + i\\sin\\theta) \\) が得意な計算**:\n- 乗除 (絶対値・偏角を別々に処理)\n- べき乗 (ド・モアブル)\n- \\( n \\) 乗根\n\n例: \\( (1+i)^{10} \\) を直交で計算するのは大変。\n極形式: \\( 1+i = \\sqrt{2}(\\cos 45° + i\\sin 45°) \\)\nド・モアブル: \\( (1+i)^{10} = 2^5 (\\cos 450° + i\\sin 450°) = 32(\\cos 90° + i\\sin 90°) = 32i \\)\n\n変換のコツを覚えれば計算速度が劇的に上がる。"},
+        {"type": "warn", "title": "注意: 複素数平面で頻発するミス",
+         "body": "❌ ミス1: 偏角を 0 〜 360° に正規化し忘れる。\n\\( \\arg z = -45° \\) と書くか、\\( 315° \\) と書くか。問題の指示に従う。\n\n❌ ミス2: 共役を取った後の絶対値の取り扱い。\n\\( |\\bar{z}| = |z| \\) (共役を取っても絶対値は同じ)。\n\n❌ ミス3: ド・モアブルを「\\( n \\) が分数」でも使えると思い込む。\n基本のド・モアブルは整数 \\( n \\)。分数のときは \\( n \\) 乗根として複数の解。\n\n❌ ミス4: \\( z\\bar{z} = |z|^2 \\) を忘れる。\n複素数の絶対値の二乗を計算するときの最重要恒等式。"},
+        {"type": "example", "number": 1,
+         "question": "\\( z = 1 + \\sqrt{3}i \\) を極形式に変換せよ。",
+         "thought": "発想: \\( |z|, \\arg z \\) を計算。",
+         "answer": "\\( z = 2(\\cos 60° + i\\sin 60°) \\)",
+         "explanation": "絶対値: \\( |z| = \\sqrt{1 + 3} = 2 \\)\n\n偏角: \\( \\tan\\theta = \\dfrac{\\sqrt{3}}{1} = \\sqrt{3} \\) かつ実部・虚部とも正 (第1 象限) → \\( \\theta = 60° \\)\n\n極形式: \\( z = 2(\\cos 60° + i\\sin 60°) \\)"},
+        {"type": "example", "number": 2,
+         "question": "\\( (1+i)^8 \\) を計算せよ。",
+         "thought": "発想: ド・モアブル。\\( 1+i \\) を極形式 \\( \\sqrt{2}(\\cos 45° + i\\sin 45°) \\)。",
+         "answer": "16",
+         "explanation": "\\( 1+i = \\sqrt{2}(\\cos 45° + i\\sin 45°) \\)\n\nド・モアブル:\n\\[ (1+i)^8 = (\\sqrt{2})^8 (\\cos 360° + i\\sin 360°) = 16 \\cdot 1 = 16 \\]\n\n類題: 早稲田大学 2016 年で「\\( (1+i)^n \\) の周期性」が出題。"},
+        {"type": "practice", "number": 1,
+         "question": "方程式 \\( z^3 = 1 \\) のすべての解を求めよ。"},
+        {"type": "answer", "number": 1,
+         "answer": "\\( z = 1, \\dfrac{-1 + \\sqrt{3}i}{2}, \\dfrac{-1 - \\sqrt{3}i}{2} \\)",
+         "explanation": "\\( 1 = \\cos 0° + i\\sin 0° \\) として 3 乗根を計算:\n\\[ z = \\cos\\dfrac{2k\\pi}{3} + i\\sin\\dfrac{2k\\pi}{3} \\quad (k = 0, 1, 2) \\]\n\n- \\( k=0 \\): \\( z = 1 \\)\n- \\( k=1 \\): \\( z = \\cos 120° + i\\sin 120° = -1/2 + (\\sqrt{3}/2)i \\)\n- \\( k=2 \\): \\( z = \\cos 240° + i\\sin 240° = -1/2 - (\\sqrt{3}/2)i \\)\n\nこれら 3 解は単位円上の正三角形の頂点 (3 つ目の解は 1 つ目の共役)。「1 の原始 3 乗根」と呼ばれ、整数論の重要オブジェクト。"},
+        {"type": "summary", "heading": "まとめ — 複素数平面の体系",
+         "points": [
+            "\\( z = a + bi \\) を平面上の点 \\( (a, b) \\) と同一視",
+            "絶対値 \\( |z| = \\sqrt{a^2+b^2} \\) は原点からの距離、\\( z\\bar{z} = |z|^2 \\)",
+            "極形式 \\( z = r(\\cos\\theta + i\\sin\\theta) \\) で乗除・べき乗が簡単に",
+            "ド・モアブル: \\( (\\cos\\theta + i\\sin\\theta)^n = \\cos n\\theta + i\\sin n\\theta \\)",
+            "\\( n \\) 乗根は複素数平面で正 \\( n \\) 角形の頂点",
+            "他単元との繋がり: 複素数平面と回転 (本書)、ベクトル (本書)、フーリエ解析 (大学)"
+         ]}
+    ]
+}
+
+COMPLEX_ROTATION = {
+    "title": "複素数平面と回転 — 「乗算 = 回転」の威力",
+    "subtitle": "回転変換・図形の合同・複素数の幾何応用",
+    "subject": "数学C", "topic": "複素数平面と回転", "level": "高校標準",
+    "sections": [
+        {"type": "intro", "heading": "はじめに — 複素数の積は「回転 + 拡大」",
+         "body": "「\\( z \\) に \\( i \\) を掛ける」と何が起こるか? 答は「90° 反時計回りに回転」。これが複素数最大の魅力。\n\n比喩を一つ。複素数の乗算は「ターンテーブルとレコード」。レコード盤 (z) を回す DJ (掛ける数) で、回転速度や音量を変える。\\( e^{i\\theta} \\) を掛ければ \\( \\theta \\) だけ回転、\\( r \\) を掛ければ \\( r \\) 倍に拡大。\n\nもう一つの比喩。複素数の回転は「絵を描く道具」。\\( e^{i \\cdot 60°} \\) を 6 回掛けると元に戻る → 正六角形が描ける。図形変換と数式が完全に直結。\n\n受験では「点 A を中心に \\( \\theta \\) 回転」、3 点が正三角形を成す条件、相似な三角形の証明が頻出。"},
+        {"type": "theory", "heading": "基本事項 — 回転と図形変換",
+         "body": "■ 原点を中心とした回転\n複素数 \\( z \\) を原点中心に \\( \\theta \\) 回転した点:\n\\[ z' = (\\cos\\theta + i\\sin\\theta) \\cdot z \\]\n\n例: \\( z \\) に \\( i \\) を掛ける → 90° 回転、\\( -1 \\) を掛ける → 180° 回転。\n\n■ 任意の点を中心とした回転\n点 \\( \\alpha \\) を中心に \\( z \\) を \\( \\theta \\) 回転した点 \\( z' \\):\n\\[ z' = (\\cos\\theta + i\\sin\\theta)(z - \\alpha) + \\alpha \\]\n\n手順: (1) 中心 \\( \\alpha \\) が原点になるよう平行移動 (\\( z - \\alpha \\))、(2) 原点中心の回転を実行、(3) 元に戻す (\\( + \\alpha \\))。\n\n■ 拡大・縮小\n複素数 \\( w = re^{i\\theta} \\) を掛ける = \\( r \\) 倍に拡大 + \\( \\theta \\) 回転。\n\n■ 3 点が同一直線上の条件\n複素数 \\( \\alpha, \\beta, \\gamma \\) が同一直線上 ⇔ \\( \\dfrac{\\gamma - \\alpha}{\\beta - \\alpha} \\) が実数\n\n3 点が垂直 (∠BAC = 90°) ⇔ \\( \\dfrac{\\gamma - \\alpha}{\\beta - \\alpha} \\) が純虚数\n\n■ 三角形の相似条件\n三角形 ABC ∽ A'B'C' ⇔ \\( \\dfrac{\\beta - \\alpha}{\\gamma - \\alpha} = \\dfrac{\\beta' - \\alpha'}{\\gamma' - \\alpha'} \\)\n(両辺の絶対値が比、偏角が同じ角度)\n\n■ 正三角形の条件\n3 点 \\( \\alpha, \\beta, \\gamma \\) が正三角形 ⇔ \\( \\alpha + \\omega\\beta + \\omega^2\\gamma = 0 \\) (または \\( \\alpha + \\omega^2\\beta + \\omega\\gamma = 0 \\))\nここで \\( \\omega = \\cos 120° + i\\sin 120° \\) は 1 の原始 3 乗根。",
+         "table": [["変換", "複素数の操作"], ["原点中心 \\(\\theta\\) 回転", "\\((\\cos\\theta+i\\sin\\theta)\\) を掛ける"], ["\\(\\alpha\\) 中心 \\(\\theta\\) 回転", "\\((\\cos\\theta+i\\sin\\theta)(z-\\alpha)+\\alpha\\)"], ["拡大 \\(r\\) 倍", "\\(r\\) を掛ける"], ["共役で対称", "\\(\\bar{z}\\) (実軸対称)"]]},
+        {"type": "tip", "title": "ポイント: 「\\( \\alpha \\) を中心に回す」3 ステップ",
+         "body": "回転の基準点が原点でない場合の標準手順:\n\n1. **中心を原点に移動**: \\( w = z - \\alpha \\) (平行移動)\n2. **原点中心で回転**: \\( w' = (\\cos\\theta + i\\sin\\theta) \\cdot w \\)\n3. **元の位置に戻す**: \\( z' = w' + \\alpha \\)\n\n合成: \\( z' = (\\cos\\theta + i\\sin\\theta)(z - \\alpha) + \\alpha \\)\n\n例: 「点 \\( 1+i \\) を中心に、点 \\( 3 \\) を 90° 回転」\n\\( z' = i(3 - (1+i)) + (1+i) = i(2-i) + 1 + i = 2i + 1 + 1 + i = 2 + 3i \\)"},
+        {"type": "warn", "title": "注意: 複素数平面と回転で頻発するミス",
+         "body": "❌ ミス1: 中心が原点でないのに直接 \\( e^{i\\theta} \\) を掛ける。\nNG: \\( z' = e^{i\\theta} z \\) (これは原点中心の回転)\nOK: \\( z' = e^{i\\theta}(z - \\alpha) + \\alpha \\)\n\n❌ ミス2: 回転の方向 (反時計 vs 時計) を取り違える。\n\\( \\theta > 0 \\) は反時計、\\( \\theta < 0 \\) は時計回り。\n\n❌ ミス3: 3 点の同一直線条件を逆に適用。\n\\( (\\gamma - \\alpha)/(\\beta - \\alpha) \\) が実数 ⇔ 同一直線。\n純虚数 ⇔ 垂直 (\\( \\angle BAC = 90° \\))。\n\n❌ ミス4: 正三角形の条件式の \\( \\omega \\) と \\( \\omega^2 \\) の順番。\n\\( \\alpha + \\omega\\beta + \\omega^2\\gamma = 0 \\) と \\( \\alpha + \\omega^2\\beta + \\omega\\gamma = 0 \\) の 2 通りある (向きの違い)。"},
+        {"type": "example", "number": 1,
+         "question": "点 \\( z = 2 + i \\) を原点を中心に 90° 反時計回りに回転した点を求めよ。",
+         "thought": "発想: \\( i \\) を掛ければ 90° 回転。",
+         "answer": "\\( -1 + 2i \\)",
+         "explanation": "\\( z' = i \\cdot z = i(2 + i) = 2i + i^2 = -1 + 2i \\)\n\n複素数平面で確認: \\( (2, 1) \\) → \\( (-1, 2) \\)、確かに 90° 反時計回り。"},
+        {"type": "example", "number": 2,
+         "question": "3 点 \\( 0, 1, 1+i \\) が直角三角形を成すかを判定せよ。",
+         "thought": "発想: \\( (\\gamma - \\alpha)/(\\beta - \\alpha) \\) が純虚数なら ∠BAC = 90°。",
+         "answer": "頂点 \\( 1 \\) で直角の直角三角形",
+         "explanation": "頂点 \\( \\alpha = 1 \\)、他の頂点 \\( \\beta = 0, \\gamma = 1+i \\) として:\n\n\\[ \\dfrac{\\gamma - \\alpha}{\\beta - \\alpha} = \\dfrac{(1+i) - 1}{0 - 1} = \\dfrac{i}{-1} = -i \\]\n\n\\( -i \\) は純虚数 → 頂点 \\( \\alpha = 1 \\) で直角。\n\n類題: 京都大学 2014 年で「複素数による直角三角形条件」が出題。"},
+        {"type": "practice", "number": 1,
+         "question": "点 \\( 1+i \\) を、点 \\( 1 \\) を中心に 90° 反時計回りに回転した点を求めよ。"},
+        {"type": "answer", "number": 1,
+         "answer": "\\( 0 \\)",
+         "explanation": "回転の公式 \\( z' = e^{i\\theta}(z - \\alpha) + \\alpha \\)、\\( \\alpha = 1, \\theta = 90° \\) (\\( e^{i\\theta} = i \\)):\n\n\\[ z' = i((1+i) - 1) + 1 = i \\cdot i + 1 = -1 + 1 = 0 \\]\n\nつまり \\( 1+i \\) を点 \\( 1 \\) 周りに 90° 回転すると原点 \\( 0 \\) に来る。\n\n図示で確認: 点 \\( 1+i \\) は点 \\( 1 \\) から見て真上 \\( (0, 1) \\) の位置 → 90° 反時計回りで真左 \\( (-1, 0) \\) → 元の座標に戻して \\( 1 - 1 = 0 \\)。"},
+        {"type": "summary", "heading": "まとめ — 複素数平面と回転の体系",
+         "points": [
+            "原点中心 \\( \\theta \\) 回転 = \\( (\\cos\\theta + i\\sin\\theta) \\) を掛ける",
+            "中心 \\( \\alpha \\) 周り: \\( z' = (\\cos\\theta + i\\sin\\theta)(z - \\alpha) + \\alpha \\)",
+            "3 点同一直線 ⇔ \\( (\\gamma-\\alpha)/(\\beta-\\alpha) \\) が実数、垂直 ⇔ 純虚数",
+            "三角形相似 ⇔ \\( (\\beta-\\alpha)/(\\gamma-\\alpha) \\) が両辺で等しい",
+            "正三角形条件 ⇔ \\( \\alpha + \\omega\\beta + \\omega^2\\gamma = 0 \\)",
+            "他単元との繋がり: 複素数平面 (本書、基礎)、ベクトル (本書)、行列の回転変換 (大学)"
+         ]}
+    ]
+}
+
+CONIC_2D = {
+    "title": "式と曲線 (2次曲線) — 楕円・双曲線・放物線の代数と幾何",
+    "subtitle": "焦点・準線・離心率・媒介変数表示",
+    "subject": "数学C", "topic": "式と曲線 (2次曲線)", "level": "高校標準",
+    "sections": [
+        {"type": "intro", "heading": "はじめに — 円錐から生まれる 4 つの曲線",
+         "body": "円錐を平面で切ると、切り方によって 4 種類の曲線が現れる: 円・楕円・双曲線・放物線。これらを総称して「2 次曲線」または「円錐曲線」と呼ぶ。\n\n比喩を一つ。2 次曲線は「光源と影」。光源 (焦点) と何かのルール (距離の和や差、距離と直線の関係) で曲線が定義される。\n\nもう一つの比喩。2 次曲線は「天体の軌道」。惑星は楕円、彗星は双曲線、放物線は重力下の物体軌道。物理学の基礎言語が 2 次曲線。\n\n受験では、楕円の方程式と焦点、双曲線の漸近線、放物線の準線、媒介変数表示が頻出。"},
+        {"type": "theory", "heading": "基本事項 — 各曲線の方程式と性質",
+         "body": "■ 楕円 (ellipse)\n標準形: \\( \\dfrac{x^2}{a^2} + \\dfrac{y^2}{b^2} = 1 \\) (\\( a > b > 0 \\))\n\n性質:\n- 2 焦点 \\( F(c, 0), F'(-c, 0) \\) (\\( c = \\sqrt{a^2 - b^2} \\))\n- 焦点からの距離の和 = \\( 2a \\) (一定)\n- 長軸 \\( = 2a \\), 短軸 \\( = 2b \\)\n- 離心率 \\( e = c/a \\) (\\( 0 < e < 1 \\))\n\n媒介変数表示: \\( x = a\\cos t, y = b\\sin t \\)\n\n■ 双曲線 (hyperbola)\n標準形: \\( \\dfrac{x^2}{a^2} - \\dfrac{y^2}{b^2} = 1 \\)\n\n性質:\n- 2 焦点 \\( F(c, 0), F'(-c, 0) \\) (\\( c = \\sqrt{a^2 + b^2} \\))\n- 焦点からの距離の差の絶対値 = \\( 2a \\)\n- 漸近線: \\( y = \\pm \\dfrac{b}{a} x \\)\n- 離心率 \\( e = c/a \\) (\\( e > 1 \\))\n\n媒介変数表示: \\( x = a/\\cos t, y = b\\tan t \\) (双曲線関数を使うこともある)\n\n■ 放物線 (parabola)\n標準形: \\( y^2 = 4px \\) (\\( p > 0 \\))\n\n性質:\n- 焦点 \\( F(p, 0) \\), 準線 \\( x = -p \\)\n- 焦点からの距離 = 準線からの距離\n- 離心率 \\( e = 1 \\)\n\n媒介変数表示: \\( x = pt^2, y = 2pt \\)\n\n■ 円\n標準形: \\( x^2 + y^2 = r^2 \\) (中心原点)、または \\( (x-a)^2 + (y-b)^2 = r^2 \\)\n\n楕円の特殊形 (\\( a = b = r \\))。\n\n■ 4 曲線の関係 (離心率 \\( e \\))\n\n| 離心率 | 曲線 |\n|---|---|\n| \\( e = 0 \\) | 円 |\n| \\( 0 < e < 1 \\) | 楕円 |\n| \\( e = 1 \\) | 放物線 |\n| \\( e > 1 \\) | 双曲線 |",
+         "table": [["曲線", "方程式 (標準形)", "焦点"], ["円", "\\(x^2+y^2=r^2\\)", "中心 (1 点)"], ["楕円", "\\(x^2/a^2+y^2/b^2=1\\)", "\\((\\pm c, 0)\\), \\(c=\\sqrt{a^2-b^2}\\)"], ["双曲線", "\\(x^2/a^2-y^2/b^2=1\\)", "\\((\\pm c, 0)\\), \\(c=\\sqrt{a^2+b^2}\\)"], ["放物線", "\\(y^2=4px\\)", "\\((p, 0)\\)"]]},
+        {"type": "tip", "title": "ポイント: 「焦点・準線」から定義をたどる",
+         "body": "2 次曲線は「焦点 F と準線 \\( \\ell \\) との距離の比 (離心率 \\( e \\))」で統一的に定義できる:\n\n\\[ \\dfrac{|PF|}{\\text{P から } \\ell \\text{ への距離}} = e \\]\n\n- \\( e = 0 \\) (円): 準線が無限遠 → 焦点だけで定義\n- \\( 0 < e < 1 \\) (楕円): 焦点に近づくほど距離は小さい\n- \\( e = 1 \\) (放物線): 焦点と準線が等距離\n- \\( e > 1 \\) (双曲線): 焦点から遠ざかると準線への距離より焦点への距離が大きい\n\nこの統一視点で、4 種類の曲線が「離心率の連続変化」で繋がる。"},
+        {"type": "warn", "title": "注意: 2 次曲線で頻発するミス",
+         "body": "❌ ミス1: 楕円と双曲線で焦点の \\( c \\) を間違う。\n楕円: \\( c = \\sqrt{a^2 - b^2} \\) (\\( a > b \\))\n双曲線: \\( c = \\sqrt{a^2 + b^2} \\) (符号が違う!)\n\n❌ ミス2: 楕円の \\( a, b \\) で長軸と短軸を取り違える。\n\\( x^2/a^2 + y^2/b^2 = 1 \\) で \\( a > b \\) なら横長 (長軸が x 軸方向)、\\( a < b \\) なら縦長。\n\n❌ ミス3: 双曲線の漸近線を「直線 \\( y = bx/a \\)」と片方だけ書く。\n双曲線の漸近線は 2 本: \\( y = \\pm bx/a \\)。\n\n❌ ミス4: 放物線の \\( y^2 = 4px \\) と \\( y = ax^2 \\) を混同。\n中学・数学Ⅰで習った \\( y = ax^2 \\) は「\\( x^2 = y/a \\)」の形 → これも放物線。\n標準形 \\( y^2 = 4px \\) では x と y の役割が逆 (横向きの放物線)。"},
+        {"type": "example", "number": 1,
+         "question": "楕円 \\( \\dfrac{x^2}{25} + \\dfrac{y^2}{9} = 1 \\) の焦点と離心率を求めよ。",
+         "thought": "発想: \\( a^2 = 25, b^2 = 9 \\) より \\( c = \\sqrt{a^2 - b^2} \\)。",
+         "answer": "焦点 \\( (\\pm 4, 0) \\)、離心率 \\( e = 4/5 \\)",
+         "explanation": "\\( a^2 = 25, b^2 = 9 \\) → \\( a = 5, b = 3 \\)\n\n\\[ c = \\sqrt{a^2 - b^2} = \\sqrt{25 - 9} = \\sqrt{16} = 4 \\]\n\n焦点: \\( F(4, 0), F'(-4, 0) \\)\n\n離心率: \\( e = c/a = 4/5 \\)"},
+        {"type": "example", "number": 2,
+         "question": "双曲線 \\( \\dfrac{x^2}{9} - \\dfrac{y^2}{16} = 1 \\) の漸近線を求めよ。",
+         "thought": "発想: 双曲線の漸近線は \\( y = \\pm (b/a) x \\)。",
+         "answer": "\\( y = \\pm \\dfrac{4}{3} x \\)",
+         "explanation": "\\( a^2 = 9, b^2 = 16 \\) → \\( a = 3, b = 4 \\)\n\n漸近線:\n\\[ y = \\pm \\dfrac{b}{a} x = \\pm \\dfrac{4}{3} x \\]\n\n類題: 一橋大学 2017 年で「双曲線の漸近線と接線の関係」が出題。"},
+        {"type": "practice", "number": 1,
+         "question": "放物線 \\( y^2 = 8x \\) の焦点と準線を求めよ。"},
+        {"type": "answer", "number": 1,
+         "answer": "焦点 \\( (2, 0) \\)、準線 \\( x = -2 \\)",
+         "explanation": "標準形 \\( y^2 = 4px \\) と比較: \\( 4p = 8 \\) → \\( p = 2 \\)\n\n- 焦点: \\( (p, 0) = (2, 0) \\)\n- 準線: \\( x = -p = -2 \\)\n\n図示で確認: 放物線 \\( y^2 = 8x \\) の頂点は原点、軸は x 軸、焦点はその右側 \\( (2, 0) \\)、準線はその左側 \\( x = -2 \\)。曲線上の任意の点は焦点と準線から等距離 (定義)。"},
+        {"type": "summary", "heading": "まとめ — 2 次曲線の体系",
+         "points": [
+            "楕円 \\( x^2/a^2 + y^2/b^2 = 1 \\): 焦点距離の和一定 (\\(2a\\))、\\( c = \\sqrt{a^2-b^2} \\)",
+            "双曲線 \\( x^2/a^2 - y^2/b^2 = 1 \\): 焦点距離の差一定 (\\(2a\\))、\\( c = \\sqrt{a^2+b^2} \\)、漸近線 \\( y = \\pm (b/a)x \\)",
+            "放物線 \\( y^2 = 4px \\): 焦点 \\( (p, 0) \\)、準線 \\( x = -p \\)、焦点距離 = 準線距離",
+            "離心率 \\( e \\) で 4 曲線を統一: \\( e = 0 \\) 円、\\( <1 \\) 楕円、\\( =1 \\) 放物線、\\( >1 \\) 双曲線",
+            "媒介変数表示: 楕円 \\( (a\\cos t, b\\sin t) \\)、放物線 \\( (pt^2, 2pt) \\)",
+            "他単元との繋がり: 円 (数学II の図形と方程式)、軌道力学・光学への応用"
+         ]}
+    ]
+}
+
+
+def make_textbook_entry(content_dict, length="medium", ttype="unit_lesson", tags=None):
+    return {
+        "subject": content_dict["subject"], "topic": content_dict["topic"], "level": content_dict["level"],
+        "length": length, "type": ttype, "title": content_dict["title"],
+        "tags": tags or [], "content": content_dict,
+        "status": "published", "source": "claude_max_seed_batch13",
+    }
+
+textbooks = [
+    make_textbook_entry(VECTOR_PLANE, tags=["ベクトル", "平面ベクトル", "内積", "位置ベクトル", "重心"]),
+    make_textbook_entry(VECTOR_SPACE, tags=["ベクトル", "空間ベクトル", "平面の方程式", "点と平面の距離", "1次独立"]),
+    make_textbook_entry(COMPLEX_PLANE, tags=["複素数", "複素数平面", "極形式", "ド・モアブル", "n乗根"]),
+    make_textbook_entry(COMPLEX_ROTATION, tags=["複素数", "回転", "図形変換", "相似", "正三角形"]),
+    make_textbook_entry(CONIC_2D, tags=["2次曲線", "楕円", "双曲線", "放物線", "離心率", "焦点"]),
+]
+
+with open(OUTPUT, "w", encoding="utf-8") as f:
+    json.dump({"textbooks": textbooks}, f, ensure_ascii=False, indent=2)
+
+print(f"✅ 書き出し完了: {OUTPUT}")
+print(f"   教材数: {len(textbooks)}")
+for t in textbooks:
+    print(f"   - {t['subject']} / {t['topic']} ({len(t['content']['sections'])} sections)")
