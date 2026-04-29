@@ -41,6 +41,34 @@ const DEFAULT_MAIL_BODY = `{{student}} 様の保護者様
 {{ownerPhone}}
 ────────────────────`;
 
+const DEFAULT_STRIPE_INVITE_SUBJECT = '【{{juku}}】月謝のカード決済 (毎月自動引き落とし) のご案内';
+const DEFAULT_STRIPE_INVITE_BODY = `{{student}} 様の保護者様
+
+平素より{{juku}}をご利用いただきありがとうございます。
+塾長の{{owner}}でございます。
+
+このたび月謝のお支払い方法に **クレジットカード (毎月自動引き落とし)** をご用意いたしました。
+従来の銀行振込に加え、ご都合に合わせてお選びいただけます。
+
+【自動引き落とし お申し込みURL】
+{{paymentLink}}
+
+上記URLよりカード情報を一度ご登録いただきますと、
+毎月{{deadlineDay}}日頃に **月謝 ¥{{fee}}** を自動で引き落とさせていただきます。
+振込手数料はかからず、毎月の振込忘れの心配もございません。
+
+カード情報の変更・解約は、Stripe カスタマーポータルからいつでも可能です。
+銀行振込を継続される場合は、引き続きこれまで通りで結構です。
+
+ご不明な点がございましたら下記までお気軽にお問い合わせください。
+
+────────────────────
+{{juku}}
+{{owner}}
+{{ownerEmail}}
+{{ownerPhone}}
+────────────────────`;
+
 const DEFAULT_SETTINGS = {
   jukuName: '◯◯塾',
   ownerName: '塾長',
@@ -57,6 +85,8 @@ const DEFAULT_SETTINGS = {
   mailBody: DEFAULT_MAIL_BODY,
   stripePaymentLink: '',         // 共通 Stripe Payment Links URL
   stripeLinksByFee: {},          // 金額別: { '7500': 'url', '15000': 'url' }
+  stripeInviteSubject: DEFAULT_STRIPE_INVITE_SUBJECT,
+  stripeInviteBody: DEFAULT_STRIPE_INVITE_BODY,
 };
 
 let SETTINGS = { ...DEFAULT_SETTINGS };
@@ -258,6 +288,15 @@ function getMailSent(month, studentId) {
 function setMailSent(month, studentId, isoDate) {
   if (!STATE.overrides.mailSent[month]) STATE.overrides.mailSent[month] = {};
   STATE.overrides.mailSent[month][studentId] = isoDate;
+  saveOverrides();
+}
+
+function getStripeInviteSent(studentId) {
+  return STATE.overrides.stripeInviteSent?.[studentId] || null;
+}
+function setStripeInviteSent(studentId, isoDate) {
+  if (!STATE.overrides.stripeInviteSent) STATE.overrides.stripeInviteSent = {};
+  STATE.overrides.stripeInviteSent[studentId] = isoDate;
   saveOverrides();
 }
 
@@ -976,6 +1015,27 @@ function buildMailFor(studentId) {
   };
 }
 
+function buildStripeInviteFor(studentId) {
+  const s = STATE.data.students.find(x => x.id === studentId);
+  if (!s) return null;
+  const vars = {
+    student: s.name,
+    juku: SETTINGS.jukuName,
+    owner: SETTINGS.ownerName,
+    ownerEmail: SETTINGS.ownerEmail,
+    ownerPhone: SETTINGS.ownerPhone,
+    fee: (s.fee || 0).toLocaleString('ja-JP'),
+    deadlineDay: SETTINGS.deadlineDay || 25,
+    paymentLink: paymentLinkFor(s),
+  };
+  return {
+    student: s,
+    to: getEmail(studentId),
+    subject: renderTemplate(SETTINGS.stripeInviteSubject || DEFAULT_STRIPE_INVITE_SUBJECT, vars),
+    body: renderTemplate(SETTINGS.stripeInviteBody || DEFAULT_STRIPE_INVITE_BODY, vars),
+  };
+}
+
 function mailtoUrl(to, subject, body) {
   const params = new URLSearchParams();
   if (subject) params.set('subject', subject);
@@ -1096,6 +1156,88 @@ function bulkMailBccCopy() {
   copyToClipboard(text);
   alert(`📋 ${targets.length}名分のBCC・件名・本文をクリップボードにコピーしました\n\nGmail等の新規メール作成画面に貼り付けてください。`);
   hideModal('bulkMailModal');
+}
+
+// === Stripe 案内メール一斉送信 (現通塾生にカード決済登録を促す) ===
+
+function stripeInviteTargets(opts = {}) {
+  const onlyUnsent = opts.onlyUnsent !== false;
+  return activeStudents().filter(s => {
+    if (!getEmail(s.id)) return false;
+    if (!paymentLinkFor(s) || paymentLinkFor(s) === '(未設定)') return false;
+    if (onlyUnsent && getStripeInviteSent(s.id)) return false;
+    return true;
+  });
+}
+
+function openStripeInviteModal() {
+  const targetsAll = stripeInviteTargets({ onlyUnsent: false });
+  const targetsUnsent = stripeInviteTargets({ onlyUnsent: true });
+  const totalActive = activeStudents().length;
+  const noEmail = activeStudents().filter(s => !getEmail(s.id)).length;
+  const noLink = activeStudents().filter(s => {
+    const link = paymentLinkFor(s);
+    return getEmail(s.id) && (!link || link === '(未設定)');
+  }).length;
+  document.getElementById('stripeInviteSummary').innerHTML =
+    `通塾生 <strong>${totalActive}名</strong> のうち:<br>` +
+    `　・送信対象 (メアド+リンク有・未送信): <strong style="color:var(--success,#10b981)">${targetsUnsent.length}名</strong><br>` +
+    `　・既に送信済 (再送可): <strong style="color:var(--text-muted)">${targetsAll.length - targetsUnsent.length}名</strong><br>` +
+    `　・メアド未登録: <strong style="color:var(--warning)">${noEmail}名</strong> → 全生徒タブで登録してください<br>` +
+    `　・Stripe Payment Link 未設定の月謝額: <strong style="color:var(--warning)">${noLink}名</strong> → 設定モーダルで登録してください`;
+  showModal('stripeInviteModal');
+}
+
+function bulkStripeInviteSequential(opts = {}) {
+  const targets = stripeInviteTargets({ onlyUnsent: opts.onlyUnsent !== false });
+  if (!targets.length) { alert('送信対象がありません'); return; }
+  hideModal('stripeInviteModal');
+  if (!confirm(`${targets.length}名のメーラーを順次開きます。\nブラウザのポップアップブロックを解除してください。続行しますか？`)) return;
+  let i = 0;
+  const next = () => {
+    if (i >= targets.length) { alert(`✅ ${targets.length}名分の Stripe 案内メーラーを開きました`); refresh(); return; }
+    const s = targets[i];
+    const m = buildStripeInviteFor(s.id);
+    if (m && m.to) {
+      if (mailtoSafetyCheck(m.to, m.subject, m.body)) {
+        window.open(mailtoUrl(m.to, m.subject, m.body), '_blank');
+        setStripeInviteSent(s.id, new Date().toISOString().slice(0, 10));
+      }
+    }
+    i++;
+    setTimeout(next, 800);
+  };
+  next();
+}
+
+function bulkStripeInviteBccCopy() {
+  const targets = stripeInviteTargets({ onlyUnsent: false });
+  if (!targets.length) { alert('送信対象がありません'); return; }
+  const bcc = targets.map(s => getEmail(s.id)).join(', ');
+  const vars = {
+    student: '保護者各位',
+    juku: SETTINGS.jukuName,
+    owner: SETTINGS.ownerName,
+    ownerEmail: SETTINGS.ownerEmail,
+    ownerPhone: SETTINGS.ownerPhone,
+    fee: '(各人別)',
+    deadlineDay: SETTINGS.deadlineDay || 25,
+    paymentLink: '(各人個別のURLを記載してください)',
+  };
+  const subject = renderTemplate(SETTINGS.stripeInviteSubject || DEFAULT_STRIPE_INVITE_SUBJECT, vars);
+  const body = renderTemplate(SETTINGS.stripeInviteBody || DEFAULT_STRIPE_INVITE_BODY, vars);
+  const text = `BCC: ${bcc}\n\n件名: ${subject}\n\n${body}`;
+  copyToClipboard(text);
+  alert(`📋 ${targets.length}名分のBCC・件名・本文 (共通) をクリップボードにコピーしました\n\n※ paymentLink は各人別なので一括BCCには不向き。順次送信を推奨します。`);
+  hideModal('stripeInviteModal');
+}
+
+function previewStripeInvite() {
+  const targets = stripeInviteTargets({ onlyUnsent: false });
+  if (!targets.length) { alert('プレビュー対象がいません (メアド+リンク登録済の通塾生が必要)'); return; }
+  const m = buildStripeInviteFor(targets[0].id);
+  if (!m) return;
+  alert(`【プレビュー: ${m.student.name} 様】\n\n宛先: ${m.to}\n件名: ${m.subject}\n\n${m.body}`);
 }
 
 // === Phase 4: Invoice PDF ===
@@ -1642,6 +1784,8 @@ function openSettings() {
   document.getElementById('setDunningTone').value = SETTINGS.dunningTone;
   document.getElementById('setMailSubject').value = SETTINGS.mailSubject;
   document.getElementById('setMailBody').value = SETTINGS.mailBody;
+  document.getElementById('setStripeInviteSubject').value = SETTINGS.stripeInviteSubject || DEFAULT_STRIPE_INVITE_SUBJECT;
+  document.getElementById('setStripeInviteBody').value = SETTINGS.stripeInviteBody || DEFAULT_STRIPE_INVITE_BODY;
   showModal('settingsModal');
 }
 
@@ -1659,6 +1803,8 @@ function saveSettingsFromForm() {
   SETTINGS.dunningTone = document.getElementById('setDunningTone').value;
   SETTINGS.mailSubject = document.getElementById('setMailSubject').value;
   SETTINGS.mailBody = document.getElementById('setMailBody').value;
+  SETTINGS.stripeInviteSubject = document.getElementById('setStripeInviteSubject').value;
+  SETTINGS.stripeInviteBody = document.getElementById('setStripeInviteBody').value;
   SETTINGS.stripePaymentLink = document.getElementById('setStripeCommon').value.trim();
   SETTINGS.stripeLinksByFee = {};
   document.querySelectorAll('[data-stripe-fee]').forEach(inp => {
@@ -1686,10 +1832,22 @@ function setupModals() {
   document.getElementById('settingsBtn').addEventListener('click', openSettings);
   document.getElementById('saveSettingsBtn').addEventListener('click', saveSettingsFromForm);
   document.getElementById('resetSettingsBtn').addEventListener('click', () => {
-    if (!confirm('メールテンプレートを初期値に戻しますか？')) return;
+    if (!confirm('メールテンプレート (督促 + Stripe案内) を初期値に戻しますか？')) return;
     document.getElementById('setMailSubject').value = DEFAULT_MAIL_SUBJECT;
     document.getElementById('setMailBody').value = DEFAULT_MAIL_BODY;
+    document.getElementById('setStripeInviteSubject').value = DEFAULT_STRIPE_INVITE_SUBJECT;
+    document.getElementById('setStripeInviteBody').value = DEFAULT_STRIPE_INVITE_BODY;
   });
+
+  // Stripe Invite (一斉送信)
+  const sib = document.getElementById('stripeInviteBtn');
+  if (sib) sib.addEventListener('click', openStripeInviteModal);
+  const sip = document.getElementById('stripeInvitePreviewBtn');
+  if (sip) sip.addEventListener('click', previewStripeInvite);
+  const siu = document.getElementById('stripeInviteUnsentBtn');
+  if (siu) siu.addEventListener('click', () => bulkStripeInviteSequential({ onlyUnsent: true }));
+  const sia = document.getElementById('stripeInviteAllBtn');
+  if (sia) sia.addEventListener('click', () => bulkStripeInviteSequential({ onlyUnsent: false }));
 
   // Mail preview
   document.getElementById('mailSendBtn').addEventListener('click', (e) => {

@@ -151,6 +151,7 @@
         <select class="select" id="gradeFilter"><option value="">学年: 全て</option></select>
         <select class="select" id="courseFilter"><option value="">コース: 全て</option></select>
         <button class="btn btn-ghost btn-sm" id="resetFilterBtn">↺ リセット</button>
+        <button class="btn btn-primary btn-sm" id="stripeInviteBtn" title="現通塾生に Stripe カード決済 (毎月自動引き落とし) の案内メールを一斉送信">💳 Stripe案内メール一斉送信</button>
       </div>
     </div>
     <div class="table-wrap">
@@ -450,6 +451,19 @@
           <textarea id="setMailBody" rows="14"></textarea>
         </label>
       </div>
+
+      <div class="form-section">
+        <h3>Stripe カード決済 案内メールテンプレート</h3>
+        <p class="form-hint">「全生徒タブ → 💳 Stripe案内メール一斉送信」で使われるテンプレートです。<br>使える変数: <code>{{student}}</code> 生徒名 / <code>{{fee}}</code> 月謝額 / <code>{{deadlineDay}}</code> 引落日 / <code>{{paymentLink}}</code> カード決済URL / <code>{{juku}}</code> 塾名 / <code>{{owner}}</code> 塾長名</p>
+        <label class="form-group form-group-wide">
+          <span>件名</span>
+          <input type="text" id="setStripeInviteSubject">
+        </label>
+        <label class="form-group form-group-wide">
+          <span>本文</span>
+          <textarea id="setStripeInviteBody" rows="16"></textarea>
+        </label>
+      </div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" data-modal-close>キャンセル</button>
@@ -505,6 +519,41 @@
         <button class="bulk-option" id="bulkBccBtn">
           <strong>📋 BCC一括コピー</strong>
           <span>全員のメアドをBCC形式でコピー (Gmail等に貼って送信)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Stripe 案内メール一斉送信モーダル -->
+<div class="modal-overlay hidden" id="stripeInviteModal">
+  <div class="modal modal-sm">
+    <div class="modal-head">
+      <h2>💳 Stripe カード決済 案内メール 一斉送信</h2>
+      <button class="modal-close" data-modal-close>✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="stripeInviteSummary"></p>
+      <div class="hint" style="margin:0.8rem 0;font-size:0.82rem;color:var(--text-muted)">
+        <strong>事前準備:</strong>
+        <ol style="margin:0.4rem 0 0 1.2rem;padding:0;line-height:1.6">
+          <li><a href="https://dashboard.stripe.com/payment-links" target="_blank" style="color:var(--primary-light)">Stripe Dashboard → Payment Links</a> で月謝額別に <strong>「Recurring (毎月)」</strong>のリンクを作成</li>
+          <li>設定モーダル → 「カード決済 (Stripe Payment Links)」で各 URL を登録</li>
+          <li>↓ 一斉送信 (順次メーラー起動 / 各人別の URL がメール本文に挿入されます)</li>
+        </ol>
+      </div>
+      <div class="bulk-options">
+        <button class="bulk-option" id="stripeInvitePreviewBtn">
+          <strong>👁 1名分プレビュー</strong>
+          <span>送信前に内容を確認</span>
+        </button>
+        <button class="bulk-option" id="stripeInviteUnsentBtn">
+          <strong>🔄 未送信者のみ順次送信</strong>
+          <span>既に案内済の生徒は除外して順次メーラー起動</span>
+        </button>
+        <button class="bulk-option" id="stripeInviteAllBtn">
+          <strong>🔁 全員に再送 (リマインド用)</strong>
+          <span>送信済の生徒も含めて全員に順次メーラー起動</span>
         </button>
       </div>
     </div>
