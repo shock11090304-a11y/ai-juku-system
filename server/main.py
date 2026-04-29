@@ -5023,6 +5023,73 @@ def public_textbook_search(
     return {"ok": True, "count": len(out), "results": out}
 
 
+@app.post("/api/admin/students/purge-test")
+def admin_students_purge_test(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """テスト用ダミー生徒レコードを削除する admin endpoint。
+    payload:
+      {"ids": [5, 6, 7]}                       # ID 指定削除
+      {"name_contains": ["検証", "再確認"]}    # 名前部分一致で削除 (複数 OR)
+      {"dry_run": true}                        # 削除せず該当件数だけ返す
+    認証: admin Bearer or x-cron-secret"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    ids = payload.get("ids") or []
+    name_contains = payload.get("name_contains") or []
+    dry_run = bool(payload.get("dry_run", False))
+    if not ids and not name_contains:
+        raise HTTPException(status_code=400, detail="ids または name_contains のいずれか必須")
+
+    conn = db()
+    c = conn.cursor()
+    matched = []
+    try:
+        # ID 指定
+        if ids:
+            placeholders = ",".join(["?"] * len(ids))
+            c.execute(f"SELECT id, fullname, status FROM students WHERE id IN ({placeholders})", tuple(ids))
+            for r in c.fetchall():
+                matched.append({"id": r["id"], "fullname": r["fullname"], "status": r["status"], "via": "id"})
+        # 名前部分一致 (複数 OR)
+        if name_contains:
+            for kw in name_contains:
+                c.execute("SELECT id, fullname, status FROM students WHERE fullname LIKE ?", (f"%{kw}%",))
+                for r in c.fetchall():
+                    if not any(m["id"] == r["id"] for m in matched):
+                        matched.append({"id": r["id"], "fullname": r["fullname"], "status": r["status"], "via": f"name~{kw}"})
+
+        deleted = 0
+        if not dry_run and matched:
+            ids_to_delete = [m["id"] for m in matched]
+            placeholders = ",".join(["?"] * len(ids_to_delete))
+            c.execute(f"DELETE FROM students WHERE id IN ({placeholders})", tuple(ids_to_delete))
+            deleted = c.rowcount
+            # 関連レコード (otp_codes / events) もクリーンアップ
+            try:
+                c.execute(f"DELETE FROM otp_codes WHERE student_id IN ({placeholders})", tuple(ids_to_delete))
+            except Exception: pass
+            conn.commit()
+    finally:
+        conn.close()
+
+    log.info(f"[Students:PurgeTest] dry_run={dry_run} matched={len(matched)} deleted={deleted}")
+    return {
+        "ok": True,
+        "matched": len(matched),
+        "deleted": deleted,
+        "dry_run": dry_run,
+        "items": matched[:50],
+        "message": f"{'(dry run) ' if dry_run else ''}該当 {len(matched)} 件、削除 {deleted} 件",
+    }
+
+
 @app.post("/api/admin/textbooks/purge")
 def admin_textbook_pool_purge(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """textbook_pool の特定レコードを削除する admin endpoint。
