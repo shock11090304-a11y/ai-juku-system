@@ -2882,8 +2882,10 @@ def ai_messages_proxy(payload: dict, authorization: Optional[str] = Header(None)
     # payload 検証
     model = payload.get("model") or "claude-sonnet-4-6"
     max_tokens = int(payload.get("max_tokens") or 4000)
-    if max_tokens > 8000:
-        max_tokens = 8000  # 上限保護
+    # 教材生成 (textbook-generator.js) は 16000 を要求するため上限を 24000 に拡張。
+    # 8000 cap だと長文 JSON が中途で切断され Parse error になっていた。
+    if max_tokens > 24000:
+        max_tokens = 24000
     messages = payload.get("messages")
     if not isinstance(messages, list) or not messages:
         raise HTTPException(status_code=400, detail="messages required")
@@ -2891,6 +2893,20 @@ def ai_messages_proxy(payload: dict, authorization: Optional[str] = Header(None)
     system = payload.get("system")
     if system:
         body["system"] = system
+
+    # Opus 4.7 は thinking/output_config 必須 (これが無いと Anthropic が 400 を返す)。
+    # /api/ai/call の同等ロジック (L6847-) を踏襲し、Sonnet 系には enabled thinking。
+    # フロントが thinking/output_config/temperature を明示してきた場合はそれを優先。
+    if (model or "").startswith("claude-opus-4-7"):
+        body["thinking"] = payload.get("thinking") or {"type": "adaptive"}
+        body["output_config"] = payload.get("output_config") or {"effort": "high"}
+        body["temperature"] = float(payload.get("temperature") or 1.0)
+    else:
+        # Sonnet/Haiku: thinking はオプショナル。フロントが指定した時のみ付ける。
+        if payload.get("thinking") is not None:
+            body["thinking"] = payload.get("thinking")
+        if payload.get("temperature") is not None:
+            body["temperature"] = float(payload.get("temperature"))
 
     # Anthropic 呼び出し
     try:
@@ -2904,11 +2920,14 @@ def ai_messages_proxy(payload: dict, authorization: Optional[str] = Header(None)
             },
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=120) as resp:
+        with urllib.request.urlopen(req, timeout=180) as resp:
             data = json.loads(resp.read().decode())
     except urllib.error.HTTPError as e:
         body_err = e.read().decode("utf-8", errors="ignore")
-        log.error(f"[AI proxy] Anthropic HTTP {e.code}: {body_err[:300]}")
+        log.error(f"[AI proxy] Anthropic HTTP {e.code} (model={model}, max_tokens={max_tokens}): {body_err[:500]}")
+        # 400 の場合は upstream のエラー本文も伝搬し、フロントの alert で原因が分かるようにする。
+        if e.code == 400:
+            raise HTTPException(status_code=502, detail=f"AI upstream 400: {body_err[:200]}")
         raise HTTPException(status_code=502, detail=f"AI upstream error: {e.code}")
     except Exception as e:
         log.error(f"[AI proxy] error: {type(e).__name__}: {e}")
