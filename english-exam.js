@@ -2342,18 +2342,33 @@ async function loadArchiveList() {
       document.getElementById('archBackBtn').addEventListener('click', () => loadArchiveOverview());
       return;
     }
+    // 試験名 + 大学/級ラベルを取得 (ARCH_STATE 優先、なければ data.items[0] から)
+    const headExam = ARCH_STATE.exam || (data.items[0] && data.items[0].exam);
+    const headGrade = ARCH_STATE.grade || (data.items[0] && data.items[0].grade);
+    const headMeta = headExam ? _archGetGroupMeta(headExam, headGrade) : { examLbl: '', gradeLbl: '' };
+    const headTitle = `${headMeta.examLbl}${headMeta.gradeLbl ? ' ' + headMeta.gradeLbl : ''}`.trim();
+
     let html = `<div class="archive-list-head">
-      <strong>${data.total} 問</strong> 該当 (上位 ${data.items.length} 件表示)
+      <div class="arch-list-head-title">
+        <span class="arch-list-head-exam">${escapeHtml(headTitle || '問題一覧')}</span>
+        <span class="arch-list-head-count"><strong>${data.total} 問</strong> 該当 (上位 ${data.items.length} 件)</span>
+      </div>
       <button class="ee-btn ee-btn-ghost ee-btn-mini" id="archBackBtn">← 全体ビューに戻る</button>
     </div>`;
     html += '<div class="archive-items">';
     data.items.forEach(it => {
       const yearTag = it.year ? `<span class="arch-year-tag">${it.year}年度</span>` : '';
-      const univTag = it.univ_simulated ? `<span class="arch-univ-tag">${escapeHtml(it.univ_simulated)}</span>` : '';
+      // 大学/級名: backend が univ_simulated 返してくれば優先、なければ ARCH_STATE.grade or it.grade から正規化
+      let univDisplay = it.univ_simulated || '';
+      if (!univDisplay) {
+        const meta = _archGetGroupMeta(it.exam, it.grade);
+        univDisplay = meta.gradeLbl || '';
+      }
+      const univTag = univDisplay ? `<span class="arch-univ-tag">🎓 ${escapeHtml(univDisplay)}</span>` : '';
       // part キー (r_q1 等) → 日本語ラベル「📝 Reading 大問1 (短文穴埋め)」(塾長指示 2026-04-30)
       const partLabel = _archGetPartLabel(it.exam, it.grade, it.part);
       html += `<div class="archive-item-card">
-        <div class="arch-item-meta">${yearTag}${univTag}<span class="arch-item-part" title="${escapeHtml(it.part)}">${escapeHtml(partLabel)}</span><span class="arch-item-q">${it.question_count}問</span></div>
+        <div class="arch-item-meta">${univTag}${yearTag}<span class="arch-item-part" title="${escapeHtml(it.part)}">${escapeHtml(partLabel)}</span><span class="arch-item-q">${it.question_count}問</span></div>
         <div class="arch-item-preview">${escapeHtml(it.passage_preview || '(プレビュー無し)')}…</div>
         <button class="ee-btn ee-btn-primary ee-btn-mini" data-qid="${it.id}">📝 これを解く</button>
       </div>`;
