@@ -153,6 +153,12 @@ MONITORING_TO_EMAIL = os.getenv("MONITORING_TO_EMAIL", "") or DAILY_SNS_TO_EMAIL
 MONITORING_DAILY_SUMMARY_HOUR_JST = int(os.getenv("MONITORING_DAILY_SUMMARY_HOUR_JST", "7"))
 MONITORING_ALERT_COOLDOWN_MIN = int(os.getenv("MONITORING_ALERT_COOLDOWN_MIN", "60"))  # 同じアラートは60分に1回まで
 MONITORING_QUIET_HOURS_AFTER_LAUNCH_HOURS = int(os.getenv("MONITORING_QUIET_HOURS", "48"))  # ローンチ後48hは「申込0」を異常としない
+# 24h 未ログイン生徒への自動 nudge cron (2026-04-30 追加 — 塾長指示「申込→ログイン経路を完璧に」)
+NEVER_LOGIN_NUDGE_ENABLED = os.getenv("NEVER_LOGIN_NUDGE_ENABLED", "1") == "1"
+NEVER_LOGIN_NUDGE_HOUR_JST = int(os.getenv("NEVER_LOGIN_NUDGE_HOUR_JST", "9"))  # 朝9時にnudge
+NEVER_LOGIN_NUDGE_HOURS_THRESHOLD = int(os.getenv("NEVER_LOGIN_NUDGE_HOURS", "24"))  # 申込から24h以上経過
+NEVER_LOGIN_NUDGE_MAX_PER_DAY = int(os.getenv("NEVER_LOGIN_NUDGE_MAX_PER_DAY", "30"))  # 1日上限 (Resend rate 対策)
+_NEVER_LOGIN_NUDGE_LAST_RUN: dict = {"date": ""}  # 同日内多重起動防止
 
 # 入塾金を免除するプラン
 ENROLLMENT_FEE_EXEMPT = {"student_addon"}
@@ -1310,6 +1316,79 @@ def _collect_health_snapshot() -> dict:
     snapshot["js_error_6h"] = event_count("js_error", js_err_lower_bound)
     snapshot["js_error_last_sweep"] = str(last_sweep) if last_sweep else None
 
+    # 🔥 申込→ログイン経路 監視 (2026-04-30 追加 — 塾長指示「申込→ログイン経路を完璧に」)
+    # 過去 24h 申込数のうち、何名がログイン済みか。50% 以下は赤バナー警告。
+    try:
+        c.execute(
+            """SELECT
+                 COUNT(*) AS signups,
+                 COUNT(last_login_at) AS logged_in
+               FROM students
+               WHERE created_at >= ?
+                 AND status IN ('trial', 'paid')""",
+            (h24,)
+        )
+        login_row = c.fetchone()
+        signups_24h_login = int(login_row[0]) if login_row else 0
+        logged_in_24h = int(login_row[1]) if login_row else 0
+    except Exception as e:
+        log.warning(f"[Monitor] login-rate query failed: {e}")
+        try: conn.rollback()
+        except Exception: pass
+        signups_24h_login = 0
+        logged_in_24h = 0
+    snapshot["login_signups_24h"] = signups_24h_login
+    snapshot["login_logged_in_24h"] = logged_in_24h
+    snapshot["login_never_logged_in_24h"] = max(0, signups_24h_login - logged_in_24h)
+    if signups_24h_login > 0:
+        snapshot["login_rate_24h_pct"] = round(100 * logged_in_24h / signups_24h_login, 1)
+    else:
+        snapshot["login_rate_24h_pct"] = None  # 申込ゼロなら判定不可
+
+    # 🔥 magic link メール送信成功率 (events.signup_email_status の直近 7 日)
+    # 失敗が連続 3 件以上なら CEO ダッシュ警告 + alert 発火
+    h7d = now - timedelta(days=7)
+    try:
+        c.execute(
+            "SELECT props FROM events WHERE name = 'signup_email_status' AND created_at >= ? ORDER BY created_at DESC LIMIT 200",
+            (h7d,)
+        )
+        email_rows = c.fetchall()
+        email_total = 0
+        email_sent = 0
+        recent_failures_streak = 0  # 最新から連続する失敗数
+        streak_broken = False
+        for er in email_rows:
+            props_raw = er[0] if not hasattr(er, "keys") else er["props"]
+            try:
+                props = json.loads(props_raw) if isinstance(props_raw, str) else props_raw
+            except Exception:
+                props = None
+            if not isinstance(props, dict):
+                continue
+            email_total += 1
+            ok_flag = bool(props.get("email_sent"))
+            if ok_flag:
+                email_sent += 1
+                streak_broken = True
+            else:
+                if not streak_broken:
+                    recent_failures_streak += 1
+        snapshot["email_total_7d"] = email_total
+        snapshot["email_sent_7d"] = email_sent
+        snapshot["email_success_rate_7d_pct"] = (
+            round(100 * email_sent / email_total, 1) if email_total > 0 else None
+        )
+        snapshot["email_recent_failures_streak"] = recent_failures_streak
+    except Exception as e:
+        log.warning(f"[Monitor] email-rate query failed: {e}")
+        try: conn.rollback()
+        except Exception: pass
+        snapshot["email_total_7d"] = 0
+        snapshot["email_sent_7d"] = 0
+        snapshot["email_success_rate_7d_pct"] = None
+        snapshot["email_recent_failures_streak"] = 0
+
     # サービスローンチからの経過時間
     snapshot["hours_since_launch"] = max(0, int((now.timestamp() - SERVICE_LAUNCH_TS) / 3600))
 
@@ -1395,6 +1474,34 @@ def _evaluate_alerts(snapshot: dict) -> list:
         # paid 顧客がいるなら invoice.paid が月次で来るはず。来ないのは Webhook 不通の兆候
         # (ただし新規 paid が直近24h 0件なら通常)
         pass  # 今は判定保留
+    # 7. 🔥 申込→ログイン経路 監視 (2026-04-30 追加)
+    # 過去24h 申込 3 名以上で、ログイン率 50% 未満なら critical
+    sg = snapshot.get("login_signups_24h", 0)
+    li = snapshot.get("login_logged_in_24h", 0)
+    if sg >= 3:
+        rate = li / sg
+        if rate < 0.5:
+            alerts.append({
+                "key": "login_rate_low_24h", "severity": "critical",
+                "title": f"🚨 24h 申込ログイン率が低い ({int(rate*100)}%)",
+                "detail": (
+                    f"過去24h 申込 {sg} 名のうち、ログイン済 {li} 名のみ "
+                    f"(未ログイン {sg - li} 名)。magic link メール未着 / 認証バグの兆候。"
+                    " /api/admin/students/never-logged-in?hours=24 で対象確認 + send-login-link で再送信を検討。"
+                ),
+            })
+    # 8. 🔥 magic link メール送信失敗の連続検知 (2026-04-30 追加)
+    streak = snapshot.get("email_recent_failures_streak", 0)
+    if streak >= 3:
+        alerts.append({
+            "key": "email_failure_streak", "severity": "critical",
+            "title": f"🚨 magic link メール送信失敗が連続 {streak} 件",
+            "detail": (
+                f"events.signup_email_status の直近 {streak} 件が連続で email_sent=false。"
+                " Resend API 障害 / API キー失効 / ドメイン認証問題の可能性。"
+                f" 直近7日 送信成功率 {snapshot.get('email_success_rate_7d_pct')}%。"
+            ),
+        })
     return alerts
 
 
@@ -1529,6 +1636,92 @@ def _check_daily_summary_sent_today_jst() -> bool:
     return n > 0
 
 
+def _maybe_run_never_login_nudge(now_jst: datetime) -> dict:
+    """24h 未ログイン生徒に magic link を再送信 (1日1回のみ)。
+    NEVER_LOGIN_NUDGE_HOUR_JST 時台で、まだ今日実行していなければ走る。
+    塾長指示「申込→ログイン経路を完璧に」(2026-04-29) 対応。
+    """
+    if not NEVER_LOGIN_NUDGE_ENABLED:
+        return {"ran": False, "reason": "disabled"}
+    if now_jst.hour != NEVER_LOGIN_NUDGE_HOUR_JST:
+        return {"ran": False, "reason": "wrong_hour"}
+    today_key = now_jst.strftime("%Y-%m-%d")
+    if _NEVER_LOGIN_NUDGE_LAST_RUN.get("date") == today_key:
+        return {"ran": False, "reason": "already_ran_today"}
+
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=NEVER_LOGIN_NUDGE_HOURS_THRESHOLD)
+    conn = db()
+    c = conn.cursor()
+    targets: list = []
+    try:
+        try:
+            c.execute(
+                """SELECT id, name, email
+                   FROM students
+                   WHERE last_login_at IS NULL
+                     AND status IN ('trial', 'paid')
+                     AND email IS NOT NULL AND email != ''
+                     AND created_at <= ?
+                   ORDER BY created_at ASC
+                   LIMIT ?""",
+                (cutoff, NEVER_LOGIN_NUDGE_MAX_PER_DAY)
+            )
+            targets = [dict(r) for r in c.fetchall()]
+        except Exception as e:
+            try: conn.rollback()
+            except Exception: pass
+            log.warning(f"[Monitor:Nudge] query failed: {e}")
+    finally:
+        conn.close()
+
+    # 今日実行したフラグは「対象を取得できた時点で」立てる (空でも今日はもう走らない)
+    _NEVER_LOGIN_NUDGE_LAST_RUN["date"] = today_key
+
+    if not targets:
+        log.info("[Monitor:Nudge] no targets — skip")
+        return {"ran": True, "matched": 0, "sent": 0}
+
+    sent = 0
+    failed = []
+    import time as _t
+    for idx, s in enumerate(targets):
+        if idx > 0:
+            _t.sleep(0.6)  # Resend rate (2 req/s) 対策
+        try:
+            session_token = _sign_session_token(s["id"])
+            magic_url = f"{BASE_URL}/auth.html?t={session_token}"
+            otp_code = _create_otp(s["id"])
+            result = _send_magic_link_email(
+                s["email"], s.get("name") or "", magic_url,
+                otp_code=otp_code, is_welcome=True,
+            )
+            if isinstance(result, dict) and result.get("sent"):
+                sent += 1
+            else:
+                failed.append({"id": s["id"], "error": str((result or {}).get("error", "send_failed"))[:120]})
+        except Exception as e:
+            failed.append({"id": s["id"], "error": f"{type(e).__name__}: {e}"[:120]})
+            log.error(f"[Monitor:Nudge] send error for student {s['id']}: {e}")
+
+    log.info(f"[Monitor:Nudge] matched={len(targets)} sent={sent} failed={len(failed)}")
+    # events に結果を記録
+    try:
+        conn2 = db()
+        c2 = conn2.cursor()
+        c2.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            ("never_login_nudge", json.dumps({
+                "matched": len(targets), "sent": sent, "failed": len(failed),
+                "failed_details": failed[:10],
+            }, ensure_ascii=False)[:4000], "monitor_scheduler")
+        )
+        conn2.commit()
+        conn2.close()
+    except Exception:
+        pass
+    return {"ran": True, "matched": len(targets), "sent": sent, "failed": len(failed)}
+
+
 def _send_daily_summary_if_due() -> dict:
     """毎朝 MONITORING_DAILY_SUMMARY_HOUR_JST 時に1回だけ送信"""
     if _check_daily_summary_sent_today_jst():
@@ -1601,6 +1794,12 @@ async def _monitor_scheduler():
                         log.info("[Monitor] Daily summary sent")
                 except Exception as e:
                     log.error(f"[Monitor] daily summary error: {e}", exc_info=True)
+            # 2-B. 🔥 24h 未ログイン生徒への自動 magic link 再送信 (Phase B nudge)
+            # 朝 9 時 (JST) に1日1回実行。NEVER_LOGIN_NUDGE_HOUR_JST で変更可能。
+            try:
+                _maybe_run_never_login_nudge(now_jst)
+            except Exception as e:
+                log.error(f"[Monitor:Nudge] error: {e}", exc_info=True)
             # 3. 次のループまで sleep
             await asyncio.sleep(MONITORING_INTERVAL_MIN * 60)
         except asyncio.CancelledError:
@@ -1734,15 +1933,60 @@ async def _run_synthetic_checkout_test() -> dict:
     r4 = await loop.run_in_executor(None, _http_post_json, backend_base + "/api/trial/signup", sentinel_payload)
     details["signup_status"] = r4["status"]
     sentinel_student_id = None
+    signup_email_sent = None
     if r4["status"] != 200:
         failures.append(f"/api/trial/signup status={r4['status']} body={r4.get('body','')[:200]}")
     else:
         try:
             j = json.loads(r4["body"])
             sentinel_student_id = j.get("student_id")
+            signup_email_sent = j.get("email_sent")
             details["signup_student_id"] = sentinel_student_id
+            details["signup_email_sent"] = signup_email_sent
         except Exception as e:
             failures.append(f"/api/trial/signup non-JSON body: {e}")
+
+    # 4b. 🔥 致命傷検知: signup レスポンスの email_sent=True を必須化
+    # (2026-04-30 追加: 8名全員ログイン不能の二度目を絶対阻止)
+    # email_sent が False なら Resend 障害 or token 切れ → Auto-Rollback 対象。
+    # signup 自体は成功しても、メールが届かなければ顧客は dashboard にたどり着けない。
+    if r4["status"] == 200 and signup_email_sent is False:
+        failures.append("/api/trial/signup email_sent=false (magic link メール未送信 = 顧客ログイン不能)")
+    elif r4["status"] == 200 and signup_email_sent is None:
+        # 旧 deploy で email_sent フィールド自体が無い場合は警告のみ (後方互換)
+        details["signup_email_sent_warn"] = "field missing — old deploy?"
+
+    # 4c. events.signup_email_status の DB 記録を確認 (申込後 5 秒以内に必ず記録されるべき)
+    # signup 成功でも events に記録されていない = 監視 endpoint が壊れている兆候
+    if sentinel_student_id:
+        try:
+            await asyncio.sleep(2.0)  # event 記録の遅延を吸収 (commit ラグ + Postgres 反映)
+            conn = db()
+            c = conn.cursor()
+            session_key = f"student:{sentinel_student_id}"
+            c.execute(
+                "SELECT props FROM events WHERE name = 'signup_email_status' AND session_id = ? ORDER BY created_at DESC LIMIT 1",
+                (session_key,)
+            )
+            row = c.fetchone()
+            conn.close()
+            if not row:
+                failures.append(f"events.signup_email_status not recorded within 2s for student_id={sentinel_student_id}")
+            else:
+                try:
+                    raw = row["props"] if hasattr(row, "__getitem__") else None
+                    props = json.loads(raw) if isinstance(raw, str) else raw
+                    if isinstance(props, dict):
+                        details["event_email_sent"] = props.get("email_sent")
+                        if props.get("email_sent") is False:
+                            err_msg = (props.get("error") or "")[:120]
+                            # signup レスポンス側で既に検出済みでなければ追加
+                            if not any("email_sent=false" in f for f in failures):
+                                failures.append(f"events.signup_email_status email_sent=false (error={err_msg})")
+                except Exception:
+                    pass
+        except Exception as e:
+            log.warning(f"[Monitor:Synth] events.signup_email_status check failed: {e}")
 
     # 5. cleanup: sentinel student を DB から消す
     if sentinel_student_id:
@@ -2108,6 +2352,167 @@ def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, otp
         return {"sent": False, "error": str(e)[:200]}
 
 
+# キャリアメール (HTML が崩れる / フィルタが厳しい): 警告ログのみ
+_CARRIER_DOMAINS = (
+    "ezweb.ne.jp", "i.softbank.jp", "softbank.ne.jp",
+    "docomo.ne.jp", "au.com", "ymobile.ne.jp",
+    "ido.ne.jp", "vodafone.ne.jp", "ezweb.jp", "pdx.ne.jp",
+)
+
+
+def _is_carrier_email(email: str) -> bool:
+    e = (email or "").lower().strip()
+    return any(e.endswith("@" + d) for d in _CARRIER_DOMAINS)
+
+
+def _send_magic_link_with_retry(to_email: str, student_name: str, magic_url: str,
+                                  otp_code: str = "", is_welcome: bool = False,
+                                  max_attempts: int = 3) -> dict:
+    """_send_magic_link_email を 429/一時エラー対応で最大 max_attempts 回リトライ。
+    指数バックオフ (1s → 2s → 4s)。bounce/blocked 系のレスポンスは即諦める。
+    キャリアメール宛は注意ログを出す。"""
+    import time as _t
+    if _is_carrier_email(to_email):
+        log.warning(f"[MagicLink] Carrier email destination: {to_email} (HTML may render poorly / spam filters strict)")
+
+    last_error: Optional[str] = None
+    for attempt in range(max_attempts):
+        try:
+            result = _send_magic_link_email(
+                to_email, student_name, magic_url,
+                otp_code=otp_code, is_welcome=is_welcome,
+            )
+            if isinstance(result, dict) and result.get("sent"):
+                return result
+            last_error = (result or {}).get("error", "send_failed")
+            err_str = str(last_error).lower()
+            # bounce / blocked / invalid: リトライ無意味
+            if any(k in err_str for k in ("bounce", "blocked", "invalid", "not_found", "validation_error", "400", "404", "422")):
+                log.warning(f"[MagicLink] Permanent failure for {to_email} (no retry): {last_error}")
+                return {"sent": False, "error": last_error, "permanent": True}
+            # 429 / 5xx / timeout 系のみリトライ
+            if attempt < max_attempts - 1 and any(k in err_str for k in ("429", "too many", "rate", "timeout", "503", "502", "500")):
+                _t.sleep(2 ** attempt)  # 1s → 2s → 4s
+                continue
+            break
+        except Exception as e:
+            last_error = f"{type(e).__name__}: {e}"
+            log.error(f"[MagicLink] retry attempt {attempt+1} exception for {to_email}: {last_error}")
+            if attempt < max_attempts - 1:
+                _t.sleep(2 ** attempt)
+    return {"sent": False, "error": last_error or "unknown", "retried": True}
+
+
+def _invalidate_active_otps(student_id: int) -> None:
+    """指定生徒の有効な OTP を全て無効化。重複申込・magic-link 再送時に旧コード混乱防止。
+    失敗してもログのみ (致命ではない)。"""
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute(
+            "UPDATE otp_codes SET used_at = CURRENT_TIMESTAMP "
+            "WHERE student_id = ? AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP",
+            (student_id,)
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        log.warning(f"[OTP] failed to invalidate active OTPs for student {student_id}: {e}")
+
+
+def _record_critical_event(name: str, props: dict) -> None:
+    """致命系の event を記録 (notification_all_channels_failed など)。
+    DB 不調でも例外で死なない (best-effort)。"""
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            (name, json.dumps(props, ensure_ascii=False)[:4000], "notification-fallback")
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        log.warning(f"[CriticalEvent] failed to record {name}: {e}")
+
+
+def _send_login_link_via_line(student_id: int, magic_url: str, otp_code: str) -> dict:
+    """LINE 経由で magic link を送信。LINE_TEMPLATES['magic_link_login'] を使う。
+    line_user_id が無い / LINE 未設定なら {sent: False, reason: ...} を返す (例外は投げない)。
+    成功時は notifications テーブルに記録される (_do_line_push の責務)。"""
+    if not LINE_CHANNEL_ACCESS_TOKEN:
+        return {"sent": False, "reason": "line_not_configured"}
+    try:
+        result = _do_line_push(student_id, "magic_link_login", {
+            "magic_url": magic_url,
+            "otp_code": otp_code,
+        })
+        if isinstance(result, dict) and result.get("ok"):
+            return {"sent": True}
+        return {"sent": False, "reason": (result or {}).get("message") or "line_push_failed"}
+    except HTTPException as he:
+        # _do_line_push は line_user_id 無しで 404 を投げる
+        if he.status_code == 404:
+            return {"sent": False, "reason": "no_line_user_id"}
+        return {"sent": False, "reason": f"http_{he.status_code}"}
+    except Exception as e:
+        log.warning(f"[LINE-Fallback] student {student_id} push failed: {type(e).__name__}: {e}")
+        return {"sent": False, "reason": f"{type(e).__name__}: {str(e)[:120]}"}
+
+
+def _send_login_link_multi(student_id: int, email: str, name: str, magic_url: str,
+                            otp_code: str, is_welcome: bool = False,
+                            force_line: bool = False) -> dict:
+    """email + LINE のマルチチャネル fallback で magic link を送信。
+    - email を試行
+    - 失敗 OR キャリアメール (ezweb/docomo/au.com 等) OR force_line=True なら LINE も併用
+    - 両方失敗時は events に critical 記録 (notification_all_channels_failed)
+    返り値: {email_sent, line_sent, both_failed, email_error, line_reason, is_carrier}
+    """
+    out = {"email_sent": False, "line_sent": False, "both_failed": False,
+           "email_error": None, "line_reason": None,
+           "is_carrier": _is_carrier_email(email or "")}
+
+    # 1) email 送信 (既存 retry helper を活用)
+    if email:
+        try:
+            email_result = _send_magic_link_with_retry(
+                email, name or "", magic_url,
+                otp_code=otp_code, is_welcome=is_welcome,
+            )
+            out["email_sent"] = bool(email_result.get("sent"))
+            if not out["email_sent"]:
+                out["email_error"] = email_result.get("error") or "send_failed"
+        except Exception as e:
+            out["email_error"] = f"{type(e).__name__}: {str(e)[:120]}"
+            log.error(f"[Notify-Multi] email exception for student {student_id}: {out['email_error']}")
+    else:
+        out["email_error"] = "no_email"
+
+    # 2) LINE 併用判定: 失敗 OR キャリアメール OR force_line
+    should_try_line = force_line or out["is_carrier"] or (not out["email_sent"])
+    if should_try_line:
+        line_result = _send_login_link_via_line(student_id, magic_url, otp_code)
+        out["line_sent"] = bool(line_result.get("sent"))
+        if not out["line_sent"]:
+            out["line_reason"] = line_result.get("reason")
+
+    # 3) 両方失敗 → critical event
+    if not out["email_sent"] and not out["line_sent"]:
+        out["both_failed"] = True
+        _record_critical_event("notification_all_channels_failed", {
+            "student_id": student_id,
+            "email": email,
+            "is_carrier": out["is_carrier"],
+            "email_error": out["email_error"],
+            "line_reason": out["line_reason"],
+            "ts": datetime.now(timezone.utc).isoformat(),
+        })
+        log.error(f"[Notify-Multi] BOTH CHANNELS FAILED student={student_id} email={email} "
+                  f"carrier={out['is_carrier']} email_err={out['email_error']} line={out['line_reason']}")
+    return out
+
+
 def _get_current_student(authorization: Optional[str], allow_canceled: bool = False) -> Optional[dict]:
     """Authorization: Bearer <token> ヘッダからセッション検証し生徒レコードを返す。
 
@@ -2182,32 +2587,30 @@ class MagicLinkRequest(BaseModel):
 @app.post("/api/auth/magic-link")
 def request_magic_link(payload: MagicLinkRequest, request: Request):
     """メールアドレスから生徒を検索し、ログインURLをメール送信する。
-    存在しないメールでも 200 を返す（アカウント列挙攻撃対策）。"""
+    存在しないメールでも 200 を返す（アカウント列挙攻撃対策）。
+    再送時は古い OTP を無効化して新しいコードのみ有効にする。"""
     email_lower = (payload.email or "").lower().strip()
     if not email_lower:
         raise HTTPException(status_code=400, detail="Email required")
-    # レート制限: 同一IPから1分間に5回まで
+    # レート制限: 同一IPから1分間に5回まで (現状値、ブルートフォース抑制と UX のバランス)
     _check_rate_limit_ip(request, bucket="magic_link", limit=5, window=60)
 
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT id, name, email, status FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
+    c.execute("SELECT id, name, email, status, trial_end FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
     row = c.fetchone()
     conn.close()
 
     # 体験期間中の trial ユーザーも送信対象（trial_end 未経過のみ）
     is_sendable = False
+    is_trial_expired = False
     if row:
         if row["status"] == "paid":
             is_sendable = True
         elif row["status"] == "trial":
-            # trial_end チェック
-            c = db().cursor()
-            c.execute("SELECT trial_end FROM students WHERE id=?", (row["id"],))
-            te_row = c.fetchone()
-            if te_row and te_row["trial_end"]:
+            te = row["trial_end"]
+            if te:
                 try:
-                    te = te_row["trial_end"]
                     if isinstance(te, str):
                         te_dt = datetime.fromisoformat(te.replace("Z", "+00:00"))
                     else:
@@ -2216,16 +2619,28 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
                         te_dt = te_dt.replace(tzinfo=timezone.utc)
                     if te_dt > datetime.now(timezone.utc):
                         is_sendable = True
+                    else:
+                        is_trial_expired = True
                 except Exception:
                     pass
 
     if is_sendable:
+        # 古い OTP を全て無効化してから新規発行 (再送 UX: 新コードのみ有効)
+        _invalidate_active_otps(row["id"])
         token = _sign_session_token(row["id"])
         magic_url = f"{BASE_URL}/auth.html?t={token}"
         otp_code = _create_otp(row["id"])
-        _send_magic_link_email(row["email"], row["name"] or "", magic_url, otp_code=otp_code, is_welcome=False)
+        _send_magic_link_with_retry(row["email"], row["name"] or "", magic_url, otp_code=otp_code, is_welcome=False)
+    elif is_trial_expired:
+        # 期間切れは案内専用文言を返す (列挙対策上は status code は 200 のままで OK)
+        log.info(f"Magic link requested but trial expired: {email_lower}")
+        return {
+            "ok": True,
+            "trial_expired": True,
+            "message": "体験期間が終了しています。継続をご希望の方はLPから本登録をお願いします。",
+        }
     else:
-        # 存在しない or 期限切れでも同じレスポンスを返す（列挙対策）
+        # 存在しない or 状態不明: 同じレスポンスを返す（列挙対策）
         log.info(f"Magic link requested for unknown/inactive email: {email_lower}")
 
     return {"ok": True, "message": "該当するアカウントがあればメールをお送りしました。届かない場合は迷惑メールフォルダもご確認ください。"}
@@ -2248,7 +2663,11 @@ def verify_code(payload: VerifyCodeRequest, request: Request):
     """
     import time
     email_lower = (payload.email or "").lower().strip()
-    code = (payload.code or "").strip()
+    code_raw = (payload.code or "")
+    # 全角数字 → 半角化、空白・ハイフン・タブ等を除去 (UX: コピペ事故救済)
+    _zen_to_han = str.maketrans("0123456789", "0123456789")
+    code = code_raw.translate(_zen_to_han)
+    code = "".join(ch for ch in code if ch.isdigit())
     if not email_lower or not code or len(code) != 6 or not code.isdigit():
         raise HTTPException(status_code=400, detail="有効なメールアドレスと6桁のコードを入力してください")
 
@@ -5039,6 +5458,98 @@ def public_textbook_search(
     return {"ok": True, "count": len(out), "results": out}
 
 
+@app.get("/api/admin/students/never-logged-in")
+def admin_students_never_logged_in(
+    hours: int = 24,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """申込から N 時間 (default 24h) 経過してもログインしていない生徒一覧。
+    塾長指示「申込→ログイン経路を完璧に」(2026-04-29) のための監視 endpoint。
+    自動 nudge cron / CEO ダッシュ赤バナーから利用される。
+    認証: admin Bearer or x-cron-secret"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    # 1〜24*30 の範囲に clamp
+    hours = max(1, min(int(hours or 24), 24 * 30))
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+
+    conn = db()
+    c = conn.cursor()
+    students = []
+    try:
+        try:
+            c.execute(
+                """SELECT id, name, email, created_at, last_login_at, status, plan
+                   FROM students
+                   WHERE last_login_at IS NULL
+                     AND status IN ('trial', 'paid')
+                     AND email IS NOT NULL AND email != ''
+                     AND created_at <= ?
+                   ORDER BY created_at ASC""",
+                (cutoff,)
+            )
+        except Exception:
+            # last_login_at カラム未マイグレーション環境 (普通はあり得ない)
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            c.execute(
+                """SELECT id, name, email, created_at, status, plan
+                   FROM students
+                   WHERE status IN ('trial', 'paid')
+                     AND email IS NOT NULL AND email != ''
+                     AND created_at <= ?
+                   ORDER BY created_at ASC""",
+                (cutoff,)
+            )
+        rows = c.fetchall()
+        now = datetime.now(timezone.utc)
+        for r in rows:
+            d = dict(r)
+            signup_at = d.get("created_at")
+            hours_since = None
+            if signup_at:
+                try:
+                    if isinstance(signup_at, str):
+                        # ISO 文字列 → datetime
+                        sa = datetime.fromisoformat(signup_at.replace("Z", "+00:00"))
+                    else:
+                        sa = signup_at
+                    if hasattr(sa, "tzinfo") and sa.tzinfo is None:
+                        sa = sa.replace(tzinfo=timezone.utc)
+                    hours_since = round((now - sa).total_seconds() / 3600, 1)
+                except Exception:
+                    hours_since = None
+            students.append({
+                "id": d.get("id"),
+                "name": d.get("name"),
+                "email": d.get("email"),
+                "signup_at": str(signup_at) if signup_at else None,
+                "hours_since": hours_since,
+                "status": d.get("status"),
+                "plan": d.get("plan"),
+            })
+    finally:
+        conn.close()
+
+    return {
+        "ok": True,
+        "hours": hours,
+        "count": len(students),
+        "students": students,
+    }
+
+
 @app.post("/api/admin/students/backfill-last-login")
 def admin_students_backfill_last_login(payload: dict = None, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """events テーブルから last_login_at を遡及推定して埋める。
@@ -6382,6 +6893,28 @@ async def admin_synthetic_checkout_now(authorization: Optional[str] = Header(Non
     return result
 
 
+@app.post("/api/admin/monitor/never-login-nudge-now")
+def admin_never_login_nudge_now(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """24h 未ログイン生徒への magic link 自動再送信を今すぐ実行 (手動トリガー)。
+    cron 自動実行を待たずに CEO ダッシュから 1 クリックで再送可能。
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    # 同日内多重起動ブロックは bypass (手動なので)
+    _NEVER_LOGIN_NUDGE_LAST_RUN["date"] = ""
+    JST = timezone(timedelta(hours=9))
+    # 時刻ガードも bypass: 現在時刻を NEVER_LOGIN_NUDGE_HOUR_JST にすり替えて呼ぶ
+    fake = datetime.now(JST).replace(hour=NEVER_LOGIN_NUDGE_HOUR_JST)
+    return _maybe_run_never_login_nudge(fake)
+
+
 @app.post("/api/admin/monitor/daily-summary-now")
 def admin_monitor_daily_summary_now(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """デイリーサマリを今すぐ送信 (手動)。今日既に送信済みでも force=1 で再送可能。"""
@@ -6477,31 +7010,58 @@ def usage_me(authorization: Optional[str] = Header(None)):
 
 @app.post("/api/trial/signup")
 def trial_signup(payload: TrialSignup):
+    # 入力検証: TrialSignup の field_validator (フルネーム必須・XSS 対策) は通過済み。
+    # メール小文字化 + grade/goal/plan の長さ制限 (XSS 対策の二重防御)
+    email_norm = (payload.email or "").lower().strip()
+    if not email_norm:
+        raise HTTPException(status_code=400, detail="Email required")
+    grade = (payload.grade or "")[:50]
+    goal = (payload.goal or "")[:500]
+    plan = (payload.plan or "hybrid")[:50]
+
     now = datetime.now(timezone.utc)
     trial_end = now + timedelta(days=FOUNDER_TRIAL_DAYS)  # 7日間の完全無料体験
     conn = db()
     c = conn.cursor()
+    is_existing = False
     try:
         c.execute(
             """INSERT INTO students (name, email, grade, goal, plan, status, trial_start, trial_end)
                VALUES (?, ?, ?, ?, ?, 'trial', ?, ?)
                RETURNING id""",
-            (payload.name, payload.email, payload.grade, payload.goal,
-             payload.plan or "hybrid", now.isoformat(), trial_end.isoformat())
+            (payload.name, email_norm, grade, goal,
+             plan, now.isoformat(), trial_end.isoformat())
         )
         returned = c.fetchone()
         student_id = returned["id"] if returned else None
         conn.commit()
     except IntegrityError:
+        # 既存メール: 同一 email の student_id を返す。
+        # paid ユーザーは plan/status を変更しない (誤って ¥14,500 → trial 降格させない)。
+        # trial 期限切れ/canceled は trial を再延長 (リカバリ申込として扱う)。
         conn.rollback()
-        c.execute("SELECT id FROM students WHERE email = ?", (payload.email,))
+        is_existing = True
+        c.execute("SELECT id, status, trial_end FROM students WHERE LOWER(email) = ? LIMIT 1", (email_norm,))
         row = c.fetchone()
         student_id = row["id"] if row else None
         if not student_id:
+            conn.close()
             raise HTTPException(status_code=400, detail="Email conflict")
+        try:
+            existing_status = row["status"] if row else None
+            if existing_status in ("trial", "canceled", "expired", None, ""):
+                c.execute(
+                    """UPDATE students SET status='trial', trial_start=?, trial_end=?, updated_at=CURRENT_TIMESTAMP
+                       WHERE id=?""",
+                    (now.isoformat(), trial_end.isoformat(), student_id)
+                )
+                conn.commit()
+                log.info(f"[Signup] Re-activated trial for existing student {student_id} ({email_norm}) prev_status={existing_status}")
+        except Exception as _e:
+            log.warning(f"[Signup] re-activation update failed for student {student_id}: {_e}")
     conn.close()
 
-    log.info(f"Trial signup: {payload.email} -> student_id={student_id}")
+    log.info(f"Trial signup: {email_norm} -> student_id={student_id} existing={is_existing}")
 
     # 🔥 致命傷修正 (2026-04-29): 申込直後に magic link 招待メールを送信
     # これが無いと顧客はログイン経路を知らず、ダッシュ未利用 = 価値ゼロ。
@@ -6510,11 +7070,14 @@ def trial_signup(payload: TrialSignup):
     email_error = None
     if student_id:
         try:
+            # 重複申込時は古い OTP を無効化 (旧コード混乱防止)
+            if is_existing:
+                _invalidate_active_otps(student_id)
             session_token = _sign_session_token(student_id)
             magic_url = f"{BASE_URL}/auth.html?t={session_token}"
             otp_code = _create_otp(student_id)
-            result = _send_magic_link_email(
-                payload.email,
+            result = _send_magic_link_with_retry(
+                email_norm,
                 payload.name or "",
                 magic_url,
                 otp_code=otp_code,
@@ -6523,10 +7086,10 @@ def trial_signup(payload: TrialSignup):
             email_sent = bool(result.get("sent"))
             if not email_sent:
                 email_error = (result or {}).get("error", "send_failed")
-                log.error(f"[Signup] Welcome email failed for student {student_id} ({payload.email}): {email_error}")
+                log.error(f"[Signup] Welcome email failed for student {student_id} ({email_norm}): {email_error}")
         except Exception as e:
             email_error = f"{type(e).__name__}: {e}"
-            log.error(f"[Signup] Welcome email exception for student {student_id} ({payload.email}): {email_error}")
+            log.error(f"[Signup] Welcome email exception for student {student_id} ({email_norm}): {email_error}")
 
     # 監視: events に signup_email_status を記録 (CEO ダッシュ監視・自動 nudge 用)
     try:
@@ -7002,6 +7565,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                     log.error(f"Failed to mark enrollment_fee_waived: {type(e).__name__}: {e}")
 
         # Welcome email (どちらのタイプも共通: ログインコード+リンク送信)
+        # 429 / 一時エラー対応: _send_magic_link_with_retry を使用 (trial_signup と DRY 統一)
         try:
             if student_id and student_id != "":
                 c.execute("SELECT id, name, email FROM students WHERE id=?", (student_id,))
@@ -7011,10 +7575,33 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                 c.execute("SELECT id, name, email FROM students WHERE 1=0")
             s_row = c.fetchone()
             if s_row and s_row["email"]:
+                # 既存 OTP を無効化してから新発行 (重複コード混乱防止)
+                _invalidate_active_otps(s_row["id"])
                 _token = _sign_session_token(s_row["id"])
                 _magic_url = f"{BASE_URL}/auth.html?t={_token}"
                 _otp_code = _create_otp(s_row["id"])
-                _send_magic_link_email(s_row["email"], s_row["name"] or "", _magic_url, otp_code=_otp_code, is_welcome=True)
+                _wresult = _send_magic_link_with_retry(s_row["email"], s_row["name"] or "", _magic_url, otp_code=_otp_code, is_welcome=True)
+                # 監視: signup_email_status と統一フォーマットで記録
+                try:
+                    _conn_e = db()
+                    _cc_e = _conn_e.cursor()
+                    _cc_e.execute(
+                        "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                        (
+                            "welcome_email_status",
+                            json.dumps({
+                                "student_id": s_row["id"],
+                                "email_sent": bool(_wresult.get("sent")),
+                                "error": (_wresult.get("error") or "")[:200] if not _wresult.get("sent") else None,
+                                "source": "stripe_webhook",
+                            }, ensure_ascii=False),
+                            f"student:{s_row['id']}",
+                        ),
+                    )
+                    _conn_e.commit()
+                    _conn_e.close()
+                except Exception as _ee:
+                    log.warning(f"[Webhook] welcome_email_status event failed: {_ee}")
         except Exception as e:
             log.error(f"Failed to send welcome magic link: {type(e).__name__}: {e}")
 
@@ -7079,6 +7666,17 @@ LINE_TEMPLATES = {
                 f"💬 AI質問 {p.get('questions', 0)}回\n\n"
                 f"継続するにはこちら👇\n"
                 f"{BASE_URL}/checkout.html?email={p.get('email', '')}"
+    },
+    # メールが届かない (キャリアメール / 迷惑振り分け) 生徒向け fallback
+    "magic_link_login": lambda p: {
+        "type": "text",
+        "text": f"🎓 AI学習コーチ塾 ログイン\n\n"
+                f"{p.get('name', '生徒')}さん、ログインリンクをお送りします。\n\n"
+                f"🔢 ログインコード（10分間有効）: {p.get('otp_code', '')}\n\n"
+                f"または下記リンクから直接ログイン（30日間有効）👇\n"
+                f"{p.get('magic_url', '')}\n\n"
+                f"※ メールが届かない場合の代替送信です。\n"
+                f"心当たりがない場合は無視してください。"
     },
 }
 

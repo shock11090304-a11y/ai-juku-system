@@ -512,6 +512,21 @@
           <span>✅ 本契約 <strong id="monPaid24">0</strong></span>
         </div>
       </div>
+      <!-- 🔥 申込→ログイン経路 監視 (2026-04-30 追加 — 塾長指示「申込→ログイン経路を完璧に」) -->
+      <div id="monLoginRateBanner" style="margin-bottom:1rem;padding:0.85rem 1rem;border-radius:10px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;">
+        <div>
+          <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.2rem;">🔐 24h 申込ログイン率</div>
+          <div id="monLoginRateText" style="font-size:0.92rem;color:#e4e4e7;font-weight:700;">--</div>
+        </div>
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+          <button id="runNeverLoginNudgeBtn" type="button" title="24h 未ログイン生徒へ magic link を一括再送信" style="background:rgba(245,158,11,0.18);color:#fbbf24;border:1px solid rgba(245,158,11,0.4);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.72rem;font-weight:700;cursor:pointer;">📧 未ログイン生徒に再送信</button>
+        </div>
+      </div>
+      <div id="monEmailRateBanner" style="margin-bottom:1rem;padding:0.65rem 1rem;border-radius:8px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.06);font-size:0.82rem;color:#cbd5e1;">
+        <span style="color:#94a3b8;">✉️ magic link 送信成功率 (直近 7d): </span>
+        <strong id="monEmailRateText">--</strong>
+      </div>
+
       <!-- アラート一覧 -->
       <div id="monAlertsBox"></div>
 
@@ -1569,6 +1584,66 @@
         document.getElementById('monCheckoutDone').textContent = fmtNum(s.checkout_completed_24h);
         document.getElementById('monSignup24').textContent = fmtNum(s.signups_24h);
         document.getElementById('monPaid24').textContent = fmtNum(s.paid_24h);
+        // 🔥 24h 申込ログイン率 (2026-04-30 追加)
+        const loginBanner = document.getElementById('monLoginRateBanner');
+        const loginText = document.getElementById('monLoginRateText');
+        const sg24 = s.login_signups_24h || 0;
+        const li24 = s.login_logged_in_24h || 0;
+        const nl24 = s.login_never_logged_in_24h || 0;
+        const rate24 = s.login_rate_24h_pct;
+        if (sg24 === 0) {
+          loginText.innerHTML = `過去 24h 申込: <strong>0 名</strong> <span style="color:#71717a;">(判定対象なし)</span>`;
+          loginBanner.style.background = 'rgba(0,0,0,0.25)';
+          loginBanner.style.borderColor = 'rgba(255,255,255,0.08)';
+        } else {
+          let icon = '✅';
+          let bg = 'rgba(52,211,153,0.10)';
+          let bd = 'rgba(52,211,153,0.35)';
+          let color = '#34d399';
+          // 50% 未満 = 赤、80% 未満 = 黄
+          if (rate24 !== null && rate24 < 50) {
+            icon = '🚨'; bg = 'rgba(248,113,113,0.14)'; bd = 'rgba(248,113,113,0.5)'; color = '#fca5a5';
+          } else if (rate24 !== null && rate24 < 80) {
+            icon = '⚠️'; bg = 'rgba(251,191,36,0.12)'; bd = 'rgba(251,191,36,0.45)'; color = '#fbbf24';
+          }
+          loginText.innerHTML = `${icon} 過去 24h 申込 <strong>${sg24} 名</strong>・ログイン済 <strong>${li24} 名</strong>・未ログイン <strong style="color:${color};">${nl24} 名</strong> <span style="color:${color};font-weight:900;">(${rate24 !== null ? rate24 + '%' : '--'})</span>`;
+          loginBanner.style.background = bg;
+          loginBanner.style.borderColor = bd;
+        }
+        // 🔥 magic link メール送信成功率 (直近7日)
+        const emailBanner = document.getElementById('monEmailRateBanner');
+        const emailText = document.getElementById('monEmailRateText');
+        const eTotal = s.email_total_7d || 0;
+        const eSent = s.email_sent_7d || 0;
+        const eRate = s.email_success_rate_7d_pct;
+        const eStreak = s.email_recent_failures_streak || 0;
+        if (eTotal === 0) {
+          emailText.innerHTML = `<span style="color:#71717a;">記録なし (申込が無いか、新 deploy 直後)</span>`;
+          emailBanner.style.background = 'rgba(0,0,0,0.25)';
+          emailBanner.style.borderColor = 'rgba(255,255,255,0.06)';
+        } else {
+          let color = '#34d399';
+          let prefix = '✅';
+          if (eStreak >= 3) {
+            color = '#fca5a5'; prefix = '🚨';
+            emailBanner.style.background = 'rgba(248,113,113,0.14)';
+            emailBanner.style.borderColor = 'rgba(248,113,113,0.5)';
+          } else if (eRate !== null && eRate < 90) {
+            color = '#fbbf24'; prefix = '⚠️';
+            emailBanner.style.background = 'rgba(251,191,36,0.12)';
+            emailBanner.style.borderColor = 'rgba(251,191,36,0.45)';
+          } else {
+            emailBanner.style.background = 'rgba(0,0,0,0.25)';
+            emailBanner.style.borderColor = 'rgba(255,255,255,0.06)';
+          }
+          let streakSuffix = '';
+          if (eStreak >= 3) {
+            streakSuffix = ` <span style="color:#fca5a5;font-weight:900;">— 連続失敗 ${eStreak} 件</span>`;
+          } else if (eStreak > 0) {
+            streakSuffix = ` <span style="color:#fbbf24;">— 直近失敗 ${eStreak} 件</span>`;
+          }
+          emailText.innerHTML = `${prefix} <span style="color:${color};font-weight:900;">${eRate !== null ? eRate + '%' : '--'}</span> (${eSent}/${eTotal})${streakSuffix}`;
+        }
         // 総合バッジ
         const badge = document.getElementById('monitorHealthBadge');
         if (alerts.length === 0) {
@@ -1867,6 +1942,32 @@
           loadE2ESyntheticStatus();
         } catch (e) { alert('⚠️ ' + e.message); }
         synthBtn.disabled = false; synthBtn.textContent = orig;
+      });
+      // 🔥 24h 未ログイン生徒に magic link 一括再送信 (2026-04-30 追加)
+      const nudgeBtn = document.getElementById('runNeverLoginNudgeBtn');
+      if (nudgeBtn) nudgeBtn.addEventListener('click', async () => {
+        // まず対象一覧を確認
+        try {
+          const lr = await AdminAuth.fetch('/api/admin/students/never-logged-in?hours=24');
+          if (!lr.ok) { alert('対象取得失敗: ' + lr.status); return; }
+          const ld = await lr.json();
+          if (!ld.count) { alert('✅ 24h 未ログイン生徒は 0 名 — nudge 不要'); return; }
+          const preview = (ld.students || []).slice(0, 5).map(s => `・${s.name || '(名前なし)'} (${s.email}) — ${s.hours_since}h前申込`).join('\n');
+          const more = ld.count > 5 ? `\n…他 ${ld.count - 5} 名` : '';
+          if (!confirm(`24h 未ログイン生徒 ${ld.count} 名に magic link を再送信します。\n\n${preview}${more}\n\n続行しますか?`)) return;
+        } catch (e) { alert('⚠️ ' + e.message); return; }
+        nudgeBtn.disabled = true; const orig = nudgeBtn.textContent; nudgeBtn.textContent = '⏳ 送信中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/monitor/never-login-nudge-now', { method: 'POST' });
+          const j = await r.json();
+          if (j.ran) {
+            alert(`✅ 完了: 対象 ${j.matched} 名 / 送信 ${j.sent} 通 / 失敗 ${j.failed || 0} 件`);
+          } else {
+            alert('⚠️ 実行されませんでした: ' + (j.reason || '不明'));
+          }
+          loadMonitorHealth();
+        } catch (e) { alert('⚠️ ' + e.message); }
+        nudgeBtn.disabled = false; nudgeBtn.textContent = orig;
       });
       document.getElementById('revenueRange')?.addEventListener('change', loadRevenueTimeline);
       const btn = document.getElementById('refreshSignupSummary');
