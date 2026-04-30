@@ -858,7 +858,17 @@ function showRunner(exam, section, isMock = false) {
     document.getElementById('examRunnerSection').style.display = 'none';
     document.getElementById('examDetailSection').style.display = '';
   };
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // 塾長指示 2026-04-30: 問題本文 (examRunnerSection) 位置まで自動スクロール
+  // 旧: window.scrollTo({ top: 0 }) はページ最上部に戻すだけで、問題本文は画面外のまま
+  // 新: examRunnerSection の位置に nav bar 60px offset 込みで移動
+  setTimeout(() => {
+    const runner = document.getElementById('examRunnerSection');
+    if (runner) {
+      const rect = runner.getBoundingClientRect();
+      const targetY = window.scrollY + rect.top - 60;
+      window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+    }
+  }, 50);
 }
 
 function startTimer(minutes) {
