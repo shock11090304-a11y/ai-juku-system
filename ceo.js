@@ -251,10 +251,19 @@ function renderRoster(students) {
       : `<strong>${escapeHtml(s.name || '-')}</strong>`;
     // 最終ログイン: 相対時刻を表示 (例「3分前」「2時間前」「3日前」)、未ログインなら「未ログイン」
     const lastLogin = s.last_login_at ? formatRelativeTime(s.last_login_at) : '<span style="color:#71717a;">未ログイン</span>';
+    // 📱 LINE 連携マーカー (緑=連携済 / 灰=未連携で誘導)
+    const hasLine = !!s.has_line;
+    const lineIcon = hasLine
+      ? ` <span title="LINE 連携済 (メール届かない時の fallback 通知 OK)" style="color:#06c755;font-size:0.95em;cursor:help;">📱</span>`
+      : ` <span title="LINE 未連携 — 連携誘導すると配信信頼性UP" style="color:#71717a;font-size:0.95em;cursor:help;opacity:0.5;">📱</span>`;
+    // 📧 キャリアメール警告 (ezweb/docomo/au.com 等は迷惑振り分け率が高い)
+    const carrierWarn = s.is_carrier_email
+      ? ` <span title="キャリアメール (ezweb/docomo/au.com 等) — 迷惑振り分け率が高いため LINE 連携を推奨" style="color:#fbbf24;font-size:0.85em;cursor:help;">⚠️📧</span>`
+      : '';
     return `
       <tr>
         <td>${i + 1}</td>
-        <td>${nameClickable}${nameWarning}</td>
+        <td>${nameClickable}${nameWarning}${lineIcon}${carrierWarn}</td>
         <td>${escapeHtml(s.grade || '-')}</td>
         <td style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(courses)}">
           ${fee > 0 ? `<span style="color:var(--primary-light);font-weight:700;">${planName}</span> / ` : ''}${escapeHtml(courses)}

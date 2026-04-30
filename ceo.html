@@ -1119,6 +1119,11 @@
           status: st.status,
           trial_end: st.trial_end,
           plan: st.plan,
+          last_login_at: st.last_login_at || null,
+          // 通知 fallback (LINE / SMS) のための表示用フラグ
+          has_line: !!st.has_line,
+          is_carrier_email: !!st.is_carrier_email,
+          email: st.email || '',
         }));
         // 申込詳細モーダル用に完全フィールドを保持 (id => student)
         window.__studentsById = (data.students || []).reduce((acc, st) => {

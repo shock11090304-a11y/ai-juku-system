@@ -729,18 +729,53 @@ def stats(x_stats_token: str = Header(None)):
 # ==========================================================================
 # Auth helpers: magic link token sign/verify & email send
 # ==========================================================================
-def _sign_session_token(student_id: int, ttl_seconds: int = SESSION_TTL_SECONDS) -> str:
-    """student_id と expiry を HMAC-SHA256 で署名し、URL-safe Base64 エンコード。"""
+# セキュリティ起動チェック (4番手 監査 2026-04-30):
+# 本番 (USE_POSTGRES=True = Railway) で MAGIC_LINK_SECRET が dev fallback または
+# 32文字未満の場合は警告ログを出力 (HMAC 署名が予測可能になりトークン偽造のリスク)。
+if USE_POSTGRES:
+    if MAGIC_LINK_SECRET == "dev-secret-DO-NOT-USE-IN-PROD":
+        log.error(
+            "[SECURITY] MAGIC_LINK_SECRET が dev fallback のまま本番運用中! "
+            "Railway env で 32文字以上のランダム値を MAGIC_LINK_SECRET (または APP_SECRET) に設定してください。"
+        )
+    elif len(MAGIC_LINK_SECRET) < 32:
+        log.warning(
+            f"[SECURITY] MAGIC_LINK_SECRET が短い (len={len(MAGIC_LINK_SECRET)} chars). "
+            "32文字以上のランダム値を推奨。"
+        )
+
+
+def _sign_session_token(student_id: int, ttl_seconds: int = SESSION_TTL_SECONDS, token_type: str = "session") -> str:
+    """student_id, expiry, token_type を HMAC-SHA256 で署名し、URL-safe Base64 エンコード。
+
+    token_type:
+    - 'session' (default): 30日有効、Authorization: Bearer で認証 API を叩く長期トークン
+    - 'magic': 1時間有効、magic link URL に埋め込む短期トークン。/api/auth/verify で
+       長期 session トークンへ交換する。
+
+    後方互換: 旧フォーマット ("sid.exp.sig" 3 parts) は session として受理する。"""
     import time
     exp = int(time.time()) + ttl_seconds
-    payload = f"{student_id}.{exp}"
+    payload = f"{token_type}.{student_id}.{exp}"
     sig = hmac.new(MAGIC_LINK_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
     raw = f"{payload}.{sig}"
     return base64.urlsafe_b64encode(raw.encode()).decode().rstrip("=")
 
 
-def _verify_session_token(token: str) -> Optional[dict]:
-    """トークンを検証して {student_id, exp} を返す。無効/期限切れなら None。"""
+def _create_magic_link_token(student_id: int, ttl_seconds: int = 3600) -> str:
+    """Magic link 用の短命トークン (デフォルト1時間)。
+    URL に直入れするため漏洩リスクを最小化する目的で session token と分離。"""
+    return _sign_session_token(student_id, ttl_seconds=ttl_seconds, token_type="magic")
+
+
+def _verify_session_token(token: str, expected_type: str = "session") -> Optional[dict]:
+    """トークンを検証して {student_id, exp, token_type} を返す。無効/期限切れなら None。
+
+    新フォーマット: "type.sid.exp.sig" (4 parts)
+    旧フォーマット: "sid.exp.sig" (3 parts) — 後方互換として 'session' 扱いで受理。
+    expected_type を None にすると type チェックをスキップ (verify endpoint で session/magic
+    両方を許容するため)。
+    """
     import time
     if not token:
         return None
@@ -748,16 +783,33 @@ def _verify_session_token(token: str) -> Optional[dict]:
         padded = token + "=" * (-len(token) % 4)
         raw = base64.urlsafe_b64decode(padded).decode()
         parts = raw.split(".")
-        if len(parts) != 3:
-            return None
-        sid_str, exp_str, sig = parts
-        expected = hmac.new(MAGIC_LINK_SECRET.encode(), f"{sid_str}.{exp_str}".encode(), hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(sig, expected):
-            return None
-        exp = int(exp_str)
-        if exp < int(time.time()):
-            return None
-        return {"student_id": int(sid_str), "exp": exp}
+        # 新フォーマット (type.sid.exp.sig)
+        if len(parts) == 4:
+            ttype, sid_str, exp_str, sig = parts
+            payload = f"{ttype}.{sid_str}.{exp_str}"
+            expected = hmac.new(MAGIC_LINK_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
+            if not hmac.compare_digest(sig, expected):
+                return None
+            if expected_type and ttype != expected_type:
+                # session を期待した API に magic を投げてきた等は拒否
+                return None
+            exp = int(exp_str)
+            if exp < int(time.time()):
+                return None
+            return {"student_id": int(sid_str), "exp": exp, "token_type": ttype}
+        # 旧フォーマット (sid.exp.sig) — session として受理 (後方互換)
+        if len(parts) == 3:
+            sid_str, exp_str, sig = parts
+            expected = hmac.new(MAGIC_LINK_SECRET.encode(), f"{sid_str}.{exp_str}".encode(), hashlib.sha256).hexdigest()
+            if not hmac.compare_digest(sig, expected):
+                return None
+            if expected_type and expected_type != "session":
+                return None
+            exp = int(exp_str)
+            if exp < int(time.time()):
+                return None
+            return {"student_id": int(sid_str), "exp": exp, "token_type": "session"}
+        return None
     except Exception:
         return None
 
@@ -2258,19 +2310,63 @@ def admin_rollback_history(authorization: Optional[str] = Header(None)):
     }
 
 
+_LAST_OTP_GC_TS = {"ts": 0.0}
+
 def _create_otp(student_id: int, ttl_seconds: int = 600) -> str:
-    """6桁数字のOTPコードを生成しDBに保存。10分有効。"""
+    """6桁数字のOTPコードを生成しDBに保存。10分有効。
+
+    DB 肥大化対策 (4番手 監査 2026-04-30):
+    - 同一 student の未使用 active OTP が3件以上ある場合、最も古い1件を invalidate
+      (1人で12時間に大量発行→DB 行が無限に増えるのを防ぐ)
+    - グローバル GC: 1時間に1回、全体の expires_at < now-7days な行を物理削除
+    """
     import secrets
+    import time as _time
     code = f"{secrets.randbelow(1000000):06d}"
     expires_at = datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds)
     conn = db()
     c = conn.cursor()
+    # 1) 同一 student の active OTP を最大 3件に制限
+    try:
+        c.execute(
+            "SELECT id FROM otp_codes WHERE student_id = ? AND used_at IS NULL "
+            "AND expires_at > CURRENT_TIMESTAMP ORDER BY created_at ASC",
+            (student_id,)
+        )
+        rows = c.fetchall()
+        # 新規発行で 4件目になるなら、古い分を invalidate
+        if len(rows) >= 3:
+            stale_ids = [r["id"] for r in rows[:-2]]  # 直近2件以外を無効化
+            placeholders = ",".join(["?"] * len(stale_ids))
+            c.execute(
+                f"UPDATE otp_codes SET used_at = CURRENT_TIMESTAMP WHERE id IN ({placeholders})",
+                tuple(stale_ids)
+            )
+    except Exception as _e:
+        log.debug(f"[OTP] active-otp limit cleanup failed: {_e}")
+    # 2) 新規 OTP 挿入
     c.execute(
         "INSERT INTO otp_codes (student_id, code, expires_at) VALUES (?, ?, ?)",
         (student_id, code, expires_at.isoformat())
     )
     conn.commit()
     conn.close()
+    # 3) Opportunistic global GC (1時間に1回): 7日前以前の expired を物理削除
+    now_ts = _time.time()
+    if now_ts - _LAST_OTP_GC_TS["ts"] > 3600:
+        _LAST_OTP_GC_TS["ts"] = now_ts
+        try:
+            conn2 = db(); c2 = conn2.cursor()
+            if USE_POSTGRES:
+                c2.execute("DELETE FROM otp_codes WHERE expires_at < CURRENT_TIMESTAMP - INTERVAL '7 days'")
+            else:
+                c2.execute("DELETE FROM otp_codes WHERE expires_at < datetime('now', '-7 days')")
+            deleted = c2.rowcount or 0
+            conn2.commit(); conn2.close()
+            if deleted > 0:
+                log.info(f"[OTP-GC] purged {deleted} expired otp_codes rows (>7 days old)")
+        except Exception as _e:
+            log.warning(f"[OTP-GC] cleanup failed: {_e}")
     return code
 
 
@@ -2911,15 +3007,26 @@ def admin_stats(authorization: Optional[str] = Header(None)):
     c = conn.cursor()
     # last_login_at は migration 直後の旧 DB に存在しない可能性あり → try/except でフォールバック
     try:
-        c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at FROM students ORDER BY id DESC")
+        c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at, line_user_id FROM students ORDER BY id DESC")
         rows = c.fetchall()
         has_last_login = True
     except Exception:
-        c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, paid_since, created_at FROM students ORDER BY id DESC")
-        rows = c.fetchall()
-        has_last_login = False
+        try:
+            c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, paid_since, created_at, line_user_id FROM students ORDER BY id DESC")
+            rows = c.fetchall()
+            has_last_login = False
+        except Exception:
+            c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, paid_since, created_at FROM students ORDER BY id DESC")
+            rows = c.fetchall()
+            has_last_login = False
     students = []
     for row in rows:
+        # row["line_user_id"] は schema が古いと KeyError → 安全に拾う
+        try:
+            _line_uid = row["line_user_id"]
+        except Exception:
+            _line_uid = None
+        _email = row["email"] or ""
         students.append({
             "id": row["id"],
             "name": row["name"],
@@ -2932,6 +3039,8 @@ def admin_stats(authorization: Optional[str] = Header(None)):
             "paid_since": str(row["paid_since"]) if row["paid_since"] else None,
             "created_at": str(row["created_at"]) if row["created_at"] else None,
             "last_login_at": (str(row["last_login_at"]) if has_last_login and row["last_login_at"] else None),
+            "has_line": bool(_line_uid),
+            "is_carrier_email": _is_carrier_email(_email),
         })
     # 集計
     c.execute("SELECT COUNT(*) AS n FROM students WHERE status='paid'")
@@ -5652,83 +5761,104 @@ def admin_students_send_login_link(payload: dict, authorization: Optional[str] =
         if ids:
             placeholders = ",".join(["?"] * len(ids))
             try:
-                c.execute(f"""SELECT id, name, email, status, last_login_at
+                c.execute(f"""SELECT id, name, email, line_user_id, status, last_login_at
                              FROM students WHERE id IN ({placeholders})""", tuple(ids))
             except Exception:
-                c.execute(f"""SELECT id, name, email, status
+                c.execute(f"""SELECT id, name, email, line_user_id, status
                              FROM students WHERE id IN ({placeholders})""", tuple(ids))
             students_to_send = [dict(r) for r in c.fetchall()]
         elif target == "never_logged_in":
             try:
-                c.execute("""SELECT id, name, email, status, last_login_at FROM students
+                c.execute("""SELECT id, name, email, line_user_id, status, last_login_at FROM students
                              WHERE last_login_at IS NULL
                                AND status IN ('trial', 'paid')
-                               AND email IS NOT NULL AND email != ''""")
+                               AND ((email IS NOT NULL AND email != '')
+                                    OR (line_user_id IS NOT NULL AND line_user_id != ''))""")
             except Exception:
                 # last_login_at カラム未マイグレーション環境
-                c.execute("""SELECT id, name, email, status FROM students
+                c.execute("""SELECT id, name, email, line_user_id, status FROM students
                              WHERE status IN ('trial', 'paid')
-                               AND email IS NOT NULL AND email != ''""")
+                               AND ((email IS NOT NULL AND email != '')
+                                    OR (line_user_id IS NOT NULL AND line_user_id != ''))""")
             students_to_send = [dict(r) for r in c.fetchall()]
     finally:
         conn.close()
 
     import time as _t
-    sent = 0
+    email_sent_n = 0
+    line_sent_n = 0
+    both_failed_n = 0
+    sent = 0   # 後方互換: email or line のどちらかが成功した件数
     failed = []
     sent_details = []
     for idx, s in enumerate(students_to_send):
-        sent_details.append({"id": s["id"], "name": s.get("name"), "email": s.get("email")})
+        sent_details.append({
+            "id": s["id"],
+            "name": s.get("name"),
+            "email": s.get("email"),
+            "has_line": bool(s.get("line_user_id")),
+            "is_carrier": _is_carrier_email(s.get("email") or ""),
+        })
         if dry_run:
             continue
         # Resend rate limit (Free 2 req/sec) 対策: 各送信前に 0.6 秒 sleep
         if idx > 0:
             _t.sleep(0.6)
-        # 最大 3 回リトライ (429 対策、指数バックオフ)
-        success = False
-        last_error = None
-        for attempt in range(3):
-            try:
-                session_token = _sign_session_token(s["id"])
-                magic_url = f"{BASE_URL}/auth.html?t={session_token}"
-                otp_code = _create_otp(s["id"])
-                result = _send_magic_link_email(
-                    s["email"],
-                    s.get("name") or "",
-                    magic_url,
-                    otp_code=otp_code,
-                    is_welcome=True,
-                )
-                # _send_magic_link_email は {sent: True/False, ...} を返す
-                if isinstance(result, dict) and result.get("sent"):
-                    success = True
-                    break
-                last_error = (result or {}).get("error", "send_failed")
-                # 429 などのレート制限エラーなら待ってリトライ
-                if "429" in str(last_error) or "Too Many" in str(last_error):
-                    _t.sleep(2 ** attempt)  # 1s → 2s → 4s
-                    continue
-                # その他のエラーはリトライしない
-                break
-            except Exception as e:
-                last_error = f"{type(e).__name__}: {e}"
-                log.error(f"[Students:SendLoginLink] exception for student {s['id']}: {last_error}")
-                _t.sleep(2 ** attempt)
-        if success:
-            sent += 1
-        else:
-            failed.append({"id": s["id"], "email": s.get("email"), "error": str(last_error)[:200]})
+        try:
+            session_token = _sign_session_token(s["id"])
+            magic_url = f"{BASE_URL}/auth.html?t={session_token}"
+            otp_code = _create_otp(s["id"])
+            multi = _send_login_link_multi(
+                student_id=s["id"],
+                email=s.get("email") or "",
+                name=s.get("name") or "",
+                magic_url=magic_url,
+                otp_code=otp_code,
+                is_welcome=True,
+                # キャリアメール + LINE 連携済 なら強制で LINE も併用 (足立えみ ezweb 等)
+                force_line=bool(s.get("line_user_id")) and _is_carrier_email(s.get("email") or ""),
+            )
+        except Exception as e:
+            log.error(f"[Students:SendLoginLink] multi-channel exception for student {s['id']}: {type(e).__name__}: {e}")
+            multi = {"email_sent": False, "line_sent": False, "both_failed": True,
+                     "email_error": f"{type(e).__name__}: {e}", "line_reason": None,
+                     "is_carrier": _is_carrier_email(s.get("email") or "")}
 
-    log.info(f"[Students:SendLoginLink] dry_run={dry_run} matched={len(students_to_send)} sent={sent} failed={len(failed)}")
+        if multi.get("email_sent"):
+            email_sent_n += 1
+        if multi.get("line_sent"):
+            line_sent_n += 1
+        if multi.get("email_sent") or multi.get("line_sent"):
+            sent += 1
+        if multi.get("both_failed"):
+            both_failed_n += 1
+            failed.append({
+                "id": s["id"],
+                "email": s.get("email"),
+                "is_carrier": multi.get("is_carrier"),
+                "email_error": str(multi.get("email_error") or "")[:160],
+                "line_reason": str(multi.get("line_reason") or "")[:160],
+            })
+
+    log.info(f"[Students:SendLoginLink] dry_run={dry_run} matched={len(students_to_send)} "
+             f"email_sent={email_sent_n} line_sent={line_sent_n} both_failed={both_failed_n}")
     return {
         "ok": True,
         "matched": len(students_to_send),
         "sent": sent,
-        "failed": len(failed),
+        "email_sent": email_sent_n,
+        "line_sent": line_sent_n,
+        "both_failed": both_failed_n,
+        "failed": both_failed_n,            # 後方互換: 旧 UI 用
         "failed_details": failed[:20],
         "dry_run": dry_run,
         "items": sent_details[:50],
-        "message": f"{'(dry run) ' if dry_run else ''}対象 {len(students_to_send)} 名・送信 {sent} 通・失敗 {len(failed)}",
+        "message": (
+            f"{'(dry run) ' if dry_run else ''}対象 {len(students_to_send)} 名"
+            f"・email 送信 {email_sent_n} 通"
+            f"・LINE 送信 {line_sent_n} 通"
+            f"・両方失敗 {both_failed_n} 名"
+        ),
     }
 
 
