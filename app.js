@@ -3088,13 +3088,27 @@ function spImportFromCurriculum() {
     return;
   }
 
+  // 壊れた curriculum 自動検出 (demoChat の「学習サポート」「効果的な学習ステップ」等が含まれてたら破棄)
+  // 直前の AI 失敗 (student_id バグ等) で fallback テンプレが保存されていた場合の自動修復
+  const corruptionPatterns = [
+    /学習サポート/, /効果的な学習ステップ/, /AIチューターがより深い対話/,
+    /ご質問.+について考えてみましょう/,
+  ];
+  const isCorrupted = corruptionPatterns.some(p => p.test(md));
+  if (isCorrupted) {
+    localStorage.removeItem('ai_juku_last_curriculum');
+    window._lastCurriculumMarkdown = null;
+    alert('保存されているカリキュラムが直前の AI 不調時の fallback テキストでした。\n破棄しましたので、「🎯 カリキュラム生成」タブで再生成してください。');
+    return;
+  }
+
   // === STAGE 1: Parse ===
   const weeklyTemplate = _parseWeeklyTemplate(md);
   const phases = _parsePhases(md);
   const templateSize = Object.values(weeklyTemplate).reduce((a, b) => a + b.length, 0);
 
   if (templateSize === 0) {
-    alert('カリキュラムの「週間スケジュール例」セクションに「### 月曜」→「- 英語: ... (30分)」形式のタスクが見つかりません。カリキュラムを再生成してください。');
+    alert('カリキュラム本文に「### 月曜 (Xh)」→「- 英語: ... (30分)」形式の週間スケジュール例が含まれていません。\n「🎯 カリキュラム生成」タブで再生成してください。\n(直近 AI 不調の影響を受けた可能性があります)');
     return;
   }
 
