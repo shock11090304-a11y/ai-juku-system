@@ -2585,5 +2585,147 @@
     });
   })();
   </script>
+
+  <!-- 🔄 floating reload + toast 通知 (CEO ダッシュ全画面 共通便利機能) -->
+  <div id="ceoToast" style="position:fixed;top:1rem;right:1rem;z-index:200;display:none;
+       padding:0.75rem 1.1rem;border-radius:10px;background:rgba(15,23,42,0.96);
+       border:1px solid rgba(99,102,241,0.5);color:#e2e8f0;font-size:0.85rem;
+       font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,0.5);max-width:340px;
+       backdrop-filter:blur(8px);">
+  </div>
+
+  <!-- 🚀 CEO 便利ボタン群 (画面右下 floating・常時表示) -->
+  <div id="ceoFab" style="position:fixed;bottom:1.2rem;right:1.2rem;z-index:150;
+       display:flex;flex-direction:column;gap:0.5rem;align-items:flex-end;">
+    <!-- 折りたたみ展開ボタン -->
+    <div id="ceoFabActions" style="display:flex;flex-direction:column;gap:0.4rem;align-items:flex-end;">
+      <button id="ceoActSnsRun" type="button" title="Daily SNS を今すぐ生成・送信"
+        style="background:rgba(34,197,94,0.85);color:white;border:none;
+               padding:0.55rem 0.95rem;border-radius:30px;font-weight:700;font-size:0.78rem;
+               cursor:pointer;box-shadow:0 4px 14px rgba(34,197,94,0.4);
+               white-space:nowrap;">📨 SNS 即配信</button>
+      <button id="ceoActMonitor" type="button" title="監視を今すぐ実行"
+        style="background:rgba(251,191,36,0.85);color:#1f2937;border:none;
+               padding:0.55rem 0.95rem;border-radius:30px;font-weight:700;font-size:0.78rem;
+               cursor:pointer;box-shadow:0 4px 14px rgba(251,191,36,0.4);
+               white-space:nowrap;">⚡ 監視 即診断</button>
+      <button id="ceoActReload" type="button" title="全データを最新に更新"
+        style="background:rgba(99,102,241,0.95);color:white;border:none;
+               padding:0.65rem 1.1rem;border-radius:30px;font-weight:800;font-size:0.85rem;
+               cursor:pointer;box-shadow:0 6px 18px rgba(99,102,241,0.5);
+               white-space:nowrap;">🔄 全データ更新</button>
+    </div>
+  </div>
+
+  <script>
+    // ---- Toast 通知 (CEO ダッシュ共通) ----
+    function ceoToast(msg, type = 'info', durationMs = 2400) {
+      const el = document.getElementById('ceoToast');
+      if (!el) return;
+      const colors = {
+        info:    'rgba(99,102,241,0.6)',
+        success: 'rgba(34,197,94,0.6)',
+        warn:    'rgba(251,191,36,0.6)',
+        error:   'rgba(239,68,68,0.6)',
+      };
+      el.style.borderColor = colors[type] || colors.info;
+      el.innerHTML = msg;
+      el.style.display = 'block';
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => { el.style.display = 'none'; }, durationMs);
+    }
+
+    // ---- 🔄 全データ即更新 ----
+    document.getElementById('ceoActReload')?.addEventListener('click', async () => {
+      const btn = document.getElementById('ceoActReload');
+      const orig = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '⏳ 更新中...';
+      const tasks = [
+        ['signupSummary',   typeof loadSignupSummary === 'function' ? loadSignupSummary : null],
+        ['liveRoster',      typeof loadLiveRoster === 'function' ? loadLiveRoster : null],
+        ['foundersDual',    typeof loadFoundersDualCount === 'function' ? loadFoundersDualCount : null],
+        ['analytics',       typeof loadAnalyticsDashboard === 'function' ? loadAnalyticsDashboard : null],
+        ['monitor',         typeof loadMonitorHealth === 'function' ? loadMonitorHealth : null],
+        ['e2e',             typeof loadE2ESyntheticStatus === 'function' ? loadE2ESyntheticStatus : null],
+        ['revenue',         typeof loadRevenueTimeline === 'function' ? loadRevenueTimeline : null],
+        ['pool',            typeof loadPoolStatus === 'function' ? loadPoolStatus : null],
+        ['realtime',        typeof loadRealtimeVisitors === 'function' ? loadRealtimeVisitors : null],
+      ].filter(t => t[1]);
+      const t0 = performance.now();
+      const results = await Promise.allSettled(tasks.map(t => Promise.resolve(t[1]())));
+      const elapsed = Math.round(performance.now() - t0);
+      const failed = results.filter(r => r.status === 'rejected').length;
+      btn.disabled = false;
+      btn.textContent = orig;
+      if (failed === 0) {
+        ceoToast(`✅ 全 ${tasks.length} widget 更新完了 (${elapsed}ms)`, 'success');
+      } else {
+        ceoToast(`⚠️ ${tasks.length - failed}/${tasks.length} widget 更新 (${failed} 失敗・${elapsed}ms)`, 'warn', 3500);
+      }
+    });
+
+    // ---- ⚡ 監視 即診断 (manual monitor trigger) ----
+    document.getElementById('ceoActMonitor')?.addEventListener('click', async () => {
+      if (!window.AdminAuth || !AdminAuth.getToken()) { ceoToast('未認証', 'error'); return; }
+      const btn = document.getElementById('ceoActMonitor');
+      const orig = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '⏳ 診断中...';
+      try {
+        const res = await AdminAuth.fetch('/api/admin/monitor/run-now', { method: 'POST' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const alerts = data.alerts || [];
+        if (alerts.length === 0) {
+          ceoToast(`✅ 監視診断 緑 (アラート 0 件)`, 'success');
+        } else {
+          ceoToast(`⚠️ アラート ${alerts.length} 件: ${alerts.map(a => a.key || '?').join(', ')}`, 'warn', 4000);
+        }
+        if (typeof loadMonitorHealth === 'function') loadMonitorHealth();
+      } catch (e) {
+        ceoToast(`❌ 診断失敗: ${e.message}`, 'error', 3500);
+      }
+      btn.disabled = false;
+      btn.textContent = orig;
+    });
+
+    // ---- 📨 SNS 即配信 (今日分未配信時のみ実行・既送信ならその旨表示) ----
+    document.getElementById('ceoActSnsRun')?.addEventListener('click', async () => {
+      if (!window.AdminAuth || !AdminAuth.getToken()) { ceoToast('未認証', 'error'); return; }
+      const btn = document.getElementById('ceoActSnsRun');
+      const orig = btn.textContent;
+      if (!confirm('Daily SNS を今すぐ生成・送信しますか?\n(本日既に送信済の場合は skip されます)')) return;
+      btn.disabled = true;
+      btn.textContent = '⏳ 配信中...';
+      try {
+        const res = await AdminAuth.fetch('/api/admin/sns/run-now', { method: 'POST' });
+        const data = await res.json();
+        if (data.ran === false) {
+          ceoToast(`ℹ️ ${data.reason === 'already_sent_today' ? '本日分は既に配信済' : (data.reason || 'skip')}`, 'info', 3500);
+        } else if (data.sent || data.ok) {
+          const cnt = (data.posts || []).length;
+          ceoToast(`✅ Daily SNS 配信完了 (${cnt} 投稿生成・Gmail 送信済)`, 'success', 3500);
+        } else {
+          ceoToast(`⚠️ 結果不明: ${JSON.stringify(data).substring(0, 100)}`, 'warn', 4000);
+        }
+      } catch (e) {
+        ceoToast(`❌ 配信失敗: ${e.message}`, 'error', 3500);
+      }
+      btn.disabled = false;
+      btn.textContent = orig;
+    });
+
+    // ---- キーボードショートカット: R で全リロード ----
+    document.addEventListener('keydown', (e) => {
+      // 入力中は ignore (textarea / input 等)
+      if (e.target && /^(input|textarea|select)$/i.test(e.target.tagName)) return;
+      if (e.key === 'r' || e.key === 'R') {
+        if (e.metaKey || e.ctrlKey || e.altKey) return;  // OS ショートカット干渉避ける
+        document.getElementById('ceoActReload')?.click();
+        e.preventDefault();
+      }
+    });
+  </script>
 </body>
 </html>
