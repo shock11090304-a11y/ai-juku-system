@@ -86,10 +86,11 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 # Google AI Studio で無料発行: https://aistudio.google.com/app/apikey
 # Gemini 1.5/2.5 Flash は 1日 1,500 req まで無料枠あり
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-# 主モデル = Gemini 2.5 Pro (塾長 Pro 契約済・教材生成や採点の高 stake task で使用)
-# 低 stake task (Daily SNS / 分類) は LIGHT (Flash) で課金抑制 + 無料枠活用
-# Pro 失敗時は内部で Flash に自動フォールバック (二段 Gemini fallback)
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
+# 主モデル = Gemini 2.5 Flash (無料枠 1500 req/日)
+# AI Studio 無料 tier では Pro モデルは limit:0 で呼べない仕様のため Flash デフォ。
+# 将来 paid tier 化したら Railway env に GEMINI_MODEL=gemini-2.5-pro を追加するだけで
+# Tier 4 fallback が Pro 主軸に切替わる (Pro→Flash 二段 fallback ロジックも残してある)。
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 GEMINI_MODEL_LIGHT = os.getenv("GEMINI_MODEL_LIGHT", "gemini-2.5-flash")
 CRON_SECRET = os.getenv("CRON_SECRET", "")  # 未設定時は cron 系エンドポイントを全拒否
 STATS_TOKEN = os.getenv("STATS_TOKEN", "")  # 未設定時は /api/stats を全拒否
