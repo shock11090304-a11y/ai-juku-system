@@ -914,6 +914,108 @@ select:focus, input:focus, textarea:focus {
 .reveal-hidden { display: none; }
 .reveal-hidden.show { display: block; }
 
+/* 🎯 4択ボタン (塾長指示 2026-04-30: 4 択問題はクリック可能ボタン化) */
+.problem-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 1rem 0 0.5rem;
+}
+.problem-choice-btn {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.18s;
+  text-align: left;
+  width: 100%;
+}
+.problem-choice-btn:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.5);
+  transform: translateX(2px);
+}
+.problem-choice-btn:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+.problem-choice-btn .choice-letter {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.18);
+  color: var(--primary-light);
+  font-weight: 900;
+  font-size: 1rem;
+}
+.problem-choice-btn .choice-text {
+  flex: 1;
+  line-height: 1.55;
+}
+/* 正解クリック時 (緑 + ✓) */
+.problem-choice-btn.correct {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.6);
+}
+.problem-choice-btn.correct .choice-letter {
+  background: rgba(34, 197, 94, 0.4);
+  color: #d1fae5;
+}
+/* 不正解クリック時 (赤) */
+.problem-choice-btn.incorrect {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.6);
+}
+.problem-choice-btn.incorrect .choice-letter {
+  background: rgba(239, 68, 68, 0.4);
+  color: #fee2e2;
+}
+/* 不正解時に正解の位置を強調 (緑枠線) */
+.problem-choice-btn.correct-answer:not(.correct) {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.5);
+  border-style: dashed;
+}
+.problem-feedback {
+  margin: 0.6rem 0 0.3rem;
+}
+.pf-mark {
+  display: inline-block;
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 0.92rem;
+}
+.pf-correct { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); }
+.pf-incorrect { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+.pf-skip { background: rgba(251, 191, 36, 0.12); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
+
+/* 📊 正解率バッジ */
+.problem-stats-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid;
+}
+.problem-stats-fresh { background: rgba(255,255,255,0.05); color: var(--text-dim); border-color: rgba(255,255,255,0.12); }
+.problem-stats-good  { background: rgba(34, 197, 94, 0.12); color: #4ade80; border-color: rgba(34, 197, 94, 0.4); }
+.problem-stats-mid   { background: rgba(251, 191, 36, 0.12); color: #fbbf24; border-color: rgba(251, 191, 36, 0.4); }
+.problem-stats-weak  { background: rgba(239, 68, 68, 0.12); color: #f87171; border-color: rgba(239, 68, 68, 0.4); }
+
 /* Problems layout */
 .problems-layout {
   display: grid;

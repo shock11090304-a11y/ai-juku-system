@@ -4997,6 +4997,50 @@ JSON文字列の中でバックスラッシュを使う場合は必ず二重に�
     });
   }
 
+  // 4択ボタン: 即採点 + 正解率記録 (塾長指示 2026-04-30)
+  out.querySelectorAll('.problem-choices').forEach(group => {
+    const pid = group.dataset.pid;
+    const correctIdx = parseInt(group.dataset.correct, 10);
+    group.querySelectorAll('.problem-choice-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // すでに採点済 (どれかに correct/incorrect が付いてる) なら無視
+        if (group.querySelector('.problem-choice-btn.correct, .problem-choice-btn.incorrect')) return;
+        const idx = parseInt(btn.dataset.idx, 10);
+        const isCorrect = (correctIdx >= 0) && (idx === correctIdx);
+        // 全ボタンを disabled にする
+        group.querySelectorAll('.problem-choice-btn').forEach(b => {
+          b.disabled = true;
+          const bIdx = parseInt(b.dataset.idx, 10);
+          if (bIdx === correctIdx) b.classList.add('correct-answer');
+        });
+        btn.classList.add(isCorrect ? 'correct' : 'incorrect');
+        // フィードバック表示
+        const fb = out.querySelector(`.problem-feedback[data-pid="${pid}"]`);
+        if (fb) {
+          if (correctIdx < 0) {
+            fb.innerHTML = `<div class="pf-mark pf-skip">⚠️ 正答情報が読み取れませんでした (記述式の可能性)。下の解答をご確認ください。</div>`;
+          } else {
+            fb.innerHTML = isCorrect
+              ? `<div class="pf-mark pf-correct">✅ 正解!</div>`
+              : `<div class="pf-mark pf-incorrect">❌ 不正解。正解は ${'①②③④⑤⑥⑦⑧⑨'[correctIdx] || (correctIdx + 1)} です。</div>`;
+          }
+          fb.style.display = '';
+        }
+        // 履歴記録
+        if (correctIdx >= 0 && pid) {
+          _recordProblemAttempt(pid, isCorrect);
+          // 正解率バッジを更新
+          const block = btn.closest('.problem-block');
+          const oldBadge = block ? block.querySelector('.problem-stats-badge') : null;
+          if (oldBadge) {
+            const stats = _getProblemStats(pid);
+            oldBadge.outerHTML = _problemStatsBadge(stats);
+          }
+        }
+      });
+    });
+  });
+
   actions.style.display = 'flex';
   btn.disabled = false;
   btn.textContent = '🎲 問題を生成';
@@ -5049,6 +5093,143 @@ JSON文字列の中でバックスラッシュを使う場合は必ず二重に�
   } catch (e) { console.warn('Learning Brain hook failed:', e); }
 }
 
+// ===========================================================================
+// 問題挑戦履歴 + 正解率 (塾長指示 2026-04-30)
+// ===========================================================================
+const PROBLEM_STATS_KEY = 'ai_juku_problem_stats_v1';
+
+function _problemId(stem, choices) {
+  const seed = (stem || '') + '|' + (choices || []).join('|');
+  let hash = 5381;
+  for (let i = 0; i < seed.length; i++) {
+    hash = ((hash << 5) + hash) + seed.charCodeAt(i);
+    hash |= 0;
+  }
+  return 'p_' + Math.abs(hash).toString(36);
+}
+function _getProblemStats(pid) {
+  try {
+    const all = JSON.parse(localStorage.getItem(PROBLEM_STATS_KEY) || '{}');
+    return all[pid] || { attempts: 0, correct: 0 };
+  } catch (e) { return { attempts: 0, correct: 0 }; }
+}
+function _recordProblemAttempt(pid, isCorrect) {
+  try {
+    const all = JSON.parse(localStorage.getItem(PROBLEM_STATS_KEY) || '{}');
+    if (!all[pid]) all[pid] = { attempts: 0, correct: 0 };
+    all[pid].attempts++;
+    if (isCorrect) all[pid].correct++;
+    all[pid].last_ts = Date.now();
+    localStorage.setItem(PROBLEM_STATS_KEY, JSON.stringify(all));
+  } catch (e) {}
+}
+
+// 4択問題: question 文字列から (stem, choices[]) を分離
+// AI が ①②③④ / 1. 2. 3. 4. / A. B. C. D. のいずれかで返してくる前提
+function _parseChoicesFromQuestion(question) {
+  if (!question) return null;
+  const lines = String(question).split(/\r?\n/);
+  const stem = [];
+  const choices = [];
+  let inChoices = false;
+  let pending = null;  // 現在 build 中の choice text (複数行対応)
+  // 行頭の選択肢マーカーを検出 (①〜⑨ / 1.〜9. / 1) / A. / a. / (1) / (A) など)
+  const markerRe = /^\s*(?:[①②③④⑤⑥⑦⑧⑨]|[\(（]?\s*[1-9一二三四五六七八九A-Ja-j]\s*[)）.、]\s*)(.+?)\s*$/;
+  const isMarkerLine = (l) => {
+    const m = l.match(/^\s*(?:[①②③④⑤⑥⑦⑧⑨]|[\(（]?\s*[1-9A-Ja-j]\s*[)）.、])/);
+    return !!m;
+  };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      // 空行: 選択肢中なら現在の pending を確定
+      if (pending != null) {
+        choices.push(pending.trim());
+        pending = null;
+      }
+      if (!inChoices) stem.push('');
+      continue;
+    }
+    if (isMarkerLine(trimmed)) {
+      inChoices = true;
+      // 前の pending を確定
+      if (pending != null) choices.push(pending.trim());
+      // marker を除去した本文を抽出
+      const m = trimmed.match(markerRe);
+      pending = m && m[1] ? m[1] : trimmed.replace(/^\s*[①-⑨\(（]?\s*[1-9A-Ja-j]\s*[)）.、]?\s*/, '');
+    } else {
+      if (inChoices) {
+        // 選択肢の続き行 (折り返し or 末尾の補足)
+        // 末尾の "(原始・古代の問題)" のような annotation は無視 (短く括弧開始)
+        if (/^[（(].*[）)]$/.test(trimmed)) continue;
+        if (pending != null) pending += ' ' + trimmed;
+      } else {
+        stem.push(line);
+      }
+    }
+  }
+  if (pending != null) choices.push(pending.trim());
+
+  // 妥当性チェック: 2-6 個の選択肢 + 各 choice が 200 字以内
+  if (choices.length < 2 || choices.length > 6) return null;
+  if (choices.some(c => !c || c.length > 240)) return null;
+  return { stem: stem.join('\n').trim(), choices };
+}
+
+// answer フィールドから正解 index (0始まり) を抽出
+function _extractAnswerIndex(answer, choices) {
+  if (answer === null || answer === undefined) return -1;
+  const a = String(answer).trim();
+  if (!a) return -1;
+  // ①②③④⑤⑥
+  const circleMap = '①②③④⑤⑥⑦⑧⑨';
+  const ci = circleMap.indexOf(a[0]);
+  if (ci >= 0) return ci;
+  // (1) (2) (3)
+  const mp = a.match(/^[（(]\s*([1-9])\s*[）)]/);
+  if (mp) return parseInt(mp[1]) - 1;
+  // 1. 2. 3.
+  const m = a.match(/^([1-9])[.)、\s]/);
+  if (m) return parseInt(m[1]) - 1;
+  // 単独数字
+  if (/^[0-9]+$/.test(a)) {
+    const n = parseInt(a, 10);
+    // 「②」「①」と統一して扱うため、原則 1始まり扱い (1 → index 0, 2 → index 1)。
+    // ただし 0 が来た場合は「0始まりの 0番目」= index 0。
+    if (choices) {
+      if (n === 0) return 0;
+      if (n >= 1 && n <= choices.length) return n - 1;
+    }
+    return Math.max(0, n - 1);
+  }
+  // A. B. C.
+  const mAlpha = a.match(/^([A-Da-d])[.)、\s]?/);
+  if (mAlpha) return mAlpha[1].toUpperCase().charCodeAt(0) - 65;
+  // 本文一致 (choice の文章で部分一致を取る)
+  if (Array.isArray(choices)) {
+    const norm = (s) => String(s).replace(/\s+/g, '').toLowerCase();
+    const an = norm(a);
+    let bestIdx = -1, bestLen = 0;
+    choices.forEach((c, i) => {
+      const cn = norm(c);
+      if (an && cn && (cn.includes(an) || an.includes(cn))) {
+        const overlap = Math.min(cn.length, an.length);
+        if (overlap > bestLen) { bestLen = overlap; bestIdx = i; }
+      }
+    });
+    if (bestIdx >= 0) return bestIdx;
+  }
+  return -1;
+}
+
+function _problemStatsBadge(stats) {
+  if (!stats || !stats.attempts) return '<span class="problem-stats-badge problem-stats-fresh">📊 未挑戦</span>';
+  const pct = Math.round((stats.correct / stats.attempts) * 100);
+  const cls = pct >= 80 ? 'problem-stats-good' : (pct >= 50 ? 'problem-stats-mid' : 'problem-stats-weak');
+  return `<span class="problem-stats-badge ${cls}">📊 正解率 ${pct}% (${stats.correct}/${stats.attempts})</span>`;
+}
+
 function renderProblems(data, layout, source) {
   const title = data.title || '練習問題';
   const subtitle = data.subtitle || '';
@@ -5066,6 +5247,51 @@ function renderProblems(data, layout, source) {
     return `<span class="problem-source-badge">🏛 ${escapeHtml(source.univ)} ${escapeHtml(source.year || '')}年度${escapeHtml(qPart)} 類題</span>`;
   };
 
+  // 4択 (or 多択) の場合の問題本文 + ボタン (塾長指示 2026-04-30)
+  const renderProblemBody = (p) => {
+    // p.choices があれば優先 (将来 prompt 改修でAIが分離する場合)、無ければ question から parse
+    let stem = '', choices = null;
+    if (Array.isArray(p.choices) && p.choices.length >= 2) {
+      stem = String(p.stem || p.question || '').trim();
+      choices = p.choices.map(c => String(c).trim());
+    } else {
+      const parsed = _parseChoicesFromQuestion(p.question);
+      if (parsed) {
+        stem = parsed.stem;
+        choices = parsed.choices;
+      }
+    }
+    if (!choices) {
+      // 4択でない問題 (記述等) は plain text
+      return `<div class="problem-block-body">${escapeHtml(p.question || '').replace(/\n/g, '<br>')}</div>`;
+    }
+    const ansIdx = _extractAnswerIndex(p.answer, choices);
+    const pid = _problemId(stem, choices);
+    const stats = _getProblemStats(pid);
+    const circles = '①②③④⑤⑥⑦⑧⑨';
+    let body = `<div class="problem-block-body">${escapeHtml(stem).replace(/\n/g, '<br>')}</div>`;
+    body += `<div class="problem-choices" data-pid="${pid}" data-correct="${ansIdx}">`;
+    choices.forEach((c, i) => {
+      body += `<button type="button" class="problem-choice-btn" data-idx="${i}">
+        <span class="choice-letter">${circles[i] || (i + 1)}</span>
+        <span class="choice-text">${escapeHtml(c)}</span>
+      </button>`;
+    });
+    body += `</div>`;
+    body += `<div class="problem-feedback" data-pid="${pid}" style="display:none;"></div>`;
+    return body;
+  };
+
+  // 各問題の正解率バッジ
+  const statsBadge = (p) => {
+    const parsed = Array.isArray(p.choices) && p.choices.length >= 2
+      ? { stem: p.stem || p.question || '', choices: p.choices.map(c => String(c)) }
+      : _parseChoicesFromQuestion(p.question);
+    if (!parsed) return '';
+    const pid = _problemId(parsed.stem, parsed.choices);
+    return _problemStatsBadge(_getProblemStats(pid));
+  };
+
   if (layout === 'end') {
     // 巻末解答: 問題を全部先に → 解答セクション
     problems.forEach(p => {
@@ -5073,8 +5299,9 @@ function renderProblems(data, layout, source) {
         <div class="problem-block-header">
           <span class="problem-block-num">問題 ${p.number || ''}</span>
           ${sourceBadge(p)}
+          ${statsBadge(p)}
         </div>
-        <div class="problem-block-body">${escapeHtml(p.question || '').replace(/\n/g, '<br>')}</div>
+        ${renderProblemBody(p)}
       </div>`;
     });
     html += `<div class="answers-section-header"><h2>📖 解答・解説編</h2><p>※ 問題を解いてから確認しましょう</p></div>`;
@@ -5094,8 +5321,9 @@ function renderProblems(data, layout, source) {
         <div class="problem-block-header">
           <span class="problem-block-num">問題 ${p.number || ''}</span>
           ${sourceBadge(p)}
+          ${statsBadge(p)}
         </div>
-        <div class="problem-block-body">${escapeHtml(p.question || '').replace(/\n/g, '<br>')}</div>
+        ${renderProblemBody(p)}
       </div>
       <div class="answer-block-v2">
         <div class="ab-label">解答・解説</div>
@@ -5113,8 +5341,9 @@ function renderProblems(data, layout, source) {
         <div class="problem-block-header">
           <span class="problem-block-num">問題 ${p.number || ''}</span>
           ${sourceBadge(p)}
+          ${statsBadge(p)}
         </div>
-        <div class="problem-block-body">${escapeHtml(p.question || '').replace(/\n/g, '<br>')}</div>
+        ${renderProblemBody(p)}
         <button class="reveal-problem-btn" data-target="${ansId}">🙈 まず考えてみよう</button>
         <div class="reveal-hidden" id="${ansId}">
           <div class="answer-block-v2" style="margin-top:1rem;">
