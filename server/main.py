@@ -7132,6 +7132,63 @@ def admin_monitor_run_now(authorization: Optional[str] = Header(None), x_cron_se
     return _run_monitor_check()
 
 
+@app.get("/api/admin/students/list-minimal")
+def admin_students_list_minimal(limit: int = 20,
+                                  email_contains: Optional[str] = None,
+                                  x_cron_secret: Optional[str] = Header(None),
+                                  authorization: Optional[str] = Header(None)):
+    """active student の最小情報 (id, email, status, plan) を取得。
+    AI チューター動作確認時に塾長 / テスト student の id を特定するため。
+    x-cron-secret or admin Bearer 認証。email は氏名や個人情報を含まない範囲で返す。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    limit = max(1, min(int(limit or 20), 100))
+    conn = db()
+    c = conn.cursor()
+    if email_contains:
+        c.execute(
+            "SELECT id, email, status, plan, last_login_at, trial_end FROM students "
+            "WHERE status IN ('trial', 'paid') AND email LIKE ? "
+            "ORDER BY last_login_at DESC NULLS LAST LIMIT ?",
+            (f"%{email_contains}%", limit),
+        )
+    else:
+        c.execute(
+            "SELECT id, email, status, plan, last_login_at, trial_end FROM students "
+            "WHERE status IN ('trial', 'paid') "
+            "ORDER BY last_login_at DESC NULLS LAST LIMIT ?",
+            (limit,),
+        )
+    rows = c.fetchall()
+    conn.close()
+    students = []
+    for r in rows:
+        # email を一部 masking (xxxx@example.com 形式)
+        email = r["email"] or ""
+        if email and "@" in email:
+            local, domain = email.split("@", 1)
+            email_masked = (local[:3] + "***" + "@" + domain) if len(local) > 3 else (local + "***@" + domain)
+        else:
+            email_masked = email
+        students.append({
+            "id": r["id"],
+            "email_masked": email_masked,
+            "status": r["status"],
+            "plan": r["plan"],
+            "last_login_at": str(r["last_login_at"]) if r["last_login_at"] else None,
+            "trial_end": str(r["trial_end"]) if r["trial_end"] else None,
+        })
+    return {"count": len(students), "students": students}
+
+
 @app.get("/api/admin/ai/recent-failures")
 def admin_ai_recent_failures(limit: int = 30, x_cron_secret: Optional[str] = Header(None),
                               authorization: Optional[str] = Header(None)):
