@@ -6502,7 +6502,53 @@ def trial_signup(payload: TrialSignup):
     conn.close()
 
     log.info(f"Trial signup: {payload.email} -> student_id={student_id}")
-    return {"ok": True, "student_id": student_id, "trial_end": trial_end.isoformat()}
+
+    # 🔥 致命傷修正 (2026-04-29): 申込直後に magic link 招待メールを送信
+    # これが無いと顧客はログイン経路を知らず、ダッシュ未利用 = 価値ゼロ。
+    # 失敗しても signup 自体は成功させる (顧客は admin から再送信で救済可能)。
+    email_sent = False
+    email_error = None
+    if student_id:
+        try:
+            session_token = _sign_session_token(student_id)
+            magic_url = f"{BASE_URL}/auth.html?t={session_token}"
+            otp_code = _create_otp(student_id)
+            result = _send_magic_link_email(
+                payload.email,
+                payload.name or "",
+                magic_url,
+                otp_code=otp_code,
+                is_welcome=True,
+            )
+            email_sent = bool(result.get("sent"))
+            if not email_sent:
+                email_error = (result or {}).get("error", "send_failed")
+                log.error(f"[Signup] Welcome email failed for student {student_id} ({payload.email}): {email_error}")
+        except Exception as e:
+            email_error = f"{type(e).__name__}: {e}"
+            log.error(f"[Signup] Welcome email exception for student {student_id} ({payload.email}): {email_error}")
+
+    # 監視: events に signup_email_status を記録 (CEO ダッシュ監視・自動 nudge 用)
+    try:
+        conn2 = db(); cc = conn2.cursor()
+        cc.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            (
+                "signup_email_status",
+                json.dumps({"student_id": student_id, "email_sent": email_sent, "error": email_error[:200] if email_error else None}, ensure_ascii=False),
+                f"student:{student_id}",
+            ),
+        )
+        conn2.commit(); conn2.close()
+    except Exception as _e:
+        log.warning(f"[Signup] failed to record signup_email_status event: {_e}")
+
+    return {
+        "ok": True,
+        "student_id": student_id,
+        "trial_end": trial_end.isoformat(),
+        "email_sent": email_sent,  # フロント (checkout-success.html) で「メール届かなかった場合は…」案内に使う
+    }
 
 # ==========================================================================
 # Routes: Stripe Checkout
