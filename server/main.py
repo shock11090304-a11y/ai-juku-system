@@ -2723,7 +2723,10 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
     if is_sendable:
         # 古い OTP を全て無効化してから新規発行 (再送 UX: 新コードのみ有効)
         _invalidate_active_otps(row["id"])
-        token = _sign_session_token(row["id"])
+        # magic link には 1時間のみ有効な短命トークンを使う (4番手 監査 2026-04-30):
+        # 30日 session token を URL に直入れすると referer / browser history 経由で漏洩した時の
+        # 影響範囲が大きすぎる。/api/auth/verify が新規 session token に交換する。
+        token = _create_magic_link_token(row["id"])
         magic_url = f"{BASE_URL}/auth.html?t={token}"
         otp_code = _create_otp(row["id"])
         _send_magic_link_with_retry(row["email"], row["name"] or "", magic_url, otp_code=otp_code, is_welcome=False)
@@ -2877,9 +2880,14 @@ def verify_code(payload: VerifyCodeRequest, request: Request):
 
 @app.get("/api/auth/verify")
 def verify_magic_link(t: str):
-    """auth.html からのトークン検証。有効なら生徒情報を返す。
-    成功時に同じトークンを返し、クライアントは localStorage にセッションとして保存する。"""
-    claims = _verify_session_token(t)
+    """auth.html からのトークン検証。有効なら生徒情報 + 新規 session token を返す。
+
+    入力: 'magic' タイプ (1時間有効、URL 埋め込み用) または旧フォーマット ('session', 30日)。
+    出力: 必ず新規 'session' トークンを発行 (URL 漏洩リスクを切り離す)。
+    クライアントは localStorage にこの新トークンを保存する (4番手 監査 2026-04-30)。"""
+    import time as _t
+    # expected_type=None で magic / session 両方を許容
+    claims = _verify_session_token(t, expected_type=None)
     if not claims:
         raise HTTPException(status_code=401, detail="Invalid or expired link")
 
@@ -2911,10 +2919,14 @@ def verify_magic_link(t: str):
     if not _allowed:
         raise HTTPException(status_code=403, detail="体験期間が終了しました。継続登録をご希望の方はLPからお申し込みください。")
 
+    # 新規 session token を発行 (URL の magic token は1時間で破棄、セッションは30日)
+    new_session_token = _sign_session_token(row["id"])
+    new_exp = int(_t.time()) + SESSION_TTL_SECONDS
+
     return {
         "ok": True,
-        "token": t,
-        "expires_at": claims["exp"],
+        "token": new_session_token,
+        "expires_at": new_exp,
         "student": {
             "id": row["id"],
             "name": row["name"],
@@ -5805,7 +5817,8 @@ def admin_students_send_login_link(payload: dict, authorization: Optional[str] =
         if idx > 0:
             _t.sleep(0.6)
         try:
-            session_token = _sign_session_token(s["id"])
+            # 1時間有効な短命 magic link token (4番手 監査 2026-04-30)
+            session_token = _create_magic_link_token(s["id"])
             magic_url = f"{BASE_URL}/auth.html?t={session_token}"
             otp_code = _create_otp(s["id"])
             multi = _send_login_link_multi(
@@ -7139,7 +7152,12 @@ def usage_me(authorization: Optional[str] = Header(None)):
 
 
 @app.post("/api/trial/signup")
-def trial_signup(payload: TrialSignup):
+def trial_signup(payload: TrialSignup, request: Request):
+    # レート制限 (4番手 監査 2026-04-30): 1 IP あたり 5分で 3 申込まで。
+    # Resend 経由で welcome email を送るため、無制限だと
+    # (1) Resend abuse 判定で送信ブロック、(2) DB に dummy student を量産される。
+    _check_rate_limit_ip(request, bucket="trial_signup", limit=3, window=300)
+
     # 入力検証: TrialSignup の field_validator (フルネーム必須・XSS 対策) は通過済み。
     # メール小文字化 + grade/goal/plan の長さ制限 (XSS 対策の二重防御)
     email_norm = (payload.email or "").lower().strip()
@@ -7203,7 +7221,8 @@ def trial_signup(payload: TrialSignup):
             # 重複申込時は古い OTP を無効化 (旧コード混乱防止)
             if is_existing:
                 _invalidate_active_otps(student_id)
-            session_token = _sign_session_token(student_id)
+            # 1時間有効な短命 magic link token (4番手 監査 2026-04-30)
+            session_token = _create_magic_link_token(student_id)
             magic_url = f"{BASE_URL}/auth.html?t={session_token}"
             otp_code = _create_otp(student_id)
             result = _send_magic_link_with_retry(
@@ -7707,7 +7726,8 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
             if s_row and s_row["email"]:
                 # 既存 OTP を無効化してから新発行 (重複コード混乱防止)
                 _invalidate_active_otps(s_row["id"])
-                _token = _sign_session_token(s_row["id"])
+                # 1時間有効な短命 magic link token (4番手 監査 2026-04-30)
+                _token = _create_magic_link_token(s_row["id"])
                 _magic_url = f"{BASE_URL}/auth.html?t={_token}"
                 _otp_code = _create_otp(s_row["id"])
                 _wresult = _send_magic_link_with_retry(s_row["email"], s_row["name"] or "", _magic_url, otp_code=_otp_code, is_welcome=True)

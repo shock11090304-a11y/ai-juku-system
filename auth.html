@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ログイン中... | AI学習コーチ塾</title>
   <meta name="robots" content="noindex">
+  <!-- Magic-link token (?t=...) を外部サイトへ Referer leak しないため (4番手 監査 2026-04-30) -->
+  <meta name="referrer" content="no-referrer">
   <script src="cache-purge.js?v=20260430-emailflow"></script>
   <script src="frontend-error-monitor.js?v=20260427-init"></script>
   <link rel="stylesheet" href="lp.css">
@@ -120,6 +122,14 @@
       : 'https://ai-juku-api-production.up.railway.app';
     const params = new URLSearchParams(window.location.search);
     const token = params.get('t');
+    // ブラウザ history / 第三者拡張機能経由の token 漏洩を最小化するため、
+    // token を読み取った直後に URL から ?t=... を消去する (4番手 監査 2026-04-30)。
+    if (token && window.history && window.history.replaceState) {
+      try {
+        const urlNoToken = window.location.pathname + (params.get('redirect') ? '?redirect=' + encodeURIComponent(params.get('redirect')) : '');
+        window.history.replaceState({}, '', urlNoToken);
+      } catch (_e) { /* IE 等は無視 */ }
+    }
     const card = document.getElementById('card');
     const emoji = document.getElementById('emoji');
     const title = document.getElementById('title');
