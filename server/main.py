@@ -429,6 +429,7 @@ def init_db():
     _migrations = [
         ("enrollment_fee_waived", "ALTER TABLE students ADD COLUMN enrollment_fee_waived INTEGER DEFAULT 0"),
         ("enrollment_waiver_applied_at", "ALTER TABLE students ADD COLUMN enrollment_waiver_applied_at TIMESTAMP"),
+        ("last_login_at", "ALTER TABLE students ADD COLUMN last_login_at TIMESTAMP"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -2330,6 +2331,12 @@ def verify_code(payload: VerifyCodeRequest, request: Request):
         conn.close()
         raise generic_401
 
+    # 最終ログイン時刻を更新 (CEO ダッシュ「最終ログイン」表示用)
+    try:
+        c.execute("UPDATE students SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?", (student["id"],))
+    except Exception as _e:
+        log.warning(f"[verify-code] last_login_at update failed: {_e}")
+
     conn.commit()
     conn.close()
 
@@ -2483,9 +2490,17 @@ def admin_stats(authorization: Optional[str] = Header(None)):
 
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, paid_since, created_at FROM students ORDER BY id DESC")
+    # last_login_at は migration 直後の旧 DB に存在しない可能性あり → try/except でフォールバック
+    try:
+        c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at FROM students ORDER BY id DESC")
+        rows = c.fetchall()
+        has_last_login = True
+    except Exception:
+        c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, paid_since, created_at FROM students ORDER BY id DESC")
+        rows = c.fetchall()
+        has_last_login = False
     students = []
-    for row in c.fetchall():
+    for row in rows:
         students.append({
             "id": row["id"],
             "name": row["name"],
@@ -2497,6 +2512,7 @@ def admin_stats(authorization: Optional[str] = Header(None)):
             "trial_end": str(row["trial_end"]) if row["trial_end"] else None,
             "paid_since": str(row["paid_since"]) if row["paid_since"] else None,
             "created_at": str(row["created_at"]) if row["created_at"] else None,
+            "last_login_at": (str(row["last_login_at"]) if has_last_login and row["last_login_at"] else None),
         })
     # 集計
     c.execute("SELECT COUNT(*) AS n FROM students WHERE status='paid'")
@@ -5021,6 +5037,96 @@ def public_textbook_search(
             "created_at": str(r.get("created_at")) if r.get("created_at") else None,
         })
     return {"ok": True, "count": len(out), "results": out}
+
+
+@app.get("/api/admin/students/{student_id}/activity")
+def admin_student_activity(student_id: int, hours: int = 720, limit: int = 200, authorization: Optional[str] = Header(None)):
+    """指定生徒のアクティビティ履歴を返す。
+    - hours: 直近 N 時間 (デフォ 30 日 = 720h)
+    - limit: 最大件数 (デフォ 200)
+    返却:
+      {
+        "student": {id, name, email, ...},
+        "activity_summary": {ai_calls, problem_attempts, login_count, ...},
+        "events": [{name, props, created_at}, ...]
+      }
+    認証: admin Bearer 必須"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+
+    hours = max(1, min(int(hours), 24 * 365))  # 1h〜365日
+    limit = max(1, min(int(limit), 1000))
+    cutoff_iso = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime("%Y-%m-%d %H:%M:%S")
+
+    conn = db()
+    c = conn.cursor()
+    try:
+        # 生徒基本情報
+        try:
+            c.execute("""SELECT id, name, email, grade, goal, plan, status,
+                                trial_end, paid_since, created_at, last_login_at
+                         FROM students WHERE id = ?""", (student_id,))
+        except Exception:
+            c.execute("""SELECT id, name, email, grade, goal, plan, status,
+                                trial_end, paid_since, created_at
+                         FROM students WHERE id = ?""", (student_id,))
+        srow = c.fetchone()
+        if not srow:
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        student = dict(srow)
+        for k in ("trial_end", "paid_since", "created_at", "last_login_at"):
+            if k in student and student[k]:
+                student[k] = str(student[k])
+
+        # アクティビティ events (session_id = "student:N" でフィルタ)
+        session_key = f"student:{student_id}"
+        c.execute(
+            """SELECT name, props, created_at
+               FROM events
+               WHERE session_id = ? AND created_at >= ?
+               ORDER BY created_at DESC
+               LIMIT ?""",
+            (session_key, cutoff_iso, limit),
+        )
+        events_raw = c.fetchall()
+        events = []
+        for r in events_raw:
+            props_str = r["props"] or "{}"
+            try:
+                props = json.loads(props_str) if isinstance(props_str, str) else props_str
+            except Exception:
+                props = {"_raw": str(props_str)[:200]}
+            events.append({
+                "name": r["name"],
+                "props": props,
+                "created_at": str(r["created_at"]),
+            })
+
+        # 集計サマリ
+        summary = {
+            "total_events": len(events),
+            "ai_calls": sum(1 for e in events if e["name"].startswith("ai_")),
+            "ai_input_tokens": sum(int(e["props"].get("input_tokens", 0) or 0) for e in events if e["name"].startswith("ai_")),
+            "ai_output_tokens": sum(int(e["props"].get("output_tokens", 0) or 0) for e in events if e["name"].startswith("ai_")),
+            "problem_attempts": sum(1 for e in events if "problem" in e["name"] or "exam" in e["name"]),
+            "textbook_views": sum(1 for e in events if "textbook" in e["name"]),
+            "by_event": {},
+        }
+        for e in events:
+            summary["by_event"][e["name"]] = summary["by_event"].get(e["name"], 0) + 1
+    finally:
+        conn.close()
+
+    return {
+        "ok": True,
+        "student": student,
+        "activity_summary": summary,
+        "events": events,
+        "filter": {"hours": hours, "limit": limit},
+    }
 
 
 @app.post("/api/admin/students/purge-test")
