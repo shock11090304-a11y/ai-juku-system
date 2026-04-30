@@ -395,11 +395,33 @@ ${/数学/.test(subject) ? `
         const clean = text.trim().replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
         json = JSON.parse(clean);
       } catch (e) {
-        // フェイルセーフ最終層: プール miss + Anthropic 失敗 → 親切な案内 + demo
-        const friendlyMsg = String(e.message || '').includes('ROUTER_EXTERNAL') || String(e.message || '').includes('502')
-          ? 'AI 生成が混雑しています。教材プールにこの単元を事前収録すると次回から待ち時間ゼロで取り出せます。塾長に追加収録依頼してください。'
-          : `AI 生成が一時的に失敗しました: ${e.message}`;
-        alert(`${friendlyMsg}\n\nサンプル教材を表示します。`);
+        // フェイルセーフ最終層: プール miss + Anthropic + Gemini 両系統失敗 → 中立的案内 + demo
+        const errMsg = String(e.message || '').slice(0, 100);
+        const isRouterErr = errMsg.includes('ROUTER_EXTERNAL') || errMsg.includes('502') || errMsg.includes('504');
+        const friendlyMsg = isRouterErr
+          ? '教材生成サーバが混雑しています。30秒後にもう一度「✨ テキスト教材を生成」を押してください。\n(Anthropic + Gemini 両系統で一時的に応答が遅れている可能性)'
+          : `教材生成で一時的なエラーが発生しました。\n詳細: ${errMsg}\n30秒後に再試行してください。`;
+        alert(`${friendlyMsg}\n\n仮の教材を表示します (本物ではありません)。`);
+        // backend events に詳細を記録 (塾長が真原因を即特定できるように)
+        try {
+          if (sessionToken) {
+            fetch(`${backend}/api/admin/log-frontend-error`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + sessionToken,
+              },
+              body: JSON.stringify({
+                kind: 'textbook_generate',
+                subject, topic, level, type,
+                model: MODEL_PREMIUM,
+                error_message: errMsg,
+                full_error: String(e.message || '').slice(0, 500),
+                user_agent: navigator.userAgent.slice(0, 200),
+              }),
+            }).catch(() => {});  // fire-and-forget
+          }
+        } catch (_) {}
         json = generateDemo(subject, topic, level);
       }
     }

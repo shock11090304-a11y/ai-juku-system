@@ -7189,6 +7189,50 @@ def admin_students_list_minimal(limit: int = 20,
     return {"count": len(students), "students": students}
 
 
+@app.post("/api/admin/log-frontend-error")
+def admin_log_frontend_error(payload: dict, authorization: Optional[str] = Header(None)):
+    """frontend で発生したエラーを events に記録する endpoint (生徒 / 塾長 共通)。
+    教材生成・AI チューター等で fallback 表示が出た時、真原因を即特定するため。
+    認証: 生徒 Bearer or admin Bearer (両方未認証でも記録は可)"""
+    student = None
+    is_admin = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            is_admin = True
+        else:
+            try:
+                student = _get_current_student(authorization)
+            except Exception:
+                pass
+    try:
+        conn = db()
+        c = conn.cursor()
+        props = {
+            "kind": (payload.get("kind") or "unknown")[:50],
+            "subject": (payload.get("subject") or "")[:50],
+            "topic": (payload.get("topic") or "")[:80],
+            "level": (payload.get("level") or "")[:30],
+            "type": (payload.get("type") or "")[:30],
+            "model": (payload.get("model") or "")[:50],
+            "error_message": (payload.get("error_message") or "")[:300],
+            "full_error": (payload.get("full_error") or "")[:600],
+            "user_agent": (payload.get("user_agent") or "")[:200],
+            "student_id": student.get("id") if student else None,
+            "is_admin": is_admin,
+        }
+        c.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            ("frontend_error", json.dumps(props, ensure_ascii=False), "frontend_log"),
+        )
+        conn.commit()
+        conn.close()
+        return {"ok": True}
+    except Exception as e:
+        log.error(f"log-frontend-error failed: {e}")
+        return {"ok": False, "error": str(e)[:200]}
+
+
 @app.get("/api/admin/ai/recent-failures")
 def admin_ai_recent_failures(limit: int = 30, x_cron_secret: Optional[str] = Header(None),
                               authorization: Optional[str] = Header(None)):
@@ -7208,7 +7252,7 @@ def admin_ai_recent_failures(limit: int = 30, x_cron_secret: Optional[str] = Hea
     c = conn.cursor()
     c.execute(
         "SELECT created_at, name, props FROM events "
-        "WHERE name IN ('ai_call_failure', 'ai_total_failure', 'ai_credit_low', 'ai_fallback_used', 'ai_fallback_gemini') "
+        "WHERE name IN ('ai_call_failure', 'ai_total_failure', 'ai_credit_low', 'ai_fallback_used', 'ai_fallback_gemini', 'frontend_error') "
         "ORDER BY created_at DESC LIMIT ?",
         (limit,),
     )
