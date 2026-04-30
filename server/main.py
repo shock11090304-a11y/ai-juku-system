@@ -4312,23 +4312,16 @@ def _generate_exam_question(exam_id: str, part_key: str, eiken_grade: Optional[s
 }}"""
 
     try:
-        req = urllib.request.Request(
-            "https://api.anthropic.com/v1/messages",
-            data=json.dumps({
+        # AI never-fail: _call_anthropic_safe 経由で Tier 4 (Gemini) まで自動 fallback
+        data = _call_anthropic_safe(
+            {
                 "model": EXAM_QUESTIONS_MODEL,
                 "max_tokens": 4000,
                 "system": system,
                 "messages": [{"role": "user", "content": user}],
-            }).encode("utf-8"),
-            headers={
-                "x-api-key": ANTHROPIC_API_KEY,
-                "anthropic-version": "2023-06-01",
-                "Content-Type": "application/json",
             },
-            method="POST",
+            kind=f"examq_{exam_id}_{part_key}",
         )
-        with urllib.request.urlopen(req, timeout=90) as resp:
-            data = json.loads(resp.read().decode())
         text = data["content"][0]["text"].strip()
         if text.startswith("```"):
             text = text.split("```", 2)[1]
@@ -4336,13 +4329,8 @@ def _generate_exam_question(exam_id: str, part_key: str, eiken_grade: Optional[s
                 text = text[4:]
             text = text.strip().rstrip("`").strip()
         return json.loads(text)
-    except urllib.error.HTTPError as e:
-        body = ""
-        try:
-            body = e.read().decode("utf-8", errors="replace")[:500]
-        except Exception:
-            pass
-        log.error(f"[ExamQ] Generation failed for {exam_id}/{part_key}: HTTPError {e.code}: {body}")
+    except HTTPException as e:
+        log.error(f"[ExamQ] Generation failed for {exam_id}/{part_key}: HTTP {e.status_code}: {e.detail}")
         return None
     except Exception as e:
         log.error(f"[ExamQ] Generation failed for {exam_id}/{part_key}: {type(e).__name__}: {e}")
@@ -6614,23 +6602,16 @@ def public_exam_questions_recommend(payload: dict):
   "reason_jp": "なぜ次にこれを解くべきか (3行以上、具体的な弱点指摘+伸ばし方)",
   "study_tip_jp": "今日のうちに取り入れるべき具体的な学習Tip (語彙/文法/構造把握 etc)"
 }}"""
-            req = urllib.request.Request(
-                "https://api.anthropic.com/v1/messages",
-                data=json.dumps({
+            # AI never-fail: _call_anthropic_safe 経由で Tier 4 (Gemini) まで自動 fallback
+            d = _call_anthropic_safe(
+                {
                     "model": EXAM_QUESTIONS_MODEL,
                     "max_tokens": 800,
                     "system": system,
                     "messages": [{"role": "user", "content": user}],
-                }).encode("utf-8"),
-                headers={
-                    "x-api-key": ANTHROPIC_API_KEY,
-                    "anthropic-version": "2023-06-01",
-                    "Content-Type": "application/json",
                 },
-                method="POST",
+                kind="recommend_next_advice",
             )
-            with urllib.request.urlopen(req, timeout=60) as resp:
-                d = json.loads(resp.read().decode())
             text = d["content"][0]["text"].strip()
             if text.startswith("```"):
                 text = text.split("```", 2)[1]
@@ -6774,23 +6755,16 @@ def public_curriculum_generate(payload: dict):
 - estimated_score_at_exam は具体的な数値 (例: 「東大英語 78/120 → 88/120 (+10)」)"""
 
     try:
-        req = urllib.request.Request(
-            "https://api.anthropic.com/v1/messages",
-            data=json.dumps({
+        # AI never-fail: _call_anthropic_safe 経由で Tier 4 (Gemini) まで自動 fallback
+        d = _call_anthropic_safe(
+            {
                 "model": EXAM_QUESTIONS_MODEL,
                 "max_tokens": 8000,
                 "system": system,
                 "messages": [{"role": "user", "content": user}],
-            }).encode("utf-8"),
-            headers={
-                "x-api-key": ANTHROPIC_API_KEY,
-                "anthropic-version": "2023-06-01",
-                "Content-Type": "application/json",
             },
-            method="POST",
+            kind="curriculum_generate",
         )
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            d = json.loads(resp.read().decode())
         text = d["content"][0]["text"].strip()
         if text.startswith("```"):
             text = text.split("```", 2)[1]
@@ -7024,23 +6998,16 @@ def _generate_news_reading_question(article: dict, feed_name: str, level: str = 
 }}"""
 
     try:
-        req = urllib.request.Request(
-            "https://api.anthropic.com/v1/messages",
-            data=json.dumps({
+        # AI never-fail: _call_anthropic_safe 経由で Tier 4 (Gemini) まで自動 fallback
+        data = _call_anthropic_safe(
+            {
                 "model": EXAM_QUESTIONS_MODEL,
                 "max_tokens": 4000,
                 "system": system,
                 "messages": [{"role": "user", "content": user}],
-            }).encode("utf-8"),
-            headers={
-                "x-api-key": ANTHROPIC_API_KEY,
-                "anthropic-version": "2023-06-01",
-                "Content-Type": "application/json",
             },
-            method="POST",
+            kind="news_reading_question",
         )
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            data = json.loads(resp.read().decode())
         text = data["content"][0]["text"].strip()
         if text.startswith("```"):
             text = text.split("```", 2)[1]
@@ -8751,8 +8718,6 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
     if _msg_text_total > 40000:
         raise HTTPException(status_code=413, detail="messages too long")
 
-    import urllib.request
-
     body = {
         "model": payload.model,
         "max_tokens": max_tokens,
@@ -8774,20 +8739,10 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
             body["temperature"] = 1.0
             body["thinking"] = {"type": "enabled", "budget_tokens": min(int(payload.thinking_budget or 4000), 16000)}
 
-    req = urllib.request.Request(
-        "https://api.anthropic.com/v1/messages",
-        method="POST",
-        headers={
-            "Content-Type": "application/json",
-            "x-api-key": ANTHROPIC_API_KEY,
-            "anthropic-version": "2023-06-01",
-        },
-        data=json.dumps(body).encode("utf-8"),
-    )
-
+    # AI never-fail 原則: _call_anthropic_safe() 経由で 4 段降格 (Opus→Sonnet→Haiku→Gemini)。
+    # 直叩きから _call_anthropic_safe() に移行 (memory: feedback_ai_never_fail.md)
     try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+        data = _call_anthropic_safe(body, kind=f"call_{payload.kind}", student_id=payload.student_id)
 
         # Track cost per student (for CEO analytics)
         usage = data.get("usage", {})
@@ -8800,7 +8755,8 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
                 (
                     f"ai_call_{payload.kind}",
                     json.dumps({
-                        "model": payload.model,
+                        "model": data.get("_actual_model") or payload.model,
+                        "provider": data.get("_provider") or "anthropic",
                         "input_tokens": usage.get("input_tokens", 0),
                         "output_tokens": usage.get("output_tokens", 0),
                     }),
@@ -8824,10 +8780,9 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
                 log.warning(f"_increment_usage failed silently: {e}")
 
         return data
-    except urllib.error.HTTPError as e:
-        err = e.read().decode("utf-8")[:300]
-        log.error(f"AI proxy error: {e.code} {err}")
-        raise HTTPException(status_code=e.code, detail=err)
+    except HTTPException:
+        # _call_anthropic_safe が raise した 503 (全 tier 失敗) は素通し
+        raise
     except Exception as e:
         log.error(f"AI proxy exception: {e}")
         raise HTTPException(status_code=500, detail=str(e))
