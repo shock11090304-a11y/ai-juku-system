@@ -739,6 +739,71 @@ def health():
         "campaign_waiver_active": ENROLLMENT_WAIVER_CAMPAIGN_ENABLED,
     }
 
+
+@app.get("/api/email/diagnose-public")
+def email_diagnose_public():
+    """🔥 緊急診断用: 認証不要で Resend ドメイン状態 + 直近エラー要約を公開。
+    機密値 (API キー本体, FROM_EMAIL のローカルパート, 顧客メール) は出さない。
+    169 件連続失敗に対する原因特定のため 2026-04-30 緊急追加。
+    """
+    import urllib.request, urllib.error
+    out = {
+        "from_domain": FROM_EMAIL.split("@")[-1].rstrip(">").strip() if "@" in FROM_EMAIL else "not_set",
+        "api_key_set": bool(RESEND_API_KEY),
+        "api_key_prefix": (RESEND_API_KEY[:4] + "***") if RESEND_API_KEY else "",
+        "domain_status": None,
+        "domains_summary": [],
+        "api_key_valid": None,
+        "last_error_class": None,  # error の type 名のみ (full message は出さない)
+        "last_error_short": None,  # 先頭 80 文字のみ
+    }
+    if not RESEND_API_KEY:
+        out["api_key_valid"] = False
+        return out
+    # Resend /domains で検証状態のみ取得
+    try:
+        req = urllib.request.Request(
+            "https://api.resend.com/domains",
+            headers={"Authorization": f"Bearer {RESEND_API_KEY}"},
+            method="GET",
+        )
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            out["api_key_valid"] = True
+            data = json.loads(resp.read().decode())
+            domains = data.get("data", []) if isinstance(data, dict) else data
+            target_domain = out["from_domain"]
+            for d in (domains if isinstance(domains, list) else []):
+                out["domains_summary"].append({"name": d.get("name"), "status": d.get("status")})
+                if d.get("name") == target_domain:
+                    out["domain_status"] = d.get("status")
+            if out["domain_status"] is None and target_domain:
+                out["domain_status"] = "not_registered"
+    except urllib.error.HTTPError as e:
+        out["api_key_valid"] = False
+        out["last_error_class"] = f"HTTPError_{e.code}"
+        out["last_error_short"] = f"HTTP {e.code}"[:80]
+    except Exception as e:
+        out["api_key_valid"] = False
+        out["last_error_class"] = type(e).__name__
+        out["last_error_short"] = str(e)[:80]
+    # 最近のメール送信エラー (1件のみ、type だけ出す)
+    try:
+        conn = db(); c = conn.cursor()
+        c.execute(
+            "SELECT props FROM events WHERE name = 'signup_email_status' ORDER BY created_at DESC LIMIT 1"
+        )
+        row = c.fetchone()
+        conn.close()
+        if row:
+            props_raw = row[0] if not hasattr(row, "keys") else row["props"]
+            props = json.loads(props_raw) if isinstance(props_raw, str) else props_raw
+            if isinstance(props, dict) and not props.get("email_sent"):
+                err = (props.get("error") or "")[:150]
+                out["recent_send_error_short"] = err
+    except Exception:
+        pass
+    return out
+
 @app.get("/api/stats")
 def stats(x_stats_token: str = Header(None)):
     """CEO dashboard 用の集計情報。
@@ -1450,6 +1515,7 @@ def _collect_health_snapshot() -> dict:
         email_sent = 0
         recent_failures_streak = 0  # 最新から連続する失敗数
         streak_broken = False
+        most_recent_error = None  # 直近の失敗エラー (alert 詳細用)
         for er in email_rows:
             props_raw = er[0] if not hasattr(er, "keys") else er["props"]
             try:
@@ -1466,12 +1532,15 @@ def _collect_health_snapshot() -> dict:
             else:
                 if not streak_broken:
                     recent_failures_streak += 1
+                    if most_recent_error is None:
+                        most_recent_error = (props.get("error") or "")[:200]
         snapshot["email_total_7d"] = email_total
         snapshot["email_sent_7d"] = email_sent
         snapshot["email_success_rate_7d_pct"] = (
             round(100 * email_sent / email_total, 1) if email_total > 0 else None
         )
         snapshot["email_recent_failures_streak"] = recent_failures_streak
+        snapshot["email_most_recent_error"] = most_recent_error
     except Exception as e:
         log.warning(f"[Monitor] email-rate query failed: {e}")
         try: conn.rollback()
@@ -1585,6 +1654,8 @@ def _evaluate_alerts(snapshot: dict) -> list:
     # 8. 🔥 magic link メール送信失敗の連続検知 (2026-04-30 追加)
     streak = snapshot.get("email_recent_failures_streak", 0)
     if streak >= 3:
+        recent_err = snapshot.get("email_most_recent_error") or ""
+        err_suffix = f" 直近エラー: {recent_err}" if recent_err else ""
         alerts.append({
             "key": "email_failure_streak", "severity": "critical",
             "title": f"🚨 magic link メール送信失敗が連続 {streak} 件",
@@ -1592,6 +1663,7 @@ def _evaluate_alerts(snapshot: dict) -> list:
                 f"events.signup_email_status の直近 {streak} 件が連続で email_sent=false。"
                 " Resend API 障害 / API キー失効 / ドメイン認証問題の可能性。"
                 f" 直近7日 送信成功率 {snapshot.get('email_success_rate_7d_pct')}%。"
+                f"{err_suffix}"
             ),
         })
     return alerts
