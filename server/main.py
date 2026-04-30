@@ -5069,12 +5069,23 @@ def admin_students_purge_test(payload: dict, authorization: Optional[str] = Head
         if not dry_run and matched:
             ids_to_delete = [m["id"] for m in matched]
             placeholders = ",".join(["?"] * len(ids_to_delete))
-            c.execute(f"DELETE FROM students WHERE id IN ({placeholders})", tuple(ids_to_delete))
-            deleted = c.rowcount
-            # 関連レコード (otp_codes / events) もクリーンアップ
+            # 外部キー違反防止: 関連テーブルを先に削除
             try:
                 c.execute(f"DELETE FROM otp_codes WHERE student_id IN ({placeholders})", tuple(ids_to_delete))
-            except Exception: pass
+            except Exception as e:
+                log.warning(f"[Students:PurgeTest] otp_codes cleanup failed: {e}")
+            try:
+                c.execute(f"DELETE FROM payments WHERE student_id IN ({placeholders})", tuple(ids_to_delete))
+            except Exception as e:
+                log.warning(f"[Students:PurgeTest] payments cleanup failed: {e}")
+            try:
+                c.execute(f"DELETE FROM usage_monthly WHERE student_id IN ({placeholders})", tuple(ids_to_delete))
+            except Exception as e:
+                log.warning(f"[Students:PurgeTest] usage_monthly cleanup failed: {e}")
+            # students 本体削除
+            c.execute(f"DELETE FROM students WHERE id IN ({placeholders})", tuple(ids_to_delete))
+            # _Cursor に rowcount 属性が無いため matched 数を deleted とみなす
+            deleted = len(ids_to_delete)
             conn.commit()
     finally:
         conn.close()
