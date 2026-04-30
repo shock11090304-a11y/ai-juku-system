@@ -197,8 +197,37 @@ _default_origins = "https://trillion-ai-juku.com,https://www.trillion-ai-juku.co
 ALLOWED_ORIGINS = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", _default_origins).split(",") if o.strip()]
 
 # 1日あたり1生徒が消費できるAIトークン上限 (input+output の合計)
-# 100K tokens ≒ Opus で $10、Sonnet で $1 程度。通常利用では十分超えない。
-AI_DAILY_TOKEN_BUDGET = int(os.getenv("AI_DAILY_TOKEN_BUDGET", "100000"))
+# Plan 別の budget を設定 (塾長指示 2026-04-30: premium は実質無制限に)
+#   - trial:    100K  (Opus で $10 程度・トライアル中の濫用防止)
+#   - standard: 300K  (3 倍・教材生成や問題大量生成も実用範囲)
+#   - premium / founder_special / family: 2M  (実質無制限・塾長運用や濃い学習も対応)
+#   - student_addon: 200K  (通塾生補助・standard より控えめ)
+AI_DAILY_TOKEN_BUDGET = int(os.getenv("AI_DAILY_TOKEN_BUDGET", "100000"))  # default fallback (trial 相当)
+# Premium 相当 (実質無制限) のプラン集合 — PRICE_MAP の全キーを後方互換含めてカバー
+PREMIUM_TIER_PLANS = {
+    "premium",
+    "family",
+    "founder_special",  # 創設メンバー50名・永年¥14,500・premium 全機能
+    "founder1",         # 旧 founder_special (2026-04-28 廃止・後方互換)
+    "hybrid",           # 旧 premium 名 (後方互換)
+    "intensive",        # 旧 family 名 (後方互換)
+}
+PLAN_DAILY_TOKEN_BUDGET = {
+    # premium tier (実質無制限)
+    "premium":         2_000_000,
+    "family":          2_000_000,
+    "founder_special": 2_000_000,
+    "founder1":        2_000_000,  # 後方互換 (旧 founder_special)
+    "hybrid":          2_000_000,  # 後方互換 (旧 premium)
+    "intensive":       2_000_000,  # 後方互換 (旧 family)
+    # standard tier
+    "standard":          300_000,
+    "ai":                300_000,  # 後方互換 (旧 standard)
+    # 通塾生補助
+    "student_addon":     200_000,
+    # 体験
+    "trial":             100_000,
+}
 
 # ==========================================================================
 # 認証（マジックリンク方式）
@@ -8832,13 +8861,23 @@ def _verify_student_active(student_id: int) -> dict:
 
 
 def _check_ai_budget(student_id: int) -> None:
-    """その生徒が直近24hで消費したAIトークンが AI_DAILY_TOKEN_BUDGET を超えていないか確認。"""
-    # Postgres は TIMESTAMP (tz なし) カラムと tz 付き ISO 文字列の比較で
-    # エラーを返すため、datetime オブジェクトをそのまま渡して psycopg に
-    # 型変換を任せる（SQLite も datetime を受け付ける）。
+    """その生徒が直近24hで消費したAIトークンが Plan 別 budget を超えていないか確認。
+    Plan 別 (塾長指示 2026-04-30): premium/family/founder_special は実質無制限の 2M tokens。
+    旧プラン名 (founder1/hybrid/intensive/ai) も後方互換でカバー (DB 既存データ対策)。"""
     one_day_ago = datetime.now(timezone.utc) - timedelta(days=1)
     conn = db()
     c = conn.cursor()
+    # 生徒の plan を取得して budget を決定
+    plan = "trial"
+    try:
+        c.execute("SELECT plan FROM students WHERE id = ?", (student_id,))
+        row = c.fetchone()
+        if row and row["plan"]:
+            plan = str(row["plan"])
+    except Exception:
+        pass
+    budget = PLAN_DAILY_TOKEN_BUDGET.get(plan, AI_DAILY_TOKEN_BUDGET)
+    is_premium_tier = plan in PREMIUM_TIER_PLANS
     # psycopg は % をプレースホルダ誤検知するため LIKE パターンもパラメータで渡す
     c.execute(
         """SELECT props FROM events
@@ -8855,11 +8894,20 @@ def _check_ai_budget(student_id: int) -> None:
         except (json.JSONDecodeError, ValueError, TypeError):
             continue
     conn.close()
-    if total >= AI_DAILY_TOKEN_BUDGET:
-        raise HTTPException(
-            status_code=429,
-            detail=f"1日あたりのAI利用上限（{AI_DAILY_TOKEN_BUDGET:,}トークン）に達しました。明日またお試しください。",
-        )
+    if total >= budget:
+        # Plan 別に upgrade 文言を出し分け (premium tier は upgrade 不要)
+        if is_premium_tier:
+            detail = (
+                f"AI_BUDGET_PREMIUM:1日あたりのAI利用上限({budget:,}トークン)に達しました。"
+                f"明日(JST 0時頃)にリセットされます。{plan}プランは大量生成にも耐える設計ですが、"
+                f"教材一括生成等で稀に到達することがあります。"
+            )
+        else:
+            detail = (
+                f"AI_BUDGET_TRIAL:1日あたりのAI利用上限({budget:,}トークン)に達しました。"
+                f"明日リセットされます。プレミアムプランなら 1日 2,000,000 トークンまで利用可能です。"
+            )
+        raise HTTPException(status_code=429, detail=detail)
 
 
 # ==========================================================================

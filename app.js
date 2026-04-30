@@ -970,35 +970,69 @@ function addStudent() {
 // ==========================================================================
 // Claude API Call
 // ==========================================================================
-// クォータ超過時のアップグレード誘導モーダル
+// クォータ超過時のダイアログ (premium tier vs trial で出し分け)
 function showQuotaExhaustedDialog(feature, message) {
   const labels = { problems: '問題生成', essays: '添削', textbooks: '参考書生成' };
   const featureName = labels[feature] || feature;
   const existing = document.getElementById('quotaExhaustedModal');
   if (existing) existing.remove();
+  // backend の prefix で premium tier 判定 (PREMIUM_TIER_PLANS に該当するプランは upgrade 不要)
+  const isPremium = String(message || '').startsWith('AI_BUDGET_PREMIUM:');
+  // prefix を文言から除去
+  const cleanMessage = String(message || '').replace(/^AI_BUDGET_(PREMIUM|TRIAL):/, '');
+  // 既存 student の plan 状況も別経路で取得 (frontend cache)
+  const student = (typeof getCurrentStudent === 'function') ? getCurrentStudent() : null;
+  const planFromStudent = student && student.plan ? String(student.plan) : '';
+  const PREMIUM_TIER = ['premium', 'family', 'founder_special', 'founder1', 'hybrid', 'intensive'];
+  const userIsPremium = isPremium || PREMIUM_TIER.includes(planFromStudent);
+
   const modal = document.createElement('div');
   modal.id = 'quotaExhaustedModal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;';
-  modal.innerHTML = `
-    <div style="background:linear-gradient(135deg,#1a1432,#2a1a48);border:1px solid rgba(167,139,250,0.4);border-radius:18px;padding:1.8rem;max-width:480px;width:100%;color:#f5f5fa;">
-      <div style="font-size:2rem;margin-bottom:0.5rem;">⚠️</div>
-      <h3 style="font-size:1.3rem;margin:0 0 0.5rem 0;color:#fbbf24;">${featureName}の今月分が上限に達しました</h3>
-      <p style="font-size:0.92rem;color:#cbd5e1;margin-bottom:1rem;line-height:1.6;">${message}</p>
-      <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:10px;padding:0.9rem;margin-bottom:1.2rem;">
-        <div style="font-weight:800;color:#a78bfa;margin-bottom:0.3rem;">プレミアム ¥39,800/月</div>
-        <ul style="margin:0;padding-left:1.2rem;font-size:0.88rem;color:#cbd5e1;line-height:1.7;">
-          <li>問題生成・添削・参考書生成すべて<strong style="color:#fbbf24;">無制限</strong></li>
-          <li>最上位AIモデル Opus 4.7 (Extended Thinking)</li>
-          <li>優先処理 + 保護者向け詳細レポート</li>
-        </ul>
+
+  if (userIsPremium) {
+    // プレミアム: アップグレード勧誘なし、明日リセット案内のみ
+    modal.innerHTML = `
+      <div style="background:linear-gradient(135deg,#1a1432,#2a1a48);border:1px solid rgba(167,139,250,0.4);border-radius:18px;padding:1.8rem;max-width:480px;width:100%;color:#f5f5fa;">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">⏰</div>
+        <h3 style="font-size:1.3rem;margin:0 0 0.5rem 0;color:#fbbf24;">本日の AI 利用上限に達しました</h3>
+        <p style="font-size:0.92rem;color:#cbd5e1;margin-bottom:1rem;line-height:1.6;">${escapeHtml(cleanMessage)}</p>
+        <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:10px;padding:0.9rem;margin-bottom:1.2rem;">
+          <div style="font-weight:800;color:#4ade80;margin-bottom:0.3rem;">✓ あなたは ${escapeHtml(planFromStudent || 'プレミアム')} プランをご利用中</div>
+          <p style="margin:0;font-size:0.85rem;color:#cbd5e1;line-height:1.6;">
+            本日 1日 2,000,000 トークンまで利用可能。<strong>JST 0時頃に自動リセット</strong>されます。
+            濃密な学習・教材一括生成 等で稀に到達することがあります。
+          </p>
+        </div>
+        <div style="display:flex;gap:0.5rem;">
+          <button onclick="document.getElementById('quotaExhaustedModal').remove()" style="background:linear-gradient(135deg,#6366f1,#a78bfa);color:white;border:none;padding:0.7rem 1.2rem;border-radius:8px;font-weight:800;font-size:0.95rem;cursor:pointer;flex:1;">了解</button>
+        </div>
+        <p style="font-size:0.78rem;color:#71717a;margin-top:0.8rem;text-align:center;">明日 (JST 0:00 頃) に上限がリセットされます</p>
       </div>
-      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-        <a href="upgrade.html" style="background:linear-gradient(135deg,#8b5cf6,#ec4899);color:white;padding:0.7rem 1.2rem;border-radius:8px;text-decoration:none;font-weight:800;font-size:0.95rem;flex:1;text-align:center;">プレミアムにアップグレード →</a>
-        <button onclick="document.getElementById('quotaExhaustedModal').remove()" style="background:rgba(255,255,255,0.08);color:#cbd5e1;border:1px solid rgba(255,255,255,0.15);padding:0.7rem 1.2rem;border-radius:8px;font-weight:700;font-size:0.95rem;cursor:pointer;">閉じる</button>
+    `;
+  } else {
+    // 体験 / standard: アップグレード勧誘あり
+    modal.innerHTML = `
+      <div style="background:linear-gradient(135deg,#1a1432,#2a1a48);border:1px solid rgba(167,139,250,0.4);border-radius:18px;padding:1.8rem;max-width:480px;width:100%;color:#f5f5fa;">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">⚠️</div>
+        <h3 style="font-size:1.3rem;margin:0 0 0.5rem 0;color:#fbbf24;">本日の AI 利用上限に達しました</h3>
+        <p style="font-size:0.92rem;color:#cbd5e1;margin-bottom:1rem;line-height:1.6;">${escapeHtml(cleanMessage)}</p>
+        <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:10px;padding:0.9rem;margin-bottom:1.2rem;">
+          <div style="font-weight:800;color:#a78bfa;margin-bottom:0.3rem;">プレミアム ¥39,800/月</div>
+          <ul style="margin:0;padding-left:1.2rem;font-size:0.88rem;color:#cbd5e1;line-height:1.7;">
+            <li>1日 <strong style="color:#fbbf24;">2,000,000 トークン</strong> (体験の 20倍)</li>
+            <li>最上位AIモデル Opus 4.7 (Extended Thinking)</li>
+            <li>優先処理 + 保護者向け詳細レポート</li>
+          </ul>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+          <a href="upgrade.html" style="background:linear-gradient(135deg,#8b5cf6,#ec4899);color:white;padding:0.7rem 1.2rem;border-radius:8px;text-decoration:none;font-weight:800;font-size:0.95rem;flex:1;text-align:center;">プレミアムにアップグレード →</a>
+          <button onclick="document.getElementById('quotaExhaustedModal').remove()" style="background:rgba(255,255,255,0.08);color:#cbd5e1;border:1px solid rgba(255,255,255,0.15);padding:0.7rem 1.2rem;border-radius:8px;font-weight:700;font-size:0.95rem;cursor:pointer;">閉じる</button>
+        </div>
+        <p style="font-size:0.78rem;color:#71717a;margin-top:0.8rem;text-align:center;">明日 (JST 0:00 頃) に上限がリセットされます</p>
       </div>
-      <p style="font-size:0.78rem;color:#71717a;margin-top:0.8rem;text-align:center;">次回の請求サイクル開始日に上限がリセットされます</p>
-    </div>
-  `;
+    `;
+  }
   document.body.appendChild(modal);
 }
 
@@ -1053,17 +1087,21 @@ async function callClaude(systemPrompt, userMessage, options = {}) {
         }),
         signal: controller.signal,
       });
-      // 月次クォータ超過 (429) の場合は明示的にエラーを投げてアップグレード誘導
-      if (res.status === 429 && feature) {
+      // クォータ超過 (429): 月次クォータ (feature 別) と日次 token budget (AI_BUDGET_*) の両方をキャッチ
+      if (res.status === 429) {
         const errData = await res.json().catch(() => ({}));
-        const msg = errData.detail || '今月の利用上限に達しました。プレミアムにアップグレードすると無制限で使えます。';
-        if (typeof showQuotaExhaustedDialog === 'function') {
-          showQuotaExhaustedDialog(feature, msg);
-        } else {
-          alert('⚠️ ' + msg);
+        const detail = String(errData.detail || '');
+        const isDailyBudget = detail.startsWith('AI_BUDGET_PREMIUM:') || detail.startsWith('AI_BUDGET_TRIAL:');
+        if (feature || isDailyBudget) {
+          const msg = detail || '本日の AI 利用上限に達しました。明日リセットされます。';
+          if (typeof showQuotaExhaustedDialog === 'function') {
+            showQuotaExhaustedDialog(feature || 'daily_budget', msg);
+          } else {
+            alert('⚠️ ' + msg.replace(/^AI_BUDGET_(PREMIUM|TRIAL):/, ''));
+          }
+          if (inflightAbortControllers.get(abortKey) === controller) inflightAbortControllers.delete(abortKey);
+          throw new Error('QUOTA_EXHAUSTED:' + (feature || 'daily_budget'));
         }
-        if (inflightAbortControllers.get(abortKey) === controller) inflightAbortControllers.delete(abortKey);
-        throw new Error('QUOTA_EXHAUSTED:' + feature);
       }
       if (res.ok) {
         const data = await res.json();
