@@ -813,11 +813,24 @@
         <div class="roster-controls">
           <input type="text" id="rosterSearch" placeholder="名前/学年で検索..." />
           <select id="rosterSort">
-            <option value="fee-desc">月謝順（高→低）</option>
-            <option value="fee-asc">月謝順（低→高）</option>
+            <option value="fee-desc">月謝順(高→低)</option>
+            <option value="fee-asc">月謝順(低→高)</option>
             <option value="name">名前順</option>
             <option value="grade">学年順</option>
           </select>
+        </div>
+      </div>
+      <!-- 🚨 未ログイン警告バナー (実害あり = 課金してるのに使ってない) -->
+      <div id="neverLoginAlert" style="display:none;margin:0.75rem 0;padding:0.9rem 1rem;background:linear-gradient(90deg,rgba(239,68,68,0.15),rgba(239,68,68,0.05));border:1px solid rgba(239,68,68,0.4);border-radius:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+          <div style="flex:1;min-width:240px;">
+            <div style="color:#f87171;font-weight:700;font-size:0.95rem;">🚨 <span id="neverLoginCount">0</span>名 がアプリに未ログイン</div>
+            <div style="color:#fca5a5;font-size:0.78rem;margin-top:0.25rem;">課金している/体験中なのに一度もアプリを使っていない生徒です。即座にログイン招待を送ってください。</div>
+          </div>
+          <div style="display:flex;gap:0.5rem;">
+            <button id="neverLoginPreview" style="background:rgba(255,255,255,0.08);color:#e4e4e7;border:1px solid rgba(255,255,255,0.2);padding:0.55rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.82rem;">対象を確認</button>
+            <button id="neverLoginSend" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;padding:0.55rem 1.1rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:700;">📧 全員に招待送信</button>
+          </div>
         </div>
       </div>
       <div class="roster-table-wrapper">
@@ -1118,6 +1131,23 @@
         const counterEl = document.getElementById('rosterCounter');
         if (counterEl) {
           counterEl.textContent = `(取得 ${apiStudents.length}名 / ${counterParts.join(' • ')})`;
+        }
+
+        // 🚨 未ログイン (last_login_at IS NULL) の trial/paid 全員を集計してアラート表示
+        const neverLoginStudents = apiStudents.filter(st =>
+          !st.last_login_at && (st.status === 'paid' || st.status === 'trial')
+        );
+        const neverAlertEl = document.getElementById('neverLoginAlert');
+        const neverCountEl = document.getElementById('neverLoginCount');
+        if (neverAlertEl && neverCountEl) {
+          if (neverLoginStudents.length > 0) {
+            neverCountEl.textContent = neverLoginStudents.length;
+            neverAlertEl.style.display = 'block';
+            window.__neverLoginStudents = neverLoginStudents;
+          } else {
+            neverAlertEl.style.display = 'none';
+            window.__neverLoginStudents = [];
+          }
         }
 
         // === 💰 MRR 内訳: 有料生徒の月謝を一覧化して合計を MRR と突合 ===
@@ -2329,6 +2359,44 @@
       if (e.key === 'Escape') {
         const modal = document.getElementById('studentDetailModal');
         if (modal && modal.style.display === 'flex') modal.style.display = 'none';
+      }
+    });
+
+    // 🚨 未ログイン招待送信ボタン
+    document.addEventListener('click', async (e) => {
+      const previewBtn = e.target.closest && e.target.closest('#neverLoginPreview');
+      if (previewBtn) {
+        const list = window.__neverLoginStudents || [];
+        if (list.length === 0) { alert('未ログインの生徒はいません'); return; }
+        const lines = list.map((s, i) => `${i+1}. ${s.name || '(名前なし)'} (${s.email || '?'}) [${s.status}]`).join('\n');
+        alert(`📋 招待送信対象 (${list.length}名):\n\n${lines}`);
+      }
+      const sendBtn = e.target.closest && e.target.closest('#neverLoginSend');
+      if (sendBtn) {
+        const list = window.__neverLoginStudents || [];
+        if (list.length === 0) { alert('未ログインの生徒はいません'); return; }
+        const ok = confirm(`📧 ${list.length}名 にログイン招待メールを送信します。よろしいですか?\n\n対象:\n${list.slice(0,8).map(s => '・' + (s.name || '?') + ' (' + (s.email || '?') + ')').join('\n')}${list.length > 8 ? '\n他 ' + (list.length-8) + '名' : ''}`);
+        if (!ok) return;
+        sendBtn.disabled = true;
+        sendBtn.textContent = '⏳ 送信中...';
+        try {
+          const res = await AdminAuth.fetch('/api/admin/students/send-login-link', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: list.map(s => s.id), dry_run: false }),
+          });
+          const data = await res.json();
+          if (res.ok && data.ok) {
+            alert(`✅ 完了: 対象${data.matched}名・送信${data.sent}通・失敗${data.failed}通\n\n3 分後にダッシュをリロードして「最終ログイン」が更新されているか確認してください。`);
+          } else {
+            alert(`⚠️ 送信失敗: ${data.detail || data.message || res.status}`);
+          }
+        } catch (err) {
+          alert(`⚠️ エラー: ${err.message}`);
+        } finally {
+          sendBtn.disabled = false;
+          sendBtn.textContent = '📧 全員に招待送信';
+        }
       }
     });
   })();

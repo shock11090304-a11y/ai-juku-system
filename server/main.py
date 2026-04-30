@@ -5039,6 +5039,94 @@ def public_textbook_search(
     return {"ok": True, "count": len(out), "results": out}
 
 
+@app.post("/api/admin/students/send-login-link")
+def admin_students_send_login_link(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """指定生徒 (ids) または未ログイン全員に magic link メールを送信する。
+    payload:
+      {"ids": [1, 2, 3]}              # ID 指定
+      {"target": "never_logged_in"}   # last_login_at IS NULL の trial/paid 全員
+      {"dry_run": true}               # 送信せず対象一覧のみ返す
+    認証: admin Bearer or x-cron-secret"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    ids = payload.get("ids") or []
+    target = payload.get("target")
+    dry_run = bool(payload.get("dry_run", False))
+    if not ids and not target:
+        raise HTTPException(status_code=400, detail="ids または target のいずれか必須")
+
+    conn = db()
+    c = conn.cursor()
+    students_to_send = []
+    try:
+        if ids:
+            placeholders = ",".join(["?"] * len(ids))
+            try:
+                c.execute(f"""SELECT id, name, email, status, last_login_at
+                             FROM students WHERE id IN ({placeholders})""", tuple(ids))
+            except Exception:
+                c.execute(f"""SELECT id, name, email, status
+                             FROM students WHERE id IN ({placeholders})""", tuple(ids))
+            students_to_send = [dict(r) for r in c.fetchall()]
+        elif target == "never_logged_in":
+            try:
+                c.execute("""SELECT id, name, email, status, last_login_at FROM students
+                             WHERE last_login_at IS NULL
+                               AND status IN ('trial', 'paid')
+                               AND email IS NOT NULL AND email != ''""")
+            except Exception:
+                # last_login_at カラム未マイグレーション環境
+                c.execute("""SELECT id, name, email, status FROM students
+                             WHERE status IN ('trial', 'paid')
+                               AND email IS NOT NULL AND email != ''""")
+            students_to_send = [dict(r) for r in c.fetchall()]
+    finally:
+        conn.close()
+
+    sent = 0
+    failed = []
+    sent_details = []
+    for s in students_to_send:
+        sent_details.append({"id": s["id"], "name": s.get("name"), "email": s.get("email")})
+        if dry_run:
+            continue
+        try:
+            session_token = _sign_session_token(s["id"])
+            magic_url = f"{BASE_URL}/auth.html?t={session_token}"
+            otp_code = _create_otp(s["id"])
+            _send_magic_link_email(
+                s["email"],
+                s.get("name") or "",
+                magic_url,
+                otp_code=otp_code,
+                is_welcome=True,  # 初回ログイン誘導なので welcome モード
+            )
+            sent += 1
+        except Exception as e:
+            log.error(f"[Students:SendLoginLink] failed for student {s['id']}: {type(e).__name__}: {e}")
+            failed.append({"id": s["id"], "email": s.get("email"), "error": str(e)[:200]})
+
+    log.info(f"[Students:SendLoginLink] dry_run={dry_run} matched={len(students_to_send)} sent={sent} failed={len(failed)}")
+    return {
+        "ok": True,
+        "matched": len(students_to_send),
+        "sent": sent,
+        "failed": len(failed),
+        "failed_details": failed[:20],
+        "dry_run": dry_run,
+        "items": sent_details[:50],
+        "message": f"{'(dry run) ' if dry_run else ''}対象 {len(students_to_send)} 名・送信 {sent} 通・失敗 {len(failed)}",
+    }
+
+
 @app.get("/api/admin/students/{student_id}/activity")
 def admin_student_activity(student_id: int, hours: int = 720, limit: int = 200, authorization: Optional[str] = Header(None)):
     """指定生徒のアクティビティ履歴を返す。
