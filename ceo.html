@@ -830,6 +830,7 @@
               <th>プラン / 受講コース</th>
               <th>月謝</th>
               <th>状態</th>
+              <th>最終ログイン</th>
               <th>目標</th>
             </tr>
           </thead>
@@ -2057,16 +2058,29 @@
     .student-name-link:hover { color: #fbbf24 !important; background: rgba(251,191,36,0.08); }
   </style>
   <div id="studentDetailModal" class="student-detail-overlay" role="dialog" aria-modal="true" aria-labelledby="studentDetailTitle" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:20px;">
-    <div style="background:linear-gradient(160deg,#1e1b4b 0%,#0a0a1a 70%);border:1px solid rgba(167,139,250,0.4);border-radius:16px;max-width:640px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 30px 80px rgba(99,102,241,0.4);">
+    <div style="background:linear-gradient(160deg,#1e1b4b 0%,#0a0a1a 70%);border:1px solid rgba(167,139,250,0.4);border-radius:16px;max-width:760px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 30px 80px rgba(99,102,241,0.4);">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.1);">
-        <h3 id="studentDetailTitle" style="margin:0;font-size:1.15rem;color:#a78bfa;">📋 申込内容詳細</h3>
+        <h3 id="studentDetailTitle" style="margin:0;font-size:1.15rem;color:#a78bfa;">📋 生徒詳細</h3>
         <button id="studentDetailClose" style="background:rgba(255,255,255,0.08);color:#e4e4e7;border:1px solid rgba(255,255,255,0.15);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;line-height:1;">✕</button>
       </div>
+      <!-- タブヘッダ -->
+      <div id="studentDetailTabs" style="display:flex;gap:0;padding:0 24px;border-bottom:1px solid rgba(255,255,255,0.08);">
+        <button class="sd-tab-btn active" data-tab="info" style="flex:1;padding:12px 16px;background:none;color:#a78bfa;border:none;border-bottom:2px solid #a78bfa;cursor:pointer;font-size:0.92rem;font-weight:600;">📋 申込内容</button>
+        <button class="sd-tab-btn" data-tab="activity" style="flex:1;padding:12px 16px;background:none;color:#71717a;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.92rem;font-weight:600;">⚡ アクティビティ履歴</button>
+        <button class="sd-tab-btn" data-tab="stats" style="flex:1;padding:12px 16px;background:none;color:#71717a;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.92rem;font-weight:600;">📊 利用統計</button>
+      </div>
+      <!-- タブパネル -->
       <div id="studentDetailBody" style="padding:24px;color:#e4e4e7;font-size:0.92rem;line-height:1.7;">
-        <!-- JS で埋める -->
+        <div class="sd-tab-pane" data-pane="info"><!-- JS で埋める --></div>
+        <div class="sd-tab-pane" data-pane="activity" style="display:none;">読み込み中...</div>
+        <div class="sd-tab-pane" data-pane="stats" style="display:none;">読み込み中...</div>
       </div>
     </div>
   </div>
+  <style>
+    .sd-tab-btn:hover { color: #fff !important; }
+    .sd-tab-btn.active { color: #a78bfa !important; border-bottom-color: #a78bfa !important; }
+  </style>
 
   <!-- 申込詳細モーダル script -->
   <script>
@@ -2115,18 +2129,27 @@
       const map = window.__studentsById || {};
       const st = map[String(id)];
       const modal = document.getElementById('studentDetailModal');
-      const body = document.getElementById('studentDetailBody');
+      const infoPane = modal.querySelector('[data-pane="info"]');
+      const activityPane = modal.querySelector('[data-pane="activity"]');
+      const statsPane = modal.querySelector('[data-pane="stats"]');
       if (!st) {
-        body.innerHTML = '<div style="color:#fbbf24;">⚠️ この生徒の詳細データが見つかりません (再読み込みしてみてください)</div>';
+        infoPane.innerHTML = '<div style="color:#fbbf24;">⚠️ この生徒の詳細データが見つかりません (再読み込みしてみてください)</div>';
         modal.style.display = 'flex';
         return;
       }
+      // モーダルを開く時はタブを「申込内容」にリセット
+      modal.querySelectorAll('.sd-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === 'info'));
+      modal.querySelectorAll('.sd-tab-pane').forEach(p => p.style.display = (p.dataset.pane === 'info' ? 'block' : 'none'));
+
       const statusLabel = STATUS_LABEL[st.status] || (st.status || '不明');
       const planLabel   = st.plan ? (PLAN_LABEL[st.plan] || st.plan) : '<span style="color:#71717a;">未契約 (トライアル中など)</span>';
       const emailHtml = st.email
         ? `<a href="${esc(safeMailtoHref(st.email))}" style="color:#34d399;text-decoration:underline;">${esc(st.email)}</a>`
         : '<span style="color:#71717a;">登録なし</span>';
-      body.innerHTML = [
+      const lastLoginHtml = st.last_login_at
+        ? fmtDate(st.last_login_at)
+        : '<span style="color:#71717a;">未ログイン</span>';
+      infoPane.innerHTML = [
         row('申込日時',     fmtDate(st.created_at)),
         row('お名前',       `<strong style="font-size:1.05rem;color:#fff;">${esc(st.name || '(未登録)')}</strong>`),
         row('保護者メール', emailHtml),
@@ -2136,9 +2159,125 @@
         row('現在の状態',   `<strong>${esc(statusLabel)}</strong>`),
         row('体験終了日',   fmtDate(st.trial_end)),
         row('本契約開始日', fmtDate(st.paid_since)),
+        row('最終ログイン', lastLoginHtml),
         row('生徒ID',       `<code style="color:#71717a;font-size:0.78rem;">${esc(st.id)}</code>`),
       ].join('');
+
+      // アクティビティと統計タブはまだ未取得 → タブクリック時に lazy fetch
+      activityPane.dataset.studentId = String(st.id);
+      statsPane.dataset.studentId = String(st.id);
+      activityPane.dataset.loaded = '';
+      statsPane.dataset.loaded = '';
+      activityPane.innerHTML = '<div style="color:#71717a;text-align:center;padding:1.5rem;">タブをクリックして読み込みます</div>';
+      statsPane.innerHTML = '<div style="color:#71717a;text-align:center;padding:1.5rem;">タブをクリックして読み込みます</div>';
       modal.style.display = 'flex';
+    }
+
+    // タブ切り替え + lazy fetch
+    async function loadStudentActivity(studentId, pane) {
+      pane.innerHTML = '<div style="color:#71717a;text-align:center;padding:1.5rem;">⏳ 読み込み中...</div>';
+      try {
+        const res = await AdminAuth.fetch(`/api/admin/students/${encodeURIComponent(studentId)}/activity?hours=720&limit=200`);
+        if (!res.ok) {
+          pane.innerHTML = `<div style="color:#fbbf24;">⚠️ 取得失敗 (HTTP ${res.status})</div>`;
+          return null;
+        }
+        return await res.json();
+      } catch (e) {
+        pane.innerHTML = `<div style="color:#fbbf24;">⚠️ エラー: ${esc(String(e.message || e))}</div>`;
+        return null;
+      }
+    }
+    function eventNameLabel(name) {
+      const map = {
+        'ai_proxy_call': '🤖 AI 教材生成',
+        'ai_call_chat': '💬 AI チャット',
+        'ai_call_diagnostic': '🩺 AI 診断',
+        'ai_call_curriculum': '📚 AI カリキュラム',
+        'ai_call_essay': '✍️ AI 作文',
+        'ai_call_problems': '❓ AI 問題生成',
+        'ai_fallback_used': '🛡️ AI モデル降格',
+        'ai_credit_low': '🚨 AI クレジット不足',
+        'ai_total_failure': '❌ AI 全失敗',
+      };
+      return map[name] || name;
+    }
+    function renderActivityPane(pane, data) {
+      const events = (data && data.events) || [];
+      if (events.length === 0) {
+        pane.innerHTML = '<div style="color:#71717a;text-align:center;padding:1.5rem;">📭 直近 30 日間の活動記録がありません</div>';
+        return;
+      }
+      const rows = events.map(e => {
+        const t = fmtDate(e.created_at);
+        const label = eventNameLabel(e.name);
+        const props = e.props || {};
+        const hint = [
+          props.model && `モデル: ${esc(props.model)}`,
+          props.input_tokens != null && `入力 ${props.input_tokens}t`,
+          props.output_tokens != null && `出力 ${props.output_tokens}t`,
+          props.kind && `用途: ${esc(props.kind)}`,
+          props.fallback_used && `<span style="color:#fbbf24;">降格使用</span>`,
+        ].filter(Boolean).join(' / ');
+        return `<tr>
+          <td style="padding:6px 8px;color:#94a3b8;font-size:0.78rem;white-space:nowrap;">${esc(t)}</td>
+          <td style="padding:6px 8px;color:#e4e4e7;font-size:0.85rem;">${esc(label)}</td>
+          <td style="padding:6px 8px;color:#71717a;font-size:0.75rem;">${hint}</td>
+        </tr>`;
+      }).join('');
+      pane.innerHTML = `
+        <div style="margin-bottom:0.75rem;color:#94a3b8;font-size:0.82rem;">直近 30 日 / 最新 ${events.length} 件 (時系列降順)</div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead><tr style="border-bottom:1px solid rgba(167,139,250,0.3);">
+              <th style="text-align:left;padding:6px 8px;color:#a78bfa;font-size:0.78rem;font-weight:600;">時刻</th>
+              <th style="text-align:left;padding:6px 8px;color:#a78bfa;font-size:0.78rem;font-weight:600;">アクション</th>
+              <th style="text-align:left;padding:6px 8px;color:#a78bfa;font-size:0.78rem;font-weight:600;">詳細</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    }
+    function renderStatsPane(pane, data) {
+      const s = (data && data.activity_summary) || {};
+      const byEvent = s.by_event || {};
+      const totalAi = s.ai_calls || 0;
+      const totalProb = s.problem_attempts || 0;
+      const totalTb = s.textbook_views || 0;
+      const inTok = s.ai_input_tokens || 0;
+      const outTok = s.ai_output_tokens || 0;
+      // Anthropic Sonnet 4.6 概算 (input $3/M, output $15/M)
+      const usdCost = (inTok * 3 + outTok * 15) / 1000000;
+      const breakdown = Object.entries(byEvent).sort((a,b) => b[1] - a[1]).map(([k, v]) =>
+        `<tr>
+          <td style="padding:5px 8px;color:#94a3b8;font-size:0.82rem;">${esc(eventNameLabel(k))}</td>
+          <td style="padding:5px 8px;text-align:right;color:#fff;font-weight:600;">${v}</td>
+        </tr>`
+      ).join('');
+      pane.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.75rem;margin-bottom:1rem;">
+          <div style="padding:0.9rem;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:8px;">
+            <div style="color:#a78bfa;font-size:0.75rem;font-weight:600;">🤖 AI 利用回数</div>
+            <div style="color:#fff;font-size:1.6rem;font-weight:800;margin-top:0.25rem;">${totalAi}</div>
+          </div>
+          <div style="padding:0.9rem;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:8px;">
+            <div style="color:#34d399;font-size:0.75rem;font-weight:600;">📚 教材閲覧</div>
+            <div style="color:#fff;font-size:1.6rem;font-weight:800;margin-top:0.25rem;">${totalTb}</div>
+          </div>
+          <div style="padding:0.9rem;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:8px;">
+            <div style="color:#fbbf24;font-size:0.75rem;font-weight:600;">❓ 問題演習</div>
+            <div style="color:#fff;font-size:1.6rem;font-weight:800;margin-top:0.25rem;">${totalProb}</div>
+          </div>
+          <div style="padding:0.9rem;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:8px;">
+            <div style="color:#818cf8;font-size:0.75rem;font-weight:600;">💰 概算 AI コスト</div>
+            <div style="color:#fff;font-size:1.6rem;font-weight:800;margin-top:0.25rem;">$${usdCost.toFixed(3)}</div>
+          </div>
+        </div>
+        <div style="margin-top:1rem;color:#94a3b8;font-size:0.82rem;">入力トークン ${inTok.toLocaleString()} / 出力トークン ${outTok.toLocaleString()}</div>
+        <div style="margin-top:1rem;border-top:1px solid rgba(255,255,255,0.08);padding-top:0.75rem;">
+          <div style="color:#a78bfa;font-size:0.85rem;font-weight:600;margin-bottom:0.5rem;">アクション別内訳</div>
+          ${breakdown ? `<table style="width:100%;border-collapse:collapse;"><tbody>${breakdown}</tbody></table>` : '<div style="color:#71717a;font-size:0.82rem;">記録なし</div>'}
+        </div>`;
     }
     window.showStudentDetail = showStudentDetail;
 
@@ -2162,6 +2301,27 @@
         e.preventDefault();
         const id = link.getAttribute('data-student-id');
         if (id) showStudentDetail(id);
+      }
+      // タブ切り替え
+      const tabBtn = e.target.closest && e.target.closest('.sd-tab-btn');
+      if (tabBtn && tabBtn.closest('#studentDetailModal')) {
+        const target = tabBtn.dataset.tab;
+        modal.querySelectorAll('.sd-tab-btn').forEach(b => b.classList.toggle('active', b === tabBtn));
+        modal.querySelectorAll('.sd-tab-pane').forEach(p => p.style.display = (p.dataset.pane === target ? 'block' : 'none'));
+        // lazy fetch
+        const pane = modal.querySelector(`.sd-tab-pane[data-pane="${target}"]`);
+        if ((target === 'activity' || target === 'stats') && pane && !pane.dataset.loaded) {
+          const sid = pane.dataset.studentId;
+          if (sid) {
+            pane.dataset.loaded = 'loading';
+            loadStudentActivity(sid, pane).then(data => {
+              if (!data) return;
+              if (target === 'activity') renderActivityPane(pane, data);
+              else if (target === 'stats') renderStatsPane(pane, data);
+              pane.dataset.loaded = 'done';
+            });
+          }
+        }
       }
     });
     // ESC キーで閉じる

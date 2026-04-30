@@ -228,7 +228,7 @@ function renderRoster(students) {
   list.sort(sorters[sort] || sorters['fee-desc']);
 
   if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);">生徒データがありません。 index.html の「📥 juku-managerからインポート」で既存生徒を取り込んでください。</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">生徒データがありません。 index.html の「📥 juku-managerからインポート」で既存生徒を取り込んでください。</td></tr>';
     return;
   }
 
@@ -247,8 +247,10 @@ function renderRoster(students) {
     // 名前を clickable に: クリックで申込詳細モーダルを開く (showStudentDetail(id))
     const idAttr = s.id != null ? `data-student-id="${escapeHtml(String(s.id))}"` : '';
     const nameClickable = idAttr
-      ? `<a class="student-name-link" ${idAttr} style="cursor:pointer;color:var(--primary-light);text-decoration:underline;font-weight:700;" title="クリックで申込内容を表示">${escapeHtml(s.name || '-')}</a>`
+      ? `<a class="student-name-link" ${idAttr} style="cursor:pointer;color:var(--primary-light);text-decoration:underline;font-weight:700;" title="クリックで詳細・アクティビティ履歴を表示">${escapeHtml(s.name || '-')}</a>`
       : `<strong>${escapeHtml(s.name || '-')}</strong>`;
+    // 最終ログイン: 相対時刻を表示 (例「3分前」「2時間前」「3日前」)、未ログインなら「未ログイン」
+    const lastLogin = s.last_login_at ? formatRelativeTime(s.last_login_at) : '<span style="color:#71717a;">未ログイン</span>';
     return `
       <tr>
         <td>${i + 1}</td>
@@ -259,10 +261,29 @@ function renderRoster(students) {
         </td>
         <td class="fee-cell">${fee > 0 ? '¥' + fee.toLocaleString() : '-'}</td>
         <td><span class="roster-status ${status}">${status === 'trial' ? '体験中' : '通塾'}</span></td>
+        <td style="font-size:0.85em;color:var(--text-dim);">${lastLogin}</td>
         <td style="color:var(--text-dim);font-size:0.85em;">${escapeHtml(s.goal || '-')}</td>
       </tr>
     `;
   }).join('');
+}
+
+// 相対時刻フォーマット: "2026-04-29 12:34:56" → "3分前" "2時間前" "5日前"
+function formatRelativeTime(timestamp) {
+  if (!timestamp) return '<span style="color:#71717a;">-</span>';
+  try {
+    const t = new Date(String(timestamp).replace(' ', 'T'));
+    if (isNaN(t.getTime())) return escapeHtml(String(timestamp));
+    const diff = Math.floor((Date.now() - t.getTime()) / 1000);
+    if (diff < 60) return '<span style="color:#34d399;">たった今</span>';
+    if (diff < 3600) return `<span style="color:#34d399;">${Math.floor(diff / 60)}分前</span>`;
+    if (diff < 86400) return `<span style="color:#a78bfa;">${Math.floor(diff / 3600)}時間前</span>`;
+    if (diff < 604800) return `<span style="color:#fbbf24;">${Math.floor(diff / 86400)}日前</span>`;
+    if (diff < 2592000) return `<span style="color:#f87171;">${Math.floor(diff / 604800)}週間前</span>`;
+    return `<span style="color:#71717a;">${Math.floor(diff / 2592000)}ヶ月前</span>`;
+  } catch (e) {
+    return escapeHtml(String(timestamp));
+  }
 }
 
 function escapeHtml(s) {
