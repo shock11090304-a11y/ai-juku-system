@@ -754,11 +754,14 @@ def email_diagnose_public():
         "domain_status": None,
         "domains_summary": [],
         "api_key_valid": None,
-        "last_error_class": None,  # error の type 名のみ (full message は出さない)
-        "last_error_short": None,  # 先頭 80 文字のみ
+        "api_key_scope": None,  # full_access / send_only / invalid
+        "last_error_class": None,
+        "last_error_short": None,
+        "diagnosis": [],  # 推測される原因 + 対処
     }
     if not RESEND_API_KEY:
         out["api_key_valid"] = False
+        out["diagnosis"].append("RESEND_API_KEY が未設定です。Vercel/Railway 環境変数で設定してください。")
         return out
     # Resend /domains で検証状態のみ取得
     try:
@@ -769,6 +772,7 @@ def email_diagnose_public():
         )
         with urllib.request.urlopen(req, timeout=8) as resp:
             out["api_key_valid"] = True
+            out["api_key_scope"] = "full_access"
             data = json.loads(resp.read().decode())
             domains = data.get("data", []) if isinstance(data, dict) else data
             target_domain = out["from_domain"]
@@ -779,14 +783,25 @@ def email_diagnose_public():
             if out["domain_status"] is None and target_domain:
                 out["domain_status"] = "not_registered"
     except urllib.error.HTTPError as e:
-        out["api_key_valid"] = False
-        out["last_error_class"] = f"HTTPError_{e.code}"
-        out["last_error_short"] = f"HTTP {e.code}"[:80]
+        if e.code == 403:
+            # 403 on /domains = "send only" 権限のキー (本番送信は OK)
+            out["api_key_valid"] = True
+            out["api_key_scope"] = "send_only"
+            out["domain_status"] = "unverifiable_via_send_only_key"
+        elif e.code == 401:
+            out["api_key_valid"] = False
+            out["api_key_scope"] = "invalid"
+            out["last_error_class"] = "HTTPError_401"
+            out["last_error_short"] = "API key revoked or invalid"
+        else:
+            out["api_key_valid"] = False
+            out["last_error_class"] = f"HTTPError_{e.code}"
+            out["last_error_short"] = f"HTTP {e.code}"[:80]
     except Exception as e:
         out["api_key_valid"] = False
         out["last_error_class"] = type(e).__name__
         out["last_error_short"] = str(e)[:80]
-    # 最近のメール送信エラー (1件のみ、type だけ出す)
+    # 最近のメール送信エラー (1件のみ、先頭 150 文字)
     try:
         conn = db(); c = conn.cursor()
         c.execute(
@@ -802,6 +817,21 @@ def email_diagnose_public():
                 out["recent_send_error_short"] = err
     except Exception:
         pass
+    # 推測される原因 + 対処
+    err = (out.get("recent_send_error_short") or "").lower()
+    if "429" in err or "too many" in err or "rate" in err:
+        out["diagnosis"].append("🚨 Resend のレート制限/日次クォータ超過 (HTTP 429)。無料枠は 100/日・3000/月。")
+        out["diagnosis"].append("対処1: Resend ダッシュ → Usage で残量確認 (https://resend.com/emails)")
+        out["diagnosis"].append("対処2: 必要なら有料プラン (Pro $20/月で 50000/月) にアップグレード")
+        out["diagnosis"].append("対処3: 合成監視が日次クォータを食い潰していた → 修正済 (2026-04-30 deploy)")
+    elif "401" in err or "unauthor" in err:
+        out["diagnosis"].append("🚨 API キーが無効化されています。Resend ダッシュボードで再生成 → Railway 環境変数更新。")
+    elif "422" in err or "domain" in err or "verify" in err:
+        out["diagnosis"].append(f"🚨 ドメイン {out['from_domain']} の検証が切れています。Resend で DNS 再検証してください。")
+    elif "500" in err or "502" in err or "503" in err:
+        out["diagnosis"].append("Resend 側の一時障害の可能性。https://resend-status.com で確認。")
+    elif err:
+        out["diagnosis"].append(f"未分類エラー: {err}")
     return out
 
 @app.get("/api/stats")
@@ -2532,6 +2562,14 @@ def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, otp
         # Dev モード: コンソールにログ出力してテストを可能に
         log.warning(f"[DEV-MODE] RESEND_API_KEY 未設定のため送信スキップ。magic URL:\n  {magic_url}")
         return {"sent": False, "dev_mode": True, "magic_url": magic_url}
+
+    # 🔥 致命傷修正 (2026-04-30): synthetic monitor 用アドレスへの送信は SKIP
+    # @synthetic-monitor.trillion-ai-juku.com は MX レコード無し → 100% bounce
+    # 5分おき monitor が Resend 無料枠 (100/日) を圧迫 + bounce rate 悪化 → 429 連発
+    # 169 件連続失敗の根本原因。実 API call せず synthetic ID 返す (E2E 監視継続のため)。
+    if "@synthetic-monitor." in (to_email or "").lower():
+        log.info(f"[Magic Link] Skip Resend API for synthetic monitor: {to_email}")
+        return {"sent": True, "resend_id": "synthetic-skip", "synthetic": True}
 
     try:
         import urllib.request
