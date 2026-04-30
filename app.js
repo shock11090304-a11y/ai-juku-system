@@ -3783,15 +3783,25 @@ function bindEvents() {
   document.getElementById('moshiUploadBtn').addEventListener('click', () => document.getElementById('moshiImage').click());
   document.getElementById('moshiImage').addEventListener('change', handleMoshiUpload);
 
-  // Problem generator: 科目→単元プルダウン連動・クイックフィル
+  // Problem generator: 科目→単元 chip 連動・クイックフィル
   document.getElementById('probSubject').addEventListener('change', (e) => {
     populateUnits(e.target.value);
-    document.getElementById('probUnit').value = '';
-    document.getElementById('probWeaknessGroup').style.display = 'none';
+    // chip リセット (populateUnits で innerHTML 再生成済)
+    const probUnitHidden = document.getElementById('probUnit');
+    if (probUnitHidden) probUnitHidden.value = '';
+    const grp = document.getElementById('probWeaknessGroup');
+    if (grp) grp.style.display = 'none';
   });
+  // 旧 probUnit select の change イベントは hidden 化により発火しないが、
+  // 万が一の互換のため残す (履歴復元等で value 設定された場合)
   document.getElementById('probUnit').addEventListener('change', (e) => {
     const subject = document.getElementById('probSubject').value;
-    populateWeaknesses(subject, e.target.value);
+    if (e.target.value) {
+      // hidden select に値が入った = 履歴復元等。対応するチップを selected に
+      const chip = document.querySelector(`#probUnitChips .weakness-chip[data-unit="${CSS.escape(e.target.value)}"]`);
+      if (chip) chip.classList.add('selected');
+      populateWeaknessesForSelectedUnits(subject);
+    }
     syncTopicFromSelections();
   });
   document.getElementById('qfFromMoshi').addEventListener('click', quickFillFromMoshi);
@@ -4401,32 +4411,69 @@ const UNITS_DATA = {
   },
 };
 
-function populateUnits(subject) {
-  const data = UNITS_DATA[subject];
-  const sel = document.getElementById('probUnit');
-  const group = document.getElementById('probWeaknessGroup');
-  sel.innerHTML = '<option value="">-- 選択してください --</option>';
-  if (!data) return;
-  data.units.forEach(u => {
-    const opt = document.createElement('option');
-    opt.value = u; opt.textContent = u;
-    sel.appendChild(opt);
-  });
-  group.style.display = 'none';
+// 選択中の単元を取得 (chip UI に対応・後方互換で hidden select 値も読む)
+function getSelectedUnits() {
+  const selected = [...document.querySelectorAll('#probUnitChips .weakness-chip.selected')]
+    .map(c => c.dataset.unit);
+  if (selected.length > 0) return selected;
+  // 後方互換: hidden select に値がある場合 (履歴復元時等)
+  const fallback = document.getElementById('probUnit')?.value || '';
+  return fallback ? [fallback] : [];
 }
 
-function populateWeaknesses(subject, unit) {
+function populateUnits(subject) {
+  const data = UNITS_DATA[subject];
+  const chipsEl = document.getElementById('probUnitChips');
+  const sel = document.getElementById('probUnit');
+  const group = document.getElementById('probWeaknessGroup');
+  // 旧 select は後方互換用に空に
+  if (sel) sel.innerHTML = '<option value="">-- 選択してください --</option>';
+  if (chipsEl) chipsEl.innerHTML = '';
+  if (!data) return;
+
+  if (chipsEl) {
+    chipsEl.innerHTML = data.units.map(u =>
+      `<span class="weakness-chip" data-unit="${escapeHtml(u)}">${escapeHtml(u)}</span>`
+    ).join('');
+    chipsEl.querySelectorAll('.weakness-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        chip.classList.toggle('selected');
+        // 選択された単元すべての弱点候補を集約して表示
+        populateWeaknessesForSelectedUnits(subject);
+        syncTopicFromSelections();
+      });
+    });
+  }
+  if (group) group.style.display = 'none';
+}
+
+// 選択中の単元すべての弱点候補を集約して chip 表示 (重複排除)
+function populateWeaknessesForSelectedUnits(subject) {
   const data = UNITS_DATA[subject];
   const chips = document.getElementById('probWeaknessChips');
   const group = document.getElementById('probWeaknessGroup');
-  if (!data || !unit || !data.weaknesses[unit]) {
-    group.style.display = 'none';
+  const units = getSelectedUnits();
+  if (!data || units.length === 0) {
+    if (group) group.style.display = 'none';
     return;
   }
-  chips.innerHTML = data.weaknesses[unit].map(w =>
+  // 全単元の弱点候補を集めて重複排除 (順序は最初の単元のものを優先)
+  const aggregate = [];
+  const seen = new Set();
+  for (const u of units) {
+    const ws = data.weaknesses[u] || [];
+    for (const w of ws) {
+      if (!seen.has(w)) { seen.add(w); aggregate.push(w); }
+    }
+  }
+  if (aggregate.length === 0) {
+    if (group) group.style.display = 'none';
+    return;
+  }
+  chips.innerHTML = aggregate.map(w =>
     `<span class="weakness-chip" data-w="${escapeHtml(w)}">${escapeHtml(w)}</span>`
   ).join('');
-  group.style.display = 'block';
+  if (group) group.style.display = 'block';
   chips.querySelectorAll('.weakness-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       chip.classList.toggle('selected');
@@ -4435,13 +4482,25 @@ function populateWeaknesses(subject, unit) {
   });
 }
 
+// 旧名 populateWeaknesses は単一単元用だが、互換のため残す (1 単元なら新関数に委譲)
+function populateWeaknesses(subject, unit) {
+  // chip UI が存在すれば集約版へ
+  if (document.getElementById('probUnitChips')) {
+    populateWeaknessesForSelectedUnits(subject);
+    return;
+  }
+  // (旧 select UI 用の fallback は削除)
+}
+
 function syncTopicFromSelections() {
-  const unit = document.getElementById('probUnit').value;
-  const selected = [...document.querySelectorAll('.weakness-chip.selected')].map(c => c.dataset.w);
+  const units = getSelectedUnits();
+  const selected = [...document.querySelectorAll('#probWeaknessChips .weakness-chip.selected')]
+    .map(c => c.dataset.w);
   const topicField = document.getElementById('probTopic');
+  if (!topicField) return;
   const existing = topicField.value.split('\n').filter(l => !l.startsWith('📌')).join('\n').trim();
   let newText = '';
-  if (unit) newText += `📌 単元: ${unit}\n`;
+  if (units.length) newText += `📌 単元: ${units.join('・')}\n`;
   if (selected.length) newText += `📌 重点ポイント: ${selected.join('、')}\n`;
   if (existing) newText += existing;
   topicField.value = newText.trim();
@@ -4515,8 +4574,13 @@ function quickFillFromHistory() {
   document.getElementById('probSubject').value = recent.subject;
   populateUnits(recent.subject);
   setTimeout(() => {
-    if (recent.unit) document.getElementById('probUnit').value = recent.unit;
-    populateWeaknesses(recent.subject, recent.unit);
+    // recent.unit は単一 or 複数 (・区切り) どちらも対応
+    const recentUnits = (recent.unit || '').split('・').map(s => s.trim()).filter(Boolean);
+    recentUnits.forEach(u => {
+      const chip = document.querySelector(`#probUnitChips .weakness-chip[data-unit="${CSS.escape(u)}"]`);
+      if (chip) chip.classList.add('selected');
+    });
+    populateWeaknessesForSelectedUnits(recent.subject);
   }, 50);
   document.getElementById('probTopic').value = recent.topic || '';
   const status = document.getElementById('qfMoshiStatus');
@@ -4619,14 +4683,16 @@ function _markBatch(idx, state) {
 // ==========================================================================
 async function generateProblems() {
   const subject = document.getElementById('probSubject').value;
-  const unit = document.getElementById('probUnit').value;
+  // 単元複数選択対応 (chip UI から取得、1 つでも複数でも OK)
+  const units = getSelectedUnits();
+  const unit = units.join('・');  // history 等の表示用に集約
   const topic = document.getElementById('probTopic').value.trim();
   const count = document.getElementById('probCount').value;
   const difficulty = document.getElementById('probDifficulty').value;
   const format = document.getElementById('probFormat').value;
   const layout = document.querySelector('input[name="probLayout"]:checked')?.value || 'end';
 
-  if (!topic && !unit) { alert('単元を選ぶか、テーマ・弱点を入力してください'); return; }
+  if (!topic && units.length === 0) { alert('単元を 1 つ以上選ぶか、テーマ・弱点を入力してください'); return; }
   // 学年×難易度の整合ガード（数学・理科で東大レベルを中学生に出さない）
   const _grade = (getCurrentStudent().grade || '');
   if (difficulty === '難関' && /中\d|小\d/.test(_grade) && /数学|理科|物理|化学/.test(subject)) {
@@ -4692,6 +4758,39 @@ async function generateProblems() {
 - 各問題のquestion/answer/explanationは別フィールドに分ける（絶対に混ぜない）
 - 各問題は独立して解ける
 - **各問題に必ず source フィールドを設定する**。実在する大学・試験・年度の出題形式を参考にした類題であることを示す。例: 「東京大学 2020年度 大問2 類題」「共通テスト 2023年度 第3問 類題」「早稲田大学 商学部 2019年度 類題」「全統模試 基礎レベル」「定期テスト頻出」。記憶が曖昧な年度は詐称せず「難関大頻出」「私大標準」などジャンル表記に留める。複数問題がある場合は適度に出典校を散らす（全問同一大学にしない）。
+
+${units.length > 1 ? `【複数単元の均等配分 (重要)】
+出題対象の単元: ${units.map(u => `「${u}」`).join('・')} の ${units.length} 単元。
+各単元から ${count} 問を可能な限り均等配分で出題する (端数は前から +1)。
+例: ${count} 問 ÷ ${units.length} 単元 = 各 ${Math.floor(parseInt(count) / units.length)}〜${Math.ceil(parseInt(count) / units.length)} 問。
+各問題の question 末尾に「(${units[0]} の問題)」のように単元名を明示。` : ''}
+
+【🎲 反復回避・多様性確保 (最重要・全難易度共通)】
+${count} 問が「同じ問題の言い換え」「同じ例文の数字違い」になることは絶対 NG。以下を厳守:
+
+1. **例文の題材を毎問変える**: [音楽・映画・スポーツ・料理・旅行・科学技術・歴史・自然・教育・ビジネス・芸術・健康] から各問異なるジャンルを選ぶ。同じジャンルが連続しても 2 問まで。
+
+2. **subtype の分散** (形式「${format}」の枠内で):
+   - 4択: 空所補充 / 適切な選択肢 / 誤り訂正の 4 択化 / 同義文選択 / 言い換え
+   - 記述: 短文記述 / 整序英作文 / 和訳 / 英訳 / 語形変化 / 解釈
+   - 穴埋め: 空所 1 つ / 空所複数 / 文章中の空所 / 対話の空所
+   - 並び替え: 単純整序 / 不要語あり / 語句指定 / 部分整序
+   - ミックス: 上記から最低 4 種類を均等に混合
+
+3. **出題切り口の分散**: 同じ文法/概念でも以下のような切り口を変える:
+   - 識別系 (どれが正しい用法か)
+   - 訂正系 (誤りを指摘して直す)
+   - 産出系 (与えられた条件で文を作る)
+   - 解釈系 (意味の違いを説明)
+   - 比較系 (2 つの表現の使い分け)
+   - 状況選択系 (場面に応じて適切な表現を選ぶ)
+
+4. **重複自己チェック (生成完了直前)**: 全 ${count} 問の question を見直し、以下に該当するものは別問題に差し替える:
+   - 例文の主語・動詞・目的語の組み合わせがほぼ同じ
+   - 問われている grammar/concept がまったく同じで違いは語彙だけ
+   - 解答パターン (例: which / who の選択) が連続 3 問以上同じ
+
+5. **語彙レベル分散**: 簡単な語彙の問題 → やや難しい語彙の問題 → 抽象的な語彙の問題、と段階的に複雑化。
 
 【解説（explanation）の書き方 — 難易度別】
 解説は「答え合わせ」ではなく「独り学習の先生」を目指す。以下のセクション構成を**難易度に合わせて選択**:
@@ -5073,6 +5172,9 @@ function resetProblemsForm() {
   document.getElementById('probCount').value = '10';
   document.getElementById('probDifficulty').value = '標準';
   document.getElementById('probFormat').value = '4択問題';
+
+  // 単元 chips の選択も解除
+  document.querySelectorAll('#probUnitChips .weakness-chip.selected').forEach(c => c.classList.remove('selected'));
 
   // 弱点チップ群を閉じる
   const weaknessGroup = document.getElementById('probWeaknessGroup');

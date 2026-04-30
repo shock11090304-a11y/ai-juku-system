@@ -586,11 +586,10 @@
             </select>
           </div>
           <div class="form-group">
-            <label>単元（プルダウンから選択）</label>
-            <select id="probUnit">
-              <option value="">-- 選択してください --</option>
-            </select>
-            <p class="field-hint-small">💡 単元を選ぶと、関連する弱点候補が下に出ます</p>
+            <label>単元（クリックで複数選択可）</label>
+            <div id="probUnitChips" class="weakness-chips" style="min-height:40px;"></div>
+            <select id="probUnit" style="display:none;"><!-- 旧 hidden 互換用 (history 復元等) --></select>
+            <p class="field-hint-small">💡 単元を 1 つ以上選ぶと、関連する弱点候補が下に出ます。複数選ぶと均等配分で出題</p>
           </div>
           <div class="form-group" id="probWeaknessGroup" style="display:none;">
             <label>よくある弱点ポイント（クリックで選択）</label>
@@ -1062,7 +1061,7 @@
   <script src="learning-brain.js?v=20260425-2"></script>
   <script src="exam-prep.js?v=20260425-1"></script>
   <script src="referral-program.js?v=20260425-1"></script>
-  <script src="app.js?v=20260430-curriculum-corrupt-detect"></script>
+  <script src="app.js?v=20260430-multi-unit-diversity"></script>
   <script>
   // 定期テスト連携: exam-prep.html から ?examPrep=1&subject=&topic=&examId= で来た時、
   // 問題ジェネレーターに自動入力 + タブ切替 + 通知バナー
