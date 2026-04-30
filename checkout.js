@@ -53,6 +53,32 @@ if (params.get('goal')) document.getElementById('goal').value = params.get('goal
 updateSummary();
 document.querySelectorAll('input[name="plan"]').forEach(r => r.addEventListener('change', updateSummary));
 
+// キャリアメール (ezweb / docomo / au / softbank) を判定。
+// 受信許可設定が無いと magic link 招待メールがブロックされやすい現実があるため、
+// checkout 時に明示注意 + checkout-success / auth で対処手順を強調する。
+const CARRIER_EMAIL_REGEX = /@(docomo\.ne\.jp|ezweb\.ne\.jp|au\.com|softbank\.ne\.jp|i\.softbank\.jp|ymobile\.ne\.jp|vodafone\.ne\.jp|ido\.ne\.jp|d\.vodafone\.ne\.jp|ezweb\.ne|disney\.ne\.jp|emnet\.ne\.jp|willcom\.com|wcm\.ne\.jp|jp-d\.ne\.jp|jp-h\.ne\.jp|jp-k\.ne\.jp|jp-n\.ne\.jp|jp-r\.ne\.jp|jp-s\.ne\.jp|jp-t\.ne\.jp|pdx\.ne\.jp|wm\.pdx\.ne\.jp|di\.pdx\.ne\.jp|dj\.pdx\.ne\.jp|dk\.pdx\.ne\.jp|t\.vodafone\.ne\.jp|h\.vodafone\.ne\.jp|q\.vodafone\.ne\.jp|n\.vodafone\.ne\.jp|c\.vodafone\.ne\.jp|k\.vodafone\.ne\.jp|r\.vodafone\.ne\.jp|s\.vodafone\.ne\.jp)$/i;
+function isCarrierEmail(e) {
+  return CARRIER_EMAIL_REGEX.test((e || '').trim().toLowerCase());
+}
+function isValidEmailFormat(e) {
+  // HTML5 互換の最小バリデーション (空白なし + @ + . を満たす)
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((e || '').trim());
+}
+
+// 入力時にキャリアメール注意を inline 表示
+(function setupEmailHint() {
+  const emailEl = document.getElementById('email');
+  if (!emailEl) return;
+  const hint = document.createElement('p');
+  hint.id = 'emailCarrierHint';
+  hint.style.cssText = 'display:none;margin-top:0.45rem;padding:0.65rem 0.8rem;background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.35);border-radius:8px;color:#fbbf24;font-size:0.82rem;line-height:1.55;';
+  hint.innerHTML = '⚠️ <strong>キャリアメール検出</strong>: docomo / ezweb / au / softbank はログインメールがブロックされやすい設定です。<strong>可能であれば Gmail / iCloud / Yahoo メール</strong> を推奨します。<br>キャリアメールのまま進める場合は、後ほどご案内する「PCからのメール受信許可」設定を必ず行ってください。';
+  emailEl.parentNode.appendChild(hint);
+  emailEl.addEventListener('input', () => {
+    hint.style.display = isCarrierEmail(emailEl.value) ? 'block' : 'none';
+  });
+})();
+
 document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const submitBtn = document.getElementById('submitBtn');
@@ -63,8 +89,22 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
   const plan = window.__urlPlanOverride || document.querySelector('input[name="plan"]:checked').value;
   const lastName = (document.getElementById('lastName').value || '').trim();
   const firstName = (document.getElementById('firstName').value || '').trim();
+  const email = (document.getElementById('email').value || '').trim();
+  const grade = document.getElementById('grade').value;
   if (!lastName || !firstName) {
-    errorBox.textContent = 'フルネーム（姓と名の両方）を入力してください。';
+    errorBox.textContent = '⚠️ フルネーム（姓と名の両方）を入力してください。';
+    errorBox.style.display = 'block';
+    submitBtn.disabled = false;
+    return;
+  }
+  if (!isValidEmailFormat(email)) {
+    errorBox.textContent = '⚠️ メールアドレスの形式が正しくありません。 (例: parent@example.com)';
+    errorBox.style.display = 'block';
+    submitBtn.disabled = false;
+    return;
+  }
+  if (!grade) {
+    errorBox.textContent = '⚠️ 学年を選択してください。';
     errorBox.style.display = 'block';
     submitBtn.disabled = false;
     return;
@@ -72,12 +112,13 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
   const payload = {
     plan,
     name: `${lastName}${firstName}`,
-    email: document.getElementById('email').value,
-    grade: document.getElementById('grade').value,
+    email,
+    grade,
     goal: document.getElementById('goal').value,
   };
 
   submitBtn.disabled = true;
+  submitBtn.textContent = '📮 送信中... (1〜2秒)';
   errorBox.style.display = 'none';
   loadingBox.style.display = 'block';
 
@@ -95,6 +136,20 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     }
 
     const signupData = await signupRes.json();
+
+    // checkout-success.html で「メール届きませんでしたか?」UI を出すために
+    // signupData.email_sent + email を sessionStorage に渡す。
+    // (success_url は Stripe の {CHECKOUT_SESSION_ID} を含むため、URL 改変では渡せない場面がある)
+    try {
+      sessionStorage.setItem('ai_juku_signup_meta', JSON.stringify({
+        email: payload.email,
+        name: payload.name,
+        student_id: signupData.student_id || null,
+        email_sent: !!signupData.email_sent,
+        is_carrier_email: isCarrierEmail(payload.email),
+        ts: Date.now(),
+      }));
+    } catch (_e) { /* sessionStorage が無効でも遷移自体は続行 */ }
 
     // 2. 7日間 完全無料体験 (バックエンドが FOUNDER_TRIAL_PRICE=0 を検出すると
     //    Stripe をスキップして即座に checkout-success.html へ遷移する)。
@@ -126,20 +181,28 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
   } catch (err) {
     loadingBox.style.display = 'none';
     submitBtn.disabled = false;
+    submitBtn.textContent = '🎁 7日間 無料体験を開始する →';
 
     // BACKEND_DOWN 時の「自動で成功画面へ進行」を削除。
     // 以前は決済せずに localStorage に学生を作って「成功」画面へ遷移していたが、
     // 攻撃者がバックエンドを一時ブロックすれば無料でアカウント作成できてしまう上、
     // 保護者が「決済したつもり」の誤認を起こす（クレーム直結）。常にエラーのみ表示。
+    const supportLine = '<br><br>📞 お困りの場合は <a href="mailto:info@trillion-ai-juku.com" style="color:var(--primary-light);">info@trillion-ai-juku.com</a> まで。';
     if (err.message === 'BACKEND_DOWN' || (err.message || '').includes('Failed to fetch')) {
       errorBox.innerHTML = `
         <strong>⚠️ 決済サービスに接続できませんでした</strong><br>
         ただ今混み合っているか、ネットワークが不安定な可能性があります。<br>
-        少し時間をおいて再度お試しいただくか、塾までお問い合わせください。
+        <strong>もう一度「無料体験を開始する」ボタンを押してお試しいただくか</strong>、少し時間をおいて再度お試しください。${supportLine}
+      `;
+      errorBox.style.display = 'block';
+    } else if ((err.message || '').includes('募集終了')) {
+      errorBox.innerHTML = `
+        <strong>🙏 創設メンバー50名の募集は終了しました</strong><br>
+        通常プランからお申込みいただけます。${supportLine}
       `;
       errorBox.style.display = 'block';
     } else {
-      errorBox.textContent = `エラー: ${err.message}`;
+      errorBox.innerHTML = `<strong>エラー:</strong> ${(err.message || '不明なエラー')}<br>もう一度お試しください。${supportLine}`;
       errorBox.style.display = 'block';
     }
   }

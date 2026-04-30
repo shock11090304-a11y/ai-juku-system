@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ログイン | AI学習コーチ塾</title>
   <meta name="robots" content="noindex">
-  <script src="cache-purge.js?v=20260425-1"></script>
+  <script src="cache-purge.js?v=20260430-emailflow"></script>
+  <script src="frontend-error-monitor.js?v=20260427-init"></script>
   <link rel="stylesheet" href="lp.css?v=20260424-mobile">
   <style>
     .auth-main { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; position: relative; z-index: 1; }
@@ -156,9 +157,13 @@
 
         <form class="auth-form" id="emailForm">
           <label for="email">メールアドレス</label>
-          <input type="email" id="email" name="email" required autocomplete="email" placeholder="parent@example.com">
+          <input type="email" id="email" name="email" required autocomplete="email" inputmode="email" autofocus placeholder="parent@example.com" spellcheck="false">
           <button type="submit" class="auth-submit" id="emailBtn">📧 ログインコードを送信</button>
         </form>
+        <div style="margin-top:1rem;padding:0.75rem 0.9rem;background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.35);border-radius:8px;color:#fde68a;font-size:0.78rem;line-height:1.65;">
+          <strong style="color:#fbbf24;">📱 docomo / ezweb / au / softbank をお使いの方:</strong>
+          キャリアメールはPCからのメール受信がブロックされやすい設定です。受信許可リストに <strong>@trillion-ai-juku.com</strong> および <strong>@resend.dev</strong> を追加するか、「PCからのメールを受信する」設定をONにしてください。
+        </div>
       </div>
 
       <!-- Step 2: OTPコード入力 -->
@@ -225,6 +230,15 @@
     const msg = document.getElementById('msg');
 
     let currentEmail = '';
+
+    // URL ?email=... プリフィル (auth.html の再送信フォームから誘導された時用)
+    (function prefillEmail() {
+      const qp = new URLSearchParams(window.location.search);
+      const e = (qp.get('email') || '').trim();
+      if (e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
+        emailInput.value = e;
+      }
+    })();
 
     function showMsg(type, text) {
       msg.className = 'auth-msg ' + type;

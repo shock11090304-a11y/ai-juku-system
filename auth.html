@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ログイン中... | AI学習コーチ塾</title>
   <meta name="robots" content="noindex">
-  <script src="cache-purge.js?v=20260425-1"></script>
+  <script src="cache-purge.js?v=20260430-emailflow"></script>
+  <script src="frontend-error-monitor.js?v=20260427-init"></script>
   <link rel="stylesheet" href="lp.css">
   <style>
     .auth-main { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
@@ -36,7 +37,53 @@
       border-radius: 10px;
       font-weight: 800;
       font-family: inherit;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
     }
+    .auth-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .resend-block {
+      margin-top: 1.5rem;
+      padding-top: 1.2rem;
+      border-top: 1px solid var(--panel-border);
+      text-align: left;
+    }
+    .resend-block h4 { margin: 0 0 0.5rem; font-size: 0.95rem; color: var(--text); font-weight: 800; }
+    .resend-block p { margin: 0.4rem 0; font-size: 0.85rem; color: var(--text-dim); line-height: 1.7; }
+    .resend-block input[type="email"] {
+      width: 100%;
+      padding: 0.75rem 0.9rem;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.95rem;
+      font-family: inherit;
+      box-sizing: border-box;
+      margin-top: 0.4rem;
+    }
+    .resend-msg {
+      margin-top: 0.7rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      display: none;
+    }
+    .resend-msg.success { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35); color: #6ee7b7; display: block; }
+    .resend-msg.error { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); color: #fca5a5; display: block; }
+    .carrier-tip {
+      margin-top: 0.8rem;
+      padding: 0.7rem 0.85rem;
+      background: rgba(251,191,36,0.10);
+      border: 1px solid rgba(251,191,36,0.35);
+      border-radius: 8px;
+      color: #fde68a;
+      font-size: 0.8rem;
+      line-height: 1.65;
+      text-align: left;
+    }
+    .carrier-tip strong { color: #fbbf24; }
   </style>
 </head>
 <body>
@@ -47,6 +94,23 @@
       <div class="auth-emoji" id="emoji">⏳</div>
       <h1 class="auth-title" id="title">認証中...</h1>
       <p class="auth-desc" id="desc">ログインリンクを確認しています。そのままお待ちください。</p>
+
+      <!-- エラー時のみ display:block にする再送信ブロック -->
+      <div class="resend-block" id="resendBlock" style="display:none;">
+        <h4>📧 メールが届かない / リンクが切れた場合</h4>
+        <p>ご登録のメールアドレスを入力すると、新しいログインリンクと6桁コードを再送信します。</p>
+        <form id="resendForm">
+          <input type="email" id="resendEmail" required autocomplete="email" inputmode="email" placeholder="parent@example.com">
+          <button type="submit" class="auth-btn" id="resendBtn" style="margin-top:0.85rem;width:100%;">📨 ログインリンクを再送信</button>
+        </form>
+        <div class="resend-msg" id="resendMsg"></div>
+        <div class="carrier-tip">
+          <strong>📱 docomo / ezweb / au / softbank をお使いの方へ</strong><br>
+          キャリアメールはPCからのメールがブロックされやすい設定になっています。<br>
+          各キャリアの「迷惑メール対策」から <strong>「PCからのメールを受信する」</strong> 設定をONにするか、受信許可リストに <strong>@trillion-ai-juku.com</strong> および <strong>@resend.dev</strong> を追加してください。<br>
+          解決しない場合は <a href="mailto:info@trillion-ai-juku.com" style="color:#fbbf24;">info@trillion-ai-juku.com</a> までご連絡を。
+        </div>
+      </div>
     </div>
   </main>
 
@@ -60,12 +124,21 @@
     const emoji = document.getElementById('emoji');
     const title = document.getElementById('title');
     const desc = document.getElementById('desc');
+    const resendBlock = document.getElementById('resendBlock');
+    const resendForm = document.getElementById('resendForm');
+    const resendBtn = document.getElementById('resendBtn');
+    const resendEmail = document.getElementById('resendEmail');
+    const resendMsg = document.getElementById('resendMsg');
 
     function showError(msg, linkHtml = '') {
       emoji.textContent = '⚠️';
       emoji.className = 'auth-emoji error';
       title.textContent = 'ログインできませんでした';
       desc.innerHTML = msg + (linkHtml || '<br><a class="auth-btn" href="login.html">ログインページへ</a>');
+      // 再送信フォームを必ず表示 (8 名全員未ログイン問題への直接対策)
+      if (resendBlock) resendBlock.style.display = 'block';
+      // ログイン用 OTP/ code 入力は login.html 側に集約。autofocus は再送信フォームに当てる。
+      setTimeout(() => { try { resendEmail.focus(); } catch (_e) {} }, 100);
     }
 
     function showSuccess(studentName) {
@@ -73,6 +146,48 @@
       emoji.className = 'auth-emoji success';
       title.textContent = `ようこそ、${studentName}さま！`;
       desc.innerHTML = 'ログインに成功しました。学習環境へ移動します...';
+    }
+
+    function showResendMsg(type, html) {
+      if (!resendMsg) return;
+      resendMsg.className = 'resend-msg ' + type;
+      resendMsg.innerHTML = html;
+    }
+
+    // 再送信フォーム handler
+    if (resendForm) {
+      resendForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = (resendEmail.value || '').trim();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          showResendMsg('error', '⚠️ メールアドレスの形式が正しくありません。');
+          return;
+        }
+        resendBtn.disabled = true;
+        const origText = resendBtn.textContent;
+        resendBtn.textContent = '📮 送信中...';
+        showResendMsg('', '');
+        try {
+          const r = await fetch(`${API_BASE}/api/auth/magic-link`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+          });
+          if (r.ok) {
+            showResendMsg('success', `✅ <strong>${email}</strong> 宛に新しいログインリンクを送信しました。1〜2分で届きます。届かない場合は迷惑メールフォルダもご確認ください。<br><br><a class="auth-btn" href="login.html?email=${encodeURIComponent(email)}" style="margin-top:0.6rem;">🔐 ログインページで6桁コードを入力</a>`);
+          } else if (r.status === 429) {
+            showResendMsg('error', '⚠️ リクエスト過多です。1分ほど時間をおいてお試しください。');
+          } else {
+            const data = await r.json().catch(() => ({}));
+            showResendMsg('error', `⚠️ ${data.detail || '送信に失敗しました'}。<a href="mailto:info@trillion-ai-juku.com" style="color:#fca5a5;text-decoration:underline;">info@trillion-ai-juku.com</a> までご連絡ください。`);
+          }
+        } catch (_e) {
+          showResendMsg('error', '⚠️ ネットワークエラーが発生しました。時間をおいてお試しください。');
+        } finally {
+          resendBtn.disabled = false;
+          resendBtn.textContent = origText;
+        }
+      });
     }
 
     (async () => {
@@ -85,9 +200,9 @@
         const data = await res.json();
         if (!res.ok) {
           if (res.status === 401) {
-            showError('このリンクは有効期限が切れているか、無効です。', '<br><a class="auth-btn" href="login.html">新しいリンクを発行する</a>');
+            showError('このリンクは <strong>有効期限が切れている</strong>、または既に使用済みです。<br>下のフォームから新しいリンクを再発行できます。', '<br><a class="auth-btn" href="login.html">ログインページへ</a>');
           } else if (res.status === 403) {
-            showError('アカウントが有効ではありません。お問い合わせください。', '<br><a class="auth-btn" href="mailto:info@trillion-ai-juku.com">お問い合わせ</a>');
+            showError('アカウントが有効ではありません。', '<br><a class="auth-btn" href="mailto:info@trillion-ai-juku.com">お問い合わせ</a>');
           } else {
             showError(data.detail || 'ログインに失敗しました。');
           }

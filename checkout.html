@@ -117,8 +117,8 @@
         </div>
         <div class="form-group">
           <label>保護者様メールアドレス *</label>
-          <input type="email" id="email" required>
-          <p class="field-hint">📧 このアドレスに決済確認・レポートが届きます</p>
+          <input type="email" id="email" required autocomplete="email" maxlength="254" placeholder="parent@example.com" inputmode="email" spellcheck="false">
+          <p class="field-hint">📧 このアドレスに <strong>ログインリンク・決済確認・レポート</strong> が届きます。受信できる端末で確認できるアドレスをご入力ください。</p>
         </div>
         <div class="form-group">
           <label>志望校・目標（任意）</label>
@@ -172,6 +172,9 @@
         <p class="legal-note">
           ご登録により、<a href="legal.html#terms">利用規約</a>・<a href="legal.html#privacy">プライバシーポリシー</a>・<a href="legal.html#tokusho">特商法に基づく表記</a>に同意したものとみなされます。
         </p>
+        <p class="legal-note" style="margin-top:0.6rem;">
+          📞 お困りの場合: <a href="mailto:info@trillion-ai-juku.com">info@trillion-ai-juku.com</a> までお気軽にどうぞ。
+        </p>
 
         <div id="errorBox" class="error-box" style="display:none;"></div>
         <div id="loadingBox" class="loading-box" style="display:none;">
@@ -186,7 +189,7 @@
     <div class="footer-bottom">© 2026 AI学習コーチ塾 | Powered by Claude AI</div>
   </footer>
 
-  <script src="checkout.js?v=20260427-fixformbug"></script>
+  <script src="checkout.js?v=20260430-emailflow"></script>
   <script>
     // 入塾金免除キャンペーン残枠取得 + summary 表示にも反映
     (function() {

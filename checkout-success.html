@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <script src="cache-purge.js"></script>
+  <script src="cache-purge.js?v=20260430-emailflow"></script>
+  <script src="frontend-error-monitor.js?v=20260427-init"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>登録完了 | AI学習コーチ塾</title>
@@ -18,7 +19,7 @@
       padding: 1rem 0;
       display: flex;
       gap: 1rem;
-      align-items: center;
+      align-items: flex-start;
       border-bottom: 1px solid var(--panel-border);
     }
     .step-list li:last-child { border-bottom: none; }
@@ -32,7 +33,98 @@
       justify-content: center;
       font-weight: 900;
       flex-shrink: 0;
+      margin-top: 2px;
     }
+
+    /* メール届かない時の対処パネル */
+    .email-help {
+      background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(236,72,153,0.06));
+      border: 2px solid rgba(99,102,241,0.45);
+      border-radius: 16px;
+      padding: 1.6rem 1.4rem;
+      margin: 2rem 0;
+      text-align: left;
+    }
+    .email-help h3 {
+      margin: 0 0 0.6rem;
+      font-size: 1.15rem;
+      color: var(--primary-light);
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .email-help p { margin: 0.5rem 0; line-height: 1.7; font-size: 0.92rem; color: var(--text-dim); }
+    .email-help ul { margin: 0.5rem 0 0.7rem 1.2rem; padding: 0; line-height: 1.85; font-size: 0.9rem; color: var(--text-dim); }
+    .email-help ul li { margin-bottom: 0.25rem; }
+    .resend-btn {
+      display: inline-block;
+      margin: 0.6rem 0 0.4rem;
+      padding: 0.85rem 1.5rem;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .resend-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99,102,241,0.35); }
+    .resend-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+    .resend-msg {
+      margin-top: 0.7rem;
+      padding: 0.7rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      display: none;
+    }
+    .resend-msg.success { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35); color: #6ee7b7; display: block; }
+    .resend-msg.error { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); color: #fca5a5; display: block; }
+
+    /* email_sent=false 時の赤い大きな警告バナー */
+    .email-fail-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(239,68,68,0.18), rgba(220,38,38,0.10));
+      border: 2px solid #ef4444;
+      border-radius: 14px;
+      padding: 1.4rem 1.2rem;
+      margin: 1.5rem auto;
+      max-width: 720px;
+      text-align: left;
+      box-shadow: 0 0 0 4px rgba(239,68,68,0.10);
+      animation: pulseRed 2s ease-in-out infinite;
+    }
+    .email-fail-banner.show { display: block; }
+    .email-fail-banner h3 {
+      margin: 0 0 0.5rem;
+      color: #fca5a5;
+      font-size: 1.12rem;
+      font-weight: 900;
+    }
+    .email-fail-banner p { margin: 0.4rem 0; line-height: 1.7; font-size: 0.92rem; color: #fecaca; }
+    @keyframes pulseRed {
+      0%, 100% { box-shadow: 0 0 0 4px rgba(239,68,68,0.10); }
+      50%      { box-shadow: 0 0 0 8px rgba(239,68,68,0.18); }
+    }
+
+    /* キャリアメール受信許可案内 */
+    .carrier-tip {
+      display: none;
+      background: rgba(251,191,36,0.10);
+      border: 1px solid rgba(251,191,36,0.35);
+      border-radius: 10px;
+      padding: 0.95rem 1rem;
+      margin-top: 0.85rem;
+      color: #fde68a;
+      font-size: 0.86rem;
+      line-height: 1.7;
+    }
+    .carrier-tip.show { display: block; }
+    .carrier-tip strong { color: #fbbf24; }
+
     @keyframes pop {
       0% { transform: scale(0); }
       70% { transform: scale(1.2); }
@@ -77,6 +169,18 @@
         7日間 完全無料の体験が始まります。クレジットカード登録不要・自動課金なし・解約手続きも不要です。
       </p>
 
+      <!-- ⚠️ メール送信失敗時の赤い大バナー (email_sent=false 検知時のみ) -->
+      <div class="email-fail-banner" id="emailFailBanner">
+        <h3>⚠️ ログインメールの送信に失敗しました</h3>
+        <p>
+          サーバー側の一時的な障害でログインメールが届いていない可能性があります。
+          <strong>下の「📧 ログインメール再送信」ボタン</strong>から、もう一度お試しください。
+        </p>
+        <p style="font-size:0.85rem;color:#fda4af;">
+          何度試しても失敗する場合は <a href="mailto:info@trillion-ai-juku.com" style="color:#fca5a5;text-decoration:underline;">info@trillion-ai-juku.com</a> までご連絡ください。塾長から個別にログインリンクをお送りします。
+        </p>
+      </div>
+
       <!-- 入塾金免除キャンペーン適用バナー (現時点で枠が残っていれば月額移行時に免除確定) -->
       <div id="enrollmentWaiverConfirm" style="display:none;background:linear-gradient(135deg,rgba(251,191,36,0.18),rgba(236,72,153,0.12));border:2px solid #fbbf24;border-radius:14px;padding:1.2rem;margin:1.5rem auto;max-width:600px;text-align:center;">
         <div style="font-weight:900;color:#fbbf24;font-size:1.15rem;margin-bottom:0.4rem;">🎁 入塾金 ¥10,000 免除キャンペーン適用予定</div>
@@ -91,25 +195,18 @@
             <div class="step-num">1</div>
             <div>
               <strong>📧 メールをご確認ください</strong><br>
-              <span style="font-size:0.85rem;color:var(--text-dim);">ご登録のメールアドレスに <strong>ログインリンク</strong> をお送りしました。クリックすると学習環境に入れます。</span>
+              <span style="font-size:0.85rem;color:var(--text-dim);">ご登録のメールアドレス <strong id="loginEmailShown" style="color:var(--primary-light);"></strong> に <strong>ログインリンク + 6桁コード</strong> をお送りしました。リンクをクリックするだけで学習環境に入れます。</span>
             </div>
           </li>
           <li>
             <div class="step-num">2</div>
-            <div>
-              <strong>メールが届かない場合</strong><br>
-              <span style="font-size:0.85rem;color:var(--text-dim);">迷惑メールフォルダをご確認ください。それでも届かない場合は <a href="login.html" style="color:var(--primary-light);">ログインページ</a> からメールアドレスを入力して再発行できます。</span>
-            </div>
-          </li>
-          <li>
-            <div class="step-num">3</div>
             <div>
               <strong>志望校・目標を設定</strong><br>
               <span style="font-size:0.85rem;color:var(--text-dim);">AIがカリキュラムを自動生成します</span>
             </div>
           </li>
           <li>
-            <div class="step-num">4</div>
+            <div class="step-num">3</div>
             <div>
               <strong>最初の質問をAIにしてみる</strong><br>
               <span style="font-size:0.85rem;color:var(--text-dim);">深夜でも即答。今夜からでも使えます</span>
@@ -118,12 +215,39 @@
         </ol>
       </div>
 
-      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
-        <a href="login.html" class="btn-primary btn-lg">📧 ログインリンクを再発行</a>
+      <!-- 📧 メールが届かない時の対処パネル -->
+      <div class="email-help">
+        <h3>📧 メールが届きませんでしたか?</h3>
+        <p>1〜2分待っても届かない場合は、以下をご確認ください。</p>
+        <ul>
+          <li><strong>迷惑メール / 受信拒否フォルダ</strong>を確認 (Gmail は「プロモーション」「ソーシャル」タブも)</li>
+          <li>登録時のアドレスにタイプミスがないか確認 (例: gmail.con → gmail.com)</li>
+          <li>受信箱の空き容量がいっぱいだと届きません</li>
+          <li>下の「ログインメール再送信」ボタンをお試しください</li>
+        </ul>
+
+        <!-- キャリアメールユーザー向け: 受信許可設定の案内 (sessionStorage 検出時のみ表示) -->
+        <div class="carrier-tip" id="carrierTip">
+          <strong>📱 docomo / ezweb / au / softbank をお使いの方へ</strong><br>
+          キャリアメールの初期設定では、PCからのメールがブロックされる場合があります。<br>
+          以下のいずれかをお試しください:
+          <ul style="margin:0.4rem 0 0.2rem 1.1rem;">
+            <li>「<strong>PCからのメールを受信する</strong>」設定をON (各キャリアの「迷惑メール対策」から)</li>
+            <li>受信許可リストに <strong>@trillion-ai-juku.com</strong> と <strong>@resend.dev</strong> を追加</li>
+            <li>または、Gmail / iCloud などのフリーメールでログインアドレスを変更 (info@trillion-ai-juku.com までご連絡ください)</li>
+          </ul>
+        </div>
+
+        <button type="button" class="resend-btn" id="resendBtn">📧 ログインメール再送信</button>
+        <div class="resend-msg" id="resendMsg"></div>
+      </div>
+
+      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:1rem;">
+        <a href="login.html" class="btn-primary btn-lg">🔐 ログインページへ進む</a>
       </div>
 
       <p style="margin-top:2rem;font-size:0.85rem;color:var(--text-muted);">
-        ご質問がございましたら、<a href="mailto:info@trillion-ai-juku.com" style="color:var(--primary-light);">info@trillion-ai-juku.com</a> までお気軽にどうぞ。<br>
+        ご質問・お困りごとは、<a href="mailto:info@trillion-ai-juku.com" style="color:var(--primary-light);">info@trillion-ai-juku.com</a> までお気軽にどうぞ。<br>
         体験期間中はいつでも<a href="legal.html#tokusho" style="color:var(--primary-light);">解約可能</a>です。
       </p>
     </div>
@@ -162,8 +286,15 @@
     }
     setTimeout(() => container.remove(), 5000);
 
+    // API_BASE: 開発:8090 → localhost:8000、本番は同一オリジン (Vercel rewrite + 直接 Railway)
+    function getApiBase() {
+      const origin = window.location.origin;
+      if (origin.includes(':8090') || origin.includes('localhost:8090')) return 'http://localhost:8000';
+      return 'https://ai-juku-api-production.up.railway.app';
+    }
+    const API_BASE = getApiBase();
+
     // Track success event
-    const API_BASE = window.location.origin.includes(':8090') ? 'http://localhost:8000' : window.location.origin;
     fetch(`${API_BASE}/api/track`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -176,6 +307,101 @@
       const banner = document.getElementById('enrollmentWaiverConfirm');
       if (banner) banner.style.display = '';
     }).catch(() => {});
+
+    // ============================================================
+    // 📧 申込メタ情報の復元 + メール導線 UI 制御
+    // ============================================================
+    let signupMeta = null;
+    try {
+      const raw = sessionStorage.getItem('ai_juku_signup_meta');
+      if (raw) signupMeta = JSON.parse(raw);
+    } catch (_e) { signupMeta = null; }
+
+    // 表示用にマスクされた email を生成 (例: par***@gmail.com)
+    function maskEmail(e) {
+      if (!e || !e.includes('@')) return e || '';
+      const [local, domain] = e.split('@');
+      if (local.length <= 3) return local + '@' + domain;
+      return local.slice(0, 3) + '***@' + domain;
+    }
+    const loginEmailShown = document.getElementById('loginEmailShown');
+    if (loginEmailShown) {
+      loginEmailShown.textContent = signupMeta && signupMeta.email ? maskEmail(signupMeta.email) : '(ご登録のメール)';
+    }
+
+    // email_sent=false 警告バナーを表示
+    if (signupMeta && signupMeta.email_sent === false) {
+      const banner = document.getElementById('emailFailBanner');
+      if (banner) banner.classList.add('show');
+    }
+
+    // キャリアメール検出時に対処手順を強調表示
+    if (signupMeta && signupMeta.is_carrier_email) {
+      const tip = document.getElementById('carrierTip');
+      if (tip) tip.classList.add('show');
+    }
+
+    // 📧 ログインメール再送信
+    const resendBtn = document.getElementById('resendBtn');
+    const resendMsg = document.getElementById('resendMsg');
+    function showResendMsg(type, html) {
+      if (!resendMsg) return;
+      resendMsg.className = 'resend-msg ' + type;
+      resendMsg.innerHTML = html;
+    }
+    if (resendBtn) {
+      let cooldownTimer = null;
+      resendBtn.addEventListener('click', async () => {
+        const email = signupMeta && signupMeta.email;
+        if (!email) {
+          showResendMsg('error', '⚠️ メールアドレスが取得できませんでした。<a href="login.html" style="color:#fca5a5;text-decoration:underline;">ログインページ</a>からメールアドレスを入力して再発行してください。');
+          return;
+        }
+        resendBtn.disabled = true;
+        resendBtn.textContent = '📮 送信中...';
+        showResendMsg('', '');
+        try {
+          const res = await fetch(`${API_BASE}/api/auth/magic-link`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+          });
+          if (res.ok) {
+            // バックエンドはアカウント列挙対策で常に 200 を返すが、UI 上は「再送信完了」を出す。
+            showResendMsg('success', `✅ <strong>${maskEmail(email)}</strong> 宛に再送信しました。1〜2分以内に届きます。届かない場合は迷惑メールフォルダもご確認ください。`);
+            // email_sent=false 警告は再送が成功したので隠す
+            const banner = document.getElementById('emailFailBanner');
+            if (banner) banner.classList.remove('show');
+            // 60秒のクールダウン (連打防止)
+            let remaining = 60;
+            resendBtn.textContent = `再送信 (${remaining}秒後に再可)`;
+            cooldownTimer = setInterval(() => {
+              remaining -= 1;
+              if (remaining <= 0) {
+                clearInterval(cooldownTimer);
+                resendBtn.disabled = false;
+                resendBtn.textContent = '📧 ログインメール再送信';
+              } else {
+                resendBtn.textContent = `再送信 (${remaining}秒後に再可)`;
+              }
+            }, 1000);
+          } else if (res.status === 429) {
+            showResendMsg('error', '⚠️ リクエスト過多です。1分ほど時間をおいて再度お試しください。');
+            resendBtn.disabled = false;
+            resendBtn.textContent = '📧 ログインメール再送信';
+          } else {
+            const data = await res.json().catch(() => ({}));
+            showResendMsg('error', `⚠️ ${data.detail || '送信に失敗しました'}。<a href="mailto:info@trillion-ai-juku.com" style="color:#fca5a5;text-decoration:underline;">info@trillion-ai-juku.com</a> までご連絡ください。`);
+            resendBtn.disabled = false;
+            resendBtn.textContent = '📧 ログインメール再送信';
+          }
+        } catch (e) {
+          showResendMsg('error', '⚠️ ネットワークエラーが発生しました。時間をおいて再度お試しください。');
+          resendBtn.disabled = false;
+          resendBtn.textContent = '📧 ログインメール再送信';
+        }
+      });
+    }
   </script>
 </body>
 </html>
