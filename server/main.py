@@ -7604,6 +7604,143 @@ def public_ai_health():
     }
 
 
+@app.post("/api/admin/email/diagnose")
+def admin_email_diagnose(authorization: Optional[str] = Header(None)):
+    """Resend API の接続・ドメイン検証・送信テストを一括診断。
+    CEO ダッシュの「メール診断」ボタンから呼ばれる。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+
+    import urllib.request, urllib.error
+    result = {
+        "resend_api_key_set": bool(RESEND_API_KEY),
+        "resend_api_key_prefix": (RESEND_API_KEY[:8] + "***") if RESEND_API_KEY else "",
+        "from_email": FROM_EMAIL,
+        "domain_status": None,
+        "domains": [],
+        "recent_errors": [],
+        "test_send": None,
+    }
+
+    # 1. Resend /domains で送信ドメインの検証状態を取得
+    if RESEND_API_KEY:
+        try:
+            req = urllib.request.Request(
+                "https://api.resend.com/domains",
+                headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json"},
+                method="GET",
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                domains_data = json.loads(resp.read().decode())
+                domains_list = domains_data.get("data", []) if isinstance(domains_data, dict) else domains_data
+                for d in (domains_list if isinstance(domains_list, list) else []):
+                    result["domains"].append({
+                        "name": d.get("name"),
+                        "status": d.get("status"),
+                        "created_at": d.get("created_at"),
+                    })
+                # FROM_EMAIL のドメインが verified か判定
+                from_domain = ""
+                if "<" in FROM_EMAIL and ">" in FROM_EMAIL:
+                    from_domain = FROM_EMAIL.split("<")[1].split(">")[0].split("@")[-1]
+                elif "@" in FROM_EMAIL:
+                    from_domain = FROM_EMAIL.split("@")[-1]
+                matched = [d for d in result["domains"] if d.get("name") == from_domain]
+                if matched:
+                    result["domain_status"] = matched[0].get("status")
+                elif from_domain == "resend.dev":
+                    result["domain_status"] = "resend_default_sender"
+                else:
+                    result["domain_status"] = f"not_found ({from_domain})"
+        except Exception as e:
+            result["domain_status"] = f"api_error: {type(e).__name__}: {str(e)[:200]}"
+
+    # 2. DB から直近のメール失敗エラーを取得
+    try:
+        conn = db(); c = conn.cursor()
+        c.execute(
+            "SELECT props, created_at FROM events WHERE name = 'signup_email_status' ORDER BY created_at DESC LIMIT 10",
+        )
+        rows = c.fetchall()
+        conn.close()
+        for r in rows:
+            try:
+                props = json.loads(r["props"]) if isinstance(r["props"], str) else r["props"]
+                result["recent_errors"].append({
+                    "email_sent": props.get("email_sent"),
+                    "error": (props.get("error") or "")[:200],
+                    "created_at": str(r["created_at"]),
+                })
+            except Exception:
+                pass
+    except Exception as e:
+        result["recent_errors"] = [{"error": f"db_query_failed: {e}"}]
+
+    # 3. Resend API キーが生きているか: /api-keys で軽量確認
+    if RESEND_API_KEY:
+        try:
+            req = urllib.request.Request(
+                "https://api.resend.com/api-keys",
+                headers={"Authorization": f"Bearer {RESEND_API_KEY}"},
+                method="GET",
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                result["api_key_valid"] = True
+        except urllib.error.HTTPError as e:
+            result["api_key_valid"] = False
+            result["api_key_error"] = f"HTTP {e.code}: {e.read().decode('utf-8', errors='replace')[:200]}"
+        except Exception as e:
+            result["api_key_valid"] = False
+            result["api_key_error"] = f"{type(e).__name__}: {str(e)[:200]}"
+
+    return result
+
+
+@app.post("/api/admin/email/test-send")
+def admin_email_test_send(payload: dict, authorization: Optional[str] = Header(None)):
+    """テストメール送信。CEO ダッシュ「テスト送信」ボタン用。
+    payload.to が必須 (CEOのメールアドレス)。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+
+    to_email = (payload.get("to") or "").strip()
+    if not to_email or "@" not in to_email:
+        raise HTTPException(status_code=400, detail="to (メールアドレス) が必要です")
+
+    import urllib.request, urllib.error
+    if not RESEND_API_KEY:
+        return {"sent": False, "error": "RESEND_API_KEY 未設定"}
+    try:
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({
+                "from": FROM_EMAIL,
+                "to": [to_email],
+                "subject": "【AI学習コーチ塾】メール送信テスト",
+                "html": "<h2>✅ メール送信テスト成功</h2><p>Resend API 経由の送信が正常に動作しています。</p>",
+            }).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            body = json.loads(resp.read().decode())
+            return {"sent": True, "resend_id": body.get("id"), "to": to_email}
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode("utf-8", errors="replace")[:300]
+        return {"sent": False, "error": f"HTTP {e.code}: {err_body}", "to": to_email}
+    except Exception as e:
+        return {"sent": False, "error": f"{type(e).__name__}: {str(e)[:200]}", "to": to_email}
+
+
 @app.post("/api/admin/monitor/synthetic-checkout-now")
 async def admin_synthetic_checkout_now(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """E2E 合成チェックを今すぐ実行 (手動トリガー)。"""

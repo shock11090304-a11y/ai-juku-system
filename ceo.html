@@ -529,8 +529,14 @@
         </div>
       </div>
       <div id="monEmailRateBanner" style="margin-bottom:1rem;padding:0.65rem 1rem;border-radius:8px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.06);font-size:0.82rem;color:#cbd5e1;">
-        <span style="color:#94a3b8;">✉️ magic link 送信成功率 (直近 7d): </span>
-        <strong id="monEmailRateText">--</strong>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+          <div>
+            <span style="color:#94a3b8;">✉️ magic link 送信成功率 (直近 7d): </span>
+            <strong id="monEmailRateText">--</strong>
+          </div>
+          <button id="emailDiagnoseBtn" type="button" style="background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);padding:0.3rem 0.7rem;border-radius:6px;font-size:0.7rem;font-weight:700;cursor:pointer;">🩺 メール診断</button>
+        </div>
+        <div id="emailDiagnoseResult" style="display:none;margin-top:0.6rem;padding:0.6rem;background:rgba(0,0,0,0.4);border-radius:6px;font-size:0.75rem;line-height:1.5;color:#e4e4e7;"></div>
       </div>
 
       <!-- アラート一覧 -->
@@ -1950,6 +1956,87 @@
         copyUrlBtn?.addEventListener('click', () => copyText(resUrl.value, copyUrlBtn, '📋 URL'));
         copyDmBtn?.addEventListener('click', () => copyText(resDm.value, copyDmBtn, '📋 DM テンプレをコピー'));
       })();
+
+      // 🩺 「メール診断」ボタン
+      const emailDiagBtn = document.getElementById('emailDiagnoseBtn');
+      if (emailDiagBtn) emailDiagBtn.addEventListener('click', async () => {
+        const resultDiv = document.getElementById('emailDiagnoseResult');
+        emailDiagBtn.disabled = true; emailDiagBtn.textContent = '⏳ 診断中...';
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '⏳ Resend API を診断中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/email/diagnose', { method: 'POST' });
+          const d = await r.json();
+          let html = '';
+          // API キー状態
+          html += `<div style="margin-bottom:0.4rem;">🔑 API キー: ${d.api_key_valid ? '<span style="color:#34d399;">✅ 有効</span>' : '<span style="color:#f87171;">❌ 無効</span>'}${d.api_key_error ? ' — ' + d.api_key_error : ''}</div>`;
+          html += `<div style="margin-bottom:0.4rem;">📧 FROM: <code style="background:rgba(255,255,255,0.1);padding:0.15rem 0.3rem;border-radius:3px;">${d.from_email || '未設定'}</code></div>`;
+          // ドメイン状態
+          const ds = d.domain_status || 'unknown';
+          const domainOk = ds === 'verified' || ds === 'active';
+          const domainColor = domainOk ? '#34d399' : ds === 'resend_default_sender' ? '#fbbf24' : '#f87171';
+          html += `<div style="margin-bottom:0.4rem;">🌐 ドメイン: <span style="color:${domainColor};font-weight:700;">${ds}</span></div>`;
+          if (d.domains && d.domains.length) {
+            html += '<div style="margin-bottom:0.4rem;padding-left:1rem;">';
+            d.domains.forEach(dm => {
+              const ok = dm.status === 'verified' || dm.status === 'active';
+              html += `<div>${ok ? '✅' : '❌'} ${dm.name} — ${dm.status}</div>`;
+            });
+            html += '</div>';
+          }
+          if (ds === 'resend_default_sender') {
+            html += '<div style="color:#fbbf24;margin-bottom:0.4rem;">⚠️ onboarding@resend.dev はテスト用。本番では独自ドメインを FROM_EMAIL に設定してください。</div>';
+          }
+          // 直近エラー
+          if (d.recent_errors && d.recent_errors.length) {
+            html += '<div style="margin-top:0.5rem;font-weight:700;color:#fca5a5;">📋 直近の送信エラー:</div>';
+            d.recent_errors.filter(e => e.error).slice(0, 5).forEach(e => {
+              html += `<div style="padding-left:1rem;color:#fca5a5;font-size:0.72rem;word-break:break-all;">• ${e.error} <span style="color:#71717a;">(${e.created_at})</span></div>`;
+            });
+          }
+          // 修復ガイド
+          if (!domainOk || !d.api_key_valid) {
+            html += '<div style="margin-top:0.6rem;padding:0.5rem;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.3);border-radius:6px;">';
+            html += '<div style="font-weight:700;color:#fbbf24;">🔧 修復手順:</div>';
+            if (!d.api_key_valid) html += '<div>1. <a href="https://resend.com/api-keys" target="_blank" style="color:#a5b4fc;">Resend ダッシュボード</a>で API キーを再生成</div>';
+            if (!d.api_key_valid) html += '<div>2. Vercel → Settings → Environment Variables → RESEND_API_KEY を更新</div>';
+            if (!domainOk && ds !== 'resend_default_sender') html += '<div>3. <a href="https://resend.com/domains" target="_blank" style="color:#a5b4fc;">Resend ドメイン設定</a>で DNS レコードを確認・再検証</div>';
+            if (ds === 'resend_default_sender') {
+              html += '<div>1. <a href="https://resend.com/domains" target="_blank" style="color:#a5b4fc;">Resend ドメイン設定</a>で trillion-ai-juku.com を追加・検証</div>';
+              html += '<div>2. Vercel → Environment Variables → FROM_EMAIL を <code>AI学習コーチ塾 &lt;noreply@trillion-ai-juku.com&gt;</code> に設定</div>';
+              html += '<div>3. Redeploy</div>';
+            }
+            html += '</div>';
+          }
+          // テスト送信ボタン
+          if (d.api_key_valid) {
+            html += `<div style="margin-top:0.6rem;"><button id="emailTestSendBtn" style="background:rgba(52,211,153,0.2);color:#34d399;border:1px solid rgba(52,211,153,0.4);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.72rem;font-weight:700;cursor:pointer;">📨 テスト送信 (自分宛)</button> <span id="emailTestResult" style="font-size:0.72rem;"></span></div>`;
+            setTimeout(() => {
+              const tsBtn = document.getElementById('emailTestSendBtn');
+              if (tsBtn) tsBtn.addEventListener('click', async () => {
+                const toEmail = prompt('送信先メールアドレスを入力:');
+                if (!toEmail) return;
+                tsBtn.disabled = true; tsBtn.textContent = '⏳ 送信中...';
+                try {
+                  const tr = await AdminAuth.fetch('/api/admin/email/test-send', {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({to: toEmail})
+                  });
+                  const tj = await tr.json();
+                  document.getElementById('emailTestResult').innerHTML = tj.sent
+                    ? `<span style="color:#34d399;">✅ 送信成功 (${tj.resend_id})</span>`
+                    : `<span style="color:#f87171;">❌ 失敗: ${tj.error}</span>`;
+                } catch (e) { document.getElementById('emailTestResult').innerHTML = `<span style="color:#f87171;">❌ ${e.message}</span>`; }
+                tsBtn.disabled = false; tsBtn.textContent = '📨 テスト送信 (自分宛)';
+              });
+            }, 100);
+          }
+          resultDiv.innerHTML = html;
+        } catch (e) {
+          resultDiv.innerHTML = `<span style="color:#f87171;">❌ 診断失敗: ${e.message}</span>`;
+        }
+        emailDiagBtn.disabled = false; emailDiagBtn.textContent = '🩺 メール診断';
+      });
 
       // ⚡ 「JS エラー一括解決」ボタン (2026-04-28 self-healing)
       const sweepBtn = document.getElementById('sweepJsErrorsBtn');
