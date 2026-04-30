@@ -657,6 +657,69 @@ async function init() {
   }
   state.currentStudentId = storage.get(STORAGE_KEYS.CURRENT_STUDENT, state.students[0]?.id);
 
+  // ----------------------------------------------------------------------
+  // 🛡️ login session → currentStudentId 自動同期 (2026-04-30 修正)
+  // 背景: login.html は ai_juku_session_student に id=N を保存するが、
+  // app.js の state.currentStudentId はそれを読まず seedStudents[0].id=1 に
+  // 固定されていた。結果 frontend が DB 不存在の id=1 を /api/ai/call に送り、
+  // 404 → demoChat fallback で「学習サポート」テンプレが返る事故が頻発。
+  // 修復順序: session_student → /api/auth/me (token あれば) → 既存 fallback
+  // role==='parent' の時は parent verify が後で上書きするので skip
+  // ----------------------------------------------------------------------
+  if (role !== 'parent') {
+    let resolvedSessionStudent = null;
+    try {
+      const sessionStudentRaw = localStorage.getItem('ai_juku_session_student');
+      if (sessionStudentRaw) {
+        const ss = JSON.parse(sessionStudentRaw);
+        if (ss && ss.id) resolvedSessionStudent = ss;
+      }
+    } catch (e) {
+      console.warn('[init] session_student parse failed:', e);
+    }
+    // session_student が無いが session_token があるなら /api/auth/me で取得
+    if (!resolvedSessionStudent && localStorage.getItem('ai_juku_session_token')) {
+      try {
+        const fetcher = (window.AuthGuard && AuthGuard.authFetch)
+          ? AuthGuard.authFetch.bind(AuthGuard)
+          : (url) => fetch(url, { headers: { Authorization: 'Bearer ' + localStorage.getItem('ai_juku_session_token') } });
+        const res = await fetcher(`${BACKEND_URL}/api/auth/me`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.student && data.student.id) {
+            resolvedSessionStudent = data.student;
+            // localStorage にも書き戻し (次回起動高速化)
+            localStorage.setItem('ai_juku_session_student', JSON.stringify(data.student));
+          }
+        }
+      } catch (e) {
+        console.warn('[init] /api/auth/me 取得失敗:', e);
+      }
+    }
+    // 取得できた場合 state を整合させる
+    if (resolvedSessionStudent && resolvedSessionStudent.id) {
+      const ss = resolvedSessionStudent;
+      // state.students[] に session student を merge (id 衝突なら更新)
+      const idx = state.students.findIndex(s => s.id === ss.id);
+      const mergedStudent = {
+        // seed 形式の必須 field を default で埋める
+        weeklyHours: 0,
+        fee: 0,
+        subjects: {},
+        ...ss,
+      };
+      if (idx >= 0) {
+        state.students[idx] = { ...state.students[idx], ...mergedStudent };
+      } else {
+        state.students.push(mergedStudent);
+      }
+      state.currentStudentId = ss.id;
+      storage.set(STORAGE_KEYS.STUDENTS, state.students);
+      storage.set(STORAGE_KEYS.CURRENT_STUDENT, ss.id);
+      console.info('[init] session student 同期完了 student_id=' + ss.id);
+    }
+  }
+
   // バックエンドAI proxy を検出
   const hostedMode = await detectBackendAI();
 
