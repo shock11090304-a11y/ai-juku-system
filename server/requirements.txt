@@ -4,3 +4,4 @@ pydantic[email]==2.9.2
 stripe==11.1.0
 python-dotenv==1.0.1
 psycopg[binary]==3.2.3
+google-generativeai==0.8.3

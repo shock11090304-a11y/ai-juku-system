@@ -82,6 +82,12 @@ LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET", "")
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+# Gemini Tier 4 fallback (AI never-fail 原則: Anthropic 完全障害でも止まらない)
+# Google AI Studio で無料発行: https://aistudio.google.com/app/apikey
+# Gemini 1.5/2.5 Flash は 1日 1,500 req まで無料枠あり
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL_LIGHT = os.getenv("GEMINI_MODEL_LIGHT", "gemini-2.5-flash")
 CRON_SECRET = os.getenv("CRON_SECRET", "")  # 未設定時は cron 系エンドポイントを全拒否
 STATS_TOKEN = os.getenv("STATS_TOKEN", "")  # 未設定時は /api/stats を全拒否
 # HMAC 署名鍵（保護者ビュー署名・他の署名用途で利用）
@@ -694,6 +700,7 @@ def health():
         "stripe_configured": bool(STRIPE_SECRET_KEY),
         "line_configured": bool(LINE_CHANNEL_ACCESS_TOKEN),
         "anthropic_configured": bool(ANTHROPIC_API_KEY),
+        "gemini_configured": bool(GEMINI_API_KEY),  # Tier 4 fallback (AI never-fail)
         "email_configured": bool(RESEND_API_KEY),  # Magic link / Welcome / 各種通知メール
         "campaign_waiver_active": ENROLLMENT_WAIVER_CAMPAIGN_ENABLED,
     }
@@ -991,9 +998,13 @@ def _check_daily_sns_sent_today_jst() -> bool:
 
 
 def _generate_daily_sns_posts() -> list:
-    """Anthropic API で塾長キャラのThreads投稿5本(5型ローテ)を生成"""
-    if not ANTHROPIC_API_KEY:
-        log.warning("[DailySNS] ANTHROPIC_API_KEY 未設定でスキップ")
+    """塾長キャラのThreads投稿5本(5型ローテ)を生成。
+    _call_ai_safe(task_type='daily_sns') 経由 = Gemini Flash 優先 (低 stake + 課金抑制)。
+    Gemini 失敗時は Anthropic にフォールバック (4段降格 + Tier 4 Gemini で結局止まらない)。
+    """
+    # ANTHROPIC か GEMINI のどちらか 1 つでもあれば動く設計
+    if not ANTHROPIC_API_KEY and not GEMINI_API_KEY:
+        log.warning("[DailySNS] ANTHROPIC_API_KEY も GEMINI_API_KEY も未設定でスキップ")
         return []
     recent = _get_recent_sns_posts(days=30)
     avoid_section = ""
@@ -1029,23 +1040,15 @@ def _generate_daily_sns_posts() -> list:
 
     system_prompt = f"{JUKUCHO_PERSONA}\n\n{THREADS_RULES}"
     try:
-        req = urllib.request.Request(
-            "https://api.anthropic.com/v1/messages",
-            data=json.dumps({
+        data = _call_ai_safe(
+            {
                 "model": DAILY_SNS_MODEL,
                 "max_tokens": 3000,
                 "system": system_prompt,
                 "messages": [{"role": "user", "content": user_msg}],
-            }).encode("utf-8"),
-            headers={
-                "x-api-key": ANTHROPIC_API_KEY,
-                "anthropic-version": "2023-06-01",
-                "Content-Type": "application/json",
             },
-            method="POST",
+            task_type="daily_sns",
         )
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            data = json.loads(resp.read().decode())
         content_text = data["content"][0]["text"].strip()
         # コードブロックで囲まれている場合は除去
         if content_text.startswith("```"):
@@ -1057,7 +1060,9 @@ def _generate_daily_sns_posts() -> list:
                 content_text = content_text[:-3].strip()
         parsed = json.loads(content_text)
         posts = parsed.get("posts", [])
-        log.info(f"[DailySNS] Generated {len(posts)} posts via {DAILY_SNS_MODEL}")
+        actual_model = data.get("_actual_model") or DAILY_SNS_MODEL
+        provider = data.get("_provider") or "anthropic"
+        log.info(f"[DailySNS] Generated {len(posts)} posts via {actual_model} ({provider})")
         return posts
     except Exception as e:
         log.error(f"[DailySNS] Generation failed: {type(e).__name__}: {e}")
@@ -1281,6 +1286,7 @@ def _collect_health_snapshot() -> dict:
         "timestamp": now.isoformat(),
         "stripe_configured": bool(STRIPE_SECRET_KEY),
         "anthropic_configured": bool(ANTHROPIC_API_KEY),
+        "gemini_configured": bool(GEMINI_API_KEY),
         "email_configured": bool(RESEND_API_KEY),
         "founder_special_price_configured": bool(STRIPE_PRICE_FOUNDER_SPECIAL) or bool(_lookup_founder_special_price_id()),
         "founder1_price_configured": bool(STRIPE_PRICE_FOUNDER_SPECIAL) or bool(_lookup_founder_special_price_id()),  # 後方互換 (旧名)
@@ -3437,6 +3443,87 @@ def _anthropic_max_tokens_cap(model: str, requested: int) -> int:
     return min(requested, 8000)
 
 
+def _call_gemini(body: dict, *, model: str = None, kind: str = "chat") -> dict:
+    """Gemini API 呼び出し (Anthropic body 互換 → Gemini 形式変換)。
+    入力は Anthropic /v1/messages 形式 (model/max_tokens/system/messages)。
+    出力は Anthropic 互換形式に詰め直して返す (caller 側の data["content"][0]["text"] が動く)。
+    Gemini API 失敗時は HTTPError 相当を raise する (Tier 4 fallback の最終層)。
+    """
+    if not GEMINI_API_KEY:
+        raise RuntimeError("GEMINI_API_KEY not configured")
+    try:
+        import google.generativeai as genai
+    except ImportError:
+        raise RuntimeError("google-generativeai package not installed")
+
+    # API キー設定 (毎回呼んでも冪等)
+    genai.configure(api_key=GEMINI_API_KEY)
+
+    target_model = model or GEMINI_MODEL
+    system_text = body.get("system") or ""
+    msgs = body.get("messages") or []
+    max_tokens = int(body.get("max_tokens") or 4000)
+
+    # Gemini は max_tokens=8192 (Flash) / 8192 (Pro) が上限。clamp。
+    max_tokens = min(max_tokens, 8000)
+
+    # Gemini の history 形式: [{"role": "user|model", "parts": [text]}]
+    # Anthropic の messages: [{"role": "user|assistant", "content": "..."}]
+    history = []
+    last_user_text = ""
+    for m in msgs:
+        role = m.get("role", "user")
+        content = m.get("content", "")
+        if isinstance(content, list):
+            content = "".join(c.get("text", "") for c in content if isinstance(c, dict))
+        if role == "assistant":
+            history.append({"role": "model", "parts": [content]})
+        else:
+            if msgs and m is msgs[-1]:
+                last_user_text = content
+            else:
+                history.append({"role": "user", "parts": [content]})
+
+    # 最後の user message が抽出できなかったケース fallback
+    if not last_user_text and msgs:
+        c = msgs[-1].get("content", "")
+        if isinstance(c, list):
+            c = "".join(x.get("text", "") for x in c if isinstance(x, dict))
+        last_user_text = c
+
+    try:
+        gen_model = genai.GenerativeModel(
+            model_name=target_model,
+            system_instruction=system_text or None,
+            generation_config={
+                "max_output_tokens": max_tokens,
+                "temperature": float(body.get("temperature") or 0.7),
+            },
+        )
+        chat = gen_model.start_chat(history=history)
+        resp = chat.send_message(last_user_text)
+        text = resp.text or ""
+    except Exception as e:
+        log.error(f"[Gemini] call failed model={target_model}: {type(e).__name__}: {str(e)[:300]}")
+        raise
+
+    # Anthropic 互換形式に詰め直す
+    return {
+        "id": f"gemini_{int(time.time()*1000)}",
+        "type": "message",
+        "role": "assistant",
+        "model": target_model,
+        "content": [{"type": "text", "text": text}],
+        "_actual_model": target_model,
+        "_provider": "gemini",
+        "stop_reason": "end_turn",
+        "usage": {
+            "input_tokens": getattr(resp.usage_metadata, "prompt_token_count", 0) if hasattr(resp, "usage_metadata") else 0,
+            "output_tokens": getattr(resp.usage_metadata, "candidates_token_count", 0) if hasattr(resp, "usage_metadata") else 0,
+        },
+    }
+
+
 def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = None) -> dict:
     """全 Anthropic API 呼び出しの統一エントリ。絶対に止まらない設計。
     - 3 段モデルフォールバック (要求 → Sonnet 4.6 → Haiku 4.5)
@@ -3549,19 +3636,84 @@ def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = No
                 log.warning(f"[AI failsafe] {model} exhausted retries on network error, advancing to next tier")
                 break
 
-    # 全 tier 全 attempt 失敗
+    # Tier 4: Gemini 最終 fallback (Anthropic 完全障害でも止まらない設計)
+    # AI never-fail 原則 (memory: feedback_ai_never_fail.md): Anthropic 全停止時も
+    # Daily SNS / 教材生成 / 採点 が止まらないように Gemini に投げ替える。
+    if GEMINI_API_KEY:
+        try:
+            log.warning(f"[AI failsafe] Anthropic全滅、Gemini Tier 4 にフォールバック (kind={kind})")
+            data = _call_gemini(body, kind=kind)
+            _record_ai_critical_event("ai_fallback_gemini", {
+                "requested_model": requested_model,
+                "actual_model": data.get("_actual_model"),
+                "anthropic_last_error": last_error_code,
+                "kind": kind,
+                "student_id": student_id,
+            })
+            return data
+        except Exception as ge:
+            log.error(f"[AI failsafe] Gemini Tier 4 もエラー: {type(ge).__name__}: {str(ge)[:200]}")
+            # Gemini も落ちたら下の total_failure へ流れる
+
+    # 全 tier 全 attempt 失敗 (Anthropic 4段 + Gemini も全滅)
     _record_ai_critical_event("ai_total_failure", {
         "requested_model": requested_model,
         "last_error_code": last_error_code,
         "last_error_body": last_error_body[:300],
+        "gemini_configured": bool(GEMINI_API_KEY),
         "kind": kind,
         "student_id": student_id,
     })
-    log.error(f"[AI failsafe] ALL TIERS FAILED. last={last_error_code}: {last_error_body[:200]}")
+    log.error(f"[AI failsafe] ALL TIERS FAILED (incl. Gemini). last={last_error_code}: {last_error_body[:200]}")
     raise HTTPException(
         status_code=503,
         detail=f"AI temporarily unavailable. Last error: {last_error_code}"
     )
+
+
+_GEMINI_FIRST_TASKS = {
+    # 低 stake task = Gemini 優先で課金抑制 + 並列処理高速化
+    # 失敗時は Anthropic にフォールバックする (品質が落ちないように)
+    "daily_sns",        # SNS 投稿生成 (短文・カジュアル)
+    "tag_extract",      # タグ抽出 (構造化抽出)
+    "summarize_short",  # 短文要約
+    "classify",         # 分類タスク
+    "moderate",         # NG 文言判定
+}
+
+
+def _call_ai_safe(body: dict, *, task_type: str = "default", kind: str = None,
+                   student_id: int = None) -> dict:
+    """task_type ベースで Gemini / Anthropic を振り分ける統一 AI ルーター。
+
+    使い分け:
+    - task_type が _GEMINI_FIRST_TASKS にあれば Gemini Flash 優先 → 失敗時 Anthropic にフォールバック
+    - それ以外は Anthropic 優先 (品質責任が大きいタスク = 教材/採点/対話/問題生成)
+    - どちらの経路でも _call_anthropic_safe の Tier 4 (Gemini) があるので最終的に止まらない
+
+    Why: 教材生成・記述採点・古文/医学部論述は Anthropic Opus/Sonnet の品質責任が大きい。
+    一方 Daily SNS や分類などは Gemini Flash で十分 (かつ無料枠 1500/日 が大きい)。
+    塾長指示「AI never-fail」+ 課金抑制を両立させる設計。
+    """
+    kind = kind or task_type
+
+    # 1) Gemini-first パス (低 stake タスク)
+    if task_type in _GEMINI_FIRST_TASKS and GEMINI_API_KEY:
+        try:
+            return _call_gemini(body, model=GEMINI_MODEL_LIGHT, kind=kind)
+        except Exception as e:
+            log.warning(
+                f"[AI router] Gemini-first failed for task={task_type}, falling back to Anthropic: "
+                f"{type(e).__name__}: {str(e)[:200]}"
+            )
+            # Anthropic 経路へフォールスルー
+            _record_ai_critical_event("ai_router_gemini_first_failed", {
+                "task_type": task_type,
+                "error": str(e)[:300],
+            })
+
+    # 2) Anthropic 経路 (高 stake タスクの主経路 + Gemini-first 失敗時の救済)
+    return _call_anthropic_safe(body, kind=kind, student_id=student_id)
 
 
 def _ai_credit_low_active() -> bool:
@@ -6980,6 +7132,58 @@ def admin_monitor_run_now(authorization: Optional[str] = Header(None), x_cron_se
     if not authed:
         raise HTTPException(status_code=401, detail="未認証")
     return _run_monitor_check()
+
+
+@app.post("/api/admin/ai/test-gemini")
+def admin_test_gemini(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """Gemini Tier 4 fallback の動作確認 endpoint。
+    admin Bearer or x-cron-secret 認証。Gemini で 1 回 generate して
+    {ok, model, sample, latency_ms} を返す。CEO ダッシュ から呼び出す。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    if not GEMINI_API_KEY:
+        return {
+            "ok": False,
+            "configured": False,
+            "error": "GEMINI_API_KEY が Railway env に未設定。https://aistudio.google.com/app/apikey で発行してください。",
+        }
+
+    t0 = time.time()
+    try:
+        data = _call_gemini(
+            {
+                "model": GEMINI_MODEL,
+                "max_tokens": 200,
+                "system": "あなたは丁寧な日本語アシスタントです。",
+                "messages": [{"role": "user", "content": "「AI never-fail テスト成功」とだけ短く返答してください。"}],
+            },
+            kind="test_gemini",
+        )
+        text = (data.get("content") or [{}])[0].get("text", "") if data.get("content") else ""
+        return {
+            "ok": True,
+            "configured": True,
+            "model": data.get("_actual_model"),
+            "provider": data.get("_provider"),
+            "sample": text[:200],
+            "latency_ms": int((time.time() - t0) * 1000),
+            "usage": data.get("usage", {}),
+        }
+    except Exception as e:
+        return {
+            "ok": False,
+            "configured": True,
+            "error": f"{type(e).__name__}: {str(e)[:300]}",
+            "latency_ms": int((time.time() - t0) * 1000),
+        }
 
 
 @app.get("/api/admin/monitor/status")

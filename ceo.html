@@ -499,6 +499,12 @@
           <div style="color:#94a3b8;margin-bottom:0.2rem;">Anthropic API</div>
           <div id="monAnthropic" style="font-size:1.2rem;font-weight:900;">--</div>
         </div>
+        <div style="background:rgba(0,0,0,0.25);border-radius:8px;padding:0.6rem;text-align:center;">
+          <div style="color:#94a3b8;margin-bottom:0.2rem;">Gemini (Tier 4)</div>
+          <div id="monGemini" style="font-size:1.2rem;font-weight:900;">--</div>
+          <button id="testGeminiBtn" onclick="testGemini()" style="margin-top:0.4rem;background:rgba(99,102,241,0.2);color:#818cf8;border:1px solid rgba(99,102,241,0.4);padding:0.25rem 0.5rem;border-radius:6px;font-size:0.7rem;font-weight:700;cursor:pointer;">⚡ テスト</button>
+          <div id="testGeminiResult" style="margin-top:0.3rem;font-size:0.65rem;color:#94a3b8;"></div>
+        </div>
       </div>
       <!-- 過去24h ファネル -->
       <div style="background:rgba(0,0,0,0.25);border-radius:10px;padding:0.85rem;margin-bottom:1rem;">
@@ -1562,6 +1568,34 @@
       }
     }
 
+    // Gemini Tier 4 動作確認 (1クリックテスト)
+    async function testGemini() {
+      const btn = document.getElementById('testGeminiBtn');
+      const result = document.getElementById('testGeminiResult');
+      if (!window.AdminAuth || !AdminAuth.getToken()) {
+        result.innerHTML = '<span style="color:#f87171;">未認証</span>';
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = '⏳ 接続中...';
+      result.innerHTML = '';
+      try {
+        const res = await AdminAuth.fetch('/api/admin/ai/test-gemini', { method: 'POST' });
+        const data = await res.json();
+        if (data.ok) {
+          result.innerHTML = `<span style="color:#34d399;">✅ ${data.model} (${data.latency_ms}ms)</span><br><span style="color:#94a3b8;font-size:0.6rem;">${(data.sample || '').substring(0, 60)}</span>`;
+        } else if (!data.configured) {
+          result.innerHTML = `<span style="color:#fbbf24;">⚠️ env 未設定</span><br><span style="color:#94a3b8;font-size:0.6rem;">Railway に GEMINI_API_KEY を追加</span>`;
+        } else {
+          result.innerHTML = `<span style="color:#f87171;">❌ ${(data.error || '').substring(0, 80)}</span>`;
+        }
+      } catch (e) {
+        result.innerHTML = `<span style="color:#f87171;">❌ ${e.message}</span>`;
+      }
+      btn.disabled = false;
+      btn.textContent = '⚡ テスト';
+    }
+
     // 申込→決済 監視ヘルス
     async function loadMonitorHealth() {
       if (!window.AdminAuth || !AdminAuth.getToken()) return;
@@ -1581,6 +1615,7 @@
         if (setupBtn) setupBtn.style.display = s.founder_special_price_configured ? 'none' : '';
         document.getElementById('monEmail').innerHTML = s.email_configured ? ok : ng;
         document.getElementById('monAnthropic').innerHTML = s.anthropic_configured ? ok : ng;
+        document.getElementById('monGemini').innerHTML = s.gemini_configured ? ok : ng;
         // ファネル
         document.getElementById('monPv').textContent = fmtNum(s.pv_24h);
         document.getElementById('monCta').textContent = fmtNum(s.cta_24h);
