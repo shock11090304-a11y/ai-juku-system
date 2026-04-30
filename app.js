@@ -5172,9 +5172,45 @@ function _parseChoicesFromQuestion(question) {
   if (pending != null) choices.push(pending.trim());
 
   // 妥当性チェック: 2-6 個の選択肢 + 各 choice が 200 字以内
-  if (choices.length < 2 || choices.length > 6) return null;
-  if (choices.some(c => !c || c.length > 240)) return null;
-  return { stem: stem.join('\n').trim(), choices };
+  if (choices.length >= 2 && choices.length <= 6 && choices.every(c => c && c.length <= 240)) {
+    return { stem: stem.join('\n').trim(), choices };
+  }
+
+  // ===== パターン B: 1行に並んだ inline 選択肢 =====
+  // 例: "(a) lives (b) is living (c) has lived (d) had lived"
+  // 例: "(1) X (2) Y (3) Z (4) W"
+  // marker を順序通りに検出 (a→b→c→d / 1→2→3→4 が連続している必要)
+  const text = String(question);
+  const inlineRe = /[\(（]\s*([a-eA-E1-9])\s*[\)）]/g;
+  const matches = [];
+  let mm;
+  let consecutive = true;
+  let lastOrd = -1;
+  while ((mm = inlineRe.exec(text)) !== null) {
+    const v = mm[1];
+    const ord = /[a-eA-E]/.test(v) ? v.toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0)
+                                   : parseInt(v, 10) - 1;
+    if (matches.length === 0 && ord !== 0) continue;  // 最初は a or 1 から
+    if (lastOrd >= 0 && ord !== lastOrd + 1) { consecutive = false; break; }
+    matches.push({ idx: mm.index, len: mm[0].length, ord });
+    lastOrd = ord;
+  }
+  if (consecutive && matches.length >= 2 && matches.length <= 6) {
+    const stemB = text.substring(0, matches[0].idx).trim();
+    const choicesB = [];
+    for (let i = 0; i < matches.length; i++) {
+      const start = matches[i].idx + matches[i].len;
+      const end = i + 1 < matches.length ? matches[i + 1].idx : text.length;
+      let body = text.substring(start, end).trim();
+      // 末尾の annotation 除去 ("(原始・古代の問題)" 等)
+      body = body.replace(/[\(（][^\)）]*問題[\)）]\s*$/, '').trim();
+      choicesB.push(body);
+    }
+    if (choicesB.every(c => c && c.length <= 240)) {
+      return { stem: stemB, choices: choicesB };
+    }
+  }
+  return null;
 }
 
 // answer フィールドから正解 index (0始まり) を抽出
