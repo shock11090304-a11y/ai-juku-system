@@ -5162,28 +5162,51 @@ def admin_students_send_login_link(payload: dict, authorization: Optional[str] =
     finally:
         conn.close()
 
+    import time as _t
     sent = 0
     failed = []
     sent_details = []
-    for s in students_to_send:
+    for idx, s in enumerate(students_to_send):
         sent_details.append({"id": s["id"], "name": s.get("name"), "email": s.get("email")})
         if dry_run:
             continue
-        try:
-            session_token = _sign_session_token(s["id"])
-            magic_url = f"{BASE_URL}/auth.html?t={session_token}"
-            otp_code = _create_otp(s["id"])
-            _send_magic_link_email(
-                s["email"],
-                s.get("name") or "",
-                magic_url,
-                otp_code=otp_code,
-                is_welcome=True,  # 初回ログイン誘導なので welcome モード
-            )
+        # Resend rate limit (Free 2 req/sec) 対策: 各送信前に 0.6 秒 sleep
+        if idx > 0:
+            _t.sleep(0.6)
+        # 最大 3 回リトライ (429 対策、指数バックオフ)
+        success = False
+        last_error = None
+        for attempt in range(3):
+            try:
+                session_token = _sign_session_token(s["id"])
+                magic_url = f"{BASE_URL}/auth.html?t={session_token}"
+                otp_code = _create_otp(s["id"])
+                result = _send_magic_link_email(
+                    s["email"],
+                    s.get("name") or "",
+                    magic_url,
+                    otp_code=otp_code,
+                    is_welcome=True,
+                )
+                # _send_magic_link_email は {sent: True/False, ...} を返す
+                if isinstance(result, dict) and result.get("sent"):
+                    success = True
+                    break
+                last_error = (result or {}).get("error", "send_failed")
+                # 429 などのレート制限エラーなら待ってリトライ
+                if "429" in str(last_error) or "Too Many" in str(last_error):
+                    _t.sleep(2 ** attempt)  # 1s → 2s → 4s
+                    continue
+                # その他のエラーはリトライしない
+                break
+            except Exception as e:
+                last_error = f"{type(e).__name__}: {e}"
+                log.error(f"[Students:SendLoginLink] exception for student {s['id']}: {last_error}")
+                _t.sleep(2 ** attempt)
+        if success:
             sent += 1
-        except Exception as e:
-            log.error(f"[Students:SendLoginLink] failed for student {s['id']}: {type(e).__name__}: {e}")
-            failed.append({"id": s["id"], "email": s.get("email"), "error": str(e)[:200]})
+        else:
+            failed.append({"id": s["id"], "email": s.get("email"), "error": str(last_error)[:200]})
 
     log.info(f"[Students:SendLoginLink] dry_run={dry_run} matched={len(students_to_send)} sent={sent} failed={len(failed)}")
     return {
