@@ -2174,6 +2174,23 @@ async function loadArchiveOverview(examId = null) {
 function _renderArchiveOverview({ total, cards }) {
   const box = document.getElementById('archOverview');
   if (!box) return;
+
+  // タブの可視性を card 数で判定 (空カテゴリのタブは hide。塾長指示 2026-04-30)
+  // 「all」は常時表示、それ以外はカードがあるカテゴリのみ
+  const tabCounts = {};
+  cards.forEach(c => { tabCounts[c.category] = (tabCounts[c.category] || 0) + 1; });
+  document.querySelectorAll('.archive-cat-tab').forEach(tab => {
+    const cat = tab.dataset.cat;
+    if (cat === 'all') { tab.style.display = ''; return; }
+    tab.style.display = (tabCounts[cat] || 0) > 0 ? '' : 'none';
+  });
+  // 現在 active なタブが空カテゴリだった場合は all に戻す
+  const activeTabPrev = document.querySelector('.archive-cat-tab.active');
+  if (activeTabPrev && activeTabPrev.dataset.cat !== 'all' && (tabCounts[activeTabPrev.dataset.cat] || 0) === 0) {
+    activeTabPrev.classList.remove('active');
+    document.querySelector('.archive-cat-tab[data-cat="all"]')?.classList.add('active');
+  }
+
   // 現在のカテゴリタブと検索クエリで filter
   const activeTab = document.querySelector('.archive-cat-tab.active');
   const cat = activeTab ? activeTab.dataset.cat : 'all';
@@ -2207,7 +2224,7 @@ function _renderArchiveOverview({ total, cards }) {
   });
   html += '</div>';
   box.innerHTML = html;
-  // カードクリック = 即遷移 (絞り込みボタン不要)
+  // カードクリック = 即遷移 (絞り込みボタン不要) + 問題リストまで自動スクロール
   box.querySelectorAll('.archive-group-card').forEach(btn => {
     btn.addEventListener('click', () => {
       ARCH_STATE.exam = btn.dataset.exam;
@@ -2222,6 +2239,17 @@ function _renderArchiveOverview({ total, cards }) {
       if (gradeF) gradeF.value = ARCH_STATE.grade || '';
       if (typeof populateArchPartOptions === 'function') populateArchPartOptions();
       loadArchiveList();
+      // 塾長指示 2026-04-30: クリック後に問題一覧まで自動スクロール
+      // (loadArchiveList で archList が表示される → 80ms 後に scrollIntoView)
+      setTimeout(() => {
+        const list = document.getElementById('archList');
+        if (list) {
+          // 一覧 + ヘッダ全体が見えるように nav bar 分の offset (60px) を確保
+          const rect = list.getBoundingClientRect();
+          const targetY = window.scrollY + rect.top - 60;
+          window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+        }
+      }, 100);
     });
   });
 }
