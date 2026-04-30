@@ -5054,16 +5054,16 @@ def admin_students_purge_test(payload: dict, authorization: Optional[str] = Head
         # ID 指定
         if ids:
             placeholders = ",".join(["?"] * len(ids))
-            c.execute(f"SELECT id, fullname, status FROM students WHERE id IN ({placeholders})", tuple(ids))
+            c.execute(f"SELECT id, name, status FROM students WHERE id IN ({placeholders})", tuple(ids))
             for r in c.fetchall():
-                matched.append({"id": r["id"], "fullname": r["fullname"], "status": r["status"], "via": "id"})
+                matched.append({"id": r["id"], "name": r["name"], "status": r["status"], "via": "id"})
         # 名前部分一致 (複数 OR)
         if name_contains:
             for kw in name_contains:
-                c.execute("SELECT id, fullname, status FROM students WHERE fullname LIKE ?", (f"%{kw}%",))
+                c.execute("SELECT id, name, status FROM students WHERE name LIKE ?", (f"%{kw}%",))
                 for r in c.fetchall():
                     if not any(m["id"] == r["id"] for m in matched):
-                        matched.append({"id": r["id"], "fullname": r["fullname"], "status": r["status"], "via": f"name~{kw}"})
+                        matched.append({"id": r["id"], "name": r["name"], "status": r["status"], "via": f"name~{kw}"})
 
         deleted = 0
         if not dry_run and matched:
