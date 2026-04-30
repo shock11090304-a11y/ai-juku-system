@@ -7132,6 +7132,147 @@ def admin_monitor_run_now(authorization: Optional[str] = Header(None), x_cron_se
     return _run_monitor_check()
 
 
+@app.get("/api/admin/ai/recent-failures")
+def admin_ai_recent_failures(limit: int = 30, x_cron_secret: Optional[str] = Header(None),
+                              authorization: Optional[str] = Header(None)):
+    """直近の AI call 失敗を events から取得 (stage 別の失敗詳細)。
+    塾長が「frontend で AI チューターが応答テンプレに変わった原因」を即特定可能。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    limit = max(1, min(int(limit or 30), 200))
+    conn = db()
+    c = conn.cursor()
+    c.execute(
+        "SELECT created_at, name, props FROM events "
+        "WHERE name IN ('ai_call_failure', 'ai_total_failure', 'ai_credit_low', 'ai_fallback_used', 'ai_fallback_gemini') "
+        "ORDER BY created_at DESC LIMIT ?",
+        (limit,),
+    )
+    rows = c.fetchall()
+    conn.close()
+    failures = []
+    for r in rows:
+        try:
+            props = json.loads(r["props"] or "{}")
+        except Exception:
+            props = {}
+        failures.append({
+            "created_at": str(r["created_at"]),
+            "name": r["name"],
+            "stage": props.get("stage"),
+            "status_code": props.get("status_code"),
+            "detail": props.get("detail"),
+            "student_id": props.get("student_id"),
+            "model": props.get("model"),
+            "kind": props.get("kind"),
+            "feature": props.get("feature"),
+            "thinking": props.get("thinking"),
+            "origin": props.get("origin"),
+            "referer": props.get("referer"),
+            "raw": props,
+        })
+    # stage 別集計 (どこで止まっているかすぐ分かる)
+    by_stage = {}
+    for f in failures:
+        stage = f.get("stage") or f.get("name") or "unknown"
+        by_stage[stage] = by_stage.get(stage, 0) + 1
+    return {
+        "count": len(failures),
+        "by_stage_top": sorted(by_stage.items(), key=lambda x: -x[1])[:10],
+        "failures": failures,
+    }
+
+
+@app.post("/api/admin/ai/probe-call")
+def admin_probe_call(payload: dict, request: Request,
+                      x_cron_secret: Optional[str] = Header(None),
+                      authorization: Optional[str] = Header(None)):
+    """/api/ai/call の前段 check + AI 呼出を完全再現するデバッグ endpoint。
+    payload で student_id / model / system / messages / kind / feature / thinking を指定可能。
+    各 check のどこで失敗したか、stage と status_code が返る。塾長操作不要で再現テスト可。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    student_id = payload.get("student_id")
+    model = payload.get("model") or "claude-opus-4-7"
+    thinking = bool(payload.get("thinking", False))
+    feature = payload.get("feature")
+    kind = payload.get("kind") or "chat"
+    system_text = payload.get("system") or "あなたは進路相談に詳しい AI コーチです。"
+    messages = payload.get("messages") or [{"role": "user", "content": "九州大学の滑り止めはどこがいいですか?"}]
+
+    # 各 stage を順次再現 (失敗した時点で stage と detail を返す)
+    result = {"stages": []}
+
+    # Origin check (request の origin/referer はテスト用に許可しておく)
+    # Stage 1: ANTHROPIC_API_KEY
+    if not ANTHROPIC_API_KEY:
+        return {**result, "ok": False, "stage": "anthropic_unconfigured", "status_code": 503}
+    result["stages"].append("anthropic_configured: ok")
+
+    # Stage 2: student check
+    try:
+        student_row = _verify_student_active(student_id) if student_id else None
+        if student_id:
+            _check_ai_budget(student_id)
+            if feature:
+                _check_quota(student_row, feature)
+        result["stages"].append(f"student_check: ok (student_id={student_id or 'skipped'})")
+    except HTTPException as e:
+        return {**result, "ok": False, "stage": "student_or_budget_or_quota",
+                "status_code": e.status_code, "detail": str(e.detail)}
+
+    # Stage 3: AI 呼び出し (Opus 4.7 必須パラメータ補完含む)
+    body = {
+        "model": model,
+        "max_tokens": int(payload.get("max_tokens") or 300),
+        "system": system_text,
+        "messages": messages,
+    }
+    if model.startswith("claude-opus-4-7"):
+        body["thinking"] = {"type": "adaptive"}
+        body["output_config"] = {"effort": "low"}
+        body["temperature"] = 1.0
+    elif thinking:
+        body["thinking"] = {"type": "enabled", "budget_tokens": 4000}
+        body["temperature"] = 1.0
+
+    t0 = time.time()
+    try:
+        data = _call_anthropic_safe(body, kind=f"probe_call_{kind}", student_id=student_id)
+        text = (data.get("content") or [{}])[0].get("text", "")
+        return {
+            **result,
+            "ok": True,
+            "actual_model": data.get("_actual_model"),
+            "provider": data.get("_provider", "anthropic"),
+            "latency_ms": int((time.time() - t0) * 1000),
+            "text_head": text[:600],
+        }
+    except HTTPException as e:
+        return {**result, "ok": False, "stage": "anthropic_all_tiers_failed",
+                "status_code": e.status_code, "detail": str(e.detail),
+                "latency_ms": int((time.time() - t0) * 1000)}
+    except Exception as e:
+        return {**result, "ok": False, "stage": "ai_call_unexpected",
+                "error_type": type(e).__name__, "error": str(e)[:600],
+                "latency_ms": int((time.time() - t0) * 1000)}
+
+
 @app.post("/api/admin/ai/probe-tutor")
 def admin_probe_tutor(payload: dict, x_cron_secret: Optional[str] = Header(None),
                        authorization: Optional[str] = Header(None)):
@@ -8714,11 +8855,44 @@ def _increment_usage(student_id: int, feature: str) -> int:
     return new_count
 
 
+def _record_ai_call_failure(stage: str, status_code: int, detail: str, payload_obj=None,
+                              request_obj: Request = None):
+    """ai_proxy の前段 check or AI 呼出で発生した失敗を events テーブルに記録。
+    塾長が CEO ダッシュ /api/admin/ai/recent-failures から直近の失敗詳細を見られる。
+    Why: probe-tutor は前段 check bypass で動くが、本物の /api/ai/call は前段で
+    止まる可能性があるため、前段 check の失敗も可視化する必要がある (memory: feedback_self_healing_dashboard)。
+    """
+    try:
+        conn = db()
+        c = conn.cursor()
+        props = {
+            "stage": stage,
+            "status_code": status_code,
+            "detail": (detail or "")[:500],
+            "student_id": getattr(payload_obj, "student_id", None) if payload_obj else None,
+            "model": getattr(payload_obj, "model", None) if payload_obj else None,
+            "kind": getattr(payload_obj, "kind", None) if payload_obj else None,
+            "feature": getattr(payload_obj, "feature", None) if payload_obj else None,
+            "thinking": getattr(payload_obj, "thinking", None) if payload_obj else None,
+            "origin": (request_obj.headers.get("origin") if request_obj else None),
+            "referer": (request_obj.headers.get("referer") if request_obj else None)[:200] if request_obj and request_obj.headers.get("referer") else None,
+        }
+        c.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            ("ai_call_failure", json.dumps(props, ensure_ascii=False), "ai_proxy_check"),
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        log.error(f"_record_ai_call_failure failed: {e}")
+
+
 @app.post("/api/ai/call")
 async def ai_proxy(payload: AIProxyRequest, request: Request):
     """顧客の全AI呼び出しを塾長のAPIキーで代理実行。
     Origin検証・student_id存在/有効性検証・1日あたりトークンbudgetで多層防御。"""
     if not ANTHROPIC_API_KEY:
+        _record_ai_call_failure("anthropic_unconfigured", 503, "ANTHROPIC_API_KEY 未設定", payload, request)
         raise HTTPException(
             status_code=503,
             detail="AI サービスが構成されていません。管理者にお問い合わせください。",
@@ -8726,8 +8900,16 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
 
     # 1) Origin/Referer が許可ドメインか
     if not _origin_allowed(request):
+        origin_header = request.headers.get('origin')
+        referer_header = request.headers.get('referer')
         log.warning(
-            f"/api/ai/call blocked by origin check: origin={request.headers.get('origin')} referer={request.headers.get('referer')} ip={request.client.host if request.client else '?'}"
+            f"/api/ai/call blocked by origin check: origin={origin_header} referer={referer_header} ip={request.client.host if request.client else '?'}"
+        )
+        _record_ai_call_failure(
+            "origin_check",
+            403,
+            f"origin={origin_header}, referer={(referer_header or '')[:120]}",
+            payload, request,
         )
         raise HTTPException(status_code=403, detail="Origin not allowed")
 
@@ -8739,10 +8921,22 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
         # 機能別月次クォータ check (problems / essays / textbooks)
         if payload.feature:
             _check_quota(student_row, payload.feature)
-    except HTTPException:
-        raise  # 4xx はそのまま伝搬
+    except HTTPException as e:
+        # 4xx はそのまま伝搬するが、events に詳細を記録 (塾長デバッグ用)
+        _record_ai_call_failure(
+            "student_or_budget_or_quota",
+            e.status_code,
+            str(e.detail)[:300],
+            payload, request,
+        )
+        raise
     except Exception as e:
         log.error(f"/api/ai/call validation exception: {type(e).__name__}: {e}")
+        _record_ai_call_failure(
+            "validation_unexpected", 500,
+            f"{type(e).__name__}: {str(e)[:200]}",
+            payload, request,
+        )
         raise HTTPException(status_code=500, detail=f"validation error: {type(e).__name__}: {str(e)[:200]}")
 
     # 4) モデルとトークン数の上限ガード（異常値を弾く）。
@@ -8758,10 +8952,13 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
     )
     _sys = (payload.system or "")
     if len(_sys) > 6000:
+        _record_ai_call_failure("system_too_long", 400, f"len={len(_sys)}", payload, request)
         raise HTTPException(status_code=400, detail="system prompt too long")
     _sys_low = _sys.lower()
-    if any(p in _sys_low for p in _JAILBREAK_PATTERNS):
+    matched_jb = next((p for p in _JAILBREAK_PATTERNS if p in _sys_low), None)
+    if matched_jb:
         log.warning(f"/api/ai/call blocked by jailbreak pattern check: student_id={payload.student_id}")
+        _record_ai_call_failure("jailbreak_pattern", 403, f"pattern={matched_jb}", payload, request)
         raise HTTPException(status_code=403, detail="prohibited system prompt")
     # messages 総長も上限（画像除く）
     _msg_text_total = 0
@@ -8774,6 +8971,7 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
                 if isinstance(part, dict) and part.get("type") == "text":
                     _msg_text_total += len(part.get("text") or "")
     if _msg_text_total > 40000:
+        _record_ai_call_failure("messages_too_long", 413, f"total_chars={_msg_text_total}", payload, request)
         raise HTTPException(status_code=413, detail="messages too long")
 
     body = {
@@ -8843,11 +9041,19 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
                 log.warning(f"_increment_usage failed silently: {e}")
 
         return data
-    except HTTPException:
-        # _call_anthropic_safe が raise した 503 (全 tier 失敗) は素通し
+    except HTTPException as e:
+        # _call_anthropic_safe が raise した 503 (全 tier 失敗) を events に記録 + 素通し
+        _record_ai_call_failure(
+            "anthropic_all_tiers_failed", e.status_code, str(e.detail)[:300],
+            payload, request,
+        )
         raise
     except Exception as e:
         log.error(f"AI proxy exception: {e}")
+        _record_ai_call_failure(
+            "ai_call_unexpected", 500, f"{type(e).__name__}: {str(e)[:300]}",
+            payload, request,
+        )
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/ai/status")
