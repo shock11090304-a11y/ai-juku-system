@@ -86,7 +86,10 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 # Google AI Studio で無料発行: https://aistudio.google.com/app/apikey
 # Gemini 1.5/2.5 Flash は 1日 1,500 req まで無料枠あり
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+# 主モデル = Gemini 2.5 Pro (塾長 Pro 契約済・教材生成や採点の高 stake task で使用)
+# 低 stake task (Daily SNS / 分類) は LIGHT (Flash) で課金抑制 + 無料枠活用
+# Pro 失敗時は内部で Flash に自動フォールバック (二段 Gemini fallback)
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
 GEMINI_MODEL_LIGHT = os.getenv("GEMINI_MODEL_LIGHT", "gemini-2.5-flash")
 CRON_SECRET = os.getenv("CRON_SECRET", "")  # 未設定時は cron 系エンドポイントを全拒否
 STATS_TOKEN = os.getenv("STATS_TOKEN", "")  # 未設定時は /api/stats を全拒否
@@ -3491,37 +3494,64 @@ def _call_gemini(body: dict, *, model: str = None, kind: str = "chat") -> dict:
             c = "".join(x.get("text", "") for x in c if isinstance(x, dict))
         last_user_text = c
 
-    try:
-        gen_model = genai.GenerativeModel(
-            model_name=target_model,
-            system_instruction=system_text or None,
-            generation_config={
-                "max_output_tokens": max_tokens,
-                "temperature": float(body.get("temperature") or 0.7),
-            },
-        )
-        chat = gen_model.start_chat(history=history)
-        resp = chat.send_message(last_user_text)
-        text = resp.text or ""
-    except Exception as e:
-        log.error(f"[Gemini] call failed model={target_model}: {type(e).__name__}: {str(e)[:300]}")
-        raise
+    # 安全フィルタは BLOCK_ONLY_HIGH に設定 = 高校教材 (戦争史・歴史・医療・薬物・倫理) が
+    # Gemini のデフォ厳しめフィルタで誤ブロックされないようにする。完全 OFF にはしない。
+    safety_settings = [
+        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
+        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
+        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
+        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
+    ]
 
-    # Anthropic 互換形式に詰め直す
-    return {
-        "id": f"gemini_{int(time.time()*1000)}",
-        "type": "message",
-        "role": "assistant",
-        "model": target_model,
-        "content": [{"type": "text", "text": text}],
-        "_actual_model": target_model,
-        "_provider": "gemini",
-        "stop_reason": "end_turn",
-        "usage": {
-            "input_tokens": getattr(resp.usage_metadata, "prompt_token_count", 0) if hasattr(resp, "usage_metadata") else 0,
-            "output_tokens": getattr(resp.usage_metadata, "candidates_token_count", 0) if hasattr(resp, "usage_metadata") else 0,
-        },
-    }
+    # Pro → Flash 二段 fallback: Pro が quota/rate limit で落ちたら Flash に自動降格
+    # (塾長 Pro 契約だが Pro の rate limit に引っかかる/一時障害でも Gemini 路線は止まらない)
+    candidate_models = [target_model]
+    if target_model != GEMINI_MODEL_LIGHT:
+        candidate_models.append(GEMINI_MODEL_LIGHT)
+
+    last_err = None
+    for idx, gm_name in enumerate(candidate_models):
+        try:
+            gen_model = genai.GenerativeModel(
+                model_name=gm_name,
+                system_instruction=system_text or None,
+                generation_config={
+                    "max_output_tokens": max_tokens,
+                    "temperature": float(body.get("temperature") or 0.7),
+                },
+                safety_settings=safety_settings,
+            )
+            chat = gen_model.start_chat(history=history)
+            resp = chat.send_message(last_user_text)
+            text = resp.text or ""
+            if idx > 0:
+                log.warning(f"[Gemini] succeeded with fallback model {gm_name} after {target_model} failed")
+            # Anthropic 互換形式に詰め直す
+            return {
+                "id": f"gemini_{int(time.time()*1000)}",
+                "type": "message",
+                "role": "assistant",
+                "model": gm_name,
+                "content": [{"type": "text", "text": text}],
+                "_actual_model": gm_name,
+                "_provider": "gemini",
+                "stop_reason": "end_turn",
+                "usage": {
+                    "input_tokens": getattr(resp.usage_metadata, "prompt_token_count", 0) if hasattr(resp, "usage_metadata") else 0,
+                    "output_tokens": getattr(resp.usage_metadata, "candidates_token_count", 0) if hasattr(resp, "usage_metadata") else 0,
+                },
+            }
+        except Exception as e:
+            last_err = e
+            log.warning(f"[Gemini] {gm_name} failed (attempt {idx + 1}/{len(candidate_models)}): {type(e).__name__}: {str(e)[:300]}")
+            if idx == len(candidate_models) - 1:
+                # 全 Gemini モデル失敗 → 上位の Tier 4 fallback 経路では _call_anthropic_safe の
+                # 全失敗パスに合流する。_call_ai_safe の Gemini-first 経路では Anthropic 経路に流れる。
+                log.error(f"[Gemini] all candidate models failed: {[m for m in candidate_models]}")
+                raise
+
+    # 到達不能 (上の loop で raise or return する)
+    raise last_err if last_err else RuntimeError("Gemini all models failed")
 
 
 def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = None) -> dict:
