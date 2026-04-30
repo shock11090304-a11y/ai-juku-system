@@ -7165,10 +7165,15 @@ def admin_monitor_run_now(authorization: Optional[str] = Header(None), x_cron_se
 
 
 @app.post("/api/admin/ai/test-gemini")
-def admin_test_gemini(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+def admin_test_gemini(model: Optional[str] = None, strict: int = 0,
+                       authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """Gemini Tier 4 fallback の動作確認 endpoint。
     admin Bearer or x-cron-secret 認証。Gemini で 1 回 generate して
-    {ok, model, sample, latency_ms} を返す。CEO ダッシュ から呼び出す。"""
+    {ok, model, sample, latency_ms} を返す。
+    クエリ:
+      - model=gemini-2.5-pro 等で任意モデル指定 (省略時は GEMINI_MODEL = Pro)
+      - strict=1 で Pro→Flash 二段 fallback を bypass し、Pro が失敗したら raw error を返す
+    """
     authed = False
     if authorization and authorization.startswith("Bearer "):
         token = authorization[len("Bearer "):].strip()
@@ -7186,11 +7191,52 @@ def admin_test_gemini(authorization: Optional[str] = Header(None), x_cron_secret
             "error": "GEMINI_API_KEY が Railway env に未設定。https://aistudio.google.com/app/apikey で発行してください。",
         }
 
+    target_model = model or GEMINI_MODEL
+
+    # strict=1: 二段 fallback bypass で raw error を取得 (デバッグ用)
+    if strict:
+        t0 = time.time()
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key=GEMINI_API_KEY)
+            gen_model = genai.GenerativeModel(
+                model_name=target_model,
+                system_instruction="あなたは丁寧な日本語アシスタントです。",
+                generation_config={"max_output_tokens": 200, "temperature": 0.7},
+                safety_settings=[
+                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
+                    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
+                    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
+                    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
+                ],
+            )
+            chat = gen_model.start_chat()
+            resp = chat.send_message("「AI never-fail テスト成功」とだけ短く返答してください。")
+            return {
+                "ok": True,
+                "configured": True,
+                "model": target_model,
+                "provider": "gemini",
+                "strict": True,
+                "sample": (resp.text or "")[:200],
+                "latency_ms": int((time.time() - t0) * 1000),
+            }
+        except Exception as e:
+            return {
+                "ok": False,
+                "configured": True,
+                "strict": True,
+                "model_attempted": target_model,
+                "error_type": type(e).__name__,
+                "error": str(e)[:1500],
+                "latency_ms": int((time.time() - t0) * 1000),
+            }
+
     t0 = time.time()
     try:
         data = _call_gemini(
             {
-                "model": GEMINI_MODEL,
+                "model": target_model,
                 "max_tokens": 200,
                 "system": "あなたは丁寧な日本語アシスタントです。",
                 "messages": [{"role": "user", "content": "「AI never-fail テスト成功」とだけ短く返答してください。"}],
