@@ -735,6 +735,7 @@ def health():
         "anthropic_configured": bool(ANTHROPIC_API_KEY),
         "gemini_configured": bool(GEMINI_API_KEY),  # Tier 4 fallback (AI never-fail)
         "email_configured": bool(RESEND_API_KEY),  # Magic link / Welcome / 各種通知メール
+        "email_from_domain": FROM_EMAIL.split("@")[-1].rstrip(">").strip() if "@" in FROM_EMAIL else "not_set",
         "campaign_waiver_active": ENROLLMENT_WAIVER_CAMPAIGN_ENABLED,
     }
 
@@ -7605,14 +7606,18 @@ def public_ai_health():
 
 
 @app.post("/api/admin/email/diagnose")
-def admin_email_diagnose(authorization: Optional[str] = Header(None)):
+def admin_email_diagnose(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """Resend API の接続・ドメイン検証・送信テストを一括診断。
     CEO ダッシュの「メール診断」ボタンから呼ばれる。"""
-    if not authorization or not authorization.startswith("Bearer "):
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
         raise HTTPException(status_code=401, detail="未認証")
-    token = authorization[len("Bearer "):].strip()
-    if not _verify_admin_token(token):
-        raise HTTPException(status_code=401, detail="セッション期限切れ")
 
     import urllib.request, urllib.error
     result = {
