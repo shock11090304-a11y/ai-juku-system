@@ -1322,3 +1322,47 @@ body {
   .ee-header-actions { gap: 0.3rem; }
   .ee-mode-badge { font-size: 0.65rem; padding: 0.15rem 0.4rem; }
 }
+
+/* ========== 🖨 印刷モード (問題本文のみ印刷・解答/タイマー/UI を隠す) ========== */
+@media print {
+  /* ヘッダ・ナビ・他セクションすべて非表示 */
+  body * { visibility: hidden; }
+  .ee-section-runner,
+  .ee-section-runner * { visibility: visible; }
+  .ee-section-runner {
+    position: absolute; left: 0; top: 0; width: 100%;
+    background: white !important; color: #000 !important;
+    padding: 1rem !important;
+    border: none !important;
+  }
+  /* 印刷時に隠す: タイマー・操作ボタン・Vision プレビュー等 */
+  .ee-timer,
+  .ee-runner-actions,
+  .ee-runner-head .ee-eyebrow,
+  #cancelRunBtn,
+  #submitAnswersBtn,
+  #printRunnerBtn { display: none !important; }
+  /* 問題本文・選択肢・passage は印刷向けに整形 */
+  .ee-question-box {
+    background: white !important;
+    color: #000 !important;
+    border: 1px solid #888 !important;
+    page-break-inside: auto;
+  }
+  .ee-question-box * {
+    color: #000 !important;
+    background: transparent !important;
+  }
+  /* リスニング audio プレイヤー等は印刷不要 */
+  audio, .ee-audio-controls { display: none !important; }
+  /* 解答欄 (input/textarea) の現在の入力値は印刷に残す */
+  input, textarea {
+    border: 1px solid #888 !important;
+    background: white !important;
+    color: #000 !important;
+  }
+  /* リンクの URL を脚注で出さない */
+  a[href]:after { content: ''; }
+  /* ページ余白 */
+  @page { margin: 1.5cm; }
+}

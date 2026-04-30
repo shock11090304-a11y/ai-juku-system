@@ -2093,6 +2093,22 @@ function getEEBackend() {
     ? 'http://localhost:8000' : window.location.origin;
 }
 
+// part キー (例 r_q1) → 日本語の section 名 (例 「📝 Reading 大問1 (短文穴埋め)」)
+// archive list の問題カードで「何の問題か」を分かりやすく表示するため
+function _archGetPartLabel(exam, grade, partKey) {
+  if (!exam || !partKey) return partKey || '';
+  let secs = [];
+  try {
+    if (exam === 'eiken' && grade) secs = getEikenSections(grade);
+    else if (exam === 'daigaku' && grade) secs = getDaigakuSections(grade);
+    else if (exam === 'rikei' && grade && typeof getRikeiSections === 'function') secs = getRikeiSections(grade);
+    else secs = (EXAMS[exam] && EXAMS[exam].sections) || [];
+  } catch (e) { secs = []; }
+  const sec = (secs || []).find(s => s.key === partKey);
+  if (sec) return `${sec.icon || ''} ${sec.name}`.trim();
+  return partKey;
+}
+
 // 試験キー → 表示ラベル + 大カテゴリ (大タブ filter 用)
 // rikei/todai/kyodai/kyotsu 等 backend が返す全 key を網羅
 function _archGetGroupMeta(exam, grade) {
@@ -2334,8 +2350,10 @@ async function loadArchiveList() {
     data.items.forEach(it => {
       const yearTag = it.year ? `<span class="arch-year-tag">${it.year}年度</span>` : '';
       const univTag = it.univ_simulated ? `<span class="arch-univ-tag">${escapeHtml(it.univ_simulated)}</span>` : '';
+      // part キー (r_q1 等) → 日本語ラベル「📝 Reading 大問1 (短文穴埋め)」(塾長指示 2026-04-30)
+      const partLabel = _archGetPartLabel(it.exam, it.grade, it.part);
       html += `<div class="archive-item-card">
-        <div class="arch-item-meta">${yearTag}${univTag}<span class="arch-item-part">${escapeHtml(it.part)}</span><span class="arch-item-q">${it.question_count}問</span></div>
+        <div class="arch-item-meta">${yearTag}${univTag}<span class="arch-item-part" title="${escapeHtml(it.part)}">${escapeHtml(partLabel)}</span><span class="arch-item-q">${it.question_count}問</span></div>
         <div class="arch-item-preview">${escapeHtml(it.passage_preview || '(プレビュー無し)')}…</div>
         <button class="ee-btn ee-btn-primary ee-btn-mini" data-qid="${it.id}">📝 これを解く</button>
       </div>`;
@@ -2805,6 +2823,11 @@ document.addEventListener('DOMContentLoaded', () => {
   renderHistorySection();
   // ニュースフィード選択 UI
   renderNewsFeedGrid();
+  // 🖨 印刷ボタン (塾長指示 2026-04-30): 問題本文のみ印刷 (CSS @media print で他要素を隠す)
+  document.getElementById('printRunnerBtn')?.addEventListener('click', () => {
+    window.print();
+  });
+
   // アーカイブ + ヒートマップ
   bindArchiveFilters();
   loadArchiveOverview();
