@@ -5039,6 +5039,77 @@ def public_textbook_search(
     return {"ok": True, "count": len(out), "results": out}
 
 
+@app.post("/api/admin/students/backfill-last-login")
+def admin_students_backfill_last_login(payload: dict = None, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """events テーブルから last_login_at を遡及推定して埋める。
+    last_login_at は新規追加カラムなので、過去にアプリを使っていた生徒も NULL のまま。
+    各生徒の session_id='student:N' の最新 events.created_at を last_login_at にコピー。
+
+    payload (省略可):
+      {"dry_run": true}  # 推定対象一覧のみ返す (実 UPDATE しない)
+    認証: admin Bearer or x-cron-secret"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    payload = payload or {}
+    dry_run = bool(payload.get("dry_run", False))
+
+    conn = db()
+    c = conn.cursor()
+    updated = []
+    skipped_no_events = []
+    try:
+        # 全生徒を取得 (status 問わず、last_login_at IS NULL のもの)
+        try:
+            c.execute("""SELECT id, name FROM students
+                         WHERE last_login_at IS NULL
+                           AND status IN ('trial', 'paid', 'canceled')""")
+        except Exception:
+            # last_login_at カラム未マイグレーション環境 (普通はあり得ない)
+            raise HTTPException(status_code=500, detail="last_login_at カラム未追加")
+        students = [dict(r) for r in c.fetchall()]
+
+        for s in students:
+            sid = s["id"]
+            session_key = f"student:{sid}"
+            # 最新の events.created_at (session_id でフィルタ)
+            c.execute(
+                "SELECT MAX(created_at) AS latest FROM events WHERE session_id = ?",
+                (session_key,)
+            )
+            latest_row = c.fetchone()
+            latest = latest_row["latest"] if latest_row else None
+            if not latest:
+                skipped_no_events.append({"id": sid, "name": s.get("name")})
+                continue
+            updated.append({"id": sid, "name": s.get("name"), "estimated_last_login": str(latest)})
+            if not dry_run:
+                c.execute("UPDATE students SET last_login_at = ? WHERE id = ?", (latest, sid))
+
+        if not dry_run:
+            conn.commit()
+    finally:
+        conn.close()
+
+    log.info(f"[Students:BackfillLastLogin] dry_run={dry_run} updated={len(updated)} skipped_no_events={len(skipped_no_events)}")
+    return {
+        "ok": True,
+        "updated": len(updated),
+        "skipped_no_events": len(skipped_no_events),
+        "dry_run": dry_run,
+        "items": updated[:50],
+        "no_events_items": skipped_no_events[:20],
+        "message": f"{'(dry run) ' if dry_run else ''}推定 {len(updated)} 名 / events 無し {len(skipped_no_events)} 名",
+    }
+
+
 @app.post("/api/admin/students/send-login-link")
 def admin_students_send_login_link(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """指定生徒 (ids) または未ログイン全員に magic link メールを送信する。

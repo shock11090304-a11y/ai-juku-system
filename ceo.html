@@ -820,16 +820,17 @@
           </select>
         </div>
       </div>
-      <!-- 🚨 未ログイン警告バナー (実害あり = 課金してるのに使ってない) -->
-      <div id="neverLoginAlert" style="display:none;margin:0.75rem 0;padding:0.9rem 1rem;background:linear-gradient(90deg,rgba(239,68,68,0.15),rgba(239,68,68,0.05));border:1px solid rgba(239,68,68,0.4);border-radius:10px;">
+      <!-- 🟡 last_login_at 未記録バナー: まず過去履歴で推定、それでも残れば本当に未ログイン -->
+      <div id="neverLoginAlert" style="display:none;margin:0.75rem 0;padding:0.9rem 1rem;background:linear-gradient(90deg,rgba(251,191,36,0.15),rgba(251,191,36,0.05));border:1px solid rgba(251,191,36,0.4);border-radius:10px;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
           <div style="flex:1;min-width:240px;">
-            <div style="color:#f87171;font-weight:700;font-size:0.95rem;">🚨 <span id="neverLoginCount">0</span>名 がアプリに未ログイン</div>
-            <div style="color:#fca5a5;font-size:0.78rem;margin-top:0.25rem;">課金している/体験中なのに一度もアプリを使っていない生徒です。即座にログイン招待を送ってください。</div>
+            <div style="color:#fbbf24;font-weight:700;font-size:0.95rem;">🟡 <span id="neverLoginCount">0</span>名 の最終ログイン時刻が未記録</div>
+            <div style="color:#fcd34d;font-size:0.78rem;margin-top:0.25rem;">last_login_at は新フィールドのため過去履歴未反映。まず「過去履歴から推定」で events から埋め、それでも残った生徒は本当に未利用 → 招待送信を検討。</div>
           </div>
-          <div style="display:flex;gap:0.5rem;">
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <button id="neverLoginBackfill" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;padding:0.55rem 1.1rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:700;" title="events から各生徒の最終アクティビティ時刻を推定して last_login_at を埋める">📅 過去履歴から推定</button>
             <button id="neverLoginPreview" style="background:rgba(255,255,255,0.08);color:#e4e4e7;border:1px solid rgba(255,255,255,0.2);padding:0.55rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.82rem;">対象を確認</button>
-            <button id="neverLoginSend" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;padding:0.55rem 1.1rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:700;">📧 全員に招待送信</button>
+            <button id="neverLoginSend" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;padding:0.55rem 1.1rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:700;" title="本当に未ログインの生徒に magic link メールを送信">📧 全員に招待送信</button>
           </div>
         </div>
       </div>
@@ -2362,8 +2363,50 @@
       }
     });
 
-    // 🚨 未ログイン招待送信ボタン
+    // 🟡 過去履歴から last_login_at を推定するバックフィルボタン
     document.addEventListener('click', async (e) => {
+      const backfillBtn = e.target.closest && e.target.closest('#neverLoginBackfill');
+      if (backfillBtn) {
+        // dry_run で対象確認 → 確認後に実 UPDATE
+        backfillBtn.disabled = true;
+        backfillBtn.textContent = '⏳ 推定中...';
+        try {
+          const resDry = await AdminAuth.fetch('/api/admin/students/backfill-last-login', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ dry_run: true }),
+          });
+          const dataDry = await resDry.json();
+          if (!resDry.ok || !dataDry.ok) {
+            alert(`⚠️ 推定失敗: ${dataDry.detail || resDry.status}`);
+            return;
+          }
+          const previewLines = (dataDry.items || []).slice(0, 10).map(it =>
+            `・${it.name || '?'} → ${it.estimated_last_login}`
+          ).join('\n');
+          const moreCount = (dataDry.items || []).length - 10;
+          const ok = confirm(`📅 events 履歴から ${dataDry.updated} 名の last_login_at を推定できます。\n\n${previewLines}${moreCount > 0 ? '\n他 ' + moreCount + '名' : ''}\n\nevents 記録なし: ${dataDry.skipped_no_events} 名 (本当に未利用の可能性)\n\nこれで last_login_at を更新しますか?`);
+          if (!ok) return;
+          // 実 UPDATE
+          const res = await AdminAuth.fetch('/api/admin/students/backfill-last-login', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ dry_run: false }),
+          });
+          const data = await res.json();
+          if (res.ok && data.ok) {
+            alert(`✅ 完了: ${data.updated} 名の last_login_at を推定で更新\nevents 記録なし: ${data.skipped_no_events} 名 (これらが本当に未利用)\n\nダッシュをリロードして「最終ログイン」を確認してください。`);
+            // 自動リロード
+            location.reload();
+          } else {
+            alert(`⚠️ 更新失敗: ${data.detail || res.status}`);
+          }
+        } catch (err) {
+          alert(`⚠️ エラー: ${err.message}`);
+        } finally {
+          backfillBtn.disabled = false;
+          backfillBtn.textContent = '📅 過去履歴から推定';
+        }
+      }
+
       const previewBtn = e.target.closest && e.target.closest('#neverLoginPreview');
       if (previewBtn) {
         const list = window.__neverLoginStudents || [];
