@@ -7132,6 +7132,64 @@ def admin_monitor_run_now(authorization: Optional[str] = Header(None), x_cron_se
     return _run_monitor_check()
 
 
+@app.post("/api/admin/ai/probe-tutor")
+def admin_probe_tutor(payload: dict, x_cron_secret: Optional[str] = Header(None),
+                       authorization: Optional[str] = Header(None)):
+    """AI チューター (Anthropic Opus 4.7 等) を _call_anthropic_safe 経由で叩いて動作確認。
+    /api/ai/call の前段 check (origin/student/budget/quota) を bypass し純粋に AI 経路だけテスト。
+    payload: {model?, system?, messages?, thinking?, max_tokens?}"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    model = payload.get("model") or "claude-opus-4-7"
+    body = {
+        "model": model,
+        "max_tokens": int(payload.get("max_tokens") or 300),
+        "system": payload.get("system") or "あなたは進路相談に詳しい AI コーチです。",
+        "messages": payload.get("messages") or [
+            {"role": "user", "content": "九州大学の滑り止めはどこがいいですか?"}
+        ],
+    }
+    # Opus 4.7 必須パラメータ自動補完 (probe でも同じ補完ロジック適用)
+    if model.startswith("claude-opus-4-7"):
+        body["thinking"] = {"type": "adaptive"}
+        body["output_config"] = {"effort": "low"}
+        body["temperature"] = 1.0
+
+    t0 = time.time()
+    try:
+        data = _call_anthropic_safe(body, kind="probe_tutor")
+        text = (data.get("content") or [{}])[0].get("text", "") if data.get("content") else ""
+        return {
+            "ok": True,
+            "actual_model": data.get("_actual_model"),
+            "provider": data.get("_provider", "anthropic"),
+            "latency_ms": int((time.time() - t0) * 1000),
+            "text_head": text[:600],
+        }
+    except HTTPException as e:
+        return {
+            "ok": False,
+            "status_code": e.status_code,
+            "detail": e.detail,
+            "latency_ms": int((time.time() - t0) * 1000),
+        }
+    except Exception as e:
+        return {
+            "ok": False,
+            "error_type": type(e).__name__,
+            "error": str(e)[:600],
+            "latency_ms": int((time.time() - t0) * 1000),
+        }
+
+
 @app.post("/api/admin/ai/test-gemini")
 def admin_test_gemini(model: Optional[str] = None, strict: int = 0,
                        authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
@@ -8724,20 +8782,25 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
         "system": payload.system,
         "messages": payload.messages,
     }
-    if payload.thinking:
-        # Claude Opus 4.7 は "enabled" thinking を受け付けず "adaptive" + output_config.effort を要求。
-        # Sonnet 4.6 以下は "enabled" が依然有効なのでモデル名で分岐。
-        if (payload.model or "").startswith("claude-opus-4-7"):
-            # adaptive: effort は "low" / "medium" / "high" / "auto"。
-            # thinking_budget (tokens) → effort への大雑把な換算
+    # Opus 4.7 は thinking + output_config + temperature が **必須** (memory: feedback_opus47_proxy_required.md)
+    # frontend から thinking=false で来ても backend で必ず補完する。
+    # Tier 2 (Sonnet) 降格時は _call_anthropic_safe 内部で thinking/output_config が pop されるので
+    # 補完しても降格パスで問題は起きない。
+    if (payload.model or "").startswith("claude-opus-4-7"):
+        # thinking=true の用途 (diagnostic/curriculum/essay/problems): budget に応じた effort
+        # thinking=false の用途 (chat/parent/prep/speaking): adaptive + low で軽く回す (latency/cost 抑制)
+        if payload.thinking:
             budget = int(payload.thinking_budget or 4000)
             effort = "high" if budget >= 4000 else ("medium" if budget >= 1500 else "low")
-            body["thinking"] = {"type": "adaptive"}
-            body["output_config"] = {"effort": effort}
-            body["temperature"] = 1.0
         else:
-            body["temperature"] = 1.0
-            body["thinking"] = {"type": "enabled", "budget_tokens": min(int(payload.thinking_budget or 4000), 16000)}
+            effort = "low"
+        body["thinking"] = {"type": "adaptive"}
+        body["output_config"] = {"effort": effort}
+        body["temperature"] = 1.0
+    elif payload.thinking:
+        # Sonnet 4.6 以下は "enabled" + budget_tokens 形式
+        body["temperature"] = 1.0
+        body["thinking"] = {"type": "enabled", "budget_tokens": min(int(payload.thinking_budget or 4000), 16000)}
 
     # AI never-fail 原則: _call_anthropic_safe() 経由で 4 段降格 (Opus→Sonnet→Haiku→Gemini)。
     # 直叩きから _call_anthropic_safe() に移行 (memory: feedback_ai_never_fail.md)
