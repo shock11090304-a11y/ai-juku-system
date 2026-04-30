@@ -856,6 +856,43 @@ body {
 
 /* ========== 📚 Archive Section ========== */
 .ee-section-archive { border-color: rgba(167,139,250,0.18); }
+.archive-search-row {
+  margin-bottom: 0.8rem;
+}
+.archive-search-input {
+  width: 100%;
+  font-size: 0.95rem;
+  padding: 0.7rem 1rem;
+}
+.archive-cat-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.1rem;
+  border-bottom: 1px solid rgba(167,139,250,0.18);
+  padding-bottom: 0.8rem;
+}
+.archive-cat-tab {
+  background: rgba(167,139,250,0.06);
+  border: 1px solid rgba(167,139,250,0.2);
+  color: var(--ee-text-dim);
+  padding: 0.5rem 1rem;
+  border-radius: 22px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.archive-cat-tab:hover {
+  background: rgba(167,139,250,0.12);
+  color: var(--ee-text);
+}
+.archive-cat-tab.active {
+  background: linear-gradient(135deg, #a78bfa, #ec4899);
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 4px 12px rgba(167,139,250,0.4);
+}
 .archive-filters {
   display: flex; flex-wrap: wrap; gap: 0.6rem;
   margin-bottom: 1rem;

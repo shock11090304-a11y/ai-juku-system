@@ -6,7 +6,7 @@
   <title>🎓 試験対策スタジオ | TOEFL・TOEIC・IELTS・英検・大学入試・理系 6試験完全対応 | AI学習コーチ塾</title>
   <meta name="description" content="TOEFL iBT・TOEIC L&R・IELTS Academic・英検・大学入試英語・理系科目 (数学/物理/化学/生物/地学) を AI が完全対応。模試生成・スコア予測・CEFR換算・弱点分析・図やグラフを含む理系問題まで一気通貫。Claude AI による個別最適化。">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="english-exam.css">
+  <link rel="stylesheet" href="english-exam.css?v=20260430-archive-tabs">
   <script src="cache-purge.js"></script>
 
   <script src="frontend-error-monitor.js?v=20260427-init"></script>
@@ -179,25 +179,28 @@
       <div class="ee-section-head">
         <div class="ee-eyebrow">📚 QUESTION ARCHIVE</div>
         <h2>🗄️ 蓄積問題アーカイブ</h2>
-        <p class="ee-section-desc">AI が日々生成して蓄積した問題プール (毎日 6時間おきに増加) を直接ブラウズ。試験 → 大学/級 → 大問 で絞り込んで好きな問題を選べます。同じ問題には2度出会わないよう履歴も記録。</p>
+        <p class="ee-section-desc">AI が日々蓄積した問題プールを直接ブラウズ。<strong>カードをクリックするだけで問題一覧</strong>が表示されます。同じ問題には2度出会わないよう履歴も自動記録。</p>
       </div>
-      <div class="archive-filters">
-        <select id="archExamFilter" class="ee-select-inline">
-          <option value="">📋 試験を選ぶ…</option>
-          <option value="toefl">🇺🇸 TOEFL iBT</option>
-          <option value="toeic">💼 TOEIC L&R</option>
-          <option value="ielts">🇬🇧 IELTS Academic</option>
-          <option value="eiken">🇯🇵 英検</option>
-          <option value="daigaku">🎓 大学入試</option>
-        </select>
-        <select id="archGradeFilter" class="ee-select-inline" style="display:none;">
-          <option value="">大学/級 すべて</option>
-        </select>
-        <select id="archPartFilter" class="ee-select-inline" style="display:none;">
-          <option value="">大問 すべて</option>
-        </select>
-        <input type="number" id="archYearFilter" class="ee-text-input-inline" placeholder="年度 (例: 2023)" min="2005" max="2026" style="display:none;">
-        <button id="archSearchBtn" class="ee-btn ee-btn-primary" style="display:none;">🔍 絞り込む</button>
+      <!-- 🔍 検索バー -->
+      <div class="archive-search-row">
+        <input type="search" id="archSearchInput" class="ee-text-input-inline archive-search-input"
+               placeholder="🔍 検索 (例: 東大、英検2級、TOEFL Reading、医学部)" autocomplete="off">
+      </div>
+      <!-- 大カテゴリタブ -->
+      <div class="archive-cat-tabs" id="archCatTabs">
+        <button type="button" class="archive-cat-tab active" data-cat="all">📚 全試験</button>
+        <button type="button" class="archive-cat-tab" data-cat="eiken">🇯🇵 英検</button>
+        <button type="button" class="archive-cat-tab" data-cat="overseas">🌍 海外英語資格</button>
+        <button type="button" class="archive-cat-tab" data-cat="daigaku">🎓 大学入試</button>
+        <button type="button" class="archive-cat-tab" data-cat="rikei">🔬 理系大学</button>
+      </div>
+      <!-- 旧フィルタ select (後方互換: 一部 JS が参照するため hidden で残置) -->
+      <div class="archive-filters" style="display:none;">
+        <select id="archExamFilter"><option value="">all</option></select>
+        <select id="archGradeFilter"><option value="">all</option></select>
+        <select id="archPartFilter"><option value="">all</option></select>
+        <input type="number" id="archYearFilter">
+        <button id="archSearchBtn" type="button">filter</button>
       </div>
       <div class="archive-overview" id="archOverview">
         <p class="ee-loading">⏳ 蓄積状況を読み込み中…</p>
@@ -444,6 +447,6 @@
   </footer>
 
   <script src="english-exam-banks.js"></script>
-  <script src="english-exam.js"></script>
+  <script src="english-exam.js?v=20260430-archive-tabs"></script>
 </body>
 </html>

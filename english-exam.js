@@ -2083,11 +2083,61 @@ function getEEBackend() {
     ? 'http://localhost:8000' : window.location.origin;
 }
 
+// 試験キー → 表示ラベル + 大カテゴリ (大タブ filter 用)
+// rikei/todai/kyodai/kyotsu 等 backend が返す全 key を網羅
+function _archGetGroupMeta(exam, grade) {
+  // 試験名 label (icon + 名前)
+  const examLabels = {
+    toefl: '🇺🇸 TOEFL',
+    toeic: '💼 TOEIC',
+    ielts: '🇬🇧 IELTS',
+    eiken: '🇯🇵 英検',
+    daigaku: '🎓 大学入試',
+    rikei: '🔬 理系大学',
+  };
+  // grade (級・大学キー) → 表示名
+  const gradeLabels = {
+    // 英検
+    g1: '1級', gp1: '準1級', g2: '2級', gp2: '準2級', g3: '3級', g4: '4級', g5: '5級',
+    // 大学入試 (主要)
+    todai: '東大', kyodai: '京大', osaka: '阪大', tokoda: '東工大',
+    hitotsu: '一橋', nagoya: '名大', tohoku: '東北大', kyushu: '九大', hokudai: '北大',
+    waseda: '早稲田', keio: '慶應', sophia: '上智', icu: '国際基督教',
+    meiji: '明治', aoyama: '青山学院', rikkyo: '立教', chuo: '中央', hosei: '法政',
+    kansai: '関西', kangaku: '関学', doshisha: '同志社', ritsumei: '立命館',
+    kyotsu: '共通テスト', center: 'センター',
+    igakubu_kokoritsu: '医学部 (国公立)', igakubu_shiritsu: '医学部 (私立)',
+    todai_rikei: '東大 理系', kyodai_rikei: '京大 理系',
+    osaka_rikei: '阪大 理系', tokoda_rikei: '東工大 理系',
+    kokoritsu_rikei: '国公立 理系', kyotsu_rikei: '共通テスト 理系',
+    igakubu_kokoritsu_rikei: '医学部 (国公立) 理系',
+  };
+  // 大カテゴリ判定 (タブ filter 用)
+  let category;
+  if (exam === 'eiken') category = 'eiken';
+  else if (exam === 'toefl' || exam === 'toeic' || exam === 'ielts') category = 'overseas';
+  else if (exam === 'rikei' || /rikei/.test(grade || '')) category = 'rikei';
+  else if (exam === 'daigaku') category = 'daigaku';
+  else category = 'other';
+  // 表示名 (label + grade)
+  const examLbl = examLabels[exam] || `📋 ${exam}`;
+  const gradeLbl = gradeLabels[grade] || (grade || '');
+  return { category, examLbl, gradeLbl };
+}
+
+// 大カテゴリタブ + 検索バーで client side filter
+let _ARCH_OVERVIEW_CACHE = null;  // 全カード data (フェッチ後キャッシュ)
+
 async function loadArchiveOverview(examId = null) {
   const box = document.getElementById('archOverview');
   const list = document.getElementById('archList');
   box.style.display = '';
   list.style.display = 'none';
+  // キャッシュ済なら fetch せず render のみ (タブ切替・検索 input 用)
+  if (_ARCH_OVERVIEW_CACHE && !examId) {
+    _renderArchiveOverview(_ARCH_OVERVIEW_CACHE);
+    return;
+  }
   box.innerHTML = '<p class="ee-loading">⏳ 蓄積状況を読み込み中…</p>';
   try {
     const url = `${getEEBackend()}/api/exam-questions/archive` + (examId ? `?exam=${encodeURIComponent(examId)}` : '');
@@ -2099,7 +2149,6 @@ async function loadArchiveOverview(examId = null) {
       return;
     }
     // 試験+grade ごとに集計
-    const labels = { toefl: '🇺🇸 TOEFL', toeic: '💼 TOEIC', ielts: '🇬🇧 IELTS', eiken: '🇯🇵 英検', daigaku: '🎓 大学入試' };
     const byKey = new Map();
     data.groups.forEach(g => {
       const k = `${g.exam}/${g.grade || '_'}`;
@@ -2108,37 +2157,73 @@ async function loadArchiveOverview(examId = null) {
       o.parts.push({ part: g.part, count: g.count });
       o.total += g.count;
     });
-    let html = `<div class="archive-overview-head">📊 蓄積総数: <strong>${data.total}</strong> 問 (試験/級・大学/枠ごと)</div><div class="archive-overview-grid">`;
-    [...byKey.values()].sort((a,b)=>b.total-a.total).forEach(o => {
-      const gradeLabel = o.grade ? ` <span class="arch-grade-tag">${o.grade}</span>` : '';
-      html += `<button type="button" class="archive-group-card" data-exam="${o.exam}" data-grade="${o.grade || ''}">
-        <div class="arch-group-name">${labels[o.exam] || o.exam}${gradeLabel}</div>
-        <div class="arch-group-count">${o.total} 問</div>
-        <div class="arch-group-parts">${o.parts.length} 大問</div>
-      </button>`;
+    const cards = [...byKey.values()].sort((a, b) => b.total - a.total).map(o => {
+      const meta = _archGetGroupMeta(o.exam, o.grade);
+      // 検索 hit 用: 空白あり版 + 空白なし版の両方を持つ (「英検2級」「英検 2級」両方 hit)
+      const baseText = `${meta.examLbl} ${meta.gradeLbl} ${o.exam} ${o.grade || ''}`.toLowerCase();
+      return { ...o, ...meta, searchText: baseText + ' ' + baseText.replace(/\s+/g, '') };
     });
-    html += '</div>';
-    box.innerHTML = html;
-    box.querySelectorAll('.archive-group-card').forEach(btn => {
-      btn.addEventListener('click', () => {
-        ARCH_STATE.exam = btn.dataset.exam;
-        ARCH_STATE.grade = btn.dataset.grade || null;
-        ARCH_STATE.part = null;
-        ARCH_STATE.year = null;
-        // フィルタ UI を反映
-        document.getElementById('archExamFilter').value = ARCH_STATE.exam;
-        populateArchGradeOptions();
-        document.getElementById('archGradeFilter').value = ARCH_STATE.grade || '';
-        populateArchPartOptions();
-        document.getElementById('archYearFilter').style.display = ARCH_STATE.exam === 'daigaku' ? '' : 'none';
-        document.getElementById('archSearchBtn').style.display = '';
-        loadArchiveList();
-      });
-    });
+    _ARCH_OVERVIEW_CACHE = { total: data.total, cards };
+    _renderArchiveOverview(_ARCH_OVERVIEW_CACHE);
   } catch (e) {
     console.warn('[archive] overview failed:', e);
     box.innerHTML = `<p class="ee-error">⚠️ 取得失敗: ${escapeHtml(String(e.message || e))}</p>`;
   }
+}
+
+function _renderArchiveOverview({ total, cards }) {
+  const box = document.getElementById('archOverview');
+  if (!box) return;
+  // 現在のカテゴリタブと検索クエリで filter
+  const activeTab = document.querySelector('.archive-cat-tab.active');
+  const cat = activeTab ? activeTab.dataset.cat : 'all';
+  const query = (document.getElementById('archSearchInput')?.value || '').trim().toLowerCase();
+
+  let filtered = cards;
+  if (cat !== 'all') {
+    filtered = filtered.filter(c => c.category === cat);
+  }
+  if (query) {
+    // 検索クエリも空白除去版を作って hit 判定 (「英検2級」「東大 理系」両方ヒット)
+    const q1 = query;
+    const q2 = query.replace(/\s+/g, '');
+    filtered = filtered.filter(c => c.searchText.includes(q1) || c.searchText.includes(q2));
+  }
+
+  let html = `<div class="archive-overview-head">📊 蓄積総数: <strong>${total}</strong> 問 (絞り込み: ${filtered.length} カテゴリ)</div>`;
+  if (filtered.length === 0) {
+    html += `<p class="ee-empty">📭 該当するカードがありません。タブを切り替えるか、検索キーワードを変更してください。</p>`;
+    box.innerHTML = html;
+    return;
+  }
+  html += '<div class="archive-overview-grid">';
+  filtered.forEach(o => {
+    const gradeBadge = o.gradeLbl ? ` <span class="arch-grade-tag">${escapeHtml(o.gradeLbl)}</span>` : '';
+    html += `<button type="button" class="archive-group-card" data-exam="${escapeHtml(o.exam)}" data-grade="${escapeHtml(o.grade || '')}">
+      <div class="arch-group-name">${escapeHtml(o.examLbl)}${gradeBadge}</div>
+      <div class="arch-group-count">${o.total} 問</div>
+      <div class="arch-group-parts">${o.parts.length} 大問 → クリックで一覧</div>
+    </button>`;
+  });
+  html += '</div>';
+  box.innerHTML = html;
+  // カードクリック = 即遷移 (絞り込みボタン不要)
+  box.querySelectorAll('.archive-group-card').forEach(btn => {
+    btn.addEventListener('click', () => {
+      ARCH_STATE.exam = btn.dataset.exam;
+      ARCH_STATE.grade = btn.dataset.grade || null;
+      ARCH_STATE.part = null;
+      ARCH_STATE.year = null;
+      // 旧 hidden filter UI も同期 (loadArchiveList 内部で参照されるため)
+      const examF = document.getElementById('archExamFilter');
+      const gradeF = document.getElementById('archGradeFilter');
+      if (examF) examF.value = ARCH_STATE.exam;
+      if (typeof populateArchGradeOptions === 'function') populateArchGradeOptions();
+      if (gradeF) gradeF.value = ARCH_STATE.grade || '';
+      if (typeof populateArchPartOptions === 'function') populateArchPartOptions();
+      loadArchiveList();
+    });
+  });
 }
 
 function populateArchGradeOptions() {
@@ -2389,27 +2474,40 @@ async function aiRecommendNext() {
 }
 
 function bindArchiveFilters() {
+  // 大カテゴリタブ
+  const tabs = document.querySelectorAll('.archive-cat-tab');
+  tabs.forEach(t => {
+    t.addEventListener('click', () => {
+      tabs.forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      // キャッシュ済データから即 re-render (fetch 不要)
+      if (_ARCH_OVERVIEW_CACHE) _renderArchiveOverview(_ARCH_OVERVIEW_CACHE);
+    });
+  });
+  // 検索バー (リアルタイム filter・debounce 200ms)
+  const searchInp = document.getElementById('archSearchInput');
+  if (searchInp) {
+    let _searchTimer = null;
+    searchInp.addEventListener('input', () => {
+      clearTimeout(_searchTimer);
+      _searchTimer = setTimeout(() => {
+        if (_ARCH_OVERVIEW_CACHE) _renderArchiveOverview(_ARCH_OVERVIEW_CACHE);
+      }, 200);
+    });
+  }
+  // 旧 hidden filter UI (loadArchiveList 内部で参照されるため残置)
   const examSel = document.getElementById('archExamFilter');
   const gradeSel = document.getElementById('archGradeFilter');
   const partSel = document.getElementById('archPartFilter');
   const yearInp = document.getElementById('archYearFilter');
   const searchBtn = document.getElementById('archSearchBtn');
   if (!examSel) return;
+  // 旧経路: hidden になってるが値変更 → state 同期 (history 復元等で動く)
   examSel.addEventListener('change', () => {
     ARCH_STATE.exam = examSel.value || null;
-    ARCH_STATE.grade = null;
-    ARCH_STATE.part = null;
-    ARCH_STATE.year = null;
-    populateArchGradeOptions();
-    populateArchPartOptions();
-    yearInp.style.display = ARCH_STATE.exam === 'daigaku' ? '' : 'none';
-    searchBtn.style.display = ARCH_STATE.exam ? '' : 'none';
-    loadArchiveOverview(ARCH_STATE.exam);
   });
   gradeSel.addEventListener('change', () => {
     ARCH_STATE.grade = gradeSel.value || null;
-    ARCH_STATE.part = null;
-    populateArchPartOptions();
   });
   partSel.addEventListener('change', () => {
     ARCH_STATE.part = partSel.value || null;
