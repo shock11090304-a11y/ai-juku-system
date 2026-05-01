@@ -422,30 +422,38 @@ ${/数学/.test(subject) ? `
   let draft = null;  // Phase 1 の出力 (pool hit or live writer)
 
   // ----- Anthropic call helper (Phase 1, 2 で共通利用) -----
-  const callAI = async (sysPrompt, msg, label) => {
-    const body = {
-      model: MODEL_PREMIUM,
-      max_tokens: 16000,
-      system: sysPrompt,
-      messages: [{ role: 'user', content: msg }],
-    };
-    let res;
-    if (sessionToken) {
-      res = await fetch(`${backend}/api/ai/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionToken },
-        body: JSON.stringify(body),
-      });
-    } else {
-      const isOpus47 = (MODEL_PREMIUM || '').startsWith('claude-opus-4-7');
-      const directBody = { ...body, temperature: 1.0 };
-      if (isOpus47) {
-        directBody.thinking = { type: 'adaptive' };
-        directBody.output_config = { effort: 'high' };
-      } else {
-        directBody.thinking = { type: 'enabled', budget_tokens: 5000 };
+  // 🔥 2026-05-01: 5xx/timeout に対し最大 2 回リトライ (指数バックオフ)
+  // max_tokens=8000 (元 16000): 多くの教材は 5000-7000 token で収まるためレスポンス高速化
+  const callAI = async (sysPrompt, msg, label, maxTokens = 8000) => {
+    const buildBody = () => {
+      const body = {
+        model: MODEL_PREMIUM,
+        max_tokens: maxTokens,
+        system: sysPrompt,
+        messages: [{ role: 'user', content: msg }],
+      };
+      if (!sessionToken) {
+        const isOpus47 = (MODEL_PREMIUM || '').startsWith('claude-opus-4-7');
+        body.temperature = 1.0;
+        if (isOpus47) {
+          body.thinking = { type: 'adaptive' };
+          body.output_config = { effort: 'high' };
+        } else {
+          body.thinking = { type: 'enabled', budget_tokens: 5000 };
+        }
       }
-      res = await fetch(API_URL, {
+      return body;
+    };
+    const doFetch = async () => {
+      const body = buildBody();
+      if (sessionToken) {
+        return fetch(`${backend}/api/ai/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionToken },
+          body: JSON.stringify(body),
+        });
+      }
+      return fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -453,18 +461,44 @@ ${/数学/.test(subject) ? `
           'anthropic-version': '2023-06-01',
           'anthropic-dangerous-direct-browser-access': 'true'
         },
-        body: JSON.stringify(directBody),
+        body: JSON.stringify(body),
       });
+    };
+    const isRetryable = (status, errText) => {
+      if (status === 0) return true;  // network error
+      if ([502, 503, 504, 529].includes(status)) return true;
+      if ([500].includes(status) && /overloaded|temporary|router|timeout/i.test(errText)) return true;
+      return false;
+    };
+    let lastErr = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const res = await doFetch();
+        if (!res.ok) {
+          const errText = await res.text();
+          if (attempt < 3 && isRetryable(res.status, errText)) {
+            console.warn(`[callAI:${label}] retryable ${res.status} (attempt ${attempt}/3) → ${2 ** (attempt-1)}s 待機`);
+            await new Promise(r => setTimeout(r, (2 ** (attempt - 1)) * 1000));
+            continue;
+          }
+          throw new Error(`${label} API ${res.status}: ${errText.slice(0, 200)}`);
+        }
+        const data = await res.json();
+        const textBlock = (data.content || []).find(b => b.type === 'text');
+        const text = textBlock?.text || '{}';
+        const clean = text.trim().replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+        return JSON.parse(clean);
+      } catch (e) {
+        lastErr = e;
+        if (attempt < 3 && /NetworkError|Failed to fetch|fetch.*failed/i.test(e.message)) {
+          console.warn(`[callAI:${label}] network error retry (attempt ${attempt}/3)`);
+          await new Promise(r => setTimeout(r, (2 ** (attempt - 1)) * 1000));
+          continue;
+        }
+        throw e;
+      }
     }
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`${label} API ${res.status}: ${errText.slice(0, 200)}`);
-    }
-    const data = await res.json();
-    const textBlock = (data.content || []).find(b => b.type === 'text');
-    const text = textBlock?.text || '{}';
-    const clean = text.trim().replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
-    return JSON.parse(clean);
+    throw lastErr || new Error(`${label} all retries exhausted`);
   };
 
   // ----- Step 1: 教材プール検索 (Phase 1 ショートカット候補) -----
