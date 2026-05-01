@@ -1,0 +1,340 @@
+{
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "g_grammar",
+      "eiken_grade": "waseda",
+      "question_data": {
+        "year_simulated": 2023,
+        "univ_simulated": "早稲田大学 商学部 (類題)",
+        "passage": "",
+        "audio_script": "",
+        "prompt": "Choose the most appropriate option to complete the sentence.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "Tokyo, ____ has a population of over 13 million, is one of the most densely populated cities in the world.",
+            "choices": [
+              "which",
+              "that",
+              "where",
+              "what"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n関係代名詞の「制限用法 vs 非制限用法」のコア:\n- **制限用法 (コンマ無し)**: 「他にも候補があり、その中から限定する」\n- **非制限用法 (コンマ有り)**: 「先行詞は1つに決まっており、追加情報を補足する」\n\n固有名詞 (Tokyo) は世界に1つしかないため、「他の Tokyo の中から限定する」必要がない。よって**非制限用法 (コンマ + which)** のみ可能。\n\n## 🔬 文構造分析\n- **S**: Tokyo\n- **挿入節 (補足説明)**: , which has a population of over 13 million,\n  - which = 関係代名詞 (主格、非制限用法)\n  - has = V', a population = O', of over 13 million = M'\n- **V**: is\n- **C**: one of the most densely populated cities\n- **M**: in the world\n\n## 📍 本文の根拠\n先行詞 Tokyo はコンマで区切られた挿入節を伴っており、これは典型的な**非制限用法**のシグナル。「東京 (ちなみに人口1300万人超) は…」という追加情報。\n\n## ❌ 誤答 NG 理由\n- **that**: 関係代名詞 that は**非制限用法 (コンマ付き) では使えない**という鉄則違反。\n- **where**: 関係副詞。後続節に主語が必要 (where ___ has...) だが、空所直後の has には S が無い。\n- **what**: 先行詞 Tokyo がすでにあるため、「先行詞を含む関係代名詞 what」は重複で不可。"
+          }
+        ]
+      },
+      "model": "claude-opus-4-7"
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "g_grammar",
+      "eiken_grade": "waseda",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "早稲田大学 文学部 (類題)",
+        "passage": "",
+        "audio_script": "",
+        "prompt": "Choose the most appropriate option to complete the sentence.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "____ for your timely advice, I would have made a serious mistake on the project.",
+            "choices": [
+              "Had it not been",
+              "If it were not",
+              "Were it not",
+              "Should it not be"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n仮定法倒置のコア:\n- **If it had not been for ~** (もし~がなかったら) → if 省略 → **Had it not been for ~**\n- **If it were not for ~** (もし~がなければ) → if 省略 → **Were it not for ~**\n\n判別の鍵は**主節の時制**。主節が `would have made` (仮定法過去完了) なら、if 節も**過去の事実に反する仮定** (had not been) でなければ時制が一致しない。\n\n## 🔬 文構造分析\n- **倒置された if 節**: Had it not been for your timely advice,\n  - = If it had not been for your timely advice (元の形)\n  - 過去の特定時点の話 (= あの時 advice がなかったら)\n- **主節**: I would have made a serious mistake\n  - **S**: I, **V (助動詞+完了)**: would have made, **O**: a serious mistake\n- **M**: on the project\n\n## 📍 本文の根拠\n主節の `would have made` が**仮定法過去完了**を確定させる。よって if 節も**過去完了形**の倒置 `Had it not been for` が一致する唯一の選択肢。\n\n## ❌ 誤答 NG 理由\n- **If it were not**: were not は仮定法**過去** (現在の事実に反する) で、主節 would have made (仮定法過去完了) と時制不一致。さらに if 残しなら倒置にならず、本問の倒置構文には不適合。\n- **Were it not**: 同様に仮定法**過去**の倒置で、主節と時制が合わない。\n- **Should it not be**: Should 倒置は「万一」の意味で**未来の話**。過去の出来事を語る主節と整合しない。"
+          }
+        ]
+      },
+      "model": "claude-opus-4-7"
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "g_grammar",
+      "eiken_grade": "keio",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "慶應義塾大学 経済学部 (類題)",
+        "passage": "",
+        "audio_script": "",
+        "prompt": "Choose the most appropriate option to complete the sentence.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "____ being a holiday, the office was unusually quiet, with only a few employees finishing urgent tasks.",
+            "choices": [
+              "It",
+              "There",
+              "That",
+              "What"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n分詞構文の「意味上の主語」のコア:\n- 通常の分詞構文 (Being a holiday, ...) は**主節の主語**と意味上の主語が一致する。\n- しかし主節の主語 (the office) と「祝日である」主体は不一致 → このとき**意味上の主語を分詞の前に明示**する必要がある (= 独立分詞構文)。\n- 「(その日が) 祝日だったので」と表すには、形式主語 **It** を分詞の前に置く: `It being a holiday, ...`\n\n## 🔬 文構造分析\n- **独立分詞構文**: It being a holiday\n  - It = 意味上の主語 (= 状況・その日)\n  - being a holiday = 分詞句\n- **主節 S**: the office\n- **主節 V**: was\n- **C**: unusually quiet\n- **付帯状況 (with O + 分詞)**: with only a few employees finishing urgent tasks\n  - 「~の状態で」O = a few employees, 分詞 = finishing\n\n## 📍 本文の根拠\n主節の主語は「the office」で、「祝日である」主体ではない → 意味上の主語を分詞の前に明示する独立分詞構文が必要。It being ~ は天気・状況を表す典型パターン。\n\n## ❌ 誤答 NG 理由\n- **There**: There being ~ は「~がある状態で」の意味 (例: There being no objection)。本問は「祝日**である**」状態を表すので不一致。\n- **That**: 接続詞 that が文頭で分詞 being と続く構造は文法的に成立しない。\n- **What**: 関係代名詞 what は先行詞内蔵で、分詞の意味上の主語にはなれない。"
+          }
+        ]
+      },
+      "model": "claude-opus-4-7"
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "g_grammar",
+      "eiken_grade": "keio",
+      "question_data": {
+        "year_simulated": 2023,
+        "univ_simulated": "慶應義塾大学 商学部 (類題)",
+        "passage": "",
+        "audio_script": "",
+        "prompt": "Choose the most appropriate option to complete the sentence.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "The candidate ____ the committee believes is best suited for the role has not yet accepted the offer.",
+            "choices": [
+              "whom",
+              "who",
+              "whose",
+              "which"
+            ],
+            "answer": 1,
+            "explanation": "## 🎯 コアイメージ\n連鎖関係詞節 (the man who I think is honest) のコア:\n- 関係代名詞節の中に **\"S think / believe / say\"** などの挿入があるとき、**関係代名詞は挿入節の後ろの動詞の主語**になる。\n- 機械的に「動詞 believes の前にあるから whom」と判断してはいけない。`the committee believes` は**挿入** (= I think 相当) で、本来の主動詞は **is**。\n- 関係代名詞は **is suited** の主格 → **who** が正解。\n\n## 🔬 文構造分析\n- **主節 S**: The candidate [who (the committee believes) is best suited for the role]\n  - who = is best suited の S' (主格)\n  - the committee believes = 挿入節 (削除しても文が成立)\n- **主節 V**: has not yet accepted\n- **O**: the offer\n\n挿入節を取り除くと: The candidate **who is** best suited for the role has not yet accepted the offer.\n\n## 📍 本文の根拠\n空所の後ろで動詞 is が続き、is の主語が空欄 (the committee believes は挿入)。よって主格 who が必要。連鎖関係詞節の典型形。\n\n## ❌ 誤答 NG 理由\n- **whom**: 目的格。is の主語位置は主格を要求するので不可。「動詞の前は whom」と機械暗記する受験生を狙った典型的なひっかけ。\n- **whose**: 所有格。空所直後に名詞が来ない (is が来る) ので不適。\n- **which**: 先行詞 The candidate (人) には who/whom を使う。which は物・動物用。"
+          }
+        ]
+      },
+      "model": "claude-opus-4-7"
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "g_grammar",
+      "eiken_grade": "osaka",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "大阪大学 (類題)",
+        "passage": "",
+        "audio_script": "",
+        "prompt": "Choose the most appropriate option to complete the sentence.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "____ time we spend reading academic papers, ____ familiar we become with the conventions of scholarly writing.",
+            "choices": [
+              "The much / the much",
+              "The more / the more",
+              "More / more",
+              "As more / as more"
+            ],
+            "answer": 1,
+            "explanation": "## 🎯 コアイメージ\n「The 比較級 ~, the 比較級 ...」のコア:\n- 「~すればするほど、ますます…」という**比例関係**を表す。\n- 形は固定: **The + 比較級 (+ S + V), the + 比較級 (+ S + V).**\n- 名詞 time は不可算名詞なので、量の比較は **much** の比較級 = **more** を使う (× many → more time)。\n\n## 🔬 文構造分析\n- **従属節**: The more time we spend reading academic papers,\n  - the more = 副詞句 (we spend を修飾、目的語の time を前置)\n  - more time = 名詞句 (spend の O が前に出ている)\n  - **S'**: we, **V'**: spend, **分詞句**: reading academic papers\n- **主節**: the more familiar we become with the conventions of scholarly writing.\n  - the more familiar = 補語 C が前置\n  - **S**: we, **V**: become, **C**: more familiar\n  - **M**: with the conventions of scholarly writing\n\n## 📍 本文の根拠\n「論文を読むのに**多くの時間**を費やす + 学術文体の慣習に**より馴染む**」という量と程度の比例関係 → The more / the more 構文が必要。\n\n## ❌ 誤答 NG 理由\n- **The much / the much**: much は原級。「The 比較級 ~, the 比較級 …」構文は**比較級必須**。much の比較級は more。\n- **More / more**: 冠詞 the の脱落。この構文は the が必須。\n- **As more / as more**: 「as 比較級」という形は存在しない。as ~ as 構文と混同したミス。"
+          }
+        ]
+      },
+      "model": "claude-opus-4-7"
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "g_grammar",
+      "eiken_grade": "nagoya",
+      "question_data": {
+        "year_simulated": 2023,
+        "univ_simulated": "名古屋大学 (類題)",
+        "passage": "",
+        "audio_script": "",
+        "prompt": "Choose the most appropriate option to complete the sentence.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "I still remember the day ____ I first stepped into a research laboratory and decided to become a scientist.",
+            "choices": [
+              "where",
+              "when",
+              "which",
+              "what"
+            ],
+            "answer": 1,
+            "explanation": "## 🎯 コアイメージ\n関係副詞 when / where の判別コア:\n- **先行詞が時 (day, year, moment)** → when\n- **先行詞が場所 (place, city, country)** → where\n- ポイント: 後続節が**完全文** (S+V+O が揃っている) なら関係**副詞**、不完全文 (S か O が欠けている) なら関係**代名詞**。\n\n## 🔬 文構造分析\n- **主節 S**: I, **V**: remember, **O**: the day [when ...]\n- **関係副詞節 (the day を修飾)**: when I first stepped into a research laboratory and decided to become a scientist\n  - **S'**: I, **V'1**: stepped (into a research laboratory), **V'2**: decided (to become a scientist)\n  - 関係副詞 when = on which (the day) で、文中の副詞句として機能\n  - 関係詞節は完全文 (S+V+adverbial が揃っている)\n\n## 📍 本文の根拠\n先行詞は **the day** (時) であり、関係詞節は完全文 (I stepped... and decided... に欠けている要素なし) → 時を表す関係**副詞 when** が正解。\n\n## ❌ 誤答 NG 理由\n- **where**: 先行詞が day (時) なので場所の関係副詞 where は不可。a research laboratory に引きずられて選ぶのが典型ミス。\n- **which**: 関係代名詞。後続が完全文では使えず、後続節に主語/目的語の欠落が必要だが、本問では欠落なし。\n- **what**: 先行詞内蔵型。先行詞 the day が既にあるため重複で不可。"
+          }
+        ]
+      },
+      "model": "claude-opus-4-7"
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "g_grammar",
+      "eiken_grade": "hokudai",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "北海道大学 (類題)",
+        "passage": "",
+        "audio_script": "",
+        "prompt": "Choose the most appropriate option to complete the sentence.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "Looking back, I ____ harder for the entrance exam; I barely passed and almost lost my chance to enter the university.",
+            "choices": [
+              "could study",
+              "must have studied",
+              "should have studied",
+              "would study"
+            ],
+            "answer": 2,
+            "explanation": "## 🎯 コアイメージ\n助動詞 + have done のコア (過去への評価):\n- **should have done**: 「~すべきだった (のにしなかった)」= **後悔・非難**\n- **must have done**: 「~したに違いない」= **過去の確信ある推量**\n- **could have done**: 「~できたのに」= **可能性への後悔**\n- **may/might have done**: 「~したかもしれない」= **過去の弱い推量**\n\n本問の文脈は「ぎりぎり合格、危なかった」→ 過去の自分への**後悔**を示す。\n\n## 🔬 文構造分析\n- **挿入分詞句**: Looking back (M、文修飾)\n- **主節 S**: I\n- **V (助動詞 + have + 過去分詞)**: should have studied\n- **M**: harder\n- **M**: for the entrance exam\n- **セミコロン以下 (理由・補足)**: I barely passed and almost lost my chance to enter the university.\n\n## 📍 本文の根拠\n後半「barely passed (やっとのことで合格) / almost lost my chance (危うく機会を失うところだった)」が**過去の不十分な努力への後悔**を示す → should have studied (もっと勉強すべきだった) が文脈に最も合致。\n\n## ❌ 誤答 NG 理由\n- **could study**: 単なる過去の能力「勉強できた」で、後悔のニュアンスがない。後悔なら could **have** studied が必要。\n- **must have studied**: 「勉強したに違いない」= 過去の推量。barely passed の文脈と矛盾 (もし熱心に勉強したならぎりぎり合格にはならない)。\n- **would study**: 過去の習慣「よく勉強したものだ」または仮定法。文脈の後悔と一致しない。"
+          }
+        ]
+      },
+      "model": "claude-opus-4-7"
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "g_grammar",
+      "eiken_grade": "kyushu",
+      "question_data": {
+        "year_simulated": 2023,
+        "univ_simulated": "九州大学 (類題)",
+        "passage": "",
+        "audio_script": "",
+        "prompt": "Choose the most appropriate option to complete the sentence.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "Only after the experiment had been repeated several times ____ the unexpected pattern in the data.",
+            "choices": [
+              "noticed the researchers",
+              "the researchers noticed",
+              "did the researchers notice",
+              "have the researchers noticed"
+            ],
+            "answer": 2,
+            "explanation": "## 🎯 コアイメージ\n否定語・準否定語倒置のコア:\n- 文頭に **Only + 副詞句/節**, **Never**, **Hardly**, **Little**, **No sooner** などが出ると、後続の主節は**疑問文と同じ語順**で倒置する。\n- 倒置形: **助動詞/be 動詞 + S + 動詞原形 (or 過去分詞)**\n- 一般動詞は do/does/did を立てる: did + S + V (原形)\n\n## 🔬 文構造分析\n- **文頭の Only 句**: Only after the experiment had been repeated several times\n  - 「実験が数回繰り返されてから初めて」= 否定的ニュアンス (それまでは…ない)\n- **倒置された主節**:\n  - **助動詞**: did\n  - **S**: the researchers\n  - **V (原形)**: notice\n  - **O**: the unexpected pattern in the data\n- 元の語順: The researchers noticed the unexpected pattern in the data only after the experiment had been repeated several times.\n\n## 📍 本文の根拠\n文頭の **Only after ~** が倒置を引き起こす否定句。主節は did + S + 動詞原形の語順 → did the researchers notice が唯一文法的に正しい形。\n\n## ❌ 誤答 NG 理由\n- **noticed the researchers**: 一般動詞をそのまま倒置するのは誤り。do サポートが必要。\n- **the researchers noticed**: Only ~ の後で倒置が起きていない。受験生の最頻出ミス。\n- **have the researchers noticed**: 主節の時点が過去 (had been repeated と並ぶ単純過去) なので現在完了 have noticed は時制不一致。"
+          }
+        ]
+      },
+      "model": "claude-opus-4-7"
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "g1",
+      "eiken_grade": "gp1",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "英検準1級 文法",
+        "passage": "",
+        "audio_script": "",
+        "prompt": "Choose the best word or phrase to complete the sentence.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "If the company ____ the warning signs earlier, the financial crisis could have been avoided altogether.",
+            "choices": [
+              "has recognized",
+              "would recognize",
+              "had recognized",
+              "recognized"
+            ],
+            "answer": 2,
+            "explanation": "## 🎯 コアイメージ\n仮定法過去完了のコア:\n- 過去の事実に反する仮定 → **If + S + had + 過去分詞, S + would/could/might + have + 過去分詞**\n- 「もし~していたら、…していただろうに」(実際には~しなかった、…しなかった)\n- 主節と if 節は**時制ペア**で固定。片方が could have been (仮定法過去完了) なら、もう片方も had + 過去分詞。\n\n## 🔬 文構造分析\n- **if 節**: If the company **had recognized** the warning signs earlier,\n  - **S'**: the company, **V'**: had recognized (過去完了形), **O'**: the warning signs, **M'**: earlier\n- **主節**: the financial crisis **could have been avoided** altogether.\n  - **S**: the financial crisis, **V**: could have been avoided (仮定法過去完了の受動)\n  - **M**: altogether\n\n## 📍 本文の根拠\n主節の **could have been avoided** が仮定法過去完了を確定 → if 節も **had + 過去分詞** に揃える必要がある。「会社が早く警告に気付いていたら、危機は回避できたはずだ (実際は気付かず、危機が起きた)」という過去の反実仮想。\n\n## ❌ 誤答 NG 理由\n- **has recognized**: 現在完了。仮定法では用いず、直説法の時制。\n- **would recognize**: would は主節用の助動詞。if 節では使わないのが原則 (例外的な丁寧表現を除く)。\n- **recognized**: 仮定法**過去** (現在の事実に反する仮定)。主節の could have been avoided と時制不一致。"
+          }
+        ]
+      },
+      "model": "claude-opus-4-7"
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "g1",
+      "eiken_grade": "gp1",
+      "question_data": {
+        "year_simulated": 2023,
+        "univ_simulated": "英検準1級 語彙 (環境)",
+        "passage": "",
+        "audio_script": "",
+        "prompt": "Choose the best word to complete the sentence.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "Rising sea temperatures and unsustainable fishing practices have only served to ____ the decline of coral reef ecosystems around the world.",
+            "choices": [
+              "mitigate",
+              "alleviate",
+              "perpetuate",
+              "exacerbate"
+            ],
+            "answer": 3,
+            "explanation": "## 🎯 コアイメージ\n4語のコアイメージ整理:\n- **exacerbate** [動]: 「(悪い状況を) さらに悪化させる」= make worse\n- **alleviate** [動]: 「(苦痛・問題を) 軽減する」= ease, lessen\n- **perpetuate** [動]: 「(状態を) 永続させる、変えずに続ける」= cause to continue\n- **mitigate** [動]: 「(深刻さを) 和らげる、軽減する」= alleviate より公式・政策寄り\n\n本問の文脈は「海温上昇 + 持続不能な漁業 → サンゴ礁衰退**を加速**」= 悪化の方向。\n\n## 🔬 文構造分析\n- **S**: Rising sea temperatures and unsustainable fishing practices\n- **V**: have only served to ____\n  - have served to do = 「~するのに役立った/つながった」 (only がつくと皮肉的に「~を悪化させただけだった」の意味合い)\n- **O**: the decline of coral reef ecosystems\n- **M**: around the world\n\n## 📍 本文の根拠\n主語は2つの**負の要因** (温暖化 + 乱獲)、目的語は **the decline** (衰退) → 動詞は「衰退を**さらに悪化**させる」 = exacerbate が文脈と完全一致。 only served to ~ の only も「悪い結果を強調」する皮肉表現。\n\n## ❌ 誤答 NG 理由\n- **mitigate**: 「和らげる」= alleviate と同方向で逆。ひっかけとして配置される頻出語。\n- **alleviate**: 「軽減する」= 真逆の意味。悪化要因が衰退を「軽減」するのは論理矛盾。\n- **perpetuate**: 「永続させる」は近いが、本問は「悪化を加速」のニュアンスで、ただ続けるだけでは弱い。decline はすでに進行中で「悪化」の動詞が必要。"
+          }
+        ]
+      },
+      "model": "claude-opus-4-7"
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "g1",
+      "eiken_grade": "gp1",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "英検準1級 語彙 (経済格差)",
+        "passage": "",
+        "audio_script": "",
+        "prompt": "Choose the best word to complete the sentence.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "Economists have pointed to a striking ____ between the country's reported economic growth and the stagnant wages experienced by ordinary workers.",
+            "choices": [
+              "coincidence",
+              "incongruity",
+              "compatibility",
+              "discrepancy"
+            ],
+            "answer": 3,
+            "explanation": "## 🎯 コアイメージ\n4語のコアイメージ整理:\n- **discrepancy** [名]: 「(本来一致するはずの2つの数値・事実の) 食い違い、ズレ」= 統計・経済・データに最頻出\n- **incongruity** [名]: 「(性質・スタイルの) 不調和」= 文化・芸術・態度の不一致 (経済データには通常使わない)\n- **compatibility** [名]: 「両立可能性、互換性」= 一致・調和の意味で、本問の文脈と真逆\n- **coincidence** [名]: 「偶然の一致」= 予期せず重なる事象\n\n本問は「経済成長率」と「賃金停滞」という**数値・事実の食い違い** → discrepancy が最適。\n\n## 🔬 文構造分析\n- **S**: Economists\n- **V**: have pointed to\n- **O**: a striking ____ [between A and B]\n  - **A**: the country's reported economic growth (報告上の経済成長)\n  - **B**: the stagnant wages experienced by ordinary workers (一般労働者の停滞した賃金)\n- striking = 形容詞「際立った」(食い違いを強調)\n\n## 📍 本文の根拠\n「経済成長 vs 賃金停滞」は、**本来連動するはずなのに乖離している**経済統計の典型例。これは英語で a discrepancy between A and B と表現するのが定型。本問の between A and B 構造が discrepancy を強く示唆。\n\n## ❌ 誤答 NG 理由\n- **coincidence**: 「偶然の一致」= 一致のニュアンスで、ここでは「ズレ」を表したいので不一致。\n- **incongruity**: 「不調和」は文化・態度・スタイルに使う語で、経済指標の食い違いには discrepancy が標準。コロケーションのレベルで不適。\n- **compatibility**: 「両立可能性」= 真逆の意味。"
+          }
+        ]
+      },
+      "model": "claude-opus-4-7"
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_short",
+      "eiken_grade": "gp1",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "英検準1級 長文短問 (AI 医療)",
+        "passage": "AI in Medical Diagnosis\n\nIn recent years, artificial intelligence has begun to play a remarkable role in medical diagnosis. Some hospitals now use AI systems to analyze X-ray images, CT scans, and pathology slides, often detecting subtle patterns that even experienced radiologists might overlook. A 2023 study published in a leading medical journal reported that an AI model trained on millions of mammograms achieved diagnostic accuracy comparable to a panel of board-certified radiologists, while completing its analysis in a fraction of the time.\n\nDespite these advances, many physicians remain cautious. They warn that AI systems are only as reliable as the data on which they are trained. If a model is trained primarily on patients of a particular age group or ethnic background, its accuracy may decline when applied to populations underrepresented in the training data. Critics also note that AI cannot yet weigh the human factors that shape clinical judgment—patient anxiety, family history described in conversation, or subtle behavioral cues that an experienced doctor learns to read over years of practice.\n\nHospitals adopting these technologies have therefore taken a cautious approach. Rather than allowing AI to replace human diagnosis, most institutions use it as a 'second reader,' flagging cases that warrant closer human review. Proponents argue that this hybrid model offers the best of both worlds: the speed and pattern-recognition of machines combined with the contextual judgment of trained clinicians. Whether AI will eventually move beyond this supporting role remains an open question, but for now, the consensus is that human oversight remains essential.",
+        "audio_script": "",
+        "prompt": "",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What concern do critical physicians raise about AI diagnostic systems, according to the passage?",
+            "choices": [
+              "They reveal patient information to outside parties without permission.",
+              "They tend to be slower than human radiologists when analyzing complex cases.",
+              "They cost too much for most hospitals to adopt on a large scale.",
+              "Their accuracy may drop for patient groups underrepresented in the training data."
+            ],
+            "answer": 3,
+            "explanation": "## 🎯 コアイメージ\n長文推論問題のコア = **設問のキーワードを本文の特定パラグラフに紐付け、選択肢と本文の論理関係 (一致/不一致/言及なし) を判定**する。\n\n本問のキーワード: **critical physicians, concern, AI diagnostic systems** → 第2段落 (Despite these advances, many physicians remain cautious...) が根拠箇所。\n\n## 🔬 文構造分析 (該当箇所)\n第2段落2文目:\n- **S**: They (= cautious physicians)\n- **V**: warn\n- **O (that 節)**: that AI systems are only as reliable as the data on which they are trained.\n\n3文目:\n- **If 節**: If a model is trained primarily on patients of a particular age group or ethnic background,\n- **主節 S**: its accuracy, **V**: may decline\n- **M (when 節)**: when applied to populations **underrepresented in the training data**.\n\n## 📍 本文の根拠\n第2段落の「If a model is trained primarily on patients of a particular age group or ethnic background, its accuracy may decline when applied to populations **underrepresented in the training data**」が、選択肢3「accuracy may drop for patient groups **underrepresented in the training data**」とほぼ同義の言い換え。\n\n## ❌ 誤答 NG 理由\n- **reveal patient information**: プライバシー漏洩の話題は本文に登場しない。AI の倫理問題で連想しがちなひっかけ。\n- **slower than human radiologists**: 第1段落で AI は「a fraction of the time (はるかに短時間)」と書かれ、むしろ AI の方が速い。本文と真逆。\n- **cost too much**: 費用については本文に一切言及なし (= out of scope)。"
+          }
+        ]
+      },
+      "model": "claude-opus-4-7"
+    }
+  ]
+}
