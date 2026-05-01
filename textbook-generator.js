@@ -496,29 +496,85 @@ ${/数学/.test(subject) ? `
     }
   }
 
-  // ----- Step 2: Phase 1 + Phase 2 (常にチーム検閲を通す) -----
-  // 🔥 塾長指示「全部チームで作る」: pool hit でも Phase 2 review は必ず実行
-  // - pool hit + Phase 2: 1 AI call (review only) = 高速 + 整合確保
-  // - pool miss + Phase 1 + Phase 2: 2 AI calls (write + review) = 標準
+  // ----- Step 2: チェック工程 + 生成 -----
+  // 🔥 塾長指示「いきなりプールに入らずチェックしてから」「チームで作り上げる」
+  // 設計:
+  //  Pool hit → Phase 1/2: 軽量検証 (タイトル整合チェック、5-10秒) → 不整合なら full 再生成 → 整合なら使用
+  //  Pool miss → Phase 1: 執筆 (30-90秒) + Phase 2: 検閲修正 (30-90秒) の 2 段
+  //  ※ Pool 教材 (5-8 ページ JSON 30k-50k 文字) を Phase 2 にフル投入すると router timeout したため軽量検証に変更
   if (!sessionToken && !apiKey) {
     await new Promise(r => setTimeout(r, 1500));
     json = generateDemo(subject, topic, level);
   } else {
     try {
-      // ===== Phase 1: 執筆 (Writer) — pool hit 時はスキップ =====
-      if (!draft) {
-        btn.textContent = '⏳ Phase 1/2: 執筆中...';
-        result.innerHTML = '<div class="tb-placeholder"><div style="font-size:3rem;">✍️</div><p>Phase 1/2: AI 講師が初稿を執筆中... (30-90秒)</p></div>';
-        draft = await callAI(systemPrompt, userMsg, 'Phase1-Writer');
-      } else {
-        btn.textContent = '⏳ Phase 1/2: プール命中 (検閲へ)';
-        result.innerHTML = '<div class="tb-placeholder"><div style="font-size:3rem;">📚</div><p>Phase 1/2: 教材プールから関連教材を取り出しました → チーム検閲へ進みます</p></div>';
+      if (draft) {
+        // ===== Pool hit: 軽量検証 (Verify) — タイトル/トピック/レベル整合のみ =====
+        btn.textContent = '⏳ 1/2: プール候補を検証中...';
+        result.innerHTML = '<div class="tb-placeholder"><div style="font-size:3rem;">🔍</div><p>1/2: チームがプールから取り出した候補を検証しています (5〜15秒)</p></div>';
+        const verifySystemPrompt = `あなたは教材編集チームの検閲担当です。
+ユーザー要求とプール教材のメタ情報を照合し、トピック・レベル・科目が一致しているか厳格に判定してください。
+
+【出力形式】純粋な JSON のみ (Markdown コードフェンス禁止):
+{
+  "topic_match": true|false,
+  "level_match": true|false,
+  "subject_match": true|false,
+  "ok": true|false,
+  "reason": "判定理由を 1 行"
+}
+
+判定基準:
+- topic_match: ユーザー要求 topic の主要キーワードが教材タイトル/サブタイトル/topic フィールドに含まれているか
+- level_match: 教材 level がユーザー要求 level と同等か (例: 高校標準 vs 難関大受験 は不一致)
+- subject_match: 科目が一致しているか
+- ok: 上記 3 つすべてが true の時のみ true`;
+
+        const verifyUserMsg = `【ユーザー要求】
+科目: ${subject}
+単元: ${topic}
+レベル: ${level}
+
+【プール候補のメタ情報】
+タイトル: ${draft.title || ''}
+サブタイトル: ${draft.subtitle || ''}
+科目: ${draft.subject || ''}
+トピック: ${draft.topic || ''}
+レベル: ${draft.level || ''}
+
+判定してください。`;
+
+        let verdict = { ok: false, reason: 'verify_failed' };
+        try {
+          verdict = await callAI(verifySystemPrompt, verifyUserMsg, 'Verify');
+        } catch (verifyErr) {
+          console.warn('[textbook] Verify 失敗 → 安全側で再生成:', verifyErr.message);
+          verdict = { ok: false, reason: 'verify_error' };
+        }
+
+        if (verdict.ok) {
+          // 整合 → プール教材をそのまま使用
+          btn.textContent = '⏳ 2/2: 検証 OK — 整合確認済';
+          result.innerHTML = `<div class="tb-placeholder"><div style="font-size:3rem;">✅</div><p>2/2: チーム検証 OK (${verdict.reason || 'プール教材は要求と整合'}) — そのまま採用します</p></div>`;
+          json = draft;
+        } else {
+          // 不整合 → live 生成にフォールバック
+          console.warn(`[textbook] Verify NG: ${verdict.reason} → Phase 1+2 再生成へ`);
+          btn.textContent = '⏳ 1/2: プール不整合 — 再生成';
+          result.innerHTML = `<div class="tb-placeholder"><div style="font-size:3rem;">🔄</div><p>1/2: プール候補が要求と不整合 (${verdict.reason}) → 新規執筆します (30-90秒)</p></div>`;
+          draft = null;  // 再生成のため reset
+          poolHitInfo = null;
+        }
       }
 
-      // ===== Phase 2: チーム検閲+編集統合 (3視点 Reviewer + Editor) — 必ず実行 =====
-      const phase2Label = poolHitInfo ? 'Phase 2/2: プール教材を検閲・トピック適合化中...' : 'Phase 2/2: 内容検閲・教育検閲・入試検閲の3視点 + 編集統合中...';
-      btn.textContent = '⏳ Phase 2/2: チーム検閲中...';
-      result.innerHTML = `<div class="tb-placeholder"><div style="font-size:3rem;">🔍</div><p>${phase2Label} (30-90秒)</p></div>`;
+      if (!draft && !json) {
+        // ===== Pool miss / 不整合: Phase 1 (Writer) =====
+        btn.textContent = '⏳ 1/2: 執筆中...';
+        result.innerHTML = '<div class="tb-placeholder"><div style="font-size:3rem;">✍️</div><p>1/2: AI 講師が初稿を執筆中... (30-90秒)</p></div>';
+        draft = await callAI(systemPrompt, userMsg, 'Phase1-Writer');
+
+        // ===== Phase 2: チーム検閲 (内容/教育/入試 + 編集統合) =====
+        btn.textContent = '⏳ 2/2: チーム検閲中...';
+        result.innerHTML = '<div class="tb-placeholder"><div style="font-size:3rem;">🔍</div><p>2/2: 内容検閲・教育検閲・入試検閲の3視点 + 編集統合中... (30-90秒)</p></div>';
         const reviewSystemPrompt = `あなたは難関塾の教材編集チームです。Writer が執筆した初稿を 3 つの視点で同時検閲し、編集統合まで行います:
 
 【3 視点による相互検閲】
@@ -554,6 +610,7 @@ ${JSON.stringify(draft, null, 2)}
 トピック不一致なら全面書き直し、レベル不整合なら語彙・例題を調整してください。`;
 
         json = await callAI(reviewSystemPrompt, reviewUserMsg, 'Phase2-Review');
+      }
       } catch (e) {
         // フェイルセーフ最終層: プール miss + Anthropic + Gemini 両系統失敗 → 中立的案内 + demo
         const errMsg = String(e.message || '').slice(0, 100);
