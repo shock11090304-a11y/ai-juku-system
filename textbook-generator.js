@@ -434,19 +434,25 @@ ${/数学/.test(subject) ? `
   let poolHitInfo = null;
   let draft = null;  // Phase 1 の出力 (pool hit or live writer)
 
-  // ----- Anthropic call helper (Phase 1, 2 で共通利用) -----
-  // 🔥 2026-05-01: 5xx/timeout に対し最大 2 回リトライ (指数バックオフ)
-  // max_tokens=8000 (元 16000): 多くの教材は 5000-7000 token で収まるためレスポンス高速化
-  const callAI = async (sysPrompt, msg, label, maxTokens = 8000) => {
+  // ----- Anthropic call helper -----
+  // 🔥 2026-05-01: 重要な変更点:
+  // - AbortController で 120 秒 timeout 強制 (旧: 無限待機 → 「進まない」事故)
+  // - 5xx + timeout は自動リトライ (最大 3 回、指数バックオフ)
+  // - model 切替可能 (Sonnet 4.6 = Opus 4.7 の 3-5x 高速、textbook 品質に十分)
+  // - max_tokens=8000 (元 16000)
+  const callAI = async (sysPrompt, msg, label, options = {}) => {
+    const maxTokens = options.maxTokens || 8000;
+    const useModel = options.useModel || MODEL_PREMIUM;
+    const timeoutMs = options.timeoutMs || 120000;  // 2 分
     const buildBody = () => {
       const body = {
-        model: MODEL_PREMIUM,
+        model: useModel,
         max_tokens: maxTokens,
         system: sysPrompt,
         messages: [{ role: 'user', content: msg }],
       };
       if (!sessionToken) {
-        const isOpus47 = (MODEL_PREMIUM || '').startsWith('claude-opus-4-7');
+        const isOpus47 = (useModel || '').startsWith('claude-opus-4-7');
         body.temperature = 1.0;
         if (isOpus47) {
           body.thinking = { type: 'adaptive' };
@@ -457,13 +463,14 @@ ${/数学/.test(subject) ? `
       }
       return body;
     };
-    const doFetch = async () => {
+    const doFetch = async (signal) => {
       const body = buildBody();
       if (sessionToken) {
         return fetch(`${backend}/api/ai/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionToken },
           body: JSON.stringify(body),
+          signal,
         });
       }
       return fetch(API_URL, {
@@ -475,18 +482,22 @@ ${/数学/.test(subject) ? `
           'anthropic-dangerous-direct-browser-access': 'true'
         },
         body: JSON.stringify(body),
+        signal,
       });
     };
     const isRetryable = (status, errText) => {
-      if (status === 0) return true;  // network error
+      if (status === 0) return true;
       if ([502, 503, 504, 529].includes(status)) return true;
       if ([500].includes(status) && /overloaded|temporary|router|timeout/i.test(errText)) return true;
       return false;
     };
     let lastErr = null;
     for (let attempt = 1; attempt <= 3; attempt++) {
+      const controller = new AbortController();
+      const timeoutHandle = setTimeout(() => controller.abort(), timeoutMs);
       try {
-        const res = await doFetch();
+        const res = await doFetch(controller.signal);
+        clearTimeout(timeoutHandle);
         if (!res.ok) {
           const errText = await res.text();
           if (attempt < 3 && isRetryable(res.status, errText)) {
@@ -502,9 +513,12 @@ ${/数学/.test(subject) ? `
         const clean = text.trim().replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
         return JSON.parse(clean);
       } catch (e) {
+        clearTimeout(timeoutHandle);
         lastErr = e;
-        if (attempt < 3 && /NetworkError|Failed to fetch|fetch.*failed/i.test(e.message)) {
-          console.warn(`[callAI:${label}] network error retry (attempt ${attempt}/3)`);
+        const isAbort = e.name === 'AbortError' || /aborted|timeout/i.test(e.message);
+        const isNetwork = /NetworkError|Failed to fetch|fetch.*failed/i.test(e.message);
+        if (attempt < 3 && (isAbort || isNetwork)) {
+          console.warn(`[callAI:${label}] ${isAbort ? 'TIMEOUT('+timeoutMs+'ms)' : 'network error'} retry (attempt ${attempt}/3)`);
           await new Promise(r => setTimeout(r, (2 ** (attempt - 1)) * 1000));
           continue;
         }
@@ -592,7 +606,7 @@ ${/数学/.test(subject) ? `
 
         let verdict = { ok: false, reason: 'verify_failed' };
         try {
-          verdict = await callAI(verifySystemPrompt, verifyUserMsg, 'Verify');
+          verdict = await callAI(verifySystemPrompt, verifyUserMsg, 'Verify', { useModel: MODEL_STANDARD, maxTokens: 500, timeoutMs: 30000 });
         } catch (verifyErr) {
           console.warn('[textbook] Verify 失敗 → 安全側で再生成:', verifyErr.message);
           verdict = { ok: false, reason: 'verify_error' };
@@ -621,7 +635,7 @@ ${/数学/.test(subject) ? `
         // 結果: 30-60 秒 (旧 60-180 秒) で同等品質
         btn.textContent = '⏳ AI チームが執筆+検閲中...';
         result.innerHTML = '<div class="tb-placeholder"><div style="font-size:3rem;">✍️🔍</div><p>AI 講師チーム (執筆者 + 内容/教育/入試の 3 検閲者) が並行作業中... (30-60秒)</p></div>';
-        json = await callAI(systemPrompt, userMsg, 'Writer+Review-Combined');
+        json = await callAI(systemPrompt, userMsg, 'Writer+Review-Combined', { useModel: MODEL_STANDARD, maxTokens: 8000, timeoutMs: 120000 });
       }
       } catch (e) {
         // フェイルセーフ最終層: プール miss + Anthropic + Gemini 両系統失敗 → 中立的案内 + demo
