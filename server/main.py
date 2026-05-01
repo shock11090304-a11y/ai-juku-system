@@ -5866,49 +5866,56 @@ def public_textbook_search(
     c = conn.cursor()
     try:
         results = []
-        # Stage 1: subject + topic + level 完全一致
-        if topic and level:
-            c.execute(
-                """SELECT id, subject, topic, level, length, type, title, tags, content, created_at
-                   FROM textbook_pool
-                   WHERE status = 'published' AND subject = ? AND topic = ? AND level = ?
-                   ORDER BY created_at DESC LIMIT ?""",
-                (subject, topic, level, limit),
-            )
-            results = [dict(r) for r in c.fetchall()]
-
-        # Stage 2: subject + topic LIKE (level は問わず)
-        if not results and topic:
-            c.execute(
-                """SELECT id, subject, topic, level, length, type, title, tags, content, created_at
-                   FROM textbook_pool
-                   WHERE status = 'published' AND subject = ? AND topic LIKE ?
-                   ORDER BY created_at DESC LIMIT ?""",
-                (subject, f"%{topic}%", limit),
-            )
-            results = [dict(r) for r in c.fetchall()]
-
-        # Stage 3: subject + level
-        if not results and level:
-            c.execute(
-                """SELECT id, subject, topic, level, length, type, title, tags, content, created_at
-                   FROM textbook_pool
-                   WHERE status = 'published' AND subject = ? AND level = ?
-                   ORDER BY created_at DESC LIMIT ?""",
-                (subject, level, limit),
-            )
-            results = [dict(r) for r in c.fetchall()]
-
-        # Stage 4: subject だけ
-        if not results:
-            c.execute(
-                """SELECT id, subject, topic, level, length, type, title, tags, content, created_at
-                   FROM textbook_pool
-                   WHERE status = 'published' AND subject = ?
-                   ORDER BY created_at DESC LIMIT ?""",
-                (subject, limit),
-            )
-            results = [dict(r) for r in c.fetchall()]
+        # 🔥 致命傷修正 (2026-05-01): topic 指定時に無関係教材を返す bug 修正
+        # 旧コードは Stage 4 で subject のみで全件返していた → 関係代名詞リクエストに 話法 が返る事故
+        # 新ルール: topic 指定があれば topic match した結果のみ返す。topic miss は空配列で live 生成に流す
+        if topic:
+            # topic を「、」「,」「/」で分割して各 token で OR 検索 (関係代名詞、関係副詞 → 関係代名詞 OR 関係副詞)
+            topic_tokens = [t.strip() for t in topic.replace("、", ",").replace("/", ",").split(",") if t.strip()]
+            # Stage 1: 完全一致 (subject + topic 文字列そのまま + level)
+            if level:
+                c.execute(
+                    """SELECT id, subject, topic, level, length, type, title, tags, content, created_at
+                       FROM textbook_pool
+                       WHERE status = 'published' AND subject = ? AND topic = ? AND level = ?
+                       ORDER BY created_at DESC LIMIT ?""",
+                    (subject, topic, level, limit),
+                )
+                results = [dict(r) for r in c.fetchall()]
+            # Stage 2: 各 token のいずれかが topic に含まれる + subject 一致 (level は問わず)
+            if not results and topic_tokens:
+                placeholders = " OR ".join(["topic LIKE ?"] * len(topic_tokens))
+                like_args = [f"%{t}%" for t in topic_tokens]
+                c.execute(
+                    f"""SELECT id, subject, topic, level, length, type, title, tags, content, created_at
+                       FROM textbook_pool
+                       WHERE status = 'published' AND subject = ? AND ({placeholders})
+                       ORDER BY created_at DESC LIMIT ?""",
+                    (subject, *like_args, limit),
+                )
+                results = [dict(r) for r in c.fetchall()]
+            # 🚫 topic 指定があるのに miss した場合は subject 全件 fallback しない
+            #    → 空配列を返して呼び出し側が live 生成に流す (チーム検閲付き)
+        else:
+            # topic 未指定時のみ subject + level / subject 全件で fallback 許可
+            if level:
+                c.execute(
+                    """SELECT id, subject, topic, level, length, type, title, tags, content, created_at
+                       FROM textbook_pool
+                       WHERE status = 'published' AND subject = ? AND level = ?
+                       ORDER BY created_at DESC LIMIT ?""",
+                    (subject, level, limit),
+                )
+                results = [dict(r) for r in c.fetchall()]
+            if not results:
+                c.execute(
+                    """SELECT id, subject, topic, level, length, type, title, tags, content, created_at
+                       FROM textbook_pool
+                       WHERE status = 'published' AND subject = ?
+                       ORDER BY created_at DESC LIMIT ?""",
+                    (subject, limit),
+                )
+                results = [dict(r) for r in c.fetchall()]
     finally:
         conn.close()
 
