@@ -14,7 +14,7 @@ FastAPI + SQLite + Stripe + LINE Messaging API
 from fastapi import FastAPI, Request, HTTPException, Depends, Header, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse, FileResponse, RedirectResponse
+from fastapi.responses import JSONResponse, FileResponse, RedirectResponse, StreamingResponse
 from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional, List
 from datetime import datetime, timezone, timedelta, time as dt_time
@@ -29,6 +29,7 @@ import urllib.request
 import urllib.error
 import base64
 import io
+import zipfile
 import pathlib
 import logging
 
@@ -10715,6 +10716,205 @@ def admin_qr_scan_stats(
         "unique_slugs": len(sorted_slugs),
         "by_slug": sorted_slugs,
     }
+
+
+# ==========================================================================
+# 📸 マーケティング素材ダウンロード (Instagram/Threads/チラシ等の宣伝素材を CEO ダッシュから取得)
+# 配置: STATIC_DIR / marketing-assets / {campaign} / *.png|*.svg|*.jpg
+# 公開静的 URL: trillion-ai-juku.com/marketing-assets/{campaign}/{file} (Vercel が serve)
+# ZIP 一括 DL は admin 認証必須 (こちらは Railway 経由)
+# ==========================================================================
+
+_MARKETING_CAMPAIGN_ALLOWED = {"instagram", "threads", "flyer", "classroom", "demo", "x", "line"}
+_MARKETING_FILE_EXTENSIONS = {".png", ".svg", ".jpg", ".jpeg", ".webp", ".pdf"}
+_MARKETING_MAX_FILES = 100  # DoS 対策: 1 campaign 内のファイル数上限
+_MARKETING_MAX_TOTAL_BYTES = 50 * 1024 * 1024  # 合計サイズ上限
+
+# 各 campaign の人間向け説明 (CEO ダッシュ表示用)
+_MARKETING_CAMPAIGN_LABELS = {
+    "instagram": {"emoji": "📷", "label": "Instagram 投稿用", "color": "#ec4899"},
+    "threads": {"emoji": "🧵", "label": "Threads 投稿用", "color": "#a78bfa"},
+    "flyer": {"emoji": "📄", "label": "チラシ印刷用", "color": "#fbbf24"},
+    "classroom": {"emoji": "🏫", "label": "教室掲示用", "color": "#34d399"},
+    "demo": {"emoji": "🎓", "label": "体験授業用", "color": "#22d3ee"},
+    "x": {"emoji": "🐦", "label": "X 投稿用", "color": "#0ea5e9"},
+    "line": {"emoji": "💬", "label": "LINE 配信用", "color": "#10b981"},
+}
+
+# 各ファイルの人間向け説明 (キャプション)。完全 hard-code、未登録は filename をそのまま使う
+_MARKETING_FILE_DESCRIPTIONS = {
+    "instagram": {
+        "01-hero-lp.png": "LP ヒーロー (50/50 創設メンバー、24h AI チューター)",
+        "02-curriculum.png": "学年×目標×個別最適 カリキュラム",
+        "03-pricing-content.png": "¥14,500 の中身ぜんぶ見せます",
+        "04-features.png": "14機能詳細カルーセル",
+        "05-checkout-cta.png": "創設メンバー申込 CTA",
+        "ai-juku-instagram-qr.png": "QR コード (PNG/SNS用)",
+        "ai-juku-instagram-qr.svg": "QR コード (SVG/印刷用)",
+    },
+}
+
+def _is_safe_marketing_filename(name: str) -> bool:
+    """path traversal 防止: filename は basename のみ + 許可拡張子 + ASCII"""
+    if not name or len(name) > 200:
+        return False
+    if name != os.path.basename(name):  # path separator が入ってたら拒否
+        return False
+    if any(c in name for c in ("..", "/", "\\", "\x00")):
+        return False
+    ext = pathlib.Path(name).suffix.lower()
+    if ext not in _MARKETING_FILE_EXTENSIONS:
+        return False
+    # ASCII 印字可能 + 一般的な記号のみ
+    return all(0x20 <= ord(c) < 0x7f for c in name)
+
+def _marketing_assets_dir(campaign: str) -> pathlib.Path:
+    """campaign 名 validate 済前提で marketing-assets ディレクトリを返す"""
+    return STATIC_DIR / "marketing-assets" / campaign
+
+def _list_safe_marketing_files(dir_path: pathlib.Path) -> list:
+    """指定 dir から安全な marketing file のみ列挙。
+    Symlink 完全拒否 + resolve() で dir 外脱出を物理的に防止 (CI/CD 侵害対策)。
+    最大 _MARKETING_MAX_FILES 件で打ち切り (DoS 対策)。
+    """
+    if not dir_path.exists() or not dir_path.is_dir():
+        return []
+    safe = []
+    try:
+        dir_resolved = dir_path.resolve(strict=True)
+    except Exception:
+        return []
+    for entry in sorted(dir_path.iterdir()):
+        if len(safe) >= _MARKETING_MAX_FILES:
+            break
+        # Symlink は一切受付けない (CI/CD 経由の悪意ある PR で /etc/passwd 等に向ける攻撃の防御)
+        if entry.is_symlink():
+            continue
+        if not entry.is_file():
+            continue
+        # filename 検証
+        if not _is_safe_marketing_filename(entry.name):
+            continue
+        # resolve() 後に dir 配下に留まることを確認 (二重防御)
+        try:
+            resolved = entry.resolve(strict=True)
+            resolved.relative_to(dir_resolved)
+        except (ValueError, OSError):
+            continue
+        safe.append(entry)
+    return safe
+
+
+@app.get("/api/admin/marketing-assets/{campaign}/list")
+def admin_marketing_assets_list(
+    campaign: str,
+    request: Request,
+    authorization: Optional[str] = Header(None),
+):
+    """📋 指定 campaign のマーケティング素材一覧。admin Bearer auth + IP rate limit (60req/min)。
+    返り値: {ok, campaign, label_info, files: [{name, size, public_url, description}], exists, total_bytes}
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="未認証")
+
+    # admin auth 後の rate limit (token 漏洩時のダメージコントロール)
+    _check_rate_limit_ip(request, bucket="mkt_assets_list", limit=60, window=60)
+
+    campaign_l = (campaign or "").strip().lower()
+    if campaign_l not in _MARKETING_CAMPAIGN_ALLOWED:
+        raise HTTPException(status_code=400, detail=f"campaign は {sorted(_MARKETING_CAMPAIGN_ALLOWED)} のいずれか")
+
+    dir_path = _marketing_assets_dir(campaign_l)
+    if not dir_path.exists() or not dir_path.is_dir():
+        return {"ok": True, "campaign": campaign_l, "files": [], "exists": False, "label_info": _MARKETING_CAMPAIGN_LABELS.get(campaign_l, {})}
+
+    descriptions = _MARKETING_FILE_DESCRIPTIONS.get(campaign_l, {})
+    safe_entries = _list_safe_marketing_files(dir_path)
+    files = []
+    total_bytes = 0
+    for entry in safe_entries:
+        size = entry.stat().st_size
+        total_bytes += size
+        files.append({
+            "name": entry.name,
+            "size": size,
+            "size_human": f"{size/1024:.1f} KB" if size < 1024*1024 else f"{size/1024/1024:.2f} MB",
+            "public_url": f"/marketing-assets/{campaign_l}/{entry.name}",
+            "description": descriptions.get(entry.name, ""),
+            "extension": entry.suffix.lower().lstrip("."),
+        })
+
+    return {
+        "ok": True,
+        "campaign": campaign_l,
+        "files": files,
+        "exists": True,
+        "file_count_capped": len(safe_entries) >= _MARKETING_MAX_FILES,
+        "total_bytes": total_bytes,
+        "total_human": f"{total_bytes/1024/1024:.2f} MB" if total_bytes >= 1024*1024 else f"{total_bytes/1024:.1f} KB",
+        "label_info": _MARKETING_CAMPAIGN_LABELS.get(campaign_l, {}),
+    }
+
+
+@app.get("/api/admin/marketing-assets/{campaign}/zip")
+def admin_marketing_assets_zip(
+    campaign: str,
+    request: Request,
+    authorization: Optional[str] = Header(None),
+):
+    """📦 指定 campaign の全ファイルを ZIP で一括ダウンロード。admin Bearer auth + IP rate limit (10req/min)。
+    Symlink 拒否 + 合計 50MB 上限 + ファイル数 100 上限。StreamingResponse で 1 buffer のみ使用。
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="未認証")
+
+    # ZIP 生成は CPU/RAM 重いので rate limit 厳しめ
+    _check_rate_limit_ip(request, bucket="mkt_assets_zip", limit=10, window=60)
+
+    campaign_l = (campaign or "").strip().lower()
+    if campaign_l not in _MARKETING_CAMPAIGN_ALLOWED:
+        raise HTTPException(status_code=400, detail=f"campaign は {sorted(_MARKETING_CAMPAIGN_ALLOWED)} のいずれか")
+
+    dir_path = _marketing_assets_dir(campaign_l)
+    if not dir_path.exists() or not dir_path.is_dir():
+        raise HTTPException(status_code=404, detail="campaign フォルダが存在しません")
+
+    safe_entries = _list_safe_marketing_files(dir_path)
+    if not safe_entries:
+        raise HTTPException(status_code=404, detail="ダウンロード可能なファイルが無し")
+
+    # 合計サイズチェック (50MB 上限、メモリ保護)
+    total = 0
+    for entry in safe_entries:
+        total += entry.stat().st_size
+        if total > _MARKETING_MAX_TOTAL_BYTES:
+            raise HTTPException(status_code=413, detail=f"合計サイズが上限 {_MARKETING_MAX_TOTAL_BYTES//1024//1024}MB 超過")
+
+    # in-memory ZIP 生成 (StreamingResponse に直接 buf を渡し、二重コピー回避)
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for entry in safe_entries:
+            zf.write(entry, arcname=entry.name)
+    zip_size = buf.tell()
+    buf.seek(0)
+
+    today = datetime.now(timezone(timedelta(hours=9))).strftime("%Y%m%d")
+    download_name = f"ai-juku-{campaign_l}-{today}.zip"
+
+    return StreamingResponse(
+        buf,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{download_name}"',
+            "Content-Length": str(zip_size),
+        },
+    )
 
 
 # ==========================================================================

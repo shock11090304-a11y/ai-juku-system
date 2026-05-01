@@ -644,6 +644,104 @@
     </section>
 
     <!-- ========================================== -->
+    <!-- 📸 マーケティング素材ダウンロード (Instagram/Threads/チラシ等の宣伝素材) -->
+    <!-- ========================================== -->
+    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(236,72,153,0.06); border: 1px solid rgba(236,72,153,0.25); border-radius: 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7rem;flex-wrap:wrap;gap:0.5rem;">
+        <h2 style="font-size:1.15rem;color:#ec4899;margin:0;">📸 マーケティング素材ダウンロード</h2>
+        <span style="font-size:0.7rem;color:#71717a;">Instagram・Threads・チラシ印刷用</span>
+      </div>
+      <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.9rem;line-height:1.6;">
+        投稿用画像・QR コードを <strong style="color:#ec4899;">ZIP 一括</strong> または個別ダウンロード。<br>
+        Instagram/Threads にそのまま貼れる解像度で出力済 (1080×1350 = フィード推奨 4:5 比率)。<br>
+        新しい素材を追加したい時は <code style="background:rgba(255,255,255,0.08);padding:0.05rem 0.3rem;border-radius:3px;">marketing-assets/{campaign}/</code> に置いて redeploy で反映。
+      </div>
+
+      <!-- campaign タブ (Threads が主集客なので default active) -->
+      <div id="mktCampaignTabs" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.8rem;">
+        <button data-campaign="threads" class="mkt-tab-btn active">🧵 Threads <span style="font-size:0.65rem;opacity:0.85;">主集客</span></button>
+        <button data-campaign="instagram" class="mkt-tab-btn">📷 Instagram</button>
+        <button data-campaign="flyer" class="mkt-tab-btn">📄 チラシ</button>
+        <button data-campaign="classroom" class="mkt-tab-btn">🏫 教室掲示</button>
+        <button data-campaign="demo" class="mkt-tab-btn">🎓 体験授業</button>
+      </div>
+
+      <div id="mktAssetsBox" style="background:rgba(0,0,0,0.35);border:1px solid rgba(236,72,153,0.25);border-radius:10px;padding:1rem;min-height:100px;">
+        <div style="color:#71717a;font-size:0.78rem;">読み込み中...</div>
+      </div>
+      <div id="mktError" style="display:none;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.4);border-radius:10px;padding:0.7rem;color:#fca5a5;font-size:0.82rem;margin-top:0.5rem;"></div>
+    </section>
+    <style>
+      .mkt-tab-btn {
+        background: rgba(236,72,153,0.1);
+        color: #f9a8d4;
+        border: 1px solid rgba(236,72,153,0.3);
+        padding: 0.4rem 0.85rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .mkt-tab-btn:hover {
+        background: rgba(236,72,153,0.18);
+        border-color: rgba(236,72,153,0.55);
+      }
+      .mkt-tab-btn.active {
+        background: rgba(236,72,153,0.32);
+        border-color: #ec4899;
+        color: #fff;
+      }
+      .mkt-asset-card {
+        display: grid;
+        grid-template-columns: 100px 1fr auto;
+        gap: 0.8rem;
+        align-items: center;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 8px;
+        padding: 0.7rem;
+        margin-bottom: 0.5rem;
+      }
+      .mkt-asset-thumb {
+        width: 100px;
+        height: 100px;
+        background: #fff;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .mkt-asset-thumb img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+      .mkt-dl-btn {
+        background: linear-gradient(135deg,#ec4899,#a855f7);
+        color: #fff;
+        border: none;
+        padding: 0.5rem 0.9rem;
+        border-radius: 6px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .mkt-dl-btn:hover { filter: brightness(1.1); }
+      @media (max-width: 600px) {
+        .mkt-asset-card {
+          grid-template-columns: 80px 1fr;
+        }
+        .mkt-asset-card > .mkt-dl-btn {
+          grid-column: 1 / -1;
+        }
+      }
+    </style>
+
+    <!-- ========================================== -->
     <!-- 📱 QR コード発行 (チラシ・教室掲示・SNS・名刺などからの申込導線) -->
     <!-- ========================================== -->
     <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(34,211,238,0.06); border: 1px solid rgba(34,211,238,0.25); border-radius: 14px;">
@@ -2180,6 +2278,218 @@
 
         copyUrlBtn?.addEventListener('click', () => copyText(resUrl.value, copyUrlBtn, '📋 URL'));
         copyDmBtn?.addEventListener('click', () => copyText(resDm.value, copyDmBtn, '📋 DM テンプレをコピー'));
+      })();
+
+      // 📸 マーケティング素材ダウンロード
+      (function setupMarketingAssets() {
+        const tabsWrap = document.getElementById('mktCampaignTabs');
+        const box = document.getElementById('mktAssetsBox');
+        const errEl = document.getElementById('mktError');
+        if (!tabsWrap || !box) return;
+
+        let currentCampaign = 'threads';
+        let loadReqId = 0;  // race condition 対策: タブを素早く切替えても古い response を破棄
+        // iOS Safari 検出 (DL 挙動が異なる)
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+        function escapeHtml(s) {
+          if (s == null) return '';
+          return String(s).replace(/[&<>"']/g, c => ({
+            '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+          })[c]);
+        }
+
+        function showInlineError(msg, allowRetry) {
+          errEl.innerHTML = '❌ ' + escapeHtml(msg) +
+            (allowRetry ? ' <button id="mktErrRetryBtn" style="margin-left:0.5rem;background:rgba(236,72,153,0.25);color:#fff;border:1px solid rgba(236,72,153,0.5);padding:0.25rem 0.6rem;border-radius:4px;font-size:0.72rem;font-weight:700;cursor:pointer;">🔄 再試行</button>' : '');
+          errEl.style.display = 'block';
+          const retry = document.getElementById('mktErrRetryBtn');
+          if (retry) retry.addEventListener('click', () => loadCampaign(currentCampaign));
+        }
+
+        async function loadCampaign(campaign) {
+          currentCampaign = campaign;
+          const reqId = ++loadReqId;
+          tabsWrap.querySelectorAll('.mkt-tab-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.campaign === campaign);
+          });
+          box.innerHTML = '<div style="color:#71717a;font-size:0.78rem;">読み込み中...</div>';
+          errEl.style.display = 'none';
+
+          try {
+            const res = await window.AdminAuth.fetch(`/api/admin/marketing-assets/${encodeURIComponent(campaign)}/list`);
+            if (reqId !== loadReqId) return;  // 古い response は破棄
+            if (!res.ok) {
+              const txt = await res.text().catch(() => '');
+              throw new Error('HTTP ' + res.status + ': ' + (txt || res.statusText));
+            }
+            const data = await res.json();
+            if (reqId !== loadReqId) return;
+            if (data.campaign && data.campaign !== currentCampaign) return;
+            renderAssets(data);
+          } catch (e) {
+            if (reqId !== loadReqId) return;
+            console.error('[mkt-assets]', e);
+            box.innerHTML = '';
+            const msg = e.message || String(e);
+            showInlineError('読み込み失敗: ' + msg, true);
+          }
+        }
+
+        function renderAssets(data) {
+          if (!data.exists || !data.files || data.files.length === 0) {
+            const labelEmoji = (data.label_info && data.label_info.emoji) || '📁';
+            const camp = escapeHtml(data.campaign || currentCampaign);
+            box.innerHTML = `
+              <div style="text-align:center;padding:1.5rem;color:#71717a;">
+                <div style="font-size:2rem;margin-bottom:0.5rem;">${labelEmoji}</div>
+                <div style="font-size:0.85rem;color:#94a3b8;margin-bottom:0.6rem;">この campaign にはまだ素材が無し</div>
+                <button id="mktSwitchToInstagramBtn" style="background:rgba(236,72,153,0.2);color:#f9a8d4;border:1px solid rgba(236,72,153,0.4);padding:0.5rem 1rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;margin-bottom:0.6rem;">
+                  📷 Instagram タブの素材を流用する
+                </button>
+                <div style="font-size:0.7rem;color:#71717a;margin-top:0.5rem;line-height:1.5;">
+                  ※ ${camp} 専用素材は今後追加予定<br>
+                  運用上は Instagram の素材で代用可能 (両 SNS とも同じ画像で OK)
+                </div>
+              </div>`;
+            const switchBtn = document.getElementById('mktSwitchToInstagramBtn');
+            if (switchBtn) switchBtn.addEventListener('click', () => loadCampaign('instagram'));
+            return;
+          }
+
+          let html = '';
+          // ヘッダ: 件数 + ZIP 一括 DL
+          const totalH = escapeHtml(data.total_human || '');
+          const sendableHint = (data.total_bytes && data.total_bytes < 25 * 1024 * 1024) ? ' (LINE/Mail で送れます)' : '';
+          html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem;padding-bottom:0.6rem;border-bottom:1px solid rgba(236,72,153,0.18);">
+            <div style="font-size:0.8rem;color:#f9a8d4;font-weight:700;">
+              📦 ${data.files.length} ファイル · 合計 ${totalH}<span style="font-weight:400;color:#94a3b8;font-size:0.74rem;">${sendableHint}</span>
+            </div>
+            <button id="mktZipDlBtn" style="background:linear-gradient(135deg,#ec4899,#a855f7);color:#fff;border:none;padding:0.5rem 1rem;border-radius:8px;font-size:0.8rem;font-weight:800;cursor:pointer;">
+              ⬇️ ZIP 一括ダウンロード
+            </button>
+          </div>`;
+
+          // ファイル一覧 (description 優先表示で塾長が判別しやすく)
+          data.files.forEach((f, idx) => {
+            const isImage = ['png','jpg','jpeg','webp'].includes(f.extension);
+            const isSvg = f.extension === 'svg';
+            const thumb = isImage
+              ? `<img src="${escapeHtml(f.public_url)}" alt="${escapeHtml(f.name)}" loading="lazy">`
+              : isSvg
+                ? `<div style="font-size:1.5rem;color:#a78bfa;">🎨</div>` // SVG は img タグで表示せず (XSS 防御)
+                : `<div style="font-size:2rem;color:#71717a;">📄</div>`;
+            const desc = f.description ? escapeHtml(f.description) : escapeHtml(f.name);
+            const subtle = f.description ? escapeHtml(f.name) : '';
+            html += `<div class="mkt-asset-card" data-idx="${idx}">
+              <div class="mkt-asset-thumb">${thumb}</div>
+              <div style="min-width:0;">
+                <div style="font-size:0.86rem;font-weight:800;color:#fff;line-height:1.4;">${desc}</div>
+                ${subtle ? `<div style="font-size:0.7rem;color:#71717a;margin-top:0.15rem;font-family:ui-monospace,monospace;word-break:break-all;">${subtle}</div>` : ''}
+                <div style="font-size:0.7rem;color:#71717a;margin-top:0.15rem;">${escapeHtml(f.size_human)} · ${escapeHtml(f.extension.toUpperCase())}${isIOS && isImage ? ' · <span style="color:#fbbf24;">📱 長押しで保存</span>' : ''}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:0.3rem;">
+                <a class="mkt-dl-btn" href="${escapeHtml(f.public_url)}" download="${escapeHtml(f.name)}" target="_blank" rel="noopener">⬇️ DL</a>
+                ${isImage ? `<button class="mkt-copy-btn" data-url="${escapeHtml(f.public_url)}" data-mime="image/${f.extension === 'jpg' ? 'jpeg' : f.extension}" style="background:rgba(236,72,153,0.15);color:#f9a8d4;border:1px solid rgba(236,72,153,0.4);padding:0.4rem 0.7rem;border-radius:6px;font-size:0.72rem;font-weight:700;cursor:pointer;white-space:nowrap;">📎 コピー</button>` : ''}
+              </div>
+            </div>`;
+          });
+
+          box.innerHTML = html;
+
+          // ZIP 一括 DL ボタン
+          const zipBtn = document.getElementById('mktZipDlBtn');
+          if (zipBtn) zipBtn.addEventListener('click', async () => {
+            const orig = zipBtn.textContent;
+            zipBtn.disabled = true;
+            zipBtn.textContent = '⏳ ZIP 生成中...';
+            try {
+              const res = await window.AdminAuth.fetch(`/api/admin/marketing-assets/${encodeURIComponent(currentCampaign)}/zip`);
+              if (!res.ok) {
+                const txt = await res.text().catch(() => '');
+                throw new Error('HTTP ' + res.status + ': ' + (txt || res.statusText));
+              }
+              const blob = await res.blob();
+              const cd = res.headers.get('Content-Disposition') || '';
+              const fnMatch = cd.match(/filename="([^"]+)"/);
+              const filename = fnMatch ? fnMatch[1] : `ai-juku-${currentCampaign}.zip`;
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = filename;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              setTimeout(() => URL.revokeObjectURL(url), 1500);
+              zipBtn.textContent = '✅ ダウンロード完了';
+              setTimeout(() => { zipBtn.disabled = false; zipBtn.textContent = orig; }, 2000);
+            } catch (e) {
+              console.error('[mkt-zip]', e);
+              showInlineError('ZIP ダウンロード失敗: ' + (e.message || e) + ' (個別 DL に切替可能)', true);
+              zipBtn.disabled = false;
+              zipBtn.textContent = orig;
+            }
+          });
+
+          // 「📎 コピー」ボタン (clipboard image API、SNS コピペ運用に最適化)
+          box.querySelectorAll('.mkt-copy-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+              const url = btn.dataset.url;
+              const mime = btn.dataset.mime || 'image/png';
+              const orig = btn.textContent;
+              btn.disabled = true;
+              btn.textContent = '⏳';
+              try {
+                if (!navigator.clipboard || !window.ClipboardItem) {
+                  throw new Error('お使いのブラウザは画像コピー非対応 (DL を使ってください)');
+                }
+                const r = await fetch(url);
+                if (!r.ok) throw new Error('画像取得失敗: HTTP ' + r.status);
+                let blob = await r.blob();
+                // ClipboardItem は image/png 以外サポート薄いので、PNG 以外は PNG に変換
+                if (mime !== 'image/png') {
+                  blob = await convertToPng(blob);
+                }
+                await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
+                btn.textContent = '✅ コピー済';
+                setTimeout(() => { btn.disabled = false; btn.textContent = orig; }, 1500);
+              } catch (e) {
+                console.error('[mkt-copy]', e);
+                btn.textContent = '❌';
+                setTimeout(() => { btn.disabled = false; btn.textContent = orig; }, 2000);
+                alert('画像コピー失敗: ' + (e.message || e) + '\n\nDL ボタンで保存してください。');
+              }
+            });
+          });
+        }
+
+        // 任意 image blob を PNG blob に変換 (Canvas 経由、ClipboardItem 互換用)
+        function convertToPng(blob) {
+          return new Promise((resolve, reject) => {
+            const img = new Image();
+            const url = URL.createObjectURL(blob);
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.naturalWidth;
+              canvas.height = img.naturalHeight;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              canvas.toBlob(b => {
+                URL.revokeObjectURL(url);
+                if (b) resolve(b); else reject(new Error('canvas.toBlob 失敗'));
+              }, 'image/png');
+            };
+            img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('画像読込失敗')); };
+            img.src = url;
+          });
+        }
+
+        tabsWrap.querySelectorAll('.mkt-tab-btn').forEach(btn => {
+          btn.addEventListener('click', () => loadCampaign(btn.dataset.campaign));
+        });
+
+        // 初回ロード (admin 認証通過後)
+        setTimeout(() => loadCampaign('threads'), 500);
       })();
 
       // 📱 QR コード発行
