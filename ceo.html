@@ -644,6 +644,118 @@
     </section>
 
     <!-- ========================================== -->
+    <!-- 📱 QR コード発行 (チラシ・教室掲示・SNS・名刺などからの申込導線) -->
+    <!-- ========================================== -->
+    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(34,211,238,0.06); border: 1px solid rgba(34,211,238,0.25); border-radius: 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7rem;flex-wrap:wrap;gap:0.5rem;">
+        <h2 style="font-size:1.15rem;color:#22d3ee;margin:0;">📱 QR コード発行 (申込導線)</h2>
+        <span style="font-size:0.7rem;color:#71717a;">チラシ・教室掲示・SNS・名刺 → 申込ページ</span>
+      </div>
+      <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.9rem;line-height:1.6;">
+        媒体を選んで <strong style="color:#22d3ee;">QR 生成</strong> → PNG/SVG ダウンロード → チラシ等に印刷。<br>
+        スキャン後は自動で <code style="background:rgba(255,255,255,0.08);padding:0.05rem 0.3rem;border-radius:3px;">/qr/{slug}</code> 経由で <strong>checkout.html</strong> に redirect (UTM 自動付与)。<br>
+        印刷後でも redirect 先は変更可能 (dynamic QR)。<span style="color:#34d399;">スキャン件数は自動集計</span>。
+      </div>
+
+      <!-- プリセット媒体ボタン -->
+      <div style="margin-bottom:0.7rem;">
+        <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.4rem;font-weight:700;">📌 プリセット媒体 (クリックで slug 自動入力)</div>
+        <div id="qrPresetBtns" style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+          <button data-slug="flyer" class="qr-preset-btn">📄 チラシ</button>
+          <button data-slug="classroom" class="qr-preset-btn">🏫 教室掲示</button>
+          <button data-slug="business-card" class="qr-preset-btn">💳 名刺</button>
+          <button data-slug="poster" class="qr-preset-btn">🖼️ ポスター</button>
+          <button data-slug="threads" class="qr-preset-btn">🧵 Threads <span style="opacity:0.7;">(THREADS6K)</span></button>
+          <button data-slug="instagram" class="qr-preset-btn">📷 Instagram</button>
+          <button data-slug="x" class="qr-preset-btn">🐦 X</button>
+          <button data-slug="line" class="qr-preset-btn">💬 LINE</button>
+          <button data-slug="demo" class="qr-preset-btn">🎓 体験授業</button>
+          <button data-slug="briefing" class="qr-preset-btn">📋 説明会</button>
+          <button data-slug="open-house" class="qr-preset-btn">🚪 オープンハウス</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.6rem;margin-bottom:0.7rem;">
+        <input id="qrSlugInput" type="text" placeholder="slug (英数字+ハイフン) *" maxlength="32" style="background:rgba(0,0,0,0.4);border:1px solid rgba(34,211,238,0.35);color:#fff;padding:0.6rem 0.8rem;border-radius:8px;font-size:0.88rem;font-family:ui-monospace,monospace;">
+        <button id="qrGenBtn" style="background:linear-gradient(135deg,#22d3ee,#0ea5e9);color:#fff;border:none;padding:0.6rem 0.8rem;border-radius:8px;font-size:0.88rem;font-weight:800;cursor:pointer;">📱 QR 生成</button>
+      </div>
+
+      <div id="qrResult" style="display:none;background:rgba(0,0,0,0.35);border:1px solid rgba(34,211,238,0.3);border-radius:10px;padding:1rem;">
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:1rem;align-items:start;">
+          <!-- QR プレビュー -->
+          <div style="background:#fff;padding:0.6rem;border-radius:8px;display:flex;align-items:center;justify-content:center;min-width:200px;min-height:200px;">
+            <img id="qrPreviewImg" alt="QR preview" style="max-width:200px;max-height:200px;display:block;">
+          </div>
+          <!-- メタ情報 -->
+          <div style="font-size:0.8rem;color:#e4e4e7;line-height:1.6;">
+            <div style="font-size:0.78rem;color:#22d3ee;font-weight:800;margin-bottom:0.4rem;">✅ <span id="qrResultSlug">--</span> 用 QR を発行しました</div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.2rem;">🔗 QR が指す URL (印刷用)</div>
+            <div style="display:flex;gap:0.4rem;margin-bottom:0.5rem;">
+              <input id="qrResultUrl" readonly style="flex:1;background:#0f172a;color:#fbbf24;border:1px solid rgba(251,191,36,0.3);padding:0.4rem 0.6rem;border-radius:6px;font-size:0.74rem;font-family:ui-monospace,monospace;">
+              <button id="qrCopyUrlBtn" style="background:rgba(251,191,36,0.2);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);padding:0.4rem 0.7rem;border-radius:6px;font-size:0.74rem;font-weight:700;cursor:pointer;white-space:nowrap;">📋</button>
+            </div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.2rem;">🎯 最終遷移先 (UTM 込み)</div>
+            <div style="background:#0f172a;color:#a5b4fc;border:1px solid rgba(99,102,241,0.3);padding:0.4rem 0.6rem;border-radius:6px;font-size:0.7rem;font-family:ui-monospace,monospace;word-break:break-all;margin-bottom:0.6rem;" id="qrResultDest">--</div>
+            <div style="font-size:0.72rem;color:#94a3b8;display:flex;flex-wrap:wrap;gap:0.6rem;margin-bottom:0.7rem;">
+              <span>媒体: <strong id="qrResultCategory" style="color:#22d3ee;">--</strong></span>
+              <span>キャンペーン: <strong id="qrResultCampaign" style="color:#22d3ee;">--</strong></span>
+              <span id="qrResultCouponWrap" style="display:none;">クーポン: <strong id="qrResultCoupon" style="color:#fbbf24;">--</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ダウンロードボタン -->
+        <div style="display:flex;gap:0.5rem;margin-top:0.7rem;flex-wrap:wrap;">
+          <button id="qrDownloadPngBtn" style="flex:1;min-width:140px;background:linear-gradient(135deg,#22d3ee,#0ea5e9);color:#fff;border:none;padding:0.6rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">⬇️ PNG (SNS・プレビュー用)</button>
+          <button id="qrDownloadSvgBtn" style="flex:1;min-width:140px;background:linear-gradient(135deg,#a78bfa,#8b5cf6);color:#fff;border:none;padding:0.6rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">⬇️ SVG (チラシ・名刺印刷用)</button>
+          <button id="qrTestRedirectBtn" style="background:rgba(34,211,238,0.15);color:#22d3ee;border:1px solid rgba(34,211,238,0.4);padding:0.6rem 0.8rem;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;">🧪 redirect テスト</button>
+        </div>
+        <div style="margin-top:0.5rem;font-size:0.7rem;color:#94a3b8;line-height:1.5;">
+          💡 <strong>右クリック → 画像をコピー</strong>でそのまま Threads/Instagram に貼れます。<br>
+          🖨️ チラシや名刺の印刷会社入稿は <strong>SVG</strong> 推奨 (拡大しても劣化しない)。
+        </div>
+      </div>
+      <div id="qrError" style="display:none;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.4);border-radius:10px;padding:0.7rem;color:#fca5a5;font-size:0.82rem;margin-top:0.5rem;"></div>
+
+      <!-- スキャン統計 -->
+      <div style="margin-top:1rem;padding-top:0.8rem;border-top:1px solid rgba(34,211,238,0.18);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">
+          <div style="font-size:0.78rem;color:#22d3ee;font-weight:800;">📊 直近 30 日のスキャン件数</div>
+          <button id="qrStatsRefreshBtn" style="background:rgba(34,211,238,0.15);color:#22d3ee;border:1px solid rgba(34,211,238,0.4);padding:0.3rem 0.7rem;border-radius:6px;font-size:0.7rem;font-weight:700;cursor:pointer;">🔄 更新</button>
+        </div>
+        <div id="qrScanStats" style="font-size:0.78rem;color:#94a3b8;">読み込み中...</div>
+      </div>
+    </section>
+    <style>
+      .qr-preset-btn {
+        background: rgba(34,211,238,0.1);
+        color: #67e8f9;
+        border: 1px solid rgba(34,211,238,0.3);
+        padding: 0.4rem 0.7rem;
+        border-radius: 6px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .qr-preset-btn:hover {
+        background: rgba(34,211,238,0.2);
+        border-color: rgba(34,211,238,0.55);
+        transform: translateY(-1px);
+      }
+      .qr-preset-btn.active {
+        background: rgba(34,211,238,0.32);
+        border-color: #22d3ee;
+        color: #fff;
+      }
+      @media (max-width: 600px) {
+        #qrResult > div[style*="grid-template-columns"] {
+          grid-template-columns: 1fr !important;
+        }
+      }
+    </style>
+
+    <!-- ========================================== -->
     <!-- 🔗 magic link 指定アドレス送信 (親の携帯で登録 → 子供のアドレスに送り直す等) -->
     <!-- ========================================== -->
     <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.25); border-radius: 14px;">
@@ -2068,6 +2180,196 @@
 
         copyUrlBtn?.addEventListener('click', () => copyText(resUrl.value, copyUrlBtn, '📋 URL'));
         copyDmBtn?.addEventListener('click', () => copyText(resDm.value, copyDmBtn, '📋 DM テンプレをコピー'));
+      })();
+
+      // 📱 QR コード発行
+      (function setupQrGenerator() {
+        const slugInput = document.getElementById('qrSlugInput');
+        const genBtn = document.getElementById('qrGenBtn');
+        const result = document.getElementById('qrResult');
+        const errEl = document.getElementById('qrError');
+        const previewImg = document.getElementById('qrPreviewImg');
+        const resultSlug = document.getElementById('qrResultSlug');
+        const resultUrl = document.getElementById('qrResultUrl');
+        const resultDest = document.getElementById('qrResultDest');
+        const resultCategory = document.getElementById('qrResultCategory');
+        const resultCampaign = document.getElementById('qrResultCampaign');
+        const resultCouponWrap = document.getElementById('qrResultCouponWrap');
+        const resultCoupon = document.getElementById('qrResultCoupon');
+        const copyUrlBtn = document.getElementById('qrCopyUrlBtn');
+        const dlPngBtn = document.getElementById('qrDownloadPngBtn');
+        const dlSvgBtn = document.getElementById('qrDownloadSvgBtn');
+        const testRedirectBtn = document.getElementById('qrTestRedirectBtn');
+        const presetWrap = document.getElementById('qrPresetBtns');
+        const statsBox = document.getElementById('qrScanStats');
+        const statsRefreshBtn = document.getElementById('qrStatsRefreshBtn');
+
+        if (!genBtn || !slugInput) return;
+
+        let currentSvg = '';
+        let currentPngB64 = '';
+        let currentSlug = '';
+
+        // プリセットボタン → slug 自動入力
+        presetWrap?.querySelectorAll('.qr-preset-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const slug = btn.dataset.slug;
+            slugInput.value = slug;
+            presetWrap.querySelectorAll('.qr-preset-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            slugInput.focus();
+          });
+        });
+
+        // slug input を手動編集したら preset active を解除 (印刷事故防止)
+        slugInput.addEventListener('input', () => {
+          const v = (slugInput.value || '').trim().toLowerCase();
+          presetWrap?.querySelectorAll('.qr-preset-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.slug === v);
+          });
+        });
+
+        // slug 入力検証 (英数字+ハイフン+アンダースコア、最大32字)
+        function isValidSlug(s) {
+          return /^[a-z0-9_-]{1,32}$/i.test(s);
+        }
+
+        genBtn.addEventListener('click', async () => {
+          errEl.style.display = 'none';
+          result.style.display = 'none';
+          const slug = (slugInput.value || '').trim().toLowerCase();
+          if (!slug || !isValidSlug(slug)) {
+            errEl.textContent = '⚠️ slug は英数字+ハイフン+アンダースコアで1〜32文字';
+            errEl.style.display = 'block';
+            return;
+          }
+          genBtn.disabled = true;
+          const origLabel = genBtn.textContent;
+          genBtn.textContent = '⏳ 生成中...';
+          try {
+            const res = await window.AdminAuth.fetch('/api/admin/qr/generate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ slug, base_url: 'https://trillion-ai-juku.com' }),
+            });
+            if (!res.ok) {
+              const txt = await res.text().catch(() => '');
+              throw new Error('HTTP ' + res.status + ': ' + (txt || res.statusText));
+            }
+            const data = await res.json();
+            currentSvg = data.svg || '';
+            currentPngB64 = data.png_base64 || '';
+            currentSlug = data.slug || slug;
+
+            // プレビュー画像: PNG があれば PNG、無ければ SVG (base64 化)
+            if (currentPngB64) {
+              previewImg.src = 'data:image/png;base64,' + currentPngB64;
+            } else if (currentSvg) {
+              previewImg.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(currentSvg)));
+            }
+
+            resultSlug.textContent = data.slug;
+            resultUrl.value = data.qr_url || '';
+            resultDest.textContent = data.destination || '';
+            resultCategory.textContent = data.category || 'custom';
+            resultCampaign.textContent = data.campaign || data.slug;
+            if (data.coupon) {
+              resultCoupon.textContent = data.coupon;
+              resultCouponWrap.style.display = 'inline';
+            } else {
+              resultCouponWrap.style.display = 'none';
+            }
+            result.style.display = 'block';
+
+            // QR URL を自動でクリップボードへ
+            try { await navigator.clipboard.writeText(data.qr_url || ''); } catch(_) {}
+
+            // 統計再読み込み
+            loadStats();
+          } catch (e) {
+            console.error('[qr-gen]', e);
+            const msg = e.message || String(e);
+            let nextStep = '';
+            if (msg.includes('401')) nextStep = '<br>→ ログインし直してから再試行';
+            else if (msg.includes('500') && msg.includes('qrcode')) nextStep = '<br>→ サーバ側 redeploy 待ち (requirements 反映に1〜2分)';
+            else nextStep = '<br>→ 数秒待って再試行 / 続くなら「メール診断」ボタンで API 状態を確認';
+            errEl.innerHTML = '❌ 生成失敗: ' + msg + nextStep;
+            errEl.style.display = 'block';
+          } finally {
+            genBtn.disabled = false;
+            genBtn.textContent = origLabel;
+          }
+        });
+
+        // QR URL コピー
+        copyUrlBtn?.addEventListener('click', () => copyText(resultUrl.value, copyUrlBtn, '📋'));
+
+        // PNG ダウンロード
+        dlPngBtn?.addEventListener('click', () => {
+          if (!currentPngB64) {
+            alert('PNG が利用できません (SVG のみ)');
+            return;
+          }
+          const a = document.createElement('a');
+          a.href = 'data:image/png;base64,' + currentPngB64;
+          a.download = `qr-${currentSlug}.png`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        });
+
+        // SVG ダウンロード (印刷品質)
+        dlSvgBtn?.addEventListener('click', () => {
+          if (!currentSvg) {
+            alert('SVG が利用できません');
+            return;
+          }
+          const blob = new Blob([currentSvg], { type: 'image/svg+xml' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `qr-${currentSlug}.svg`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+        });
+
+        // redirect テスト (新タブで /qr/{slug} を開く)
+        testRedirectBtn?.addEventListener('click', () => {
+          if (!resultUrl.value) return;
+          window.open(resultUrl.value, '_blank', 'noopener');
+        });
+
+        // スキャン統計読み込み
+        async function loadStats() {
+          if (!statsBox) return;
+          statsBox.innerHTML = '<span style="color:#71717a;">読み込み中...</span>';
+          try {
+            const res = await window.AdminAuth.fetch('/api/admin/qr/scan-stats?days=30');
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+            if (!data.by_slug || data.by_slug.length === 0) {
+              statsBox.innerHTML = '<span style="color:#71717a;">まだスキャン記録はありません (印刷後にスキャンされると集計されます)</span>';
+              return;
+            }
+            let html = `<div style="margin-bottom:0.4rem;color:#34d399;">合計 <strong>${data.total_scans}</strong> 件 / ${data.unique_slugs} slug</div>`;
+            html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.4rem;">';
+            data.by_slug.forEach(s => {
+              html += `<div style="background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.2);padding:0.4rem 0.6rem;border-radius:6px;font-size:0.74rem;">
+                <div style="color:#22d3ee;font-weight:800;font-family:ui-monospace,monospace;">${s.slug}</div>
+                <div style="color:#94a3b8;font-size:0.7rem;">${s.category} · <strong style="color:#fff;">${s.scans}</strong> 件</div>
+              </div>`;
+            });
+            html += '</div>';
+            statsBox.innerHTML = html;
+          } catch (e) {
+            statsBox.innerHTML = `<span style="color:#fca5a5;">読み込み失敗: ${e.message || e}</span>`;
+          }
+        }
+        statsRefreshBtn?.addEventListener('click', loadStats);
+        // 初回ロード (admin 認証通過後)
+        setTimeout(loadStats, 500);
       })();
 
       // 🩺 「メール診断」ボタン

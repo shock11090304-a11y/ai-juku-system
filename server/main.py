@@ -11,10 +11,10 @@ FastAPI + SQLite + Stripe + LINE Messaging API
     uvicorn main:app --reload --port 8000
 """
 
-from fastapi import FastAPI, Request, HTTPException, Depends, Header
+from fastapi import FastAPI, Request, HTTPException, Depends, Header, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, RedirectResponse
 from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional, List
 from datetime import datetime, timezone, timedelta, time as dt_time
@@ -28,6 +28,7 @@ import time
 import urllib.request
 import urllib.error
 import base64
+import io
 import pathlib
 import logging
 
@@ -10418,6 +10419,303 @@ def admin_list_js_errors(authorization: Optional[str] = Header(None), limit: int
         "recent_5min": recent_5min,
         "errors": result,
     }
+
+# ==========================================================================
+# 📱 QR コード機能 (チラシ・教室掲示・SNS・名刺などからの申込導線)
+# 仕組み: /qr/{slug} → checkout.html (UTM 自動付与) で集客元の効果測定可能。
+# slug は印刷後も動的に redirect 先を変えられる (dynamic QR)。
+# ==========================================================================
+
+# 媒体カテゴリ (UTM medium に使用)。未登録 slug は "custom" 扱い。
+QR_SLUG_CATEGORIES = {
+    # 印刷物
+    "flyer": "print",
+    "classroom": "print",
+    "business-card": "print",
+    "brochure": "print",
+    "poster": "print",
+    "handout": "print",
+    "leaflet": "print",
+    # SNS
+    "threads": "sns",
+    "instagram": "sns",
+    "x": "sns",
+    "youtube": "sns",
+    "line": "sns",
+    "facebook": "sns",
+    # イベント/対面
+    "demo": "event",
+    "briefing": "event",
+    "exam-day": "event",
+    "open-house": "event",
+    "trial": "event",
+}
+
+# 各 slug の優先 coupon (未指定なら none)。Threads6K キャンペーン連動。
+QR_SLUG_DEFAULT_COUPON = {
+    "threads": "THREADS6K",
+}
+
+# 安全な slug 検証 (英数字 + ハイフン + アンダースコア、最大 32 字)
+_QR_SLUG_MAX_LEN = 32
+
+_QR_SLUG_ALLOWED = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_")
+_QR_ALLOWED_HOSTS = {"trillion-ai-juku.com", "www.trillion-ai-juku.com"}
+_QR_DEFAULT_BASE = "https://trillion-ai-juku.com"
+
+# bot / crawler の User-Agent (SNS preview crawler 等)。スキャン件数水増し防止用
+_QR_BOT_UA_PATTERNS = (
+    "bot", "crawler", "spider", "preview",
+    "facebookexternalhit", "slackbot", "discordbot",
+    "twitterbot", "linkedinbot", "whatsapp", "telegram",
+)
+
+def _is_safe_qr_slug(slug: str) -> bool:
+    """ASCII 英数字 + ハイフン + アンダースコアのみ許可。Unicode (日本語等) は弾く。"""
+    if not slug or len(slug) > _QR_SLUG_MAX_LEN:
+        return False
+    return all(c in _QR_SLUG_ALLOWED for c in slug)
+
+def _validate_qr_base_url(base_url: str) -> str:
+    """base_url が allowlist host + https か検証。違反時は default に強制。
+    Open Redirect 対策: admin token を奪っても外部ドメインに redirect する QR は作れない。
+    """
+    if not base_url:
+        return _QR_DEFAULT_BASE
+    try:
+        from urllib.parse import urlparse
+        p = urlparse(base_url)
+    except Exception:
+        return _QR_DEFAULT_BASE
+    if p.scheme != "https" or (p.hostname or "").lower() not in _QR_ALLOWED_HOSTS:
+        return _QR_DEFAULT_BASE
+    return base_url.rstrip("/")
+
+def _qr_build_query_string(slug_l: str) -> str:
+    """slug から UTM クエリ文字列を組み立てる (path は呼び出し側で固定)。"""
+    category = QR_SLUG_CATEGORIES.get(slug_l, "custom")
+    coupon = QR_SLUG_DEFAULT_COUPON.get(slug_l)
+    qs = f"utm_source=qr&utm_medium={category}&utm_campaign={slug_l}"
+    if coupon:
+        qs += f"&coupon={coupon}"
+    return qs
+
+def _qr_resolve_destination(slug: str, base_url: str = _QR_DEFAULT_BASE) -> dict:
+    """slug から redirect 先 URL + UTM パラメータを組み立てる。
+    base_url は allowlist 検証通過必須 (Open Redirect 防止)。
+    """
+    slug_l = (slug or "").strip().lower()
+    category = QR_SLUG_CATEGORIES.get(slug_l, "custom")
+    coupon = QR_SLUG_DEFAULT_COUPON.get(slug_l)
+    base_url = _validate_qr_base_url(base_url)
+    qs = _qr_build_query_string(slug_l)
+    return {
+        "url": f"{base_url}/checkout.html?{qs}",
+        "category": category,
+        "campaign": slug_l,
+        "coupon": coupon,
+    }
+
+
+@app.get("/qr/{slug}")
+def qr_redirect(slug: str, request: Request):
+    """🔁 QR コード redirect: 短縮 slug → checkout.html (UTM 自動付与)。
+    印刷した QR の遷移先を後から変更できる仕組み。スキャン件数を events に記録。
+    Critical 対策: rate limit (per IP) + bot 除外 + 同一オリジン redirect 強制。
+    """
+    if not _is_safe_qr_slug(slug):
+        # 不正な slug は LP に逃がす (印刷ミスや改ざん耐性)
+        return RedirectResponse(url="/lp.html", status_code=302)
+
+    slug_l = slug.lower()
+    qs = _qr_build_query_string(slug_l)
+    redirect_path = f"/checkout.html?{qs}"
+
+    # bot / SNS preview crawler は redirect だけして DB 書込みを skip (件数水増し防止)
+    ua = request.headers.get("user-agent", "")[:300]
+    ua_l = ua.lower()
+    is_bot = any(p in ua_l for p in _QR_BOT_UA_PATTERNS)
+    if is_bot:
+        return RedirectResponse(url=redirect_path, status_code=302)
+
+    # rate limit: 同一 IP から 1 分 30 回までは記録、それ以上は redirect だけ通す
+    rate_ok = True
+    try:
+        _check_rate_limit_ip(request, bucket="qr_scan", limit=30, window=60)
+    except HTTPException:
+        rate_ok = False
+
+    if rate_ok:
+        # スキャン件数を events テーブルに記録 (CEO ダッシュ analytics で集計可)
+        try:
+            ref = request.headers.get("referer", "")[:300]
+            # referer は host 部分のみ保存 (個人情報含む可能性のある query を捨てる)
+            ref_host = ""
+            if ref:
+                try:
+                    from urllib.parse import urlparse
+                    ref_host = (urlparse(ref).hostname or "")[:120]
+                except Exception:
+                    ref_host = ""
+            conn = db()
+            c = conn.cursor()
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                (
+                    "qr_scan",
+                    json.dumps({
+                        "slug": slug_l,
+                        "category": QR_SLUG_CATEGORIES.get(slug_l, "custom"),
+                        "user_agent": ua,
+                        "referer_host": ref_host,
+                    }),
+                    f"qr_{slug_l}_{int(time.time())}",
+                ),
+            )
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            log.warning(f"[qr_scan] event log failed: {e}")
+
+    return RedirectResponse(url=redirect_path, status_code=302)
+
+
+@app.post("/api/admin/qr/generate")
+def admin_qr_generate(
+    payload: dict = Body(default={}),
+    authorization: Optional[str] = Header(None),
+):
+    """📱 QR コード生成 (印刷用 SVG + 表示用 PNG base64)。admin Bearer 認証必須。
+    payload: {slug: str, base_url?: str (allowlist 内 https のみ)}
+    返り値: {ok, slug, qr_url, destination, svg, png_base64, category, coupon}
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="未認証")
+
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="payload は object 形式")
+    slug_raw = payload.get("slug")
+    if not isinstance(slug_raw, str):
+        raise HTTPException(status_code=400, detail="slug は文字列必須")
+    slug = slug_raw.strip().lower()
+    base_url_raw = payload.get("base_url") or _QR_DEFAULT_BASE
+    if not isinstance(base_url_raw, str):
+        raise HTTPException(status_code=400, detail="base_url は文字列")
+    # Open Redirect 対策: allowlist 検証 (違反は default に強制 fallback)
+    base_url = _validate_qr_base_url(base_url_raw)
+
+    if not _is_safe_qr_slug(slug):
+        raise HTTPException(status_code=400, detail="slug は英数字+ハイフン (最大32字)")
+
+    qr_url = f"{base_url}/qr/{slug}"
+    dest = _qr_resolve_destination(slug, base_url)
+
+    try:
+        import qrcode
+        from qrcode.image.svg import SvgPathImage
+    except ImportError:
+        raise HTTPException(status_code=500, detail="qrcode lib 未インストール (requirements.txt 反映後 redeploy 必要)")
+
+    # SVG (印刷品質・無限スケール)
+    svg_qr = qrcode.QRCode(
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=12,
+        border=4,
+        image_factory=SvgPathImage,
+    )
+    svg_qr.add_data(qr_url)
+    svg_qr.make(fit=True)
+    svg_img = svg_qr.make_image()
+    svg_buf = io.BytesIO()
+    svg_img.save(svg_buf)
+    try:
+        svg_str = svg_buf.getvalue().decode("utf-8")
+    except UnicodeDecodeError:
+        svg_str = svg_buf.getvalue().decode("utf-8", errors="replace")
+
+    # PNG (画面プレビュー用、PIL があれば、無ければ SVG のみ)
+    png_b64 = ""
+    try:
+        png_qr = qrcode.QRCode(
+            error_correction=qrcode.constants.ERROR_CORRECT_H,
+            box_size=10,
+            border=4,
+        )
+        png_qr.add_data(qr_url)
+        png_qr.make(fit=True)
+        png_img = png_qr.make_image(fill_color="black", back_color="white")
+        png_buf = io.BytesIO()
+        png_img.save(png_buf, format="PNG")
+        png_b64 = base64.b64encode(png_buf.getvalue()).decode()
+    except Exception as e:
+        log.warning(f"[qr_generate] PNG render skipped (PIL 未導入か lib 未対応): {e}")
+
+    return {
+        "ok": True,
+        "slug": slug,
+        "qr_url": qr_url,
+        "destination": dest["url"],
+        "category": dest["category"],
+        "campaign": dest["campaign"],
+        "coupon": dest["coupon"],
+        "svg": svg_str,
+        "png_base64": png_b64,
+        "preset_category": QR_SLUG_CATEGORIES.get(slug),
+    }
+
+
+@app.get("/api/admin/qr/scan-stats")
+def admin_qr_scan_stats(
+    authorization: Optional[str] = Header(None),
+    days: int = 30,
+):
+    """📊 QR スキャン件数を slug 別に集計 (直近 N 日)。admin Bearer 認証必須。
+    DoS 対策: SELECT に LIMIT 100000 を入れて巨大テーブルでも OOM しない。
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="未認証")
+
+    days = max(1, min(days, 365))
+    conn = db()
+    c = conn.cursor()
+    try:
+        ts_clause = (
+            f"created_at > NOW() - INTERVAL '{days} days'" if USE_POSTGRES
+            else f"created_at > datetime('now', '-{days} days')"
+        )
+        c.execute(f"SELECT props, created_at FROM events WHERE name='qr_scan' AND {ts_clause} ORDER BY created_at DESC LIMIT 100000")
+        rows = c.fetchall()
+    finally:
+        conn.close()
+
+    by_slug = {}
+    total = 0
+    for row in rows:
+        try:
+            p = json.loads(row["props"]) if hasattr(row, "keys") else json.loads(row[0])
+        except Exception:
+            p = {}
+        s = (p.get("slug") or "unknown").lower()
+        if s not in by_slug:
+            by_slug[s] = {"slug": s, "category": p.get("category", "custom"), "scans": 0}
+        by_slug[s]["scans"] += 1
+        total += 1
+
+    sorted_slugs = sorted(by_slug.values(), key=lambda x: -x["scans"])
+    return {
+        "ok": True,
+        "days": days,
+        "total_scans": total,
+        "unique_slugs": len(sorted_slugs),
+        "by_slug": sorted_slugs,
+    }
+
 
 # ==========================================================================
 # Static file serving (frontend)
