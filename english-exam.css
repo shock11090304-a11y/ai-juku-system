@@ -1125,6 +1125,17 @@ body {
 .katex { font-size: 1em !important; color: inherit; }
 .katex-display { margin: 0.7rem 0 !important; }
 
+/* 🛟 auto-extracted choices ヒント (下線部番号選択問題) */
+.ee-choices-hint {
+  font-size: 0.85rem;
+  color: var(--accent, #ffb84d);
+  background: rgba(255, 184, 77, 0.1);
+  border-left: 3px solid var(--accent, #ffb84d);
+  padding: 0.4rem 0.7rem;
+  margin: 0.5rem 0;
+  border-radius: 6px;
+}
+
 /* ========== 🎯 ボタン式 4択 (Phase 8) ========== */
 .ee-choices-btn {
   display: grid;

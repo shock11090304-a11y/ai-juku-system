@@ -1209,9 +1209,39 @@ function escapeTextWithMath(s) {
     .replace(/\n/g, '<br>');
 }
 
+// 🛟 緊急救済: AI が multiple_choice なのに choices: [] を返した場合、
+// stem 内の ①②③④⑤⑥⑦⑧ を検出して自動的に選択肢へ昇格させる
+// (下線部誤り選択問題で AI が「番号は問題文に既にある」と判断して空配列を返すケース)
+function _autoExtractChoicesFromStem(q) {
+  if (!q || q.type !== 'multiple_choice') return q;
+  if (Array.isArray(q.choices) && q.choices.length > 0) return q;
+  const text = (q.stem || '') + ' ' + (q.passage || '');
+  const pattern = /[①②③④⑤⑥⑦⑧]/g;
+  const found = text.match(pattern) || [];
+  // 出現順を保つかつ重複排除
+  const seen = new Set();
+  const matches = [];
+  for (const m of found) {
+    if (!seen.has(m)) {
+      seen.add(m);
+      matches.push(m);
+    }
+  }
+  if (matches.length >= 2) {
+    q.choices = matches;
+    q._auto_extracted_choices = true;  // デバッグ用フラグ + UI ヒント表示用
+    try { console.warn('[exam] choices auto-extracted from stem ①②...:', q.id, matches); } catch (e) {}
+  }
+  return q;
+}
+
 function renderQuestions() {
   const box = document.getElementById('questionBox');
   const instant = getUserInstantPref();
+  // 🛟 各 question を auto-extract で前処理 (choices=[] の致命的 UI 詰まり救済)
+  if (Array.isArray(state.questions)) {
+    state.questions.forEach(_autoExtractChoicesFromStem);
+  }
   let html = '';
   // ⚠️ AI 接続失敗・問題不足時の明示警告 (偽プレースホルダ廃止に伴う)
   if (state.warning) {
@@ -1239,6 +1269,10 @@ function renderQuestions() {
       <div class="ee-question-num">Q${idx + 1}</div>
       <div class="ee-question-stem">${escapeTextWithMath(q.stem || '')}</div>`;
     if (q.type === 'multiple_choice' && Array.isArray(q.choices) && q.choices.length) {
+      // 🛟 auto-extract された下線部番号選択肢の場合はヒント表示
+      if (q._auto_extracted_choices) {
+        html += `<div class="ee-choices-hint">💡 下線部の該当番号を選択してください</div>`;
+      }
       // 🎯 ボタン式 4択 (radio は隠して label をボタンに)
       html += `<div class="ee-choices ee-choices-btn" role="radiogroup" aria-label="Q${idx + 1} の選択肢">`;
       q.choices.forEach((c, ci) => {

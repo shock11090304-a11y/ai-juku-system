@@ -4500,12 +4500,20 @@ explanation フィールドは Markdown で **以下4セクションを必ず明
       "id": "q1",
       "type": "multiple_choice|short_answer|essay|speaking",
       "stem": "問題文 (英文 or 日本語の和訳指示)",
-      "choices": ["選択肢があれば配列、無ければ空配列"],
+      "choices": ["選択肢配列 — multiple_choice の場合は必ず非空 (最低2要素)"],
       "answer": "正解 (選択肢index 0始まり、または模範解答テキスト全文)",
       "explanation": "解説 Markdown (## 🎯 コアイメージ → ## 🔬 文構造分析 → ## 📍 本文の根拠 → ## ❌ 誤答 NG 理由 の4セクション必須)"
     }}
   ]
-}}"""
+}}
+
+【🛟 choices 配列の絶対遵守ルール (致命傷防止)】
+- type が "multiple_choice" の場合、choices 配列は **必ず非空** (最低 2 要素・通常 4 要素) で返すこと。
+  - 通常の選択肢問題: ["選択肢A", "選択肢B", "選択肢C", "選択肢D"]
+  - 下線部誤り選択 (①②③④ を本文中にインライン挿入する形式) の場合: ["①", "②", "③", "④"]
+  - 空欄補充: ["where", "that", "which", "when"] のように単語/句で
+- **choices: [] (空配列) を返すのは絶対禁止**。テキスト記述式の問題なら type を "short_answer" にすること。
+- 「下線部の番号は問題文中にあるから choices は要らない」は誤り。フロントは choices を見てボタン描画する。"""
 
     # ===== 🔬 理系科目: 数学/物理/化学/生物/地学 (図/数式必須) =====
     elif exam_id == "rikei":
@@ -4631,7 +4639,15 @@ explanation フィールドは Markdown で **以下4セクションを必ず明
       "explanation": "解説 (日本語、3行以上)"
     }}
   ]
-}}"""
+}}
+
+【🛟 choices 配列の絶対遵守ルール (致命傷防止)】
+- type が "multiple_choice" の場合、choices 配列は **必ず非空** (最低 2 要素・通常 4 要素) で返すこと。
+  - 通常の選択肢問題: ["選択肢A", "選択肢B", "選択肢C", "選択肢D"]
+  - 下線部誤り選択 (①②③④ を本文中にインライン挿入する形式) の場合: ["①", "②", "③", "④"]
+  - 空欄補充: ["where", "that", "which", "when"] のように単語/句で
+- **choices: [] (空配列) を返すのは絶対禁止**。テキスト記述式の問題なら type を "short_answer" にすること。
+- 「下線部の番号は問題文中にあるから choices は要らない」は誤り。フロントは choices を見てボタン描画する。"""
 
     try:
         # AI never-fail: _call_anthropic_safe 経由で Tier 4 (Gemini) まで自動 fallback
