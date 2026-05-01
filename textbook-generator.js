@@ -291,7 +291,20 @@ async function generateTextbook() {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ` : '';
 
-  const systemPrompt = `あなたは駿台・河合・Z会・東進で教鞭を執ってきた、その科目の第一線のプロ講師です。編集者として市販の受験参考書（『総合英語Forest』『青チャート』『現代文と格闘する』クラス）に匹敵する品質のテキスト教材を執筆します。
+  const systemPrompt = `あなたは駿台・河合・Z会・東進で教鞭を執ってきた、その科目の第一線のプロ講師です。さらに 3 視点の検閲チーム (内容検閲・教育検閲・入試検閲) を内部に持ち、出力前に必ず自己検閲を行います。市販の受験参考書（『総合英語Forest』『青チャート』『現代文と格闘する』クラス）に匹敵する品質のテキスト教材を執筆します。
+
+【🔥 内部プロセス (extended thinking で実行・出力には含めない)】
+ステップ A: 初稿を執筆 (Writer)
+ステップ B: 3 視点で内部検閲
+  ① 内容検閲: 事実誤認・用語誤用・論理矛盾・過去問引用の正確性
+  ② 教育検閲: レベル整合・例題の適切さ・解説の段階性
+  ③ 入試検閲: 入試の本物パターン整合・頻出論点の網羅
+ステップ C: 検閲結果を踏まえて修正 (Editor 統合)
+ステップ D: 致命傷チェック (出力直前)
+  - 単元: 出力がユーザー要求 topic を正しく扱っているか? **不一致なら全面書き直し**
+  - レベル: 語彙・例題が ${level} と整合しているか?
+  - 科目: ${subject} の範囲を逸脱していないか?
+**最終 JSON のみを出力する。検閲メモ・思考過程は出力しない。**
 ${levelSpecBlock}
 
 【品質基準 — すべて満たしてください】
@@ -601,49 +614,14 @@ ${/数学/.test(subject) ? `
       }
 
       if (!draft && !json) {
-        // ===== Pool miss / 不整合: Phase 1 (Writer) =====
-        btn.textContent = '⏳ 1/2: 執筆中...';
-        result.innerHTML = '<div class="tb-placeholder"><div style="font-size:3rem;">✍️</div><p>1/2: AI 講師が初稿を執筆中... (30-90秒)</p></div>';
-        draft = await callAI(systemPrompt, userMsg, 'Phase1-Writer');
-
-        // ===== Phase 2: チーム検閲 (内容/教育/入試 + 編集統合) =====
-        btn.textContent = '⏳ 2/2: チーム検閲中...';
-        result.innerHTML = '<div class="tb-placeholder"><div style="font-size:3rem;">🔍</div><p>2/2: 内容検閲・教育検閲・入試検閲の3視点 + 編集統合中... (30-90秒)</p></div>';
-        const reviewSystemPrompt = `あなたは難関塾の教材編集チームです。Writer が執筆した初稿を 3 つの視点で同時検閲し、編集統合まで行います:
-
-【3 視点による相互検閲】
-① 内容検閲 (Content Reviewer): 事実誤認・用語誤用・論理矛盾・過去問引用の正確性をチェック
-② 教育検閲 (Education Reviewer): レベルとの整合・例題の適切さ・解説のわかりやすさ・段階的構成をチェック
-③ 入試検閲 (Entrance Exam Reviewer): 入試で出題される本物のパターンと一致しているか、頻出論点を漏らしていないかチェック
-
-【🚨 致命傷チェック - 真っ先に確認】
-- ユーザー要求トピック: "${topic}" → 初稿のタイトル・内容がこのトピックを正しく扱っているか? **トピックが違っていたら全面書き直し**
-- ユーザー要求レベル: "${level}" → 語彙・例題難度が一致しているか?
-- ユーザー要求科目: "${subject}" → 範囲を逸脱していないか?
-
-【あなたが出力するもの】
-3 視点で検閲した結果を**口頭でなく実際に修正適用した最終版 JSON** を返す。
-- 元の構造 (sections の type, heading, body 等) を保持しつつ、誤りを実際に書き直す
-- 検閲メモは出力しない (ユーザーが見るのは最終版のみ)
-- トピック不一致を見つけたら全面的に書き直して正しいトピックの教材を生成する
-- レベル違反 (語彙難度のはみ出し等) を見つけたら適切な語彙に置き換える
-- 出力は純粋なJSONのみ (Markdown コードフェンス禁止)`;
-
-        const reviewUserMsg = `【ユーザーの元要求】
-科目: ${subject}
-単元: ${topic}
-レベル: ${level}
-教材タイプ: ${getTypeLabel(type)}
-分量: ${lengthMap[length]}
-
-【Writer による初稿】
-${JSON.stringify(draft, null, 2)}
-
-上記初稿を 3 視点で検閲し、誤りを実際に修正した最終版 JSON を返してください。
-特に「単元 ${topic}」が正しく扱われているか厳密に確認してください。
-トピック不一致なら全面書き直し、レベル不整合なら語彙・例題を調整してください。`;
-
-        json = await callAI(reviewSystemPrompt, reviewUserMsg, 'Phase2-Review');
+        // ===== 統合 1-call フロー: Writer + Reviewer + Editor を single Opus call で実行 =====
+        // 🔥 2026-05-01: sequential 2-call (Phase 1 + Phase 2) は Opus 4.7 × 2 で 2-3 分かかり router timeout 多発
+        // → 1-call 化。systemPrompt 内で「内部 4 ステップ (執筆→3視点検閲→修正→致命傷確認)」を指示し、
+        //   Opus 4.7 の extended thinking で multi-perspective 検閲を内部実行 → 最終 JSON のみ出力
+        // 結果: 30-60 秒 (旧 60-180 秒) で同等品質
+        btn.textContent = '⏳ AI チームが執筆+検閲中...';
+        result.innerHTML = '<div class="tb-placeholder"><div style="font-size:3rem;">✍️🔍</div><p>AI 講師チーム (執筆者 + 内容/教育/入試の 3 検閲者) が並行作業中... (30-60秒)</p></div>';
+        json = await callAI(systemPrompt, userMsg, 'Writer+Review-Combined');
       }
       } catch (e) {
         // フェイルセーフ最終層: プール miss + Anthropic + Gemini 両系統失敗 → 中立的案内 + demo
