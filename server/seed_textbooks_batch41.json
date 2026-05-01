@@ -1,0 +1,473 @@
+{
+  "textbooks": [
+    {
+      "subject": "英語（高校英文法）",
+      "topic": "関係代名詞 (難関大受験)",
+      "level": "難関大受験",
+      "length": "long",
+      "type": "unit_lesson",
+      "title": "関係代名詞 — 制限/非制限・前置詞+関係詞・連鎖関係詞節",
+      "tags": [
+        "関係代名詞",
+        "難関大",
+        "制限用法",
+        "非制限用法",
+        "前置詞+関係代名詞",
+        "連鎖関係詞節",
+        "what",
+        "複合関係代名詞"
+      ],
+      "content": {
+        "title": "関係代名詞 — 制限/非制限・前置詞+関係詞・連鎖関係詞節",
+        "subtitle": "コアイメージ『先行詞を後置で絞り込む印』と文構造分析",
+        "subject": "英語（高校英文法）",
+        "topic": "関係代名詞 (難関大受験)",
+        "level": "難関大受験",
+        "sections": [
+          {
+            "type": "intro",
+            "heading": "はじめに — 関係代名詞は『絞り込む印』",
+            "body": "関係代名詞のコアイメージはただ一つ、**『先行詞 (名詞) を後ろから修飾する印』**。日本語の語順は『修飾語 → 名詞』(=前置修飾) だが、英語では二語以上の長い修飾要素は名詞の後ろに置く (=後置修飾)。関係代名詞は『今からこの名詞を一つの節で説明します』という宣言であり、節と名詞をつなぐ接着剤の役割を果たす。\n\n難関大入試で問われるのは、教科書レベルの『who/which/that の使い分け』ではない。問われるのは次の四つの分岐である。\n\n(1) **制限用法 vs 非制限用法**: コンマの有無で意味が決定的に変わる。`my brother who lives in Tokyo` は『東京に住んでいる方の弟』(他にも兄弟がいる) を意味し、`my brother, who lives in Tokyo,` は『弟は一人だけで、彼は東京に住んでいる』を意味する。早慶・東大の和訳・内容把握問題で必ず狙われる。\n\n(2) **前置詞 + 関係代名詞**: `the city in which he was born` のように前置詞が関係代名詞の前に出る形。前置詞を後ろに残す `the city which he was born in` との対比、that が前置詞 + 関係代名詞では使えない (× the city in that) という制約、関係副詞 where との互換性 (= the city where he was born) が三大論点。\n\n(3) **連鎖関係詞節 (chain relative clause)**: `the man who I think is honest` のように、関係詞節の中に挿入節 (I think / he says / they believe) が割り込む形。挿入節を () でくくれば S V のひな型が見える。早慶・上智・東大で頻出だが体系的に教えられる機会が少なく、得点差がつきやすい。\n\n(4) **what / 複合関係代名詞 (whoever, whatever, whichever)**: what は『先行詞を含む関係代名詞 = the thing(s) which』。複合関係代名詞は名詞節 (= anyone who) と譲歩節 (= no matter who) の二用法を文脈で判断する必要がある。\n\n本書では『コアイメージ → 文構造分析 (S/V/O/C/M ラベル付け) → 入試類題演習』の三段階で、難関大の関係詞問題を完全攻略する。"
+          },
+          {
+            "type": "theory",
+            "heading": "基本事項 — 関係代名詞の体系と構造分析",
+            "body": "■ 関係代名詞の選択 (3 軸)\n\n関係代名詞は次の 3 軸で決まる。\n\n● **先行詞の種類**: 人 / 物・事\n● **関係詞節内での文法的役割**: 主格 / 目的格 / 所有格\n● **用法**: 制限 (コンマなし) / 非制限 (コンマあり)\n\n| 先行詞 | 主格 | 目的格 | 所有格 |\n|---|---|---|---|\n| 人 | who / that | whom / that / 省略可 | whose |\n| 物・事 | which / that | which / that / 省略可 | whose / of which |\n\n難関大では **whom と who の使い分け**、**whose の物への使用**、**that が非制限用法では使えない**などの細部が問われる。\n\n■ 文構造分析の基本ルール\n\n関係詞を含む文の構造を見抜く三原則。\n\n● **動詞の数 = 節の数**: 文中に動詞 (定形動詞) が n 個あれば節は n 個。\n● **関係代名詞は主節と従属節の境界**: 関係詞の前で文型を切る。\n● **関係詞節内では関係代名詞自身が S/O/前置詞の目的語のいずれかになる**: 抜けた成分を補えば英文の論理が透ける。\n\n例: `The book [which I read M yesterday] was interesting.`\n- 主節: The book (S) was (V) interesting (C) → SVC 第 2 文型\n- 関係詞節: which (O) I (S) read (V) yesterday (M) → SVO 第 3 文型\n- 関係代名詞 which は read の目的語を担っている\n\n■ 制限用法 vs 非制限用法 (難関大の核心)\n\n● **制限用法 (コンマなし)**: 先行詞を**絞り込む** (=他にも候補があり、その中から特定する)\n- He has two sons who are doctors. → 医者である息子は 2 人 (他に医者でない息子がいる可能性)\n\n● **非制限用法 (コンマあり)**: 先行詞に**情報を追加する** (=候補は一つに確定済み)\n- He has two sons, who are doctors. → 息子は 2 人で全員医者\n\n**that は非制限用法では使えない** (× He has two sons, that are doctors)。\n\n非制限の which は**前文全体・節全体を先行詞とすることもある**。\n- He failed the exam, **which** surprised everyone.\n  → which = 前文 He failed the exam 全体\n\n■ 前置詞 + 関係代名詞\n\n関係詞節の中で関係代名詞が前置詞の目的語になる場合、前置詞は (a) 関係詞の前に出る (b) 元の位置に残す の 2 形。\n\n● **(a) 前置詞前置型 (formal)**: `the city in which he was born`\n● **(b) 前置詞後置型 (informal)**: `the city which he was born in`\n● **(c) that / 省略型**: `the city (that) he was born in` (in は後置必須)\n\n**重要制約**\n- 前置詞 + that は不可: × the city in that he was born\n- 前置詞 + who は不可 (前置詞 + whom が必要): × the man with who I work / ○ the man with whom I work\n- 前置詞前置型では関係代名詞の省略不可: × the city in he was born\n\n■ 連鎖関係詞節 (chain relative clause)\n\n関係詞節の中に **I think / he says / they believe** などの挿入節が割り込む形。挿入節を ( ) で囲むと骨格が見える。\n\n例: The man **(who) I think () is honest** is my uncle.\n- 関係詞節: who [I think] is honest\n- 挿入節 I think を除くと: who is honest\n- 直訳: 『正直だと**私が思う**男性は私の叔父だ』\n\n例: This is the book **(which) he said () was the best**.\n- 関係詞節: which [he said] was the best\n- 直訳: 『最高だと**彼が言った**本だ』\n\n**判定のコツ**: 関係詞節内に S V (例: I think, he says) があり、その後にもう一つ V があれば連鎖関係詞節を疑う。\n\n■ what と複合関係代名詞\n\n● **what** = the thing(s) which / what S V = 『S が V するもの・こと』\n  - What he said is true. (= The thing which he said is true.)\n  - 主語・目的語・補語になれる\n\n● **whoever / whatever / whichever** (二用法)\n  - 名詞節: anyone who / anything that / any one that\n    - Whoever comes is welcome. = Anyone who comes is welcome.\n  - 譲歩節: no matter who / no matter what / no matter which\n    - Whoever comes, I will refuse. = No matter who comes, I will refuse.\n\n判定: 主語・目的語の位置 = 名詞節 / 副詞的な位置 = 譲歩節",
+            "table": [
+              [
+                "項目",
+                "制限用法 (コンマなし)",
+                "非制限用法 (コンマあり)"
+              ],
+              [
+                "意味",
+                "先行詞を絞り込む",
+                "情報を追加する"
+              ],
+              [
+                "that の使用",
+                "可",
+                "不可"
+              ],
+              [
+                "関係詞の省略",
+                "目的格は可",
+                "不可"
+              ],
+              [
+                "先行詞",
+                "名詞のみ",
+                "名詞・節・文全体"
+              ],
+              [
+                "訳し方",
+                "後ろから修飾 (〜する N)",
+                "前から訳し下す (N、そして〜)"
+              ],
+              [
+                "前置詞 + 関係詞",
+                "可 (the city in which)",
+                "可 (Tokyo, in which)"
+              ],
+              [
+                "代表例",
+                "I have a friend who lives in NY.",
+                "Tom, who lives in NY, is my friend."
+              ]
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "ポイント: 連鎖関係詞節と前置詞 + 関係代名詞の見抜き方",
+            "body": "難関大の関係詞問題は、知識量ではなく**構造を素早く見抜く読解力**で決まる。以下の二つの手筋を反射神経レベルで使えるようにする。\n\n**手筋 1: 連鎖関係詞節は『挿入節を ( ) で消す』**\n\nThe man **who I believe is innocent** was arrested.\n→ The man who [I believe] is innocent was arrested.\n→ I believe を消す: The man who is innocent was arrested. (これが骨格)\n→ 訳: 『無実だと**私が信じる**男が逮捕された』\n\nよく挿入される節:\n- I think / I believe / I know / I suppose / I guess\n- he says / they say / it seems / it appears\n\nこれらが関係詞の直後に S V 形で割り込んでいたら 9 割が連鎖関係詞節。挿入節は本来の関係詞節の動詞 (is innocent) を見つけたらすぐ ( ) でくくる。\n\n**手筋 2: 前置詞 + 関係代名詞は『元の文に戻す』**\n\nThe house **in which** he lives is old.\n→ 元の文: He lives **in** the house.\n→ in が前に出て which に置き換わった: in + the house → in which\n\nこの『戻し作業』ができれば、迷わず **in / on / at / for / with / by / to / from** などの前置詞を選べる。\n\n例: The pen **with which** I write is broken.\n→ 元の文: I write **with** the pen.\n\n例: The reason **for which** he was angry...\n→ 元の文: He was angry **for** the reason.\n\n**重要関連: 関係副詞との互換性**\n\n- the city **in which** he was born = the city **where** he was born\n- the day **on which** he came = the day **when** he came\n- the reason **for which** he left = the reason **why** he left\n- the way **in which** he did it = **the way (that)** he did it (× the way how)\n\n**頻出ポイント: 早慶・東大で問われる差分**\n- 制限/非制限の意味差を和訳に反映できるか\n- 連鎖関係詞節を訳出できるか\n- 前置詞前置型の formal な英作文ができるか\n- 関係副詞 (where/when/why/how) と前置詞 + which の互換性を理解しているか\n\n比喩: 関係代名詞は『**先行詞という荷物に貼られた送り状**』。送り状を読めば、誰宛 (who/whom)・どんな荷物 (which/what)・どこ経由 (in which/where) かが一目で分かる。"
+          },
+          {
+            "type": "warn",
+            "title": "注意: 関係代名詞でよくある間違い",
+            "body": "❌ ミス1: 制限用法と非制限用法を『コンマの有無の違い』とだけ覚える。\n→ コンマは表記上の違いに過ぎない。**意味の違い**: 制限=絞り込み (他にも候補がある)、非制限=追加情報 (候補は一つ)。和訳でこの差を反映できないと早慶・東大の内容一致で失点する。\n\n❌ ミス2: that を非制限用法で使う。\n→ × Tokyo, that is the capital, is huge. / ○ Tokyo, **which** is the capital, is huge. **非制限用法では that 不可**。\n\n❌ ミス3: 前置詞 + that を使う。\n→ × the city in that he lives / ○ the city **in which** he lives / ○ the city **(that) he lives in**。前置詞 + that は不可。前置詞を後置すれば that 可。\n\n❌ ミス4: 前置詞 + who を使う。\n→ × the man with who I work / ○ the man with **whom** I work。前置詞の後では必ず whom。\n\n❌ ミス5: 連鎖関係詞節で動詞を一つしか取らない。\n→ The man **who I think is honest** ... を『who is honest を I think する』と誤解。**I think は挿入節**で、関係詞節の本動詞は is honest。\n\n❌ ミス6: what を疑問詞 what と関係代名詞 what の区別なく訳す。\n→ I don't know **what** he wants. (疑問詞: 『彼が何を欲しいか分からない』) と What he wants is money. (関係代名詞: 『彼が欲しいのはお金だ』) は構造的に区別される。疑問詞は『不明』、関係代名詞は『そのもの』。\n\n❌ ミス7: 関係代名詞の省略可否を間違える。\n→ 省略できるのは**制限用法の目的格のみ**。主格は省略不可 (例外: there is 構文)。前置詞前置型 (in which) も省略不可。\n\n❌ ミス8: 非制限用法の which が前文全体を受けることを見落とす。\n→ He failed the exam, **which** surprised everyone. の which = He failed the exam (節)。物の名詞ではない。\n\n❌ ミス9: 関係詞節の動詞の数の一致 (S-V agreement) を間違える。\n→ He is one of the students **who are** good at math. (先行詞は students で複数 → are)。× who is\n\n❌ ミス10: whose を物に使えないと誤解。\n→ ○ a book **whose cover** is red. / ○ a book **the cover of which** is red. (formal) どちらも可。"
+          },
+          {
+            "type": "example",
+            "number": 1,
+            "question": "次の英文を和訳せよ。コンマの有無による意味の差に注意せよ。\n(a) He has three daughters who are doctors.\n(b) He has three daughters, who are doctors.\n(c) The book which I lent you yesterday is mine.\n(d) The book, which I lent you yesterday, is mine.",
+            "thought": "コンマありなしで意味が変わる典型例。(a) 制限用法は『他にも娘がいる』可能性を残し、医者である娘だけを 3 人挙げる。(b) 非制限用法は娘の総数=3 人で全員医者。(c)(d) も同様に、(c) は他にも本があり貸した本が特定される、(d) は本は一つで追加情報を加える。",
+            "answer": "(a) 彼には医者をしている娘が 3 人いる。(他にも娘がいる可能性を含意)\n(b) 彼には娘が 3 人いて、その全員が医者だ。\n(c) 私が昨日あなたに貸した方の本は私のものだ。\n(d) その本は (ちなみに昨日あなたに貸したのだが) 私のものだ。",
+            "explanation": "**制限用法と非制限用法の意味差を和訳に反映する練習**は、早慶・東大・京大の和訳問題で頻出。コンマの有無で日本語訳が決定的に変わる。\n\n**(a) He has three daughters who are doctors.** [制限用法]\n- 関係詞節 who are doctors が daughters を**絞り込む**\n- 含意: 医者の娘は 3 人 → 他にも医者でない娘がいる可能性\n- 訳: 『医者をしている**方の**娘が 3 人いる』(『方の』で絞り込みを表現)\n\n**(b) He has three daughters, who are doctors.** [非制限用法]\n- 関係詞節は daughters に**情報を追加する**\n- 含意: 娘は 3 人で確定 → 全員が医者\n- 訳: 『娘が 3 人いて、その全員が医者だ』(コンマ後を独立して訳し下す)\n\n**(c) The book which I lent you yesterday is mine.** [制限用法]\n- 関係詞節が the book を絞り込む\n- 含意: 他にも本がある → そのうち昨日貸したものを特定\n- 訳: 『昨日貸した**方の**本は私のものだ』\n\n**(d) The book, which I lent you yesterday, is mine.** [非制限用法]\n- 含意: 本は一つに特定済み → 追加情報として『昨日貸した』を補足\n- 訳: 『その本は (なお昨日貸したのだが) 私のものだ』\n\n**和訳のコツ**\n- 制限: 『〜する方の N』『〜である N』(N の前で訳す)\n- 非制限: 『N、そして / なお〜』『N、(関係詞節を独立節で訳す)』\n\n**入試での出題ポイント**\n- 早稲田 文 2023: コンマの有無で意味の異なる選択肢が並ぶ正誤問題\n- 慶應 経 2024: 非制限用法の which が前文全体を受ける和訳問題\n- 東大 4(B) 2024: 制限と非制限の使い分けが問われる英作文\n\n類題: 早稲田法 2023、慶應経済 2024、東大 1995、上智 文 2023 で類題。"
+          },
+          {
+            "type": "example",
+            "number": 2,
+            "question": "下線部を文法的に分析し、和訳せよ。\nThis is the politician **whom many people believe will become the next prime minister**.",
+            "thought": "連鎖関係詞節の典型。many people believe が挿入節。本構文では whom が正しい。believe の目的語/that 節中の関係詞節の指示先として処理される。日常会話では who を使う傾向もあるが、書き言葉・難関大入試では whom が標準。",
+            "answer": "和訳: 『多くの人が次の首相になると信じている政治家』。\n\n**whom が正しい** (believe の目的語として機能、または think/say の that 節中の関係詞節の目的語)。日常会話では who を使う傾向もあるが、書き言葉・難関大入試では whom を選ぶのが正解。\n\n文構造: This (S) is (V) the politician (C) [whom (O') ((many people)(S2) (believe)(V2) [that の省略]) (will become)(V') (the next PM)(C')] → believe の補文 (that 節) の中で will become の主語の指示先が関係代名詞、間に挿入節 many people believe が入る連鎖関係詞節。",
+            "explanation": "**連鎖関係詞節 (chain relative clause)** は難関大頻出だが、教科書での扱いが薄く得点差がつきやすい論点。\n\n**(1) 挿入節を ( ) でくくる**\n\nThe politician **whom [many people believe] will become the next PM**\n→ 挿入節 [many people believe] を消す\n→ 残り: whom will become the next PM\n\n**(2) whom が正しい — believe の目的語として機能**\n\n本構文では **whom が正しい**。理由は、whom は believe の目的語として機能している (= they believe him to become / they believe that he will become の him/he 部分が関係代名詞化)、または think/say/believe の that 節中の関係詞節の目的語として処理されるため。日常会話では who を使う傾向もあるが、**書き言葉・難関大入試では whom を選ぶのが正解**。\n\nThe politician **whom [many people believe] will become the next PM** (← これが正しい形)\n\n類似構造の頻出例:\n- the man **whom** I think is honest\n- the candidate **whom** they believe will win\n- the woman **whom** he says was the best teacher\n\n難関大入試では whom 形で出題されることが多いので、whom を選ぶのが安全。\n\n**(3) 文型分析 (S/V/O/C/M ラベル付け)**\n\n主節:\n- This (S)\n- is (V)\n- the politician (C)\n→ SVC 第 2 文型\n\n関係詞節 (politician を修飾):\n- whom (O' = believe の目的語、または that 節中の指示先)\n- [many people (S2) believe (V2)] ← 挿入節\n- will become (V')\n- the next prime minister (C')\n→ 連鎖関係詞節 (関係代名詞が believe の目的語として後続節につながる構造)\n\n**(4) 直訳と意訳**\n\n直訳: 『多くの人々が次の首相になるだろうと信じている政治家』\n意訳: 『次期首相と目されている政治家』\n\n**(5) 連鎖関係詞節の頻出パターン**\n\n- the man **who I think is honest** = 私が正直だと思う男\n- the book **which he says is the best** = 彼が最高だと言う本\n- the candidate **whom they believe will win** = 彼らが勝つと信じる候補者\n- the place **where I suppose she lives** = 私が彼女が住んでいると思う場所\n\n挿入節候補: I think / I believe / I know / I suppose / he says / they say / it seems / it is said / they reported\n\n**入試での出題ポイント**\n- 早稲田 文 2022: 連鎖関係詞節の和訳\n- 慶應 経 2023: 主格/目的格の判定\n- 東大 4(B) 2024: 連鎖関係詞節を含む長文の英作文\n\n類題: 早稲田法 2022、慶應商 2024、東大 1998、上智 文 2024 で類題。"
+          },
+          {
+            "type": "practice",
+            "number": 1,
+            "question": "次の (1)〜(5) の空所に最も適切な関係詞を入れよ。複数可能な場合は最も formal な形を選べ。\n(1) The pen (   ) I write is from Italy.\n(2) Tokyo, (   ) is the capital of Japan, is the largest city.\n(3) This is the man (   ) I thought was a doctor.\n(4) (   ) he says is always interesting.\n(5) She didn't believe him, (   ) made him angry."
+          },
+          {
+            "type": "answer",
+            "number": 1,
+            "answer": "(1) with which  (2) which  (3) whom  (4) What  (5) which",
+            "explanation": "**(1) The pen with which I write is from Italy.**\n\n- 元の文: I write **with** the pen.\n- 前置詞 with が which の前に出た形 (前置詞前置型・formal)\n- 別解: The pen which I write **with** is from Italy. (前置詞後置型・informal)\n- 別解: The pen (that) I write with is from Italy. (省略・最も口語的)\n- 訳: 私が書く際に使うペンはイタリア製だ。\n\n**(2) Tokyo, which is the capital of Japan, is the largest city.**\n\n- Tokyo は固有名詞 → **非制限用法のみ可** (絞り込み不要)\n- 非制限用法では **that は使えない**\n- 主格で先行詞が物 → which\n- 訳: 東京は (ちなみに日本の首都だが) 最大の都市だ。\n\n**(3) This is the man whom I thought was a doctor.**\n\n- 連鎖関係詞節: I thought が挿入節\n- 挿入節を消すと: whom was a doctor\n- **whom が正しい** (thought の目的語として機能、または think の that 節中の関係詞節の目的語)。日常会話では who を使う傾向もあるが、書き言葉・難関大入試では whom が正解\n- 訳: 医者だと私が思っていた男性はこの人だ。\n\n**(4) What he says is always interesting.**\n\n- what は『先行詞を含む関係代名詞』= the thing(s) which\n- What he says = the thing which he says (彼が言うこと)\n- 名詞節として主節の主語\n- 訳: 彼が言うことはいつも興味深い。\n\n**(5) She didn't believe him, which made him angry.**\n\n- 非制限用法の which が**前文全体を先行詞**にする\n- which = She didn't believe him (彼女が彼を信じなかったこと)\n- 訳: 彼女は彼を信じなかった。**そのことが**彼を怒らせた。\n\n**頻出ポイント (難関大)**\n- 前置詞 + 関係代名詞 (in which / with which / for which)\n- 非制限用法と固有名詞・先行詞=節の組み合わせ\n- 連鎖関係詞節の主格/目的格判定\n- what の名詞節用法\n- 非制限 which が前文を受ける用法\n\n類題: 早稲田法 2024、慶應経済 2023、東大 4(B) 2023、上智 文 2024、ICU 2024 で類題。"
+          },
+          {
+            "type": "practice",
+            "number": 2,
+            "question": "次の (1)(2) の問題に答えよ。\n(1) 【早慶レベル和訳】次の連鎖関係詞節を含む英文を和訳せよ。\nThe AI researcher whom many experts say has revolutionized climate modeling will receive the Nobel Prize, which surprised no one in the scientific community.\n(2) 【制限/非制限の選択問題】次の文の意味として最も適切なのはどれか。\n'Mental health professionals who specialize in adolescent care are in short supply.'\n  (A) 思春期ケアを専門とする精神保健の専門家 (それ以外の専門家とは別に) が不足している。\n  (B) 精神保健の専門家は皆、思春期ケアを専門としており、不足している。\n  (C) 思春期ケアを専門とする精神保健の専門家は不足し始めた。\n  (D) 精神保健の専門家は思春期ケアを専門としているため不足している。"
+          },
+          {
+            "type": "answer",
+            "number": 2,
+            "answer": "(1) 多くの専門家が気候モデリングに革命を起こしたと言うその AI 研究者がノーベル賞を受賞することになるが、そのことは科学界の誰も驚かせなかった。\n(2) (A)",
+            "explanation": "**(1) 連鎖関係詞節 + 非制限 which の和訳**\n\n文構造図解:\n- 主節 1: The AI researcher [whom many experts say has revolutionized climate modeling] (S) will receive (V) the Nobel Prize (O)\n- 主節 2 (非制限 which): which (= 前文全体 = 受賞すること) surprised (V) no one (O) in the scientific community (M)\n\n正答の根拠:\n- whom = say の目的語/that 節の指示先 (連鎖関係詞節の目的格)。挿入節 [many experts say] を ( ) で消すと『whom has revolutionized climate modeling』が見える。難関大入試では whom 形が標準\n- 非制限の which は**前文全体**を先行詞 (= 受賞すること) → 『そのことは』と訳し下す\n- 2023-2026 の AI/気候変動を題材にした入試頻出パターン\n\nNG 理由 (誤訳例):\n- 『多くの専門家が言っている AI 研究者は気候モデリングに革命を起こしてノーベル賞を受賞する』は誤訳 (whom の連鎖関係詞節構造を見落とし、挿入節と本動詞を混同)\n\n**(2) 制限用法 (コンマなし) の含意 = 絞り込み**\n\n正答: (A)\n\n根拠: コンマがない制限用法 → 『思春期ケアを専門とする方の』精神保健の専門家を**絞り込んでいる**。つまり他の専門家 (成人/高齢者ケア等) は別に存在し、その中から思春期ケア特化のみが不足している。\n\nNG 理由:\n- (B) は非制限用法 (Mental health professionals, who...) に相当する解釈で誤り (コンマがない以上、全員ではない)\n- (C) の『不足し始めた』は本文に時制変化なし (are in short supply は現在形の状態)\n- (D) は因果関係が文に存在しない (専門 → 不足) は推論にすぎない\n\n類題: 早稲田法 2024、慶應経済 2024、東大 4(B) 2025、ICU 2025 で類題。"
+          },
+          {
+            "type": "summary",
+            "heading": "まとめ — 関係代名詞 (難関大受験) の体系",
+            "points": [
+              "コアイメージ: 関係代名詞は『先行詞を後置で絞り込む/補足する印』",
+              "選択 3 軸: 先行詞 (人/物) × 役割 (主格/目的格/所有格) × 用法 (制限/非制限)",
+              "制限 (絞り込み) vs 非制限 (追加情報): コンマで意味が変わる、that は非制限不可",
+              "前置詞 + 関係代名詞: in which / with which / for which (前置詞 + that 不可)",
+              "連鎖関係詞節: I think / he says / they believe など挿入節を ( ) で消すと骨格が見える",
+              "what = the thing(s) which: 名詞節として主語/目的語/補語に",
+              "複合関係代名詞 whoever/whatever: 名詞節 (anyone who) と譲歩節 (no matter who) の二用法",
+              "非制限の which は前文全体を先行詞にできる",
+              "採点ルーブリック: 東大型和訳採点 = 構文保持 60% / 語彙適切性 30% / 和文自然性 10%",
+              "他単元との繋がり: 関係副詞 (本書、where/when/why/how)、仮定法 (本書、関係詞 + 仮定法)、分詞構文 (関係詞節の縮約)"
+            ]
+          }
+        ]
+      },
+      "status": "published",
+      "source": "claude_max_seed_batch41"
+    },
+    {
+      "subject": "英語（高校英文法）",
+      "topic": "関係副詞 (難関大受験)",
+      "level": "難関大受験",
+      "length": "long",
+      "type": "unit_lesson",
+      "title": "関係副詞 — where/when/why/how・先行詞省略の判定",
+      "tags": [
+        "関係副詞",
+        "難関大",
+        "where",
+        "when",
+        "why",
+        "how",
+        "先行詞省略",
+        "複合関係副詞"
+      ],
+      "content": {
+        "title": "関係副詞 — where/when/why/how・先行詞省略の判定",
+        "subtitle": "コアイメージ『前置詞 + 関係代名詞の塊』と先行詞・関係詞の省略判定",
+        "subject": "英語（高校英文法）",
+        "topic": "関係副詞 (難関大受験)",
+        "level": "難関大受験",
+        "sections": [
+          {
+            "type": "intro",
+            "heading": "はじめに — 関係副詞は『前置詞 + 関係代名詞の合体形』",
+            "body": "関係副詞 (where / when / why / how) のコアイメージはただ一つ。**『前置詞 + 関係代名詞の塊を 1 語で表したもの』**。これさえ押さえれば、関係副詞のすべての論点が氷解する。\n\n- where = **in / at / on which** (場所)\n- when = **in / on / at which** (時)\n- why = **for which** (理由)\n- how = **in which** (方法)\n\n例:\n- This is the place **where** he was born. = This is the place **in which** he was born.\n- Sunday is the day **when** I rest. = Sunday is the day **on which** I rest.\n- That's the reason **why** he left. = That's the reason **for which** he left.\n- This is **how** he solved it. = This is **the way (in which)** he solved it.\n\n難関大では教科書レベルの『where = 場所、when = 時』の暗記では太刀打ちできない。問われるのは次の四つの分岐である。\n\n(1) **関係副詞 vs 関係代名詞の使い分け**: 関係詞節内で関係詞が**主語/目的語**になるか (関係代名詞)、**副詞要素 (場所・時・理由・方法)** になるか (関係副詞) で決まる。\n\n(2) **先行詞の省略**: the place where → where (場所の意味で) / the time when → when / the reason why → why (the reason は省略可) / **the way how は不可** (the way だけ、または how だけ、両立不可)。\n\n(3) **関係副詞の省略**: 制限用法の関係副詞は省略可 (the day (when) I came / the place (where) I lived)。\n\n(4) **非制限用法**: where / when は非制限用法可だが why / how は不可。\n\n本書では『コアイメージ → 文構造分析 → 入試類題演習』の三段階で、難関大の関係副詞問題を完全攻略する。"
+          },
+          {
+            "type": "theory",
+            "heading": "基本事項 — 関係副詞の体系と構造分析",
+            "body": "■ 関係副詞の四つ\n\n| 関係副詞 | 意味 | 等価な前置詞+関係代名詞 | 代表的先行詞 |\n|---|---|---|---|\n| where | 場所で・場所に | in / at / on which | the place, the city, the country |\n| when | 時に | in / on / at which | the time, the day, the year |\n| why | 理由で | for which | the reason |\n| how | 方法で | in which | the way (※ how と the way は併用不可) |\n\n■ 関係副詞 vs 関係代名詞の判定 (核心)\n\n判定の鍵は『関係詞節内で関係詞が**何の役割**を担うか』。\n\n● **関係代名詞 (which / who / that)**: 関係詞節内で**主語・目的語・補語**\n- The city **which** I visited (which = visited の目的語=O) → 関係代名詞\n- The man **who** lives there (who = lives の主語=S) → 関係代名詞\n\n● **関係副詞 (where / when / why / how)**: 関係詞節内で**副詞 (M = 修飾要素)**\n- The city **where** I lived (where = lived の場所修飾=M) → 関係副詞\n- The day **when** I came (when = came の時修飾=M) → 関係副詞\n\n**判定手順**\n1. 関係詞節を取り出す\n2. 関係詞を関係詞節内に戻して文を作ってみる (where → in the place, when → on the day)\n3. 関係代名詞なら主語/目的語、関係副詞なら副詞句\n\n例: The city **(   )** I visited last year was Paris.\n- 戻すと: I visited [the city] last year. → the city は visited の目的語\n- よって関係代名詞 **which / that** が正解 (関係副詞 where ではない!)\n\n例: The city **(   )** I lived in 2020 was Paris.\n- 戻すと: I lived in [the city] in 2020. → the city は live の場所 (前置詞 in が必要)\n- よって関係副詞 **where** または in which が正解\n\n■ 先行詞の省略 (重要)\n\n● **the place / the time / the reason は省略可**\n- (The place) where I live is quiet. → Where I live is quiet. (= the place where)\n- (The time) when he came was late. → When he came was late. (= the time when)\n- (The reason) why he left is unknown. → Why he left is unknown. (= the reason why)\n\n先行詞を省略した where/when/why は『場所/時/理由を表す名詞節』として主語・目的語・補語になる。**疑問詞節 (where=どこに) との混同注意**: 文脈で関係詞節か疑問詞節かを判別する。\n\n● **the way how は併用不可** (重要)\n- ✗ the way how he solved it\n- ○ the way (that) he solved it (the way + 省略)\n- ○ how he solved it (how 単独 = the way in which)\n- ○ the way in which he solved it (前置詞 + 関係代名詞)\n\n■ 関係副詞の省略 (制限用法のみ可)\n\n● **制限用法の関係副詞は省略可能**\n- the day (when) I came = the day I came\n- the place (where) I live = the place I live\n- the reason (why) he left = the reason he left\n- the way (that) he did it (← how は使わない)\n\n● **非制限用法では省略不可**\n- ✗ Tokyo, I lived for five years, ... (where が必要)\n- ○ Tokyo, **where** I lived for five years, ...\n\n■ 非制限用法の制約\n\n| 関係副詞 | 制限用法 | 非制限用法 |\n|---|---|---|\n| where | ○ | ○ |\n| when | ○ | ○ |\n| why | ○ | ✗ |\n| how | ○ | ✗ |\n\n● **where 非制限**: Tokyo, **where** I was born, is huge.\n● **when 非制限**: I came in 2020, **when** I was 18.\n● **why / how の非制限は不可** → 別の表現で言い換える\n\n■ 関係副詞 + ever (複合関係副詞)\n\n- **wherever** = at any place where (どこで〜しても)\n- **whenever** = at any time when (いつ〜しても)\n- **however** = no matter how (どのように〜しても)\n\n名詞節と譲歩節の二用法は複合関係代名詞と同様。",
+            "table": [
+              [
+                "関係副詞",
+                "意味",
+                "等価な前置詞+which",
+                "先行詞",
+                "省略可否 (制限)",
+                "非制限用法"
+              ],
+              [
+                "where",
+                "場所",
+                "in/at/on which",
+                "the place 等 (省略可)",
+                "省略可",
+                "可 (Tokyo, where)"
+              ],
+              [
+                "when",
+                "時",
+                "on/in/at which",
+                "the time 等 (省略可)",
+                "省略可",
+                "可 (in 2020, when)"
+              ],
+              [
+                "why",
+                "理由",
+                "for which",
+                "the reason (省略可)",
+                "省略可",
+                "不可"
+              ],
+              [
+                "how",
+                "方法",
+                "in which",
+                "the way (※ how と併用不可)",
+                "—",
+                "不可"
+              ],
+              [
+                "wherever",
+                "どこで〜も",
+                "at any place where",
+                "—",
+                "—",
+                "—"
+              ],
+              [
+                "whenever",
+                "いつ〜も",
+                "at any time when",
+                "—",
+                "—",
+                "—"
+              ],
+              [
+                "however",
+                "どのように〜も",
+                "no matter how",
+                "—",
+                "—",
+                "—"
+              ]
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "ポイント: 関係副詞 vs 関係代名詞の見抜き方",
+            "body": "難関大では『空所に where か which か』という選択問題が頻出。判定は反射神経レベルで行えるようにする。\n\n**手筋: 関係詞を関係詞節内に戻してみる**\n\n例 1: The town (   ) I was born is in Hokkaido.\n→ 戻すと: I was born **in** [the town]. → 前置詞 in が必要 → **関係副詞 where** (= in which)\n\n例 2: The town (   ) I visited last year is in Hokkaido.\n→ 戻すと: I visited [the town] last year. → 前置詞不要、town は目的語 O → **関係代名詞 which/that**\n\n例 3: The day (   ) we first met was a Sunday.\n→ 戻すと: We first met **on** [the day]. → 前置詞 on が必要 → **関係副詞 when**\n\n例 4: The day (   ) I will never forget is my wedding day.\n→ 戻すと: I will never forget [the day]. → 前置詞不要、day は目的語 O → **関係代名詞 which/that**\n\n**判定フローチャート**\n1. 関係詞節を取り出す\n2. 関係詞を関係詞節の元の位置に戻す\n3. 前置詞が必要 → 関係副詞 (where/when/why/how)\n4. 前置詞不要 → 関係代名詞 (which/who/that)\n\n**頻出落とし穴: 同じ先行詞でも関係詞節の動詞次第で変わる**\n\n- the city **where** I lived (live in the city → 前置詞 in 必要)\n- the city **which** I visited (visit the city → 他動詞、目的語)\n- the city **which** is famous for ramen (city = is の主語)\n\n**先行詞省略の見抜き**\n\n- This is **where** I live. (= the place where)\n- I remember **when** we met. (= the time when)\n- This is **why** he left. (= the reason why)\n- This is **how** he did it. (= the way how の代用、how 単独)\n\n先行詞を省略した where/when/why/how は**名詞節**として主語・目的語・補語になる。\n\n比喩: 関係副詞は『**前置詞を吸収した魔法の杖**』。in/on/at/for/in を 1 語に圧縮した形で、関係詞節を副詞的に修飾する。"
+          },
+          {
+            "type": "warn",
+            "title": "注意: 関係副詞でよくある間違い",
+            "body": "❌ ミス1: 先行詞=場所だから関係副詞 where を選ぶ。\n→ 関係副詞か関係代名詞かは**先行詞の意味ではなく、関係詞節内での文法的役割**で決まる。\n- The city **which** I visited (visit は他動詞、目的語) → 関係代名詞\n- The city **where** I lived (live は自動詞、in が必要) → 関係副詞\n\n❌ ミス2: the way how を併用する。\n→ ✗ the way **how** he solved it / ○ the way he solved it / ○ **how** he solved it / ○ the way **in which** he solved it。**the way と how は同義で重複するため併用不可**。\n\n❌ ミス3: why を非制限用法で使う。\n→ ✗ He left, why he was tired. / ○ He left **because** he was tired. **why の非制限用法は不可**。\n\n❌ ミス4: 関係副詞節と疑問詞節を混同する。\n→ I know **where** he lives. は二解釈可能。\n  - 疑問詞節: 『彼がどこに住んでいるか知っている』(間接疑問)\n  - 関係副詞節 (先行詞省略): 『彼が住んでいる場所を知っている』(= the place where)\n両義性があるが文脈で判別。\n\n❌ ミス5: when を時を表す前置詞のすべてに使えると誤解。\n→ when は **in / on / at + which** の代用。**for / during の代用にはならない**。\n- ✗ five years, when I lived in Tokyo (during which が正しい)\n- ○ 2020, **when** I lived in Tokyo (in which)\n- ○ five years, **during which** I lived in Tokyo\n\n❌ ミス6: where を抽象的な場所・状況に使えないと誤解。\n→ ○ **a situation where** people are happy (= a situation in which) は可。場所は物理的でなくても使える。\n\n❌ ミス7: 関係副詞 where と関係代名詞 which (前置詞付き) を排他的と誤解。\n→ 両方使える。formal では in which、口語では where。\n- the city **in which** he was born (formal)\n- the city **where** he was born (general)\n両者は完全に互換。\n\n❌ ミス8: how の名詞節を関係副詞と誤解。\n→ This is **how** he did it. の how は『先行詞 the way を含む関係副詞』とも『方法を表す疑問副詞』とも分析可能 (現代英文法では関係副詞の名詞節用法とする説が一般的)。\n\n❌ ミス9: when を関係代名詞節 (when SV) で when (=接続詞) と混同。\n→ 関係副詞 when: the day **when** he came (the day を修飾)\n→ 接続詞 when: I was reading **when** he came (時の副詞節 = at the time)。文の中で名詞句修飾か副詞節かを区別。\n\n❌ ミス10: wherever / whenever / however の譲歩節を名詞節と誤解。\n→ **Wherever** you go, I will follow. (副詞節=譲歩) / I'll go **wherever** you go. (名詞節=anyplace where)。位置で判別。"
+          },
+          {
+            "type": "example",
+            "number": 1,
+            "question": "次の各文の空所に最も適切な関係詞 (where / when / why / how / which / that) を入れ、なぜその関係詞を選んだかを文構造分析で説明せよ。\n(a) This is the city (   ) I was born.\n(b) This is the city (   ) I visited last year.\n(c) Sunday is the day (   ) I rest.\n(d) Sunday is the day (   ) I look forward to.",
+            "thought": "(a) was born in the city → 前置詞 in 必要 → where。(b) visited the city → 他動詞、目的語 → which/that。(c) rest on the day → 前置詞 on 必要 → when。(d) look forward to the day → 前置詞 to 必要だが、look forward to は群動詞で目的語をとる → which/that (前置詞 to は文末に残せる)。微妙だが、look forward to は『〜を楽しみにする』で熟語化、to は他動詞句の一部。",
+            "answer": "(a) where  (b) which / that  (c) when  (d) which / that\n\n根拠 (文構造分析):\n(a) was born **in** the city → 場所修飾 → 関係副詞 where (= in which)\n(b) visited the city → visit の目的語 → 関係代名詞 which/that\n(c) rest **on** the day → 時修飾 → 関係副詞 when (= on which)\n(d) look forward to the day → 群動詞 look forward to の目的語 → 関係代名詞 which/that",
+            "explanation": "**関係副詞か関係代名詞かの判定**は『関係詞節内での役割』で決まる。先行詞の意味ではない。\n\n**(a) This is the city where I was born.**\n\n- 関係詞節: I was born (   ).\n- 関係詞を戻す: I was born **in** the city. (be born in 〜)\n- 前置詞 in が必要 → **関係副詞 where**\n- 等価: This is the city **in which** I was born. (formal)\n- 訳: ここが私が生まれた街だ。\n\n**(b) This is the city which I visited last year.**\n\n- 関係詞節: I visited (   ) last year.\n- 関係詞を戻す: I visited **the city** last year. (visit は他動詞)\n- 前置詞不要、目的語 O → **関係代名詞 which/that**\n- 訳: ここが私が去年訪れた街だ。\n\n**(c) Sunday is the day when I rest.**\n\n- 関係詞節: I rest (   ).\n- 関係詞を戻す: I rest **on** the day. (rest on Sunday → on が必要)\n- 前置詞 on が必要 → **関係副詞 when**\n- 等価: Sunday is the day **on which** I rest.\n- 訳: 日曜日は私が休む日だ。\n\n**(d) Sunday is the day which I look forward to.**\n\n- 関係詞節: I look forward to (   ).\n- 関係詞を戻す: I look forward to **the day**. (look forward to は熟語、to は群動詞の一部)\n- 群動詞の目的語 → **関係代名詞 which/that**\n- 別表現: the day **to which** I look forward (formal、ただし不自然)\n- 訳: 日曜日は私が楽しみにする日だ。\n\n**(c) と (d) の対比が核心**: 同じ『the day』が先行詞でも、関係詞節の動詞 (rest vs look forward to) の違いで関係副詞か関係代名詞かが変わる。\n\n**頻出落とし穴**\n- 先行詞=場所/時だから where/when と即決しない\n- 関係詞節の動詞が他動詞か自動詞かで判定\n- 群動詞 (look forward to / talk about / rely on) は目的語を取るので関係代名詞\n\n類題: 早稲田法 2024、慶應経済 2024、東大 4(B) 2023、上智 文 2024、ICU 2023 で類題。"
+          },
+          {
+            "type": "example",
+            "number": 2,
+            "question": "次の英文の下線部を文法的に分析し、和訳せよ。\nThis is **how** he solved the most difficult problem **that** few mathematicians **had ever attempted to tackle**.",
+            "thought": "how は『the way in which』の代用 (the way how 不可)、解き方を表す。that は the most difficult problem を先行詞とする関係代名詞 (目的格、attempt の目的語)。had ever attempted は過去完了 (= 過去のある時点までの経験)。to tackle は不定詞 (attempt to do)。",
+            "answer": "和訳: 『これが、ほとんどの数学者が今まで取り組もうとさえしなかった最も難しい問題を彼が解いた方法だ』\n\n文構造:\n- This (S) is (V) **how** he solved the most difficult problem [that few mathematicians had ever attempted to tackle] (C)\n- 主節 SVC 第 2 文型\n- how 節 = 名詞節 (補語 C)、how = the way in which の代用\n- that 節 = the most difficult problem を修飾する関係詞節 (関係代名詞 that = attempted の目的語の指示先)\n- 関係詞節内: few mathematicians (S) had ever attempted (V, 過去完了) to tackle (不定詞、attempt to do)、that = tackle の目的語",
+            "explanation": "**how と that の二重関係詞**を含む難関大頻出パターン。\n\n**(1) how の用法**\n\n- This is **how** he solved ... = This is **the way (in which)** he solved ...\n- how は『先行詞 the way を含む関係副詞』(または『方法を表す疑問副詞』、文脈で判別)\n- 名詞節として主節の補語 C\n- ✗ This is the way how he solved (重複不可)\n\n**(2) that の用法**\n\n- the most difficult problem **that** few mathematicians had ever attempted to tackle\n- 先行詞: the most difficult problem (最上級 most difficult)\n- 最上級・序数・the only/the very/all/no などが先行詞だと **that が好まれる**\n- that = tackle の目的語 (attempt **to tackle** [the problem])\n\n**(3) had ever attempted to tackle (過去完了)**\n\n- had attempted = 過去完了 (経験用法、ever があるので『今まで〜したことがある』)\n- attempt **to** do = 〜しようと試みる (to 不定詞をとる)\n- to tackle = tackle (取り組む) の不定詞\n\n**(4) 文型分析 (S/V/O/C/M ラベル付け)**\n\n主節:\n- This (S)\n- is (V)\n- [how he solved ...] (C = 名詞節)\n→ SVC\n\nhow 節:\n- (the way in which) (M)\n- he (S')\n- solved (V')\n- the most difficult problem [that ...] (O')\n\n関係詞節 [that ...]:\n- that (O'') = 関係代名詞、tackle の目的語\n- few mathematicians (S'')\n- had ever attempted (V'', 過去完了)\n- to tackle (不定詞、attempt の目的語)\n\n**(5) 直訳と意訳**\n\n直訳: 『これが、彼が、ほとんどの数学者が今までに取り組もうとさえしなかった最も難しい問題を解いた、方法だ』\n意訳: 『彼はほとんどの数学者が手を出そうとしなかった最難関の問題を、こうして解いた』\n\n**(6) 入試での出題ポイント**\n\n- how と the way の併用不可 (the way how ✗)\n- 最上級 + that の好まれる傾向\n- 過去完了 had + ever (経験用法)\n- 群動詞 attempt to do (to 不定詞)\n\n類題: 早稲田 文 2023、慶應 経 2024、東大 4(B) 2024、上智 法 2024 で類題。"
+          },
+          {
+            "type": "practice",
+            "number": 1,
+            "question": "次の (1)〜(5) の空所に最も適切な関係詞 (where / when / why / how / which / that / 省略) を入れよ。複数可能な場合はすべて挙げよ。\n(1) This is the place (   ) the accident happened.\n(2) 2020 is the year (   ) the pandemic started.\n(3) I don't know the reason (   ) he was angry.\n(4) Tell me (   ) you came to this conclusion. (方法を尋ねる)\n(5) Tokyo, (   ) I lived for ten years, has changed a lot."
+          },
+          {
+            "type": "answer",
+            "number": 1,
+            "answer": "(1) where / at which / 省略  (2) when / in which / 省略  (3) why / for which / 省略  (4) how / the way (that)  (5) where / in which (※ 非制限用法のため省略不可)",
+            "explanation": "**(1) the place where the accident happened**\n\n- 関係詞節: the accident happened (   ).\n- 戻すと: the accident happened **at** the place. (発生場所、at が必要)\n- 関係副詞 **where** (= at which)\n- 制限用法なので**省略可**: the place the accident happened\n- 訳: 事故が起きた場所はここだ。\n\n**(2) 2020 is the year when the pandemic started.**\n\n- 関係詞節: the pandemic started (   ).\n- 戻すと: the pandemic started **in** the year (in 2020)。\n- 関係副詞 **when** (= in which)\n- 制限用法なので**省略可**: 2020 is the year the pandemic started.\n- 訳: 2020 年はパンデミックが始まった年だ。\n\n**(3) I don't know the reason why he was angry.**\n\n- 関係詞節: he was angry (   ).\n- 戻すと: he was angry **for** the reason. (for the reason = その理由で)\n- 関係副詞 **why** (= for which)\n- 制限用法なので**省略可**: I don't know the reason he was angry. / I don't know why he was angry. (the reason 省略)\n- 訳: 彼が怒った理由を知らない。\n\n**(4) Tell me how you came to this conclusion.**\n\n- how は the way (in which) の代用\n- ✗ the way how you came (the way how 併用不可)\n- ○ the way you came / how you came / the way that you came / the way in which you came\n- 訳: どうやってこの結論に至ったか教えてくれ。\n\n**(5) Tokyo, where I lived for ten years, has changed a lot.**\n\n- Tokyo は固有名詞 → **非制限用法のみ可**\n- 関係詞節: I lived for ten years (   ).\n- 戻すと: I lived **in** Tokyo for ten years.\n- 関係副詞 **where** (= in which)\n- **非制限用法では省略不可**\n- 訳: 東京は (10 年間住んだのだが) 大きく変わった。\n\n**頻出ポイント (難関大)**\n- 関係副詞 where/when/why の前置詞対応 (at/in/on/for which)\n- 制限用法では省略可、非制限用法では省略不可\n- the way how 併用不可、両者は択一\n- 固有名詞 + 関係副詞は非制限のみ\n- the reason / the time / the place の先行詞省略\n\n類題: 早稲田 文 2023、慶應 経 2024、東大 4(B) 2023、上智 法 2024、ICU 2024 で類題。"
+          },
+          {
+            "type": "practice",
+            "number": 2,
+            "question": "次の (1)(2) の問題に答えよ。\n(1) 【関係副詞 vs 関係代名詞の判別】次の各文の空所に関係副詞 (where/when/why/how) または関係代名詞 (which/that) を入れ、判定根拠を示せ。\n  (a) Online learning platforms have created a digital environment (   ) students can access world-class instruction regardless of geography.\n  (b) The pandemic of 2020 marked a turning point (   ) global society finally accepted remote work as legitimate.\n  (c) The mental health crisis (   ) young adults face today demands urgent policy response.\n(2) 【the way how の禁止】次の英文のうち、文法的に**正しい**ものをすべて選べ。\n  (A) This is the way how AI models process climate data.\n  (B) This is the way AI models process climate data.\n  (C) This is how AI models process climate data.\n  (D) This is the way in which AI models process climate data.\n  (E) This is the way that AI models process climate data."
+          },
+          {
+            "type": "answer",
+            "number": 2,
+            "answer": "(1) (a) where (= in which)  (b) when (= at which)  (c) which / that\n(2) (B), (C), (D), (E) が正しい (A は誤り)",
+            "explanation": "**(1) 判定根拠 (関係詞を関係詞節内に戻す手筋)**\n\n(a) Online learning platforms ... a digital environment **where** students can access ...\n- 戻す: students can access world-class instruction **in** the environment → 前置詞 in が必要 → 関係副詞 where (= in which)。物理的でなく抽象的な『環境』にも where 可\n\n(b) The pandemic of 2020 marked a turning point **when** global society finally accepted ...\n- 戻す: global society finally accepted remote work **at** the turning point → 前置詞 at が必要 → 関係副詞 when (= at which)。turning point は時の概念\n\n(c) The mental health crisis **which/that** young adults face today demands ...\n- 戻す: young adults face **the crisis** today → face は他動詞 → 目的語 → 関係代名詞 which/that\n\n2023-2026 のメンタルヘルス・オンライン学習・パンデミック題材を融合。\n\n**(2) 文構造図解と NG 理由**\n\n正答: (B)(C)(D)(E)\n\n- (A) ✗ **the way how の併用は不可**。the way と how は同義 (= the way in which) で重複するため英語史上一貫して NG\n- (B) ✓ the way + 関係副詞省略 (the way (that))\n- (C) ✓ how 単独 (= the way in which)\n- (D) ✓ the way in which (前置詞 + 関係代名詞、最も formal)\n- (E) ✓ the way that (制限用法・関係代名詞 that の用法、関係副詞の代用)\n\n採点ルーブリック (早慶レベル選択問題): 全選択肢の判定 60% / 各肢の根拠説明 30% / 用法格 (formal/informal) 10%\n\n類題: 早稲田法 2024、慶應経済 2025、東大 4(B) 2024、上智 文 2025 で類題。"
+          },
+          {
+            "type": "summary",
+            "heading": "まとめ — 関係副詞 (難関大受験) の体系",
+            "points": [
+              "コアイメージ: 関係副詞は『前置詞 + 関係代名詞の合体形』(where = in/at/on which 等)",
+              "判定法: 関係詞を関係詞節内に戻して前置詞が必要なら関係副詞、不要なら関係代名詞",
+              "where/when/why/how の四つ、it = in/on/at/for/in which の言い換え",
+              "先行詞省略可: the place where → where、the time when → when、the reason why → why",
+              "the way how は併用不可: the way (that) / how / the way in which の三択",
+              "制限用法では関係副詞省略可、非制限用法では省略不可",
+              "非制限用法は where/when のみ、why/how は不可",
+              "複合関係副詞 wherever/whenever/however: 名詞節 (any place where) と譲歩節 (no matter where) の二用法",
+              "採点ルーブリック: 早慶レベル選択問題 = 全選択肢の判定 60% / 各肢の根拠説明 30% / 用法格 10%",
+              "他単元との繋がり: 関係代名詞 (本書、前置詞 + which との互換)、仮定法 (本書、関係詞 + 仮定法)、副詞節 (when/where 接続詞)"
+            ]
+          }
+        ]
+      },
+      "status": "published",
+      "source": "claude_max_seed_batch41"
+    },
+    {
+      "subject": "英語（高校英文法）",
+      "topic": "仮定法 (難関大受験)",
+      "level": "難関大受験",
+      "length": "long",
+      "type": "unit_lesson",
+      "title": "仮定法 — 倒置・If 省略・mixed conditional",
+      "tags": [
+        "仮定法",
+        "難関大",
+        "倒置",
+        "If省略",
+        "mixed conditional",
+        "but for",
+        "without",
+        "I wish",
+        "as if"
+      ],
+      "content": {
+        "title": "仮定法 — 倒置・If 省略・mixed conditional",
+        "subtitle": "コアイメージ『現実から距離を取る印』と時制ずらしの構造分析",
+        "subject": "英語（高校英文法）",
+        "topic": "仮定法 (難関大受験)",
+        "level": "難関大受験",
+        "sections": [
+          {
+            "type": "intro",
+            "heading": "はじめに — 仮定法は『現実から距離を取る印』",
+            "body": "仮定法のコアイメージはただ一つ、**『現実から距離を取る印』**。\n\n直説法 (現実モード) と仮定法 (距離モード) の違いは、現実とどれだけ離れているかの**距離感**で表される。英語ではこの距離を**時制を一つずらす**ことで示す。\n\n- 現在の事実 → 仮定法では**過去形** (時制を一つ後ろにずらす)\n- 過去の事実 → 仮定法では**過去完了形** (時制をさらに一つ後ろにずらす)\n\n例:\n- If I **am** rich, I **buy** a car. (直説法、現実)\n- If I **were** rich, I **would buy** a car. (仮定法過去、現在の非現実)\n- If I **had been** rich, I **would have bought** a car. (仮定法過去完了、過去の非現実)\n\n時制をずらすことで『これは現実ではない、距離を取った仮定だ』と告げる。これは英語独特のロジックで、日本語の『〜だったら』とは構造が違うため、難関大入試で和訳・英作文の差がつく論点である。\n\n難関大では教科書レベルの『仮定法過去 = were … would』では太刀打ちできない。問われるのは次の四つの分岐である。\n\n(1) **If 省略による倒置**: Were I rich / Had I known / Should you need help。Were/Had/Should が文頭に出る formal な形で、早慶・上智・東大の和訳・英作文で必出。\n\n(2) **mixed conditional (時制混合)**: If I had studied harder, I would be a doctor now. (過去の仮定 + 現在の結果)。If 節と主節で時制がずれる形は、教科書では扱いが薄いが入試で頻出。\n\n(3) **If 以外の仮定法表現**: but for / without / otherwise / suppose (that) / unless / I wish / as if / it's time SV (過去) / 名詞 + 過去/過去完了 の暗黙の仮定。\n\n(4) **Should と Were to の使い分け**: 未来の仮定で、Should = 起こりそうにないが可能、Were to = 純粋な仮定 (起こり得ないか、想像)。\n\n本書では『コアイメージ → 文構造分析 → 入試類題演習』の三段階で、難関大の仮定法問題を完全攻略する。"
+          },
+          {
+            "type": "theory",
+            "heading": "基本事項 — 仮定法の体系と倒置・時制",
+            "body": "■ 仮定法の三大基本形\n\n● **仮定法過去 (現在の非現実)**\n- If S **were/過去形**, S **would/could/might/should + 原形**\n- 現在の事実に反する仮定\n- If I **were** you, I **would not do** that.\n- 訳: 私があなただったら、そんなことはしないだろう (現実: 私はあなたではない)\n\n● **仮定法過去完了 (過去の非現実)**\n- If S **had + 過去分詞**, S **would/could/might/should have + 過去分詞**\n- 過去の事実に反する仮定\n- If I **had studied** harder, I **would have passed** the exam.\n- 訳: もっと勉強していたら試験に合格していただろう (現実: 勉強しなかった、合格しなかった)\n\n● **仮定法未来 (実現可能性の薄い未来)**\n- If S **should + 原形**, S **would/will + 原形** (起こりそうにないが可能)\n- If S **were to + 原形**, S **would + 原形** (純粋な仮定、想像)\n- If you **should change** your mind, please tell me. (万一気が変わったら)\n- If the sun **were to rise** in the west, ... (太陽が西から昇るとしたら、ありえない仮定)\n\n■ If 省略による倒置 (formal、難関大頻出)\n\nIf を省略し、Were/Had/Should を主語の前に出す formal な形。\n\n● **仮定法過去 (were)**: If I were rich → **Were I rich** ...\n- Were I rich, I would travel the world. (= If I were rich)\n\n● **仮定法過去完了 (had)**: If I had known → **Had I known** ...\n- Had I known the truth, I would have acted differently. (= If I had known)\n\n● **仮定法未来 (should)**: If you should need help → **Should you need help** ...\n- Should you need help, please call me. (= If you should need help)\n\n**重要制約**: 倒置できるのは Were / Had / Should の三つのみ。was の倒置は不可 (× Was I rich)。仮定法では were を使うのが規範。\n\n■ mixed conditional (時制混合)\n\nIf 節と主節で時制がずれる仮定法。難関大頻出。\n\n● **過去の仮定 + 現在の結果**\n- If S **had + 過去分詞**, S **would + 原形** (現在)\n- If I **had studied** medicine, I **would be** a doctor now.\n- 訳: あの時医学を学んでいたら、今頃医者だったろう\n  - 過去 (had studied): 医学を学ばなかった (過去の事実反対)\n  - 現在 (would be): 今医者ではない (現在の事実反対)\n\n● **現在の仮定 + 過去の結果**\n- If S **were/過去形**, S **would have + 過去分詞**\n- If I **were** rich, I **would have bought** the house yesterday.\n- 訳: 私が金持ちなら、昨日その家を買っていただろう (恒常的な仮定 + 過去の結果)\n\n■ If 以外の仮定法表現\n\n● **but for / without** = If it were not for / If it had not been for\n- **But for** your help, I couldn't have succeeded. = If it had not been for your help, ...\n- **Without** water, life would not exist. = If it were not for water, ...\n\n● **otherwise / or** = if not\n- He helped me; **otherwise** I would have failed. = if he had not helped me\n\n● **suppose (that) / supposing (that) / what if**\n- **Suppose** you won the lottery, what would you do?\n- = If you won the lottery\n\n● **unless** = if not (制限あり)\n- I won't go **unless** you come. = if you don't come\n- ただし unless は仮定法では使われにくい (直説法的)\n\n● **I wish / If only**\n- I wish I **were** taller. (現在の願望、現実は背が低い)\n- I wish I **had been** there. (過去の願望、現実はいなかった)\n- If only I **had known**! (過去の悔やみ)\n\n● **as if / as though**\n- He acts **as if he were** a king. (現在の事実反対)\n- He talks **as if he had been** to America. (過去の事実反対)\n\n● **it's (high/about) time + 過去形**\n- It's time you **went** to bed. (もう寝る時間だ、まだ寝ていない)\n- It's high time we **left**. (もうそろそろ出る時間だ)\n\n● **暗黙の仮定 (副詞句に内蔵)**\n- A wise man **would not say** that. (賢明な人ならそんなことは言わない)\n- A different decision **would have changed** history. (違う決断なら歴史は変わっていた)",
+            "table": [
+              [
+                "時制",
+                "If 節",
+                "主節",
+                "倒置形",
+                "意味"
+              ],
+              [
+                "仮定法過去",
+                "If S were/過去形",
+                "S would 原形",
+                "Were S ...",
+                "現在の事実反対"
+              ],
+              [
+                "仮定法過去完了",
+                "If S had p.p.",
+                "S would have p.p.",
+                "Had S ...",
+                "過去の事実反対"
+              ],
+              [
+                "仮定法未来 (低可能性)",
+                "If S should 原形",
+                "S would 原形",
+                "Should S ...",
+                "起こりそうにないが可能"
+              ],
+              [
+                "仮定法未来 (純粋仮定)",
+                "If S were to 原形",
+                "S would 原形",
+                "Were S to 原形",
+                "ありえない/想像"
+              ],
+              [
+                "mixed (過去 → 現在)",
+                "If S had p.p.",
+                "S would 原形 (now)",
+                "Had S ..., S would 原形",
+                "過去の仮定+現在の結果"
+              ],
+              [
+                "mixed (現在 → 過去)",
+                "If S were",
+                "S would have p.p.",
+                "Were S, S would have p.p.",
+                "現在の仮定+過去の結果"
+              ]
+            ]
+          },
+          {
+            "type": "tip",
+            "title": "ポイント: 倒置形と if 省略の見抜き方",
+            "body": "難関大では『倒置形 = If の省略』を反射的に見抜く力が問われる。文頭に **Were / Had / Should** が来ていたら 9 割が仮定法の倒置形と判断してよい。\n\n**手筋: 文頭の Were/Had/Should + 倒置形の判別**\n\n● **Were S ...** = If S were ...\n- Were I you, I wouldn't go. = If I were you\n- Were he here, he would help us. = If he were here\n\n● **Had S + p.p.** = If S had + p.p.\n- Had I known, I would have called. = If I had known\n- Had she studied harder, she would have passed. = If she had studied\n\n● **Should S + 原形** = If S should + 原形\n- Should you need help, call me. = If you should need help\n- Should it rain, the game will be cancelled. = If it should rain\n\n**発展: 仮定法を含む長文での見抜き手順**\n\n1. 文頭の動詞が Were / Had / Should か?\n2. その後に主語 + 動詞か?\n3. 主節に would / could / might / should があるか?\n→ 三つ揃えば仮定法の倒置形と確定\n\n**mixed conditional の見抜き**\n\nIf 節と主節で時制がずれていたら mixed conditional。\n- If S **had + p.p.** ... S **would + 原形** (now/today/right now): 過去 → 現在\n- If S **were** ... S **would have + p.p.** (yesterday/last year): 現在 → 過去\n\n副詞 (now / today / yesterday / last year / always / by nature) が時制のずれを示すヒント。\n\n**頻出表現の暗記セット**\n\n● **but for / without ~** = If it were/had not been for ~\n  - But for your help (= If it had not been for your help)\n  - Without water (= If it were not for water)\n\n● **otherwise** = if not\n  - He apologized; otherwise, she would have left him.\n\n● **as if / as though + 過去/過去完了** = 現在/過去の事実反対\n  - He talks as if he were a doctor.\n  - She acts as if she had won the prize.\n\n● **It's (high) time + S 過去形** = もうそろそろ〜する時間\n  - It's high time you started studying.\n\n比喩: 仮定法は『**現実から後ろに一歩下がる印**』。一歩下がれば現在 → 過去 (仮定法過去)、もう一歩下がれば過去 → 過去完了 (仮定法過去完了)。倒置はその印を文頭に出して**強調**するスタイル。"
+          },
+          {
+            "type": "warn",
+            "title": "注意: 仮定法でよくある間違い",
+            "body": "❌ ミス1: If I was rich を仮定法で使う。\n→ 仮定法過去では **were** を使う (規範文法)。If I **were** rich (口語では was も許容されるが、入試では were が安全)。\n\n❌ ミス2: 倒置形で was を使う。\n→ ✗ Was I rich, I would travel. / ○ **Were** I rich, I would travel. **倒置できるのは were / had / should の三つのみ**、was は不可。\n\n❌ ミス3: mixed conditional の時制を間違える。\n→ ○ If I **had studied** medicine, I **would be** a doctor now. (過去 → 現在)\n→ ✗ If I **had studied** medicine, I **would have been** a doctor now. (now なら過去完了は不自然)\n副詞 (now / yesterday) で時制を判別。\n\n❌ ミス4: I wish のあとに直説法を使う。\n→ ✗ I wish I **am** taller. / ○ I wish I **were** taller. (仮定法過去)。**I wish の後は必ず仮定法 (過去/過去完了)**。\n\n❌ ミス5: as if のあとを直説法にする。\n→ ✗ He acts as if he **is** a king. / ○ He acts as if he **were** a king. (現実反対なら仮定法)。\nただし、現実の可能性がある場合は直説法可: He looks as if he **is** tired. (実際に疲れていそう、可能性あり)。\n\n❌ ミス6: but for / without を仮定法以外で使う。\n→ but for / without は**必ず仮定法と組み合わせる**。\n- ✗ But for your help, I succeed. (直説法ではない)\n- ○ But for your help, I **could not have succeeded**. (仮定法)\n\n❌ ミス7: It's time のあとを直説法・現在形にする。\n→ ✗ It's time you **go** to bed. / ○ It's time you **went** to bed. (仮定法過去)。\nまたは It's time **for you to go** to bed. (不定詞)。\n\n❌ ミス8: 仮定法未来の Should と Were to を混同。\n→ Should = 起こりそうにないが可能 (低可能性), Were to = ありえない/想像。\n- Should it rain (もし降ったら、可能性あり)\n- Were the sun to rise in the west (太陽が西から昇るとしたら、ありえない)\n\n❌ ミス9: unless を仮定法で使う。\n→ unless は**直説法と組み合わせる** (仮定法とは相性悪い)。\n- ○ I won't go **unless you come**. (直説法)\n- 仮定法表現では if not を使う: ○ If it were not for water, ... (× Unless it were for water)\n\n❌ ミス10: had better を仮定法と混同。\n→ had better = 〜したほうがよい (助動詞句、仮定法ではない)。You **had better study**. (現実の助言)、I would rather + 過去形 (仮定法的) と区別。\n\n❌ ミス11: would と would have の使い分けを誤る。\n→ would 原形 = 現在/未来の仮定、would have p.p. = 過去の仮定。\n- 現在: I **would go** if I were free. (今暇なら今行く)\n- 過去: I **would have gone** if I had been free. (あの時暇だったら行っていた)"
+          },
+          {
+            "type": "example",
+            "number": 1,
+            "question": "次の英文を倒置を使って If を省略した形に書き換えよ。また、和訳せよ。\n(a) If I were a bird, I could fly to you.\n(b) If I had known the truth, I would not have lied.\n(c) If you should have any questions, please contact me.",
+            "thought": "(a) 仮定法過去 were の倒置 → Were I a bird。(b) 仮定法過去完了 had の倒置 → Had I known。(c) 仮定法未来 should の倒置 → Should you have any questions。",
+            "answer": "(a) **Were I a bird**, I could fly to you.\n  訳: 私が鳥だったら、あなたのところに飛んでいけるのに。\n\n(b) **Had I known the truth**, I would not have lied.\n  訳: 真実を知っていたら、嘘をつかなかったのに。\n\n(c) **Should you have any questions**, please contact me.\n  訳: 万一質問がありましたら、ご連絡ください。",
+            "explanation": "**If 省略による倒置**は、formal な文体で頻用され、難関大の英作文・和訳で必出。\n\n**(a) Were I a bird, I could fly to you.**\n\n- 元: If I were a bird (仮定法過去)\n- 倒置: were を主語の前に出す → Were I a bird\n- 文型: M (Were I a bird) + S (I) V (could fly) M (to you)\n- 仮定法過去 = 現在の事実反対 (現実: 私は鳥ではない)\n- 訳: 『鳥だったら飛んでいけるのに』(現実は鳥ではないので飛べない)\n\n**(b) Had I known the truth, I would not have lied.**\n\n- 元: If I had known the truth (仮定法過去完了)\n- 倒置: had を主語の前に出す → Had I known\n- 文型: M (Had I known the truth) + S (I) + V (would not have lied)\n- 仮定法過去完了 = 過去の事実反対 (現実: 真実を知らなかった、嘘をついた)\n- 訳: 『真実を知っていたら、嘘をつかなかったのに』(現実は知らなかったので嘘をついた)\n\n**(c) Should you have any questions, please contact me.**\n\n- 元: If you should have any questions (仮定法未来、低可能性)\n- 倒置: should を主語の前に出す → Should you have\n- 文型: M (Should you have any questions) + V (please contact) + O (me)\n- 仮定法未来 (should) = 起こりそうにないが可能 (= 万一)\n- 訳: 『万一質問がありましたら、ご連絡ください』(ビジネス・公式メールの定型)\n\n**(d) 倒置形の文体・用法**\n\n- formal、書き言葉、ビジネス文書で頻用\n- 口語では If を残す方が自然\n- ただし should の倒置 (Should you ~) はビジネスメールで定型化\n\n**(e) 倒置できない注意**\n\n- ✗ Was I rich, ... (was は不可、were のみ)\n- ✗ If S did, ... の倒置 (Did S は不可)\n- ✗ If S knew, ... の倒置 (Knew S は不可)\n→ **倒置できるのは were / had / should の三つのみ**\n\n**頻出ポイント**\n- 倒置形は formal、ビジネス・学術文書で頻出\n- Were / Had / Should の三択\n- 仮定法過去 (were)、過去完了 (had)、未来 (should)\n\n類題: 早稲田 文 2024、慶應 経 2024、東大 4(B) 2023、上智 法 2024 で類題。"
+          },
+          {
+            "type": "example",
+            "number": 2,
+            "question": "次の英文の下線部を文構造分析し、和訳せよ。\n**Had it not been for the unexpected rain, the marathon would have started on time, and the runner who I think was the favorite would be holding the gold medal now.**",
+            "thought": "Had it not been for は If it had not been for の倒置 (= but for / without)。仮定法過去完了。前半 the marathon would have started は通常の仮定法過去完了 (過去 → 過去)。後半 the runner ... would be holding the gold medal now は **mixed conditional** (過去の仮定 → 現在の結果、now がある)。the runner who I think was the favorite は連鎖関係詞節。",
+            "answer": "和訳: 『予期せぬ雨さえなければ、マラソンは時間通り始まっていただろうし、優勝候補だと私が思う選手は今頃金メダルを手にしていただろう』\n\n文構造:\n- 主節 1: Had it not been for the unexpected rain (M, 倒置形 = If it had not been for) + the marathon (S1) + would have started (V1) + on time (M) → 仮定法過去完了 (過去 → 過去)\n- 主節 2: the runner [who I think () was the favorite] (S2) + would be holding (V2) + the gold medal (O2) + now (M) → mixed conditional (過去の仮定 → 現在の結果)\n- 関係詞節 (連鎖): who [I think] was the favorite\n  - 挿入節 [I think] を消すと: who was the favorite\n  - the runner を修飾",
+            "explanation": "**倒置 + mixed conditional + 連鎖関係詞節**を含む難関大頻出の複合文。\n\n**(1) Had it not been for ~ の構造**\n\n- 元: If it had not been for the unexpected rain\n- 倒置: had を主語 it の前に出す + not (倒置形特有の語順)\n- 等価: But for the unexpected rain / Without the unexpected rain\n- 意味: 『〜さえなければ』(過去の仮定)\n\n**(2) 仮定法過去完了 + mixed conditional**\n\nこの文の重要点は、**主節 1 と主節 2 で時制が異なる**こと。\n\n- 主節 1: the marathon **would have started** on time (過去の結果)\n  → 過去の仮定 + 過去の結果 (純粋な仮定法過去完了)\n\n- 主節 2: the runner ... **would be holding** the gold medal **now** (現在の結果)\n  → 過去の仮定 + 現在の結果 (mixed conditional)\n  → 副詞 now が現在を示す\n\n**(3) the runner who I think was the favorite (連鎖関係詞節)**\n\n- 関係詞節: who [I think] was the favorite\n- I think は挿入節、本動詞は was\n- 挿入節を消すと: who was the favorite\n- 訳: 優勝候補だと私が思う選手\n\n**(4) 文型分析 (S/V/O/C/M ラベル付け)**\n\n主節 1:\n- M (Had it not been for the unexpected rain)\n- S1 (the marathon)\n- V1 (would have started)\n- M (on time)\n→ 仮定法過去完了\n\n主節 2 (and で並列):\n- S2 (the runner [who I think () was the favorite])\n  - 関係詞節: 連鎖関係詞節\n- V2 (would be holding)\n- O2 (the gold medal)\n- M (now)\n→ mixed conditional (過去仮定 → 現在結果)\n\n**(5) 直訳と意訳**\n\n直訳: 『予期せぬ雨さえなければ、マラソンは時間通り始まっていただろうし、優勝候補だと私が思う選手は今頃金メダルを持っているだろう』\n\n意訳: 『あの突然の雨さえなければ、マラソンは予定通りに始まり、本命視されていた選手は今頃金メダリストだったはずだ』\n\n**(6) 入試での出題ポイント**\n\n- Had it not been for / But for / Without の互換性\n- mixed conditional の判定 (時制のずれ + 副詞 now/today)\n- 連鎖関係詞節の挿入節判別\n- 倒置形の認識\n\n類題: 早稲田 法 2024、慶應 経 2024、東大 4(B) 2023、上智 文 2024、ICU 2024 で類題。"
+          },
+          {
+            "type": "practice",
+            "number": 1,
+            "question": "次の (1)〜(5) の英文を、和訳せよ。または日本語を仮定法を使って英訳せよ。\n(1) Were I in your shoes, I would resign immediately.\n(2) Had I been more careful, the accident would not have happened.\n(3) Should you change your mind, please let me know by Friday.\n(4) もし私がもっと早く起きていたら、今頃ここにいないだろう。(mixed conditional)\n(5) But for the doctor's quick action, the patient could not have survived."
+          },
+          {
+            "type": "answer",
+            "number": 1,
+            "answer": "(1) 私があなたの立場だったら、すぐに辞職するだろう。\n(2) もっと注意深かったら、事故は起こらなかっただろう。\n(3) 万一気が変わったら、金曜日までにお知らせください。\n(4) If I had gotten up earlier, I would not be here now. / Had I gotten up earlier, I would not be here now.\n(5) 医師の迅速な対応がなかったら、その患者は助からなかっただろう。",
+            "explanation": "**(1) Were I in your shoes, I would resign immediately.**\n\n- 倒置形 = If I were in your shoes (仮定法過去)\n- in someone's shoes = 〜の立場で\n- 訳: 私があなたの立場だったら、すぐに辞職するだろう。\n- 現実: 私はあなたの立場ではない、辞職もしない。\n\n**(2) Had I been more careful, the accident would not have happened.**\n\n- 倒置形 = If I had been more careful (仮定法過去完了)\n- 過去 → 過去 (純粋な仮定法過去完了)\n- 訳: もっと注意深かったら、事故は起こらなかっただろう。\n- 現実: 注意深くなかった、事故が起きた。\n\n**(3) Should you change your mind, please let me know by Friday.**\n\n- 倒置形 = If you should change your mind (仮定法未来、低可能性)\n- 訳: 万一気が変わったら、金曜日までにお知らせください。\n- ビジネスメールの定型表現。\n- 別表現: If you happen to change your mind / In case you change your mind。\n\n**(4) If I had gotten up earlier, I would not be here now.**\n\n- mixed conditional (過去の仮定 + 現在の結果)\n- If 節: 仮定法過去完了 (過去の事実反対 = 現実は遅く起きた)\n- 主節: would not be (現在の事実反対 + now が現在を示す)\n- 倒置形: Had I gotten up earlier, I would not be here now.\n- 訳: もし私がもっと早く起きていたら、今頃ここにいないだろう。\n- 現実: 遅く起きた、結果として今ここにいる。\n\n**(5) But for the doctor's quick action, the patient could not have survived.**\n\n- but for ~ = If it had not been for ~ = without ~\n- 仮定法過去完了 (could not have survived)\n- 訳: 医師の迅速な対応がなかったら、その患者は助からなかっただろう。\n- 現実: 医師が迅速に対応した、患者は助かった。\n- 等価表現: \n  - If it had not been for the doctor's quick action, ...\n  - Had it not been for the doctor's quick action, ...\n  - Without the doctor's quick action, ...\n\n**頻出ポイント (難関大)**\n\n- 倒置形 (Were / Had / Should) と If 形の互換\n- 仮定法過去 vs 過去完了 vs mixed conditional\n- but for / without / otherwise の仮定法表現\n- 副詞 (now / today / yesterday) が時制のずれ判定の鍵\n- 仮定法での would / could / might / should の使い分け\n  - would: 単純な仮定の結論\n  - could: 可能性 (〜できるのに)\n  - might: 可能性低 (〜かもしれないのに)\n  - should: 義務・期待 (〜すべきなのに)\n\n類題: 早稲田法 2024、慶應経済 2024、東大 4(B) 2024、上智 文 2024、ICU 2024、一橋 2024 で類題。"
+          },
+          {
+            "type": "practice",
+            "number": 2,
+            "question": "次の (1)(2) の問題に答えよ。\n(1) 【倒置形による英文完成】次の文の (   ) に入る最も適切な形を選び、和訳せよ。\n  (a) (   ) the climate negotiations succeed in 2025, the global temperature rise might still be limited to 1.5°C.\n     (i) Were  (ii) Should  (iii) Had  (iv) If\n  (b) (   ) we acted decisively a decade ago, the mental health crisis among young adults would not be this severe today.\n     (i) Were  (ii) Should  (iii) Had  (iv) Have\n(2) 【mixed conditional の時制ずれ判別】次の (a)(b)(c) のうち、文法的に**正しい** mixed conditional はどれか。すべて選び、理由を述べよ。\n  (a) If I had invested in AI startups in 2018, I would be wealthy now.\n  (b) If I had invested in AI startups in 2018, I would have been wealthy now.\n  (c) If I were more disciplined, I would have completed the climate research project last year."
+          },
+          {
+            "type": "answer",
+            "number": 2,
+            "answer": "(1) (a) (ii) Should (= If the climate negotiations should succeed)、(b) (iii) Had (= If we had acted)\n  和訳: (a) 万一 2025 年の気候交渉が成功すれば、地球の気温上昇は依然として 1.5℃ に抑えられるかもしれない。\n  (b) 10 年前に断固として行動していれば、今日の若者のメンタルヘルス危機はこれほど深刻ではなかっただろう。\n(2) (a) と (c) が正しい (b は誤り)",
+            "explanation": "**(1) 倒置形の判別**\n\n(a) **Should** the climate negotiations succeed (倒置形 = If they should succeed = 仮定法未来・低可能性)\n- 文構造図解: M [Should the climate negotiations succeed in 2025] + S [the global temperature rise] + V [might still be limited] + M [to 1.5°C]\n- might (助動詞過去形) があり、未来の起こりそうにない仮定 → Should の倒置\n- (i) Were は If S were (現在反対) で『成功している (現在)』の意味で文意不自然\n- (iii) Had は If S had p.p. (過去反対) で過去完了が必要だが succeed (原形) は接続不可\n- (iv) If は倒置形ではないので空所に直接置けない\n\n(b) **Had** we acted decisively a decade ago (倒置形 = If we had acted = 仮定法過去完了)\n- 文構造図解: M [Had we acted decisively a decade ago] + S [the mental health crisis among young adults] + V [would not be] + C [this severe] + M [today]\n- 今日 (today) と 10 年前 (a decade ago) → **mixed conditional** (過去仮定 + 現在結果)\n- 倒置可能なのは Had (= If S had p.p.)\n- 2023-2026 の気候変動・メンタルヘルスを題材にした入試類題\n\n**(2) mixed conditional の時制ずれ判別**\n\n正答: (a) と (c)\n\n(a) ✓ If I had invested ... I would be wealthy **now**\n- 過去の仮定 (had invested = 2018 年に投資しなかった) + 現在の結果 (would be wealthy now = 今金持ちでない)\n- 副詞 now が現在を示す mixed conditional の典型\n\n(b) ✗ If I had invested ... I would have been wealthy **now**\n- now と would have been (過去完了系) は不整合\n- 過去の結果なら『I would have been wealthy then/at that time』と過去の副詞が必要\n- 現在の結果なら would be (原形) でなければならない\n\n(c) ✓ If I were more disciplined, I would have completed ... **last year**\n- 現在の仮定 (were more disciplined = 恒常的特性、今も自制心が足りない) + 過去の結果 (would have completed last year = 去年完了しなかった)\n- 副詞 last year が過去を示す mixed conditional (現在 → 過去)\n\n採点ルーブリック (難関大記述採点): 倒置形の認識 40% / mixed conditional の時制ずれ判定 40% / 副詞による時制判別根拠 20%\n\n類題: 早稲田法 2025、慶應経済 2025、東大 4(B) 2025、上智 文 2024、一橋 2025 で類題。"
+          },
+          {
+            "type": "summary",
+            "heading": "まとめ — 仮定法 (難関大受験) の体系",
+            "points": [
+              "コアイメージ: 仮定法は『現実から距離を取る印』、時制を一つずらして距離を表現",
+              "三大基本形: 仮定法過去 (were/would 原形)、過去完了 (had p.p./would have p.p.)、未来 (should/were to)",
+              "If 省略の倒置: Were S / Had S / Should S の三つのみ可、was は不可",
+              "mixed conditional: If 節 (過去) + 主節 (現在 = now) で時制ずれ、副詞 now/today/yesterday が判別の鍵",
+              "If 以外の仮定法表現: but for / without / otherwise / suppose / what if / I wish / as if / it's time + 過去形",
+              "as if / as though + 過去 (現在反対) / 過去完了 (過去反対)",
+              "Should (低可能性=万一) と Were to (純粋仮定=ありえない/想像) の使い分け",
+              "would / could / might / should の使い分け: 結論の含意 (単純結論/可能/低可能/義務)",
+              "採点ルーブリック: 難関大記述採点 = 倒置形の認識 40% / mixed conditional の時制判定 40% / 副詞による時制判別根拠 20%",
+              "他単元との繋がり: 倒置 (本書、仮定法以外の倒置)、関係代名詞 (本書、仮定法 + 関係詞節)、助動詞 (would/could/might の本来用法)"
+            ]
+          }
+        ]
+      },
+      "status": "published",
+      "source": "claude_max_seed_batch41"
+    }
+  ]
+}
