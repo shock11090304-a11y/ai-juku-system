@@ -542,6 +542,15 @@
       <!-- アラート一覧 -->
       <div id="monAlertsBox"></div>
 
+      <!-- 📚 教材プール 未作成リクエスト一覧 (2026-05-01: pool 主導戦略) -->
+      <div style="margin-top:1rem;padding:0.9rem;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.3);border-radius:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.6rem;">
+          <div style="font-size:0.85rem;font-weight:800;color:#fbbf24;">📚 教材プール 未作成リクエスト (直近 7日) — 生徒/塾長が要求したが pool に未登録の単元</div>
+          <button id="refreshTbReqBtn" type="button" style="background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);padding:0.3rem 0.7rem;border-radius:6px;font-size:0.72rem;font-weight:700;cursor:pointer;">🔄 更新</button>
+        </div>
+        <div id="tbMissingReqList" style="font-size:0.78rem;color:#cbd5e1;">読み込み中...</div>
+      </div>
+
       <!-- 🛡️ E2E 合成監視 + JS エラー (24/365 自動検知 - Phase 14: 2026-04-27 追加) -->
       <div style="margin-top:1rem;padding:0.9rem;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.3);border-radius:10px;">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.6rem;">
@@ -1863,6 +1872,42 @@
     }
     function escapeHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+    // 📚 教材プール 未作成リクエスト 一覧読込
+    async function loadTextbookMissingRequests() {
+      const box = document.getElementById('tbMissingReqList');
+      if (!box) return;
+      try {
+        const r = await AdminAuth.fetch('/api/admin/textbooks/missing-requests?hours=168');
+        if (!r.ok) {
+          box.innerHTML = `<span style="color:#71717a;">取得失敗 (HTTP ${r.status})</span>`;
+          return;
+        }
+        const d = await r.json();
+        if (!d.items || d.items.length === 0) {
+          box.innerHTML = `<span style="color:#86efac;">✅ 直近 7 日間で未作成リクエストはありません</span>`;
+          return;
+        }
+        let html = `<div style="margin-bottom:0.5rem;color:#fbbf24;font-weight:700;">📊 ${d.total_unique} 単元 / 計 ${d.total_requests} 件のリクエスト (件数の多い順)</div>`;
+        html += '<div style="max-height:300px;overflow-y:auto;">';
+        d.items.slice(0, 30).forEach((item, i) => {
+          const badge = item.count >= 5 ? '🔥' : item.count >= 2 ? '⚠️' : '';
+          html += `<div style="padding:0.4rem 0.6rem;background:rgba(0,0,0,0.25);border-radius:4px;margin-bottom:0.25rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;">
+            <div style="flex:1;min-width:0;">
+              <span style="color:#fbbf24;font-weight:700;">${badge} ${item.count}件</span>
+              <span style="color:#e4e4e7;margin-left:0.5rem;">${item.subject} / <strong>${item.topic}</strong> / ${item.level}</span>
+              <span style="color:#71717a;font-size:0.72rem;margin-left:0.5rem;">${item.type}</span>
+            </div>
+            <div style="color:#71717a;font-size:0.7rem;">最新: ${(item.last_at || '').slice(0, 16).replace('T', ' ')}</div>
+          </div>`;
+        });
+        html += '</div>';
+        if (d.items.length > 30) html += `<p style="color:#71717a;font-size:0.7rem;margin-top:0.4rem;">…他 ${d.items.length - 30} 件</p>`;
+        box.innerHTML = html;
+      } catch (e) {
+        box.innerHTML = `<span style="color:#f87171;">取得エラー: ${e.message}</span>`;
+      }
+    }
+
     // 初回読込 + 60秒ごと自動更新
     function start() {
       loadSignupSummary();
@@ -1873,6 +1918,7 @@
       loadE2ESyntheticStatus();
       loadRevenueTimeline();
       loadPoolStatus();
+      loadTextbookMissingRequests();
       setInterval(loadSignupSummary, 60000);
       setInterval(loadLiveRoster, 60000);
       setInterval(loadFoundersDualCount, 60000);
@@ -1881,6 +1927,10 @@
       setInterval(loadE2ESyntheticStatus, 60000);
       setInterval(loadRevenueTimeline, 60000);
       setInterval(loadPoolStatus, 60000);
+      setInterval(loadTextbookMissingRequests, 120000);
+      // 教材プール 未作成リクエスト 手動更新
+      const refreshTbReqBtn = document.getElementById('refreshTbReqBtn');
+      if (refreshTbReqBtn) refreshTbReqBtn.addEventListener('click', loadTextbookMissingRequests);
       // 📨 通塾生 招待 URL 発行
       (function setupInviteGenUI(){
         const btn = document.getElementById('invGenBtn');

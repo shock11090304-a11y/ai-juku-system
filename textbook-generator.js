@@ -528,8 +528,11 @@ ${/数学/.test(subject) ? `
     throw lastErr || new Error(`${label} all retries exhausted`);
   };
 
-  // ----- Step 1: 教材プール検索 (Phase 1 ショートカット候補) -----
-  // 🔥 2026-05-01: pool hit でも Phase 2 検閲は必ず通す。topic 整合性も検証
+  // ----- Step 1: 教材プール検索 (Pool-only モード) -----
+  // 🔥 2026-05-01 戦略変更: live 生成廃止 → pool 主導
+  // - hit + topic 整合 → 即配信
+  // - miss or 不整合 → CEO に未作成リクエスト通知 + 「準備中」メッセージ
+  let poolMissReason = null;
   if (sessionToken) {
     try {
       const params = new URLSearchParams({ subject, topic, level, type, limit: '1' });
@@ -544,129 +547,55 @@ ${/数学/.test(subject) ? `
           const hitText = `${hit.title || ''} ${hit.topic || ''}`.toLowerCase();
           const topicMatches = topicTokens.length === 0 || topicTokens.some(t => hitText.includes(t.toLowerCase()));
           if (hit.content && typeof hit.content === 'object' && topicMatches) {
-            draft = hit.content;
+            json = hit.content;
             poolHitInfo = { id: hit.id, title: hit.title, source: 'textbook_pool' };
-            console.log('[textbook] プール命中 (topic 整合) → Phase 2 検閲へ:', hit.title);
+            console.log('[textbook] プール命中:', hit.title);
           } else if (!topicMatches) {
-            console.warn(`[textbook] プール mismatch 拒否: 要求 "${topic}" だが pool "${hit.title}" → live 生成へ`);
+            poolMissReason = `pool に "${topic}" の教材が無く、"${hit.title}" は不整合のため除外`;
+            console.warn(`[textbook] ${poolMissReason}`);
           }
+        } else {
+          poolMissReason = `pool に "${subject} / ${topic} / ${level}" の教材未登録`;
         }
+      } else {
+        poolMissReason = `pool 検索 API エラー (HTTP ${poolRes.status})`;
       }
     } catch (e) {
-      console.warn('[textbook] pool 検索失敗 (続行):', e);
+      poolMissReason = `pool 検索ネットワークエラー: ${e.message}`;
+      console.warn('[textbook] pool 検索失敗:', e);
     }
+  } else {
+    poolMissReason = '未ログイン (pool アクセス不可)';
   }
 
-  // ----- Step 2: チェック工程 + 生成 -----
-  // 🔥 塾長指示「いきなりプールに入らずチェックしてから」「チームで作り上げる」
-  // 設計:
-  //  Pool hit → Phase 1/2: 軽量検証 (タイトル整合チェック、5-10秒) → 不整合なら full 再生成 → 整合なら使用
-  //  Pool miss → Phase 1: 執筆 (30-90秒) + Phase 2: 検閲修正 (30-90秒) の 2 段
-  //  ※ Pool 教材 (5-8 ページ JSON 30k-50k 文字) を Phase 2 にフル投入すると router timeout したため軽量検証に変更
-  if (!sessionToken && !apiKey) {
-    await new Promise(r => setTimeout(r, 1500));
-    json = generateDemo(subject, topic, level);
-  } else {
-    try {
-      if (draft) {
-        // ===== Pool hit: 軽量検証 (Verify) — タイトル/トピック/レベル整合のみ =====
-        btn.textContent = '⏳ 1/2: プール候補を検証中...';
-        result.innerHTML = '<div class="tb-placeholder"><div style="font-size:3rem;">🔍</div><p>1/2: チームがプールから取り出した候補を検証しています (5〜15秒)</p></div>';
-        const verifySystemPrompt = `あなたは教材編集チームの検閲担当です。
-ユーザー要求とプール教材のメタ情報を照合し、トピック・レベル・科目が一致しているか厳格に判定してください。
-
-【出力形式】純粋な JSON のみ (Markdown コードフェンス禁止):
-{
-  "topic_match": true|false,
-  "level_match": true|false,
-  "subject_match": true|false,
-  "ok": true|false,
-  "reason": "判定理由を 1 行"
-}
-
-判定基準:
-- topic_match: ユーザー要求 topic の主要キーワードが教材タイトル/サブタイトル/topic フィールドに含まれているか
-- level_match: 教材 level がユーザー要求 level と同等か (例: 高校標準 vs 難関大受験 は不一致)
-- subject_match: 科目が一致しているか
-- ok: 上記 3 つすべてが true の時のみ true`;
-
-        const verifyUserMsg = `【ユーザー要求】
-科目: ${subject}
-単元: ${topic}
-レベル: ${level}
-
-【プール候補のメタ情報】
-タイトル: ${draft.title || ''}
-サブタイトル: ${draft.subtitle || ''}
-科目: ${draft.subject || ''}
-トピック: ${draft.topic || ''}
-レベル: ${draft.level || ''}
-
-判定してください。`;
-
-        let verdict = { ok: false, reason: 'verify_failed' };
-        try {
-          verdict = await callAI(verifySystemPrompt, verifyUserMsg, 'Verify', { useModel: MODEL_STANDARD, maxTokens: 500, timeoutMs: 30000 });
-        } catch (verifyErr) {
-          console.warn('[textbook] Verify 失敗 → 安全側で再生成:', verifyErr.message);
-          verdict = { ok: false, reason: 'verify_error' };
-        }
-
-        if (verdict.ok) {
-          // 整合 → プール教材をそのまま使用
-          btn.textContent = '⏳ 2/2: 検証 OK — 整合確認済';
-          result.innerHTML = `<div class="tb-placeholder"><div style="font-size:3rem;">✅</div><p>2/2: チーム検証 OK (${verdict.reason || 'プール教材は要求と整合'}) — そのまま採用します</p></div>`;
-          json = draft;
-        } else {
-          // 不整合 → live 生成にフォールバック
-          console.warn(`[textbook] Verify NG: ${verdict.reason} → Phase 1+2 再生成へ`);
-          btn.textContent = '⏳ 1/2: プール不整合 — 再生成';
-          result.innerHTML = `<div class="tb-placeholder"><div style="font-size:3rem;">🔄</div><p>1/2: プール候補が要求と不整合 (${verdict.reason}) → 新規執筆します (30-90秒)</p></div>`;
-          draft = null;  // 再生成のため reset
-          poolHitInfo = null;
-        }
-      }
-
-      if (!draft && !json) {
-        // ===== 統合 1-call フロー: Writer + Reviewer + Editor を single Opus call で実行 =====
-        // 🔥 2026-05-01: sequential 2-call (Phase 1 + Phase 2) は Opus 4.7 × 2 で 2-3 分かかり router timeout 多発
-        // → 1-call 化。systemPrompt 内で「内部 4 ステップ (執筆→3視点検閲→修正→致命傷確認)」を指示し、
-        //   Opus 4.7 の extended thinking で multi-perspective 検閲を内部実行 → 最終 JSON のみ出力
-        // 結果: 30-60 秒 (旧 60-180 秒) で同等品質
-        btn.textContent = '⏳ AI チームが執筆+検閲中...';
-        result.innerHTML = '<div class="tb-placeholder"><div style="font-size:3rem;">✍️🔍</div><p>AI 講師チーム (執筆者 + 内容/教育/入試の 3 検閲者) が並行作業中... (30-60秒)</p></div>';
-        json = await callAI(systemPrompt, userMsg, 'Writer+Review-Combined', { useModel: MODEL_STANDARD, maxTokens: 8000, timeoutMs: 120000 });
-      }
-      } catch (e) {
-        // フェイルセーフ最終層: プール miss + Anthropic + Gemini 両系統失敗 → 中立的案内 + demo
-        const errMsg = String(e.message || '').slice(0, 100);
-        const isRouterErr = errMsg.includes('ROUTER_EXTERNAL') || errMsg.includes('502') || errMsg.includes('504');
-        const friendlyMsg = isRouterErr
-          ? '教材生成サーバが混雑しています。30秒後にもう一度「✨ テキスト教材を生成」を押してください。\n(Anthropic + Gemini 両系統で一時的に応答が遅れている可能性)'
-          : `教材生成で一時的なエラーが発生しました。\n詳細: ${errMsg}\n30秒後に再試行してください。`;
-        alert(`${friendlyMsg}\n\n仮の教材を表示します (本物ではありません)。`);
-        // backend events に詳細を記録 (塾長が真原因を即特定できるように)
-        try {
-          if (sessionToken) {
-            fetch(`${backend}/api/admin/log-frontend-error`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + sessionToken,
-              },
-              body: JSON.stringify({
-                kind: 'textbook_generate',
-                subject, topic, level, type,
-                model: MODEL_PREMIUM,
-                error_message: errMsg,
-                full_error: String(e.message || '').slice(0, 500),
-                user_agent: navigator.userAgent.slice(0, 200),
-              }),
-            }).catch(() => {});  // fire-and-forget
-          }
-        } catch (_) {}
-        json = generateDemo(subject, topic, level);
-      }
+  // ----- Step 2: pool miss 時は CEO に未作成リクエスト通知 + 「準備中」メッセージ -----
+  // 🔥 戦略変更 (2026-05-01): live 生成は廃止。未作成は塾長がバッチ生成して pool に追加
+  if (!json) {
+    if (sessionToken) {
+      // CEO に通知 (events.textbook_request_missing)
+      try {
+        await fetch(`${backend}/api/textbooks/request-generation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionToken },
+          body: JSON.stringify({ subject, topic, level, type, length }),
+        });
+      } catch (_) {}
+    }
+    // ユーザーには「準備中」表示 (alert は出さない、UI 内で完結)
+    btn.textContent = '✨ テキスト教材を生成';
+    btn.disabled = false;
+    result.className = 'tb-result';
+    result.innerHTML = `<div class="tb-placeholder" style="text-align:center;padding:2rem;">
+      <div style="font-size:3rem;">📚</div>
+      <h3 style="margin:1rem 0;color:#fbbf24;">この教材は準備中です</h3>
+      <p style="color:#cbd5e1;margin-bottom:0.5rem;">ご要求の単元 <strong>${topic}</strong> (${level}) は<br>まだ教材プールに登録されていません。</p>
+      <p style="color:#94a3b8;font-size:0.85rem;margin-top:1rem;">塾長にリクエストが自動送信されました。<br>近日中に教材プールに追加されますので、しばらくお待ちください。</p>
+      <p style="color:#71717a;font-size:0.75rem;margin-top:1.5rem;">理由: ${poolMissReason || 'pool 未登録'}</p>
+      <p style="color:#71717a;font-size:0.75rem;margin-top:0.5rem;">別の単元 (例: 仮定法、分詞構文、関係代名詞 など)<br>ですでに準備済みのものをお試しください。</p>
+    </div>`;
+    actions.style.display = 'none';
+    tabs.style.display = 'none';
+    return;  // 後続のレンダリング処理をスキップ
   }
 
   lastData = json;

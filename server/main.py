@@ -5943,6 +5943,118 @@ def public_textbook_search(
     return {"ok": True, "count": len(out), "results": out}
 
 
+@app.post("/api/textbooks/request-generation")
+def textbook_request_generation(payload: dict, authorization: Optional[str] = Header(None)):
+    """🔥 2026-05-01: pool miss 時にリクエスト記録 (CEO 通知用)。
+    塾長指示「pool 主導にシフト、未作成は塾長に通知」。
+    Live 生成は廃止し、未作成は events.textbook_request_missing に記録 → CEO ダッシュで一覧表示。
+    認証: 生徒 magic-link or admin"""
+    authed = False
+    student = None
+    is_admin = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            is_admin = True
+            authed = True
+        else:
+            try:
+                student = _get_current_student(authorization)
+                if student:
+                    authed = True
+            except Exception:
+                pass
+    if not authed:
+        raise HTTPException(status_code=401, detail="Login required")
+
+    subject = (payload.get("subject") or "").strip()
+    topic = (payload.get("topic") or "").strip()
+    level = (payload.get("level") or "").strip()
+    type_ = (payload.get("type") or "").strip()
+    length = (payload.get("length") or "").strip()
+    if not subject or not topic:
+        raise HTTPException(status_code=400, detail="subject and topic required")
+
+    requester_label = "admin" if is_admin else f"student:{student.get('id')}"
+    try:
+        conn = db(); c = conn.cursor()
+        c.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            (
+                "textbook_request_missing",
+                json.dumps({
+                    "subject": subject, "topic": topic, "level": level,
+                    "type": type_, "length": length,
+                    "requester": requester_label,
+                }, ensure_ascii=False),
+                f"textbook_req:{requester_label}",
+            ),
+        )
+        conn.commit(); conn.close()
+        log.info(f"[Textbook] Missing request: {subject} / {topic} / {level} ({requester_label})")
+    except Exception as e:
+        log.warning(f"[Textbook] failed to record missing request: {e}")
+    return {"ok": True, "queued": True}
+
+
+@app.get("/api/admin/textbooks/missing-requests")
+def admin_textbook_missing_requests(
+    hours: int = 168,  # default 7日
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🔥 2026-05-01: 未作成教材リクエスト一覧 (CEO 通知用)。
+    subject + topic + level の組合せで集計し、件数の多い順に返す。
+    pool に作るべき優先順位を CEO が即把握できる。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    hours = max(1, min(int(hours or 168), 24 * 90))
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    conn = db(); c = conn.cursor()
+    try:
+        c.execute(
+            "SELECT props, created_at FROM events WHERE name = 'textbook_request_missing' AND created_at >= ? ORDER BY created_at DESC",
+            (cutoff,)
+        )
+        rows = c.fetchall()
+    finally:
+        conn.close()
+
+    # subject + topic + level でグルーピング
+    aggregated = {}
+    for r in rows:
+        try:
+            props = json.loads(r[0]) if not hasattr(r, 'keys') else json.loads(r["props"])
+            key = (props.get("subject", ""), props.get("topic", ""), props.get("level", ""))
+            if key not in aggregated:
+                aggregated[key] = {
+                    "subject": key[0], "topic": key[1], "level": key[2],
+                    "type": props.get("type", ""), "length": props.get("length", ""),
+                    "count": 0, "first_at": str(r[1] if not hasattr(r, "keys") else r["created_at"]),
+                    "last_at": str(r[1] if not hasattr(r, "keys") else r["created_at"]),
+                }
+            aggregated[key]["count"] += 1
+            # last_at は最新のリクエスト
+            cur_last = aggregated[key]["last_at"]
+            new_at = str(r[1] if not hasattr(r, "keys") else r["created_at"])
+            if new_at > cur_last:
+                aggregated[key]["last_at"] = new_at
+        except Exception:
+            continue
+
+    # 件数の多い順にソート
+    out = sorted(aggregated.values(), key=lambda x: -x["count"])
+    return {"ok": True, "total_unique": len(out), "total_requests": sum(x["count"] for x in out), "items": out}
+
+
 @app.get("/api/admin/students/never-logged-in")
 def admin_students_never_logged_in(
     hours: int = 24,
