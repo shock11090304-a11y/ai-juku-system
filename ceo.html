@@ -670,6 +670,21 @@
         <div style="color:#71717a;font-size:0.78rem;">読み込み中...</div>
       </div>
       <div id="mktError" style="display:none;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.4);border-radius:10px;padding:0.7rem;color:#fca5a5;font-size:0.82rem;margin-top:0.5rem;"></div>
+
+      <!-- 📤 アップロード UI (drag-drop + file picker → GitHub commit) -->
+      <div style="margin-top:1rem;padding-top:0.9rem;border-top:1px dashed rgba(236,72,153,0.25);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.5rem;">
+          <div style="font-size:0.85rem;color:#f9a8d4;font-weight:800;">📤 新しい素材をアップロード</div>
+          <div style="font-size:0.7rem;color:#71717a;">アップロード先: <strong id="mktUploadCampaignLabel" style="color:#ec4899;">threads</strong></div>
+        </div>
+        <div id="mktDropZone" style="border:2px dashed rgba(236,72,153,0.4);border-radius:10px;padding:1.2rem;text-align:center;cursor:pointer;background:rgba(236,72,153,0.04);transition:all 0.15s;">
+          <div style="font-size:2rem;margin-bottom:0.3rem;">📁</div>
+          <div style="font-size:0.82rem;color:#f9a8d4;font-weight:700;margin-bottom:0.2rem;">クリックでファイル選択 / ドラッグ&ドロップ</div>
+          <div style="font-size:0.7rem;color:#71717a;">PNG / JPG / WebP / GIF / SVG / PDF (最大 10MB)</div>
+          <input id="mktFileInput" type="file" accept=".png,.jpg,.jpeg,.webp,.gif,.svg,.pdf" style="display:none;">
+        </div>
+        <div id="mktUploadList" style="margin-top:0.6rem;"></div>
+      </div>
     </section>
     <style>
       .mkt-tab-btn {
@@ -2487,6 +2502,168 @@
         tabsWrap.querySelectorAll('.mkt-tab-btn').forEach(btn => {
           btn.addEventListener('click', () => loadCampaign(btn.dataset.campaign));
         });
+
+        // 📤 アップロード機能
+        const dropZone = document.getElementById('mktDropZone');
+        const fileInput = document.getElementById('mktFileInput');
+        const uploadList = document.getElementById('mktUploadList');
+        const uploadCampaignLabel = document.getElementById('mktUploadCampaignLabel');
+
+        // タブ切替時にアップロード先表示更新
+        const origLoadCampaign = loadCampaign;
+        loadCampaign = function(c) {
+          if (uploadCampaignLabel) uploadCampaignLabel.textContent = c;
+          return origLoadCampaign(c);
+        };
+
+        if (dropZone && fileInput) {
+          dropZone.addEventListener('click', () => fileInput.click());
+          ['dragover', 'dragenter'].forEach(ev => dropZone.addEventListener(ev, e => {
+            e.preventDefault();
+            dropZone.style.background = 'rgba(236,72,153,0.15)';
+            dropZone.style.borderColor = '#ec4899';
+          }));
+          dropZone.addEventListener('dragleave', e => {
+            e.preventDefault();
+            dropZone.style.background = 'rgba(236,72,153,0.04)';
+            dropZone.style.borderColor = 'rgba(236,72,153,0.4)';
+          });
+          dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.style.background = 'rgba(236,72,153,0.04)';
+            dropZone.style.borderColor = 'rgba(236,72,153,0.4)';
+            const files = Array.from(e.dataTransfer?.files || []);
+            if (files.length) handleUploadFiles(files);
+          });
+          fileInput.addEventListener('change', e => {
+            const files = Array.from(e.target.files || []);
+            if (files.length) handleUploadFiles(files);
+            fileInput.value = '';
+          });
+        }
+
+        // 簡易 toast (誤タブ予防 + 一般通知)
+        function showMktToast(text, color) {
+          const t = document.createElement('div');
+          t.textContent = text;
+          t.style.cssText = `position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:${color || 'rgba(236,72,153,0.95)'};color:#fff;padding:0.6rem 1.2rem;border-radius:8px;font-size:0.85rem;font-weight:700;z-index:10000;box-shadow:0 4px 16px rgba(0,0,0,0.4);`;
+          document.body.appendChild(t);
+          setTimeout(() => { t.style.transition = 'opacity 0.5s'; t.style.opacity = '0'; }, 1500);
+          setTimeout(() => t.remove(), 2100);
+        }
+
+        // 日本語/特殊文字混じり filename を ASCII safe な名前に sanitize
+        // 例: "2026-05-Threads-投稿用.png" → "upload-1714521600-a3f.png"
+        function sanitizeFilename(originalName) {
+          const parts = originalName.split('.');
+          const ext = parts.length > 1 ? parts.pop().toLowerCase() : 'bin';
+          const safeExt = /^[a-z0-9]{1,8}$/.test(ext) ? ext : 'bin';
+          // 元名を ASCII 化 (英数のみ残す)
+          const base = parts.join('.').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 30);
+          if (base && /^[a-zA-Z0-9_-]+$/.test(base) && base.length >= 3) {
+            // ASCII 元名が使える場合はそのまま使う (重複時は server 側で 409)
+            return `${base}.${safeExt}`;
+          }
+          // 完全自動命名
+          const ts = Math.floor(Date.now() / 1000);
+          const rand = Math.random().toString(36).substring(2, 6);
+          return `upload-${ts}-${rand}.${safeExt}`;
+        }
+
+        // upload 中のキャンペーンを closure capture (タブ切替後に間違って別タブを再読込しないよう)
+        async function handleUploadFiles(files) {
+          const uploadCampaign = currentCampaign;  // closure 固定
+          showMktToast(`📤 ${uploadCampaign} に ${files.length} ファイルをアップロード`, 'rgba(167,139,250,0.95)');
+          // 並列 upload (5 file 同時まで)
+          const results = await Promise.all(files.map(f => uploadOneFile(f, uploadCampaign)));
+          const successCount = results.filter(r => r === 'success').length;
+          // 反映確認は upload 時 campaign の list 再読込 (タブ移動済でも campaign 固定)
+          if (successCount > 0) {
+            setTimeout(() => {
+              if (currentCampaign === uploadCampaign) {
+                loadCampaign(uploadCampaign);
+              } else {
+                showMktToast(`✅ ${uploadCampaign} に ${successCount} 件反映済`, 'rgba(52,211,153,0.95)');
+              }
+            }, 150000);  // 2.5min Vercel + Railway redeploy 余裕
+          }
+        }
+
+        // HTTP status → 塾長向けメッセージ翻訳
+        function translateUploadError(status, raw) {
+          if (status === 413) return '容量オーバー (10MB まで。Canva で圧縮 PNG にしてください)';
+          if (status === 422 || status === 400) {
+            if (/filename|拡張子|画像形式/.test(raw)) return 'ファイル名/形式が不正 (英数字+.拡張子のみ、PNG/JPG/SVG など)';
+            if (/SVG/.test(raw)) return 'SVG にスクリプトが含まれているため拒否 (Canva の SVG export 推奨)';
+            return raw.slice(0, 80);
+          }
+          if (status === 409) return '既存ファイルと同名 (上書きを選択してください)';
+          if (status === 503) return 'サーバ設定不備 (PAT 失効の可能性、塾長確認が必要)';
+          if (status === 502) return 'GitHub API エラー (数分後に再試行)';
+          if (status === 401) return '認証切れ (再ログインしてください)';
+          if (status === 429) return 'アップロード上限 (5/分)。しばらく待って再試行';
+          return `エラー (${status}): ${raw.slice(0, 60)}`;
+        }
+
+        async function uploadOneFile(file, uploadCampaign) {
+          if (!uploadList) return 'error';
+          const sanitizedName = sanitizeFilename(file.name);
+          const renamed = sanitizedName !== file.name;
+
+          const row = document.createElement('div');
+          row.style.cssText = 'background:rgba(236,72,153,0.08);border:1px solid rgba(236,72,153,0.2);border-radius:6px;padding:0.5rem 0.7rem;margin-bottom:0.3rem;font-size:0.78rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.4rem;';
+          row.innerHTML = `<div style="min-width:0;flex:1;">
+            <div style="font-family:ui-monospace,monospace;color:#f9a8d4;word-break:break-all;">${escapeHtml(sanitizedName)}</div>
+            ${renamed ? `<div style="font-size:0.66rem;color:#71717a;">元: ${escapeHtml(file.name)}</div>` : ''}
+            <div style="font-size:0.66rem;color:#71717a;">${(file.size/1024).toFixed(1)}KB → ${escapeHtml(uploadCampaign)}</div>
+          </div>
+          <div class="mkt-up-status" style="color:#fbbf24;white-space:nowrap;">⏳ アップロード中</div>`;
+          uploadList.appendChild(row);
+          const statusEl = row.querySelector('.mkt-up-status');
+
+          if (file.size > 10 * 1024 * 1024) {
+            statusEl.innerHTML = '<span style="color:#fca5a5;">❌ 10MB 超過</span>';
+            return 'error';
+          }
+
+          // sanitize した filename で再構成 (File は immutable なので renamed File 作成)
+          const renamedFile = renamed ? new File([file], sanitizedName, { type: file.type }) : file;
+
+          async function postWithFlag(overwrite) {
+            const fd = new FormData();
+            fd.append('file', renamedFile);
+            fd.append('overwrite', overwrite ? 'true' : 'false');
+            return window.AdminAuth.fetch(
+              `/api/admin/marketing-assets/${encodeURIComponent(uploadCampaign)}/upload`,
+              { method: 'POST', body: fd }
+            );
+          }
+
+          try {
+            let res = await postWithFlag(false);
+            if (res.status === 409) {
+              if (!confirm(`「${sanitizedName}」は ${uploadCampaign} に既に存在します。上書きしますか?`)) {
+                statusEl.innerHTML = '<span style="color:#71717a;">— skip (既存維持)</span>';
+                return 'skip';
+              }
+              res = await postWithFlag(true);
+            }
+            if (!res.ok) {
+              const raw = await res.text().catch(() => '');
+              const userMsg = translateUploadError(res.status, raw);
+              throw new Error(userMsg);
+            }
+            const data = await res.json();
+            statusEl.innerHTML = `<span style="color:#34d399;">✅ commit ${escapeHtml(data.commit_sha || '')} (${data.overwritten ? '上書' : '新規'}) — 2〜3分後に反映</span>`;
+            return 'success';
+          } catch (e) {
+            console.error('[mkt-upload]', e);
+            const msg = (e.message || String(e));
+            statusEl.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(msg.substring(0, 100))}</span>`;
+            return 'error';
+          }
+        }
 
         // 初回ロード (admin 認証通過後)
         setTimeout(() => loadCampaign('threads'), 500);

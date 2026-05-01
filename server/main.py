@@ -11,7 +11,7 @@ FastAPI + SQLite + Stripe + LINE Messaging API
     uvicorn main:app --reload --port 8000
 """
 
-from fastapi import FastAPI, Request, HTTPException, Depends, Header, Body
+from fastapi import FastAPI, Request, HTTPException, Depends, Header, Body, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse, RedirectResponse, StreamingResponse
@@ -10856,6 +10856,183 @@ def admin_marketing_assets_list(
         "total_bytes": total_bytes,
         "total_human": f"{total_bytes/1024/1024:.2f} MB" if total_bytes >= 1024*1024 else f"{total_bytes/1024:.1f} KB",
         "label_info": _MARKETING_CAMPAIGN_LABELS.get(campaign_l, {}),
+    }
+
+
+_MARKETING_UPLOAD_MAX_BYTES = 10 * 1024 * 1024  # 1 file あたり 10MB 上限
+_MARKETING_UPLOAD_MAX_FILENAME_LEN = 80
+
+# MIME magic bytes による型チェック (extension 詐称防御)
+_MARKETING_MAGIC_BYTES = {
+    b"\x89PNG\r\n\x1a\n": "png",
+    b"\xff\xd8\xff": "jpg",
+    b"GIF87a": "gif",
+    b"GIF89a": "gif",
+    b"RIFF": "webp",  # 後ろの "WEBP" もチェック
+    b"%PDF-": "pdf",
+}
+
+# SVG 内に含まれてはいけない危険タグ/属性 (XSS 物理防御; vercel header に頼らない)
+_SVG_DANGEROUS_PATTERNS = (
+    b"<script", b"</script", b"javascript:",
+    b"onload=", b"onerror=", b"onclick=", b"onmouseover=", b"onfocus=",
+    b"<foreignobject", b"<iframe", b"<embed", b"<object",
+    b"<use ", b"<use\t", b"<use\n",  # xlink:href で外部 SVG 取り込み
+    b"<animate ", b"<set ",  # CSS-from属性で実行可能
+    b"href=\"javascript", b"href='javascript", b"xlink:href=\"javascript", b"xlink:href='javascript",
+)
+
+def _svg_is_safe(data: bytes) -> bool:
+    """SVG bytes を string match で検査。<script> や onevent 属性 / external href があれば False。"""
+    if not data:
+        return False
+    low = data.lower()
+    for bad in _SVG_DANGEROUS_PATTERNS:
+        if bad in low:
+            return False
+    return True
+
+def _detect_image_kind(data: bytes) -> Optional[str]:
+    """先頭 bytes から実ファイル形式を判定 (extension 詐称攻撃対策)。"""
+    if not data:
+        return None
+    for sig, kind in _MARKETING_MAGIC_BYTES.items():
+        if data.startswith(sig):
+            if kind == "webp" and len(data) >= 12 and data[8:12] == b"WEBP":
+                return "webp"
+            elif kind != "webp":
+                return kind
+    # SVG: "<?xml" or "<svg" で開始 (XML)
+    head = data[:200].lstrip().lower()
+    if head.startswith(b"<?xml") and b"<svg" in head[:200]:
+        return "svg"
+    if head.startswith(b"<svg"):
+        return "svg"
+    return None
+
+
+@app.post("/api/admin/marketing-assets/{campaign}/upload")
+async def admin_marketing_assets_upload(
+    campaign: str,
+    request: Request,
+    file: UploadFile = File(...),
+    overwrite: bool = Form(False),
+    authorization: Optional[str] = Header(None),
+):
+    """📤 マーケティング素材を CEO ダッシュからアップロード (GitHub API 経由 commit)。
+    admin Bearer auth + IP rate limit (5req/min)。
+    multipart/form-data: file (画像/PDF), overwrite (true なら既存上書き)
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="未認証")
+
+    # upload は重い + GitHub API rate limit があるので厳しめ
+    _check_rate_limit_ip(request, bucket="mkt_assets_upload", limit=5, window=60)
+
+    if not GITHUB_REVERT_PAT:
+        raise HTTPException(status_code=503, detail="GITHUB_REVERT_PAT 未設定 (CEO ダッシュ env で設定要)")
+
+    campaign_l = (campaign or "").strip().lower()
+    if campaign_l not in _MARKETING_CAMPAIGN_ALLOWED:
+        raise HTTPException(status_code=400, detail=f"campaign は {sorted(_MARKETING_CAMPAIGN_ALLOWED)} のいずれか")
+
+    # filename validation
+    raw_name = (file.filename or "").strip()
+    if not raw_name:
+        raise HTTPException(status_code=400, detail="filename が空")
+    safe_name = os.path.basename(raw_name)
+    if len(safe_name) > _MARKETING_UPLOAD_MAX_FILENAME_LEN:
+        raise HTTPException(status_code=400, detail=f"filename は {_MARKETING_UPLOAD_MAX_FILENAME_LEN} 字以内")
+    if not _is_safe_marketing_filename(safe_name):
+        raise HTTPException(status_code=400, detail="filename は英数字+ハイフン+アンダースコア+許可拡張子のみ (frontend 側で sanitize 推奨)")
+
+    # Content-Length 事前チェック (DoS 対策: read 前に弾く)
+    try:
+        cl = int(request.headers.get("content-length") or 0)
+    except (TypeError, ValueError):
+        cl = 0
+    if cl > _MARKETING_UPLOAD_MAX_BYTES + 4096:  # multipart overhead 余裕
+        raise HTTPException(status_code=413, detail=f"Content-Length が上限 {_MARKETING_UPLOAD_MAX_BYTES//1024//1024}MB 超過")
+
+    # ファイル読込 (上限+1 で打ち切り = OOM 防止)
+    contents = await file.read(_MARKETING_UPLOAD_MAX_BYTES + 1)
+    if len(contents) > _MARKETING_UPLOAD_MAX_BYTES:
+        raise HTTPException(status_code=413, detail=f"ファイルサイズが上限 {_MARKETING_UPLOAD_MAX_BYTES//1024//1024}MB 超過")
+    if len(contents) == 0:
+        raise HTTPException(status_code=400, detail="ファイルが空")
+
+    # MIME magic bytes で実ファイル形式を判定 (extension 詐称防御)
+    detected = _detect_image_kind(contents)
+    declared_ext = pathlib.Path(safe_name).suffix.lower().lstrip(".")
+    if not detected:
+        raise HTTPException(status_code=400, detail="非対応の画像形式 (PNG/JPG/WebP/GIF/SVG/PDF のみ)")
+    if detected == "jpg" and declared_ext in ("jpg", "jpeg"):
+        pass
+    elif detected != declared_ext:
+        raise HTTPException(status_code=400, detail=f"拡張子 .{declared_ext} と実形式 ({detected}) が不一致")
+
+    # SVG XSS 対策: vercel.json header に依存せず string match で危険タグを reject
+    if detected == "svg" and not _svg_is_safe(contents):
+        raise HTTPException(status_code=400, detail="SVG にスクリプト/外部 href/onevent 属性があるため拒否 (XSS 防止)")
+
+    # GitHub API で commit (PUT /repos/{owner}/{repo}/contents/{path})
+    repo_path = f"marketing-assets/{campaign_l}/{safe_name}"
+    # Critical 対策: path 越境を server 側で再 assert (PAT scope の防御)
+    if not repo_path.startswith(f"marketing-assets/{campaign_l}/"):
+        raise HTTPException(status_code=400, detail="path 越境検知")
+    if ".." in repo_path or "//" in repo_path:
+        raise HTTPException(status_code=400, detail="path に不正な区切り")
+    api_url = f"/repos/{GITHUB_REPO}/contents/{repo_path}"
+
+    # 既存チェック (overwrite=False で同名あれば 409)
+    existing_sha = None
+    head_res = _github_api("GET", api_url)
+    if head_res.get("ok") and head_res.get("status") == 200:
+        if not overwrite:
+            raise HTTPException(status_code=409, detail=f"既存ファイルあり: {safe_name} (overwrite=true で上書き可)")
+        existing_sha = (head_res.get("json") or {}).get("sha")
+
+    # base64 encode + PUT
+    content_b64 = base64.b64encode(contents).decode("ascii")
+    # commit message から filename を除外 (public commit log 漏洩対策)
+    commit_msg = f"upload marketing-asset to {campaign_l} (CEO dashboard)"
+    body = {
+        "message": commit_msg,
+        "content": content_b64,
+        "branch": AUTO_ROLLBACK_BRANCH,
+    }
+    if existing_sha:
+        body["sha"] = existing_sha
+
+    put_res = _github_api("PUT", api_url, body=body, timeout=30)
+    if not put_res.get("ok"):
+        # PAT 失効 (401) は self-healing 誘導
+        if put_res.get("status") == 401:
+            raise HTTPException(status_code=503, detail="GITHUB_REVERT_PAT 失効。Vercel/Railway env で PAT 更新が必要")
+        if put_res.get("status") == 403:
+            raise HTTPException(status_code=503, detail="GitHub API rate limit 到達 or PAT scope 不足")
+        raise HTTPException(status_code=502, detail=f"GitHub API 失敗 (status {put_res.get('status')})")
+
+    commit_sha = ((put_res.get("json") or {}).get("commit") or {}).get("sha", "")[:8]
+
+    # Audit log (誰がいつ何を上げたか追跡可能に)
+    log.info(f"[mkt-upload] admin token={token[:6]}... campaign={campaign_l} file={safe_name} size={len(contents)} commit={commit_sha} overwrote={existing_sha is not None}")
+
+    return {
+        "ok": True,
+        "campaign": campaign_l,
+        "filename": safe_name,
+        "size": len(contents),
+        "size_human": f"{len(contents)/1024:.1f} KB" if len(contents) < 1024*1024 else f"{len(contents)/1024/1024:.2f} MB",
+        "detected_kind": detected,
+        "overwritten": existing_sha is not None,
+        "commit_sha": commit_sha,
+        "deploy_eta_seconds": 150,  # Vercel + Railway 余裕を持って 2.5min
+        "public_url": f"/marketing-assets/{campaign_l}/{safe_name}",
+        "message": "✅ commit 済。Vercel + Railway redeploy で 2〜3分後に反映されます。",
     }
 
 
