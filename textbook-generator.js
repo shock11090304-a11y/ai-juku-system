@@ -1434,8 +1434,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 過去問対応モードUI初期化
   initTbPastExamUi();
-  // 初期表示
+
+  // ===== URL params から自動入力 (塾長指示 2026-05-01) =====
+  // セッション結果モーダルの「弱点単元の教材へ」リンクから来た場合に
+  // ?subject=英語&topic=関係代名詞&level=B1 などを自動セット。
+  let _urlSubjectApplied = false;
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlSubject = urlParams.get('subject');
+    const urlTopic = urlParams.get('topic');
+    const urlLevel = urlParams.get('level');
+
+    if (urlSubject && Array.from(subjSelect.options).some(o => o.value === urlSubject)) {
+      subjSelect.value = urlSubject;
+      _urlSubjectApplied = true;
+    }
+    if (urlLevel) {
+      const lvSel = document.getElementById('tbLevel');
+      if (lvSel && Array.from(lvSel.options).some(o => o.value === urlLevel)) {
+        lvSel.value = urlLevel;
+      }
+    }
+    if (urlTopic) {
+      // 1) 該当 subject の単元マスタに完全一致があれば selectedUnits に追加
+      const masterUnits = TB_UNITS_BY_SUBJECT[subjSelect.value] || [];
+      if (masterUnits.includes(urlTopic)) {
+        tbSelectedUnits = [urlTopic];
+      } else {
+        // 2) 部分一致 (前方/部分包含) 試行
+        const hit = masterUnits.find(u => u.includes(urlTopic) || urlTopic.includes(u));
+        if (hit) {
+          tbSelectedUnits = [hit];
+        } else {
+          // 3) 単元マスタに無ければ自由入力フィールドへ
+          const tInput = document.getElementById('tbTopic');
+          if (tInput) tInput.value = urlTopic;
+        }
+      }
+    }
+  } catch (e) { console.warn('[tb] URL params apply failed:', e); }
+
+  // 初期表示 (上記 URL params 適用後の subject 値で units を描画)
   renderTbUnits(subjSelect.value);
+  if (_urlSubjectApplied || tbSelectedUnits.length > 0) updateTbSelectedBar();
 
   // クリアボタン
   document.getElementById('tbUnitClear').addEventListener('click', clearTbUnits);

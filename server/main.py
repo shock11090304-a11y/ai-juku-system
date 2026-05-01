@@ -4113,6 +4113,31 @@ EXAM_QUESTION_ROTATION = [
     ("daigaku", "r_long",        "kangaku"),
     ("daigaku", "r_long",        "doshisha"),
     ("daigaku", "r_long",        "ritsumei"),
+    # 国公立旧帝 (北大/東北大/九大)
+    ("daigaku", "r_long",        "hokudai"),
+    ("daigaku", "w_essay",       "hokudai"),
+    ("daigaku", "r_translation", "hokudai"),
+    ("daigaku", "r_long",        "tohoku"),
+    ("daigaku", "w_essay",       "tohoku"),
+    ("daigaku", "r_translation", "tohoku"),
+    ("daigaku", "r_long",        "kyushu"),
+    ("daigaku", "w_essay",       "kyushu"),
+    ("daigaku", "r_translation", "kyushu"),
+    # 国公立準難関 (神戸/横国/千葉/筑波)
+    ("daigaku", "r_long",        "kobe"),
+    ("daigaku", "w_essay",       "kobe"),
+    ("daigaku", "r_translation", "kobe"),
+    ("daigaku", "r_long",        "yokokoku"),
+    ("daigaku", "w_essay",       "yokokoku"),
+    ("daigaku", "r_long",        "chiba"),
+    ("daigaku", "r_translation", "chiba"),
+    ("daigaku", "r_long",        "tsukuba"),
+    ("daigaku", "w_essay",       "tsukuba"),
+    # 私立 学習院 + 成成明武
+    ("daigaku", "r_long",        "gakushuin"),
+    ("daigaku", "r_long",        "seikei"),
+    ("daigaku", "r_long",        "seijo"),
+    ("daigaku", "r_long",        "musashi"),
     # 医学部
     ("daigaku", "r_long",        "igakubu_kokoritsu"),
     ("daigaku", "r_translation", "igakubu_kokoritsu"),
@@ -4193,6 +4218,17 @@ DAIGAKU_UNIV_STYLES = {
     "kangaku":   {"name": "関西学院大学",   "style": "実用英語重視・実用的なテーマの英文。英文要約 or 短い意見論述。"},
     "doshisha":  {"name": "同志社大学",     "style": "やや長めの評論/エッセイ系長文。同志社型整序問題。"},
     "ritsumei":  {"name": "立命館大学",     "style": "英語選択幅広い学部対応・長文+整序+自由英作。"},
+    "hokudai":   {"name": "北海道大学",     "style": "国公立旧帝。標準〜やや難の評論/論説系英文 + 部分和訳 + 自由英作 70-100語。北方圏/環境/農学/獣医学が頻出テーマ。関係詞節・無生物主語の和訳が中核。"},
+    "tohoku":    {"name": "東北大学",       "style": "国公立旧帝。理系/文系融合の硬めの英文 + 全訳/部分和訳 + 自由英作 80-120語。技術/科学哲学/環境/震災後の復興系テーマ。記述式の精度を問う。"},
+    "kyushu":    {"name": "九州大学",       "style": "国公立旧帝。アジア圏/グローバル/共生をテーマにした評論系英文 + 構造把握型和訳 + 自由英作 70-100語。理論的・抽象的英文が多め。"},
+    "kobe":      {"name": "神戸大学",       "style": "国公立準難関。経済/経営/国際文化系の評論英文 + 部分和訳 + 自由英作 60-80語。読みやすい標準英文だが論理的整合性を厳格に問う。"},
+    "yokokoku":  {"name": "横浜国立大学",   "style": "国公立準難関。経営/経済/教育/工学系の標準英文 + 部分和訳 + 自由英作 (テーマ自由度高め)。総合力重視・論理整合性。"},
+    "chiba":     {"name": "千葉大学",       "style": "国公立準難関。教育/医/工/園芸 等学部別出題。標準英文長文 + 整序 + 部分和訳。読解スピード重視。"},
+    "tsukuba":   {"name": "筑波大学",       "style": "国公立準難関。総合学群型・幅広いテーマの評論英文 + 部分和訳 + 自由英作 70-100語。論理思考・パラフレーズ力を問う。"},
+    "gakushuin": {"name": "学習院大学",     "style": "私立 MARCH 準級。標準的な評論英文 + 文法+整序+短い意見論述。読み物としても良質な英文を採用する伝統。"},
+    "seikei":    {"name": "成蹊大学",       "style": "私立成成明学武。標準難度の評論/エッセイ系英文 + 文法 + 整序 + 短い意見論述。基礎〜標準の総合力を測る。"},
+    "seijo":     {"name": "成城大学",       "style": "私立成成明学武。文学/社会/文化系の標準英文 + 文法 + 整序。読みやすい標準英文を丁寧に処理する力。"},
+    "musashi":   {"name": "武蔵大学",       "style": "私立成成明学武。経済/人文/社会系の標準英文 + 文法 + 整序 + 自由英作 (短め)。総合的な英語運用力を重視。"},
     "igakubu_kokoritsu": {"name": "国公立医学部 (東大理三/京大医/阪大医/東京医歯大)", "style": "CRISPR/iPS/ゲノム/感染症/疫学/医療AI/抗生物質耐性 等の医学・生命科学系英文。医療倫理 (遺伝子治療/AI診断/尊厳死) の英作文。"},
     "igakubu_shiritsu":  {"name": "私立医学部 (慈恵/順天堂/日医/慶應医)", "style": "医療現場/疾患/薬学/公衆衛生 の英文。医学英語の語彙穴埋め。医療テーマの英作文 70-100語。"},
     "kyotsu":    {"name": "共通テスト",     "style": "2021年〜の新形式・実用英語重視 (広告/メール/SNS/レビュー/記事/学術/物語)。複数情報源統合型。Listeningはグラフ/情報統合あり。"},
@@ -4262,9 +4298,57 @@ RIKEI_PART_HINTS = {
 }
 
 
-def _generate_exam_question(exam_id: str, part_key: str, eiken_grade: Optional[str] = None) -> Optional[dict]:
+def _get_recent_exam_combinations(student_id: Optional[int], days: int = 7) -> list:
+    """指定 student_id に直近 N 日以内に出された (univ, year) の組合せ一覧を返す。
+    events.name = 'exam_question_served' を session_id='student:N' で絞って取得。
+    student_id 未指定時は空リスト (= 全件除外無し)。"""
+    if not student_id:
+        return []
+    try:
+        cutoff = datetime.utcnow() - timedelta(days=max(1, days))
+        session_key = f"student:{student_id}"
+        conn = db()
+        c = conn.cursor()
+        try:
+            c.execute(
+                "SELECT props FROM events WHERE name = 'exam_question_served' AND session_id = ? AND created_at >= ?",
+                (session_key, cutoff),
+            )
+            rows = c.fetchall()
+        finally:
+            conn.close()
+        combos = []
+        for r in rows:
+            props_str = r["props"] if hasattr(r, "keys") and "props" in r.keys() else (r[0] if r else None)
+            if not props_str:
+                continue
+            try:
+                props = json.loads(props_str) if isinstance(props_str, str) else props_str
+            except Exception:
+                continue
+            univ = props.get("univ")
+            year = props.get("year")
+            if univ and year:
+                combos.append((str(univ), int(year)))
+        return combos
+    except Exception as e:
+        log.warning(f"[ExamQ:Recent] failed: {e}")
+        return []
+
+
+def _generate_exam_question(
+    exam_id: str,
+    part_key: str,
+    eiken_grade: Optional[str] = None,
+    exclude_combinations: Optional[list] = None,
+    topic_hint: Optional[str] = None,
+) -> Optional[dict]:
     """Anthropic API で1問生成して dict を返す。失敗時 None。
-    daigaku の場合は eiken_grade に大学キー (todai/kyodai/...) を入れる慣例。"""
+    daigaku の場合は eiken_grade に大学キー (todai/kyodai/...) を入れる慣例。
+
+    exclude_combinations: [(univ, year), ...] 直近で同じ生徒に出した組合せを避ける。
+        全部除外で残り無い場合は最も古い (= 最初の要素) を許可する relative diversity。
+    topic_hint: 単元タグ (例: '関係代名詞') を AI prompt に明示注入。"""
     if not ANTHROPIC_API_KEY:
         return None
 
@@ -4317,11 +4401,24 @@ def _generate_exam_question(exam_id: str, part_key: str, eiken_grade: Optional[s
         part_label = DAIGAKU_PART_HINTS.get(part_key, part_key)
         # 2005-2026 のうち、その大学/枠が存在した年度を選択
         if univ_key == "kyotsu":
-            year = random.randint(2021, 2026)  # 共通テスト
+            year_candidates = list(range(2021, 2027))  # 共通テスト
         elif univ_key == "center":
-            year = random.randint(2005, 2020)  # センター試験
+            year_candidates = list(range(2005, 2021))  # センター試験
         else:
-            year = random.randint(2005, 2026)
+            year_candidates = list(range(2005, 2027))
+
+        # 直近で同 student に出た (univ, year) を除外して相対的多様性確保
+        excluded_for_univ = set()
+        if exclude_combinations:
+            for (eu, ey) in exclude_combinations:
+                if eu == univ_key:
+                    excluded_for_univ.add(int(ey))
+        remaining = [y for y in year_candidates if y not in excluded_for_univ]
+        if remaining:
+            year = random.choice(remaining)
+        else:
+            # 全年度除外 → 最も古い (= 最初に出た) 年度を再利用 (relative diversity)
+            year = year_candidates[0] if year_candidates else random.randint(2005, 2026)
         exam_label = f"{univ_name} {year}年度入試 (英語)"
 
         system = f"""あなたは日本の大学受験英語の出題傾向に精通した専門家です。
@@ -4361,12 +4458,36 @@ explanation フィールドは Markdown で **以下4セクションを必ず明
 
 - 出力は純粋なJSONのみ。explanation フィールド内の上記 Markdown は \\n でエスケープして JSON 文字列化する"""
 
+        # 単元タグ (topic_hint) があれば prompt に明示注入
+        topic_clause = ""
+        if topic_hint:
+            topic_clause = f"""
+【単元指定 (絶対遵守)】
+- この問題の中心単元は **「{topic_hint}」** に固定する。
+- 「{topic_hint}」の運用が問題の核心となる出題のみ生成 (関係詞節を選んだら関係代名詞中心、分詞構文を選んだら分詞構文中心、等)。
+- 単元から外れた文法事項を中核に据えるのは禁止。
+"""
+
+        # 直近で出した (univ, year) があれば AI に明示提示 (avoid 句)
+        avoid_clause = ""
+        if exclude_combinations:
+            # univ_key 一致の組合せのみ提示 (この生成枠は univ_key 固定)
+            same_univ = [(u, y) for (u, y) in exclude_combinations if u == univ_key]
+            if same_univ:
+                pairs = ", ".join([f"({u}, {y})" for (u, y) in same_univ[:20]])
+                avoid_clause = f"""
+【直近出題回避 (相対的多様性)】
+- 同じ生徒に直近 7 日以内に出した組合せは: {pairs}
+- 上記とは異なる年度・異なるテーマで出題することで生徒に多様な経験を提供すること。
+- すでに本枠は y={year} を選定済 (除外候補から除外)。テーマも上記過去出題と被らないように選ぶ。
+"""
+
         user = f"""**{univ_name} {year}年度** 形式の **{part_key}** ({part_label}) の類題を1セット生成してください。
 
 【テーマ選定指針】
 - {year}年に話題だったトピック or {univ_name} 頻出の論題から自然に選ぶ
 - {univ_name} の難易度・抽象度に合わせる ({univ_style.split('。')[0]})
-
+{topic_clause}{avoid_clause}
 【出力形式】純粋なJSONのみ:
 {{
   "passage": "(Reading の場合は本文、それ以外は空文字)",
@@ -4460,7 +4581,8 @@ explanation フィールドは Markdown で **以下4セクションを必ず明
   ]
 }}"""
 
-        user = f"""**{univ_name} {year}年度** 形式の **{subject}** ({part_label}) の類題を1セット生成してください。
+        rikei_topic_clause = f"\n\n【単元指定 (絶対遵守)】中心単元は **「{topic_hint}」** に固定する。" if topic_hint else ""
+        user = f"""**{univ_name} {year}年度** 形式の **{subject}** ({part_label}) の類題を1セット生成してください。{rikei_topic_clause}
 
 【出力】上記の system に従い純粋な JSON のみ。{subject} で図が必要な問題は figure_svg を必ず埋めること (空文字 NG)。"""
 
@@ -4491,7 +4613,8 @@ explanation フィールドは Markdown で **以下4セクションを必ず明
 
 - 出力は純粋なJSONのみ。explanation 内の Markdown は \\n でエスケープ"""
 
-        user = f"""{exam_label} の **{part_key}** ({part_label}) の問題を1セット生成してください。
+        other_topic_clause = f"\n\n【単元指定 (絶対遵守)】中心単元は **「{topic_hint}」** に固定する。「{topic_hint}」の運用が問題の核心となる出題のみ生成。" if topic_hint else ""
+        user = f"""{exam_label} の **{part_key}** ({part_label}) の問題を1セット生成してください。{other_topic_clause}
 
 【出力形式】純粋なJSONのみ:
 {{
@@ -4649,9 +4772,17 @@ _REFILL_INFLIGHT: set = set()
 _REFILL_LOCK = asyncio.Lock()
 
 
-async def _refill_part_async(exam_id: str, part_key: str, eiken_grade: Optional[str], target: int = 2) -> None:
+async def _refill_part_async(
+    exam_id: str,
+    part_key: str,
+    eiken_grade: Optional[str],
+    target: int = 2,
+    exclude_combinations: Optional[list] = None,
+    topic_hint: Optional[str] = None,
+) -> None:
     """生徒のリクエスト由来で薄い part を裏で補充。
-    target 問数を生成。in-flight ロックで多重発火を防止。daily max は遵守。"""
+    target 問数を生成。in-flight ロックで多重発火を防止。daily max は遵守。
+    exclude_combinations / topic_hint があれば AI prompt に注入して多様性・単元固定。"""
     key = (exam_id, part_key, eiken_grade)
     async with _REFILL_LOCK:
         if key in _REFILL_INFLIGHT:
@@ -4668,11 +4799,17 @@ async def _refill_part_async(exam_id: str, part_key: str, eiken_grade: Optional[
         if counts.get(key, 0) >= EXAM_QUESTIONS_TARGET_POOL:
             return
         n_to_gen = min(target, EXAM_QUESTIONS_DAILY_MAX - today_count)
-        log.info(f"[ExamQ:Refill] Generating {n_to_gen} for {key} (current pool={counts.get(key, 0)})")
+        log.info(f"[ExamQ:Refill] Generating {n_to_gen} for {key} (current pool={counts.get(key, 0)}, exclude={len(exclude_combinations or [])}, topic={topic_hint})")
         for _ in range(n_to_gen):
             # 同期的な API 呼び出しを別スレッドへ (FastAPI のイベントループをブロックしない)
             q = await asyncio.get_event_loop().run_in_executor(
-                None, _generate_exam_question, exam_id, part_key, eiken_grade
+                None,
+                _generate_exam_question,
+                exam_id,
+                part_key,
+                eiken_grade,
+                exclude_combinations,
+                topic_hint,
             )
             if q:
                 await asyncio.get_event_loop().run_in_executor(
@@ -6701,10 +6838,20 @@ def admin_exam_questions_generate(payload: dict, authorization: Optional[str] = 
 
 
 @app.get("/api/exam-questions/bank")
-def public_exam_questions_bank(exam: str, part: str, eiken_grade: Optional[str] = None, univ: Optional[str] = None, limit: int = 20):
+def public_exam_questions_bank(
+    exam: str,
+    part: str,
+    eiken_grade: Optional[str] = None,
+    univ: Optional[str] = None,
+    limit: int = 20,
+    student_id: Optional[int] = None,
+    topic: Optional[str] = None,
+):
     """公開API: 試験パートの最新N問を返す (フロントが AUTO_GENERATED_BANKS に流し込む)。
     認証不要 (出題内容は公開可・実回答は提出不要)。
-    univ パラメータは大学入試 (daigaku) 用 — DB スキーマ上は eiken_grade カラムに大学キーを保存している。"""
+    univ パラメータは大学入試 (daigaku) 用 — DB スキーマ上は eiken_grade カラムに大学キーを保存している。
+    student_id があれば直近 7 日に出した (univ, year) を pool 側でも除外し、refill 側にも exclude を伝播。
+    topic は単元タグ (例: '関係代名詞') — refill 時の AI prompt に注入される。"""
     limit = max(1, min(limit, 50))
     # daigaku の場合 univ → eiken_grade として扱う (DB スキーマ共有)
     if exam == "daigaku" and univ and not eiken_grade:
@@ -6714,12 +6861,12 @@ def public_exam_questions_bank(exam: str, part: str, eiken_grade: Optional[str] 
     try:
         if eiken_grade:
             c.execute(
-                "SELECT question_data, created_at FROM exam_questions WHERE exam_id = ? AND part_key = ? AND eiken_grade = ? ORDER BY created_at DESC LIMIT ?",
+                "SELECT id, question_data, created_at FROM exam_questions WHERE exam_id = ? AND part_key = ? AND eiken_grade = ? ORDER BY created_at DESC LIMIT ?",
                 (exam, part, eiken_grade, limit),
             )
         else:
             c.execute(
-                "SELECT question_data, created_at FROM exam_questions WHERE exam_id = ? AND part_key = ? ORDER BY created_at DESC LIMIT ?",
+                "SELECT id, question_data, created_at FROM exam_questions WHERE exam_id = ? AND part_key = ? ORDER BY created_at DESC LIMIT ?",
                 (exam, part, limit),
             )
         rows = c.fetchall()
@@ -6733,21 +6880,78 @@ def public_exam_questions_bank(exam: str, part: str, eiken_grade: Optional[str] 
         try:
             data = json.loads(r["question_data"])
             data["_created_at"] = str(r["created_at"])
+            data["_question_id"] = r["id"] if hasattr(r, "keys") and "id" in r.keys() else r[0]
             items.append(data)
         except Exception:
             pass
-    # ランダムに1件返す (毎回違う問題で多様性確保)
+
+    # 直近 7 日除外 (相対的多様性): student_id があれば過去出題と同じ (univ, year) を後回しに
+    exclude_combinations = _get_recent_exam_combinations(student_id, days=7) if student_id else []
+    excluded_set = set((str(u), int(y)) for (u, y) in exclude_combinations)
+
     import random
-    selected = random.choice(items) if items else None
+    pool_unseen = []
+    pool_seen = []
+    if excluded_set and items:
+        for it in items:
+            it_univ = str(it.get("univ_simulated") or eiken_grade or "")
+            try:
+                it_year = int(it.get("year_simulated") or 0)
+            except Exception:
+                it_year = 0
+            # 大学キー比較 (eiken_grade に揃える)
+            key_pair = (str(eiken_grade or ""), it_year)
+            if key_pair in excluded_set:
+                pool_seen.append(it)
+            else:
+                pool_unseen.append(it)
+        candidates = pool_unseen if pool_unseen else pool_seen
+    else:
+        candidates = items
+    selected = random.choice(candidates) if candidates else None
 
     # 🔁 オンデマンド補充: pool が薄い part を生徒が引いた瞬間に裏で補充キューイング
     # (ExamQ scheduler は N時間おき・interval=6h なので、その間でも必要なら即補充)
     if EXAM_QUESTIONS_ENABLED and len(items) < EXAM_QUESTIONS_MIN_POOL:
         try:
-            asyncio.create_task(_refill_part_async(exam, part, eiken_grade, target=2))
-            log.info(f"[ExamQ:Refill] queued for {exam}/{part}/{eiken_grade} (pool={len(items)} < min={EXAM_QUESTIONS_MIN_POOL})")
+            asyncio.create_task(_refill_part_async(
+                exam, part, eiken_grade,
+                target=2,
+                exclude_combinations=exclude_combinations or None,
+                topic_hint=topic,
+            ))
+            log.info(f"[ExamQ:Refill] queued for {exam}/{part}/{eiken_grade} (pool={len(items)} < min={EXAM_QUESTIONS_MIN_POOL}, topic={topic})")
         except Exception as e:
             log.warning(f"[ExamQ:Refill] failed to queue: {e}")
+
+    # 出題記録 (events) — 今後の除外判定に利用
+    if selected and student_id:
+        try:
+            session_key = f"student:{student_id}"
+            props = {
+                "student_id": int(student_id),
+                "exam": exam,
+                "part": part,
+                "univ": eiken_grade or univ,
+                "year": selected.get("year_simulated"),
+                "question_id": selected.get("_question_id"),
+                "topic": topic,
+            }
+            conn2 = db()
+            c2 = conn2.cursor()
+            try:
+                c2.execute(
+                    "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                    ("exam_question_served", json.dumps(props, ensure_ascii=False), session_key),
+                )
+                conn2.commit()
+            except Exception as e:
+                log.warning(f"[ExamQ:Served] event insert failed: {e}")
+                try: conn2.rollback()
+                except Exception: pass
+            conn2.close()
+        except Exception as e:
+            log.warning(f"[ExamQ:Served] event recording failed: {e}")
 
     return {"exam": exam, "part": part, "eiken_grade": eiken_grade, "count": len(items), "selected": selected, "all": items[:5]}
 

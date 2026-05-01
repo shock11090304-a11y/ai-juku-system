@@ -5197,6 +5197,8 @@ function _recordProblemAttempt(pid, isCorrect) {
     all[pid].last_ts = Date.now();
     localStorage.setItem(PROBLEM_STATS_KEY, JSON.stringify(all));
   } catch (e) {}
+  // セッション統計にも push (塾長指示 2026-05-01)
+  try { _pushSessionAttempt(pid, isCorrect); } catch (e) {}
 }
 
 // 4択問題: question 文字列から (stem, choices[]) を分離
@@ -5341,6 +5343,313 @@ function _problemStatsBadge(stats) {
   return `<span class="problem-stats-badge ${cls}">📊 正解率 ${pct}% (${stats.correct}/${stats.attempts})</span>`;
 }
 
+// ===========================================================================
+// セッション統計 (連続して解いた N 問の集合) (塾長指示 2026-05-01)
+// ===========================================================================
+const SESSION_STATS_KEY = 'ai_juku_session_stats_v1';
+const SESSION_AUTO_FINALIZE_AT = 10;     // N 問達成で自動 finalize
+const SESSION_HISTORY_MAX = 30;          // 過去 30 セッション保持
+
+// 単元キーワード辞書 (problem.question から topic を推定するフォールバック用)
+const _TOPIC_KEYWORDS = [
+  { topic: '関係代名詞', re: /関係代名詞|whose|which|who(m)?\s/i },
+  { topic: '関係副詞', re: /関係副詞|where\s|when\s|why\s/i },
+  { topic: '仮定法', re: /仮定法|if\s.*\bwere\b|wish\s+I|would\s+have/i },
+  { topic: '時制', re: /時制|現在完了|過去完了|未来完了|have\s+been|had\s+been/i },
+  { topic: '受動態', re: /受動態|受け身|be\s+(?:done|made|given|taken)/i },
+  { topic: '不定詞', re: /不定詞|to\s+(?:be|do|have|go)\b/i },
+  { topic: '動名詞', re: /動名詞|-ing\s+(?:is|was)|enjoy\s+\w+ing/i },
+  { topic: '分詞', re: /分詞構文|現在分詞|過去分詞/i },
+  { topic: '比較', re: /比較級|最上級|as\s+\w+\s+as|than\s/i },
+  { topic: '助動詞', re: /助動詞|must\s|should\s|might\s|could\s|would\s/i },
+  { topic: '前置詞', re: /前置詞/i },
+  { topic: '接続詞', re: /接続詞|although|because|while/i },
+  { topic: '語彙', re: /語彙|単語|意味/i },
+  { topic: '微分積分', re: /微分|積分|導関数|∫/ },
+  { topic: '数列', re: /数列|等差|等比|級数/ },
+  { topic: '確率', re: /確率|場合の数/ },
+  { topic: 'ベクトル', re: /ベクトル/ },
+  { topic: '三角関数', re: /三角関数|sin|cos|tan/i },
+  { topic: '二次関数', re: /二次関数|放物線/ },
+  { topic: '図形', re: /三角形|円|多角形|相似/ },
+];
+function _inferTopicFromText(text) {
+  if (!text) return null;
+  const s = String(text).slice(0, 1500);
+  for (const e of _TOPIC_KEYWORDS) {
+    if (e.re.test(s)) return e.topic;
+  }
+  return null;
+}
+
+// セッション開始 (renderProblems から呼ばれる)
+function _initExamSession(meta) {
+  window.__examSessionState = {
+    sessionId: 'exam_' + Date.now(),
+    startTs: Date.now(),
+    attempts: [],
+    active: true,
+    subject: (meta && meta.subject) || '',
+    primaryTopic: (meta && meta.primaryTopic) || '',
+    plannedCount: (meta && meta.plannedCount) || 0,
+    problems: (meta && meta.problems) || [],  // {pid, topic, source, year, univ}
+  };
+}
+
+// 解答を 1 件 push (_recordProblemAttempt 内から呼ぶ)
+function _pushSessionAttempt(pid, isCorrect) {
+  const ss = window.__examSessionState;
+  if (!ss || !ss.active) return;
+  // 同じ pid を同セッションで 2 回以上記録しない (誤クリック防止)
+  if (ss.attempts.some(a => a.pid === pid)) return;
+  // problems から meta を引く
+  const meta = (ss.problems || []).find(p => p.pid === pid) || {};
+  ss.attempts.push({
+    pid,
+    topic: meta.topic || ss.primaryTopic || '',
+    univ: meta.univ || '',
+    year: meta.year || '',
+    isCorrect: !!isCorrect,
+    ts: Date.now(),
+  });
+  // N 問達成で自動 finalize
+  const threshold = Math.min(ss.plannedCount || SESSION_AUTO_FINALIZE_AT, SESSION_AUTO_FINALIZE_AT);
+  if (ss.attempts.length >= threshold || ss.attempts.length >= ss.plannedCount) {
+    // 全問解いた、または閾値達成
+    setTimeout(() => _finalizeExamSession('auto'), 400);
+  }
+}
+
+// セッション集計
+function _aggregateSession(ss) {
+  const total = ss.attempts.length;
+  const correct = ss.attempts.filter(a => a.isCorrect).length;
+  const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+  // 単元別集計
+  const byTopic = {};
+  ss.attempts.forEach(a => {
+    const t = a.topic || '(その他)';
+    if (!byTopic[t]) byTopic[t] = { total: 0, correct: 0 };
+    byTopic[t].total++;
+    if (a.isCorrect) byTopic[t].correct++;
+  });
+  const topicRows = Object.keys(byTopic).map(t => ({
+    topic: t,
+    total: byTopic[t].total,
+    correct: byTopic[t].correct,
+    pct: Math.round((byTopic[t].correct / byTopic[t].total) * 100),
+  })).sort((a, b) => a.pct - b.pct);  // 弱い順
+  // 弱点/強み判定: ノイズ低減のため最低 3 問以上解いた単元のみ判定対象
+  // (1-2 問だけの単元は標本数が少なく誤判定しやすい・塾長指示 2026-05-01)
+  const weakTopics = topicRows.filter(r => r.pct < 60 && r.total >= 3).map(r => r.topic);
+  const strongTopics = topicRows.filter(r => r.pct >= 80 && r.total >= 3).map(r => r.topic);
+  return { total, correct, accuracy, topicRows, weakTopics, strongTopics };
+}
+
+// セッション履歴を localStorage に保存
+function _saveSessionHistory(ss, agg) {
+  try {
+    const all = JSON.parse(localStorage.getItem(SESSION_STATS_KEY) || '{"sessions":[]}');
+    const sessions = Array.isArray(all.sessions) ? all.sessions : [];
+    sessions.unshift({
+      sessionId: ss.sessionId,
+      startTs: ss.startTs,
+      endTs: Date.now(),
+      subject: ss.subject || '',
+      primaryTopic: ss.primaryTopic || '',
+      attempts: ss.attempts,
+      accuracy: agg.accuracy,
+      total: agg.total,
+      correct: agg.correct,
+      weakTopics: agg.weakTopics,
+      strongTopics: agg.strongTopics,
+    });
+    // LRU: 古いものを削除
+    all.sessions = sessions.slice(0, SESSION_HISTORY_MAX);
+    localStorage.setItem(SESSION_STATS_KEY, JSON.stringify(all));
+  } catch (e) { console.warn('save session failed', e); }
+}
+
+// finalize: モーダル表示 + 履歴保存
+function _finalizeExamSession(trigger) {
+  const ss = window.__examSessionState;
+  if (!ss || !ss.active) return;
+  if (ss.attempts.length === 0) {
+    // 1 問も解いてないので何もしない
+    ss.active = false;
+    return;
+  }
+  ss.active = false;
+  const agg = _aggregateSession(ss);
+  _saveSessionHistory(ss, agg);
+  _showSessionResultModal(ss, agg);
+}
+
+// モーダルレンダリング
+function _showSessionResultModal(ss, agg) {
+  const modal = document.getElementById('sessionResultModal');
+  if (!modal) {
+    console.warn('sessionResultModal not found in DOM');
+    return;
+  }
+  const body = document.getElementById('sessionResultBody');
+  if (!body) return;
+
+  // a. 総正解率
+  let html = `<div class="srm-hero">
+    <div class="srm-pct ${agg.accuracy >= 80 ? 'srm-pct-good' : (agg.accuracy >= 50 ? 'srm-pct-mid' : 'srm-pct-weak')}">${agg.accuracy}%</div>
+    <div class="srm-fraction">${agg.correct} / ${agg.total} 問正解</div>
+    <div class="srm-meta">${escapeHtml(ss.subject || '')} ${ss.primaryTopic ? '・' + escapeHtml(ss.primaryTopic) : ''}</div>
+  </div>`;
+
+  // b. 単元別正解率テーブル
+  if (agg.topicRows.length > 0) {
+    html += `<h3 class="srm-h3">📊 単元別正解率</h3>
+    <div class="srm-topic-table">`;
+    agg.topicRows.forEach(r => {
+      const cls = r.pct < 60 ? 'srm-row-weak' : (r.pct >= 80 ? 'srm-row-strong' : 'srm-row-mid');
+      html += `<div class="srm-row ${cls}">
+        <span class="srm-row-topic">${escapeHtml(r.topic)}</span>
+        <span class="srm-row-bar"><span class="srm-row-bar-fill" style="width:${r.pct}%"></span></span>
+        <span class="srm-row-pct">${r.pct}% (${r.correct}/${r.total})</span>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // c. 弱点ハイライト
+  if (agg.weakTopics.length > 0) {
+    html += `<div class="srm-block srm-block-weak">
+      <div class="srm-block-head">⚠️ 重点復習が必要な単元</div>
+      <div class="srm-block-body">${agg.weakTopics.map(t => `<span class="srm-tag srm-tag-weak">${escapeHtml(t)}</span>`).join(' ')}</div>
+    </div>`;
+  }
+  // d. 強み
+  if (agg.strongTopics.length > 0) {
+    html += `<div class="srm-block srm-block-strong">
+      <div class="srm-block-head">💪 得意な単元</div>
+      <div class="srm-block-body">${agg.strongTopics.map(t => `<span class="srm-tag srm-tag-strong">${escapeHtml(t)}</span>`).join(' ')}</div>
+    </div>`;
+  }
+
+  // e. 推奨アクション
+  if (agg.weakTopics.length > 0) {
+    const subj = encodeURIComponent(ss.subject || '');
+    const top = encodeURIComponent(agg.weakTopics[0] || '');
+    html += `<div class="srm-cta">
+      <p class="srm-cta-text">📚 弱点単元の解説教材で復習しましょう。</p>
+      <a class="srm-cta-btn" href="textbook-generator.html?subject=${subj}&topic=${top}">📖 「${escapeHtml(agg.weakTopics[0])}」の教材へ →</a>
+    </div>`;
+  } else if (agg.accuracy >= 80) {
+    html += `<div class="srm-cta srm-cta-good">
+      <p class="srm-cta-text">🎉 素晴らしい正解率です。難易度を上げて挑戦してみましょう。</p>
+    </div>`;
+  }
+
+  // f. 詳細ログ (折りたたみ)
+  html += `<details class="srm-details">
+    <summary>📋 各問題の正誤詳細を見る</summary>
+    <table class="srm-detail-table">
+      <thead><tr><th>#</th><th>単元</th><th>結果</th></tr></thead>
+      <tbody>`;
+  ss.attempts.forEach((a, i) => {
+    html += `<tr><td>${i + 1}</td><td>${escapeHtml(a.topic || '-')}</td><td>${a.isCorrect ? '<span class="srm-mark-ok">✅ 正解</span>' : '<span class="srm-mark-ng">❌ 不正解</span>'}</td></tr>`;
+  });
+  html += `</tbody></table></details>`;
+
+  body.innerHTML = html;
+  modal.classList.add('show');
+}
+
+function _closeSessionResultModal() {
+  const modal = document.getElementById('sessionResultModal');
+  if (modal) modal.classList.remove('show');
+}
+
+// ===== モーダル UX 改善: Esc キー + 背景クリックで閉じる (塾長指示 2026-05-01) =====
+// 多重バインド防止: グローバルフラグで1回だけ登録
+if (typeof window !== 'undefined' && !window.__srmHandlersBound) {
+  window.__srmHandlersBound = true;
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const modal = document.getElementById('sessionResultModal');
+    if (modal && modal.classList.contains('show')) {
+      _closeSessionResultModal();
+    }
+  });
+  // DOM 構築後に modal overlay へ click ハンドラ追加
+  // (DOMContentLoaded 後にも安全に動くよう defer)
+  const _bindModalBgClick = () => {
+    const modal = document.getElementById('sessionResultModal');
+    if (!modal || modal.__bgClickBound) return;
+    modal.__bgClickBound = true;
+    modal.addEventListener('click', (e) => {
+      // 背景 (modal overlay 自体) クリック時のみ閉じる。中身 (.modal-content / .srm-content) クリックでは閉じない。
+      if (e.target === modal) {
+        _closeSessionResultModal();
+      }
+    });
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _bindModalBgClick);
+  } else {
+    _bindModalBgClick();
+  }
+}
+
+// 「セッション終了」ボタンから呼ばれる手動 finalize
+function endExamSessionManually() {
+  const ss = window.__examSessionState;
+  if (ss && ss.active) {
+    _finalizeExamSession('manual');
+    return;
+  }
+  // すでに finalize 済 → 直近のセッション結果を再表示
+  if (ss && ss.attempts && ss.attempts.length > 0) {
+    const agg = _aggregateSession(ss);
+    _showSessionResultModal(ss, agg);
+    return;
+  }
+  // 履歴から直近の 1 件を表示
+  const history = getSessionHistory();
+  if (history.length > 0) {
+    const last = history[0];
+    const agg = {
+      total: last.total, correct: last.correct, accuracy: last.accuracy,
+      weakTopics: last.weakTopics || [], strongTopics: last.strongTopics || [],
+      topicRows: (() => {
+        const by = {};
+        (last.attempts || []).forEach(a => {
+          const t = a.topic || '(その他)';
+          if (!by[t]) by[t] = { total: 0, correct: 0 };
+          by[t].total++; if (a.isCorrect) by[t].correct++;
+        });
+        return Object.keys(by).map(t => ({
+          topic: t, total: by[t].total, correct: by[t].correct,
+          pct: Math.round((by[t].correct / by[t].total) * 100),
+        })).sort((a,b) => a.pct - b.pct);
+      })(),
+    };
+    _showSessionResultModal({
+      sessionId: last.sessionId, attempts: last.attempts || [],
+      subject: last.subject || '', primaryTopic: last.primaryTopic || '',
+    }, agg);
+    return;
+  }
+  alert('まだ問題に解答していません。問題を解いてから「セッション終了」を押してください。');
+}
+
+// 過去セッション一覧を取得 (将来 マイページ表示用)
+function getSessionHistory() {
+  try {
+    const all = JSON.parse(localStorage.getItem(SESSION_STATS_KEY) || '{"sessions":[]}');
+    return Array.isArray(all.sessions) ? all.sessions : [];
+  } catch (e) { return []; }
+}
+window.endExamSessionManually = endExamSessionManually;
+window._closeSessionResultModal = _closeSessionResultModal;
+window.getSessionHistory = getSessionHistory;
+
 function renderProblems(data, layout, source) {
   const title = data.title || '練習問題';
   const subtitle = data.subtitle || '';
@@ -5348,6 +5657,57 @@ function renderProblems(data, layout, source) {
   if (subtitle) html += `<p style="color:var(--text-dim);font-size:0.95rem;margin-top:-0.5rem;margin-bottom:1.5rem;">${escapeHtml(subtitle)}</p>`;
 
   const problems = data.problems || [];
+
+  // ========= 既存セッションの auto-finalize (塾長指示 2026-05-01) =========
+  // 前回のセッションが active で attempts ありの状態で新セッション開始 →
+  // データ喪失を防ぐため自動で finalize (モーダル表示 + 履歴保存) してから上書き。
+  try {
+    if (window.__examSessionState && window.__examSessionState.active
+        && Array.isArray(window.__examSessionState.attempts)
+        && window.__examSessionState.attempts.length > 0) {
+      _finalizeExamSession('auto-switch');
+    }
+  } catch (e) { console.warn('auto-finalize skipped:', e); }
+
+  // ========= セッショントラッキング初期化 (塾長指示 2026-05-01) =========
+  // probSubject / probTopic から context を取り、問題 pid <-> topic マップを作る
+  let _sessionMeta = null;
+  try {
+    const subjectEl = document.getElementById('probSubject');
+    const topicEl = document.getElementById('probTopic');
+    const sessionProblems = [];
+    problems.forEach(p => {
+      let stem = '', choices = null;
+      if (Array.isArray(p.choices) && p.choices.length >= 2) {
+        stem = String(p.stem || p.question || '').trim();
+        choices = p.choices.map(c => String(c).trim());
+      } else {
+        const parsed = _parseChoicesFromQuestion(p.question);
+        if (parsed) { stem = parsed.stem; choices = parsed.choices; }
+      }
+      if (!choices) return;  // 4択以外はセッション集計対象外
+      const pid = _problemId(stem, choices);
+      // topic 推定: p.topic > p.unit > probTopic 入力 > キーワードからの推定
+      const inferredTopic = p.topic || p.unit
+        || (topicEl && topicEl.value ? String(topicEl.value).split(/[、,\n]/)[0].trim() : '')
+        || _inferTopicFromText(stem) || '';
+      sessionProblems.push({
+        pid,
+        topic: inferredTopic,
+        univ: (source && source.univ) || '',
+        year: (source && source.year) || '',
+      });
+    });
+    if (sessionProblems.length > 0) {
+      _sessionMeta = {
+        subject: subjectEl ? subjectEl.value : '',
+        primaryTopic: topicEl ? String(topicEl.value || '').split(/[、,\n]/)[0].trim() : '',
+        plannedCount: sessionProblems.length,
+        problems: sessionProblems,
+      };
+      _initExamSession(_sessionMeta);
+    }
+  } catch (e) { console.warn('session init failed', e); }
 
   // 問題番号の横に出典大学名バッジを出す
   const sourceBadge = (p) => {
