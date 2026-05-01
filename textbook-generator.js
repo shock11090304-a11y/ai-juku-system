@@ -419,9 +419,56 @@ ${/数学/.test(subject) ? `
     ? 'http://localhost:8000' : window.location.origin;
   const apiKey = getApiKey();
   let poolHitInfo = null;
+  let draft = null;  // Phase 1 の出力 (pool hit or live writer)
 
-  // ----- Step 1: 教材プール検索 (Anthropic クレジット消費ゼロ・即取り出し) -----
-  // 🔥 致命傷修正 (2026-05-01): pool hit でも topic 整合性を検証。無関係教材を返さない
+  // ----- Anthropic call helper (Phase 1, 2 で共通利用) -----
+  const callAI = async (sysPrompt, msg, label) => {
+    const body = {
+      model: MODEL_PREMIUM,
+      max_tokens: 16000,
+      system: sysPrompt,
+      messages: [{ role: 'user', content: msg }],
+    };
+    let res;
+    if (sessionToken) {
+      res = await fetch(`${backend}/api/ai/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionToken },
+        body: JSON.stringify(body),
+      });
+    } else {
+      const isOpus47 = (MODEL_PREMIUM || '').startsWith('claude-opus-4-7');
+      const directBody = { ...body, temperature: 1.0 };
+      if (isOpus47) {
+        directBody.thinking = { type: 'adaptive' };
+        directBody.output_config = { effort: 'high' };
+      } else {
+        directBody.thinking = { type: 'enabled', budget_tokens: 5000 };
+      }
+      res = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify(directBody),
+      });
+    }
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`${label} API ${res.status}: ${errText.slice(0, 200)}`);
+    }
+    const data = await res.json();
+    const textBlock = (data.content || []).find(b => b.type === 'text');
+    const text = textBlock?.text || '{}';
+    const clean = text.trim().replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+    return JSON.parse(clean);
+  };
+
+  // ----- Step 1: 教材プール検索 (Phase 1 ショートカット候補) -----
+  // 🔥 2026-05-01: pool hit でも Phase 2 検閲は必ず通す。topic 整合性も検証
   if (sessionToken) {
     try {
       const params = new URLSearchParams({ subject, topic, level, type, limit: '1' });
@@ -432,14 +479,13 @@ ${/数学/.test(subject) ? `
         const poolData = await poolRes.json();
         if (poolData.results && poolData.results.length > 0) {
           const hit = poolData.results[0];
-          // ✅ topic 整合性検証: ユーザー指定 topic の要素が hit.title or hit.topic に含まれるか確認
           const topicTokens = topic.split(/[、,/\s]+/).filter(Boolean);
           const hitText = `${hit.title || ''} ${hit.topic || ''}`.toLowerCase();
           const topicMatches = topicTokens.length === 0 || topicTokens.some(t => hitText.includes(t.toLowerCase()));
           if (hit.content && typeof hit.content === 'object' && topicMatches) {
-            json = hit.content;
+            draft = hit.content;
             poolHitInfo = { id: hit.id, title: hit.title, source: 'textbook_pool' };
-            console.log('[textbook] プール命中 (topic 整合):', hit.title);
+            console.log('[textbook] プール命中 (topic 整合) → Phase 2 検閲へ:', hit.title);
           } else if (!topicMatches) {
             console.warn(`[textbook] プール mismatch 拒否: 要求 "${topic}" だが pool "${hit.title}" → live 生成へ`);
           }
@@ -450,70 +496,29 @@ ${/数学/.test(subject) ? `
     }
   }
 
-  // ----- Step 2-4: プール miss なら従来の生成ロジックへ -----
-  // 🔥 2026-05-01: チーム検閲ワークフロー導入。Phase 1 (執筆) → Phase 2 (3視点検閲+編集統合)
-  // 内容検閲・教育検閲・入試検閲の3視点を1回のAI callで併用評価し、編集統合まで行う設計
-  // (5回 sequential AI call は UX 上遅すぎるため、reviewer+editor を 1 call に圧縮)
-  if (!json) {
-    if (!sessionToken && !apiKey) {
-      await new Promise(r => setTimeout(r, 1500));
-      json = generateDemo(subject, topic, level);
-    } else {
-      // ----- Anthropic call helper (Phase 1, 2 で共通利用) -----
-      const callAI = async (sysPrompt, msg, label) => {
-        const body = {
-          model: MODEL_PREMIUM,
-          max_tokens: 16000,
-          system: sysPrompt,
-          messages: [{ role: 'user', content: msg }],
-        };
-        let res;
-        if (sessionToken) {
-          res = await fetch(`${backend}/api/ai/messages`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionToken },
-            body: JSON.stringify(body),
-          });
-        } else {
-          const isOpus47 = (MODEL_PREMIUM || '').startsWith('claude-opus-4-7');
-          const directBody = { ...body, temperature: 1.0 };
-          if (isOpus47) {
-            directBody.thinking = { type: 'adaptive' };
-            directBody.output_config = { effort: 'high' };
-          } else {
-            directBody.thinking = { type: 'enabled', budget_tokens: 5000 };
-          }
-          res = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-api-key': apiKey,
-              'anthropic-version': '2023-06-01',
-              'anthropic-dangerous-direct-browser-access': 'true'
-            },
-            body: JSON.stringify(directBody),
-          });
-        }
-        if (!res.ok) {
-          const errText = await res.text();
-          throw new Error(`${label} API ${res.status}: ${errText.slice(0, 200)}`);
-        }
-        const data = await res.json();
-        const textBlock = (data.content || []).find(b => b.type === 'text');
-        const text = textBlock?.text || '{}';
-        const clean = text.trim().replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
-        return JSON.parse(clean);
-      };
-
-      try {
-        // ===== Phase 1: 執筆 (Writer) =====
+  // ----- Step 2: Phase 1 + Phase 2 (常にチーム検閲を通す) -----
+  // 🔥 塾長指示「全部チームで作る」: pool hit でも Phase 2 review は必ず実行
+  // - pool hit + Phase 2: 1 AI call (review only) = 高速 + 整合確保
+  // - pool miss + Phase 1 + Phase 2: 2 AI calls (write + review) = 標準
+  if (!sessionToken && !apiKey) {
+    await new Promise(r => setTimeout(r, 1500));
+    json = generateDemo(subject, topic, level);
+  } else {
+    try {
+      // ===== Phase 1: 執筆 (Writer) — pool hit 時はスキップ =====
+      if (!draft) {
         btn.textContent = '⏳ Phase 1/2: 執筆中...';
         result.innerHTML = '<div class="tb-placeholder"><div style="font-size:3rem;">✍️</div><p>Phase 1/2: AI 講師が初稿を執筆中... (30-90秒)</p></div>';
-        const draft = await callAI(systemPrompt, userMsg, 'Phase1-Writer');
+        draft = await callAI(systemPrompt, userMsg, 'Phase1-Writer');
+      } else {
+        btn.textContent = '⏳ Phase 1/2: プール命中 (検閲へ)';
+        result.innerHTML = '<div class="tb-placeholder"><div style="font-size:3rem;">📚</div><p>Phase 1/2: 教材プールから関連教材を取り出しました → チーム検閲へ進みます</p></div>';
+      }
 
-        // ===== Phase 2: チーム検閲+編集統合 (3視点 Reviewer + Editor) =====
-        btn.textContent = '⏳ Phase 2/2: チーム検閲中...';
-        result.innerHTML = '<div class="tb-placeholder"><div style="font-size:3rem;">🔍</div><p>Phase 2/2: 内容検閲・教育検閲・入試検閲の3視点 + 編集統合中... (30-90秒)</p></div>';
+      // ===== Phase 2: チーム検閲+編集統合 (3視点 Reviewer + Editor) — 必ず実行 =====
+      const phase2Label = poolHitInfo ? 'Phase 2/2: プール教材を検閲・トピック適合化中...' : 'Phase 2/2: 内容検閲・教育検閲・入試検閲の3視点 + 編集統合中...';
+      btn.textContent = '⏳ Phase 2/2: チーム検閲中...';
+      result.innerHTML = `<div class="tb-placeholder"><div style="font-size:3rem;">🔍</div><p>${phase2Label} (30-90秒)</p></div>`;
         const reviewSystemPrompt = `あなたは難関塾の教材編集チームです。Writer が執筆した初稿を 3 つの視点で同時検閲し、編集統合まで行います:
 
 【3 視点による相互検閲】
@@ -579,7 +584,6 @@ ${JSON.stringify(draft, null, 2)}
         } catch (_) {}
         json = generateDemo(subject, topic, level);
       }
-    }
   }
 
   lastData = json;
