@@ -90,6 +90,8 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
   const lastName = (document.getElementById('lastName').value || '').trim();
   const firstName = (document.getElementById('firstName').value || '').trim();
   const email = (document.getElementById('email').value || '').trim();
+  const studentEmailEl = document.getElementById('studentEmail');
+  const studentEmail = studentEmailEl ? (studentEmailEl.value || '').trim() : '';
   const grade = document.getElementById('grade').value;
   if (!lastName || !firstName) {
     errorBox.textContent = '⚠️ フルネーム（姓と名の両方）を入力してください。';
@@ -99,6 +101,13 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
   }
   if (!isValidEmailFormat(email)) {
     errorBox.textContent = '⚠️ メールアドレスの形式が正しくありません。 (例: parent@example.com)';
+    errorBox.style.display = 'block';
+    submitBtn.disabled = false;
+    return;
+  }
+  // 生徒メールは任意。入力されていれば形式チェック
+  if (studentEmail && !isValidEmailFormat(studentEmail)) {
+    errorBox.textContent = '⚠️ 生徒様メールアドレスの形式が正しくありません。空欄でも構いません。';
     errorBox.style.display = 'block';
     submitBtn.disabled = false;
     return;
@@ -113,6 +122,7 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     plan,
     name: `${lastName}${firstName}`,
     email,
+    student_email: studentEmail,  // 任意 (空欄なら保護者メールのみ)
     grade,
     goal: document.getElementById('goal').value,
   };

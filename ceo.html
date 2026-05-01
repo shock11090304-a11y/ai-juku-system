@@ -643,6 +643,28 @@
       <div id="invError" style="display:none;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.4);border-radius:10px;padding:0.7rem;color:#fca5a5;font-size:0.82rem;"></div>
     </section>
 
+    <!-- ========================================== -->
+    <!-- 🔗 magic link 指定アドレス送信 (親の携帯で登録 → 子供のアドレスに送り直す等) -->
+    <!-- ========================================== -->
+    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.25); border-radius: 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7rem;flex-wrap:wrap;gap:0.5rem;">
+        <h2 style="font-size:1.15rem;color:#a5b4fc;margin:0;">🔗 magic link 指定アドレス送信</h2>
+        <span style="font-size:0.7rem;color:#71717a;">親の携帯で登録 → 子供のアドレスに送り直す</span>
+      </div>
+      <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.9rem;line-height:1.6;">
+        生徒 ID + 送信先メールアドレスを指定して magic link を再送できます。<br>
+        例: 親が登録した後、生徒本人の Gmail に直接ログインリンクを届けたい場合に使用。
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.6rem;margin-bottom:0.7rem;">
+        <input id="mlStudentId" type="number" min="1" placeholder="生徒 ID *" style="background:rgba(0,0,0,0.4);border:1px solid rgba(99,102,241,0.35);color:#fff;padding:0.6rem 0.8rem;border-radius:8px;font-size:0.88rem;">
+        <input id="mlToEmail" type="email" placeholder="送信先メールアドレス *" style="background:rgba(0,0,0,0.4);border:1px solid rgba(99,102,241,0.35);color:#fff;padding:0.6rem 0.8rem;border-radius:8px;font-size:0.88rem;">
+        <button id="mlSendBtn" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;padding:0.6rem 0.8rem;border-radius:8px;font-size:0.88rem;font-weight:800;cursor:pointer;">📨 magic link 送信</button>
+      </div>
+
+      <div id="mlResult" style="display:none;background:rgba(0,0,0,0.35);border:1px solid rgba(99,102,241,0.3);border-radius:10px;padding:0.9rem;font-size:0.85rem;"></div>
+    </section>
+
     <!-- 🎓 問題プール状況 (随時自動追加スケジューラの可視化) -->
     <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(14,165,233,0.06); border: 1px solid rgba(14,165,233,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
@@ -1931,6 +1953,47 @@
       // 教材プール 未作成リクエスト 手動更新
       const refreshTbReqBtn = document.getElementById('refreshTbReqBtn');
       if (refreshTbReqBtn) refreshTbReqBtn.addEventListener('click', loadTextbookMissingRequests);
+
+      // 🔗 magic link 指定アドレス送信 (親の携帯で登録 → 子供の email に送り直す等)
+      const mlSendBtn = document.getElementById('mlSendBtn');
+      if (mlSendBtn) mlSendBtn.addEventListener('click', async () => {
+        const sid = parseInt(document.getElementById('mlStudentId').value || '0', 10);
+        const toEmail = (document.getElementById('mlToEmail').value || '').trim();
+        const resultBox = document.getElementById('mlResult');
+        if (!sid || sid <= 0) { alert('生徒 ID を入力してください'); return; }
+        if (!toEmail || !toEmail.includes('@')) { alert('有効な送信先メールアドレスを入力してください'); return; }
+        if (!confirm(`生徒 ID ${sid} の magic link を ${toEmail} に送信します。よろしいですか?`)) return;
+        mlSendBtn.disabled = true; const orig = mlSendBtn.textContent; mlSendBtn.textContent = '⏳ 送信中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/students/send-magic-link-to', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ student_id: sid, to_email: toEmail }),
+          });
+          const j = await r.json();
+          resultBox.style.display = 'block';
+          if (r.ok && j.sent) {
+            resultBox.style.borderColor = 'rgba(34,197,94,0.5)';
+            resultBox.style.background = 'rgba(34,197,94,0.1)';
+            resultBox.innerHTML = `<div style="color:#86efac;font-weight:700;">✅ 送信成功</div>
+              <div style="margin-top:0.4rem;color:#cbd5e1;">生徒 ID: <strong>${j.student_id}</strong> / 登録メール: ${j.registered_email}</div>
+              <div style="color:#cbd5e1;">送信先: <strong>${j.to}</strong></div>
+              <div style="margin-top:0.4rem;color:#71717a;font-size:0.78rem;">受信側でメールを開いて magic link をクリック or OTP 入力でログイン可能</div>`;
+          } else {
+            resultBox.style.borderColor = 'rgba(248,113,113,0.5)';
+            resultBox.style.background = 'rgba(248,113,113,0.1)';
+            resultBox.innerHTML = `<div style="color:#fca5a5;font-weight:700;">❌ 送信失敗</div>
+              <div style="margin-top:0.4rem;color:#cbd5e1;">${j.error || j.detail || JSON.stringify(j).slice(0, 200)}</div>`;
+          }
+        } catch (e) {
+          resultBox.style.display = 'block';
+          resultBox.style.borderColor = 'rgba(248,113,113,0.5)';
+          resultBox.style.background = 'rgba(248,113,113,0.1)';
+          resultBox.innerHTML = `<div style="color:#fca5a5;">❌ ${e.message}</div>`;
+        }
+        mlSendBtn.disabled = false; mlSendBtn.textContent = orig;
+      });
+
       // 📨 通塾生 招待 URL 発行
       (function setupInviteGenUI(){
         const btn = document.getElementById('invGenBtn');

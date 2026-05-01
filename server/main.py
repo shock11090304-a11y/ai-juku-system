@@ -475,6 +475,7 @@ def init_db():
         ("enrollment_fee_waived", "ALTER TABLE students ADD COLUMN enrollment_fee_waived INTEGER DEFAULT 0"),
         ("enrollment_waiver_applied_at", "ALTER TABLE students ADD COLUMN enrollment_waiver_applied_at TIMESTAMP"),
         ("last_login_at", "ALTER TABLE students ADD COLUMN last_login_at TIMESTAMP"),
+        ("student_email", "ALTER TABLE students ADD COLUMN student_email TEXT DEFAULT ''"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -676,7 +677,8 @@ def _validate_fullname(v: str) -> str:
 
 class TrialSignup(BaseModel):
     name: str
-    email: EmailStr
+    email: EmailStr  # 保護者メール (主要連絡先 + magic link 送信先)
+    student_email: Optional[str] = None  # 生徒本人のメール (任意、磁気リンクの cc 送信先)
     grade: Optional[str] = None
     goal: Optional[str] = None
     plan: Optional[str] = "hybrid"
@@ -685,6 +687,17 @@ class TrialSignup(BaseModel):
     @classmethod
     def _name_must_be_fullname(cls, v: str) -> str:
         return _validate_fullname(v)
+
+    @field_validator("student_email")
+    @classmethod
+    def _student_email_optional(cls, v):
+        # 空文字 or None は許可。値があるなら簡易的に @ を含むかだけチェック
+        if v is None or v == "":
+            return ""
+        v = v.strip().lower()
+        if "@" not in v or "." not in v.split("@")[-1]:
+            raise ValueError("student_email is invalid")
+        return v
 
 
 class CheckoutRequest(BaseModel):
@@ -6441,6 +6454,55 @@ def admin_student_activity(student_id: int, hours: int = 720, limit: int = 200, 
     }
 
 
+@app.post("/api/admin/students/send-magic-link-to")
+def admin_send_magic_link_to_address(payload: dict, authorization: Optional[str] = Header(None)):
+    """🔥 2026-05-01: CEO ダッシュから指定アドレスに magic link を送信。
+    親の携帯で登録してしまった場合に、子供のメールアドレス等に直接送りたいケースに対応。
+    payload:
+      {"student_id": 123, "to_email": "child@example.com"}
+    認証: admin Bearer のみ"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+
+    student_id = payload.get("student_id")
+    to_email = (payload.get("to_email") or "").strip().lower()
+    if not student_id or not to_email:
+        raise HTTPException(status_code=400, detail="student_id and to_email required")
+    if "@" not in to_email or "." not in to_email.split("@")[-1]:
+        raise HTTPException(status_code=400, detail="invalid to_email")
+
+    conn = db(); c = conn.cursor()
+    c.execute("SELECT id, name, email, status FROM students WHERE id = ? LIMIT 1", (int(student_id),))
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="student not found")
+
+    # 古い OTP を無効化してから新規発行
+    _invalidate_active_otps(row["id"])
+    session_token = _create_magic_link_token(row["id"])
+    magic_url = f"{BASE_URL}/auth.html?t={session_token}"
+    otp_code = _create_otp(row["id"])
+    result = _send_magic_link_with_retry(
+        to_email,
+        row["name"] or "",
+        magic_url,
+        otp_code=otp_code,
+        is_welcome=False,
+    )
+    return {
+        "ok": True,
+        "sent": bool(result.get("sent")),
+        "to": to_email,
+        "student_id": row["id"],
+        "registered_email": row["email"],
+        "error": (result or {}).get("error", None) if not result.get("sent") else None,
+    }
+
+
 @app.post("/api/admin/students/purge-test")
 def admin_students_purge_test(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """テスト用ダミー生徒レコードを削除する admin endpoint。
@@ -8157,6 +8219,7 @@ def trial_signup(payload: TrialSignup, request: Request):
     email_norm = (payload.email or "").lower().strip()
     if not email_norm:
         raise HTTPException(status_code=400, detail="Email required")
+    student_email_norm = (payload.student_email or "").lower().strip()
     grade = (payload.grade or "")[:50]
     goal = (payload.goal or "")[:500]
     plan = (payload.plan or "hybrid")[:50]
@@ -8168,10 +8231,10 @@ def trial_signup(payload: TrialSignup, request: Request):
     is_existing = False
     try:
         c.execute(
-            """INSERT INTO students (name, email, grade, goal, plan, status, trial_start, trial_end)
-               VALUES (?, ?, ?, ?, ?, 'trial', ?, ?)
+            """INSERT INTO students (name, email, student_email, grade, goal, plan, status, trial_start, trial_end)
+               VALUES (?, ?, ?, ?, ?, ?, 'trial', ?, ?)
                RETURNING id""",
-            (payload.name, email_norm, grade, goal,
+            (payload.name, email_norm, student_email_norm, grade, goal,
              plan, now.isoformat(), trial_end.isoformat())
         )
         returned = c.fetchone()
@@ -8192,10 +8255,13 @@ def trial_signup(payload: TrialSignup, request: Request):
         try:
             existing_status = row["status"] if row else None
             if existing_status in ("trial", "canceled", "expired", None, ""):
+                # 既存生徒の student_email も更新 (空白のままなら新値で上書き、既存値があれば保持)
                 c.execute(
-                    """UPDATE students SET status='trial', trial_start=?, trial_end=?, updated_at=CURRENT_TIMESTAMP
+                    """UPDATE students SET status='trial', trial_start=?, trial_end=?,
+                       student_email = CASE WHEN COALESCE(student_email, '') = '' THEN ? ELSE student_email END,
+                       updated_at=CURRENT_TIMESTAMP
                        WHERE id=?""",
-                    (now.isoformat(), trial_end.isoformat(), student_id)
+                    (now.isoformat(), trial_end.isoformat(), student_email_norm, student_id)
                 )
                 conn.commit()
                 log.info(f"[Signup] Re-activated trial for existing student {student_id} ({email_norm}) prev_status={existing_status}")
@@ -8208,8 +8274,10 @@ def trial_signup(payload: TrialSignup, request: Request):
     # 🔥 致命傷修正 (2026-04-29): 申込直後に magic link 招待メールを送信
     # これが無いと顧客はログイン経路を知らず、ダッシュ未利用 = 価値ゼロ。
     # 失敗しても signup 自体は成功させる (顧客は admin から再送信で救済可能)。
+    # 🔥 2026-05-01: 生徒メール (任意) が指定されていれば、両方に送信 (子供の端末でログイン可能に)
     email_sent = False
     email_error = None
+    student_email_sent = False
     if student_id:
         try:
             # 重複申込時は古い OTP を無効化 (旧コード混乱防止)
@@ -8230,6 +8298,20 @@ def trial_signup(payload: TrialSignup, request: Request):
             if not email_sent:
                 email_error = (result or {}).get("error", "send_failed")
                 log.error(f"[Signup] Welcome email failed for student {student_id} ({email_norm}): {email_error}")
+            # 生徒メール (任意) にも送信 (失敗しても親メールが届いていれば OK 扱い)
+            if student_email_norm and student_email_norm != email_norm:
+                try:
+                    student_result = _send_magic_link_with_retry(
+                        student_email_norm,
+                        payload.name or "",
+                        magic_url,
+                        otp_code=otp_code,
+                        is_welcome=True,
+                    )
+                    student_email_sent = bool(student_result.get("sent"))
+                    log.info(f"[Signup] Student-email send for {student_id}: sent={student_email_sent} ({student_email_norm})")
+                except Exception as se:
+                    log.warning(f"[Signup] Student-email send exception for {student_id}: {se}")
         except Exception as e:
             email_error = f"{type(e).__name__}: {e}"
             log.error(f"[Signup] Welcome email exception for student {student_id} ({email_norm}): {email_error}")
@@ -8254,6 +8336,7 @@ def trial_signup(payload: TrialSignup, request: Request):
         "student_id": student_id,
         "trial_end": trial_end.isoformat(),
         "email_sent": email_sent,  # フロント (checkout-success.html) で「メール届かなかった場合は…」案内に使う
+        "student_email_sent": student_email_sent,  # 生徒メール (任意) への送信成否
     }
 
 # ==========================================================================
