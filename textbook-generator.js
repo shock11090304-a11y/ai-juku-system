@@ -194,7 +194,105 @@ async function generateTextbook() {
     exhaustive: '20000字以上',
   };
 
+  // 🔥 レベル別の具体仕様 — AI が「level: 高校応用」と書かれただけでは判別できないため明示
+  const levelSpecMap = {
+    '中学基礎': {
+      reader: '中学1-2年生 (英語学習開始〜1年経過)',
+      cefr: 'A1',
+      vocab: '600〜1200語 (NEW HORIZON / NEW CROWN 中1-2 レベル)',
+      grammar: 'be動詞、一般動詞、現在進行形、過去形 (規則/不規則)、未来形 will/be going to、命令文、疑問詞、助動詞 can/may/must の基礎',
+      example_difficulty: '教科書例文レベル。短文 (5-12語)。複文は最小限',
+      explanation_assumption: '英文法用語 (S-V, 主語, 述語) を初出時に必ず日本語で定義してから使う',
+      problem_difficulty: '中学定期テスト〜公立高校入試の基本',
+      style: '丁寧語・段階的・例文を3個ずつ示す。専門用語は必ず注釈',
+    },
+    '中学応用': {
+      reader: '中学3年生 (高校入試対策)',
+      cefr: 'A2',
+      vocab: '1500〜2200語 (システム英単語 ジュニア / ターゲット1200)',
+      grammar: '現在完了 (3用法)、関係代名詞 (主格/目的格/who/which/that)、分詞の形容詞用法、間接疑問文、SVOC、比較 (原級/比較級/最上級/同等)、受動態',
+      example_difficulty: '高校入試標準〜難関私立 (千葉/神奈川公立、開成/灘 入試レベル)',
+      explanation_assumption: '中学英文法用語は既知前提。高校文法用語 (関係副詞、分詞構文等) は使わない',
+      problem_difficulty: '都立自校作成・難関私立高校入試',
+      style: '中学生向けにわかりやすく。関連事項を1段ずつ丁寧に。例題は1単元あたり3-5問',
+    },
+    '高校基礎': {
+      reader: '高校1年生 (Forest導入〜)',
+      cefr: 'A2-B1',
+      vocab: '2500〜3500語 (ターゲット1400 / システム英単語 Basic)',
+      grammar: '5文型完成、時制 (完了形・進行完了)、助動詞推量、不定詞 (3用法+完了/進行)、動名詞、分詞、受動態 (進行・完了)、関係詞 (代/副/制限/非制限)',
+      example_difficulty: '共通テスト基本問題、進研模試〜河合全統 偏差値 50',
+      explanation_assumption: '中学英文法用語は完全既知。高校英文法用語は初出時に簡単な定義を添える',
+      problem_difficulty: '日東駒専・産近甲龍・地方公立大基本問題',
+      style: 'Forest/Vintage 風の体系的解説。例題は1単元 5-8問。よくあるミス必須',
+    },
+    '高校標準': {
+      reader: '高校2-3年生 (一般入試志望)',
+      cefr: 'B1',
+      vocab: '4500〜5500語 (システム英単語 / ターゲット1900)',
+      grammar: '仮定法 (過去/過去完了/混合)、分詞構文、関係副詞、強調構文、倒置 (基礎)、話法、無生物主語、複雑な不定詞',
+      example_difficulty: '共通テスト本試験、河合全統 偏差値 55-60',
+      explanation_assumption: '高校英文法用語は既知前提。複雑な構造は富田流に図解で示す',
+      problem_difficulty: 'MARCH・関関同立・地方国公立 (千葉/横浜国立/筑波/広島/岡山)',
+      style: '駿台/河合 標準テキスト風。例題には類題 (大学名/年度) を最低1つ添える',
+    },
+    '高校応用': {
+      reader: '高校3年生 (難関私大・地方旧帝志望)',
+      cefr: 'B2',
+      vocab: '6000〜7000語 (鉄壁 / 速読英単語上級編)',
+      grammar: '仮定法倒置 (Were I to / Had I known)、無生物主語の和訳、分詞構文の意味上の主語、複雑な節構造 (3-4段の入れ子)、倒置全般、強調 (文型崩し)',
+      example_difficulty: '早慶・上智・地方旧帝 (北大/東北大/名大/阪大/九大)',
+      explanation_assumption: '高校英文法は完全既知。複雑な構造は必ず S/V/O/C/M ラベル付きで階層図解',
+      problem_difficulty: '早慶・上智・地方旧帝 (偏差値 60-65)',
+      style: '富田一彦『英文読解100の原則』風の精密構造分析。例題には類題 (早稲田 文 2018, 慶應 経 2020 等) を必ず添える',
+    },
+    '難関大受験': {
+      reader: '東大・京大・一橋・東工大・国公立医学部志望者',
+      cefr: 'B2-C1',
+      vocab: '7000〜9000語 (鉄壁 + 単語王 + 速単上級・必修)',
+      grammar: '高校文法を全網羅した上で、抽象的論題・複雑構文・要約・自由英作文・和訳・整序英作文の最高難度',
+      example_difficulty: '東大・京大・一橋・東工大・国公立医学部 (新潟/筑波/千葉/岐阜医)',
+      explanation_assumption: '高校英文法は完全既知。富田流構造分析を全面採用。和訳は直訳寄り (構文保存)',
+      problem_difficulty: '東大 (1A 要約 70-80字、1B 自由英作 60-80語、4B 和訳、5 物語/エッセイ)、京大 (英文和訳 + 自由英作)',
+      style: '東大予備校 (鉄緑会・SEG) 風の徹底精読。例題は東大過去問の構文を再現 (記憶範囲で大学名/年度を明示)',
+    },
+    'ネイティブ・英検1級': {
+      reader: '英検1級・TOEFL 100+・IELTS 7.0+・帰国子女・通訳/翻訳志望',
+      cefr: 'C1-C2',
+      vocab: '10000語以上 (パス単 1級 + GRE Vocab + 学術論文語彙)',
+      grammar: '学術論文・社説・New York Times 級の論説。抽象的語彙、低頻度コロケーション、修辞法 (chiasmus / antithesis / metaphor)',
+      example_difficulty: '英検1級長文・TOEFL リーディング・GRE Reading・The Economist 社説',
+      explanation_assumption: '英文法は完全既知。例題本文も C1 レベル以上の英文を使用 (機械翻訳臭は厳禁)',
+      problem_difficulty: '英検1級・TOEFL iBT 100+・IELTS 7.5+・GRE Verbal 160+',
+      style: 'CEFR C1-C2 ネイティブ向け。Stylistic devices や register (formal/informal) の細かい違いまで言及',
+    },
+  };
+  const levelSpec = levelSpecMap[level] || null;
+
+  // レベル別仕様を AI に明示
+  const levelSpecBlock = levelSpec ? `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔥【レベル「${level}」の絶対遵守仕様】← この仕様から外れた教材は不合格
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- **想定読者:** ${levelSpec.reader}
+- **CEFR:** ${levelSpec.cefr}
+- **語彙範囲:** ${levelSpec.vocab} ← この語彙難度を厳守。これを超える/下回る単語の使用禁止
+- **文法カバー範囲:** ${levelSpec.grammar} ← この範囲外の文法事項を持ち込まない
+- **例題の難しさ:** ${levelSpec.example_difficulty}
+- **解説の前提知識:** ${levelSpec.explanation_assumption}
+- **問題難度:** ${levelSpec.problem_difficulty}
+- **スタイル:** ${levelSpec.style}
+
+【レベル整合性チェック (出力前に必ず自己レビュー)】
+- 例題・演習に使った英文の語彙はすべて ${levelSpec.vocab} に収まっているか？
+- 解説で使った文法用語は ${levelSpec.cefr} の学習者が知っているレベルか？
+- 例題の難しさは ${levelSpec.example_difficulty} と一致しているか？
+- ${levelSpec.problem_difficulty} を志望/想定する学習者が解いて伸びる教材になっているか？
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+` : '';
+
   const systemPrompt = `あなたは駿台・河合・Z会・東進で教鞭を執ってきた、その科目の第一線のプロ講師です。編集者として市販の受験参考書（『総合英語Forest』『青チャート』『現代文と格闘する』クラス）に匹敵する品質のテキスト教材を執筆します。
+${levelSpecBlock}
 
 【品質基準 — すべて満たしてください】
 ✅ 単元の本質を初学者にも伝える比喩・具体例を最低2つ以上含める
