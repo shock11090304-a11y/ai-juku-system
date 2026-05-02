@@ -1,0 +1,131 @@
+{
+  "questions": [
+    {
+      "exam_id": "eiken",
+      "part_key": "w_essay",
+      "eiken_grade": "g1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "TOPIC: Should governments invest more heavily in renewable energy at the expense of fossil fuel industries?\n\nPOINTS to consider (use 3 of 4): - Climate change - Economic costs - Energy security - Job displacement\n\nRequirements: Write an essay of 200-240 words.",
+        "sample": "Governments should aggressively invest in renewable energy, even at the expense of fossil fuel industries. The mounting evidence on climate change, the strategic value of energy security, and the long-term economic logic all support this transition.\n\nFirst, the climate imperative is undeniable. Continued reliance on fossil fuels will produce catastrophic warming whose costs will far exceed any short-term savings from delayed action. Coastal flooding, agricultural disruption, and intensifying extreme weather events impose massive expenses on future generations. Renewable infrastructure, while expensive to build, eliminates these recurring environmental costs.\n\nSecond, energy security increasingly favors renewables. Nations dependent on imported oil remain vulnerable to geopolitical disruption, as recent crises have demonstrated. Domestic solar and wind capacity, by contrast, generates electricity from inexhaustible local resources, freeing countries from supply manipulation by hostile producers.\n\nFinally, while job displacement in fossil fuel industries presents legitimate transition challenges, ignoring this concern would be misguided. Yet the renewable sector is creating employment far faster than fossil fuels are shedding it. Targeted retraining programs, supported by carbon revenues, can ensure that affected workers benefit rather than suffer from this shift.\n\nDelaying renewable investment to protect fossil fuel interests is therefore neither environmentally defensible, strategically prudent, nor economically rational. The transition is inevitable; the only question is whether governments will manage it actively or be forced into chaotic responses by accumulating crises. (236 words)",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "Above prompt — 200-240 word opinion essay.",
+            "answer": "see sample",
+            "explanation": "【1級 w_essay】① 立場明示 (aggressively invest, even at the expense of) ② 3 points 構造 (Climate change + Energy security + Job displacement) ③ 各 point は独立段落で論証 ④ 譲歩節 (while job displacement presents legitimate challenges) で対立論点を取り込む ⑤ 結論で「inevitable transition / active vs chaotic management」の対比で締める。1級は具体例・歴史的事象 (geopolitical disruption / coastal flooding) で抽象論を補強する答案が高評価。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "w_summary",
+      "eiken_grade": "g1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "Read the following passage and summarize it in your own words in English. The summary should be between 90 and 110 words.\n\nThe widespread integration of artificial intelligence into healthcare promises substantial improvements in diagnostic accuracy, treatment personalization, and operational efficiency. Algorithms trained on vast medical datasets can now identify certain cancers earlier than experienced radiologists, predict patient deterioration before clinical signs appear, and suggest treatment protocols tailored to individual genetic profiles. Many hospitals have begun deploying AI tools across departments, with some institutions reporting measurable reductions in misdiagnosis rates and improved patient outcomes for specific conditions.\n\nHowever, these advances raise complex challenges that the medical profession is still learning to navigate. Algorithmic recommendations may carry biases reflecting training data limitations, particularly regarding underrepresented populations whose patterns differ from majority groups. Physicians may face pressure to defer to AI suggestions even when their clinical judgment differs, potentially eroding professional skill over time. Patient privacy presents another concern, as AI systems require access to extensive medical records that must be protected from misuse. Furthermore, when AI-assisted decisions lead to adverse outcomes, the question of responsibility ── whether liability rests with the algorithm developer, the deploying institution, or the individual physician ── remains legally unsettled. Effective integration thus requires not only technical refinement but careful attention to bias auditing, professional education, regulatory frameworks, and public deliberation about acceptable trade-offs.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "Summarize the passage in 90 to 110 words.",
+            "answer": "Artificial intelligence is transforming healthcare by improving diagnostic accuracy, predicting patient deterioration, and personalizing treatment. Algorithms can detect certain cancers earlier than experts and tailor protocols to individual genetics, with hospitals reporting reduced misdiagnosis rates. Yet significant challenges remain. Training data biases may disadvantage underrepresented populations, while physicians risk eroding their clinical judgment by deferring excessively to AI. Patient privacy concerns arise from the extensive medical records AI requires, and legal liability for AI-assisted errors remains unclear ── whether developers, hospitals, or doctors bear responsibility. Effective integration therefore demands not just technical advances but bias auditing, professional training, regulation, and public discussion. (105 words)",
+            "explanation": "【1級 w_summary】① 模範解答 105 語、90-110 範囲内 ② 原文 4 段構成「AI の利点 (診断・予測・個別化)」「実証成果」「課題群 (バイアス・職能侵蝕・privacy・liability)」「統合の必要条件」を漏れなく圧縮 ③ paraphrasing 例: integration → transforming, deferred → eroding clinical judgment ④ 結論で「technical + bias audit + training + regulation + public discussion」と多層対応を列挙し原文の含意を保持。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "w_email",
+      "eiken_grade": "gp2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "You received an email from your friend Sara. Read the email and write a reply in English. Your reply should be between 40 and 50 words.\n\n---\nHi!\n\nMy parents finally agreed to let me adopt a pet from the local animal shelter next weekend! I'm so excited but also a little worried because I have never had a pet before.\n\nDo you have any advice for first-time pet owners? Also, what kind of pet do you think is good for beginners?\n\nYour friend,\nSara\n---",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "Write a reply email to Sara in 40 to 50 words.",
+            "answer": "Hi Sara,\n\nThat's wonderful news! My advice is to read about pet care before adoption, so you know what to expect. I think a cat is great for beginners because cats are quiet and independent. Remember to spend time with your pet every day. Good luck!\n\nYour friend",
+            "answer_word_count": 47,
+            "explanation": "【準2級 w_email 新形式】① 質問2点 (アドバイス + おすすめペット種) に両方回答 ② アドバイス: 事前学習、毎日の触れ合い ③ おすすめ: 猫 + 理由 (quiet, independent) ④ 励ましの締め (Good luck!) ⑤ 47 語で 40-50 範囲内。準2級 vocabulary (adoption, expect, independent, remember to V) で構成。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "keio",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "慶應義塾大学 経済学部 (類題)",
+        "passage": "Behavioral economics has fundamentally challenged the traditional assumption that consumers and investors make decisions through rational calculation of expected utility. Decades of experimental research have documented systematic deviations from rational choice theory, including loss aversion, the endowment effect, and various forms of cognitive bias. These findings have profound implications for both market analysis and public policy.\n\nLoss aversion ── the tendency to feel losses more strongly than equivalent gains ── helps explain why investors often hold declining stocks too long while quickly selling rising ones, a pattern that produces measurably worse returns than balanced approaches would yield. The endowment effect, in which people demand more to give up an item than they would pay to acquire it, creates inefficiencies in markets that rational choice theory cannot easily accommodate.\n\nThese behavioral patterns have practical applications in policy design. Default options exert powerful influence: enrollment rates in retirement savings plans rise dramatically when employees are automatically enrolled with the option to opt out, compared to systems requiring active enrollment. Organ donation participation similarly responds to default settings. Such \"nudges\" can substantially shift outcomes without restricting individual choice, though they raise their own ethical questions about whether shaping defaults constitutes manipulation.\n\nCritics caution against overreaching applications of behavioral insights. The same techniques that encourage beneficial behaviors can be deployed to exploit consumers, particularly when sophisticated firms apply them against less informed individuals. Furthermore, the assumption that policymakers can reliably identify what is in citizens' best interests ── implicit in nudge programs ── deserves skepticism. Behavioral economics offers genuine insights, but its application requires careful balancing of effectiveness, autonomy, and accountability.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is loss aversion as defined in the passage?",
+            "choices": [
+              "A tax on capital losses.",
+              "The tendency to feel losses more strongly than equivalent gains.",
+              "An economic theory that prohibits losses.",
+              "The desire to avoid all financial transactions."
+            ],
+            "answer": "1",
+            "explanation": "本文「Loss aversion ── the tendency to feel losses more strongly than equivalent gains」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "How can default options affect retirement savings enrollment?",
+            "choices": [
+              "They eliminate retirement savings entirely.",
+              "They have no measurable effect on enrollment rates.",
+              "They can dramatically raise enrollment rates when automatic enrollment with opt-out replaces active enrollment.",
+              "They only matter for very wealthy employees."
+            ],
+            "answer": "2",
+            "explanation": "本文「enrollment rates in retirement savings plans rise dramatically when employees are automatically enrolled with the option to opt out, compared to systems requiring active enrollment」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What concern do critics raise about applying behavioral economics?",
+            "choices": [
+              "Behavioral economics has been entirely disproven.",
+              "The techniques are too cheap to be effective.",
+              "Critics offer no substantive concerns.",
+              "The same techniques can exploit consumers, and assumptions about policymakers' ability to identify citizens' best interests deserve skepticism."
+            ],
+            "answer": "3",
+            "explanation": "本文「The same techniques that encourage beneficial behaviors can be deployed to exploit consumers ... the assumption that policymakers can reliably identify what is in citizens' best interests ... deserves skepticism」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "w_essay",
+      "eiken_grade": "todai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "Theme: Some argue that artistic creativity will become more valuable as artificial intelligence automates many cognitive tasks; others contend that AI itself will produce art indistinguishable from human work, making human creativity less special. What is your view?\n\n60-80 語で意見を述べなさい (東大型 2A)。",
+        "sample": "I believe artistic creativity will become more valuable, not less, despite advances in AI-generated content. While AI can produce work that imitates artistic forms, what audiences ultimately value is the embedded human experience ── the suffering, joy, and meaning that shape genuine creation. AI lacks lived experience and therefore cannot produce art with comparable emotional weight, even when its outputs appear technically impressive. As routine creative tasks become automated, the distinctly human dimension of art will only become more precious. (78 words)",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "Above prompt — 60-80 語自由英作文。",
+            "answer": "see sample",
+            "explanation": "【東大2A】① 立場明示 + 譲歩 (despite advances in AI-generated content) ② 核心論点 (embedded human experience / suffering, joy, meaning) で AI との差別化 ③ AI 限界の論証 (lacks lived experience / emotional weight) ④ 結論で reverse paradox (automation makes human creativity more precious)。東大2A は「対立する2つの主張のどちらに与するか + 理由」型 → 譲歩を含む立場取り + 核心定義の提示が高評価。"
+          }
+        ]
+      }
+    }
+  ]
+}
