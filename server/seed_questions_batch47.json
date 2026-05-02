@@ -1,0 +1,212 @@
+{
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "kandai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "関西大学 商学部 (類題)",
+        "passage": "Marketing scholars have long observed that consumers often base purchasing decisions on factors that have little to do with the actual qualities of products. Research in this area has identified a phenomenon known as the \"halo effect\": when a brand or product creates a strong positive impression on one dimension, that impression tends to extend to unrelated dimensions, even when no logical connection exists.\n\nClassic experiments have demonstrated this effect across many contexts. Subjects rate the same wine more favorably when told it is expensive, perceive identical software as more user-friendly when presented in attractive interfaces, and consider products from environmentally responsible companies to taste better—even when the products themselves are unchanged. The halo effect operates largely outside conscious awareness, making it difficult for consumers to recognize and adjust for its influence.\n\nFor businesses, these findings present both opportunities and ethical challenges. Building strong positive associations with one element of a brand—through design, advertising, or corporate reputation—can create benefits that extend far beyond that specific element. A company known for excellent customer service may benefit from improved perceptions of its product quality, even if quality remains constant. Some critics, however, argue that the halo effect allows companies to substitute image for substance, deflecting attention from actual product limitations.\n\nThe response from consumer protection advocates has emphasized education rather than restriction. Helping consumers understand cognitive biases—through school curricula, public campaigns, and clearer disclosure requirements—aims to reduce the gap between how people think they make decisions and how they actually make them. Whether such efforts can meaningfully counter biases that operate below conscious awareness remains an open question, but the alternative of regulating impressions seems impractical and potentially incompatible with free expression.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is the \"halo effect\" as defined in the passage?",
+            "choices": [
+              "A positive impression on one dimension extending to unrelated dimensions, with no logical connection needed.",
+              "A method of measuring product quality scientifically.",
+              "A strategy used only in religious contexts.",
+              "A weather phenomenon affecting consumer behavior."
+            ],
+            "answer": "0",
+            "explanation": "本文「when a brand or product creates a strong positive impression on one dimension, that impression tends to extend to unrelated dimensions, even when no logical connection exists」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Why is the halo effect difficult for consumers to manage?",
+            "choices": [
+              "Because regulations make it illegal to discuss.",
+              "Because consumers refuse to buy any products at all.",
+              "Because it operates largely outside conscious awareness.",
+              "Because all products have identical qualities."
+            ],
+            "answer": "2",
+            "explanation": "本文「The halo effect operates largely outside conscious awareness」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What is the strategy advocated by consumer protection groups according to the passage?",
+            "choices": [
+              "Regulating all advertising impressions strictly.",
+              "Education about cognitive biases through curricula and public campaigns.",
+              "Banning all forms of marketing.",
+              "Eliminating the use of brand names entirely."
+            ],
+            "answer": "1",
+            "explanation": "本文「The response from consumer protection advocates has emphasized education rather than restriction. Helping consumers understand cognitive biases—through school curricula, public campaigns」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "kangaku",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "関西学院大学 国際学部 (類題)",
+        "passage": "International student exchanges have been promoted for decades as a way to build mutual understanding across cultures. Universities, governments, and nonprofit organizations have invested substantial resources in programs that bring students from one country to study in another, often for periods ranging from a single semester to a full degree. Defenders of these programs argue that direct contact with other cultures fosters empathy, reduces stereotypes, and creates lasting personal and professional networks.\n\nResearch on the actual effects of such exchanges has produced more nuanced findings than the optimistic claims often made for them. Many participants do report increased cultural awareness and improved foreign language skills, particularly when programs include structured opportunities for engagement with local communities rather than merely placing students in foreign classrooms. However, simply being abroad does not automatically produce these benefits. Students who remain within social bubbles of fellow exchange participants from their home country may return with little more than tourism-style impressions.\n\nMoreover, the benefits of exchange programs are not equally available to all students. Costs—including tuition, travel, and living expenses—remain significant barriers, even with scholarships. Students from less-resourced backgrounds, who might benefit most from international experience, are often the least able to participate. This creates a paradox: programs intended to broaden perspectives may inadvertently reinforce existing inequalities by serving primarily those already positioned to access global opportunities.\n\nThoughtful program designers have responded by creating more accessible alternatives, including virtual exchange programs that allow cross-cultural interaction without travel costs, short-term immersion experiences during academic breaks, and need-based scholarship structures. Whether these alternatives match the depth of traditional long-term exchange remains debated. What is clear is that the rhetoric of internationalization needs to be matched by attention to questions of access, design, and meaningful integration.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "According to the passage, when do exchange programs successfully produce cultural awareness benefits?",
+            "choices": [
+              "When programs last only a few days.",
+              "When students never leave the home university.",
+              "When programs include structured opportunities for engagement with local communities.",
+              "When students stay only with fellow exchange participants."
+            ],
+            "answer": "2",
+            "explanation": "本文「particularly when programs include structured opportunities for engagement with local communities rather than merely placing students in foreign classrooms」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What paradox does the passage identify about exchange programs?",
+            "choices": [
+              "Programs intended to broaden perspectives may reinforce existing inequalities by serving those already positioned for global opportunities.",
+              "Exchange programs increase population in receiving countries.",
+              "Students who travel abroad become unable to speak any languages.",
+              "Universities lose money on every program."
+            ],
+            "answer": "0",
+            "explanation": "本文「programs intended to broaden perspectives may inadvertently reinforce existing inequalities by serving primarily those already positioned to access global opportunities」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What kind of alternative has been developed to make exchange more accessible?",
+            "choices": [
+              "Eliminating all foreign language instruction.",
+              "Required full-year stays for all students.",
+              "Forcing all students to study abroad regardless of finances.",
+              "Virtual exchange programs and short-term immersion experiences with need-based scholarships."
+            ],
+            "answer": "3",
+            "explanation": "本文「virtual exchange programs that allow cross-cultural interaction without travel costs, short-term immersion experiences during academic breaks, and need-based scholarship structures」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "doshisha",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "同志社大学 政策学部 (類題)",
+        "passage": "Public trust in democratic institutions has declined significantly across many established democracies in recent decades. Polls in the United States, much of Europe, and several Asian democracies show substantial drops in confidence in legislatures, courts, political parties, and electoral systems. Researchers have struggled to identify a single cause for this decline, in part because the patterns vary considerably from country to country.\n\nSeveral candidate explanations have received serious attention. Economic stagnation has affected many democracies in ways that may erode confidence in political systems perceived as failing to address widely shared concerns. The rise of social media has accelerated the spread of disinformation and made it easier for citizens to encounter accounts of corruption, scandal, or institutional failure—whether accurate, exaggerated, or fabricated. Political polarization has intensified, encouraging citizens to view rival parties not merely as wrong but as illegitimate, undermining shared respect for procedural norms.\n\nThe consequences of declining trust are themselves contested. Some scholars argue that healthy democracies require ongoing skepticism toward power, and that what looks like erosion may simply reflect more demanding citizens. Others worry that the erosion has crossed thresholds that could destabilize democratic governance: when citizens believe institutions are corrupt or rigged, they may turn to leaders who promise to bypass normal procedures, accelerating the decay they claim to address.\n\nProposed responses range widely. Institutional reforms—electoral changes, judicial transparency, anti-corruption measures—target specific complaints. Educational initiatives aim to build civic knowledge and media literacy. Some argue that without addressing underlying economic and cultural conditions, technical fixes will prove inadequate. The challenge facing contemporary democracies is to recognize warning signs without treating every criticism as a crisis, and to reform institutions without abandoning the procedural commitments that distinguish democratic from authoritarian governance.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "Why has identifying a single cause for declining trust proved difficult?",
+            "choices": [
+              "Because trust has actually been increasing everywhere.",
+              "Because all democracies have identical conditions.",
+              "Because the patterns vary considerably from country to country.",
+              "Because researchers have not yet studied the issue."
+            ],
+            "answer": "2",
+            "explanation": "本文「Researchers have struggled to identify a single cause for this decline, in part because the patterns vary considerably from country to country」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What does the passage say about how political polarization affects trust?",
+            "choices": [
+              "It strengthens political party loyalty equally for all sides.",
+              "It eliminates the need for elections.",
+              "It encourages citizens to view rival parties as illegitimate, undermining respect for procedural norms.",
+              "It has no measurable effect on democratic institutions."
+            ],
+            "answer": "2",
+            "explanation": "本文「Political polarization has intensified, encouraging citizens to view rival parties not merely as wrong but as illegitimate, undermining shared respect for procedural norms」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What concern do scholars raise about the long-term effects of declining trust?",
+            "choices": [
+              "Citizens may turn to leaders who promise to bypass normal procedures, accelerating decay.",
+              "Democratic institutions will become too efficient.",
+              "Citizens will all become political experts.",
+              "Skepticism will entirely disappear from democracies."
+            ],
+            "answer": "0",
+            "explanation": "本文「they may turn to leaders who promise to bypass normal procedures, accelerating the decay they claim to address」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "ritsumei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2023,
+        "univ_simulated": "立命館大学 国際関係学部 (類題)",
+        "passage": "The concept of food sovereignty has emerged as a powerful framework for thinking about global food systems. Coined in the 1990s by an international peasant movement called La Vía Campesina, food sovereignty differs in important ways from earlier concepts like food security. Whereas food security focuses on whether populations have access to sufficient calories, food sovereignty asks who controls the systems through which food is produced, distributed, and consumed.\n\nAdvocates argue that current food systems—dominated by large corporations, long supply chains, and global markets—undermine the autonomy of local communities. Small farmers in many countries cannot compete with subsidized imports from wealthy nations, leading to declining rural economies and migration to overcrowded cities. Industrial agricultural practices, often imposed by international financial institutions as conditions for loans, have eroded traditional knowledge and damaged ecosystems on which local food production depends.\n\nThe food sovereignty framework proposes alternatives that prioritize the rights of communities to define their own agricultural and food policies. This includes the right to produce food appropriate to local conditions, to maintain traditional crop varieties and farming practices, and to limit imports that threaten local production. Concrete proposals range from restructuring international trade rules to supporting cooperative farming arrangements and seed banks managed by local communities.\n\nCritics of food sovereignty raise several concerns. Strict implementation, they argue, could reduce overall food availability and increase prices, particularly in regions that depend heavily on imports. Local control may not always produce the most sustainable practices, and protecting traditional methods may slow innovation needed to feed growing populations facing climate change. Defenders respond that the goal is not autarky but greater balance between local autonomy and global cooperation, and that genuine sustainability requires the local knowledge that industrial systems have systematically displaced.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "How does food sovereignty differ from food security according to the passage?",
+            "choices": [
+              "Food security includes only national governments.",
+              "Food sovereignty focuses only on calories per person.",
+              "Food sovereignty asks who controls food systems, while food security focuses on access to sufficient calories.",
+              "They are identical concepts with different names."
+            ],
+            "answer": "2",
+            "explanation": "本文「Whereas food security focuses on whether populations have access to sufficient calories, food sovereignty asks who controls the systems through which food is produced, distributed, and consumed」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What does the passage cite as a problem caused by current global food systems?",
+            "choices": [
+              "There is too much regional variety in food.",
+              "Small farmers cannot compete with subsidized imports, leading to declining rural economies.",
+              "Communities have too much agricultural autonomy.",
+              "All food has become free worldwide."
+            ],
+            "answer": "1",
+            "explanation": "本文「Small farmers in many countries cannot compete with subsidized imports from wealthy nations, leading to declining rural economies」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "How do defenders respond to the criticism that food sovereignty would reduce overall food supply?",
+            "choices": [
+              "They claim subsidies should be eliminated entirely.",
+              "They say the goal is not autarky but balance between local autonomy and global cooperation.",
+              "They argue agricultural production is unimportant.",
+              "They propose returning to pre-industrial conditions exclusively."
+            ],
+            "answer": "1",
+            "explanation": "本文「Defenders respond that the goal is not autarky but greater balance between local autonomy and global cooperation」が根拠。"
+          }
+        ]
+      }
+    }
+  ]
+}
