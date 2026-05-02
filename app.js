@@ -281,6 +281,21 @@ const storage = {
 };
 
 // ==========================================================================
+// Migrations (1-shot cleanup; idempotent via marker key)
+// ==========================================================================
+(function runMigrations() {
+  // 2026-05-02: 生徒画面からメンター管理タブを削除した際の localStorage 残置データ消去
+  // (デモデータが入ってる可能性。UI 復活時は API から動的取得するため不要)
+  const MIG_KEY = 'ai_juku_migration_20260502_mentor_removed';
+  if (!localStorage.getItem(MIG_KEY)) {
+    try {
+      localStorage.removeItem('ai_juku_mentor_sessions');
+      localStorage.setItem(MIG_KEY, '1');
+    } catch (_) { /* localStorage 不可環境は黙って skip */ }
+  }
+})();
+
+// ==========================================================================
 // Seed Data (初期サンプル生徒)
 // ==========================================================================
 const seedStudents = [
@@ -3669,8 +3684,9 @@ AIへの質問数: 47件
 // TAB: Mentor
 // ==========================================================================
 function renderMentorSchedule() {
-  const sessions = storage.get(STORAGE_KEYS.SESSIONS, defaultSessions());
   const container = document.getElementById('mentorSchedule');
+  if (!container) return;  // メンター UI 非表示画面 (生徒画面等) では何もしない
+  const sessions = storage.get(STORAGE_KEYS.SESSIONS, defaultSessions());
   container.innerHTML = sessions.map(s => `
     <div class="schedule-item">
       <div>
@@ -3682,6 +3698,8 @@ function renderMentorSchedule() {
   `).join('');
 }
 
+// ⚠️ ここに実生徒名を絶対書かない (公開 JS のため source 閲覧で全員見える)。
+// 山田/佐藤/鈴木 はリポジトリ全域で使われるサンプル名。実生徒データは API から動的取得すること。
 function defaultSessions() {
   return [
     { day: '月曜', time: '19:00', student: '山田 太郎 (高2)', topic: '週次面談・英語進捗' },
@@ -3703,9 +3721,11 @@ function addMentorSession() {
 }
 
 async function generateSessionPrep() {
-  const studentId = parseInt(document.getElementById('prepStudent').value);
-  const student = safeStudent(state.students.find(s => s.id === studentId)) || getCurrentStudent();
+  const prepStudentEl = document.getElementById('prepStudent');
   const out = document.getElementById('prepResult');
+  if (!prepStudentEl || !out) return;  // メンター UI 非表示画面 (生徒画面等) では何もしない
+  const studentId = parseInt(prepStudentEl.value);
+  const student = safeStudent(state.students.find(s => s.id === studentId)) || getCurrentStudent();
   out.innerHTML = '<p class="placeholder">🎯 準備メモ生成中...</p>';
 
   const systemPrompt = `あなたはメンタリングの達人です。講師が生徒との週1面談で話すべきポイントを整理します。
@@ -3978,8 +3998,11 @@ function bindEvents() {
   document.getElementById('essayAnswerFile').addEventListener('change', e => handleEssayImageUpload('answer', e.target.files[0]));
   document.getElementById('essayAnswerRemove').addEventListener('click', () => clearEssayImage('answer'));
   document.getElementById('generateParentReport').addEventListener('click', generateParentReport);
-  document.getElementById('generatePrepBtn').addEventListener('click', generateSessionPrep);
-  document.getElementById('addSessionBtn').addEventListener('click', addMentorSession);
+  // メンター管理 button: 生徒画面 (index.html) には UI 無いので存在チェック付き
+  const generatePrepBtn = document.getElementById('generatePrepBtn');
+  if (generatePrepBtn) generatePrepBtn.addEventListener('click', generateSessionPrep);
+  const addSessionBtn = document.getElementById('addSessionBtn');
+  if (addSessionBtn) addSessionBtn.addEventListener('click', addMentorSession);
 }
 
 // ==========================================================================

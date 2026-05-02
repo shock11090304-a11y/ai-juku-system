@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI学習コーチ塾 | 次世代型個別最適化学習プラットフォーム</title>
-  <script src="cache-purge.js?v=20260425-1"></script>
+  <script src="cache-purge.js?v=20260502-mentor-removed"></script>
 
   <script src="frontend-error-monitor.js?v=20260427-init"></script>
   <link rel="manifest" href="manifest.json">
@@ -164,7 +164,7 @@
     <button class="tab" data-tab="email">✉️ 保護者メール</button>
     <button class="tab" data-tab="speaking">🎙 スピーキング練習</button>
     <a href="english-exam.html" class="tab" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;background:linear-gradient(135deg,rgba(30,64,175,0.15),rgba(220,38,38,0.15));border:1px solid rgba(99,102,241,0.4);">🎓 英語試験対策 <span style="font-size:0.65rem;background:#dc2626;color:white;padding:0.05rem 0.35rem;border-radius:3px;font-weight:900;">4試験対応</span></a>
-    <button class="tab" data-tab="mentor">📅 メンター管理</button>
+    <!-- メンター管理タブは生徒画面では非表示 (講師/塾長機能のため) — 2026-05-02 -->
   </nav>
 
   <!-- Content Areas -->
@@ -1027,31 +1027,9 @@
       </div>
     </section>
 
-    <!-- MENTOR TAB -->
-    <section id="tab-mentor" class="tab-content">
-      <div class="panel-header">
-        <h2>📅 メンター管理</h2>
-        <p>週1回のモチベーション管理・進捗確認。講師コストを最小化します。</p>
-      </div>
-      <div class="mentor-layout">
-        <div class="mentor-schedule">
-          <h3>🗓 今週のメンタリング予定</h3>
-          <div id="mentorSchedule" class="schedule-list"></div>
-          <button id="addSessionBtn" class="btn-secondary btn-small">＋ セッション追加</button>
-        </div>
-        <div class="mentor-prep">
-          <h3>💬 次回セッション準備 (AI自動生成)</h3>
-          <div class="form-group">
-            <label>対象生徒</label>
-            <select id="prepStudent"></select>
-          </div>
-          <button id="generatePrepBtn" class="btn-primary">🎯 セッション準備メモを生成</button>
-          <div id="prepResult" class="result-box" style="margin-top:1rem;">
-            <p class="placeholder">メンタリング前にAIが話すべきポイントを整理します。</p>
-          </div>
-        </div>
-      </div>
-    </section>
+    <!-- MENTOR TAB は生徒画面から削除済 (講師/塾長機能のため) — 2026-05-02 -->
+    <!-- 関連 JS (app.js renderMentorSchedule / addMentorSession / generateSessionPrep) は -->
+    <!-- 全 null-guard 入りで残存。将来 ceo.html or 専用 staff page に移行可能 -->
   </main>
 
   <footer class="footer">
@@ -1062,7 +1040,7 @@
   <script src="learning-brain.js?v=20260425-2"></script>
   <script src="exam-prep.js?v=20260425-1"></script>
   <script src="referral-program.js?v=20260425-1"></script>
-  <script src="app.js?v=20260501-session-ux-r2"></script>
+  <script src="app.js?v=20260502-mentor-removed"></script>
   <script>
   // 定期テスト連携: exam-prep.html から ?examPrep=1&subject=&topic=&examId= で来た時、
   // 問題ジェネレーターに自動入力 + タブ切替 + 通知バナー
