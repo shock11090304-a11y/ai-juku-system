@@ -1,0 +1,127 @@
+{
+  "questions": [
+    {
+      "exam_id": "eiken",
+      "part_key": "w_opinion",
+      "eiken_grade": "gp2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "TOPIC: Should high schools allow students to use smartphones during lunch breaks?\n\nPOINTS to consider (use 2 of 4): - Communication - Distraction - Safety - Social skills\n\nRequirements: 50-60 words.",
+        "sample": "I think high schools should allow smartphone use during lunch breaks. I have two reasons.\n\nFirst, smartphones help students communicate with their families. They can quickly send messages or check schedules with their parents. Second, lunch break is a time to relax. Students need a short rest before afternoon classes. (51 words)",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "Above prompt — 50-60 word opinion essay.",
+            "answer": "see sample",
+            "explanation": "【準2級 w_opinion】① 立場明示「I think high schools should allow ...」② 「I have two reasons.」で論点宣言 ③ First / Second で 2 points (Communication + Safety/relax 簡略化) ④ 各 reason は具体例 (messages with parents, rest before afternoon classes) で補強。51 語で 50-60 範囲内。準2級レベルの基礎文法・語彙のみ使用。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "w_summary",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "Read the following passage and summarize it in English in 45 to 55 words.\n\nIn recent years, more Japanese companies have introduced four-day work weeks. Microsoft Japan reported in 2019 that productivity increased by 40% during a one-month trial. Other companies have followed, finding that workers feel less stressed and more focused. However, not all jobs work well with shorter weeks. Customer service, hospitality, and manufacturing often require continuous staffing. Some companies have addressed this by rotating shifts so that the workplace remains open while individual employees work fewer days. While the four-day work week is still uncommon in Japan, public interest is growing, especially among younger workers who value work-life balance.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "上記英文を 45-55 語の英語で要約しなさい。",
+            "answer": "More Japanese companies are testing four-day work weeks, with Microsoft Japan reporting a 40% productivity rise in 2019. Workers report less stress and better focus, though some industries needing continuous staffing use rotating shifts. Although still rare, the idea is gaining popularity among younger workers seeking better work-life balance. (50 words)",
+            "explanation": "【2級 w_summary 新形式】① 模範解答 50 語、45-55 範囲 OK ② 原文の主要 4 要素「導入企業増加 + Microsoft 実績」「労働者の利益 (低ストレス・集中)」「継続業務の課題と対応 (rotating shifts)」「若者層の関心」を漏れなく圧縮 ③ paraphrasing: introduced → testing, public interest is growing → gaining popularity ④ 結論で「work-life balance」キーワードを保持。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3",
+      "eiken_grade": "gp1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Comeback of Independent Bookstores\n\nIndependent bookstores ── locally owned shops not part of major chains ── were once predicted to disappear under pressure from online retailers and digital books. Yet recent years have witnessed a surprising reversal: independent bookstores have been opening at a faster rate than they have closed in many countries, including Japan. Customers, weary of algorithmic recommendations and impersonal transactions, increasingly seek the human curation and community atmosphere these shops provide.\n\nResearchers studying this phenomenon point to several factors. Independent bookstores have repositioned themselves as more than retail outlets ── they host author events, reading groups, and educational programs that build customer loyalty over time. Their carefully curated selections, often reflecting the staff's particular interests and expertise, offer discoveries that algorithm-driven platforms struggle to match. Many have built strong social media presences that translate online attention into physical visits.\n\nThe economics, however, remain challenging. Profit margins on books are notoriously thin, while urban rents continue rising in commercial districts. Many surviving independent shops have diversified into related products: stationery, gifts, and cafes that complement the reading experience while generating higher margins. Some have adopted subscription models, where customers receive curated book selections regularly. Government and community support has also mattered: in some countries, fixed book prices prevent online retailers from undercutting local shops on best-sellers.\n\nThe future of these stores remains uncertain. Each closure represents a real loss for its neighborhood, and economic pressures continue to mount. Yet the resilience demonstrated over recent years suggests something important about what readers want from book purchases ── not merely access to titles but participation in communities organized around literature. Whether that desire can sustain the financial reality of independent retail will determine whether the recent revival proves durable.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What surprising trend does the passage describe?",
+            "choices": [
+              "Independent bookstores have completely disappeared.",
+              "Independent bookstores have only thrived in one country.",
+              "All bookstores have been replaced by digital platforms.",
+              "Independent bookstores have been opening at a faster rate than they have closed in many countries."
+            ],
+            "answer": "3",
+            "explanation": "本文「independent bookstores have been opening at a faster rate than they have closed in many countries, including Japan」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "How have independent bookstores repositioned themselves?",
+            "choices": [
+              "They have moved entirely online.",
+              "As more than retail outlets — hosting author events, reading groups, and educational programs.",
+              "They have eliminated all books from their shelves.",
+              "They have become exclusive members-only clubs."
+            ],
+            "answer": "1",
+            "explanation": "本文「Independent bookstores have repositioned themselves as more than retail outlets ── they host author events, reading groups, and educational programs」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What does the passage suggest about why this revival matters?",
+            "choices": [
+              "Readers want not merely access to titles but participation in communities organized around literature.",
+              "Online retailers have been outlawed.",
+              "No one buys books anymore.",
+              "Books have become free."
+            ],
+            "answer": "0",
+            "explanation": "本文「what readers want from book purchases ── not merely access to titles but participation in communities organized around literature」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_translation",
+      "eiken_grade": "todai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "What strikes the careful observer about technological progress is not the speed at which it occurs, which has long been a subject of commentary, but the difficulty of perceiving its pace from within ── for those swept along by accelerating change typically experience as ordinary the very transformations that, viewed from a distance, would astonish.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "上記英文を日本語に和訳しなさい。",
+            "answer": "技術的進歩について慎重な観察者が驚くのは、その進行速度ではない。それは長らく論評の対象となってきたものだが、そうではなく、その速度を内部から知覚することの困難さなのである。なぜなら、加速する変化に押し流されていく者たちは、通常、外から見れば驚嘆すべきまさにその変容を、ありふれたものとして経験するからである。",
+            "explanation": "## 🎯 コアイメージ\n**What strikes O about X is not A but B** = 「O が X について驚くのは A ではなく B である」(関係代名詞 what + not A but B 構造)。\n\n## 🔬 文構造分析\n- **What strikes the careful observer about technological progress** = 主語節 (関係代名詞 what)\n- **is not the speed at which it occurs ..., but the difficulty of perceiving its pace from within** = 補語 (not A but B)\n- **at which it occurs** = 関係詞節 (the speed を修飾)\n- **which has long been a subject of commentary** = 非制限関係詞節 (the speed を補足)\n- **for those swept along ... typically experience as ordinary the very transformations that ...** = 理由節 (for + SV)\n- **viewed from a distance** = 過去分詞句 (transformations を後置修飾、譲歩的)\n- **the very transformations that ... would astonish** = 「驚嘆すべきまさにその変容」(very + 関係詞 + 仮定法 would)\n\n## 📍 東大型ポイント\n① What strikes O about X is = 「O が X について驚くのは」(関係代名詞 what + 知覚動詞 strike) ② not A but B 構造 ③ for = 「なぜなら」(理由節接続詞、文中) ④ those swept along by X = 「X に押し流される人々」(過去分詞による後置修飾) ⑤ experience as ordinary the very transformations = 「驚嘆すべきまさにその変容を、ありふれたものとして経験する」(experience O as C 倒置 + the very + 関係詞) ⑥ viewed from a distance, would astonish = 仮定法的「外から見れば驚嘆すべきであろう」。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_translation",
+      "eiken_grade": "hitotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "It is not, in the end, the formal structures of democratic institutions ── elections, legislatures, courts ── that primarily determine whether a society remains free, but rather the diffuse and difficult-to-measure habits of mind that allow citizens to engage with views they oppose without abandoning the conviction that fellow citizens, even when wrong, deserve a hearing.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "上記英文を日本語に和訳しなさい。",
+            "answer": "結局のところ、社会が自由であり続けるかを主として決定するのは、選挙、議会、裁判所といった民主的諸制度の形式的構造ではなく、むしろ、市民が自らの反対する見解と関わりつつも、たとえ誤っているときでさえ同胞の市民は発言の機会を与えられるに値するという信念を捨てずにいることを可能にする、漠然として測定しがたい心の習慣なのである。",
+            "explanation": "## 🎯 コアイメージ\n**It is not A ... that V, but rather B** = 「V するのは A ではなく、むしろ B である」(強調構文 + not A but B)。\n\n## 🔬 文構造分析\n- **It is not ... the formal structures of democratic institutions ── elections, legislatures, courts ── that primarily determine ..., but rather the diffuse and difficult-to-measure habits of mind that ...** = 強調構文 (It is not A but B that V)\n- **── elections, legislatures, courts ──** = em-dash による具体例の挿入\n- **whether a society remains free** = determine の目的節\n- **the habits of mind that allow citizens to engage with views they oppose without abandoning the conviction that ...** = 関係詞節 (the habits を修飾)\n- **the conviction that fellow citizens, even when wrong, deserve a hearing** = 同格 that 節\n\n## 📍 一橋型ポイント\n① It is not A but B that V = 強調構文の否定形 ② diffuse and difficult-to-measure = 「漠然として測定しがたい」(対句的形容詞) ③ habits of mind = 心の習慣 (cognitive virtues の概念) ④ engage with views they oppose = 反対する見解と関わる ⑤ even when wrong = 「たとえ誤っているときでさえ」(譲歩節) ⑥ deserve a hearing = 「発言の機会を与えられるに値する」(政治的・倫理的フレーズ)。一橋型は政治哲学・自由論テーマで強調構文+同格 that 節+譲歩節の合成が頻出。"
+          }
+        ]
+      }
+    }
+  ]
+}
