@@ -1,0 +1,264 @@
+{
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "rikkyo",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "立教大学 観光学部 (類題)",
+        "passage": "Tourism has become one of the world's largest industries, generating jobs and economic activity in regions that might otherwise struggle to attract investment. Yet the same growth that has brought prosperity has also produced a phenomenon increasingly known as overtourism, in which destinations receive more visitors than their infrastructure, ecosystems, or local communities can accommodate. Cities like Venice, Barcelona, and Kyoto have become particularly visible examples, with residents complaining about crowded streets, rising rents, and the loss of authentic neighborhood life.\n\nThe causes of overtourism are multiple. Cheap flights have made international travel accessible to far more people than in previous decades. Digital platforms allow homeowners to convert apartments into short-term rentals, increasing visitor capacity but reducing housing stock for permanent residents. Social media intensifies tourist concentration: photogenic locations identified through travel posts attract disproportionate visitor numbers, while less-publicized but equally interesting alternatives remain underused.\n\nResponses to overtourism vary considerably. Some cities have introduced visitor caps, limiting daily entries to popular sites. Others have raised taxes on tourist accommodation or banned new short-term rentals in residential neighborhoods. Some destinations focus on dispersing tourists across less-visited regions through marketing and infrastructure investment, while others pursue \"slow tourism\" models that encourage longer stays in fewer locations.\n\nThese measures generate their own controversies. Restrictive policies may reduce economic benefits and exclude potential visitors who would have benefited from cultural exchange. Yet unrestricted growth threatens the very qualities that attracted visitors in the first place. Finding sustainable balance between economic benefit and protection of place remains one of the most challenging tasks facing tourism-dependent communities worldwide.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is overtourism according to the passage?",
+            "choices": [
+              "A new form of tourism that has eliminated all problems.",
+              "A type of tourism that benefits all destinations equally.",
+              "A government policy promoting unlimited tourism.",
+              "Destinations receiving more visitors than their infrastructure, ecosystems, or local communities can accommodate."
+            ],
+            "answer": "3",
+            "explanation": "本文「overtourism, in which destinations receive more visitors than their infrastructure, ecosystems, or local communities can accommodate」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What role does social media play in overtourism?",
+            "choices": [
+              "It has no effect on tourism patterns.",
+              "It eliminates all tourist concentration.",
+              "It intensifies tourist concentration: photogenic locations identified through travel posts attract disproportionate visitor numbers.",
+              "It only promotes less-visited destinations."
+            ],
+            "answer": "2",
+            "explanation": "本文「Social media intensifies tourist concentration: photogenic locations identified through travel posts attract disproportionate visitor numbers」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What conclusion does the passage draw about responses to overtourism?",
+            "choices": [
+              "Unrestricted growth has been proven entirely beneficial.",
+              "Finding sustainable balance between economic benefit and protection of place remains one of the most challenging tasks.",
+              "Tourism should be eliminated entirely.",
+              "All restrictive policies have failed."
+            ],
+            "answer": "1",
+            "explanation": "本文「Finding sustainable balance between economic benefit and protection of place remains one of the most challenging tasks facing tourism-dependent communities worldwide」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "chuo",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "中央大学 経済学部 (類題)",
+        "passage": "The traditional view of work, in which employees join a company and gradually advance through a clear hierarchy over decades, has been undergoing dramatic transformation in many advanced economies. Career paths now frequently involve multiple employers, periods of self-employment, and substantial changes in field. Some welcome this development as offering greater freedom and varied experience; others worry about the loss of stability and security that long-term employment historically provided.\n\nSeveral forces drive this transformation. Technology rapidly changes which skills are valuable, requiring workers to continuously update their capabilities or risk obsolescence. Companies, facing competitive pressures and rapid market shifts, increasingly rely on contractors and project-based teams rather than expanding permanent workforces. Workers themselves often prefer flexibility, particularly younger generations who value experience variety over predictable advancement.\n\nThe consequences vary across different workers. Highly skilled professionals in growing fields often benefit from these changes, gaining more negotiating power and higher pay through frequent moves. Workers with specialized but less in-demand skills, however, may struggle to find continuous employment, particularly as they age and employers prefer cheaper younger workers. Those without strong educational credentials or transferable skills often face the greatest challenges, lacking both stability and the means to acquire new capabilities.\n\nPolicy responses to these changes have lagged behind the structural shifts. Social safety nets designed for traditional long-term employment fit awkwardly with project-based and self-employed work. Health insurance, retirement contributions, and unemployment protection often remain tied to specific employers, creating gaps for those moving frequently between roles. How societies adapt their institutions to support workers in this new environment may determine whether the transformation produces broadly shared prosperity or deepening inequality.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "How has the traditional view of work been transforming according to the passage?",
+            "choices": [
+              "Workers stay with one company for life.",
+              "Career paths now frequently involve multiple employers, self-employment, and field changes.",
+              "Companies have eliminated all jobs.",
+              "Hierarchies have become stricter than ever."
+            ],
+            "answer": "1",
+            "explanation": "本文「Career paths now frequently involve multiple employers, periods of self-employment, and substantial changes in field」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Which workers may struggle most with these changes?",
+            "choices": [
+              "Wealthy investors who do not work.",
+              "Workers with specialized but less in-demand skills, particularly as they age.",
+              "Workers under 25 only.",
+              "Highly skilled professionals in growing fields."
+            ],
+            "answer": "1",
+            "explanation": "本文「Workers with specialized but less in-demand skills, however, may struggle to find continuous employment, particularly as they age」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What does the passage say about policy responses to work transformation?",
+            "choices": [
+              "Policy responses have lagged behind the structural shifts; safety nets fit awkwardly with project-based work.",
+              "No changes are needed.",
+              "Policies have fully adapted to new conditions.",
+              "All workers now have perfect protection."
+            ],
+            "answer": "0",
+            "explanation": "本文「Policy responses to these changes have lagged behind the structural shifts. Social safety nets designed for traditional long-term employment fit awkwardly with project-based and self-employed work」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "kandai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2023,
+        "univ_simulated": "関西大学 文学部 (類題)",
+        "passage": "Reading habits among young people have undergone significant changes over the past two decades. While total reading time may not have declined as dramatically as some commentators suggest, the type of reading and the contexts in which it occurs have transformed substantially. Long-form sustained reading ── novels, extended journalism, scholarly works ── has decreased in many populations, while fragmentary reading of short articles, social media posts, and brief messages has increased dramatically.\n\nResearchers have studied how these patterns affect cognitive development and emotional well-being. Sustained engagement with long texts appears to develop different mental capacities than rapid consumption of fragments. Long-form reading typically requires holding complex information in mind across extended periods, following nuanced arguments, and engaging with perspectives that resist quick summary. Fragmentary reading, by contrast, optimizes for novelty and emotional impact, often at the cost of depth.\n\nFor young people, the implications may be particularly significant. Brain development continues into the early twenties, and the cognitive habits formed during these years shape adult patterns. Some neuroscientists worry that students whose reading consists primarily of fragments may struggle to develop the sustained attention and complex reasoning that academic and professional success increasingly require. Others argue that fragmentary reading is simply different rather than inferior, developing different but valuable capabilities like rapid information processing and synthesis across diverse sources.\n\nResponses to these concerns have varied. Some educators emphasize structured exposure to long-form texts despite student resistance. Some libraries have created \"slow reading\" programs that encourage extended engagement with single works. Others focus on teaching students to navigate fragmentary information environments thoughtfully, recognizing patterns of manipulation and seeking deeper sources when initial information seems insufficient. Whether these efforts can preserve the benefits of traditional reading while embracing new forms remains an open question.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "How have young people's reading habits transformed?",
+            "choices": [
+              "Long-form sustained reading has decreased while fragmentary reading has increased dramatically.",
+              "No changes have occurred in reading habits.",
+              "Total reading has been completely eliminated.",
+              "Long-form reading has dramatically increased."
+            ],
+            "answer": "0",
+            "explanation": "本文「Long-form sustained reading ── novels, extended journalism, scholarly works ── has decreased in many populations, while fragmentary reading of short articles, social media posts, and brief messages has increased dramatically」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What different views do researchers offer about fragmentary reading?",
+            "choices": [
+              "Fragmentary reading is universally praised.",
+              "Everyone agrees fragmentary reading is bad.",
+              "Some neuroscientists worry it impedes sustained attention; others argue it is simply different rather than inferior, developing valuable rapid processing.",
+              "Researchers have not studied this."
+            ],
+            "answer": "2",
+            "explanation": "本文「Some neuroscientists worry that students ... may struggle to develop the sustained attention ... Others argue that fragmentary reading is simply different rather than inferior, developing different but valuable capabilities」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What educational responses to these reading changes does the passage describe?",
+            "choices": [
+              "All schools have abandoned reading instruction.",
+              "Reading has been replaced by video entirely.",
+              "No responses have been developed yet.",
+              "Some emphasize structured exposure to long-form texts; some libraries create \"slow reading\" programs; others focus on teaching navigation of fragmentary environments."
+            ],
+            "answer": "3",
+            "explanation": "本文「Some educators emphasize structured exposure to long-form texts ... Some libraries have created \"slow reading\" programs ... Others focus on teaching students to navigate fragmentary information environments thoughtfully」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "doshisha",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "同志社大学 グローバル地域文化学部 (類題)",
+        "passage": "The phenomenon of cultural appropriation ── adopting elements from a culture not one's own ── has generated intense debate in recent years. Critics argue that such borrowing, particularly when undertaken by members of dominant cultures from those of marginalized groups, often strips elements of their original meaning, transforms them into commodities, and rewards outsiders with attention and profit while original communities receive neither acknowledgment nor benefit. Defenders argue that cultural exchange has produced enrichment throughout history and that strict prohibitions risk freezing cultures in artificial purity rather than allowing the natural mixing that has characterized human societies since prehistory.\n\nDistinguishing constructive cultural exchange from problematic appropriation requires careful attention to several factors. Power dynamics matter: when a dominant culture borrows from a historically marginalized one, the borrowing occurs in a context where the source community may have suffered from suppression of the very practices being adopted. Intent matters too, but its significance is often overstated: well-intentioned borrowing can still cause harm when contextualized by historical injustice. Knowledge and respect also matter: borrowers who understand the meaning and history of what they adopt typically do less harm than those who treat cultural elements as decoration.\n\nThese complexities resist simple rules. Some categorical prohibitions ── against displaying religious symbols carelessly, for instance ── have become widely accepted. Others remain genuinely contested. Whether non-Asian artists may legitimately incorporate Asian musical traditions, whether non-indigenous designers may use indigenous patterns, whether food traditions may be reinterpreted across cultural lines: these questions provoke disagreement even among those who share broad ethical commitments.\n\nNavigating these issues requires neither dismissive rejection of cultural mixing nor unreflective participation in it. The most thoughtful approaches emphasize ongoing dialogue, recognition of source communities, willingness to listen to objections, and humility about the difficulty of full understanding. Such approaches cannot guarantee perfect outcomes, but they offer a path forward through genuinely difficult terrain.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What do critics argue about cultural appropriation?",
+            "choices": [
+              "Critics offer no specific objections.",
+              "Borrowing strips elements of meaning, commodifies them, and rewards outsiders without acknowledging or benefiting source communities.",
+              "It always benefits original communities.",
+              "It is impossible to occur in modern times."
+            ],
+            "answer": "1",
+            "explanation": "本文「strips elements of their original meaning, transforms them into commodities, and rewards outsiders with attention and profit while original communities receive neither acknowledgment nor benefit」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What does the passage say about distinguishing exchange from appropriation?",
+            "choices": [
+              "Power dynamics, intent (with limits), and knowledge/respect all matter, but the issues resist simple rules.",
+              "A simple rule resolves all cases.",
+              "Only intent matters.",
+              "No distinction is possible."
+            ],
+            "answer": "0",
+            "explanation": "本文「Distinguishing constructive cultural exchange from problematic appropriation requires careful attention to several factors. Power dynamics matter ... Intent matters too ... Knowledge and respect also matter ... These complexities resist simple rules」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What approach does the passage advocate for navigating these issues?",
+            "choices": [
+              "Ongoing dialogue, recognition of source communities, listening to objections, and humility about understanding.",
+              "Avoiding all cultural contact entirely.",
+              "Complete prohibition of all cultural mixing.",
+              "Unreflective participation without consideration."
+            ],
+            "answer": "0",
+            "explanation": "本文「The most thoughtful approaches emphasize ongoing dialogue, recognition of source communities, willingness to listen to objections, and humility about the difficulty of full understanding」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "ritsumei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "立命館大学 国際関係学部 (類題)",
+        "passage": "Multilateralism ── the practice of nations cooperating through formal institutions and shared rules ── has been the dominant framework for managing global challenges since World War II. Organizations like the United Nations, the World Trade Organization, and various climate agreements embody the assumption that complex problems crossing borders require coordinated international response. Yet multilateral institutions have come under increasing strain in recent years, with several major powers questioning their legitimacy or selectively withdrawing from agreements that were previously honored.\n\nThe critiques of multilateralism take several forms. Some argue that international institutions have grown unaccountable, with decisions affecting hundreds of millions made by officials whom citizens cannot vote out. Others contend that multilateral compromises produce lowest-common-denominator outcomes, weakened by the need to accommodate diverse national interests. Still others maintain that institutions designed for the post-war world reflect outdated power balances and inadequately represent rising regions, particularly in Asia and the global South.\n\nDefenders of multilateral approaches emphasize what would be lost in their absence. Climate change, pandemic preparedness, and nuclear proliferation are problems no single nation can solve. Trade conflicts and territorial disputes, when handled through bilateral negotiations alone, more frequently escalate into broader confrontation. Multilateral institutions, despite their imperfections, provide forums where disagreements can be aired and partial cooperation maintained even when full agreement proves impossible.\n\nResolving this tension may require neither defending existing institutions unchanged nor abandoning them in favor of unilateralism. Some scholars advocate reform that addresses legitimate complaints about representation and accountability while preserving core cooperative functions. Others suggest that multilateralism may need to operate at multiple scales simultaneously: regional cooperation for some issues, global agreements for others, with flexible coalitions of willing partners filling gaps that universal institutions cannot bridge. How effectively the international system adapts to these challenges may determine whether the next decades produce continued progress on shared problems or fragmenting into competitive blocs.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is multilateralism according to the passage?",
+            "choices": [
+              "A religious framework for international relations.",
+              "A military strategy used during World War II.",
+              "The practice of nations cooperating through formal institutions and shared rules.",
+              "An economic system that has been abandoned."
+            ],
+            "answer": "2",
+            "explanation": "本文「Multilateralism ── the practice of nations cooperating through formal institutions and shared rules」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What is one critique of multilateralism mentioned in the passage?",
+            "choices": [
+              "Critics offer no specific complaints.",
+              "Multilateralism is too cheap to be effective.",
+              "Some argue international institutions have grown unaccountable, with decisions made by officials whom citizens cannot vote out.",
+              "Multilateral institutions have eliminated all international cooperation."
+            ],
+            "answer": "2",
+            "explanation": "本文「Some argue that international institutions have grown unaccountable, with decisions affecting hundreds of millions made by officials whom citizens cannot vote out」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What scholarly response to the tension over multilateralism does the passage describe?",
+            "choices": [
+              "Complete abandonment of all international cooperation.",
+              "Returning to pre-WWII isolation.",
+              "No responses have been proposed.",
+              "Reform addressing representation and accountability while preserving core cooperative functions; possibly multilateralism at multiple scales."
+            ],
+            "answer": "3",
+            "explanation": "本文「Some scholars advocate reform that addresses legitimate complaints about representation and accountability while preserving core cooperative functions. Others suggest that multilateralism may need to operate at multiple scales」が根拠。"
+          }
+        ]
+      }
+    }
+  ]
+}
