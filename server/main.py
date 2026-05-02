@@ -4068,6 +4068,7 @@ EXAM_QUESTION_ROTATION = [
     ("eiken", "r_q3", "gp1"),
     ("eiken", "w_essay", "gp1"),
     ("eiken", "r_q1", "g2"),
+    ("eiken", "r_q3", "g2"),        # 2026-05-03 復活: 2級長文 (旧形式但し import 既存データあり)
     ("eiken", "r_q3b", "g2"),       # 2026-04-30 追加: 2級長文内容一致
     ("eiken", "w_opinion", "g2"),
     ("eiken", "w_summary", "g2"),   # 2026-04-30 追加: 2級要約 (新形式 2024〜)
