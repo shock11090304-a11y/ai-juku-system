@@ -1,0 +1,208 @@
+{
+  "questions": [
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3b",
+      "eiken_grade": "gp2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "School Lunch in Different Countries\n\nSchool lunches look very different around the world. In Japan, students often eat \"kyushoku\" prepared by the school. The meal includes rice, vegetables, fish or meat, and miso soup. Students wear special clothes and serve the food to each other in the classroom. After eating, they clean up together.\n\nIn France, school lunches are seen as an important part of education. Students eat in a quiet dining hall where they can practice good manners. A typical French school lunch may include a salad, a main course like chicken with vegetables, cheese, and a piece of fruit. The meal often takes about an hour, much longer than in many other countries.\n\nIn the United States, school lunches are usually quicker and simpler. Many students eat sandwiches, pizza, or salads from the cafeteria, often in just 20 to 30 minutes. Some schools allow students to bring their own lunches from home. In recent years, more American schools have tried to offer healthier options like fresh vegetables and whole grain bread.\n\nThese differences show how each culture views food and education. In Japan, lunch teaches teamwork and responsibility. In France, it teaches manners and the joy of eating slowly. In the United States, it focuses on giving students enough energy for the rest of the school day. There is no single \"best\" way to do school lunch, but each system reflects what people value most about food and learning.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What does the passage say about school lunch in France?",
+            "choices": [
+              "Students always eat alone.",
+              "Students must eat very quickly.",
+              "Schools do not provide any lunch.",
+              "Students eat in a quiet dining hall and the meal takes about an hour."
+            ],
+            "answer": "3",
+            "explanation": "本文「Students eat in a quiet dining hall where they can practice good manners ... The meal often takes about an hour」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3b",
+      "eiken_grade": "gp2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "A New Way to Reduce Food Waste\n\nIn many cities around Japan, a new type of business is helping reduce food waste. These businesses are smartphone applications that connect customers with local restaurants and bakeries. At the end of each day, shops sell their unsold food at a discount through the app. Customers can buy meals or pastries for half the usual price or less.\n\nThe idea began in Europe a few years ago and has now spread to Japan. The largest app of this kind says it has helped save more than five million meals from being thrown away. Many small bakeries say the app has become an important source of income, especially during slow weeks.\n\nFor customers, the app offers two main benefits. First, it saves money. Sandwiches, sushi, and bread that would normally cost 800 yen might be available for 300 or 400 yen. Second, customers feel good about helping the environment. Reducing food waste means less garbage in landfills and fewer greenhouse gases.\n\nHowever, the system is not perfect. Customers usually do not know exactly what they will receive ── they buy a \"surprise bag\" with whatever the shop has left. Some people enjoy this surprise, but others find it frustrating when they receive items they do not like. Pickup times are also limited, often during a short window in the evening, which may not match every customer's schedule.\n\nDespite these issues, the trend is growing. Many businesses, schools, and even some hospitals are starting to use similar systems. Reducing food waste is a serious problem, and these apps offer one practical solution.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is one main benefit of the food waste reduction app for customers?",
+            "choices": [
+              "It guarantees customers will receive only their favorite foods.",
+              "It always delivers food directly to their homes.",
+              "It saves money by offering items at half the usual price or less.",
+              "It eliminates all need for cooking at home."
+            ],
+            "answer": "2",
+            "explanation": "本文「First, it saves money. Sandwiches, sushi, and bread that would normally cost 800 yen might be available for 300 or 400 yen」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "kyodai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "京都大学 経済学部 (類題)",
+        "passage": "The relationship between income and happiness has long fascinated economists and psychologists alike. Common intuition suggests that wealthier individuals must be happier, since money provides freedom from material want and access to experiences others cannot afford. Empirical research, however, has produced more nuanced findings that complicate this assumption.\n\nStudies across many countries reveal that within developed economies, additional income beyond a moderate threshold ── often estimated at around the average national salary ── correlates only weakly with reported life satisfaction. Below this threshold, more money does meaningfully reduce stress and increase well-being, particularly when it removes worries about basic necessities. Above it, however, additional income produces diminishing returns. The wealthy may report similar levels of daily happiness as those earning substantially less, even as they continue to seek further accumulation.\n\nSeveral mechanisms help explain this pattern. Hedonic adaptation ── the human tendency to quickly adjust to improved circumstances ── means that the joy of new acquisitions fades faster than expected. Social comparison shifts as wealth grows: rather than comparing oneself to those with less, wealthy individuals tend to compare themselves to those with even more, generating perpetual dissatisfaction. Additionally, the demands accompanying high incomes ── longer working hours, greater responsibility, social obligations ── may directly offset their material benefits.\n\nThese findings have important implications for individual choices and public policy. They suggest that beyond a certain point, the pursuit of additional income may yield smaller returns than other investments ── in relationships, health, or personal development. They also raise questions about economic policies that prioritize aggregate growth over distribution: if additional wealth above the threshold contributes little to well-being, redistribution toward those below it may produce greater overall happiness, even if total wealth remains unchanged.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What does empirical research show about the income-happiness relationship within developed economies?",
+            "choices": [
+              "Additional income beyond a moderate threshold correlates only weakly with reported life satisfaction.",
+              "Income has no relationship to happiness whatsoever.",
+              "Wealthy individuals are always less happy than poor individuals.",
+              "Additional income always brings proportional happiness increases."
+            ],
+            "answer": "0",
+            "explanation": "本文「additional income beyond a moderate threshold ── often estimated at around the average national salary ── correlates only weakly with reported life satisfaction」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What is hedonic adaptation according to the passage?",
+            "choices": [
+              "A medical condition affecting wealthy individuals.",
+              "A government policy on income redistribution.",
+              "The human tendency to quickly adjust to improved circumstances, making joy from new acquisitions fade.",
+              "An economic theory rejected by all researchers."
+            ],
+            "answer": "2",
+            "explanation": "本文「Hedonic adaptation ── the human tendency to quickly adjust to improved circumstances ── means that the joy of new acquisitions fades faster than expected」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What policy implication does the passage suggest these findings have?",
+            "choices": [
+              "Aggregate growth should be the only policy priority.",
+              "Beyond a threshold, redistribution toward those below it may produce greater overall happiness, even without total wealth change.",
+              "Income studies are useless for public policy.",
+              "All income redistribution should be banned."
+            ],
+            "answer": "1",
+            "explanation": "本文「if additional wealth above the threshold contributes little to well-being, redistribution toward those below it may produce greater overall happiness, even if total wealth remains unchanged」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "icu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "国際基督教大学 (類題)",
+        "passage": "The phenomenon known as the \"replication crisis\" has shaken several scientific fields over the past decade. Researchers attempting to reproduce the results of widely cited studies have repeatedly failed to confirm findings that had been treated as established knowledge. Psychology has been particularly affected, but problems have appeared in medicine, economics, and other disciplines as well.\n\nMultiple factors have contributed to the crisis. Publication bias ── the tendency of journals to publish only studies with positive results ── means that null findings often remain unpublished, distorting the apparent state of knowledge. Pressure to produce surprising results encourages researchers to analyze data in ways that maximize the chance of finding statistically significant patterns, even when those patterns reflect noise rather than genuine effects. Small sample sizes, common in many fields due to resource constraints, magnify the role of random variation.\n\nResponses to the crisis have been substantial. Many journals now require researchers to register their hypotheses and analytical approaches in advance, preventing post-hoc adjustments that could fabricate apparent significance. Some have begun publishing replication studies and null findings that previously would have been rejected. Open science movements promote sharing data and code, allowing other researchers to verify analyses and detect errors.\n\nThe crisis has also prompted broader reflection about scientific method itself. Some commentators argue that the difficulties reveal fundamental limits of statistical methods that have dominated certain fields, suggesting greater humility about what such methods can establish. Others view the crisis as a sign of science working as intended ── revealing flawed earlier work and improving through correction. Still others worry that public trust in science may suffer from prominent reports of failure, even as the response strengthens scientific practice.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is the \"replication crisis\" according to the passage?",
+            "choices": [
+              "A new way of producing scientific results faster.",
+              "Researchers attempting to reproduce widely cited studies have repeatedly failed to confirm findings treated as established knowledge.",
+              "A shortage of research funding worldwide.",
+              "A government policy banning scientific research."
+            ],
+            "answer": "1",
+            "explanation": "本文「Researchers attempting to reproduce the results of widely cited studies have repeatedly failed to confirm findings that had been treated as established knowledge」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What is publication bias and how does it contribute to the crisis?",
+            "choices": [
+              "Researchers' refusal to publish anything at all.",
+              "A new policy to publish only negative results.",
+              "Journals' tendency to publish only positive-result studies, leaving null findings unpublished and distorting apparent knowledge.",
+              "Government censorship of all scientific journals."
+            ],
+            "answer": "2",
+            "explanation": "本文「Publication bias ── the tendency of journals to publish only studies with positive results ── means that null findings often remain unpublished, distorting the apparent state of knowledge」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What different views do commentators offer about the crisis?",
+            "choices": [
+              "No views have been offered yet.",
+              "Everyone agrees the crisis means science is failing.",
+              "Everyone agrees no action is needed.",
+              "Some see fundamental limits of statistical methods; others view it as science working through correction; still others worry about public trust damage."
+            ],
+            "answer": "3",
+            "explanation": "本文「Some commentators argue that the difficulties reveal fundamental limits ... Others view the crisis as a sign of science working as intended ... Still others worry that public trust in science may suffer」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "waseda",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "早稲田大学 教育学部 (類題)",
+        "passage": "Educational researchers have increasingly questioned the assumption that learning naturally improves with greater investment of time. The relationship between hours spent studying and actual academic improvement, recent studies suggest, depends crucially on how that time is structured rather than simply how much of it is spent.\n\nDeliberate practice ── the focused, goal-oriented engagement with challenging material ── differs fundamentally from passive review or repetitive performance of already-mastered tasks. Students who spend three hours actively wrestling with problems slightly beyond their current ability typically achieve more than students who spend six hours rereading familiar notes or completing routine exercises. The quality of engagement, measured by attention, effort, and productive struggle, matters more than mere duration.\n\nThis insight has practical implications for how students approach demanding subjects. Mathematics learning, for example, requires sustained mental effort on unfamiliar problems rather than simple repetition. Language acquisition demands genuine communication attempts, including the discomfort of speaking imperfectly, rather than passive consumption of vocabulary lists. In each case, the most effective learning occurs at the boundary of current ability, where progress feels difficult and uncertain.\n\nYet this principle is widely violated in actual study habits. Students often gravitate toward review activities that feel productive without producing substantial learning ── highlighting passages already understood, recopying notes, or solving problems they have already mastered. The visible effort creates an illusion of progress while genuine improvement requires the more uncomfortable work of confronting genuine difficulty.\n\nUnderstanding these dynamics could substantially improve educational outcomes without increasing total study time. Indeed, students who learn to recognize the difference between productive and unproductive practice often achieve more while studying less, freeing time for other valuable pursuits. The question is not just how much students study, but how they study.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What does recent research suggest about the relationship between study time and improvement?",
+            "choices": [
+              "More hours always produce more learning.",
+              "Time spent studying has no relationship to improvement.",
+              "Only natural talent matters.",
+              "The relationship depends crucially on how time is structured rather than simply how much is spent."
+            ],
+            "answer": "3",
+            "explanation": "本文「The relationship between hours spent studying and actual academic improvement, recent studies suggest, depends crucially on how that time is structured rather than simply how much of it is spent」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What is deliberate practice according to the passage?",
+            "choices": [
+              "Avoiding all difficult material.",
+              "The focused, goal-oriented engagement with challenging material at the boundary of current ability.",
+              "Passive review of familiar notes.",
+              "Memorizing lists of facts repeatedly."
+            ],
+            "answer": "1",
+            "explanation": "本文「Deliberate practice ── the focused, goal-oriented engagement with challenging material」+「the most effective learning occurs at the boundary of current ability」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What conclusion does the passage draw about educational outcomes?",
+            "choices": [
+              "The visible effort creates an illusion of progress; genuine improvement requires confronting genuine difficulty.",
+              "Students should always study longer hours.",
+              "Total study time is the only factor that matters.",
+              "Students cannot improve their study habits."
+            ],
+            "answer": "0",
+            "explanation": "本文「The visible effort creates an illusion of progress while genuine improvement requires the more uncomfortable work of confronting genuine difficulty」が根拠。"
+          }
+        ]
+      }
+    }
+  ]
+}
