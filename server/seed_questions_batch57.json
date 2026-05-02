@@ -1,0 +1,131 @@
+{
+  "questions": [
+    {
+      "exam_id": "eiken",
+      "part_key": "w_summary",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "Read the following passage and summarize it in English in 45 to 55 words.\n\nIn many Japanese cities, public libraries are changing their roles to serve their communities better. In the past, libraries were mostly quiet places for reading books and studying. Today, however, many libraries offer much more than books. They have computer rooms where people can use the internet for free. They organize events such as story times for children, English conversation classes, and lectures by local authors. Some libraries even rent out tools, kitchen equipment, and games. The number of visitors has increased in many cities because people now see libraries as community centers. Critics argue that libraries should focus only on books, but most residents support the new services.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "上記英文を 45-55 語の英語で要約しなさい。",
+            "answer": "Public libraries in Japan are evolving from quiet book-only spaces into community centers that offer free internet, events such as story times and lectures, and even rentals of tools and games. Visitor numbers have risen because residents value these new services, even though some critics prefer libraries to remain focused on books. (52 words)",
+            "explanation": "【2級 w_summary 新形式】① 模範解答 52 語、45-55 語範囲 OK ② 原文の主要 3 要素「図書館の役割変化 (本→コミュニティセンター)」「具体的サービス (internet/events/rentals)」「来場者増 + 一部批判」を漏れなく圧縮 ③ paraphrasing: changing → evolving, even more → and even ④ 結論で「critics」も触れて原文の含意を保持。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "w_summary",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "Read the following passage and summarize it in English in 45 to 55 words.\n\nMany high school students in Japan are now choosing to take a \"gap year\" before starting university. A gap year is a year-long break between high school and college, during which students may travel, work, volunteer, or study a special skill. Supporters say that a gap year helps students mature and clarify their goals before they start university. Many gap-year students return more focused, with better motivation for their studies. However, critics worry that students who take a year off may lose study habits and find it harder to return to academic life. The decision often depends on each student's situation and personality.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "上記英文を 45-55 語の英語で要約しなさい。",
+            "answer": "More Japanese high school students are taking a gap year before university to travel, work, volunteer, or learn skills. Supporters believe this break helps students mature and find clear goals, returning to studies more motivated. Critics worry it may weaken study habits, making the choice depend on each student's situation. (50 words)",
+            "explanation": "【2級 w_summary 新形式】① 模範解答 50 語、45-55 範囲 OK ② 原文 3 要素「ギャップイヤー定義」「賛成派の論拠 (mature/clear goals/motivation)」「反対派の懸念 (lose habits)」+ 結論「個人差」を漏れなく圧縮 ③ paraphrasing: year-long break → gap year, supporters say → believe ④ 中立的結論を維持 (depend on situation)。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3b",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Return of Vinyl Records\n\nIn an era dominated by digital music streaming, an unexpected trend has emerged in many countries, including Japan: the return of vinyl records. After decades of decline, vinyl sales have grown steadily for over ten years. Several record stores in Tokyo and Osaka have opened in recent years, and many new music releases now include vinyl versions alongside digital downloads.\n\nWhy are people buying records again? One reason is sound quality. Many music fans believe vinyl produces a warmer, richer sound compared to digital files, especially for older recordings made before digital technology became standard. Another reason is the physical experience. Listeners enjoy holding the album cover, reading the printed lyrics, and carefully placing the needle on the record. Some people say this slow, deliberate process makes them appreciate music more deeply than streaming.\n\nVinyl is also popular as a way to support artists. Streaming services pay performers very small amounts for each play, while record sales generate much higher income for musicians. Some musicians release special vinyl editions with extra songs or artwork to attract dedicated fans.\n\nDespite these advantages, vinyl is not for everyone. Records are expensive ── often costing 3,000 to 5,000 yen each ── and the equipment needed to play them is also costly. Vinyl also takes up shelf space, which is challenging in small apartments. For now, vinyl remains a niche market, but its growing fan base suggests that the format will continue to thrive alongside digital music.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What does the passage say about why vinyl records are popular again?",
+            "choices": [
+              "Vinyl is the cheapest music format available.",
+              "Streaming services no longer exist.",
+              "Vinyl is required by the Japanese government.",
+              "Vinyl produces warmer sound and offers a physical, deliberate listening experience that fans value."
+            ],
+            "answer": "3",
+            "explanation": "本文「Many music fans believe vinyl produces a warmer, richer sound ... Listeners enjoy holding the album cover, reading the printed lyrics, and carefully placing the needle on the record. Some people say this slow, deliberate process makes them appreciate music more deeply」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3b",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "School Cafeteria Innovations\n\nMany high schools across Japan have begun redesigning their cafeteria menus to address modern dietary preferences and concerns about food waste. The traditional approach, in which all students received the same fixed meal, is gradually being replaced by more flexible options. At Sakurai High School in Nagoya, for example, students can now choose between three different main dishes each day, including a vegetarian option.\n\nThe changes have come from several directions. Increased awareness of dietary diversity has made schools more attentive to students with food allergies, religious restrictions, and personal preferences. At the same time, many schools are concerned about the large amount of food thrown away each day. By offering choices, schools find that students are more likely to finish their meals.\n\nSurprisingly, these changes have also improved student engagement with food itself. Some schools have started \"menu suggestion boxes\" where students can propose new dishes. Cooking teachers report that students now show more interest in nutrition and food preparation when they feel ownership over what they eat. Several schools have even begun cooking classes after school, connecting cafeteria experiences with practical skills.\n\nNot everyone supports these changes. Some teachers worry that endless customization makes meals too expensive and complicated to prepare. Others feel that traditional shared meals taught important lessons about community. Despite these concerns, many schools have decided that the benefits of flexibility ── reduced waste, better nutrition, and more engaged students ── justify the additional effort.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What change in school cafeterias does the passage describe?",
+            "choices": [
+              "Schools no longer allow students to eat lunch.",
+              "Cafeterias are offering more flexible menu options, including vegetarian choices.",
+              "Schools have completely closed all their cafeterias.",
+              "Cafeterias now serve only the same fixed meal to all students."
+            ],
+            "answer": "1",
+            "explanation": "本文「The traditional approach, in which all students received the same fixed meal, is gradually being replaced by more flexible options ... students can now choose between three different main dishes each day, including a vegetarian option」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3b",
+      "eiken_grade": "gp2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Junior High Students Help the Environment\n\nLast month, the students at Hibari Junior High School in Saitama started a new project to help their local environment. Every Saturday morning, about 30 students walk along the river near their school and pick up trash. They collect plastic bottles, food wrappers, and other items that people have left behind. The project began after Ms. Sato, the science teacher, told her class about the dangers of plastic in rivers and oceans.\n\nThe students were surprised by the amount of trash they found on the first day. \"We collected three large bags in just two hours,\" said Kenta, a third-year student. \"I never realized how much rubbish was in our river.\" After cleaning, the students sort the items and learn which materials can be recycled.\n\nThe project has changed how many students think about garbage. Several students have started bringing reusable water bottles to school instead of buying plastic ones. Others have asked their families to use cloth shopping bags. Ms. Sato says the students are also teaching their parents about environmental issues.\n\nThe school plans to expand the project. Next year, they hope to invite students from other schools to join. The local government has even provided special gloves and tools to help the students work safely. Many community members thank the students when they pass by during the cleanup. The students feel proud that their efforts are making a real difference for their town.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What did the students at Hibari Junior High School start doing?",
+            "choices": [
+              "Walking along the river every Saturday morning to pick up trash.",
+              "Selling reusable water bottles to other schools.",
+              "Closing the local river to all visitors.",
+              "Building a new school by the river."
+            ],
+            "answer": "0",
+            "explanation": "本文「Every Saturday morning, about 30 students walk along the river near their school and pick up trash」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "w_email",
+      "eiken_grade": "gp2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "You received an email from your friend Mike. Read the email and write a reply in English. Your reply should be between 40 and 50 words.\n\n---\nHi!\n\nI'm thinking about joining the school marathon next month. I've never run more than 3 kilometers before, and the marathon is 10 kilometers, so I'm a little nervous.\n\nDo you have any tips for training? Also, what should I eat before a long run?\n\nYour friend,\nMike\n---",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "Write a reply email to Mike in 40 to 50 words.",
+            "answer": "Hi Mike,\n\nGood luck with the marathon! For training, start with short runs and increase the distance slowly each week. Drink plenty of water every day. Before a long run, eat a banana or some bread for energy. Don't eat too much. You can do it!\n\nYour friend",
+            "answer_word_count": 47,
+            "explanation": "【準2級 w_email】① 質問2点 (training tips + food before run) 両方回答 ② training: 短い距離から徐々に増やす + 水分補給 ③ food: バナナやパン (具体例) ④ 励まし (You can do it!) で締める ⑤ 47 語で 40-50 範囲内。準2級 vocabulary (increase, slowly, energy) で構成。"
+          }
+        ]
+      }
+    }
+  ]
+}
