@@ -1135,6 +1135,79 @@
     </section>
 
     <!-- Charts -->
+    <!-- 📊 LP A/B コンバージョンファネル (2026-05-03 追加) -->
+    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.25); border-radius: 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+        <h3 style="margin:0;color:#a78bfa;">📊 LP A/B ファネル (events 集計)</h3>
+        <div style="display:flex;gap:0.5rem;align-items:center;">
+          <select id="lpFunnelDays" style="background:rgba(255,255,255,0.05);color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:0.3rem 0.6rem;font-size:0.82rem;">
+            <option value="7" selected>7日間</option>
+            <option value="14">14日間</option>
+            <option value="30">30日間</option>
+          </select>
+          <button id="lpFunnelLoad" type="button" style="background:rgba(167,139,250,0.18);color:#a78bfa;border:1px solid rgba(167,139,250,0.4);padding:0.3rem 0.7rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">🔄 更新</button>
+        </div>
+      </div>
+      <p style="font-size:0.85rem;color:#9ca3af;margin-bottom:1rem;">LP コンバージョンファネル (variant ごと)。session_id 単位の unique 数で集計。</p>
+      <div id="lpFunnelContent" style="font-size:0.88rem;">
+        <p style="color:#71717a;">「🔄 更新」を押すと最新データを取得します。</p>
+      </div>
+    </section>
+
+    <script>
+    (function() {
+      const btn = document.getElementById('lpFunnelLoad');
+      const daysSel = document.getElementById('lpFunnelDays');
+      const out = document.getElementById('lpFunnelContent');
+      if (!btn) return;
+      btn.addEventListener('click', async () => {
+        const token = localStorage.getItem('ai_juku_admin_token');
+        if (!token) { out.innerHTML = '<p style="color:#ef4444;">管理者ログインが必要です</p>'; return; }
+        out.innerHTML = '<p>読み込み中...</p>';
+        try {
+          const res = await fetch(`/api/admin/lp-funnel?days=${daysSel.value}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          renderFunnel(data);
+        } catch (e) {
+          out.innerHTML = `<p style="color:#ef4444;">取得失敗: ${e.message}</p>`;
+        }
+      });
+      function renderFunnel(data) {
+        const variants = data.variants || {};
+        const order = ['lp_view', 'lp_scroll_50', 'lp_cta_click', 'lp_form_start', 'lp_form_submit'];
+        const labels = { lp_view: '👁 表示', lp_scroll_50: '📜 50%スクロール', lp_cta_click: '🔘 CTAクリック', lp_form_start: '✏️ フォーム着手', lp_form_submit: '📤 フォーム送信' };
+        const variantNames = Object.keys(variants);
+        if (variantNames.length === 0) {
+          out.innerHTML = `<p style="color:#71717a;">${data.summary.days}日間にイベントなし。total_events=${data.summary.total_events}</p>`;
+          return;
+        }
+        let html = `<div style="margin-bottom:0.7rem;font-size:0.78rem;color:#a78bfa;">過去 ${data.summary.days} 日 / 計 ${data.summary.total_events} events / ${variantNames.length} variants</div>`;
+        html += '<table style="width:100%;border-collapse:collapse;font-size:0.85rem;">';
+        html += '<thead><tr style="border-bottom:1px solid rgba(255,255,255,0.15);"><th style="text-align:left;padding:0.5rem;">Variant</th>';
+        order.forEach(o => { html += `<th style="text-align:right;padding:0.5rem;">${labels[o]}</th>`; });
+        html += '<th style="text-align:right;padding:0.5rem;">CV率</th></tr></thead><tbody>';
+        variantNames.sort().forEach(v => {
+          const events = variants[v] || {};
+          const view = events.lp_view || 0;
+          const submit = events.lp_form_submit || 0;
+          const cvr = view > 0 ? ((submit / view) * 100).toFixed(1) : '--';
+          html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.05);"><td style="padding:0.5rem;font-weight:700;">${v}</td>`;
+          order.forEach(o => {
+            const n = events[o] || 0;
+            const pct = view > 0 && n > 0 ? ` <span style="color:#71717a;font-size:0.7rem;">(${((n/view)*100).toFixed(0)}%)</span>` : '';
+            html += `<td style="text-align:right;padding:0.5rem;">${n}${pct}</td>`;
+          });
+          html += `<td style="text-align:right;padding:0.5rem;font-weight:800;color:${cvr === '--' ? '#71717a' : '#10b981'};">${cvr}${cvr === '--' ? '' : '%'}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        out.innerHTML = html;
+      }
+    })();
+    </script>
+
     <section class="charts-section">
       <div class="chart-box wide">
         <div class="chart-header">
