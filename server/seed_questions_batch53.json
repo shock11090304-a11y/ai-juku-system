@@ -1,0 +1,258 @@
+{
+  "questions": [
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3",
+      "eiken_grade": "g1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Cognitive Costs of Information Abundance\n\nThe digital age has produced a profound paradox in human knowledge acquisition. While we have unprecedented access to vast repositories of information ── more than any previous generation could have imagined ── studies consistently demonstrate that this abundance has not translated into deeper understanding. In fact, certain measures of cognitive performance, including sustained attention and complex reasoning, appear to have declined among populations with the highest information access.\n\nResearchers have proposed several mechanisms for this counterintuitive finding. The phenomenon known as \"information foraging\" suggests that users instinctively optimize for novelty rather than depth, sampling many sources superficially rather than engaging deeply with any one. Furthermore, the constant availability of search engines may discourage the effortful cognitive processing required for genuine learning. When information can always be retrieved on demand, the brain assigns lower priority to internal storage and integration.\n\nThis pattern has implications for educational practice. Traditional pedagogical assumptions ── that more information leads to better-informed citizens, that easier access promotes inquiry ── may need substantial revision. Some researchers argue that artificial scarcity, in which students engage with carefully selected materials over extended periods, may produce more durable understanding than unlimited browsing. Others suggest that the critical skill is not access but discernment: the ability to evaluate source quality, recognize manipulation, and synthesize across viewpoints.\n\nWhat is clear is that the optimistic assumption of the early internet era ── that democratized information would automatically yield democratized wisdom ── has not been validated. The relationship between information environments and cognitive flourishing is more complex than enthusiasts predicted, requiring nuanced approaches that acknowledge both the genuine benefits and the previously unanticipated costs. Future research will need to identify which configurations of information access actually support deep understanding, and which inadvertently undermine it.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What paradox does the passage identify in the digital age?",
+            "choices": [
+              "Despite unprecedented information access, certain cognitive performance measures appear to have declined.",
+              "Information has become too expensive to access.",
+              "Information access has decreased dramatically.",
+              "No paradox exists in the digital age."
+            ],
+            "answer": "0",
+            "explanation": "本文「While we have unprecedented access to vast repositories of information ... studies consistently demonstrate that this abundance has not translated into deeper understanding ... cognitive performance ... appear to have declined」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "According to the passage, why might constant search engine availability undermine learning?",
+            "choices": [
+              "Search engines actively prevent learning by design.",
+              "Search engines block access to all websites.",
+              "Search engines are too slow to be useful.",
+              "The brain assigns lower priority to internal storage and integration when information can always be retrieved."
+            ],
+            "answer": "3",
+            "explanation": "本文「When information can always be retrieved on demand, the brain assigns lower priority to internal storage and integration」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What conclusion does the passage draw about early internet-era optimism?",
+            "choices": [
+              "No conclusions about the internet are possible yet.",
+              "Early internet users were more intelligent than current users.",
+              "The optimistic assumption that democratized information would automatically yield democratized wisdom has not been validated.",
+              "The early internet was unable to democratize information."
+            ],
+            "answer": "2",
+            "explanation": "本文「the optimistic assumption of the early internet era ── that democratized information would automatically yield democratized wisdom ── has not been validated」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3",
+      "eiken_grade": "g1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Decline of Civic Religious Practice\n\nReligious participation has declined substantially across many industrialized democracies over the past half-century, with implications that extend well beyond the spiritual sphere. Sociologists studying this phenomenon note that traditional religious institutions historically served functions that went far beyond doctrine ── they provided regular settings for intergenerational mixing, moral deliberation among non-experts, and the reinforcement of obligations to those outside one's immediate family. As participation has fallen, secular institutions have emerged that fulfill some of these functions, but rarely all of them simultaneously.\n\nThe consequences of this institutional shift remain contested. Optimists argue that the decline reflects genuine intellectual progress ── greater willingness to question inherited beliefs, increased tolerance for diverse worldviews, and the maturation of secular ethical reasoning. From this perspective, voluntary associations, civic organizations, and online communities can provide the collective experiences that religious institutions once monopolized.\n\nCritics, however, point to evidence that secular substitutes have not adequately replaced what was lost. Rates of social isolation have risen even as connectivity technologies have multiplied. Communities that once gathered weekly for shared rituals now disperse into smaller, more demographically homogeneous social bubbles. The civic skills cultivated by participation in religious organizations ── compromise, sustained commitment to non-instrumental relationships, willingness to defer to collective decisions ── may be eroding without obvious replacement.\n\nResolving this debate requires distinguishing different aspects of religious institutions. The doctrinal claims of any particular tradition can reasonably be questioned without dismissing the social and ethical functions those traditions historically performed. Whether secular societies can develop institutions that match those functions ── or whether something genuinely valuable has been lost ── may be among the more consequential cultural questions of the coming decades.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What functions did traditional religious institutions historically serve beyond doctrine, according to the passage?",
+            "choices": [
+              "Settings for intergenerational mixing, moral deliberation, and reinforcement of obligations beyond family.",
+              "Only theological education.",
+              "Sports and entertainment exclusively.",
+              "Government tax collection."
+            ],
+            "answer": "0",
+            "explanation": "本文「they provided regular settings for intergenerational mixing, moral deliberation among non-experts, and the reinforcement of obligations to those outside one's immediate family」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What evidence do critics cite that secular substitutes are inadequate?",
+            "choices": [
+              "Rates of social isolation have risen even as connectivity technologies have multiplied.",
+              "Critics provide no specific evidence.",
+              "Religious institutions have become more popular than ever.",
+              "Secular institutions cost too much to operate."
+            ],
+            "answer": "0",
+            "explanation": "本文「Rates of social isolation have risen even as connectivity technologies have multiplied」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What does the passage suggest is needed to resolve the debate about religious decline?",
+            "choices": [
+              "Avoiding the topic entirely.",
+              "Distinguishing doctrinal claims from social/ethical functions, and asking whether secular institutions can match the latter.",
+              "Returning entirely to traditional religious practice.",
+              "Eliminating all religious institutions immediately."
+            ],
+            "answer": "1",
+            "explanation": "本文「Resolving this debate requires distinguishing different aspects of religious institutions. The doctrinal claims ... can reasonably be questioned without dismissing the social and ethical functions」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "gp1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "The committee's report ( ) several troubling discrepancies between the company's public statements and its internal financial records.",
+            "choices": [
+              "concealed",
+              "alleviated",
+              "unveiled",
+              "fabricated"
+            ],
+            "answer": "2",
+            "explanation": "unveil = 明らかにする/暴露する。「報告書が会社の公式声明と内部財務記録の間の食い違いを明らかにした」が文脈に合う。conceal = 隠す (反意)、fabricate = ねつ造する、alleviate = 緩和する、はいずれも文脈不適。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "The negotiations broke down when neither party was willing to ( ) on the central issue of jurisdictional authority.",
+            "choices": [
+              "conspire",
+              "compromise",
+              "capitulate",
+              "contemplate"
+            ],
+            "answer": "1",
+            "explanation": "compromise = 妥協する。「中核的問題で妥協できず交渉決裂」が自然。capitulate = 降伏する (一方的)、conspire = 共謀する、contemplate = 熟考する、はいずれも双方間の妥協の文脈に合わない。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "Despite repeated warnings from regulators, the firm continued to ( ) safety protocols, eventually leading to the catastrophic incident.",
+            "choices": [
+              "adhere to",
+              "circumvent",
+              "ratify",
+              "reinforce"
+            ],
+            "answer": "1",
+            "explanation": "circumvent = 回避する/迂回する。「安全規定を回避し続けた結果、致命的事故に至った」が文意に合う。adhere to = 遵守する (反意)、reinforce = 強化する、ratify = 批准する、はいずれも文脈に矛盾。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "kyodai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "京都大学 文学部 (類題)",
+        "passage": "Among the most peculiar features of human cognition is the gap between what we know intellectually and what we feel viscerally. We may understand, with statistical clarity, that air travel is far safer than driving; yet many of us experience anxiety in airplanes that road trips never produce. We may know, abstractly, that the slow accumulation of small environmental harms threatens far more than dramatic disasters; yet our concern responds more powerfully to a single visible catastrophe than to invisible cumulative damage.\n\nThis disjunction between knowledge and feeling is not a mere defect to be overcome. It reflects, rather, the architecture of cognition itself. Our emotional responses evolved to track immediate, perceptible threats ── predators, social rejection, physical harm ── because such threats were the relevant ones throughout most of human evolutionary history. Statistical reasoning about distant or invisible risks is a relatively recent capacity, layered onto cognitive systems that did not evolve for it. The mismatch between these layers explains why even those who understand a risk intellectually often fail to respond to it proportionately.\n\nThis recognition has practical consequences. Public health communications that rely solely on statistical information frequently fail to motivate behavior change, while vivid imagery and personal narratives often succeed where numbers do not. Effective policy may require translating abstract knowledge into forms that engage emotional cognition, not because such translation makes the knowledge more accurate, but because it makes it more actionable.\n\nYet this same insight raises troubling questions. If our emotional responses systematically mistrack reality, then policies optimized for emotional persuasion may divert resources toward dramatic but minor risks while neglecting greater but invisible ones. Navigating between intellectual and emotional cognition, neither dismissing the latter as primitive nor surrendering wholly to its biases, may be one of the central challenges of contemporary public reasoning.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What gap does the author identify in human cognition?",
+            "choices": [
+              "No gap exists in human cognition.",
+              "Between human and animal cognition.",
+              "Between past and future cognitive abilities.",
+              "Between what we know intellectually and what we feel viscerally."
+            ],
+            "answer": "3",
+            "explanation": "本文「Among the most peculiar features of human cognition is the gap between what we know intellectually and what we feel viscerally」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Why does the author argue this disjunction is not merely a defect?",
+            "choices": [
+              "Because no defects exist in human cognition.",
+              "Because it has been completely eliminated by modern education.",
+              "Because it reflects the evolutionary architecture of cognition — emotions evolved to track immediate threats, while statistical reasoning is recent.",
+              "Because emotional responses are always more accurate than statistics."
+            ],
+            "answer": "2",
+            "explanation": "本文「It reflects, rather, the architecture of cognition itself ... emotional responses evolved to track immediate, perceptible threats ... Statistical reasoning ... is a relatively recent capacity」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What troubling question does the author raise about emotion-optimized policy?",
+            "choices": [
+              "It may divert resources toward dramatic but minor risks while neglecting greater but invisible ones.",
+              "It is illegal in most countries.",
+              "It is too cheap to implement.",
+              "It guarantees perfect outcomes."
+            ],
+            "answer": "0",
+            "explanation": "本文「policies optimized for emotional persuasion may divert resources toward dramatic but minor risks while neglecting greater but invisible ones」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "waseda",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2023,
+        "univ_simulated": "早稲田大学 国際教養学部 (類題)",
+        "passage": "The relationship between travel and cultural understanding has been romanticized in modern discourse, with travel often portrayed as a powerful means of broadening one's perspective and fostering cross-cultural empathy. While these claims contain elements of truth, recent research suggests that the simple act of physical relocation does not automatically produce the cognitive and emotional shifts that travel enthusiasts often promise.\n\nStudies of long-term expatriates and short-term tourists alike reveal that cultural exposure produces dramatically different effects depending on how it is approached. Travelers who move through foreign environments primarily as observers, photographing sites and consuming experiences from a comfortable distance, often return with their preexisting assumptions strengthened rather than challenged. The unfamiliar elements they encountered are processed through cognitive filters that emphasize confirmation of expected differences while minimizing recognition of shared humanity.\n\nMore transformative effects appear when travelers engage in genuine reciprocal relationships across cultural lines ── working alongside local people, depending on their assistance, encountering situations where one's own competence is reduced and local knowledge proves essential. Such experiences can produce the humility and recalibration of perspective that surface tourism rarely achieves. The factor distinguishing transformative travel from confirming travel is not the destination but the willingness to occupy positions of vulnerability and dependence within unfamiliar contexts.\n\nThese findings have implications for how cultural exchange programs are designed and evaluated. Programs that maximize comfortable exposure but minimize meaningful contact may, despite generating positive subjective ratings, fail to produce the broadened perspectives that justify their cost. Programs that intentionally place participants in situations requiring genuine engagement ── language acquisition, work in unfamiliar conditions, sustained relationships with local mentors ── may produce more lasting cognitive shifts even when participants find them initially uncomfortable.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What does recent research suggest about the simple act of physical relocation?",
+            "choices": [
+              "It is impossible to study scientifically.",
+              "It automatically produces all the cognitive shifts travel enthusiasts promise.",
+              "It eliminates all cultural differences.",
+              "It does not automatically produce the cognitive and emotional shifts that travel enthusiasts often promise."
+            ],
+            "answer": "3",
+            "explanation": "本文「the simple act of physical relocation does not automatically produce the cognitive and emotional shifts that travel enthusiasts often promise」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "According to the passage, what distinguishes transformative travel from confirming travel?",
+            "choices": [
+              "The cost of the trip.",
+              "The duration of stay.",
+              "The willingness to occupy positions of vulnerability and dependence within unfamiliar contexts.",
+              "The destination chosen."
+            ],
+            "answer": "2",
+            "explanation": "本文「The factor distinguishing transformative travel from confirming travel is not the destination but the willingness to occupy positions of vulnerability and dependence within unfamiliar contexts」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What implication does the passage draw for cultural exchange programs?",
+            "choices": [
+              "Subjective ratings should be the only evaluation metric.",
+              "All such programs should be cancelled.",
+              "Comfort is the most important factor in program design.",
+              "Programs maximizing comfortable exposure but minimizing meaningful contact may fail despite positive subjective ratings; programs requiring genuine engagement may produce more lasting shifts."
+            ],
+            "answer": "3",
+            "explanation": "本文「Programs that maximize comfortable exposure but minimize meaningful contact may, despite generating positive subjective ratings, fail to produce the broadened perspectives that justify their cost」が根拠。"
+          }
+        ]
+      }
+    }
+  ]
+}
