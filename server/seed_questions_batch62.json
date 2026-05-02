@@ -1,0 +1,227 @@
+{
+  "questions": [
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3",
+      "eiken_grade": "gp1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Urban Forests as Public Health Investment\n\nResearchers studying public health have begun documenting the substantial benefits that urban forests provide to city residents. While the aesthetic value of trees has long been recognized, recent studies suggest that systematic tree cover correlates with measurable improvements in physical and mental health, sometimes producing effects comparable to those of significant medical interventions.\n\nThe mechanisms behind these benefits are diverse. Trees absorb air pollutants, including the particulate matter responsible for many respiratory illnesses. They reduce summer temperatures through shade and evaporative cooling, which lowers heat-related deaths and reduces energy consumption for air conditioning. Their presence is associated with increased physical activity among residents, who walk and exercise more in green environments. Even brief exposure to tree-rich settings appears to reduce stress hormones and improve mood, with measurable effects within minutes of arrival.\n\nDespite these documented benefits, urban tree cover has declined in many cities over recent decades. Development pressure converts green space to buildings and parking lots. Maintenance budgets have not kept pace with planting needs. Climate change, ironically, threatens the very trees that help cities adapt to its effects, with droughts and pests killing established trees faster than replacements can mature.\n\nResponses to these challenges have varied. Some cities have set ambitious tree-planting goals and earmarked dedicated funding. Others have introduced regulations protecting existing trees and requiring developers to incorporate green space. A few have begun treating urban forests as critical infrastructure, comparable to water systems or roads, and budgeting accordingly. Whether these efforts can match the scale of need ── and whether they can be sustained across political and economic cycles ── will likely determine whether the next generation inherits cities that support human flourishing or merely tolerate it.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What does recent research suggest about urban forests?",
+            "choices": [
+              "They cause more harm than benefit.",
+              "They correlate with measurable improvements in physical and mental health, sometimes comparable to medical interventions.",
+              "They have no health benefits at all.",
+              "Their effects are limited to aesthetic value only."
+            ],
+            "answer": "1",
+            "explanation": "本文「systematic tree cover correlates with measurable improvements in physical and mental health, sometimes producing effects comparable to those of significant medical interventions」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Why has urban tree cover declined in many cities?",
+            "choices": [
+              "Development pressure, inadequate maintenance budgets, and climate-change-related threats have all contributed.",
+              "Trees have become illegal.",
+              "Cities have intentionally removed trees for safety.",
+              "Climate change has eliminated all trees."
+            ],
+            "answer": "0",
+            "explanation": "本文「Development pressure converts green space to buildings and parking lots. Maintenance budgets have not kept pace with planting needs. Climate change, ironically, threatens the very trees」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What approach do some cities now take toward urban forests?",
+            "choices": [
+              "Treating them as decorative ornaments only.",
+              "Banning all tree planting.",
+              "Requiring residents to remove all trees from their property.",
+              "Treating them as critical infrastructure comparable to water systems or roads, with corresponding budgets."
+            ],
+            "answer": "3",
+            "explanation": "本文「A few have begun treating urban forests as critical infrastructure, comparable to water systems or roads, and budgeting accordingly」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3",
+      "eiken_grade": "gp1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Decline of Conversation\n\nThe ubiquity of smartphones has transformed not only how we communicate but also when and whether we communicate at all. While digital messages have multiplied dramatically over the past decade, several researchers report that genuine conversation ── extended, attentive, face-to-face exchange ── has become increasingly rare in everyday life. People who share physical space frequently divide their attention between their companions and their devices, producing interactions that feel diminished even to participants who initiated them.\n\nThe cognitive consequences merit attention. Sustained conversation develops capacities that brief digital exchanges do not: the ability to follow complex arguments, tolerate uncomfortable silence while another person collects their thoughts, and respond to emotional cues that text cannot transmit. Children whose social environment privileges digital communication over face-to-face exchange may develop conversational skills more slowly than previous generations, with implications for their later professional and personal lives.\n\nThe consequences for community life may be even more significant. Civic engagement, neighborhood cohesion, and democratic deliberation all depend on citizens who can engage thoughtfully with views different from their own. Brief digital exchanges, optimized for emotional impact and shareable content, often substitute confrontation for genuine engagement. Communities composed of people who can only react quickly may struggle to address complex problems requiring sustained collective attention.\n\nResponses to these concerns have varied. Some schools have introduced \"phone-free zones\" during instructional time. Some restaurants and cafes have created device-free seating areas. Some families experiment with collective phone breaks during meals or weekends. The effectiveness of these interventions remains uncertain, and skeptics note that the deeper challenge is not avoiding devices occasionally but cultivating attention and patience that constant digital connection actively erodes. Whether contemporary societies can preserve the practice of genuine conversation may depend on whether they decide it is worth the difficult work of doing so.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What does the passage say about contemporary communication patterns?",
+            "choices": [
+              "Genuine face-to-face conversation has become more common than ever.",
+              "Smartphones have eliminated all communication.",
+              "No changes have occurred in communication.",
+              "While digital messages have multiplied, genuine extended attentive face-to-face conversation has become increasingly rare."
+            ],
+            "answer": "3",
+            "explanation": "本文「While digital messages have multiplied dramatically over the past decade, several researchers report that genuine conversation ── extended, attentive, face-to-face exchange ── has become increasingly rare」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What concerns does the passage raise about children's development?",
+            "choices": [
+              "Children whose social environment privileges digital over face-to-face exchange may develop conversational skills more slowly.",
+              "Children have stopped speaking entirely.",
+              "Children no longer need to develop any conversational skills.",
+              "Children are developing too quickly through digital communication."
+            ],
+            "answer": "0",
+            "explanation": "本文「Children whose social environment privileges digital communication over face-to-face exchange may develop conversational skills more slowly than previous generations」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What deeper challenge do skeptics of phone-free interventions identify?",
+            "choices": [
+              "Phone-free zones are too expensive.",
+              "The challenge is solved by avoiding devices occasionally.",
+              "The deeper challenge is not avoiding devices occasionally but cultivating attention and patience that constant digital connection actively erodes.",
+              "No challenges remain after phone-free interventions."
+            ],
+            "answer": "2",
+            "explanation": "本文「the deeper challenge is not avoiding devices occasionally but cultivating attention and patience that constant digital connection actively erodes」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "After the meeting, the manager ( ) all the participants for their valuable input.",
+            "choices": [
+              "ignored",
+              "punished",
+              "thanked",
+              "blamed"
+            ],
+            "answer": "2",
+            "explanation": "thank A for B = A に B のことで感謝する。「会議後、マネージャーは貴重な意見への感謝を全参加者に伝えた」が文意に合う。blame は「非難」、ignore は「無視」、punish は「罰する」で文脈と矛盾。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "The technology has improved so much that smartphones can now ( ) tasks that once required a desktop computer.",
+            "choices": [
+              "forget",
+              "prevent",
+              "perform",
+              "destroy"
+            ],
+            "answer": "2",
+            "explanation": "perform = 実行する/果たす。「スマホは、以前デスクトップが必要だった作業を実行できる」が自然。destroy は「破壊」、prevent は「防止」、forget は「忘却」で文脈と合わない。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "The scientist's discovery was ( ); it changed how the entire field approaches research.",
+            "choices": [
+              "groundbreaking",
+              "ordinary",
+              "forgettable",
+              "minor"
+            ],
+            "answer": "0",
+            "explanation": "groundbreaking = 画期的な。「分野全体の研究方針を変えた」発見の修飾語として自然。minor は「些細な」、ordinary は「普通の」、forgettable は「忘れやすい」で逆の意味。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "w_essay",
+      "eiken_grade": "igakubu_kokoritsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "国公立医学部 (類題)",
+        "prompt": "Theme: As medical artificial intelligence becomes more accurate at diagnosis, some argue that physicians should defer to algorithmic recommendations even when their clinical judgment differs. Others maintain that human judgment must retain final authority. State your position with reasoning.\n\n100-130 語で意見を述べなさい (国公立医学部型 自由英作文)。",
+        "sample": "I believe physicians should retain final authority while genuinely engaging with algorithmic recommendations. AI systems excel at recognizing patterns across massive datasets, often catching diagnostic possibilities that individual physicians might miss. Reflexive rejection of these tools would harm patients.\n\nYet algorithmic recommendations carry biases reflecting their training data, may fail in unusual cases that fall outside trained patterns, and cannot integrate the contextual knowledge that direct patient examination provides. A physician who knows that this particular patient consistently underreports symptoms, or that local environmental factors create unusual disease patterns, possesses information no algorithm can access.\n\nThe optimal model treats AI as augmentation, not replacement: physicians use algorithmic analysis as additional input while retaining responsibility for synthesizing diverse evidence into final clinical decisions. (123 words)",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "Above prompt — 100-130 語自由英作文。",
+            "answer": "see sample",
+            "explanation": "【国公立医学部型】① 立場明示 + 譲歩 (retain final authority WHILE engaging with AI) ② AI 利点認識 (pattern recognition) ③ AI 限界 (training bias / contextual knowledge) ④ 結論で reframe (augmentation not replacement)。医学部論文は「医師権威 vs 技術導入」の二項対立を超え、相互補完モデルを示す答案が高評価。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "igakubu_shiritsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "私立医学部 (類題)",
+        "passage": "The integration of mental health into general medical practice has emerged as a significant challenge for healthcare systems worldwide. Historically, mental and physical health were treated as separate domains, with separate specialists, separate facilities, and often separate insurance coverage. Yet research increasingly demonstrates that this division corresponds poorly to clinical reality, in which physical and mental conditions interact in complex ways that require coordinated response.\n\nDepression and anxiety, for example, both contribute to and result from numerous physical conditions. Chronic pain often produces depression, while depression amplifies pain perception in ways that complicate treatment. Cardiovascular disease and depression share risk factors and influence each other's progression. Patients with diabetes who develop depression often see their glycemic control deteriorate, even when their depression has no obvious connection to their diabetes management.\n\nDespite these interconnections, healthcare systems have struggled to coordinate mental and physical care effectively. Primary care physicians, who have most contact with patients, often lack training in mental health diagnosis or feel rushed during visits. Specialty mental health care often involves long wait times and stigmatized navigation that deters many patients. Insurance frameworks may treat conditions independently, leaving gaps in coverage for patients whose problems span the artificial division.\n\nReform efforts have focused on several strategies. Some health systems have integrated behavioral health specialists directly into primary care clinics, allowing immediate consultation and reducing the practical and stigma barriers to mental health treatment. Some have trained primary care physicians more thoroughly in screening and basic treatment of common mental health conditions, while maintaining specialist referral for complex cases. Insurance reforms have begun requiring mental health parity ── treating conditions equivalently regardless of whether they are categorized as physical or mental.\n\nProgress has been uneven. Some systems have demonstrated meaningful improvements, while others have implemented changes superficially without altering underlying practice patterns. Achieving genuine integration may require not just structural changes but cultural shifts in how clinicians, patients, and society itself understand the relationship between mind and body.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "How were mental and physical health historically treated according to the passage?",
+            "choices": [
+              "As issues only doctors could understand.",
+              "As separate domains with separate specialists, facilities, and often separate insurance coverage.",
+              "As completely identical conditions.",
+              "As problems that did not require treatment."
+            ],
+            "answer": "1",
+            "explanation": "本文「Historically, mental and physical health were treated as separate domains, with separate specialists, separate facilities, and often separate insurance coverage」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What example does the passage give of mental-physical health interaction?",
+            "choices": [
+              "Mental health has no effect on physical conditions.",
+              "Patients with diabetes who develop depression often see their glycemic control deteriorate, even without obvious connection to diabetes management.",
+              "Physical conditions never affect mental health.",
+              "Depression and anxiety eliminate all physical illness."
+            ],
+            "answer": "1",
+            "explanation": "本文「Patients with diabetes who develop depression often see their glycemic control deteriorate, even when their depression has no obvious connection to their diabetes management」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What does the passage say about reform efforts and progress?",
+            "choices": [
+              "Mental health care has been completely abolished.",
+              "No reform efforts have been attempted.",
+              "All systems have achieved perfect integration.",
+              "Progress has been uneven; achieving genuine integration may require cultural shifts beyond structural changes."
+            ],
+            "answer": "3",
+            "explanation": "本文「Progress has been uneven ... Achieving genuine integration may require not just structural changes but cultural shifts in how clinicians, patients, and society itself understand the relationship between mind and body」が根拠。"
+          }
+        ]
+      }
+    }
+  ]
+}
