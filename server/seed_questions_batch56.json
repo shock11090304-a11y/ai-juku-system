@@ -1,0 +1,228 @@
+{
+  "questions": [
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "The new policy will ( ) all employees, including those working remotely from other prefectures.",
+            "choices": [
+              "affect",
+              "escape",
+              "reduce",
+              "prevent"
+            ],
+            "answer": "0",
+            "explanation": "affect = 影響を与える。「新方針は他県のリモート勤務者を含む全従業員に影響する」。prevent = 妨げる、reduce = 減らす、escape = 逃げる、はいずれも文脈に合わない。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Despite the heavy rain, the festival ( ) took place as scheduled, attracting over five thousand visitors.",
+            "choices": [
+              "still",
+              "never",
+              "barely",
+              "seldom"
+            ],
+            "answer": "0",
+            "explanation": "still = それでも/それにもかかわらず。「大雨にもかかわらず予定通り開催」。barely = かろうじて (合うが文意は still が自然)、never = 一度も〜ない (誤)、seldom = めったに〜ない (誤)。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "The company has decided to ( ) its training program to better prepare new employees for the job.",
+            "choices": [
+              "abandon",
+              "reject",
+              "memorize",
+              "expand"
+            ],
+            "answer": "3",
+            "explanation": "expand = 拡大する/拡充する。「新人をよりよく職務に備えさせるため、研修プログラムを拡充」。abandon = 放棄、reject = 拒絶、memorize = 暗記、はいずれも文脈に合わない。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q1",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "The professor told us to ( ) our reports by the end of next week.",
+            "choices": [
+              "submit",
+              "ignore",
+              "delay",
+              "forget"
+            ],
+            "answer": "0",
+            "explanation": "submit = 提出する。「来週末までにレポートを提出」が文意に合う。forget = 忘れる、ignore = 無視する、delay = 遅らせる、はいずれも教授の指示として不自然。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "If you ( ) the instructions carefully, you will not make any mistakes.",
+            "choices": [
+              "destroy",
+              "sing",
+              "follow",
+              "sleep"
+            ],
+            "answer": "2",
+            "explanation": "follow = (指示に) 従う。「指示に注意深く従えば間違いを犯さない」。sleep = 眠る、destroy = 壊す、sing = 歌う、はいずれも文意に合わない。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "My grandfather often ( ) about his experiences during the war when he visits us on weekends.",
+            "choices": [
+              "laughs",
+              "cries",
+              "forgets",
+              "talks"
+            ],
+            "answer": "3",
+            "explanation": "talk about ~ = 〜について話す。「祖父は週末訪問時、戦争体験についてよく話す」。forget は about との結合が不自然、laugh / cry は about との慣用結合がない。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Bicycle Sharing in Japanese Cities\n\nIn recent years, bicycle sharing programs have become increasingly popular in major Japanese cities. These services allow users to rent bicycles for short periods using a smartphone application, and to pick up and return bikes at various stations throughout the city. Tokyo, Osaka, and Fukuoka now have well-developed networks with hundreds of stations.\n\nThe popularity of bicycle sharing has several causes. First, traffic congestion in city centers has become severe, making short trips by car frustrating and slow. Bicycles can move easily through narrow streets and avoid traffic jams. Second, environmental awareness has grown among younger people, who prefer transportation options that produce no carbon emissions. Third, the cost is much lower than taxis: a typical 30-minute rental costs about 200 yen, while a similar taxi ride might cost 1,500 yen or more.\n\nHowever, bicycle sharing also faces challenges. Some users do not return bikes to designated stations, leaving them on sidewalks where they block pedestrians. Other users do not check brakes and lights before riding, which has led to several accidents. City governments are now working with companies to address these issues through user education and improved monitoring systems.\n\nLooking ahead, many experts believe that bicycle sharing will continue to grow, especially as cities create more dedicated bike lanes. Some companies are even introducing electric bicycles, which require less effort and appeal to older users. As the technology improves and infrastructure develops, bicycle sharing may become a standard feature of urban transportation throughout Japan.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is one reason for the popularity of bicycle sharing programs in Japan?",
+            "choices": [
+              "Japanese cities have completely eliminated all cars.",
+              "Bicycles are more expensive than cars in Japan.",
+              "Traffic congestion makes short trips by car frustrating and slow.",
+              "Bicycle sharing programs are illegal in most cities."
+            ],
+            "answer": "2",
+            "explanation": "本文「traffic congestion in city centers has become severe, making short trips by car frustrating and slow. Bicycles can move easily through narrow streets and avoid traffic jams」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "How does the cost of a bicycle rental compare to a taxi ride?",
+            "choices": [
+              "Bicycle rental is always free.",
+              "Bicycle rental costs about 200 yen, while a similar taxi ride might cost 1,500 yen or more.",
+              "Bicycle rental costs more than a taxi.",
+              "Both cost the same amount."
+            ],
+            "answer": "1",
+            "explanation": "本文「a typical 30-minute rental costs about 200 yen, while a similar taxi ride might cost 1,500 yen or more」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What is one challenge bicycle sharing programs face?",
+            "choices": [
+              "Cities have run out of bicycles entirely.",
+              "Some users leave bikes blocking pedestrians or fail to check safety equipment, leading to accidents.",
+              "No one wants to use the bicycles.",
+              "All bicycles are too expensive for users."
+            ],
+            "answer": "1",
+            "explanation": "本文「Some users do not return bikes to designated stations, leaving them on sidewalks where they block pedestrians. Other users do not check brakes and lights before riding, which has led to several accidents」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Rise of Online Cooking Classes\n\nDuring the past few years, online cooking classes have grown rapidly in popularity. Once limited to a small number of professional websites, cooking instruction is now available through countless platforms, ranging from major video services to small social media accounts run by individual home cooks. Students can learn techniques from chefs around the world without ever leaving their kitchens.\n\nThe shift began during the global pandemic when people spent more time at home and needed new hobbies. Many discovered that cooking, which had previously seemed difficult or time-consuming, was actually enjoyable when learned at one's own pace. Online classes allowed beginners to pause, rewind, and rewatch demonstrations as often as needed, removing the pressure that traditional in-person cooking classes sometimes create.\n\nThe educational approaches vary widely. Some instructors focus on quick weeknight meals using common ingredients, helping busy families improve their everyday cooking. Others teach traditional regional cuisine that might otherwise be difficult to access ── for example, Korean home cooks now share recipes that were once known only within Korean families. Still others emphasize professional techniques, helping serious amateur cooks reach near-restaurant quality.\n\nDespite these benefits, some critics worry about the loss of personal connection. In traditional cooking classes, students could ask immediate questions, taste each step, and receive feedback on their technique. Online classes, even with chat features, cannot fully replicate this experience. Some cooking schools are now experimenting with hybrid formats, where students follow online instruction at home but attend occasional in-person sessions to refine their skills with direct guidance.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What change has happened to cooking instruction over the past few years?",
+            "choices": [
+              "It has become illegal in many countries.",
+              "It has grown rapidly in popularity through countless online platforms, including major video services and social media.",
+              "It has been reduced to only major professional websites.",
+              "It is no longer offered anywhere."
+            ],
+            "answer": "1",
+            "explanation": "本文「online cooking classes have grown rapidly in popularity. Once limited to a small number of professional websites, cooking instruction is now available through countless platforms, ranging from major video services to small social media accounts」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What advantage do online cooking classes offer over traditional in-person classes?",
+            "choices": [
+              "Students cannot ask any questions.",
+              "Students must travel to distant cities.",
+              "Students can pause, rewind, and rewatch demonstrations as often as needed.",
+              "Students must work faster than ever before."
+            ],
+            "answer": "2",
+            "explanation": "本文「Online classes allowed beginners to pause, rewind, and rewatch demonstrations as often as needed」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What is one concern critics raise about online cooking classes?",
+            "choices": [
+              "Online classes are always free.",
+              "Online classes use only Japanese ingredients.",
+              "Online classes cannot fully replicate the personal connection of in-person classes, where students could ask immediate questions and receive feedback.",
+              "Online classes only teach professional chefs."
+            ],
+            "answer": "2",
+            "explanation": "本文「Online classes, even with chat features, cannot fully replicate this experience. ... students could ask immediate questions, taste each step, and receive feedback on their technique」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3b",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "School Lunch Reform\n\nFor decades, Japanese public schools have served traditional school lunches called \"kyushoku.\" These meals, prepared in school kitchens by trained nutritionists, are designed to provide balanced nutrition while teaching students about healthy eating. In recent years, however, school lunches have undergone significant changes.\n\nOne major change is the increased focus on local ingredients. Many municipalities now require schools to use vegetables, rice, and meat produced within the same prefecture whenever possible. Officials say this helps support local farmers, reduces transportation costs, and teaches children about the foods grown in their region. Some schools even invite local farmers to speak with students, explaining how their crops are grown.\n\nAnother change involves accommodating dietary needs. As Japanese society becomes more diverse, schools must consider students with food allergies, religious dietary restrictions, and various health conditions. Many schools now offer alternative menus alongside the standard meal, and some allow parents to bring boxed lunches when school meals do not meet their child's needs. Critics argue that these accommodations reduce the educational value of shared meals, but supporters say inclusion matters more than uniformity.\n\nDespite these positive changes, school lunch programs face ongoing challenges. Rising food costs put pressure on school budgets. Some children still skip school lunches because they prefer convenience store food. Schools are working to make meals more appealing through student input and creative menu development. The future of kyushoku will likely require continued adaptation to meet both nutritional and cultural needs of the next generation of Japanese students.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What does the passage say about the changes to Japanese school lunches?",
+            "choices": [
+              "Schools have eliminated nutrition education entirely.",
+              "Lunches now use only imported foreign ingredients.",
+              "School kitchens have been completely closed.",
+              "Local ingredients have become more important, and schools accommodate diverse dietary needs."
+            ],
+            "answer": "3",
+            "explanation": "本文「One major change is the increased focus on local ingredients ... Another change involves accommodating dietary needs ... students with food allergies, religious dietary restrictions, and various health conditions」が根拠。"
+          }
+        ]
+      }
+    }
+  ]
+}
