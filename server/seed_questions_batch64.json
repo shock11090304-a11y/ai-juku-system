@@ -1,0 +1,201 @@
+{
+  "questions": [
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Dance as Therapy\n\nIn many countries, including Japan, dance therapy has emerged as an effective treatment for various mental and physical health conditions. Trained therapists use carefully selected movements to help patients recover from depression, anxiety, and certain physical injuries. While the idea of using dance as medicine may sound unusual, research has shown surprisingly strong results.\n\nFor patients with depression, dance offers benefits that pure conversation therapy cannot. Movement releases natural mood-lifting chemicals in the brain, while expressing emotions through the body often reaches feelings that words cannot. One study at a Tokyo hospital found that depression patients who participated in weekly dance sessions reported greater improvement than those receiving standard talk therapy alone.\n\nElderly patients have benefited too. Dance helps maintain balance, coordination, and muscle strength, which become increasingly important with age. Several Japanese nursing homes now offer regular dance classes, finding that residents who participate fall less often and report better mood. Some classes use simple folk dances, while others adapt traditional Japanese dance forms.\n\nDance therapy also helps children with developmental challenges. Children who struggle with verbal communication sometimes express themselves more clearly through movement, and group dance sessions help them practice social skills in a relaxed setting. Some special education schools now include dance as part of their curriculum.\n\nDespite these benefits, dance therapy faces challenges. Trained therapists are still rare in Japan, and insurance often does not cover dance treatment. As more research demonstrates clear benefits, however, dance therapy may become a more standard part of healthcare in coming years.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What advantage does dance therapy offer over conversation therapy for depression patients?",
+            "choices": [
+              "Conversation therapy has been completely abandoned.",
+              "Conversation therapy is illegal in most countries.",
+              "Movement releases mood-lifting chemicals and expresses emotions that words cannot reach.",
+              "Dance therapy is much cheaper for everyone."
+            ],
+            "answer": "2",
+            "explanation": "本文「Movement releases natural mood-lifting chemicals in the brain, while expressing emotions through the body often reaches feelings that words cannot」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Why has dance therapy become popular in Japanese nursing homes?",
+            "choices": [
+              "Residents who participate fall less often and report better mood.",
+              "Dance is required by Japanese law for elderly people.",
+              "Residents pay extra for dance classes.",
+              "Nursing homes have eliminated all other activities."
+            ],
+            "answer": "0",
+            "explanation": "本文「residents who participate fall less often and report better mood」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What challenges does dance therapy still face?",
+            "choices": [
+              "Trained therapists are still rare in Japan, and insurance often does not cover dance treatment.",
+              "Dance therapy is too expensive for any patient.",
+              "All Japanese hospitals refuse to use dance therapy.",
+              "Dance is not effective for any condition."
+            ],
+            "answer": "0",
+            "explanation": "本文「Trained therapists are still rare in Japan, and insurance often does not cover dance treatment」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Return of Vegetable Gardens\n\nDuring and after the global pandemic, many Japanese families started growing vegetables at home. According to a 2023 government survey, the percentage of households growing at least some food increased by 15% compared to before the pandemic. While garden space in Japanese cities is often limited, families have found creative solutions to grow plants in small areas.\n\nApartment dwellers commonly use balconies and windowsills. Tomatoes, herbs, and peppers grow well in pots, and many families have discovered that even very small spaces can produce useful amounts of fresh food. Some families have purchased vertical garden systems, which stack growing trays to multiply growing space without taking up much floor area.\n\nThose with more outdoor space have built more elaborate gardens. Community gardens, where neighbors share land for growing food, have become particularly popular. Several cities now offer reduced-cost garden plots in public parks. Members report that they value not only the food but also the connections they form with neighbors who share their interest.\n\nSchools have also embraced food growing. Many elementary and junior high schools now have vegetable gardens where students learn about plants, nutrition, and seasonal cycles. Teachers report that students who grow vegetables often eat them more eagerly than store-bought produce, helping address concerns about children's nutrition.\n\nThe trend offers benefits beyond fresh food. Growing plants reduces stress, provides physical activity, and connects people with seasonal rhythms that modern urban life often obscures. Whether the trend will continue as memories of the pandemic fade remains uncertain, but for now, many Japanese families have discovered that even small gardens can enrich daily life in unexpected ways.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What does the 2023 government survey reveal about Japanese households?",
+            "choices": [
+              "The pandemic had no effect on home gardening.",
+              "The percentage of households growing food has increased by 15% compared to before the pandemic.",
+              "All Japanese households have stopped growing vegetables.",
+              "Only large rural households grow vegetables."
+            ],
+            "answer": "1",
+            "explanation": "本文「the percentage of households growing at least some food increased by 15% compared to before the pandemic」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Why are community gardens popular according to the passage?",
+            "choices": [
+              "They are required by Japanese law.",
+              "Members must pay very high fees.",
+              "Community gardens produce only flowers.",
+              "Members value not only the food but also the connections they form with neighbors who share their interest."
+            ],
+            "answer": "3",
+            "explanation": "本文「Members report that they value not only the food but also the connections they form with neighbors who share their interest」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What benefit do schools find from vegetable gardens?",
+            "choices": [
+              "Schools earn large profits from vegetable sales.",
+              "Schools have eliminated all other subjects.",
+              "Students who grow vegetables often eat them more eagerly than store-bought produce.",
+              "Students refuse to participate in any gardening."
+            ],
+            "answer": "2",
+            "explanation": "本文「students who grow vegetables often eat them more eagerly than store-bought produce, helping address concerns about children's nutrition」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3b",
+      "eiken_grade": "gp2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Robot Pets in Japan\n\nIn recent years, robot pets have become surprisingly popular in Japan. These electronic animals look and move like real dogs or cats, but they never get sick, never need food, and never need to be walked. They run on batteries and respond to touch, sounds, and voices.\n\nThe most famous robot pet is Sony's AIBO, which was first released in 1999. Recent versions of AIBO can recognize their owners' faces, learn their names, and remember which actions make their owners happy. AIBO can even develop different personalities based on how it is treated.\n\nMany elderly people in Japan have welcomed robot pets into their homes. For some, real pets are difficult because of allergies, limited space, or worries about caring for an animal. Robot pets offer companionship without these challenges. Hospitals and nursing homes now use robot animals to help patients with dementia feel calmer and more connected.\n\nNot everyone supports this trend. Some critics worry that robot pets cannot replace the genuine emotional bonds people form with real animals. Others say robot pets are too expensive, with the latest AIBO costing more than 200,000 yen. However, supporters argue that robot pets fill an important need, especially for those who cannot care for living animals.\n\nAs technology improves, robot pets are becoming more lifelike each year. Whether they will remain a niche product or become a common part of Japanese households is still unclear, but their growing popularity suggests they meet a real human need for companionship.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What does the passage say about why elderly people welcome robot pets?",
+            "choices": [
+              "Elderly people prefer not to have any pets.",
+              "Real pets are required for all elderly people.",
+              "Robot pets are completely free.",
+              "Robot pets offer companionship without challenges like allergies, space limits, or care worries."
+            ],
+            "answer": "3",
+            "explanation": "本文「real pets are difficult because of allergies, limited space, or worries about caring for an animal. Robot pets offer companionship without these challenges」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "w_essay",
+      "eiken_grade": "kyodai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "京都大学 法学部 (類題)",
+        "prompt": "Theme: \"To remain silent is sometimes to speak; to be inactive is sometimes to act.\" Discuss this view in relation to social or political life.\n\n100-150語で論じなさい (京大型 自由英作文)。",
+        "sample": "The claim that silence speaks and inaction acts captures something profound about social life. When neighbors witness injustice and remain silent, they communicate, intentionally or not, that the injustice is acceptable. When citizens decline to vote, they shape election outcomes as surely as those who vote. The boundary between speaking and not speaking, between acting and not acting, often dissolves under examination.\n\nYet this insight, while powerful, requires careful application. Demanding that everyone constantly express opinions on every issue would produce paralysis and conformity rather than genuine engagement. Some silences reflect thoughtfulness; some inactions preserve options for future action. Distinguishing principled restraint from complicit silence requires moral judgment that no general rule can fully systematize.\n\nThe deeper lesson is therefore not that silence always speaks but that we cannot escape responsibility through silence ── the choice itself communicates. (140 words)",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "Above prompt — 100-150 語自由英作文。",
+            "answer": "see sample",
+            "explanation": "【京大型】① 命題 (silence speaks / inaction acts) を社会的場面で具体化 (witnessing injustice, declining to vote) ② 譲歩 (this insight requires careful application) で単純化を否定 ③ 区別 (principled restraint vs complicit silence) で深化 ④ 結論で命題を再解釈 (cannot escape responsibility through silence)。京大法学部は政治哲学・倫理命題を社会的具体例で論じる力を要求。140 語で 100-150 範囲内。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "hitotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "一橋大学 社会学部 (類題)",
+        "passage": "The phenomenon of declining trust in institutions ── governments, media organizations, scientific bodies, even universities ── has emerged as a defining feature of contemporary politics in many democracies. Surveys consistently show that citizens express less confidence in these institutions than their counterparts did decades ago, with implications that extend well beyond political theory into the practical functioning of societies.\n\nUnderstanding this decline requires distinguishing several different phenomena that often get conflated. Some loss of confidence reflects accurate perception of institutional failures: bodies that overpromised, that protected their own interests rather than those they served, or that proved unable to address problems they were established to handle. Other erosion stems from coordinated efforts to undermine institutions for political advantage, with actors deliberately spreading distrust regardless of underlying performance. Still other loss reflects broader social changes ── greater individualism, fragmenting media environments, declining shared experiences ── that make sustained collective action of any kind more difficult.\n\nThese different sources require different responses. Institutional failures call for genuine reform, not merely better communication. Coordinated undermining requires more direct contestation, including better support for institutions actually serving the public good. Broader social changes may require entirely new institutional forms suited to contemporary conditions rather than restoration of legacy structures.\n\nThe complexity of this situation defies the simple narratives often used to discuss it. Stories of universal institutional collapse oversimplify by ignoring the genuine differences in how various institutions have responded to pressure. Stories of populist subversion oversimplify by ignoring legitimate grievances that fuel some distrust. Productive responses depend on careful analysis of which institutions deserve renewed confidence, which require fundamental reform, and which may need to be replaced by structures better suited to contemporary realities.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What does the passage say must be distinguished to understand declining institutional trust?",
+            "choices": [
+              "Several different phenomena are often conflated: institutional failures, coordinated undermining, and broader social changes.",
+              "Different institutions are exactly the same.",
+              "Trust has actually been increasing everywhere.",
+              "No analysis of institutional trust is possible."
+            ],
+            "answer": "0",
+            "explanation": "本文「Understanding this decline requires distinguishing several different phenomena that often get conflated. Some loss of confidence reflects accurate perception of institutional failures ... Other erosion stems from coordinated efforts ... Still other loss reflects broader social changes」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What kind of response do institutional failures call for according to the passage?",
+            "choices": [
+              "Eliminating the institutions entirely.",
+              "Increased silence about the failures.",
+              "Continued operation without any changes.",
+              "Genuine reform, not merely better communication."
+            ],
+            "answer": "3",
+            "explanation": "本文「Institutional failures call for genuine reform, not merely better communication」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What does the passage say about simple narratives discussing this issue?",
+            "choices": [
+              "All narratives are equally accurate.",
+              "Stories of universal institutional collapse and stories of populist subversion both oversimplify; productive responses require careful analysis.",
+              "Simple narratives perfectly capture the situation.",
+              "No narratives have been offered yet."
+            ],
+            "answer": "1",
+            "explanation": "本文「Stories of universal institutional collapse oversimplify ... Stories of populist subversion oversimplify ... Productive responses depend on careful analysis」が根拠。"
+          }
+        ]
+      }
+    }
+  ]
+}
