@@ -1,0 +1,78 @@
+{
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_translation",
+      "eiken_grade": "hitotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "What seems most striking about the current debate over technological change is not the disagreement among experts about specific predictions, which is to be expected, but the difficulty even careful observers have in distinguishing changes that genuinely transform the conditions of human life from those that merely rearrange the surface of familiar arrangements.",
+        "questions": [
+          {"id":"q1","type":"essay","stem":"上記英文を日本語に和訳しなさい。","answer":"現在の技術変化をめぐる議論で最も際立っているのは、具体的予測について専門家間の意見が分かれることではなく ── それは予想されてしかるべきだが ── 慎重な観察者でさえ、人間生活の条件を真に変容させる変化と、ありふれた仕組みの表層を組み替えるにすぎない変化とを区別することの困難さである。","explanation":"## 🎯 コアイメージ\n**What seems most striking is not A but B** = 「最も際立っているのは A ではなく B である」(否定強調 + 関係代名詞 what)。\n\n## 🔬 文構造分析\n- **What seems most striking about X** = 主語節 (関係代名詞 what)\n- **is not the disagreement ..., which is to be expected, but the difficulty ...** = 補語 (not A but B)\n- **which is to be expected** = 関係詞節 (非制限用法)、be to do の予定/当然用法\n- **the difficulty even careful observers have in distinguishing X from Y** = 「慎重な観察者でさえ X と Y を区別する困難さ」(have difficulty in V-ing 構文)\n- **changes that genuinely transform ... from those that merely rearrange ...** = 区別の対比軸\n\n## 📍 一橋型ポイント\n① not A but B 構造 ② which is to be expected = 当然/予期されるべき (be to do) ③ have difficulty in distinguishing X from Y = 区別する困難 ④ those = changes の代用 ⑤ rearrange the surface of familiar arrangements = 「ありふれた仕組みの表層を組み替える」(antithesis に注意)。一橋型は抽象的論説 + not...but の対比構造が頻出。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_translation",
+      "eiken_grade": "hitotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "There is, perhaps, no more telling sign of intellectual maturity than the willingness to entertain seriously views that one finds repugnant, recognizing that the strength of one's own position depends not on shielding it from challenge but on its capacity to withstand the most rigorous objections honest opponents can muster.",
+        "questions": [
+          {"id":"q1","type":"essay","stem":"上記英文を日本語に和訳しなさい。","answer":"知的成熟のしるしとして、自分が嫌悪する見解をも真剣に受け入れようとする姿勢ほど雄弁なものは、おそらく存在しない。自らの立場の強さは、それを批判から守ることにではなく、誠実な論敵が提示しうる最も厳しい反論にも耐えうる能力にこそ依拠することを認める姿勢である。","explanation":"## 🎯 コアイメージ\n**There is no more X than Y** = 「Y ほど X なものはない」(最上級相当の比較構文)。**not A but B** で論点を明確化する一橋型の典型。\n\n## 🔬 文構造分析\n- **There is no more telling sign of X than Y** = 「Y ほど雄弁な X のしるしはない」(no + 比較級 + than 構文)\n- **the willingness to entertain seriously views ...** = Y (意志を持つこと)\n- **that one finds repugnant** = 関係詞節 (views を修飾)\n- **recognizing that ...** = 分詞構文 (付帯状況)\n- **the strength of one's own position depends not on A but on B** = 「立場の強さは A ではなく B に依拠する」\n- **its capacity to withstand the most rigorous objections honest opponents can muster** = 「誠実な論敵が提示しうる最も厳しい反論にも耐えうる能力」\n\n## 📍 一橋型ポイント\n① no more X than Y = 最上級的否定比較 ② entertain views = 見解を真剣に受け止める (think about seriously) ③ repugnant = 嫌悪を催す ④ shield X from Y = X を Y から守る ⑤ rigorous objections honest opponents can muster = 関係代名詞省略 + muster (奮い立たせる/集める) の典型理解問題。一橋型は哲学的命題 + 比較構文の合成が頻出。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_translation",
+      "eiken_grade": "hitotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "If we are honest with ourselves, we must acknowledge that the institutions we praise as bulwarks of justice often functioned, throughout much of their history, as instruments of exclusion ── and that the genuine progress they have made toward inclusion has come not through the gradual unfolding of their original principles but through sustained pressure from those whom those principles, as originally understood, were meant to keep out.",
+        "questions": [
+          {"id":"q1","type":"essay","stem":"上記英文を日本語に和訳しなさい。","answer":"自らに誠実であろうとするならば、我々が正義の砦として称賛する諸制度が、その歴史の大部分において、しばしば排除の道具として機能してきたこと、そして包摂へ向けたそれらの真の進歩は、本来の理念が漸進的に展開した結果としてではなく、その理念が当初の理解においては締め出すべき対象とされていた人々からの持続的圧力を通じてもたらされてきたことを、認めなければならない。","explanation":"## 🎯 コアイメージ\n**If we are honest with ourselves, we must acknowledge that ... ── and that ...** = 「自らに誠実なら、X と Y を認めねばならない」(条件節 + 二重 that 節)。\n\n## 🔬 文構造分析\n- **If we are honest with ourselves** = 条件節\n- **we must acknowledge that A ── and that B** = 主節 (二つの that 節を ── (em-dash) で並列)\n- **A: the institutions we praise as bulwarks of justice often functioned ... as instruments of exclusion** = 「我々が正義の砦と称賛する諸制度が排除の道具として機能した」\n- **B: the genuine progress they have made toward inclusion has come not through A but through B** = 「真の進歩は A ではなく B を通じて来た」\n- **those whom those principles, as originally understood, were meant to keep out** = 「その理念が当初の理解において締め出すべきとされた人々」(関係代名詞 whom + as 副詞挿入 + were meant to do)\n\n## 📍 一橋型ポイント\n① bulwarks of justice = 正義の砦 ② instruments of exclusion = 排除の道具 (対比語彙) ③ not through A but through B = 経路の対比 ④ as originally understood = 「当初の理解においては」(過去分詞挿入の譲歩) ⑤ were meant to keep out = 「締め出すべきとされていた」(意図の受動態)。一橋型は社会哲学・歴史哲学テーマで二重 that 節+対比構造の長文和訳が頻出。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_translation",
+      "eiken_grade": "kyodai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The most stubborn errors are not those that result from ignorance, which careful inquiry can correct, but those that arise from a confidence so well established that we no longer notice ourselves making the assumptions on which it rests.",
+        "questions": [
+          {"id":"q1","type":"essay","stem":"上記英文を日本語に和訳しなさい。","answer":"最も根強い誤りとは、無知から生じる誤り ── それは慎重な探究によって是正可能であるが ── ではなく、もはや自分がその根拠となる前提を立てていることに気づかないほどに確固たる確信から生じる誤りである。","explanation":"## 🎯 コアイメージ\n**not those that ..., but those that ...** = 「〜するものではなく〜するものこそが (最も根強い誤り)」(関係代名詞 those による限定)。**so X that S V** = 「あまりに X なので S V する」(結果構文)。\n\n## 🔬 文構造分析\n- **The most stubborn errors are not those ... but those ...** = 主節 (not A but B、A/B はそれぞれ those that ... 節)\n- **those that result from ignorance, which careful inquiry can correct** = 関係詞節 + 非制限関係詞 which (ignorance を修飾)\n- **those that arise from a confidence so well established that we no longer notice ...** = 「あまりに確立された確信ゆえに、もはや〜に気づかない」(so ... that)\n- **ourselves making the assumptions on which it rests** = 「その確信が依拠する前提を自分が立てていること」(notice + O + V-ing 構文 + 関係詞節)\n\n## 📍 京大型ポイント\n① not those that ... but those that ... = 関係代名詞による対比 ② which careful inquiry can correct = 非制限用法 (補足説明) ③ a confidence so well established that ... = so ... that 構文 ④ no longer notice ourselves making = 「もはや自分が立てていることに気づかない」(再帰代名詞 + 動名詞) ⑤ on which it rests = 「それが依拠する」(前置詞 + 関係代名詞)。京大型は哲学/認識論テーマでの so...that + 関係詞節重複の長文和訳が頻出。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "w_essay",
+      "eiken_grade": "waseda",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "Theme: Some argue that universities should focus primarily on cultivating critical thinking, while others believe they should emphasize practical skills directly applicable to the workplace. Which view do you support?\n\n70-100 語で意見を述べなさい (早稲田型 自由英作文)。",
+        "sample": "I support cultivating critical thinking as the primary mission of universities, though practical skills also matter. The economic reality is that specific skills become obsolete more quickly than ever in our rapidly changing labor market, while the capacity to evaluate evidence, recognize biases, and integrate diverse perspectives remains permanently valuable. Graduates equipped with strong critical thinking can acquire new technical competencies throughout their careers, but those whose education emphasized only narrow vocational training may struggle when their fields evolve. Critical thinking is therefore the more durable foundation, even if it must be supplemented with selected practical capabilities. (96 words)",
+        "questions": [
+          {"id":"q1","type":"essay","stem":"Above prompt — 70-100 語自由英作文。","answer":"see sample","explanation":"【早稲田型 自由英作文】① 立場明示 (I support ...) + 譲歩節 (though practical skills also matter) で nuance を組込 ② 因果論証 (specific skills obsolete vs critical thinking permanent) ③ 対比 (graduates with critical thinking ↔ those with only vocational training) ④ 結論で立場再強調 + 微調整 (must be supplemented)。早稲田は政治経済/法学部で「対立する2つの主張のどちらを支持するか」型が頻出 → 譲歩を組み込んだ立場取りが高評価。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "w_essay",
+      "eiken_grade": "keio",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "Theme: With the rapid spread of remote work, some argue that traditional office spaces have become unnecessary, while others insist that physical proximity remains essential for meaningful collaboration. State your position with reasoning.\n\n70-100 語で意見を述べなさい (慶應型 自由英作文)。",
+        "sample": "I believe physical offices remain valuable, although remote work should be available as an option. Spontaneous conversations in shared workspaces ── informal exchanges by the coffee machine, brief consultations between meetings ── often generate the unexpected insights that scheduled video calls cannot replicate. Furthermore, junior employees benefit enormously from observing experienced colleagues in their natural working environment, learning tacit professional norms that no manual can capture. While remote work offers genuine advantages in flexibility and focus, eliminating offices entirely would impoverish the collaborative culture on which innovation ultimately depends. A hybrid model is therefore optimal. (95 words)",
+        "questions": [
+          {"id":"q1","type":"essay","stem":"Above prompt — 70-100 語自由英作文。","answer":"see sample","explanation":"【慶應型 自由英作文】① 立場明示 + 譲歩 (although remote work should be available) ② 具体的論証 (spontaneous conversations / coffee machine / tacit professional norms) で抽象論を回避 ③ 譲歩反転 (While remote work offers ... eliminating offices entirely would ...) ④ 結論で第三道 (hybrid model)。慶應は経済/商学/法学部で「実務的判断を要する論題」が頻出 → 二項対立を超えた現実的解 (hybrid 等) を提案する答案が高評価。"}
+        ]
+      }
+    }
+  ]
+}
