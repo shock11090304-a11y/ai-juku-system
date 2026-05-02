@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_summary",
+      "eiken_grade": "todai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Memory is often imagined as a storehouse where past experiences are kept intact, waiting to be retrieved. Recent cognitive science, however, suggests a radically different picture. Each act of recollection is itself a creative reconstruction, shaped by present concerns, emotions, and the gaps in earlier traces. What we call a memory is therefore less a recording than a story we tell ourselves anew, every time we look back. This finding has unsettling implications for personal identity. If the self is grounded in continuous memory, and memory is constantly rewritten, then the very thread we believe ties yesterday's person to today's is woven and rewoven without our noticing. Yet this fluidity need not be a loss. It allows us to integrate suffering, revise mistaken judgments, and grow into futures our former selves could not have imagined. Identity, on this view, is not a fixed possession but an ongoing narrative practice.",
+        "questions": [
+          {"id":"q1","type":"essay","stem":"上記英文の内容を 60-80字の日本語で要約しなさい (東大型 大問1B)。","answer":"記憶は固定された記録ではなく想起の度に再構成される物語であり、自己同一性も書き換え続けられる動的な実践として捉え直される。","explanation":"【東大型要約】① 60-80字厳守 (本解答 61字) ② 段落構造: 通説の提示 (記憶=貯蔵庫) → 認知科学による反証 (再構成説) → 自己同一性への含意 → 否定的評価の転換 (成長の余地) ③ キーワード: reconstruction, narrative practice, identity, fluidity ④ 結論: 記憶も自己も静的な実体ではなく、現在の関心により絶えず編み直される動的な物語であるという主張を、論理関係 (逆接 yet) を保持しつつ凝縮する。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_summary",
+      "eiken_grade": "todai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "We tend to assume that paying attention is a neutral mental act, simply a matter of focusing on whatever stands before us. Philosophers of mind, however, have begun to argue that attention carries a deep ethical weight. To attend to one thing is always to turn away from countless others, and the patterns of what we habitually notice quietly shape the world we inhabit. A society whose attention is captured by spectacle, outrage, and metrics will produce citizens with correspondingly narrow inner lives. Conversely, communities that cultivate slow, careful regard for ordinary persons and overlooked details may sustain richer forms of moral perception. From this standpoint, the modern attention economy is not merely a commercial nuisance but a quiet civilizational risk. Reclaiming attention, then, is not a private discipline of productivity. It is a collective task of deciding which aspects of reality deserve the dignity of our gaze.",
+        "questions": [
+          {"id":"q1","type":"essay","stem":"上記英文の内容を 60-80字の日本語で要約しなさい (東大型 大問1B)。","answer":"注意は中立な認知行為ではなく倫理的選択であり、その注意を商業に奪われた現代では何を見るかを社会全体で根本的に問い直す必要がある。","explanation":"【東大型要約】① 60-80字厳守 (本解答 62字) ② 段落構造: 通念の提示 (注意=中立) → 反論 (倫理的重み) → 社会的帰結の対比 (spectacle vs slow regard) → 結論的提言 (collective task) ③ キーワード: ethical weight, attention economy, moral perception, collective task ④ 結論: 注意は個人の集中力の問題を超えた倫理的・社会的実践であり、注意経済への対抗は私的修養でなく市民的課題であるという主張を、対比構造を保ちながら圧縮する。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_summary",
+      "eiken_grade": "todai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Art has long been regarded as a mirror of society, yet this metaphor obscures its more active functions. While paintings, novels, and films undeniably reflect the values of their era, they simultaneously shape those values by directing attention toward certain experiences and away from others. A landscape painting, for instance, does not merely depict nature; it teaches viewers how to see nature, framing wilderness as either threatening or sublime. Critics who treat art purely as documentation overlook this constitutive role. Moreover, the aesthetic experience itself cultivates capacities that purely rational discourse cannot reach: empathy across cultural boundaries, tolerance of ambiguity, and the imaginative rehearsal of alternative lives. In societies that prize measurable outcomes, such functions are easily dismissed as ornamental. Yet the erosion of artistic literacy correlates with diminished civic imagination. Defending art, therefore, is not a matter of preserving cultural luxury but of safeguarding the very faculties through which a community envisions and reconstructs itself.",
+        "questions": [
+          {"id":"q1","type":"essay","stem":"上記英文の内容を 60-80字の日本語で要約しなさい (東大型 大問1B)。","answer":"芸術は社会を映すだけでなく人々の見方を能動的に形作り、共感や想像力を育む役割を担うため、その衰退は共同体の構想力の喪失を招く。","explanation":"【東大型要約・芸術の社会的機能】① 段落構造: 「芸術は社会の鏡」という通説 → yet で反転 (能動的機能) → 具体例 (風景画) → 結論 (civic imagination の保護) ② キーワード: mirror / shape values / constitutive role / empathy / civic imagination / faculties ③ 結論: 「Defending art ... is safeguarding the very faculties through which a community envisions and reconstructs itself」=「共同体の構想力の保護」 ④ 60-80字内で「主張(鏡+形成)+機能(共感/想像)+結論(共同体の構想力喪失)」の3要素を圧縮。"}
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_summary",
+      "eiken_grade": "todai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Expertise is conventionally defined as the accumulation of specialized knowledge through prolonged training, but this definition conceals a paradox. The deeper one's mastery of a domain, the more one's intuitions become tacit, resistant to articulation, and therefore difficult to transmit. Novices crave explicit rules, yet experts increasingly operate by pattern recognition that even they cannot fully explain. This opacity produces two opposing risks. On one hand, society may grant excessive deference to specialists whose reasoning is opaque, mistaking confidence for competence. On the other, public skepticism toward experts, fueled by demands for transparent justification, can dismiss genuinely reliable judgment as elitist mystification. Resolving this tension requires neither blind trust nor reflexive doubt but a cultivated literacy in how expert judgment is formed, tested, and revised. Without such literacy, democratic societies oscillate between technocratic submission and populist rejection, both of which corrode the careful deliberation upon which collective decisions ultimately depend.",
+        "questions": [
+          {"id":"q1","type":"essay","stem":"上記英文の内容を 60-80字の日本語で要約しなさい (東大型 大問1B)。","answer":"専門知は熟達するほど暗黙的になり説明困難であるため過信も拒絶も招くが、判断形成の過程を理解する素養が無ければ民主社会は熟議を失い両極端へ揺れる。","explanation":"【東大型要約・専門知のパラドックス】① 段落構造: 「専門知=知識蓄積」定義 → but で反転 → 暗黙性の核心矛盾 → On one hand/On the other で二極対比 → Resolving/Without such literacy で処方箋と帰結 ② キーワード: tacit / opacity / excessive deference / public skepticism / literacy / oscillate / deliberation ③ 結論: democratic societies oscillate between technocratic submission and populist rejection, both of which corrode deliberation = 熟議の腐食・両極端の揺れ ④ 60-80字内で「専門知の暗黙性→過信/拒絶の両極→熟議喪失」の3段論法を凝縮。"}
+        ]
+      }
+    }
+  ]
+}

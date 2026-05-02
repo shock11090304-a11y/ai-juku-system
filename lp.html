@@ -133,7 +133,7 @@
   }
   </script>
 
-  <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost">
+  <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost-r2">
   <link rel="manifest" href="manifest.json">
   <script src="analytics.js" defer></script>
   <script src="pwa.js" defer></script>
@@ -764,10 +764,69 @@
   </footer>
 
   <script>
+    // ============================================
+    // 📊 LP コンバージョン計測 (A/B テスト基盤)
+    // analytics.js は defer 読込なので DOMContentLoaded で実行する
+    // ============================================
+    function _setupLpTracking() {
+      // window.track は analytics.js が定義する。無ければ少し待って再試行。
+      if (typeof window.track !== 'function') {
+        return setTimeout(_setupLpTracking, 200);
+      }
+      // LP 訪問識別
+      const lpVariant = window.localStorage.getItem('aj_lp_variant') || 'v2_2026-05-02';
+      window.localStorage.setItem('aj_lp_variant', lpVariant);
+      window.track('lp_view', { variant: lpVariant });
+      // 全 CTA に click tracker 付与 (overlap 防止: .btn-primary は除外、href ベースで識別)
+      document.querySelectorAll('a[href*="checkout.html"], a[href="#trial"], .sticky-cta-btn').forEach(el => {
+        el.addEventListener('click', () => {
+          const href = el.getAttribute('href') || '';
+          const utmMatch = href.match(/utm_source=([^&]+)/);
+          const utmSource = utmMatch ? utmMatch[1] : 'unknown';
+          const ctaText = (el.textContent || '').trim().slice(0, 60);
+          window.track('lp_cta_click', { variant: lpVariant, utm_source: utmSource, cta_text: ctaText });
+        });
+      });
+      // フォーム着手 (最初のフィールドフォーカス)
+      let formStarted = false;
+      ['trialName', 'trialEmail'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('focus', () => {
+          if (!formStarted) {
+            formStarted = true;
+            window.track('lp_form_start', { variant: lpVariant });
+          }
+        }, { once: true });
+      });
+      // スクロール深度 (25/50/75/100%)
+      const depthsHit = new Set();
+      window.addEventListener('scroll', () => {
+        const docH = document.documentElement.scrollHeight - window.innerHeight;
+        if (docH <= 0) return;
+        const pct = Math.round((window.scrollY / docH) * 100);
+        [25, 50, 75, 100].forEach(threshold => {
+          if (pct >= threshold && !depthsHit.has(threshold)) {
+            depthsHit.add(threshold);
+            window.track('lp_scroll_depth', { variant: lpVariant, depth: threshold });
+          }
+        });
+      }, { passive: true });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', _setupLpTracking);
+    } else {
+      _setupLpTracking();
+    }
+
     document.getElementById('trialForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const gradeExtra = document.getElementById('trialGradeExtra');
       const goalExtra = document.getElementById('trialGoalExtra');
+      const lpVariant = window.localStorage.getItem('aj_lp_variant') || 'unknown';
+      // form submission tracking
+      if (typeof window.track === 'function') {
+        window.track('lp_form_submit', { variant: lpVariant, plan: document.getElementById('trialPlan').value });
+      }
       const params = new URLSearchParams({
         name: document.getElementById('trialName').value,
         email: document.getElementById('trialEmail').value,
