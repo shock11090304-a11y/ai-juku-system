@@ -1,0 +1,316 @@
+{
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "waseda",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "早稲田大学 政治経済学部 (類題)",
+        "passage": "Economic inequality has emerged as one of the most contested issues in contemporary public policy. While most economists agree that some inequality is inevitable in market economies—reflecting differences in skills, effort, and choices—there is sharp disagreement about how much inequality is justified, and what policies should respond to it. The debate matters because economic positions shape access to education, healthcare, political influence, and the broader range of opportunities a society offers.\n\nProponents of redistribution argue that current levels of inequality have grown beyond any plausible justification rooted in productivity or merit. Wealth at the top has increased dramatically while wages for many workers have stagnated, suggesting that the gains of economic growth have been captured disproportionately by those already advantaged. Beyond fairness, they argue that extreme concentration distorts political processes, with the wealthy able to fund campaigns, hire lobbyists, and shape regulations in their favor.\n\nCritics of redistribution worry that interventions designed to reduce inequality may produce worse outcomes than the inequality they address. High taxes can discourage work, investment, and entrepreneurship, slowing the economic growth that ultimately raises living standards for everyone. Welfare programs, however well-intentioned, can create dependency and reduce incentives for self-reliance. Government attempts to set wages or restrict markets often produce unintended consequences—shortages, black markets, or capital flight.\n\nThe most thoughtful analyses recognize legitimate concerns on both sides. They emphasize that policy choices involve trade-offs rather than simple solutions, and that what works depends heavily on institutional context, cultural attitudes, and political will. Whether a society leans more toward equality or more toward growth reflects values that reasonable people genuinely disagree about, even after considering all the available evidence.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "Why does economic inequality matter according to the passage?",
+            "choices": [
+              "Because economic positions shape access to education, healthcare, political influence, and opportunities.",
+              "Because economists are debating it rather than studying it.",
+              "Because everyone agrees on a single solution.",
+              "Because inequality has been completely eliminated in most countries."
+            ],
+            "answer": "0",
+            "explanation": "本文「economic positions shape access to education, healthcare, political influence, and the broader range of opportunities」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What is one argument made by proponents of redistribution?",
+            "choices": [
+              "Inequality has no impact on democratic systems.",
+              "Wealth at the top has stagnated while worker wages have grown.",
+              "Extreme concentration distorts political processes through funding campaigns and shaping regulations.",
+              "Markets always self-correct without intervention."
+            ],
+            "answer": "2",
+            "explanation": "本文「extreme concentration distorts political processes, with the wealthy able to fund campaigns, hire lobbyists, and shape regulations in their favor」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What concern do critics of redistribution raise?",
+            "choices": [
+              "Tax revenue should be eliminated entirely.",
+              "Inequality is impossible to measure scientifically.",
+              "All redistribution policies have always succeeded.",
+              "Interventions may produce worse outcomes (slowed growth, dependency, unintended market consequences)."
+            ],
+            "answer": "3",
+            "explanation": "本文「High taxes can discourage work ... Welfare programs ... can create dependency ... Government attempts to set wages or restrict markets often produce unintended consequences」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "waseda",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2023,
+        "univ_simulated": "早稲田大学 文化構想学部 (類題)",
+        "passage": "The rise of artificial intelligence has prompted philosophers and cognitive scientists to revisit fundamental questions about the nature of mind and consciousness. As machines increasingly perform tasks once thought to require human intelligence—translating languages, recognizing images, generating coherent text—we are forced to confront uncomfortable questions: What, if anything, distinguishes human cognition from advanced computation? Are current AI systems merely simulating intelligence, or have they begun to possess something like understanding?\n\nOne traditional answer emphasizes consciousness—the subjective, felt quality of experience. According to this view, even when AI matches or exceeds human performance on cognitive tasks, it lacks the inner life that gives human cognition its distinctive character. We do not merely process information; we feel pain, joy, curiosity, and boredom, and these feelings shape what we attend to and value. Whether machines could ever possess such subjective experience remains a contested question with deep philosophical implications.\n\nAnother answer focuses on understanding rather than consciousness. The philosopher John Searle's famous \"Chinese Room\" argument suggests that a system can produce appropriate outputs—Chinese sentences in response to Chinese inputs—without genuinely understanding the language. Even sophisticated language models, on this view, manipulate symbols according to learned patterns without grasping what those symbols mean. Whether this distinction will hold as AI systems grow more capable is an open question.\n\nFor practical purposes, perhaps these philosophical disputes matter less than questions about how to use these technologies wisely. AI systems already assist with medical diagnosis, scientific research, and creative work, regardless of whether they truly \"understand\" their tasks. Yet the philosophical questions also have practical stakes: how we answer them will shape ethical frameworks for treating AI systems, allocating responsibility for their outputs, and protecting the things we value about human existence.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What fundamental questions has the rise of AI prompted philosophers to revisit?",
+            "choices": [
+              "Whether AI is profitable or not.",
+              "How fast computers can process data.",
+              "What distinguishes human cognition from advanced computation, and whether AI possesses understanding.",
+              "Where AI was first invented historically."
+            ],
+            "answer": "2",
+            "explanation": "本文「What, if anything, distinguishes human cognition from advanced computation? Are current AI systems merely simulating intelligence, or have they begun to possess something like understanding?」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What does Searle's Chinese Room argument suggest?",
+            "choices": [
+              "A system can produce appropriate outputs without genuinely understanding the language.",
+              "All philosophical arguments are useless.",
+              "AI systems automatically understand any language.",
+              "Chinese is impossible for machines to process."
+            ],
+            "answer": "0",
+            "explanation": "本文「a system can produce appropriate outputs—Chinese sentences in response to Chinese inputs—without genuinely understanding the language」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "Why do these philosophical questions matter practically according to the passage?",
+            "choices": [
+              "They have no practical implications whatsoever.",
+              "They guarantee that AI will replace all humans.",
+              "They will shape ethical frameworks, responsibility allocation, and protection of valued aspects of human existence.",
+              "They prevent AI from being useful in any field."
+            ],
+            "answer": "2",
+            "explanation": "本文「how we answer them will shape ethical frameworks for treating AI systems, allocating responsibility for their outputs, and protecting the things we value about human existence」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "keio",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "慶應義塾大学 経済学部 (類題)",
+        "passage": "The concept of \"network effects\" has become central to understanding contemporary digital economies. A network effect exists when the value of a product or service increases as more people use it. Telephones offer a classic example: a single telephone is useless, but a phone connected to one other phone has some value, and a phone connected to millions of others has enormous value. Many of today's most prominent technology companies—social media platforms, e-commerce marketplaces, payment systems—derive their dominance not primarily from superior technology but from network effects that create powerful winner-take-most dynamics.\n\nThese dynamics have profound implications for competition and consumer welfare. Once a network grows beyond a certain threshold, it becomes increasingly difficult for competitors to challenge it, even if they offer superior products. Users cluster on dominant platforms not because those platforms are necessarily best, but because that is where other users already are. New entrants face the chicken-and-egg problem of needing users to attract users, while incumbent platforms can leverage their existing user base to introduce new services or extract higher prices.\n\nResponses to these dynamics have been varied. Some economists argue that network effects are simply a feature of certain markets and that consumer choice will eventually correct any abuses—if a dominant platform becomes sufficiently exploitative, users will tolerate the friction of switching. Others worry that the costs of switching, combined with the convenience of network effects, lock users into platforms even when better alternatives exist, justifying regulatory intervention. The European Union's Digital Markets Act represents one major attempt to address these concerns through legal requirements for openness and interoperability.\n\nWhat seems clear is that network-based markets will continue to challenge traditional assumptions about how competition works. Whether through technological innovation, user behavior, or policy intervention, the question of how to balance the genuine benefits of large networks against their tendencies toward concentration remains one of the central economic questions of our time.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is a network effect according to the passage?",
+            "choices": [
+              "A type of advertising on social media.",
+              "When a product loses value as more people use it.",
+              "A computer virus that spreads through networks.",
+              "When the value of a product or service increases as more people use it."
+            ],
+            "answer": "3",
+            "explanation": "本文「A network effect exists when the value of a product or service increases as more people use it」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What \"chicken-and-egg problem\" do new entrants face?",
+            "choices": [
+              "They can only operate during specific hours.",
+              "They must hire chickens for their boards.",
+              "They have too many users to manage effectively.",
+              "They need users to attract users, while incumbents leverage existing user bases."
+            ],
+            "answer": "3",
+            "explanation": "本文「New entrants face the chicken-and-egg problem of needing users to attract users, while incumbent platforms can leverage their existing user base」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What does the Digital Markets Act represent?",
+            "choices": [
+              "A guarantee that all platforms will succeed equally.",
+              "A return to pre-digital economies.",
+              "A major regulatory attempt to address network-effect concerns through openness and interoperability.",
+              "A complete ban on technology companies in Europe."
+            ],
+            "answer": "2",
+            "explanation": "本文「The European Union's Digital Markets Act represents one major attempt to address these concerns through legal requirements for openness and interoperability」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "keio",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2023,
+        "univ_simulated": "慶應義塾大学 法学部政治学科 (類題)",
+        "passage": "The relationship between expertise and democracy has become increasingly fraught in contemporary politics. On one hand, modern policy challenges—climate change, public health crises, financial regulation—demand technical knowledge that few citizens possess. Decisions made without expert input risk being uninformed, ineffective, or actively harmful. On the other hand, deference to experts can erode democratic accountability, treating contested questions as technical problems with single correct answers and excluding citizens from decisions that affect their lives.\n\nNavigating this tension requires distinguishing different kinds of questions. Some questions are genuinely technical: whether a particular drug is safe, whether a bridge is structurally sound, what historical evidence shows about a past event. On these matters, expert knowledge typically deserves significant weight, even if experts can be wrong or biased. Other questions involve value judgments that experts have no special authority to make: whether to prioritize economic growth over environmental protection, how much risk society should accept in exchange for innovation, what trade-offs between security and liberty are acceptable.\n\nIn practice, technical and evaluative dimensions often intertwine. Climate science can describe what is likely to happen under various scenarios, but choosing among policy responses involves judgments about who bears costs and who benefits—questions where expertise alone cannot determine answers. Public health experts can identify effective interventions, but balancing their effectiveness against impacts on civil liberties or economic activity requires democratic deliberation, not technocratic decision.\n\nThe quality of democracy thus depends partly on cultivating both expert knowledge and public capacity for engaging with it. Citizens cannot be expected to master every technical domain, but they can develop habits of asking what kind of question is being addressed, who benefits from particular framings, and what assumptions experts bring to their conclusions. This is challenging work, but the alternative—either uncritical deference or reflexive rejection of expertise—undermines democracy's capacity to address complex problems.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "Why is the relationship between expertise and democracy described as \"fraught\"?",
+            "choices": [
+              "Because democratic societies have abolished expertise.",
+              "Because policy challenges demand technical knowledge most citizens lack, while deference to experts can erode accountability.",
+              "Because experts have eliminated democracy entirely.",
+              "Because all policy questions have obvious technical answers."
+            ],
+            "answer": "1",
+            "explanation": "本文「modern policy challenges ... demand technical knowledge that few citizens possess」+「deference to experts can erode democratic accountability」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "How does the passage distinguish technical questions from value-judgment questions?",
+            "choices": [
+              "All questions are equally technical.",
+              "Technical questions are always wrong, value questions always right.",
+              "Technical questions concern matters like drug safety; value-judgment questions involve choices about priorities and trade-offs.",
+              "Value judgments require advanced degrees in science."
+            ],
+            "answer": "2",
+            "explanation": "本文「Some questions are genuinely technical: whether a particular drug is safe ... Other questions involve value judgments that experts have no special authority to make: whether to prioritize economic growth over environmental protection」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What does the author argue democracy depends on?",
+            "choices": [
+              "Rejecting all complex problems entirely.",
+              "Cultivating both expert knowledge and public capacity to engage with it.",
+              "Eliminating all expertise from public discourse.",
+              "Letting experts make all decisions without input."
+            ],
+            "answer": "1",
+            "explanation": "本文「The quality of democracy thus depends partly on cultivating both expert knowledge and public capacity for engaging with it」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "igakubu_kokoritsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "国公立医学部 (類題)",
+        "passage": "The development of genome-editing technologies, particularly CRISPR-Cas9, has opened therapeutic possibilities that seemed unimaginable a generation ago. By precisely modifying specific DNA sequences, researchers can in principle correct genetic mutations that cause disease, potentially eliminating conditions that have plagued humanity for millennia. Already, clinical trials are demonstrating dramatic results in treating sickle cell disease, certain forms of blindness, and several previously incurable cancers.\n\nThese advances have provoked a parallel debate about boundaries. While most researchers and ethicists support somatic gene editing—modifications that affect only the patient's own cells and are not passed to offspring—germline editing, which alters genes that can be inherited, raises far more contested issues. Modifications introduced into embryos would affect future generations who could not consent, with effects that may be impossible to predict or reverse. The 2018 case of a Chinese researcher who created gene-edited babies provoked widespread condemnation across the scientific community.\n\nProponents of cautious germline editing argue that, properly regulated, the technology could prevent severe genetic diseases that condemn families to generations of suffering. They emphasize that informed consent issues are not unique to gene editing—parents already make consequential medical decisions for their children—and that prohibiting promising technologies forces patients to suffer needlessly when treatments exist.\n\nCritics raise concerns that go beyond consent and reversibility. The same technologies that can prevent disease could be used for enhancement—altering traits unrelated to medical conditions. Even if regulations restrict applications today, the line between treatment and enhancement is genuinely difficult to draw, and the prospect of enabling parents to choose certain traits for their children raises troubling questions about equality, identity, and what it means to accept the children one has rather than design the children one wants.\n\nResolving these tensions requires not only scientific judgment but also broader deliberation about what kinds of beings we wish to become. The medical profession will play a crucial role in this conversation, but the answers cannot belong to medicine alone.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What distinguishes germline editing from somatic gene editing?",
+            "choices": [
+              "There is no difference between them.",
+              "Somatic editing is always passed to offspring while germline editing is not.",
+              "Germline editing alters genes that can be inherited; somatic editing affects only the patient's own cells.",
+              "Germline editing is much cheaper than somatic editing."
+            ],
+            "answer": "2",
+            "explanation": "本文「germline editing, which alters genes that can be inherited」+「somatic gene editing—modifications that affect only the patient's own cells and are not passed to offspring」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What argument do proponents of cautious germline editing offer?",
+            "choices": [
+              "Gene editing should be available without any regulation.",
+              "Informed consent has been entirely solved.",
+              "Genetic diseases are no longer a problem.",
+              "Properly regulated, it could prevent severe genetic diseases that condemn families to suffering."
+            ],
+            "answer": "3",
+            "explanation": "本文「properly regulated, the technology could prevent severe genetic diseases that condemn families to generations of suffering」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What broader concern do critics raise about gene editing technologies?",
+            "choices": [
+              "The line between treatment and enhancement is hard to draw, raising troubling questions about equality and identity.",
+              "All genetic research should be banned.",
+              "Diseases are entirely psychological in origin.",
+              "The technology will never work in any case."
+            ],
+            "answer": "0",
+            "explanation": "本文「the line between treatment and enhancement is genuinely difficult to draw, and the prospect of enabling parents to choose certain traits for their children raises troubling questions about equality, identity」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "igakubu_kokoritsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2023,
+        "univ_simulated": "国公立医学部 (類題)",
+        "passage": "Antimicrobial resistance has emerged as one of the most pressing challenges facing global health. Bacteria that have developed resistance to antibiotics now cause infections that doctors increasingly struggle to treat, threatening to undo decades of medical progress. Routine surgeries, cancer chemotherapy, and care for premature infants all depend on the assumption that bacterial infections can be effectively controlled. As resistant strains spread, this assumption is becoming dangerously fragile.\n\nThe causes of this crisis are largely understood. Antibiotics have been overprescribed for decades, often for viral infections against which they are useless. Patients frequently fail to complete prescribed courses, allowing surviving bacteria to develop resistance. Agricultural use of antibiotics—both to treat sick animals and to promote growth in healthy ones—creates additional selection pressure that produces resistant strains in food animals, which can then spread to humans. International travel and trade carry resistant bacteria across borders within hours.\n\nThe pharmaceutical pipeline, meanwhile, has largely failed to keep pace. Developing new antibiotics is expensive and commercially unattractive: they are typically used briefly for individual infections rather than chronically for ongoing conditions, providing limited revenue compared to medications for chronic diseases. Many large pharmaceutical companies have exited antibiotic research entirely. The result is a slowing flow of new agents at exactly the time when accelerating resistance demands them most.\n\nResponses must operate at multiple levels. Individual prescribers must distinguish bacterial from viral infections more carefully and educate patients about appropriate use. Hospitals must implement stewardship programs that monitor and constrain antibiotic prescribing. Agricultural practices must change to reduce non-therapeutic uses. Internationally, surveillance systems must track resistance patterns and coordinate responses. Beyond all these, novel funding mechanisms may be needed to make antibiotic development commercially sustainable—perhaps subscription-based payment models that compensate developers for maintaining ready supply rather than for volume sold.\n\nWhat is clear is that resistance respects no borders and that responses confined to single countries or single sectors will prove inadequate. The challenge demands coordination of a kind humanity has rarely managed.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "Why does antimicrobial resistance threaten medical progress according to the passage?",
+            "choices": [
+              "Because doctors no longer prescribe any medications.",
+              "Because all infections are now untreatable.",
+              "Because antibiotics have already been banned globally.",
+              "Because routine surgeries, chemotherapy, and care for premature infants depend on controllable bacterial infections."
+            ],
+            "answer": "3",
+            "explanation": "本文「Routine surgeries, cancer chemotherapy, and care for premature infants all depend on the assumption that bacterial infections can be effectively controlled」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Why has the pharmaceutical pipeline failed to keep pace with resistance?",
+            "choices": [
+              "Antibiotics are commercially unattractive due to brief individual use, limiting revenue compared to chronic-disease drugs.",
+              "Antibiotic research has been the most profitable area of medicine.",
+              "Pharmaceutical research is illegal in most countries.",
+              "All bacteria have already been eliminated."
+            ],
+            "answer": "0",
+            "explanation": "本文「Developing new antibiotics is expensive and commercially unattractive: they are typically used briefly for individual infections rather than chronically for ongoing conditions, providing limited revenue compared to medications for chronic diseases」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What novel funding mechanism does the passage mention as a possible solution?",
+            "choices": [
+              "Subscription-based payment models compensating developers for maintaining supply rather than volume sold.",
+              "Charging patients more for each antibiotic prescribed.",
+              "Banning all pharmaceutical companies entirely.",
+              "Returning to pre-antibiotic medicine."
+            ],
+            "answer": "0",
+            "explanation": "本文「subscription-based payment models that compensate developers for maintaining ready supply rather than for volume sold」が根拠。"
+          }
+        ]
+      }
+    }
+  ]
+}
