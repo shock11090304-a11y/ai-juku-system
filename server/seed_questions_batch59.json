@@ -1,0 +1,136 @@
+{
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "w_essay",
+      "eiken_grade": "kyodai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "京都大学 文学部 (類題)",
+        "prompt": "Theme: \"True education is not the filling of a vessel but the kindling of a flame.\" Discuss how this view applies to contemporary university education.\n\n100-150語で論じなさい (京大型 自由英作文)。",
+        "sample": "The metaphor of education as kindling rather than filling resonates strongly with contemporary university experience. When professors merely transfer information that students could access elsewhere, they fail to develop what universities ought uniquely to provide: the capacity to think independently, to question received wisdom, and to generate insights that did not previously exist.\n\nKindling, however, requires both spark and fuel. Students arriving without basic knowledge cannot suddenly produce original thought; the metaphor risks underestimating the substantive learning that genuine creativity presupposes. The most effective universities therefore combine both ── ensuring students acquire foundational understanding while creating conditions in which their curiosity can flourish.\n\nIn an era when information is freely available but discernment is rare, the kindling function may matter more than ever. Universities that resist becoming mere certification factories preserve something genuinely valuable. (138 words)",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "Above prompt — 100-150 語自由英作文。",
+            "answer": "see sample",
+            "explanation": "【京大型 自由英作文】① メタファー (kindling vs filling) を解釈 → 哲学的論考の出発点 ② 譲歩 (Kindling requires both spark and fuel) で単純化を否定 ③ 結論「両者の統合」+ 現代的価値 (information vs discernment) ④ 138 語で 100-150 範囲内。京大型は 「メタファーの解釈 + 反論 + 統合」型の弁証法的構成が高評価。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_translation",
+      "eiken_grade": "hitotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "What our societies most need is not yet another technological breakthrough that promises to solve problems already addressed by existing tools, but the wisdom to deploy ── thoughtfully and equitably ── the considerable capabilities we already possess.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "上記英文を日本語に和訳しなさい。",
+            "answer": "我々の社会が最も必要としているのは、既存の道具によって既に対処されている問題を解決すると約束する更なる技術的飛躍ではなく、我々がすでに保有しているかなりの能力を、思慮深くかつ公正に展開する知恵である。",
+            "explanation": "## 🎯 コアイメージ\n**What S V is not A but B** = 「S が V するものは A ではなく B である」(関係代名詞 what + not A but B 構造)。\n\n## 🔬 文構造分析\n- **What our societies most need** = 主語節 (関係代名詞 what)\n- **is not yet another technological breakthrough ... but the wisdom to deploy ...** = 補語 (not A but B 対比)\n- **that promises to solve problems already addressed by existing tools** = 関係詞節 (technological breakthrough を修飾)\n- **already addressed by existing tools** = 過去分詞による後置修飾\n- **── thoughtfully and equitably ──** = 副詞句の挿入 (em-dash)\n- **the considerable capabilities we already possess** = 関係代名詞省略 (capabilities (that) we already possess)\n\n## 📍 一橋型ポイント\n① yet another = また別の/更なる (否定的含意) ② already addressed by = 既に対処されている (過去分詞の後置修飾) ③ thoughtfully and equitably = 思慮深くかつ公正に (副詞句の挿入訳出) ④ deploy = 展開する/活用する (capabilities との結合) ⑤ 「能力の有無」ではなく「能力の運用知恵」を問う点が一橋の社会哲学的論調。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "w_essay",
+      "eiken_grade": "keio",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "慶應義塾大学 経済学部 (類題)",
+        "prompt": "Theme: Some economists argue that universal basic income (UBI) ── a regular cash payment to all citizens regardless of employment ── is necessary as automation reduces traditional jobs. Others worry it would discourage work and burden public finances. State your position with reasoning.\n\n100-130 語で意見を述べなさい (慶應経済型 自由英作文)。",
+        "sample": "I support implementing a modest universal basic income, though concerns about work incentives deserve careful design responses. The traditional argument that UBI discourages employment overlooks substantial evidence from pilot programs: most recipients continue working, often shifting to more meaningful or educational pursuits rather than withdrawing from the labor market entirely.\n\nMore importantly, the structural reality is changing. As automation displaces traditional employment, distinguishing between those who deserve support and those who do not becomes increasingly arbitrary. UBI provides a basic floor without the stigma and bureaucracy of means-tested welfare.\n\nThe burden on public finances is real, but financing through carbon taxes, wealth taxes, or efficiency gains from simplified welfare administration could make UBI fiscally sustainable. The question is not whether the economy is changing, but whether policy will adapt thoughtfully. (128 words)",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "Above prompt — 100-130 語自由英作文。",
+            "answer": "see sample",
+            "explanation": "【慶應経済型】① 立場明示 (I support modest UBI) + 譲歩 (concerns deserve careful design) ② 反論への反論 (pilot programs evidence) で実証的論証 ③ 構造変化論 (automation displaces, distinguishing becomes arbitrary) ④ 財政懸念への対応 (carbon tax, wealth tax, efficiency gains) ⑤ 結論で reframe (whether economy changes vs whether policy adapts)。慶應経済は「実証データ + 政策デザイン」を組合せた答案が高評価。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "w_essay",
+      "eiken_grade": "gp1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "TOPIC: Should public schools place more emphasis on practical life skills than on traditional academic subjects?\n\nPOINTS to consider (use 2 of 4): - Independence - Future careers - Higher education - Cultural knowledge\n\nRequirements: Write an essay of 120-150 words.",
+        "sample": "Public schools should incorporate more practical life skills, though not at the expense of traditional academic subjects. Two considerations support this balanced view.\n\nFirst, financial literacy, basic cooking, and time management directly support independence as students transition to adulthood. Many young adults lack basic skills like budgeting, tax filing, or simple home maintenance ── gaps that academic excellence alone cannot fill. Adding practical curriculum helps graduates navigate adult responsibilities they will inevitably face.\n\nSecond, future careers increasingly require both academic foundations and practical capabilities. Software engineers need mathematics; doctors need biology; but all professionals also need communication skills, financial planning, and personal resilience. Academic subjects build conceptual depth, while practical skills enable application.\n\nThe optimal approach therefore is not to choose between academic and practical learning, but to ensure students develop both throughout their education. (134 words)",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "Above prompt — 120-150 word opinion essay.",
+            "answer": "see sample",
+            "explanation": "【準1級 w_essay】① 譲歩節組込の立場明示 (incorporate more practical, though not at expense of academic) ② 2 points 構造 (Independence + Future careers) ③ 各 point は具体例で補強 (financial literacy, budgeting / software engineers need math) ④ 結論で reframe (not to choose between, but to ensure both)。準1級は「対立軸を超える第三の道」を提示する答案が高評価。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "g_grammar",
+      "eiken_grade": "waseda",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "早稲田大学 商学部 (類題)",
+        "passage": "",
+        "prompt": "Choose the most appropriate option to complete each sentence.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "Such was the impact of the discovery ____ entire textbooks had to be rewritten.",
+            "choices": [
+              "as",
+              "when",
+              "which",
+              "that"
+            ],
+            "answer": "3",
+            "explanation": "## 🎯 コアイメージ\n**Such X that S V** = 「とても X なので S V する」(結果構文)。文頭に Such が来ると倒置して **Such was the impact ... that ...** の語順。\n\n## 🔬 文構造分析\n- **Such was the impact of the discovery** = 倒置 (Such + V + S)\n- **that entire textbooks had to be rewritten** = 結果節 (that + SV)\n- 「その発見の衝撃はとても大きかったので、教科書全体が書き直されなければならなかった」\n\n## 📍 早稲田型ポイント\n① Such ... that 構文の文頭倒置 (= So great was the impact that ...) ② impact = 衝撃/影響 ③ entire textbooks had to be rewritten = 受動態 + 助動詞 had to。\n\n## ❌ 誤答 NG 理由\n- as: such ... as は同等比較 (例: such cars as I bought)、結果用法ではない\n- when / which: 関係副詞・関係代名詞は結果構文を成立させない"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Only after months of negotiations ____ on the terms of the agreement.",
+            "choices": [
+              "agreed the parties",
+              "did the parties agree",
+              "the parties did agree",
+              "the parties agreed"
+            ],
+            "answer": "1",
+            "explanation": "## 🎯 コアイメージ\n**Only + 副詞句**が文頭に出ると**倒置**: Only after X did S V (do/does/did + S + 動詞原形)。\n\n## 🔬 文構造分析\n- **Only after months of negotiations** = 副詞句 (文頭・倒置トリガー)\n- **did the parties agree** = 倒置 (did + S + 動詞原形)\n- **on the terms of the agreement** = 副詞句\n\n## 📍 早稲田型ポイント\n① Only + 時/条件副詞句文頭 → 倒置 ② did + S + 動詞原形 (現在 = does + S + V、過去 = did + S + V) ③ agree on = 〜について合意する (前置詞 on の選択も頻出)。\n\n## ❌ 誤答 NG 理由\n- the parties did agree: 倒置されていない (Only 文頭の鉄則違反)\n- the parties agreed: 倒置なし\n- agreed the parties: 動詞 + 主語の倒置 (be 動詞や助動詞ならば可、本動詞は不可)"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "The proposal, ____ has been criticized by some experts, deserves serious consideration.",
+            "choices": [
+              "which",
+              "as",
+              "what",
+              "that"
+            ],
+            "answer": "0",
+            "explanation": "## 🎯 コアイメージ\n**非制限用法 (コンマ付き) の関係代名詞**は **which** のみ可。先行詞 the proposal は「もの」+主格。\n\n## 🔬 文構造分析\n- **The proposal, which has been criticized by some experts, deserves serious consideration.** = 主節 (The proposal deserves...) + 挿入関係詞節\n- **which** = 関係代名詞 (主格、非制限用法)\n- **has been criticized by some experts** = 関係詞節内の動詞 (現在完了受動態)\n\n## 📍 早稲田型ポイント\n① 非制限用法 (コンマ + 関係代名詞) → which のみ ② that は非制限用法不可 (鉄則) ③ as は as 〜 関係代名詞用法あるが文意限定 (= 〜のように/〜のとおり) で本問では不適。\n\n## ❌ 誤答 NG 理由\n- as: コンマ付き挿入で as 節は不自然 (= 〜のように)\n- that: 非制限用法では使用不可\n- what: 先行詞 the proposal がすでにあるため不可"
+          }
+        ]
+      }
+    }
+  ]
+}
