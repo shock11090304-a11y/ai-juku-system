@@ -133,7 +133,7 @@
   }
   </script>
 
-  <link rel="stylesheet" href="lp.css">
+  <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost">
   <link rel="manifest" href="manifest.json">
   <script src="analytics.js" defer></script>
   <script src="pwa.js" defer></script>
@@ -274,18 +274,35 @@
   <!-- Hero -->
   <section class="hero">
     <div class="hero-badge">🎖 創業記念 <strong>創設メンバー 50名限定</strong> 募集中</div>
-    <div class="threads-trust-badge">
-      <span class="ttb-icon">🟣</span>
-      <span class="ttb-text"><strong>Threads フォロワー 6,000人</strong> が毎朝読む塾長アカウント</span>
-    </div>
     <h1 class="hero-title">
-      <span class="gradient-text">AI</span>が一人ひとりに最適化する<br>
-      次世代型・完全個別学習塾
+      深夜2時の「わからない」を<br>
+      <span class="gradient-text">AIが即解決</span>する塾
     </h1>
     <p class="hero-sub">
-      24時間質問できるAIチューター、志望校別カリキュラム自動生成、<br>
-      週次AI診断レポート ── すべて従来塾の<strong>1/3の価格</strong>で。
+      塾が閉まっている時間こそ、子どもは一番つまずく。<br>
+      <strong>24時間対応のAIチューター</strong>が、その場で丁寧に解説します。
     </p>
+
+    <!-- 信頼バッジ群 (横並び) -->
+    <div class="hero-trust-row">
+      <div class="trust-chip"><span>🟣</span> Threads <strong>6,000</strong>人</div>
+      <div class="trust-chip"><span>🎓</span> 5教科 + 英語4試験</div>
+      <div class="trust-chip"><span>💰</span> 従来塾の<strong>1/3</strong></div>
+      <div class="trust-chip"><span>🔒</span> クレカ登録<strong>不要</strong></div>
+    </div>
+
+    <!-- メインCTA (大きく1つ) -->
+    <div class="hero-cta-block">
+      <a href="checkout.html?plan=founder_special&utm_source=hero" class="btn-primary btn-hero-main" data-founder-cta>
+        7日間 完全無料で体験する
+        <span class="btn-sub-text">クレジットカード登録不要・自動課金なし</span>
+      </a>
+      <div class="hero-cta-secondary">
+        <a href="demo-features.html" class="btn-ghost btn-lg">実画面デモを見る</a>
+      </div>
+    </div>
+
+    <!-- 残席カウンター (コンパクト版) -->
     <div class="seats-counter seats-counter-enhanced">
       <div class="seats-left">
         <span class="seats-label">🔥 創設メンバー 残り枠</span>
@@ -302,43 +319,38 @@
       </div>
       <div class="seats-price">
         <span class="price-strike">通常 ¥39,800/月</span>
-        <span class="price-now">7日間 <strong>完全無料</strong> 体験</span>
-        <span class="price-save">🎁 創設メンバー50名限定 永年¥14,500/月（契約後の値上げなし）</span>
+        <span class="price-now">永年 <strong>¥14,500</strong>/月</span>
+        <span class="price-save">50名限定・契約後の値上げなし</span>
       </div>
     </div>
+
     <!-- 入塾金免除キャンペーンバナー (先着100名) -->
     <div id="enrollmentWaiverBanner" style="display:none;background:linear-gradient(135deg,rgba(251,191,36,0.18),rgba(236,72,153,0.12));border:1px solid rgba(251,191,36,0.45);border-radius:12px;padding:0.85rem 1.1rem;margin:1rem 0;text-align:center;">
       <div style="font-weight:900;color:#fbbf24;font-size:1rem;margin-bottom:0.25rem;">🎉 先着100名 入塾金 ¥10,000 免除キャンペーン</div>
       <div style="font-size:0.88rem;color:#fde68a;">月額移行時の初回請求から ¥10,000 が0円に。残り <strong id="waiverRemaining">--</strong> 名</div>
     </div>
-    <div class="hero-ctas">
-      <a href="checkout.html?plan=founder_special" class="btn-primary btn-lg" data-founder-cta>🎁 7日間 無料で試す →</a>
-      <a href="demo-features.html" class="btn-ghost btn-lg">🎥 実画面デモを見る</a>
+
+    <!-- ビフォーアフター (視覚的インパクト) -->
+    <div class="hero-before-after">
+      <div class="ba-card ba-before">
+        <div class="ba-label">😰 今まで</div>
+        <ul>
+          <li>深夜の質問 → 翌週まで放置</li>
+          <li>月5〜8万円の個別指導</li>
+          <li>画一的なカリキュラム</li>
+        </ul>
+      </div>
+      <div class="ba-arrow">→</div>
+      <div class="ba-card ba-after">
+        <div class="ba-label">✨ AI学習コーチ塾なら</div>
+        <ul>
+          <li>24時間いつでも即回答</li>
+          <li>月¥14,500〜で全機能（創設メンバー価格）</li>
+          <li>一人ひとりに最適化</li>
+        </ul>
+      </div>
     </div>
-    <div class="hero-stats">
-      <div class="hero-stat">
-        <div class="stat-num">24<span>h</span></div>
-        <div class="stat-label">AIが質問対応</div>
-      </div>
-      <div class="hero-stat">
-        <div class="stat-num">1/3</div>
-        <div class="stat-label">従来塾の価格</div>
-      </div>
-      <div class="hero-stat">
-        <div class="stat-num">4<span style="font-size:0.6em;">試験</span></div>
-        <div class="stat-label">英語試験完全対応</div>
-      </div>
-      <div class="hero-stat">
-        <div class="stat-num">100<span>%</span></div>
-        <div class="stat-label">個別最適化</div>
-      </div>
-    </div>
-    <!-- 4試験対応バッジ (英語強化アピール) -->
-    <div style="display:flex;justify-content:center;gap:0.5rem;flex-wrap:wrap;margin-top:1.5rem;">
-      <a href="english-exam.html" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;background:linear-gradient(135deg,rgba(30,64,175,0.18),rgba(220,38,38,0.18));border:1px solid rgba(99,102,241,0.4);border-radius:999px;color:#fff;font-size:0.85rem;font-weight:700;">
-        🎓 TOEFL / TOEIC / IELTS / 英検 すべて対応 →
-      </a>
-    </div>
+
     <!-- 実績プルーフ（localStorageの匿名集計） -->
     <div id="lpProofWrap" style="display:none;">
       <div style="text-align:center;margin-top:2.5rem;color:rgba(255,255,255,0.85);font-weight:700;font-size:0.9rem;letter-spacing:0.05em;">
@@ -377,6 +389,15 @@
           <p>保護者は「ちゃんと進んでるのか」が見えず、不安が募る。</p>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- Mid-page CTA (Problem → Solution bridge) -->
+  <section class="section section-mid-cta">
+    <div class="section-inner section-narrow" style="text-align:center;">
+      <h2 style="font-size:1.8rem;font-weight:800;margin-bottom:1rem;">もう、<span class="gradient-text">一人で悩ませない</span></h2>
+      <p style="color:var(--text-dim);margin-bottom:2rem;font-size:1rem;">月額¥14,500〜 で 24時間対応 × 全科目 × 完全個別最適化。まずは無料で体験してください。</p>
+      <a href="checkout.html?plan=founder_special&utm_source=mid1" class="btn-primary btn-lg" data-founder-cta>7日間 無料体験を始める →</a>
     </div>
   </section>
 
@@ -527,6 +548,32 @@
     </div>
   </section>
 
+  <!-- Social Proof (Features直後 — 離脱ポイントにソーシャルプルーフ挿入) -->
+  <section class="section section-dark">
+    <div class="section-inner">
+      <div class="social-proof-strip">
+        <div class="sp-quote">
+          <span class="sp-stars">★★★★★</span>
+          <p>"深夜に数学でつまづいてもすぐ解説してくれる。<strong>勉強のリズムが途切れなくなりました。</strong>"</p>
+          <span class="sp-author">— 高校2年 K さん（東大志望）</span>
+        </div>
+        <div class="sp-quote">
+          <span class="sp-stars">★★★★★</span>
+          <p>"前の塾より半額なのに内容は遥かに濃い。<strong>毎週のレポートで安心。</strong>"</p>
+          <span class="sp-author">— 中3 保護者様（開成志望）</span>
+        </div>
+        <div class="sp-quote">
+          <span class="sp-stars">★★★★★</span>
+          <p>"英作文の添削が神。<strong>AIと講師の二段構えで記述力が激変。</strong>"</p>
+          <span class="sp-author">— 高校3年 S さん（早稲田志望）</span>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:2.5rem;">
+        <a href="checkout.html?plan=founder_special&utm_source=mid2" class="btn-primary btn-lg" data-founder-cta>無料で同じ体験をする →</a>
+      </div>
+    </div>
+  </section>
+
   <!-- How it works -->
   <section id="howitworks" class="section section-dark">
     <div class="section-inner">
@@ -574,47 +621,32 @@
     </div>
   </section>
 
-  <!-- Testimonials -->
+  <!-- Guarantee (リスクリバーサル — 不安解消で CVR 向上) -->
   <section class="section section-dark">
-    <div class="section-inner">
-      <div class="section-header">
-        <div class="eyebrow">Voices</div>
-        <h2>受講生・保護者様の声</h2>
+    <div class="section-inner section-narrow">
+      <div class="guarantee-block">
+        <div class="guarantee-icon">🛡️</div>
+        <h2>安心の<span class="gradient-text">3つの約束</span></h2>
+        <div class="guarantee-grid">
+          <div class="guarantee-item">
+            <div class="gi-icon">💳</div>
+            <h3>クレカ登録不要</h3>
+            <p>7日間の無料体験にクレジットカードは一切不要。勝手に課金されることはありません。</p>
+          </div>
+          <div class="guarantee-item">
+            <div class="gi-icon">🚪</div>
+            <h3>解約手続き不要</h3>
+            <p>気に入らなければ何もしなくてOK。7日後に「継続しますか？」のメールが届くだけです。</p>
+          </div>
+          <div class="guarantee-item">
+            <div class="gi-icon">🔒</div>
+            <h3>データは安全</h3>
+            <p>学習データは暗号化保存。第三者への提供なし。いつでもデータ削除が可能です。</p>
+          </div>
+        </div>
       </div>
-      <div class="testimonials">
-        <div class="testimonial">
-          <div class="t-stars">⭐⭐⭐⭐⭐</div>
-          <p>"夜中に数学でつまづいてもすぐ解説してくれるので、勉強のリズムが途切れません。偏差値が半年で8上がりました。"</p>
-          <div class="t-author">
-            <div class="t-avatar">👦</div>
-            <div>
-              <div class="t-name">高校2年 Kさん</div>
-              <div class="t-role">東京大学志望</div>
-            </div>
-          </div>
-        </div>
-        <div class="testimonial">
-          <div class="t-stars">⭐⭐⭐⭐⭐</div>
-          <p>"毎週の保護者レポートで子どもの成長が見えるので、安心して任せられます。前の塾より半額なのに内容は遥かに濃い。"</p>
-          <div class="t-author">
-            <div class="t-avatar">👩</div>
-            <div>
-              <div class="t-name">中学3年 保護者様</div>
-              <div class="t-role">開成高校志望</div>
-            </div>
-          </div>
-        </div>
-        <div class="testimonial">
-          <div class="t-stars">⭐⭐⭐⭐⭐</div>
-          <p>"英作文の添削が神。AIが細かい文法ミスを拾ってくれて、人間講師はロジックや表現力に集中して指導してくれます。"</p>
-          <div class="t-author">
-            <div class="t-avatar">👧</div>
-            <div>
-              <div class="t-name">高校3年 Sさん</div>
-              <div class="t-role">早稲田大学志望</div>
-            </div>
-          </div>
-        </div>
+      <div style="text-align:center;margin-top:2.5rem;">
+        <a href="#trial" class="btn-primary btn-lg">不安ゼロで始める →</a>
       </div>
     </div>
   </section>
@@ -651,41 +683,47 @@
     </div>
   </section>
 
-  <!-- Final CTA -->
+  <!-- Final CTA (フォーム軽量化 — 入力項目を最小限にしてCVR向上) -->
   <section id="trial" class="section section-cta">
     <div class="section-inner section-narrow">
-      <h2 class="cta-title">今すぐ<span class="gradient-text">7日間 完全無料</span>で始める</h2>
-      <p class="cta-sub">クレジットカード登録不要・自動課金なし・解約手続き不要。気に入ったら創設メンバー50名限定 永年¥14,500で継続。</p>
-      <form class="trial-form" id="trialForm" action="checkout.html" method="get">
-        <div class="form-row">
-          <input type="text" id="trialName" placeholder="お名前（お子様）" required>
-          <select id="trialGrade" required>
-            <option value="">学年を選択</option>
-            <option>小学5年</option>
-            <option>小学6年</option>
-            <option>中学1年</option>
-            <option>中学2年</option>
-            <option>中学3年</option>
-            <option>高校1年</option>
-            <option>高校2年</option>
-            <option>高校3年</option>
-            <option>既卒生</option>
-          </select>
+      <h2 class="cta-title">まずは<span class="gradient-text">無料で体験</span>してみてください</h2>
+      <p class="cta-sub">お名前とメールアドレスだけ。7日間すべての機能を無料でお試しいただけます。</p>
+
+      <form class="trial-form trial-form-simple" id="trialForm" action="checkout.html" method="get">
+        <input type="text" id="trialName" placeholder="お子様のお名前" required>
+        <input type="email" id="trialEmail" placeholder="メールアドレス" required>
+        <input type="hidden" id="trialPlan" value="founder_special">
+        <input type="hidden" id="trialGrade" value="">
+        <input type="hidden" id="trialGoal" value="">
+        <button type="submit" class="btn-primary btn-lg btn-block btn-cta-submit">7日間 無料体験を始める →</button>
+        <div class="form-reassurance">
+          <span>💳 クレカ登録不要</span>
+          <span>🔄 自動課金なし</span>
+          <span>🚪 解約手続き不要</span>
         </div>
-        <div class="form-row">
-          <input type="email" id="trialEmail" placeholder="保護者様メールアドレス" required>
-          <input type="text" id="trialGoal" placeholder="志望校・目標（任意）">
-        </div>
-        <select id="trialPlan" required>
-          <option value="founder_special">🎁 創設メンバープラン 永年¥14,500/月（50名限定）</option>
-          <option value="premium">プレミアム（月¥39,800）</option>
-          <option value="standard">スタンダード（月¥24,980）</option>
-          <option value="family">家族プラン 3名まで（月¥59,800）</option>
-          <option value="undecided">まだ決めていない</option>
-        </select>
-        <button type="submit" class="btn-primary btn-lg btn-block">🎁 7日間 無料体験を開始する →</button>
-        <p class="form-note">※ クレジットカード登録不要 / 自動課金なし / 7日後に「継続しますか？」のメールが届きます（無視すれば自動終了）</p>
       </form>
+
+      <div class="cta-after-details">
+        <details>
+          <summary>学年・志望校も入力する（任意）</summary>
+          <div class="cta-extra-fields">
+            <select id="trialGradeExtra">
+              <option value="">学年を選択</option>
+              <option>小学5年</option>
+              <option>小学6年</option>
+              <option>中学1年</option>
+              <option>中学2年</option>
+              <option>中学3年</option>
+              <option>高校1年</option>
+              <option>高校2年</option>
+              <option>高校3年</option>
+              <option>既卒生</option>
+            </select>
+            <input type="text" id="trialGoalExtra" placeholder="志望校・目標（任意）">
+          </div>
+        </details>
+      </div>
+
       <div id="trialSuccess" class="trial-success" style="display:none;">
         <div class="success-icon">🎉</div>
         <h3>登録完了！</h3>
@@ -728,12 +766,15 @@
   <script>
     document.getElementById('trialForm').addEventListener('submit', (e) => {
       e.preventDefault();
+      const gradeExtra = document.getElementById('trialGradeExtra');
+      const goalExtra = document.getElementById('trialGoalExtra');
       const params = new URLSearchParams({
         name: document.getElementById('trialName').value,
-        grade: document.getElementById('trialGrade').value,
         email: document.getElementById('trialEmail').value,
-        goal: document.getElementById('trialGoal').value,
         plan: document.getElementById('trialPlan').value,
+        grade: (gradeExtra && gradeExtra.value) || '',
+        goal: (goalExtra && goalExtra.value) || '',
+        utm_source: 'lp_form',
       });
       window.location.href = `checkout.html?${params.toString()}`;
     });
@@ -816,7 +857,7 @@
         <div class="sticky-cta-line1">🎁 7日間 完全無料</div>
         <div class="sticky-cta-line2">クレカ登録不要 / 創設メンバー残席</div>
       </div>
-      <a href="checkout.html?plan=founder_special&utm_source=sticky_cta" class="sticky-cta-btn" data-founder-cta>席を確保する →</a>
+      <a href="checkout.html?plan=founder_special&utm_source=sticky_cta" class="sticky-cta-btn" data-founder-cta>枠を確保する →</a>
     </div>
     <button id="stickyCtaClose" class="sticky-cta-close" aria-label="閉じる">×</button>
   </div>

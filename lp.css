@@ -1008,3 +1008,258 @@ body {
   .sticky-cta-line2 { font-size: 0.66rem; }
   .sticky-cta-btn { padding: 12px 16px; font-size: 0.85rem; }
 }
+
+/* ============================================ */
+/* Hero 改善 — 信頼バッジ・メインCTA・ビフォーアフター */
+/* ============================================ */
+.hero-trust-row {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+.trust-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.9rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+.trust-chip strong { color: var(--text); font-weight: 800; }
+
+.hero-cta-block { text-align: center; margin-bottom: 2rem; }
+.btn-hero-main {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.2rem 3rem;
+  font-size: 1.2rem;
+  font-weight: 900;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.4);
+  animation: ctaPulse 2.5s ease-in-out infinite;
+}
+.btn-hero-main:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(99, 102, 241, 0.6);
+}
+@keyframes ctaPulse {
+  0%, 100% { box-shadow: 0 8px 30px rgba(99, 102, 241, 0.4); }
+  50% { box-shadow: 0 8px 40px rgba(236, 72, 153, 0.6), 0 0 0 8px rgba(236, 72, 153, 0.1); }
+}
+.btn-sub-text {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 500;
+  opacity: 0.85;
+  margin-top: 0.3rem;
+}
+.hero-cta-secondary { margin-top: 1rem; }
+
+/* Before / After 比較カード */
+.hero-before-after {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 3rem;
+  flex-wrap: wrap;
+}
+.ba-card {
+  flex: 1;
+  min-width: 240px;
+  max-width: 340px;
+  padding: 1.5rem;
+  border-radius: 16px;
+  text-align: left;
+}
+.ba-before {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+.ba-after {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+.ba-label {
+  font-weight: 800;
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+}
+.ba-before .ba-label { color: #fca5a5; }
+.ba-after .ba-label { color: #6ee7b7; }
+.ba-card ul {
+  list-style: none;
+  padding: 0;
+}
+.ba-card li {
+  padding: 0.35rem 0;
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  padding-left: 1.2rem;
+  position: relative;
+}
+.ba-before li::before { content: "✕"; position: absolute; left: 0; color: #ef4444; font-weight: 700; }
+.ba-after li::before { content: "✓"; position: absolute; left: 0; color: #10b981; font-weight: 700; }
+.ba-arrow {
+  display: flex;
+  align-items: center;
+  font-size: 2rem;
+  color: var(--text-muted);
+  font-weight: 900;
+}
+@media (max-width: 640px) {
+  .ba-arrow { transform: rotate(90deg); }
+  .hero-before-after { flex-direction: column; align-items: center; }
+  .ba-card { max-width: 100%; }
+  .hero-trust-row { gap: 0.4rem; }
+  .trust-chip { font-size: 0.72rem; padding: 0.3rem 0.6rem; }
+  .btn-hero-main { font-size: 1rem; padding: 1rem 2rem; }
+}
+
+/* ============================================ */
+/* Social Proof Strip (Features直後) */
+/* ============================================ */
+.social-proof-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+.sp-quote {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+.sp-stars {
+  display: block;
+  color: #fbbf24;
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+  letter-spacing: 2px;
+}
+.sp-quote p {
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+}
+.sp-quote strong { color: #fcd34d; }
+.sp-author {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+@media (max-width: 768px) {
+  .social-proof-strip { grid-template-columns: 1fr; }
+}
+
+/* ============================================ */
+/* Guarantee / Risk Reversal */
+/* ============================================ */
+.guarantee-block { text-align: center; }
+.guarantee-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+.guarantee-block h2 { font-size: 2rem; font-weight: 800; margin-bottom: 2.5rem; }
+.guarantee-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+.guarantee-item {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  transition: all 0.3s;
+}
+.guarantee-item:hover {
+  transform: translateY(-4px);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+.gi-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+.guarantee-item h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+.guarantee-item p { font-size: 0.88rem; color: var(--text-dim); line-height: 1.7; }
+@media (max-width: 640px) {
+  .guarantee-grid { grid-template-columns: 1fr; }
+}
+
+/* ============================================ */
+/* Simplified Trial Form */
+/* ============================================ */
+.trial-form-simple {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+.trial-form-simple input {
+  padding: 1rem 1.2rem;
+  font-size: 1rem;
+}
+.btn-cta-submit {
+  font-size: 1.15rem;
+  padding: 1.1rem;
+  font-weight: 900;
+  margin-top: 0.5rem;
+}
+.form-reassurance {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+.form-reassurance span {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.cta-after-details {
+  margin-top: 1rem;
+}
+.cta-after-details details {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 0.75rem 1.25rem;
+}
+.cta-after-details summary {
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+.cta-extra-fields {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+.cta-extra-fields select,
+.cta-extra-fields input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+@media (max-width: 640px) {
+  .cta-extra-fields { flex-direction: column; }
+  .form-reassurance { gap: 0.8rem; }
+}
+
+/* ============================================ */
+/* Mid-page CTA */
+/* ============================================ */
+.section-mid-cta {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(236, 72, 153, 0.05));
+  padding: 4rem 1.5rem;
+}
