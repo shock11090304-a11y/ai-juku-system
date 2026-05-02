@@ -11289,10 +11289,11 @@ def mock_exam_generate(payload: dict):
     # セッション作成
     snapshot_json = json.dumps({"sections": sections_out, "answer_key": snapshot}, ensure_ascii=False)
     c.execute(
-        "INSERT INTO mock_exam_sessions (student_id, exam_type, target_label, duration_min, started_at, score_max, questions_json) VALUES (?,?,?,?,?,?,?)",
+        "INSERT INTO mock_exam_sessions (student_id, exam_type, target_label, duration_min, started_at, score_max, questions_json) VALUES (?,?,?,?,?,?,?) RETURNING id",
         (student_id, exam_type, tpl["label"], tpl["duration_min"], datetime.now(timezone.utc).isoformat(), max_score, snapshot_json),
     )
-    session_id = c.lastrowid
+    sid_row = c.fetchone()
+    session_id = (sid_row[0] if not hasattr(sid_row, 'keys') else sid_row.get("id")) if sid_row else None
     conn.commit()
     conn.close()
 
@@ -11543,22 +11544,34 @@ def vocab_grade(payload: dict):
 @app.get("/api/vocab/stats")
 def vocab_stats(student_id: int):
     """生徒の単語学習統計 (mypage 用)。"""
+    def _val(row, idx, key):
+        if row is None: return 0
+        if hasattr(row, 'keys'):
+            return row.get(key, 0) or 0
+        return (row[idx] if idx < len(row) else 0) or 0
+
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT box, COUNT(*) FROM vocab_progress WHERE student_id=? GROUP BY box", (student_id,))
     by_box = {}
-    for r in c.fetchall():
-        b = r[0] if not hasattr(r, 'keys') else r[0]
-        n = r[1] if not hasattr(r, 'keys') else r[1]
-        by_box[int(b)] = int(n)
-    c.execute("SELECT COUNT(*) FROM vocab_progress WHERE student_id=? AND next_review_at <= ?", (student_id, datetime.now(timezone.utc).isoformat()))
-    due_now = (c.fetchone() or [0])[0]
-    c.execute("SELECT COUNT(*) FROM vocab_words")
-    total_words = (c.fetchone() or [0])[0]
-    c.execute("SELECT SUM(review_count), SUM(correct_count) FROM vocab_progress WHERE student_id=?", (student_id,))
-    rr = c.fetchone() or [0, 0]
-    total_reviews = int(rr[0] or 0)
-    total_correct = int(rr[1] or 0)
+    try:
+        c.execute("SELECT box AS box_n, COUNT(*) AS cnt FROM vocab_progress WHERE student_id=? GROUP BY box", (student_id,))
+        for r in c.fetchall():
+            b = _val(r, 0, 'box_n')
+            n = _val(r, 1, 'cnt')
+            by_box[int(b)] = int(n)
+    except Exception:
+        by_box = {}
+
+    c.execute("SELECT COUNT(*) AS cnt FROM vocab_progress WHERE student_id=? AND next_review_at <= ?", (student_id, datetime.now(timezone.utc).isoformat()))
+    due_now = int(_val(c.fetchone(), 0, 'cnt'))
+
+    c.execute("SELECT COUNT(*) AS cnt FROM vocab_words")
+    total_words = int(_val(c.fetchone(), 0, 'cnt'))
+
+    c.execute("SELECT COALESCE(SUM(review_count), 0) AS rsum, COALESCE(SUM(correct_count), 0) AS csum FROM vocab_progress WHERE student_id=?", (student_id,))
+    rr = c.fetchone()
+    total_reviews = int(_val(rr, 0, 'rsum'))
+    total_correct = int(_val(rr, 1, 'csum'))
     conn.close()
     accuracy = round(100 * total_correct / max(total_reviews, 1), 1)
     return {
