@@ -11430,12 +11430,15 @@ def vocab_import(payload: dict, authorization: Optional[str] = Header(None), x_c
                 if not w.get("word") or not w.get("meaning_jp") or not w.get("level"):
                     failed.append({"i": i, "reason": "missing required fields"})
                     continue
-                c.execute("INSERT INTO vocab_words (word, pos, meaning_jp, example_en, example_jp, level, tags) VALUES (?,?,?,?,?,?,?) ON CONFLICT(word) DO NOTHING",
-                          (w["word"], w.get("pos", ""), w["meaning_jp"], w.get("example_en", ""), w.get("example_jp", ""), w["level"], w.get("tags", "")))
-                if c.rowcount > 0:
-                    inserted += 1
-                else:
+                # 事前 SELECT で重複チェック (rowcount が _Cursor wrapper で参照不可のため)
+                c.execute("SELECT id FROM vocab_words WHERE word=?", (w["word"],))
+                existing = c.fetchone()
+                if existing:
                     skipped += 1
+                    continue
+                c.execute("INSERT INTO vocab_words (word, pos, meaning_jp, example_en, example_jp, level, tags) VALUES (?,?,?,?,?,?,?)",
+                          (w["word"], w.get("pos", ""), w["meaning_jp"], w.get("example_en", ""), w.get("example_jp", ""), w["level"], w.get("tags", "")))
+                inserted += 1
             except Exception as e:
                 failed.append({"i": i, "reason": f"{type(e).__name__}: {str(e)[:80]}"})
                 try: conn.rollback()
