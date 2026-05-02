@@ -2,6 +2,12 @@
 <html lang="ja">
 <head>
   <script src="cache-purge.js"></script>
+  <!-- html2canvas: テンプレートから画像生成 (templates → PNG) 用 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+    integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+    onerror="window.__html2canvasFailed=true;console.warn('[CDN] html2canvas 読込失敗 — テンプレ生成機能は無効');"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CEO経営ダッシュボード | AI学習コーチ塾</title>
@@ -635,7 +641,7 @@
           <button id="invCopyUrlBtn" style="background:rgba(251,191,36,0.2);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);padding:0.5rem 0.9rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;white-space:nowrap;">📋 URL</button>
         </div>
         <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.3rem;">💬 DM 返信テンプレ (コピペで Threads/LINE に貼れます)</div>
-        <textarea id="invResultDm" readonly rows="9" style="width:100%;background:#0f172a;color:#e4e4e7;border:1px solid rgba(217,70,239,0.3);padding:0.7rem;border-radius:6px;font-size:0.82rem;line-height:1.55;resize:vertical;font-family:'Hiragino Sans','Yu Gothic',sans-serif;"></textarea>
+        <textarea id="invResultDm" readonly rows="9" style="width:100%;background:#0f172a;color:#e4e4e7;border:1px solid rgba(217,70,239,0.3);padding:0.7rem;border-radius:6px;font-size:0.82rem;line-height:1.55;resize:vertical;font-family:${TPL_FONT_FAMILY};"></textarea>
         <div style="display:flex;gap:0.4rem;margin-top:0.5rem;">
           <button id="invCopyDmBtn" style="flex:1;background:linear-gradient(135deg,#d946ef,#a855f7);color:#fff;border:none;padding:0.6rem;border-radius:8px;font-size:0.88rem;font-weight:800;cursor:pointer;">📋 DM テンプレをコピー</button>
         </div>
@@ -671,10 +677,43 @@
       </div>
       <div id="mktError" style="display:none;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.4);border-radius:10px;padding:0.7rem;color:#fca5a5;font-size:0.82rem;margin-top:0.5rem;"></div>
 
+      <!-- 🎨 テンプレートから新規生成 (HTML→PNG via html2canvas) -->
+      <div style="margin-top:1rem;padding-top:0.9rem;border-top:1px dashed rgba(168,85,247,0.3);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.5rem;">
+          <div style="font-size:0.85rem;color:#c084fc;font-weight:800;">🎨 テンプレートから新規生成</div>
+          <div style="font-size:0.7rem;color:#71717a;">フォーム入力 → 1080×1350 PNG → 自動アップロード</div>
+        </div>
+
+        <!-- テンプレート picker -->
+        <div id="tplPickerWrap" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.7rem;"></div>
+
+        <!-- form + preview の 2 カラム (mobile では縦積み) -->
+        <div id="tplGridLayout" style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;background:rgba(168,85,247,0.04);border:1px solid rgba(168,85,247,0.2);border-radius:10px;padding:0.8rem;">
+          <div>
+            <div style="font-size:0.72rem;color:#c084fc;font-weight:700;margin-bottom:0.4rem;">📝 入力フィールド</div>
+            <div id="tplFormFields" style="display:flex;flex-direction:column;gap:0.4rem;"></div>
+            <div style="margin-top:0.7rem;display:flex;gap:0.4rem;flex-wrap:wrap;">
+              <button id="tplResetBtn" style="background:rgba(255,255,255,0.06);color:#94a3b8;border:1px solid rgba(255,255,255,0.15);padding:0.45rem 0.8rem;border-radius:6px;font-size:0.74rem;font-weight:700;cursor:pointer;">↺ デフォルトに戻す</button>
+              <button id="tplSaveBtn" style="background:linear-gradient(135deg,#c084fc,#ec4899);color:#fff;border:none;padding:0.45rem 1rem;border-radius:6px;font-size:0.78rem;font-weight:800;cursor:pointer;">📤 PNG 生成 → アップロード</button>
+            </div>
+            <div id="tplSaveStatus" style="margin-top:0.5rem;font-size:0.74rem;"></div>
+          </div>
+          <div>
+            <div style="font-size:0.72rem;color:#c084fc;font-weight:700;margin-bottom:0.4rem;">👁 プレビュー (実寸 1080×1350 を 縮小表示)</div>
+            <div id="tplPreviewWrap" style="background:#000;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;aspect-ratio:4/5;">
+              <!-- 縮小プレビュー (実寸 div を transform: scale で縮小) -->
+              <div id="tplPreviewScaler" style="transform-origin:top left;"></div>
+            </div>
+          </div>
+        </div>
+        <!-- 実寸描画用の hidden div (1080x1350) — html2canvas で capture する元 -->
+        <div id="tplCanvasSource" style="position:absolute;left:-99999px;top:0;width:1080px;height:1350px;"></div>
+      </div>
+
       <!-- 📤 アップロード UI (drag-drop + file picker → GitHub commit) -->
       <div style="margin-top:1rem;padding-top:0.9rem;border-top:1px dashed rgba(236,72,153,0.25);">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.5rem;">
-          <div style="font-size:0.85rem;color:#f9a8d4;font-weight:800;">📤 新しい素材をアップロード</div>
+          <div style="font-size:0.85rem;color:#f9a8d4;font-weight:800;">📤 既存ファイルをアップロード</div>
           <div style="font-size:0.7rem;color:#71717a;">アップロード先: <strong id="mktUploadCampaignLabel" style="color:#ec4899;">threads</strong></div>
         </div>
         <div id="mktDropZone" style="border:2px dashed rgba(236,72,153,0.4);border-radius:10px;padding:1.2rem;text-align:center;cursor:pointer;background:rgba(236,72,153,0.04);transition:all 0.15s;">
@@ -753,6 +792,55 @@
         .mkt-asset-card > .mkt-dl-btn {
           grid-column: 1 / -1;
         }
+      }
+      /* テンプレート picker */
+      .tpl-pick-btn {
+        background: rgba(168,85,247,0.1);
+        color: #c084fc;
+        border: 1px solid rgba(168,85,247,0.3);
+        padding: 0.4rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .tpl-pick-btn:hover { background: rgba(168,85,247,0.18); }
+      .tpl-pick-btn.active {
+        background: rgba(168,85,247,0.32);
+        border-color: #c084fc;
+        color: #fff;
+      }
+      .tpl-form-row { display:flex; flex-direction:column; gap:0.2rem; }
+      .tpl-form-label { font-size:0.7rem; color:#94a3b8; font-weight:600; }
+      .tpl-form-input,
+      .tpl-form-textarea,
+      .tpl-form-select {
+        background: rgba(0,0,0,0.4);
+        border: 1px solid rgba(168,85,247,0.3);
+        color: #fff;
+        padding: 0.4rem 0.55rem;
+        border-radius: 5px;
+        font-size: 0.78rem;
+        font-family: inherit;
+      }
+      .tpl-form-textarea { min-height: 60px; resize: vertical; }
+      .tpl-form-color { padding: 0.15rem; height: 32px; }
+      /* color preset chips (ブランド配色 6 色) */
+      .tpl-color-presets { display:flex; gap:0.25rem; margin-top:0.2rem; flex-wrap:wrap; }
+      .tpl-color-preset {
+        width: 22px; height: 22px;
+        border-radius: 4px;
+        border: 1px solid rgba(255,255,255,0.2);
+        cursor: pointer;
+        padding: 0;
+        transition: transform 0.1s;
+      }
+      .tpl-color-preset:hover { transform: scale(1.15); border-color: #fff; }
+      /* mobile: form / preview 縦積み */
+      @media (max-width: 768px) {
+        #tplGridLayout { grid-template-columns: 1fr !important; }
+        #tplPreviewWrap { max-height: 420px; }
       }
     </style>
 
@@ -2667,6 +2755,417 @@
 
         // 初回ロード (admin 認証通過後)
         setTimeout(() => loadCampaign('threads'), 500);
+      })();
+
+      // 🎨 テンプレートから画像生成 (HTML → html2canvas → PNG → 既存 upload)
+      (function setupTemplateGenerator() {
+        const pickerWrap = document.getElementById('tplPickerWrap');
+        const formWrap = document.getElementById('tplFormFields');
+        const previewScaler = document.getElementById('tplPreviewScaler');
+        const previewWrap = document.getElementById('tplPreviewWrap');
+        const canvasSource = document.getElementById('tplCanvasSource');
+        const saveBtn = document.getElementById('tplSaveBtn');
+        const resetBtn = document.getElementById('tplResetBtn');
+        const statusEl = document.getElementById('tplSaveStatus');
+        if (!pickerWrap || !formWrap || !canvasSource) return;
+
+        function escapeHtml(s) {
+          if (s == null) return '';
+          return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+        }
+        function escapeAttr(s) { return escapeHtml(s); }
+        function nl2br(s) { return escapeHtml(s).replace(/\n/g, '<br>'); }
+        // CSS injection 防御: color 値は #RGB / #RRGGBB / #RRGGBBAA のみ許可、不正は #000000
+        function safeColor(s) {
+          const m = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.exec(String(s||'').trim());
+          return m ? '#' + m[1] : '#000000';
+        }
+        // ブランド配色プリセット (6 色: ai-juku 既存 LP / Threads / クーポン色)
+        const COLOR_PRESETS = ['#1e1b4b', '#0f172a', '#7c2d12', '#0c1f3a', '#1f0a36', '#000000'];
+        // 共通フォント定義 (Mac:Hiragino / Win:Yu Gothic / fallback:system-ui)
+        const TPL_FONT_FAMILY = "'Hiragino Sans','Yu Gothic',system-ui,-apple-system,sans-serif";
+
+        // ---------- テンプレ定義 ----------
+        // 各 template は: id, label, fields[{name, label, type, default, placeholder?}], render(values) → HTML
+        // render は 1080×1350 の固定サイズ前提 (実寸 div 内に flex/grid 配置)
+        const TEMPLATES = [
+          {
+            id: 'hero',
+            label: '🚀 ヒーロー',
+            fields: [
+              { name: 'badge', label: '🏷 上部バッジ (任意)', type: 'text', default: '創設メンバー 残り 50 名' },
+              { name: 'title', label: '📣 大タイトル', type: 'textarea', default: 'AI が一人ひとりに\n最適化する塾' },
+              { name: 'subtitle', label: '💬 サブタイトル', type: 'text', default: '24時間 AI チューター + 24教科担当' },
+              { name: 'price', label: '💎 大きい数字', type: 'text', default: '¥14,500' },
+              { name: 'priceLabel', label: '価格ラベル', type: 'text', default: '永年・全教科対応' },
+              { name: 'cta', label: '🎯 CTA テキスト', type: 'text', default: '7日間 完全無料 →' },
+              { name: 'bg', label: '背景色 (グラデ start)', type: 'color', default: '#1e1b4b' },
+              { name: 'accent', label: 'アクセント色', type: 'color', default: '#a78bfa' },
+            ],
+            render: (v) => `
+              <div style="width:1080px;height:1350px;background:linear-gradient(135deg,${safeColor(v.bg)} 0%,#000 100%);display:flex;flex-direction:column;justify-content:space-between;padding:80px 70px;font-family:${TPL_FONT_FAMILY};color:#fff;box-sizing:border-box;">
+                <div>
+                  ${v.badge ? `<div style="display:inline-block;background:${safeColor(v.accent)};color:#000;padding:12px 24px;border-radius:32px;font-weight:900;font-size:28px;">${escapeHtml(v.badge)}</div>` : ''}
+                  <div style="font-size:88px;font-weight:900;line-height:1.15;margin-top:60px;letter-spacing:-1px;">${nl2br(v.title)}</div>
+                  <div style="font-size:36px;color:${safeColor(v.accent)};margin-top:32px;font-weight:700;">${escapeHtml(v.subtitle)}</div>
+                </div>
+                <div>
+                  <div style="font-size:160px;font-weight:900;color:${safeColor(v.accent)};line-height:1;letter-spacing:-3px;">${escapeHtml(v.price)}</div>
+                  <div style="font-size:32px;color:#94a3b8;margin-top:8px;font-weight:700;">${escapeHtml(v.priceLabel)}</div>
+                </div>
+                <div style="background:linear-gradient(90deg,${safeColor(v.accent)},#ec4899);color:#fff;padding:32px 0;border-radius:18px;text-align:center;font-size:46px;font-weight:900;letter-spacing:1px;">${escapeHtml(v.cta)}</div>
+              </div>`,
+          },
+          {
+            id: 'features',
+            label: '💎 機能訴求',
+            fields: [
+              { name: 'title', label: '上部タイトル', type: 'text', default: 'AI 塾の 4 つの強み' },
+              { name: 'f1emoji', label: '機能1 絵文字', type: 'text', default: '🤖' },
+              { name: 'f1label', label: '機能1 名称', type: 'text', default: '24時間 AI チューター' },
+              { name: 'f1desc', label: '機能1 説明 (1-2行)', type: 'textarea', default: '深夜でも即答。\nわからない問題をいつでも質問。' },
+              { name: 'f2emoji', label: '機能2 絵文字', type: 'text', default: '📊' },
+              { name: 'f2label', label: '機能2 名称', type: 'text', default: '個別最適カリキュラム' },
+              { name: 'f2desc', label: '機能2 説明', type: 'textarea', default: '学年×目標×弱点で\n毎日違う最適問題を出題。' },
+              { name: 'f3emoji', label: '機能3 絵文字', type: 'text', default: '🎯' },
+              { name: 'f3label', label: '機能3 名称', type: 'text', default: '英語4試験 完全対応' },
+              { name: 'f3desc', label: '機能3 説明', type: 'textarea', default: 'TOEFL/TOEIC/IELTS/英検\n全試験対策が一つで完結。' },
+              { name: 'f4emoji', label: '機能4 絵文字', type: 'text', default: '👨‍👩‍👧' },
+              { name: 'f4label', label: '機能4 名称', type: 'text', default: '保護者レポート自動生成' },
+              { name: 'f4desc', label: '機能4 説明', type: 'textarea', default: '週次の進捗レポート。\n親子の対話を促進。' },
+              { name: 'bg', label: '背景色', type: 'color', default: '#0f172a' },
+            ],
+            render: (v) => `
+              <div style="width:1080px;height:1350px;background:linear-gradient(180deg,${safeColor(v.bg)} 0%,#000 100%);padding:80px 60px;font-family:${TPL_FONT_FAMILY};color:#fff;box-sizing:border-box;">
+                <div style="font-size:64px;font-weight:900;text-align:center;margin-bottom:50px;background:linear-gradient(90deg,#a78bfa,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">${escapeHtml(v.title)}</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;">
+                  ${[1,2,3,4].map(i => `
+                    <div style="background:rgba(167,139,250,0.08);border:2px solid rgba(167,139,250,0.3);border-radius:24px;padding:32px;">
+                      <div style="font-size:88px;line-height:1;margin-bottom:16px;">${escapeHtml(v['f'+i+'emoji'])}</div>
+                      <div style="font-size:34px;font-weight:900;color:#a78bfa;margin-bottom:12px;line-height:1.2;">${escapeHtml(v['f'+i+'label'])}</div>
+                      <div style="font-size:24px;color:#cbd5e1;line-height:1.5;font-weight:600;">${nl2br(v['f'+i+'desc'])}</div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>`,
+          },
+          {
+            id: 'coupon',
+            label: '🎟 クーポン告知',
+            fields: [
+              { name: 'campaign', label: 'キャンペーン名', type: 'text', default: 'Threads フォロワー限定' },
+              { name: 'amount', label: '大きい割引額', type: 'text', default: '¥2,500' },
+              { name: 'amountLabel', label: '割引ラベル', type: 'text', default: '永年 OFF' },
+              { name: 'code', label: 'クーポンコード', type: 'text', default: 'THREADS6K' },
+              { name: 'period', label: '期間 (任意)', type: 'text', default: '無期限・先着 6,000 名' },
+              { name: 'note', label: '注意書き (任意)', type: 'textarea', default: 'チェックアウト時にコード入力で\n¥14,500 → ¥12,000 が永年継続' },
+              { name: 'bg', label: '背景色', type: 'color', default: '#7c2d12' },
+              { name: 'accent', label: 'アクセント色', type: 'color', default: '#fbbf24' },
+            ],
+            render: (v) => `
+              <div style="width:1080px;height:1350px;background:linear-gradient(135deg,${safeColor(v.bg)},#000);padding:80px 60px;font-family:${TPL_FONT_FAMILY};color:#fff;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;">
+                <div style="text-align:center;">
+                  <div style="display:inline-block;font-size:32px;font-weight:900;background:${safeColor(v.accent)};color:#000;padding:14px 32px;border-radius:40px;">🎟 ${escapeHtml(v.campaign)}</div>
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-size:240px;font-weight:900;color:${safeColor(v.accent)};line-height:0.9;letter-spacing:-5px;">${escapeHtml(v.amount)}</div>
+                  <div style="font-size:64px;font-weight:900;margin-top:20px;">${escapeHtml(v.amountLabel)}</div>
+                </div>
+                <div style="text-align:center;background:rgba(255,255,255,0.08);border:3px dashed ${safeColor(v.accent)};border-radius:24px;padding:36px;">
+                  <div style="font-size:24px;color:#cbd5e1;margin-bottom:12px;font-weight:700;">クーポンコード</div>
+                  <div style="font-size:80px;font-weight:900;letter-spacing:8px;color:${safeColor(v.accent)};font-family:'SF Mono','Menlo',monospace;">${escapeHtml(v.code)}</div>
+                  ${v.period ? `<div style="font-size:24px;color:#94a3b8;margin-top:14px;">${escapeHtml(v.period)}</div>` : ''}
+                </div>
+                ${v.note ? `<div style="font-size:26px;color:#cbd5e1;text-align:center;line-height:1.5;font-weight:600;">${nl2br(v.note)}</div>` : ''}
+              </div>`,
+          },
+          {
+            id: 'kpi',
+            label: '📊 実績訴求',
+            fields: [
+              { name: 'title', label: '上部タイトル', type: 'text', default: '創設メンバーの実績' },
+              { name: 'k1num', label: 'KPI1 数字', type: 'text', default: '50' },
+              { name: 'k1unit', label: 'KPI1 単位', type: 'text', default: '名' },
+              { name: 'k1label', label: 'KPI1 ラベル', type: 'text', default: '創設メンバー' },
+              { name: 'k2num', label: 'KPI2 数字', type: 'text', default: '24' },
+              { name: 'k2unit', label: 'KPI2 単位', type: 'text', default: '時間' },
+              { name: 'k2label', label: 'KPI2 ラベル', type: 'text', default: 'AI 即応答' },
+              { name: 'k3num', label: 'KPI3 数字', type: 'text', default: '4' },
+              { name: 'k3unit', label: 'KPI3 単位', type: 'text', default: '試験' },
+              { name: 'k3label', label: 'KPI3 ラベル', type: 'text', default: '英語完全対応' },
+              { name: 'cta', label: 'CTA', type: 'text', default: '7日間 完全無料 →' },
+              { name: 'bg', label: '背景色', type: 'color', default: '#0c1f3a' },
+            ],
+            render: (v) => `
+              <div style="width:1080px;height:1350px;background:linear-gradient(135deg,${safeColor(v.bg)},#000);padding:90px 70px;font-family:${TPL_FONT_FAMILY};color:#fff;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;">
+                <div style="font-size:60px;font-weight:900;text-align:center;background:linear-gradient(90deg,#22d3ee,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">${escapeHtml(v.title)}</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;">
+                  ${[1,2,3].map(i => `
+                    <div style="background:rgba(34,211,238,0.08);border:2px solid rgba(34,211,238,0.4);border-radius:24px;padding:36px 16px;text-align:center;">
+                      <div style="font-size:140px;font-weight:900;color:#22d3ee;line-height:1;letter-spacing:-3px;">${escapeHtml(v['k'+i+'num'])}</div>
+                      <div style="font-size:32px;color:#22d3ee;font-weight:700;margin-top:6px;">${escapeHtml(v['k'+i+'unit'])}</div>
+                      <div style="font-size:28px;color:#cbd5e1;margin-top:18px;font-weight:700;line-height:1.3;">${escapeHtml(v['k'+i+'label'])}</div>
+                    </div>
+                  `).join('')}
+                </div>
+                <div style="background:linear-gradient(90deg,#22d3ee,#a78bfa);color:#000;padding:34px 0;border-radius:20px;text-align:center;font-size:50px;font-weight:900;">${escapeHtml(v.cta)}</div>
+              </div>`,
+          },
+          {
+            id: 'qa',
+            label: '❓ Q&A',
+            fields: [
+              { name: 'q', label: '❓ 質問テキスト', type: 'textarea', default: '塾に通う時間が無い\n部活と両立できる?' },
+              { name: 'a', label: '💡 回答テキスト', type: 'textarea', default: 'AI チューターは深夜でも即答。\n部活の後・通学電車の中・休み時間—\n好きな時に 5 分から学習できます。' },
+              { name: 'cta', label: 'CTA (任意)', type: 'text', default: '詳しくはプロフィールから →' },
+              { name: 'bg', label: '背景色', type: 'color', default: '#1f0a36' },
+              { name: 'accent', label: 'アクセント色', type: 'color', default: '#ec4899' },
+            ],
+            render: (v) => `
+              <div style="width:1080px;height:1350px;background:linear-gradient(135deg,${safeColor(v.bg)},#000);padding:90px 70px;font-family:${TPL_FONT_FAMILY};color:#fff;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;">
+                <div>
+                  <div style="font-size:140px;font-weight:900;color:${safeColor(v.accent)};line-height:1;">Q.</div>
+                  <div style="font-size:60px;font-weight:900;line-height:1.4;margin-top:12px;">${nl2br(v.q)}</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.06);border-left:8px solid ${safeColor(v.accent)};border-radius:0 16px 16px 0;padding:36px 40px;">
+                  <div style="font-size:48px;font-weight:900;color:${safeColor(v.accent)};line-height:1;margin-bottom:20px;">A.</div>
+                  <div style="font-size:36px;line-height:1.6;font-weight:600;color:#e4e4e7;">${nl2br(v.a)}</div>
+                </div>
+                <div style="text-align:center;font-size:34px;font-weight:800;color:${safeColor(v.accent)};">${escapeHtml(v.cta)}</div>
+              </div>`,
+          },
+        ];
+
+        let currentTpl = TEMPLATES[0];
+        let values = {};
+
+        function renderPicker() {
+          pickerWrap.innerHTML = TEMPLATES.map(t =>
+            `<button class="tpl-pick-btn ${t.id === currentTpl.id ? 'active' : ''}" data-tpl="${escapeAttr(t.id)}">${escapeHtml(t.label)}</button>`
+          ).join('');
+          pickerWrap.querySelectorAll('.tpl-pick-btn').forEach(b => {
+            b.addEventListener('click', () => {
+              const t = TEMPLATES.find(x => x.id === b.dataset.tpl);
+              if (t) selectTemplate(t);
+            });
+          });
+        }
+
+        function selectTemplate(tpl) {
+          currentTpl = tpl;
+          values = Object.fromEntries(tpl.fields.map(f => [f.name, f.default]));
+          renderPicker();
+          renderForm();
+          updatePreview();
+        }
+
+        function renderForm() {
+          formWrap.innerHTML = currentTpl.fields.map(f => {
+            const id = `tplF_${currentTpl.id}_${f.name}`;
+            const val = values[f.name] != null ? values[f.name] : (f.default || '');
+            let input = '';
+            if (f.type === 'textarea') {
+              input = `<textarea id="${id}" class="tpl-form-textarea" data-name="${escapeAttr(f.name)}" placeholder="${escapeAttr(f.placeholder || '')}">${escapeHtml(val)}</textarea>`;
+            } else if (f.type === 'color') {
+              const presetChips = COLOR_PRESETS.map(c =>
+                `<button type="button" class="tpl-color-preset" data-target="${id}" data-color="${escapeAttr(c)}" style="background:${safeColor(c)};" title="${escapeAttr(c)}"></button>`
+              ).join('');
+              input = `<div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
+                <input type="color" id="${id}" class="tpl-form-input tpl-form-color" data-name="${escapeAttr(f.name)}" value="${safeColor(val)}">
+                <div class="tpl-color-presets">${presetChips}</div>
+              </div>`;
+            } else {
+              input = `<input type="text" id="${id}" class="tpl-form-input" data-name="${escapeAttr(f.name)}" value="${escapeAttr(val)}" placeholder="${escapeAttr(f.placeholder || '')}">`;
+            }
+            return `<div class="tpl-form-row"><label class="tpl-form-label" for="${id}">${escapeHtml(f.label)}</label>${input}</div>`;
+          }).join('');
+
+          // Debounce + IME 対応の input handler
+          let debounceT = null;
+          let isComposing = false;  // IME 変換中フラグ
+          formWrap.querySelectorAll('input,textarea').forEach(el => {
+            el.addEventListener('compositionstart', () => { isComposing = true; });
+            el.addEventListener('compositionend', () => {
+              isComposing = false;
+              values[el.dataset.name] = el.value;
+              scheduleUpdate();
+            });
+            el.addEventListener('input', () => {
+              if (isComposing) return;  // IME 変換中は preview 更新しない (日本語崩れ防止)
+              values[el.dataset.name] = el.value;
+              scheduleUpdate();
+            });
+            // color input は change/input ともに即反映 (IME 関係なし)
+            if (el.type === 'color') {
+              el.addEventListener('change', () => {
+                values[el.dataset.name] = el.value;
+                updatePreview();
+              });
+            }
+          });
+
+          function scheduleUpdate() {
+            clearTimeout(debounceT);
+            debounceT = setTimeout(updatePreview, 200);  // 200ms debounce
+          }
+
+          // color preset chips → 対応 color input にセット + 再描画
+          formWrap.querySelectorAll('.tpl-color-preset').forEach(chip => {
+            chip.addEventListener('click', () => {
+              const targetId = chip.dataset.target;
+              const colorEl = document.getElementById(targetId);
+              if (!colorEl) return;
+              colorEl.value = chip.dataset.color;
+              values[colorEl.dataset.name] = chip.dataset.color;
+              updatePreview();
+            });
+          });
+        }
+
+        function updatePreview() {
+          const html = currentTpl.render(values);
+          canvasSource.innerHTML = html;
+          previewScaler.innerHTML = html;
+          // 0/負値 防御 (display:none 親や font 未読込時の race condition 対策)
+          const wrapWidth = Math.max(previewWrap.clientWidth - 4, 100);
+          const scale = Math.max(wrapWidth / 1080, 0.05);
+          previewScaler.style.transform = `scale(${scale})`;
+          previewScaler.style.transformOrigin = 'top left';
+          previewScaler.style.width = '1080px';
+          previewScaler.style.height = '1350px';
+          previewWrap.style.height = (1350 * scale) + 'px';
+        }
+
+        // resize は debounce 150ms (drag resize 中の高頻度発火抑制)
+        let resizeT = null;
+        window.addEventListener('resize', () => {
+          clearTimeout(resizeT);
+          resizeT = setTimeout(updatePreview, 150);
+        });
+
+        // ↺ デフォルトに戻す
+        resetBtn?.addEventListener('click', () => {
+          values = Object.fromEntries(currentTpl.fields.map(f => [f.name, f.default]));
+          renderForm();
+          updatePreview();
+        });
+
+        // CDN 失敗時は saveBtn を grey-out + クリックも無効化
+        function checkCdnAvailable() {
+          if (window.__html2canvasFailed || typeof html2canvas !== 'function') {
+            saveBtn.disabled = true;
+            saveBtn.style.opacity = '0.4';
+            saveBtn.title = 'html2canvas CDN 読込失敗。ネット接続確認 or リロード';
+            statusEl.innerHTML = '<span style="color:#fbbf24;">⚠️ html2canvas CDN 未読込 — ページリロード推奨</span>';
+            return false;
+          }
+          return true;
+        }
+
+        // template id → 日本語ラベル (ファイル名表示用)
+        const TPL_ID_TO_JA = {
+          hero: 'ヒーロー', features: '機能訴求', coupon: 'クーポン',
+          kpi: '実績', qa: 'QA',
+        };
+
+        // ファイル名生成: tpl-{id}-{YYYYMMDD-HHMM}-{title 先頭 12 字 sanitized}.png
+        function buildFilename() {
+          const now = new Date();
+          const pad = n => String(n).padStart(2, '0');
+          const dt = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
+          // title 系 field から ASCII 化
+          const titleRaw = String(values.title || values.q || values.campaign || '').slice(0, 30);
+          const titleAscii = titleRaw.replace(/[^a-zA-Z0-9]/g, '').slice(0, 12);
+          const slug = titleAscii ? `-${titleAscii}` : '';
+          return `tpl-${currentTpl.id}-${dt}${slug}.png`;
+        }
+
+        // 📤 PNG 生成 → 既存 upload エンドポイントへ POST
+        saveBtn?.addEventListener('click', async () => {
+          if (!checkCdnAvailable()) return;
+
+          const activeTab = document.querySelector('.mkt-tab-btn.active');
+          const campaign = (activeTab && activeTab.dataset.campaign) || 'threads';
+          const orig = saveBtn.textContent;
+          saveBtn.disabled = true;
+          saveBtn.textContent = '⏳ PNG 生成中...';
+          statusEl.innerHTML = '';
+
+          try {
+            const targetEl = canvasSource.firstElementChild;
+            if (!targetEl) throw new Error('テンプレ要素無し');
+            const canvas = await html2canvas(targetEl, {
+              width: 1080,
+              height: 1350,
+              scale: 1,
+              backgroundColor: null,
+              logging: false,
+              useCORS: true,
+            });
+            const blob = await new Promise((resolve, reject) => {
+              canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob 失敗 (canvas タイント可能性)')), 'image/png');
+            });
+            saveBtn.textContent = '⏳ アップロード中...';
+
+            const filename = buildFilename();
+            const fd = new FormData();
+            fd.append('file', new File([blob], filename, { type: 'image/png' }));
+            fd.append('overwrite', 'false');
+
+            const res = await window.AdminAuth.fetch(
+              `/api/admin/marketing-assets/${encodeURIComponent(campaign)}/upload`,
+              { method: 'POST', body: fd }
+            );
+            if (!res.ok) {
+              const raw = await res.text().catch(() => '');
+              const userMsg = res.status === 413 ? '画像が 10MB 超 (テンプレ複雑度を下げて再生成)'
+                : res.status === 409 ? '同名既存 (時刻が同分内なら待って再試行)'
+                : res.status === 401 ? '認証切れ (再ログイン)'
+                : res.status === 429 ? 'アップロード上限 (5/分)。しばらく待って再試行'
+                : `HTTP ${res.status}: ${raw.slice(0, 80)}`;
+              throw new Error(userMsg);
+            }
+            const data = await res.json();
+            // 成功表示 + 連続生成 / 既存 list reload ボタン
+            const tplJa = TPL_ID_TO_JA[currentTpl.id] || currentTpl.id;
+            statusEl.innerHTML = `
+              <div style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);border-radius:6px;padding:0.5rem;color:#34d399;line-height:1.5;">
+                ✅ ${escapeHtml(tplJa)} を <strong>${escapeHtml(campaign)}</strong> に保存
+                <div style="font-family:ui-monospace,monospace;font-size:0.7rem;color:#94a3b8;margin-top:0.2rem;">${escapeHtml(filename)} (commit ${escapeHtml(data.commit_sha || '')})</div>
+                <div style="margin-top:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;">
+                  <button id="tplNextSameBtn" style="background:rgba(34,211,153,0.25);color:#34d399;border:1px solid rgba(52,211,153,0.4);padding:0.35rem 0.7rem;border-radius:5px;font-size:0.72rem;font-weight:700;cursor:pointer;">📋 同じテンプレで次を作る</button>
+                  <button id="tplReloadListBtn" style="background:rgba(168,85,247,0.2);color:#c084fc;border:1px solid rgba(168,85,247,0.4);padding:0.35rem 0.7rem;border-radius:5px;font-size:0.72rem;font-weight:700;cursor:pointer;">🔄 反映確認 (list 再読込)</button>
+                </div>
+              </div>`;
+            // 連続生成: form は維持 (塾長は 1 文字書き換えて再保存するパターン多い)
+            document.getElementById('tplNextSameBtn')?.addEventListener('click', () => {
+              statusEl.innerHTML = '<span style="color:#94a3b8;">↺ form を編集して再保存できます</span>';
+            });
+            document.getElementById('tplReloadListBtn')?.addEventListener('click', () => {
+              const reloadBtn = document.querySelector('.mkt-tab-btn.active');
+              if (reloadBtn) reloadBtn.click();  // marketing-assets の loadCampaign 発火
+            });
+            // 自動 reload: 2.5 分後に list 再読込 (Vercel + Railway redeploy 完了後)
+            setTimeout(() => {
+              const stillActive = document.querySelector(`.mkt-tab-btn.active[data-campaign="${campaign}"]`);
+              if (stillActive) stillActive.click();  // 同じ campaign tab がまだ active なら refresh
+            }, 150000);
+          } catch (e) {
+            console.error('[tpl-save]', e);
+            statusEl.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml((e.message || String(e)).substring(0, 200))}</span>
+              <button id="tplRetryBtn" style="margin-left:0.5rem;background:rgba(236,72,153,0.2);color:#f9a8d4;border:1px solid rgba(236,72,153,0.4);padding:0.25rem 0.6rem;border-radius:4px;font-size:0.7rem;font-weight:700;cursor:pointer;">🔄 再試行</button>`;
+            document.getElementById('tplRetryBtn')?.addEventListener('click', () => saveBtn.click());
+          } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = orig;
+          }
+        });
+
+        // 初期化 (font 読込完了後 + 1 frame 待って scale 計算正確に)
+        selectTemplate(TEMPLATES[0]);
+        requestAnimationFrame(() => requestAnimationFrame(updatePreview));
+        // CDN 状態を初期表示
+        setTimeout(checkCdnAvailable, 100);
       })();
 
       // 📱 QR コード発行
