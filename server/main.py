@@ -4093,6 +4093,7 @@ EXAM_QUESTION_ROTATION = [
     ("daigaku", "w_essay",       "kyodai"),
     ("daigaku", "r_long",        "osaka"),
     ("daigaku", "w_essay",       "osaka"),
+    ("daigaku", "g_grammar",     "osaka"),
     ("daigaku", "r_long",        "tokoda"),
     ("daigaku", "r_long",        "hitotsu"),
     ("daigaku", "r_translation", "hitotsu"),
@@ -4100,6 +4101,7 @@ EXAM_QUESTION_ROTATION = [
     # 私立 早慶上智ICU
     ("daigaku", "r_long",        "waseda"),
     ("daigaku", "w_essay",       "waseda"),
+    ("daigaku", "g_grammar",     "waseda"),
     ("daigaku", "r_long",        "keio"),
     ("daigaku", "w_essay",       "keio"),
     ("daigaku", "r_long",        "sophia"),
