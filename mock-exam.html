@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>完全模試 | AI学習コーチ塾</title>
+  <script src="cache-purge.js?v=20260503-mock-exam-init"></script>
+  <script src="frontend-error-monitor.js"></script>
+  <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost-r2">
+  <link rel="stylesheet" href="mock-exam.css?v=20260503-init">
+  <script src="analytics.js" defer></script>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="lp.html" class="nav-logo">
+        <span class="logo-icon">🎓</span>
+        <span class="logo-text">AI学習コーチ塾</span>
+      </a>
+      <div class="nav-cta">
+        <a href="mypage.html" class="btn-ghost">マイページ</a>
+        <a href="lp.html" class="btn-ghost">トップ</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="me-container">
+    <!-- Step 1: 模試選択画面 -->
+    <section id="meSetup" class="me-section">
+      <div class="me-header">
+        <div class="eyebrow">🎯 完全模試 Mock Exam</div>
+        <h1>本番想定の模試を AI が動的生成</h1>
+        <p class="me-sub">
+          蓄積した <strong id="totalQ">1,170+</strong> 問の問題プールから、志望校・級に合わせて模試を組み立て。<br>
+          時間制限・自動採点・偏差値推定まで完全対応。
+        </p>
+      </div>
+
+      <div class="me-templates" id="meTemplates">
+        <!-- JS で動的生成 -->
+        <div class="me-loading">読み込み中...</div>
+      </div>
+    </section>
+
+    <!-- Step 2: 受験画面 -->
+    <section id="meExam" class="me-section" style="display:none;">
+      <div class="me-exam-header">
+        <div class="me-exam-title" id="meTitle">模試</div>
+        <div class="me-exam-timer">
+          <span class="me-timer-label">残り時間</span>
+          <span class="me-timer-value" id="meTimer">--:--</span>
+        </div>
+      </div>
+      <div class="me-progress">
+        <span id="meProgressLabel">0 / 0 問完了</span>
+        <div class="me-progress-bar"><div id="meProgressFill" class="me-progress-fill"></div></div>
+      </div>
+      <div id="meSections" class="me-sections-wrap"></div>
+      <div class="me-submit-row">
+        <button id="meSubmitBtn" class="btn-primary btn-lg">📊 採点する</button>
+      </div>
+    </section>
+
+    <!-- Step 3: 結果画面 -->
+    <section id="meResult" class="me-section" style="display:none;">
+      <div class="me-result-header">
+        <div class="me-result-emoji">🎉</div>
+        <h2 id="meResultTitle">採点完了</h2>
+      </div>
+      <div class="me-score-cards">
+        <div class="me-score-card me-score-main">
+          <div class="me-score-label">総合得点</div>
+          <div class="me-score-value"><span id="meScoreTotal">--</span><span class="me-score-max">/<span id="meScoreMax">--</span></span></div>
+          <div class="me-score-pct"><span id="meScorePct">--</span>%</div>
+        </div>
+        <div class="me-score-card me-score-deviation">
+          <div class="me-score-label">偏差値推定</div>
+          <div class="me-score-value" id="meDeviation">--</div>
+          <div class="me-score-note">※ 60% で 50、80% で 60 の簡易推定</div>
+        </div>
+      </div>
+      <div class="me-section-scores">
+        <h3>セクション別得点</h3>
+        <div id="meSectionList"></div>
+      </div>
+      <div class="me-result-actions">
+        <button id="meRetryBtn" class="btn-secondary btn-lg">もう一度挑戦</button>
+        <a href="vocab.html" class="btn-primary btn-lg">📚 弱点を単語帳で復習 →</a>
+      </div>
+      <div class="me-share">
+        <p class="me-share-prompt">📣 結果をシェア</p>
+        <button id="meShareTwitter" class="btn-ghost">𝕏 Twitter にシェア</button>
+        <button id="meShareThreads" class="btn-ghost">🟣 Threads にシェア</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="mock-exam.js?v=20260503-init"></script>
+</body>
+</html>

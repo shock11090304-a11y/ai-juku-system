@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI単語帳 | AI学習コーチ塾</title>
+  <script src="cache-purge.js?v=20260503-vocab-init"></script>
+  <script src="frontend-error-monitor.js"></script>
+  <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost-r2">
+  <link rel="stylesheet" href="vocab.css?v=20260503-init">
+  <script src="analytics.js" defer></script>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="lp.html" class="nav-logo">
+        <span class="logo-icon">🎓</span>
+        <span class="logo-text">AI学習コーチ塾</span>
+      </a>
+      <div class="nav-cta">
+        <a href="mypage.html" class="btn-ghost">マイページ</a>
+        <a href="mock-exam.html" class="btn-ghost">🎯 模試</a>
+        <a href="lp.html" class="btn-ghost">トップ</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="vc-container">
+    <!-- Step 1: 級・大学レベル選択 -->
+    <section id="vcSetup" class="vc-section">
+      <div class="vc-header">
+        <div class="eyebrow">📚 AI 単語帳</div>
+        <h1>エビングハウス曲線で<br><span class="gradient-text">忘却タイミングに最適化</span></h1>
+        <p class="vc-sub">
+          Leitner Box (1日→3日→7日→21日→60日) の科学的復習スケジュールで、<br>
+          一度覚えた単語を確実に長期記憶へ。
+        </p>
+      </div>
+
+      <div class="vc-stats" id="vcStatsCard" style="display:none;">
+        <div class="vc-stat-row">
+          <div class="vc-stat-cell">
+            <div class="vc-stat-num" id="vcDueNow">--</div>
+            <div class="vc-stat-label">今復習すべき</div>
+          </div>
+          <div class="vc-stat-cell">
+            <div class="vc-stat-num" id="vcMastered">--</div>
+            <div class="vc-stat-label">習得済み (Box5)</div>
+          </div>
+          <div class="vc-stat-cell">
+            <div class="vc-stat-num" id="vcAccuracy">--</div>
+            <div class="vc-stat-label">正答率 (%)</div>
+          </div>
+          <div class="vc-stat-cell">
+            <div class="vc-stat-num" id="vcTotal">--</div>
+            <div class="vc-stat-label">総単語数</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="vc-level-picker">
+        <h3>レベル選択</h3>
+        <div class="vc-level-buttons">
+          <button class="vc-level-btn" data-level="">全レベル</button>
+          <button class="vc-level-btn" data-level="eiken_g3">英検3級</button>
+          <button class="vc-level-btn" data-level="eiken_gp2">英検準2級</button>
+          <button class="vc-level-btn" data-level="eiken_g2">英検2級</button>
+          <button class="vc-level-btn" data-level="eiken_gp1">英検準1級</button>
+          <button class="vc-level-btn" data-level="eiken_g1">英検1級</button>
+          <button class="vc-level-btn" data-level="kyotsu">共通テスト</button>
+          <button class="vc-level-btn" data-level="todai_kyodai">難関国立</button>
+        </div>
+      </div>
+
+      <div class="vc-actions">
+        <button id="vcStartBtn" class="btn-primary btn-lg">📖 復習を開始 →</button>
+      </div>
+    </section>
+
+    <!-- Step 2: カード復習画面 -->
+    <section id="vcReview" class="vc-section" style="display:none;">
+      <div class="vc-review-header">
+        <span id="vcQueueCount">単語 0/0</span>
+        <button id="vcExitBtn" class="btn-ghost btn-small">終了</button>
+      </div>
+
+      <div class="vc-card-wrap">
+        <div class="vc-card" id="vcCard">
+          <div class="vc-card-front" id="vcCardFront">
+            <div class="vc-card-pos" id="vcCardPos"></div>
+            <div class="vc-card-word" id="vcCardWord">--</div>
+            <button class="vc-show-btn" id="vcShowBtn">意味を見る</button>
+          </div>
+          <div class="vc-card-back" id="vcCardBack" style="display:none;">
+            <div class="vc-card-meaning" id="vcCardMeaning"></div>
+            <div class="vc-card-example" id="vcCardExample"></div>
+            <div class="vc-card-example-jp" id="vcCardExampleJp"></div>
+            <div class="vc-grade-buttons">
+              <button class="vc-grade-btn vc-grade-no" id="vcGradeNo">❌ 知らなかった</button>
+              <button class="vc-grade-btn vc-grade-yes" id="vcGradeYes">✅ 知っていた</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="vc-progress-info">
+        <span id="vcCurrentBox">Box: --</span> ·
+        <span id="vcCurrentLevel">レベル: --</span>
+      </div>
+    </section>
+
+    <!-- Step 3: 完了画面 -->
+    <section id="vcComplete" class="vc-section" style="display:none;">
+      <div class="vc-complete-emoji">🎉</div>
+      <h2>本日の復習完了!</h2>
+      <p>復習した単語: <strong id="vcReviewedCount">0</strong> 単語</p>
+      <p>正答: <strong id="vcCorrectCount">0</strong> 単語</p>
+      <div class="vc-complete-actions">
+        <button id="vcContinueBtn" class="btn-secondary btn-lg">続けて学習</button>
+        <a href="mock-exam.html" class="btn-primary btn-lg">🎯 模試で試す →</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="vocab.js?v=20260503-init"></script>
+</body>
+</html>

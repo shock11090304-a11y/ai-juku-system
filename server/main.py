@@ -465,6 +465,47 @@ def init_db():
         used_count INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY (student_id, feature, year_month)
     );
+    CREATE TABLE IF NOT EXISTS mock_exam_sessions (
+        id {pk},
+        student_id INTEGER,
+        exam_type TEXT NOT NULL,
+        target_label TEXT,
+        duration_min INTEGER,
+        started_at TIMESTAMP,
+        submitted_at TIMESTAMP,
+        score_total INTEGER,
+        score_max INTEGER,
+        deviation_estimate REAL,
+        section_scores TEXT,
+        questions_json TEXT NOT NULL,
+        answers_json TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_mock_exam_student ON mock_exam_sessions(student_id, created_at);
+    CREATE TABLE IF NOT EXISTS vocab_words (
+        id {pk},
+        word TEXT UNIQUE NOT NULL,
+        pos TEXT,
+        meaning_jp TEXT NOT NULL,
+        example_en TEXT,
+        example_jp TEXT,
+        level TEXT NOT NULL,
+        tags TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_vocab_words_level ON vocab_words(level);
+    CREATE TABLE IF NOT EXISTS vocab_progress (
+        id {pk},
+        student_id INTEGER NOT NULL,
+        word_id INTEGER NOT NULL,
+        box INTEGER DEFAULT 1,
+        next_review_at TIMESTAMP,
+        last_reviewed_at TIMESTAMP,
+        review_count INTEGER DEFAULT 0,
+        correct_count INTEGER DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS idx_vocab_progress_unique ON vocab_progress(student_id, word_id);
+    CREATE INDEX IF NOT EXISTS idx_vocab_progress_due ON vocab_progress(student_id, next_review_at);
     CREATE INDEX IF NOT EXISTS idx_events_session ON events(session_id, created_at);
     CREATE INDEX IF NOT EXISTS idx_students_status ON students(status);
     CREATE INDEX IF NOT EXISTS idx_otp_student ON otp_codes(student_id, used_at, expires_at);
@@ -11096,6 +11137,435 @@ def admin_marketing_assets_zip(
             "Content-Length": str(zip_size),
         },
     )
+
+
+# ==========================================================================
+# 🎯 Mock Exam (完全模試) — 受験者層集客強化機能 (2026-05-03)
+# 1171問プールから動的に試験を組み立て、本番想定で受験させる
+# ==========================================================================
+
+# 模試テンプレート: exam_type → セクション構成
+MOCK_EXAM_TEMPLATES = {
+    "kyotsu": {
+        "label": "共通テスト英語 (リーディング相当)",
+        "duration_min": 80,
+        "sections": [
+            {"name": "短文読解", "exam_id": "daigaku", "part_key": "r_short", "eiken_grade": "kyotsu", "count": 2, "points_per": 6},
+            {"name": "長文読解", "exam_id": "daigaku", "part_key": "r_long", "eiken_grade": "kyotsu", "count": 3, "points_per": 8},
+        ],
+    },
+    "todai": {
+        "label": "東京大学 英語 (大問抜粋)",
+        "duration_min": 90,
+        "sections": [
+            {"name": "要約 (大問1B)", "exam_id": "daigaku", "part_key": "r_summary", "eiken_grade": "todai", "count": 1, "points_per": 15},
+            {"name": "長文読解", "exam_id": "daigaku", "part_key": "r_long", "eiken_grade": "todai", "count": 2, "points_per": 12},
+            {"name": "和訳", "exam_id": "daigaku", "part_key": "r_translation", "eiken_grade": "todai", "count": 2, "points_per": 12},
+        ],
+    },
+    "kyodai": {
+        "label": "京都大学 英語 (大問抜粋)",
+        "duration_min": 90,
+        "sections": [
+            {"name": "長文読解", "exam_id": "daigaku", "part_key": "r_long", "eiken_grade": "kyodai", "count": 2, "points_per": 14},
+            {"name": "和訳", "exam_id": "daigaku", "part_key": "r_translation", "eiken_grade": "kyodai", "count": 2, "points_per": 14},
+        ],
+    },
+    "waseda": {
+        "label": "早稲田大学 英語 (商/政経 想定)",
+        "duration_min": 75,
+        "sections": [
+            {"name": "長文読解", "exam_id": "daigaku", "part_key": "r_long", "eiken_grade": "waseda", "count": 3, "points_per": 10},
+            {"name": "文法", "exam_id": "daigaku", "part_key": "g_grammar", "eiken_grade": "waseda", "count": 1, "points_per": 6},
+        ],
+    },
+    "keio": {
+        "label": "慶應義塾大学 英語 (経済/商 想定)",
+        "duration_min": 75,
+        "sections": [
+            {"name": "長文読解", "exam_id": "daigaku", "part_key": "r_long", "eiken_grade": "keio", "count": 3, "points_per": 10},
+        ],
+    },
+    "eiken_g2": {
+        "label": "英検2級 模試 (リーディング)",
+        "duration_min": 60,
+        "sections": [
+            {"name": "短文穴埋め", "exam_id": "eiken", "part_key": "r_q1", "eiken_grade": "g2", "count": 3, "points_per": 4},
+            {"name": "長文読解", "exam_id": "eiken", "part_key": "r_q3", "eiken_grade": "g2", "count": 2, "points_per": 8},
+            {"name": "内容一致型", "exam_id": "eiken", "part_key": "r_q3b", "eiken_grade": "g2", "count": 1, "points_per": 6},
+        ],
+    },
+    "eiken_gp1": {
+        "label": "英検準1級 模試 (リーディング)",
+        "duration_min": 70,
+        "sections": [
+            {"name": "短文穴埋め", "exam_id": "eiken", "part_key": "r_q1", "eiken_grade": "gp1", "count": 3, "points_per": 4},
+            {"name": "長文読解", "exam_id": "eiken", "part_key": "r_q3", "eiken_grade": "gp1", "count": 2, "points_per": 8},
+        ],
+    },
+    "eiken_g1": {
+        "label": "英検1級 模試 (リーディング)",
+        "duration_min": 80,
+        "sections": [
+            {"name": "短文穴埋め", "exam_id": "eiken", "part_key": "r_q1", "eiken_grade": "g1", "count": 3, "points_per": 5},
+            {"name": "長文読解", "exam_id": "eiken", "part_key": "r_q3", "eiken_grade": "g1", "count": 2, "points_per": 10},
+        ],
+    },
+}
+
+
+@app.get("/api/mock-exam/templates")
+def mock_exam_templates():
+    """利用可能な模試テンプレート一覧 (LP/UI セレクト用)。"""
+    out = []
+    for k, v in MOCK_EXAM_TEMPLATES.items():
+        section_total = sum(s["count"] * s["points_per"] for s in v["sections"])
+        out.append({
+            "exam_type": k,
+            "label": v["label"],
+            "duration_min": v["duration_min"],
+            "max_score": section_total,
+            "section_count": len(v["sections"]),
+        })
+    return {"templates": out}
+
+
+@app.post("/api/mock-exam/generate")
+def mock_exam_generate(payload: dict):
+    """模試を動的に生成。
+    payload: {"exam_type": "kyotsu" | "todai" | ..., "student_id": optional}
+    既存の exam_questions プールから section ごとに最新順 N 件を取得。
+    返却: {session_id, label, duration_min, sections: [{name, questions: [...]}], max_score}
+    """
+    exam_type = payload.get("exam_type")
+    if exam_type not in MOCK_EXAM_TEMPLATES:
+        raise HTTPException(status_code=400, detail=f"Unknown exam_type: {exam_type}")
+    student_id = payload.get("student_id")
+    tpl = MOCK_EXAM_TEMPLATES[exam_type]
+
+    conn = db()
+    c = conn.cursor()
+    sections_out = []
+    max_score = 0
+    snapshot = []  # 採点用の正解データ
+    for sec in tpl["sections"]:
+        # 該当 part の最新 count 件をランダム抽出 (created_at DESC LIMIT で多様性確保)
+        c.execute(
+            "SELECT id, question_data FROM exam_questions WHERE exam_id=? AND part_key=? AND eiken_grade=? ORDER BY RANDOM() LIMIT ?",
+            (sec["exam_id"], sec["part_key"], sec["eiken_grade"], sec["count"]),
+        )
+        rows = c.fetchall()
+        section_questions = []
+        for r in rows:
+            qid = r[0] if not hasattr(r, 'keys') else r["id"]
+            qdata_raw = r[1] if not hasattr(r, 'keys') else r["question_data"]
+            qdata = json.loads(qdata_raw) if isinstance(qdata_raw, str) else qdata_raw
+            sub_questions = qdata.get("questions", [])
+            section_questions.append({
+                "exam_question_id": qid,
+                "passage": qdata.get("passage", ""),
+                "audio_script": qdata.get("audio_script", ""),
+                "prompt": qdata.get("prompt", ""),
+                "year_simulated": qdata.get("year_simulated"),
+                "univ_simulated": qdata.get("univ_simulated"),
+                "questions": sub_questions,
+            })
+            # 採点用 snapshot
+            snapshot.append({
+                "section_name": sec["name"],
+                "exam_question_id": qid,
+                "sub_questions": [
+                    {"id": sq.get("id"), "answer": sq.get("answer"), "points": sec["points_per"] // max(len(sub_questions), 1)}
+                    for sq in sub_questions if sq.get("type") == "multiple_choice"
+                ],
+            })
+        sections_out.append({
+            "name": sec["name"],
+            "points_per_question": sec["points_per"],
+            "questions": section_questions,
+        })
+        max_score += sec["count"] * sec["points_per"]
+
+    # セッション作成
+    snapshot_json = json.dumps({"sections": sections_out, "answer_key": snapshot}, ensure_ascii=False)
+    c.execute(
+        "INSERT INTO mock_exam_sessions (student_id, exam_type, target_label, duration_min, started_at, score_max, questions_json) VALUES (?,?,?,?,?,?,?)",
+        (student_id, exam_type, tpl["label"], tpl["duration_min"], datetime.now(timezone.utc).isoformat(), max_score, snapshot_json),
+    )
+    session_id = c.lastrowid
+    conn.commit()
+    conn.close()
+
+    return {
+        "session_id": session_id,
+        "exam_type": exam_type,
+        "label": tpl["label"],
+        "duration_min": tpl["duration_min"],
+        "max_score": max_score,
+        "sections": sections_out,
+    }
+
+
+@app.post("/api/mock-exam/submit")
+def mock_exam_submit(payload: dict):
+    """模試の採点。
+    payload: {"session_id": N, "answers": {"<exam_question_id>_<sub_id>": "<choice_index>"}}
+    返却: {score_total, score_max, percentage, deviation_estimate, section_scores, weak_topics}
+    """
+    session_id = payload.get("session_id")
+    answers = payload.get("answers") or {}
+    if not session_id:
+        raise HTTPException(status_code=400, detail="session_id required")
+
+    conn = db()
+    c = conn.cursor()
+    c.execute("SELECT student_id, exam_type, score_max, questions_json FROM mock_exam_sessions WHERE id=?", (session_id,))
+    row = c.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="session not found")
+    student_id = row[0] if not hasattr(row, 'keys') else row["student_id"]
+    exam_type = row[1] if not hasattr(row, 'keys') else row["exam_type"]
+    score_max = row[2] if not hasattr(row, 'keys') else row["score_max"]
+    snap_json = row[3] if not hasattr(row, 'keys') else row["questions_json"]
+    snap = json.loads(snap_json)
+    answer_key = snap.get("answer_key", [])
+
+    score_total = 0
+    section_scores = {}
+    weak_topics = []
+    for ak in answer_key:
+        sec_name = ak["section_name"]
+        eq_id = ak["exam_question_id"]
+        sec = section_scores.setdefault(sec_name, {"got": 0, "max": 0})
+        for sq in ak["sub_questions"]:
+            sub_id = sq.get("id")
+            correct = str(sq.get("answer", ""))
+            points = int(sq.get("points") or 0)
+            sec["max"] += points
+            user_ans_key = f"{eq_id}_{sub_id}"
+            user_ans = str(answers.get(user_ans_key, "")).strip()
+            if user_ans and user_ans == correct:
+                score_total += points
+                sec["got"] += points
+            elif points > 0:
+                weak_topics.append({"section": sec_name, "exam_question_id": eq_id, "sub_id": sub_id})
+
+    pct = round(100 * score_total / score_max, 1) if score_max > 0 else 0
+    # 偏差値の簡易推定: 50 + (pct - 60) / 2 (60% = 50, 80% = 60, 40% = 40)
+    deviation_estimate = round(50 + (pct - 60) / 2, 1)
+    # 範囲制限
+    deviation_estimate = max(30.0, min(80.0, deviation_estimate))
+
+    section_scores_list = [{"name": k, "got": v["got"], "max": v["max"], "pct": round(100 * v["got"] / max(v["max"], 1), 1)} for k, v in section_scores.items()]
+
+    c.execute(
+        "UPDATE mock_exam_sessions SET submitted_at=?, score_total=?, deviation_estimate=?, section_scores=?, answers_json=? WHERE id=?",
+        (datetime.now(timezone.utc).isoformat(), score_total, deviation_estimate, json.dumps(section_scores_list, ensure_ascii=False), json.dumps(answers, ensure_ascii=False), session_id),
+    )
+    conn.commit()
+    conn.close()
+
+    return {
+        "session_id": session_id,
+        "exam_type": exam_type,
+        "score_total": score_total,
+        "score_max": score_max,
+        "percentage": pct,
+        "deviation_estimate": deviation_estimate,
+        "section_scores": section_scores_list,
+        "weak_count": len(weak_topics),
+    }
+
+
+@app.get("/api/mock-exam/history")
+def mock_exam_history(student_id: int):
+    """生徒の模試履歴 (mypage 用)。"""
+    conn = db()
+    c = conn.cursor()
+    c.execute("SELECT id, exam_type, target_label, score_total, score_max, deviation_estimate, submitted_at FROM mock_exam_sessions WHERE student_id=? AND submitted_at IS NOT NULL ORDER BY submitted_at DESC LIMIT 30", (student_id,))
+    rows = c.fetchall()
+    conn.close()
+    out = []
+    for r in rows:
+        d = dict(r) if hasattr(r, 'keys') else {"id": r[0], "exam_type": r[1], "target_label": r[2], "score_total": r[3], "score_max": r[4], "deviation_estimate": r[5], "submitted_at": r[6]}
+        out.append(d)
+    return {"history": out}
+
+
+# ==========================================================================
+# 📚 AI 単語帳 (Spaced Repetition) — Leitner Box system (2026-05-03)
+# ==========================================================================
+
+LEITNER_INTERVALS = {1: 1, 2: 3, 3: 7, 4: 21, 5: 60}  # box → days until next review
+
+
+@app.post("/api/admin/vocab/import")
+def vocab_import(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """単語データの一括 import (admin)。
+    payload: {"words": [{"word":"...", "pos":"...", "meaning_jp":"...", "example_en":"...", "example_jp":"...", "level":"...", "tags":"..."}, ...]}
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    words = payload.get("words") or []
+    if not isinstance(words, list) or not words:
+        raise HTTPException(status_code=400, detail="words が空")
+
+    inserted = 0
+    skipped = 0
+    failed = []
+    conn = db()
+    c = conn.cursor()
+    try:
+        for i, w in enumerate(words):
+            try:
+                if not w.get("word") or not w.get("meaning_jp") or not w.get("level"):
+                    failed.append({"i": i, "reason": "missing required fields"})
+                    continue
+                c.execute("INSERT INTO vocab_words (word, pos, meaning_jp, example_en, example_jp, level, tags) VALUES (?,?,?,?,?,?,?) ON CONFLICT(word) DO NOTHING",
+                          (w["word"], w.get("pos", ""), w["meaning_jp"], w.get("example_en", ""), w.get("example_jp", ""), w["level"], w.get("tags", "")))
+                if c.rowcount > 0:
+                    inserted += 1
+                else:
+                    skipped += 1
+            except Exception as e:
+                failed.append({"i": i, "reason": f"{type(e).__name__}: {str(e)[:80]}"})
+                try: conn.rollback()
+                except Exception: pass
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True, "inserted": inserted, "skipped": skipped, "failed": len(failed), "failed_details": failed[:10]}
+
+
+@app.get("/api/vocab/queue")
+def vocab_queue(student_id: int, level: Optional[str] = None, limit: int = 20):
+    """次に復習すべき単語キューを返す。
+    優先順位: 1) 今復習期限の単語 2) まだ未学習の単語
+    """
+    conn = db()
+    c = conn.cursor()
+    out = []
+    # 1) 期限到来の progress
+    now = datetime.now(timezone.utc).isoformat()
+    sql_due = """
+        SELECT vw.id, vw.word, vw.pos, vw.meaning_jp, vw.example_en, vw.example_jp, vw.level, vw.tags, vp.box
+        FROM vocab_progress vp
+        JOIN vocab_words vw ON vw.id = vp.word_id
+        WHERE vp.student_id = ? AND vp.next_review_at <= ?
+    """
+    params = [student_id, now]
+    if level:
+        sql_due += " AND vw.level = ?"
+        params.append(level)
+    sql_due += " ORDER BY vp.next_review_at ASC LIMIT ?"
+    params.append(limit)
+    c.execute(sql_due, tuple(params))
+    for r in c.fetchall():
+        d = dict(r) if hasattr(r, 'keys') else {"id": r[0], "word": r[1], "pos": r[2], "meaning_jp": r[3], "example_en": r[4], "example_jp": r[5], "level": r[6], "tags": r[7], "box": r[8]}
+        d["status"] = "review"
+        out.append(d)
+
+    # 2) 残り枠で未学習
+    remaining = limit - len(out)
+    if remaining > 0:
+        sql_new = """
+            SELECT id, word, pos, meaning_jp, example_en, example_jp, level, tags
+            FROM vocab_words
+            WHERE id NOT IN (SELECT word_id FROM vocab_progress WHERE student_id = ?)
+        """
+        params2 = [student_id]
+        if level:
+            sql_new += " AND level = ?"
+            params2.append(level)
+        sql_new += " ORDER BY id LIMIT ?"
+        params2.append(remaining)
+        c.execute(sql_new, tuple(params2))
+        for r in c.fetchall():
+            d = dict(r) if hasattr(r, 'keys') else {"id": r[0], "word": r[1], "pos": r[2], "meaning_jp": r[3], "example_en": r[4], "example_jp": r[5], "level": r[6], "tags": r[7]}
+            d["box"] = 0
+            d["status"] = "new"
+            out.append(d)
+    conn.close()
+    return {"queue": out, "count": len(out)}
+
+
+@app.post("/api/vocab/grade")
+def vocab_grade(payload: dict):
+    """単語の自己評価を記録。Leitner box 方式で次回復習日を更新。
+    payload: {"student_id": N, "word_id": M, "knew": true/false}
+    """
+    student_id = payload.get("student_id")
+    word_id = payload.get("word_id")
+    knew = bool(payload.get("knew"))
+    if not student_id or not word_id:
+        raise HTTPException(status_code=400, detail="student_id / word_id required")
+
+    conn = db()
+    c = conn.cursor()
+    c.execute("SELECT id, box, review_count, correct_count FROM vocab_progress WHERE student_id=? AND word_id=?", (student_id, word_id))
+    row = c.fetchone()
+    now = datetime.now(timezone.utc)
+    if row:
+        # 既存: box を更新
+        prog_id = row[0] if not hasattr(row, 'keys') else row["id"]
+        cur_box = int(row[1] if not hasattr(row, 'keys') else row["box"])
+        review_count = int(row[2] if not hasattr(row, 'keys') else row["review_count"])
+        correct_count = int(row[3] if not hasattr(row, 'keys') else row["correct_count"])
+        new_box = min(5, cur_box + 1) if knew else 1
+        days = LEITNER_INTERVALS.get(new_box, 1)
+        next_at = (now + timedelta(days=days)).isoformat()
+        c.execute("UPDATE vocab_progress SET box=?, next_review_at=?, last_reviewed_at=?, review_count=?, correct_count=? WHERE id=?",
+                  (new_box, next_at, now.isoformat(), review_count + 1, correct_count + (1 if knew else 0), prog_id))
+    else:
+        # 新規
+        new_box = 2 if knew else 1
+        days = LEITNER_INTERVALS.get(new_box, 1)
+        next_at = (now + timedelta(days=days)).isoformat()
+        c.execute("INSERT INTO vocab_progress (student_id, word_id, box, next_review_at, last_reviewed_at, review_count, correct_count) VALUES (?,?,?,?,?,?,?)",
+                  (student_id, word_id, new_box, next_at, now.isoformat(), 1, 1 if knew else 0))
+    conn.commit()
+    conn.close()
+    return {"ok": True, "new_box": new_box, "next_review_in_days": LEITNER_INTERVALS.get(new_box, 1)}
+
+
+@app.get("/api/vocab/stats")
+def vocab_stats(student_id: int):
+    """生徒の単語学習統計 (mypage 用)。"""
+    conn = db()
+    c = conn.cursor()
+    c.execute("SELECT box, COUNT(*) FROM vocab_progress WHERE student_id=? GROUP BY box", (student_id,))
+    by_box = {}
+    for r in c.fetchall():
+        b = r[0] if not hasattr(r, 'keys') else r[0]
+        n = r[1] if not hasattr(r, 'keys') else r[1]
+        by_box[int(b)] = int(n)
+    c.execute("SELECT COUNT(*) FROM vocab_progress WHERE student_id=? AND next_review_at <= ?", (student_id, datetime.now(timezone.utc).isoformat()))
+    due_now = (c.fetchone() or [0])[0]
+    c.execute("SELECT COUNT(*) FROM vocab_words")
+    total_words = (c.fetchone() or [0])[0]
+    c.execute("SELECT SUM(review_count), SUM(correct_count) FROM vocab_progress WHERE student_id=?", (student_id,))
+    rr = c.fetchone() or [0, 0]
+    total_reviews = int(rr[0] or 0)
+    total_correct = int(rr[1] or 0)
+    conn.close()
+    accuracy = round(100 * total_correct / max(total_reviews, 1), 1)
+    return {
+        "total_words_in_pool": total_words,
+        "by_box": by_box,
+        "mastered": by_box.get(5, 0),
+        "due_now": due_now,
+        "total_reviews": total_reviews,
+        "accuracy_percent": accuracy,
+    }
 
 
 # ==========================================================================

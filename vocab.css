@@ -1,0 +1,204 @@
+/* ============================================
+   📚 AI Vocab Styles
+   ============================================ */
+
+.vc-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 6rem;
+  position: relative;
+  z-index: 1;
+}
+.vc-section { display: block; }
+
+.vc-header { text-align: center; margin-bottom: 2.5rem; }
+.vc-header h1 { font-size: 2.2rem; font-weight: 900; margin: 1rem 0; line-height: 1.3; }
+.vc-sub { color: var(--text-dim); line-height: 1.8; }
+
+/* === 統計 === */
+.vc-stats {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 1.25rem;
+  margin-bottom: 2rem;
+}
+.vc-stat-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+.vc-stat-cell { text-align: center; }
+.vc-stat-num {
+  font-size: 1.9rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #818cf8, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.vc-stat-label { font-size: 0.78rem; color: var(--text-dim); }
+
+/* === レベル選択 === */
+.vc-level-picker { margin-bottom: 2rem; }
+.vc-level-picker h3 { font-size: 1rem; margin-bottom: 0.85rem; color: var(--text-dim); font-weight: 600; }
+.vc-level-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.vc-level-btn {
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  transition: all 0.18s;
+}
+.vc-level-btn:hover {
+  background: rgba(99,102,241,0.1);
+  border-color: rgba(99,102,241,0.35);
+}
+.vc-level-btn.active {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border-color: transparent;
+  font-weight: 700;
+}
+
+.vc-actions { text-align: center; margin-top: 2rem; }
+
+/* === Review Card === */
+.vc-review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.vc-card-wrap { perspective: 1200px; margin-bottom: 1.5rem; }
+.vc-card {
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+  border-radius: 18px;
+  padding: 3.5rem 2rem;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+}
+.vc-card-pos {
+  font-size: 0.78rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+}
+.vc-card-word {
+  font-size: 3.5rem;
+  font-weight: 900;
+  margin-bottom: 2rem;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #fff, #c7d2fe);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.vc-show-btn {
+  padding: 0.85rem 2rem;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+.vc-show-btn:hover {
+  background: rgba(99,102,241,0.18);
+}
+
+.vc-card-back {
+  width: 100%;
+}
+.vc-card-meaning {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+  color: var(--text);
+}
+.vc-card-example {
+  font-size: 1rem;
+  color: var(--primary-light);
+  font-style: italic;
+  margin-bottom: 0.5rem;
+  padding: 0.85rem 1rem;
+  background: rgba(99,102,241,0.08);
+  border-radius: 8px;
+}
+.vc-card-example-jp {
+  font-size: 0.92rem;
+  color: var(--text-dim);
+  margin-bottom: 1.5rem;
+}
+
+.vc-grade-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.vc-grade-btn {
+  padding: 1.1rem;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vc-grade-no {
+  background: rgba(239,68,68,0.15);
+  border: 1px solid rgba(239,68,68,0.4);
+  color: #fca5a5;
+}
+.vc-grade-no:hover { background: rgba(239,68,68,0.25); }
+.vc-grade-yes {
+  background: rgba(16,185,129,0.15);
+  border: 1px solid rgba(16,185,129,0.4);
+  color: #6ee7b7;
+}
+.vc-grade-yes:hover { background: rgba(16,185,129,0.25); }
+
+.vc-progress-info {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* === 完了画面 === */
+.vc-complete-emoji { font-size: 4rem; text-align: center; margin-bottom: 1rem; }
+#vcComplete { text-align: center; }
+#vcComplete h2 { font-size: 2rem; margin-bottom: 1rem; }
+#vcComplete p { color: var(--text-dim); margin: 0.5rem 0; }
+#vcComplete strong { color: var(--primary-light); font-size: 1.3em; }
+.vc-complete-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .vc-stat-row { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+  .vc-card-word { font-size: 2.5rem; }
+  .vc-grade-buttons { grid-template-columns: 1fr; }
+  .vc-complete-actions { flex-direction: column; }
+}
