@@ -1,0 +1,146 @@
+{
+  "questions": [
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3b",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Japan's Aging Workforce\n\nJapan faces a serious demographic challenge: the country's workforce is shrinking rapidly as more people retire and fewer young people enter the labor market. By 2030, experts predict that Japan will have nearly five million fewer workers than it had in 2020. This trend has significant implications for the economy and for individual companies.\n\nIn response, many companies are changing how they think about older employees. Until recently, most Japanese companies required workers to retire at age 60 or 65. Now, many businesses are encouraging employees to continue working into their 70s, often in modified roles that match their skills and physical abilities. Some companies offer part-time positions, remote work options, or consultant arrangements that let experienced workers contribute without the demands of full-time employment.\n\nResearchers have studied how older workers contribute to companies. Several findings stand out. Older employees often have valuable industry knowledge that newer workers lack. They tend to be more loyal to their employers, reducing the costs of turnover. They also bring stability and mentoring to younger colleagues. However, some companies report challenges: older workers may struggle with rapidly changing technology, and creating fair compensation systems for diverse roles can be complex.\n\nThe government has supported these changes through subsidies for companies that retain or hire older workers. Some prefectures have set up programs to match retirees with companies needing their skills. As the population continues to age, the integration of older workers into the modern economy will likely become an increasingly important policy concern.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What does the passage say about Japanese companies' changing attitudes toward older employees?",
+            "choices": [
+              "All companies now require workers to be under 30.",
+              "Companies are firing all employees over age 60.",
+              "Companies have eliminated retirement entirely.",
+              "Many businesses now encourage employees to continue working into their 70s with modified roles."
+            ],
+            "answer": "3",
+            "explanation": "本文「many businesses are encouraging employees to continue working into their 70s, often in modified roles that match their skills and physical abilities」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3b",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Science of Sleep and Learning\n\nResearchers studying memory and learning have made significant discoveries about the role of sleep. While it was long known that students who get enough sleep perform better on tests, recent studies show that sleep does much more than simply prevent tiredness ── it actively helps the brain process and store new information.\n\nDuring sleep, particularly during the deep stages, the brain replays memories from the day. This replay strengthens neural connections and helps move information from short-term to long-term memory. Studies on students who learned new vocabulary showed that those who slept after studying retained 30% more words than those who stayed awake the same number of hours. Even short naps after learning have been shown to improve memory consolidation.\n\nThese findings have practical implications for student schedules. Sleep experts now recommend that students avoid pulling all-nighters before exams, which can damage memory rather than help it. Instead, they suggest spreading study sessions across multiple days and getting full nights of sleep, particularly the night after learning new material. Some schools have started later morning classes, allowing students more sleep, with reported improvements in test scores and student well-being.\n\nDespite this evidence, many students continue to sacrifice sleep for studying. Cultural pressures, after-school activities, and digital entertainment all compete with adequate rest. Sleep researchers argue that improving public understanding of sleep's role in learning is essential. As more schools and parents recognize the connection, sleep may finally receive the priority it deserves in education planning.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What does recent research show about sleep and learning?",
+            "choices": [
+              "Sleep prevents people from learning.",
+              "Sleep actively helps the brain process and store information by strengthening neural connections.",
+              "Sleep has no measurable effect on memory.",
+              "Students who sleep less always perform better."
+            ],
+            "answer": "1",
+            "explanation": "本文「sleep does much more than simply prevent tiredness ── it actively helps the brain process and store new information ... strengthens neural connections and helps move information from short-term to long-term memory」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3b",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Rise of Cashless Payment in Japan\n\nFor many years, Japan has been known as a country where cash remains popular for daily transactions, even as other developed nations moved rapidly toward cashless payment systems. However, recent trends suggest that this is changing. According to government data, cashless transactions accounted for nearly 40% of consumer spending in 2024, up from less than 20% a decade earlier.\n\nSeveral factors have contributed to this shift. The government has actively promoted cashless payments through reward programs and incentives for small businesses. The COVID-19 pandemic encouraged contactless transactions, and many people who tried cashless apps during that time continued using them afterwards. Additionally, the rapid spread of QR code payment systems, easier to set up than traditional credit card terminals, has allowed even small shops and food stalls to accept digital payments.\n\nDespite these advances, Japan's transition has been slower than in many neighboring countries. South Korea and China have nearly eliminated cash for daily transactions, while Sweden has moved toward becoming the world's first effectively cashless society. By contrast, many Japanese consumers still prefer cash, particularly for small purchases or in regions where digital infrastructure is less developed.\n\nThe long-term implications of this shift are significant. Reduced cash use lowers the costs of producing and managing physical currency. It also makes economic activity easier to track for tax and policy purposes. However, concerns about digital privacy, exclusion of those without smartphones, and dependence on private payment companies have prompted ongoing public debate. How Japan balances these considerations will shape its financial landscape in the coming decade.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What recent trend does the passage describe in Japanese consumer spending?",
+            "choices": [
+              "Cashless transactions accounted for nearly 40% of consumer spending in 2024, up from less than 20% a decade earlier.",
+              "No change has occurred in payment habits.",
+              "All transactions in Japan are now cashless.",
+              "Cashless transactions have decreased dramatically."
+            ],
+            "answer": "0",
+            "explanation": "本文「cashless transactions accounted for nearly 40% of consumer spending in 2024, up from less than 20% a decade earlier」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "hitotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "一橋大学 商学部 (類題)",
+        "passage": "Globalization has produced wealth on an unprecedented scale, but the distribution of that wealth has provoked sharp debate among economists, policymakers, and citizens. Trade liberalization, technological diffusion, and integrated capital markets have lifted hundreds of millions out of poverty, particularly in East Asia, while creating substantial gains for educated workers and capital owners in wealthy nations. Yet substantial portions of populations in developed economies have experienced stagnant wages, deindustrialization, and growing economic insecurity, leading to political backlash that few mainstream commentators predicted.\n\nUnderstanding this paradox requires distinguishing between aggregate gains and their distribution. Economic theory predicts that trade benefits both partner economies overall, but it does not promise that benefits will flow equally to all citizens within those economies. When manufacturing employment in advanced countries shifts to lower-wage regions, the workers displaced may not easily transition to other employment, particularly in communities whose economic identity has long been tied to specific industries. Aggregate national wealth may rise even as concentrated communities suffer disproportionate losses.\n\nResponses to this challenge fall along familiar political lines. Some advocates argue that the answer lies in stronger redistributive policies ── progressive taxation, expanded education and retraining programs, more generous social safety nets ── that can ensure broader sharing of globalization's gains. Others argue for limiting trade itself, restoring tariffs and protecting domestic industries even at the cost of higher consumer prices and reduced economic efficiency.\n\nThe most thoughtful analyses recognize that neither extreme captures the full picture. Pure protectionism would forfeit substantial economic gains and reduce living standards for consumers, particularly those with lower incomes who depend on affordable goods. Yet allowing displacement to occur without serious response neglects the legitimate grievances of communities whose economic foundations have been disrupted. Finding policies that maintain global economic engagement while supporting affected workers remains one of the central challenges facing developed democracies.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What paradox does the passage identify about globalization?",
+            "choices": [
+              "Globalization has eliminated all economic problems.",
+              "Globalization has only harmed developing economies.",
+              "Globalization has produced wealth at unprecedented scale, but its distribution has provoked sharp debate.",
+              "No paradox exists."
+            ],
+            "answer": "2",
+            "explanation": "本文「Globalization has produced wealth on an unprecedented scale, but the distribution of that wealth has provoked sharp debate」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What does the passage say about workers displaced by manufacturing shifts?",
+            "choices": [
+              "They always quickly find better jobs.",
+              "They benefit equally from trade gains.",
+              "They are unaffected by globalization.",
+              "They may not easily transition to other employment, particularly in communities with strong industrial identity."
+            ],
+            "answer": "3",
+            "explanation": "本文「the workers displaced may not easily transition to other employment, particularly in communities whose economic identity has long been tied to specific industries」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What conclusion does the passage draw about responses to globalization's challenges?",
+            "choices": [
+              "Neither extreme is right; balancing global engagement with support for affected workers is central.",
+              "Pure protectionism is the only solution.",
+              "Pure trade liberalization is the only solution.",
+              "The challenges have already been resolved."
+            ],
+            "answer": "0",
+            "explanation": "本文「The most thoughtful analyses recognize that neither extreme captures the full picture ... Finding policies that maintain global economic engagement while supporting affected workers remains one of the central challenges」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_translation",
+      "eiken_grade": "todai",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Technologies that initially seem to extend human capacities often, on closer examination, alter the very abilities they appear to enhance. The smartphone, for instance, gives its user near-instant access to information that previous generations would have struggled to retrieve, yet evidence suggests that habitual reliance on this access has measurably reduced our capacity to remember and reason without it.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "上記英文を日本語に和訳しなさい。",
+            "answer": "人間の能力を拡張すると当初は思われる技術が、よく検討してみると、その向上させているように見える能力そのものを変質させてしまうことがしばしばある。例えばスマートフォンは、利用者に対し、以前の世代であれば苦労して取得しなければならなかったであろう情報へのほぼ即時のアクセスを提供する。それにもかかわらず、このアクセスへの習慣的な依存が、それなしでは記憶し推論する我々の能力を測定可能な程度に減退させてきたことが、証拠から示唆されている。",
+            "explanation": "## 🎯 コアイメージ\n**Technologies that initially seem to V often, on closer examination, alter ...** = 「当初は V するように見える技術が、よく検討すると 〜 を変質させる」(関係代名詞 + 副詞句 on closer examination の挿入)。**the very abilities they appear to enhance** = 「その向上させているように見えるまさにその能力」(very + 関係代名詞省略)。\n\n## 🔬 文構造分析\n- **Technologies [that initially seem to extend human capacities] often, on closer examination, alter the very abilities [they appear to enhance].** = 「人間の能力を拡張すると当初は思われる技術が、よく検討してみると、向上させているように見える能力そのものを変質させる」\n- **The smartphone, for instance, gives its user near-instant access to information [that previous generations would have struggled to retrieve]** = 例示文 (関係詞節 + 仮定法過去完了)\n- **yet evidence suggests that habitual reliance on this access has measurably reduced our capacity to remember and reason without it** = 「それにもかかわらず証拠は習慣的依存が能力を測定可能な程度に減退させてきたことを示唆」\n\n## 📍 東大型ポイント\n① on closer examination = よく検討してみると (副詞句挿入) ② alter = 変質させる (change より厳密) ③ the very abilities they appear to enhance = まさにその能力 (very + 関係代名詞省略) ④ would have struggled to retrieve = 苦労して取得したであろう (仮定法過去完了の if 節省略) ⑤ measurably reduced = 測定可能な程度に減退 (副詞 measurably の正確訳)。"
+          }
+        ]
+      }
+    }
+  ]
+}
