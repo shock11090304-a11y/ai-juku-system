@@ -1,0 +1,167 @@
+{
+  "questions": [
+    {
+      "exam_id": "eiken",
+      "part_key": "w_opinion",
+      "eiken_grade": "gp2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "TOPIC: Should junior high schools require students to wear uniforms?\n\nPOINTS to consider (use 2 of 4): - Equality - Cost - Individuality - Convenience\n\nRequirements: 50-60 words.",
+        "sample": "I think junior high schools should require uniforms. I have two reasons.\n\nFirst, uniforms make students feel equal. When everyone wears the same clothes, there is less difference between rich and poor families. This helps students focus on studying.\n\nSecond, uniforms are convenient. Students do not need to choose new clothes every morning, so they can save time before school. (60 words)",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "Above prompt — 50-60 word opinion essay.",
+            "answer": "see sample",
+            "explanation": "【準2級 w_opinion】① 立場明示「I think junior high schools should require uniforms.」② 「I have two reasons.」で論点宣言 ③ First / Second で 2 つの points (Equality + Convenience) を展開 ④ 各 reason は具体例 (rich/poor families, choose new clothes) で補強。50-60 語厳守、シンプルな高校1年レベル文法・語彙。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3b",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Volunteer Work in High School\n\nMany Japanese high schools now encourage students to take part in volunteer activities. Some schools even include volunteer hours as part of students' final grades. Students help with various activities, such as cleaning local parks, visiting elderly people, or supporting children's events at community centers.\n\nWhen Yuki Tanaka, a second-year student at Sakura High School, started volunteering at a local nursing home, she was nervous. She had never spoken with elderly people outside of her own family. However, after a few visits, she began to enjoy listening to the residents' stories about their lives. \"I learned that history is not just something in textbooks,\" Yuki said. \"It lives in the memories of these people.\"\n\nTeachers report that volunteer work brings unexpected benefits. Students often become more confident speakers, develop better social skills, and start thinking more carefully about their future careers. Some students decide to study social work or healthcare after their volunteer experiences. One teacher noted that students who volunteer regularly tend to perform better in classroom discussions, perhaps because they have practiced communicating with people of different ages and backgrounds.\n\nOf course, volunteering also has challenges. Some students worry that volunteer hours take time away from studying for exams or club activities. Others find it difficult to commit to regular schedules. To address these concerns, many schools now offer flexible volunteer programs and short-term opportunities, so students can participate without feeling overwhelmed.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What did Yuki learn from her volunteer experience?",
+            "choices": [
+              "Volunteer work is only for college students.",
+              "Elderly people's memories preserve real history.",
+              "History is only found in textbooks.",
+              "She prefers studying alone to volunteering."
+            ],
+            "answer": "1",
+            "explanation": "本文「I learned that history is not just something in textbooks. It lives in the memories of these people」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "w_summary",
+      "eiken_grade": "g2",
+      "model": "claude-max-plan",
+      "question_data": {
+        "prompt": "Read the following passage and summarize it in English in 45 to 55 words.\n\nIn recent years, many supermarkets in Japan have started selling \"imperfect\" vegetables and fruits at lower prices. These products may have unusual shapes, small marks, or sizes that are larger or smaller than usual, but their taste and nutrition are the same as ordinary products. Before, such items were often thrown away because consumers preferred perfect-looking food. This caused huge food waste, with millions of tons of edible food discarded every year. Now, supporters of imperfect food say that buying these products helps reduce waste and supports farmers. Some shops report that imperfect products sell out quickly because young customers especially like the lower prices. Critics argue that imperfect products may damage food brand image, but most experts believe the benefits outweigh the costs.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "上記英文を 45-55 語の英語で要約しなさい。",
+            "answer": "Many Japanese supermarkets now sell imperfect vegetables and fruits at lower prices, even though their taste and nutrition are normal. Previously discarded as ugly, these products help reduce food waste and support farmers. Younger shoppers like the cheaper prices, and most experts believe this trend brings more benefits than problems. (50 words)",
+            "explanation": "【2級 w_summary 新形式】① 模範解答 50 語、45-55 語範囲 OK ② 原文の主要 3 要素「imperfect 製品の販売開始 + 通常の品質」「廃棄削減・農家支援の意義」「若者の支持と専門家の評価」を漏れなく圧縮 ③ paraphrasing: discarded → cheaper, ugly → imperfect 維持 ④ 結論で「benefits > problems」を明示。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "eiken",
+      "part_key": "r_q3",
+      "eiken_grade": "gp1",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "The Renaissance of Public Libraries\n\nFor decades, public libraries seemed destined for irrelevance. As digital media made information freely accessible from any internet-connected device, many predicted that traditional libraries would gradually fade from civic life. The reality has proven more interesting. While book lending has declined modestly in many countries, libraries themselves are experiencing a renaissance ── often with higher visitor numbers than they recorded in their print-only heyday.\n\nThe transformation has come through reimagining what libraries provide. Modern libraries function less as warehouses of books and more as community hubs offering services no other institution conveniently delivers. Many now provide free meeting spaces for local groups, coding classes for unemployed adults, technology tutoring for elderly residents struggling with digital systems, and quiet study areas for students whose homes are too crowded or noisy. Some libraries have even introduced \"library of things\" programs, lending out tools, musical instruments, and household equipment that residents need only occasionally.\n\nThis shift reflects deeper changes in how communities understand public infrastructure. As private spaces grow more expensive and commercial environments increasingly require purchases, libraries remain among the few places where citizens can spend extended hours without paying anything. They serve a function that economists struggle to quantify but that residents intuitively value: providing a non-commercial common space accessible to everyone regardless of income.\n\nThe consequences of this transformation extend beyond library walls. Communities with thriving libraries often show stronger civic engagement, more cross-generational interaction, and lower social isolation rates. Critics caution against expecting libraries to compensate for broader failures in social infrastructure ── shrinking public services, declining mental health resources, growing economic inequality. Yet the success of contemporary libraries suggests that institutions willing to evolve thoughtfully in response to changing community needs can find renewed relevance even in the digital age.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What was the predicted fate of public libraries before the recent renaissance?",
+            "choices": [
+              "They would gradually fade from civic life as digital media replaced books.",
+              "They would replace all schools and universities.",
+              "They would only serve children.",
+              "They would become more profitable than ever."
+            ],
+            "answer": "0",
+            "explanation": "本文「many predicted that traditional libraries would gradually fade from civic life」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "How have modern libraries reimagined their role?",
+            "choices": [
+              "They have eliminated all books from their collections.",
+              "They have become commercial bookstores.",
+              "They have moved entirely online.",
+              "They function as community hubs offering meeting spaces, classes, technology tutoring, and study areas."
+            ],
+            "answer": "3",
+            "explanation": "本文「Modern libraries function less as warehouses of books and more as community hubs offering services no other institution conveniently delivers. Many now provide free meeting spaces ... coding classes ... technology tutoring ... quiet study areas」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What broader civic effect does the passage associate with thriving libraries?",
+            "choices": [
+              "Stronger civic engagement, more cross-generational interaction, and lower social isolation rates.",
+              "Greater dependency on private services.",
+              "Higher commercial profits in surrounding businesses.",
+              "Less education in the community."
+            ],
+            "answer": "0",
+            "explanation": "本文「Communities with thriving libraries often show stronger civic engagement, more cross-generational interaction, and lower social isolation rates」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "waseda",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "早稲田大学 商学部 (類題)",
+        "passage": "Subscription business models have proliferated dramatically over the past decade, transforming how consumers access goods and services across remarkably diverse industries. Once limited primarily to magazines and newspapers, the subscription approach now governs everything from software access to clothing rental, meal kits, and even automobile use. Consumers increasingly pay recurring fees for ongoing access rather than one-time purchases for ownership.\n\nProponents of this shift point to genuine advantages for both businesses and consumers. Companies enjoy more predictable revenue streams, while customers benefit from continuous updates, lower upfront costs, and the convenience of automatic delivery. Streaming entertainment services, for example, provide vast content libraries at monthly prices far below the cost of purchasing equivalent media. Software companies can deliver continuous improvements rather than infrequent major releases that customers might skip.\n\nCritics, however, identify several concerns. Subscription fatigue has emerged as consumers find themselves paying for numerous services they barely use, often forgetting which subscriptions they have until reviewing credit card statements. The aggregate cost of multiple small subscriptions frequently exceeds what consumers would have spent on selective traditional purchases. Some scholars also worry about the long-term implications of replacing ownership with access ── consumers who never actually own anything may have less control over their experiences and weaker incentives to maintain durable possessions.\n\nThe regulatory environment is gradually catching up. Several jurisdictions have introduced laws requiring clearer cancellation procedures, transparent pricing for renewal periods, and reminders before recurring charges. Whether these protections suffice remains contested, particularly as artificial intelligence enables increasingly sophisticated retention tactics that exploit cognitive limitations. The subscription economy is unlikely to disappear, but its terms will continue to evolve as consumers, regulators, and businesses negotiate the appropriate balance of convenience, cost, and consumer protection.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "How has the subscription approach changed over the past decade?",
+            "choices": [
+              "It is now only used for newspapers.",
+              "It has been completely abandoned by businesses.",
+              "It has expanded from magazines to govern goods like software, clothing rental, meal kits, and automobiles.",
+              "Subscriptions have decreased in popularity."
+            ],
+            "answer": "2",
+            "explanation": "本文「Once limited primarily to magazines and newspapers, the subscription approach now governs everything from software access to clothing rental, meal kits, and even automobile use」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What is \"subscription fatigue\" according to the passage?",
+            "choices": [
+              "Excessive enthusiasm for new subscription services.",
+              "A regulatory term used by lawyers.",
+              "A medical condition caused by too many subscriptions.",
+              "Consumers paying for numerous services they barely use, often forgetting their subscriptions."
+            ],
+            "answer": "3",
+            "explanation": "本文「Subscription fatigue has emerged as consumers find themselves paying for numerous services they barely use, often forgetting which subscriptions they have」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What broader concern do scholars raise about subscription economies?",
+            "choices": [
+              "Subscriptions reduce consumer choice entirely.",
+              "Subscriptions are inherently illegal.",
+              "Replacing ownership with access may give consumers less control over their experiences and weaker incentives to maintain durable possessions.",
+              "Companies make too much money."
+            ],
+            "answer": "2",
+            "explanation": "本文「consumers who never actually own anything may have less control over their experiences and weaker incentives to maintain durable possessions」が根拠。"
+          }
+        ]
+      }
+    }
+  ]
+}
