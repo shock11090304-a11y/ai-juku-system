@@ -1,0 +1,405 @@
+{
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_short",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "[Notice from a Local Library]\n\n=== HARMONY CITY LIBRARY — Summer Reading Program ===\n\nWho can join: All students aged 6-18 living in Harmony City\nDuration: July 1 - August 31\n\n--- HOW TO PARTICIPATE ---\n1. Register at the front desk by July 10 (free)\n2. Pick up your reading log booklet\n3. Read at least 5 books before August 31\n4. Submit completed booklet to receive a certificate and prize\n\n--- WEEKLY EVENTS (free, no registration needed) ---\n• Story Hour for ages 6-9: Tuesdays 3-4 PM\n• Book Discussion for ages 13-18: Thursdays 5-6 PM\n• Author Visit (special event): July 22, 2-4 PM\n\n--- IMPORTANT NOTES ---\n* Books must be borrowed from this library to count\n* Each book report should be at least 100 words\n* Top 10 readers will receive bookstore gift cards\n* The library is closed on July 15 for staff training",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "Who is eligible to join the Summer Reading Program?",
+            "choices": [
+              "Only library staff members.",
+              "Adults living in nearby cities.",
+              "Students aged 6-18 living in Harmony City.",
+              "Anyone visiting the library on July 22."
+            ],
+            "answer": "2",
+            "explanation": "本文「Who can join: All students aged 6-18 living in Harmony City」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What is required to receive a certificate at the end of the program?",
+            "choices": [
+              "Pay a registration fee.",
+              "Attend at least three weekly events.",
+              "Borrow books from any local bookstore.",
+              "Read at least 5 books and submit the completed log booklet."
+            ],
+            "answer": "3",
+            "explanation": "本文「Read at least 5 books before August 31. Submit completed booklet to receive a certificate and prize」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What is true about the Author Visit event?",
+            "choices": [
+              "It requires registration before July 10.",
+              "It is a special event held on July 22, 2-4 PM, free of charge.",
+              "It is held weekly throughout the summer.",
+              "It is only open to ages 6-9."
+            ],
+            "answer": "1",
+            "explanation": "本文「Author Visit (special event): July 22, 2-4 PM」+「WEEKLY EVENTS (free, no registration needed)」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_short",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "[Email between two students]\n\nFrom: Yuki\nTo: Ken\nSubject: School Cultural Festival Plans\n\nHi Ken,\n\nOur class committee met yesterday to plan our cultural festival booth. We finally decided to do a Japanese sweets cafe instead of a haunted house. The vote was 22 to 8.\n\nHere's what we need help with:\n\n1. SETUP (October 8, 9 AM - 12 PM)\n   We need 6 volunteers to move tables and set up decorations. Lunch will be provided.\n\n2. COOKING TEAM (October 9, 8 AM - 1 PM)\n   We need 4 students who can cook. Mr. Tanaka's mother will teach us how to make matcha cookies and dorayaki on October 5 after school.\n\n3. SERVING (October 9-10, during festival hours)\n   We need 8 servers each day. Two-hour shifts.\n\nLet me know which role you can take. Please reply by October 1.\n\nThanks!\nYuki",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What did the class committee finally decide to do for the cultural festival?",
+            "choices": [
+              "A haunted house.",
+              "A traditional dance performance.",
+              "A photography exhibition.",
+              "A Japanese sweets cafe."
+            ],
+            "answer": "3",
+            "explanation": "本文「We finally decided to do a Japanese sweets cafe instead of a haunted house」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "When will Mr. Tanaka's mother teach the cooking team?",
+            "choices": [
+              "October 8, 9 AM - 12 PM.",
+              "October 9, 8 AM - 1 PM.",
+              "October 1 at noon.",
+              "October 5 after school."
+            ],
+            "answer": "3",
+            "explanation": "本文「Mr. Tanaka's mother will teach us how to make matcha cookies and dorayaki on October 5 after school」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "By when does Ken need to reply to Yuki?",
+            "choices": [
+              "October 9.",
+              "October 8.",
+              "October 5.",
+              "October 1."
+            ],
+            "answer": "3",
+            "explanation": "本文「Please reply by October 1」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "l_part1_2",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[共通テスト Part 1型 - 短い対話 × 3]\n\n【対話1】\nMan: Excuse me, could you tell me how to get to the city library from here?\nWoman: Sure. Walk straight for two blocks, then turn left at the post office. The library is right next to the city hall.\nMan: How long does it take?\nWoman: About 10 minutes on foot. If you take the bus, it's only 3 stops, but you have to wait about 15 minutes.\n\n【対話2】\nWoman: I just got my exam results. I scored 78 out of 100 on the math test.\nMan: That's higher than mine. I got 72.\nWoman: Really? Yumi got the highest in our class — 95.\nMan: That's amazing. The class average was around 65, so we're both above average.\n\n【対話3】\nMan: I want to buy a present for my sister's birthday next week.\nWoman: What does she like?\nMan: She loves reading mystery novels and drinking herbal tea.\nWoman: How about a tea set? My favorite shop sells beautiful Japanese-style cups for around 3,000 yen.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "How does the woman in Dialogue 1 suggest the man can reach the library faster?",
+            "choices": [
+              "By walking straight for 10 minutes.",
+              "By riding a bicycle for 10 minutes.",
+              "By taking the bus, which is only 3 stops.",
+              "By calling a taxi from the post office."
+            ],
+            "answer": "0",
+            "explanation": "本文「About 10 minutes on foot. If you take the bus, it's only 3 stops, but you have to wait about 15 minutes」より、徒歩 10 分 < バス 15+短時間。徒歩のほうが速い。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Who scored the highest on the math test in Dialogue 2?",
+            "choices": [
+              "Yumi, with 95.",
+              "The man speaker, with 72.",
+              "The woman speaker, with 78.",
+              "The teacher, with the class average."
+            ],
+            "answer": "0",
+            "explanation": "本文「Yumi got the highest in our class — 95」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What does the woman in Dialogue 3 recommend the man buy?",
+            "choices": [
+              "A Japanese-style tea set for around 3,000 yen.",
+              "Herbal tea leaves.",
+              "A birthday cake.",
+              "A mystery novel."
+            ],
+            "answer": "0",
+            "explanation": "本文「How about a tea set? My favorite shop sells beautiful Japanese-style cups for around 3,000 yen」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "l_part1_2",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[共通テスト Part 2型 - 短い対話 × 3]\n\n【対話1】\nWoman: Excuse me, I'd like to return this jacket. I bought it yesterday but the size is too small.\nMan: I see. Do you have the receipt?\nWoman: Yes, here it is.\nMan: Thank you. Would you like to exchange it for a larger size, or get a refund?\nWoman: An exchange would be perfect. Do you have a medium?\n\n【対話2】\nMan: I missed the train this morning, so I'll be 30 minutes late for the meeting.\nWoman: Don't worry. I can start the presentation, and you can join when you arrive.\nMan: Thanks. Could you also bring my laptop from my desk? It's open and connected to the projector cable.\nWoman: Sure, I'll bring it to the meeting room.\n\n【対話3】\nWoman: How was your weekend trip to Kyoto?\nMan: Wonderful, but the train was so crowded that I couldn't get a seat for two hours.\nWoman: Did you visit any temples?\nMan: Yes, I went to Kinkaku-ji and Ginkaku-ji. The autumn leaves were beautiful, especially around Arashiyama.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What does the woman in Dialogue 1 ultimately want?",
+            "choices": [
+              "Just to look around the store.",
+              "An exchange for a medium size.",
+              "A different jacket in a different color.",
+              "A refund only."
+            ],
+            "answer": "1",
+            "explanation": "本文「An exchange would be perfect. Do you have a medium?」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What does the man in Dialogue 2 ask the woman to do?",
+            "choices": [
+              "Reschedule the meeting to the afternoon.",
+              "Pick him up at the station.",
+              "Bring his laptop from his desk.",
+              "Cancel the meeting."
+            ],
+            "answer": "2",
+            "explanation": "本文「Could you also bring my laptop from my desk?」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What did the man enjoy most about his weekend trip in Dialogue 3?",
+            "choices": [
+              "The food at restaurants.",
+              "The crowded train ride.",
+              "The shopping in central Kyoto.",
+              "The autumn leaves around Arashiyama."
+            ],
+            "answer": "3",
+            "explanation": "本文「The autumn leaves were beautiful, especially around Arashiyama」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "l_part3_4",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[共通テスト Part 5型 - 講義]\n\nProfessor: Good morning, students. Today we will discuss the rise of green architecture and why it matters in our modern cities.\n\nGreen architecture, sometimes called sustainable architecture, refers to design that minimizes harmful effects on human health and the environment. The architect protects air, water, and earth by choosing eco-friendly building materials and construction practices.\n\nOne of the simplest examples is the rooftop garden. By planting grasses and small trees on the roof of a building, designers can reduce summer cooling costs by up to 25 percent. The plants also clean the air and provide habitats for insects and small birds. Cities with many rooftop gardens are noticeably cooler in summer than those without.\n\nAnother important feature is natural lighting. Large windows and skylights allow sunlight to enter during the day, reducing the need for electric lighting. Modern designs combine windows with sensors that automatically adjust artificial lights when natural light is sufficient. This can cut a building's electricity use by 30 to 40 percent.\n\nFinally, water systems matter too. Buildings can collect rainwater, filter it, and use it for toilets and gardens. Some buildings reuse used water from sinks and showers after light treatment, saving thousands of liters per month.\n\nGreen architecture costs more to build initially, but it usually saves money over time. As cities continue to grow, the environmental impact of buildings becomes more important. The architects of the future must think not only about beauty and function but also about the long-term health of our planet.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "According to the lecture, what is one benefit of rooftop gardens?",
+            "choices": [
+              "They make buildings warmer in winter.",
+              "They are completely free to install.",
+              "They eliminate the need for windows.",
+              "They reduce summer cooling costs by up to 25 percent and clean the air."
+            ],
+            "answer": "3",
+            "explanation": "本文「By planting grasses and small trees on the roof of a building, designers can reduce summer cooling costs by up to 25 percent. The plants also clean the air」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "How can sensors and large windows reduce electricity use?",
+            "choices": [
+              "By turning off all lights at night.",
+              "By blocking all natural light.",
+              "By replacing all artificial lights with candles.",
+              "By cutting building electricity use by 30-40 percent through automatic adjustment."
+            ],
+            "answer": "3",
+            "explanation": "本文「Modern designs combine windows with sensors that automatically adjust artificial lights when natural light is sufficient. This can cut a building's electricity use by 30 to 40 percent」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What does the professor conclude about future architecture?",
+            "choices": [
+              "Only beauty matters in good architecture.",
+              "Future buildings should ignore environmental issues.",
+              "Architects must think about beauty, function, and the long-term health of the planet.",
+              "Cities should stop growing entirely."
+            ],
+            "answer": "2",
+            "explanation": "本文「The architects of the future must think not only about beauty and function but also about the long-term health of our planet」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "l_part3_4",
+      "eiken_grade": "kyotsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[共通テスト Part 5型 - 講義]\n\nProfessor: Hello everyone. Today's lecture is about a remarkable behavior found in animals: cooperation between different species. This behavior, sometimes called interspecies mutualism, can teach us a great deal about evolution and survival.\n\nLet me start with a famous example. In African savannas, oxpecker birds often sit on the backs of large animals such as zebras and rhinoceroses. The birds eat parasites that live on the animals' skin. The animals benefit because they get rid of the parasites, while the birds get a steady supply of food. This relationship benefits both species.\n\nA different example involves coral reefs. Small fish called cleaner wrasses set up cleaning stations where larger fish come to have parasites removed from their bodies and even inside their mouths. Surprisingly, the larger fish do not eat the small ones. Studies suggest that cleaner wrasses release a chemical signal that says \"don't eat me — I'm helping you.\"\n\nNot all interspecies relationships are simple, however. Sometimes one species cheats. Some cleaner wrasses have been observed taking small bites of healthy skin instead of just removing parasites. The larger fish remember which cleaners cheat and avoid them in the future.\n\nThese relationships challenge older theories of evolution that emphasized only competition. While competition is real, cooperation between species can also be a powerful survival strategy. Understanding these relationships is becoming more important as habitats change due to climate and human activity.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is interspecies mutualism according to the lecture?",
+            "choices": [
+              "Cooperation between different species that benefits both.",
+              "Animals fighting against species different from their own.",
+              "A behavior limited only to insects.",
+              "A modern human invention."
+            ],
+            "answer": "0",
+            "explanation": "本文「cooperation between different species. This behavior, sometimes called interspecies mutualism」+ oxpecker example showing both species benefit が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "How do cleaner wrasses signal that they are helping rather than prey?",
+            "choices": [
+              "They release a chemical signal.",
+              "They make loud noises.",
+              "They swim in circles.",
+              "They change color rapidly."
+            ],
+            "answer": "0",
+            "explanation": "本文「cleaner wrasses release a chemical signal that says 'don't eat me — I'm helping you'」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What do these relationships challenge about older theories of evolution?",
+            "choices": [
+              "The idea that mutualism is impossible in nature.",
+              "The idea that animals can ever survive at all.",
+              "The idea that humans descended from apes.",
+              "The idea that competition is the only force in evolution."
+            ],
+            "answer": "3",
+            "explanation": "本文「These relationships challenge older theories of evolution that emphasized only competition」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_grammar",
+      "eiken_grade": "center",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "",
+        "prompt": "Choose the most appropriate word to complete each sentence.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "By the time we arrived at the station, the last train ____ already left.",
+            "choices": [
+              "has",
+              "have",
+              "is",
+              "had"
+            ],
+            "answer": "3",
+            "explanation": "By the time + 過去形 SV → 主節は大過去 (過去完了)。「我々が駅に着いた時点で、終電はすでに出発していた」had + p.p. が正解。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "The teacher recommended that every student ____ the assignment by Friday.",
+            "choices": [
+              "finishing",
+              "finish",
+              "finished",
+              "finishes"
+            ],
+            "answer": "1",
+            "explanation": "recommend / suggest / propose + that 節 = 仮定法現在 (動詞原形)。「先生は全員が金曜までに課題を終えるよう推奨した」三人称単数でも s なし。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "The book ____ I borrowed from the library last week is very interesting.",
+            "choices": [
+              "who",
+              "which",
+              "what",
+              "whom"
+            ],
+            "answer": "1",
+            "explanation": "先行詞 The book は「もの」+ 目的格 (I borrowed の目的語) → which が正解。who/whom = 人、what = 先行詞含む。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "l_listening",
+      "eiken_grade": "center",
+      "model": "claude-max-plan",
+      "question_data": {
+        "audio_script": "[センター試験 リスニング - 短い対話 × 3]\n\n【対話1】\nWoman: I'm going to the supermarket after class. Do you need anything?\nMan: Could you get me some apples? About four would be enough.\nWoman: Sure. Anything else?\nMan: That's all, thanks. Here's a 1,000 yen note. Should be enough for the apples.\n\n【対話2】\nMan: How was your trip to Hokkaido last weekend?\nWoman: It was great! The weather was a bit cold, but we saw beautiful snow.\nMan: Did you go skiing?\nWoman: No, I tried snowboarding for the first time. I fell many times, but it was so much fun.\n\n【対話3】\nWoman: I can't decide whether to study abroad next year or to start working immediately after graduation.\nMan: What does your family think?\nWoman: My parents support both options, but my older sister suggests studying abroad first.\nMan: I think your sister's advice makes sense. Working can wait, but studying abroad is much harder later.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What does the man ask the woman to buy in Dialogue 1?",
+            "choices": [
+              "Eight apples.",
+              "Four apples.",
+              "A bag of rice.",
+              "A 1,000 yen item."
+            ],
+            "answer": "1",
+            "explanation": "本文「Could you get me some apples? About four would be enough」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What did the woman do for the first time on her Hokkaido trip?",
+            "choices": [
+              "She visited a hot spring.",
+              "She tried snowboarding.",
+              "She went skiing.",
+              "She climbed a mountain."
+            ],
+            "answer": "1",
+            "explanation": "本文「I tried snowboarding for the first time」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What does the woman's older sister suggest in Dialogue 3?",
+            "choices": [
+              "She should study abroad before working.",
+              "She should not make any decisions yet.",
+              "She should start working immediately.",
+              "She should ask her parents for more advice."
+            ],
+            "answer": "0",
+            "explanation": "本文「my older sister suggests studying abroad first」が根拠。"
+          }
+        ]
+      }
+    }
+  ]
+}
