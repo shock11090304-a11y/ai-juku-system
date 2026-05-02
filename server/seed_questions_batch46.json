@@ -1,0 +1,264 @@
+{
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "meiji",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "明治大学 商学部 (類題)",
+        "passage": "Behavioral economics has transformed how researchers think about consumer decision-making. Traditional economic theory assumed that consumers were rational agents who carefully weighed costs and benefits before making choices. Decades of experiments have revealed, however, that real consumers regularly behave in ways that contradict this assumption. They overvalue what they already own, place excessive weight on losses compared to equivalent gains, and are heavily influenced by how options are framed.\n\nOne of the most striking findings concerns what economists call \"default effects.\" When a particular option is set as the default—the choice that occurs unless someone actively changes it—participation in that option dramatically increases. Studies of organ donation, retirement savings, and energy plans have all demonstrated that simply changing the default can shift behavior far more than information campaigns or financial incentives.\n\nThese findings have practical implications for both businesses and policymakers. Companies have learned to design choice architectures that guide consumers toward profitable options without removing freedom of choice. Governments, meanwhile, have begun using \"nudges\"—small adjustments to how decisions are presented—to encourage healthier eating, increased savings, and tax compliance.\n\nThe ethical dimensions of this work, however, remain contested. Critics argue that nudging crosses an important line by exploiting cognitive limitations rather than respecting autonomous choice. Defenders respond that all environments inevitably shape decisions in some way, and that thoughtful design simply replaces accidental influence with deliberate consideration of human welfare. The debate is unlikely to be resolved soon, but understanding how decisions actually get made—rather than how rational agents would supposedly make them—has clearly changed both economic theory and public policy.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "How does behavioral economics differ from traditional economic theory?",
+            "choices": [
+              "It shows consumers regularly act in ways that contradict rationality assumptions.",
+              "It treats consumer decisions as predetermined.",
+              "It assumes consumers are perfectly rational.",
+              "It eliminates the study of economics."
+            ],
+            "answer": "0",
+            "explanation": "本文「real consumers regularly behave in ways that contradict this assumption」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What does the passage say about default effects?",
+            "choices": [
+              "Changing the default can shift behavior more than information or financial incentives.",
+              "Default effects only matter for very small purchases.",
+              "Default options eliminate consumer choice entirely.",
+              "They have no measurable impact on behavior."
+            ],
+            "answer": "0",
+            "explanation": "本文「changing the default can shift behavior far more than information campaigns or financial incentives」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What is one criticism of using nudges as policy tools?",
+            "choices": [
+              "Nudges always fail in practice.",
+              "Nudges are too expensive to implement.",
+              "Nudges are illegal in most countries.",
+              "Nudges may exploit cognitive limitations rather than respecting autonomous choice."
+            ],
+            "answer": "3",
+            "explanation": "本文「nudging crosses an important line by exploiting cognitive limitations rather than respecting autonomous choice」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "aogaku",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "青山学院大学 文学部英米文学科 (類題)",
+        "passage": "The rise of streaming services has fundamentally altered how people experience music. Earlier listeners typically encountered music through carefully selected albums, often associated with particular artists, time periods, or cultural movements. To listen to a song meant, in most cases, to listen to it within the context of an album that an artist had crafted as a coherent statement. Streaming platforms, with their playlist-driven interfaces and algorithmic recommendations, have largely dissolved this album-centered experience.\n\nThis shift has produced both gains and losses. On the positive side, listeners now have access to vast catalogs of music from across the world, much of which would have been impossible to encounter in the previous era of physical media. Algorithmic recommendations, while imperfect, often expose listeners to artists and styles they might never have discovered through traditional channels. The barriers between mainstream and niche music have weakened, allowing diverse voices to reach interested audiences.\n\nYet something is also being lost. Songs increasingly seem designed to perform well on streaming platforms—front-loaded with hooks, kept short to maximize replay statistics, and produced with mixing decisions optimized for headphones rather than full-range listening. The album as an integrated artistic work survives in some genres but faces increasing economic pressure. The communal experience of discussing a new album release has largely been replaced by individual streams of decontextualized tracks.\n\nWhether the gains outweigh the losses depends partly on what one values about music. Those who prize discovery and accessibility have reason to celebrate the streaming era. Those who valued the deeper engagement that came with album-centered listening may experience the change as impoverishment, even as they enjoy expanded options.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "How did earlier listeners typically encounter music, according to the passage?",
+            "choices": [
+              "Through random radio play exclusively.",
+              "Through algorithmic recommendations.",
+              "Through carefully selected albums associated with particular artists or movements.",
+              "Only through live concerts."
+            ],
+            "answer": "2",
+            "explanation": "本文「Earlier listeners typically encountered music through carefully selected albums, often associated with particular artists, time periods, or cultural movements」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What is one positive outcome of streaming mentioned in the passage?",
+            "choices": [
+              "Listeners gain access to vast catalogs and exposure to artists they might never have discovered.",
+              "Songs have become longer and more complex.",
+              "All physical media has been replaced.",
+              "Album sales have increased dramatically."
+            ],
+            "answer": "0",
+            "explanation": "本文「listeners now have access to vast catalogs of music from across the world ... expose listeners to artists and styles they might never have discovered」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What is one negative consequence of the streaming era described in the passage?",
+            "choices": [
+              "Listeners can no longer find new music.",
+              "Live performances have completely disappeared.",
+              "Music has become more expensive than ever.",
+              "Songs are increasingly designed to perform well on streaming, optimized for replay statistics rather than full artistic experience."
+            ],
+            "answer": "3",
+            "explanation": "本文「Songs increasingly seem designed to perform well on streaming platforms—front-loaded with hooks, kept short to maximize replay statistics」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "rikkyo",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2023,
+        "univ_simulated": "立教大学 社会学部 (類題)",
+        "passage": "Social media platforms have transformed how political conversations unfold, with consequences that researchers are only beginning to understand. Earlier forms of mass communication—newspapers, television, radio—were shaped by editorial gatekeepers who selected and presented information according to professional standards. Social media largely bypasses these gatekeepers, allowing any user to publish content that can potentially reach millions.\n\nThis democratization of voice has clear benefits. Marginalized communities can share perspectives that mainstream media might overlook. Citizen journalists can document events that traditional outlets fail to cover. Political organizing can occur with unprecedented speed and reach. The civil rights movements of recent decades have demonstrated how social media can mobilize support for important causes.\n\nYet the same features that empower marginalized voices also amplify misinformation and inflammatory content. Algorithms designed to maximize engagement tend to reward emotionally charged material, including content that misrepresents facts or attacks specific groups. Users often encounter information selected to confirm their existing views, deepening polarization and reducing the common factual ground necessary for democratic deliberation.\n\nResponses to these problems have varied. Some platforms have introduced fact-checking labels and reduced the visibility of certain types of content. Critics argue that these measures either go too far in restricting speech or fall far short of addressing systemic issues. Governments have begun considering regulatory frameworks, but balancing free expression with protection from harmful content has proved challenging across different political systems.\n\nThe long-term effects of social media on democracy remain contested. What seems clear is that the technologies we have built are reshaping not only how political opinions form but also what kinds of conversations our societies can sustain.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "How did earlier mass communication differ from social media?",
+            "choices": [
+              "It used the same algorithms as social media.",
+              "It had no influence on public opinion.",
+              "It was shaped by editorial gatekeepers selecting information by professional standards.",
+              "It allowed any user to reach millions instantly."
+            ],
+            "answer": "2",
+            "explanation": "本文「Earlier forms of mass communication ... were shaped by editorial gatekeepers who selected and presented information according to professional standards」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What is one benefit of social media's democratization of voice mentioned in the passage?",
+            "choices": [
+              "All news now comes from professional journalists.",
+              "Marginalized communities can share perspectives mainstream media might overlook.",
+              "Misinformation has been eliminated.",
+              "Algorithms have been completely fair."
+            ],
+            "answer": "1",
+            "explanation": "本文「Marginalized communities can share perspectives that mainstream media might overlook」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What concern does the passage raise about engagement-maximizing algorithms?",
+            "choices": [
+              "They reward emotionally charged material, including misinformation, deepening polarization.",
+              "They prevent any content from reaching audiences.",
+              "They are too expensive to maintain.",
+              "They only show users content from international sources."
+            ],
+            "answer": "0",
+            "explanation": "本文「Algorithms designed to maximize engagement tend to reward emotionally charged material ... deepening polarization」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "chuo",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "中央大学 法学部 (類題)",
+        "passage": "The relationship between law and morality has occupied legal philosophers for centuries. One influential view, often associated with legal positivism, holds that law is whatever has been properly enacted by recognized authorities, regardless of whether it conforms to moral principles. On this view, an unjust law remains a law, even if citizens have moral reasons to disobey it. The opposing tradition, sometimes called natural law theory, maintains that genuinely valid law must conform to underlying moral principles—that an unjust enactment is not truly law at all, regardless of its formal pedigree.\n\nThese seemingly abstract positions carry significant practical consequences. They shape how judges interpret ambiguous statutes, how legislators justify new laws, and how citizens understand their obligations. After World War II, debates between positivists and natural law theorists became urgent when courts considered whether officials who had enforced clearly unjust Nazi statutes could be held accountable. Strict positivism seemed to immunize them; natural law theory provided grounds for prosecution.\n\nContemporary legal scholarship has largely moved beyond simple versions of either view. Most theorists now acknowledge that law and morality are conceptually distinct yet practically intertwined. Legal systems claim moral authority and depend on widespread acceptance of their legitimacy; this acceptance, in turn, often depends on broad alignment between law and shared moral convictions. When legal systems persistently violate widely held moral principles, they tend to face crises of compliance and legitimacy that purely formal analysis cannot capture.\n\nFor practicing lawyers and judges, these theoretical debates matter less in routine cases than in difficult ones where text and justice seem to point in different directions. How they navigate such tensions reveals not only their views about law but also their underlying commitments about what makes law worthy of obedience.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is the central claim of legal positivism according to the passage?",
+            "choices": [
+              "Law is whatever has been properly enacted by recognized authorities, regardless of moral content.",
+              "Citizens must always obey natural law.",
+              "There is no such thing as law.",
+              "All laws must be morally just to be valid."
+            ],
+            "answer": "0",
+            "explanation": "本文「law is whatever has been properly enacted by recognized authorities, regardless of whether it conforms to moral principles」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "How did the post-WWII period bring positivism vs. natural law into urgent focus?",
+            "choices": [
+              "By establishing a single global legal system.",
+              "By eliminating all legal philosophy from universities.",
+              "By ending all national courts permanently.",
+              "Through cases considering whether officials who enforced unjust Nazi statutes could be held accountable."
+            ],
+            "answer": "3",
+            "explanation": "本文「After World War II, debates between positivists and natural law theorists became urgent when courts considered whether officials who had enforced clearly unjust Nazi statutes could be held accountable」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What is the position of contemporary legal scholarship on law and morality?",
+            "choices": [
+              "Only one of them—law or morality—actually exists.",
+              "Law and morality are conceptually distinct yet practically intertwined.",
+              "Morality has no relationship to law.",
+              "Law and morality are completely identical."
+            ],
+            "answer": "1",
+            "explanation": "本文「Most theorists now acknowledge that law and morality are conceptually distinct yet practically intertwined」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "hosei",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2023,
+        "univ_simulated": "法政大学 経済学部 (類題)",
+        "passage": "The phenomenon known as the \"gig economy\"—work organized around short-term projects, contracts, and platform-mediated tasks rather than long-term employment—has expanded rapidly across many industrialized economies over the past two decades. Workers who once might have spent careers with a single employer now often piece together income from multiple sources: driving for ride-share services, delivering food, completing tasks through online marketplaces, or providing freelance professional services.\n\nProponents of this shift point to flexibility as its central benefit. Gig workers can in principle choose when, where, and how much to work, fitting employment around family obligations, education, or other priorities. Digital platforms have created income opportunities for people who might otherwise struggle to access traditional employment, including those in remote areas or with non-standard schedules.\n\nCritics, however, point to substantial costs. The flexibility that benefits some workers leaves others without stable income, predictable hours, or workplace protections that traditional employment has historically provided. Health insurance, retirement contributions, paid leave, and protection against arbitrary termination—all standard features of secure employment in many countries—are typically absent from gig arrangements. Workers who lack other resources may find themselves with theoretical flexibility but practical insecurity.\n\nThe legal status of gig workers has become a contested terrain. Courts and regulators in different jurisdictions have reached different conclusions about whether platform workers should be classified as employees or independent contractors. The classification has profound consequences: employees enjoy legal protections that contractors lack, but those protections come with corresponding obligations on employers. Tech companies have invested substantial resources in defending the contractor classification, while labor advocates have pushed for reform.\n\nHow this tension is resolved will significantly shape the future of work. The gig economy is unlikely to disappear, but its terms—who bears risk, who receives protection, who shares in productivity gains—remain very much under negotiation.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is the central benefit of the gig economy according to its proponents?",
+            "choices": [
+              "Permanent job security.",
+              "Better health insurance than employees receive.",
+              "Higher guaranteed wages than traditional employment.",
+              "Flexibility in choosing when, where, and how much to work."
+            ],
+            "answer": "3",
+            "explanation": "本文「Gig workers can in principle choose when, where, and how much to work, fitting employment around family obligations」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What protections are typically absent from gig arrangements?",
+            "choices": [
+              "Public transportation passes and food.",
+              "Telephone service and email.",
+              "Internet access and computer use.",
+              "Health insurance, retirement contributions, paid leave, and termination protection."
+            ],
+            "answer": "3",
+            "explanation": "本文「Health insurance, retirement contributions, paid leave, and protection against arbitrary termination—all standard features of secure employment ... are typically absent」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "Why has the legal classification of gig workers become contested?",
+            "choices": [
+              "Because employees and contractors have identical legal status.",
+              "Because tech companies refuse to use platforms.",
+              "Because employees enjoy legal protections that contractors lack, with corresponding obligations on employers.",
+              "Because the gig economy has disappeared."
+            ],
+            "answer": "2",
+            "explanation": "本文「employees enjoy legal protections that contractors lack, but those protections come with corresponding obligations on employers」が根拠。"
+          }
+        ]
+      }
+    }
+  ]
+}
