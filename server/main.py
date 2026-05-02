@@ -11585,6 +11585,144 @@ def vocab_stats(student_id: int):
 
 
 # ==========================================================================
+# 📊 LP A/B 計測 集計 endpoint (CEO ダッシュ用)
+# ==========================================================================
+@app.get("/api/admin/lp-funnel")
+def lp_funnel(authorization: Optional[str] = Header(None), days: int = 7):
+    """LP のコンバージョンファネル集計。
+    変数: days (default 7)。
+    返却: {variants: {variant_id: {lp_view, lp_scroll_50, lp_cta_click, lp_form_start, lp_form_submit}, ...}}
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="未認証")
+
+    conn = db()
+    c = conn.cursor()
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    # name LIKE 'lp_%' のみ抽出
+    c.execute("SELECT name, props, session_id, created_at FROM events WHERE name LIKE 'lp_%' AND created_at > ? LIMIT 50000", (cutoff,))
+    rows = c.fetchall()
+
+    # 集計: variant -> event -> count (sessions の unique はざっくり session_id 単位)
+    variants = {}  # {variant: {event_name: set(session_ids), event_name_50: set(session_ids)}}
+    for r in rows:
+        name = r[0] if not hasattr(r, 'keys') else r["name"]
+        props_raw = r[1] if not hasattr(r, 'keys') else r["props"]
+        sess = r[2] if not hasattr(r, 'keys') else r["session_id"]
+        try:
+            props = json.loads(props_raw) if isinstance(props_raw, str) else (props_raw or {})
+        except Exception:
+            props = {}
+        variant = props.get("variant", "unknown")
+        v = variants.setdefault(variant, {})
+
+        # scroll_depth は depth >= 50 だけカウント (中盤到達)
+        if name == "lp_scroll_depth":
+            try:
+                if int(props.get("depth", 0)) >= 50:
+                    v.setdefault("lp_scroll_50", set()).add(sess or "_anon")
+            except Exception:
+                pass
+        else:
+            v.setdefault(name, set()).add(sess or "_anon")
+
+    # set → count
+    out_variants = {}
+    for variant, events in variants.items():
+        out_variants[variant] = {k: len(s) for k, s in events.items()}
+
+    # 全 variants 横断のサマリ
+    summary = {"days": days, "total_events": len(rows), "variants_count": len(variants)}
+
+    return {"summary": summary, "variants": out_variants}
+
+
+# ==========================================================================
+# ✍️ Mock Exam 英作文採点 (Anthropic API 経由)
+# ==========================================================================
+@app.post("/api/mock-exam/grade-essay")
+def mock_exam_grade_essay(payload: dict):
+    """模試内 essay (英作文) を AI で採点。
+    payload: {"prompt": "...", "essay": "...", "level": "todai" | "kyodai" | "eiken_g1" | ...}
+    返却: {scores: {structure, content, language}, overall, total_points, feedback_jp}
+    """
+    prompt = (payload.get("prompt") or "").strip()
+    essay = (payload.get("essay") or "").strip()
+    level = (payload.get("level") or "todai").strip()
+    if not essay or len(essay) < 20:
+        raise HTTPException(status_code=400, detail="essay が短すぎます (20 文字以上必須)")
+    if len(essay) > 4000:
+        raise HTTPException(status_code=400, detail="essay が長すぎます (4000 文字以内)")
+
+    # Anthropic AI による採点 — 既存の _call_anthropic_safe があれば使う
+    system = (
+        "You are an experienced English exam grader for Japanese university entrance exams. "
+        "Grade the student's essay strictly but fairly. Score on 3 dimensions (0-10 each):\n"
+        "1) Structure: thesis clarity, paragraph organization, logical flow\n"
+        "2) Content: argument depth, evidence/examples, originality\n"
+        "3) Language: grammar accuracy, vocabulary range, naturalness\n\n"
+        "Return ONLY valid JSON: {\"structure\": <0-10>, \"content\": <0-10>, \"language\": <0-10>, "
+        "\"overall_comment_jp\": \"...\", \"strengths_jp\": [\"...\"], \"improvements_jp\": [\"...\"]}\n"
+        "Comment in Japanese for the student."
+    )
+    user = f"Level: {level}\n\nPrompt: {prompt}\n\nStudent essay:\n{essay}\n\nGrade now (JSON only)."
+
+    try:
+        # 既存の AI 呼び出し safe wrapper
+        if "_call_anthropic_safe" in globals():
+            resp_text = _call_anthropic_safe(system=system, user=user, max_tokens=1500)
+        else:
+            # fallback: 直接呼び出し (API key check)
+            api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+            if not api_key:
+                raise HTTPException(status_code=503, detail="ANTHROPIC_API_KEY 未設定")
+            import anthropic
+            client = anthropic.Anthropic(api_key=api_key)
+            msg = client.messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=1500,
+                system=system,
+                messages=[{"role": "user", "content": user}],
+            )
+            resp_text = msg.content[0].text if msg.content else "{}"
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"AI 採点失敗: {type(e).__name__}: {str(e)[:120]}")
+
+    # JSON パース
+    try:
+        # ``` で囲まれていたら除去
+        cleaned = resp_text.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.split("\n", 1)[1] if "\n" in cleaned else cleaned
+            if cleaned.endswith("```"):
+                cleaned = cleaned.rsplit("```", 1)[0]
+        scores = json.loads(cleaned)
+    except Exception:
+        # JSON が壊れていたら空テンプレで返す
+        scores = {"structure": 5, "content": 5, "language": 5,
+                  "overall_comment_jp": resp_text[:400],
+                  "strengths_jp": [], "improvements_jp": []}
+
+    s = int(scores.get("structure") or 0)
+    c_ = int(scores.get("content") or 0)
+    l_ = int(scores.get("language") or 0)
+    total_30 = s + c_ + l_
+    return {
+        "scores": {"structure": s, "content": c_, "language": l_},
+        "total_30": total_30,
+        "overall_pct": round(100 * total_30 / 30, 1),
+        "overall_comment_jp": scores.get("overall_comment_jp", ""),
+        "strengths_jp": scores.get("strengths_jp", []),
+        "improvements_jp": scores.get("improvements_jp", []),
+    }
+
+
+# ==========================================================================
 # Static file serving (frontend)
 # ==========================================================================
 @app.get("/")

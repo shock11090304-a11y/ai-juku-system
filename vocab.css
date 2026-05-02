@@ -67,6 +67,80 @@
   font-weight: 700;
 }
 
+.vc-univ-btn {
+  padding: 0.5rem 0.95rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.82rem;
+  transition: all 0.18s;
+}
+.vc-univ-btn:hover { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.4); }
+.vc-univ-btn.active {
+  background: linear-gradient(135deg, #f59e0b, #ec4899);
+  border-color: transparent;
+  font-weight: 700;
+}
+
+.vc-voice-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.88rem;
+  color: var(--text);
+  cursor: pointer;
+}
+.vc-voice-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.vc-speak-btn {
+  background: rgba(99,102,241,0.18);
+  border: 1px solid rgba(99,102,241,0.4);
+  color: var(--primary-light);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s;
+  margin: 1rem 0;
+}
+.vc-speak-btn:hover {
+  background: rgba(99,102,241,0.3);
+  transform: scale(1.05);
+}
+.vc-speak-btn.vc-speak-example {
+  width: 36px;
+  height: 36px;
+  font-size: 0.95rem;
+  margin: 0 0 0 0.5rem;
+  flex-shrink: 0;
+}
+.vc-card-example-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(99,102,241,0.08);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.5rem;
+}
+.vc-card-example-row .vc-card-example {
+  flex: 1;
+  background: none;
+  padding: 0;
+  margin-bottom: 0;
+}
+
 .vc-actions { text-align: center; margin-top: 2rem; }
 
 /* === Review Card === */

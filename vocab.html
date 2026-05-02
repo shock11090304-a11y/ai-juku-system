@@ -75,6 +75,25 @@
         </div>
       </div>
 
+      <div class="vc-level-picker">
+        <h3>大学別頻出 (任意)</h3>
+        <div class="vc-level-buttons">
+          <button class="vc-univ-btn active" data-univ="">指定なし</button>
+          <button class="vc-univ-btn" data-univ="todai">東大</button>
+          <button class="vc-univ-btn" data-univ="kyodai">京大</button>
+          <button class="vc-univ-btn" data-univ="waseda">早稲田</button>
+          <button class="vc-univ-btn" data-univ="keio">慶應</button>
+        </div>
+      </div>
+
+      <div class="vc-level-picker">
+        <h3>音声設定</h3>
+        <label class="vc-voice-toggle">
+          <input type="checkbox" id="vcAutoSpeak" checked>
+          <span>カード表示時に英単語を自動読み上げ (Web Speech API)</span>
+        </label>
+      </div>
+
       <div class="vc-actions">
         <button id="vcStartBtn" class="btn-primary btn-lg">📖 復習を開始 →</button>
       </div>
@@ -92,11 +111,15 @@
           <div class="vc-card-front" id="vcCardFront">
             <div class="vc-card-pos" id="vcCardPos"></div>
             <div class="vc-card-word" id="vcCardWord">--</div>
+            <button class="vc-speak-btn" id="vcSpeakBtn" title="単語を読み上げる" aria-label="単語を読み上げる">🔊</button>
             <button class="vc-show-btn" id="vcShowBtn">意味を見る</button>
           </div>
           <div class="vc-card-back" id="vcCardBack" style="display:none;">
             <div class="vc-card-meaning" id="vcCardMeaning"></div>
-            <div class="vc-card-example" id="vcCardExample"></div>
+            <div class="vc-card-example-row">
+              <div class="vc-card-example" id="vcCardExample"></div>
+              <button class="vc-speak-btn vc-speak-example" id="vcSpeakExampleBtn" title="例文を読み上げる" aria-label="例文を読み上げる">🔊</button>
+            </div>
             <div class="vc-card-example-jp" id="vcCardExampleJp"></div>
             <div class="vc-grade-buttons">
               <button class="vc-grade-btn vc-grade-no" id="vcGradeNo">❌ 知らなかった</button>
