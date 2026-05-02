@@ -4146,6 +4146,7 @@ EXAM_QUESTION_ROTATION = [
     # 医学部
     ("daigaku", "r_long",        "igakubu_kokoritsu"),
     ("daigaku", "r_translation", "igakubu_kokoritsu"),
+    ("daigaku", "w_essay",       "igakubu_kokoritsu"),  # 2026-05-03 追加
     ("daigaku", "r_long",        "igakubu_shiritsu"),
     # 共通テスト・センター試験 (2005-2020 はセンター・2021- は共通テスト)
     ("daigaku", "r_long",        "kyotsu"),
