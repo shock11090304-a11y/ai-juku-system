@@ -1,0 +1,366 @@
+{
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "nagoya",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "名古屋大学 文学部 (類題)",
+        "passage": "The notion that science progresses through a steady accumulation of facts has fallen out of favor among historians of science. Thomas Kuhn's influential analysis suggested instead that scientific progress occurs through occasional dramatic reorganizations—paradigm shifts—in which fundamental assumptions are overturned and replaced. According to Kuhn, periods of \"normal science\" involve refining established frameworks, but anomalies eventually accumulate that the existing paradigm cannot accommodate, leading to crisis and eventual revolution.\n\nThis view, while powerful, has its critics. Some historians argue that Kuhn overstates the discontinuity between paradigms. The transition from Newtonian to Einsteinian physics, for example, did not simply discard previous knowledge but reinterpreted it within a broader framework. Newtonian mechanics remains accurate within everyday domains and continues to be used by engineers and physicists alike.\n\nOthers point out that Kuhn's model fits some sciences better than others. Physics, with its emphasis on unified theories, may indeed exhibit revolutionary shifts. But disciplines like biology or geology often progress through gradual integration of diverse findings rather than sudden overturning of foundational principles. The history of evolutionary biology since Darwin shows refinement and extension rather than overthrow.\n\nThese debates remind us that the philosophy of science cannot be reduced to a single model. What matters is recognizing that scientific knowledge is shaped by both careful observation and theoretical commitments, and that progress involves not only new facts but also new ways of asking questions about the world we inhabit.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What is the main claim of Thomas Kuhn's view as described in the passage?",
+            "choices": [
+              "Science is largely unaffected by social or historical context.",
+              "Science progresses through smooth and continuous accumulation of facts.",
+              "Science progresses through occasional dramatic reorganizations called paradigm shifts.",
+              "Science cannot make any genuine progress at all."
+            ],
+            "answer": "2",
+            "explanation": "本文「scientific progress occurs through occasional dramatic reorganizations—paradigm shifts—in which fundamental assumptions are overturned and replaced」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "How does the author illustrate the criticism that Kuhn overstates discontinuity?",
+            "choices": [
+              "By showing that Einstein's work completely replaced Newton's.",
+              "By arguing that physics is more advanced than biology.",
+              "By noting that Newtonian mechanics is reinterpreted but still used today.",
+              "By citing the use of pre-scientific superstition."
+            ],
+            "answer": "2",
+            "explanation": "本文「Newtonian mechanics remains accurate within everyday domains and continues to be used by engineers and physicists alike」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What does the author conclude about scientific progress?",
+            "choices": [
+              "Progress involves both new facts and new ways of asking questions.",
+              "Scientific knowledge is purely subjective.",
+              "Kuhn's model is correct for all sciences.",
+              "Only physics undergoes genuine progress."
+            ],
+            "answer": "0",
+            "explanation": "本文「progress involves not only new facts but also new ways of asking questions about the world」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "nagoya",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2023,
+        "univ_simulated": "名古屋大学 教育学部 (類題)",
+        "passage": "Educational researchers have long debated the relationship between examinations and learning. On one view, regular testing motivates students, provides clear goals, and helps teachers identify gaps in understanding. On another view, an excessive focus on examinations narrows the curriculum, encourages superficial learning of facts likely to appear on tests, and creates anxiety that interferes with deep engagement.\n\nRecent neuroscience research adds nuance to this debate. Studies have shown that the act of retrieving information from memory—as required during a test—actually strengthens long-term retention more effectively than simply rereading material. This phenomenon, known as the \"testing effect,\" suggests that examinations, when designed appropriately, can enhance rather than merely measure learning.\n\nHowever, the testing effect depends heavily on the type of assessment. Multiple-choice tests that reward recognition tend to produce shallower learning than open-ended questions that require students to organize and articulate their understanding. Furthermore, the psychological climate around testing matters: students who view tests as opportunities to demonstrate growth tend to benefit more than those who view them as threats to their self-worth.\n\nThese findings suggest that the question is not whether to test, but how. Schools that integrate frequent low-stakes assessments, emphasize feedback over ranking, and design questions that demand reasoning may capture the educational benefits of testing while minimizing its costs. Such an approach treats examinations as one tool among many for fostering learning, rather than as the ultimate goal of education itself.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "According to the passage, what does recent neuroscience research suggest about the testing effect?",
+            "choices": [
+              "Memory is not affected by testing.",
+              "Reading is more effective than testing.",
+              "Tests are harmful to memory.",
+              "Retrieving information during tests strengthens long-term retention."
+            ],
+            "answer": "3",
+            "explanation": "本文「the act of retrieving information from memory—as required during a test—actually strengthens long-term retention more effectively than simply rereading material」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "Why do open-ended questions tend to produce deeper learning than multiple-choice questions?",
+            "choices": [
+              "They require students to organize and articulate their understanding.",
+              "They are graded by computers.",
+              "They take more time to complete.",
+              "They are always easier than multiple-choice questions."
+            ],
+            "answer": "0",
+            "explanation": "本文「open-ended questions that require students to organize and articulate their understanding」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What is the author's overall conclusion?",
+            "choices": [
+              "Multiple-choice tests are always preferable.",
+              "How tests are designed and used matters more than whether to use them.",
+              "Tests should be the ultimate goal of education.",
+              "Tests should be eliminated."
+            ],
+            "answer": "1",
+            "explanation": "本文「the question is not whether to test, but how」+「Such an approach treats examinations as one tool among many for fostering learning, rather than as the ultimate goal of education itself」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "icu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "国際基督教大学 (類題)",
+        "passage": "The concept of \"global citizenship\" has gained currency in recent decades, particularly in international universities and policy circles. Advocates argue that pressing problems—climate change, pandemics, financial crises—cross national borders and require collective responses that go beyond traditional notions of citizenship rooted in particular nation-states. To address such problems effectively, individuals must develop loyalties and identities that transcend their place of birth.\n\nCritics raise several concerns about this framework. First, they argue that global citizenship lacks the institutional foundation that meaningful citizenship requires. Citizens of a nation can vote, hold officials accountable, and seek legal protection through established political structures. The \"global citizen,\" by contrast, has no equivalent rights or recourse, which makes the term more rhetorical than practical.\n\nA second concern involves the universalism that global citizenship presumes. Different cultures hold genuinely different values about family, community, justice, and the good life. A framework that asks individuals to identify primarily as members of humanity at large may inadvertently privilege the cultural assumptions of those who design the framework, often educated elites in wealthy democracies.\n\nDefenders of the concept respond that global citizenship need not replace national or local identities; it can complement them. Acknowledging shared humanity while preserving cultural distinctiveness is, they argue, both philosophically coherent and practically necessary. Whether such a layered identity can be sustained—particularly when global and local interests genuinely conflict—remains an open question, one that the next generation of educators and policymakers will need to address with both intellectual rigor and cultural humility.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "Why do advocates of global citizenship argue it is needed?",
+            "choices": [
+              "Because nation-states have already disappeared.",
+              "Because pressing problems cross national borders and require collective responses.",
+              "Because elite universities require it.",
+              "Because citizenship is a meaningless concept."
+            ],
+            "answer": "1",
+            "explanation": "本文「pressing problems—climate change, pandemics, financial crises—cross national borders and require collective responses」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What is the first concern raised by critics?",
+            "choices": [
+              "Global citizenship is too expensive.",
+              "Global citizenship is illegal in many countries.",
+              "Global citizenship lacks the institutional foundation that meaningful citizenship requires.",
+              "Global citizenship cannot be taught."
+            ],
+            "answer": "2",
+            "explanation": "本文「global citizenship lacks the institutional foundation that meaningful citizenship requires. Citizens of a nation can vote ... The \"global citizen,\" by contrast, has no equivalent rights or recourse」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What do defenders of global citizenship suggest about identity?",
+            "choices": [
+              "It is impossible to maintain.",
+              "It can complement national and local identities rather than replace them.",
+              "It must replace local and national identities.",
+              "Cultural distinctiveness is irrelevant."
+            ],
+            "answer": "1",
+            "explanation": "本文「global citizenship need not replace national or local identities; it can complement them」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "icu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2023,
+        "univ_simulated": "国際基督教大学 (類題)",
+        "passage": "Few aspects of human existence are as universal as the experience of language, and yet linguistic diversity is increasingly under threat. Of the roughly 7,000 languages spoken today, linguists estimate that one disappears every two weeks. By the end of this century, perhaps half of these languages will have ceased to exist as living tongues, surviving—if at all—only as recordings or written documents.\n\nThe loss of a language is not simply a loss of vocabulary. Each language embodies a distinctive way of perceiving and organizing reality. The categories a language makes available—how it divides time, space, color, kinship, or causation—shape the thoughts of those who speak it in ways that translation cannot fully capture. When the last speaker of a language dies, an entire conceptual framework dies with them.\n\nResponses to this loss vary. Some communities have launched ambitious revitalization efforts, often led by younger members reconnecting with their heritage. Others accept the trend as an inevitable consequence of globalization and economic integration. Still others argue that the goal should not be preservation for its own sake but ensuring that linguistic communities have genuine choices, including the choice to maintain their language with adequate institutional support.\n\nWhat all sides recognize is that language is more than a tool. It is a medium through which communities understand themselves, transmit values across generations, and locate their place in the world. The future of linguistic diversity will depend not only on policies and resources but on whether societies decide that this aspect of human heritage deserves the same protection often afforded to artistic and architectural treasures.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "According to the passage, why is language loss described as more than a loss of vocabulary?",
+            "choices": [
+              "Because dictionaries can preserve languages permanently.",
+              "Because translation can fully capture every nuance.",
+              "Because each language embodies a distinctive way of perceiving and organizing reality.",
+              "Because vocabulary is unimportant."
+            ],
+            "answer": "2",
+            "explanation": "本文「Each language embodies a distinctive way of perceiving and organizing reality」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "What is one community-led response to language loss mentioned in the passage?",
+            "choices": [
+              "Ambitious revitalization efforts often led by younger members.",
+              "Translating all languages into English.",
+              "Refusing to teach any language at all.",
+              "Banning the use of dominant languages."
+            ],
+            "answer": "0",
+            "explanation": "本文「Some communities have launched ambitious revitalization efforts, often led by younger members reconnecting with their heritage」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What does the author suggest the future of linguistic diversity depends on?",
+            "choices": [
+              "Whether societies decide that linguistic heritage deserves the same protection as artistic treasures.",
+              "Eliminating English from the world.",
+              "Banning international travel.",
+              "Forcing everyone to learn endangered languages."
+            ],
+            "answer": "0",
+            "explanation": "本文「The future of linguistic diversity will depend ... on whether societies decide that this aspect of human heritage deserves the same protection often afforded to artistic and architectural treasures」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "sophia",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "上智大学 法学部 (類題)",
+        "passage": "Privacy in the digital age has emerged as one of the defining legal and ethical challenges of our time. As individuals conduct increasing portions of their lives online—shopping, working, socializing, and even seeking medical advice—they leave behind detailed traces that can be collected, analyzed, and monetized in ways that were inconceivable a generation ago. The legal frameworks designed to protect personal information were largely shaped before the rise of large-scale data analytics and now struggle to address contemporary challenges.\n\nDifferent jurisdictions have responded in markedly different ways. The European Union's General Data Protection Regulation, often called GDPR, takes a comprehensive approach, granting individuals significant control over their data and imposing substantial penalties on companies that violate these rights. The American approach, by contrast, has historically been sectoral, with separate rules for medical records, financial information, and children's data, leaving substantial gaps in coverage. Asian jurisdictions occupy varied positions, with some adopting GDPR-like frameworks and others emphasizing national security considerations.\n\nThese divergent approaches reflect deeper disagreements about the relationship between individuals, businesses, and governments. Should personal data be treated as a fundamental right that individuals control, as a commercial commodity that companies can exploit with consent, or as a public resource subject to regulatory oversight? Each framing carries significant implications for innovation, civil liberties, and economic growth.\n\nNo consensus seems likely in the near term. What is clear, however, is that the choices societies make about data privacy will shape the relationship between citizens and institutions for decades to come. The challenge is not merely technical but profoundly philosophical, requiring careful balance between competing values that reasonable people can prioritize differently.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "Why are existing legal frameworks struggling with digital privacy?",
+            "choices": [
+              "They are written in too many languages.",
+              "They are too detailed and specific.",
+              "They have been completely abolished worldwide.",
+              "They were largely shaped before large-scale data analytics emerged."
+            ],
+            "answer": "3",
+            "explanation": "本文「The legal frameworks designed to protect personal information were largely shaped before the rise of large-scale data analytics」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "How does the American approach to privacy differ from the European GDPR approach?",
+            "choices": [
+              "America has stricter rules than Europe.",
+              "America uses GDPR exclusively.",
+              "America has no privacy laws at all.",
+              "America's approach is sectoral with separate rules for different domains, leaving gaps."
+            ],
+            "answer": "3",
+            "explanation": "本文「The American approach, by contrast, has historically been sectoral, with separate rules for medical records, financial information, and children's data, leaving substantial gaps」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What does the author conclude about the privacy debate?",
+            "choices": [
+              "The challenge is philosophical, requiring balance between competing values.",
+              "The challenge is purely technical with one obvious solution.",
+              "Only governments can decide.",
+              "The debate has been completely resolved."
+            ],
+            "answer": "0",
+            "explanation": "本文「The challenge is not merely technical but profoundly philosophical, requiring careful balance between competing values」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "igakubu_shiritsu",
+      "model": "claude-max-plan",
+      "question_data": {
+        "year_simulated": 2024,
+        "univ_simulated": "私立医学部 (類題)",
+        "passage": "The relationship between physicians and patients has evolved substantially over the past several decades. Earlier models of medicine assumed a clear hierarchy: the physician possessed specialized knowledge and made decisions on the patient's behalf, while the patient's role was largely to comply with the prescribed treatment. This paternalistic model was justified by the idea that medical decisions required expertise that ordinary patients could not possess.\n\nContemporary medical ethics has shifted decisively toward a model of shared decision-making. Patients are now recognized not only as having a right to information about their condition but also as bringing essential perspectives—about their values, fears, and life circumstances—that the physician cannot supply. Effective treatment, on this view, requires integrating medical knowledge with patient priorities, rather than treating the patient's role as merely passive.\n\nThis shift has been accelerated by several developments. The internet provides patients with unprecedented access to medical information, though the quality of that information varies widely. Increasing recognition of cultural diversity has revealed that what counts as a \"good outcome\" depends partly on values that vary across communities. Legal frameworks now require informed consent for most procedures, formally acknowledging the patient's right to participate in decisions affecting their own body.\n\nYet the shared decision-making model presents challenges of its own. Patients facing serious illness may be too overwhelmed to engage meaningfully in complex decisions. Time-pressured clinical encounters often leave inadequate room for genuine dialogue. And cultural expectations vary: some patients prefer that their physicians take the lead, viewing extensive choice as burdensome rather than empowering. Navigating these tensions thoughtfully remains one of the central challenges of contemporary medical practice.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "What characterized the earlier paternalistic model of medicine?",
+            "choices": [
+              "There were no physicians, only patients.",
+              "Physicians and patients were equal partners.",
+              "The patient made all medical decisions alone.",
+              "The physician possessed specialized knowledge and made decisions on the patient's behalf."
+            ],
+            "answer": "3",
+            "explanation": "本文「the physician possessed specialized knowledge and made decisions on the patient's behalf, while the patient's role was largely to comply」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "According to the passage, what perspectives do patients bring that physicians cannot supply?",
+            "choices": [
+              "Knowledge of advanced surgical techniques.",
+              "Detailed knowledge of pharmacology.",
+              "Their values, fears, and life circumstances.",
+              "Diagnostic imaging interpretation."
+            ],
+            "answer": "2",
+            "explanation": "本文「bringing essential perspectives—about their values, fears, and life circumstances」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What challenge does the shared decision-making model face?",
+            "choices": [
+              "Physicians refuse to give any information.",
+              "There are no longer any clinical encounters.",
+              "Patients facing serious illness may be too overwhelmed to engage meaningfully in complex decisions.",
+              "Patients always know more than physicians."
+            ],
+            "answer": "2",
+            "explanation": "本文「Patients facing serious illness may be too overwhelmed to engage meaningfully in complex decisions」が根拠。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "center",
+      "model": "claude-max-plan",
+      "question_data": {
+        "passage": "Many people believe that creativity is something a person is simply born with—you either have it or you don't. However, recent research suggests that creativity is much more like a skill that can be developed through practice. Studies of artists, scientists, and musicians have shown that those who reach the highest levels of creative achievement typically share certain habits, regardless of their natural talent.\n\nOne important habit is curiosity. Highly creative people tend to ask many questions and explore topics far beyond their immediate field of work. A novelist might study physics, a scientist might learn to paint, and a musician might read history. This wide-ranging interest creates connections between different ideas, which often leads to original thinking.\n\nAnother key habit is persistence. Creative work often requires many attempts before something successful emerges. Most great artists and inventors have produced large amounts of unsuccessful work alongside their famous achievements. The willingness to keep trying after failure—rather than giving up—turns out to be a stronger predictor of creative success than raw talent alone.\n\nFinally, creative people often build environments that support their work. They surround themselves with people who give honest feedback, they set aside regular time for focused thinking, and they limit distractions during their most productive hours. These environmental choices show that creativity, while rooted in the individual mind, also depends on the conditions a person creates around themselves.",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "According to the passage, what does recent research suggest about creativity?",
+            "choices": [
+              "It is impossible to study scientifically.",
+              "It depends only on natural talent.",
+              "It is something only some people are born with.",
+              "It is much more like a skill that can be developed through practice."
+            ],
+            "answer": "3",
+            "explanation": "本文「creativity is much more like a skill that can be developed through practice」が根拠。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "How does curiosity contribute to creative thinking?",
+            "choices": [
+              "It creates connections between different ideas, leading to original thinking.",
+              "It removes the need for persistence.",
+              "It allows people to win arguments easily.",
+              "It helps people memorize facts faster."
+            ],
+            "answer": "0",
+            "explanation": "本文「This wide-ranging interest creates connections between different ideas, which often leads to original thinking」が根拠。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "What does the passage say about the environments of creative people?",
+            "choices": [
+              "They prefer to work in complete isolation always.",
+              "They build environments with honest feedback, focused time, and limited distractions.",
+              "They never seek feedback from others.",
+              "They depend entirely on their environment, not their own minds."
+            ],
+            "answer": "1",
+            "explanation": "本文「they surround themselves with people who give honest feedback, they set aside regular time for focused thinking, and they limit distractions」が根拠。"
+          }
+        ]
+      }
+    }
+  ]
+}
