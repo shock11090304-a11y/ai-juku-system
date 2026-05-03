@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>大学別 過去問風オリジナル | AI学習コーチ塾</title>
+  <script src="cache-purge.js?v=20260503-univexam"></script>
+  <script src="frontend-error-monitor.js"></script>
+  <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost-r2">
+  <link rel="stylesheet" href="vocab.css?v=20260503-quiz4-levels">
+  <style>
+    .ux-container { max-width: 920px; margin: 2rem auto; padding: 0 1rem; }
+    .ux-header { text-align: center; margin-bottom: 2rem; }
+    .ux-header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    .ux-sub { color: #94a3b8; font-size: 0.9rem; line-height: 1.7; margin-bottom: 0.7rem; }
+    .ux-disclaimer {
+      background: rgba(251,191,36,0.06);
+      border: 1px solid rgba(251,191,36,0.3);
+      border-radius: 10px;
+      padding: 0.7rem 1rem;
+      font-size: 0.78rem;
+      color: #fcd34d;
+      margin: 1rem auto;
+      max-width: 700px;
+    }
+    .ux-univ-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.7rem;
+      margin: 1.5rem 0;
+    }
+    .ux-univ-card {
+      background: rgba(255,255,255,0.04);
+      border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .ux-univ-card:hover { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.5); }
+    .ux-univ-card.active { background: rgba(99,102,241,0.22); border-color: rgba(99,102,241,0.7); }
+    .ux-univ-name { font-size: 1.1rem; font-weight: 800; color: #c7d2fe; }
+    .ux-univ-meta { font-size: 0.75rem; color: #94a3b8; margin-top: 0.3rem; }
+
+    .ux-list { margin-top: 1.5rem; }
+    .ux-item {
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 0.95rem;
+      margin-bottom: 0.7rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .ux-item:hover { background: rgba(99,102,241,0.10); border-color: rgba(99,102,241,0.4); }
+    .ux-item-row1 {
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.3rem;
+    }
+    .ux-topic { font-weight: 700; color: #e4e4e7; }
+    .ux-badges { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+    .ux-badge {
+      padding: 0.15rem 0.55rem;
+      background: rgba(99,102,241,0.18);
+      border: 1px solid rgba(99,102,241,0.4);
+      color: #a78bfa;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+    .ux-badge.diff-難  { background: rgba(239,68,68,0.18);  border-color: rgba(239,68,68,0.4);  color:#fca5a5; }
+    .ux-badge.diff-標準 { background: rgba(251,191,36,0.18); border-color: rgba(251,191,36,0.4); color:#fcd34d; }
+    .ux-inspired { font-size: 0.75rem; color: #94a3b8; }
+
+    .ux-detail-card {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(99,102,241,0.4);
+      border-radius: 14px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .ux-detail-meta { font-size: 0.85rem; color: #c7d2fe; margin-bottom: 1rem; }
+    .ux-question { white-space: pre-wrap; line-height: 1.85; font-size: 0.96rem; color: #e4e4e7; margin-bottom: 1.2rem; }
+    .ux-choices-block { margin: 1rem 0; }
+    .ux-choice-row {
+      padding: 0.85rem 1rem;
+      background: rgba(255,255,255,0.04);
+      border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      cursor: pointer;
+      margin-bottom: 0.5rem;
+      transition: all 0.15s;
+      display: flex; gap: 0.7rem; align-items: flex-start;
+    }
+    .ux-choice-row:hover:not(.disabled) { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.5); }
+    .ux-choice-row.correct { background: rgba(16,185,129,0.22); border-color: rgba(16,185,129,0.6); color: #6ee7b7; }
+    .ux-choice-row.wrong   { background: rgba(239,68,68,0.22); border-color: rgba(239,68,68,0.6); color: #fca5a5; }
+    .ux-choice-key { font-weight: 800; min-width: 1.5em; }
+
+    .ux-answer-block {
+      background: rgba(16,185,129,0.08);
+      border: 1px solid rgba(16,185,129,0.35);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-top: 1.2rem;
+      display: none;
+    }
+    .ux-answer-block.show { display: block; }
+    .ux-answer-label { font-weight: 800; color: #6ee7b7; margin-bottom: 0.4rem; }
+    .ux-answer-text { white-space: pre-wrap; line-height: 1.8; color: #e4e4e7; }
+    .ux-explanation-block {
+      background: rgba(99,102,241,0.06);
+      border: 1px solid rgba(99,102,241,0.3);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-top: 0.8rem;
+      display: none;
+    }
+    .ux-explanation-block.show { display: block; }
+    .ux-explanation-label { font-weight: 800; color: #a78bfa; margin-bottom: 0.4rem; }
+
+    .ux-actions { display: flex; gap: 0.6rem; margin-top: 1rem; flex-wrap: wrap; }
+    .ux-loading { text-align: center; color: #94a3b8; padding: 2rem; }
+
+    @media (max-width: 640px) {
+      .ux-univ-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="lp.html" class="nav-logo">
+        <span class="logo-icon">🎓</span>
+        <span class="logo-text">AI学習コーチ塾</span>
+      </a>
+      <div class="nav-cta">
+        <a href="mypage.html" class="btn-ghost">マイページ</a>
+        <a href="vocab.html" class="btn-ghost">📖 単語帳</a>
+        <a href="lp.html" class="btn-ghost">トップ</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="ux-container">
+    <div class="ux-header">
+      <h1>🎓 大学別 過去問風 オリジナル問題</h1>
+      <p class="ux-sub">
+        東大・京大・早稲田・慶應・一橋 等、各大学の出題スタイルを参考に<br>
+        AI が独自作成したオリジナル問題と詳細解説
+      </p>
+    </div>
+
+    <div class="ux-disclaimer">
+      ⚖️ 著作権配慮: 本コーナーの全問題・解答・解説は AI による完全独自創作です。
+      実際の過去問テキストの転載は一切ありません (出題スタイル・テーマ傾向のみ参考)。
+    </div>
+
+    <!-- 大学カード -->
+    <div id="uxUnivGrid" class="ux-univ-grid">
+      <div class="ux-loading">大学一覧を読み込み中...</div>
+    </div>
+
+    <!-- 問題一覧 -->
+    <div id="uxList" class="ux-list" style="display:none;"></div>
+
+    <!-- 問題詳細 -->
+    <div id="uxDetail" style="display:none;"></div>
+  </main>
+
+  <script>
+    (function() {
+      const BACKEND_URL = window.location.hostname === 'localhost' && window.location.port === '8090'
+        ? 'http://localhost:8000'
+        : window.location.origin;
+
+      let currentUniv = null;
+
+      async function loadMeta() {
+        const grid = document.getElementById('uxUnivGrid');
+        try {
+          const r = await fetch(`${BACKEND_URL}/api/university-problems/meta/universities`);
+          if (!r.ok) throw new Error(r.status);
+          const d = await r.json();
+          if (!d.items || d.items.length === 0) {
+            grid.innerHTML = '<div class="ux-loading">問題はまだ登録されていません</div>';
+            return;
+          }
+          // 大学単位で集約 (同大学に複数科目がある可能性)
+          const byUniv = {};
+          d.items.forEach(it => {
+            if (!byUniv[it.university]) byUniv[it.university] = { count: 0, subjects: [] };
+            byUniv[it.university].count += it.count;
+            byUniv[it.university].subjects.push(`${it.subject}:${it.count}`);
+          });
+          grid.innerHTML = Object.entries(byUniv).map(([u, info]) => `
+            <div class="ux-univ-card" data-univ="${escapeHtml(u)}">
+              <div class="ux-univ-name">${escapeHtml(u)}</div>
+              <div class="ux-univ-meta">${info.subjects.join(' / ')} <br>合計 ${info.count} 問</div>
+            </div>
+          `).join('');
+          grid.querySelectorAll('.ux-univ-card').forEach(card => {
+            card.addEventListener('click', () => selectUniv(card.dataset.univ));
+          });
+        } catch (e) {
+          grid.innerHTML = `<div class="ux-loading">読込エラー: ${e.message}</div>`;
+        }
+      }
+
+      async function selectUniv(univ) {
+        currentUniv = univ;
+        document.querySelectorAll('.ux-univ-card').forEach(c =>
+          c.classList.toggle('active', c.dataset.univ === univ));
+        const list = document.getElementById('uxList');
+        list.style.display = '';
+        list.innerHTML = '<div class="ux-loading">問題一覧を読み込み中...</div>';
+        document.getElementById('uxDetail').style.display = 'none';
+        try {
+          const r = await fetch(`${BACKEND_URL}/api/university-problems?university=${encodeURIComponent(univ)}&limit=50`);
+          const d = await r.json();
+          if (!d.items || d.items.length === 0) {
+            list.innerHTML = '<div class="ux-loading">該当問題なし</div>'; return;
+          }
+          list.innerHTML = `
+            <h3 style="color:#c7d2fe;margin-bottom:0.7rem;">${escapeHtml(univ)} の問題 (${d.items.length} 問)</h3>
+          ` + d.items.map(it => `
+            <div class="ux-item" data-id="${it.id}">
+              <div class="ux-item-row1">
+                <div class="ux-topic">${escapeHtml(it.topic || '問題')}</div>
+                <div class="ux-badges">
+                  ${it.faculty ? `<span class="ux-badge">${escapeHtml(it.faculty)}</span>` : ''}
+                  <span class="ux-badge">${it.problem_type === 'multiple_choice' ? '4択' : '記述'}</span>
+                  <span class="ux-badge diff-${escapeHtml(it.difficulty || '')}">${escapeHtml(it.difficulty || '標準')}</span>
+                </div>
+              </div>
+              <div class="ux-inspired">${escapeHtml(it.inspired_by || '')}</div>
+            </div>
+          `).join('');
+          list.querySelectorAll('.ux-item').forEach(el => {
+            el.addEventListener('click', () => loadDetail(parseInt(el.dataset.id, 10)));
+          });
+        } catch (e) {
+          list.innerHTML = `<div class="ux-loading">読込エラー: ${e.message}</div>`;
+        }
+      }
+
+      async function loadDetail(pid) {
+        const detail = document.getElementById('uxDetail');
+        detail.style.display = '';
+        detail.innerHTML = '<div class="ux-loading">問題を読み込み中...</div>';
+        try {
+          const r = await fetch(`${BACKEND_URL}/api/university-problems/${pid}`);
+          const p = await r.json();
+          renderDetail(p);
+          detail.scrollIntoView({block: 'start', behavior: 'smooth'});
+        } catch (e) {
+          detail.innerHTML = `<div class="ux-loading">読込エラー: ${e.message}</div>`;
+        }
+      }
+
+      function renderDetail(p) {
+        const detail = document.getElementById('uxDetail');
+        const isMC = p.problem_type === 'multiple_choice';
+        let choicesHtml = '';
+        if (isMC && Array.isArray(p.choices)) {
+          choicesHtml = `
+            <div class="ux-choices-block" id="uxChoices">
+              ${p.choices.map((c, i) => `
+                <div class="ux-choice-row" data-key="${String.fromCharCode(65+i)}" data-idx="${i}">
+                  <div class="ux-choice-key">${String.fromCharCode(65+i)}.</div>
+                  <div>${escapeHtml(c)}</div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+        detail.innerHTML = `
+          <div class="ux-detail-card">
+            <div class="ux-detail-meta">
+              <strong>${escapeHtml(p.university)}</strong> ${p.faculty ? '/ ' + escapeHtml(p.faculty) : ''} · ${escapeHtml(p.subject)} · <span style="color:#fcd34d;">${escapeHtml(p.difficulty || '標準')}</span><br>
+              <span style="font-size:0.78rem;">${escapeHtml(p.inspired_by || '')}</span>
+            </div>
+            <div class="ux-question">${escapeHtml(p.question_text)}</div>
+            ${choicesHtml}
+            <div class="ux-actions">
+              ${isMC ? '' : '<button type="button" class="btn-secondary btn-small" id="uxRevealBtn">解答・解説を表示</button>'}
+              <button type="button" class="btn-ghost btn-small" id="uxBackBtn">← 一覧に戻る</button>
+            </div>
+            <div class="ux-answer-block" id="uxAnswerBlock">
+              <div class="ux-answer-label">📝 解答</div>
+              <div class="ux-answer-text">${escapeHtml(p.answer)}</div>
+            </div>
+            <div class="ux-explanation-block" id="uxExplanationBlock">
+              <div class="ux-explanation-label">💡 解説</div>
+              <div class="ux-answer-text">${escapeHtml(p.explanation)}</div>
+            </div>
+          </div>
+        `;
+
+        // MC: クリックで自動採点
+        if (isMC && Array.isArray(p.choices)) {
+          document.querySelectorAll('#uxChoices .ux-choice-row').forEach(row => {
+            row.addEventListener('click', () => {
+              const userKey = row.dataset.key;
+              const correctKey = String(p.answer).trim().toUpperCase().slice(0,1);
+              document.querySelectorAll('#uxChoices .ux-choice-row').forEach(r => {
+                r.classList.add('disabled');
+                r.style.cursor = 'default';
+                if (r.dataset.key === correctKey) r.classList.add('correct');
+                else if (r.dataset.key === userKey) r.classList.add('wrong');
+              });
+              document.getElementById('uxAnswerBlock').classList.add('show');
+              document.getElementById('uxExplanationBlock').classList.add('show');
+            });
+          });
+        } else {
+          // free_response: ボタンで解答・解説を開示
+          const reveal = document.getElementById('uxRevealBtn');
+          if (reveal) {
+            reveal.addEventListener('click', () => {
+              document.getElementById('uxAnswerBlock').classList.add('show');
+              document.getElementById('uxExplanationBlock').classList.add('show');
+              reveal.disabled = true;
+              reveal.textContent = '✓ 表示済み';
+            });
+          }
+        }
+        const back = document.getElementById('uxBackBtn');
+        if (back) back.addEventListener('click', () => {
+          detail.style.display = 'none';
+          document.getElementById('uxList').scrollIntoView({block:'start', behavior:'smooth'});
+        });
+      }
+
+      function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[c]);
+      }
+
+      document.addEventListener('DOMContentLoaded', loadMeta);
+    })();
+  </script>
+</body>
+</html>
