@@ -3322,7 +3322,18 @@ def admin_stats(authorization: Optional[str] = Header(None)):
 
     conn.close()
 
-    plan_fees = {"standard": 24980, "premium": 39800, "family": 59800, "student_addon": 9800}
+    # 🔧 plan→月額料金マップ。MRR/ARR 集計はこのマップに無いプランを 0 円扱いするため、
+    # 全有効プランをここに列挙する必要がある (2026-05-03 founder_special 漏れで MRR=0 致命事故)。
+    # founder_special は THREADS6K クーポン経路 ¥12,000 永年 (memory note 根拠)。
+    # founder1 は旧 founder_special の後方互換キー (line 111 と同期)。
+    plan_fees = {
+        "standard": 24980,
+        "premium": 39800,
+        "family": 59800,
+        "student_addon": 9800,
+        "founder_special": 12000,
+        "founder1": 12000,
+    }
     paid_students = [s for s in students if s["status"] == "paid"]
     mrr = sum(plan_fees.get(s.get("plan") or "", 0) for s in paid_students)
 
@@ -8401,6 +8412,16 @@ def admin_email_diagnose(authorization: Optional[str] = Header(None), x_cron_sec
                     result["domain_status"] = "resend_default_sender"
                 else:
                     result["domain_status"] = f"not_found ({from_domain})"
+        except urllib.error.HTTPError as e:
+            if e.code == 403:
+                # send-only restricted key (domains:read scope なし)。実送信は影響なし
+                result["domain_status"] = "send_only_key (domains:read scope なし — 実送信は影響なし)"
+                result["domain_status_remediation"] = "Resend ダッシュで API key を Full access に上げるか、新しい key で domains:read scope を追加してください"
+            elif e.code == 401:
+                result["domain_status"] = "unauthorized (API key が revoke 済みまたは無効)"
+                result["domain_status_remediation"] = "Resend ダッシュで新しい API key を発行し RESEND_API_KEY 環境変数を更新してください"
+            else:
+                result["domain_status"] = f"api_error: HTTPError {e.code}"
         except Exception as e:
             result["domain_status"] = f"api_error: {type(e).__name__}: {str(e)[:200]}"
 
@@ -8436,8 +8457,18 @@ def admin_email_diagnose(authorization: Optional[str] = Header(None), x_cron_sec
             with urllib.request.urlopen(req, timeout=10) as resp:
                 result["api_key_valid"] = True
         except urllib.error.HTTPError as e:
-            result["api_key_valid"] = False
-            result["api_key_error"] = f"HTTP {e.code}: {e.read().decode('utf-8', errors='replace')[:200]}"
+            if e.code == 403:
+                # send-only restricted key (api-keys:read scope なし)。実送信は影響なし
+                result["api_key_valid"] = True
+                result["api_key_scope"] = "send_only"
+                result["api_key_error"] = "send_only key (api-keys:read scope なし — 実送信は影響なし)"
+            elif e.code == 401:
+                result["api_key_valid"] = False
+                result["api_key_scope"] = "invalid"
+                result["api_key_error"] = "HTTP 401: API key が revoke 済みまたは無効"
+            else:
+                result["api_key_valid"] = False
+                result["api_key_error"] = f"HTTP {e.code}: {e.read().decode('utf-8', errors='replace')[:200]}"
         except Exception as e:
             result["api_key_valid"] = False
             result["api_key_error"] = f"{type(e).__name__}: {str(e)[:200]}"
@@ -11714,7 +11745,15 @@ def vocab_import(payload: dict, authorization: Optional[str] = Header(None), x_c
 def vocab_queue(student_id: int, level: Optional[str] = None, limit: int = 20):
     """次に復習すべき単語キューを返す。
     優先順位: 1) 今復習期限の単語 2) まだ未学習の単語
+
+    limit clamp: max=100 / min=1。 quiz endpoint と統一 (2026-05-03)。
     """
+    # limit clamp (silent fallback 防止)
+    orig_limit = limit
+    if limit is None or limit < 1:
+        limit = 10
+    if limit > 100:
+        limit = 100
     conn = db()
     c = conn.cursor()
     out = []
@@ -11759,7 +11798,7 @@ def vocab_queue(student_id: int, level: Optional[str] = None, limit: int = 20):
             d["status"] = "new"
             out.append(d)
     conn.close()
-    return {"queue": out, "count": len(out)}
+    return {"queue": out, "count": len(out), "requested_limit": orig_limit, "applied_limit": limit}
 
 
 @app.post("/api/vocab/grade")
@@ -11928,8 +11967,17 @@ def vocab_quiz(student_id: int, level: Optional[str] = None, limit: int = 10, un
     """4 択形式の単語クイズキュー。各 item は target word + 同 pos の distractor 3 個 + 品詞 + 自他動詞ラベル。
     塾長指示 (2026-05-03): 4 択は同品詞で固める / 自他動詞 + 品詞を表示。
     フロントが distractors を shuffle して出題する想定 (server は shuffle 済み choices も返す)。
-    レベル指定時は _LEVEL_RELATED の関連レベルからも引いて実プールを拡張する。"""
+    レベル指定時は _LEVEL_RELATED の関連レベルからも引いて実プールを拡張する。
+
+    limit clamp: max=100 / min=1。 過大値 (99999 等) は内部で limit*3 を distractor SQL に渡して
+    silent fallback (count=0) になっていた致命 issue の修正 (2026-05-03)。"""
     import random as _r
+    # limit clamp (silent fallback 防止)
+    orig_limit = limit
+    if limit is None or limit < 1:
+        limit = 10
+    if limit > 100:
+        limit = 100
     conn = db()
     c = conn.cursor()
     now = datetime.now(timezone.utc).isoformat()
@@ -12037,7 +12085,7 @@ def vocab_quiz(student_id: int, level: Optional[str] = None, limit: int = 10, un
             "correct_index": correct_index,
         })
     conn.close()
-    return {"quiz": quiz_items, "count": len(quiz_items)}
+    return {"quiz": quiz_items, "count": len(quiz_items), "requested_limit": orig_limit, "applied_limit": limit}
 
 
 # ==========================================================================
