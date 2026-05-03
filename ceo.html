@@ -291,6 +291,7 @@
       <h3>👤 生徒・運営</h3>
       <div class="tb-buttons">
         <a href="index.html" class="tb-btn"><span class="tb-icon">🎓</span><span class="tb-label">生徒アプリ</span></a>
+        <button id="impersonateStudentBtn" type="button" class="tb-btn" title="塾長として任意の生徒画面に直接ログイン (magic link 不要)" style="background:linear-gradient(135deg,rgba(167,139,250,0.18),rgba(99,102,241,0.10));border:1px solid rgba(167,139,250,0.45);cursor:pointer;color:inherit;font:inherit;"><span class="tb-icon">🔐</span><span class="tb-label">生徒として入る</span></button>
         <a href="alerts.html" class="tb-btn"><span class="tb-icon">🔔</span><span class="tb-label">自動アラート</span></a>
         <a href="personalized-outreach.html" class="tb-btn"><span class="tb-icon">📨</span><span class="tb-label">個別展開</span></a>
         <a href="access-map.html" class="tb-btn"><span class="tb-icon">🗺</span><span class="tb-label">画面マップ</span></a>
@@ -3804,6 +3805,49 @@
       document.addEventListener('DOMContentLoaded', () => setTimeout(start, 1500));
     } else { setTimeout(start, 1500); }
   })();
+  </script>
+
+  <!-- 🔐 admin → 生徒として直接ログイン (magic link 迂回 / 塾長指示 2026-05-03) -->
+  <script>
+    (function() {
+      function bind() {
+        const btn = document.getElementById('impersonateStudentBtn');
+        if (!btn) return;
+        btn.addEventListener('click', async () => {
+          if (!window.AdminAuth || !AdminAuth.getToken()) {
+            alert('管理者ログインが必要です'); return;
+          }
+          const inp = prompt('入りたい生徒の email または ID を入力してください\n例: shock11090304@gmail.com / 6');
+          if (!inp) return;
+          const isNumeric = /^\d+$/.test(inp.trim());
+          const payload = isNumeric ? { id: parseInt(inp, 10) } : { email: inp.trim() };
+          try {
+            const res = await AdminAuth.fetch('/api/admin/login-as-student', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            if (!res.ok || !data.ok) {
+              alert('⚠️ ' + (data.detail || 'ログインに失敗しました'));
+              return;
+            }
+            // student session を localStorage に保存して mypage へ
+            localStorage.setItem('ai_juku_session_token', data.token);
+            localStorage.setItem('ai_juku_session_expires', String(data.expires_at));
+            localStorage.setItem('ai_juku_session_student', JSON.stringify(data.student));
+            localStorage.setItem('aj_current_student_id', String(data.student.id));
+            const target = confirm(`✅ ${data.student.name || data.student.email} としてログインしました。\n\nOK: マイページへ\nキャンセル: 生徒メイン (index.html) へ`);
+            window.location.href = target ? 'mypage.html' : 'index.html';
+          } catch (e) {
+            alert('⚠️ 通信エラー: ' + e.message);
+          }
+        });
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bind);
+      } else { bind(); }
+    })();
   </script>
 
   <!-- ============================================================ -->

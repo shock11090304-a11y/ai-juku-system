@@ -6707,6 +6707,64 @@ def admin_send_magic_link_to_address(payload: dict, authorization: Optional[str]
     }
 
 
+@app.post("/api/admin/login-as-student")
+def admin_login_as_student(payload: dict, authorization: Optional[str] = Header(None)):
+    """🔐 塾長が生徒として直接ログインする (magic link 不要の admin 迂回)。
+    payload: {"id": 6} または {"email": "..."}
+    成功時: 30日有効の session token + student info を返す。塾長は localStorage に
+    保存して mypage / index にアクセスできる。
+    監査ログ: 全 impersonation を log + events に記録。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+
+    sid_arg = payload.get("id")
+    email_arg = (payload.get("email") or "").strip().lower()
+    conn = db()
+    c = conn.cursor()
+    try:
+        if sid_arg:
+            c.execute("SELECT id, name, email, status, plan FROM students WHERE id=?", (int(sid_arg),))
+        elif email_arg:
+            c.execute("SELECT id, name, email, status, plan FROM students WHERE LOWER(email)=? LIMIT 1", (email_arg,))
+        else:
+            raise HTTPException(status_code=400, detail="id or email required")
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="student not found")
+        sid = int(row["id"])
+        # 監査ログ
+        log.warning(f"[AdminImpersonation] admin -> student id={sid} email={row['email']}")
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, created_at) VALUES (?, ?, ?)",
+                ("admin_impersonation", json.dumps({"student_id": sid, "email": row["email"]}, ensure_ascii=False), datetime.now(timezone.utc)),
+            )
+            conn.commit()
+        except Exception:
+            try: conn.rollback()
+            except Exception: pass
+
+        session_token = _sign_session_token(sid, token_type="session")
+        import time as _t
+        return {
+            "ok": True,
+            "token": session_token,
+            "expires_at": int(_t.time()) + SESSION_TTL_SECONDS,
+            "student": {
+                "id": sid,
+                "name": row["name"],
+                "email": row["email"],
+                "status": row["status"],
+                "plan": row["plan"],
+            },
+        }
+    finally:
+        conn.close()
+
+
 @app.post("/api/admin/students/reactivate")
 def admin_students_reactivate(payload: dict, authorization: Optional[str] = Header(None)):
     """canceled / expired student を任意の status に再アクティベート。
