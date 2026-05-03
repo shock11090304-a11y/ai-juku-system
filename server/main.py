@@ -445,6 +445,30 @@ def init_db():
     );
     CREATE INDEX IF NOT EXISTS idx_textbook_pool ON textbook_pool(subject, level, status, created_at);
     CREATE INDEX IF NOT EXISTS idx_textbook_pool_topic ON textbook_pool(topic);
+    -- 大学別 過去問風オリジナル問題プール (塾長指示 2026-05-03)
+    -- 著作権配慮: 全て Claude 生成のオリジナル。過去問の「スタイル・出題パターン」のみを参考にし、
+    -- 実問題文の転載は禁止。inspired_by フィールドで「東大2022年第1問の長文読解スタイル」など出典明示。
+    CREATE TABLE IF NOT EXISTS university_problems (
+        id {pk},
+        university TEXT NOT NULL,
+        faculty TEXT,
+        year INTEGER,
+        subject TEXT NOT NULL,
+        topic TEXT,
+        problem_type TEXT,
+        question_text TEXT NOT NULL,
+        choices TEXT,
+        answer TEXT NOT NULL,
+        explanation TEXT NOT NULL,
+        difficulty TEXT,
+        inspired_by TEXT,
+        tags TEXT,
+        status TEXT DEFAULT 'published',
+        source TEXT DEFAULT 'claude_max',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_university_problems ON university_problems(university, subject, status, created_at);
+    CREATE INDEX IF NOT EXISTS idx_university_problems_year ON university_problems(year, subject);
     CREATE TABLE IF NOT EXISTS processed_events (
         event_id TEXT PRIMARY KEY,
         event_type TEXT,
@@ -11498,6 +11522,121 @@ def mock_exam_submit(payload: dict):
         "section_scores": section_scores_list,
         "weak_count": len(weak_topics),
     }
+
+
+@app.get("/api/mock-exam/history")
+# ==========================================================================
+# 🎓 大学別 過去問風オリジナル問題 (塾長指示 2026-05-03)
+# 著作権: 全て Claude 生成のオリジナル問題。過去問の出題スタイル・トピックのみ参考、
+# 実問題文の転載は禁止。inspired_by フィールドに「東大2022年第1問の長文読解スタイル」等
+# のメタ情報を保存するが、これは事実情報 (どの大学のどの年度のどの形式の問題を模した
+# かの説明) で、原問題のテキスト自体は含まない。
+# ==========================================================================
+@app.get("/api/university-problems")
+def university_problems_list(university: Optional[str] = None, subject: Optional[str] = None,
+                              year: Optional[int] = None, limit: int = 30, offset: int = 0):
+    """大学別問題一覧。重い question_text 等は含めず、ID + メタのみ。"""
+    conn = db(); c = conn.cursor()
+    sql = "SELECT id, university, faculty, year, subject, topic, problem_type, difficulty, inspired_by, tags, created_at FROM university_problems WHERE status='published'"
+    params = []
+    if university:
+        sql += " AND university = ?"; params.append(university)
+    if subject:
+        sql += " AND subject = ?"; params.append(subject)
+    if year:
+        sql += " AND year = ?"; params.append(year)
+    sql += " ORDER BY university, subject, year DESC, id DESC LIMIT ? OFFSET ?"
+    params.extend([limit, offset])
+    c.execute(sql, tuple(params))
+    out = []
+    for r in c.fetchall():
+        d = dict(r) if hasattr(r, 'keys') else {}
+        out.append(d)
+    conn.close()
+    return {"items": out, "count": len(out)}
+
+
+@app.get("/api/university-problems/{pid}")
+def university_problems_detail(pid: int):
+    """1 問の詳細 (問題文・選択肢・解答・解説 全て返す)。"""
+    conn = db(); c = conn.cursor()
+    c.execute("SELECT id, university, faculty, year, subject, topic, problem_type, question_text, choices, answer, explanation, difficulty, inspired_by, tags, created_at FROM university_problems WHERE id=? AND status='published'", (pid,))
+    r = c.fetchone()
+    conn.close()
+    if not r:
+        raise HTTPException(status_code=404, detail="not found")
+    d = dict(r) if hasattr(r, 'keys') else {}
+    if d.get("choices"):
+        try: d["choices"] = json.loads(d["choices"])
+        except: pass
+    return d
+
+
+@app.get("/api/university-problems/meta/universities")
+def university_problems_meta():
+    """利用可能な (university, subject) の組合せと件数。生徒画面のフィルタ UI 用。"""
+    conn = db(); c = conn.cursor()
+    c.execute("SELECT university, subject, COUNT(*) AS cnt FROM university_problems WHERE status='published' GROUP BY university, subject ORDER BY university, subject")
+    rows = []
+    for r in c.fetchall():
+        rows.append({
+            "university": r["university"] if hasattr(r, 'keys') else r[0],
+            "subject":    r["subject"]    if hasattr(r, 'keys') else r[1],
+            "count":      r["cnt"]        if hasattr(r, 'keys') else r[2],
+        })
+    conn.close()
+    return {"items": rows}
+
+
+@app.post("/api/admin/university-problems/import")
+def university_problems_import(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """大学別オリジナル問題の一括 import (admin)。
+    payload: {"items": [{university, faculty, year, subject, topic, problem_type, question_text,
+                          choices(list|None), answer, explanation, difficulty, inspired_by, tags}, ...]}"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token): authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    items = payload.get("items") or []
+    if not isinstance(items, list) or not items:
+        raise HTTPException(status_code=400, detail="items が空")
+
+    inserted = 0; failed = 0; failed_details = []
+    conn = db(); c = conn.cursor()
+    try:
+        for i, it in enumerate(items):
+            try:
+                if not it.get("university") or not it.get("subject") or not it.get("question_text") or not it.get("answer") or not it.get("explanation"):
+                    failed += 1; failed_details.append({"i": i, "reason": "missing required"}); continue
+                choices_raw = it.get("choices")
+                choices_str = json.dumps(choices_raw, ensure_ascii=False) if isinstance(choices_raw, list) else (choices_raw or "")
+                c.execute(
+                    """INSERT INTO university_problems
+                       (university, faculty, year, subject, topic, problem_type, question_text, choices,
+                        answer, explanation, difficulty, inspired_by, tags, source)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (
+                        it["university"], it.get("faculty",""), it.get("year"),
+                        it["subject"], it.get("topic",""), it.get("problem_type","multiple_choice"),
+                        it["question_text"], choices_str, it["answer"], it["explanation"],
+                        it.get("difficulty","standard"), it.get("inspired_by",""),
+                        it.get("tags",""), it.get("source","claude_max"),
+                    )
+                )
+                inserted += 1
+            except Exception as e:
+                failed += 1; failed_details.append({"i": i, "reason": f"{type(e).__name__}: {str(e)[:80]}"})
+                try: conn.rollback()
+                except Exception: pass
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True, "inserted": inserted, "failed": failed, "failed_details": failed_details[:5]}
 
 
 @app.get("/api/mock-exam/history")
