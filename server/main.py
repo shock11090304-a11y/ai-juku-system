@@ -6707,6 +6707,65 @@ def admin_send_magic_link_to_address(payload: dict, authorization: Optional[str]
     }
 
 
+@app.post("/api/admin/students/reactivate")
+def admin_students_reactivate(payload: dict, authorization: Optional[str] = Header(None)):
+    """canceled / expired student を任意の status に再アクティベート。
+    塾長自身のテスト用アカウント (status=canceled) を復活させて magic link を
+    届くようにする用途 (2026-05-03 塾長指示)。
+    payload: {"id": 6, "status": "paid", "plan": "founder_special"}
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+
+    sid = int(payload.get("id") or 0)
+    new_status = (payload.get("status") or "paid").strip()
+    new_plan = (payload.get("plan") or "founder_special").strip()
+    if not sid:
+        raise HTTPException(status_code=400, detail="id required")
+    if new_status not in ("paid", "trial"):
+        raise HTTPException(status_code=400, detail="status must be 'paid' or 'trial'")
+
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT id, email, status, plan FROM students WHERE id=?", (sid,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail=f"student id={sid} not found")
+        before = {"status": row["status"], "plan": row["plan"]}
+        if new_status == "paid":
+            c.execute(
+                "UPDATE students SET status='paid', plan=?, paid_since=COALESCE(paid_since, ?), trial_end=NULL WHERE id=?",
+                (new_plan, datetime.now(timezone.utc), sid),
+            )
+        else:
+            new_trial_end = datetime.now(timezone.utc) + timedelta(days=30)
+            c.execute(
+                "UPDATE students SET status='trial', plan=?, trial_end=? WHERE id=?",
+                (new_plan, new_trial_end, sid),
+            )
+        conn.commit()
+        c.execute("SELECT id, name, email, status, plan, trial_end, paid_since FROM students WHERE id=?", (sid,))
+        after_row = c.fetchone()
+        log.info(f"[admin/reactivate] id={sid} {before} -> status={new_status} plan={new_plan}")
+        return {
+            "ok": True,
+            "id": sid,
+            "before": before,
+            "after": {
+                "status": after_row["status"],
+                "plan": after_row["plan"],
+                "trial_end": str(after_row["trial_end"]) if after_row["trial_end"] else None,
+                "paid_since": str(after_row["paid_since"]) if after_row["paid_since"] else None,
+            },
+        }
+    finally:
+        conn.close()
+
+
 @app.post("/api/admin/students/purge-test")
 def admin_students_purge_test(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """テスト用ダミー生徒レコードを削除する admin endpoint。
