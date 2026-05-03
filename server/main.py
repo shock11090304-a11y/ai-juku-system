@@ -11727,18 +11727,22 @@ def _pos_label_jp(pos: str) -> str:
     return _POS_LABEL_JP.get(pos.strip().lower(), pos)
 
 
-def _detect_transitivity(pos: str, meaning_jp: str) -> str:
-    """日本語の意味文から自動詞 (vi) / 他動詞 (vt) / vt+vi を推定。
-    動詞以外は空文字。
-    ヒューリスティクス:
-    - 「〜を」「~を」 → vt
-    - 「〜に」「〜と」「〜が」のみで「〜を」無し → vi
-    - 両方含む → vt+vi
-    - パターン無し動詞 → vi (デフォルト)"""
+def _detect_transitivity(pos: str, meaning_jp: str, tags: str = "") -> str:
+    """自動詞 (vi) / 他動詞 (vt) / vt+vi を判定。
+    1) tags に明示があれば最優先 (Netlify import の動・他/動・自/動・自他 由来)
+    2) 無ければ meaning_jp の「〜を」パターンから推定
+    動詞以外は空文字。"""
     if not pos: return ""
     pl = pos.strip().lower()
     if "verb" not in pl and pl not in ("v",):
         return ""
+    # tags 由来 (import データに付与) を優先
+    if tags:
+        t_set = {t.strip() for t in tags.split(",")}
+        if "vt+vi" in t_set: return "vt+vi"
+        if "vt" in t_set: return "vt"
+        if "vi" in t_set: return "vi"
+    # フォールバック: meaning_jp の 〜を/〜に パターン
     m = (meaning_jp or "").replace("～", "〜")
     has_wo = "〜を" in m or "~を" in m
     has_other = any(p in m for p in ("〜に", "~に", "〜と", "~と", "〜が", "~が"))
@@ -11845,7 +11849,7 @@ def vocab_quiz(student_id: int, level: Optional[str] = None, limit: int = 10, un
         choices = [w["meaning_jp"]] + distractors[:3]
         _r.shuffle(choices)
         correct_index = choices.index(w["meaning_jp"])
-        transitivity = _detect_transitivity(wpos, w.get("meaning_jp") or "")
+        transitivity = _detect_transitivity(wpos, w.get("meaning_jp") or "", w.get("tags") or "")
         quiz_items.append({
             "id": w["id"],
             "word": w["word"],

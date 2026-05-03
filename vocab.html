@@ -7,7 +7,7 @@
   <script src="cache-purge.js?v=20260503-vocab-init"></script>
   <script src="frontend-error-monitor.js"></script>
   <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost-r2">
-  <link rel="stylesheet" href="vocab.css?v=20260503-quiz4">
+  <link rel="stylesheet" href="vocab.css?v=20260503-quiz4-levels">
   <script src="analytics.js" defer></script>
 </head>
 <body>
@@ -63,14 +63,35 @@
 
       <div class="vc-level-picker">
         <h3>レベル選択</h3>
+        <div class="vc-level-sub">学年</div>
         <div class="vc-level-buttons">
           <button class="vc-level-btn" data-level="">全レベル</button>
+          <button class="vc-level-btn" data-level="chu1">中1</button>
+          <button class="vc-level-btn" data-level="chu2">中2</button>
+          <button class="vc-level-btn" data-level="chu3">中3</button>
+        </div>
+        <div class="vc-level-sub">難易度</div>
+        <div class="vc-level-buttons">
+          <button class="vc-level-btn" data-level="basic">基礎</button>
+          <button class="vc-level-btn" data-level="intermediate">中級</button>
+          <button class="vc-level-btn" data-level="advanced">上級</button>
+        </div>
+        <div class="vc-level-sub">英検</div>
+        <div class="vc-level-buttons">
+          <button class="vc-level-btn" data-level="eiken_g5">英検5級</button>
+          <button class="vc-level-btn" data-level="eiken_g4">英検4級</button>
           <button class="vc-level-btn" data-level="eiken_g3">英検3級</button>
           <button class="vc-level-btn" data-level="eiken_gp2">英検準2級</button>
           <button class="vc-level-btn" data-level="eiken_g2">英検2級</button>
           <button class="vc-level-btn" data-level="eiken_gp1">英検準1級</button>
           <button class="vc-level-btn" data-level="eiken_g1">英検1級</button>
+        </div>
+        <div class="vc-level-sub">大学受験</div>
+        <div class="vc-level-buttons">
           <button class="vc-level-btn" data-level="kyotsu">共通テスト</button>
+          <button class="vc-level-btn" data-level="chihokkokuritsu">地方国立</button>
+          <button class="vc-level-btn" data-level="march">MARCH</button>
+          <button class="vc-level-btn" data-level="soukeijou">早慶上智</button>
           <button class="vc-level-btn" data-level="todai_kyodai">難関国立</button>
         </div>
       </div>

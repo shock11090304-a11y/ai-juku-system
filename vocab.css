@@ -372,3 +372,13 @@
   .vc-choices { grid-template-columns: 1fr; }
   .vc-choice { font-size: 1rem; }
 }
+
+/* level picker サブカテゴリ見出し */
+.vc-level-sub {
+  margin-top: 0.7rem;
+  margin-bottom: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.06em;
+}
