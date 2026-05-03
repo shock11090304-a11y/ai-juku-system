@@ -11757,15 +11757,45 @@ def _transitivity_label_jp(t: str) -> str:
     return {"vt": "他動詞", "vi": "自動詞", "vt+vi": "自他両用"}.get(t, "")
 
 
+# 同等レベル横断マップ (塾長指示 2026-05-03): 同じ英単語は1レベルにしか入れられないため、
+# クイズ抽出時に関連レベルからも引く。例: 英検2級は intermediate / kyotsu からも引く
+_LEVEL_RELATED = {
+    'eiken_g5':       ['chu1'],
+    'eiken_g4':       ['chu1', 'chu2'],
+    'eiken_g3':       ['chu3', 'basic'],
+    'eiken_gp2':      ['basic', 'intermediate'],
+    'eiken_g2':       ['intermediate', 'kyotsu'],
+    'eiken_gp1':      ['advanced', 'march'],
+    'eiken_g1':       ['soukeijou', 'todai_kyodai'],
+    'kyotsu':         ['intermediate'],
+    'chihokkokuritsu':['kyotsu', 'intermediate'],
+    'march':          ['advanced'],
+    'soukeijou':      ['advanced', 'march'],
+    'todai_kyodai':   ['soukeijou', 'advanced'],
+}
+
+
+def _expand_levels(level: Optional[str]) -> list:
+    """指定 level + 関連 level を返す。level なしなら []."""
+    if not level:
+        return []
+    out = [level]
+    out.extend(_LEVEL_RELATED.get(level, []))
+    return out
+
+
 @app.get("/api/vocab/quiz")
 def vocab_quiz(student_id: int, level: Optional[str] = None, limit: int = 10, univ: Optional[str] = None):
     """4 択形式の単語クイズキュー。各 item は target word + 同 pos の distractor 3 個 + 品詞 + 自他動詞ラベル。
     塾長指示 (2026-05-03): 4 択は同品詞で固める / 自他動詞 + 品詞を表示。
-    フロントが distractors を shuffle して出題する想定 (server は shuffle 済み choices も返す)。"""
+    フロントが distractors を shuffle して出題する想定 (server は shuffle 済み choices も返す)。
+    レベル指定時は _LEVEL_RELATED の関連レベルからも引いて実プールを拡張する。"""
     import random as _r
     conn = db()
     c = conn.cursor()
     now = datetime.now(timezone.utc).isoformat()
+    levels = _expand_levels(level)
+    placeholders = ",".join(["?"] * len(levels)) if levels else ""
     # 1) 期限到来の progress (queue と同じ優先順位)
     sql_due = """
         SELECT vw.id, vw.word, vw.pos, vw.meaning_jp, vw.example_en, vw.example_jp, vw.level, vw.tags, vp.box
@@ -11774,9 +11804,9 @@ def vocab_quiz(student_id: int, level: Optional[str] = None, limit: int = 10, un
         WHERE vp.student_id = ? AND vp.next_review_at <= ?
     """
     params = [student_id, now]
-    if level:
-        sql_due += " AND vw.level = ?"
-        params.append(level)
+    if levels:
+        sql_due += f" AND vw.level IN ({placeholders})"
+        params.extend(levels)
     sql_due += " ORDER BY vp.next_review_at ASC LIMIT ?"
     params.append(limit * 3)  # univ filter で絞られる可能性があるので余裕めに
     c.execute(sql_due, tuple(params))
@@ -11794,9 +11824,9 @@ def vocab_quiz(student_id: int, level: Optional[str] = None, limit: int = 10, un
             WHERE id NOT IN (SELECT word_id FROM vocab_progress WHERE student_id = ?)
         """
         params2 = [student_id]
-        if level:
-            sql_new += " AND level = ?"
-            params2.append(level)
+        if levels:
+            sql_new += f" AND level IN ({placeholders})"
+            params2.extend(levels)
         sql_new += " ORDER BY id LIMIT ?"
         params2.append((limit - len(candidates)) * 3)
         c.execute(sql_new, tuple(params2))
