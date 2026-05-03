@@ -7,7 +7,7 @@
   <script src="cache-purge.js?v=20260503-vocab-init"></script>
   <script src="frontend-error-monitor.js"></script>
   <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost-r2">
-  <link rel="stylesheet" href="vocab.css?v=20260503-init">
+  <link rel="stylesheet" href="vocab.css?v=20260503-quiz4">
   <script src="analytics.js" defer></script>
 </head>
 <body>
@@ -99,7 +99,7 @@
       </div>
     </section>
 
-    <!-- Step 2: カード復習画面 -->
+    <!-- Step 2: 4 択クイズ画面 (塾長指示 2026-05-03: 4 択・同品詞縛り・自他/品詞表示) -->
     <section id="vcReview" class="vc-section" style="display:none;">
       <div class="vc-review-header">
         <span id="vcQueueCount">単語 0/0</span>
@@ -107,24 +107,34 @@
       </div>
 
       <div class="vc-card-wrap">
-        <div class="vc-card" id="vcCard">
-          <div class="vc-card-front" id="vcCardFront">
-            <div class="vc-card-pos" id="vcCardPos"></div>
-            <div class="vc-card-word" id="vcCardWord">--</div>
-            <button class="vc-speak-btn" id="vcSpeakBtn" title="単語を読み上げる" aria-label="単語を読み上げる">🔊</button>
-            <button class="vc-show-btn" id="vcShowBtn">意味を見る</button>
+        <div class="vc-card vc-quiz-card" id="vcCard">
+          <!-- 上段: 品詞 + 自他バッジ + 単語 -->
+          <div class="vc-quiz-tags">
+            <span class="vc-pos-badge" id="vcCardPos"></span>
+            <span class="vc-vt-badge" id="vcCardVt" style="display:none;"></span>
           </div>
-          <div class="vc-card-back" id="vcCardBack" style="display:none;">
-            <div class="vc-card-meaning" id="vcCardMeaning"></div>
+          <div class="vc-card-word" id="vcCardWord">--</div>
+          <button class="vc-speak-btn" id="vcSpeakBtn" title="単語を読み上げる" aria-label="単語を読み上げる">🔊</button>
+
+          <p class="vc-quiz-prompt">↓ 正しい意味を選んでください</p>
+
+          <!-- 4 択ボタン (同品詞 distractor) -->
+          <div class="vc-choices" id="vcChoices">
+            <button type="button" class="vc-choice" data-idx="0"></button>
+            <button type="button" class="vc-choice" data-idx="1"></button>
+            <button type="button" class="vc-choice" data-idx="2"></button>
+            <button type="button" class="vc-choice" data-idx="3"></button>
+          </div>
+
+          <!-- 解説 (回答後に表示) -->
+          <div class="vc-quiz-feedback" id="vcQuizFeedback" style="display:none;">
+            <div class="vc-feedback-status" id="vcFeedbackStatus"></div>
             <div class="vc-card-example-row">
               <div class="vc-card-example" id="vcCardExample"></div>
               <button class="vc-speak-btn vc-speak-example" id="vcSpeakExampleBtn" title="例文を読み上げる" aria-label="例文を読み上げる">🔊</button>
             </div>
             <div class="vc-card-example-jp" id="vcCardExampleJp"></div>
-            <div class="vc-grade-buttons">
-              <button class="vc-grade-btn vc-grade-no" id="vcGradeNo">❌ 知らなかった</button>
-              <button class="vc-grade-btn vc-grade-yes" id="vcGradeYes">✅ 知っていた</button>
-            </div>
+            <button type="button" class="btn-primary btn-small" id="vcNextBtn" style="margin-top:1rem;">次の単語 →</button>
           </div>
         </div>
       </div>
@@ -148,6 +158,6 @@
     </section>
   </main>
 
-  <script src="vocab.js?v=20260503-init"></script>
+  <script src="vocab.js?v=20260503-quiz4"></script>
 </body>
 </html>

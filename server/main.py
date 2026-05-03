@@ -11706,6 +11706,168 @@ def vocab_stats(student_id: int):
 
 
 # ==========================================================================
+# 📖 単語: 4 択クイズ + 自動詞/他動詞・品詞ラベル (塾長指示 2026-05-03)
+# ==========================================================================
+_POS_LABEL_JP = {
+    "verb": "動詞", "v": "動詞",
+    "noun": "名詞", "n": "名詞",
+    "adjective": "形容詞", "adj": "形容詞", "a": "形容詞",
+    "adverb": "副詞", "adv": "副詞",
+    "preposition": "前置詞", "prep": "前置詞",
+    "conjunction": "接続詞", "conj": "接続詞",
+    "pronoun": "代名詞", "pron": "代名詞",
+    "interjection": "間投詞", "intj": "間投詞",
+    "determiner": "限定詞", "det": "限定詞",
+    "phrase": "熟語",
+}
+
+
+def _pos_label_jp(pos: str) -> str:
+    if not pos: return ""
+    return _POS_LABEL_JP.get(pos.strip().lower(), pos)
+
+
+def _detect_transitivity(pos: str, meaning_jp: str) -> str:
+    """日本語の意味文から自動詞 (vi) / 他動詞 (vt) / vt+vi を推定。
+    動詞以外は空文字。
+    ヒューリスティクス:
+    - 「〜を」「~を」 → vt
+    - 「〜に」「〜と」「〜が」のみで「〜を」無し → vi
+    - 両方含む → vt+vi
+    - パターン無し動詞 → vi (デフォルト)"""
+    if not pos: return ""
+    pl = pos.strip().lower()
+    if "verb" not in pl and pl not in ("v",):
+        return ""
+    m = (meaning_jp or "").replace("～", "〜")
+    has_wo = "〜を" in m or "~を" in m
+    has_other = any(p in m for p in ("〜に", "~に", "〜と", "~と", "〜が", "~が"))
+    if has_wo and has_other:
+        return "vt+vi"
+    if has_wo:
+        return "vt"
+    return "vi"
+
+
+def _transitivity_label_jp(t: str) -> str:
+    return {"vt": "他動詞", "vi": "自動詞", "vt+vi": "自他両用"}.get(t, "")
+
+
+@app.get("/api/vocab/quiz")
+def vocab_quiz(student_id: int, level: Optional[str] = None, limit: int = 10, univ: Optional[str] = None):
+    """4 択形式の単語クイズキュー。各 item は target word + 同 pos の distractor 3 個 + 品詞 + 自他動詞ラベル。
+    塾長指示 (2026-05-03): 4 択は同品詞で固める / 自他動詞 + 品詞を表示。
+    フロントが distractors を shuffle して出題する想定 (server は shuffle 済み choices も返す)。"""
+    import random as _r
+    conn = db()
+    c = conn.cursor()
+    now = datetime.now(timezone.utc).isoformat()
+    # 1) 期限到来の progress (queue と同じ優先順位)
+    sql_due = """
+        SELECT vw.id, vw.word, vw.pos, vw.meaning_jp, vw.example_en, vw.example_jp, vw.level, vw.tags, vp.box
+        FROM vocab_progress vp
+        JOIN vocab_words vw ON vw.id = vp.word_id
+        WHERE vp.student_id = ? AND vp.next_review_at <= ?
+    """
+    params = [student_id, now]
+    if level:
+        sql_due += " AND vw.level = ?"
+        params.append(level)
+    sql_due += " ORDER BY vp.next_review_at ASC LIMIT ?"
+    params.append(limit * 3)  # univ filter で絞られる可能性があるので余裕めに
+    c.execute(sql_due, tuple(params))
+    candidates = []
+    seen_ids = set()
+    for r in c.fetchall():
+        d = dict(r) if hasattr(r, 'keys') else {"id": r[0], "word": r[1], "pos": r[2], "meaning_jp": r[3], "example_en": r[4], "example_jp": r[5], "level": r[6], "tags": r[7], "box": r[8]}
+        d["status"] = "review"
+        candidates.append(d); seen_ids.add(d["id"])
+
+    if len(candidates) < limit:
+        sql_new = """
+            SELECT id, word, pos, meaning_jp, example_en, example_jp, level, tags
+            FROM vocab_words
+            WHERE id NOT IN (SELECT word_id FROM vocab_progress WHERE student_id = ?)
+        """
+        params2 = [student_id]
+        if level:
+            sql_new += " AND level = ?"
+            params2.append(level)
+        sql_new += " ORDER BY id LIMIT ?"
+        params2.append((limit - len(candidates)) * 3)
+        c.execute(sql_new, tuple(params2))
+        for r in c.fetchall():
+            d = dict(r) if hasattr(r, 'keys') else {"id": r[0], "word": r[1], "pos": r[2], "meaning_jp": r[3], "example_en": r[4], "example_jp": r[5], "level": r[6], "tags": r[7]}
+            d["box"] = 0; d["status"] = "new"
+            if d["id"] not in seen_ids:
+                candidates.append(d); seen_ids.add(d["id"])
+
+    # univ tag filter
+    if univ:
+        want = f"univ:{univ}"
+        candidates = [w for w in candidates if want in (w.get("tags") or "")]
+
+    candidates = candidates[:limit]
+
+    # 各 candidate に対して同 pos の distractor を 3 件取得
+    quiz_items = []
+    for w in candidates:
+        wpos = (w.get("pos") or "").strip()
+        # 同 pos / 異なる id / 同 level 優先 → 不足なら同 pos / 全 level
+        c.execute(
+            "SELECT meaning_jp FROM vocab_words WHERE pos=? AND id<>? AND level=? ORDER BY RANDOM() LIMIT 3",
+            (wpos, w["id"], w["level"]),
+        )
+        distractors = [row["meaning_jp"] if hasattr(row, 'keys') else row[0] for row in c.fetchall()]
+        if len(distractors) < 3:
+            need = 3 - len(distractors)
+            c.execute(
+                "SELECT meaning_jp FROM vocab_words WHERE pos=? AND id<>? AND meaning_jp NOT IN (" + ",".join(["?"]*max(1,len(distractors))) + ") ORDER BY RANDOM() LIMIT ?",
+                (wpos, w["id"], *(distractors or [""]), need),
+            )
+            for row in c.fetchall():
+                m = row["meaning_jp"] if hasattr(row, 'keys') else row[0]
+                if m not in distractors:
+                    distractors.append(m)
+        # 同 pos ですら 3 件揃わない場合は any pos からフォールバック (英検3級など pool 薄い時用)
+        if len(distractors) < 3:
+            need = 3 - len(distractors)
+            c.execute(
+                "SELECT meaning_jp FROM vocab_words WHERE id<>? ORDER BY RANDOM() LIMIT ?",
+                (w["id"], need * 3),
+            )
+            for row in c.fetchall():
+                m = row["meaning_jp"] if hasattr(row, 'keys') else row[0]
+                if m not in distractors and m != w["meaning_jp"]:
+                    distractors.append(m)
+                    if len(distractors) >= 3: break
+
+        choices = [w["meaning_jp"]] + distractors[:3]
+        _r.shuffle(choices)
+        correct_index = choices.index(w["meaning_jp"])
+        transitivity = _detect_transitivity(wpos, w.get("meaning_jp") or "")
+        quiz_items.append({
+            "id": w["id"],
+            "word": w["word"],
+            "pos": wpos,
+            "pos_label_jp": _pos_label_jp(wpos),
+            "transitivity": transitivity,
+            "transitivity_label_jp": _transitivity_label_jp(transitivity),
+            "meaning_jp": w["meaning_jp"],
+            "example_en": w.get("example_en") or "",
+            "example_jp": w.get("example_jp") or "",
+            "level": w["level"],
+            "tags": w.get("tags") or "",
+            "box": w.get("box", 0),
+            "status": w.get("status", "new"),
+            "choices": choices,
+            "correct_index": correct_index,
+        })
+    conn.close()
+    return {"quiz": quiz_items, "count": len(quiz_items)}
+
+
+# ==========================================================================
 # 📊 LP A/B 計測 集計 endpoint (CEO ダッシュ用)
 # ==========================================================================
 @app.get("/api/admin/lp-funnel")

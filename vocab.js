@@ -1,5 +1,6 @@
 // ==========================================================================
-// 📚 AI 単語帳 — Frontend (Leitner SRS)
+// 📚 AI 単語帳 — Frontend (4 択クイズ + Leitner SRS)
+// 塾長指示 2026-05-03: 4 択・同品詞縛り・自動詞/他動詞・品詞ラベル表示
 // ==========================================================================
 
 (function() {
@@ -13,12 +14,13 @@
   let currentUniv = '';
   let reviewedCount = 0;
   let correctCount = 0;
+  let answered = false; // 現在の単語が既に回答済みか
 
   // === Web Speech API 音声読み上げ ===
   function speak(text, rate = 0.9) {
     if (!('speechSynthesis' in window) || !text) return;
     try {
-      window.speechSynthesis.cancel(); // 重複防止
+      window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'en-US';
       u.rate = rate;
@@ -29,7 +31,7 @@
 
   function getStudentId() {
     const id = localStorage.getItem('aj_current_student_id');
-    return id ? parseInt(id) : 1; // デフォルト: 体験ユーザー想定で id=1
+    return id ? parseInt(id) : 1;
   }
 
   // === 統計取得 ===
@@ -49,24 +51,18 @@
     }
   }
 
-  // === キュー取得 ===
+  // === キュー取得 (4 択クイズ endpoint) ===
   async function loadQueue(level, univ) {
     const studentId = getStudentId();
-    // 大学指定時は limit を多めに取得し、tags で client-side filter
-    const fetchLimit = univ ? 100 : 20;
+    const fetchLimit = univ ? 60 : 20;
     const params = new URLSearchParams({ student_id: studentId, limit: fetchLimit });
     if (level) params.set('level', level);
+    if (univ) params.set('univ', univ);
     try {
-      const res = await fetch(`${BACKEND_URL}/api/vocab/queue?${params}`);
-      if (!res.ok) throw new Error(`Queue fetch failed: ${res.status}`);
+      const res = await fetch(`${BACKEND_URL}/api/vocab/quiz?${params}`);
+      if (!res.ok) throw new Error(`Quiz fetch failed: ${res.status}`);
       const data = await res.json();
-      let all = data.queue || [];
-      // 大学タグフィルタ (tags に "univ:todai" が含まれる単語のみ抽出)
-      if (univ) {
-        const wantTag = `univ:${univ}`;
-        all = all.filter(w => (w.tags || '').split(',').map(t => t.trim()).includes(wantTag));
-      }
-      queue = all.slice(0, 20);
+      queue = (data.quiz || []).slice(0, 20);
       queueIndex = 0;
       reviewedCount = 0;
       correctCount = 0;
@@ -86,30 +82,6 @@
     }
   }
 
-  // === カード描画 ===
-  function renderCard() {
-    if (queueIndex >= queue.length) {
-      showComplete();
-      return;
-    }
-    const w = queue[queueIndex];
-    document.getElementById('vcQueueCount').textContent = `単語 ${queueIndex + 1}/${queue.length}`;
-    document.getElementById('vcCardWord').textContent = w.word;
-    document.getElementById('vcCardPos').textContent = w.pos || '';
-    document.getElementById('vcCardMeaning').textContent = w.meaning_jp || '';
-    document.getElementById('vcCardExample').textContent = w.example_en || '';
-    document.getElementById('vcCardExampleJp').textContent = w.example_jp || '';
-    document.getElementById('vcCurrentBox').textContent = `Box: ${w.box || 0} (${w.status === 'new' ? '未学習' : '復習'})`;
-    document.getElementById('vcCurrentLevel').textContent = `レベル: ${labelLevel(w.level)}`;
-    document.getElementById('vcCardFront').style.display = '';
-    document.getElementById('vcCardBack').style.display = 'none';
-    // 自動読み上げ
-    const autoSpeak = document.getElementById('vcAutoSpeak');
-    if (autoSpeak && autoSpeak.checked) {
-      setTimeout(() => speak(w.word, 0.85), 150);
-    }
-  }
-
   function labelLevel(lv) {
     const map = {
       'eiken_g3': '英検3級', 'eiken_gp2': '英検準2級', 'eiken_g2': '英検2級',
@@ -119,23 +91,104 @@
     return map[lv] || lv || '--';
   }
 
-  // === 自己評価 ===
-  async function gradeCard(knew) {
+  // === カード描画 (4 択 UI) ===
+  function renderCard() {
+    if (queueIndex >= queue.length) {
+      showComplete();
+      return;
+    }
+    const w = queue[queueIndex];
+    answered = false;
+    document.getElementById('vcQueueCount').textContent = `単語 ${queueIndex + 1}/${queue.length}`;
+    document.getElementById('vcCardWord').textContent = w.word;
+
+    // 品詞バッジ (動詞/名詞/形容詞 ...)
+    const posEl = document.getElementById('vcCardPos');
+    posEl.textContent = w.pos_label_jp || '';
+    posEl.style.display = w.pos_label_jp ? '' : 'none';
+
+    // 自動詞/他動詞バッジ
+    const vtEl = document.getElementById('vcCardVt');
+    if (w.transitivity && w.transitivity_label_jp) {
+      vtEl.textContent = w.transitivity_label_jp;
+      vtEl.dataset.kind = w.transitivity; // CSS で色分け (vt/vi/vt+vi)
+      vtEl.style.display = '';
+    } else {
+      vtEl.style.display = 'none';
+    }
+
+    // 4 択ボタン
+    const choices = w.choices || [];
+    const correctIdx = w.correct_index;
+    document.querySelectorAll('.vc-choice').forEach((btn, i) => {
+      btn.textContent = (i + 1) + '. ' + (choices[i] || '');
+      btn.classList.remove('correct', 'wrong', 'disabled');
+      btn.disabled = false;
+      btn.dataset.correct = (i === correctIdx) ? '1' : '0';
+    });
+
+    // フィードバック非表示
+    document.getElementById('vcQuizFeedback').style.display = 'none';
+    document.getElementById('vcCardExample').textContent = w.example_en || '';
+    document.getElementById('vcCardExampleJp').textContent = w.example_jp || '';
+
+    document.getElementById('vcCurrentBox').textContent = `Box: ${w.box || 0} (${w.status === 'new' ? '未学習' : '復習'})`;
+    document.getElementById('vcCurrentLevel').textContent = `レベル: ${labelLevel(w.level)}`;
+
+    // 自動読み上げ
+    const autoSpeak = document.getElementById('vcAutoSpeak');
+    if (autoSpeak && autoSpeak.checked) {
+      setTimeout(() => speak(w.word, 0.85), 150);
+    }
+  }
+
+  // === 選択肢クリック ===
+  function onChoiceClick(idx) {
+    if (answered) return;
+    answered = true;
     const w = queue[queueIndex];
     if (!w) return;
-    const studentId = getStudentId();
-    try {
-      await fetch(`${BACKEND_URL}/api/vocab/grade`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ student_id: studentId, word_id: w.id, knew }),
-      });
-      if (typeof window.track === 'function') window.track('vocab_grade', { knew, level: w.level });
-    } catch (e) {
-      console.warn('grade failed', e);
+    const correctIdx = w.correct_index;
+    const isCorrect = idx === correctIdx;
+
+    document.querySelectorAll('.vc-choice').forEach((btn, i) => {
+      btn.disabled = true;
+      btn.classList.add('disabled');
+      if (i === correctIdx) btn.classList.add('correct');
+      else if (i === idx) btn.classList.add('wrong');
+    });
+
+    // フィードバック表示
+    const fb = document.getElementById('vcQuizFeedback');
+    fb.style.display = '';
+    const status = document.getElementById('vcFeedbackStatus');
+    status.innerHTML = isCorrect
+      ? '<span style="color:#10b981;font-weight:800;">✅ 正解!</span> '
+        + `<span style="font-size:0.85em;color:#94a3b8;">(${w.pos_label_jp || ''}${w.transitivity_label_jp ? ' / ' + w.transitivity_label_jp : ''})</span>`
+      : '<span style="color:#ef4444;font-weight:800;">❌ 不正解</span> '
+        + `<span style="font-size:0.95em;color:#cbd5e1;">正解: ${w.meaning_jp}</span>`;
+
+    // 例文の自動読み上げ
+    const autoSpeak = document.getElementById('vcAutoSpeak');
+    if (autoSpeak && autoSpeak.checked && w.example_en) {
+      setTimeout(() => speak(w.example_en, 0.95), 250);
     }
+
+    // grade を SRS バックエンドに送信
+    const studentId = getStudentId();
+    fetch(`${BACKEND_URL}/api/vocab/grade`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ student_id: studentId, word_id: w.id, knew: isCorrect }),
+    }).catch(e => console.warn('grade failed', e));
+
+    if (typeof window.track === 'function') window.track('vocab_quiz_answer', { knew: isCorrect, level: w.level, pos: w.pos });
+
     reviewedCount += 1;
-    if (knew) correctCount += 1;
+    if (isCorrect) correctCount += 1;
+  }
+
+  function nextCard() {
     queueIndex += 1;
     renderCard();
   }
@@ -147,21 +200,19 @@
     document.getElementById('vcCorrectCount').textContent = correctCount;
   }
 
-  // === 開始ボタン ===
   async function startReview() {
     const ok = await loadQueue(currentLevel, currentUniv);
     if (!ok) return;
     document.getElementById('vcSetup').style.display = 'none';
     document.getElementById('vcReview').style.display = 'block';
     document.getElementById('vcComplete').style.display = 'none';
-    if (typeof window.track === 'function') window.track('vocab_session_start', { level: currentLevel });
+    if (typeof window.track === 'function') window.track('vocab_session_start', { level: currentLevel, mode: 'quiz4' });
     renderCard();
   }
 
-  // === 初期化 ===
   document.addEventListener('DOMContentLoaded', () => {
     loadStats();
-    // レベル選択
+
     document.querySelectorAll('.vc-level-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.vc-level-btn').forEach(b => b.classList.remove('active'));
@@ -169,10 +220,8 @@
         currentLevel = btn.dataset.level || '';
       });
     });
-    // 全レベルをデフォルト active に
     document.querySelector('.vc-level-btn[data-level=""]').classList.add('active');
 
-    // 大学選択
     document.querySelectorAll('.vc-univ-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.vc-univ-btn').forEach(b => b.classList.remove('active'));
@@ -182,17 +231,21 @@
     });
 
     document.getElementById('vcStartBtn').addEventListener('click', startReview);
-    document.getElementById('vcShowBtn').addEventListener('click', () => {
-      document.getElementById('vcCardFront').style.display = 'none';
-      document.getElementById('vcCardBack').style.display = '';
-      // 例文の自動読み上げ
-      const autoSpeak = document.getElementById('vcAutoSpeak');
-      if (autoSpeak && autoSpeak.checked) {
-        const w = queue[queueIndex];
-        if (w && w.example_en) setTimeout(() => speak(w.example_en, 0.95), 200);
-      }
+
+    // 4 択ボタン bind
+    document.querySelectorAll('.vc-choice').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.idx, 10);
+        onChoiceClick(idx);
+      });
     });
-    // 手動読み上げボタン
+    // キーボード 1-4 で選択
+    document.addEventListener('keydown', (e) => {
+      if (document.getElementById('vcReview').style.display === 'none') return;
+      if (answered && e.key === 'Enter') { nextCard(); return; }
+      if (['1','2','3','4'].includes(e.key)) onChoiceClick(parseInt(e.key,10) - 1);
+    });
+
     document.getElementById('vcSpeakBtn').addEventListener('click', () => {
       const w = queue[queueIndex];
       if (w) speak(w.word, 0.85);
@@ -201,10 +254,9 @@
       const w = queue[queueIndex];
       if (w && w.example_en) speak(w.example_en, 0.95);
     });
-    document.getElementById('vcGradeYes').addEventListener('click', () => gradeCard(true));
-    document.getElementById('vcGradeNo').addEventListener('click', () => gradeCard(false));
+    document.getElementById('vcNextBtn').addEventListener('click', nextCard);
     document.getElementById('vcExitBtn').addEventListener('click', () => {
-      if (confirm('復習を終了しますか?')) showComplete();
+      if (confirm('クイズを終了しますか?')) showComplete();
     });
     document.getElementById('vcContinueBtn').addEventListener('click', () => {
       document.getElementById('vcComplete').style.display = 'none';
