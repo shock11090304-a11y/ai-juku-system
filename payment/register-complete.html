@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>登録完了 | AI学習コーチ塾</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px 16px; }
+    .complete-card {
+      max-width: 560px; width: 100%;
+      background: var(--panel-solid);
+      border: 1px solid var(--panel-border);
+      border-radius: 24px;
+      padding: 40px 32px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      position: relative; z-index: 1;
+    }
+    .check-icon {
+      width: 80px; height: 80px;
+      background: linear-gradient(135deg, var(--success), #34d399);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+      box-shadow: 0 0 40px rgba(16,185,129,0.4);
+      animation: pop 0.4s ease-out;
+    }
+    .check-icon svg { width: 40px; height: 40px; stroke: #fff; stroke-width: 3; fill: none; }
+    @keyframes pop { 0% { transform: scale(0); } 60% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+    h1 { font-size: 1.6rem; margin-bottom: 12px; font-weight: 700; }
+    .lead { color: var(--text-dim); line-height: 1.7; margin-bottom: 24px; font-size: 0.95rem; }
+    .info-box {
+      background: rgba(99,102,241,0.08);
+      border: 1px solid rgba(99,102,241,0.3);
+      border-radius: 12px;
+      padding: 16px 18px;
+      text-align: left;
+      margin-bottom: 24px;
+      font-size: 0.88rem;
+      line-height: 1.7;
+      color: var(--text);
+    }
+    .info-box ul { padding-left: 20px; margin-top: 6px; }
+    .info-box li { margin-bottom: 4px; }
+    .footer-note { color: var(--text-muted); font-size: 0.82rem; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <div class="complete-card">
+    <div class="check-icon">
+      <svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 7"></polyline></svg>
+    </div>
+    <h1>登録が完了しました</h1>
+    <p class="lead">クレジットカードでの月謝自動引き落としの設定が完了しました。<br>ご登録のメールアドレス宛に Stripe より領収書が届きます。</p>
+
+    <div class="info-box">
+      <strong>📅 今後の流れ</strong>
+      <ul>
+        <li>本日付で初回のお支払いが完了しています (前払い分)</li>
+        <li>次回引き落とし予定日: <strong id="nextBillDate" style="color:var(--primary-light);">計算中...</strong></li>
+        <li>以降毎月同日に自動で引き落とされます</li>
+        <li>カード情報の変更・解約は領収書メール内のリンクからいつでも可能です</li>
+        <li>ご不明点は塾長 LINE までお問い合わせください</li>
+      </ul>
+    </div>
+
+    <p class="footer-note">このページは閉じていただいて構いません。<br>ご登録ありがとうございました 🙏</p>
+    <script>
+      (function() {
+        const today = new Date();
+        const next = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
+        // 月末跨ぎ補正 (例: 1/31 登録 → 2/28 ではなく 2/末)
+        if (next.getDate() !== today.getDate()) {
+          next.setDate(0); // 翌月の月末
+        }
+        const y = next.getFullYear();
+        const m = String(next.getMonth() + 1).padStart(2, '0');
+        const d = String(next.getDate()).padStart(2, '0');
+        document.getElementById('nextBillDate').textContent = `${y}年${m}月${d}日`;
+      })();
+    </script>
+  </div>
+</body>
+</html>

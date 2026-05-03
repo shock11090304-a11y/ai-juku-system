@@ -615,18 +615,64 @@ const DAKUTEN = { 'カ':'ガ','キ':'ギ','ク':'グ','ケ':'ゲ','コ':'ゴ',
                   'ウ':'ヴ' };
 const HANDAKUTEN = { 'ハ':'パ','ヒ':'ピ','フ':'プ','ヘ':'ペ','ホ':'ポ' };
 
+const HW_KANA_MAP = {
+  'ｦ':'ヲ','ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ',
+  'ｬ':'ャ','ｭ':'ュ','ｮ':'ョ','ｯ':'ッ','ｰ':'ー',
+  'ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ',
+  'ｶ':'カ','ｷ':'キ','ｸ':'ク','ｹ':'ケ','ｺ':'コ',
+  'ｻ':'サ','ｼ':'シ','ｽ':'ス','ｾ':'セ','ｿ':'ソ',
+  'ﾀ':'タ','ﾁ':'チ','ﾂ':'ツ','ﾃ':'テ','ﾄ':'ト',
+  'ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ',
+  'ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ホ',
+  'ﾏ':'マ','ﾐ':'ミ','ﾑ':'ム','ﾒ':'メ','ﾓ':'モ',
+  'ﾔ':'ヤ','ﾕ':'ユ','ﾖ':'ヨ',
+  'ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ',
+  'ﾜ':'ワ','ﾝ':'ン',
+};
+
 const IMPORT = { rows: [], candidates: [], filterTab: 'pending' };
 
 function normalizeName(raw) {
   if (!raw) return '';
-  let s = String(raw)
-    .replace(/(.)[゛ﾞ]/g, (m, c) => DAKUTEN[c] || c)
-    .replace(/(.)[゜ﾟ]/g, (m, c) => HANDAKUTEN[c] || c)
-    .replace(/[ァ-ヶ]/g, m => String.fromCharCode(m.charCodeAt(0) - 0x60))
-    .replace(/[\s　]+/g, '')
-    .replace(/(英語(塾代|代|月謝)?|月謝|塾代)$/, '')
-    .toLowerCase();
+  let s = String(raw);
+  s = s.replace(/[ｦ-ﾝ]/g, c => HW_KANA_MAP[c] || c);
+  s = s.replace(/(.)[゛ﾞ]/g, (m, c) => DAKUTEN[c] || c);
+  s = s.replace(/(.)[゜ﾟ]/g, (m, c) => HANDAKUTEN[c] || c);
+  s = s.replace(/[ァ-ヶ]/g, m => String.fromCharCode(m.charCodeAt(0) - 0x60));
+  s = s.replace(/づ/g, 'ず').replace(/ぢ/g, 'じ');
+  s = s.replace(/[\s　]+/g, '');
+  s = s.replace(/(英語(塾代|代|月謝)?|月謝|塾代)$/, '');
+  s = s.toLowerCase();
   return s;
+}
+
+function extractNameCandidates(rawName) {
+  if (!rawName) return [];
+  const cands = new Set();
+  const name = String(rawName);
+  const parenRe = /[（(]([^）)]+)[）)]/g;
+  let m;
+  while ((m = parenRe.exec(name)) !== null) {
+    const inner = m[1].trim();
+    if (inner.length >= 2) cands.add(inner);
+  }
+  const outside = name.replace(/[（(][^）)]*[）)]/g, '').trim();
+  if (outside.length >= 1) {
+    const cleaned = outside
+      .replace(/準?\d級[へにを]?/g, '')
+      .replace(/さん[姉妹弟兄]?$/,'')
+      .replace(/(弟|妹|兄|姉)$/,'')
+      .trim();
+    if (cleaned.length >= 1) cands.add(cleaned);
+  }
+  cands.add(name);
+  return [...cands];
+}
+
+function extractSurname(raw) {
+  const s = String(raw || '').replace(/[\s　]+/g, ' ').trim();
+  const parts = s.split(' ');
+  return parts[0] || '';
 }
 
 function isNoise(content) {
@@ -644,7 +690,7 @@ function lcs(a, b) {
   return best;
 }
 
-function matchPayer(payerRaw) {
+function matchPayer(payerRaw, amount) {
   const normPayer = normalizeName(payerRaw);
   if (!normPayer) return [];
 
@@ -656,20 +702,44 @@ function matchPayer(payerRaw) {
     }
   }
 
-  // 2. 全通塾生でスコア計算
+  const payerSurname = normalizeName(extractSurname(payerRaw));
+
+  // 2. 全通塾生でマルチ候補スコア計算
   const cands = STATE.data.students
     .filter(s => s.status === '通塾')
     .map(s => {
-      const norm = normalizeName(s.name);
-      if (!norm) return null;
-      let score = 0;
-      if (norm === normPayer) score = 100;
-      else if (norm.includes(normPayer) || normPayer.includes(norm)) score = 85;
-      else {
-        const common = lcs(norm, normPayer);
-        if (common.length >= 2) score = Math.min(70, common.length * 18);
+      const nameCands = extractNameCandidates(s.name);
+      let bestScore = 0;
+
+      for (const cand of nameCands) {
+        const norm = normalizeName(cand);
+        if (!norm) continue;
+
+        let score = 0;
+        if (norm === normPayer) {
+          score = 100;
+        } else if (norm.includes(normPayer) || normPayer.includes(norm)) {
+          score = 85;
+        } else if (payerSurname.length >= 2) {
+          if (norm.startsWith(payerSurname)) {
+            score = 78;
+          } else {
+            const candSurname = normalizeName(extractSurname(cand));
+            if (candSurname.length >= 2 && payerSurname === candSurname) score = 78;
+          }
+        }
+        if (score === 0) {
+          const common = lcs(norm, normPayer);
+          if (common.length >= 2) score = Math.min(70, common.length * 18);
+        }
+        if (score > bestScore) bestScore = score;
       }
-      return score > 0 ? { studentId: s.id, name: s.name, score } : null;
+
+      if (bestScore > 0 && amount && s.fee && Math.abs(amount - s.fee) < 100) {
+        bestScore = Math.min(100, bestScore + 8);
+      }
+
+      return bestScore > 0 ? { studentId: s.id, name: s.name, score: bestScore } : null;
     })
     .filter(Boolean)
     .sort((a, b) => b.score - a.score)
@@ -733,7 +803,7 @@ function processImport(rows) {
 
   IMPORT.candidates = incoming.map((r, i) => {
     const ignored = isNoise(r.content);
-    const matches = ignored ? [] : matchPayer(r.content);
+    const matches = ignored ? [] : matchPayer(r.content, r.amount);
     const best = matches[0];
     return {
       idx: i,
@@ -833,7 +903,7 @@ function renderMatchList() {
       c.ignored = true; c.decided = false; c.selectedStudentId = null;
     } else if (a === 'unignore') {
       c.ignored = false;
-      const matches = matchPayer(c.payer);
+      const matches = matchPayer(c.payer, c.amount);
       c.matches = matches;
       const best = matches[0];
       if (best && (best.confidence === 'learned' || best.confidence === 'high')) {

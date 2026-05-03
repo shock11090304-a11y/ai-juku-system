@@ -13,6 +13,14 @@
       "destination": "/api/mail-send"
     },
     {
+      "source": "/payment/api/register-subscribe",
+      "destination": "/api/register-subscribe"
+    },
+    {
+      "source": "/payment/api/stripe-webhook",
+      "destination": "/api/stripe-webhook"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://ai-juku-api-production.up.railway.app/api/:path*"
     },

@@ -1,0 +1,29 @@
+{
+  "_comment": "AI学習コーチ塾 コース単価カタログ。register.html と register-subscribe.py の両方で参照される。価格改定時はこのファイルを更新するだけで OK。",
+  "version": "2026-05-03",
+  "currency": "JPY",
+  "courses": [
+    { "id": "ronin",        "name": "浪人生",            "price": 30000, "tier": "premium" },
+    { "id": "kokuritsu",    "name": "国公立難関大学",      "price": 25000, "tier": "premium" },
+    { "id": "kanri",        "name": "学習管理",          "price": 22500, "tier": "high" },
+    { "id": "kanri-monitor","name": "学習管理モニター",     "price": 16500, "tier": "high" },
+    { "id": "gmarch",       "name": "GMARCH",         "price": 12500, "tier": "mid" },
+    { "id": "soukei",       "name": "早慶クラス",         "price": 12500, "tier": "mid" },
+    { "id": "eiken-jun1",   "name": "英検準１級",         "price": 8500,  "tier": "standard" },
+    { "id": "chu2",         "name": "中学2年",           "price": 7500,  "tier": "standard" },
+    { "id": "chu1",         "name": "中学基礎中学1年",      "price": 7500,  "tier": "standard" },
+    { "id": "chu3-monday",  "name": "月曜中３英文法",       "price": 7500,  "tier": "standard" },
+    { "id": "grammar-1",    "name": "英文法レベル１",       "price": 7500,  "tier": "standard" },
+    { "id": "grammar-2",    "name": "英文法レベル２",       "price": 7500,  "tier": "standard" },
+    { "id": "kaishaku",     "name": "英文解釈",          "price": 7500,  "tier": "standard" },
+    { "id": "eiken-jun2",   "name": "英検準２級",         "price": 7500,  "tier": "standard" },
+    { "id": "eiken-2",      "name": "英検２級",          "price": 7500,  "tier": "standard" },
+    { "id": "long-1",       "name": "英語長文レベル１",     "price": 7500,  "tier": "standard" },
+    { "id": "long-2",       "name": "英語長文レベル２",     "price": 7500,  "tier": "standard" },
+    { "id": "kou2-grammar", "name": "高校2年英文法",       "price": 7500,  "tier": "standard" }
+  ],
+  "options": [
+    { "id": "facility-1500", "name": "設備費 (¥1,500)", "price": 1500 },
+    { "id": "facility-1350", "name": "設備費 (¥1,350)", "price": 1350 }
+  ]
+}

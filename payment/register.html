@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>カード払い登録 | AI学習コーチ塾</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { padding-bottom: 140px; }
+    .reg-wrap { max-width: 760px; margin: 0 auto; padding: 24px 16px 32px; position: relative; z-index: 1; }
+    .reg-hero {
+      background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(236,72,153,0.12));
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      padding: 28px 24px;
+      margin-bottom: 24px;
+      backdrop-filter: blur(8px);
+    }
+    .reg-hero h1 { font-size: 1.6rem; margin-bottom: 8px; font-weight: 700; }
+    .reg-hero p { color: var(--text-dim); font-size: 0.95rem; line-height: 1.6; }
+    .reg-hero .subnote { margin-top: 12px; padding: 10px 14px; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3); border-radius: 10px; font-size: 0.85rem; color: #fcd34d; }
+
+    .section {
+      background: var(--panel-solid);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 22px 20px;
+      margin-bottom: 18px;
+      backdrop-filter: blur(6px);
+    }
+    .section h2 { font-size: 1.1rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .section h2 .req { font-size: 0.7rem; color: var(--error); background: rgba(239,68,68,0.15); padding: 2px 8px; border-radius: 6px; font-weight: 500; }
+    .section h2 .opt { font-size: 0.7rem; color: var(--text-muted); background: rgba(107,114,128,0.15); padding: 2px 8px; border-radius: 6px; font-weight: 500; }
+
+    .field { margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    .field label { display: block; font-size: 0.85rem; margin-bottom: 6px; color: var(--text-dim); font-weight: 500; }
+    .field input, .field select {
+      width: 100%; padding: 12px 14px; font-size: 1rem;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      color: var(--text);
+      transition: border-color 0.2s;
+    }
+    .field input:focus, .field select:focus { outline: none; border-color: var(--primary); }
+    .field input:invalid:not(:placeholder-shown) { border-color: var(--error); }
+    .field .hint { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
+
+    .course-tier { margin-bottom: 16px; }
+    .course-tier:last-child { margin-bottom: 0; }
+    .tier-label { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+    .course-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 10px;
+    }
+    .course-card {
+      padding: 14px 14px 12px;
+      background: rgba(255,255,255,0.03);
+      border: 2px solid var(--panel-border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      position: relative;
+      user-select: none;
+    }
+    .course-card:hover { border-color: var(--primary-light); background: rgba(99,102,241,0.08); }
+    .course-card.sel {
+      background: linear-gradient(135deg, rgba(99,102,241,0.22), rgba(99,102,241,0.10));
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.18);
+    }
+    .course-card.sel::after {
+      content: '✓'; position: absolute; top: 8px; right: 10px;
+      width: 22px; height: 22px; background: var(--primary); color: #fff;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-weight: bold; font-size: 0.85rem;
+    }
+    .course-card .cn { font-weight: 600; margin-bottom: 6px; font-size: 0.95rem; padding-right: 26px; }
+    .course-card .cp { color: var(--primary-light); font-weight: 700; font-size: 1.05rem; }
+    .course-card.recommended { border-color: rgba(16,185,129,0.4); }
+    .course-card.recommended::before {
+      content: '推奨'; position: absolute; top: -8px; left: 12px;
+      background: var(--success); color: #fff; font-size: 0.65rem;
+      font-weight: 700; padding: 2px 8px; border-radius: 6px;
+    }
+    .course-card.mismatch { opacity: 0.55; }
+    .course-card.mismatch:hover { opacity: 0.85; }
+
+    /* 確認モーダル */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(8px); z-index: 200;
+      display: none; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal-backdrop.show { display: flex; animation: fadeIn 0.2s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-card {
+      background: var(--panel-solid);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      max-width: 540px; width: 100%; max-height: 88vh; overflow-y: auto;
+      padding: 28px 24px;
+      animation: slideUp 0.3s ease-out;
+    }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-card h2 { font-size: 1.2rem; margin-bottom: 8px; }
+    .modal-card .modal-sub { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 20px; }
+    .summary-row {
+      display: flex; justify-content: space-between; padding: 10px 0;
+      border-bottom: 1px solid var(--panel-border); font-size: 0.92rem;
+    }
+    .summary-row:last-of-type { border-bottom: none; }
+    .summary-row .lbl { color: var(--text-dim); flex-shrink: 0; min-width: 110px; }
+    .summary-row .val { color: var(--text); text-align: right; word-break: break-all; }
+    .summary-courses { padding: 12px 0; border-bottom: 1px solid var(--panel-border); }
+    .summary-courses .scrow {
+      display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.88rem;
+    }
+    .summary-courses .scrow .scn { color: var(--text); }
+    .summary-courses .scrow .scp { color: var(--primary-light); font-weight: 600; }
+    .summary-total {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 16px 0 4px; border-top: 2px solid var(--primary);
+    }
+    .summary-total .ttl { font-size: 1rem; font-weight: 600; }
+    .summary-total .tml { font-size: 1.6rem; font-weight: 800; color: var(--primary-light); }
+    .summary-note {
+      background: rgba(245,158,11,0.10); border: 1px solid rgba(245,158,11,0.3);
+      border-radius: 10px; padding: 10px 12px; margin: 14px 0 18px;
+      font-size: 0.82rem; color: #fcd34d; line-height: 1.6;
+    }
+    .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+    .modal-actions button { flex: 1; padding: 13px 16px; font-size: 0.95rem; font-weight: 600; border-radius: 10px; cursor: pointer; border: none; }
+    .modal-actions .btn-back { background: rgba(255,255,255,0.06); color: var(--text); border: 1px solid var(--panel-border); }
+    .modal-actions .btn-back:hover { background: rgba(255,255,255,0.10); }
+    .modal-actions .btn-confirm { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; }
+    .modal-actions .btn-confirm:hover { transform: translateY(-1px); }
+
+    /* 学年-コース 不一致警告 */
+    .grade-warning {
+      background: rgba(239,68,68,0.10); border: 1px solid rgba(239,68,68,0.4);
+      border-radius: 10px; padding: 10px 12px; margin-top: 10px;
+      font-size: 0.82rem; color: #fca5a5; display: none;
+    }
+    .grade-warning.show { display: block; }
+
+    .options-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .opt-card {
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.03);
+      border: 2px solid var(--panel-border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex; align-items: center; gap: 8px;
+      user-select: none;
+    }
+    .opt-card:hover { border-color: var(--accent); }
+    .opt-card.sel { background: rgba(236,72,153,0.15); border-color: var(--accent); }
+    .opt-card .on { font-size: 0.9rem; }
+    .opt-card .op { color: var(--accent); font-weight: 600; }
+
+    .total-bar {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      background: rgba(10,10,26,0.95);
+      backdrop-filter: blur(14px);
+      border-top: 1px solid var(--panel-border);
+      padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+      z-index: 50;
+    }
+    .total-inner { max-width: 760px; margin: 0 auto; display: flex; gap: 16px; align-items: center; }
+    .total-info { flex: 1; }
+    .total-info .tlabel { font-size: 0.78rem; color: var(--text-dim); margin-bottom: 2px; }
+    .total-info .tamt { font-size: 1.5rem; font-weight: 800; color: var(--primary-light); line-height: 1.1; }
+    .total-info .tbreak { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+    .submit-btn {
+      padding: 14px 22px; font-size: 1rem; font-weight: 700;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: #fff; border: none; border-radius: 12px;
+      cursor: pointer; white-space: nowrap;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    .submit-btn:hover:not(:disabled) { transform: translateY(-1px); }
+    .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .err-banner {
+      background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.4);
+      color: #fca5a5; padding: 12px 14px; border-radius: 10px; margin-bottom: 12px;
+      font-size: 0.9rem; display: none;
+    }
+    .err-banner.show { display: block; }
+
+    .loading-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none;
+      align-items: center; justify-content: center; z-index: 100;
+      backdrop-filter: blur(4px);
+    }
+    .loading-overlay.show { display: flex; }
+    .loading-overlay .lo-card { background: var(--panel-solid); padding: 28px 36px; border-radius: 16px; text-align: center; }
+    .loading-overlay .spinner {
+      width: 40px; height: 40px; border: 3px solid var(--panel-border);
+      border-top-color: var(--primary); border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 600px) {
+      .reg-hero { padding: 22px 18px; }
+      .reg-hero h1 { font-size: 1.35rem; }
+      .section { padding: 18px 16px; }
+      .course-grid { grid-template-columns: 1fr; }
+      .total-info .tamt { font-size: 1.3rem; }
+      .submit-btn { padding: 12px 16px; font-size: 0.92rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <div class="reg-wrap">
+    <div class="reg-hero">
+      <h1>📝 カード払い登録</h1>
+      <p>クレジットカードでの月謝自動引き落としを開始します。<br>毎月の振込手数料・振込忘れ・残高不足の心配が一切なくなります。</p>
+      <div class="subnote">⚠️ ご記入いただいた内容で月額が確定します。コースの選択漏れにご注意ください。</div>
+    </div>
+
+    <div id="errBanner" class="err-banner" role="alert" aria-live="polite"></div>
+
+    <form id="regForm" novalidate>
+      <!-- 生徒情報 -->
+      <div class="section">
+        <h2>👤 生徒情報 <span class="req">必須</span></h2>
+        <div class="field">
+          <label>生徒氏名 (フルネーム)</label>
+          <input type="text" name="studentName" placeholder="例: 山田 太郎" required maxlength="40">
+          <div class="hint">普段ご利用の表記でご入力ください (漢字・ひらがな・ニックネーム どれでも可)</div>
+        </div>
+        <div class="field">
+          <label>学年</label>
+          <select name="grade" required>
+            <option value="">選択してください</option>
+            <option>中学1年</option>
+            <option>中学2年</option>
+            <option>中学3年</option>
+            <option>高校1年</option>
+            <option>高校2年</option>
+            <option>高校3年</option>
+            <option>浪人</option>
+            <option>その他</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 受講コース -->
+      <div class="section">
+        <h2>📚 受講コース (複数選択可) <span class="req">1つ以上必須</span></h2>
+        <div id="courseGrid"></div>
+        <div class="options-row" id="optionsRow"></div>
+        <div class="grade-warning" id="gradeWarning">⚠️ 選択された学年と一致しないコースが含まれています。内容をご確認ください。</div>
+      </div>
+
+      <!-- 保護者情報 -->
+      <div class="section">
+        <h2>👨‍👩‍👧 保護者情報 <span class="req">必須</span></h2>
+        <div class="field">
+          <label>保護者氏名</label>
+          <input type="text" name="parentName" placeholder="例: 山田 花子" required maxlength="40">
+        </div>
+        <div class="field">
+          <label>メールアドレス</label>
+          <input type="email" name="email" placeholder="例: yamada@example.com" required maxlength="120">
+          <div class="hint">領収書・引落し通知をお送りします</div>
+        </div>
+        <div class="field">
+          <label>電話番号 <span style="color:var(--text-muted);font-size:0.85em;">(任意)</span></label>
+          <input type="tel" name="phone" placeholder="例: 090-1234-5678" maxlength="20">
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="total-bar">
+    <div class="total-inner">
+      <div class="total-info">
+        <div class="tlabel">月額合計</div>
+        <div class="tamt" id="totalAmt">¥0</div>
+        <div class="tbreak" id="totalBreak">コースを選択してください</div>
+      </div>
+      <button type="button" id="submitBtn" class="submit-btn" disabled>カード登録に進む →</button>
+    </div>
+  </div>
+
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="lo-card">
+      <div class="spinner"></div>
+      <div>登録準備中…</div>
+    </div>
+  </div>
+
+  <!-- 確認モーダル -->
+  <div id="confirmModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" aria-hidden="true">
+    <div class="modal-card" tabindex="-1">
+      <h2 id="confirmTitle">📋 登録内容のご確認</h2>
+      <div class="modal-sub">下記の内容で月額自動引き落としを開始します</div>
+      <div id="confirmBody"></div>
+      <div class="summary-note">⚠️ 確定後の金額変更は塾長まで個別にご連絡ください。カード情報の変更・解約は領収書メール内のリンクからいつでも可能です。</div>
+      <div class="modal-actions">
+        <button type="button" class="btn-back" id="modalBack">← 戻って修正</button>
+        <button type="button" class="btn-confirm" id="modalConfirm">確定して決済へ進む →</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const STATE = { courses: [], options: [], selected: new Set(), selectedOpts: new Set(), grade: '', pendingPayload: null };
+
+// 学年→ tier マッピング (推奨コース判定用)
+const GRADE_TIER_MAP = {
+  '中学1年': ['standard'],
+  '中学2年': ['standard'],
+  '中学3年': ['standard'],
+  '高校1年': ['standard', 'mid'],
+  '高校2年': ['standard', 'mid', 'high'],
+  '高校3年': ['standard', 'mid', 'high', 'premium'],
+  '浪人':    ['premium'],
+  'その他':  ['standard', 'mid', 'high', 'premium'],
+};
+const GRADE_COURSE_MAP = {
+  '中学1年': ['chu1', 'grammar-1', 'eiken-jun2', 'eiken-2', 'long-1'],
+  '中学2年': ['chu2', 'chu3-monday', 'grammar-1', 'eiken-jun2', 'eiken-2', 'long-1'],
+  '中学3年': ['chu3-monday', 'grammar-1', 'grammar-2', 'eiken-jun1', 'eiken-2', 'long-1'],
+  '高校1年': ['kou2-grammar', 'grammar-1', 'grammar-2', 'eiken-jun1', 'long-1', 'long-2', 'kaishaku', 'gmarch', 'soukei', 'kanri-monitor', 'kanri'],
+  '高校2年': ['kou2-grammar', 'grammar-1', 'grammar-2', 'eiken-jun1', 'long-1', 'long-2', 'kaishaku', 'gmarch', 'soukei', 'kanri-monitor', 'kanri', 'kokuritsu'],
+  '高校3年': ['kou2-grammar', 'grammar-1', 'grammar-2', 'eiken-jun1', 'long-1', 'long-2', 'kaishaku', 'gmarch', 'soukei', 'kanri-monitor', 'kanri', 'kokuritsu'],
+  '浪人':    ['ronin', 'kokuritsu', 'gmarch', 'soukei', 'kanri'],
+  'その他':  null,
+};
+
+async function init() {
+  try {
+    const res = await fetch('courses.json', { cache: 'no-store' });
+    const data = await res.json();
+    STATE.courses = data.courses;
+    STATE.options = data.options || [];
+    renderCourses();
+    renderOptions();
+    bindForm();
+    bindGrade();
+    bindModal();
+  } catch (e) {
+    showError('コース情報の読み込みに失敗しました。ページを再読込してください。');
+  }
+}
+
+function bindGrade() {
+  const sel = document.querySelector('select[name="grade"]');
+  sel.addEventListener('change', () => {
+    STATE.grade = sel.value;
+    refreshGradeMarkers();
+    refreshGradeWarning();
+  });
+}
+
+function refreshGradeMarkers() {
+  const allowedCourses = GRADE_COURSE_MAP[STATE.grade];
+  const cards = document.querySelectorAll('.course-card');
+  cards.forEach(card => {
+    card.classList.remove('recommended', 'mismatch');
+    if (!STATE.grade || !allowedCourses) return;
+    if (allowedCourses.includes(card.dataset.id)) card.classList.add('recommended');
+    else card.classList.add('mismatch');
+  });
+}
+
+function refreshGradeWarning() {
+  const warn = document.getElementById('gradeWarning');
+  if (!STATE.grade || STATE.grade === 'その他') { warn.classList.remove('show'); return; }
+  const allowed = GRADE_COURSE_MAP[STATE.grade];
+  if (!allowed) { warn.classList.remove('show'); return; }
+  const hasMismatch = [...STATE.selected].some(id => !allowed.includes(id));
+  warn.classList.toggle('show', hasMismatch);
+}
+
+function bindModal() {
+  const modal = document.getElementById('confirmModal');
+  const closeModal = () => {
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    // フォーカスを「カード登録に進む」ボタンに戻す
+    document.getElementById('submitBtn').focus();
+  };
+  document.getElementById('modalBack').addEventListener('click', closeModal);
+  document.getElementById('modalConfirm').addEventListener('click', () => {
+    if (STATE.processing) return;  // 二重送信防止
+    STATE.processing = true;
+    closeModal();
+    proceedToCheckout();
+  });
+  // 背景クリックで閉じる
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+  // Esc キーで閉じる
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && modal.classList.contains('show')) closeModal();
+  });
+}
+
+function renderCourses() {
+  const grid = document.getElementById('courseGrid');
+  // Group by tier
+  const tiers = [
+    { key: 'premium', label: '🎓 大学受験 (難関)' },
+    { key: 'high',    label: '📈 学習管理コース' },
+    { key: 'mid',     label: '🏛 私立大学コース' },
+    { key: 'standard',label: '📖 標準コース (¥7,500〜)' },
+  ];
+  let html = '';
+  for (const t of tiers) {
+    const tcourses = STATE.courses.filter(c => c.tier === t.key);
+    if (!tcourses.length) continue;
+    html += `<div class="course-tier"><div class="tier-label">${t.label}</div><div class="course-grid">`;
+    for (const c of tcourses) {
+      html += `<div class="course-card" data-id="${c.id}"><div class="cn">${escapeHtml(c.name)}</div><div class="cp">¥${c.price.toLocaleString()}/月</div></div>`;
+    }
+    html += `</div></div>`;
+  }
+  grid.innerHTML = html;
+  grid.addEventListener('click', e => {
+    const card = e.target.closest('.course-card');
+    if (!card) return;
+    const id = card.dataset.id;
+    if (STATE.selected.has(id)) { STATE.selected.delete(id); card.classList.remove('sel'); }
+    else { STATE.selected.add(id); card.classList.add('sel'); }
+    updateTotal();
+    refreshGradeWarning();
+  });
+}
+
+function renderOptions() {
+  const row = document.getElementById('optionsRow');
+  if (!STATE.options.length) return;
+  row.innerHTML = `<div class="tier-label" style="width:100%;margin-bottom:4px;">🔧 オプション (該当者のみ)</div>` +
+    STATE.options.map(o => `<div class="opt-card" data-id="${o.id}"><span class="on">${escapeHtml(o.name)}</span></div>`).join('');
+  row.addEventListener('click', e => {
+    const card = e.target.closest('.opt-card');
+    if (!card) return;
+    const id = card.dataset.id;
+    if (STATE.selectedOpts.has(id)) { STATE.selectedOpts.delete(id); card.classList.remove('sel'); }
+    else {
+      // Allow only one facility fee at a time (mutual exclusion among facility-* options)
+      if (id.startsWith('facility-')) {
+        for (const oid of [...STATE.selectedOpts]) {
+          if (oid.startsWith('facility-')) {
+            STATE.selectedOpts.delete(oid);
+            row.querySelector(`[data-id="${oid}"]`)?.classList.remove('sel');
+          }
+        }
+      }
+      STATE.selectedOpts.add(id); card.classList.add('sel');
+    }
+    updateTotal();
+  });
+}
+
+function updateTotal() {
+  let total = 0;
+  const breakdown = [];
+  for (const id of STATE.selected) {
+    const c = STATE.courses.find(x => x.id === id);
+    if (c) { total += c.price; breakdown.push(`${c.name} ¥${c.price.toLocaleString()}`); }
+  }
+  for (const id of STATE.selectedOpts) {
+    const o = STATE.options.find(x => x.id === id);
+    if (o) { total += o.price; breakdown.push(`${o.name} ¥${o.price.toLocaleString()}`); }
+  }
+  document.getElementById('totalAmt').textContent = `¥${total.toLocaleString()}`;
+  document.getElementById('totalBreak').textContent = breakdown.length ? breakdown.join(' / ') : 'コースを選択してください';
+  document.getElementById('submitBtn').disabled = total === 0;
+}
+
+function bindForm() {
+  const btn = document.getElementById('submitBtn');
+  btn.addEventListener('click', onSubmit);
+}
+
+function onSubmit() {
+  hideError();
+  const form = document.getElementById('regForm');
+  const fd = new FormData(form);
+  const studentName = (fd.get('studentName') || '').toString().trim();
+  const grade = (fd.get('grade') || '').toString();
+  const parentName = (fd.get('parentName') || '').toString().trim();
+  const email = (fd.get('email') || '').toString().trim();
+  const phone = (fd.get('phone') || '').toString().trim();
+
+  if (!studentName) return showError('生徒氏名を入力してください');
+  if (!grade) return showError('学年を選択してください');
+  if (!parentName) return showError('保護者氏名を入力してください');
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showError('正しいメールアドレスを入力してください');
+  if (!STATE.selected.size) return showError('受講コースを1つ以上選択してください');
+
+  STATE.pendingPayload = {
+    studentName, grade, parentName, email, phone,
+    courses: [...STATE.selected],
+    options: [...STATE.selectedOpts],
+  };
+  showConfirmModal();
+}
+
+function showConfirmModal() {
+  const p = STATE.pendingPayload;
+  let total = 0;
+  let courseRows = '';
+  for (const id of p.courses) {
+    const c = STATE.courses.find(x => x.id === id);
+    if (c) { total += c.price; courseRows += `<div class="scrow"><div class="scn">${escapeHtml(c.name)}</div><div class="scp">¥${c.price.toLocaleString()}</div></div>`; }
+  }
+  for (const id of p.options) {
+    const o = STATE.options.find(x => x.id === id);
+    if (o) { total += o.price; courseRows += `<div class="scrow"><div class="scn">${escapeHtml(o.name)}</div><div class="scp">¥${o.price.toLocaleString()}</div></div>`; }
+  }
+  // 学年-コース不一致チェック
+  let mismatchNote = '';
+  const allowed = GRADE_COURSE_MAP[p.grade];
+  if (allowed) {
+    const mismatched = p.courses.filter(id => !allowed.includes(id));
+    if (mismatched.length) {
+      const names = mismatched.map(id => STATE.courses.find(c => c.id === id)?.name).filter(Boolean);
+      mismatchNote = `<div class="summary-note" style="background:rgba(239,68,68,0.10);border-color:rgba(239,68,68,0.4);color:#fca5a5;">⚠️ 学年「${escapeHtml(p.grade)}」と一致しないコースが含まれています: ${escapeHtml(names.join(', '))}<br>このまま登録すると ¥${total.toLocaleString()} で月額決済が開始されます。問題ない場合のみ進んでください。</div>`;
+    }
+  }
+  const body = `
+    <div class="summary-row"><div class="lbl">生徒氏名</div><div class="val">${escapeHtml(p.studentName)}</div></div>
+    <div class="summary-row"><div class="lbl">学年</div><div class="val">${escapeHtml(p.grade)}</div></div>
+    <div class="summary-row"><div class="lbl">保護者氏名</div><div class="val">${escapeHtml(p.parentName)}</div></div>
+    <div class="summary-row"><div class="lbl">メール</div><div class="val">${escapeHtml(p.email)}</div></div>
+    ${p.phone ? `<div class="summary-row"><div class="lbl">電話</div><div class="val">${escapeHtml(p.phone)}</div></div>` : ''}
+    <div class="summary-courses">${courseRows}</div>
+    <div class="summary-total"><div class="ttl">月額合計</div><div class="tml">¥${total.toLocaleString()}</div></div>
+    ${mismatchNote}
+  `;
+  document.getElementById('confirmBody').innerHTML = body;
+  const modal = document.getElementById('confirmModal');
+  modal.classList.add('show');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+  // 「戻って修正」ボタンに初期フォーカス (確定誤クリック防止)
+  setTimeout(() => document.getElementById('modalBack').focus(), 100);
+}
+
+async function proceedToCheckout() {
+  const payload = STATE.pendingPayload;
+  if (!payload) { STATE.processing = false; return; }
+  document.getElementById('loadingOverlay').classList.add('show');
+  document.getElementById('submitBtn').disabled = true;
+  try {
+    const res = await fetch('api/register-subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.checkoutUrl) {
+      throw new Error(data.message || 'サーバーエラーが発生しました');
+    }
+    window.location.href = data.checkoutUrl;
+  } catch (e) {
+    document.getElementById('loadingOverlay').classList.remove('show');
+    document.getElementById('submitBtn').disabled = false;
+    STATE.processing = false;  // エラー時は再試行可能に
+    showError(`登録に失敗しました: ${e.message}`);
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('errBanner');
+  el.textContent = '⚠️ ' + msg;
+  el.classList.add('show');
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function hideError() { document.getElementById('errBanner').classList.remove('show'); }
+function escapeHtml(s) { return String(s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+init();
+</script>
+</body>
+</html>
