@@ -162,12 +162,23 @@
         getToken, clearSession, saveSession,
         apiBase: API_BASE,
         // 認証付き fetch
+        // 401 で reload するとローテーション失敗の旧トークンや、起動直後の他 fetch で
+        // 連続 reload ループに陥る (塾長報告 2026-05-03)。reload は廃止し、
+        // session を消して gate を再表示するだけにする (caller 側は !res.ok を見て
+        // 通常エラー扱いにする)。
         async fetch(path, init = {}) {
           const token = getToken();
           const headers = new Headers(init.headers || {});
           if (token) headers.set('Authorization', 'Bearer ' + token);
           const res = await fetch(API_BASE + path, { ...init, headers });
-          if (res.status === 401) { clearSession(); window.location.reload(); }
+          if (res.status === 401) {
+            clearSession();
+            try {
+              document.body.classList.add('admin-locked');
+              const g = document.getElementById('adminGate');
+              if (g) g.classList.remove('hidden');
+            } catch (_) {}
+          }
           return res;
         },
       };
