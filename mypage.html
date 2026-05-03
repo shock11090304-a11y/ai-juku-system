@@ -276,6 +276,7 @@
       </p>
       <div id="lbTodayReview"></div>
       <div id="lbStudyTimeWidget" style="margin-top:1rem;"></div>
+      <div id="vocabSrsWidget" style="margin-top:1rem;"></div>
       <div id="curriculumWeekWidget" style="margin-top:1rem;"></div>
       <div id="usageQuotaWidget" style="margin-top:1rem;"></div>
       <div id="examPrepWidget" style="margin-top:1rem;"></div>
@@ -350,6 +351,7 @@
         ReferralProgram.renderReferralWidget('referralWidget', student);
         renderUsageQuotaWidget('usageQuotaWidget');
         renderCurriculumWeekWidget('curriculumWeekWidget');
+        renderVocabSrsWidget('vocabSrsWidget', studentId);
       }
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initWidgets);
@@ -409,6 +411,60 @@
           </div>`;
       } catch (e) {
         console.warn('Usage quota widget fetch failed:', e);
+        el.innerHTML = '';
+      }
+    }
+
+    // 📖 AI 単語帳 (Leitner SRS) ウィジェット — 今日復習する単語数 + Box 進捗
+    async function renderVocabSrsWidget(containerId, studentId) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      const API_BASE = (window.location.origin.includes(':8090') || window.location.origin.includes('localhost:8090'))
+        ? 'http://localhost:8000' : window.location.origin;
+      try {
+        const res = await fetch(`${API_BASE}/api/vocab/stats?student_id=${encodeURIComponent(studentId)}`);
+        if (!res.ok) { el.innerHTML = ''; return; }
+        const d = await res.json();
+        const due = d.due_now || 0;
+        const total = d.total_words_in_pool || 0;
+        const mastered = d.mastered || 0;
+        const reviews = d.total_reviews || 0;
+        const acc = d.accuracy_percent != null ? d.accuracy_percent : 0;
+        const boxes = d.by_box || {};
+        const boxCells = [1,2,3,4,5].map(b => {
+          const cnt = boxes[b] || 0;
+          const colors = ['#ef4444','#f59e0b','#fbbf24','#34d399','#10b981'];
+          return `<div style="flex:1;min-width:0;text-align:center;padding:0.4rem 0.2rem;background:rgba(0,0,0,0.25);border-radius:6px;">
+            <div style="font-size:0.65rem;color:#94a3b8;">Box ${b}</div>
+            <div style="font-size:1rem;font-weight:800;color:${colors[b-1]};">${cnt}</div>
+          </div>`;
+        }).join('');
+        const dueColor = due > 0 ? '#ef4444' : '#10b981';
+        const dueLabel = due > 0 ? `🔥 ${due} 件` : '✅ 完了';
+        el.innerHTML = `
+          <div style="background:linear-gradient(135deg,rgba(99,102,241,0.10),rgba(16,185,129,0.06));border:1px solid rgba(99,102,241,0.30);border-radius:12px;padding:0.95rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.55rem;">
+              <div style="font-weight:800;color:#a78bfa;">📖 AI 単語帳 (SRS) <span style="font-size:0.65em;color:#94a3b8;font-weight:600;">Leitner Box・忘却曲線対応</span></div>
+              <a href="vocab.html" style="background:rgba(99,102,241,0.22);color:#c7d2fe;border:1px solid rgba(99,102,241,0.5);padding:0.35rem 0.85rem;border-radius:6px;font-size:0.78rem;font-weight:700;text-decoration:none;">→ 学習する</a>
+            </div>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.55rem;">
+              <div style="flex:1;min-width:120px;padding:0.55rem;background:rgba(0,0,0,0.25);border-radius:8px;">
+                <div style="font-size:0.7rem;color:#94a3b8;">今日復習する単語</div>
+                <div style="font-size:1.25rem;font-weight:800;color:${dueColor};">${dueLabel}</div>
+              </div>
+              <div style="flex:1;min-width:120px;padding:0.55rem;background:rgba(0,0,0,0.25);border-radius:8px;">
+                <div style="font-size:0.7rem;color:#94a3b8;">マスター済み / 全単語</div>
+                <div style="font-size:1.25rem;font-weight:800;color:#10b981;">${mastered} / ${total}</div>
+              </div>
+              <div style="flex:1;min-width:120px;padding:0.55rem;background:rgba(0,0,0,0.25);border-radius:8px;">
+                <div style="font-size:0.7rem;color:#94a3b8;">累計レビュー / 正答率</div>
+                <div style="font-size:1.25rem;font-weight:800;color:#fbbf24;">${reviews} <span style="font-size:0.7rem;color:#cbd5e1;font-weight:600;">${acc}%</span></div>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.3rem;">${boxCells}</div>
+          </div>`;
+      } catch (e) {
+        console.warn('Vocab SRS widget fetch failed:', e);
         el.innerHTML = '';
       }
     }

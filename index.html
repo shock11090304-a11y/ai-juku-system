@@ -114,6 +114,10 @@
             <span class="icon">🛡️</span>
             <span class="label">滑り止め</span>
           </a>
+          <a href="vocab.html" class="btn-icon-labeled" title="忘却曲線対応 Leitner Box・科学的暗記 (AI 単語帳 SRS)">
+            <span class="icon">📖</span>
+            <span class="label">単語帳</span>
+          </a>
           <button id="openSettings" class="btn-icon-labeled" title="管理者設定">
             <span class="icon">⚙️</span>
             <span class="label">設定</span>
@@ -164,6 +168,7 @@
     <button class="tab" data-tab="email">✉️ 保護者メール</button>
     <button class="tab" data-tab="speaking">🎙 スピーキング練習</button>
     <a href="english-exam.html" class="tab" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;background:linear-gradient(135deg,rgba(30,64,175,0.15),rgba(220,38,38,0.15));border:1px solid rgba(99,102,241,0.4);">🎓 英語試験対策 <span style="font-size:0.65rem;background:#dc2626;color:white;padding:0.05rem 0.35rem;border-radius:3px;font-weight:900;">4試験対応</span></a>
+    <a href="vocab.html" class="tab" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;background:linear-gradient(135deg,rgba(99,102,241,0.18),rgba(16,185,129,0.10));border:1px solid rgba(99,102,241,0.45);">📖 AI単語帳 (SRS) <span id="indexVocabDueBadge" style="display:none;font-size:0.65rem;background:#10b981;color:white;padding:0.05rem 0.35rem;border-radius:3px;font-weight:900;">●</span></a>
     <!-- メンター管理タブは生徒画面では非表示 (講師/塾長機能のため) — 2026-05-02 -->
   </nav>
 
@@ -1110,6 +1115,39 @@
       ReferralProgram.autoApplyFromUrl();
     }
   })();
+  </script>
+
+  <!-- 📖 AI 単語帳 due-count バッジ (タブの NEW 部分に件数を出す) -->
+  <script>
+    (function updateVocabDueBadge() {
+      function load() {
+        const badge = document.getElementById('indexVocabDueBadge');
+        if (!badge) return;
+        let st = null;
+        try { st = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null'); } catch (_) {}
+        const sid = st && st.id ? st.id : null;
+        if (!sid) { badge.style.display = 'inline-flex'; badge.textContent = 'NEW'; return; }
+        const API_BASE = (window.location.origin.includes(':8090') || window.location.origin.includes('localhost:8090'))
+          ? 'http://localhost:8000' : window.location.origin;
+        fetch(`${API_BASE}/api/vocab/stats?student_id=${encodeURIComponent(sid)}`)
+          .then(r => r.ok ? r.json() : null)
+          .then(d => {
+            if (!d) return;
+            const due = d.due_now || 0;
+            badge.style.display = 'inline-flex';
+            if (due > 0) {
+              badge.textContent = `🔥 ${due}`;
+              badge.style.background = '#ef4444';
+            } else {
+              badge.textContent = '✅';
+              badge.style.background = '#10b981';
+            }
+          })
+          .catch(() => {});
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
+      else load();
+    })();
   </script>
 
   <!-- 📊 セッション結果モーダル (塾長指示 2026-05-01) -->
