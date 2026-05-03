@@ -134,7 +134,11 @@
         <select class="select" id="unpaidCourseFilter"><option value="">コース: 全て</option></select>
         <button class="btn btn-ghost btn-sm" id="copyAllBccBtn" title="全員のメアドをBCCコピー">📋 BCC</button>
         <button class="btn btn-primary" id="bulkMailBtn">📧 一括督促メール</button>
+        <button class="btn btn-accent" id="bulkPastDueBtn" title="Stripe登録済の未払い者に請求書一括発行">💳 Stripe請求書一括</button>
       </div>
+    </div>
+    <div class="stripe-status-bar" id="stripeStatusBar" style="display:none; padding:10px 14px; background:rgba(99,102,241,0.08); border-left:3px solid var(--primary); margin:0 0 12px; font-size:0.85rem; border-radius:6px;">
+      <span id="stripeStatusText">Stripe 登録状況を読込中…</span>
     </div>
     <div class="table-wrap">
       <table class="table" id="unpaidTable">
@@ -142,10 +146,11 @@
           <tr>
             <th>ID</th><th>氏名</th><th>学年</th>
             <th class="ta-r">月謝</th><th>メール</th>
+            <th class="ta-c">Stripe</th>
             <th class="ta-c">督促状況</th><th class="ta-c">アクション</th>
           </tr>
         </thead>
-        <tbody id="unpaidTbody"><tr><td colspan="7" class="empty">読込中…</td></tr></tbody>
+        <tbody id="unpaidTbody"><tr><td colspan="8" class="empty">読込中…</td></tr></tbody>
       </table>
     </div>
   </section>

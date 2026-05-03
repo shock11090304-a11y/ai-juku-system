@@ -193,9 +193,43 @@ def _handle_subscription_deleted(event):
     _log(f"webhook: subscription_deleted sub={sub_id}")
 
 
+def _handle_payment_succeeded(event):
+    """invoice.payment_succeeded — 月次サブスク or 過去未納分の請求書が支払われた時"""
+    obj = event.get("data", {}).get("object", {})
+    invoice_id = obj.get("id", "")
+    customer = obj.get("customer", "")
+    subscription = obj.get("subscription", "")
+    amount_paid = obj.get("amount_paid", 0)
+    metadata = obj.get("metadata", {}) or {}
+    source = metadata.get("source", "")
+    student_name = metadata.get("student_name", "")
+    month = metadata.get("month", "")
+
+    record = {
+        "invoice_id": invoice_id,
+        "stripe_customer_id": customer,
+        "stripe_subscription_id": subscription,
+        "amount_paid": amount_paid,
+        "metadata": metadata,
+        "paid_at": int(time.time()),
+        "source": source,
+    }
+    _redis_safe("SET", f"pay:succeeded:{invoice_id}", json.dumps(record, ensure_ascii=False))
+    _redis_safe("ZADD", "pay:succeeded:index", str(record["paid_at"]), invoice_id)
+
+    # past-due 由来なら専用 index にも記録 (塾長ダッシュ用)
+    if source == "past-due-invoice-v1":
+        _redis_safe("SET", f"pastdue:paid:{invoice_id}", json.dumps(record, ensure_ascii=False))
+        _redis_safe("ZADD", "pastdue:paid:index", str(record["paid_at"]), invoice_id)
+        _log(f"webhook: past-due paid invoice={invoice_id} student={student_name} month={month} amount={amount_paid}")
+    else:
+        _log(f"webhook: payment_succeeded invoice={invoice_id} amount={amount_paid}")
+
+
 HANDLERS = {
     "checkout.session.completed": _handle_checkout_completed,
     "invoice.payment_failed": _handle_payment_failed,
+    "invoice.payment_succeeded": _handle_payment_succeeded,
     "customer.subscription.deleted": _handle_subscription_deleted,
 }
 

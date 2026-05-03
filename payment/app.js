@@ -397,7 +397,59 @@ function statusSelect(student) {
 }
 
 // === Unpaid Tab ===
-function renderUnpaid() {
+// Stripe 登録顧客キャッシュ (60秒)
+const STRIPE_CUST_CACHE = { customers: [], loadedAt: 0, loading: false };
+
+async function loadRegisteredCustomers(force = false) {
+  const now = Date.now();
+  if (!force && STRIPE_CUST_CACHE.loadedAt && now - STRIPE_CUST_CACHE.loadedAt < 60000) return STRIPE_CUST_CACHE.customers;
+  if (STRIPE_CUST_CACHE.loading) return STRIPE_CUST_CACHE.customers;
+  const pw = (typeof CHAT_STATE !== 'undefined' && CHAT_STATE.pw) || localStorage.getItem('juku-chat-pw-v1') || '';
+  if (!pw) return [];
+  STRIPE_CUST_CACHE.loading = true;
+  try {
+    const res = await fetch('/payment/api/registered-customers', { headers: { 'X-Admin-Password': pw } });
+    if (!res.ok) { STRIPE_CUST_CACHE.loading = false; return []; }
+    const data = await res.json();
+    STRIPE_CUST_CACHE.customers = data.customers || [];
+    STRIPE_CUST_CACHE.loadedAt = now;
+  } catch (e) {
+    console.warn('loadRegisteredCustomers failed:', e);
+  } finally {
+    STRIPE_CUST_CACHE.loading = false;
+  }
+  return STRIPE_CUST_CACHE.customers;
+}
+
+// 生徒名から Stripe Customer をマッチ (matchPayer の正規化を流用)
+function matchCustomerForStudent(student) {
+  if (!STRIPE_CUST_CACHE.customers.length) return null;
+  const sNorm = normalizeName(student.name);
+  if (!sNorm) return null;
+  // Layer 1: 完全一致 (各候補名)
+  for (const c of STRIPE_CUST_CACHE.customers) {
+    const cNorm = normalizeName(c.studentName);
+    if (cNorm && cNorm === sNorm) return c;
+  }
+  // Layer 2: 部分一致
+  for (const c of STRIPE_CUST_CACHE.customers) {
+    const cNorm = normalizeName(c.studentName);
+    if (cNorm && (cNorm.includes(sNorm) || sNorm.includes(cNorm))) return c;
+  }
+  // Layer 3: 括弧内候補との完全一致
+  const sCands = extractNameCandidates(student.name).map(normalizeName).filter(Boolean);
+  for (const c of STRIPE_CUST_CACHE.customers) {
+    const cCands = extractNameCandidates(c.studentName).map(normalizeName).filter(Boolean);
+    for (const sc of sCands) {
+      for (const cc of cCands) {
+        if (sc === cc) return c;
+      }
+    }
+  }
+  return null;
+}
+
+async function renderUnpaid() {
   const month = STATE.currentMonth;
   document.getElementById('unpaidMonthTag').textContent = month;
   const tbody = document.getElementById('unpaidTbody');
@@ -411,31 +463,41 @@ function renderUnpaid() {
   if (course) unpaid = unpaid.filter(s => (s.courses || []).includes(course));
   document.getElementById('unpaidCountTag').textContent = `${unpaid.length}名`;
 
+  // Stripe 登録顧客 (バックグラウンドで読込、結果は次の renderUnpaid で反映)
+  loadRegisteredCustomers().then(() => updateStripeStatusBar(unpaid));
+  updateStripeStatusBar(unpaid);
+
   if (!unpaid.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty">🎉 ${month} の未払い者はいません</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="empty">🎉 ${month} の未払い者はいません</td></tr>`;
     return;
   }
 
   tbody.innerHTML = unpaid.map(s => {
     const sent = getMailSent(month, s.id);
     const email = getEmail(s.id);
+    const stripeCust = matchCustomerForStudent(s);
+    const stripeBadge = stripeCust
+      ? `<span class="badge" style="background:rgba(16,185,129,0.18); color:#34d399; padding:2px 8px; border-radius:6px; font-size:0.78rem; font-weight:600;" title="${escapeHtml(stripeCust.customerId)}">✓ 登録済</span>`
+      : `<span class="badge" style="background:rgba(107,114,128,0.18); color:#9ca3af; padding:2px 8px; border-radius:6px; font-size:0.78rem;">未登録</span>`;
     const status = sent
       ? `<span class="mail-status mail-sent">✓ ${sent} 送信済</span>`
       : email
         ? `<span class="mail-status mail-pending">未送信</span>`
         : `<span class="mail-status">メール未登録</span>`;
     return `
-    <tr data-student-id="${s.id}">
+    <tr data-student-id="${s.id}" data-stripe-customer="${stripeCust ? escapeHtml(stripeCust.customerId) : ''}">
       <td class="id-cell">#${s.id}</td>
       <td class="name-cell">${escapeHtml(s.name)}</td>
       <td>${escapeHtml(s.grade || '—')}</td>
       <td class="ta-r fee-cell">${yen(s.fee)}</td>
       <td><input type="text" class="email-input" data-action="email" placeholder="メール未登録" value="${escapeHtml(email)}"></td>
+      <td class="ta-c">${stripeBadge}</td>
       <td class="ta-c">${status}</td>
       <td class="ta-c">
         <div class="mail-actions">
           <button class="icon-btn" data-action="mail-preview" title="メール内容を確認">📧 確認</button>
           <button class="icon-btn ${sent ? 'icon-btn-success' : ''}" data-action="mail-send" title="メーラーで開く" ${email ? '' : 'disabled'}>${sent ? '✓ 送信' : '➜ 送信'}</button>
+          ${stripeCust ? `<button class="icon-btn" data-action="past-due-one" title="この生徒に Stripe 請求書を発行">💳 請求書</button>` : ''}
           <button class="pay-toggle" data-action="toggle" title="入金済にする">○</button>
         </div>
       </td>
@@ -456,6 +518,8 @@ function renderUnpaid() {
     } else if (a === 'mail-send') {
       sendMailTo(id);
       renderUnpaid();
+    } else if (a === 'past-due-one') {
+      sendPastDueInvoiceFor(id);
     }
   };
   tbody.oninput = (e) => {
@@ -464,6 +528,126 @@ function renderUnpaid() {
     const id = parseInt(tr.dataset.studentId, 10);
     if (t.dataset.action === 'email') setEmail(id, t.value.trim());
   };
+}
+
+function updateStripeStatusBar(unpaid) {
+  const bar = document.getElementById('stripeStatusBar');
+  const text = document.getElementById('stripeStatusText');
+  const btn = document.getElementById('bulkPastDueBtn');
+  if (!bar || !text) return;
+  const total = STRIPE_CUST_CACHE.customers.length;
+  if (total === 0) {
+    bar.style.display = 'block';
+    text.textContent = `💳 Stripe 登録者: 0 名 — まだカード登録した保護者がいません (登録 URL: /payment/register.html)`;
+    if (btn) btn.disabled = true;
+    return;
+  }
+  const matchedCount = unpaid.filter(s => matchCustomerForStudent(s)).length;
+  bar.style.display = 'block';
+  text.innerHTML = `💳 Stripe 登録者 <strong>${total}名</strong> 中、当月未払い者で登録済みは <strong style="color:#34d399;">${matchedCount}名</strong> / 未登録 <strong style="color:#9ca3af;">${unpaid.length - matchedCount}名</strong>`;
+  if (btn) btn.disabled = matchedCount === 0;
+}
+
+async function sendPastDueInvoiceFor(studentId) {
+  const s = STATE.data.students.find(x => x.id === studentId);
+  if (!s) return;
+  const cust = matchCustomerForStudent(s);
+  if (!cust) { alert('この生徒は Stripe 未登録です'); return; }
+  const month = STATE.currentMonth;
+  const fee = s.fee || 0;
+  if (!fee) { alert('月謝額が 0 円です'); return; }
+  if (!confirm(`#${s.id} ${s.name} に ${month} 分の請求書を発行します。\n\n金額: ¥${fee.toLocaleString()}\n送信先: ${cust.email || '(Stripe 登録時メアド)'}\n支払期限: 7 日後\n\n保護者の登録メアド宛に Stripe から自動でメール送信されます。\n同じ生徒・同月の重複発行は自動で防がれます (90日間)。\n続行しますか?`)) return;
+
+  const pw = (typeof CHAT_STATE !== 'undefined' && CHAT_STATE.pw) || localStorage.getItem('juku-chat-pw-v1') || '';
+  if (!pw) { alert('管理パスワード未入力です。チャットタブで入力してください。'); switchTab('chat'); return; }
+
+  // 二重送信防止: 同一行のボタンを一時 disabled
+  const btn = document.querySelector(`tr[data-student-id="${studentId}"] [data-action="past-due-one"]`);
+  if (btn) { if (btn.dataset.busy === '1') return; btn.dataset.busy = '1'; btn.disabled = true; const orig = btn.textContent; btn.textContent = '⏳'; }
+  try {
+    const res = await fetch('/payment/api/past-due-invoice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Password': pw },
+      body: JSON.stringify({ items: [{ customerId: cust.customerId, studentName: s.name, month, amount: fee, description: `AI学習コーチ塾 ${month} 月謝` }] }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { alert(`エラー: ${data.message || data.error || 'unknown'}`); return; }
+    const r = (data.results || [])[0] || {};
+    if (r.status === 'success') {
+      alert(`✓ 請求書発行完了\n\nInvoice ID: ${r.invoiceId}\n金額: ¥${r.amountDue.toLocaleString()}\n\nStripe から保護者宛にメール送信されました。`);
+    } else if (r.status === 'duplicate') {
+      alert(`⚠ 既に発行済み\n\nこの生徒の ${month} 分は既に請求書が発行されています。\nInvoice ID: ${r.invoiceId}\n\n90日経過後または別月であれば再発行できます。`);
+    } else {
+      alert(`発行失敗: ${r.error || 'unknown'}`);
+    }
+  } finally {
+    if (btn) { btn.dataset.busy = ''; btn.disabled = false; btn.textContent = '💳 請求書'; }
+  }
+}
+
+async function sendBulkPastDueInvoices() {
+  const btn = document.getElementById('bulkPastDueBtn');
+  if (btn?.dataset.busy === '1') return;  // 二重送信防止
+  const month = STATE.currentMonth;
+  const grade = document.getElementById('unpaidGradeFilter')?.value || '';
+  const course = document.getElementById('unpaidCourseFilter')?.value || '';
+  let unpaid = activeStudents().filter(s => {
+    const pay = getPayment(month, s.id);
+    return !pay || !pay.paid;
+  });
+  if (grade) unpaid = unpaid.filter(s => s.grade === grade);
+  if (course) unpaid = unpaid.filter(s => (s.courses || []).includes(course));
+
+  await loadRegisteredCustomers(true);
+  const items = [];
+  for (const s of unpaid) {
+    const cust = matchCustomerForStudent(s);
+    if (cust && cust.customerId && (s.fee || 0) > 0) {
+      items.push({ customerId: cust.customerId, studentName: s.name, month, amount: s.fee, description: `AI学習コーチ塾 ${month} 月謝` });
+    }
+  }
+  if (!items.length) { alert(`Stripe 登録済の未払い者がいません (${month})`); return; }
+  const total = items.reduce((sum, i) => sum + i.amount, 0);
+  // 個別金額を含む詳細 confirm
+  const itemList = items.slice(0, 10).map(i => `  • ${i.studentName} ¥${i.amount.toLocaleString()}`).join('\n');
+  const more = items.length > 10 ? `\n  ...他 ${items.length - 10} 名` : '';
+  if (!confirm(`【${month} 分 Stripe 請求書 一括発行】\n\n対象: ${items.length} 名\n合計: ¥${total.toLocaleString()}\n支払期限: 発行から 7 日後\n\n${itemList}${more}\n\n各保護者の Stripe 登録メアド宛に Stripe からメール送信されます。\n同じ生徒・同月の重複発行は自動で防がれます (90日間)。\n\n続行しますか?`)) return;
+
+  const pw = (typeof CHAT_STATE !== 'undefined' && CHAT_STATE.pw) || localStorage.getItem('juku-chat-pw-v1') || '';
+  if (!pw) { alert('管理パスワード未入力。チャットタブで入力してください。'); switchTab('chat'); return; }
+
+  if (btn) {
+    btn.dataset.busy = '1';
+    btn.disabled = true;
+    btn.textContent = '⏳ 発行中…';
+  }
+  try {
+    const res = await fetch('/payment/api/past-due-invoice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Password': pw },
+      body: JSON.stringify({ items }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { alert(`エラー: ${data.message || data.error || 'unknown'}`); return; }
+    const ok = data.summary?.success || 0;
+    const ng = data.summary?.failed || 0;
+    const dup = (data.results || []).filter(r => r.status === 'duplicate').length;
+    let detail = '';
+    if (ng > 0) {
+      const failures = (data.results || []).filter(r => r.status === 'error');
+      if (failures.length) detail += '\n\n失敗詳細:\n' + failures.slice(0, 15).map(r => `  ⚠ ${r.studentName}: ${r.error}`).join('\n');
+    }
+    if (dup > 0) {
+      detail += `\n\n重複スキップ: ${dup} 名 (既に同月分発行済)`;
+    }
+    alert(`完了\n  成功: ${ok}/${items.length}\n  失敗: ${ng}\n  重複スキップ: ${dup}${detail}`);
+  } finally {
+    if (btn) {
+      btn.dataset.busy = '';
+      btn.disabled = false;
+      btn.textContent = '💳 Stripe請求書一括';
+    }
+  }
 }
 
 // === All Students Tab ===
@@ -3096,6 +3280,8 @@ function setupModals() {
 
   // Bulk mail
   document.getElementById('bulkMailBtn').addEventListener('click', openBulkMailModal);
+  const pdBtn = document.getElementById('bulkPastDueBtn');
+  if (pdBtn) pdBtn.addEventListener('click', sendBulkPastDueInvoices);
   document.getElementById('bulkSequentialBtn').addEventListener('click', bulkMailSequential);
   document.getElementById('bulkBccBtn').addEventListener('click', bulkMailBccCopy);
   document.getElementById('copyAllBccBtn').addEventListener('click', () => {

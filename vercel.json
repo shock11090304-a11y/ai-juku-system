@@ -21,6 +21,14 @@
       "destination": "/api/stripe-webhook"
     },
     {
+      "source": "/payment/api/past-due-invoice",
+      "destination": "/api/past-due-invoice"
+    },
+    {
+      "source": "/payment/api/registered-customers",
+      "destination": "/api/registered-customers"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://ai-juku-api-production.up.railway.app/api/:path*"
     },
