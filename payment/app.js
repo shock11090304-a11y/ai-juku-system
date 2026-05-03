@@ -1743,11 +1743,13 @@ function renderInvoiceTab() {
     </tr>`;
   }).join('');
 
-  tbody.onclick = (e) => {
+  tbody.onclick = async (e) => {
     const btn = e.target.closest('[data-invoice-id]');
     if (btn) {
       const id = parseInt(btn.dataset.invoiceId, 10);
-      generateInvoicePDF(id, /*download*/ true);
+      btn.disabled = true; const orig = btn.textContent; btn.textContent = '⏳ 生成中…';
+      try { await generateInvoicePDF(id, /*download*/ true); }
+      finally { btn.disabled = false; btn.textContent = orig; }
     }
   };
 }
@@ -1756,104 +1758,144 @@ function getSelectedInvoiceIds() {
   return [...document.querySelectorAll('.invoice-check:checked')].map(c => parseInt(c.value, 10));
 }
 
-function generateInvoicePDF(studentId, download = true, returnDoc = false) {
+function buildInvoiceHTML(s, month) {
+  const stripeUrl = paymentLinkFor(s);
+  const customerPortal = SETTINGS.stripeCustomerPortalUrl || '';
+  const today = new Date().toISOString().slice(0, 10);
+  const due = deadlineForMonth(month);
+  const courses = (s.courses || []).join(' / ') || '—';
+  const fee = (s.fee || 0).toLocaleString('ja-JP');
+  const note = s.notes ? `<div class="note-line">※ ${escapeHtml(s.notes)}</div>` : '';
+
+  // HTML 生成 (html2canvas で画像化する用、A4 比率)
+  return `
+  <div style="width:794px; padding:48px 56px; background:#fff; color:#1f2937; font-family:'Noto Sans JP','Hiragino Sans','Yu Gothic UI',-apple-system,sans-serif; font-size:14px; line-height:1.5;">
+    <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:32px;">
+      <div>
+        <div style="font-size:32px; font-weight:800; color:#111827; letter-spacing:-0.5px;">請求書</div>
+        <div style="font-size:13px; color:#6b7280; margin-top:4px;">INVOICE</div>
+      </div>
+      <div style="text-align:right; font-size:13px; color:#374151;">
+        <div>請求書 No. <strong>${month}-${String(s.id).padStart(4,'0')}</strong></div>
+        <div style="margin-top:2px;">発行日: ${today}</div>
+        <div style="margin-top:2px;">支払期限: <strong style="color:#dc2626;">${escapeHtml(due)}</strong></div>
+      </div>
+    </div>
+
+    <div style="background:linear-gradient(135deg,#6366f1,#818cf8); color:#fff; padding:14px 20px; border-radius:10px 10px 0 0; font-weight:700; font-size:15px;">
+      ご請求先
+    </div>
+    <table style="width:100%; border-collapse:collapse; margin-bottom:24px;">
+      <tbody>
+        <tr><td style="padding:12px 18px; border:1px solid #e5e7eb; background:#f9fafb; font-weight:600; width:30%;">生徒氏名</td><td style="padding:12px 18px; border:1px solid #e5e7eb;">${escapeHtml(s.name)}</td></tr>
+        <tr><td style="padding:12px 18px; border:1px solid #e5e7eb; background:#f9fafb; font-weight:600;">学年</td><td style="padding:12px 18px; border:1px solid #e5e7eb;">${escapeHtml(s.grade || '—')}</td></tr>
+        <tr><td style="padding:12px 18px; border:1px solid #e5e7eb; background:#f9fafb; font-weight:600;">受講コース</td><td style="padding:12px 18px; border:1px solid #e5e7eb;">${escapeHtml(courses)}</td></tr>
+        <tr><td style="padding:12px 18px; border:1px solid #e5e7eb; background:#f9fafb; font-weight:600;">対象月</td><td style="padding:12px 18px; border:1px solid #e5e7eb;">${month}</td></tr>
+        <tr><td style="padding:12px 18px; border:1px solid #e5e7eb; background:#f9fafb; font-weight:600;">請求金額</td><td style="padding:12px 18px; border:1px solid #e5e7eb; font-size:20px; font-weight:800; color:#6366f1;">¥${fee}</td></tr>
+      </tbody>
+    </table>
+    ${note}
+
+    <div style="background:linear-gradient(135deg,#ec4899,#f472b6); color:#fff; padding:14px 20px; border-radius:10px 10px 0 0; font-weight:700; font-size:15px; margin-top:24px;">
+      お支払い方法 1. 銀行振込
+    </div>
+    <table style="width:100%; border-collapse:collapse; margin-bottom:24px;">
+      <tbody>
+        <tr><td style="padding:11px 18px; border:1px solid #e5e7eb; background:#fdf2f8; font-weight:600; width:30%;">銀行名</td><td style="padding:11px 18px; border:1px solid #e5e7eb;">${escapeHtml(SETTINGS.bankName || '—')}</td></tr>
+        <tr><td style="padding:11px 18px; border:1px solid #e5e7eb; background:#fdf2f8; font-weight:600;">支店名</td><td style="padding:11px 18px; border:1px solid #e5e7eb;">${escapeHtml(SETTINGS.branchName || '—')}</td></tr>
+        <tr><td style="padding:11px 18px; border:1px solid #e5e7eb; background:#fdf2f8; font-weight:600;">口座種別</td><td style="padding:11px 18px; border:1px solid #e5e7eb;">${escapeHtml(SETTINGS.accountType || '普通')}</td></tr>
+        <tr><td style="padding:11px 18px; border:1px solid #e5e7eb; background:#fdf2f8; font-weight:600;">口座番号</td><td style="padding:11px 18px; border:1px solid #e5e7eb; font-family:'Menlo',monospace; letter-spacing:1px;">${escapeHtml(SETTINGS.accountNumber || '—')}</td></tr>
+        <tr><td style="padding:11px 18px; border:1px solid #e5e7eb; background:#fdf2f8; font-weight:600;">口座名義</td><td style="padding:11px 18px; border:1px solid #e5e7eb;">${escapeHtml(SETTINGS.accountHolder || '—')}</td></tr>
+      </tbody>
+    </table>
+
+    ${stripeUrl && stripeUrl !== '(未設定)' ? `
+    <div style="background:linear-gradient(135deg,#10b981,#34d399); color:#fff; padding:14px 20px; border-radius:10px 10px 0 0; font-weight:700; font-size:15px;">
+      お支払い方法 2. クレジットカード (Stripe)
+    </div>
+    <table style="width:100%; border-collapse:collapse; margin-bottom:18px;">
+      <tbody>
+        <tr><td style="padding:11px 18px; border:1px solid #e5e7eb; background:#ecfdf5; font-weight:600; width:30%;">支払いリンク</td><td style="padding:11px 18px; border:1px solid #e5e7eb; word-break:break-all; font-size:12px; color:#059669;">${escapeHtml(stripeUrl)}</td></tr>
+        <tr><td style="padding:11px 18px; border:1px solid #e5e7eb; background:#ecfdf5; font-weight:600;">使い方</td><td style="padding:11px 18px; border:1px solid #e5e7eb;">URL にアクセス → カード情報入力 → 月額自動引き落としが開始されます</td></tr>
+        ${customerPortal ? `<tr><td style="padding:11px 18px; border:1px solid #e5e7eb; background:#ecfdf5; font-weight:600;">変更・解約</td><td style="padding:11px 18px; border:1px solid #e5e7eb; word-break:break-all; font-size:12px; color:#059669;">${escapeHtml(customerPortal)}</td></tr>` : ''}
+      </tbody>
+    </table>
+    ` : ''}
+
+    <div style="display:flex; justify-content:flex-end; align-items:baseline; gap:18px; padding:18px 22px; background:linear-gradient(135deg,#1f2937,#374151); color:#fff; border-radius:12px; margin-top:8px;">
+      <div style="font-size:14px; opacity:0.8;">合計</div>
+      <div style="font-size:32px; font-weight:800; letter-spacing:-1px;">¥${fee}</div>
+    </div>
+
+    <div style="margin-top:36px; padding-top:18px; border-top:1px solid #e5e7eb; font-size:12px; color:#6b7280; line-height:1.7;">
+      <div style="font-weight:600; color:#374151; margin-bottom:4px;">${escapeHtml(SETTINGS.jukuName || 'AI学習コーチ塾')}</div>
+      ${SETTINGS.ownerName ? `<div>塾長: ${escapeHtml(SETTINGS.ownerName)}</div>` : ''}
+      ${SETTINGS.ownerEmail ? `<div>📧 ${escapeHtml(SETTINGS.ownerEmail)}</div>` : ''}
+      ${SETTINGS.ownerPhone ? `<div>📞 ${escapeHtml(SETTINGS.ownerPhone)}</div>` : ''}
+      <div style="margin-top:8px; font-size:11px; color:#9ca3af;">ご不明点は塾長 LINE までお問い合わせください。</div>
+    </div>
+  </div>`;
+}
+
+async function generateInvoicePDF(studentId, download = true, returnDoc = false) {
   const s = STATE.data.students.find(x => x.id === studentId);
   if (!s) return null;
   const month = STATE.currentMonth;
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  // 日本語フォント未組込のため、jsPDFのデフォルトフォントだとカナ/漢字は出ないことが多い
-  // → autoTable + 既定フォントで対応 (Helvetica)
-  // 日本語混在は doc.text で記号化されるリスクがあるが、最低限の英数+記号でレイアウトする
-  // 真の日本語対応はNoto SansフォントをBase64で組み込む必要があるが、今回は autoTable を使った構造化レイアウトで読みやすさ確保
 
-  // タイトル
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(22);
-  doc.text('INVOICE / Seikyusho', 105, 22, { align: 'center' });
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`No. ${month}-${String(s.id).padStart(4, '0')}`, 200, 14, { align: 'right' });
-  doc.text(`Date: ${new Date().toISOString().slice(0,10)}`, 200, 19, { align: 'right' });
+  // 1. HTML を一時的に DOM に追加 (画面外、html2canvas で画像化する用)
+  const container = document.createElement('div');
+  container.style.cssText = 'position:fixed; left:-10000px; top:0; pointer-events:none; opacity:1;';
+  container.innerHTML = buildInvoiceHTML(s, month);
+  document.body.appendChild(container);
+  // フォント描画完了を待つ (Noto Sans JP の load 確実化)
+  if (document.fonts && document.fonts.ready) {
+    try { await document.fonts.ready; } catch (e) {}
+  }
 
-  // 生徒情報 (日本語は ASCII transliteration ではなく そのまま入れる - フォント未対応で文字化けする可能性ありを許容)
-  // 代わりに HTML + html2canvas でPDFにする方が確実。autoTableで構造を持たせる
-  const rows = [
-    ['Student / Seito',  s.name],
-    ['Grade / Gakunen',  s.grade || '-'],
-    ['Course',           (s.courses || []).join(', ') || '-'],
-    ['Period / Tsukiwari',`${month}`],
-    ['Due / Kigen',      deadlineForMonth(month)],
-    ['Amount / Kingaku', `JPY ${(s.fee || 0).toLocaleString('en-US')}`],
-  ];
-
-  doc.autoTable({
-    startY: 35,
-    head: [[`Bill To`, '']],
-    body: rows,
-    theme: 'grid',
-    styles: { fontSize: 11, cellPadding: 3 },
-    headStyles: { fillColor: [99, 102, 241], textColor: 255 },
-    columnStyles: { 0: { cellWidth: 60, fontStyle: 'bold' } },
-  });
-
-  // 振込先
-  const finalY = doc.lastAutoTable.finalY + 10;
-  doc.autoTable({
-    startY: finalY,
-    head: [['Bank Transfer / Furikomi-saki', '']],
-    body: [
-      ['Bank',     SETTINGS.bankName || 'Rakuten Bank'],
-      ['Branch',   SETTINGS.branchName || '-'],
-      ['Type',     SETTINGS.accountType || 'Futsu (Ordinary)'],
-      ['Number',   SETTINGS.accountNumber || '-'],
-      ['Holder',   SETTINGS.accountHolder || '-'],
-    ],
-    theme: 'grid',
-    styles: { fontSize: 11, cellPadding: 3 },
-    headStyles: { fillColor: [236, 72, 153], textColor: 255 },
-    columnStyles: { 0: { cellWidth: 60, fontStyle: 'bold' } },
-  });
-
-  // カード決済 (Stripe Payment Link)
-  const stripeUrl = paymentLinkFor(s);
-  if (stripeUrl && stripeUrl !== '(未設定)') {
-    const finalYC = doc.lastAutoTable.finalY + 8;
-    doc.autoTable({
-      startY: finalYC,
-      head: [['Card Payment / Card-bara', '']],
-      body: [
-        ['URL', stripeUrl],
-        ['Note', 'Click the URL to pay by credit card via Stripe.'],
-      ],
-      theme: 'grid',
-      styles: { fontSize: 9, cellPadding: 3 },
-      headStyles: { fillColor: [16, 185, 129], textColor: 255 },
-      columnStyles: { 0: { cellWidth: 30, fontStyle: 'bold' }, 1: { cellWidth: 'auto' } },
+  try {
+    // 2. html2canvas で画像化 (高 DPI = 2x で文字滑らか)
+    const canvas = await html2canvas(container.firstElementChild, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      logging: false,
+      useCORS: true,
     });
+    // 3. jsPDF にイメージ埋込み (A4 サイズに収める)
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+    const pageW = 210;
+    const pageH = 297;
+    const imgW = pageW - 20;  // 左右 10mm マージン
+    const imgH = (canvas.height / canvas.width) * imgW;
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+
+    if (imgH <= pageH - 20) {
+      doc.addImage(imgData, 'JPEG', 10, 10, imgW, imgH, undefined, 'FAST');
+    } else {
+      // 縦長で 1 ページに収まらない場合は分割描画
+      const pageImgH = pageH - 20;
+      const totalPages = Math.ceil(imgH / pageImgH);
+      for (let p = 0; p < totalPages; p++) {
+        if (p > 0) doc.addPage();
+        const yOffset = -p * pageImgH;
+        doc.addImage(imgData, 'JPEG', 10, 10 + yOffset, imgW, imgH, undefined, 'FAST');
+      }
+    }
+
+    if (returnDoc) { document.body.removeChild(container); return doc; }
+    if (download) {
+      const safeName = (s.name || '').replace(/[\\/:*?"<>|]/g, '_').slice(0, 20);
+      const filename = `請求書_${month}_${s.id}_${safeName}.pdf`;
+      doc.save(filename);
+    }
+    document.body.removeChild(container);
+    return doc;
+  } catch (e) {
+    document.body.removeChild(container);
+    console.error('PDF generation failed:', e);
+    alert('PDF 生成に失敗しました: ' + (e.message || e));
+    return null;
   }
-
-  // 合計
-  const finalY2 = doc.lastAutoTable.finalY + 10;
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.text(`TOTAL: JPY ${(s.fee || 0).toLocaleString('en-US')}`, 200, finalY2 + 6, { align: 'right' });
-
-  // フッター
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(120);
-  doc.text(SETTINGS.jukuName || 'Juku', 14, 285);
-  doc.text(SETTINGS.ownerName || '', 14, 290);
-  if (SETTINGS.ownerEmail) doc.text(SETTINGS.ownerEmail, 14, 295);
-  doc.text(`Page 1 of 1`, 200, 290, { align: 'right' });
-
-  if (returnDoc) return doc;
-  if (download) {
-    const filename = `invoice_${month}_${s.id}_${(s.name || '').slice(0, 10)}.pdf`;
-    doc.save(filename);
-  }
-  return doc;
 }
 
 async function bulkInvoicePDF() {
@@ -1863,12 +1905,15 @@ async function bulkInvoicePDF() {
 
   const zip = new JSZip();
   const month = STATE.currentMonth;
+  let success = 0;
   for (const id of ids) {
-    const doc = generateInvoicePDF(id, false, true);
+    const doc = await generateInvoicePDF(id, false, true);
     if (doc) {
       const s = STATE.data.students.find(x => x.id === id);
-      const filename = `invoice_${month}_${id}_${(s?.name || '').slice(0, 10)}.pdf`;
+      const safe = (s?.name || '').replace(/[\\/:*?"<>|]/g, '_').slice(0, 20);
+      const filename = `請求書_${month}_${id}_${safe}.pdf`;
       zip.file(filename, doc.output('blob'));
+      success++;
     }
   }
   const blob = await zip.generateAsync({ type: 'blob' });
@@ -1877,14 +1922,15 @@ async function bulkInvoicePDF() {
   a.href = url; a.download = `invoices_${month}.zip`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  alert(`✅ ${ids.length}件の請求書PDFを ZIP でダウンロードしました`);
+  alert(`✅ ${success}/${ids.length}件の請求書PDFを ZIP でダウンロードしました`);
 }
 
-function previewInvoicePDF() {
+async function previewInvoicePDF() {
   const ids = getSelectedInvoiceIds();
   const id = ids[0] || activeStudents()[0]?.id;
   if (!id) { alert('対象を選択してください'); return; }
-  const doc = generateInvoicePDF(id, false, true);
+  const doc = await generateInvoicePDF(id, false, true);
+  if (!doc) return;
   const blob = doc.output('blob');
   const url = URL.createObjectURL(blob);
   document.getElementById('invoiceIframe').src = url;
@@ -3294,9 +3340,14 @@ function setupModals() {
   // Invoice
   document.getElementById('invoiceBulkBtn').addEventListener('click', bulkInvoicePDF);
   document.getElementById('invoicePreviewBtn').addEventListener('click', previewInvoicePDF);
-  document.getElementById('invoiceDownloadBtn').addEventListener('click', (e) => {
+  document.getElementById('invoiceDownloadBtn').addEventListener('click', async (e) => {
     const id = parseInt(e.target.dataset.studentId, 10);
-    if (id) generateInvoicePDF(id, true);
+    if (id) {
+      const btn = e.target;
+      btn.disabled = true; const orig = btn.textContent; btn.textContent = '⏳ 生成中…';
+      try { await generateInvoicePDF(id, true); }
+      finally { btn.disabled = false; btn.textContent = orig; }
+    }
   });
   document.getElementById('invoiceSelectAll').addEventListener('change', (e) => {
     document.querySelectorAll('.invoice-check').forEach(c => c.checked = e.target.checked);
