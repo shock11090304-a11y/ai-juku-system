@@ -112,7 +112,12 @@
         一度ログインすると、<strong>30日間はパスワード入力不要</strong>です。
       </p>
       <form id="adminLoginForm" autocomplete="off">
-        <input type="password" id="adminPassword" placeholder="塾長パスワード" required autofocus>
+        <!-- Safari keychain の自動入力で誤った値が連続送信されて 401 → rate limit に陥る事故対策。
+             type=text + JS で見た目は password / 名前を非標準に / autocomplete=off / readonly→focus で解除 -->
+        <input type="text" id="adminPassword" name="admin-secret-12345" placeholder="塾長パスワード"
+               required autocomplete="off" data-lpignore="true" data-1p-ignore="true"
+               readonly onfocus="this.removeAttribute('readonly');this.type='password';"
+               style="-webkit-text-security:disc;text-security:disc;">
         <button type="submit" id="adminLoginBtn">🔓 ログイン</button>
       </form>
       <div class="admin-gate-msg" id="adminGateMsg"></div>
@@ -211,7 +216,13 @@
             if (typeof window.renderAll === 'function') window.renderAll();
           } else {
             msg.className = 'admin-gate-msg error';
-            msg.textContent = '⚠️ ' + (data.detail || '認証に失敗しました');
+            if (res.status === 429) {
+              msg.textContent = '⏳ 試行回数上限。5分ほど待ってから再度お試しください (keychain 自動入力で誤値が連続送信されている可能性)。';
+            } else if (res.status === 401) {
+              msg.textContent = '⚠️ パスワードが正しくありません。keychain の候補ではなく手入力してください。';
+            } else {
+              msg.textContent = '⚠️ ' + (data.detail || '認証に失敗しました');
+            }
             input.value = '';
             input.focus();
           }

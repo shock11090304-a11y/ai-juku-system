@@ -3189,15 +3189,19 @@ class AdminLoginRequest(BaseModel):
 
 @app.post("/api/admin/login")
 def admin_login(payload: AdminLoginRequest, request: Request):
-    """塾長パスワードで認証。成功時は30日有効のトークンを返す。"""
-    _check_rate_limit_ip(request, bucket="admin_login", limit=5, window=300)  # 5分で5回まで
+    """塾長パスワードで認証。成功時は30日有効のトークンを返す。
+    keychain 自動入力で連続失敗するケースを救済するため limit 緩め (20/5min)。
+    成功時には失敗カウンタをリセットする。"""
+    _check_rate_limit_ip(request, bucket="admin_login", limit=20, window=300)
     if not ADMIN_PASSWORD:
         raise HTTPException(status_code=503, detail="管理者パスワードが未設定です。Railway環境変数 ADMIN_PASSWORD を設定してください。")
     if not hmac.compare_digest((payload.password or ""), ADMIN_PASSWORD):
         log.warning(f"Admin login failed from {_client_ip(request)}")
         raise HTTPException(status_code=401, detail="パスワードが正しくありません")
+    ip = _client_ip(request)
+    _RATE_LIMIT_STORE.pop((ip, "admin_login"), None)
     tok = _sign_admin_token()
-    log.info(f"Admin login success from {_client_ip(request)}")
+    log.info(f"Admin login success from {ip}")
     return {"ok": True, **tok}
 
 
