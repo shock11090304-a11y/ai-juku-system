@@ -296,6 +296,7 @@ function formatRelativeTime(timestamp) {
 }
 
 function escapeHtml(s) {
+  if (s == null) return '';
   return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
@@ -651,4 +652,320 @@ document.addEventListener('DOMContentLoaded', () => {
     document.hidden ? stopAutoRefresh() : startAutoRefresh();
   });
   if (!document.hidden) startAutoRefresh();
+
+  // 📚 学習記録ダッシュボード初期化
+  try { initStudyLogDashboard(); } catch (e) { console.error('initStudyLogDashboard failed:', e); }
 });
+
+// ==========================================================================
+// 📚 学習記録ダッシュボード (Studyplus 代替・Phase 1)
+// 国公立難関大学コース受講生のみ集計対象 (server 側で course='kokuritsu_nankan' フィルタ)
+// ==========================================================================
+let _slDashboardLoadTimer = null;
+function _scheduleStudyLogLoad() {
+  if (_slDashboardLoadTimer) clearTimeout(_slDashboardLoadTimer);
+  _slDashboardLoadTimer = setTimeout(() => { _slDashboardLoadTimer = null; loadStudyLogDashboard(); }, 200);
+}
+
+function initStudyLogDashboard() {
+  const refreshBtn = document.getElementById('slRefreshBtn');
+  const daysSel = document.getElementById('slDays');
+  const courseBtn = document.getElementById('slCourseManageBtn');
+  const courseClose = document.getElementById('slCourseClose');
+  const courseModal = document.getElementById('slCourseManageModal');
+  if (refreshBtn) refreshBtn.addEventListener('click', _scheduleStudyLogLoad);
+  if (daysSel) daysSel.addEventListener('change', _scheduleStudyLogLoad);
+  if (courseBtn) courseBtn.addEventListener('click', openCourseManageModal);
+  if (courseClose) courseClose.addEventListener('click', () => { courseModal.style.display = 'none'; });
+  if (courseModal) courseModal.addEventListener('click', (e) => {
+    if (e.target === courseModal) courseModal.style.display = 'none';
+  });
+  // ESC キーで close
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && courseModal && courseModal.style.display === 'flex') {
+      courseModal.style.display = 'none';
+    }
+  });
+  // 認証完了を待つ retry: 200ms × 最大10回 (2秒) で AdminAuth.getToken() を polling
+  const tryLoad = (retries = 10) => {
+    if (window.AdminAuth && window.AdminAuth.getToken()) return loadStudyLogDashboard();
+    if (retries > 0) setTimeout(() => tryLoad(retries - 1), 200);
+  };
+  tryLoad();
+}
+
+async function openCourseManageModal() {
+  const modal = document.getElementById('slCourseManageModal');
+  const list = document.getElementById('slCourseList');
+  if (!modal || !list) return;
+  modal.style.display = 'flex';
+  list.innerHTML = '<div style="text-align:center; color:#71717a; padding:2rem;">読み込み中...</div>';
+  try {
+    const res = await window.AdminAuth.fetch('/api/admin/students/by-course');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const students = data.students || [];
+    if (!students.length) {
+      list.innerHTML = '<div style="text-align:center; color:#71717a; padding:2rem;">生徒がいません</div>';
+      return;
+    }
+    const enrolled = students.filter(s => s.course === 'kokuritsu_nankan');
+    const others = students.filter(s => s.course !== 'kokuritsu_nankan');
+    list.innerHTML = `
+      <div style="margin-bottom:1.2rem;">
+        <div style="color:#fbbf24; font-size:0.9rem; font-weight:700; margin-bottom:0.5rem;">✅ 国公立難関大学コース 受講中 (${enrolled.length}名)</div>
+        ${enrolled.length === 0 ? '<div style="color:#71717a; font-size:0.85rem;">まだ加入者がいません</div>' :
+          enrolled.map(s => `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0.7rem; background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.2); border-radius:8px; margin-bottom:0.4rem;">
+              <div style="color:#e4e4e7; font-size:0.88rem;">${escapeHtml(s.name)} ${s.grade ? `<span style="color:#71717a; font-size:0.78rem;">(${escapeHtml(s.grade)})</span>` : ''}</div>
+              <button data-sid="${s.id}" data-action="remove" class="sl-course-toggle" style="background:rgba(239,68,68,0.15); color:#fca5a5; border:0; padding:0.3rem 0.7rem; border-radius:6px; cursor:pointer; font-size:0.8rem;">離脱させる</button>
+            </div>
+          `).join('')}
+      </div>
+      <div>
+        <div style="color:#a1a1aa; font-size:0.9rem; font-weight:700; margin-bottom:0.5rem;">⚪ 未加入の生徒 (${others.length}名)</div>
+        ${others.length === 0 ? '<div style="color:#71717a; font-size:0.85rem;">全生徒加入済</div>' :
+          others.map(s => `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0.7rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; margin-bottom:0.4rem;">
+              <div style="color:#e4e4e7; font-size:0.88rem;">${escapeHtml(s.name)} ${s.grade ? `<span style="color:#71717a; font-size:0.78rem;">(${escapeHtml(s.grade)})</span>` : ''}</div>
+              <button data-sid="${s.id}" data-action="add" class="sl-course-toggle" style="background:rgba(99,102,241,0.2); color:#c7d2fe; border:0; padding:0.3rem 0.7rem; border-radius:6px; cursor:pointer; font-size:0.8rem;">加入させる</button>
+            </div>
+          `).join('')}
+      </div>
+    `;
+    list.querySelectorAll('.sl-course-toggle').forEach(b => {
+      b.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        const sid = btn.getAttribute('data-sid');
+        const action = btn.getAttribute('data-action');
+        const newCourse = action === 'add' ? 'kokuritsu_nankan' : null;
+        btn.disabled = true;
+        try {
+          const r = await window.AdminAuth.fetch(`/api/admin/students/${encodeURIComponent(sid)}/course`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ course: newCourse }),
+          });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          await openCourseManageModal();  // 再描画
+          loadStudyLogDashboard();        // dashboard も更新
+        } catch (err) {
+          alert('変更に失敗しました: ' + (err.message || err));
+          btn.disabled = false;
+        }
+      });
+    });
+  } catch (e) {
+    list.innerHTML = `<div style="text-align:center; color:#fca5a5; padding:1rem;">読み込み失敗: ${escapeHtml(e.message || '')}</div>`;
+  }
+}
+
+async function loadStudyLogDashboard() {
+  if (!window.AdminAuth || !window.AdminAuth.getToken()) return;
+  const daysSel = document.getElementById('slDays');
+  const days = parseInt((daysSel && daysSel.value) || '7', 10);
+  try {
+    const [timelineRes, heatmapRes, summaryRes] = await Promise.all([
+      window.AdminAuth.fetch(`/api/admin/study-logs/timeline?days=${days}&limit=200`),
+      window.AdminAuth.fetch(`/api/admin/study-logs/heatmap?days=${days}`),
+      window.AdminAuth.fetch(`/api/admin/study-logs/students?days=${days}`),
+    ]);
+    if (!timelineRes.ok || !heatmapRes.ok || !summaryRes.ok) {
+      console.warn('study log dashboard: one or more requests failed');
+      return;
+    }
+    const [timeline, heatmap, summary] = await Promise.all([
+      timelineRes.json(), heatmapRes.json(), summaryRes.json()
+    ]);
+    renderStudyLogHeatmap(heatmap);
+    renderStudyLogRanking(summary);
+    renderStudyLogTimeline(timeline);
+  } catch (e) {
+    console.error('loadStudyLogDashboard failed:', e);
+  }
+}
+
+function _slHeatColor(min) {
+  if (min === 0) return 'rgba(30,41,59,0.5)';
+  if (min < 30) return 'rgba(59,130,246,0.35)';
+  if (min < 60) return 'rgba(99,102,241,0.45)';
+  if (min < 120) return 'rgba(168,85,247,0.55)';
+  if (min < 240) return 'rgba(236,72,153,0.65)';
+  return 'rgba(239,68,68,0.85)';
+}
+
+function _slCellLabel(min) {
+  if (min === 0) return '';
+  if (min < 60) return `${min}m`;
+  return `${(min / 60).toFixed(1)}h`;
+}
+
+function renderStudyLogHeatmap(data) {
+  const el = document.getElementById('slHeatmap');
+  if (!el) return;
+  const dates = data.dates || [];
+  const students = data.students || [];
+  if (!students.length) {
+    el.innerHTML = '<div style="color:#71717a; padding:1rem; text-align:center;">国公立難関大学コース受講生がまだ居ません。CEOダッシュの「コース管理」から生徒をアサインしてください。</div>';
+    return;
+  }
+  const dateHeader = dates.map(d => `<th style="padding:2px 3px; font-size:0.65rem; color:#71717a; text-align:center; min-width:32px;">${d.slice(5)}</th>`).join('');
+  const rows = students.map(s => {
+    const cells = dates.map(d => {
+      const m = (s.data && s.data[d]) || 0;
+      const title = `${s.name} - ${d}: ${m}分`;
+      return `<td title="${escapeHtml(title)}" style="background:${_slHeatColor(m)}; padding:0; min-width:32px; height:24px; border:1px solid rgba(0,0,0,0.3); font-size:0.6rem; text-align:center; color:#fff;">${_slCellLabel(m)}</td>`;
+    }).join('');
+    const grade = s.grade ? `<span style="color:#71717a; font-size:0.7rem;">(${escapeHtml(s.grade)})</span>` : '';
+    return `
+      <tr>
+        <td style="padding:2px 6px; color:#e4e4e7; font-size:0.78rem; white-space:nowrap; position:sticky; left:0; background:rgba(15,23,42,0.95);">${escapeHtml(s.name)} ${grade}</td>
+        ${cells}
+        <td style="padding:2px 6px; color:#c7d2fe; font-size:0.78rem; font-weight:700; text-align:right;">${s.total}分</td>
+      </tr>`;
+  }).join('');
+  el.innerHTML = `
+    <table style="border-collapse:collapse; width:100%; min-width:600px;">
+      <thead><tr><th style="padding:2px 6px; font-size:0.7rem; color:#a1a1aa; text-align:left; position:sticky; left:0; background:rgba(15,23,42,0.95);">生徒</th>${dateHeader}<th style="padding:2px 6px; font-size:0.7rem; color:#a1a1aa; text-align:right;">計</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="margin-top:0.5rem; font-size:0.7rem; color:#71717a; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+      凡例:
+      <span style="background:${_slHeatColor(0)}; padding:2px 8px; border-radius:3px;">0</span>
+      <span style="background:${_slHeatColor(15)}; padding:2px 8px; border-radius:3px;">~30分</span>
+      <span style="background:${_slHeatColor(45)}; padding:2px 8px; border-radius:3px;">~1h</span>
+      <span style="background:${_slHeatColor(90)}; padding:2px 8px; border-radius:3px;">~2h</span>
+      <span style="background:${_slHeatColor(180)}; padding:2px 8px; border-radius:3px;">~4h</span>
+      <span style="background:${_slHeatColor(300)}; padding:2px 8px; border-radius:3px;">4h+</span>
+      <span style="margin-left:auto; color:#a1a1aa;">全 ${students.length} 名表示中</span>
+    </div>`;
+}
+
+function renderStudyLogRanking(data) {
+  const el = document.getElementById('slRanking');
+  if (!el) return;
+  const allStudents = data.students || [];
+  const activeStudents = allStudents.filter(s => s.total_minutes > 0);
+  const inactiveCount = allStudents.length - activeStudents.length;
+  if (!activeStudents.length) {
+    el.innerHTML = `<div style="color:#71717a; padding:1rem; text-align:center;">期間内に学習記録のある生徒がいません ${allStudents.length > 0 ? `(コース受講生 ${allStudents.length} 名全員未記録)` : ''}</div>`;
+    return;
+  }
+  const max = activeStudents[0].total_minutes;
+  const inactiveBadge = inactiveCount > 0
+    ? `<div style="margin-bottom:0.5rem; padding:0.4rem 0.6rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:6px; color:#fca5a5; font-size:0.78rem;">⚠️ 期間内に未記録の受講生: ${inactiveCount} 名</div>` : '';
+  el.innerHTML = inactiveBadge + activeStudents.map((s, i) => {
+    const pct = Math.round((s.total_minutes / max) * 100);
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+    return `
+      <div style="display:grid; grid-template-columns:30px 1fr 100px 60px; align-items:center; gap:0.5rem; padding:0.4rem 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+        <div style="font-size:0.85rem; color:#a1a1aa;">${medal}</div>
+        <div style="color:#e4e4e7; font-size:0.85rem;">${escapeHtml(s.name)} ${s.grade ? `<span style="color:#71717a; font-size:0.75rem;">(${escapeHtml(s.grade)})</span>` : ''}</div>
+        <div style="background:rgba(99,102,241,0.15); border-radius:4px; height:8px; overflow:hidden;">
+          <div style="background:linear-gradient(90deg,#6366f1,#ec4899); height:100%; width:${pct}%;"></div>
+        </div>
+        <div style="text-align:right; color:#c7d2fe; font-size:0.82rem; font-weight:700;">${s.total_minutes}分</div>
+      </div>`;
+  }).join('');
+}
+
+function renderStudyLogTimeline(data) {
+  const el = document.getElementById('slTimeline');
+  if (!el) return;
+  const logs = data.logs || [];
+  if (!logs.length) {
+    el.innerHTML = '<div style="color:#71717a; padding:1rem; text-align:center;">期間内に学習記録がありません</div>';
+    return;
+  }
+  el.innerHTML = logs.map(l => {
+    const r = l.reactions || { likes: 0, comments: [] };
+    const likedClass = r.likes > 0 ? 'background:rgba(236,72,153,0.25); color:#f9a8d4;' : 'background:rgba(255,255,255,0.05); color:#a1a1aa;';
+    const likeIcon = r.likes > 0 ? '❤️' : '🤍';
+    const comments = (r.comments || []).map(c => `
+      <div style="background:rgba(255,255,255,0.04); padding:0.4rem 0.6rem; border-radius:6px; margin-top:0.3rem; font-size:0.78rem;">
+        <span style="color:#fbbf24; font-weight:700;">塾長:</span> <span style="color:#d4d4d8;">${escapeHtml(c.comment)}</span>
+      </div>`).join('');
+    return `
+      <div data-log-row="${l.id}" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:0.75rem; margin-bottom:0.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+          <div style="color:#e4e4e7; font-size:0.85rem;">
+            <span style="font-weight:700; color:#c7d2fe;">${escapeHtml(l.student_name || '?')}</span>
+            ${l.grade ? `<span style="color:#71717a; font-size:0.75rem;"> (${escapeHtml(l.grade)})</span>` : ''}
+            <span style="margin-left:0.5rem; padding:0.1rem 0.4rem; background:rgba(99,102,241,0.2); border-radius:4px; font-size:0.72rem; color:#c7d2fe;">${escapeHtml(l.subject)}</span>
+            ${l.material ? `<span style="color:#a1a1aa; font-size:0.78rem; margin-left:0.3rem;">${escapeHtml(l.material)}</span>` : ''}
+          </div>
+          <div style="font-size:0.72rem; color:#71717a;">${escapeHtml(l.date)} · ${l.minutes}分${l.pages ? ' · ' + l.pages + 'p' : ''}</div>
+        </div>
+        ${l.note ? `<div style="font-size:0.82rem; color:#d4d4d8; padding:0.3rem 0.5rem; background:rgba(0,0,0,0.2); border-radius:6px; margin:0.4rem 0;">${escapeHtml(l.note)}</div>` : ''}
+        <div style="display:flex; gap:0.5rem; align-items:center; margin-top:0.4rem;">
+          <button data-log-id="${l.id}" class="sl-like-btn" aria-label="いいね ${r.likes} 件" style="${likedClass} border:0; padding:0.25rem 0.6rem; border-radius:999px; cursor:pointer; font-size:0.78rem;">${likeIcon} ${r.likes}</button>
+          <button data-log-id="${l.id}" class="sl-comment-btn" aria-label="コメント送信" style="background:rgba(99,102,241,0.15); color:#c7d2fe; border:0; padding:0.25rem 0.6rem; border-radius:999px; cursor:pointer; font-size:0.78rem;">💬 コメント</button>
+        </div>
+        <div data-comments-for="${l.id}">${comments}</div>
+      </div>`;
+  }).join('');
+  // bind like (optimistic update)
+  el.querySelectorAll('.sl-like-btn').forEach(b => {
+    b.addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      const id = btn.getAttribute('data-log-id');
+      btn.disabled = true;
+      try {
+        const res = await window.AdminAuth.fetch(`/api/admin/study-logs/${encodeURIComponent(id)}/react`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kind: 'like' }),
+        });
+        let alreadySent = false;
+        if (res.ok) {
+          const j = await res.json();
+          if (j.already) {
+            btn.textContent = '💖 送信済';
+            alreadySent = true;
+          } else {
+            const cur = parseInt(btn.textContent.replace(/\D+/g, ''), 10) || 0;
+            btn.innerHTML = `❤️ ${cur + 1}`;
+            btn.style.cssText = 'background:rgba(236,72,153,0.25); color:#f9a8d4; border:0; padding:0.25rem 0.6rem; border-radius:999px; cursor:pointer; font-size:0.78rem;';
+            alreadySent = true;
+          }
+        } else if (res.status === 401) {
+          // adminGate が出てるはず
+        } else {
+          alert('いいね送信に失敗しました (HTTP ' + res.status + ')');
+        }
+        if (!alreadySent) btn.disabled = false;
+      } catch (err) {
+        console.error(err);
+        alert('ネットワークエラー: ' + (err.message || err));
+        btn.disabled = false;
+      }
+    });
+  });
+  // bind comment (prompt は最低限保持。長期は modal 化推奨)
+  el.querySelectorAll('.sl-comment-btn').forEach(b => {
+    b.addEventListener('click', async (e) => {
+      const id = e.currentTarget.getAttribute('data-log-id');
+      const comment = prompt('コメントを入力 (最大500文字)');
+      if (!comment || !comment.trim()) return;
+      try {
+        const res = await window.AdminAuth.fetch(`/api/admin/study-logs/${encodeURIComponent(id)}/react`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kind: 'comment', comment: comment.trim() }),
+        });
+        if (res.ok) {
+          // optimistic: コメントだけ追記
+          const wrap = document.querySelector(`[data-comments-for="${id}"]`);
+          if (wrap) {
+            const div = document.createElement('div');
+            div.style.cssText = 'background:rgba(255,255,255,0.04); padding:0.4rem 0.6rem; border-radius:6px; margin-top:0.3rem; font-size:0.78rem;';
+            div.innerHTML = `<span style="color:#fbbf24; font-weight:700;">塾長:</span> <span style="color:#d4d4d8;">${escapeHtml(comment.trim())}</span>`;
+            wrap.appendChild(div);
+          }
+        } else {
+          alert('コメント送信に失敗しました');
+        }
+      } catch (err) { alert('エラー: ' + (err.message || err)); }
+    });
+  });
+}

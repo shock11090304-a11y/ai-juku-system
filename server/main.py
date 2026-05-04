@@ -533,6 +533,34 @@ def init_db():
     CREATE INDEX IF NOT EXISTS idx_events_session ON events(session_id, created_at);
     CREATE INDEX IF NOT EXISTS idx_students_status ON students(status);
     CREATE INDEX IF NOT EXISTS idx_otp_student ON otp_codes(student_id, used_at, expires_at);
+    -- 学習記録 (Studyplus for School 代替: 塾長指示 2026-05-04)
+    CREATE TABLE IF NOT EXISTS study_logs (
+        id {pk},
+        student_id INTEGER NOT NULL,
+        studied_date DATE NOT NULL,
+        subject TEXT NOT NULL,
+        material TEXT,
+        minutes INTEGER NOT NULL,
+        pages INTEGER,
+        note TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_study_logs_student_date ON study_logs(student_id, studied_date);
+    CREATE INDEX IF NOT EXISTS idx_study_logs_studied_created ON study_logs(studied_date, created_at);
+    CREATE TABLE IF NOT EXISTS study_log_reactions (
+        id {pk},
+        log_id INTEGER NOT NULL,
+        actor_type TEXT NOT NULL,
+        actor_id INTEGER,
+        kind TEXT NOT NULL,
+        comment TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_study_log_reactions ON study_log_reactions(log_id, created_at);
+    -- admin の like 重複防止 (race condition 対策・塾長レビュー指摘 2026-05-04)
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_study_log_admin_like
+        ON study_log_reactions(log_id, actor_type, kind)
+        WHERE actor_type = 'admin' AND kind = 'like';
     """)
     # 既存DBに不足列を追加 (idempotent migration)
     # Postgres: 「column already exists」エラーで トランザクションが abort されると
@@ -543,6 +571,9 @@ def init_db():
         ("enrollment_waiver_applied_at", "ALTER TABLE students ADD COLUMN enrollment_waiver_applied_at TIMESTAMP"),
         ("last_login_at", "ALTER TABLE students ADD COLUMN last_login_at TIMESTAMP"),
         ("student_email", "ALTER TABLE students ADD COLUMN student_email TEXT DEFAULT ''"),
+        # 学習記録機能の対象コース識別 (国公立難関大学コース = 'kokuritsu_nankan')
+        # NULL or '' = 一般コース。Studyplus 代替の学習管理は本コース受講生のみ提供 (塾長指示 2026-05-04)
+        ("course", "ALTER TABLE students ADD COLUMN course TEXT DEFAULT NULL"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -567,7 +598,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "x-cron-secret", "stripe-signature", "x-line-signature"],
 )
 
@@ -2855,7 +2886,7 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
         return None
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT id, name, email, grade, goal, plan, status, stripe_customer_id, trial_end, enrollment_fee_waived FROM students WHERE id = ?", (claims["student_id"],))
+    c.execute("SELECT id, name, email, grade, goal, plan, status, stripe_customer_id, trial_end, enrollment_fee_waived, course FROM students WHERE id = ?", (claims["student_id"],))
     row = c.fetchone()
     conn.close()
     if not row:
@@ -2891,6 +2922,11 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
         waived = bool(row["enrollment_fee_waived"]) if "enrollment_fee_waived" in row.keys() else False
     except (KeyError, TypeError, IndexError):
         waived = False
+    course_val = None
+    try:
+        course_val = row["course"] if "course" in row.keys() else None
+    except (KeyError, TypeError, IndexError):
+        course_val = None
     return {
         "id": row["id"],
         "name": row["name"],
@@ -2900,6 +2936,7 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
         "plan": row["plan"],
         "status": status,
         "enrollment_fee_waived": waived,  # mypage の「免除済みバッジ」表示に使用
+        "course": course_val,  # 国公立難関大学コース ('kokuritsu_nankan') 識別 (塾長指示 2026-05-04)
     }
 
 
@@ -3005,7 +3042,7 @@ def verify_code(payload: VerifyCodeRequest, request: Request):
 
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
+    c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, course FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
     student = c.fetchone()
 
     generic_401 = HTTPException(status_code=401, detail="コードが正しくないか、有効期限が切れています")
@@ -3104,6 +3141,7 @@ def verify_code(payload: VerifyCodeRequest, request: Request):
             "grade": student["grade"],
             "goal": student["goal"],
             "plan": student["plan"],
+            "course": student["course"],
         }
     }
 
@@ -3123,7 +3161,7 @@ def verify_magic_link(t: str):
 
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end FROM students WHERE id = ?", (claims["student_id"],))
+    c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, course FROM students WHERE id = ?", (claims["student_id"],))
     row = c.fetchone()
     conn.close()
     if not row:
@@ -3165,6 +3203,7 @@ def verify_magic_link(t: str):
             "goal": row["goal"],
             "plan": row["plan"],
             "status": row["status"],
+            "course": row["course"],
         }
     }
 
@@ -12224,6 +12263,588 @@ def mock_exam_grade_essay(payload: dict):
         "strengths_jp": scores.get("strengths_jp", []),
         "improvements_jp": scores.get("improvements_jp", []),
     }
+
+
+# ==========================================================================
+# Routes: Study Logs (学習記録 - Studyplus for School 代替)
+# 塾長指示 2026-05-04: コスト削減のため Studyplus for School 機能を内製化
+# 国公立難関大学コース (course='kokuritsu_nankan') 受講生のみ提供
+# Phase 1: 学習記録 + タイムライン + ヒートマップ + リアクション
+# ==========================================================================
+_STUDY_SUBJECTS = {
+    "英語", "数学", "国語", "現代文", "古文", "漢文",
+    "理科", "物理", "化学", "生物", "地学",
+    "社会", "日本史", "世界史", "地理", "倫理", "政経",
+    "情報", "小論文", "面接対策", "その他",
+}
+_STUDY_LOG_TARGET_COURSE = "kokuritsu_nankan"  # 国公立難関大学コース 識別子
+
+# JST (UTC+9) helper - JST 基準で「今日」を計算しないと夜間学習の記録が翌日扱いになる
+_JST = timezone(timedelta(hours=9))
+
+def _today_jst():
+    return datetime.now(_JST).date()
+
+
+def _verify_admin_required(authorization: Optional[str]) -> None:
+    """admin Bearer token 検証 (失敗で 401)。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="未認証")
+
+
+def _require_study_log_course(student: dict) -> None:
+    """国公立難関大学コース受講生のみ通す。それ以外は 403。
+    塾長指示 2026-05-04: 学習記録機能は本コース受講生限定。
+    """
+    if not student or student.get("course") != _STUDY_LOG_TARGET_COURSE:
+        raise HTTPException(status_code=403, detail="この機能は国公立難関大学コース受講生限定です")
+
+
+def _sanitize_text(s, maxlen):
+    """制御文字除去 + 長さ切り詰め + strip。空なら None。"""
+    import re as _re
+    if s is None:
+        return None
+    s = _re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', str(s))[:maxlen].strip()
+    return s or None
+
+
+class StudyLogCreateRequest(BaseModel):
+    studied_date: Optional[str] = None
+    subject: str
+    material: Optional[str] = None
+    minutes: int
+    pages: Optional[int] = None
+    note: Optional[str] = None
+
+
+@app.post("/api/study-logs")
+def create_study_log(payload: StudyLogCreateRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒が学習記録を投稿。国公立難関大学コース限定。"""
+    _check_rate_limit_ip(request, bucket="study_log_create", limit=30, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+
+    subject = (payload.subject or "").strip()
+    if subject not in _STUDY_SUBJECTS:
+        raise HTTPException(status_code=400, detail="科目が不正です")
+
+    try:
+        minutes = int(payload.minutes or 0)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="勉強時間が不正です")
+    if minutes <= 0 or minutes > 1440:
+        raise HTTPException(status_code=400, detail="勉強時間は 1〜1440 分で指定してください")
+
+    today = _today_jst()
+    studied_date = (payload.studied_date or today.isoformat()).strip()
+    try:
+        d = datetime.strptime(studied_date, "%Y-%m-%d").date()
+        if d > today:
+            raise HTTPException(status_code=400, detail="未来の日付は登録できません")
+        if (today - d).days > 365:
+            raise HTTPException(status_code=400, detail="1年以上前の日付は登録できません")
+    except HTTPException:
+        raise
+    except ValueError:
+        raise HTTPException(status_code=400, detail="日付フォーマットが不正です (YYYY-MM-DD)")
+
+    material = _sanitize_text(payload.material, 200)
+    note = _sanitize_text(payload.note, 1000)
+    pages = None
+    if payload.pages is not None:
+        try:
+            p = int(payload.pages)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="ページ数が不正です")
+        if not (0 <= p <= 10000):
+            raise HTTPException(status_code=400, detail="ページ数は 0〜10000 で指定してください")
+        pages = p
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 直近10秒以内の重複投稿を弾く (連打防止・seed_questions 致命事故と同パターン回避)
+        if USE_POSTGRES:
+            c.execute(
+                "SELECT id FROM study_logs WHERE student_id = ? AND studied_date = ? AND subject = ? "
+                "AND COALESCE(material,'') = COALESCE(?,'') AND minutes = ? "
+                "AND created_at > NOW() - INTERVAL '10 seconds' LIMIT 1",
+                (student["id"], studied_date, subject, material, minutes)
+            )
+        else:
+            c.execute(
+                "SELECT id FROM study_logs WHERE student_id = ? AND studied_date = ? AND subject = ? "
+                "AND COALESCE(material,'') = COALESCE(?,'') AND minutes = ? "
+                "AND created_at > datetime('now','-10 seconds') LIMIT 1",
+                (student["id"], studied_date, subject, material, minutes)
+            )
+        if c.fetchone():
+            raise HTTPException(status_code=409, detail="重複投稿です。少し待ってから再度お試しください。")
+
+        c.execute(
+            "INSERT INTO study_logs (student_id, studied_date, subject, material, minutes, pages, note) VALUES (?,?,?,?,?,?,?) RETURNING id",
+            (student["id"], studied_date, subject, material, minutes, pages, note)
+        )
+        returned = c.fetchone()
+        new_id = returned["id"] if returned else None
+        conn.commit()
+        log.info(f"[StudyLog] create id={new_id} student={student['id']} subj={subject} min={minutes}")
+        return {"ok": True, "id": new_id}
+    finally:
+        conn.close()
+
+
+@app.delete("/api/study-logs/{log_id}")
+def delete_my_study_log(log_id: int, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒が自分の学習記録を削除 (誤投稿対策)。"""
+    _check_rate_limit_ip(request, bucket="study_log_delete", limit=20, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT student_id FROM study_logs WHERE id = ?", (log_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="記録が見つかりません")
+        if int(row["student_id"]) != int(student["id"]):
+            raise HTTPException(status_code=403, detail="権限がありません")
+
+        # 塾長コメントが付いていたら削除を抑止 (励ましが消えるのを防ぐ)
+        c.execute(
+            "SELECT COUNT(*) AS n FROM study_log_reactions WHERE log_id = ? AND actor_type = 'admin' AND kind = 'comment'",
+            (log_id,)
+        )
+        row2 = c.fetchone()
+        admin_comments = int((row2["n"] if row2 else 0) or 0)
+        if admin_comments > 0:
+            raise HTTPException(status_code=409, detail="塾長コメントが付いた記録は削除できません。塾長に削除を依頼してください。")
+
+        try:
+            c.execute("DELETE FROM study_log_reactions WHERE log_id = ?", (log_id,))
+            c.execute("DELETE FROM study_logs WHERE id = ?", (log_id,))
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        log.info(f"[StudyLog] delete id={log_id} student={student['id']}")
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
+@app.get("/api/study-logs/me")
+def get_my_study_logs(authorization: Optional[str] = Header(None), days: int = 30, limit: int = 200):
+    """生徒が自分の学習記録を取得 (デフォルト直近30日)。"""
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+
+    try:
+        days = int(days or 30)
+        limit = int(limit or 200)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="クエリパラメータが不正です")
+    days = max(1, min(days, 365))
+    limit = max(1, min(limit, 1000))
+    today = _today_jst()
+    cutoff_date = (today - timedelta(days=days - 1)).isoformat()
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 詳細表示用 logs (LIMIT)
+        c.execute(
+            "SELECT id, studied_date, subject, material, minutes, pages, note, created_at "
+            "FROM study_logs WHERE student_id = ? AND studied_date >= ? "
+            "ORDER BY studied_date DESC, created_at DESC LIMIT ?",
+            (student["id"], cutoff_date, limit)
+        )
+        rows = c.fetchall()
+        logs = []
+        log_ids = []
+        for r in rows:
+            log_ids.append(r["id"])
+            logs.append({
+                "id": r["id"],
+                "date": str(r["studied_date"]),
+                "subject": r["subject"],
+                "material": r["material"],
+                "minutes": int(r["minutes"] or 0),
+                "pages": r["pages"],
+                "note": r["note"],
+                "created_at": str(r["created_at"]) if r["created_at"] else None
+            })
+
+        # 集計は LIMIT なしで全期間
+        c.execute(
+            "SELECT studied_date, subject, SUM(minutes) AS m "
+            "FROM study_logs WHERE student_id = ? AND studied_date >= ? "
+            "GROUP BY studied_date, subject",
+            (student["id"], cutoff_date)
+        )
+        daily = {}
+        by_subject = {}
+        for r in c.fetchall():
+            d = str(r["studied_date"])
+            s = r["subject"]
+            m = int(r["m"] or 0)
+            daily[d] = daily.get(d, 0) + m
+            by_subject[s] = by_subject.get(s, 0) + m
+
+        # reactions
+        reactions_map = {}
+        if log_ids:
+            placeholders = ",".join(["?"] * len(log_ids))
+            c.execute(
+                f"SELECT log_id, kind, comment, actor_type, created_at FROM study_log_reactions WHERE log_id IN ({placeholders}) ORDER BY created_at ASC",
+                tuple(log_ids)
+            )
+            for r in c.fetchall():
+                lid = r["log_id"]
+                if lid not in reactions_map:
+                    reactions_map[lid] = {"likes": 0, "comments": []}
+                if r["kind"] == "like":
+                    reactions_map[lid]["likes"] += 1
+                elif r["kind"] == "comment" and r["comment"]:
+                    reactions_map[lid]["comments"].append({
+                        "actor_type": r["actor_type"],
+                        "comment": r["comment"],
+                        "created_at": str(r["created_at"]) if r["created_at"] else None
+                    })
+        for log_obj in logs:
+            log_obj["reactions"] = reactions_map.get(log_obj["id"], {"likes": 0, "comments": []})
+
+        return {
+            "ok": True,
+            "logs": logs,
+            "daily": [{"date": d, "minutes": m} for d, m in sorted(daily.items())],
+            "by_subject": [{"subject": s, "minutes": m} for s, m in sorted(by_subject.items(), key=lambda x: -x[1])],
+            "total_minutes": sum(daily.values()),
+            "days_active": len(daily),
+            "period_days": days,
+        }
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/study-logs/timeline")
+def admin_study_logs_timeline(authorization: Optional[str] = Header(None), days: int = 7, limit: int = 200, student_id: Optional[int] = None):
+    """塾長: 国公立難関大学コース生徒の学習記録タイムライン。"""
+    _verify_admin_required(authorization)
+
+    try:
+        days = int(days or 7)
+        limit = int(limit or 200)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="クエリパラメータが不正です")
+    days = max(1, min(days, 90))
+    limit = max(1, min(limit, 1000))
+    today = _today_jst()
+    cutoff_date = (today - timedelta(days=days - 1)).isoformat()
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        if student_id:
+            c.execute(
+                """SELECT sl.id, sl.student_id, sl.studied_date, sl.subject, sl.material, sl.minutes, sl.pages, sl.note, sl.created_at,
+                          s.name AS student_name, s.grade, s.course
+                   FROM study_logs sl
+                   JOIN students s ON sl.student_id = s.id
+                   WHERE sl.studied_date >= ? AND sl.student_id = ? AND s.course = ?
+                   ORDER BY sl.created_at DESC
+                   LIMIT ?""",
+                (cutoff_date, int(student_id), _STUDY_LOG_TARGET_COURSE, limit)
+            )
+        else:
+            c.execute(
+                """SELECT sl.id, sl.student_id, sl.studied_date, sl.subject, sl.material, sl.minutes, sl.pages, sl.note, sl.created_at,
+                          s.name AS student_name, s.grade, s.course
+                   FROM study_logs sl
+                   JOIN students s ON sl.student_id = s.id
+                   WHERE sl.studied_date >= ? AND s.course = ?
+                   ORDER BY sl.created_at DESC
+                   LIMIT ?""",
+                (cutoff_date, _STUDY_LOG_TARGET_COURSE, limit)
+            )
+        rows = c.fetchall()
+
+        logs = []
+        log_ids = []
+        for r in rows:
+            log_ids.append(r["id"])
+            logs.append({
+                "id": r["id"],
+                "student_id": r["student_id"],
+                "student_name": r["student_name"],
+                "grade": r["grade"],
+                "date": str(r["studied_date"]),
+                "subject": r["subject"],
+                "material": r["material"],
+                "minutes": int(r["minutes"] or 0),
+                "pages": r["pages"],
+                "note": r["note"],
+                "created_at": str(r["created_at"]) if r["created_at"] else None
+            })
+
+        reactions_map = {}
+        if log_ids:
+            placeholders = ",".join(["?"] * len(log_ids))
+            c.execute(
+                f"SELECT log_id, kind, comment, actor_type, created_at FROM study_log_reactions WHERE log_id IN ({placeholders}) ORDER BY created_at ASC",
+                tuple(log_ids)
+            )
+            for r in c.fetchall():
+                lid = r["log_id"]
+                if lid not in reactions_map:
+                    reactions_map[lid] = {"likes": 0, "comments": []}
+                if r["kind"] == "like":
+                    reactions_map[lid]["likes"] += 1
+                elif r["kind"] == "comment" and r["comment"]:
+                    reactions_map[lid]["comments"].append({
+                        "actor_type": r["actor_type"],
+                        "comment": r["comment"],
+                        "created_at": str(r["created_at"]) if r["created_at"] else None
+                    })
+        for log_obj in logs:
+            log_obj["reactions"] = reactions_map.get(log_obj["id"], {"likes": 0, "comments": []})
+
+        return {"ok": True, "logs": logs, "count": len(logs), "period_days": days}
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/study-logs/heatmap")
+def admin_study_logs_heatmap(authorization: Optional[str] = Header(None), days: int = 30):
+    """塾長: 国公立難関大学コース生徒×日 の学習時間ヒートマップ。
+    記録ゼロの生徒も「サボってる生徒」として可視化するため LEFT JOIN で全員表示。
+    """
+    _verify_admin_required(authorization)
+
+    try:
+        days = int(days or 30)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="クエリパラメータが不正です")
+    days = max(1, min(days, 90))
+    today = _today_jst()
+    cutoff_date = (today - timedelta(days=days - 1)).isoformat()
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 国公立難関大学コース受講中の生徒一覧 (active 状態のみ)
+        c.execute(
+            """SELECT id, name, grade FROM students
+               WHERE course = ? AND status IN ('paid', 'trial')
+               ORDER BY name""",
+            (_STUDY_LOG_TARGET_COURSE,)
+        )
+        all_students = c.fetchall()
+
+        # 期間内の集計
+        c.execute(
+            """SELECT sl.student_id, sl.studied_date, SUM(sl.minutes) AS total_minutes
+               FROM study_logs sl
+               JOIN students s ON sl.student_id = s.id
+               WHERE sl.studied_date >= ? AND s.course = ? AND s.status IN ('paid', 'trial')
+               GROUP BY sl.student_id, sl.studied_date""",
+            (cutoff_date, _STUDY_LOG_TARGET_COURSE)
+        )
+        agg_rows = c.fetchall()
+
+        students_map = {}
+        for s in all_students:
+            students_map[s["id"]] = {
+                "student_id": s["id"],
+                "name": s["name"],
+                "grade": s["grade"],
+                "data": {},
+                "total": 0,
+            }
+        for r in agg_rows:
+            sid = r["student_id"]
+            if sid in students_map:
+                m = int(r["total_minutes"] or 0)
+                students_map[sid]["data"][str(r["studied_date"])] = m
+                students_map[sid]["total"] += m
+
+        full_dates = [(today - timedelta(days=i)).isoformat() for i in range(days - 1, -1, -1)]
+        students_list = list(students_map.values())
+        students_list.sort(key=lambda x: -x["total"])
+
+        return {
+            "ok": True,
+            "dates": full_dates,
+            "students": students_list,
+            "total_students": len(students_list),
+            "period_days": days,
+        }
+    finally:
+        conn.close()
+
+
+class StudyLogReactRequest(BaseModel):
+    kind: str
+    comment: Optional[str] = None
+
+
+@app.post("/api/admin/study-logs/{log_id}/react")
+def admin_react_to_study_log(log_id: int, payload: StudyLogReactRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """塾長: 学習記録にいいね or コメントを投稿。"""
+    _check_rate_limit_ip(request, bucket="study_log_react", limit=60, window=60)
+    _verify_admin_required(authorization)
+
+    kind = (payload.kind or "").strip()
+    if kind not in ("like", "comment"):
+        raise HTTPException(status_code=400, detail="kind は 'like' または 'comment'")
+
+    comment = None
+    if kind == "comment":
+        comment = _sanitize_text(payload.comment, 500)
+        if not comment:
+            raise HTTPException(status_code=400, detail="コメントは必須です")
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id FROM study_logs WHERE id = ?", (log_id,))
+        if not c.fetchone():
+            raise HTTPException(status_code=404, detail="記録が見つかりません")
+
+        try:
+            c.execute(
+                "INSERT INTO study_log_reactions (log_id, actor_type, actor_id, kind, comment) VALUES (?,?,?,?,?)",
+                (log_id, "admin", None, kind, comment)
+            )
+            conn.commit()
+        except IntegrityError:
+            # UNIQUE 違反 = admin like の race condition 重複 (partial index で防御)
+            conn.rollback()
+            if kind == "like":
+                return {"ok": True, "already": True}
+            raise
+        log.info(f"[StudyLog] admin_react log_id={log_id} kind={kind}")
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/study-logs/students")
+def admin_study_logs_students_summary(authorization: Optional[str] = Header(None), days: int = 7):
+    """塾長: 国公立難関大学コース生徒別の集計。"""
+    _verify_admin_required(authorization)
+
+    try:
+        days = int(days or 7)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="クエリパラメータが不正です")
+    days = max(1, min(days, 90))
+    today = _today_jst()
+    cutoff_date = (today - timedelta(days=days - 1)).isoformat()
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            """SELECT s.id, s.name, s.grade, s.status,
+                      COALESCE(SUM(sl.minutes), 0) AS total_minutes,
+                      COUNT(DISTINCT sl.studied_date) AS days_active,
+                      MAX(sl.studied_date) AS last_studied
+               FROM students s
+               LEFT JOIN study_logs sl ON s.id = sl.student_id AND sl.studied_date >= ?
+               WHERE s.course = ? AND s.status IN ('paid', 'trial')
+               GROUP BY s.id, s.name, s.grade, s.status
+               ORDER BY total_minutes DESC""",
+            (cutoff_date, _STUDY_LOG_TARGET_COURSE)
+        )
+        rows = c.fetchall()
+        students = []
+        for r in rows:
+            students.append({
+                "student_id": r["id"],
+                "name": r["name"],
+                "grade": r["grade"],
+                "status": r["status"],
+                "total_minutes": int(r["total_minutes"] or 0),
+                "days_active": int(r["days_active"] or 0),
+                "last_studied": str(r["last_studied"]) if r["last_studied"] else None,
+            })
+        return {"ok": True, "students": students, "period_days": days}
+    finally:
+        conn.close()
+
+
+# 塾長: 生徒のコース割当 (国公立難関大学コース 加入/離脱)
+class StudentCourseSetRequest(BaseModel):
+    course: Optional[str] = None  # 'kokuritsu_nankan' or null
+
+
+@app.post("/api/admin/students/{student_id}/course")
+def admin_set_student_course(student_id: int, payload: StudentCourseSetRequest, authorization: Optional[str] = Header(None)):
+    """塾長: 生徒のコースを設定 (kokuritsu_nankan or null)。"""
+    _verify_admin_required(authorization)
+    new_course = (payload.course or "").strip() or None
+    if new_course is not None and new_course != _STUDY_LOG_TARGET_COURSE:
+        raise HTTPException(status_code=400, detail=f"course は '{_STUDY_LOG_TARGET_COURSE}' または null のみ")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, course FROM students WHERE id = ?", (student_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        old_course = row["course"] if "course" in row.keys() else None
+        c.execute("UPDATE students SET course = ? WHERE id = ?", (new_course, student_id))
+        # 監査ログ (events テーブル)
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("course_change", json.dumps({"student_id": student_id, "old": old_course, "new": new_course, "actor": "admin"}, ensure_ascii=False), "admin_action")
+            )
+        except Exception as ev_err:
+            log.warning(f"[StudyLog] course_change event log failed: {ev_err}")
+        conn.commit()
+        log.info(f"[StudyLog] admin set course student={student_id} course={new_course}")
+        return {"ok": True, "student_id": student_id, "course": new_course}
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/students/by-course")
+def admin_list_students_by_course(authorization: Optional[str] = Header(None), course: Optional[str] = None):
+    """塾長: コース別の生徒一覧 (course 未指定で全生徒)。"""
+    _verify_admin_required(authorization)
+    conn = db()
+    try:
+        c = conn.cursor()
+        if course:
+            c.execute(
+                "SELECT id, name, grade, status, course FROM students WHERE course = ? AND status IN ('paid','trial') ORDER BY name",
+                (course,)
+            )
+        else:
+            c.execute(
+                "SELECT id, name, grade, status, course FROM students WHERE status IN ('paid','trial') ORDER BY name"
+            )
+        rows = c.fetchall()
+        students = [{
+            "id": r["id"], "name": r["name"], "grade": r["grade"],
+            "status": r["status"], "course": r["course"],
+        } for r in rows]
+        return {"ok": True, "students": students}
+    finally:
+        conn.close()
 
 
 # ==========================================================================

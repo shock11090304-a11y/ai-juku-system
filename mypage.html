@@ -275,6 +275,98 @@
       </div>
     </section>
 
+    <!-- 📚 学習記録 (Studyplus 代替・Phase 1) - 国公立難関大学コース受講生限定 (JSで表示制御) -->
+    <section class="study-log-section" style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:14px; display:none;">
+      <div class="section-title"><h2>📚 学習記録 <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">国公立難関大学コース</span></h2></div>
+      <p style="font-size:0.85rem; color:#a1a1aa; margin-bottom:1rem;">
+        今日勉強した内容を記録しよう。塾長があなたの頑張りを見て、いいねやコメントを送ります。
+      </p>
+
+      <!-- 記録投稿フォーム -->
+      <div style="background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.25); border-radius:12px; padding:1rem; margin-bottom:1.5rem;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:0.75rem;">
+          <div>
+            <label for="slDate" style="display:block; font-size:0.75rem; color:#a1a1aa; margin-bottom:0.25rem;">日付</label>
+            <input type="date" id="slDate" style="width:100%; padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+          </div>
+          <div>
+            <label for="slSubject" style="display:block; font-size:0.75rem; color:#a1a1aa; margin-bottom:0.25rem;">科目 *</label>
+            <select id="slSubject" style="width:100%; padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+              <option value="英語">英語</option>
+              <option value="数学">数学</option>
+              <option value="国語">国語</option>
+              <option value="現代文">現代文</option>
+              <option value="古文">古文</option>
+              <option value="漢文">漢文</option>
+              <option value="理科">理科 (総合)</option>
+              <option value="物理">物理</option>
+              <option value="化学">化学</option>
+              <option value="生物">生物</option>
+              <option value="地学">地学</option>
+              <option value="社会">社会 (総合)</option>
+              <option value="日本史">日本史</option>
+              <option value="世界史">世界史</option>
+              <option value="地理">地理</option>
+              <option value="倫理">倫理</option>
+              <option value="政経">政経</option>
+              <option value="情報">情報</option>
+              <option value="小論文">小論文</option>
+              <option value="面接対策">面接対策</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:0.75rem; margin-bottom:0.75rem;">
+          <div>
+            <label for="slMaterial" style="display:block; font-size:0.75rem; color:#a1a1aa; margin-bottom:0.25rem;">教材名</label>
+            <input type="text" id="slMaterial" maxlength="200" placeholder="例: ターゲット1900 / 青チャート" style="width:100%; padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+          </div>
+          <div>
+            <label for="slMinutes" style="display:block; font-size:0.75rem; color:#a1a1aa; margin-bottom:0.25rem;">勉強時間 (分) *</label>
+            <input type="number" id="slMinutes" min="1" max="1440" placeholder="60" style="width:100%; padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+          </div>
+          <div>
+            <label for="slPages" style="display:block; font-size:0.75rem; color:#a1a1aa; margin-bottom:0.25rem;">ページ数</label>
+            <input type="number" id="slPages" min="0" max="10000" placeholder="任意" style="width:100%; padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+          </div>
+        </div>
+        <div style="margin-bottom:0.75rem;">
+          <label for="slNote" style="display:block; font-size:0.75rem; color:#a1a1aa; margin-bottom:0.25rem;">振り返りメモ</label>
+          <textarea id="slNote" maxlength="1000" rows="2" placeholder="難しかった所、できるようになった所など..." style="width:100%; padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; resize:vertical;"></textarea>
+        </div>
+        <button id="slSubmitBtn" type="button" style="width:100%; padding:0.85rem; background:linear-gradient(135deg,#6366f1,#8b5cf6); border:0; border-radius:10px; color:#fff; font-weight:700; font-size:1rem; cursor:pointer;">📝 記録を保存</button>
+        <div id="slMessage" style="margin-top:0.6rem; font-size:0.85rem; text-align:center;"></div>
+      </div>
+
+      <!-- 集計サマリ -->
+      <div id="slSummary" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:0.75rem; margin-bottom:1.25rem;">
+        <div style="background:rgba(99,102,241,0.1); border-radius:10px; padding:0.85rem; text-align:center;">
+          <div style="font-size:0.72rem; color:#a1a1aa;">直近30日 合計</div>
+          <div style="font-size:1.4rem; font-weight:800; color:#c7d2fe;"><span id="slTotalMin">0</span>分</div>
+        </div>
+        <div style="background:rgba(99,102,241,0.1); border-radius:10px; padding:0.85rem; text-align:center;">
+          <div style="font-size:0.72rem; color:#a1a1aa;">学習日数</div>
+          <div style="font-size:1.4rem; font-weight:800; color:#c7d2fe;"><span id="slDaysActive">0</span>日</div>
+        </div>
+        <div style="background:rgba(99,102,241,0.1); border-radius:10px; padding:0.85rem; text-align:center;">
+          <div style="font-size:0.72rem; color:#a1a1aa;">記録回数</div>
+          <div style="font-size:1.4rem; font-weight:800; color:#c7d2fe;"><span id="slLogCount">0</span>回</div>
+        </div>
+      </div>
+
+      <!-- 30日チャート -->
+      <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1rem; margin-bottom:1.25rem;">
+        <div style="font-size:0.85rem; color:#a1a1aa; margin-bottom:0.5rem;">📊 直近30日の学習時間 (分)</div>
+        <div style="position:relative; height:200px;"><canvas id="slDailyChart"></canvas></div>
+      </div>
+
+      <!-- 履歴一覧 -->
+      <div>
+        <div style="font-size:0.85rem; color:#a1a1aa; margin-bottom:0.5rem;">📋 最近の記録</div>
+        <div id="slLogList" style="max-height:400px; overflow-y:auto;"></div>
+      </div>
+    </section>
+
     <!-- Learning Brain: 今日の復習 (エビングハウス自動復習) -->
     <section class="lb-review-section" style="margin-top: 2rem; padding: 1.5rem; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;">
       <div class="section-title"><h2>🔁 今日の復習 <span style="font-size:0.65em;background:linear-gradient(135deg,#818cf8,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">エビングハウス忘却曲線対応</span></h2></div>
@@ -344,7 +436,7 @@
   <script src="learning-brain.js?v=20260425-2"></script>
   <script src="exam-prep.js?v=20260425-1"></script>
   <script src="referral-program.js?v=20260425-1"></script>
-  <script src="mypage.js?v=20260425-day-pills"></script>
+  <script src="mypage.js?v=20260504-study-log-3"></script>
   <script>
     // ウィジェット初期描画
     (function() {

@@ -262,6 +262,7 @@ function rotateMotivation() {
 }
 
 function escapeHtml(s) {
+  if (s == null) return '';
   return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
@@ -467,4 +468,255 @@ document.addEventListener('DOMContentLoaded', () => {
   try { logActivity('mypage_view'); } catch (e) { console.error('logActivity failed:', e); }
   try { bindTrialOnboarding(); } catch (e) { console.error('bindTrialOnboarding failed:', e); }
   try { renderTrialOnboarding(); } catch (e) { console.error('renderTrialOnboarding failed:', e); }
+  try { initStudyLog(); } catch (e) { console.error('initStudyLog failed:', e); }
 });
+
+// ==========================================================================
+// 📚 学習記録 (Studyplus 代替・Phase 1)
+// 国公立難関大学コース受講生のみ表示。他コースの場合は section 自動非表示。
+// ==========================================================================
+const SL_API_BASE = window.location.hostname === 'localhost' && window.location.port === '8090'
+  ? 'http://localhost:8000' : window.location.origin;
+
+let _slDailyChart = null;
+
+// JST (Asia/Tokyo) 基準で YYYY-MM-DD を返す。Intl 経由でブラウザのローカル TZ に依存しない。
+function _slJstDate(offsetDays = 0) {
+  const d = new Date(Date.now() - offsetDays * 86400000);
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' }).format(d);
+}
+
+function _slToken() {
+  return (window.AuthGuard && window.AuthGuard.getToken()) || localStorage.getItem('ai_juku_session_token');
+}
+
+async function slApiFetch(path, options = {}) {
+  const token = _slToken();
+  const headers = Object.assign({'Content-Type': 'application/json'}, options.headers || {});
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch(SL_API_BASE + path, Object.assign({}, options, { headers }));
+  if (!res.ok) {
+    let detail = '';
+    try { const j = await res.json(); detail = j.detail || ''; } catch {}
+    if (res.status === 401 && window.AuthGuard) {
+      // session expired
+      try { window.AuthGuard.clearSession && window.AuthGuard.clearSession(); } catch {}
+    }
+    const err = new Error(detail || `HTTP ${res.status}`);
+    err.status = res.status;
+    throw err;
+  }
+  return res.json();
+}
+
+function initStudyLog() {
+  // 国公立難関大学コース受講生のみ section を表示。
+  // auth-guard の /api/auth/me 非同期更新を待つため最大2秒 polling (200ms × 10)
+  const section = document.querySelector('.study-log-section');
+  const tryInit = (retries) => {
+    const student = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || null;
+    if (!student) {
+      if (section) section.style.display = 'none';
+      if (retries > 0) setTimeout(() => tryInit(retries - 1), 200);
+      return;
+    }
+    // course フィールドが未取得 (auth refresh 待ち) の場合は polling 継続
+    if (typeof student.course === 'undefined' && retries > 0) {
+      setTimeout(() => tryInit(retries - 1), 200);
+      return;
+    }
+    const isTarget = student.course === 'kokuritsu_nankan';
+    if (!isTarget) {
+      // 一般生徒には機能の存在告知 + 申込導線 (機会損失防止)
+      if (section) {
+        section.style.display = '';
+        section.innerHTML = `
+          <div class="section-title"><h2>📚 学習記録 <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">国公立難関大学コース 限定</span></h2></div>
+          <div style="padding:1.2rem; background:rgba(251,191,36,0.06); border:1px dashed rgba(251,191,36,0.35); border-radius:12px; text-align:center;">
+            <div style="font-size:2.5rem; margin-bottom:0.5rem;">🎯</div>
+            <div style="color:#fbbf24; font-weight:700; font-size:1.05rem; margin-bottom:0.5rem;">国公立難関大学コース 受講生 限定機能</div>
+            <p style="color:#a1a1aa; font-size:0.88rem; margin:0.5rem 0 1rem 0;">毎日の学習時間・教材・科目を記録し、塾長から励ましコメント。東大・京大・国公立医学部志望者向けの徹底学習管理を提供します。</p>
+            <div style="font-size:0.85rem; color:#d4d4d8;">
+              ご興味のある方は<strong style="color:#fbbf24;">塾長まで直接お問い合わせください</strong>
+            </div>
+          </div>`;
+      }
+      return;
+    }
+    if (section) section.style.display = '';
+    const dateInput = document.getElementById('slDate');
+    if (dateInput) dateInput.value = _slJstDate(0);
+    const btn = document.getElementById('slSubmitBtn');
+    if (btn && !btn._slBound) {
+      btn.addEventListener('click', submitStudyLog);
+      btn._slBound = true;
+    }
+    loadMyStudyLogs();
+  };
+  tryInit(10);
+}
+
+async function submitStudyLog() {
+  const msg = document.getElementById('slMessage');
+  const btn = document.getElementById('slSubmitBtn');
+  if (!btn || btn.disabled) return;  // 二重送信防止
+  if (msg) { msg.textContent = ''; msg.style.color = '#a1a1aa'; }
+
+  const date = document.getElementById('slDate').value;
+  const subject = document.getElementById('slSubject').value;
+  const material = document.getElementById('slMaterial').value.trim();
+  const minutes = parseInt(document.getElementById('slMinutes').value, 10);
+  const pagesRaw = document.getElementById('slPages').value;
+  const pages = pagesRaw ? parseInt(pagesRaw, 10) : null;
+  const note = document.getElementById('slNote').value.trim();
+
+  if (!subject) { if (msg) { msg.textContent = '科目を選択してください'; msg.style.color = '#fca5a5'; } return; }
+  if (!minutes || minutes < 1 || minutes > 1440) { if (msg) { msg.textContent = '勉強時間は 1〜1440 分で入力してください'; msg.style.color = '#fca5a5'; } return; }
+
+  btn.disabled = true;
+  btn.textContent = '保存中...';
+  try {
+    await slApiFetch('/api/study-logs', {
+      method: 'POST',
+      body: JSON.stringify({
+        studied_date: date || undefined,
+        subject, material: material || undefined,
+        minutes, pages, note: note || undefined,
+      }),
+    });
+    if (msg) { msg.textContent = '✅ 記録しました！'; msg.style.color = '#86efac'; }
+    document.getElementById('slMaterial').value = '';
+    document.getElementById('slMinutes').value = '';
+    document.getElementById('slPages').value = '';
+    document.getElementById('slNote').value = '';
+    await loadMyStudyLogs();
+  } catch (e) {
+    if (msg) { msg.textContent = '❌ ' + (e.message || '保存に失敗しました'); msg.style.color = '#fca5a5'; }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📝 記録を保存';
+  }
+}
+
+async function loadMyStudyLogs() {
+  const list = document.getElementById('slLogList');
+  const summary = document.getElementById('slSummary');
+  try {
+    const data = await slApiFetch('/api/study-logs/me?days=30&limit=200');
+    const logs = data.logs || [];
+    const daily = data.daily || [];
+    const totEl = document.getElementById('slTotalMin');
+    const daEl = document.getElementById('slDaysActive');
+    const lcEl = document.getElementById('slLogCount');
+    if (totEl) totEl.textContent = (data.total_minutes || 0).toLocaleString();
+    if (daEl) daEl.textContent = (data.days_active || 0);
+    if (lcEl) lcEl.textContent = logs.length;
+    // empty state: サマリーカードを「最初の1件を記録しよう」hint に置換
+    if (summary) {
+      if (logs.length === 0) {
+        summary.style.gridTemplateColumns = '1fr';
+        summary.innerHTML = `<div style="background:rgba(251,191,36,0.08); border:1px dashed rgba(251,191,36,0.3); border-radius:10px; padding:1rem; text-align:center;"><div style="color:#fbbf24; font-weight:700; font-size:0.95rem;">📝 まずは1件記録してみよう！</div><div style="font-size:0.78rem; color:#a1a1aa; margin-top:0.3rem;">毎日の積み重ねが志望校合格への最短ルート</div></div>`;
+      } else {
+        // re-render normal summary if previously empty
+        if (!totEl) {
+          summary.style.gridTemplateColumns = 'repeat(auto-fit, minmax(110px, 1fr))';
+          summary.innerHTML = `
+            <div style="background:rgba(99,102,241,0.1); border-radius:10px; padding:0.85rem; text-align:center;"><div style="font-size:0.72rem; color:#a1a1aa;">直近30日 合計</div><div style="font-size:1.4rem; font-weight:800; color:#c7d2fe;"><span id="slTotalMin">${(data.total_minutes || 0).toLocaleString()}</span>分</div></div>
+            <div style="background:rgba(99,102,241,0.1); border-radius:10px; padding:0.85rem; text-align:center;"><div style="font-size:0.72rem; color:#a1a1aa;">学習日数</div><div style="font-size:1.4rem; font-weight:800; color:#c7d2fe;"><span id="slDaysActive">${data.days_active || 0}</span>日</div></div>
+            <div style="background:rgba(99,102,241,0.1); border-radius:10px; padding:0.85rem; text-align:center;"><div style="font-size:0.72rem; color:#a1a1aa;">記録回数</div><div style="font-size:1.4rem; font-weight:800; color:#c7d2fe;"><span id="slLogCount">${logs.length}</span>回</div></div>`;
+        }
+      }
+    }
+    renderSlDailyChart(daily);
+    renderSlLogList(logs);
+  } catch (e) {
+    console.error('loadMyStudyLogs failed:', e);
+    if (list) {
+      list.innerHTML = `<div style="text-align:center; color:#fca5a5; padding:1rem;">⚠️ 記録の読み込みに失敗しました (${escapeHtml(e.message || '')}) <button id="slRetryBtn" style="margin-left:0.5rem; background:rgba(99,102,241,0.2); border:0; color:#c7d2fe; padding:0.3rem 0.6rem; border-radius:6px; cursor:pointer;">再試行</button></div>`;
+      const retryBtn = document.getElementById('slRetryBtn');
+      if (retryBtn) retryBtn.addEventListener('click', loadMyStudyLogs);
+    }
+  }
+}
+
+function renderSlDailyChart(daily) {
+  const canvas = document.getElementById('slDailyChart');
+  if (!canvas || !window.Chart) {
+    if (canvas) canvas.parentElement.innerHTML = '<div style="text-align:center; color:#71717a; padding:1rem; font-size:0.85rem;">グラフを読み込めません</div>';
+    return;
+  }
+  // JST 30 日分 (Intl 経由で TZ 安全)
+  const map = {};
+  (daily || []).forEach(d => { if (d && d.date) map[String(d.date).slice(0, 10)] = d.minutes || 0; });
+  const labels = [];
+  const values = [];
+  for (let i = 29; i >= 0; i--) {
+    const key = _slJstDate(i);
+    labels.push(key.slice(5));
+    values.push(map[key] || 0);
+  }
+  if (_slDailyChart) _slDailyChart.destroy();
+  _slDailyChart = new Chart(canvas, {
+    type: 'bar',
+    data: { labels, datasets: [{ label: '分', data: values, backgroundColor: 'rgba(99,102,241,0.6)', borderColor: 'rgba(99,102,241,1)', borderWidth: 1 }] },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#a1a1aa', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { ticks: { color: '#a1a1aa' }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true },
+      },
+    },
+  });
+}
+
+function renderSlLogList(logs) {
+  const list = document.getElementById('slLogList');
+  if (!list) return;
+  if (!logs.length) {
+    list.innerHTML = '<div style="text-align:center; color:#71717a; padding:2rem;">まだ記録がありません。今日勉強した内容を記録してみよう！</div>';
+    return;
+  }
+  list.innerHTML = logs.map(l => {
+    const reactions = l.reactions || { likes: 0, comments: [] };
+    const commentsHtml = (reactions.comments || []).map(c =>
+      `<div style="background:rgba(255,255,255,0.04); padding:0.5rem 0.75rem; border-radius:8px; margin-top:0.4rem; font-size:0.82rem;">
+        <span style="color:#fbbf24; font-weight:700;">塾長:</span>
+        <span style="color:#e4e4e7;">${escapeHtml(c.comment)}</span>
+      </div>`
+    ).join('');
+    const likeBadge = reactions.likes > 0
+      ? `<span style="background:rgba(236,72,153,0.18); color:#f9a8d4; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.72rem; margin-left:0.5rem;" aria-label="いいね ${reactions.likes} 件">❤️ ${reactions.likes}</span>`
+      : '';
+    const hasAdminComment = (reactions.comments || []).some(c => c.actor_type === 'admin');
+    return `
+      <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:0.85rem; margin-bottom:0.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+          <div>
+            <span style="font-weight:700; color:#c7d2fe;">${escapeHtml(l.subject)}</span>
+            ${l.material ? `<span style="color:#a1a1aa; font-size:0.85rem;"> - ${escapeHtml(l.material)}</span>` : ''}
+            ${likeBadge}
+          </div>
+          <div style="font-size:0.75rem; color:#71717a;">
+            ${escapeHtml(l.date)} · ${l.minutes}分${l.pages ? ' · ' + l.pages + 'p' : ''}
+            ${hasAdminComment ? '' : `<button data-log-id="${l.id}" class="sl-delete-btn" aria-label="この記録を削除" title="削除" style="background:none; border:0; color:#71717a; cursor:pointer; margin-left:0.5rem; font-size:0.9rem;">🗑</button>`}
+          </div>
+        </div>
+        ${l.note ? `<div style="font-size:0.85rem; color:#d4d4d8; margin-top:0.3rem;">${escapeHtml(l.note)}</div>` : ''}
+        ${commentsHtml}
+      </div>`;
+  }).join('');
+  list.querySelectorAll('.sl-delete-btn').forEach(b => {
+    b.addEventListener('click', async (e) => {
+      const id = e.currentTarget.getAttribute('data-log-id');
+      if (!confirm('この記録を削除しますか？\n（一度削除すると元に戻せません）')) return;
+      try {
+        await slApiFetch(`/api/study-logs/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        await loadMyStudyLogs();
+      } catch (err) {
+        alert('削除に失敗しました: ' + (err.message || ''));
+      }
+    });
+  });
+}

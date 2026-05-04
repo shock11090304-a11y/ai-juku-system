@@ -96,6 +96,12 @@
     @media (max-width: 640px) {
       .admin-gate-card { padding: 2rem 1.25rem; }
     }
+    /* 学習記録ダッシュボード mobile/desktop 出し分け */
+    .mobile-only { display: none; }
+    @media (max-width: 768px) {
+      .mobile-only { display: inline; }
+      #slCourseManageModal > div { padding: 1rem !important; }
+    }
   </style>
 </head>
 <body class="admin-locked">
@@ -1385,6 +1391,61 @@
         </div>
       </div>
     </section>
+
+    <!-- 📚 学習記録ダッシュボード (Studyplus 代替・Phase 1) - 国公立難関大学コース受講生のみ -->
+    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.3); border-radius: 14px;" id="studyLogSection">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+        <h2 style="margin:0; color:#c7d2fe; font-size:1.3rem;">📚 学習記録ダッシュボード <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">国公立難関大学コース</span></h2>
+        <div style="display:flex; gap:0.5rem; align-items:center;">
+          <select id="slDays" style="padding:0.4rem 0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff;">
+            <option value="7" selected>直近7日</option>
+            <option value="14">直近14日</option>
+            <option value="30">直近30日</option>
+            <option value="60">直近60日</option>
+          </select>
+          <button id="slRefreshBtn" type="button" style="padding:0.4rem 0.8rem; background:rgba(99,102,241,0.2); border:1px solid rgba(99,102,241,0.4); border-radius:6px; color:#c7d2fe; cursor:pointer;">🔄 更新</button>
+          <button id="slCourseManageBtn" type="button" style="padding:0.4rem 0.8rem; background:rgba(251,191,36,0.15); border:1px solid rgba(251,191,36,0.4); border-radius:6px; color:#fbbf24; cursor:pointer;">⚙️ コース管理</button>
+        </div>
+      </div>
+      <p style="color:#a1a1aa; font-size:0.85rem; margin-bottom:1rem;">
+        Studyplus for School 内製代替。<strong style="color:#fbbf24;">国公立難関大学コース受講生のみ</strong>。記録ゼロも可視化、コース未アサイン生徒は表示されません。
+      </p>
+
+      <!-- ヒートマップ -->
+      <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1rem; margin-bottom:1rem; overflow-x:auto;">
+        <div style="font-size:0.9rem; color:#c7d2fe; margin-bottom:0.5rem; font-weight:700;">
+          🔥 学習時間ヒートマップ (赤=多 / 青=少)
+          <span class="mobile-only" style="font-size:0.7rem; color:#71717a; font-weight:400; margin-left:0.5rem;">← 横スクロール →</span>
+        </div>
+        <div id="slHeatmap" style="font-size:0.78rem; color:#fff;"></div>
+      </div>
+
+      <!-- 生徒別ランキング -->
+      <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1rem; margin-bottom:1rem;">
+        <div style="font-size:0.9rem; color:#c7d2fe; margin-bottom:0.5rem; font-weight:700;">🏆 学習時間ランキング (期間内合計)</div>
+        <div id="slRanking"></div>
+      </div>
+
+      <!-- タイムライン -->
+      <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1rem;">
+        <div style="font-size:0.9rem; color:#c7d2fe; margin-bottom:0.5rem; font-weight:700;">📜 最新の学習記録タイムライン</div>
+        <div id="slTimeline" style="max-height:600px; overflow-y:auto;"></div>
+      </div>
+
+      <!-- コース管理 modal -->
+      <div id="slCourseManageModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:flex-start; justify-content:center; padding:2rem; overflow-y:auto;">
+        <div style="background:#0f172a; border:1px solid rgba(99,102,241,0.4); border-radius:14px; padding:1.5rem; max-width:700px; width:100%; max-height:90vh; overflow-y:auto;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+            <h3 style="margin:0; color:#c7d2fe;">⚙️ 国公立難関大学コース 受講生管理</h3>
+            <button id="slCourseClose" type="button" style="background:none; border:0; color:#a1a1aa; font-size:1.5rem; cursor:pointer;">×</button>
+          </div>
+          <p style="color:#a1a1aa; font-size:0.85rem; margin-bottom:1rem;">
+            「加入」で生徒に学習記録機能 + ヒートマップを公開。「離脱」で本コース解除 (一般生徒に戻る)。
+          </p>
+          <div id="slCourseList" style="max-height:60vh; overflow-y:auto;"></div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer class="footer">
@@ -1392,7 +1453,7 @@
   </footer>
 
   <script src="plans.js?v=20260422"></script>
-  <script src="ceo.js?v=20260429-grade-normalize"></script>
+  <script src="ceo.js?v=20260504-study-log-2"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {
