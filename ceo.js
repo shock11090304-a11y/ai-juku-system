@@ -655,6 +655,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 📚 学習記録ダッシュボード初期化
   try { initStudyLogDashboard(); } catch (e) { console.error('initStudyLogDashboard failed:', e); }
+  try { initStudyPlanDashboard(); } catch (e) { console.error('initStudyPlanDashboard failed:', e); }
 });
 
 // ==========================================================================
@@ -968,4 +969,237 @@ function renderStudyLogTimeline(data) {
       } catch (err) { alert('エラー: ' + (err.message || err)); }
     });
   });
+}
+
+
+// ==========================================================================
+// 📅 学習計画ダッシュボード (Phase 2 - ガント + カレンダー)
+// ==========================================================================
+const _SP_CAL_STATE = { year: null, month: null };
+
+// JST 安全な日付ヘルパー (UTC ズレで chip が消える致命バグ修正・Frontend C-1 / Integration M-3)
+function _spJstDateStr(d) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' }).format(d || new Date());
+}
+function _spParseJstDate(s) {
+  // 'YYYY-MM-DD' を JST 00:00 として解釈 (timezone offset 付き ISO 文字列で Date() に渡す)
+  return new Date(s + 'T00:00:00+09:00');
+}
+
+function initStudyPlanDashboard() {
+  const refreshBtn = document.getElementById('spRefreshBtn');
+  const daysSel = document.getElementById('spGanttDays');
+  const ganttBtn = document.getElementById('spViewGanttBtn');
+  const calBtn = document.getElementById('spViewCalendarBtn');
+  const calPrev = document.getElementById('spCalPrev');
+  const calNext = document.getElementById('spCalNext');
+  if (refreshBtn) refreshBtn.addEventListener('click', () => loadStudyPlanDashboard());
+  if (daysSel) daysSel.addEventListener('change', () => loadStudyPlanDashboard());
+  if (ganttBtn) ganttBtn.addEventListener('click', () => switchSpView('gantt'));
+  if (calBtn) calBtn.addEventListener('click', () => switchSpView('calendar'));
+  if (calPrev) calPrev.addEventListener('click', () => calNavigate(-1));
+  if (calNext) calNext.addEventListener('click', () => calNavigate(1));
+
+  // initial: today
+  const today = new Date();
+  _SP_CAL_STATE.year = today.getFullYear();
+  _SP_CAL_STATE.month = today.getMonth() + 1;
+
+  const tryLoad = (retries = 10) => {
+    if (window.AdminAuth && window.AdminAuth.getToken()) return loadStudyPlanDashboard();
+    if (retries > 0) setTimeout(() => tryLoad(retries - 1), 200);
+  };
+  tryLoad();
+}
+
+function switchSpView(view) {
+  const ganttView = document.getElementById('spGanttView');
+  const calView = document.getElementById('spCalendarView');
+  const ganttBtn = document.getElementById('spViewGanttBtn');
+  const calBtn = document.getElementById('spViewCalendarBtn');
+  if (view === 'gantt') {
+    if (ganttView) ganttView.style.display = '';
+    if (calView) calView.style.display = 'none';
+    if (ganttBtn) { ganttBtn.style.background = 'rgba(251,191,36,0.25)'; ganttBtn.style.color = '#fbbf24'; }
+    if (calBtn) { calBtn.style.background = 'none'; calBtn.style.color = '#a1a1aa'; }
+    loadGantt();
+  } else {
+    if (ganttView) ganttView.style.display = 'none';
+    if (calView) calView.style.display = '';
+    if (calBtn) { calBtn.style.background = 'rgba(251,191,36,0.25)'; calBtn.style.color = '#fbbf24'; }
+    if (ganttBtn) { ganttBtn.style.background = 'none'; ganttBtn.style.color = '#a1a1aa'; }
+    loadCalendar();
+  }
+}
+
+function calNavigate(delta) {
+  let m = _SP_CAL_STATE.month + delta;
+  let y = _SP_CAL_STATE.year;
+  if (m > 12) { m = 1; y += 1; }
+  if (m < 1) { m = 12; y -= 1; }
+  _SP_CAL_STATE.year = y;
+  _SP_CAL_STATE.month = m;
+  loadCalendar();
+}
+
+async function loadStudyPlanDashboard() {
+  if (!window.AdminAuth || !window.AdminAuth.getToken()) return;
+  // initial display: gantt
+  const ganttView = document.getElementById('spGanttView');
+  if (ganttView && ganttView.style.display !== 'none') {
+    loadGantt();
+  } else {
+    loadCalendar();
+  }
+}
+
+async function loadGantt() {
+  const el = document.getElementById('spGantt');
+  if (!el) return;
+  if (!window.AdminAuth || !window.AdminAuth.getToken()) return;
+  const days = parseInt(document.getElementById('spGanttDays').value || '60', 10);
+  el.innerHTML = '<div style="text-align:center; color:#71717a; padding:2rem;">読み込み中...</div>';
+  try {
+    const res = await window.AdminAuth.fetch(`/api/admin/study-plans/gantt?days=${days}`);
+    if (!res.ok) { el.innerHTML = `<div style="color:#fca5a5; padding:1rem;">読み込み失敗 (HTTP ${res.status})</div>`; return; }
+    const data = await res.json();
+    renderGantt(data);
+  } catch (e) {
+    el.innerHTML = `<div style="color:#fca5a5; padding:1rem;">エラー: ${escapeHtml(e.message || '')}</div>`;
+  }
+}
+
+function renderGantt(data) {
+  const el = document.getElementById('spGantt');
+  if (!el) return;
+  const students = data.students || [];
+  const ws = _spParseJstDate(data.window_start);
+  const we = new Date(data.window_end);
+  const today = _spParseJstDate(data.today);
+  const totalDays = Math.ceil((we - ws) / 86400000) + 1;
+
+  if (!students.length) {
+    el.innerHTML = '<div style="color:#71717a; padding:2rem; text-align:center;">期間内に学習計画がありません</div>';
+    return;
+  }
+
+  // 日付ヘッダ (月単位の区切りも入れる)
+  const dayWidthPx = Math.max(8, Math.floor(960 / totalDays));
+  const headerCells = [];
+  let lastMonth = -1;
+  for (let i = 0; i < totalDays; i++) {
+    const d = new Date(ws.getTime() + i * 86400000);
+    const dom = d.getDate();
+    const mon = d.getMonth() + 1;
+    const isFirstOfMonth = dom === 1 || i === 0;
+    const isToday = d.toDateString() === today.toDateString();
+    headerCells.push(`<div style="display:inline-block; width:${dayWidthPx}px; text-align:center; font-size:0.6rem; color:${isToday ? '#fbbf24' : '#71717a'}; border-left:${isFirstOfMonth ? '1px solid rgba(255,255,255,0.1)' : '0'}; padding:1px 0;">${isFirstOfMonth ? mon + '/' : ''}${dom}</div>`);
+  }
+  const todayOffset = Math.max(0, Math.ceil((today - ws) / 86400000));
+  const todayLeftPx = todayOffset * dayWidthPx;
+
+  // 生徒行 (今日縦線は各行の background-image で描画 → overflow クリップ問題回避)
+  const rows = students.map(s => {
+    const trackHeight = Math.max(22, (s.plans || []).length * 22);
+    const bars = (s.plans || []).map((p, idx) => {
+      const ps = _spParseJstDate(p.start_date);
+      const pe = _spParseJstDate(p.end_date);
+      const startOffset = Math.max(0, Math.ceil((ps - ws) / 86400000));
+      const endOffset = Math.min(totalDays - 1, Math.ceil((pe - ws) / 86400000));
+      const widthPx = Math.max(dayWidthPx, (endOffset - startOffset + 1) * dayWidthPx);
+      const leftPx = startOffset * dayWidthPx;
+      // 進捗 = minPct, pages 主目標 plan は pagePct を fallback
+      const pct = (p.progress_minutes_pct !== null && p.progress_minutes_pct !== undefined) ? p.progress_minutes_pct : p.progress_pages_pct;
+      const tooltip = `${p.title} (${p.subject})\n${p.start_date}〜${p.end_date}\n進捗: ${pct ?? '—'}%${p.target_minutes ? ` (${p.actual_minutes}/${p.target_minutes}分)` : ''}${p.target_pages ? ` (${p.actual_pages}/${p.target_pages}p)` : ''}`;
+      const progressOverlay = (pct !== null && pct !== undefined) ? `<div style="position:absolute; left:0; top:0; height:100%; width:${Math.min(100, pct)}%; background:rgba(255,255,255,0.25); border-radius:4px;"></div>` : '';
+      return `<div title="${escapeHtml(tooltip)}" style="position:absolute; left:${leftPx}px; top:${idx * 22}px; width:${widthPx}px; height:18px; background:${escapeHtml(p.color)}; border-radius:4px; display:flex; align-items:center; padding:0 4px; color:#fff; font-size:0.62rem; font-weight:700; white-space:nowrap; overflow:hidden; cursor:pointer;">${progressOverlay}<span style="position:relative; z-index:1;">${escapeHtml(p.title)}</span></div>`;
+    }).join('');
+    return `
+      <div style="display:flex; align-items:flex-start; border-bottom:1px solid rgba(255,255,255,0.05); padding:4px 0;">
+        <div style="width:120px; min-width:120px; padding-right:0.5rem; color:#e4e4e7; font-size:0.78rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; position:sticky; left:0; background:rgba(15,23,42,0.95);">${escapeHtml(s.name)} ${s.grade ? `<span style="color:#71717a; font-size:0.7rem;">(${escapeHtml(s.grade)})</span>` : ''}</div>
+        <div style="position:relative; flex:1; min-width:${totalDays * dayWidthPx}px; height:${trackHeight}px; background-image:linear-gradient(to right, transparent ${todayLeftPx}px, #fbbf24 ${todayLeftPx}px, #fbbf24 ${todayLeftPx + 2}px, transparent ${todayLeftPx + 2}px);">
+          ${bars}
+        </div>
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div style="position:relative;">
+      <div style="display:flex; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px; margin-bottom:4px;">
+        <div style="width:120px; min-width:120px; font-size:0.7rem; color:#a1a1aa; position:sticky; left:0; background:rgba(15,23,42,0.95);">生徒</div>
+        <div style="position:relative; flex:1; min-width:${totalDays * dayWidthPx}px; height:14px; white-space:nowrap;">${headerCells.join('')}<div style="position:absolute; left:${todayLeftPx}px; top:-4px; bottom:-4px; width:2px; background:#fbbf24; z-index:5; pointer-events:none;"></div></div>
+      </div>
+      ${rows}
+    </div>
+    <div style="margin-top:0.5rem; font-size:0.72rem; color:#71717a;">
+      合計 ${data.total_plans} 計画 / ${students.length} 名 · <span style="display:inline-block; width:8px; height:8px; background:#fbbf24; vertical-align:middle;"></span> 今日 · 進捗バー = 学習記録から自動集計
+    </div>`;
+}
+
+async function loadCalendar() {
+  const el = document.getElementById('spCalendar');
+  const lbl = document.getElementById('spCalLabel');
+  if (!el || !window.AdminAuth || !window.AdminAuth.getToken()) return;
+  const y = _SP_CAL_STATE.year, m = _SP_CAL_STATE.month;
+  if (lbl) lbl.textContent = `${y}年${m}月`;
+  el.innerHTML = '<div style="text-align:center; color:#71717a; padding:2rem;">読み込み中...</div>';
+  try {
+    const res = await window.AdminAuth.fetch(`/api/admin/study-plans/calendar?year=${y}&month=${m}`);
+    if (!res.ok) { el.innerHTML = `<div style="color:#fca5a5; padding:1rem;">読み込み失敗 (HTTP ${res.status})</div>`; return; }
+    const data = await res.json();
+    renderCalendar(data);
+  } catch (e) {
+    el.innerHTML = `<div style="color:#fca5a5; padding:1rem;">エラー: ${escapeHtml(e.message || '')}</div>`;
+  }
+}
+
+function renderCalendar(data) {
+  const el = document.getElementById('spCalendar');
+  if (!el) return;
+  const y = data.year, m = data.month;
+  const firstDay = new Date(y, m - 1, 1);
+  const lastDate = new Date(y, m, 0).getDate();
+  const startWeekday = firstDay.getDay(); // 0=Sun
+
+  // plans を日付ごとにマッピング (JST 統一・UTC ズレ防止)
+  const plansByDate = {};
+  (data.plans || []).forEach(p => {
+    const ps = _spParseJstDate(p.start_date);
+    const pe = _spParseJstDate(p.end_date);
+    for (let d = new Date(Math.max(ps, firstDay)); d <= pe && d.getMonth() + 1 === m; d.setDate(d.getDate() + 1)) {
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      if (!plansByDate[key]) plansByDate[key] = [];
+      plansByDate[key].push(p);
+    }
+  });
+
+  const todayStr = _spJstDateStr();
+  const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+  const weekHeader = weekdays.map((w, i) => `<div style="text-align:center; font-size:0.75rem; color:${i === 0 ? '#fca5a5' : i === 6 ? '#7dd3fc' : '#a1a1aa'}; padding:0.3rem 0; font-weight:700;">${w}</div>`).join('');
+
+  const cells = [];
+  for (let i = 0; i < startWeekday; i++) cells.push(`<div style="min-height:80px; background:rgba(0,0,0,0.1);"></div>`);
+  for (let d = 1; d <= lastDate; d++) {
+    const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const isToday = dateStr === todayStr;
+    const dayPlans = plansByDate[dateStr] || [];
+    const planChips = dayPlans.slice(0, 4).map(p =>
+      `<div title="${escapeHtml(p.student_name + ': ' + p.title)}" style="background:${escapeHtml(p.color)}; color:#fff; font-size:0.62rem; padding:1px 4px; border-radius:3px; margin:1px 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(p.student_name)}: ${escapeHtml(p.title)}</div>`
+    ).join('');
+    const more = dayPlans.length > 4 ? `<div style="font-size:0.62rem; color:#a1a1aa;">+${dayPlans.length - 4} more</div>` : '';
+    cells.push(`
+      <div style="min-height:80px; padding:0.3rem; background:${isToday ? 'rgba(251,191,36,0.1)' : 'rgba(0,0,0,0.2)'}; border:1px solid ${isToday ? 'rgba(251,191,36,0.5)' : 'rgba(255,255,255,0.05)'}; border-radius:4px; overflow:hidden;">
+        <div style="font-size:0.75rem; color:${isToday ? '#fbbf24' : '#a1a1aa'}; font-weight:${isToday ? '700' : '400'}; margin-bottom:0.2rem;">${d}</div>
+        ${planChips}${more}
+      </div>`);
+  }
+  // 末尾の空セル
+  while (cells.length % 7 !== 0) cells.push(`<div style="min-height:80px; background:rgba(0,0,0,0.1);"></div>`);
+
+  el.innerHTML = `
+    <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:2px;">
+      ${weekHeader}
+      ${cells.join('')}
+    </div>
+    <div style="margin-top:0.5rem; font-size:0.72rem; color:#71717a;">合計 ${(data.plans || []).length} 計画</div>`;
 }

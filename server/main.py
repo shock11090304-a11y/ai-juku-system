@@ -561,6 +561,29 @@ def init_db():
     CREATE UNIQUE INDEX IF NOT EXISTS uq_study_log_admin_like
         ON study_log_reactions(log_id, actor_type, kind)
         WHERE actor_type = 'admin' AND kind = 'like';
+    -- 学習計画 (Phase 2 - 国公立難関大学コース限定・塾長指示 2026-05-05)
+    CREATE TABLE IF NOT EXISTS study_plans (
+        id {pk},
+        student_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        material TEXT,
+        start_date DATE NOT NULL,
+        end_date DATE NOT NULL,
+        target_minutes INTEGER,
+        target_pages INTEGER,
+        color TEXT DEFAULT '#6366f1',
+        status TEXT DEFAULT 'active',
+        note TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_study_plans_student ON study_plans(student_id, status, start_date);
+    CREATE INDEX IF NOT EXISTS idx_study_plans_period ON study_plans(start_date, end_date);
+    -- 重複計画防止 (active のみ・archive 後は再登録可) - Security 監査 2026-05-05
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_study_plans_no_dup
+        ON study_plans(student_id, subject, COALESCE(material,''), start_date, end_date)
+        WHERE status != 'archived';
     """)
     # 既存DBに不足列を追加 (idempotent migration)
     # Postgres: 「column already exists」エラーで トランザクションが abort されると
@@ -598,7 +621,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "x-cron-secret", "stripe-signature", "x-line-signature"],
 )
 
@@ -12843,6 +12866,501 @@ def admin_list_students_by_course(authorization: Optional[str] = Header(None), c
             "status": r["status"], "course": r["course"],
         } for r in rows]
         return {"ok": True, "students": students}
+    finally:
+        conn.close()
+
+
+# ==========================================================================
+# Routes: Study Plans (学習計画 - Phase 2)
+# 塾長指示 2026-05-05: study_logs (実績) と study_plans (計画) を組み合わせ、
+# ガントチャート + カレンダーで「計画 vs 実績」を可視化。
+# 国公立難関大学コース限定。
+# ==========================================================================
+class StudyPlanCreateRequest(BaseModel):
+    title: str
+    subject: str
+    material: Optional[str] = None
+    start_date: str  # YYYY-MM-DD
+    end_date: str    # YYYY-MM-DD
+    target_minutes: Optional[int] = None
+    target_pages: Optional[int] = None
+    color: Optional[str] = None
+    note: Optional[str] = None
+
+
+class StudyPlanUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    subject: Optional[str] = None
+    material: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    target_minutes: Optional[int] = None
+    target_pages: Optional[int] = None
+    color: Optional[str] = None
+    status: Optional[str] = None
+    note: Optional[str] = None
+
+
+_PLAN_STATUSES = {"active", "completed", "archived"}
+_PLAN_COLOR_RE_STR = r'^#[0-9a-fA-F]{6}$'
+
+
+def _validate_plan_dates(start_date: str, end_date: str) -> tuple:
+    """start_date / end_date を validate して date オブジェクト返す。"""
+    try:
+        sd = datetime.strptime(start_date.strip(), "%Y-%m-%d").date()
+        ed = datetime.strptime(end_date.strip(), "%Y-%m-%d").date()
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=400, detail="日付フォーマットが不正です (YYYY-MM-DD)")
+    if ed < sd:
+        raise HTTPException(status_code=400, detail="終了日は開始日以降に指定してください")
+    today = _today_jst()
+    if (sd - today).days > 730:
+        raise HTTPException(status_code=400, detail="2年以上先の計画は登録できません")
+    if (today - sd).days > 730:
+        raise HTTPException(status_code=400, detail="2年以上前の計画は登録できません")
+    if (ed - sd).days > 730:
+        raise HTTPException(status_code=400, detail="期間は最大2年までです")
+    return sd, ed
+
+
+def _validate_plan_color(color: Optional[str]) -> Optional[str]:
+    import re as _re
+    if not color:
+        return None
+    color = color.strip()
+    if not _re.match(_PLAN_COLOR_RE_STR, color):
+        raise HTTPException(status_code=400, detail="color は #RRGGBB 形式で指定してください")
+    return color
+
+
+@app.post("/api/study-plans")
+def create_study_plan(payload: StudyPlanCreateRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒が学習計画を作成。"""
+    _check_rate_limit_ip(request, bucket="study_plan_create", limit=20, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+
+    title = _sanitize_text(payload.title, 100)
+    if not title:
+        raise HTTPException(status_code=400, detail="タイトルは必須です")
+    subject = (payload.subject or "").strip()
+    if subject not in _STUDY_SUBJECTS:
+        raise HTTPException(status_code=400, detail="科目が不正です")
+    material = _sanitize_text(payload.material, 200)
+    note = _sanitize_text(payload.note, 1000)
+    sd, ed = _validate_plan_dates(payload.start_date, payload.end_date)
+    color = _validate_plan_color(payload.color) or '#6366f1'
+
+    target_minutes = None
+    if payload.target_minutes is not None:
+        try:
+            tm = int(payload.target_minutes)
+            if tm < 0 or tm > 60000:
+                raise HTTPException(status_code=400, detail="目標分数は 0〜60000 で指定してください")
+            target_minutes = tm
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="目標分数が不正です")
+
+    target_pages = None
+    if payload.target_pages is not None:
+        try:
+            tp = int(payload.target_pages)
+            if tp < 0 or tp > 100000:
+                raise HTTPException(status_code=400, detail="目標ページは 0〜100000 で指定してください")
+            target_pages = tp
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="目標ページが不正です")
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        try:
+            c.execute(
+                "INSERT INTO study_plans (student_id, title, subject, material, start_date, end_date, target_minutes, target_pages, color, note) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?) RETURNING id",
+                (student["id"], title, subject, material, sd.isoformat(), ed.isoformat(), target_minutes, target_pages, color, note)
+            )
+            returned = c.fetchone()
+            new_id = returned["id"] if returned else None
+            conn.commit()
+        except IntegrityError:
+            conn.rollback()
+            raise HTTPException(status_code=409, detail="同じ内容の計画が既に存在します (subject + 教材 + 期間が一致)")
+        log.info(f"[StudyPlan] create id={new_id} student={student['id']} subj={subject}")
+        return {"ok": True, "id": new_id}
+    finally:
+        conn.close()
+
+
+@app.put("/api/study-plans/{plan_id}")
+def update_study_plan(plan_id: int, payload: StudyPlanUpdateRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒が自分の学習計画を更新。"""
+    _check_rate_limit_ip(request, bucket="study_plan_update", limit=30, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT student_id, start_date, end_date FROM study_plans WHERE id = ?", (plan_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="計画が見つかりません")
+        if int(row["student_id"]) != int(student["id"]):
+            raise HTTPException(status_code=403, detail="権限がありません")
+
+        # 更新するフィールドのみ抽出
+        updates = {}
+        if payload.title is not None:
+            t = _sanitize_text(payload.title, 100)
+            if not t:
+                raise HTTPException(status_code=400, detail="タイトルは必須です")
+            updates["title"] = t
+        if payload.subject is not None:
+            if payload.subject not in _STUDY_SUBJECTS:
+                raise HTTPException(status_code=400, detail="科目が不正です")
+            updates["subject"] = payload.subject
+        if payload.material is not None:
+            updates["material"] = _sanitize_text(payload.material, 200)
+        if payload.note is not None:
+            updates["note"] = _sanitize_text(payload.note, 1000)
+        if payload.color is not None:
+            updates["color"] = _validate_plan_color(payload.color) or '#6366f1'
+        if payload.status is not None:
+            if payload.status not in _PLAN_STATUSES:
+                raise HTTPException(status_code=400, detail="status が不正です")
+            updates["status"] = payload.status
+
+        # 日付は両方 or どちらかが来た時に validate
+        if payload.start_date is not None or payload.end_date is not None:
+            new_sd = payload.start_date or str(row["start_date"])
+            new_ed = payload.end_date or str(row["end_date"])
+            sd, ed = _validate_plan_dates(new_sd, new_ed)
+            updates["start_date"] = sd.isoformat()
+            updates["end_date"] = ed.isoformat()
+
+        if payload.target_minutes is not None:
+            try:
+                tm = int(payload.target_minutes)
+                if tm < 0 or tm > 60000:
+                    raise HTTPException(status_code=400, detail="目標分数は 0〜60000")
+                updates["target_minutes"] = tm
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="目標分数が不正です")
+        if payload.target_pages is not None:
+            try:
+                tp = int(payload.target_pages)
+                if tp < 0 or tp > 100000:
+                    raise HTTPException(status_code=400, detail="目標ページは 0〜100000")
+                updates["target_pages"] = tp
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="目標ページが不正です")
+
+        if not updates:
+            return {"ok": True, "no_change": True}
+
+        # updated_at も更新
+        if USE_POSTGRES:
+            updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+        else:
+            updates["updated_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        set_clause = ", ".join([f"{k} = ?" for k in updates.keys()])
+        # WHERE id AND student_id (TOCTOU 防御: SELECT 後の race で他生徒の row を更新しないように二重ガード)
+        c.execute(f"UPDATE study_plans SET {set_clause} WHERE id = ? AND student_id = ?", tuple(updates.values()) + (plan_id, student["id"]))
+        conn.commit()
+        log.info(f"[StudyPlan] update id={plan_id} student={student['id']}")
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
+@app.delete("/api/study-plans/{plan_id}")
+def delete_my_study_plan(plan_id: int, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒が自分の学習計画を削除。"""
+    _check_rate_limit_ip(request, bucket="study_plan_delete", limit=20, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT student_id FROM study_plans WHERE id = ?", (plan_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="計画が見つかりません")
+        if int(row["student_id"]) != int(student["id"]):
+            raise HTTPException(status_code=403, detail="権限がありません")
+        c.execute("DELETE FROM study_plans WHERE id = ? AND student_id = ?", (plan_id, student["id"]))
+        conn.commit()
+        log.info(f"[StudyPlan] delete id={plan_id} student={student['id']}")
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
+def _enrich_plans_with_progress(c, plans: List[dict]) -> List[dict]:
+    """plans 配列に study_logs から集計した progress (実績分数/ページ + 達成率) を付与。
+    バッチ化: 全生徒分の logs を 1 クエリで取得し Python 側で fold。N+1 回避。
+    """
+    if not plans:
+        return plans
+
+    student_ids = list({int(p["student_id"]) for p in plans})
+    if not student_ids:
+        return plans
+    placeholders = ",".join(["?"] * len(student_ids))
+    c.execute(
+        f"""SELECT student_id, subject, COALESCE(material,'') AS mkey,
+                   studied_date, COALESCE(SUM(minutes),0) AS m, COALESCE(SUM(pages),0) AS p
+            FROM study_logs WHERE student_id IN ({placeholders})
+            GROUP BY student_id, subject, COALESCE(material,''), studied_date""",
+        tuple(student_ids)
+    )
+    daily_rows = c.fetchall()
+    # (sid, subj, mkey) -> sorted list of (date_str, m, p)
+    bucket = {}
+    for r in daily_rows:
+        key = (int(r["student_id"]), r["subject"], r["mkey"] or '')
+        bucket.setdefault(key, []).append((str(r["studied_date"]), int(r["m"] or 0), int(r["p"] or 0)))
+
+    for p in plans:
+        sid = int(p["student_id"])
+        subj = p["subject"]
+        mat_key = (p.get("material") or '') if p.get("material") else None
+        sd = str(p["start_date"])
+        ed = str(p["end_date"])
+        actual_min = 0
+        actual_pages = 0
+        # material 指定なし → subject 全 material 合算 / 指定あり → 完全一致のみ
+        if mat_key is None:
+            for (sub_key, lst) in bucket.items():
+                if sub_key[0] == sid and sub_key[1] == subj:
+                    for (d, m, pp) in lst:
+                        if sd <= d <= ed:
+                            actual_min += m
+                            actual_pages += pp
+        else:
+            lst = bucket.get((sid, subj, mat_key), [])
+            for (d, m, pp) in lst:
+                if sd <= d <= ed:
+                    actual_min += m
+                    actual_pages += pp
+        p["actual_minutes"] = actual_min
+        p["actual_pages"] = actual_pages
+        if p.get("target_minutes"):
+            p["progress_minutes_pct"] = min(100, round(actual_min / p["target_minutes"] * 100, 1))
+        else:
+            p["progress_minutes_pct"] = None
+        if p.get("target_pages"):
+            p["progress_pages_pct"] = min(100, round(actual_pages / p["target_pages"] * 100, 1))
+        else:
+            p["progress_pages_pct"] = None
+    return plans
+
+
+@app.get("/api/study-plans/me")
+def get_my_study_plans(authorization: Optional[str] = Header(None), status: Optional[str] = None):
+    """生徒が自分の学習計画 + 進捗を取得。"""
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+    if status and status not in _PLAN_STATUSES:
+        raise HTTPException(status_code=400, detail="status が不正です")
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        if status:
+            c.execute(
+                "SELECT id, student_id, title, subject, material, start_date, end_date, target_minutes, target_pages, color, status, note, created_at "
+                "FROM study_plans WHERE student_id = ? AND status = ? ORDER BY start_date DESC",
+                (student["id"], status)
+            )
+        else:
+            c.execute(
+                "SELECT id, student_id, title, subject, material, start_date, end_date, target_minutes, target_pages, color, status, note, created_at "
+                "FROM study_plans WHERE student_id = ? ORDER BY start_date DESC",
+                (student["id"],)
+            )
+        rows = c.fetchall()
+        plans = []
+        for r in rows:
+            plans.append({
+                "id": r["id"],
+                "student_id": r["student_id"],
+                "title": r["title"],
+                "subject": r["subject"],
+                "material": r["material"],
+                "start_date": str(r["start_date"]),
+                "end_date": str(r["end_date"]),
+                "target_minutes": r["target_minutes"],
+                "target_pages": r["target_pages"],
+                "color": r["color"] or '#6366f1',
+                "status": r["status"],
+                "note": r["note"],
+                "created_at": str(r["created_at"]) if r["created_at"] else None,
+            })
+        plans = _enrich_plans_with_progress(c, plans)
+        return {"ok": True, "plans": plans, "count": len(plans)}
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/study-plans/gantt")
+def admin_study_plans_gantt(request: Request, authorization: Optional[str] = Header(None), days: int = 60, student_id: Optional[int] = None):
+    """塾長: 全コース受講生のガントチャート用データ (期間+進捗)。"""
+    _check_rate_limit_ip(request, bucket="admin_gantt", limit=60, window=60)
+    _verify_admin_required(authorization)
+    try:
+        days = int(days or 60)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="クエリパラメータが不正です")
+    days = max(7, min(days, 365))
+    today = _today_jst()
+    # ガントの window: 今日から前後を表示。表示範囲とアクティブ計画の判定を分離。
+    window_start = (today - timedelta(days=days // 2)).isoformat()
+    window_end = (today + timedelta(days=days // 2)).isoformat()
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        if student_id:
+            c.execute(
+                """SELECT sp.id, sp.student_id, sp.title, sp.subject, sp.material,
+                          sp.start_date, sp.end_date, sp.target_minutes, sp.target_pages,
+                          sp.color, sp.status,
+                          s.name AS student_name, s.grade
+                   FROM study_plans sp
+                   JOIN students s ON sp.student_id = s.id
+                   WHERE s.course = ? AND s.status IN ('paid','trial')
+                     AND sp.status != 'archived'
+                     AND sp.end_date >= ? AND sp.start_date <= ?
+                     AND sp.student_id = ?
+                   ORDER BY s.name, sp.start_date""",
+                (_STUDY_LOG_TARGET_COURSE, window_start, window_end, int(student_id))
+            )
+        else:
+            c.execute(
+                """SELECT sp.id, sp.student_id, sp.title, sp.subject, sp.material,
+                          sp.start_date, sp.end_date, sp.target_minutes, sp.target_pages,
+                          sp.color, sp.status,
+                          s.name AS student_name, s.grade
+                   FROM study_plans sp
+                   JOIN students s ON sp.student_id = s.id
+                   WHERE s.course = ? AND s.status IN ('paid','trial')
+                     AND sp.status != 'archived'
+                     AND sp.end_date >= ? AND sp.start_date <= ?
+                   ORDER BY s.name, sp.start_date""",
+                (_STUDY_LOG_TARGET_COURSE, window_start, window_end)
+            )
+        rows = c.fetchall()
+        plans = []
+        for r in rows:
+            plans.append({
+                "id": r["id"],
+                "student_id": r["student_id"],
+                "student_name": r["student_name"],
+                "grade": r["grade"],
+                "title": r["title"],
+                "subject": r["subject"],
+                "material": r["material"],
+                "start_date": str(r["start_date"]),
+                "end_date": str(r["end_date"]),
+                "target_minutes": r["target_minutes"],
+                "target_pages": r["target_pages"],
+                "color": r["color"] or '#6366f1',
+                "status": r["status"],
+            })
+        plans = _enrich_plans_with_progress(c, plans)
+
+        # 生徒別グルーピング (ガント描画用)
+        students_map = {}
+        for p in plans:
+            sid = p["student_id"]
+            if sid not in students_map:
+                students_map[sid] = {
+                    "student_id": sid,
+                    "name": p["student_name"],
+                    "grade": p["grade"],
+                    "plans": []
+                }
+            students_map[sid]["plans"].append(p)
+
+        return {
+            "ok": True,
+            "window_start": window_start,
+            "window_end": window_end,
+            "today": today.isoformat(),
+            "students": list(students_map.values()),
+            "total_plans": len(plans),
+        }
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/study-plans/calendar")
+def admin_study_plans_calendar(request: Request, authorization: Optional[str] = Header(None), year: Optional[int] = None, month: Optional[int] = None):
+    """塾長: 月間カレンダー (該当月に重なる全計画)。"""
+    _check_rate_limit_ip(request, bucket="admin_calendar", limit=60, window=60)
+    _verify_admin_required(authorization)
+    today = _today_jst()
+    try:
+        y = int(year) if year else today.year
+        m = int(month) if month else today.month
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="year/month が不正です")
+    if not (2020 <= y <= 2100) or not (1 <= m <= 12):
+        raise HTTPException(status_code=400, detail="year/month が範囲外です")
+
+    # 月初・月末
+    import calendar as _cal
+    last_day = _cal.monthrange(y, m)[1]
+    month_start = f"{y:04d}-{m:02d}-01"
+    month_end = f"{y:04d}-{m:02d}-{last_day:02d}"
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            """SELECT sp.id, sp.student_id, sp.title, sp.subject, sp.material,
+                      sp.start_date, sp.end_date, sp.color, sp.status,
+                      s.name AS student_name, s.grade
+               FROM study_plans sp
+               JOIN students s ON sp.student_id = s.id
+               WHERE s.course = ? AND s.status IN ('paid','trial')
+                 AND sp.status != 'archived'
+                 AND sp.end_date >= ? AND sp.start_date <= ?
+               ORDER BY sp.start_date""",
+            (_STUDY_LOG_TARGET_COURSE, month_start, month_end)
+        )
+        rows = c.fetchall()
+        plans = [{
+            "id": r["id"],
+            "student_id": r["student_id"],
+            "student_name": r["student_name"],
+            "grade": r["grade"],
+            "title": r["title"],
+            "subject": r["subject"],
+            "material": r["material"],
+            "start_date": str(r["start_date"]),
+            "end_date": str(r["end_date"]),
+            "color": r["color"] or '#6366f1',
+            "status": r["status"],
+        } for r in rows]
+        return {
+            "ok": True,
+            "year": y, "month": m,
+            "month_start": month_start, "month_end": month_end,
+            "plans": plans,
+        }
     finally:
         conn.close()
 

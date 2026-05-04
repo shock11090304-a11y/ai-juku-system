@@ -469,6 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
   try { bindTrialOnboarding(); } catch (e) { console.error('bindTrialOnboarding failed:', e); }
   try { renderTrialOnboarding(); } catch (e) { console.error('renderTrialOnboarding failed:', e); }
   try { initStudyLog(); } catch (e) { console.error('initStudyLog failed:', e); }
+  try { initStudyPlan(); } catch (e) { console.error('initStudyPlan failed:', e); }
 });
 
 // ==========================================================================
@@ -719,4 +720,299 @@ function renderSlLogList(logs) {
       }
     });
   });
+}
+
+
+// ==========================================================================
+// 📅 学習計画 (Phase 2 - 国公立難関大学コース受講生限定)
+// ==========================================================================
+const SP_SUBJECTS = ['英語','数学','国語','現代文','古文','漢文','理科','物理','化学','生物','地学','社会','日本史','世界史','地理','倫理','政経','情報','小論文','面接対策','その他'];
+let _spLastPlans = []; // editStudyPlan で再 fetch 不要 (Frontend M-5)
+
+function initStudyPlan() {
+  const section = document.querySelector('.study-plan-section');
+  const tryInit = (retries) => {
+    const student = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || null;
+    if (!student) {
+      if (section) section.style.display = 'none';
+      if (retries > 0) setTimeout(() => tryInit(retries - 1), 200);
+      return;
+    }
+    if (typeof student.course === 'undefined' && retries > 0) {
+      setTimeout(() => tryInit(retries - 1), 200);
+      return;
+    }
+    if (student.course !== 'kokuritsu_nankan') {
+      // 一般生徒には CTA 表示 (Frontend m-1: 機会損失防止)
+      if (section) {
+        section.style.display = '';
+        section.innerHTML = `
+          <div class="section-title"><h2>📅 学習計画 <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">国公立難関大学コース 限定</span></h2></div>
+          <div style="padding:1.2rem; background:rgba(251,191,36,0.06); border:1px dashed rgba(251,191,36,0.35); border-radius:12px; text-align:center;">
+            <div style="font-size:2.5rem; margin-bottom:0.5rem;">📅</div>
+            <div style="color:#fbbf24; font-weight:700; font-size:1.05rem; margin-bottom:0.5rem;">志望校合格までのロードマップを描こう</div>
+            <p style="color:#a1a1aa; font-size:0.88rem; margin:0.5rem 0 1rem 0;">学習計画 + 進捗ガントチャート + 月間カレンダーで「いつまでに何を」を可視化。</p>
+            <div style="font-size:0.85rem; color:#d4d4d8;">国公立難関大学コースで利用可能 — <strong style="color:#fbbf24;">塾長まで直接お問い合わせください</strong></div>
+          </div>`;
+      }
+      return;
+    }
+    if (section) section.style.display = '';
+    // populate subject options
+    const subjSel = document.getElementById('spSubject');
+    if (subjSel && !subjSel.options.length) {
+      SP_SUBJECTS.forEach(s => {
+        const o = document.createElement('option');
+        o.value = s; o.textContent = s;
+        subjSel.appendChild(o);
+      });
+    }
+    // default dates: today / today+30
+    const today = _slJstDate(0);
+    const future = _slJstDate(-30);  // _slJstDate(offsetDays) は -offsetDays するので future = -30 を渡す
+    const sd = document.getElementById('spStart');
+    const ed = document.getElementById('spEnd');
+    if (sd && !sd.value) sd.value = today;
+    if (ed && !ed.value) ed.value = future;
+    // bind
+    const toggle = document.getElementById('spToggleFormBtn');
+    const wrap = document.getElementById('spFormWrap');
+    const cancelBtn = document.getElementById('spCancelBtn');
+    const saveBtn = document.getElementById('spSaveBtn');
+    if (toggle && !toggle._spBound) {
+      toggle.addEventListener('click', () => {
+        const willOpen = wrap.style.display === 'none';
+        wrap.style.display = willOpen ? '' : 'none';
+        // 開く時に編集中だったらクリア (Frontend C-2: 別計画として複製作成事故防止)
+        if (willOpen && wrap.dataset.editId) clearSpForm();
+      });
+      toggle._spBound = true;
+    }
+    if (cancelBtn && !cancelBtn._spBound) {
+      cancelBtn.addEventListener('click', () => { wrap.style.display = 'none'; clearSpForm(); });
+      cancelBtn._spBound = true;
+    }
+    if (saveBtn && !saveBtn._spBound) {
+      saveBtn.addEventListener('click', submitStudyPlan);
+      saveBtn._spBound = true;
+    }
+    loadMyStudyPlans();
+  };
+  tryInit(10);
+}
+
+function clearSpForm() {
+  const ids = ['spTitle','spMaterial','spTargetMin','spTargetPages','spNote'];
+  ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const wrap = document.getElementById('spFormWrap');
+  if (wrap) wrap.dataset.editId = '';
+  const saveBtn = document.getElementById('spSaveBtn');
+  if (saveBtn) saveBtn.textContent = '📝 計画を保存';
+  const msg = document.getElementById('spFormMessage');
+  if (msg) msg.textContent = '';
+}
+
+async function submitStudyPlan() {
+  const msg = document.getElementById('spFormMessage');
+  const btn = document.getElementById('spSaveBtn');
+  if (!btn || btn.disabled) return;
+  if (msg) { msg.textContent = ''; msg.style.color = '#a1a1aa'; }
+
+  const wrap = document.getElementById('spFormWrap');
+  const editId = wrap && wrap.dataset.editId ? parseInt(wrap.dataset.editId, 10) : null;
+
+  const title = document.getElementById('spTitle').value.trim();
+  const subject = document.getElementById('spSubject').value;
+  const material = document.getElementById('spMaterial').value.trim();
+  const start_date = document.getElementById('spStart').value;
+  const end_date = document.getElementById('spEnd').value;
+  const target_minutes_raw = document.getElementById('spTargetMin').value;
+  const target_pages_raw = document.getElementById('spTargetPages').value;
+  const color = document.getElementById('spColor').value;
+  const note = document.getElementById('spNote').value.trim();
+
+  if (!title) { if (msg) { msg.textContent = 'タイトルは必須です'; msg.style.color = '#fca5a5'; } return; }
+  if (!subject) { if (msg) { msg.textContent = '科目を選択してください'; msg.style.color = '#fca5a5'; } return; }
+  if (!start_date || !end_date) { if (msg) { msg.textContent = '開始日と終了日を入力してください'; msg.style.color = '#fca5a5'; } return; }
+  if (end_date < start_date) { if (msg) { msg.textContent = '終了日は開始日以降にしてください'; msg.style.color = '#fca5a5'; } return; }
+
+  const body = {
+    title, subject,
+    material: material || undefined,
+    start_date, end_date,
+    target_minutes: target_minutes_raw ? parseInt(target_minutes_raw, 10) : undefined,
+    target_pages: target_pages_raw ? parseInt(target_pages_raw, 10) : undefined,
+    color, note: note || undefined,
+  };
+
+  btn.disabled = true;
+  btn.textContent = '保存中...';
+  try {
+    if (editId) {
+      await slApiFetch(`/api/study-plans/${encodeURIComponent(editId)}`, { method: 'PUT', body: JSON.stringify(body) });
+    } else {
+      await slApiFetch('/api/study-plans', { method: 'POST', body: JSON.stringify(body) });
+    }
+    if (msg) { msg.textContent = '✅ 保存しました！'; msg.style.color = '#86efac'; }
+    clearSpForm();
+    document.getElementById('spFormWrap').style.display = 'none';
+    await loadMyStudyPlans();
+  } catch (e) {
+    if (msg) { msg.textContent = '❌ ' + (e.message || '保存に失敗しました'); msg.style.color = '#fca5a5'; }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = editId ? '📝 計画を更新' : '📝 計画を保存';
+  }
+}
+
+async function loadMyStudyPlans() {
+  const list = document.getElementById('spPlanList');
+  if (!list) return;
+  try {
+    const data = await slApiFetch('/api/study-plans/me');
+    const plans = data.plans || [];
+    _spLastPlans = plans;  // Frontend M-5: editStudyPlan の再 fetch 不要
+    // 学習記録の material datalist 更新 (UX M-3: 表記揺れ対策)
+    const dl = document.getElementById('slMaterialDatalist');
+    if (dl) {
+      const materials = Array.from(new Set(plans.filter(p => p.material).map(p => p.material)));
+      dl.innerHTML = materials.map(m => `<option value="${escapeHtml(m)}">`).join('');
+    }
+    if (!plans.length) {
+      list.innerHTML = '<div style="text-align:center; color:#71717a; padding:1.5rem; background:rgba(0,0,0,0.2); border-radius:10px;">📝 まだ計画がありません。「+ 新しい計画を追加」から第一歩を！</div>';
+      return;
+    }
+    // active / completed / archived 分類
+    const active = plans.filter(p => p.status === 'active');
+    const completed = plans.filter(p => p.status === 'completed');
+    const archived = plans.filter(p => p.status === 'archived');
+    list.innerHTML = `
+      ${renderSpPlanGroup('🎯 進行中', active, '#fbbf24')}
+      ${renderSpPlanGroup('✅ 完了', completed, '#34d399')}
+      ${archived.length ? renderSpPlanGroup('📦 アーカイブ', archived, '#71717a') : ''}
+    `;
+    // bind buttons
+    list.querySelectorAll('.sp-edit-btn').forEach(b => b.addEventListener('click', () => editStudyPlan(b.getAttribute('data-id'))));
+    list.querySelectorAll('.sp-delete-btn').forEach(b => b.addEventListener('click', () => deleteStudyPlan(b.getAttribute('data-id'))));
+    list.querySelectorAll('.sp-status-btn').forEach(b => b.addEventListener('click', () => changeStudyPlanStatus(b.getAttribute('data-id'), b.getAttribute('data-status'))));
+  } catch (e) {
+    console.error('loadMyStudyPlans failed:', e);
+    list.innerHTML = `<div style="text-align:center; color:#fca5a5; padding:1rem;">⚠️ 計画の読み込みに失敗しました (${escapeHtml(e.message || '')}) <button onclick="loadMyStudyPlans()" style="margin-left:0.5rem; background:rgba(99,102,241,0.2); border:0; color:#c7d2fe; padding:0.3rem 0.6rem; border-radius:6px; cursor:pointer;">再試行</button></div>`;
+  }
+}
+
+function renderSpPlanGroup(label, plans, accentColor) {
+  if (!plans.length) return '';
+  const cards = plans.map(p => {
+    const today = _slJstDate(0);
+    const remainDays = Math.max(0, Math.ceil((new Date(p.end_date) - new Date(today)) / 86400000));
+    const totalDays = Math.max(1, Math.ceil((new Date(p.end_date) - new Date(p.start_date)) / 86400000) + 1);
+    const elapsedDays = Math.max(0, Math.min(totalDays, Math.ceil((new Date(today) - new Date(p.start_date)) / 86400000) + 1));
+    const dayPct = Math.round(elapsedDays / totalDays * 100);
+    const minPct = p.progress_minutes_pct;
+    const pagePct = p.progress_pages_pct;
+    return `
+      <div style="background:rgba(255,255,255,0.04); border-left:4px solid ${escapeHtml(p.color)}; border-radius:8px; padding:0.85rem; margin-bottom:0.6rem;">
+        <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.4rem;">
+          <div style="flex:1;">
+            <div style="font-weight:700; color:#e4e4e7; font-size:0.95rem;">${escapeHtml(p.title)}</div>
+            <div style="font-size:0.78rem; color:#a1a1aa; margin-top:0.2rem;">
+              <span style="background:rgba(99,102,241,0.2); color:#c7d2fe; padding:0.1rem 0.4rem; border-radius:4px; font-size:0.72rem;">${escapeHtml(p.subject)}</span>
+              ${p.material ? `<span style="margin-left:0.3rem;">${escapeHtml(p.material)}</span>` : ''}
+            </div>
+            <div style="font-size:0.75rem; color:#71717a; margin-top:0.2rem;">
+              ${escapeHtml(p.start_date)} 〜 ${escapeHtml(p.end_date)}
+              ${p.status === 'active' ? `<span style="color:${remainDays <= 7 ? '#fca5a5' : '#a1a1aa'}; margin-left:0.5rem;">残り ${remainDays} 日</span>` : ''}
+            </div>
+          </div>
+          <div style="display:flex; gap:0.3rem;">
+            <button data-id="${p.id}" class="sp-edit-btn" aria-label="編集" title="編集" style="background:none; border:0; color:#a1a1aa; cursor:pointer; font-size:0.9rem;">✏️</button>
+            ${p.status === 'active' ? `<button data-id="${p.id}" data-status="completed" class="sp-status-btn" aria-label="完了にする" title="完了にする" style="background:none; border:0; color:#34d399; cursor:pointer; font-size:0.9rem;">✅</button>` : ''}
+            <button data-id="${p.id}" class="sp-delete-btn" aria-label="削除" title="削除" style="background:none; border:0; color:#71717a; cursor:pointer; font-size:0.9rem;">🗑</button>
+          </div>
+        </div>
+        ${minPct !== null && minPct !== undefined ? `
+          <div style="margin-top:0.4rem;">
+            <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:#a1a1aa; margin-bottom:0.2rem;">
+              <span>勉強時間 ${p.actual_minutes}/${p.target_minutes}分</span>
+              <span style="color:${minPct >= dayPct ? '#86efac' : '#fca5a5'};">${minPct}% (経過 ${dayPct}%)</span>
+            </div>
+            <div style="background:rgba(255,255,255,0.05); border-radius:4px; height:6px; overflow:hidden; position:relative;">
+              <div style="background:linear-gradient(90deg,#6366f1,#ec4899); height:100%; width:${Math.min(100, minPct)}%;"></div>
+              <div style="position:absolute; top:0; left:${Math.min(100, dayPct)}%; width:1px; height:100%; background:#fbbf24;"></div>
+            </div>
+          </div>` : (p.actual_minutes > 0 || p.actual_pages > 0) ? `
+          <div style="margin-top:0.4rem; font-size:0.75rem; color:#a1a1aa;">
+            実績: ${p.actual_minutes}分${p.actual_pages ? ' / ' + p.actual_pages + 'p' : ''} <span style="font-size:0.7rem; color:#71717a;">(目標未設定)</span>
+          </div>` : ''}
+        ${pagePct !== null && pagePct !== undefined ? `
+          <div style="margin-top:0.4rem;">
+            <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:#a1a1aa; margin-bottom:0.2rem;">
+              <span>ページ ${p.actual_pages}/${p.target_pages}p</span>
+              <span style="color:${pagePct >= dayPct ? '#86efac' : '#fca5a5'};">${pagePct}%</span>
+            </div>
+            <div style="background:rgba(255,255,255,0.05); border-radius:4px; height:6px; overflow:hidden;">
+              <div style="background:linear-gradient(90deg,#10b981,#34d399); height:100%; width:${Math.min(100, pagePct)}%;"></div>
+            </div>
+          </div>` : ''}
+        ${p.note ? `<div style="font-size:0.78rem; color:#d4d4d8; margin-top:0.4rem; padding:0.4rem 0.5rem; background:rgba(0,0,0,0.2); border-radius:6px;">${escapeHtml(p.note)}</div>` : ''}
+      </div>`;
+  }).join('');
+  return `
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:0.85rem; color:${accentColor}; font-weight:700; margin-bottom:0.5rem;">${label} (${plans.length})</div>
+      ${cards}
+    </div>`;
+}
+
+async function editStudyPlan(id) {
+  // load existing plan, populate form (cache 優先 / Frontend M-5)
+  try {
+    let plan = _spLastPlans.find(p => String(p.id) === String(id));
+    if (!plan) {
+      const data = await slApiFetch('/api/study-plans/me');
+      _spLastPlans = data.plans || [];
+      plan = _spLastPlans.find(p => String(p.id) === String(id));
+    }
+    if (!plan) { alert('計画が見つかりません'); return; }
+    document.getElementById('spTitle').value = plan.title;
+    document.getElementById('spSubject').value = plan.subject;
+    document.getElementById('spMaterial').value = plan.material || '';
+    document.getElementById('spStart').value = plan.start_date;
+    document.getElementById('spEnd').value = plan.end_date;
+    document.getElementById('spTargetMin').value = plan.target_minutes || '';
+    document.getElementById('spTargetPages').value = plan.target_pages || '';
+    document.getElementById('spColor').value = plan.color || '#6366f1';
+    document.getElementById('spNote').value = plan.note || '';
+    const wrap = document.getElementById('spFormWrap');
+    wrap.dataset.editId = id;
+    wrap.style.display = '';
+    document.getElementById('spSaveBtn').textContent = '📝 計画を更新';
+    wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } catch (e) {
+    alert('読み込みに失敗: ' + (e.message || ''));
+  }
+}
+
+async function deleteStudyPlan(id) {
+  if (!confirm('この計画を削除しますか？\n（一度削除すると元に戻せません）')) return;
+  try {
+    await slApiFetch(`/api/study-plans/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    await loadMyStudyPlans();
+  } catch (e) {
+    alert('削除に失敗: ' + (e.message || ''));
+  }
+}
+
+async function changeStudyPlanStatus(id, newStatus) {
+  if (newStatus === 'completed' && !confirm('この計画を完了にしますか？')) return;
+  try {
+    await slApiFetch(`/api/study-plans/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status: newStatus }),
+    });
+    await loadMyStudyPlans();
+  } catch (e) {
+    alert('変更に失敗: ' + (e.message || ''));
+  }
 }

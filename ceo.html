@@ -1446,6 +1446,44 @@
         </div>
       </div>
     </section>
+
+    <!-- 📅 学習計画ダッシュボード (Phase 2 - ガント + カレンダー) -->
+    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.3); border-radius: 14px;" id="studyPlanSection">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+        <h2 style="margin:0; color:#fbbf24; font-size:1.3rem;">📅 学習計画ダッシュボード <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">国公立難関大学コース</span></h2>
+        <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+          <div style="display:flex; gap:0.2rem; background:rgba(0,0,0,0.4); border-radius:6px; padding:2px;">
+            <button id="spViewGanttBtn" type="button" class="sp-view-btn active" data-view="gantt" style="padding:0.35rem 0.7rem; background:rgba(251,191,36,0.25); border:0; border-radius:4px; color:#fbbf24; cursor:pointer; font-size:0.85rem;">📊 ガント</button>
+            <button id="spViewCalendarBtn" type="button" class="sp-view-btn" data-view="calendar" style="padding:0.35rem 0.7rem; background:none; border:0; border-radius:4px; color:#a1a1aa; cursor:pointer; font-size:0.85rem;">📆 カレンダー</button>
+          </div>
+          <select id="spGanttDays" style="padding:0.4rem 0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff;">
+            <option value="30">30日</option>
+            <option value="60" selected>60日</option>
+            <option value="90">90日</option>
+            <option value="180">180日</option>
+          </select>
+          <button id="spRefreshBtn" type="button" style="padding:0.4rem 0.8rem; background:rgba(251,191,36,0.2); border:1px solid rgba(251,191,36,0.4); border-radius:6px; color:#fbbf24; cursor:pointer;">🔄 更新</button>
+        </div>
+      </div>
+      <p style="color:#a1a1aa; font-size:0.85rem; margin-bottom:1rem;">
+        コース受講生の学習計画を一覧表示。<strong style="color:#fbbf24;">縦線=今日</strong>、進捗バーは学習記録から自動集計。
+      </p>
+
+      <!-- ガントビュー -->
+      <div id="spGanttView" style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1rem; overflow-x:auto;">
+        <div id="spGantt"></div>
+      </div>
+
+      <!-- カレンダービュー -->
+      <div id="spCalendarView" style="display:none; background:rgba(0,0,0,0.3); border-radius:10px; padding:1rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
+          <button id="spCalPrev" type="button" style="padding:0.4rem 0.8rem; background:rgba(255,255,255,0.05); border:0; border-radius:6px; color:#c7d2fe; cursor:pointer;">← 前月</button>
+          <div id="spCalLabel" style="font-size:1rem; color:#fbbf24; font-weight:700;"></div>
+          <button id="spCalNext" type="button" style="padding:0.4rem 0.8rem; background:rgba(255,255,255,0.05); border:0; border-radius:6px; color:#c7d2fe; cursor:pointer;">翌月 →</button>
+        </div>
+        <div id="spCalendar"></div>
+      </div>
+    </section>
   </main>
 
   <footer class="footer">
@@ -1453,7 +1491,7 @@
   </footer>
 
   <script src="plans.js?v=20260422"></script>
-  <script src="ceo.js?v=20260504-study-log-2"></script>
+  <script src="ceo.js?v=20260505-study-plan-3"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {
