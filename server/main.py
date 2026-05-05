@@ -16029,6 +16029,242 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
         raise HTTPException(status_code=503, detail=f"AI 生成失敗: {str(e)[:200]}")
 
 
+@app.post("/api/curricula/{curr_id}/gap-analyze")
+def curriculum_gap_analyze(curr_id: int, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒: 模試結果から志望校到達のギャップを分析し AI 修正提案を返す (Phase 4.7)。"""
+    _check_rate_limit_ip(request, bucket="curr_gap_analyze", limit=20, window=600)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+    if not GEMINI_API_KEY:
+        raise HTTPException(status_code=503, detail="Gemini が構成されていません")
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, student_id, target_university, target_faculty, exam_date, start_date, daily_minutes, baseline_note, phases, status FROM curricula WHERE id = ?", (curr_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="カリキュラムが見つかりません")
+        if int(row["student_id"]) != int(student["id"]):
+            raise HTTPException(status_code=403, detail="権限がありません")
+        try:
+            phases = json.loads(row["phases"] or "[]")
+        except Exception:
+            phases = []
+        # 模試結果 (科目別最新偏差値 + 推移)
+        c.execute(
+            "SELECT exam_name, exam_date, subject, deviation, judgement FROM exam_results "
+            "WHERE student_id = ? AND deviation IS NOT NULL ORDER BY exam_date DESC LIMIT 30",
+            (student["id"],)
+        )
+        exam_rows = c.fetchall()
+    finally:
+        conn.close()
+
+    if not exam_rows:
+        raise HTTPException(status_code=400, detail="模試結果がまだ登録されていません。先に模試結果を追加してください。")
+
+    # 科目別: 最新と推移 (古い→新しい順で trend)
+    by_subj = {}
+    for r in exam_rows:
+        s = r["subject"]
+        if s not in by_subj:
+            by_subj[s] = {"latest": {"deviation": r["deviation"], "judgement": r["judgement"], "date": str(r["exam_date"]), "exam": r["exam_name"]}, "history": []}
+        by_subj[s]["history"].append({"date": str(r["exam_date"]), "deviation": r["deviation"]})
+    # 各科目の trend (上昇/下降/横ばい)
+    for s, d in by_subj.items():
+        h = d["history"]
+        if len(h) >= 2:
+            recent = h[0]["deviation"]
+            older = h[-1]["deviation"]
+            diff = recent - older
+            d["trend"] = "上昇" if diff >= 2 else ("下降" if diff <= -2 else "横ばい")
+            d["trend_diff"] = round(diff, 1)
+        else:
+            d["trend"] = "データ不足"
+            d["trend_diff"] = 0
+
+    today = _today_jst()
+    exam_dt = datetime.strptime(str(row["exam_date"]), "%Y-%m-%d").date() if row["exam_date"] else today
+    remain_days = max(0, (exam_dt - today).days)
+    remain_months = max(1, round(remain_days / 30))
+
+    # 模試 summary 文字列
+    exam_lines = []
+    for s, d in by_subj.items():
+        l = d["latest"]
+        jd = f" / 判定 {l['judgement']}" if l['judgement'] else ""
+        exam_lines.append(f"- {s}: 偏差値 {l['deviation']}{jd} ({l['exam']} {l['date']}) | 推移: {d['trend']} ({'+' if d['trend_diff']>0 else ''}{d['trend_diff']})")
+    exam_block = "\n".join(exam_lines)
+
+    # フェーズ summary
+    phase_lines = []
+    for i, p in enumerate(phases):
+        mats = ", ".join((p.get("materials") or [])[:5])
+        sapuri = ", ".join((p.get("sapuri_lectures") or [])[:5])
+        phase_lines.append(f"  フェーズ{i+1}: {p.get('name','')} ({p.get('start_date','')}〜{p.get('end_date','')}) focus: {p.get('focus','')} / 教材: {mats} / スタサプ: {sapuri}")
+    phase_block = "\n".join(phase_lines) if phase_lines else "  (なし)"
+
+    sys_prompt = "難関大学受験の戦略アドバイザーです。生徒の現状偏差値と志望校に必要な偏差値のギャップを科目別に分析し、現行カリキュラムに具体的な修正提案を行います。教師名は出さない (ただし sapuri_lectures は商品名そのまま)。純粋な JSON のみ返答 (前置き解説不要)。"
+    user_prompt = f"""## 志望校
+{row['target_university']}{(' / ' + row['target_faculty']) if row['target_faculty'] else ''}
+
+## 入試まで
+{remain_days}日 ({remain_months} ヶ月)
+
+## 1日の確保時間
+{row['daily_minutes'] or 60} 分
+
+## 現状の模試結果 (科目別最新偏差値 + 推移)
+{exam_block}
+
+## 現行カリキュラム ({len(phases)} フェーズ)
+{phase_block}
+
+上記を踏まえて、ギャップ分析と修正提案を JSON で返してください。
+
+出力形式 (フェンスや前置きなし):
+{{
+  "target_deviation": "志望校合格に必要な平均偏差値レベル (例: 65)",
+  "current_average": "現状の平均偏差値",
+  "gap_summary": "総合ギャップ分析 (200字以内、ペース妥当性 + 全体所見)",
+  "subject_gaps": [
+    {{
+      "subject": "科目名",
+      "current": 現状偏差値,
+      "target": 目標偏差値,
+      "gap": 不足分 (target - current),
+      "priority": "高|中|低",
+      "trend_comment": "推移コメント (40字以内)"
+    }}
+  ],
+  "phase_adjustments": [
+    {{
+      "phase_index": 0,
+      "phase_name": "対象フェーズ名",
+      "action": "教材追加|教材削減|期間延長|期間短縮|スタサプ追加|フェーズ名変更",
+      "detail": "具体修正内容 (100字以内)",
+      "new_materials": ["新規追加教材1", "..."],
+      "new_sapuri_lectures": ["新規追加スタサプ講義1", "..."]
+    }}
+  ],
+  "overall_recommendation": "総合戦略アドバイス (200字以内、3-5 個の actionable items)"
+}}
+
+注意:
+- ギャップが 5 以上の科目は priority=高
+- スタサプ講義は商品名そのまま (例: 高3 ハイレベル英文法)
+- phase_adjustments は変更が必要なフェーズだけ提案 (全フェーズ列挙不要)"""
+
+    body = {
+        "model": "gemini-2.5-flash",
+        "max_tokens": 3500,
+        "system": sys_prompt,
+        "messages": [{"role": "user", "content": user_prompt}],
+    }
+    try:
+        data = _call_gemini(body, model="gemini-2.5-flash", kind="curr_gap_analyze")
+        text = "".join(c.get("text", "") for c in (data.get("content") or []) if isinstance(c, dict)).strip()
+        if not text:
+            raise HTTPException(status_code=503, detail="AI が空文字を返しました")
+        cleaned = text.strip()
+        if cleaned.startswith("```"):
+            import re as _re
+            cleaned = _re.sub(r'^```(?:json)?\s*|\s*```$', '', cleaned).strip()
+        try:
+            parsed = json.loads(cleaned)
+        except Exception:
+            import re as _re
+            m = _re.search(r'\{[\s\S]*\}', cleaned)
+            if not m:
+                raise HTTPException(status_code=503, detail="AI 出力 JSON 解析失敗")
+            parsed = json.loads(m.group(0))
+
+        log.info(f"[Curriculum] gap-analyze curr={curr_id} student={student['id']} adjustments={len(parsed.get('phase_adjustments') or [])}")
+        return {
+            "ok": True,
+            "curriculum_id": curr_id,
+            "remain_days": remain_days,
+            "analysis": parsed,
+            "model": data.get("_actual_model"),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error(f"[Curriculum] gap-analyze failed: {type(e).__name__}: {str(e)[:200]}")
+        raise HTTPException(status_code=503, detail=f"AI 分析失敗: {str(e)[:200]}")
+
+
+class GapApplyRequest(BaseModel):
+    phase_adjustments: List[dict]  # [{phase_index, action, new_materials, new_sapuri_lectures}]
+
+
+@app.post("/api/curricula/{curr_id}/apply-gap-fix")
+def curriculum_apply_gap_fix(curr_id: int, payload: GapApplyRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒: gap-analyze の提案をカリキュラムに反映 (Phase 4.7)。"""
+    _check_rate_limit_ip(request, bucket="curr_gap_apply", limit=10, window=600)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT student_id, phases FROM curricula WHERE id = ?", (curr_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="カリキュラムが見つかりません")
+        if int(row["student_id"]) != int(student["id"]):
+            raise HTTPException(status_code=403, detail="権限がありません")
+        try:
+            phases = json.loads(row["phases"] or "[]")
+        except Exception:
+            phases = []
+        applied = 0
+        for adj in payload.phase_adjustments:
+            try:
+                idx = int(adj.get("phase_index", -1))
+            except (TypeError, ValueError):
+                continue
+            if idx < 0 or idx >= len(phases):
+                continue
+            phase = phases[idx]
+            new_mats = adj.get("new_materials") or []
+            new_sapuri = adj.get("new_sapuri_lectures") or []
+            mats_clean = [m for m in (_sanitize_text(x, 100) for x in new_mats) if m]
+            sapuri_clean = [m for m in (_sanitize_text(x, 120) for x in new_sapuri) if m]
+            if mats_clean:
+                cur = phase.get("materials") or []
+                for m in mats_clean:
+                    if m not in cur:
+                        cur.append(m)
+                phase["materials"] = cur[:10]
+            if sapuri_clean:
+                cur = phase.get("sapuri_lectures") or []
+                for m in sapuri_clean:
+                    if m not in cur:
+                        cur.append(m)
+                phase["sapuri_lectures"] = cur[:8]
+            applied += 1
+        if not applied:
+            return {"ok": True, "applied": 0, "message": "適用すべき変更がありませんでした"}
+        # update DB
+        if USE_POSTGRES:
+            updated_at = datetime.now(timezone.utc).isoformat()
+        else:
+            updated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        c.execute("UPDATE curricula SET phases = ?, updated_at = ? WHERE id = ? AND student_id = ?",
+                  (json.dumps(phases, ensure_ascii=False), updated_at, curr_id, student["id"]))
+        conn.commit()
+        log.info(f"[Curriculum] apply-gap-fix curr={curr_id} student={student['id']} applied={applied}")
+        return {"ok": True, "applied": applied}
+    finally:
+        conn.close()
+
+
 @app.post("/api/curricula/{curr_id}/expand-to-plans")
 def expand_curriculum_to_plans(curr_id: int, request: Request, authorization: Optional[str] = Header(None)):
     """生徒: カリキュラム各フェーズの教材を study_plans に一括展開。"""

@@ -1870,6 +1870,7 @@ async function loadMyCurricula() {
           </div>
           <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:0.5rem;">
             <button data-id="${c.id}" class="cu-detail-btn" style="background:rgba(99,102,241,0.2); color:#c7d2fe; border:0; padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.78rem;">📖 詳細を見る</button>
+            <button data-id="${c.id}" class="cu-gap-btn" style="background:linear-gradient(135deg,#a78bfa,#ec4899); color:#fff; border:0; padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:700;">🤖 AI ギャップ分析</button>
             <button data-id="${c.id}" class="cu-expand-btn" style="background:linear-gradient(135deg,#10b981,#34d399); color:#fff; border:0; padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:700;">📅 学習計画に展開</button>
             <button data-id="${c.id}" class="cu-delete-btn" style="background:rgba(239,68,68,0.15); color:#fca5a5; border:0; padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.78rem;">🗑 削除</button>
           </div>
@@ -1895,6 +1896,20 @@ async function loadMyCurricula() {
       if (d) d.style.display = d.style.display === 'none' ? '' : 'none';
     }));
     list.querySelectorAll('.cu-expand-btn').forEach(b => b.addEventListener('click', () => expandCurriculumToPlans(b.getAttribute('data-id'))));
+    list.querySelectorAll('.cu-gap-btn').forEach(b => b.addEventListener('click', () => {
+      const id = b.getAttribute('data-id');
+      const curr = (_cuLastList || []).find(c => String(c.id) === String(id));
+      if (!curr) return;
+      (async () => {
+        try {
+          showGapAnalysisModal('loading', { curriculum: curr });
+          const data = await slApiFetch(`/api/curricula/${encodeURIComponent(id)}/gap-analyze`, { method: 'POST' });
+          showGapAnalysisModal('result', { curriculum: curr, ...data });
+        } catch (e) {
+          showGapAnalysisModal('error', { curriculum: curr, error: e.message });
+        }
+      })();
+    }));
     list.querySelectorAll('.cu-delete-btn').forEach(b => b.addEventListener('click', () => deleteCurriculum(b.getAttribute('data-id'))));
   } catch (e) {
     console.error('loadMyCurricula failed:', e);
@@ -2017,6 +2032,8 @@ async function submitExamResult() {
     ['exScore', 'exMaxScore', 'exDeviation', 'exNote'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     document.getElementById('exJudgement').value = '';
     await loadMyExamResults();
+    // Phase 4.7: アクティブカリキュラムがあれば自動 gap-analyze
+    triggerAutoGapAnalysis();
   } catch (e) {
     msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || '保存失敗');
   } finally {
@@ -2332,4 +2349,156 @@ function printWorksheet(d) {
   w.document.write(html);
   w.document.close();
   setTimeout(() => w.print(), 500);
+}
+
+
+// ==========================================================================
+// 📊 ギャップ分析 (Phase 4.7) - 模試追加 → 自動カリキュラム修正提案
+// ==========================================================================
+async function triggerAutoGapAnalysis() {
+  // _cuLastList に active カリキュラムがあるか確認 → なければ skip
+  if (!_cuLastList || !_cuLastList.length) {
+    // まだ load されていない場合は load してから判定
+    try {
+      const data = await slApiFetch('/api/curricula/me');
+      _cuLastList = data.curricula || [];
+    } catch { return; }
+  }
+  const active = (_cuLastList || []).find(c => c.status === 'active');
+  if (!active) return;
+  // 通知 + 分析開始
+  try {
+    showGapAnalysisModal('loading', { curriculum: active });
+    const data = await slApiFetch(`/api/curricula/${encodeURIComponent(active.id)}/gap-analyze`, { method: 'POST' });
+    showGapAnalysisModal('result', { curriculum: active, ...data });
+  } catch (e) {
+    console.error('gap analyze failed:', e);
+    showGapAnalysisModal('error', { curriculum: active, error: e.message });
+  }
+}
+
+function showGapAnalysisModal(state, ctx) {
+  let modal = document.getElementById('gapAnalysisModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'gapAnalysisModal';
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; display:flex; align-items:flex-start; justify-content:center; padding:2rem; overflow-y:auto;';
+    modal.innerHTML = `
+      <div style="background:#0f172a; border:1px solid rgba(167,139,250,0.4); border-radius:14px; padding:1.5rem; max-width:760px; width:100%;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+          <h3 style="margin:0; color:#c4b5fd;">📊 AI ギャップ分析 (志望校 vs 現状)</h3>
+          <button id="gapModalClose" type="button" style="background:none; border:0; color:#a1a1aa; font-size:1.5rem; cursor:pointer;">×</button>
+        </div>
+        <div id="gapModalBody"></div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.querySelector('#gapModalClose').addEventListener('click', () => modal.style.display = 'none');
+    modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.style.display === 'flex') modal.style.display = 'none'; });
+  }
+  modal.style.display = 'flex';
+  const body = modal.querySelector('#gapModalBody');
+
+  if (state === 'loading') {
+    body.innerHTML = `
+      <div style="text-align:center; padding:2rem; color:#a1a1aa;">
+        <div style="font-size:2.5rem; margin-bottom:0.5rem;">🤖</div>
+        <div>AI が「${escapeHtml(ctx.curriculum.target_university || '志望校')}」までのギャップを分析中... (10-25秒)</div>
+        <div style="font-size:0.8rem; color:#71717a; margin-top:0.5rem;">模試結果 + 現行カリキュラムを総合判断</div>
+      </div>`;
+    return;
+  }
+  if (state === 'error') {
+    body.innerHTML = `<div style="color:#fca5a5; padding:1rem;">❌ 分析失敗: ${escapeHtml(ctx.error || '')}</div>`;
+    return;
+  }
+  // result
+  const a = ctx.analysis || {};
+  const subjGapsHtml = (a.subject_gaps || []).map(s => {
+    const pColor = { '高': '#fca5a5', '中': '#fbbf24', '低': '#86efac' }[s.priority] || '#a1a1aa';
+    const gap = typeof s.gap === 'number' ? s.gap : (s.target - s.current);
+    return `
+      <div style="background:rgba(255,255,255,0.04); border-left:3px solid ${pColor}; border-radius:6px; padding:0.6rem 0.75rem; margin-bottom:0.4rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.3rem;">
+          <div>
+            <span style="font-weight:700; color:#e4e4e7;">${escapeHtml(s.subject)}</span>
+            <span style="background:rgba(255,255,255,0.1); color:${pColor}; padding:0.1rem 0.5rem; border-radius:4px; font-size:0.7rem; margin-left:0.4rem;">優先度${escapeHtml(s.priority)}</span>
+          </div>
+          <div style="font-size:0.85rem;">
+            <span style="color:#a1a1aa;">現状 ${s.current}</span>
+            <span style="color:#71717a;"> → 目標 </span>
+            <span style="color:#86efac;">${s.target}</span>
+            <span style="color:${gap > 0 ? '#fca5a5' : '#86efac'}; font-weight:700; margin-left:0.4rem;">(${gap > 0 ? '+' : ''}${gap})</span>
+          </div>
+        </div>
+        ${s.trend_comment ? `<div style="font-size:0.78rem; color:#a1a1aa; margin-top:0.2rem;">📈 ${escapeHtml(s.trend_comment)}</div>` : ''}
+      </div>`;
+  }).join('');
+  const adjustments = a.phase_adjustments || [];
+  const adjHtml = adjustments.map((adj, i) => `
+    <div style="background:rgba(167,139,250,0.06); border:1px solid rgba(167,139,250,0.3); border-radius:8px; padding:0.7rem; margin-bottom:0.4rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
+        <div style="font-weight:700; color:#c4b5fd; font-size:0.88rem;">📝 ${escapeHtml(adj.phase_name || `フェーズ${(adj.phase_index||0)+1}`)}</div>
+        <span style="background:rgba(167,139,250,0.2); color:#c4b5fd; padding:0.1rem 0.5rem; border-radius:4px; font-size:0.72rem; font-weight:700;">${escapeHtml(adj.action || '修正')}</span>
+      </div>
+      <div style="font-size:0.85rem; color:#e4e4e7; margin-bottom:0.3rem;">${escapeHtml(adj.detail || '')}</div>
+      ${adj.new_materials && adj.new_materials.length ? `<div style="font-size:0.78rem; color:#a1a1aa;">📚 追加教材: ${adj.new_materials.map(m => `<span style="background:rgba(99,102,241,0.15); color:#c7d2fe; padding:0.1rem 0.4rem; border-radius:4px; margin-right:0.2rem; display:inline-block; margin-bottom:0.2rem;">${escapeHtml(m)}</span>`).join('')}</div>` : ''}
+      ${adj.new_sapuri_lectures && adj.new_sapuri_lectures.length ? `<div style="font-size:0.78rem; color:#a1a1aa; margin-top:0.2rem;">📺 追加スタサプ: ${adj.new_sapuri_lectures.map(m => `<span style="background:rgba(251,113,133,0.15); color:#fda4af; padding:0.1rem 0.4rem; border-radius:4px; margin-right:0.2rem; display:inline-block; margin-bottom:0.2rem;">${escapeHtml(m)}</span>`).join('')}</div>` : ''}
+    </div>
+  `).join('');
+
+  body.innerHTML = `
+    <div style="background:rgba(0,0,0,0.3); border-radius:8px; padding:0.85rem; margin-bottom:0.8rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; flex-wrap:wrap; gap:0.4rem;">
+        <div style="font-weight:700; color:#fbbf24;">🎯 ${escapeHtml(ctx.curriculum.target_university)}${ctx.curriculum.target_faculty ? ` <span style="color:#a1a1aa; font-size:0.85rem;">${escapeHtml(ctx.curriculum.target_faculty)}</span>` : ''}</div>
+        <div style="font-size:0.85rem; color:#a1a1aa;">入試まで ${ctx.remain_days} 日</div>
+      </div>
+      <div style="display:flex; gap:0.7rem; flex-wrap:wrap; font-size:0.85rem;">
+        <div style="background:rgba(99,102,241,0.15); color:#c7d2fe; padding:0.3rem 0.7rem; border-radius:6px;">目標偏差値: <strong>${escapeHtml(String(a.target_deviation || '?'))}</strong></div>
+        <div style="background:rgba(255,255,255,0.05); color:#e4e4e7; padding:0.3rem 0.7rem; border-radius:6px;">現状: <strong>${escapeHtml(String(a.current_average || '?'))}</strong></div>
+      </div>
+    </div>
+    ${a.gap_summary ? `<div style="background:rgba(245,158,11,0.08); border-left:4px solid #f59e0b; padding:0.7rem; border-radius:6px; margin-bottom:0.8rem; font-size:0.88rem; color:#e4e4e7;">📊 <strong style="color:#fbbf24;">総合分析:</strong> ${escapeHtml(a.gap_summary)}</div>` : ''}
+    <div style="font-weight:700; color:#c4b5fd; font-size:0.9rem; margin-bottom:0.4rem;">📐 科目別ギャップ</div>
+    ${subjGapsHtml}
+    ${adjustments.length ? `
+      <div style="font-weight:700; color:#c4b5fd; font-size:0.9rem; margin:0.8rem 0 0.4rem;">✏️ カリキュラム修正提案</div>
+      ${adjHtml}
+    ` : '<div style="text-align:center; color:#71717a; padding:0.8rem;">大きな修正提案はありません (現行カリキュラムで順調)</div>'}
+    ${a.overall_recommendation ? `<div style="background:rgba(16,185,129,0.08); border-left:4px solid #10b981; padding:0.7rem; border-radius:6px; margin-top:0.8rem; font-size:0.88rem; color:#e4e4e7;">💪 <strong style="color:#86efac;">戦略アドバイス:</strong> ${escapeHtml(a.overall_recommendation)}</div>` : ''}
+    ${adjustments.length ? `
+      <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+        <button id="gapApplyBtn" type="button" style="flex:1; padding:0.75rem; background:linear-gradient(135deg,#a78bfa,#ec4899); border:0; border-radius:8px; color:#fff; font-weight:800; cursor:pointer;">✨ AI 提案をカリキュラムに反映 (${adjustments.length} 件)</button>
+        <button id="gapDismissBtn" type="button" style="padding:0.75rem 1.2rem; background:rgba(255,255,255,0.08); border:0; border-radius:8px; color:#a1a1aa; cursor:pointer;">後で考える</button>
+      </div>
+      <div id="gapApplyMsg" style="margin-top:0.5rem; font-size:0.78rem; min-height:1em;"></div>
+    ` : `
+      <div style="margin-top:1rem; text-align:center;">
+        <button id="gapDismissBtn" type="button" style="padding:0.75rem 1.5rem; background:rgba(255,255,255,0.08); border:0; border-radius:8px; color:#c7d2fe; cursor:pointer;">確認した</button>
+      </div>
+    `}
+    <div style="font-size:0.7rem; color:#71717a; margin-top:0.7rem; text-align:right;">model: ${escapeHtml(ctx.model || 'gemini-2.5-flash')} ・ AI による参考分析 (最終判断は塾長と相談)</div>`;
+
+  const dismissBtn = body.querySelector('#gapDismissBtn');
+  if (dismissBtn) dismissBtn.addEventListener('click', () => modal.style.display = 'none');
+  const applyBtn = body.querySelector('#gapApplyBtn');
+  if (applyBtn) applyBtn.addEventListener('click', async () => {
+    if (!confirm(`カリキュラムに ${adjustments.length} 件の修正を反映しますか?`)) return;
+    applyBtn.disabled = true; applyBtn.textContent = '反映中...';
+    const m = body.querySelector('#gapApplyMsg');
+    try {
+      const res = await slApiFetch(`/api/curricula/${encodeURIComponent(ctx.curriculum.id)}/apply-gap-fix`, {
+        method: 'POST',
+        body: JSON.stringify({ phase_adjustments: adjustments }),
+      });
+      m.style.color = '#86efac'; m.textContent = `✅ ${res.applied} 件のフェーズに反映しました`;
+      applyBtn.textContent = '✅ 反映完了';
+      // カリキュラム一覧を更新
+      if (typeof loadMyCurricula === 'function') await loadMyCurricula();
+      setTimeout(() => { modal.style.display = 'none'; }, 1500);
+    } catch (e) {
+      m.style.color = '#fca5a5'; m.textContent = '❌ ' + (e.message || '反映失敗');
+      applyBtn.disabled = false; applyBtn.textContent = `✨ AI 提案をカリキュラムに反映 (${adjustments.length} 件)`;
+    }
+  });
 }
