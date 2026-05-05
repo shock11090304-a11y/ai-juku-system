@@ -1005,9 +1005,274 @@ function initStudyPlan() {
       saveBtn.addEventListener('click', submitStudyPlan);
       saveBtn._spBound = true;
     }
+    // AI 機能 (A+B+C)
+    bindStudyPlanAiButtons();
     loadMyStudyPlans();
   };
   tryInit(10);
+}
+
+// ==========================================================================
+// 🤖 学習計画 AI 機能 (A: 計画自動生成 / B: 進捗診断 / C: 教材推薦)
+// ==========================================================================
+function bindStudyPlanAiButtons() {
+  const aiGenBtn = document.getElementById('spAiGenBtn');
+  const aiRecBtn = document.getElementById('spAiRecBtn');
+  const aiGenSubmit = document.getElementById('spAiGenSubmit');
+  const aiRecSubmit = document.getElementById('spRecSubmit');
+  const recSubj = document.getElementById('spRecSubject');
+  if (aiGenBtn && !aiGenBtn._spAiBound) {
+    aiGenBtn.addEventListener('click', () => {
+      const w = document.getElementById('spAiGenWrap');
+      const w2 = document.getElementById('spAiRecWrap');
+      const isOpen = w.style.display !== 'none';
+      w.style.display = isOpen ? 'none' : '';
+      if (!isOpen) {
+        w2.style.display = 'none';
+        // default values
+        const today = _slJstDate(0);
+        const future = _slJstDate(-90);  // 90 日後
+        if (!document.getElementById('spAiStart').value) document.getElementById('spAiStart').value = today;
+        if (!document.getElementById('spAiEnd').value) document.getElementById('spAiEnd').value = future;
+        if (!document.getElementById('spAiDailyMin').value) document.getElementById('spAiDailyMin').value = '60';
+      }
+    });
+    aiGenBtn._spAiBound = true;
+  }
+  if (aiRecBtn && !aiRecBtn._spAiBound) {
+    aiRecBtn.addEventListener('click', () => {
+      const w = document.getElementById('spAiRecWrap');
+      const w2 = document.getElementById('spAiGenWrap');
+      const isOpen = w.style.display !== 'none';
+      w.style.display = isOpen ? 'none' : '';
+      if (!isOpen) {
+        w2.style.display = 'none';
+        // populate subject options
+        if (recSubj && !recSubj.options.length) {
+          recSubj.innerHTML = '<option value="">-- 苦手科目を選択 --</option>' + SP_SUBJECTS.map(s => `<option value="${s}">${s}</option>`).join('');
+        }
+      }
+    });
+    aiRecBtn._spAiBound = true;
+  }
+  if (aiGenSubmit && !aiGenSubmit._spAiBound) {
+    aiGenSubmit.addEventListener('click', generateStudyPlanWithAi);
+    aiGenSubmit._spAiBound = true;
+  }
+  if (aiRecSubmit && !aiRecSubmit._spAiBound) {
+    aiRecSubmit.addEventListener('click', recommendTextbooksWithAi);
+    aiRecSubmit._spAiBound = true;
+  }
+}
+
+async function _spCallAi(systemPrompt, userText, maxTokens) {
+  const token = (window.AuthGuard && window.AuthGuard.getToken()) || localStorage.getItem('ai_juku_session_token');
+  const student = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || {};
+  const sid = student.id || 'guest';
+  const res = await fetch(SL_API_BASE + '/api/ai/call', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (token || '') },
+    body: JSON.stringify({
+      student_id: sid,
+      model: 'claude-sonnet-4-6',
+      max_tokens: maxTokens || 1500,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userText }],
+    }),
+  });
+  if (!res.ok) {
+    const errTxt = await res.text();
+    throw new Error(`HTTP ${res.status}: ${errTxt.slice(0, 100)}`);
+  }
+  const data = await res.json();
+  const txt = (data.content || []).map(c => c.text || '').join('').trim();
+  const jsonStr = txt.replace(/^```(?:json)?\s*|\s*```$/g, '');
+  try { return JSON.parse(jsonStr); }
+  catch { const m = jsonStr.match(/[\[\{][\s\S]*[\]\}]/); if (m) return JSON.parse(m[0]); throw new Error('JSON 解析失敗'); }
+}
+
+// ============ A: AI 計画自動生成 ============
+async function generateStudyPlanWithAi() {
+  const btn = document.getElementById('spAiGenSubmit');
+  const msg = document.getElementById('spAiGenMsg');
+  const proposalsEl = document.getElementById('spAiGenProposals');
+  if (!btn || btn.disabled) return;
+  const goal = document.getElementById('spAiGoal').value.trim();
+  const material = document.getElementById('spAiMaterial').value.trim();
+  const start = document.getElementById('spAiStart').value;
+  const end = document.getElementById('spAiEnd').value;
+  const dailyMin = parseInt(document.getElementById('spAiDailyMin').value, 10) || 60;
+  if (!goal) { msg.style.color = '#fca5a5'; msg.textContent = '志望校は必須です'; return; }
+  if (!start || !end) { msg.style.color = '#fca5a5'; msg.textContent = '期間を入力してください'; return; }
+  if (end < start) { msg.style.color = '#fca5a5'; msg.textContent = '終了日は開始日以降にしてください'; return; }
+
+  btn.disabled = true; btn.textContent = '🤖 AI 生成中... (10-30秒)';
+  msg.style.color = '#c4b5fd'; msg.textContent = '🤖 受験戦略を考えています...';
+  proposalsEl.innerHTML = '';
+  try {
+    const days = Math.max(1, Math.round((new Date(end) - new Date(start)) / 86400000) + 1);
+    const totalMin = days * dailyMin;
+    const sysPrompt = '受験戦略を立てる学習プランナーです。指定の志望校に必要な科目構成を考慮し、現実的な学習計画を立てます。教師名や塾名は出さず、純粋な JSON だけ返答します。';
+    const userPrompt = `志望校: ${goal}\n${material ? '優先教材: ' + material + '\n' : ''}期間: ${start} 〜 ${end} (${days}日間)\n1日確保時間: ${dailyMin} 分 (期間総計 ${totalMin} 分)\n\n受験戦略上、上記期間に並列で進めるべき計画を 3〜5件 提案してください。各計画は study_plans に登録される単位 (1 教材 or 1 単元 単位)。\n\n出力形式 (フェンスや前置きなし、純粋な JSON):\n[\n  {\n    "title": "タイトル (40文字以内)",\n    "subject": "次から1つ: 英語/数学/国語/現代文/古文/漢文/理科/物理/化学/生物/地学/社会/日本史/世界史/地理/倫理/政経/情報/小論文/面接対策/その他",\n    "material": "推奨教材名 (40文字以内、例: ターゲット1900・青チャート数学IA)",\n    "start_date": "${start}",\n    "end_date": "YYYY-MM-DD (期間内の現実的な終了日)",\n    "target_minutes": 整数 (期間総分数の妥当な配分),\n    "target_pages": 整数 or null,\n    "color": "#RRGGBB (科目別に視認性高く: 英#6366f1 数#10b981 国#ec4899 理#f59e0b 社#8b5cf6 等)",\n    "rationale": "この計画を提案する理由 (60文字以内)"\n  }\n]\n注: target_minutes 合計は期間総計の 80〜100% に収めること。期間が短い (30日以下) なら 3件、長い (180日以上) なら 5件まで。`;
+    const proposals = await _spCallAi(sysPrompt, userPrompt, 2500);
+    if (!Array.isArray(proposals) || !proposals.length) throw new Error('提案が空でした');
+
+    msg.style.color = '#86efac'; msg.textContent = `✅ ${proposals.length} 件の計画案を生成しました`;
+    proposalsEl.innerHTML = `
+      <div style="margin-top:0.5rem; padding:0.7rem; background:rgba(0,0,0,0.25); border-radius:8px;">
+        ${proposals.map((p, i) => `
+          <label style="display:block; padding:0.6rem 0.7rem; background:rgba(255,255,255,0.04); border-left:3px solid ${escapeHtml(p.color || '#6366f1')}; border-radius:6px; margin-bottom:0.4rem; cursor:pointer;">
+            <input type="checkbox" data-idx="${i}" class="sp-ai-prop-check" checked style="vertical-align:middle; margin-right:0.4rem;">
+            <span style="font-weight:700; color:#e4e4e7;">${escapeHtml(p.title || '')}</span>
+            <span style="font-size:0.72rem; color:#a1a1aa; margin-left:0.3rem;">[${escapeHtml(p.subject || '')}]</span>
+            <div style="font-size:0.78rem; color:#a1a1aa; margin-top:0.2rem; margin-left:1.5rem;">
+              ${escapeHtml(p.start_date || '')} 〜 ${escapeHtml(p.end_date || '')} ・ 目標 ${p.target_minutes || 0}分${p.target_pages ? ' / ' + p.target_pages + 'p' : ''} ・ ${escapeHtml(p.material || '教材未指定')}
+            </div>
+            ${p.rationale ? `<div style="font-size:0.75rem; color:#c4b5fd; margin-top:0.2rem; margin-left:1.5rem;">💡 ${escapeHtml(p.rationale)}</div>` : ''}
+          </label>
+        `).join('')}
+        <button id="spAiAddSelected" type="button" style="width:100%; margin-top:0.5rem; padding:0.6rem; background:linear-gradient(135deg,#6366f1,#a78bfa); border:0; border-radius:8px; color:#fff; font-weight:700; cursor:pointer;">✨ 選択した計画を追加</button>
+        <div id="spAiAddMsg" style="margin-top:0.4rem; font-size:0.78rem; min-height:1em;"></div>
+      </div>`;
+    document.getElementById('spAiAddSelected').addEventListener('click', () => addAiProposalsToPlans(proposals));
+  } catch (e) {
+    msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || '生成失敗');
+  } finally {
+    btn.disabled = false; btn.textContent = '✨ 計画を生成する';
+  }
+}
+
+async function addAiProposalsToPlans(proposals) {
+  const checks = Array.from(document.querySelectorAll('.sp-ai-prop-check:checked'));
+  const addMsg = document.getElementById('spAiAddMsg');
+  if (!checks.length) { addMsg.style.color = '#fca5a5'; addMsg.textContent = '少なくとも 1 件選択してください'; return; }
+  const btn = document.getElementById('spAiAddSelected');
+  btn.disabled = true;
+  let ok = 0, fail = 0;
+  for (const ck of checks) {
+    const i = parseInt(ck.getAttribute('data-idx'), 10);
+    const p = proposals[i];
+    if (!p) { fail++; continue; }
+    try {
+      await slApiFetch('/api/study-plans', {
+        method: 'POST',
+        body: JSON.stringify({
+          title: p.title, subject: p.subject, material: p.material || undefined,
+          start_date: p.start_date, end_date: p.end_date,
+          target_minutes: p.target_minutes || undefined, target_pages: p.target_pages || undefined,
+          color: p.color || undefined, note: p.rationale || undefined,
+        }),
+      });
+      ok++;
+    } catch { fail++; }
+  }
+  addMsg.style.color = ok ? '#86efac' : '#fca5a5';
+  addMsg.textContent = `✅ ${ok} 件追加${fail ? ` / ❌ ${fail} 件失敗` : ''}`;
+  if (ok > 0) {
+    document.getElementById('spAiGenWrap').style.display = 'none';
+    await loadMyStudyPlans();
+  }
+  btn.disabled = false;
+}
+
+// ============ B: AI 進捗診断 ============
+async function diagStudyPlanWithAi(planId) {
+  const plan = (_spLastPlans || []).find(p => String(p.id) === String(planId));
+  if (!plan) { alert('計画が見つかりません'); return; }
+  // modal を作る (simple)
+  let modal = document.getElementById('spDiagModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'spDiagModal';
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; display:flex; align-items:flex-start; justify-content:center; padding:2rem; overflow-y:auto;';
+    modal.innerHTML = `
+      <div style="background:#0f172a; border:1px solid rgba(167,139,250,0.4); border-radius:14px; padding:1.5rem; max-width:600px; width:100%;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+          <h3 style="margin:0; color:#c4b5fd;">🤖 AI 進捗診断</h3>
+          <button id="spDiagClose" type="button" style="background:none; border:0; color:#a1a1aa; font-size:1.5rem; cursor:pointer;">×</button>
+        </div>
+        <div id="spDiagBody"></div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.querySelector('#spDiagClose').addEventListener('click', () => modal.style.display = 'none');
+    modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+  }
+  modal.style.display = 'flex';
+  const body = modal.querySelector('#spDiagBody');
+  body.innerHTML = '<div style="text-align:center; padding:2rem; color:#a1a1aa;">🤖 診断中... (5-15秒)</div>';
+
+  try {
+    const today = _slJstDate(0);
+    const totalDays = Math.max(1, Math.round((new Date(plan.end_date) - new Date(plan.start_date)) / 86400000) + 1);
+    const elapsedDays = Math.max(0, Math.min(totalDays, Math.round((new Date(today) - new Date(plan.start_date)) / 86400000) + 1));
+    const remainDays = Math.max(0, Math.round((new Date(plan.end_date) - new Date(today)) / 86400000));
+    const sysPrompt = '学習進捗を客観的に診断するコーチです。データから現実的な評価と次の一手を 200 字程度で示します。教師名は出さず、純粋な JSON のみ返答します。';
+    const userPrompt = `計画タイトル: ${plan.title}\n科目: ${plan.subject}\n教材: ${plan.material || '未指定'}\n期間: ${plan.start_date} 〜 ${plan.end_date} (全 ${totalDays}日 / 経過 ${elapsedDays}日 / 残 ${remainDays}日)\n目標: ${plan.target_minutes || '未設定'}分${plan.target_pages ? ' / ' + plan.target_pages + 'p' : ''}\n実績: ${plan.actual_minutes}分${plan.actual_pages ? ' / ' + plan.actual_pages + 'p' : ''}\n進捗率: ${plan.progress_minutes_pct ?? '—'}% (時間) ${plan.progress_pages_pct ? '/ ' + plan.progress_pages_pct + '% (ページ)' : ''}\n\n上記から JSON で診断結果を返してください (フェンスや前置きなし):\n{\n  "verdict": "great|good|warning|critical",\n  "verdict_label": "評価ラベル (例: 順調 / 要注意 / 危機的)",\n  "elapsed_pct": 整数 (経過率%),\n  "summary": "現状サマリ (60字)",\n  "actions": ["次の一手 1 (40字)", "次の一手 2 (40字)", "次の一手 3 (40字)"]\n}`;
+    const result = await _spCallAi(sysPrompt, userPrompt, 800);
+    const verdictColor = { great: '#34d399', good: '#86efac', warning: '#fbbf24', critical: '#fca5a5' }[result.verdict] || '#a78bfa';
+    const verdictIcon = { great: '🎉', good: '✅', warning: '⚠️', critical: '🚨' }[result.verdict] || '🤖';
+    body.innerHTML = `
+      <div style="background:rgba(255,255,255,0.04); border-left:4px solid ${verdictColor}; border-radius:8px; padding:0.9rem; margin-bottom:0.8rem;">
+        <div style="font-size:1.1rem; color:${verdictColor}; font-weight:800; margin-bottom:0.4rem;">${verdictIcon} ${escapeHtml(result.verdict_label || '')} <span style="font-size:0.8rem; color:#a1a1aa;">(経過 ${result.elapsed_pct ?? '—'}%)</span></div>
+        <div style="color:#e4e4e7; font-size:0.92rem;">${escapeHtml(result.summary || '')}</div>
+      </div>
+      <div style="font-weight:700; color:#c4b5fd; font-size:0.88rem; margin-bottom:0.4rem;">📋 次の一手</div>
+      ${(result.actions || []).map(a => `<div style="background:rgba(255,255,255,0.04); border-radius:6px; padding:0.55rem 0.7rem; margin-bottom:0.35rem; font-size:0.88rem; color:#e4e4e7;">→ ${escapeHtml(a)}</div>`).join('')}
+      <div style="font-size:0.7rem; color:#71717a; margin-top:0.7rem; text-align:right;">AI による参考診断です。最終判断は塾長と相談してください。</div>`;
+  } catch (e) {
+    body.innerHTML = `<div style="color:#fca5a5; padding:1rem;">❌ 診断失敗: ${escapeHtml(e.message || '')}</div>`;
+  }
+}
+
+// ============ C: AI 教材推薦 ============
+async function recommendTextbooksWithAi() {
+  const btn = document.getElementById('spRecSubmit');
+  const msg = document.getElementById('spRecMsg');
+  const resultsEl = document.getElementById('spRecResults');
+  if (!btn || btn.disabled) return;
+  const goal = document.getElementById('spRecGoal').value.trim();
+  const subj = document.getElementById('spRecSubject').value;
+  if (!goal) { msg.style.color = '#fca5a5'; msg.textContent = '志望校は必須です'; return; }
+  if (!subj) { msg.style.color = '#fca5a5'; msg.textContent = '苦手科目を選択してください'; return; }
+
+  btn.disabled = true; btn.textContent = '🎯 AI 推薦中...';
+  msg.style.color = '#fbbf24'; msg.textContent = '🎯 教材を選定しています...';
+  resultsEl.innerHTML = '';
+  try {
+    const sysPrompt = '受験参考書アドバイザーです。志望校レベルと苦手科目に応じて段階的に取り組むべき定番教材を推薦します。教師名は出さず、JSON のみ返答します。';
+    const userPrompt = `志望校: ${goal}\n苦手科目: ${subj}\n\n上記の生徒に適した教材を 3〜5 件、易→難の順で推薦してください。出力 (フェンスや前置きなし):\n[\n  {"title": "教材名 (例: 大岩のいちばんはじめの英文法)", "level": "基礎/標準/応用/発展", "reason": "推薦理由 (50字)", "estimated_days": 整数 (推奨完走日数), "estimated_minutes_total": 整数 (期間総分数の目安)}\n]`;
+    const recs = await _spCallAi(sysPrompt, userPrompt, 1500);
+    if (!Array.isArray(recs) || !recs.length) throw new Error('推薦が空でした');
+    msg.style.color = '#86efac'; msg.textContent = `✅ ${recs.length} 件の教材を推薦`;
+    resultsEl.innerHTML = recs.map((r, i) => `
+      <div style="background:rgba(255,255,255,0.04); border-left:3px solid #fbbf24; border-radius:6px; padding:0.7rem; margin-bottom:0.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
+          <div style="font-weight:700; color:#e4e4e7;">${i + 1}. ${escapeHtml(r.title || '')}</div>
+          <span style="font-size:0.72rem; background:rgba(251,191,36,0.2); color:#fbbf24; padding:0.1rem 0.5rem; border-radius:4px;">${escapeHtml(r.level || '')}</span>
+        </div>
+        <div style="font-size:0.82rem; color:#d4d4d8; margin-bottom:0.4rem;">💡 ${escapeHtml(r.reason || '')}</div>
+        <div style="font-size:0.75rem; color:#a1a1aa; margin-bottom:0.4rem;">⏱ 推奨完走 ${r.estimated_days || '—'}日 / 計 ${r.estimated_minutes_total || '—'}分</div>
+        <button data-rec-idx="${i}" class="sp-rec-add-btn" type="button" style="background:linear-gradient(135deg,#fbbf24,#10b981); color:#fff; border:0; padding:0.35rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:700;">📅 この教材で計画を作成</button>
+      </div>`).join('');
+    resultsEl.querySelectorAll('.sp-rec-add-btn').forEach(b => b.addEventListener('click', () => {
+      const i = parseInt(b.getAttribute('data-rec-idx'), 10);
+      const r = recs[i];
+      // A の form に pre-fill して開く
+      document.getElementById('spAiRecWrap').style.display = 'none';
+      document.getElementById('spAiGenWrap').style.display = '';
+      document.getElementById('spAiGoal').value = goal;
+      document.getElementById('spAiMaterial').value = r.title || '';
+      document.getElementById('spAiStart').value = _slJstDate(0);
+      document.getElementById('spAiEnd').value = _slJstDate(-(r.estimated_days || 30));
+      document.getElementById('spAiDailyMin').value = Math.max(15, Math.round((r.estimated_minutes_total || 1800) / (r.estimated_days || 30)));
+      // 自動生成も即座にトリガー
+      generateStudyPlanWithAi();
+    }));
+  } catch (e) {
+    msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || '推薦失敗');
+  } finally {
+    btn.disabled = false; btn.textContent = '🎯 教材を推薦する';
+  }
 }
 
 function clearSpForm() {
@@ -1102,6 +1367,7 @@ async function loadMyStudyPlans() {
     `;
     // bind buttons
     list.querySelectorAll('.sp-edit-btn').forEach(b => b.addEventListener('click', () => editStudyPlan(b.getAttribute('data-id'))));
+    list.querySelectorAll('.sp-diag-btn').forEach(b => b.addEventListener('click', () => diagStudyPlanWithAi(b.getAttribute('data-id'))));
     list.querySelectorAll('.sp-delete-btn').forEach(b => b.addEventListener('click', () => deleteStudyPlan(b.getAttribute('data-id'))));
     list.querySelectorAll('.sp-status-btn').forEach(b => b.addEventListener('click', () => changeStudyPlanStatus(b.getAttribute('data-id'), b.getAttribute('data-status'))));
   } catch (e) {
@@ -1136,6 +1402,7 @@ function renderSpPlanGroup(label, plans, accentColor) {
           </div>
           <div style="display:flex; gap:0.3rem;">
             <button data-id="${p.id}" class="sp-edit-btn" aria-label="編集" title="編集" style="background:none; border:0; color:#a1a1aa; cursor:pointer; font-size:0.9rem;">✏️</button>
+            ${p.status === 'active' ? `<button data-id="${p.id}" class="sp-diag-btn" aria-label="AI診断" title="AI が進捗を診断" style="background:none; border:0; color:#a78bfa; cursor:pointer; font-size:0.9rem;">🤖</button>` : ''}
             ${p.status === 'active' ? `<button data-id="${p.id}" data-status="completed" class="sp-status-btn" aria-label="完了にする" title="完了にする" style="background:none; border:0; color:#34d399; cursor:pointer; font-size:0.9rem;">✅</button>` : ''}
             <button data-id="${p.id}" class="sp-delete-btn" aria-label="削除" title="削除" style="background:none; border:0; color:#71717a; cursor:pointer; font-size:0.9rem;">🗑</button>
           </div>

@@ -380,6 +380,41 @@
         志望校合格までの学習計画を立てよう。期間内の達成率は学習記録から自動集計されます。
       </p>
 
+      <!-- 🤖 AI 機能群 (Phase 2.5: A 計画生成 / B 診断 / C 教材推薦) -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:0.5rem; margin-bottom:0.8rem;">
+        <button id="spAiGenBtn" type="button" style="padding:0.6rem; background:linear-gradient(135deg,#a78bfa,#ec4899); border:0; border-radius:10px; color:#fff; font-weight:700; font-size:0.85rem; cursor:pointer;">🤖 AI に計画を立てる</button>
+        <button id="spAiRecBtn" type="button" style="padding:0.6rem; background:linear-gradient(135deg,#fbbf24,#10b981); border:0; border-radius:10px; color:#fff; font-weight:700; font-size:0.85rem; cursor:pointer;">🎯 AI 教材推薦</button>
+      </div>
+
+      <!-- A: AI 計画生成 mini form -->
+      <div id="spAiGenWrap" style="display:none; background:rgba(167,139,250,0.06); border:1px solid rgba(167,139,250,0.3); border-radius:12px; padding:1rem; margin-bottom:1rem;">
+        <div style="font-size:0.85rem; color:#c4b5fd; margin-bottom:0.5rem; font-weight:700;">🤖 志望校 + 期間 + 1日の確保時間 を入力すると AI が複数計画を提案</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; margin-bottom:0.5rem;">
+          <input type="text" id="spAiGoal" maxlength="100" placeholder="志望校 例: 東京大学 文科一類" style="padding:0.5rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff;">
+          <input type="text" id="spAiMaterial" maxlength="100" placeholder="目標教材 (任意) 例: 青チャート数学IA" style="padding:0.5rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff;">
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.6rem; margin-bottom:0.5rem;">
+          <input type="date" id="spAiStart" style="padding:0.5rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff;">
+          <input type="date" id="spAiEnd" style="padding:0.5rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff;">
+          <input type="number" id="spAiDailyMin" min="15" max="600" placeholder="1日 (分) 例: 60" style="padding:0.5rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff;">
+        </div>
+        <button id="spAiGenSubmit" type="button" style="width:100%; padding:0.65rem; background:linear-gradient(135deg,#a78bfa,#ec4899); border:0; border-radius:8px; color:#fff; font-weight:700; cursor:pointer;">✨ 計画を生成する</button>
+        <div id="spAiGenMsg" style="margin-top:0.5rem; font-size:0.8rem; min-height:1em;"></div>
+        <div id="spAiGenProposals" style="margin-top:0.7rem;"></div>
+      </div>
+
+      <!-- C: AI 教材推薦 mini form -->
+      <div id="spAiRecWrap" style="display:none; background:rgba(251,191,36,0.06); border:1px solid rgba(251,191,36,0.3); border-radius:12px; padding:1rem; margin-bottom:1rem;">
+        <div style="font-size:0.85rem; color:#fbbf24; margin-bottom:0.5rem; font-weight:700;">🎯 志望校 + 苦手科目 で 推奨教材を AI が提示</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; margin-bottom:0.5rem;">
+          <input type="text" id="spRecGoal" maxlength="100" placeholder="志望校 例: 一橋大学 商学部" style="padding:0.5rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff;">
+          <select id="spRecSubject" style="padding:0.5rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff;"></select>
+        </div>
+        <button id="spRecSubmit" type="button" style="width:100%; padding:0.65rem; background:linear-gradient(135deg,#fbbf24,#10b981); border:0; border-radius:8px; color:#fff; font-weight:700; cursor:pointer;">🎯 教材を推薦する</button>
+        <div id="spRecMsg" style="margin-top:0.5rem; font-size:0.8rem; min-height:1em;"></div>
+        <div id="spRecResults" style="margin-top:0.7rem;"></div>
+      </div>
+
       <!-- 計画作成フォーム (toggle で開閉) -->
       <button id="spToggleFormBtn" type="button" style="width:100%; padding:0.7rem; background:linear-gradient(135deg,#fbbf24,#ec4899); border:0; border-radius:10px; color:#fff; font-weight:700; font-size:0.95rem; cursor:pointer; margin-bottom:1rem;">+ 新しい計画を追加</button>
 
@@ -567,7 +602,7 @@
   <script src="learning-brain.js?v=20260425-2"></script>
   <script src="exam-prep.js?v=20260425-1"></script>
   <script src="referral-program.js?v=20260425-1"></script>
-  <script src="mypage.js?v=20260506-material-photo"></script>
+  <script src="mypage.js?v=20260506-ai-study-plan"></script>
   <script>
     // ウィジェット初期描画
     (function() {
