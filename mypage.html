@@ -373,6 +373,83 @@
       </div>
     </section>
 
+    <!-- 📊 模試結果 (Phase 4.5 - 国公立難関大学コース限定) -->
+    <section class="exam-section" style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:14px; display:none;">
+      <div class="section-title"><h2>📊 模試結果 <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">難関大学コース</span></h2></div>
+      <p style="font-size:0.85rem; color:#a1a1aa; margin-bottom:1rem;">河合・駿台・東進などの外部模試結果を登録 → AI カリキュラム生成時に自動反映されます。</p>
+
+      <button id="exToggleFormBtn" type="button" style="width:100%; padding:0.7rem; background:linear-gradient(135deg,#10b981,#34d399); border:0; border-radius:10px; color:#fff; font-weight:700; font-size:0.95rem; cursor:pointer; margin-bottom:0.8rem;">＋ 模試結果を追加</button>
+
+      <!-- 入力フォーム (toggle) -->
+      <div id="exFormWrap" style="display:none; background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.3); border-radius:12px; padding:1rem; margin-bottom:1rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.7rem;">
+          <div style="font-size:0.9rem; color:#86efac; font-weight:700;">📊 模試結果を登録</div>
+          <button id="exFormCancelBtn" type="button" style="background:none; border:0; color:#71717a; cursor:pointer; font-size:0.75rem;">✕ 閉じる</button>
+        </div>
+        <div style="display:grid; grid-template-columns:2fr 1fr; gap:0.6rem; margin-bottom:0.5rem;">
+          <div>
+            <label for="exName" style="display:block; font-size:0.72rem; color:#86efac; margin-bottom:0.2rem; font-weight:700;">模試名 <span style="color:#fca5a5;">*</span></label>
+            <input type="text" id="exName" maxlength="100" placeholder="例: 河合塾 第1回全統共通テスト模試" style="width:100%; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.9rem;">
+          </div>
+          <div>
+            <label for="exDate" style="display:block; font-size:0.72rem; color:#86efac; margin-bottom:0.2rem; font-weight:700;">受験日 <span style="color:#fca5a5;">*</span></label>
+            <input type="date" id="exDate" style="width:100%; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.9rem;">
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:0.6rem; margin-bottom:0.5rem;">
+          <div>
+            <label for="exSubject" style="display:block; font-size:0.72rem; color:#86efac; margin-bottom:0.2rem; font-weight:700;">科目 <span style="color:#fca5a5;">*</span></label>
+            <select id="exSubject" style="width:100%; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.9rem;"></select>
+          </div>
+          <div>
+            <label for="exScore" style="display:block; font-size:0.72rem; color:#86efac; margin-bottom:0.2rem; font-weight:700;">得点</label>
+            <input type="number" id="exScore" min="0" max="1000" placeholder="例: 78" style="width:100%; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.9rem;">
+          </div>
+          <div>
+            <label for="exMaxScore" style="display:block; font-size:0.72rem; color:#86efac; margin-bottom:0.2rem; font-weight:700;">満点</label>
+            <input type="number" id="exMaxScore" min="1" max="1000" placeholder="例: 100" style="width:100%; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.9rem;">
+          </div>
+          <div>
+            <label for="exDeviation" style="display:block; font-size:0.72rem; color:#86efac; margin-bottom:0.2rem; font-weight:700;">偏差値</label>
+            <input type="number" id="exDeviation" min="10" max="100" step="0.1" placeholder="例: 62.5" style="width:100%; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.9rem;">
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 2fr; gap:0.6rem; margin-bottom:0.5rem;">
+          <div>
+            <label for="exJudgement" style="display:block; font-size:0.72rem; color:#86efac; margin-bottom:0.2rem; font-weight:700;">判定</label>
+            <select id="exJudgement" style="width:100%; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.9rem;">
+              <option value="">-- 任意 --</option>
+              <option value="A">A判定</option>
+              <option value="B">B判定</option>
+              <option value="C">C判定</option>
+              <option value="D">D判定</option>
+              <option value="E">E判定</option>
+            </select>
+          </div>
+          <div>
+            <label for="exTargetUni" style="display:block; font-size:0.72rem; color:#86efac; margin-bottom:0.2rem; font-weight:700;">志望校 (この判定の対象校)</label>
+            <input type="text" id="exTargetUni" maxlength="100" placeholder="例: 東京大学 文科一類" style="width:100%; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.9rem;">
+          </div>
+        </div>
+        <div style="margin-bottom:0.7rem;">
+          <label for="exNote" style="display:block; font-size:0.72rem; color:#86efac; margin-bottom:0.2rem; font-weight:700;">メモ <span style="color:#71717a;">(任意)</span></label>
+          <input type="text" id="exNote" maxlength="500" placeholder="例: 英語の長文で時間切れ" style="width:100%; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.9rem;">
+        </div>
+        <button id="exSubmitBtn" type="button" style="width:100%; padding:0.7rem; background:linear-gradient(135deg,#10b981,#34d399); border:0; border-radius:8px; color:#fff; font-weight:700; cursor:pointer;">📊 結果を保存</button>
+        <div id="exFormMsg" style="margin-top:0.5rem; font-size:0.78rem; min-height:1em;"></div>
+      </div>
+
+      <!-- 直近模試サマリ -->
+      <div id="exLatestSummary"></div>
+      <!-- 偏差値推移グラフ -->
+      <div id="exTrendWrap" style="margin-top:1rem; background:rgba(0,0,0,0.3); border-radius:10px; padding:1rem; display:none;">
+        <div style="font-size:0.85rem; color:#86efac; margin-bottom:0.5rem;">📈 科目別 偏差値推移</div>
+        <div style="position:relative; height:240px;"><canvas id="exTrendChart"></canvas></div>
+      </div>
+      <!-- 模試一覧 -->
+      <div id="exList" style="margin-top:1rem;"></div>
+    </section>
+
     <!-- 🎓 合格カリキュラム (Phase 4 - 国公立難関大学コース限定 / 難関私立も対象) -->
     <section class="curriculum-section" style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:14px; display:none;">
       <div class="section-title"><h2>🎓 合格カリキュラム <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">難関大学コース (国公立・難関私立)</span></h2></div>
@@ -421,8 +498,9 @@
         </div>
 
         <div style="margin-bottom:0.8rem;">
-          <label for="cuAiBaseline" style="display:block; font-size:0.72rem; color:#c4b5fd; margin-bottom:0.2rem; font-weight:700;">現状学力 <span style="color:#71717a;">(任意)</span></label>
-          <textarea id="cuAiBaseline" maxlength="500" rows="2" placeholder="例: 偏差値58 / 英数は基礎完成、理科に不安あり" style="width:100%; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.85rem; resize:vertical;"></textarea>
+          <label for="cuAiBaseline" style="display:block; font-size:0.72rem; color:#c4b5fd; margin-bottom:0.2rem; font-weight:700;">現状学力メモ <span style="color:#71717a;">(任意)</span></label>
+          <textarea id="cuAiBaseline" maxlength="500" rows="2" placeholder="例: 英数は基礎完成、理科に不安あり" style="width:100%; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.85rem; resize:vertical;"></textarea>
+          <div style="font-size:0.7rem; color:#86efac; margin-top:0.3rem;">💡 「📊 模試結果」セクションに登録済みの直近模試 (科目別偏差値・判定) は AI に自動反映されます</div>
         </div>
 
         <button id="cuAiGenSubmit" type="button" style="width:100%; padding:0.7rem; background:linear-gradient(135deg,#a78bfa,#ec4899); border:0; border-radius:8px; color:#fff; font-weight:700; cursor:pointer;">✨ カリキュラムを生成する</button>
@@ -704,7 +782,7 @@
   <script src="learning-brain.js?v=20260425-2"></script>
   <script src="exam-prep.js?v=20260425-1"></script>
   <script src="referral-program.js?v=20260425-1"></script>
-  <script src="mypage.js?v=20260506-sapuri"></script>
+  <script src="mypage.js?v=20260506-exam"></script>
   <script>
     // ウィジェット初期描画
     (function() {

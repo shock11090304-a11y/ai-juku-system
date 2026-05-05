@@ -603,6 +603,24 @@ def init_db():
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     CREATE INDEX IF NOT EXISTS idx_curricula_student ON curricula(student_id, status);
+    -- 外部模試結果 (河合/駿台/東進/進研 等) - Phase 4.5 / 塾長指示 2026-05-06
+    -- 内蔵 mock_exam_sessions と分離。生徒が手入力 + AI カリキュラム生成時に自動参照。
+    CREATE TABLE IF NOT EXISTS exam_results (
+        id {pk},
+        student_id INTEGER NOT NULL,
+        exam_name TEXT NOT NULL,
+        exam_date DATE NOT NULL,
+        subject TEXT NOT NULL,
+        score INTEGER,
+        max_score INTEGER,
+        deviation REAL,
+        judgement TEXT,
+        target_university TEXT,
+        note TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_exam_results_student ON exam_results(student_id, exam_date);
+    CREATE INDEX IF NOT EXISTS idx_exam_results_subject ON exam_results(student_id, subject, exam_date);
     -- 塾長→生徒メッセージ機能 (Phase 3 - email only, 塾長指示 2026-05-05)
     CREATE TABLE IF NOT EXISTS messages (
         id {pk},
@@ -15169,6 +15187,282 @@ def mark_message_read(msg_id: int, request: Request, authorization: Optional[str
 
 
 # ==========================================================================
+# Routes: Exam Results (外部模試結果 - 国公立難関大学コース限定)
+# 塾長指示 2026-05-06: 模試結果を AI カリキュラム/進捗診断に反映
+# ==========================================================================
+class ExamResultCreateRequest(BaseModel):
+    exam_name: str  # 例: 河合塾 第1回全統共通テスト模試
+    exam_date: str  # YYYY-MM-DD
+    subject: str  # 科目 (_STUDY_SUBJECTS)
+    score: Optional[int] = None
+    max_score: Optional[int] = None
+    deviation: Optional[float] = None
+    judgement: Optional[str] = None  # A/B/C/D/E
+    target_university: Optional[str] = None
+    note: Optional[str] = None
+
+
+class ExamResultUpdateRequest(BaseModel):
+    exam_name: Optional[str] = None
+    exam_date: Optional[str] = None
+    subject: Optional[str] = None
+    score: Optional[int] = None
+    max_score: Optional[int] = None
+    deviation: Optional[float] = None
+    judgement: Optional[str] = None
+    target_university: Optional[str] = None
+    note: Optional[str] = None
+
+
+_EXAM_JUDGEMENTS = {"A", "B", "C", "D", "E"}
+
+
+def _validate_exam_payload(exam_name, exam_date_str, subject, score, max_score, deviation, judgement):
+    name = _sanitize_text(exam_name, 100)
+    if not name:
+        raise HTTPException(status_code=400, detail="模試名は必須")
+    try:
+        ed = datetime.strptime((exam_date_str or "").strip(), "%Y-%m-%d").date()
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=400, detail="日付フォーマット不正 (YYYY-MM-DD)")
+    today = _today_jst()
+    if (today - ed).days > 1825:
+        raise HTTPException(status_code=400, detail="5年以上前の模試は登録できません")
+    if (ed - today).days > 30:
+        raise HTTPException(status_code=400, detail="未来の模試は登録できません")
+    sub = (subject or "").strip()
+    if sub not in _STUDY_SUBJECTS:
+        raise HTTPException(status_code=400, detail="科目が不正です")
+    sc = None
+    if score is not None:
+        try:
+            sc = int(score)
+            if not (0 <= sc <= 1000):
+                raise HTTPException(status_code=400, detail="score は 0〜1000")
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="score が不正")
+    ms = None
+    if max_score is not None:
+        try:
+            ms = int(max_score)
+            if not (1 <= ms <= 1000):
+                raise HTTPException(status_code=400, detail="max_score は 1〜1000")
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="max_score が不正")
+    dev = None
+    if deviation is not None:
+        try:
+            dev = float(deviation)
+            if not (10.0 <= dev <= 100.0):
+                raise HTTPException(status_code=400, detail="deviation は 10〜100")
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="deviation が不正")
+    jdg = None
+    if judgement:
+        jdg = (judgement or "").strip().upper()
+        if jdg not in _EXAM_JUDGEMENTS:
+            raise HTTPException(status_code=400, detail="judgement は A〜E")
+    return {"exam_name": name, "exam_date": ed.isoformat(), "subject": sub, "score": sc, "max_score": ms, "deviation": dev, "judgement": jdg}
+
+
+@app.post("/api/exam-results")
+def create_exam_result(payload: ExamResultCreateRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒: 外部模試結果を登録 (国公立難関大学コース限定)。"""
+    _check_rate_limit_ip(request, bucket="exam_create", limit=30, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+    v = _validate_exam_payload(payload.exam_name, payload.exam_date, payload.subject,
+                                payload.score, payload.max_score, payload.deviation, payload.judgement)
+    target_uni = _sanitize_text(payload.target_university, 100)
+    note = _sanitize_text(payload.note, 500)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO exam_results (student_id, exam_name, exam_date, subject, score, max_score, deviation, judgement, target_university, note) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?) RETURNING id",
+            (student["id"], v["exam_name"], v["exam_date"], v["subject"], v["score"], v["max_score"], v["deviation"], v["judgement"], target_uni, note)
+        )
+        returned = c.fetchone()
+        new_id = returned["id"] if returned else None
+        conn.commit()
+        log.info(f"[ExamResult] create id={new_id} student={student['id']} subj={v['subject']} dev={v['deviation']}")
+        return {"ok": True, "id": new_id}
+    finally:
+        conn.close()
+
+
+@app.put("/api/exam-results/{exam_id}")
+def update_exam_result(exam_id: int, payload: ExamResultUpdateRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒: 模試結果を更新。"""
+    _check_rate_limit_ip(request, bucket="exam_update", limit=30, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT student_id FROM exam_results WHERE id = ?", (exam_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="模試結果が見つかりません")
+        if int(row["student_id"]) != int(student["id"]):
+            raise HTTPException(status_code=403, detail="権限がありません")
+
+        updates = {}
+        # 各フィールドが個別に来た場合は validate
+        if any(getattr(payload, f) is not None for f in ["exam_name", "exam_date", "subject", "score", "max_score", "deviation", "judgement"]):
+            # 既存値で埋めて全体 validate
+            c.execute("SELECT exam_name, exam_date, subject, score, max_score, deviation, judgement FROM exam_results WHERE id = ?", (exam_id,))
+            cur = c.fetchone()
+            v = _validate_exam_payload(
+                payload.exam_name if payload.exam_name is not None else cur["exam_name"],
+                payload.exam_date if payload.exam_date is not None else str(cur["exam_date"]),
+                payload.subject if payload.subject is not None else cur["subject"],
+                payload.score if payload.score is not None else cur["score"],
+                payload.max_score if payload.max_score is not None else cur["max_score"],
+                payload.deviation if payload.deviation is not None else cur["deviation"],
+                payload.judgement if payload.judgement is not None else cur["judgement"],
+            )
+            updates.update(v)
+        if payload.target_university is not None:
+            updates["target_university"] = _sanitize_text(payload.target_university, 100)
+        if payload.note is not None:
+            updates["note"] = _sanitize_text(payload.note, 500)
+        if not updates:
+            return {"ok": True, "no_change": True}
+        set_clause = ", ".join([f"{k} = ?" for k in updates.keys()])
+        c.execute(f"UPDATE exam_results SET {set_clause} WHERE id = ? AND student_id = ?", tuple(updates.values()) + (exam_id, student["id"]))
+        conn.commit()
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
+@app.delete("/api/exam-results/{exam_id}")
+def delete_exam_result(exam_id: int, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒: 模試結果を削除。"""
+    _check_rate_limit_ip(request, bucket="exam_delete", limit=20, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT student_id FROM exam_results WHERE id = ?", (exam_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="模試結果が見つかりません")
+        if int(row["student_id"]) != int(student["id"]):
+            raise HTTPException(status_code=403, detail="権限がありません")
+        c.execute("DELETE FROM exam_results WHERE id = ? AND student_id = ?", (exam_id, student["id"]))
+        conn.commit()
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
+@app.get("/api/exam-results/me")
+def get_my_exam_results(authorization: Optional[str] = Header(None), limit: int = 100):
+    """生徒: 自分の模試結果一覧 (外部模試 + 内蔵模試統合)。"""
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+    try:
+        limit = max(1, min(int(limit or 100), 500))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="limit が不正")
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 外部模試
+        c.execute(
+            "SELECT id, exam_name, exam_date, subject, score, max_score, deviation, judgement, target_university, note, created_at "
+            "FROM exam_results WHERE student_id = ? ORDER BY exam_date DESC LIMIT ?",
+            (student["id"], limit)
+        )
+        external = []
+        for r in c.fetchall():
+            external.append({
+                "id": r["id"], "source": "external",
+                "exam_name": r["exam_name"],
+                "exam_date": str(r["exam_date"]),
+                "subject": r["subject"],
+                "score": r["score"], "max_score": r["max_score"],
+                "deviation": r["deviation"],
+                "judgement": r["judgement"],
+                "target_university": r["target_university"],
+                "note": r["note"],
+            })
+        # 内蔵模試 (mock_exam_sessions) も最新数件統合
+        try:
+            c.execute(
+                "SELECT id, exam_type, target_label, score_total, score_max, deviation_estimate, submitted_at, started_at "
+                "FROM mock_exam_sessions WHERE student_id = ? AND submitted_at IS NOT NULL "
+                "ORDER BY submitted_at DESC LIMIT 30",
+                (student["id"],)
+            )
+            internal = []
+            for r in c.fetchall():
+                ts = r["submitted_at"] or r["started_at"]
+                internal.append({
+                    "id": f"int_{r['id']}", "source": "internal",
+                    "exam_name": f"AI模試 ({r['exam_type'] or '汎用'})",
+                    "exam_date": str(ts).split(" ")[0].split("T")[0] if ts else None,
+                    "subject": "総合",
+                    "score": r["score_total"], "max_score": r["score_max"],
+                    "deviation": r["deviation_estimate"],
+                    "judgement": None,
+                    "target_university": r["target_label"],
+                    "note": None,
+                })
+        except Exception as ie:
+            log.debug(f"[ExamResult] internal merge skip: {ie}")
+            internal = []
+        # 偏差値推移サマリ (科目別最新3件)
+        c.execute(
+            "SELECT subject, deviation, exam_date FROM exam_results WHERE student_id = ? AND deviation IS NOT NULL "
+            "ORDER BY subject, exam_date DESC",
+            (student["id"],)
+        )
+        by_subject_trend = {}
+        for r in c.fetchall():
+            s = r["subject"]
+            if s not in by_subject_trend:
+                by_subject_trend[s] = []
+            if len(by_subject_trend[s]) < 5:
+                by_subject_trend[s].append({"date": str(r["exam_date"]), "deviation": r["deviation"]})
+        # 最新模試: 同じ exam_date でグループ化された科目別偏差値
+        latest_exam_date = external[0]["exam_date"] if external else None
+        latest_summary = None
+        if latest_exam_date:
+            c.execute(
+                "SELECT subject, deviation, judgement FROM exam_results WHERE student_id = ? AND exam_date = ? AND deviation IS NOT NULL",
+                (student["id"], latest_exam_date)
+            )
+            latest_subjects = []
+            for r in c.fetchall():
+                latest_subjects.append({"subject": r["subject"], "deviation": r["deviation"], "judgement": r["judgement"]})
+            if latest_subjects:
+                avg_dev = round(sum(s["deviation"] for s in latest_subjects) / len(latest_subjects), 1)
+                latest_summary = {"exam_date": latest_exam_date, "subjects": latest_subjects, "average_deviation": avg_dev}
+        return {
+            "ok": True,
+            "external": external,
+            "internal": internal,
+            "by_subject_trend": by_subject_trend,
+            "latest_summary": latest_summary,
+        }
+    finally:
+        conn.close()
+
+
+# ==========================================================================
 # Routes: Curricula (Phase 4 - 合格カリキュラム / 国公立難関大学コース限定)
 # 塾長指示 2026-05-06: 学習計画より上位の「合格までの全体ロードマップ」
 # ==========================================================================
@@ -15476,14 +15770,42 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
     baseline = _sanitize_text(payload.baseline_note, 500) or "未指定"
     months = max(1, round((ed - sd).days / 30))
 
+    # 直近模試結果を自動 inject (科目別偏差値+判定 / 最大3件)
+    exam_summary = ""
+    try:
+        _conn = db()
+        _c = _conn.cursor()
+        _c.execute(
+            "SELECT exam_name, exam_date, subject, deviation, judgement FROM exam_results "
+            "WHERE student_id = ? AND deviation IS NOT NULL ORDER BY exam_date DESC LIMIT 15",
+            (student["id"],)
+        )
+        recent = _c.fetchall()
+        _conn.close()
+        if recent:
+            # 科目別最新偏差値
+            by_subj = {}
+            for r in recent:
+                s = r["subject"]
+                if s not in by_subj:
+                    by_subj[s] = {"deviation": r["deviation"], "judgement": r["judgement"], "exam": r["exam_name"], "date": str(r["exam_date"])}
+            lines = ["", "## 直近模試結果 (科目別偏差値 / 判定 / 模試名・日付):"]
+            for s, d in by_subj.items():
+                jd = f" / 判定 {d['judgement']}" if d['judgement'] else ""
+                lines.append(f"- {s}: 偏差値 {d['deviation']}{jd} ({d['exam']} / {d['date']})")
+            exam_summary = "\n".join(lines)
+    except Exception as e:
+        log.warning(f"[Curriculum] exam inject failed: {e}")
+
     sys_prompt = "受験戦略を立てる学習プランナーです。難関大学 (国公立・難関私立) 志望者に対し、入試日から逆算した全体カリキュラムを 4-6 フェーズに分割して提案します。各フェーズは現実的な期間と教材 + スタディサプリ (スタサプ) の対応講義で構成。スタサプ講義は商品名そのまま (例: 『高3 トップレベル英語 〈読解編〉』『高3 ハイレベル数学IAIIB』『古文文法ベーシックレベル』) で記載。市販の参考書教材とスタサプ講義は別フィールドに分けて出力。純粋な JSON のみ返答 (前置きや解説不要)。"
     user_prompt = f"""志望校: {target_university}{(' / ' + target_faculty) if target_faculty else ''}
 開始日: {sd.isoformat()}
 入試日: {ed.isoformat()} (期間 {months} ヶ月)
 1日確保時間: {daily} 分
-現状: {baseline}
+現状: {baseline}{exam_summary}
 
 上記から、難関大学合格までの全体カリキュラムを 4-6 フェーズに分割して JSON で返してください。
+模試結果が含まれている場合は、特に偏差値が低い科目に厚めの教材配分をしてください。
 各フェーズには市販教材 (materials) と スタディサプリ講義 (sapuri_lectures) の両方を提案してください。
 
 出力形式 (フェンスや前置きなし):

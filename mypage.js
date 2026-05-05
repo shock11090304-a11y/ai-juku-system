@@ -469,6 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
   try { bindTrialOnboarding(); } catch (e) { console.error('bindTrialOnboarding failed:', e); }
   try { renderTrialOnboarding(); } catch (e) { console.error('renderTrialOnboarding failed:', e); }
   try { initStudyLog(); } catch (e) { console.error('initStudyLog failed:', e); }
+  try { initExamResults(); } catch (e) { console.error('initExamResults failed:', e); }
   try { initCurriculum(); } catch (e) { console.error('initCurriculum failed:', e); }
   try { initStudyPlan(); } catch (e) { console.error('initStudyPlan failed:', e); }
   try { initMessages(); } catch (e) { console.error('initMessages failed:', e); }
@@ -1917,6 +1918,225 @@ async function deleteCurriculum(curriculumId) {
   try {
     await slApiFetch(`/api/curricula/${encodeURIComponent(curriculumId)}`, { method: 'DELETE' });
     await loadMyCurricula();
+  } catch (e) {
+    alert('削除失敗: ' + (e.message || ''));
+  }
+}
+
+
+// ==========================================================================
+// 📊 模試結果 (Phase 4.5 - 国公立難関大学コース限定)
+// ==========================================================================
+let _exTrendChart = null;
+
+function initExamResults() {
+  const section = document.querySelector('.exam-section');
+  const tryInit = (retries) => {
+    const student = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || null;
+    if (!student) {
+      if (section) section.style.display = 'none';
+      if (retries > 0) setTimeout(() => tryInit(retries - 1), 200);
+      return;
+    }
+    if (typeof student.course === 'undefined' && retries > 0) {
+      setTimeout(() => tryInit(retries - 1), 200);
+      return;
+    }
+    if (student.course !== 'kokuritsu_nankan') {
+      if (section) section.style.display = 'none';
+      return;
+    }
+    if (section) section.style.display = '';
+    bindExamButtons();
+    loadMyExamResults();
+  };
+  tryInit(10);
+}
+
+function bindExamButtons() {
+  // subject options 投入
+  const subjSel = document.getElementById('exSubject');
+  if (subjSel && !subjSel.options.length) {
+    subjSel.innerHTML = '<option value="">-- 選択 --</option>' + SP_SUBJECTS.map(s => `<option value="${s}">${s}</option>`).join('');
+  }
+  const toggle = document.getElementById('exToggleFormBtn');
+  const cancel = document.getElementById('exFormCancelBtn');
+  const submit = document.getElementById('exSubmitBtn');
+  if (toggle && !toggle._exBound) {
+    toggle.addEventListener('click', () => {
+      const w = document.getElementById('exFormWrap');
+      const isOpen = w.style.display !== 'none';
+      w.style.display = isOpen ? 'none' : '';
+      if (!isOpen && !document.getElementById('exDate').value) {
+        document.getElementById('exDate').value = _slJstDate(0);
+      }
+    });
+    toggle._exBound = true;
+  }
+  if (cancel && !cancel._exBound) {
+    cancel.addEventListener('click', () => { document.getElementById('exFormWrap').style.display = 'none'; });
+    cancel._exBound = true;
+  }
+  if (submit && !submit._exBound) {
+    submit.addEventListener('click', submitExamResult);
+    submit._exBound = true;
+  }
+}
+
+async function submitExamResult() {
+  const btn = document.getElementById('exSubmitBtn');
+  const msg = document.getElementById('exFormMsg');
+  if (!btn || btn.disabled) return;
+  const name = document.getElementById('exName').value.trim();
+  const date = document.getElementById('exDate').value;
+  const subject = document.getElementById('exSubject').value;
+  const score = document.getElementById('exScore').value;
+  const maxScore = document.getElementById('exMaxScore').value;
+  const dev = document.getElementById('exDeviation').value;
+  const judgement = document.getElementById('exJudgement').value;
+  const targetUni = document.getElementById('exTargetUni').value.trim();
+  const note = document.getElementById('exNote').value.trim();
+  if (!name || !date || !subject) { msg.style.color = '#fca5a5'; msg.textContent = '模試名・受験日・科目は必須'; return; }
+  btn.disabled = true; btn.textContent = '保存中...';
+  try {
+    await slApiFetch('/api/exam-results', {
+      method: 'POST',
+      body: JSON.stringify({
+        exam_name: name, exam_date: date, subject,
+        score: score ? parseInt(score, 10) : undefined,
+        max_score: maxScore ? parseInt(maxScore, 10) : undefined,
+        deviation: dev ? parseFloat(dev) : undefined,
+        judgement: judgement || undefined,
+        target_university: targetUni || undefined,
+        note: note || undefined,
+      }),
+    });
+    msg.style.color = '#86efac'; msg.textContent = '✅ 模試結果を保存しました';
+    // clear form (model+date は保持・他クリア)
+    ['exScore', 'exMaxScore', 'exDeviation', 'exNote'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    document.getElementById('exJudgement').value = '';
+    await loadMyExamResults();
+  } catch (e) {
+    msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || '保存失敗');
+  } finally {
+    btn.disabled = false; btn.textContent = '📊 結果を保存';
+  }
+}
+
+async function loadMyExamResults() {
+  const list = document.getElementById('exList');
+  const summaryEl = document.getElementById('exLatestSummary');
+  if (!list) return;
+  try {
+    const data = await slApiFetch('/api/exam-results/me?limit=200');
+    const ext = data.external || [];
+    const internal = data.internal || [];
+    const all = [...ext, ...internal].sort((a, b) => (b.exam_date || '').localeCompare(a.exam_date || ''));
+    // 直近サマリ
+    if (data.latest_summary) {
+      const ls = data.latest_summary;
+      const avg = ls.average_deviation;
+      const avgColor = avg >= 65 ? '#86efac' : avg >= 55 ? '#fbbf24' : '#fca5a5';
+      summaryEl.innerHTML = `
+        <div style="background:rgba(0,0,0,0.3); border-left:4px solid ${avgColor}; border-radius:8px; padding:0.85rem; margin-bottom:0.5rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.4rem;">
+            <div style="font-size:0.85rem; color:#86efac; font-weight:700;">📊 直近模試 (${escapeHtml(ls.exam_date)}) 平均偏差値: <span style="color:${avgColor}; font-size:1.2rem;">${avg}</span></div>
+            <div style="display:flex; gap:0.3rem; flex-wrap:wrap;">
+              ${ls.subjects.map(s => {
+                const c = s.deviation >= 65 ? '#86efac' : s.deviation >= 55 ? '#fbbf24' : '#fca5a5';
+                const jd = s.judgement ? ` <span style="background:rgba(255,255,255,0.1); padding:0 0.3rem; border-radius:3px;">${s.judgement}</span>` : '';
+                return `<span style="background:rgba(255,255,255,0.05); color:${c}; padding:0.2rem 0.5rem; border-radius:6px; font-size:0.78rem;">${escapeHtml(s.subject)}: ${s.deviation}${jd}</span>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>`;
+    } else {
+      summaryEl.innerHTML = '';
+    }
+    // 偏差値推移グラフ
+    renderExamTrendChart(data.by_subject_trend || {});
+    // 一覧
+    if (!all.length) {
+      list.innerHTML = '<div style="text-align:center; color:#71717a; padding:1rem;">📊 まだ模試結果がありません。「＋ 模試結果を追加」から登録してみよう</div>';
+      return;
+    }
+    list.innerHTML = `
+      <div style="font-size:0.78rem; color:#a1a1aa; margin-bottom:0.4rem;">📋 模試履歴 (外部 ${ext.length} 件 / 内蔵 ${internal.length} 件)</div>
+      ${all.slice(0, 30).map(r => {
+        const isInternal = r.source === 'internal';
+        const devColor = r.deviation >= 65 ? '#86efac' : r.deviation >= 55 ? '#fbbf24' : (r.deviation ? '#fca5a5' : '#71717a');
+        const sourceTag = isInternal ? '<span style="background:rgba(167,139,250,0.2); color:#c4b5fd; padding:0.1rem 0.4rem; border-radius:4px; font-size:0.7rem;">🤖 AI模試</span>' : '<span style="background:rgba(16,185,129,0.2); color:#86efac; padding:0.1rem 0.4rem; border-radius:4px; font-size:0.7rem;">📋 外部</span>';
+        const delBtn = isInternal ? '' : `<button data-id="${r.id}" class="ex-del-btn" style="background:none; border:0; color:#71717a; cursor:pointer; font-size:0.85rem;">🗑</button>`;
+        return `
+          <div style="background:rgba(255,255,255,0.04); border-radius:8px; padding:0.7rem; margin-bottom:0.4rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem; flex-wrap:wrap; gap:0.3rem;">
+              <div style="font-weight:700; color:#e4e4e7; font-size:0.88rem;">${sourceTag} ${escapeHtml(r.exam_name)}</div>
+              <div style="font-size:0.72rem; color:#71717a;">${escapeHtml(r.exam_date || '')}</div>
+            </div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap; font-size:0.78rem;">
+              <span style="color:#c7d2fe;">科目: ${escapeHtml(r.subject)}</span>
+              ${r.deviation ? `<span style="color:${devColor}; font-weight:700;">偏差値 ${r.deviation}</span>` : ''}
+              ${r.score !== null && r.score !== undefined ? `<span style="color:#a1a1aa;">${r.score}${r.max_score ? '/' + r.max_score : ''}点</span>` : ''}
+              ${r.judgement ? `<span style="color:#fbbf24;">判定 ${r.judgement}</span>` : ''}
+              ${r.target_university ? `<span style="color:#a1a1aa;">→ ${escapeHtml(r.target_university)}</span>` : ''}
+            </div>
+            ${r.note ? `<div style="font-size:0.78rem; color:#d4d4d8; margin-top:0.3rem;">${escapeHtml(r.note)}</div>` : ''}
+            <div style="text-align:right; margin-top:0.2rem;">${delBtn}</div>
+          </div>`;
+      }).join('')}`;
+    list.querySelectorAll('.ex-del-btn').forEach(b => b.addEventListener('click', () => deleteExamResult(b.getAttribute('data-id'))));
+  } catch (e) {
+    console.error('loadMyExamResults failed:', e);
+    list.innerHTML = `<div style="text-align:center; color:#fca5a5; padding:1rem;">⚠️ 読み込み失敗 (${escapeHtml(e.message || '')})</div>`;
+  }
+}
+
+function renderExamTrendChart(trendBySubj) {
+  const canvas = document.getElementById('exTrendChart');
+  const wrap = document.getElementById('exTrendWrap');
+  if (!canvas || !wrap || !window.Chart) return;
+  const subjects = Object.keys(trendBySubj);
+  if (!subjects.length) {
+    wrap.style.display = 'none';
+    return;
+  }
+  wrap.style.display = '';
+  // 全日付を集めて時系列順にソート
+  const allDates = new Set();
+  subjects.forEach(s => trendBySubj[s].forEach(p => allDates.add(p.date)));
+  const labels = Array.from(allDates).sort();
+  const palette = ['#6366f1', '#10b981', '#ec4899', '#f59e0b', '#8b5cf6', '#06b6d4', '#fbbf24', '#fb7185'];
+  const datasets = subjects.map((s, i) => ({
+    label: s,
+    data: labels.map(d => {
+      const point = trendBySubj[s].find(p => p.date === d);
+      return point ? point.deviation : null;
+    }),
+    borderColor: palette[i % palette.length],
+    backgroundColor: palette[i % palette.length] + '33',
+    spanGaps: true,
+    tension: 0.2,
+  }));
+  if (_exTrendChart) _exTrendChart.destroy();
+  _exTrendChart = new Chart(canvas, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#a1a1aa', font: { size: 10 } } } },
+      scales: {
+        x: { ticks: { color: '#a1a1aa', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { ticks: { color: '#a1a1aa' }, grid: { color: 'rgba(255,255,255,0.05)' }, suggestedMin: 35, suggestedMax: 75 },
+      },
+    },
+  });
+}
+
+async function deleteExamResult(id) {
+  if (!confirm('この模試結果を削除しますか?')) return;
+  try {
+    await slApiFetch(`/api/exam-results/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    await loadMyExamResults();
   } catch (e) {
     alert('削除失敗: ' + (e.message || ''));
   }
