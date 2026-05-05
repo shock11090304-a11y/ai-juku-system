@@ -780,6 +780,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 📚 学習記録ダッシュボード初期化
   try { initStudyLogDashboard(); } catch (e) { console.error('initStudyLogDashboard failed:', e); }
   try { initStudyPlanDashboard(); } catch (e) { console.error('initStudyPlanDashboard failed:', e); }
+  try { initMessageDashboard(); } catch (e) { console.error('initMessageDashboard failed:', e); }
 
   // 🔔 体験終了者フォローアップ + 🎁 紹介ループ metrics: AdminAuth 認証後に読み込み
   const tryLoadAdminSections = (retries = 10) => {
@@ -1337,4 +1338,237 @@ function renderCalendar(data) {
       ${cells.join('')}
     </div>
     <div style="margin-top:0.5rem; font-size:0.72rem; color:#71717a;">合計 ${(data.plans || []).length} 計画</div>`;
+}
+
+
+// ==========================================================================
+// 📨 メッセージ配信ダッシュボード (Phase 3)
+// ==========================================================================
+let _msgCurrentTarget = 'student';
+let _msgLastBroadcastCount = -1;  // 0名 confirm 防止 (Frontend C-2)
+
+// ISO → JST 'YYYY-MM-DD HH:MM' 変換 (UX C-1)
+function _msgFmtJst(s) {
+  if (!s) return '';
+  try {
+    const iso = String(s);
+    const d = new Date(iso.endsWith('Z') || /[+-]\d\d:?\d\d$/.test(iso) ? iso : iso + 'Z');
+    if (isNaN(d)) return String(s).slice(0, 16).replace('T', ' ');
+    const fmt = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
+    return fmt.format(d).replace(/\//g, '-');
+  } catch { return String(s).slice(0, 16).replace('T', ' '); }
+}
+
+function initMessageDashboard() {
+  const tabInd = document.getElementById('msgTabIndividual');
+  const tabBC = document.getElementById('msgTabBroadcast');
+  const sendBtn = document.getElementById('msgSendBtn');
+  const refreshBtn = document.getElementById('msgRefreshBtn');
+  const broadcastFilter = document.getElementById('msgBroadcastFilter');
+
+  if (tabInd) tabInd.addEventListener('click', () => switchMsgTab('student'));
+  if (tabBC) tabBC.addEventListener('click', () => switchMsgTab('broadcast'));
+  if (sendBtn) sendBtn.addEventListener('click', sendMessage);
+  if (refreshBtn) refreshBtn.addEventListener('click', loadMessageHistory);
+  if (broadcastFilter) broadcastFilter.addEventListener('change', updateBroadcastCount);
+
+  const tryLoad = (retries = 10) => {
+    if (window.AdminAuth && window.AdminAuth.getToken()) {
+      loadStudentSelect();
+      loadMessageHistory();
+      updateBroadcastCount();
+    } else if (retries > 0) {
+      setTimeout(() => tryLoad(retries - 1), 200);
+    }
+  };
+  tryLoad();
+}
+
+function switchMsgTab(target) {
+  _msgCurrentTarget = target;
+  const tabInd = document.getElementById('msgTabIndividual');
+  const tabBC = document.getElementById('msgTabBroadcast');
+  const indWrap = document.getElementById('msgIndividualWrap');
+  const bcWrap = document.getElementById('msgBroadcastWrap');
+  if (target === 'student') {
+    if (tabInd) { tabInd.style.background = 'rgba(236,72,153,0.25)'; tabInd.style.color = '#f9a8d4'; }
+    if (tabBC) { tabBC.style.background = 'none'; tabBC.style.color = '#a1a1aa'; }
+    if (indWrap) indWrap.style.display = '';
+    if (bcWrap) bcWrap.style.display = 'none';
+  } else {
+    if (tabBC) { tabBC.style.background = 'rgba(236,72,153,0.25)'; tabBC.style.color = '#f9a8d4'; }
+    if (tabInd) { tabInd.style.background = 'none'; tabInd.style.color = '#a1a1aa'; }
+    if (indWrap) indWrap.style.display = 'none';
+    if (bcWrap) bcWrap.style.display = '';
+    updateBroadcastCount();
+  }
+}
+
+async function loadStudentSelect() {
+  const sel = document.getElementById('msgStudentSelect');
+  if (!sel) return;
+  try {
+    const res = await window.AdminAuth.fetch('/api/admin/students/by-course');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const students = data.students || [];
+    sel.innerHTML = '<option value="">-- 生徒を選択 --</option>' + students.map(s =>
+      `<option value="${escapeHtml(String(s.id))}">${escapeHtml(s.name)}${s.grade ? ` (${escapeHtml(s.grade)})` : ''}${s.course === 'kokuritsu_nankan' ? ' [国公立難関]' : ''}</option>`
+    ).join('');
+  } catch (e) {
+    sel.innerHTML = `<option value="">読み込み失敗: ${escapeHtml(e.message || '')}</option>`;
+  }
+}
+
+async function updateBroadcastCount() {
+  const filter = document.getElementById('msgBroadcastFilter');
+  const countEl = document.getElementById('msgBroadcastCount');
+  if (!filter || !countEl) return;
+  countEl.textContent = '対象人数を計算中...';
+  try {
+    const res = await window.AdminAuth.fetch('/api/admin/students/by-course');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const all = data.students || [];
+    let cnt = 0;
+    const f = filter.value;
+    if (f === 'all') cnt = all.length;
+    else if (f === 'kokuritsu_nankan') cnt = all.filter(s => s.course === 'kokuritsu_nankan').length;
+    else if (f === 'paid_only') cnt = all.filter(s => s.status === 'paid').length;
+    else if (f === 'trial_only') cnt = all.filter(s => s.status === 'trial').length;
+    countEl.textContent = `📊 対象: ${cnt} 名`;
+    countEl.style.color = cnt > 0 ? '#86efac' : '#fca5a5';
+    _msgLastBroadcastCount = cnt;
+  } catch (e) {
+    countEl.textContent = '対象人数取得失敗';
+    _msgLastBroadcastCount = -1;
+  }
+}
+
+async function sendMessage() {
+  const btn = document.getElementById('msgSendBtn');
+  const msg = document.getElementById('msgSendMessage');
+  if (!btn || btn.disabled) return;
+  if (msg) { msg.textContent = ''; msg.style.color = '#a1a1aa'; }
+
+  const target = _msgCurrentTarget;
+  const subject = document.getElementById('msgSubject').value.trim();
+  const body = document.getElementById('msgBody').value.trim();
+  const sendEmail = document.getElementById('msgSendEmail').checked;
+
+  if (!body) { if (msg) { msg.textContent = '本文は必須です'; msg.style.color = '#fca5a5'; } return; }
+
+  const payload = { target, subject: subject || undefined, body, send_email: sendEmail };
+  if (target === 'student') {
+    const sid = document.getElementById('msgStudentSelect').value;
+    if (!sid) { if (msg) { msg.textContent = '送信先生徒を選択してください'; msg.style.color = '#fca5a5'; } return; }
+    payload.student_id = parseInt(sid, 10);
+  } else {
+    payload.broadcast_filter = document.getElementById('msgBroadcastFilter').value;
+    // 0 名 / 取得失敗時は送信拒否 (Frontend C-2)
+    if (_msgLastBroadcastCount === 0) { if (msg) { msg.textContent = '対象人数 0 名のため送信できません'; msg.style.color = '#fca5a5'; } return; }
+    if (_msgLastBroadcastCount < 0) { if (msg) { msg.textContent = '対象人数を取得してから再度実行してください'; msg.style.color = '#fca5a5'; } return; }
+    // 文字数 client side 検証 (Frontend M-6)
+    if (body.length > 5000) { if (msg) { msg.textContent = `本文は5000文字以内 (現在 ${body.length} 文字)`; msg.style.color = '#fca5a5'; } return; }
+    if (subject.length > 200) { if (msg) { msg.textContent = `件名は200文字以内 (現在 ${subject.length} 文字)`; msg.style.color = '#fca5a5'; } return; }
+    const bodyPreview = body.length > 50 ? body.slice(0, 50) + '…' : body;
+    if (!confirm(`一斉送信します。\n対象: ${_msgLastBroadcastCount} 名\n件名: ${subject || '(なし)'}\n本文: ${bodyPreview}\nメール配信: ${sendEmail ? 'あり' : 'なし'}\n\nよろしいですか？`)) return;
+  }
+  // 個別送信時の文字数検証 (broadcast 上で実施した分は通過済)
+  if (target === 'student') {
+    if (body.length > 5000) { if (msg) { msg.textContent = `本文は5000文字以内 (現在 ${body.length} 文字)`; msg.style.color = '#fca5a5'; } return; }
+    if (subject.length > 200) { if (msg) { msg.textContent = `件名は200文字以内 (現在 ${subject.length} 文字)`; msg.style.color = '#fca5a5'; } return; }
+  }
+
+  btn.disabled = true;
+  btn.textContent = '送信中...';
+  try {
+    const res = await window.AdminAuth.fetch('/api/admin/messages/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      let detail = '';
+      try { const j = await res.json(); detail = j.detail || ''; } catch {}
+      throw new Error(detail || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    if (msg) {
+      msg.textContent = `✅ 送信完了 (受信者 ${data.recipients} 名 · email送信 ${data.email_sent}/${data.email_attempted}${data.email_failed ? ` · 失敗 ${data.email_failed}` : ''})`;
+      msg.style.color = '#86efac';
+    }
+    document.getElementById('msgSubject').value = '';
+    document.getElementById('msgBody').value = '';
+    await loadMessageHistory();
+  } catch (e) {
+    if (msg) { msg.textContent = '❌ ' + (e.message || '送信失敗'); msg.style.color = '#fca5a5'; }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📨 送信';
+  }
+}
+
+async function loadMessageHistory() {
+  const el = document.getElementById('msgHistory');
+  if (!el) return;
+  if (!window.AdminAuth || !window.AdminAuth.getToken()) {
+    el.innerHTML = '<div style="color:#fbbf24; padding:1rem;">⏳ 認証準備中...</div>';
+    return;
+  }
+  el.innerHTML = '<div style="text-align:center; color:#71717a; padding:1rem;">読み込み中...</div>';
+  try {
+    const res = await window.AdminAuth.fetch('/api/admin/messages?limit=100');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const broadcasts = data.broadcasts || [];
+    const individuals = data.individuals || [];
+    if (!broadcasts.length && !individuals.length) {
+      el.innerHTML = '<div style="text-align:center; color:#71717a; padding:1.5rem;">送信履歴がありません</div>';
+      return;
+    }
+    let html = '';
+    if (broadcasts.length) {
+      html += '<div style="font-size:0.8rem; color:#a1a1aa; margin:0.5rem 0;">📢 一斉送信</div>';
+      html += broadcasts.map(b => {
+        const fLabel = { all: '全生徒', kokuritsu_nankan: '国公立難関', paid_only: '有料のみ', trial_only: '体験のみ' }[b.broadcast_filter] || b.broadcast_filter;
+        return `
+          <div style="background:rgba(255,255,255,0.04); border-left:3px solid #ec4899; border-radius:6px; padding:0.7rem; margin-bottom:0.5rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
+              <div style="font-weight:700; color:#f9a8d4; font-size:0.88rem;">📢 ${escapeHtml(b.subject || 'お知らせ')} <span style="font-size:0.72rem; color:#a1a1aa; font-weight:400; margin-left:0.3rem;">[${escapeHtml(fLabel)}]</span></div>
+              <div style="font-size:0.72rem; color:#71717a;">${escapeHtml(_msgFmtJst(b.created_at))}</div>
+            </div>
+            <div style="font-size:0.78rem; color:#d4d4d8; max-height:3em; overflow:hidden; margin-bottom:0.4rem;">${escapeHtml(b.body)}</div>
+            <div style="display:flex; gap:0.7rem; font-size:0.72rem; color:#a1a1aa;">
+              <span>👥 受信 ${b.recipient_count}</span>
+              <span style="color:#86efac;">📧 ${b.email_sent_count}</span>
+              ${b.email_failed_count > 0 ? `<span style="color:#fca5a5;">⚠ 失敗 ${b.email_failed_count}</span>` : ''}
+              <span style="color:#7dd3fc;">👁 既読 ${b.read_count}/${b.recipient_count}</span>
+            </div>
+          </div>`;
+      }).join('');
+    }
+    if (individuals.length) {
+      html += '<div style="font-size:0.8rem; color:#a1a1aa; margin:0.7rem 0 0.5rem;">👤 個別送信</div>';
+      html += individuals.map(m => {
+        const readBadge = m.read_at
+          ? `<span style="color:#7dd3fc;">👁 既読 ${escapeHtml(_msgFmtJst(m.read_at))}</span>`
+          : '<span style="color:#fbbf24;">未読</span>';
+        const emailBadge = m.email_status === 'sent' ? '<span style="color:#86efac;">📧 送信済</span>'
+          : (m.email_status && m.email_status.startsWith('failed')) ? `<span style="color:#fca5a5;" title="${escapeHtml(m.email_status)}">⚠ メール失敗</span>` : '';
+        return `
+          <div style="background:rgba(255,255,255,0.04); border-left:3px solid rgba(236,72,153,0.5); border-radius:6px; padding:0.7rem; margin-bottom:0.5rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
+              <div style="font-weight:700; color:#e4e4e7; font-size:0.88rem;">👤 ${escapeHtml(m.student_name || '?')}${m.grade ? ` <span style="color:#71717a; font-size:0.72rem;">(${escapeHtml(m.grade)})</span>` : ''} <span style="color:#f9a8d4; margin-left:0.3rem;">${escapeHtml(m.subject || 'お知らせ')}</span></div>
+              <div style="font-size:0.72rem; color:#71717a;">${escapeHtml(_msgFmtJst(m.created_at))}</div>
+            </div>
+            <div style="font-size:0.78rem; color:#d4d4d8; max-height:3em; overflow:hidden; margin-bottom:0.4rem;">${escapeHtml(m.body)}</div>
+            <div style="display:flex; gap:0.7rem; font-size:0.72rem;">${emailBadge} ${readBadge}</div>
+          </div>`;
+      }).join('');
+    }
+    el.innerHTML = html;
+  } catch (e) {
+    el.innerHTML = `<div style="color:#fca5a5; padding:1rem;">エラー: ${escapeHtml(e.message || '')}</div>`;
+  }
 }

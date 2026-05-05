@@ -11,7 +11,7 @@ FastAPI + SQLite + Stripe + LINE Messaging API
     uvicorn main:app --reload --port 8000
 """
 
-from fastapi import FastAPI, Request, HTTPException, Depends, Header, Body, UploadFile, File, Form
+from fastapi import FastAPI, Request, HTTPException, Depends, Header, Body, UploadFile, File, Form, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse, RedirectResponse, StreamingResponse
@@ -584,6 +584,26 @@ def init_db():
     CREATE UNIQUE INDEX IF NOT EXISTS uq_study_plans_no_dup
         ON study_plans(student_id, subject, COALESCE(material,''), start_date, end_date)
         WHERE status != 'archived';
+    -- 塾長→生徒メッセージ機能 (Phase 3 - email only, 塾長指示 2026-05-05)
+    CREATE TABLE IF NOT EXISTS messages (
+        id {pk},
+        sender_type TEXT NOT NULL,
+        sender_id INTEGER,
+        recipient_type TEXT NOT NULL,
+        recipient_id INTEGER,
+        broadcast_filter TEXT,
+        subject TEXT,
+        body TEXT NOT NULL,
+        sent_via TEXT DEFAULT 'in_app',
+        email_status TEXT,
+        sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        read_at TIMESTAMP,
+        broadcast_group_id TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient_type, recipient_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_type, sender_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_messages_broadcast ON messages(broadcast_group_id);
     -- 紹介ループ (Referral): 既存生徒が新規生徒を呼ぶと両者に特典 (2026-05-05)
     -- referrer_id: 紹介した既存生徒 (students.id)
     -- referred_id: 紹介された新規生徒 (students.id) — 申込時に確定
@@ -14666,6 +14686,375 @@ def admin_study_plans_calendar(request: Request, authorization: Optional[str] = 
             "month_start": month_start, "month_end": month_end,
             "plans": plans,
         }
+    finally:
+        conn.close()
+
+
+# ==========================================================================
+# Routes: Messages (Phase 3 - 塾長→生徒メッセージ機能, email only)
+# 塾長指示 2026-05-05: Studyplus for School のメッセージ機能を内製代替。
+# 個別 / 一斉 (フィルタ: コース/学年/ステータス) を email + アプリ内で配信。
+# ==========================================================================
+_MSG_BROADCAST_FILTERS = {"all", "kokuritsu_nankan", "paid_only", "trial_only"}
+
+
+def _send_message_email(to_email: str, subject: str, body_text: str, student_name: Optional[str] = None) -> dict:
+    """Resend 経由でメッセージを送信。in-app メッセージとは別の email 通知。"""
+    if not RESEND_API_KEY:
+        return {"sent": False, "error": "RESEND_API_KEY not configured"}
+    # 合成監視向け bounce 防止 (memory: feedback_synthetic_monitor_quota.md)
+    # case-insensitive (Integration 監査 2026-05-05): 大文字混じりでも skip
+    if "@synthetic-monitor." in (to_email or "").lower():
+        return {"sent": True, "resend_id": "synthetic-skip", "synthetic": True}
+    def _esc(s):
+        return (str(s or "")
+                .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                .replace('"', "&quot;").replace("'", "&#39;"))
+    # subject: HTML escape + CRLF 除去 (header injection 二重防御 / Security M-1)
+    raw_subject = (subject or "AI学習コーチ塾より新着メッセージ").replace("\r", "").replace("\n", " ")
+    safe_subject = _esc(raw_subject)
+    # body: HTML escape + CRLF 正規化
+    body_normalized = (body_text or "").replace("\r\n", "\n").replace("\r", "\n")
+    safe_body_html = _esc(body_normalized).replace("\n", "<br>")
+    greeting = f"<p>{_esc(student_name)}さん</p>" if student_name else ""
+    html = f"""<!DOCTYPE html><html><body style="font-family:sans-serif; line-height:1.7; color:#333; padding:1.5rem; max-width:600px; margin:0 auto;">
+<h2 style="color:#6366f1; border-bottom:2px solid #6366f1; padding-bottom:0.5rem;">📨 {safe_subject}</h2>
+{greeting}
+<div style="background:#fafafa; border-left:4px solid #6366f1; padding:1rem 1.2rem; border-radius:6px; margin:1rem 0;">
+{safe_body_html}
+</div>
+<p style="font-size:0.85rem; color:#666; margin-top:1.5rem;">
+このメッセージは AI学習コーチ塾 のマイページからも確認できます:<br>
+<a href="https://trillion-ai-juku.com/mypage.html" style="color:#6366f1;">https://trillion-ai-juku.com/mypage.html</a>
+</p>
+<hr style="margin:2rem 0; border:none; border-top:1px solid #eee;">
+<p style="font-size:0.78rem; color:#999;">配信元: AI学習コーチ塾 / 配信停止やお問い合わせは塾長まで</p>
+</body></html>"""
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({"from": FROM_EMAIL, "to": [to_email], "subject": safe_subject, "html": html}).encode("utf-8"),
+            headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json", "User-Agent": "ai-juku-system/1.0"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode())
+            return {"sent": True, "resend_id": result.get("id")}
+    except Exception as e:
+        log.error(f"[Messages] email send failed for {to_email}: {type(e).__name__}: {str(e)[:200]}")
+        return {"sent": False, "error": str(e)[:200]}
+
+
+class MessageSendRequest(BaseModel):
+    target: str  # 'student' (個別) or 'broadcast' (一斉)
+    student_id: Optional[int] = None  # target='student' 時に必須
+    broadcast_filter: Optional[str] = None  # 'all'/'kokuritsu_nankan'/'paid_only'/'trial_only'
+    subject: Optional[str] = None
+    body: str
+    send_email: bool = True
+
+
+@app.post("/api/admin/messages/send")
+def admin_send_message(payload: MessageSendRequest, background_tasks: BackgroundTasks, request: Request, authorization: Optional[str] = Header(None)):
+    """塾長: 個別 or 一斉メッセージを送信。in-app は同期保存、email は BackgroundTasks で非同期送信。"""
+    _check_rate_limit_ip(request, bucket="msg_send", limit=20, window=60)
+    _verify_admin_required(authorization)
+
+    target = (payload.target or "").strip()
+    if target not in ("student", "broadcast"):
+        raise HTTPException(status_code=400, detail="target は 'student' または 'broadcast'")
+
+    # broadcast は別途 rate limit (5 分 3 回) — Resend 枠保護 (Security C-1 / feedback_synthetic_monitor_quota.md)
+    if target == "broadcast":
+        _check_rate_limit_ip(request, bucket="msg_broadcast", limit=3, window=300)
+
+    body = _sanitize_text(payload.body, 5000)
+    if not body:
+        raise HTTPException(status_code=400, detail="本文は必須です")
+    subject = _sanitize_text(payload.subject, 200) or "AI学習コーチ塾より新着メッセージ"
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 対象生徒一覧を解決
+        targets = []
+        broadcast_group_id = None
+        if target == "student":
+            if not payload.student_id:
+                raise HTTPException(status_code=400, detail="student_id が必要です")
+            c.execute("SELECT id, name, email FROM students WHERE id = ? AND status IN ('paid','trial')", (int(payload.student_id),))
+            row = c.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="生徒が見つからないか、status が無効です")
+            targets.append({"id": row["id"], "name": row["name"], "email": row["email"]})
+        else:
+            bf = (payload.broadcast_filter or "all").strip()
+            if bf not in _MSG_BROADCAST_FILTERS:
+                raise HTTPException(status_code=400, detail="broadcast_filter が不正です")
+            import uuid as _uuid
+            broadcast_group_id = f"bc_{_uuid.uuid4().hex[:12]}"
+            if bf == "all":
+                c.execute("SELECT id, name, email FROM students WHERE status IN ('paid','trial')")
+            elif bf == "kokuritsu_nankan":
+                c.execute("SELECT id, name, email FROM students WHERE status IN ('paid','trial') AND course = ?", (_STUDY_LOG_TARGET_COURSE,))
+            elif bf == "paid_only":
+                c.execute("SELECT id, name, email FROM students WHERE status = 'paid'")
+            elif bf == "trial_only":
+                c.execute("SELECT id, name, email FROM students WHERE status = 'trial'")
+            for r in c.fetchall():
+                targets.append({"id": r["id"], "name": r["name"], "email": r["email"]})
+
+        if not targets:
+            raise HTTPException(status_code=404, detail="対象生徒がいません")
+        # 一斉送信の上限 500 名 (Security M-4 / Resend 枠保護)
+        if target == "broadcast" and len(targets) > 500:
+            raise HTTPException(status_code=413, detail=f"一斉送信の上限は500名です (対象: {len(targets)}名)")
+
+        # 60秒以内の同一内容 broadcast を弾く (連打誤送信防止 / Security C-1)
+        if target == "broadcast":
+            if USE_POSTGRES:
+                c.execute(
+                    "SELECT 1 FROM messages WHERE broadcast_group_id IS NOT NULL "
+                    "AND broadcast_filter = ? AND subject = ? AND body = ? "
+                    "AND created_at > NOW() - INTERVAL '60 seconds' LIMIT 1",
+                    (payload.broadcast_filter or "all", subject, body)
+                )
+            else:
+                c.execute(
+                    "SELECT 1 FROM messages WHERE broadcast_group_id IS NOT NULL "
+                    "AND broadcast_filter = ? AND subject = ? AND body = ? "
+                    "AND created_at > datetime('now','-60 seconds') LIMIT 1",
+                    (payload.broadcast_filter or "all", subject, body)
+                )
+            if c.fetchone():
+                raise HTTPException(status_code=409, detail="同一内容の一斉送信が60秒以内に実行されています")
+
+        # Phase A: in-app メッセージを全件 INSERT して即 commit (idle in transaction 防止)
+        # email 送信は後で BackgroundTasks に逃がし、email_status は事後 UPDATE する
+        msg_records = []  # [(msg_id, email, name)]
+        recipients_with_email = 0
+        for t in targets:
+            sent_via_initial = "in_app"
+            if payload.send_email and t["email"]:
+                recipients_with_email += 1
+                sent_via_initial = "queued"  # 後で email_in_app or in_app に UPDATE
+            c.execute(
+                "INSERT INTO messages (sender_type, sender_id, recipient_type, recipient_id, broadcast_filter, subject, body, sent_via, email_status, broadcast_group_id) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?) RETURNING id",
+                ("admin", None, "student", t["id"], (payload.broadcast_filter if target == "broadcast" else None),
+                 subject, body, sent_via_initial, None, broadcast_group_id)
+            )
+            row = c.fetchone()
+            new_id = row["id"] if row else None
+            msg_records.append((new_id, t["email"], t["name"]))
+        conn.commit()
+        log.info(f"[Messages] admin send target={target} recipients={len(targets)} queued_email={recipients_with_email} group={broadcast_group_id} ip={_client_ip(request)}")
+
+        # Phase B: email 送信を BackgroundTasks で非同期化 (HTTP リクエストは即返却)
+        if payload.send_email:
+            background_tasks.add_task(_bg_send_messages_email, msg_records, subject, body)
+
+        return {
+            "ok": True,
+            "target": target,
+            "recipients": len(targets),
+            "email_attempted": recipients_with_email,
+            "email_queued": recipients_with_email,
+            "broadcast_group_id": broadcast_group_id,
+        }
+    finally:
+        conn.close()
+
+
+def _bg_send_messages_email(msg_records: list, subject: str, body: str) -> None:
+    """BackgroundTasks: 各メッセージの email を順次送信し、email_status / sent_via を後追い更新。
+    別 connection で動作するため、admin_send_message のレスポンスは即返却される。"""
+    sent_ok, sent_fail = 0, 0
+    for (msg_id, email, name) in msg_records:
+        if not msg_id:
+            continue
+        if not email:
+            # email 無し → in_app のみ確定
+            try:
+                c2 = db()
+                cur2 = c2.cursor()
+                cur2.execute("UPDATE messages SET sent_via = ? WHERE id = ?", ("in_app", msg_id))
+                c2.commit()
+                c2.close()
+            except Exception as e:
+                log.warning(f"[Messages][bg] in_app finalize failed id={msg_id}: {e}")
+            continue
+        res = _send_message_email(email, subject, body, student_name=name)
+        if res.get("sent"):
+            sent_ok += 1
+            new_via, new_status = "email_in_app", "sent"
+        else:
+            sent_fail += 1
+            err = (res.get("error") or "unknown")[:100]
+            new_via, new_status = "in_app", f"failed:{err}"
+        try:
+            c2 = db()
+            cur2 = c2.cursor()
+            cur2.execute("UPDATE messages SET sent_via = ?, email_status = ? WHERE id = ?", (new_via, new_status, msg_id))
+            c2.commit()
+            c2.close()
+        except Exception as e:
+            log.warning(f"[Messages][bg] status UPDATE failed id={msg_id}: {e}")
+    log.info(f"[Messages][bg] email batch done: sent={sent_ok} failed={sent_fail}")
+
+
+@app.get("/api/admin/messages")
+def admin_list_messages(authorization: Optional[str] = Header(None), limit: int = 100, offset: int = 0):
+    """塾長: 送信履歴。broadcast は group_id で集約。"""
+    _verify_admin_required(authorization)
+    try:
+        limit = max(1, min(int(limit or 100), 500))
+        offset = max(0, int(offset or 0))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="クエリパラメータが不正です")
+    conn = db()
+    try:
+        c = conn.cursor()
+        # broadcast_group_id ごとにまとめる + 個別は別途
+        c.execute(
+            """SELECT m.id, m.recipient_id, m.subject, m.body, m.sent_via, m.email_status, m.read_at, m.created_at,
+                      m.broadcast_filter, m.broadcast_group_id,
+                      s.name AS student_name, s.grade
+               FROM messages m
+               LEFT JOIN students s ON m.recipient_id = s.id
+               WHERE m.sender_type = 'admin'
+               ORDER BY m.created_at DESC
+               LIMIT ? OFFSET ?""",
+            (limit, offset)
+        )
+        rows = c.fetchall()
+        # group by broadcast_group_id (None = individual)
+        groups = {}
+        individuals = []
+        for r in rows:
+            obj = {
+                "id": r["id"],
+                "recipient_id": r["recipient_id"],
+                "student_name": r["student_name"],
+                "grade": r["grade"],
+                "subject": r["subject"],
+                "body": r["body"],
+                "sent_via": r["sent_via"],
+                "email_status": r["email_status"],
+                "read_at": str(r["read_at"]) if r["read_at"] else None,
+                "created_at": str(r["created_at"]) if r["created_at"] else None,
+                "broadcast_filter": r["broadcast_filter"],
+                "broadcast_group_id": r["broadcast_group_id"],
+            }
+            if obj["broadcast_group_id"]:
+                gid = obj["broadcast_group_id"]
+                if gid not in groups:
+                    groups[gid] = {
+                        "broadcast_group_id": gid,
+                        "broadcast_filter": obj["broadcast_filter"],
+                        "subject": obj["subject"],
+                        "body": obj["body"],
+                        "created_at": obj["created_at"],
+                        "recipient_count": 0,
+                        "email_sent_count": 0,
+                        "email_failed_count": 0,
+                        "read_count": 0,
+                        "recipients_preview": [],
+                    }
+                g = groups[gid]
+                g["recipient_count"] += 1
+                if obj["email_status"] == "sent":
+                    g["email_sent_count"] += 1
+                elif obj["email_status"] and obj["email_status"].startswith("failed"):
+                    g["email_failed_count"] += 1
+                if obj["read_at"]:
+                    g["read_count"] += 1
+                if len(g["recipients_preview"]) < 10:
+                    g["recipients_preview"].append({"name": obj["student_name"], "grade": obj["grade"], "read_at": obj["read_at"]})
+            else:
+                individuals.append(obj)
+        return {"ok": True, "individuals": individuals, "broadcasts": list(groups.values())}
+    finally:
+        conn.close()
+
+
+@app.get("/api/messages/me")
+def get_my_messages(authorization: Optional[str] = Header(None), limit: int = 50):
+    """生徒: 自分宛メッセージ受信箱。"""
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    try:
+        limit = max(1, min(int(limit or 50), 200))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="クエリパラメータが不正です")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT id, subject, body, sent_via, read_at, created_at FROM messages "
+            "WHERE recipient_type = 'student' AND recipient_id = ? "
+            "ORDER BY created_at DESC LIMIT ?",
+            (student["id"], limit)
+        )
+        rows = c.fetchall()
+        msgs = []
+        unread = 0
+        for r in rows:
+            is_unread = not r["read_at"]
+            if is_unread:
+                unread += 1
+            msgs.append({
+                "id": r["id"],
+                "subject": r["subject"],
+                "body": r["body"],
+                "sent_via": r["sent_via"],
+                "is_unread": is_unread,
+                "read_at": str(r["read_at"]) if r["read_at"] else None,
+                "created_at": str(r["created_at"]) if r["created_at"] else None,
+            })
+        return {"ok": True, "messages": msgs, "unread_count": unread}
+    finally:
+        conn.close()
+
+
+@app.post("/api/messages/me/{msg_id}/read")
+def mark_message_read(msg_id: int, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒: メッセージを既読にする。"""
+    _check_rate_limit_ip(request, bucket="msg_read", limit=120, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 自分宛 + 未読のみ更新 (race-safe)
+        c.execute(
+            "UPDATE messages SET read_at = CURRENT_TIMESTAMP WHERE id = ? AND recipient_type = 'student' AND recipient_id = ? AND read_at IS NULL",
+            (msg_id, student["id"])
+        )
+        conn.commit()
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
+@app.get("/api/messages/me/unread-count")
+def get_my_unread_count(authorization: Optional[str] = Header(None)):
+    """生徒: 未読件数 (badge 表示用 - 軽量)。"""
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT COUNT(*) AS n FROM messages WHERE recipient_type = 'student' AND recipient_id = ? AND read_at IS NULL",
+            (student["id"],)
+        )
+        row = c.fetchone()
+        return {"ok": True, "unread_count": int((row["n"] if row else 0) or 0)}
     finally:
         conn.close()
 

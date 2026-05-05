@@ -470,6 +470,7 @@ document.addEventListener('DOMContentLoaded', () => {
   try { renderTrialOnboarding(); } catch (e) { console.error('renderTrialOnboarding failed:', e); }
   try { initStudyLog(); } catch (e) { console.error('initStudyLog failed:', e); }
   try { initStudyPlan(); } catch (e) { console.error('initStudyPlan failed:', e); }
+  try { initMessages(); } catch (e) { console.error('initMessages failed:', e); }
   try { initReferralSection(); } catch (e) { console.error('initReferralSection failed:', e); }
 });
 
@@ -1113,5 +1114,115 @@ async function changeStudyPlanStatus(id, newStatus) {
     await loadMyStudyPlans();
   } catch (e) {
     alert('変更に失敗: ' + (e.message || ''));
+  }
+}
+
+
+// ==========================================================================
+// 📨 メッセージ受信箱 (Phase 3 - 全生徒対象)
+// ==========================================================================
+let _msgPollTimer = null;
+
+// ISO 文字列を JST 'YYYY-MM-DD HH:MM' に変換 (UTC 表示ズレ防止 / UX C-1)
+function _fmtJstYMDHM(s) {
+  if (!s) return '';
+  try {
+    const iso = String(s);
+    const d = new Date(iso.endsWith('Z') || /[+-]\d\d:?\d\d$/.test(iso) ? iso : iso + 'Z');
+    if (isNaN(d)) return String(s).slice(0, 16).replace('T', ' ');
+    const fmt = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
+    return fmt.format(d).replace(/\//g, '-');
+  } catch { return String(s).slice(0, 16).replace('T', ' '); }
+}
+
+function initMessages() {
+  loadMyMessages();
+  // 60秒に1回 unread count を polling (タブ非アクティブ時は停止)
+  const startPoll = () => {
+    if (_msgPollTimer) return;
+    _msgPollTimer = setInterval(refreshUnreadBadge, 60000);
+  };
+  const stopPoll = () => {
+    if (_msgPollTimer) { clearInterval(_msgPollTimer); _msgPollTimer = null; }
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopPoll();
+    else { startPoll(); refreshUnreadBadge(); }
+  });
+  if (!document.hidden) startPoll();
+}
+
+async function refreshUnreadBadge() {
+  try {
+    const data = await slApiFetch('/api/messages/me/unread-count');
+    updateUnreadBadge(data.unread_count || 0);
+  } catch (e) { /* silent */ }
+}
+
+function updateUnreadBadge(count) {
+  const badge = document.getElementById('msgUnreadBadge');
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent = count > 99 ? '99+' : count;
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+async function loadMyMessages() {
+  const list = document.getElementById('msgList');
+  if (!list) return;
+  list.innerHTML = '<div style="text-align:center; color:#71717a; padding:1rem;">📨 読み込み中...</div>';
+  try {
+    const data = await slApiFetch('/api/messages/me?limit=50');
+    const msgs = data.messages || [];
+    updateUnreadBadge(data.unread_count || 0);
+    if (!msgs.length) {
+      list.innerHTML = '<div style="text-align:center; color:#71717a; padding:1.5rem; background:rgba(0,0,0,0.2); border-radius:10px;">📭 メッセージはまだありません</div>';
+      return;
+    }
+    list.innerHTML = msgs.map(m => {
+      const unreadBorder = m.is_unread ? 'border-left:4px solid #ec4899;' : 'border-left:4px solid rgba(255,255,255,0.05);';
+      const dotBadge = m.is_unread ? '<span class="msg-unread-dot" style="display:inline-block; width:8px; height:8px; background:#ec4899; border-radius:50%; margin-right:0.4rem; vertical-align:middle;"></span>' : '';
+      return `
+        <div data-msg-id="${m.id}" data-unread="${m.is_unread ? '1' : '0'}" class="msg-item" style="background:rgba(255,255,255,0.04); ${unreadBorder} border-radius:8px; padding:0.85rem; margin-bottom:0.6rem; cursor:pointer;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
+            <div style="font-weight:700; color:#c7d2fe; font-size:0.9rem;">${dotBadge}${escapeHtml(m.subject || 'お知らせ')}</div>
+            <div style="font-size:0.72rem; color:#71717a;">${escapeHtml(_fmtJstYMDHM(m.created_at))}</div>
+          </div>
+          <div class="msg-body" style="font-size:0.85rem; color:#d4d4d8; white-space:pre-wrap; max-height:3em; overflow:hidden; text-overflow:ellipsis; transition:max-height 0.3s;">${escapeHtml(m.body)}</div>
+        </div>`;
+    }).join('');
+    list.querySelectorAll('.msg-item').forEach(el => {
+      el.addEventListener('click', async () => {
+        const body = el.querySelector('.msg-body');
+        const expanded = el.dataset.expanded === '1';
+        if (expanded) {
+          body.style.maxHeight = '3em';
+          el.dataset.expanded = '0';
+        } else {
+          body.style.maxHeight = '60em';
+          el.dataset.expanded = '1';
+          // 既読化
+          if (el.dataset.unread === '1') {
+            const id = el.getAttribute('data-msg-id');
+            try {
+              await slApiFetch(`/api/messages/me/${encodeURIComponent(id)}/read`, { method: 'POST' });
+              el.dataset.unread = '0';
+              el.style.borderLeft = '4px solid rgba(255,255,255,0.05)';
+              const dot = el.querySelector('.msg-unread-dot');
+              if (dot) dot.remove();
+              await refreshUnreadBadge();
+            } catch (e) { /* silent */ }
+          }
+        }
+      });
+    });
+  } catch (e) {
+    console.error('loadMyMessages failed:', e);
+    list.innerHTML = `<div style="text-align:center; color:#fca5a5; padding:1rem;">⚠️ メッセージ読み込み失敗 (${escapeHtml(e.message || '')}) <button id="msgRetryBtn" style="margin-left:0.5rem; background:rgba(99,102,241,0.2); border:0; color:#c7d2fe; padding:0.3rem 0.6rem; border-radius:6px; cursor:pointer;">再試行</button></div>`;
+    const retryBtn = document.getElementById('msgRetryBtn');
+    if (retryBtn) retryBtn.addEventListener('click', loadMyMessages);
   }
 }

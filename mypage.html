@@ -432,6 +432,15 @@
       <div id="spPlanList"></div>
     </section>
 
+    <!-- 📨 メッセージ受信箱 (Phase 3 - 全生徒対象) -->
+    <section class="messages-section" style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:14px;">
+      <div class="section-title">
+        <h2>📨 塾長からのメッセージ <span id="msgUnreadBadge" style="display:none; background:#ec4899; color:#fff; font-size:0.65em; padding:0.15em 0.5em; border-radius:999px; margin-left:0.5rem; vertical-align:middle;">0</span></h2>
+      </div>
+      <p style="font-size:0.85rem; color:#a1a1aa; margin-bottom:1rem;">塾長からの個別連絡・一斉連絡が届きます (登録メールにも配信)。</p>
+      <div id="msgList" style="max-height:500px; overflow-y:auto;"></div>
+    </section>
+
     <!-- Learning Brain: 今日の復習 (エビングハウス自動復習) -->
     <section class="lb-review-section" style="margin-top: 2rem; padding: 1.5rem; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;">
       <div class="section-title"><h2>🔁 今日の復習 <span style="font-size:0.65em;background:linear-gradient(135deg,#818cf8,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">エビングハウス忘却曲線対応</span></h2></div>
@@ -553,7 +562,7 @@
   <script src="learning-brain.js?v=20260425-2"></script>
   <script src="exam-prep.js?v=20260425-1"></script>
   <script src="referral-program.js?v=20260425-1"></script>
-  <script src="mypage.js?v=20260505-study-plan-3"></script>
+  <script src="mypage.js?v=20260505-messages-2"></script>
   <script>
     // ウィジェット初期描画
     (function() {

@@ -1632,6 +1632,69 @@
         <div id="spCalendar"></div>
       </div>
     </section>
+
+    <!-- 📨 メッセージ送信ダッシュボード (Phase 3) -->
+    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(236,72,153,0.06); border: 1px solid rgba(236,72,153,0.3); border-radius: 14px;" id="messagesSection">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+        <h2 style="margin:0; color:#f9a8d4; font-size:1.3rem;">📨 メッセージ配信</h2>
+        <button id="msgRefreshBtn" type="button" style="padding:0.4rem 0.8rem; background:rgba(236,72,153,0.2); border:1px solid rgba(236,72,153,0.4); border-radius:6px; color:#f9a8d4; cursor:pointer;">🔄 履歴更新</button>
+      </div>
+      <p style="color:#a1a1aa; font-size:0.85rem; margin-bottom:1rem;">
+        生徒の <strong>マイページ受信箱</strong> + <strong>登録メール</strong> に同時配信。一斉送信ではコース/プラン別フィルタ可。
+      </p>
+
+      <!-- 送信フォーム -->
+      <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1.2rem; margin-bottom:1rem;">
+        <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem; background:rgba(0,0,0,0.4); border-radius:6px; padding:2px; max-width:340px;">
+          <button id="msgTabIndividual" type="button" data-target="student" class="msg-tab-btn active" style="flex:1; padding:0.45rem; background:rgba(236,72,153,0.25); color:#f9a8d4; border:0; border-radius:4px; cursor:pointer; font-size:0.85rem;">👤 個別送信</button>
+          <button id="msgTabBroadcast" type="button" data-target="broadcast" class="msg-tab-btn" style="flex:1; padding:0.45rem; background:none; color:#a1a1aa; border:0; border-radius:4px; cursor:pointer; font-size:0.85rem;">📢 一斉送信</button>
+        </div>
+
+        <!-- 個別送信: 生徒選択 -->
+        <div id="msgIndividualWrap" style="margin-bottom:0.75rem;">
+          <label for="msgStudentSelect" style="display:block; font-size:0.75rem; color:#a1a1aa; margin-bottom:0.25rem;">送信先生徒 *</label>
+          <select id="msgStudentSelect" style="width:100%; padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+            <option value="">読み込み中...</option>
+          </select>
+        </div>
+
+        <!-- 一斉送信: フィルタ -->
+        <div id="msgBroadcastWrap" style="display:none; margin-bottom:0.75rem;">
+          <label for="msgBroadcastFilter" style="display:block; font-size:0.75rem; color:#a1a1aa; margin-bottom:0.25rem;">送信対象 *</label>
+          <select id="msgBroadcastFilter" style="width:100%; padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+            <option value="all">全生徒 (paid + trial)</option>
+            <option value="kokuritsu_nankan">国公立難関大学コース 受講生のみ</option>
+            <option value="paid_only">有料生徒のみ</option>
+            <option value="trial_only">体験中生徒のみ</option>
+          </select>
+          <div id="msgBroadcastCount" style="font-size:0.78rem; color:#a1a1aa; margin-top:0.3rem;"></div>
+        </div>
+
+        <div style="margin-bottom:0.75rem;">
+          <label for="msgSubject" style="display:block; font-size:0.75rem; color:#a1a1aa; margin-bottom:0.25rem;">件名</label>
+          <input type="text" id="msgSubject" maxlength="200" placeholder="例: 模試結果のご連絡 / 7月講習について" style="width:100%; padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+        </div>
+
+        <div style="margin-bottom:0.75rem;">
+          <label for="msgBody" style="display:block; font-size:0.75rem; color:#a1a1aa; margin-bottom:0.25rem;">本文 *</label>
+          <textarea id="msgBody" maxlength="5000" rows="6" placeholder="本文を入力 (改行可・最大5000文字)" style="width:100%; padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; resize:vertical; font-family:inherit;"></textarea>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+          <input type="checkbox" id="msgSendEmail" checked style="width:18px; height:18px;">
+          <label for="msgSendEmail" style="font-size:0.85rem; color:#d4d4d8; cursor:pointer;">📧 登録メールにも配信する</label>
+        </div>
+
+        <button id="msgSendBtn" type="button" style="width:100%; padding:0.85rem; background:linear-gradient(135deg,#ec4899,#8b5cf6); border:0; border-radius:10px; color:#fff; font-weight:700; font-size:1rem; cursor:pointer;">📨 送信</button>
+        <div id="msgSendMessage" style="margin-top:0.6rem; font-size:0.85rem; text-align:center;"></div>
+      </div>
+
+      <!-- 送信履歴 -->
+      <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1rem;">
+        <div style="font-size:0.9rem; color:#f9a8d4; font-weight:700; margin-bottom:0.5rem;">📜 送信履歴 (最新50件)</div>
+        <div id="msgHistory" style="max-height:500px; overflow-y:auto;"></div>
+      </div>
+    </section>
   </main>
 
   <footer class="footer">
@@ -1639,7 +1702,7 @@
   </footer>
 
   <script src="plans.js?v=20260422"></script>
-  <script src="ceo.js?v=20260505-study-plan-3"></script>
+  <script src="ceo.js?v=20260505-messages-2"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {
