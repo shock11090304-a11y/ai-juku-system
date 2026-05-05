@@ -781,6 +781,7 @@ document.addEventListener('DOMContentLoaded', () => {
   try { initStudyLogDashboard(); } catch (e) { console.error('initStudyLogDashboard failed:', e); }
   try { initStudyPlanDashboard(); } catch (e) { console.error('initStudyPlanDashboard failed:', e); }
   try { initMessageDashboard(); } catch (e) { console.error('initMessageDashboard failed:', e); }
+  try { initCourseApps(); } catch (e) { console.error('initCourseApps failed:', e); }
 
   // 🔔 体験終了者フォローアップ + 🎁 紹介ループ metrics: AdminAuth 認証後に読み込み
   const tryLoadAdminSections = (retries = 10) => {
@@ -1775,5 +1776,106 @@ async function openAiDraftModal(kind, context, hint, targetName, targetSid) {
     }
   } catch (e) {
     body.innerHTML = `<div style="color:#fca5a5; padding:1rem;">❌ 生成失敗: ${escapeHtml(e.message || '')}</div>`;
+  }
+}
+
+
+// ==========================================================================
+// 📋 国公立難関大学コース 申込待ち (Phase 4.8)
+// ==========================================================================
+function initCourseApps() {
+  const refresh = document.getElementById('caRefreshBtn');
+  if (refresh && !refresh._caBound) {
+    refresh.addEventListener('click', loadCourseApps);
+    refresh._caBound = true;
+  }
+  const tryLoad = (retries = 10) => {
+    if (window.AdminAuth && window.AdminAuth.getToken()) return loadCourseApps();
+    if (retries > 0) setTimeout(() => tryLoad(retries - 1), 200);
+  };
+  tryLoad();
+}
+
+async function loadCourseApps() {
+  const list = document.getElementById('caList');
+  const badge = document.getElementById('caPendingBadge');
+  if (!list || !window.AdminAuth || !window.AdminAuth.getToken()) return;
+  list.innerHTML = '<div style="text-align:center; color:#71717a; padding:1rem;">読み込み中...</div>';
+  try {
+    const res = await window.AdminAuth.fetch('/api/admin/course-applications?status=pending&limit=100');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const apps = data.applications || [];
+    const pending = data.pending_count || 0;
+    if (badge) {
+      if (pending > 0) { badge.textContent = pending > 99 ? '99+' : pending; badge.style.display = ''; }
+      else { badge.style.display = 'none'; }
+    }
+    if (!apps.length) {
+      list.innerHTML = '<div style="text-align:center; color:#71717a; padding:1.5rem;">📭 未対応の申込はありません</div>';
+      return;
+    }
+    list.innerHTML = apps.map(a => `
+      <div data-id="${a.id}" style="background:rgba(255,255,255,0.04); border:1px solid rgba(167,139,250,0.3); border-left:4px solid #a78bfa; border-radius:10px; padding:0.85rem; margin-bottom:0.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.3rem;">
+          <div style="font-weight:800; color:#e4e4e7;">📥 ${escapeHtml(a.name)}${a.grade ? ` <span style="color:#71717a; font-size:0.78rem;">(${escapeHtml(a.grade)})</span>` : ''}</div>
+          <div style="font-size:0.72rem; color:#71717a;">${escapeHtml(_msgFmtJst(a.created_at))}</div>
+        </div>
+        <div style="display:grid; grid-template-columns:auto 1fr; gap:0.3rem 0.7rem; font-size:0.82rem; margin-bottom:0.5rem;">
+          <span style="color:#a1a1aa;">📧 メール:</span> <span style="color:#e4e4e7;">${escapeHtml(a.email)}</span>
+          ${a.target_university ? `<span style="color:#a1a1aa;">🎯 志望校:</span> <span style="color:#fbbf24;">${escapeHtml(a.target_university)}</span>` : ''}
+          ${a.phone ? `<span style="color:#a1a1aa;">📞 電話:</span> <span style="color:#e4e4e7;">${escapeHtml(a.phone)}</span>` : ''}
+          ${a.referrer ? `<span style="color:#a1a1aa;">👥 紹介者:</span> <span style="color:#e4e4e7;">${escapeHtml(a.referrer)}</span>` : ''}
+        </div>
+        ${a.note ? `<div style="background:rgba(0,0,0,0.25); padding:0.45rem 0.6rem; border-radius:6px; font-size:0.82rem; color:#d4d4d8; margin-bottom:0.5rem;">💬 ${escapeHtml(a.note)}</div>` : ''}
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <button data-id="${a.id}" data-name="${escapeHtml(a.name)}" class="ca-approve-btn" style="background:linear-gradient(135deg,#10b981,#34d399); color:#fff; border:0; padding:0.5rem 1rem; border-radius:8px; cursor:pointer; font-size:0.85rem; font-weight:700;">✅ 承認 (アカウント作成 + magic link 送信)</button>
+          <button data-id="${a.id}" data-name="${escapeHtml(a.name)}" class="ca-reject-btn" style="background:rgba(239,68,68,0.15); color:#fca5a5; border:0; padding:0.5rem 0.9rem; border-radius:8px; cursor:pointer; font-size:0.85rem;">✕ 却下</button>
+        </div>
+        <div class="ca-result" style="margin-top:0.4rem; font-size:0.78rem; min-height:1em;"></div>
+      </div>`).join('');
+    list.querySelectorAll('.ca-approve-btn').forEach(b => b.addEventListener('click', async (e) => {
+      const id = b.getAttribute('data-id');
+      const name = b.getAttribute('data-name');
+      const resultEl = b.parentElement.parentElement.querySelector('.ca-result');
+      if (!confirm(`「${name}」さんを承認しますか?\n生徒アカウントを作成し、magic link メールを送信します。`)) return;
+      b.disabled = true;
+      const orig = b.textContent;
+      b.textContent = '承認処理中...';
+      try {
+        const r = await window.AdminAuth.fetch(`/api/admin/course-applications/${encodeURIComponent(id)}/approve`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}),
+        });
+        if (!r.ok) {
+          let detail = ''; try { const j = await r.json(); detail = j.detail || ''; } catch {}
+          throw new Error(detail || `HTTP ${r.status}`);
+        }
+        const j = await r.json();
+        resultEl.innerHTML = `<span style="color:#86efac;">✅ 承認完了 (生徒ID: ${j.student_id} ${j.welcome_email_sent ? '/ welcome メール送信済' : '/ メール送信失敗'})</span>`;
+        setTimeout(() => loadCourseApps(), 1500);
+      } catch (err) {
+        resultEl.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(err.message || '承認失敗')}</span>`;
+        b.disabled = false; b.textContent = orig;
+      }
+    }));
+    list.querySelectorAll('.ca-reject-btn').forEach(b => b.addEventListener('click', async () => {
+      const id = b.getAttribute('data-id');
+      const name = b.getAttribute('data-name');
+      const reason = prompt(`「${name}」さんを却下しますか?\n理由を入力してください (任意・内部メモ):`);
+      if (reason === null) return;
+      b.disabled = true;
+      try {
+        const r = await window.AdminAuth.fetch(`/api/admin/course-applications/${encodeURIComponent(id)}/reject`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: reason || undefined }),
+        });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        await loadCourseApps();
+      } catch (err) {
+        alert('却下失敗: ' + (err.message || ''));
+        b.disabled = false;
+      }
+    }));
+  } catch (e) {
+    list.innerHTML = `<div style="color:#fca5a5; padding:1rem;">エラー: ${escapeHtml(e.message || '')}</div>`;
   }
 }

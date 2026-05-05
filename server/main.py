@@ -621,6 +621,27 @@ def init_db():
     );
     CREATE INDEX IF NOT EXISTS idx_exam_results_student ON exam_results(student_id, exam_date);
     CREATE INDEX IF NOT EXISTS idx_exam_results_subject ON exam_results(student_id, subject, exam_date);
+    -- 国公立難関大学コース 申込フォーム (Phase 4.8 - クレカなし申込)
+    -- 塾長指示 2026-05-06: 専用 LP からクレカ登録なしで申込
+    CREATE TABLE IF NOT EXISTS course_applications (
+        id {pk},
+        name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        grade TEXT,
+        target_university TEXT,
+        phone TEXT,
+        referrer TEXT,
+        note TEXT,
+        status TEXT DEFAULT 'pending',
+        student_id INTEGER,
+        approved_at TIMESTAMP,
+        approved_by TEXT,
+        rejected_reason TEXT,
+        ip TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_course_applications_status ON course_applications(status, created_at);
+    CREATE INDEX IF NOT EXISTS idx_course_applications_email ON course_applications(email, status);
     -- 塾長→生徒メッセージ機能 (Phase 3 - email only, 塾長指示 2026-05-05)
     CREATE TABLE IF NOT EXISTS messages (
         id {pk},
@@ -15458,6 +15479,239 @@ def get_my_exam_results(authorization: Optional[str] = Header(None), limit: int 
             "by_subject_trend": by_subject_trend,
             "latest_summary": latest_summary,
         }
+    finally:
+        conn.close()
+
+
+# ==========================================================================
+# Routes: Course Applications (Phase 4.8 - 国公立難関大学コース クレカなし申込)
+# 塾長指示 2026-05-06: 専用 LP からクレカ登録なしで申込 → 塾長承認で加入
+# ==========================================================================
+class CourseApplicationRequest(BaseModel):
+    name: str
+    email: EmailStr
+    grade: Optional[str] = None
+    target_university: Optional[str] = None
+    phone: Optional[str] = None
+    referrer: Optional[str] = None  # 紹介者
+    note: Optional[str] = None
+
+
+@app.post("/api/course-applications")
+def public_course_application(payload: CourseApplicationRequest, request: Request):
+    """公開: 難関大学コースへの申込 (クレカ不要)。"""
+    # 公開 endpoint なので rate limit を厳しめに (1 IP 5回/24h)
+    _check_rate_limit_ip(request, bucket="course_apply", limit=5, window=86400)
+    name = _sanitize_text(payload.name, 100)
+    if not name:
+        raise HTTPException(status_code=400, detail="お名前は必須です")
+    email_lower = (payload.email or "").lower().strip()
+    if not email_lower or "@" not in email_lower:
+        raise HTTPException(status_code=400, detail="有効なメールアドレスを入力してください")
+    grade = _sanitize_text(payload.grade, 30)
+    target_uni = _sanitize_text(payload.target_university, 100)
+    phone = _sanitize_text(payload.phone, 30)
+    referrer = _sanitize_text(payload.referrer, 100)
+    note = _sanitize_text(payload.note, 1000)
+    ip = _client_ip(request)
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 同 email で 'pending' or 'approved' の申込が既にあれば 409 (重複防止)
+        c.execute(
+            "SELECT id, status FROM course_applications WHERE LOWER(email) = ? AND status IN ('pending','approved') ORDER BY id DESC LIMIT 1",
+            (email_lower,)
+        )
+        existing = c.fetchone()
+        if existing:
+            if existing["status"] == "approved":
+                raise HTTPException(status_code=409, detail="このメールアドレスは既に承認済みです")
+            else:
+                raise HTTPException(status_code=409, detail="このメールアドレスで既にお申込済みです (1-2営業日以内に塾長から連絡があります)")
+
+        c.execute(
+            "INSERT INTO course_applications (name, email, grade, target_university, phone, referrer, note, ip) "
+            "VALUES (?,?,?,?,?,?,?,?) RETURNING id",
+            (name, email_lower, grade, target_uni, phone, referrer, note, ip)
+        )
+        returned = c.fetchone()
+        new_id = returned["id"] if returned else None
+        conn.commit()
+        log.info(f"[CourseApp] new application id={new_id} email={email_lower} ip={ip}")
+    finally:
+        conn.close()
+
+    # 塾長 email 通知
+    admin_to = os.getenv("DAILY_SNS_TO_EMAIL") or os.getenv("MONITORING_TO_EMAIL")
+    if admin_to and RESEND_API_KEY:
+        try:
+            body_text = (
+                f"塾長へ\n\n"
+                f"国公立難関大学コースへの新規申込が届きました。\n\n"
+                f"## 申込者情報\n"
+                f"お名前: {name}\n"
+                f"メール: {email_lower}\n"
+                f"学年: {grade or '未記入'}\n"
+                f"志望校: {target_uni or '未記入'}\n"
+                f"電話: {phone or '未記入'}\n"
+                f"紹介者: {referrer or 'なし'}\n"
+                f"メモ: {note or 'なし'}\n\n"
+                f"CEO ダッシュ → 📋 難関コース申込待ち から承認できます。"
+            )
+            _send_message_email(admin_to, f"📥 難関コース 新規申込: {name}", body_text, student_name="塾長")
+        except Exception as ee:
+            log.warning(f"[CourseApp] admin email failed: {ee}")
+
+    return {"ok": True, "application_id": new_id, "message": "お申込ありがとうございます。塾長から1-2営業日以内にご連絡いたします。"}
+
+
+@app.get("/api/admin/course-applications")
+def admin_list_course_applications(authorization: Optional[str] = Header(None), status: Optional[str] = "pending", limit: int = 100):
+    """塾長: コース申込一覧 (デフォルト pending のみ)。"""
+    _verify_admin_required(authorization)
+    try:
+        limit = max(1, min(int(limit or 100), 500))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="limit が不正")
+    conn = db()
+    try:
+        c = conn.cursor()
+        if status and status in ("pending", "approved", "rejected"):
+            c.execute(
+                "SELECT id, name, email, grade, target_university, phone, referrer, note, status, student_id, approved_at, rejected_reason, created_at "
+                "FROM course_applications WHERE status = ? ORDER BY created_at DESC LIMIT ?",
+                (status, limit)
+            )
+        else:
+            c.execute(
+                "SELECT id, name, email, grade, target_university, phone, referrer, note, status, student_id, approved_at, rejected_reason, created_at "
+                "FROM course_applications ORDER BY created_at DESC LIMIT ?",
+                (limit,)
+            )
+        rows = c.fetchall()
+        items = [{
+            "id": r["id"], "name": r["name"], "email": r["email"],
+            "grade": r["grade"], "target_university": r["target_university"],
+            "phone": r["phone"], "referrer": r["referrer"], "note": r["note"],
+            "status": r["status"], "student_id": r["student_id"],
+            "approved_at": str(r["approved_at"]) if r["approved_at"] else None,
+            "rejected_reason": r["rejected_reason"],
+            "created_at": str(r["created_at"]) if r["created_at"] else None,
+        } for r in rows]
+        # pending count (admin badge 用)
+        c.execute("SELECT COUNT(*) AS n FROM course_applications WHERE status = 'pending'")
+        pending_row = c.fetchone()
+        return {"ok": True, "applications": items, "pending_count": int(pending_row["n"] if pending_row else 0)}
+    finally:
+        conn.close()
+
+
+class CourseApplicationApproveRequest(BaseModel):
+    note: Optional[str] = None  # 内部メモ
+
+
+@app.post("/api/admin/course-applications/{app_id}/approve")
+def admin_approve_course_application(app_id: int, payload: CourseApplicationApproveRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """塾長: 申込を承認 → 既存 student 検索 or 新規作成 → course='kokuritsu_nankan' 付与 + magic link メール送信。"""
+    _verify_admin_required(authorization)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, name, email, status FROM course_applications WHERE id = ?", (app_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="申込が見つかりません")
+        if row["status"] != "pending":
+            raise HTTPException(status_code=409, detail=f"既に {row['status']} 状態です")
+        email_lower = (row["email"] or "").lower().strip()
+        name = row["name"]
+
+        # 既存生徒検索 → なければ trial として新規作成
+        c.execute("SELECT id, status, course FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
+        st = c.fetchone()
+        student_id = None
+        if st:
+            student_id = st["id"]
+            # 既存生徒に course 付与 (status は変更しない)
+            c.execute("UPDATE students SET course = ? WHERE id = ?", (_STUDY_LOG_TARGET_COURSE, student_id))
+            log.info(f"[CourseApp] approve existing student id={student_id} email={email_lower}")
+        else:
+            # 新規生徒 (trial で作成 / クレカなし → trial_end は 30日後で寛容)
+            now = datetime.now(timezone.utc)
+            trial_end = now + timedelta(days=30)
+            c.execute(
+                "INSERT INTO students (name, email, status, course, trial_start, trial_end) "
+                "VALUES (?,?,?,?,?,?) RETURNING id",
+                (name, email_lower, "trial", _STUDY_LOG_TARGET_COURSE, now.isoformat(), trial_end.isoformat())
+            )
+            new = c.fetchone()
+            student_id = new["id"] if new else None
+            log.info(f"[CourseApp] approve created new student id={student_id} email={email_lower}")
+
+        # application を approved に更新
+        admin_note = _sanitize_text(payload.note, 500)
+        c.execute(
+            "UPDATE course_applications SET status = 'approved', student_id = ?, approved_at = CURRENT_TIMESTAMP, approved_by = ?, note = COALESCE(?, note) WHERE id = ?",
+            (student_id, "admin", admin_note, app_id)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    # magic link 送信 (welcome + ログイン link)
+    sent_link = False
+    try:
+        # 既存の magic link 発行ロジックを呼ぶ
+        # _create_otp は student_id を取る
+        # _send_magic_link_email がある (推定) → なければ直接 send
+        # 簡略化: magic link URL を直接生成して email 送信
+        magic_token = _sign_session_token(student_id, ttl_seconds=3600, token_type="magic")  # 1h
+        login_url = f"https://trillion-ai-juku.com/auth.html?t={magic_token}"
+        body_text = (
+            f"{name} さん\n\n"
+            f"国公立難関大学コースへのご加入が承認されました!\n"
+            f"以下のリンクから1-クリックでログインできます (有効期限 1時間):\n\n"
+            f"{login_url}\n\n"
+            f"ログイン後、マイページで以下が利用可能になります:\n"
+            f"📚 学習記録 + ヒートマップ\n"
+            f"🎓 合格カリキュラム (AI 自動生成)\n"
+            f"📊 模試結果 + AI ギャップ分析\n"
+            f"🎯 AI 弱点プリント生成 + スタサプ補強推薦\n"
+            f"📅 学習計画 (ガント + カレンダー)\n"
+            f"📨 塾長との直接メッセージ\n\n"
+            f"30日間の体験期間中はクレカ登録なしで全機能をお試しいただけます。"
+        )
+        res = _send_message_email(email_lower, "✅ 国公立難関大学コース ご加入承認", body_text, student_name=name)
+        sent_link = res.get("sent", False)
+    except Exception as e:
+        log.warning(f"[CourseApp] welcome email failed: {e}")
+
+    return {"ok": True, "student_id": student_id, "welcome_email_sent": sent_link}
+
+
+class CourseApplicationRejectRequest(BaseModel):
+    reason: Optional[str] = None
+
+
+@app.post("/api/admin/course-applications/{app_id}/reject")
+def admin_reject_course_application(app_id: int, payload: CourseApplicationRejectRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """塾長: 申込を却下。"""
+    _verify_admin_required(authorization)
+    reason = _sanitize_text(payload.reason, 300) or "塾長判断"
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, status FROM course_applications WHERE id = ?", (app_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="申込が見つかりません")
+        if row["status"] != "pending":
+            raise HTTPException(status_code=409, detail=f"既に {row['status']} 状態です")
+        c.execute("UPDATE course_applications SET status = 'rejected', rejected_reason = ? WHERE id = ?", (reason, app_id))
+        conn.commit()
+        log.info(f"[CourseApp] reject id={app_id} reason={reason}")
+        return {"ok": True}
     finally:
         conn.close()
 

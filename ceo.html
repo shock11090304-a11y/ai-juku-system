@@ -1633,6 +1633,16 @@
       </div>
     </section>
 
+    <!-- 📋 国公立難関大学コース 申込待ち (Phase 4.8) -->
+    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.3); border-radius: 14px;" id="courseAppsSection">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+        <h2 style="margin:0; color:#c4b5fd; font-size:1.3rem;">📋 難関コース 申込待ち <span id="caPendingBadge" style="display:none; background:#ec4899; color:#fff; font-size:0.7em; padding:0.15em 0.6em; border-radius:999px; vertical-align:middle; margin-left:0.4rem;">0</span></h2>
+        <button id="caRefreshBtn" type="button" style="padding:0.4rem 0.8rem; background:rgba(167,139,250,0.2); border:1px solid rgba(167,139,250,0.4); border-radius:6px; color:#c4b5fd; cursor:pointer;">🔄 更新</button>
+      </div>
+      <p style="color:#a1a1aa; font-size:0.85rem; margin-bottom:1rem;">専用LP <code style="background:rgba(0,0,0,0.4); padding:0.1rem 0.4rem; border-radius:4px;">/course-kokuritsu-nankan.html</code> から届いた申込。「✅ 承認」で生徒アカウント作成 + magic link 送信 + course 自動付与。</p>
+      <div id="caList"></div>
+    </section>
+
     <!-- 📨 メッセージ送信ダッシュボード (Phase 3) -->
     <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(236,72,153,0.06); border: 1px solid rgba(236,72,153,0.3); border-radius: 14px;" id="messagesSection">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
@@ -1705,7 +1715,7 @@
   </footer>
 
   <script src="plans.js?v=20260422"></script>
-  <script src="ceo.js?v=20260506-gemini-draft"></script>
+  <script src="ceo.js?v=20260506-course-apps"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {
