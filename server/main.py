@@ -1337,10 +1337,89 @@ def _check_daily_sns_sent_today_jst() -> bool:
     return n > 0
 
 
+def _compute_sns_utm_cv(days: int = 30) -> dict:
+    """utm_content (authority/testimonial) ごとの LP CV を集計。
+    返却: {utm_content: {views, submits, cv_rate}}
+    Threads 経由の流入 (utm_source=threads) のみ対象。"""
+    conn = db()
+    c = conn.cursor()
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    try:
+        c.execute(
+            """SELECT name, props, session_id FROM events
+               WHERE name IN ('lp_view', 'lp_form_submit') AND created_at > ?
+               LIMIT 20000""",
+            (cutoff,)
+        )
+        rows = list(c.fetchall())
+    finally:
+        conn.close()
+
+    views = {}  # utm_content -> set(session_ids)
+    submits = {}
+    for r in rows:
+        name = r["name"] if hasattr(r, "keys") else r[0]
+        props_raw = r["props"] if hasattr(r, "keys") else r[1]
+        sess = (r["session_id"] if hasattr(r, "keys") else r[2]) or "_anon"
+        try:
+            props = json.loads(props_raw) if isinstance(props_raw, str) else (props_raw or {})
+        except Exception:
+            props = {}
+        # Threads からの流入のみ
+        utm_source = props.get("utm_source", "")
+        if utm_source != "threads":
+            continue
+        content = props.get("utm_content", "unknown")
+        if name == "lp_view":
+            views.setdefault(content, set()).add(sess)
+        elif name == "lp_form_submit":
+            submits.setdefault(content, set()).add(sess)
+
+    out = {}
+    for content, view_set in views.items():
+        v_count = len(view_set)
+        s_count = len(submits.get(content, set()))
+        cv = (s_count / v_count) if v_count > 0 else 0.0
+        out[content] = {"views": v_count, "submits": s_count, "cv_rate": cv}
+    return out
+
+
+SNS_UTM_ALLOWLIST = {"authority": "数字×権威型", "testimonial": "体験談ストーリー型"}
+
+
+def _build_sns_winning_hint() -> str:
+    """過去30日 CV データから「効いている型」を判定し、prompt 用ヒント文を返す。
+    Security: UTM 値は SNS_UTM_ALLOWLIST にあるもののみ採用 (prompt 注入攻撃防止)。
+    Statistical: 150 views 以上 (binomial CI 妥当性) + 30% 以上の差 (hysteresis 兼ねた安定性)。"""
+    cv_data = _compute_sns_utm_cv(days=30)
+    candidates = []
+    for utm, data in cv_data.items():
+        # Allowlist のみ採用 (prompt injection 防御)
+        if utm not in SNS_UTM_ALLOWLIST:
+            continue
+        # 統計的有意性確保: 150 views 必須 (CI が狭まる)
+        if data["views"] >= 150:
+            candidates.append((SNS_UTM_ALLOWLIST[utm], data["cv_rate"], data["views"]))
+    if len(candidates) < 2:
+        return ""
+    candidates.sort(key=lambda x: x[1], reverse=True)
+    winner_type, winner_cv, winner_views = candidates[0]
+    loser_type, loser_cv, _ = candidates[1]
+    # 30% 以上の差がない時はヒント出さない (hysteresis: borderline で flicker しない)
+    if winner_cv <= loser_cv * 1.3:
+        return ""
+    # winner/loser はハードコード辞書値なので f-string 安全
+    return (f"\n\n【📊 過去30日 Threads 経由 CV データ (重要)】\n"
+            f"「{winner_type}」が「{loser_type}」より CV 率が高い (CV {winner_cv*100:.1f}% vs {loser_cv*100:.1f}%、views {winner_views}+).\n"
+            f"今回の生成では、「{winner_type}」のスタイル・訴求パターンを他の型にも一部反映させ、"
+            f"より高い engagement を狙ってください。各 type の本数は崩さない (1本ずつ)。")
+
+
 def _generate_daily_sns_posts() -> list:
     """塾長キャラのThreads投稿5本(5型ローテ)を生成。
     _call_ai_safe(task_type='daily_sns') 経由 = Gemini Flash 優先 (低 stake + 課金抑制)。
     Gemini 失敗時は Anthropic にフォールバック (4段降格 + Tier 4 Gemini で結局止まらない)。
+    Phase 3 (2026-05-05): 過去30日 CV データから効いてる型のヒントを prompt に注入。
     """
     # ANTHROPIC か GEMINI のどちらか 1 つでもあれば動く設計
     if not ANTHROPIC_API_KEY and not GEMINI_API_KEY:
@@ -1352,11 +1431,12 @@ def _generate_daily_sns_posts() -> list:
         joined = "\n".join(f"- {t}" for t in recent[-25:])  # 直近25本まで
         avoid_section = f"\n\n【重複回避】以下は過去30日に生成済み。同じ訴求/同じ書き出しは避けてください:\n{joined}"
 
+    winning_hint = _build_sns_winning_hint()
     types_section = "\n".join(f"{i+1}. {t['name']}: {t['desc']}" for i, t in enumerate(POST_TYPES))
     user_msg = f"""今日のThreads投稿を5本作成してください。5型を1本ずつ:
 
 {types_section}
-{avoid_section}
+{avoid_section}{winning_hint}
 
 【🔗 LP誘導リンクの自動挿入】
 以下の 2 type の本文末尾には、必ず空行を挟んで誘導リンクを含めてください:
@@ -13110,6 +13190,39 @@ def lp_assign_variant(request: Request, force: Optional[str] = None):
         "variant": variant,
         "config": cfg.get("config", {}),
         "description": cfg.get("description", ""),
+    }
+
+
+@app.get("/api/admin/sns-cv")
+def admin_sns_cv(authorization: Optional[str] = Header(None), days: int = 30):
+    """CEOダッシュ用: SNS 投稿型 (UTM content) ごとの CV 率 + 自動学習ヒント有効化状況"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+
+    cv_data = _compute_sns_utm_cv(days=days)
+    rows = []
+    for utm, label in SNS_UTM_ALLOWLIST.items():
+        d = cv_data.get(utm, {"views": 0, "submits": 0, "cv_rate": 0.0})
+        rows.append({
+            "utm_content": utm,
+            "post_type": label,
+            "views": d["views"],
+            "submits": d["submits"],
+            "cv_rate_pct": round(d["cv_rate"] * 100, 2),
+            "has_enough_data": d["views"] >= 150,
+        })
+    rows.sort(key=lambda r: r["cv_rate_pct"], reverse=True)
+    hint = _build_sns_winning_hint()
+    return {
+        "days": days,
+        "rows": rows,
+        "hint_active": bool(hint),
+        "hint_preview": hint[:300] if hint else "",
+        "min_views_for_signal": 150,
+        "min_cv_diff_pct": 30,
     }
 
 

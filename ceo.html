@@ -1194,6 +1194,17 @@
           <p style="color:#71717a;">読み込み中...</p>
         </div>
       </div>
+
+      <!-- 📲 SNS 投稿 CV 自動学習 (Phase 3) -->
+      <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.08);">
+        <h3 style="font-size:0.95rem;color:#22d3ee;margin:0 0 0.6rem 0;">📲 Threads 投稿型 CV 自動学習</h3>
+        <p style="font-size:0.8rem;color:#9ca3af;margin:0 0 0.8rem 0;">
+          UTM 経由の流入 CV を測定し、効いている投稿型のスタイルを daily SNS 生成 prompt に自動反映します (各型 150 views 以上 + CV 30% 差で発火)。
+        </p>
+        <div id="snsCvContent" style="font-size:0.85rem;">
+          <p style="color:#71717a;">読み込み中...</p>
+        </div>
+      </div>
     </section>
 
     <script>
@@ -1287,8 +1298,39 @@
         if (s == null) return '';
         return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
       }
+      // 📲 SNS CV 自動学習 status
+      async function loadSnsCv() {
+        const snsOut = document.getElementById('snsCvContent');
+        if (!snsOut) return;
+        const tk = localStorage.getItem('ai_juku_admin_token');
+        if (!tk) { snsOut.innerHTML = '<p style="color:#ef4444;">管理者ログインが必要です</p>'; return; }
+        try {
+          const res = await fetch('/api/admin/sns-cv?days=30', {
+            headers: { 'Authorization': 'Bearer ' + tk }
+          });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          let html = '';
+          if (data.hint_active) {
+            html += `<div style="padding:0.7rem;background:rgba(34,211,238,0.10);border:1px solid rgba(34,211,238,0.3);border-radius:8px;margin-bottom:0.8rem;color:#67e8f9;">✅ 自動学習 <strong>稼働中</strong> — 次回の daily SNS 生成 prompt に勝者型ヒントが注入されます</div>`;
+          } else {
+            html += `<div style="padding:0.7rem;background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.3);border-radius:8px;margin-bottom:0.8rem;color:#fbbf24;">⏸ データ不足 — 各型 ${data.min_views_for_signal}+ views ならび 20% 以上 CV 差が必要</div>`;
+          }
+          html += '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;">';
+          html += '<thead><tr style="border-bottom:1px solid rgba(255,255,255,0.1);"><th style="text-align:left;padding:0.4rem;">投稿型</th><th style="text-align:left;padding:0.4rem;">UTM</th><th style="text-align:right;padding:0.4rem;">Views</th><th style="text-align:right;padding:0.4rem;">Submits</th><th style="text-align:right;padding:0.4rem;">CV</th></tr></thead><tbody>';
+          (data.rows || []).forEach(r => {
+            const cvColor = r.has_enough_data ? '#22d3ee' : '#71717a';
+            html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.05);"><td style="padding:0.4rem;color:#cbd5e1;">${escapeBandit(r.post_type)}</td><td style="padding:0.4rem;font-family:monospace;font-size:0.78rem;color:#94a3b8;">${escapeBandit(r.utm_content)}</td><td style="text-align:right;padding:0.4rem;">${r.views}</td><td style="text-align:right;padding:0.4rem;">${r.submits}</td><td style="text-align:right;padding:0.4rem;font-weight:700;color:${cvColor};">${r.cv_rate_pct}%</td></tr>`;
+          });
+          html += '</tbody></table>';
+          snsOut.innerHTML = html;
+        } catch (e) {
+          snsOut.innerHTML = `<p style="color:#ef4444;">取得失敗: ${e.message}</p>`;
+        }
+      }
       // 自動ロード
       setTimeout(loadBanditStatus, 500);
+      setTimeout(loadSnsCv, 600);
     })();
     </script>
 
