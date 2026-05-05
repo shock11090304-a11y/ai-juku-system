@@ -318,9 +318,14 @@
         </div>
         <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:0.75rem; margin-bottom:0.75rem;">
           <div>
-            <label for="slMaterial" style="display:block; font-size:0.75rem; color:#a1a1aa; margin-bottom:0.25rem;">教材名</label>
-            <input type="text" id="slMaterial" maxlength="200" list="slMaterialDatalist" placeholder="例: ターゲット1900 / 青チャート" style="width:100%; padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+            <label for="slMaterial" style="display:block; font-size:0.75rem; color:#a1a1aa; margin-bottom:0.25rem;">教材名 <span style="color:#71717a;">(📷でAI読取)</span></label>
+            <div style="display:flex; gap:0.4rem;">
+              <input type="text" id="slMaterial" maxlength="200" list="slMaterialDatalist" placeholder="例: ターゲット1900 / 青チャート" style="flex:1; padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff;">
+              <button type="button" id="slMaterialPhotoBtn" aria-label="教材を写真で取り込む" title="教材を写真で取り込む" style="padding:0.6rem 0.8rem; background:linear-gradient(135deg,#a78bfa,#ec4899); border:0; border-radius:8px; color:#fff; cursor:pointer; font-size:1.1rem;">📷</button>
+              <input type="file" id="slMaterialPhotoInput" accept="image/*" capture="environment" style="display:none;">
+            </div>
             <datalist id="slMaterialDatalist"></datalist>
+            <div id="slMaterialPhotoMsg" style="margin-top:0.3rem; font-size:0.75rem; min-height:1em;"></div>
           </div>
           <div>
             <label for="slMinutes" style="display:block; font-size:0.75rem; color:#a1a1aa; margin-bottom:0.25rem;">勉強時間 (分) *</label>
@@ -562,7 +567,7 @@
   <script src="learning-brain.js?v=20260425-2"></script>
   <script src="exam-prep.js?v=20260425-1"></script>
   <script src="referral-program.js?v=20260425-1"></script>
-  <script src="mypage.js?v=20260505-inquiry-btn"></script>
+  <script src="mypage.js?v=20260506-material-photo"></script>
   <script>
     // ウィジェット初期描画
     (function() {

@@ -652,9 +652,116 @@ function initStudyLog() {
       btn.addEventListener('click', submitStudyLog);
       btn._slBound = true;
     }
+    // 📷 教材写真 AI読取
+    const photoBtn = document.getElementById('slMaterialPhotoBtn');
+    const photoInput = document.getElementById('slMaterialPhotoInput');
+    if (photoBtn && !photoBtn._slBound) {
+      photoBtn.addEventListener('click', () => photoInput && photoInput.click());
+      photoBtn._slBound = true;
+    }
+    if (photoInput && !photoInput._slBound) {
+      photoInput.addEventListener('change', handleMaterialPhoto);
+      photoInput._slBound = true;
+    }
     loadMyStudyLogs();
   };
   tryInit(10);
+}
+
+// 教材写真を圧縮 → Claude Vision で教材名/科目を抽出して form に auto-fill
+async function handleMaterialPhoto(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const photoBtn = document.getElementById('slMaterialPhotoBtn');
+  const msg = document.getElementById('slMaterialPhotoMsg');
+  const matInput = document.getElementById('slMaterial');
+  const subjSel = document.getElementById('slSubject');
+  if (msg) { msg.style.color = '#a78bfa'; msg.textContent = '🔍 AI が読み取り中... (5-15秒)'; }
+  if (photoBtn) { photoBtn.disabled = true; photoBtn.textContent = '⏳'; }
+  try {
+    // 圧縮 (max 1024px, JPEG q0.8)
+    const dataUrl = await _compressImage(file, 1024, 0.8);
+    const base64 = dataUrl.split(',')[1];
+    const mime = dataUrl.match(/data:(image\/[^;]+);/)[1];
+    const token = (window.AuthGuard && window.AuthGuard.getToken()) || localStorage.getItem('ai_juku_session_token');
+    const student = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || {};
+    const sid = student.id || 'guest';
+    const res = await fetch(SL_API_BASE + '/api/ai/call', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (token || '') },
+      body: JSON.stringify({
+        student_id: sid,
+        model: 'claude-sonnet-4-6',
+        max_tokens: 500,
+        system: 'あなたは日本の中高生向け教材を画像から識別する専門家です。必ず純粋な JSON だけ返答します。',
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: '画像から教材を識別し、以下の JSON で返してください (フェンスや前置きなし):\n{\n  "title": "教材名 (例: ターゲット1900・青チャート数学IA・新数学スタンダード演習)",\n  "subject": "次のいずれか一致: 英語/数学/国語/現代文/古文/漢文/理科/物理/化学/生物/地学/社会/日本史/世界史/地理/倫理/政経/情報/小論文/面接対策/その他",\n  "confidence": "high|mid|low"\n}\n判別不能なら title:"" にしてください。' },
+            { type: 'image', source: { type: 'base64', media_type: mime, data: base64 } }
+          ]
+        }],
+      }),
+    });
+    if (!res.ok) {
+      const errTxt = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errTxt.slice(0, 100)}`);
+    }
+    const data = await res.json();
+    const txt = (data.content || []).map(c => c.text || '').join('').trim();
+    const jsonStr = txt.replace(/^```(?:json)?\s*|\s*```$/g, '');
+    let parsed;
+    try { parsed = JSON.parse(jsonStr); }
+    catch { const m = jsonStr.match(/\{[\s\S]*\}/); if (m) parsed = JSON.parse(m[0]); else throw new Error('JSON 解析失敗'); }
+    if (!parsed.title) {
+      if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '❌ 教材を識別できませんでした。手動で入力してください。'; }
+      return;
+    }
+    if (matInput) matInput.value = parsed.title;
+    let subjMsg = '';
+    if (parsed.subject && subjSel) {
+      const opts = Array.from(subjSel.options).map(o => o.value);
+      if (opts.includes(parsed.subject)) {
+        subjSel.value = parsed.subject;
+        subjMsg = ` / 科目: ${parsed.subject}`;
+      }
+    }
+    const conf = parsed.confidence || 'mid';
+    const confLabel = { high: '✅ 高精度', mid: '👍 確からしい', low: '⚠️ 低精度・確認推奨' }[conf] || '';
+    if (msg) { msg.style.color = '#86efac'; msg.textContent = `${confLabel} 教材名: ${parsed.title}${subjMsg}`; }
+  } catch (err) {
+    console.error('material photo failed:', err);
+    if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (err.message || '読取失敗'); }
+  } finally {
+    if (photoBtn) { photoBtn.disabled = false; photoBtn.textContent = '📷'; }
+    if (e.target) e.target.value = '';  // 同じファイル再選択を許可
+  }
+}
+
+// canvas で画像をリサイズ + JPEG 圧縮 (Resend / Anthropic 経由のペイロード上限対策)
+function _compressImage(file, maxSide, quality) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('画像読込失敗'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('画像復号失敗'));
+      img.onload = () => {
+        const ratio = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const w = Math.round(img.width * ratio);
+        const h = Math.round(img.height * ratio);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 async function submitStudyLog() {
