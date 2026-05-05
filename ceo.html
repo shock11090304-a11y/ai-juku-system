@@ -678,6 +678,26 @@
         </div>
       </div>
       <div id="invError" style="display:none;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.4);border-radius:10px;padding:0.7rem;color:#fca5a5;font-size:0.82rem;"></div>
+
+      <!-- 🚀 一斉招待 (200名向け bulk send) -->
+      <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(217,70,239,0.2);">
+        <h3 style="font-size:1rem;color:#a78bfa;margin:0 0 0.4rem 0;">🚀 一斉招待メール (リアル塾 200名向け)</h3>
+        <p style="font-size:0.78rem;color:#94a3b8;margin:0 0 0.7rem 0;line-height:1.6;">
+          既存リアル塾生のメールアドレスを貼り付けて<strong>一斉送信</strong>。各人にHMAC署名付き招待URLが個別送付されます (1回最大100件・24h dedup付き)。
+        </p>
+        <div style="background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:0.6rem 0.8rem;margin-bottom:0.7rem;font-size:0.78rem;color:#fbbf24;line-height:1.5;">
+          ⚠️ <strong>Resend 無料枠 100通/日</strong>。200名なら<strong>2日に分けて</strong>配信してください (1日目: 100名 → 翌日: 残り)。<br>
+          24h 累計 90通超えそうな時はエラー。dry-run で件数チェック推奨。
+        </div>
+        <textarea id="bulkInvEmails" rows="6" placeholder="email を1行ずつ貼り付け&#10;parent1@example.com&#10;parent2@example.com&#10;..." style="width:100%;background:#0f172a;color:#e4e4e7;border:1px solid rgba(167,139,250,0.3);padding:0.6rem;border-radius:8px;font-size:0.82rem;font-family:ui-monospace,monospace;line-height:1.5;resize:vertical;"></textarea>
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;flex-wrap:wrap;align-items:center;">
+          <input id="bulkInvDays" type="number" min="1" max="365" value="30" style="background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.35);color:#fff;padding:0.5rem;border-radius:6px;font-size:0.85rem;width:90px;" title="期限 (日)">
+          <span style="font-size:0.78rem;color:#71717a;">日 期限</span>
+          <button id="bulkInvDryBtn" style="background:rgba(99,102,241,0.18);color:#a78bfa;border:1px solid rgba(99,102,241,0.4);padding:0.5rem 0.9rem;border-radius:6px;font-size:0.82rem;font-weight:700;cursor:pointer;">🔍 dry-run プレビュー</button>
+          <button id="bulkInvSendBtn" style="background:linear-gradient(135deg,#a78bfa,#6366f1);color:#fff;border:none;padding:0.5rem 1rem;border-radius:6px;font-size:0.85rem;font-weight:800;cursor:pointer;">📨 本送信</button>
+        </div>
+        <div id="bulkInvResult" style="display:none;margin-top:0.8rem;padding:0.8rem;background:rgba(0,0,0,0.35);border:1px solid rgba(167,139,250,0.3);border-radius:8px;font-size:0.85rem;"></div>
+      </div>
     </section>
 
     <!-- ========================================== -->
@@ -2706,6 +2726,91 @@
 
         copyUrlBtn?.addEventListener('click', () => copyText(resUrl.value, copyUrlBtn, '📋 URL'));
         copyDmBtn?.addEventListener('click', () => copyText(resDm.value, copyDmBtn, '📋 DM テンプレをコピー'));
+
+        // 🚀 一斉招待 (bulk send)
+        const bulkEmails = document.getElementById('bulkInvEmails');
+        const bulkDays = document.getElementById('bulkInvDays');
+        const bulkDryBtn = document.getElementById('bulkInvDryBtn');
+        const bulkSendBtn = document.getElementById('bulkInvSendBtn');
+        const bulkResult = document.getElementById('bulkInvResult');
+
+        function _parseEmails(raw) {
+          return (raw || '')
+            .split(/[\n,;\s]+/)
+            .map(s => s.trim().toLowerCase())
+            .filter(s => s && s.includes('@') && s.includes('.'));
+        }
+
+        async function _bulkInvite(dryRun) {
+          if (!bulkEmails || !bulkResult) return;
+          const list = _parseEmails(bulkEmails.value);
+          if (list.length === 0) {
+            bulkResult.style.display = 'block';
+            bulkResult.style.color = '#fca5a5';
+            bulkResult.textContent = '⚠️ 有効な email がありません';
+            return;
+          }
+          if (list.length > 100) {
+            bulkResult.style.display = 'block';
+            bulkResult.style.color = '#fca5a5';
+            bulkResult.textContent = `⚠️ ${list.length} 件は上限超過 (最大100件)。分割してください。`;
+            return;
+          }
+          if (!dryRun && !confirm(`${list.length} 件にメール送信します。よろしいですか？`)) return;
+
+          const days = parseInt(bulkDays.value || '30', 10) || 30;
+          const triggerBtn = dryRun ? bulkDryBtn : bulkSendBtn;
+          const orig = triggerBtn.textContent;
+          triggerBtn.disabled = true;
+          triggerBtn.textContent = dryRun ? '🔍 計算中...' : '📨 送信中...';
+          bulkResult.style.display = 'block';
+          bulkResult.style.color = '#cbd5e1';
+          bulkResult.textContent = (dryRun ? 'プレビュー' : '送信') + '中...';
+
+          try {
+            const res = await window.AdminAuth.fetch('/api/admin/marketing/bulk-invite', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ emails: list, expires_days: days, dry_run: dryRun }),
+            });
+            if (!res.ok) {
+              const txt = await res.text().catch(() => '');
+              throw new Error('HTTP ' + res.status + ': ' + txt);
+            }
+            const data = await res.json();
+            let html = '';
+            if (dryRun) {
+              html = `<div style="color:#a78bfa;font-weight:700;margin-bottom:0.4rem;">🔍 dry-run 結果 (${data.total} 件)</div>`;
+              html += `<div style="font-size:0.78rem;color:#94a3b8;">送信されません。本送信ボタンを押すと実際に配信されます。</div>`;
+              if (data.results && data.results.length) {
+                html += '<div style="margin-top:0.6rem;max-height:200px;overflow:auto;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:0.5rem;font-size:0.78rem;font-family:ui-monospace,monospace;">';
+                data.results.slice(0, 50).forEach(r => {
+                  html += `<div style="padding:0.15rem 0;color:${r.status === 'dry_run' ? '#34d399' : '#fbbf24'};">${r.email} — ${r.status}</div>`;
+                });
+                html += '</div>';
+              }
+            } else {
+              html = `<div style="color:#34d399;font-weight:700;margin-bottom:0.4rem;">✅ 送信完了</div>`;
+              html += `<div style="font-size:0.85rem;">送信: <strong style="color:#34d399;">${data.sent}</strong> / 重複スキップ: <strong style="color:#fbbf24;">${data.skipped_dedup}</strong> / 失敗: <strong style="color:#f87171;">${data.failed}</strong></div>`;
+              if (data.failed_details && data.failed_details.length) {
+                html += '<div style="margin-top:0.6rem;font-size:0.78rem;color:#fca5a5;">失敗詳細:</div>';
+                data.failed_details.forEach(f => {
+                  html += `<div style="font-size:0.75rem;color:#fca5a5;font-family:ui-monospace,monospace;">${f.email}: ${f.error || ''}</div>`;
+                });
+              }
+            }
+            bulkResult.innerHTML = html;
+          } catch (e) {
+            bulkResult.style.color = '#fca5a5';
+            bulkResult.textContent = '❌ エラー: ' + e.message;
+          } finally {
+            triggerBtn.disabled = false;
+            triggerBtn.textContent = orig;
+          }
+        }
+
+        bulkDryBtn?.addEventListener('click', () => _bulkInvite(true));
+        bulkSendBtn?.addEventListener('click', () => _bulkInvite(false));
       })();
 
       // 📸 マーケティング素材ダウンロード

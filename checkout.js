@@ -39,11 +39,31 @@ if (params.get('plan') && PLAN_INFO[params.get('plan')]) {
   if (target) {
     target.checked = true;
   }
-  // founder_special など対応 radio 無しの URL plan は submit 時に上書き利用。
-  if (!target && params.get('plan') === 'founder_special') {
-    window.__urlPlanOverride = 'founder_special';
+  // founder_special / student_addon など対応 radio 無しの URL plan は submit 時に上書き利用。
+  const overridablePlans = ['founder_special', 'student_addon'];
+  if (!target && overridablePlans.includes(params.get('plan'))) {
+    window.__urlPlanOverride = params.get('plan');
+    // student_addon の場合は UI に明示
+    if (params.get('plan') === 'student_addon') {
+      const planSection = document.querySelector('.plans-section, [class*="plan-option"]')?.closest('section, div');
+      const summary = document.getElementById('summaryPlan');
+      if (summary) summary.textContent = '塾生アドオン (永年¥9,800)';
+      const summaryPrice = document.getElementById('summaryPrice');
+      if (summaryPrice) summaryPrice.textContent = '¥9,800/月（税込）';
+      // 入塾金免除
+      const enrollmentRow = document.getElementById('summaryEnrollmentRow');
+      if (enrollmentRow) enrollmentRow.style.display = 'none';
+      // 既存ラジオを全部 hide して「塾生限定プラン」notice を出す
+      const planSec = document.querySelector('.plans');
+      if (planSec) {
+        planSec.innerHTML = '<div style="padding:1rem;background:linear-gradient(135deg,rgba(99,102,241,0.10),rgba(34,197,94,0.10));border:1px solid rgba(99,102,241,0.3);border-radius:10px;text-align:center;"><div style="font-size:1.1rem;font-weight:800;color:#a78bfa;">🎓 塾生アドオン (永年¥9,800/月)</div><div style="font-size:0.85rem;color:#cbd5e1;margin-top:0.4rem;">通塾生限定価格 + 入塾金免除</div></div>';
+      }
+    }
   }
 }
+
+// 招待トークン (student-upgrade.html 経由) を保持して signup 時に送る
+window.__inviteToken = params.get('invite') || '';
 if (params.get('email')) document.getElementById('email').value = params.get('email');
 if (params.get('lastName')) document.getElementById('lastName').value = params.get('lastName');
 if (params.get('firstName')) document.getElementById('firstName').value = params.get('firstName');

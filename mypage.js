@@ -521,12 +521,54 @@ async function initReferralSection() {
           copyBtn.style.background = 'linear-gradient(135deg, #6366f1, #8b5cf6)';
         }, 2000);
       } catch (e) {
-        // fallback: select + execCommand
         linkInput.select();
         document.execCommand('copy');
       }
     });
   }
+
+  // 🚀 SNS シェアボタン (review 指摘の友達紹介シェア摩擦を下げる)
+  // user の plan により share text を出し分ける
+  const student = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || null;
+  const isStudentAddon = student && student.plan === 'student_addon';
+
+  function _shareText() {
+    const url = linkInput.value;
+    if (!url || url.startsWith('取得') || url.startsWith('ログイン')) return null;
+    if (isStudentAddon) {
+      return {
+        url,
+        text: '塾の友達に教えたい📣 AI学習コーチ塾 — 入塾金¥10,000免除キャンペーン中！\n24時間 AI 質問対応・東大/京大レベルの問題AI自動生成。\n紹介で僕も¥3,000 OFF (Stripe 自動適用)',
+      };
+    }
+    return {
+      url,
+      text: 'AI学習コーチ塾 — 友達紹介で入塾金¥10,000免除！\n24時間 AI 質問対応・個別カリキュラム自動設計。\n\n👇 紹介URLから登録するとお得',
+    };
+  }
+  const wireShare = (id, builder) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      const s = _shareText();
+      if (!s) return;
+      const target = builder(s);
+      if (target) window.open(target, '_blank', 'noopener');
+    });
+  };
+  wireShare('shareLineBtn', s => `https://line.me/R/msg/text/?${encodeURIComponent(s.text + '\n' + s.url)}`);
+  wireShare('shareThreadsBtn', s => `https://www.threads.net/intent/post?text=${encodeURIComponent(s.text + '\n' + s.url)}`);
+  wireShare('shareXBtn', s => `https://twitter.com/intent/tweet?text=${encodeURIComponent(s.text)}&url=${encodeURIComponent(s.url)}`);
+  wireShare('shareEmailBtn', s => `mailto:?subject=${encodeURIComponent('AI学習コーチ塾 紹介URL')}&body=${encodeURIComponent(s.text + '\n\n' + s.url)}`);
+
+  // 既存リアル塾生 (student_addon プラン) には専用の audience copy
+  // FIX (review): localStorage key 修正 — 'ai_juku_user' は存在しない、AuthGuard.getStudent() を使用
+  try {
+    const copyEl = document.getElementById('referralAudienceCopy');
+    if (copyEl && isStudentAddon) {
+      copyEl.innerHTML = '🏫 <strong>リアル塾の友達・クラスメイト</strong>に紹介すれば、あなたは <strong style="color:#a78bfa;">¥3,000 OFF</strong>、相手は <strong style="color:#ec4899;">入塾金 ¥10,000 免除</strong>。塾生プラン限定 永年¥9,800 で広めましょう。';
+    }
+  } catch (e) { /* noop */ }
 }
 
 // ==========================================================================

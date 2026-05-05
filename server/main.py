@@ -5797,6 +5797,205 @@ def public_verify_invite(token: str):
     return _verify_invite_token(token)
 
 
+def _send_student_invite_email(to_email: str, name: str, invite_url: str, expires_at_jst_str: str) -> dict:
+    """通塾生向け招待メール (一斉配信用)。Resend 経由"""
+    import html as _html
+    if not RESEND_API_KEY:
+        return {"sent": False, "dev_mode": True}
+    safe_name = _html.escape(name or "")
+    safe_invite_url = _html.escape(invite_url)  # FIX (review): href 値も XSS 対策エスケープ
+    greeting = f"{safe_name}さま" if safe_name else "保護者さま"
+    subject = "【AI学習コーチ塾】通塾生限定 永年¥9,800/月 招待のご案内"
+    html = f"""<!DOCTYPE html>
+<html><body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 580px; margin: 0 auto; padding: 2rem;">
+<h1 style="font-size: 1.4rem; color: #6366f1;">🎓 通塾生限定 AI 学習アドオン</h1>
+<p>{greeting}、いつもありがとうございます。</p>
+
+<p>AI学習コーチ塾 (オンライン) を、通塾生のみなさまに<strong>特別価格でご案内</strong>させていただきます。</p>
+
+<div style="background: linear-gradient(135deg, #f0fdf4, #dbeafe); padding: 1.2rem; border-radius: 10px; margin: 1.5rem 0; border: 1px solid rgba(99,102,241,0.3);">
+  <div style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.3rem;">通常価格 <s>¥39,800/月</s></div>
+  <div style="font-size: 1.5rem; font-weight: 800; color: #6366f1;">月額 ¥9,800 永年</div>
+  <div style="font-size: 0.85rem; color: #6b7280; margin-top: 0.3rem;">+ 入塾金 ¥10,000 免除</div>
+</div>
+
+<h3 style="color: #374151; font-size: 1.05rem;">何ができるか</h3>
+<ul style="font-size: 0.95rem;">
+  <li>📚 24時間 AI 個別質問対応 (英数理国全教科)</li>
+  <li>🎯 大学別過去問風オリジナル問題プール</li>
+  <li>📊 学習計画・進捗管理 (国公立難関大学コース)</li>
+  <li>📝 英作文 AI 採点 / 模試</li>
+  <li>📩 保護者さまへの週次学習レポート</li>
+</ul>
+
+<p style="text-align: center; margin: 2rem 0;">
+  <a href="{safe_invite_url}" style="display: inline-block; padding: 1rem 2rem; background: linear-gradient(135deg, #6366f1, #ec4899); color: white; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 1.05rem;">
+    🚀 通塾生プランで始める
+  </a>
+</p>
+
+<p style="font-size: 0.85rem; color: #999; text-align: center;">
+  ※ {_html.escape(expires_at_jst_str)} までに開いてください<br>
+  ※ この URL はお客様専用です。他の方への転送はご遠慮ください
+</p>
+
+<hr style="margin: 2rem 0; border: none; border-top: 1px solid #eee;">
+<p style="font-size: 0.8rem; color: #999;">
+  ご不明な点は <a href="mailto:info@trillion-ai-juku.com" style="color: #6366f1;">info@trillion-ai-juku.com</a> までお問い合わせください。<br>
+  配信停止をご希望の方はこのメールにご返信ください。
+</p>
+</body></html>"""
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({"from": FROM_EMAIL, "to": [to_email], "subject": subject, "html": html}).encode("utf-8"),
+            headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json", "User-Agent": "ai-juku-system/1.0"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode())
+            return {"sent": True, "resend_id": result.get("id")}
+    except Exception as e:
+        return {"sent": False, "error": str(e)}
+
+
+@app.post("/api/admin/marketing/bulk-invite")
+async def admin_bulk_invite(
+    payload: dict,
+    authorization: Optional[str] = Header(None),
+):
+    """🚀 通塾生向け一斉招待メール配信。
+    payload: {emails: ["a@b.com", ...], expires_days?: 30, base_url?, dry_run?: false}
+    Anti-spam: 1回最大100件、Resend 100件/日無料枠を考慮。
+    Dedup: 直近24h で同じ email に既に送信済ならスキップ。
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+
+    payload = payload or {}
+    raw_emails = payload.get("emails") or []
+    if not isinstance(raw_emails, list):
+        raise HTTPException(status_code=400, detail="emails must be array")
+    if len(raw_emails) == 0:
+        raise HTTPException(status_code=400, detail="emails array is empty")
+    if len(raw_emails) > 100:
+        raise HTTPException(status_code=400, detail="一度に送信できるのは最大100件です。複数回に分けてください。")
+
+    expires_days = int(payload.get("expires_days", 30))
+    if expires_days < 1 or expires_days > 365:
+        expires_days = 30
+    base_url = (payload.get("base_url") or BASE_URL or "https://trillion-ai-juku.com").rstrip("/")
+    dry_run = bool(payload.get("dry_run", False))
+
+    # email 正規化 + 重複排除
+    seen = set()
+    emails = []
+    for e in raw_emails:
+        if not isinstance(e, str):
+            continue
+        e_norm = e.strip().lower()
+        if "@" not in e_norm or "." not in e_norm.split("@", 1)[1]:
+            continue
+        if e_norm in seen:
+            continue
+        seen.add(e_norm)
+        emails.append(e_norm)
+
+    if not emails:
+        raise HTTPException(status_code=400, detail="有効な email がありません")
+
+    # 24h dedup + daily quota check (Resend 100/day 制限考慮)
+    conn = db()
+    c = conn.cursor()
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    try:
+        c.execute(
+            "SELECT props FROM events WHERE name='bulk_invite_send' AND created_at > ?",
+            (cutoff,)
+        )
+        recent_emails = set()
+        sent_count_24h = 0
+        for row in c.fetchall():
+            try:
+                p = json.loads(row["props"] if hasattr(row, "keys") else row[0])
+                em = (p.get("email") or "").lower()
+                if em:
+                    recent_emails.add(em)
+                if p.get("ok"):
+                    sent_count_24h += 1
+            except Exception:
+                pass
+    finally:
+        conn.close()
+
+    # Resend 100/日制限: 24h 累積 + 今回送信予定 が 90 件超えそうなら警告 (10件 buffer)
+    will_send = len([e for e in emails if e not in recent_emails])
+    if not dry_run and (sent_count_24h + will_send) > 90:
+        raise HTTPException(
+            status_code=429,
+            detail=f"24h以内の Resend 送信枠超過の恐れ (済 {sent_count_24h} + 予定 {will_send} > 90)。明日に分割するか、件数を減らしてください。"
+        )
+
+    import time as _time
+    sent_count = 0
+    skipped_dedup = 0
+    failed = []
+    results = []
+    for idx, email in enumerate(emails):
+        if email in recent_emails:
+            skipped_dedup += 1
+            results.append({"email": email, "status": "skipped_dedup"})
+            continue
+
+        token_str = _sign_invite_token(email, expires_days)
+        invite_url = f"{base_url}/student-upgrade.html?invite={token_str}"
+        expires_at_jst = (datetime.now(timezone.utc) + timedelta(days=expires_days)).astimezone(timezone(timedelta(hours=9)))
+        expires_str = expires_at_jst.strftime("%Y-%m-%d")
+
+        if dry_run:
+            results.append({"email": email, "status": "dry_run", "invite_url": invite_url})
+            continue
+
+        result = _send_student_invite_email(email, "", invite_url, expires_str)
+        ok = bool(result.get("sent"))
+        if ok:
+            sent_count += 1
+            results.append({"email": email, "status": "sent"})
+        else:
+            failed.append({"email": email, "error": result.get("error", "send_failed")})
+            results.append({"email": email, "status": "failed", "error": result.get("error", "")})
+
+        # events に記録 (dedup 用)
+        try:
+            conn2 = db(); cc = conn2.cursor()
+            cc.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("bulk_invite_send", json.dumps({"email": email, "ok": ok, "error": result.get("error", "")}, ensure_ascii=False), "admin_bulk_invite")
+            )
+            conn2.commit(); conn2.close()
+        except Exception as _e:
+            log.warning(f"[BulkInvite] event record failed: {_e}")
+
+        # Resend rate limit (約10req/sec) 対策: 200ms sleep
+        if idx < len(emails) - 1:
+            _time.sleep(0.2)
+
+    return {
+        "ok": True,
+        "total": len(emails),
+        "sent": sent_count,
+        "skipped_dedup": skipped_dedup,
+        "failed": len(failed),
+        "failed_details": failed[:20],
+        "dry_run": dry_run,
+        "results": results if dry_run else None,
+    }
+
+
 @app.post("/api/admin/stripe/setup-threads6k-coupon")
 def admin_stripe_setup_threads6k_coupon(
     authorization: Optional[str] = Header(None),
