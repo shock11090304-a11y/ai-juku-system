@@ -6862,6 +6862,22 @@ def admin_login_as_student(payload: dict, authorization: Optional[str] = Header(
         conn.close()
 
 
+@app.post("/api/admin/send-report")
+def admin_send_report(payload: dict, authorization: Optional[str] = Header(None)):
+    """管理者がモニタリングメールアドレスに任意レポートを送信。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+    subject = payload.get("subject", "レポート")
+    body_html = payload.get("body_html", "")
+    if not body_html:
+        raise HTTPException(status_code=400, detail="body_html required")
+    result = _send_monitor_email(subject, body_html)
+    return {"ok": result.get("sent", False), "error": result.get("error")}
+
+
 @app.post("/api/admin/students/reactivate")
 def admin_students_reactivate(payload: dict, authorization: Optional[str] = Header(None)):
     """canceled / expired student を任意の status に再アクティベート。
