@@ -1948,6 +1948,7 @@ function initExamResults() {
     }
     if (section) section.style.display = '';
     bindExamButtons();
+    bindWeakPointButtons();
     loadMyExamResults();
   };
   tryInit(10);
@@ -2140,4 +2141,195 @@ async function deleteExamResult(id) {
   } catch (e) {
     alert('削除失敗: ' + (e.message || ''));
   }
+}
+
+
+// ==========================================================================
+// 🎯 AI 弱点プリント生成 (Phase 4.6)
+// ==========================================================================
+function bindWeakPointButtons() {
+  // subject options 投入 + 弱点 hint
+  const sel = document.getElementById('wpSubject');
+  if (sel && !sel.options.length) {
+    sel.innerHTML = '<option value="">-- 選択 --</option>' + SP_SUBJECTS.map(s => `<option value="${s}">${s}</option>`).join('');
+    sel.addEventListener('change', updateWpSubjectHint);
+  }
+  const toggle = document.getElementById('wpToggleBtn');
+  const cancel = document.getElementById('wpCancelBtn');
+  const submit = document.getElementById('wpSubmitBtn');
+  if (toggle && !toggle._wpBound) {
+    toggle.addEventListener('click', async () => {
+      const w = document.getElementById('wpFormWrap');
+      const isOpen = w.style.display !== 'none';
+      w.style.display = isOpen ? 'none' : '';
+      if (!isOpen) {
+        // 模試結果から弱点科目を auto-suggest
+        await autoSuggestWeakSubject();
+      }
+    });
+    toggle._wpBound = true;
+  }
+  if (cancel && !cancel._wpBound) {
+    cancel.addEventListener('click', () => { document.getElementById('wpFormWrap').style.display = 'none'; });
+    cancel._wpBound = true;
+  }
+  if (submit && !submit._wpBound) {
+    submit.addEventListener('click', generateWeakPointWorksheet);
+    submit._wpBound = true;
+  }
+}
+
+async function autoSuggestWeakSubject() {
+  const sel = document.getElementById('wpSubject');
+  const hint = document.getElementById('wpSubjectHint');
+  if (!sel || !hint) return;
+  try {
+    const data = await slApiFetch('/api/exam-results/me?limit=50');
+    const trend = data.by_subject_trend || {};
+    // 各科目の最新偏差値を収集 → 偏差値が一番低いものを suggest
+    const latests = [];
+    Object.keys(trend).forEach(s => {
+      const arr = trend[s] || [];
+      if (arr.length && arr[0].deviation != null) {
+        latests.push({ subject: s, deviation: arr[0].deviation });
+      }
+    });
+    if (!latests.length) {
+      hint.textContent = '💡 模試結果がまだありません。「📊 模試結果を追加」から登録すると、AI が弱点を自動検出します。';
+      hint.style.color = '#a1a1aa';
+      return;
+    }
+    latests.sort((a, b) => a.deviation - b.deviation);
+    const weakest = latests[0];
+    if (sel.value === '') sel.value = weakest.subject;
+    hint.textContent = `💡 直近模試で偏差値が低い順: ${latests.slice(0, 3).map(x => `${x.subject}(${x.deviation})`).join(' / ')} → 推奨「${weakest.subject}」を自動選択`;
+    hint.style.color = '#86efac';
+  } catch (e) {
+    hint.textContent = '';
+  }
+}
+
+function updateWpSubjectHint() {
+  // 個別 hint 更新 (科目変更時)
+  const hint = document.getElementById('wpSubjectHint');
+  if (hint) hint.textContent = '';
+}
+
+async function generateWeakPointWorksheet() {
+  const btn = document.getElementById('wpSubmitBtn');
+  const msg = document.getElementById('wpMsg');
+  const result = document.getElementById('wpResult');
+  if (!btn || btn.disabled) return;
+  const subject = document.getElementById('wpSubject').value;
+  const topic = document.getElementById('wpTopic').value.trim();
+  const num = parseInt(document.getElementById('wpNum').value, 10) || 8;
+  const uni = document.getElementById('wpUni').value.trim();
+  if (!subject) { msg.style.color = '#fca5a5'; msg.textContent = '科目を選択してください'; return; }
+  if (num < 3 || num > 15) { msg.style.color = '#fca5a5'; msg.textContent = '問題数は 3-15 で指定'; return; }
+
+  btn.disabled = true; btn.textContent = '🤖 AI が問題作成中... (15-30秒)';
+  msg.style.color = '#fbbf24'; msg.textContent = '🎯 弱点を分析して問題を生成しています...';
+  result.innerHTML = '';
+  try {
+    const data = await slApiFetch('/api/weak-points/generate-worksheet', {
+      method: 'POST',
+      body: JSON.stringify({
+        subject, topic: topic || undefined, num_problems: num, target_university: uni || undefined,
+      }),
+    });
+    msg.style.color = '#86efac'; msg.textContent = `✅ 弱点プリントを生成しました (${data.problems.length} 問)`;
+    result.innerHTML = renderWorksheet(data);
+    // 印刷ボタンと解答 toggle
+    const printBtn = document.getElementById('wpPrintBtn');
+    const ansToggle = document.getElementById('wpAnsToggleBtn');
+    if (printBtn) printBtn.addEventListener('click', () => printWorksheet(data));
+    if (ansToggle) ansToggle.addEventListener('click', () => {
+      document.querySelectorAll('.wp-ans-block').forEach(el => {
+        el.style.display = el.style.display === 'none' ? '' : 'none';
+      });
+      ansToggle.textContent = ansToggle.textContent.includes('表示') ? '🙈 解答を隠す' : '👁 解答を表示';
+    });
+  } catch (e) {
+    msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || '生成失敗');
+  } finally {
+    btn.disabled = false; btn.textContent = '✨ 弱点プリントを生成 (15-30秒)';
+  }
+}
+
+function renderWorksheet(d) {
+  const probsHtml = (d.problems || []).map(p => {
+    const diffColor = { '易': '#86efac', '標準': '#fbbf24', '応用': '#f97316', '発展': '#fca5a5' }[p.difficulty] || '#a1a1aa';
+    return `
+      <div style="background:rgba(255,255,255,0.04); border-radius:8px; padding:0.85rem; margin-bottom:0.6rem; page-break-inside:avoid;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+          <div style="font-weight:700; color:#fbbf24;">問題 ${p.no}</div>
+          <span style="background:rgba(255,255,255,0.1); color:${diffColor}; padding:0.1rem 0.5rem; border-radius:4px; font-size:0.72rem; font-weight:700;">${escapeHtml(p.difficulty)}</span>
+        </div>
+        <div style="color:#e4e4e7; font-size:0.92rem; white-space:pre-wrap; margin-bottom:0.5rem; line-height:1.6;">${escapeHtml(p.question)}</div>
+        <div class="wp-ans-block" style="background:rgba(16,185,129,0.08); border-left:3px solid #10b981; padding:0.5rem 0.75rem; border-radius:6px; margin-top:0.4rem;">
+          <div style="font-weight:700; color:#86efac; font-size:0.78rem; margin-bottom:0.2rem;">✅ 解答</div>
+          <div style="color:#e4e4e7; font-size:0.85rem; white-space:pre-wrap;">${escapeHtml(p.answer)}</div>
+        </div>
+        <div class="wp-ans-block" style="background:rgba(99,102,241,0.08); border-left:3px solid #6366f1; padding:0.5rem 0.75rem; border-radius:6px; margin-top:0.3rem;">
+          <div style="font-weight:700; color:#c7d2fe; font-size:0.78rem; margin-bottom:0.2rem;">💡 解説</div>
+          <div style="color:#d4d4d8; font-size:0.85rem; white-space:pre-wrap; line-height:1.6;">${escapeHtml(p.explanation)}</div>
+        </div>
+      </div>`;
+  }).join('');
+  const lecturesHtml = (d.sapuri_lectures || []).map((l, i) => `
+    <div style="background:rgba(251,113,133,0.08); border-left:3px solid #fb7185; border-radius:6px; padding:0.6rem; margin-bottom:0.4rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">
+        <div style="font-weight:700; color:#fda4af; font-size:0.88rem;">${i + 1}. 📺 ${escapeHtml(l.title)}</div>
+        <span style="background:rgba(251,113,133,0.2); color:#fda4af; padding:0.1rem 0.5rem; border-radius:4px; font-size:0.7rem; font-weight:700;">${escapeHtml(l.level)}</span>
+      </div>
+      <div style="color:#d4d4d8; font-size:0.78rem;">💡 ${escapeHtml(l.reason)}</div>
+    </div>`).join('');
+  return `
+    <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.7rem;">
+        <div>
+          <div style="font-size:0.92rem; color:#fbbf24; font-weight:800;">📋 ${escapeHtml(d.subject)} 弱点プリント</div>
+          <div style="font-size:0.78rem; color:#a1a1aa; margin-top:0.2rem;">テーマ: ${escapeHtml(d.topic_used)}</div>
+        </div>
+        <div style="display:flex; gap:0.3rem;">
+          <button id="wpAnsToggleBtn" type="button" style="background:rgba(99,102,241,0.2); color:#c7d2fe; border:0; padding:0.4rem 0.7rem; border-radius:6px; cursor:pointer; font-size:0.78rem;">🙈 解答を隠す</button>
+          <button id="wpPrintBtn" type="button" style="background:linear-gradient(135deg,#10b981,#34d399); color:#fff; border:0; padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:700;">🖨 印刷</button>
+        </div>
+      </div>
+      ${d.weak_point_analysis ? `<div style="background:rgba(245,158,11,0.08); border-left:3px solid #f59e0b; padding:0.55rem 0.75rem; border-radius:6px; margin-bottom:0.7rem; font-size:0.85rem; color:#e4e4e7;">🎯 <strong style="color:#fbbf24;">弱点分析:</strong> ${escapeHtml(d.weak_point_analysis)}</div>` : ''}
+      ${probsHtml}
+      ${lecturesHtml ? `
+        <div style="margin-top:1rem; padding-top:0.7rem; border-top:1px solid rgba(255,255,255,0.1);">
+          <div style="font-size:0.88rem; color:#fda4af; font-weight:700; margin-bottom:0.4rem;">📺 補強推薦: スタサプ講義 (${d.sapuri_lectures.length} 件・易→難)</div>
+          ${lecturesHtml}
+        </div>` : ''}
+    </div>`;
+}
+
+function printWorksheet(d) {
+  const probsHtml = (d.problems || []).map(p => `
+    <div style="page-break-inside:avoid; margin-bottom:1rem; border-bottom:1px solid #ccc; padding-bottom:0.7rem;">
+      <h3 style="margin:0 0 0.3rem 0;">問題 ${p.no} <span style="font-size:0.7em; background:#eee; padding:1px 5px; border-radius:3px;">${p.difficulty}</span></h3>
+      <div style="white-space:pre-wrap; line-height:1.6;">${escapeHtml(p.question)}</div>
+      <div style="margin-top:0.5rem; padding:0.4rem; background:#f0fdf4;"><strong>解答:</strong> ${escapeHtml(p.answer)}</div>
+      <div style="margin-top:0.3rem; padding:0.4rem; background:#eff6ff;"><strong>解説:</strong> ${escapeHtml(p.explanation)}</div>
+    </div>`).join('');
+  const lectHtml = (d.sapuri_lectures || []).map((l, i) => `
+    <li style="margin-bottom:0.3rem;"><strong>${i + 1}. ${escapeHtml(l.title)}</strong> [${escapeHtml(l.level)}] - ${escapeHtml(l.reason)}</li>
+  `).join('');
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${escapeHtml(d.subject)} 弱点プリント</title>
+    <style>body{font-family:'Hiragino Sans','Yu Gothic',sans-serif; padding:2rem; max-width:800px; margin:0 auto; line-height:1.6;} h1{border-bottom:2px solid #333;} h3{margin-top:1rem;} @media print { body{padding:1rem;} }</style>
+    </head><body>
+    <h1>📋 ${escapeHtml(d.subject)} 弱点プリント</h1>
+    <p><strong>テーマ:</strong> ${escapeHtml(d.topic_used)}</p>
+    ${d.weak_point_analysis ? `<div style="background:#fef3c7; padding:0.7rem; border-left:4px solid #f59e0b; margin:1rem 0;"><strong>🎯 弱点分析:</strong> ${escapeHtml(d.weak_point_analysis)}</div>` : ''}
+    <hr>
+    ${probsHtml}
+    ${lectHtml ? `<h2>📺 補強推薦: スタサプ講義</h2><ul>${lectHtml}</ul>` : ''}
+    </body></html>`;
+  const w = window.open('', '_blank');
+  if (!w) { alert('ポップアップがブロックされました'); return; }
+  w.document.write(html);
+  w.document.close();
+  setTimeout(() => w.print(), 500);
 }

@@ -448,6 +448,42 @@
       </div>
       <!-- 模試一覧 -->
       <div id="exList" style="margin-top:1rem;"></div>
+
+      <!-- 🎯 AI 弱点プリント生成 (Phase 4.6) -->
+      <div style="margin-top:1.2rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.08);">
+        <button id="wpToggleBtn" type="button" style="width:100%; padding:0.85rem; background:linear-gradient(135deg,#ec4899,#f59e0b); border:0; border-radius:10px; color:#fff; font-weight:800; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(245,158,11,0.25);">🎯 AI に弱点プリントを作ってもらう</button>
+        <div id="wpFormWrap" style="display:none; background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.3); border-radius:12px; padding:1rem; margin-top:0.8rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
+            <div style="font-size:0.9rem; color:#fbbf24; font-weight:700;">🎯 弱点プリント生成 (AI 問題作成 + スタサプ補強推薦)</div>
+            <button id="wpCancelBtn" type="button" style="background:none; border:0; color:#71717a; cursor:pointer; font-size:0.75rem;">✕ 閉じる</button>
+          </div>
+          <p style="font-size:0.75rem; color:#a1a1aa; margin:0 0 0.7rem 0;">直近模試で偏差値が低い科目から AI が選び、解答+解説付きの問題プリントを生成します。</p>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; margin-bottom:0.6rem;">
+            <div>
+              <label for="wpSubject" style="display:block; font-size:0.72rem; color:#fbbf24; margin-bottom:0.2rem; font-weight:700;">科目 <span style="color:#fca5a5;">*</span></label>
+              <select id="wpSubject" style="width:100%; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.9rem;"></select>
+              <div id="wpSubjectHint" style="font-size:0.7rem; color:#86efac; margin-top:0.2rem; min-height:0.9em;"></div>
+            </div>
+            <div>
+              <label for="wpNum" style="display:block; font-size:0.72rem; color:#fbbf24; margin-bottom:0.2rem; font-weight:700;">問題数 <span style="color:#fca5a5;">*</span></label>
+              <input type="number" id="wpNum" min="3" max="15" value="8" style="width:100%; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.9rem;">
+            </div>
+          </div>
+          <div style="margin-bottom:0.6rem;">
+            <label for="wpTopic" style="display:block; font-size:0.72rem; color:#fbbf24; margin-bottom:0.2rem; font-weight:700;">テーマ・単元 <span style="color:#71717a;">(任意)</span></label>
+            <input type="text" id="wpTopic" maxlength="200" placeholder="例: 関係詞 / 二次関数 / 力学 / 古文助動詞 (空欄なら模試結果から AI が推測)" style="width:100%; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.9rem;">
+          </div>
+          <div style="margin-bottom:0.7rem;">
+            <label for="wpUni" style="display:block; font-size:0.72rem; color:#fbbf24; margin-bottom:0.2rem; font-weight:700;">志望校 <span style="color:#71717a;">(任意・難易度合わせ)</span></label>
+            <input type="text" id="wpUni" maxlength="100" placeholder="例: 東京大学 / 早稲田大学" style="width:100%; padding:0.55rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.9rem;">
+          </div>
+
+          <button id="wpSubmitBtn" type="button" style="width:100%; padding:0.7rem; background:linear-gradient(135deg,#ec4899,#f59e0b); border:0; border-radius:8px; color:#fff; font-weight:700; cursor:pointer;">✨ 弱点プリントを生成 (15-30秒)</button>
+          <div id="wpMsg" style="margin-top:0.5rem; font-size:0.78rem; min-height:1em;"></div>
+          <div id="wpResult" style="margin-top:0.7rem;"></div>
+        </div>
+      </div>
     </section>
 
     <!-- 🎓 合格カリキュラム (Phase 4 - 国公立難関大学コース限定 / 難関私立も対象) -->
@@ -782,7 +818,7 @@
   <script src="learning-brain.js?v=20260425-2"></script>
   <script src="exam-prep.js?v=20260425-1"></script>
   <script src="referral-program.js?v=20260425-1"></script>
-  <script src="mypage.js?v=20260506-exam"></script>
+  <script src="mypage.js?v=20260506-weak-point"></script>
   <script>
     // ウィジェット初期描画
     (function() {

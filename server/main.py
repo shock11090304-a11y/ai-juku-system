@@ -15463,6 +15463,154 @@ def get_my_exam_results(authorization: Optional[str] = Header(None), limit: int 
 
 
 # ==========================================================================
+# Routes: Weak-Points Worksheet (Phase 4.6 - AI 弱点プリント生成 / 国公立難関大学コース限定)
+# 塾長指示 2026-05-06: 弱点はスタサプ講義で補強 + AI で弱点プリント自動生成
+# ==========================================================================
+class WorksheetGenRequest(BaseModel):
+    subject: str
+    topic: Optional[str] = None  # 空欄なら AI が模試結果から推測
+    num_problems: Optional[int] = 8
+    target_university: Optional[str] = None  # 任意・志望校レベル合わせ
+
+
+@app.post("/api/weak-points/generate-worksheet")
+def generate_weak_points_worksheet(payload: WorksheetGenRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒: 弱点プリントを AI 生成 + スタサプ講義補強推薦。"""
+    _check_rate_limit_ip(request, bucket="weak_worksheet", limit=10, window=600)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+    if not GEMINI_API_KEY:
+        raise HTTPException(status_code=503, detail="Gemini が構成されていません")
+
+    subject = (payload.subject or "").strip()
+    if subject not in _STUDY_SUBJECTS:
+        raise HTTPException(status_code=400, detail="科目が不正です")
+    topic = _sanitize_text(payload.topic, 200) or ""
+    target_uni = _sanitize_text(payload.target_university, 100) or ""
+    try:
+        n = int(payload.num_problems or 8)
+        if not (3 <= n <= 15):
+            raise HTTPException(status_code=400, detail="問題数は 3〜15")
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="問題数が不正")
+
+    # 模試結果から弱点情報を context inject
+    exam_context = ""
+    try:
+        _conn = db()
+        _c = _conn.cursor()
+        _c.execute(
+            "SELECT exam_name, exam_date, deviation, judgement, note FROM exam_results "
+            "WHERE student_id = ? AND subject = ? ORDER BY exam_date DESC LIMIT 3",
+            (student["id"], subject)
+        )
+        rows = _c.fetchall()
+        _conn.close()
+        if rows:
+            lines = ["", "## この生徒の最近の模試結果 (科目: " + subject + "):"]
+            for r in rows:
+                jd = f" / 判定 {r['judgement']}" if r['judgement'] else ""
+                nt = f" / メモ: {r['note']}" if r['note'] else ""
+                lines.append(f"- {r['exam_name']} ({r['exam_date']}): 偏差値 {r['deviation'] or '?'}{jd}{nt}")
+            exam_context = "\n".join(lines)
+    except Exception as e:
+        log.warning(f"[Worksheet] exam context fetch failed: {e}")
+
+    sys_prompt = "難関大学受験の問題作成のプロです。生徒の弱点科目に合わせて練習問題を作成し、解答・解説・対応するスタディサプリ講義も提案します。教師名は塾長指示で出さない方針 (ただし sapuri_lectures は商品名そのままなので講師名を含む)。純粋な JSON のみ返答 (前置きや解説不要)。"
+    user_prompt = f"""科目: {subject}
+{('テーマ/単元: ' + topic) if topic else 'テーマ/単元: AI が模試結果から推測して設定'}
+{('志望校: ' + target_uni) if target_uni else ''}
+問題数: {n} 問{exam_context}
+
+上記の弱点を補強する練習問題を生成してください。問題は易→難の順で並べ、各問題に解答と解説を付けます。さらに対応するスタサプ講義 (3-5 件、レベル別) を推薦してください。
+
+出力形式 (フェンスや前置きなし、純粋な JSON):
+{{
+  "topic_used": "実際に扱ったテーマ (60字以内)",
+  "weak_point_analysis": "この弱点の典型的な原因と対策 (120字以内)",
+  "problems": [
+    {{
+      "no": 1,
+      "difficulty": "易|標準|応用|発展",
+      "question": "問題文 (300字以内、必要なら数式は LaTeX なしの平文で)",
+      "answer": "解答 (簡潔に)",
+      "explanation": "解説 (200字以内、なぜそうなるか・解法の核を明示)"
+    }}
+  ],
+  "sapuri_lectures": [
+    {{"title": "スタサプ講義名 (商品名そのまま)", "level": "ベーシック|スタンダード|ハイレベル|トップレベル", "reason": "この弱点克服に有効な理由 (60字以内)"}}
+  ]
+}}
+
+注意:
+- 問題は前提知識を上げすぎず、弱点克服に集中
+- 解説は「公式暗記」ではなく「なぜそうなるか」の理解促進
+- スタサプ講義名は実在の商品 (ベーシック → トップレベルの順で 3-5 件)"""
+
+    body = {
+        "model": "gemini-2.5-flash",
+        "max_tokens": 4000,
+        "system": sys_prompt,
+        "messages": [{"role": "user", "content": user_prompt}],
+    }
+    try:
+        data = _call_gemini(body, model="gemini-2.5-flash", kind="weak_worksheet")
+        text = "".join(c.get("text", "") for c in (data.get("content") or []) if isinstance(c, dict)).strip()
+        if not text:
+            raise HTTPException(status_code=503, detail="AI が空文字を返しました")
+        cleaned = text.strip()
+        if cleaned.startswith("```"):
+            import re as _re
+            cleaned = _re.sub(r'^```(?:json)?\s*|\s*```$', '', cleaned).strip()
+        try:
+            parsed = json.loads(cleaned)
+        except Exception:
+            import re as _re
+            m = _re.search(r'\{[\s\S]*\}', cleaned)
+            if not m:
+                raise HTTPException(status_code=503, detail="AI 出力 JSON 解析失敗")
+            parsed = json.loads(m.group(0))
+        problems = parsed.get("problems") or []
+        if not problems:
+            raise HTTPException(status_code=503, detail="AI が problems を返しませんでした")
+        # validate / sanitize
+        out_problems = []
+        for i, p in enumerate(problems[:n]):
+            out_problems.append({
+                "no": i + 1,
+                "difficulty": _sanitize_text(p.get("difficulty"), 20) or "標準",
+                "question": _sanitize_text(p.get("question"), 600) or "",
+                "answer": _sanitize_text(p.get("answer"), 400) or "",
+                "explanation": _sanitize_text(p.get("explanation"), 600) or "",
+            })
+        out_lectures = []
+        for r in (parsed.get("sapuri_lectures") or [])[:6]:
+            out_lectures.append({
+                "title": _sanitize_text(r.get("title"), 120) or "",
+                "level": _sanitize_text(r.get("level"), 30) or "",
+                "reason": _sanitize_text(r.get("reason"), 200) or "",
+            })
+        out = {
+            "ok": True,
+            "subject": subject,
+            "topic_used": _sanitize_text(parsed.get("topic_used"), 100) or topic or "未指定",
+            "weak_point_analysis": _sanitize_text(parsed.get("weak_point_analysis"), 300) or "",
+            "problems": out_problems,
+            "sapuri_lectures": out_lectures,
+            "model": data.get("_actual_model"),
+        }
+        log.info(f"[Worksheet] gen student={student['id']} subj={subject} topic={topic} n={len(out_problems)}")
+        return out
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error(f"[Worksheet] failed: {type(e).__name__}: {str(e)[:200]}")
+        raise HTTPException(status_code=503, detail=f"AI 生成失敗: {str(e)[:200]}")
+
+
+# ==========================================================================
 # Routes: Curricula (Phase 4 - 合格カリキュラム / 国公立難関大学コース限定)
 # 塾長指示 2026-05-06: 学習計画より上位の「合格までの全体ロードマップ」
 # ==========================================================================
