@@ -15264,10 +15264,17 @@ def _validate_curr_phases(phases: list) -> list:
             t = _sanitize_text(m, 200)
             if t:
                 milestones.append(t)
+        # スタサプ講義 (Phase 4.5 / 塾長指示 2026-05-06)
+        sapuri_lectures = []
+        for m in (d.get("sapuri_lectures") or [])[:8]:
+            t = _sanitize_text(m, 120)
+            if t:
+                sapuri_lectures.append(t)
         out.append({
             "name": name, "focus": focus,
             "start_date": sd.isoformat(), "end_date": ed.isoformat(),
             "materials": materials, "milestones": milestones,
+            "sapuri_lectures": sapuri_lectures,
         })
     return out
 
@@ -15469,7 +15476,7 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
     baseline = _sanitize_text(payload.baseline_note, 500) or "未指定"
     months = max(1, round((ed - sd).days / 30))
 
-    sys_prompt = "受験戦略を立てる学習プランナーです。難関大学 (国公立・難関私立) 志望者に対し、入試日から逆算した全体カリキュラムを 4-6 フェーズに分割して提案します。各フェーズは現実的な期間と教材で構成。教師名や塾名は塾長指示で出さない。純粋な JSON のみ返答 (前置きや解説不要)。"
+    sys_prompt = "受験戦略を立てる学習プランナーです。難関大学 (国公立・難関私立) 志望者に対し、入試日から逆算した全体カリキュラムを 4-6 フェーズに分割して提案します。各フェーズは現実的な期間と教材 + スタディサプリ (スタサプ) の対応講義で構成。スタサプ講義は商品名そのまま (例: 『高3 トップレベル英語 〈読解編〉』『高3 ハイレベル数学IAIIB』『古文文法ベーシックレベル』) で記載。市販の参考書教材とスタサプ講義は別フィールドに分けて出力。純粋な JSON のみ返答 (前置きや解説不要)。"
     user_prompt = f"""志望校: {target_university}{(' / ' + target_faculty) if target_faculty else ''}
 開始日: {sd.isoformat()}
 入試日: {ed.isoformat()} (期間 {months} ヶ月)
@@ -15477,6 +15484,7 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
 現状: {baseline}
 
 上記から、難関大学合格までの全体カリキュラムを 4-6 フェーズに分割して JSON で返してください。
+各フェーズには市販教材 (materials) と スタディサプリ講義 (sapuri_lectures) の両方を提案してください。
 
 出力形式 (フェンスや前置きなし):
 {{
@@ -15486,7 +15494,8 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
       "start_date": "YYYY-MM-DD",
       "end_date": "YYYY-MM-DD",
       "focus": "このフェーズの主軸 (60字以内、例: 英文法基礎 + 数学IA基礎完成)",
-      "materials": ["定番教材1", "定番教材2", "定番教材3"],
+      "materials": ["定番市販教材1 (例: ターゲット1900)", "定番市販教材2", "定番市販教材3"],
+      "sapuri_lectures": ["対応するスタサプ講義名 (例: 高3 トップレベル英語〈読解編〉)", "...", "..."],
       "milestones": ["月末までに〇〇完了 (60字以内)", "...", "..."]
     }}
   ]
@@ -15495,8 +15504,10 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
 注意:
 - フェーズの期間は重複・空白なく開始日〜入試日を埋める
 - 直前期は入試日 1-2 ヶ月前から
-- 各フェーズに教材 2-5 件・マイルストーン 2-4 件
-- 受験科目構成 (志望校に必要な科目) を考慮して教材選定"""
+- 各フェーズに市販教材 2-4 件、スタサプ講義 2-4 件、マイルストーン 2-4 件
+- 受験科目構成 (志望校に必要な科目) を考慮
+- スタサプ講義はレベル (ベーシック/スタンダード/ハイレベル/トップレベル) と科目を明示した商品名で記載
+- フェーズ進行に応じて段階的にレベルを上げる (例: 基礎期=ベーシック→標準期=スタンダード→応用期=ハイレベル→直前期=トップレベル)"""
 
     body = {
         "model": "gemini-2.5-flash",
@@ -15612,23 +15623,28 @@ def expand_curriculum_to_plans(curr_id: int, request: Request, authorization: Op
                 continue
             ph_days = max(1, (p_ed - p_sd).days + 1)
             materials = ph.get("materials") or []
-            if not materials:
+            sapuri_lectures = ph.get("sapuri_lectures") or []
+            # 市販教材 + スタサプ講義 を「教材 + 出典タグ」のペアで結合
+            combined = [(m, "市販") for m in materials] + [(s, "スタサプ") for s in sapuri_lectures]
+            if not combined:
                 continue
-            # 1教材あたり目標分数 = フェーズ総分数 / 教材数
-            per_material_min = max(60, (ph_days * daily) // max(1, len(materials)))
-            for mat in materials:
+            # 1項目あたり目標分数 = フェーズ総分数 / 全項目数
+            per_item_min = max(60, (ph_days * daily) // max(1, len(combined)))
+            for (mat, source_tag) in combined:
                 mat_clean = (mat or "").strip()[:100]
                 if not mat_clean:
                     continue
                 subject = _guess_subject(mat_clean)
                 color = subject_colors.get(subject, "#6366f1")
-                title = f"[{ph.get('name','フェーズ')}] {mat_clean}"[:100]
+                # スタサプは識別しやすいよう [📺 スタサプ] prefix
+                src_prefix = "📺 " if source_tag == "スタサプ" else ""
+                title = f"[{ph.get('name','フェーズ')}] {src_prefix}{mat_clean}"[:100]
                 try:
                     c.execute(
                         "INSERT INTO study_plans (student_id, title, subject, material, start_date, end_date, target_minutes, color, note) "
                         "VALUES (?,?,?,?,?,?,?,?,?)",
-                        (student["id"], title, subject, mat_clean, ph_start, ph_end, per_material_min, color,
-                         f"カリキュラム自動展開 / フェーズ: {ph.get('name','')} / focus: {ph.get('focus','')}"[:1000])
+                        (student["id"], title, subject, mat_clean, ph_start, ph_end, per_item_min, color,
+                         f"カリキュラム自動展開 / 出典: {source_tag} / フェーズ: {ph.get('name','')} / focus: {ph.get('focus','')}"[:1000])
                     )
                     added += 1
                 except IntegrityError:

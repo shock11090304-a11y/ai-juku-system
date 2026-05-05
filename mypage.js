@@ -1790,7 +1790,8 @@ function renderCurriculumPreview(c) {
             <div style="font-size:0.72rem; color:#71717a;">${escapeHtml(p.start_date)} 〜 ${escapeHtml(p.end_date)}</div>
           </div>
           <div style="font-size:0.85rem; color:#e4e4e7; margin-bottom:0.4rem;">🎯 ${escapeHtml(p.focus)}</div>
-          ${p.materials && p.materials.length ? `<div style="font-size:0.78rem; color:#a1a1aa; margin-bottom:0.3rem;">📚 教材: ${p.materials.map(m => `<span style="background:rgba(99,102,241,0.15); color:#c7d2fe; padding:0.1rem 0.4rem; border-radius:4px; margin-right:0.2rem; display:inline-block; margin-bottom:0.2rem;">${escapeHtml(m)}</span>`).join('')}</div>` : ''}
+          ${p.materials && p.materials.length ? `<div style="font-size:0.78rem; color:#a1a1aa; margin-bottom:0.3rem;">📚 市販教材: ${p.materials.map(m => `<span style="background:rgba(99,102,241,0.15); color:#c7d2fe; padding:0.1rem 0.4rem; border-radius:4px; margin-right:0.2rem; display:inline-block; margin-bottom:0.2rem;">${escapeHtml(m)}</span>`).join('')}</div>` : ''}
+          ${p.sapuri_lectures && p.sapuri_lectures.length ? `<div style="font-size:0.78rem; color:#a1a1aa; margin-bottom:0.3rem;">📺 スタサプ講義: ${p.sapuri_lectures.map(m => `<span style="background:rgba(251,113,133,0.15); color:#fda4af; padding:0.1rem 0.4rem; border-radius:4px; margin-right:0.2rem; display:inline-block; margin-bottom:0.2rem;">${escapeHtml(m)}</span>`).join('')}</div>` : ''}
           ${p.milestones && p.milestones.length ? `<div style="font-size:0.78rem; color:#a1a1aa;">📌 マイルストーン: <ul style="margin:0.2rem 0 0 1rem; padding:0;">${p.milestones.map(m => `<li>${escapeHtml(m)}</li>`).join('')}</ul></div>` : ''}
         </div>
       `).join('')}
@@ -1880,6 +1881,7 @@ async function loadMyCurricula() {
                 </div>
                 <div style="font-size:0.78rem; color:#d4d4d8; margin-top:0.3rem;">🎯 ${escapeHtml(p.focus)}</div>
                 ${p.materials && p.materials.length ? `<div style="font-size:0.75rem; color:#a1a1aa; margin-top:0.3rem;">📚 ${p.materials.map(m => escapeHtml(m)).join(' / ')}</div>` : ''}
+                ${p.sapuri_lectures && p.sapuri_lectures.length ? `<div style="font-size:0.75rem; color:#fda4af; margin-top:0.3rem;">📺 スタサプ: ${p.sapuri_lectures.map(m => escapeHtml(m)).join(' / ')}</div>` : ''}
                 ${p.milestones && p.milestones.length ? `<div style="font-size:0.75rem; color:#a1a1aa; margin-top:0.3rem;">📌 ${p.milestones.map(m => '・' + escapeHtml(m)).join(' ')}</div>` : ''}
               </div>
             `).join('')}
