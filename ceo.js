@@ -414,6 +414,34 @@ function renderExpiredUsers(expired) {
   }).join('');
 }
 
+async function loadReferralMetrics() {
+  if (!window.AdminAuth || !window.AdminAuth.getToken()) return;
+  try {
+    const res = await window.AdminAuth.fetch('/api/admin/referrals');
+    if (!res.ok) return;
+    const data = await res.json();
+    const fmt = (n) => '¥' + Number(n || 0).toLocaleString();
+    const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    setText('referralTotal', data.total || 0);
+    setText('referralPaidCount', data.paid || 0);
+    setText('referralPending', data.pending || 0);
+    setText('referralRewardTotal', fmt(data.reward_total_yen));
+    const topEl = document.getElementById('referralTopReferrers');
+    if (topEl) {
+      if (!data.top_referrers || data.top_referrers.length === 0) {
+        topEl.innerHTML = '<div style="opacity:0.6;">まだ紹介申込はありません。生徒が mypage の「友達紹介」セクションからURLをシェアできます。</div>';
+      } else {
+        topEl.innerHTML = '<div style="font-weight:700;margin-bottom:0.4rem;">🏆 上位紹介者:</div>' +
+          data.top_referrers.map((r, i) =>
+            `<div style="padding:0.3rem 0;">${i + 1}. ${escapeHtml(r.name || '-')} — ${r.invited}名招待 / ${r.converted || 0}名成立</div>`
+          ).join('');
+      }
+    }
+  } catch (e) {
+    console.error('loadReferralMetrics failed:', e);
+  }
+}
+
 async function expiredAction(action, studentId) {
   if (!window.AdminAuth || !window.AdminAuth.getToken()) {
     alert('管理者認証が必要です');
@@ -753,12 +781,16 @@ document.addEventListener('DOMContentLoaded', () => {
   try { initStudyLogDashboard(); } catch (e) { console.error('initStudyLogDashboard failed:', e); }
   try { initStudyPlanDashboard(); } catch (e) { console.error('initStudyPlanDashboard failed:', e); }
 
-  // 🔔 体験終了者フォローアップ: AdminAuth 認証後に読み込み
-  const tryLoadExpired = (retries = 10) => {
-    if (window.AdminAuth && window.AdminAuth.getToken()) return loadExpiredUsers();
-    if (retries > 0) setTimeout(() => tryLoadExpired(retries - 1), 300);
+  // 🔔 体験終了者フォローアップ + 🎁 紹介ループ metrics: AdminAuth 認証後に読み込み
+  const tryLoadAdminSections = (retries = 10) => {
+    if (window.AdminAuth && window.AdminAuth.getToken()) {
+      loadExpiredUsers();
+      loadReferralMetrics();
+      return;
+    }
+    if (retries > 0) setTimeout(() => tryLoadAdminSections(retries - 1), 300);
   };
-  tryLoadExpired();
+  tryLoadAdminSections();
 });
 
 // ==========================================================================

@@ -584,6 +584,27 @@ def init_db():
     CREATE UNIQUE INDEX IF NOT EXISTS uq_study_plans_no_dup
         ON study_plans(student_id, subject, COALESCE(material,''), start_date, end_date)
         WHERE status != 'archived';
+    -- 紹介ループ (Referral): 既存生徒が新規生徒を呼ぶと両者に特典 (2026-05-05)
+    -- referrer_id: 紹介した既存生徒 (students.id)
+    -- referred_id: 紹介された新規生徒 (students.id) — 申込時に確定
+    -- code: 紹介URL の ref パラメータ (HMAC ベース、予測不能)
+    -- referred_paid_at: 被紹介者が paid 化したタイミング (NULL なら未換金)
+    -- coupon_applied_at: 紹介者に Stripe coupon 発行したタイミング (二重発行防止)
+    -- coupon_id: 発行済 Stripe coupon ID (audit 用)
+    CREATE TABLE IF NOT EXISTS referrals (
+        id {pk},
+        referrer_id INTEGER NOT NULL,
+        referred_id INTEGER NOT NULL UNIQUE,
+        code TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        referred_paid_at TIMESTAMP,
+        coupon_applied_at TIMESTAMP,
+        coupon_id TEXT,
+        FOREIGN KEY(referrer_id) REFERENCES students(id),
+        FOREIGN KEY(referred_id) REFERENCES students(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_id);
+    CREATE INDEX IF NOT EXISTS idx_referrals_referred ON referrals(referred_id);
     """)
     # 既存DBに不足列を追加 (idempotent migration)
     # Postgres: 「column already exists」エラーで トランザクションが abort されると
@@ -822,6 +843,7 @@ class TrialSignup(BaseModel):
     grade: Optional[str] = None
     goal: Optional[str] = None
     plan: Optional[str] = "hybrid"
+    ref: Optional[str] = None  # 紹介URLの ref コード (ある時は referrer に coupon 付与経路を作る)
 
     @field_validator("name")
     @classmethod
@@ -1099,6 +1121,42 @@ def _verify_session_token(token: str, expected_type: str = "session") -> Optiona
                 return None
             return {"student_id": int(sid_str), "exp": exp, "token_type": "session"}
         return None
+    except Exception:
+        return None
+
+
+# ==========================================================================
+# 紹介ループ (Referral): 既存生徒が新規生徒を呼ぶと両者に特典 (2026-05-05)
+# 紹介URL: https://trillion-ai-juku.com/?ref=<HMAC code>
+# code = base64(<student_id>.<HMAC(student_id)>)
+# 既存 MAGIC_LINK_SECRET を流用 (新規 secret 設定不要)
+# ==========================================================================
+def _generate_referral_code(student_id: int) -> str:
+    """生徒IDから予測不能な紹介コードを生成。HMAC ベースなのでDB不要で検証可能。
+    Security: full 256-bit HMAC (brute force 困難)"""
+    payload = f"ref.{student_id}"
+    sig = hmac.new(MAGIC_LINK_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
+    raw = f"{student_id}.{sig}"
+    return base64.urlsafe_b64encode(raw.encode()).decode().rstrip("=")
+
+
+def _verify_referral_code(code: str) -> Optional[int]:
+    """紹介コードを検証して referrer の student_id を返す。無効なら None。
+    Security: full 256-bit HMAC verification"""
+    if not code or len(code) > 200:
+        return None
+    try:
+        padded = code + "=" * (-len(code) % 4)
+        raw = base64.urlsafe_b64decode(padded).decode()
+        parts = raw.split(".")
+        if len(parts) != 2:
+            return None
+        sid_str, sig = parts
+        # 後方互換: 旧 16 char 切り詰め HMAC も受理 (deploy 直後の旧コード対応)
+        expected_full = hmac.new(MAGIC_LINK_SECRET.encode(), f"ref.{sid_str}".encode(), hashlib.sha256).hexdigest()
+        if not (hmac.compare_digest(sig, expected_full) or hmac.compare_digest(sig, expected_full[:16])):
+            return None
+        return int(sid_str)
     except Exception:
         return None
 
@@ -8809,6 +8867,113 @@ def auth_me(authorization: Optional[str] = Header(None)):
     return {"ok": True, "student": student}
 
 
+# ==========================================================================
+# 紹介ループ API (mypage で生徒が自分の紹介URLを取得 / 紹介状況を確認)
+# ==========================================================================
+@app.get("/api/referral/my-link")
+def referral_my_link(authorization: Optional[str] = Header(None)):
+    """ログイン中の生徒の紹介URL + 集計を返す。
+    - link: 共有用URL (LP に ?ref= 付き)
+    - invited: 紹介で申込された数
+    - paid: 紹介経由で paid 化した数 (=¥3,000 OFF クーポン獲得回数)
+    - reward_yen: 累計獲得割引額 (paid 数 × 3000)
+    """
+    student = _get_current_student(authorization, allow_canceled=True)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    sid = student["id"]
+    code = _generate_referral_code(sid)
+    link = f"{BASE_URL}/?ref={code}"
+
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT COUNT(*) AS n FROM referrals WHERE referrer_id=?", (sid,))
+        invited = c.fetchone()["n"]
+        c.execute("SELECT COUNT(*) AS n FROM referrals WHERE referrer_id=? AND referred_paid_at IS NOT NULL", (sid,))
+        paid = c.fetchone()["n"]
+    finally:
+        conn.close()
+
+    return {
+        "ok": True,
+        "link": link,
+        "code": code,
+        "invited": invited,
+        "paid": paid,
+        "reward_yen": paid * 3000,
+        "reward_per_referral_yen": 3000,
+    }
+
+
+@app.get("/api/referral/verify")
+def referral_verify(request: Request, code: str = ""):
+    """LP 側で ?ref=XXX を検証する公開 endpoint。表示文言を変える時のみ呼ぶ (UI 装飾用)。
+    認証不要だが、有効なコードかどうかだけを返す (referrer の個人情報は返さない)。
+    Anti-enum: 1 IP あたり 5分で 30回まで (oracle attack 抑制)。"""
+    _check_rate_limit_ip(request, bucket="referral_verify", limit=30, window=300)
+    code = (code or "").strip()
+    if not code:
+        return {"valid": False}
+    rid = _verify_referral_code(code)
+    if not rid:
+        return {"valid": False}
+    return {"valid": True}
+
+
+@app.get("/api/admin/referrals")
+def admin_referrals_summary(authorization: Optional[str] = Header(None)):
+    """CEOダッシュ用: 紹介経路サマリ。
+    - total: 総紹介申込数
+    - paid: 成立 (被紹介者が paid 化) した数
+    - pending: 紹介申込済だが未成立
+    - top_referrers: 上位5名 (紹介者ごとの招待数)
+    - reward_total_yen: 紹介者に支払った累計クーポン金額
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT COUNT(*) AS n FROM referrals")
+        total = c.fetchone()["n"]
+        c.execute("SELECT COUNT(*) AS n FROM referrals WHERE referred_paid_at IS NOT NULL")
+        paid = c.fetchone()["n"]
+        c.execute("SELECT COUNT(*) AS n FROM referrals WHERE coupon_applied_at IS NOT NULL")
+        rewarded = c.fetchone()["n"]
+        c.execute(
+            """SELECT r.referrer_id, s.name, s.email, COUNT(*) AS invited,
+                      SUM(CASE WHEN r.referred_paid_at IS NOT NULL THEN 1 ELSE 0 END) AS converted
+               FROM referrals r
+               LEFT JOIN students s ON s.id = r.referrer_id
+               GROUP BY r.referrer_id, s.name, s.email
+               ORDER BY invited DESC LIMIT 5"""
+        )
+        top = []
+        for row in c.fetchall():
+            top.append({
+                "referrer_id": row["referrer_id"],
+                "name": row["name"] or "",
+                "email": row["email"] or "",
+                "invited": row["invited"],
+                "converted": row["converted"] or 0,
+            })
+    finally:
+        conn.close()
+    return {
+        "total": total,
+        "paid": paid,
+        "rewarded": rewarded,
+        "pending": max(0, total - paid),
+        "reward_total_yen": rewarded * 3000,
+        "top_referrers": top,
+    }
+
+
 def _get_waiver_count() -> int:
     """これまでキャンペーンで入塾金免除を受けた生徒数を返す。
     enrollment_waiver_applied_at IS NOT NULL で絞ることで、
@@ -8938,6 +9103,66 @@ def trial_signup(payload: TrialSignup, request: Request):
     conn.close()
 
     log.info(f"Trial signup: {email_norm} -> student_id={student_id} existing={is_existing}")
+
+    # 紹介ループ: ?ref= が指定されていて、新規申込 (=既存ユーザーでない) なら referrals に記録。
+    # 既存ユーザーの再申込時は記録しない (再活性化は紹介報酬対象外)。
+    # Anti-fraud: 同一 referrer から大量招待 = 自己アカウント生成攻撃を防ぐため、
+    # 直近24h で同じ referrer による招待が10件超なら拒否 (小規模塾なので本数で十分)。
+    ref_code = (payload.ref or "").strip()
+    if ref_code and student_id and not is_existing:
+        try:
+            referrer_id = _verify_referral_code(ref_code)
+            if not referrer_id:
+                log.warning(f"[Referral] invalid ref code: code={ref_code[:20]} student={student_id}")
+            elif referrer_id == student_id:
+                log.warning(f"[Referral] self-referral blocked: student={student_id}")
+            else:
+                _conn = db(); _c = _conn.cursor()
+                try:
+                    # Anti-fraud 1: referrer の直近24h招待数チェック
+                    yesterday = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+                    _c.execute(
+                        "SELECT COUNT(*) AS n FROM referrals WHERE referrer_id=? AND created_at > ?",
+                        (referrer_id, yesterday)
+                    )
+                    recent_count = _c.fetchone()["n"]
+                    # Anti-fraud 2: 同じ email ドメイン (個人 gmail 等) の自己招待を抑制
+                    # 同一 referrer × 同一被招待 email ドメイン (gmail/yahoo 等の汎用以外) で2件以上は拒否
+                    domain = email_norm.split("@")[-1] if "@" in email_norm else ""
+                    is_carrier_or_generic = domain in (
+                        "gmail.com", "yahoo.co.jp", "yahoo.com", "icloud.com", "outlook.com",
+                        "hotmail.com", "live.com", "ezweb.ne.jp", "docomo.ne.jp", "softbank.ne.jp",
+                        "i.softbank.jp", "au.com", "ymobile.ne.jp"
+                    )
+                    domain_dup_count = 0
+                    if domain and not is_carrier_or_generic:
+                        _c.execute(
+                            """SELECT COUNT(*) AS n FROM referrals r
+                               JOIN students s ON s.id = r.referred_id
+                               WHERE r.referrer_id=? AND LOWER(s.email) LIKE ?""",
+                            (referrer_id, f"%@{domain}")
+                        )
+                        domain_dup_count = _c.fetchone()["n"]
+
+                    if recent_count >= 10:
+                        log.warning(f"[Referral] referrer {referrer_id} rate-limited (24h count={recent_count})")
+                    elif domain_dup_count >= 2:
+                        log.warning(f"[Referral] referrer {referrer_id} suspicious same-domain ({domain}) count={domain_dup_count}")
+                    else:
+                        try:
+                            _c.execute(
+                                """INSERT INTO referrals (referrer_id, referred_id, code) VALUES (?, ?, ?)""",
+                                (referrer_id, student_id, ref_code)
+                            )
+                            _conn.commit()
+                            log.info(f"[Referral] new: referrer={referrer_id} referred={student_id}")
+                        except IntegrityError:
+                            _conn.rollback()
+                            log.info(f"[Referral] already linked for student {student_id}")
+                finally:
+                    _conn.close()
+        except Exception as e:
+            log.warning(f"[Referral] tracking failed: {type(e).__name__}: {e}")
 
     # 🔥 致命傷修正 (2026-04-29): 申込直後に magic link 招待メールを送信
     # これが無いと顧客はログイン経路を知らず、ダッシュ未利用 = 価値ゼロ。
@@ -9300,6 +9525,120 @@ def founders_count(public: bool = False):
     return {"limit": FOUNDER_LIMIT, "taken": paid, "remaining": real_remaining}
 
 # ==========================================================================
+# 紹介ループ Stripe coupon 発行ヘルパー (race-safe + deferred 対応)
+# ==========================================================================
+def _process_referral_coupon_for_referred(c, conn, s, referred_id: int):
+    """被紹介者が paid 化した時に呼ばれる。
+    referrer の status と stripe_customer_id を確認し、
+    paid なら即時 coupon 発行、未 paid なら referred_paid_at だけ記録 (deferred)。
+    Race-safe: atomic UPDATE で claim-first → 失敗 (=他 worker 処理済) なら何もしない。"""
+    # 該当 referral レコードを取得
+    c.execute(
+        "SELECT id, referrer_id, coupon_applied_at, referred_paid_at FROM referrals WHERE referred_id=?",
+        (referred_id,)
+    )
+    ref_row = c.fetchone()
+    if not ref_row:
+        return  # 紹介リンク無し
+
+    # 既に処理済みなら何もしない
+    if ref_row["coupon_applied_at"]:
+        return
+
+    # referred_paid_at をまず claim (race-safe: WHERE referred_paid_at IS NULL)
+    c.execute(
+        "UPDATE referrals SET referred_paid_at=CURRENT_TIMESTAMP WHERE id=? AND referred_paid_at IS NULL",
+        (ref_row["id"],)
+    )
+    rowcount = c.rowcount if hasattr(c, "rowcount") else 0
+    conn.commit()
+    if rowcount == 0 and ref_row["referred_paid_at"]:
+        # 他 worker が既に処理済 → 進めない
+        return
+
+    # referrer の状態確認
+    c.execute(
+        "SELECT id, status, stripe_customer_id FROM students WHERE id=?",
+        (ref_row["referrer_id"],)
+    )
+    referrer_row = c.fetchone()
+    if not referrer_row:
+        log.warning(f"[Referral] referrer {ref_row['referrer_id']} not found")
+        return
+
+    if referrer_row["status"] != "paid" or not referrer_row["stripe_customer_id"]:
+        log.info(f"[Referral] referrer {ref_row['referrer_id']} not paid yet → coupon deferred")
+        return
+
+    # coupon 発行 (claim-first で coupon_applied_at を入れて他 worker をブロック)
+    _issue_referral_coupon(c, conn, s, ref_row["id"], referrer_row["stripe_customer_id"], ref_row["referrer_id"])
+
+
+def _process_deferred_referral_coupons(c, conn, s, paid_student_id: int):
+    """生徒が paid 化した時に呼ばれる。
+    この生徒が紹介者になっている referrals のうち deferred (referred_paid_at IS NOT NULL かつ coupon_applied_at IS NULL)
+    を見つけて coupon 発行する。"""
+    c.execute(
+        """SELECT id FROM referrals
+           WHERE referrer_id=? AND referred_paid_at IS NOT NULL AND coupon_applied_at IS NULL""",
+        (paid_student_id,)
+    )
+    rows = list(c.fetchall())
+    if not rows:
+        return
+    c.execute("SELECT stripe_customer_id FROM students WHERE id=? AND status='paid'", (paid_student_id,))
+    customer_row = c.fetchone()
+    if not customer_row or not customer_row["stripe_customer_id"]:
+        return
+    customer_id = customer_row["stripe_customer_id"]
+    log.info(f"[Referral] processing {len(rows)} deferred coupon(s) for paid_student_id={paid_student_id}")
+    for r in rows:
+        _issue_referral_coupon(c, conn, s, r["id"], customer_id, paid_student_id)
+
+
+def _issue_referral_coupon(c, conn, s, referral_row_id: int, customer_id: str, referrer_id: int):
+    """Stripe coupon 発行 + active sub に適用 + referrals 更新。Race-safe (claim-first)。"""
+    # claim-first: coupon_applied_at をプレースホルダ '__pending__' で先に書き込み
+    pending_marker = "__pending__"
+    c.execute(
+        """UPDATE referrals SET coupon_id=? WHERE id=? AND coupon_applied_at IS NULL""",
+        (pending_marker, referral_row_id)
+    )
+    rowcount = c.rowcount if hasattr(c, "rowcount") else 0
+    conn.commit()
+    if rowcount == 0:
+        # 他 worker が先に処理した
+        return
+
+    coupon_id_created = None
+    try:
+        cp = s.Coupon.create(
+            amount_off=3000, currency="jpy", duration="once",
+            max_redemptions=1, name="紹介報酬 ¥3,000 OFF"
+        )
+        coupon_id_created = cp.id
+        subs = s.Subscription.list(customer=customer_id, status="active", limit=1)
+        if subs.data:
+            s.Subscription.modify(subs.data[0].id, coupon=coupon_id_created)
+            log.info(f"✅ Referral coupon applied: referrer={referrer_id} coupon={coupon_id_created}")
+        else:
+            log.warning(f"[Referral] referrer {referrer_id} has no active subscription; coupon created but not applied")
+    except Exception as ce:
+        log.error(f"[Referral] coupon create/apply failed: {type(ce).__name__}: {ce}")
+        # __pending__ をクリアして再リトライ可能にする
+        c.execute("UPDATE referrals SET coupon_id=NULL WHERE id=? AND coupon_id=?", (referral_row_id, pending_marker))
+        conn.commit()
+        return
+
+    # 確定: coupon_applied_at + coupon_id を入れる
+    c.execute(
+        "UPDATE referrals SET coupon_applied_at=CURRENT_TIMESTAMP, coupon_id=? WHERE id=?",
+        (coupon_id_created, referral_row_id)
+    )
+    conn.commit()
+
+
+# ==========================================================================
 # Routes: Stripe Webhook
 # ==========================================================================
 @app.post("/api/stripe/webhook")
@@ -9457,6 +9796,32 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                     log.info(f"✅ Enrollment fee WAIVED (campaign): customer={customer} student_id={student_id} email={email}")
                 except Exception as e:
                     log.error(f"Failed to mark enrollment_fee_waived: {type(e).__name__}: {e}")
+
+            # 紹介ループ報酬: paid 化した生徒の紹介者に ¥3,000 OFF クーポン自動付与。
+            # Race condition 対策: atomic UPDATE で coupon_applied_at を先に確保 (claim-first)、
+            #   失敗 (=他 worker が先に処理済み) なら何もしない。
+            # Deferred 対策: referrer がまだ paid でない時は coupon_id をブランクのまま referred_paid_at だけ記録 →
+            #   referrer 自身が paid 化する時 (= この同じ webhook が referrer side で発火) に
+            #   _process_deferred_referral_coupons() で再発行。
+            try:
+                resolved_referred_id = None
+                if student_id and student_id != "":
+                    resolved_referred_id = int(student_id)
+                elif email:
+                    c.execute("SELECT id FROM students WHERE email=? LIMIT 1", (email,))
+                    _row = c.fetchone()
+                    if _row:
+                        resolved_referred_id = _row["id"] if hasattr(_row, "keys") else _row[0]
+
+                if resolved_referred_id:
+                    _process_referral_coupon_for_referred(c, conn, s, resolved_referred_id)
+
+                # 紹介者自身の paid 転換: deferred になっていたクーポンを再処理
+                referrer_paid_id = resolved_referred_id  # この生徒が referrer として持つ deferred を処理
+                if referrer_paid_id:
+                    _process_deferred_referral_coupons(c, conn, s, referrer_paid_id)
+            except Exception as e:
+                log.error(f"[Referral] reward processing failed: {type(e).__name__}: {e}")
 
         # Welcome email (どちらのタイプも共通: ログインコード+リンク送信)
         # 429 / 一時エラー対応: _send_magic_link_with_retry を使用 (trial_signup と DRY 統一)

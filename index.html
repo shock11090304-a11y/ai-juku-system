@@ -6,6 +6,18 @@
   <title>AI学習コーチ塾 | 次世代型個別最適化学習プラットフォーム</title>
   <script src="cache-purge.js?v=20260502-mentor-removed"></script>
 
+  <!-- 紹介ループ: ?ref= を 30 日間 localStorage に保存 (signup 時に送信) -->
+  <script>
+    (function() {
+      try {
+        var ref = new URLSearchParams(window.location.search).get('ref');
+        if (ref && /^[A-Za-z0-9_-]{4,100}$/.test(ref)) {
+          localStorage.setItem('ai_juku_ref', JSON.stringify({ code: ref, ts: Date.now() }));
+        }
+      } catch (e) { /* noop */ }
+    })();
+  </script>
+
   <script src="frontend-error-monitor.js?v=20260427-init"></script>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon-192.svg">

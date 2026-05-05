@@ -1371,6 +1371,30 @@
       <div id="expiredUsersList" style="display:flex;flex-direction:column;gap:0.6rem;"></div>
     </section>
 
+    <!-- 🎁 紹介ループ Metrics -->
+    <section id="referralMetricsSection" style="margin: 1.5rem 0; padding: 1.2rem; background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(236,72,153,0.06)); border: 1px solid rgba(167,139,250,0.25); border-radius: 14px;">
+      <h2 style="font-size:1.1rem;margin:0 0 0.8rem 0;color:#a78bfa;">🎁 紹介ループ ファネル</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1rem;">
+        <div style="padding:0.8rem;background:rgba(0,0,0,0.25);border-radius:8px;">
+          <div style="font-size:0.8rem;color:#94a3b8;">📨 招待中</div>
+          <div style="font-size:1.4rem;font-weight:700;color:#e5e7eb;" id="referralTotal">—</div>
+        </div>
+        <div style="padding:0.8rem;background:rgba(0,0,0,0.25);border-radius:8px;">
+          <div style="font-size:0.8rem;color:#94a3b8;">✅ 成立 (paid)</div>
+          <div style="font-size:1.4rem;font-weight:700;color:#34d399;" id="referralPaidCount">—</div>
+        </div>
+        <div style="padding:0.8rem;background:rgba(0,0,0,0.25);border-radius:8px;">
+          <div style="font-size:0.8rem;color:#94a3b8;">⏳ 未成立</div>
+          <div style="font-size:1.4rem;font-weight:700;color:#fbbf24;" id="referralPending">—</div>
+        </div>
+        <div style="padding:0.8rem;background:rgba(0,0,0,0.25);border-radius:8px;">
+          <div style="font-size:0.8rem;color:#94a3b8;">💰 累計報酬</div>
+          <div style="font-size:1.4rem;font-weight:700;color:#a78bfa;" id="referralRewardTotal">—</div>
+        </div>
+      </div>
+      <div id="referralTopReferrers" style="font-size:0.85rem;color:#cbd5e1;"></div>
+    </section>
+
     <!-- Action Items -->
     <section class="action-section">
       <h2>🎯 CEO 今週の意思決定ポイント</h2>

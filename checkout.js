@@ -118,6 +118,23 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     submitBtn.disabled = false;
     return;
   }
+  // 紹介コード: URL ?ref= or localStorage に保存されていれば payload に乗せる (30日 TTL)
+  let refCode = '';
+  try {
+    const urlRef = new URLSearchParams(window.location.search).get('ref');
+    if (urlRef) refCode = urlRef.trim();
+    if (!refCode) {
+      const stored = localStorage.getItem('ai_juku_ref');
+      if (stored) {
+        const obj = JSON.parse(stored);
+        // 30日以内なら有効
+        if (obj && obj.code && obj.ts && (Date.now() - obj.ts) < 30 * 86400 * 1000) {
+          refCode = obj.code;
+        }
+      }
+    }
+  } catch (e) { /* noop */ }
+
   const payload = {
     plan,
     name: `${lastName}${firstName}`,
@@ -125,6 +142,7 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     student_email: studentEmail,  // 任意 (空欄なら保護者メールのみ)
     grade,
     goal: document.getElementById('goal').value,
+    ref: refCode || undefined,
   };
 
   submitBtn.disabled = true;

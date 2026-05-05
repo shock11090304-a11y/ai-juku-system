@@ -477,6 +477,40 @@
     </section>
 
     <!-- 契約・解約管理 -->
+    <!-- 🎁 紹介ループ (友達紹介で双方に特典) -->
+    <section class="referral-section" style="margin-top:2rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(236,72,153,0.10)); border: 1px solid rgba(167,139,250,0.35); border-radius: 14px;">
+      <div class="section-title"><h2>🎁 友達紹介で双方に特典</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.8rem;margin-bottom:1rem;">
+        <div style="padding:0.8rem;background:rgba(0,0,0,0.25);border-radius:8px;">
+          <div style="font-size:0.75rem;color:#94a3b8;">あなたの特典</div>
+          <div style="font-size:1.05rem;font-weight:700;color:#a78bfa;">📅 紹介1名成立で ¥3,000 OFF</div>
+          <div style="font-size:0.78rem;color:#cbd5e1;margin-top:0.3rem;">翌月の Stripe 請求に自動適用</div>
+        </div>
+        <div style="padding:0.8rem;background:rgba(0,0,0,0.25);border-radius:8px;">
+          <div style="font-size:0.75rem;color:#94a3b8;">友達の特典</div>
+          <div style="font-size:1.05rem;font-weight:700;color:#ec4899;">🎟️ 入塾金 ¥10,000 が免除</div>
+          <div style="font-size:0.78rem;color:#cbd5e1;margin-top:0.3rem;">月額プラン本登録時に自動適用</div>
+        </div>
+      </div>
+      <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 10px; margin-bottom: 1rem;">
+        <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.5rem;">あなた専用の紹介URL:</div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <input type="text" id="referralLinkInput" readonly value="読み込み中…" style="flex: 1; padding: 0.6rem; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #e5e7eb; font-size: 0.85rem; font-family: monospace;">
+          <button id="copyReferralBtn" type="button" style="padding: 0.6rem 1rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 700; cursor: pointer; white-space: nowrap;">
+            📋 コピー
+          </button>
+        </div>
+      </div>
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.9rem;">
+        <div>📨 招待中: <strong id="referralInvited" style="color: #a78bfa;">—</strong> 名</div>
+        <div>✅ 成立済: <strong id="referralPaid" style="color: #34d399;">—</strong> 名</div>
+        <div>💰 累計獲得: <strong id="referralReward" style="color: #fbbf24;">—</strong></div>
+      </div>
+      <p style="margin-top: 0.8rem; font-size: 0.78rem; color: #94a3b8;">
+        ※ クーポンは Stripe 経由で自動的に翌月の請求に反映されます。手続き不要です。
+      </p>
+    </section>
+
     <section class="billing-section" style="margin-top:2rem; padding: 1.5rem; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;">
       <div class="section-title"><h2>⚙️ 契約管理</h2></div>
       <div id="billingInfo" style="font-size:0.9rem; color: #cbd5e1; margin-bottom: 1rem; line-height: 1.7;">

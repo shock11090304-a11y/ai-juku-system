@@ -470,7 +470,64 @@ document.addEventListener('DOMContentLoaded', () => {
   try { renderTrialOnboarding(); } catch (e) { console.error('renderTrialOnboarding failed:', e); }
   try { initStudyLog(); } catch (e) { console.error('initStudyLog failed:', e); }
   try { initStudyPlan(); } catch (e) { console.error('initStudyPlan failed:', e); }
+  try { initReferralSection(); } catch (e) { console.error('initReferralSection failed:', e); }
 });
+
+// ==========================================================================
+// 🎁 紹介ループ UI
+// ==========================================================================
+async function initReferralSection() {
+  const linkInput = document.getElementById('referralLinkInput');
+  const copyBtn = document.getElementById('copyReferralBtn');
+  const invitedEl = document.getElementById('referralInvited');
+  const paidEl = document.getElementById('referralPaid');
+  const rewardEl = document.getElementById('referralReward');
+  if (!linkInput) return;
+
+  const apiBase = window.location.hostname === 'localhost' && window.location.port === '8090'
+    ? 'http://localhost:8000' : window.location.origin;
+  const token = (window.AuthGuard && window.AuthGuard.getToken()) || localStorage.getItem('ai_juku_session_token');
+  if (!token) { linkInput.value = 'ログイン後に表示されます'; return; }
+
+  try {
+    const res = await fetch(`${apiBase}/api/referral/my-link`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      linkInput.value = '取得に失敗しました';
+      return;
+    }
+    const data = await res.json();
+    linkInput.value = data.link || '';
+    if (invitedEl) invitedEl.textContent = data.invited || 0;
+    if (paidEl) paidEl.textContent = data.paid || 0;
+    if (rewardEl) rewardEl.textContent = '¥' + (data.reward_yen || 0).toLocaleString();
+  } catch (e) {
+    console.error('referral fetch failed:', e);
+    linkInput.value = '取得エラー';
+  }
+
+  if (copyBtn) {
+    copyBtn.addEventListener('click', async () => {
+      const url = linkInput.value;
+      if (!url || url.startsWith('取得') || url.startsWith('ログイン')) return;
+      try {
+        await navigator.clipboard.writeText(url);
+        const orig = copyBtn.textContent;
+        copyBtn.textContent = '✅ コピー完了';
+        copyBtn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+        setTimeout(() => {
+          copyBtn.textContent = orig;
+          copyBtn.style.background = 'linear-gradient(135deg, #6366f1, #8b5cf6)';
+        }, 2000);
+      } catch (e) {
+        // fallback: select + execCommand
+        linkInput.select();
+        document.execCommand('copy');
+      }
+    });
+  }
+}
 
 // ==========================================================================
 // 📚 学習記録 (Studyplus 代替・Phase 1)
