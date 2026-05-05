@@ -6,8 +6,8 @@
   <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="0">
-  <title>国公立難関大学コース 申込 (クレカ不要) | AI学習コーチ塾</title>
-  <meta name="description" content="東大・京大・国公立医学部・難関私立を目指す高校生向け。AI が模試結果から弱点分析・カリキュラム自動生成・スタサプ連携。クレカ登録不要で 30日体験。">
+  <title>国公立難関大学コース 申込 | AI学習コーチ塾</title>
+  <meta name="description" content="東大・京大・国公立医学部・難関私立を目指す高校生向け。AI が模試結果から弱点分析・カリキュラム自動生成・スタサプ連携。">
   <script src="cache-purge.js?v=20260506-1"></script>
   <link rel="stylesheet" href="style.css">
   <style>
@@ -49,7 +49,6 @@
       <div class="ck-eyebrow">🎓 国公立難関大学コース (難関私立も対象)</div>
       <h1 class="ck-title">AI が「合格まで」を最短設計する<br>専用学習管理コース</h1>
       <p class="ck-sub">東大・京大・国公立医学部・早慶上理 を目指す高校生向け</p>
-      <div class="ck-pricing">💳 クレカ登録 <strong>不要</strong> ・ 🎁 30日無料体験</div>
     </div>
 
     <div class="ck-features">
@@ -86,8 +85,8 @@
     </div>
 
     <div class="ck-form-section">
-      <h2 class="ck-form-title">📝 申込フォーム (1分で完了)</h2>
-      <p class="ck-form-sub">塾長が確認後、1-2 営業日以内にご連絡いたします。<strong style="color:#86efac;">クレジットカード登録は不要</strong>です。</p>
+      <h2 class="ck-form-title">📝 申込フォーム</h2>
+      <p class="ck-form-sub">必要事項をご記入のうえ送信してください。塾長が確認後、1-2 営業日以内にご連絡いたします。</p>
 
       <form id="ckForm" novalidate>
         <div class="ck-grid-2">
@@ -130,13 +129,13 @@
           <label for="ckNote">塾長への質問・要望 <span style="color:#71717a;">(任意)</span></label>
           <textarea id="ckNote" maxlength="1000" rows="3" placeholder="現状の悩み・希望など何でも"></textarea>
         </div>
-        <button type="submit" id="ckSubmit" class="ck-submit">📩 無料で申込 (クレカ不要)</button>
+        <button type="submit" id="ckSubmit" class="ck-submit">📩 申込を送信</button>
         <div id="ckMsg" class="ck-msg" style="display:none;"></div>
       </form>
 
       <p class="ck-note">
         ※ お申込後、塾長から確認のご連絡を差し上げます。<br>
-        ※ 30日無料体験中の課金は一切ありません。継続される場合のみ別途お支払い手続きをご案内します。<br>
+        ※ ご利用料金につきましては塾長より別途ご案内いたします。<br>
         ※ ご入力情報は塾の運営目的以外には使用いたしません。
       </p>
     </div>
@@ -198,7 +197,7 @@
         } catch (err) {
           showMsg('error', '❌ ' + (err.message || '申込に失敗しました。時間をおいて再度お試しください'));
           submitBtn.disabled = false;
-          submitBtn.textContent = '📩 無料で申込 (クレカ不要)';
+          submitBtn.textContent = '📩 申込を送信';
         }
       });
     })();

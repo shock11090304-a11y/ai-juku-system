@@ -15680,7 +15680,7 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
             f"🎯 AI 弱点プリント生成 + スタサプ補強推薦\n"
             f"📅 学習計画 (ガント + カレンダー)\n"
             f"📨 塾長との直接メッセージ\n\n"
-            f"30日間の体験期間中はクレカ登録なしで全機能をお試しいただけます。"
+            f"ご利用料金につきましては別途ご案内いたします。"
         )
         res = _send_message_email(email_lower, "✅ 国公立難関大学コース ご加入承認", body_text, student_name=name)
         sent_link = res.get("sent", False)
