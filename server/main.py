@@ -673,6 +673,25 @@ async def _start_background_tasks():
     _BACKGROUND_TASKS.append(task)
     log.info("[Startup] Post-deploy smoke test scheduled (will run in 30 seconds)")
 
+    # 🔔 体験管理 scheduler (毎日 JST 10:00):
+    # - expire-trials: trial_end 経過後の自動 expired 化
+    # - trial-reminders: 終了 1-2 日前リマインダー
+    # - trial-followups: 終了後 Day1/3/7 ドリップ
+    # - daily-alerts: 継続学習リマインド (連続未ログイン用)
+    # 外部 cron 不要 (in-process scheduler)。CRON_SECRET が設定されていれば起動。
+    if CRON_SECRET:
+        task = asyncio.create_task(_trial_management_scheduler())
+        _BACKGROUND_TASKS.append(task)
+        log.info("[Startup] Trial management scheduler launched (target JST 10:00 daily)")
+    else:
+        log.warning("[Startup] Trial management scheduler NOT launched (CRON_SECRET not set)")
+
+    # 📊 週次レポート scheduler (毎週日曜 JST 19:00): LINE 学習サマリ送信
+    if CRON_SECRET:
+        task = asyncio.create_task(_weekly_reports_scheduler())
+        _BACKGROUND_TASKS.append(task)
+        log.info("[Startup] Weekly reports scheduler launched (target Sun JST 19:00)")
+
 
 async def _post_deploy_smoke_test():
     """uvicorn 起動から 30 秒後に 1 回だけ実行される自動 smoke test。
@@ -1436,6 +1455,134 @@ def _run_daily_sns_post() -> dict:
     if result.get("sent"):
         _record_daily_sns_sent(posts, resend_id=result.get("resend_id", ""))
     return {"ran": True, "posts_count": len(posts), "send_result": result}
+
+
+# ==========================================================================
+# 体験管理 in-process scheduler (毎日 JST 10:00)
+# 外部 cron が無くても expire-trials / trial-reminders / trial-followups を自動実行
+# ==========================================================================
+def _check_scheduler_ran_today_jst(event_name: str) -> bool:
+    """今日(JST)に同じスケジューラタスクが events に記録されているか確認。
+    multi-replica の重複実行を防ぐ (DB 共有 = lock 代わり)。"""
+    JST = timezone(timedelta(hours=9))
+    today_jst = datetime.now(JST).date()
+    today_start_utc = datetime.combine(today_jst, dt_time(0, 0), tzinfo=JST).astimezone(timezone.utc)
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(
+            "SELECT COUNT(*) AS n FROM events WHERE name = ? AND created_at >= ?",
+            (event_name, today_start_utc)
+        )
+        n = c.fetchone()["n"]
+    except Exception as e:
+        log.warning(f"_check_scheduler_ran_today_jst({event_name}) failed: {e}")
+        n = 0
+    finally:
+        conn.close()
+    return n > 0
+
+
+def _record_scheduler_run(event_name: str, payload: dict):
+    """events テーブルに scheduler 実行記録を残す (重複検出用)"""
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, 'in_process_scheduler')",
+            (event_name, json.dumps(payload, ensure_ascii=False)[:4000])
+        )
+        conn.commit()
+    except Exception as e:
+        log.warning(f"_record_scheduler_run({event_name}) failed: {e}")
+    finally:
+        conn.close()
+
+
+async def _trial_management_scheduler():
+    """体験管理 3 タスクを毎日 JST 10:00 に内部実行。同じ FastAPI process 内なので
+    HTTP 越しでなく直接 endpoint 関数を呼ぶ。multi-replica は events テーブル lock で防止。
+    daily-alerts は dedup が無いため敢えて含めない (重複 LINE push 事故防止)。"""
+    JST = timezone(timedelta(hours=9))
+    TARGET_HOUR_JST = 10
+    log.info(f"[TrialMgr] Scheduler started, target hour JST {TARGET_HOUR_JST}:00")
+    secret = CRON_SECRET
+
+    while True:
+        try:
+            now_jst = datetime.now(JST)
+            target = now_jst.replace(hour=TARGET_HOUR_JST, minute=0, second=0, microsecond=0)
+            if target <= now_jst:
+                target += timedelta(days=1)
+            sleep_secs = (target - now_jst).total_seconds()
+            log.info(f"[TrialMgr] Next run at {target.isoformat()} (in {int(sleep_secs)}s)")
+            await asyncio.sleep(sleep_secs)
+
+            # multi-replica 重複実行防止: 今日既に他 replica が走っていればスキップ
+            if _check_scheduler_ran_today_jst("trial_mgmt_run"):
+                log.info("[TrialMgr] Skipped (already ran today by another replica)")
+                continue
+
+            # 3 タスクを順次実行 (例外は個別に握りつぶしてループ継続)
+            tasks = [
+                ("expire-trials", lambda: cron_expire_trials(x_cron_secret=secret, dry_run=False)),
+                ("trial-reminders", lambda: cron_trial_reminders(x_cron_secret=secret, dry_run=False)),
+                ("trial-followups", lambda: cron_trial_followups(x_cron_secret=secret, dry_run=False)),
+            ]
+            results = {}
+            for task_name, fn in tasks:
+                try:
+                    r = fn()
+                    results[task_name] = r
+                    log.info(f"[TrialMgr] {task_name}: {r}")
+                except Exception as e:
+                    results[task_name] = {"error": f"{type(e).__name__}: {e}"}
+                    log.error(f"[TrialMgr] {task_name} failed: {type(e).__name__}: {e}", exc_info=True)
+            _record_scheduler_run("trial_mgmt_run", results)
+        except asyncio.CancelledError:
+            log.info("[TrialMgr] Scheduler cancelled")
+            raise
+        except Exception as e:
+            log.error(f"[TrialMgr] Scheduler loop error: {e}", exc_info=True)
+            await asyncio.sleep(3600)
+
+
+async def _weekly_reports_scheduler():
+    """週次レポートを毎週日曜 JST 19:00 に内部実行。multi-replica 重複防止付き。"""
+    JST = timezone(timedelta(hours=9))
+    TARGET_HOUR_JST = 19
+    TARGET_WEEKDAY = 6  # Sunday (Mon=0..Sun=6)
+    log.info(f"[WeeklyReports] Scheduler started, target Sun JST {TARGET_HOUR_JST}:00")
+    secret = CRON_SECRET
+
+    while True:
+        try:
+            now_jst = datetime.now(JST)
+            # 次の日曜 19:00
+            days_ahead = (TARGET_WEEKDAY - now_jst.weekday()) % 7
+            target = now_jst.replace(hour=TARGET_HOUR_JST, minute=0, second=0, microsecond=0)
+            if days_ahead == 0 and target <= now_jst:
+                days_ahead = 7
+            target += timedelta(days=days_ahead)
+            sleep_secs = (target - now_jst).total_seconds()
+            log.info(f"[WeeklyReports] Next run at {target.isoformat()} (in {int(sleep_secs)}s)")
+            await asyncio.sleep(sleep_secs)
+            if _check_scheduler_ran_today_jst("weekly_reports_run"):
+                log.info("[WeeklyReports] Skipped (already ran today by another replica)")
+                continue
+            try:
+                result = cron_weekly_reports(x_cron_secret=secret, dry_run=False)
+                log.info(f"[WeeklyReports] result: {result}")
+                _record_scheduler_run("weekly_reports_run", result if isinstance(result, dict) else {})
+            except Exception as e:
+                log.error(f"[WeeklyReports] failed: {type(e).__name__}: {e}", exc_info=True)
+                _record_scheduler_run("weekly_reports_run", {"error": f"{type(e).__name__}: {e}"})
+        except asyncio.CancelledError:
+            log.info("[WeeklyReports] Scheduler cancelled")
+            raise
+        except Exception as e:
+            log.error(f"[WeeklyReports] Scheduler loop error: {e}", exc_info=True)
+            await asyncio.sleep(3600)
 
 
 async def _daily_sns_scheduler():
