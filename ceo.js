@@ -355,6 +355,102 @@ function renderActionItems(m) {
 }
 
 // ==========================================================================
+// 🔔 体験終了者フォローアップ管理
+// ==========================================================================
+async function loadExpiredUsers() {
+  if (!window.AdminAuth || !window.AdminAuth.getToken()) return;
+  try {
+    const res = await window.AdminAuth.fetch('/api/admin/students');
+    if (!res.ok) return;
+    const data = await res.json();
+    const expired = (data.students || []).filter(s => s.status === 'expired');
+    renderExpiredUsers(expired);
+  } catch (e) {
+    console.error('loadExpiredUsers failed:', e);
+  }
+}
+
+function renderExpiredUsers(expired) {
+  const section = document.getElementById('expiredUsersSection');
+  const list = document.getElementById('expiredUsersList');
+  if (!section || !list) return;
+
+  if (expired.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+
+  // 経過日数で降順ソート (古い=緊急度高を上に)
+  expired.sort((a, b) => {
+    const da = a.trial_end ? new Date(String(a.trial_end).replace(' ', 'T')).getTime() : 0;
+    const db2 = b.trial_end ? new Date(String(b.trial_end).replace(' ', 'T')).getTime() : 0;
+    return da - db2;
+  });
+
+  list.innerHTML = expired.map(s => {
+    const daysSince = s.trial_end
+      ? Math.floor((Date.now() - new Date(String(s.trial_end).replace(' ', 'T')).getTime()) / 86400000)
+      : '?';
+    const urgency = daysSince <= 3 ? '#22c55e' : daysSince <= 7 ? '#f59e0b' : '#ef4444';
+    const urgencyLabel = daysSince <= 3 ? '🟢 回収見込み高' : daysSince <= 7 ? '🟡 早めにアプローチ' : '🔴 離脱リスク高';
+    const drippedNote = daysSince > 10 ? '<span style="font-size:0.75rem;color:#71717a;margin-left:0.3rem;">(自動ドリップ完了)</span>' : '';
+    return `
+      <div style="display:flex;align-items:center;gap:0.8rem;padding:0.8rem 1rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+          <div style="font-weight:700;color:#e5e7eb;font-size:0.95rem;">${escapeHtml(s.name || '-')}</div>
+          <div style="font-size:0.8rem;color:#9ca3af;margin-top:2px;">
+            ${escapeHtml(s.email || '')} · 終了後 ${daysSince}日
+            <span style="color:${urgency};font-weight:600;margin-left:0.4rem;">${urgencyLabel}</span>${drippedNote}
+          </div>
+        </div>
+        <button onclick="expiredAction('followup',${s.id})" style="padding:0.4rem 0.8rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;border-radius:6px;font-size:0.8rem;cursor:pointer;white-space:nowrap;" title="フォローアップメールを送信">
+          📧 メール送信
+        </button>
+        <button onclick="expiredAction('extend',${s.id})" style="padding:0.4rem 0.8rem;background:linear-gradient(135deg,#22c55e,#16a34a);color:white;border:none;border-radius:6px;font-size:0.8rem;cursor:pointer;white-space:nowrap;" title="体験を7日間延長">
+          🔄 体験延長
+        </button>
+      </div>`;
+  }).join('');
+}
+
+async function expiredAction(action, studentId) {
+  if (!window.AdminAuth || !window.AdminAuth.getToken()) {
+    alert('管理者認証が必要です');
+    return;
+  }
+  const endpoint = action === 'extend'
+    ? '/api/admin/students/extend-trial'
+    : '/api/admin/students/send-followup';
+  const confirmMsg = action === 'extend'
+    ? 'この生徒の体験期間を7日間延長しますか？'
+    : 'この生徒にフォローアップメールを送信しますか？';
+  if (!confirm(confirmMsg)) return;
+
+  try {
+    const res = await window.AdminAuth.fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: studentId, days: 7 }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert('エラー: ' + (err.detail || err.error || `HTTP ${res.status}`));
+      return;
+    }
+    const data = await res.json();
+    if (data.ok) {
+      alert(action === 'extend' ? '✅ 体験期間を延長しました' : '✅ フォローアップメールを送信しました');
+      loadExpiredUsers();
+    } else {
+      alert('エラー: ' + (data.detail || data.error || JSON.stringify(data)));
+    }
+  } catch (e) {
+    alert('通信エラー: ' + e.message);
+  }
+}
+
+// ==========================================================================
 // Charts
 // ==========================================================================
 let charts = {};
@@ -656,6 +752,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // 📚 学習記録ダッシュボード初期化
   try { initStudyLogDashboard(); } catch (e) { console.error('initStudyLogDashboard failed:', e); }
   try { initStudyPlanDashboard(); } catch (e) { console.error('initStudyPlanDashboard failed:', e); }
+
+  // 🔔 体験終了者フォローアップ: AdminAuth 認証後に読み込み
+  const tryLoadExpired = (retries = 10) => {
+    if (window.AdminAuth && window.AdminAuth.getToken()) return loadExpiredUsers();
+    if (retries > 0) setTimeout(() => tryLoadExpired(retries - 1), 300);
+  };
+  tryLoadExpired();
 });
 
 // ==========================================================================

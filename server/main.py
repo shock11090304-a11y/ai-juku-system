@@ -9583,6 +9583,296 @@ def cron_expire_trials(x_cron_secret: str = Header(None), dry_run: bool = False)
     return {"expired": len(expired_ids), "candidates": len(candidates), "preview": expired_ids if dry_run else None}
 
 
+# ---------------------------------------------------------------------------
+# 体験終了後フォローアップ (3段ドリップ: Day1 / Day3 / Day7)
+# ---------------------------------------------------------------------------
+
+def _send_trial_followup_email(to_email: str, student_name: str, days_since: int, upgrade_url: str) -> dict:
+    """体験終了後のフォローアップメール。段階に応じて訴求を変える。"""
+    import html as _html
+    if not RESEND_API_KEY:
+        log.warning(f"[DEV-MODE] Trial followup skipped for {to_email}")
+        return {"sent": False, "dev_mode": True}
+    safe_name = _html.escape(student_name or "")
+    greeting = f"{safe_name}さまの保護者さま" if safe_name else "保護者さま"
+
+    if days_since <= 1:
+        subject = "【AI学習コーチ塾】体験期間が終了しました — いつでも再開できます"
+        headline = "体験期間が終了しました"
+        body_msg = """
+<p>7日間の無料体験をご利用いただき、ありがとうございました。</p>
+<p>体験中の学習データはすべて保存されています。<br>
+いつでも月額プランに登録いただければ、続きから学習を再開できます。</p>
+<p style="background:#f0fdf4;padding:1rem;border-left:4px solid #22c55e;border-radius:4px;">
+  🎁 <strong>体験終了後3日以内のご登録で、入塾金(¥10,000)を免除</strong>いたします。
+</p>"""
+    elif days_since <= 3:
+        subject = "【AI学習コーチ塾】入塾金免除はあと数日です"
+        headline = "入塾金免除の期限が近づいています"
+        body_msg = """
+<p>体験終了から数日が経ちました。お子さまの学習データはそのまま保存されています。</p>
+<p style="background:#fffbeb;padding:1rem;border-left:4px solid #f59e0b;border-radius:4px;">
+  ⏰ <strong>入塾金(¥10,000)免除の期限がまもなく終了します。</strong><br>
+  お得な期間中にご検討ください。
+</p>
+<p>AI学習コーチが24時間お子さまの学習をサポートします。<br>
+分からない問題はAIがその場で丁寧に解説。保護者さまへの学習レポートも毎週お届けします。</p>"""
+    else:
+        subject = "【AI学習コーチ塾】学習の遅れが気になっていませんか？"
+        headline = "学習の継続をサポートします"
+        body_msg = """
+<p>体験期間終了から1週間が経ちました。</p>
+<p>入試まで残された時間は限られています。<br>
+AIが毎日の学習計画を自動作成し、苦手分野を集中的に克服するカリキュラムで、
+効率よく合格力を身につけることができます。</p>
+<p style="background:#f8f9fc;padding:1rem;border-left:4px solid #6366f1;border-radius:4px;">
+  📊 <strong>お子さまの体験中の学習データは保存済みです。</strong><br>
+  月額プランに登録いただければ、すぐに続きから再開できます。
+</p>"""
+
+    html = f"""<!DOCTYPE html>
+<html><body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 560px; margin: 0 auto; padding: 2rem;">
+<h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AI学習コーチ塾</h1>
+<p>{greeting}</p>
+<h2 style="font-size:1.15rem;color:#374151;">{headline}</h2>
+{body_msg}
+<p style="text-align:center; margin: 2rem 0;">
+  <a href="{upgrade_url}" style="display:inline-block; padding: 1rem 2rem; background:linear-gradient(135deg,#6366f1,#ec4899); color:white; text-decoration:none; border-radius:8px; font-weight:700; font-size:1.05rem;">
+    🎓 月額プランに登録する
+  </a>
+</p>
+<div style="background:#fafafa; padding:1rem; border-radius:6px; margin: 1.5rem 0; font-size: 0.9rem;">
+  <strong>💡 ご安心ください</strong><br>
+  ・ 自動課金は一切発生しません<br>
+  ・ 学習データは保持されています<br>
+  ・ いつでも好きなタイミングで再開できます
+</div>
+<p style="font-size:0.85rem; color:#666;">
+  ※ このメールは体験をご利用いただいた方にお送りしています。<br>
+  今後の配信を希望されない場合は、このメールに返信でお知らせください。
+</p>
+<hr style="margin:2rem 0; border:none; border-top:1px solid #eee;">
+<p style="font-size:0.8rem; color:#999;">
+  お問い合わせ: <a href="mailto:info@trillion-ai-juku.com" style="color:#6366f1;">info@trillion-ai-juku.com</a>
+</p>
+</body></html>"""
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({"from": FROM_EMAIL, "to": [to_email], "subject": subject, "html": html}).encode("utf-8"),
+            headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json", "User-Agent": "ai-juku-system/1.0"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode())
+            log.info(f"Trial followup (day {days_since}) sent to {to_email}: {result.get('id')}")
+            return {"sent": True, "resend_id": result.get("id")}
+    except Exception as e:
+        log.error(f"Trial followup email failed for {to_email}: {type(e).__name__}: {e}")
+        return {"sent": False, "error": str(e)}
+
+
+@app.post("/api/cron/trial-followups")
+def cron_trial_followups(x_cron_secret: str = Header(None), dry_run: bool = False):
+    """体験終了後フォローアップ: Day1 / Day3 / Day7 の3段階ドリップメール。
+    expire-trials の後に毎日実行。notifications テーブルで重複防止。"""
+    if not CRON_SECRET:
+        raise HTTPException(status_code=503, detail="Cron not configured")
+    if not x_cron_secret or not hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    import urllib.parse as _urlparse
+    conn = db()
+    c = conn.cursor()
+    try:
+        now = datetime.now(timezone.utc)
+
+        c.execute(
+            "SELECT id, name, email, trial_end FROM students WHERE status='expired' AND email IS NOT NULL AND trial_end IS NOT NULL"
+        )
+        expired_students = list(c.fetchall())
+
+        sent = 0
+        skipped = 0
+        preview = []
+        for row in expired_students:
+            try:
+                te = row["trial_end"]
+                if isinstance(te, str):
+                    te = datetime.fromisoformat(te.replace("Z", "+00:00"))
+                if te.tzinfo is None:
+                    te = te.replace(tzinfo=timezone.utc)
+                days_since = int((now - te).total_seconds() / 86400)
+            except Exception:
+                continue
+
+            # >= 範囲で判定: cron が1日欠落しても取りこぼさない (dedup で二重送信防止)
+            if days_since < 0:
+                continue
+            elif days_since <= 2:
+                step = 1
+            elif days_since <= 5:
+                step = 3
+            elif days_since <= 10:
+                step = 7
+            else:
+                continue
+
+            template_key = f"trial_followup_day{step}"
+            c.execute(
+                "SELECT id FROM notifications WHERE student_id=? AND template=? AND success=1 LIMIT 1",
+                (row["id"], template_key)
+            )
+            if c.fetchone():
+                skipped += 1
+                continue
+
+            if dry_run:
+                preview.append({"student_id": row["id"], "email": row["email"], "days_since": days_since, "step": step})
+                continue
+
+            upgrade_url = f"{BASE_URL}/upgrade.html?email={_urlparse.quote(row['email'], safe='')}"
+            result = _send_trial_followup_email(row["email"], row["name"] or "", step, upgrade_url)
+            c.execute(
+                """INSERT INTO notifications (student_id, channel, template, payload, success, error)
+                   VALUES (?, 'email', ?, ?, ?, ?)""",
+                (row["id"], template_key, json.dumps({"days_since": days_since, "step": step}),
+                 1 if result.get("sent") else 0, result.get("error", ""))
+            )
+            if result.get("sent"):
+                sent += 1
+        conn.commit()
+        return {"sent": sent, "skipped": skipped, "candidates": len(expired_students), "preview": preview if dry_run else None}
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/students/extend-trial")
+def admin_extend_trial(payload: dict, authorization: Optional[str] = Header(None)):
+    """CEOダッシュボードから1クリックで体験延長。expired/trial → trial + 7日延長。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+
+    try:
+        sid = int(payload.get("id") or 0)
+        extra_days = int(payload.get("days") or 7)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="id and days must be integers")
+    if not sid:
+        raise HTTPException(status_code=400, detail="id required")
+    if extra_days < 1 or extra_days > 30:
+        raise HTTPException(status_code=400, detail="days must be 1-30")
+
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT id, email, name, status, trial_end FROM students WHERE id=?", (sid,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail=f"student id={sid} not found")
+        if row["status"] not in ("expired", "trial"):
+            raise HTTPException(status_code=400, detail=f"status={row['status']} は体験延長対象外です (expired/trial のみ)")
+
+        new_trial_end = datetime.now(timezone.utc) + timedelta(days=extra_days)
+        c.execute(
+            "UPDATE students SET status='trial', trial_end=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (new_trial_end, sid)
+        )
+        # 旧 followup 通知をクリア → 再 expire 時に新しいドリップが送れるようにする
+        c.execute(
+            "DELETE FROM notifications WHERE student_id=? AND template LIKE 'trial_followup_%'",
+            (sid,)
+        )
+        conn.commit()
+        log.info(f"[admin/extend-trial] id={sid} extended {extra_days} days, new trial_end={new_trial_end}")
+        return {
+            "ok": True,
+            "id": sid,
+            "name": row["name"],
+            "email": row["email"],
+            "previous_status": row["status"],
+            "new_trial_end": new_trial_end.isoformat(),
+            "extended_days": extra_days,
+        }
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/students/send-followup")
+def admin_send_followup(payload: dict, authorization: Optional[str] = Header(None)):
+    """CEOダッシュボードから手動フォローアップメール送信。24h cooldown 付き。"""
+    import urllib.parse as _urlparse
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+
+    try:
+        sid = int(payload.get("id") or 0)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="id must be integer")
+    if not sid:
+        raise HTTPException(status_code=400, detail="id required")
+
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT id, email, name, status, trial_end FROM students WHERE id=?", (sid,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail=f"student id={sid} not found")
+        if not row["email"]:
+            raise HTTPException(status_code=400, detail="メールアドレスが登録されていません")
+
+        # 24h cooldown: 直近24時間以内に手動送信済みならブロック
+        cooldown_since = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+        c.execute(
+            "SELECT id FROM notifications WHERE student_id=? AND template='trial_followup_manual' AND success=1 AND created_at > ? LIMIT 1",
+            (sid, cooldown_since)
+        )
+        if c.fetchone():
+            raise HTTPException(status_code=429, detail="24時間以内にフォローアップ済みです。時間を置いてお試しください。")
+
+        # trial_end からの経過日数で適切なテンプレートを自動選択
+        days_since_expiry = 1
+        try:
+            te = row["trial_end"]
+            if te:
+                if isinstance(te, str):
+                    te = datetime.fromisoformat(te.replace("Z", "+00:00"))
+                if te.tzinfo is None:
+                    te = te.replace(tzinfo=timezone.utc)
+                days_since_expiry = max(1, int((datetime.now(timezone.utc) - te).total_seconds() / 86400))
+        except Exception:
+            pass
+
+        upgrade_url = f"{BASE_URL}/upgrade.html?email={_urlparse.quote(row['email'], safe='')}"
+        result = _send_trial_followup_email(row["email"], row["name"] or "", days_since_expiry, upgrade_url)
+        if not result.get("sent"):
+            c.execute(
+                """INSERT INTO notifications (student_id, channel, template, payload, success, error)
+                   VALUES (?, 'email', 'trial_followup_manual', ?, 0, ?)""",
+                (sid, json.dumps({"triggered_by": "ceo_dashboard", "days_since": days_since_expiry}), result.get("error", ""))
+            )
+            conn.commit()
+            raise HTTPException(status_code=502, detail=f"メール送信失敗: {result.get('error', '不明')}")
+
+        c.execute(
+            """INSERT INTO notifications (student_id, channel, template, payload, success, error)
+               VALUES (?, 'email', 'trial_followup_manual', ?, 1, '')""",
+            (sid, json.dumps({"triggered_by": "ceo_dashboard", "days_since": days_since_expiry}))
+        )
+        conn.commit()
+        return {"ok": True, "sent": True, "email": row["email"]}
+    finally:
+        conn.close()
+
+
 @app.post("/api/cron/trial-reminders")
 def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = False):
     """毎日1回外部cronから呼び出し。trial_end が 1-2 日先の生徒にリマインダー送信。
