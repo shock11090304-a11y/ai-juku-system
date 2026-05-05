@@ -360,7 +360,7 @@ function renderActionItems(m) {
 async function loadExpiredUsers() {
   if (!window.AdminAuth || !window.AdminAuth.getToken()) return;
   try {
-    const res = await window.AdminAuth.fetch('/api/admin/students');
+    const res = await window.AdminAuth.fetch('/api/admin/stats');
     if (!res.ok) return;
     const data = await res.json();
     const expired = (data.students || []).filter(s => s.status === 'expired');
