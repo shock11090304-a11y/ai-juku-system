@@ -14162,6 +14162,38 @@ def admin_set_student_course(student_id: int, payload: StudentCourseSetRequest, 
             )
         except Exception as ev_err:
             log.warning(f"[StudyLog] course_change event log failed: {ev_err}")
+
+        # 生徒に加入完了 / 解除通知 in-app message を自動送信 (塾長指示 2026-05-05)
+        if old_course != new_course:
+            if new_course == _STUDY_LOG_TARGET_COURSE:
+                notif_subject = "✅ 国公立難関大学コース 加入完了"
+                notif_body = "ご加入ありがとうございます。マイページに「📚 学習記録」「📅 学習計画」セクションが表示されました。\n\n今日から毎日の学習を記録し、塾長と一緒に志望校合格まで走りましょう。"
+            elif old_course == _STUDY_LOG_TARGET_COURSE and new_course is None:
+                notif_subject = "📤 国公立難関大学コース 解除のお知らせ"
+                notif_body = "国公立難関大学コースを解除しました。学習記録・学習計画セクションは非表示になります。\nご質問は塾長までお問い合わせください。"
+            else:
+                notif_subject = None
+            if notif_subject:
+                try:
+                    c.execute(
+                        "INSERT INTO messages (sender_type, sender_id, recipient_type, recipient_id, broadcast_filter, subject, body, sent_via, email_status) "
+                        "VALUES (?,?,?,?,?,?,?,?,?)",
+                        ("admin", None, "student", student_id, None, notif_subject, notif_body, "in_app", None)
+                    )
+                except Exception as me:
+                    log.warning(f"[StudyLog] course notify message failed: {me}")
+            # 既存 inquiry message の subject に「✅ 加入済み」prefix を付ける (履歴表示で識別)
+            if new_course == _STUDY_LOG_TARGET_COURSE:
+                try:
+                    c.execute(
+                        "UPDATE messages SET subject = '✅ [加入済み] ' || COALESCE(subject, '') "
+                        "WHERE sender_type = 'student' AND recipient_type = 'admin' AND sender_id = ? "
+                        "AND COALESCE(subject, '') NOT LIKE '✅ [加入済み]%'",
+                        (student_id,)
+                    )
+                except Exception as ue:
+                    log.warning(f"[StudyLog] inquiry subject update failed: {ue}")
+
         conn.commit()
         log.info(f"[StudyLog] admin set course student={student_id} course={new_course}")
         return {"ok": True, "student_id": student_id, "course": new_course}
@@ -14906,7 +14938,7 @@ def _bg_send_messages_email(msg_records: list, subject: str, body: str) -> None:
 
 @app.get("/api/admin/messages")
 def admin_list_messages(authorization: Optional[str] = Header(None), limit: int = 100, offset: int = 0):
-    """塾長: 送信履歴。broadcast は group_id で集約。"""
+    """塾長: 送信履歴 + 受信した生徒からの問い合わせ。broadcast は group_id で集約。"""
     _verify_admin_required(authorization)
     try:
         limit = max(1, min(int(limit or 100), 500))
@@ -14916,10 +14948,10 @@ def admin_list_messages(authorization: Optional[str] = Header(None), limit: int 
     conn = db()
     try:
         c = conn.cursor()
-        # broadcast_group_id ごとにまとめる + 個別は別途
+        # admin が送った履歴 (recipient で students JOIN)
         c.execute(
             """SELECT m.id, m.recipient_id, m.subject, m.body, m.sent_via, m.email_status, m.read_at, m.created_at,
-                      m.broadcast_filter, m.broadcast_group_id,
+                      m.broadcast_filter, m.broadcast_group_id, m.sender_type,
                       s.name AS student_name, s.grade
                FROM messages m
                LEFT JOIN students s ON m.recipient_id = s.id
@@ -14929,6 +14961,18 @@ def admin_list_messages(authorization: Optional[str] = Header(None), limit: int 
             (limit, offset)
         )
         rows = c.fetchall()
+        # 生徒からの問い合わせ (sender_id で students JOIN, 加入状況も含める)
+        c.execute(
+            """SELECT m.id, m.sender_id AS from_student_id, m.subject, m.body, m.created_at, m.read_at,
+                      s.name AS from_student_name, s.grade AS from_student_grade, s.course AS from_student_course
+               FROM messages m
+               LEFT JOIN students s ON m.sender_id = s.id
+               WHERE m.sender_type = 'student' AND m.recipient_type = 'admin'
+               ORDER BY m.created_at DESC
+               LIMIT ?""",
+            (min(limit, 200),)
+        )
+        inquiries_rows = c.fetchall()
         # group by broadcast_group_id (None = individual)
         groups = {}
         individuals = []
@@ -14974,7 +15018,26 @@ def admin_list_messages(authorization: Optional[str] = Header(None), limit: int 
                     g["recipients_preview"].append({"name": obj["student_name"], "grade": obj["grade"], "read_at": obj["read_at"]})
             else:
                 individuals.append(obj)
-        return {"ok": True, "individuals": individuals, "broadcasts": list(groups.values())}
+        # 受信問い合わせ整形 (mypage:source_tag を「(本文なし)」に置換 / 加入済みフラグ)
+        inquiries = []
+        for r in inquiries_rows:
+            raw_body = (r["body"] or "")
+            # 「mypage:study-log」「mypage:study-plan」のような source タグだけなら「(本文なし)」表示
+            stripped = raw_body.strip()
+            display_body = "(本文なし)" if stripped.startswith("mypage:") and len(stripped) <= 30 else raw_body
+            inquiries.append({
+                "id": r["id"],
+                "from_student_id": r["from_student_id"],
+                "from_student_name": r["from_student_name"],
+                "from_student_grade": r["from_student_grade"],
+                "from_student_course": r["from_student_course"],
+                "is_already_enrolled": r["from_student_course"] == _STUDY_LOG_TARGET_COURSE,
+                "subject": r["subject"],
+                "body": display_body,
+                "created_at": str(r["created_at"]) if r["created_at"] else None,
+                "read_at": str(r["read_at"]) if r["read_at"] else None,
+            })
+        return {"ok": True, "individuals": individuals, "broadcasts": list(groups.values()), "inquiries": inquiries}
     finally:
         conn.close()
 
@@ -15055,6 +15118,9 @@ def student_course_inquiry(payload: CourseInquiryRequest, request: Request, auth
     course = (payload.course or "").strip()
     if course != _STUDY_LOG_TARGET_COURSE:
         raise HTTPException(status_code=400, detail="course が不正です")
+    # 既加入なら 409 (重複申込防止)
+    if (student.get("course") or None) == _STUDY_LOG_TARGET_COURSE:
+        raise HTTPException(status_code=409, detail="すでに加入済みのコースです")
     note = _sanitize_text(payload.note, 500)
     course_label = "国公立難関大学コース"
 

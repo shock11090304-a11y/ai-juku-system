@@ -1523,11 +1523,37 @@ async function loadMessageHistory() {
     const data = await res.json();
     const broadcasts = data.broadcasts || [];
     const individuals = data.individuals || [];
-    if (!broadcasts.length && !individuals.length) {
+    const inquiries = data.inquiries || [];
+    if (!broadcasts.length && !individuals.length && !inquiries.length) {
       el.innerHTML = '<div style="text-align:center; color:#71717a; padding:1.5rem;">送信履歴がありません</div>';
       return;
     }
     let html = '';
+    // 📥 受信した申込問い合わせ (最上部に表示)
+    if (inquiries.length) {
+      const pending = inquiries.filter(q => !q.is_already_enrolled);
+      const enrolled = inquiries.filter(q => q.is_already_enrolled);
+      html += `<div style="font-size:0.8rem; color:#fbbf24; margin:0.5rem 0; font-weight:700;">📥 受信した申込問い合わせ (${inquiries.length} 件 / 未対応 ${pending.length})</div>`;
+      html += inquiries.map(q => {
+        const enrolledBadge = q.is_already_enrolled
+          ? '<span style="background:rgba(134,239,172,0.18); color:#86efac; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:700;">✅ 加入済み</span>'
+          : '<span style="background:rgba(251,191,36,0.18); color:#fbbf24; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:700;">🟡 未対応</span>';
+        const actionBtn = q.is_already_enrolled
+          ? ''
+          : `<button data-sid="${escapeHtml(String(q.from_student_id))}" data-q-id="${escapeHtml(String(q.id))}" class="msg-approve-btn" style="background:linear-gradient(135deg,#10b981,#34d399); color:#fff; border:0; padding:0.4rem 0.9rem; border-radius:8px; cursor:pointer; font-size:0.78rem; font-weight:700;">✅ 加入させる</button>`;
+        const replyBtn = `<button data-sid="${escapeHtml(String(q.from_student_id))}" data-name="${escapeHtml(q.from_student_name || '')}" class="msg-reply-btn" style="background:rgba(99,102,241,0.2); color:#c7d2fe; border:0; padding:0.4rem 0.9rem; border-radius:8px; cursor:pointer; font-size:0.78rem;">💬 返信</button>`;
+        return `
+          <div style="background:rgba(251,191,36,0.05); border:1px solid rgba(251,191,36,0.3); border-left:4px solid #fbbf24; border-radius:8px; padding:0.85rem; margin-bottom:0.6rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.3rem;">
+              <div style="font-weight:700; color:#e4e4e7; font-size:0.92rem;">📥 ${escapeHtml(q.from_student_name || '?')}${q.from_student_grade ? ` <span style="color:#71717a; font-size:0.72rem;">(${escapeHtml(q.from_student_grade)})</span>` : ''} ${enrolledBadge}</div>
+              <div style="font-size:0.72rem; color:#71717a;">${escapeHtml(_msgFmtJst(q.created_at))}</div>
+            </div>
+            <div style="font-size:0.85rem; color:#d4d4d8; padding:0.4rem 0.6rem; background:rgba(0,0,0,0.25); border-radius:6px; margin-bottom:0.5rem;">${escapeHtml(q.body)}</div>
+            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">${actionBtn}${replyBtn}</div>
+            <div class="msg-approve-result" style="margin-top:0.4rem; font-size:0.78rem;"></div>
+          </div>`;
+      }).join('');
+    }
     if (broadcasts.length) {
       html += '<div style="font-size:0.8rem; color:#a1a1aa; margin:0.5rem 0;">📢 一斉送信</div>';
       html += broadcasts.map(b => {
@@ -1568,6 +1594,67 @@ async function loadMessageHistory() {
       }).join('');
     }
     el.innerHTML = html;
+
+    // 「✅ 加入させる」ボタン bind
+    el.querySelectorAll('.msg-approve-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (btn.disabled) return;
+        const sid = btn.getAttribute('data-sid');
+        const resultEl = btn.parentElement.parentElement.querySelector('.msg-approve-result');
+        if (!confirm(`生徒 ID ${sid} を国公立難関大学コースに加入させますか?\n生徒に「加入完了」通知が自動で送信されます。`)) return;
+        btn.disabled = true;
+        const orig = btn.textContent;
+        btn.textContent = '加入処理中...';
+        try {
+          const res = await window.AdminAuth.fetch(`/api/admin/students/${encodeURIComponent(sid)}/course`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ course: 'kokuritsu_nankan' }),
+          });
+          if (!res.ok) {
+            let detail = '';
+            try { const j = await res.json(); detail = j.detail || ''; } catch {}
+            throw new Error(detail || `HTTP ${res.status}`);
+          }
+          if (resultEl) resultEl.innerHTML = '<span style="color:#86efac;">✅ 加入完了。生徒に通知を送信しました。</span>';
+          // 0.8 秒後に履歴再描画 (subject に「✅ [加入済み]」prefix が付く)
+          setTimeout(() => loadMessageHistory(), 800);
+        } catch (e) {
+          if (resultEl) resultEl.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(e.message || '加入失敗')}</span>`;
+          btn.disabled = false;
+          btn.textContent = orig;
+        }
+      });
+    });
+
+    // 「💬 返信」ボタン bind: 個別送信タブを開いて該当生徒を選択 + フォーカス
+    el.querySelectorAll('.msg-reply-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const sid = btn.getAttribute('data-sid');
+        const name = btn.getAttribute('data-name');
+        switchMsgTab('student');
+        const sel = document.getElementById('msgStudentSelect');
+        if (sel) {
+          sel.value = sid;
+          // 選択肢に存在しない場合 (最近追加 etc) → 強制 option 追加
+          if (sel.value !== sid) {
+            const opt = document.createElement('option');
+            opt.value = sid;
+            opt.textContent = name || `生徒ID ${sid}`;
+            opt.selected = true;
+            sel.insertBefore(opt, sel.firstChild ? sel.firstChild.nextSibling : null);
+          }
+          sel.focus();
+        }
+        const subj = document.getElementById('msgSubject');
+        if (subj && !subj.value) subj.value = `Re: お問い合わせの件 (${name || ''})`;
+        const body = document.getElementById('msgBody');
+        if (body) body.focus();
+        // フォームまでスクロール
+        const sec = document.getElementById('messagesSection');
+        if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
   } catch (e) {
     el.innerHTML = `<div style="color:#fca5a5; padding:1rem;">エラー: ${escapeHtml(e.message || '')}</div>`;
   }
