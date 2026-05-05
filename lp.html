@@ -790,14 +790,72 @@
     // 📊 LP コンバージョン計測 (A/B テスト基盤)
     // analytics.js は defer 読込なので DOMContentLoaded で実行する
     // ============================================
-    function _setupLpTracking() {
+    async function _assignVariant() {
+      // localStorage に保存済み (7日以内) なら再利用 (sticky 化)
+      // 7日: A/B 実験の標準窓 - 同じユーザーは7日間同じ variant を見続ける
+      try {
+        const cached = localStorage.getItem('aj_lp_variant_v2');
+        if (cached) {
+          const obj = JSON.parse(cached);
+          if (obj && obj.variant && obj.ts && (Date.now() - obj.ts) < 7 * 24 * 3600 * 1000) {
+            return obj;
+          }
+        }
+      } catch (e) { /* noop */ }
+      // backend に問い合わせ (epsilon-greedy で割当)
+      try {
+        const apiBase = window.location.origin;
+        const res = await fetch(`${apiBase}/api/lp/assign-variant`, { method: 'GET' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.variant) {
+            const obj = { variant: data.variant, config: data.config || {}, ts: Date.now() };
+            localStorage.setItem('aj_lp_variant_v2', JSON.stringify(obj));
+            return obj;
+          }
+        }
+      } catch (e) { /* noop */ }
+      // fallback: 旧来の variant id
+      return { variant: 'v2_2026-05-02', config: {}, ts: Date.now() };
+    }
+
+    function _applyVariantConfig(cfg) {
+      // variant 固有の content override (headline / cta_text)
+      // data-variant-exempt 属性のついた要素はスキップ可能
+      if (!cfg) return;
+      try {
+        if (cfg.headline) {
+          const h = document.querySelector('.hero h1, h1.hero-title, h1');
+          if (h) {
+            h.textContent = cfg.headline;
+          } else {
+            console.warn('[Variant] no h1 selector matched, headline override skipped');
+          }
+        }
+        if (cfg.cta_text) {
+          let count = 0;
+          document.querySelectorAll('a[href*="checkout.html"], .sticky-cta-btn').forEach(el => {
+            if (el.hasAttribute('data-variant-exempt')) return;
+            if (el.children.length === 0) {
+              el.textContent = cfg.cta_text;
+              count++;
+            }
+          });
+          if (count === 0) console.warn('[Variant] no CTA elements matched');
+        }
+      } catch (e) { console.warn('variant apply failed', e); }
+    }
+
+    async function _setupLpTracking() {
       // window.track は analytics.js が定義する。無ければ少し待って再試行。
       if (typeof window.track !== 'function') {
         return setTimeout(_setupLpTracking, 200);
       }
-      // LP 訪問識別
-      const lpVariant = window.localStorage.getItem('aj_lp_variant') || 'v2_2026-05-02';
-      window.localStorage.setItem('aj_lp_variant', lpVariant);
+      // 多腕バンディット: backend から variant 取得 → content override → tracking
+      const assigned = await _assignVariant();
+      const lpVariant = assigned.variant;
+      window.localStorage.setItem('aj_lp_variant', lpVariant);  // 後方互換 (旧 key)
+      _applyVariantConfig(assigned.config);
       window.track('lp_view', { variant: lpVariant });
       // 全 CTA に click tracker 付与 (overlap 防止: .btn-primary は除外、href ベースで識別)
       document.querySelectorAll('a[href*="checkout.html"], a[href="#trial"], .sticky-cta-btn').forEach(el => {

@@ -12971,6 +12971,181 @@ def vocab_quiz(student_id: int, level: Optional[str] = None, limit: int = 10, un
 # ==========================================================================
 # 📊 LP A/B 計測 集計 endpoint (CEO ダッシュ用)
 # ==========================================================================
+# ==========================================================================
+# 🎰 LP Variant Multi-Armed Bandit (Phase 2)
+# 既存の variant + analytics を最適化: epsilon-greedy で CV 高い variant に traffic 寄せる
+# ==========================================================================
+# Variant pool (hard-coded MVP, DB 化は次 phase)
+# 各 variant は ID + 表示用 description。LP 側で variant ID を見て content を出し分ける想定。
+LP_VARIANT_POOL = {
+    "v2_2026-05-02": {
+        "description": "現行ベースライン (一般訴求)",
+        "config": {"headline": None, "cta_text": None},  # null = 既定値使用
+        "active": True,
+    },
+    "v3_50limit": {
+        "description": "50名限定 + 希少性訴求",
+        "config": {
+            "headline": "🎯 創設メンバー50名限定 — 募集終了間近",
+            "cta_text": "今すぐ無料体験を始める (残り枠わずか)",
+        },
+        "active": True,
+    },
+    "v3_results": {
+        "description": "成果訴求 (合格実績/学習量)",
+        "config": {
+            "headline": "🎓 AI が君だけのカリキュラムを設計 — 24時間質問できる個別指導",
+            "cta_text": "7日間の無料体験を始める",
+        },
+        "active": True,
+    },
+}
+LP_BANDIT_EPSILON = 0.2  # 20% 探索 / 80% 既知最良 variant
+LP_BANDIT_MIN_VIEWS_PER_VARIANT = 30  # この未満の variant は強制探索
+
+
+_LP_BANDIT_CACHE = {"data": None, "ts": 0, "days": 0}  # 60秒 cache (DoS 緩和)
+
+
+def _compute_lp_variant_cv(days: int = 14) -> dict:
+    """各 variant の CV (lp_view → lp_form_submit) を集計。
+    返却: {variant_id: {views: int, submits: int, cv_rate: float}}
+    Cache: 60s (高頻度 assign-variant 呼出しでも DB 負荷を抑制)"""
+    import time as _time
+    now = _time.time()
+    if _LP_BANDIT_CACHE["data"] is not None and _LP_BANDIT_CACHE["days"] == days and now - _LP_BANDIT_CACHE["ts"] < 60:
+        return _LP_BANDIT_CACHE["data"]
+
+    conn = db()
+    c = conn.cursor()
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    try:
+        c.execute(
+            """SELECT name, props, session_id FROM events
+               WHERE name IN ('lp_view', 'lp_form_submit') AND created_at > ?
+               LIMIT 20000""",
+            (cutoff,)
+        )
+        rows = list(c.fetchall())
+    finally:
+        conn.close()
+
+    # session_id の unique で集計
+    views = {}  # variant -> set(session_ids)
+    submits = {}
+    for r in rows:
+        name = r["name"] if hasattr(r, "keys") else r[0]
+        props_raw = r["props"] if hasattr(r, "keys") else r[1]
+        sess = (r["session_id"] if hasattr(r, "keys") else r[2]) or "_anon"
+        try:
+            props = json.loads(props_raw) if isinstance(props_raw, str) else (props_raw or {})
+        except Exception:
+            props = {}
+        variant = props.get("variant", "unknown")
+        if name == "lp_view":
+            views.setdefault(variant, set()).add(sess)
+        elif name == "lp_form_submit":
+            submits.setdefault(variant, set()).add(sess)
+
+    out = {}
+    for variant, view_set in views.items():
+        v_count = len(view_set)
+        s_count = len(submits.get(variant, set()))
+        cv = (s_count / v_count) if v_count > 0 else 0.0
+        out[variant] = {"views": v_count, "submits": s_count, "cv_rate": cv}
+    # views が無くて submits だけある variant も拾う
+    for variant in submits:
+        if variant not in out:
+            out[variant] = {"views": 0, "submits": len(submits[variant]), "cv_rate": 0.0}
+
+    _LP_BANDIT_CACHE["data"] = out
+    _LP_BANDIT_CACHE["ts"] = now
+    _LP_BANDIT_CACHE["days"] = days
+    return out
+
+
+def _select_lp_variant_epsilon_greedy() -> str:
+    """epsilon-greedy で variant を選ぶ。
+    - cold start (views < MIN): 最少 views variant を選択 (race-safe round-robin)
+    - それ以外: epsilon=0.2 で random 探索、0.8 で best CV variant
+    """
+    import random
+    active_variants = [vid for vid, cfg in LP_VARIANT_POOL.items() if cfg.get("active")]
+    if not active_variants:
+        return "v2_2026-05-02"  # fallback
+
+    cv_data = _compute_lp_variant_cv(days=14)
+
+    # 1) 未収集データ variant を優先 (cold start) — race-safe: 最少 views variant に決定的に流す
+    # これにより 100 同時接続でも全員が「最少 views variant」を均等に埋めていく
+    cold_variants = [v for v in active_variants if cv_data.get(v, {}).get("views", 0) < LP_BANDIT_MIN_VIEWS_PER_VARIANT]
+    if cold_variants:
+        return min(cold_variants, key=lambda v: cv_data.get(v, {}).get("views", 0))
+
+    # 2) epsilon 探索
+    if random.random() < LP_BANDIT_EPSILON:
+        return random.choice(active_variants)
+
+    # 3) Greedy: best CV
+    best = max(active_variants, key=lambda v: cv_data.get(v, {}).get("cv_rate", 0.0))
+    return best
+
+
+@app.get("/api/lp/assign-variant")
+def lp_assign_variant(request: Request, force: Optional[str] = None):
+    """LP 側が初訪問時に呼ぶ: 推奨 variant ID を返す。
+    - force=<variant_id>: テスト用に強制指定 (active な変数のみ受理)
+    - 未指定: epsilon-greedy で選択
+    Anti-DoS: 1 IP あたり 1分で 60 回まで (LP load 1回/sess なので十分)
+    """
+    _check_rate_limit_ip(request, bucket="lp_variant_assign", limit=60, window=60)
+
+    if force and force in LP_VARIANT_POOL and LP_VARIANT_POOL[force].get("active"):
+        variant = force
+    else:
+        variant = _select_lp_variant_epsilon_greedy()
+
+    cfg = LP_VARIANT_POOL.get(variant, {})
+    return {
+        "variant": variant,
+        "config": cfg.get("config", {}),
+        "description": cfg.get("description", ""),
+    }
+
+
+@app.get("/api/admin/lp-bandit")
+def admin_lp_bandit(authorization: Optional[str] = Header(None), days: int = 14):
+    """CEOダッシュ用: 多腕バンディットの現状 + 推奨 variant"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+
+    cv_data = _compute_lp_variant_cv(days=days)
+    rows = []
+    for vid, cfg in LP_VARIANT_POOL.items():
+        cv = cv_data.get(vid, {"views": 0, "submits": 0, "cv_rate": 0.0})
+        rows.append({
+            "variant": vid,
+            "description": cfg.get("description", ""),
+            "active": cfg.get("active", False),
+            "views": cv["views"],
+            "submits": cv["submits"],
+            "cv_rate_pct": round(cv["cv_rate"] * 100, 2),
+            "cold_start": cv["views"] < LP_BANDIT_MIN_VIEWS_PER_VARIANT,
+        })
+    rows.sort(key=lambda r: r["cv_rate_pct"], reverse=True)
+    winner = rows[0] if rows and not rows[0]["cold_start"] else None
+    return {
+        "days": days,
+        "epsilon": LP_BANDIT_EPSILON,
+        "min_views_threshold": LP_BANDIT_MIN_VIEWS_PER_VARIANT,
+        "variants": rows,
+        "current_winner": winner,
+    }
+
+
 @app.get("/api/admin/lp-funnel")
 def lp_funnel(authorization: Optional[str] = Header(None), days: int = 7):
     """LP のコンバージョンファネル集計。
