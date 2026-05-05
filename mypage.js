@@ -1063,6 +1063,16 @@ function bindStudyPlanAiButtons() {
     aiRecSubmit.addEventListener('click', recommendTextbooksWithAi);
     aiRecSubmit._spAiBound = true;
   }
+  const aiGenCancel = document.getElementById('spAiGenCancelBtn');
+  if (aiGenCancel && !aiGenCancel._spAiBound) {
+    aiGenCancel.addEventListener('click', () => { document.getElementById('spAiGenWrap').style.display = 'none'; });
+    aiGenCancel._spAiBound = true;
+  }
+  const aiRecCancel = document.getElementById('spAiRecCancelBtn');
+  if (aiRecCancel && !aiRecCancel._spAiBound) {
+    aiRecCancel.addEventListener('click', () => { document.getElementById('spAiRecWrap').style.display = 'none'; });
+    aiRecCancel._spAiBound = true;
+  }
 }
 
 async function _spCallAi(systemPrompt, userText, maxTokens) {
