@@ -11251,6 +11251,52 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
         "system": payload.system,
         "messages": payload.messages,
     }
+
+    # Gemini ルート: model="gemini-*" を frontend から指定された場合は直接 Gemini を呼ぶ
+    # (塾長指示 2026-05-06: コスト削減のため text 系 AI 機能は Gemini に切替)
+    # Vision (image) は Gemini route 未対応 → Anthropic に強制 fallback
+    if (payload.model or "").startswith("gemini-"):
+        if not GEMINI_API_KEY:
+            _record_ai_call_failure("gemini_unconfigured", 503, "GEMINI_API_KEY 未設定", payload, request)
+            raise HTTPException(status_code=503, detail="Gemini が構成されていません")
+        # 画像入力検知
+        _has_image = False
+        for _m in (payload.messages or []):
+            _c = _m.get("content") if isinstance(_m, dict) else None
+            if isinstance(_c, list):
+                for _part in _c:
+                    if isinstance(_part, dict) and _part.get("type") == "image":
+                        _has_image = True; break
+            if _has_image: break
+        if _has_image:
+            _record_ai_call_failure("gemini_no_vision", 400, "Gemini route は image 入力非対応", payload, request)
+            raise HTTPException(status_code=400, detail="画像入力は claude-* モデルを指定してください")
+        try:
+            data = _call_gemini(body, model=payload.model, kind=payload.kind)
+            usage = data.get("usage", {}) or {}
+            if payload.student_id and usage:
+                try:
+                    _conn = db()
+                    _c = _conn.cursor()
+                    _c.execute(
+                        "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                        (f"ai_call_{payload.kind}",
+                         json.dumps({"model": data.get("_actual_model") or payload.model, "provider": "gemini",
+                                     "input_tokens": usage.get("input_tokens", 0), "output_tokens": usage.get("output_tokens", 0)}),
+                         str(payload.student_id))
+                    )
+                    _conn.commit()
+                    _conn.close()
+                except Exception as _ev:
+                    log.warning(f"[AIProxy][Gemini] cost tracking failed: {_ev}")
+            return data
+        except HTTPException:
+            raise
+        except Exception as e:
+            log.error(f"[AIProxy][Gemini] failed: {type(e).__name__}: {str(e)[:200]}")
+            _record_ai_call_failure("gemini_call_failed", 503, f"{type(e).__name__}: {str(e)[:200]}", payload, request)
+            raise HTTPException(status_code=503, detail=f"Gemini 呼び出しに失敗: {str(e)[:200]}")
+
     # Opus 4.7 は thinking + output_config + temperature が **必須** (memory: feedback_opus47_proxy_required.md)
     # frontend から thinking=false で来ても backend で必ず補完する。
     # Tier 2 (Sonnet) 降格時は _call_anthropic_safe 内部で thinking/output_config が pop されるので
@@ -15101,6 +15147,57 @@ def mark_message_read(msg_id: int, request: Request, authorization: Optional[str
         return {"ok": True}
     finally:
         conn.close()
+
+
+class AdminAiDraftRequest(BaseModel):
+    kind: str  # 'reply_draft' or 'broadcast_draft'
+    context: str  # 状況説明 (返信案なら相手の本文 / 一斉送信なら要点)
+    extra_hint: Optional[str] = None  # 追加指示 (任意)
+
+
+@app.post("/api/admin/ai-draft")
+def admin_ai_draft(payload: AdminAiDraftRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """塾長: メッセージ返信案 / 一斉送信文案を Gemini で生成 (Phase 3.5 / 塾長指示 2026-05-06)。"""
+    _check_rate_limit_ip(request, bucket="admin_ai_draft", limit=30, window=60)
+    _verify_admin_required(authorization)
+    if not GEMINI_API_KEY:
+        raise HTTPException(status_code=503, detail="Gemini が構成されていません")
+
+    kind = (payload.kind or "").strip()
+    if kind not in ("reply_draft", "broadcast_draft"):
+        raise HTTPException(status_code=400, detail="kind は 'reply_draft' または 'broadcast_draft'")
+
+    context = _sanitize_text(payload.context, 4000)
+    if not context:
+        raise HTTPException(status_code=400, detail="context は必須です")
+    extra_hint = _sanitize_text(payload.extra_hint, 500) or ""
+
+    hint_block = f"## 追加指示:\n{extra_hint}\n\n" if extra_hint else ""
+    if kind == "reply_draft":
+        sys_prompt = "あなたは200名規模の学習塾を運営する塾長の秘書 AI です。生徒・保護者からの問い合わせに対し、塾長口調で丁寧かつ温かい返信案を作成します。教師名や塾名は塾長指示で出さない方針。返信案は 100〜250 字、改行は適度に入れて読みやすく。署名や末尾挨拶は不要 (本文のみ)。純粋なテキストのみ返答 (前置きや解説は不要)。"
+        user_prompt = f"以下の問い合わせに対する返信案を作成してください。\n\n## 受信メッセージ:\n{context}\n\n{hint_block}## 要件:\n- 塾長口調 (温かく・誠実に)\n- 100〜250 字程度\n- 適度な改行で読みやすく\n- 署名/末尾挨拶 (敬具など) は不要"
+    else:  # broadcast_draft
+        sys_prompt = "あなたは200名規模の学習塾を運営する塾長の秘書 AI です。塾長が指定する要点から、保護者・生徒に一斉送信する案内文を整えます。教師名や塾名は塾長指示で出さない方針。文章は 200〜500 字、見出しや箇条書きを使い読みやすく。署名や末尾挨拶は不要 (本文のみ)。純粋なテキストのみ返答 (前置きや解説は不要)。"
+        user_prompt = f"以下の要点から、一斉送信用の案内文を作成してください。\n\n## 要点:\n{context}\n\n{hint_block}## 要件:\n- 塾長口調 (敬体・温かく)\n- 200〜500 字程度\n- 見出しや箇条書きを適度に活用\n- 署名/末尾挨拶 (敬具など) は不要"
+
+    body = {
+        "model": "gemini-2.5-flash",
+        "max_tokens": 1500,
+        "system": sys_prompt,
+        "messages": [{"role": "user", "content": user_prompt}],
+    }
+    try:
+        data = _call_gemini(body, model="gemini-2.5-flash", kind=f"admin_{kind}")
+        text = "".join(c.get("text", "") for c in (data.get("content") or []) if isinstance(c, dict)).strip()
+        if not text:
+            raise HTTPException(status_code=503, detail="AI が空文字を返しました。再度お試しください")
+        log.info(f"[AdminAiDraft] kind={kind} ip={_client_ip(request)} chars={len(text)}")
+        return {"ok": True, "draft": text, "model": data.get("_actual_model"), "kind": kind}
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error(f"[AdminAiDraft] failed kind={kind}: {type(e).__name__}: {str(e)[:200]}")
+        raise HTTPException(status_code=503, detail=f"AI 生成失敗: {str(e)[:200]}")
 
 
 class CourseInquiryRequest(BaseModel):

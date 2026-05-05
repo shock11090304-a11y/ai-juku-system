@@ -1676,7 +1676,10 @@
         </div>
 
         <div style="margin-bottom:0.75rem;">
-          <label for="msgBody" style="display:block; font-size:0.75rem; color:#a1a1aa; margin-bottom:0.25rem;">本文 *</label>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+            <label for="msgBody" style="font-size:0.75rem; color:#a1a1aa;">本文 *</label>
+            <button id="msgAiDraftBtn" type="button" style="background:linear-gradient(135deg,#a78bfa,#ec4899); color:#fff; border:0; padding:0.25rem 0.7rem; border-radius:6px; font-size:0.72rem; cursor:pointer; font-weight:700;">🤖 AI で文案を作る</button>
+          </div>
           <textarea id="msgBody" maxlength="5000" rows="6" placeholder="本文を入力 (改行可・最大5000文字)" style="width:100%; padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; resize:vertical; font-family:inherit;"></textarea>
         </div>
 
@@ -1702,7 +1705,7 @@
   </footer>
 
   <script src="plans.js?v=20260422"></script>
-  <script src="ceo.js?v=20260505-approve-flow"></script>
+  <script src="ceo.js?v=20260506-gemini-draft"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {

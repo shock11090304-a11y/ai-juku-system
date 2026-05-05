@@ -1371,6 +1371,17 @@ function initMessageDashboard() {
   if (sendBtn) sendBtn.addEventListener('click', sendMessage);
   if (refreshBtn) refreshBtn.addEventListener('click', loadMessageHistory);
   if (broadcastFilter) broadcastFilter.addEventListener('change', updateBroadcastCount);
+  // E: AI で文案を作る (一斉/個別共通)
+  const aiDraftBtn = document.getElementById('msgAiDraftBtn');
+  if (aiDraftBtn && !aiDraftBtn._bound) {
+    aiDraftBtn.addEventListener('click', async () => {
+      const points = prompt('一斉送信の要点を入力してください (Gemini で文案を生成します)\n\n例: 「7月夏期講習開講・全6日間・締切7/20・費用¥35,000」');
+      if (!points || !points.trim()) return;
+      const hint = prompt('追加指示があれば入力 (任意)\n例: 「保護者向け」「箇条書き多めに」', '') || '';
+      await openAiDraftModal('broadcast_draft', points.trim(), hint, null, null);
+    });
+    aiDraftBtn._bound = true;
+  }
 
   const tryLoad = (retries = 10) => {
     if (window.AdminAuth && window.AdminAuth.getToken()) {
@@ -1542,6 +1553,7 @@ async function loadMessageHistory() {
           ? ''
           : `<button data-sid="${escapeHtml(String(q.from_student_id))}" data-q-id="${escapeHtml(String(q.id))}" class="msg-approve-btn" style="background:linear-gradient(135deg,#10b981,#34d399); color:#fff; border:0; padding:0.4rem 0.9rem; border-radius:8px; cursor:pointer; font-size:0.78rem; font-weight:700;">✅ 加入させる</button>`;
         const replyBtn = `<button data-sid="${escapeHtml(String(q.from_student_id))}" data-name="${escapeHtml(q.from_student_name || '')}" class="msg-reply-btn" style="background:rgba(99,102,241,0.2); color:#c7d2fe; border:0; padding:0.4rem 0.9rem; border-radius:8px; cursor:pointer; font-size:0.78rem;">💬 返信</button>`;
+        const aiReplyBtn = `<button data-sid="${escapeHtml(String(q.from_student_id))}" data-name="${escapeHtml(q.from_student_name || '')}" data-context="${escapeHtml(q.body || '')}" class="msg-ai-reply-btn" style="background:linear-gradient(135deg,#a78bfa,#ec4899); color:#fff; border:0; padding:0.4rem 0.9rem; border-radius:8px; cursor:pointer; font-size:0.78rem; font-weight:700;">🤖 AI 返信案</button>`;
         return `
           <div style="background:rgba(251,191,36,0.05); border:1px solid rgba(251,191,36,0.3); border-left:4px solid #fbbf24; border-radius:8px; padding:0.85rem; margin-bottom:0.6rem;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.3rem;">
@@ -1549,7 +1561,7 @@ async function loadMessageHistory() {
               <div style="font-size:0.72rem; color:#71717a;">${escapeHtml(_msgFmtJst(q.created_at))}</div>
             </div>
             <div style="font-size:0.85rem; color:#d4d4d8; padding:0.4rem 0.6rem; background:rgba(0,0,0,0.25); border-radius:6px; margin-bottom:0.5rem;">${escapeHtml(q.body)}</div>
-            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">${actionBtn}${replyBtn}</div>
+            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">${actionBtn}${replyBtn}${aiReplyBtn}</div>
             <div class="msg-approve-result" style="margin-top:0.4rem; font-size:0.78rem;"></div>
           </div>`;
       }).join('');
@@ -1655,7 +1667,113 @@ async function loadMessageHistory() {
         if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     });
+
+    // 「🤖 AI 返信案」ボタン bind (Phase 3.5 / Gemini)
+    el.querySelectorAll('.msg-ai-reply-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const sid = btn.getAttribute('data-sid');
+        const name = btn.getAttribute('data-name');
+        const ctx = btn.getAttribute('data-context') || '(本文なし)';
+        const hint = prompt(`AI 返信案を作成します (Gemini)。\n\n返信のトーン・追加指示があれば入力してください (任意・空欄可):\n例: 「明日の面談に誘う」「料金についても触れる」`, '');
+        if (hint === null) return;
+        await openAiDraftModal('reply_draft', `生徒「${name}」(ID:${sid}) からのメッセージ:\n${ctx}`, hint, name, sid);
+      });
+    });
   } catch (e) {
     el.innerHTML = `<div style="color:#fca5a5; padding:1rem;">エラー: ${escapeHtml(e.message || '')}</div>`;
+  }
+}
+
+// ==========================================================================
+// 🤖 AI 返信案 / 一斉送信文案 (Phase 3.5 / Gemini)
+// ==========================================================================
+async function openAiDraftModal(kind, context, hint, targetName, targetSid) {
+  let modal = document.getElementById('aiDraftModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'aiDraftModal';
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; display:flex; align-items:flex-start; justify-content:center; padding:2rem; overflow-y:auto;';
+    modal.innerHTML = `
+      <div style="background:#0f172a; border:1px solid rgba(167,139,250,0.4); border-radius:14px; padding:1.5rem; max-width:700px; width:100%;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+          <h3 id="aiDraftTitle" style="margin:0; color:#c4b5fd;">🤖 AI 文案 (Gemini)</h3>
+          <button id="aiDraftClose" type="button" style="background:none; border:0; color:#a1a1aa; font-size:1.5rem; cursor:pointer;">×</button>
+        </div>
+        <div id="aiDraftBody"></div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.querySelector('#aiDraftClose').addEventListener('click', () => modal.style.display = 'none');
+    modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.style.display === 'flex') modal.style.display = 'none'; });
+  }
+  modal.style.display = 'flex';
+  modal.querySelector('#aiDraftTitle').textContent = kind === 'reply_draft' ? `🤖 AI 返信案 (Gemini) ${targetName ? '→ ' + targetName : ''}` : '🤖 AI 一斉送信文案 (Gemini)';
+  const body = modal.querySelector('#aiDraftBody');
+  body.innerHTML = '<div style="text-align:center; padding:2rem; color:#a1a1aa;">🤖 Gemini が文案を生成中... (3-10秒)</div>';
+
+  try {
+    const res = await window.AdminAuth.fetch('/api/admin/ai-draft', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind, context, extra_hint: hint || undefined }),
+    });
+    if (!res.ok) {
+      let detail = '';
+      try { const j = await res.json(); detail = j.detail || ''; } catch {}
+      throw new Error(detail || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    const draft = data.draft || '';
+    body.innerHTML = `
+      <div style="background:rgba(167,139,250,0.06); border:1px solid rgba(167,139,250,0.3); border-radius:8px; padding:0.9rem; margin-bottom:0.8rem;">
+        <div style="font-size:0.78rem; color:#a1a1aa; margin-bottom:0.4rem;">生成された文案 (編集可)</div>
+        <textarea id="aiDraftText" rows="10" style="width:100%; padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; font-family:inherit; resize:vertical;">${escapeHtml(draft)}</textarea>
+      </div>
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+        ${kind === 'reply_draft' ? `<button id="aiDraftUseAsReply" type="button" style="flex:1; padding:0.7rem; background:linear-gradient(135deg,#6366f1,#8b5cf6); border:0; border-radius:8px; color:#fff; font-weight:700; cursor:pointer;">✉️ この文面で個別送信フォームを開く</button>` : `<button id="aiDraftUseAsBroadcast" type="button" style="flex:1; padding:0.7rem; background:linear-gradient(135deg,#ec4899,#8b5cf6); border:0; border-radius:8px; color:#fff; font-weight:700; cursor:pointer;">📢 この文面で一斉送信フォームを開く</button>`}
+        <button id="aiDraftRegen" type="button" style="padding:0.7rem 1rem; background:rgba(255,255,255,0.08); border:0; border-radius:8px; color:#c7d2fe; cursor:pointer;">🔁 再生成</button>
+        <button id="aiDraftCopy" type="button" style="padding:0.7rem 1rem; background:rgba(255,255,255,0.08); border:0; border-radius:8px; color:#c7d2fe; cursor:pointer;">📋 コピー</button>
+      </div>
+      <div id="aiDraftMsg" style="margin-top:0.5rem; font-size:0.78rem; min-height:1em;"></div>
+      <div style="margin-top:0.5rem; font-size:0.7rem; color:#71717a; text-align:right;">model: ${escapeHtml(data.model || 'gemini-2.5-flash')} ・ 必ず塾長が確認・編集してから送信してください</div>`;
+
+    body.querySelector('#aiDraftCopy').addEventListener('click', async () => {
+      const t = body.querySelector('#aiDraftText').value;
+      try {
+        await navigator.clipboard.writeText(t);
+        body.querySelector('#aiDraftMsg').innerHTML = '<span style="color:#86efac;">✅ コピーしました</span>';
+      } catch { body.querySelector('#aiDraftMsg').innerHTML = '<span style="color:#fca5a5;">❌ コピー失敗 (手動でテキスト選択してコピーしてください)</span>'; }
+    });
+    body.querySelector('#aiDraftRegen').addEventListener('click', () => openAiDraftModal(kind, context, hint, targetName, targetSid));
+
+    if (kind === 'reply_draft') {
+      body.querySelector('#aiDraftUseAsReply').addEventListener('click', () => {
+        const t = body.querySelector('#aiDraftText').value;
+        switchMsgTab('student');
+        const sel = document.getElementById('msgStudentSelect');
+        if (sel && targetSid) sel.value = String(targetSid);
+        const subj = document.getElementById('msgSubject');
+        if (subj && !subj.value) subj.value = `Re: お問い合わせの件 (${targetName || ''})`;
+        const bodyInp = document.getElementById('msgBody');
+        if (bodyInp) bodyInp.value = t;
+        modal.style.display = 'none';
+        const sec = document.getElementById('messagesSection');
+        if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    } else {
+      body.querySelector('#aiDraftUseAsBroadcast').addEventListener('click', () => {
+        const t = body.querySelector('#aiDraftText').value;
+        switchMsgTab('broadcast');
+        const subj = document.getElementById('msgSubject');
+        if (subj && !subj.value) subj.value = '';
+        const bodyInp = document.getElementById('msgBody');
+        if (bodyInp) bodyInp.value = t;
+        modal.style.display = 'none';
+        const sec = document.getElementById('messagesSection');
+        if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+  } catch (e) {
+    body.innerHTML = `<div style="color:#fca5a5; padding:1rem;">❌ 生成失敗: ${escapeHtml(e.message || '')}</div>`;
   }
 }
