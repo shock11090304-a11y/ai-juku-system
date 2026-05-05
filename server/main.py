@@ -15040,6 +15040,84 @@ def mark_message_read(msg_id: int, request: Request, authorization: Optional[str
         conn.close()
 
 
+class CourseInquiryRequest(BaseModel):
+    course: str  # 'kokuritsu_nankan'
+    note: Optional[str] = None  # 任意の追記
+
+
+@app.post("/api/student/course-inquiry")
+def student_course_inquiry(payload: CourseInquiryRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒: コース申込問い合わせ。CEOダッシュ通知 + 塾長 email 通知 + 生徒に確認 in-app message を送信。"""
+    _check_rate_limit_ip(request, bucket="course_inquiry", limit=5, window=600)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    course = (payload.course or "").strip()
+    if course != _STUDY_LOG_TARGET_COURSE:
+        raise HTTPException(status_code=400, detail="course が不正です")
+    note = _sanitize_text(payload.note, 500)
+    course_label = "国公立難関大学コース"
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 監査 events に記録
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("course_inquiry", json.dumps({
+                    "student_id": student["id"], "name": student["name"], "email": student.get("email"),
+                    "grade": student.get("grade"), "course": course, "note": note,
+                }, ensure_ascii=False), "student_action")
+            )
+        except Exception as ev_err:
+            log.warning(f"[CourseInquiry] events log failed: {ev_err}")
+
+        # 塾長宛 in-app message として messages テーブルにも保存 (CEO ダッシュ履歴に出す)
+        admin_subject = f"📥 {course_label} 申込問い合わせ ({student['name']})"
+        admin_body = f"生徒「{student['name']}」({student.get('grade') or '学年未設定'}) から {course_label} の申込問い合わせがありました。\n\nメール: {student.get('email') or '未登録'}\nメモ: {note or '(なし)'}"
+        try:
+            c.execute(
+                "INSERT INTO messages (sender_type, sender_id, recipient_type, recipient_id, broadcast_filter, subject, body, sent_via, email_status) "
+                "VALUES (?,?,?,?,?,?,?,?,?)",
+                ("student", student["id"], "admin", None, None, admin_subject, admin_body, "in_app", None)
+            )
+        except Exception as me:
+            log.warning(f"[CourseInquiry] messages log failed: {me}")
+        # 生徒に確認 in-app message を保存
+        try:
+            c.execute(
+                "INSERT INTO messages (sender_type, sender_id, recipient_type, recipient_id, broadcast_filter, subject, body, sent_via, email_status) "
+                "VALUES (?,?,?,?,?,?,?,?,?)",
+                ("admin", None, "student", student["id"], None,
+                 f"📥 {course_label} 申込お問い合わせを受け付けました",
+                 f"このたびは {course_label} へのお問い合わせありがとうございます。\n塾長から折り返しご連絡いたします (通常 1〜2 営業日以内)。\n\nお問い合わせ内容:\n{note or '(コメントなし)'}",
+                 "in_app", None)
+            )
+        except Exception as me2:
+            log.warning(f"[CourseInquiry] confirm message failed: {me2}")
+
+        conn.commit()
+        log.info(f"[CourseInquiry] student={student['id']} course={course} ip={_client_ip(request)}")
+    finally:
+        conn.close()
+
+    # 塾長宛 email 通知 (env DAILY_SNS_TO_EMAIL を流用 / 未設定なら skip)
+    admin_to = os.getenv("DAILY_SNS_TO_EMAIL") or os.getenv("MONITORING_TO_EMAIL")
+    if admin_to and RESEND_API_KEY:
+        try:
+            _send_message_email(
+                admin_to,
+                f"📥 {course_label} 申込問い合わせ ({student['name']})",
+                f"塾長へ\n\n生徒「{student['name']}」({student.get('grade') or '学年未設定'}) から {course_label} の申込問い合わせがありました。\n\nメール: {student.get('email') or '未登録'}\nメモ: {note or '(なし)'}\n\nCEO ダッシュ → 📨 メッセージ配信 → 送信履歴 で詳細確認できます。",
+                student_name="塾長"
+            )
+        except Exception as ee:
+            log.warning(f"[CourseInquiry] admin email failed: {ee}")
+
+    return {"ok": True, "message": "お問い合わせを受け付けました。塾長から折り返しご連絡いたします。"}
+
+
 @app.get("/api/messages/me/unread-count")
 def get_my_unread_count(authorization: Optional[str] = Header(None)):
     """生徒: 未読件数 (badge 表示用 - 軽量)。"""

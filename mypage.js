@@ -637,10 +637,10 @@ function initStudyLog() {
             <div style="font-size:2.5rem; margin-bottom:0.5rem;">🎯</div>
             <div style="color:#fbbf24; font-weight:700; font-size:1.05rem; margin-bottom:0.5rem;">国公立難関大学コース 受講生 限定機能</div>
             <p style="color:#a1a1aa; font-size:0.88rem; margin:0.5rem 0 1rem 0;">毎日の学習時間・教材・科目を記録し、塾長から励ましコメント。東大・京大・国公立医学部志望者向けの徹底学習管理を提供します。</p>
-            <div style="font-size:0.85rem; color:#d4d4d8;">
-              ご興味のある方は<strong style="color:#fbbf24;">塾長まで直接お問い合わせください</strong>
-            </div>
+            <button type="button" class="course-inquiry-btn" data-course="kokuritsu_nankan" data-source="study-log" style="display:inline-block; padding:0.85rem 1.5rem; background:linear-gradient(135deg,#fbbf24,#ec4899); color:#fff; border:0; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(236,72,153,0.3);">📩 塾長に申込問い合わせをする</button>
+            <div class="course-inquiry-msg" style="margin-top:0.7rem; font-size:0.82rem;"></div>
           </div>`;
+        bindCourseInquiryButtons(section);
       }
       return;
     }
@@ -852,8 +852,10 @@ function initStudyPlan() {
             <div style="font-size:2.5rem; margin-bottom:0.5rem;">📅</div>
             <div style="color:#fbbf24; font-weight:700; font-size:1.05rem; margin-bottom:0.5rem;">志望校合格までのロードマップを描こう</div>
             <p style="color:#a1a1aa; font-size:0.88rem; margin:0.5rem 0 1rem 0;">学習計画 + 進捗ガントチャート + 月間カレンダーで「いつまでに何を」を可視化。</p>
-            <div style="font-size:0.85rem; color:#d4d4d8;">国公立難関大学コースで利用可能 — <strong style="color:#fbbf24;">塾長まで直接お問い合わせください</strong></div>
+            <button type="button" class="course-inquiry-btn" data-course="kokuritsu_nankan" data-source="study-plan" style="display:inline-block; padding:0.85rem 1.5rem; background:linear-gradient(135deg,#fbbf24,#ec4899); color:#fff; border:0; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(236,72,153,0.3);">📩 塾長に申込問い合わせをする</button>
+            <div class="course-inquiry-msg" style="margin-top:0.7rem; font-size:0.82rem;"></div>
           </div>`;
+        bindCourseInquiryButtons(section);
       }
       return;
     }
@@ -1225,4 +1227,47 @@ async function loadMyMessages() {
     const retryBtn = document.getElementById('msgRetryBtn');
     if (retryBtn) retryBtn.addEventListener('click', loadMyMessages);
   }
+}
+
+
+// ==========================================================================
+// 📩 コース申込問い合わせ (一般生徒の CTA ボタン)
+// ==========================================================================
+function bindCourseInquiryButtons(scope) {
+  const root = scope || document;
+  root.querySelectorAll('.course-inquiry-btn').forEach(btn => {
+    if (btn._inquiryBound) return;
+    btn._inquiryBound = true;
+    btn.addEventListener('click', async () => {
+      if (btn.disabled) return;
+      const course = btn.getAttribute('data-course') || 'kokuritsu_nankan';
+      const source = btn.getAttribute('data-source') || '';
+      const msgEl = btn.parentElement.querySelector('.course-inquiry-msg');
+      // 確認ダイアログ (誤タップ防止)
+      const noteRaw = prompt('塾長への伝言があれば入力してください (任意・最大500文字)\n\n空欄のまま OK で送信できます。', '');
+      if (noteRaw === null) return; // キャンセル
+      btn.disabled = true;
+      const originalText = btn.textContent;
+      btn.textContent = '送信中...';
+      try {
+        const data = await slApiFetch('/api/student/course-inquiry', {
+          method: 'POST',
+          body: JSON.stringify({ course, note: (noteRaw || ('mypage:' + source)).trim() }),
+        });
+        if (msgEl) {
+          msgEl.innerHTML = `<span style="color:#86efac;">✅ ${escapeHtml(data.message || 'お問い合わせを受け付けました')}</span>`;
+        }
+        btn.textContent = '✅ 送信済み';
+        btn.style.background = 'rgba(134,239,172,0.2)';
+        btn.style.color = '#86efac';
+        btn.style.boxShadow = 'none';
+        // refresh unread badge (確認 message が届いた)
+        if (typeof refreshUnreadBadge === 'function') refreshUnreadBadge();
+      } catch (e) {
+        if (msgEl) msgEl.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(e.message || '送信に失敗しました')}</span>`;
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    });
+  });
 }
