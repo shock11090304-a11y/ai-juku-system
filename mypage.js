@@ -469,6 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
   try { bindTrialOnboarding(); } catch (e) { console.error('bindTrialOnboarding failed:', e); }
   try { renderTrialOnboarding(); } catch (e) { console.error('renderTrialOnboarding failed:', e); }
   try { initStudyLog(); } catch (e) { console.error('initStudyLog failed:', e); }
+  try { initCurriculum(); } catch (e) { console.error('initCurriculum failed:', e); }
   try { initStudyPlan(); } catch (e) { console.error('initStudyPlan failed:', e); }
   try { initMessages(); } catch (e) { console.error('initMessages failed:', e); }
   try { initReferralSection(); } catch (e) { console.error('initReferralSection failed:', e); }
@@ -1654,4 +1655,267 @@ function bindCourseInquiryButtons(scope) {
       }
     });
   });
+}
+
+
+// ==========================================================================
+// 🎓 合格カリキュラム (Phase 4 - 国公立難関大学コース限定 / 難関私立も対象)
+// ==========================================================================
+function initCurriculum() {
+  const section = document.querySelector('.curriculum-section');
+  const tryInit = (retries) => {
+    const student = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || null;
+    if (!student) {
+      if (section) section.style.display = 'none';
+      if (retries > 0) setTimeout(() => tryInit(retries - 1), 200);
+      return;
+    }
+    if (typeof student.course === 'undefined' && retries > 0) {
+      setTimeout(() => tryInit(retries - 1), 200);
+      return;
+    }
+    if (student.course !== 'kokuritsu_nankan') {
+      // 一般生徒には CTA 表示 (難関私立も対象である旨を明記)
+      if (section) {
+        section.style.display = '';
+        section.innerHTML = `
+          <div class="section-title"><h2>🎓 合格カリキュラム <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">難関大学コース 限定</span></h2></div>
+          <div style="padding:1.2rem; background:rgba(251,191,36,0.06); border:1px dashed rgba(251,191,36,0.35); border-radius:12px; text-align:center;">
+            <div style="font-size:2.5rem; margin-bottom:0.5rem;">🎓</div>
+            <div style="color:#fbbf24; font-weight:700; font-size:1.05rem; margin-bottom:0.5rem;">入試日から逆算した合格までの全体ロードマップ</div>
+            <p style="color:#a1a1aa; font-size:0.88rem; margin:0.5rem 0 1rem 0;">AI が 4-6 フェーズに分割して教材・期間・マイルストーンを提案。<br><strong style="color:#fbbf24;">国公立 + 難関私立大学</strong> 志望者が対象です。</p>
+            <div style="font-size:0.85rem; color:#d4d4d8;"><strong style="color:#fbbf24;">塾長まで直接お問い合わせください</strong></div>
+          </div>`;
+      }
+      return;
+    }
+    if (section) section.style.display = '';
+    bindCurriculumButtons();
+    loadMyCurricula();
+  };
+  tryInit(10);
+}
+
+let _cuLastList = [];
+let _cuLastPreview = null;
+
+function bindCurriculumButtons() {
+  const toggleBtn = document.getElementById('cuToggleAiBtn');
+  const cancelBtn = document.getElementById('cuAiCancelBtn');
+  const submitBtn = document.getElementById('cuAiGenSubmit');
+  if (toggleBtn && !toggleBtn._cuBound) {
+    toggleBtn.addEventListener('click', () => {
+      const w = document.getElementById('cuAiWrap');
+      const isOpen = w.style.display !== 'none';
+      w.style.display = isOpen ? 'none' : '';
+      if (!isOpen) {
+        // default values
+        const today = _slJstDate(0);
+        if (!document.getElementById('cuAiStart').value) document.getElementById('cuAiStart').value = today;
+        if (!document.getElementById('cuAiDailyMin').value) document.getElementById('cuAiDailyMin').value = '60';
+      }
+    });
+    toggleBtn._cuBound = true;
+  }
+  if (cancelBtn && !cancelBtn._cuBound) {
+    cancelBtn.addEventListener('click', () => { document.getElementById('cuAiWrap').style.display = 'none'; });
+    cancelBtn._cuBound = true;
+  }
+  if (submitBtn && !submitBtn._cuBound) {
+    submitBtn.addEventListener('click', generateCurriculumWithAi);
+    submitBtn._cuBound = true;
+  }
+}
+
+async function generateCurriculumWithAi() {
+  const btn = document.getElementById('cuAiGenSubmit');
+  const msg = document.getElementById('cuAiMsg');
+  const previewEl = document.getElementById('cuAiPreview');
+  if (!btn || btn.disabled) return;
+  const univ = document.getElementById('cuAiUniv').value.trim();
+  const faculty = document.getElementById('cuAiFaculty').value.trim();
+  const start = document.getElementById('cuAiStart').value;
+  const exam = document.getElementById('cuAiExam').value;
+  const dailyMin = parseInt(document.getElementById('cuAiDailyMin').value, 10) || 60;
+  const baseline = document.getElementById('cuAiBaseline').value.trim();
+
+  if (!univ) { msg.style.color = '#fca5a5'; msg.textContent = '志望校は必須です'; return; }
+  if (!exam) { msg.style.color = '#fca5a5'; msg.textContent = '入試日は必須です'; return; }
+  if (start && exam <= start) { msg.style.color = '#fca5a5'; msg.textContent = '入試日は開始日より後である必要があります'; return; }
+
+  btn.disabled = true; btn.textContent = '🤖 AI 生成中... (15-40秒)';
+  msg.style.color = '#c4b5fd'; msg.textContent = '🤖 入試日から逆算してフェーズ分割しています...';
+  previewEl.innerHTML = '';
+  try {
+    const data = await slApiFetch('/api/curricula/ai-generate', {
+      method: 'POST',
+      body: JSON.stringify({
+        target_university: univ,
+        target_faculty: faculty || undefined,
+        exam_date: exam,
+        start_date: start || undefined,
+        daily_minutes: dailyMin,
+        baseline_note: baseline || undefined,
+      }),
+    });
+    const preview = data.preview;
+    _cuLastPreview = preview;
+    if (!preview || !preview.phases || !preview.phases.length) throw new Error('AI が phases を返しませんでした');
+    msg.style.color = '#86efac'; msg.textContent = `✅ ${preview.phases.length} フェーズの合格カリキュラムを生成しました (プレビュー → 保存ボタンで確定)`;
+    previewEl.innerHTML = renderCurriculumPreview(preview);
+    document.getElementById('cuPreviewSaveBtn').addEventListener('click', saveCurriculumFromPreview);
+  } catch (e) {
+    msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || '生成失敗');
+  } finally {
+    btn.disabled = false; btn.textContent = '✨ カリキュラムを生成する';
+  }
+}
+
+function renderCurriculumPreview(c) {
+  const examDate = c.exam_date;
+  const startDate = c.start_date;
+  const today = _slJstDate(0);
+  const remainDays = Math.max(0, Math.ceil((new Date(examDate) - new Date(today)) / 86400000));
+  return `
+    <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1rem; margin-top:0.5rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+        <div style="font-weight:800; color:#fbbf24; font-size:1.05rem;">🎓 ${escapeHtml(c.target_university)}${c.target_faculty ? ` <span style="color:#a1a1aa; font-size:0.85rem;">${escapeHtml(c.target_faculty)}</span>` : ''}</div>
+        <div style="font-size:0.75rem; color:#a1a1aa;">入試まで <strong style="color:#ec4899;">${remainDays}日</strong></div>
+      </div>
+      <div style="font-size:0.78rem; color:#a1a1aa; margin-bottom:0.7rem;">${escapeHtml(startDate)} 〜 ${escapeHtml(examDate)} ・ 1日 ${c.daily_minutes}分</div>
+      ${c.phases.map((p, i) => `
+        <div style="background:rgba(255,255,255,0.04); border-left:4px solid #a78bfa; border-radius:8px; padding:0.7rem; margin-bottom:0.5rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
+            <div style="font-weight:700; color:#c4b5fd;">${i + 1}. ${escapeHtml(p.name)}</div>
+            <div style="font-size:0.72rem; color:#71717a;">${escapeHtml(p.start_date)} 〜 ${escapeHtml(p.end_date)}</div>
+          </div>
+          <div style="font-size:0.85rem; color:#e4e4e7; margin-bottom:0.4rem;">🎯 ${escapeHtml(p.focus)}</div>
+          ${p.materials && p.materials.length ? `<div style="font-size:0.78rem; color:#a1a1aa; margin-bottom:0.3rem;">📚 教材: ${p.materials.map(m => `<span style="background:rgba(99,102,241,0.15); color:#c7d2fe; padding:0.1rem 0.4rem; border-radius:4px; margin-right:0.2rem; display:inline-block; margin-bottom:0.2rem;">${escapeHtml(m)}</span>`).join('')}</div>` : ''}
+          ${p.milestones && p.milestones.length ? `<div style="font-size:0.78rem; color:#a1a1aa;">📌 マイルストーン: <ul style="margin:0.2rem 0 0 1rem; padding:0;">${p.milestones.map(m => `<li>${escapeHtml(m)}</li>`).join('')}</ul></div>` : ''}
+        </div>
+      `).join('')}
+      <button id="cuPreviewSaveBtn" type="button" style="width:100%; margin-top:0.5rem; padding:0.75rem; background:linear-gradient(135deg,#10b981,#34d399); border:0; border-radius:8px; color:#fff; font-weight:800; cursor:pointer;">✅ このカリキュラムで保存する</button>
+      <div id="cuPreviewSaveMsg" style="margin-top:0.4rem; font-size:0.78rem; min-height:1em;"></div>
+    </div>`;
+}
+
+async function saveCurriculumFromPreview() {
+  if (!_cuLastPreview) return;
+  const btn = document.getElementById('cuPreviewSaveBtn');
+  const msg = document.getElementById('cuPreviewSaveMsg');
+  btn.disabled = true; btn.textContent = '保存中...';
+  try {
+    await slApiFetch('/api/curricula', {
+      method: 'POST',
+      body: JSON.stringify({
+        target_university: _cuLastPreview.target_university,
+        target_faculty: _cuLastPreview.target_faculty,
+        exam_date: _cuLastPreview.exam_date,
+        start_date: _cuLastPreview.start_date,
+        daily_minutes: _cuLastPreview.daily_minutes,
+        baseline_note: _cuLastPreview.baseline_note,
+        phases: _cuLastPreview.phases,
+        ai_model: _cuLastPreview.ai_model,
+      }),
+    });
+    if (msg) { msg.style.color = '#86efac'; msg.textContent = '✅ カリキュラムを保存しました'; }
+    document.getElementById('cuAiWrap').style.display = 'none';
+    _cuLastPreview = null;
+    await loadMyCurricula();
+  } catch (e) {
+    if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '❌ 保存失敗: ' + (e.message || ''); }
+    btn.disabled = false; btn.textContent = '✅ このカリキュラムで保存する';
+  }
+}
+
+async function loadMyCurricula() {
+  const list = document.getElementById('cuList');
+  if (!list) return;
+  try {
+    const data = await slApiFetch('/api/curricula/me');
+    const items = data.curricula || [];
+    _cuLastList = items;
+    if (!items.length) {
+      list.innerHTML = '<div style="text-align:center; color:#71717a; padding:1.5rem; background:rgba(0,0,0,0.2); border-radius:10px;">🎓 カリキュラムがまだありません。「🤖 AI に作ってもらう」から生成してみよう！</div>';
+      return;
+    }
+    const today = _slJstDate(0);
+    list.innerHTML = items.map(c => {
+      const remainDays = Math.max(0, Math.ceil((new Date(c.exam_date) - new Date(today)) / 86400000));
+      const totalDays = Math.max(1, Math.ceil((new Date(c.exam_date) - new Date(c.start_date)) / 86400000));
+      const elapsedDays = Math.max(0, Math.min(totalDays, Math.ceil((new Date(today) - new Date(c.start_date)) / 86400000)));
+      const dayPct = Math.round(elapsedDays / totalDays * 100);
+      const statusBadge = c.status === 'active' ? '<span style="background:rgba(134,239,172,0.18); color:#86efac; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:700;">進行中</span>'
+        : c.status === 'completed' ? '<span style="background:rgba(56,189,248,0.18); color:#7dd3fc; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:700;">完了</span>'
+        : '<span style="background:rgba(113,113,122,0.18); color:#a1a1aa; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:700;">アーカイブ</span>';
+      // 現在のフェーズ判定
+      const currentPhase = (c.phases || []).find(p => p.start_date <= today && today <= p.end_date) || (c.phases || []).find(p => today < p.start_date);
+      return `
+        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(167,139,250,0.3); border-left:4px solid #a78bfa; border-radius:10px; padding:1rem; margin-bottom:0.7rem;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem; flex-wrap:wrap; gap:0.4rem;">
+            <div style="flex:1;">
+              <div style="font-weight:800; color:#fbbf24; font-size:1.05rem;">🎓 ${escapeHtml(c.target_university)}${c.target_faculty ? ` <span style="color:#a1a1aa; font-size:0.85rem;">${escapeHtml(c.target_faculty)}</span>` : ''} ${statusBadge}</div>
+              <div style="font-size:0.75rem; color:#a1a1aa; margin-top:0.2rem;">${escapeHtml(c.start_date)} 〜 ${escapeHtml(c.exam_date)} ・ 1日 ${c.daily_minutes || 60}分</div>
+              ${currentPhase ? `<div style="font-size:0.85rem; color:#c4b5fd; margin-top:0.3rem;">📍 現在: <strong>${escapeHtml(currentPhase.name)}</strong> ${currentPhase.start_date <= today ? '(進行中)' : '(まだ先)'}</div>` : ''}
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:1.4rem; font-weight:800; color:#ec4899;">${remainDays}日</div>
+              <div style="font-size:0.7rem; color:#71717a;">入試まで</div>
+            </div>
+          </div>
+          <div style="background:rgba(0,0,0,0.3); border-radius:6px; height:8px; overflow:hidden; margin-bottom:0.5rem;">
+            <div style="background:linear-gradient(90deg,#a78bfa,#ec4899); height:100%; width:${dayPct}%;"></div>
+          </div>
+          <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:0.5rem;">
+            <button data-id="${c.id}" class="cu-detail-btn" style="background:rgba(99,102,241,0.2); color:#c7d2fe; border:0; padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.78rem;">📖 詳細を見る</button>
+            <button data-id="${c.id}" class="cu-expand-btn" style="background:linear-gradient(135deg,#10b981,#34d399); color:#fff; border:0; padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:700;">📅 学習計画に展開</button>
+            <button data-id="${c.id}" class="cu-delete-btn" style="background:rgba(239,68,68,0.15); color:#fca5a5; border:0; padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer; font-size:0.78rem;">🗑 削除</button>
+          </div>
+          <div id="cuDetail-${c.id}" style="display:none; margin-top:0.6rem;">
+            ${(c.phases || []).map((p, i) => `
+              <div style="background:rgba(0,0,0,0.25); border-left:3px solid ${p.start_date <= today && today <= p.end_date ? '#fbbf24' : 'rgba(255,255,255,0.1)'}; border-radius:6px; padding:0.6rem; margin-bottom:0.4rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <div style="font-weight:700; color:#e4e4e7; font-size:0.88rem;">${i + 1}. ${escapeHtml(p.name)}</div>
+                  <div style="font-size:0.7rem; color:#71717a;">${escapeHtml(p.start_date)}〜${escapeHtml(p.end_date)}</div>
+                </div>
+                <div style="font-size:0.78rem; color:#d4d4d8; margin-top:0.3rem;">🎯 ${escapeHtml(p.focus)}</div>
+                ${p.materials && p.materials.length ? `<div style="font-size:0.75rem; color:#a1a1aa; margin-top:0.3rem;">📚 ${p.materials.map(m => escapeHtml(m)).join(' / ')}</div>` : ''}
+                ${p.milestones && p.milestones.length ? `<div style="font-size:0.75rem; color:#a1a1aa; margin-top:0.3rem;">📌 ${p.milestones.map(m => '・' + escapeHtml(m)).join(' ')}</div>` : ''}
+              </div>
+            `).join('')}
+          </div>
+        </div>`;
+    }).join('');
+    list.querySelectorAll('.cu-detail-btn').forEach(b => b.addEventListener('click', () => {
+      const id = b.getAttribute('data-id');
+      const d = document.getElementById('cuDetail-' + id);
+      if (d) d.style.display = d.style.display === 'none' ? '' : 'none';
+    }));
+    list.querySelectorAll('.cu-expand-btn').forEach(b => b.addEventListener('click', () => expandCurriculumToPlans(b.getAttribute('data-id'))));
+    list.querySelectorAll('.cu-delete-btn').forEach(b => b.addEventListener('click', () => deleteCurriculum(b.getAttribute('data-id'))));
+  } catch (e) {
+    console.error('loadMyCurricula failed:', e);
+    list.innerHTML = `<div style="text-align:center; color:#fca5a5; padding:1rem;">⚠️ カリキュラム読み込み失敗 (${escapeHtml(e.message || '')})</div>`;
+  }
+}
+
+async function expandCurriculumToPlans(curriculumId) {
+  if (!confirm('このカリキュラムの全フェーズの教材を「学習計画」に一括展開しますか?\n（既存の同名計画はスキップされます）')) return;
+  try {
+    const data = await slApiFetch(`/api/curricula/${encodeURIComponent(curriculumId)}/expand-to-plans`, { method: 'POST' });
+    alert(`✅ ${data.added} 件の学習計画を追加しました${data.skipped ? ` (重複でスキップ ${data.skipped} 件)` : ''}`);
+    await loadMyStudyPlans();
+  } catch (e) {
+    alert('展開失敗: ' + (e.message || ''));
+  }
+}
+
+async function deleteCurriculum(curriculumId) {
+  if (!confirm('このカリキュラムを削除しますか?\n（学習計画には影響しません）')) return;
+  try {
+    await slApiFetch(`/api/curricula/${encodeURIComponent(curriculumId)}`, { method: 'DELETE' });
+    await loadMyCurricula();
+  } catch (e) {
+    alert('削除失敗: ' + (e.message || ''));
+  }
 }

@@ -584,6 +584,25 @@ def init_db():
     CREATE UNIQUE INDEX IF NOT EXISTS uq_study_plans_no_dup
         ON study_plans(student_id, subject, COALESCE(material,''), start_date, end_date)
         WHERE status != 'archived';
+    -- 合格カリキュラム (Phase 4 - 国公立難関大学コース限定・塾長指示 2026-05-06)
+    -- 難関大学 (国公立 + 難関私立) 志望者向けの全体ロードマップ。1生徒に通常1件 active。
+    CREATE TABLE IF NOT EXISTS curricula (
+        id {pk},
+        student_id INTEGER NOT NULL,
+        target_university TEXT NOT NULL,
+        target_faculty TEXT,
+        exam_date DATE NOT NULL,
+        start_date DATE NOT NULL,
+        daily_minutes INTEGER,
+        baseline_note TEXT,
+        phases TEXT NOT NULL,
+        ai_model TEXT,
+        status TEXT DEFAULT 'active',
+        note TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_curricula_student ON curricula(student_id, status);
     -- 塾長→生徒メッセージ機能 (Phase 3 - email only, 塾長指示 2026-05-05)
     CREATE TABLE IF NOT EXISTS messages (
         id {pk},
@@ -15145,6 +15164,481 @@ def mark_message_read(msg_id: int, request: Request, authorization: Optional[str
         )
         conn.commit()
         return {"ok": True}
+    finally:
+        conn.close()
+
+
+# ==========================================================================
+# Routes: Curricula (Phase 4 - 合格カリキュラム / 国公立難関大学コース限定)
+# 塾長指示 2026-05-06: 学習計画より上位の「合格までの全体ロードマップ」
+# ==========================================================================
+class CurriculumPhase(BaseModel):
+    name: str  # 例: 「基礎固め期」
+    start_date: str
+    end_date: str
+    focus: str  # 例: 「英文法と数学IAの基礎完成」
+    materials: List[str] = []  # 推奨教材
+    milestones: List[str] = []  # マイルストーン (例: 「7月末までに英単語1900完了」)
+
+
+class CurriculumCreateRequest(BaseModel):
+    target_university: str
+    target_faculty: Optional[str] = None
+    exam_date: str  # YYYY-MM-DD
+    start_date: str
+    daily_minutes: Optional[int] = None
+    baseline_note: Optional[str] = None  # 現状学力メモ
+    phases: List[CurriculumPhase]
+    ai_model: Optional[str] = None
+    note: Optional[str] = None
+
+
+class CurriculumUpdateRequest(BaseModel):
+    target_university: Optional[str] = None
+    target_faculty: Optional[str] = None
+    exam_date: Optional[str] = None
+    start_date: Optional[str] = None
+    daily_minutes: Optional[int] = None
+    baseline_note: Optional[str] = None
+    phases: Optional[List[CurriculumPhase]] = None
+    status: Optional[str] = None
+    note: Optional[str] = None
+
+
+class CurriculumAiGenRequest(BaseModel):
+    target_university: str
+    target_faculty: Optional[str] = None
+    exam_date: str
+    start_date: Optional[str] = None  # 省略時は today (JST)
+    daily_minutes: int = 60
+    baseline_note: Optional[str] = None  # 現状偏差値や状況
+
+
+_CURR_STATUSES = {"active", "completed", "archived"}
+
+
+def _validate_curr_dates(start_date: str, exam_date: str) -> tuple:
+    try:
+        sd = datetime.strptime((start_date or "").strip(), "%Y-%m-%d").date()
+        ed = datetime.strptime((exam_date or "").strip(), "%Y-%m-%d").date()
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=400, detail="日付フォーマット不正 (YYYY-MM-DD)")
+    if ed <= sd:
+        raise HTTPException(status_code=400, detail="入試日は開始日より後である必要があります")
+    today = _today_jst()
+    if (ed - today).days > 1825:  # 5年
+        raise HTTPException(status_code=400, detail="5年以上先の入試日は登録できません")
+    if (today - sd).days > 730:
+        raise HTTPException(status_code=400, detail="2年以上前の開始日は登録できません")
+    return sd, ed
+
+
+def _validate_curr_phases(phases: list) -> list:
+    """phases を validate して JSON serializable な list に正規化。"""
+    if not phases:
+        raise HTTPException(status_code=400, detail="phases は 1 件以上必須")
+    if len(phases) > 10:
+        raise HTTPException(status_code=400, detail="phases は最大 10 件")
+    out = []
+    for p in phases:
+        if isinstance(p, dict):
+            d = p
+        else:
+            d = p.dict() if hasattr(p, "dict") else dict(p)
+        name = _sanitize_text(d.get("name"), 60) or "フェーズ"
+        focus = _sanitize_text(d.get("focus"), 200) or ""
+        try:
+            sd = datetime.strptime((d.get("start_date") or "").strip(), "%Y-%m-%d").date()
+            ed = datetime.strptime((d.get("end_date") or "").strip(), "%Y-%m-%d").date()
+        except (ValueError, AttributeError):
+            raise HTTPException(status_code=400, detail=f"phase '{name}' の日付フォーマット不正")
+        if ed < sd:
+            raise HTTPException(status_code=400, detail=f"phase '{name}' の終了日は開始日以降である必要")
+        materials = []
+        for m in (d.get("materials") or [])[:10]:
+            t = _sanitize_text(m, 100)
+            if t:
+                materials.append(t)
+        milestones = []
+        for m in (d.get("milestones") or [])[:10]:
+            t = _sanitize_text(m, 200)
+            if t:
+                milestones.append(t)
+        out.append({
+            "name": name, "focus": focus,
+            "start_date": sd.isoformat(), "end_date": ed.isoformat(),
+            "materials": materials, "milestones": milestones,
+        })
+    return out
+
+
+@app.post("/api/curricula")
+def create_curriculum(payload: CurriculumCreateRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒: 合格カリキュラム作成 (国公立難関大学コース限定)。"""
+    _check_rate_limit_ip(request, bucket="curr_create", limit=20, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+
+    target_university = _sanitize_text(payload.target_university, 100)
+    if not target_university:
+        raise HTTPException(status_code=400, detail="志望校は必須です")
+    target_faculty = _sanitize_text(payload.target_faculty, 100)
+    sd, ed = _validate_curr_dates(payload.start_date, payload.exam_date)
+    phases_list = _validate_curr_phases(payload.phases)
+    daily = None
+    if payload.daily_minutes is not None:
+        try:
+            d = int(payload.daily_minutes)
+            if 0 < d <= 600:
+                daily = d
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="daily_minutes が不正")
+    baseline_note = _sanitize_text(payload.baseline_note, 1000)
+    note = _sanitize_text(payload.note, 1000)
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO curricula (student_id, target_university, target_faculty, exam_date, start_date, daily_minutes, baseline_note, phases, ai_model, note) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?) RETURNING id",
+            (student["id"], target_university, target_faculty, ed.isoformat(), sd.isoformat(), daily, baseline_note,
+             json.dumps(phases_list, ensure_ascii=False), _sanitize_text(payload.ai_model, 50), note)
+        )
+        returned = c.fetchone()
+        new_id = returned["id"] if returned else None
+        conn.commit()
+        log.info(f"[Curriculum] create id={new_id} student={student['id']} univ={target_university}")
+        return {"ok": True, "id": new_id}
+    finally:
+        conn.close()
+
+
+@app.put("/api/curricula/{curr_id}")
+def update_curriculum(curr_id: int, payload: CurriculumUpdateRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒: カリキュラム更新。"""
+    _check_rate_limit_ip(request, bucket="curr_update", limit=30, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT student_id, exam_date, start_date FROM curricula WHERE id = ?", (curr_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="カリキュラムが見つかりません")
+        if int(row["student_id"]) != int(student["id"]):
+            raise HTTPException(status_code=403, detail="権限がありません")
+
+        updates = {}
+        if payload.target_university is not None:
+            t = _sanitize_text(payload.target_university, 100)
+            if not t: raise HTTPException(status_code=400, detail="志望校は必須")
+            updates["target_university"] = t
+        if payload.target_faculty is not None:
+            updates["target_faculty"] = _sanitize_text(payload.target_faculty, 100)
+        if payload.baseline_note is not None:
+            updates["baseline_note"] = _sanitize_text(payload.baseline_note, 1000)
+        if payload.note is not None:
+            updates["note"] = _sanitize_text(payload.note, 1000)
+        if payload.status is not None:
+            if payload.status not in _CURR_STATUSES:
+                raise HTTPException(status_code=400, detail="status が不正")
+            updates["status"] = payload.status
+        if payload.daily_minutes is not None:
+            try:
+                d = int(payload.daily_minutes)
+                if not (0 < d <= 600): raise HTTPException(status_code=400, detail="daily_minutes は 1〜600")
+                updates["daily_minutes"] = d
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="daily_minutes が不正")
+        if payload.start_date is not None or payload.exam_date is not None:
+            new_sd = payload.start_date or str(row["start_date"])
+            new_ed = payload.exam_date or str(row["exam_date"])
+            sd, ed = _validate_curr_dates(new_sd, new_ed)
+            updates["start_date"] = sd.isoformat()
+            updates["exam_date"] = ed.isoformat()
+        if payload.phases is not None:
+            phases_list = _validate_curr_phases(payload.phases)
+            updates["phases"] = json.dumps(phases_list, ensure_ascii=False)
+
+        if not updates:
+            return {"ok": True, "no_change": True}
+        if USE_POSTGRES:
+            updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+        else:
+            updates["updated_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        set_clause = ", ".join([f"{k} = ?" for k in updates.keys()])
+        c.execute(f"UPDATE curricula SET {set_clause} WHERE id = ? AND student_id = ?", tuple(updates.values()) + (curr_id, student["id"]))
+        conn.commit()
+        log.info(f"[Curriculum] update id={curr_id} student={student['id']}")
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
+@app.delete("/api/curricula/{curr_id}")
+def delete_curriculum(curr_id: int, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒: カリキュラム削除。"""
+    _check_rate_limit_ip(request, bucket="curr_delete", limit=10, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT student_id FROM curricula WHERE id = ?", (curr_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="カリキュラムが見つかりません")
+        if int(row["student_id"]) != int(student["id"]):
+            raise HTTPException(status_code=403, detail="権限がありません")
+        c.execute("DELETE FROM curricula WHERE id = ? AND student_id = ?", (curr_id, student["id"]))
+        conn.commit()
+        log.info(f"[Curriculum] delete id={curr_id} student={student['id']}")
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
+@app.get("/api/curricula/me")
+def get_my_curricula(authorization: Optional[str] = Header(None)):
+    """生徒: 自分のカリキュラム一覧。"""
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT id, target_university, target_faculty, exam_date, start_date, daily_minutes, baseline_note, phases, ai_model, status, note, created_at "
+            "FROM curricula WHERE student_id = ? ORDER BY status ASC, exam_date ASC",
+            (student["id"],)
+        )
+        rows = c.fetchall()
+        items = []
+        for r in rows:
+            try:
+                phases = json.loads(r["phases"] or "[]")
+            except Exception:
+                phases = []
+            items.append({
+                "id": r["id"],
+                "target_university": r["target_university"],
+                "target_faculty": r["target_faculty"],
+                "exam_date": str(r["exam_date"]),
+                "start_date": str(r["start_date"]),
+                "daily_minutes": r["daily_minutes"],
+                "baseline_note": r["baseline_note"],
+                "phases": phases,
+                "ai_model": r["ai_model"],
+                "status": r["status"],
+                "note": r["note"],
+                "created_at": str(r["created_at"]) if r["created_at"] else None,
+            })
+        return {"ok": True, "curricula": items}
+    finally:
+        conn.close()
+
+
+@app.post("/api/curricula/ai-generate")
+def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒: AI で全体カリキュラムを生成 (DB に保存はしない、生徒が確認後に POST /api/curricula で保存)。"""
+    _check_rate_limit_ip(request, bucket="curr_ai_gen", limit=10, window=600)  # 10分10回
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+    if not GEMINI_API_KEY:
+        raise HTTPException(status_code=503, detail="Gemini が構成されていません")
+
+    target_university = _sanitize_text(payload.target_university, 100)
+    if not target_university:
+        raise HTTPException(status_code=400, detail="志望校は必須")
+    target_faculty = _sanitize_text(payload.target_faculty, 100) or ""
+    today = _today_jst()
+    sd_str = (payload.start_date or "").strip() or today.isoformat()
+    sd, ed = _validate_curr_dates(sd_str, payload.exam_date)
+    daily = max(15, min(int(payload.daily_minutes or 60), 600))
+    baseline = _sanitize_text(payload.baseline_note, 500) or "未指定"
+    months = max(1, round((ed - sd).days / 30))
+
+    sys_prompt = "受験戦略を立てる学習プランナーです。難関大学 (国公立・難関私立) 志望者に対し、入試日から逆算した全体カリキュラムを 4-6 フェーズに分割して提案します。各フェーズは現実的な期間と教材で構成。教師名や塾名は塾長指示で出さない。純粋な JSON のみ返答 (前置きや解説不要)。"
+    user_prompt = f"""志望校: {target_university}{(' / ' + target_faculty) if target_faculty else ''}
+開始日: {sd.isoformat()}
+入試日: {ed.isoformat()} (期間 {months} ヶ月)
+1日確保時間: {daily} 分
+現状: {baseline}
+
+上記から、難関大学合格までの全体カリキュラムを 4-6 フェーズに分割して JSON で返してください。
+
+出力形式 (フェンスや前置きなし):
+{{
+  "phases": [
+    {{
+      "name": "フェーズ名 (例: 基礎固め期 / 標準演習期 / 過去問演習期 / 直前期)",
+      "start_date": "YYYY-MM-DD",
+      "end_date": "YYYY-MM-DD",
+      "focus": "このフェーズの主軸 (60字以内、例: 英文法基礎 + 数学IA基礎完成)",
+      "materials": ["定番教材1", "定番教材2", "定番教材3"],
+      "milestones": ["月末までに〇〇完了 (60字以内)", "...", "..."]
+    }}
+  ]
+}}
+
+注意:
+- フェーズの期間は重複・空白なく開始日〜入試日を埋める
+- 直前期は入試日 1-2 ヶ月前から
+- 各フェーズに教材 2-5 件・マイルストーン 2-4 件
+- 受験科目構成 (志望校に必要な科目) を考慮して教材選定"""
+
+    body = {
+        "model": "gemini-2.5-flash",
+        "max_tokens": 4000,
+        "system": sys_prompt,
+        "messages": [{"role": "user", "content": user_prompt}],
+    }
+    try:
+        data = _call_gemini(body, model="gemini-2.5-flash", kind="curriculum_gen")
+        text = "".join(c.get("text", "") for c in (data.get("content") or []) if isinstance(c, dict)).strip()
+        if not text:
+            raise HTTPException(status_code=503, detail="AI が空文字を返しました")
+        # JSON parse
+        cleaned = text.strip()
+        if cleaned.startswith("```"):
+            import re as _re
+            cleaned = _re.sub(r'^```(?:json)?\s*|\s*```$', '', cleaned).strip()
+        try:
+            parsed = json.loads(cleaned)
+        except Exception:
+            import re as _re
+            m = _re.search(r'\{[\s\S]*\}', cleaned)
+            if not m:
+                raise HTTPException(status_code=503, detail="AI 出力 JSON 解析失敗")
+            parsed = json.loads(m.group(0))
+        phases_raw = parsed.get("phases") or []
+        if not phases_raw:
+            raise HTTPException(status_code=503, detail="AI が phases を返しませんでした")
+        # validate
+        phases_list = _validate_curr_phases(phases_raw)
+        log.info(f"[Curriculum] ai-generate student={student['id']} univ={target_university} phases={len(phases_list)}")
+        return {
+            "ok": True,
+            "preview": {
+                "target_university": target_university,
+                "target_faculty": target_faculty or None,
+                "exam_date": ed.isoformat(),
+                "start_date": sd.isoformat(),
+                "daily_minutes": daily,
+                "baseline_note": baseline if baseline != "未指定" else None,
+                "phases": phases_list,
+                "ai_model": data.get("_actual_model"),
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error(f"[Curriculum] ai-generate failed: {type(e).__name__}: {str(e)[:200]}")
+        raise HTTPException(status_code=503, detail=f"AI 生成失敗: {str(e)[:200]}")
+
+
+@app.post("/api/curricula/{curr_id}/expand-to-plans")
+def expand_curriculum_to_plans(curr_id: int, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒: カリキュラム各フェーズの教材を study_plans に一括展開。"""
+    _check_rate_limit_ip(request, bucket="curr_expand", limit=10, window=300)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, student_id, target_university, daily_minutes, phases FROM curricula WHERE id = ?", (curr_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="カリキュラムが見つかりません")
+        if int(row["student_id"]) != int(student["id"]):
+            raise HTTPException(status_code=403, detail="権限がありません")
+        try:
+            phases = json.loads(row["phases"] or "[]")
+        except Exception:
+            phases = []
+        if not phases:
+            raise HTTPException(status_code=400, detail="phases が空です")
+
+        daily = int(row["daily_minutes"] or 60)
+        # フェーズ別科目別 color
+        subject_colors = {"英語": "#6366f1", "数学": "#10b981", "国語": "#ec4899", "現代文": "#ec4899", "古文": "#f472b6", "漢文": "#fb7185",
+                          "理科": "#f59e0b", "物理": "#fbbf24", "化学": "#fb923c", "生物": "#84cc16", "地学": "#a3e635",
+                          "社会": "#8b5cf6", "日本史": "#a78bfa", "世界史": "#c4b5fd", "地理": "#7dd3fc",
+                          "倫理": "#67e8f9", "政経": "#22d3ee", "情報": "#94a3b8", "小論文": "#f472b6", "面接対策": "#94a3b8", "その他": "#71717a"}
+
+        def _guess_subject(material: str) -> str:
+            m = (material or "").lower()
+            if any(k in material for k in ["英", "english", "ターゲット", "シス単", "速読", "ネクステ", "vintage"]): return "英語"
+            if any(k in material for k in ["数", "チャート", "プラチカ", "1対1", "標問", "やさしい理系", "ハイ理"]): return "数学"
+            if any(k in material for k in ["古文", "漢文", "古典"]): return "古文"
+            if any(k in material for k in ["現代文", "得点奪取", "上級現代文"]): return "現代文"
+            if "国語" in material: return "国語"
+            if "物理" in material: return "物理"
+            if "化学" in material: return "化学"
+            if "生物" in material: return "生物"
+            if "日本史" in material: return "日本史"
+            if "世界史" in material: return "世界史"
+            if "地理" in material: return "地理"
+            if "倫" in material or "政経" in material: return "政経"
+            if "理科" in material: return "理科"
+            if "社会" in material or "歴史" in material: return "社会"
+            if "小論" in material: return "小論文"
+            return "その他"
+
+        added, skipped = 0, 0
+        for ph in phases:
+            ph_start = ph.get("start_date")
+            ph_end = ph.get("end_date")
+            if not ph_start or not ph_end:
+                continue
+            # フェーズ期間日数
+            try:
+                p_sd = datetime.strptime(ph_start, "%Y-%m-%d").date()
+                p_ed = datetime.strptime(ph_end, "%Y-%m-%d").date()
+            except Exception:
+                continue
+            ph_days = max(1, (p_ed - p_sd).days + 1)
+            materials = ph.get("materials") or []
+            if not materials:
+                continue
+            # 1教材あたり目標分数 = フェーズ総分数 / 教材数
+            per_material_min = max(60, (ph_days * daily) // max(1, len(materials)))
+            for mat in materials:
+                mat_clean = (mat or "").strip()[:100]
+                if not mat_clean:
+                    continue
+                subject = _guess_subject(mat_clean)
+                color = subject_colors.get(subject, "#6366f1")
+                title = f"[{ph.get('name','フェーズ')}] {mat_clean}"[:100]
+                try:
+                    c.execute(
+                        "INSERT INTO study_plans (student_id, title, subject, material, start_date, end_date, target_minutes, color, note) "
+                        "VALUES (?,?,?,?,?,?,?,?,?)",
+                        (student["id"], title, subject, mat_clean, ph_start, ph_end, per_material_min, color,
+                         f"カリキュラム自動展開 / フェーズ: {ph.get('name','')} / focus: {ph.get('focus','')}"[:1000])
+                    )
+                    added += 1
+                except IntegrityError:
+                    skipped += 1
+                except Exception as ee:
+                    log.warning(f"[Curriculum] expand insert failed: {ee}")
+                    skipped += 1
+        conn.commit()
+        log.info(f"[Curriculum] expand-to-plans curr={curr_id} added={added} skipped={skipped}")
+        return {"ok": True, "added": added, "skipped": skipped}
     finally:
         conn.close()
 
