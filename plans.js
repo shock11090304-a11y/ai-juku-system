@@ -36,13 +36,13 @@ const PLAN_CONFIG = {
         { name: '🎁 一度契約すれば永年¥14,500（値上げ対象外）', included: true, highlight: true, note: true },
       ],
     },
-    // ⭐ プレミアム ¥19,800 (新体系の主力プラン・国公立難関機能フル解放)
+    // ⭐ プレミアム ¥39,800 (主力プラン・学習管理機能フル解放)
     premium: {
       id: 'premium',
       name: 'プレミアム',
-      price: 19800,
-      priceLabel: '¥19,800',
-      tagline: 'AI 全機能無制限 + 学習管理 + 合格カリキュラム自動生成',
+      price: 39800,
+      priceLabel: '¥39,800',
+      tagline: 'AI 全機能無制限 + 学習管理 + 合格カリキュラム自動生成 + ZOOM 授業参加可',
       maxStudents: 1,
       aiModel: 'opus',
       color: '#8b5cf6',
@@ -67,12 +67,12 @@ const PLAN_CONFIG = {
         { name: '塾長との双方向メッセージ・授業ファイル受信', included: false, note: true },
       ],
     },
-    // 👨‍👩‍👧‍👦 家族プラン ¥39,800 (プレミアム × 3 名)
+    // 👨‍👩‍👧‍👦 家族プラン ¥59,800 (プレミアム × 3 名)
     family: {
       id: 'family',
       name: '家族プラン',
-      price: 39800,
-      priceLabel: '¥39,800',
+      price: 59800,
+      priceLabel: '¥59,800',
       tagline: '兄弟姉妹3名まで使える',
       maxStudents: 3,
       aiModel: 'opus',
@@ -84,7 +84,7 @@ const PLAN_CONFIG = {
         { name: '🆕 家族ダッシュボード（全員の進捗一覧）', included: true, highlight: true },
         { name: '🆕 兄弟姉妹のカリキュラム相互参照', included: true, highlight: true },
         { name: '🆕 保護者向け家族レポート', included: true, highlight: true },
-        { name: '生徒1人あたり実質¥13,267/月', included: true, note: true },
+        { name: '生徒1人あたり実質¥19,933/月', included: true, note: true },
         { name: '優先サポート', included: true },
       ],
     },
@@ -185,8 +185,8 @@ const PLAN_CONFIG = {
 
   // 年間先払い割引
   annualDiscount: {
-    premiumAnnual: { monthly: 19800, annual: 198000, saved: 39600, label: '年間¥198,000（2ヶ月分お得）' },
-    familyAnnual: { monthly: 39800, annual: 398000, saved: 79600, label: '年間¥398,000（2ヶ月分お得）' },
+    premiumAnnual: { monthly: 39800, annual: 398000, saved: 79600, label: '年間¥398,000（2ヶ月分お得）' },
+    familyAnnual: { monthly: 59800, annual: 598000, saved: 119600, label: '年間¥598,000（2ヶ月分お得）' },
   },
 };
 

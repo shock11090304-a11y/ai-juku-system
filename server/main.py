@@ -102,16 +102,16 @@ APP_SECRET = os.getenv("APP_SECRET", "")
 PRICE_MAP = {
     # 🎁 創設メンバー 永年¥14,500 (募集停止・既契約者据置)
     "founder_special": (STRIPE_PRICE_FOUNDER_SPECIAL, 14500, "創設メンバー (永年¥14,500)", 1),
-    # 新プラン構造（2026-05-06〜、4 プラン体系・国公立難関本クラスは Stripe ¥0 sub）
+    # プラン構造 (2026-05-06 改訂・通塾生のみ値下げ・プレミアム/家族は据置)
     "standard": (STRIPE_PRICE_STANDARD, 24980, "スタンダード (旧・募集停止)", 1),  # legacy 据置
-    "premium": (STRIPE_PRICE_PREMIUM, 19800, "プレミアム", 1),  # ¥39,800 → ¥19,800 値下げ
-    "family": (STRIPE_PRICE_FAMILY, 39800, "家族プラン（最大3名）", 3),  # ¥59,800 → ¥39,800 値下げ
-    "student_addon": (STRIPE_PRICE_STUDENT_ADDON, 5000, "通塾生プラン", 1),  # ¥9,800 → ¥5,000 値下げ
+    "premium": (STRIPE_PRICE_PREMIUM, 39800, "プレミアム", 1),  # 据置 + 学習管理機能を解放
+    "family": (STRIPE_PRICE_FAMILY, 59800, "家族プラン（最大3名）", 3),  # 据置
+    "student_addon": (STRIPE_PRICE_STUDENT_ADDON, 5000, "通塾生プラン", 1),  # ¥9,800 → ¥5,000 値下げ + 機能フル付与
     # 後方互換 (founder1 は 2026-04-28 廃止・新 founder_special に置換)
     "founder1": (STRIPE_PRICE_FOUNDER_SPECIAL, 14500, "創設メンバー (永年¥14,500)", 1),
     "ai": (STRIPE_PRICE_STANDARD, 24980, "スタンダード (旧・募集停止)", 1),
-    "hybrid": (STRIPE_PRICE_PREMIUM, 19800, "プレミアム", 1),
-    "intensive": (STRIPE_PRICE_FAMILY, 39800, "家族プラン（最大3名）", 3),
+    "hybrid": (STRIPE_PRICE_PREMIUM, 39800, "プレミアム", 1),
+    "intensive": (STRIPE_PRICE_FAMILY, 59800, "家族プラン（最大3名）", 3),
 }
 
 # 入塾金（トライアル後の初回請求に追加・通塾生アドオンは免除）
@@ -123,7 +123,7 @@ STUDENT_ADDON_PRICE = 5000
 # 創設メンバー体験は完全無料化 (CVR最大化方針)
 # 7日間 = GW長期休みに集中体験 → 休み明けに本契約継続を狙う設計
 FOUNDER_TRIAL_PRICE = 0
-FOUNDER_TRIAL_DAYS = 7
+FOUNDER_TRIAL_DAYS = 10  # 7→10 日に拡張 (塾長指示 2026-05-06: 学習管理 + ZOOM 授業を体感する適度な期間)
 # 旧 100名 → 新 50名限定 (2026-04-28 ピボット・¥14,500/月 永年・premium全機能)
 FOUNDER_LIMIT = int(os.getenv("FOUNDER_LIMIT", "50"))
 
@@ -1287,6 +1287,81 @@ def _check_rate_limit_ip(request, bucket: str, limit: int = 10, window: int = 60
                 del _RATE_LIMIT_STORE[k]
 
 
+def _send_trial_unused_warning_email(to_email: str, student_name: str, stage: str, login_url: str, days_unused: int) -> dict:
+    """体験中で未利用 (last_login_at IS NULL) の生徒に通告メール。
+    stage='early' (登録 3 日経過): 「使ってみませんか?」
+    stage='late' (体験終了 2 日前): 「終了が迫ってます」
+    塾長指示 2026-05-06: 登録のみで使用歴がない人に通告"""
+    import html as _html
+    if not RESEND_API_KEY:
+        log.warning(f"[DEV-MODE] Trial unused warning ({stage}) skipped for {to_email}")
+        return {"sent": False, "dev_mode": True}
+    safe_name = _html.escape(student_name or "")
+    greeting = f"{safe_name}さまの保護者さま" if safe_name else "保護者さま"
+
+    if stage == "early":
+        subject = "【AI学習コーチ塾】まだログインされていません — 体験を始めてみませんか?"
+        body_intro = (
+            f"お申込みありがとうございます。\n\n"
+            f"無料体験のお申込みから {days_unused} 日経過しましたが、まだ AI 学習コーチ塾にログインされていないようです。\n\n"
+            f"AI チューターや問題生成・学習記録など、体験できる機能はすべて無料で使えます。"
+        )
+        cta_label = "🎓 ログインして体験を始める"
+        bottom = "体験期間は 10 日間。何もしなければ自動終了し、課金は一切発生しません。"
+    elif stage == "late":
+        subject = f"【AI学習コーチ塾】無料体験 終了まで {days_unused} 日 — まだ未利用です"
+        body_intro = (
+            f"無料体験の終了が近づいています。\n\n"
+            f"残り {days_unused} 日 ですが、まだログイン履歴がありません。\n\n"
+            f"これまでの実績で「合格カリキュラム自動生成」「24h AI チューター」を最も気に入っていただいています。"
+            f" 1 度ログインしてから判断されるのをお勧めします。"
+        )
+        cta_label = "📅 ログインして残り日数を体験する"
+        bottom = "体験期間終了後は自動的にアクセスが失効します (課金は発生しません・データは保持)。"
+    else:
+        subject = "【AI学習コーチ塾】体験のご案内"
+        body_intro = "AI 学習コーチ塾の体験のご案内です。"
+        cta_label = "🎓 体験を始める"
+        bottom = ""
+
+    html = f"""<!DOCTYPE html>
+<html><body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 560px; margin: 0 auto; padding: 2rem;">
+<h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AI学習コーチ塾</h1>
+<p>{greeting}、こんにちは。</p>
+<p style="white-space:pre-line;">{_html.escape(body_intro)}</p>
+
+<p style="text-align:center; margin: 2rem 0;">
+  <a href="{login_url}" style="display:inline-block; padding: 1rem 2rem; background:linear-gradient(135deg,#6366f1,#ec4899); color:white; text-decoration:none; border-radius:8px; font-weight:700; font-size:1.05rem;">
+    {_html.escape(cta_label)}
+  </a>
+</p>
+
+<div style="background:#fafafa; padding:1rem; border-radius:6px; margin: 1.5rem 0; font-size: 0.9rem; color:#555;">
+  💡 {_html.escape(bottom)}
+</div>
+
+<p style="font-size:0.85rem; color:#666;">ご不明な点はお問い合わせください。</p>
+<hr style="margin:2rem 0; border:none; border-top:1px solid #eee;">
+<p style="font-size:0.8rem; color:#999;">
+  お問い合わせ: <a href="mailto:info@trillion-ai-juku.com" style="color:#6366f1;">info@trillion-ai-juku.com</a>
+</p>
+</body></html>"""
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({"from": FROM_EMAIL, "to": [to_email], "subject": subject, "html": html}).encode("utf-8"),
+            headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json", "User-Agent": "ai-juku-system/1.0"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode())
+            return {"sent": True, "resend_id": result.get("id")}
+    except Exception as e:
+        log.error(f"Trial unused warning ({stage}) email failed for {to_email}: {type(e).__name__}: {e}")
+        return {"sent": False, "error": str(e)}
+
+
 def _send_trial_ending_email(to_email: str, student_name: str, days_left: int, upgrade_url: str) -> dict:
     """体験終了リマインダーメール。継続したい人向けに本契約フォームへの誘導。
     体験終了時の自動課金は行わないので、何もしなければアカウントは自動失効する（データは保持）。
@@ -1748,11 +1823,12 @@ async def _trial_management_scheduler():
                 log.info("[TrialMgr] Skipped (already ran today by another replica)")
                 continue
 
-            # 3 タスクを順次実行 (例外は個別に握りつぶしてループ継続)
+            # 4 タスクを順次実行 (例外は個別に握りつぶしてループ継続)
             tasks = [
                 ("expire-trials", lambda: cron_expire_trials(x_cron_secret=secret, dry_run=False)),
                 ("trial-reminders", lambda: cron_trial_reminders(x_cron_secret=secret, dry_run=False)),
                 ("trial-followups", lambda: cron_trial_followups(x_cron_secret=secret, dry_run=False)),
+                ("trial-unused-warning", lambda: cron_trial_unused_warning(x_cron_secret=secret, dry_run=False)),
             ]
             results = {}
             for task_name, fn in tasks:
@@ -9905,7 +9981,7 @@ def trial_signup(payload: TrialSignup, request: Request):
     plan = (payload.plan or "hybrid")[:50]
 
     now = datetime.now(timezone.utc)
-    trial_end = now + timedelta(days=FOUNDER_TRIAL_DAYS)  # 7日間の完全無料体験
+    trial_end = now + timedelta(days=FOUNDER_TRIAL_DAYS)  # 10 日間の完全無料体験 (2026-05-06)
     conn = db()
     c = conn.cursor()
     is_existing = False
@@ -11356,6 +11432,117 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
     conn.commit()
     conn.close()
     return {"sent": sent, "skipped": skipped, "skipped_silent": skipped_silent, "candidates": len(candidates), "preview": preview if dry_run else None}
+
+
+@app.post("/api/cron/trial-unused-warning")
+def cron_trial_unused_warning(x_cron_secret: str = Header(None), dry_run: bool = False):
+    """体験中で last_login_at IS NULL の生徒に通告メール送信。
+    Stage 1 (early): 登録から 3 日経過 → 「体験を始めてみませんか?」
+    Stage 2 (late): 体験終了 2 日前 → 「終了が迫ってます」
+    notifications テーブルで重複送信防止 (template='trial_unused_early' / 'trial_unused_late')
+    塾長指示 2026-05-06: 登録のみで使用歴がない人に通告"""
+    if not CRON_SECRET:
+        raise HTTPException(status_code=503, detail="Cron not configured")
+    if not x_cron_secret or not hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    conn = db()
+    c = conn.cursor()
+    now = datetime.now(timezone.utc)
+    sent_early = 0
+    sent_late = 0
+    skipped_already = 0
+    preview = []
+    try:
+        # Stage 1: 登録から 3 日経過 + 未ログイン (4 日目に 1 通)
+        early_lower = now - timedelta(days=4)  # 4 日経過は対象外 (重複防止のための窓)
+        early_upper = now - timedelta(days=3)  # 3 日経過
+        c.execute(
+            """SELECT id, name, email, created_at, trial_end FROM students
+               WHERE status = 'trial' AND email IS NOT NULL AND last_login_at IS NULL
+                 AND created_at > ? AND created_at <= ?""",
+            (early_lower.isoformat(), early_upper.isoformat())
+        )
+        for row in c.fetchall():
+            # dedup
+            c.execute(
+                "SELECT id FROM notifications WHERE student_id=? AND template='trial_unused_early' AND success=1 LIMIT 1",
+                (row["id"],)
+            )
+            if c.fetchone():
+                skipped_already += 1
+                continue
+            try:
+                ca = row["created_at"]
+                if isinstance(ca, str):
+                    ca = datetime.fromisoformat(ca.replace("Z", "+00:00"))
+                if ca.tzinfo is None: ca = ca.replace(tzinfo=timezone.utc)
+                days_unused = max(1, int((now - ca).total_seconds() / 86400))
+            except Exception:
+                days_unused = 3
+            if dry_run:
+                preview.append({"student_id": row["id"], "email": row["email"], "stage": "early", "days_unused": days_unused})
+                continue
+            login_url = f"{BASE_URL}/login.html?email={row['email']}"
+            result = _send_trial_unused_warning_email(row["email"], row["name"] or "", "early", login_url, days_unused)
+            c.execute(
+                """INSERT INTO notifications (student_id, channel, template, payload, success, error)
+                   VALUES (?, 'email', 'trial_unused_early', ?, ?, ?)""",
+                (row["id"], json.dumps({"days_unused": days_unused}), 1 if result.get("sent") else 0, result.get("error", ""))
+            )
+            if result.get("sent"):
+                sent_early += 1
+
+        # Stage 2: 体験終了 2 日前 + 未ログイン (重複防止 dedup あり)
+        late_lower = now
+        late_upper = now + timedelta(days=2)
+        c.execute(
+            """SELECT id, name, email, trial_end FROM students
+               WHERE status = 'trial' AND email IS NOT NULL AND last_login_at IS NULL
+                 AND trial_end IS NOT NULL AND trial_end > ? AND trial_end <= ?""",
+            (late_lower.isoformat(), late_upper.isoformat())
+        )
+        for row in c.fetchall():
+            c.execute(
+                "SELECT id FROM notifications WHERE student_id=? AND template='trial_unused_late' AND success=1 LIMIT 1",
+                (row["id"],)
+            )
+            if c.fetchone():
+                skipped_already += 1
+                continue
+            try:
+                te = row["trial_end"]
+                if isinstance(te, str):
+                    te = datetime.fromisoformat(te.replace("Z", "+00:00"))
+                if te.tzinfo is None: te = te.replace(tzinfo=timezone.utc)
+                days_left = max(1, int((te - now).total_seconds() / 86400))
+            except Exception:
+                days_left = 2
+            if dry_run:
+                preview.append({"student_id": row["id"], "email": row["email"], "stage": "late", "days_left": days_left})
+                continue
+            login_url = f"{BASE_URL}/login.html?email={row['email']}"
+            result = _send_trial_unused_warning_email(row["email"], row["name"] or "", "late", login_url, days_left)
+            c.execute(
+                """INSERT INTO notifications (student_id, channel, template, payload, success, error)
+                   VALUES (?, 'email', 'trial_unused_late', ?, ?, ?)""",
+                (row["id"], json.dumps({"days_left": days_left}), 1 if result.get("sent") else 0, result.get("error", ""))
+            )
+            if result.get("sent"):
+                sent_late += 1
+
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {
+        "ok": True,
+        "sent_early": sent_early,
+        "sent_late": sent_late,
+        "skipped_already_sent": skipped_already,
+        "dry_run": dry_run,
+        "preview": preview if dry_run else None,
+    }
 
 
 @app.post("/api/billing/portal-session")
