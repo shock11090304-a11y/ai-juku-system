@@ -1,0 +1,221 @@
+{
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "todai",
+      "model": "claude-sonnet-4.6-team-review-v1",
+      "question_data": {
+        "passage": "When ChatGPT was unveiled to the public in late 2022, it provoked a debate that echoed many earlier panics about technology. Some commentators predicted the immediate obsolescence of teachers, lawyers, and writers; others insisted that the new system was nothing more than a sophisticated parrot, mechanically rearranging fragments of language without understanding them. Both positions, in their own ways, missed what was genuinely novel about the situation.\n\nWhat made large language models unsettling was not that they could perform tasks once thought to require human intelligence, but that they did so through a process radically unlike the one we associate with thinking. Earlier symbolic AI was at least intelligible to its designers: rules were written, then followed. The new systems, by contrast, learn statistical patterns from oceans of text, and the rules they follow, if rules they are, lie hidden in billions of parameters that no engineer can fully inspect. (1)This opacity, far from being an incidental flaw, is a structural feature of the technology, and it has consequences we are only beginning to appreciate.\n\nConsider the question of authorship. When a student submits an essay produced with the help of a language model, who, if anyone, is its author? The simplest answer—that the student is, since they pressed the keys—seems inadequate when the model has supplied not merely the spelling but the argument. Yet the model itself cannot be an author in any traditional sense: it has no intentions, no audience in mind, no stake in being understood. (2)The category of authorship, which we have inherited from a print culture in which a single human mind was assumed to lie behind every text, may simply not survive the encounter with machines that produce fluent prose without producing anything that could meaningfully be called a thought.\n\nThis difficulty is not confined to the classroom. In journalism, in scientific writing, even in legal opinions, the assumption that a text expresses a particular human's beliefs has done a great deal of quiet work. We trust a doctor's note partly because we believe a doctor wrote it. We discount an anonymous pamphlet partly because we cannot locate its source. Strip away the human author, and many of our practices for evaluating texts begin to wobble. (3)The challenge, then, is not how to detect AI-generated writing, but how to live in a world where the question \"who wrote this?\" no longer has the kind of answer it used to.\n\nNone of this means that language models are dangerous in the way some critics have suggested. They are not lying when they produce false information; they have no propositional attitudes at all, and lying requires something like an intention to deceive. They are not stealing when they reproduce phrases from their training data; the legal and moral category of theft assumes a robust account of property over expression that the technology may force us to revise. The deeper worry is subtler: that we will adapt to these systems by quietly lowering our standards for what counts as understanding, as research, as writing—not because the machines have succeeded in thinking, but because we have decided to call what they do thinking, in order to make our lives easier.",
+          "audio_script": "",
+          "prompt": "",
+          "year_simulated": 2024,
+          "univ_simulated": "東京大学",
+          "questions": [
+            {
+              "id": "q1",
+              "type": "multiple_choice",
+              "stem": "下線部 (1) This opacity, far from being an incidental flaw, is a structural feature of the technology の意味として最も適切なものを選びなさい。",
+              "choices": [
+                "この技術は仕様上きわめて透明性が高く、構造が明瞭である。",
+                "この不透明性は偶然生じた欠陥ではなく、この技術に本質的に備わった特性である。",
+                "この不透明性は当面の不具合にすぎず、いずれ技術的に解消されるだろう。",
+                "この技術の構造的欠陥は、不透明性とは別の形で表面化する。"
+              ],
+              "answer": 1,
+              "explanation": "## 🎯 コアイメージ\n- `far from + 名詞句` =「~どころか」「~とはほど遠く」(否定+対比のコアイメージ)\n- `incidental` =「偶発的な、付随的な」 ↔ `structural` =「構造に組み込まれた、本質的な」 という二項対比が文意の核\n- `feature` =「(欠点ではなく) 特性・仕様」 — bug の対義語的に用いられている\n\n## 🔬 文構造分析\nThis opacity [, far from being an incidental flaw,] is a structural feature of the technology[, and it has consequences ...]\n  主節: S=This opacity / V=is / C=a structural feature (M=of the technology)\n  挿入句 [far from being an incidental flaw]: S=This opacity を修飾する分詞構文相当 (省略された being) で「偶発的欠陥どころか」の譲歩を作る\n  → 文の論理: 「不透明性 ≠ 偶発的欠陥」 ∧ 「不透明性 = 構造的特性」\n\n## 📍 本文の根拠\n第2段落「the rules they follow ... lie hidden in billions of parameters that no engineer can fully inspect」がこの opacity の中身を説明し、続く下線部で「これは欠陥ではなく仕様」と評価している。さらに次文「has consequences we are only beginning to appreciate」が「単なる不具合」では無いことを補強する。\n\n## ❌ 誤答 NG 理由\n- 選択肢0:「透明性が高く」は opacity の語義と真逆。コアイメージ違反。\n- 選択肢2:「いずれ解消される」は `structural feature` (本質的特性) と矛盾。本文最終段の「we will adapt」も解消ではなく適応の話。\n- 選択肢3: 不透明性 \"とは別の形で\" 構造的欠陥が表面化する、と本文を分割しているが、本文は「不透明性 = 構造的特性そのもの」と一体視している。\n\n【日本人弱点コメント】`far from being ~` を「~から遠くにある」と直訳すると逆の意味に取れる。固定表現として「~どころか・~とは似ても似つかぬ」と覚えること。"
+            },
+            {
+              "id": "q2",
+              "type": "multiple_choice",
+              "stem": "下線部 (2) The category of authorship ... may simply not survive the encounter with machines that produce fluent prose without producing anything that could meaningfully be called a thought の解釈として最も適切なものを選びなさい。",
+              "choices": [
+                "機械が流暢な文章を生み出すことによって、著者の概念は新たな次元へと発展する。",
+                "機械は思考と呼べるものを生み出さない以上、著者という概念に何の影響も及ぼさない。",
+                "印刷文化以来の「著者」という概念は、思考なしに文章を生み出す機械の出現に耐えられない可能性がある。",
+                "流暢な文章を生み出せる機械を著者と認めなければ、著作権制度は維持できない。"
+              ],
+              "answer": 2,
+              "explanation": "## 🎯 コアイメージ\n- `survive the encounter with ~` =「~との遭遇を生き延びる」 → 否定形で「~に直面して生き残れない・もたなくなる」\n- `the category of authorship` の `category` =「(分類項としての) 概念・カテゴリ」 — 制度・概念上の枠組みのコア\n- `without producing anything that could meaningfully be called a thought` =「意味のある形で『思考』と呼べるものは何ひとつ生み出さずに」 — 形式 (流暢さ) と実質 (思考) の分離\n\n## 🔬 文構造分析\nThe category of authorship, [which we have inherited from a print culture [in which a single human mind was assumed to lie behind every text]], may simply not survive [the encounter with machines [that produce fluent prose without producing anything [that could meaningfully be called a thought]]].\n  主節: S=The category of authorship / V=may not survive / O=the encounter\n  関係詞節 [which we have inherited]: 主節の S を後置修飾 (先行詞=The category)\n  関係詞節 [in which a single human mind was assumed to lie behind every text]: print culture を修飾\n  関係詞節 [that produce fluent prose without producing ...]: machines を修飾\n  関係詞節 [that could meaningfully be called a thought]: anything を修飾\n→ 動詞4つ・節4つの典型的東大型多重関係節。骨は「The category may not survive the encounter」のみ。\n\n## 📍 本文の根拠\n直前文「The model itself cannot be an author in any traditional sense: it has no intentions, no audience in mind, no stake in being understood」が、まさに「思考なしに流暢な文を産む」状態を定義している。下線部はその帰結として「authorship という概念自体が崩れる」と述べる。\n\n## ❌ 誤答 NG 理由\n- 選択肢0: 「新たな次元へ発展」は本文の悲観的なトーンと真逆。`may not survive` を見誤っている。\n- 選択肢1: 「何の影響も及ぼさない」は本文の主張と正反対。むしろ「概念が壊れるかもしれない」が本文の立場。\n- 選択肢3: 著作権制度の話に飛躍している。本文は print culture 由来の概念枠組み (category) を論じており、法制度の救済の話ではない。\n\n【日本人弱点コメント】`without producing anything that could meaningfully be called a thought` の二重否定的構造 (without + anything) を「思考と呼べる何かを生み出すことなしに」と素直に直訳することがコツ。"
+            },
+            {
+              "id": "q3",
+              "type": "multiple_choice",
+              "stem": "下線部 (3) で著者が問題視しているのはどのような事態か。最も適切なものを選びなさい。",
+              "choices": [
+                "AI が書いた文章を技術的に検出できないという事態。",
+                "「誰が書いたのか」という問いが、これまでと同じように答えられなくなった世界に生きること。",
+                "AI が大量の偽情報を発信して人々を欺くこと。",
+                "AI 生成テキストが既存の著作権法に違反すること。"
+              ],
+              "answer": 1,
+              "explanation": "## 🎯 コアイメージ\n- `not how to detect ~ but how to live in a world where ...` の `not A but B` 構文 = 「A ではなく B」(対比のコア)\n- `the kind of answer it used to (have)` =「以前持っていたような答え (= 単一の人間著者を指せる答え)」\n- `wobble` (前段) =「ぐらつく」 → 前提が揺らぐイメージで、社会の評価実践がぐらつく状況のコア\n\n## 🔬 文構造分析\nThe challenge, then, is [not how to detect AI-generated writing,] but [how to live in a world [where the question \"who wrote this?\" no longer has the kind of answer [it used to]]].\n  主節: S=The challenge / V=is / C=not [how to detect ...] but [how to live ...] (correlative not...but...)\n  関係副詞節 [where the question ... no longer has ...]: a world を修飾\n  関係詞節 [(that) it used to (have)]: the kind of answer を修飾、`it`=the question, `used to` の後ろは省略\n→ 「(本当の) 課題 = AI 生成を見抜くこと 「ではなく」 著者を指せない世界での生き方」 が骨組み\n\n## 📍 本文の根拠\n前段「We trust a doctor's note partly because we believe a doctor wrote it. We discount an anonymous pamphlet partly because we cannot locate its source」=「誰が書いたか」が文の信頼性評価のインフラだった、という議論。下線部はこのインフラそのものが揺らぐ事態を「課題」と定義する。\n\n## ❌ 誤答 NG 理由\n- 選択肢0: 著者は「detect ~ ではない」と明確に否定している。`not how to detect` の見落とし。\n- 選択肢2: 第5段「They are not lying ... they have no propositional attitudes at all」で著者は欺瞞論を退けている。\n- 選択肢3: 第5段「the legal and moral category of theft assumes ... that the technology may force us to revise」で、著作権侵害論も退けている。\n\n【日本人弱点コメント】`not A but B` 構文で A だけ読んで安心してしまうのが典型的失点。`but` 以下を読み切って初めて主旨が確定する。"
+            },
+            {
+              "id": "q4",
+              "type": "multiple_choice",
+              "stem": "本文全体の主旨として最も適切なものを選びなさい。",
+              "choices": [
+                "ChatGPT のような AI は人間の知能を完全に代替できる段階に達しており、教育・法曹・執筆業はやがて消滅する。",
+                "AI は思考しない以上、人間社会のあり方には実質的な影響を及ぼさない。",
+                "言語モデルがもたらす真の問題は技術的な誤りではなく、私たちが「理解」「研究」「執筆」の基準を無自覚に下げてしまうことである。",
+                "AI を著者と認めて法整備を進めることが急務である。"
+              ],
+              "answer": 2,
+              "explanation": "## 🎯 コアイメージ\n- `the deeper worry is subtler` =「より深い懸念はもっと微妙だ」 — 表層の議論 (誇大宣伝/陳腐化論) を退けて本質的論点を提示する筆者特有の論法のコア\n- `lower our standards for ~` =「~の基準を下げる」 — 質的劣化のコア\n- `not because ... but because` = 因果の二項対比\n\n## 🔬 文構造分析\nThe deeper worry is subtler: that we will adapt to these systems [by quietly lowering our standards [for what counts as understanding, as research, as writing]] — not because the machines have succeeded in thinking, but because we have decided to call what they do thinking, in order to make our lives easier.\n  主節: S=The deeper worry / V=is / C=subtler\n  同格 that 節: 主節の C を補足説明 (S=we, V=will adapt)\n  by 句 = 適応の手段 (lower our standards)\n  not because A, but because B = 適応の動機の対比 (機械の側の達成ではなく、人間の側の妥協)\n\n## 📍 本文の根拠\n最終段全体が筆者の主張。前段までで「AI は嘘をつかない」「盗まない」と表面的批判をひとつずつ退けたうえで、「真の懸念は人間の側の基準低下」と結論づける。これが本文の到達点。\n\n## ❌ 誤答 NG 理由\n- 選択肢0: 第1段で著者が「missed what was genuinely novel」として退けた立場 (代替論)。\n- 選択肢1: 第3-4段で著者は「authorship の概念が崩れる」と影響の大きさを強調している。「実質的影響なし」は誤読。\n- 選択肢3: 著者は「authorship という概念自体が機械との遭遇に耐えられない」と論じており、AI を著者として法整備に取り込む方向は支持していない。\n\n【日本人弱点コメント】最終段の `not because A, but because B` を「機械が考えていないのに、私たちが考えていると呼ぶことに決めるから」と訳出する際、`call X Y` (XをYと呼ぶ) の構文を見落としやすい。`call what they do thinking` = 「彼ら (機械) のしていることを思考と呼ぶ」。"
+            }
+          ]
+        }
+      },
+      {
+        "exam_id": "daigaku",
+        "part_key": "r_translation",
+        "eiken_grade": "kyodai",
+        "model": "claude-sonnet-4.6-team-review-v1",
+        "question_data": {
+          "passage": "What we now call \"sleep\" is, viewed historically, a remarkably narrow conception of an experience that human beings have shaped in many different ways over the centuries. Until well into the nineteenth century, in much of northern Europe, ordinary people did not lie down in the evening expecting to sleep through until dawn. They slept in two distinct phases — what historians have come to call \"first sleep\" and \"second sleep\" — separated by an interval of perhaps an hour, sometimes more, in which they would rise, tend the fire, pray, talk quietly with a spouse, even visit a neighbour. (1)Far from being a sign of disturbed rest, this wakeful interlude was treated as one of the most contemplative and intimate moments of the day, and its disappearance from our cultural memory tells us as much about modern life as any account of factories or railways. The reasons for the change are not, on the whole, biological. (2)What displaced segmented sleep was the gradual extension, by gas lamp and later by electric light, of the productive day into hours that had once belonged to the dark, so that the night ceased to be an honoured space of withdrawal and became, instead, a defective version of the day, to be lit, filled, and made to yield.",
+          "audio_script": "",
+          "prompt": "",
+          "year_simulated": 2023,
+          "univ_simulated": "京都大学",
+          "questions": [
+            {
+              "id": "q1",
+              "type": "short_answer",
+              "stem": "下線部 (1) Far from being a sign of disturbed rest, this wakeful interlude was treated as one of the most contemplative and intimate moments of the day, and its disappearance from our cultural memory tells us as much about modern life as any account of factories or railways. を日本語に訳しなさい。",
+              "choices": [],
+              "answer": "この (夜中の) 目覚めの時間帯は、睡眠が乱されている兆候であるどころか、一日のうちで最も内省的で親密な時間のひとつとみなされていたのであり、それが私たちの文化的記憶から消え去ってしまったという事実は、工場や鉄道に関するいかなる説明にも劣らず、近代という時代について多くを物語っている。",
+              "explanation": "## 🎯 コアイメージ\n- `Far from being ~`: 「~であるどころか・~とはほど遠く」 (否定+反転のコア)。問題1と同じ表現で、京大も頻出。\n- `as much A as B`: 「Bと同じくらい多くのA」 → 比較の片方を打ち消すのではなく、両者を同等に強調する用法\n- `tell us about ~`: 「~について物語る・教えてくれる」 (情報源としての主語のコア)\n- `interlude` =「(本来の流れの) 合間・幕間」 — 寝ている時間の \"合間\" のコア\n\n## 🔬 文構造分析\n[Far from being a sign of disturbed rest], this wakeful interlude was treated as [one of the most contemplative and intimate moments of the day], and [its disappearance from our cultural memory] tells us [as much about modern life as any account of factories or railways].\n  前半節: M=Far from being ... (分詞構文相当・主節 S を譲歩で限定) / S=this wakeful interlude / V=was treated / C=as one of ...\n  後半節: S=its disappearance (from our cultural memory が後置修飾) / V=tells / IO=us / DO=as much about modern life as any account ...\n  並列: 前半 'was treated' と 後半 'tells' を and で結ぶ並列構造\n  比較: as much (about modern life) as any account (of factories or railways) — 「工場や鉄道についての説明と同じくらい・近代生活について多くを語る」\n\n## 📍 本文の根拠\nこの和訳問題は単独の文を訳出するもの。文脈としては、第一段全体が「分割睡眠 (first sleep / second sleep) は欠陥ではなく文化的に貴重な時間だった」という主張で、下線部はその総括的評価。後続の「reasons for the change are not biological」が次の論点へつなぐ。\n\n## ❌ 誤答 NG 理由 (記述式の典型的減点)\n- 「Far from being」を「~から遠く」と空間訳してしまう → 慣用句として「~どころか」が必須。\n- `as much A as B` を「B と同じくらい A」と取らずに「B ほど A はない」と訳す → 比較は「同等」、A も B も同程度の情報源として強調。\n- `tells us about ~` を「~を教える」と短絡せず「~について多くを物語る」「~を雄弁に語る」と意訳する余地を残す。\n- `disappearance` を「消失」とだけ訳すと硬い。「消え去ったという事実」「忘れ去られたこと」など主語化処理が京大型。\n\n【日本人弱点コメント】`its disappearance from ~ tells us as much about ... as ~` という「無生物主語+ tell + 比較」構造は和訳時に直訳すると不自然 (「その消失は私たちに語る」)。「~が消え去ったことは、…について雄弁に物語っている」のように主語の名詞化と動詞の和化処理が京大採点でほぼ必須。"
+            },
+            {
+              "id": "q2",
+              "type": "short_answer",
+              "stem": "下線部 (2) What displaced segmented sleep was the gradual extension, by gas lamp and later by electric light, of the productive day into hours that had once belonged to the dark, so that the night ceased to be an honoured space of withdrawal and became, instead, a defective version of the day, to be lit, filled, and made to yield. を日本語に訳しなさい。",
+              "choices": [],
+              "answer": "分割睡眠を駆逐したのは、ガス灯やのちには電灯によって、生産的な活動の続く一日が、かつては闇に属していた時間帯にまで徐々に延長されていったことであった。その結果、夜はもはや人が世俗から退いて過ごすにふさわしい時間ではなくなり、代わりに、灯され、充たされ、何かを生み出すべく駆り立てられる、いわば「不完全な昼」と化していった。",
+              "explanation": "## 🎯 コアイメージ\n- 強調構文 `What displaced ~ was ...`: 「~を駆逐したのは…であった」 (= It was ... that displaced ~ と等価)。京大頻出。\n- `belong to ~`: 「~の領域である・~に属する」 (所属のコア・所有ではなく所属)\n- `so that` (結果): 「その結果~」 (目的の so that とは別物。本文は文脈から結果)\n- `cease to be`: 「~でなくなる」 (停止のコア)\n- `to be lit, filled, and made to yield`: 形容詞的不定詞 (a defective version を後置修飾) + 受動の連鎖 → 「灯され、満たされ、生産させられる」\n\n## 🔬 文構造分析\n[What displaced segmented sleep] was [the gradual extension, [by gas lamp and later by electric light], of the productive day into hours [that had once belonged to the dark]], so that [the night ceased to be an honoured space of withdrawal and became, instead, a defective version of the day, [to be lit, filled, and made to yield]].\n  主節 (強調構文): S=What displaced segmented sleep (関係代名詞 What 節) / V=was / C=the gradual extension ... of the productive day into hours ...\n  挿入句: by gas lamp and later by electric light (extension の手段)\n  関係詞節: that had once belonged to the dark — hours を修飾 (過去完了で「かつてそうだった」)\n  結果節 so that: S=the night / V₁=ceased to be (an honoured space ...) / V₂=became (a defective version ...)\n  形容詞的不定詞: to be lit, filled, and made to yield — a defective version of the day を後置修飾 (受動3連鎖)\n\n## 📍 本文の根拠\n下線部は「分割睡眠が消えた原因は生物学ではなく、夜の照明化による労働時間の侵食である」という筆者の主張の核。前段「reasons for the change are not, on the whole, biological」を踏まえ、何が原因かを明示する文。\n\n## ❌ 誤答 NG 理由 (記述式の典型的減点)\n- 強調構文 `What ~ was ...` を「~したものは…だった」と直訳しすぎる → 「~したのは…である」が自然。\n- `the productive day` を「生産的な日」と訳す → ここでの day は「日中・活動時間」なので「労働時間としての一日」「生産活動の続く時間」が文脈訳。\n- `that had once belonged to the dark` の過去完了を見落とす → 「かつては闇に属していた」と完了の含意を出す必要あり。\n- `to be lit, filled, and made to yield` の3連鎖の使役+受動 (`made to yield` = 「生産させられる」) を1語ずつ訳出することが京大採点で重要。yield の処理 (「成果をもたらす・産出する」) を「収穫する」と誤訳しないこと。\n- `so that` を「~するために」と目的訳すると意味不明になる → 結果訳「その結果」「こうして」。\n\n【日本人弱点コメント】京大の和訳は「無生物主語の能動 → 日本語では受動・名詞化で処理」が頻出 (本問の `What displaced segmented sleep was ~`)。直訳「分割睡眠を駆逐したものは~であった」を踏まえつつ、自然な日本語に整える二段階処理が必須。また `to be lit, filled, and made to yield` のような不定詞の後置修飾は「~される (べき)」と訳出。"
+            }
+          ]
+        }
+      },
+      {
+        "exam_id": "daigaku",
+        "part_key": "w_essay",
+        "eiken_grade": "waseda",
+        "model": "claude-sonnet-4.6-team-review-v1",
+        "question_data": {
+          "passage": "",
+          "audio_script": "",
+          "prompt": "Some people argue that social media platforms should hold the same legal responsibility as traditional newspapers for the content posted by their users. Others maintain that holding platforms responsible would harm free expression and innovation. \n\nWhich position do you find more convincing? Write an essay of approximately 200-250 words in English, presenting your view with at least two specific reasons or examples to support it.",
+          "year_simulated": 2025,
+          "univ_simulated": "早稲田大学 (国際教養学部)",
+          "questions": [
+            {
+              "id": "q1",
+              "type": "essay",
+              "stem": "上記 prompt に対して 200-250 語の英語エッセイで自分の立場を論じなさい。",
+              "choices": [],
+              "answer": "I find it more convincing that social media platforms should bear at least a substantial share of legal responsibility for the content their users post, though not necessarily on the exact same terms as a traditional newspaper. Two reasons lead me to this conclusion.\n\nFirst, the analogy with newspapers, while imperfect, captures something important: a platform's algorithmic recommendations are not a neutral pipe but an editorial choice. When a service decides which posts to amplify and which to bury, it is making decisions strikingly similar to those of a newspaper editor. If those choices contribute to the spread of defamation or incitement, it seems unreasonable that the editor in code should escape the legal accountability the editor in print has long accepted.\n\nSecond, the argument from \"free expression\" is often overstated. Holding platforms responsible would not silence ordinary users; it would simply oblige large companies to invest in the kind of moderation and transparency that they already have the resources to provide. Smaller services could be protected by tiered rules based on size and reach, much as labour and tax laws already differentiate between corporations and start-ups.\n\nThis does not mean platforms should be treated as authors of every post. Rather, they should be co-responsible when their design choices foreseeably amplify harmful material. Such a framework respects both free speech and the legitimate interests of those harmed by the most powerful information systems we have ever built.",
+              "explanation": "## 🎯 コアイメージ — 早稲田 国際教養型エッセイの 4 軸\n- 立場明示 (introduction で position を即出し) → 早慶英作文の絶対原則\n- 譲歩+反論 (`though not necessarily ~`) → 立場を取りつつ過剰主張を避ける高度な精度のコア\n- 理由は **2 つ以上の独立した論点**: 本文では (a) アルゴリズム=編集行為アナロジー / (b) 規模別段階制で free expression は守れる の二系統\n- 結論で再整理 (co-responsible / not authors) → 立場の精緻化で締める\n\n## 🔬 文構造分析 — 評価対象になる重要構文\n1. **譲歩構文** `though not necessarily on the exact same terms` (M-clause) → 主節 S=I, V=find, C=more convincing を緩める\n2. **強調的言い換え** `is not a neutral pipe but an editorial choice` (not A but B) → アルゴリズム評価の核心命題\n3. **対比+段階性** `much as labour and tax laws already differentiate between ~` → 一般原則 (サイズ別規制) を既知の例で normalise する\n4. **関係詞節** `the editor in code` vs `the editor in print` → 比喩を造語的に言い換えて統一する高度な技法\n5. **結論文の連結** `Such a framework respects both ~ and ~` → 両立 (両論の懸念を包摂) で締める\n\n## 📍 本文 (= 模範解答) の根拠 — 採点者が見るチェックポイント\n- 【冒頭立場】: 第1文 `I find it more convincing that ~ should bear ... legal responsibility, though not necessarily on the exact same terms` — 立場+留保を1文で示す早慶型\n- 【論点1の論拠】: 第2段 `algorithmic recommendations are not a neutral pipe but an editorial choice` を明示し、新聞アナロジーが \"完全 \" ではなく \"重要な部分を捉える\" と慎重に位置づけている\n- 【論点2の反論吸収】: 第3段で free expression 反論を `often overstated` と退け、tiered rules で対案を提示 — 反論の単純拒絶ではなく弱点の指摘+代替案の提示\n- 【結論の精緻化】: 第4段で \"authors of every post\" と \"co-responsible\" を分離し、立場の正確な範囲を限定\n- 【単語数】: 約240語 (200-250 範囲内)\n\n## ❌ よくある減点 NG 理由 (essay の場合は \"模範解答との比較で見るべき NG パターン\")\n- 立場が3段目以降になる → 早慶系では大幅減点。第1文で position 必須。\n- 理由が1つしかない/同じ理由の言い換え → \"two reasons\" を満たしていない (本問は2つ以上を要求)。\n- 反論側を完全無視 → 国際教養 (SILS) は反論への engagement を高評価する。\n- 結論が冒頭の単純な繰り返し → \"refined position\" (精緻化された立場) で締めるのが理想 (本文 `Such a framework respects both ~`)。\n- 200 語未満 / 250 語超過: 多くの早稲田学部で語数指定逸脱は内容点関係なく減点対象。\n\n【日本人弱点コメント】\n- `the same legal responsibility as ~` の as は前置詞ではなく接続詞 (responsibility as newspapers do の省略) になる場面と前置詞 (the same as ~) の場面の使い分けに注意。本問では前置詞用法 (the same X as Y)。\n- `bear responsibility for ~`: 「~について責任を負う」 (carry / take と並ぶ典型動詞、英作で確実に使えるとレベルが上がる)。\n- 「~どころか」を `Far from ~ing` で表現すると引き締まる (本模範では未使用だが応用可)。"
+            }
+          ]
+        }
+      },
+      {
+        "exam_id": "daigaku",
+        "part_key": "r_long",
+        "eiken_grade": "meiji",
+        "model": "claude-sonnet-4.6-team-review-v1",
+        "question_data": {
+          "passage": "Cities have always been places where strangers meet. That, more than anything else, is what makes them cities rather than overgrown villages. The streets of a large town are filled, hour after hour, with people who have no prior connection to one another and who, in most cases, will never meet again. Yet these unrelated lives are not chaotic; they are arranged, often with extraordinary delicacy, by an invisible network of habits, conventions, and small considerations that allow millions of people to share the same space without serious conflict.\n\nThe American writer Jane Jacobs called this network \"the ballet of the good city sidewalk.\" Her phrase is more than a poetic flourish. A ballet implies coordinated movement among performers who have learned, through long practice, to anticipate one another's steps. (1)On a healthy urban street, pedestrians do something similar: they swerve a little to avoid collisions, glance briefly to acknowledge a child running ahead of its parent, slow their pace at a busy corner, all without speaking and often without conscious thought.\n\nWhat is striking is how easily this delicate choreography can be disrupted. When a city becomes too dependent on cars, sidewalks empty and the ballet stops; the strangers who once shared a daily rhythm are now isolated in their vehicles, watching one another through windscreens. When a neighborhood becomes too quiet, the eyes that once watched over the street disappear, and small acts of incivility, no longer noticed, gradually become normal. (2)The remarkable order of city life is, in this sense, less a permanent achievement than a constantly renewed performance, kept alive only as long as enough people are present to perform it.\n\nThis idea has practical implications for how cities are designed. For most of the twentieth century, city planners treated streets primarily as channels for moving vehicles, and the people on them as obstacles to that flow. The result, in many countries, was the gradual hollowing out of public life: shopping moved into enclosed malls, children stopped playing on the street, and the casual encounters that used to bind neighborhoods together became rarer.\n\nIn the past two decades, however, a different vision has slowly gained ground. Urban designers in cities as different as Copenhagen and Bogotá have begun to put pedestrians, cyclists, and casual gatherings back at the center of their plans. Sidewalks have been widened, traffic lanes narrowed, and squares restored as places where people are expected not just to pass through but to linger. (3)The early evidence suggests that these changes do more than make cities prettier; they restore something close to what Jacobs described, a fragile but valuable form of public life that, once lost, is hard to bring back.",
+          "audio_script": "",
+          "prompt": "",
+          "year_simulated": 2024,
+          "univ_simulated": "明治大学 (商学部・経営学部 共通)",
+          "questions": [
+            {
+              "id": "q1",
+              "type": "multiple_choice",
+              "stem": "下線部 (1) On a healthy urban street, pedestrians do something similar の \"something similar\" が指す内容として最も適切なものを選びなさい。",
+              "choices": [
+                "練習を重ねて互いの動きを予測しながら協調する、バレエの舞踊家のような動き",
+                "観光客に道を尋ねたり、地図を見せ合ったりする社交的な行為",
+                "信号や標識など、明文化されたルールに従って整然と移動する行為",
+                "車道を渡る前に必ず止まって左右を確認するという交通安全の基本動作"
+              ],
+              "answer": 0,
+              "explanation": "## 🎯 コアイメージ\n- `something similar` の \"similar\" の比較対象は直前文の内容 — 直近の名詞 (ballet) ではなく、その動作的本質 (= coordinated movement among performers who have learned to anticipate one another's steps)。\n- `do something similar` =「同じようなことをする」 — 動詞 do + 名詞 something + 形容詞 similar の 3 語フレーズ\n- `swerve / glance / slow their pace ~ all without speaking and often without conscious thought` =「無言・無意識のうちにそれらすべてを行う」 → ballet との並列のコアイメージ\n\n## 🔬 文構造分析\n直前文: A ballet implies [coordinated movement among performers [who have learned, through long practice, to anticipate one another's steps]].\n下線部文: On a healthy urban street, pedestrians do [something similar]: they [swerve a little to avoid collisions], [glance briefly to acknowledge a child running ahead of its parent], [slow their pace at a busy corner], all without speaking and often without conscious thought.\n  主節: S=pedestrians / V=do / O=something similar\n  コロン以降: do の中身を3つの動詞句で具体化 (swerve / glance / slow)\n  all without ~ ~ : 3つの動作すべての M (条件)\n→ 「歩行者は ballet と \"似たこと\" をする」の \"似た\" の中身は、直前文の「練習で互いの動きを予知する協調動作」。\n\n## 📍 本文の根拠\n第2段冒頭で Jacobs の \"the ballet of the good city sidewalk\" を引用し、ballet の本質を「coordinated movement among performers who have learned to anticipate one another's steps」と定義。これと \"similar\" な行為が下線部の歩行者の動き (swerve, glance, slow) として具体化される。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「観光客に道を尋ねる」は本文に言及なし。`without speaking` (無言で) と矛盾。\n- 選択肢2:「明文化されたルール」は本文の \"invisible network of habits, conventions, and small considerations\" (見えない・暗黙のネットワーク) と真逆。\n- 選択肢3: 第2段は信号や安全確認の話ではなく、無意識の協調動作の話。`without conscious thought` を見落とした典型的減点。\n\n【日本人弱点コメント】指示語の指す内容を「直近の名詞」で取るのは典型的失点。`something similar` の \"similar\" の比較対象は、直前文の中の \"the action structure\" (動作構造) であって、ballet という単語そのものではない。"
+            },
+            {
+              "id": "q2",
+              "type": "multiple_choice",
+              "stem": "下線部 (2) The remarkable order of city life is, in this sense, less a permanent achievement than a constantly renewed performance の意味として最も適切なものを選びなさい。",
+              "choices": [
+                "都市の秩序は完成された制度であり、ひとたび作られれば自動的に維持される。",
+                "都市生活の見事な秩序は、永続的な達成というよりも、絶えず更新され続ける「上演」である。",
+                "都市生活の秩序は、過去の偉大な達成の単なる再現にすぎない。",
+                "都市の秩序を保つには、終わりなき肉体的な労働が必要である。"
+              ],
+              "answer": 1,
+              "explanation": "## 🎯 コアイメージ\n- `less A than B`: 「A というよりむしろ B」 (A=否定寄り / B=肯定寄り、コアは比較で重心を B に置く)\n- `permanent achievement` ↔ `constantly renewed performance`: 「完成された業績」 vs 「絶えず更新される上演」 — 静的 vs 動的の対比\n- `performance` =「上演・実演」 — 業績ではなく \"パフォーマンス\" (実演) の意味のコア。第2段の ballet 比喩を引き継ぐ\n- `kept alive only as long as enough people are present to perform it` =「それを上演する人々が十分にいる限りにおいてのみ生き続ける」 (条件のコア)\n\n## 🔬 文構造分析\nThe remarkable order of city life is, [in this sense], less [a permanent achievement] than [a constantly renewed performance], kept alive [only as long as enough people are present [to perform it]].\n  主節: S=The remarkable order of city life / V=is / C=less A than B (correlative)\n  挿入: in this sense (前段の議論を受ける)\n  分詞句: kept alive ~ → C を後置修飾 (a constantly renewed performance を限定)\n  接続節: only as long as ~ → 条件 (~の限り)\n  関係的不定詞: to perform it → enough people を修飾\n\n## 📍 本文の根拠\n第3段の前半「When a city becomes too dependent on cars, sidewalks empty and the ballet stops」「When a neighborhood becomes too quiet, the eyes that once watched over the street disappear」 = 秩序が脆く、人がいなくなれば崩れる、という議論。下線部はその総括的命題。\n\n## ❌ 誤答 NG 理由\n- 選択肢0:「自動的に維持される」は本文の主張と真逆。`less a permanent achievement` (永続的達成 \"ではない\") を見落とし。\n- 選択肢2:「過去の達成の再現」は誤読。本文は「現在進行形で維持される」(constantly renewed) と述べている。\n- 選択肢3:「肉体的労働」は飛躍。`performance` を \"上演 (= 人々の存在と振る舞い)\" ではなく \"労働\" と取った誤り。\n\n【日本人弱点コメント】`less A than B` を「A は B より少ない」と直訳すると意味不明。固定構文として「A というより B」「A であるよりむしろ B」と覚える。"
+            },
+            {
+              "id": "q3",
+              "type": "multiple_choice",
+              "stem": "本文の主旨として最も適切なものを選びなさい。",
+              "choices": [
+                "都市計画は車の効率を最優先にすべきであり、歩行者の動線は副次的な配慮にとどめるべきだ。",
+                "現代の都市は、明文化された交通規則が完備されているため、見知らぬ人々が共存できる。",
+                "都市の見えない秩序は人々の存在と振る舞いに支えられた脆いものであり、その回復には歩行者を中心に据えた都市設計が有効である。",
+                "ジェイン・ジェイコブズの理論は文学的比喩にすぎず、現代の都市設計には実用性がない。"
+              ],
+              "answer": 2,
+              "explanation": "## 🎯 コアイメージ\n- 文章全体の論証は 4 段構成: ① 都市=見知らぬ人の出会いの場 / ② Jacobs の ballet 比喩で秩序を描写 / ③ 秩序の脆さ (車依存・空洞化で崩れる) / ④ 都市設計上の含意 (歩行者中心への回帰)\n- 結論段の `do more than make cities prettier; they restore ... a fragile but valuable form of public life` =「美化以上のもの = 公共生活の回復」 — 主旨のコア\n- `fragile but valuable` =「脆いが貴重」 — 第3段の \"performance\" 命題と整合\n\n## 🔬 文構造分析\n結論文: The early evidence suggests [that these changes do more than make cities prettier; they restore something close to what Jacobs described, a fragile but valuable form of public life [that, [once lost], is hard to bring back]].\n  目的節 that 節内: S=these changes / V=do more than (= だけにとどまらない) / O=make cities prettier\n  ; 以降: S=they (these changes) / V=restore / O=something close to what Jacobs described\n  同格: a fragile but valuable form of public life — something に同格説明\n  関係詞節: that ... is hard to bring back — public life を修飾\n  挿入: once lost (条件分詞構文) — それが一旦失われると\n\n## 📍 本文の根拠\n第4段「city planners treated streets primarily as channels for moving vehicles」 → 過去の失敗。第5段「Urban designers in cities ... pedestrians, cyclists, and casual gatherings back at the center」 → 新しい解決策。最終文「restore something close to what Jacobs described」 → ① ② ③ で描いた Jacobs 的秩序を回復する、という論旨を closure させる。\n\n## ❌ 誤答 NG 理由\n- 選択肢0: 第4段で著者が \"hollowing out of public life\" として批判した立場。\n- 選択肢1:「明文化された交通規則」は本文の \"invisible network of habits, conventions\" (= 暗黙の取り決め) と真逆。\n- 選択肢3: 第5段で実際の都市 (Copenhagen / Bogotá) で実装され \"early evidence suggests\" と肯定的成果に触れているため、\"実用性なし\" は誤読。\n\n【日本人弱点コメント】長文の主旨問題は最終段が決定的。途中段の局所的議論ではなく、最終段で著者が立てる \"前向きな解決策 + その含意\" を主旨として選ぶのが定石。"
+            }
+          ]
+        }
+      },
+      {
+        "exam_id": "daigaku",
+        "part_key": "g_grammar",
+        "eiken_grade": "osaka",
+        "model": "claude-sonnet-4.6-team-review-v1",
+        "question_data": {
+          "passage": "",
+          "audio_script": "",
+          "prompt": "",
+          "year_simulated": 2024,
+          "univ_simulated": "大阪大学",
+          "questions": [
+            {
+              "id": "q1",
+              "type": "multiple_choice",
+              "stem": "次の英文の空欄に入れるのに最も適切なものを選びなさい。\n\nThe committee insisted that the report ( ) by the end of the month, regardless of the difficulties the team was facing.",
+              "choices": [
+                "be submitted",
+                "is submitted",
+                "was submitted",
+                "would be submitted"
+              ],
+              "answer": 0,
+              "explanation": "## 🎯 コアイメージ\n- `insist that S (should) V原形` 構文 — 「主張・命令・要求・提案」(insist / demand / require / suggest / recommend / propose / order / request) のあとの that 節は時制ではなく **仮定法現在 (動詞原形)** が原則。\n- `should` は省略可能で、動詞そのものが原形 (= be) で残る。これがアメリカ英語の標準形で、阪大で頻出のポイント。\n- 受動態の場合の原形は `be + p.p.` → `be submitted`。\n\n## 🔬 文構造分析\nThe committee insisted [that the report (should) be submitted by the end of the month], [regardless of the difficulties [(that) the team was facing]].\n  主節: S=The committee / V=insisted / O=that 節\n  目的節: S=the report / V=(should) be submitted (仮定法現在の受動)\n  M: by the end of the month / regardless of the difficulties\n  関係詞節: (that) the team was facing — the difficulties を修飾 (目的格関係代名詞省略)\n→ 主節 `insisted` (過去) との時制一致は適用されないのが仮定法現在の核心。\n\n## 📍 出題ポイント\n- 阪大は `insist / demand / require` の仮定法現在を毎年のように出題。`should be submitted` も正しいが、選択肢にない場合は `be submitted` (原形) を選ぶ。\n- 主節の動詞が現在形 (insists) であろうと過去形 (insisted) であろうと、that 節は **常に動詞原形** (時制の影響を受けない) のがこの構文の特徴。\n\n## ❌ 誤答 NG 理由\n- 選択肢1 (is submitted): 通常の現在時制。insist that 構文では時制ではなく原形が必要。\n- 選択肢2 (was submitted): 主節の過去 `insisted` に時制を一致させた誤り。仮定法現在は時制一致を受けない。\n- 選択肢3 (would be submitted): would は仮定法過去・婉曲・未来表現で、insist that 構文の語法には合わない。\n\n【日本人弱点コメント】`insist that` は (a) 「~と (事実として) 強く主張する」のときは普通の時制 (= insist that S V (時制一致あり)) も使われるが、(b) 「~するよう要求する・主張する」のときは仮定法現在 (動詞原形) 必須。本問は文脈 (「困難があっても提出すべきだ、と委員会が要求した」) から (b) の用法と判断。\n\n紛らわしい類似動詞: `suggest that S (should) V原形` (提案) ↔ `suggest that S V(時制一致)` (~を示唆・暗示する) の二義性は阪大が好んで出題する。"
+            },
+            {
+              "id": "q2",
+              "type": "multiple_choice",
+              "stem": "次の英文の空欄に入れるのに最も適切なものを選びなさい。\n\nNot until she opened the second envelope ( ) what the entire correspondence had really been about.",
+              "choices": [
+                "she realized",
+                "did she realize",
+                "had she realized",
+                "she had realized"
+              ],
+              "answer": 1,
+              "explanation": "## 🎯 コアイメージ\n- 否定の副詞句が文頭に出ると、主節の主語と (助) 動詞は **倒置** される。これが英語の固定ルール。\n- `Not until ~ + 主節 (倒置)` の典型構文 — 「~するまでは…しなかった」「~して初めて…した」\n- 過去のある時点での \"気づき\" は単純過去 (`did she realize` = `she realized` の倒置形) が中立的。\n- 大過去 (`had she realized`) を選んでしまう誤りに注意 — 主節の動作が \"初めて気づいた\" 時点なので、過去完了は不要。\n\n## 🔬 文構造分析\n[Not until [she opened the second envelope]] did she realize [what the entire correspondence had really been about].\n  M (倒置のトリガー): Not until + 副詞節 [she opened the second envelope]\n  主節 (倒置): did + S=she + V原形=realize → 通常語順 \"she realized\" の倒置\n  目的節 (間接疑問): [what the entire correspondence had really been about] (S=the entire correspondence / V=had been about (大過去))\n→ 副詞節は単純過去 (opened) / 主節も実質単純過去 (did realize) / 目的節 \"全文通信が何についてだったか\" は realize より以前の事 → 過去完了 (had been about)。3つの時制が論理的に整合。\n\n## 📍 出題ポイント\n- 阪大の文法問題は \"倒置\" を毎年出題。No sooner had S V than ... / Hardly had S V when ... / Not until ~ + 倒置 がトップ3。\n- `did she realize` の助動詞 do の使用が \"単純過去の倒置\" の標準形。`had she realized` (過去完了倒置) は時間関係に余計な制約をかけてしまう。\n\n## ❌ 誤答 NG 理由\n- 選択肢0 (she realized): Not until が文頭に出たら倒置必須。倒置を欠いた語順は文法違反。\n- 選択肢2 (had she realized): 過去完了の倒置は形としては正しいが、本文には「彼女が気づいた」より以前の動作を立てる意味的必要がない。`opened the second envelope` (副詞節) も `realize` (主節) も同じ過去時点の動作なので単純過去で十分。\n- 選択肢3 (she had realized): 倒置欠如+不要な過去完了の二重ミス。\n\n【日本人弱点コメント】「~して初めて気づいた」は日本語直訳で「私は初めて気づいた」と能動・通常語順を作りがちだが、英語では `Only when ~ / Not until ~ / It was not until ~ that ~` を文頭に出した瞬間に倒置 (またはthat 強調構文) になる。倒置は「副詞句が文頭に出たので主語と (助) 動詞をひっくり返す」だけのルールで、難しい構文ではない。"
+            }
+          ]
+        }
+      }
+    ],
+    "skip_full": false
+  }
