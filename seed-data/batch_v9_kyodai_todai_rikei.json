@@ -1,0 +1,187 @@
+{
+  "questions": [
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q1",
+      "eiken_grade": "kyodai_rikei",
+      "model": "claude-sonnet-4.6-team-review-v9",
+      "question_data": {
+        "passage": "袋の中に赤玉が 3 個、白玉が 2 個入っている。袋から 1 個ずつ玉を取り出し、取り出した玉は袋に戻さない (= 非復元抽出) という試行を考える。\n\n3 回目で初めて白玉を取り出した、という事象 \\(A\\) について考える。",
+        "audio_string": "",
+        "audio_script": "",
+        "prompt": "",
+        "figure_svg": "",
+        "year_simulated": 2024,
+        "univ_simulated": "京都大学 理系",
+        "subject": "数学",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "short_answer",
+            "stem": "(1) 事象 \\(A\\) (3 回目で初めて白玉を取り出す) の確率 \\(P(A)\\) を求めよ。",
+            "choices": [],
+            "answer": "\\(P(A) = \\dfrac{1}{5}\\)",
+            "explanation": "## 考え方\n3 回目で初めて白玉 ⇔ 1, 2 回目はともに赤玉、3 回目に白玉。非復元抽出なので確率は条件付き分母が変化する。\n\n## 立式\n各回の事象:\n- 1 回目: 赤玉 (確率 \\(\\dfrac{3}{5}\\))\n- 2 回目: 赤玉 (1 回目の赤玉が抜けた後、残り 4 個中赤玉 2 個 → 確率 \\(\\dfrac{2}{4}\\))\n- 3 回目: 白玉 (1, 2 回目の赤玉 2 個が抜けた後、残り 3 個中白玉 2 個 → 確率 \\(\\dfrac{2}{3}\\))\n\n## 計算\n\\[P(A) = \\dfrac{3}{5} \\times \\dfrac{2}{4} \\times \\dfrac{2}{3} = \\dfrac{3 \\cdot 2 \\cdot 2}{5 \\cdot 4 \\cdot 3} = \\dfrac{12}{60} = \\dfrac{1}{5}\\]\n\n## 答え\n\\(P(A) = \\dfrac{1}{5}\\)\n\n## 補足\n別解 (組合せ計算): 3 回目までに引いた 3 個のうち、1 回目と 2 回目が赤、3 回目が白という順序付き並び。 \\(\\dfrac{{}_3\\text{P}_2 \\cdot {}_2\\text{P}_1}{{}_5\\text{P}_3} = \\dfrac{6 \\cdot 2}{60} = \\dfrac{1}{5}\\) で同じ結果。\n\n京大数学では「非復元抽出」と「復元抽出」の確率比較が頻出。本問の設定で復元抽出 (毎回戻す) なら \\(P = (3/5)^2 \\cdot (2/5) = 18/125\\) ≠ 1/5 で異なる結果になることに注意。"
+          },
+          {
+            "id": "q2",
+            "type": "short_answer",
+            "stem": "(2) 事象 \\(A\\) (3 回目で初めて白玉) が起きたという条件下で、2 回目に取り出した玉が赤玉であった確率 \\(P(B | A)\\) を求めよ。",
+            "choices": [],
+            "answer": "\\(P(B | A) = 1\\) (= 確実に赤玉)",
+            "explanation": "## 考え方\n事象 \\(A\\) の定義: 3 回目で初めて白玉。これは 1 回目と 2 回目の両方が赤玉でなければ実現しない。\n\n## 立式\n事象 \\(B\\): 2 回目に取り出した玉が赤玉。\n事象 \\(A \\cap B\\) = (3 回目で初めて白玉 AND 2 回目が赤玉) = (1, 2 回目とも赤玉 AND 3 回目が白玉) = 事象 \\(A\\) そのもの。\n\n条件付き確率の定義:\n\\[P(B | A) = \\dfrac{P(A \\cap B)}{P(A)} = \\dfrac{P(A)}{P(A)} = 1\\]\n\n## 計算\n\\(P(B | A) = 1\\)\n\n## 答え\n\\(P(B | A) = 1\\) (= 事象 \\(A\\) のもとでは 2 回目は必ず赤玉)\n\n## 補足\n条件付き確率の本質: 条件 \\(A\\) を知った時点で、選択肢が大きく絞り込まれる。本問では `\\(A\\)` の定義が「2 回目までは赤玉」を含意するため、`B` (= 2 回目が赤玉) は \\(A\\) のもとで自明。京大数学はこの種の条件付き確率における `自明な含意` を読み取らせる出題が頻出。"
+          },
+          {
+            "id": "q3",
+            "type": "short_answer",
+            "stem": "(3) 1 〜 5 回目までに取り出した玉のうち、白玉が初めて出る回数を \\(X\\) とする (= 「初めて白が出る回数」の確率変数)。\\(X\\) の確率分布表を作成し、期待値 \\(E[X]\\) を求めよ。",
+            "choices": [],
+            "answer": "\\(P(X=1)=\\dfrac{2}{5}, P(X=2)=\\dfrac{3}{10}, P(X=3)=\\dfrac{1}{5}, P(X=4)=\\dfrac{1}{10}\\)、\\(E[X] = 2\\)",
+            "explanation": "## 考え方\n\\(X = k\\) = 「1 ~ (k-1) 回目はすべて赤玉、k 回目に白玉」 (k = 1, 2, 3, 4)。袋には赤 3 + 白 2 = 5 個なので、最大で 4 回目までに白が出ることが保証される (赤を 4 個連続で引く事象は赤が 3 個しかないので不可能)。\n\n## 立式\n各 \\(P(X=k)\\) を計算:\n\n- \\(P(X=1)\\) = 1 回目で白 = \\(\\dfrac{2}{5}\\)\n- \\(P(X=2)\\) = (1 回目赤) × (2 回目白 | 1 回目赤) = \\(\\dfrac{3}{5} \\times \\dfrac{2}{4} = \\dfrac{6}{20} = \\dfrac{3}{10}\\)\n- \\(P(X=3)\\) = (1, 2 回目赤) × (3 回目白) = \\(\\dfrac{3}{5} \\times \\dfrac{2}{4} \\times \\dfrac{2}{3} = \\dfrac{12}{60} = \\dfrac{1}{5}\\) (= q1 と同じ)\n- \\(P(X=4)\\) = (1, 2, 3 回目赤) × (4 回目白) = \\(\\dfrac{3}{5} \\times \\dfrac{2}{4} \\times \\dfrac{1}{3} \\times \\dfrac{2}{2} = \\dfrac{6}{120} \\cdot 1 = \\dfrac{1}{20}\\)\n\nここで気をつけて計算: \\(\\dfrac{3}{5} \\times \\dfrac{2}{4} \\times \\dfrac{1}{3} = \\dfrac{6}{60} = \\dfrac{1}{10}\\)。さらに 4 回目が白 (残り赤 0 + 白 2 = 2 個中白 2 個 = 確率 1)。\nよって \\(P(X=4) = \\dfrac{1}{10} \\times 1 = \\dfrac{1}{10}\\)。\n\n確率の総和確認: \\(\\dfrac{2}{5} + \\dfrac{3}{10} + \\dfrac{1}{5} + \\dfrac{1}{10} = \\dfrac{4}{10} + \\dfrac{3}{10} + \\dfrac{2}{10} + \\dfrac{1}{10} = \\dfrac{10}{10} = 1\\) ✓\n\n## 計算\n期待値:\n\\[E[X] = 1 \\cdot \\dfrac{2}{5} + 2 \\cdot \\dfrac{3}{10} + 3 \\cdot \\dfrac{1}{5} + 4 \\cdot \\dfrac{1}{10}\\]\n\\[= \\dfrac{2}{5} + \\dfrac{6}{10} + \\dfrac{3}{5} + \\dfrac{4}{10}\\]\n\\[= \\dfrac{4}{10} + \\dfrac{6}{10} + \\dfrac{6}{10} + \\dfrac{4}{10} = \\dfrac{20}{10} = 2\\]\n\n## 答え\n\\(E[X] = 2\\) (= 平均的に 2 回目に白が初出する)\n\n## 補足\n直感確認: 5 個中白 2 個 = 白の比率 40%。一様分布近似なら期待値 = 2.5 程度になりそうだが、実際は非復元抽出で `白が出るまでにかかる回数` が短く偏るため期待値は 2 と少し下回る。京大数学ではこの種の確率分布作成 + 期待値計算が頻出 (記述式)。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q3",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-sonnet-4.6-team-review-v9",
+      "question_data": {
+        "passage": "関数 \\(f(x) = \\dfrac{\\sin x}{x}\\) (\\(x \\neq 0\\)) について考える。\n\n極限 \\(\\lim_{x \\to 0} \\dfrac{\\sin x}{x} = 1\\) は既知としてよい。",
+        "audio_script": "",
+        "prompt": "",
+        "figure_svg": "",
+        "year_simulated": 2024,
+        "univ_simulated": "東京大学 理系",
+        "subject": "数学",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "short_answer",
+            "stem": "(1) 極限 \\(\\lim_{x \\to 0} \\dfrac{1 - \\cos x}{x^2}\\) を求めよ。",
+            "choices": [],
+            "answer": "\\(\\dfrac{1}{2}\\)",
+            "explanation": "## 考え方\n半角公式 \\(1 - \\cos x = 2\\sin^2(x/2)\\) を使うか、テイラー展開で考える。\n\n## 立式\n半角公式:\n\\[1 - \\cos x = 2\\sin^2(x/2)\\]\n\nよって:\n\\[\\dfrac{1 - \\cos x}{x^2} = \\dfrac{2\\sin^2(x/2)}{x^2} = \\dfrac{2}{x^2} \\cdot \\sin^2(x/2)\\]\n\n## 計算\n\\(t = x/2\\) と置換すると \\(x \\to 0\\) のとき \\(t \\to 0\\):\n\\[\\dfrac{2 \\sin^2(x/2)}{x^2} = \\dfrac{2 \\sin^2 t}{(2t)^2} = \\dfrac{2 \\sin^2 t}{4t^2} = \\dfrac{1}{2} \\cdot \\dfrac{\\sin^2 t}{t^2} = \\dfrac{1}{2} \\left(\\dfrac{\\sin t}{t}\\right)^2\\]\n\n極限を取る:\n\\[\\lim_{x \\to 0} \\dfrac{1 - \\cos x}{x^2} = \\dfrac{1}{2} \\cdot \\left(\\lim_{t \\to 0} \\dfrac{\\sin t}{t}\\right)^2 = \\dfrac{1}{2} \\cdot 1^2 = \\dfrac{1}{2}\\]\n\n## 答え\n\\(\\dfrac{1}{2}\\)\n\n## 補足\nテイラー展開 (\\(\\cos x = 1 - x^2/2 + x^4/24 - \\cdots\\)) からも同じ結果:\n\\[\\dfrac{1 - \\cos x}{x^2} = \\dfrac{x^2/2 - x^4/24 + \\cdots}{x^2} = \\dfrac{1}{2} - \\dfrac{x^2}{24} + \\cdots \\to \\dfrac{1}{2}\\]\n\n半角公式法とテイラー法の両方マスターしておくこと。東大数学では `lim (sin x)/x = 1` の応用として頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "short_answer",
+            "stem": "(2) 関数 \\(g(x)\\) を以下のように定義する。\n\\[g(x) = \\begin{cases} \\dfrac{\\sin x}{x} & (x \\neq 0) \\\\ 1 & (x = 0) \\end{cases}\\]\n\\(g(x)\\) は \\(x = 0\\) で連続か。連続性の定義に従って判定し、根拠を述べよ。",
+            "choices": [],
+            "answer": "連続である。\\(\\lim_{x \\to 0} g(x) = \\lim_{x \\to 0} \\dfrac{\\sin x}{x} = 1 = g(0)\\) であるため。",
+            "explanation": "## 考え方\n点 \\(a\\) における連続性の定義: \\(\\lim_{x \\to a} f(x) = f(a)\\) (極限値と関数値が一致)。\n\n## 立式\n本問では:\n- \\(\\lim_{x \\to 0} g(x) = \\lim_{x \\to 0} \\dfrac{\\sin x}{x} = 1\\) (与えられた既知)\n- \\(g(0) = 1\\) (定義より)\n\n両者が等しい: \\(\\lim_{x \\to 0} g(x) = g(0) = 1\\)\n\n## 計算\n連続の定義を満たす。\n\n## 答え\n\\(g(x)\\) は \\(x = 0\\) で連続である。\n\n## 補足\nこのような関数 (= 不定形を `(x=0 のときは適切な値で埋める)` 形で連続にしたもの) は `removable singularity` (除去可能な特異点) と呼ばれる。東大数学はこの種の連続性論証を毎年問う。\n\n注: 関数 \\(g(x)\\) は \\(x = 0\\) で **微分可能** でもある (= テイラー展開可能) ことが知られている。これは別問題で扱われることがある。"
+          },
+          {
+            "id": "q3",
+            "type": "short_answer",
+            "stem": "(3) (2) で定義された連続関数 \\(g(x)\\) について、極限 \\(\\lim_{x \\to 0} \\dfrac{g(x) - 1}{x^2}\\) を求めよ。",
+            "choices": [],
+            "answer": "\\(-\\dfrac{1}{6}\\)",
+            "explanation": "## 考え方\n\\(g(x) = \\dfrac{\\sin x}{x}\\) (\\(x \\neq 0\\))、\\(g(0) = 1\\)。\\(\\dfrac{g(x) - 1}{x^2} = \\dfrac{\\sin x / x - 1}{x^2} = \\dfrac{\\sin x - x}{x^3}\\) と整理する。\n\n## 立式\n\\[\\dfrac{g(x) - 1}{x^2} = \\dfrac{\\dfrac{\\sin x}{x} - 1}{x^2} = \\dfrac{\\sin x - x}{x^3}\\]\n\n## 計算\nテイラー展開を使う:\n\\[\\sin x = x - \\dfrac{x^3}{6} + \\dfrac{x^5}{120} - \\cdots\\]\n\\[\\sin x - x = -\\dfrac{x^3}{6} + \\dfrac{x^5}{120} - \\cdots\\]\n\nしたがって:\n\\[\\dfrac{\\sin x - x}{x^3} = -\\dfrac{1}{6} + \\dfrac{x^2}{120} - \\cdots\\]\n\n極限を取る:\n\\[\\lim_{x \\to 0} \\dfrac{\\sin x - x}{x^3} = -\\dfrac{1}{6}\\]\n\n## 答え\n\\(\\lim_{x \\to 0} \\dfrac{g(x) - 1}{x^2} = -\\dfrac{1}{6}\\)\n\n## 補足\n本問は \\(g(x)\\) が \\(x = 0\\) で 2 回微分可能であり、 \\(g''(0) = 2 \\cdot (-1/6) = -1/3\\) という意味的解釈ができる (= \\(g(x) \\approx 1 - x^2/6\\) の 2 次テイラー展開)。\n\nロピタルの定理を使う別解:\n\\[\\lim_{x \\to 0} \\dfrac{\\sin x - x}{x^3} \\overset{\\text{L'Hôpital}}{=} \\lim_{x \\to 0} \\dfrac{\\cos x - 1}{3x^2} \\overset{\\text{L'Hôpital}}{=} \\lim_{x \\to 0} \\dfrac{-\\sin x}{6x} = -\\dfrac{1}{6}\\]\n\n東大数学はテイラー展開・ロピタルの定理の運用を毎年問う。両解法をマスターしておくこと。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-sonnet-4.6-team-review-v9",
+      "question_data": {
+        "passage": "なめらかな水平面上で、質量 \\(m\\) の物体 A が水平方向に速さ \\(v_0\\) で運動し、初めは静止していた質量 \\(2m\\) の物体 B に弾性衝突 (跳ね返り係数 \\(e = 1\\)) する。",
+        "audio_script": "",
+        "prompt": "",
+        "figure_svg": "",
+        "year_simulated": 2024,
+        "univ_simulated": "東京大学 理系",
+        "subject": "物理",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "short_answer",
+            "stem": "(1) 衝突後の物体 A と B の速度を、それぞれ \\(v_A\\)、\\(v_B\\) として求めよ。\n\n(衝突方向を正、A の初速 \\(v_0\\) を正の値とする)",
+            "choices": [],
+            "answer": "\\(v_A = -\\dfrac{1}{3} v_0\\) (= 反対方向に \\(\\dfrac{v_0}{3}\\) の速さ)、\\(v_B = \\dfrac{2}{3} v_0\\)",
+            "explanation": "## 考え方\n弾性衝突 (\\(e = 1\\)) では運動量保存 + 運動エネルギー保存の両方が成立する。\n\n## 立式\n運動量保存:\n\\[mv_0 + 2m \\cdot 0 = mv_A + 2m v_B\\]\n\\[v_0 = v_A + 2 v_B \\quad \\cdots ①\\]\n\n反発係数 \\(e = 1\\):\n\\[e = -\\dfrac{v_A - v_B}{v_0 - 0} = 1\\]\n\\[v_A - v_B = -v_0 \\quad \\cdots ②\\]\n\n## 計算\n② を \\(v_A\\) について解く: \\(v_A = v_B - v_0\\)\n① に代入:\n\\[v_0 = (v_B - v_0) + 2 v_B = 3 v_B - v_0\\]\n\\[3 v_B = 2 v_0\\]\n\\[v_B = \\dfrac{2}{3} v_0\\]\n\n② から:\n\\[v_A = v_B - v_0 = \\dfrac{2}{3} v_0 - v_0 = -\\dfrac{1}{3} v_0\\]\n\n## 答え\n\\(v_A = -\\dfrac{1}{3} v_0\\) (= 反対方向に \\(\\dfrac{v_0}{3}\\))、\\(v_B = \\dfrac{2}{3} v_0\\)\n\n## 補足\n軽い物体 (A: 質量 m) が重い物体 (B: 質量 2m) に弾性衝突すると、軽い物体は跳ね返って逆向きに進む (\\(v_A < 0\\))。重い物体はそれより遅い速さで前方へ。\n\n質量比が等しい (m = 2m → m = m に変更) 場合は \\(v_A = 0, v_B = v_0\\) で完全エネルギー譲渡 (= 銃の弾と的の関係)。質量比が極端 (m << 2m) なら \\(v_A → -v_0, v_B → 0\\) で軽い物体は完全反射。本問は中間的な状況。"
+          },
+          {
+            "id": "q2",
+            "type": "short_answer",
+            "stem": "(2) 衝突前後の運動エネルギーを比較し、保存されていることを確認せよ。",
+            "choices": [],
+            "answer": "衝突前: \\(\\dfrac{1}{2} m v_0^2\\)、衝突後: \\(\\dfrac{1}{2} m v_A^2 + \\dfrac{1}{2} (2m) v_B^2 = \\dfrac{1}{2} m v_0^2\\) (整合)",
+            "explanation": "## 考え方\n運動エネルギー = (1/2) m v² の総和を計算。\n\n## 立式\n衝突前 (B 静止):\n\\[E_{\\text{前}} = \\dfrac{1}{2} m v_0^2 + 0 = \\dfrac{1}{2} m v_0^2\\]\n\n衝突後:\n\\[E_{\\text{後}} = \\dfrac{1}{2} m v_A^2 + \\dfrac{1}{2} (2m) v_B^2\\]\n\n## 計算\n\\(v_A = -v_0/3\\), \\(v_B = 2v_0/3\\) を代入:\n\\[E_{\\text{後}} = \\dfrac{1}{2} m \\left(\\dfrac{v_0}{3}\\right)^2 + \\dfrac{1}{2} (2m) \\left(\\dfrac{2 v_0}{3}\\right)^2\\]\n\\[= \\dfrac{1}{2} m \\cdot \\dfrac{v_0^2}{9} + m \\cdot \\dfrac{4 v_0^2}{9}\\]\n\\[= \\dfrac{m v_0^2}{18} + \\dfrac{4 m v_0^2}{9}\\]\n\\[= \\dfrac{m v_0^2}{18} + \\dfrac{8 m v_0^2}{18} = \\dfrac{9 m v_0^2}{18} = \\dfrac{m v_0^2}{2}\\]\n\n## 答え\n\\[E_{\\text{後}} = \\dfrac{1}{2} m v_0^2 = E_{\\text{前}}\\]\n\n運動エネルギーは保存されている (= 弾性衝突の定義通り)。\n\n## 補足\n弾性衝突は理想化された衝突で、現実には完全弾性衝突は (低速の) 分子衝突や理想化されたボール衝突 (硬球) でしか実現しない。実際の衝突では音・熱・変形でエネルギーが散逸する。本問は東大物理で頻出の `運動量保存 + エネルギー保存連立` の典型問題。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_q2",
+      "eiken_grade": "keio_rikei",
+      "model": "claude-sonnet-4.6-team-review-v9",
+      "question_data": {
+        "passage": "曲線 \\(C: y = \\ln x\\) (\\(x > 0\\)) について考える。",
+        "audio_script": "",
+        "prompt": "",
+        "figure_svg": "",
+        "year_simulated": 2024,
+        "univ_simulated": "慶應義塾大学 理工学部",
+        "subject": "数学",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "short_answer",
+            "stem": "(1) 曲線 \\(C\\) と x 軸 と \\(x = e\\) の直線で囲まれた図形の面積 \\(S\\) を求めよ。",
+            "choices": [],
+            "answer": "\\(S = 1\\)",
+            "explanation": "## 考え方\n曲線 \\(y = \\ln x\\) は \\(x = 1\\) で \\(y = 0\\) (x 軸と交わる)、\\(x = e\\) で \\(y = 1\\)。x 軸上の領域は \\(x \\in [1, e]\\)。\n\n## 立式\n\\[S = \\int_1^e \\ln x \\, dx\\]\n\n## 計算\n部分積分: \\(u = \\ln x\\), \\(dv = dx\\) → \\(du = (1/x) dx\\), \\(v = x\\)\n\\[\\int \\ln x \\, dx = x \\ln x - \\int x \\cdot \\dfrac{1}{x} dx = x \\ln x - x + C\\]\n\n定積分:\n\\[S = [x \\ln x - x]_1^e = (e \\ln e - e) - (1 \\cdot \\ln 1 - 1) = (e \\cdot 1 - e) - (0 - 1) = 0 + 1 = 1\\]\n\n## 答え\n\\(S = 1\\)\n\n## 補足\n部分積分による \\(\\int \\ln x \\, dx\\) は標準的な技法。\\(\\ln 1 = 0, \\ln e = 1\\) の値を覚えておくこと。慶應理工は \\(\\int \\ln x \\, dx\\) や \\(\\int x e^x dx\\) のような部分積分頻出問題が定番。"
+          },
+          {
+            "id": "q2",
+            "type": "short_answer",
+            "stem": "(2) (1) の図形を x 軸の周りに 1 回転してできる立体の体積 \\(V\\) を求めよ。",
+            "choices": [],
+            "answer": "\\(V = \\pi (e - 2)\\)",
+            "explanation": "## 考え方\n回転体の体積公式: \\(V = \\pi \\int_a^b y^2 dx\\) (x 軸周りの回転)。\n\n## 立式\n\\[V = \\pi \\int_1^e (\\ln x)^2 dx\\]\n\n## 計算\n部分積分: \\(u = (\\ln x)^2\\), \\(dv = dx\\) → \\(du = 2 \\ln x \\cdot (1/x) dx = (2 \\ln x / x) dx\\), \\(v = x\\)\n\\[\\int (\\ln x)^2 dx = x (\\ln x)^2 - \\int x \\cdot \\dfrac{2 \\ln x}{x} dx = x (\\ln x)^2 - 2 \\int \\ln x \\, dx\\]\n\n(1) より \\(\\int \\ln x \\, dx = x \\ln x - x + C\\):\n\\[\\int (\\ln x)^2 dx = x (\\ln x)^2 - 2(x \\ln x - x) + C = x (\\ln x)^2 - 2x \\ln x + 2x + C\\]\n\n定積分:\n\\[\\int_1^e (\\ln x)^2 dx = [x (\\ln x)^2 - 2x \\ln x + 2x]_1^e\\]\n\nx = e のとき: \\(e \\cdot 1^2 - 2e \\cdot 1 + 2e = e - 2e + 2e = e\\)\nx = 1 のとき: \\(1 \\cdot 0 - 2 \\cdot 0 + 2 = 2\\)\n\n差分: \\(e - 2\\)\n\n## 答え\n\\[V = \\pi \\int_1^e (\\ln x)^2 dx = \\pi (e - 2)\\]\n\n## 補足\n\\(e - 2 \\approx 0.7183\\) で正の値 → 体積は約 \\(0.72\\pi \\approx 2.26\\)。検算: \\(x = 1\\) で \\(y = 0\\), \\(x = e\\) で \\(y = 1\\) の領域を回転させた立体は (= \\(y = \\ln x\\) を `傾斜` でなぞった) 細長い円錐に近いが、\\(\\ln x\\) のカーブを反映して `(e-2)π` という非自明な値を取る。\n\n慶應理工は `部分積分 2 段階` (= (ln x)² のように 2 回部分積分が必要) が頻出。先に (1) で \\(\\int \\ln x \\, dx\\) を求めさせ、(2) でそれを再利用させる構成は典型的。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "waseda_rikei",
+      "model": "claude-sonnet-4.6-team-review-v9",
+      "question_data": {
+        "passage": "なめらかな水平面上に置かれた質量 \\(m\\) の物体に、ばね定数 \\(k\\) のばねの一端を取り付け、ばねの他端は固定壁に接続されている。物体を自然長から距離 \\(A\\) だけ伸ばした位置で静かに離す。重力加速度 \\(g\\)、運動はばねの軸方向の 1 次元のみとする。",
+        "audio_script": "",
+        "prompt": "",
+        "figure_svg": "",
+        "year_simulated": 2024,
+        "univ_simulated": "早稲田大学 基幹理工",
+        "subject": "物理",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "short_answer",
+            "stem": "(1) 物体の運動を表す微分方程式を導出し、その一般解を求めよ。",
+            "choices": [],
+            "answer": "微分方程式: \\(m\\ddot{x} = -kx\\)、一般解: \\(x(t) = A \\cos(\\omega t)\\) ここで \\(\\omega = \\sqrt{k/m}\\)",
+            "explanation": "## 考え方\nばねからの復元力 \\(F = -kx\\) (フックの法則・x は自然長からの変位) と運動方程式 \\(F = ma\\) を組み合わせる。\n\n## 立式\nばねからの力: \\(F = -kx\\) (= 復元力、変位 x の逆向き)\n運動方程式: \\(F = m\\ddot{x}\\) ここで \\(\\ddot{x} = \\dfrac{d^2 x}{dt^2}\\)\n\nしたがって:\n\\[m\\ddot{x} = -kx\\]\n\\[\\ddot{x} = -\\dfrac{k}{m} x\\]\n\n## 計算\n\\(\\omega^2 = k/m\\) と置けば \\(\\ddot{x} = -\\omega^2 x\\) は単振動の微分方程式。一般解:\n\\[x(t) = A \\cos(\\omega t) + B \\sin(\\omega t)\\]\n\n初期条件: \\(t = 0\\) で \\(x = A\\) (= 自然長から A 離れた位置), \\(\\dot{x} = 0\\) (= 静かに離す)\n- \\(x(0) = A \\cos(0) + B \\sin(0) = A \\cdot 1 + 0 = A\\) → 整合 (= 第1項の係数は \\(A\\))\n- \\(\\dot{x}(0) = -A\\omega \\sin(0) + B \\omega \\cos(0) = 0 + B\\omega = 0\\) → \\(B = 0\\)\n\n## 答え\n微分方程式: \\(m\\ddot{x} = -kx\\)\n一般解 (本問の初期条件下): \\(x(t) = A \\cos(\\omega t)\\) ここで \\(\\omega = \\sqrt{k/m}\\)\n\n## 補足\n単振動 (= 調和振動子) の標準解。周期 \\(T = 2\\pi/\\omega = 2\\pi\\sqrt{m/k}\\)、振動数 \\(f = 1/T = \\omega/(2\\pi)\\)。\n\n摩擦の入った減衰振動では \\(m\\ddot{x} = -kx - b\\dot{x}\\) (b は減衰係数) となり、解は減衰指数を伴う。早慶理工では摩擦無し → 摩擦あり の段階展開が頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "short_answer",
+            "stem": "(2) 物体が自然長 \\(x = 0\\) を最初に通過する時刻 \\(t_1\\) を求めよ。",
+            "choices": [],
+            "answer": "\\(t_1 = \\dfrac{\\pi}{2\\omega} = \\dfrac{\\pi}{2}\\sqrt{\\dfrac{m}{k}}\\)",
+            "explanation": "## 考え方\n\\(x(t) = A \\cos(\\omega t)\\) が \\(x = 0\\) になるのは \\(\\cos(\\omega t) = 0\\)、つまり \\(\\omega t = \\pi/2 + n\\pi\\) (n は 0, 1, 2, ...)。\n\n## 立式\n最初に \\(x = 0\\) を通過する瞬間は最小の正の解:\n\\[\\omega t_1 = \\pi/2\\]\n\\[t_1 = \\dfrac{\\pi}{2\\omega}\\]\n\n\\(\\omega = \\sqrt{k/m}\\) を代入:\n\\[t_1 = \\dfrac{\\pi}{2 \\sqrt{k/m}} = \\dfrac{\\pi}{2}\\sqrt{\\dfrac{m}{k}}\\]\n\n## 計算\n上述。\n\n## 答え\n\\(t_1 = \\dfrac{\\pi}{2}\\sqrt{\\dfrac{m}{k}}\\)\n\n## 補足\nこれは周期 \\(T = 2\\pi\\sqrt{m/k}\\) の 4 分の 1。物体は \\(x = A\\) (最大変位) → \\(x = 0\\) (自然長・最大速さ) → \\(x = -A\\) (反対側最大変位) → \\(x = 0\\) → \\(x = A\\) の 1 周期で動く。最初の通過は (1/4) T で実現。\n\n早稲田理工は単振動の周期と特徴的時刻 (最大速度・最大加速度・最大変位) の対応を頻出させる。"
+          }
+        ]
+      }
+    }
+  ],
+  "skip_full": false
+}
