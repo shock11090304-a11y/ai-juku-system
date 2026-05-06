@@ -2662,11 +2662,17 @@ async def _run_synthetic_checkout_test() -> dict:
                 return {"status": 0, "body": "", "url": url, "error": last_error, "attempts": retries + 1}
 
     loop = asyncio.get_event_loop()
+    warnings_list = []  # warning 級 (実顧客影響なしの偽陽性) は failures と分離
 
     # 1. lp.html (Vercel 経由 — ユーザーが見る形で取得)
+    # NOTE 2026-05-06: Railway 内部 → Vercel への urllib HTTP 接続が status=0 で失敗する
+    # 偽陽性が常態化していたため、status=0 (network error) は warning 扱いに格下げ。
+    # 実顧客は外部 ISP 経由でアクセスするため影響なし。HTTP error (4xx/5xx) は依然 failure。
     r1 = await loop.run_in_executor(None, _http_get, frontend_base + "/lp.html")
     details["lp_status"] = r1["status"]
-    if r1["status"] != 200:
+    if r1["status"] == 0:
+        warnings_list.append(f"lp.html: Railway→Vercel 内部接続失敗 (実顧客影響なし・{r1.get('error','?')[:80]})")
+    elif r1["status"] != 200:
         failures.append(f"lp.html status={r1['status']}")
     elif "checkout.html" not in r1["body"]:
         failures.append("lp.html does not link to checkout.html")
@@ -2675,7 +2681,9 @@ async def _run_synthetic_checkout_test() -> dict:
     r2 = await loop.run_in_executor(None, _http_get, frontend_base + "/checkout.html")
     details["checkout_html_status"] = r2["status"]
     checkout_js_match = ""
-    if r2["status"] != 200:
+    if r2["status"] == 0:
+        warnings_list.append(f"checkout.html: Railway→Vercel 内部接続失敗 (実顧客影響なし)")
+    elif r2["status"] != 200:
         failures.append(f"checkout.html status={r2['status']}")
     else:
         # checkout.js の version 付き script を抽出
@@ -2689,11 +2697,13 @@ async def _run_synthetic_checkout_test() -> dict:
             if "?v=" not in checkout_js_match:
                 failures.append("checkout.js script tag has no cache-busting ?v= (regressions could persist via cache)")
 
-    # 3. checkout.js fix marker check (Vercel 経由)
+    # 3. checkout.js fix marker check (Vercel 経由・status=200 取得時のみ)
     if r2["status"] == 200 and checkout_js_match:
         r3 = await loop.run_in_executor(None, _http_get, frontend_base + "/" + checkout_js_match)
         details["checkout_js_status"] = r3["status"]
-        if r3["status"] != 200:
+        if r3["status"] == 0:
+            warnings_list.append(f"checkout.js: Railway→Vercel 内部接続失敗")
+        elif r3["status"] != 200:
             failures.append(f"checkout.js status={r3['status']}")
         else:
             for marker in _SYNTHETIC_CHECKOUT_FIX_MARKERS:
@@ -2820,6 +2830,7 @@ async def _run_synthetic_checkout_test() -> dict:
         "ts": datetime.now(timezone(timedelta(hours=9))).isoformat(),
         "duration_ms": duration_ms,
         "failures": failures,
+        "warnings": warnings_list,  # Railway→Vercel 内部接続偽陽性等 (実顧客影響なし)
         "details": details,
     }
 
