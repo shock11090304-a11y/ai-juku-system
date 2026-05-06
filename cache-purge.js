@@ -99,3 +99,44 @@
     });
   } catch (e) { /* 古いブラウザで fail しても無視 */ }
 })();
+
+// ==========================================================================
+// 🔄 ユーザー操作: システム強制更新ボタン用の共通関数
+// 「同じ回答ばかり」など古いキャッシュ由来の不具合を生徒自身で解消するため、
+// mypage.html / index.html のヘッダーボタンから呼び出される。
+// ==========================================================================
+window.forceUpdateApp = function () {
+  if (!confirm('🔄 システムを最新版に更新します。\n\nブラウザの古いキャッシュをクリアして再読込します。\nよろしいですか?')) return;
+
+  // 1. 古い AI チャット履歴を削除 (汚染履歴が context に紛れ込むのを防ぐ)
+  try { localStorage.removeItem('ai_juku_chat_history'); } catch (e) {}
+  try { localStorage.removeItem('ai_juku_force_reload'); } catch (e) {}
+
+  // 2. Service Worker を全 unregister
+  var swPromise = Promise.resolve();
+  try {
+    if ('serviceWorker' in navigator) {
+      swPromise = navigator.serviceWorker.getRegistrations().then(function (regs) {
+        return Promise.all(regs.map(function (r) { return r.unregister(); }));
+      });
+    }
+  } catch (e) {}
+
+  // 3. Cache Storage を全削除
+  var cachePromise = Promise.resolve();
+  try {
+    if ('caches' in window) {
+      cachePromise = caches.keys().then(function (keys) {
+        return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+      });
+    }
+  } catch (e) {}
+
+  Promise.allSettled([swPromise, cachePromise]).finally(function () {
+    // 4. cache buster 付きで hard reload (CDN edge cache も bypass)
+    var url = new URL(window.location.href);
+    url.searchParams.set('_cb', Date.now().toString());
+    window.location.replace(url.toString());
+  });
+};
+

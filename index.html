@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI学習コーチ塾 | 次世代型個別最適化学習プラットフォーム</title>
-  <script src="cache-purge.js?v=20260502-mentor-removed"></script>
+  <script src="cache-purge.js?v=20260506-update-btn"></script>
 
   <!-- 紹介ループ: ?ref= を 30 日間 localStorage に保存 (signup 時に送信) -->
   <script>
@@ -73,6 +73,7 @@
       <div class="nav-status-group">
         <span id="costMeter" class="cost-meter admin-only-ui" style="display:none;" title="今月の推定API費用 (管理者のみ)">¥0</span>
         <span id="modeIndicator" class="mode-badge live">🟢 AI接続中</span>
+        <button type="button" onclick="window.forceUpdateApp && window.forceUpdateApp()" title="動作がおかしい時はここをタップして最新版に更新" style="background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.4);border-radius:8px;color:#c4b5fd;padding:0.4rem 0.7rem;cursor:pointer;font-size:0.78rem;font-weight:700;margin-left:0.4rem;white-space:nowrap;">🔄 更新</button>
       </div>
 
       <div class="nav-bar-wrapper admin-only-ui" style="display:none;" title="管理者ナビゲーション">
