@@ -1,0 +1,170 @@
+{
+  "questions": [
+    {
+      "exam_id": "rikei",
+      "part_key": "math_basic",
+      "eiken_grade": "march_rikei",
+      "model": "claude-sonnet-4.6-team-review-v5",
+      "question_data": {
+        "passage": "関数 \\(f(x) = x^3 - 3x^2 + 1\\) について考える。",
+        "audio_script": "",
+        "prompt": "",
+        "figure_svg": "",
+        "year_simulated": 2024,
+        "univ_simulated": "MARCH 理工 (明治理工/中央理工)",
+        "subject": "数学",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "short_answer",
+            "stem": "(1) \\(f(x)\\) の極値を求め、極大・極小をとる x の値も答えよ。",
+            "choices": [],
+            "answer": "x=0 で極大値 f(0)=1、x=2 で極小値 f(2)=-3",
+            "explanation": "## 考え方\n微分 \\(f'(x)\\) を求め、\\(f'(x) = 0\\) となる x を見つけて符号変化を調べる。\n\n## 立式\n\\[f'(x) = 3x^2 - 6x = 3x(x-2)\\]\n\n\\(f'(x) = 0\\) を解く: \\(x = 0\\) または \\(x = 2\\)。\n\n## 計算\n増減表:\n| \\(x\\) | ... | 0 | ... | 2 | ... |\n|------|-----|---|-----|---|-----|\n| \\(f'(x)\\) | + | 0 | - | 0 | + |\n| \\(f(x)\\) | ↗ | 極大 | ↘ | 極小 | ↗ |\n\n\\(f(0) = 0 - 0 + 1 = 1\\) (極大値)\n\\(f(2) = 8 - 12 + 1 = -3\\) (極小値)\n\n## 答え\n極大値 \\(f(0) = 1\\)、極小値 \\(f(2) = -3\\)。\n\n## 補足\n3次関数の極値は \\(f'(x) = 0\\) の2解 (重解でなければ) によって決まる。\\(f''(x) = 6x - 6\\) を見れば、\\(x=0\\) で \\(f''<0\\) (極大)、\\(x=2\\) で \\(f''>0\\) (極小) も確認できる。MARCH 理工では微分の基本運用力を毎年問う。"
+          },
+          {
+            "id": "q2",
+            "type": "short_answer",
+            "stem": "(2) 曲線 \\(y = f(x)\\) と直線 \\(y = k\\) (\\(k\\) は定数) が異なる 3 点で交わるような \\(k\\) の値の範囲を求めよ。",
+            "choices": [],
+            "answer": "\\(-3 < k < 1\\)",
+            "explanation": "## 考え方\n3 次関数のグラフと水平直線が異なる 3 点で交わる ⇔ 直線が極大値と極小値の間にある (両端含まず)。\n\n## 立式\n(1) より極大値 = 1、極小値 = -3。直線 \\(y = k\\) が極大値と極小値の間 (両端含まず) にあれば 3 点交わる。\n\n## 計算\n\\[-3 < k < 1\\]\n\n## 答え\n\\(-3 < k < 1\\)\n\n## 補足\n3次関数 \\(y = f(x)\\) と \\(y = k\\) の交点数:\n- \\(k > 1\\) または \\(k < -3\\): 1 点 (グラフが極値を介さず横切る)\n- \\(k = 1\\) または \\(k = -3\\): 2 点 (極値を介して接する + 1 点交差)\n- \\(-3 < k < 1\\): 3 点 (本問の答え)\n\nこのタイプの問題は MARCH 理工の典型出題。グラフを書いて視覚的に判定するのが速い。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "math_basic",
+      "eiken_grade": "march_rikei",
+      "model": "claude-sonnet-4.6-team-review-v5",
+      "question_data": {
+        "passage": "空間内に 3 点 A(2, 0, 0)、B(0, 3, 0)、C(0, 0, 4) がある。",
+        "audio_script": "",
+        "prompt": "",
+        "figure_svg": "",
+        "year_simulated": 2024,
+        "univ_simulated": "MARCH 理工 (青学理工/立教理学)",
+        "subject": "数学",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "short_answer",
+            "stem": "(1) 三角形 ABC の面積を求めよ。",
+            "choices": [],
+            "answer": "面積 \\(= \\sqrt{61}\\)",
+            "explanation": "## 考え方\n三角形 ABC の面積は \\(\\dfrac{1}{2} |\\vec{AB} \\times \\vec{AC}|\\) (= 外積の半分) で求める。\n\n## 立式\n\\[\\vec{AB} = B - A = (-2, 3, 0)\\]\n\\[\\vec{AC} = C - A = (-2, 0, 4)\\]\n\n外積 \\(\\vec{AB} \\times \\vec{AC}\\):\n\\[\\vec{AB} \\times \\vec{AC} = \\begin{vmatrix} \\mathbf{i} & \\mathbf{j} & \\mathbf{k} \\\\ -2 & 3 & 0 \\\\ -2 & 0 & 4 \\end{vmatrix}\\]\n\n## 計算\n\\[\\mathbf{i} 成分: (3)(4) - (0)(0) = 12\\]\n\\[\\mathbf{j} 成分: -[(-2)(4) - (0)(-2)] = -(-8) = 8\\]\n\\[\\mathbf{k} 成分: (-2)(0) - (3)(-2) = 0 + 6 = 6\\]\n\n外積 = \\((12, 8, 6)\\)\n\n大きさ:\n\\[|\\vec{AB} \\times \\vec{AC}| = \\sqrt{12^2 + 8^2 + 6^2} = \\sqrt{144 + 64 + 36} = \\sqrt{244} = 2\\sqrt{61}\\]\n\n面積:\n\\[S = \\dfrac{1}{2} |\\vec{AB} \\times \\vec{AC}| = \\dfrac{1}{2} \\cdot 2\\sqrt{61} = \\sqrt{61}\\]\n\n## 答え\n\\(\\sqrt{61}\\)\n\n## 補足\n空間内の三角形面積は外積の半分で計算するのが定石。MARCH 理工では空間ベクトルの基本運用 (内積・外積・体積) が毎年問われる。\\(\\sqrt{61} \\approx 7.81\\) 程度の値。"
+          },
+          {
+            "id": "q2",
+            "type": "short_answer",
+            "stem": "(2) 原点 O(0,0,0) と平面 ABC の距離 \\(d\\) を求めよ。",
+            "choices": [],
+            "answer": "\\(d = \\dfrac{12}{\\sqrt{61}} = \\dfrac{12\\sqrt{61}}{61}\\)",
+            "explanation": "## 考え方\n四面体 OABC の体積を 2 通りで表し、d を逆算する。または平面 ABC の方程式を立てて点と平面の距離公式を使う。\n\n## 立式 (体積比較法)\n体積 V を 2 通りで:\n- 底面 OAB (xy 平面上の三角形, S_OAB = (1/2)·2·3 = 3) × 高さ |C の z 成分| = 4 / 3:\n  \\[V = \\dfrac{1}{3} \\cdot 3 \\cdot 4 = 4\\]\n- 底面 ABC (S = √61) × 高さ d / 3:\n  \\[V = \\dfrac{1}{3} \\cdot \\sqrt{61} \\cdot d\\]\n\n両者を等しくおいて:\n\\[\\dfrac{1}{3} \\cdot \\sqrt{61} \\cdot d = 4\\]\n\n## 計算\n\\[d = \\dfrac{12}{\\sqrt{61}} = \\dfrac{12\\sqrt{61}}{61}\\]\n\n## 答え\n\\(d = \\dfrac{12}{\\sqrt{61}} = \\dfrac{12\\sqrt{61}}{61}\\) (有理化)\n\n## 補足\n別解 (平面の方程式): A(2,0,0), B(0,3,0), C(0,0,4) を通る平面は intercept 形式で:\n\\[\\dfrac{x}{2} + \\dfrac{y}{3} + \\dfrac{z}{4} = 1\\]\n通分: \\(6x + 4y + 3z = 12\\)。\n\n点と平面の距離公式 (\\(|ax_0 + by_0 + cz_0 - d|/\\sqrt{a^2+b^2+c^2}\\)):\n\\[d = \\dfrac{|0 + 0 + 0 - 12|}{\\sqrt{36 + 16 + 9}} = \\dfrac{12}{\\sqrt{61}}\\]\n\nどちらの解法でも一致。MARCH 理工では `体積比較` と `平面方程式 + 距離公式` の両方が出題されるので両方マスターしておくこと。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_basic_q",
+      "eiken_grade": "march_rikei",
+      "model": "claude-sonnet-4.6-team-review-v5",
+      "question_data": {
+        "passage": "傾斜角 \\(\\theta = 30°\\) の斜面に質量 \\(m = 2.0\\) kg の物体を置いた。物体と斜面の動摩擦係数は \\(\\mu = 0.20\\)。重力加速度 \\(g = 9.8\\) m/s²、\\(\\sin 30° = 0.5\\)、\\(\\cos 30° = \\sqrt{3}/2 \\approx 0.866\\) とする。",
+        "audio_script": "",
+        "prompt": "",
+        "figure_svg": "",
+        "year_simulated": 2024,
+        "univ_simulated": "MARCH 理工 (法政理工/中央理工)",
+        "subject": "物理",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "short_answer",
+            "stem": "(1) 物体を斜面に沿って下向きに離した場合の加速度 \\(a\\) を求めよ。有効数字 2 桁で。",
+            "choices": [],
+            "answer": "\\(a \\approx 3.2\\) m/s² (斜面下向き)",
+            "explanation": "## 考え方\n斜面方向の運動方程式: 斜面下向きの重力成分 \\(mg\\sin\\theta\\) と斜面上向きの動摩擦力 \\(\\mu N = \\mu m g \\cos\\theta\\) の差で物体が加速する。\n\n## 立式\n斜面方向 (下向き正): \n\\[ma = mg\\sin\\theta - \\mu m g \\cos\\theta\\]\n\n両辺を m で割って:\n\\[a = g(\\sin\\theta - \\mu\\cos\\theta)\\]\n\n## 計算\n\\[a = 9.8 \\times (0.5 - 0.20 \\times 0.866)\\]\n\\[= 9.8 \\times (0.5 - 0.1732)\\]\n\\[= 9.8 \\times 0.3268\\]\n\\[\\approx 3.20\\] m/s²\n\n## 答え\n\\(a \\approx 3.2\\) m/s² (斜面下向き)\n\n## 補足\nもし \\(\\mu \\geq \\tan\\theta\\) (= 0.577) なら静摩擦が重力成分を上回り物体は静止する。本問では \\(\\mu = 0.20 < 0.577\\) なので滑り落ちる。MARCH 理工では `滑るか/静止か` の閾値判定 + 加速度計算が頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "short_answer",
+            "stem": "(2) 物体が斜面を 5.0 m 滑り下りたときの速さ \\(v\\) を求めよ。",
+            "choices": [],
+            "answer": "\\(v = \\sqrt{2 \\cdot 3.2 \\cdot 5.0} = \\sqrt{32} \\approx 5.7\\) m/s",
+            "explanation": "## 考え方\n等加速度直線運動の公式: \\(v^2 - v_0^2 = 2as\\)。初速 \\(v_0 = 0\\) なので \\(v = \\sqrt{2as}\\)。\n\n## 立式\n\\[v^2 = 2 a s = 2 \\cdot 3.2 \\cdot 5.0 = 32\\]\n\n## 計算\n\\[v = \\sqrt{32} = 4\\sqrt{2} \\approx 5.66\\] m/s\n\n## 答え\n\\(v \\approx 5.7\\) m/s\n\n## 補足\nエネルギー保存則による別解: 重力位置エネルギーの減少 = 運動エネルギーの増加 + 動摩擦力による仕事 (= 熱)。\n\\[mgs\\sin\\theta = \\dfrac{1}{2}mv^2 + \\mu mgs\\cos\\theta\\]\n\\[v^2 = 2gs(\\sin\\theta - \\mu\\cos\\theta) = 2as\\] (← 同じ結果)\n\nMARCH 理工では運動方程式と力学的エネルギーの両方の解法を理解しておくこと。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_basic_q",
+      "eiken_grade": "march_rikei",
+      "model": "claude-sonnet-4.6-team-review-v5",
+      "question_data": {
+        "passage": "水酸化ナトリウム NaOH の固体 0.40 g を水に溶かして 100 mL の水溶液を作った。原子量 Na=23、O=16、H=1.0 とする。",
+        "audio_script": "",
+        "prompt": "",
+        "figure_svg": "",
+        "year_simulated": 2024,
+        "univ_simulated": "MARCH 理工 (明治理工/法政理工)",
+        "subject": "化学",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "short_answer",
+            "stem": "(1) この水溶液のモル濃度 (mol/L) を求めよ。有効数字 2 桁で。",
+            "choices": [],
+            "answer": "0.10 mol/L",
+            "explanation": "## 考え方\nモル濃度 = (溶質の物質量) / (溶液の体積)。\n\n## 立式\nNaOH の式量 = 23 + 16 + 1 = 40 g/mol\n物質量 = 0.40 g / 40 g/mol = 0.010 mol\n体積 = 100 mL = 0.100 L\n\n## 計算\nモル濃度 = 0.010 mol / 0.100 L = 0.10 mol/L\n\n## 答え\n0.10 mol/L\n\n## 補足\nMARCH 理工の化学では、モル濃度・質量パーセント濃度・モル分率の換算問題が定番。式量計算の暗算精度が大事。"
+          },
+          {
+            "id": "q2",
+            "type": "short_answer",
+            "stem": "(2) この水溶液の pH を求めよ。NaOH は完全に電離し、25°C で水のイオン積 \\(K_w = 1.0 \\times 10^{-14}\\) (mol/L)² とする。",
+            "choices": [],
+            "answer": "pH = 13",
+            "explanation": "## 考え方\nNaOH は強塩基で完全電離: \\(\\text{NaOH} \\to \\text{Na}^+ + \\text{OH}^-\\)。よって \\([\\text{OH}^-] = [\\text{NaOH}] = 0.10\\) mol/L。\n\n## 立式\n水のイオン積:\n\\[[\\text{H}^+][\\text{OH}^-] = 1.0 \\times 10^{-14}\\]\n\\[[\\text{H}^+] = \\dfrac{1.0 \\times 10^{-14}}{0.10} = 1.0 \\times 10^{-13}\\] mol/L\n\n## 計算\npH = \\(-\\log_{10} [\\text{H}^+] = -\\log_{10}(1.0 \\times 10^{-13}) = 13\\)\n\n## 答え\npH = 13\n\n## 補足\n別解: pOH = \\(-\\log_{10}[\\text{OH}^-] = -\\log_{10}(0.10) = 1\\)\npH + pOH = 14 (25°C) → pH = 14 - 1 = 13\n\nどちらの解法でも一致。pH 計算は MARCH 理工の化学で必出。強酸/強塩基/弱酸/弱塩基の場合分けと、緩衝溶液の Henderson-Hasselbalch 式まで含めて押さえておくこと。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_basic_q",
+      "eiken_grade": "march_rikei",
+      "model": "claude-sonnet-4.6-team-review-v5",
+      "question_data": {
+        "passage": "アルケン (二重結合を 1 つ持つ脂肪族炭化水素) であるエチレン \\(\\text{CH}_2=\\text{CH}_2\\) と臭素 \\(\\text{Br}_2\\) (赤褐色) を反応させると、無色の生成物 X (1,2-ジブロモエタン) が得られる。",
+        "audio_script": "",
+        "prompt": "",
+        "figure_svg": "",
+        "year_simulated": 2024,
+        "univ_simulated": "MARCH 理工 (中央理工/青学理工)",
+        "subject": "化学",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "short_answer",
+            "stem": "(1) この反応の化学反応式を書け。生成物 X の構造式 (示性式) も含めること。",
+            "choices": [],
+            "answer": "\\(\\text{CH}_2=\\text{CH}_2 + \\text{Br}_2 \\to \\text{CH}_2\\text{Br-CH}_2\\text{Br}\\)",
+            "explanation": "## 考え方\nアルケンの炭素=炭素二重結合に Br_2 が付加 (= 求電子付加反応)。臭素分子が二重結合に切り込み、各炭素に 1 つずつ Br が結合する。\n\n## 立式\n\\[\\text{CH}_2=\\text{CH}_2 + \\text{Br}_2 \\to \\text{CH}_2\\text{Br}\\text{-CH}_2\\text{Br}\\]\n\n## 計算\n反応の特徴:\n- C=C の二重結合 → C-C 単結合 (= 二重結合が1本減)\n- Br-Br 結合切断 → 2つの C-Br 結合形成\n- 全体として `付加反応` (アルケン → ジハロゲン化アルカン)\n\n## 答え\n\\[\\text{CH}_2=\\text{CH}_2 + \\text{Br}_2 \\to \\text{CH}_2\\text{Br-CH}_2\\text{Br} \\quad (1{,}2\\text{-}\\text{ジブロモエタン})\\]\n\n## 補足\nこの反応は `アルケンの判別` に使われる典型的な反応:\n- 反応前: 臭素水 (赤褐色) + 試料\n- 反応後: 臭素水の赤褐色が消失 → 試料はアルケン (= 二重結合あり) と判定\n\nアルカン (単結合のみ) は同じ条件で Br_2 と反応しない (光照射で置換反応のみ)。MARCH 理工では `付加反応 vs 置換反応` の区別が頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "short_answer",
+            "stem": "(2) 1,3-ブタジエン \\(\\text{CH}_2=\\text{CH-CH}=\\text{CH}_2\\) と 1 等量の Br_2 が低温 (-15°C) で反応すると、主に 1,2-付加体 (\\(\\text{CH}_2\\text{Br-CHBr-CH}=\\text{CH}_2\\)) が得られるが、高温 (60°C) では 1,4-付加体 (\\(\\text{CH}_2\\text{Br-CH}=\\text{CH-CH}_2\\text{Br}\\)) が主生成物となる。この温度依存性の理由を 80 字以内で簡潔に説明せよ。",
+            "choices": [],
+            "answer": "1,2-付加体は活性化エネルギーが低く速度論支配 (低温で生成)。1,4-付加体は熱力学的に安定 (内部の二重結合がより置換度高く安定) で熱力学支配 (高温で平衡到達)。",
+            "explanation": "## 考え方\n1,3-ブタジエンの臭素付加は典型的な `速度論支配 vs 熱力学支配` の例。\n\n## 立式 (反応エネルギー図の概念)\n- 1,2-付加体: 中間体カチオン (アリル位) に Br⁻ が付加、活性化エネルギーが小さい (= 速度速い、低温で優位)\n- 1,4-付加体: 末端への付加で内部 C=C 結合を残す。熱力学的に安定 (内部二重結合は二置換 ≥ 一置換) (= 熱力学的に有利、高温で平衡)\n\n## 計算 (記述)\n低温では速度が支配的 → 速く形成される 1,2-付加体が主。高温では熱平衡まで到達 → 安定な 1,4-付加体が主。\n\n## 答え\n1,2-付加体は活性化エネルギーが低く速度論支配 (低温で主)。1,4-付加体は熱力学的に安定 (内部二重結合の置換度が高く、超共役/共役による安定化が大きい) で熱力学支配 (高温で平衡到達して主に)。\n\n## 補足\n速度論支配 (kinetic control) vs 熱力学支配 (thermodynamic control) の対比は有機化学の重要概念。本問のように温度依存性で問うのは MARCH 上位 (中央/明治) の頻出パターン。\n\n類似事例: アルドール縮合 (低温=速度論=熱力学不安定エノラート、高温=熱力学=安定エノラート)、エノラート形成、カルボニル化合物の還元なども同じ概念で考察できる。"
+          }
+        ]
+      }
+    }
+  ],
+  "skip_full": false
+}
