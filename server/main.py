@@ -10573,15 +10573,27 @@ def cron_trial_followups(x_cron_secret: str = Header(None), dry_run: bool = Fals
     try:
         now = datetime.now(timezone.utc)
 
+        # 継続意思のない (= 一度もログインしていない) 顧客はスキップ (塾長指示 2026-05-06)
         c.execute(
-            "SELECT id, name, email, trial_end FROM students WHERE status='expired' AND email IS NOT NULL AND trial_end IS NOT NULL"
+            "SELECT id, name, email, trial_end, last_login_at FROM students WHERE status='expired' AND email IS NOT NULL AND trial_end IS NOT NULL"
         )
         expired_students = list(c.fetchall())
 
         sent = 0
         skipped = 0
+        skipped_silent = 0
+        skipped_silent_ids = []
         preview = []
         for row in expired_students:
+            # サイレント顧客スキップ: 一度もログインしていない = 継続の連絡がない顧客 (塾長指示 2026-05-06)
+            try:
+                _last_login = row["last_login_at"]
+            except (KeyError, IndexError):
+                _last_login = None
+            if not _last_login:
+                skipped_silent += 1
+                skipped_silent_ids.append(row["id"])
+                continue
             try:
                 te = row["trial_end"]
                 if isinstance(te, str):
@@ -10628,7 +10640,19 @@ def cron_trial_followups(x_cron_secret: str = Header(None), dry_run: bool = Fals
             if result.get("sent"):
                 sent += 1
         conn.commit()
-        return {"sent": sent, "skipped": skipped, "candidates": len(expired_students), "preview": preview if dry_run else None}
+        # events に audit log (CEO ダッシュ可視化用)
+        if skipped_silent > 0 and not dry_run:
+            try:
+                c.execute(
+                    "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                    ("trial_followup_silent_skipped",
+                     json.dumps({"count": skipped_silent, "student_ids": skipped_silent_ids[:50], "reason": "last_login_at IS NULL"}, ensure_ascii=False),
+                     "cron")
+                )
+                conn.commit()
+            except Exception as _e:
+                log.warning(f"[trial-followups] silent skip audit failed: {_e}")
+        return {"sent": sent, "skipped": skipped, "skipped_silent": skipped_silent, "candidates": len(expired_students), "preview": preview if dry_run else None}
     finally:
         conn.close()
 
@@ -10773,8 +10797,9 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
     t_start = now + timedelta(hours=24)   # 24時間後以降
     t_end = now + timedelta(hours=48)     # 48時間以内
     # status='paid' はStripeトライアル中、'trial'はまだ未決済のトライアル
+    # 継続意思のない (= 一度もログインしていない) 顧客はスキップ (塾長指示 2026-05-06)
     c.execute(
-        """SELECT id, name, email, trial_end, status FROM students
+        """SELECT id, name, email, trial_end, status, last_login_at FROM students
            WHERE status IN ('trial','paid') AND email IS NOT NULL
              AND trial_end IS NOT NULL
              AND trial_end > ? AND trial_end <= ?""",
@@ -10784,8 +10809,19 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
 
     sent = 0
     skipped = 0
+    skipped_silent = 0
+    skipped_silent_ids = []
     preview = []
     for row in candidates:
+        # サイレント顧客スキップ: 一度もログインしていない = 継続の連絡がない顧客 (塾長指示 2026-05-06)
+        try:
+            _last_login = row["last_login_at"]
+        except (KeyError, IndexError):
+            _last_login = None
+        if not _last_login:
+            skipped_silent += 1
+            skipped_silent_ids.append(row["id"])
+            continue
         # 重複チェック: この生徒に trial_ending 通知を既に送っていたらスキップ
         c.execute(
             "SELECT id FROM notifications WHERE student_id=? AND template='trial_ending' AND success=1 LIMIT 1",
@@ -10815,9 +10851,21 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
         )
         if result.get("sent"):
             sent += 1
+    # events に audit log (CEO ダッシュ可視化用)
+    if skipped_silent > 0 and not dry_run:
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("trial_reminder_silent_skipped",
+                 json.dumps({"count": skipped_silent, "student_ids": skipped_silent_ids[:50], "reason": "last_login_at IS NULL"}, ensure_ascii=False),
+                 "cron")
+            )
+            conn.commit()
+        except Exception as _e:
+            log.warning(f"[trial-reminders] silent skip audit failed: {_e}")
     conn.commit()
     conn.close()
-    return {"sent": sent, "skipped": skipped, "candidates": len(candidates), "preview": preview if dry_run else None}
+    return {"sent": sent, "skipped": skipped, "skipped_silent": skipped_silent, "candidates": len(candidates), "preview": preview if dry_run else None}
 
 
 @app.post("/api/billing/portal-session")
