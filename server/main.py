@@ -172,6 +172,26 @@ NEVER_LOGIN_NUDGE_HOURS_THRESHOLD = int(os.getenv("NEVER_LOGIN_NUDGE_HOURS", "24
 NEVER_LOGIN_NUDGE_MAX_PER_DAY = int(os.getenv("NEVER_LOGIN_NUDGE_MAX_PER_DAY", "30"))  # 1日上限 (Resend rate 対策)
 _NEVER_LOGIN_NUDGE_LAST_RUN: dict = {"date": ""}  # 同日内多重起動防止
 
+# 🌐 ドメイン状態監視 (2026-05-06 致命事故対応 — clientHold で全停止した教訓)
+# RDAP で WHOIS Domain Status を 30 分おきに監視。clientHold/serverHold/inactive/pendingDelete
+# 検知時は即座に塾長に緊急アラートメール送信 (Resend 経由なので自社ドメイン DNS に依存しない)。
+DOMAIN_MONITOR_ENABLED = os.getenv("DOMAIN_MONITOR_ENABLED", "1") == "1"
+DOMAIN_MONITOR_TARGET = os.getenv("DOMAIN_MONITOR_TARGET", "trillion-ai-juku.com")
+DOMAIN_MONITOR_INTERVAL_MIN = int(os.getenv("DOMAIN_MONITOR_INTERVAL_MIN", "30"))  # 30分おき (RDAP rate 対策)
+DOMAIN_MONITOR_MANUAL_THROTTLE_SEC = int(os.getenv("DOMAIN_MONITOR_MANUAL_THROTTLE_SEC", "60"))  # 手動 trigger の最低間隔
+_DOMAIN_MONITOR_LAST_CHECK: dict = {"ts": 0.0, "status": None, "alert_sent_at": 0.0, "manual_ts": 0.0}
+# 🔔 Whois 認証年次更新リマインダー (お名前.com は年1回 Whois 認証メール返信が必須)
+# 2026-05-06 にこの認証を逃してドメインが clientHold になった。事故日近辺 (5/6) を anniversary
+# として、30 日前 + 7 日前の 2 段階で塾長に通知して再発防止。
+WHOIS_RENEWAL_REMINDER_ENABLED = os.getenv("WHOIS_RENEWAL_REMINDER_ENABLED", "1") == "1"
+# DOMAIN_REGISTRATION_ANNIVERSARY = "MM-DD" (お名前.com の Whois 認証メールが届く時期)
+DOMAIN_REGISTRATION_ANNIVERSARY = os.getenv("DOMAIN_REGISTRATION_ANNIVERSARY", "05-06")
+# 何日前にリマインダーを送るか (カンマ区切り、複数指定可)。デフォは 30 日前 + 7 日前の 2 段階。
+WHOIS_RENEWAL_REMINDER_DAYS_BEFORE = os.getenv("WHOIS_RENEWAL_REMINDER_DAYS_BEFORE", "30,7")
+# 旧 env (互換用、4/15 固定運用していた場合のフォールバック)
+WHOIS_RENEWAL_REMINDER_MONTH = int(os.getenv("WHOIS_RENEWAL_REMINDER_MONTH", "0"))  # 0=disabled (旧モード)
+WHOIS_RENEWAL_REMINDER_DAY = int(os.getenv("WHOIS_RENEWAL_REMINDER_DAY", "0"))
+
 # 入塾金を免除するプラン
 ENROLLMENT_FEE_EXEMPT = {"student_addon"}
 
@@ -2499,6 +2519,384 @@ def _maybe_run_never_login_nudge(now_jst: datetime) -> dict:
     return {"ran": True, "matched": len(targets), "sent": sent, "failed": len(failed)}
 
 
+# =====================================================================
+# 🌐 ドメイン状態監視 + Whois 認証年次リマインダー
+# 2026-05-06 致命事故 (お名前.com Whois 年次認証を逃して clientHold で
+# trillion-ai-juku.com 全停止 → 顧客アクセス不能) の再発防止策。
+#
+# 3視点 review feedback (2026-05-06) を反映:
+#   - JST NameError 修正 (module-global JST_TZ 化)
+#   - multi-replica 安全な kv_settings 永続 dedup
+#   - 4/15 単日 → DOMAIN_REGISTRATION_ANNIVERSARY 起点で 30/7 日前の window
+#   - HTML エスケープで XSS 防止
+#   - kv_settings UPSERT パターン
+#   - 異常 status 別の対応手順分岐
+#   - 手動 trigger に rate limit
+# =====================================================================
+
+import html as _html_mod  # XSS escape 用 (RDAP-derived fields)
+
+# JST timezone (module-level, 上記レビューで指摘された NameError 防止)
+JST_TZ_DOMAIN = timezone(timedelta(hours=9))
+
+_BAD_DOMAIN_STATUSES = {
+    "clienthold",
+    "serverhold",
+    "inactive",
+    "pendingdelete",
+    "redemptionperiod",
+}
+
+
+def _normalize_status(s: str) -> str:
+    """RDAP status の表記揺れを吸収 ('client hold', 'clientHold', 'CLIENT_HOLD' → 'clienthold')"""
+    return (s or "").lower().replace(" ", "").replace("_", "").replace("-", "")
+
+
+def _kv_get(key: str) -> Optional[str]:
+    """kv_settings から値を読む (cross-replica safe)"""
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute("CREATE TABLE IF NOT EXISTS kv_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)")
+        c.execute("SELECT value FROM kv_settings WHERE key = ?", (key,))
+        row = c.fetchone()
+        conn.close()
+        if not row:
+            return None
+        if isinstance(row, dict):
+            return row.get("value")
+        try:
+            return row[0] if row[0] is not None else None
+        except (KeyError, IndexError, TypeError):
+            return row.get("value") if hasattr(row, "get") else None
+    except Exception as e:
+        log.warning(f"[kv_get:{key}] error: {e}")
+        return None
+
+
+def _kv_set(key: str, value: str) -> bool:
+    """kv_settings UPSERT (PostgreSQL/SQLite 両対応)。DELETE+INSERT より race-safe。"""
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute("CREATE TABLE IF NOT EXISTS kv_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)")
+        # ON CONFLICT は SQLite/PostgreSQL 両方サポート
+        try:
+            c.execute(
+                "INSERT INTO kv_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP",
+                (key, value)
+            )
+        except Exception:
+            # フォールバック: DELETE + INSERT (古い SQLite or psycopg)
+            c.execute("DELETE FROM kv_settings WHERE key = ?", (key,))
+            c.execute("INSERT INTO kv_settings (key, value) VALUES (?, ?)", (key, value))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        log.warning(f"[kv_set:{key}] error: {e}")
+        return False
+
+
+def _check_domain_status_via_rdap(domain: str = None) -> dict:
+    """RDAP (https://rdap.org) で WHOIS Domain Status を取得。
+    返り値: {"ok": bool, "domain": str, "status": [str], "error": str|None, "bad_status_detected": [str]}
+    """
+    target = domain or DOMAIN_MONITOR_TARGET
+    out = {"ok": False, "domain": target, "status": [], "error": None, "bad_status_detected": []}
+    # URL 安全性: env-only だが念のため危険文字を弾く
+    if not target or any(ch in target for ch in ("/", " ", "\n", "\r", "?", "#")):
+        out["error"] = "invalid_domain"
+        return out
+    try:
+        req = urllib.request.Request(
+            f"https://rdap.org/domain/{target}",
+            headers={"User-Agent": "ai-juku-monitor/1.0", "Accept": "application/rdap+json"},
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            statuses = data.get("status") or []
+            out["status"] = statuses
+            bad_set = {_normalize_status(bs) for bs in _BAD_DOMAIN_STATUSES}
+            for s in statuses:
+                if _normalize_status(s) in bad_set:
+                    out["bad_status_detected"].append(s)
+            out["ok"] = True
+    except urllib.error.HTTPError as e:
+        out["error"] = f"HTTPError {e.code}"
+        if e.code == 404:
+            out["bad_status_detected"].append("not_registered")
+    except urllib.error.URLError as e:
+        out["error"] = f"URLError {getattr(e, 'reason', e)}"
+    except Exception as e:
+        out["error"] = f"{type(e).__name__}: {e}"
+    return out
+
+
+def _build_domain_alert_email(result: dict) -> tuple:
+    """異常 status 種別ごとに subject/body を分岐生成。XSS 防止のため HTML エスケープ。"""
+    bad_raw = result.get("bad_status_detected") or []
+    bad_norm = [_normalize_status(s) for s in bad_raw]
+    domain_safe = _html_mod.escape(str(result.get("domain") or ""))
+    bad_safe = _html_mod.escape(", ".join(bad_raw))
+    all_status_safe = _html_mod.escape(", ".join(result.get("status") or []))
+    detect_time = datetime.now(JST_TZ_DOMAIN).strftime("%Y-%m-%d %H:%M:%S")
+
+    # subject はヘッダ injection 防止のため改行除去
+    subject = f"🚨🚨 緊急: ドメイン異常検知 ({domain_safe}) — {bad_safe}".replace("\r", "").replace("\n", " ")
+
+    # 状態別の対応手順
+    if "pendingdelete" in bad_norm or "redemptionperiod" in bad_norm:
+        action_html = """
+        <h3 style="color:#dc2626;">🆘 即対応 (pendingDelete / redemptionPeriod)</h3>
+        <p style="background:#fee2e2;padding:12px;border-radius:8px;border-left:4px solid #dc2626;">
+          ⚠️ <strong>ドメインが削除/redemption フェーズに入っています。30 日以内に行動しないとドメインを失います。</strong>
+        </p>
+        <ol style="line-height:1.8;">
+          <li>お名前.com に至急連絡 (TEL: 03-6745-9522 / 平日 10:00-18:00)</li>
+          <li>「redemption fee 支払いで復活したい」と伝える (1ドメイン¥10,000〜¥30,000 程度)</li>
+          <li>支払い完了後、登録更新も同時に実施</li>
+        </ol>
+        """
+    elif "not_registered" in bad_norm:
+        action_html = """
+        <h3 style="color:#dc2626;">🆘 即対応 (登録抹消の疑い)</h3>
+        <p style="background:#fee2e2;padding:12px;border-radius:8px;border-left:4px solid #dc2626;">
+          ⚠️ <strong>RDAP がドメインを認識しません (404)。登録が抹消された可能性があります。</strong>
+        </p>
+        <ol style="line-height:1.8;">
+          <li>お名前.com Navi にログイン → 「ドメイン > ドメイン一覧」確認</li>
+          <li>登録更新切れの場合は即時更新 (24h 以内なら復活可能性高)</li>
+        </ol>
+        """
+    else:
+        # clientHold / serverHold / inactive (Whois 認証関連が大半)
+        action_html = """
+        <h3>📋 即対応手順 (clientHold / serverHold)</h3>
+        <ol style="line-height:1.8;">
+          <li>お名前.com Navi にログイン: <a href="https://navi.onamae.com/">https://navi.onamae.com/</a></li>
+          <li>「ドメイン > ドメイン機能一覧 > Whois 情報認証」を確認</li>
+          <li>受信箱で「onamae.com Whois」と検索 (送信元: <code>verification-noreply@onamae.com</code>)</li>
+          <li>認証 URL をクリック → 数時間以内に解除</li>
+          <li>メールが見つからなければ Whois 情報認証画面から再送信</li>
+        </ol>
+        """
+
+    body_html = f"""
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+      <h2 style="color:#dc2626;">🚨 ドメイン異常を検知しました</h2>
+      <p><strong>ドメイン:</strong> {domain_safe}</p>
+      <p><strong>異常 status:</strong> <code style="background:#fee;color:#dc2626;padding:4px 8px;border-radius:4px;">{bad_safe}</code></p>
+      <p><strong>全 status:</strong> {all_status_safe}</p>
+      <p><strong>検知時刻:</strong> {detect_time} JST</p>
+      <hr>
+      {action_html}
+      <p style="font-size:0.85rem;color:#71717a;margin-top:20px;">
+        🛡️ ai-juku-system が 30 分おきに RDAP をチェック中。本アラートはエスカレーション付きで dedup 送信します。
+      </p>
+    </div>
+    """
+    return subject, body_html
+
+
+def _maybe_run_domain_status_check() -> dict:
+    """30 分おきにドメイン状態を RDAP で確認、異常検知時は緊急アラート送信。
+    multi-replica 対応のため kv_settings で永続 dedup。
+    エスカレーション: 1h → 6h → 24h で再アラート (DNS 伝播待ち長時間化に対応)。
+    """
+    if not DOMAIN_MONITOR_ENABLED:
+        return {"ran": False, "reason": "disabled"}
+    now_ts = time.time()
+    # multi-replica safe interval gate: kv_settings の値を尊重 (in-memory は補助)
+    last_check_kv = _kv_get("domain_monitor_last_check_ts")
+    last_check_ts = float(last_check_kv) if last_check_kv else _DOMAIN_MONITOR_LAST_CHECK.get("ts", 0.0)
+    if now_ts - last_check_ts < DOMAIN_MONITOR_INTERVAL_MIN * 60:
+        return {"ran": False, "reason": "interval_not_reached"}
+    _kv_set("domain_monitor_last_check_ts", str(now_ts))
+    _DOMAIN_MONITOR_LAST_CHECK["ts"] = now_ts
+
+    result = _check_domain_status_via_rdap()
+    _DOMAIN_MONITOR_LAST_CHECK["status"] = result.get("status")
+    bad = result.get("bad_status_detected") or []
+
+    # events 記録 (audit log)
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            ("domain_status_check", json.dumps(result, ensure_ascii=False)[:4000], "monitor_scheduler")
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+    if not bad:
+        # OK 状態: 連続失敗カウンタリセット
+        _kv_set("domain_monitor_consecutive_failures", "0")
+        return {"ran": True, "ok": True, "status": result.get("status")}
+
+    # エスカレーション: 1h → 6h → 24h で再送
+    last_alert_kv = _kv_get("domain_monitor_alert_sent_at")
+    last_alert_ts = float(last_alert_kv) if last_alert_kv else 0.0
+    alert_count_kv = _kv_get("domain_monitor_alert_count_in_incident")
+    alert_count = int(alert_count_kv) if alert_count_kv else 0
+    elapsed = now_ts - last_alert_ts
+    if alert_count == 0:
+        cooldown = 0  # 初回は即時
+    elif alert_count == 1:
+        cooldown = 3600  # 2回目: 1h 後
+    elif alert_count == 2:
+        cooldown = 6 * 3600  # 3回目: 6h 後
+    else:
+        cooldown = 24 * 3600  # 4回目以降: 24h 後
+    if elapsed < cooldown:
+        return {"ran": True, "ok": False, "bad": bad, "alert_skipped": f"cooldown_{cooldown}s"}
+
+    subject, body_html = _build_domain_alert_email(result)
+    email_result = _send_monitor_email(subject, body_html)
+    sent = bool(email_result.get("sent"))
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            ("domain_status_alert", json.dumps({
+                "bad_status": bad,
+                "all_status": result.get("status"),
+                "alert_attempt": alert_count + 1,
+                "sent": sent,
+                "resend_id": email_result.get("resend_id"),
+                "error": email_result.get("error"),
+            }, ensure_ascii=False)[:4000], "monitor_scheduler")
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+    if sent:
+        _DOMAIN_MONITOR_LAST_CHECK["alert_sent_at"] = now_ts
+        _kv_set("domain_monitor_alert_sent_at", str(now_ts))
+        _kv_set("domain_monitor_alert_count_in_incident", str(alert_count + 1))
+    return {"ran": True, "ok": False, "bad": bad, "alert_sent": sent, "alert_attempt": alert_count + 1}
+
+
+def _whois_reminder_should_fire(now_jst: datetime) -> tuple:
+    """4/15 単日固定だと監視自体ダウン時に逃すので、anniversary 起点の window に変更。
+    返り値: (should_fire: bool, reason: str, days_before: int)
+    """
+    if not WHOIS_RENEWAL_REMINDER_ENABLED:
+        return False, "disabled", 0
+    # 旧 env (4/15 固定) との互換: 設定があればそちらに従う (deprecation path)
+    if WHOIS_RENEWAL_REMINDER_MONTH and WHOIS_RENEWAL_REMINDER_DAY:
+        if now_jst.month == WHOIS_RENEWAL_REMINDER_MONTH and now_jst.day == WHOIS_RENEWAL_REMINDER_DAY and now_jst.hour <= 11:
+            return True, "legacy_fixed_date", 0
+        return False, "legacy_no_match", 0
+    # 新方式: anniversary - 30d, anniversary - 7d の window で fire
+    try:
+        anni_m, anni_d = [int(x) for x in DOMAIN_REGISTRATION_ANNIVERSARY.split("-")]
+    except Exception:
+        return False, "invalid_anniversary", 0
+    try:
+        days_before_list = [int(x.strip()) for x in WHOIS_RENEWAL_REMINDER_DAYS_BEFORE.split(",") if x.strip()]
+    except Exception:
+        return False, "invalid_days_before", 0
+
+    # 今年の anniversary 日付を構築
+    try:
+        anni_this_year = datetime(now_jst.year, anni_m, anni_d, tzinfo=now_jst.tzinfo)
+    except Exception:
+        return False, "invalid_anniversary_date", 0
+    # anniversary を過ぎていたら来年の同日を見る (12/31 から 1/X など)
+    if now_jst > anni_this_year:
+        try:
+            anni_this_year = datetime(now_jst.year + 1, anni_m, anni_d, tzinfo=now_jst.tzinfo)
+        except Exception:
+            return False, "invalid_next_anniversary", 0
+
+    delta_days = (anni_this_year.date() - now_jst.date()).days
+    # 30 日前の window: [days_before, days_before+2] に入っていれば fire (監視ダウン耐性)
+    for db_target in days_before_list:
+        if db_target <= delta_days <= db_target + 2:
+            return True, f"anniversary_minus_{db_target}d_window", db_target
+    return False, "outside_window", delta_days
+
+
+def _maybe_run_whois_renewal_reminder(now_jst: datetime) -> dict:
+    """お名前.com Whois 認証年次リマインダーを送信。
+    anniversary - 30/7 日前の window で fire (kv_settings で year+days_before の組み合わせ単位で dedup)。
+    """
+    should_fire, reason, days_before = _whois_reminder_should_fire(now_jst)
+    if not should_fire:
+        return {"ran": False, "reason": reason}
+    # 朝の時間帯のみ (深夜のスケジュール起動を回避)
+    if now_jst.hour > 11:
+        return {"ran": False, "reason": "after_noon"}
+
+    year_key = str(now_jst.year)
+    dedup_key = f"whois_renewal_reminder_sent_{year_key}_minus_{days_before}d"
+    if _kv_get(dedup_key):
+        return {"ran": False, "reason": "already_sent_this_window", "year": year_key, "days_before": days_before}
+
+    domain_safe = _html_mod.escape(DOMAIN_MONITOR_TARGET)
+    anni_safe = _html_mod.escape(DOMAIN_REGISTRATION_ANNIVERSARY)
+    urgency_color = "#dc2626" if days_before <= 7 else "#f59e0b"
+    urgency_label = "🚨 至急" if days_before <= 7 else "🔔 事前"
+
+    subject = f"{urgency_label} [{days_before}日前リマインダー] お名前.com Whois 認証メールにご注意 ({domain_safe})"
+    body_html = f"""
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+      <h2 style="color:{urgency_color};">{urgency_label} Whois 認証年次更新のお知らせ ({days_before} 日前)</h2>
+      <p>塾長 様</p>
+      <p>
+        ドメイン登録記念日 ({anni_safe}) まで <strong>{days_before} 日</strong> です。<br>
+        お名前.com から下記の認証メールが届きます (送信元: <code>verification-noreply@onamae.com</code>):
+      </p>
+      <blockquote style="background:#f1f5f9;padding:10px 15px;border-left:3px solid #94a3b8;font-style:italic;">
+        「[重要] [ドメイン名] ドメイン Whois 情報の有効性認証手続きのお願い」
+      </blockquote>
+      <p style="background:#fef3c7;padding:12px;border-radius:8px;border-left:4px solid #f59e0b;">
+        ⚠️ <strong>このメールに記載された認証 URL を 15 日以内にクリックしないと、ドメインが clientHold (利用停止) になります。</strong><br>
+        2026-05-06 に実際に発生し、サイト全停止 + 顧客アクセス不能の致命事故になりました。
+      </p>
+      <h3>📋 アクション</h3>
+      <ol style="line-height:1.8;">
+        <li>受信箱で「onamae.com Whois」と検索</li>
+        <li>認証メールを開いて URL をクリック</li>
+        <li>「Whois 認証完了」画面が表示されれば OK</li>
+        <li>万一見つからなければ <a href="https://navi.onamae.com/">お名前.com Navi</a> > Whois 情報認証 から再送信</li>
+      </ol>
+      <p style="font-size:0.85rem;color:#71717a;margin-top:20px;">
+        対象ドメイン: <code>{domain_safe}</code><br>
+        このメールは 30/7 日前の 2 段階で年 1 回送信されます。<br>
+        🛡️ ai-juku-system in-process scheduler が 30 分おきに RDAP をチェック中、万一 clientHold が発生したら緊急アラートも送ります。
+      </p>
+    </div>
+    """
+    email_result = _send_monitor_email(subject, body_html)
+    sent = bool(email_result.get("sent"))
+    if sent:
+        _kv_set(dedup_key, str(int(time.time())))
+        try:
+            conn = db()
+            c = conn.cursor()
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("whois_renewal_reminder_sent", json.dumps({
+                    "year": year_key,
+                    "days_before": days_before,
+                    "resend_id": email_result.get("resend_id"),
+                }, ensure_ascii=False)[:1000], "monitor_scheduler")
+            )
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+    return {"ran": True, "sent": sent, "year": year_key, "days_before": days_before}
+
+
 def _send_daily_summary_if_due() -> dict:
     """毎朝 MONITORING_DAILY_SUMMARY_HOUR_JST 時に1回だけ送信"""
     if _check_daily_summary_sent_today_jst():
@@ -2577,6 +2975,19 @@ async def _monitor_scheduler():
                 _maybe_run_never_login_nudge(now_jst)
             except Exception as e:
                 log.error(f"[Monitor:Nudge] error: {e}", exc_info=True)
+            # 2-C. 🌐 ドメイン状態 RDAP 監視 (2026-05-06 clientHold 事故再発防止)
+            # 30 分おきに WHOIS Domain Status をチェック。clientHold/serverHold 検知時は緊急アラート。
+            try:
+                domain_check = _maybe_run_domain_status_check()
+                if domain_check.get("ran") and not domain_check.get("ok", True):
+                    log.warning(f"[Monitor:Domain] BAD STATUS: {domain_check.get('bad')}")
+            except Exception as e:
+                log.error(f"[Monitor:Domain] check error: {e}", exc_info=True)
+            # 2-D. 🔔 Whois 認証年次リマインダー (年1回, デフォ 4/15 朝)
+            try:
+                _maybe_run_whois_renewal_reminder(now_jst)
+            except Exception as e:
+                log.error(f"[Monitor:Whois] reminder error: {e}", exc_info=True)
             # 3. 次のループまで sleep
             await asyncio.sleep(MONITORING_INTERVAL_MIN * 60)
         except asyncio.CancelledError:
@@ -9780,6 +10191,87 @@ def admin_monitor_daily_summary_now(authorization: Optional[str] = Header(None),
     subject, html = _format_daily_summary(snapshot)
     result = _send_monitor_email(subject, html)
     return {"sent": result.get("sent"), "snapshot": snapshot, "subject": subject}
+
+
+@app.get("/api/admin/monitor/domain-status")
+def admin_domain_status(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """RDAP で WHOIS Domain Status を即時確認 (手動)。
+    返り値: {"ok": bool, "domain": str, "status": [...], "bad_status_detected": [...], "error": str|None}
+    認証なしでも GET できる軽量エンドポイントだが、PII 防衛として admin only にする。
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    return _check_domain_status_via_rdap()
+
+
+@app.post("/api/admin/monitor/domain-check-now")
+def admin_domain_check_now(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """ドメイン状態 RDAP チェックを即時実行 (手動)。clientHold 等の異常検知時はアラートメール送信。
+    interval 制限を bypass するが、rdap.org への DoS 防止のため 60 秒の手動 throttle あり。
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    # 手動 throttle: 60 秒に 1 回まで (rdap.org への配慮)
+    now_ts = time.time()
+    last_manual = _DOMAIN_MONITOR_LAST_CHECK.get("manual_ts", 0.0)
+    if now_ts - last_manual < DOMAIN_MONITOR_MANUAL_THROTTLE_SEC:
+        wait_sec = int(DOMAIN_MONITOR_MANUAL_THROTTLE_SEC - (now_ts - last_manual))
+        return {"ran": False, "reason": "manual_throttle", "wait_seconds": wait_sec}
+    _DOMAIN_MONITOR_LAST_CHECK["manual_ts"] = now_ts
+    # interval ガード (kv_settings 永続) を bypass: kv 値を 0 に戻す
+    _kv_set("domain_monitor_last_check_ts", "0")
+    _DOMAIN_MONITOR_LAST_CHECK["ts"] = 0.0
+    return _maybe_run_domain_status_check()
+
+
+@app.post("/api/admin/monitor/whois-reminder-test")
+def admin_whois_reminder_test(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """Whois 認証年次リマインダーを今すぐテスト送信 (手動)。
+    日付ガードと「今年送信済」ガードを bypass する。
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    # ガード bypass: anniversary - 30 日前の朝として振る舞う
+    try:
+        anni_m, anni_d = [int(x) for x in DOMAIN_REGISTRATION_ANNIVERSARY.split("-")]
+    except Exception:
+        anni_m, anni_d = 5, 6
+    fake_date = datetime(datetime.now(JST_TZ_DOMAIN).year, anni_m, anni_d, 8, 0, 0, tzinfo=JST_TZ_DOMAIN) - timedelta(days=30)
+    # 今年の dedup キーを消す
+    year_key = str(fake_date.year)
+    try:
+        conn = db()
+        c = conn.cursor()
+        for db_target in [30, 7]:
+            c.execute("DELETE FROM kv_settings WHERE key = ?", (f"whois_renewal_reminder_sent_{year_key}_minus_{db_target}d",))
+        # 旧 key も互換で消去
+        c.execute("DELETE FROM kv_settings WHERE key = ?", ("whois_renewal_reminder_last_year",))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+    return _maybe_run_whois_renewal_reminder(fake_date)
 
 
 @app.get("/api/auth/me")
