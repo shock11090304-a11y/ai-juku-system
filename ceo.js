@@ -1789,6 +1789,19 @@ function initCourseApps() {
     refresh.addEventListener('click', loadCourseApps);
     refresh._caBound = true;
   }
+  const copyBtn = document.getElementById('caCopyUrlBtn');
+  if (copyBtn && !copyBtn._caBound) {
+    copyBtn.addEventListener('click', () => {
+      const url = window.location.origin + '/course-kokuritsu-nankan.html';
+      navigator.clipboard.writeText(url).then(() => {
+        copyBtn.textContent = '✅ コピー済み';
+        setTimeout(() => { copyBtn.textContent = '📋 URL コピー'; }, 2000);
+      }).catch(() => {
+        prompt('以下の URL をコピーしてください:', url);
+      });
+    });
+    copyBtn._caBound = true;
+  }
   const tryLoad = (retries = 10) => {
     if (window.AdminAuth && window.AdminAuth.getToken()) return loadCourseApps();
     if (retries > 0) setTimeout(() => tryLoad(retries - 1), 200);

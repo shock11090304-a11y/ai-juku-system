@@ -676,4 +676,7 @@
   .sab-icon { font-size: 2rem; }
   .sab-title { font-size: 1rem; }
   .sab-cta { width: 100%; padding: 14px; }
+  /* 模試スキャン preview: モバイルで4列→2列に縮約 */
+  .ex-scan-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
+  .ex-scan-grid-2 { grid-template-columns: 1fr !important; }
 }

@@ -378,7 +378,24 @@
       <div class="section-title"><h2>📊 模試結果 <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">難関大学コース</span></h2></div>
       <p style="font-size:0.85rem; color:#a1a1aa; margin-bottom:1rem;">河合・駿台・東進などの外部模試結果を登録 → AI カリキュラム生成時に自動反映されます。</p>
 
-      <button id="exToggleFormBtn" type="button" style="width:100%; padding:0.7rem; background:linear-gradient(135deg,#10b981,#34d399); border:0; border-radius:10px; color:#fff; font-weight:700; font-size:0.95rem; cursor:pointer; margin-bottom:0.8rem;">＋ 模試結果を追加</button>
+      <button id="exScanPhotoBtn" type="button" style="width:100%; padding:0.85rem; background:linear-gradient(135deg,#a78bfa,#ec4899); border:0; border-radius:10px; color:#fff; font-weight:800; font-size:1rem; cursor:pointer; margin-bottom:0.4rem; box-shadow:0 6px 18px rgba(167,139,250,0.3);">📷 模試写真をスキャン <span style="background:rgba(255,255,255,0.18); padding:0.1rem 0.5rem; border-radius:999px; font-size:0.72rem; margin-left:0.4rem;">推奨・全科目一括</span></button>
+      <button id="exToggleFormBtn" type="button" style="width:100%; padding:0.55rem; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); border-radius:8px; color:#86efac; font-weight:600; font-size:0.85rem; cursor:pointer; margin-bottom:0.8rem;">＋ 手入力で追加 (1科目ずつ)</button>
+      <input type="file" id="exScanPhotoInput" accept="image/*" capture="environment" style="display:none;">
+
+      <!-- 📷 スキャン結果プレビュー -->
+      <div id="exScanPreview" style="display:none; background:rgba(167,139,250,0.06); border:1px solid rgba(167,139,250,0.3); border-radius:12px; padding:1rem; margin-bottom:1rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.7rem;">
+          <div style="font-size:0.9rem; color:#c4b5fd; font-weight:700;">🔍 AI 解析結果</div>
+          <button id="exScanCloseBtn" type="button" style="background:none; border:0; color:#71717a; cursor:pointer; font-size:0.75rem;">✕ 閉じる</button>
+        </div>
+        <div id="exScanCommon" style="font-size:0.82rem; color:#a1a1aa; margin-bottom:0.6rem;"></div>
+        <div id="exScanSubjects"></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-top:0.7rem;">
+          <button id="exScanSelectAllBtn" type="button" style="padding:0.55rem; background:rgba(167,139,250,0.15); border:1px solid rgba(167,139,250,0.4); border-radius:8px; color:#c4b5fd; font-weight:700; cursor:pointer; font-size:0.85rem;">☑ 全件選択</button>
+          <button id="exScanSaveBtn" type="button" style="padding:0.55rem; background:linear-gradient(135deg,#10b981,#34d399); border:0; border-radius:8px; color:#fff; font-weight:700; cursor:pointer; font-size:0.85rem;">💾 選択した科目を保存</button>
+        </div>
+        <div id="exScanMsg" style="margin-top:0.5rem; font-size:0.78rem; min-height:1em;"></div>
+      </div>
 
       <!-- 入力フォーム (toggle) -->
       <div id="exFormWrap" style="display:none; background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.3); border-radius:12px; padding:1rem; margin-bottom:1rem;">

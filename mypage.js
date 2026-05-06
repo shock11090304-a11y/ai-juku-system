@@ -1676,7 +1676,6 @@ function initCurriculum() {
       return;
     }
     if (student.course !== 'kokuritsu_nankan') {
-      // 一般生徒には CTA 表示 (難関私立も対象である旨を明記)
       if (section) {
         section.style.display = '';
         section.innerHTML = `
@@ -1685,8 +1684,10 @@ function initCurriculum() {
             <div style="font-size:2.5rem; margin-bottom:0.5rem;">🎓</div>
             <div style="color:#fbbf24; font-weight:700; font-size:1.05rem; margin-bottom:0.5rem;">入試日から逆算した合格までの全体ロードマップ</div>
             <p style="color:#a1a1aa; font-size:0.88rem; margin:0.5rem 0 1rem 0;">AI が 4-6 フェーズに分割して教材・期間・マイルストーンを提案。<br><strong style="color:#fbbf24;">国公立 + 難関私立大学</strong> 志望者が対象です。</p>
-            <div style="font-size:0.85rem; color:#d4d4d8;"><strong style="color:#fbbf24;">塾長まで直接お問い合わせください</strong></div>
+            <button type="button" class="course-inquiry-btn" data-course="kokuritsu_nankan" data-source="curriculum" style="display:inline-block; padding:0.85rem 1.5rem; background:linear-gradient(135deg,#fbbf24,#ec4899); color:#fff; border:0; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(236,72,153,0.3);">📩 塾長に申込問い合わせをする</button>
+            <div class="course-inquiry-msg" style="margin-top:0.7rem; font-size:0.82rem;"></div>
           </div>`;
+        bindCourseInquiryButtons(section);
       }
       return;
     }
@@ -1958,7 +1959,19 @@ function initExamResults() {
       return;
     }
     if (student.course !== 'kokuritsu_nankan') {
-      if (section) section.style.display = 'none';
+      if (section) {
+        section.style.display = '';
+        section.innerHTML = `
+          <div class="section-title"><h2>📊 模試分析 & AI弱点プリント <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">難関大学コース 限定</span></h2></div>
+          <div style="padding:1.2rem; background:rgba(251,191,36,0.06); border:1px dashed rgba(251,191,36,0.35); border-radius:12px; text-align:center;">
+            <div style="font-size:2.5rem; margin-bottom:0.5rem;">📊</div>
+            <div style="color:#fbbf24; font-weight:700; font-size:1.05rem; margin-bottom:0.5rem;">模試結果から AI が弱点を自動分析</div>
+            <p style="color:#a1a1aa; font-size:0.88rem; margin:0.5rem 0 1rem 0;">河合・駿台等の模試を登録 → AI が偏差値ギャップを分析し、弱点プリントを自動生成。カリキュラム修正提案まで。</p>
+            <button type="button" class="course-inquiry-btn" data-course="kokuritsu_nankan" data-source="exam-analysis" style="display:inline-block; padding:0.85rem 1.5rem; background:linear-gradient(135deg,#fbbf24,#ec4899); color:#fff; border:0; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(236,72,153,0.3);">📩 塾長に申込問い合わせをする</button>
+            <div class="course-inquiry-msg" style="margin-top:0.7rem; font-size:0.82rem;"></div>
+          </div>`;
+        bindCourseInquiryButtons(section);
+      }
       return;
     }
     if (section) section.style.display = '';
@@ -1997,6 +2010,235 @@ function bindExamButtons() {
     submit.addEventListener('click', submitExamResult);
     submit._exBound = true;
   }
+  // 📷 模試写真スキャン
+  const scanBtn = document.getElementById('exScanPhotoBtn');
+  const scanInput = document.getElementById('exScanPhotoInput');
+  const scanClose = document.getElementById('exScanCloseBtn');
+  const scanSelectAll = document.getElementById('exScanSelectAllBtn');
+  const scanSave = document.getElementById('exScanSaveBtn');
+  if (scanBtn && !scanBtn._exBound) {
+    scanBtn.addEventListener('click', () => scanInput && scanInput.click());
+    scanBtn._exBound = true;
+  }
+  if (scanInput && !scanInput._exBound) {
+    scanInput.addEventListener('change', handleExamPhoto);
+    scanInput._exBound = true;
+  }
+  if (scanClose && !scanClose._exBound) {
+    scanClose.addEventListener('click', () => { document.getElementById('exScanPreview').style.display = 'none'; });
+    scanClose._exBound = true;
+  }
+  if (scanSelectAll && !scanSelectAll._exBound) {
+    scanSelectAll.addEventListener('click', () => {
+      const boxes = document.querySelectorAll('#exScanSubjects .ex-scan-cb');
+      const allChecked = Array.from(boxes).every(b => b.checked);
+      boxes.forEach(b => { b.checked = !allChecked; });
+      scanSelectAll.textContent = allChecked ? '☑ 全件選択' : '☐ 全件解除';
+    });
+    scanSelectAll._exBound = true;
+  }
+  if (scanSave && !scanSave._exBound) {
+    scanSave.addEventListener('click', saveDetectedExams);
+    scanSave._exBound = true;
+  }
+}
+
+// 📷 模試写真スキャン: Claude Vision で全科目一括抽出
+async function handleExamPhoto(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const scanBtn = document.getElementById('exScanPhotoBtn');
+  const preview = document.getElementById('exScanPreview');
+  const commonEl = document.getElementById('exScanCommon');
+  const subjectsEl = document.getElementById('exScanSubjects');
+  const msg = document.getElementById('exScanMsg');
+  if (preview) preview.style.display = '';
+  if (commonEl) commonEl.textContent = '';
+  if (subjectsEl) subjectsEl.innerHTML = '<div style="text-align:center; color:#c4b5fd; padding:1rem;">🔍 AI が読み取り中... (10-25秒)</div>';
+  if (msg) { msg.textContent = ''; msg.style.color = '#a1a1aa'; }
+  if (scanBtn) { scanBtn.disabled = true; scanBtn.textContent = '⏳ スキャン中...'; }
+  try {
+    const dataUrl = await _compressImage(file, 1280, 0.82);
+    const base64 = dataUrl.split(',')[1];
+    const mime = dataUrl.match(/data:(image\/[^;]+);/)[1];
+    const token = (window.AuthGuard && window.AuthGuard.getToken()) || localStorage.getItem('ai_juku_session_token');
+    const student = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || {};
+    const sid = student.id || 'guest';
+    const allowedSubjects = '英語/数学/国語/現代文/古文/漢文/理科/物理/化学/生物/地学/社会/日本史/世界史/地理/倫理/政経/情報/小論文/面接対策/その他';
+    const promptText = `画像は日本の大学受験模試 (河合塾・駿台・東進・ベネッセ・進研模試等) の成績表です。\n読み取れた全科目を抽出し、純粋な JSON のみで返してください (前置きやコードフェンス禁止):\n{\n  "exam_name": "模試名 (例: 河合塾 第1回全統共通テスト模試)",\n  "exam_date": "受験日 YYYY-MM-DD (完全な日付が判読不能なら null。月だけ見えても推測せず null)",\n  "target_university": "成績表に記載された志望校 (1校。なければ null)",\n  "subjects": [\n    {\n      "subject": "次のいずれか1つに必ず正規化: ${allowedSubjects}",\n      "score": 数値 or null,\n      "max_score": 数値 or null,\n      "deviation": 数値 or null,\n      "judgement": "A|B|C|D|E or null",\n      "weak_areas": "苦手分野・大問別の名前 (画像の表に「リスニング」「長文読解」「文法」等の項目別得点が見えれば項目名を列挙)。なければ null"\n    }\n  ],\n  "confidence": "high|mid|low"\n}\n科目正規化ルール:\n- 数学IA/IIB/III/数IA/数IIB等 → "数学"\n- 物理基礎/化学基礎/生物基礎 → "物理"/"化学"/"生物" (基礎を除く)\n- 共通テスト英語のリーディング/リスニング両方が見えても合算せず、配点の大きい方を「英語」として1件にまとめる (合算した score を返す)\n- 古文+漢文が「古典」と1項目で表記されていれば "国語" にまとめる (古文/漢文 別欄なら個別に)\n- 倫理政経/倫政 → "社会"\n\n厳格ルール (絶対遵守):\n- 判読不能な数値・日付は必ず null。決して推測しない\n- score ≤ max_score を満たすこと。違反する組合せは両方 null にする\n- ぼやけ・反射・手書き訂正で読みにくい値は null + confidence: "low"\n- 返答は完全に有効な JSON のみ。説明文・前置き・後置き・\`\`\` フェンス禁止`;
+    const res = await fetch(SL_API_BASE + '/api/ai/call', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (token || '') },
+      body: JSON.stringify({
+        student_id: sid,
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1500,
+        kind: 'exam_photo_scan',
+        system: 'あなたは日本の大学受験模試成績表から数値データを高精度に抽出する OCR 専門家です。返答は必ず完全に有効な純粋 JSON のみで、コードフェンスや説明文は一切含めません。',
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: promptText },
+            { type: 'image', source: { type: 'base64', media_type: mime, data: base64 } }
+          ]
+        }],
+      }),
+    });
+    if (!res.ok) {
+      const errTxt = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errTxt.slice(0, 120)}`);
+    }
+    const data = await res.json();
+    const txt = (data.content || []).map(c => c.text || '').join('').trim();
+    const jsonStr = txt.replace(/^```(?:json)?\s*|\s*```$/g, '');
+    let parsed;
+    try { parsed = JSON.parse(jsonStr); }
+    catch { const m = jsonStr.match(/\{[\s\S]*\}/); if (m) parsed = JSON.parse(m[0]); else throw new Error('JSON 解析失敗'); }
+    const subjects = Array.isArray(parsed.subjects) ? parsed.subjects : [];
+    if (!subjects.length) {
+      if (subjectsEl) subjectsEl.innerHTML = `
+        <div style="color:#fca5a5; padding:0.7rem; margin-bottom:0.5rem;">❌ 科目を読み取れませんでした。画像が不鮮明か、模試結果以外の写真の可能性があります。</div>
+        <button type="button" id="exScanFallbackBtn" style="width:100%; padding:0.55rem; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); border-radius:8px; color:#86efac; font-weight:700; cursor:pointer; font-size:0.85rem;">＋ 手入力フォームを開く</button>`;
+      const fallback = document.getElementById('exScanFallbackBtn');
+      if (fallback) fallback.addEventListener('click', () => {
+        document.getElementById('exScanPreview').style.display = 'none';
+        document.getElementById('exFormWrap').style.display = '';
+        if (!document.getElementById('exDate').value) document.getElementById('exDate').value = _slJstDate(0);
+        const nameEl = document.getElementById('exName'); if (nameEl) nameEl.focus();
+      });
+      return;
+    }
+    // common 情報を表示
+    const conf = parsed.confidence || 'mid';
+    const confLabel = { high: '✅ 高精度', mid: '👍 確からしい', low: '⚠️ 低精度・要確認' }[conf] || '';
+    const cleanDate = (parsed.exam_date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.exam_date)) ? parsed.exam_date : '';
+    const cleanName = parsed.exam_name || '';
+    const cleanUni = parsed.target_university || '';
+    const fallbackDate = _slJstDate(0);
+    if (commonEl) {
+      commonEl.innerHTML = `
+        <div style="background:rgba(0,0,0,0.3); padding:0.6rem 0.8rem; border-radius:8px; margin-bottom:0.4rem;">
+          <div style="font-size:0.74rem; color:#71717a; margin-bottom:0.4rem;">${confLabel} ${subjects.length}科目検出</div>
+          <div style="display:grid; grid-template-columns:auto 1fr; gap:0.3rem 0.6rem; font-size:0.82rem;">
+            <span style="color:#a1a1aa;">📋 模試名:</span> <input type="text" id="exScanCommonName" value="${escapeHtml(cleanName)}" maxlength="100" style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:4px; color:#fff; padding:0.3rem 0.5rem; font-size:0.82rem;">
+            <span style="color:#a1a1aa;">📅 受験日:</span> <input type="date" id="exScanCommonDate" value="${escapeHtml(cleanDate || fallbackDate)}" style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:4px; color:#fff; padding:0.3rem 0.5rem; font-size:0.82rem;">
+            <span style="color:#a1a1aa;">🎯 志望校:</span> <input type="text" id="exScanCommonUni" value="${escapeHtml(cleanUni)}" maxlength="100" placeholder="(任意)" style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:4px; color:#fff; padding:0.3rem 0.5rem; font-size:0.82rem;">
+          </div>
+        </div>`;
+    }
+    // subjects rendering
+    if (subjectsEl) {
+      subjectsEl.innerHTML = subjects.map((s, i) => {
+        const subjVal = SP_SUBJECTS.includes(s.subject) ? s.subject : 'その他';
+        const subjOpts = SP_SUBJECTS.map(opt => `<option value="${opt}"${opt === subjVal ? ' selected' : ''}>${opt}</option>`).join('');
+        const judgeOpts = ['', 'A', 'B', 'C', 'D', 'E'].map(j => `<option value="${j}"${(s.judgement || '') === j ? ' selected' : ''}>${j ? j + '判定' : '-- 任意 --'}</option>`).join('');
+        const score = s.score !== null && s.score !== undefined ? s.score : '';
+        const maxScore = s.max_score !== null && s.max_score !== undefined ? s.max_score : '';
+        const dev = s.deviation !== null && s.deviation !== undefined ? s.deviation : '';
+        const weakAreas = s.weak_areas || '';
+        return `
+          <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(167,139,250,0.25); border-radius:8px; padding:0.6rem; margin-bottom:0.4rem;">
+            <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; margin-bottom:0.4rem;">
+              <input type="checkbox" class="ex-scan-cb" data-idx="${i}" checked style="width:1.1em; height:1.1em; cursor:pointer;">
+              <span style="font-weight:700; color:#e4e4e7; font-size:0.88rem;">この科目を保存</span>
+            </label>
+            <div class="ex-scan-grid-4" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:0.4rem;">
+              <div><label style="display:block; font-size:0.68rem; color:#a1a1aa; margin-bottom:0.15rem;">科目</label><select class="ex-scan-subject" data-idx="${i}" style="width:100%; padding:0.4rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:4px; color:#fff; font-size:0.82rem;">${subjOpts}</select></div>
+              <div><label style="display:block; font-size:0.68rem; color:#a1a1aa; margin-bottom:0.15rem;">得点</label><input type="number" class="ex-scan-score" data-idx="${i}" min="0" max="1000" value="${score}" style="width:100%; padding:0.4rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:4px; color:#fff; font-size:0.82rem;"></div>
+              <div><label style="display:block; font-size:0.68rem; color:#a1a1aa; margin-bottom:0.15rem;">満点</label><input type="number" class="ex-scan-maxscore" data-idx="${i}" min="1" max="1000" value="${maxScore}" style="width:100%; padding:0.4rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:4px; color:#fff; font-size:0.82rem;"></div>
+              <div><label style="display:block; font-size:0.68rem; color:#a1a1aa; margin-bottom:0.15rem;">偏差値</label><input type="number" step="0.1" class="ex-scan-dev" data-idx="${i}" min="10" max="100" value="${dev}" style="width:100%; padding:0.4rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:4px; color:#fff; font-size:0.82rem;"></div>
+            </div>
+            <div class="ex-scan-grid-2" style="display:grid; grid-template-columns:1fr 2fr; gap:0.4rem; margin-top:0.4rem;">
+              <div><label style="display:block; font-size:0.68rem; color:#a1a1aa; margin-bottom:0.15rem;">判定</label><select class="ex-scan-judge" data-idx="${i}" style="width:100%; padding:0.4rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:4px; color:#fff; font-size:0.82rem;">${judgeOpts}</select></div>
+              <div><label style="display:block; font-size:0.68rem; color:#a1a1aa; margin-bottom:0.15rem;">弱点メモ (AI抽出・編集可)</label><input type="text" class="ex-scan-note" data-idx="${i}" maxlength="500" value="${escapeHtml(weakAreas)}" placeholder="例: 長文読解、ベクトル" style="width:100%; padding:0.4rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:4px; color:#fff; font-size:0.82rem;"></div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+  } catch (err) {
+    console.error('exam photo scan failed:', err);
+    if (subjectsEl) subjectsEl.innerHTML = `<div style="color:#fca5a5; padding:0.7rem;">❌ ${escapeHtml(err.message || '読取失敗')}</div>`;
+  } finally {
+    if (scanBtn) { scanBtn.disabled = false; scanBtn.textContent = '📷 模試写真をスキャン'; }
+    if (e.target) e.target.value = '';
+  }
+}
+
+async function saveDetectedExams() {
+  const saveBtn = document.getElementById('exScanSaveBtn');
+  const msg = document.getElementById('exScanMsg');
+  const subjectsEl = document.getElementById('exScanSubjects');
+  if (!saveBtn || saveBtn.disabled || !subjectsEl) return;
+  const nameEl = document.getElementById('exScanCommonName');
+  const dateEl = document.getElementById('exScanCommonDate');
+  const uniEl = document.getElementById('exScanCommonUni');
+  const examName = (nameEl && nameEl.value || '').trim();
+  const examDate = (dateEl && dateEl.value || '').trim();
+  const targetUni = (uniEl && uniEl.value || '').trim();
+  if (!examName) {
+    msg.style.color = '#fca5a5'; msg.textContent = '模試名を入力してください (赤枠の欄)';
+    if (nameEl) { nameEl.style.border = '1px solid #fca5a5'; nameEl.focus(); nameEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    return;
+  }
+  if (!examDate) {
+    msg.style.color = '#fca5a5'; msg.textContent = '受験日を入力してください (赤枠の欄)';
+    if (dateEl) { dateEl.style.border = '1px solid #fca5a5'; dateEl.focus(); dateEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    return;
+  }
+  if (nameEl) nameEl.style.border = '1px solid rgba(255,255,255,0.15)';
+  if (dateEl) dateEl.style.border = '1px solid rgba(255,255,255,0.15)';
+  const checks = subjectsEl.querySelectorAll('.ex-scan-cb');
+  const targets = [];
+  checks.forEach(cb => {
+    if (!cb.checked) return;
+    const idx = cb.getAttribute('data-idx');
+    const subject = subjectsEl.querySelector(`.ex-scan-subject[data-idx="${idx}"]`).value;
+    const score = subjectsEl.querySelector(`.ex-scan-score[data-idx="${idx}"]`).value;
+    const maxScore = subjectsEl.querySelector(`.ex-scan-maxscore[data-idx="${idx}"]`).value;
+    const dev = subjectsEl.querySelector(`.ex-scan-dev[data-idx="${idx}"]`).value;
+    const judge = subjectsEl.querySelector(`.ex-scan-judge[data-idx="${idx}"]`).value;
+    const note = subjectsEl.querySelector(`.ex-scan-note[data-idx="${idx}"]`).value.trim();
+    targets.push({ subject, score, maxScore, dev, judge, note });
+  });
+  if (!targets.length) { msg.style.color = '#fca5a5'; msg.textContent = '保存する科目を1つ以上選択してください'; return; }
+  saveBtn.disabled = true; saveBtn.textContent = '保存中...';
+  msg.style.color = '#a78bfa'; msg.textContent = `0 / ${targets.length} 件保存中...`;
+  let success = 0;
+  const errors = [];
+  for (let i = 0; i < targets.length; i++) {
+    const t = targets[i];
+    try {
+      await slApiFetch('/api/exam-results', {
+        method: 'POST',
+        body: JSON.stringify({
+          exam_name: examName,
+          exam_date: examDate,
+          subject: t.subject,
+          score: t.score ? parseInt(t.score, 10) : undefined,
+          max_score: t.maxScore ? parseInt(t.maxScore, 10) : undefined,
+          deviation: t.dev ? parseFloat(t.dev) : undefined,
+          judgement: t.judge || undefined,
+          target_university: targetUni || undefined,
+          note: t.note || undefined,
+        }),
+      });
+      success++;
+      msg.textContent = `${success} / ${targets.length} 件保存中...`;
+    } catch (e) {
+      errors.push(`${t.subject}: ${e.message || '失敗'}`);
+    }
+  }
+  if (errors.length === 0) {
+    const savedSubjects = targets.map(t => t.subject).join(', ');
+    msg.style.color = '#86efac'; msg.textContent = `✅ ${success} 件保存完了: ${savedSubjects}`;
+    await loadMyExamResults();
+    triggerAutoGapAnalysis();
+    setTimeout(() => { document.getElementById('exScanPreview').style.display = 'none'; }, 2800);
+  } else {
+    msg.style.color = '#fca5a5'; msg.innerHTML = `⚠️ ${success}件成功 / ${errors.length}件失敗<br>${errors.map(e => escapeHtml(e)).join('<br>')}`;
+    if (success > 0) await loadMyExamResults();
+  }
+  saveBtn.disabled = false; saveBtn.textContent = '💾 選択した科目を保存';
 }
 
 async function submitExamResult() {
