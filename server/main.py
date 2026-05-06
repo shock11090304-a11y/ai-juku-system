@@ -6430,16 +6430,21 @@ async def admin_send_link_email(
 
 
 @app.post("/api/admin/cache/force-purge")
-def admin_cache_force_purge(authorization: Optional[str] = Header(None)):
+def admin_cache_force_purge(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """🧹 全生徒のブラウザキャッシュを強制パージ。
 
     DB に CACHE_VERSION を bump して保存。フロントの cache-purge.js が起動時に
     /api/cache-version を叩き、保存値より新しければ caches を全削除 + 強制リロード。
-    バージョン文字列は ISO timestamp で生成。"""
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="未認証")
-    token = authorization[len("Bearer "):].strip()
-    if not _verify_admin_token(token):
+    バージョン文字列は ISO timestamp で生成。
+    認証: admin Bearer または X-Cron-Secret (緊急対応で塾長離席中でも実行可・2026-05-06)"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
         raise HTTPException(status_code=401, detail="未認証")
 
     new_version = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
