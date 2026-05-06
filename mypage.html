@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="mypage.css?v=20260425-trial-fix">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="auth-guard.js?v=20260424-1"></script>
 </head>
 <body class="mypage-body">
@@ -378,9 +379,9 @@
       <div class="section-title"><h2>📊 模試結果 <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">難関大学コース</span></h2></div>
       <p style="font-size:0.85rem; color:#a1a1aa; margin-bottom:1rem;">河合・駿台・東進などの外部模試結果を登録 → AI カリキュラム生成時に自動反映されます。</p>
 
-      <button id="exScanPhotoBtn" type="button" style="width:100%; padding:0.85rem; background:linear-gradient(135deg,#a78bfa,#ec4899); border:0; border-radius:10px; color:#fff; font-weight:800; font-size:1rem; cursor:pointer; margin-bottom:0.4rem; box-shadow:0 6px 18px rgba(167,139,250,0.3);">📷 模試写真をスキャン <span style="background:rgba(255,255,255,0.18); padding:0.1rem 0.5rem; border-radius:999px; font-size:0.72rem; margin-left:0.4rem;">推奨・全科目一括</span></button>
+      <button id="exScanPhotoBtn" type="button" style="width:100%; padding:0.85rem; background:linear-gradient(135deg,#a78bfa,#ec4899); border:0; border-radius:10px; color:#fff; font-weight:800; font-size:1rem; cursor:pointer; margin-bottom:0.4rem; box-shadow:0 6px 18px rgba(167,139,250,0.3);">📷 模試結果を写真/PDFでスキャン <span style="background:rgba(255,255,255,0.18); padding:0.1rem 0.5rem; border-radius:999px; font-size:0.72rem; margin-left:0.4rem;">推奨・全科目一括</span></button>
       <button id="exToggleFormBtn" type="button" style="width:100%; padding:0.55rem; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); border-radius:8px; color:#86efac; font-weight:600; font-size:0.85rem; cursor:pointer; margin-bottom:0.8rem;">＋ 手入力で追加 (1科目ずつ)</button>
-      <input type="file" id="exScanPhotoInput" accept="image/*" capture="environment" style="display:none;">
+      <input type="file" id="exScanPhotoInput" accept="image/*,application/pdf" capture="environment" style="display:none;">
 
       <!-- 📷 スキャン結果プレビュー -->
       <div id="exScanPreview" style="display:none; background:rgba(167,139,250,0.06); border:1px solid rgba(167,139,250,0.3); border-radius:12px; padding:1rem; margin-bottom:1rem;">

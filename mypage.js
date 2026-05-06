@@ -740,6 +740,56 @@ async function handleMaterialPhoto(e) {
   }
 }
 
+// PDF → Claude Vision 用 image parts 配列。pdf.js でページを canvas に描画 → JPEG 化
+async function _pdfToImageParts(file, opts) {
+  const { maxPages = 3, scale = 2.0, quality = 0.82, maxSide = 1400 } = opts || {};
+  if (file.size > 10_000_000) {
+    throw new Error(`ファイルサイズが大きすぎます (${(file.size / 1_000_000).toFixed(1)}MB)。10MB以下の PDF をご利用ください`);
+  }
+  if (typeof pdfjsLib === 'undefined') throw new Error('PDF ライブラリの読込に失敗しました (ページを再読込してください)');
+  if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+  const arrayBuffer = await file.arrayBuffer();
+  let pdf;
+  try {
+    pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  } catch (err) {
+    const m = (err && err.message) || '';
+    if (/password|encrypt/i.test(m) || (err && err.name === 'PasswordException')) {
+      throw new Error('PDF がパスワード保護されています。保護を解除してから再アップロードしてください');
+    }
+    if (/Invalid PDF|InvalidPDF/i.test(m)) {
+      throw new Error('PDF が破損しているか、有効な PDF ではありません');
+    }
+    throw err;
+  }
+  const totalPages = Math.min(pdf.numPages, maxPages);
+  const parts = [];
+  for (let p = 1; p <= totalPages; p++) {
+    const page = await pdf.getPage(p);
+    let viewport = page.getViewport({ scale });
+    // long edge を maxSide に合わせる (ペイロード抑制)
+    const longSide = Math.max(viewport.width, viewport.height);
+    if (longSide > maxSide) {
+      const adjustedScale = scale * (maxSide / longSide);
+      viewport = page.getViewport({ scale: adjustedScale });
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    const dataUrl = canvas.toDataURL('image/jpeg', quality);
+    const base64 = dataUrl.split(',')[1];
+    parts.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } });
+  }
+  if (!parts.length) throw new Error('PDF にページがありません');
+  return parts;
+}
+
 // canvas で画像をリサイズ + JPEG 圧縮 (Resend / Anthropic 経由のペイロード上限対策)
 function _compressImage(file, maxSide, quality) {
   return new Promise((resolve, reject) => {
@@ -2043,7 +2093,7 @@ function bindExamButtons() {
   }
 }
 
-// 📷 模試写真スキャン: Claude Vision で全科目一括抽出
+// 📷 模試スキャン: 画像 or PDF を Claude Vision で全科目一括抽出
 async function handleExamPhoto(e) {
   const file = e.target.files && e.target.files[0];
   if (!file) return;
@@ -2052,15 +2102,24 @@ async function handleExamPhoto(e) {
   const commonEl = document.getElementById('exScanCommon');
   const subjectsEl = document.getElementById('exScanSubjects');
   const msg = document.getElementById('exScanMsg');
+  const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '');
   if (preview) preview.style.display = '';
   if (commonEl) commonEl.textContent = '';
-  if (subjectsEl) subjectsEl.innerHTML = '<div style="text-align:center; color:#c4b5fd; padding:1rem;">🔍 AI が読み取り中... (10-25秒)</div>';
+  if (subjectsEl) subjectsEl.innerHTML = `<div style="text-align:center; color:#c4b5fd; padding:1rem;">🔍 ${isPdf ? 'PDF を画像化中...' : 'AI が読み取り中...'} (10-30秒)</div>`;
   if (msg) { msg.textContent = ''; msg.style.color = '#a1a1aa'; }
   if (scanBtn) { scanBtn.disabled = true; scanBtn.textContent = '⏳ スキャン中...'; }
   try {
-    const dataUrl = await _compressImage(file, 1280, 0.82);
-    const base64 = dataUrl.split(',')[1];
-    const mime = dataUrl.match(/data:(image\/[^;]+);/)[1];
+    let imageParts;
+    if (isPdf) {
+      // PDF: 最初の3ページを画像化して複数 image part として送信
+      imageParts = await _pdfToImageParts(file, { maxPages: 3, scale: 2.0, quality: 0.82, maxSide: 1400 });
+      if (subjectsEl) subjectsEl.innerHTML = `<div style="text-align:center; color:#c4b5fd; padding:1rem;">🔍 ${imageParts.length}ページ抽出 → AI が解析中... (15-30秒)</div>`;
+    } else {
+      const dataUrl = await _compressImage(file, 1280, 0.82);
+      const base64 = dataUrl.split(',')[1];
+      const mime = dataUrl.match(/data:(image\/[^;]+);/)[1];
+      imageParts = [{ type: 'image', source: { type: 'base64', media_type: mime, data: base64 } }];
+    }
     const token = (window.AuthGuard && window.AuthGuard.getToken()) || localStorage.getItem('ai_juku_session_token');
     const student = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || {};
     const sid = student.id || 'guest';
@@ -2073,13 +2132,13 @@ async function handleExamPhoto(e) {
         student_id: sid,
         model: 'claude-sonnet-4-6',
         max_tokens: 1500,
-        kind: 'exam_photo_scan',
+        kind: isPdf ? 'exam_pdf_scan' : 'exam_photo_scan',
         system: 'あなたは日本の大学受験模試成績表から数値データを高精度に抽出する OCR 専門家です。返答は必ず完全に有効な純粋 JSON のみで、コードフェンスや説明文は一切含めません。',
         messages: [{
           role: 'user',
           content: [
-            { type: 'text', text: promptText },
-            { type: 'image', source: { type: 'base64', media_type: mime, data: base64 } }
+            { type: 'text', text: promptText + (isPdf && imageParts.length > 1 ? `\n\n【重要・複数ページ統合ルール】${imageParts.length}ページの画像を提供しています。同一の模試として処理し、以下を厳守:\n1. 同一科目の重複排除: 複数ページで同じ科目が出現した場合、より詳細な値 (大問別 breakdown が見えるページ) を優先し、subjects 配列に同一科目を2回以上含めない\n2. 空白/表紙ページをスキップ: 数値データのないページ (校章のみ、白紙) は無視\n3. 大問別表は科目に紐付ける: 表が「英語」のセクションに配置されているなら weak_areas は英語の subjects エントリにのみ記載\n4. 配置の典型例 - ページ1: 模試名/総合点 / ページ2-N: 科目別詳細。exam_name と exam_date は最初に見つけた値で固定し、後続ページで上書きしない` : '') },
+            ...imageParts
           ]
         }],
       }),
