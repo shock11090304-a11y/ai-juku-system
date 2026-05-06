@@ -40,9 +40,8 @@
       <div class="up-head">
         <h1>🎓 継続登録</h1>
         <p>
-          7日間の無料体験はいかがでしたか？<br>
-          引き続きご利用される方は、以下から月額プランを選択してください。<br>
-          <small style="color:var(--text-muted);">※ 初月に入塾金 ¥10,000 が請求書に加算されます</small>
+          10日間の無料体験はいかがでしたか?<br>
+          引き続きご利用される方は、以下から月額プランを選択してください。
         </p>
       </div>
 
@@ -53,24 +52,50 @@
                placeholder="parent@example.com">
 
         <div class="plan-group" id="planGroup">
-          <label class="plan-option selected">
-            <input type="radio" name="plan" value="standard" checked>
-            <div class="plan-name">📘 スタンダード</div>
-            <div class="plan-tagline">1名まで・AIチューター・教材生成・週次レポート</div>
-            <div><span class="plan-price">¥24,980</span><span class="plan-price-unit">/月（税込）</span></div>
+          <!-- 🎁 創設メンバー (推奨・人気No.1) -->
+          <label class="plan-option selected" style="border-color:#fbbf24; background:linear-gradient(180deg, rgba(251,191,36,0.08), rgba(236,72,153,0.04));">
+            <input type="radio" name="plan" value="founder_special" checked>
+            <div class="plan-name" style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+              🎁 創設メンバー
+              <span style="background:linear-gradient(135deg,#fbbf24,#ec4899); color:#fff; font-size:0.65rem; padding:0.15rem 0.5rem; border-radius:999px; font-weight:800;">⭐ 50名限定</span>
+              <span style="color:#fbbf24; font-size:0.7rem; font-weight:700;">人気No.1</span>
+            </div>
+            <div class="plan-tagline">プレミアム同等の全機能無制限・契約後は永年¥14,500 (値上げ対象外)</div>
+            <div><span class="plan-price">¥14,500</span><span class="plan-price-unit">/月 (税込・永年)</span></div>
           </label>
+
+          <!-- 🔥 プレミアム -->
           <label class="plan-option">
             <input type="radio" name="plan" value="premium">
-            <div class="plan-name">🔥 プレミアム <span style="color:#fbbf24; font-size:0.75rem;">人気No.1</span></div>
-            <div class="plan-tagline">1名まで・全機能解放（模試・過去問・面談記録等）</div>
-            <div><span class="plan-price">¥39,800</span><span class="plan-price-unit">/月（税込）</span></div>
+            <div class="plan-name">🔥 プレミアム</div>
+            <div class="plan-tagline">1名まで・全機能無制限 + 学習管理 + 合格カリキュラム自動生成</div>
+            <div><span class="plan-price">¥39,800</span><span class="plan-price-unit">/月 (税込)</span></div>
           </label>
+
+          <!-- 👨‍👩‍👧 家族プラン -->
           <label class="plan-option">
             <input type="radio" name="plan" value="family">
             <div class="plan-name">👨‍👩‍👧 家族プラン</div>
-            <div class="plan-tagline">最大3名まで共有可能・兄弟姉妹で利用</div>
-            <div><span class="plan-price">¥59,800</span><span class="plan-price-unit">/月（税込）</span></div>
+            <div class="plan-tagline">最大3名まで共有可能・兄弟姉妹で利用 (1人あたり実質¥19,933)</div>
+            <div><span class="plan-price">¥59,800</span><span class="plan-price-unit">/月 (税込)</span></div>
           </label>
+
+          <!-- 🏫 通塾生プラン (招待コード必要・折りたたみ) -->
+          <div id="addonToggleWrap" style="margin-top:0.4rem;">
+            <button type="button" id="addonToggleBtn" style="width:100%; padding:0.7rem 1rem; background:rgba(255,255,255,0.04); border:1px dashed rgba(255,255,255,0.18); border-radius:10px; color:#cbd5e1; cursor:pointer; font-size:0.85rem; font-family:inherit; text-align:left;">
+              🏫 通塾生プラン (¥5,000/月) をご希望の方 ▾
+            </button>
+            <div id="addonPanel" style="display:none; margin-top:0.5rem; padding:0.85rem 1rem; background:rgba(0,0,0,0.3); border:1px solid rgba(34,197,94,0.3); border-radius:10px;">
+              <p style="font-size:0.82rem; color:#cbd5e1; margin:0 0 0.5rem;">
+                通塾生プランは塾長から発行される<strong style="color:#86efac;">招待コード</strong>経由でのみご契約いただけます。
+              </p>
+              <input type="text" id="inviteCode" placeholder="招待コードを入力 (例: AJK-XXXXXXXX)" maxlength="40"
+                     style="width:100%; padding:0.7rem 0.9rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#e4e4e7; font-size:0.9rem; box-sizing:border-box; font-family:inherit;">
+              <p style="font-size:0.75rem; color:#71717a; margin:0.5rem 0 0;">
+                招待コードをお持ちでない場合は塾長までお問い合わせください: <a href="mailto:info@trillion-ai-juku.com" style="color:var(--primary-light);">info@trillion-ai-juku.com</a>
+              </p>
+            </div>
+          </div>
         </div>
 
         <button type="submit" id="submitBtn" class="up-cta">💳 決済画面に進む →</button>
@@ -78,7 +103,7 @@
       </form>
 
       <div class="up-foot">
-        7日間の無料体験は ¥0 でしたので、本日のお手続きが初回課金となります。<br>
+        10日間の無料体験は ¥0 でしたので、本日のお手続きが初回課金となります。<br>
         ご不明な点は <a href="mailto:info@trillion-ai-juku.com" style="color:var(--primary-light);">info@trillion-ai-juku.com</a> まで。<br>
         <a href="lp.html" style="color:var(--primary-light);">← LPに戻る</a>
       </div>
@@ -100,12 +125,32 @@
       });
     });
 
+    // 🏫 通塾生プラン 折りたたみ
+    const addonBtn = document.getElementById('addonToggleBtn');
+    const addonPanel = document.getElementById('addonPanel');
+    if (addonBtn && addonPanel) {
+      addonBtn.addEventListener('click', () => {
+        const open = addonPanel.style.display !== 'none';
+        addonPanel.style.display = open ? 'none' : '';
+        addonBtn.textContent = open
+          ? '🏫 通塾生プラン (¥5,000/月) をご希望の方 ▾'
+          : '🏫 通塾生プラン (¥5,000/月) をご希望の方 ▴';
+      });
+    }
+
     document.getElementById('upgradeForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('submitBtn');
       const errBox = document.getElementById('errorBox');
-      const plan = document.querySelector('input[name="plan"]:checked').value;
+      let plan = document.querySelector('input[name="plan"]:checked').value;
       const email = document.getElementById('email').value.trim();
+
+      // 招待コード入力があれば通塾生プランに切替
+      const inviteInput = document.getElementById('inviteCode');
+      const inviteCode = inviteInput ? inviteInput.value.trim() : '';
+      if (inviteCode) {
+        plan = 'student_addon';
+      }
 
       btn.disabled = true;
       btn.textContent = '⏳ 決済セッションを準備中...';
@@ -115,7 +160,7 @@
         const res = await fetch(`${API_BASE}/api/stripe/checkout`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ plan, email, name: '' }),
+          body: JSON.stringify({ plan, email, name: '', invite_code: inviteCode || undefined }),
         });
         const data = await res.json();
         if (res.ok && data.checkout_url) {
