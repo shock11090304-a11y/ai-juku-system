@@ -1136,7 +1136,14 @@ async function callClaude(systemPrompt, userMessage, options = {}) {
       // そうでなければログだけ残して旧フォールバック（state.apiKey直叩き）に流す。
       if (inflightAbortControllers.get(abortKey) === controller) inflightAbortControllers.delete(abortKey);
       if (isJsonKind) return jsonSafeFallback(`backend ${res.status}`);
-      console.warn(`Backend AI proxy returned ${res.status}, falling back`);
+      // chat/diagnostic 等: backend エラーの詳細を取得してログに残す + デモ fallback 防止
+      let errDetail = '';
+      try { const j = await res.json(); errDetail = j.detail || ''; } catch {}
+      console.warn(`Backend AI proxy returned ${res.status}: ${errDetail}, falling back`);
+      // backend が明示的に拒否した場合 (4xx) はデモ応答に落とさず、エラーメッセージを表示
+      if (kind === 'chat' && res.status >= 400 && res.status < 500 && res.status !== 401) {
+        return `⚠️ AI への問い合わせが拒否されました (${res.status}: ${errDetail || 'unknown'})。\n\nしばらく経ってから再度お試しいただくか、別の表現で質問し直してください。塾長にもこのエラーを報告しています。`;
+      }
     } catch (e) {
       if (e.name === 'AbortError') throw e;  // 中断は呼び出し元で無視させる
       console.warn('Backend AI proxy failed:', e);

@@ -11517,7 +11517,10 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
         "you are now", "act as dan", "dan mode",
     )
     _sys = (payload.system or "")
-    if len(_sys) > 6000:
+    # 上限 12000 chars: AI チューター system prompt は科目別指導方針を全 inline する設計のため
+    # 7500-8500 chars 必要。以前 6000 制限で 400 → frontend が demo fallback してしまう不具合の修正 (2026-05-06)。
+    # Anthropic API 自体は 200k token 対応なので 12000 chars は十分余裕がある。
+    if len(_sys) > 12000:
         _record_ai_call_failure("system_too_long", 400, f"len={len(_sys)}", payload, request)
         raise HTTPException(status_code=400, detail="system prompt too long")
     _sys_low = _sys.lower()
