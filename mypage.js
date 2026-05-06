@@ -673,12 +673,12 @@ function initStudyLog() {
       if (section) {
         section.style.display = '';
         section.innerHTML = `
-          <div class="section-title"><h2>📚 学習記録 <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">国公立難関大学コース 限定</span></h2></div>
+          <div class="section-title"><h2>📚 学習記録 <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">プレミアム限定</span></h2></div>
           <div style="padding:1.2rem; background:rgba(251,191,36,0.06); border:1px dashed rgba(251,191,36,0.35); border-radius:12px; text-align:center;">
             <div style="font-size:2.5rem; margin-bottom:0.5rem;">🎯</div>
-            <div style="color:#fbbf24; font-weight:700; font-size:1.05rem; margin-bottom:0.5rem;">国公立難関大学コース 受講生 限定機能</div>
-            <p style="color:#a1a1aa; font-size:0.88rem; margin:0.5rem 0 1rem 0;">毎日の学習時間・教材・科目を記録し、塾長から励ましコメント。東大・京大・国公立医学部志望者向けの徹底学習管理を提供します。</p>
-            <button type="button" class="course-inquiry-btn" data-course="kokuritsu_nankan" data-source="study-log" style="display:inline-block; padding:0.85rem 1.5rem; background:linear-gradient(135deg,#fbbf24,#ec4899); color:#fff; border:0; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(236,72,153,0.3);">📩 塾長に申込問い合わせをする</button>
+            <div style="color:#fbbf24; font-weight:700; font-size:1.05rem; margin-bottom:0.5rem;">プレミアム以上で利用可</div>
+            <p style="color:#a1a1aa; font-size:0.88rem; margin:0.5rem 0 1rem 0;">毎日の学習時間・教材・科目を記録し、AI が学習進捗を分析。プレミアムプラン以上で利用可能です。</p>
+            <button type="button" class="course-inquiry-btn" data-course="kokuritsu_nankan" data-source="study-log" style="display:inline-block; padding:0.85rem 1.5rem; background:linear-gradient(135deg,#fbbf24,#ec4899); color:#fff; border:0; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(236,72,153,0.3);">⭐ プレミアムにアップグレード</button>
             <div class="course-inquiry-msg" style="margin-top:0.7rem; font-size:0.82rem;"></div>
           </div>`;
         bindCourseInquiryButtons(section);
@@ -1045,12 +1045,12 @@ function initStudyPlan() {
       if (section) {
         section.style.display = '';
         section.innerHTML = `
-          <div class="section-title"><h2>📅 学習計画 <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">国公立難関大学コース 限定</span></h2></div>
+          <div class="section-title"><h2>📅 学習計画 <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">プレミアム限定</span></h2></div>
           <div style="padding:1.2rem; background:rgba(251,191,36,0.06); border:1px dashed rgba(251,191,36,0.35); border-radius:12px; text-align:center;">
             <div style="font-size:2.5rem; margin-bottom:0.5rem;">📅</div>
             <div style="color:#fbbf24; font-weight:700; font-size:1.05rem; margin-bottom:0.5rem;">志望校合格までのロードマップを描こう</div>
             <p style="color:#a1a1aa; font-size:0.88rem; margin:0.5rem 0 1rem 0;">学習計画 + 進捗ガントチャート + 月間カレンダーで「いつまでに何を」を可視化。</p>
-            <button type="button" class="course-inquiry-btn" data-course="kokuritsu_nankan" data-source="study-plan" style="display:inline-block; padding:0.85rem 1.5rem; background:linear-gradient(135deg,#fbbf24,#ec4899); color:#fff; border:0; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(236,72,153,0.3);">📩 塾長に申込問い合わせをする</button>
+            <button type="button" class="course-inquiry-btn" data-course="kokuritsu_nankan" data-source="study-plan" style="display:inline-block; padding:0.85rem 1.5rem; background:linear-gradient(135deg,#fbbf24,#ec4899); color:#fff; border:0; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(236,72,153,0.3);">⭐ プレミアムにアップグレード</button>
             <div class="course-inquiry-msg" style="margin-top:0.7rem; font-size:0.82rem;"></div>
           </div>`;
         bindCourseInquiryButtons(section);
@@ -1942,12 +1942,12 @@ function initCurriculum() {
       if (section) {
         section.style.display = '';
         section.innerHTML = `
-          <div class="section-title"><h2>🎓 合格カリキュラム <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">難関大学コース 限定</span></h2></div>
+          <div class="section-title"><h2>🎓 合格カリキュラム <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">プレミアム限定</span></h2></div>
           <div style="padding:1.2rem; background:rgba(251,191,36,0.06); border:1px dashed rgba(251,191,36,0.35); border-radius:12px; text-align:center;">
             <div style="font-size:2.5rem; margin-bottom:0.5rem;">🎓</div>
             <div style="color:#fbbf24; font-weight:700; font-size:1.05rem; margin-bottom:0.5rem;">入試日から逆算した合格までの全体ロードマップ</div>
-            <p style="color:#a1a1aa; font-size:0.88rem; margin:0.5rem 0 1rem 0;">AI が 4-6 フェーズに分割して教材・期間・マイルストーンを提案。<br><strong style="color:#fbbf24;">国公立 + 難関私立大学</strong> 志望者が対象です。</p>
-            <button type="button" class="course-inquiry-btn" data-course="kokuritsu_nankan" data-source="curriculum" style="display:inline-block; padding:0.85rem 1.5rem; background:linear-gradient(135deg,#fbbf24,#ec4899); color:#fff; border:0; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(236,72,153,0.3);">📩 塾長に申込問い合わせをする</button>
+            <p style="color:#a1a1aa; font-size:0.88rem; margin:0.5rem 0 1rem 0;">AI が入試日から逆算して 4-6 フェーズに分割し、教材・期間・マイルストーンを自動提案。プレミアムプラン以上で利用可能です。</p>
+            <button type="button" class="course-inquiry-btn" data-course="kokuritsu_nankan" data-source="curriculum" style="display:inline-block; padding:0.85rem 1.5rem; background:linear-gradient(135deg,#fbbf24,#ec4899); color:#fff; border:0; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(236,72,153,0.3);">⭐ プレミアムにアップグレード</button>
             <div class="course-inquiry-msg" style="margin-top:0.7rem; font-size:0.82rem;"></div>
           </div>`;
         bindCourseInquiryButtons(section);
@@ -2225,12 +2225,12 @@ function initExamResults() {
       if (section) {
         section.style.display = '';
         section.innerHTML = `
-          <div class="section-title"><h2>📊 模試分析 & AI弱点プリント <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">難関大学コース 限定</span></h2></div>
+          <div class="section-title"><h2>📊 模試分析 & AI弱点プリント <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">プレミアム限定</span></h2></div>
           <div style="padding:1.2rem; background:rgba(251,191,36,0.06); border:1px dashed rgba(251,191,36,0.35); border-radius:12px; text-align:center;">
             <div style="font-size:2.5rem; margin-bottom:0.5rem;">📊</div>
             <div style="color:#fbbf24; font-weight:700; font-size:1.05rem; margin-bottom:0.5rem;">模試結果から AI が弱点を自動分析</div>
-            <p style="color:#a1a1aa; font-size:0.88rem; margin:0.5rem 0 1rem 0;">河合・駿台等の模試を登録 → AI が偏差値ギャップを分析し、弱点プリントを自動生成。カリキュラム修正提案まで。</p>
-            <button type="button" class="course-inquiry-btn" data-course="kokuritsu_nankan" data-source="exam-analysis" style="display:inline-block; padding:0.85rem 1.5rem; background:linear-gradient(135deg,#fbbf24,#ec4899); color:#fff; border:0; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(236,72,153,0.3);">📩 塾長に申込問い合わせをする</button>
+            <p style="color:#a1a1aa; font-size:0.88rem; margin:0.5rem 0 1rem 0;">河合・駿台等の模試を登録 → AI が偏差値ギャップを分析し、弱点プリントを自動生成。プレミアムプラン以上で利用可能です。</p>
+            <button type="button" class="course-inquiry-btn" data-course="kokuritsu_nankan" data-source="exam-analysis" style="display:inline-block; padding:0.85rem 1.5rem; background:linear-gradient(135deg,#fbbf24,#ec4899); color:#fff; border:0; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(236,72,153,0.3);">⭐ プレミアムにアップグレード</button>
             <div class="course-inquiry-msg" style="margin-top:0.7rem; font-size:0.82rem;"></div>
           </div>`;
         bindCourseInquiryButtons(section);
