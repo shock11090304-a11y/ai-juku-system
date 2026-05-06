@@ -1,0 +1,275 @@
+{
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "tokoda",
+      "model": "claude-sonnet-4.6-team-review-v10",
+      "question_data": {
+        "passage": "The history of computing has been told, by its most prominent participants, as a story of relentless miniaturisation. Each generation of devices has done more than the one before, and done it on smaller substrates and with less energy. (1)What this triumphalist narrative tends to obscure is that the gains of the past sixty years have rested on a series of physical accidents—the unusual properties of silicon, the abundance of certain rare-earth elements, the engineering tractability of the lithography that turns photographic patterns into electronic ones—and that the assumption these accidents will continue indefinitely is no more than that, an assumption.\n\nFor several decades, what is now called Moore's Law functioned less as a description than as a coordinating mechanism. Companies organised their roadmaps around it; investors expected it; engineers, knowing what their colleagues at competing firms were preparing, set themselves targets that would not embarrass them. The doubling of transistor density every two years became something between a prediction and a self-fulfilling prophecy.\n\nWhen physical limits began to assert themselves around 2010, the response was not to abandon the trajectory but to reinterpret it. Performance gains that could no longer be obtained through smaller transistors were sought through different architectures, specialised accelerators, three-dimensional stacking, and new approaches to cooling. (2)The metric that mattered—useful computation per dollar, per second, per watt—continued, more or less, to improve, even as the simple story of `smaller and faster' fragmented into a much messier collection of trade-offs.\n\nThe rise of machine learning, which now consumes the largest share of the most advanced semiconductors, has accelerated this fragmentation. (3)A chip optimised for training neural networks need not have, and often does not have, the kind of general-purpose flexibility that made earlier microprocessors so widely useful; it is, in effect, a piece of factory equipment, designed for one kind of work and clumsy at most others. This represents a quiet but consequential reversal: the post-war computing project began with the universal machine, and arrives, three-quarters of a century later, at the special-purpose engine.",
+        "audio_script": "",
+        "prompt": "",
+        "year_simulated": 2024,
+        "univ_simulated": "東京工業大学",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "下線部 (1) What this triumphalist narrative tends to obscure is that the gains of the past sixty years have rested on a series of physical accidents の意味として最も適切なものを選びなさい。",
+            "choices": [
+              "この勝利物語が見えなくしてしまいがちなのは、過去60年の成果が一連の物理的偶然の上に成り立ってきたという事実である。",
+              "この勝利物語は、過去60年の物理的偶然をすべて克服してきたことを示している。",
+              "過去60年の成果は物理的偶然ではなく、計画的な努力によって達成された。",
+              "勝利物語は物理的偶然を強調することで、技術の発展を歪んで伝えている。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `What X tends to obscure is that ~` =「X が見えなくしがちなのは~」 (関係代名詞 What 節 + 動名詞)\n- `triumphalist narrative` =「勝利物語」 (= 一方的に勝利を讃える物語)\n- `rest on ~` =「~に依拠する・~の上に成り立つ」\n- `a series of physical accidents` =「一連の物理的偶然」 (= シリコンの特性、希土類の存在、リソグラフィの加工性などが偶然的に揃ったこと)\n\n## 🔬 文構造分析\n[What this triumphalist narrative tends to obscure] is [that [the gains of the past sixty years have rested on [a series of physical accidents—[the unusual properties of silicon, the abundance of certain rare-earth elements, the engineering tractability of [the lithography [that turns photographic patterns into electronic ones]]]—] and [that the assumption [these accidents will continue indefinitely] is no more than that, an assumption]]].\n  主節: S=What this triumphalist narrative tends to obscure (関係代名詞 What 節) / V=is / C=that 節\n  目的節 that 節: 2 つの並列 (the gains have rested on ~ + the assumption is no more than that)\n  ダッシュ挿入: 物理的偶然の具体例 3 つ (silicon / rare-earth elements / lithography)\n\n## 📍 本文の根拠\n第1段全体が「Moore's Law の triumphalist narrative」と「実は物理的偶然の積み重ね」の対比を導入する。下線部はこの対比を直接述べる。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「物理的偶然をすべて克服してきた」は本文と真逆 (本文は依拠してきた、と述べる)。\n- 選択肢2:「物理的偶然ではなく計画的努力」も本文と真逆。\n- 選択肢3:「物理的偶然を強調」は本文と外れた解釈 (= triumphalist narrative はむしろ偶然性を obscure する)。\n\n【日本人弱点コメント】`tend to obscure` (= 見えなくしがちな) は中立的観察を示す表現。`obscure` (隠す・不明瞭にする) を「強調する」「明確にする」と誤訳しやすいので注意。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "下線部 (2) The metric that mattered—useful computation per dollar, per second, per watt—continued, more or less, to improve, even as the simple story of `smaller and faster' fragmented into a much messier collection of trade-offs. の意味として最も適切なものを選びなさい。",
+            "choices": [
+              "重要だった指標 — ドル/秒/ワット あたりの有用な計算量 — は、「より小さく・より速く」という単純な物語が複雑なトレードオフの集合に断片化したにもかかわらず、おおむね改善し続けた。",
+              "「より小さく・より速く」という指標は単純すぎたため、ドル/秒/ワット あたりの計算量は悪化した。",
+              "重要だった指標は ドル/秒/ワット あたりの計算量に統一され、トレードオフは解消された。",
+              "コンピュータの性能は単純な指標で測れるべきであり、トレードオフを考慮するのは無意味である。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `even as ~` =「~するにもかかわらず」 (= 譲歩のコア)\n- `more or less` =「おおむね・大体」 (= 厳密ではないが概ね)\n- `fragment into ~` =「~へ断片化する・~へ崩れる」\n- 「単純な物語」 → 「複雑なトレードオフ」 という対比\n\n## 🔬 文構造分析\n[The metric [that mattered]]—[useful computation per dollar, per second, per watt]—continued, [more or less], to improve, [even as [the simple story of `smaller and faster' fragmented into [a much messier collection of trade-offs]]].\n  主節: S=The metric (that mattered で関係詞節修飾) / 挿入=ダッシュで具体定義 / V=continued / 不定詞=to improve\n  挿入: more or less (概ね)\n  譲歩節 even as: 単純な物語が断片化したにもかかわらず\n\n## 📍 本文の根拠\n第3段全体が「物理限界に直面しても、別アプローチで性能向上は続いた」という議論。下線部はこの議論の総括的命題。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「悪化した」は本文 `continued to improve` と真逆。\n- 選択肢2:「指標が統一されトレードオフ解消」は本文と真逆 (本文は messier collection of trade-offs と述べる)。\n- 選択肢3:「単純な指標で測れるべき」は本文の主旨と外れた解釈。\n\n【日本人弱点コメント】`even as` の譲歩用法 (= ~するにもかかわらず) は受験頻出。`even though` と等価。本問では「単純な物語が断片化した時期にあって」と訳すこともできる。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "下線部 (3) における `quiet but consequential reversal` (静かだが重大な逆転) とはどのような現象か、最も適切なものを選びなさい。",
+            "choices": [
+              "戦後コンピュータ計画は汎用機 (universal machine) から始まったが、四分の三世紀後には特定用途の専用機械 (special-purpose engine) に到達したという逆転。",
+              "コンピュータの性能向上が完全に停止し、技術が後退する逆転。",
+              "汎用機は不要となり、すべての機械学習チップが汎用性を失った。",
+              "計算機はもはや「機械」ではなく「エンジン」になったという呼称の変化。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `quiet but consequential reversal` =「静かだが重大な逆転」 (= 目立たないが意義深い変化)\n- `the universal machine` (= チューリングマシン的な汎用計算機) ↔ `the special-purpose engine` (= 特定用途専用エンジン)\n- 戦後コンピュータの origin (= universal machine) と現在の状況 (= ML 専用チップ) の対比\n\n## 🔬 文構造分析\nThis represents [a quiet but consequential reversal]: [the post-war computing project began with [the universal machine], and arrives, [three-quarters of a century later], at [the special-purpose engine]].\n  主節: S=This / V=represents / O=a quiet but consequential reversal\n  : (コロン) で reversal の中身を具体化\n  対比: began with the universal machine ↔ arrives at the special-purpose engine\n\n## 📍 本文の根拠\n下線部直前「A chip optimised for training neural networks need not have ... the kind of general-purpose flexibility ... it is, in effect, a piece of factory equipment, designed for one kind of work and clumsy at most others」が逆転の具体的内容を提供する。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「性能向上が完全に停止し技術が後退」は本文の `continued to improve` (第3段) と真逆。\n- 選択肢2:「汎用機は不要となり」は本文と外れた強解釈 (本文は ML 用途では特殊化が進む、というだけ)。\n- 選択肢3:「呼称の変化」は字面通りの誤読 (engine は呼称ではなく `特定用途機械` の比喩)。\n\n【日本人弱点コメント】`special-purpose` (= 特定用途) と `general-purpose` (= 汎用) は対比語。コンピュータ科学では基本概念。`engine` を「エンジン (機関)」だけでなく「(特定用途のための) 機械」とイメージできると本問の比喩を取りやすい。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "hitotsu",
+      "model": "claude-sonnet-4.6-team-review-v10",
+      "question_data": {
+        "passage": "The economist Albert Hirschman, in a small book published in 1970, drew a distinction that has since become a permanent fixture in arguments about declining institutions. (1)When members or customers of an organisation become dissatisfied, he observed, they have, in essence, two options: they can leave (`exit') or they can stay and complain (`voice'). The choice between these is shaped by many things, but Hirschman's point was that the relative ease of one tends to crowd out the other.\n\nA marketplace in which switching suppliers is effortless will, on the whole, generate less articulate criticism than one in which leaving is costly. The dissatisfied customer who can simply move to a rival has little reason to invest the time and emotional energy required to explain what is wrong. (2)Conversely, the captive member of a club, denomination, or political party, finding herself unable to leave without significant cost, will sometimes develop a remarkably patient and constructive form of criticism—criticism that, paradoxically, ends up benefiting the very institution she might prefer to abandon.\n\nThis observation has uncomfortable implications for an age organised around frictionless choice. The platforms that promise to make every transaction easier—to find another doctor, another school, another news source, another community of belief—simultaneously erode the conditions under which sustained, internal reform becomes possible. (3)A society of readily-available exits is a society in which voice grows quieter, not because the underlying complaints have diminished but because the institutions that might once have heard them have become, in subtle ways, harder to address.\n\nIt would be premature to conclude that exit is therefore bad and voice good. Some institutions deserve to die; some forms of loyalty are corrosive; some markets work best when switching is easy. Hirschman's argument is more carefully balanced than the slogans extracted from it. But the contemporary tendency to treat exit as a universal solvent for institutional dysfunction loses something important: the slow, patient labour of those who, finding themselves bound to a flawed institution, work to make it less flawed because, for whatever reason, they cannot or will not walk away.",
+        "audio_script": "",
+        "prompt": "",
+        "year_simulated": 2024,
+        "univ_simulated": "一橋大学",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "下線部 (1) で Hirschman が示した `exit` と `voice` の関係性として最も適切なものを選びなさい。",
+            "choices": [
+              "一方の選択肢が容易になるほど、もう一方の選択肢が押しのけられる傾向がある。",
+              "exit と voice はどちらも独立した選択肢で、互いに影響し合うことはない。",
+              "exit と voice は同じ意味で、組織から離れる方法として両者を選択できる。",
+              "voice (発言) は exit (退場) よりも常に効果的な選択肢である。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `crowd out ~` =「~を押しのける・~を排除する」 (= 経済学の基本概念、片方が増えるともう片方が減るトレードオフ)\n- `the relative ease of one tends to crowd out the other` =「一方の (相対的な) 容易さは、もう一方を押しのける傾向にある」\n- exit と voice の負の相関 (= 補完ではなく代替) のコア\n\n## 🔬 文構造分析\nThe choice between these is shaped by many things, but [Hirschman's point was [that [the relative ease of one tends to crowd out the other]]].\n  接続: but で対比\n  目的節 that: S=the relative ease of one (= exit/voice の片方の容易さ) / V=tends to crowd out / O=the other (もう片方)\n\n## 📍 本文の根拠\n下線部直前「they can leave (`exit') or they can stay and complain (`voice')」で 2 選択肢を定義。下線部で「片方の容易さがもう片方を排除する」と論じる。第2段以降で具体例 (= 容易な market vs 拘束的 club) を展開。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「互いに影響し合うことはない」は本文と真逆 (= crowd out の関係を否定)。\n- 選択肢2:「同じ意味」は完全な誤読 (= leave と stay-and-complain は対立)。\n- 選択肢3:「常に voice の方が効果的」は本文と外れた価値判断。本文は中立的観察。\n\n【日本人弱点コメント】`crowd out` は経済学では「クラウディング・アウト効果」と呼ばれ、政府支出が民間投資を押しのける現象を指す。本問では一般的な「片方が増えるともう片方が減る」のトレードオフ意で頻出。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "下線部 (2) Conversely, the captive member of a club, denomination, or political party, finding herself unable to leave without significant cost, will sometimes develop a remarkably patient and constructive form of criticism の解釈として最も適切なものを選びなさい。",
+            "choices": [
+              "逆に、容易には離れられない club / 教派 / 政党などの拘束的成員は、しばしば驚くほど忍耐強く建設的な批判を発展させることがある。",
+              "拘束的な組織から離れられない人は、不満を抱きやすく、悪意のある批判を発展させる。",
+              "拘束的な組織の成員は、外部の批判を受けて初めて建設的な議論を生み出すようになる。",
+              "club や政党のメンバーは、必ずしも組織を批判するわけではなく、おおむね受け身である。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `Conversely` =「逆に」 (= 前文と対比のシグナル)\n- `the captive member` =「拘束された成員」 (= 容易に離れられない人)\n- `finding herself unable to leave without significant cost` =「相当のコストなしには離れられないと気づいて」 (分詞構文)\n- `remarkably patient and constructive form of criticism` =「驚くほど忍耐強く建設的な批判」\n- 拘束 → 建設的批判の発展、というパラドックスのコア\n\n## 🔬 文構造分析\nConversely, [the captive member of a club, denomination, or political party], [finding herself unable to leave without significant cost], will sometimes develop [a remarkably patient and constructive form of criticism]—[criticism [that, [paradoxically], ends up benefiting [the very institution [she might prefer to abandon]]]].\n  主節: S=the captive member ~ (a club, denomination, or political party の例示) / 分詞句=finding herself unable ~ / V=will sometimes develop / O=criticism\n  ダッシュ挿入: criticism の言い換え (= criticism that ends up benefiting ~)\n  関係詞節: that, paradoxically, ends up benefiting ~ (= 逆説的に、その制度に利益をもたらす批判)\n  関係詞節: she might prefer to abandon (= 彼女が見捨てたいと思うかもしれない制度)\n\n## 📍 本文の根拠\n第2段全体が「離れやすい market は批判が薄い、拘束的 club は建設的批判が育つ」という対比。下線部は後半 (拘束的) のメカニズムを論じる。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「悪意のある批判」は本文と真逆 (本文は constructive = 建設的と述べる)。\n- 選択肢2:「外部の批判を受けて初めて」は本文と外れる (本文は内部成員自身が批判を発展させる)。\n- 選択肢3:「おおむね受け身」は本文と真逆 (= patient and constructive criticism は能動的)。\n\n【日本人弱点コメント】`finding herself unable to leave` の `find oneself` (~ と気づく・~ という状態にある) は受験頻出表現。本問では「離れられない自分を見出して」 = 「離れられないと気づいて」。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "本文全体の論旨として最も適切なものを選びなさい。",
+            "choices": [
+              "選択肢が容易な現代社会では voice (発言) が弱まり、制度内部からの忍耐強い改革労働の価値が見落とされがちであり、これは exit (退場) を万能の解決策と見なす傾向の問題である。",
+              "exit (退場) は常に voice (発言) より優れた選択肢で、制度から離れることが個人の幸福を最大化する。",
+              "voice (発言) は exit (退場) より道徳的に優れているため、すべての人は組織から離れずに批判すべきである。",
+              "Hirschman の理論は古く、現代のフリクションレスな選択環境では適用できない。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- 第1段: Hirschman の exit/voice 二択論\n- 第2段: 容易な exit は voice を弱め、拘束的 voice は建設的批判を生む\n- 第3段: 現代のフリクションレス選択は voice を不可視化\n- 第4段 (本文最終段): 結論は中立的 — exit が万能ではなく、`slow, patient labour` の価値を見直すべき\n- 全体の主旨のコア: 現代の `frictionless choice` への警鐘\n\n## 🔬 文構造分析 (主旨命題)\n第4段最終文「the contemporary tendency to treat exit as a universal solvent for institutional dysfunction loses something important: the slow, patient labour of those who, finding themselves bound to a flawed institution, work to make it less flawed」が主旨を結晶化する。\n\n## 📍 本文の根拠\n第3段「erode the conditions under which sustained, internal reform becomes possible」と第4段の `slow, patient labour` 礼賛が、本文の主旨を確立する。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「exit が常に voice より優れる」は第4段「It would be premature to conclude that exit is therefore bad and voice good」と整合せず、また `the contemporary tendency to treat exit as a universal solvent ... loses something important` と真逆。\n- 選択肢2:「voice は道徳的に優れる」は本文の中立的議論を価値判断に偏向させた誤読。本文は「exit/voice はバランス問題」と述べる。\n- 選択肢3:「Hirschman の理論は古く適用できない」は本文の主張と真逆 (= 本文は Hirschman 理論の現代的意義を強調する)。\n\n【日本人弱点コメント】長文の主旨は最終段で明示されることが多い。本文の最終段「Hirschman's argument is more carefully balanced than the slogans extracted from it. But ~」の `But` 以降が主旨。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "nagoya",
+      "model": "claude-sonnet-4.6-team-review-v10",
+      "question_data": {
+        "passage": "The biologist J. B. S. Haldane is supposed to have answered, when asked what he had learned about the mind of God from his decades of studying living creatures, that the Creator must have `an inordinate fondness for beetles'. The remark, whether or not Haldane really made it, captured a genuine puzzle: of the several million species of multicellular animal life that have been described, something close to a quarter are species of beetle. (1)A naturalist trying to imagine, from first principles, what a typical animal looks like would never arrive at the beetle—and yet, statistically speaking, there is no creature more typical.\n\nThis kind of statistical surprise is now familiar to evolutionary biologists, but its philosophical implications are still being absorbed. The standard textbook narrative of evolution emphasises adaptation: organisms acquire features that fit them to their environments, and the features that work get passed on. (2)What this account underplays is the role of mere historical contingency—the way in which a body plan that worked tolerably well at some early moment, having survived a series of accidents, becomes the starting point for a vast lineage of descendants whose own subsequent diversification proceeds entirely along channels carved by the original accident.\n\nThe beetle body plan is one such accident. It was not, in any meaningful sense, the optimal solution to the problem of being an animal. (3)Once it had taken hold, however, it provided a sufficiently robust template that subsequent variations on the theme—the longer leg, the modified mouthpart, the new colour pattern—could continue to find their place in the world without needing to revisit the basic question of what kind of animal to be in the first place.",
+        "audio_script": "",
+        "prompt": "",
+        "year_simulated": 2024,
+        "univ_simulated": "名古屋大学",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "下線部 (1) A naturalist trying to imagine, from first principles, what a typical animal looks like would never arrive at the beetle—and yet, statistically speaking, there is no creature more typical. の意味として最も適切なものを選びなさい。",
+            "choices": [
+              "原理から「典型的な動物」を想像しようとした博物学者は、決して甲虫に到達しないだろう。しかし統計的に言えば、甲虫より典型的な生物は存在しない。",
+              "博物学者は甲虫の典型的な姿を原理から導き出すべきだが、それは難しい。",
+              "甲虫は典型的な動物の代表例として、博物学者が真っ先に想像するものである。",
+              "原理を放棄して統計に頼れば、博物学者は容易に甲虫の特徴を導き出せる。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `from first principles` =「原理から (= 基本原理に基づいて)」 (= 哲学的・科学的アプローチのコア)\n- `would never arrive at ~` =「決して~にたどり着くことはないだろう」 (= 仮定法過去 + 否定強調)\n- `and yet ~` =「しかし~である」 (= 譲歩+逆説のシグナル)\n- `statistically speaking` =「統計的に言えば」\n- パラドックス: 想像不可能な姿だが、統計的には最も典型的、というコントラスト\n\n## 🔬 文構造分析\n[A naturalist [trying to imagine, [from first principles], [what a typical animal looks like]]] would never arrive at [the beetle]—and yet, [statistically speaking], there is [no creature more typical].\n  主節: S=A naturalist (trying to imagine ~ で分詞句修飾) / 助動詞=would (仮定法) / V=never arrive at / O=the beetle\n  ダッシュ後の譲歩: and yet ~ (= しかし、統計的には甲虫より典型的な生物はない)\n\n## 📍 本文の根拠\nこの文は本文の `Haldane の格言` を生物学的に解釈する核心。`an inordinate fondness for beetles` (神は甲虫を異常に好む) → 甲虫が動物界の 1/4 を占めるという統計的事実を、`想像と現実のギャップ` として表現する。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「博物学者は導き出すべき」は本文の主張と外れる。\n- 選択肢2:「真っ先に想像する」は本文と真逆 (`would never arrive at the beetle`)。\n- 選択肢3:「容易に導き出せる」は本文と外れた解釈。\n\n【日本人弱点コメント】`would never arrive at ~` の `would` は仮定法過去で「(もし~するとしたら) 決して~ないだろう」の含意。`could` ではなく `would` が使われていることに注意。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "下線部 (2) What this account underplays is the role of mere historical contingency において、著者が標準教科書の進化論に対して指摘している不足は何か。最も適切なものを選びなさい。",
+            "choices": [
+              "標準教科書の説明は、適応 (adaptation) を強調する一方で、単なる歴史的偶然性 (historical contingency) の役割を過小評価している。",
+              "標準教科書は歴史的偶然性のみを重視し、適応の役割を完全に無視している。",
+              "標準教科書は適応も偶然性も無視しており、進化論として不十分である。",
+              "適応と偶然性は同じ意味であり、両者を区別する必要はない。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `What X underplays is ~` =「X が過小評価しているのは~」 (= 関係代名詞 What 節 + underplay)\n- `mere historical contingency` =「単なる歴史的偶然性」 (= 必然性ではない、たまたまそうなっただけのもの)\n- 適応 vs 偶然性 の対比のコア\n\n## 🔬 文構造分析\n[What this account underplays] is [the role of [mere historical contingency—[the way [in which a body plan [that worked tolerably well at some early moment], [having survived a series of accidents], becomes the starting point for [a vast lineage of descendants [whose own subsequent diversification proceeds entirely along channels [carved by the original accident]]]]]]]].\n  主節: S=What this account underplays / V=is / C=the role of mere historical contingency\n  ダッシュ挿入: contingency の中身を具体化 (the way in which ~)\n  深いネスト: a body plan が初期に偶然成功 → 子孫がそれに従う、というメカニズム\n\n## 📍 本文の根拠\n下線部直前「The standard textbook narrative of evolution emphasises adaptation」が標準説明 (= 適応重視) を述べた後、下線部で「実は歴史的偶然性が過小評価されている」と批判する。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「歴史的偶然性のみを重視」は本文と真逆。本文は標準教科書が `adaptation を強調・contingency を過小評価` と述べる。\n- 選択肢2:「両方無視」は本文と外れる (本文は adaptation を重視と述べる)。\n- 選択肢3:「同じ意味」は完全な誤読 (= adaptation と contingency は対立概念)。\n\n【日本人弱点コメント】`underplay` (= 過小評価する・控えめに扱う) は受験単語ではないが論説文頻出。`overplay` (= 過大評価する) との対比で覚える。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "下線部 (3) Once it had taken hold, however, it provided a sufficiently robust template that subsequent variations on the theme ... could continue to find their place in the world without needing to revisit the basic question of what kind of animal to be in the first place. の解釈として最も適切なものを選びなさい。",
+            "choices": [
+              "甲虫の体制が確立した後、それは十分に頑健なテンプレートとなり、その上での後続の変異 — 脚の長さ、口器、色彩 — が「そもそもどんな動物になるか」という基本的問いを再訪することなく、世界に居場所を見つけ続けることができた。",
+              "甲虫の体制が確立した後、後続の世代は基本的な動物のあり方を再検討する必要があり、進化の方向性が定まらなかった。",
+              "甲虫の体制は不安定で、後続の変異は次々と新しい動物像を模索する必要があった。",
+              "甲虫の体制は最初から最適解であり、後続の変異は単なる微調整に過ぎなかった。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `Once X had taken hold` =「いったん X が確立すると」 (= 過去完了の時間条件)\n- `a sufficiently robust template` =「十分に頑健なテンプレート」 (= 基盤としての安定性)\n- `subsequent variations on the theme` =「テーマの上の後続の変異」 (音楽用語的な比喩)\n- `without needing to revisit the basic question` =「基本的問いを再訪する必要なく」\n- 確立した体制が future variations の `制約 + 自由度` を提供するメカニズム\n\n## 🔬 文構造分析\nOnce [it had taken hold], however, [it provided [a sufficiently robust template [that [subsequent variations on the theme—the longer leg, the modified mouthpart, the new colour pattern—could continue to find their place in the world [without [needing to revisit [the basic question of [what kind of animal to be in the first place]]]]]]]].\n  時間節: Once it had taken hold (過去完了)\n  主節: S=it / V=provided / O=a sufficiently robust template\n  関係詞節 that: subsequent variations が template の上で進化できる、という条件\n  ダッシュ挿入: variations の例 (longer leg, modified mouthpart, new colour pattern)\n  否定不定詞: without needing to revisit ~\n\n## 📍 本文の根拠\n第3段全体が「甲虫の体制 = 偶然成功 → 子孫の多様化のテンプレート」というメカニズムを論じる。下線部はこのメカニズムの結論。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「基本的問いを再検討する必要があり」は本文と真逆 (`without needing to revisit`)。\n- 選択肢2:「不安定で次々と新しい動物像を模索」は本文と真逆 (= robust template と述べる)。\n- 選択肢3:「最初から最適解」は本文の `not the optimal solution` (第3段冒頭) と真逆。\n\n【日本人弱点コメント】`Once + 過去完了` の時間節は受験頻出。「いったん~してしまうと」と訳す。`have taken hold` (= 定着する・確立する) は熟語的表現で、`hold` は名詞 (= つかみ・足場)。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "chuo",
+      "model": "claude-sonnet-4.6-team-review-v10",
+      "question_data": {
+        "passage": "The rule of law, in the formulation that has become standard, requires that legal authority be exercised through general rules announced in advance, applied consistently, and accessible to those whose conduct they govern. (1)What this formulation tends to leave out is the work that goes into making such rules tractable for ordinary people: the lawyers who translate legal language into something a client can act on, the clerks who maintain the records without which proceedings dissolve into confusion, the institutional culture that decides which marginal cases will be pursued and which let go.\n\nThis hidden infrastructure is rarely visible until something goes wrong with it. The recent scandals over wrongful convictions in several countries—convictions secured against people who turned out, sometimes after decades, to be innocent—have not, on close inspection, exposed defects in the formal rules of criminal procedure. Those rules remain, on paper, as protective as they ever were. (2)What has gone wrong is something subtler: the practical machinery that was supposed to give those rules effect—forensic laboratories under-resourced and under-supervised, prosecutors evaluated on conviction rates rather than on the careful weighing of evidence, public defenders whose caseloads guarantee that no individual case will receive the attention it deserves—has been allowed, slowly and without anyone deciding it should be so, to fall below the level needed for the rules to mean what they say.\n\nThis is why purely procedural reforms tend, by themselves, to disappoint. (3)A new statute, however carefully drafted, can do its work only through the institutions that were already there to receive it; if those institutions have decayed, the statute, in practice, may amount to little more than an aspirational poster on the office wall. The rule of law is not, in the end, an arrangement of texts. It is an arrangement of people, trained and resourced and held to standards, who give the texts their force.",
+        "audio_script": "",
+        "prompt": "",
+        "year_simulated": 2024,
+        "univ_simulated": "中央大学 法学部",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "下線部 (1) で著者が `rule of law` の標準的定式化に欠けていると指摘しているものは何か。最も適切なものを選びなさい。",
+            "choices": [
+              "法律家・書記・組織文化など、一般人が法を実践的に利用できるようにするための「目に見えない労働」とインフラ。",
+              "法を知る権利・公正な裁判を受ける権利などの基本的人権。",
+              "立法府による厳密な法律制定プロセスと、その透明性。",
+              "法廷での弁護士の弁論技術と、判例研究の充実。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `What X tends to leave out is ~` =「X が見落としがちなのは~」 (= 関係代名詞 What 節)\n- `the work that goes into making such rules tractable for ordinary people` =「そうした規則を一般人にとって実践的に使えるものにするためになされる労働」\n- `tractable` =「扱いやすい・実践可能な」 (= ordinary people にとって法を `actionable` にする)\n- 例示: lawyers (translators) / clerks (record-keepers) / institutional culture (case-selection)\n\n## 🔬 文構造分析\n[What this formulation tends to leave out] is [the work [that goes into making [such rules tractable for ordinary people]: [the lawyers [who translate legal language into [something a client can act on]]], [the clerks [who maintain the records [without which proceedings dissolve into confusion]]], [the institutional culture [that decides [which marginal cases will be pursued] and [which let go]]]]].\n  主節: S=What this formulation tends to leave out / V=is / C=the work\n  関係詞節 that: the work を修飾 / 動詞 goes into\n  : (コロン) で具体例を 3 つ列挙\n\n## 📍 本文の根拠\n本文第1段全体が、法の支配 (= rule of law) の標準定式と、その背後の `hidden infrastructure` の対比を導入する。下線部はこの対比の前者を批判的に評価する。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「基本的人権」は本文の議論と関係ない。\n- 選択肢2:「立法プロセスの透明性」は本文の議論と外れる (本文は実施段階の `hidden infrastructure` を論じる)。\n- 選択肢3:「弁護技術と判例研究」は本文の例示の一部に近いが、本文の主旨は `lawyer + clerk + institutional culture` の3層を含むより広い概念。\n\n【日本人弱点コメント】`tractable` は法律・科学的論説で頻出。`tract-` (= 引っ張る、扱う) を語根とする派生語で、`intractable` (= 手に負えない) との対比も覚える。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "下線部 (2) What has gone wrong is something subtler の `something subtler` の中身を、本文に基づいて最も適切に説明しているものを選びなさい。",
+            "choices": [
+              "法律の形式的規則ではなく、それを実効化するための実務機構 — 鑑識ラボのリソース不足、起訴件数で評価される検察、過大な事件量を抱えた弁護士 — が、誰の決定もなしに徐々に劣化していること。",
+              "刑事手続の形式的規則そのものに重大な欠陥があり、根本的な書き換えが必要であること。",
+              "司法システムの劣化は短期間に発生したため、容易に発見・修正できる。",
+              "司法スキャンダルの主因は、個々の法律家の倫理的逸脱にある。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `something subtler` =「もっと微妙なもの」 (= 表面的問題ではない深層の問題のシグナル)\n- 例示: forensic laboratories under-resourced / prosecutors evaluated on conviction rates / public defenders with overwhelming caseloads\n- `slowly and without anyone deciding it should be so` =「ゆっくりと、誰もそうするべきだと決めたわけでもなく」 (= 構造的劣化のメカニズム)\n\n## 🔬 文構造分析\n[What has gone wrong] is [something subtler: [the practical machinery [that was supposed to give those rules effect]—[forensic laboratories under-resourced and under-supervised, prosecutors evaluated on conviction rates rather than on the careful weighing of evidence, public defenders whose caseloads guarantee that no individual case will receive the attention it deserves]—has been allowed, slowly and without anyone deciding it should be so, to fall below the level needed for the rules to mean what they say]].\n  主節: S=What has gone wrong / V=is / C=something subtler (: で具体化)\n  ダッシュ挿入: 3 つの例 (forensic / prosecutors / public defenders)\n  関係詞節 that was supposed to give those rules effect: the practical machinery を修飾\n\n## 📍 本文の根拠\n下線部直前「Those rules remain, on paper, as protective as they ever were」(= 形式規則は健在) と、下線部の `something subtler` (= 実効化機構の劣化) の対比が本文第2段の核心。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「形式的規則そのものに欠陥があり、根本的書き換えが必要」は本文と真逆 (本文は `Those rules remain ... as protective as they ever were` と明示)。\n- 選択肢2:「短期間に発生し容易に修正できる」は本文の `slowly and without anyone deciding` と矛盾。\n- 選択肢3:「個々の法律家の倫理的逸脱」は本文の構造的・組織的議論を矮小化した誤読。\n\n【日本人弱点コメント】`under-resourced and under-supervised` の `under-` 接頭辞は「不十分な~」の意。`under-resourced` =「リソースが不十分」、`under-supervised` =「監督が不十分」。ハイフン付き形容詞で論説文頻出。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "本文最終段の主旨として最も適切なものを選びなさい。",
+            "choices": [
+              "法の支配は最終的にはテキストの配置ではなく、訓練・資源・基準を備えた人々の配置であり、これらにテキストの効力が依存する。",
+              "法の支配は最終的にはテキスト (法令) の配置のみで決まり、運用する人々は副次的である。",
+              "法の支配を実現するためには、新しい法令を頻繁に制定することが最も重要である。",
+              "法の支配は、各国の文化や歴史によって本質的に異なるため、普遍的定義は不可能である。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- 第1段: 法の支配の標準定式 + `hidden infrastructure` の対比\n- 第2段: スキャンダルは形式規則の欠陥ではなく、実効化機構の劣化\n- 第3段 (最終段): 純粋な手続改革の限界 + 「法の支配 = 人々の配置」結論\n- 最終文 `It is an arrangement of people, trained and resourced and held to standards, who give the texts their force.` が主旨を結晶化\n\n## 🔬 文構造分析 (主旨命題)\n[The rule of law is not, in the end, [an arrangement of texts]]. [It is [an arrangement of people, [trained and resourced and held to standards], [who give the texts their force]]].\n  対比: arrangement of texts ↔ arrangement of people\n  分詞修飾: trained / resourced / held to standards (3 並列で people を修飾)\n  関係詞節 who give the texts their force: people を修飾 (= テキストに力を与える人々)\n\n## 📍 本文の根拠\n第3段「purely procedural reforms tend, by themselves, to disappoint」 + 「a new statute ... can do its work only through the institutions that were already there to receive it」が下線部 (3) で論じられた後、最終2文で結論として「法の支配 = 人々の配置」と総括する。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「テキストの配置のみで決まる」は本文の主張と真逆。\n- 選択肢2:「新しい法令の頻繁な制定」は本文と外れる (本文は手続改革の限界を論じる)。\n- 選択肢3:「普遍的定義は不可能」は本文の論点と関係ない (本文は法の支配の定式そのものを論じている)。\n\n【日本人弱点コメント】中央大法学部の論説では `the rule of law` (= 法の支配) と `the rule by law` (= 法による支配 = 専制) の区別が頻出。本文の `rule of law` は前者で、人々の運用が前提。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "doshisha",
+      "model": "claude-sonnet-4.6-team-review-v10",
+      "question_data": {
+        "passage": "Cities, the urban historian Lewis Mumford once argued, are first of all theatres: places where citizens come to see and be seen, to participate in the public drama of civic life. The buildings, the streets, the squares are stage furniture; the real action is the meeting of strangers and neighbours in the same space, with the rich texture of overheard conversation, accidental encounter, and small public ceremonies that no individual scripted but that all collectively perform.\n\n(1)This metaphor, attractive as it is, has its dangers. Theatres can be empty. The settings remain when the audience and the actors have gone, and a city without civic participation is, in Mumford's view, no longer truly a city—just an arrangement of well-engineered spaces awaiting an animation that may never come. The post-pandemic experience has made this fragility more visible than usual. Office districts in many world capitals, drained of their daytime populations, revealed how much of what we had assumed to be the city itself was in fact dependent on the daily flow of people whose principal reason for being there was economic.\n\nWhat is now called the `fifteen-minute city' represents one response to this fragility. The idea, popularised by the urbanist Carlos Moreno, is that the essential elements of urban life—work, education, healthcare, leisure, food, social connection—should be reachable within a quarter-hour walk or bicycle ride from one's home. (2)On a generous interpretation, this is not so much a new urban form as the recovery of one that existed almost everywhere before the automobile, and survives, in fragments, in the older neighbourhoods of cities that the twentieth century did not entirely level.\n\nThe more difficult question—the one that careful proponents of the idea avoid making explicit—is what kind of citizen this redesigned city presupposes. (3)A neighbourhood in which most of one's daily needs can be met within a short walk is, by the same token, a neighbourhood in which most of one's daily exposures are local; and a citizenry whose horizons coincide too closely with their immediate surroundings has, historically, been a citizenry vulnerable to being managed by people whose horizons do not.",
+        "audio_script": "",
+        "prompt": "",
+        "year_simulated": 2024,
+        "univ_simulated": "同志社大学",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "下線部 (1) This metaphor, attractive as it is, has its dangers. Theatres can be empty. の解釈として最も適切なものを選びなさい。",
+            "choices": [
+              "「都市は劇場である」という比喩は魅力的だが、その危険性もある。劇場は空になりうる。",
+              "「都市は劇場である」という比喩は完璧で、危険性は皆無である。",
+              "都市と劇場は本質的に異なる場所であり、比喩として混同してはならない。",
+              "劇場は空になることはなく、都市も常に活気で満たされている。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `attractive as it is` =「(その表現は) 魅力的だが」 (= 譲歩構文 `as it is`)\n- `has its dangers` =「危険性を持つ」 (= 比喩の限界・危うさ)\n- `Theatres can be empty` =「劇場は (人がいなくて) 空になりうる」 (= 都市から人がいなくなる可能性のメタファー)\n\n## 🔬 文構造分析\n[This metaphor, [attractive as it is], has [its dangers]]. [Theatres can be empty].\n  主節: S=This metaphor / 譲歩=attractive as it is / V=has / O=its dangers\n  独立文: Theatres can be empty (= dangers の具体例として、劇場は空になりうるという警告)\n  譲歩構文: `Adj + as + S + V` =「~ではあるが」 (= though it is attractive と同義)\n\n## 📍 本文の根拠\n第1段が `都市 = 劇場` のメタファーを導入した後、第2段冒頭の下線部で「魅力的だが危険性もある」と転換する。続く `The settings remain when the audience and the actors have gone` で危険性を具体化する。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「比喩は完璧で危険性は皆無」は本文と真逆。\n- 選択肢2:「比喩として混同してはならない」は本文と外れる (本文は比喩の有用性を認めつつ限界を論じる)。\n- 選択肢3:「劇場は空にならない」は本文の `Theatres can be empty` と真逆。\n\n【日本人弱点コメント】`attractive as it is` の譲歩構文は受験頻出。`Adj/Adv + as + S + V` で「~ではあるが・~とはいえ」の意味。`Young as he is, he is wise.` (= 若いとはいえ賢い) と同じ構造。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "下線部 (2) On a generous interpretation, this is not so much a new urban form as the recovery of one that existed almost everywhere before the automobile の解釈として最も適切なものを選びなさい。",
+            "choices": [
+              "寛大な解釈をすれば、これ (15 分都市) は新しい都市形態というよりむしろ、自動車の登場以前にほぼどこにでも存在した都市形態の復活である。",
+              "「15 分都市」はまったく新しい都市形態であり、過去のいかなる都市形態とも無関係である。",
+              "自動車登場以前の都市は不便で、現代の「15 分都市」とは本質的に異なる。",
+              "都市形態は時代を超えて変化し続けており、過去との比較は無意味である。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `not so much A as B` =「A というよりむしろ B」 (= 比較で重心を B に置く)\n- A: a new urban form (= 新しい都市形態)\n- B: the recovery of one that existed almost everywhere before the automobile (= 自動車前にどこにでもあった都市形態の復活)\n- `On a generous interpretation` =「寛大な解釈をすれば」 (= 慈善的解釈の前置きシグナル)\n\n## 🔬 文構造分析\n[On a generous interpretation], [this is not so much a new urban form as the recovery of [one [that existed almost everywhere before the automobile]], and survives, [in fragments], in [the older neighbourhoods of [cities [that the twentieth century did not entirely level]]]].\n  主節: S=this / V=is / C=not so much A as B\n  関係詞節 that existed almost everywhere ~: one (= an urban form) を修飾\n  追加 and survives ~ : 関係詞節 (one が修飾され続ける)\n  関係詞節 that the twentieth century did not entirely level: cities を修飾\n\n## 📍 本文の根拠\n第3段で `15 分都市` の概念を導入した後、下線部で「実は新しいものではなく、自動車前の都市形態の復活」と歴史的位置づけを示す。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「まったく新しい都市形態で、過去と無関係」は本文と真逆。\n- 選択肢2:「自動車前の都市は不便で本質的に異なる」は本文と真逆 (本文は前自動車期都市と 15 分都市の連続性を強調)。\n- 選択肢3:「過去との比較は無意味」は本文の主張と外れる (本文は積極的に過去と比較する)。\n\n【日本人弱点コメント】`not so much A as B` (= A というより B) は受験頻出。`A rather than B` (B ではなく A) と紛らわしいので注意 — `not so much A as B` は B が重心で、`A rather than B` は A が重心。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "下線部 (3) における著者の問題提起として最も適切なものを選びなさい。",
+            "choices": [
+              "15 分都市は日常生活が地元に集中しがちな住民を生み出し、歴史的に見るとそうした住民は「視野の広い」人々によって管理されやすい傾向にある。",
+              "15 分都市は住民の視野を広げ、外部からの管理を受けにくくする利点がある。",
+              "15 分都市の住民は、歴史的に見て独立心が強く、外部からの管理に抵抗してきた。",
+              "15 分都市は実現不可能な理想であり、現実の都市計画には適用できない。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `daily exposures are local` =「日々の経験 (= 接触範囲) が地元に限定される」\n- `a citizenry whose horizons coincide too closely with their immediate surroundings` =「地平線が直接の周囲と過度に重なる住民」 (= 視野が狭い住民)\n- `vulnerable to being managed by people whose horizons do not` =「(地平線がそう重ならない) 視野の広い人々によって管理されやすい」 (= 政治哲学的警告)\n\n## 🔬 文構造分析\n[A neighbourhood [in which most of one's daily needs can be met within a short walk]] is, [by the same token], [a neighbourhood [in which most of one's daily exposures are local]]; and [a citizenry [whose horizons coincide too closely with their immediate surroundings]] has, [historically], been [a citizenry [vulnerable to [being managed by [people [whose horizons do not]]]]].\n  ; (セミコロン) で 2 つの命題を並列\n  前半: 短歩圏で需要が満たせる neighbourhood は、日常体験も local に\n  後半: 視野が周囲と重なりすぎる citizenry は、視野の広い人々に管理されやすい\n\n## 📍 本文の根拠\n第4段冒頭「The more difficult question—the one that careful proponents of the idea avoid making explicit—is what kind of citizen this redesigned city presupposes」が問題提起の前置き。下線部はこの問題への著者の懸念を示す。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「視野を広げ管理を受けにくくする利点」は本文と真逆。\n- 選択肢2:「独立心が強く管理に抵抗してきた」は本文と真逆 (`vulnerable to being managed`)。\n- 選択肢3:「実現不可能な理想」は本文の主張と外れる (本文は実現可能性ではなく市民像を論じる)。\n\n【日本人弱点コメント】`whose horizons do not (coincide ...)` の `do not` の後ろは省略 (= coincide too closely with their immediate surroundings の繰り返しを避ける)。「(視野が周囲と過度に重ならない) 人々」と訳出する。"
+          }
+        ]
+      }
+    }
+  ],
+  "skip_full": false
+}
