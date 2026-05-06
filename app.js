@@ -245,16 +245,16 @@ const BACKEND_URL = (window.location.hostname === 'localhost' && window.location
 let BACKEND_AI_AVAILABLE = null;  // Auto-detected on init
 
 async function detectBackendAI() {
-  if (BACKEND_AI_AVAILABLE !== null) return BACKEND_AI_AVAILABLE;
+  if (BACKEND_AI_AVAILABLE === true) return true;  // 成功はキャッシュ。失敗は毎回再試行 (一過性の network 障害で permanent demo に陥る不具合の修正 2026-05-06)
   try {
-    const res = await fetch(`${BACKEND_URL}/api/ai/status`, { signal: AbortSignal.timeout(1500) });
+    const res = await fetch(`${BACKEND_URL}/api/ai/status`, { signal: AbortSignal.timeout(3000) });
     if (res.ok) {
       const data = await res.json();
       BACKEND_AI_AVAILABLE = !!data.hosted_mode;
       return BACKEND_AI_AVAILABLE;
     }
   } catch {}
-  BACKEND_AI_AVAILABLE = false;
+  // 失敗: 今回は false 返すが state は変えない (次回再試行する)
   return false;
 }
 
@@ -1133,23 +1133,37 @@ async function callClaude(systemPrompt, userMessage, options = {}) {
         return text;
       }
       // res.ok が false の場合: JSON kind なら安全なフォールバックで即抜け。
-      // そうでなければログだけ残して旧フォールバック（state.apiKey直叩き）に流す。
       if (inflightAbortControllers.get(abortKey) === controller) inflightAbortControllers.delete(abortKey);
       if (isJsonKind) return jsonSafeFallback(`backend ${res.status}`);
-      // chat/diagnostic 等: backend エラーの詳細を取得してログに残す + デモ fallback 防止
+      // chat/diagnostic: backend エラーの詳細を取得して明確なエラー表示 (demo に絶対落とさない)
       let errDetail = '';
       try { const j = await res.json(); errDetail = j.detail || ''; } catch {}
-      console.warn(`Backend AI proxy returned ${res.status}: ${errDetail}, falling back`);
-      // backend が明示的に拒否した場合 (4xx) はデモ応答に落とさず、エラーメッセージを表示
-      if (kind === 'chat' && res.status >= 400 && res.status < 500 && res.status !== 401) {
-        return `⚠️ AI への問い合わせが拒否されました (${res.status}: ${errDetail || 'unknown'})。\n\nしばらく経ってから再度お試しいただくか、別の表現で質問し直してください。塾長にもこのエラーを報告しています。`;
+      console.warn(`Backend AI proxy returned ${res.status}: ${errDetail}`);
+      if (kind === 'chat') {
+        // 401: セッション期限切れ → ログイン誘導
+        if (res.status === 401) {
+          return '⚠️ セッションが期限切れです。お手数ですが一度ログアウト → 再ログインしてからご質問ください。\n（マイページ右上のメニュー → ログアウト → 改めて magic link でログイン）';
+        }
+        // 4xx: backend が明示的に拒否
+        if (res.status >= 400 && res.status < 500) {
+          return `⚠️ AI への問い合わせが拒否されました (${res.status}: ${errDetail || 'unknown'})。\n\n別の表現で質問し直すか、しばらくしてから再度お試しください。`;
+        }
+        // 5xx: backend / Anthropic / Gemini 障害
+        if (res.status >= 500) {
+          return `⚠️ AI サービスが一時的に利用できません (${res.status})。\n\n数分お待ちいただいてから再度お試しください。長時間続く場合は塾長にお問い合わせください。`;
+        }
       }
     } catch (e) {
-      if (e.name === 'AbortError') throw e;  // 中断は呼び出し元で無視させる
+      if (e.name === 'AbortError') throw e;
       console.warn('Backend AI proxy failed:', e);
       if (isJsonKind) {
         if (inflightAbortControllers.get(abortKey) === controller) inflightAbortControllers.delete(abortKey);
         return jsonSafeFallback('backend exception');
+      }
+      // network エラー等も demo に落とさず明確エラー表示
+      if (kind === 'chat') {
+        if (inflightAbortControllers.get(abortKey) === controller) inflightAbortControllers.delete(abortKey);
+        return `⚠️ ネットワーク接続を確認できませんでした。Wi-Fi/モバイル通信を確認後、再度お試しください。\n(エラー詳細: ${(e.message || 'network').slice(0, 80)})`;
       }
     }
   }
@@ -2424,7 +2438,26 @@ function buildDemoEnglishGrammar(topic) {
 // ==========================================================================
 function loadChatHistory() {
   const history = storage.get(STORAGE_KEYS.CHAT_HISTORY, []);
-  state.chatHistory = history;
+  // 過去の demo 応答を自動 purge: 旧 demoResponse が含む明確なシグネチャ群で検出
+  // (2026-05-06 修正・demo fallback で同じ回答ばかり表示されてた事故の後始末)
+  const DEMO_SIGNATURES = [
+    '💡 質問内容を詳しく書いていただくほど、より具体的な解説をご提供できます。',
+    '💡 学習データが蓄積されるほど、より個別最適化された',
+    '💡 該当する古典の文章を貼り付けていただくと',
+    '💡 問題文を詳しく教えていただくと、その問題専用の解説',
+    '💡 具体的な時代や事項を教えていただくと、より詳しい解説',
+    'もし問題文を具体的に教えてくれたら、その問題専用の解説も作成できます',
+    '💡 さらに詳しい個別解説をご希望の方は、AIチューターに「もっと詳しく」と質問してみてください。',
+  ];
+  const cleanHistory = history.filter(m => {
+    if (m.role !== 'assistant' || !m.content) return true;
+    return !DEMO_SIGNATURES.some(sig => m.content.includes(sig));
+  });
+  if (cleanHistory.length !== history.length) {
+    console.warn(`[chatHistory] purged ${history.length - cleanHistory.length} demo responses`);
+    storage.set(STORAGE_KEYS.CHAT_HISTORY, cleanHistory);
+  }
+  state.chatHistory = cleanHistory;
   const container = document.getElementById('chatMessages');
   // Keep greeting, render history
   history.forEach(msg => appendMessage(msg.role, msg.content, false));
