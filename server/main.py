@@ -14288,16 +14288,18 @@ def _verify_admin_required(authorization: Optional[str]) -> None:
         raise HTTPException(status_code=401, detail="未認証")
 
 
-_STUDY_LOG_ALLOWED_PLANS = {"premium", "family", "founder_special"}  # 新プラン体系 2026-05-06
+_STUDY_LOG_ALLOWED_PLANS = {"premium", "family", "founder_special", "student_addon"}  # 新プラン体系 2026-05-06
 
 def _require_study_log_course(student: dict) -> None:
     """学習管理機能 (学習記録・カリキュラム・模試分析・弱点プリント) アクセス判定。
-    新プラン体系 2026-05-06:
+    新プラン体系 2026-05-06 (通塾生優遇方針 2026-05-06):
       - course='kokuritsu_nankan' (本クラス所属生徒・無料 sub) → 解放
       - plan='premium' (¥19,800・国公立難関機能含むフル) → 解放
       - plan='family' (¥39,800・プレミアム×3名) → 解放
       - plan='founder_special' (¥14,500 永年・既契約者特典) → 解放
-    塾長指示 2026-05-06: 通塾生プラン (¥5,000) と standard 廃止組は AI のみで学習管理 NG
+      - plan='student_addon' (通塾生 ¥5,000・招待制限定) → 解放 (塾長指示 2026-05-06)
+    塾長指示 2026-05-06: 旧 standard (¥24,980 募集停止) のみ AI のみで学習管理 NG
+    通塾生は塾の月謝も払う高単価層で招待制限定のため学習管理を解放
     """
     if not student:
         raise HTTPException(status_code=403, detail="この機能はログイン必須です")

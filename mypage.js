@@ -11,12 +11,13 @@ const KEYS = {
 
 // ==========================================================================
 // 学習管理機能 (学習記録・カリキュラム・模試分析・弱点プリント) アクセス判定
-// 新プラン体系 2026-05-06:
+// 新プラン体系 2026-05-06 (通塾生優遇方針):
 //   - course='kokuritsu_nankan' (本クラス所属生徒) → 解放
 //   - plan='premium' (¥19,800) / 'family' (¥39,800) / 'founder_special' (¥14,500 永年) → 解放
-//   - plan='student_addon' (通塾生 ¥5,000) / 'standard' (旧・募集停止) → AI のみで学習管理 NG
+//   - plan='student_addon' (通塾生 ¥5,000・招待制限定) → 解放 (塾長指示 2026-05-06)
+//   - plan='standard' (旧 ¥24,980・募集停止) のみ NG
 // ==========================================================================
-const _STUDY_MGMT_PLANS = ['premium', 'family', 'founder_special'];
+const _STUDY_MGMT_PLANS = ['premium', 'family', 'founder_special', 'student_addon'];
 function _canUseStudyMgmt(student) {
   if (!student) return false;
   if (student.course === 'kokuritsu_nankan') return true;
