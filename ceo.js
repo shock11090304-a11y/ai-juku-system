@@ -228,7 +228,7 @@ function renderRoster(students) {
   list.sort(sorters[sort] || sorters['fee-desc']);
 
   if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">生徒データがありません。 index.html の「📥 juku-managerからインポート」で既存生徒を取り込んでください。</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-muted);">生徒データがありません。 index.html の「📥 juku-managerからインポート」で既存生徒を取り込んでください。</td></tr>';
     return;
   }
 
@@ -260,6 +260,9 @@ function renderRoster(students) {
     const carrierWarn = s.is_carrier_email
       ? ` <span title="キャリアメール (ezweb/docomo/au.com 等) — 迷惑振り分け率が高いため LINE 連携を推奨" style="color:#fbbf24;font-size:0.85em;cursor:help;">⚠️📧</span>`
       : '';
+    const deleteBtn = s.id != null
+      ? `<button class="roster-delete-btn" data-sid="${escapeHtml(String(s.id))}" data-name="${escapeHtml(s.name || '')}" data-email="${escapeHtml(s.email || '')}" title="この生徒の全データを完全削除 (取消不能)" style="background:rgba(239,68,68,0.1);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);padding:0.25rem 0.5rem;border-radius:6px;cursor:pointer;font-size:0.85em;">🗑️</button>`
+      : '<span style="color:var(--text-muted);font-size:0.8em;">-</span>';
     return `
       <tr>
         <td>${i + 1}</td>
@@ -272,9 +275,24 @@ function renderRoster(students) {
         <td><span class="roster-status ${status}">${status === 'trial' ? '体験中' : '通塾'}</span></td>
         <td style="font-size:0.85em;color:var(--text-dim);">${lastLogin}</td>
         <td style="color:var(--text-dim);font-size:0.85em;">${escapeHtml(s.goal || '-')}</td>
+        <td>${deleteBtn}</td>
       </tr>
     `;
   }).join('');
+  // 削除ボタン bind
+  tbody.querySelectorAll('.roster-delete-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const b = e.currentTarget;
+      const sid = b.getAttribute('data-sid');
+      const name = b.getAttribute('data-name');
+      const email = b.getAttribute('data-email');
+      if (typeof confirmAndDeleteStudent === 'function') {
+        confirmAndDeleteStudent(sid, name, email);
+      } else {
+        alert('削除機能の読み込みに失敗しました。ページを再読込してください。');
+      }
+    });
+  });
 }
 
 // 相対時刻フォーマット: "2026-04-29 12:34:56" → "3分前" "2時間前" "5日前"
