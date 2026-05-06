@@ -122,12 +122,30 @@ function render() {
   document.getElementById('todayQ').textContent = data.todayQuestions;
   document.getElementById('todayDone').textContent = done;
   document.getElementById('todayXp').textContent = data.todayXp;
+  // AI 質問数を backend events から取得して上書き (端末跨ぎでも正確)
+  _refreshAiQuestionsFromBackend();
 
   // Weekly chart
   renderWeeklyChart(data.weeklyMinutes);
 
   // Motivation
   rotateMotivation();
+}
+
+// AI 質問数を /api/usage/me から取得して #todayQ を上書き
+async function _refreshAiQuestionsFromBackend() {
+  try {
+    const token = (window.AuthGuard && window.AuthGuard.getToken && window.AuthGuard.getToken()) || localStorage.getItem('ai_juku_session_token');
+    if (!token) return;
+    const apiBase = (window.location.origin.includes(':8090') || window.location.origin.includes('localhost:8090'))
+      ? 'http://localhost:8000' : window.location.origin;
+    const res = await fetch(apiBase + '/api/usage/me', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!res.ok) return;
+    const data = await res.json();
+    const aiq = data.ai_questions || {};
+    const todayEl = document.getElementById('todayQ');
+    if (todayEl && typeof aiq.today === 'number') todayEl.textContent = aiq.today;
+  } catch (e) { console.warn('[AI質問数] backend 同期失敗:', e); }
 }
 
 function guessAvatar(student) {

@@ -1421,6 +1421,7 @@
             <button id="neverLoginBackfill" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;padding:0.55rem 1.1rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:700;" title="events から各生徒の最終アクティビティ時刻を推定して last_login_at を埋める">📅 過去履歴から推定</button>
             <button id="neverLoginPreview" style="background:rgba(255,255,255,0.08);color:#e4e4e7;border:1px solid rgba(255,255,255,0.2);padding:0.55rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.82rem;">対象を確認</button>
             <button id="neverLoginSend" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;padding:0.55rem 1.1rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:700;" title="本当に未ログインの生徒に magic link メールを送信">📧 全員に招待送信</button>
+            <button id="purgeStaleBtn" style="background:linear-gradient(135deg,#71717a,#52525b);color:#fff;border:none;padding:0.55rem 1.1rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:700;" title="合成監視 orphan + テストキーワードを含む生徒を一括削除 (cascade)">🧹 監視・テストデータ purge</button>
           </div>
         </div>
       </div>
@@ -1435,6 +1436,7 @@
               <th>月謝</th>
               <th>状態</th>
               <th>最終ログイン</th>
+              <th title="ログイン + AI質問 + 学習記録 + 模試の最新時刻">最終活動</th>
               <th>目標</th>
               <th>操作</th>
             </tr>
@@ -1901,6 +1903,7 @@
           trial_end: st.trial_end,
           plan: st.plan,
           last_login_at: st.last_login_at || null,
+          latest_activity_at: st.latest_activity_at || null,  // ログイン+AI+学習+模試の最新時刻
           // 通知 fallback (LINE / SMS) のための表示用フラグ
           has_line: !!st.has_line,
           is_carrier_email: !!st.is_carrier_email,
@@ -4596,6 +4599,34 @@
         const lines = list.map((s, i) => `${i+1}. ${s.name || '(名前なし)'} (${s.email || '?'}) [${s.status}]`).join('\n');
         alert(`📋 招待送信対象 (${list.length}名):\n\n${lines}`);
       }
+      const purgeBtn = e.target.closest && e.target.closest('#purgeStaleBtn');
+      if (purgeBtn) {
+        purgeBtn.disabled = true;
+        const orig = purgeBtn.textContent;
+        purgeBtn.textContent = '⏳ 確認中...';
+        try {
+          const resDry = await AdminAuth.fetch('/api/admin/students/purge-stale-data', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ dry_run: true }),
+          });
+          const dDry = await resDry.json();
+          if (!resDry.ok || !dDry.ok) { alert('⚠️ プレビュー失敗: ' + (dDry.detail || resDry.status)); return; }
+          if (dDry.matched === 0) { alert('✅ クリーンアップ対象 0 件 — 既に綺麗です'); return; }
+          const lines = (dDry.items || []).map((it, i) => `${i+1}. ${it.name || '(名前なし)'} (${it.email || '?'}) [${it.via}]`).join('\n');
+          const ok = confirm(`🧹 ${dDry.matched} 件を完全削除します (cascade: study_logs/exam_results/messages 等も同時削除)\n\n${lines}\n\n取消不能です。実行しますか?`);
+          if (!ok) return;
+          purgeBtn.textContent = '⏳ 削除中...';
+          const res = await AdminAuth.fetch('/api/admin/students/purge-stale-data', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ dry_run: false }),
+          });
+          const d = await res.json();
+          if (res.ok && d.ok) { alert(`✅ 削除完了: ${d.deleted} 件\nロスター/KPI を再描画します`); location.reload(); }
+          else { alert('⚠️ 削除失敗: ' + (d.detail || res.status)); }
+        } catch (err) { alert('⚠️ エラー: ' + err.message); }
+        finally { purgeBtn.disabled = false; purgeBtn.textContent = orig; }
+      }
+
       const sendBtn = e.target.closest && e.target.closest('#neverLoginSend');
       if (sendBtn) {
         const list = window.__neverLoginStudents || [];

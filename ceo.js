@@ -228,7 +228,7 @@ function renderRoster(students) {
   list.sort(sorters[sort] || sorters['fee-desc']);
 
   if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-muted);">生徒データがありません。 index.html の「📥 juku-managerからインポート」で既存生徒を取り込んでください。</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-muted);">生徒データがありません。 index.html の「📥 juku-managerからインポート」で既存生徒を取り込んでください。</td></tr>';
     return;
   }
 
@@ -251,6 +251,17 @@ function renderRoster(students) {
       : `<strong>${escapeHtml(s.name || '-')}</strong>`;
     // 最終ログイン: 相対時刻を表示 (例「3分前」「2時間前」「3日前」)、未ログインなら「未ログイン」
     const lastLogin = s.last_login_at ? formatRelativeTime(s.last_login_at) : '<span style="color:#71717a;">未ログイン</span>';
+    // 最終活動: ログイン+AI質問+学習記録+模試の MAX。last_login_at とズレてれば乖離アラート表示
+    const latestAct = s.latest_activity_at ? formatRelativeTime(s.latest_activity_at) : '<span style="color:#71717a;">活動なし</span>';
+    let activeColor = '';
+    if (s.latest_activity_at && s.last_login_at) {
+      const lActD = new Date(String(s.latest_activity_at).replace(' ', 'T'));
+      const lLogD = new Date(String(s.last_login_at).replace(' ', 'T'));
+      // 活動が「ログイン」より 24h 以上新しければセッション継続中の継続利用 → 緑強調
+      if (!isNaN(lActD.getTime()) && !isNaN(lLogD.getTime()) && (lActD - lLogD) > 86400000) {
+        activeColor = ' style="font-weight:700;color:#34d399;" title="ログイン後もセッション継続して学習中"';
+      }
+    }
     // 📱 LINE 連携マーカー (緑=連携済 / 灰=未連携で誘導)
     const hasLine = !!s.has_line;
     const lineIcon = hasLine
@@ -274,6 +285,7 @@ function renderRoster(students) {
         <td class="fee-cell">${fee > 0 ? '¥' + fee.toLocaleString() : '-'}</td>
         <td><span class="roster-status ${status}">${status === 'trial' ? '体験中' : '通塾'}</span></td>
         <td style="font-size:0.85em;color:var(--text-dim);">${lastLogin}</td>
+        <td${activeColor || ' style="font-size:0.85em;color:var(--text-dim);"'}>${latestAct}</td>
         <td style="color:var(--text-dim);font-size:0.85em;">${escapeHtml(s.goal || '-')}</td>
         <td>${deleteBtn}</td>
       </tr>

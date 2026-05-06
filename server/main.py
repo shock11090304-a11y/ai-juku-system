@@ -3690,6 +3690,54 @@ def admin_stats(authorization: Optional[str] = Header(None)):
             c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, paid_since, created_at FROM students ORDER BY id DESC")
             rows = c.fetchall()
             has_last_login = False
+    # 最終アクティビティ計算 (last_login_at + events + study_logs + exam_results の MAX)
+    # 集約クエリで 3 回 DB ヒットに抑える (N+1 回避)
+    # NOTE: events.session_id は "123" と "student:123" 両形式が混在 (legacy 不整合)
+    events_latest = {}
+    try:
+        # 数値文字列 OR "student:数値" の session_id を student id として集約
+        c.execute("""
+            SELECT student_key, MAX(created_at) AS latest FROM (
+                SELECT CASE WHEN session_id LIKE 'student:%' THEN substr(session_id, 9) ELSE session_id END AS student_key, created_at
+                FROM events
+                WHERE (session_id ~ '^[0-9]+$' OR session_id ~ '^student:[0-9]+$')
+            ) sub GROUP BY student_key
+        """)
+        for r in c.fetchall():
+            try: events_latest[int(r["student_key"])] = r["latest"]
+            except (ValueError, TypeError): pass
+    except Exception as _e:
+        log.warning(f"[admin_stats] events latest query failed: {_e}")
+    study_log_latest = {}
+    try:
+        c.execute("SELECT student_id, MAX(created_at) AS latest FROM study_logs GROUP BY student_id")
+        study_log_latest = {r["student_id"]: r["latest"] for r in c.fetchall()}
+    except Exception: pass
+    exam_latest = {}
+    try:
+        c.execute("SELECT student_id, MAX(created_at) AS latest FROM exam_results GROUP BY student_id")
+        exam_latest = {r["student_id"]: r["latest"] for r in c.fetchall()}
+    except Exception: pass
+
+    def _latest_activity(sid: int, last_login_raw):
+        """4 つのソースから max を取り、isoformat 文字列で返す。全て None なら None。"""
+        candidates = []
+        for v in (last_login_raw, events_latest.get(sid), study_log_latest.get(sid), exam_latest.get(sid)):
+            if not v: continue
+            if isinstance(v, str):
+                try: candidates.append(datetime.fromisoformat(v.replace("Z", "+00:00")))
+                except ValueError: continue
+            else:
+                candidates.append(v)
+        if not candidates: return None
+        # tz 揃え
+        normalized = []
+        for d in candidates:
+            if d.tzinfo is None:
+                d = d.replace(tzinfo=timezone.utc)
+            normalized.append(d)
+        return max(normalized).isoformat()
+
     students = []
     for row in rows:
         # row["line_user_id"] は schema が古いと KeyError → 安全に拾う
@@ -3698,6 +3746,8 @@ def admin_stats(authorization: Optional[str] = Header(None)):
         except Exception:
             _line_uid = None
         _email = row["email"] or ""
+        _last_login = (row["last_login_at"] if has_last_login else None)
+        _latest_act = _latest_activity(row["id"], _last_login)
         students.append({
             "id": row["id"],
             "name": row["name"],
@@ -3709,7 +3759,8 @@ def admin_stats(authorization: Optional[str] = Header(None)):
             "trial_end": str(row["trial_end"]) if row["trial_end"] else None,
             "paid_since": str(row["paid_since"]) if row["paid_since"] else None,
             "created_at": str(row["created_at"]) if row["created_at"] else None,
-            "last_login_at": (str(row["last_login_at"]) if has_last_login and row["last_login_at"] else None),
+            "last_login_at": (str(_last_login) if _last_login else None),
+            "latest_activity_at": _latest_act,  # 学習記録/AI質問/模試含む最終アクティビティ
             "has_line": bool(_line_uid),
             "is_carrier_email": _is_carrier_email(_email),
         })
@@ -9362,6 +9413,114 @@ def admin_email_test_send(payload: dict, authorization: Optional[str] = Header(N
         return {"sent": False, "error": f"{type(e).__name__}: {str(e)[:200]}", "to": to_email}
 
 
+@app.post("/api/admin/students/purge-stale-data")
+def admin_students_purge_stale(payload: dict = None, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """合成監視 orphan + テストデータを安全に一括削除。
+    対象:
+      1. email が @synthetic-monitor.* で created_at > 5分前 (E2E 後の orphan)
+      2. name に test/テスト/ダミー/sample 等のキーワードを含む生徒 (キーワードマッチ)
+    payload (省略可): {"dry_run": true} で件数のみ返す
+    関連 cascade も実行 (admin_student_delete と同じ範囲: study_logs/messages/events 等)
+    認証: admin Bearer or x-cron-secret"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    payload = payload or {}
+    dry_run = bool(payload.get("dry_run", False))
+
+    BLOCKED_KEYWORDS = ['テスト', 'ﾃｽﾄ', 'test', 'ダミー', 'dummy', 'サンプル', 'sample',
+                       'デモ', 'demo', '品質検証', '確認用', '動作確認', '検証用',
+                       'あいうえお', 'aaa', 'bbb', 'xxx', 'zzz', '監視 守', '監視　守']
+
+    conn = db()
+    c = conn.cursor()
+    matched = []
+    try:
+        # 1. 合成監視 orphan
+        c.execute(
+            "SELECT id, name, email, created_at FROM students WHERE email LIKE '%@synthetic-monitor.%' AND created_at < ?",
+            ((datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat(),)
+        )
+        for r in c.fetchall():
+            matched.append({"id": r["id"], "name": r["name"], "email": r["email"],
+                           "via": "synthetic_monitor_orphan", "created_at": str(r["created_at"])})
+        # 2. テストキーワードマッチ
+        for kw in BLOCKED_KEYWORDS:
+            c.execute(
+                "SELECT id, name, email, created_at FROM students WHERE LOWER(name) LIKE ?",
+                (f"%{kw.lower()}%",)
+            )
+            for r in c.fetchall():
+                if not any(m["id"] == r["id"] for m in matched):
+                    matched.append({"id": r["id"], "name": r["name"], "email": r["email"],
+                                   "via": f"test_kw:{kw}", "created_at": str(r["created_at"])})
+
+        deleted = 0
+        if not dry_run and matched:
+            ids = [m["id"] for m in matched]
+            placeholders = ",".join(["?"] * len(ids))
+            tup = tuple(ids)
+            # 全関連テーブル cascade (admin_student_delete と同等)
+            cascade_tables = [
+                ("study_logs", f"DELETE FROM study_logs WHERE student_id IN ({placeholders})"),
+                ("study_plans", f"DELETE FROM study_plans WHERE student_id IN ({placeholders})"),
+                ("exam_results", f"DELETE FROM exam_results WHERE student_id IN ({placeholders})"),
+                ("curricula", f"DELETE FROM curricula WHERE student_id IN ({placeholders})"),
+                ("notifications", f"DELETE FROM notifications WHERE student_id IN ({placeholders})"),
+                ("otp_codes", f"DELETE FROM otp_codes WHERE student_id IN ({placeholders})"),
+                ("usage_monthly", f"DELETE FROM usage_monthly WHERE student_id IN ({placeholders})"),
+                ("mock_exam_sessions", f"DELETE FROM mock_exam_sessions WHERE student_id IN ({placeholders})"),
+                ("vocab_progress", f"DELETE FROM vocab_progress WHERE student_id IN ({placeholders})"),
+                ("payments", f"DELETE FROM payments WHERE student_id IN ({placeholders})"),
+            ]
+            for tbl, sql in cascade_tables:
+                try: c.execute(sql, tup)
+                except Exception as e: log.warning(f"[PurgeStale] {tbl}: {e}")
+            # messages 双方向
+            try:
+                c.execute(
+                    f"DELETE FROM messages WHERE (sender_type='student' AND sender_id IN ({placeholders})) OR (recipient_type='student' AND recipient_id IN ({placeholders}))",
+                    tup + tup
+                )
+            except Exception as e: log.warning(f"[PurgeStale] messages: {e}")
+            # course_applications/referrals は NULL 化 (履歴保持)
+            try: c.execute(f"UPDATE course_applications SET student_id=NULL WHERE student_id IN ({placeholders})", tup)
+            except Exception: pass
+            try: c.execute(f"UPDATE referrals SET referrer_id=NULL WHERE referrer_id IN ({placeholders})", tup)
+            except Exception: pass
+            try: c.execute(f"UPDATE referrals SET referred_id=NULL WHERE referred_id IN ({placeholders})", tup)
+            except Exception: pass
+            # students 本体
+            c.execute(f"DELETE FROM students WHERE id IN ({placeholders})", tup)
+            deleted = len(ids)
+            # audit log
+            try:
+                c.execute(
+                    "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                    ("admin_purge_stale", json.dumps({"matched_count": len(matched), "items": matched[:50]}, ensure_ascii=False), "admin")
+                )
+            except Exception: pass
+            conn.commit()
+    finally:
+        conn.close()
+
+    log.info(f"[PurgeStale] dry_run={dry_run} matched={len(matched)} deleted={deleted}")
+    return {
+        "ok": True,
+        "matched": len(matched),
+        "deleted": deleted,
+        "dry_run": dry_run,
+        "items": matched[:100],
+    }
+
+
 @app.post("/api/admin/email/send-custom")
 def admin_email_send_custom(
     payload: dict,
@@ -9486,10 +9645,36 @@ def admin_monitor_daily_summary_now(authorization: Optional[str] = Header(None),
 
 @app.get("/api/auth/me")
 def auth_me(authorization: Optional[str] = Header(None)):
-    """現在のセッションを検証して生徒情報を返す。全ページのアクセスガードに使う。"""
+    """現在のセッションを検証して生徒情報を返す。全ページのアクセスガードに使う。
+    + last_login_at を 4 時間以上前なら更新 (継続利用を「最終ログイン」に反映するため)"""
     student = _get_current_student(authorization)
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
+    # last_login_at リフレッシュ: 4 時間に 1 回まで (DB 書込抑制)
+    try:
+        last_login_raw = student.get("last_login_at")
+        should_refresh = True
+        if last_login_raw:
+            try:
+                if isinstance(last_login_raw, str):
+                    last = datetime.fromisoformat(last_login_raw.replace("Z", "+00:00"))
+                else:
+                    last = last_login_raw
+                if last.tzinfo is None: last = last.replace(tzinfo=timezone.utc)
+                if (datetime.now(timezone.utc) - last).total_seconds() < 4 * 3600:
+                    should_refresh = False
+            except Exception:
+                pass
+        if should_refresh:
+            conn = db()
+            c = conn.cursor()
+            try:
+                c.execute("UPDATE students SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?", (student["id"],))
+                conn.commit()
+            finally:
+                conn.close()
+    except Exception as _e:
+        log.warning(f"[auth_me] last_login_at refresh skipped: {_e}")
     return {"ok": True, "student": student}
 
 
@@ -9641,8 +9826,8 @@ def waiver_status():
 
 @app.get("/api/usage/me")
 def usage_me(authorization: Optional[str] = Header(None)):
-    """ログイン中の生徒の今月の使用回数 + プラン上限を返す。
-    フロントの「残り○回」表示・アップグレード誘導に使用。"""
+    """ログイン中の生徒の今月の使用回数 + プラン上限 + AI 質問累計を返す。
+    フロントの「残り○回」表示・アップグレード誘導 + 「AI質問数」スタッツ表示に使用。"""
     student = _get_current_student(authorization)
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -9654,15 +9839,42 @@ def usage_me(authorization: Optional[str] = Header(None)):
         limit = quotas.get(feature)
         used_count = used.get(feature, 0)
         out[feature] = {
-            "limit": limit,        # None = 無制限
+            "limit": limit,
             "used": used_count,
             "remaining": (None if limit is None else max(0, limit - used_count)),
         }
+    # AI 質問累計 (events テーブルから取得・端末跨ぎでも正確)
+    # NOTE: events.session_id は "123" と "student:123" 両形式が混在 (legacy 不整合)
+    ai_total = 0
+    ai_today = 0
+    try:
+        conn = db()
+        c = conn.cursor()
+        sid_str = str(student['id'])
+        sid_prefixed = f"student:{sid_str}"
+        c.execute(
+            "SELECT COUNT(*) AS n FROM events WHERE session_id IN (?, ?) AND name LIKE 'ai_call_%'",
+            (sid_str, sid_prefixed)
+        )
+        ai_total = c.fetchone()["n"]
+        # 今日 (JST) のカウント
+        now_jst = datetime.now(timezone.utc) + timedelta(hours=9)
+        today_start_jst = now_jst.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start_utc = today_start_jst - timedelta(hours=9)
+        c.execute(
+            "SELECT COUNT(*) AS n FROM events WHERE session_id IN (?, ?) AND name LIKE 'ai_call_%' AND created_at >= ?",
+            (sid_str, sid_prefixed, today_start_utc.isoformat())
+        )
+        ai_today = c.fetchone()["n"]
+        conn.close()
+    except Exception as _e:
+        log.warning(f"[usage_me] ai_call count failed: {_e}")
     return {
         "ok": True,
         "plan": plan,
         "year_month": _jst_year_month(),
         "usage": out,
+        "ai_questions": {"total": ai_total, "today": ai_today},
     }
 
 
