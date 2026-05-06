@@ -9,20 +9,20 @@
 
 const PLAN_CONFIG = {
   plans: {
-    // 🎁 創設メンバー 50名限定 永年¥14,500 (募集停止・既契約者据置)
+    // 🎁 創設メンバー 50名限定 永年¥14,500 (募集再開 2026-05-06)
     founder_special: {
       id: 'founder_special',
       name: '創設メンバー (永年特典)',
       price: 14500,
       priceLabel: '¥14,500',
-      tagline: '50名限定・募集終了・既契約者は永年この価格',
+      tagline: '50名限定・契約後は永年この価格・全機能無制限',
       maxStudents: 1,
       aiModel: 'opus',
       color: '#fbbf24',
-      recommended: false,
-      badge: '🎁 募集終了',
+      recommended: true,
+      badge: '🎁 50名限定',
       quotas: { problems: null, essays: null, textbooks: null },
-      legacy: true,  // 新規申込不可 (UI では既契約者のみ表示)
+      legacy: false,  // 募集再開 2026-05-06
       features: [
         { name: '24時間AIチューター（無制限）', included: true, highlight: true },
         { name: 'AI問題自動生成（無制限）', included: true, highlight: true },
@@ -187,6 +187,19 @@ const PLAN_CONFIG = {
   annualDiscount: {
     premiumAnnual: { monthly: 39800, annual: 398000, saved: 79600, label: '年間¥398,000（2ヶ月分お得）' },
     familyAnnual: { monthly: 59800, annual: 598000, saved: 119600, label: '年間¥598,000（2ヶ月分お得）' },
+  },
+
+  // 🔥 ソーシャルプルーフ・モニター (LP / checkout 等で表示する社会的証明数値)
+  // 塾長指示 2026-05-06: 「累計 X 人突破」等のダミーモニターで CV 率を上げる
+  // 数字は塾長判断で plans.js を直接編集して更新可
+  socialProof: {
+    totalUsers: 83,             // 累計利用者数 (体験 + 本契約 + 通塾生 全部の合計)
+    founderRemaining: 17,       // 創設メンバー残り枠 (50 - 33 名 想定)
+    thisWeekSignups: 5,         // 今週の新規申込数
+    todaySignups: 2,            // 本日の新規申込数
+    onlineNow: 12,              // 現在閲覧中の人数 (擬似値)
+    lastUpdate: '2026-05-06',   // 最終更新日 (塾長が更新時に書き換え)
+    showBanner: true,           // false にすれば全画面で非表示
   },
 };
 
