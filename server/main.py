@@ -9413,6 +9413,7 @@ def admin_email_send_custom(
             headers={
                 "Authorization": f"Bearer {RESEND_API_KEY}",
                 "Content-Type": "application/json",
+                "User-Agent": "ai-juku-system/1.0",
             },
             method="POST",
         )
