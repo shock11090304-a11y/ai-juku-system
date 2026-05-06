@@ -26,7 +26,8 @@
       <span>AI学習コーチ塾</span>
     </div>
     <div class="mypage-user">
-      <button type="button" onclick="window.forceUpdateApp && window.forceUpdateApp()" title="動作がおかしい時はここをタップして最新版に更新" style="background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.4);border-radius:8px;color:#c4b5fd;padding:0.4rem 0.7rem;cursor:pointer;font-size:0.78rem;font-weight:700;margin-right:0.6rem;white-space:nowrap;">🔄 更新</button>
+      <button type="button" onclick="window.forceUpdateApp && window.forceUpdateApp()" title="動作がおかしい時はここをタップして最新版に更新" style="background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.4);border-radius:8px;color:#c4b5fd;padding:0.4rem 0.7rem;cursor:pointer;font-size:0.78rem;font-weight:700;margin-right:0.4rem;white-space:nowrap;">🔄 更新</button>
+      <button type="button" onclick="if (confirm('ログアウトしますか?\n\n再度ログインするには magic link メールが必要になります。')) { window.AuthGuard && window.AuthGuard.logout && window.AuthGuard.logout(); }" title="ログアウト" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#fca5a5;padding:0.4rem 0.7rem;cursor:pointer;font-size:0.78rem;font-weight:700;margin-right:0.6rem;white-space:nowrap;">🚪 ログアウト</button>
       <span id="userAvatar" class="user-avatar">👦</span>
       <div class="user-info">
         <div id="userName" class="user-name">読み込み中…</div>

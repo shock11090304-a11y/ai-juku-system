@@ -74,6 +74,7 @@
         <span id="costMeter" class="cost-meter admin-only-ui" style="display:none;" title="今月の推定API費用 (管理者のみ)">¥0</span>
         <span id="modeIndicator" class="mode-badge live">🟢 AI接続中</span>
         <button type="button" onclick="window.forceUpdateApp && window.forceUpdateApp()" title="動作がおかしい時はここをタップして最新版に更新" style="background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.4);border-radius:8px;color:#c4b5fd;padding:0.4rem 0.7rem;cursor:pointer;font-size:0.78rem;font-weight:700;margin-left:0.4rem;white-space:nowrap;">🔄 更新</button>
+        <button type="button" onclick="if (confirm('ログアウトしますか?\n\n再度ログインするには magic link メールが必要になります。')) { window.AuthGuard && window.AuthGuard.logout && window.AuthGuard.logout(); }" title="ログアウト" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#fca5a5;padding:0.4rem 0.7rem;cursor:pointer;font-size:0.78rem;font-weight:700;margin-left:0.4rem;white-space:nowrap;">🚪 ログアウト</button>
       </div>
 
       <div class="nav-bar-wrapper admin-only-ui" style="display:none;" title="管理者ナビゲーション">
