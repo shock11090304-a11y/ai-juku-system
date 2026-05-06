@@ -202,10 +202,16 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     // 2. 7日間 完全無料体験 (バックエンドが FOUNDER_TRIAL_PRICE=0 を検出すると
     //    Stripe をスキップして即座に checkout-success.html へ遷移する)。
     //    継続は別途 upgrade.html で本契約。
+    // 招待コード (通塾生 student_addon プラン用) を URL params から取得して送信
+    // 体験フローでは backend は invite_code を保管・本契約時に検証 (memory: feedback_student_invite_link)
+    const checkoutBody = { email: payload.email, name: payload.name, student_id: signupData.student_id };
+    if (window.__inviteToken) {
+      checkoutBody.invite_code = window.__inviteToken;
+    }
     const checkoutRes = await fetch(`${API_BASE}/api/stripe/trial-checkout`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: payload.email, name: payload.name, student_id: signupData.student_id }),
+      body: JSON.stringify(checkoutBody),
     });
     // 創設メンバー50名達成時は403で停止する。URL直打ち経由の51名目以降をブロック。
     if (checkoutRes.status === 403) {

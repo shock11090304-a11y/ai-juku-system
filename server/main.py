@@ -954,6 +954,7 @@ class CheckoutRequest(BaseModel):
     email: EmailStr
     name: str
     student_id: Optional[int] = None
+    invite_code: Optional[str] = None  # 通塾生プラン (student_addon) で必須・HMAC トークン
 
     @field_validator("name")
     @classmethod
@@ -10237,15 +10238,63 @@ def create_trial_checkout(payload: dict):
 def create_checkout_session(payload: CheckoutRequest):
     """
     新プラン構造でのチェックアウト:
-    - 創設メンバープラン (founder_special): 永年¥14,500/月 (50名限定・全機能無制限) + 入塾金 ¥10,000
-    - 通常プラン (standard/premium/family): 月額サブスク + 初回請求に入塾金 ¥10,000 を追加
-    - 塾生アドオン (student_addon): 入塾金なし、月額 ¥9,800 のみ
-    - 体験は別途 /api/stripe/trial-checkout で 7日間 完全無料 (Stripe を経由しない)
+    - 創設メンバープラン (founder_special): 永年¥14,500/月 (50名限定・全機能無制限)
+    - 通常プラン (premium/family): 月額サブスク
+    - 通塾生プラン (student_addon): ¥5,000/月・**招待コード必須** (HMAC トークン)
+    - 体験は別途 /api/stripe/trial-checkout で 10日間 完全無料 (Stripe を経由しない)
     """
     price_info = PRICE_MAP.get(payload.plan)
     if not price_info:
         raise HTTPException(status_code=400, detail=f"Invalid plan: {payload.plan}")
     price_id, amount, plan_name, max_students = price_info
+
+    # 🏫 通塾生プラン: 招待コード (HMAC トークン) 必須検証
+    # 塾長指示 2026-05-06: 通塾生は塾長発行の招待コード経由でのみ契約可能
+    # memory: feedback_student_invite_link.md (招待リンク方式は実装済み)
+    # 例外: 既存の paid 生徒 (再チェックアウト・プラン変更) は invite_code 不要
+    _is_existing_paid_student = False
+    if payload.plan == "student_addon" and payload.student_id:
+        try:
+            _conn_pc = db()
+            _c_pc = _conn_pc.cursor()
+            _c_pc.execute("SELECT status FROM students WHERE id = ? AND email = ?", (payload.student_id, payload.email.lower().strip()))
+            _row_pc = _c_pc.fetchone()
+            if _row_pc and _row_pc["status"] == "paid":
+                _is_existing_paid_student = True
+                log.info(f"[Checkout] student_addon re-checkout for existing paid student_id={payload.student_id} (invite_code skipped)")
+            _conn_pc.close()
+        except Exception as _e_pc:
+            log.warning(f"[Checkout] existing paid check failed: {_e_pc}")
+    if payload.plan == "student_addon" and not _is_existing_paid_student:
+        if not payload.invite_code:
+            raise HTTPException(
+                status_code=400,
+                detail="通塾生プランは招待コードが必要です。塾長から発行された招待コードを入力してください。"
+            )
+        invite_check = _verify_invite_token(payload.invite_code.strip())
+        if not invite_check.get("valid"):
+            reason = invite_check.get("reason", "invalid")
+            log.warning(f"[Checkout] student_addon invite_code rejected: reason={reason} email={payload.email}")
+            err_msg = {
+                "expired": "招待コードの有効期限が切れています。塾長に再発行を依頼してください。",
+                "signature_mismatch": "招待コードが無効です (署名検証失敗)。",
+                "malformed": "招待コードの形式が不正です。",
+                "server_misconfigured": "サーバー設定エラー。塾長にお問い合わせください。",
+            }.get(reason, "招待コードが無効です。")
+            raise HTTPException(status_code=403, detail=err_msg)
+        # invite token の email と payload.email の一致を検証 (他人の招待を流用させない)
+        invite_email = (invite_check.get("email") or "").strip().lower()
+        payload_email = (payload.email or "").strip().lower()
+        if invite_email and payload_email and invite_email != payload_email:
+            log.warning(f"[Checkout] student_addon invite_code email mismatch: invite={invite_email} payload={payload_email}")
+            raise HTTPException(
+                status_code=403,
+                detail=f"招待コードに紐づくメールアドレスと入力されたメールアドレスが一致しません。招待コードの発行元 {invite_email} でお申込みください。"
+            )
+        # invite token の kind を確認 (必ず student_addon)
+        if invite_check.get("kind") != "student_addon":
+            raise HTTPException(status_code=403, detail="招待コードの種類が不正です。")
+        log.info(f"[Checkout] student_addon invite verified: email={payload_email}")
     # 🎁 founder_special / founder1: env が空でも lookup_key で動的解決を試みる
     if payload.plan in ("founder_special", "founder1") and not price_id:
         price_id = _lookup_founder_special_price_id()
