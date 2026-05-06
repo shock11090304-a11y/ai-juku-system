@@ -849,28 +849,44 @@ async function openCourseManageModal() {
     }
     const enrolled = students.filter(s => s.course === 'kokuritsu_nankan');
     const others = students.filter(s => s.course !== 'kokuritsu_nankan');
+    const renderRow = (s, courseColor, courseAction) => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0.7rem; background:${courseColor.bg}; border:1px solid ${courseColor.border}; border-radius:8px; margin-bottom:0.4rem; gap:0.4rem;">
+        <div style="color:#e4e4e7; font-size:0.88rem; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(s.name)}${s.grade ? ` <span style="color:#71717a; font-size:0.78rem;">(${escapeHtml(s.grade)})</span>` : ''}</div>
+        <div style="display:flex; gap:0.3rem; flex-shrink:0;">
+          ${courseAction.html}
+          <button data-sid="${s.id}" data-name="${escapeHtml(s.name)}" data-email="${escapeHtml(s.email || '')}" class="sl-student-delete" title="完全削除 (取消不能)" style="background:rgba(239,68,68,0.1); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); padding:0.3rem 0.5rem; border-radius:6px; cursor:pointer; font-size:0.8rem;">🗑️</button>
+        </div>
+      </div>`;
+    const enrolledColor = { bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.2)' };
+    const otherColor = { bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.08)' };
+    const enrolledAction = (s) => ({ html: `<button data-sid="${s.id}" data-action="remove" class="sl-course-toggle" style="background:rgba(239,68,68,0.15); color:#fca5a5; border:0; padding:0.3rem 0.7rem; border-radius:6px; cursor:pointer; font-size:0.8rem;">離脱</button>` });
+    const otherAction = (s) => ({ html: `<button data-sid="${s.id}" data-action="add" class="sl-course-toggle" style="background:rgba(99,102,241,0.2); color:#c7d2fe; border:0; padding:0.3rem 0.7rem; border-radius:6px; cursor:pointer; font-size:0.8rem;">加入</button>` });
     list.innerHTML = `
       <div style="margin-bottom:1.2rem;">
         <div style="color:#fbbf24; font-size:0.9rem; font-weight:700; margin-bottom:0.5rem;">✅ 国公立難関大学コース 受講中 (${enrolled.length}名)</div>
         ${enrolled.length === 0 ? '<div style="color:#71717a; font-size:0.85rem;">まだ加入者がいません</div>' :
-          enrolled.map(s => `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0.7rem; background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.2); border-radius:8px; margin-bottom:0.4rem;">
-              <div style="color:#e4e4e7; font-size:0.88rem;">${escapeHtml(s.name)} ${s.grade ? `<span style="color:#71717a; font-size:0.78rem;">(${escapeHtml(s.grade)})</span>` : ''}</div>
-              <button data-sid="${s.id}" data-action="remove" class="sl-course-toggle" style="background:rgba(239,68,68,0.15); color:#fca5a5; border:0; padding:0.3rem 0.7rem; border-radius:6px; cursor:pointer; font-size:0.8rem;">離脱させる</button>
-            </div>
-          `).join('')}
+          enrolled.map(s => renderRow(s, enrolledColor, enrolledAction(s))).join('')}
       </div>
       <div>
         <div style="color:#a1a1aa; font-size:0.9rem; font-weight:700; margin-bottom:0.5rem;">⚪ 未加入の生徒 (${others.length}名)</div>
         ${others.length === 0 ? '<div style="color:#71717a; font-size:0.85rem;">全生徒加入済</div>' :
-          others.map(s => `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0.7rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; margin-bottom:0.4rem;">
-              <div style="color:#e4e4e7; font-size:0.88rem;">${escapeHtml(s.name)} ${s.grade ? `<span style="color:#71717a; font-size:0.78rem;">(${escapeHtml(s.grade)})</span>` : ''}</div>
-              <button data-sid="${s.id}" data-action="add" class="sl-course-toggle" style="background:rgba(99,102,241,0.2); color:#c7d2fe; border:0; padding:0.3rem 0.7rem; border-radius:6px; cursor:pointer; font-size:0.8rem;">加入させる</button>
-            </div>
-          `).join('')}
+          others.map(s => renderRow(s, otherColor, otherAction(s))).join('')}
+      </div>
+      <div style="margin-top:1rem; padding:0.7rem; background:rgba(239,68,68,0.05); border:1px solid rgba(239,68,68,0.2); border-radius:8px; font-size:0.78rem; color:#fca5a5;">
+        🗑️ <strong>顧客データ削除</strong>: 選択した生徒の<u>全データ</u> (学習記録・模試・カリキュラム・メッセージ・通知・支払履歴) を完全削除します。<br>
+        Stripe 有効サブスクがある場合は確認後に同時解約。<u>取消不能</u>のため、生徒名を入力する 2 段階確認が必要です。
       </div>
     `;
+    // 削除ボタン bind
+    list.querySelectorAll('.sl-student-delete').forEach(b => {
+      b.addEventListener('click', (e) => {
+        const btn = e.currentTarget;
+        const sid = btn.getAttribute('data-sid');
+        const name = btn.getAttribute('data-name');
+        const email = btn.getAttribute('data-email');
+        confirmAndDeleteStudent(sid, name, email);
+      });
+    });
     list.querySelectorAll('.sl-course-toggle').forEach(b => {
       b.addEventListener('click', async (e) => {
         const btn = e.currentTarget;
@@ -895,6 +911,85 @@ async function openCourseManageModal() {
     });
   } catch (e) {
     list.innerHTML = `<div style="text-align:center; color:#fca5a5; padding:1rem;">読み込み失敗: ${escapeHtml(e.message || '')}</div>`;
+  }
+}
+
+// 🗑️ 顧客データ完全削除 (2段階確認 + Stripe ガード)
+async function confirmAndDeleteStudent(studentId, studentName, studentEmail) {
+  if (!window.AdminAuth || !window.AdminAuth.getToken()) { alert('管理者認証が必要です'); return; }
+  // Step 1: dry_run で関連データ件数 + Stripe 有無を取得
+  let snapshot;
+  try {
+    const r = await window.AdminAuth.fetch(`/api/admin/students/${encodeURIComponent(studentId)}/delete`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dry_run: true }),
+    });
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      alert('プレビュー取得失敗: ' + (j.detail || r.status));
+      return;
+    }
+    const data = await r.json();
+    snapshot = data.snapshot;
+  } catch (e) { alert('⚠️ ' + (e.message || e)); return; }
+  const rc = snapshot.related_counts || {};
+  const total = Object.values(rc).reduce((a, b) => a + (typeof b === 'number' && b > 0 ? b : 0), 0);
+  const hasSub = !!snapshot.stripe_subscription_id;
+  const lines = [];
+  lines.push(`🗑️ 顧客データ完全削除\n`);
+  lines.push(`生徒: ${studentName} (ID:${studentId})`);
+  lines.push(`メール: ${studentEmail || '(未設定)'}`);
+  lines.push(`プラン: ${snapshot.plan || '-'} / 状態: ${snapshot.status || '-'} / コース: ${snapshot.course || '-'}`);
+  if (hasSub) {
+    lines.push(`\n⚠️ Stripe 有効サブスク: ${snapshot.stripe_subscription_id}`);
+    lines.push('  → 削除と同時に Stripe 解約も実行します (cancel_stripe=true)');
+  }
+  lines.push('\n削除される関連データ:');
+  Object.keys(rc).forEach(k => {
+    const v = rc[k];
+    if (typeof v === 'number' && v > 0) lines.push(`  - ${k}: ${v}件`);
+  });
+  if (total === 0) lines.push('  (関連データなし)');
+  lines.push(`\n合計 ${total} 件の関連レコード + 生徒本体を削除します。`);
+  lines.push('この操作は取消不能です。続行しますか?');
+  if (!confirm(lines.join('\n'))) return;
+  // Step 2: 同名衝突防止のため email を入力させて確認 (email 未設定なら name fallback)
+  const useEmail = !!(studentEmail && studentEmail.trim());
+  const expectedKey = useEmail ? studentEmail.trim() : (studentName || '').trim();
+  const promptLabel = useEmail
+    ? `削除を実行するには、メールアドレスを正確に入力してください:\n\n「${expectedKey}」\n\n(同名生徒との誤削除防止のため email 確認)`
+    : `削除を実行するには、生徒名を正確に入力してください:\n\n「${expectedKey}」\n\n(この生徒は email 未設定のため名前で確認)`;
+  const typed = prompt(promptLabel);
+  if (typed === null) return;
+  const compareTyped = useEmail ? typed.trim().toLowerCase() : typed.trim();
+  const compareExpected = useEmail ? expectedKey.toLowerCase() : expectedKey;
+  if (compareTyped !== compareExpected) {
+    alert(`入力された${useEmail ? 'メールアドレス' : '名前'}が一致しません。削除をキャンセルしました。`);
+    return;
+  }
+  // Step 3: 実行
+  try {
+    const body = { cancel_stripe: hasSub, dry_run: false };
+    if (useEmail) body.confirm_email = studentEmail;
+    else body.confirm_name = studentName;
+    const r = await window.AdminAuth.fetch(`/api/admin/students/${encodeURIComponent(studentId)}/delete`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      alert('❌ 削除失敗: ' + (j.detail || r.status));
+      return;
+    }
+    const data = await r.json();
+    const dc = data.deleted || {};
+    const summary = Object.keys(dc).map(k => `${k}: ${dc[k]}`).join('\n');
+    alert(`✅ 削除完了\n\n生徒「${studentName}」を完全削除しました。\n\n${summary}`);
+    // 一覧を再描画
+    if (typeof openCourseManageModal === 'function') await openCourseManageModal();
+    if (typeof loadStudyLogDashboard === 'function') loadStudyLogDashboard();
+  } catch (e) {
+    alert('⚠️ ' + (e.message || e));
   }
 }
 

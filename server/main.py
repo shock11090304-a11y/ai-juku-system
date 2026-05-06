@@ -7577,6 +7577,195 @@ def admin_students_purge_test(payload: dict, authorization: Optional[str] = Head
     }
 
 
+class StudentDeleteRequest(BaseModel):
+    confirm_email: Optional[str] = None  # 安全装置: student.email と完全一致必須 (同名衝突防止)
+    confirm_name: Optional[str] = None  # 後方互換 (email 未設定の生徒向け fallback)
+    dry_run: Optional[bool] = False
+    cancel_stripe: Optional[bool] = False  # Stripe 解約も同時実行する場合 true
+
+
+@app.post("/api/admin/students/{student_id}/delete")
+def admin_student_delete(student_id: int, payload: StudentDeleteRequest, authorization: Optional[str] = Header(None)):
+    """顧客データ完全削除 (admin only)。生徒本体 + 全関連データを cascade delete。
+    安全装置: payload.confirm_name が student.name と完全一致する場合のみ実行。
+    Stripe 有効サブスクがある場合、payload.cancel_stripe=true でない限り 409 で拒否。
+    events テーブルに削除前スナップショット audit log を残す。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="未認証")
+
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT id, name, email, status, plan, course, stripe_subscription_id, stripe_customer_id, created_at FROM students WHERE id=?", (student_id,))
+        student = c.fetchone()
+        if not student:
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+
+        # 安全装置: email 完全一致必須 (同名衝突防止)。email 未設定の生徒のみ name fallback 可。
+        if not payload.dry_run:
+            student_email = (student["email"] or "").strip().lower()
+            student_name = (student["name"] or "").strip()
+            if student_email:
+                provided_email = (payload.confirm_email or "").strip().lower()
+                if not provided_email or provided_email != student_email:
+                    raise HTTPException(status_code=400, detail="確認のためメールアドレスを正確に入力してください")
+            else:
+                # email 未設定 → name fallback
+                provided_name = (payload.confirm_name or "").strip()
+                if not provided_name or provided_name != student_name:
+                    raise HTTPException(status_code=400, detail="確認のため生徒名を正確に入力してください (この生徒は email 未設定のため名前で確認)")
+
+        # Stripe ガード: 有効サブスクがあり cancel_stripe=false なら 409
+        sub_id = student["stripe_subscription_id"]
+        if sub_id and not payload.dry_run:
+            if not payload.cancel_stripe:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Stripe 有効サブスクがあります。先に Stripe ダッシュで解約するか、cancel_stripe=true を付けて再送してください"
+                )
+            _stripe = get_stripe()
+            if not _stripe:
+                raise HTTPException(status_code=503, detail="Stripe が構成されていません")
+            try:
+                _stripe.Subscription.delete(sub_id)
+                log.info(f"[StudentDelete] stripe sub canceled: student={student_id} sub={sub_id}")
+            except Exception as e:
+                err_msg = str(e).lower()
+                # 既解約・存在しないサブスクは正常扱いで進める (Stripe ポータルで既に解約済みケース)
+                if any(s in err_msg for s in ("no such subscription", "resource_missing", "already canceled", "already_canceled")):
+                    log.info(f"[StudentDelete] stripe sub already gone (treated as success): student={student_id} sub={sub_id}")
+                else:
+                    log.error(f"[StudentDelete] stripe cancel failed: {type(e).__name__}: {e}")
+                    raise HTTPException(status_code=502, detail=f"Stripe 解約失敗: {e}")
+
+        # 関連データの件数集計 (preview 用 + audit)
+        related_counts = {}
+        related_tables = [
+            ("study_logs", "student_id"),
+            ("study_plans", "student_id"),
+            ("exam_results", "student_id"),
+            ("curricula", "student_id"),
+            ("notifications", "student_id"),
+            ("otp_codes", "student_id"),
+            ("usage_monthly", "student_id"),
+            ("mock_exam_sessions", "student_id"),
+            ("vocab_progress", "student_id"),
+            ("payments", "student_id"),
+        ]
+        for tbl, col in related_tables:
+            try:
+                c.execute(f"SELECT COUNT(*) AS n FROM {tbl} WHERE {col}=?", (student_id,))
+                row = c.fetchone()
+                related_counts[tbl] = int(row["n"]) if row else 0
+            except Exception as _e:
+                related_counts[tbl] = -1  # テーブル不在等
+        # messages (sender or recipient)
+        try:
+            c.execute(
+                "SELECT COUNT(*) AS n FROM messages WHERE (sender_type='student' AND sender_id=?) OR (recipient_type='student' AND recipient_id=?)",
+                (student_id, student_id)
+            )
+            row = c.fetchone()
+            related_counts["messages"] = int(row["n"]) if row else 0
+        except Exception:
+            related_counts["messages"] = -1
+        # referrals (referrer or referred)
+        try:
+            c.execute("SELECT COUNT(*) AS n FROM referrals WHERE referrer_id=? OR referred_id=?", (student_id, student_id))
+            row = c.fetchone()
+            related_counts["referrals"] = int(row["n"]) if row else 0
+        except Exception:
+            related_counts["referrals"] = -1
+        # course_applications
+        try:
+            c.execute("SELECT COUNT(*) AS n FROM course_applications WHERE student_id=?", (student_id,))
+            row = c.fetchone()
+            related_counts["course_applications"] = int(row["n"]) if row else 0
+        except Exception:
+            related_counts["course_applications"] = -1
+
+        snapshot = {
+            "id": student["id"], "name": student["name"], "email": student["email"],
+            "status": student["status"], "plan": student["plan"], "course": student["course"],
+            "created_at": str(student["created_at"]) if student["created_at"] else None,
+            "stripe_customer_id": student["stripe_customer_id"],
+            "stripe_subscription_id": student["stripe_subscription_id"],
+            "related_counts": related_counts,
+        }
+
+        if payload.dry_run:
+            return {"ok": True, "dry_run": True, "snapshot": snapshot, "message": "削除されません (dry_run)"}
+
+        # 監査ログ: 削除前スナップショット
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("admin_student_deleted", json.dumps(snapshot, ensure_ascii=False), "admin")
+            )
+        except Exception as _e:
+            log.warning(f"[StudentDelete] audit log failed: {_e}")
+
+        # cascade delete - FK 依存順に
+        delete_tables = [
+            ("study_logs", "DELETE FROM study_logs WHERE student_id=?"),
+            ("study_plans", "DELETE FROM study_plans WHERE student_id=?"),
+            ("exam_results", "DELETE FROM exam_results WHERE student_id=?"),
+            ("curricula", "DELETE FROM curricula WHERE student_id=?"),
+            ("notifications", "DELETE FROM notifications WHERE student_id=?"),
+            ("otp_codes", "DELETE FROM otp_codes WHERE student_id=?"),
+            ("usage_monthly", "DELETE FROM usage_monthly WHERE student_id=?"),
+            ("mock_exam_sessions", "DELETE FROM mock_exam_sessions WHERE student_id=?"),
+            ("vocab_progress", "DELETE FROM vocab_progress WHERE student_id=?"),
+            ("payments", "DELETE FROM payments WHERE student_id=?"),
+        ]
+        deleted_counts = {}
+        for tbl, sql in delete_tables:
+            try:
+                c.execute(sql, (student_id,))
+                deleted_counts[tbl] = related_counts.get(tbl, 0)
+            except Exception as e:
+                log.warning(f"[StudentDelete] {tbl} cleanup failed: {e}")
+                deleted_counts[tbl] = -1
+        # messages: 双方向
+        try:
+            c.execute(
+                "DELETE FROM messages WHERE (sender_type='student' AND sender_id=?) OR (recipient_type='student' AND recipient_id=?)",
+                (student_id, student_id)
+            )
+            deleted_counts["messages"] = related_counts.get("messages", 0)
+        except Exception as e:
+            log.warning(f"[StudentDelete] messages cleanup failed: {e}")
+            deleted_counts["messages"] = -1
+        # course_applications: 監査保存のため student_id を NULL にして履歴は残す
+        try:
+            c.execute("UPDATE course_applications SET student_id=NULL WHERE student_id=?", (student_id,))
+            deleted_counts["course_applications_anonymized"] = related_counts.get("course_applications", 0)
+        except Exception as e:
+            log.warning(f"[StudentDelete] course_applications anonymize failed: {e}")
+        # referrals: 監査保存のため referrer_id/referred_id を NULL にして履歴は残す
+        try:
+            c.execute("UPDATE referrals SET referrer_id=NULL WHERE referrer_id=?", (student_id,))
+            c.execute("UPDATE referrals SET referred_id=NULL WHERE referred_id=?", (student_id,))
+            deleted_counts["referrals_anonymized"] = related_counts.get("referrals", 0)
+        except Exception as e:
+            log.warning(f"[StudentDelete] referrals anonymize failed: {e}")
+        # students 本体削除
+        c.execute("DELETE FROM students WHERE id=?", (student_id,))
+        conn.commit()
+        log.info(f"[StudentDelete] student={student_id} name={student['name']} email={student['email']} deleted={deleted_counts}")
+        return {
+            "ok": True, "dry_run": False,
+            "deleted": deleted_counts,
+            "snapshot": snapshot,
+            "message": f"生徒「{student['name']}」を削除しました",
+        }
+    finally:
+        conn.close()
+
+
 @app.post("/api/admin/textbooks/purge")
 def admin_textbook_pool_purge(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """textbook_pool の特定レコードを削除する admin endpoint。
