@@ -2619,20 +2619,47 @@ async def _run_synthetic_checkout_test() -> dict:
     # バックエンド API 検証用 (Vercel 経由を回避)
     backend_base = "https://ai-juku-api-production.up.railway.app"
 
-    def _http_get(url: str, timeout: int = 8) -> dict:
-        req = urllib.request.Request(url, headers={
-            # ブラウザ系 UA を装って Vercel Security Checkpoint をパス
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 ai-juku-synth-monitor",
-            "Accept": "text/html,application/json,*/*",
-        })
-        try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                body = resp.read().decode("utf-8", errors="replace")
-                return {"status": resp.status, "body": body, "url": url}
-        except urllib.error.HTTPError as e:
-            return {"status": e.code, "body": "", "url": url, "error": str(e)}
-        except Exception as e:
-            return {"status": 0, "body": "", "url": url, "error": f"{type(e).__name__}: {e}"}
+    def _http_get(url: str, timeout: int = 10, retries: int = 2) -> dict:
+        """Railway 内部 → Vercel/Railway HTTP GET。
+        2026-05-06 修正: リトライ機構、gzip 対応、最新 UA、ブラウザ互換ヘッダー
+        timeout 10s × 3 試行 + backoff = worst-case ~33s per call (5 分監視 cycle 内に収まる)"""
+        last_error = None
+        for attempt in range(retries + 1):
+            req = urllib.request.Request(url, headers={
+                # 最新 Chrome 131 互換 (Vercel/Cloudflare の bot 検知をパス)
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+                "Accept-Language": "ja,en-US;q=0.9,en;q=0.8",
+                "Accept-Encoding": "gzip, deflate",
+                "Cache-Control": "no-cache",
+                "Pragma": "no-cache",
+                "Sec-Fetch-Dest": "document",
+                "Sec-Fetch-Mode": "navigate",
+                "Sec-Fetch-Site": "none",
+                "Upgrade-Insecure-Requests": "1",
+            })
+            try:
+                with urllib.request.urlopen(req, timeout=timeout) as resp:
+                    body_raw = resp.read()
+                    # gzip 対応 (urllib は自動 decompress しない)
+                    if resp.headers.get("Content-Encoding") == "gzip":
+                        import gzip as _gzip
+                        body_raw = _gzip.decompress(body_raw)
+                    elif resp.headers.get("Content-Encoding") == "deflate":
+                        import zlib as _zlib
+                        body_raw = _zlib.decompress(body_raw)
+                    body = body_raw.decode("utf-8", errors="replace")
+                    return {"status": resp.status, "body": body, "url": url, "attempt": attempt + 1}
+            except urllib.error.HTTPError as e:
+                # 4xx/5xx は HTTPError として返す (retry しない・Vercel が明示的に返してる)
+                return {"status": e.code, "body": "", "url": url, "error": str(e)}
+            except Exception as e:
+                last_error = f"{type(e).__name__}: {e}"
+                if attempt < retries:
+                    import time as _t
+                    _t.sleep(1.5 ** attempt)  # backoff: 1.5s, 2.25s
+                    continue
+                return {"status": 0, "body": "", "url": url, "error": last_error, "attempts": retries + 1}
 
     loop = asyncio.get_event_loop()
 
@@ -2690,22 +2717,32 @@ async def _run_synthetic_checkout_test() -> dict:
         "grade": "高校3年",
         "goal": "[E2E synthetic monitor / auto-cleanup]",
     }
-    def _http_post_json(url: str, payload: dict, timeout: int = 8) -> dict:
+    def _http_post_json(url: str, payload: dict, timeout: int = 10, retries: int = 2) -> dict:
+        """Railway 内部 → Railway POST。
+        2026-05-06 修正: リトライ機構追加 (_http_get と同じ resilience)"""
         body_bytes = json.dumps(payload).encode("utf-8")
-        # Origin / Referer は本物のブラウザ訪問に近づける (CORS / _origin_allowed を通す)
-        req = urllib.request.Request(url, data=body_bytes, method="POST", headers={
-            "Content-Type": "application/json",
-            "User-Agent": "ai-juku-synth-monitor/1.0",
-            "Origin": frontend_base,
-            "Referer": frontend_base + "/checkout.html",
-        })
-        try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                return {"status": resp.status, "body": resp.read().decode("utf-8", errors="replace")}
-        except urllib.error.HTTPError as e:
-            return {"status": e.code, "body": e.read().decode("utf-8", errors="replace") if hasattr(e, "read") else ""}
-        except Exception as e:
-            return {"status": 0, "body": "", "error": f"{type(e).__name__}: {e}"}
+        last_error = None
+        for attempt in range(retries + 1):
+            # Origin / Referer は本物のブラウザ訪問に近づける (CORS / _origin_allowed を通す)
+            req = urllib.request.Request(url, data=body_bytes, method="POST", headers={
+                "Content-Type": "application/json",
+                "User-Agent": "ai-juku-synth-monitor/1.0",
+                "Origin": frontend_base,
+                "Referer": frontend_base + "/checkout.html",
+            })
+            try:
+                with urllib.request.urlopen(req, timeout=timeout) as resp:
+                    return {"status": resp.status, "body": resp.read().decode("utf-8", errors="replace"), "attempt": attempt + 1}
+            except urllib.error.HTTPError as e:
+                # 4xx/5xx は明示的なエラー (retry しない・サーバー側の判断)
+                return {"status": e.code, "body": e.read().decode("utf-8", errors="replace") if hasattr(e, "read") else ""}
+            except Exception as e:
+                last_error = f"{type(e).__name__}: {e}"
+                if attempt < retries:
+                    import time as _t
+                    _t.sleep(1.5 ** attempt)
+                    continue
+                return {"status": 0, "body": "", "error": last_error, "attempts": retries + 1}
 
     r4 = await loop.run_in_executor(None, _http_post_json, backend_base + "/api/trial/signup", sentinel_payload)
     details["signup_status"] = r4["status"]
