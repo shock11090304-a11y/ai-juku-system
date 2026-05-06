@@ -9362,6 +9362,70 @@ def admin_email_test_send(payload: dict, authorization: Optional[str] = Header(N
         return {"sent": False, "error": f"{type(e).__name__}: {str(e)[:200]}", "to": to_email}
 
 
+@app.post("/api/admin/email/send-custom")
+def admin_email_send_custom(
+    payload: dict,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """任意の subject/body でメール送信。admin Bearer または X-Cron-Secret 認証。
+    payload: { to: str, subject: str, body: str (text or html), is_html: bool=False }"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    to_email = (payload.get("to") or "").strip()
+    subject = (payload.get("subject") or "").strip()
+    body = payload.get("body") or ""
+    is_html = bool(payload.get("is_html", False))
+    if not to_email or "@" not in to_email:
+        raise HTTPException(status_code=400, detail="to (メールアドレス) が必要です")
+    if not subject:
+        raise HTTPException(status_code=400, detail="subject が必要です")
+    if not body:
+        raise HTTPException(status_code=400, detail="body が必要です")
+    # 合成監視や PII 防衛: synthetic-monitor アドレスはスキップ
+    if "@synthetic-monitor." in to_email:
+        return {"sent": False, "skipped": "synthetic_monitor"}
+
+    import urllib.request, urllib.error
+    if not RESEND_API_KEY:
+        return {"sent": False, "error": "RESEND_API_KEY 未設定"}
+    email_body = {
+        "from": FROM_EMAIL,
+        "to": [to_email],
+        "subject": subject,
+    }
+    if is_html:
+        email_body["html"] = body
+    else:
+        email_body["text"] = body
+    try:
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps(email_body).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            res_body = json.loads(resp.read().decode())
+            return {"sent": True, "resend_id": res_body.get("id"), "to": to_email, "subject": subject}
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode("utf-8", errors="replace")[:300]
+        return {"sent": False, "error": f"HTTP {e.code}: {err_body}", "to": to_email}
+    except Exception as e:
+        return {"sent": False, "error": f"{type(e).__name__}: {str(e)[:200]}", "to": to_email}
+
+
 @app.post("/api/admin/monitor/synthetic-checkout-now")
 async def admin_synthetic_checkout_now(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """E2E 合成チェックを今すぐ実行 (手動トリガー)。"""
