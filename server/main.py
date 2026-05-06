@@ -4296,10 +4296,25 @@ def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = No
                         "raw": err_body[:300],
                     })
                     log.error(f"[AI failsafe] CREDIT LOW detected: {err_body[:200]}")
-                    # credit 不足は他モデルでも同じ Anthropic アカウントなので fallback しても無駄
+                    # credit 不足は他 Anthropic モデルでも同じアカウントなので無駄。
+                    # ただし Gemini は別プロバイダなので Tier 4 fallback に流す (2026-05-06 塾長指示)
+                    if GEMINI_API_KEY:
+                        try:
+                            log.warning(f"[AI failsafe] credit_low → Gemini Tier 4 即時 fallback (kind={kind})")
+                            gdata = _call_gemini(body, kind=kind)
+                            _record_ai_critical_event("ai_fallback_gemini_credit_low", {
+                                "requested_model": requested_model,
+                                "actual_model": gdata.get("_actual_model"),
+                                "kind": kind,
+                                "student_id": student_id,
+                            })
+                            return gdata
+                        except Exception as ge:
+                            log.error(f"[AI failsafe] credit_low → Gemini も失敗: {type(ge).__name__}: {str(ge)[:200]}")
+                            # Gemini も落ちたら 503 (credit 補充依頼)
                     raise HTTPException(
                         status_code=503,
-                        detail="AI_CREDIT_LOW: Anthropic クレジット枯渇。塾長に補充依頼してください。"
+                        detail="AI_CREDIT_LOW: Anthropic クレジット枯渇 + Gemini fallback 失敗。塾長に補充依頼してください。"
                     )
 
                 # 4xx (validation) → リトライ無駄、次の tier

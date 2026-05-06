@@ -214,7 +214,7 @@ const MODEL_FAST = 'claude-haiku-4-5-20251001';  // $1/1M in, $5/1M out（最速
 
 // 機能別モデル選択
 const MODEL_MAP = {
-  chat:       { model: MODEL_PREMIUM,  thinking: false, budget: 0,    maxTokens: 2000 },  // 速度優先
+  chat:       { model: MODEL_STANDARD, thinking: false, budget: 0,    maxTokens: 2000 },  // 速度優先・Sonnet で 5x 安、失敗時 Gemini 自動 fallback (2026-05-06)
   diagnostic: { model: MODEL_PREMIUM,  thinking: true,  budget: 4000, maxTokens: 3000 },  // 高ステークス
   curriculum: { model: MODEL_PREMIUM,  thinking: true,  budget: 5000, maxTokens: 4000 },  // 高ステークス
   essay:      { model: MODEL_PREMIUM,  thinking: true,  budget: 4000, maxTokens: 3500 },  // 教育的価値
