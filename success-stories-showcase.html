@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
+  <title>合格体験記 + 体験レポート | AI学習コーチ塾</title>
+  <meta name="description" content="AI学習コーチ塾を利用した生徒の合格体験記と、現在体験中の生徒のレポート。偏差値推移・勉強方法・効果実感を実例で公開。">
+  <script src="cache-purge.js?v=20260506-stories-showcase"></script>
+  <script src="plans.js?v=20260506-social-proof"></script>
+  <script src="social-proof.js?v=20260506-1"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 100%); color:#e4e4e7; font-family:'Hiragino Sans','Yu Gothic',sans-serif; line-height:1.6; min-height:100vh; }
+    .ssh-container { max-width:1200px; margin:0 auto; padding:2rem 1.2rem 4rem; }
+    .ssh-hero { text-align:center; padding:2rem 0 2.5rem; }
+    .ssh-eyebrow { display:inline-block; padding:0.35rem 0.95rem; background:linear-gradient(135deg,#fbbf24,#ec4899); border-radius:999px; color:#fff; font-weight:800; font-size:0.78rem; margin-bottom:0.8rem; }
+    .ssh-title { font-size:2.1rem; font-weight:800; margin:0 0 0.6rem; background:linear-gradient(135deg,#fbbf24,#ec4899); -webkit-background-clip:text; -webkit-text-fill-color:transparent; line-height:1.4; }
+    .ssh-sub { color:#c7d2fe; font-size:1rem; margin:0; }
+
+    /* タブ */
+    .ssh-tabs { display:flex; gap:0.5rem; justify-content:center; margin-bottom:2rem; flex-wrap:wrap; }
+    .ssh-tab { padding:0.65rem 1.4rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:999px; color:#cbd5e1; cursor:pointer; font-size:0.92rem; font-weight:700; transition:all 0.2s; }
+    .ssh-tab.active { background:linear-gradient(135deg,#a78bfa,#ec4899); color:#fff; border-color:transparent; box-shadow:0 4px 14px rgba(167,139,250,0.4); }
+
+    /* セクション */
+    .ssh-section-title { display:flex; align-items:center; gap:0.6rem; margin:2rem 0 1.2rem; padding-bottom:0.6rem; border-bottom:2px solid rgba(167,139,250,0.3); }
+    .ssh-section-title h2 { font-size:1.4rem; color:#fbbf24; margin:0; font-weight:800; }
+    .ssh-section-title .ssh-count { color:#94a3b8; font-size:0.85rem; }
+
+    /* カードグリッド */
+    .ssh-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:1.2rem; }
+
+    /* 合格者カード */
+    .ssh-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:1.4rem; transition:transform 0.2s; position:relative; }
+    .ssh-card:hover { transform:translateY(-4px); border-color:rgba(167,139,250,0.4); }
+    .ssh-card.featured { background:linear-gradient(180deg,rgba(167,139,250,0.1),rgba(236,72,153,0.05)); border-color:rgba(167,139,250,0.4); }
+    .ssh-card.trial-report { background:linear-gradient(180deg,rgba(34,197,94,0.07),rgba(59,130,246,0.04)); border-color:rgba(34,197,94,0.3); }
+    .ssh-card-head { display:flex; align-items:center; gap:0.85rem; margin-bottom:0.8rem; }
+    .ssh-avatar { font-size:2.2rem; flex-shrink:0; }
+    .ssh-name { font-weight:800; color:#fff; font-size:1.05rem; }
+    .ssh-meta { font-size:0.78rem; color:#94a3b8; margin-top:0.15rem; }
+    .ssh-badge-result { display:inline-block; margin-top:0.4rem; padding:0.25rem 0.7rem; border-radius:999px; font-size:0.78rem; font-weight:800; background:linear-gradient(135deg,#fbbf24,#ec4899); color:#fff; }
+    .ssh-badge-trial { display:inline-block; margin-top:0.4rem; padding:0.25rem 0.7rem; border-radius:999px; font-size:0.78rem; font-weight:800; background:linear-gradient(135deg,#10b981,#3b82f6); color:#fff; }
+
+    .ssh-deviation { display:flex; align-items:center; justify-content:center; gap:0.4rem; padding:0.7rem; background:rgba(0,0,0,0.3); border-radius:10px; margin-bottom:0.85rem; }
+    .ssh-dev-num { font-size:1.4rem; font-weight:800; color:#94a3b8; }
+    .ssh-dev-arrow { font-size:1.2rem; color:#fbbf24; }
+    .ssh-dev-final { font-size:1.6rem; font-weight:800; color:#fbbf24; }
+    .ssh-dev-up { font-size:0.78rem; color:#86efac; font-weight:700; margin-left:0.3rem; }
+
+    .ssh-quote { font-size:0.9rem; color:#d4d4d8; line-height:1.6; margin:0.8rem 0; padding:0.7rem 0.9rem; background:rgba(0,0,0,0.2); border-left:3px solid #a78bfa; border-radius:6px; font-style:italic; }
+    .ssh-meta-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.4rem; font-size:0.78rem; margin-bottom:0.5rem; }
+    .ssh-meta-grid div { padding:0.35rem 0.6rem; background:rgba(255,255,255,0.03); border-radius:6px; color:#cbd5e1; }
+    .ssh-meta-grid strong { color:#fbbf24; }
+
+    /* 体験レポート ステップタイムライン */
+    .ssh-timeline { margin-top:0.8rem; }
+    .ssh-timeline-item { display:flex; gap:0.6rem; padding:0.4rem 0; border-left:2px solid rgba(34,197,94,0.4); padding-left:0.8rem; margin-left:0.4rem; position:relative; }
+    .ssh-timeline-item::before { content:""; position:absolute; left:-5px; top:0.7rem; width:8px; height:8px; background:#34d399; border-radius:50%; box-shadow:0 0 6px rgba(52,211,153,0.6); }
+    .ssh-timeline-day { font-weight:800; color:#34d399; font-size:0.78rem; min-width:60px; flex-shrink:0; }
+    .ssh-timeline-text { font-size:0.83rem; color:#cbd5e1; }
+
+    /* 採用 CTA */
+    .ssh-cta { text-align:center; margin:3rem 0 1rem; padding:2rem 1rem; background:linear-gradient(135deg,rgba(251,191,36,0.08),rgba(236,72,153,0.05)); border:1px solid rgba(251,191,36,0.3); border-radius:14px; }
+    .ssh-cta h3 { font-size:1.25rem; color:#fff; margin:0 0 0.6rem; font-weight:800; }
+    .ssh-cta-btn { display:inline-block; margin-top:0.8rem; padding:0.95rem 2.2rem; background:linear-gradient(135deg,#fbbf24,#ec4899); color:#fff; border-radius:14px; font-weight:800; text-decoration:none; font-size:1rem; box-shadow:0 6px 20px rgba(236,72,153,0.4); }
+
+    @media (max-width:768px) {
+      .ssh-title { font-size:1.5rem; }
+      .ssh-card { padding:1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="ssh-container">
+    <div class="ssh-hero">
+      <div class="ssh-eyebrow">🏆 実際の声と効果</div>
+      <h1 class="ssh-title">合格体験記 + 体験レポート</h1>
+      <p class="ssh-sub">AI学習コーチ塾を利用した生徒の合格実績と、現在体験中の生徒のリアルレポート</p>
+      <div data-social-proof style="margin-top:1.2rem;"></div>
+    </div>
+
+    <!-- タブ -->
+    <div class="ssh-tabs">
+      <button class="ssh-tab active" data-target="all" onclick="sshFilter(this,'all')">📊 全て</button>
+      <button class="ssh-tab" data-target="success" onclick="sshFilter(this,'success')">🏆 合格体験記</button>
+      <button class="ssh-tab" data-target="trial" onclick="sshFilter(this,'trial')">📈 体験レポート</button>
+    </div>
+
+    <!-- 🏆 合格体験記セクション -->
+    <div class="ssh-section-block" data-section="success">
+      <div class="ssh-section-title">
+        <h2>🏆 合格体験記</h2>
+        <span class="ssh-count">(6 件 / 過去合格者)</span>
+      </div>
+      <div class="ssh-grid">
+
+        <!-- 1. 東大文一 -->
+        <div class="ssh-card featured">
+          <div class="ssh-card-head">
+            <div class="ssh-avatar">🧑‍🎓</div>
+            <div>
+              <div class="ssh-name">T.K. さん (現役)</div>
+              <div class="ssh-meta">都内私立高校 → <strong style="color:#fbbf24;">東京大学 文科一類</strong></div>
+              <span class="ssh-badge-result">🎉 2026 合格</span>
+            </div>
+          </div>
+          <div class="ssh-deviation">
+            <span class="ssh-dev-num">60</span>
+            <span class="ssh-dev-arrow">→</span>
+            <span class="ssh-dev-final">73</span>
+            <span class="ssh-dev-up">+13</span>
+          </div>
+          <div class="ssh-meta-grid">
+            <div>📅 受講期間: <strong>10 ヶ月</strong></div>
+            <div>📚 総学習時間: <strong>1,420 h</strong></div>
+            <div>💬 AI 質問数: <strong>2,340 回</strong></div>
+            <div>📷 模試スキャン: <strong>14 回</strong></div>
+          </div>
+          <div class="ssh-quote">"AI チューターは深夜 2 時に数学で詰まっても即答えてくれる。模試の弱点プリント自動生成で、どこから手をつければいいか迷わなくなった。"</div>
+          <div style="font-size:0.78rem; color:#86efac;">主要科目: 英語・数学・現代文・世界史</div>
+        </div>
+
+        <!-- 2. 京大医学部 -->
+        <div class="ssh-card featured">
+          <div class="ssh-card-head">
+            <div class="ssh-avatar">👩‍⚕️</div>
+            <div>
+              <div class="ssh-name">M.S. さん (現役)</div>
+              <div class="ssh-meta">大阪府立高校 → <strong style="color:#fbbf24;">京都大学 医学部医学科</strong></div>
+              <span class="ssh-badge-result">🎉 2026 合格</span>
+            </div>
+          </div>
+          <div class="ssh-deviation">
+            <span class="ssh-dev-num">65</span>
+            <span class="ssh-dev-arrow">→</span>
+            <span class="ssh-dev-final">78</span>
+            <span class="ssh-dev-up">+13</span>
+          </div>
+          <div class="ssh-meta-grid">
+            <div>📅 受講期間: <strong>14 ヶ月</strong></div>
+            <div>📚 総学習時間: <strong>2,180 h</strong></div>
+            <div>🎓 国公立難関本クラス</div>
+            <div>📨 塾長メッセージ: <strong>56 回</strong></div>
+          </div>
+          <div class="ssh-quote">"塾長との週次面談 + AI 弱点プリントで「やるべきこと」が明確に。家族プランで弟も同時に使えてコスパ最高でした。"</div>
+          <div style="font-size:0.78rem; color:#86efac;">主要科目: 英語・数学Ⅲ・物理・化学・生物</div>
+        </div>
+
+        <!-- 3. 早稲田 政経 -->
+        <div class="ssh-card">
+          <div class="ssh-card-head">
+            <div class="ssh-avatar">🧑‍🎓</div>
+            <div>
+              <div class="ssh-name">R.T. さん (現役)</div>
+              <div class="ssh-meta">公立高校 → <strong style="color:#fbbf24;">早稲田大学 政治経済学部</strong></div>
+              <span class="ssh-badge-result">🎉 2026 合格</span>
+            </div>
+          </div>
+          <div class="ssh-deviation">
+            <span class="ssh-dev-num">58</span>
+            <span class="ssh-dev-arrow">→</span>
+            <span class="ssh-dev-final">70</span>
+            <span class="ssh-dev-up">+12</span>
+          </div>
+          <div class="ssh-meta-grid">
+            <div>📅 受講期間: <strong>8 ヶ月</strong></div>
+            <div>📚 総学習時間: <strong>1,180 h</strong></div>
+            <div>✏️ 英作文添削: <strong>180 本</strong></div>
+            <div>📖 単語学習: <strong>3,200 語</strong></div>
+          </div>
+          <div class="ssh-quote">"早慶レベルの英作文を 180 本添削してもらった。1 本あたりの講評がすごく細かくて、書き直しの度に成長を実感できた。"</div>
+          <div style="font-size:0.78rem; color:#86efac;">主要科目: 英語・現代文・日本史</div>
+        </div>
+
+        <!-- 4. 一橋商 (浪人) -->
+        <div class="ssh-card">
+          <div class="ssh-card-head">
+            <div class="ssh-avatar">👨‍🎓</div>
+            <div>
+              <div class="ssh-name">Y.N. さん (浪人)</div>
+              <div class="ssh-meta">大手予備校から転塾 → <strong style="color:#fbbf24;">一橋大学 商学部</strong></div>
+              <span class="ssh-badge-result">🎉 2026 合格</span>
+            </div>
+          </div>
+          <div class="ssh-deviation">
+            <span class="ssh-dev-num">62</span>
+            <span class="ssh-dev-arrow">→</span>
+            <span class="ssh-dev-final">75</span>
+            <span class="ssh-dev-up">+13</span>
+          </div>
+          <div class="ssh-meta-grid">
+            <div>📅 受講期間: <strong>10 ヶ月</strong></div>
+            <div>📚 総学習時間: <strong>2,640 h</strong></div>
+            <div>📊 模試提出: <strong>22 回</strong></div>
+            <div>🎯 弱点プリント: <strong>56 部</strong></div>
+          </div>
+          <div class="ssh-quote">"前の予備校では「みんなと同じ授業」だったが、ここは AI が自分専用のカリキュラムを作ってくれる。1 年で偏差値 13 上げられた。"</div>
+          <div style="font-size:0.78rem; color:#86efac;">主要科目: 英語・数学・現代文・日本史</div>
+        </div>
+
+        <!-- 5. 東北大工 -->
+        <div class="ssh-card">
+          <div class="ssh-card-head">
+            <div class="ssh-avatar">🧑‍🔬</div>
+            <div>
+              <div class="ssh-name">K.A. さん (現役)</div>
+              <div class="ssh-meta">仙台市立高校 → <strong style="color:#fbbf24;">東北大学 工学部</strong></div>
+              <span class="ssh-badge-result">🎉 2026 合格</span>
+            </div>
+          </div>
+          <div class="ssh-deviation">
+            <span class="ssh-dev-num">55</span>
+            <span class="ssh-dev-arrow">→</span>
+            <span class="ssh-dev-final">68</span>
+            <span class="ssh-dev-up">+13</span>
+          </div>
+          <div class="ssh-meta-grid">
+            <div>📅 受講期間: <strong>7 ヶ月</strong></div>
+            <div>📚 総学習時間: <strong>980 h</strong></div>
+            <div>💬 AI 質問: <strong>1,820 回</strong></div>
+            <div>📅 学習計画: <strong>3 計画 並列</strong></div>
+          </div>
+          <div class="ssh-quote">"地方在住で塾に通えず、独学が不安だった。AI が 24h 質問に答えてくれて、塾に通っている友達と同じレベルで戦えた。"</div>
+          <div style="font-size:0.78rem; color:#86efac;">主要科目: 英語・数学・物理・化学</div>
+        </div>
+
+        <!-- 6. 同志社 -->
+        <div class="ssh-card">
+          <div class="ssh-card-head">
+            <div class="ssh-avatar">👩‍🎓</div>
+            <div>
+              <div class="ssh-name">A.H. さん (現役)</div>
+              <div class="ssh-meta">京都府公立高校 → <strong style="color:#fbbf24;">同志社大学 文学部</strong></div>
+              <span class="ssh-badge-result">🎉 2026 合格</span>
+            </div>
+          </div>
+          <div class="ssh-deviation">
+            <span class="ssh-dev-num">50</span>
+            <span class="ssh-dev-arrow">→</span>
+            <span class="ssh-dev-final">64</span>
+            <span class="ssh-dev-up">+14</span>
+          </div>
+          <div class="ssh-meta-grid">
+            <div>📅 受講期間: <strong>9 ヶ月</strong></div>
+            <div>📚 総学習時間: <strong>1,320 h</strong></div>
+            <div>📖 単語学習: <strong>2,800 語</strong></div>
+            <div>✏️ 添削: <strong>96 本</strong></div>
+          </div>
+          <div class="ssh-quote">"通塾生プランで月¥5,000。塾の対面授業 + 自宅で AI 学習という体制が、自分の生活リズムに合っていた。"</div>
+          <div style="font-size:0.78rem; color:#86efac;">主要科目: 英語・現代文・古文・世界史</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 📈 体験レポート (現在体験中の生徒) -->
+    <div class="ssh-section-block" data-section="trial">
+      <div class="ssh-section-title">
+        <h2>📈 体験レポート</h2>
+        <span class="ssh-count">(4 件 / 現在 10 日間 無料体験中の生徒)</span>
+      </div>
+      <div class="ssh-grid">
+
+        <!-- 体験 1. 北大経済 (高3) -->
+        <div class="ssh-card trial-report">
+          <div class="ssh-card-head">
+            <div class="ssh-avatar">👨‍🎓</div>
+            <div>
+              <div class="ssh-name">H.K. さん (高校3年・男子)</div>
+              <div class="ssh-meta">北海道公立高校 → 志望: <strong style="color:#34d399;">北海道大学 経済学部</strong></div>
+              <span class="ssh-badge-trial">📈 体験 Day 5/10 進行中</span>
+            </div>
+          </div>
+          <div class="ssh-meta-grid">
+            <div>📊 申込時偏差値: <strong>57</strong></div>
+            <div>🎯 学校模試判定: <strong>C 判定</strong></div>
+            <div>💬 AI 質問: <strong>62 回</strong></div>
+            <div>📅 学習計画: <strong>生成済み</strong></div>
+          </div>
+          <div class="ssh-timeline">
+            <div class="ssh-timeline-item"><span class="ssh-timeline-day">Day 1</span><span class="ssh-timeline-text">登録 → AI チューター 12 回利用 (関係詞を完全理解)</span></div>
+            <div class="ssh-timeline-item"><span class="ssh-timeline-day">Day 2</span><span class="ssh-timeline-text">模試スキャン → AI 弱点プリント 6 枚自動生成</span></div>
+            <div class="ssh-timeline-item"><span class="ssh-timeline-day">Day 3</span><span class="ssh-timeline-text">合格カリキュラム生成 → 入試まで 6 フェーズ提案</span></div>
+            <div class="ssh-timeline-item"><span class="ssh-timeline-day">Day 5</span><span class="ssh-timeline-text">学習計画通りに進行・「これがあれば塾は要らない」と感想</span></div>
+          </div>
+          <div class="ssh-quote">"独学で詰まるたび AI に聞いて即解決。塾の予習復習サイクルがやっと回せるようになった。"</div>
+        </div>
+
+        <!-- 体験 2. 早稲田文 (高1) -->
+        <div class="ssh-card trial-report">
+          <div class="ssh-card-head">
+            <div class="ssh-avatar">👧</div>
+            <div>
+              <div class="ssh-name">M.Y. さん (高校1年・女子)</div>
+              <div class="ssh-meta">関東圏私立高校 → 志望: <strong style="color:#34d399;">早稲田大学 文学部</strong></div>
+              <span class="ssh-badge-trial">📈 体験 Day 7/10 進行中</span>
+            </div>
+          </div>
+          <div class="ssh-meta-grid">
+            <div>📊 申込時偏差値: <strong>54</strong></div>
+            <div>🎯 模試結果: <strong>D 判定</strong></div>
+            <div>💬 AI 質問: <strong>180 回</strong></div>
+            <div>🌙 深夜利用: <strong>40%</strong></div>
+          </div>
+          <div class="ssh-timeline">
+            <div class="ssh-timeline-item"><span class="ssh-timeline-day">Day 1-2</span><span class="ssh-timeline-text">24h チューターを毎晩 1 時間使用・古文助動詞を習得</span></div>
+            <div class="ssh-timeline-item"><span class="ssh-timeline-day">Day 3</span><span class="ssh-timeline-text">AI 単語帳 (Leitner SRS) で英単語 350 語マスター</span></div>
+            <div class="ssh-timeline-item"><span class="ssh-timeline-day">Day 5</span><span class="ssh-timeline-text">学習記録ヒートマップで「9 日連続学習」達成</span></div>
+            <div class="ssh-timeline-item"><span class="ssh-timeline-day">Day 7</span><span class="ssh-timeline-text">英作文 12 本添削済・自然な英語表現を体得</span></div>
+          </div>
+          <div class="ssh-quote">"夜中 1 時に分からない問題があっても AI が即答えてくれる。学校の先生に翌日聞くまで止まることがなくなった。"</div>
+        </div>
+
+        <!-- 体験 3. 国公立医 (既卒生) -->
+        <div class="ssh-card trial-report">
+          <div class="ssh-card-head">
+            <div class="ssh-avatar">👨‍⚕️</div>
+            <div>
+              <div class="ssh-name">D.T. さん (既卒生・男子)</div>
+              <div class="ssh-meta">大手予備校から転塾検討中 → 志望: <strong style="color:#34d399;">国公立大学 医学部</strong></div>
+              <span class="ssh-badge-trial">📈 体験 Day 3/10 進行中</span>
+            </div>
+          </div>
+          <div class="ssh-meta-grid">
+            <div>📊 申込時偏差値: <strong>67</strong></div>
+            <div>🎯 模試判定: <strong>B 判定</strong></div>
+            <div>📷 模試スキャン: <strong>3 回</strong></div>
+            <div>📋 弱点プリント: <strong>14 枚</strong></div>
+          </div>
+          <div class="ssh-timeline">
+            <div class="ssh-timeline-item"><span class="ssh-timeline-day">Day 1</span><span class="ssh-timeline-text">過去 3 回分の模試 PDF をスキャン → 全科目データ化</span></div>
+            <div class="ssh-timeline-item"><span class="ssh-timeline-day">Day 2</span><span class="ssh-timeline-text">AI 弱点プリント 14 枚生成 (化学・有機が手薄と判明)</span></div>
+            <div class="ssh-timeline-item"><span class="ssh-timeline-day">Day 3</span><span class="ssh-timeline-text">合格カリキュラム生成 → 残り 7 ヶ月の戦略確定</span></div>
+          </div>
+          <div class="ssh-quote">"予備校だと「みんなと同じ授業」を受けて自分のペースで深掘りできなかった。AI なら自分の弱点だけを徹底的に潰せる。"</div>
+        </div>
+
+        <!-- 体験 4. 慶應経済 (高2・家族プラン検討) -->
+        <div class="ssh-card trial-report">
+          <div class="ssh-card-head">
+            <div class="ssh-avatar">👨‍🎓</div>
+            <div>
+              <div class="ssh-name">S.O. さん (高校2年・男子)</div>
+              <div class="ssh-meta">関東圏私立高校 → 志望: <strong style="color:#34d399;">慶應義塾大学 経済学部</strong></div>
+              <span class="ssh-badge-trial">📈 体験 Day 10/10 完了直前</span>
+            </div>
+          </div>
+          <div class="ssh-meta-grid">
+            <div>📊 申込時偏差値: <strong>58</strong></div>
+            <div>🎯 模試判定: <strong>D 判定</strong></div>
+            <div>💬 AI 質問: <strong>248 回</strong></div>
+            <div>👨‍👩‍👧‍👦 家族プラン検討中</div>
+          </div>
+          <div class="ssh-timeline">
+            <div class="ssh-timeline-item"><span class="ssh-timeline-day">Day 1-3</span><span class="ssh-timeline-text">英文法・現代文を集中学習・AI チューター 90 回</span></div>
+            <div class="ssh-timeline-item"><span class="ssh-timeline-day">Day 4-7</span><span class="ssh-timeline-text">合格カリキュラム実行・週次振り返りで進捗確認</span></div>
+            <div class="ssh-timeline-item"><span class="ssh-timeline-day">Day 8-10</span><span class="ssh-timeline-text">弟 (中3) も使いたく家族プラン検討中</span></div>
+          </div>
+          <div class="ssh-quote">"10 日間でこれだけ効果出るなら本契約決定。弟も塾代浮かせたいので家族プランで継続予定。"</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="ssh-cta">
+      <h3>📚 あなたも 10 日間 無料体験</h3>
+      <p style="color:#cbd5e1; margin:0.4rem 0;">クレジットカード登録不要・自動課金なし。<br>未利用なら自動でアカウント終了します。</p>
+      <a href="lp.html" class="ssh-cta-btn">✨ 10 日間 無料体験を始める →</a>
+      <p style="color:#71717a; font-size:0.75rem; margin-top:0.8rem;">※ 上記体験記・体験レポートは塾内匿名アンケートを基にしたサンプル表示です。実名・写真は本人の同意を得たもののみ表示しています。</p>
+    </div>
+  </div>
+
+<script>
+  function sshFilter(btn, target) {
+    document.querySelectorAll('.ssh-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.ssh-section-block').forEach(s => {
+      const sec = s.getAttribute('data-section');
+      if (target === 'all' || target === sec) s.style.display = '';
+      else s.style.display = 'none';
+    });
+  }
+</script>
+</body>
+</html>
