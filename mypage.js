@@ -9,6 +9,25 @@ const KEYS = {
   MYPAGE: 'ai_juku_mypage',
 };
 
+// ==========================================================================
+// 学習管理機能 (学習記録・カリキュラム・模試分析・弱点プリント) アクセス判定
+// 新プラン体系 2026-05-06:
+//   - course='kokuritsu_nankan' (本クラス所属生徒) → 解放
+//   - plan='premium' (¥19,800) / 'family' (¥39,800) / 'founder_special' (¥14,500 永年) → 解放
+//   - plan='student_addon' (通塾生 ¥5,000) / 'standard' (旧・募集停止) → AI のみで学習管理 NG
+// ==========================================================================
+const _STUDY_MGMT_PLANS = ['premium', 'family', 'founder_special'];
+function _canUseStudyMgmt(student) {
+  if (!student) return false;
+  if (student.course === 'kokuritsu_nankan') return true;
+  const plan = String(student.plan || '').toLowerCase();
+  return _STUDY_MGMT_PLANS.indexOf(plan) >= 0;
+}
+// 塾長との双方向メッセージ・授業ファイル送受信は本クラス所属生徒のみ (有料プランは対象外)
+function _canUseTeacherMessaging(student) {
+  return !!(student && student.course === 'kokuritsu_nankan');
+}
+
 // Levels & XP progression
 const LEVELS = [
   { lv: 1, name: '新米学習者', xp: 0 },
@@ -646,7 +665,8 @@ function initStudyLog() {
       setTimeout(() => tryInit(retries - 1), 200);
       return;
     }
-    const isTarget = student.course === 'kokuritsu_nankan';
+    // 新プラン体系 2026-05-06: 国公立難関本クラス OR プレミアム以上で学習管理機能を解放
+    const isTarget = _canUseStudyMgmt(student);
     if (!isTarget) {
       // 一般生徒には機能の存在告知 + 申込導線 (機会損失防止)
       if (section) {
@@ -1019,8 +1039,8 @@ function initStudyPlan() {
       setTimeout(() => tryInit(retries - 1), 200);
       return;
     }
-    if (student.course !== 'kokuritsu_nankan') {
-      // 一般生徒には CTA 表示 (Frontend m-1: 機会損失防止)
+    if (!_canUseStudyMgmt(student)) {
+      // 一般生徒 (通塾生プラン等) には CTA 表示 (Frontend m-1: 機会損失防止)
       if (section) {
         section.style.display = '';
         section.innerHTML = `
@@ -1619,11 +1639,11 @@ function _initComposeUI() {
   const fileInput = document.getElementById('msgComposeFile');
   const fileNameLabel = document.getElementById('msgComposeFileName');
   if (!composeBtn || !composeForm) return;
-  // course === 'kokuritsu_nankan' の生徒のみボタン表示
+  // 塾長との双方向メッセージは本クラス所属生徒のみ表示 (premium 等の有料プランでは非表示)
   const tryShow = (retries) => {
     const student = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || null;
     if (!student && retries > 0) { setTimeout(() => tryShow(retries - 1), 200); return; }
-    if (student && student.course === 'kokuritsu_nankan') {
+    if (_canUseTeacherMessaging(student)) {
       composeBtn.style.display = '';
       if (composeHint) composeHint.style.display = '';
     }
@@ -1917,7 +1937,7 @@ function initCurriculum() {
       setTimeout(() => tryInit(retries - 1), 200);
       return;
     }
-    if (student.course !== 'kokuritsu_nankan') {
+    if (!_canUseStudyMgmt(student)) {
       if (section) {
         section.style.display = '';
         section.innerHTML = `
@@ -2200,7 +2220,7 @@ function initExamResults() {
       setTimeout(() => tryInit(retries - 1), 200);
       return;
     }
-    if (student.course !== 'kokuritsu_nankan') {
+    if (!_canUseStudyMgmt(student)) {
       if (section) {
         section.style.display = '';
         section.innerHTML = `

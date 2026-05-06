@@ -100,25 +100,25 @@ STATS_TOKEN = os.getenv("STATS_TOKEN", "")  # 未設定時は /api/stats を全�
 APP_SECRET = os.getenv("APP_SECRET", "")
 
 PRICE_MAP = {
-    # 🎁 期間限定50名 永年¥14,500 (premium 全機能)
+    # 🎁 創設メンバー 永年¥14,500 (募集停止・既契約者据置)
     "founder_special": (STRIPE_PRICE_FOUNDER_SPECIAL, 14500, "創設メンバー (永年¥14,500)", 1),
-    # 新プラン構造（2026-04-22〜、面談なし、AI機能で差別化）
-    "standard": (STRIPE_PRICE_STANDARD, 24980, "スタンダード", 1),
-    "premium": (STRIPE_PRICE_PREMIUM, 39800, "プレミアム", 1),
-    "family": (STRIPE_PRICE_FAMILY, 59800, "家族プラン（最大3名）", 3),
-    "student_addon": (STRIPE_PRICE_STUDENT_ADDON, 9800, "塾生アドオン", 1),
+    # 新プラン構造（2026-05-06〜、4 プラン体系・国公立難関本クラスは Stripe ¥0 sub）
+    "standard": (STRIPE_PRICE_STANDARD, 24980, "スタンダード (旧・募集停止)", 1),  # legacy 据置
+    "premium": (STRIPE_PRICE_PREMIUM, 19800, "プレミアム", 1),  # ¥39,800 → ¥19,800 値下げ
+    "family": (STRIPE_PRICE_FAMILY, 39800, "家族プラン（最大3名）", 3),  # ¥59,800 → ¥39,800 値下げ
+    "student_addon": (STRIPE_PRICE_STUDENT_ADDON, 5000, "通塾生プラン", 1),  # ¥9,800 → ¥5,000 値下げ
     # 後方互換 (founder1 は 2026-04-28 廃止・新 founder_special に置換)
     "founder1": (STRIPE_PRICE_FOUNDER_SPECIAL, 14500, "創設メンバー (永年¥14,500)", 1),
-    "ai": (STRIPE_PRICE_STANDARD, 24980, "スタンダード", 1),
-    "hybrid": (STRIPE_PRICE_PREMIUM, 39800, "プレミアム", 1),
-    "intensive": (STRIPE_PRICE_FAMILY, 59800, "家族プラン（最大3名）", 3),
+    "ai": (STRIPE_PRICE_STANDARD, 24980, "スタンダード (旧・募集停止)", 1),
+    "hybrid": (STRIPE_PRICE_PREMIUM, 19800, "プレミアム", 1),
+    "intensive": (STRIPE_PRICE_FAMILY, 39800, "家族プラン（最大3名）", 3),
 }
 
-# 入塾金（トライアル後の初回請求に追加・塾生アドオンは免除）
+# 入塾金（トライアル後の初回請求に追加・通塾生アドオンは免除）
 ENROLLMENT_FEE = 10000
 
-# 塾生アドオン（月額、入塾金不要）
-STUDENT_ADDON_PRICE = 15000
+# 通塾生プラン（月額、入塾金不要）
+STUDENT_ADDON_PRICE = 5000
 
 # 創設メンバー体験は完全無料化 (CVR最大化方針)
 # 7日間 = GW長期休みに集中体験 → 休み明けに本契約継続を狙う設計
@@ -14288,12 +14288,30 @@ def _verify_admin_required(authorization: Optional[str]) -> None:
         raise HTTPException(status_code=401, detail="未認証")
 
 
+_STUDY_LOG_ALLOWED_PLANS = {"premium", "family", "founder_special"}  # 新プラン体系 2026-05-06
+
 def _require_study_log_course(student: dict) -> None:
-    """国公立難関大学コース受講生のみ通す。それ以外は 403。
-    塾長指示 2026-05-04: 学習記録機能は本コース受講生限定。
+    """学習管理機能 (学習記録・カリキュラム・模試分析・弱点プリント) アクセス判定。
+    新プラン体系 2026-05-06:
+      - course='kokuritsu_nankan' (本クラス所属生徒・無料 sub) → 解放
+      - plan='premium' (¥19,800・国公立難関機能含むフル) → 解放
+      - plan='family' (¥39,800・プレミアム×3名) → 解放
+      - plan='founder_special' (¥14,500 永年・既契約者特典) → 解放
+    塾長指示 2026-05-06: 通塾生プラン (¥5,000) と standard 廃止組は AI のみで学習管理 NG
     """
-    if not student or student.get("course") != _STUDY_LOG_TARGET_COURSE:
-        raise HTTPException(status_code=403, detail="この機能は国公立難関大学コース受講生限定です")
+    if not student:
+        raise HTTPException(status_code=403, detail="この機能はログイン必須です")
+    # 国公立難関本クラス所属
+    if student.get("course") == _STUDY_LOG_TARGET_COURSE:
+        return
+    # プレミアム / 家族 / 創設メンバー のいずれか
+    plan = (student.get("plan") or "").lower()
+    if plan in _STUDY_LOG_ALLOWED_PLANS:
+        return
+    raise HTTPException(
+        status_code=403,
+        detail="この機能はプレミアム以上または国公立難関大学コース受講生のみ利用可能です"
+    )
 
 
 def _sanitize_text(s, maxlen):
@@ -15858,12 +15876,15 @@ def get_my_messages(authorization: Optional[str] = Header(None), limit: int = 50
 
 @app.post("/api/student/messages/send")
 def student_send_message(payload: StudentMessageSendRequest, request: Request, authorization: Optional[str] = Header(None)):
-    """生徒 → 塾長 メッセージ送信。授業質問・ファイル送信用 (国公立難関コース受講生向け)。
+    """生徒 → 塾長 メッセージ送信。国公立難関大学コース 本クラス受講生限定。
     in-app メッセージとして塾長宛に保存 + 塾長 email にも通知。"""
     _check_rate_limit_ip(request, bucket="student_msg_send", limit=10, window=300)
     student = _get_current_student(authorization)
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
+    # 本クラス所属生徒のみ (course='kokuritsu_nankan')
+    if (student.get("course") or "") != _STUDY_LOG_TARGET_COURSE:
+        raise HTTPException(status_code=403, detail="塾長へのメッセージ送信は国公立難関大学コース 本クラス受講生のみ利用可能です")
 
     body = _sanitize_text(payload.body, 5000)
     if not body:

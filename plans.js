@@ -1,27 +1,28 @@
 // ==========================================================================
-// プラン設定（一元管理）
-// このファイルを編集するだけで、LP/checkout/チェックアウトに即反映
+// プラン設定（一元管理）2026-05-06 新体系
+// 旧 standard (¥24,980) は廃止 (新規募集停止) → 既存契約者は plan='standard' のまま据置
+// 旧プレミアム ¥39,800 → ¥19,800 に値下げ + 学習管理機能を解放
+// 旧通塾生 ¥9,800 → ¥5,000 に値下げ + AI 機能のみに絞る
+// 旧家族プラン ¥59,800 → ¥39,800 に値下げ
+// 創設メンバー ¥14,500 永年は据置 (募集停止・既契約者のみ)
 // ==========================================================================
 
 const PLAN_CONFIG = {
-  // 新規向け3プラン
   plans: {
-    // 🎁 創設メンバー 50名限定 永年¥14,500 (体験 → 本契約への目玉プラン)
-    // 一度契約すれば永年この価格 (値上げなし)。50名到達で募集終了。
-    // 旧 founder1 (¥25,000・100名) は 2026-04-28 廃止 → 本プランに置換。
-    // server 側 PRICE_MAP では 'founder1' エイリアスも本プランに紐付け済 (後方互換)。
+    // 🎁 創設メンバー 50名限定 永年¥14,500 (募集停止・既契約者据置)
     founder_special: {
       id: 'founder_special',
       name: '創設メンバー (永年特典)',
       price: 14500,
       priceLabel: '¥14,500',
-      tagline: '50名限定・契約後は永年この価格・全機能無制限',
+      tagline: '50名限定・募集終了・既契約者は永年この価格',
       maxStudents: 1,
       aiModel: 'opus',
       color: '#fbbf24',
-      recommended: true,
-      badge: '🎁 50名限定',
+      recommended: false,
+      badge: '🎁 募集終了',
       quotas: { problems: null, essays: null, textbooks: null },
+      legacy: true,  // 新規申込不可 (UI では既契約者のみ表示)
       features: [
         { name: '24時間AIチューター（無制限）', included: true, highlight: true },
         { name: 'AI問題自動生成（無制限）', included: true, highlight: true },
@@ -30,81 +31,84 @@ const PLAN_CONFIG = {
         { name: 'オリジナル参考書生成（無制限）', included: true, highlight: true },
         { name: '5試験対応 (TOEFL/TOEIC/IELTS/英検/大学入試)', included: true, highlight: true },
         { name: '英字ニュース読解 (CNN/Japan Times/BBC ほか)', included: true, highlight: true },
-        { name: '保護者向け詳細レポート（週次・月次）', included: true },
+        { name: '学習記録・合格カリキュラム自動生成・模試 AI 分析', included: true, highlight: true },
+        { name: '保護者向け詳細レポート（週次・月次)', included: true },
         { name: '🎁 一度契約すれば永年¥14,500（値上げ対象外）', included: true, highlight: true, note: true },
-        { name: '優先処理（AI応答の速度優先）', included: true },
       ],
     },
+    // ⭐ プレミアム ¥19,800 (新体系の主力プラン・国公立難関機能フル解放)
+    premium: {
+      id: 'premium',
+      name: 'プレミアム',
+      price: 19800,
+      priceLabel: '¥19,800',
+      tagline: 'AI 全機能無制限 + 学習管理 + 合格カリキュラム自動生成',
+      maxStudents: 1,
+      aiModel: 'opus',
+      color: '#8b5cf6',
+      recommended: true,
+      badge: '⭐ 推奨',
+      quotas: { problems: null, essays: null, textbooks: null },
+      features: [
+        { name: '24時間AIチューター（無制限）', included: true, highlight: true },
+        { name: 'AI問題自動生成（無制限）', included: true, highlight: true },
+        { name: '英作文・記述添削（無制限）', included: true, highlight: true },
+        { name: 'オリジナル参考書生成（無制限）', included: true, highlight: true },
+        { name: '5試験対応 (TOEFL/TOEIC/IELTS/英検/大学入試)', included: true },
+        { name: '英字ニュース読解 (CNN/Japan Times/BBC ほか)', included: true },
+        { name: '🆕 学習記録 + ヒートマップ', included: true, highlight: true },
+        { name: '🆕 学習計画 + ガントチャート', included: true, highlight: true },
+        { name: '🆕 合格カリキュラム自動生成 (4-6 フェーズ)', included: true, highlight: true },
+        { name: '🆕 模試 → AI ギャップ分析', included: true, highlight: true },
+        { name: '🆕 AI 弱点プリント生成', included: true, highlight: true },
+        { name: '🆕 模試 写真/PDF AI スキャン', included: true, highlight: true },
+        { name: '保護者向け詳細レポート（週次・月次）', included: true },
+        { name: '優先処理（AI応答の速度優先）', included: true },
+        { name: '塾長との双方向メッセージ・授業ファイル受信', included: false, note: true },
+      ],
+    },
+    // 👨‍👩‍👧‍👦 家族プラン ¥39,800 (プレミアム × 3 名)
+    family: {
+      id: 'family',
+      name: '家族プラン',
+      price: 39800,
+      priceLabel: '¥39,800',
+      tagline: '兄弟姉妹3名まで使える',
+      maxStudents: 3,
+      aiModel: 'opus',
+      color: '#ec4899',
+      quotas: { problems: null, essays: null, textbooks: null },
+      features: [
+        { name: 'プレミアムプランの全機能', included: true, highlight: true },
+        { name: '🆕 生徒アカウント最大3名まで', included: true, highlight: true },
+        { name: '🆕 家族ダッシュボード（全員の進捗一覧）', included: true, highlight: true },
+        { name: '🆕 兄弟姉妹のカリキュラム相互参照', included: true, highlight: true },
+        { name: '🆕 保護者向け家族レポート', included: true, highlight: true },
+        { name: '生徒1人あたり実質¥13,267/月', included: true, note: true },
+        { name: '優先サポート', included: true },
+      ],
+    },
+    // [LEGACY] スタンダード ¥24,980 (新規募集停止・既存契約者のみ据置)
     standard: {
       id: 'standard',
-      name: 'スタンダード',
+      name: 'スタンダード (旧)',
       price: 24980,
       priceLabel: '¥24,980',
-      tagline: 'AI学習を始めるなら',
+      tagline: '【旧プラン・新規募集停止】既存契約者のみ据置',
       maxStudents: 1,
       aiModel: 'sonnet',
       color: '#3b82f6',
-      // 月次クォータ (server/main.py のチェックロジックが参照)
+      legacy: true,  // 新規申込不可
       quotas: {
-        problems: 50,    // 問題生成 月50回
-        essays: 20,      // 英作文・記述添削 月20回
-        textbooks: 5,    // 参考書生成 月5冊
+        problems: 50,
+        essays: 20,
+        textbooks: 5,
       },
       features: [
         { name: '24時間AIチューター', included: true },
         { name: 'AI問題自動生成（月50回まで）', included: true },
         { name: '英作文・記述添削（月20回まで）', included: true },
-        { name: '学習診断・カリキュラム生成', included: true },
         { name: 'オリジナル参考書生成（月5冊まで）', included: true },
-        { name: '保護者向け学習レポート（週次）', included: true },
-        { name: '問題生成・添削・参考書を無制限に使う', included: false },
-        { name: '保護者向け詳細レポート', included: false },
-        { name: '家族プラン（複数生徒）', included: false },
-      ],
-    },
-    premium: {
-      id: 'premium',
-      name: 'プレミアム',
-      price: 39800,
-      priceLabel: '¥39,800',
-      tagline: '差額¥15,000で全機能解放',
-      maxStudents: 1,
-      aiModel: 'opus',
-      color: '#8b5cf6',
-      recommended: true,
-      // 月次クォータ: null = 無制限
-      quotas: { problems: null, essays: null, textbooks: null },
-      features: [
-        { name: '24時間AIチューター', included: true },
-        { name: 'AI問題自動生成（無制限）', included: true, highlight: true },
-        { name: '英作文・記述添削（無制限）', included: true, highlight: true },
-        { name: '学習診断・カリキュラム生成', included: true },
-        { name: 'オリジナル参考書生成（無制限）', included: true, highlight: true },
-        { name: '優先処理（AI応答の速度優先）', included: true },
-        { name: '保護者向け詳細レポート（週次・月次）', included: true },
-        { name: '家族プラン（複数生徒）', included: false },
-      ],
-    },
-    family: {
-      id: 'family',
-      name: '家族プラン',
-      price: 59800,
-      priceLabel: '¥59,800',
-      tagline: '兄弟姉妹3名まで使える',
-      maxStudents: 3,
-      aiModel: 'opus',
-      color: '#ec4899',
-      // 月次クォータ: null = 無制限
-      quotas: { problems: null, essays: null, textbooks: null },
-      features: [
-        { name: 'プレミアムプランの全機能', included: true },
-        { name: '🆕 生徒アカウント最大3名まで', included: true, highlight: true },
-        { name: '🆕 家族ダッシュボード（全員の進捗一覧）', included: true, highlight: true },
-        { name: '🆕 兄弟姉妹のカリキュラム相互参照', included: true, highlight: true },
-        { name: '🆕 保護者向け家族レポート', included: true, highlight: true },
-        { name: '生徒1人あたり実質¥19,933/月', included: true, note: true },
-        { name: '優先サポート', included: true },
-        { name: '問題生成・添削・参考書すべて無制限', included: true },
       ],
     },
   },
@@ -133,26 +137,49 @@ const PLAN_CONFIG = {
     apiPath: '/api/campaigns/enrollment-waiver/status',
   },
 
-  // 既存塾生向けアドオン (2026-04-26 値下げ ¥15,000 → 永年¥9,800・招待リンク方式で月額固定運用)
+  // 既存塾生向けアドオン (2026-05-06 値下げ ¥9,800 → 永年¥5,000・AI 機能のみに絞る)
+  // 学習記録・カリキュラム・模試分析・弱点プリント等は対象外 (差別化のため)
   studentAddon: {
-    price: 9800,
-    priceLabel: '¥9,800',
-    description: '塾生限定アドオン（月謝に追加・永年この価格）',
+    price: 5000,
+    priceLabel: '¥5,000',
+    description: '通塾生限定プラン（月謝に追加・永年この価格・招待リンク方式）',
     features: [
-      '全AI機能無制限',
-      '問題生成・添削・教材作成すべて無制限',
-      '講師によるAI学習履歴の週次レビュー',
-      '塾の宿題とAI自動連携',
-      '保護者向け統合レポート',
+      '24時間AIチューター（無制限）',
+      'AI問題自動生成（無制限）',
+      '英作文・記述添削（無制限）',
+      'AI 単語帳 + Leitner SRS',
+      '大学過去問 (東大・京大・医学部等)',
+      'オリジナル参考書 自動生成（無制限）',
+      '5試験対応 (TOEFL/TOEIC/IELTS/英検/大学入試)',
       '塾内対面指導との完全併用',
+      '※ 学習記録・合格カリキュラム生成・模試 AI 分析はプレミアムプラン (¥19,800) 以上が必要',
     ],
   },
 
-  // 年間先払い割引 (通塾生アドオンは月額固定運用のため除外)
+  // 🎓 国公立難関大学コース 本クラス (システム利用料 ¥0・塾代別途)
+  // 塾長承認制・Stripe ¥0 sub で「契約中」状態を表現
+  // course='kokuritsu_nankan' を付与 → 全機能 + 塾長双方向メッセージ + 授業ファイル送信 解放
+  kokuritsuNankanClass: {
+    id: 'kokuritsu_nankan_class',
+    name: '国公立難関大学コース 本クラス',
+    price: 0,
+    priceLabel: '¥0',
+    tagline: 'システム利用料 ¥0 (月謝は塾代に含む・塾長承認制)',
+    description: '塾長 DM/メールで個別 LP 配布 → 申込フォーム → CEO 承認 → magic link 自動ログイン',
+    features: [
+      'プレミアムプランの全機能',
+      '🎓 学習記録・合格カリキュラム・模試分析・弱点プリント',
+      '📩 塾長との双方向メッセージ',
+      '📎 授業ファイル送受信 (PDF/画像/Word/Excel/PPT・10MB)',
+      '👨‍🏫 塾長による進捗フィードバック (いいね/コメント・週次励まし)',
+      '🛡️ クレカ縛りなし (塾長判断で個別承認・完全クローズド運用)',
+    ],
+  },
+
+  // 年間先払い割引
   annualDiscount: {
-    standardAnnual: { monthly: 24980, annual: 249800, saved: 49960, label: '年間¥249,800（2ヶ月分お得）' },
-    premiumAnnual: { monthly: 39800, annual: 398000, saved: 79600, label: '年間¥398,000（2ヶ月分お得）' },
-    familyAnnual: { monthly: 59800, annual: 598000, saved: 119600, label: '年間¥598,000（2ヶ月分お得）' },
+    premiumAnnual: { monthly: 19800, annual: 198000, saved: 39600, label: '年間¥198,000（2ヶ月分お得）' },
+    familyAnnual: { monthly: 39800, annual: 398000, saved: 79600, label: '年間¥398,000（2ヶ月分お得）' },
   },
 };
 

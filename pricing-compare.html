@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
   <title>プラン比較 | AI学習コーチ塾</title>
-  <meta name="description" content="AI学習コーチ塾の全プランを一覧比較。創設メンバー / スタンダード / 国公立難関大学コース / プレミアム / 家族プラン。あなたに最適なプランを選べます。">
-  <script src="cache-purge.js?v=20260506-pricing-compare"></script>
+  <meta name="description" content="AI学習コーチ塾 4 プラン比較。通塾生 ¥5,000 / プレミアム ¥19,800 / 家族プラン ¥39,800 / 国公立難関大学コース 本クラス (システム代¥0)。">
+  <script src="cache-purge.js?v=20260506-pricing-v2"></script>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -17,24 +17,23 @@
       line-height: 1.6;
       min-height: 100vh;
     }
-    .pc-container { max-width: 1400px; margin: 0 auto; padding: 2rem 1.2rem 4rem; }
+    .pc-container { max-width: 1300px; margin: 0 auto; padding: 2rem 1.2rem 4rem; }
     .pc-hero { text-align: center; padding: 2rem 0 3rem; }
     .pc-eyebrow { display:inline-block; padding:0.4rem 1rem; background:linear-gradient(135deg,#fbbf24,#ec4899); border-radius:999px; color:#fff; font-weight:800; font-size:0.82rem; margin-bottom:1rem; }
     .pc-title { font-size:2.3rem; font-weight:800; line-height:1.4; margin:0 0 1rem; background:linear-gradient(135deg,#fbbf24,#ec4899); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
     .pc-sub { color:#c7d2fe; font-size:1.05rem; margin:0; }
 
-    /* プランカード横並び */
     .pc-cards {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.2rem;
       margin-bottom: 3rem;
     }
     .pc-card {
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 16px;
-      padding: 1.5rem 1.2rem;
+      padding: 1.7rem 1.4rem;
       position: relative;
       display: flex;
       flex-direction: column;
@@ -42,10 +41,14 @@
     }
     .pc-card:hover { transform: translateY(-4px); }
     .pc-card.featured {
-      background: linear-gradient(180deg, rgba(167,139,250,0.12) 0%, rgba(236,72,153,0.06) 100%);
-      border: 2px solid rgba(167,139,250,0.5);
-      box-shadow: 0 12px 40px rgba(167,139,250,0.25);
-      transform: scale(1.03);
+      background: linear-gradient(180deg, rgba(167,139,250,0.15) 0%, rgba(236,72,153,0.08) 100%);
+      border: 2px solid rgba(167,139,250,0.55);
+      box-shadow: 0 12px 40px rgba(167,139,250,0.3);
+      transform: scale(1.04);
+    }
+    .pc-card.special {
+      background: linear-gradient(180deg, rgba(251,191,36,0.12) 0%, rgba(236,72,153,0.06) 100%);
+      border: 2px solid rgba(251,191,36,0.45);
     }
     .pc-card .pc-badge {
       position: absolute;
@@ -56,45 +59,27 @@
       color: #fff;
       font-weight: 800;
       font-size: 0.74rem;
-      padding: 0.3rem 0.8rem;
+      padding: 0.3rem 0.9rem;
       border-radius: 999px;
       white-space: nowrap;
     }
-    .pc-card .pc-plan-name {
-      font-size: 1.1rem;
-      font-weight: 800;
-      color: #fff;
-      margin-bottom: 0.3rem;
-    }
-    .pc-card .pc-tagline {
-      font-size: 0.78rem;
-      color: #94a3b8;
-      margin-bottom: 1rem;
-      min-height: 2.6em;
-    }
-    .pc-card .pc-price-block {
-      display: flex;
-      align-items: baseline;
-      margin-bottom: 0.3rem;
-      flex-wrap: wrap;
-      gap: 0.2rem;
-    }
-    .pc-card .pc-price {
-      font-size: 1.8rem;
-      font-weight: 800;
-      color: #fbbf24;
-    }
-    .pc-card.featured .pc-price {
-      background: linear-gradient(135deg,#a78bfa,#ec4899);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
+    .pc-card .pc-plan-name { font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 0.3rem; }
+    .pc-card .pc-tagline { font-size: 0.8rem; color: #94a3b8; margin-bottom: 1rem; min-height: 2.6em; }
+    .pc-card .pc-price-block { display: flex; align-items: baseline; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 0.2rem; }
+    .pc-card .pc-price { font-size: 2rem; font-weight: 800; color: #fbbf24; }
+    .pc-card.featured .pc-price { background: linear-gradient(135deg,#a78bfa,#ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .pc-card.special .pc-price { color: #fbbf24; }
     .pc-card .pc-price-suffix { font-size:0.8rem; color:#a1a1aa; }
     .pc-card .pc-old-price { font-size:0.78rem; color:#71717a; text-decoration:line-through; margin-bottom:0.4rem; }
-    .pc-card .pc-note { font-size:0.72rem; color:#a1a1aa; margin-bottom:1rem; min-height:1em; }
+    .pc-card .pc-note { font-size:0.74rem; color:#a1a1aa; margin-bottom:1rem; min-height:1.2em; }
+    .pc-card .pc-features-mini { list-style: none; padding: 0; margin: 0 0 1rem; font-size: 0.8rem; }
+    .pc-card .pc-features-mini li { padding: 0.2rem 0; color: #cbd5e1; }
+    .pc-card .pc-features-mini li:before { content: "✓ "; color: #34d399; font-weight: 800; }
+    .pc-card .pc-features-mini li.no:before { content: "× "; color: #71717a; }
+    .pc-card .pc-features-mini li.no { color: #71717a; }
     .pc-card .pc-cta {
       margin-top: auto;
-      padding: 0.7rem;
+      padding: 0.75rem;
       border-radius: 8px;
       text-align: center;
       font-weight: 700;
@@ -104,18 +89,10 @@
       text-decoration: none;
       display: block;
     }
-    .pc-card .pc-cta.primary {
-      background: linear-gradient(135deg,#a78bfa,#ec4899);
-      color: #fff;
-      box-shadow: 0 4px 14px rgba(167,139,250,0.3);
-    }
-    .pc-card .pc-cta.secondary {
-      background: rgba(255,255,255,0.08);
-      color: #e4e4e7;
-      border: 1px solid rgba(255,255,255,0.18);
-    }
+    .pc-card .pc-cta.primary { background: linear-gradient(135deg,#a78bfa,#ec4899); color: #fff; box-shadow: 0 4px 14px rgba(167,139,250,0.3); }
+    .pc-card .pc-cta.secondary { background: rgba(255,255,255,0.08); color: #e4e4e7; border: 1px solid rgba(255,255,255,0.18); }
+    .pc-card .pc-cta.special { background: linear-gradient(135deg,#fbbf24,#f59e0b); color: #fff; }
 
-    /* 比較表 */
     .pc-table-wrap {
       background: rgba(0,0,0,0.3);
       border: 1px solid rgba(255,255,255,0.08);
@@ -124,18 +101,8 @@
       margin-bottom: 3rem;
       overflow-x: auto;
     }
-    .pc-table-wrap h2 {
-      font-size: 1.4rem;
-      color: #fbbf24;
-      margin: 0 0 1rem;
-      font-weight: 800;
-    }
-    table.pc-table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      min-width: 720px;
-    }
+    .pc-table-wrap h2 { font-size: 1.4rem; color: #fbbf24; margin: 0 0 1rem; font-weight: 800; }
+    table.pc-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 720px; }
     table.pc-table thead th {
       background: rgba(167,139,250,0.08);
       padding: 1rem 0.5rem;
@@ -146,23 +113,10 @@
       border-bottom: 2px solid rgba(167,139,250,0.3);
       vertical-align: bottom;
     }
-    table.pc-table thead th.pc-feature-col {
-      text-align: left;
-      width: 32%;
-      color: #a1a1aa;
-      font-weight: 700;
-      padding-left: 1rem;
-    }
-    table.pc-table thead th.featured-col {
-      background: linear-gradient(180deg, rgba(167,139,250,0.25) 0%, rgba(236,72,153,0.15) 100%);
-      border-bottom: 2px solid rgba(236,72,153,0.6);
-    }
-    table.pc-table tbody tr {
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-    }
-    table.pc-table tbody tr:hover {
-      background: rgba(255,255,255,0.02);
-    }
+    table.pc-table thead th.pc-feature-col { text-align: left; width: 36%; color: #a1a1aa; font-weight: 700; padding-left: 1rem; }
+    table.pc-table thead th.featured-col { background: linear-gradient(180deg, rgba(167,139,250,0.25) 0%, rgba(236,72,153,0.15) 100%); border-bottom: 2px solid rgba(236,72,153,0.6); }
+    table.pc-table thead th.special-col { background: linear-gradient(180deg, rgba(251,191,36,0.25) 0%, rgba(236,72,153,0.1) 100%); }
+    table.pc-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); }
     table.pc-table tbody tr.section-header td {
       background: rgba(251,191,36,0.06);
       color: #fbbf24;
@@ -171,133 +125,41 @@
       padding: 0.7rem 1rem;
       border-bottom: 1px solid rgba(251,191,36,0.2);
     }
-    table.pc-table tbody td {
-      padding: 0.7rem 0.5rem;
-      text-align: center;
-      font-size: 0.85rem;
-      vertical-align: middle;
-    }
-    table.pc-table tbody td.feat-name {
-      text-align: left;
-      color: #d4d4d8;
-      padding-left: 1rem;
-      font-weight: 600;
-    }
-    table.pc-table tbody td.featured-col {
-      background: rgba(167,139,250,0.04);
-    }
+    table.pc-table tbody td { padding: 0.7rem 0.5rem; text-align: center; font-size: 0.85rem; vertical-align: middle; }
+    table.pc-table tbody td.feat-name { text-align: left; color: #d4d4d8; padding-left: 1rem; font-weight: 600; }
+    table.pc-table tbody td.featured-col { background: rgba(167,139,250,0.04); }
+    table.pc-table tbody td.special-col { background: rgba(251,191,36,0.04); }
     .pc-yes { color: #34d399; font-size: 1.1rem; font-weight: 800; }
     .pc-yes-strong { color: #fbbf24; font-size: 1.2rem; font-weight: 800; }
     .pc-no { color: #71717a; font-size: 1.05rem; }
     .pc-quota { color: #a1a1aa; font-size: 0.78rem; font-style: italic; }
 
-    /* 用途別おすすめ表 */
-    .pc-decision {
-      background: linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(236,72,153,0.04) 100%);
-      border: 1px solid rgba(167,139,250,0.3);
-      border-radius: 14px;
-      padding: 1.5rem;
-      margin-bottom: 3rem;
-    }
-    .pc-decision h2 {
-      font-size: 1.3rem;
-      color: #c4b5fd;
-      margin: 0 0 1rem;
-      font-weight: 800;
-    }
-    .pc-decision-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 0.8rem;
-    }
-    .pc-decision-item {
-      background: rgba(0,0,0,0.3);
-      border-left: 4px solid #a78bfa;
-      border-radius: 8px;
-      padding: 0.9rem 1rem;
-    }
-    .pc-decision-item .who {
-      color: #fbbf24;
-      font-weight: 800;
-      font-size: 0.92rem;
-      margin-bottom: 0.3rem;
-    }
-    .pc-decision-item .what {
-      color: #cbd5e1;
-      font-size: 0.85rem;
-      margin-bottom: 0.3rem;
-    }
-    .pc-decision-item .price {
-      color: #34d399;
-      font-weight: 700;
-      font-size: 0.85rem;
-    }
+    .pc-decision { background: linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(236,72,153,0.04) 100%); border: 1px solid rgba(167,139,250,0.3); border-radius: 14px; padding: 1.5rem; margin-bottom: 3rem; }
+    .pc-decision h2 { font-size: 1.3rem; color: #c4b5fd; margin: 0 0 1rem; font-weight: 800; }
+    .pc-decision-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.8rem; }
+    .pc-decision-item { background: rgba(0,0,0,0.3); border-left: 4px solid #a78bfa; border-radius: 8px; padding: 0.9rem 1rem; }
+    .pc-decision-item .who { color: #fbbf24; font-weight: 800; font-size: 0.92rem; margin-bottom: 0.3rem; }
+    .pc-decision-item .what { color: #cbd5e1; font-size: 0.85rem; margin-bottom: 0.3rem; }
+    .pc-decision-item .price { color: #34d399; font-weight: 700; font-size: 0.85rem; }
 
-    /* 値段帯ビジュアライザ */
-    .pc-value-bars {
-      background: rgba(0,0,0,0.3);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 14px;
-      padding: 1.5rem;
-      margin-bottom: 3rem;
-    }
-    .pc-value-bars h2 {
-      font-size: 1.3rem;
-      color: #fbbf24;
-      margin: 0 0 0.5rem;
-      font-weight: 800;
-    }
-    .pc-value-bars .pc-vb-sub {
-      font-size: 0.85rem;
-      color: #94a3b8;
-      margin: 0 0 1.5rem;
-    }
-    .pc-vb-row {
-      display: flex;
-      align-items: center;
-      gap: 0.7rem;
-      margin-bottom: 0.7rem;
-      flex-wrap: wrap;
-    }
-    .pc-vb-label {
-      width: 220px;
-      font-size: 0.85rem;
-      color: #d4d4d8;
-      flex-shrink: 0;
-    }
-    .pc-vb-bar-track {
-      flex: 1;
-      min-width: 180px;
-      height: 28px;
-      background: rgba(255,255,255,0.04);
-      border-radius: 4px;
-      position: relative;
-      overflow: visible;
-    }
-    .pc-vb-bar {
-      height: 100%;
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      padding-right: 0.5rem;
-      color: #fff;
-      font-size: 0.78rem;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-    .pc-vb-bar.cheap   { background: linear-gradient(90deg, #06b6d4, #3b82f6); }
-    .pc-vb-bar.std     { background: linear-gradient(90deg, #3b82f6, #6366f1); }
-    .pc-vb-bar.feat    { background: linear-gradient(90deg, #a78bfa, #ec4899); box-shadow: 0 0 18px rgba(236,72,153,0.4); }
-    .pc-vb-bar.prem    { background: linear-gradient(90deg, #8b5cf6, #d946ef); }
-    .pc-vb-bar.fam     { background: linear-gradient(90deg, #ec4899, #f43f5e); }
+    .pc-value-bars { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 1.5rem; margin-bottom: 3rem; }
+    .pc-value-bars h2 { font-size: 1.3rem; color: #fbbf24; margin: 0 0 0.5rem; font-weight: 800; }
+    .pc-vb-sub { font-size: 0.85rem; color: #94a3b8; margin: 0 0 1.5rem; }
+    .pc-vb-row { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 0.7rem; flex-wrap: wrap; }
+    .pc-vb-label { width: 240px; font-size: 0.85rem; color: #d4d4d8; flex-shrink: 0; }
+    .pc-vb-bar-track { flex: 1; min-width: 180px; height: 28px; background: rgba(255,255,255,0.04); border-radius: 4px; position: relative; overflow: visible; }
+    .pc-vb-bar { height: 100%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.5rem; color: #fff; font-size: 0.78rem; font-weight: 700; white-space: nowrap; }
+    .pc-vb-bar.cheap { background: linear-gradient(90deg, #06b6d4, #3b82f6); }
+    .pc-vb-bar.feat  { background: linear-gradient(90deg, #a78bfa, #ec4899); box-shadow: 0 0 18px rgba(236,72,153,0.4); }
+    .pc-vb-bar.fam   { background: linear-gradient(90deg, #ec4899, #f43f5e); }
+    .pc-vb-bar.spec  { background: linear-gradient(90deg, #fbbf24, #f59e0b); box-shadow: 0 0 18px rgba(251,191,36,0.4); }
     .pc-vb-bar.compare { background: linear-gradient(90deg, #4b5563, #1f2937); }
 
     @media (max-width: 768px) {
       .pc-title { font-size: 1.6rem; }
       .pc-card { padding: 1rem 0.8rem; }
       .pc-card.featured { transform: none; }
-      .pc-card .pc-price { font-size: 1.5rem; }
+      .pc-card .pc-price { font-size: 1.6rem; }
       .pc-vb-label { width: 100%; }
     }
   </style>
@@ -305,86 +167,100 @@
 <body>
   <div class="pc-container">
     <div class="pc-hero">
-      <div class="pc-eyebrow">📊 全プラン一覧比較</div>
+      <div class="pc-eyebrow">📊 新プラン体系 (2026-05-06 改定)</div>
       <h1 class="pc-title">あなたに最適な プランを選ぶ</h1>
-      <p class="pc-sub">AI学習コーチ塾の 6 プラン × 30+ 機能を一目で比較</p>
+      <p class="pc-sub">通塾生 ¥5,000 / プレミアム ¥19,800 / 家族 ¥39,800 / 国公立難関本クラス システム代¥0</p>
     </div>
 
-    <!-- プランカード -->
+    <!-- プランカード (4 プラン横並び) -->
     <div class="pc-cards">
-      <!-- 通塾生アドオン -->
+
+      <!-- 通塾生プラン ¥5,000 -->
       <div class="pc-card">
-        <div class="pc-plan-name">通塾生アドオン</div>
+        <div class="pc-plan-name">🏫 通塾生プラン</div>
         <div class="pc-tagline">既存通塾生限定<br>塾内対面指導と完全併用</div>
         <div class="pc-price-block">
-          <span class="pc-price">¥9,800</span>
+          <span class="pc-price">¥5,000</span>
           <span class="pc-price-suffix">/月 永年</span>
         </div>
+        <div class="pc-old-price">旧¥9,800 → 値下げ</div>
         <div class="pc-note">招待リンク方式・入塾金免除</div>
-        <a href="#" class="pc-cta secondary">塾長に申込</a>
+        <ul class="pc-features-mini">
+          <li>24h AI チューター 無制限</li>
+          <li>AI 問題生成・添削 無制限</li>
+          <li>AI 単語帳・大学過去問</li>
+          <li>オリジナル参考書生成</li>
+          <li class="no">学習記録・カリキュラム</li>
+          <li class="no">塾長個別メッセージ</li>
+        </ul>
+        <a href="#" class="pc-cta secondary">塾長から招待リンク受領</a>
       </div>
 
-      <!-- 創設メンバー -->
-      <div class="pc-card">
-        <span class="pc-badge">🎁 50名限定</span>
-        <div class="pc-plan-name">創設メンバー</div>
-        <div class="pc-tagline">全機能無制限<br>契約後は永年この価格</div>
-        <div class="pc-price-block">
-          <span class="pc-price">¥14,500</span>
-          <span class="pc-price-suffix">/月 永年</span>
-        </div>
-        <div class="pc-note">値上げ対象外</div>
-        <a href="lp.html" class="pc-cta primary">7日無料体験</a>
-      </div>
-
-      <!-- スタンダード -->
-      <div class="pc-card">
-        <div class="pc-plan-name">スタンダード</div>
-        <div class="pc-tagline">AI 学習を始めるなら<br>月額枠あり</div>
-        <div class="pc-price-block">
-          <span class="pc-price">¥24,980</span>
-          <span class="pc-price-suffix">/月</span>
-        </div>
-        <div class="pc-note">問題50回・添削20回・参考書5冊</div>
-        <a href="upgrade.html" class="pc-cta secondary">詳細</a>
-      </div>
-
-      <!-- 🆕 国公立難関コース (FEATURED) -->
+      <!-- プレミアム ¥19,800 (FEATURED) -->
       <div class="pc-card featured">
-        <span class="pc-badge">🆕 NEW・推奨</span>
-        <div class="pc-plan-name">国公立難関大学コース</div>
-        <div class="pc-tagline">合格まで責任を持つ<br>個別塾レベル指導</div>
+        <span class="pc-badge">⭐ 推奨</span>
+        <div class="pc-plan-name">⭐ プレミアム</div>
+        <div class="pc-tagline">AI 全機能無制限 +<br>合格カリキュラム自動生成</div>
         <div class="pc-price-block">
-          <span class="pc-price">¥24,800</span>
+          <span class="pc-price">¥19,800</span>
           <span class="pc-price-suffix">/月</span>
         </div>
-        <div class="pc-old-price">大手個別塾 ¥40,000-80,000 比 約 1/2-1/3</div>
-        <a href="course-kokuritsu-nankan.html" class="pc-cta primary">申込フォーム</a>
+        <div class="pc-old-price">旧¥39,800 → 大幅値下げ</div>
+        <div class="pc-note">大手個別塾¥40,000-80,000 の半額以下</div>
+        <ul class="pc-features-mini">
+          <li>通塾生プランの全機能</li>
+          <li>🆕 学習記録 + ヒートマップ</li>
+          <li>🆕 学習計画 + ガント</li>
+          <li>🆕 合格カリキュラム自動生成</li>
+          <li>🆕 模試 → AI ギャップ分析</li>
+          <li>🆕 AI 弱点プリント生成</li>
+          <li>🆕 模試 写真/PDF AI スキャン</li>
+          <li class="no">塾長双方向メッセージ・授業ファイル</li>
+        </ul>
+        <a href="lp.html" class="pc-cta primary">7 日間 無料体験</a>
       </div>
 
-      <!-- プレミアム -->
+      <!-- 家族プラン ¥39,800 -->
       <div class="pc-card">
-        <div class="pc-plan-name">プレミアム</div>
-        <div class="pc-tagline">全 AI 機能 無制限<br>差額¥15,000 で全機能</div>
+        <div class="pc-plan-name">👨‍👩‍👧‍👦 家族プラン</div>
+        <div class="pc-tagline">兄弟姉妹 3 名まで使える<br>1 人あたり ¥13,267</div>
         <div class="pc-price-block">
           <span class="pc-price">¥39,800</span>
           <span class="pc-price-suffix">/月</span>
         </div>
-        <div class="pc-note">問題・添削・参考書すべて無制限</div>
+        <div class="pc-old-price">旧¥59,800 → 値下げ</div>
+        <div class="pc-note">プレミアム × 3 名 + 家族統合ダッシュ</div>
+        <ul class="pc-features-mini">
+          <li>プレミアムの全機能</li>
+          <li>生徒アカウント 3 名まで</li>
+          <li>家族ダッシュボード</li>
+          <li>兄弟姉妹のカリキュラム相互参照</li>
+          <li>家族レポート</li>
+        </ul>
         <a href="upgrade.html" class="pc-cta secondary">詳細</a>
       </div>
 
-      <!-- 家族プラン -->
-      <div class="pc-card">
-        <div class="pc-plan-name">家族プラン</div>
-        <div class="pc-tagline">兄弟姉妹 3 名まで使える<br>1人あたり¥19,933</div>
+      <!-- 国公立難関大学 本クラス (SPECIAL) -->
+      <div class="pc-card special">
+        <span class="pc-badge" style="background:linear-gradient(135deg,#fbbf24,#f59e0b);">🎓 塾長承認制</span>
+        <div class="pc-plan-name">🎓 国公立難関大学コース 本クラス</div>
+        <div class="pc-tagline">合格まで責任を持つ<br>個別塾レベル指導</div>
         <div class="pc-price-block">
-          <span class="pc-price">¥59,800</span>
-          <span class="pc-price-suffix">/月</span>
+          <span class="pc-price">¥0</span>
+          <span class="pc-price-suffix">/月 (システム代)</span>
         </div>
-        <div class="pc-note">家族ダッシュボード付</div>
-        <a href="upgrade.html" class="pc-cta secondary">詳細</a>
+        <div class="pc-note">月謝は塾代に含まれます</div>
+        <ul class="pc-features-mini">
+          <li>プレミアムの全機能</li>
+          <li>📩 塾長との双方向メッセージ</li>
+          <li>📎 授業ファイル送受信</li>
+          <li>👨‍🏫 塾長による進捗フィードバック</li>
+          <li>🛡️ クレカ縛りなし・塾長個別承認</li>
+          <li>📅 入試日逆算カリキュラム</li>
+        </ul>
+        <a href="course-kokuritsu-nankan.html" class="pc-cta special">申込フォーム (塾長 DM 配布)</a>
       </div>
+
     </div>
 
     <!-- 詳細比較表 -->
@@ -394,336 +270,190 @@
         <thead>
           <tr>
             <th class="pc-feature-col">機能</th>
-            <th>通塾生<br><span style="color:#86efac;">¥9,800</span></th>
-            <th>創設<br><span style="color:#fbbf24;">¥14,500</span></th>
-            <th>スタンダード<br><span style="color:#60a5fa;">¥24,980</span></th>
-            <th class="featured-col">🆕 国公立難関<br><span style="color:#fbbf24;">¥24,800</span></th>
-            <th>プレミアム<br><span style="color:#c4b5fd;">¥39,800</span></th>
-            <th>家族<br><span style="color:#fda4af;">¥59,800</span></th>
+            <th>通塾生<br><span style="color:#86efac;">¥5,000</span></th>
+            <th class="featured-col">⭐ プレミアム<br><span style="color:#fbbf24;">¥19,800</span></th>
+            <th>家族<br><span style="color:#fda4af;">¥39,800</span></th>
+            <th class="special-col">🎓 国公立難関<br><span style="color:#fbbf24;">¥0 (塾代別)</span></th>
           </tr>
         </thead>
         <tbody>
 
-          <!-- 🤖 AI 共通機能 -->
-          <tr class="section-header"><td colspan="7">🤖 AI 共通機能 (全プラン)</td></tr>
-
+          <tr class="section-header"><td colspan="5">🤖 AI 機能 (全プラン共通・全部無制限)</td></tr>
           <tr>
             <td class="feat-name">24h AI チューター</td>
-            <td><span class="pc-yes">✓</span></td>
             <td><span class="pc-yes-strong">✓ 無制限</span></td>
-            <td><span class="pc-yes">✓</span></td>
             <td class="featured-col"><span class="pc-yes-strong">✓ 無制限</span></td>
             <td><span class="pc-yes-strong">✓ 無制限</span></td>
-            <td><span class="pc-yes-strong">✓ 無制限</span></td>
+            <td class="special-col"><span class="pc-yes-strong">✓ 無制限</span></td>
           </tr>
-
           <tr>
-            <td class="feat-name">AI 問題自動生成</td>
-            <td><span class="pc-yes">✓</span></td>
+            <td class="feat-name">AI 問題自動生成 / 英作文添削 / 参考書生成</td>
             <td><span class="pc-yes-strong">✓ 無制限</span></td>
-            <td><span class="pc-quota">月50回</span></td>
             <td class="featured-col"><span class="pc-yes-strong">✓ 無制限</span></td>
             <td><span class="pc-yes-strong">✓ 無制限</span></td>
-            <td><span class="pc-yes-strong">✓ 無制限</span></td>
+            <td class="special-col"><span class="pc-yes-strong">✓ 無制限</span></td>
           </tr>
-
           <tr>
-            <td class="feat-name">英作文・記述添削</td>
-            <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes-strong">✓ 無制限</span></td>
-            <td><span class="pc-quota">月20回</span></td>
-            <td class="featured-col"><span class="pc-yes-strong">✓ 無制限</span></td>
-            <td><span class="pc-yes-strong">✓ 無制限</span></td>
-            <td><span class="pc-yes-strong">✓ 無制限</span></td>
-          </tr>
-
-          <tr>
-            <td class="feat-name">オリジナル参考書 自動生成</td>
-            <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes-strong">✓ 無制限</span></td>
-            <td><span class="pc-quota">月5冊</span></td>
-            <td class="featured-col"><span class="pc-yes-strong">✓ 無制限</span></td>
-            <td><span class="pc-yes-strong">✓ 無制限</span></td>
-            <td><span class="pc-yes-strong">✓ 無制限</span></td>
-          </tr>
-
-          <tr>
-            <td class="feat-name">AI 単語帳 + Leitner SRS</td>
-            <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
+            <td class="feat-name">AI 単語帳 (Leitner SRS) + 大学過去問</td>
             <td><span class="pc-yes">✓</span></td>
             <td class="featured-col"><span class="pc-yes">✓</span></td>
             <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
+            <td class="special-col"><span class="pc-yes">✓</span></td>
           </tr>
-
           <tr>
-            <td class="feat-name">大学過去問 (東大・京大・医学部等)</td>
-            <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
+            <td class="feat-name">完全模試 + 5 試験対応 (TOEFL/TOEIC/IELTS/英検/大学)</td>
             <td><span class="pc-yes">✓</span></td>
             <td class="featured-col"><span class="pc-yes">✓</span></td>
             <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
+            <td class="special-col"><span class="pc-yes">✓</span></td>
           </tr>
-
           <tr>
-            <td class="feat-name">完全模試 (河合・駿台等)</td>
-            <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
+            <td class="feat-name">英字ニュース読解 / 定期テスト対策</td>
             <td><span class="pc-yes">✓</span></td>
             <td class="featured-col"><span class="pc-yes">✓</span></td>
             <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
+            <td class="special-col"><span class="pc-yes">✓</span></td>
           </tr>
 
-          <tr>
-            <td class="feat-name">5 試験対応 (TOEFL/TOEIC/IELTS/英検/大学)</td>
-            <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
-            <td class="featured-col"><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
-          </tr>
-
-          <tr>
-            <td class="feat-name">英字ニュース読解 (CNN/BBC/Japan Times)</td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
-            <td class="featured-col"><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
-          </tr>
-
-          <tr>
-            <td class="feat-name">定期テスト対策</td>
-            <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
-            <td class="featured-col"><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
-          </tr>
-
-          <!-- 🎯 国公立難関 限定機能 -->
-          <tr class="section-header"><td colspan="7">🎯 国公立難関コース 限定機能</td></tr>
-
+          <tr class="section-header"><td colspan="5">📚 学習管理 (プレミアム以上限定)</td></tr>
           <tr>
             <td class="feat-name">学習記録 + ヒートマップ</td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
+            <td><span class="pc-no">×</span></td>
             <td class="featured-col"><span class="pc-yes-strong">✓</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
+            <td><span class="pc-yes-strong">✓</span></td>
+            <td class="special-col"><span class="pc-yes-strong">✓</span></td>
           </tr>
-
           <tr>
             <td class="feat-name">学習計画 + ガントチャート</td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
+            <td><span class="pc-no">×</span></td>
             <td class="featured-col"><span class="pc-yes-strong">✓</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
+            <td><span class="pc-yes-strong">✓</span></td>
+            <td class="special-col"><span class="pc-yes-strong">✓</span></td>
           </tr>
-
           <tr>
-            <td class="feat-name">合格カリキュラム 自動生成 (4-6 フェーズ)</td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
+            <td class="feat-name">合格カリキュラム自動生成 (4-6 フェーズ)</td>
+            <td><span class="pc-no">×</span></td>
             <td class="featured-col"><span class="pc-yes-strong">✓</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
+            <td><span class="pc-yes-strong">✓</span></td>
+            <td class="special-col"><span class="pc-yes-strong">✓</span></td>
           </tr>
-
           <tr>
             <td class="feat-name">模試 → AI ギャップ分析</td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
+            <td><span class="pc-no">×</span></td>
             <td class="featured-col"><span class="pc-yes-strong">✓</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
+            <td><span class="pc-yes-strong">✓</span></td>
+            <td class="special-col"><span class="pc-yes-strong">✓</span></td>
           </tr>
-
           <tr>
             <td class="feat-name">AI 弱点プリント生成</td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
+            <td><span class="pc-no">×</span></td>
             <td class="featured-col"><span class="pc-yes-strong">✓</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
+            <td><span class="pc-yes-strong">✓</span></td>
+            <td class="special-col"><span class="pc-yes-strong">✓</span></td>
           </tr>
-
-          <tr>
-            <td class="feat-name">塾長との 双方向メッセージ</td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td class="featured-col"><span class="pc-yes-strong">✓</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
-          </tr>
-
-          <tr>
-            <td class="feat-name">授業ファイル送受信 (PDF/画像/Word/Excel/PPT)</td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td class="featured-col"><span class="pc-yes-strong">✓</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
-          </tr>
-
-          <tr>
-            <td class="feat-name">塾長による進捗フィードバック (いいね/コメント)</td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td class="featured-col"><span class="pc-yes-strong">✓</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
-          </tr>
-
           <tr>
             <td class="feat-name">模試 写真/PDF AI スキャン</td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
+            <td><span class="pc-no">×</span></td>
             <td class="featured-col"><span class="pc-yes-strong">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
+            <td><span class="pc-yes-strong">✓</span></td>
+            <td class="special-col"><span class="pc-yes-strong">✓</span></td>
           </tr>
 
-          <!-- 📊 サポート・特典 -->
-          <tr class="section-header"><td colspan="7">📊 サポート・特典</td></tr>
+          <tr class="section-header"><td colspan="5">🎓 国公立難関 本クラス 限定 (塾長個別対応)</td></tr>
+          <tr>
+            <td class="feat-name">塾長との 双方向メッセージ</td>
+            <td><span class="pc-no">×</span></td>
+            <td class="featured-col"><span class="pc-no">×</span></td>
+            <td><span class="pc-no">×</span></td>
+            <td class="special-col"><span class="pc-yes-strong">✓</span></td>
+          </tr>
+          <tr>
+            <td class="feat-name">授業ファイル送受信 (PDF/画像/Word/Excel/PPT)</td>
+            <td><span class="pc-no">×</span></td>
+            <td class="featured-col"><span class="pc-no">×</span></td>
+            <td><span class="pc-no">×</span></td>
+            <td class="special-col"><span class="pc-yes-strong">✓</span></td>
+          </tr>
+          <tr>
+            <td class="feat-name">塾長による進捗フィードバック (いいね/コメント)</td>
+            <td><span class="pc-no">×</span></td>
+            <td class="featured-col"><span class="pc-no">×</span></td>
+            <td><span class="pc-no">×</span></td>
+            <td class="special-col"><span class="pc-yes-strong">✓</span></td>
+          </tr>
 
+          <tr class="section-header"><td colspan="5">📊 共通サポート・特典</td></tr>
           <tr>
             <td class="feat-name">保護者向け詳細レポート (週次・月次)</td>
             <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-quota">週次のみ</span></td>
             <td class="featured-col"><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
             <td><span class="pc-yes-strong">✓ 家族統合</span></td>
+            <td class="special-col"><span class="pc-yes-strong">✓ 詳細</span></td>
           </tr>
-
           <tr>
             <td class="feat-name">優先処理 (AI 応答の速度優先)</td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-no">−</span></td>
+            <td><span class="pc-no">×</span></td>
             <td class="featured-col"><span class="pc-yes">✓</span></td>
             <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
+            <td class="special-col"><span class="pc-yes">✓</span></td>
           </tr>
-
           <tr>
             <td class="feat-name">紹介プログラム (友達紹介で双方に¥3,000)</td>
             <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
             <td class="featured-col"><span class="pc-yes">✓</span></td>
             <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
+            <td class="special-col"><span class="pc-yes">✓</span></td>
           </tr>
-
-          <tr>
-            <td class="feat-name">入塾金 ¥10,000</td>
-            <td><span class="pc-yes-strong">免除</span></td>
-            <td><span class="pc-quota">キャンペーン中 免除</span></td>
-            <td><span class="pc-quota">キャンペーン中 免除</span></td>
-            <td class="featured-col"><span class="pc-quota">キャンペーン中 免除</span></td>
-            <td><span class="pc-quota">キャンペーン中 免除</span></td>
-            <td><span class="pc-quota">キャンペーン中 免除</span></td>
-          </tr>
-
-          <tr>
-            <td class="feat-name">永年価格固定 (値上げ対象外)</td>
-            <td><span class="pc-yes-strong">✓</span></td>
-            <td><span class="pc-yes-strong">✓ 50名限定</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td class="featured-col"><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
-          </tr>
-
           <tr>
             <td class="feat-name">7 日間 無料体験 (クレカ不要)</td>
             <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes-strong">✓</span></td>
+            <td class="featured-col"><span class="pc-yes-strong">✓</span></td>
             <td><span class="pc-yes">✓</span></td>
-            <td class="featured-col"><span class="pc-quota">塾長承認制</span></td>
-            <td><span class="pc-yes">✓</span></td>
-            <td><span class="pc-yes">✓</span></td>
+            <td class="special-col"><span class="pc-quota">塾長承認制</span></td>
           </tr>
-
           <tr>
             <td class="feat-name">家族プラン (兄弟姉妹 3 名まで)</td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
-            <td class="featured-col"><span class="pc-no">−</span></td>
-            <td><span class="pc-no">−</span></td>
+            <td><span class="pc-no">×</span></td>
+            <td class="featured-col"><span class="pc-no">×</span></td>
             <td><span class="pc-yes-strong">✓</span></td>
+            <td class="special-col"><span class="pc-no">×</span></td>
           </tr>
 
         </tbody>
       </table>
     </div>
 
-    <!-- 価値帯 視覚化 -->
+    <!-- 価格帯 視覚比較 -->
     <div class="pc-value-bars">
       <h2>💰 価格帯 視覚比較 (大手個別塾と比べると)</h2>
-      <p class="pc-vb-sub">同じ「合格まで責任を持つ個別指導」でも、AI を活用すると 1/2 〜 1/8 の価格で同等以上のサポートを実現</p>
+      <p class="pc-vb-sub">同じ「合格まで個別指導」でも、AI を活用すると 1/4〜1/16 の価格で同等以上のサポートを実現</p>
 
       <div class="pc-vb-row">
         <div class="pc-vb-label">大手個別塾 (週1)</div>
         <div class="pc-vb-bar-track"><div class="pc-vb-bar compare" style="width:100%;">¥80,000/月</div></div>
       </div>
-
       <div class="pc-vb-row">
         <div class="pc-vb-label">河合塾マナビス</div>
         <div class="pc-vb-bar-track"><div class="pc-vb-bar compare" style="width:62%;">¥50,000/月</div></div>
       </div>
-
       <div class="pc-vb-row">
         <div class="pc-vb-label">家族プラン</div>
-        <div class="pc-vb-bar-track"><div class="pc-vb-bar fam" style="width:75%;">¥59,800/月 (3名)</div></div>
+        <div class="pc-vb-bar-track"><div class="pc-vb-bar fam" style="width:50%;">¥39,800/月 (3名)</div></div>
       </div>
-
       <div class="pc-vb-row">
-        <div class="pc-vb-label">プレミアム</div>
-        <div class="pc-vb-bar-track"><div class="pc-vb-bar prem" style="width:50%;">¥39,800/月</div></div>
+        <div class="pc-vb-label">⭐ プレミアム</div>
+        <div class="pc-vb-bar-track"><div class="pc-vb-bar feat" style="width:25%;">¥19,800/月 ⭐</div></div>
       </div>
-
       <div class="pc-vb-row">
-        <div class="pc-vb-label">🆕 国公立難関コース</div>
-        <div class="pc-vb-bar-track"><div class="pc-vb-bar feat" style="width:31%;">¥24,800/月 ⭐</div></div>
+        <div class="pc-vb-label">通塾生プラン</div>
+        <div class="pc-vb-bar-track"><div class="pc-vb-bar cheap" style="width:6.3%;">¥5,000/月</div></div>
       </div>
-
       <div class="pc-vb-row">
-        <div class="pc-vb-label">スタンダード</div>
-        <div class="pc-vb-bar-track"><div class="pc-vb-bar std" style="width:31.2%;">¥24,980/月</div></div>
+        <div class="pc-vb-label">🎓 国公立難関 本クラス</div>
+        <div class="pc-vb-bar-track"><div class="pc-vb-bar spec" style="width:0.5%;">¥0 (システム代・塾代別途)</div></div>
       </div>
-
       <div class="pc-vb-row">
-        <div class="pc-vb-label">創設メンバー</div>
-        <div class="pc-vb-bar-track"><div class="pc-vb-bar cheap" style="width:18%;">¥14,500/月 (永年)</div></div>
-      </div>
-
-      <div class="pc-vb-row">
-        <div class="pc-vb-label">通塾生アドオン</div>
-        <div class="pc-vb-bar-track"><div class="pc-vb-bar cheap" style="width:12%;">¥9,800/月 (永年)</div></div>
-      </div>
-
-      <div class="pc-vb-row">
-        <div class="pc-vb-label">スタサプ単体</div>
+        <div class="pc-vb-label">スタサプ単体 (参考)</div>
         <div class="pc-vb-bar-track"><div class="pc-vb-bar compare" style="width:2.7%;">¥2,178/月</div></div>
       </div>
     </div>
@@ -733,34 +463,24 @@
       <h2>🎯 こんな方には このプラン</h2>
       <div class="pc-decision-grid">
         <div class="pc-decision-item">
-          <div class="who">🎓 東大・京大・国公立医学部 志望</div>
-          <div class="what">「合格まで AI + 塾長個別」をフルサポート希望</div>
-          <div class="price">→ <strong>国公立難関大学コース ¥24,800/月</strong></div>
+          <div class="who">🎓 東大・京大・国公立医学部 志望 + 塾長個別指導希望</div>
+          <div class="what">合格まで塾長が伴走・授業ファイル送受信・週次フィードバック付き</div>
+          <div class="price">→ <strong>国公立難関 本クラス (システム代¥0・塾代別途)</strong></div>
         </div>
         <div class="pc-decision-item">
-          <div class="who">📱 とりあえず AI 学習を始めたい</div>
-          <div class="what">創設メンバー枠が空いていれば こちらが圧倒的にお得</div>
-          <div class="price">→ <strong>創設メンバー ¥14,500/月 (50名限定・永年)</strong></div>
+          <div class="who">📊 自分でカリキュラムを管理したい受験生</div>
+          <div class="what">AI が自動でカリキュラム生成・模試分析・弱点プリント。塾長対応は不要</div>
+          <div class="price">→ <strong>プレミアム ¥19,800/月</strong></div>
         </div>
         <div class="pc-decision-item">
           <div class="who">🏫 既存の塾に通っている</div>
-          <div class="what">塾の宿題と AI を併用・自宅学習を強化したい</div>
-          <div class="price">→ <strong>通塾生アドオン ¥9,800/月 (永年)</strong></div>
-        </div>
-        <div class="pc-decision-item">
-          <div class="who">💯 中学受験家庭・上限なく利用したい</div>
-          <div class="what">問題生成・添削・参考書を 1日 50回以上 使う</div>
-          <div class="price">→ <strong>プレミアム ¥39,800/月</strong></div>
+          <div class="what">塾の宿題と AI を併用・自宅学習を強化。学習管理は塾の先生がするのでシンプルな AI ツールだけ欲しい</div>
+          <div class="price">→ <strong>通塾生プラン ¥5,000/月 (永年・招待制)</strong></div>
         </div>
         <div class="pc-decision-item">
           <div class="who">👨‍👩‍👧‍👦 兄弟姉妹で利用したい</div>
-          <div class="what">家族で 1 アカウント、兄弟姉妹のカリキュラム相互参照</div>
-          <div class="price">→ <strong>家族プラン ¥59,800/月 (3名まで)</strong></div>
-        </div>
-        <div class="pc-decision-item">
-          <div class="who">🤖 AI 試用・短期利用</div>
-          <div class="what">月額枠あり (問題50回・添削20回・参考書5冊)</div>
-          <div class="price">→ <strong>スタンダード ¥24,980/月</strong></div>
+          <div class="what">家族で 1 アカウント・兄弟姉妹のカリキュラム相互参照</div>
+          <div class="price">→ <strong>家族プラン ¥39,800/月 (3名まで)</strong></div>
         </div>
       </div>
     </div>
@@ -768,7 +488,8 @@
     <div style="text-align:center; padding: 2rem 0;">
       <p style="color:#a1a1aa; font-size:0.9rem; margin-bottom:1rem;">🎁 全プラン共通 — <strong style="color:#fbbf24;">7 日間無料体験 (クレカ不要・自動課金なし)</strong></p>
       <a href="lp.html" style="display:inline-block; padding:1rem 2.5rem; background:linear-gradient(135deg,#fbbf24,#ec4899); color:#fff; border-radius:14px; font-weight:800; text-decoration:none; font-size:1.05rem; box-shadow:0 8px 24px rgba(236,72,153,0.4);">✨ まずは 7 日間 無料体験 →</a>
-      <p style="color:#71717a; font-size:0.78rem; margin-top:1rem;">国公立難関コースは塾長承認制 — 個別 LP は塾長から DM/メールで配布されます</p>
+      <p style="color:#71717a; font-size:0.78rem; margin-top:1rem;">国公立難関 本クラスは塾長承認制 — 個別 LP は塾長から DM/メールで配布</p>
+      <p style="color:#71717a; font-size:0.7rem; margin-top:0.5rem;">既存契約者: スタンダード (¥24,980) / 旧プレミアム (¥39,800) / 創設メンバー (¥14,500 永年・募集終了) は現契約価格で永年据置</p>
     </div>
 
   </div>
