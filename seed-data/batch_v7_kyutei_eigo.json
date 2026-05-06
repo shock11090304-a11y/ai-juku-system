@@ -1,0 +1,234 @@
+{
+  "questions": [
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "hokudai",
+      "model": "claude-sonnet-4.6-team-review-v7",
+      "question_data": {
+        "passage": "Forests, the geographer Wendell Berry once observed, do not exist for our benefit, although it sometimes suits us to forget this. (1)For most of human history, woodlands were spaces of work and danger as much as of beauty, and the romantic conception of the forest as a refuge from civilization is, in historical terms, a remarkably recent invention.\n\nIn northern Japan, the relationship between people and forests has been shaped by an unusually long memory. The 2011 Tōhoku earthquake and the subsequent reconstruction efforts forced communities to think carefully about which trees to replant, and where, and for whom. Cedar plantations established in the postwar years, once celebrated as engines of economic growth, were now reconsidered: they had pushed out native broadleaved species, contributed to seasonal pollen allergies that affected millions, and proved less resilient to extreme weather than the older mixed forests they had replaced. (2)What had been treated as a triumph of forest engineering came, slowly, to look like a debt that future generations would be paying down for decades.\n\nThe debate that followed was not simply about ecology. It touched on questions of memory and identity. To restore mixed forests was, in part, to acknowledge that the postwar generation had got something wrong, and that humility, in turn, raised uncomfortable questions about other monocultures—of opinion, of education, of work—that the same era had produced. (3)A forest is, among other things, a kind of historical document, and learning to read it again required a willingness to admit that earlier readings had been incomplete.\n\nWhat makes the Hokkaido case especially interesting is that this rethinking has been driven, in part, by the Ainu, whose land use practices long predate the cedar plantations and whose understanding of the forest as a community of relationships—rather than a stock of timber—has begun to reshape how regional governments approach reforestation. The Ainu word for forest, iwor, refers not to a stand of trees but to a whole region of activity that includes the rivers, the animals, and the people who depend on them. Translating that word into policy has not been straightforward, but the attempt itself has changed how the conversation is conducted.",
+        "audio_script": "",
+        "prompt": "",
+        "year_simulated": 2024,
+        "univ_simulated": "北海道大学",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "下線部 (1) For most of human history, woodlands were spaces of work and danger as much as of beauty, and the romantic conception of the forest as a refuge from civilization is, in historical terms, a remarkably recent invention. の意味として最も適切なものを選びなさい。",
+            "choices": [
+              "歴史を通じて、森林は美しさと同等に労働と危険の場であり、文明からの避難所としての森林という考え方は歴史的に見てきわめて新しい発想である。",
+              "人類の歴史の大半において、森林は美しさをすべてのものに与える場であったが、近年その役割は変わった。",
+              "森林を文明からの逃れる場所とみなす発想は古代から普遍的であり、人類は古来より森林を聖地として崇めてきた。",
+              "森林は人類の歴史の大半において文明そのものであり、近代の工業化のみが森林の価値観を変えた。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `as much as` =「~と同程度に・~に劣らず」 (比較を等値で打ち切るコア)\n- `the romantic conception of the forest as a refuge` = 森林を「文明からの避難所」と捉えるロマン主義的概念\n- `in historical terms` =「歴史的に見て」 (= 視点の限定)\n- `a remarkably recent invention` =「驚くほど近年の発明 (= 古くからあるものではない)」\n\n## 🔬 文構造分析\nFor most of human history, [woodlands were spaces of work and danger as much as of beauty], and [the romantic conception of the forest as a refuge from civilization is, [in historical terms], a remarkably recent invention].\n  前半節: M=For most of human history (時間 M) / S=woodlands / V=were / C=spaces of work and danger (= as much as of beauty で比較ポイント明示)\n  後半節: S=the romantic conception (of the forest as a refuge from civilization で後置修飾) / V=is / 挿入=in historical terms / C=a remarkably recent invention\n\n## 📍 本文の根拠\n第1段全体が「森林は (現代の感覚と異なり) 古来は労働と危険の場だった」という導入。下線部はこの段の主張を直接表現している。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「美しさをすべてのものに与える場」は本文の主張と外れた表現。\n- 選択肢2:「古代から普遍的」は `remarkably recent invention` と真逆。\n- 選択肢3:「森林は文明そのもの」は本文と関係ない。\n\n【日本人弱点コメント】`as much as of beauty` の `of` は前置詞で、`spaces of beauty` と平行構造を作る。「労働の・危険の・美の場」と訳すことが鍵。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "下線部 (2) What had been treated as a triumph of forest engineering came, slowly, to look like a debt that future generations would be paying down for decades. の解釈として最も適切なものを選びなさい。",
+            "choices": [
+              "森林工学の勝利として扱われていたものは、徐々に未来世代が何十年もかけて返済していく負債のように見えるようになった。",
+              "森林工学は勝利を収めたが、その恩恵は未来世代まで及ぶ持続可能な遺産である。",
+              "未来世代は森林工学の恩恵を享受し、何十年にもわたって繁栄を享受するだろう。",
+              "森林工学は勝利を収めたが、未来世代がそれを評価するには何十年もかかるだろう。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `What had been treated as ~` (関係代名詞 What 節 + 過去完了) =「~として扱われていたもの」\n- `came to look like` =「~のように見えるようになった」 (came to + 動詞原形 = ~するようになる)\n- `a debt ... paying down` =「返済していく負債」 (negative 評価のメタファー)\n- 「triumph (勝利)」 と 「debt (負債)」 の対比が文の核\n\n## 🔬 文構造分析\n[What had been treated as a triumph of forest engineering] came, [slowly], to look like [a debt [that future generations would be paying down for decades]].\n  主節: S=What had been treated as a triumph of forest engineering (関係代名詞 What 節) / V=came / 不定詞=to look like (CO 補語)\n  挿入: slowly (副詞)\n  関係詞節: that future generations would be paying down for decades — a debt を修飾\n\n## 📍 本文の根拠\n第2段「Cedar plantations ... once celebrated as engines of economic growth, were now reconsidered」 がこの逆転評価を具体化している。下線部はその比喩的総括。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「持続可能な遺産」は本文と真逆 (debt = 負債は negative 評価)。\n- 選択肢2:「繁栄を享受」は positive 解釈で、debt の比喩を見落とした誤読。\n- 選択肢3:「評価するのに時間がかかる」は本文の意味と外れる (本文は `payment in debt` の比喩であって `evaluation` の話ではない)。\n\n【日本人弱点コメント】`debt that future generations would be paying down for decades` の `pay down` (= 借金を返済する) は受験頻出の句動詞。`debt as a metaphor` (負債としてのメタファー) を理解することが論説文読解の鍵。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "下線部 (3) A forest is, among other things, a kind of historical document, and learning to read it again required a willingness to admit that earlier readings had been incomplete. の意味として最も適切なものを選びなさい。",
+            "choices": [
+              "森林は (とりわけ) 一種の歴史文書であり、それを読み直すには、以前の読みが不完全であったと認める意志が必要であった。",
+              "森林は歴史書のようなものであるため、専門の歴史学者でなければ読み解くことはできない。",
+              "森林は古代の文書と同じくらい古いものであり、その読解にはあらゆる学問領域の知識が必要である。",
+              "森林の中には歴史的書物が保存されており、それを発掘するのが研究者の役目である。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `among other things` =「とりわけ・なかんずく」 (= 他にも色々ある中で特に)\n- `a kind of historical document` =「一種の歴史文書」 (比喩)\n- `learning to read it again required a willingness to admit ~` =「それを読み直すこと (の学習) は、~と認める意志を必要とした」\n\n## 🔬 文構造分析\nA forest is, [among other things], a kind of historical document, and [learning to read it again] required [a willingness [to admit [that earlier readings had been incomplete]]].\n  前半節: S=A forest / V=is / C=a kind of historical document\n  後半節: S=learning to read it again (動名詞句 = 「それを読み直すこと」) / V=required / O=a willingness (a willingness to admit ~ = ~を認める意志)\n  目的節 that 節: earlier readings had been incomplete (過去完了)\n\n## 📍 本文の根拠\n第3段全体が「森林を再評価することは、過去世代の判断 (= 戦後植林政策) の不完全性を認めることでもある」という議論。下線部はこの議論を比喩的に総括する。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「専門の歴史学者でなければ」は本文と関係ない (民主的・社会的議論として書かれている)。\n- 選択肢2:「あらゆる学問領域の知識」は本文と関係ない。\n- 選択肢3:「歴史的書物の発掘」は文字通りに取った誤り。本文は `historical document` を比喩として使用。\n\n【日本人弱点コメント】`a kind of ~` (= 一種の) は比喩的に使うときの典型表現。直訳「一種の歴史文書」を「歴史を語るもの・歴史を内包するもの」と意訳できると論説文の趣旨を取りやすい。"
+          },
+          {
+            "id": "q4",
+            "type": "multiple_choice",
+            "stem": "本文中で、アイヌの言語の `iwor` が示している森林観として最も適切なものを選びなさい。",
+            "choices": [
+              "森林とは、立木の単なる集合ではなく、川・動物・人々を含む活動全体の領域である。",
+              "森林とは、長期的に経済的価値を生み出す木材資源の貯蔵所である。",
+              "森林とは、人間が立ち入るべきでない神聖な領域であり、利用は禁忌である。",
+              "森林とは、文明から逃れるためのロマン主義的な避難所である。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `iwor refers not to a stand of trees but to a whole region of activity` =「iwor は立木の集まりではなく、活動全体の領域を指す」 (not A but B 構文)\n- `a community of relationships—rather than a stock of timber` =「(在庫としての) 木材ではなく、関係性の共同体」 (negative + positive の対比)\n- 関係性・全体性のコア (= ホーリズム的森林観)\n\n## 🔬 文構造分析\nThe Ainu word for forest, iwor, refers not to [a stand of trees] but to [a whole region of activity [that includes the rivers, the animals, and the people [who depend on them]]].\n  主節: S=The Ainu word for forest / 同格=iwor / V=refers / 補語句=not to A but to B\n  関係詞節 that ... : a whole region of activity を修飾\n  関係詞節 who depend on them: the people を修飾\n\n## 📍 本文の根拠\n第4段「the Ainu, whose ... understanding of the forest as a community of relationships—rather than a stock of timber」と「The Ainu word for forest, iwor, refers not to a stand of trees but to a whole region of activity that includes the rivers, the animals, and the people who depend on them」が直接の根拠。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「木材資源の貯蔵所」は本文の `not ... a stock of timber` で明確に否定されている見方。\n- 選択肢2:「立ち入るべきでない神聖な領域」は本文に言及なし。\n- 選択肢3:「文明から逃れる避難所」は第1段で「historically recent invention」と退けられた `romantic conception`。\n\n【日本人弱点コメント】`not A but B` 構文で A だけ拾わず B まで読み取る。本問では `a community of relationships` (関係性の共同体) と `a stock of timber` (木材在庫) の対比を捉えるのが鍵。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "w_essay",
+      "eiken_grade": "tohoku",
+      "model": "claude-sonnet-4.6-team-review-v7",
+      "question_data": {
+        "passage": "",
+        "audio_script": "",
+        "prompt": "Some scientists argue that the most important task for science in the next twenty years is to develop technologies that can reverse climate change at scale. Others argue that science should focus less on technological fixes and more on understanding the social and political conditions that allow harmful practices to continue.\n\nWhich position do you find more convincing? Write an essay of approximately 80-120 words in English presenting your view, supported by at least one specific reason or example.",
+        "year_simulated": 2024,
+        "univ_simulated": "東北大学",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "essay",
+            "stem": "上記 prompt に対して 80-120 語の英語エッセイで自分の立場を論じなさい。",
+            "choices": [],
+            "answer": "I find the second position more convincing. Even our most promising technologies—carbon capture, geoengineering, fusion energy—will fail to address climate change unless societies are organized in ways that allow them to be deployed responsibly. The 2011 Tōhoku disaster offered a sobering local example: the technical safety of nuclear plants depended on institutional cultures, regulatory capture, and public scrutiny far more than on the engineering itself. A purely technological focus risks producing solutions that no community will accept or that powerful interests will distort. Science that takes social and political conditions seriously is, in this sense, not less rigorous but more so. (Approximately 105 words)",
+            "explanation": "## 🎯 コアイメージ — 東北大型エッセイの軸\n- 80-120 語は東北大の自由英作の中堅レンジ (大問 4 で頻出)。短いが立場+理由+具体例の三位一体は必須\n- 立場明示+譲歩は不要 (語数制約のため断定型が高評価)\n- 具体例 (本問では Tōhoku 震災) を挙げると地域的・現代的視点が出て採点で有利\n\n## 🔬 文構造分析 — 評価ポイント\n1. **冒頭立場**: `I find the second position more convincing.` (1 文で position 提示)\n2. **論拠の論理構造**: `Even our most promising technologies ... will fail to address climate change unless ...` (let alone 構文に近い譲歩+条件)\n3. **具体例の使い方**: `The 2011 Tōhoku disaster offered a sobering local example` で地域の事例を導入\n4. **結論の精緻化**: `Science that takes ... is, in this sense, not less rigorous but more so` で `not A but B` の対比で締める\n\n## 📍 本文 (= 模範解答) の根拠\n- 【1文目立場】: 第二の立場 (社会・政治条件) を支持\n- 【論点1】: 技術単独では機能しない (carbon capture / geoengineering / fusion 等の例示で具体性)\n- 【論点2 (具体例)】: 2011 東北震災で原発の安全性が `engineering` よりも `institutional culture / regulatory capture / public scrutiny` に依存していたという地域的事例\n- 【結論】: 社会・政治を扱う科学は `less rigorous` ではなく `more rigorous` だと再定義\n\n## ❌ 減点 NG 理由\n- 立場が遅れる (3 文目以降に position) — 80-120 語では致命的\n- 具体例なし (例: 単なる一般論で終わる) — 東北大は具体性を高評価\n- 語数逸脱 (60 語以下、または 130 語超過)\n- 文法ミス (関係代名詞 that vs which、定冠詞、時制) — 80 語で 1 つでもあれば大幅減点\n\n【日本人弱点コメント】\n- `Even ~ will fail to ... unless ...` の構文は譲歩+条件を 1 文に詰め込む高度な英作。確実に使えるとレベルが上がる。\n- `regulatory capture` は社会科学の専門用語 (= 規制虜) で、東北大の英作で使えると採点者の目を引く。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_translation",
+      "eiken_grade": "kyushu",
+      "model": "claude-sonnet-4.6-team-review-v7",
+      "question_data": {
+        "passage": "What we call \"global\" thinking is often, on closer inspection, a particular regional habit of mind given a flattering name. (1)The categories through which scholars in the wealthy countries of the North Atlantic have for two centuries divided the world—East and West, modern and traditional, developed and underdeveloped—were neither inevitable nor neutral, and the institutions that grew up around them, from area studies departments to development banks, have a longer reach than any single set of policies. To notice this is not to dismiss the achievements made under those categories, which are real, but rather to ask what kinds of question those achievements have made it harder, rather than easier, to pose. (2)A vocabulary that helps us see one part of the world clearly may, almost without our noticing it, be quietly preventing us from seeing another part at all.",
+        "audio_script": "",
+        "prompt": "",
+        "year_simulated": 2024,
+        "univ_simulated": "九州大学",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "short_answer",
+            "stem": "下線部 (1) The categories through which scholars in the wealthy countries of the North Atlantic have for two centuries divided the world—East and West, modern and traditional, developed and underdeveloped—were neither inevitable nor neutral, and the institutions that grew up around them, from area studies departments to development banks, have a longer reach than any single set of policies. を日本語に訳しなさい。",
+            "choices": [],
+            "answer": "北大西洋諸国の富裕な学者たちが二世紀にわたって世界を分割するのに用いてきたカテゴリー —「東と西」「近代と伝統」「先進国と後進国」— は、必然でも中立でもなく、それを取り巻いて成長してきた諸制度は、地域研究の学部から開発銀行に至るまで、いかなる単一の政策がもつ影響よりも遠くまで及んでいる。",
+            "explanation": "## 🎯 コアイメージ\n- `the categories through which ~` =「~するためのカテゴリー」 (前置詞 + 関係詞: through which = それを通じて、手段のコア)\n- `neither A nor B` =「A でも B でもない」 (二重否定的な強調)\n- `grow up around ~` =「~を取り囲んで成長する・~の周りに発展する」\n- `have a longer reach than ~` =「~より遠く (= 広く・深く) 及ぶ」 (= reach は影響力の比喩)\n\n## 🔬 文構造分析\n[The categories [through which scholars in the wealthy countries of the North Atlantic have for two centuries divided the world—East and West, modern and traditional, developed and underdeveloped—]] were [neither inevitable nor neutral], and [the institutions [that grew up around them], [from area studies departments to development banks], have a longer reach than [any single set of policies]].\n  前半節: S=The categories (through which ... 関係詞節) / V=were / C=neither inevitable nor neutral\n  関係詞節 through which: scholars が長年世界を分割するのに用いた\n  ダッシュ挿入: 例示 (East and West, modern and traditional, developed and underdeveloped)\n  後半節: S=the institutions (that grew up around them = 関係詞節) / 挿入=from area studies ... to development banks (例示) / V=have / O=a longer reach than any single set of policies (比較)\n\n## 📍 本文の根拠\n第1文「What we call \"global\" thinking is often, on closer inspection, a particular regional habit of mind」がこの段の主張を凝縮している。下線部はこの主張を歴史的・制度的に展開した部分。\n\n## ❌ 減点 NG 理由 (記述式典型)\n- `through which` を関係詞として正しく訳せない (= 「~を通して」「~するための」と訳出)\n- `neither A nor B` を「A も B も」と肯定的に取る (二重否定の見落とし)\n- `have a longer reach than ~` を直訳「~より長い手を持つ」と取る (= 「より広く影響を及ぼす」と意訳が必要)\n- ダッシュ挿入の例示部分を全部訳出すること (省略すると減点)\n\n【日本人弱点コメント】京大・九大の和訳問題は「無生物主語の能動 → 日本語では受動・名詞化」の処理がほぼ必須。本文 `the categories were ~` を「~カテゴリーは~であった」とそのまま訳出するより「~するために用いられたカテゴリーは~であり」と関係詞節を活用した日本語化が高評価。"
+          },
+          {
+            "id": "q2",
+            "type": "short_answer",
+            "stem": "下線部 (2) A vocabulary that helps us see one part of the world clearly may, almost without our noticing it, be quietly preventing us from seeing another part at all. を日本語に訳しなさい。",
+            "choices": [],
+            "answer": "世界の一部分を明確に見せてくれる語彙が、私たちがほとんど気づかないうちに、別の部分をまったく見えなくしてしまっている、ということがある。",
+            "explanation": "## 🎯 コアイメージ\n- `A vocabulary that helps us see ~` =「~を見せる助けとなる語彙」 (S+V+O+原形不定詞: help O do)\n- `may ... be preventing us from seeing ~` =「~を見ることを妨げているかもしれない」 (進行形+ from 動名詞)\n- `almost without our noticing it` =「私たちがほとんど気づかないうちに」 (without + ing の名詞節構造、without の主語は our)\n- `at all` =「まったく」 (否定の強調)\n\n## 🔬 文構造分析\n[A vocabulary [that helps us see one part of the world clearly]] may, [almost without our noticing it], be quietly preventing us from [seeing another part at all].\n  主節: S=A vocabulary (that 関係詞節 = that helps us see ~ で修飾) / 助動詞=may / V=be preventing (進行形・動詞句)\n  関係詞節 that: A vocabulary を修飾、help us see ~ (help + O + 原形)\n  挿入句 almost without our noticing it: 副詞句 (~ ing の主語 our + noticing it)\n  目的構造 prevent us from seeing ~: prevent + O + from + ing\n\n## 📍 本文の根拠\nこれは下線部 (1) の議論を一般化した結論文。「カテゴリーが見せるものと隠すもの」の対比を `vocabulary` の比喩で展開。\n\n## ❌ 減点 NG 理由 (記述式典型)\n- `that helps us see one part` の `help` (= 5 文型 SVOC で原形不定詞) を見落として訳す\n- `almost without our noticing it` の `our` を見落として「(誰が) 気づかないうちに」と曖昧化\n- `prevent us from seeing` を「~から私たちを隠す」のような不自然な訳にしない (= 「~を見ることを妨げる」と動名詞を活用)\n- `at all` を「すべて」と取る (否定強調の語であり、肯定文では出てこない用法に注意)\n\n【日本人弱点コメント】九大は `prevent O from ing` `keep O from ing` `stop O from ing` 系の構文を頻出させる。`from + ing` を「~することを (妨げる・抑える)」と動名詞として訳出することがコツ。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "kyushu",
+      "model": "claude-sonnet-4.6-team-review-v7",
+      "question_data": {
+        "passage": "The medical anthropologist Margaret Lock has spent much of her career arguing that the human body, despite the apparent universality with which medicine treats it, is shaped in ways we rarely notice by the cultures that surround it. Her best-known studies, conducted in Japan and North America, looked at how women experience menopause, and at how communities in different countries decide whether a person on a ventilator is dead or alive. (1)What she found was not a difference of opinion that medicine, given enough time, could simply correct, but a deeper kind of variation: bodies themselves seemed to behave differently in different places, and the boundary between biology and culture turned out to be less stable than the textbooks suggested.\n\nThe Japanese case is particularly instructive. In the 1980s, Lock noticed that Japanese women reporting menopausal symptoms described an experience strikingly different from the one familiar to American clinicians. Hot flushes, the symptom most strongly associated with menopause in North America, were rare. Shoulder stiffness, headaches, and a kind of cold that came up through the back were prominent. (2)At first, the easy interpretation was that Japanese women were simply more reticent about discussing certain symptoms; but as the data accumulated, this explanation began to look insufficient. Bodies that had eaten different foods, performed different kinds of work, lived in different climates, and grown old in different social arrangements really did seem to age along somewhat different paths.\n\nThis finding, which Lock came to call konenki, the Japanese word for the period of life surrounding what English-speakers call menopause, was uncomfortable for the global pharmaceutical industry. (3)If the symptoms of midlife in Japan were not simply a culturally muted version of the American experience, then the medications developed against the American profile were not, in any straightforward sense, a treatment for a universal disease; they were a treatment for one local pattern, exported, sometimes profitably, to other places.",
+        "audio_script": "",
+        "prompt": "",
+        "year_simulated": 2024,
+        "univ_simulated": "九州大学",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "下線部 (1) What she found was not a difference of opinion that medicine, given enough time, could simply correct, but a deeper kind of variation の意味として最も適切なものを選びなさい。",
+            "choices": [
+              "彼女が発見したのは、医学が時間をかければ単に修正できるような意見の相違ではなく、もっと深い種類の差異であった。",
+              "彼女が発見したのは、医学的見解の相違であり、これは時間をかけて修正される必要があった。",
+              "彼女が発見したのは、医学が時間をかけて作り出した深いレベルの差異であった。",
+              "彼女が発見したのは、医学的に修正可能な比較的浅い差異であった。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `not A but B` 構文 — 「A ではなく B」 (対比のコア)\n- `a difference of opinion that medicine ... could simply correct` =「医学が単に修正できる意見の相違」\n- `a deeper kind of variation` =「もっと深い種類の差異」 (= 単なる意見の相違ではなく、より本質的なもの)\n- `given enough time` =「時間をかければ」 (条件の分詞構文)\n\n## 🔬 文構造分析\nWhat she found was [not [a difference of opinion [that medicine, [given enough time], could simply correct]], but [a deeper kind of variation]].\n  主節: S=What she found (関係代名詞 What 節) / V=was / C=not A but B (対比)\n  関係詞節 that: a difference of opinion を修飾 / S=medicine, V=could correct\n  分詞構文 given enough time: 「時間が与えられれば」 (条件)\n\n## 📍 本文の根拠\nこの段落全体が「Lock の発見は単なる文化的バイアスの問題ではなく、もっと根本的な身体性の差異だった」という主張。下線部はこの主張を導入する。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「医学的見解の相違」と取ったが、本文は `not A but B` で A 部分を否定している。\n- 選択肢2:「医学が時間をかけて作り出した」は逆 (本文は medicine could correct = 医学が修正できる、の話)。\n- 選択肢3:「修正可能な浅い差異」は本文の `deeper kind of variation` (より深い差異) と真逆。\n\n【日本人弱点コメント】`given enough time` は分詞構文 (= if given enough time) で、`given` は動詞 give の過去分詞。前置詞 `given` (= ~を考慮すると) と混同しないこと。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "下線部 (2) At first, the easy interpretation was that Japanese women were simply more reticent about discussing certain symptoms に対する筆者の評価として最も適切なものを選びなさい。",
+            "choices": [
+              "この解釈は当初は妥当だと思われたが、データの蓄積とともに不十分であることが分かってきた。",
+              "この解釈は今でも医学界で広く受け入れられている標準的な見解である。",
+              "この解釈は最初から完全に誤っており、Lock は当初からそれを退けていた。",
+              "この解釈は文化的偏見に基づいており、医学的根拠がまったくない。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `the easy interpretation` =「安易な (= 表面的に納得しやすい) 解釈」 — 暗にこの解釈は不十分という含みがある\n- `but as the data accumulated, this explanation began to look insufficient` =「しかしデータが蓄積するにつれ、この説明は不十分に見えるようになった」\n- 段階的論証のコア: ① 当初の解釈 → ② データ蓄積 → ③ 修正\n\n## 🔬 文構造分析\nAt first, [the easy interpretation was [that Japanese women were simply more reticent about discussing certain symptoms]]; but [as the data accumulated], [this explanation began to look insufficient].\n  ; (セミコロン) の前後で対比構造\n  前半: 当初の解釈\n  後半: データ蓄積で不十分と判明\n\n## 📍 本文の根拠\n下線部直後の `but as the data accumulated, this explanation began to look insufficient` が筆者の評価を直接示す。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「今でも広く受け入れられている」は本文と真逆 (本文は不十分と判明した、と述べる)。\n- 選択肢2:「Lock は当初からそれを退けていた」は誤り (本文は `At first, the easy interpretation was ~` で当初の解釈として認めていたと書いている)。\n- 選択肢3:「文化的偏見に基づき医学的根拠がない」は強すぎる評価。本文は「不十分」と述べるだけ。\n\n【日本人弱点コメント】`the easy interpretation` の `easy` は表面的・安易な という否定的含みを持つことが多い。`a simple/easy explanation` が `but ~` で続くパターンは長文で頻出のシグナル。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "下線部 (3) If the symptoms of midlife in Japan were not simply a culturally muted version of the American experience, then the medications developed against the American profile were not, in any straightforward sense, a treatment for a universal disease; they were a treatment for one local pattern, exported, sometimes profitably, to other places. の解釈として最も適切なものを選びなさい。",
+            "choices": [
+              "日本の中年期症状がアメリカ経験の文化的に抑制された版でないなら、アメリカ的プロファイルに対して開発された薬は普遍的疾患の治療薬ではなく、ある一地域のパターンに対する治療薬を他地域へ (時に利益的に) 輸出したものに過ぎない。",
+              "日本とアメリカの中年期症状は本質的に同じであり、同じ薬で治療できる。",
+              "日本市場向けに新しい薬を開発する必要があり、アメリカの薬は使えない。",
+              "アメリカの薬は普遍的な治療薬であり、文化的差異は無視できる。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `If A ... then B` の仮定 — A が真なら B が導かれる\n- `not simply a culturally muted version of ~` =「~の単なる文化的に抑制された版ではない」 (= 質的に異なる)\n- `developed against the American profile` =「アメリカ的プロファイルに対して開発された」 (against = ~を対象とした)\n- `not, in any straightforward sense, a treatment for a universal disease` =「いかなる単純な意味でも普遍的疾患の治療薬ではない」 (二重否定的強調)\n- `exported, sometimes profitably, to other places` =「(時に利益を上げながら) 他地域へ輸出された」 (= 地元向けの薬を他地域に売っている、という批判)\n\n## 🔬 文構造分析\n[If [the symptoms of midlife in Japan were not simply a culturally muted version of the American experience]], [then [the medications [developed against the American profile] were not, [in any straightforward sense], a treatment for a universal disease]; [they were a treatment for one local pattern, [exported, [sometimes profitably], to other places]]].\n  if 節: 仮定\n  then 節: 帰結 (前半 + ; (セミコロン) 後の言い換え)\n  分詞句 developed against ~: the medications を後置修飾\n  分詞句 exported, sometimes profitably, to other places: a treatment for one local pattern を後置修飾\n\n## 📍 本文の根拠\n下線部はこの段落全体の結論。前段で `konenki` が文化単位の異なる現象であることが論証され、その含意としてこの結論が導かれる。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「本質的に同じ」は本文と真逆 (本文は質的に異なると述べる)。\n- 選択肢2:「日本市場向けに新しい薬を開発する必要」は本文の主張を超えた解釈 (本文は批判的観察にとどまる)。\n- 選択肢3:「アメリカの薬は普遍的治療薬」は本文と真逆。\n\n【日本人弱点コメント】`exported ~ to other places` の分詞構文 + `sometimes profitably` の挿入は九大型の長文で頻出。`exported` は分詞で、`a treatment for one local pattern` を後置修飾している。`sometimes profitably` は副詞挿入で、輸出の様態を表す (= 時には利益を上げながら)。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "daigaku",
+      "part_key": "r_long",
+      "eiken_grade": "tohoku",
+      "model": "claude-sonnet-4.6-team-review-v7",
+      "question_data": {
+        "passage": "When historians of science look back at the early decades of the twenty-first century, they may be struck by how much intellectual energy was spent debating whether artificial intelligence was \"really\" intelligent. The terms of the debate—does it understand, does it know what it is doing, can it be said to think—were inherited from nineteenth-century philosophy of mind, and they did not always sit comfortably with the systems being argued about. (1)A more useful set of questions, in retrospect, might have concerned not what these machines were, in some essential sense, but what they were doing to the institutions—universities, courts, hospitals—into which they were so rapidly being introduced.\n\nConsider the case of medicine. By 2024, machine learning systems were already outperforming experienced radiologists at certain narrow diagnostic tasks. Whether this counted as the machines \"seeing\" what was on the scan, in any rich philosophical sense, was an interesting question, but probably not the most pressing one. The more immediate questions concerned what kind of medicine would emerge in a world where the machine's reading carried weight, where the radiologist's role shifted from primary interpreter to second-opinion provider, and where the data on which the machines had been trained reflected the hospitals, demographics, and disease patterns of the wealthy countries that had built them.\n\n(2)A medicine reorganized around such systems is not, despite first appearances, a more objective medicine. It is a medicine in which a particular set of human choices—about which datasets to collect, which conditions to prioritize, which errors to tolerate—has been built into the infrastructure and become harder to question precisely because the resulting decisions look mechanical. (3)What earlier generations of doctors might have argued about openly, with appeals to evidence and to their own clinical experience, would now be settled, often invisibly, at the level of code, in conversations to which most clinicians had no access.",
+        "audio_script": "",
+        "prompt": "",
+        "year_simulated": 2024,
+        "univ_simulated": "東北大学",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "下線部 (1) A more useful set of questions, in retrospect, might have concerned not what these machines were, in some essential sense, but what they were doing to the institutions の解釈として最も適切なものを選びなさい。",
+            "choices": [
+              "振り返ってみると、より有益な問いの組は、これらの機械が本質的に何であるかではなく、機械が制度に対して何をしていたかに関するものだったかもしれない。",
+              "歴史を振り返ると、機械の本質を問うことが最も有益であり、その問いは制度には及ばなかった。",
+              "機械の本質と機械が制度に与える影響は同じ問いであり、両者を分離する必要はない。",
+              "制度への影響を問う前に、機械の本質を完全に解明する必要があった。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `not A but B` 構文 — 「A ではなく B」\n- A: `what these machines were, in some essential sense` (= 機械が本質的には何であるか)\n- B: `what they were doing to the institutions` (= 機械が制度にしていたこと)\n- `in retrospect` =「振り返ってみると」 (= 後知恵で)\n- `might have concerned ~` =「~に関わっていたかもしれない」 (過去の仮定的可能性)\n\n## 🔬 文構造分析\n[A more useful set of questions], [in retrospect], might have concerned [not [what these machines were, [in some essential sense]], but [what they were doing to the institutions—universities, courts, hospitals—[into which they were so rapidly being introduced]]].\n  主節: S=A more useful set of questions / 挿入=in retrospect / V=might have concerned / O=not A but B\n  A 部分: what these machines were (関係代名詞 What 節) + in some essential sense (挿入)\n  B 部分: what they were doing to the institutions (What 節) + ダッシュ挿入 (例) + into which 関係詞節\n\n## 📍 本文の根拠\nこの段全体が「機械の `本質` を問うより、機械が制度にしていることを問うほうが有益」という議論。下線部はその主張を導入する。\n\n## ❌ 誤答 NG 理由\n- 選択肢1:「機械の本質を問うことが最も有益」は本文と真逆 (not A but B の A を肯定的に取った誤り)。\n- 選択肢2:「両者を分離する必要はない」は本文の対比構造を見落とした誤り。\n- 選択肢3:「機械の本質を完全に解明する必要があった」も本文と真逆 (本文は本質論を退ける)。\n\n【日本人弱点コメント】`not A but B` 構文で A の中身が複雑な句 (本問では `what these machines were, in some essential sense`) になっていると、B (= 機械が制度にしていること) を見落としやすい。`but B` まで読み切ることが必須。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "下線部 (2) A medicine reorganized around such systems is not, despite first appearances, a more objective medicine. の意味として最も適切なものを選びなさい。",
+            "choices": [
+              "そうしたシステムを中心に再編された医療は、見かけに反して、より客観的な医療ではない。",
+              "そうしたシステムを取り入れることで、医療はより客観的なものとなり、見かけよりも信頼できる。",
+              "AI を取り入れた医療は完全に客観的であり、人間の主観は完全に排除される。",
+              "そうしたシステムは見かけ通り客観的であり、医療の信頼性を高める。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- `is not, despite first appearances, a more objective medicine` =「(見かけに反して) より客観的な医療ではない」\n- `despite first appearances` =「見かけに反して・第一印象に反して」 (=逆説のシグナル)\n- `reorganized around such systems` =「そうしたシステムを中心に再編された」 (分詞による後置修飾)\n\n## 🔬 文構造分析\n[A medicine [reorganized around such systems]] is [not], [despite first appearances], [a more objective medicine].\n  主節: S=A medicine (reorganized ... 過去分詞句で後置修飾) / V=is / 挿入=despite first appearances / C= a more objective medicine (否定 not で打ち消し)\n\n## 📍 本文の根拠\n下線部は第3段の主張を導入する文。次文以降で「人間の選択がインフラに組み込まれて見えにくくなっただけ」という具体的論証が展開される。\n\n## ❌ 誤答 NG 理由\n- 選択肢1: 本文の主張と真逆 (本文は「より客観的ではない」と述べる)。\n- 選択肢2:「人間の主観は完全に排除される」は本文と真逆。第3段全体が `human choices ... built into the infrastructure` と人間の選択が組み込まれていることを論じる。\n- 選択肢3: 本文の `not, despite first appearances` を見落とした誤読。\n\n【日本人弱点コメント】`despite first appearances` (= 見かけに反して) は論説文で頻出の逆説マーカー。`first appearances` を字面通り「初対面の印象」と訳しすぎず、議論の展開上の `表面上の判断` を意味することを押さえる。"
+          },
+          {
+            "id": "q3",
+            "type": "multiple_choice",
+            "stem": "本文全体を通じての著者の主張として最も適切なものを選びなさい。",
+            "choices": [
+              "AI 医療システムは客観性を装うが、実際には人間の選択が制度の奥深くに埋め込まれて見えにくくなる、という制度論的視点が重要である。",
+              "AI 医療システムは人間の医師を完全に置き換える日が来るので、医療現場は AI を信頼すべきである。",
+              "AI が `本当に思考しているか` という哲学的問いこそが、医療の未来を決定する最も重要な問題である。",
+              "AI 医療システムは客観的であり、人間の偏見を排除した公平な医療を提供する。"
+            ],
+            "answer": 0,
+            "explanation": "## 🎯 コアイメージ\n- 第1段: 哲学的問い (機械の本質) より制度的問い (機械が制度にしていること) のほうが有益\n- 第2段: 医学の例で、機械が radiologist の役割を再編成している\n- 第3段: AI 医療は `客観的に見える` が、人間の選択がインフラに組み込まれて見えにくくなっているだけ\n- 全体の主張のコア: AI の哲学的本質より、AI が制度にしている `見えない政治` を問う必要\n\n## 🔬 文構造分析 (主旨命題)\n第3段最終文「[What earlier generations of doctors might have argued about openly], [with appeals to evidence and to their own clinical experience], [would now be settled, [often invisibly], at the level of code, [in conversations to which most clinicians had no access]]」が主旨を結晶化。\n\n## 📍 本文の根拠\n第1段 (哲学的問い vs 制度的問い)、第2段 (radiologist 役割の再編)、第3段 (見えない選択の埋め込み) のすべてが `AI = 制度の中の人間の選択を見えなくする装置` という主旨を支える。\n\n## ❌ 誤答 NG 理由\n- 選択肢1: 第2段の `outperforming experienced radiologists at certain narrow diagnostic tasks` は限定的成功を述べるだけで、`完全置換` までは主張していない。\n- 選択肢2: 著者は哲学的問いを `not the most pressing one` (最も切迫した問いではない) と退けている。\n- 選択肢3: 本文の主張と真逆 (= 本文は AI 医療が客観的であるという見方を批判している)。\n\n【日本人弱点コメント】長文の主旨は最終段の最終文 + 第1段の問題提起 を組み合わせて読む。本文では第1段の `not what these machines were ... but what they were doing to the institutions` が問題提起、第3段最終文がその答え。"
+          }
+        ]
+      }
+    }
+  ],
+  "skip_full": false
+}
