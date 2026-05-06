@@ -1,0 +1,196 @@
+{
+  "questions": [
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_q3",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-sonnet-4.6-team-review-v3",
+      "question_data": {
+        "passage": "分子式 \\(\\text{C}_4\\text{H}_8\\text{O}_2\\) で表される有機化合物 X について、次の事実が判明した。\n\n(a) X は中性で、ナトリウムと反応しない。\n(b) X を希塩酸で加水分解すると、化合物 Y と化合物 Z が得られた。\n(c) Y は還元性を示さず、銀鏡反応も呈しない。Y はヨードホルム反応で黄色沈殿を生じる。\n(d) Z は炭素原子 1 個のカルボン酸である。",
+        "audio_script": "",
+        "prompt": "",
+        "figure_svg": "",
+        "year_simulated": 2024,
+        "univ_simulated": "東京大学 理系",
+        "subject": "化学",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "short_answer",
+            "stem": "(1) X はどの官能基を持つ化合物か。エステル / カルボン酸 / アルコール / アルデヒド / ケトン から選び、根拠も 30 字以内で述べよ。",
+            "choices": [],
+            "answer": "エステル。希塩酸で加水分解されてカルボン酸 Z を生じ、中性で Na と反応しないため。",
+            "explanation": "## 考え方\n官能基の判定は与えられた事実 (a)〜(d) から推論する:\n- (a) 中性で Na と反応しない → カルボキシ基 (-COOH) もヒドロキシ基 (-OH) も持たない\n- (b) 加水分解で Z (= 1C のカルボン酸 = ギ酸 HCOOH) を生成 → これがエステルの典型反応\n\n## 立式 (推論)\n中性 + 加水分解 + カルボン酸生成 → エステル (-COO-) 一択。\n\n## 計算 (確認)\nエステル一般式 \\(\\text{R-COO-R'}\\) の加水分解:\n\\[\\text{R-COO-R'} + \\text{H}_2\\text{O} \\to \\text{R-COOH} + \\text{R'-OH}\\]\n本問では \\(Z\\) = HCOOH (ギ酸) → \\(R = H\\) → X は \\(\\text{HCOO-R'}\\) (ギ酸エステル) の形。\n\n## 答え\nエステル。希塩酸で加水分解されてカルボン酸 Z を生じ、中性で Na と反応しないため。\n\n## 補足\n中性 vs 酸性 vs 塩基性の判定 + Na 反応性の組合せは官能基の特定の鉄板判別法。エステルは中性、カルボン酸とアルコールは Na と反応 (\\(\\text{H}_2\\) 発生) するためここで切り分けられる。"
+          },
+          {
+            "id": "q2",
+            "type": "short_answer",
+            "stem": "(2) 化合物 Y の構造式を骨格式で答え、Y の名称も書け。",
+            "choices": [],
+            "answer": "Y = 2-プロパノール (イソプロピルアルコール)、構造式: \\(\\text{CH}_3\\text{-CH(OH)-CH}_3\\)",
+            "explanation": "## 考え方\n(b)(d) より、X = R'-OOC-H (= HCOO-R') の形でカルボン酸 Z = HCOOH を切り離した残りが Y = R'-OH (アルコール)。\n\n分子式 \\(\\text{C}_4\\text{H}_8\\text{O}_2\\) から HCOOH (\\(\\text{CH}_2\\text{O}_2\\)) を引いた残り:\n\\[\\text{C}_4\\text{H}_8\\text{O}_2 - \\text{CH}_2\\text{O}_2 + \\text{H}_2\\text{O} = \\text{C}_3\\text{H}_8\\text{O}\\]\n→ Y = \\(\\text{C}_3\\text{H}_8\\text{O}\\) (= プロパノール または メチルエチルエーテル)。\n\n## 立式\n(c) より Y はヨードホルム反応で黄色沈殿を生じる → 構造 \\(\\text{CH}_3\\text{-CH(OH)-}\\) または \\(\\text{CH}_3\\text{-CO-}\\) を持つ。\n\\(\\text{C}_3\\text{H}_8\\text{O}\\) のうちこの条件を満たすのは:\n- 2-プロパノール \\(\\text{CH}_3\\text{-CH(OH)-CH}_3\\) (\\(\\text{CH}_3\\text{-CH(OH)-}\\) 構造あり) ✓\n- 1-プロパノール \\(\\text{CH}_3\\text{CH}_2\\text{CH}_2\\text{OH}\\) (該当構造なし) ✗\n- メチルエチルエーテル \\(\\text{CH}_3\\text{-O-C}_2\\text{H}_5\\) (アルコールではない) ✗\n\n## 計算 (推論)\nY = 2-プロパノール (イソプロピルアルコール) と確定。\n\n## 答え\nY = 2-プロパノール (イソプロピルアルコール)、構造式: \\(\\text{CH}_3\\text{-CH(OH)-CH}_3\\)。\n\n## 補足\nヨードホルム反応 (\\(\\text{CH}_3\\text{-CO-R}\\) や \\(\\text{CH}_3\\text{-CH(OH)-R}\\) で黄色沈殿 \\(\\text{CHI}_3\\) を生じる) は東大化学頻出の構造判別反応。これと加水分解の組合せで X = ギ酸イソプロピル \\(\\text{HCOO-CH(CH}_3)_2\\) と確定する。"
+          },
+          {
+            "id": "q3",
+            "type": "short_answer",
+            "stem": "(3) (1)(2) を踏まえ、化合物 X の構造式と名称を答えよ。",
+            "choices": [],
+            "answer": "X = ギ酸イソプロピル (= ギ酸 2-プロピル)、構造式: \\(\\text{HCOO-CH(CH}_3)_2\\)",
+            "explanation": "## 考え方\n(1) で X はエステル、(2) で Y = 2-プロパノール、(d) で Z = ギ酸 HCOOH と確定。エステル X はこの両者の脱水縮合から生成する。\n\n## 立式\n\\[\\text{HCOOH} + \\text{HOCH(CH}_3)_2 \\to \\text{HCOO-CH(CH}_3)_2 + \\text{H}_2\\text{O}\\]\n\n## 計算 (検証)\n分子式: HCOO (= \\(\\text{CHO}_2\\)) + CH(CH₃)₂ (= \\(\\text{C}_3\\text{H}_7\\)) = \\(\\text{C}_4\\text{H}_8\\text{O}_2\\) ✓ (与えられた分子式と整合)。\n\n## 答え\nX = ギ酸イソプロピル \\(\\text{HCOO-CH(CH}_3)_2\\)。\n\n## 補足\n東大化学 大問3 (有機) は「構造決定」が王道。判別反応 (Na 反応・加水分解・ヨードホルム反応・銀鏡反応) を組合せて分子構造を 1 つに絞り込む論理力が問われる。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "chem_q2",
+      "eiken_grade": "kyodai_rikei",
+      "model": "claude-sonnet-4.6-team-review-v3",
+      "question_data": {
+        "passage": "次の (a)(b)(c) の水溶液 (それぞれ 0.10 mol/L) に水酸化ナトリウム NaOH 水溶液を少しずつ加えていき、生じる沈殿の挙動を観察した。\n\n(a) 硫酸亜鉛 \\(\\text{ZnSO}_4\\) 水溶液\n(b) 硫酸銅(II) \\(\\text{CuSO}_4\\) 水溶液\n(c) 塩化鉄(III) \\(\\text{FeCl}_3\\) 水溶液",
+        "audio_script": "",
+        "prompt": "",
+        "figure_svg": "",
+        "year_simulated": 2023,
+        "univ_simulated": "京都大学 理系",
+        "subject": "化学",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "short_answer",
+            "stem": "(1) (a)(b)(c) それぞれの水溶液に NaOH を少量加えたとき生じる沈殿の化学式と色を答えよ。",
+            "choices": [],
+            "answer": "(a) Zn(OH)_2 (白色)、(b) Cu(OH)_2 (青白色)、(c) Fe(OH)_3 (赤褐色)",
+            "explanation": "## 考え方\n強塩基 NaOH を加えると、金属イオンが対応する水酸化物として沈殿する。\n\n## 立式\n各反応式:\n- (a) \\(\\text{Zn}^{2+} + 2\\text{OH}^- \\to \\text{Zn(OH)}_2 \\downarrow\\) (白色沈殿)\n- (b) \\(\\text{Cu}^{2+} + 2\\text{OH}^- \\to \\text{Cu(OH)}_2 \\downarrow\\) (青白色沈殿)\n- (c) \\(\\text{Fe}^{3+} + 3\\text{OH}^- \\to \\text{Fe(OH)}_3 \\downarrow\\) (赤褐色沈殿)\n\n## 計算 (色の理由)\n色は金属イオンの d 電子配置に由来:\n- Zn²⁺ (d¹⁰) — 完全充填で d-d 遷移なし → 白色\n- Cu²⁺ (d⁹) — d-d 遷移あり → 青白〜青色\n- Fe³⁺ (d⁵) — 強配位場でなく弱い遷移 + Fe(OH)₃ は鉄と酸素のクラスターで赤褐色\n\n## 答え\n上述。\n\n## 補足\n京大化学では「沈殿色 + 金属イオン色」の暗記+背景理解が頻出。沈殿色は受験定番なので暗記必須:\n- Zn(OH)₂ 白 / Cu(OH)₂ 青白 / Fe(OH)₃ 赤褐 / Al(OH)₃ 白 / Pb(OH)₂ 白"
+          },
+          {
+            "id": "q2",
+            "type": "short_answer",
+            "stem": "(2) (1) で得られた沈殿に過剰の NaOH 水溶液を加えると、(a)(b)(c) のうち、どれが溶解するか。理由とともに 80 字以内で述べよ。",
+            "choices": [],
+            "answer": "(a) Zn(OH)_2 のみ溶解する。Zn(OH)_2 は両性水酸化物で過剰の OH⁻ と錯イオン \\(\\text{[Zn(OH)}_4]^{2-}\\) (テトラヒドロキシド亜鉛(II)酸イオン) を形成して溶けるため。",
+            "explanation": "## 考え方\n両性水酸化物 (= 酸にも塩基にも溶ける水酸化物) は限定的: \\(\\text{Al(OH)}_3, \\text{Zn(OH)}_2, \\text{Sn(OH)}_2, \\text{Pb(OH)}_2\\)。本問では Zn のみが両性。\n\n## 立式\n\\[\\text{Zn(OH)}_2 + 2\\text{OH}^- \\to [\\text{Zn(OH)}_4]^{2-}\\]\n(無色の溶液になる)\n\nCu(OH)₂ も Fe(OH)₃ も両性ではないため過剰 NaOH に溶けない (NH₃ には Cu(OH)₂ は錯体 \\([\\text{Cu(NH}_3)_4]^{2+}\\) で溶けるが、NaOH には溶けない)。\n\n## 計算 (記述)\n(a) Zn(OH)₂ のみ溶解。理由は両性水酸化物の錯イオン形成。\n\n## 答え\n(a) Zn(OH)₂ のみ溶解する。両性水酸化物として過剰の OH⁻ と \\([\\text{Zn(OH)}_4]^{2-}\\) を形成するため。\n\n## 補足\n京大化学は両性元素 (Al, Zn, Sn, Pb) の挙動 + 錯イオンの形成・命名を頻出させる。`過剰 NaOH に溶ける = 両性` のロジックは確実に。"
+          },
+          {
+            "id": "q3",
+            "type": "short_answer",
+            "stem": "(3) (1) で得られた (b) Cu(OH)_2 の沈殿に、過剰のアンモニア水を加えるとどうなるか。化学式を含めて 60 字以内で答えよ。",
+            "choices": [],
+            "answer": "深青色の溶液となる。錯イオン \\([\\text{Cu(NH}_3)_4]^{2+}\\) (テトラアンミン銅(II)イオン) が形成され、Cu(OH)_2 が溶ける。",
+            "explanation": "## 考え方\nNH₃ は配位子として金属イオンと錯イオンを作る。Cu²⁺ + NH₃ の組合せはアンミン錯体 \\([\\text{Cu(NH}_3)_4]^{2+}\\) を作り、特徴的な深青色を呈する。\n\n## 立式\n\\[\\text{Cu(OH)}_2 + 4\\text{NH}_3 \\to [\\text{Cu(NH}_3)_4]^{2+} + 2\\text{OH}^-\\]\n\n## 計算 (色)\n\\([\\text{Cu(NH}_3)_4]^{2+}\\) は深青色 (リンデマン青)。Cu²⁺ 単独 (淡青色) や Cu(OH)₂ (青白色) と区別できる。\n\n## 答え\n深青色の溶液となる ([Cu(NH_3)_4]^(2+) 形成)。\n\n## 補足\nアンモニア錯体は他にも:\n- \\([\\text{Ag(NH}_3)_2]^+\\) (無色) — 銀鏡反応のトレンス試薬\n- \\([\\text{Zn(NH}_3)_4]^{2+}\\) (無色)\n- \\([\\text{Ni(NH}_3)_6]^{2+}\\) (青紫)\n京大化学はこの種の錯イオンの色・配位数・命名を要求する。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q2",
+      "eiken_grade": "todai_rikei",
+      "model": "claude-sonnet-4.6-team-review-v3",
+      "question_data": {
+        "passage": "起電力 \\(E\\) (内部抵抗無視) の電池、抵抗値 \\(R\\) の抵抗 1 個、容量 \\(C\\) のコンデンサー (初期電荷 0)、スイッチ S を直列に接続した RC 回路がある。時刻 \\(t=0\\) でスイッチ S を閉じ、コンデンサーへの充電を開始する。",
+        "audio_script": "",
+        "prompt": "",
+        "figure_svg": "<svg viewBox=\"0 0 400 250\" xmlns=\"http://www.w3.org/2000/svg\" stroke=\"currentColor\" fill=\"none\" stroke-width=\"1.5\"><line x1=\"60\" y1=\"60\" x2=\"60\" y2=\"50\"/><line x1=\"50\" y1=\"50\" x2=\"70\" y2=\"50\"/><line x1=\"55\" y1=\"45\" x2=\"65\" y2=\"45\" stroke-width=\"3\"/><line x1=\"60\" y1=\"40\" x2=\"60\" y2=\"30\"/><text x=\"30\" y=\"55\" font-family=\"sans-serif\" font-size=\"12\" fill=\"currentColor\" stroke=\"none\">E</text><line x1=\"60\" y1=\"30\" x2=\"180\" y2=\"30\"/><line x1=\"180\" y1=\"30\" x2=\"180\" y2=\"60\"/><line x1=\"175\" y1=\"60\" x2=\"185\" y2=\"60\" stroke-dasharray=\"2 2\"/><line x1=\"185\" y1=\"55\" x2=\"195\" y2=\"45\"/><text x=\"195\" y=\"50\" font-family=\"sans-serif\" font-size=\"12\" fill=\"currentColor\" stroke=\"none\">S</text><line x1=\"180\" y1=\"60\" x2=\"180\" y2=\"100\"/><rect x=\"170\" y=\"100\" width=\"20\" height=\"40\" fill=\"none\"/><text x=\"195\" y=\"125\" font-family=\"sans-serif\" font-size=\"12\" fill=\"currentColor\" stroke=\"none\">R</text><line x1=\"180\" y1=\"140\" x2=\"180\" y2=\"170\"/><line x1=\"180\" y1=\"170\" x2=\"320\" y2=\"170\"/><line x1=\"320\" y1=\"170\" x2=\"320\" y2=\"195\"/><line x1=\"310\" y1=\"195\" x2=\"330\" y2=\"195\" stroke-width=\"2.5\"/><line x1=\"310\" y1=\"205\" x2=\"330\" y2=\"205\" stroke-width=\"2.5\"/><line x1=\"320\" y1=\"205\" x2=\"320\" y2=\"230\"/><text x=\"335\" y=\"205\" font-family=\"sans-serif\" font-size=\"12\" fill=\"currentColor\" stroke=\"none\">C</text><line x1=\"320\" y1=\"230\" x2=\"60\" y2=\"230\"/><line x1=\"60\" y1=\"230\" x2=\"60\" y2=\"60\"/></svg>",
+        "year_simulated": 2024,
+        "univ_simulated": "東京大学 理系",
+        "subject": "物理",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "short_answer",
+            "stem": "(1) 時刻 \\(t\\) における回路を流れる電流 \\(I(t)\\) を、与えられた量 \\(E, R, C, t\\) で表せ。",
+            "choices": [],
+            "answer": "\\(I(t) = \\dfrac{E}{R} e^{-t/(RC)}\\)",
+            "explanation": "## 考え方\nキルヒホッフの電圧法則 (KVL): 電池の起電力 \\(E\\) = 抵抗の電圧降下 \\(IR\\) + コンデンサの電圧 \\(V_C = Q/C\\)。\n\n## 立式\n\\[E = R I + \\dfrac{Q}{C}\\]\n\n電流の定義 \\(I = \\dfrac{dQ}{dt}\\) を用いると:\n\\[E = R \\dfrac{dQ}{dt} + \\dfrac{Q}{C}\\]\n\n変数分離形に整理:\n\\[\\dfrac{dQ}{dt} = \\dfrac{E - Q/C}{R} = \\dfrac{EC - Q}{RC}\\]\n\n## 計算\n初期条件 \\(Q(0) = 0\\) で積分:\n\\[Q(t) = EC(1 - e^{-t/(RC)})\\]\n\n微分して電流:\n\\[I(t) = \\dfrac{dQ}{dt} = EC \\cdot \\dfrac{1}{RC} e^{-t/(RC)} = \\dfrac{E}{R} e^{-t/(RC)}\\]\n\n## 答え\n\\[I(t) = \\dfrac{E}{R} e^{-t/(RC)}\\]\n\n## 補足\n時定数 \\(\\tau = RC\\) は RC 回路の特徴的時間スケール。\\(t = \\tau\\) で電流は初期値の \\(1/e \\approx 0.368\\) 倍。\\(t \\to \\infty\\) で \\(I \\to 0\\) (= 充電完了で電流ゼロ) — 物理的に整合。"
+          },
+          {
+            "id": "q2",
+            "type": "short_answer",
+            "stem": "(2) スイッチを閉じてから十分時間が経過した後、コンデンサーに蓄えられた静電エネルギー \\(U_C\\) を、電池が回路全体に行った仕事 \\(W_{battery}\\) と比較せよ。両者の比 \\(U_C / W_{battery}\\) を求め、エネルギー保存の観点からその意味を 60 字以内で説明せよ。",
+            "choices": [],
+            "answer": "\\(\\dfrac{U_C}{W_{battery}} = \\dfrac{1}{2}\\)。電池の供給エネルギーの半分はコンデンサーに蓄えられ、残り半分は抵抗で熱として失われる。",
+            "explanation": "## 考え方\n充電完了 (\\(t \\to \\infty\\)) でコンデンサ電圧は \\(E\\)、電荷は \\(Q_\\infty = CE\\)。\n\n## 立式\n蓄えられた静電エネルギー:\n\\[U_C = \\dfrac{1}{2} C E^2\\]\n\n電池が供給した総エネルギー (= 起電力 × 移動した総電荷):\n\\[W_{battery} = E \\cdot Q_\\infty = E \\cdot CE = C E^2\\]\n\n## 計算\n\\[\\dfrac{U_C}{W_{battery}} = \\dfrac{(1/2) C E^2}{C E^2} = \\dfrac{1}{2}\\]\n\n抵抗で消費される熱エネルギー:\n\\[W_R = W_{battery} - U_C = C E^2 - \\dfrac{1}{2} C E^2 = \\dfrac{1}{2} C E^2\\]\n\n→ 電池供給エネルギーの 50% が熱として消散、50% がコンデンサに蓄積。\n\n## 答え\n\\(\\dfrac{U_C}{W_{battery}} = \\dfrac{1}{2}\\)。電池の供給エネルギーの半分は熱として失われる (RC 充電の普遍的性質)。\n\n## 補足\n抵抗の値 \\(R\\) によらず、RC 充電では常に半分が熱になる — これは非自明な普遍則。\\(R \\to 0\\) (= 抵抗ゼロ) でも同様 (代わりに大電流の瞬間で電力消費が起きる)。電源・コンデンサ間の `エネルギー転送効率` を上げるには変圧/共振回路が必要 (= スイッチング電源の理論基盤)。東大物理は RC 回路でこの 50% 損失をしばしば問う。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_q1",
+      "eiken_grade": "kyodai_rikei",
+      "model": "claude-sonnet-4.6-team-review-v3",
+      "question_data": {
+        "passage": "質量 \\(M\\) の物体 A が水平で滑らかな床の上に静止している。質量 \\(m\\) の小球 B が水平方向の速さ \\(v_0\\) で物体 A に衝突した。衝突は完全非弾性 (= 衝突後 A と B は一体となって運動する) であり、衝突前後で物体は全て水平方向に運動するとする。",
+        "audio_script": "",
+        "prompt": "",
+        "figure_svg": "",
+        "year_simulated": 2023,
+        "univ_simulated": "京都大学 理系",
+        "subject": "物理",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "short_answer",
+            "stem": "(1) 衝突後の A+B 一体物体の速さ \\(v_1\\) を、\\(M, m, v_0\\) で表せ。",
+            "choices": [],
+            "answer": "\\(v_1 = \\dfrac{m}{M+m} v_0\\)",
+            "explanation": "## 考え方\n外力 (= 床面が水平で摩擦無視) が水平方向にないので、運動量保存則が水平方向に成立する。\n\n## 立式\n衝突前: A 静止 (運動量 0) + B (運動量 \\(mv_0\\))\n衝突後: A+B 一体 (運動量 \\((M+m)v_1\\))\n\n運動量保存則:\n\\[mv_0 = (M+m) v_1\\]\n\n## 計算\n\\[v_1 = \\dfrac{m}{M+m} v_0\\]\n\n## 答え\n\\(v_1 = \\dfrac{m}{M+m} v_0\\)\n\n## 補足\n完全非弾性衝突では運動量は保存されるが運動エネルギーは失われる (一部が熱・変形エネルギーに変換)。本問の設定は弾道学・銃の反動・物体の合体衝突 (例: 衛星のドッキング) などのモデル。"
+          },
+          {
+            "id": "q2",
+            "type": "short_answer",
+            "stem": "(2) 衝突によって失われた運動エネルギー \\(\\Delta E\\) を、\\(M, m, v_0\\) で表せ。これは衝突時に熱・音・変形エネルギーに変換される。",
+            "choices": [],
+            "answer": "\\(\\Delta E = \\dfrac{1}{2} \\dfrac{Mm}{M+m} v_0^2\\)",
+            "explanation": "## 考え方\n衝突前後の運動エネルギーを計算し、その差を求める。\n\n## 立式\n衝突前 (B のみ運動):\n\\[E_{\\text{前}} = \\dfrac{1}{2} m v_0^2\\]\n\n衝突後 (A+B 一体):\n\\[E_{\\text{後}} = \\dfrac{1}{2} (M+m) v_1^2 = \\dfrac{1}{2} (M+m) \\left(\\dfrac{m v_0}{M+m}\\right)^2 = \\dfrac{1}{2} \\dfrac{m^2 v_0^2}{M+m}\\]\n\n## 計算\n\\[\\Delta E = E_{\\text{前}} - E_{\\text{後}} = \\dfrac{1}{2} m v_0^2 - \\dfrac{1}{2} \\dfrac{m^2 v_0^2}{M+m}\\]\n\\[= \\dfrac{1}{2} v_0^2 \\left( m - \\dfrac{m^2}{M+m} \\right) = \\dfrac{1}{2} v_0^2 \\cdot \\dfrac{m(M+m) - m^2}{M+m} = \\dfrac{1}{2} v_0^2 \\cdot \\dfrac{mM}{M+m}\\]\n\\[= \\dfrac{1}{2} \\dfrac{Mm}{M+m} v_0^2\\]\n\n## 答え\n\\(\\Delta E = \\dfrac{1}{2} \\dfrac{Mm}{M+m} v_0^2\\)\n\n## 補足\n係数 \\(\\dfrac{Mm}{M+m}\\) は **換算質量 (reduced mass)** \\(\\mu\\) と呼ばれ、二体衝突の物理で頻出する量。\n- \\(M \\gg m\\) (例: ビリヤードボールが壁に衝突) では \\(\\mu \\approx m\\) → \\(\\Delta E \\approx \\dfrac{1}{2} m v_0^2\\) (= ほぼ全エネルギー喪失)。\n- \\(M \\ll m\\) (= 重い小球が軽い物体に衝突) では \\(\\mu \\approx M\\) → \\(\\Delta E \\approx \\dfrac{1}{2} M v_0^2\\) (= 失う割合は小さい)。\n京大物理は本問のような `運動量保存 + エネルギー保存違反` の組合せで現実の物理プロセスを定量化させる出題が王道。"
+          }
+        ]
+      }
+    },
+    {
+      "exam_id": "rikei",
+      "part_key": "phys_basic",
+      "eiken_grade": "kyotsu_rikei",
+      "model": "claude-sonnet-4.6-team-review-v3",
+      "question_data": {
+        "passage": "波長 0.50 m の波が x 軸正の方向に速さ 2.0 m/s で進んでいる。",
+        "audio_script": "",
+        "prompt": "",
+        "figure_svg": "",
+        "year_simulated": 2024,
+        "univ_simulated": "共通テスト 物理基礎",
+        "subject": "物理",
+        "questions": [
+          {
+            "id": "q1",
+            "type": "multiple_choice",
+            "stem": "この波の振動数 (Hz) として最も適切なものを次から選べ。",
+            "choices": [
+              "1.0 Hz",
+              "2.0 Hz",
+              "4.0 Hz",
+              "0.25 Hz"
+            ],
+            "answer": 2,
+            "explanation": "## 考え方\n波の基本式: \\(v = f \\lambda\\) (速さ = 振動数 × 波長)。\n\n## 立式\n\\[f = \\dfrac{v}{\\lambda} = \\dfrac{2.0 \\text{ m/s}}{0.50 \\text{ m}}\\]\n\n## 計算\n\\[f = \\dfrac{2.0}{0.50} = 4.0 \\text{ Hz}\\]\n\n## 答え\n選択肢 2 (4.0 Hz)。\n\n## 補足\n\\(v = f\\lambda\\) は全ての波 (音波・水面波・電磁波) で成り立つ最重要関係式。\\(v\\) (速さ・m/s) ・ \\(f\\) (振動数・Hz = 1/s) ・ \\(\\lambda\\) (波長・m) の単位の整合 (m/s = (1/s)(m)) も理解しておくこと。\n\n誤答について:\n- 1.0 Hz: 速さと波長を加算してしまった誤り (2.0 + 0.50 とは関係ない)。\n- 2.0 Hz: 速さの値そのまま。f = v ではなく f = v/λ。\n- 0.25 Hz: 逆数を取った誤り (= λ/v = 0.25)。これは周期 T = 0.25 s に該当する。"
+          },
+          {
+            "id": "q2",
+            "type": "multiple_choice",
+            "stem": "上記の波の周期 \\(T\\) (秒) として最も適切なものを次から選べ。",
+            "choices": [
+              "0.25 s",
+              "0.50 s",
+              "1.0 s",
+              "4.0 s"
+            ],
+            "answer": 0,
+            "explanation": "## 考え方\n周期 \\(T\\) と振動数 \\(f\\) の関係: \\(T = \\dfrac{1}{f}\\)。\n\n## 立式\n(q1) より \\(f = 4.0\\) Hz なので:\n\\[T = \\dfrac{1}{f} = \\dfrac{1}{4.0 \\text{ Hz}}\\]\n\n## 計算\n\\[T = 0.25 \\text{ s}\\]\n\n## 答え\n選択肢 0 (0.25 s)。\n\n## 補足\n周期 = 1 振動にかかる時間。振動数 = 1 秒間の振動回数。両者は逆数関係 (T = 1/f, f = 1/T)。共通テストではこの関係式を利用する2段階問題が頻出。\n\n誤答について:\n- 0.50 s: 波長の値そのまま (混同)。\n- 1.0 s: 1/2 を取った誤り。\n- 4.0 s: f と T を取り違えた誤り (T = f になっている)。"
+          }
+        ]
+      }
+    }
+  ],
+  "skip_full": false
+}
