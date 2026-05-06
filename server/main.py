@@ -657,6 +657,10 @@ def init_db():
         sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         read_at TIMESTAMP,
         broadcast_group_id TEXT,
+        attachment_filename TEXT,
+        attachment_mime TEXT,
+        attachment_size INTEGER,
+        attachment_data_b64 TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient_type, recipient_id, created_at);
@@ -696,6 +700,11 @@ def init_db():
         # 学習記録機能の対象コース識別 (国公立難関大学コース = 'kokuritsu_nankan')
         # NULL or '' = 一般コース。Studyplus 代替の学習管理は本コース受講生のみ提供 (塾長指示 2026-05-04)
         ("course", "ALTER TABLE students ADD COLUMN course TEXT DEFAULT NULL"),
+        # 双方向メッセージ + 授業ファイル添付 (塾長指示 2026-05-06)
+        ("msg_attachment_filename", "ALTER TABLE messages ADD COLUMN attachment_filename TEXT"),
+        ("msg_attachment_mime", "ALTER TABLE messages ADD COLUMN attachment_mime TEXT"),
+        ("msg_attachment_size", "ALTER TABLE messages ADD COLUMN attachment_size INTEGER"),
+        ("msg_attachment_data_b64", "ALTER TABLE messages ADD COLUMN attachment_data_b64 TEXT"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -15421,6 +15430,107 @@ class MessageSendRequest(BaseModel):
     subject: Optional[str] = None
     body: str
     send_email: bool = True
+    # 添付ファイル (任意・授業ファイル送信用 / 塾長指示 2026-05-06)
+    attachment_filename: Optional[str] = None
+    attachment_mime: Optional[str] = None
+    attachment_data_b64: Optional[str] = None  # base64 encoded content
+
+
+class StudentMessageSendRequest(BaseModel):
+    """生徒 → 塾長 メッセージ送信。国公立難関コース受講生から授業質問・ファイル送信用。"""
+    subject: Optional[str] = None
+    body: str
+    attachment_filename: Optional[str] = None
+    attachment_mime: Optional[str] = None
+    attachment_data_b64: Optional[str] = None
+
+
+# 添付ファイル制限 (塾長指示 2026-05-06)
+_MSG_ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
+_MSG_ATTACHMENT_ALLOWED_MIMES = {
+    "image/jpeg", "image/png", "image/heic", "image/webp", "image/gif",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "text/plain", "text/csv",
+}
+# magic bytes 署名 (3 視点 review 2026-05-06: mime spoofing 防御)
+_MSG_ATTACHMENT_MAGIC = {
+    "image/jpeg": [b"\xff\xd8\xff"],
+    "image/png": [b"\x89PNG\r\n\x1a\n"],
+    "image/gif": [b"GIF87a", b"GIF89a"],
+    "image/webp": [b"RIFF"],  # 後段で WEBP container も check
+    "application/pdf": [b"%PDF"],
+    "application/msword": [b"\xd0\xcf\x11\xe0"],
+    "application/vnd.ms-excel": [b"\xd0\xcf\x11\xe0"],
+    "application/vnd.ms-powerpoint": [b"\xd0\xcf\x11\xe0"],
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [b"PK\x03\x04"],
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [b"PK\x03\x04"],
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": [b"PK\x03\x04"],
+    # image/heic: variable magic, skip
+    # text/plain, text/csv: textual content, no magic check
+}
+
+
+def _validate_message_attachment(filename: Optional[str], mime: Optional[str], data_b64: Optional[str]) -> Optional[dict]:
+    """添付ファイル検証。OK なら {filename, mime, size, data_b64} を返す。
+    どれか欠けてれば None。違反なら HTTPException raise。
+    + magic bytes による mime spoofing 防御 (3 視点 review 2026-05-06)"""
+    if not (filename or mime or data_b64):
+        return None
+    if not (filename and mime and data_b64):
+        raise HTTPException(status_code=400, detail="添付ファイルは filename / mime / data_b64 全て必要です")
+    fn = filename.strip()[:200]
+    mt = mime.strip().lower()
+    if mt not in _MSG_ATTACHMENT_ALLOWED_MIMES:
+        raise HTTPException(status_code=400, detail=f"添付ファイル形式 {mt} は許可されていません (PDF/画像/Word/Excel/PowerPoint/text のみ)")
+    # base64 size 推定: len * 3/4
+    b64_len = len(data_b64)
+    if b64_len > _MSG_ATTACHMENT_MAX_BYTES * 4 // 3 + 100:
+        raise HTTPException(status_code=413, detail=f"添付ファイルが大きすぎます (上限 {_MSG_ATTACHMENT_MAX_BYTES // 1024 // 1024} MB)")
+    # decode できるかだけ check (オーバーヘッド最小)
+    import base64 as _b64
+    try:
+        decoded = _b64.b64decode(data_b64, validate=True)
+    except Exception:
+        raise HTTPException(status_code=400, detail="添付データが破損しています (base64 デコード失敗)")
+    actual_size = len(decoded)
+    if actual_size > _MSG_ATTACHMENT_MAX_BYTES:
+        raise HTTPException(status_code=413, detail=f"添付ファイルが大きすぎます ({actual_size // 1024 // 1024} MB / 上限 {_MSG_ATTACHMENT_MAX_BYTES // 1024 // 1024} MB)")
+    # magic bytes check (mime spoofing による XSS / RCE 防御)
+    expected_signatures = _MSG_ATTACHMENT_MAGIC.get(mt)
+    if expected_signatures and actual_size >= 8:
+        head = decoded[:16]
+        match = any(head.startswith(sig) for sig in expected_signatures)
+        if not match:
+            raise HTTPException(status_code=400, detail=f"添付ファイルの内容が宣言された形式 ({mt}) と一致しません (mime spoofing 検出)")
+        # WEBP は RIFF...WEBP container を更に check
+        if mt == "image/webp" and actual_size >= 16 and decoded[8:12] != b"WEBP":
+            raise HTTPException(status_code=400, detail="WEBP ファイルが破損しています")
+    return {"filename": fn, "mime": mt, "size": actual_size, "data_b64": data_b64}
+
+
+def _safe_attachment_response(filename: str, stored_mime: str, data: bytes):
+    """添付ダウンロード response builder。XSS 防御:
+    - 許可リストにある mime のみ Content-Type 反映 (text/html 等の rendering 系を弾く)
+    - それ以外は application/octet-stream に強制
+    - Content-Disposition: attachment で常にダウンロード扱い
+    - X-Content-Type-Options: nosniff で MIME sniffing 攻撃を防御"""
+    from fastapi.responses import Response as _Resp
+    from urllib.parse import quote as _qu
+    safe_mime = stored_mime if stored_mime in _MSG_ATTACHMENT_ALLOWED_MIMES else "application/octet-stream"
+    return _Resp(
+        content=data,
+        media_type=safe_mime,
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{_qu(filename or 'attachment')}",
+            "X-Content-Type-Options": "nosniff",
+        }
+    )
 
 
 @app.post("/api/admin/messages/send")
@@ -15498,6 +15608,11 @@ def admin_send_message(payload: MessageSendRequest, background_tasks: Background
             if c.fetchone():
                 raise HTTPException(status_code=409, detail="同一内容の一斉送信が60秒以内に実行されています")
 
+        # 添付ファイル検証 (任意)
+        attachment = _validate_message_attachment(
+            payload.attachment_filename, payload.attachment_mime, payload.attachment_data_b64
+        )
+
         # Phase A: in-app メッセージを全件 INSERT して即 commit (idle in transaction 防止)
         # email 送信は後で BackgroundTasks に逃がし、email_status は事後 UPDATE する
         msg_records = []  # [(msg_id, email, name)]
@@ -15508,10 +15623,14 @@ def admin_send_message(payload: MessageSendRequest, background_tasks: Background
                 recipients_with_email += 1
                 sent_via_initial = "queued"  # 後で email_in_app or in_app に UPDATE
             c.execute(
-                "INSERT INTO messages (sender_type, sender_id, recipient_type, recipient_id, broadcast_filter, subject, body, sent_via, email_status, broadcast_group_id) "
-                "VALUES (?,?,?,?,?,?,?,?,?,?) RETURNING id",
+                "INSERT INTO messages (sender_type, sender_id, recipient_type, recipient_id, broadcast_filter, subject, body, sent_via, email_status, broadcast_group_id, attachment_filename, attachment_mime, attachment_size, attachment_data_b64) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id",
                 ("admin", None, "student", t["id"], (payload.broadcast_filter if target == "broadcast" else None),
-                 subject, body, sent_via_initial, None, broadcast_group_id)
+                 subject, body, sent_via_initial, None, broadcast_group_id,
+                 attachment["filename"] if attachment else None,
+                 attachment["mime"] if attachment else None,
+                 attachment["size"] if attachment else None,
+                 attachment["data_b64"] if attachment else None)
             )
             row = c.fetchone()
             new_id = row["id"] if row else None
@@ -15588,6 +15707,7 @@ def admin_list_messages(authorization: Optional[str] = Header(None), limit: int 
         c.execute(
             """SELECT m.id, m.recipient_id, m.subject, m.body, m.sent_via, m.email_status, m.read_at, m.created_at,
                       m.broadcast_filter, m.broadcast_group_id, m.sender_type,
+                      m.attachment_filename, m.attachment_mime, m.attachment_size,
                       s.name AS student_name, s.grade
                FROM messages m
                LEFT JOIN students s ON m.recipient_id = s.id
@@ -15600,6 +15720,7 @@ def admin_list_messages(authorization: Optional[str] = Header(None), limit: int 
         # 生徒からの問い合わせ (sender_id で students JOIN, 加入状況も含める)
         c.execute(
             """SELECT m.id, m.sender_id AS from_student_id, m.subject, m.body, m.created_at, m.read_at,
+                      m.attachment_filename, m.attachment_mime, m.attachment_size,
                       s.name AS from_student_name, s.grade AS from_student_grade, s.course AS from_student_course
                FROM messages m
                LEFT JOIN students s ON m.sender_id = s.id
@@ -15613,6 +15734,7 @@ def admin_list_messages(authorization: Optional[str] = Header(None), limit: int 
         groups = {}
         individuals = []
         for r in rows:
+            _att_fn = r["attachment_filename"] if "attachment_filename" in r.keys() else None
             obj = {
                 "id": r["id"],
                 "recipient_id": r["recipient_id"],
@@ -15626,6 +15748,7 @@ def admin_list_messages(authorization: Optional[str] = Header(None), limit: int 
                 "created_at": str(r["created_at"]) if r["created_at"] else None,
                 "broadcast_filter": r["broadcast_filter"],
                 "broadcast_group_id": r["broadcast_group_id"],
+                "attachment": ({"filename": _att_fn, "mime": r["attachment_mime"], "size": r["attachment_size"]} if _att_fn else None),
             }
             if obj["broadcast_group_id"]:
                 gid = obj["broadcast_group_id"]
@@ -15661,6 +15784,7 @@ def admin_list_messages(authorization: Optional[str] = Header(None), limit: int 
             # 「mypage:study-log」「mypage:study-plan」のような source タグだけなら「(本文なし)」表示
             stripped = raw_body.strip()
             display_body = "(本文なし)" if stripped.startswith("mypage:") and len(stripped) <= 30 else raw_body
+            _i_att_fn = r["attachment_filename"] if "attachment_filename" in r.keys() else None
             inquiries.append({
                 "id": r["id"],
                 "from_student_id": r["from_student_id"],
@@ -15670,6 +15794,7 @@ def admin_list_messages(authorization: Optional[str] = Header(None), limit: int 
                 "is_already_enrolled": r["from_student_course"] == _STUDY_LOG_TARGET_COURSE,
                 "subject": r["subject"],
                 "body": display_body,
+                "attachment": ({"filename": _i_att_fn, "mime": r["attachment_mime"], "size": r["attachment_size"]} if _i_att_fn else None),
                 "created_at": str(r["created_at"]) if r["created_at"] else None,
                 "read_at": str(r["read_at"]) if r["read_at"] else None,
             })
@@ -15680,7 +15805,8 @@ def admin_list_messages(authorization: Optional[str] = Header(None), limit: int 
 
 @app.get("/api/messages/me")
 def get_my_messages(authorization: Optional[str] = Header(None), limit: int = 50):
-    """生徒: 自分宛メッセージ受信箱。"""
+    """生徒: 自分宛メッセージ受信箱 + 自分が送信したメッセージ (双方向) を取得。
+    添付ファイルは metadata のみ返す (実データは /api/messages/me/{id}/attachment で別途取得)。"""
     student = _get_current_student(authorization)
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -15691,29 +15817,194 @@ def get_my_messages(authorization: Optional[str] = Header(None), limit: int = 50
     conn = db()
     try:
         c = conn.cursor()
+        # 受信 + 送信 両方を時系列で取得
         c.execute(
-            "SELECT id, subject, body, sent_via, read_at, created_at FROM messages "
-            "WHERE recipient_type = 'student' AND recipient_id = ? "
+            "SELECT id, sender_type, recipient_type, subject, body, sent_via, read_at, created_at, "
+            "attachment_filename, attachment_mime, attachment_size FROM messages "
+            "WHERE (recipient_type = 'student' AND recipient_id = ?) "
+            "   OR (sender_type = 'student' AND sender_id = ?) "
             "ORDER BY created_at DESC LIMIT ?",
-            (student["id"], limit)
+            (student["id"], student["id"], limit)
         )
         rows = c.fetchall()
         msgs = []
         unread = 0
         for r in rows:
-            is_unread = not r["read_at"]
+            # 自分が送信したメッセージは既読扱い (受信側ではないため read_at は気にしない)
+            is_outgoing = (r["sender_type"] == "student")
+            is_unread = (not is_outgoing) and (not r["read_at"])
             if is_unread:
                 unread += 1
+            has_attachment = bool(r["attachment_filename"])
             msgs.append({
                 "id": r["id"],
+                "direction": "out" if is_outgoing else "in",
                 "subject": r["subject"],
                 "body": r["body"],
                 "sent_via": r["sent_via"],
                 "is_unread": is_unread,
                 "read_at": str(r["read_at"]) if r["read_at"] else None,
                 "created_at": str(r["created_at"]) if r["created_at"] else None,
+                "attachment": {
+                    "filename": r["attachment_filename"],
+                    "mime": r["attachment_mime"],
+                    "size": r["attachment_size"],
+                } if has_attachment else None,
             })
         return {"ok": True, "messages": msgs, "unread_count": unread}
+    finally:
+        conn.close()
+
+
+@app.post("/api/student/messages/send")
+def student_send_message(payload: StudentMessageSendRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒 → 塾長 メッセージ送信。授業質問・ファイル送信用 (国公立難関コース受講生向け)。
+    in-app メッセージとして塾長宛に保存 + 塾長 email にも通知。"""
+    _check_rate_limit_ip(request, bucket="student_msg_send", limit=10, window=300)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    body = _sanitize_text(payload.body, 5000)
+    if not body:
+        raise HTTPException(status_code=400, detail="本文は必須です")
+    subject = _sanitize_text(payload.subject, 200) or f"📩 {student.get('name') or '生徒'}さんからのメッセージ"
+
+    # 添付ファイル検証 (任意)
+    attachment = _validate_message_attachment(
+        payload.attachment_filename, payload.attachment_mime, payload.attachment_data_b64
+    )
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO messages (sender_type, sender_id, recipient_type, recipient_id, broadcast_filter, subject, body, sent_via, email_status, attachment_filename, attachment_mime, attachment_size, attachment_data_b64) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id",
+            ("student", student["id"], "admin", None, None,
+             subject, body, "in_app", None,
+             attachment["filename"] if attachment else None,
+             attachment["mime"] if attachment else None,
+             attachment["size"] if attachment else None,
+             attachment["data_b64"] if attachment else None)
+        )
+        row = c.fetchone()
+        msg_id = row["id"] if row else None
+        # 監査 events
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("student_message_sent",
+                 json.dumps({"student_id": student["id"], "name": student.get("name"),
+                            "msg_id": msg_id, "has_attachment": bool(attachment),
+                            "subject": subject[:120]}, ensure_ascii=False),
+                 str(student["id"]))
+            )
+        except Exception: pass
+        conn.commit()
+        log.info(f"[Messages] student->admin send student={student['id']} msg_id={msg_id} attachment={bool(attachment)}")
+
+        # 塾長 email 通知 (任意・DAILY_SNS_TO_EMAIL 設定済みなら)
+        if DAILY_SNS_TO_EMAIL and RESEND_API_KEY and FROM_EMAIL:
+            try:
+                import urllib.request as _ur
+                from_label = student.get("name") or "(名前未登録)"
+                attach_note = f"\n📎 添付: {attachment['filename']} ({attachment['size'] // 1024} KB)" if attachment else ""
+                email_body = (
+                    f"{from_label}さん (生徒ID:{student['id']}) からメッセージが届きました。\n\n"
+                    f"件名: {subject}\n\n{body}{attach_note}\n\n"
+                    f"CEO ダッシュ「📨 メッセージ配信」 → 履歴 で内容確認 + 返信できます。"
+                )
+                req = _ur.Request(
+                    "https://api.resend.com/emails",
+                    data=json.dumps({
+                        "from": FROM_EMAIL,
+                        "to": [DAILY_SNS_TO_EMAIL],
+                        "subject": f"📩 [生徒メッセージ] {subject}",
+                        "text": email_body,
+                    }).encode("utf-8"),
+                    headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json", "User-Agent": "ai-juku-system/1.0"},
+                    method="POST",
+                )
+                _ur.urlopen(req, timeout=10).read()
+            except Exception as _e:
+                log.warning(f"[Messages] student->admin email notify failed: {_e}")
+
+        return {"ok": True, "message_id": msg_id, "has_attachment": bool(attachment),
+                "info": "塾長に届きました。返信は受信箱に表示されます (通常 1〜2 営業日以内)。"}
+    finally:
+        conn.close()
+
+
+@app.get("/api/messages/me/{msg_id}/attachment")
+def get_my_message_attachment(msg_id: int, authorization: Optional[str] = Header(None)):
+    """生徒: 自分宛 OR 自分送信メッセージの添付ファイルをダウンロード。
+    認可: そのメッセージの sender か recipient のみ。"""
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT sender_type, sender_id, recipient_type, recipient_id, "
+            "attachment_filename, attachment_mime, attachment_data_b64 "
+            "FROM messages WHERE id = ?",
+            (int(msg_id),)
+        )
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="メッセージが見つかりません")
+        is_recipient = (row["recipient_type"] == "student" and row["recipient_id"] == student["id"])
+        is_sender = (row["sender_type"] == "student" and row["sender_id"] == student["id"])
+        if not (is_recipient or is_sender):
+            raise HTTPException(status_code=403, detail="このメッセージへのアクセス権がありません")
+        if not row["attachment_data_b64"]:
+            raise HTTPException(status_code=404, detail="添付ファイルがありません")
+        import base64 as _b64
+        try:
+            data = _b64.b64decode(row["attachment_data_b64"])
+        except Exception:
+            raise HTTPException(status_code=500, detail="添付データの読込に失敗しました")
+        return _safe_attachment_response(
+            row["attachment_filename"] or "attachment",
+            row["attachment_mime"] or "application/octet-stream",
+            data,
+        )
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/messages/{msg_id}/attachment")
+def admin_get_message_attachment(msg_id: int, authorization: Optional[str] = Header(None)):
+    """塾長: 任意のメッセージの添付ファイルをダウンロード。生徒からの添付も閲覧可。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="未認証")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT attachment_filename, attachment_mime, attachment_data_b64 FROM messages WHERE id = ?",
+            (int(msg_id),)
+        )
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="メッセージが見つかりません")
+        if not row["attachment_data_b64"]:
+            raise HTTPException(status_code=404, detail="添付ファイルがありません")
+        import base64 as _b64
+        try:
+            data = _b64.b64decode(row["attachment_data_b64"])
+        except Exception:
+            raise HTTPException(status_code=500, detail="添付データの読込に失敗しました")
+        return _safe_attachment_response(
+            row["attachment_filename"] or "attachment",
+            row["attachment_mime"] or "application/octet-stream",
+            data,
+        )
     finally:
         conn.close()
 

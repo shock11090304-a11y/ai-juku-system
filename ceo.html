@@ -1699,9 +1699,16 @@
           <textarea id="msgBody" maxlength="5000" rows="6" placeholder="本文を入力 (改行可・最大5000文字)" style="width:100%; padding:0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; resize:vertical; font-family:inherit;"></textarea>
         </div>
 
-        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem; flex-wrap:wrap;">
           <input type="checkbox" id="msgSendEmail" checked style="width:18px; height:18px;">
           <label for="msgSendEmail" style="font-size:0.85rem; color:#d4d4d8; cursor:pointer;">📧 登録メールにも配信する</label>
+        </div>
+
+        <!-- 📎 授業ファイル添付 (PDF/画像/Word/Excel/PPT・10MB まで) -->
+        <div style="margin-bottom:0.75rem; padding:0.6rem 0.7rem; background:rgba(0,0,0,0.25); border:1px dashed rgba(167,139,250,0.3); border-radius:8px;">
+          <label for="msgAttachInput" style="font-size:0.82rem; color:#c4b5fd; cursor:pointer; display:block; margin-bottom:0.3rem;">📎 授業ファイル添付 (任意・10MB まで)</label>
+          <input type="file" id="msgAttachInput" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv" style="font-size:0.85rem; color:#cbd5e1;">
+          <div id="msgAttachStatus" style="font-size:0.78rem; color:#86efac; margin-top:0.3rem; min-height:1em;"></div>
         </div>
 
         <button id="msgSendBtn" type="button" style="width:100%; padding:0.85rem; background:linear-gradient(135deg,#ec4899,#8b5cf6); border:0; border-radius:10px; color:#fff; font-weight:700; font-size:1rem; cursor:pointer;">📨 送信</button>

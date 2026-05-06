@@ -1596,6 +1596,35 @@ async function sendMessage() {
   if (!body) { if (msg) { msg.textContent = '本文は必須です'; msg.style.color = '#fca5a5'; } return; }
 
   const payload = { target, subject: subject || undefined, body, send_email: sendEmail };
+
+  // 📎 添付ファイル (任意・10MB)
+  const attachInput = document.getElementById('msgAttachInput');
+  const attachStatus = document.getElementById('msgAttachStatus');
+  const attachFile = attachInput && attachInput.files && attachInput.files[0];
+  if (attachFile) {
+    if (attachFile.size > 10 * 1024 * 1024) {
+      if (msg) { msg.textContent = `添付ファイルが大きすぎます (${(attachFile.size/1024/1024).toFixed(1)} MB / 上限 10 MB)`; msg.style.color = '#fca5a5'; }
+      return;
+    }
+    try {
+      if (attachStatus) attachStatus.textContent = '⏳ ファイル読込中...';
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('ファイル読込失敗'));
+        reader.readAsDataURL(attachFile);
+      });
+      const b64 = String(dataUrl).split(',')[1] || '';
+      payload.attachment_filename = attachFile.name;
+      payload.attachment_mime = attachFile.type || 'application/octet-stream';
+      payload.attachment_data_b64 = b64;
+      if (attachStatus) attachStatus.textContent = `📎 ${attachFile.name} (${(attachFile.size/1024).toFixed(1)} KB)`;
+    } catch (e) {
+      if (msg) { msg.textContent = 'ファイル読込失敗: ' + (e.message || ''); msg.style.color = '#fca5a5'; }
+      return;
+    }
+  }
+
   if (target === 'student') {
     const sid = document.getElementById('msgStudentSelect').value;
     if (!sid) { if (msg) { msg.textContent = '送信先生徒を選択してください'; msg.style.color = '#fca5a5'; } return; }
@@ -1637,6 +1666,8 @@ async function sendMessage() {
     }
     document.getElementById('msgSubject').value = '';
     document.getElementById('msgBody').value = '';
+    if (attachInput) attachInput.value = '';
+    if (attachStatus) attachStatus.textContent = '';
     await loadMessageHistory();
   } catch (e) {
     if (msg) { msg.textContent = '❌ ' + (e.message || '送信失敗'); msg.style.color = '#fca5a5'; }

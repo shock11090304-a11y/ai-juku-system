@@ -1593,6 +1593,7 @@ function _fmtJstYMDHM(s) {
 
 function initMessages() {
   loadMyMessages();
+  _initComposeUI();
   // 60秒に1回 unread count を polling (タブ非アクティブ時は停止)
   const startPoll = () => {
     if (_msgPollTimer) return;
@@ -1606,6 +1607,131 @@ function initMessages() {
     else { startPoll(); refreshUnreadBadge(); }
   });
   if (!document.hidden) startPoll();
+}
+
+// ✏️ 送信フォーム初期化 (kokuritsu_nankan 受講生向け)
+function _initComposeUI() {
+  const composeBtn = document.getElementById('msgComposeBtn');
+  const composeHint = document.getElementById('msgComposeHint');
+  const composeForm = document.getElementById('msgComposeForm');
+  const cancelBtn = document.getElementById('msgComposeCancel');
+  const submitBtn = document.getElementById('msgComposeSubmit');
+  const fileInput = document.getElementById('msgComposeFile');
+  const fileNameLabel = document.getElementById('msgComposeFileName');
+  if (!composeBtn || !composeForm) return;
+  // course === 'kokuritsu_nankan' の生徒のみボタン表示
+  const tryShow = (retries) => {
+    const student = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || null;
+    if (!student && retries > 0) { setTimeout(() => tryShow(retries - 1), 200); return; }
+    if (student && student.course === 'kokuritsu_nankan') {
+      composeBtn.style.display = '';
+      if (composeHint) composeHint.style.display = '';
+    }
+  };
+  tryShow(10);
+  if (!composeBtn._bound) {
+    composeBtn._bound = true;
+    composeBtn.addEventListener('click', () => {
+      composeForm.style.display = '';
+      composeBtn.style.display = 'none';
+    });
+  }
+  if (cancelBtn && !cancelBtn._bound) {
+    cancelBtn._bound = true;
+    cancelBtn.addEventListener('click', () => {
+      composeForm.style.display = 'none';
+      composeBtn.style.display = '';
+      _resetComposeForm();
+    });
+  }
+  if (fileInput && !fileInput._bound) {
+    fileInput._bound = true;
+    fileInput.addEventListener('change', (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) { fileNameLabel.textContent = ''; return; }
+      if (f.size > 10 * 1024 * 1024) {
+        fileNameLabel.textContent = `❌ ファイルが大きすぎます (${(f.size/1024/1024).toFixed(1)} MB / 上限 10 MB)`;
+        fileNameLabel.style.color = '#fca5a5';
+        fileInput.value = '';
+        return;
+      }
+      fileNameLabel.textContent = `📎 ${f.name} (${(f.size/1024).toFixed(1)} KB)`;
+      fileNameLabel.style.color = '#86efac';
+    });
+  }
+  if (submitBtn && !submitBtn._bound) {
+    submitBtn._bound = true;
+    submitBtn.addEventListener('click', _submitComposeMessage);
+  }
+}
+
+function _resetComposeForm() {
+  ['msgComposeSubject', 'msgComposeBody'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const fileInput = document.getElementById('msgComposeFile');
+  if (fileInput) fileInput.value = '';
+  const fileLabel = document.getElementById('msgComposeFileName');
+  if (fileLabel) { fileLabel.textContent = ''; }
+  const status = document.getElementById('msgComposeStatus');
+  if (status) status.textContent = '';
+}
+
+async function _submitComposeMessage() {
+  const subject = (document.getElementById('msgComposeSubject').value || '').trim();
+  const body = (document.getElementById('msgComposeBody').value || '').trim();
+  const fileInput = document.getElementById('msgComposeFile');
+  const file = fileInput && fileInput.files && fileInput.files[0];
+  const submitBtn = document.getElementById('msgComposeSubmit');
+  const status = document.getElementById('msgComposeStatus');
+  if (!body) {
+    status.innerHTML = '<span style="color:#fca5a5;">本文を入力してください</span>';
+    return;
+  }
+  if (file && file.size > 10 * 1024 * 1024) {
+    status.innerHTML = '<span style="color:#fca5a5;">添付ファイルは 10 MB まで</span>';
+    return;
+  }
+  submitBtn.disabled = true;
+  const orig = submitBtn.textContent;
+  submitBtn.textContent = '⏳ 送信中...';
+  status.innerHTML = '<span style="color:#a1a1aa;">送信中...</span>';
+  const payload = { subject: subject || undefined, body };
+  if (file) {
+    try {
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('ファイル読込失敗'));
+        reader.readAsDataURL(file);
+      });
+      const b64 = String(dataUrl).split(',')[1] || '';
+      payload.attachment_filename = file.name;
+      payload.attachment_mime = file.type || 'application/octet-stream';
+      payload.attachment_data_b64 = b64;
+    } catch (e) {
+      status.innerHTML = `<span style="color:#fca5a5;">ファイル読込失敗: ${escapeHtml(e.message || '')}</span>`;
+      submitBtn.disabled = false; submitBtn.textContent = orig; return;
+    }
+  }
+  try {
+    const r = await slApiFetch('/api/student/messages/send', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    status.innerHTML = `<span style="color:#86efac;">✅ ${escapeHtml(r.info || '送信完了')}</span>`;
+    _resetComposeForm();
+    // フォームを閉じて受信箱を再読込
+    setTimeout(() => {
+      document.getElementById('msgComposeForm').style.display = 'none';
+      const cb = document.getElementById('msgComposeBtn');
+      if (cb) cb.style.display = '';
+      loadMyMessages();
+    }, 1200);
+  } catch (e) {
+    status.innerHTML = `<span style="color:#fca5a5;">❌ 送信失敗: ${escapeHtml(e.message || '')}</span>`;
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = orig;
+  }
 }
 
 async function refreshUnreadBadge() {
@@ -1639,17 +1765,65 @@ async function loadMyMessages() {
       return;
     }
     list.innerHTML = msgs.map(m => {
-      const unreadBorder = m.is_unread ? 'border-left:4px solid #ec4899;' : 'border-left:4px solid rgba(255,255,255,0.05);';
+      const isOut = m.direction === 'out';
+      const unreadBorder = m.is_unread ? 'border-left:4px solid #ec4899;'
+        : (isOut ? 'border-left:4px solid rgba(167,139,250,0.5);' : 'border-left:4px solid rgba(255,255,255,0.05);');
       const dotBadge = m.is_unread ? '<span class="msg-unread-dot" style="display:inline-block; width:8px; height:8px; background:#ec4899; border-radius:50%; margin-right:0.4rem; vertical-align:middle;"></span>' : '';
+      const dirBadge = isOut
+        ? '<span style="background:rgba(167,139,250,0.2); color:#c4b5fd; padding:0.1rem 0.5rem; border-radius:4px; font-size:0.7em; margin-right:0.4rem; vertical-align:middle;">📤 送信済</span>'
+        : '';
+      const att = m.attachment;
+      const attBlock = att
+        ? `<div class="msg-attachment" style="margin-top:0.5rem; padding:0.5rem 0.7rem; background:rgba(0,0,0,0.3); border-radius:6px; display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+            <span style="font-size:0.8rem; color:#cbd5e1;">📎 ${escapeHtml(att.filename)} <span style="color:#71717a; font-size:0.85em;">(${Math.round((att.size||0)/1024)} KB)</span></span>
+            <button type="button" data-msg-id="${m.id}" class="msg-att-dl" style="background:rgba(99,102,241,0.25); color:#c7d2fe; border:0; padding:0.3rem 0.7rem; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:700;">⬇️ ダウンロード</button>
+          </div>`
+        : '';
       return `
         <div data-msg-id="${m.id}" data-unread="${m.is_unread ? '1' : '0'}" class="msg-item" style="background:rgba(255,255,255,0.04); ${unreadBorder} border-radius:8px; padding:0.85rem; margin-bottom:0.6rem; cursor:pointer;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
-            <div style="font-weight:700; color:#c7d2fe; font-size:0.9rem;">${dotBadge}${escapeHtml(m.subject || 'お知らせ')}</div>
+            <div style="font-weight:700; color:#c7d2fe; font-size:0.9rem;">${dotBadge}${dirBadge}${escapeHtml(m.subject || 'お知らせ')}</div>
             <div style="font-size:0.72rem; color:#71717a;">${escapeHtml(_fmtJstYMDHM(m.created_at))}</div>
           </div>
           <div class="msg-body" style="font-size:0.85rem; color:#d4d4d8; white-space:pre-wrap; max-height:3em; overflow:hidden; text-overflow:ellipsis; transition:max-height 0.3s;">${escapeHtml(m.body)}</div>
+          ${attBlock}
         </div>`;
     }).join('');
+    // 添付 DL ボタン bind (クリックの bubble を止めて行展開と分離)
+    list.querySelectorAll('.msg-att-dl').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-msg-id');
+        const orig = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '⏳ 取得中...';
+        try {
+          const apiBase = (window.location.origin.includes(':8090') || window.location.origin.includes('localhost:8090'))
+            ? 'http://localhost:8000' : window.location.origin;
+          const token = (window.AuthGuard && window.AuthGuard.getToken && window.AuthGuard.getToken()) || localStorage.getItem('ai_juku_session_token');
+          const r = await fetch(apiBase + `/api/messages/me/${encodeURIComponent(id)}/attachment`, {
+            headers: { 'Authorization': 'Bearer ' + token },
+          });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          const blob = await r.blob();
+          // Content-Disposition から filename を抽出
+          const cd = r.headers.get('content-disposition') || '';
+          let fn = 'attachment';
+          const m1 = cd.match(/filename\*=UTF-8''([^;]+)/i);
+          if (m1) { try { fn = decodeURIComponent(m1[1]); } catch {} }
+          else { const m2 = cd.match(/filename="?([^";]+)/i); if (m2) fn = m2[1]; }
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = fn; document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1500);
+        } catch (e) {
+          alert('ダウンロード失敗: ' + (e.message || e));
+        } finally {
+          btn.disabled = false;
+          btn.textContent = orig;
+        }
+      });
+    });
     list.querySelectorAll('.msg-item').forEach(el => {
       el.addEventListener('click', async () => {
         const body = el.querySelector('.msg-body');
