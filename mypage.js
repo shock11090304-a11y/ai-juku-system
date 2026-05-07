@@ -1187,9 +1187,32 @@ async function _spCallAi(systemPrompt, userText, maxTokens) {
   }
   const data = await res.json();
   const txt = (data.content || []).map(c => c.text || '').join('').trim();
-  const jsonStr = txt.replace(/^```(?:json)?\s*|\s*```$/g, '');
+  const jsonStr = txt.replace(/^```(?:json)?\s*|\s*```$/g, '').trim();
   try { return JSON.parse(jsonStr); }
-  catch { const m = jsonStr.match(/[\[\{][\s\S]*[\]\}]/); if (m) return JSON.parse(m[0]); throw new Error('JSON 解析失敗'); }
+  catch (_e1) {
+    // 2026-05-07: 再試行 1: 一番外側の [...]/{...} を抽出
+    const m = jsonStr.match(/[\[\{][\s\S]*[\]\}]/);
+    if (m) {
+      try { return JSON.parse(m[0]); } catch (_e2) {}
+    }
+    // 2026-05-07: 再試行 2: truncated JSON 救済 (max_tokens で途中切れた場合)
+    // 配列なら、最後の "完結した" } の位置までで切り、] を補完
+    if (jsonStr.startsWith('[')) {
+      // 最後の },\n  { や } } を探す
+      const lastCompleteObj = jsonStr.lastIndexOf('},');
+      if (lastCompleteObj > 0) {
+        const truncated = jsonStr.slice(0, lastCompleteObj + 1) + ']';
+        try {
+          const arr = JSON.parse(truncated);
+          if (Array.isArray(arr) && arr.length > 0) {
+            console.warn(`[_spCallAi] truncated 検知 → ${arr.length} 件まで救済`);
+            return arr;
+          }
+        } catch (_e3) {}
+      }
+    }
+    throw new Error('AI 応答の解析に失敗しました。もう一度お試しください。');
+  }
 }
 
 // ============ A: AI 計画自動生成 ============
@@ -1214,8 +1237,12 @@ async function generateStudyPlanWithAi() {
     const days = Math.max(1, Math.round((new Date(end) - new Date(start)) / 86400000) + 1);
     const totalMin = days * dailyMin;
     const sysPrompt = '受験戦略を立てる学習プランナーです。指定の志望校に必要な科目構成を考慮し、現実的な学習計画を立てます。教師名や塾名は出さず、純粋な JSON だけ返答します。';
-    const userPrompt = `志望校: ${goal}\n${material ? '優先教材: ' + material + '\n' : ''}期間: ${start} 〜 ${end} (${days}日間)\n1日確保時間: ${dailyMin} 分 (期間総計 ${totalMin} 分)\n\n受験戦略上、上記期間に並列で進めるべき計画を 3〜5件 提案してください。各計画は study_plans に登録される単位 (1 教材 or 1 単元 単位)。\n\n出力形式 (フェンスや前置きなし、純粋な JSON):\n[\n  {\n    "title": "タイトル (40文字以内)",\n    "subject": "次から1つ: 英語/数学/国語/現代文/古文/漢文/理科/物理/化学/生物/地学/社会/日本史/世界史/地理/倫理/政経/情報/小論文/面接対策/その他",\n    "material": "推奨教材名 (40文字以内、例: ターゲット1900・青チャート数学IA)",\n    "start_date": "${start}",\n    "end_date": "YYYY-MM-DD (期間内の現実的な終了日)",\n    "target_minutes": 整数 (期間総分数の妥当な配分),\n    "target_pages": 整数 or null,\n    "color": "#RRGGBB (科目別に視認性高く: 英#6366f1 数#10b981 国#ec4899 理#f59e0b 社#8b5cf6 等)",\n    "rationale": "この計画を提案する理由 (60文字以内)"\n  }\n]\n注: target_minutes 合計は期間総計の 80〜100% に収めること。期間が短い (30日以下) なら 3件、長い (180日以上) なら 5件まで。`;
-    const proposals = await _spCallAi(sysPrompt, userPrompt, 2500);
+    // 2026-05-07 致命修正: max_tokens を 2500→4500 に増量
+    // (3〜5件 × 9 field の JSON は出力 3000-4000 token 必要・2500 だと途中で切れて parse 失敗していた)
+    // 同時に rationale を 40 文字以内に短縮 + color は省略可に変更してトークン節約
+    const userPrompt = `志望校: ${goal}\n${material ? '優先教材: ' + material + '\n' : ''}期間: ${start} 〜 ${end} (${days}日間)\n1日確保時間: ${dailyMin} 分 (期間総計 ${totalMin} 分)\n\n上記期間に並列で進めるべき計画を 3〜4件 提案してください。各計画は study_plans に登録される単位 (1 教材 or 1 単元 単位)。\n\n出力形式 (フェンスや前置きなし、純粋な JSON だけ・改行最小):\n[\n  {\n    "title": "タイトル(40文字以内)",\n    "subject": "次から1つ: 英語/数学/国語/現代文/古文/漢文/理科/物理/化学/生物/地学/社会/日本史/世界史/地理/倫理/政経/情報/小論文/面接対策/その他",\n    "material": "推奨教材名(40文字以内)",\n    "start_date": "${start}",\n    "end_date": "YYYY-MM-DD",\n    "target_minutes": 整数,\n    "target_pages": 整数 or null,\n    "color": "#6366f1(英)/#10b981(数)/#ec4899(国)/#f59e0b(理)/#8b5cf6(社) 該当色",\n    "rationale": "理由(40文字以内)"\n  }\n]\n注: target_minutes 合計は期間総計の 80〜100%。期間 30日以下なら 3件、それ以上 4件。短文・簡潔に。`;
+    // max_tokens を 4500 に増量 (Gemini truncation 対策)
+    const proposals = await _spCallAi(sysPrompt, userPrompt, 4500);
     if (!Array.isArray(proposals) || !proposals.length) throw new Error('提案が空でした');
 
     msg.style.color = '#86efac'; msg.textContent = `✅ ${proposals.length} 件の計画案を生成しました`;
