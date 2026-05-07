@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+<script src="cache-purge.js"></script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover">
 <title>AI 東大英語チャレンジ — シェア画像</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -11,12 +12,17 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
     color: #fff;
     -webkit-font-smoothing: antialiased;
+    /* iPhone Safari の URL bar が動的に viewport を変えるので small viewport 単位で固定 */
+    min-height: 100vh;
+    min-height: 100svh;
+    display: grid;
+    place-items: center;
   }
   /* Threads/X 推奨アスペクト比 1:1 (1080x1080) を再現する正方形 */
   .card {
-    width: min(100vw, 100vh, 600px);
+    /* svh で iPhone Safari URL bar による viewport 縮みに耐性 */
+    width: min(100vw, 100svh, 600px);
     aspect-ratio: 1 / 1;
-    margin: 0 auto;
     padding: 8% 7%;
     background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #831843 100%);
     position: relative;
@@ -202,6 +208,8 @@
     </div>
   </div>
 </div>
+<!-- スクショ用画像なのでメインカードは static / 直開き訪問者向けの導線リンクを画面下に -->
+<a href="ai-todai-challenge.html?utm_source=share-image&utm_campaign=ai-todai" style="position:fixed;bottom:36px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:#fbbf24;padding:0.5rem 1rem;border-radius:999px;text-decoration:none;font-size:11px;font-weight:700;border:1px solid rgba(251,191,36,0.4);z-index:9;">📖 詳細ページを見る →</a>
 <div class="hint">📸 iPhone: ボリューム上 + サイドボタン同時押しでスクショ → Threads に添付</div>
 </body>
 </html>
