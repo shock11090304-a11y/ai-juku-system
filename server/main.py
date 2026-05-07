@@ -763,6 +763,24 @@ def init_db():
     );
     CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_id);
     CREATE INDEX IF NOT EXISTS idx_referrals_referred ON referrals(referred_id);
+
+    -- 🎫 招待コード (短い文字列・URL に焼かない方式)
+    -- 2026-05-07: URL 焼き込み方式は塾長 typo で email 不一致 → 顧客失敗の事故あり (森澤さん)
+    -- → 短い code (AJK-XXXXXXXX) を発行し、checkout.html の入力欄に貼ってもらう運用に切替
+    -- code は server で DB lookup → email/expires/kind を解決 (typo 不可・iab 安全)
+    CREATE TABLE IF NOT EXISTS invite_codes (
+        id {pk},
+        code TEXT UNIQUE NOT NULL,
+        email TEXT NOT NULL,
+        kind TEXT NOT NULL DEFAULT 'student_addon',
+        expires_at TIMESTAMP NOT NULL,
+        used_at TIMESTAMP,
+        used_by_student_id INTEGER,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_invite_codes_email ON invite_codes(email);
+    CREATE INDEX IF NOT EXISTS idx_invite_codes_expires ON invite_codes(expires_at);
     """)
     # 既存DBに不足列を追加 (idempotent migration)
     # Postgres: 「column already exists」エラーで トランザクションが abort されると
@@ -6765,10 +6783,19 @@ def _sign_invite_token(email: str, expires_days: int = 30) -> str:
 
 
 def _verify_invite_token(token: str) -> dict:
-    """招待トークン検証。{valid, email?, expires_at?, reason?} を返す。"""
+    """招待トークン検証。{valid, email?, expires_at?, reason?} を返す。
+    2026-05-07: HMAC 形式の URL token 以外に、短い招待コード (AJK-XXXXXXXX 等)
+    も受け付ける。コードの場合は DB invite_codes table から lookup する。"""
     if not APP_SECRET:
         return {"valid": False, "reason": "server_misconfigured"}
-    if not token or "." not in token:
+    if not token:
+        return {"valid": False, "reason": "malformed"}
+    token = token.strip()
+    # ① 短い招待コード形式 (AJK-XXXXXXXX 系) → DB lookup
+    if "." not in token and len(token) <= 64:
+        return _verify_invite_code_db(token)
+    # ② 従来の HMAC 形式 (<payload_b64>.<sig_b64>)
+    if "." not in token:
         return {"valid": False, "reason": "malformed"}
     try:
         payload_b64, sig_b64 = token.split(".", 1)
@@ -6788,6 +6815,106 @@ def _verify_invite_token(token: str) -> dict:
         }
     except Exception as e:
         return {"valid": False, "reason": f"parse_error_{type(e).__name__}"}
+
+
+# 🎫 短い招待コード (DB lookup 方式・2026-05-07 追加)
+import secrets as _secrets
+
+def _generate_invite_code(prefix: str = "AJK") -> str:
+    """ハイフン込み 12 文字の招待コードを生成。
+    形式: AJK-XXXXXXXX (8 文字 base32 大文字・人間が読みやすい)
+    人間タイポしやすい O/0/I/1 を除外した 32 文字セット。"""
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # 32 chars (O/0/I/1 除外)
+    suffix = "".join(_secrets.choice(alphabet) for _ in range(8))
+    return f"{prefix}-{suffix}"
+
+
+def _normalize_invite_code(code: str) -> str:
+    """ユーザ入力を normalize: 全角→半角・大文字化・前後空白除去・全空白除去。
+    e.g. "ajk-abc12345" / "ＡＪＫ−ＡＢＣ１２３４５" → "AJK-ABC12345" """
+    if not code:
+        return ""
+    s = code.strip()
+    # 全角 → 半角
+    fullwidth_to_halfwidth = str.maketrans(
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789−ー―‐",
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789----"
+    )
+    s = s.translate(fullwidth_to_halfwidth)
+    # 全空白除去 + 大文字化
+    s = "".join(s.split()).upper()
+    return s
+
+
+def _verify_invite_code_db(code: str) -> dict:
+    """DB lookup 方式の招待コード検証。{valid, email?, expires_at?, reason?, kind?}"""
+    code_norm = _normalize_invite_code(code)
+    if not code_norm or len(code_norm) > 64:
+        return {"valid": False, "reason": "malformed"}
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute(
+            "SELECT id, code, email, kind, expires_at, used_at FROM invite_codes WHERE UPPER(code) = ? LIMIT 1",
+            (code_norm,)
+        )
+        row = c.fetchone()
+        conn.close()
+        if not row:
+            return {"valid": False, "reason": "not_found"}
+        # expires_at は string (postgres TIMESTAMP) or datetime → parse
+        exp_raw = row["expires_at"] if hasattr(row, "__getitem__") else row[4]
+        try:
+            if isinstance(exp_raw, str):
+                # PostgreSQL の "2026-05-14 11:32:15+00" 形式 or ISO
+                from dateutil import parser as _du_parser
+                exp_dt = _du_parser.parse(exp_raw)
+            else:
+                exp_dt = exp_raw
+            if exp_dt.tzinfo is None:
+                exp_dt = exp_dt.replace(tzinfo=timezone.utc)
+            exp_ts = exp_dt.timestamp()
+        except Exception:
+            # fallback: assume not expired if we can't parse
+            exp_ts = datetime.now(timezone.utc).timestamp() + 86400
+        if exp_ts < datetime.now(timezone.utc).timestamp():
+            return {"valid": False, "reason": "expired"}
+        return {
+            "valid": True,
+            "email": row["email"],
+            "expires_at": int(exp_ts),
+            "kind": row["kind"] or "student_addon",
+            "code": row["code"],
+        }
+    except Exception as e:
+        log.warning(f"[InviteCode] verify failed: {type(e).__name__}: {e}")
+        return {"valid": False, "reason": f"db_error_{type(e).__name__}"}
+
+
+def _save_invite_code(code: str, email: str, kind: str, expires_at_iso: str, notes: str = "") -> bool:
+    """招待コードを DB に保存。冪等 (同 code 既存なら False)。"""
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute(
+            """INSERT INTO invite_codes (code, email, kind, expires_at, notes)
+               VALUES (?, ?, ?, ?, ?)""",
+            (code, (email or "").strip().lower(), kind, expires_at_iso, notes or "")
+        )
+        conn.commit()
+        conn.close()
+        return True
+    except IntegrityError:
+        try: conn.rollback()
+        except Exception: pass
+        try: conn.close()
+        except Exception: pass
+        return False
+    except Exception as e:
+        log.warning(f"[InviteCode] save failed: {type(e).__name__}: {e}")
+        try: conn.close()
+        except Exception: pass
+        return False
 
 
 @app.post("/api/admin/marketing/generate-student-invite")
@@ -6860,6 +6987,97 @@ def public_verify_invite(token: str):
     if not token:
         return {"valid": False, "reason": "missing_token"}
     return _verify_invite_token(token)
+
+
+# 🎫 招待コード (短い文字列・DB lookup 方式) 生成 endpoint
+# 2026-05-07: URL 焼き込み方式は塾長 typo で email mismatch → 顧客失敗事故あり (森澤さん)
+# → 短い code (AJK-XXXXXXXX) を発行・顧客は checkout/upgrade で入力、server で DB lookup
+@app.post("/api/admin/marketing/generate-invite-code")
+async def admin_generate_invite_code(
+    payload: dict = None,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🎫 通塾生向け 招待コード (短い文字列) を 1 件発行。
+    payload: {email: str, expires_days?: 30, kind?: 'student_addon', notes?: ''}
+    レスポンス: {ok, code, email, expires_at_jst, dm_template}
+    認証: admin Bearer or x-cron-secret
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    payload = payload or {}
+    email = (payload.get("email") or "").strip().lower()
+    expires_days = int(payload.get("expires_days", 30))
+    kind = (payload.get("kind") or "student_addon").strip()
+    notes = (payload.get("notes") or "").strip()
+    name = (payload.get("name") or "").strip()
+
+    if not email or "@" not in email or "." not in email.split("@", 1)[1]:
+        raise HTTPException(status_code=400, detail="email が不正")
+    if expires_days < 1 or expires_days > 365:
+        raise HTTPException(status_code=400, detail="expires_days は 1〜365 の範囲")
+
+    # 衝突回避: 最大 5 回 retry でユニークな code を生成
+    code = None
+    for _ in range(5):
+        candidate = _generate_invite_code()
+        if _save_invite_code(
+            candidate,
+            email,
+            kind,
+            (datetime.now(timezone.utc) + timedelta(days=expires_days)).isoformat(),
+            notes,
+        ):
+            code = candidate
+            break
+    if not code:
+        raise HTTPException(status_code=500, detail="コード生成に失敗しました (衝突連発)。再度お試しください。")
+
+    expires_at_jst = (datetime.now(timezone.utc) + timedelta(days=expires_days)).astimezone(timezone(timedelta(hours=9)))
+    expires_at_jst_str = expires_at_jst.strftime('%Y/%m/%d %H:%M')
+
+    name_part = f"{name}さん " if name else ""
+    dm_template = (
+        f"{name_part}いつもありがとうございます！\n"
+        f"\n"
+        f"AI学習アドオンの招待コードをお送りします。\n"
+        f"通塾生限定・永年¥5,000/月 (入塾金免除) です。\n"
+        f"\n"
+        f"【招待コード】\n"
+        f"{code}\n"
+        f"\n"
+        f"【お申込み手順】\n"
+        f"1. https://trillion-ai-juku.com/checkout.html?plan=student_addon を開く\n"
+        f"2. 「🎓 通塾生プラン」を選択\n"
+        f"3. お名前・メールアドレスを入力\n"
+        f"4. 「招待コード」欄に上記コード ({code}) をコピペ\n"
+        f"5. 決済情報を入力 → 完了\n"
+        f"\n"
+        f"※ 体験期間中の学習履歴・進捗データはすべて引き継がれます。\n"
+        f"※ コード有効期限: {expires_at_jst_str}\n"
+        f"※ 不明点はこちらの DM にどうぞ。"
+    )
+
+    log.info(f"[InviteCode] generated code={code} email={email} kind={kind} expires_days={expires_days}")
+
+    return {
+        "ok": True,
+        "code": code,
+        "email": email,
+        "kind": kind,
+        "expires_at_jst": expires_at_jst_str,
+        "expires_days": expires_days,
+        "dm_template": dm_template,
+        "checkout_url_with_code": f"https://trillion-ai-juku.com/checkout.html?plan=student_addon&invite_code={code}",
+    }
 
 
 def _send_student_invite_email(to_email: str, name: str, invite_url: str, expires_at_jst_str: str) -> dict:

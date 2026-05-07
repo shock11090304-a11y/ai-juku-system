@@ -60,7 +60,8 @@ if (params.get('plan') && PLAN_INFO[params.get('plan')]) {
 
 // 招待トークン (student-upgrade.html 経由 or URL ?invite= で渡される) を保持
 // 2026-05-07: 入力欄 #inviteCode に URL 値を auto-fill (塾長指示 = 申し込み画面に招待コード入力欄)
-window.__inviteToken = params.get('invite') || '';
+// 2026-05-07 update: ?invite_code=AJK-XXX の短いコード方式も受け付ける (URL token typo 事故対策)
+window.__inviteToken = params.get('invite') || params.get('invite_code') || '';
 if (window.__inviteToken) {
   const inviteEl = document.getElementById('inviteCode');
   if (inviteEl) inviteEl.value = window.__inviteToken;
