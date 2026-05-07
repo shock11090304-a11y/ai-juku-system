@@ -178,16 +178,20 @@
       </div>
     </div>
 
-    <!-- 生徒追加モーダル (2026-05-07 追加) -->
-    <div id="addStudentModal" class="modal-overlay hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9990;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
-      <div style="background:var(--panel,#1f2937);color:var(--text,#fff);border-radius:14px;padding:24px;max-width:520px;width:calc(100% - 32px);box-shadow:0 20px 60px rgba(0,0,0,0.5);max-height:90vh;overflow-y:auto;">
-        <h3 style="margin:0 0 16px;font-size:1.15rem;font-weight:700;">➕ 新規生徒を追加</h3>
-        <div style="display:flex;flex-direction:column;gap:12px;">
+    <!-- 生徒追加モーダル (2026-05-07 追加 / 2026-05-07 sticky footer 修正) -->
+    <div id="addStudentModal" class="modal-overlay hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9990;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:16px;">
+      <div style="background:var(--panel,#1f2937);color:var(--text,#fff);border-radius:14px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);max-height:calc(100vh - 32px);display:flex;flex-direction:column;">
+        <!-- header -->
+        <div style="padding:18px 22px 12px;border-bottom:1px solid rgba(255,255,255,0.08);">
+          <h3 style="margin:0;font-size:1.1rem;font-weight:700;">➕ 新規生徒を追加</h3>
+        </div>
+        <!-- body (scrollable) -->
+        <div style="padding:14px 22px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;flex:1;min-height:0;">
           <label style="display:flex;flex-direction:column;gap:4px;">
             <span style="font-size:0.82rem;font-weight:600;">氏名 <span style="color:#f87171;">*</span></span>
             <input type="text" id="addStudentName" required placeholder="例: 山田 太郎" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.3);color:inherit;font-size:0.95rem;">
           </label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <label style="display:flex;flex-direction:column;gap:4px;">
               <span style="font-size:0.82rem;font-weight:600;">学年</span>
               <select id="addStudentGrade" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.3);color:inherit;font-size:0.95rem;">
@@ -224,15 +228,16 @@
             <span style="font-size:0.82rem;font-weight:600;">備考 (任意)</span>
             <textarea id="addStudentNotes" rows="2" placeholder="例: 兄が #189 在籍" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.3);color:inherit;font-size:0.95rem;font-family:inherit;resize:vertical;"></textarea>
           </label>
+          <p style="margin:6px 0 0;font-size:0.76rem;color:var(--text-muted,#9ca3af);line-height:1.4;">
+            追加した生徒は <code>STATE.overrides.newStudents</code> に保存され、クラウド同期で携帯/PC 間で共有されます。<br>
+            ※ data.json (元データ) は変更されません。
+          </p>
         </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
+        <!-- footer (sticky・常に表示) -->
+        <div style="padding:14px 22px;border-top:1px solid rgba(255,255,255,0.08);display:flex;gap:10px;justify-content:flex-end;background:var(--panel,#1f2937);flex-shrink:0;">
           <button class="btn btn-ghost" id="addStudentCancelBtn">キャンセル</button>
-          <button class="btn btn-primary" id="addStudentSaveBtn">追加して保存</button>
+          <button class="btn btn-primary" id="addStudentSaveBtn">✓ 追加して保存</button>
         </div>
-        <p style="margin-top:12px;font-size:0.78rem;color:var(--text-muted,#9ca3af);">
-          追加した生徒は <code>STATE.overrides.newStudents</code> に保存され、クラウド同期で携帯/PC 間で共有されます。<br>
-          ※ data.json (元データ) は変更されません。
-        </p>
       </div>
     </div>
     <div class="table-wrap">
@@ -864,6 +869,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="app.js?v=20260507-addstudent2"></script>
+<script src="app.js?v=20260507-addstudent3"></script>
 </body>
 </html>
