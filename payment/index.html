@@ -180,8 +180,8 @@
       </div>
     </div>
 
-    <!-- 生徒追加モーダル (2026-05-07 追加 / 2026-05-07 sticky footer 修正) -->
-    <div id="addStudentModal" class="modal-overlay hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9990;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:16px;">
+    <!-- 生徒追加モーダル (2026-05-07 追加 / 既存 .modal-overlay.hidden { display:none } を尊重するためインライン display を削除) -->
+    <div id="addStudentModal" class="modal-overlay hidden">
       <div style="background:var(--panel,#1f2937);color:var(--text,#fff);border-radius:14px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);max-height:calc(100vh - 32px);display:flex;flex-direction:column;">
         <!-- header -->
         <div style="padding:18px 22px 12px;border-bottom:1px solid rgba(255,255,255,0.08);">
@@ -871,6 +871,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="app.js?v=20260507-headersync"></script>
+<script src="app.js?v=20260507-modalfix"></script>
 </body>
 </html>

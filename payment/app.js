@@ -253,6 +253,20 @@ function mergeNewStudentsIntoData() {
   STATE.data.nextStudentId = maxId;
 }
 
+// 2026-05-07: モーダル閉じる safe helper (インライン style 上書き対策の二重保険)
+function closeAddStudentModalSafe() {
+  const m = document.getElementById('addStudentModal');
+  if (!m) return;
+  m.classList.add('hidden');
+  m.style.display = 'none';   // ← class が効かなくても確実に消す
+}
+function openAddStudentModalSafe() {
+  const m = document.getElementById('addStudentModal');
+  if (!m) return;
+  m.classList.remove('hidden');
+  m.style.display = '';        // ← inline 削除で CSS 定義 (display: grid) を復活
+}
+
 // 2026-05-07 追加: 生徒追加モーダル — open
 function openAddStudentModal() {
   const modal = document.getElementById('addStudentModal');
@@ -266,7 +280,7 @@ function openAddStudentModal() {
   document.getElementById('addStudentCourses').value = '';
   document.getElementById('addStudentNotes').value = '';
   document.getElementById('addStudentEnrollDate').value = STATE.currentMonth || todayMonth();
-  modal.classList.remove('hidden');
+  openAddStudentModalSafe();
   // フォーカス
   setTimeout(() => document.getElementById('addStudentName').focus(), 50);
 }
@@ -342,7 +356,7 @@ async function saveNewStudent() {
   STATE.data.students.push(newStudent);
   STATE.data.nextStudentId = id + 1;
 
-  document.getElementById('addStudentModal').classList.add('hidden');
+  closeAddStudentModalSafe();
   populateAllFilters();
   refresh();
 
@@ -361,13 +375,13 @@ async function saveNewStudent() {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     const m = document.getElementById('addStudentModal');
-    if (m && !m.classList.contains('hidden')) m.classList.add('hidden');
+    if (m && !m.classList.contains('hidden')) closeAddStudentModalSafe();
   }
 });
 // overlay クリック (modal 外側 = overlay 自身) で閉じる
 document.addEventListener('click', (e) => {
   const m = document.getElementById('addStudentModal');
-  if (m && !m.classList.contains('hidden') && e.target === m) m.classList.add('hidden');
+  if (m && !m.classList.contains('hidden') && e.target === m) closeAddStudentModalSafe();
 });
 
 function getStatus(student) {
@@ -3975,7 +3989,7 @@ function setupModals() {
   const asb = document.getElementById('addStudentBtn');
   if (asb) asb.addEventListener('click', openAddStudentModal);
   const ascb = document.getElementById('addStudentCancelBtn');
-  if (ascb) ascb.addEventListener('click', () => document.getElementById('addStudentModal')?.classList.add('hidden'));
+  if (ascb) ascb.addEventListener('click', closeAddStudentModalSafe);
   const assb = document.getElementById('addStudentSaveBtn');
   if (assb) assb.addEventListener('click', saveNewStudent);
 
