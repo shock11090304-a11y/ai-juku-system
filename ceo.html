@@ -3896,37 +3896,69 @@
       // Threads/X 投稿テキストや任意のメモを Gmail (DAILY_SNS_TO_EMAIL) に送る
       // — iPhone でコピペしやすくするため。`/api/admin/email/send-custom` を流用。
       const SELF_MEMO_PRESETS = {
+        // v2 (2026-05-07 改): Threads は URL を含む投稿の reach を 1/10〜1/50 に制限する仕様
+        // → 本文に URL を入れず、最初の自分リプライに置く戦法
+        // → 画像を添付するため、専用のシェア画像ページを案内
         ai_todai_threads: {
-          subject: '📱 Threads 投稿用 — AI 東大英語チャレンジ',
-          body: `¥14,500/月 の AI チューター、東大英語 2024 を解かせてみた。
+          subject: '📱 Threads 投稿用 v2 (URL なし・画像必須) — AI 東大チャレンジ',
+          body: `【メイン投稿 (本文)】 ※ URL を含めないこと
 
-結果: 4/4 全問正解 (所要 9 分)。
+¥14,500/月の AI チューターに東大英語 2024 を解かせたら、9分で全問正解した。
 
-しかも、各問の推論プロセスを全公開してます。普通の塾なら絶対やらない検証。
+塾代の感覚、もうずれてないか。
 
-→ https://trillion-ai-juku.com/ai-todai-challenge.html?utm_source=threads&utm_campaign=ai-todai
+詳細は次のリプライに置きます👇
 
-#AI東大模試 #大学受験 #東大英語
+#AI東大模試 #大学受験 #塾選び
 
----
-📌 投稿手順 (iPhone):
-1. Threads アプリを開く
-2. 真ん中下の ✏ 新規スレッド ボタンをタップ
-3. 上の本文 (区切り線より上) を長押し → コピー → 貼り付け
-4. 右上の「投稿」をタップ
+────────────────────────────
+【1番目の自分リプライ (= 本投稿の comment 欄に追加)】
 
-💡 画像も添付するとエンゲージメント 3〜5 倍:
-→ https://trillion-ai-juku.com/ai-todai-challenge.html を開いてスコア部分をスクショ → 添付`
+→ trillion-ai-juku.com/ai-todai-challenge.html
+
+各問の推論プロセスを全公開してます (やらせなしの検証)。
+10日間 ¥0 で同じAIを試せます。
+
+────────────────────────────
+🚨 投稿前に必ずやること (バズ確度 5-10倍 UP):
+
+1️⃣ シェア画像をスクショ
+  iPhone Safari で開く:
+  https://trillion-ai-juku.com/ai-todai-share-image.html
+  → 画面全体をスクショ (= ボリューム上 + サイドボタン)
+
+2️⃣ Threads アプリを開く
+  → ✏ 新規スレッド
+  → メイン投稿テキスト (上記) を貼付
+  → 📎 画像添付 → 撮ったスクショを選択
+  → 投稿
+
+3️⃣ 自分の投稿が出たら、即「返信」をタップ
+  → 「1番目の自分リプライ」 (上記) を貼付
+  → 投稿
+  ※ これで URL は本文ではなく comment に置かれ、reach 制限を回避
+
+────────────────────────────
+💡 なぜ前回 20 view しか伸びなかったか:
+- Threads は本文に URL があると reach を大幅制限する仕様
+- 画像なしの投稿は image post の 1/3〜1/5 のリーチ
+- 上記の「URL は reply / 画像は必須」 が Threads 攻略の鉄則`
         },
         ai_todai_x: {
           subject: '𝕏 X 投稿用 — AI 東大英語チャレンジ',
-          body: `¥14,500/月の AI チューターに東大英語 2024 を解かせたら全問正解 (4/4) した。
+          body: `【X (旧 Twitter) はリンク制限が緩いので URL 込み投稿で OK】
+
+¥14,500/月の AI チューターに東大英語 2024 を解かせたら全問正解 (4/4) した。
 
 所要時間 9 分。
 
 しかも各問の推論プロセスを全公開してる。本当に AI で解けるのか?疑う前にこのページ見てほしい。
 
-https://trillion-ai-juku.com/ai-todai-challenge.html?utm_source=x&utm_campaign=ai-todai`
+https://trillion-ai-juku.com/ai-todai-challenge.html?utm_source=x&utm_campaign=ai-todai
+
+────────────────────────────
+画像を添付するとさらに伸びます:
+https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ → 添付`
         },
       };
       const selfMemoLoadBtn = document.getElementById('selfMemoLoadBtn');
