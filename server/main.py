@@ -6312,6 +6312,12 @@ def admin_stripe_setup_all_prices(authorization: Optional[str] = Header(None)):
 def admin_stripe_check_prices(authorization: Optional[str] = Header(None)):
     """💳 全プランの Stripe 反映状態をチェック (= 読み取りのみ・Price は作成しない)
     塾長が「金額が Stripe に反映されているか」を確認する用。
+
+    2 段検査:
+    (A) lookup_key で見つかる Price の amount が PRICE_MAP の期待値と一致するか
+    (B) **env (STRIPE_PRICE_*) が指す Price の amount も期待値と一致するか**
+        → 2026-05-07 student_addon env が ¥9,800 旧 Price を指していて UI ¥5,000 と
+          不一致だった致命事故 (Reviewer A 検出) の再発防止。
     """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="未認証")
@@ -6322,55 +6328,111 @@ def admin_stripe_check_prices(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=503, detail="STRIPE_SECRET_KEY が未設定")
 
     s = get_stripe()
+
+    # 各プランの env 値を spec に組み込んでおく (eval 経由で取得)
+    _ENV_BY_LOOKUP = {
+        "founder_special": STRIPE_PRICE_FOUNDER_SPECIAL,
+        "premium": STRIPE_PRICE_PREMIUM,
+        "family": STRIPE_PRICE_FAMILY,
+        "standard": STRIPE_PRICE_STANDARD,
+        "student_addon": STRIPE_PRICE_STUDENT_ADDON,
+    }
+
     results = []
     for spec in _STRIPE_PLAN_SPECS:
         lk = spec["lookup_key"]
         amount = spec["amount"]
+        result = {
+            "lookup_key": lk,
+            "expected_jpy": amount,
+        }
+
+        # (A) lookup_key 検索
         try:
             existing = s.Price.list(lookup_keys=[lk], active=True, limit=1)
             if existing and existing.data:
                 ex = existing.data[0]
-                amount_match = (ex.unit_amount == amount)
-                results.append({
-                    "lookup_key": lk,
-                    "expected_jpy": amount,
+                lk_match = (ex.unit_amount == amount)
+                result.update({
                     "stripe_jpy": ex.unit_amount,
-                    "match": amount_match,
+                    "match": lk_match,
                     "price_id": ex.id,
                     "interval": ex.recurring.get("interval") if ex.recurring else None,
                     "active": ex.active,
                 })
             else:
-                results.append({
-                    "lookup_key": lk,
-                    "expected_jpy": amount,
+                result.update({
                     "stripe_jpy": None,
                     "match": False,
                     "price_id": None,
                     "missing": True,
                 })
         except Exception as e:
-            results.append({
-                "lookup_key": lk,
-                "expected_jpy": amount,
+            result.update({
                 "match": False,
-                "error": str(e),
+                "error": f"lookup_key search failed: {e}",
             })
+
+        # (B) env 値の検証 (env が指す Price の amount が期待値と一致するか)
+        env_pid = (_ENV_BY_LOOKUP.get(lk) or "").strip()
+        if env_pid and not env_pid.endswith("_placeholder"):
+            try:
+                env_price = s.Price.retrieve(env_pid)
+                env_amount = env_price.get("unit_amount")
+                env_match = (env_amount == amount)
+                result["env"] = {
+                    "price_id": env_pid,
+                    "stripe_jpy": env_amount,
+                    "match": env_match,
+                    "lookup_key_on_price": env_price.get("lookup_key"),
+                    "active": env_price.get("active"),
+                }
+                # env が違う Price を指していたら overall match を falsify
+                if not env_match:
+                    result["match"] = False
+                    result["env_mismatch"] = True
+            except Exception as e:
+                result["env"] = {
+                    "price_id": env_pid,
+                    "error": str(e),
+                    "match": False,
+                }
+                result["match"] = False
+        else:
+            # env が placeholder/空 → lookup_key 結果が source of truth
+            result["env"] = {
+                "price_id": env_pid or None,
+                "match": None,  # env 未設定なので評価対象外
+                "note": "env 未設定 → lookup_key を source of truth として使う" if not env_pid else "env が placeholder",
+            }
+
+        results.append(result)
 
     all_match = all(r.get("match") for r in results)
     missing = [r for r in results if r.get("missing")]
-    mismatched = [r for r in results if r.get("stripe_jpy") is not None and not r.get("match")]
+    mismatched = [r for r in results if r.get("stripe_jpy") is not None and not r.get("match") and not r.get("missing")]
+    env_mismatched = [r for r in results if r.get("env_mismatch")]
+
+    if all_match:
+        recommendation = "✅ 全プラン Stripe 反映済 (lookup_key + env 両方一致)"
+    else:
+        msgs = []
+        if missing:
+            msgs.append(f"未作成 {len(missing)} 件 → POST /api/admin/stripe/setup-all-prices")
+        if env_mismatched:
+            msgs.append(f"env が間違った Price を指している {len(env_mismatched)} 件 → Railway env を修正")
+        if mismatched:
+            msgs.append(f"lookup_key 上の Price 金額不一致 {len(mismatched)} 件")
+        recommendation = "⚠️ " + " / ".join(msgs)
+
     return {
         "ok": all_match,
         "all_match": all_match,
         "missing_count": len(missing),
         "mismatched_count": len(mismatched),
+        "env_mismatched_count": len(env_mismatched),
         "results": results,
-        "recommendation": (
-            "✅ 全プラン Stripe 反映済"
-            if all_match
-            else f"⚠️ {len(missing) + len(mismatched)} 件 不一致 → POST /api/admin/stripe/setup-all-prices で自動修正"
-        ),
+        "recommendation": recommendation,
     }
 
 
