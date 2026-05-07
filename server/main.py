@@ -303,6 +303,36 @@ def _lookup_founder_special_price_id() -> str:
     _FOUNDER_SPECIAL_PRICE_CACHE = {"id": None, "checked_at": now}
     return ""
 
+# 2026-05-07 追加 (Reviewer A CRITICAL #3): student_addon の lookup_key fallback
+_STUDENT_ADDON_PRICE_CACHE: dict = {"id": None, "checked_at": None}
+
+def _lookup_student_addon_price_id() -> str:
+    """Stripe API で lookup_key='student_addon' の price を検索。
+    env STRIPE_PRICE_STUDENT_ADDON が placeholder/空のときのフォールバック。
+    placeholder のまま Stripe に送ると 'No such price' で 400 になるため必ず実 ID を返す。"""
+    global _STUDENT_ADDON_PRICE_CACHE
+    # env が placeholder でない実 price ID なら優先
+    if STRIPE_PRICE_STUDENT_ADDON and not STRIPE_PRICE_STUDENT_ADDON.endswith("_placeholder"):
+        return STRIPE_PRICE_STUDENT_ADDON
+    if not STRIPE_SECRET_KEY:
+        return ""
+    cached_id = _STUDENT_ADDON_PRICE_CACHE.get("id")
+    checked = _STUDENT_ADDON_PRICE_CACHE.get("checked_at")
+    now = datetime.now(timezone.utc)
+    if cached_id and checked and (now - checked).total_seconds() < 3600:
+        return cached_id
+    try:
+        s = get_stripe()
+        results = s.Price.list(lookup_keys=["student_addon"], active=True, limit=1)
+        if results and results.data:
+            pid = results.data[0].id
+            _STUDENT_ADDON_PRICE_CACHE = {"id": pid, "checked_at": now}
+            return pid
+    except Exception as e:
+        log.warning(f"[Stripe] student_addon lookup failed: {e}")
+    _STUDENT_ADDON_PRICE_CACHE = {"id": None, "checked_at": now}
+    return ""
+
 # ==========================================================================
 # Database Setup (SQLite / Postgres 両対応)
 # ==========================================================================
@@ -2047,7 +2077,7 @@ def _collect_health_snapshot() -> dict:
 
     # paid (本契約) 数
     snapshot["paid_total"] = safe_count(
-        "SELECT COUNT(*) FROM students WHERE status='paid' AND plan IS NOT NULL AND plan != ''"
+        "SELECT COUNT(*) FROM students WHERE status='paid' AND plan IS NOT NULL AND plan != '' AND plan != 'student_addon'"
     )
     snapshot["paid_24h"] = safe_count(
         "SELECT COUNT(*) FROM students WHERE status='paid' AND paid_since >= ?", (h24,)
@@ -10790,12 +10820,35 @@ def trial_signup(payload: TrialSignup, request: Request):
 def create_trial_checkout(payload: dict):
     """7日間 完全無料 体験 (GW 集中体験戦略)。Stripe 決済は発生しない。
     創設メンバー50名枠は本契約 (paid) のみでカウント。体験は無制限に受付。
+    2026-05-07: 通塾生プラン (student_addon) は invite_code 検証必須化 (Reviewer A CRITICAL #1)
     """
     email = (payload.get("email") or "").strip()
     name = (payload.get("name") or "").strip()
     student_id = payload.get("student_id")
+    invite_code = (payload.get("invite_code") or "").strip()
+    plan_hint = (payload.get("plan") or "").strip()  # フロントが送ってくれる場合のヒント
     if not email:
         raise HTTPException(status_code=400, detail="email required")
+
+    # 通塾生プラン (student_addon) は招待コード必須 + 検証
+    # フロントの guard はバイパス可能 (DevTools) なので server side で必ず検証
+    if plan_hint == "student_addon" or invite_code:
+        if not invite_code:
+            raise HTTPException(status_code=400, detail="通塾生プランをご利用には塾長から発行された招待コードが必要です。")
+        try:
+            inv = _verify_invite_token(invite_code)
+        except HTTPException:
+            raise
+        except Exception as e:
+            log.warning(f"[trial-checkout] invite verify failed: {e}")
+            raise HTTPException(status_code=401, detail="招待コードが無効または期限切れです。塾長にご確認ください。")
+        # invite token の email と payload.email の一致を検証 (他人の招待を流用させない)
+        token_email = (inv.get("email") or "").strip().lower()
+        payload_email = email.strip().lower()
+        if token_email and token_email != payload_email:
+            log.warning(f"[trial-checkout] invite email mismatch: token={token_email} payload={payload_email}")
+            raise HTTPException(status_code=401, detail="招待コードと入力されたメールアドレスが一致しません。塾長にご確認ください。")
+        log.info(f"[trial-checkout] invite verified: email={payload_email}")
 
     # 完全無料体験: Stripe をスキップして即時 success ページへ
     if FOUNDER_TRIAL_PRICE == 0:
@@ -10811,7 +10864,7 @@ def create_trial_checkout(payload: dict):
     c_fc = conn_fc.cursor()
     try:
         c_fc.execute(
-            "SELECT COUNT(*) FROM students WHERE status='paid' AND plan IS NOT NULL"
+            "SELECT COUNT(*) FROM students WHERE status='paid' AND plan IS NOT NULL AND plan != 'student_addon'"
         )
         taken = c_fc.fetchone()[0]
     except Exception:
@@ -10940,7 +10993,7 @@ def create_checkout_session(payload: CheckoutRequest):
         c_fc = conn_fc.cursor()
         try:
             c_fc.execute(
-                "SELECT COUNT(*) FROM students WHERE status='paid' AND plan IS NOT NULL AND plan != ''"
+                "SELECT COUNT(*) FROM students WHERE status='paid' AND plan IS NOT NULL AND plan != '' AND plan != 'student_addon'"
             )
             paid_count = c_fc.fetchone()[0]
         except Exception as e:
@@ -11106,7 +11159,7 @@ def founders_count(public: bool = False):
     c = conn.cursor()
     try:
         c.execute(
-            "SELECT COUNT(*) FROM students WHERE status='paid' AND plan IS NOT NULL AND plan != ''"
+            "SELECT COUNT(*) FROM students WHERE status='paid' AND plan IS NOT NULL AND plan != '' AND plan != 'student_addon'"
         )
         paid = c.fetchone()[0]
     except Exception as e:

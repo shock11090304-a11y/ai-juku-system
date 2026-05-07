@@ -8,6 +8,7 @@ const PLAN_INFO = {
   standard:  { name: 'スタンダード',     price: 24980 },
   premium:   { name: 'プレミアム',       price: 39800 },
   family:    { name: '家族プラン（最大3名）', price: 59800 },
+  student_addon: { name: '🎓 通塾生プラン (永年¥5,000)', price: 5000 },
   // 旧プラン（後方互換用）
   ai:        { name: 'スタンダード',     price: 24980 },
   hybrid:    { name: 'プレミアム',       price: 39800 },
@@ -206,8 +207,16 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     // 2026-05-07: URL params だけでなく入力欄 #inviteCode の手入力も受け付ける (塾長指示)
     // 体験フローでは backend は invite_code を保管・本契約時に検証 (memory: feedback_student_invite_link)
     const checkoutBody = { email: payload.email, name: payload.name, student_id: signupData.student_id };
-    const inviteFromInput = (document.getElementById('inviteCode')?.value || '').trim();
+    // Reviewer B H2: 全角空白も除去 (DM コピペで全角混入対策)
+    const inviteFromInput = (document.getElementById('inviteCode')?.value || '')
+      .trim()
+      .replace(/[\s　]+/g, '');
     const inviteCode = inviteFromInput || window.__inviteToken || '';
+    // payload に plan ヒントを送る (= server side で student_addon の場合に invite_code 必須化)
+    const selectedPlanForBody = (document.querySelector('input[name="plan"]:checked')?.value || window.__urlPlanOverride || 'founder_special');
+    if (selectedPlanForBody) {
+      checkoutBody.plan = selectedPlanForBody;
+    }
     // 通塾生プラン選択時は招待コード必須 (2026-05-07: 不正契約防止)
     const selectedPlanGuard = (document.querySelector('input[name="plan"]:checked')?.value || window.__urlPlanOverride || 'founder_special');
     if (selectedPlanGuard === 'student_addon' && !inviteCode) {
