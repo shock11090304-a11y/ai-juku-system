@@ -576,6 +576,20 @@
         <div id="emailDiagnoseResult" style="display:none;margin-top:0.6rem;padding:0.6rem;background:rgba(0,0,0,0.4);border-radius:6px;font-size:0.75rem;line-height:1.5;color:#e4e4e7;"></div>
       </div>
 
+      <!-- 📧 自分宛メモ送信 (= Threads 投稿テキスト等を Gmail に送る・iPhone でコピペしやすく / 2026-05-07 追加) -->
+      <div style="margin:1rem 0;padding:0.9rem;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.3);border-radius:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.6rem;">
+          <div style="font-size:0.88rem;font-weight:800;color:#34d399;">📧 自分宛メモ送信 — 投稿テキスト等を Gmail に送る (iPhone コピペ用)</div>
+          <button id="selfMemoLoadBtn" type="button" style="background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.4);padding:0.3rem 0.7rem;border-radius:6px;font-size:0.72rem;font-weight:700;cursor:pointer;">📋 AI東大Threads投稿文をロード</button>
+        </div>
+        <input id="selfMemoSubject" type="text" placeholder="件名 (例: Threads 投稿用テキスト)" style="width:100%;padding:0.55rem 0.7rem;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:#e4e4e7;font-size:0.85rem;margin-bottom:0.5rem;box-sizing:border-box;">
+        <textarea id="selfMemoBody" rows="8" placeholder="本文 (= iPhone でコピペできるテキスト)" style="width:100%;padding:0.6rem 0.7rem;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:#e4e4e7;font-size:0.85rem;font-family:inherit;line-height:1.6;resize:vertical;box-sizing:border-box;"></textarea>
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;align-items:center;flex-wrap:wrap;">
+          <button id="selfMemoSendBtn" type="button" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;padding:0.55rem 1.2rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">📧 自分宛に送信</button>
+          <span id="selfMemoStatus" style="font-size:0.78rem;color:#94a3b8;"></span>
+        </div>
+      </div>
+
       <!-- アラート一覧 -->
       <div id="monAlertsBox"></div>
 
@@ -3877,6 +3891,93 @@
         // 初回ロード (admin 認証通過後)
         setTimeout(loadStats, 500);
       })();
+
+      // 📧 自分宛メモ送信 (2026-05-07 追加)
+      // Threads/X 投稿テキストや任意のメモを Gmail (DAILY_SNS_TO_EMAIL) に送る
+      // — iPhone でコピペしやすくするため。`/api/admin/email/send-custom` を流用。
+      const SELF_MEMO_PRESETS = {
+        ai_todai_threads: {
+          subject: '📱 Threads 投稿用 — AI 東大英語チャレンジ',
+          body: `¥14,500/月 の AI チューター、東大英語 2024 を解かせてみた。
+
+結果: 4/4 全問正解 (所要 9 分)。
+
+しかも、各問の推論プロセスを全公開してます。普通の塾なら絶対やらない検証。
+
+→ https://trillion-ai-juku.com/ai-todai-challenge.html?utm_source=threads&utm_campaign=ai-todai
+
+#AI東大模試 #大学受験 #東大英語
+
+---
+📌 投稿手順 (iPhone):
+1. Threads アプリを開く
+2. 真ん中下の ✏ 新規スレッド ボタンをタップ
+3. 上の本文 (区切り線より上) を長押し → コピー → 貼り付け
+4. 右上の「投稿」をタップ
+
+💡 画像も添付するとエンゲージメント 3〜5 倍:
+→ https://trillion-ai-juku.com/ai-todai-challenge.html を開いてスコア部分をスクショ → 添付`
+        },
+        ai_todai_x: {
+          subject: '𝕏 X 投稿用 — AI 東大英語チャレンジ',
+          body: `¥14,500/月の AI チューターに東大英語 2024 を解かせたら全問正解 (4/4) した。
+
+所要時間 9 分。
+
+しかも各問の推論プロセスを全公開してる。本当に AI で解けるのか?疑う前にこのページ見てほしい。
+
+https://trillion-ai-juku.com/ai-todai-challenge.html?utm_source=x&utm_campaign=ai-todai`
+        },
+      };
+      const selfMemoLoadBtn = document.getElementById('selfMemoLoadBtn');
+      if (selfMemoLoadBtn) selfMemoLoadBtn.addEventListener('click', () => {
+        const p = SELF_MEMO_PRESETS.ai_todai_threads;
+        document.getElementById('selfMemoSubject').value = p.subject;
+        document.getElementById('selfMemoBody').value = p.body;
+        const status = document.getElementById('selfMemoStatus');
+        if (status) status.textContent = '✓ Threads 投稿テキストをロードしました。「📧 自分宛に送信」を押してください。';
+      });
+      const selfMemoSendBtn = document.getElementById('selfMemoSendBtn');
+      if (selfMemoSendBtn) selfMemoSendBtn.addEventListener('click', async () => {
+        const subject = document.getElementById('selfMemoSubject').value.trim();
+        const body = document.getElementById('selfMemoBody').value.trim();
+        const status = document.getElementById('selfMemoStatus');
+        if (!subject) { alert('件名を入力してください'); return; }
+        if (!body) { alert('本文を入力してください'); return; }
+        selfMemoSendBtn.disabled = true; selfMemoSendBtn.textContent = '⏳ 送信中...';
+        if (status) { status.textContent = ''; status.style.color = '#94a3b8'; }
+        try {
+          // 自分宛 (= DAILY_SNS_TO_EMAIL = 塾長 Gmail) に送る。to を空にすると server 側でデフォ宛先を解決
+          // 旧 send-custom は to 必須なので、ceo.html の admin から「自分宛」= 塾長メールを取得して使う。
+          // 簡略化: 環境変数経由のデフォ宛先がない場合に備え、明示的に shock11090304@gmail.com を to にする。
+          const to = (window.CEO_OWNER_EMAIL || '').trim() || 'shock11090304@gmail.com';
+          const r = await AdminAuth.fetch('/api/admin/email/send-custom', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ to, subject, body, is_html: false }),
+          });
+          const d = await r.json();
+          if (r.ok && d.sent) {
+            if (status) {
+              status.textContent = `✓ 送信成功 (resend_id: ${(d.resend_id || '').slice(0, 12)}…) — 受信箱を確認してください`;
+              status.style.color = '#34d399';
+            }
+          } else {
+            if (status) {
+              status.textContent = '⚠ 送信失敗: ' + (d.detail || d.error || `HTTP ${r.status}`);
+              status.style.color = '#f87171';
+            }
+          }
+        } catch (e) {
+          if (status) {
+            status.textContent = '⚠ 送信エラー: ' + e.message;
+            status.style.color = '#f87171';
+          }
+        } finally {
+          selfMemoSendBtn.disabled = false;
+          selfMemoSendBtn.textContent = '📧 自分宛に送信';
+        }
+      });
 
       // 🩺 「メール診断」ボタン
       const emailDiagBtn = document.getElementById('emailDiagnoseBtn');
