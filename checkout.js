@@ -27,6 +27,25 @@ function updateSummary() {
   if (enrollmentRow) {
     enrollmentRow.style.display = (plan === 'student_addon') ? 'none' : '';
   }
+  // 🚨 2026-05-07: submit ボタン文言を plan で動的に変える (致命修正)
+  // student_addon は本契約 (即課金) なので「無料体験」文言は誤誘導
+  const submitBtn = document.getElementById('submitBtn');
+  if (submitBtn && !submitBtn.disabled) {
+    if (plan === 'student_addon') {
+      submitBtn.textContent = '💳 ¥5,000/月で登録する →';
+    } else {
+      submitBtn.textContent = '🎁 10日間 無料体験を開始する →';
+    }
+  }
+  // 体験期間説明セクションも plan に応じて切替
+  const trialNote = document.getElementById('trialNote');
+  if (trialNote) {
+    trialNote.style.display = (plan === 'student_addon') ? 'none' : '';
+  }
+  const studentAddonNote = document.getElementById('studentAddonNote');
+  if (studentAddonNote) {
+    studentAddonNote.style.display = (plan === 'student_addon') ? '' : 'none';
+  }
 }
 
 // Pre-fill from URL params (from LP link)
@@ -229,7 +248,13 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     if (inviteCode) {
       checkoutBody.invite_code = inviteCode;
     }
-    const checkoutRes = await fetch(`${API_BASE}/api/stripe/trial-checkout`, {
+    // 🚨 2026-05-07 致命修正: student_addon は trial-checkout (無料体験) ではなく
+    // /api/stripe/checkout (即課金 ¥5,000/月) に流す。これまで student_addon 選択しても
+    // 無料体験ループに陥り、本契約に至れない致命バグ (塾長指摘・森澤さん事故時)。
+    // 体験中の trial student (signupData.student_id) は維持されるので学習履歴は継承される。
+    const isPaidPlan = (selectedPlanForBody === 'student_addon');
+    const checkoutEndpoint = isPaidPlan ? '/api/stripe/checkout' : '/api/stripe/trial-checkout';
+    const checkoutRes = await fetch(`${API_BASE}${checkoutEndpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(checkoutBody),
@@ -256,7 +281,11 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
   } catch (err) {
     loadingBox.style.display = 'none';
     submitBtn.disabled = false;
-    submitBtn.textContent = '🎁 7日間 無料体験を開始する →';
+    // plan に応じてボタン文言を復元 (student_addon は本契約の文言)
+    const errPlan = (document.querySelector('input[name="plan"]:checked')?.value || window.__urlPlanOverride || 'founder_special');
+    submitBtn.textContent = (errPlan === 'student_addon')
+      ? '💳 ¥5,000/月で登録する →'
+      : '🎁 10日間 無料体験を開始する →';
 
     // BACKEND_DOWN 時の「自動で成功画面へ進行」を削除。
     // 以前は決済せずに localStorage に学生を作って「成功」画面へ遷移していたが、

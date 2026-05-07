@@ -177,7 +177,7 @@
             <span>本日お支払い金額</span>
             <span class="total">¥0</span>
           </div>
-          <p class="summary-note">
+          <p class="summary-note" id="trialNote">
             <strong>📅 料金スケジュール</strong><br>
             ・本日: ¥0（クレジットカード登録不要・自動課金なし）<br>
             ・7日後: 「ご継続のご意思」を確認するメールが届きます<br>
@@ -185,6 +185,16 @@
             ・<strong>2回目以降の課金は契約日を起算日として毎月同日</strong>（例: 7月15日にご契約→毎月15日に自動課金）<br>
             ・何もしなければ体験は自動終了し、料金は一切発生しません<br>
             ※「塾生アドオン」プランでは入塾金は発生しません
+          </p>
+          <!-- 🎓 通塾生プラン (student_addon) 専用 note: 即課金・無料体験なし・履歴継承 -->
+          <p class="summary-note" id="studentAddonNote" style="display:none;">
+            <strong>📅 通塾生プラン お支払い</strong><br>
+            ・本日: <strong>¥5,000 (税込) を即時お支払い</strong> (Stripe 決済画面に進みます)<br>
+            ・<strong>入塾金 ¥10,000 は免除</strong> (通塾生限定特典)<br>
+            ・体験中の学習履歴・進捗データは <strong>完全継続</strong> (体験申込時と同じメールアドレスでお手続きください)<br>
+            ・翌月以降: 毎月同日に ¥5,000 の自動課金<br>
+            ・解約はいつでも可能 (担当講師にお申し出ください・違約金なし)<br>
+            ※ クレジットカードの登録が必要です。
           </p>
         </div>
 
