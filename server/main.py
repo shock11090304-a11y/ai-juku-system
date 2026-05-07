@@ -4755,6 +4755,9 @@ _AI_PROXY_RATE = {}  # session_id → [unix timestamps]
 # - credit 不足検知時は ai_credit_low イベント発火 (CEO ダッシュ緊急バナー)
 # ==========================================================================
 _AI_CIRCUIT_BREAKER = {"credit_low_until": 0.0, "last_error": None}
+# 🚨 2026-05-07: Gemini quota exhausted (429) を一定回数検知したら一時的に Gemini を skip
+# 設計: 5 分間で 3 回以上 429 → 30 分間 Gemini をスキップして直接 Anthropic 経由
+_GEMINI_QUOTA_FAIL = {"count_in_window": 0, "window_start": 0.0, "skip_until": 0.0}
 
 
 def _record_ai_critical_event(event_name: str, props: dict):
@@ -13381,6 +13384,25 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
     # (塾長指示 2026-05-06: コスト削減のため text 系 AI 機能は Gemini に切替)
     # Vision (image) は Gemini route 未対応 → Anthropic に強制 fallback
     if (payload.model or "").startswith("gemini-"):
+        # 🚨 2026-05-07: Gemini quota 連続失敗時は Gemini をスキップして直接 Anthropic 経由
+        # (Gemini → Anthropic の二重 round-trip でコスト増を防ぐ・circuit breaker パターン)
+        import time as _t
+        if _GEMINI_QUOTA_FAIL.get("skip_until", 0.0) > _t.time():
+            log.info(f"[AIProxy][Gemini circuit breaker] Gemini skip active until {_GEMINI_QUOTA_FAIL['skip_until']:.0f}, going direct to Anthropic")
+            if ANTHROPIC_API_KEY:
+                fallback_body = dict(body)
+                fallback_body["model"] = "claude-sonnet-4-6"
+                try:
+                    data = _call_anthropic_safe(fallback_body, kind=payload.kind)
+                    if isinstance(data, dict):
+                        data["_fallback_from"] = "gemini_circuit_breaker"
+                    return data
+                except HTTPException:
+                    raise
+                except Exception as ce:
+                    log.error(f"[AIProxy][Gemini skip → Anthropic] failed: {type(ce).__name__}: {str(ce)[:120]}")
+                    raise HTTPException(status_code=503, detail="AI サービスが一時的に応答できません。少し時間をおいてもう一度お試しください。")
+            # Anthropic も無ければ Gemini を試すしかない (skip 解除して通常経路へ)
         if not GEMINI_API_KEY:
             _record_ai_call_failure("gemini_unconfigured", 503, "GEMINI_API_KEY 未設定", payload, request)
             raise HTTPException(status_code=503, detail="Gemini が構成されていません")
@@ -13418,9 +13440,69 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
         except HTTPException:
             raise
         except Exception as e:
-            log.error(f"[AIProxy][Gemini] failed: {type(e).__name__}: {str(e)[:200]}")
-            _record_ai_call_failure("gemini_call_failed", 503, f"{type(e).__name__}: {str(e)[:200]}", payload, request)
-            raise HTTPException(status_code=503, detail=f"Gemini 呼び出しに失敗: {str(e)[:200]}")
+            # 🚨 2026-05-07: Gemini 失敗時は Anthropic に自動 fallback
+            # memory 「AI never-fail 原則」: Gemini quota (429) 等で 503 を顧客に返さない
+            # 顧客 (森澤さん級の決済前段階) で AI 計画生成が止まると致命的に機会損失
+            err_str = f"{type(e).__name__}: {str(e)[:200]}"
+            err_lower = err_str.lower()
+            # quota 系 429 を circuit breaker でカウント (5 分窓で 3 回 → 30 分 skip)
+            import time as _tt
+            if "429" in err_str or "quota" in err_lower or "exceed" in err_lower:
+                now_ts = _tt.time()
+                if now_ts - _GEMINI_QUOTA_FAIL.get("window_start", 0) > 300:
+                    _GEMINI_QUOTA_FAIL["window_start"] = now_ts
+                    _GEMINI_QUOTA_FAIL["count_in_window"] = 1
+                else:
+                    _GEMINI_QUOTA_FAIL["count_in_window"] += 1
+                if _GEMINI_QUOTA_FAIL["count_in_window"] >= 3:
+                    _GEMINI_QUOTA_FAIL["skip_until"] = now_ts + 1800  # 30 min skip
+                    log.warning(f"[AIProxy][Gemini circuit breaker] Activated for 30 min after {_GEMINI_QUOTA_FAIL['count_in_window']} 429s in 5min window")
+                    _record_ai_critical_event("gemini_circuit_breaker_activated", {
+                        "fail_count": _GEMINI_QUOTA_FAIL["count_in_window"],
+                        "skip_minutes": 30,
+                    })
+            log.warning(f"[AIProxy][Gemini→Anthropic fallback] Gemini failed ({err_str}), trying Anthropic")
+            if not ANTHROPIC_API_KEY:
+                _record_ai_call_failure("gemini_failed_anthropic_unconfigured", 503, err_str, payload, request)
+                raise HTTPException(status_code=503, detail=f"AI 呼び出しに失敗 (Gemini quota + Anthropic 未構成): {err_str[:120]}")
+            try:
+                # Anthropic に切替 (Sonnet 4.6 default)
+                fallback_body = dict(body)
+                fallback_body["model"] = "claude-sonnet-4-6"
+                data = _call_anthropic_safe(fallback_body, kind=payload.kind)
+                # 結果に fallback flag を埋める
+                if isinstance(data, dict):
+                    data["_fallback_from"] = "gemini"
+                    data["_fallback_reason"] = err_str[:100]
+                # cost tracking (Anthropic 経由)
+                if payload.student_id:
+                    try:
+                        _conn = db()
+                        _c = _conn.cursor()
+                        usage = data.get("usage", {}) or {}
+                        _c.execute(
+                            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                            (f"ai_call_{payload.kind}",
+                             json.dumps({"model": data.get("_actual_model") or "claude-sonnet-4-6",
+                                         "provider": "anthropic",
+                                         "fallback_from": "gemini",
+                                         "fallback_reason": err_str[:80],
+                                         "input_tokens": usage.get("input_tokens", 0),
+                                         "output_tokens": usage.get("output_tokens", 0)}),
+                             str(payload.student_id))
+                        )
+                        _conn.commit()
+                        _conn.close()
+                    except Exception as _ev:
+                        log.warning(f"[AIProxy][Anthropic fallback] cost tracking failed: {_ev}")
+                log.info(f"[AIProxy][Gemini→Anthropic fallback] success after Gemini fail")
+                return data
+            except HTTPException:
+                raise
+            except Exception as e2:
+                log.error(f"[AIProxy] BOTH Gemini and Anthropic failed: gemini={err_str} / anthropic={type(e2).__name__}: {str(e2)[:120]}")
+                _record_ai_call_failure("gemini_and_anthropic_failed", 503, f"gemini={err_str[:80]} / anthropic={type(e2).__name__}: {str(e2)[:80]}", payload, request)
+                raise HTTPException(status_code=503, detail="AI サービスが一時的に応答できません。少し時間をおいてもう一度お試しください。")
 
     # Opus 4.7 は thinking + output_config + temperature が **必須** (memory: feedback_opus47_proxy_required.md)
     # frontend から thinking=false で来ても backend で必ず補完する。
