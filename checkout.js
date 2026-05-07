@@ -40,25 +40,20 @@ if (params.get('plan') && PLAN_INFO[params.get('plan')]) {
     target.checked = true;
   }
   // founder_special / student_addon など対応 radio 無しの URL plan は submit 時に上書き利用。
-  const overridablePlans = ['founder_special', 'student_addon'];
+  // 2026-05-07: student_addon は radio が UI に追加されたため、URL plan=student_addon は radio.check + summary 更新
+  const overridablePlans = ['founder_special'];
   if (!target && overridablePlans.includes(params.get('plan'))) {
     window.__urlPlanOverride = params.get('plan');
-    // student_addon の場合は UI に明示
-    if (params.get('plan') === 'student_addon') {
-      const planSection = document.querySelector('.plans-section, [class*="plan-option"]')?.closest('section, div');
-      const summary = document.getElementById('summaryPlan');
-      if (summary) summary.textContent = '塾生アドオン (永年¥9,800)';
-      const summaryPrice = document.getElementById('summaryPrice');
-      if (summaryPrice) summaryPrice.textContent = '¥9,800/月（税込）';
-      // 入塾金免除
-      const enrollmentRow = document.getElementById('summaryEnrollmentRow');
-      if (enrollmentRow) enrollmentRow.style.display = 'none';
-      // 既存ラジオを全部 hide して「塾生限定プラン」notice を出す
-      const planSec = document.querySelector('.plans');
-      if (planSec) {
-        planSec.innerHTML = '<div style="padding:1rem;background:linear-gradient(135deg,rgba(99,102,241,0.10),rgba(34,197,94,0.10));border:1px solid rgba(99,102,241,0.3);border-radius:10px;text-align:center;"><div style="font-size:1.1rem;font-weight:800;color:#a78bfa;">🎓 塾生アドオン (永年¥9,800/月)</div><div style="font-size:0.85rem;color:#cbd5e1;margin-top:0.4rem;">通塾生限定価格 + 入塾金免除</div></div>';
-      }
-    }
+  }
+  if (params.get('plan') === 'student_addon' && target) {
+    target.checked = true;
+    target.dispatchEvent(new Event('change', { bubbles: true }));
+    const summary = document.getElementById('summaryPlan');
+    if (summary) summary.textContent = '通塾生プラン (永年¥5,000)';
+    const summaryPrice = document.getElementById('summaryPrice');
+    if (summaryPrice) summaryPrice.textContent = '¥5,000/月(税込)';
+    const enrollmentRow = document.getElementById('summaryEnrollmentRow');
+    if (enrollmentRow) enrollmentRow.style.display = 'none';
   }
 }
 
@@ -213,6 +208,14 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     const checkoutBody = { email: payload.email, name: payload.name, student_id: signupData.student_id };
     const inviteFromInput = (document.getElementById('inviteCode')?.value || '').trim();
     const inviteCode = inviteFromInput || window.__inviteToken || '';
+    // 通塾生プラン選択時は招待コード必須 (2026-05-07: 不正契約防止)
+    const selectedPlanGuard = (document.querySelector('input[name="plan"]:checked')?.value || window.__urlPlanOverride || 'founder_special');
+    if (selectedPlanGuard === 'student_addon' && !inviteCode) {
+      alert('🎓 通塾生プランをご利用には、塾長から発行された招待コードが必要です。\n\n「🎓 通塾生 招待コード」欄に DM で受け取ったコードをご入力ください。\nお持ちでない方は塾長 (Instagram/Threads DM) までお問い合わせください。');
+      const inviteEl = document.getElementById('inviteCode');
+      if (inviteEl) { inviteEl.focus(); inviteEl.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+      throw new Error('INVITE_CODE_REQUIRED');
+    }
     if (inviteCode) {
       checkoutBody.invite_code = inviteCode;
     }
