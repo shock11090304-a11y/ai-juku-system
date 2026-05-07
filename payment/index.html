@@ -29,6 +29,8 @@
     <button class="btn btn-ghost" id="importBtn" title="JSONバックアップを読み込み">📂</button>
     <button class="btn btn-ghost" id="settingsBtn" title="設定 (塾名・振込先・メールテンプレ)">⚙</button>
     <button class="btn btn-ghost" id="reloadBtn" title="data.json を再読込">↻</button>
+    <!-- 2026-05-07: クラウド同期ステータス (ヘッダ内へ移動・固定オーバーレイから解放) -->
+    <button class="btn btn-ghost" id="cloudSyncBtn" title="クラウド同期ステータス" style="font-size:0.8rem;padding:0.45rem 0.7rem;">☁ …</button>
     <input type="file" id="importFile" accept=".json" hidden>
   </div>
 </header>
@@ -869,6 +871,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="app.js?v=20260507-addstudent3"></script>
+<script src="app.js?v=20260507-headersync"></script>
 </body>
 </html>

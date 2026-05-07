@@ -677,40 +677,48 @@ window.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') CloudSync.flushSync();
 });
 
-// クラウド同期ステータスバー (header に動的注入)
+// クラウド同期ステータスバー (2026-05-07: position:fixed から header 内ボタンに変更)
+// 旧版は画面右上に常時オーバーレイ表示で生徒一覧の右端を遮蔽していたため、ヘッダー内に統合。
 function updateSyncStatusBar() {
-  let bar = document.getElementById('cloudSyncBar');
-  if (!bar) {
-    bar = document.createElement('div');
-    bar.id = 'cloudSyncBar';
-    bar.style.cssText = 'position:fixed;top:8px;right:8px;z-index:9998;padding:6px 12px;border-radius:8px;font-size:0.78rem;font-weight:600;cursor:pointer;backdrop-filter:blur(8px);user-select:none;';
-    bar.title = 'クラウド同期状態';
-    bar.addEventListener('click', () => {
+  // 旧バー (position:fixed) が DOM に残っていたら削除 (= バックワード互換)
+  const oldFixed = document.getElementById('cloudSyncBar');
+  if (oldFixed && oldFixed.style.position === 'fixed') oldFixed.remove();
+
+  const btn = document.getElementById('cloudSyncBtn');
+  if (!btn) return;
+  // クリックハンドラを 1 回だけ bind
+  if (!btn.dataset.bound) {
+    btn.addEventListener('click', () => {
       if (CloudSync.status === 'auth-required') {
         promptAdminLogin();
       } else if (CloudSync.status === 'error') {
-        alert(`同期エラー: ${CloudSync.errorMsg}\n\nクリックで再試行します。`);
+        alert(`同期エラー: ${CloudSync.errorMsg}\n\nOK で再試行します。`);
         CloudSync.pushNow();
       } else {
         // 強制 push
         CloudSync.pushNow();
       }
     });
-    document.body.appendChild(bar);
+    btn.dataset.bound = '1';
   }
   const s = CloudSync.status;
   const map = {
-    'init':          { txt: '☁ 初期化中…', bg: 'rgba(107,114,128,0.85)', col: '#fff' },
-    'syncing':       { txt: '⏳ 同期中…',   bg: 'rgba(99,102,241,0.85)', col: '#fff' },
-    'ok':            { txt: '✓ 同期済',      bg: 'rgba(16,185,129,0.85)', col: '#fff' },
-    'auth-required': { txt: '🔒 ログインしてください', bg: 'rgba(245,158,11,0.95)', col: '#fff' },
-    'error':         { txt: '⚠ 同期エラー (再試行)', bg: 'rgba(239,68,68,0.9)',  col: '#fff' },
-    'disabled':      { txt: '☁ 同期 OFF',  bg: 'rgba(107,114,128,0.85)', col: '#fff' },
+    'init':          { txt: '☁ 初期化',     title: 'クラウド同期初期化中…' },
+    'syncing':       { txt: '⏳ 同期中',     title: 'サーバーと同期中…' },
+    'ok':            { txt: '✓ 同期済',      title: 'クラウド同期 OK (クリックで強制 push)' },
+    'auth-required': { txt: '🔒 ログイン',  title: 'クリックで管理者ログイン' },
+    'error':         { txt: '⚠ エラー',     title: `同期エラー: ${CloudSync.errorMsg || '不明'} (クリックで再試行)` },
+    'disabled':      { txt: '☁ OFF',        title: 'クラウド同期 OFF' },
   };
   const cfg = map[s] || map['init'];
-  bar.textContent = cfg.txt;
-  bar.style.background = cfg.bg;
-  bar.style.color = cfg.col;
+  btn.textContent = cfg.txt;
+  btn.title = cfg.title;
+  // 状態別の色 (= 既存 .btn-ghost の上に色だけ重ねる)
+  btn.style.color = (s === 'ok') ? '#34d399'
+                  : (s === 'syncing') ? '#a5b4fc'
+                  : (s === 'auth-required') ? '#fbbf24'
+                  : (s === 'error') ? '#fca5a5'
+                  : '';
 }
 
 // 管理者ログインモーダル (シンプルな prompt 派生)
