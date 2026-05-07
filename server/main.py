@@ -10297,7 +10297,7 @@ def juku_payment_get_overrides(authorization: Optional[str] = Header(None)):
     if not _verify_admin_token(token):
         raise HTTPException(status_code=401, detail="管理者トークンが無効です")
     val = _kv_get(JUKU_PAYMENT_KV_KEY)
-    # updated_at も取りたいので生 SQL
+    # updated_at も取りたいので生 SQL (psycopg dict_row でも sqlite Row でも動くよう条件分岐)
     updated_at = None
     try:
         conn = db()
@@ -10306,8 +10306,15 @@ def juku_payment_get_overrides(authorization: Optional[str] = Header(None)):
         c.execute("SELECT updated_at FROM kv_settings WHERE key = ?", (JUKU_PAYMENT_KV_KEY,))
         row = c.fetchone()
         conn.close()
-        if row:
-            ua = row[0] if not hasattr(row, "get") else (row.get("updated_at") if "updated_at" in (getattr(row, "keys", lambda: [])() or []) else row[0] if hasattr(row, "__getitem__") else None)
+        if row is not None:
+            # Reviewer A HIGH: psycopg dict_row では row[0] が KeyError(0) になる致命パターン → name で取る
+            ua = None
+            try:
+                ua = row["updated_at"]
+            except (KeyError, IndexError, TypeError):
+                # sqlite Row 互換 fallback
+                try: ua = row[0]
+                except Exception: ua = None
             if ua is not None:
                 updated_at = ua.isoformat() if hasattr(ua, "isoformat") else str(ua)
     except Exception as e:

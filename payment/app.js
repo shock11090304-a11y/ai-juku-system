@@ -321,12 +321,25 @@ const API_BASE = (location.hostname === 'localhost' || location.hostname === '12
   ? 'http://localhost:8000'
   : '';  // 同一オリジン (= /payment/ から /api/ へ相対)
 
+// Reviewer A MEDIUM: JSON.parse バリデーション用 (= 期待される top-level key の whitelist)
+const OVERRIDE_VALID_KEYS = new Set([
+  'payments', 'emails', 'payerNames', 'mailSent', 'status', 'stripeInviteSent',
+]);
+function _isValidOverrides(obj) {
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
+  for (const k of Object.keys(obj)) {
+    if (!OVERRIDE_VALID_KEYS.has(k)) return false;
+  }
+  return true;
+}
+
 const CloudSync = {
   pushTimer: null,
   status: 'init',          // 'init' | 'syncing' | 'ok' | 'auth-required' | 'error' | 'disabled'
   lastPushAt: 0,
   lastPullAt: 0,
   errorMsg: '',
+  bootstrapped: false,     // Reviewer A CRITICAL #2: bootstrap 完了まで push を suppress
 
   getToken() { return localStorage.getItem(ADMIN_TOKEN_KEY) || ''; },
   setToken(t) { if (t) localStorage.setItem(ADMIN_TOKEN_KEY, t); },
@@ -389,9 +402,29 @@ const CloudSync = {
   },
 
   schedulePush() {
+    // Reviewer A CRITICAL #2: bootstrap 完了前は push しない (= remote 取得前に local を上書きされるのを防ぐ)
+    if (!this.bootstrapped) return;
     // 2 秒 debounce — 連続編集を 1 リクエストにまとめる
     if (this.pushTimer) clearTimeout(this.pushTimer);
     this.pushTimer = setTimeout(() => this.pushNow(), 2000);
+  },
+
+  // Reviewer A CRITICAL #1 / LOW #7: ページ離脱時に debounce flush
+  // sendBeacon で同期 (= 確実に届く・ブラウザがタブを閉じても OK)
+  flushSync() {
+    if (this.pushTimer) { clearTimeout(this.pushTimer); this.pushTimer = null; }
+    const token = this.getToken();
+    if (!token || !this.bootstrapped) return;
+    try {
+      const value = JSON.stringify(STATE.overrides || {});
+      // sendBeacon は header が付かないため、custom auth は不可。fetch keepalive で代用。
+      fetch(`${API_BASE}/api/juku-payment/overrides`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value }),
+        keepalive: true,
+      }).catch(() => {});  // 離脱中なので結果は気にしない
+    } catch (e) { /* ignore */ }
   },
 
   async pushNow() {
@@ -435,24 +468,38 @@ const CloudSync = {
   async bootstrap() {
     // ページロード直後に呼ぶ。token があれば pull → local 上書き。
     const token = this.getToken();
-    if (!token) { this.status = 'auth-required'; updateSyncStatusBar(); return; }
+    if (!token) { this.status = 'auth-required'; updateSyncStatusBar(); this.bootstrapped = true; return; }
     const remote = await this.pull();
     if (remote && remote.exists && remote.value) {
       try {
         const remoteOverrides = JSON.parse(remote.value);
-        // remote が存在すれば local を上書き (= last-write-wins・サーバーが正)
-        STATE.overrides = remoteOverrides;
-        localStorage.setItem(LS_KEY, JSON.stringify(STATE.overrides));
-        // refresh は呼出元 (init) で実施
+        // Reviewer A MEDIUM: 期待されない top-level key が混在してたら拒否 (= corrupted remote 防御)
+        if (_isValidOverrides(remoteOverrides)) {
+          STATE.overrides = remoteOverrides;
+          localStorage.setItem(LS_KEY, JSON.stringify(STATE.overrides));
+        } else {
+          console.warn('[CloudSync] remote overrides shape invalid, ignoring:', Object.keys(remoteOverrides));
+          this.errorMsg = 'remote データ形式不正 (= 古い/壊れたデータ。push で上書きします)';
+        }
       } catch (e) {
         console.warn('[CloudSync] remote JSON parse failed:', e);
+        this.errorMsg = 'remote JSON parse 失敗';
       }
     } else if (remote && !remote.exists) {
-      // remote 未作成 = 初回 → 現在の local を push して作成
+      // remote 未作成 = 初回 → 現在の local を push して作成 (bootstrap 完了後に schedulePush が動くよう先に flag 立てる)
+      this.bootstrapped = true;
       await this.pushNow();
+      return;
     }
+    this.bootstrapped = true;
   },
 };
+
+// Reviewer A CRITICAL #1 / LOW #7: ページ離脱時に debounce flush
+window.addEventListener('pagehide', () => CloudSync.flushSync());
+window.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') CloudSync.flushSync();
+});
 
 // クラウド同期ステータスバー (header に動的注入)
 function updateSyncStatusBar() {
