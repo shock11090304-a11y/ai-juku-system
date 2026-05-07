@@ -1220,9 +1220,12 @@ function setupImportUI() {
 async function handleFile(file) {
   try {
     const name = (file.name || '').toLowerCase();
+    console.log('[handleFile] received:', { name: file.name, type: file.type, size: file.size });
     if (name.endsWith('.pdf') || file.type === 'application/pdf') {
       // PDF 取込 (2026-05-07 追加: 楽天銀行入出金明細 PDF 対応)
+      console.log('[handleFile] PDF mode');
       const result = await extractPdfText(file);
+      console.log('[handleFile] extractPdfText result:', { numPages: result?.numPages, textLen: result?.text?.length, head: result?.text?.slice(0, 200) });
       // text の長さで原因切り分け (Reviewer B HIGH)
       if (!result || !result.text || result.text.length < 50) {
         if (result && result.numPages === 0) {
@@ -1314,14 +1317,17 @@ async function extractPdfText(file) {
 
 function parsePDFText(text) {
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+  console.log('[parsePDFText] input lines:', lines.length);
+
+  // === Strategy A: 4 行 1 set (pypdf 形式 / 列ごとに改行されるケース) ===
   const datePat = /^\d{4}\/\d{2}\/\d{2}$/;
-  const numPat = /^[+-]?[\d,]+$/;  // Reviewer A HIGH: + 付き金額にも対応
-  const out = [];
+  const numPat = /^[+-]?[\d,]+$/;
+  const outA = [];
   let i = 0;
   while (i < lines.length) {
     if (!datePat.test(lines[i])) { i++; continue; }
-    if (i + 3 >= lines.length) { i++; continue; }   // 旧 break で残り行を捨てていた境界バグ修正
-    const dateStr = lines[i].replace(/\//g, '');     // YYYY/MM/DD → YYYYMMDD (CSV と同形式)
+    if (i + 3 >= lines.length) { i++; continue; }
+    const dateStr = lines[i].replace(/\//g, '');
     const amountRaw = lines[i + 1];
     const balanceRaw = lines[i + 2];
     const content = lines[i + 3];
@@ -1329,10 +1335,50 @@ function parsePDFText(text) {
     const amount = parseInt(amountRaw.replace(/[,+]/g, ''), 10);
     const balance = parseInt(balanceRaw.replace(/[,+]/g, ''), 10);
     if (isNaN(amount) || isNaN(balance)) { i++; continue; }
-    out.push({ date: dateStr, amount, balance, content });
+    outA.push({ date: dateStr, amount, balance, content });
     i += 4;
   }
-  return out;
+  console.log('[parsePDFText] Strategy A (4-line set):', outA.length, 'rows');
+  if (outA.length > 0) return outA;
+
+  // === Strategy B: 1 行に 4 値 (pdf.js が同 y 座標を行に合体するケース) ===
+  // 例: "2026/03/10 7,500 3,021,780 キタモト ヒカリ"
+  // 例: "2026/03/10 -55,000 3,014,280 カ－ド出金 セブン銀行003401001109486"
+  const lineRegex = /^(\d{4}\/\d{2}\/\d{2})\s+([+-]?[\d,]+)\s+([\d,]+)\s+(.+)$/;
+  const outB = [];
+  for (const line of lines) {
+    const m = line.match(lineRegex);
+    if (!m) continue;
+    const dateStr = m[1].replace(/\//g, '');
+    const amount = parseInt(m[2].replace(/[,+]/g, ''), 10);
+    const balance = parseInt(m[3].replace(/,/g, ''), 10);
+    const content = m[4].trim();
+    if (isNaN(amount) || isNaN(balance)) continue;
+    outB.push({ date: dateStr, amount, balance, content });
+  }
+  console.log('[parsePDFText] Strategy B (single-line):', outB.length, 'rows');
+  if (outB.length > 0) return outB;
+
+  // === Strategy C: より緩い行スキャン (どこかに日付があれば後ろから 3 値+内容を探す) ===
+  // pdf.js が縦書き的に出した場合や、ヘッダ列幅違いに対するセーフティネット
+  const outC = [];
+  const looseDate = /(\d{4}\/\d{2}\/\d{2})/;
+  for (let k = 0; k < lines.length; k++) {
+    const dm = lines[k].match(looseDate);
+    if (!dm) continue;
+    // この行の日付以降をパース
+    const after = lines[k].slice(lines[k].indexOf(dm[1]) + dm[1].length).trim();
+    const tail = after.match(/^([+-]?[\d,]+)\s+([\d,]+)\s+(.+)$/);
+    if (!tail) continue;
+    const dateStr = dm[1].replace(/\//g, '');
+    const amount = parseInt(tail[1].replace(/[,+]/g, ''), 10);
+    const balance = parseInt(tail[2].replace(/,/g, ''), 10);
+    const content = tail[3].trim();
+    if (isNaN(amount) || isNaN(balance)) continue;
+    outC.push({ date: dateStr, amount, balance, content });
+  }
+  console.log('[parsePDFText] Strategy C (loose):', outC.length, 'rows');
+  return outC;
 }
 
 // === Stripe Charges API 取込 (CSV と同じ rows 形式に変換 → processImport で再利用) ===
