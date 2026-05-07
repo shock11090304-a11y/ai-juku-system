@@ -716,16 +716,23 @@ async function init() {
       const ss = resolvedSessionStudent;
       // state.students[] に session student を merge (id 衝突なら更新)
       const idx = state.students.findIndex(s => s.id === ss.id);
+      // 2026-05-07: ss.name=undefined だと既存 seed の name を消して
+      // renderEmailStudentsList で escapeHtml(null) TypeError → 致命バグの root cause だった
+      // → undefined の値だけは上書きしないよう sanitize する
+      const ssClean = Object.fromEntries(Object.entries(ss).filter(([_, v]) => v !== undefined && v !== null));
       const mergedStudent = {
         // seed 形式の必須 field を default で埋める
         weeklyHours: 0,
         fee: 0,
         subjects: {},
-        ...ss,
+        ...ssClean,
       };
       if (idx >= 0) {
         state.students[idx] = { ...state.students[idx], ...mergedStudent };
       } else {
+        // 新規 push 時は name/grade fallback を担保 (UI 崩壊防止)
+        if (!mergedStudent.name) mergedStudent.name = `生徒#${ss.id}`;
+        if (!mergedStudent.grade) mergedStudent.grade = '';
         state.students.push(mergedStudent);
       }
       state.currentStudentId = ss.id;
@@ -2565,7 +2572,10 @@ function clearChatAttachment() {
 }
 
 function escapeHtml(s) {
-  return s.replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  // 2026-05-07: null/undefined 安全化 (Android Chrome で renderEmailStudentsList が
+  // s.name=null で TypeError 出していた致命バグ修正)
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
 function formatMarkdown(text) {

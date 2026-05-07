@@ -358,8 +358,16 @@ class _Cursor:
     def execute(self, sql, params=()):
         if self._is_pg:
             sql = sql.replace("?", "%s")
-        self._cur.execute(sql, params)
-        if not self._is_pg:
+            # 2026-05-07: psycopg3 は params=() でも SQL 内の % を placeholder として
+            # 解釈しようとして「only '%s', '%b', '%t' are allowed」エラーを出す。
+            # params が空なら params 引数を渡さず execute すると literal % が
+            # 安全に通る (LIKE 'foo:%' などで頻発していた致命バグの根本対策)
+            if params:
+                self._cur.execute(sql, params)
+            else:
+                self._cur.execute(sql)
+        else:
+            self._cur.execute(sql, params)
             self.lastrowid = self._cur.lastrowid
         return self
 
@@ -383,6 +391,16 @@ class _Cursor:
         if self._is_pg:
             return [_Row(r) if isinstance(r, dict) and not isinstance(r, _Row) else r for r in rows]
         return rows
+
+    @property
+    def rowcount(self):
+        """直前の DML 操作の影響行数。sqlite3/psycopg 共に rowcount 属性を持つ。
+        2026-05-07: _increment_usage が rowcount に直接アクセスして AttributeError 連発
+        していた致命バグを fix。"""
+        try:
+            return self._cur.rowcount
+        except Exception:
+            return -1
 
 
 class _Connection:
@@ -4271,9 +4289,12 @@ def admin_stats(authorization: Optional[str] = Header(None)):
     events_latest = {}
     try:
         # 数値文字列 OR "student:数値" の session_id を student id として集約
+        # 2026-05-07: LIKE 'student:%' の % が psycopg3 にプレースホルダとして誤認識されて
+        # 「only '%s', '%b', '%t' are allowed as placeholders, got '%''」エラー連発していたので
+        # %% にエスケープ + LIKE を文字位置 substr に置換 (postgres/sqlite 両対応簡素化)
         c.execute("""
             SELECT student_key, MAX(created_at) AS latest FROM (
-                SELECT CASE WHEN session_id LIKE 'student:%' THEN substr(session_id, 9) ELSE session_id END AS student_key, created_at
+                SELECT CASE WHEN substr(session_id, 1, 8) = 'student:' THEN substr(session_id, 9) ELSE session_id END AS student_key, created_at
                 FROM events
                 WHERE (session_id ~ '^[0-9]+$' OR session_id ~ '^student:[0-9]+$')
             ) sub GROUP BY student_key
