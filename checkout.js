@@ -62,8 +62,13 @@ if (params.get('plan') && PLAN_INFO[params.get('plan')]) {
   }
 }
 
-// 招待トークン (student-upgrade.html 経由) を保持して signup 時に送る
+// 招待トークン (student-upgrade.html 経由 or URL ?invite= で渡される) を保持
+// 2026-05-07: 入力欄 #inviteCode に URL 値を auto-fill (塾長指示 = 申し込み画面に招待コード入力欄)
 window.__inviteToken = params.get('invite') || '';
+if (window.__inviteToken) {
+  const inviteEl = document.getElementById('inviteCode');
+  if (inviteEl) inviteEl.value = window.__inviteToken;
+}
 if (params.get('email')) document.getElementById('email').value = params.get('email');
 if (params.get('lastName')) document.getElementById('lastName').value = params.get('lastName');
 if (params.get('firstName')) document.getElementById('firstName').value = params.get('firstName');
@@ -202,11 +207,14 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     // 2. 7日間 完全無料体験 (バックエンドが FOUNDER_TRIAL_PRICE=0 を検出すると
     //    Stripe をスキップして即座に checkout-success.html へ遷移する)。
     //    継続は別途 upgrade.html で本契約。
-    // 招待コード (通塾生 student_addon プラン用) を URL params から取得して送信
+    // 招待コード (通塾生 student_addon プラン用) を取得して送信
+    // 2026-05-07: URL params だけでなく入力欄 #inviteCode の手入力も受け付ける (塾長指示)
     // 体験フローでは backend は invite_code を保管・本契約時に検証 (memory: feedback_student_invite_link)
     const checkoutBody = { email: payload.email, name: payload.name, student_id: signupData.student_id };
-    if (window.__inviteToken) {
-      checkoutBody.invite_code = window.__inviteToken;
+    const inviteFromInput = (document.getElementById('inviteCode')?.value || '').trim();
+    const inviteCode = inviteFromInput || window.__inviteToken || '';
+    if (inviteCode) {
+      checkoutBody.invite_code = inviteCode;
     }
     const checkoutRes = await fetch(`${API_BASE}/api/stripe/trial-checkout`, {
       method: 'POST',

@@ -134,7 +134,14 @@
           <input type="text" id="goal" placeholder="例：東京大学 文科一類 / 英検準1級合格">
         </div>
 
-        <div class="summary-box">
+                <!-- 🎓 通塾生 招待コード入力欄 (2026-05-07 追加) -->
+        <div class="form-group" id="inviteCodeGroup">
+          <label>🎓 通塾生 招待コード(任意)<span style="font-weight:400;font-size:0.78rem;color:#94a3b8;margin-left:0.4rem;">塾長から発行された招待コード</span></label>
+          <input type="text" id="inviteCode" placeholder="塾長 DM で受け取ったコードを貼付 (URL でアクセスした場合は自動入力)" maxlength="500" autocomplete="off" spellcheck="false">
+          <p class="field-hint">💡 <strong>通塾生プラン (¥5,000/月)</strong> をご希望の方のみ。塾長から DM で受け取った招待 URL の <code>?invite=</code> 以降を貼付ください。お持ちでない方は空欄で OK です。</p>
+        </div>
+
+<div class="summary-box">
           <h3>📋 ご注文内容</h3>
           <div class="summary-row">
             <span>選択プラン（体験後・本契約時）</span>
