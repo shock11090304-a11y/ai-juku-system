@@ -1028,14 +1028,18 @@ class TrialSignup(BaseModel):
 class CheckoutRequest(BaseModel):
     plan: str
     email: EmailStr
-    name: str
+    name: Optional[str] = ""  # 2026-05-07: upgrade.html (継続登録) は name 入力欄が無いので
+                              # 既存 trial student から DB lookup してフォールバック可能化
     student_id: Optional[int] = None
     invite_code: Optional[str] = None  # 通塾生プラン (student_addon) で必須・HMAC トークン
 
     @field_validator("name")
     @classmethod
-    def _name_must_be_fullname(cls, v: str) -> str:
-        return _validate_fullname(v)
+    def _name_must_be_fullname(cls, v):
+        # 空文字 / None は許容 (endpoint 側で email から DB lookup する)
+        if not v or not str(v).strip():
+            return ""
+        return _validate_fullname(str(v))
 
 class LinePushRequest(BaseModel):
     student_id: int
@@ -11270,6 +11274,44 @@ def create_checkout_session(payload: CheckoutRequest):
         raise HTTPException(status_code=400, detail=f"Invalid plan: {payload.plan}")
     price_id, amount, plan_name, max_students = price_info
 
+    # 🔧 2026-05-07: name 空で来た場合 (upgrade.html 継続登録) は email から既存生徒を lookup
+    # → trial 中に登録した name を DB から復元 (顧客 wrmama10 が [object Object] 報告した
+    # 致命バグの根本対策)
+    payload_name = (payload.name or "").strip()
+    if not payload_name:
+        try:
+            _conn_lookup = db()
+            _c_lookup = _conn_lookup.cursor()
+            _c_lookup.execute(
+                "SELECT id, name FROM students WHERE LOWER(email) = LOWER(?) ORDER BY id DESC LIMIT 1",
+                (payload.email,),
+            )
+            _row_lookup = _c_lookup.fetchone()
+            _conn_lookup.close()
+            if _row_lookup and _row_lookup["name"]:
+                payload_name = (_row_lookup["name"] or "").strip()
+                # student_id も埋めておく (後続の re-checkout 判定や履歴継承で使う)
+                if not payload.student_id and _row_lookup.get("id"):
+                    payload.student_id = _row_lookup["id"]
+                log.info(f"[Checkout] name lookup ok: email={payload.email} -> name={payload_name[:20]} student_id={payload.student_id}")
+            else:
+                # 既存生徒が見つからない (新規ユーザが name 抜きで来た) → 親切なエラー
+                raise HTTPException(
+                    status_code=400,
+                    detail="お名前が必要です。お手数ですが LP からお手続きをお願いいたします (新規登録の場合は氏名入力欄あり)。"
+                )
+        except HTTPException:
+            raise
+        except Exception as _e_lookup:
+            log.warning(f"[Checkout] name lookup failed: {_e_lookup}")
+            raise HTTPException(status_code=400, detail="お名前の自動取得に失敗しました。お手数ですが新規登録画面からお手続きください。")
+    # 後続コードが payload.name を参照するので上書き
+    if payload_name != payload.name:
+        try:
+            payload.__dict__["name"] = payload_name  # pydantic v2 でも書き換え可能
+        except Exception:
+            pass
+
     # 🏫 通塾生プラン: 招待コード (HMAC トークン) 必須検証
     # 塾長指示 2026-05-06: 通塾生は塾長発行の招待コード経由でのみ契約可能
     # memory: feedback_student_invite_link.md (招待リンク方式は実装済み)
@@ -11414,6 +11456,7 @@ def create_checkout_session(payload: CheckoutRequest):
         "metadata": {
             "plan": payload.plan,
             "student_id": str(payload.student_id or ""),
+            "name": (payload.name or "")[:200],  # 2026-05-07: Reviewer C 指摘・webhook 側で name lost を防ぐ
             "max_students": str(max_students),
             "founder": "1",
             "needs_enrollment_fee": "1" if needs_enrollment_fee else "0",
@@ -11434,6 +11477,7 @@ def create_checkout_session(payload: CheckoutRequest):
             "plan": payload.plan,
             "plan_name": plan_name,
             "student_id": str(payload.student_id or ""),
+            "name": (payload.name or "")[:200],  # 2026-05-07: webhook で「（新規）」表示防止
             "max_students": str(max_students),
             "purchase_type": "monthly",
             "needs_enrollment_fee": "1" if needs_enrollment_fee else "0",

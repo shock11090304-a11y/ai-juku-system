@@ -156,20 +156,52 @@
       btn.textContent = '⏳ 決済セッションを準備中...';
       errBox.style.display = 'none';
 
+      // 2026-05-07: data.detail が string / array (FastAPI 422) / object 全部に対応
+      // 旧コード `new Error(data.detail)` で配列をそのまま渡すと "[object Object]" が
+      // 顧客に見える致命バグ → 必ず読める文字列に変換 (Instagram DM 報告 wrmama10)
+      function _formatErrorDetail(detail, fallback) {
+        if (!detail) return fallback;
+        if (typeof detail === 'string') return detail;
+        if (Array.isArray(detail)) {
+          // FastAPI pydantic 形式: [{loc:[...], msg:"...", type:"..."}]
+          const msgs = detail.map(d => {
+            if (typeof d === 'string') return d;
+            if (d && typeof d === 'object') {
+              const loc = Array.isArray(d.loc) ? d.loc.filter(x => x !== 'body').join('.') : '';
+              const msg = d.msg || d.message || '';
+              return loc ? `${loc}: ${msg}` : msg;
+            }
+            return String(d);
+          }).filter(Boolean);
+          return msgs.length ? msgs.join(' / ') : fallback;
+        }
+        if (typeof detail === 'object') {
+          return detail.msg || detail.message || detail.error || JSON.stringify(detail);
+        }
+        return String(detail);
+      }
+
       try {
         const res = await fetch(`${API_BASE}/api/stripe/checkout`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          // name は空送信 → server が email から既存 trial student の name を DB lookup する
           body: JSON.stringify({ plan, email, name: '', invite_code: inviteCode || undefined }),
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (res.ok && data.checkout_url) {
           window.location.href = data.checkout_url;
         } else {
-          throw new Error(data.detail || '決済セッションの作成に失敗しました');
+          // 422 (validation) / 400 / 403 / 500 すべて読める文字列に変換
+          const msg = _formatErrorDetail(data.detail, '決済セッションの作成に失敗しました');
+          throw new Error(msg);
         }
       } catch (err) {
-        errBox.textContent = '⚠️ ' + err.message;
+        // err.message が "[object Object]" にならないよう最終ガード
+        const safeMsg = (err && err.message && err.message !== '[object Object]')
+          ? err.message
+          : '決済セッションの作成に失敗しました。お手数ですが info@trillion-ai-juku.com までご連絡ください。';
+        errBox.textContent = '⚠️ ' + safeMsg;
         errBox.style.display = 'block';
         btn.disabled = false;
         btn.textContent = '💳 決済画面に進む →';
