@@ -173,7 +173,66 @@
         <select class="select" id="courseFilter"><option value="">コース: 全て</option></select>
         <button class="btn btn-ghost btn-sm" id="resetFilterBtn">↺ リセット</button>
         <button class="btn btn-ghost btn-sm" id="emailImportBtn" title="メアド一括登録 (CSV/TSV)">📧 メアド一括登録</button>
-        <button class="btn btn-primary btn-sm" id="stripeInviteBtn" title="現通塾生に Stripe カード決済 (毎月自動引き落とし) の案内メールを一斉送信">💳 Stripe案内メール一斉送信</button>
+        <button class="btn btn-primary btn-sm" id="addStudentBtn" title="新規生徒を追加 (クラウド同期されます)">➕ 生徒追加</button>
+        <button class="btn btn-accent btn-sm" id="stripeInviteBtn" title="現通塾生に Stripe カード決済 (毎月自動引き落とし) の案内メールを一斉送信">💳 Stripe案内メール一斉送信</button>
+      </div>
+    </div>
+
+    <!-- 生徒追加モーダル (2026-05-07 追加) -->
+    <div id="addStudentModal" class="modal-overlay hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9990;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+      <div style="background:var(--panel,#1f2937);color:var(--text,#fff);border-radius:14px;padding:24px;max-width:520px;width:calc(100% - 32px);box-shadow:0 20px 60px rgba(0,0,0,0.5);max-height:90vh;overflow-y:auto;">
+        <h3 style="margin:0 0 16px;font-size:1.15rem;font-weight:700;">➕ 新規生徒を追加</h3>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <label style="display:flex;flex-direction:column;gap:4px;">
+            <span style="font-size:0.82rem;font-weight:600;">氏名 <span style="color:#f87171;">*</span></span>
+            <input type="text" id="addStudentName" required placeholder="例: 山田 太郎" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.3);color:inherit;font-size:0.95rem;">
+          </label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <label style="display:flex;flex-direction:column;gap:4px;">
+              <span style="font-size:0.82rem;font-weight:600;">学年</span>
+              <select id="addStudentGrade" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.3);color:inherit;font-size:0.95rem;">
+                <option value="">未選択</option>
+                <option>小学1年</option><option>小学2年</option><option>小学3年</option>
+                <option>小学4年</option><option>小学5年</option><option>小学6年</option>
+                <option>中学1年</option><option>中学2年</option><option>中学3年</option>
+                <option>高校1年</option><option>高校2年</option><option>高校3年</option>
+                <option>高卒生</option><option>大学生</option><option>その他</option>
+              </select>
+            </label>
+            <label style="display:flex;flex-direction:column;gap:4px;">
+              <span style="font-size:0.82rem;font-weight:600;">月謝 (円) <span style="color:#f87171;">*</span></span>
+              <input type="number" id="addStudentFee" required placeholder="例: 16500" min="0" step="100" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.3);color:inherit;font-size:0.95rem;">
+            </label>
+          </div>
+          <label style="display:flex;flex-direction:column;gap:4px;">
+            <span style="font-size:0.82rem;font-weight:600;">入塾日 (月)</span>
+            <input type="month" id="addStudentEnrollDate" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.3);color:inherit;font-size:0.95rem;">
+          </label>
+          <label style="display:flex;flex-direction:column;gap:4px;">
+            <span style="font-size:0.82rem;font-weight:600;">メールアドレス (任意)</span>
+            <input type="email" id="addStudentEmail" placeholder="parent@example.com" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.3);color:inherit;font-size:0.95rem;">
+          </label>
+          <label style="display:flex;flex-direction:column;gap:4px;">
+            <span style="font-size:0.82rem;font-weight:600;">振込人名 (任意・カナ推奨)</span>
+            <input type="text" id="addStudentPayerName" placeholder="例: ヤマダ タロウ (= 銀行明細上の表記)" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.3);color:inherit;font-size:0.95rem;">
+          </label>
+          <label style="display:flex;flex-direction:column;gap:4px;">
+            <span style="font-size:0.82rem;font-weight:600;">コース (任意・カンマ区切り or 改行区切り)</span>
+            <textarea id="addStudentCourses" rows="2" placeholder="例: 中学2年, 英文法レベル１" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.3);color:inherit;font-size:0.95rem;font-family:inherit;resize:vertical;"></textarea>
+          </label>
+          <label style="display:flex;flex-direction:column;gap:4px;">
+            <span style="font-size:0.82rem;font-weight:600;">備考 (任意)</span>
+            <textarea id="addStudentNotes" rows="2" placeholder="例: 兄が #189 在籍" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.3);color:inherit;font-size:0.95rem;font-family:inherit;resize:vertical;"></textarea>
+          </label>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
+          <button class="btn btn-ghost" id="addStudentCancelBtn">キャンセル</button>
+          <button class="btn btn-primary" id="addStudentSaveBtn">追加して保存</button>
+        </div>
+        <p style="margin-top:12px;font-size:0.78rem;color:var(--text-muted,#9ca3af);">
+          追加した生徒は <code>STATE.overrides.newStudents</code> に保存され、クラウド同期で携帯/PC 間で共有されます。<br>
+          ※ data.json (元データ) は変更されません。
+        </p>
       </div>
     </div>
     <div class="table-wrap">
@@ -805,6 +864,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="app.js?v=20260507-cloudsync2"></script>
+<script src="app.js?v=20260507-addstudent2"></script>
 </body>
 </html>

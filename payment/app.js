@@ -229,7 +229,146 @@ async function loadData() {
   if (!STATE.overrides.payerNames) STATE.overrides.payerNames = {};
   if (!STATE.overrides.mailSent) STATE.overrides.mailSent = {};
   if (!STATE.overrides.status) STATE.overrides.status = {};
+  if (!STATE.overrides.newStudents) STATE.overrides.newStudents = [];   // 2026-05-07: 生徒追加機能
+  // newStudents を STATE.data.students に in-memory merge (id 重複は新生徒側を採用)
+  mergeNewStudentsIntoData();
 }
+
+// 2026-05-07 追加: クラウド同期で取得した newStudents を data.json と合体する
+function mergeNewStudentsIntoData() {
+  if (!STATE.data || !STATE.data.students) return;
+  const newStudents = STATE.overrides.newStudents || [];
+  if (!newStudents.length) return;
+  // 既存 id set
+  const existingIds = new Set(STATE.data.students.map(s => s.id));
+  for (const ns of newStudents) {
+    if (!ns || typeof ns.id !== 'number') continue;
+    if (!existingIds.has(ns.id)) {
+      STATE.data.students.push(ns);
+      existingIds.add(ns.id);
+    }
+  }
+  // nextStudentId も追従 (= 次の追加で重複しないよう)
+  const maxId = Math.max(STATE.data.nextStudentId || 1, ...newStudents.map(s => (s.id || 0) + 1));
+  STATE.data.nextStudentId = maxId;
+}
+
+// 2026-05-07 追加: 生徒追加モーダル — open
+function openAddStudentModal() {
+  const modal = document.getElementById('addStudentModal');
+  if (!modal) return;
+  // クリア + 入塾日 default = 今月
+  document.getElementById('addStudentName').value = '';
+  document.getElementById('addStudentGrade').value = '';
+  document.getElementById('addStudentFee').value = '';
+  document.getElementById('addStudentEmail').value = '';
+  document.getElementById('addStudentPayerName').value = '';
+  document.getElementById('addStudentCourses').value = '';
+  document.getElementById('addStudentNotes').value = '';
+  document.getElementById('addStudentEnrollDate').value = STATE.currentMonth || todayMonth();
+  modal.classList.remove('hidden');
+  // フォーカス
+  setTimeout(() => document.getElementById('addStudentName').focus(), 50);
+}
+
+// 2026-05-07 追加: 生徒追加モーダル — 保存
+async function saveNewStudent() {
+  const name = document.getElementById('addStudentName').value.trim();
+  const grade = document.getElementById('addStudentGrade').value.trim();
+  const feeRaw = document.getElementById('addStudentFee').value.trim();
+  const email = document.getElementById('addStudentEmail').value.trim();
+  const payerName = document.getElementById('addStudentPayerName').value.trim();
+  const coursesRaw = document.getElementById('addStudentCourses').value.trim();
+  const notes = document.getElementById('addStudentNotes').value.trim();
+  const enrollDate = document.getElementById('addStudentEnrollDate').value.trim() || (STATE.currentMonth || todayMonth());
+
+  if (!name) { alert('氏名は必須です'); return; }
+  const fee = parseInt(feeRaw, 10);
+  if (isNaN(fee) || fee < 0) { alert('月謝は 0 以上の整数を入力してください'); return; }
+  // Reviewer A LOW #9: 極端な大値警告
+  if (fee > 1000000) {
+    if (!confirm(`月謝 ¥${fee.toLocaleString()} は通常より大きい値です。本当によろしいですか?`)) return;
+  }
+  // Reviewer A HIGH #4: 同名生徒の重複チェック (空白除去で正規化)
+  const normName = name.replace(/[\s　]/g, '');
+  const dup = STATE.data.students.find(s => (s.name || '').replace(/[\s　]/g, '') === normName);
+  if (dup) {
+    if (!confirm(`既に同名の生徒「${dup.name}」(ID #${dup.id}) が登録されています。\n本当に新規で追加しますか?\n(同姓同名なら OK / 兄弟登録ミス防止)`)) return;
+  }
+
+  // コース parse: カンマ or 改行 区切り
+  const courses = coursesRaw
+    ? coursesRaw.split(/[,、\n]/).map(s => s.trim()).filter(s => s)
+    : [];
+
+  // Reviewer A CRITICAL #1: id 発行 — newStudents の max も考慮 (= 同時追加で衝突防止)
+  const usedIds = new Set(STATE.data.students.map(s => s.id));
+  const newStudentsMax = (STATE.overrides.newStudents || []).reduce(
+    (mx, s) => Math.max(mx, s.id || 0), 0
+  );
+  let id = Math.max(STATE.data.nextStudentId || 1, newStudentsMax + 1);
+  while (usedIds.has(id)) id += 1;
+
+  const newStudent = {
+    id,
+    name,
+    grade: grade || '',
+    email: email || '',
+    courses,
+    enrollDate,
+    status: '通塾',
+    fee,
+    notes: notes || '',
+    addedVia: 'add-student-modal',
+    addedAt: new Date().toISOString(),
+  };
+
+  // overrides に保存 (= クラウド同期される)
+  if (!STATE.overrides.newStudents) STATE.overrides.newStudents = [];
+  STATE.overrides.newStudents.push(newStudent);
+  // 振込人名は payerNames にも保存 (= マッチに使われる)
+  if (payerName) {
+    if (!STATE.overrides.payerNames) STATE.overrides.payerNames = {};
+    STATE.overrides.payerNames[id] = payerName;
+  }
+  // メールも overrides.emails に保存
+  if (email) {
+    if (!STATE.overrides.emails) STATE.overrides.emails = {};
+    STATE.overrides.emails[id] = email;
+  }
+  saveOverrides();          // localStorage 保存 + CloudSync push (debounced)
+
+  // in-memory にも追加 (即時反映)
+  STATE.data.students.push(newStudent);
+  STATE.data.nextStudentId = id + 1;
+
+  document.getElementById('addStudentModal').classList.add('hidden');
+  populateAllFilters();
+  refresh();
+
+  // Reviewer A HIGH #5: 即時 push (debounce 待たずに) — タブ閉じ・通信不安定で消失防止
+  let cloudMsg = '';
+  if (typeof CloudSync !== 'undefined' && CloudSync.bootstrapped && CloudSync.getToken()) {
+    const ok = await CloudSync.pushNow();
+    cloudMsg = ok ? '✓ クラウド同期完了 (携帯/PC 共有)' : '⚠ クラウド同期失敗 (再試行は右上 ⚠ アイコンクリック)';
+  } else {
+    cloudMsg = 'ℹ クラウド未ログイン: localStorage のみに保存 (右上 🔒 をクリックでログインすると同期されます)';
+  }
+  alert(`✓ ${name} さん (ID #${id}) を追加しました。\n\n月謝 ¥${fee.toLocaleString()} / 学年 ${grade || '未設定'}\n\n${cloudMsg}`);
+}
+
+// Reviewer A HIGH #3: ESC キー + overlay クリックで閉じる
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const m = document.getElementById('addStudentModal');
+    if (m && !m.classList.contains('hidden')) m.classList.add('hidden');
+  }
+});
+// overlay クリック (modal 外側 = overlay 自身) で閉じる
+document.addEventListener('click', (e) => {
+  const m = document.getElementById('addStudentModal');
+  if (m && !m.classList.contains('hidden') && e.target === m) m.classList.add('hidden');
+});
 
 function getStatus(student) {
   return STATE.overrides.status?.[student.id] ?? student.status;
@@ -324,6 +463,7 @@ const API_BASE = (location.hostname === 'localhost' || location.hostname === '12
 // Reviewer A MEDIUM: JSON.parse バリデーション用 (= 期待される top-level key の whitelist)
 const OVERRIDE_VALID_KEYS = new Set([
   'payments', 'emails', 'payerNames', 'mailSent', 'status', 'stripeInviteSent',
+  'newStudents',   // 2026-05-07: 生徒追加機能
 ]);
 function _isValidOverrides(obj) {
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
@@ -432,6 +572,33 @@ const CloudSync = {
     if (!token) { this.status = 'auth-required'; updateSyncStatusBar(); return false; }
     this.status = 'syncing'; updateSyncStatusBar();
     try {
+      // Reviewer A CRITICAL #2: pull-merge-push で newStudents 配列の同時追加消失を防ぐ
+      // 同時に別デバイスで生徒追加された場合、単純な POST だと array overwrite で消失する。
+      // → push 直前に pull → 自分にない newStudents を merge (id unique) → POST
+      try {
+        const pullRes = await fetch(`${API_BASE}/api/juku-payment/overrides`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (pullRes.ok) {
+          const data = await pullRes.json();
+          if (data.exists && data.value) {
+            const remoteOv = JSON.parse(data.value);
+            if (_isValidOverrides(remoteOv) && Array.isArray(remoteOv.newStudents)) {
+              const localIds = new Set((STATE.overrides.newStudents || []).map(s => s.id));
+              const toAdd = remoteOv.newStudents.filter(s => s && typeof s.id === 'number' && !localIds.has(s.id));
+              if (toAdd.length) {
+                STATE.overrides.newStudents = (STATE.overrides.newStudents || []).concat(toAdd);
+                localStorage.setItem(LS_KEY, JSON.stringify(STATE.overrides));
+                if (typeof mergeNewStudentsIntoData === 'function') mergeNewStudentsIntoData();
+                if (typeof populateAllFilters === 'function') populateAllFilters();
+                if (typeof refresh === 'function') refresh();
+                console.log('[CloudSync] pushNow: merged', toAdd.length, 'remote newStudents before push');
+              }
+            }
+          }
+        }
+      } catch (e) { console.warn('[CloudSync] pre-push pull failed:', e); /* push は続行 */ }
+
       const value = JSON.stringify(STATE.overrides || {});
       const res = await fetch(`${API_BASE}/api/juku-payment/overrides`, {
         method: 'POST',
@@ -476,7 +643,16 @@ const CloudSync = {
         // Reviewer A MEDIUM: 期待されない top-level key が混在してたら拒否 (= corrupted remote 防御)
         if (_isValidOverrides(remoteOverrides)) {
           STATE.overrides = remoteOverrides;
+          // overrides 既定キーを補完 (= 後方互換)
+          if (!STATE.overrides.payments) STATE.overrides.payments = {};
+          if (!STATE.overrides.emails) STATE.overrides.emails = {};
+          if (!STATE.overrides.payerNames) STATE.overrides.payerNames = {};
+          if (!STATE.overrides.mailSent) STATE.overrides.mailSent = {};
+          if (!STATE.overrides.status) STATE.overrides.status = {};
+          if (!STATE.overrides.newStudents) STATE.overrides.newStudents = [];
           localStorage.setItem(LS_KEY, JSON.stringify(STATE.overrides));
+          // remote 側の newStudents を STATE.data.students に in-memory merge (= 別デバイスで追加した生徒を取り込む)
+          mergeNewStudentsIntoData();
         } else {
           console.warn('[CloudSync] remote overrides shape invalid, ignoring:', Object.keys(remoteOverrides));
           this.errorMsg = 'remote データ形式不正 (= 古い/壊れたデータ。push で上書きします)';
@@ -550,7 +726,17 @@ async function promptAdminLogin() {
     if (remote && remote.exists && remote.value) {
       try {
         STATE.overrides = JSON.parse(remote.value);
+        // 既定キー補完
+        if (!STATE.overrides.payments) STATE.overrides.payments = {};
+        if (!STATE.overrides.emails) STATE.overrides.emails = {};
+        if (!STATE.overrides.payerNames) STATE.overrides.payerNames = {};
+        if (!STATE.overrides.mailSent) STATE.overrides.mailSent = {};
+        if (!STATE.overrides.status) STATE.overrides.status = {};
+        if (!STATE.overrides.newStudents) STATE.overrides.newStudents = [];
         localStorage.setItem(LS_KEY, JSON.stringify(STATE.overrides));
+        // 別デバイスで追加した生徒を in-memory merge
+        if (typeof mergeNewStudentsIntoData === 'function') mergeNewStudentsIntoData();
+        if (typeof populateAllFilters === 'function') populateAllFilters();
         if (typeof refresh === 'function') refresh();
       } catch (e) {}
     } else {
@@ -3776,6 +3962,14 @@ function setupModals() {
     clearTimeout(window._emailPreviewTimer);
     window._emailPreviewTimer = setTimeout(renderEmailImportPreview, 400);
   });
+
+  // 2026-05-07 追加: 生徒追加モーダル
+  const asb = document.getElementById('addStudentBtn');
+  if (asb) asb.addEventListener('click', openAddStudentModal);
+  const ascb = document.getElementById('addStudentCancelBtn');
+  if (ascb) ascb.addEventListener('click', () => document.getElementById('addStudentModal')?.classList.add('hidden'));
+  const assb = document.getElementById('addStudentSaveBtn');
+  if (assb) assb.addEventListener('click', saveNewStudent);
 
   // Stripe Invite (一斉送信)
   const sib = document.getElementById('stripeInviteBtn');
