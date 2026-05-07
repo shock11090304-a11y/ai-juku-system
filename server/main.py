@@ -357,14 +357,22 @@ class _Cursor:
 
     def execute(self, sql, params=()):
         if self._is_pg:
-            sql = sql.replace("?", "%s")
-            # 2026-05-07: psycopg3 は params=() でも SQL 内の % を placeholder として
+            # 2026-05-07: psycopg3 は SQL 内の literal % を placeholder として
             # 解釈しようとして「only '%s', '%b', '%t' are allowed」エラーを出す。
-            # params が空なら params 引数を渡さず execute すると literal % が
-            # 安全に通る (LIKE 'foo:%' などで頻発していた致命バグの根本対策)
+            # 修正方針:
+            # 1. params 有り時: SQL 内の literal % を %% に escape してから ? を %s に変換
+            #    (LIKE 'ai_call_%' のようなパターンも安全に通る)
+            # 2. params 無し時: psycopg に params 引数を渡さない
+            #    (execute(sql) は interpolation せず literal % が素通り)
             if params:
+                # Step 1: literal % を %% に escape (LIKE pattern や regex 等で頻出)
+                sql = sql.replace("%", "%%")
+                # Step 2: ? → %s 変換 (この %s は escape 後の literal %% と区別される)
+                sql = sql.replace("?", "%s")
                 self._cur.execute(sql, params)
             else:
+                # params 空 → escape も placeholder 変換も不要
+                # (execute(sql) は psycopg が interpolation を試みない)
                 self._cur.execute(sql)
         else:
             self._cur.execute(sql, params)
