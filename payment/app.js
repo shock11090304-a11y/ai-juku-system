@@ -1226,15 +1226,16 @@ async function handleFile(file) {
       console.log('[handleFile] PDF mode');
       const result = await extractPdfText(file);
       console.log('[handleFile] extractPdfText result:', { numPages: result?.numPages, textLen: result?.text?.length, head: result?.text?.slice(0, 200) });
-      // text の長さで原因切り分け (Reviewer B HIGH)
+      // text の長さで原因切り分け + 診断情報を alert に表示 (塾長スクショ送信用)
       if (!result || !result.text || result.text.length < 50) {
-        if (result && result.numPages === 0) {
-          alert('PDF にページがありません。ファイルが破損している可能性があります。');
-        } else if (result && result.text && result.text.length < 50) {
-          alert('PDF からテキストがほとんど抽出できませんでした。\n\n考えられる原因:\n• スキャン画像の PDF (= テキスト埋め込みなし) → OCR が必要\n• 暗号化された PDF → パスワード解除して再保存\n• フォーマット違いの PDF → 楽天銀行「入出金明細」の元 PDF か確認');
-        } else {
-          alert('PDF からテキストを取得できませんでした。');
-        }
+        const diag = result?.diag || 'no diag';
+        const v = (typeof pdfjsLib !== 'undefined' ? (pdfjsLib.version || 'loaded') : 'NOT loaded');
+        const ws = (typeof pdfjsLib !== 'undefined' ? (pdfjsLib.GlobalWorkerOptions?.workerSrc?.slice(-40) || 'no worker') : '-');
+        let reason = '';
+        if (result && result.numPages === 0) reason = '・PDF にページがありません (ファイル破損)';
+        else if (result && result.text && result.text.length < 50) reason = '・テキストがほぼ抽出されていません';
+        else reason = '・テキスト抽出が空 (= スキャン画像 PDF か pdf.js 互換問題の可能性)';
+        alert(`PDF からテキストを取得できませんでした。\n\n${reason}\n\n📋 診断情報 (このスクショを送ってください):\n• pdf.js: ${v}\n• worker: ...${ws}\n• ${diag}\n\n対策候補:\n1. ブラウザを強制リロード (Cmd+Shift+R)\n2. 別ブラウザ (Chrome 推奨) で試す\n3. スクショを送って頂ければ詳細解析します`);
         return;
       }
       const rows = parsePDFText(result.text);
@@ -1271,8 +1272,10 @@ async function extractPdfText(file) {
   }
   const buf = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-  if (!pdf || !pdf.numPages) return { text: '', numPages: 0 };
+  if (!pdf || !pdf.numPages) return { text: '', numPages: 0, diag: 'no pages' };
   const allLines = [];
+  let totalItems = 0;
+  const itemsPerPage = [];
   for (let p = 1; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);
     const content = await page.getTextContent();
@@ -1280,6 +1283,8 @@ async function extractPdfText(file) {
     // f が y 座標 (PDF は左下原点なので y 大 → 上、y 小 → 下)。
     // 同一行 (= y がほぼ同じ) を結合 → y 降順で並べる で reading order に揃える。
     const items = content.items.filter(it => it && typeof it.str === 'string');
+    totalItems += items.length;
+    itemsPerPage.push(items.length);
     // 行ごとに group (y 座標で集約・誤差 2pt 以内は同行扱い)
     const lineMap = new Map();
     for (const it of items) {
@@ -1312,7 +1317,10 @@ async function extractPdfText(file) {
       if (line) allLines.push(line);
     }
   }
-  return { text: allLines.join('\n'), numPages: pdf.numPages };
+  const text = allLines.join('\n');
+  const diag = `pages=${pdf.numPages}, totalItems=${totalItems}, perPage=[${itemsPerPage.join(',')}], lines=${allLines.length}, textLen=${text.length}, head100=${JSON.stringify(text.slice(0, 100))}`;
+  console.log('[extractPdfText] diag:', diag);
+  return { text, numPages: pdf.numPages, diag };
 }
 
 function parsePDFText(text) {
