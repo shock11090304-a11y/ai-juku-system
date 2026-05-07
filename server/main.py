@@ -11293,7 +11293,8 @@ def create_checkout_session(payload: CheckoutRequest):
                 # student_id も埋めておく (後続の re-checkout 判定や履歴継承で使う)
                 if not payload.student_id and _row_lookup.get("id"):
                     payload.student_id = _row_lookup["id"]
-                log.info(f"[Checkout] name lookup ok: email={payload.email} -> name={payload_name[:20]} student_id={payload.student_id}")
+                # 2026-05-07: PII reduction (Round 2 audit) — name を log に出さない
+                log.info(f"[Checkout] name lookup ok: email={payload.email} student_id={payload.student_id} (name resolved from DB)")
             else:
                 # 既存生徒が見つからない (新規ユーザが name 抜きで来た) → 親切なエラー
                 raise HTTPException(
@@ -11727,7 +11728,12 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
         c = conn.cursor()
         customer = session.get("customer")
         subscription = session.get("subscription")
-        email = session.get("customer_details", {}).get("email") or session.get("customer_email")
+        # 2026-05-07: email を必ず lowercase に正規化 (Round 2 audit 検出・致命バグ修正)
+        # 旧コード: WHERE email=? が Stripe から来た "Parent@Example.com" で MISS → 新規 INSERT
+        # → 既存 trial student の history が孤立する致命バグ。
+        # students テーブルは trial/signup で email_norm (lowercase) で保存している (line 10979)。
+        _email_raw = session.get("customer_details", {}).get("email") or session.get("customer_email")
+        email = (_email_raw or "").strip().lower() or None
 
         if purchase_type == "trial":
             # 完全無料 7日体験 (GW集中体験戦略): status='trial', trial_start=now, trial_end=now+7d
