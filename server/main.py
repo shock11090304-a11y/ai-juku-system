@@ -6124,6 +6124,257 @@ def admin_stripe_setup_founder_special(authorization: Optional[str] = Header(Non
 
 
 # ============================================================================
+# 💳 Stripe Price 全プラン一括セットアップ (2026-05-07 追加)
+# 塾長指示「金額のstripe反映ができてるかどうかもチェックして実装してください」
+# ============================================================================
+
+# 全プランの設定: lookup_key, 金額(JPY), Product 名, 説明
+_STRIPE_PLAN_SPECS = [
+    {
+        "lookup_key": "founder_special",
+        "amount": 14500,
+        "product_name": "AI学習コーチ塾 創設メンバー",
+        "description": "期間限定 50名・永年¥14,500/月・全機能無制限",
+        "metadata": {"plan": "founder_special", "tier": "premium-equivalent", "perpetual": "true"},
+    },
+    {
+        "lookup_key": "premium",
+        "amount": 39800,
+        "product_name": "AI学習コーチ塾 プレミアム",
+        "description": "AI 全機能無制限 + 学習管理 + 合格カリキュラム自動生成 + ZOOM 授業",
+        "metadata": {"plan": "premium", "tier": "premium"},
+    },
+    {
+        "lookup_key": "family",
+        "amount": 59800,
+        "product_name": "AI学習コーチ塾 家族プラン",
+        "description": "兄弟姉妹3名まで使える・1人あたり実質¥19,933/月",
+        "metadata": {"plan": "family", "tier": "premium", "max_students": "3"},
+    },
+    {
+        "lookup_key": "standard",
+        "amount": 24980,
+        "product_name": "AI学習コーチ塾 スタンダード",
+        "description": "24時間AIチューター + 問題生成月50回 + 添削月20回 + 参考書月5冊",
+        "metadata": {"plan": "standard", "tier": "standard"},
+    },
+    {
+        "lookup_key": "student_addon",
+        "amount": 5000,
+        "product_name": "AI学習コーチ塾 通塾生プラン",
+        "description": "通塾生限定 (塾長招待制)・永年¥5,000/月・全機能無制限・入塾金免除",
+        "metadata": {"plan": "student_addon", "perpetual": "true", "invite_only": "true"},
+    },
+]
+
+
+@app.post("/api/admin/stripe/setup-all-prices")
+def admin_stripe_setup_all_prices(authorization: Optional[str] = Header(None)):
+    """💳 全プランの Stripe Price を 1 度に作成 (or 既存検証)。
+    各 Price は lookup_key で永続検索可能 → env 設定不要。
+    冪等: 既に lookup_key で見つかれば再作成しない。
+    admin Bearer 認証必須。
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="未認証")
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="STRIPE_SECRET_KEY が未設定 (Railway env)")
+
+    s = get_stripe()
+    results = []
+
+    for spec in _STRIPE_PLAN_SPECS:
+        lk = spec["lookup_key"]
+        amount = spec["amount"]
+        try:
+            # 1. lookup_key で既存検索 (冪等)
+            existing = s.Price.list(lookup_keys=[lk], active=True, limit=1)
+            if existing and existing.data:
+                ex = existing.data[0]
+                # 金額の整合確認
+                amount_match = (ex.unit_amount == amount)
+                results.append({
+                    "lookup_key": lk,
+                    "status": "existing" if amount_match else "existing_amount_mismatch",
+                    "price_id": ex.id,
+                    "amount_jpy": ex.unit_amount,
+                    "expected_jpy": amount,
+                    "amount_match": amount_match,
+                    "interval": ex.recurring.get("interval") if ex.recurring else None,
+                    "message": (
+                        f"既存 Price が一致 ({ex.id}・¥{ex.unit_amount:,}/月)" if amount_match
+                        else f"⚠️ 金額不一致: Stripe={ex.unit_amount} 期待={amount}・既存 Price は active=False にして再作成推奨"
+                    ),
+                })
+                continue
+        except Exception as e:
+            log.warning(f"[Stripe Setup] lookup_key={lk} 検索失敗: {e}")
+
+        # 2. Product を name 一致で再利用 or 新規作成
+        product_id = None
+        try:
+            prods = s.Product.list(active=True, limit=100)
+            for p in prods.data:
+                if p.name == spec["product_name"]:
+                    product_id = p.id
+                    break
+        except Exception as e:
+            log.warning(f"[Stripe Setup] product list 失敗: {e}")
+        if not product_id:
+            try:
+                prod = s.Product.create(
+                    name=spec["product_name"],
+                    description=spec["description"],
+                    metadata=spec["metadata"],
+                )
+                product_id = prod.id
+                log.info(f"[Stripe Setup] product 作成: {spec['product_name']} = {product_id}")
+            except Exception as e:
+                results.append({
+                    "lookup_key": lk,
+                    "status": "product_create_failed",
+                    "error": str(e),
+                })
+                continue
+
+        # 3. Price 作成 (lookup_key + recurring monthly + JPY)
+        try:
+            price = s.Price.create(
+                product=product_id,
+                unit_amount=amount,
+                currency="jpy",
+                recurring={"interval": "month"},
+                lookup_key=lk,
+                transfer_lookup_key=True,  # 同 lookup_key の旧 Price から強制移管
+                metadata=spec["metadata"],
+            )
+            log.info(f"[Stripe Setup] price 作成: lookup_key={lk} amount={amount} id={price.id}")
+
+            # 4. キャッシュ更新 (founder_special / student_addon のみ)
+            now = datetime.now(timezone.utc)
+            if lk == "founder_special":
+                global _FOUNDER_SPECIAL_PRICE_CACHE
+                _FOUNDER_SPECIAL_PRICE_CACHE = {"id": price.id, "checked_at": now}
+            elif lk == "student_addon":
+                global _STUDENT_ADDON_PRICE_CACHE
+                _STUDENT_ADDON_PRICE_CACHE = {"id": price.id, "checked_at": now}
+
+            results.append({
+                "lookup_key": lk,
+                "status": "created",
+                "product_id": product_id,
+                "price_id": price.id,
+                "amount_jpy": amount,
+                "expected_jpy": amount,
+                "amount_match": True,
+                "interval": "month",
+                "message": f"✅ 作成完了 ({price.id}・¥{amount:,}/月)",
+            })
+        except Exception as e:
+            results.append({
+                "lookup_key": lk,
+                "status": "price_create_failed",
+                "error": str(e),
+            })
+
+    # サマリ
+    created = [r for r in results if r["status"] == "created"]
+    existing = [r for r in results if r["status"] == "existing"]
+    mismatched = [r for r in results if r["status"] == "existing_amount_mismatch"]
+    failed = [r for r in results if r["status"] in ("product_create_failed", "price_create_failed")]
+
+    return {
+        "ok": len(failed) == 0,
+        "summary": {
+            "total": len(_STRIPE_PLAN_SPECS),
+            "created": len(created),
+            "existing_match": len(existing),
+            "existing_mismatch": len(mismatched),
+            "failed": len(failed),
+        },
+        "results": results,
+        "next_steps": (
+            "✅ 全プラン Stripe 反映済 (lookup_key で動的解決)。env 設定は不要。"
+            if len(failed) == 0 and len(mismatched) == 0
+            else (
+                "⚠️ amount mismatch あり: 該当プランの旧 Price を Stripe Dashboard で active=False にしてから再実行してください。"
+                if len(mismatched) > 0
+                else "❌ 一部失敗: results.error を確認"
+            )
+        ),
+    }
+
+
+@app.get("/api/admin/stripe/check-prices")
+def admin_stripe_check_prices(authorization: Optional[str] = Header(None)):
+    """💳 全プランの Stripe 反映状態をチェック (= 読み取りのみ・Price は作成しない)
+    塾長が「金額が Stripe に反映されているか」を確認する用。
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="未認証")
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="STRIPE_SECRET_KEY が未設定")
+
+    s = get_stripe()
+    results = []
+    for spec in _STRIPE_PLAN_SPECS:
+        lk = spec["lookup_key"]
+        amount = spec["amount"]
+        try:
+            existing = s.Price.list(lookup_keys=[lk], active=True, limit=1)
+            if existing and existing.data:
+                ex = existing.data[0]
+                amount_match = (ex.unit_amount == amount)
+                results.append({
+                    "lookup_key": lk,
+                    "expected_jpy": amount,
+                    "stripe_jpy": ex.unit_amount,
+                    "match": amount_match,
+                    "price_id": ex.id,
+                    "interval": ex.recurring.get("interval") if ex.recurring else None,
+                    "active": ex.active,
+                })
+            else:
+                results.append({
+                    "lookup_key": lk,
+                    "expected_jpy": amount,
+                    "stripe_jpy": None,
+                    "match": False,
+                    "price_id": None,
+                    "missing": True,
+                })
+        except Exception as e:
+            results.append({
+                "lookup_key": lk,
+                "expected_jpy": amount,
+                "match": False,
+                "error": str(e),
+            })
+
+    all_match = all(r.get("match") for r in results)
+    missing = [r for r in results if r.get("missing")]
+    mismatched = [r for r in results if r.get("stripe_jpy") is not None and not r.get("match")]
+    return {
+        "ok": all_match,
+        "all_match": all_match,
+        "missing_count": len(missing),
+        "mismatched_count": len(mismatched),
+        "results": results,
+        "recommendation": (
+            "✅ 全プラン Stripe 反映済"
+            if all_match
+            else f"⚠️ {len(missing) + len(mismatched)} 件 不一致 → POST /api/admin/stripe/setup-all-prices で自動修正"
+        ),
+    }
+
+
+# ============================================================================
 # 🔧 セルフヒーリング系 admin endpoints (Phase 9)
 # 設計原則: monitor が検知できる異常は CEO ダッシュ 1 クリックで解決可能にする
 # ============================================================================

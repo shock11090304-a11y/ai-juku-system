@@ -656,6 +656,29 @@
           </button>
         </div>
       </div>
+
+      <!-- 💳 Stripe Price 全プラン一括セットアップ (2026-05-07 追加) -->
+      <div style="margin-top:1rem;padding:0.9rem;background:rgba(0,0,0,0.25);border:1px solid rgba(99,102,241,0.25);border-radius:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.7rem;">
+          <div style="font-size:0.85rem;font-weight:800;color:#a5b4fc;">💳 Stripe Price 反映確認 / 一括セットアップ</div>
+          <span style="font-size:0.7rem;color:#71717a;">5プラン: founder/premium/family/standard/student_addon</span>
+        </div>
+        <div style="font-size:0.75rem;color:#94a3b8;line-height:1.6;margin-bottom:0.7rem;">
+          全プランの価格が Stripe に正しく反映されているか確認 → 不足分があれば 1 クリックで自動作成。<br>
+          <span style="color:#fbbf24;">lookup_key で永続検索可能なので env 設定不要 (再 deploy しても大丈夫)</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.5rem;margin-bottom:0.7rem;">
+          <button id="checkStripePricesBtn" type="button" style="background:rgba(99,102,241,0.18);color:#818cf8;border:1px solid rgba(99,102,241,0.4);padding:0.7rem 0.8rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;text-align:left;">
+            <div>🔍 Stripe 反映状態をチェック</div>
+            <div style="font-size:0.7rem;color:#71717a;font-weight:400;margin-top:0.2rem;">読み取りのみ・即時実行 OK</div>
+          </button>
+          <button id="setupStripePricesBtn" type="button" style="background:rgba(34,197,94,0.18);color:#4ade80;border:1px solid rgba(34,197,94,0.4);padding:0.7rem 0.8rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;text-align:left;">
+            <div>✨ 不足分を一括作成 (冪等)</div>
+            <div style="font-size:0.7rem;color:#71717a;font-weight:400;margin-top:0.2rem;">既存はそのまま・無いものだけ作成</div>
+          </button>
+        </div>
+        <div id="stripePricesResult" style="display:none;font-size:0.78rem;color:#cbd5e1;background:rgba(0,0,0,0.3);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:0.7rem;line-height:1.6;"></div>
+      </div>
     </section>
 
     <!-- ========================================== -->
@@ -4293,6 +4316,62 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           }
         } catch (e) { alert('⚠️ ' + e.message); }
         poolPurgeBtn.disabled = false; poolPurgeBtn.innerHTML = orig;
+      });
+
+      // 💳 Stripe Price 反映チェック / 一括セットアップ (2026-05-07 追加)
+      function _renderStripePricesResult(payload, mode) {
+        const box = document.getElementById('stripePricesResult');
+        if (!box) return;
+        box.style.display = 'block';
+        const rows = (payload.results || []).map((r) => {
+          const exp = r.expected_jpy != null ? `¥${r.expected_jpy.toLocaleString()}` : '--';
+          const got = r.stripe_jpy != null
+            ? `¥${r.stripe_jpy.toLocaleString()}`
+            : (r.amount_jpy != null ? `¥${r.amount_jpy.toLocaleString()}` : (r.missing ? '未作成' : (r.error ? 'エラー' : '--')));
+          const matchIcon = (r.match || r.amount_match) ? '✅' : (r.status === 'created' ? '🆕' : '⚠️');
+          const note = r.message || r.error || (r.missing ? '→ セットアップ実行で作成' : '');
+          const id = r.price_id ? `<span style=\"color:#71717a;font-size:0.7rem;\">(${r.price_id})</span>` : '';
+          return `<tr><td style=\"padding:0.3rem 0.5rem;\">${matchIcon}</td><td style=\"padding:0.3rem 0.5rem;font-weight:700;\">${r.lookup_key}</td><td style=\"padding:0.3rem 0.5rem;\">${exp}</td><td style=\"padding:0.3rem 0.5rem;\">${got}</td><td style=\"padding:0.3rem 0.5rem;font-size:0.72rem;color:#a1a1aa;\">${note} ${id}</td></tr>`;
+        }).join('');
+        const summary = payload.summary
+          ? `<div style=\"font-size:0.78rem;color:${payload.ok ? '#4ade80' : '#fbbf24'};font-weight:800;margin-bottom:0.5rem;\">${payload.next_steps || ''}</div><div style=\"font-size:0.72rem;color:#94a3b8;margin-bottom:0.6rem;\">作成: ${payload.summary.created} / 既存一致: ${payload.summary.existing_match} / 金額不一致: ${payload.summary.existing_mismatch} / 失敗: ${payload.summary.failed} (合計 ${payload.summary.total})</div>`
+          : `<div style=\"font-size:0.78rem;color:${payload.all_match ? '#4ade80' : '#fbbf24'};font-weight:800;margin-bottom:0.5rem;\">${payload.recommendation || ''}</div><div style=\"font-size:0.72rem;color:#94a3b8;margin-bottom:0.6rem;\">未作成: ${payload.missing_count} / 金額不一致: ${payload.mismatched_count}</div>`;
+        box.innerHTML = `${summary}<table style=\"width:100%;border-collapse:collapse;font-size:0.78rem;\"><thead><tr style=\"color:#71717a;font-size:0.7rem;border-bottom:1px solid rgba(255,255,255,0.08);\"><th style=\"text-align:left;padding:0.3rem 0.5rem;\"></th><th style=\"text-align:left;padding:0.3rem 0.5rem;\">プラン</th><th style=\"text-align:left;padding:0.3rem 0.5rem;\">期待</th><th style=\"text-align:left;padding:0.3rem 0.5rem;\">Stripe</th><th style=\"text-align:left;padding:0.3rem 0.5rem;\">備考</th></tr></thead><tbody>${rows}</tbody></table>`;
+      }
+
+      const checkStripePricesBtn = document.getElementById('checkStripePricesBtn');
+      if (checkStripePricesBtn) checkStripePricesBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        checkStripePricesBtn.disabled = true; const orig = checkStripePricesBtn.innerHTML;
+        checkStripePricesBtn.innerHTML = '⏳ チェック中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/stripe/check-prices', { method: 'GET' });
+          const j = await r.json();
+          if (r.ok || j.results) {
+            _renderStripePricesResult(j, 'check');
+          } else {
+            alert('⚠️ エラー: ' + JSON.stringify(j));
+          }
+        } catch (e) { alert('⚠️ ' + e.message); }
+        checkStripePricesBtn.disabled = false; checkStripePricesBtn.innerHTML = orig;
+      });
+
+      const setupStripePricesBtn = document.getElementById('setupStripePricesBtn');
+      if (setupStripePricesBtn) setupStripePricesBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        if (!confirm('Stripe livemode に 5プラン全ての Product+Price を一括作成します (既存はスキップ・冪等)。\n\n対象:\n  • founder_special ¥14,500\n  • premium ¥39,800\n  • family ¥59,800\n  • standard ¥24,980\n  • student_addon ¥5,000\n\n続行?')) return;
+        setupStripePricesBtn.disabled = true; const orig = setupStripePricesBtn.innerHTML;
+        setupStripePricesBtn.innerHTML = '⏳ セットアップ中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/stripe/setup-all-prices', { method: 'POST' });
+          const j = await r.json();
+          if (r.ok || j.results) {
+            _renderStripePricesResult(j, 'setup');
+          } else {
+            alert('⚠️ エラー: ' + JSON.stringify(j));
+          }
+        } catch (e) { alert('⚠️ ' + e.message); }
+        setupStripePricesBtn.disabled = false; setupStripePricesBtn.innerHTML = orig;
       });
 
       const poolRefreshBtn = document.getElementById('poolRefreshBtn');
