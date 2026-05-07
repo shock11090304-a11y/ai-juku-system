@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>塾月謝 入金管理</title>
 <link rel="stylesheet" href="style.css">
+<!-- pdf.js (CDN・client-side PDF text 抽出用 / 2026-05-07 楽天銀行PDF取込追加) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
 </head>
 <body>
 <div class="bg-gradient"></div>
@@ -15,7 +17,7 @@
     <div class="logo-icon">¥</div>
     <div>
       <div class="logo-title">塾月謝 入金管理</div>
-      <div class="logo-sub">楽天銀行 CSV 連携 / 督促メール</div>
+      <div class="logo-sub">楽天銀行 CSV/PDF 連携 / 督促メール</div>
     </div>
   </div>
   <div class="header-actions">
@@ -60,7 +62,7 @@
   <button class="tab" data-tab="enrollment">🎓 在籍判定</button>
   <button class="tab" data-tab="all">👥 全生徒</button>
   <button class="tab" data-tab="history">📅 月別履歴</button>
-  <button class="tab" data-tab="import">📥 CSV取込</button>
+  <button class="tab" data-tab="import">📥 CSV/PDF取込</button>
   <button class="tab" data-tab="invoice">📄 請求書PDF</button>
   <button class="tab" data-tab="communication">📨 連絡</button>
   <button class="tab" data-tab="chat">💬 チャット<span id="chatGlobalUnread" class="chat-global-badge hidden">0</span></button>
@@ -304,19 +306,19 @@
     </div>
   </section>
 
-  <!-- CSV取込 -->
+  <!-- CSV/PDF取込 -->
   <section class="panel hidden" data-panel="import">
     <div class="panel-head">
-      <h2>楽天銀行 CSV 取込</h2>
+      <h2>楽天銀行 CSV / PDF 取込</h2>
       <div class="panel-actions">
         <span class="month-tag" id="importMonthTag">対象月: —</span>
       </div>
     </div>
     <div class="upload-area" id="uploadArea">
       <div class="upload-icon">📂</div>
-      <div class="upload-title">楽天銀行の入出金明細CSVをドラッグ&ドロップ</div>
-      <div class="upload-sub">または クリックして選択 (Shift_JIS 自動デコード対応)</div>
-      <input type="file" id="csvFile" accept=".csv" hidden>
+      <div class="upload-title">楽天銀行の入出金明細 CSV または PDF をドラッグ&ドロップ</div>
+      <div class="upload-sub">または クリックして選択 (CSV: Shift_JIS 自動デコード / PDF: pdf.js テキスト抽出)</div>
+      <input type="file" id="csvFile" accept=".csv,.pdf" hidden>
     </div>
 
     <div class="stripe-import-area" style="margin-top:1rem;padding:1rem;border:1px solid var(--border);border-radius:12px;background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(236,72,153,0.04))">

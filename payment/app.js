@@ -322,6 +322,55 @@ function setPayment(month, studentId, paid, date = '', note = '', amount = null)
   saveOverrides();
 }
 
+// 2026-05-07 追加: 即反映ボタン用の Undo トースト
+// 10 秒以内に「取消」をクリックすると入金状態を元に戻す。
+// keyframe 「toastInCentered」をグローバル注入 (1回のみ・既存 slideUp と translateX 衝突するため専用)
+(function ensureToastKeyframe() {
+  if (document.getElementById('instantPayToastKeyframe')) return;
+  const style = document.createElement('style');
+  style.id = 'instantPayToastKeyframe';
+  style.textContent = `@keyframes toastInCentered { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }`;
+  document.head.appendChild(style);
+})();
+
+function showInstantPayUndoToast(month, studentId, name) {
+  // 既存トーストがあれば消す
+  const old = document.getElementById('instantPayToast');
+  if (old) old.remove();
+  const toast = document.createElement('div');
+  toast.id = 'instantPayToast';
+  // Reviewer B CRITICAL: translateX(-50%) を keyframe (translate(-50%, ...)) で保持
+  toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translate(-50%, 0);background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:12px 18px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.25);font-size:0.9rem;font-weight:600;z-index:9999;display:flex;align-items:center;gap:14px;flex-wrap:wrap;max-width:calc(100vw - 32px);animation:toastInCentered 0.25s ease-out';
+  toast.innerHTML = `
+    <span>✓ ${escapeHtml(name)} さんを ${month} 入金済として記録しました</span>
+    <button id="instantPayUndoBtn" style="background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:5px 12px;border-radius:6px;font-weight:700;cursor:pointer;font-size:0.85rem">↩ 取消</button>
+    <span id="instantPayCountdown" style="font-size:0.78rem;opacity:0.85">10秒後に閉じる</span>
+  `;
+  document.body.appendChild(toast);
+  // カウントダウン + 自動消去
+  let secs = 10;
+  const cd = toast.querySelector('#instantPayCountdown');
+  const interval = setInterval(() => {
+    secs -= 1;
+    if (cd) cd.textContent = `${secs}秒後に閉じる`;
+    if (secs <= 0) {
+      clearInterval(interval);
+      toast.remove();
+    }
+  }, 1000);
+  // 取消ハンドラ: setPayment を unpaid に戻す + delete override
+  toast.querySelector('#instantPayUndoBtn').addEventListener('click', () => {
+    clearInterval(interval);
+    // setPayment(month, id, false) では override が「未払い」として残ってしまうため、override 自体を削除
+    if (STATE.overrides.payments[month] && STATE.overrides.payments[month][studentId] !== undefined) {
+      delete STATE.overrides.payments[month][studentId];
+      saveOverrides();
+    }
+    refresh();
+    toast.remove();
+  });
+}
+
 function getEmail(studentId) {
   return STATE.overrides.emails?.[studentId] ?? STATE.data.students.find(s => s.id === studentId)?.email ?? '';
 }
@@ -498,7 +547,7 @@ async function renderUnpaid() {
           <button class="icon-btn" data-action="mail-preview" title="メール内容を確認">📧 確認</button>
           <button class="icon-btn ${sent ? 'icon-btn-success' : ''}" data-action="mail-send" title="メーラーで開く" ${email ? '' : 'disabled'}>${sent ? '✓ 送信' : '➜ 送信'}</button>
           ${stripeCust ? `<button class="icon-btn" data-action="past-due-one" title="この生徒に Stripe 請求書を発行">💳 請求書</button>` : ''}
-          <button class="pay-toggle" data-action="toggle" title="入金済にする">○</button>
+          <button class="btn btn-primary btn-sm pay-toggle" data-action="toggle" title="入金済にする (即時反映・取消可)">💴 入金あり</button>
         </div>
       </td>
     </tr>`;
@@ -511,8 +560,21 @@ async function renderUnpaid() {
     const id = parseInt(tr.dataset.studentId, 10);
     const a = btn.dataset.action;
     if (a === 'toggle') {
+      // 2026-05-07: 即反映ボタン格上げ — 確認 dialog + 取消トースト
+      const student = activeStudents().find(x => x.id === id);
+      if (!student) {
+        alert('生徒情報が見つかりません。画面を再読込してください。');
+        return;
+      }
+      const name = student.name;
+      const fee = student.fee || 0;
+      const monthJp = month.replace(/^(\d{4})-(\d{2})$/, '$1年$2月');
+      const feeMsg = fee > 0 ? `¥${fee.toLocaleString()}` : '¥0 (※月謝額が未設定です)';
+      const ok = confirm(`${name} さんの ${monthJp}月謝 ${feeMsg} を入金済として記録しますか?\n\n(振込日: 今日 / 摘要: 手動チェック)\n\n反映後 10 秒以内なら下部のトーストで取消できます。`);
+      if (!ok) return;
       setPayment(month, id, true, new Date().toISOString().slice(0, 10), '手動チェック', null);
       refresh();
+      showInstantPayUndoToast(month, id, name);
     } else if (a === 'mail-preview') {
       openMailPreview(id);
     } else if (a === 'mail-send') {
@@ -1157,14 +1219,120 @@ function setupImportUI() {
 
 async function handleFile(file) {
   try {
+    const name = (file.name || '').toLowerCase();
+    if (name.endsWith('.pdf') || file.type === 'application/pdf') {
+      // PDF 取込 (2026-05-07 追加: 楽天銀行入出金明細 PDF 対応)
+      const result = await extractPdfText(file);
+      // text の長さで原因切り分け (Reviewer B HIGH)
+      if (!result || !result.text || result.text.length < 50) {
+        if (result && result.numPages === 0) {
+          alert('PDF にページがありません。ファイルが破損している可能性があります。');
+        } else if (result && result.text && result.text.length < 50) {
+          alert('PDF からテキストがほとんど抽出できませんでした。\n\n考えられる原因:\n• スキャン画像の PDF (= テキスト埋め込みなし) → OCR が必要\n• 暗号化された PDF → パスワード解除して再保存\n• フォーマット違いの PDF → 楽天銀行「入出金明細」の元 PDF か確認');
+        } else {
+          alert('PDF からテキストを取得できませんでした。');
+        }
+        return;
+      }
+      const rows = parsePDFText(result.text);
+      if (!rows.length) {
+        alert(`PDF から ${result.text.length}文字 のテキストは取れましたが、有効な取引行が見つかりませんでした。\n\n考えられる原因:\n• 楽天銀行「入出金明細」以外の PDF\n• フォーマット変更 (複数列レイアウト等)\n\n抽出テキストの先頭 100 文字:\n${result.text.slice(0, 100)}`);
+        return;
+      }
+      processImport(rows);
+      return;
+    }
+    // CSV 既存ロジック
     const text = await decodeFile(file);
     const rows = parseCSVText(text);
     if (!rows.length) { alert('CSVに有効な行が見つかりませんでした'); return; }
     processImport(rows);
   } catch (err) {
     console.error(err);
-    alert('CSV読込エラー: ' + err.message);
+    alert('読込エラー: ' + err.message);
   }
+}
+
+// === PDF 取込 (2026-05-07 追加) ===========================================
+// 楽天銀行「入出金明細」PDF を pdf.js で text 抽出 → CSV と同じ rows 形式に変換。
+// PDF の text 構造は 4 行 1 set:
+//   取引日 (YYYY/MM/DD) / 入出金 (±N,NNN) / 残高 (N,NNN) / 内容 (任意文字列)
+async function extractPdfText(file) {
+  if (typeof pdfjsLib === 'undefined') {
+    throw new Error('pdf.js が読込まれていません。ページをリロードして再試行してください。');
+  }
+  // worker URL を設定 (CDN 同 version)
+  if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  if (!pdf || !pdf.numPages) return { text: '', numPages: 0 };
+  const allLines = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    // pdf.js getTextContent items は { str, transform: [a,b,c,d,e,f] } の配列。
+    // f が y 座標 (PDF は左下原点なので y 大 → 上、y 小 → 下)。
+    // 同一行 (= y がほぼ同じ) を結合 → y 降順で並べる で reading order に揃える。
+    const items = content.items.filter(it => it && typeof it.str === 'string');
+    // 行ごとに group (y 座標で集約・誤差 2pt 以内は同行扱い)
+    const lineMap = new Map();
+    for (const it of items) {
+      const y = Math.round((it.transform && it.transform[5]) || 0);
+      // 2pt 以内の既存 y キーがあれば合流
+      let key = y;
+      for (const k of lineMap.keys()) { if (Math.abs(k - y) <= 2) { key = k; break; } }
+      const x = (it.transform && it.transform[4]) || 0;
+      const arr = lineMap.get(key) || [];
+      arr.push({ x, str: it.str });
+      lineMap.set(key, arr);
+    }
+    // y 降順 (= 上から下) で並べる
+    const ys = [...lineMap.keys()].sort((a, b) => b - a);
+    for (const y of ys) {
+      const arr = lineMap.get(y).sort((a, b) => a.x - b.x);
+      // x 差で空白挿入 (Reviewer A CRITICAL: 単純 join('') だと「振込 タナカ タロウ」→「振込タナカタロウ」と詰まり matchPayer が壊れる)
+      let line = '';
+      for (let k = 0; k < arr.length; k++) {
+        const o = arr[k];
+        if (k === 0) { line = o.str; continue; }
+        const prev = arr[k - 1];
+        const prevEnd = (prev.x || 0) + (prev.width || 0);
+        const gap = (o.x || 0) - prevEnd;
+        // 経験値 2pt 超で空白挿入。既に str の末尾/先頭に空白がある場合は重複させない。
+        const sepNeeded = gap > 2 && !/\s$/.test(line) && !/^\s/.test(o.str);
+        line += (sepNeeded ? ' ' : '') + o.str;
+      }
+      line = line.trim();
+      if (line) allLines.push(line);
+    }
+  }
+  return { text: allLines.join('\n'), numPages: pdf.numPages };
+}
+
+function parsePDFText(text) {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+  const datePat = /^\d{4}\/\d{2}\/\d{2}$/;
+  const numPat = /^[+-]?[\d,]+$/;  // Reviewer A HIGH: + 付き金額にも対応
+  const out = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (!datePat.test(lines[i])) { i++; continue; }
+    if (i + 3 >= lines.length) { i++; continue; }   // 旧 break で残り行を捨てていた境界バグ修正
+    const dateStr = lines[i].replace(/\//g, '');     // YYYY/MM/DD → YYYYMMDD (CSV と同形式)
+    const amountRaw = lines[i + 1];
+    const balanceRaw = lines[i + 2];
+    const content = lines[i + 3];
+    if (!numPat.test(amountRaw) || !numPat.test(balanceRaw)) { i++; continue; }
+    const amount = parseInt(amountRaw.replace(/[,+]/g, ''), 10);
+    const balance = parseInt(balanceRaw.replace(/[,+]/g, ''), 10);
+    if (isNaN(amount) || isNaN(balance)) { i++; continue; }
+    out.push({ date: dateStr, amount, balance, content });
+    i += 4;
+  }
+  return out;
 }
 
 // === Stripe Charges API 取込 (CSV と同じ rows 形式に変換 → processImport で再利用) ===
