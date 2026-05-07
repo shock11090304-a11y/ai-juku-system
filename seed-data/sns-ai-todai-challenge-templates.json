@@ -5,32 +5,38 @@
   "url_with_utm": "https://trillion-ai-juku.com/ai-todai-challenge.html?utm_source=threads&utm_campaign=ai-todai",
   "templates": [
     {
-      "id": "threads-1-hook",
+      "id": "threads-1-hook-v3",
       "platform": "threads",
       "type": "hook",
-      "text": "¥14,500/月 の AI チューター、東大英語 2024 を解かせてみた。\n\n結果: 4/4 全問正解 (所要 9 分)。\n\nしかも、各問の推論プロセスを全公開してます。普通の塾なら絶対やらない検証。\n\n→ https://trillion-ai-juku.com/ai-todai-challenge.html?utm_source=threads&utm_campaign=ai-todai\n\n#AI東大模試 #大学受験 #東大英語",
-      "char_count_jp": 175
+      "main_post": "¥14,500 の AI に東大英語 2024 を解かせたら、9 分で全問正解した。\n\n塾代の感覚、もうずれてないか。\n\n(続きはリプライ)",
+      "first_reply": "→ trillion-ai-juku.com/ai-todai-challenge.html\n\n各問の推論プロセスも公開してます (やらせなしの独立検証)。\n10 日間 ¥0 で試せます。\n\n#大学受験",
+      "image_required": true,
+      "image_source": "https://trillion-ai-juku.com/ai-todai-share-image.html",
+      "note": "メイン投稿に URL / hashtag / 絵文字過多を含めない (Threads アルゴ最適化)"
     },
     {
-      "id": "threads-2-comparison",
+      "id": "threads-2-comparison-v3",
       "platform": "threads",
       "type": "comparison",
-      "text": "個別指導塾: 月 30,000 円\n大手映像塾: 月 20,000 円\nai-juku の AI: 月 14,500 円\n\nで、AI が東大英語 2024 で全問正解した。\n\n業界、これでいいんですか?\n\n各問の推論プロセス全公開:\nhttps://trillion-ai-juku.com/ai-todai-challenge.html?utm_source=threads&utm_campaign=ai-todai\n\n#AI東大模試 #個別指導 #塾代",
-      "char_count_jp": 178
+      "main_post": "個別指導塾: 月 30,000 円\n大手映像塾: 月 20,000 円\nai-juku の AI: 月 14,500 円\n\nこれで、AI が東大英語 2024 で全問正解した。\n\n業界、これでいいんですか?",
+      "first_reply": "詳細・推論プロセス全公開:\ntrillion-ai-juku.com/ai-todai-challenge.html\n\n#塾代",
+      "image_required": true
     },
     {
-      "id": "threads-3-transparency",
+      "id": "threads-3-transparency-v3",
       "platform": "threads",
       "type": "transparency",
-      "text": "「AI が東大英語で全問正解!」\n\n…と煽る塾は多いけど、本当に解ける問題なのか? どう考えたのか? 公開してるところはほぼ無い。\n\nうちは、AI に正解を一切伏せて独立に解かせ、各問の推論プロセスを全公開しました。\n\nやらせなしの検証:\nhttps://trillion-ai-juku.com/ai-todai-challenge.html?utm_source=threads&utm_campaign=ai-todai\n\n#AI東大模試 #透明性 #大学受験",
-      "char_count_jp": 196
+      "main_post": "「AI が東大で◯点!」と煽る塾は多いけど、本当に解ける問題なのか・どう考えたのか公開してるところは無い。\n\nうちは AI に正解を伏せて独立に解かせ、推論プロセスを全公開しました。",
+      "first_reply": "→ trillion-ai-juku.com/ai-todai-challenge.html\n\nやらせなしの独立検証。\n\n#透明性",
+      "image_required": true
     },
     {
-      "id": "threads-4-cta-direct",
+      "id": "threads-4-cta-direct-v3",
       "platform": "threads",
       "type": "cta",
-      "text": "東大英語を 9 分で全問正解する AI、月 ¥14,500 で使えます。\n\n10 日間 ¥0 でお試し可能 (= クレカ登録不要)。\n\n受験生・保護者の方、まずは AI の実力を見て:\nhttps://trillion-ai-juku.com/ai-todai-challenge.html?utm_source=threads&utm_campaign=ai-todai&utm_content=cta\n\n#大学受験 #AI学習 #塾選び",
-      "char_count_jp": 156
+      "main_post": "東大英語を 9 分で全問正解した AI、月 ¥14,500。\n\n10 日間 ¥0 でお試し可能 (クレカ登録不要)。",
+      "first_reply": "→ trillion-ai-juku.com/checkout.html?plan=founder_special&utm_source=threads&utm_campaign=ai-todai&utm_content=cta\n\n#大学受験",
+      "image_required": true
     },
     {
       "id": "x-1-thread-opener",
