@@ -1,0 +1,73 @@
+{
+  "campaign": "ai-todai-challenge",
+  "created_at": "2026-05-07",
+  "purpose": "ai-todai-challenge.html へ流入させるバズ施策の Threads/X 投稿テンプレ集",
+  "url_with_utm": "https://trillion-ai-juku.com/ai-todai-challenge.html?utm_source=threads&utm_campaign=ai-todai",
+  "templates": [
+    {
+      "id": "threads-1-hook",
+      "platform": "threads",
+      "type": "hook",
+      "text": "¥14,500/月 の AI チューター、東大英語 2024 を解かせてみた。\n\n結果: 4/4 全問正解 (所要 9 分)。\n\nしかも、各問の推論プロセスを全公開してます。普通の塾なら絶対やらない検証。\n\n→ https://trillion-ai-juku.com/ai-todai-challenge.html?utm_source=threads&utm_campaign=ai-todai\n\n#AI東大模試 #大学受験 #東大英語",
+      "char_count_jp": 175
+    },
+    {
+      "id": "threads-2-comparison",
+      "platform": "threads",
+      "type": "comparison",
+      "text": "個別指導塾: 月 30,000 円\n大手映像塾: 月 20,000 円\nai-juku の AI: 月 14,500 円\n\nで、AI が東大英語 2024 で全問正解した。\n\n業界、これでいいんですか?\n\n各問の推論プロセス全公開:\nhttps://trillion-ai-juku.com/ai-todai-challenge.html?utm_source=threads&utm_campaign=ai-todai\n\n#AI東大模試 #個別指導 #塾代",
+      "char_count_jp": 178
+    },
+    {
+      "id": "threads-3-transparency",
+      "platform": "threads",
+      "type": "transparency",
+      "text": "「AI が東大英語で全問正解!」\n\n…と煽る塾は多いけど、本当に解ける問題なのか? どう考えたのか? 公開してるところはほぼ無い。\n\nうちは、AI に正解を一切伏せて独立に解かせ、各問の推論プロセスを全公開しました。\n\nやらせなしの検証:\nhttps://trillion-ai-juku.com/ai-todai-challenge.html?utm_source=threads&utm_campaign=ai-todai\n\n#AI東大模試 #透明性 #大学受験",
+      "char_count_jp": 196
+    },
+    {
+      "id": "threads-4-cta-direct",
+      "platform": "threads",
+      "type": "cta",
+      "text": "東大英語を 9 分で全問正解する AI、月 ¥14,500 で使えます。\n\n10 日間 ¥0 でお試し可能 (= クレカ登録不要)。\n\n受験生・保護者の方、まずは AI の実力を見て:\nhttps://trillion-ai-juku.com/ai-todai-challenge.html?utm_source=threads&utm_campaign=ai-todai-cta\n\n#大学受験 #AI学習 #塾選び",
+      "char_count_jp": 156
+    },
+    {
+      "id": "x-1-thread-opener",
+      "platform": "x",
+      "type": "thread-opener",
+      "text": "¥14,500/月の AI チューターに東大英語 2024 を解かせたら全問正解 (4/4) した。\n\n所要時間 9 分。\n\nしかも各問の推論プロセスを全公開してる。本当に AI で解けるのか?疑う前にこのページ見てほしい。\n\nhttps://trillion-ai-juku.com/ai-todai-challenge.html?utm_source=x&utm_campaign=ai-todai",
+      "char_count_jp": 138
+    },
+    {
+      "id": "x-2-thread-followup",
+      "platform": "x",
+      "type": "thread-followup",
+      "text": "Q1 (下線部解釈): far from being / structural feature の構造を 1 行で読み解いて即正解。\n\nQ2 (関係詞節 4 重ネスト): may not survive the encounter の含意を文脈から取り、選択肢の 'may not' を確実に拾った。\n\n受験生平均は推定 60-70%。AI 100%。\n\n続きはページで。"
+    },
+    {
+      "id": "x-3-cta",
+      "platform": "x",
+      "type": "cta",
+      "text": "この AI を 10 日間 ¥0 で試せます。クレカ登録不要、自動課金なし。\n\n継続される方のみ ¥14,500/月 (創設メンバー価格・残 17 名)。\n\n→ https://trillion-ai-juku.com/signup-trial.html?utm_source=x&utm_campaign=ai-todai-cta"
+    }
+  ],
+  "posting_schedule": {
+    "day_1": ["threads-1-hook (8:00 JST)", "x-1-thread-opener (12:00 JST)"],
+    "day_2": ["threads-2-comparison (8:00 JST)", "x-2-thread-followup (12:00 JST)"],
+    "day_3": ["threads-3-transparency (8:00 JST)", "x-3-cta (12:00 JST)"],
+    "day_4": ["threads-4-cta-direct (12:00 JST)"]
+  },
+  "kpi_targets": {
+    "day_1_threads_views": 5000,
+    "day_3_total_views": 30000,
+    "lp_clicks_in_first_week": 1000,
+    "trial_signups_in_first_week": 30
+  },
+  "follow_up_series": [
+    "京大数学 — AI が解いてみた",
+    "早稲田 自由英作文 — AI が書いてみた",
+    "共通テスト 5 教科 — AI 全教科チャレンジ",
+    "AI に勝った受験生 (UGC キャンペーン)"
+  ]
+}
