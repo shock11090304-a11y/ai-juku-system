@@ -305,6 +305,214 @@ function setStripeInviteSent(studentId, isoDate) {
 
 function saveOverrides() {
   localStorage.setItem(LS_KEY, JSON.stringify(STATE.overrides));
+  // 2026-05-07: クラウド sync (debounced 2 秒)
+  if (typeof CloudSync !== 'undefined') CloudSync.schedulePush();
+}
+
+// =====================================================================
+// 💴 クラウド sync (2026-05-07 追加)
+// 携帯/PC 間で overrides (= 入金記録/メール/振込人名学習) を同期。
+// 認証: ai-juku-system の admin Bearer token を流用 (既存 ADMIN_PASSWORD)。
+// API: GET/POST /api/juku-payment/overrides
+// =====================================================================
+const ADMIN_TOKEN_KEY = 'juku-admin-bearer-v1';
+const SYNC_LAST_KEY = 'juku-payment-sync-last-v1';   // ローカル最終 push 時刻
+const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? 'http://localhost:8000'
+  : '';  // 同一オリジン (= /payment/ から /api/ へ相対)
+
+const CloudSync = {
+  pushTimer: null,
+  status: 'init',          // 'init' | 'syncing' | 'ok' | 'auth-required' | 'error' | 'disabled'
+  lastPushAt: 0,
+  lastPullAt: 0,
+  errorMsg: '',
+
+  getToken() { return localStorage.getItem(ADMIN_TOKEN_KEY) || ''; },
+  setToken(t) { if (t) localStorage.setItem(ADMIN_TOKEN_KEY, t); },
+  clearToken() { localStorage.removeItem(ADMIN_TOKEN_KEY); },
+
+  async login(password) {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json();
+      if (res.ok && data.token) {
+        this.setToken(data.token);
+        this.status = 'ok';
+        this.errorMsg = '';
+        updateSyncStatusBar();
+        return true;
+      }
+      this.errorMsg = data.detail || 'パスワードが違います';
+      return false;
+    } catch (e) {
+      this.errorMsg = e.message;
+      return false;
+    }
+  },
+
+  async pull() {
+    const token = this.getToken();
+    if (!token) { this.status = 'auth-required'; updateSyncStatusBar(); return null; }
+    this.status = 'syncing'; updateSyncStatusBar();
+    try {
+      const res = await fetch(`${API_BASE}/api/juku-payment/overrides`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (res.status === 401) {
+        this.clearToken();
+        this.status = 'auth-required';
+        updateSyncStatusBar();
+        return null;
+      }
+      if (!res.ok) {
+        this.status = 'error';
+        this.errorMsg = `pull ${res.status}`;
+        updateSyncStatusBar();
+        return null;
+      }
+      const data = await res.json();
+      this.lastPullAt = Date.now();
+      this.status = 'ok';
+      updateSyncStatusBar();
+      return data;  // { ok, value (JSON string), updated_at, exists }
+    } catch (e) {
+      this.status = 'error';
+      this.errorMsg = e.message;
+      updateSyncStatusBar();
+      return null;
+    }
+  },
+
+  schedulePush() {
+    // 2 秒 debounce — 連続編集を 1 リクエストにまとめる
+    if (this.pushTimer) clearTimeout(this.pushTimer);
+    this.pushTimer = setTimeout(() => this.pushNow(), 2000);
+  },
+
+  async pushNow() {
+    const token = this.getToken();
+    if (!token) { this.status = 'auth-required'; updateSyncStatusBar(); return false; }
+    this.status = 'syncing'; updateSyncStatusBar();
+    try {
+      const value = JSON.stringify(STATE.overrides || {});
+      const res = await fetch(`${API_BASE}/api/juku-payment/overrides`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value }),
+      });
+      if (res.status === 401) {
+        this.clearToken();
+        this.status = 'auth-required';
+        updateSyncStatusBar();
+        return false;
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        this.status = 'error';
+        this.errorMsg = data.detail || `push ${res.status}`;
+        updateSyncStatusBar();
+        return false;
+      }
+      const data = await res.json();
+      this.lastPushAt = Date.now();
+      localStorage.setItem(SYNC_LAST_KEY, String(this.lastPushAt));
+      this.status = 'ok';
+      updateSyncStatusBar();
+      return true;
+    } catch (e) {
+      this.status = 'error';
+      this.errorMsg = e.message;
+      updateSyncStatusBar();
+      return false;
+    }
+  },
+
+  async bootstrap() {
+    // ページロード直後に呼ぶ。token があれば pull → local 上書き。
+    const token = this.getToken();
+    if (!token) { this.status = 'auth-required'; updateSyncStatusBar(); return; }
+    const remote = await this.pull();
+    if (remote && remote.exists && remote.value) {
+      try {
+        const remoteOverrides = JSON.parse(remote.value);
+        // remote が存在すれば local を上書き (= last-write-wins・サーバーが正)
+        STATE.overrides = remoteOverrides;
+        localStorage.setItem(LS_KEY, JSON.stringify(STATE.overrides));
+        // refresh は呼出元 (init) で実施
+      } catch (e) {
+        console.warn('[CloudSync] remote JSON parse failed:', e);
+      }
+    } else if (remote && !remote.exists) {
+      // remote 未作成 = 初回 → 現在の local を push して作成
+      await this.pushNow();
+    }
+  },
+};
+
+// クラウド同期ステータスバー (header に動的注入)
+function updateSyncStatusBar() {
+  let bar = document.getElementById('cloudSyncBar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'cloudSyncBar';
+    bar.style.cssText = 'position:fixed;top:8px;right:8px;z-index:9998;padding:6px 12px;border-radius:8px;font-size:0.78rem;font-weight:600;cursor:pointer;backdrop-filter:blur(8px);user-select:none;';
+    bar.title = 'クラウド同期状態';
+    bar.addEventListener('click', () => {
+      if (CloudSync.status === 'auth-required') {
+        promptAdminLogin();
+      } else if (CloudSync.status === 'error') {
+        alert(`同期エラー: ${CloudSync.errorMsg}\n\nクリックで再試行します。`);
+        CloudSync.pushNow();
+      } else {
+        // 強制 push
+        CloudSync.pushNow();
+      }
+    });
+    document.body.appendChild(bar);
+  }
+  const s = CloudSync.status;
+  const map = {
+    'init':          { txt: '☁ 初期化中…', bg: 'rgba(107,114,128,0.85)', col: '#fff' },
+    'syncing':       { txt: '⏳ 同期中…',   bg: 'rgba(99,102,241,0.85)', col: '#fff' },
+    'ok':            { txt: '✓ 同期済',      bg: 'rgba(16,185,129,0.85)', col: '#fff' },
+    'auth-required': { txt: '🔒 ログインしてください', bg: 'rgba(245,158,11,0.95)', col: '#fff' },
+    'error':         { txt: '⚠ 同期エラー (再試行)', bg: 'rgba(239,68,68,0.9)',  col: '#fff' },
+    'disabled':      { txt: '☁ 同期 OFF',  bg: 'rgba(107,114,128,0.85)', col: '#fff' },
+  };
+  const cfg = map[s] || map['init'];
+  bar.textContent = cfg.txt;
+  bar.style.background = cfg.bg;
+  bar.style.color = cfg.col;
+}
+
+// 管理者ログインモーダル (シンプルな prompt 派生)
+async function promptAdminLogin() {
+  const pw = prompt('クラウド同期を有効にするには、管理者パスワードを入力してください。\n(ai-juku-system の ADMIN_PASSWORD と同じ)');
+  if (pw === null) return;
+  if (!pw) { alert('パスワードを入力してください'); return; }
+  const ok = await CloudSync.login(pw);
+  if (ok) {
+    alert('✓ ログイン成功。クラウド同期を開始します。');
+    // 既存データを pull (= 別デバイスで作業した結果を取り込む)
+    const remote = await CloudSync.pull();
+    if (remote && remote.exists && remote.value) {
+      try {
+        STATE.overrides = JSON.parse(remote.value);
+        localStorage.setItem(LS_KEY, JSON.stringify(STATE.overrides));
+        if (typeof refresh === 'function') refresh();
+      } catch (e) {}
+    } else {
+      // 初回 → 現在の local を push
+      await CloudSync.pushNow();
+    }
+  } else {
+    alert(`ログイン失敗: ${CloudSync.errorMsg}`);
+  }
 }
 
 // === Merged accessors ===
@@ -3595,6 +3803,9 @@ async function init() {
 
   loadSettings();
   await loadData();
+  // 2026-05-07: クラウド sync 初期化 (token があれば pull → local 上書き)
+  updateSyncStatusBar();
+  await CloudSync.bootstrap();
   populateAllFilters();
   refresh();
 

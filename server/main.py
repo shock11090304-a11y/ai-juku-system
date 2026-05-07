@@ -10274,6 +10274,81 @@ def admin_whois_reminder_test(authorization: Optional[str] = Header(None), x_cro
     return _maybe_run_whois_renewal_reminder(fake_date)
 
 
+# =====================================================================
+# 💴 juku-payment クラウド sync (2026-05-07 追加)
+# 月謝アプリ (~/ai-juku-system/payment/) の overrides を Railway Postgres
+# (kv_settings table) に保存し、携帯/PC 間でデータ共有を実現する。
+#
+# 認証: 既存の admin Bearer token を流用 (新規認証フロー不要)
+# 競合解決: シンプルな last-write-wins (= 最後の POST が勝つ)
+#   塾長 1 人運用なので multi-writer 競合は実質発生しない。
+# =====================================================================
+
+JUKU_PAYMENT_KV_KEY = "juku_payment_overrides_v1"
+
+
+@app.get("/api/juku-payment/overrides")
+def juku_payment_get_overrides(authorization: Optional[str] = Header(None)):
+    """juku-payment overrides (= payments / emails / payerNames / mailSent / status) を取得。
+    Bearer token 認証必須 (admin)。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Bearer token が必要です")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="管理者トークンが無効です")
+    val = _kv_get(JUKU_PAYMENT_KV_KEY)
+    # updated_at も取りたいので生 SQL
+    updated_at = None
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute("CREATE TABLE IF NOT EXISTS kv_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)")
+        c.execute("SELECT updated_at FROM kv_settings WHERE key = ?", (JUKU_PAYMENT_KV_KEY,))
+        row = c.fetchone()
+        conn.close()
+        if row:
+            ua = row[0] if not hasattr(row, "get") else (row.get("updated_at") if "updated_at" in (getattr(row, "keys", lambda: [])() or []) else row[0] if hasattr(row, "__getitem__") else None)
+            if ua is not None:
+                updated_at = ua.isoformat() if hasattr(ua, "isoformat") else str(ua)
+    except Exception as e:
+        log.warning(f"[JukuPay:get] updated_at fetch failed: {e}")
+    return {
+        "ok": True,
+        "value": val,                      # JSON 文字列 (= STATE.overrides の JSON.stringify)
+        "updated_at": updated_at,          # ISO 8601
+        "exists": val is not None,
+    }
+
+
+@app.post("/api/juku-payment/overrides")
+def juku_payment_set_overrides(payload: dict, authorization: Optional[str] = Header(None)):
+    """juku-payment overrides を保存。
+    payload: { "value": JSON 文字列 }"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Bearer token が必要です")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="管理者トークンが無効です")
+    val = payload.get("value")
+    if val is None:
+        raise HTTPException(status_code=400, detail="value (JSON 文字列) が必要です")
+    if not isinstance(val, str):
+        # JSON object で送られた場合は str に変換
+        try:
+            val = json.dumps(val, ensure_ascii=False)
+        except Exception:
+            raise HTTPException(status_code=400, detail="value を JSON 化できません")
+    # サイズ上限 (= 暴走/誤送信ガード): 5MB
+    if len(val.encode("utf-8")) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="value が大きすぎます (上限 5MB)")
+    ok = _kv_set(JUKU_PAYMENT_KV_KEY, val)
+    if not ok:
+        raise HTTPException(status_code=500, detail="保存に失敗しました")
+    # 更新時刻を返す
+    updated_at = datetime.now(timezone.utc).isoformat()
+    return {"ok": True, "updated_at": updated_at, "size_bytes": len(val.encode("utf-8"))}
+
+
 @app.get("/api/auth/me")
 def auth_me(authorization: Optional[str] = Header(None)):
     """現在のセッションを検証して生徒情報を返す。全ページのアクセスガードに使う。
