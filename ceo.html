@@ -1874,11 +1874,11 @@
     }
     // 申込時 (DB 上) の plan 値からフロント表示用の月額・コース名を導出
     function planFee(plan) {
-      const map = { standard: 24980, premium: 39800, family: 59800, student_addon: 5000 };
+      const map = { standard: 24980, premium: 39800, family: 59800, student_addon: 5000, founder_special: 12000, founder1: 12000 };
       return map[plan] || 0;
     }
     function planLabel(plan) {
-      const map = { standard: 'スタンダード', premium: 'プレミアム', family: '家族プラン', student_addon: '塾生アドオン', trial: 'トライアル' };
+      const map = { standard: 'スタンダード', premium: 'プレミアム', family: '家族プラン', student_addon: '塾生アドオン', founder_special: '創設メンバー', founder1: '創設メンバー', trial: 'トライアル' };
       return map[plan] || (plan || '未契約');
     }
 
@@ -2022,7 +2022,7 @@
                   <td>${i + 1}</td>
                   <td><strong>${escapeHtmlSafe(st.name)}</strong></td>
                   <td>${escapeHtmlSafe(st.grade || '-')}</td>
-                  <td>${escapeHtmlSafe(planLabel(st.plan))}</td>
+                  <td>${escapeHtmlSafe(planLabel(st.plan))}${st.course === 'kokuritsu_nankan' ? ' <span style="font-size:0.7em;color:#fbbf24;">🎯国難</span>' : ''}</td>
                   <td><span class="roster-status active">通塾</span></td>
                   <td style="text-align:right;font-weight:700;color:#34d399;">¥${fee.toLocaleString()}</td>
                 </tr>

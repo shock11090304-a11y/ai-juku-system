@@ -4301,12 +4301,12 @@ def admin_stats(authorization: Optional[str] = Header(None)):
     c = conn.cursor()
     # last_login_at は migration 直後の旧 DB に存在しない可能性あり → try/except でフォールバック
     try:
-        c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at, line_user_id FROM students ORDER BY id DESC")
+        c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at, line_user_id, course FROM students ORDER BY id DESC")
         rows = c.fetchall()
         has_last_login = True
     except Exception:
         try:
-            c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, paid_since, created_at, line_user_id FROM students ORDER BY id DESC")
+            c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, paid_since, created_at, line_user_id, course FROM students ORDER BY id DESC")
             rows = c.fetchall()
             has_last_login = False
         except Exception:
@@ -4389,6 +4389,7 @@ def admin_stats(authorization: Optional[str] = Header(None)):
             "latest_activity_at": _latest_act,  # 学習記録/AI質問/模試含む最終アクティビティ
             "has_line": bool(_line_uid),
             "is_carrier_email": _is_carrier_email(_email),
+            "course": (row["course"] if "course" in row.keys() else None),
         })
     # 集計
     c.execute("SELECT COUNT(*) AS n FROM students WHERE status='paid'")
@@ -4432,7 +4433,7 @@ def admin_stats(authorization: Optional[str] = Header(None)):
         "standard": 24980,
         "premium": 39800,
         "family": 59800,
-        "student_addon": 9800,
+        "student_addon": 5000,
         "founder_special": 12000,
         "founder1": 12000,
     }
@@ -16402,6 +16403,43 @@ def admin_study_logs_students_summary(authorization: Optional[str] = Header(None
                 "last_studied": str(r["last_studied"]) if r["last_studied"] else None,
             })
         return {"ok": True, "students": students, "period_days": days}
+    finally:
+        conn.close()
+
+
+_VALID_PLANS = {"standard", "premium", "family", "student_addon", "founder_special", "founder1"}
+
+
+class StudentPlanSetRequest(BaseModel):
+    plan: str
+
+
+@app.post("/api/admin/students/{student_id}/plan")
+def admin_set_student_plan(student_id: int, payload: StudentPlanSetRequest, authorization: Optional[str] = Header(None)):
+    """塾長: 生徒のプランを設定。"""
+    _verify_admin_required(authorization)
+    new_plan = (payload.plan or "").strip().lower()
+    if new_plan not in _VALID_PLANS:
+        raise HTTPException(status_code=400, detail=f"plan は {', '.join(sorted(_VALID_PLANS))} のいずれか")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, plan FROM students WHERE id = ?", (student_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        old_plan = row["plan"]
+        c.execute("UPDATE students SET plan = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (new_plan, student_id))
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("plan_change", json.dumps({"student_id": student_id, "old": old_plan, "new": new_plan, "actor": "admin"}, ensure_ascii=False), "admin_action")
+            )
+        except Exception as ev_err:
+            log.warning(f"[Admin] plan_change event log failed: {ev_err}")
+        conn.commit()
+        log.info(f"[Admin] set plan student={student_id} {old_plan} -> {new_plan}")
+        return {"ok": True, "student_id": student_id, "plan": new_plan}
     finally:
         conn.close()
 
