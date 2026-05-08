@@ -17490,6 +17490,31 @@ def admin_list_messages(authorization: Optional[str] = Header(None), limit: int 
         conn.close()
 
 
+@app.get("/api/admin/messages/broadcast/{group_id}")
+def admin_broadcast_detail(group_id: str, authorization: Optional[str] = Header(None)):
+    """塾長: ブロードキャストの個別配信状況。"""
+    _verify_admin_required(authorization)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            """SELECT m.id, m.recipient_id, s.name AS student_name, s.email, s.grade,
+                      m.email_status, m.sent_via, m.read_at, m.created_at
+               FROM messages m LEFT JOIN students s ON m.recipient_id = s.id
+               WHERE m.broadcast_group_id = ? ORDER BY m.id""",
+            (group_id,)
+        )
+        rows = c.fetchall()
+        return {"ok": True, "group_id": group_id, "deliveries": [
+            {"id": r["id"], "student_name": r["student_name"], "email": r["email"],
+             "grade": r["grade"], "email_status": r["email_status"],
+             "sent_via": r["sent_via"], "read_at": str(r["read_at"]) if r["read_at"] else None}
+            for r in rows
+        ]}
+    finally:
+        conn.close()
+
+
 @app.get("/api/messages/me")
 def get_my_messages(authorization: Optional[str] = Header(None), limit: int = 50):
     """生徒: 自分宛メッセージ受信箱 + 自分が送信したメッセージ (双方向) を取得。
