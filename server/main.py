@@ -17343,13 +17343,14 @@ def admin_send_message(payload: MessageSendRequest, background_tasks: Background
 
 def _bg_send_messages_email(msg_records: list, subject: str, body: str) -> None:
     """BackgroundTasks: 各メッセージの email を順次送信し、email_status / sent_via を後追い更新。
-    別 connection で動作するため、admin_send_message のレスポンスは即返却される。"""
+    別 connection で動作するため、admin_send_message のレスポンスは即返却される。
+    Resend 無料枠 rate limit (1通/秒) 回避のため 1.5秒間隔 + 429 時は指数バックオフリトライ。"""
+    import time as _t
     sent_ok, sent_fail = 0, 0
-    for (msg_id, email, name) in msg_records:
+    for i, (msg_id, email, name) in enumerate(msg_records):
         if not msg_id:
             continue
         if not email:
-            # email 無し → in_app のみ確定
             try:
                 c2 = db()
                 cur2 = c2.cursor()
@@ -17359,13 +17360,24 @@ def _bg_send_messages_email(msg_records: list, subject: str, body: str) -> None:
             except Exception as e:
                 log.warning(f"[Messages][bg] in_app finalize failed id={msg_id}: {e}")
             continue
-        res = _send_message_email(email, subject, body, student_name=name)
-        if res.get("sent"):
+        # Resend rate limit 回避: 2通目以降は 1.5秒待機
+        if i > 0:
+            _t.sleep(1.5)
+        # 429 リトライ (最大3回・指数バックオフ)
+        res = None
+        for attempt in range(3):
+            res = _send_message_email(email, subject, body, student_name=name)
+            if res.get("sent") or "429" not in str(res.get("error", "")):
+                break
+            wait = 3 * (2 ** attempt)
+            log.info(f"[Messages][bg] 429 retry {attempt+1}/3 for id={msg_id}, waiting {wait}s")
+            _t.sleep(wait)
+        if res and res.get("sent"):
             sent_ok += 1
             new_via, new_status = "email_in_app", "sent"
         else:
             sent_fail += 1
-            err = (res.get("error") or "unknown")[:100]
+            err = (res.get("error") or "unknown")[:100] if res else "no_response"
             new_via, new_status = "in_app", f"failed:{err}"
         try:
             c2 = db()
