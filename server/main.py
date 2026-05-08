@@ -3924,6 +3924,15 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
     elif status == "canceled" and allow_canceled:
         is_allowed = True
 
+    # 国公立難関大学コース所属生徒は trial_end に関係なく永久アクセス許可 (塾長指示: 永久無料)
+    if not is_allowed:
+        try:
+            _course = row["course"] if "course" in row.keys() else None
+        except Exception:
+            _course = None
+        if _course == "kokuritsu_nankan":
+            is_allowed = True
+
     if not is_allowed:
         return None
     # enrollment_fee_waived は新カラム → 古いDB行で存在しない場合に備えて defensive access
@@ -3969,15 +3978,19 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
 
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT id, name, email, status, trial_end FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
+    c.execute("SELECT id, name, email, status, trial_end, course FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
     row = c.fetchone()
     conn.close()
 
     # 体験期間中の trial ユーザーも送信対象（trial_end 未経過のみ）
+    # 国公立難関大学コース所属生徒は trial_end に関係なく常に送信可 (永久無料)
     is_sendable = False
     is_trial_expired = False
     if row:
+        _row_course = row["course"] if "course" in row.keys() else None
         if row["status"] == "paid":
+            is_sendable = True
+        elif _row_course == "kokuritsu_nankan":
             is_sendable = True
         elif row["status"] == "trial":
             te = row["trial_end"]
@@ -4057,9 +4070,13 @@ def verify_code(payload: VerifyCodeRequest, request: Request):
     generic_401 = HTTPException(status_code=401, detail="コードが正しくないか、有効期限が切れています")
 
     # trial_end 未経過の trial ユーザーも許可
+    # 国公立難関大学コース所属生徒は trial_end に関係なく常に許可 (永久無料)
     _active = False
     if student:
+        _st_course = student["course"] if "course" in student.keys() else None
         if student["status"] == "paid":
+            _active = True
+        elif _st_course == "kokuritsu_nankan":
             _active = True
         elif student["status"] == "trial" and student["trial_end"]:
             try:
@@ -4177,8 +4194,12 @@ def verify_magic_link(t: str):
         raise HTTPException(status_code=404, detail="Student not found")
 
     # paid or trial(未経過)のみ許可
+    # 国公立難関大学コース所属生徒は trial_end に関係なく常に許可 (永久無料)
     _allowed = False
+    _v_course = row["course"] if "course" in row.keys() else None
     if row["status"] == "paid":
+        _allowed = True
+    elif _v_course == "kokuritsu_nankan":
         _allowed = True
     elif row["status"] == "trial" and row["trial_end"]:
         try:
@@ -18129,9 +18150,9 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
             c.execute("UPDATE students SET course = ? WHERE id = ?", (_STUDY_LOG_TARGET_COURSE, student_id))
             log.info(f"[CourseApp] approve existing student id={student_id} email={email_lower}")
         else:
-            # 新規生徒 (trial で作成 / クレカなし → trial_end は 30日後で寛容)
+            # 新規生徒 (trial で作成 / 国難コースは永久無料なので trial_end を 10 年後に設定)
             now = datetime.now(timezone.utc)
-            trial_end = now + timedelta(days=30)
+            trial_end = now + timedelta(days=3650)
             c.execute(
                 "INSERT INTO students (name, email, status, course, trial_start, trial_end) "
                 "VALUES (?,?,?,?,?,?) RETURNING id",
