@@ -12310,6 +12310,132 @@ async def line_webhook(request: Request, x_line_signature: str = Header(None)):
 # ==========================================================================
 # Routes: Cron-style (triggered externally)
 # ==========================================================================
+
+def _send_weekly_report_email(to_email: str, student_name: str, stats: dict) -> dict:
+    """保護者向け週次レポートをメールで送信 (Resend API)。
+    塾長指示: LINE は使わない → メールで配信。"""
+    import html as _html
+    if not RESEND_API_KEY:
+        log.warning(f"[WeeklyReport] Email skipped (no RESEND_API_KEY) for {to_email}")
+        return {"sent": False, "dev_mode": True}
+    safe_name = _html.escape(student_name or "")
+    hours = stats.get("hours", 0)
+    accuracy = stats.get("accuracy", 0)
+    questions = stats.get("questions", 0)
+    problems_done = stats.get("problems_done", 0)
+    weakest = stats.get("weakest_subject")
+    subject_stats = stats.get("subject_stats", {})
+    mypage_url = f"{BASE_URL}/mypage.html"
+
+    # 科目別の表を生成
+    subject_rows = ""
+    for subj, ss in subject_stats.items():
+        total = ss.get("total", 0)
+        correct = ss.get("correct", 0)
+        rate = round(100 * correct / total) if total else 0
+        bar_color = "#22c55e" if rate >= 70 else "#f59e0b" if rate >= 50 else "#ef4444"
+        subject_rows += f"""<tr>
+            <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;">{_html.escape(subj)}</td>
+            <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;text-align:center;">{correct}/{total}</td>
+            <td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;text-align:center;">
+              <span style="color:{bar_color};font-weight:700;">{rate}%</span>
+            </td>
+        </tr>"""
+
+    subject_table = ""
+    if subject_rows:
+        subject_table = f"""
+        <h3 style="font-size:1rem;color:#6366f1;margin:1.5rem 0 0.5rem;">📚 科目別成績</h3>
+        <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+          <tr style="background:#f8fafc;">
+            <th style="padding:8px 10px;text-align:left;">科目</th>
+            <th style="padding:8px 10px;text-align:center;">正答</th>
+            <th style="padding:8px 10px;text-align:center;">正答率</th>
+          </tr>
+          {subject_rows}
+        </table>"""
+
+    weakest_note = ""
+    if weakest:
+        weakest_note = f"""
+        <div style="background:#fef3c7;padding:0.8rem 1rem;border-radius:8px;margin:1rem 0;font-size:0.9rem;">
+          ⚠️ <strong>{_html.escape(weakest)}</strong> が今週の重点強化ポイントです。
+          AI チューターに質問して苦手を克服しましょう。
+        </div>"""
+
+    subject = f"【AI学習コーチ塾】{safe_name}さんの週次学習レポート"
+    html = f"""<!DOCTYPE html>
+<html><body style="font-family: -apple-system, 'Hiragino Sans', sans-serif; line-height:1.7; color:#333; max-width:560px; margin:0 auto; padding:2rem;">
+<h1 style="font-size:1.3rem;color:#6366f1;margin-bottom:0.3rem;">🎓 AI学習コーチ塾</h1>
+<h2 style="font-size:1.1rem;color:#475569;margin-top:0;">📊 {safe_name}さんの今週のレポート</h2>
+
+<p>{safe_name}さまの保護者さま、いつもお世話になっております。<br>今週の学習状況をお知らせいたします。</p>
+
+<div style="display:flex;gap:12px;margin:1.2rem 0;flex-wrap:wrap;">
+  <div style="flex:1;min-width:120px;background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;padding:1rem;border-radius:12px;text-align:center;">
+    <div style="font-size:0.75rem;opacity:0.85;">🔥 学習時間</div>
+    <div style="font-size:1.8rem;font-weight:800;">{hours}<span style="font-size:0.9rem;">時間</span></div>
+  </div>
+  <div style="flex:1;min-width:120px;background:linear-gradient(135deg,#ec4899,#f472b6);color:#fff;padding:1rem;border-radius:12px;text-align:center;">
+    <div style="font-size:0.75rem;opacity:0.85;">💬 AI質問数</div>
+    <div style="font-size:1.8rem;font-weight:800;">{questions}<span style="font-size:0.9rem;">回</span></div>
+  </div>
+  <div style="flex:1;min-width:120px;background:linear-gradient(135deg,#22c55e,#4ade80);color:#fff;padding:1rem;border-radius:12px;text-align:center;">
+    <div style="font-size:0.75rem;opacity:0.85;">💯 正答率</div>
+    <div style="font-size:1.8rem;font-weight:800;">{accuracy}<span style="font-size:0.9rem;">%</span></div>
+  </div>
+</div>
+
+{subject_table}
+{weakest_note}
+
+<p style="text-align:center;margin:1.5rem 0;">
+  <a href="{mypage_url}" style="display:inline-block;padding:0.9rem 2rem;background:linear-gradient(135deg,#6366f1,#ec4899);color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:1rem;">
+    📊 マイページで詳細を確認
+  </a>
+</p>
+
+<div style="background:#f8fafc;padding:1rem;border-radius:8px;font-size:0.85rem;color:#64748b;">
+  💡 学習データが蓄積されるほど、より精度の高いレポートをお届けします。<br>
+  ご不明な点がございましたらお気軽にお問い合わせください。
+</div>
+
+<hr style="margin:2rem 0;border:none;border-top:1px solid #e2e8f0;">
+<p style="font-size:0.8rem;color:#94a3b8;">
+  AI学習コーチ塾 | <a href="mailto:info@trillion-ai-juku.com" style="color:#6366f1;">info@trillion-ai-juku.com</a>
+</p>
+</body></html>"""
+
+    import urllib.request
+    import time as _t
+    payload_data = json.dumps({"from": FROM_EMAIL, "to": [to_email], "subject": subject, "html": html}).encode("utf-8")
+    # 429 リトライ (最大3回・指数バックオフ 3s/6s/12s)
+    for attempt in range(3):
+        try:
+            req = urllib.request.Request(
+                "https://api.resend.com/emails",
+                data=payload_data,
+                headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json", "User-Agent": "ai-juku-system/1.0"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                result = json.loads(resp.read().decode())
+                log.info(f"[WeeklyReport] Email sent to {to_email} (resend_id={result.get('id')})")
+                return {"sent": True, "resend_id": result.get("id")}
+        except urllib.error.HTTPError as he:
+            if he.code == 429 and attempt < 2:
+                wait = 3 * (2 ** attempt)
+                log.info(f"[WeeklyReport] 429 retry {attempt+1}/3 for {to_email}, waiting {wait}s")
+                _t.sleep(wait)
+                continue
+            log.error(f"[WeeklyReport] Email failed for {to_email}: HTTP {he.code}")
+            return {"sent": False, "error": f"HTTP {he.code}"}
+        except Exception as e:
+            log.error(f"[WeeklyReport] Email failed for {to_email}: {type(e).__name__}: {e}")
+            return {"sent": False, "error": str(e)}
+    return {"sent": False, "error": "max_retries_exceeded"}
+
+
 def _compute_weekly_stats(student_id: int, days: int = 7) -> dict:
     """過去N日間の活動統計を events テーブルから集計"""
     conn = db()
@@ -12989,7 +13115,9 @@ def cancel_trial(authorization: Optional[str] = Header(None)):
 
 @app.post("/api/cron/weekly-reports")
 def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False):
-    """毎週日曜20時に外部cronから呼び出し（GitHub Actions scheduled workflow）"""
+    """毎週日曜19時 (JST) にスケジューラから実行。
+    メール配信 (全生徒) + LINE 配信 (連携済みのみ) のデュアルチャネル。
+    notifications テーブルで週次 dedup (同一生徒に週2回送らない)。"""
     if not CRON_SECRET:
         log.error("CRON_SECRET not configured; refusing cron request")
         raise HTTPException(status_code=503, detail="Cron not configured")
@@ -12998,13 +13126,21 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
 
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT id, name, email, line_user_id FROM students WHERE status IN ('trial', 'paid')")
+    # kokuritsu_nankan コース生も含めるため course も取得
+    c.execute("SELECT id, name, email, line_user_id, course FROM students WHERE status IN ('trial', 'paid')")
     students = list(c.fetchall())
     conn.close()
 
-    sent = 0
+    import time as _t
+    sent_email = 0
+    sent_line = 0
     skipped = 0
+    failed = 0
+    capped = 0
     previews = []
+    email_index = 0
+    # Resend 日次上限ガード: 他メール (ログイン/監視等) の枠を残す
+    WEEKLY_REPORT_EMAIL_CAP = int(os.getenv("WEEKLY_REPORT_EMAIL_CAP", "80"))
     for row in students:
         try:
             stats = _compute_weekly_stats(row["id"], days=7)
@@ -13012,21 +13148,74 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
             if stats["hours"] == 0 and stats["questions"] == 0 and stats["problems_done"] == 0:
                 skipped += 1
                 continue
-            params = {
-                "hours": stats["hours"],
-                "accuracy": stats["accuracy"],
-                "questions": stats["questions"],
-                "url": f"{BASE_URL}/mypage.html",
-            }
             if dry_run:
-                previews.append({"student_id": row["id"], "name": row["name"], "stats": stats, "would_send_line": bool(row["line_user_id"])})
+                previews.append({
+                    "student_id": row["id"], "name": row["name"], "stats": stats,
+                    "would_send_email": bool(row.get("email")),
+                    "would_send_line": bool(row.get("line_user_id")),
+                })
                 continue
-            if row["line_user_id"]:
-                _do_line_push(row["id"], "weekly_report", params)
-                sent += 1
+            # --- メール配信 (全生徒) ---
+            email = row.get("email")
+            if email and sent_email >= WEEKLY_REPORT_EMAIL_CAP:
+                capped += 1
+                log.warning(f"[WeeklyReport] Email cap ({WEEKLY_REPORT_EMAIL_CAP}) reached, skipping student {row['id']}")
+            elif email:
+                # 週次 dedup: 直近7日以内に同テンプレートで成功送信済みならスキップ
+                _dup_conn = db()
+                _dup_c = _dup_conn.cursor()
+                _seven_days_ago = (datetime.now(timezone.utc) - timedelta(days=6)).isoformat()
+                _dup_c.execute(
+                    "SELECT id FROM notifications WHERE student_id=? AND template='weekly_report_email' AND success=1 AND sent_at > ? LIMIT 1",
+                    (row["id"], _seven_days_ago)
+                )
+                already_sent = _dup_c.fetchone()
+                _dup_conn.close()
+                if already_sent:
+                    log.debug(f"[WeeklyReport] dedup skip email for student {row['id']}")
+                else:
+                    # Resend rate limit 対策: 2通目以降は 1.5秒待機
+                    if email_index > 0:
+                        _t.sleep(1.5)
+                    email_index += 1
+                    res = _send_weekly_report_email(email, row["name"], stats)
+                    _ok = res.get("sent", False)
+                    # notifications テーブルに記録
+                    _n_conn = db()
+                    _n_c = _n_conn.cursor()
+                    _n_c.execute(
+                        """INSERT INTO notifications (student_id, channel, template, payload, success, error)
+                           VALUES (?, 'email', 'weekly_report_email', ?, ?, ?)""",
+                        (row["id"], json.dumps(stats, ensure_ascii=False)[:500], 1 if _ok else 0,
+                         res.get("error", "")[:200] if not _ok else None)
+                    )
+                    _n_conn.commit()
+                    _n_conn.close()
+                    if _ok:
+                        sent_email += 1
+                    else:
+                        failed += 1
+            # --- LINE 配信 (連携済みのみ・従来互換) ---
+            if row.get("line_user_id"):
+                try:
+                    params = {
+                        "hours": stats["hours"],
+                        "accuracy": stats["accuracy"],
+                        "questions": stats["questions"],
+                        "url": f"{BASE_URL}/mypage.html",
+                    }
+                    _do_line_push(row["id"], "weekly_report", params)
+                    sent_line += 1
+                except Exception as le:
+                    log.warning(f"[WeeklyReport] LINE push failed for {row['id']}: {le}")
         except Exception as e:
             log.error(f"Weekly report failed for {row['id']}: {e}")
-    return {"sent": sent, "skipped": skipped, "total_students": len(students), "previews": previews if dry_run else None}
+    return {
+        "sent_email": sent_email, "sent_line": sent_line,
+        "skipped": skipped, "failed": failed, "capped": capped,
+        "total_students": len(students),
+        "previews": previews if dry_run else None,
+    }
 
 
 @app.post("/api/weekly-reports/preview")
@@ -13046,7 +13235,7 @@ def weekly_reports_preview(payload: dict, request: Request, x_stats_token: str =
 
 @app.post("/api/weekly-reports/send-one")
 def weekly_reports_send_one(payload: dict, request: Request, x_stats_token: str = Header(None)):
-    """塾長ダッシュボードから、特定生徒にレポートを即送信"""
+    """塾長ダッシュボードから、特定生徒にレポートを即送信 (メール + LINE)"""
     if not _origin_allowed(request):
         raise HTTPException(status_code=403, detail="Origin not allowed")
     if STATS_TOKEN and (not x_stats_token or not hmac.compare_digest(x_stats_token, STATS_TOKEN)):
@@ -13055,13 +13244,43 @@ def weekly_reports_send_one(payload: dict, request: Request, x_stats_token: str 
     if not student_id:
         raise HTTPException(status_code=400, detail="student_id required")
     stats = _compute_weekly_stats(int(student_id), days=7)
-    params = {
-        "hours": stats["hours"],
-        "accuracy": stats["accuracy"],
-        "questions": stats["questions"],
-        "url": f"{BASE_URL}/mypage.html",
-    }
-    return _do_line_push(int(student_id), "weekly_report", params)
+    # 生徒情報を取得
+    conn = db()
+    c = conn.cursor()
+    c.execute("SELECT name, email, line_user_id FROM students WHERE id = ?", (int(student_id),))
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="生徒が見つかりません")
+    result = {"email": None, "line": None}
+    # メール送信
+    if row["email"]:
+        result["email"] = _send_weekly_report_email(row["email"], row["name"], stats)
+        # notifications に記録
+        _ok = result["email"].get("sent", False)
+        _n_conn = db()
+        _n_c = _n_conn.cursor()
+        _n_c.execute(
+            """INSERT INTO notifications (student_id, channel, template, payload, success, error)
+               VALUES (?, 'email', 'weekly_report_email', ?, ?, ?)""",
+            (int(student_id), json.dumps(stats, ensure_ascii=False)[:500], 1 if _ok else 0,
+             result["email"].get("error", "")[:200] if not _ok else None)
+        )
+        _n_conn.commit()
+        _n_conn.close()
+    # LINE 送信 (連携済みなら)
+    if row.get("line_user_id"):
+        try:
+            params = {
+                "hours": stats["hours"],
+                "accuracy": stats["accuracy"],
+                "questions": stats["questions"],
+                "url": f"{BASE_URL}/mypage.html",
+            }
+            result["line"] = _do_line_push(int(student_id), "weekly_report", params)
+        except Exception:
+            result["line"] = {"ok": False}
+    return result
 
 # ==========================================================================
 # Routes: Analytics
