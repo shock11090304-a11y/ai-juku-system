@@ -11164,7 +11164,12 @@ def usage_me(authorization: Optional[str] = Header(None)):
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
     plan = (student.get("plan") or "trial").lower()
-    quotas = PLAN_QUOTAS.get(plan, PLAN_QUOTAS["trial"])
+    # 国公立難関大学コース = premium 同等 → 全機能無制限 (塾長指示)
+    _u_course = student.get("course")
+    if _u_course == "kokuritsu_nankan":
+        quotas = PLAN_QUOTAS.get("premium", PLAN_QUOTAS["trial"])
+    else:
+        quotas = PLAN_QUOTAS.get(plan, PLAN_QUOTAS["trial"])
     used = _get_all_monthly_usage(int(student["id"]))
     out = {}
     for feature in QUOTA_FEATURES:
@@ -13098,15 +13103,19 @@ def _verify_student_active(student_id: int) -> dict:
     conn = db()
     c = conn.cursor()
     c.execute(
-        "SELECT id, status, trial_end, plan FROM students WHERE id = ?",
+        "SELECT id, status, trial_end, plan, course FROM students WHERE id = ?",
         (student_id,),
     )
     row = c.fetchone()
     conn.close()
     if not row:
         raise HTTPException(status_code=404, detail="生徒が見つかりません")
+    _row_course = row["course"] if "course" in row.keys() else None
     status = row["status"]
     if status == "paid":
+        return dict(row)
+    # 国公立難関大学コース = premium 同等 → trial_end に関係なく永久アクセス (塾長指示)
+    if _row_course == "kokuritsu_nankan":
         return dict(row)
     if status == "trial":
         # トライアル期限切れチェック（Postgres は datetime、SQLite は str で返す）
@@ -13136,17 +13145,24 @@ def _check_ai_budget(student_id: int) -> None:
     one_day_ago = datetime.now(timezone.utc) - timedelta(days=1)
     conn = db()
     c = conn.cursor()
-    # 生徒の plan を取得して budget を決定
+    # 生徒の plan + course を取得して budget を決定
     plan = "trial"
+    _course = None
     try:
-        c.execute("SELECT plan FROM students WHERE id = ?", (student_id,))
+        c.execute("SELECT plan, course FROM students WHERE id = ?", (student_id,))
         row = c.fetchone()
         if row and row["plan"]:
             plan = str(row["plan"])
+        if row:
+            _course = row["course"] if "course" in row.keys() else None
     except Exception:
         pass
-    budget = PLAN_DAILY_TOKEN_BUDGET.get(plan, AI_DAILY_TOKEN_BUDGET)
-    is_premium_tier = plan in PREMIUM_TIER_PLANS
+    # 国公立難関大学コース = premium 同等 (塾長指示: プレミアムの名前を変えて使っている)
+    is_premium_tier = plan in PREMIUM_TIER_PLANS or _course == "kokuritsu_nankan"
+    if _course == "kokuritsu_nankan":
+        budget = PLAN_DAILY_TOKEN_BUDGET.get("premium", 2_000_000)
+    else:
+        budget = PLAN_DAILY_TOKEN_BUDGET.get(plan, AI_DAILY_TOKEN_BUDGET)
     # psycopg は % をプレースホルダ誤検知するため LIKE パターンもパラメータで渡す
     c.execute(
         """SELECT props FROM events
@@ -13223,6 +13239,10 @@ def _check_quota(student: dict, feature: str) -> None:
     達していれば 429 + プラン情報付きエラーを返す。"""
     if feature not in QUOTA_FEATURES:
         return  # クォータ対象外
+    # 国公立難関大学コース = premium 同等 → 全機能無制限 (塾長指示)
+    _sq_course = student.get("course")
+    if _sq_course == "kokuritsu_nankan":
+        return  # 無制限
     plan = (student.get("plan") or "trial").lower()
     quotas = PLAN_QUOTAS.get(plan, PLAN_QUOTAS["trial"])
     limit = quotas.get(feature)
