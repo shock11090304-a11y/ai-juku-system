@@ -665,7 +665,7 @@
         </div>
         <div style="font-size:0.75rem;color:#94a3b8;line-height:1.6;margin-bottom:0.7rem;">
           全プランの価格が Stripe に正しく反映されているか確認 → 不足分があれば 1 クリックで自動作成。<br>
-          <span style="color:#fbbf24;">lookup_key で永続検索可能なので env 設定不要 (再 deploy しても大丈夫)</span>
+          <span style="color:#fbbf24;">env が指す Price も検証 (env 不一致 → 致命事故) / env 未設定は lookup_key で永続解決 (どちらでも動作)</span>
         </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.5rem;margin-bottom:0.7rem;">
           <button id="checkStripePricesBtn" type="button" style="background:rgba(99,102,241,0.18);color:#818cf8;border:1px solid rgba(99,102,241,0.4);padding:0.7rem 0.8rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;text-align:left;">
@@ -4381,6 +4381,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             ? `¥${r.stripe_jpy.toLocaleString()}`
             : (r.amount_jpy != null ? `¥${r.amount_jpy.toLocaleString()}` : (r.missing ? '未作成' : (r.error ? 'エラー' : '--')));
           // env 列: env が指す Price の金額が期待値と一致するか
+          // env 未設定でも lookup_key で解決できれば OK (env_mismatch だけが致命)
           let envCell = '--';
           if (r.env) {
             if (r.env.error) {
@@ -4390,7 +4391,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             } else if (r.env.match === false) {
               envCell = `<span style=\"color:#fca5a5;font-weight:800;\">⚠️ ¥${(r.env.stripe_jpy||0).toLocaleString()}</span>`;
             } else {
-              envCell = `<span style=\"color:#71717a;\">未設定</span>`;
+              // env 未設定 (lookup_key fallback で動作中 = OK)
+              envCell = `<span style=\"color:#86efac;\" title=\"env 未設定だが lookup_key で永続解決中。env を Render に設定すると Stripe API call が省略され若干高速になります\">✓ lookup_key 解決</span>`;
             }
           }
           // overall match icon (lookup_key + env 両方を加味)

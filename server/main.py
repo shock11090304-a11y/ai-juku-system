@@ -6488,15 +6488,26 @@ def admin_stripe_check_prices(authorization: Optional[str] = Header(None)):
     missing = [r for r in results if r.get("missing")]
     mismatched = [r for r in results if r.get("stripe_jpy") is not None and not r.get("match") and not r.get("missing")]
     env_mismatched = [r for r in results if r.get("env_mismatch")]
+    # env が「実際に設定されていて lookup_key と金額一致」しているプラン数を数える
+    # (未設定で lookup_key fallback の場合は env.match=None なので除外)
+    env_set_and_match = [r for r in results if (r.get("env") or {}).get("match") is True]
+    env_unset_fallback = [r for r in results if (r.get("env") or {}).get("match") is None and r.get("match") is True]
 
     if all_match:
-        recommendation = "✅ 全プラン Stripe 反映済 (lookup_key + env 両方一致)"
+        if not env_unset_fallback:
+            recommendation = "✅ 全プラン Stripe 反映済 (lookup_key + env 両方一致)"
+        else:
+            unset_keys = ", ".join(r["lookup_key"] for r in env_unset_fallback)
+            recommendation = (
+                f"✅ 全プラン Stripe 反映済 (lookup_key 一致 / env: {len(env_set_and_match)} 件設定済 + "
+                f"{len(env_unset_fallback)} 件は lookup_key fallback で解決: {unset_keys})"
+            )
     else:
         msgs = []
         if missing:
             msgs.append(f"未作成 {len(missing)} 件 → POST /api/admin/stripe/setup-all-prices")
         if env_mismatched:
-            msgs.append(f"env が間違った Price を指している {len(env_mismatched)} 件 → Railway env を修正")
+            msgs.append(f"env が間違った Price を指している {len(env_mismatched)} 件 → Render env を修正")
         if mismatched:
             msgs.append(f"lookup_key 上の Price 金額不一致 {len(mismatched)} 件")
         recommendation = "⚠️ " + " / ".join(msgs)
@@ -6507,6 +6518,8 @@ def admin_stripe_check_prices(authorization: Optional[str] = Header(None)):
         "missing_count": len(missing),
         "mismatched_count": len(mismatched),
         "env_mismatched_count": len(env_mismatched),
+        "env_unset_fallback_count": len(env_unset_fallback),
+        "env_set_match_count": len(env_set_and_match),
         "results": results,
         "recommendation": recommendation,
     }
