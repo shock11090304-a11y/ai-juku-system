@@ -16779,6 +16779,8 @@ MOCK_EXAM_TEMPLATES = {
             {"name": "要約 (大問1B)", "exam_id": "daigaku", "part_key": "r_summary", "eiken_grade": "todai", "count": 1, "points_per": 15},
             {"name": "長文読解", "exam_id": "daigaku", "part_key": "r_long", "eiken_grade": "todai", "count": 2, "points_per": 12},
             {"name": "和訳", "exam_id": "daigaku", "part_key": "r_translation", "eiken_grade": "todai", "count": 2, "points_per": 12},
+            # 2026-05-11 追加: 英作文 essay section (5 AI 多視点採点 + 写真 upload 機能の到達経路を確保)
+            {"name": "英作文 (大問2A・自由英作)", "exam_id": "daigaku", "part_key": "w_essay", "eiken_grade": "todai", "count": 1, "points_per": 15},
         ],
     },
     "kyodai": {
@@ -16901,8 +16903,13 @@ def mock_exam_generate(payload: dict):
             "name": sec["name"],
             "points_per_question": sec["points_per"],
             "questions": section_questions,
+            "auto_graded": sec.get("part_key") != "w_essay",  # essay は別経路 (5 AI 多視点・自動採点対象外)
         })
-        max_score += sec["count"] * sec["points_per"]
+        # 2026-05-11 修正: w_essay section は自動採点 (multiple_choice) されないので
+        # score_max に加算すると 偏差値が見かけ上急落する致命バグ。auto 採点対象のみ加算。
+        # (3視点 review 致命指摘対応・東大模試 essay 追加で 14.6 ポイント急落バグ防止)
+        if sec.get("part_key") != "w_essay":
+            max_score += sec["count"] * sec["points_per"]
 
     # セッション作成
     snapshot_json = json.dumps({"sections": sections_out, "answer_key": snapshot}, ensure_ascii=False)
@@ -18025,7 +18032,7 @@ def _grade_one_view(view_id: str, prompt: str, level: str,
 
 
 @app.post("/api/mock-exam/grade-essay-multiview")
-async def mock_exam_grade_essay_multiview(payload: dict):
+async def mock_exam_grade_essay_multiview(payload: dict, authorization: Optional[str] = Header(None)):
     """🌟 5 AI 多視点 英作文採点 (写真 or テキスト対応)
     塾長指示 2026-05-10「写真採点 + 5 AI 多視点 (A+A)」の実装。
 
@@ -18061,28 +18068,38 @@ async def mock_exam_grade_essay_multiview(payload: dict):
     student_id = payload.get("student_id")
 
     # 🛡️ 認証 + rate limit (重 endpoint 暴走防御・3視点 review 致命対応 2026-05-10)
-    # student_id 必須化 + DB 存在 check + 1h あたり 10 回制限
+    # 2026-05-11 追加: admin Bearer 経路では student_id 任意 + rate limit skip (CEO ダッシュ demo 用)
+    is_admin_call = False
+    if authorization and authorization.startswith("Bearer "):
+        _admin_token_try = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(_admin_token_try):
+            is_admin_call = True
+
     try:
         student_id = int(student_id) if student_id else 0
     except (TypeError, ValueError):
         student_id = 0
-    if not student_id or student_id <= 0:
-        raise HTTPException(
-            status_code=403,
-            detail="ログインが必要です (student_id 未提供)。マイページから採点してください。"
-        )
-    # DB 存在 check
-    conn_auth = db()
-    try:
-        c_auth = conn_auth.cursor()
-        c_auth.execute("SELECT id FROM students WHERE id = ?", (student_id,))
-        row_auth = c_auth.fetchone()
-        if not row_auth:
-            raise HTTPException(status_code=403, detail="存在しない生徒 ID です")
-    finally:
-        conn_auth.close()
-    # rate limit (5 AI 並列の重 endpoint・$0.10-0.30/req 級の暴走防御)
-    _check_grade_multiview_rate(student_id)
+
+    if not is_admin_call:
+        # 通常 student 経路: student_id 必須化 + DB 存在 check + 1h あたり 10 回制限
+        if not student_id or student_id <= 0:
+            raise HTTPException(
+                status_code=403,
+                detail="ログインが必要です (student_id 未提供)。マイページから採点してください。"
+            )
+        # DB 存在 check
+        conn_auth = db()
+        try:
+            c_auth = conn_auth.cursor()
+            c_auth.execute("SELECT id FROM students WHERE id = ?", (student_id,))
+            row_auth = c_auth.fetchone()
+            if not row_auth:
+                raise HTTPException(status_code=403, detail="存在しない生徒 ID です")
+        finally:
+            conn_auth.close()
+        # rate limit (5 AI 並列の重 endpoint・$0.10-0.30/req 級の暴走防御)
+        _check_grade_multiview_rate(student_id)
+    # is_admin_call = True の場合: student_id 任意・DB check skip・rate limit skip (塾長 demo/監査用)
 
     # validation
     if not image_b64 and not essay_text:
@@ -18176,6 +18193,7 @@ async def mock_exam_grade_essay_multiview(payload: dict):
         all_improvements.extend((v.get("improvements") or [])[:2])
 
     # event 記録 (analytics 用)
+    # 2026-05-11 追加: is_admin flag で admin demo を analytics 集計から除外可能に
     try:
         _record_ai_critical_event("multiview_grade_done", {
             "successful_views": len(successful),
@@ -18186,6 +18204,7 @@ async def mock_exam_grade_essay_multiview(payload: dict):
             "with_image": bool(image_b64),
             "essay_text_length": len(essay_text) if essay_text else 0,
             "student_id": student_id,
+            "is_admin": is_admin_call,
         })
     except Exception as ee:
         log.warning(f"[grade-essay-multiview] event log failed: {ee}")

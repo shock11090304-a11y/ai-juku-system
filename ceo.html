@@ -796,6 +796,39 @@
         </div>
         <div id="ytResult" style="display:none;font-size:0.78rem;color:#cbd5e1;background:rgba(0,0,0,0.3);border:1px solid rgba(244,63,94,0.25);border-radius:8px;padding:0.7rem;line-height:1.6;max-height:60vh;overflow-y:auto;"></div>
       </div>
+
+      <!-- 📷 写真採点 デモ (admin only・2026-05-11 追加・モバイル動作確認用) -->
+      <div style="margin-top:1rem;padding:0.9rem;background:rgba(0,0,0,0.25);border:1px solid rgba(168,85,247,0.3);border-radius:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.7rem;">
+          <div style="font-size:0.85rem;font-weight:800;color:#c4b5fd;">📷 写真採点 デモ (5 AI 多視点・admin)</div>
+          <span style="font-size:0.7rem;color:#71717a;">塾長テスト/監査用・rate limit skip</span>
+        </div>
+        <div style="font-size:0.75rem;color:#94a3b8;line-height:1.6;margin-bottom:0.7rem;">
+          英作文 (テキスト or 写真) → 5 AI (Opus / GPT-4o / Sonnet / Gemini Pro / Haiku) が並列採点。<br>
+          <span style="color:#fbbf24;">本番経路: 生徒が mock-exam.html (東大型模試 2026-05-11 で英作文 section 追加済) で利用</span>
+        </div>
+        <textarea id="pgPrompt" rows="2" placeholder="出題文 (例: AI が教育に与える影響を 100 語以内で論じよ)"
+                  style="width:100%;background:rgba(0,0,0,0.4);border:1px solid rgba(168,85,247,0.3);color:#fff;padding:0.5rem;border-radius:6px;font-size:0.78rem;margin-bottom:0.4rem;resize:vertical;"></textarea>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.4rem;margin-bottom:0.4rem;">
+          <select id="pgLevel" style="background:rgba(0,0,0,0.4);border:1px solid rgba(168,85,247,0.3);color:#fff;padding:0.45rem 0.6rem;border-radius:6px;font-size:0.78rem;">
+            <option value="todai">level: todai (東大)</option>
+            <option value="kyodai">level: kyodai (京大)</option>
+            <option value="waseda">level: waseda</option>
+            <option value="keio">level: keio</option>
+            <option value="eiken_g1">level: eiken_g1</option>
+            <option value="eiken_gp1">level: eiken_gp1</option>
+          </select>
+          <label class="pgPhotoLabel" for="pgPhoto" style="display:inline-flex;align-items:center;justify-content:center;padding:0.45rem 0.7rem;background:rgba(99,102,241,0.18);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);border-radius:6px;cursor:pointer;font-size:0.78rem;font-weight:600;">
+            📷 写真選択
+            <input type="file" accept="image/*" id="pgPhoto" style="display:none;">
+          </label>
+          <span id="pgPhotoName" style="font-size:0.72rem;color:#94a3b8;align-self:center;"></span>
+        </div>
+        <textarea id="pgEssay" rows="6" placeholder="英作文テキスト直接入力 (写真と併用 OK・どちらかが必須・20 文字以上)"
+                  style="width:100%;background:rgba(0,0,0,0.4);border:1px solid rgba(168,85,247,0.3);color:#fff;padding:0.5rem;border-radius:6px;font-size:0.78rem;margin-bottom:0.5rem;resize:vertical;font-family:inherit;"></textarea>
+        <button id="pgGradeBtn" type="button" style="background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;border:none;padding:0.55rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">🌟 5 AI 多視点で採点</button>
+        <div id="pgResult" style="display:none;margin-top:0.7rem;font-size:0.78rem;color:#cbd5e1;background:rgba(0,0,0,0.3);border:1px solid rgba(168,85,247,0.25);border-radius:8px;padding:0.7rem;line-height:1.6;max-height:60vh;overflow-y:auto;"></div>
+      </div>
     </section>
 
     <!-- ========================================== -->
@@ -5036,6 +5069,108 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       if (ytPreviewBtn) ytPreviewBtn.addEventListener('click', () => _ytGenerate(false));
       const ytSaveBtn = document.getElementById('ytSaveBtn');
       if (ytSaveBtn) ytSaveBtn.addEventListener('click', () => _ytGenerate(true));
+
+      // 📷 写真採点 デモ (admin only・2026-05-11 追加・5 AI 多視点)
+      let _pgPhotoB64 = '';
+      let _pgPhotoMime = '';
+      const pgPhotoInput = document.getElementById('pgPhoto');
+      if (pgPhotoInput) pgPhotoInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) { alert('画像が大きすぎます (5MB 以内)'); e.target.value=''; return; }
+        if (!['image/jpeg','image/png','image/webp'].includes(file.type)) { alert('画像形式は JPEG/PNG/WebP のみ'); e.target.value=''; return; }
+        const reader = new FileReader();
+        reader.onload = () => {
+          const url = reader.result || '';
+          _pgPhotoB64 = url.split(',')[1] || '';
+          _pgPhotoMime = file.type;
+          const nm = document.getElementById('pgPhotoName');
+          if (nm) { nm.textContent = `📷 ${file.name} (${Math.round(file.size/1024)}KB)`; nm.style.color = '#86efac'; }
+        };
+        reader.readAsDataURL(file);
+      });
+
+      const pgGradeBtn = document.getElementById('pgGradeBtn');
+      if (pgGradeBtn) pgGradeBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        const prompt = document.getElementById('pgPrompt').value.trim();
+        const level = document.getElementById('pgLevel').value;
+        const essay = document.getElementById('pgEssay').value.trim();
+        if (!essay && !_pgPhotoB64) return alert('テキスト or 写真のいずれかを入力してください');
+        if (essay && essay.length < 20 && !_pgPhotoB64) return alert('テキストが短すぎます (20 文字以上 or 写真をアップ)');
+
+        const orig = pgGradeBtn.innerHTML;
+        pgGradeBtn.disabled = true;
+        pgGradeBtn.innerHTML = '⏳ 5 AI が採点中... (60-90秒)';
+        const resultDiv = document.getElementById('pgResult');
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = `<div style="text-align:center;padding:1rem;">
+          🌟 5 AI 並列採点中... <div class="pgElapsed" style="font-size:0.85rem;color:#86efac;margin-top:0.5rem;font-weight:700;">経過 0 秒</div>
+          <div style="font-size:0.7rem;color:#94a3b8;margin-top:0.4rem;">🏗️ Opus · 💡 GPT-4o · 📝 Sonnet · 🎯 Gemini · 🌱 Haiku</div>
+        </div>`;
+        const startTs = Date.now();
+        const elapsedTimer = setInterval(() => {
+          const sec = Math.floor((Date.now() - startTs) / 1000);
+          const el = resultDiv.querySelector('.pgElapsed');
+          if (el) {
+            el.textContent = `経過 ${sec} 秒 (60-90 秒目安)`;
+            if (sec > 90) el.style.color = '#fbbf24';
+          }
+        }, 1000);
+        try {
+          const payload = { prompt, level };
+          if (essay) payload.essay_text = essay;
+          if (_pgPhotoB64) { payload.image_base64 = _pgPhotoB64; payload.mime_type = _pgPhotoMime; }
+          const r = await AdminAuth.fetch('/api/mock-exam/grade-essay-multiview', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const j = await r.json();
+          if (r.ok && j.ok) {
+            _renderPgResult(resultDiv, j);
+          } else {
+            resultDiv.innerHTML = `<div style="color:#fca5a5;">⚠️ ${escapeForUI(j.detail || JSON.stringify(j))}</div>`;
+          }
+        } catch (e) {
+          resultDiv.innerHTML = `<div style="color:#fca5a5;">⚠️ ${escapeForUI(e.message)}</div>`;
+        } finally {
+          clearInterval(elapsedTimer);
+        }
+        pgGradeBtn.disabled = false;
+        pgGradeBtn.innerHTML = orig;
+      });
+
+      function _renderPgResult(div, j) {
+        const agg = j.aggregate || {};
+        const sa = agg.scores_avg || {};
+        const strengths = (agg.top_strengths || []).map(s => `<li>${escapeForUI(s)}</li>`).join('');
+        const improvements = (agg.top_improvements || []).map(s => `<li>${escapeForUI(s)}</li>`).join('');
+        const viewsHtml = (j.views || []).map(v => {
+          if (v.error) return `<details style="margin:0.3rem 0;border:1px solid rgba(248,113,113,0.3);border-radius:6px;background:rgba(248,113,113,0.08);">
+            <summary style="padding:0.4rem 0.6rem;cursor:pointer;color:#fca5a5;">${escapeForUI(v.label||v.view_id)} <span style="background:rgba(248,113,113,0.2);padding:0.1rem 0.3rem;border-radius:3px;font-size:0.7rem;">エラー</span></summary>
+            <div style="padding:0.4rem 0.6rem;font-size:0.78rem;">${escapeForUI(v.error)}</div></details>`;
+          const sc = v.scores || {};
+          return `<details style="margin:0.3rem 0;border:1px solid rgba(168,85,247,0.25);border-radius:6px;background:rgba(168,85,247,0.05);">
+            <summary style="padding:0.4rem 0.6rem;cursor:pointer;font-weight:700;color:#c4b5fd;">${escapeForUI(v.label||v.view_id)} <span style="color:#86efac;margin-left:0.5rem;">${v.total_30 ?? '--'}/30</span> <span style="font-size:0.7rem;color:#71717a;margin-left:0.5rem;">${escapeForUI(v.model||'')}</span></summary>
+            <div style="padding:0.5rem 0.7rem;font-size:0.82rem;line-height:1.6;">
+              <div style="font-size:0.78rem;color:#94a3b8;">構造 ${sc.structure ?? '--'} · 内容 ${sc.content ?? '--'} · 言語 ${sc.language ?? '--'}</div>
+              <div style="margin-top:0.4rem;">${escapeForUI(v.comment_jp||'')}</div>
+              ${(v.strengths||[]).length ? `<div style="margin-top:0.3rem;font-size:0.78rem;"><strong style="color:#86efac;">💪 強み:</strong> ${v.strengths.map(escapeForUI).join('・')}</div>` : ''}
+              ${(v.improvements||[]).length ? `<div style="margin-top:0.3rem;font-size:0.78rem;"><strong style="color:#fbbf24;">🎯 改善:</strong> ${v.improvements.map(escapeForUI).join('・')}</div>` : ''}
+            </div></details>`;
+        }).join('');
+        div.innerHTML = `
+          <div style="background:linear-gradient(135deg,rgba(34,197,94,0.1),rgba(59,130,246,0.1));border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:0.7rem;margin-bottom:0.7rem;">
+            <div style="display:flex;align-items:baseline;gap:0.4rem;"><span style="font-size:1.7rem;font-weight:900;color:#86efac;">${agg.avg_total_30 ?? '--'}</span><span style="color:#71717a;">/30</span><span style="margin-left:0.7rem;color:#86efac;font-weight:700;">${agg.avg_pct ?? '--'}%</span></div>
+            <div style="font-size:0.85rem;color:#cbd5e1;margin-top:0.3rem;">構造 ${sa.structure ?? '--'} · 内容 ${sa.content ?? '--'} · 言語 ${sa.language ?? '--'}</div>
+            <div style="font-size:0.7rem;color:#71717a;margin-top:0.3rem;">${agg.successful_views || 0}/${agg.total_views || 5} AI 成功 · 所要 ${((j.elapsed_ms_total||0)/1000).toFixed(1)}秒</div>
+          </div>
+          ${strengths ? `<details open style="margin:0.4rem 0;"><summary style="cursor:pointer;color:#86efac;font-weight:700;">💪 強み (${(agg.top_strengths||[]).length})</summary><ul style="padding-left:1.5rem;font-size:0.82rem;line-height:1.7;">${strengths}</ul></details>` : ''}
+          ${improvements ? `<details open style="margin:0.4rem 0;"><summary style="cursor:pointer;color:#fbbf24;font-weight:700;">🎯 改善点 (${(agg.top_improvements||[]).length})</summary><ul style="padding-left:1.5rem;font-size:0.82rem;line-height:1.7;">${improvements}</ul></details>` : ''}
+          <h4 style="font-size:0.9rem;color:#c4b5fd;margin:0.7rem 0 0.3rem 0;">各 AI の視点</h4>
+          ${viewsHtml}
+        `;
+      }
 
       // 📤 draft 直 publish (1 クリックで生徒公開・delegation で動的ボタンも捕捉)
       document.addEventListener('click', async (e) => {
