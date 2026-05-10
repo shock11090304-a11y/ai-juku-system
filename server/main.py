@@ -4912,29 +4912,53 @@ def _call_gemini(body: dict, *, model: str = None, kind: str = "chat") -> dict:
     # Gemini は max_tokens=8192 (Flash) / 8192 (Pro) が上限。clamp。
     max_tokens = min(max_tokens, 8000)
 
-    # Gemini の history 形式: [{"role": "user|model", "parts": [text]}]
-    # Anthropic の messages: [{"role": "user|assistant", "content": "..."}]
+    # Gemini の history 形式: [{"role": "user|model", "parts": [text or {inline_data:...}]}]
+    # Anthropic の messages: [{"role": "user|assistant", "content": "..." | [{type:text|image,...}]}]
+    # 2026-05-10 vision 対応: content list に image type があれば parts に inline_data を含める
+    import base64 as _b64
+    def _content_to_parts(content):
+        """Anthropic content (str or list) → Gemini parts list 変換"""
+        if isinstance(content, str):
+            return [content]
+        if not isinstance(content, list):
+            return [str(content)]
+        parts = []
+        for c in content:
+            if not isinstance(c, dict):
+                continue
+            ctype = c.get("type")
+            if ctype == "text":
+                parts.append(c.get("text", ""))
+            elif ctype == "image":
+                src = c.get("source") or {}
+                if src.get("type") == "base64":
+                    mime = src.get("media_type", "image/jpeg")
+                    data_b64 = src.get("data", "")
+                    try:
+                        data_bytes = _b64.b64decode(data_b64) if data_b64 else b""
+                        if data_bytes:
+                            parts.append({"inline_data": {"mime_type": mime, "data": data_bytes}})
+                    except Exception as _be:
+                        log.warning(f"[Gemini] image base64 decode failed: {_be}")
+        return parts or [""]
+
     history = []
-    last_user_text = ""
+    last_user_parts = [""]
     for m in msgs:
         role = m.get("role", "user")
         content = m.get("content", "")
-        if isinstance(content, list):
-            content = "".join(c.get("text", "") for c in content if isinstance(c, dict))
+        parts = _content_to_parts(content)
         if role == "assistant":
-            history.append({"role": "model", "parts": [content]})
+            history.append({"role": "model", "parts": parts})
         else:
             if msgs and m is msgs[-1]:
-                last_user_text = content
+                last_user_parts = parts
             else:
-                history.append({"role": "user", "parts": [content]})
+                history.append({"role": "user", "parts": parts})
 
     # 最後の user message が抽出できなかったケース fallback
-    if not last_user_text and msgs:
-        c = msgs[-1].get("content", "")
-        if isinstance(c, list):
-            c = "".join(x.get("text", "") for x in c if isinstance(x, dict))
-        last_user_text = c
+    if (not last_user_parts or last_user_parts == [""]) and msgs:
+        last_user_parts = _content_to_parts(msgs[-1].get("content", ""))
 
     # 安全フィルタは BLOCK_ONLY_HIGH に設定 = 高校教材 (戦争史・歴史・医療・薬物・倫理) が
     # Gemini のデフォ厳しめフィルタで誤ブロックされないようにする。完全 OFF にはしない。
@@ -4964,7 +4988,9 @@ def _call_gemini(body: dict, *, model: str = None, kind: str = "chat") -> dict:
                 safety_settings=safety_settings,
             )
             chat = gen_model.start_chat(history=history)
-            resp = chat.send_message(last_user_text)
+            # 2026-05-10 vision 対応: parts list を直接渡す (image 含む場合)
+            # 単一 text の場合は string でも list でも OK だが、list 統一で安全
+            resp = chat.send_message(last_user_parts)
             text = resp.text or ""
             if idx > 0:
                 log.warning(f"[Gemini] succeeded with fallback model {gm_name} after {target_model} failed")
@@ -5023,8 +5049,9 @@ def _call_openai(body: dict, *, model: str = None, kind: str = "chat") -> dict:
         max_tokens = min(max_tokens, 16000)
 
     # Anthropic messages → OpenAI messages 変換
-    # Anthropic: [{role: "user|assistant", content: "..." | [{type:text, text}]}]
-    # OpenAI:    [{role: "system|user|assistant", content: "..."}]
+    # Anthropic: [{role: "user|assistant", content: "..." | [{type:text, text} | {type:image, source:{type:base64,media_type,data}}]}]
+    # OpenAI:    [{role: ..., content: "..." or [{type:"text",text} | {type:"image_url",image_url:{url:"data:..."}}]}]
+    # 2026-05-10 vision 対応: content list 内に image type があれば OpenAI vision 形式に変換
     openai_messages = []
     if system_text:
         openai_messages.append({"role": "system", "content": system_text})
@@ -5032,7 +5059,31 @@ def _call_openai(body: dict, *, model: str = None, kind: str = "chat") -> dict:
         role = m.get("role", "user")
         content = m.get("content", "")
         if isinstance(content, list):
-            content = "".join(c.get("text", "") for c in content if isinstance(c, dict))
+            # multimodal content: text と image を保持して OpenAI 形式に変換
+            has_image = any(isinstance(c, dict) and c.get("type") == "image" for c in content)
+            if has_image:
+                # OpenAI vision 形式に変換
+                converted = []
+                for c in content:
+                    if not isinstance(c, dict):
+                        continue
+                    ctype = c.get("type")
+                    if ctype == "text":
+                        converted.append({"type": "text", "text": c.get("text", "")})
+                    elif ctype == "image":
+                        # Anthropic: source.{type:"base64", media_type, data}
+                        src = c.get("source") or {}
+                        if src.get("type") == "base64":
+                            mime = src.get("media_type", "image/jpeg")
+                            data_b64 = src.get("data", "")
+                            converted.append({"type": "image_url", "image_url": {"url": f"data:{mime};base64,{data_b64}"}})
+                    elif ctype == "image_url":
+                        # 既に OpenAI 形式
+                        converted.append({"type": "image_url", "image_url": c.get("image_url", {})})
+                content = converted
+            else:
+                # 旧来通り flatten (text only)
+                content = "".join(c.get("text", "") for c in content if isinstance(c, dict))
         if role not in ("user", "assistant", "system"):
             role = "user"
         openai_messages.append({"role": role, "content": content})
@@ -17434,13 +17485,430 @@ def lp_funnel(authorization: Optional[str] = Header(None), days: int = 7):
 
 
 # ==========================================================================
-# ✍️ Mock Exam 英作文採点 (Anthropic API 経由)
+# ✍️ Mock Exam 英作文採点 (5 AI 多視点・写真対応)
+# 2026-05-10 塾長指示「写真採点 + 5 AI 多視点採点 (A+A)」の実装
+# memory: feedback_team_review_all_generation.md (3-5 AI 多視点) /
+#         feedback_ai_never_fail.md (_call_anthropic_safe 経由必須) /
+#         feedback_opus47_proxy_required.md (Opus 4.7 必須パラメータ)
 # ==========================================================================
+
+# 5 AI 多視点採点の定義 (各視点で異なる AI を使い多様性担保)
+# 教師名禁止 (memory: project_ai_juku_english_philosophy.md・全 view 共通制約)
+_GRADE_VIEW_TEACHER_NAME_BAN = (
+    "\n\n[CRITICAL OUTPUT CONSTRAINT] "
+    "NEVER include specific Japanese teacher names (e.g. 関正生, 富田, 安河内, 西きょうじ etc.) in any output. "
+    "Use generic terms like 「英語教育の専門家」 or 「ある教育者」 instead. "
+    "memory: project_ai_juku_english_philosophy.md."
+)
+
+_GRADE_VIEW_DEFINITIONS = {
+    "structure": {
+        "label": "🏗️ 構造・論理",
+        "model": "claude-opus-4-7",
+        "kind": "anthropic",
+        "primary_axis": "structure",  # 集計時にこの軸を 1.0x、他軸は 0.3x で加重平均
+        "perspective": "structure / paragraph organization / logical flow / thesis clarity",
+        "system": (
+            "You are an Oxford-trained essay structure expert grading Japanese university entrance exam essays. "
+            "Focus EXCLUSIVELY on structure, logical flow, and paragraph organization. "
+            "Score 0-10 each on: structure (paragraph hierarchy/topic sentences), content (logical depth), language (cohesion devices).\n\n"
+            "Return ONLY valid JSON (no markdown):\n"
+            '{"structure": <0-10>, "content": <0-10>, "language": <0-10>, '
+            '"comment_jp": "<2-3行で全体所感>", '
+            '"strengths": ["<具体的な強み1>", "..."], "improvements": ["<改善案1>", "..."]}\n'
+            "All comments in Japanese. Be strict but fair. 構造に集中して厳格に採点。"
+            + _GRADE_VIEW_TEACHER_NAME_BAN
+        ),
+    },
+    "content": {
+        "label": "💡 内容・主張",
+        "model": "gpt-4o",
+        "kind": "openai",
+        "primary_axis": "content",
+        "perspective": "argument depth / evidence quality / originality / topic relevance",
+        "system": (
+            "You are a Harvard debate coach grading Japanese university entrance exam essays. "
+            "Focus EXCLUSIVELY on content depth: argument originality, evidence/examples, topic relevance. "
+            "Score 0-10 each on: structure, content (PRIMARY focus), language.\n\n"
+            "Return ONLY valid JSON (no markdown):\n"
+            '{"structure": <0-10>, "content": <0-10>, "language": <0-10>, '
+            '"comment_jp": "<2-3行で全体所感>", '
+            '"strengths": ["..."], "improvements": ["..."]}\n'
+            "All comments in Japanese. 内容の深さを最重視・独創性と論拠の質に厳しく。"
+            + _GRADE_VIEW_TEACHER_NAME_BAN
+        ),
+    },
+    "language": {
+        "label": "📝 言語・表現",
+        "model": "claude-sonnet-4-6",
+        "kind": "anthropic",
+        "primary_axis": "language",
+        "perspective": "grammar / vocabulary / naturalness / collocations",
+        "system": (
+            "You are a Cambridge ESL examiner grading Japanese university entrance exam essays. "
+            "Focus EXCLUSIVELY on language quality: grammar accuracy, vocabulary range, idiomatic naturalness, collocations. "
+            "Score 0-10 each on: structure, content, language (PRIMARY focus).\n\n"
+            "Return ONLY valid JSON:\n"
+            '{"structure": <0-10>, "content": <0-10>, "language": <0-10>, '
+            '"comment_jp": "<2-3行で全体所感・具体的な誤用例>", '
+            '"strengths": ["..."], "improvements": ["..."]}\n'
+            "All comments in Japanese. 文法・語彙・コロケーションを最重視。"
+            + _GRADE_VIEW_TEACHER_NAME_BAN
+        ),
+    },
+    "exam_form": {
+        "label": "🎯 入試形式準拠",
+        "model": "gemini-2.5-pro",
+        "kind": "gemini",
+        "primary_axis": "structure",  # 入試形式は構造寄り
+        "perspective": "exam format compliance / word count / time-budget realism",
+        "system": (
+            "You are a Japanese university entrance exam director (e.g. UTokyo/Kyoto) reviewing student essays. "
+            "Focus EXCLUSIVELY on exam format: 設問への準拠, word count realism, time-budget feasibility, 体裁. "
+            "Score 0-10 each on: structure (exam-aligned organization), content (prompt-relevance), language (exam-register).\n\n"
+            "Return ONLY valid JSON:\n"
+            '{"structure": <0-10>, "content": <0-10>, "language": <0-10>, '
+            '"comment_jp": "<2-3行で全体所感・本物の入試として通用するか>", '
+            '"strengths": ["..."], "improvements": ["..."]}\n'
+            "All comments in Japanese. 本番試験での通用度を最重視。"
+            + _GRADE_VIEW_TEACHER_NAME_BAN
+        ),
+    },
+    "learner": {
+        "label": "🌱 学習者目線",
+        "model": "claude-haiku-4-5",
+        "kind": "anthropic",
+        "primary_axis": None,  # 全軸均等 (学習者目線は全方位)
+        "perspective": "from a Japanese high schooler perspective / improvement priority / encouragement",
+        "system": (
+            "You are an empathetic Japanese high school teacher grading essays. "
+            "Focus EXCLUSIVELY on learner perspective: 高校生の視点, 改善優先度, モチベーション維持. "
+            "Score 0-10 each on the same 3 dimensions but emphasize WHAT THE LEARNER CAN ACTUALLY FIX NEXT.\n\n"
+            "Return ONLY valid JSON:\n"
+            '{"structure": <0-10>, "content": <0-10>, "language": <0-10>, '
+            '"comment_jp": "<2-3行・前向き・次に何をすべきか>", '
+            '"strengths": ["<生徒が誇るべき点>"], "improvements": ["<最優先で直すべき1点>"]}\n'
+            "All comments in Japanese. 学習者を励まし・改善優先度を明確に。"
+            + _GRADE_VIEW_TEACHER_NAME_BAN
+        ),
+    },
+}
+
+# rate limit: 1 student で 1 時間 10 回まで (in-memory・1 replica 想定)
+# memory: feedback_role_engineer.md (Claude が技術判断・暴走防御)
+# memory: feedback_synthetic_monitor_quota.md (重 endpoint の財務事故素地・要防御)
+_GRADE_MULTIVIEW_RATE: dict = {}  # {student_id: [unix_ts, ...]}
+_GRADE_MULTIVIEW_RATE_LIMIT_PER_HOUR = 10
+
+def _check_grade_multiview_rate(student_id: int) -> None:
+    """1 student / 1 時間あたり 10 回までに制限。超えたら 429。
+    重 endpoint (5 LLM 並列・$0.10-0.30/req) の暴走を防ぐ。"""
+    import time as _t
+    now = _t.time()
+    h_ago = now - 3600
+    timestamps = _GRADE_MULTIVIEW_RATE.get(student_id, [])
+    timestamps = [t for t in timestamps if t > h_ago]
+    if len(timestamps) >= _GRADE_MULTIVIEW_RATE_LIMIT_PER_HOUR:
+        oldest_in_window = min(timestamps)
+        retry_after_min = max(1, int((oldest_in_window + 3600 - now) / 60))
+        raise HTTPException(
+            status_code=429,
+            detail=f"5 AI 多視点採点は 1 時間あたり {_GRADE_MULTIVIEW_RATE_LIMIT_PER_HOUR} 回まで。約 {retry_after_min} 分後に再試行してください。"
+        )
+    timestamps.append(now)
+    _GRADE_MULTIVIEW_RATE[student_id] = timestamps
+
+
+def _grade_one_view(view_id: str, prompt: str, level: str,
+                     image_b64: Optional[str], mime: str, essay_text: Optional[str]) -> dict:
+    """1 AI で 1 視点の採点を実行 (sync・thread pool から呼ぶ)。
+    返却: {view_id, model, scores, total_30, comment_jp, strengths, improvements, elapsed_ms} or
+          {view_id, model, error, elapsed_ms}"""
+    import time as _t
+    t0 = _t.time()
+    view_def = _GRADE_VIEW_DEFINITIONS[view_id]
+
+    user_text = f"Level: {level}\n\nPrompt: {prompt}\n\n"
+    if essay_text:
+        user_text += f"Essay (text):\n{essay_text}\n\n"
+    if image_b64:
+        user_text += "Essay is provided as the attached image. OCR/読解してから採点してください。\n\n"
+    user_text += f"Now grade this essay from the [{view_def['perspective']}] perspective. Return JSON ONLY."
+
+    # Anthropic 互換 content (image + text)
+    content_blocks = []
+    if image_b64:
+        content_blocks.append({
+            "type": "image",
+            "source": {"type": "base64", "media_type": mime, "data": image_b64},
+        })
+    content_blocks.append({"type": "text", "text": user_text})
+
+    body = {
+        "model": view_def["model"],
+        "max_tokens": 1500,
+        "system": view_def["system"],
+        "messages": [{"role": "user", "content": content_blocks}],
+    }
+    # Opus 4.7 必須パラメータ (memory: feedback_opus47_proxy_required.md)
+    if view_def["model"].startswith("claude-opus-4-7"):
+        body["thinking"] = {"type": "adaptive"}
+        body["output_config"] = {"effort": "high"}
+        body["temperature"] = 1.0
+
+    try:
+        if view_def["kind"] == "anthropic":
+            data = _call_anthropic_safe(body, kind=f"grade_view_{view_id}", student_id=None)
+        elif view_def["kind"] == "openai":
+            data = _call_openai(body, kind=f"grade_view_{view_id}")
+        elif view_def["kind"] == "gemini":
+            data = _call_gemini(body, kind=f"grade_view_{view_id}")
+        else:
+            raise RuntimeError(f"unknown view kind: {view_def['kind']}")
+
+        text = (data.get("content") or [{}])[0].get("text", "") if data.get("content") else ""
+        # JSON parse (markdown code fence 除去)
+        cleaned = text.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.split("\n", 1)[1] if "\n" in cleaned else cleaned
+            if cleaned.endswith("```"):
+                cleaned = cleaned.rsplit("```", 1)[0]
+        try:
+            scores = json.loads(cleaned)
+        except Exception:
+            # JSON 壊れの場合は中身から数字抽出を試みる (fallback)
+            import re as _re
+            def _extract_num(key):
+                m = _re.search(rf'"{key}"\s*:\s*(\d+)', cleaned)
+                return int(m.group(1)) if m else 5
+            scores = {
+                "structure": _extract_num("structure"),
+                "content": _extract_num("content"),
+                "language": _extract_num("language"),
+                "comment_jp": text[:400] if text else "JSON parse 失敗",
+                "strengths": [], "improvements": [],
+            }
+
+        s_val = int(scores.get("structure") or 0)
+        c_val = int(scores.get("content") or 0)
+        l_val = int(scores.get("language") or 0)
+        return {
+            "view_id": view_id,
+            "label": view_def["label"],
+            "model": data.get("_actual_model") or view_def["model"],
+            "provider": data.get("_provider") or view_def["kind"],
+            "scores": {"structure": s_val, "content": c_val, "language": l_val},
+            "total_30": s_val + c_val + l_val,
+            "comment_jp": scores.get("comment_jp") or scores.get("overall_comment_jp") or "",
+            "strengths": scores.get("strengths") or scores.get("strengths_jp") or [],
+            "improvements": scores.get("improvements") or scores.get("improvements_jp") or [],
+            "elapsed_ms": int((_t.time() - t0) * 1000),
+        }
+    except Exception as e:
+        return {
+            "view_id": view_id,
+            "label": view_def["label"],
+            "model": view_def["model"],
+            "error": f"{type(e).__name__}: {str(e)[:200]}",
+            "elapsed_ms": int((_t.time() - t0) * 1000),
+        }
+
+
+@app.post("/api/mock-exam/grade-essay-multiview")
+async def mock_exam_grade_essay_multiview(payload: dict):
+    """🌟 5 AI 多視点 英作文採点 (写真 or テキスト対応)
+    塾長指示 2026-05-10「写真採点 + 5 AI 多視点 (A+A)」の実装。
+
+    payload:
+      {
+        "prompt": "出題文",
+        "level": "todai" | "kyodai" | "eiken_g1" | ... (default: "todai"),
+        "image_base64": "<base64>" (optional),
+        "mime_type": "image/jpeg" | "image/png" | "image/webp" (default: image/jpeg),
+        "essay_text": "<text>" (optional・image との併用 OK),
+        "student_id": <int> (optional)
+      }
+    image_base64 か essay_text のいずれか必須。
+
+    各 view は異なる AI で並列実行 (asyncio.gather + thread pool):
+      - structure: Claude Opus 4.7 (Extended Thinking)
+      - content:   GPT-4o (vision 強い・OpenAI Tier 5 課金経路)
+      - language:  Claude Sonnet 4.6
+      - exam_form: Gemini 2.5 Pro
+      - learner:   Claude Haiku 4.5
+
+    部分失敗許容: 5 view 中 3 以上成功で結果返却 (アンサンブル平均)。
+    全体 timeout: 120 秒・各 view 90 秒。
+    """
+    import asyncio as _asyncio
+    import base64 as _b64
+
+    prompt = (payload.get("prompt") or "").strip()
+    level = (payload.get("level") or "todai").strip()
+    image_b64 = (payload.get("image_base64") or "").strip()
+    mime = (payload.get("mime_type") or "image/jpeg").strip()
+    essay_text = (payload.get("essay_text") or "").strip()
+    student_id = payload.get("student_id")
+
+    # 🛡️ 認証 + rate limit (重 endpoint 暴走防御・3視点 review 致命対応 2026-05-10)
+    # student_id 必須化 + DB 存在 check + 1h あたり 10 回制限
+    try:
+        student_id = int(student_id) if student_id else 0
+    except (TypeError, ValueError):
+        student_id = 0
+    if not student_id or student_id <= 0:
+        raise HTTPException(
+            status_code=403,
+            detail="ログインが必要です (student_id 未提供)。マイページから採点してください。"
+        )
+    # DB 存在 check
+    conn_auth = db()
+    try:
+        c_auth = conn_auth.cursor()
+        c_auth.execute("SELECT id FROM students WHERE id = ?", (student_id,))
+        row_auth = c_auth.fetchone()
+        if not row_auth:
+            raise HTTPException(status_code=403, detail="存在しない生徒 ID です")
+    finally:
+        conn_auth.close()
+    # rate limit (5 AI 並列の重 endpoint・$0.10-0.30/req 級の暴走防御)
+    _check_grade_multiview_rate(student_id)
+
+    # validation
+    if not image_b64 and not essay_text:
+        raise HTTPException(status_code=400, detail="image_base64 か essay_text のいずれか必須")
+    if image_b64:
+        # base64 size + mime check
+        try:
+            decoded = _b64.b64decode(image_b64, validate=True)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"image_base64 decode 失敗: {e}")
+        if len(decoded) > 5 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="画像が大きすぎます (5MB 以内)")
+        if mime not in ("image/jpeg", "image/png", "image/webp"):
+            raise HTTPException(status_code=400, detail="mime_type は jpeg/png/webp のみ")
+    if essay_text and len(essay_text) > 4000:
+        raise HTTPException(status_code=400, detail="essay_text が長すぎます (4000 文字以内)")
+
+    # 5 AI 並列実行 (asyncio.gather + run_in_executor)
+    # Python 3.12+ で get_event_loop() は DeprecationWarning なので get_running_loop() を使う
+    loop = _asyncio.get_running_loop()
+    view_ids = list(_GRADE_VIEW_DEFINITIONS.keys())
+    tasks = []
+    for vid in view_ids:
+        future = loop.run_in_executor(
+            None, _grade_one_view, vid, prompt, level, image_b64, mime, essay_text
+        )
+        # 各 view 90秒 timeout
+        tasks.append(_asyncio.wait_for(future, timeout=90))
+
+    import time as _t
+    t0_total = _t.time()
+    results = await _asyncio.gather(*tasks, return_exceptions=True)
+    elapsed_ms_total = int((_t.time() - t0_total) * 1000)
+
+    # 結果整形 (Python 3.11+ で TimeoutError == asyncio.TimeoutError なので両方検査)
+    views = []
+    for i, vid in enumerate(view_ids):
+        r = results[i]
+        if isinstance(r, (_asyncio.TimeoutError, TimeoutError)):
+            view_def = _GRADE_VIEW_DEFINITIONS[vid]
+            views.append({
+                "view_id": vid, "label": view_def["label"], "model": view_def["model"],
+                "error": "timeout (90s)",
+            })
+        elif isinstance(r, Exception):
+            view_def = _GRADE_VIEW_DEFINITIONS[vid]
+            views.append({
+                "view_id": vid, "label": view_def["label"], "model": view_def["model"],
+                "error": f"{type(r).__name__}: {str(r)[:200]}",
+            })
+        else:
+            views.append(r)
+
+    # 集計 (成功 view のみ + 専門外軸の重み下げ)
+    # 各 view は primary_axis を 1.0x、それ以外を 0.3x で加重平均 (専門性希釈防止)
+    # primary_axis=None の view (learner) は全軸 0.5x で中立 contribution
+    successful = [v for v in views if "scores" in v]
+    if len(successful) < 3:
+        log.error(f"[grade-essay-multiview] only {len(successful)}/5 views succeeded")
+        raise HTTPException(
+            status_code=502,
+            detail=f"5 視点中 {len(successful)} のみ成功。再試行を推奨します。"
+        )
+
+    def _weighted_avg_axis(axis: str) -> float:
+        weighted_sum = 0.0
+        weight_sum = 0.0
+        for v in successful:
+            view_def = _GRADE_VIEW_DEFINITIONS[v["view_id"]]
+            primary = view_def.get("primary_axis")
+            if primary == axis:
+                w = 1.0
+            elif primary is None:
+                w = 0.5  # learner view は全軸均等中立
+            else:
+                w = 0.3
+            weighted_sum += float(v["scores"][axis]) * w
+            weight_sum += w
+        return weighted_sum / weight_sum if weight_sum else 0.0
+
+    avg_structure = _weighted_avg_axis("structure")
+    avg_content = _weighted_avg_axis("content")
+    avg_language = _weighted_avg_axis("language")
+    avg_total = avg_structure + avg_content + avg_language
+
+    # 強み・改善点を集約
+    all_strengths = []
+    all_improvements = []
+    for v in successful:
+        all_strengths.extend((v.get("strengths") or [])[:2])
+        all_improvements.extend((v.get("improvements") or [])[:2])
+
+    # event 記録 (analytics 用)
+    try:
+        _record_ai_critical_event("multiview_grade_done", {
+            "successful_views": len(successful),
+            "total_views": len(views),
+            "avg_total_30": round(avg_total, 1),
+            "elapsed_ms": elapsed_ms_total,
+            "level": level,
+            "with_image": bool(image_b64),
+            "essay_text_length": len(essay_text) if essay_text else 0,
+            "student_id": student_id,
+        })
+    except Exception as ee:
+        log.warning(f"[grade-essay-multiview] event log failed: {ee}")
+
+    return {
+        "ok": True,
+        "views": views,
+        "aggregate": {
+            "avg_total_30": round(avg_total, 1),
+            "avg_pct": round(100 * avg_total / 30, 1),
+            "scores_avg": {
+                "structure": round(avg_structure, 1),
+                "content": round(avg_content, 1),
+                "language": round(avg_language, 1),
+            },
+            "successful_views": len(successful),
+            "total_views": len(views),
+            "top_strengths": all_strengths[:6],
+            "top_improvements": all_improvements[:6],
+        },
+        "elapsed_ms_total": elapsed_ms_total,
+    }
+
+
 @app.post("/api/mock-exam/grade-essay")
 def mock_exam_grade_essay(payload: dict):
-    """模試内 essay (英作文) を AI で採点。
+    """模試内 essay (英作文) を AI で採点 — 単一 AI シンプル版 (高速・後方互換)。
     payload: {"prompt": "...", "essay": "...", "level": "todai" | "kyodai" | "eiken_g1" | ...}
     返却: {scores: {structure, content, language}, overall, total_points, feedback_jp}
+
+    2026-05-10 修正: 旧 _call_anthropic_safe(system=, user=, max_tokens=) signature mismatch
+    bug を修正 (`body: dict` 形式に統一・AI never-fail 5 段防御に乗る)。
+    多視点採点が欲しい場合は /api/mock-exam/grade-essay-multiview を使用。
     """
     prompt = (payload.get("prompt") or "").strip()
     essay = (payload.get("essay") or "").strip()
@@ -17450,7 +17918,6 @@ def mock_exam_grade_essay(payload: dict):
     if len(essay) > 4000:
         raise HTTPException(status_code=400, detail="essay が長すぎます (4000 文字以内)")
 
-    # Anthropic AI による採点 — 既存の _call_anthropic_safe があれば使う
     system = (
         "You are an experienced English exam grader for Japanese university entrance exams. "
         "Grade the student's essay strictly but fairly. Score on 3 dimensions (0-10 each):\n"
@@ -17464,31 +17931,22 @@ def mock_exam_grade_essay(payload: dict):
     user = f"Level: {level}\n\nPrompt: {prompt}\n\nStudent essay:\n{essay}\n\nGrade now (JSON only)."
 
     try:
-        # 既存の AI 呼び出し safe wrapper
-        if "_call_anthropic_safe" in globals():
-            resp_text = _call_anthropic_safe(system=system, user=user, max_tokens=1500)
-        else:
-            # fallback: 直接呼び出し (API key check)
-            api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-            if not api_key:
-                raise HTTPException(status_code=503, detail="ANTHROPIC_API_KEY 未設定")
-            import anthropic
-            client = anthropic.Anthropic(api_key=api_key)
-            msg = client.messages.create(
-                model="claude-haiku-4-5-20251001",
-                max_tokens=1500,
-                system=system,
-                messages=[{"role": "user", "content": user}],
-            )
-            resp_text = msg.content[0].text if msg.content else "{}"
+        # 2026-05-10 bug 修正: _call_anthropic_safe の正しい signature (body: dict) を使用
+        body = {
+            "model": "claude-haiku-4-5",
+            "max_tokens": 1500,
+            "system": system,
+            "messages": [{"role": "user", "content": user}],
+        }
+        data = _call_anthropic_safe(body, kind="grade_essay", student_id=payload.get("student_id"))
+        resp_text = (data.get("content") or [{}])[0].get("text", "") if data.get("content") else "{}"
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"AI 採点失敗: {type(e).__name__}: {str(e)[:120]}")
 
-    # JSON パース
+    # JSON パース (```json fence 除去)
     try:
-        # ``` で囲まれていたら除去
         cleaned = resp_text.strip()
         if cleaned.startswith("```"):
             cleaned = cleaned.split("\n", 1)[1] if "\n" in cleaned else cleaned
@@ -17496,7 +17954,6 @@ def mock_exam_grade_essay(payload: dict):
                 cleaned = cleaned.rsplit("```", 1)[0]
         scores = json.loads(cleaned)
     except Exception:
-        # JSON が壊れていたら空テンプレで返す
         scores = {"structure": 5, "content": 5, "language": 5,
                   "overall_comment_jp": resp_text[:400],
                   "strengths_jp": [], "improvements_jp": []}

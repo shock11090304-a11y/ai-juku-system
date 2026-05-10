@@ -113,11 +113,31 @@
           </div>
         `;
       } else {
-        // essay 型は今回は表示のみ (記述採点なし) — placeholder
+        // 2026-05-10: essay 型は 5 AI 多視点採点 + 写真 upload 対応 (塾長指示「A+A」)
+        // /api/mock-exam/grade-essay-multiview に POST → Claude Opus / GPT-4o / Sonnet / Gemini Pro / Haiku の
+        // 5 視点で並列採点して accordion 表示
+        const subqUid = `${q.exam_question_id}_${sq.id}`;
+        const stemEsc = escapeHtml(sq.stem || '');
+        const examLevel = (currentSession && currentSession.exam_type) || 'todai';
         return `
-          <div class="me-subq">
-            <div class="me-subq-stem">${escapeHtml(sq.stem)}</div>
-            <textarea rows="4" placeholder="(記述問題は採点対象外・ベータ機能)"></textarea>
+          <div class="me-subq me-subq-essay" data-uid="${subqUid}">
+            <div class="me-subq-stem">${stemEsc}</div>
+            <textarea class="me-essay-input" id="meEssay_${subqUid}" rows="6"
+                      placeholder="ここに英作文を入力 (or 下の📷ボタンで答案写真 upload)"></textarea>
+            <div class="me-essay-actions">
+              <label class="me-photo-label" for="mePhoto_${subqUid}">
+                📷 写真でアップロード
+                <input type="file" accept="image/*" capture="environment"
+                       class="me-photo-input" id="mePhoto_${subqUid}"
+                       data-uid="${subqUid}" style="display:none;">
+              </label>
+              <span class="me-photo-name" id="mePhotoName_${subqUid}"></span>
+              <button class="me-grade-btn btn-primary" data-uid="${subqUid}"
+                      data-stem="${stemEsc}" data-level="${escapeHtml(examLevel)}">
+                🌟 5 AI 多視点で採点
+              </button>
+            </div>
+            <div class="me-grade-result" id="meGradeResult_${subqUid}" style="display:none;"></div>
           </div>
         `;
       }
@@ -141,7 +161,212 @@
       answers[`${eq}_${sub}`] = e.target.value;
       updateProgress();
     }
+    // 2026-05-10: 写真 upload 対応 (5 AI 多視点採点)
+    if (e.target.matches('.me-photo-input')) {
+      onEssayPhotoChange(e);
+    }
   }
+
+  // 📷 写真 upload → base64 変換 + button にメタデータ保存
+  function onEssayPhotoChange(e) {
+    const file = e.target.files && e.target.files[0];
+    const uid = e.target.dataset.uid;
+    if (!file || !uid) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('画像が大きすぎます (5MB 以内)');
+      e.target.value = '';
+      return;
+    }
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedMimes.includes(file.type)) {
+      alert('画像形式は JPEG / PNG / WebP のみ対応');
+      e.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      // data:image/...;base64,XXX → XXX 部分を抽出
+      const dataUrl = reader.result || '';
+      const b64 = dataUrl.split(',')[1] || '';
+      const btn = document.querySelector(`.me-grade-btn[data-uid="${uid}"]`);
+      if (btn) {
+        btn.dataset.imageB64 = b64;
+        btn.dataset.imageMime = file.type;
+      }
+      const nameEl = document.getElementById(`mePhotoName_${uid}`);
+      if (nameEl) {
+        nameEl.textContent = `📷 ${file.name} (${Math.round(file.size/1024)}KB)`;
+        nameEl.style.color = '#86efac';
+      }
+    };
+    reader.onerror = () => {
+      alert('画像の読み込みに失敗しました');
+      e.target.value = '';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // 🌟 5 AI 多視点採点 endpoint 呼出 + 結果描画
+  async function onGradeEssayClick(e) {
+    const btn = e.target.closest('.me-grade-btn');
+    if (!btn) return;
+    const uid = btn.dataset.uid;
+    const stem = btn.dataset.stem || '';
+    const level = btn.dataset.level || 'todai';
+    const essay = (document.getElementById(`meEssay_${uid}`)?.value || '').trim();
+    const imageB64 = btn.dataset.imageB64 || '';
+    const imageMime = btn.dataset.imageMime || 'image/jpeg';
+
+    if (!essay && !imageB64) {
+      alert('テキスト入力 or 写真アップロードのいずれかが必要です');
+      return;
+    }
+    if (essay && essay.length < 20 && !imageB64) {
+      alert('英作文が短すぎます (20 文字以上 or 写真をアップロード)');
+      return;
+    }
+
+    const studentId = parseInt(localStorage.getItem('aj_current_student_id') || '0', 10) || null;
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '⏳ 5 AI が採点中... (60-90秒)';
+
+    const resultDiv = document.getElementById(`meGradeResult_${uid}`);
+    if (resultDiv) {
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = `
+        <div class="me-grade-loading">
+          <div>🌟 5 AI が並列で採点中...</div>
+          <div style="font-size:0.78rem;color:#94a3b8;margin-top:0.4rem;">
+            🏗️ 構造 (Opus 4.7) · 💡 内容 (GPT-4o) · 📝 言語 (Sonnet) · 🎯 入試 (Gemini Pro) · 🌱 学習者目線 (Haiku)
+          </div>
+          <div class="me-grade-elapsed" style="font-size:0.85rem;color:#86efac;margin-top:0.6rem;font-weight:700;">
+            経過 0 秒 (60-90 秒目安・固まったわけではありません)
+          </div>
+        </div>`;
+    }
+    // 経過秒タイマー (生徒の不安解消・3視点 review 反映 2026-05-10)
+    const elapsedStart = Date.now();
+    const elapsedTimer = setInterval(() => {
+      const sec = Math.floor((Date.now() - elapsedStart) / 1000);
+      const elapsedEl = resultDiv?.querySelector('.me-grade-elapsed');
+      if (elapsedEl) {
+        elapsedEl.textContent = `経過 ${sec} 秒 (60-90 秒目安・固まったわけではありません)`;
+        if (sec > 90) elapsedEl.style.color = '#fbbf24';
+      }
+    }, 1000);
+
+    try {
+      const payload = {
+        prompt: stem,
+        level: level,
+        student_id: studentId,
+      };
+      if (essay) payload.essay_text = essay;
+      if (imageB64) {
+        payload.image_base64 = imageB64;
+        payload.mime_type = imageMime;
+      }
+      const res = await fetch(`${BACKEND_URL}/api/mock-exam/grade-essay-multiview`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.detail || `HTTP ${res.status}`);
+      }
+      if (typeof window.track === 'function') {
+        window.track('mock_exam_grade_multiview', {
+          successful_views: data.aggregate.successful_views,
+          avg_total_30: data.aggregate.avg_total_30,
+          with_image: !!imageB64,
+        });
+      }
+      renderGradeResult(resultDiv, data);
+    } catch (err) {
+      if (resultDiv) {
+        resultDiv.innerHTML = `<div class="me-grade-error">⚠️ 採点失敗: ${escapeHtml(err.message)}</div>`;
+      }
+    } finally {
+      if (elapsedTimer) clearInterval(elapsedTimer);
+    }
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
+
+  // 5 AI 採点結果を accordion で描画
+  function renderGradeResult(div, data) {
+    if (!div) return;
+    const agg = data.aggregate || {};
+    const sa = agg.scores_avg || {};
+    const total = agg.avg_total_30 != null ? agg.avg_total_30 : '--';
+    const pct = agg.avg_pct != null ? agg.avg_pct : '--';
+
+    const strengthsList = (agg.top_strengths || []).map(s => `<li>${escapeHtml(s)}</li>`).join('');
+    const improvementsList = (agg.top_improvements || []).map(s => `<li>${escapeHtml(s)}</li>`).join('');
+
+    const viewsHtml = (data.views || []).map(v => {
+      if (v.error) {
+        return `
+          <details class="me-grade-view me-grade-view-error">
+            <summary>${escapeHtml(v.label || v.view_id)} <span class="me-grade-error-badge">エラー</span> <span class="me-grade-view-model">${escapeHtml(v.model || '')}</span></summary>
+            <div class="me-grade-view-comment">${escapeHtml(v.error)}</div>
+          </details>`;
+      }
+      const t = v.total_30 != null ? v.total_30 : '--';
+      const sc = v.scores || {};
+      const strs = (v.strengths || []).map(escapeHtml).join('・');
+      const imps = (v.improvements || []).map(escapeHtml).join('・');
+      return `
+        <details class="me-grade-view">
+          <summary>
+            ${escapeHtml(v.label || v.view_id)}
+            <span class="me-grade-view-score">${t}/30</span>
+            <span class="me-grade-view-model">${escapeHtml(v.model || '')}</span>
+          </summary>
+          <div class="me-grade-view-scores">
+            構造 ${sc.structure ?? '--'} · 内容 ${sc.content ?? '--'} · 言語 ${sc.language ?? '--'}
+          </div>
+          <div class="me-grade-view-comment">${escapeHtml(v.comment_jp || '')}</div>
+          ${strs ? `<div class="me-grade-view-strengths"><strong>💪 強み:</strong> ${strs}</div>` : ''}
+          ${imps ? `<div class="me-grade-view-improvements"><strong>🎯 改善:</strong> ${imps}</div>` : ''}
+        </details>`;
+    }).join('');
+
+    div.innerHTML = `
+      <div class="me-grade-summary">
+        <div class="me-grade-total-row">
+          <span class="me-grade-total-num">${total}</span>
+          <span class="me-grade-total-max">/30</span>
+          <span class="me-grade-total-pct">${pct}%</span>
+        </div>
+        <div class="me-grade-stats">
+          構造 ${sa.structure ?? '--'} · 内容 ${sa.content ?? '--'} · 言語 ${sa.language ?? '--'}
+        </div>
+        <div class="me-grade-meta">
+          ${agg.successful_views || 0}/${agg.total_views || 5} AI 成功 · 所要 ${((data.elapsed_ms_total || 0) / 1000).toFixed(1)}秒
+        </div>
+      </div>
+      ${strengthsList ? `<details class="me-grade-strengths" open>
+        <summary>💪 強み (${(agg.top_strengths || []).length})</summary>
+        <ul>${strengthsList}</ul>
+      </details>` : ''}
+      ${improvementsList ? `<details class="me-grade-improvements" open>
+        <summary>🎯 改善点 (${(agg.top_improvements || []).length})</summary>
+        <ul>${improvementsList}</ul>
+      </details>` : ''}
+      <h4 class="me-grade-views-title">各 AI の視点</h4>
+      ${viewsHtml}
+    `;
+  }
+
+  // 採点ボタン click を delegation で受ける (DOMContentLoaded 後の動的生成にも対応)
+  document.addEventListener('click', (e) => {
+    if (e.target.closest && e.target.closest('.me-grade-btn')) {
+      onGradeEssayClick(e);
+    }
+  });
 
   function updateProgress() {
     if (!currentSession) return;

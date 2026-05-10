@@ -274,3 +274,46 @@
   .me-exam-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
   .me-result-actions { flex-direction: column; }
 }
+
+/* =================================================================== */
+/* 🌟 5 AI 多視点採点 + 写真採点 (2026-05-10 塾長指示「A+A」) */
+/* =================================================================== */
+.me-subq-essay { padding: 0.7rem; background: rgba(168,85,247,0.05); border: 1px solid rgba(168,85,247,0.2); border-radius: 10px; margin-top: 0.5rem; }
+.me-essay-input { width: 100%; background: #0f172a; color: #e4e4e7; border: 1px solid rgba(168,85,247,0.3); padding: 0.6rem; border-radius: 6px; font-size: 0.9rem; line-height: 1.5; resize: vertical; font-family: inherit; }
+.me-essay-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; align-items: center; flex-wrap: wrap; }
+.me-photo-label { display: inline-flex; align-items: center; padding: 0.5rem 0.9rem; background: rgba(99,102,241,0.18); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.4); border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: background 0.2s; }
+.me-photo-label:hover { background: rgba(99,102,241,0.3); }
+.me-photo-name { font-size: 0.78rem; color: #94a3b8; }
+.me-grade-btn { padding: 0.5rem 1.1rem !important; font-size: 0.85rem !important; }
+.me-grade-result { margin-top: 1rem; padding: 1rem; background: rgba(0,0,0,0.35); border: 1px solid rgba(168,85,247,0.25); border-radius: 10px; font-size: 0.85rem; line-height: 1.6; }
+.me-grade-loading { text-align: center; color: #cbd5e1; padding: 1rem; }
+.me-grade-error { color: #fca5a5; padding: 0.7rem; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-radius: 6px; }
+.me-grade-summary { padding: 0.9rem; background: linear-gradient(135deg, rgba(34,197,94,0.1), rgba(59,130,246,0.1)); border: 1px solid rgba(34,197,94,0.3); border-radius: 8px; margin-bottom: 0.7rem; }
+.me-grade-total-row { display: flex; align-items: baseline; gap: 0.3rem; }
+.me-grade-total-num { font-size: 2rem; font-weight: 900; color: #86efac; line-height: 1; }
+.me-grade-total-max { color: #71717a; font-size: 1rem; }
+.me-grade-total-pct { margin-left: 0.7rem; color: #86efac; font-size: 1.1rem; font-weight: 700; }
+.me-grade-stats { font-size: 0.85rem; color: #cbd5e1; margin-top: 0.4rem; }
+.me-grade-meta { font-size: 0.7rem; color: #71717a; margin-top: 0.3rem; }
+.me-grade-strengths summary, .me-grade-improvements summary { cursor: pointer; padding: 0.4rem 0.6rem; font-weight: 700; color: #86efac; }
+.me-grade-improvements summary { color: #fbbf24; }
+.me-grade-strengths ul, .me-grade-improvements ul { margin: 0.3rem 0 0.5rem 0; padding-left: 1.5rem; color: #cbd5e1; font-size: 0.82rem; line-height: 1.7; }
+.me-grade-views-title { font-size: 0.95rem; color: #c4b5fd; margin: 0.8rem 0 0.4rem 0; font-weight: 800; }
+.me-grade-view { margin: 0.4rem 0; padding: 0.5rem; border: 1px solid rgba(168,85,247,0.25); border-radius: 6px; background: rgba(168,85,247,0.05); }
+.me-grade-view summary { cursor: pointer; font-weight: 700; color: #c4b5fd; padding: 0.3rem; }
+.me-grade-view-score { color: #86efac; margin-left: 0.5rem; font-weight: 800; }
+.me-grade-view-model { font-size: 0.7rem; color: #71717a; margin-left: 0.5rem; font-weight: 400; }
+.me-grade-view-scores { font-size: 0.78rem; color: #94a3b8; margin: 0.4rem 0; padding-left: 0.5rem; }
+.me-grade-view-comment { font-size: 0.85rem; color: #cbd5e1; line-height: 1.6; padding: 0.4rem 0.5rem; }
+.me-grade-view-strengths, .me-grade-view-improvements { font-size: 0.78rem; color: #cbd5e1; margin: 0.3rem 0; padding-left: 0.5rem; }
+.me-grade-view-strengths strong { color: #86efac; }
+.me-grade-view-improvements strong { color: #fbbf24; }
+.me-grade-view-error summary { color: #fca5a5; }
+.me-grade-error-badge { background: rgba(248,113,113,0.2); color: #fca5a5; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.7rem; margin-left: 0.4rem; }
+
+@media (max-width: 600px) {
+  .me-essay-actions { flex-direction: column; align-items: stretch; }
+  .me-photo-label { justify-content: center; }
+  .me-grade-btn { width: 100%; }
+  .me-grade-total-num { font-size: 1.6rem; }
+}
