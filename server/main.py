@@ -9316,6 +9316,316 @@ def admin_textbook_pool_import(payload: dict, authorization: Optional[str] = Hea
     }
 
 
+# ==========================================================================
+# 📺 YouTube 動画 → 教材自動生成 (Gemini multimodal・2026-05-10 塾長指示)
+# Gemini 2.5 Pro が YouTube URL を直接解析できる強みを活用 (NotebookLM 代替の進化版)
+# memory: feedback_5_person_textbook_review.md (5人1チーム検閲・YouTube 自動生成は draft 扱い)
+# memory: feedback_credential_management.md (API key log 出力禁止)
+# ==========================================================================
+
+# YouTube URL validate
+import re as _yt_re
+_YT_URL_RE = _yt_re.compile(
+    r'^https?://(?:www\.)?(?:youtube\.com/watch\?v=[\w\-]+|youtu\.be/[\w\-]+|youtube\.com/embed/[\w\-]+|youtube\.com/shorts/[\w\-]+)'
+)
+
+def _validate_youtube_url(url: str) -> bool:
+    """YouTube URL の形式 validate (open redirect 防御)。"""
+    if not url or not isinstance(url, str):
+        return False
+    return bool(_YT_URL_RE.match(url.strip()))
+
+
+def _generate_textbook_from_youtube(
+    youtube_url: str, subject_hint: str = "", topic_hint: str = "",
+    level_hint: str = "", length_hint: str = "medium",
+    type_hint: str = "unit_lesson", extra_instructions: str = "",
+) -> dict:
+    """Gemini 2.5 Pro で YouTube 動画を解析し ai-juku 教材 JSON を生成。
+
+    引用付き解析が Gemini の独自強み (NotebookLM 代替)。
+    出力は textbook_pool の content schema に合わせた dict。
+
+    返却: {title, subject, topic, level, length, type, tags, content (dict)}
+    Raises: HTTPException で 4xx/5xx
+    """
+    if not GEMINI_API_KEY:
+        raise HTTPException(status_code=503, detail="GEMINI_API_KEY 未設定 (Tier 4 環境変数を Railway に設定してください)")
+    if not _validate_youtube_url(youtube_url):
+        raise HTTPException(status_code=400, detail="無効な YouTube URL (youtube.com/watch?v= or youtu.be/ 形式)")
+
+    try:
+        import google.generativeai as genai
+    except ImportError:
+        raise HTTPException(status_code=503, detail="google-generativeai package not installed")
+
+    genai.configure(api_key=GEMINI_API_KEY)
+
+    # システムプロンプト (ai-juku 哲学 + 著作権配慮・2026-05-10 review 反映で paraphrase 必須化)
+    system_inst = (
+        "あなたは ai-juku の教材作成 AI です。指定された YouTube 動画を解析し、"
+        "**ai-juku オリジナルの教材** を作成します。\n\n"
+        "【著作権・引用ルール (絶対遵守・著作権法 32 条「公正な引用」準拠)】\n"
+        "- 動画の transcript / 字幕を **そのままコピーすることは絶対禁止**\n"
+        "- 必ず **自分の言葉で言い換える (paraphrase)** こと\n"
+        "- 動画特有の比喩・造語・固有事例は **使用禁止** (一般的な英語例文・原理に置換)\n"
+        "- 動画は **題材選びの参考のみ**・解説・例題・例文は完全に ai-juku オリジナル\n"
+        "- 引用は「主従関係」原則: 主は ai-juku 解説・従は短い引用 (1-2 文以内)・必然性ある場合のみ・出所明示\n"
+        "- youtube_citations は要点メモ程度・原文逐語コピー禁止 (timestamp + 「ai_juku_take」自分の言葉での解釈)\n\n"
+        "【ai-juku の英語哲学 (memory: english_philosophy)】\n"
+        "- 「コアイメージ × 文構造分析」の二段構え\n"
+        "- 教師名 (関正生・富田・安河内・西きょうじ 等) は出力に **一切含めない** (動画で言及されていても削除)\n"
+        "- 高校生 / 受験生にとって理解しやすい段階的解説\n\n"
+        "【出力形式】\n"
+        "純粋な JSON のみ (前後にテキスト禁止・```json fence なし)。"
+    )
+
+    user_prompt = (
+        "以下の YouTube 動画を解析して ai-juku 教材を作成してください。\n\n"
+        f"- subject_hint: {subject_hint or '動画から自動判定'}\n"
+        f"- topic_hint: {topic_hint or '動画から自動抽出'}\n"
+        f"- level_hint: {level_hint or '動画から自動判定 (高1/高2/高3/受験 等)'}\n"
+        f"- length_hint: {length_hint} (short=5min / medium=10min / long=20min 想定)\n"
+        f"- type_hint: {type_hint} (unit_lesson / drill / overview 等)\n"
+        f"- extra_instructions: {extra_instructions or 'なし'}\n\n"
+        "出力 JSON schema (textbook_pool 形式・全 key 必須):\n"
+        "```\n"
+        "{\n"
+        '  "title": "<教材タイトル・動画 title をベースに ai-juku 風に・教師名なし>",\n'
+        '  "subject": "<英語/数学IA/物理 等 - 動画から判定>",\n'
+        '  "topic": "<具体単元・例: 関係代名詞 / 二次関数 / 力学 等>",\n'
+        '  "level": "<高1〜高2 / 高3〜受験 / 難関大 等>",\n'
+        '  "length": "<short|medium|long>",\n'
+        '  "type": "<unit_lesson|drill|overview>",\n'
+        '  "tags": ["<タグ1>", "<タグ2>", "..."],\n'
+        '  "content": {\n'
+        '    "intro": "<導入 200-300字・なぜこの単元が重要か>",\n'
+        '    "core_image": "<コアイメージ 200-300字・直感的理解>",\n'
+        '    "structure_analysis": "<文構造/原理 分析 300-500字・具体例付き>",\n'
+        '    "examples": [\n'
+        '      {"problem": "<例題>", "solution": "<解説>", "key_takeaway": "<ポイント>"},\n'
+        '      ... 2-4 個\n'
+        '    ],\n'
+        '    "common_mistakes": ["<よくある誤り1>", "<...>"],\n'
+        '    "summary": "<3行まとめ>",\n'
+        '    "youtube_citations": [\n'
+        '      {"timestamp": "<MM:SS>", "topic": "<引用ポイント>", "ai_juku_take": "<ai-juku オリジナル解釈>"}\n'
+        '    ],\n'
+        '    "youtube_url": "<元動画 URL>",\n'
+        '    "source_note": "本教材は YouTube 動画を参考資料として、ai-juku がオリジナルに再構成したものです"\n'
+        "  }\n"
+        "}\n"
+        "```\n\n"
+        "再度確認: **動画の transcript をそのままコピーせず、ai-juku オリジナル**で書く。"
+    )
+
+    # Gemini 2.5 Pro に YouTube URL を file_data として渡す (Gemini 独自機能)
+    candidate_models = [GEMINI_MODEL]  # 通常 gemini-2.5-flash・必要なら GEMINI_MODEL=gemini-2.5-pro 環境変数推奨
+    # 動画解析は Pro 推奨なので明示的に試行
+    if "pro" not in GEMINI_MODEL.lower():
+        candidate_models = ["gemini-2.5-pro", GEMINI_MODEL]
+
+    last_err = None
+    for idx, gm_name in enumerate(candidate_models):
+        try:
+            model = genai.GenerativeModel(
+                model_name=gm_name,
+                system_instruction=system_inst,
+                generation_config={
+                    "max_output_tokens": 8000,
+                    # 2026-05-10 review 反映: temperature 0.7 → 0.3 で転載抑制 + 安定 JSON 出力
+                    "temperature": 0.3,
+                },
+                safety_settings=[
+                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
+                    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
+                    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
+                    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
+                ],
+            )
+            # YouTube URL を file_data として渡す (mime_type は SDK が自動判定するが video/mp4 を明示)
+            video_part = {"file_data": {"mime_type": "video/mp4", "file_uri": youtube_url}}
+            response = model.generate_content([video_part, user_prompt])
+            text = response.text or ""
+            if idx > 0:
+                log.warning(f"[YT-Textbook] succeeded with fallback model {gm_name}")
+            break
+        except Exception as e:
+            last_err = e
+            err_msg = str(e)[:300]
+            log.warning(f"[YT-Textbook] {gm_name} failed: {type(e).__name__}: {err_msg}")
+            # YouTube URL 関連の特定 error を判定
+            if "INVALID_ARGUMENT" in err_msg or "not supported" in err_msg.lower():
+                # mime_type なしで再試行
+                try:
+                    video_part = {"file_data": {"file_uri": youtube_url}}
+                    response = model.generate_content([video_part, user_prompt])
+                    text = response.text or ""
+                    log.warning(f"[YT-Textbook] succeeded after removing mime_type")
+                    break
+                except Exception as e2:
+                    last_err = e2
+                    log.warning(f"[YT-Textbook] retry without mime_type also failed: {e2}")
+            if idx == len(candidate_models) - 1:
+                # 全 model 失敗
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"Gemini で YouTube 解析失敗: {type(last_err).__name__}: {str(last_err)[:300]}"
+                )
+
+    # JSON parse (markdown fence 除去)
+    cleaned = (text or "").strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.split("\n", 1)[1] if "\n" in cleaned else cleaned
+        if cleaned.endswith("```"):
+            cleaned = cleaned.rsplit("```", 1)[0]
+    try:
+        parsed = json.loads(cleaned)
+    except Exception as je:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Gemini 出力 JSON parse 失敗: {je}. raw[:500]: {cleaned[:500]}"
+        )
+
+    # textbook_pool 形式に整形
+    return {
+        "title": parsed.get("title") or "YouTube 動画解析教材",
+        "subject": parsed.get("subject") or subject_hint or "未分類",
+        "topic": parsed.get("topic") or topic_hint or "未分類",
+        "level": parsed.get("level") or level_hint or "高1〜高2",
+        "length": parsed.get("length") or length_hint or "medium",
+        "type": parsed.get("type") or type_hint or "unit_lesson",
+        "tags": parsed.get("tags") or [],
+        "content": parsed.get("content") or parsed,  # content key なければ全体を content として扱う
+        "source_url": youtube_url,
+    }
+
+
+@app.post("/api/admin/textbooks/from-youtube")
+def admin_textbook_from_youtube(payload: dict, authorization: Optional[str] = Header(None)):
+    """🎥 YouTube 動画 → 教材自動生成 (Gemini multimodal)
+    塾長指示 2026-05-10「YouTube 動画から教材自動生成 (Gemini 独自)」の実装。
+
+    payload:
+      {
+        "youtube_url": "https://www.youtube.com/watch?v=...",
+        "subject_hint": "英語" (optional),
+        "topic_hint": "関係代名詞" (optional),
+        "level_hint": "高2〜高3" (optional),
+        "length_hint": "medium" (optional・short/medium/long),
+        "type_hint": "unit_lesson" (optional),
+        "extra_instructions": "文系向けに" (optional),
+        "auto_save": true (optional・true なら textbook_pool に直接 INSERT・default false で preview のみ)
+      }
+    返却: {ok, textbook (生成された教材), saved_id (auto_save=true 時)}
+
+    生成は draft 扱い (status='draft' で保存)。塾長 review 後 publish ボタンで status='published' へ。
+    memory: feedback_5_person_textbook_review.md (5人1チーム検閲は将来拡張で実装)
+    """
+    _verify_admin_required(authorization)
+
+    youtube_url = (payload.get("youtube_url") or "").strip()
+    if not _validate_youtube_url(youtube_url):
+        raise HTTPException(status_code=400, detail="有効な YouTube URL を指定してください")
+
+    subject_hint = (payload.get("subject_hint") or "").strip()
+    topic_hint = (payload.get("topic_hint") or "").strip()
+    level_hint = (payload.get("level_hint") or "").strip()
+    length_hint = (payload.get("length_hint") or "medium").strip()
+    type_hint = (payload.get("type_hint") or "unit_lesson").strip()
+    extra_instructions = (payload.get("extra_instructions") or "").strip()
+    auto_save = bool(payload.get("auto_save", False))
+
+    log.info(f"[YT-Textbook] generating from {youtube_url[:80]} (subject={subject_hint or 'auto'})")
+    import time as _t
+    t0 = _t.time()
+    textbook = _generate_textbook_from_youtube(
+        youtube_url, subject_hint, topic_hint, level_hint, length_hint, type_hint, extra_instructions
+    )
+    elapsed_ms = int((_t.time() - t0) * 1000)
+
+    saved_id = None
+    if auto_save:
+        # textbook_pool に status='draft' で INSERT (塾長 review 後に publish)
+        # 2026-05-10 review 致命修正: RETURNING id で race-prone な「ORDER BY id DESC LIMIT 1」を排除
+        # SQLite 3.35+ / Postgres 両対応。同時 INSERT で他人の id を返す bug を防ぐ。
+        conn = db()
+        try:
+            c = conn.cursor()
+            tags_str = ",".join(str(x) for x in (textbook.get("tags") or []))
+            content_str = json.dumps(textbook["content"], ensure_ascii=False)
+            c.execute(
+                """INSERT INTO textbook_pool
+                   (subject, topic, level, length, type, title, tags, content, status, source)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id""",
+                (textbook["subject"], textbook["topic"], textbook["level"],
+                 textbook["length"], textbook["type"], textbook["title"], tags_str,
+                 content_str, "draft", "gemini_youtube"),
+            )
+            row = c.fetchone()
+            saved_id = row["id"] if row else -1
+            conn.commit()
+            log.info(f"[YT-Textbook] saved as draft id={saved_id} elapsed={elapsed_ms}ms")
+        finally:
+            conn.close()
+
+    # event log
+    try:
+        _record_ai_critical_event("youtube_textbook_generated", {
+            "youtube_url": youtube_url[:200],
+            "subject": textbook["subject"],
+            "topic": textbook["topic"],
+            "level": textbook["level"],
+            "auto_saved": auto_save,
+            "saved_id": saved_id,
+            "elapsed_ms": elapsed_ms,
+        })
+    except Exception as ee:
+        log.warning(f"[YT-Textbook] event log failed: {ee}")
+
+    return {
+        "ok": True,
+        "textbook": textbook,
+        "saved_id": saved_id,
+        "elapsed_ms": elapsed_ms,
+        "memo": (
+            "draft 状態で保存。塾長目視 review 後「📤 即 publish」or 「ai-team-workflow」5 視点検閲 → publish 推奨 (memory: 5人1チーム検閲)"
+            if auto_save else "preview のみ。auto_save=true で textbook_pool に draft 保存します"
+        ),
+    }
+
+
+@app.post("/api/admin/textbooks/{textbook_id}/publish")
+def admin_textbook_publish(textbook_id: int, authorization: Optional[str] = Header(None)):
+    """🆕 textbook_pool の draft を published に切り替える (2026-05-10 review 反映・1 クリック publish)。
+    生徒/管理者から見える pool 検索は WHERE status='published' のため、これで生徒に公開される。"""
+    _verify_admin_required(authorization)
+    if textbook_id <= 0:
+        raise HTTPException(status_code=400, detail="textbook_id が不正です")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, status, source FROM textbook_pool WHERE id = ?", (textbook_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="textbook が見つかりません")
+        old_status = row["status"]
+        if old_status == "published":
+            return {"ok": True, "already_published": True, "id": textbook_id}
+        c.execute("UPDATE textbook_pool SET status = 'published' WHERE id = ?", (textbook_id,))
+        conn.commit()
+        log.info(f"[Textbook:Publish] id={textbook_id} {old_status} → published (source={row['source']})")
+        return {
+            "ok": True,
+            "id": textbook_id,
+            "old_status": old_status,
+            "new_status": "published",
+            "source": row["source"],
+        }
+    finally:
+        conn.close()
+
+
 @app.get("/api/textbooks/search")
 def public_textbook_search(
     subject: Optional[str] = None,

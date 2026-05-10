@@ -753,6 +753,49 @@
         </details>
         <div id="aiwImportResult" style="display:none;margin-top:0.5rem;font-size:0.78rem;background:rgba(0,0,0,0.3);border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:0.5rem;"></div>
       </div>
+
+      <!-- 📺 YouTube 動画 → 教材自動生成 (Gemini multimodal・2026-05-10 追加) -->
+      <div style="margin-top:1rem;padding:0.9rem;background:rgba(0,0,0,0.25);border:1px solid rgba(244,63,94,0.3);border-radius:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.7rem;">
+          <div style="font-size:0.85rem;font-weight:800;color:#fca5a5;">📺 YouTube 動画 → 教材自動生成 (Gemini)</div>
+          <span style="font-size:0.7rem;color:#71717a;">Gemini 2.5 Pro が動画を直接解析・引用付き</span>
+        </div>
+        <div style="font-size:0.75rem;color:#94a3b8;line-height:1.6;margin-bottom:0.5rem;">
+          YouTube URL を入力 → Gemini が動画を解析して ai-juku 教材 JSON を生成。<br>
+          <span style="color:#fbbf24;">著作権配慮: 動画は題材選びの参考のみ・解説は完全オリジナル + 短い引用付き [元動画 5:23]</span><br>
+          <span style="color:#86efac;">draft 状態で保存され、塾長 review 後 publish。</span>
+        </div>
+        <!-- 5人検閲 trade-off warning (memory: feedback_5_person_textbook_review.md) -->
+        <div style="font-size:0.72rem;color:#fbbf24;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:6px;padding:0.5rem 0.7rem;margin-bottom:0.7rem;line-height:1.6;">
+          ⚠️ <strong>単独 AI (Gemini) 生成のため</strong> memory「5人1チーム検閲」未経由。塾長目視 review 必須・重要 batch は上の「🤖 AI チーム検閲ワークフロー」に流して 5 視点検閲してから publish 推奨。
+        </div>
+        <div style="display:grid;grid-template-columns:1fr;gap:0.5rem;margin-bottom:0.6rem;">
+          <input id="ytUrl" type="url" placeholder="YouTube URL (例: https://www.youtube.com/watch?v=...)"
+                 style="background:rgba(0,0,0,0.4);border:1px solid rgba(244,63,94,0.4);color:#fff;padding:0.55rem 0.7rem;border-radius:6px;font-size:0.85rem;">
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.4rem;margin-bottom:0.6rem;">
+          <input id="ytSubjectHint" type="text" placeholder="subject (任意・例: 英語)" style="background:rgba(0,0,0,0.4);border:1px solid rgba(244,63,94,0.3);color:#fff;padding:0.45rem 0.6rem;border-radius:6px;font-size:0.78rem;">
+          <input id="ytTopicHint" type="text" placeholder="topic (任意・例: 関係代名詞)" style="background:rgba(0,0,0,0.4);border:1px solid rgba(244,63,94,0.3);color:#fff;padding:0.45rem 0.6rem;border-radius:6px;font-size:0.78rem;">
+          <input id="ytLevelHint" type="text" placeholder="level (任意・例: 高2〜高3)" style="background:rgba(0,0,0,0.4);border:1px solid rgba(244,63,94,0.3);color:#fff;padding:0.45rem 0.6rem;border-radius:6px;font-size:0.78rem;">
+          <select id="ytLengthHint" style="background:rgba(0,0,0,0.4);border:1px solid rgba(244,63,94,0.3);color:#fff;padding:0.45rem 0.6rem;border-radius:6px;font-size:0.78rem;">
+            <option value="medium">length: medium (推奨)</option>
+            <option value="short">length: short</option>
+            <option value="long">length: long</option>
+          </select>
+          <select id="ytTypeHint" style="background:rgba(0,0,0,0.4);border:1px solid rgba(244,63,94,0.3);color:#fff;padding:0.45rem 0.6rem;border-radius:6px;font-size:0.78rem;">
+            <option value="unit_lesson">type: unit_lesson</option>
+            <option value="drill">type: drill</option>
+            <option value="overview">type: overview</option>
+          </select>
+        </div>
+        <textarea id="ytExtraInstructions" rows="2" placeholder="追加指示 (任意・例: 文系向けに・初学者にもわかるように)"
+                  style="width:100%;background:rgba(0,0,0,0.4);border:1px solid rgba(244,63,94,0.3);color:#fff;padding:0.5rem;border-radius:6px;font-size:0.78rem;margin-bottom:0.6rem;resize:vertical;"></textarea>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.7rem;">
+          <button id="ytPreviewBtn" type="button" style="background:linear-gradient(135deg,#f43f5e,#be123c);color:#fff;border:none;padding:0.55rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">✨ プレビュー生成 (保存しない)</button>
+          <button id="ytSaveBtn" type="button" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;padding:0.55rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">📥 生成 → draft 保存</button>
+        </div>
+        <div id="ytResult" style="display:none;font-size:0.78rem;color:#cbd5e1;background:rgba(0,0,0,0.3);border:1px solid rgba(244,63,94,0.25);border-radius:8px;padding:0.7rem;line-height:1.6;max-height:60vh;overflow-y:auto;"></div>
+      </div>
     </section>
 
     <!-- ========================================== -->
@@ -4863,6 +4906,162 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           }
         } catch (e) { alert('⚠️ ' + e.message); }
         aiwResumeListBtn.disabled = false; aiwResumeListBtn.innerHTML = orig;
+      });
+
+      // 📺 YouTube 動画 → 教材自動生成 (Gemini multimodal・2026-05-10 追加)
+      async function _ytGenerate(autoSave) {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        const url = document.getElementById('ytUrl').value.trim();
+        if (!url) return alert('YouTube URL を入力してください');
+        if (!/^https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)/.test(url)) {
+          return alert('有効な YouTube URL ではありません (youtube.com/watch?v= or youtu.be/)');
+        }
+        const subject_hint = document.getElementById('ytSubjectHint').value.trim();
+        const topic_hint = document.getElementById('ytTopicHint').value.trim();
+        const level_hint = document.getElementById('ytLevelHint').value.trim();
+        const length_hint = document.getElementById('ytLengthHint').value;
+        const type_hint = document.getElementById('ytTypeHint').value;
+        const extra_instructions = document.getElementById('ytExtraInstructions').value.trim();
+
+        const previewBtn = document.getElementById('ytPreviewBtn');
+        const saveBtn = document.getElementById('ytSaveBtn');
+        const resultDiv = document.getElementById('ytResult');
+        previewBtn.disabled = true; saveBtn.disabled = true;
+        const origPreview = previewBtn.innerHTML;
+        const origSave = saveBtn.innerHTML;
+        const activeBtn = autoSave ? saveBtn : previewBtn;
+        activeBtn.innerHTML = autoSave ? '⏳ 生成→保存中... (60-180秒)' : '⏳ プレビュー生成中... (60-180秒)';
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = `<div style="color:#cbd5e1;text-align:center;padding:1rem;">📺 Gemini が動画を解析中... <div class="ytElapsed" style="font-size:0.85rem;color:#86efac;margin-top:0.5rem;font-weight:700;">経過 0 秒</div></div>`;
+
+        const startTs = Date.now();
+        const elapsedTimer = setInterval(() => {
+          const sec = Math.floor((Date.now() - startTs) / 1000);
+          const el = resultDiv.querySelector('.ytElapsed');
+          if (el) {
+            el.textContent = `経過 ${sec} 秒 (60-180秒目安)`;
+            if (sec > 180) el.style.color = '#fbbf24';
+          }
+        }, 1000);
+
+        try {
+          const r = await AdminAuth.fetch('/api/admin/textbooks/from-youtube', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              youtube_url: url,
+              subject_hint, topic_hint, level_hint, length_hint, type_hint, extra_instructions,
+              auto_save: autoSave,
+            }),
+          });
+          const j = await r.json();
+          if (r.ok && j.ok) {
+            _renderYtResult(resultDiv, j, autoSave);
+          } else {
+            resultDiv.innerHTML = `<div style="color:#fca5a5;">⚠️ ${escapeForUI(j.detail || JSON.stringify(j))}</div>`;
+          }
+        } catch (e) {
+          resultDiv.innerHTML = `<div style="color:#fca5a5;">⚠️ ${escapeForUI(e.message)}</div>`;
+        } finally {
+          clearInterval(elapsedTimer);
+        }
+        previewBtn.disabled = false; previewBtn.innerHTML = origPreview;
+        saveBtn.disabled = false; saveBtn.innerHTML = origSave;
+      }
+      window._ytGenerate = _ytGenerate;
+
+      function escapeForUI(s) {
+        return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]));
+      }
+
+      function _renderYtResult(div, payload, autoSave) {
+        const t = payload.textbook || {};
+        const c = t.content || {};
+        const cites = (c.youtube_citations || []).map(ct => `
+          <li><strong>[${escapeForUI(ct.timestamp || '?:?')}] ${escapeForUI(ct.topic || '')}</strong>
+              <span style="color:#94a3b8;"> — ${escapeForUI(ct.ai_juku_take || '')}</span></li>
+        `).join('');
+        const examples = (c.examples || []).map(ex => `
+          <details style="margin:0.3rem 0;border:1px solid rgba(168,85,247,0.25);border-radius:6px;background:rgba(168,85,247,0.05);">
+            <summary style="padding:0.4rem 0.6rem;cursor:pointer;font-weight:700;">📝 ${escapeForUI(ex.problem || '例題')}</summary>
+            <div style="padding:0.5rem 0.7rem;font-size:0.78rem;line-height:1.6;">
+              <div><strong>解説:</strong> ${escapeForUI(ex.solution || '')}</div>
+              <div style="margin-top:0.3rem;color:#86efac;"><strong>📌 ポイント:</strong> ${escapeForUI(ex.key_takeaway || '')}</div>
+            </div>
+          </details>
+        `).join('');
+        const mistakes = (c.common_mistakes || []).map(m => `<li>${escapeForUI(m)}</li>`).join('');
+        const tags = (t.tags || []).map(tg => `<span style="background:rgba(244,63,94,0.18);color:#fda4af;padding:0.1rem 0.45rem;border-radius:4px;font-size:0.7rem;margin-right:0.3rem;">${escapeForUI(tg)}</span>`).join('');
+
+        const savedBanner = autoSave && payload.saved_id
+          ? `<div style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.4);border-radius:6px;padding:0.6rem;margin-bottom:0.7rem;color:#86efac;">
+              ✅ textbook_pool に <strong>draft 保存完了</strong> (id=${payload.saved_id}・status='draft'・elapsed ${(payload.elapsed_ms/1000).toFixed(1)}秒)<br>
+              <span style="font-size:0.75rem;color:#cbd5e1;">下の内容を確認後、👇 で 1 クリック publish。重要 batch は ai-team-workflow で 5 視点検閲推奨</span>
+              <div style="margin-top:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;">
+                <button class="ytPublishBtn" data-tid="${payload.saved_id}" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;padding:0.45rem 0.9rem;border-radius:6px;font-size:0.78rem;font-weight:800;cursor:pointer;">📤 即 publish (生徒に公開)</button>
+                <span style="font-size:0.7rem;color:#71717a;align-self:center;">確認後押下 / 押下までは生徒には見えない</span>
+              </div>
+            </div>`
+          : `<div style="background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.35);border-radius:6px;padding:0.5rem;margin-bottom:0.7rem;color:#a5b4fc;font-size:0.78rem;">
+              ✨ <strong>プレビューモード</strong> (${(payload.elapsed_ms/1000).toFixed(1)}秒で生成)・「📥 生成 → draft 保存」で textbook_pool に投入できます
+            </div>`;
+
+        div.innerHTML = `
+          ${savedBanner}
+          <div style="background:rgba(244,63,94,0.08);border:1px solid rgba(244,63,94,0.3);border-radius:8px;padding:0.7rem;margin-bottom:0.7rem;">
+            <div style="font-size:1rem;font-weight:800;color:#fda4af;margin-bottom:0.3rem;">${escapeForUI(t.title || '')}</div>
+            <div style="font-size:0.72rem;color:#94a3b8;">
+              ${escapeForUI(t.subject || '')} / ${escapeForUI(t.topic || '')} / ${escapeForUI(t.level || '')} / ${escapeForUI(t.length || '')} / ${escapeForUI(t.type || '')}
+            </div>
+            <div style="margin-top:0.4rem;">${tags}</div>
+          </div>
+          <details open style="margin:0.5rem 0;"><summary style="cursor:pointer;font-weight:700;color:#a78bfa;">🎯 コアイメージ + 文構造分析</summary>
+            <div style="padding:0.4rem 0.7rem;line-height:1.7;font-size:0.82rem;">
+              ${c.intro ? `<div style="margin-bottom:0.5rem;"><strong>導入:</strong> ${escapeForUI(c.intro)}</div>` : ''}
+              ${c.core_image ? `<div style="margin-bottom:0.5rem;"><strong>コアイメージ:</strong> ${escapeForUI(c.core_image)}</div>` : ''}
+              ${c.structure_analysis ? `<div><strong>文構造分析:</strong> ${escapeForUI(c.structure_analysis)}</div>` : ''}
+            </div>
+          </details>
+          ${examples ? `<details><summary style="cursor:pointer;font-weight:700;color:#a78bfa;">📝 例題 (${(c.examples||[]).length}件)</summary><div style="padding:0.4rem;">${examples}</div></details>` : ''}
+          ${mistakes ? `<details><summary style="cursor:pointer;font-weight:700;color:#fbbf24;">⚠️ よくある誤り (${(c.common_mistakes||[]).length}件)</summary><ul style="padding-left:1.5rem;font-size:0.82rem;">${mistakes}</ul></details>` : ''}
+          ${c.summary ? `<details open><summary style="cursor:pointer;font-weight:700;color:#86efac;">📌 まとめ</summary><div style="padding:0.4rem 0.7rem;font-size:0.85rem;line-height:1.7;">${escapeForUI(c.summary)}</div></details>` : ''}
+          ${cites ? `<details><summary style="cursor:pointer;font-weight:700;color:#fda4af;">📺 動画引用 (${(c.youtube_citations||[]).length}件)</summary><ul style="padding-left:1.5rem;font-size:0.78rem;line-height:1.7;">${cites}</ul></details>` : ''}
+          <div style="margin-top:0.7rem;padding:0.5rem;background:rgba(0,0,0,0.3);border-radius:6px;font-size:0.7rem;color:#71717a;">
+            🔗 ${escapeForUI(c.youtube_url || payload.textbook?.source_url || '')}<br>
+            ${escapeForUI(c.source_note || '')}
+          </div>
+        `;
+      }
+
+      const ytPreviewBtn = document.getElementById('ytPreviewBtn');
+      if (ytPreviewBtn) ytPreviewBtn.addEventListener('click', () => _ytGenerate(false));
+      const ytSaveBtn = document.getElementById('ytSaveBtn');
+      if (ytSaveBtn) ytSaveBtn.addEventListener('click', () => _ytGenerate(true));
+
+      // 📤 draft 直 publish (1 クリックで生徒公開・delegation で動的ボタンも捕捉)
+      document.addEventListener('click', async (e) => {
+        const btn = e.target.closest && e.target.closest('.ytPublishBtn');
+        if (!btn) return;
+        const tid = parseInt(btn.dataset.tid, 10);
+        if (!tid || tid <= 0) return alert('textbook_id が不正');
+        if (!confirm(`textbook id=${tid} を即 publish しますか? (生徒に即時公開・1 クリックで status='published' に切替)`)) return;
+        btn.disabled = true; const orig = btn.innerHTML;
+        btn.innerHTML = '⏳ publish 中...';
+        try {
+          const r = await AdminAuth.fetch(`/api/admin/textbooks/${tid}/publish`, { method: 'POST' });
+          const j = await r.json();
+          if (r.ok && j.ok) {
+            btn.innerHTML = '✅ publish 完了 (生徒公開済)';
+            btn.style.background = 'rgba(34,197,94,0.4)';
+          } else {
+            btn.innerHTML = orig;
+            btn.disabled = false;
+            alert('⚠️ ' + (j.detail || JSON.stringify(j)));
+          }
+        } catch (err) {
+          btn.innerHTML = orig;
+          btn.disabled = false;
+          alert('⚠️ ' + err.message);
+        }
       });
 
       // 📚 Custom GPT 設計書 (NotebookLM 代替・ChatGPT Plus セットアップ用)
