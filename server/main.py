@@ -8998,11 +8998,8 @@ def admin_ai_team_workflow_import(
     if not final_output:
         raise HTTPException(status_code=400, detail="最終 phase の output が未保存です")
 
-    # JSON parse + questions 抽出
-    try:
-        parsed = json.loads(final_output)
-    except json.JSONDecodeError as e:
-        raise HTTPException(status_code=400, detail=f"最終 phase の JSON parse 失敗: {e}")
+    # JSON parse + questions 抽出 (2026-05-11: resilient parser で LaTeX invalid escape 自動修復)
+    parsed = _safe_json_loads(final_output, context="AITW-Import")
     # critical_majority error の場合は拒否
     if isinstance(parsed, dict) and parsed.get("error") == "critical_majority":
         raise HTTPException(
@@ -9336,6 +9333,59 @@ def _validate_youtube_url(url: str) -> bool:
     return bool(_YT_URL_RE.match(url.strip()))
 
 
+def _safe_json_loads(text: str, context: str = "AI-output") -> dict:
+    """🛡️ 3 段 fallback resilient JSON parser (2026-05-11 致命修正)
+    LLM (Gemini/Anthropic/GPT) の JSON 出力で頻発する致命バグを自動修復:
+    - 数学/物理教材の LaTeX 記法 (\\frac, \\sum, \\sqrt 等) が JSON invalid escape (\\f, \\s) を起こす
+    - markdown ```json``` fence で wrap される
+    - trailing/leading whitespace
+    AI チーム workflow (`import`) / YouTube textbook / exam-questions 生成 すべてで利用可能。
+    raises HTTPException(502) on total failure with detailed error context.
+    """
+    cleaned = (text or "").strip()
+    # markdown fence 除去
+    if cleaned.startswith("```"):
+        cleaned = cleaned.split("\n", 1)[1] if "\n" in cleaned else cleaned
+        if cleaned.endswith("```"):
+            cleaned = cleaned.rsplit("```", 1)[0]
+
+    parse_err = None
+    # Phase 1: そのまま parse
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError as je:
+        parse_err = je
+
+    # Phase 2: invalid escape を \\\\ に置換 (有効 escape \" \\ \/ \b \f \n \r \t \uXXXX 以外)
+    import re as _re_json
+    try:
+        cleaned_v2 = _re_json.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', cleaned)
+        result = json.loads(cleaned_v2)
+        log.warning(f"[{context}] JSON parse recovered (Phase 2: invalid escape fix)")
+        return result
+    except json.JSONDecodeError:
+        pass
+
+    # Phase 3: aggressive backslash escape (\x00 経由 swap で \\\\ を保護)
+    try:
+        cleaned_v3 = cleaned.replace('\\\\', '\x00').replace('\\', '\\\\').replace('\x00', '\\\\')
+        result = json.loads(cleaned_v3)
+        log.warning(f"[{context}] JSON parse recovered (Phase 3: aggressive backslash escape)")
+        return result
+    except json.JSONDecodeError:
+        pass
+
+    raise HTTPException(
+        status_code=502,
+        detail=(
+            f"AI 出力 JSON parse 失敗 ({context}・3 段修復試行も失敗): {parse_err}. "
+            f"数式を含む動画/問題では LaTeX 記法が JSON invalid escape を起こす場合があります。"
+            f"再生成するか追加指示に「数式は plain text (a/b, x^2 形式) で書く」を明記してください。 "
+            f"raw[:500]: {cleaned[:500]}"
+        )
+    )
+
+
 def _generate_textbook_from_youtube(
     youtube_url: str, subject_hint: str = "", topic_hint: str = "",
     level_hint: str = "", length_hint: str = "medium",
@@ -9376,6 +9426,11 @@ def _generate_textbook_from_youtube(
         "- 「コアイメージ × 文構造分析」の二段構え\n"
         "- 教師名 (関正生・富田・安河内・西きょうじ 等) は出力に **一切含めない** (動画で言及されていても削除)\n"
         "- 高校生 / 受験生にとって理解しやすい段階的解説\n\n"
+        "【数式記法 (絶対遵守・JSON parse 失敗防止)】\n"
+        "- 数式は **plain text 形式** で記述: 分数 = `1/2` `(a+b)/2`、べき乗 = `x^2` `2^n`、ルート = `sqrt(x)`、シグマ = `Σ` 等\n"
+        "- LaTeX 記法 (`\\frac`, `\\sum`, `\\sqrt`, `\\int` 等) は **JSON invalid escape を起こすため使用禁止**\n"
+        "- バックスラッシュ `\\` を文字列内で使う場合は必ず `\\\\` でエスケープ (例: 改行は `\\n`, パスは `\\\\path`)\n"
+        "- 一般項表記は `a_n` `a_(n+1)` `S_n` のように underscore 形式 (`\\_` ではない)\n\n"
         "【出力形式】\n"
         "純粋な JSON のみ (前後にテキスト禁止・```json fence なし)。"
     )
@@ -9474,18 +9529,7 @@ def _generate_textbook_from_youtube(
                 )
 
     # JSON parse (markdown fence 除去)
-    cleaned = (text or "").strip()
-    if cleaned.startswith("```"):
-        cleaned = cleaned.split("\n", 1)[1] if "\n" in cleaned else cleaned
-        if cleaned.endswith("```"):
-            cleaned = cleaned.rsplit("```", 1)[0]
-    try:
-        parsed = json.loads(cleaned)
-    except Exception as je:
-        raise HTTPException(
-            status_code=502,
-            detail=f"Gemini 出力 JSON parse 失敗: {je}. raw[:500]: {cleaned[:500]}"
-        )
+    parsed = _safe_json_loads(text, context="YT-Textbook")
 
     # textbook_pool 形式に整形
     return {
