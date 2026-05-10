@@ -8863,9 +8863,12 @@ def admin_ai_team_workflow_abort(workflow_id: str, authorization: Optional[str] 
     return {"ok": True, "workflow_id": workflow_id, "status": "aborted"}
 
 
-@app.get("/api/admin/ai-team-workflow/custom-gpt-spec")
+@app.get("/api/admin/ai-team-workflow-custom-gpt-spec")
 def admin_ai_team_workflow_custom_gpt_spec(authorization: Optional[str] = Header(None)):
     """🛠️ ChatGPT Plus 用 Custom GPT 3 体の設計書を返す (Option 2 / NotebookLM 代替)。
+
+    2026-05-10 routing 修正: 旧 path `/api/admin/ai-team-workflow/custom-gpt-spec` は
+    `/{workflow_id}` route と衝突する致命 bug があったため、ハイフン区切りで独立化。
 
     塾長 1 度のセットアップで以下が自動化される:
     - Phase 0 検索 → Custom GPT「ai-juku 検索官」(NotebookLM 代替)

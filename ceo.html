@@ -4829,7 +4829,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         aiwCustomGptBtn.disabled = true; const orig = aiwCustomGptBtn.innerHTML;
         aiwCustomGptBtn.innerHTML = '⏳ 取得中...';
         try {
-          const r = await AdminAuth.fetch('/api/admin/ai-team-workflow/custom-gpt-spec');
+          const r = await AdminAuth.fetch('/api/admin/ai-team-workflow-custom-gpt-spec');
           const j = await r.json();
           if (r.ok && j.ok) {
             _renderCustomGptSpec(j);
