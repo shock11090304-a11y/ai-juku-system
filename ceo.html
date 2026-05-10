@@ -2470,6 +2470,9 @@
     }
 
     // Gemini Tier 4 動作確認 (1クリックテスト)
+    // 2026-05-10 修正: 元々この関数は IIFE 内 (line 1915 `(function() {`) にあって
+    // `<button onclick="testGemini()">` から呼ぶと ReferenceError で silent fail していた。
+    // 関数定義の直後で window へ export して global scope から呼べるようにする。
     async function testGemini() {
       const btn = document.getElementById('testGeminiBtn');
       const result = document.getElementById('testGeminiResult');
@@ -2496,6 +2499,8 @@
       btn.disabled = false;
       btn.textContent = '⚡ テスト';
     }
+    // 🚨 IIFE scope → global export (HTML inline `onclick="testGemini()"` から呼ぶため必須)
+    window.testGemini = testGemini;
 
     // 2026-05-10 OpenAI Tier 5 fallback テスト
     async function testOpenAI() {
@@ -2524,6 +2529,8 @@
       btn.disabled = false;
       btn.textContent = '⚡ テスト';
     }
+    // 🚨 IIFE scope → global export (HTML inline `onclick="testOpenAI()"` から呼ぶため必須)
+    window.testOpenAI = testOpenAI;
 
     // 申込→決済 監視ヘルス
     async function loadMonitorHealth() {
