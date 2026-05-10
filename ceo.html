@@ -679,6 +679,56 @@
         </div>
         <div id="stripePricesResult" style="display:none;font-size:0.78rem;color:#cbd5e1;background:rgba(0,0,0,0.3);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:0.7rem;line-height:1.6;"></div>
       </div>
+
+      <!-- 🤖 AI チーム検閲ワークフロー (2026-05-10 追加) -->
+      <!-- Claude Max + ChatGPT Plus + Gemini で多視点問題作成 ($0 半自動) -->
+      <div style="margin-top:1rem;padding:0.9rem;background:rgba(0,0,0,0.25);border:1px solid rgba(168,85,247,0.3);border-radius:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.7rem;">
+          <div style="font-size:0.85rem;font-weight:800;color:#c4b5fd;">🤖 AI チーム検閲ワークフロー (Claude+ChatGPT+Gemini)</div>
+          <span style="font-size:0.7rem;color:#71717a;">$0 半自動 / 6 phase / 既存契約のみ</span>
+        </div>
+        <div style="font-size:0.75rem;color:#94a3b8;line-height:1.6;margin-bottom:0.7rem;">
+          <strong style="color:#c4b5fd;">5 AI 多視点</strong> で問題を作成・検閲・統合する半自動ワークフロー。
+          Phase 0 (ChatGPT Project で過去問検索) → Phase 1 (Claude Opus で執筆) → Phase 2/3/4 (GPT-5/Gemini/Claude Sonnet で 3 視点検閲) → Phase 5 (Claude Opus で統合)。<br>
+          <span style="color:#fbbf24;">塾長作業: 各 phase の prompt を該当 AI UI にコピペ → 結果を次 phase の <code>&lt;&lt;...&gt;&gt;</code> 箇所で置換 → 投入 (× 6 回)</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.4rem;margin-bottom:0.6rem;">
+          <select id="aiwExamId" style="background:rgba(0,0,0,0.4);border:1px solid rgba(168,85,247,0.4);color:#fff;padding:0.45rem 0.6rem;border-radius:6px;font-size:0.8rem;">
+            <option value="">試験選択...</option>
+            <option value="daigaku">daigaku (大学入試)</option>
+            <option value="eiken">eiken (英検)</option>
+            <option value="toefl">toefl</option>
+            <option value="toeic">toeic</option>
+            <option value="ielts">ielts</option>
+          </select>
+          <input id="aiwPartKey" type="text" placeholder="part_key (例: r_long)" style="background:rgba(0,0,0,0.4);border:1px solid rgba(168,85,247,0.4);color:#fff;padding:0.45rem 0.6rem;border-radius:6px;font-size:0.8rem;">
+          <input id="aiwGrade" type="text" placeholder="grade/univ (例: todai, g2)" style="background:rgba(0,0,0,0.4);border:1px solid rgba(168,85,247,0.4);color:#fff;padding:0.45rem 0.6rem;border-radius:6px;font-size:0.8rem;">
+          <input id="aiwTopic" type="text" placeholder="単元 (任意・関係代名詞 等)" style="background:rgba(0,0,0,0.4);border:1px solid rgba(168,85,247,0.4);color:#fff;padding:0.45rem 0.6rem;border-radius:6px;font-size:0.8rem;">
+          <input id="aiwYear" type="number" min="2005" max="2027" placeholder="年度 (任意)" style="background:rgba(0,0,0,0.4);border:1px solid rgba(168,85,247,0.4);color:#fff;padding:0.45rem 0.6rem;border-radius:6px;font-size:0.8rem;">
+          <input id="aiwCount" type="number" min="1" max="20" value="5" placeholder="問数" style="background:rgba(0,0,0,0.4);border:1px solid rgba(168,85,247,0.4);color:#fff;padding:0.45rem 0.6rem;border-radius:6px;font-size:0.8rem;">
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.7rem;">
+          <button id="aiwGenerateBtn" type="button" style="background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;border:none;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">✨ ワークフロー prompt を一括生成</button>
+          <button id="aiwCustomGptBtn" type="button" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;" title="ChatGPT Plus に貼り付ける Custom GPT 3 体の設計書 (NotebookLM 代替)">📚 Custom GPT 設計書</button>
+          <button id="aiwClearBtn" type="button" style="background:rgba(168,85,247,0.15);color:#c4b5fd;border:1px solid rgba(168,85,247,0.4);padding:0.6rem 1rem;border-radius:8px;font-size:0.8rem;cursor:pointer;">🗑️ クリア</button>
+        </div>
+        <div id="aiwResult" style="display:none;font-size:0.78rem;color:#cbd5e1;background:rgba(0,0,0,0.3);border:1px solid rgba(168,85,247,0.25);border-radius:8px;padding:0.7rem;line-height:1.6;max-height:60vh;overflow-y:auto;"></div>
+
+        <!-- Phase 5 出力 import 用セクション -->
+        <div style="margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid rgba(168,85,247,0.2);">
+          <div style="font-size:0.78rem;font-weight:800;color:#c4b5fd;margin-bottom:0.4rem;">📥 Phase 5 統合出力を import endpoint へ投入</div>
+          <div style="font-size:0.72rem;color:#94a3b8;line-height:1.6;margin-bottom:0.4rem;">
+            Phase 5 (Claude Opus 統合) の出力 JSON 全体 (<code>{"questions":[...], ...}</code>) を貼り付けて 1 度だけ押下。<br>
+            <span style="color:#fbbf24;">⚠️ memory: 重複連発事故防止のため 2 回押し禁止 (押下後はボタン無効化)。</span>
+          </div>
+          <textarea id="aiwImportPayload" rows="6" placeholder='Phase 5 出力 JSON (例: {"questions":[...]}) を貼り付け' style="width:100%;background:#0f172a;color:#e4e4e7;border:1px solid rgba(168,85,247,0.3);padding:0.5rem;border-radius:6px;font-size:0.78rem;font-family:ui-monospace,monospace;line-height:1.5;resize:vertical;"></textarea>
+          <div style="display:flex;gap:0.5rem;margin-top:0.4rem;align-items:center;">
+            <button id="aiwImportBtn" type="button" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;padding:0.5rem 1rem;border-radius:6px;font-size:0.82rem;font-weight:800;cursor:pointer;">📥 exam-questions/import に投入</button>
+            <span style="font-size:0.72rem;color:#71717a;">投入後はボタンが無効化されます</span>
+          </div>
+          <div id="aiwImportResult" style="display:none;margin-top:0.5rem;font-size:0.78rem;background:rgba(0,0,0,0.3);border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:0.5rem;"></div>
+        </div>
+      </div>
     </section>
 
     <!-- ========================================== -->
@@ -4445,6 +4495,205 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           }
         } catch (e) { alert('⚠️ ' + e.message); }
         setupStripePricesBtn.disabled = false; setupStripePricesBtn.innerHTML = orig;
+      });
+
+      // 🤖 AI チーム検閲ワークフロー (2026-05-10)
+      function _renderAIWorkflowResult(j) {
+        const box = document.getElementById('aiwResult');
+        if (!box) return;
+        box.style.display = 'block';
+        const spec = j.spec || {};
+        const phases = j.phases || [];
+        const instr = (j.instructions || []).map(s => `<li style="margin-bottom:0.2rem;">${s}</li>`).join('');
+        const phasesHtml = phases.map((p, idx) => {
+          const promptId = `aiwPrompt_${idx}`;
+          const escaped = (p.prompt || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          const marker = p.next_input_marker
+            ? `<div style="font-size:0.72rem;color:#fbbf24;margin-top:0.3rem;">📌 prompt 内の <code>${(p.next_input_marker||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code> を前 phase 出力で置換してから AI に投げる</div>`
+            : '';
+          return `<div style="margin-top:0.7rem;padding:0.6rem;background:rgba(0,0,0,0.4);border:1px solid rgba(168,85,247,0.25);border-radius:8px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.3rem;">
+              <div style="font-weight:800;color:#c4b5fd;font-size:0.85rem;">${p.name||''}</div>
+              <a href="${p.ai_url||'#'}" target="_blank" rel="noopener" style="color:#a78bfa;font-size:0.72rem;text-decoration:underline;">${p.ai||''} ↗</a>
+            </div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.3rem;">${p.setup_note||''}</div>
+            ${marker}
+            <textarea id="${promptId}" readonly rows="6" style="width:100%;background:#0f172a;color:#e4e4e7;border:1px solid rgba(168,85,247,0.25);padding:0.4rem;border-radius:6px;font-size:0.74rem;font-family:ui-monospace,monospace;line-height:1.4;resize:vertical;margin-top:0.3rem;">${escaped}</textarea>
+            <div style="display:flex;gap:0.4rem;margin-top:0.3rem;">
+              <button type="button" data-target="${promptId}" class="aiwCopyBtn" style="background:rgba(168,85,247,0.25);color:#c4b5fd;border:1px solid rgba(168,85,247,0.4);padding:0.4rem 0.7rem;border-radius:6px;font-size:0.74rem;font-weight:700;cursor:pointer;">📋 prompt をコピー</button>
+              <span style="font-size:0.7rem;color:#71717a;align-self:center;">出力形式: ${p.output_format||''}</span>
+            </div>
+          </div>`;
+        }).join('');
+        box.innerHTML = `<div style="font-size:0.78rem;font-weight:800;color:#c4b5fd;margin-bottom:0.4rem;">workflow_id: <code>${j.workflow_id||''}</code></div>
+          <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.4rem;">対象: ${spec.exam_label||''} / ${spec.part_label||spec.part_key||''} / ${spec.count||0}問${spec.topic_hint?` / 単元「${spec.topic_hint}」`:''}${spec.year?` / ${spec.year}年`:''}</div>
+          <details style="margin-bottom:0.5rem;"><summary style="cursor:pointer;color:#a78bfa;font-size:0.74rem;font-weight:700;">📖 ワークフロー手順 (展開)</summary><ol style="font-size:0.72rem;color:#cbd5e1;margin:0.4rem 0 0 1.2rem;padding:0;">${instr}</ol></details>
+          ${phasesHtml}
+          <div style="margin-top:0.6rem;padding:0.5rem;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:6px;font-size:0.72rem;color:#86efac;">
+            ✅ 全 6 phase 完了後、Phase 5 出力を下の「📥 Phase 5 統合出力を import」textarea に貼り付けて投入してください。
+          </div>`;
+
+        // copy ボタンに handler 付与
+        box.querySelectorAll('.aiwCopyBtn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const id = btn.dataset.target;
+            const ta = document.getElementById(id);
+            if (!ta) return;
+            try {
+              await navigator.clipboard.writeText(ta.value);
+              const orig = btn.innerHTML;
+              btn.innerHTML = '✅ コピー完了';
+              setTimeout(() => { btn.innerHTML = orig; }, 1200);
+            } catch (e) {
+              ta.select();
+              alert('⚠️ コピー失敗。textarea を選択しました — Cmd/Ctrl+C で手動コピーしてください');
+            }
+          });
+        });
+      }
+
+      const aiwGenerateBtn = document.getElementById('aiwGenerateBtn');
+      if (aiwGenerateBtn) aiwGenerateBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        const exam_id = document.getElementById('aiwExamId').value.trim();
+        const part_key = document.getElementById('aiwPartKey').value.trim();
+        const eiken_grade = document.getElementById('aiwGrade').value.trim() || null;
+        const topic_hint = document.getElementById('aiwTopic').value.trim() || null;
+        const yearVal = document.getElementById('aiwYear').value.trim();
+        const year = yearVal ? parseInt(yearVal, 10) : null;
+        const count = parseInt(document.getElementById('aiwCount').value || '5', 10);
+        if (!exam_id || !part_key) return alert('試験 と part_key は必須です');
+        aiwGenerateBtn.disabled = true; const orig = aiwGenerateBtn.innerHTML;
+        aiwGenerateBtn.innerHTML = '⏳ 生成中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/ai-team-workflow/generate', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ exam_id, part_key, eiken_grade, topic_hint, year, count })
+          });
+          const j = await r.json();
+          if (r.ok && j.ok) {
+            _renderAIWorkflowResult(j);
+          } else {
+            alert('⚠️ ' + (j.detail || JSON.stringify(j)));
+          }
+        } catch (e) { alert('⚠️ ' + e.message); }
+        aiwGenerateBtn.disabled = false; aiwGenerateBtn.innerHTML = orig;
+      });
+
+      // 📚 Custom GPT 設計書 (NotebookLM 代替・ChatGPT Plus セットアップ用)
+      const aiwCustomGptBtn = document.getElementById('aiwCustomGptBtn');
+      if (aiwCustomGptBtn) aiwCustomGptBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        aiwCustomGptBtn.disabled = true; const orig = aiwCustomGptBtn.innerHTML;
+        aiwCustomGptBtn.innerHTML = '⏳ 取得中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/ai-team-workflow/custom-gpt-spec');
+          const j = await r.json();
+          if (r.ok && j.ok) {
+            _renderCustomGptSpec(j);
+          } else {
+            alert('⚠️ ' + (j.detail || JSON.stringify(j)));
+          }
+        } catch (e) { alert('⚠️ ' + e.message); }
+        aiwCustomGptBtn.disabled = false; aiwCustomGptBtn.innerHTML = orig;
+      });
+
+      function _renderCustomGptSpec(payload) {
+        const box = document.getElementById('aiwResult');
+        if (!box) return;
+        box.style.display = 'block';
+        const escape = (s) => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]));
+        let html = `<div style="font-size:0.85rem;color:#86efac;font-weight:800;margin-bottom:0.5rem;">📚 Custom GPT 3 体 設計書 (ChatGPT Plus セットアップ用)</div>
+          <div style="font-size:0.75rem;color:#94a3b8;line-height:1.6;margin-bottom:0.7rem;">${escape(payload.memo||'')}</div>
+          <details open style="margin:0.4rem 0;border:1px solid rgba(16,185,129,0.3);border-radius:8px;background:rgba(16,185,129,0.05);">
+            <summary style="padding:0.6rem 0.8rem;cursor:pointer;font-size:0.8rem;font-weight:800;color:#86efac;">📋 セットアップ手順 (ChatGPT Plus で 1 度だけ)</summary>
+            <ol style="padding:0.7rem 1.5rem;margin:0;font-size:0.78rem;color:#cbd5e1;line-height:1.8;">
+              ${(payload.setup_steps||[]).map(s => `<li>${escape(s)}</li>`).join('')}
+            </ol>
+          </details>`;
+        for (const gpt of (payload.custom_gpts || [])) {
+          const knowledgeHTML = (gpt.knowledge_files_recommended || []).length
+            ? `<div style="margin-top:0.6rem;"><div style="font-size:0.72rem;color:#fbbf24;font-weight:700;margin-bottom:0.3rem;">📚 Knowledge 推奨ファイル:</div><ul style="font-size:0.72rem;color:#cbd5e1;padding-left:1.3rem;margin:0;">${gpt.knowledge_files_recommended.map(f => `<li>${escape(f)}</li>`).join('')}</ul></div>`
+            : '';
+          const startersHTML = (gpt.conversation_starters || []).length
+            ? `<div style="margin-top:0.6rem;"><div style="font-size:0.72rem;color:#a1a1aa;font-weight:700;margin-bottom:0.3rem;">💬 Conversation starters:</div><ul style="font-size:0.72rem;color:#cbd5e1;padding-left:1.3rem;margin:0;">${gpt.conversation_starters.map(s => `<li>${escape(s)}</li>`).join('')}</ul></div>`
+            : '';
+          html += `
+            <details style="margin:0.5rem 0;border:1px solid rgba(167,139,250,0.3);border-radius:8px;background:rgba(167,139,250,0.05);">
+              <summary style="padding:0.7rem 0.9rem;cursor:pointer;font-size:0.85rem;font-weight:800;color:#c4b5fd;">${escape(gpt.name)}</summary>
+              <div style="padding:0.8rem;">
+                <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:0.3rem;">${escape(gpt.description||'')}</div>
+                <div style="font-size:0.72rem;color:#a1a1aa;margin-bottom:0.5rem;">📌 用途: ${escape(gpt.purpose||'')}</div>
+                <div style="font-size:0.72rem;color:#a1a1aa;font-weight:700;margin-bottom:0.3rem;">🎯 Instructions (ChatGPT Custom GPT の Configure → Instructions に貼り付け):</div>
+                <textarea readonly rows="11" style="width:100%;background:#0f172a;color:#e4e4e7;border:1px solid rgba(167,139,250,0.3);padding:0.6rem;border-radius:6px;font-size:0.74rem;font-family:ui-monospace,monospace;line-height:1.5;">${escape(gpt.instructions||'')}</textarea>
+                <button class="aiw-cgpt-copy-btn" data-name="${escape(gpt.name)}" data-content="${encodeURIComponent(gpt.instructions||'')}" style="margin-top:0.4rem;background:rgba(167,139,250,0.18);color:#c4b5fd;border:1px solid rgba(167,139,250,0.4);padding:0.4rem 0.8rem;border-radius:6px;font-size:0.76rem;font-weight:700;cursor:pointer;">📋 Instructions をコピー</button>
+                ${startersHTML}
+                ${knowledgeHTML}
+              </div>
+            </details>`;
+        }
+        box.innerHTML = html;
+        // copy buttons
+        box.querySelectorAll('.aiw-cgpt-copy-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const text = decodeURIComponent(btn.dataset.content);
+            navigator.clipboard.writeText(text).then(() => {
+              const orig = btn.innerHTML;
+              btn.innerHTML = '✓ コピー済';
+              setTimeout(() => { btn.innerHTML = orig; }, 1500);
+            });
+          });
+        });
+      }
+
+      const aiwClearBtn = document.getElementById('aiwClearBtn');
+      if (aiwClearBtn) aiwClearBtn.addEventListener('click', () => {
+        ['aiwExamId','aiwPartKey','aiwGrade','aiwTopic','aiwYear','aiwImportPayload'].forEach(id => {
+          const el = document.getElementById(id); if (el) el.value = '';
+        });
+        document.getElementById('aiwCount').value = '5';
+        const box = document.getElementById('aiwResult'); if (box) { box.style.display = 'none'; box.innerHTML = ''; }
+        const ir = document.getElementById('aiwImportResult'); if (ir) { ir.style.display = 'none'; ir.innerHTML = ''; }
+        const ib = document.getElementById('aiwImportBtn'); if (ib) { ib.disabled = false; ib.innerHTML = '📥 exam-questions/import に投入'; }
+      });
+
+      const aiwImportBtn = document.getElementById('aiwImportBtn');
+      if (aiwImportBtn) aiwImportBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        const raw = document.getElementById('aiwImportPayload').value.trim();
+        if (!raw) return alert('Phase 5 出力 JSON を貼り付けてください');
+        let parsed;
+        try { parsed = JSON.parse(raw); } catch (e) { return alert('⚠️ JSON パースエラー: ' + e.message); }
+        const questions = parsed.questions || parsed; // questions array 直接 or wrapper どちらでも
+        if (!Array.isArray(questions) || questions.length === 0) return alert('questions array が空または配列ではありません');
+        if (!confirm(`${questions.length} 問を exam-questions/import に投入します。重複防止のため 2 回押し禁止。続行?`)) return;
+        aiwImportBtn.disabled = true; const orig = aiwImportBtn.innerHTML;
+        aiwImportBtn.innerHTML = '⏳ 投入中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/exam-questions/import', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ questions, skip_full: false })
+          });
+          const j = await r.json();
+          const ir = document.getElementById('aiwImportResult');
+          if (ir) {
+            ir.style.display = 'block';
+            if (r.ok && j.ok) {
+              ir.style.borderColor = 'rgba(34,197,94,0.4)';
+              ir.style.color = '#86efac';
+              ir.innerHTML = `✅ ${j.message||''} (受信 ${j.received}・投入 ${j.inserted}・skip ${j.skipped_full}・失敗 ${j.failed})`;
+              aiwImportBtn.innerHTML = '✅ 投入完了 (再送信防止のため無効化)';
+            } else {
+              ir.style.borderColor = 'rgba(248,113,113,0.4)';
+              ir.style.color = '#fca5a5';
+              ir.innerHTML = `⚠️ ${j.detail || JSON.stringify(j)}`;
+              aiwImportBtn.disabled = false; aiwImportBtn.innerHTML = orig;
+            }
+          }
+        } catch (e) {
+          alert('⚠️ ' + e.message);
+          aiwImportBtn.disabled = false; aiwImportBtn.innerHTML = orig;
+        }
       });
 
       const poolRefreshBtn = document.getElementById('poolRefreshBtn');

@@ -7926,6 +7926,538 @@ def admin_exam_questions_import(payload: dict, authorization: Optional[str] = He
 
 
 # ==========================================================================
+# 🤖 AI チーム検閲ワークフロー ($0 半自動運用): 塾長保有の Claude Max + ChatGPT Plus + Gemini を
+# 組み合わせた多視点問題生成パイプライン。各 phase の prompt を返すので、塾長が各 AI UI に
+# コピペして結果を貼り戻して次に進む。memory: feedback_team_review_all_generation.md +
+# feedback_5_person_textbook_review.md + feedback_3_person_team_review.md の AI 多視点版。
+# 2026-05-10 塾長指示「複数 AI を追加 + NotebookLM 風検索」の実装。
+# ==========================================================================
+
+def _build_ai_team_search_prompt(exam_id: str, exam_label: str, part_label: str,
+                                  topic_hint: Optional[str], year: Optional[int], count: int) -> str:
+    """Phase 0: ChatGPT Project (過去問 PDF アップロード済) で引用付き傾向検索 prompt"""
+    topic_clause = f"- 単元: 「{topic_hint}」中心" if topic_hint else "- 単元: 指定なし (典型出題範囲から)"
+    year_clause = f"- 参考年度: {year}" if year else "- 参考年度: 近年 (2020-2024 を中心に)"
+    return f"""[ChatGPT Project: ai-juku 過去問アーカイブ]
+
+このプロジェクトに格納された過去問 PDF・参考書・出題傾向資料を検索し、以下の問題作成に使える情報を **引用付き** で報告してください。
+
+【作成対象】
+- 試験: {exam_id} ({exam_label})
+- 大問: {part_label}
+{topic_clause}
+{year_clause}
+- 生成予定数: {count}問
+
+【出力形式 (Markdown)】
+## 1. 出題形式の特徴
+- 設問数 / 文字数 / 選択肢数 / 制限時間
+- 出題者が測ろうとしている能力 (3-5 行)
+
+## 2. 直近3年の頻出テーマ (引用付き)
+- 例: 「2023年 第3問: AI と教育、英文 800wd、選択肢 4つ」 [出典: 過去問集.pdf p.23]
+- 5-8 件挙げる。引用元は **必ず Project 内資料の [ファイル名 page N]** で明示
+
+## 3. 典型的な誤答パターン
+- 受験生が陥りがちな罠を 3-5 個
+
+## 4. 類題作成上の注意点
+- 著作権配慮 (丸写し禁止・「形式準拠の類題」として作る)
+- 避けるべき表現・選ぶべきテーマ
+
+## 5. 推奨テーマ (この {count}問 で扱うべき topic 候補)
+- 重複を避け、近年の trend と典型論題のバランス
+"""
+
+
+def _build_ai_team_author_prompt(exam_id: str, exam_label: str, part_key: str, part_label: str,
+                                  eiken_grade: Optional[str], topic_hint: Optional[str],
+                                  year: Optional[int], count: int) -> str:
+    """Phase 1: Claude Opus 4.7 (Claude Max UI) で執筆 prompt
+    既存 _generate_exam_question の system prompt の知見を流用 (コアイメージ×文構造分析)"""
+    topic_clause = f"- 単元固定: 「{topic_hint}」が問題の核心となる出題のみ" if topic_hint else "- 単元: 出題範囲内で多様性確保"
+    year_clause = f"- 年度準拠: {year} 年度の出題傾向を強く反映" if year else "- 年度: 近年トレンド優先"
+    return f"""あなたは {exam_label} の問題作成専門家です。直前に取得した過去問検索結果を踏まえ、新規 **類題** を {count} 問作成してください。
+
+【Phase 0 検索結果 (ChatGPT Project からの引用付き出力)】
+↓ ここに検索結果を貼り付けて Claude に渡してください ↓
+<<SEARCH_RESULTS>>
+
+【作成仕様】
+- 試験: {exam_id} ({exam_label})
+- 大問: {part_key} ({part_label})
+{topic_clause}
+{year_clause}
+- 生成数: {count}問
+
+【絶対遵守】
+- 過去問の丸写しは著作権上禁止。**「形式に完全準拠した類題」** を新規作成
+- 英文は ETS / Cambridge / Oxford 級の自然な英語 (機械翻訳臭・不自然な語彙NG)
+- 解説は **コアイメージ × 文構造分析の二段構え** (既存 ai-juku 流儀)
+
+【🔥 解説の絶対遵守フォーマット】
+explanation フィールドは Markdown で **以下4セクションを必ず明示**:
+## 🎯 コアイメージ
+〔該当する語法・文法・時制・前置詞・冠詞のコアイメージを 2-3 行で〕
+
+## 🔬 文構造分析 ← 絶対省略禁止
+〔該当文の S/V/O/C/M をラベル付きで明示。入れ子節は階層で〕
+
+## 📍 本文の根拠 (長文の場合)
+〔該当箇所を「" "」で引用 + 段落番号〕
+
+## ❌ 誤答 NG 理由 (multiple_choice の場合は必須)
+〔各誤答選択肢ごとに、構造的・本質的になぜ NG か 1 行ずつ〕
+
+【出力形式】
+**純粋な JSON のみ** (前後にテキストや ```json タグは禁止)。explanation 内 Markdown は \\n でエスケープ。
+
+```
+{{
+  "questions": [
+    {{
+      "exam_id": "{exam_id}",
+      "part_key": "{part_key}",
+      "eiken_grade": {("\"" + eiken_grade + "\"") if eiken_grade else "null"},
+      "question_data": {{
+        "passage": "...",
+        "stem": "...",
+        "choices": ["A. ...", "B. ...", "C. ...", "D. ..."],
+        "correct": "A",
+        "explanation": "## 🎯 コアイメージ\\n...\\n\\n## 🔬 文構造分析\\n..."
+      }},
+      "model": "claude-opus-4-7-team-workflow"
+    }}
+  ]
+}}
+```
+"""
+
+
+def _build_ai_team_review_prompt(role: str, exam_label: str, part_label: str, count: int) -> str:
+    """Phase 2-4: 検閲 prompt (内容/教育/入試の3視点)"""
+    role_def = {
+        "content": {
+            "title": "内容検閲官 (GPT-5 Custom GPT 推奨)",
+            "viewpoint": "文章理解・論理整合性",
+            "checklist": [
+                "本文と設問・正解選択肢の論理的整合性 (本文に書かれていない推論で正解を選ばせていないか)",
+                "誤答選択肢が「本文と矛盾している」「明らかに範囲外」など客観的に NG とわかる構造か",
+                "passage の英語が自然で文法的に正しいか (ETS/Cambridge 級か)",
+                "explanation の論理が破綻していないか (コアイメージと文構造分析が一貫しているか)",
+                "事実誤認 (歴史/科学/時事) はないか",
+            ],
+        },
+        "pedagogy": {
+            "title": "教育検閲官 (Gemini 2.5 Pro 推奨)",
+            "viewpoint": "学習者視点・難易度・分かりやすさ",
+            "checklist": [
+                f"{exam_label} の対象学習者 (高校生〜社会人) のレベル感に合っているか (語彙難度・文法難度)",
+                "問題が複数の解釈を許してしまう曖昧さがないか",
+                "解説が「なぜそうなるか」を初学者が理解できる形で書かれているか",
+                "コアイメージ説明が抽象的すぎず、具体例で補強されているか",
+                "誤答理由が学習者の typical な間違いを反映しているか",
+            ],
+        },
+        "exam": {
+            "title": "入試検閲官 (Claude Sonnet 4.6 + Custom GPT 推奨)",
+            "viewpoint": "出題形式整合・実試験での妥当性",
+            "checklist": [
+                f"{exam_label} の出題形式 (設問数/語数/選択肢数/設問順序) に完全準拠しているか",
+                f"{part_label} の典型出題スタイルから逸脱していないか",
+                "近年の試験 trend (出題テーマ・形式変更) を反映しているか",
+                "難易度が当該試験・大問の標準分布から外れすぎていないか",
+                "本番試験で出されても違和感がないか (作問者として実戦的か)",
+            ],
+        },
+    }[role]
+
+    checklist_md = "\n".join(f"   - {c}" for c in role_def["checklist"])
+    return f"""あなたは ai-juku の **{role_def['title']}** です。以下の {count} 問の問題 JSON を **{role_def['viewpoint']}** 観点で検閲してください。
+
+【Phase 1 執筆結果 (Claude Opus からの出力 JSON)】
+↓ ここに Phase 1 の JSON を貼り付けてください ↓
+<<AUTHOR_OUTPUT>>
+
+【検閲観点】
+{checklist_md}
+
+【判定ランク】
+- CRITICAL: 致命 (誤答や事実誤認・形式逸脱・著作権侵害の疑い等、import 不可)
+- MAJOR: 重大 (修正必須だが致命ではない)
+- MINOR: 軽微 (修正推奨だが妥協可)
+- OK: 問題なし
+
+【出力形式】
+**純粋な JSON のみ** (前後にテキスト禁止):
+
+```
+{{
+  "review_results": [
+    {{
+      "question_index": 0,
+      "verdict": "OK" | "MINOR" | "MAJOR" | "CRITICAL",
+      "score": 0-100,
+      "issues": [
+        {{
+          "type": "...",
+          "severity": "MINOR" | "MAJOR" | "CRITICAL",
+          "detail": "問題の具体的説明",
+          "suggestion": "推奨修正内容"
+        }}
+      ]
+    }}
+  ],
+  "overall_verdict": "PASS" | "REVIEW_AGAIN" | "REJECT",
+  "overall_summary": "全体所感を 2-3 行"
+}}
+```
+"""
+
+
+def _build_ai_team_integration_prompt(exam_id: str, exam_label: str, count: int) -> str:
+    """Phase 5: Claude Opus 4.7 で 3 検閲フィードバックを踏まえた最終版統合 prompt"""
+    return f"""あなたは ai-juku の **編集統合担当 (Claude Opus 4.7)** です。以下の元問題と 3 視点の検閲結果を踏まえ、import endpoint にそのまま投入できる **最終版 JSON** を作成してください。
+
+【Phase 1 執筆結果 (元問題)】
+↓ ここに Phase 1 の JSON を貼り付け ↓
+<<AUTHOR_OUTPUT>>
+
+【Phase 2 内容検閲フィードバック】
+↓ ここに Phase 2 の JSON を貼り付け ↓
+<<REVIEW_CONTENT>>
+
+【Phase 3 教育検閲フィードバック】
+↓ ここに Phase 3 の JSON を貼り付け ↓
+<<REVIEW_PEDAGOGY>>
+
+【Phase 4 入試検閲フィードバック】
+↓ ここに Phase 4 の JSON を貼り付け ↓
+<<REVIEW_EXAM>>
+
+【統合方針】
+- **CRITICAL は必ず修正** (1件でも残ったら REJECT 扱い)
+- **MAJOR は基本修正** (説明できる例外のみコメントで残す)
+- **MINOR は判断** (採用可否を明示)
+- 3 検閲官で意見対立 (例: 内容OK / 教育CRITICAL) があれば、
+  入試 > 内容 > 教育 の優先順位で判断 (出題形式は本番試験準拠が最優先)
+- **CRITICAL が解消できない問題は最終 array から削除** し、削除理由を removed_questions に記録
+
+【出力形式】
+**import endpoint がそのまま受け取れる JSON のみ**:
+
+```
+{{
+  "questions": [
+    {{
+      "exam_id": "{exam_id}",
+      "part_key": "...",
+      "eiken_grade": "...",
+      "question_data": {{ ... 修正済 ... }},
+      "model": "claude-opus-4-7-team-workflow-v2"
+    }}
+  ],
+  "removed_questions": [
+    {{ "original_index": N, "reason": "CRITICAL 解消不可: ..." }}
+  ],
+  "integration_notes": [
+    "Q1: 教育検閲の MAJOR (語彙難) を採用、passage 一部書き換え",
+    "Q2: 内容/入試で意見対立 → 入試判断優先で誤答選択肢 D を差替",
+    ...
+  ]
+}}
+```
+
+最終 questions array は **そのまま {count}-削除数 件** になり、import endpoint にコピペで投入されます。
+"""
+
+
+@app.post("/api/admin/ai-team-workflow/generate")
+def admin_ai_team_workflow_generate(payload: dict, authorization: Optional[str] = Header(None)):
+    """🤖 5-AI チーム検閲ワークフロー prompt 一括生成 ($0 半自動運用)
+
+    塾長保有の Claude Max + ChatGPT Plus + Gemini を組み合わせた多視点問題生成パイプライン。
+    Phase 0 検索 (ChatGPT Project) → Phase 1 執筆 (Claude Opus) → Phase 2-4 3視点検閲
+    (GPT-5 Custom GPT / Gemini 2.5 Pro / Claude Sonnet Custom GPT) → Phase 5 統合 (Claude Opus)。
+
+    各 phase の prompt を返すので、塾長が各 AI UI にコピペ → 結果を次 phase の <<...>> 部分に貼り戻して進む。
+    最終 Phase 5 の出力をそのまま /api/admin/exam-questions/import に投入で完了。
+
+    payload:
+      {
+        "exam_id": "daigaku" | "eiken" | "toefl" | "toeic" | "ielts",
+        "part_key": "r_long" | "w_essay" | ...,
+        "eiken_grade": "todai" | "g2" | null  (daigaku なら大学キー),
+        "topic_hint": "関係代名詞" | null,
+        "year": 2024 | null,
+        "count": 1-20 (default 5)
+      }
+    """
+    _verify_admin_required(authorization)
+
+    exam_id = (payload.get("exam_id") or "").strip()
+    part_key = (payload.get("part_key") or "").strip()
+    eiken_grade_raw = payload.get("eiken_grade")
+    eiken_grade = (eiken_grade_raw or "").strip() if isinstance(eiken_grade_raw, str) else None
+    if not eiken_grade:
+        eiken_grade = None
+    topic_hint = (payload.get("topic_hint") or "").strip() or None
+    year = payload.get("year")
+    if year is not None:
+        try:
+            year = int(year)
+        except (TypeError, ValueError):
+            year = None
+    try:
+        count = int(payload.get("count") or 5)
+    except (TypeError, ValueError):
+        count = 5
+
+    if not exam_id or not part_key:
+        raise HTTPException(status_code=400, detail="exam_id と part_key は必須")
+    if (exam_id, part_key, eiken_grade) not in {(e, p, g) for (e, p, g) in EXAM_QUESTION_ROTATION}:
+        raise HTTPException(
+            status_code=400,
+            detail=f"無効な組合せ: {exam_id}/{part_key}/{eiken_grade}。EXAM_QUESTION_ROTATION (server/main.py 5316) を参照してください。"
+        )
+    if count < 1 or count > 20:
+        raise HTTPException(status_code=400, detail="count は 1-20 の範囲")
+
+    # exam_label / part_label 解決
+    exam_label_map = {
+        "toefl": "TOEFL iBT",
+        "toeic": "TOEIC L&R",
+        "ielts": "IELTS Academic",
+    }
+    if exam_id == "eiken":
+        exam_label = f"英検{eiken_grade or '準1級'} (新形式 2024〜)"
+    elif exam_id == "daigaku":
+        univ_info = DAIGAKU_UNIV_STYLES.get(eiken_grade or "todai", {"name": eiken_grade or "todai"})
+        exam_label = f"{univ_info['name']} 大学入試 英語"
+    else:
+        exam_label = exam_label_map.get(exam_id, exam_id)
+
+    # part_label: 既存 part_hints + DAIGAKU_PART_HINTS から取得
+    part_label = part_key
+    try:
+        part_label = DAIGAKU_PART_HINTS.get(part_key, part_key) if exam_id == "daigaku" else part_key
+    except Exception:
+        pass
+
+    # workflow_id 生成 (UI 上の識別用・DB 保存はしない・stateless)
+    import secrets as _secrets
+    workflow_id = f"wf_{datetime.now(JST).strftime('%Y%m%d_%H%M%S')}_{_secrets.token_hex(3)}"
+
+    # 6 phase の prompt を生成
+    phases = [
+        {
+            "phase": 0,
+            "name": "📚 Phase 0: ナレッジ検索",
+            "ai": "ChatGPT Project (GPT-5)",
+            "ai_url": "https://chatgpt.com/",
+            "setup_note": "事前準備: ChatGPT Plus で「ai-juku 過去問アーカイブ」Project を作成し、過去問 PDF・参考書をアップロード済にしておく",
+            "prompt": _build_ai_team_search_prompt(exam_id, exam_label, part_label, topic_hint, year, count),
+            "output_format": "Markdown (引用付き)",
+            "next_input_marker": None,  # Phase 0 は単独実行・次 phase に貼り戻す内容を指定
+        },
+        {
+            "phase": 1,
+            "name": "✍️ Phase 1: 執筆",
+            "ai": "Claude Opus 4.7 (Claude Max)",
+            "ai_url": "https://claude.ai/",
+            "setup_note": "Claude Max 契約で Opus 4.7 を選択。新規チャット推奨 (前文脈の影響を排除)",
+            "prompt": _build_ai_team_author_prompt(exam_id, exam_label, part_key, part_label, eiken_grade, topic_hint, year, count),
+            "output_format": "純粋な JSON (questions array)",
+            "next_input_marker": "<<SEARCH_RESULTS>>",
+        },
+        {
+            "phase": 2,
+            "name": "🔬 Phase 2: 内容検閲",
+            "ai": "GPT-5 (ChatGPT Plus / Custom GPT「内容検閲官」推奨)",
+            "ai_url": "https://chatgpt.com/",
+            "setup_note": "Custom GPT「ai-juku 内容検閲官」を作成済なら使用。なければ通常 GPT-5 で OK",
+            "prompt": _build_ai_team_review_prompt("content", exam_label, part_label, count),
+            "output_format": "純粋な JSON (review_results)",
+            "next_input_marker": "<<AUTHOR_OUTPUT>>",
+        },
+        {
+            "phase": 3,
+            "name": "🎓 Phase 3: 教育検閲",
+            "ai": "Gemini 2.5 Pro",
+            "ai_url": "https://aistudio.google.com/",
+            "setup_note": "Google AI Studio で Gemini 2.5 Pro を選択。学習者目線でレビュー",
+            "prompt": _build_ai_team_review_prompt("pedagogy", exam_label, part_label, count),
+            "output_format": "純粋な JSON (review_results)",
+            "next_input_marker": "<<AUTHOR_OUTPUT>>",
+        },
+        {
+            "phase": 4,
+            "name": "🎯 Phase 4: 入試検閲",
+            "ai": "Claude Sonnet 4.6 (Claude Max / Custom GPT「入試検閲官」推奨)",
+            "ai_url": "https://claude.ai/",
+            "setup_note": "Claude Max で Sonnet 4.6 を選択 (Phase 1 の Opus とは別チャットで)",
+            "prompt": _build_ai_team_review_prompt("exam", exam_label, part_label, count),
+            "output_format": "純粋な JSON (review_results)",
+            "next_input_marker": "<<AUTHOR_OUTPUT>>",
+        },
+        {
+            "phase": 5,
+            "name": "🧬 Phase 5: 統合・最終化",
+            "ai": "Claude Opus 4.7 (Claude Max)",
+            "ai_url": "https://claude.ai/",
+            "setup_note": "Phase 1 の Opus と別チャット推奨。3 検閲を統合して最終 JSON",
+            "prompt": _build_ai_team_integration_prompt(exam_id, exam_label, count),
+            "output_format": "import endpoint 用 JSON (questions array)",
+            "next_input_marker": "<<AUTHOR_OUTPUT>> / <<REVIEW_CONTENT>> / <<REVIEW_PEDAGOGY>> / <<REVIEW_EXAM>>",
+        },
+    ]
+
+    return {
+        "ok": True,
+        "workflow_id": workflow_id,
+        "spec": {
+            "exam_id": exam_id,
+            "part_key": part_key,
+            "eiken_grade": eiken_grade,
+            "topic_hint": topic_hint,
+            "year": year,
+            "count": count,
+            "exam_label": exam_label,
+            "part_label": part_label,
+        },
+        "phases": phases,
+        "import_endpoint": "/api/admin/exam-questions/import",
+        "import_payload_template": {
+            "questions": "<<Phase 5 出力 JSON の questions array をここに貼り付け>>",
+            "skip_full": False,
+        },
+        "instructions": [
+            "1. Phase 0 prompt を ChatGPT Project にコピペ → Markdown 検索結果を取得",
+            "2. Phase 1 prompt の <<SEARCH_RESULTS>> を Phase 0 出力で置換 → Claude Opus に投入",
+            "3. Phase 2/3/4 prompt の <<AUTHOR_OUTPUT>> を Phase 1 出力で置換 → 各 AI に並列投入可",
+            "4. Phase 5 prompt の <<...>> 4 箇所を Phase 1+2+3+4 出力で置換 → Claude Opus に投入",
+            "5. Phase 5 出力の questions array を /api/admin/exam-questions/import に投入で完了",
+        ],
+        "memory_note": "memory: feedback_team_review_all_generation.md / feedback_5_person_textbook_review.md / feedback_3_person_team_review.md の AI 多視点版実装",
+    }
+
+
+@app.get("/api/admin/ai-team-workflow/custom-gpt-spec")
+def admin_ai_team_workflow_custom_gpt_spec(authorization: Optional[str] = Header(None)):
+    """🛠️ ChatGPT Plus 用 Custom GPT 3 体の設計書を返す (Option 2 / NotebookLM 代替)。
+
+    塾長 1 度のセットアップで以下が自動化される:
+    - Phase 0 検索 → Custom GPT「ai-juku 検索官」(NotebookLM 代替)
+    - Phase 2 内容検閲 → Custom GPT「ai-juku 内容検閲官」
+    - Phase 4 入試検閲 → Custom GPT「ai-juku 入試検閲官」(Claude 障害時 fallback)
+
+    塾長は ChatGPT Plus → 「探索」→ 右上「作成」で 3 体作成。Knowledge に過去問 PDF をアップ。
+    NotebookLM Plus を契約せずに同等以上の検索機能を実現 (ChatGPT Plus に Project + Custom GPT
+    が含まれているため)。
+
+    2026-05-10 塾長指示「Option 1 + Option 2 を $0 で即実装」の Option 2 部分。
+    """
+    _verify_admin_required(authorization)
+
+    return {
+        "ok": True,
+        "memo": (
+            "Custom GPT は ChatGPT Plus / Pro 限定機能。Plus は 2026-06-10 まで ¥0 キャンペーン中"
+            "なので $0 運用継続可。3 体すべて作成すれば AI チームワークフローの ChatGPT 担当 phase が"
+            "自動化される。NotebookLM Plus を別途契約する必要なし。"
+        ),
+        "setup_steps": [
+            "1. ChatGPT Plus にログイン (https://chatgpt.com/)",
+            "2. サイドバー「探索」→ 右上「+ 作成」→ Configure タブを開く",
+            "3. 各 GPT について以下の Name / Description / Instructions を貼り付け",
+            "4. Knowledge に過去問 PDF / 参考書 PDF をアップロード (ai-juku 検索官 のみ)",
+            "5. Save → 共有設定: Only me (塾長専用)",
+            "6. 完成した 3 GPT を「ai-juku」フォルダに整理推奨",
+            "7. 動作確認: Conversation starter のいずれかをクリックして応答を見る",
+        ],
+        "custom_gpts": [
+            {
+                "name": "ai-juku 検索官 (NotebookLM 代替)",
+                "description": "過去問 PDF と参考書から問題作成用の傾向情報を引用付きで取得 (Phase 0 担当)",
+                "purpose": "Phase 0 ナレッジ検索 (NotebookLM Plus の代替)",
+                "instructions": (
+                    "あなたは ai-juku 過去問検索 AI です。NotebookLM 代替として動作します。\n\n"
+                    "塾長から「{exam}/{part} の問題を作りたい」と言われたら、Knowledge に\n"
+                    "アップロードされた過去問 PDF・参考書から以下を収集してください:\n\n"
+                    "1. **過去5年間の出題傾向** (引用付き [ファイル名 p.X])\n"
+                    "2. **頻出トピック / 形式の特徴** (語数・設問数・解答形式)\n"
+                    "3. **典型的な誤答パターン** (生徒がよく落とすポイント)\n"
+                    "4. **必須語彙・文法** (このレベルで前提)\n\n"
+                    "出力: markdown 800-1500字。引用元 [ファイル名 p.X] を必ず付ける。\n"
+                    "ai-juku 哲学「コアイメージ × 文構造分析」に役立つ情報を優先。\n"
+                    "教師名 (関正生・富田 等) は出力に含めない (memory: english_philosophy)。\n\n"
+                    "ハルシネーション禁止: Knowledge に無い情報は「該当 PDF 未収録」と明記する。"
+                ),
+                "conversation_starters": [
+                    "東大2024年の英語長文の傾向を引用付きで",
+                    "英検準1級ライティングの頻出形式と誤答パターン",
+                    "TOEIC Part5 の頻出文法トピック過去5年分",
+                    "京都大学 英作文 過去傾向と必須語彙",
+                ],
+                "knowledge_files_recommended": [
+                    "東京大学 英語 過去問 PDF (5-10年分・赤本)",
+                    "京都大学 英語 過去問 PDF",
+                    "英検 1級〜準2級 過去問集 PDF",
+                    "信頼できる参考書 PDF (Z会・河合塾・代々木ゼミ・駿台)",
+                    "TOEIC / TOEFL / IELTS 公式ガイド PDF",
+                    "Studyplus 連携データなど自校独自の傾向集計があれば追加",
+                ],
+            },
+            {
+                "name": "ai-juku 内容検閲官",
+                "description": "問題の内容整合・論理一貫性・解答の唯一性を検閲 (Phase 2 担当)",
+                "purpose": "Phase 2 内容検閲 (GPT-5 視点)",
+                "instructions": (
+                    "あなたは ai-juku 問題内容検閲官です。視点: 内容整合・論理一貫性。\n\n"
+                    "入力された問題 JSON について以下をチェック:\n"
+                    "1. 設問と passage の整合 (矛盾なし)\n"
+                    "2. 解答の妥当性 (唯一解か / 複数解釈の余地)\n"
+                    "3. 解説の論理飛躍なし\n"
+                    "4. 誤答 (distractor) が「もっともらしい誤り」か\n"
+                    "5. 言語的正確性 (文法・スペル・タイポ)\n\n"
+                    "各問題に ✅ Pass / ⚠️ Fix / 🚨 Critical を判定。\n"
+                    "⚠️ Fix は「現状」「修正案」を明示。🚨 Critical は再生成必要として差し戻し。\n\n"
+                    "出力形式: 純粋な JSON (review_results array)。\n"
+                    "[{\"index\": 0, \"verdict\": \"pass|fix|critical\", \"reason\": \"...\", \"fix\": \"...\"}, ...]\n\n"
+                    "ai-juku 哲学: 「コアイメージ × 文構造分析」を尊重。教師名は出さない。"
+                ),
+                "conversation_starters": [
+                    "次の問題 JSON を内容検閲してください",
+                    "解答の唯一性を確認したい問題があります",
+                    "Critical 指摘があれば優先度順で",
+                ],
+            },
+            {
+                "name": "ai-juku 入試検閲官 (Claude 二重化用)",
+                "description": "本番試験フォーマット準拠を ChatGPT 視点で検閲 (Phase 4 二重化 / Claude 障害時 fallback)",
+                "purpose": "Phase 4 入試検閲 (オプション・Claude Sonnet 二重化用)",
+                "instructions": (
+                    "あなたは ai-juku 問題入試検閲官 (ChatGPT 版) です。視点: 本番試験フォーマット準拠。\n\n"
+                    "入力された問題 JSON が「本物の試験形式」に準拠しているか以下をチェック:\n"
+                    "1. 設問数 (本物と一致)\n"
+                    "2. 配点・選択肢数・記述語数・時間配分の前提\n"
+                    "3. passage の長さ (本物に準拠)\n"
+                    "4. 指示文の言い回し (定型文を使っているか)\n"
+                    "5. 既存過去問のコピーになっていないか (類題 OK・丸写し NG)\n\n"
+                    "出力形式: 純粋な JSON (review_results array)。\n"
+                    "通常運用では Phase 4 は Claude Sonnet が担当。\n"
+                    "二重チェックしたい場合 / Claude 障害時 fallback として併用する。"
+                ),
+                "conversation_starters": [
+                    "次の問題 JSON が東大形式に準拠しているか検閲してください",
+                    "英検準1級フォーマット準拠チェックお願いします",
+                ],
+            },
+        ],
+    }
+
+
+# ==========================================================================
 # 教材プール ($0 運用): Claude Max プラン経由で事前生成した教材 JSON を DB に貯め、
 # 生徒の textbook-generator 押下時はまずこの DB を検索して即取り出す。
 # Anthropic API クレジット消費ゼロで教材配信が成立する。
