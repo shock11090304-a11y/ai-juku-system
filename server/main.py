@@ -333,6 +333,61 @@ def _lookup_student_addon_price_id() -> str:
     _STUDENT_ADDON_PRICE_CACHE = {"id": None, "checked_at": now}
     return ""
 
+
+# 全プラン汎用 lookup_key fallback cache (premium / family / standard 用)
+# founder_special / student_addon は専用 cache を持つので例外。
+_GENERIC_PRICE_CACHE: dict = {}
+
+def _lookup_plan_price_id(plan: str) -> str:
+    """全プラン汎用: env が placeholder/空のときに lookup_key で動的解決する fallback。
+
+    2026-05-10 改修: 元々 founder_special / student_addon だけ fallback を持っていたが、
+    premium / family / standard も env が外れた瞬間に Stripe 400 で全顧客が決済不能に
+    なる致命リスクがあったため、全 5 プランに堅牢性を統一。
+    塾長指示「founder_special と同等の堅牢性に上げる」(2026-05-10)。
+
+    plan は PRICE_MAP のキー: founder_special / founder1 / premium / family / standard / student_addon。
+    1時間 cache。lookup_key も見つからなければ "" を返すので呼び出し側で 503 に変換すること。"""
+    # plan → lookup_key 正規化 (founder1 は founder_special と同じ Price)
+    lookup_key = "founder_special" if plan in ("founder_special", "founder1") else plan
+
+    # 既存専用 helper があれば優先 (個別 cache を温存)
+    if lookup_key == "founder_special":
+        return _lookup_founder_special_price_id()
+    if lookup_key == "student_addon":
+        return _lookup_student_addon_price_id()
+
+    # premium / family / standard: env が実 ID なら優先、placeholder/空 なら lookup_key 検索
+    env_pid = ""
+    if lookup_key == "premium":
+        env_pid = STRIPE_PRICE_PREMIUM
+    elif lookup_key == "family":
+        env_pid = STRIPE_PRICE_FAMILY
+    elif lookup_key == "standard":
+        env_pid = STRIPE_PRICE_STANDARD
+    if env_pid and not env_pid.endswith("_placeholder"):
+        return env_pid
+
+    if not STRIPE_SECRET_KEY:
+        return ""
+    cached = _GENERIC_PRICE_CACHE.get(lookup_key, {})
+    cached_id = cached.get("id")
+    checked = cached.get("checked_at")
+    now = datetime.now(timezone.utc)
+    if cached_id and checked and (now - checked).total_seconds() < 3600:
+        return cached_id
+    try:
+        s = get_stripe()
+        results = s.Price.list(lookup_keys=[lookup_key], active=True, limit=1)
+        if results and results.data:
+            pid = results.data[0].id
+            _GENERIC_PRICE_CACHE[lookup_key] = {"id": pid, "checked_at": now}
+            return pid
+    except Exception as e:
+        log.warning(f"[Stripe] {lookup_key} lookup failed: {e}")
+    _GENERIC_PRICE_CACHE[lookup_key] = {"id": None, "checked_at": now}
+    return ""
+
 # ==========================================================================
 # Database Setup (SQLite / Postgres 両対応)
 # ==========================================================================
@@ -11621,13 +11676,16 @@ def create_checkout_session(payload: CheckoutRequest):
         if invite_check.get("kind") != "student_addon":
             raise HTTPException(status_code=403, detail="招待コードの種類が不正です。")
         log.info(f"[Checkout] student_addon invite verified: email={payload_email}")
-    # 🎁 founder_special / founder1: env が空でも lookup_key で動的解決を試みる
-    if payload.plan in ("founder_special", "founder1") and not price_id:
-        price_id = _lookup_founder_special_price_id()
+    # 🛡️ 全プラン共通 fallback: env が空/placeholder なら lookup_key で動的解決
+    # 2026-05-10 改修: 元々 founder_special のみ fallback だったが、premium/family/standard/student_addon も
+    #   env 抜けで Stripe 400 になる致命リスクがあったため、塾長指示で全プラン同等の堅牢性に統一
+    #   (memory: feedback_stripe_price_env_design.md)
+    if not price_id or price_id.endswith("_placeholder"):
+        price_id = _lookup_plan_price_id(payload.plan)
         if not price_id:
             raise HTTPException(
                 status_code=503,
-                detail="創設メンバープランの Stripe Price が未設定です。管理者に通知済 (admin endpoint で setup してください)。"
+                detail=f"「{plan_name}」の Stripe Price が未設定です。管理者に通知済 (admin endpoint で setup してください)。"
             )
 
     # 創設メンバー枠チェック: LP で「50名限定」と約束しているため、既存 paid 生徒が
