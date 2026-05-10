@@ -94,6 +94,13 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 # Tier 4 fallback が Pro 主軸に切替わる (Pro→Flash 二段 fallback ロジックも残してある)。
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 GEMINI_MODEL_LIGHT = os.getenv("GEMINI_MODEL_LIGHT", "gemini-2.5-flash")
+# OpenAI Tier 5 fallback (2026-05-10 塾長指示・3段防御 Sonnet → Gemini → GPT)
+# OpenAI Platform で API key 発行: https://platform.openai.com/api-keys
+# 通常時は呼ばれない (Anthropic + Gemini 両方ダウン時のみ発火) のでコスト最小。
+# モデル: gpt-4o-mini (推奨・$0.15/MTok input, $0.60/MTok output) or gpt-5
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+OPENAI_MODEL_LIGHT = os.getenv("OPENAI_MODEL_LIGHT", "gpt-4o-mini")  # 二段 fallback 用 (将来 gpt-3.5 等)
 CRON_SECRET = os.getenv("CRON_SECRET", "")  # 未設定時は cron 系エンドポイントを全拒否
 STATS_TOKEN = os.getenv("STATS_TOKEN", "")  # 未設定時は /api/stats を全拒否
 # HMAC 署名鍵（保護者ビュー署名・他の署名用途で利用）
@@ -1165,6 +1172,7 @@ def health():
         "line_configured": bool(LINE_CHANNEL_ACCESS_TOKEN),
         "anthropic_configured": bool(ANTHROPIC_API_KEY),
         "gemini_configured": bool(GEMINI_API_KEY),  # Tier 4 fallback (AI never-fail)
+        "openai_configured": bool(OPENAI_API_KEY),  # Tier 5 fallback (2026-05-10 塾長指示・3段防御)
         "email_configured": bool(RESEND_API_KEY),  # Magic link / Welcome / 各種通知メール
         "email_from_domain": FROM_EMAIL.split("@")[-1].rstrip(">").strip() if "@" in FROM_EMAIL else "not_set",
         "campaign_waiver_active": ENROLLMENT_WAIVER_CAMPAIGN_ENABLED,
@@ -1752,9 +1760,9 @@ def _generate_daily_sns_posts() -> list:
     Gemini 失敗時は Anthropic にフォールバック (4段降格 + Tier 4 Gemini で結局止まらない)。
     Phase 3 (2026-05-05): 過去30日 CV データから効いてる型のヒントを prompt に注入。
     """
-    # ANTHROPIC か GEMINI のどちらか 1 つでもあれば動く設計
-    if not ANTHROPIC_API_KEY and not GEMINI_API_KEY:
-        log.warning("[DailySNS] ANTHROPIC_API_KEY も GEMINI_API_KEY も未設定でスキップ")
+    # ANTHROPIC / GEMINI / OPENAI のいずれか 1 つでもあれば動く設計 (3段防御)
+    if not ANTHROPIC_API_KEY and not GEMINI_API_KEY and not OPENAI_API_KEY:
+        log.warning("[DailySNS] ANTHROPIC_API_KEY / GEMINI_API_KEY / OPENAI_API_KEY すべて未設定でスキップ")
         return []
     recent = _get_recent_sns_posts(days=30)
     avoid_section = ""
@@ -2167,6 +2175,7 @@ def _collect_health_snapshot() -> dict:
         "stripe_configured": bool(STRIPE_SECRET_KEY),
         "anthropic_configured": bool(ANTHROPIC_API_KEY),
         "gemini_configured": bool(GEMINI_API_KEY),
+        "openai_configured": bool(OPENAI_API_KEY),
         "email_configured": bool(RESEND_API_KEY),
         "founder_special_price_configured": bool(STRIPE_PRICE_FOUNDER_SPECIAL) or bool(_lookup_founder_special_price_id()),
         "founder1_price_configured": bool(STRIPE_PRICE_FOUNDER_SPECIAL) or bool(_lookup_founder_special_price_id()),  # 後方互換 (旧名)
@@ -4987,6 +4996,116 @@ def _call_gemini(body: dict, *, model: str = None, kind: str = "chat") -> dict:
     raise last_err if last_err else RuntimeError("Gemini all models failed")
 
 
+def _call_openai(body: dict, *, model: str = None, kind: str = "chat") -> dict:
+    """OpenAI Chat Completions API 呼び出し (Anthropic body 互換 → OpenAI 形式変換)。
+
+    入力は Anthropic /v1/messages 形式 (model/max_tokens/system/messages)。
+    出力は Anthropic 互換形式に詰め直して返す (caller の data["content"][0]["text"] が動く)。
+    OpenAI API 失敗時は Exception を raise する (Tier 5 fallback の最終層)。
+
+    2026-05-10 塾長指示: AI チューターを Sonnet → Gemini → GPT の 3段 fallback に強化。
+    通常時は呼ばれない (Anthropic 健全 or Gemini 健全) のでコスト最小。
+    Anthropic + Gemini 両方ダウンの時のみ発火する最終砦。
+    """
+    if not OPENAI_API_KEY:
+        raise RuntimeError("OPENAI_API_KEY not configured")
+
+    target_model = model or OPENAI_MODEL
+    system_text = body.get("system") or ""
+    msgs = body.get("messages") or []
+    max_tokens = int(body.get("max_tokens") or 4000)
+    temperature = float(body.get("temperature") or 0.7)
+
+    # OpenAI max_tokens cap (gpt-4o-mini = 16384, gpt-5 想定 = 32768)
+    if "gpt-5" in target_model or "o3" in target_model:
+        max_tokens = min(max_tokens, 32000)
+    else:
+        max_tokens = min(max_tokens, 16000)
+
+    # Anthropic messages → OpenAI messages 変換
+    # Anthropic: [{role: "user|assistant", content: "..." | [{type:text, text}]}]
+    # OpenAI:    [{role: "system|user|assistant", content: "..."}]
+    openai_messages = []
+    if system_text:
+        openai_messages.append({"role": "system", "content": system_text})
+    for m in msgs:
+        role = m.get("role", "user")
+        content = m.get("content", "")
+        if isinstance(content, list):
+            content = "".join(c.get("text", "") for c in content if isinstance(c, dict))
+        if role not in ("user", "assistant", "system"):
+            role = "user"
+        openai_messages.append({"role": role, "content": content})
+
+    # Pro → Light 二段 fallback (将来モデル追加時に対応)
+    candidate_models = [target_model]
+    if target_model != OPENAI_MODEL_LIGHT:
+        candidate_models.append(OPENAI_MODEL_LIGHT)
+
+    last_err = None
+    for idx, om_name in enumerate(candidate_models):
+        try:
+            req_body = {
+                "model": om_name,
+                "messages": openai_messages,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            }
+            req = urllib.request.Request(
+                "https://api.openai.com/v1/chat/completions",
+                data=json.dumps(req_body).encode("utf-8"),
+                headers={
+                    "Authorization": f"Bearer {OPENAI_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=180) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                # OpenAI response → Anthropic 互換形式
+                # OpenAI: {choices: [{message: {role, content}}], usage: {prompt_tokens, completion_tokens}}
+                choices = data.get("choices") or []
+                if not choices:
+                    raise RuntimeError(f"OpenAI returned no choices: {data}")
+                content_text = (choices[0].get("message") or {}).get("content") or ""
+                usage = data.get("usage") or {}
+                if idx > 0:
+                    log.warning(f"[OpenAI] succeeded with fallback model {om_name} after {target_model} failed")
+                return {
+                    "id": data.get("id") or f"openai_{int(time.time()*1000)}",
+                    "type": "message",
+                    "role": "assistant",
+                    "model": om_name,
+                    "content": [{"type": "text", "text": content_text}],
+                    "_actual_model": om_name,
+                    "_provider": "openai",
+                    "stop_reason": (choices[0].get("finish_reason") or "end_turn"),
+                    "usage": {
+                        "input_tokens": usage.get("prompt_tokens", 0),
+                        "output_tokens": usage.get("completion_tokens", 0),
+                    },
+                }
+        except urllib.error.HTTPError as e:
+            err_body = e.read().decode("utf-8", errors="ignore")
+            last_err = RuntimeError(f"HTTP {e.code}: {err_body[:300]}")
+            log.warning(f"[OpenAI] {om_name} HTTP {e.code}: {err_body[:300]}")
+            # 401/403 は key 不正なので即終了 (他モデル試しても無駄)
+            if e.code in (401, 403):
+                raise last_err
+            # 429 / 5xx → 次の model 試行
+            if idx == len(candidate_models) - 1:
+                raise last_err
+        except Exception as e:
+            last_err = e
+            log.warning(f"[OpenAI] {om_name} failed (attempt {idx + 1}/{len(candidate_models)}): {type(e).__name__}: {str(e)[:300]}")
+            if idx == len(candidate_models) - 1:
+                log.error(f"[OpenAI] all candidate models failed: {[m for m in candidate_models]}")
+                raise
+
+    # 到達不能
+    raise last_err if last_err else RuntimeError("OpenAI all models failed")
+
+
 def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = None) -> dict:
     """全 Anthropic API 呼び出しの統一エントリ。絶対に止まらない設計。
     - 3 段モデルフォールバック (要求 → Sonnet 4.6 → Haiku 4.5)
@@ -5083,10 +5202,24 @@ def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = No
                             return gdata
                         except Exception as ge:
                             log.error(f"[AI failsafe] credit_low → Gemini も失敗: {type(ge).__name__}: {str(ge)[:200]}")
-                            # Gemini も落ちたら 503 (credit 補充依頼)
+                            # Gemini も落ちたら Tier 5 (OpenAI) に流す (2026-05-10 塾長指示)
+                    # Tier 5: OpenAI 最終 fallback (credit_low + Gemini 全滅でもまだ動く)
+                    if OPENAI_API_KEY:
+                        try:
+                            log.warning(f"[AI failsafe] credit_low → OpenAI Tier 5 即時 fallback (kind={kind})")
+                            odata = _call_openai(body, kind=kind)
+                            _record_ai_critical_event("ai_fallback_openai_credit_low", {
+                                "requested_model": requested_model,
+                                "actual_model": odata.get("_actual_model"),
+                                "kind": kind,
+                                "student_id": student_id,
+                            })
+                            return odata
+                        except Exception as oe:
+                            log.error(f"[AI failsafe] credit_low → OpenAI も失敗: {type(oe).__name__}: {str(oe)[:200]}")
                     raise HTTPException(
                         status_code=503,
-                        detail="AI_CREDIT_LOW: Anthropic クレジット枯渇 + Gemini fallback 失敗。塾長に補充依頼してください。"
+                        detail="AI_CREDIT_LOW: Anthropic クレジット枯渇 + Gemini + OpenAI 全 fallback 失敗。塾長に補充依頼してください。"
                     )
 
                 # 4xx (validation) → リトライ無駄、次の tier
@@ -5114,7 +5247,7 @@ def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = No
                 log.warning(f"[AI failsafe] {model} exhausted retries on network error, advancing to next tier")
                 break
 
-    # Tier 4: Gemini 最終 fallback (Anthropic 完全障害でも止まらない設計)
+    # Tier 4: Gemini fallback (Anthropic 完全障害でも止まらない設計)
     # AI never-fail 原則 (memory: feedback_ai_never_fail.md): Anthropic 全停止時も
     # Daily SNS / 教材生成 / 採点 が止まらないように Gemini に投げ替える。
     if GEMINI_API_KEY:
@@ -5131,18 +5264,38 @@ def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = No
             return data
         except Exception as ge:
             log.error(f"[AI failsafe] Gemini Tier 4 もエラー: {type(ge).__name__}: {str(ge)[:200]}")
-            # Gemini も落ちたら下の total_failure へ流れる
+            # Gemini も落ちたら Tier 5 (OpenAI) に流す
 
-    # 全 tier 全 attempt 失敗 (Anthropic 4段 + Gemini も全滅)
+    # Tier 5: OpenAI 最終 fallback (2026-05-10 塾長指示・3段防御)
+    # Anthropic + Gemini 両方ダウンの時のみ発火する最終砦。
+    # 通常時は呼ばれない (=コスト最小)。memory: feedback_ai_tutor_sonnet_gemini.md
+    if OPENAI_API_KEY:
+        try:
+            log.warning(f"[AI failsafe] Anthropic+Gemini全滅、OpenAI Tier 5 にフォールバック (kind={kind})")
+            data = _call_openai(body, kind=kind)
+            _record_ai_critical_event("ai_fallback_openai", {
+                "requested_model": requested_model,
+                "actual_model": data.get("_actual_model"),
+                "anthropic_last_error": last_error_code,
+                "kind": kind,
+                "student_id": student_id,
+            })
+            return data
+        except Exception as oe:
+            log.error(f"[AI failsafe] OpenAI Tier 5 もエラー: {type(oe).__name__}: {str(oe)[:200]}")
+            # OpenAI も落ちたら下の total_failure へ流れる
+
+    # 全 tier 全 attempt 失敗 (Anthropic 3段 + Gemini + OpenAI 全滅 = 5段防御を全て貫通)
     _record_ai_critical_event("ai_total_failure", {
         "requested_model": requested_model,
         "last_error_code": last_error_code,
         "last_error_body": last_error_body[:300],
         "gemini_configured": bool(GEMINI_API_KEY),
+        "openai_configured": bool(OPENAI_API_KEY),
         "kind": kind,
         "student_id": student_id,
     })
-    log.error(f"[AI failsafe] ALL TIERS FAILED (incl. Gemini). last={last_error_code}: {last_error_body[:200]}")
+    log.error(f"[AI failsafe] ALL TIERS FAILED (incl. Gemini + OpenAI). last={last_error_code}: {last_error_body[:200]}")
     raise HTTPException(
         status_code=503,
         detail=f"AI temporarily unavailable. Last error: {last_error_code}"
@@ -11277,7 +11430,10 @@ def admin_ai_recent_failures(limit: int = 30, x_cron_secret: Optional[str] = Hea
     c = conn.cursor()
     c.execute(
         "SELECT created_at, name, props FROM events "
-        "WHERE name IN ('ai_call_failure', 'ai_total_failure', 'ai_credit_low', 'ai_fallback_used', 'ai_fallback_gemini', 'frontend_error') "
+        "WHERE name IN ('ai_call_failure', 'ai_total_failure', 'ai_credit_low', 'ai_fallback_used', "
+        "'ai_fallback_gemini', 'ai_fallback_gemini_credit_low', "
+        "'ai_fallback_openai', 'ai_fallback_openai_credit_low', "  # 2026-05-10 OpenAI Tier 5 追加
+        "'frontend_error') "
         "ORDER BY created_at DESC LIMIT ?",
         (limit,),
     )
@@ -11535,6 +11691,64 @@ def admin_test_gemini(model: Optional[str] = None, strict: int = 0,
                 "messages": [{"role": "user", "content": "「AI never-fail テスト成功」とだけ短く返答してください。"}],
             },
             kind="test_gemini",
+        )
+        text = (data.get("content") or [{}])[0].get("text", "") if data.get("content") else ""
+        return {
+            "ok": True,
+            "configured": True,
+            "model": data.get("_actual_model"),
+            "provider": data.get("_provider"),
+            "sample": text[:200],
+            "latency_ms": int((time.time() - t0) * 1000),
+            "usage": data.get("usage", {}),
+        }
+    except Exception as e:
+        return {
+            "ok": False,
+            "configured": True,
+            "error": f"{type(e).__name__}: {str(e)[:300]}",
+            "latency_ms": int((time.time() - t0) * 1000),
+        }
+
+
+@app.post("/api/admin/ai/test-openai")
+def admin_test_openai(model: Optional[str] = None,
+                       authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """OpenAI Tier 5 fallback の動作確認 endpoint (2026-05-10 塾長指示)。
+    admin Bearer or x-cron-secret 認証。OpenAI で 1 回 generate して
+    {ok, model, sample, latency_ms} を返す。
+    クエリ:
+      - model=gpt-5 等で任意モデル指定 (省略時は OPENAI_MODEL = gpt-4o-mini)
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    if not OPENAI_API_KEY:
+        return {
+            "ok": False,
+            "configured": False,
+            "error": "OPENAI_API_KEY が Railway env に未設定。https://platform.openai.com/api-keys で発行してください。",
+        }
+
+    target_model = model or OPENAI_MODEL
+
+    t0 = time.time()
+    try:
+        data = _call_openai(
+            {
+                "model": target_model,
+                "max_tokens": 200,
+                "system": "あなたは丁寧な日本語アシスタントです。",
+                "messages": [{"role": "user", "content": "「AI never-fail テスト成功」とだけ短く返答してください。"}],
+            },
+            kind="test_openai",
         )
         text = (data.get("content") or [{}])[0].get("text", "") if data.get("content") else ""
         return {
