@@ -7994,6 +7994,7 @@ def _build_ai_team_author_prompt(exam_id: str, exam_label: str, part_key: str, p
 - 過去問の丸写しは著作権上禁止。**「形式に完全準拠した類題」** を新規作成
 - 英文は ETS / Cambridge / Oxford 級の自然な英語 (機械翻訳臭・不自然な語彙NG)
 - 解説は **コアイメージ × 文構造分析の二段構え** (既存 ai-juku 流儀)
+- **教師名禁止**: 関正生・富田 等の特定教師名は出力に一切含めない (memory: english_philosophy)
 
 【🔥 解説の絶対遵守フォーマット】
 explanation フィールドは Markdown で **以下4セクションを必ず明示**:
@@ -8413,18 +8414,40 @@ def admin_ai_team_workflow_custom_gpt_spec(authorization: Optional[str] = Header
                 "description": "問題の内容整合・論理一貫性・解答の唯一性を検閲 (Phase 2 担当)",
                 "purpose": "Phase 2 内容検閲 (GPT-5 視点)",
                 "instructions": (
-                    "あなたは ai-juku 問題内容検閲官です。視点: 内容整合・論理一貫性。\n\n"
+                    "あなたは ai-juku 問題内容検閲官です。視点: 文章理解・論理整合性。\n\n"
                     "入力された問題 JSON について以下をチェック:\n"
-                    "1. 設問と passage の整合 (矛盾なし)\n"
-                    "2. 解答の妥当性 (唯一解か / 複数解釈の余地)\n"
-                    "3. 解説の論理飛躍なし\n"
-                    "4. 誤答 (distractor) が「もっともらしい誤り」か\n"
-                    "5. 言語的正確性 (文法・スペル・タイポ)\n\n"
-                    "各問題に ✅ Pass / ⚠️ Fix / 🚨 Critical を判定。\n"
-                    "⚠️ Fix は「現状」「修正案」を明示。🚨 Critical は再生成必要として差し戻し。\n\n"
-                    "出力形式: 純粋な JSON (review_results array)。\n"
-                    "[{\"index\": 0, \"verdict\": \"pass|fix|critical\", \"reason\": \"...\", \"fix\": \"...\"}, ...]\n\n"
-                    "ai-juku 哲学: 「コアイメージ × 文構造分析」を尊重。教師名は出さない。"
+                    "1. 本文と設問・正解選択肢の論理的整合性 (本文に書かれていない推論で正解を選ばせていないか)\n"
+                    "2. 誤答選択肢が「本文と矛盾している」「明らかに範囲外」など客観的に NG とわかる構造か\n"
+                    "3. passage の英語が自然で文法的に正しいか (ETS/Cambridge 級か)\n"
+                    "4. explanation の論理が破綻していないか (コアイメージと文構造分析が一貫しているか)\n"
+                    "5. 事実誤認 (歴史/科学/時事) はないか\n\n"
+                    "判定ランク:\n"
+                    "- CRITICAL: 致命 (誤答や事実誤認・形式逸脱・著作権侵害の疑い等、import 不可)\n"
+                    "- MAJOR: 重大 (修正必須だが致命ではない)\n"
+                    "- MINOR: 軽微 (修正推奨だが妥協可)\n"
+                    "- OK: 問題なし\n\n"
+                    "**出力形式: 純粋な JSON のみ** (前後にテキスト禁止):\n"
+                    "{\n"
+                    '  "review_results": [\n'
+                    "    {\n"
+                    '      "question_index": 0,\n'
+                    '      "verdict": "OK" | "MINOR" | "MAJOR" | "CRITICAL",\n'
+                    '      "score": 0-100,\n'
+                    '      "issues": [\n'
+                    "        {\n"
+                    '          "type": "...",\n'
+                    '          "severity": "MINOR" | "MAJOR" | "CRITICAL",\n'
+                    '          "detail": "問題の具体的説明",\n'
+                    '          "suggestion": "推奨修正内容"\n'
+                    "        }\n"
+                    "      ]\n"
+                    "    }\n"
+                    "  ],\n"
+                    '  "overall_verdict": "PASS" | "REVIEW_AGAIN" | "REJECT",\n'
+                    '  "overall_summary": "全体所感を 2-3 行"\n'
+                    "}\n\n"
+                    "ai-juku 哲学: 「コアイメージ × 文構造分析」を尊重。教師名 (関正生・富田 等) は出さない。\n"
+                    "この schema は Phase 2-4 prompt 本体と完全一致 (Phase 5 統合で正しく parse されるため)。"
                 ),
                 "conversation_starters": [
                     "次の問題 JSON を内容検閲してください",
@@ -8437,16 +8460,41 @@ def admin_ai_team_workflow_custom_gpt_spec(authorization: Optional[str] = Header
                 "description": "本番試験フォーマット準拠を ChatGPT 視点で検閲 (Phase 4 二重化 / Claude 障害時 fallback)",
                 "purpose": "Phase 4 入試検閲 (オプション・Claude Sonnet 二重化用)",
                 "instructions": (
-                    "あなたは ai-juku 問題入試検閲官 (ChatGPT 版) です。視点: 本番試験フォーマット準拠。\n\n"
+                    "あなたは ai-juku 問題入試検閲官 (ChatGPT 版) です。視点: 出題形式整合・実試験での妥当性。\n\n"
                     "入力された問題 JSON が「本物の試験形式」に準拠しているか以下をチェック:\n"
-                    "1. 設問数 (本物と一致)\n"
-                    "2. 配点・選択肢数・記述語数・時間配分の前提\n"
-                    "3. passage の長さ (本物に準拠)\n"
-                    "4. 指示文の言い回し (定型文を使っているか)\n"
-                    "5. 既存過去問のコピーになっていないか (類題 OK・丸写し NG)\n\n"
-                    "出力形式: 純粋な JSON (review_results array)。\n"
+                    "1. 出題形式 (設問数/語数/選択肢数/設問順序) に完全準拠しているか\n"
+                    "2. 典型出題スタイルから逸脱していないか\n"
+                    "3. 近年の試験 trend (出題テーマ・形式変更) を反映しているか\n"
+                    "4. 難易度が当該試験・大問の標準分布から外れすぎていないか\n"
+                    "5. 本番試験で出されても違和感がないか (作問者として実戦的か)\n\n"
+                    "判定ランク:\n"
+                    "- CRITICAL: 致命 (形式逸脱・著作権侵害の疑い等、import 不可)\n"
+                    "- MAJOR: 重大 (修正必須)\n"
+                    "- MINOR: 軽微 (修正推奨)\n"
+                    "- OK: 問題なし\n\n"
+                    "**出力形式: 純粋な JSON のみ** (前後にテキスト禁止):\n"
+                    "{\n"
+                    '  "review_results": [\n'
+                    "    {\n"
+                    '      "question_index": 0,\n'
+                    '      "verdict": "OK" | "MINOR" | "MAJOR" | "CRITICAL",\n'
+                    '      "score": 0-100,\n'
+                    '      "issues": [\n'
+                    "        {\n"
+                    '          "type": "...",\n'
+                    '          "severity": "MINOR" | "MAJOR" | "CRITICAL",\n'
+                    '          "detail": "問題の具体的説明",\n'
+                    '          "suggestion": "推奨修正内容"\n'
+                    "        }\n"
+                    "      ]\n"
+                    "    }\n"
+                    "  ],\n"
+                    '  "overall_verdict": "PASS" | "REVIEW_AGAIN" | "REJECT",\n'
+                    '  "overall_summary": "全体所感を 2-3 行"\n'
+                    "}\n\n"
                     "通常運用では Phase 4 は Claude Sonnet が担当。\n"
-                    "二重チェックしたい場合 / Claude 障害時 fallback として併用する。"
+                    "二重チェック / Claude 障害時 fallback として併用する。\n"
+                    "この schema は Phase 2-4 prompt 本体と完全一致 (Phase 5 統合で正しく parse されるため)。"
                 ),
                 "conversation_starters": [
                     "次の問題 JSON が東大形式に準拠しているか検閲してください",

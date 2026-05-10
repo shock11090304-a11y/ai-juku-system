@@ -96,6 +96,7 @@ copy & paste でそのまま次フェーズの統合 prompt に渡される前�
 - 入試形式の妥当性にも踏み込まない (入試検閲官の領分)
 - あなたは「内容の正しさ」のみを冷徹に判定する
 - 1 問でも CRITICAL があれば overall_verdict は REJECT
+- **教師名禁止**: 関正生・富田 等の特定教師名が出力に含まれていたら CRITICAL 判定 (memory: english_philosophy)
 ```
 
 ### Conversation starters
