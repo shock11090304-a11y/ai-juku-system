@@ -138,7 +138,19 @@ function render() {
   document.getElementById('questProgress').textContent = `${done}/${data.quests.length} 完了`;
 
   // Today stats
-  document.getElementById('todayMinutes').textContent = data.todayMinutes;
+  // 学習管理機能 (kokuritsu_nankan / premium 以上) の生徒は CTA の refreshSlQuickCtaToday が
+  // /api/study-logs/me から実データを書き込むので、ここでは demo を出さず "—" 表示にして
+  // demo "45" が一瞬出る flicker を防ぐ。getCurrentStudent() は localStorage の旧データなので
+  // AuthGuard.getStudent() (server から取得した最新セッション) を優先。
+  const todayMinEl = document.getElementById('todayMinutes');
+  if (todayMinEl) {
+    const authStudent = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || null;
+    if (authStudent && _canUseStudyMgmt(authStudent)) {
+      todayMinEl.textContent = '—';
+    } else {
+      todayMinEl.textContent = data.todayMinutes;
+    }
+  }
   document.getElementById('todayQ').textContent = data.todayQuestions;
   document.getElementById('todayDone').textContent = done;
   document.getElementById('todayXp').textContent = data.todayXp;
@@ -507,6 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
   try { bindTrialOnboarding(); } catch (e) { console.error('bindTrialOnboarding failed:', e); }
   try { renderTrialOnboarding(); } catch (e) { console.error('renderTrialOnboarding failed:', e); }
   try { initStudyLog(); } catch (e) { console.error('initStudyLog failed:', e); }
+  try { initStudyLogQuickCta(); } catch (e) { console.error('initStudyLogQuickCta failed:', e); }
   try { initExamResults(); } catch (e) { console.error('initExamResults failed:', e); }
   try { initCurriculum(); } catch (e) { console.error('initCurriculum failed:', e); }
   try { initStudyPlan(); } catch (e) { console.error('initStudyPlan failed:', e); }
@@ -707,6 +720,199 @@ function initStudyLog() {
     loadMyStudyLogs();
   };
   tryInit(10);
+}
+
+// ==========================================================================
+// 📝 学習記録 クイック CTA (上部配置・engagement 改善 2026-05-11)
+// 入力フォームが下部 9 section 下に埋もれていた問題への対処。
+// 国公立難関大学コース or プレミアム以上で表示・1-tap quick log + 詳細フォーム導線
+// ==========================================================================
+function initStudyLogQuickCta() {
+  const section = document.querySelector('.study-log-quick-cta');
+  if (!section) return;
+
+  const tryShow = (retries) => {
+    const student = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || null;
+    if (!student) {
+      if (retries > 0) setTimeout(() => tryShow(retries - 1), 200);
+      return;
+    }
+    // course フィールドが auth refresh 待ちの場合は polling 継続
+    if (typeof student.course === 'undefined' && retries > 0) {
+      setTimeout(() => tryShow(retries - 1), 200);
+      return;
+    }
+    // 学習管理機能と同じ判定 (kokuritsu_nankan / premium / family / founder_special / student_addon)
+    if (!_canUseStudyMgmt(student)) return;
+    section.style.display = '';
+
+    // 今日の学習時間を表示 + #todayMinutes (上部 stats) も real data に上書き
+    refreshSlQuickCtaToday();
+
+    // 「詳しく記録」 → study-log section へ smooth scroll + 分入力欄 focus
+    const detailBtn = document.getElementById('slqcDetailBtn');
+    if (detailBtn && !detailBtn._slBound) {
+      detailBtn.addEventListener('click', () => {
+        const target = document.querySelector('.study-log-section');
+        if (!target) return;
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // scroll 完了を待ってから minutes 欄に focus (UX: 開いてすぐ入力できる)
+        setTimeout(() => {
+          const min = document.getElementById('slMinutes');
+          if (min && typeof min.focus === 'function') {
+            try { min.focus({ preventScroll: true }); } catch (_) { min.focus(); }
+          }
+        }, 600);
+        try { window.track && window.track('sl_quick_cta_detail_open'); } catch (_) {}
+      });
+      detailBtn._slBound = true;
+    }
+
+    // 1-tap quick log buttons
+    section.querySelectorAll('.slqc-quick-btn').forEach(btn => {
+      if (btn._slBound) return;
+      btn.addEventListener('click', () => {
+        const m = parseInt(btn.dataset.min, 10);
+        if (!Number.isFinite(m) || m < 1) return;
+        quickLogMinutes(m, btn);
+      });
+      btn._slBound = true;
+    });
+  };
+  tryShow(10);
+}
+
+// 今日の学習時間を /api/study-logs/me から取得して CTA + 上部 #todayMinutes を更新
+async function refreshSlQuickCtaToday() {
+  const titleEl = document.getElementById('slqcTitle');
+  const subEl = document.getElementById('slqcSub');
+  const badgeEl = document.getElementById('slqcBadge');
+  const todayStatEl = document.getElementById('todayMinutes');
+  let todayMin = 0;
+  try {
+    // days=2 にして 0 件でも空配列が返る (days=0 は backend バリデーションで拒否)
+    const data = await slApiFetch('/api/study-logs/me?days=2&limit=20');
+    const today = _slJstDate(0);
+    (data.daily || []).forEach(d => {
+      if (d && String(d.date).slice(0, 10) === today) todayMin += (d.minutes || 0);
+    });
+  } catch (e) {
+    console.warn('[StudyLog] today refresh failed:', e && e.message);
+    return;
+  }
+  // 上部 stats #todayMinutes を実データで上書き (これまで demo の 45 が固定表示されていた)
+  if (todayStatEl) todayStatEl.textContent = String(todayMin);
+  if (todayMin > 0) {
+    if (badgeEl) badgeEl.textContent = '⚡ 今日 進行中';
+    if (titleEl) titleEl.textContent = `今日 ${todayMin} 分 学習中`;
+    if (subEl) subEl.textContent = '追加で記録すれば塾長への報告も自動。1日の合計が積み上がります。';
+  } else {
+    if (badgeEl) badgeEl.textContent = '📝 今日の学習';
+    if (titleEl) titleEl.textContent = '今日の学習を記録しよう';
+    if (subEl) subEl.textContent = '塾長があなたの頑張りを見て、いいねやコメントを送ります。';
+  }
+}
+
+// 1-tap で minutes だけ送信。subject は直近の log から推定。
+// 直近の記録が無い場合は誤った subject が混入しないよう、詳細フォームに誘導 (kokuritsu_nankan は複数科目)
+async function quickLogMinutes(minutes, btn) {
+  if (!minutes || minutes < 1) return;
+  const msg = document.getElementById('slqcMessage');
+  // 直近 14 日の最新 log から subject を推定。なければ「詳しく記録」に誘導 (UX review: 英語デフォは複数科目生徒で誤分類リスク)
+  let subject = null;
+  try {
+    const recent = await slApiFetch('/api/study-logs/me?days=14&limit=10');
+    const logs = recent && recent.logs ? recent.logs : [];
+    if (logs.length > 0 && logs[0].subject) subject = logs[0].subject;
+  } catch (e) {
+    // recent fetch 失敗時はネットワークエラー扱いで一旦中断
+    if (msg) { msg.textContent = '⚠️ ネットワークエラー。少し待って再試行してください'; msg.style.color = '#fca5a5'; }
+    return;
+  }
+  if (!subject) {
+    // 初回 (履歴なし) → 詳細フォームへ誘導して科目選択を促す
+    if (msg) {
+      msg.style.color = '#fbbf24';
+      msg.innerHTML = '📚 まずは科目を選んで1件目を記録しよう → <a href="#" id="slqcGoDetail" style="color:#a78bfa; text-decoration:underline;">詳しい記録を開く</a>';
+      const goDetail = document.getElementById('slqcGoDetail');
+      if (goDetail) {
+        goDetail.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          const target = document.querySelector('.study-log-section');
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setTimeout(() => {
+              const minEl = document.getElementById('slMinutes');
+              if (minEl) minEl.value = String(minutes);
+              const subjEl = document.getElementById('slSubject');
+              if (subjEl && typeof subjEl.focus === 'function') {
+                try { subjEl.focus({ preventScroll: true }); } catch (_) { subjEl.focus(); }
+              }
+            }, 600);
+          }
+        }, { once: true });
+      }
+    }
+    return;
+  }
+  // confirm でユーザに最終確認 (誤クリックで意図しない記録が残るのを防止)
+  // iOS Safari 互換のため \n\n は使わず 1 行ずつシンプルに
+  const ok = window.confirm(`今日「${subject}」を ${minutes} 分 記録しますか?\n(教材名・メモは「詳しく記録」から後で追加できます)`);
+  if (!ok) return;
+
+  if (msg) { msg.textContent = '保存中...'; msg.style.color = '#a78bfa'; }
+  if (btn) btn.disabled = true;
+  // 同時押し対策: 全 quick btn を一時 disable
+  const allBtns = document.querySelectorAll('.slqc-quick-btn');
+  allBtns.forEach(b => b.disabled = true);
+
+  try {
+    const resp = await slApiFetch('/api/study-logs', {
+      method: 'POST',
+      body: JSON.stringify({ subject, minutes }),
+    });
+    const newId = resp && resp.id;
+    // ✅ 成功メッセージ + 取り消しリンク (誤タップ救済)
+    if (msg) {
+      msg.style.color = '#86efac';
+      const baseText = `✅ ${subject} ${minutes}分 を記録しました`;
+      if (newId) {
+        msg.innerHTML = `${baseText} <a href="#" id="slqcUndo" data-id="${newId}" style="color:#fca5a5; text-decoration:underline; margin-left:0.5rem;">取り消す</a>`;
+        const undoLink = document.getElementById('slqcUndo');
+        if (undoLink) undoLink.addEventListener('click', (ev) => { ev.preventDefault(); undoQuickLog(newId); }, { once: true });
+      } else {
+        msg.textContent = baseText;
+      }
+    }
+    try { window.track && window.track('sl_quick_log', { minutes, subject }); } catch (_) {}
+    // CTA 上部表示・stats・詳細セクション全部 refresh
+    await refreshSlQuickCtaToday();
+    if (typeof loadMyStudyLogs === 'function') {
+      try { await loadMyStudyLogs(); } catch (_) {}
+    }
+  } catch (e) {
+    const detail = (e && e.message) || '保存失敗';
+    if (msg) { msg.textContent = '❌ ' + detail; msg.style.color = '#fca5a5'; }
+  } finally {
+    allBtns.forEach(b => b.disabled = false);
+  }
+}
+
+// 誤タップ救済: クイックログ直後の取り消し
+async function undoQuickLog(logId) {
+  const msg = document.getElementById('slqcMessage');
+  if (!logId) return;
+  if (msg) { msg.textContent = '取り消し中...'; msg.style.color = '#a78bfa'; }
+  try {
+    await slApiFetch('/api/study-logs/' + encodeURIComponent(logId), { method: 'DELETE' });
+    if (msg) { msg.textContent = '🗑️ 取り消しました'; msg.style.color = '#a1a1aa'; }
+    await refreshSlQuickCtaToday();
+    if (typeof loadMyStudyLogs === 'function') {
+      try { await loadMyStudyLogs(); } catch (_) {}
+    }
+  } catch (e) {
+    if (msg) { msg.textContent = '❌ 取り消し失敗: ' + ((e && e.message) || ''); msg.style.color = '#fca5a5'; }
+  }
 }
 
 // 教材写真を圧縮 → Claude Vision で教材名/科目を抽出して form に auto-fill

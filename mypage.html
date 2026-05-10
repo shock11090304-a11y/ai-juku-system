@@ -119,6 +119,26 @@
       </div>
     </section>
 
+    <!-- 📝 学習記録 クイック CTA (国公立難関大学コース受講生のみ JS で表示制御)
+         2026-05-11 追加: 入力フォームが下部に埋もれていた engagement 問題の解消。
+         今日の学習時間を上部で可視化 + 1-tap quick log + 詳細フォームへスクロール導線 -->
+    <section class="study-log-quick-cta" style="display:none; margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(99,102,241,0.20), rgba(236,72,153,0.13)); border: 1px solid rgba(167,139,250,0.45); border-radius: 14px; box-shadow: 0 8px 24px rgba(99,102,241,0.18);">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:0.9rem; flex-wrap:wrap;">
+        <div style="flex:1 1 220px; min-width:200px;">
+          <div id="slqcBadge" style="display:inline-block; padding:0.18rem 0.65rem; background: linear-gradient(135deg,#fbbf24,#ec4899); border-radius:999px; font-size:0.7rem; font-weight:800; color:#fff; margin-bottom:0.4rem; letter-spacing:0.02em;">📝 今日の学習</div>
+          <h3 id="slqcTitle" style="margin:0 0 0.25rem 0; font-size:1.1rem; color:#fff; font-weight:800; line-height:1.35;">今日の学習を記録しよう</h3>
+          <p id="slqcSub" style="margin:0; font-size:0.82rem; color:#c7d2fe; line-height:1.5;">塾長があなたの頑張りを見て、いいねやコメントを送ります。</p>
+        </div>
+        <div style="display:flex; gap:0.45rem; flex-wrap:wrap; align-items:center;">
+          <button type="button" class="slqc-quick-btn" data-min="30" aria-label="30分の学習をクイック記録" style="padding:0.55rem 0.85rem; background:rgba(255,255,255,0.13); border:1px solid rgba(255,255,255,0.28); border-radius:10px; color:#fff; font-weight:700; font-size:0.85rem; cursor:pointer; min-height:44px;">⚡ 30分</button>
+          <button type="button" class="slqc-quick-btn" data-min="60" aria-label="1時間の学習をクイック記録" style="padding:0.55rem 0.85rem; background:rgba(255,255,255,0.13); border:1px solid rgba(255,255,255,0.28); border-radius:10px; color:#fff; font-weight:700; font-size:0.85rem; cursor:pointer; min-height:44px;">⚡ 1時間</button>
+          <button type="button" class="slqc-quick-btn" data-min="90" aria-label="1時間半の学習をクイック記録" style="padding:0.55rem 0.85rem; background:rgba(255,255,255,0.13); border:1px solid rgba(255,255,255,0.28); border-radius:10px; color:#fff; font-weight:700; font-size:0.85rem; cursor:pointer; min-height:44px;">⚡ 1.5時間</button>
+          <button type="button" id="slqcDetailBtn" aria-label="詳しい記録フォームを開く" style="padding:0.6rem 1rem; background: linear-gradient(135deg,#6366f1,#8b5cf6); border:0; border-radius:10px; color:#fff; font-weight:800; font-size:0.88rem; cursor:pointer; min-height:44px; box-shadow:0 4px 12px rgba(99,102,241,0.35);">📝 詳しく記録</button>
+        </div>
+      </div>
+      <div id="slqcMessage" role="status" aria-live="polite" style="margin-top:0.55rem; font-size:0.82rem; min-height:1em; color:#a78bfa;"></div>
+    </section>
+
     <!-- Today's Quest -->
     <section class="quest-section">
       <div class="section-title">
@@ -859,7 +879,7 @@
   <script src="learning-brain.js?v=20260425-2"></script>
   <script src="exam-prep.js?v=20260425-1"></script>
   <script src="referral-program.js?v=20260425-1"></script>
-  <script src="mypage.js?v=20260507-aiplan-tokens"></script>
+  <script src="mypage.js?v=20260511-quick-cta"></script>
   <script>
     // ウィジェット初期描画
     (function() {
