@@ -8732,6 +8732,22 @@ def admin_ai_team_workflow_save_phase(
     if not updated:
         raise HTTPException(status_code=400, detail="phase_index が範囲外")
 
+    # 🆘 critical_majority 検知: 速攻モードで Opus が過半数 CRITICAL を返したら、
+    # save 時点で塾長に明示警告して完全版での再生成を促す (memory: feedback_team_review_all_generation.md)。
+    # import 時に弾くだけでは塾長が混乱するため、save 段階で検出してUI 側に payload を返す。
+    critical_majority_warning = None
+    try:
+        parsed = json.loads(output)
+        if isinstance(parsed, dict) and parsed.get("error") == "critical_majority":
+            critical_majority_warning = {
+                "type": "critical_majority",
+                "detail": parsed.get("detail", ""),
+                "recommendation": "速攻版で過半数 CRITICAL が検出されました。完全版 (mode=full) で再生成してください (memory: feedback_5_person_textbook_review.md / feedback_team_review_all_generation.md)。",
+            }
+    except (json.JSONDecodeError, ValueError):
+        # JSON でない phase (Phase 0 検索結果など) は素通し
+        pass
+
     # 残存 placeholder の検出 (置換漏れ警告)
     next_phase = updated["phases"][phase_index + 1] if phase_index + 1 < len(updated["phases"]) else None
     placeholder_warnings = []
@@ -8748,6 +8764,7 @@ def admin_ai_team_workflow_save_phase(
         "next_phase_index": phase_index + 1 if phase_index + 1 < len(updated["phases"]) else None,
         "next_phase": next_phase,
         "placeholder_warnings": placeholder_warnings,
+        "critical_majority_warning": critical_majority_warning,
         "completed_count": sum(1 for p in updated["phases"] if p.get("output")),
         "phase_count": len(updated["phases"]),
     }
@@ -8814,10 +8831,12 @@ def admin_ai_team_workflow_import(
     try:
         result = _exam_questions_import_core(questions, skip_full)
     except Exception as e:
-        # import 失敗時は status を in_progress に戻して再試行可能にする
-        _aitw_db_set_status(workflow_id, "in_progress")
-        log.exception(f"[AITW:Import] wf={workflow_id} failed")
-        raise HTTPException(status_code=500, detail=f"import 失敗: {type(e).__name__}: {e}")
+        # import 失敗時は status='failed' に固定して再 import を抑止
+        # (in_progress に戻すと部分挿入済データを把握できないまま再試行 → 重複 INSERT 確定)
+        # 復旧手順: 塾長が DB を確認してから admin 経由で workflow を archive or 手動修正
+        _aitw_db_set_status(workflow_id, "failed")
+        log.exception(f"[AITW:Import] wf={workflow_id} failed (status=failed for manual recovery)")
+        raise HTTPException(status_code=500, detail=f"import 失敗: {type(e).__name__}: {e} — workflow status='failed' に固定 (再 import 抑止)。重複 INSERT 防止のため復旧手順は塾長判断")
 
     # status='completed' に更新 (失敗問題があっても workflow としては完了扱い)
     _aitw_db_set_status(workflow_id, "completed")

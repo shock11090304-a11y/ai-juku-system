@@ -4638,6 +4638,13 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
                 if (jj.placeholder_warnings && jj.placeholder_warnings.length) {
                   alert('⚠️ 次 phase に未置換 placeholder が残っています: ' + jj.placeholder_warnings.join(', '));
                 }
+                // 🆘 critical_majority 警告 (速攻モードで過半数 CRITICAL 検出時)
+                if (jj.critical_majority_warning) {
+                  alert(`🆘 critical_majority 検出\n\n${jj.critical_majority_warning.recommendation}\n\n詳細: ${jj.critical_majority_warning.detail || '(なし)'}\n\nこの workflow は import せず、完全版 (mode=full) で再生成してください (memory: feedback_5_person_textbook_review.md)。`);
+                  btn.innerHTML = `🆘 ${jj.completed_count}/${jj.phase_count} (critical_majority)`;
+                  btn.style.background = 'rgba(248,113,113,0.4)';
+                  return;  // import 提案ダイアログを出さない
+                }
                 btn.innerHTML = `✅ 保存済 (${jj.completed_count}/${jj.phase_count})`;
                 btn.style.background = 'rgba(34,197,94,0.3)';
 
@@ -4883,13 +4890,20 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
 
       const aiwClearBtn = document.getElementById('aiwClearBtn');
       if (aiwClearBtn) aiwClearBtn.addEventListener('click', () => {
+        // active workflow を抱えてる時は in_progress として残るので明示確認
+        if (window.__aitw_active_wf && window.__aitw_active_wf.workflow_id) {
+          if (!confirm(`active workflow [${window.__aitw_active_wf.workflow_id}] は in_progress 状態のまま DB に残ります。\n\n中止 (abort) するなら workflow 内の「🛑 中止」ボタンを使ってください。\n\nUI からクリアしてもよいですか?`)) {
+            return;
+          }
+        }
         ['aiwExamId','aiwPartKey','aiwGrade','aiwTopic','aiwYear','aiwImportPayload'].forEach(id => {
           const el = document.getElementById(id); if (el) el.value = '';
         });
         document.getElementById('aiwCount').value = '5';
         const box = document.getElementById('aiwResult'); if (box) { box.style.display = 'none'; box.innerHTML = ''; }
         const ir = document.getElementById('aiwImportResult'); if (ir) { ir.style.display = 'none'; ir.innerHTML = ''; }
-        const ib = document.getElementById('aiwImportBtn'); if (ib) { ib.disabled = false; ib.innerHTML = '📥 exam-questions/import に投入'; }
+        const ib = document.getElementById('aiwImportBtn'); if (ib) { ib.disabled = false; ib.innerHTML = '🆘 緊急 fallback で投入'; }
+        window.__aitw_active_wf = null;
       });
 
       const aiwImportBtn = document.getElementById('aiwImportBtn');
