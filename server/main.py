@@ -576,6 +576,21 @@ def init_db():
     );
     CREATE INDEX IF NOT EXISTS idx_textbook_pool ON textbook_pool(subject, level, status, created_at);
     CREATE INDEX IF NOT EXISTS idx_textbook_pool_topic ON textbook_pool(topic);
+    -- 🤖 AI チーム検閲ワークフロー stateful 保存 (2026-05-10 塾長負荷削減)
+    -- 6 phase コピペ作業の中断・再開・再生成を可能にする。
+    -- spec/phases/result は JSON TEXT (SQLite/Postgres 両対応のため jsonb は使わない)。
+    CREATE TABLE IF NOT EXISTS ai_team_workflows (
+        id {pk},
+        workflow_id TEXT UNIQUE NOT NULL,
+        spec TEXT NOT NULL,
+        phases TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'in_progress',
+        mode TEXT NOT NULL DEFAULT 'full',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_aitw_status_updated ON ai_team_workflows(status, updated_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_aitw_workflow_id ON ai_team_workflows(workflow_id);
     -- 大学別 過去問風オリジナル問題プール (塾長指示 2026-05-03)
     -- 著作権配慮: 全て Claude 生成のオリジナル。過去問の「スタイル・出題パターン」のみを参考にし、
     -- 実問題文の転載は禁止。inspired_by フィールドで「東大2022年第1問の長文読解スタイル」など出典明示。
@@ -7839,37 +7854,13 @@ async def admin_exam_questions_burst_seed(payload: dict = None, authorization: O
     }
 
 
-@app.post("/api/admin/exam-questions/import")
-def admin_exam_questions_import(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
-    """🆓 Claude Max プラン経由で生成した問題 JSON を一括インサート ($0 運用用)。
+def _exam_questions_import_core(questions: list, skip_full: bool = False) -> dict:
+    """exam_questions 一括インサートのコアロジック (admin endpoint と AI チームワークフロー両方から再利用)。
 
-    payload:
-      {
-        "questions": [
-          {"exam_id": "toefl", "part_key": "r_passage1", "eiken_grade": null,
-           "question_data": {...}, "model": "claude-max-plan"}
-        ],
-        "skip_full": true  // 任意・true なら TARGET_POOL 到達 part を skip
-      }
-
-    認証: admin Bearer or x-cron-secret"""
-    authed = False
-    if authorization and authorization.startswith("Bearer "):
-        token = authorization[len("Bearer "):].strip()
-        if _verify_admin_token(token):
-            authed = True
-    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
-        authed = True
-    if not authed:
-        raise HTTPException(status_code=401, detail="未認証")
-
-    questions = payload.get("questions") or []
-    if not isinstance(questions, list) or not questions:
-        raise HTTPException(status_code=400, detail="questions が空 or 配列ではありません")
-
-    skip_full = bool(payload.get("skip_full", False))
+    入力 validation は呼び出し側で行うこと (questions が list で空ではないことを保証)。
+    重複 import の防御は呼び出し側責任 (memory: feedback_seed_import_no_loop.md)。
+    """
     counts = _exam_pool_counts() if skip_full else {}
-
     valid_rotation = {(e, p, g) for (e, p, g) in EXAM_QUESTION_ROTATION}
 
     inserted = 0
@@ -7923,6 +7914,38 @@ def admin_exam_questions_import(payload: dict, authorization: Optional[str] = He
         "failed_details": failed[:20],
         "message": f"✅ {inserted}問 import (skip {skipped}・失敗 {len(failed)})",
     }
+
+
+@app.post("/api/admin/exam-questions/import")
+def admin_exam_questions_import(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """🆓 Claude Max プラン経由で生成した問題 JSON を一括インサート ($0 運用用)。
+
+    payload:
+      {
+        "questions": [
+          {"exam_id": "toefl", "part_key": "r_passage1", "eiken_grade": null,
+           "question_data": {...}, "model": "claude-max-plan"}
+        ],
+        "skip_full": true  // 任意・true なら TARGET_POOL 到達 part を skip
+      }
+
+    認証: admin Bearer or x-cron-secret"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    questions = payload.get("questions") or []
+    if not isinstance(questions, list) or not questions:
+        raise HTTPException(status_code=400, detail="questions が空 or 配列ではありません")
+
+    skip_full = bool(payload.get("skip_full", False))
+    return _exam_questions_import_core(questions, skip_full)
 
 
 # ==========================================================================
@@ -8173,25 +8196,261 @@ def _build_ai_team_integration_prompt(exam_id: str, exam_label: str, count: int)
 """
 
 
+def _build_ai_team_fast_prompt(exam_id: str, exam_label: str, part_key: str, part_label: str,
+                                eiken_grade: Optional[str], topic_hint: Optional[str],
+                                year: Optional[int], count: int) -> str:
+    """⚡ 速攻モード: Phase 1-5 を Claude Opus 1 chat に統合する単一 prompt
+    多視点性は Opus 内 self-review chain (extended thinking) で担保。
+    塾長作業: Phase 0 検索 + この統合 prompt = 計 2 step (15-20 分/batch)"""
+    topic_clause = f"- 単元固定: 「{topic_hint}」が問題の核心" if topic_hint else "- 単元: 出題範囲内で多様性確保"
+    year_clause = f"- 年度準拠: {year} 年度の出題傾向を強く反映" if year else "- 年度: 近年トレンド優先"
+    grade_clause = f'"eiken_grade": "{eiken_grade}"' if eiken_grade else '"eiken_grade": null'
+    return f"""あなたは ai-juku の問題作成チーム **全員を兼任する Claude Opus 4.7** です。
+以下を 1 chat 内で順序実行し、最後に統合 JSON のみを返してください。
+
+【Phase 0 検索結果 (ChatGPT Project からの引用付き出力)】
+↓ ここに検索結果を貼り付けてください ↓
+<<SEARCH_RESULTS>>
+
+【作成仕様】
+- 試験: {exam_id} ({exam_label})
+- 大問: {part_key} ({part_label})
+{topic_clause}
+{year_clause}
+- 生成数: {count}問
+
+【絶対遵守】
+- 過去問の丸写しは著作権上禁止。**「形式に完全準拠した類題」** を新規作成
+- 英文は ETS / Cambridge / Oxford 級の自然な英語
+- 解説は **コアイメージ × 文構造分析の二段構え** (既存 ai-juku 流儀)
+- **教師名禁止**: 関正生・富田 等の特定教師名は出力に一切含めない (memory: english_philosophy)
+
+【🔥 解説の絶対遵守フォーマット】
+explanation フィールドは Markdown で **以下4セクションを必ず明示**:
+## 🎯 コアイメージ
+## 🔬 文構造分析 ← 絶対省略禁止
+## 📍 本文の根拠 (長文の場合)
+## ❌ 誤答 NG 理由 (multiple_choice の場合は必須)
+
+---
+
+【ステップ A: 執筆 (思考のみ・JSON 出力禁止)】
+{count} 問のドラフトを内部で執筆。各問の draft を内部記録。
+
+【ステップ B: 自己検閲 3視点 (思考のみ・JSON 出力禁止)】
+ステップ A の draft に対し、以下 3 視点で自己批判:
+
+(視点1) **内容検閲**: 本文と設問の論理整合 / 解答の唯一性 / 誤答の質 / 事実誤認なし
+(視点2) **教育検閲**: 対象学習者のレベル感 / 解説の理解しやすさ / 誤答理由の妥当性
+(視点3) **入試検閲**: 出題形式準拠 / 設問数・語数 / 既存過去問のコピーになっていないか
+
+各視点で問題ごとに OK / MINOR / MAJOR / CRITICAL を判定。CRITICAL は再執筆。
+
+【ステップ C: 統合 (最終 JSON 出力)】
+ステップ B のフィードバックを反映した最終問題セットを JSON で出力。
+
+---
+
+【出力形式 — 絶対遵守】
+**純粋な JSON のみ** (前後にテキストや説明・思考過程は出力しない・```json タグ禁止)。
+explanation 内 Markdown は \\n でエスケープ。
+
+```
+{{
+  "questions": [
+    {{
+      "exam_id": "{exam_id}",
+      "part_key": "{part_key}",
+      {grade_clause},
+      "question_data": {{
+        "passage": "...",
+        "stem": "...",
+        "choices": ["A. ...", "B. ...", "C. ...", "D. ..."],
+        "correct": "A",
+        "explanation": "## 🎯 コアイメージ\\n...\\n\\n## 🔬 文構造分析\\n..."
+      }},
+      "model": "claude-opus-4-7-team-workflow-fast"
+    }}
+  ],
+  "self_review_summary": "ステップ B の自己検閲で発見 → 修正した内容を 3-5 行で要約",
+  "removed_questions": [
+    {{ "original_index": N, "reason": "CRITICAL 解消不可: ..." }}
+  ]
+}}
+```
+
+【⚠️ 致命安全策】
+ステップ B で {count} 問のうち過半数が CRITICAL なら、最終 JSON は出力せず以下のみ返してください:
+```
+{{ "error": "critical_majority", "detail": "理由を 2-3 行" }}
+```
+これにより塾長は再生成を判断できる (memory: feedback_team_review_all_generation.md / 完全版 6 phase に切替検討)。
+
+最終 questions array は **{count}-削除数 件** になり、塾長が CEO ダッシュ Phase 6 import textarea に貼ると DB 投入されます。
+"""
+
+
+# ==========================================================================
+# 🤖 AI チーム workflow stateful DB helpers (2026-05-10 塾長負荷削減)
+# ==========================================================================
+
+def _aitw_db_save(workflow_id: str, spec: dict, phases: list, mode: str = "full",
+                   status: str = "in_progress") -> None:
+    """workflow を DB に INSERT (新規作成時)"""
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO ai_team_workflows (workflow_id, spec, phases, status, mode) VALUES (?, ?, ?, ?, ?)",
+            (workflow_id,
+             json.dumps(spec, ensure_ascii=False),
+             json.dumps(phases, ensure_ascii=False),
+             status, mode)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _aitw_db_load(workflow_id: str) -> Optional[dict]:
+    """workflow を DB から取得 (列名アクセス・memory:postgres_dict_row 対策)"""
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT workflow_id, spec, phases, status, mode, created_at, updated_at "
+            "FROM ai_team_workflows WHERE workflow_id = ?", (workflow_id,)
+        )
+        row = c.fetchone()
+        if not row:
+            return None
+        return {
+            "workflow_id": row["workflow_id"],
+            "spec": json.loads(row["spec"]) if row["spec"] else {},
+            "phases": json.loads(row["phases"]) if row["phases"] else [],
+            "status": row["status"],
+            "mode": row["mode"],
+            "created_at": str(row["created_at"]),
+            "updated_at": str(row["updated_at"]),
+        }
+    finally:
+        conn.close()
+
+
+def _aitw_db_list(status: str = "in_progress", limit: int = 20) -> list:
+    """進行中 workflow 一覧 (CEO ダッシュ表示用)"""
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT workflow_id, spec, phases, status, mode, created_at, updated_at "
+            "FROM ai_team_workflows WHERE status = ? "
+            "ORDER BY updated_at DESC LIMIT ?", (status, limit)
+        )
+        rows = c.fetchall()
+        result = []
+        for row in rows:
+            phases = json.loads(row["phases"]) if row["phases"] else []
+            completed = sum(1 for p in phases if p.get("output"))
+            spec = json.loads(row["spec"]) if row["spec"] else {}
+            result.append({
+                "workflow_id": row["workflow_id"],
+                "spec": spec,
+                "status": row["status"],
+                "mode": row["mode"],
+                "phase_count": len(phases),
+                "completed_count": completed,
+                "created_at": str(row["created_at"]),
+                "updated_at": str(row["updated_at"]),
+            })
+        return result
+    finally:
+        conn.close()
+
+
+def _aitw_db_update_phase(workflow_id: str, phase_index: int, output: str) -> Optional[dict]:
+    """phase の output を保存し、次 phase の prompt を server side で <<...>> 自動置換。
+    返却: 更新後 workflow (新 phases を含む)。失敗時 None。"""
+    wf = _aitw_db_load(workflow_id)
+    if not wf:
+        return None
+    phases = wf["phases"]
+    if phase_index < 0 or phase_index >= len(phases):
+        return None
+
+    # 現在 phase に output 保存
+    phases[phase_index]["output"] = output
+    phases[phase_index]["saved_at"] = datetime.now(JST).isoformat()
+
+    # 次 phase 以降の prompt の placeholder を全置換
+    # full mode: <<SEARCH_RESULTS>> (Phase 0→1) / <<AUTHOR_OUTPUT>> (Phase 1→2,3,4,5) /
+    #           <<REVIEW_CONTENT/PEDAGOGY/EXAM>> (Phase 2/3/4→5)
+    # fast mode: <<SEARCH_RESULTS>> (Phase 0→1)
+    placeholder_map = {
+        0: "<<SEARCH_RESULTS>>",
+        1: "<<AUTHOR_OUTPUT>>",
+        2: "<<REVIEW_CONTENT>>",
+        3: "<<REVIEW_PEDAGOGY>>",
+        4: "<<REVIEW_EXAM>>",
+    }
+    placeholder = placeholder_map.get(phase_index)
+    if placeholder:
+        for j in range(phase_index + 1, len(phases)):
+            if placeholder in phases[j].get("prompt", ""):
+                phases[j]["prompt"] = phases[j]["prompt"].replace(placeholder, output)
+
+    # DB 更新
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "UPDATE ai_team_workflows SET phases = ?, updated_at = CURRENT_TIMESTAMP "
+            "WHERE workflow_id = ?",
+            (json.dumps(phases, ensure_ascii=False), workflow_id)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    wf["phases"] = phases
+    return wf
+
+
+def _aitw_db_set_status(workflow_id: str, status: str) -> bool:
+    """status を更新 (completed / aborted)"""
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "UPDATE ai_team_workflows SET status = ?, updated_at = CURRENT_TIMESTAMP "
+            "WHERE workflow_id = ?", (status, workflow_id)
+        )
+        conn.commit()
+        return c.rowcount > 0
+    finally:
+        conn.close()
+
+
 @app.post("/api/admin/ai-team-workflow/generate")
 def admin_ai_team_workflow_generate(payload: dict, authorization: Optional[str] = Header(None)):
-    """🤖 5-AI チーム検閲ワークフロー prompt 一括生成 ($0 半自動運用)
+    """🤖 AI チーム検閲ワークフロー prompt 一括生成 ($0 半自動運用) — stateful 化済 (2026-05-10)
 
     塾長保有の Claude Max + ChatGPT Plus + Gemini を組み合わせた多視点問題生成パイプライン。
-    Phase 0 検索 (ChatGPT Project) → Phase 1 執筆 (Claude Opus) → Phase 2-4 3視点検閲
-    (GPT-5 Custom GPT / Gemini 2.5 Pro / Claude Sonnet Custom GPT) → Phase 5 統合 (Claude Opus)。
+    生成された workflow は ai_team_workflows テーブルに保存される (途中再開・別端末再開可)。
 
-    各 phase の prompt を返すので、塾長が各 AI UI にコピペ → 結果を次 phase の <<...>> 部分に貼り戻して進む。
-    最終 Phase 5 の出力をそのまま /api/admin/exam-questions/import に投入で完了。
+    mode='full' (6 phase): Phase 0 検索 → Phase 1 執筆 → Phase 2-4 3視点検閲 → Phase 5 統合
+    mode='fast' (2 phase): Phase 0 検索 → Phase 1 統合 (Opus 1 chat で執筆+self-review+統合)
+      → 60-90分→15-20分に短縮。塾長コピペ回数 6→2 (memory: feedback_ai_team_workflow.md)
 
     payload:
       {
         "exam_id": "daigaku" | "eiken" | "toefl" | "toeic" | "ielts",
         "part_key": "r_long" | "w_essay" | ...,
-        "eiken_grade": "todai" | "g2" | null  (daigaku なら大学キー),
+        "eiken_grade": "todai" | "g2" | null,
         "topic_hint": "関係代名詞" | null,
         "year": 2024 | null,
-        "count": 1-20 (default 5)
+        "count": 1-20 (default 5),
+        "mode": "full" | "fast" (default "full")
       }
     """
     _verify_admin_required(authorization)
@@ -8213,6 +8472,9 @@ def admin_ai_team_workflow_generate(payload: dict, authorization: Optional[str] 
         count = int(payload.get("count") or 5)
     except (TypeError, ValueError):
         count = 5
+    mode = (payload.get("mode") or "full").strip().lower()
+    if mode not in ("full", "fast"):
+        mode = "full"
 
     if not exam_id or not part_key:
         raise HTTPException(status_code=400, detail="exam_id と part_key は必須")
@@ -8245,102 +8507,341 @@ def admin_ai_team_workflow_generate(payload: dict, authorization: Optional[str] 
     except Exception:
         pass
 
-    # workflow_id 生成 (UI 上の識別用・DB 保存はしない・stateless)
+    # workflow_id 生成 + DB 保存 (2026-05-10 stateful 化)
     import secrets as _secrets
     workflow_id = f"wf_{datetime.now(JST).strftime('%Y%m%d_%H%M%S')}_{_secrets.token_hex(3)}"
 
-    # 6 phase の prompt を生成
-    phases = [
-        {
-            "phase": 0,
-            "name": "📚 Phase 0: ナレッジ検索",
-            "ai": "ChatGPT Project (GPT-5)",
-            "ai_url": "https://chatgpt.com/",
-            "setup_note": "事前準備: ChatGPT Plus で「ai-juku 過去問アーカイブ」Project を作成し、過去問 PDF・参考書をアップロード済にしておく",
-            "prompt": _build_ai_team_search_prompt(exam_id, exam_label, part_label, topic_hint, year, count),
-            "output_format": "Markdown (引用付き)",
-            "next_input_marker": None,  # Phase 0 は単独実行・次 phase に貼り戻す内容を指定
-        },
-        {
-            "phase": 1,
-            "name": "✍️ Phase 1: 執筆",
-            "ai": "Claude Opus 4.7 (Claude Max)",
-            "ai_url": "https://claude.ai/",
-            "setup_note": "Claude Max 契約で Opus 4.7 を選択。新規チャット推奨 (前文脈の影響を排除)",
-            "prompt": _build_ai_team_author_prompt(exam_id, exam_label, part_key, part_label, eiken_grade, topic_hint, year, count),
-            "output_format": "純粋な JSON (questions array)",
-            "next_input_marker": "<<SEARCH_RESULTS>>",
-        },
-        {
-            "phase": 2,
-            "name": "🔬 Phase 2: 内容検閲",
-            "ai": "GPT-5 (ChatGPT Plus / Custom GPT「内容検閲官」推奨)",
-            "ai_url": "https://chatgpt.com/",
-            "setup_note": "Custom GPT「ai-juku 内容検閲官」を作成済なら使用。なければ通常 GPT-5 で OK",
-            "prompt": _build_ai_team_review_prompt("content", exam_label, part_label, count),
-            "output_format": "純粋な JSON (review_results)",
-            "next_input_marker": "<<AUTHOR_OUTPUT>>",
-        },
-        {
-            "phase": 3,
-            "name": "🎓 Phase 3: 教育検閲",
-            "ai": "Gemini 2.5 Pro",
-            "ai_url": "https://aistudio.google.com/",
-            "setup_note": "Google AI Studio で Gemini 2.5 Pro を選択。学習者目線でレビュー",
-            "prompt": _build_ai_team_review_prompt("pedagogy", exam_label, part_label, count),
-            "output_format": "純粋な JSON (review_results)",
-            "next_input_marker": "<<AUTHOR_OUTPUT>>",
-        },
-        {
-            "phase": 4,
-            "name": "🎯 Phase 4: 入試検閲",
-            "ai": "Claude Sonnet 4.6 (Claude Max / Custom GPT「入試検閲官」推奨)",
-            "ai_url": "https://claude.ai/",
-            "setup_note": "Claude Max で Sonnet 4.6 を選択 (Phase 1 の Opus とは別チャットで)",
-            "prompt": _build_ai_team_review_prompt("exam", exam_label, part_label, count),
-            "output_format": "純粋な JSON (review_results)",
-            "next_input_marker": "<<AUTHOR_OUTPUT>>",
-        },
-        {
-            "phase": 5,
-            "name": "🧬 Phase 5: 統合・最終化",
-            "ai": "Claude Opus 4.7 (Claude Max)",
-            "ai_url": "https://claude.ai/",
-            "setup_note": "Phase 1 の Opus と別チャット推奨。3 検閲を統合して最終 JSON",
-            "prompt": _build_ai_team_integration_prompt(exam_id, exam_label, count),
-            "output_format": "import endpoint 用 JSON (questions array)",
-            "next_input_marker": "<<AUTHOR_OUTPUT>> / <<REVIEW_CONTENT>> / <<REVIEW_PEDAGOGY>> / <<REVIEW_EXAM>>",
-        },
-    ]
+    # mode 別 phases 構築
+    if mode == "fast":
+        # ⚡ 速攻モード: Phase 0 検索 + Phase 1 統合 (Opus 1 chat で執筆+self-review+統合)
+        phases = [
+            {
+                "phase": 0,
+                "name": "📚 Phase 0: ナレッジ検索",
+                "ai": "ChatGPT Project (GPT-5)",
+                "ai_url": "https://chatgpt.com/",
+                "setup_note": "事前準備: ChatGPT Plus で「ai-juku 過去問アーカイブ」Project を作成し、過去問 PDF・参考書をアップロード済にしておく",
+                "prompt": _build_ai_team_search_prompt(exam_id, exam_label, part_label, topic_hint, year, count),
+                "output": None,
+                "output_format": "Markdown (引用付き)",
+                "next_input_marker": None,
+            },
+            {
+                "phase": 1,
+                "name": "⚡ Phase 1: 執筆+自己検閲+統合 (1 chat)",
+                "ai": "Claude Opus 4.7 (Claude Max / Extended Thinking 推奨)",
+                "ai_url": "https://claude.ai/",
+                "setup_note": "Opus 4.7 を選択。Extended Thinking ON 推奨 (内部 self-review chain で多視点性担保)",
+                "prompt": _build_ai_team_fast_prompt(exam_id, exam_label, part_key, part_label, eiken_grade, topic_hint, year, count),
+                "output": None,
+                "output_format": "import endpoint 用 JSON (questions array)",
+                "next_input_marker": "<<SEARCH_RESULTS>>",
+            },
+        ]
+        instructions = [
+            "1. Phase 0 prompt を ChatGPT Project にコピペ → Markdown 検索結果を取得 → CEO ダッシュ Phase 0 textarea に保存",
+            "2. 自動置換された Phase 1 統合 prompt を Claude Opus に投入 (Extended Thinking 推奨)",
+            "3. Opus が出力した最終 JSON (questions array) を Phase 1 textarea に保存",
+            "4. 「📥 Import 投入」ボタンで完了 (塾長コピペ 2 回・所要 15-20 分)",
+        ]
+    else:
+        # 📦 完全版: 既存 6 phase
+        phases = [
+            {
+                "phase": 0,
+                "name": "📚 Phase 0: ナレッジ検索",
+                "ai": "ChatGPT Project (GPT-5)",
+                "ai_url": "https://chatgpt.com/",
+                "setup_note": "事前準備: ChatGPT Plus で「ai-juku 過去問アーカイブ」Project を作成し、過去問 PDF・参考書をアップロード済にしておく",
+                "prompt": _build_ai_team_search_prompt(exam_id, exam_label, part_label, topic_hint, year, count),
+                "output": None,
+                "output_format": "Markdown (引用付き)",
+                "next_input_marker": None,
+            },
+            {
+                "phase": 1,
+                "name": "✍️ Phase 1: 執筆",
+                "ai": "Claude Opus 4.7 (Claude Max)",
+                "ai_url": "https://claude.ai/",
+                "setup_note": "Claude Max 契約で Opus 4.7 を選択。新規チャット推奨 (前文脈の影響を排除)",
+                "prompt": _build_ai_team_author_prompt(exam_id, exam_label, part_key, part_label, eiken_grade, topic_hint, year, count),
+                "output": None,
+                "output_format": "純粋な JSON (questions array)",
+                "next_input_marker": "<<SEARCH_RESULTS>>",
+            },
+            {
+                "phase": 2,
+                "name": "🔬 Phase 2: 内容検閲",
+                "ai": "GPT-5 (ChatGPT Plus / Custom GPT「内容検閲官」推奨)",
+                "ai_url": "https://chatgpt.com/",
+                "setup_note": "Custom GPT「ai-juku 内容検閲官」を作成済なら使用。なければ通常 GPT-5 で OK",
+                "prompt": _build_ai_team_review_prompt("content", exam_label, part_label, count),
+                "output": None,
+                "output_format": "純粋な JSON (review_results)",
+                "next_input_marker": "<<AUTHOR_OUTPUT>>",
+            },
+            {
+                "phase": 3,
+                "name": "🎓 Phase 3: 教育検閲",
+                "ai": "Gemini 2.5 Pro",
+                "ai_url": "https://aistudio.google.com/",
+                "setup_note": "Google AI Studio で Gemini 2.5 Pro を選択。学習者目線でレビュー",
+                "prompt": _build_ai_team_review_prompt("pedagogy", exam_label, part_label, count),
+                "output": None,
+                "output_format": "純粋な JSON (review_results)",
+                "next_input_marker": "<<AUTHOR_OUTPUT>>",
+            },
+            {
+                "phase": 4,
+                "name": "🎯 Phase 4: 入試検閲",
+                "ai": "Claude Sonnet 4.6 (Claude Max / Custom GPT「入試検閲官」推奨)",
+                "ai_url": "https://claude.ai/",
+                "setup_note": "Claude Max で Sonnet 4.6 を選択 (Phase 1 の Opus とは別チャットで)",
+                "prompt": _build_ai_team_review_prompt("exam", exam_label, part_label, count),
+                "output": None,
+                "output_format": "純粋な JSON (review_results)",
+                "next_input_marker": "<<AUTHOR_OUTPUT>>",
+            },
+            {
+                "phase": 5,
+                "name": "🧬 Phase 5: 統合・最終化",
+                "ai": "Claude Opus 4.7 (Claude Max)",
+                "ai_url": "https://claude.ai/",
+                "setup_note": "Phase 1 の Opus と別チャット推奨。3 検閲を統合して最終 JSON",
+                "prompt": _build_ai_team_integration_prompt(exam_id, exam_label, count),
+                "output": None,
+                "output_format": "import endpoint 用 JSON (questions array)",
+                "next_input_marker": "<<AUTHOR_OUTPUT>> / <<REVIEW_CONTENT>> / <<REVIEW_PEDAGOGY>> / <<REVIEW_EXAM>>",
+            },
+        ]
+        instructions = [
+            "各 phase の AI に prompt をコピペ → 出力を CEO ダッシュ textarea に保存 (server で次 phase の <<...>> を自動置換)",
+            "Phase 5 textarea に最終 JSON が入ったら 「📥 Import 投入」ボタンで完了",
+            "中断・別日再開・別端末から再開すべて可能 (workflow は DB 保存)",
+        ]
+
+    spec = {
+        "exam_id": exam_id,
+        "part_key": part_key,
+        "eiken_grade": eiken_grade,
+        "topic_hint": topic_hint,
+        "year": year,
+        "count": count,
+        "exam_label": exam_label,
+        "part_label": part_label,
+    }
+
+    # DB 保存 (stateful 化)
+    try:
+        _aitw_db_save(workflow_id, spec, phases, mode=mode, status="in_progress")
+    except Exception as e:
+        log.error(f"[AITW] DB save failed: {e}")
+        # DB 保存失敗でも prompt 生成自体は成功扱い (塾長が手動コピペで進められる)
 
     return {
         "ok": True,
         "workflow_id": workflow_id,
-        "spec": {
-            "exam_id": exam_id,
-            "part_key": part_key,
-            "eiken_grade": eiken_grade,
-            "topic_hint": topic_hint,
-            "year": year,
-            "count": count,
-            "exam_label": exam_label,
-            "part_label": part_label,
-        },
+        "mode": mode,
+        "spec": spec,
         "phases": phases,
         "import_endpoint": "/api/admin/exam-questions/import",
         "import_payload_template": {
-            "questions": "<<Phase 5 出力 JSON の questions array をここに貼り付け>>",
+            "questions": "<<最終 phase 出力 JSON の questions array をここに貼り付け>>",
             "skip_full": False,
         },
-        "instructions": [
-            "1. Phase 0 prompt を ChatGPT Project にコピペ → Markdown 検索結果を取得",
-            "2. Phase 1 prompt の <<SEARCH_RESULTS>> を Phase 0 出力で置換 → Claude Opus に投入",
-            "3. Phase 2/3/4 prompt の <<AUTHOR_OUTPUT>> を Phase 1 出力で置換 → 各 AI に並列投入可",
-            "4. Phase 5 prompt の <<...>> 4 箇所を Phase 1+2+3+4 出力で置換 → Claude Opus に投入",
-            "5. Phase 5 出力の questions array を /api/admin/exam-questions/import に投入で完了",
-        ],
-        "memory_note": "memory: feedback_team_review_all_generation.md / feedback_5_person_textbook_review.md / feedback_3_person_team_review.md の AI 多視点版実装",
+        "instructions": instructions,
+        "memory_note": "memory: feedback_team_review_all_generation.md / feedback_5_person_textbook_review.md / feedback_3_person_team_review.md / feedback_ai_team_workflow.md の AI 多視点版実装",
     }
+
+
+@app.get("/api/admin/ai-team-workflows")
+def admin_ai_team_workflows_list(
+    status: Optional[str] = "in_progress",
+    limit: int = 20,
+    authorization: Optional[str] = Header(None),
+):
+    """🤖 進行中 (or 指定 status) の AI チーム workflow 一覧。CEO ダッシュ「再開」UI 用。"""
+    _verify_admin_required(authorization)
+    if status not in ("in_progress", "completed", "aborted", "all"):
+        status = "in_progress"
+    if limit < 1 or limit > 100:
+        limit = 20
+    if status == "all":
+        # 全 status を取得する場合は status='in_progress' 以外も含む
+        conn = db()
+        try:
+            c = conn.cursor()
+            c.execute(
+                "SELECT workflow_id, spec, phases, status, mode, created_at, updated_at "
+                "FROM ai_team_workflows ORDER BY updated_at DESC LIMIT ?", (limit,)
+            )
+            rows = c.fetchall()
+            results = []
+            for row in rows:
+                phases = json.loads(row["phases"]) if row["phases"] else []
+                completed = sum(1 for p in phases if p.get("output"))
+                results.append({
+                    "workflow_id": row["workflow_id"],
+                    "spec": json.loads(row["spec"]) if row["spec"] else {},
+                    "status": row["status"],
+                    "mode": row["mode"],
+                    "phase_count": len(phases),
+                    "completed_count": completed,
+                    "created_at": str(row["created_at"]),
+                    "updated_at": str(row["updated_at"]),
+                })
+            return {"ok": True, "count": len(results), "workflows": results}
+        finally:
+            conn.close()
+    return {"ok": True, "count": 0, "workflows": _aitw_db_list(status=status, limit=limit)}
+
+
+@app.get("/api/admin/ai-team-workflow/{workflow_id}")
+def admin_ai_team_workflow_get(workflow_id: str, authorization: Optional[str] = Header(None)):
+    """🤖 1 件の workflow を取得 (再開用)"""
+    _verify_admin_required(authorization)
+    wf = _aitw_db_load(workflow_id)
+    if not wf:
+        raise HTTPException(status_code=404, detail="workflow not found")
+    return {"ok": True, **wf}
+
+
+@app.post("/api/admin/ai-team-workflow/{workflow_id}/phase/{phase_index}/save")
+def admin_ai_team_workflow_save_phase(
+    workflow_id: str, phase_index: int, payload: dict,
+    authorization: Optional[str] = Header(None),
+):
+    """🤖 phase の output を保存 → 次 phase の prompt を server side で <<...>> 自動置換。
+    塾長は CEO ダッシュ textarea にペースト → このエンドポイントを叩くだけで OK。
+    手動置換ミスを完全排除 (memory: 60-90分→15-20分の中核機能)。"""
+    _verify_admin_required(authorization)
+    output = payload.get("output", "")
+    if not isinstance(output, str):
+        raise HTTPException(status_code=400, detail="output は string")
+    output = output.strip()
+    if not output:
+        raise HTTPException(status_code=400, detail="output が空です")
+
+    wf = _aitw_db_load(workflow_id)
+    if not wf:
+        raise HTTPException(status_code=404, detail="workflow not found")
+    if wf["status"] in ("completed", "aborted"):
+        raise HTTPException(status_code=409, detail=f"workflow は既に {wf['status']} です")
+
+    updated = _aitw_db_update_phase(workflow_id, phase_index, output)
+    if not updated:
+        raise HTTPException(status_code=400, detail="phase_index が範囲外")
+
+    # 残存 placeholder の検出 (置換漏れ警告)
+    next_phase = updated["phases"][phase_index + 1] if phase_index + 1 < len(updated["phases"]) else None
+    placeholder_warnings = []
+    if next_phase and next_phase.get("prompt"):
+        for marker in ["<<SEARCH_RESULTS>>", "<<AUTHOR_OUTPUT>>", "<<REVIEW_CONTENT>>",
+                        "<<REVIEW_PEDAGOGY>>", "<<REVIEW_EXAM>>"]:
+            if marker in next_phase["prompt"]:
+                placeholder_warnings.append(marker)
+
+    return {
+        "ok": True,
+        "workflow_id": workflow_id,
+        "saved_phase": phase_index,
+        "next_phase_index": phase_index + 1 if phase_index + 1 < len(updated["phases"]) else None,
+        "next_phase": next_phase,
+        "placeholder_warnings": placeholder_warnings,
+        "completed_count": sum(1 for p in updated["phases"] if p.get("output")),
+        "phase_count": len(updated["phases"]),
+    }
+
+
+@app.post("/api/admin/ai-team-workflow/{workflow_id}/import")
+def admin_ai_team_workflow_import(
+    workflow_id: str, payload: dict,
+    authorization: Optional[str] = Header(None),
+):
+    """🤖 workflow の最終 phase output を /api/admin/exam-questions/import に内部投入。
+    成功したら status='completed' に。
+    payload 任意: { "skip_full": false }
+    重複押下防止: status が既に completed なら 409。"""
+    _verify_admin_required(authorization)
+    wf = _aitw_db_load(workflow_id)
+    if not wf:
+        raise HTTPException(status_code=404, detail="workflow not found")
+    if wf["status"] == "completed":
+        raise HTTPException(status_code=409, detail="既に import 完了済 (重複防止)")
+    if wf["status"] == "aborted":
+        raise HTTPException(status_code=409, detail="abort 済 workflow は import 不可")
+
+    phases = wf["phases"]
+    last_phase = phases[-1] if phases else None
+    final_output = (last_phase or {}).get("output", "").strip()
+    if not final_output:
+        raise HTTPException(status_code=400, detail="最終 phase の output が未保存です")
+
+    # JSON parse + questions 抽出
+    try:
+        parsed = json.loads(final_output)
+    except json.JSONDecodeError as e:
+        raise HTTPException(status_code=400, detail=f"最終 phase の JSON parse 失敗: {e}")
+    # critical_majority error の場合は拒否
+    if isinstance(parsed, dict) and parsed.get("error") == "critical_majority":
+        raise HTTPException(
+            status_code=400,
+            detail=f"fast mode で過半数 CRITICAL が検出されました。完全版に切替推奨: {parsed.get('detail', '')}"
+        )
+    questions = parsed.get("questions") if isinstance(parsed, dict) else parsed
+    if not isinstance(questions, list) or not questions:
+        raise HTTPException(status_code=400, detail="questions array が空または配列ではありません")
+
+    skip_full = bool(payload.get("skip_full", False))
+
+    # race condition 対策 (memory: feedback_seed_import_no_loop.md):
+    # status='in_progress' のときだけ 'importing' に claim → 2 タブ同時押しを 1 つに絞る
+    now_iso = datetime.now(JST).isoformat()
+    conn_lock = db()
+    try:
+        c_lock = conn_lock.cursor()
+        c_lock.execute(
+            "UPDATE ai_team_workflows SET status = ?, updated_at = ? WHERE workflow_id = ? AND status = ?",
+            ("importing", now_iso, workflow_id, "in_progress"),
+        )
+        conn_lock.commit()
+        if c_lock.rowcount == 0:
+            raise HTTPException(status_code=409, detail="他のセッションが先に import を開始したか、status が in_progress ではありません")
+    finally:
+        conn_lock.close()
+
+    # 共通 import core を再利用 (memory: feedback_seed_import_no_loop.md)
+    try:
+        result = _exam_questions_import_core(questions, skip_full)
+    except Exception as e:
+        # import 失敗時は status を in_progress に戻して再試行可能にする
+        _aitw_db_set_status(workflow_id, "in_progress")
+        log.exception(f"[AITW:Import] wf={workflow_id} failed")
+        raise HTTPException(status_code=500, detail=f"import 失敗: {type(e).__name__}: {e}")
+
+    # status='completed' に更新 (失敗問題があっても workflow としては完了扱い)
+    _aitw_db_set_status(workflow_id, "completed")
+    log.info(f"[AITW:Import] wf={workflow_id} inserted={result.get('inserted')} skipped={result.get('skipped_full')} failed={result.get('failed')}")
+
+    return {
+        "ok": True,
+        "workflow_id": workflow_id,
+        **result,  # received / inserted / skipped_full / failed / failed_details / message を top-level にも
+        "message": f"✅ {result.get('inserted')}問 import (skip {result.get('skipped_full')}・失敗 {result.get('failed')}) — workflow 完了",
+    }
+
+
+@app.post("/api/admin/ai-team-workflow/{workflow_id}/abort")
+def admin_ai_team_workflow_abort(workflow_id: str, authorization: Optional[str] = Header(None)):
+    """🤖 workflow を中止状態に (status='aborted')。再開不可になる。"""
+    _verify_admin_required(authorization)
+    wf = _aitw_db_load(workflow_id)
+    if not wf:
+        raise HTTPException(status_code=404, detail="workflow not found")
+    if wf["status"] != "in_progress":
+        raise HTTPException(status_code=409, detail=f"workflow は既に {wf['status']} です")
+    _aitw_db_set_status(workflow_id, "aborted")
+    return {"ok": True, "workflow_id": workflow_id, "status": "aborted"}
 
 
 @app.get("/api/admin/ai-team-workflow/custom-gpt-spec")

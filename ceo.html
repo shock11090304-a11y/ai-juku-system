@@ -692,6 +692,19 @@
           Phase 0 (ChatGPT Project で過去問検索) → Phase 1 (Claude Opus で執筆) → Phase 2/3/4 (GPT-5/Gemini/Claude Sonnet で 3 視点検閲) → Phase 5 (Claude Opus で統合)。<br>
           <span style="color:#fbbf24;">塾長作業: 各 phase の prompt を該当 AI UI にコピペ → 結果を次 phase の <code>&lt;&lt;...&gt;&gt;</code> 箇所で置換 → 投入 (× 6 回)</span>
         </div>
+        <!-- 🎯 Mode 選択 (2026-05-10 塾長負荷削減) -->
+        <div style="display:flex;flex-wrap:wrap;gap:0.6rem;margin-bottom:0.4rem;align-items:center;font-size:0.78rem;">
+          <span style="color:#c4b5fd;font-weight:700;">モード:</span>
+          <label style="display:flex;align-items:center;gap:0.3rem;cursor:pointer;">
+            <input type="radio" name="aiwMode" value="full" checked> 📦 完全版 (6 phase・35-45分・最高品質)
+          </label>
+          <label style="display:flex;align-items:center;gap:0.3rem;cursor:pointer;">
+            <input type="radio" name="aiwMode" value="fast"> ⚡ 速攻版 (2 phase・15-20分・Opus self-review)
+          </label>
+        </div>
+        <div style="font-size:0.7rem;color:#fbbf24;margin-bottom:0.6rem;line-height:1.6;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:6px;padding:0.4rem 0.6rem;">
+          ⚠️ <strong>速攻版の品質トレードオフ</strong>: 同一 Opus chat 内で執筆 + self-review + 統合を完結するため、<strong>異 AI による独立 multi-perspective レビューは行われません</strong>。memory: <code>feedback_5_person_textbook_review.md</code> の 5 人チーム原則とのトレードオフあり。<strong>重要 batch (eiken/daigaku) は完全版推奨</strong>・試行的 batch のみ速攻版。critical_majority 検出時は完全版で再生成してください。
+        </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.4rem;margin-bottom:0.6rem;">
           <select id="aiwExamId" style="background:rgba(0,0,0,0.4);border:1px solid rgba(168,85,247,0.4);color:#fff;padding:0.45rem 0.6rem;border-radius:6px;font-size:0.8rem;">
             <option value="">試験選択...</option>
@@ -708,26 +721,31 @@
           <input id="aiwCount" type="number" min="1" max="20" value="5" placeholder="問数" style="background:rgba(0,0,0,0.4);border:1px solid rgba(168,85,247,0.4);color:#fff;padding:0.45rem 0.6rem;border-radius:6px;font-size:0.8rem;">
         </div>
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.7rem;">
-          <button id="aiwGenerateBtn" type="button" style="background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;border:none;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">✨ ワークフロー prompt を一括生成</button>
+          <button id="aiwGenerateBtn" type="button" style="background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;border:none;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">✨ ワークフロー開始 (DB 保存)</button>
+          <button id="aiwResumeListBtn" type="button" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;" title="進行中の workflow 一覧を表示して再開">⏯️ 進行中の再開</button>
           <button id="aiwCustomGptBtn" type="button" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;" title="ChatGPT Plus に貼り付ける Custom GPT 3 体の設計書 (NotebookLM 代替)">📚 Custom GPT 設計書</button>
           <button id="aiwClearBtn" type="button" style="background:rgba(168,85,247,0.15);color:#c4b5fd;border:1px solid rgba(168,85,247,0.4);padding:0.6rem 1rem;border-radius:8px;font-size:0.8rem;cursor:pointer;">🗑️ クリア</button>
         </div>
+        <!-- 進行中 workflow 一覧 (再開用・aiwResumeListBtn で表示) -->
+        <div id="aiwActiveList" style="display:none;margin-bottom:0.7rem;font-size:0.78rem;color:#cbd5e1;background:rgba(0,0,0,0.3);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:0.7rem;line-height:1.6;"></div>
         <div id="aiwResult" style="display:none;font-size:0.78rem;color:#cbd5e1;background:rgba(0,0,0,0.3);border:1px solid rgba(168,85,247,0.25);border-radius:8px;padding:0.7rem;line-height:1.6;max-height:60vh;overflow-y:auto;"></div>
 
-        <!-- Phase 5 出力 import 用セクション -->
-        <div style="margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid rgba(168,85,247,0.2);">
-          <div style="font-size:0.78rem;font-weight:800;color:#c4b5fd;margin-bottom:0.4rem;">📥 Phase 5 統合出力を import endpoint へ投入</div>
-          <div style="font-size:0.72rem;color:#94a3b8;line-height:1.6;margin-bottom:0.4rem;">
-            Phase 5 (Claude Opus 統合) の出力 JSON 全体 (<code>{"questions":[...], ...}</code>) を貼り付けて 1 度だけ押下。<br>
-            <span style="color:#fbbf24;">⚠️ memory: 重複連発事故防止のため 2 回押し禁止 (押下後はボタン無効化)。</span>
+        <!-- 🆘 緊急 fallback: 手動 paste import (DB 障害時用)・通常は新 workflow 経由 import を使用 -->
+        <details style="margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid rgba(168,85,247,0.2);">
+          <summary style="cursor:pointer;font-size:0.78rem;font-weight:800;color:#71717a;">🆘 緊急 fallback: 手動 paste import (DB workflow 障害時のみ・展開して使用)</summary>
+          <div style="margin-top:0.5rem;padding:0.6rem;background:rgba(248,113,113,0.05);border:1px solid rgba(248,113,113,0.25);border-radius:6px;">
+            <div style="font-size:0.72rem;color:#fca5a5;line-height:1.6;margin-bottom:0.4rem;">
+              ⚠️ <strong>通常は使わないでください</strong>。新 workflow の「📥 import 投入」ボタンが workflow_id 紐付け + 二重 import 防御を提供します。<br>
+              この section は DB 障害で workflow が保存できない場合の最終手段です。塾長が active workflow と同じ JSON を貼ると <strong>重複 INSERT 確定</strong>。
+            </div>
+            <textarea id="aiwImportPayload" rows="5" placeholder='Phase 5 出力 JSON (例: {"questions":[...]}) を貼り付け - 通常は新 workflow ボタンを使用' style="width:100%;background:#0f172a;color:#e4e4e7;border:1px solid rgba(248,113,113,0.3);padding:0.5rem;border-radius:6px;font-size:0.78rem;font-family:ui-monospace,monospace;line-height:1.5;resize:vertical;"></textarea>
+            <div style="display:flex;gap:0.5rem;margin-top:0.4rem;align-items:center;flex-wrap:wrap;">
+              <button id="aiwImportBtn" type="button" style="background:rgba(248,113,113,0.2);color:#fca5a5;border:1px solid rgba(248,113,113,0.4);padding:0.5rem 1rem;border-radius:6px;font-size:0.78rem;font-weight:800;cursor:pointer;">🆘 緊急 fallback で投入</button>
+              <span style="font-size:0.7rem;color:#71717a;">active workflow がある場合は警告ダイアログが出ます</span>
+            </div>
           </div>
-          <textarea id="aiwImportPayload" rows="6" placeholder='Phase 5 出力 JSON (例: {"questions":[...]}) を貼り付け' style="width:100%;background:#0f172a;color:#e4e4e7;border:1px solid rgba(168,85,247,0.3);padding:0.5rem;border-radius:6px;font-size:0.78rem;font-family:ui-monospace,monospace;line-height:1.5;resize:vertical;"></textarea>
-          <div style="display:flex;gap:0.5rem;margin-top:0.4rem;align-items:center;">
-            <button id="aiwImportBtn" type="button" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;padding:0.5rem 1rem;border-radius:6px;font-size:0.82rem;font-weight:800;cursor:pointer;">📥 exam-questions/import に投入</button>
-            <span style="font-size:0.72rem;color:#71717a;">投入後はボタンが無効化されます</span>
-          </div>
-          <div id="aiwImportResult" style="display:none;margin-top:0.5rem;font-size:0.78rem;background:rgba(0,0,0,0.3);border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:0.5rem;"></div>
-        </div>
+        </details>
+        <div id="aiwImportResult" style="display:none;margin-top:0.5rem;font-size:0.78rem;background:rgba(0,0,0,0.3);border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:0.5rem;"></div>
       </div>
     </section>
 
@@ -4497,40 +4515,81 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         setupStripePricesBtn.disabled = false; setupStripePricesBtn.innerHTML = orig;
       });
 
-      // 🤖 AI チーム検閲ワークフロー (2026-05-10)
+      // 🤖 AI チーム検閲ワークフロー (stateful 化 2026-05-10)
+      window.__aitw_active_wf = null;  // 現在表示中の workflow
+
+      function _aitwEscape(s) {
+        return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]));
+      }
+
       function _renderAIWorkflowResult(j) {
         const box = document.getElementById('aiwResult');
         if (!box) return;
+        window.__aitw_active_wf = j;
         box.style.display = 'block';
         const spec = j.spec || {};
         const phases = j.phases || [];
-        const instr = (j.instructions || []).map(s => `<li style="margin-bottom:0.2rem;">${s}</li>`).join('');
+        const wid = j.workflow_id || '';
+        const mode = j.mode || 'full';
+        const instr = (j.instructions || []).map(s => `<li style="margin-bottom:0.2rem;">${_aitwEscape(s)}</li>`).join('');
+
         const phasesHtml = phases.map((p, idx) => {
           const promptId = `aiwPrompt_${idx}`;
-          const escaped = (p.prompt || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-          const marker = p.next_input_marker
-            ? `<div style="font-size:0.72rem;color:#fbbf24;margin-top:0.3rem;">📌 prompt 内の <code>${(p.next_input_marker||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code> を前 phase 出力で置換してから AI に投げる</div>`
+          const outputId = `aiwOutput_${idx}`;
+          const promptEsc = _aitwEscape(p.prompt || '');
+          const outputEsc = _aitwEscape(p.output || '');
+          const isLast = idx === phases.length - 1;
+          const saveLabel = isLast ? '💾 保存 → 📥 Import 投入で完了' : '💾 保存して次 phase へ自動展開';
+          const savedAt = p.saved_at ? `<span style="color:#86efac;">✅ 保存済 (${p.saved_at.slice(0,16)})</span>` : '<span style="color:#71717a;">未保存</span>';
+          // placeholder 残存検出 (visual indicator)
+          const hasPlaceholder = (p.prompt||'').match(/<<(SEARCH_RESULTS|AUTHOR_OUTPUT|REVIEW_(CONTENT|PEDAGOGY|EXAM))>>/);
+          const placeholderWarn = hasPlaceholder
+            ? `<div style="font-size:0.72rem;color:#fbbf24;margin-top:0.3rem;">⚠️ <code>${_aitwEscape(hasPlaceholder[0])}</code> が未置換 — 前 phase の保存待ち (server で自動置換されます)</div>`
+            : '';
+          // Phase 0 専用ガイド: 過去問 PDF をどう集めるか
+          const phase0Guide = idx === 0
+            ? `<div style="font-size:0.72rem;color:#fbbf24;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:6px;padding:0.5rem;margin-top:0.4rem;line-height:1.6;">
+                💡 <strong>事前準備:</strong> ChatGPT Plus で「ai-juku 過去問アーカイブ」Project を作成 →
+                赤本 PDF / 過去問集 / 公式ガイド (TOEIC/TOEFL/IELTS) を Knowledge にアップロード。
+                未準備の場合は上の <strong>📚 Custom GPT 設計書</strong> ボタンで推奨ファイル一覧を確認してください。
+              </div>`
             : '';
           return `<div style="margin-top:0.7rem;padding:0.6rem;background:rgba(0,0,0,0.4);border:1px solid rgba(168,85,247,0.25);border-radius:8px;">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.3rem;">
-              <div style="font-weight:800;color:#c4b5fd;font-size:0.85rem;">${p.name||''}</div>
-              <a href="${p.ai_url||'#'}" target="_blank" rel="noopener" style="color:#a78bfa;font-size:0.72rem;text-decoration:underline;">${p.ai||''} ↗</a>
+              <div style="font-weight:800;color:#c4b5fd;font-size:0.85rem;">${_aitwEscape(p.name||'')}</div>
+              <div style="font-size:0.7rem;">${savedAt}</div>
             </div>
-            <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.3rem;">${p.setup_note||''}</div>
-            ${marker}
-            <textarea id="${promptId}" readonly rows="6" style="width:100%;background:#0f172a;color:#e4e4e7;border:1px solid rgba(168,85,247,0.25);padding:0.4rem;border-radius:6px;font-size:0.74rem;font-family:ui-monospace,monospace;line-height:1.4;resize:vertical;margin-top:0.3rem;">${escaped}</textarea>
-            <div style="display:flex;gap:0.4rem;margin-top:0.3rem;">
+            <a href="${_aitwEscape(p.ai_url||'#')}" target="_blank" rel="noopener" style="color:#a78bfa;font-size:0.72rem;text-decoration:underline;display:inline-block;margin-bottom:0.3rem;">${_aitwEscape(p.ai||'')} ↗</a>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.3rem;">${_aitwEscape(p.setup_note||'')}</div>
+            ${phase0Guide}
+            ${placeholderWarn}
+            <div style="font-size:0.7rem;color:#a78bfa;font-weight:700;margin-top:0.4rem;margin-bottom:0.2rem;">📤 prompt (この AI に投げる):</div>
+            <textarea id="${promptId}" readonly rows="5" style="width:100%;background:#0f172a;color:#e4e4e7;border:1px solid rgba(168,85,247,0.25);padding:0.4rem;border-radius:6px;font-size:0.74rem;font-family:ui-monospace,monospace;line-height:1.4;resize:vertical;">${promptEsc}</textarea>
+            <div style="display:flex;gap:0.4rem;margin-top:0.3rem;flex-wrap:wrap;">
               <button type="button" data-target="${promptId}" class="aiwCopyBtn" style="background:rgba(168,85,247,0.25);color:#c4b5fd;border:1px solid rgba(168,85,247,0.4);padding:0.4rem 0.7rem;border-radius:6px;font-size:0.74rem;font-weight:700;cursor:pointer;">📋 prompt をコピー</button>
-              <span style="font-size:0.7rem;color:#71717a;align-self:center;">出力形式: ${p.output_format||''}</span>
+              <span style="font-size:0.7rem;color:#71717a;align-self:center;">出力形式: ${_aitwEscape(p.output_format||'')}</span>
+            </div>
+            <div style="font-size:0.7rem;color:#86efac;font-weight:700;margin-top:0.5rem;margin-bottom:0.2rem;">📥 ${_aitwEscape(p.ai||'')} の出力をここに貼り付け:</div>
+            <textarea id="${outputId}" rows="5" placeholder="${_aitwEscape(p.ai||'AI')} からの出力を貼り付け" style="width:100%;background:#0f172a;color:#e4e4e7;border:1px solid rgba(34,197,94,0.3);padding:0.4rem;border-radius:6px;font-size:0.74rem;font-family:ui-monospace,monospace;line-height:1.4;resize:vertical;">${outputEsc}</textarea>
+            <div style="display:flex;gap:0.4rem;margin-top:0.3rem;flex-wrap:wrap;">
+              <button type="button" data-phase-index="${idx}" data-output-id="${outputId}" data-is-last="${isLast?'1':'0'}" class="aiwSavePhaseBtn" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;padding:0.4rem 0.9rem;border-radius:6px;font-size:0.78rem;font-weight:800;cursor:pointer;">${saveLabel}</button>
             </div>
           </div>`;
         }).join('');
-        box.innerHTML = `<div style="font-size:0.78rem;font-weight:800;color:#c4b5fd;margin-bottom:0.4rem;">workflow_id: <code>${j.workflow_id||''}</code></div>
-          <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.4rem;">対象: ${spec.exam_label||''} / ${spec.part_label||spec.part_key||''} / ${spec.count||0}問${spec.topic_hint?` / 単元「${spec.topic_hint}」`:''}${spec.year?` / ${spec.year}年`:''}</div>
+
+        const modeChip = mode === 'fast'
+          ? '<span style="background:rgba(245,158,11,0.2);color:#fbbf24;padding:0.15rem 0.5rem;border-radius:4px;font-size:0.7rem;font-weight:700;">⚡ 速攻版</span>'
+          : '<span style="background:rgba(168,85,247,0.2);color:#c4b5fd;padding:0.15rem 0.5rem;border-radius:4px;font-size:0.7rem;font-weight:700;">📦 完全版</span>';
+
+        box.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;flex-wrap:wrap;gap:0.4rem;">
+            <div style="font-size:0.78rem;font-weight:800;color:#c4b5fd;">workflow_id: <code style="color:#fbbf24;">${_aitwEscape(wid)}</code> ${modeChip}</div>
+            <button type="button" id="aiwAbortBtn" style="background:rgba(248,113,113,0.15);color:#fca5a5;border:1px solid rgba(248,113,113,0.4);padding:0.3rem 0.7rem;border-radius:6px;font-size:0.7rem;cursor:pointer;">🛑 中止</button>
+          </div>
+          <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.4rem;">対象: ${_aitwEscape(spec.exam_label||'')} / ${_aitwEscape(spec.part_label||spec.part_key||'')} / ${spec.count||0}問${spec.topic_hint?` / 単元「${_aitwEscape(spec.topic_hint)}」`:''}${spec.year?` / ${spec.year}年`:''}</div>
           <details style="margin-bottom:0.5rem;"><summary style="cursor:pointer;color:#a78bfa;font-size:0.74rem;font-weight:700;">📖 ワークフロー手順 (展開)</summary><ol style="font-size:0.72rem;color:#cbd5e1;margin:0.4rem 0 0 1.2rem;padding:0;">${instr}</ol></details>
           ${phasesHtml}
           <div style="margin-top:0.6rem;padding:0.5rem;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:6px;font-size:0.72rem;color:#86efac;">
-            ✅ 全 6 phase 完了後、Phase 5 出力を下の「📥 Phase 5 統合出力を import」textarea に貼り付けて投入してください。
+            ✅ 最終 phase の output を保存 → 自動的に「📥 Import 投入」可能になります (workflow_id 紐付け)。
           </div>`;
 
         // copy ボタンに handler 付与
@@ -4550,6 +4609,124 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             }
           });
         });
+
+        // 保存ボタンに handler 付与
+        box.querySelectorAll('.aiwSavePhaseBtn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const phaseIdx = parseInt(btn.dataset.phaseIndex, 10);
+            const outputId = btn.dataset.outputId;
+            const isLast = btn.dataset.isLast === '1';
+            const ta = document.getElementById(outputId);
+            const output = (ta?.value || '').trim();
+            if (!output) return alert('出力が空です。AI の出力を貼り付けてから保存してください');
+            btn.disabled = true; const orig = btn.innerHTML;
+            btn.innerHTML = '⏳ 保存中...';
+            try {
+              const r = await AdminAuth.fetch(`/api/admin/ai-team-workflow/${encodeURIComponent(wid)}/phase/${phaseIdx}/save`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ output })
+              });
+              const jj = await r.json();
+              if (r.ok && jj.ok) {
+                // 次 phase の prompt textarea を server から返却された置換済 prompt で更新
+                if (jj.next_phase) {
+                  const nextPromptTa = document.getElementById(`aiwPrompt_${jj.next_phase_index}`);
+                  if (nextPromptTa && jj.next_phase.prompt) {
+                    nextPromptTa.value = jj.next_phase.prompt;
+                  }
+                }
+                if (jj.placeholder_warnings && jj.placeholder_warnings.length) {
+                  alert('⚠️ 次 phase に未置換 placeholder が残っています: ' + jj.placeholder_warnings.join(', '));
+                }
+                btn.innerHTML = `✅ 保存済 (${jj.completed_count}/${jj.phase_count})`;
+                btn.style.background = 'rgba(34,197,94,0.3)';
+
+                // 最終 phase 保存後は自動 import を提案
+                if (isLast) {
+                  if (confirm(`✅ 最終 phase 保存完了。\n\n続けて exam-questions/import に投入しますか?\n(workflow_id=${wid})`)) {
+                    await _aitwImport(wid);
+                  }
+                }
+              } else {
+                btn.innerHTML = orig;
+                btn.disabled = false;
+                alert('⚠️ ' + (jj.detail || JSON.stringify(jj)));
+              }
+            } catch (e) {
+              btn.innerHTML = orig;
+              btn.disabled = false;
+              alert('⚠️ ' + e.message);
+            }
+          });
+        });
+
+        // 中止ボタン
+        const abortBtn = document.getElementById('aiwAbortBtn');
+        if (abortBtn) abortBtn.addEventListener('click', async () => {
+          if (!confirm('この workflow を中止しますか? 中止後は再開不可です')) return;
+          try {
+            const r = await AdminAuth.fetch(`/api/admin/ai-team-workflow/${encodeURIComponent(wid)}/abort`, { method: 'POST' });
+            const jj = await r.json();
+            if (r.ok && jj.ok) {
+              box.innerHTML = `<div style="color:#fca5a5;font-weight:800;">🛑 workflow ${_aitwEscape(wid)} を中止しました</div>`;
+              window.__aitw_active_wf = null;
+            } else {
+              alert('⚠️ ' + (jj.detail || JSON.stringify(jj)));
+            }
+          } catch (e) { alert('⚠️ ' + e.message); }
+        });
+      }
+
+      // workflow を import endpoint に投入 (新エンドポイント経由 / workflow_id 紐付け)
+      async function _aitwImport(wid) {
+        try {
+          const r = await AdminAuth.fetch(`/api/admin/ai-team-workflow/${encodeURIComponent(wid)}/import`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ skip_full: false })
+          });
+          const j = await r.json();
+          const ir = document.getElementById('aiwImportResult');
+          if (ir) {
+            ir.style.display = 'block';
+            if (r.ok && j.ok) {
+              ir.style.borderColor = 'rgba(34,197,94,0.4)';
+              ir.style.color = '#86efac';
+              ir.innerHTML = `✅ ${_aitwEscape(j.message||'')} (受信 ${j.received}・投入 ${j.inserted}・skip ${j.skipped_full}・失敗 ${j.failed})`;
+            } else {
+              ir.style.borderColor = 'rgba(248,113,113,0.4)';
+              ir.style.color = '#fca5a5';
+              const detail = j.detail || JSON.stringify(j);
+              // 速攻版で critical_majority 検出時は完全版で再実行を提案
+              if (typeof detail === 'string' && detail.includes('critical_majority')) {
+                const wf = window.__aitw_active_wf;
+                const spec = wf?.spec || {};
+                ir.innerHTML = `🚨 <strong>重大エラー検出</strong>: 速攻版の自己検閲で過半数が CRITICAL でした。<br>
+                  <span style="color:#fbbf24;">${_aitwEscape(detail)}</span><br>
+                  💡 <strong>完全版モード (3 AI 多視点検閲) での再実行を推奨</strong>。同じ条件で完全版を起動しますか?
+                  <div style="margin-top:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;">
+                    <button id="aiwRetryFullBtn" data-spec='${_aitwEscape(JSON.stringify(spec))}' style="background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;border:none;padding:0.4rem 0.9rem;border-radius:6px;font-size:0.78rem;font-weight:800;cursor:pointer;">📦 完全版で再実行</button>
+                  </div>`;
+                // retry handler
+                setTimeout(() => {
+                  const retryBtn = document.getElementById('aiwRetryFullBtn');
+                  if (retryBtn) retryBtn.addEventListener('click', () => {
+                    document.getElementById('aiwExamId').value = spec.exam_id || '';
+                    document.getElementById('aiwPartKey').value = spec.part_key || '';
+                    document.getElementById('aiwGrade').value = spec.eiken_grade || '';
+                    document.getElementById('aiwTopic').value = spec.topic_hint || '';
+                    if (spec.year) document.getElementById('aiwYear').value = spec.year;
+                    document.getElementById('aiwCount').value = spec.count || 5;
+                    const fullRadio = document.querySelector('input[name="aiwMode"][value="full"]');
+                    if (fullRadio) fullRadio.checked = true;
+                    document.getElementById('aiwGenerateBtn').click();
+                  });
+                }, 50);
+              } else {
+                ir.innerHTML = `⚠️ ${_aitwEscape(detail)}`;
+              }
+            }
+          }
+        } catch (e) { alert('⚠️ ' + e.message); }
       }
 
       const aiwGenerateBtn = document.getElementById('aiwGenerateBtn');
@@ -4562,13 +4739,15 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         const yearVal = document.getElementById('aiwYear').value.trim();
         const year = yearVal ? parseInt(yearVal, 10) : null;
         const count = parseInt(document.getElementById('aiwCount').value || '5', 10);
+        const modeRadio = document.querySelector('input[name="aiwMode"]:checked');
+        const mode = modeRadio ? modeRadio.value : 'full';
         if (!exam_id || !part_key) return alert('試験 と part_key は必須です');
         aiwGenerateBtn.disabled = true; const orig = aiwGenerateBtn.innerHTML;
         aiwGenerateBtn.innerHTML = '⏳ 生成中...';
         try {
           const r = await AdminAuth.fetch('/api/admin/ai-team-workflow/generate', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ exam_id, part_key, eiken_grade, topic_hint, year, count })
+            body: JSON.stringify({ exam_id, part_key, eiken_grade, topic_hint, year, count, mode })
           });
           const j = await r.json();
           if (r.ok && j.ok) {
@@ -4578,6 +4757,62 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           }
         } catch (e) { alert('⚠️ ' + e.message); }
         aiwGenerateBtn.disabled = false; aiwGenerateBtn.innerHTML = orig;
+      });
+
+      // ⏯️ 進行中 workflow 一覧を表示して再開
+      const aiwResumeListBtn = document.getElementById('aiwResumeListBtn');
+      if (aiwResumeListBtn) aiwResumeListBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        const listBox = document.getElementById('aiwActiveList');
+        if (!listBox) return;
+        aiwResumeListBtn.disabled = true; const orig = aiwResumeListBtn.innerHTML;
+        aiwResumeListBtn.innerHTML = '⏳ 取得中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/ai-team-workflows?status=in_progress&limit=20');
+          const j = await r.json();
+          if (r.ok && j.ok) {
+            const wfs = j.workflows || [];
+            if (wfs.length === 0) {
+              listBox.innerHTML = '<div style="color:#71717a;">進行中の workflow はありません</div>';
+            } else {
+              listBox.innerHTML = '<div style="font-weight:800;color:#60a5fa;margin-bottom:0.4rem;">⏯️ 進行中 workflow (' + wfs.length + ' 件)</div>' +
+                wfs.map(wf => {
+                  const sp = wf.spec || {};
+                  const progress = `${wf.completed_count}/${wf.phase_count}`;
+                  const modeChip = wf.mode === 'fast' ? '⚡' : '📦';
+                  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem;margin-bottom:0.3rem;background:rgba(0,0,0,0.3);border:1px solid rgba(59,130,246,0.25);border-radius:6px;flex-wrap:wrap;gap:0.4rem;">
+                    <div style="font-size:0.72rem;">
+                      ${modeChip} <code style="color:#fbbf24;">${_aitwEscape(wf.workflow_id)}</code>
+                      <span style="color:#94a3b8;margin-left:0.3rem;">${_aitwEscape(sp.exam_label||sp.exam_id||'?')} / ${_aitwEscape(sp.part_label||sp.part_key||'?')} / ${sp.count||0}問</span>
+                      <span style="color:#86efac;margin-left:0.3rem;">[${progress}]</span>
+                      <span style="color:#71717a;margin-left:0.3rem;">${wf.updated_at?.slice(0,16)||''}</span>
+                    </div>
+                    <button type="button" data-wid="${_aitwEscape(wf.workflow_id)}" class="aiwResumeBtn" style="background:rgba(59,130,246,0.2);color:#60a5fa;border:1px solid rgba(59,130,246,0.4);padding:0.3rem 0.7rem;border-radius:6px;font-size:0.72rem;font-weight:700;cursor:pointer;">⏯️ 再開</button>
+                  </div>`;
+                }).join('');
+              // 再開ボタン handler
+              listBox.querySelectorAll('.aiwResumeBtn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                  const wid = btn.dataset.wid;
+                  try {
+                    const r2 = await AdminAuth.fetch(`/api/admin/ai-team-workflow/${encodeURIComponent(wid)}`);
+                    const j2 = await r2.json();
+                    if (r2.ok && j2.ok) {
+                      _renderAIWorkflowResult(j2);
+                      listBox.style.display = 'none';
+                    } else {
+                      alert('⚠️ ' + (j2.detail || JSON.stringify(j2)));
+                    }
+                  } catch (e) { alert('⚠️ ' + e.message); }
+                });
+              });
+            }
+            listBox.style.display = 'block';
+          } else {
+            alert('⚠️ ' + (j.detail || JSON.stringify(j)));
+          }
+        } catch (e) { alert('⚠️ ' + e.message); }
+        aiwResumeListBtn.disabled = false; aiwResumeListBtn.innerHTML = orig;
       });
 
       // 📚 Custom GPT 設計書 (NotebookLM 代替・ChatGPT Plus セットアップ用)
@@ -4660,6 +4895,13 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       const aiwImportBtn = document.getElementById('aiwImportBtn');
       if (aiwImportBtn) aiwImportBtn.addEventListener('click', async () => {
         if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        // 🛡️ active workflow がある時は重複 INSERT 警告 (memory: feedback_seed_import_no_loop.md)
+        if (window.__aitw_active_wf && window.__aitw_active_wf.workflow_id) {
+          const wfId = window.__aitw_active_wf.workflow_id;
+          if (!confirm(`⚠️ active workflow [${wfId}] があります。\n\n通常は workflow 内の「📥 Import 投入」ボタンを使用してください (workflow_id 紐付け + 二重 import 防御あり)。\n\n緊急 fallback として進めますか? (重複 INSERT のリスクを承知の上で続行)`)) {
+            return;
+          }
+        }
         const raw = document.getElementById('aiwImportPayload').value.trim();
         if (!raw) return alert('Phase 5 出力 JSON を貼り付けてください');
         let parsed;
