@@ -829,6 +829,24 @@
         <button id="pgGradeBtn" type="button" style="background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;border:none;padding:0.55rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">🌟 5 AI 多視点で採点</button>
         <div id="pgResult" style="display:none;margin-top:0.7rem;font-size:0.78rem;color:#cbd5e1;background:rgba(0,0,0,0.3);border:1px solid rgba(168,85,247,0.25);border-radius:8px;padding:0.7rem;line-height:1.6;max-height:60vh;overflow-y:auto;"></div>
       </div>
+
+      <!-- 📢 ChatGPT Store 集客 funnel (2026-05-11 機能 ⑥・Threads 主集客に並ぶ第 2 チャネル) -->
+      <div style="margin-top:1rem;padding:0.9rem;background:rgba(0,0,0,0.25);border:1px solid rgba(34,197,94,0.3);border-radius:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.7rem;">
+          <div style="font-size:0.85rem;font-weight:800;color:#86efac;">📢 ChatGPT Store 集客 funnel (Custom GPT 6 体)</div>
+          <span style="font-size:0.7rem;color:#71717a;">月 5 億 ChatGPT ユーザー → ai-juku LP</span>
+        </div>
+        <div style="font-size:0.75rem;color:#94a3b8;line-height:1.6;margin-bottom:0.7rem;">
+          ChatGPT Plus で Custom GPT 6 体 (東大数学 / 早慶英語 / 共通テスト / 英検準1級 / 物理 / 古文・漢文) を作成 → ChatGPT Store に公開。<br>
+          各 GPT の Conversation starters に <strong style="color:#86efac;">UTM 付き ai-juku LP リンク</strong> を組込・流入を計測。<br>
+          <span style="color:#fbbf24;">塾長作業: 6 体の設計書を ChatGPT Plus に貼り付けて作成 (各 5 分・計 30 分)・追加課金 ¥0</span>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.7rem;">
+          <button id="cgfSpecsBtn" type="button" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">📚 Custom GPT 設計書 6 体を取得</button>
+          <button id="cgfAnalyticsBtn" type="button" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">📊 流入分析 (過去 7 日)</button>
+        </div>
+        <div id="cgfResult" style="display:none;font-size:0.78rem;color:#cbd5e1;background:rgba(0,0,0,0.3);border:1px solid rgba(34,197,94,0.25);border-radius:8px;padding:0.7rem;line-height:1.6;max-height:60vh;overflow-y:auto;"></div>
+      </div>
     </section>
 
     <!-- ========================================== -->
@@ -5169,6 +5187,144 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           ${improvements ? `<details open style="margin:0.4rem 0;"><summary style="cursor:pointer;color:#fbbf24;font-weight:700;">🎯 改善点 (${(agg.top_improvements||[]).length})</summary><ul style="padding-left:1.5rem;font-size:0.82rem;line-height:1.7;">${improvements}</ul></details>` : ''}
           <h4 style="font-size:0.9rem;color:#c4b5fd;margin:0.7rem 0 0.3rem 0;">各 AI の視点</h4>
           ${viewsHtml}
+        `;
+      }
+
+      // 📢 ChatGPT Store 集客 funnel (2026-05-11 機能 ⑥)
+      const cgfSpecsBtn = document.getElementById('cgfSpecsBtn');
+      if (cgfSpecsBtn) cgfSpecsBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        cgfSpecsBtn.disabled = true; const orig = cgfSpecsBtn.innerHTML;
+        cgfSpecsBtn.innerHTML = '⏳ 取得中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/marketing/custom-gpt-funnel-specs');
+          const j = await r.json();
+          if (r.ok && j.ok) _renderCgfSpecs(j);
+          else alert('⚠️ ' + (j.detail || JSON.stringify(j)));
+        } catch (e) { alert('⚠️ ' + e.message); }
+        cgfSpecsBtn.disabled = false; cgfSpecsBtn.innerHTML = orig;
+      });
+
+      const cgfAnalyticsBtn = document.getElementById('cgfAnalyticsBtn');
+      if (cgfAnalyticsBtn) cgfAnalyticsBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        cgfAnalyticsBtn.disabled = true; const orig = cgfAnalyticsBtn.innerHTML;
+        cgfAnalyticsBtn.innerHTML = '⏳ 取得中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/marketing/chatgpt-store-analytics?days=7');
+          const j = await r.json();
+          if (r.ok && j.ok) _renderCgfAnalytics(j);
+          else alert('⚠️ ' + (j.detail || JSON.stringify(j)));
+        } catch (e) { alert('⚠️ ' + e.message); }
+        cgfAnalyticsBtn.disabled = false; cgfAnalyticsBtn.innerHTML = orig;
+      });
+
+      function _renderCgfSpecs(payload) {
+        const box = document.getElementById('cgfResult');
+        if (!box) return;
+        box.style.display = 'block';
+        const setup = (payload.setup_steps||[]).map(s => `<li>${escapeForUI(s)}</li>`).join('');
+        const gpts = (payload.custom_gpts||[]).map(g => {
+          const starters = (g.conversation_starters||[]).map(s => `<li>${escapeForUI(s)}</li>`).join('');
+          const knowledge = (g.knowledge_files_recommended||[]).map(k => `<li>${escapeForUI(k)}</li>`).join('');
+          return `
+            <details style="margin:0.5rem 0;border:1px solid rgba(34,197,94,0.3);border-radius:8px;background:rgba(34,197,94,0.05);">
+              <summary style="padding:0.7rem 0.9rem;cursor:pointer;font-size:0.85rem;font-weight:800;color:#86efac;">${escapeForUI(g.name)}</summary>
+              <div style="padding:0.8rem;">
+                <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:0.3rem;">${escapeForUI(g.description||'')}</div>
+                <div style="font-size:0.72rem;color:#a1a1aa;margin-bottom:0.5rem;">📌 用途: ${escapeForUI(g.purpose||'')}</div>
+                <div style="font-size:0.72rem;color:#a1a1aa;font-weight:700;margin-bottom:0.3rem;">🎯 Instructions (Configure → Instructions に貼り付け):</div>
+                <textarea readonly rows="11" style="width:100%;background:#0f172a;color:#e4e4e7;border:1px solid rgba(34,197,94,0.3);padding:0.6rem;border-radius:6px;font-size:0.74rem;font-family:ui-monospace,monospace;line-height:1.5;">${escapeForUI(g.instructions||'')}</textarea>
+                <button class="cgfCopyBtn" data-content="${encodeURIComponent(g.instructions||'')}" style="margin-top:0.4rem;background:rgba(34,197,94,0.18);color:#86efac;border:1px solid rgba(34,197,94,0.4);padding:0.4rem 0.8rem;border-radius:6px;font-size:0.76rem;font-weight:700;cursor:pointer;">📋 Instructions コピー</button>
+                <div style="margin-top:0.7rem;font-size:0.72rem;color:#a1a1aa;font-weight:700;">💬 Conversation starters (4 個・Configure → Conversation starters に貼り付け):</div>
+                <ol style="font-size:0.72rem;color:#cbd5e1;padding-left:1.5rem;line-height:1.7;margin:0.3rem 0;">${starters}</ol>
+                ${knowledge ? `<div style="margin-top:0.5rem;font-size:0.72rem;color:#fbbf24;font-weight:700;">📚 Knowledge 推奨ファイル (任意):</div><ul style="font-size:0.72rem;color:#cbd5e1;padding-left:1.5rem;">${knowledge}</ul>` : ''}
+                <div style="margin-top:0.6rem;padding:0.5rem;background:rgba(0,0,0,0.3);border-radius:6px;font-size:0.7rem;color:#a1a1aa;">
+                  🔗 UTM URL (Conversation starters の最後に既に組込済): <code style="color:#86efac;font-size:0.68rem;word-break:break-all;">${escapeForUI(g.utm_url||'')}</code>
+                </div>
+              </div>
+            </details>`;
+        }).join('');
+
+        box.innerHTML = `
+          <div style="font-size:0.85rem;color:#86efac;font-weight:800;margin-bottom:0.4rem;">📚 Custom GPT 6 体 設計書 取得完了 (ChatGPT Plus セットアップ用)</div>
+          <div style="font-size:0.74rem;color:#94a3b8;line-height:1.6;margin-bottom:0.6rem;">${escapeForUI(payload.memo||'')}</div>
+          <details open style="margin:0.4rem 0;border:1px solid rgba(34,197,94,0.3);border-radius:8px;background:rgba(34,197,94,0.05);">
+            <summary style="padding:0.6rem 0.8rem;cursor:pointer;font-size:0.8rem;font-weight:800;color:#86efac;">📋 セットアップ手順 (ChatGPT Plus で 6 体作成・各 5 分・計 30 分)</summary>
+            <ol style="padding:0.7rem 1.5rem;margin:0;font-size:0.78rem;color:#cbd5e1;line-height:1.8;">${setup}</ol>
+          </details>
+          <h4 style="font-size:0.9rem;color:#86efac;margin:0.7rem 0 0.3rem 0;">Custom GPT 6 体</h4>
+          ${gpts}
+        `;
+
+        // copy buttons (clipboard fallback 対応・3視点 review High 修正・iOS Safari < 13.4 等)
+        box.querySelectorAll('.cgfCopyBtn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const text = decodeURIComponent(btn.dataset.content);
+            const onSuccess = () => {
+              const orig = btn.innerHTML;
+              btn.innerHTML = '✓ コピー済';
+              setTimeout(() => { btn.innerHTML = orig; }, 1500);
+            };
+            const onFail = () => {
+              // execCommand fallback (古いブラウザ・HTTP・iOS Safari 等)
+              try {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                onSuccess();
+              } catch (e) {
+                alert('⚠️ コピー失敗。手動で textarea を選択してコピーしてください');
+              }
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(text).then(onSuccess).catch(onFail);
+            } else {
+              onFail();
+            }
+          });
+        });
+      }
+
+      function _renderCgfAnalytics(payload) {
+        const box = document.getElementById('cgfResult');
+        if (!box) return;
+        box.style.display = 'block';
+        const breakdown = (payload.chatgpt_store_breakdown||[]).map(b => `
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+            <td style="padding:0.4rem 0.5rem;font-size:0.78rem;">${escapeForUI(b.name)}</td>
+            <td style="padding:0.4rem 0.5rem;font-size:0.78rem;color:#71717a;font-family:ui-monospace,monospace;">${escapeForUI(b.campaign)}</td>
+            <td style="padding:0.4rem 0.5rem;font-size:0.85rem;color:${b.visits > 0 ? '#86efac' : '#71717a'};font-weight:800;text-align:right;">${b.visits}</td>
+          </tr>`).join('');
+        const sources = Object.entries(payload.by_source||{}).sort((a,b) => b[1]-a[1]).map(([k,v]) =>
+          `<li><strong style="color:${k==='chatgpt_store'?'#86efac':'#cbd5e1'};">${escapeForUI(k)}</strong>: ${v} visits</li>`
+        ).join('');
+        const tip = payload.chatgpt_store_total === 0
+          ? '<div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:6px;padding:0.5rem;margin:0.5rem 0;color:#fbbf24;font-size:0.78rem;">💡 まだ流入 0 件: Custom GPT 6 体を ChatGPT Store に公開すると計測開始</div>'
+          : `<div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:0.5rem;margin:0.5rem 0;color:#86efac;font-size:0.78rem;">✅ ChatGPT Store からの流入 ${payload.chatgpt_store_total} 件 (過去 ${payload.days} 日)</div>`;
+        box.innerHTML = `
+          <div style="font-size:0.85rem;color:#60a5fa;font-weight:800;margin-bottom:0.4rem;">📊 ChatGPT Store 流入分析 (過去 ${payload.days} 日)</div>
+          ${tip}
+          <div style="font-size:0.78rem;color:#cbd5e1;margin-bottom:0.6rem;">
+            総 LP 訪問 (UTM 付き): <strong>${payload.total_visits}</strong> 件 / うち ChatGPT Store: <strong style="color:#86efac;">${payload.chatgpt_store_total}</strong> 件
+          </div>
+          <h4 style="font-size:0.85rem;color:#60a5fa;margin:0.6rem 0 0.3rem 0;">Custom GPT 6 体別 流入</h4>
+          <table style="width:100%;border-collapse:collapse;background:rgba(0,0,0,0.3);border-radius:6px;overflow:hidden;">
+            <thead><tr style="background:rgba(255,255,255,0.05);">
+              <th style="padding:0.4rem 0.5rem;text-align:left;font-size:0.72rem;color:#94a3b8;">Custom GPT</th>
+              <th style="padding:0.4rem 0.5rem;text-align:left;font-size:0.72rem;color:#94a3b8;">campaign</th>
+              <th style="padding:0.4rem 0.5rem;text-align:right;font-size:0.72rem;color:#94a3b8;">visits</th>
+            </tr></thead>
+            <tbody>${breakdown}</tbody>
+          </table>
+          <h4 style="font-size:0.85rem;color:#60a5fa;margin:0.7rem 0 0.3rem 0;">全 source 別 (参考)</h4>
+          <ul style="font-size:0.78rem;color:#cbd5e1;padding-left:1.5rem;line-height:1.7;">${sources || '<li>(まだデータなし)</li>'}</ul>
+          <div style="margin-top:0.5rem;padding:0.5rem;background:rgba(0,0,0,0.3);border-radius:6px;font-size:0.72rem;color:#71717a;">${escapeForUI(payload.memo||'')}</div>
         `;
       }
 

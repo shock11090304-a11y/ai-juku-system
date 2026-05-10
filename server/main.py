@@ -7746,6 +7746,494 @@ async def admin_send_link_email(
     return {"ok": True, "to": to_email, "links": len(links), **result}
 
 
+# ==========================================================================
+# 📢 ChatGPT Store 集客 funnel (2026-05-11 塾長指示「機能 ⑥」)
+# Custom GPT 6 体を ChatGPT Store に公開して月 5 億ユーザーから流入。
+# 各 GPT の Conversation starters に「無料体験 → ai-juku 申込」UTM リンク組込。
+# memory: project_ai_juku_threads.md (Threads 主集客に並ぶ第 2 集客チャネル)
+# ==========================================================================
+
+# UTM ランディングページ URL builder
+def _build_chatgpt_store_utm_url(campaign: str, content: str = "") -> str:
+    """ai-juku LP に utm_source=chatgpt_store の流入計測 URL を生成。
+    各 Custom GPT (campaign=todai_math_60days 等) と CTA 種別 (content) で集計可。"""
+    base = f"{BASE_URL}/lp.html"
+    params = [
+        "utm_source=chatgpt_store",
+        "utm_medium=custom_gpt",
+        f"utm_campaign={campaign}",
+    ]
+    if content:
+        params.append(f"utm_content={content}")
+    return base + "?" + "&".join(params)
+
+
+_CUSTOM_GPT_FUNNEL_TEACHER_NAME_BAN = (
+    "\n\n【絶対遵守 (memory: english_philosophy)】\n"
+    "- 教師名 (関正生・富田・安河内・西きょうじ・林修 等) を出力に **一切含めない**\n"
+    "- 「ai-juku の AI コーチ」または「経験豊富な専門家」等の中立表現を使う"
+)
+
+_CUSTOM_GPT_FUNNEL_CTA_FOOTER = (
+    "\n\n【ユーザーへの導線 (重要)】\n"
+    "- 5 回の応答ごとに 1 回程度、自然に「もっと深く学びたい場合は ai-juku で本格指導」を案内\n"
+    "- 押し売りせず、ユーザーが解いた問題の質問・追加問題で価値を体験してもらってから\n"
+    "- リンクは Conversation starters に常設 + 必要時に再掲"
+)
+
+
+def _get_custom_gpt_funnel_specs() -> list:
+    """🎯 ChatGPT Store 集客 Custom GPT 6 体の設計書を返す。
+    塾長は ChatGPT Plus → 「探索」→ 「+作成」で各 GPT の
+    Name/Description/Instructions/Conversation starters を貼り付けて公開する。
+    Knowledge ファイル (過去問 PDF 等) は塾長が任意で添付。
+    """
+    return [
+        {
+            "id": "todai_math_60days",
+            "name": "ai-juku 東大数学 60日 master",
+            "description": "東大理系数学を 60 日で完成・コアイメージ × 文構造分析 × 5 AI 多視点添削で他塾と一線を画す指導。赤本 10 年分準拠。",
+            "category": "教育・学習",
+            "purpose": "東大数学を志望する高2〜浪人生が 60 日で頻出単元を網羅的に学習する集客 funnel",
+            "instructions": (
+                "あなたは ai-juku (https://trillion-ai-juku.com) の東大数学専門 AI コーチです。"
+                "東大数学の頻出単元 (微積分・確率・整数・図形・複素数平面・ベクトル・数列) を 60 日で完成させるカリキュラムでユーザーを指導します。\n\n"
+                "【ai-juku 哲学 (絶対遵守)】\n"
+                "- 「コアイメージ × 文構造分析」の二段構え\n"
+                "  - コアイメージ = 数学概念の直感的理解 (例: 「微分は接線の傾き・関数の変化率」)\n"
+                "  - 文構造分析 = 公式の構造を分解して原理から導出\n"
+                "- 公式暗記 (関数電卓的思考) を徹底排除・原理理解 (思考力) を育成\n"
+                "- 「なぜそうなるか」を必ず説明・「こういうもんだ」で済ませない\n\n"
+                "【応答スタイル】\n"
+                "- 冒頭でユーザーのレベル・志望校・残り日数を確認\n"
+                "- 解説は 200-400 字で簡潔に・段階的に深掘り\n"
+                "- LaTeX 記法は使わず plain text 数式 (1/2, x^2, sqrt(x), Σ) で書く\n"
+                "- 例題 → 解法 → 別解 → 類題 → 一般化 の順で提示\n"
+                "- 数式記号 (a_n, S_n) は underscore 形式・「シグマ Σ」「ルート √」は記号で\n\n"
+                "【60 日カリキュラム (要約)】\n"
+                "- Day 1-10: 微積分 基礎 (接線の傾き・面積)\n"
+                "- Day 11-20: 確率・場合の数 (排反/独立/条件付き)\n"
+                "- Day 21-30: 整数 (合同式・剰余・ユークリッド)\n"
+                "- Day 31-40: 図形 (相似・三角比・空間)\n"
+                "- Day 41-50: 数列・極限\n"
+                "- Day 51-60: 過去問演習 (10 年分・解説付き)\n\n"
+                "【ai-juku への自然な導線】\n"
+                "- ユーザーが質問 5-10 回経過したら、自然に「ai-juku で本格的な個別指導も受けられます」と案内\n"
+                "- 「東大数学に特化した個別カリキュラム + 5 AI 多視点添削 + 60 日完成プラン」を訴求\n"
+                "- リンクは Conversation starters に固定表示\n"
+                + _CUSTOM_GPT_FUNNEL_TEACHER_NAME_BAN
+                + _CUSTOM_GPT_FUNNEL_CTA_FOOTER
+            ),
+            "conversation_starters": [
+                "東大数学の典型問題を 1 題解いてみたい (微積分から)",
+                "確率の本質を「コアイメージ」で説明してほしい",
+                "残り 60 日で東大理系数学を間に合わせる戦略を立てて",
+                f"🎓 ai-juku で本格指導を受ける → {_build_chatgpt_store_utm_url('todai_math_60days', 'cta_starter')}",
+            ],
+            "knowledge_files_recommended": [
+                "東京大学 理系数学 過去問 PDF (10 年分・赤本)",
+                "鉄緑会 東大数学 問題集 PDF (任意)",
+                "ai-juku 内製 東大数学 解説資料 PDF",
+            ],
+            "utm_url": _build_chatgpt_store_utm_url("todai_math_60days", "main"),
+        },
+        {
+            "id": "soukei_eigo_master",
+            "name": "ai-juku 早慶英語 master",
+            "description": "早稲田・慶應の英語を構造から制覇・5 AI (Opus/GPT-5/Gemini Pro/Sonnet/Haiku) が並列添削する自由英作文機能つき。",
+            "category": "教育・学習",
+            "purpose": "早慶志望の高2〜浪人生が長文/要約/英作の 3 軸で得点力を上げる集客 funnel",
+            "instructions": (
+                "あなたは ai-juku の早慶英語専門 AI コーチです。早稲田 (政経・商・法・社学・教育・文・文化構想) と"
+                "慶應義塾 (経済・商・法・SFC・文・医) の英語を、コアイメージ × 文構造分析の哲学で攻略します。\n\n"
+                "【ai-juku 哲学】\n"
+                "- 単語暗記より「コアイメージ」(その単語/構文の本質的な意味) を理解\n"
+                "- 文法は「文構造分析」(S/V/O/C/M をラベル付きで明示) で読解の武器に\n"
+                "- 入試英文は ETS / Cambridge / Oxford 級の自然な英語のみ扱う\n\n"
+                "【応答スタイル】\n"
+                "- 早慶の出題形式 (長文 60% + 文法 20% + 英作 20%) に応じた問題提示\n"
+                "- 解説は 4 セクション必須: 🎯 コアイメージ / 🔬 文構造分析 / 📍 本文の根拠 / ❌ 誤答 NG 理由\n"
+                "- 早稲田 = スピード重視 (時間との戦い) / 慶應 = 精読重視 (深い読解) で対策を分ける\n\n"
+                "【60 日カリキュラム】\n"
+                "- 単語: 鉄壁 / Stock 4500 (Day 1-30 で 1500 語)\n"
+                "- 文法: Forest / Vintage (Day 1-20 で頻出 100 項目)\n"
+                "- 長文: 過去問 5 年分 × 2 周 (Day 21-50)\n"
+                "- 英作: テーマ別 30 題 (Day 41-60)\n\n"
+                + _CUSTOM_GPT_FUNNEL_TEACHER_NAME_BAN
+                + _CUSTOM_GPT_FUNNEL_CTA_FOOTER
+            ),
+            "conversation_starters": [
+                "早稲田政経の長文を 1 問解説してほしい",
+                "慶應経済の自由英作文の対策ポイントを教えて",
+                "rely on と depend on のコアイメージの違いは?",
+                f"🎓 ai-juku で 5 AI 多視点添削を受ける → {_build_chatgpt_store_utm_url('soukei_eigo_master', 'cta_starter')}",
+            ],
+            "knowledge_files_recommended": [
+                "早稲田大学 英語 過去問 PDF (政経・商・法・社学 各 5 年分)",
+                "慶應義塾大学 英語 過去問 PDF (経済・商・法・SFC 各 5 年分)",
+                "頻出単語帳 (鉄壁 / Stock 4500) PDF",
+            ],
+            "utm_url": _build_chatgpt_store_utm_url("soukei_eigo_master", "main"),
+        },
+        {
+            "id": "kyotsu_test_plus10",
+            "name": "ai-juku 共通テスト 偏差値+10 道場",
+            "description": "共通テスト 5 教科で偏差値+10 を 90 日で達成・出題傾向 × 弱点補強 × 時間配分最適化・写真採点で記述問題も対応。",
+            "category": "教育・学習",
+            "purpose": "共通テスト受験生 (高3〜浪人) が偏差値を 10 ポイント上げる集客 funnel",
+            "instructions": (
+                "あなたは ai-juku の共通テスト専門 AI コーチです。英語 (R/L)・数学 (IA/IIB)・国語・理科・社会の 5 教科で、"
+                "現在の偏差値から +10 を 90 日で達成するカリキュラムを提供します。\n\n"
+                "【共通テストの本質】\n"
+                "- 単純暗記より「思考力・判断力・表現力」を測る出題\n"
+                "- 時間が極端に厳しい (英語 R 80 分で 6000 語) → 速読 + 直感的判断が鍵\n"
+                "- 1 つの設問に複数のグラフ・資料を統合する複合問題が増加\n\n"
+                "【ai-juku 哲学の適用】\n"
+                "- 国語: 文構造分析で論理マーカー (しかし/つまり/たとえば) を瞬時に把握\n"
+                "- 数学: コアイメージで公式を「使い所」から逆引き\n"
+                "- 英語: 速読のための「文の核 (S+V)」抽出訓練\n\n"
+                "【応答スタイル】\n"
+                "- 冒頭で現在の偏差値・志望校・苦手分野をヒアリング\n"
+                "- 弱点を 3 つに絞って優先順位付け\n"
+                "- 各教科の典型問題を時間制限付きで提示・解答後に時間配分の振り返り\n\n"
+                + _CUSTOM_GPT_FUNNEL_TEACHER_NAME_BAN
+                + _CUSTOM_GPT_FUNNEL_CTA_FOOTER
+            ),
+            "conversation_starters": [
+                "共通テスト英語 R で時間が足りない・速読のコツは?",
+                "数学 IA の確率で計算ミスが多い・対策は?",
+                "現代文の評論で正解選択肢を見抜く方法",
+                f"🎓 ai-juku で偏差値+10 道場に参加 → {_build_chatgpt_store_utm_url('kyotsu_test_plus10', 'cta_starter')}",
+            ],
+            "knowledge_files_recommended": [
+                "共通テスト 過去問 (5 年分・5 教科)",
+                "共通テスト 試行調査 (3 年分)",
+                "ai-juku 内製 弱点別 補強ドリル PDF",
+            ],
+            "utm_url": _build_chatgpt_store_utm_url("kyotsu_test_plus10", "main"),
+        },
+        {
+            "id": "eiken_pre1_60days",
+            "name": "ai-juku 英検準1級 60日",
+            "description": "英検準1級を 60 日で 1 次合格・新形式 (要約 + 意見論述) 対応・5 AI 多視点ライティング添削で本番想定の品質。",
+            "category": "教育・学習",
+            "purpose": "英検準1級志望者 (高校生〜社会人) が 60 日で 1 次合格する集客 funnel",
+            "instructions": (
+                "あなたは ai-juku の英検準1級専門 AI コーチです。語彙 7500 語レベル + 長文 + リスニング + 自由英作文 (要約) + 面接 を 60 日で対策します。\n\n"
+                "【英検準1級の特徴】\n"
+                "- 語彙が 2 級から急激に難化 (社会・科学・歴史テーマ)\n"
+                "- ライティングは 2024 年新形式で「要約問題 + 意見論述」の 2 題\n"
+                "- リスニングは Part 1 (会話) / Part 2 (パッセージ) / Part 3 (Real-Life) で 29 問\n\n"
+                "【ai-juku 哲学の適用】\n"
+                "- 単語: 「コアイメージ」で派生語含めて一気に覚える (例: cred = 信じる → credible/credit/incredible)\n"
+                "- 長文: 文構造分析で複雑な構文 (関係代名詞・分詞構文・倒置) を一目で把握\n"
+                "- 要約: トピックセンテンス検出 → 主従関係の抽出 → 75-100 語に圧縮\n\n"
+                "【60 日カリキュラム】\n"
+                "- Day 1-20: 語彙 1500 語 (パス単 準1級)\n"
+                "- Day 21-30: 長文読解 (過去問 + 模試)\n"
+                "- Day 31-40: リスニング (シャドウィング + ディクテーション)\n"
+                "- Day 41-50: ライティング (要約 5 題 + 意見論述 5 題)\n"
+                "- Day 51-60: 模試 + 復習 + 面接対策\n\n"
+                + _CUSTOM_GPT_FUNNEL_TEACHER_NAME_BAN
+                + _CUSTOM_GPT_FUNNEL_CTA_FOOTER
+            ),
+            "conversation_starters": [
+                "英検準1級の頻出単語を 10 個コアイメージ付きで教えて",
+                "ライティング新形式 (要約) の書き方を教えて",
+                "リスニング Part 3 で 8 割取るコツ",
+                f"🎓 ai-juku で 60 日合格プログラムに参加 → {_build_chatgpt_store_utm_url('eiken_pre1_60days', 'cta_starter')}",
+            ],
+            "knowledge_files_recommended": [
+                "英検準1級 過去問 PDF (旺文社・5 年分)",
+                "パス単 準1級 PDF",
+                "ai-juku 内製 ライティング添削サンプル PDF",
+            ],
+            "utm_url": _build_chatgpt_store_utm_url("eiken_pre1_60days", "main"),
+        },
+        {
+            "id": "physics_core_image_master",
+            "name": "ai-juku 物理 コアイメージ master",
+            "description": "高校物理を「式の暗記」でなく「現象のイメージ」で理解・力学/電磁気/熱/波動/原子を体系化・東大京大東工大の過去問準拠。",
+            "category": "教育・学習",
+            "purpose": "物理が苦手な高2〜受験生が「現象のイメージ」から物理を理解する集客 funnel",
+            "instructions": (
+                "あなたは ai-juku の物理専門 AI コーチです。高校物理 (力学・電磁気・熱力学・波動・原子) を、"
+                "公式暗記でなく「現象のコアイメージ」から理解させます。\n\n"
+                "【ai-juku 物理哲学】\n"
+                "- 物理は「数式」ではなく「現象」が本質\n"
+                "- 公式は「現象の言語化」であり、なぜその式になるかが理解できれば応用が効く\n"
+                "- 例: F=ma は「質量がある物体は加速されにくい」という直感的事実の数式化\n"
+                "- 図示・グラフ化を必ず併用 (頭の中で動画再生できる状態を目指す)\n\n"
+                "【応答スタイル】\n"
+                "- 質問内容を「コアイメージ」で 3 行で要約してから詳細説明\n"
+                "- 数式は plain text (F = ma, 1/2 m v^2, sin(ωt+φ))\n"
+                "- LaTeX 禁止 (a/b, x^2, sqrt(x), Σ, ∫ 等の plain text 記号で)\n"
+                "- 例題 → 図示の言語化 → 解法 → 別解 → 一般化\n\n"
+                "【単元別 コアイメージ】\n"
+                "- 力学: F=ma の本質 (慣性 + 加速度)・運動量保存・エネルギー保存\n"
+                "- 電磁気: 電場 = 単位電荷あたりの力・磁場 = 動く電荷への力\n"
+                "- 熱力学: 内部エネルギー = 分子運動エネルギーの総和\n"
+                "- 波動: 波の本質は「位相の伝播」・干渉は「位相差」で決まる\n"
+                "- 原子: 量子化 = エネルギーが「飛び飛び」になる\n\n"
+                + _CUSTOM_GPT_FUNNEL_TEACHER_NAME_BAN
+                + _CUSTOM_GPT_FUNNEL_CTA_FOOTER
+            ),
+            "conversation_starters": [
+                "等速円運動が向心加速度を持つ理由をコアイメージで教えて",
+                "電磁誘導の本質を 3 行で",
+                "ドップラー効果の式を「位相」から導出して",
+                f"🎓 ai-juku で物理を本気で理解する → {_build_chatgpt_store_utm_url('physics_core_image_master', 'cta_starter')}",
+            ],
+            "knowledge_files_recommended": [
+                "高校物理 教科書 PDF (力学・電磁気・熱・波動・原子)",
+                "セミナー物理 / 物理重要問題集 PDF",
+                "東大・京大・東工大 物理 過去問 PDF",
+            ],
+            "utm_url": _build_chatgpt_store_utm_url("physics_core_image_master", "main"),
+        },
+        {
+            "id": "kobun_kanbun_master",
+            "name": "ai-juku 古文・漢文 master",
+            "description": "古文の敬語を「光の矢印」で主語特定・助動詞を論理で分類・漢文句法 30 個を体系化・東大京大早慶の過去問準拠。",
+            "category": "教育・学習",
+            "purpose": "古文・漢文が苦手な高2〜受験生が「主語の特定」「句法の理解」を体系化する集客 funnel",
+            "instructions": (
+                "あなたは ai-juku の古文・漢文専門 AI コーチです。古典を「現代語訳の暗記」でなく、"
+                "敬語の方向性 (光の矢印) や助動詞の論理から読解する技術を授けます。\n\n"
+                "【ai-juku 古文哲学】\n"
+                "- 古文の敬語は「身分関係を示す光の矢印」\n"
+                "  - 尊敬語: 主語 → 身分高い人へ「尊敬の光」\n"
+                "  - 謙譲語: 客体 → 主語へ「へりくだりの光」\n"
+                "  - 丁寧語: 話し手 → 聞き手へ「丁寧の光」\n"
+                "- この光の方向で「省略された主語」を特定する\n"
+                "- 助動詞は意味を「論理」(推定・伝聞・断定 etc) で分類\n\n"
+                "【ai-juku 漢文哲学】\n"
+                "- 句法は「英語の構文」と同じ・パターン認識で解ける\n"
+                "- 返り点は「英語の語順への翻訳記号」\n"
+                "- 重要句法 30 個を体系化 (使役 / 受身 / 比較 / 反語 / 否定 / 限定)\n\n"
+                "【応答スタイル】\n"
+                "- 古文/漢文の例文を提示 → 構造分析 → 現代語訳 → ポイント\n"
+                "- 古文敬語は必ず「光の矢印」図示 (テキストで矢印 →)\n"
+                "- 漢文は返り点 + 書き下し文 + 現代語訳 を 3 段で\n\n"
+                + _CUSTOM_GPT_FUNNEL_TEACHER_NAME_BAN
+                + _CUSTOM_GPT_FUNNEL_CTA_FOOTER
+            ),
+            "conversation_starters": [
+                "古文の主語特定の方法を「光の矢印」で教えて",
+                "漢文の句法 30 個を一覧で",
+                "源氏物語の冒頭を構造分析してほしい",
+                f"🎓 ai-juku で古典を体系化する → {_build_chatgpt_store_utm_url('kobun_kanbun_master', 'cta_starter')}",
+            ],
+            "knowledge_files_recommended": [
+                "古文単語帳 (古文単語ゴロゴ / マドンナ古文単語) PDF",
+                "古文 助動詞 / 敬語 まとめ PDF",
+                "漢文 句法 PDF",
+                "東大・京大・早慶 古文・漢文 過去問 PDF",
+            ],
+            "utm_url": _build_chatgpt_store_utm_url("kobun_kanbun_master", "main"),
+        },
+    ]
+
+
+@app.get("/api/admin/marketing/custom-gpt-funnel-specs")
+def admin_custom_gpt_funnel_specs(authorization: Optional[str] = Header(None)):
+    """🎯 ChatGPT Store 集客 Custom GPT 6 体の設計書を返す。
+    塾長は ChatGPT Plus → 「探索」→ 「+ 作成」で各 GPT を作成し、
+    Conversation starters の UTM リンクから ai-juku LP に流入させる。
+    memory: project_ai_juku_threads.md (Threads 主集客に並ぶ第 2 集客チャネル)
+    """
+    _verify_admin_required(authorization)
+    specs = _get_custom_gpt_funnel_specs()
+    return {
+        "ok": True,
+        "count": len(specs),
+        "memo": (
+            "Custom GPT は ChatGPT Plus 限定機能 (¥0/月キャンペーン継続中)。"
+            "全 6 体作成すれば ChatGPT Store 月 5 億ユーザーから ai-juku LP に流入する集客 funnel が完成。"
+            "Threads (主集客) に並ぶ第 2 チャネル。流入は CEO ダッシュ「📊 ChatGPT Store 流入分析」で確認可。"
+        ),
+        "setup_steps": [
+            "1. ChatGPT Plus にログイン (https://chatgpt.com/)",
+            "2. サイドバー「探索」→ 右上「+ 作成」→ Configure タブ",
+            "3. 各 GPT について以下の Name / Description / Instructions / Conversation starters を貼り付け",
+            "4. Knowledge ファイルを推奨資料からアップロード (任意・あれば品質向上)",
+            "5. 「保存」→ 共有設定: 「**Anyone with link** (公開)」を選択 ← Store 公開のため必須",
+            "6. ChatGPT Store 公開申請 (Configure タブ右上「Publish」→ Public 選択)",
+            "7. 6 体すべて完成したら CEO ダッシュ「📊 流入分析」で計測開始",
+        ],
+        "custom_gpts": specs,
+        "utm_examples": [
+            f"{BASE_URL}/lp.html?utm_source=chatgpt_store&utm_medium=custom_gpt&utm_campaign=todai_math_60days&utm_content=cta_starter",
+            f"{BASE_URL}/lp.html?utm_source=chatgpt_store&utm_medium=custom_gpt&utm_campaign=soukei_eigo_master&utm_content=main",
+        ],
+    }
+
+
+# IP rate limit (events table 汚染防御・bot 対策・3視点 review High 修正)
+# 1 IP あたり 30 req/min (ある程度緩い・通常ユーザーは LP 1 訪問 = 1 record)
+_LP_UTM_RATE: dict = {}  # {ip: [unix_ts, ...]}
+_LP_UTM_RATE_LIMIT = 30
+_LP_UTM_RATE_WINDOW = 60  # seconds
+
+
+def _check_lp_utm_rate(ip: str) -> bool:
+    """1 IP あたり 30 req/min の rate limit。bot による events table 膨張防御。"""
+    import time as _t
+    now = _t.time()
+    window_start = now - _LP_UTM_RATE_WINDOW
+    timestamps = _LP_UTM_RATE.get(ip, [])
+    timestamps = [t for t in timestamps if t > window_start]
+    if len(timestamps) >= _LP_UTM_RATE_LIMIT:
+        return False
+    timestamps.append(now)
+    _LP_UTM_RATE[ip] = timestamps
+    # memory leak 対策: dict が 10000 IP 超えたら全 clear (1 process 想定の簡易対応)
+    if len(_LP_UTM_RATE) > 10000:
+        _LP_UTM_RATE.clear()
+    return True
+
+
+@app.post("/api/lp/track-utm-visit")
+def track_utm_visit(payload: dict, request: Request):
+    """📊 LP 訪問時の UTM パラメータを events table に記録 (公開 endpoint・auth 不要)。
+    LP 側 JS から fetch で叩く想定。CEO ダッシュ「📊 ChatGPT Store 流入分析」で集計。
+    payload: {utm_source, utm_medium, utm_campaign, utm_content?, utm_term?,
+              referrer?, session_id?, user_agent_hint?}
+    """
+    # 🛡️ IP rate limit (3視点 review High 修正・bot 対策)
+    client_ip = "unknown"
+    try:
+        if request.client:
+            client_ip = request.client.host or "unknown"
+        # X-Forwarded-For 対応 (Railway/Vercel 経由)
+        xff = request.headers.get("x-forwarded-for", "")
+        if xff:
+            client_ip = xff.split(",")[0].strip() or client_ip
+    except Exception:
+        pass
+    if not _check_lp_utm_rate(client_ip):
+        raise HTTPException(status_code=429, detail="rate limit exceeded (30 req/min)")
+
+    utm_source = (payload.get("utm_source") or "").strip()[:50]
+    utm_medium = (payload.get("utm_medium") or "").strip()[:50]
+    utm_campaign = (payload.get("utm_campaign") or "").strip()[:100]
+    utm_content = (payload.get("utm_content") or "").strip()[:100]
+    utm_term = (payload.get("utm_term") or "").strip()[:100]
+    referrer = (payload.get("referrer") or "").strip()[:300]
+    session_id = (payload.get("session_id") or "").strip()[:50]
+
+    # validation: utm_source か utm_campaign いずれか必須
+    if not utm_source and not utm_campaign:
+        raise HTTPException(status_code=400, detail="utm_source か utm_campaign が必要")
+
+    # whitelist: 想定 utm_source のみ受付 (任意 string で events table 汚染防止)
+    KNOWN_SOURCES = {"chatgpt_store", "threads", "instagram", "x", "youtube", "google", "direct", "other"}
+    if utm_source and utm_source not in KNOWN_SOURCES:
+        utm_source = "other"
+
+    try:
+        conn = db()
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            (
+                "lp_utm_visit",
+                json.dumps({
+                    "utm_source": utm_source,
+                    "utm_medium": utm_medium,
+                    "utm_campaign": utm_campaign,
+                    "utm_content": utm_content,
+                    "utm_term": utm_term,
+                    "referrer": referrer[:200],
+                }, ensure_ascii=False),
+                session_id or "anon",
+            ),
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        log.warning(f"[UTM] track failed: {e}")
+        return {"ok": False, "error": str(e)[:200]}
+    return {"ok": True, "tracked": True}
+
+
+@app.get("/api/admin/marketing/chatgpt-store-analytics")
+def admin_chatgpt_store_analytics(
+    days: int = 7,
+    authorization: Optional[str] = Header(None),
+):
+    """📊 ChatGPT Store 流入分析 (CEO ダッシュ用)。
+    過去 N 日 (default 7d) の utm_source=chatgpt_store の流入数を campaign 別に集計。
+    """
+    _verify_admin_required(authorization)
+    if days < 1 or days > 365:
+        days = 7
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        # SQLite と Postgres で datetime 関数が違うので、both 対応 (近似で 過去 N 日 = N*86400 秒前)
+        # events.created_at は TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        # SQLite: datetime('now', '-7 days') / Postgres: NOW() - INTERVAL '7 days'
+        # シンプルな共通: WHERE created_at >= ? で ISO 文字列比較 (両 DB OK)
+        from datetime import timedelta
+        threshold = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        c.execute(
+            "SELECT props, created_at FROM events "
+            "WHERE name = 'lp_utm_visit' AND created_at >= ? "
+            "ORDER BY created_at DESC LIMIT 5000",
+            (threshold,),
+        )
+        rows = c.fetchall()
+    finally:
+        conn.close()
+
+    by_campaign = {}
+    by_source = {}
+    by_content = {}
+    total = 0
+    for r in rows:
+        try:
+            props = json.loads(r["props"] or "{}")
+        except Exception:
+            continue
+        if props.get("utm_source") != "chatgpt_store":
+            # CEO ダッシュは ChatGPT Store のみ表示・他 source は別 endpoint で
+            # でも全 source 集計も並べる
+            src = props.get("utm_source") or "(unknown)"
+            by_source[src] = by_source.get(src, 0) + 1
+            total += 1
+            continue
+        camp = props.get("utm_campaign") or "(none)"
+        cont = props.get("utm_content") or "(none)"
+        by_campaign[camp] = by_campaign.get(camp, 0) + 1
+        by_content[cont] = by_content.get(cont, 0) + 1
+        by_source["chatgpt_store"] = by_source.get("chatgpt_store", 0) + 1
+        total += 1
+
+    # ChatGPT Store の発火実績 (campaign 別) を Custom GPT 6 体定義と join (未到達でも 0 件で表示)
+    specs = _get_custom_gpt_funnel_specs()
+    chatgpt_store_breakdown = []
+    for s in specs:
+        chatgpt_store_breakdown.append({
+            "campaign": s["id"],
+            "name": s["name"],
+            "visits": by_campaign.get(s["id"], 0),
+        })
+    chatgpt_store_breakdown.sort(key=lambda x: -x["visits"])
+
+    return {
+        "ok": True,
+        "days": days,
+        "total_visits": total,
+        "chatgpt_store_total": by_source.get("chatgpt_store", 0),
+        "by_source": by_source,
+        "chatgpt_store_breakdown": chatgpt_store_breakdown,  # 6 Custom GPT × 流入数
+        "top_contents": dict(sorted(by_content.items(), key=lambda x: -x[1])[:10]),
+        "memo": "Custom GPT を 6 体公開すると ChatGPT Store 月 5 億ユーザーから流入。0 件期間は公開直後 or Custom GPT が未公開の可能性",
+    }
+
+
 @app.post("/api/admin/cache/force-purge")
 def admin_cache_force_purge(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """🧹 全生徒のブラウザキャッシュを強制パージ。

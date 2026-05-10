@@ -52,6 +52,34 @@
     referrer: document.referrer,
   });
 
+  // --- 📊 UTM tracking (2026-05-11 ChatGPT Store funnel・他チャネルも対応) ---
+  // URL に utm_source 等が含まれていたら /api/lp/track-utm-visit に POST + sessionStorage に保存
+  // (sessionStorage 保存で複数ページ移動時も attribution 維持)
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const utm_source = params.get('utm_source');
+    if (utm_source) {
+      const utmData = {
+        utm_source: utm_source,
+        utm_medium: params.get('utm_medium') || '',
+        utm_campaign: params.get('utm_campaign') || '',
+        utm_content: params.get('utm_content') || '',
+        utm_term: params.get('utm_term') || '',
+        referrer: document.referrer || '',
+        session_id: sessionId,
+      };
+      sessionStorage.setItem('aj_utm', JSON.stringify(utmData));
+      // backend に track (失敗しても fire-and-forget・LP 表示には影響なし)
+      fetch(`${BACKEND_URL}/api/lp/track-utm-visit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(utmData),
+      }).catch(() => {});
+    }
+  } catch (e) {
+    // URLSearchParams 未対応ブラウザ等は silent fail
+  }
+
   // --- Auto-track outbound link clicks ---
   document.addEventListener('click', (e) => {
     const link = e.target.closest('a');
