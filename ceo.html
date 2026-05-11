@@ -844,6 +844,7 @@
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.7rem;">
           <button id="cgfSpecsBtn" type="button" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">📚 Custom GPT 設計書 6 体を取得</button>
           <button id="cgfAnalyticsBtn" type="button" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">📊 流入分析 (過去 7 日)</button>
+          <button id="cgfAnnouncementBtn" type="button" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">📣 SNS 公開告知テンプレ (Threads/X/IG)</button>
         </div>
         <div id="cgfResult" style="display:none;font-size:0.78rem;color:#cbd5e1;background:rgba(0,0,0,0.3);border:1px solid rgba(34,197,94,0.25);border-radius:8px;padding:0.7rem;line-height:1.6;max-height:60vh;overflow-y:auto;"></div>
       </div>
@@ -5218,6 +5219,73 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         } catch (e) { alert('⚠️ ' + e.message); }
         cgfAnalyticsBtn.disabled = false; cgfAnalyticsBtn.innerHTML = orig;
       });
+
+      // 📣 SNS 公開告知テンプレ生成 (2026-05-11)
+      const cgfAnnouncementBtn = document.getElementById('cgfAnnouncementBtn');
+      if (cgfAnnouncementBtn) cgfAnnouncementBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        cgfAnnouncementBtn.disabled = true; const orig = cgfAnnouncementBtn.innerHTML;
+        cgfAnnouncementBtn.innerHTML = '⏳ 取得中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/marketing/custom-gpt-announcement-templates');
+          const j = await r.json();
+          if (r.ok && j.ok) _renderCgfAnnouncementTemplates(j);
+          else alert('⚠️ ' + (j.detail || JSON.stringify(j)));
+        } catch (e) { alert('⚠️ ' + e.message); }
+        cgfAnnouncementBtn.disabled = false; cgfAnnouncementBtn.innerHTML = orig;
+      });
+
+      function _renderCgfAnnouncementTemplates(payload) {
+        const box = document.getElementById('cgfResult');
+        if (!box) return;
+        box.style.display = 'block';
+        const groups = (payload.templates || []).map(g => {
+          const tpl = g.templates || {};
+          const renderTpl = (platform, label, color, content) => {
+            const safe = escapeForUI(content || '');
+            const enc = encodeURIComponent(content || '');
+            return `
+              <div style="margin-top:0.5rem;padding:0.5rem;background:rgba(0,0,0,0.35);border:1px solid ${color};border-radius:6px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.3rem;">
+                  <div style="font-size:0.74rem;font-weight:800;color:${color};">${label}</div>
+                  <button class="cgfCopyBtn" data-content="${enc}" style="background:${color};color:#000;border:none;padding:0.3rem 0.6rem;border-radius:4px;font-size:0.7rem;font-weight:700;cursor:pointer;">📋 コピー</button>
+                </div>
+                <textarea readonly rows="6" style="width:100%;background:#0f172a;color:#e4e4e7;border:1px solid ${color};padding:0.4rem;border-radius:4px;font-size:0.72rem;font-family:ui-monospace,monospace;line-height:1.5;resize:vertical;">${safe}</textarea>
+              </div>`;
+          };
+          return `
+            <details style="margin:0.5rem 0;border:1px solid rgba(245,158,11,0.3);border-radius:8px;background:rgba(245,158,11,0.05);">
+              <summary style="padding:0.6rem 0.8rem;cursor:pointer;font-size:0.82rem;font-weight:800;color:#fbbf24;">${escapeForUI(g.gpt_name||g.gpt_id||'')}</summary>
+              <div style="padding:0.6rem;">
+                <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.3rem;">${escapeForUI(g.gpt_description||'')}</div>
+                ${renderTpl('threads', '🧵 Threads', '#86efac', tpl.threads)}
+                ${renderTpl('x', '🐦 X (Twitter)', '#7dd3fc', tpl.x)}
+                ${renderTpl('instagram', '📷 Instagram', '#f9a8d4', tpl.instagram)}
+              </div>
+            </details>`;
+        }).join('');
+
+        box.innerHTML = `
+          <div style="font-size:0.85rem;color:#fbbf24;font-weight:800;margin-bottom:0.4rem;">📣 Custom GPT 公開告知テンプレ (${payload.total_templates || 0} 件・6 体 × 3 媒体)</div>
+          <div style="font-size:0.74rem;color:#94a3b8;line-height:1.6;margin-bottom:0.6rem;">${escapeForUI(payload.memo||'')}</div>
+          <div style="font-size:0.72rem;color:#fbbf24;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:0.5rem;margin-bottom:0.5rem;">
+            ⚠️ 各テンプレ内の <code>&lt;&lt;GPT_URL&gt;&gt;</code> を ChatGPT Store の各 GPT の公開 URL (例: https://chatgpt.com/g/g-XXXX-name) で置換してから投稿してください。
+          </div>
+          ${groups}
+        `;
+        // copy ボタンに handler 付与 (既存 cgfCopyBtn と同じパターンを再活用)
+        box.querySelectorAll('.cgfCopyBtn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const content = decodeURIComponent(btn.dataset.content || '');
+            try {
+              await navigator.clipboard.writeText(content);
+              const origBtn = btn.innerHTML;
+              btn.innerHTML = '✅';
+              setTimeout(() => { btn.innerHTML = origBtn; }, 1200);
+            } catch (e) { alert('⚠️ コピー失敗: ' + e.message); }
+          });
+        });
+      }
 
       function _renderCgfSpecs(payload) {
         const box = document.getElementById('cgfResult');

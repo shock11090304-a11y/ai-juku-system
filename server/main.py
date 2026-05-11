@@ -8087,6 +8087,92 @@ def _get_custom_gpt_funnel_specs() -> list:
     ]
 
 
+def _build_sns_announcement_url(platform: str, campaign: str) -> str:
+    """📣 Custom GPT 公開告知 SNS 投稿用 utm URL"""
+    base = f"{BASE_URL}/lp.html"
+    return f"{base}?utm_source={platform}&utm_medium=announce&utm_campaign={campaign}&utm_content=gpt_launch"
+
+
+def _build_custom_gpt_announcement_templates(gpt_id: str, gpt_name: str, gpt_description: str) -> dict:
+    """各 Custom GPT 1 体分の Threads / X / Instagram 公開告知投稿テンプレ。
+    <<GPT_URL>> プレースホルダは塾長が公開後の Custom GPT URL で置換する想定。
+
+    X 版は 280 字制限を厳守: GPT 名 + 50 字 desc + <<GPT_URL>> 実 URL 置換後 (≈60 字) +
+    utm URL (≈110 字) + hashtag (≈20 字) の合計が 280 字以内になるよう desc を 50 字に短縮。
+    """
+    threads_url = _build_sns_announcement_url("threads", gpt_id)
+    x_url = _build_sns_announcement_url("x", gpt_id)
+    instagram_url = _build_sns_announcement_url("instagram", gpt_id)
+    desc_x = (gpt_description or "")[:50]  # X 用 (280 字制限のため短縮)
+    desc_med = (gpt_description or "")[:140]
+    return {
+        "threads": (
+            f"🎓 ChatGPT Store で公開しました\n"
+            f"「{gpt_name}」\n\n"
+            f"{desc_med}\n\n"
+            f"無料で試せます ↓ (ChatGPT アカウントだけで OK)\n"
+            f"<<GPT_URL: ChatGPT Store の公開 URL を貼り付け>>\n\n"
+            f"本格指導は ai-juku 7 日間無料体験 (クレカ不要)\n"
+            f"→ {threads_url}"
+        ),
+        "x": (
+            f"🎓 ChatGPT Store 新公開\n"
+            f"「{gpt_name}」\n"
+            f"{desc_x}\n\n"
+            f"無料体験→<<GPT_URL>>\n"
+            f"本格指導→{x_url}\n"
+            f"#大学受験 #AI塾"
+        ),
+        "instagram": (
+            f"🎓 ChatGPT Store に新しい AI コーチを公開しました\n\n"
+            f"【{gpt_name}】\n"
+            f"{gpt_description}\n\n"
+            f"━━━━━━━━━━━━━\n"
+            f"🔗 ChatGPT で無料で試す\n"
+            f"   <<GPT_URL>>\n\n"
+            f"🎓 本格指導は ai-juku で\n"
+            f"   7 日間無料体験 (クレカ不要)\n"
+            f"   → {instagram_url}\n"
+            f"━━━━━━━━━━━━━\n\n"
+            f"#大学受験 #AI #ChatGPT #英検 #東大 #早慶 #共通テスト #物理 #古文"
+        ),
+    }
+
+
+@app.get("/api/admin/marketing/custom-gpt-announcement-templates")
+def admin_custom_gpt_announcement_templates(authorization: Optional[str] = Header(None)):
+    """📣 Custom GPT 6 体公開告知の SNS 投稿テンプレ生成 (Threads/X/Instagram)
+    塾長が ChatGPT Store に公開した Custom GPT について、塾長キャラで SNS 告知投稿を作る用。
+    各 GPT について 3 プラットフォーム × 1 テンプレ = 18 テンプレを返す ($0・既存 spec 流用)。
+
+    塾長作業: <<GPT_URL>> プレースホルダーを実 URL で置換 → コピペで投稿。
+    UTM: 全テンプレに utm_source=threads/x/instagram & utm_medium=announce 付き、計測可能。
+    memory: project_ai_juku_threads.md (Threads 主集客) + feedback_chatgpt_store_funnel.md
+    """
+    _verify_admin_required(authorization)
+    specs = _get_custom_gpt_funnel_specs()
+    templates = []
+    for spec in specs:
+        templates.append({
+            "gpt_id": spec["id"],
+            "gpt_name": spec["name"],
+            "gpt_description": spec["description"],
+            "templates": _build_custom_gpt_announcement_templates(spec["id"], spec["name"], spec["description"]),
+        })
+    return {
+        "ok": True,
+        "count": len(specs),
+        "platforms": ["threads", "x", "instagram"],
+        "total_templates": len(specs) * 3,
+        "memo": (
+            "Custom GPT 6 体公開のお知らせ SNS 投稿テンプレ。"
+            "各テンプレの <<GPT_URL>> を塾長公開後の URL (https://chatgpt.com/g/g-XXXX-name) で置換してから投稿。"
+            "推奨投稿頻度: 1 日 1 体 (6 体で 6 日・Threads 主集客に貢献)。"
+        ),
+        "templates": templates,
+    }
+
+
 @app.get("/api/admin/marketing/custom-gpt-funnel-specs")
 def admin_custom_gpt_funnel_specs(authorization: Optional[str] = Header(None)):
     """🎯 ChatGPT Store 集客 Custom GPT 6 体の設計書を返す。
