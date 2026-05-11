@@ -1181,11 +1181,13 @@ def health():
 
 
 @app.get("/api/email/diagnose-public")
-def email_diagnose_public():
+def email_diagnose_public(request: Request):
     """🔥 緊急診断用: 認証不要で Resend ドメイン状態 + 直近エラー要約を公開。
     機密値 (API キー本体, FROM_EMAIL のローカルパート, 顧客メール) は出さない。
     169 件連続失敗に対する原因特定のため 2026-04-30 緊急追加。
     """
+    # PII / 顧客数 leakage / DDoS 対策: 1分 5 回まで (2026-05-11 autonomous mode security review 反映)
+    _check_rate_limit_ip(request, bucket="diagnose_public", limit=5, window=60)
     import urllib.request, urllib.error
     out = {
         "from_domain": FROM_EMAIL.split("@")[-1].rstrip(">").strip() if "@" in FROM_EMAIL else "not_set",
@@ -1272,7 +1274,114 @@ def email_diagnose_public():
         out["diagnosis"].append("Resend 側の一時障害の可能性。https://resend-status.com で確認。")
     elif err:
         out["diagnosis"].append(f"未分類エラー: {err}")
+
+    # 🔥 magic-link (再ログイン) の直近 24h サマリを公開診断にも載せる (2026-05-11 autonomous mode)
+    # PII / 顧客数 leakage 対策: 件数の生数字は出さず boolean + ホワイトリスト分類のみ
+    # 詳細な件数は admin token 必須の /api/admin/email/diagnose 側に集約
+    try:
+        stats = _magic_link_24h_stats()
+        cls_top = _magic_link_error_classes_24h(top=3)
+        total = (stats or {}).get("total", 0)
+        sent_ok = (stats or {}).get("sent_ok", 0)
+        send_failed = (stats or {}).get("send_failed", 0)
+        # 公開サマリ: トラフィック有無と送信健全性 (件数の正確な数字は出さない)
+        out["magic_link_health_24h"] = {
+            "had_traffic": total > 0,
+            "any_send_failed": send_failed > 0,
+            "all_sent_ok": total > 0 and send_failed == 0 and sent_ok == total - (
+                (stats or {}).get("trial_expired", 0) + (stats or {}).get("unknown_email", 0) + (stats or {}).get("status_inactive", 0)
+            ),
+            "error_classes": [c for c, _ in cls_top],  # 件数は出さない、class 名のみ
+        }
+        # diagnosis: 優先順位の高い 1 件のみを最初に append (multi-cause 混乱回避)
+        priority_msgs: list = []
+        # error class が出てれば最優先 (技術原因が分かる)
+        for cls, _cnt in cls_top:
+            cls_norm = _classify_send_error(cls)
+            if cls_norm == "rate_limit":
+                priority_msgs.append("🚨 Resend 429 rate limit を検知。Pro プラン (5万/月) アップグレード or 送信ペース調整が必要。")
+                break
+            if cls_norm == "domain_invalid":
+                priority_msgs.append("🚨 Resend ドメイン検証エラー検知。https://resend.com/domains で trillion-ai-juku.com の DNS 再検証してください。")
+                break
+            if cls_norm == "api_key_revoked":
+                priority_msgs.append("🚨 Resend API key 401 検知。dashboard で再発行 + Railway 環境変数 RESEND_API_KEY 更新。")
+                break
+            if cls_norm == "network":
+                priority_msgs.append("⚠️ ネットワーク timeout/connection エラー検知 → Resend or Railway egress 一時障害の可能性。https://resend-status.com 確認。")
+                break
+            if cls_norm == "other":
+                priority_msgs.append("⚠️ 分類外の送信エラーを検知。admin ダッシュ「メール診断」で詳細確認してください。")
+                break
+        if not priority_msgs:
+            if total == 0:
+                priority_msgs.append("ℹ️ 直近 24h でログインコード送信リクエストはゼロ件。生徒が誰もログイン試行していない or 静的サイト側で fetch 自体が失敗の可能性。塾長ご自身で login.html → コード送信 を一度試してください。")
+            elif send_failed > 0:
+                priority_msgs.append("🚨 直近 24h でログインコード送信失敗あり。admin ダッシュ「📧 メール診断」で件数・error class を確認してください。")
+        for m in priority_msgs:
+            out["diagnosis"].append(m)
+    except Exception as _e:
+        out["magic_link_health_24h_error"] = f"{type(_e).__name__}: {str(_e)[:120]}"
+
     return out
+
+
+def _classify_send_error(cls_str: str) -> str:
+    """error class 文字列を 6 区分にホワイトリスト分類 (PII / 内部情報 leakage 防止)。
+    return: "rate_limit" / "domain_invalid" / "api_key_revoked" / "network" / "validation" / "other"
+    生の Python traceback や SSL 証明書情報を公開診断 endpoint から出さないための統一関数。"""
+    s = (cls_str or "").lower()
+    if "429" in s or "too many" in s or "rate" in s:
+        return "rate_limit"
+    if "422" in s or "domain" in s or "verify" in s:
+        return "domain_invalid"
+    if "401" in s or "unauthor" in s or "revoke" in s:
+        return "api_key_revoked"
+    if "timeout" in s or "connect" in s or "urlerror" in s or "ssl" in s or "dns" in s:
+        return "network"
+    if "validation_error" in s or "value_error" in s or "invalid_email" in s:
+        return "validation"
+    return "other"
+
+
+def _magic_link_error_classes_24h(top: int = 3) -> list:
+    """直近 24h の magic_link 送信失敗の error class top N を集計 (PII 配慮で error class のみ)。
+    error 文字列は ":" or " at " で truncate + 60 chars 上限 + ホワイトリスト正規化で内部情報 leakage 防止。
+    例: [["rate_limit", 5], ["network", 2]]"""
+    try:
+        from collections import Counter
+        conn = db()
+        c = conn.cursor()
+        if USE_POSTGRES:
+            c.execute(
+                "SELECT props FROM events WHERE name = 'magic_link_email_status' "
+                "AND created_at > NOW() - INTERVAL '24 hours' ORDER BY created_at DESC LIMIT 500",
+            )
+        else:
+            c.execute(
+                "SELECT props FROM events WHERE name = 'magic_link_email_status' "
+                "AND created_at > datetime('now', '-24 hours') ORDER BY created_at DESC LIMIT 500",
+            )
+        rows = c.fetchall()
+        conn.close()
+        counter: "Counter[str]" = Counter()
+        for r in rows:
+            try:
+                props = json.loads(r["props"]) if isinstance(r["props"], str) else r["props"]
+                if props.get("email_sent"):
+                    continue
+                err = (props.get("error") or "").strip()
+                if not err:
+                    continue
+                # error class 抽出 → ホワイトリスト分類で正規化 (内部情報を公開しない)
+                cls_raw = err.split(":", 1)[0][:60] if ":" in err else err[:60]
+                cls_norm = _classify_send_error(cls_raw)
+                counter[cls_norm] += 1
+            except Exception:
+                pass
+        return counter.most_common(top)
+    except Exception:
+        return []
 
 @app.get("/api/stats")
 def stats(x_stats_token: str = Header(None)):
