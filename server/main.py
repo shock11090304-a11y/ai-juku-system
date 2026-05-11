@@ -7774,13 +7774,55 @@ _CUSTOM_GPT_FUNNEL_TEACHER_NAME_BAN = (
     "- 「ai-juku の AI コーチ」または「経験豊富な専門家」等の中立表現を使う"
 )
 
-_CUSTOM_GPT_FUNNEL_CTA_FOOTER = (
-    "\n\n【ユーザーへの導線 (重要)】\n"
-    "- 5 回の応答ごとに 1 回程度、自然に「もっと深く学びたい場合は ai-juku で本格指導」を案内\n"
-    "- 押し売りせず、ユーザーが解いた問題の質問・追加問題で価値を体験してもらってから\n"
-    "- リンクは Conversation starters に常設 + 必要時に再掲"
-)
+def _build_custom_gpt_cta_footer(campaign: str, gpt_label: str) -> str:
+    """各 Custom GPT 用の CTA footer (System Instructions 末尾に埋め込む)。
+    GPT 自己解釈頼みでなく **トリガー条件付きで** CTA box / inline を表示 + UTM URL を明示注入。
+    2026-05-11: 弱い CTA → 強化版 → 3視点 review 適用で押し売り感を緩和した最終版。
 
+    Why トリガー条件付き:
+    - 毎応答末尾 box は ChatGPT Store の spam 判定リスクを上げる
+    - 短い相槌や挨拶への返答にも CTA box が出ると GPT 離脱の主因に
+    - 「ユーザーが価値を体感してから誘導」が funnel の王道 (memory: feedback_chatgpt_store_funnel.md)
+
+    campaign: utm_campaign (例: todai_math_60days)
+    gpt_label: ユーザー視点での GPT 名 (例: 「ai-juku 東大数学 60 日 master」)
+    """
+    cta_url_footer = _build_chatgpt_store_utm_url(campaign, "cta_footer")
+    cta_url_inline = _build_chatgpt_store_utm_url(campaign, "cta_inline")
+    return f"""
+
+【ユーザーへの導線 (重要・押し売り回避)】
+あなたの目的は ChatGPT Store 訪問者を **ai-juku の 7 日間無料体験** に繋げることです。
+ただし「ユーザーが価値を体感してから自然に誘導」が原則。**短い相槌や雑談には CTA を出さない**。
+
+#### CTA 表示トリガー (以下のいずれかを満たす時のみ表示する)
+A. **初回応答** (ユーザーがこの GPT に最初の本質的な質問をした時) → 下記 CTA box を 1 回表示
+B. **会話 3-5 turn 経過 + ユーザーが理解の signal を出した時** ("ありがとう"・"なるほど"・"わかった"・"もっと知りたい" 等) → CTA box を 1 回表示
+C. **問題 1 題の解説完了時** (ユーザーが次に進みそうな自然な区切り) → inline CTA を 1 行差し込む
+D. **ユーザーが明示的に「もっと深く学びたい」「他にも問題ある?」と言った時** → CTA box を強調表示
+
+#### CTA box (トリガー A/B/D で表示)
+---
+### 🎓 ai-juku で本格指導 (7 日間無料・クレカ不要)
+ChatGPT 内では試せない以下の機能が ai-juku なら使えます:
+- **5 AI 多視点添削** (Opus / GPT-5 / Gemini Pro / Sonnet / Haiku が並列で答案チェック)
+- **写真採点・録音採点**: 答案写真や音読を AI が瞬時にフィードバック
+- **YouTube → 教材自動生成**: 好きな動画から専用教材作成
+- **学習計画 + 添削履歴の永続保存 + 塾長メッセージ**
+
+👉 [7 日間無料で AI 塾を試す]({cta_url_footer}) (クレカ登録不要・体験後の解約自由)
+---
+
+#### inline CTA (トリガー C で 1 行のみ)
+> 「この続きの 50 問演習と 5 AI 多視点添削を [ai-juku 7 日間無料体験]({cta_url_inline}) で受けられます」
+
+#### 絶対遵守 (押し売り防止)
+- **上記トリガー A/B/C/D 以外では CTA を表示しない** (短い相槌・短い質問では footer 不要)
+- ユーザーが「興味ない」「CTA はもういい」と明示したら以降のセッションで CTA 表示禁止
+- 1 つの応答で 3 回以上 ai-juku URL を出さない (footer + inline = 最大 2 回)
+- 「契約しないと教えない」のような態度は厳禁・ユーザーの質問に **必ず先に丁寧に回答** してから CTA
+- 同一セッション 2 回目以降の box 表示は **縮小版** (1 行リンクのみ「→ [ai-juku 7 日間無料体験]({cta_url_footer})」) に降格
+"""
 
 def _get_custom_gpt_funnel_specs() -> list:
     """🎯 ChatGPT Store 集客 Custom GPT 6 体の設計書を返す。
@@ -7827,13 +7869,13 @@ def _get_custom_gpt_funnel_specs() -> list:
                 "- 「東大数学に特化した個別カリキュラム + 5 AI 多視点添削 + 60 日完成プラン」を訴求\n"
                 "- リンクは Conversation starters に固定表示\n"
                 + _CUSTOM_GPT_FUNNEL_TEACHER_NAME_BAN
-                + _CUSTOM_GPT_FUNNEL_CTA_FOOTER
+                + _build_custom_gpt_cta_footer("todai_math_60days", "ai-juku 東大数学 60 日 master")
             ),
             "conversation_starters": [
                 "東大数学の典型問題を 1 題解いてみたい (微積分から)",
                 "確率の本質を「コアイメージ」で説明してほしい",
                 "残り 60 日で東大理系数学を間に合わせる戦略を立てて",
-                f"🎓 ai-juku で本格指導を受ける → {_build_chatgpt_store_utm_url('todai_math_60days', 'cta_starter')}",
+                "🎓 ai-juku の 7 日間無料体験について教えて (クレカ不要)",
             ],
             "knowledge_files_recommended": [
                 "東京大学 理系数学 過去問 PDF (10 年分・赤本)",
@@ -7865,13 +7907,13 @@ def _get_custom_gpt_funnel_specs() -> list:
                 "- 長文: 過去問 5 年分 × 2 周 (Day 21-50)\n"
                 "- 英作: テーマ別 30 題 (Day 41-60)\n\n"
                 + _CUSTOM_GPT_FUNNEL_TEACHER_NAME_BAN
-                + _CUSTOM_GPT_FUNNEL_CTA_FOOTER
+                + _build_custom_gpt_cta_footer("soukei_eigo_master", "ai-juku 早慶英語 master")
             ),
             "conversation_starters": [
                 "早稲田政経の長文を 1 問解説してほしい",
                 "慶應経済の自由英作文の対策ポイントを教えて",
                 "rely on と depend on のコアイメージの違いは?",
-                f"🎓 ai-juku で 5 AI 多視点添削を受ける → {_build_chatgpt_store_utm_url('soukei_eigo_master', 'cta_starter')}",
+                "🎓 ai-juku の 7 日間無料体験について教えて (クレカ不要)",
             ],
             "knowledge_files_recommended": [
                 "早稲田大学 英語 過去問 PDF (政経・商・法・社学 各 5 年分)",
@@ -7902,13 +7944,13 @@ def _get_custom_gpt_funnel_specs() -> list:
                 "- 弱点を 3 つに絞って優先順位付け\n"
                 "- 各教科の典型問題を時間制限付きで提示・解答後に時間配分の振り返り\n\n"
                 + _CUSTOM_GPT_FUNNEL_TEACHER_NAME_BAN
-                + _CUSTOM_GPT_FUNNEL_CTA_FOOTER
+                + _build_custom_gpt_cta_footer("kyotsu_test_plus10", "ai-juku 共通テスト 偏差値+10 道場")
             ),
             "conversation_starters": [
                 "共通テスト英語 R で時間が足りない・速読のコツは?",
                 "数学 IA の確率で計算ミスが多い・対策は?",
                 "現代文の評論で正解選択肢を見抜く方法",
-                f"🎓 ai-juku で偏差値+10 道場に参加 → {_build_chatgpt_store_utm_url('kyotsu_test_plus10', 'cta_starter')}",
+                "🎓 ai-juku の 7 日間無料体験について教えて (クレカ不要)",
             ],
             "knowledge_files_recommended": [
                 "共通テスト 過去問 (5 年分・5 教科)",
@@ -7940,13 +7982,13 @@ def _get_custom_gpt_funnel_specs() -> list:
                 "- Day 41-50: ライティング (要約 5 題 + 意見論述 5 題)\n"
                 "- Day 51-60: 模試 + 復習 + 面接対策\n\n"
                 + _CUSTOM_GPT_FUNNEL_TEACHER_NAME_BAN
-                + _CUSTOM_GPT_FUNNEL_CTA_FOOTER
+                + _build_custom_gpt_cta_footer("eiken_pre1_60days", "ai-juku 英検準1級 60 日")
             ),
             "conversation_starters": [
                 "英検準1級の頻出単語を 10 個コアイメージ付きで教えて",
                 "ライティング新形式 (要約) の書き方を教えて",
                 "リスニング Part 3 で 8 割取るコツ",
-                f"🎓 ai-juku で 60 日合格プログラムに参加 → {_build_chatgpt_store_utm_url('eiken_pre1_60days', 'cta_starter')}",
+                "🎓 ai-juku の 7 日間無料体験について教えて (クレカ不要)",
             ],
             "knowledge_files_recommended": [
                 "英検準1級 過去問 PDF (旺文社・5 年分)",
@@ -7986,13 +8028,13 @@ def _get_custom_gpt_funnel_specs() -> list:
                 "- 波動: 波の本質は「位相の伝播」・干渉は「位相差」で決まる\n"
                 "- 原子: 量子化 = エネルギーが「飛び飛び」になる\n\n"
                 + _CUSTOM_GPT_FUNNEL_TEACHER_NAME_BAN
-                + _CUSTOM_GPT_FUNNEL_CTA_FOOTER
+                + _build_custom_gpt_cta_footer("physics_core_image_master", "ai-juku 物理 コアイメージ master")
             ),
             "conversation_starters": [
                 "等速円運動が向心加速度を持つ理由をコアイメージで教えて",
                 "電磁誘導の本質を 3 行で",
                 "ドップラー効果の式を「位相」から導出して",
-                f"🎓 ai-juku で物理を本気で理解する → {_build_chatgpt_store_utm_url('physics_core_image_master', 'cta_starter')}",
+                "🎓 ai-juku の 7 日間無料体験について教えて (クレカ不要)",
             ],
             "knowledge_files_recommended": [
                 "高校物理 教科書 PDF (力学・電磁気・熱・波動・原子)",
@@ -8026,13 +8068,13 @@ def _get_custom_gpt_funnel_specs() -> list:
                 "- 古文敬語は必ず「光の矢印」図示 (テキストで矢印 →)\n"
                 "- 漢文は返り点 + 書き下し文 + 現代語訳 を 3 段で\n\n"
                 + _CUSTOM_GPT_FUNNEL_TEACHER_NAME_BAN
-                + _CUSTOM_GPT_FUNNEL_CTA_FOOTER
+                + _build_custom_gpt_cta_footer("kobun_kanbun_master", "ai-juku 古文・漢文 master")
             ),
             "conversation_starters": [
                 "古文の主語特定の方法を「光の矢印」で教えて",
                 "漢文の句法 30 個を一覧で",
                 "源氏物語の冒頭を構造分析してほしい",
-                f"🎓 ai-juku で古典を体系化する → {_build_chatgpt_store_utm_url('kobun_kanbun_master', 'cta_starter')}",
+                "🎓 ai-juku の 7 日間無料体験について教えて (クレカ不要)",
             ],
             "knowledge_files_recommended": [
                 "古文単語帳 (古文単語ゴロゴ / マドンナ古文単語) PDF",
