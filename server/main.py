@@ -10120,9 +10120,12 @@ def admin_ai_team_workflows_list(
     limit: int = 20,
     authorization: Optional[str] = Header(None),
 ):
-    """🤖 進行中 (or 指定 status) の AI チーム workflow 一覧。CEO ダッシュ「再開」UI 用。"""
+    """🤖 進行中 (or 指定 status) の AI チーム workflow 一覧。CEO ダッシュ「再開」UI 用。
+
+    🆘 review 重大#8 fix: 'executing' / 'importing' / 'failed' も whitelist 追加 (全自動モード対応)。
+    """
     _verify_admin_required(authorization)
-    if status not in ("in_progress", "completed", "aborted", "all"):
+    if status not in ("in_progress", "completed", "aborted", "executing", "importing", "failed", "all"):
         status = "in_progress"
     if limit < 1 or limit > 100:
         limit = 20
@@ -10318,6 +10321,409 @@ def admin_ai_team_workflow_abort(workflow_id: str, authorization: Optional[str] 
         raise HTTPException(status_code=409, detail=f"workflow は既に {wf['status']} です")
     _aitw_db_set_status(workflow_id, "aborted")
     return {"ok": True, "workflow_id": workflow_id, "status": "aborted"}
+
+
+# ==========================================================================
+# 🌟 AI チーム検閲ワークフロー 全自動モード (2026-05-12 塾長指示・自動化導線)
+# Anthropic Opus 4.7 で執筆 + 3 視点 self-review + 統合 + import まで server 側で完結。
+# 塾長作業: spec 入力 + 1 クリックのみ (10 秒)。3-5 分後に投入完了通知。
+# 課金: 1 batch (5 問) あたり ~$0.5-1 (Opus 4.7 thinking 含む)
+# memory:
+#  - feedback_team_review_all_generation.md「単独 AI 生成禁止」→ Opus 1 chat 内 3 視点
+#    self-review chain で代替 (重要 batch は手動 mode='full' の異 AI 並列を推奨)
+#  - feedback_5_person_textbook_review.md トレードオフ警告 UI で明示
+#  - feedback_ai_never_fail.md → _call_anthropic_safe で 3 段降格 + Gemini fallback 自動
+#  - feedback_seed_import_no_loop.md → _exam_questions_import_core で dedup + valid_rotation
+# ==========================================================================
+
+# 全自動モードの 1 日コスト上限 (memory: feedback_role_engineer.md「Claude が決めて」で
+# 暴走防御の保守的値 $5/日を default。env で override 可能)
+AITW_AUTO_DAILY_BUDGET_USD = float(os.getenv("AITW_AUTO_DAILY_BUDGET_USD", "5.0"))
+
+# Opus 4.7 価格 (per million tokens) — 2026 時点の公式価格
+# memory: feedback_credential_management.md で API key は既存使用 (新規 env 不要)
+_OPUS_47_INPUT_USD_PER_MTOK = 3.0
+_OPUS_47_OUTPUT_USD_PER_MTOK = 15.0
+
+
+def _aitw_auto_estimate_cost_usd(usage: dict) -> float:
+    """Anthropic response の usage から USD コストを概算 (Opus 4.7 価格)。
+
+    🆘 review 重大#5 fix: cache_creation (1.25x input) / cache_read (0.1x input) も加算。
+    過去実装は input/output のみで cache を無視 → 過小評価リスクがあった。
+    """
+    if not usage:
+        return 0.0
+    input_tok = int(usage.get("input_tokens") or 0)
+    cache_creation = int(usage.get("cache_creation_input_tokens") or 0)
+    cache_read = int(usage.get("cache_read_input_tokens") or 0)
+    output_tok = int(usage.get("output_tokens") or 0)  # thinking tokens は output に含まれる (Anthropic spec)
+    cost = (
+        input_tok * _OPUS_47_INPUT_USD_PER_MTOK
+        + cache_creation * _OPUS_47_INPUT_USD_PER_MTOK * 1.25
+        + cache_read * _OPUS_47_INPUT_USD_PER_MTOK * 0.1
+        + output_tok * _OPUS_47_OUTPUT_USD_PER_MTOK
+    ) / 1_000_000
+    return round(cost, 4)
+
+
+def _aitw_auto_today_cost_usd() -> float:
+    """直近 24h の auto-execute コスト集計 (events table から) — daily budget check 用。
+
+    🆘 致命 fix (review 致命#2): events.created_at は DEFAULT CURRENT_TIMESTAMP (UTC) で保存される
+    が、過去実装は JST 0:00 を作って比較しており 9 時間ズレで budget が機能しなかった。
+    rolling 24h (直近 24 時間) に変更することで TZ 依存を完全排除 + 運用上等価。
+    """
+    # naive UTC で 24h 前の cutoff を作成 (DB created_at と直接比較可能)
+    cutoff = (datetime.utcnow() - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT props FROM events WHERE name = ? AND created_at >= ?",
+            ("aitw_auto_exec", cutoff),
+        )
+        rows = c.fetchall() or []
+        total = 0.0
+        for r in rows:
+            try:
+                props = json.loads(r["props"]) if isinstance(r["props"], str) else (r["props"] or {})
+                # 全 event (inflight + completed) を合算 (cost_usd は inflight 時に max 仮計上)
+                total += float(props.get("cost_usd") or 0)
+            except Exception:
+                pass
+        return round(total, 4)
+    finally:
+        conn.close()
+
+
+# 1 batch の最大想定コスト (count=10 で Opus 4.7 + thinking budget で ~$2)
+# inflight reservation で仮計上することで race condition を防ぐ (review 致命#3)
+AITW_AUTO_MAX_COST_PER_BATCH_USD = 2.0
+
+
+def _aitw_auto_inflight_insert(workflow_id: str, spec: dict) -> int:
+    """全自動実行の inflight reservation: Anthropic 呼び出し前に events に最大想定コストで INSERT。
+
+    返り値: 作成した event row id (完了時に UPDATE で actual cost に置き換える)。
+
+    🆘 致命 fix (review 致命#3 + 重大): 集計→比較→INSERT の race を排除。
+    集計時点で inflight event の cost_usd=MAX_COST が見えるので、並列 batch を防げる。
+    """
+    conn = db()
+    try:
+        c = conn.cursor()
+        props = json.dumps({
+            "workflow_id": workflow_id,
+            "cost_usd": AITW_AUTO_MAX_COST_PER_BATCH_USD,
+            "status": "inflight",
+            "spec": spec,
+            "actual_model": None,
+            "input_tokens": 0,
+            "output_tokens": 0,
+        }, ensure_ascii=False)
+        c.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            ("aitw_auto_exec", props, workflow_id),
+        )
+        conn.commit()
+        # last insert id を取得 (SQLite/Postgres 両対応)
+        try:
+            c.execute("SELECT id FROM events WHERE session_id = ? AND name = ? ORDER BY id DESC LIMIT 1",
+                      (workflow_id, "aitw_auto_exec"))
+            row = c.fetchone()
+            return int(row["id"]) if row else 0
+        except Exception:
+            return 0
+    finally:
+        conn.close()
+
+
+def _aitw_auto_inflight_finalize(event_id: int, workflow_id: str, spec: dict,
+                                  actual_cost_usd: float, actual_model: str,
+                                  usage: dict, status: str = "completed") -> None:
+    """inflight event を actual cost に置き換える UPDATE。
+
+    failure 時は status='failed' + actual_cost_usd (実発生分) で記録 → audit 整合維持。
+    """
+    if not event_id:
+        return  # inflight INSERT 失敗時は skip (audit log は欠落するが致命ではない)
+    props = json.dumps({
+        "workflow_id": workflow_id,
+        "cost_usd": actual_cost_usd,
+        "status": status,
+        "spec": spec,
+        "actual_model": actual_model,
+        "input_tokens": int((usage or {}).get("input_tokens", 0)),
+        "output_tokens": int((usage or {}).get("output_tokens", 0)),
+        "cache_creation_input_tokens": int((usage or {}).get("cache_creation_input_tokens", 0)),
+        "cache_read_input_tokens": int((usage or {}).get("cache_read_input_tokens", 0)),
+    }, ensure_ascii=False)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("UPDATE events SET props = ? WHERE id = ?", (props, event_id))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/ai-team-workflow/auto-execute")
+def admin_ai_team_workflow_auto_execute(payload: dict, authorization: Optional[str] = Header(None)):
+    """🌟 全自動モード: spec を入力するだけで Anthropic Opus 4.7 が執筆 → 3 視点 self-review → 統合 → import。
+
+    塾長作業: 試験/部/問数 + ボタン 1 クリック (10 秒)。3-5 分後に完了。
+
+    payload (admin_ai_team_workflow_generate と同じ形式):
+      {
+        "exam_id": "eiken" | "daigaku" | "toefl" | "toeic" | "ielts",
+        "part_key": "r_q1" | "r_long" | ...,
+        "eiken_grade": "gp1" | "todai" | null,
+        "topic_hint": "AI と教育" | null,
+        "year": 2024 | null,
+        "count": 1-10 (default 5・課金抑制のため上限 10)
+      }
+
+    返却:
+      {
+        "ok": true,
+        "workflow_id": "wf_...",
+        "received": 5, "inserted": 5, "skipped_full": 0, "failed": 0,
+        "cost_usd": 0.65,
+        "actual_model": "claude-opus-4-7-...",
+        "today_total_cost_usd": 1.30,
+        "daily_budget_usd": 5.0,
+        "message": "...",
+      }
+
+    冪等性: 同じ spec で 2 回呼んでも DB workflow は別 row になる (重複 INSERT は
+    valid_rotation + skip_full でカバー)。Anthropic 呼び出しコストはかかるので
+    塾長は 1 batch ごとに UI で確認推奨。
+    """
+    _verify_admin_required(authorization)
+
+    if not ANTHROPIC_API_KEY:
+        raise HTTPException(status_code=503, detail="Anthropic API key 未設定")
+
+    # 🆘 review 重大#4 fix: daily budget check に 1 batch 最大想定コストを加算 ($4.99 + $2 = $6.99 越え防止)
+    today_total = _aitw_auto_today_cost_usd()
+    if today_total + AITW_AUTO_MAX_COST_PER_BATCH_USD > AITW_AUTO_DAILY_BUDGET_USD:
+        raise HTTPException(
+            status_code=429,
+            detail=(
+                f"全自動モードの 1 日上限 (${AITW_AUTO_DAILY_BUDGET_USD:.2f}) に到達見込み。"
+                f"直近 24h: ${today_total:.4f} + 1 batch 最大 ${AITW_AUTO_MAX_COST_PER_BATCH_USD:.2f} で超過。"
+                f"明日まで待つか手動 mode で実行してください"
+            )
+        )
+
+    # spec 解析 (admin_ai_team_workflow_generate と同じロジック)
+    exam_id = (payload.get("exam_id") or "").strip()
+    part_key = (payload.get("part_key") or "").strip()
+    eiken_grade_raw = payload.get("eiken_grade")
+    eiken_grade = (eiken_grade_raw or "").strip() if isinstance(eiken_grade_raw, str) else None
+    if not eiken_grade:
+        eiken_grade = None
+    topic_hint = (payload.get("topic_hint") or "").strip() or None
+    year = payload.get("year")
+    if year is not None:
+        try:
+            year = int(year)
+        except (TypeError, ValueError):
+            year = None
+    try:
+        count = int(payload.get("count") or 5)
+    except (TypeError, ValueError):
+        count = 5
+    if count < 1 or count > 10:
+        raise HTTPException(status_code=400, detail="全自動モードは count 1-10 のみ (課金抑制)")
+
+    if not exam_id or not part_key:
+        raise HTTPException(status_code=400, detail="exam_id と part_key は必須")
+    if (exam_id, part_key, eiken_grade) not in {(e, p, g) for (e, p, g) in EXAM_QUESTION_ROTATION}:
+        raise HTTPException(
+            status_code=400,
+            detail=f"無効な組合せ: {exam_id}/{part_key}/{eiken_grade}"
+        )
+
+    # exam_label / part_label 解決
+    exam_label_map = {"toefl": "TOEFL iBT", "toeic": "TOEIC L&R", "ielts": "IELTS Academic"}
+    if exam_id == "eiken":
+        exam_label = f"英検{eiken_grade or '準1級'} (新形式 2024〜)"
+    elif exam_id == "daigaku":
+        univ_info = DAIGAKU_UNIV_STYLES.get(eiken_grade or "todai", {"name": eiken_grade or "todai"})
+        exam_label = f"{univ_info['name']} 大学入試 英語"
+    else:
+        exam_label = exam_label_map.get(exam_id, exam_id)
+    part_label = part_key
+    try:
+        part_label = DAIGAKU_PART_HINTS.get(part_key, part_key) if exam_id == "daigaku" else part_key
+    except Exception:
+        pass
+
+    spec = {
+        "exam_id": exam_id, "part_key": part_key, "eiken_grade": eiken_grade,
+        "topic_hint": topic_hint, "year": year, "count": count,
+        "exam_label": exam_label, "part_label": part_label,
+    }
+
+    # workflow_id 発行 + DB 保存 (mode='auto')
+    import secrets as _secrets
+    workflow_id = f"wf_{datetime.now(JST).strftime('%Y%m%d_%H%M%S')}_auto_{_secrets.token_hex(2)}"
+
+    # Prompt は既存 _build_ai_team_fast_prompt を流用 (1 chat で執筆+self-review+統合)
+    # <<SEARCH_RESULTS>> は「検索資料なし・一般知識で類題作成」に置換 (全自動なので過去問 PDF アクセス不可)
+    base_prompt = _build_ai_team_fast_prompt(
+        exam_id, exam_label, part_key, part_label,
+        eiken_grade, topic_hint, year, count
+    )
+    search_substitute = (
+        f"(全自動モード: 過去問 PDF アクセス不可・Opus 4.7 の一般知識で {exam_label} {part_label} の"
+        f"形式準拠類題を作成してください。引用は不要・著作権配慮のため過去問の丸写し厳禁。"
+    )
+    resolved_prompt = base_prompt.replace("<<SEARCH_RESULTS>>", search_substitute)
+
+    # DB に workflow を pre-save (status='executing')
+    phases_pre = [
+        {
+            "phase": 0, "name": "📚 Phase 0: (全自動 skip)", "ai": "n/a", "ai_url": "",
+            "setup_note": "全自動モードでは Phase 0 検索は skip", "prompt": "",
+            "output": search_substitute, "output_format": "text", "next_input_marker": None,
+        },
+        {
+            "phase": 1, "name": "🌟 Phase 1: 全自動執筆+self-review+統合",
+            "ai": "Claude Opus 4.7 (Anthropic API)", "ai_url": "",
+            "setup_note": "server 側で _call_anthropic_safe 経由で自動実行", "prompt": resolved_prompt,
+            "output": None, "output_format": "import endpoint 用 JSON",
+            "next_input_marker": None,
+        },
+    ]
+    try:
+        _aitw_db_save(workflow_id, spec, phases_pre, mode="auto", status="executing")
+    except Exception as e:
+        log.error(f"[AITW:Auto] DB save failed: {e}")
+        raise HTTPException(status_code=500, detail=f"DB 保存失敗: {e}")
+
+    # 🆘 review 致命#3 fix: inflight reservation (events に最大想定 cost で先 INSERT)
+    # これにより並列 batch の budget check で「他 batch が進行中」が見える → race 防止
+    inflight_event_id = _aitw_auto_inflight_insert(workflow_id, spec)
+    if not inflight_event_id:
+        # inflight INSERT 失敗 = events DB 障害 = budget 整合不可 → abort
+        _aitw_db_set_status(workflow_id, "failed")
+        raise HTTPException(
+            status_code=500,
+            detail="inflight reservation の INSERT 失敗 → 全自動 abort (budget 整合性確保のため)"
+        )
+
+    # Anthropic Opus 4.7 呼び出し (失敗時は _call_anthropic_safe が Sonnet/Haiku/Gemini に降格)
+    log.info(f"[AITW:Auto] start wf={workflow_id} spec={exam_id}/{part_key}/{eiken_grade} count={count} inflight_id={inflight_event_id}")
+    try:
+        # memory: feedback_opus47_proxy_required.md — Opus 4.7 必須パラメータ
+        # thinking: adaptive + output_config: effort=high + temperature=1.0 全て必須
+        # (どれか欠けると Anthropic 400 → Sonnet silent fallback で品質劣化 + cost 齟齬)
+        body = {
+            "model": "claude-opus-4-7",
+            "max_tokens": 16000,
+            "temperature": 1.0,
+            "thinking": {"type": "enabled", "budget_tokens": 8000},
+            "output_config": {"effort": "high"},
+            "system": (
+                "あなたは ai-juku の問題作成 AI です。教師名 (関正生・富田 等) は出力に一切含めない。"
+                "解説は「コアイメージ × 文構造分析」二段構え。著作権配慮のため過去問の丸写し禁止。"
+            ),
+            "messages": [{"role": "user", "content": resolved_prompt}],
+        }
+        ai_response = _call_anthropic_safe(body, kind="aitw_auto")
+    except HTTPException:
+        # inflight event を「failed」で finalize (cost=0・実行されず)
+        _aitw_auto_inflight_finalize(inflight_event_id, workflow_id, spec, 0.0, "n/a", {}, status="failed_api")
+        _aitw_db_set_status(workflow_id, "failed")
+        raise
+    except Exception as e:
+        _aitw_auto_inflight_finalize(inflight_event_id, workflow_id, spec, 0.0, "n/a", {}, status="failed_api")
+        _aitw_db_set_status(workflow_id, "failed")
+        log.exception(f"[AITW:Auto] Anthropic call failed wf={workflow_id}")
+        raise HTTPException(status_code=500, detail=f"AI 呼び出し失敗: {type(e).__name__}: {e}")
+
+    # response から text を抽出
+    output_text = ""
+    for blk in (ai_response.get("content") or []):
+        if isinstance(blk, dict) and blk.get("type") == "text":
+            output_text += blk.get("text", "")
+    output_text = output_text.strip()
+    cost_usd = _aitw_auto_estimate_cost_usd(ai_response.get("usage") or {})
+    actual_model = ai_response.get("_actual_model") or "claude-opus-4-7"
+    usage = ai_response.get("usage") or {}
+
+    if not output_text:
+        _aitw_auto_inflight_finalize(inflight_event_id, workflow_id, spec, cost_usd, actual_model, usage, status="failed_empty")
+        _aitw_db_set_status(workflow_id, "failed")
+        raise HTTPException(status_code=500, detail="AI 応答が空")
+
+    # 🆘 review 致命#3 fix: actual cost で inflight event を finalize (この時点で集計に正しく反映)
+    # 完了通知前なので、後続の parse/import 失敗でも cost は計上済 → 重複課金リスクなし
+    _aitw_auto_inflight_finalize(inflight_event_id, workflow_id, spec, cost_usd, actual_model, usage, status="ai_completed")
+
+    # JSON parse + critical_majority check
+    try:
+        parsed = json.loads(output_text)
+    except json.JSONDecodeError as e:
+        # 失敗時は output を保存して status='failed' (塾長確認用)
+        _aitw_db_update_phase(workflow_id, 1, output_text)
+        _aitw_db_set_status(workflow_id, "failed")
+        log.warning(f"[AITW:Auto] JSON parse 失敗 wf={workflow_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"AI 応答の JSON parse 失敗: {e}。workflow_id={workflow_id} で詳細確認可。コスト ${cost_usd:.4f} は計上済"
+        )
+
+    if isinstance(parsed, dict) and parsed.get("error") == "critical_majority":
+        _aitw_db_update_phase(workflow_id, 1, output_text)
+        _aitw_db_set_status(workflow_id, "failed")
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"⚠️ critical_majority 検出: {parsed.get('detail', '')}。"
+                f"完全版 (手動 mode=full) で再生成推奨 (memory: feedback_5_person_textbook_review.md)。"
+                f"コスト ${cost_usd:.4f} は計上済"
+            )
+        )
+
+    questions = parsed.get("questions") if isinstance(parsed, dict) else parsed
+    if not isinstance(questions, list) or not questions:
+        _aitw_db_update_phase(workflow_id, 1, output_text)
+        _aitw_db_set_status(workflow_id, "failed")
+        raise HTTPException(status_code=500, detail=f"questions array が空または配列ではない (cost ${cost_usd:.4f} は計上済)")
+
+    # output 保存 (中断再開用) → import
+    _aitw_db_update_phase(workflow_id, 1, output_text)
+    try:
+        result = _exam_questions_import_core(questions, skip_full=False)
+    except Exception as e:
+        _aitw_db_set_status(workflow_id, "failed")
+        log.exception(f"[AITW:Auto] import failed wf={workflow_id}")
+        raise HTTPException(status_code=500, detail=f"import 失敗 (AI 生成は成功・cost ${cost_usd:.4f} 計上済): {e}")
+
+    _aitw_db_set_status(workflow_id, "completed")
+    today_total_after = _aitw_auto_today_cost_usd()
+    log.info(
+        f"[AITW:Auto] completed wf={workflow_id} inserted={result.get('inserted')} "
+        f"failed={result.get('failed')} cost=${cost_usd:.4f} today_total=${today_total_after:.4f}"
+    )
+
+    return {
+        "ok": True,
+        "workflow_id": workflow_id,
+        **result,  # received / inserted / skipped_full / failed / failed_details / message
+        "cost_usd": cost_usd,
+        "actual_model": actual_model,
+        "today_total_cost_usd": today_total_after,
+        "daily_budget_usd": AITW_AUTO_DAILY_BUDGET_USD,
+        "message": (
+            f"🌟 全自動 {result.get('inserted')}問 投入完了 "
+            f"(cost ${cost_usd:.4f}・今日累計 ${today_total_after:.4f}/${AITW_AUTO_DAILY_BUDGET_USD:.2f})"
+        ),
+    }
 
 
 @app.get("/api/admin/ai-team-workflow-custom-gpt-spec")

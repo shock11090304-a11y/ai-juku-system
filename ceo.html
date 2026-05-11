@@ -734,9 +734,13 @@
           <label style="display:flex;align-items:center;gap:0.3rem;cursor:pointer;">
             <input type="radio" name="aiwMode" value="fast"> ⚡ 速攻版 (2 phase・15-20分・Opus self-review)
           </label>
+          <label style="display:flex;align-items:center;gap:0.3rem;cursor:pointer;">
+            <input type="radio" name="aiwMode" value="auto"> 🌟 全自動 (Anthropic API 直接・3-5 分・$0.5-1/batch)
+          </label>
         </div>
         <div style="font-size:0.7rem;color:#fbbf24;margin-bottom:0.6rem;line-height:1.6;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:6px;padding:0.4rem 0.6rem;">
-          ⚠️ <strong>速攻版の品質トレードオフ</strong>: 同一 Opus chat 内で執筆 + self-review + 統合を完結するため、<strong>異 AI による独立 multi-perspective レビューは行われません</strong>。memory: <code>feedback_5_person_textbook_review.md</code> の 5 人チーム原則とのトレードオフあり。<strong>重要 batch (eiken/daigaku) は完全版推奨</strong>・試行的 batch のみ速攻版。critical_majority 検出時は完全版で再生成してください。
+          ⚠️ <strong>速攻版・全自動版の品質トレードオフ</strong>: 同一 Opus chat 内で執筆 + self-review + 統合を完結するため、<strong>異 AI による独立 multi-perspective レビューは行われません</strong>。memory: <code>feedback_5_person_textbook_review.md</code> の 5 人チーム原則とのトレードオフあり。<strong>重要 batch (eiken/daigaku 1 級・東大) は完全版推奨</strong>・試行的 batch のみ速攻版/全自動。<br>
+          🌟 <strong>全自動版</strong>: 塾長コピペ不要・10 秒で投入完了。Anthropic API 課金 (1 batch ~$0.5-1)・1 日上限 $5 (env 設定可)。critical_majority 検出時は完全版で再生成してください。
         </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.4rem;margin-bottom:0.6rem;">
           <select id="aiwExamId" style="background:rgba(0,0,0,0.4);border:1px solid rgba(168,85,247,0.4);color:#fff;padding:0.45rem 0.6rem;border-radius:6px;font-size:0.8rem;">
@@ -4871,7 +4875,9 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
 
         const modeChip = mode === 'fast'
           ? '<span style="background:rgba(245,158,11,0.2);color:#fbbf24;padding:0.15rem 0.5rem;border-radius:4px;font-size:0.7rem;font-weight:700;">⚡ 速攻版</span>'
-          : '<span style="background:rgba(168,85,247,0.2);color:#c4b5fd;padding:0.15rem 0.5rem;border-radius:4px;font-size:0.7rem;font-weight:700;">📦 完全版</span>';
+          : (mode === 'auto'
+            ? '<span style="background:rgba(34,197,94,0.2);color:#86efac;padding:0.15rem 0.5rem;border-radius:4px;font-size:0.7rem;font-weight:700;">🌟 全自動</span>'
+            : '<span style="background:rgba(168,85,247,0.2);color:#c4b5fd;padding:0.15rem 0.5rem;border-radius:4px;font-size:0.7rem;font-weight:700;">📦 完全版</span>');
 
         box.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;flex-wrap:wrap;gap:0.4rem;">
             <div style="font-size:0.78rem;font-weight:800;color:#c4b5fd;">workflow_id: <code style="color:#fbbf24;">${_aitwEscape(wid)}</code> ${modeChip}</div>
@@ -5041,6 +5047,38 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         const modeRadio = document.querySelector('input[name="aiwMode"]:checked');
         const mode = modeRadio ? modeRadio.value : 'full';
         if (!exam_id || !part_key) return alert('試験 と part_key は必須です');
+
+        // 🌟 全自動モード: 専用 endpoint に投げて 1 クリック完了 (server で Opus 4.7 + import 完結)
+        if (mode === 'auto') {
+          if (count > 10) return alert('全自動モードは count 1-10 のみ (課金抑制)');
+          if (!confirm(`🌟 全自動モードで ${count} 問生成します。\n\n所要 3-5 分 / コスト ~$0.5-1 / 1 日上限 $5。\n\n続行?`)) return;
+          aiwGenerateBtn.disabled = true; const o = aiwGenerateBtn.innerHTML;
+          aiwGenerateBtn.innerHTML = '⏳ Opus 4.7 実行中... (3-5 分)';
+          try {
+            const rr = await AdminAuth.fetch('/api/admin/ai-team-workflow/auto-execute', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ exam_id, part_key, eiken_grade, topic_hint, year, count })
+            });
+            const jj = await rr.json();
+            const ir = document.getElementById('aiwImportResult');
+            if (ir) {
+              ir.style.display = 'block';
+              if (rr.ok && jj.ok) {
+                ir.style.borderColor = 'rgba(34,197,94,0.4)';
+                ir.style.color = '#86efac';
+                ir.innerHTML = `🌟 ${_aitwEscape(jj.message||'')} <br>workflow_id: <code>${_aitwEscape(jj.workflow_id||'')}</code> / model: ${_aitwEscape(jj.actual_model||'')} / cost $${(jj.cost_usd||0).toFixed(4)} / 今日累計 $${(jj.today_total_cost_usd||0).toFixed(4)} / 上限 $${(jj.daily_budget_usd||0).toFixed(2)}`;
+              } else {
+                ir.style.borderColor = 'rgba(248,113,113,0.4)';
+                ir.style.color = '#fca5a5';
+                ir.innerHTML = `⚠️ 全自動失敗: ${_aitwEscape(jj.detail || JSON.stringify(jj))}`;
+              }
+            }
+          } catch (e) { alert('⚠️ ' + e.message); }
+          aiwGenerateBtn.disabled = false; aiwGenerateBtn.innerHTML = o;
+          return;
+        }
+
+        // 完全版・速攻版 (既存): /generate を呼んで paste 型 workflow を開始
         aiwGenerateBtn.disabled = true; const orig = aiwGenerateBtn.innerHTML;
         aiwGenerateBtn.innerHTML = '⏳ 生成中...';
         try {
@@ -5078,7 +5116,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
                 wfs.map(wf => {
                   const sp = wf.spec || {};
                   const progress = `${wf.completed_count}/${wf.phase_count}`;
-                  const modeChip = wf.mode === 'fast' ? '⚡' : '📦';
+                  const modeChip = wf.mode === 'fast' ? '⚡' : (wf.mode === 'auto' ? '🌟' : '📦');
                   return `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem;margin-bottom:0.3rem;background:rgba(0,0,0,0.3);border:1px solid rgba(59,130,246,0.25);border-radius:6px;flex-wrap:wrap;gap:0.4rem;">
                     <div style="font-size:0.72rem;">
                       ${modeChip} <code style="color:#fbbf24;">${_aitwEscape(wf.workflow_id)}</code>
