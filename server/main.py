@@ -10739,29 +10739,44 @@ def _generate_textbook_from_youtube(
     last_err = None
     for idx, gm_name in enumerate(candidate_models):
         try:
-            model = genai.GenerativeModel(
-                model_name=gm_name,
-                system_instruction=system_inst,
-                generation_config={
-                    "max_output_tokens": 8000,
-                    # 2026-05-10 review 反映: temperature 0.7 → 0.3 で転載抑制 + 安定 JSON 出力
-                    "temperature": 0.3,
-                },
-                safety_settings=[
-                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
-                    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
-                    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
-                    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
-                ],
-            )
-            # YouTube URL を file_data として渡す (mime_type は SDK が自動判定するが video/mp4 を明示)
-            # 🔥 2026-05-12: media_resolution を「LOW」で渡し token 消費を 1/4 程度に圧縮
-            # (HIGH default だと 60-65 分超の動画で 1M token 上限超過 → 400 InvalidArgument)
-            # LOW なら ~3 時間動画まで OK。文字認識精度はやや落ちるが文字主体解説動画なら許容範囲
-            video_part = {
-                "file_data": {"mime_type": "video/mp4", "file_uri": youtube_url},
-                "video_metadata": {"media_resolution": "MEDIA_RESOLUTION_LOW"},
+            # 🔥 2026-05-12: media_resolution=LOW を generation_config に入れる (Part 内ではない)
+            # HIGH default だと 60-65 分超で 1M token 上限超過。LOW なら ~3 時間動画まで OK
+            # SDK 旧版で media_resolution を知らない場合は KeyError なし (dict は ignore される)
+            gen_cfg = {
+                "max_output_tokens": 8000,
+                # 2026-05-10 review 反映: temperature 0.7 → 0.3 で転載抑制 + 安定 JSON 出力
+                "temperature": 0.3,
+                "media_resolution": "MEDIA_RESOLUTION_LOW",
             }
+            try:
+                model = genai.GenerativeModel(
+                    model_name=gm_name,
+                    system_instruction=system_inst,
+                    generation_config=gen_cfg,
+                    safety_settings=[
+                        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
+                        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
+                        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
+                        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
+                    ],
+                )
+            except (TypeError, ValueError) as cfg_err:
+                # SDK 旧版で media_resolution unknown → 抜いて再試行
+                log.warning(f"[YT-Textbook] media_resolution unsupported, retrying without: {cfg_err}")
+                gen_cfg.pop("media_resolution", None)
+                model = genai.GenerativeModel(
+                    model_name=gm_name,
+                    system_instruction=system_inst,
+                    generation_config=gen_cfg,
+                    safety_settings=[
+                        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
+                        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
+                        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
+                        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
+                    ],
+                )
+            # YouTube URL を file_data として渡す (mime_type は SDK が自動判定するが video/mp4 を明示)
+            video_part = {"file_data": {"mime_type": "video/mp4", "file_uri": youtube_url}}
             response = model.generate_content([video_part, user_prompt])
             text = response.text or ""
             if idx > 0:
