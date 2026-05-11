@@ -10784,17 +10784,34 @@ def _generate_textbook_from_youtube(
                 err_low = err_msg.lower()
                 if "resourceexhausted" in err_low or "429" in err_low or "quota" in err_low or "rate" in err_low:
                     # 推定単価 (Gemini 2.5 Pro multimodal 動画解析の公開料金 2026 時点)
-                    # short=5min → ~$0.13、medium=10min → ~$0.24、long=20min → ~$0.42
                     cost_estimate = {
                         "short": "$0.13 (約 ¥20) /動画",
                         "medium": "$0.24 (約 ¥36) /動画",
                         "long": "$0.42 (約 ¥63) /動画",
                     }.get(length_hint, "$0.20-0.50 (約 ¥30-75) /動画")
-                    # 失敗 event 記録
+                    # 🔥 2026-05-12: prepayment depleted は "Pay-as-you-go 未設定" を意味する別エラー
+                    # AI Studio で API key を Cloud Billing と紐付けていないと prepayment mode のまま即枯渇する
+                    is_prepay = ("prepayment" in err_low or "prepay" in err_low) and ("deplete" in err_low or "credit" in err_low)
+                    code = "gemini_prepayment_depleted" if is_prepay else "gemini_quota_exhausted"
+                    if is_prepay:
+                        message = "Gemini API: Pay-as-you-go モード未設定 (前払いクレジット枯渇)。AI Studio で API key を Google Cloud Billing と紐付ける必要があります。"
+                        next_actions = [
+                            "1) https://aistudio.google.com/app/apikey で対象 API key の右側「⋮」→「Edit API key」→ Google Cloud project を Cloud Billing 有効プロジェクトに変更",
+                            "2) または https://aistudio.google.com/app/billing で「Set up Cloud Billing」or「Use Pay-as-you-go」を選択 (前払い設定は選ばない)",
+                            "3) Cloud Console (https://console.cloud.google.com/billing) で対象プロジェクトの billing 状態が「Active」になっていることを確認",
+                        ]
+                    else:
+                        message = "Gemini API quota 超過 (free tier 日次 RPD / RPM 制限)。"
+                        next_actions = [
+                            "1) Google AI Studio (https://aistudio.google.com/app/billing) で Pay-as-you-go 課金を有効化 → 即解除。budget alert $10/月 設定推奨",
+                            "2) 24h 待つ (free tier の日次クォータは UTC 0:00 = JST 9:00 に reset)",
+                            "3) 別の生成手段を試す: 上の「🤖 AI チーム検閲ワークフロー」or 写真採点 (Gemini 不要)",
+                        ]
                     try:
                         _record_ai_critical_event("youtube_textbook_quota_exhausted", {
                             "youtube_url": youtube_url[:200],
                             "length_hint": length_hint,
+                            "code": code,
                             "raw_error": str(last_err)[:200],
                         })
                     except Exception:
@@ -10802,15 +10819,11 @@ def _generate_textbook_from_youtube(
                     raise HTTPException(
                         status_code=429,
                         detail={
-                            "code": "gemini_quota_exhausted",
-                            "message": "Gemini API quota 超過 (free tier 日次 RPD / RPM 制限)。",
+                            "code": code,
+                            "message": message,
                             "estimated_cost_per_video": cost_estimate,
                             "monthly_estimate_note": "月 100 動画でも ¥1,200-6,000 程度 (gemini-2.5-flash 利用なら 1/5)。",
-                            "next_actions": [
-                                "1) Google AI Studio (https://aistudio.google.com/app/billing) で Pay-as-you-go 課金を有効化 → 即解除。budget alert $10/月 設定推奨",
-                                "2) 24h 待つ (free tier の日次クォータは UTC 0:00 = JST 9:00 に reset)",
-                                "3) 別の生成手段を試す: 上の「🤖 AI チーム検閲ワークフロー」or 写真採点 (Gemini 不要)",
-                            ],
+                            "next_actions": next_actions,
                             "raw_error": str(last_err)[:200],
                         },
                     )

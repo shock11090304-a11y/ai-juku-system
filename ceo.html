@@ -5162,7 +5162,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           const j = await r.json();
           if (r.ok && j.ok) {
             _renderYtResult(resultDiv, j, autoSave);
-          } else if (r.status === 429 && j.detail && typeof j.detail === 'object' && j.detail.code === 'gemini_quota_exhausted') {
+          } else if (r.status === 429 && j.detail && typeof j.detail === 'object' && (j.detail.code === 'gemini_quota_exhausted' || j.detail.code === 'gemini_prepayment_depleted')) {
             // 🔥 Gemini quota 超過専用 UI (2026-05-11 塾長スクリーンショット報告対応 + 3 視点 review 反映)
             const actions = (j.detail.next_actions || []).map(a => `<li style="margin:0.25rem 0;">${escapeForUI(a)}</li>`).join('');
             const costEstimate = escapeForUI(j.detail.estimated_cost_per_video || '');
