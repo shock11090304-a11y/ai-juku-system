@@ -5162,8 +5162,38 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           const j = await r.json();
           if (r.ok && j.ok) {
             _renderYtResult(resultDiv, j, autoSave);
+          } else if (r.status === 429 && j.detail && typeof j.detail === 'object' && j.detail.code === 'gemini_quota_exhausted') {
+            // 🔥 Gemini quota 超過専用 UI (2026-05-11 塾長スクリーンショット報告対応 + 3 視点 review 反映)
+            const actions = (j.detail.next_actions || []).map(a => `<li style="margin:0.25rem 0;">${escapeForUI(a)}</li>`).join('');
+            const costEstimate = escapeForUI(j.detail.estimated_cost_per_video || '');
+            const monthlyNote = escapeForUI(j.detail.monthly_estimate_note || '');
+            resultDiv.innerHTML = `
+              <div style="background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.45);border-radius:8px;padding:0.85rem;">
+                <div style="font-weight:800;color:#fbbf24;font-size:0.92rem;margin-bottom:0.5rem;">⏸️ Gemini API quota 超過 (429)</div>
+                <div style="color:#fde68a;font-size:0.82rem;margin-bottom:0.55rem;line-height:1.6;">${escapeForUI(j.detail.message || '')}</div>
+                ${costEstimate ? `<div style="background:rgba(0,0,0,0.3);padding:0.5rem 0.6rem;border-radius:6px;margin-bottom:0.55rem;font-size:0.76rem;color:#fde68a;line-height:1.65;">
+                  💰 <strong>推定単価:</strong> ${costEstimate}<br>
+                  ${monthlyNote ? `<span style="font-size:0.72rem;color:#a8a29e;">📊 ${monthlyNote}</span>` : ''}
+                </div>` : ''}
+                <div style="font-weight:700;color:#fde68a;font-size:0.82rem;margin-bottom:0.3rem;">▶ 次のアクション (どれか 1 つ):</div>
+                <ol style="color:#fde68a;font-size:0.78rem;line-height:1.7;padding-left:1.3rem;margin:0;">${actions}</ol>
+                <div style="margin-top:0.6rem;display:flex;gap:0.4rem;flex-wrap:wrap;">
+                  <button type="button" id="ytBillingConfirmBtn" style="background:rgba(251,191,36,0.2);color:#fbbf24;border:1px solid rgba(251,191,36,0.5);padding:0.4rem 0.8rem;border-radius:6px;font-size:0.76rem;font-weight:800;cursor:pointer;">💳 Google AI Studio 課金設定 (要確認)</button>
+                  <a href="https://ai.dev/rate-limit" target="_blank" rel="noopener" style="background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);padding:0.4rem 0.8rem;border-radius:6px;font-size:0.76rem;font-weight:800;text-decoration:none;">📊 現在の使用量を確認</a>
+                </div>
+                <div style="margin-top:0.55rem;padding-top:0.5rem;border-top:1px solid rgba(251,191,36,0.25);font-size:0.7rem;color:#a8a29e;line-height:1.55;">
+                  ℹ️ 1 リクエストで動画全体を解析するため Gemini quota を多く消費します。本番運用するなら課金有効化推奨。<strong style="color:#fbbf24;">必ず先に budget alert ($10/月) を設定</strong>してから enable してください。
+                </div>
+              </div>`;
+            // 課金リンクの誤クリック事故防止のため confirm dialog で減速
+            const billingBtn = document.getElementById('ytBillingConfirmBtn');
+            if (billingBtn) billingBtn.addEventListener('click', () => {
+              const ok = confirm('Google AI Studio で Pay-as-you-go を有効化しますか?\n\n⚠️ 必ず先に Google Cloud Console → Billing → Budgets & alerts で $10/月 (約 ¥1,500) の budget alert を設定してください。\n\n設定なしで enable すると高額課金リスクがあります。\n\n進めますか?');
+              if (ok) window.open('https://aistudio.google.com/app/billing', '_blank', 'noopener');
+            });
           } else {
-            resultDiv.innerHTML = `<div style="color:#fca5a5;">⚠️ ${escapeForUI(j.detail || JSON.stringify(j))}</div>`;
+            const detail = (typeof j.detail === 'object') ? JSON.stringify(j.detail) : (j.detail || JSON.stringify(j));
+            resultDiv.innerHTML = `<div style="color:#fca5a5;">⚠️ ${escapeForUI(detail)}</div>`;
           }
         } catch (e) {
           resultDiv.innerHTML = `<div style="color:#fca5a5;">⚠️ ${escapeForUI(e.message)}</div>`;
