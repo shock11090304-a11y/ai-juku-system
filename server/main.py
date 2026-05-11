@@ -10755,7 +10755,13 @@ def _generate_textbook_from_youtube(
                 ],
             )
             # YouTube URL を file_data として渡す (mime_type は SDK が自動判定するが video/mp4 を明示)
-            video_part = {"file_data": {"mime_type": "video/mp4", "file_uri": youtube_url}}
+            # 🔥 2026-05-12: media_resolution を「LOW」で渡し token 消費を 1/4 程度に圧縮
+            # (HIGH default だと 60-65 分超の動画で 1M token 上限超過 → 400 InvalidArgument)
+            # LOW なら ~3 時間動画まで OK。文字認識精度はやや落ちるが文字主体解説動画なら許容範囲
+            video_part = {
+                "file_data": {"mime_type": "video/mp4", "file_uri": youtube_url},
+                "video_metadata": {"media_resolution": "MEDIA_RESOLUTION_LOW"},
+            }
             response = model.generate_content([video_part, user_prompt])
             text = response.text or ""
             if idx > 0:
@@ -10766,6 +10772,22 @@ def _generate_textbook_from_youtube(
             err_msg = str(e)[:300]
             log.warning(f"[YT-Textbook] {gm_name} failed: {type(e).__name__}: {err_msg}")
             # YouTube URL 関連の特定 error を判定
+            # 🔥 2026-05-12: token 超過は media_resolution が効かない致命傷なので即諦めて専用エラーを返す
+            if ("1048576" in err_msg or "maximum number of tokens" in err_msg.lower() or "input token count exceeds" in err_msg.lower()):
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "code": "youtube_too_long",
+                        "message": "動画が長すぎます (Gemini の 1M token 上限超過)。",
+                        "explanation": "Gemini 2.5 Pro の input は最大 1,048,576 token (約 60-65 分の動画 / LOW 解像度でも 3 時間程度)。3 時間を超える講義動画は分割するか、別の短い動画を選んでください。",
+                        "next_actions": [
+                            "1) 60 分以下の動画を試す (確実に成功)",
+                            "2) 3 時間以下の動画を試す (LOW 解像度で対応)",
+                            "3) 長尺講義は YouTube 上で複数 chapter に分けてアップロードされていることが多いので、1 章ずつ別 URL で投入",
+                        ],
+                        "raw_error": err_msg[:200],
+                    },
+                )
             if "INVALID_ARGUMENT" in err_msg or "not supported" in err_msg.lower():
                 # mime_type なしで再試行
                 try:
