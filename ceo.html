@@ -663,6 +663,22 @@
         </div>
       </div>
 
+      <!-- 🤖 AI オートパイロット (2026-05-11 機能 C・集客〜収益化 半自動の見える化) -->
+      <div style="margin-top:1rem;padding:1rem;background:linear-gradient(135deg,rgba(168,85,247,0.10),rgba(99,102,241,0.06));border:1px solid rgba(168,85,247,0.35);border-radius:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.6rem;">
+          <div style="font-size:0.9rem;font-weight:800;color:#c4b5fd;">🤖 AI オートパイロット (集客〜収益化 半自動)</div>
+          <span style="font-size:0.7rem;color:#71717a;">9 つの AI 機能を 1 画面で確認</span>
+        </div>
+        <div style="font-size:0.74rem;color:#94a3b8;line-height:1.6;margin-bottom:0.7rem;">
+          5 phase (📣集客 / 📚接客 / 🎯訴求 / 💳決済 / 📈継続 / 🔬改善) で AI チームが半自動運用中。<br>
+          <span style="color:#fbbf24;">過去 7 日の KPI + AI 自動アクション履歴 + 各 phase の component ステータスを一覧</span>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.6rem;">
+          <button id="autopilotBtn" type="button" style="background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;border:none;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">📊 オートパイロット ダッシュ表示</button>
+        </div>
+        <div id="autopilotResult" style="display:none;font-size:0.78rem;color:#cbd5e1;background:rgba(0,0,0,0.3);border:1px solid rgba(168,85,247,0.25);border-radius:8px;padding:0.7rem;line-height:1.6;max-height:65vh;overflow-y:auto;"></div>
+      </div>
+
       <!-- 💳 Stripe Price 全プラン一括セットアップ (2026-05-07 追加) -->
       <div style="margin-top:1rem;padding:0.9rem;background:rgba(0,0,0,0.25);border:1px solid rgba(99,102,241,0.25);border-radius:10px;">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.7rem;">
@@ -845,8 +861,26 @@
           <button id="cgfSpecsBtn" type="button" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">📚 Custom GPT 設計書 6 体を取得</button>
           <button id="cgfAnalyticsBtn" type="button" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">📊 流入分析 (過去 7 日)</button>
           <button id="cgfAnnouncementBtn" type="button" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">📣 SNS 公開告知テンプレ (Threads/X/IG)</button>
+          <button id="cgfBanditBtn" type="button" style="background:linear-gradient(135deg,#ec4899,#db2777);color:#fff;border:none;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;" title="全 6 channel (Threads/X/IG/ChatGPT Store/Google/YT) 横断">📡 集客 bandit (全 6 channel)</button>
         </div>
         <div id="cgfResult" style="display:none;font-size:0.78rem;color:#cbd5e1;background:rgba(0,0,0,0.3);border:1px solid rgba(34,197,94,0.25);border-radius:8px;padding:0.7rem;line-height:1.6;max-height:60vh;overflow-y:auto;"></div>
+
+        <!-- 🚨 体験離脱予兆者 AI フォロー (2026-05-11 機能 B) -->
+        <div style="margin-top:1rem;padding:0.9rem;background:rgba(0,0,0,0.25);border:1px solid rgba(248,113,113,0.3);border-radius:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.5rem;">
+            <div style="font-size:0.85rem;font-weight:800;color:#fca5a5;">🚨 体験離脱予兆者 AI フォロー</div>
+            <span style="font-size:0.7rem;color:#71717a;">毎日 JST 9:00 自動・手動 trigger 可</span>
+          </div>
+          <div style="font-size:0.74rem;color:#94a3b8;line-height:1.6;margin-bottom:0.6rem;">
+            体験中で「失速サイン」(48h+ 未ログイン + 体験 2-7 日経過 + 1度はログイン済) を出している生徒を検知 → Claude Sonnet 4.6 が <strong>個別メッセージ</strong> を生成して in-app + email 送信。<br>
+            <span style="color:#fbbf24;">notifications テーブルで dedup (7 日以内に成功送信あれば skip)・silent customer (last_login_at IS NULL) は対象外</span>
+          </div>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <button id="trialRescueDryBtn" type="button" style="background:rgba(248,113,113,0.18);color:#fca5a5;border:1px solid rgba(248,113,113,0.4);padding:0.55rem 0.9rem;border-radius:6px;font-size:0.8rem;font-weight:700;cursor:pointer;">🔍 dry_run (対象 preview)</button>
+            <button id="trialRescueRunBtn" type="button" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;padding:0.55rem 0.9rem;border-radius:6px;font-size:0.8rem;font-weight:800;cursor:pointer;">🚨 いま実行 (AI 個別メッセ送信)</button>
+          </div>
+          <div id="trialRescueResult" style="display:none;margin-top:0.6rem;font-size:0.78rem;color:#cbd5e1;background:rgba(0,0,0,0.3);border:1px solid rgba(248,113,113,0.25);border-radius:8px;padding:0.7rem;line-height:1.6;"></div>
+        </div>
       </div>
     </section>
 
@@ -5219,6 +5253,181 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         } catch (e) { alert('⚠️ ' + e.message); }
         cgfAnalyticsBtn.disabled = false; cgfAnalyticsBtn.innerHTML = orig;
       });
+
+      // 🤖 AI オートパイロット ダッシュ (2026-05-11 機能 C)
+      const autopilotBtn = document.getElementById('autopilotBtn');
+      if (autopilotBtn) autopilotBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        autopilotBtn.disabled = true; const orig = autopilotBtn.innerHTML;
+        autopilotBtn.innerHTML = '⏳ 集約中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/autopilot/dashboard');
+          const j = await r.json();
+          if (r.ok && j.ok) _renderAutopilot(j);
+          else alert('⚠️ ' + (j.detail || JSON.stringify(j)));
+        } catch (e) { alert('⚠️ ' + e.message); }
+        autopilotBtn.disabled = false; autopilotBtn.innerHTML = orig;
+      });
+
+      function _renderAutopilot(j) {
+        const box = document.getElementById('autopilotResult');
+        if (!box) return;
+        box.style.display = 'block';
+        const kpi7 = j.kpi_7d || {};
+        const kpiAll = j.kpi_overall || {};
+        const cvVT = (kpi7.cv_visit_to_trial != null) ? (kpi7.cv_visit_to_trial * 100).toFixed(1) + '%' : '—';
+        const cvTP = (kpi7.cv_trial_to_paid != null) ? (kpi7.cv_trial_to_paid * 100).toFixed(1) + '%' : '—';
+        const mrr = (kpiAll.mrr_jpy || 0).toLocaleString();
+        const phasesHtml = (j.phases || []).map(p => {
+          const statusColor = p.status === 'active' ? '#86efac' : (p.status === 'watching' ? '#fbbf24' : '#71717a');
+          const comps = (p.components || []).map(c =>
+            `<li style="margin-bottom:0.15rem;"><strong style="color:#c4b5fd;">${escapeForUI(c.name||'')}</strong>: <span style="color:#94a3b8;">${escapeForUI(c.status||'')}</span></li>`
+          ).join('');
+          return `<div style="background:rgba(0,0,0,0.35);border:1px solid rgba(168,85,247,0.2);border-radius:8px;padding:0.6rem;">
+            <div style="font-size:0.82rem;font-weight:800;color:${statusColor};margin-bottom:0.3rem;">${escapeForUI(p.phase||'')} <span style="font-size:0.7rem;color:${statusColor};">[${p.status}]</span></div>
+            <ul style="font-size:0.72rem;color:#cbd5e1;padding-left:1.2rem;margin:0;">${comps}</ul>
+          </div>`;
+        }).join('');
+        const actionsHtml = (j.ai_actions_7d || []).map(a =>
+          `<tr><td style="padding:0.3rem 0.5rem;">${escapeForUI(a.label||a.event)}</td><td style="text-align:right;padding:0.3rem 0.5rem;font-weight:700;color:#a78bfa;">${a.count_7d}</td></tr>`
+        ).join('');
+        box.innerHTML = `
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.5rem;margin-bottom:0.8rem;">
+            <div style="background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);border-radius:8px;padding:0.5rem;text-align:center;">
+              <div style="font-size:0.7rem;color:#a5b4fc;">過去 7 日 visits</div>
+              <div style="font-size:1.4rem;font-weight:900;color:#fff;">${kpi7.visits||0}</div>
+            </div>
+            <div style="background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:0.5rem;text-align:center;">
+              <div style="font-size:0.7rem;color:#86efac;">体験申込 7d</div>
+              <div style="font-size:1.4rem;font-weight:900;color:#fff;">${kpi7.trial_signups||0}</div>
+              <div style="font-size:0.66rem;color:#86efac;">visit→trial ${cvVT}</div>
+            </div>
+            <div style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:0.5rem;text-align:center;">
+              <div style="font-size:0.7rem;color:#fbbf24;">有料転換 7d</div>
+              <div style="font-size:1.4rem;font-weight:900;color:#fff;">${kpi7.paid_conversions||0}</div>
+              <div style="font-size:0.66rem;color:#fbbf24;">trial→paid ${cvTP}</div>
+            </div>
+            <div style="background:rgba(236,72,153,0.12);border:1px solid rgba(236,72,153,0.3);border-radius:8px;padding:0.5rem;text-align:center;">
+              <div style="font-size:0.7rem;color:#f9a8d4;">MRR (推定)</div>
+              <div style="font-size:1.4rem;font-weight:900;color:#fff;">¥${mrr}</div>
+              <div style="font-size:0.66rem;color:#f9a8d4;">有料 ${kpiAll.active_paid_total||0} 名</div>
+            </div>
+            <div style="background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.3);border-radius:8px;padding:0.5rem;text-align:center;">
+              <div style="font-size:0.7rem;color:#fca5a5;">churn (30d)</div>
+              <div style="font-size:1.4rem;font-weight:900;color:#fff;">${kpiAll.churn_30d||0}</div>
+            </div>
+          </div>
+          <div style="font-size:0.78rem;font-weight:800;color:#c4b5fd;margin-bottom:0.4rem;">🔄 AI チーム 5 phase ステータス</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0.5rem;margin-bottom:0.8rem;">${phasesHtml}</div>
+          <div style="font-size:0.78rem;font-weight:800;color:#c4b5fd;margin-bottom:0.4rem;">📊 AI 自動アクション履歴 (過去 7 日)</div>
+          ${actionsHtml ? `<table style="width:100%;border-collapse:collapse;font-size:0.78rem;margin-bottom:0.6rem;"><tbody>${actionsHtml}</tbody></table>` : '<div style="font-size:0.74rem;color:#71717a;margin-bottom:0.6rem;">(過去 7 日に AI 自動アクション履歴なし)</div>'}
+          <div style="font-size:0.72rem;color:#94a3b8;line-height:1.6;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);border-radius:6px;padding:0.5rem;">${escapeForUI(j.memo||'')}</div>
+        `;
+      }
+
+      // 🚨 体験離脱予兆者 AI フォロー (2026-05-11 機能 B)
+      async function _runTrialRescue(dryRun) {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        const btnId = dryRun ? 'trialRescueDryBtn' : 'trialRescueRunBtn';
+        const btn = document.getElementById(btnId);
+        const orig = btn ? btn.innerHTML : '';
+        if (!dryRun && !confirm('体験中・離脱予兆者全員に AI 個別メッセージを送信します。続行?')) return;
+        if (btn) { btn.disabled = true; btn.innerHTML = '⏳ 実行中...'; }
+        try {
+          const r = await AdminAuth.fetch('/api/admin/marketing/trial-rescue-now', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({dry_run: dryRun})
+          });
+          const j = await r.json();
+          const box = document.getElementById('trialRescueResult');
+          if (box) {
+            box.style.display = 'block';
+            if (r.ok && j.ok) {
+              const previewRows = (j.preview || []).map(p =>
+                `<tr><td style="padding:0.2rem 0.5rem;">${p.student_id}</td><td style="padding:0.2rem 0.5rem;">${escapeForUI(p.email||'')}</td><td style="padding:0.2rem 0.5rem;text-align:right;">${p.hours_since_login}h</td><td style="padding:0.2rem 0.5rem;font-size:0.7rem;color:#94a3b8;">${escapeForUI(p.trial_end||'')}</td></tr>`
+              ).join('');
+              box.innerHTML = `
+                <div style="font-size:0.85rem;font-weight:800;color:${j.dry_run?'#fbbf24':'#86efac'};margin-bottom:0.4rem;">${j.dry_run?'🔍 dry_run 結果':'✅ 送信完了'}</div>
+                <div style="font-size:0.74rem;line-height:1.6;margin-bottom:0.4rem;">${escapeForUI(j.memo||'')}</div>
+                <div style="font-size:0.74rem;color:#94a3b8;">対象: ${j.at_risk_count} / 送信: ${j.sent} / AI fallback: ${j.ai_fallback_count} / 失敗: ${j.failed}</div>
+                ${previewRows ? `<table style="width:100%;border-collapse:collapse;font-size:0.74rem;margin-top:0.4rem;"><thead><tr style="color:#71717a;border-bottom:1px solid rgba(248,113,113,0.2);"><th style="text-align:left;padding:0.2rem 0.5rem;">ID</th><th style="text-align:left;padding:0.2rem 0.5rem;">email</th><th style="text-align:right;padding:0.2rem 0.5rem;">未ログイン</th><th style="text-align:left;padding:0.2rem 0.5rem;">体験終了</th></tr></thead><tbody>${previewRows}</tbody></table>` : ''}
+              `;
+            } else {
+              box.innerHTML = `<span style="color:#fca5a5;">⚠️ ${escapeForUI(j.detail || JSON.stringify(j))}</span>`;
+            }
+          }
+        } catch (e) { alert('⚠️ ' + e.message); }
+        if (btn) { btn.disabled = false; btn.innerHTML = orig; }
+      }
+      const trialRescueDryBtn = document.getElementById('trialRescueDryBtn');
+      if (trialRescueDryBtn) trialRescueDryBtn.addEventListener('click', () => _runTrialRescue(true));
+      const trialRescueRunBtn = document.getElementById('trialRescueRunBtn');
+      if (trialRescueRunBtn) trialRescueRunBtn.addEventListener('click', () => _runTrialRescue(false));
+
+      // 📡 集客チャネル別 bandit 状態 (2026-05-11 機能 A)
+      const cgfBanditBtn = document.getElementById('cgfBanditBtn');
+      if (cgfBanditBtn) cgfBanditBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        cgfBanditBtn.disabled = true; const orig = cgfBanditBtn.innerHTML;
+        cgfBanditBtn.innerHTML = '⏳ 取得中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/marketing/channel-bandit-status?days=30');
+          const j = await r.json();
+          if (r.ok && j.ok) _renderCgfBandit(j);
+          else alert('⚠️ ' + (j.detail || JSON.stringify(j)));
+        } catch (e) { alert('⚠️ ' + e.message); }
+        cgfBanditBtn.disabled = false; cgfBanditBtn.innerHTML = orig;
+      });
+
+      function _renderCgfBandit(j) {
+        const box = document.getElementById('cgfResult');
+        if (!box) return;
+        box.style.display = 'block';
+        const totalCV = (j.overall_cv_rate || 0) * 100;
+        const rows = (j.channels || []).map(c => {
+          const cv = (c.cv_rate || 0) * 100;
+          const weight = (c.weight || 0) * 100;
+          const status = c.views >= (j.min_views_for_qualified || 30) ? '✅ qualified' : '🔬 未測定';
+          const barWidth = Math.max(2, weight);
+          return `<tr>
+            <td style="padding:0.4rem 0.5rem;font-weight:700;color:#f9a8d4;">${escapeForUI(c.channel)}</td>
+            <td style="padding:0.4rem 0.5rem;text-align:right;">${c.views}</td>
+            <td style="padding:0.4rem 0.5rem;text-align:right;">${c.submits}</td>
+            <td style="padding:0.4rem 0.5rem;text-align:right;">${cv.toFixed(1)}%</td>
+            <td style="padding:0.4rem 0.5rem;">
+              <div style="display:flex;align-items:center;gap:0.4rem;">
+                <div style="background:rgba(236,72,153,0.2);width:100px;height:8px;border-radius:4px;overflow:hidden;">
+                  <div style="background:linear-gradient(135deg,#ec4899,#db2777);width:${barWidth}%;height:100%;"></div>
+                </div>
+                <span style="font-size:0.74rem;color:#f9a8d4;font-weight:700;">${weight.toFixed(0)}%</span>
+              </div>
+            </td>
+            <td style="padding:0.4rem 0.5rem;font-size:0.72rem;color:#94a3b8;">${status}</td>
+          </tr>`;
+        }).join('');
+        box.innerHTML = `
+          <div style="font-size:0.85rem;color:#f9a8d4;font-weight:800;margin-bottom:0.4rem;">📡 集客チャネル別 bandit 状態 (過去 ${j.days || 30} 日)</div>
+          <div style="font-size:0.74rem;color:#94a3b8;line-height:1.6;margin-bottom:0.6rem;">
+            総 views: ${j.total_views} / 総 submits: ${j.total_submits} / 全体 CV: ${totalCV.toFixed(1)}%<br>
+            epsilon: ${(j.epsilon*100).toFixed(0)}% 探索 / ${((1-j.epsilon)*100).toFixed(0)}% 活用 · qualified 判定閾値 ${j.min_views_for_qualified} views
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+            <thead><tr style="color:#71717a;font-size:0.72rem;border-bottom:1px solid rgba(236,72,153,0.2);">
+              <th style="text-align:left;padding:0.3rem 0.5rem;">チャネル</th>
+              <th style="text-align:right;padding:0.3rem 0.5rem;">views</th>
+              <th style="text-align:right;padding:0.3rem 0.5rem;">submits</th>
+              <th style="text-align:right;padding:0.3rem 0.5rem;">CV</th>
+              <th style="padding:0.3rem 0.5rem;">weight (次回配分)</th>
+              <th style="padding:0.3rem 0.5rem;">状態</th>
+            </tr></thead><tbody>${rows}</tbody>
+          </table>
+          <div style="margin-top:0.7rem;padding:0.5rem;background:rgba(236,72,153,0.08);border:1px solid rgba(236,72,153,0.3);border-radius:6px;font-size:0.74rem;color:#f9a8d4;">
+            🤖 Daily SNS 研究員 (毎日 JST 6:00) の生成 prompt に上記 weight に基づくヒントが自動注入されます。<br>
+            ${j.prompt_hint_injected ? '<strong style="color:#86efac;">✅ 現在 hint 注入中</strong>' : '<strong style="color:#fbbf24;">⏳ 注入待ち</strong> (全体 100 views 未満)'} —
+            ${escapeForUI(j.prompt_hint_preview || '')}
+          </div>
+        `;
+      }
 
       // 📣 SNS 公開告知テンプレ生成 (2026-05-11)
       const cgfAnnouncementBtn = document.getElementById('cgfAnnouncementBtn');

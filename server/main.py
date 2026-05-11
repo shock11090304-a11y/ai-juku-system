@@ -1725,6 +1725,135 @@ def _compute_sns_utm_cv(days: int = 30) -> dict:
 
 SNS_UTM_ALLOWLIST = {"authority": "数字×権威型", "testimonial": "体験談ストーリー型"}
 
+# 📡 集客チャネル別バンディット (utm_source 別 CV 集計 + epsilon-greedy)
+# 2026-05-11 塾長指示「AI チームで半自動で集客〜収益化」の集客 phase 強化
+SNS_CHANNEL_ALLOWLIST = {"threads", "x", "instagram", "chatgpt_store", "google", "youtube"}
+SNS_CHANNEL_BANDIT_EPSILON = 0.20  # 20% 探索 / 80% 活用 (LP variant bandit と同値・project_ai_juku_lp_bandit.md)
+# CV 評価のための最小 view 数 (binomial CI 妥当性の最低ライン)。
+# 集客 channel が 6 個に分散することを考慮し LP variant bandit の cold start (30) と同値で運用。
+# 100+ が理想だが初期数か月は探索フェーズになるため許容範囲。
+SNS_CHANNEL_BANDIT_MIN_VIEWS = 30
+
+
+def _compute_channel_bandit_weights(days: int = 30) -> dict:
+    """過去N日の utm_source 別 CV を集計し epsilon-greedy weight を返す。
+    Allowlist (threads/x/instagram/chatgpt_store/google/youtube) のみ採用 (prompt injection 防止)。
+    探索 (epsilon=0.20) / 活用 (1-epsilon=0.80) で各 channel に最低保証。
+    早期段階 (views < 30) は均等配分。
+
+    return: {channel: {"views": int, "submits": int, "cv_rate": float, "weight": float}}
+    weight の合計は 1.0 になる。
+    """
+    if days <= 0 or days > 365:
+        days = 30
+    conn = db()
+    c = conn.cursor()
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    try:
+        c.execute(
+            """SELECT name, props, session_id FROM events
+               WHERE name IN ('lp_view', 'lp_form_submit') AND created_at > ?
+               LIMIT 20000""",
+            (cutoff,)
+        )
+        rows = list(c.fetchall())
+    finally:
+        conn.close()
+
+    views = {ch: set() for ch in SNS_CHANNEL_ALLOWLIST}
+    submits = {ch: set() for ch in SNS_CHANNEL_ALLOWLIST}
+    for r in rows:
+        name = r["name"] if hasattr(r, "keys") else r[0]
+        props_raw = r["props"] if hasattr(r, "keys") else r[1]
+        sess = (r["session_id"] if hasattr(r, "keys") else r[2]) or "_anon"
+        try:
+            props = json.loads(props_raw) if isinstance(props_raw, str) else (props_raw or {})
+        except Exception:
+            props = {}
+        utm_source = (props.get("utm_source") or "").strip().lower()
+        if utm_source not in SNS_CHANNEL_ALLOWLIST:
+            continue
+        if name == "lp_view":
+            views[utm_source].add(sess)
+        elif name == "lp_form_submit":
+            submits[utm_source].add(sess)
+
+    # CV 計算
+    raw_cv = {}
+    total_views_known = 0
+    for ch in SNS_CHANNEL_ALLOWLIST:
+        v = len(views[ch])
+        s = len(submits[ch])
+        cv = (s / v) if v > 0 else 0.0
+        raw_cv[ch] = {"views": v, "submits": s, "cv_rate": cv}
+        if v >= SNS_CHANNEL_BANDIT_MIN_VIEWS:
+            total_views_known += v
+
+    # epsilon-greedy weight 計算
+    # 全 channel で views < min なら完全均等 (early-stage exploration)
+    qualified = [ch for ch in SNS_CHANNEL_ALLOWLIST if raw_cv[ch]["views"] >= SNS_CHANNEL_BANDIT_MIN_VIEWS]
+    n_channels = len(SNS_CHANNEL_ALLOWLIST)
+    epsilon = SNS_CHANNEL_BANDIT_EPSILON
+    exploration_weight = epsilon / n_channels  # 全 channel に均等な探索枠
+
+    out = {}
+    if not qualified:
+        # 全 channel が min_views 未満 → 完全均等 (1/n)
+        for ch in SNS_CHANNEL_ALLOWLIST:
+            out[ch] = {**raw_cv[ch], "weight": 1.0 / n_channels}
+        return out
+
+    # 活用フェーズ: qualified channel の CV 比に基づいて exploitation 枠を配分
+    total_cv = sum(raw_cv[ch]["cv_rate"] for ch in qualified)
+    for ch in SNS_CHANNEL_ALLOWLIST:
+        weight = exploration_weight  # 最低保証 (探索枠)
+        if ch in qualified and total_cv > 0:
+            cv_share = raw_cv[ch]["cv_rate"] / total_cv  # qualified 内での相対 CV
+            weight += (1 - epsilon) * cv_share
+        out[ch] = {**raw_cv[ch], "weight": weight}
+
+    # 念のため正規化 (浮動小数誤差吸収)
+    total_w = sum(v["weight"] for v in out.values())
+    if total_w > 0:
+        for ch in out:
+            out[ch]["weight"] = out[ch]["weight"] / total_w
+    return out
+
+
+def _build_channel_bandit_hint() -> str:
+    """過去30日 channel 別 CV から bandit weight を計算 → SNS 生成 prompt 用ヒント文。
+    投稿頻度の割合を「最優先チャネル」「補助チャネル」「探索チャネル」に分類して指示。
+    Statistical: 各 channel 30 views 以上 (binomial CI 妥当性) + 全体 100 views 以上で hint 出力。
+    """
+    weights = _compute_channel_bandit_weights(days=30)
+    total_views = sum(w["views"] for w in weights.values())
+    if total_views < 100:
+        # 全体 100 views 未満は均等配分継続 (ヒント出さない)
+        return ""
+
+    # weight 高い順
+    sorted_ch = sorted(weights.items(), key=lambda x: x[1]["weight"], reverse=True)
+    top_ch, top_data = sorted_ch[0]
+    weak_ch = [ch for ch, d in sorted_ch[1:] if d["weight"] < 0.10]  # 10% 未満は弱い
+
+    ch_label = {
+        "threads": "Threads",
+        "x": "X (Twitter)",
+        "instagram": "Instagram",
+        "chatgpt_store": "ChatGPT Store",
+        "google": "Google 検索",
+        "youtube": "YouTube",
+    }
+    top_label = ch_label.get(top_ch, top_ch)
+    top_cv = top_data["cv_rate"] * 100
+    weak_labels = "・".join(ch_label.get(c, c) for c in weak_ch) if weak_ch else "(なし)"
+    return (
+        f"\n\n【📡 過去30日 集客チャネル別 CV (bandit weight)】\n"
+        f"最強チャネル: {top_label} (CV {top_cv:.1f}% / views {top_data['views']} / weight {top_data['weight']*100:.0f}%) → 投稿を集中させる\n"
+        f"弱い・未測定チャネル: {weak_labels} → 探索投稿は最小限\n"
+        f"今回の生成では、{top_label} に最適化された訴求を中心にしてください。"
+    )
+
 
 def _build_sns_winning_hint() -> str:
     """過去30日 CV データから「効いている型」を判定し、prompt 用ヒント文を返す。
@@ -1771,11 +1900,12 @@ def _generate_daily_sns_posts() -> list:
         avoid_section = f"\n\n【重複回避】以下は過去30日に生成済み。同じ訴求/同じ書き出しは避けてください:\n{joined}"
 
     winning_hint = _build_sns_winning_hint()
+    channel_hint = _build_channel_bandit_hint()
     types_section = "\n".join(f"{i+1}. {t['name']}: {t['desc']}" for i, t in enumerate(POST_TYPES))
     user_msg = f"""今日のThreads投稿を5本作成してください。5型を1本ずつ:
 
 {types_section}
-{avoid_section}{winning_hint}
+{avoid_section}{winning_hint}{channel_hint}
 
 【🔗 LP誘導リンクの自動挿入】
 以下の 2 type の本文末尾には、必ず空行を挟んで誘導リンクを含めてください:
@@ -2000,12 +2130,14 @@ async def _trial_management_scheduler():
                 log.info("[TrialMgr] Skipped (already ran today by another replica)")
                 continue
 
-            # 4 タスクを順次実行 (例外は個別に握りつぶしてループ継続)
+            # 5 タスクを順次実行 (例外は個別に握りつぶしてループ継続)
             tasks = [
                 ("expire-trials", lambda: cron_expire_trials(x_cron_secret=secret, dry_run=False)),
                 ("trial-reminders", lambda: cron_trial_reminders(x_cron_secret=secret, dry_run=False)),
                 ("trial-followups", lambda: cron_trial_followups(x_cron_secret=secret, dry_run=False)),
                 ("trial-unused-warning", lambda: cron_trial_unused_warning(x_cron_secret=secret, dry_run=False)),
+                # 🚨 体験中・離脱予兆者への AI 個別フォロー (2026-05-11 追加)
+                ("trial-rescue", lambda: admin_trial_rescue_now(payload={"dry_run": False}, x_cron_secret=secret)),
             ]
             results = {}
             for task_name, fn in tasks:
@@ -8319,6 +8451,278 @@ def track_utm_visit(payload: dict, request: Request):
         log.warning(f"[UTM] track failed: {e}")
         return {"ok": False, "error": str(e)[:200]}
     return {"ok": True, "tracked": True}
+
+
+@app.get("/api/admin/autopilot/dashboard")
+def admin_autopilot_dashboard(authorization: Optional[str] = Header(None)):
+    """🤖 AI オートパイロット集約ダッシュ (集客〜収益化 半自動の見える化)
+    塾長指示「AI チームで半自動で集客〜収益化」(2026-05-11) の C 機能。
+
+    5 phase (集客 / 接客 / 訴求 / 決済 / 継続 / 改善) のステータス + 過去 7 日 KPI +
+    過去 7 日 AI 自動アクション履歴を 1 endpoint で返す。
+
+    AI チーム責任分担:
+    - 集客①: Daily SNS 研究員 (project_ai_juku.md)
+    - 集客②: ChatGPT Store funnel + Custom GPT 6 体 (feedback_chatgpt_store_funnel.md)
+    - 集客③: channel bandit (本日 commit / utm_source × CV)
+    - 接客: AI チューター 5 段 fallback (feedback_ai_tutor_sonnet_gemini.md)
+    - 訴求: LP variant 多腕バンディット (project_ai_juku_lp_bandit.md) + CTA 強化版
+    - 決済: Stripe Price lookup_key fallback + 招待コード
+    - 継続①: trial-followups / trial-reminders (silent skip)
+    - 継続②: trial-rescue (本日 commit / 体験中失速 AI 個別フォロー)
+    - 改善: SNS 投稿型 CV 自動学習 (project_ai_juku_sns_auto_learning.md)
+    """
+    _verify_admin_required(authorization)
+
+    now = datetime.now(timezone.utc)
+    cutoff_7d = (now - timedelta(days=7)).isoformat()
+    cutoff_24h = (now - timedelta(hours=24)).isoformat()
+    cutoff_30d = (now - timedelta(days=30)).isoformat()
+
+    conn = db()
+    c = conn.cursor()
+    try:
+        # ===== KPI: 過去 7 日 =====
+        # visits (lp_view) unique sessions
+        try:
+            c.execute(
+                "SELECT COUNT(DISTINCT session_id) FROM events WHERE name='lp_view' AND created_at > ?",
+                (cutoff_7d,)
+            )
+            row = c.fetchone()
+            visits_7d = (row[0] if row else 0) or 0
+        except Exception:
+            visits_7d = 0
+
+        # 体験申込 (status='trial' で過去 7 日 created)
+        try:
+            c.execute(
+                "SELECT COUNT(*) FROM students WHERE status='trial' AND created_at > ?",
+                (cutoff_7d,)
+            )
+            row = c.fetchone()
+            trial_signups_7d = (row[0] if row else 0) or 0
+        except Exception:
+            trial_signups_7d = 0
+
+        # 有料転換 (status='paid' で過去 7 日 paid_since)
+        try:
+            c.execute(
+                "SELECT COUNT(*) FROM students WHERE status='paid' AND paid_since > ?",
+                (cutoff_7d,)
+            )
+            row = c.fetchone()
+            paid_conversions_7d = (row[0] if row else 0) or 0
+        except Exception:
+            paid_conversions_7d = 0
+
+        # 全体 active paid (MRR の基盤)
+        try:
+            c.execute(
+                "SELECT plan, COUNT(*) FROM students WHERE status='paid' AND plan IS NOT NULL GROUP BY plan"
+            )
+            plan_counts = {}
+            for r in c.fetchall():
+                p = r[0] if not hasattr(r, "keys") else r["plan"]
+                cnt = r[1] if not hasattr(r, "keys") else (r["count"] if "count" in r.keys() else list(r.values())[1])
+                plan_counts[p] = cnt
+        except Exception:
+            plan_counts = {}
+
+        # MRR 計算 (PRICE_MAP の amount 参照)
+        mrr = 0
+        for plan, cnt in plan_counts.items():
+            try:
+                price_info = PRICE_MAP.get(plan)
+                if price_info:
+                    mrr += price_info[1] * cnt
+            except Exception:
+                pass
+
+        # churn (過去 30 日 expired)
+        try:
+            c.execute(
+                "SELECT COUNT(*) FROM students WHERE status='expired' AND updated_at > ?",
+                (cutoff_30d,)
+            )
+            row = c.fetchone()
+            churn_30d = (row[0] if row else 0) or 0
+        except Exception:
+            churn_30d = 0
+
+        # 体験 → 有料 転換率
+        cv_trial_to_paid = (paid_conversions_7d / trial_signups_7d) if trial_signups_7d > 0 else None
+        # LP → 体験 転換率
+        cv_visit_to_trial = (trial_signups_7d / visits_7d) if visits_7d > 0 else None
+
+        # ===== AI 自動アクション履歴 (過去 7 日) =====
+        action_types = {
+            "daily_sns_post": "📣 Daily SNS 投稿生成",
+            "trial_rescue": "🚨 体験離脱予兆 AI フォロー",
+            "lp_variant_choice": "🎰 LP バンディット選択",
+            "ai_fallback_openai": "🛡️ AI チューター fallback 発動",
+            "referral_paid_credit": "💸 紹介ループ ¥3,000 OFF 付与",
+            "textbook_generated": "📚 教材プール 自動生成",
+            "exam_question_generated": "📝 問題プール 自動生成",
+        }
+        actions_summary = []
+        try:
+            for ev_name, label in action_types.items():
+                try:
+                    c.execute(
+                        "SELECT COUNT(*) FROM events WHERE name=? AND created_at > ?",
+                        (ev_name, cutoff_7d)
+                    )
+                    row = c.fetchone()
+                    cnt = (row[0] if row else 0) or 0
+                    if cnt > 0:
+                        actions_summary.append({"event": ev_name, "label": label, "count_7d": cnt})
+                except Exception:
+                    pass
+            actions_summary.sort(key=lambda x: x["count_7d"], reverse=True)
+        except Exception:
+            pass
+
+        # ===== 5 phase 自動機能ステータス =====
+        # 集客①: Daily SNS が直近 24h で投稿生成済か
+        try:
+            c.execute(
+                "SELECT COUNT(*) FROM events WHERE name='daily_sns_post' AND created_at > ?",
+                (cutoff_24h,)
+            )
+            sns_24h = (c.fetchone()[0] or 0)
+        except Exception:
+            sns_24h = 0
+
+        # 継続②: trial-rescue が直近 7 日で実行済か
+        try:
+            c.execute(
+                "SELECT COUNT(*) FROM notifications WHERE template='trial_rescue' AND sent_at > ?",
+                (cutoff_7d,)
+            )
+            rescue_7d = (c.fetchone()[0] or 0)
+        except Exception:
+            rescue_7d = 0
+
+        phases = [
+            {
+                "phase": "📣 集客", "status": "active" if sns_24h > 0 else "idle",
+                "components": [
+                    {"name": "Daily SNS 研究員", "status": f"直近 24h: {sns_24h} 件投稿生成"},
+                    {"name": "ChatGPT Store funnel", "status": "Custom GPT 6 体 全公開済"},
+                    {"name": "集客 channel bandit", "status": "utm_source 別 CV 自動最適化中"},
+                ],
+            },
+            {
+                "phase": "📚 接客", "status": "active",
+                "components": [
+                    {"name": "AI チューター 5 段 fallback", "status": "Sonnet→Gemini→Haiku→Opus→GPT-4o"},
+                    {"name": "写真採点 (5 AI 多視点)", "status": "Opus/GPT-4o/Sonnet/Gemini/Haiku 並列"},
+                    {"name": "YouTube 教材生成", "status": "Gemini multimodal 駆動"},
+                ],
+            },
+            {
+                "phase": "🎯 訴求", "status": "active",
+                "components": [
+                    {"name": "LP variant 多腕バンディット", "status": "epsilon-greedy 0.2 で 3 variants 自動最適化"},
+                    {"name": "Custom GPT CTA 強化 (4 トリガー)", "status": "ChatGPT 内で 7 日無料体験誘導"},
+                    {"name": "創設メンバー 50 名 FOMO", "status": "残枠表示 (camouflage 値)"},
+                ],
+            },
+            {
+                "phase": "💳 決済", "status": "active",
+                "components": [
+                    {"name": "Stripe Price lookup_key fallback", "status": "全 5 プラン env 任意化"},
+                    {"name": "招待コード方式", "status": "HMAC 署名 + 30 日期限"},
+                    {"name": "synthetic-monitor", "status": "5 分おき E2E 監視"},
+                ],
+            },
+            {
+                "phase": "📈 継続", "status": "active" if rescue_7d > 0 else "watching",
+                "components": [
+                    {"name": "trial-reminders (終了3日前)", "status": "毎日 JST 9:00 cron"},
+                    {"name": "trial-followups (Day1/3/7)", "status": "silent customer skip 込み"},
+                    {"name": "trial-rescue (失速 AI 個別)", "status": f"直近 7 日: {rescue_7d} 件送信"},
+                    {"name": "紹介ループ (¥3,000 OFF)", "status": "HMAC code + claim-first UPDATE"},
+                ],
+            },
+            {
+                "phase": "🔬 改善", "status": "active",
+                "components": [
+                    {"name": "SNS 投稿型 CV 自動学習", "status": "過去 30 日 utm_content CV → prompt 注入"},
+                    {"name": "監視 AI", "status": "5 分おき monitor + 致命検知"},
+                    {"name": "事故 auto-rollback", "status": "致命検知時 GitHub PAT で revert"},
+                ],
+            },
+        ]
+
+        # ===== 戻り値 =====
+        return {
+            "ok": True,
+            "generated_at": now.isoformat(),
+            "kpi_7d": {
+                "visits": visits_7d,
+                "trial_signups": trial_signups_7d,
+                "paid_conversions": paid_conversions_7d,
+                "cv_visit_to_trial": cv_visit_to_trial,
+                "cv_trial_to_paid": cv_trial_to_paid,
+            },
+            "kpi_overall": {
+                "active_paid_total": sum(plan_counts.values()),
+                "plan_breakdown": plan_counts,
+                "mrr_jpy": mrr,
+                "churn_30d": churn_30d,
+            },
+            "phases": phases,
+            "ai_actions_7d": actions_summary,
+            "memo": (
+                "ai-juku の集客〜収益化を 9 つの AI 自動機能で半自動運用中。"
+                "塾長は本ダッシュで AI チームの仕事ぶりを 1 画面で確認可。"
+                "詳細は各 phase の専用 UI (CEO ダッシュ内) で深掘り。"
+            ),
+        }
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/marketing/channel-bandit-status")
+def admin_channel_bandit_status(days: int = 30, authorization: Optional[str] = Header(None)):
+    """📡 集客チャネル別バンディット状態 (utm_source × CV)
+    過去 N 日 (default 30) の channel 別 CV を集計し epsilon-greedy weight を返す。
+    Daily SNS 研究員の生成 prompt にこの weight に基づくヒントが自動注入される。
+
+    塾長は「どのチャネルが効いているか」「次回投稿の集中先」を可視化できる。
+    memory: project_ai_juku_sns_auto_learning.md (utm_content 学習) + project_ai_juku_lp_bandit.md (LP variant bandit)
+    """
+    _verify_admin_required(authorization)
+    if days < 1 or days > 365:
+        days = 30
+    weights = _compute_channel_bandit_weights(days=days)
+    total_views = sum(w["views"] for w in weights.values())
+    total_submits = sum(w["submits"] for w in weights.values())
+    sorted_channels = sorted(
+        [{"channel": ch, **data} for ch, data in weights.items()],
+        key=lambda x: x["weight"],
+        reverse=True,
+    )
+    hint = _build_channel_bandit_hint()
+    return {
+        "ok": True,
+        "days": days,
+        "total_views": total_views,
+        "total_submits": total_submits,
+        "overall_cv_rate": (total_submits / total_views) if total_views > 0 else 0.0,
+        "epsilon": SNS_CHANNEL_BANDIT_EPSILON,
+        "min_views_for_qualified": SNS_CHANNEL_BANDIT_MIN_VIEWS,
+        "channels": sorted_channels,
+        "prompt_hint_injected": bool(hint),
+        "prompt_hint_preview": hint[:200] if hint else "(全体 100 views 未満のため hint 注入なし・均等配分継続)",
+        "memo": (
+            "Daily SNS 研究員 (毎日 JST 6:00) の生成 prompt に上記 hint が自動注入される。"
+            f"epsilon={SNS_CHANNEL_BANDIT_EPSILON*100:.0f}% 探索 / {(1-SNS_CHANNEL_BANDIT_EPSILON)*100:.0f}% 活用。"
+            f"各 channel 30 views 以上で qualified 判定・未満は均等配分継続。"
+        ),
+    }
 
 
 @app.get("/api/admin/marketing/chatgpt-store-analytics")
@@ -15062,6 +15466,337 @@ AIが毎日の学習計画を自動作成し、苦手分野を集中的に克服
     except Exception as e:
         log.error(f"Trial followup email failed for {to_email}: {type(e).__name__}: {e}")
         return {"sent": False, "error": str(e)}
+
+
+# =====================================================================
+# 🚨 体験中・離脱予兆者への AI 個別フォロー (2026-05-11)
+# 塾長指示「AI チームで半自動で集客〜収益化」の継続 phase 強化。
+# 既存 trial-followups (体験「終了後」フォロー) と orthogonal:
+# - trial-followups: status='expired' 対象・定型 3 段ドリップ
+# - trial-rescue: status='trial' 対象・離脱予兆検知 + AI 個別メッセージ
+# memory: feedback_silent_customer_skip.md (last_login_at IS NULL skip) +
+#         feedback_cron_dedup_required.md (notifications dedup 必須)
+# =====================================================================
+
+def _detect_at_risk_trial_students(now: datetime) -> list:
+    """体験中で「失速サイン」を出している生徒を検出。
+    条件:
+    - status='trial' AND trial_end > now (体験継続中)
+    - 体験開始 (trial_start) 2-7 日経過 (登録直後の様子見期間を除外、終了直前は既存 trial-reminders 担当)
+    - last_login_at IS NOT NULL (silent customer は skip・memory: feedback_silent_customer_skip.md)
+    - last_login_at < now - 48h (ログイン履歴あるが 2 日以上アクセスなし = 失速)
+    - 過去 7 日間に template='trial_rescue' で success=1 の notification なし (dedup)
+
+    returns: list of student dict {id, name, email, grade, goal, plan, trial_start, trial_end, last_login_at, days_since_login}
+    """
+    cutoff_recent = (now - timedelta(hours=48)).isoformat()
+    cutoff_dedup = (now - timedelta(days=7)).isoformat()
+    early_cutoff = (now - timedelta(days=2)).isoformat()  # trial_start <= 2日前 (登録直後を除外)
+    late_cutoff = (now - timedelta(days=7)).isoformat()   # trial_start >= 7日前 (古すぎを除外)
+
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(
+            """SELECT s.id, s.name, s.email, s.grade, s.goal, s.plan,
+                      s.trial_start, s.trial_end, s.last_login_at
+               FROM students s
+               WHERE s.status = 'trial'
+                 AND s.email IS NOT NULL
+                 AND s.trial_end > ?
+                 AND s.last_login_at IS NOT NULL
+                 AND s.last_login_at < ?
+                 AND s.trial_start IS NOT NULL
+                 AND s.trial_start <= ?
+                 AND s.trial_start >= ?
+               LIMIT 200""",
+            (now.isoformat(), cutoff_recent, early_cutoff, late_cutoff)
+        )
+        candidates = list(c.fetchall())
+
+        # dedup check (7日以内に trial_rescue 成功送信あれば skip)
+        result = []
+        for row in candidates:
+            sid = row["id"] if hasattr(row, "keys") else row[0]
+            c.execute(
+                """SELECT id FROM notifications
+                   WHERE student_id = ? AND template = 'trial_rescue'
+                     AND success = 1 AND sent_at > ?
+                   LIMIT 1""",
+                (sid, cutoff_dedup)
+            )
+            if c.fetchone():
+                continue
+            # last_login からの経過時間 (hours) 計算
+            try:
+                ll = row["last_login_at"]
+                if isinstance(ll, str):
+                    ll = datetime.fromisoformat(ll.replace("Z", "+00:00"))
+                if ll.tzinfo is None:
+                    ll = ll.replace(tzinfo=timezone.utc)
+                hours_since_login = int((now - ll).total_seconds() / 3600)
+            except Exception:
+                hours_since_login = -1
+            result.append({
+                "id": sid,
+                "name": row["name"] if hasattr(row, "keys") else row[1],
+                "email": row["email"] if hasattr(row, "keys") else row[2],
+                "grade": row["grade"] if hasattr(row, "keys") else row[3],
+                "goal": row["goal"] if hasattr(row, "keys") else row[4],
+                "plan": row["plan"] if hasattr(row, "keys") else row[5],
+                "trial_start": str(row["trial_start"] if hasattr(row, "keys") else row[6]),
+                "trial_end": str(row["trial_end"] if hasattr(row, "keys") else row[7]),
+                "last_login_at": str(row["last_login_at"] if hasattr(row, "keys") else row[8]),
+                "hours_since_login": hours_since_login,
+            })
+        return result
+    finally:
+        conn.close()
+
+
+def _generate_personalized_followup(student: dict) -> dict:
+    """生徒の情報から個別 follow-up メッセージを AI 生成。
+    Claude Sonnet 4.6 経由 (_call_ai_safe task_type='trial_rescue' で Gemini fallback 完備)。
+    安全な fallback: AI 失敗時は定型文を返す (silent fail させない・必ず何か送る)。
+
+    returns: {subject: str, body: str, model: str, _fallback: bool}
+    """
+    name = (student.get("name") or "").strip() or "あなた"
+    grade = (student.get("grade") or "").strip()
+    goal = (student.get("goal") or "").strip()
+    hours = student.get("hours_since_login") or 0
+    days_since = max(1, hours // 24)
+
+    # AI 生成試行
+    if ANTHROPIC_API_KEY or GEMINI_API_KEY or OPENAI_API_KEY:
+        try:
+            system = (
+                "あなたは AI 学習コーチ塾の塾長です。体験中の生徒が失速しています。"
+                "親身で温かい、押し付けがましくない follow-up メッセージを書いてください。"
+                "ai-juku の AI チューター・学習計画・5 AI 多視点添削の活用を自然に促してください。"
+                "教師名 (関正生・富田・林修等) は一切出さないこと。"
+            )
+            grade_info = f"学年: {grade}" if grade else ""
+            goal_info = f"志望: {goal}" if goal else ""
+            user_msg = f"""{name}さんへの follow-up メッセージを生成してください。
+
+【状況】
+- 体験中・あと数日で終了
+- 最後のログインから {days_since} 日経過
+{grade_info}
+{goal_info}
+
+【出力形式】純粋な JSON のみ:
+{{
+  "subject": "件名 (30 字以内・絵文字 1 個 OK)",
+  "body": "本文 (180-280 字・改行は \\n・名前 {name} で呼びかけ・最後に「マイページからすぐ再開できます」で締める)"
+}}"""
+            data = _call_ai_safe(
+                {
+                    "model": "claude-sonnet-4-6-20251022",
+                    "max_tokens": 800,  # 日本語多バイト + JSON wrapper の truncate リスク回避 (3視点 review 推奨)
+                    "system": system,
+                    "messages": [{"role": "user", "content": user_msg}],
+                },
+                task_type="trial_rescue",
+            )
+            content_text = data["content"][0]["text"].strip()
+            if content_text.startswith("```"):
+                content_text = content_text.split("```", 2)[1]
+                if content_text.startswith("json"):
+                    content_text = content_text[4:]
+                content_text = content_text.strip()
+                if content_text.endswith("```"):
+                    content_text = content_text[:-3].strip()
+            parsed = json.loads(content_text)
+            subject = (parsed.get("subject") or "").strip()
+            body = (parsed.get("body") or "").strip()
+            if subject and body and len(body) >= 50:
+                return {
+                    "subject": subject,
+                    "body": body,
+                    "model": data.get("_actual_model") or "claude-sonnet-4-6",
+                    "_fallback": False,
+                }
+            log.warning(f"[TrialRescue] AI returned empty/short content for student {student.get('id')}")
+        except Exception as e:
+            log.warning(f"[TrialRescue] AI generation failed for student {student.get('id')}: {type(e).__name__}: {e}")
+
+    # Fallback (silent fail させず定型文を必ず送る)
+    return {
+        "subject": f"{name}さんへ — 体験を再開しませんか? 🎓",
+        "body": (
+            f"{name}さん、こんにちは。AI 学習コーチ塾の塾長です。\n\n"
+            f"前回のログインから {days_since} 日経ちました。体験はあと数日で終わりますが、まだ AI チューターや学習計画を試していない場合はぜひ。"
+            f"分からない問題は深夜でも AI が即解説します。\n\n"
+            f"マイページからすぐ再開できます。"
+        ),
+        "model": "fallback_static",
+        "_fallback": True,
+    }
+
+
+def _send_trial_rescue_email(to_email: str, student_name: str, subject: str, body: str, login_url: str) -> dict:
+    """trial-rescue 個別メール送信 (Resend 経由)"""
+    import html as _html
+    if not RESEND_API_KEY:
+        log.warning(f"[DEV-MODE] Trial rescue email skipped for {to_email}")
+        return {"sent": False, "dev_mode": True}
+    safe_name = _html.escape(student_name or "")
+    body_html = _html.escape(body).replace("\n", "<br>")
+    html_body = f"""<!DOCTYPE html>
+<html><body style="font-family:-apple-system,sans-serif;line-height:1.7;color:#333;max-width:560px;margin:0 auto;padding:2rem;">
+<h1 style="font-size:1.3rem;color:#6366f1;">🎓 AI学習コーチ塾</h1>
+<p style="white-space:pre-line;font-size:0.98rem;">{body_html}</p>
+<p style="text-align:center;margin:2rem 0;">
+  <a href="{login_url}" style="display:inline-block;padding:1rem 2rem;background:linear-gradient(135deg,#6366f1,#ec4899);color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">
+    🎓 マイページで体験を再開する
+  </a>
+</p>
+<hr style="margin:2rem 0;border:none;border-top:1px solid #eee;">
+<p style="font-size:0.8rem;color:#999;">お問い合わせ: <a href="mailto:info@trillion-ai-juku.com" style="color:#6366f1;">info@trillion-ai-juku.com</a></p>
+</body></html>"""
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({
+                "from": FROM_EMAIL,
+                "to": [to_email],
+                "subject": subject,
+                "html": html_body,
+            }).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json",
+                "User-Agent": "ai-juku-system/1.0",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode())
+            return {"sent": True, "resend_id": result.get("id")}
+    except Exception as e:
+        log.error(f"[TrialRescue] Email failed for {to_email}: {type(e).__name__}: {e}")
+        return {"sent": False, "error": str(e)}
+
+
+@app.post("/api/admin/marketing/trial-rescue-now")
+def admin_trial_rescue_now(
+    payload: dict = None,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🚨 体験中・離脱予兆者への AI 個別フォロー (admin Bearer or x-cron-secret)
+    塾長が CEO ダッシュから手動 trigger 可、cron からも呼ばれる兼用 endpoint。
+
+    対象: 体験中 (status='trial') + ログイン履歴あり + 48h+ 未アクセス + 体験開始 2-7 日経過
+    AI (Claude Sonnet 4.6) が個別メッセージ生成 → in-app messages + email
+    dedup: notifications template='trial_rescue' + success=1 + 7d 内
+
+    body (任意): {"dry_run": bool}
+    """
+    # auth
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    payload = payload or {}
+    dry_run = bool(payload.get("dry_run", False))
+
+    now = datetime.now(timezone.utc)
+    at_risk = _detect_at_risk_trial_students(now)
+    log.info(f"[TrialRescue] Detected {len(at_risk)} at-risk students (dry_run={dry_run})")
+
+    import urllib.parse as _urlparse
+    sent = 0
+    fallback_count = 0
+    failed = 0
+    preview = []
+    conn = db()
+    c = conn.cursor()
+    try:
+        for stu in at_risk:
+            sid = stu["id"]
+            email = stu["email"]
+            name = stu["name"] or ""
+
+            if dry_run:
+                preview.append({
+                    "student_id": sid,
+                    "email": email,
+                    "hours_since_login": stu["hours_since_login"],
+                    "trial_end": stu["trial_end"],
+                })
+                continue
+
+            # AI 個別メッセージ生成
+            msg = _generate_personalized_followup(stu)
+            subject = msg["subject"]
+            body = msg["body"]
+            if msg.get("_fallback"):
+                fallback_count += 1
+
+            # in-app messages テーブルに INSERT (生徒が次回ログイン時に表示)
+            try:
+                c.execute(
+                    """INSERT INTO messages (sender_type, sender_id, recipient_type, recipient_id,
+                                              subject, body, sent_via, email_status)
+                       VALUES ('admin', NULL, 'student', ?, ?, ?, 'in_app_and_email', 'pending')""",
+                    (sid, subject, body)
+                )
+            except Exception as e:
+                log.warning(f"[TrialRescue] in-app message insert failed for {sid}: {e}")
+
+            # メール送信
+            login_url = f"{BASE_URL}/auth.html?email={_urlparse.quote(email, safe='')}"
+            result = _send_trial_rescue_email(email, name, subject, body, login_url)
+
+            # notifications 記録 (dedup 用 + 監査)
+            try:
+                c.execute(
+                    """INSERT INTO notifications (student_id, channel, template, payload, success, error)
+                       VALUES (?, 'email', 'trial_rescue', ?, ?, ?)""",
+                    (sid, json.dumps({
+                        "subject": subject,
+                        "hours_since_login": stu["hours_since_login"],
+                        "model": msg.get("model", ""),
+                        "fallback": msg.get("_fallback", False),
+                    }, ensure_ascii=False),
+                    1 if result.get("sent") else 0,
+                    result.get("error", "") if not result.get("sent") else "")
+                )
+            except Exception as e:
+                log.warning(f"[TrialRescue] notification record failed for {sid}: {e}")
+
+            if result.get("sent"):
+                sent += 1
+            else:
+                failed += 1
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {
+        "ok": True,
+        "scanned_at": now.isoformat(),
+        "at_risk_count": len(at_risk),
+        "sent": sent,
+        "ai_fallback_count": fallback_count,
+        "failed": failed,
+        "dry_run": dry_run,
+        "preview": preview[:50] if dry_run else [],
+        "memo": (
+            f"AI 個別メッセージ {sent} 件送信完了 (fallback {fallback_count} 件)。"
+            "失速サイン (48h+ 未ログイン + 体験 2-7 日経過) を検知し AI が個別メッセージで再エンゲージ。"
+        ),
+    }
 
 
 @app.post("/api/cron/trial-followups")
