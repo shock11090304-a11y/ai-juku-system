@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ログイン | AI学習コーチ塾</title>
   <meta name="robots" content="noindex">
+  <!-- URL に code パラメータが含まれる経路 (admin OTP 緊急発行) で referer 漏洩を防ぐ -->
+  <meta name="referrer" content="no-referrer">
   <script src="cache-purge.js?v=20260430-emailflow"></script>
   <script src="frontend-error-monitor.js?v=20260427-init"></script>
   <link rel="stylesheet" href="lp.css?v=20260424-mobile">
@@ -242,12 +244,37 @@
 
     let currentEmail = '';
 
-    // URL ?email=... プリフィル (auth.html の再送信フォームから誘導された時用)
+    // URL ?email=... プリフィル + ?code=xxx&skip_send=1 で塾長発行 OTP ワンクリックログイン
+    // (塾長指示 2026-05-11: メール届かない生徒に admin が OTP 発行 → URL を LINE で渡す経路)
     (function prefillEmail() {
       const qp = new URLSearchParams(window.location.search);
       const e = (qp.get('email') || '').trim();
+      const code = (qp.get('code') || '').trim();
+      const skipSend = qp.get('skip_send') === '1';
       if (e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
         emailInput.value = e;
+      }
+      // skip_send + code 揃っていれば Step1 をスキップして Step2 に直接ジャンプ
+      // (magic-link 再発行を回避 = admin が発行した OTP が無効化されないようにする)
+      if (skipSend && e && /^\d{6}$/.test(code)) {
+        currentEmail = e;
+        emailShown.textContent = e;
+        step1.classList.add('hidden');
+        step2.classList.add('active');
+        otpInput.value = code;
+        // 「コードを再送信」ボタンを disable (押されると admin 発行 OTP が無効化される致命傷防止)
+        if (resendBtn) {
+          resendBtn.disabled = true;
+          resendBtn.style.opacity = '0.4';
+          resendBtn.style.cursor = 'not-allowed';
+          resendBtn.title = '管理者発行コードを使用中です';
+        }
+        // 1秒後に自動 submit (UX: ワンクリックログイン感)
+        setTimeout(() => {
+          try { codeForm.requestSubmit(); } catch (err) {
+            showMsg('error', '⚠️ 自動ログインに失敗しました。下の「✅ ログイン」ボタンを押してください。');
+          }
+        }, 800);
       }
     })();
 

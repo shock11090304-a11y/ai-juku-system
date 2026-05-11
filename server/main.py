@@ -11586,6 +11586,120 @@ def admin_send_magic_link_to_address(payload: dict, authorization: Optional[str]
     }
 
 
+@app.post("/api/admin/students/issue-otp-direct")
+def admin_issue_otp_direct(payload: dict, authorization: Optional[str] = Header(None)):
+    """🔑 緊急エスケープハッチ: 指定生徒の OTP コードを admin 画面に直接表示する。
+    塾長指示 2026-05-11: 室坂さん等「どのメアドにしても届かない」生徒に対し、塾長が
+    LINE/電話/対面で OTP を口頭伝達できるようにするため。メール経路を一切経由しない。
+
+    payload: {"student_id": 123} または {"email": "..."} または {"name_query": "室坂"}
+    成功時: { ok, otp, expires_at, student: {id, name, email, status} }
+
+    監査ログ: events.admin_otp_direct_issue に記録 (誰の OTP を誰に発行したか追跡)。
+    認証: admin Bearer のみ。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未認証")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=401, detail="セッション期限切れ")
+
+    sid_arg = payload.get("student_id") or payload.get("id")
+    email_arg = (payload.get("email") or "").strip().lower()
+    name_query = (payload.get("name_query") or "").strip()
+
+    conn = db()
+    c = conn.cursor()
+    try:
+        row = None
+        if sid_arg:
+            c.execute(
+                "SELECT id, name, email, status, trial_end FROM students WHERE id = ? LIMIT 1",
+                (int(sid_arg),),
+            )
+            row = c.fetchone()
+        elif email_arg:
+            c.execute(
+                "SELECT id, name, email, status, trial_end FROM students WHERE LOWER(email) = ? LIMIT 1",
+                (email_arg,),
+            )
+            row = c.fetchone()
+        elif name_query:
+            # 部分一致で複数候補がある場合は候補リストを返す (誤発行防止)
+            like = f"%{name_query}%"
+            c.execute(
+                "SELECT id, name, email, status, trial_end FROM students WHERE name LIKE ? ORDER BY id DESC LIMIT 10",
+                (like,),
+            )
+            candidates = c.fetchall()
+            if not candidates:
+                raise HTTPException(status_code=404, detail=f"name_query '{name_query}' に一致する生徒なし")
+            if len(candidates) > 1:
+                return {
+                    "ok": False,
+                    "needs_disambiguation": True,
+                    "candidates": [
+                        {"id": r["id"], "name": r["name"], "email": r["email"], "status": r["status"]}
+                        for r in candidates
+                    ],
+                    "message": f"{len(candidates)} 件ヒット。student_id を指定して再度お願いします。",
+                }
+            row = candidates[0]
+        else:
+            raise HTTPException(status_code=400, detail="student_id / email / name_query のいずれか必須")
+
+        if not row:
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+
+        sid = int(row["id"])
+        # 古い OTP を全無効化 (混乱防止)
+        _invalidate_active_otps(sid)
+        otp_code = _create_otp(sid)
+        # 監査ログ: 塾長が誰の OTP を口頭伝達するか必ず追跡可能にする
+        log.warning(f"[AdminOTPDirect] admin issued OTP for student_id={sid} email={row['email']} name={row['name']}")
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, created_at) VALUES (?, ?, ?)",
+                (
+                    "admin_otp_direct_issue",
+                    json.dumps({
+                        "student_id": sid,
+                        "name": row["name"],
+                        "email_domain": (row["email"].split("@", 1)[1] if row["email"] and "@" in row["email"] else None),
+                        "reason": "email_undeliverable_or_offline_handoff",
+                    }, ensure_ascii=False),
+                    datetime.now(timezone.utc),
+                ),
+            )
+            conn.commit()
+        except Exception:
+            try: conn.rollback()
+            except Exception: pass
+
+        # 有効期限: _create_otp の TTL は 600 秒 (10 分)。クライアント表示用に絶対時刻も返す
+        import time as _t
+        # ワンクリック URL: ?email=xxx&code=xxx で login.html Step1 スキップ + Step2 自動 submit
+        # (login.html 側の対応必要。skip_send=1 で Step1 の magic-link 再発行を抑止)
+        from urllib.parse import urlencode
+        qs = urlencode({"email": row["email"], "code": otp_code, "skip_send": "1"})
+        direct_login_url = f"{BASE_URL}/login.html?{qs}"
+        return {
+            "ok": True,
+            "otp": otp_code,
+            "expires_at": int(_t.time()) + 600,
+            "ttl_seconds": 600,
+            "direct_login_url": direct_login_url,
+            "student": {
+                "id": sid,
+                "name": row["name"],
+                "email": row["email"],
+                "status": row["status"],
+            },
+            "instructions": "【伝達方法 2 通り】(A) ワンクリック URL を LINE で送る → 生徒は URL クリックで即ログイン。(B) 6 桁コードを口頭/電話で伝える → 生徒は login.html で登録メアド入力 → コード入力。10 分以内に使ってください。",
+        }
+    finally:
+        conn.close()
+
+
 @app.post("/api/admin/login-as-student")
 def admin_login_as_student(payload: dict, authorization: Optional[str] = Header(None)):
     """🔐 塾長が生徒として直接ログインする (magic link 不要の admin 迂回)。
