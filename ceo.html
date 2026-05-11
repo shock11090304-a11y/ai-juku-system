@@ -4377,12 +4377,36 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           if (ds === 'resend_default_sender') {
             html += '<div style="color:#fbbf24;margin-bottom:0.4rem;">⚠️ onboarding@resend.dev はテスト用。本番では独自ドメインを FROM_EMAIL に設定してください。</div>';
           }
-          // 直近エラー
+          // 🔥 直近 24h の magic-link (再ログイン) 送信統計
+          if (d.magic_link_24h && d.magic_link_24h.total !== undefined) {
+            const m = d.magic_link_24h;
+            const failHot = (m.send_failed || 0) >= 3;
+            html += `<div style="margin-top:0.6rem;padding:0.5rem;background:${failHot ? 'rgba(239,68,68,0.12)' : 'rgba(99,102,241,0.10)'};border:1px solid ${failHot ? 'rgba(239,68,68,0.35)' : 'rgba(99,102,241,0.25)'};border-radius:6px;">`;
+            html += `<div style="font-weight:700;color:${failHot ? '#fca5a5' : '#a5b4fc'};">🔐 ログインコード送信 (直近24h): 合計 ${m.total}件</div>`;
+            html += `<div style="padding-left:0.5rem;font-size:0.74rem;line-height:1.7;">`;
+            html += `<span style="color:#34d399;">✅ 成功: ${m.sent_ok || 0}</span> / `;
+            html += `<span style="color:${failHot ? '#fca5a5' : '#fbbf24'};">❌ 失敗: ${m.send_failed || 0}</span> / `;
+            html += `<span style="color:#a3a3a3;">体験切れ: ${m.trial_expired || 0}</span> / `;
+            html += `<span style="color:#a3a3a3;">未登録: ${m.unknown_email || 0}</span>`;
+            html += `</div>`;
+            if (failHot) {
+              html += `<div style="margin-top:0.3rem;color:#fca5a5;font-size:0.72rem;">⚠️ 失敗が3件以上発生しています。下の直近エラーを確認してください。</div>`;
+            }
+            html += `</div>`;
+          }
+          // 直近エラー (signup + magic-link 統合)
           if (d.recent_errors && d.recent_errors.length) {
-            html += '<div style="margin-top:0.5rem;font-weight:700;color:#fca5a5;">📋 直近の送信エラー:</div>';
-            d.recent_errors.filter(e => e.error).slice(0, 5).forEach(e => {
-              html += `<div style="padding-left:1rem;color:#fca5a5;font-size:0.72rem;word-break:break-all;">• ${e.error} <span style="color:#71717a;">(${e.created_at})</span></div>`;
-            });
+            const errs = d.recent_errors.filter(e => e.error || (e.email_sent === false && e.event === 'magic_link_email_status' && e.reason === 'send_failed')).slice(0, 8);
+            if (errs.length) {
+              html += '<div style="margin-top:0.5rem;font-weight:700;color:#fca5a5;">📋 直近の送信失敗 (signup + ログイン):</div>';
+              errs.forEach(e => {
+                const eventLabel = e.event === 'magic_link_email_status' ? '🔐 再ログイン' : '📝 新規申込';
+                const hint = e.email_hint ? ` ${e.email_hint}` : '';
+                const sid = e.student_id ? ` student#${e.student_id}` : '';
+                const errTxt = e.error || e.reason || 'unknown';
+                html += `<div style="padding-left:1rem;color:#fca5a5;font-size:0.72rem;word-break:break-all;">• ${eventLabel}${sid}${hint}: ${errTxt} <span style="color:#71717a;">(${e.created_at})</span></div>`;
+              });
+            }
           }
           // 修復ガイド
           if (!domainOk || !d.api_key_valid) {

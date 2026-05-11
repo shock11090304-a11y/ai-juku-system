@@ -195,6 +195,17 @@
           <span style="margin:0 0.5rem; color:var(--text-muted);">|</span>
           <button type="button" class="auth-link-btn" id="resendBtn">コードを再送信</button>
         </p>
+
+        <!-- 届かない時の対応 (顧客が Step2 で詰まらないため: 2026-05-11 追加) -->
+        <details style="margin-top:1rem;padding:0.75rem 0.9rem;background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.35);border-radius:8px;color:#fde68a;font-size:0.8rem;line-height:1.65;">
+          <summary style="cursor:pointer;color:#fbbf24;font-weight:700;">📭 1〜2分待ってもコードが届かない場合</summary>
+          <div style="margin-top:0.6rem;">
+            <p style="margin:0.3rem 0;"><strong>1. 迷惑メールフォルダを確認</strong><br>Gmail なら「すべてのメール」検索で <code>from:trillion-ai-juku.com</code> も試してください。</p>
+            <p style="margin:0.3rem 0;"><strong>2. キャリアメール (docomo/ezweb/au/softbank)</strong><br>「PCからのメールを受信」設定をON、または受信許可リストに <strong>@trillion-ai-juku.com</strong> と <strong>@resend.dev</strong> を追加。</p>
+            <p style="margin:0.3rem 0;"><strong>3. メアドが正しいか</strong><br>「メールアドレスを変更」から入力し直してください。</p>
+            <p style="margin:0.3rem 0;"><strong>4. それでも届かない</strong><br><a href="mailto:info@trillion-ai-juku.com" style="color:#fbbf24;text-decoration:underline;">info@trillion-ai-juku.com</a> までご連絡ください (登録メアド明記)。</p>
+          </div>
+        </details>
       </div>
 
       <div class="auth-msg" id="msg"></div>

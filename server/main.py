@@ -684,6 +684,7 @@ def init_db():
     CREATE INDEX IF NOT EXISTS idx_vocab_progress_unique ON vocab_progress(student_id, word_id);
     CREATE INDEX IF NOT EXISTS idx_vocab_progress_due ON vocab_progress(student_id, next_review_at);
     CREATE INDEX IF NOT EXISTS idx_events_session ON events(session_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_events_name_created ON events(name, created_at);
     CREATE INDEX IF NOT EXISTS idx_students_status ON students(status);
     CREATE INDEX IF NOT EXISTS idx_otp_student ON otp_codes(student_id, used_at, expires_at);
     -- 学習記録 (Studyplus for School 代替: 塾長指示 2026-05-04)
@@ -3997,6 +3998,66 @@ def _invalidate_active_otps(student_id: int) -> None:
         log.warning(f"[OTP] failed to invalidate active OTPs for student {student_id}: {e}")
 
 
+def _magic_link_24h_stats() -> dict:
+    """直近 24 時間の magic-link 送信統計 (CEO ダッシュ用)。
+    sent_ok / send_failed / trial_expired / unknown_email / status_inactive を分類。"""
+    out = {"sent_ok": 0, "send_failed": 0, "trial_expired": 0, "unknown_email": 0, "status_inactive": 0, "total": 0}
+    try:
+        conn = db()
+        c = conn.cursor()
+        if USE_POSTGRES:
+            c.execute(
+                "SELECT props FROM events WHERE name = 'magic_link_email_status' "
+                "AND created_at > NOW() - INTERVAL '24 hours' ORDER BY created_at DESC LIMIT 500",
+            )
+        else:
+            c.execute(
+                "SELECT props FROM events WHERE name = 'magic_link_email_status' "
+                "AND created_at > datetime('now', '-24 hours') ORDER BY created_at DESC LIMIT 500",
+            )
+        rows = c.fetchall()
+        conn.close()
+        for r in rows:
+            try:
+                props = json.loads(r["props"]) if isinstance(r["props"], str) else r["props"]
+                out["total"] += 1
+                reason = props.get("reason") or ""
+                if props.get("email_sent"):
+                    out["sent_ok"] += 1
+                elif reason == "trial_expired":
+                    out["trial_expired"] += 1
+                elif reason == "unknown_email":
+                    out["unknown_email"] += 1
+                elif reason.startswith("status_"):
+                    out["status_inactive"] += 1
+                else:
+                    out["send_failed"] += 1
+            except Exception:
+                pass
+    except Exception as e:
+        out["error"] = f"{type(e).__name__}: {str(e)[:120]}"
+    return out
+
+
+def _record_magic_link_event(props: dict) -> None:
+    """再ログイン時の magic-link 送信成否を events に記録 (CEO ダッシュ監視用)。
+    signup_email_status は trial signup 時のみ記録されるため、再ログイン分は別 event name で
+    記録する。塾長報告「ログインコードが届かない」を切り分けるには「送れたか・誰宛か・なぜ失敗か」が必須。"""
+    try:
+        sid = props.get("student_id")
+        session_id = f"student:{sid}" if sid else "magic_link_anon"
+        conn = db()
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            ("magic_link_email_status", json.dumps(props, ensure_ascii=False)[:2000], session_id),
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        log.warning(f"[MagicLink] failed to record magic_link_email_status: {e}")
+
+
 def _record_critical_event(name: str, props: dict) -> None:
     """致命系の event を記録 (notification_all_channels_failed など)。
     DB 不調でも例外で死なない (best-effort)。"""
@@ -4220,6 +4281,13 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
                 except Exception:
                     pass
 
+    # 観測性 (2026-05-11 致命修正): 再ログイン時の magic-link 送信成否を必ず events に記録する。
+    # 以前は _send_magic_link_with_retry の戻り値を捨て、失敗してもクライアント 200 OK → silent fail。
+    # 塾長報告「ログインコードが届かない」を切り分けるには「実際に送れたか・なぜ失敗したか・誰宛か」が必須。
+    send_event_props: dict = {
+        "email_hint": email_lower[:3] + "***" + (("@" + email_lower.split("@", 1)[1]) if "@" in email_lower else ""),
+        "student_id": row["id"] if row else None,
+    }
     if is_sendable:
         # 古い OTP を全て無効化してから新規発行 (再送 UX: 新コードのみ有効)
         _invalidate_active_otps(row["id"])
@@ -4229,19 +4297,42 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
         token = _create_magic_link_token(row["id"])
         magic_url = f"{BASE_URL}/auth.html?t={token}"
         otp_code = _create_otp(row["id"])
-        _send_magic_link_with_retry(row["email"], row["name"] or "", magic_url, otp_code=otp_code, is_welcome=False)
+        send_result = _send_magic_link_with_retry(
+            row["email"], row["name"] or "", magic_url, otp_code=otp_code, is_welcome=False,
+        ) or {}
+        send_event_props.update({
+            "email_sent": bool(send_result.get("sent")),
+            "error": (send_result.get("error") or "")[:200] if not send_result.get("sent") else None,
+            "permanent": bool(send_result.get("permanent")),
+            "retried": bool(send_result.get("retried")),
+            "synthetic": bool(send_result.get("synthetic")),
+            "reason": "sent" if send_result.get("sent") else "send_failed",
+        })
+        if not send_result.get("sent"):
+            log.error(
+                f"[MagicLink] Send FAILED for student_id={row['id']} email={row['email']}: "
+                f"{send_result.get('error')} (permanent={send_result.get('permanent')}, retried={send_result.get('retried')})"
+            )
     elif is_trial_expired:
-        # 期間切れは案内専用文言を返す (列挙対策上は status code は 200 のままで OK)
         log.info(f"Magic link requested but trial expired: {email_lower}")
+        send_event_props.update({"email_sent": False, "reason": "trial_expired", "error": None})
+    else:
+        # 存在しない or 状態不明: 同じレスポンスを返す（列挙対策）
+        log.info(f"Magic link requested for unknown/inactive email: {email_lower}")
+        send_event_props.update({
+            "email_sent": False,
+            "reason": "unknown_email" if not row else f"status_{row['status']}",
+            "error": None,
+        })
+
+    _record_magic_link_event(send_event_props)
+
+    if is_trial_expired:
         return {
             "ok": True,
             "trial_expired": True,
             "message": "体験期間が終了しています。継続をご希望の方はLPから本登録をお願いします。",
         }
-    else:
-        # 存在しない or 状態不明: 同じレスポンスを返す（列挙対策）
-        log.info(f"Magic link requested for unknown/inactive email: {email_lower}")
-
     return {"ok": True, "message": "該当するアカウントがあればメールをお送りしました。届かない場合は迷惑メールフォルダもご確認ください。"}
 
 
@@ -13335,11 +13426,13 @@ def admin_email_diagnose(authorization: Optional[str] = Header(None), x_cron_sec
         except Exception as e:
             result["domain_status"] = f"api_error: {type(e).__name__}: {str(e)[:200]}"
 
-    # 2. DB から直近のメール失敗エラーを取得
+    # 2. DB から直近のメール失敗エラーを取得 (signup + magic-link 両方)
     try:
         conn = db(); c = conn.cursor()
         c.execute(
-            "SELECT props, created_at FROM events WHERE name = 'signup_email_status' ORDER BY created_at DESC LIMIT 10",
+            "SELECT name, props, created_at FROM events "
+            "WHERE name IN ('signup_email_status', 'magic_link_email_status') "
+            "ORDER BY created_at DESC LIMIT 12",
         )
         rows = c.fetchall()
         conn.close()
@@ -13347,12 +13440,20 @@ def admin_email_diagnose(authorization: Optional[str] = Header(None), x_cron_sec
             try:
                 props = json.loads(r["props"]) if isinstance(r["props"], str) else r["props"]
                 result["recent_errors"].append({
+                    "event": r["name"],
                     "email_sent": props.get("email_sent"),
                     "error": (props.get("error") or "")[:200],
+                    "reason": props.get("reason"),
+                    "student_id": props.get("student_id"),
+                    "email_hint": props.get("email_hint"),
+                    "permanent": props.get("permanent"),
+                    "retried": props.get("retried"),
                     "created_at": str(r["created_at"]),
                 })
             except Exception:
                 pass
+        # 直近 24h の magic-link 失敗統計 (CEO ダッシュで「ログインメール失敗」を即座に把握)
+        result["magic_link_24h"] = _magic_link_24h_stats()
     except Exception as e:
         result["recent_errors"] = [{"error": f"db_query_failed: {e}"}]
 
