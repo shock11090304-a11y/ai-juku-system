@@ -598,6 +598,27 @@ def init_db():
     );
     CREATE INDEX IF NOT EXISTS idx_aitw_status_updated ON ai_team_workflows(status, updated_at DESC);
     CREATE INDEX IF NOT EXISTS idx_aitw_workflow_id ON ai_team_workflows(workflow_id);
+    -- 🤖 AI チューター 3 AI 写真/PDF 解答 + 弱点ストック (塾長指示 2026-05-13)
+    -- 写真 or PDF を 3 AI (Claude Opus / GPT-4o / Gemini Pro) で並列解答。
+    -- 記述式/国語の場合は 2 回チェック (Round 1 独立 → Round 2 相互検証) で精度向上。
+    -- subject_guess (AI 自動判定) を弱点分類 cron が日次集計し、生徒個別問題推薦へ。
+    CREATE TABLE IF NOT EXISTS ai_tutor_solve_log (
+        id {pk},
+        student_id INTEGER,
+        mode TEXT NOT NULL DEFAULT 'standard',
+        subject_guess TEXT,
+        topic_guess TEXT,
+        problem_text TEXT,
+        has_image INTEGER DEFAULT 0,
+        round_count INTEGER DEFAULT 1,
+        final_answer TEXT,
+        confidence TEXT,
+        ai_models TEXT,
+        elapsed_ms INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_tutor_solve_student_created ON ai_tutor_solve_log(student_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_tutor_solve_subject ON ai_tutor_solve_log(subject_guess, created_at DESC);
     -- 大学別 過去問風オリジナル問題プール (塾長指示 2026-05-03)
     -- 著作権配慮: 全て Claude 生成のオリジナル。過去問の「スタイル・出題パターン」のみを参考にし、
     -- 実問題文の転載は禁止。inspired_by フィールドで「東大2022年第1問の長文読解スタイル」など出典明示。
@@ -20453,6 +20474,550 @@ async def mock_exam_grade_essay_multiview(payload: dict, authorization: Optional
             "top_strengths": all_strengths[:6],
             "top_improvements": all_improvements[:6],
         },
+        "elapsed_ms_total": elapsed_ms_total,
+    }
+
+
+# =============================================================================
+# 🤖 AI チューター 3 AI 写真/PDF 解答 + 2 回チェック (essay_review mode)
+# 塾長指示 2026-05-13「アプリ使いやすさアピール: 写真/PDF → 3 AI 完璧解答」
+# - mode=standard:     3 AI 並列 1 回 (計算問題・標準問題)
+# - mode=essay_review: 3 AI 並列 Round 1 (独立解答) → Round 2 (相互検証で精度↑)
+# memory: feedback_team_review_all_generation.md (Phase1 執筆 → Phase2 多視点検閲)
+# 教師名 prompt 注入禁止 (memory: project_ai_juku_english_philosophy.md)
+# =============================================================================
+
+_TUTOR_TEACHER_NAME_BAN = (
+    "\n\n## 🚫 重要な制約\n"
+    "- 個人名 (教師/講師/著名人) は出力に一切含めない\n"
+    "- 「〇〇先生」「〇〇式」「〇〇流」等の固有名詞も禁止\n"
+    "- コアイメージ・文構造分析・論理展開で説明する\n"
+)
+
+# 🇯🇵 ai-juku 英語解説の哲学 (memory: project_ai_juku_english_philosophy.md)
+# 関正生・富田両氏のスタイルを参考にしつつ「教師名は出力に一切出さない」絶対ルール。
+# 英語 problem の場合は subject=english と AI が判定した時点でこの philosophy を解説に反映させる。
+_TUTOR_ENGLISH_PHILOSOPHY = (
+    "\n\n## 📘 英語問題の解説指針 (subject='english' 判定時に厳守)\n"
+    "explanation_jp は以下の 4 セクション構造で 600-1200 字で記述:\n"
+    "1. **🎯 コアイメージ**: 該当語法/文法/時制/前置詞/冠詞の本質的イメージを 2-3 行\n"
+    "2. **🔬 文構造分析**: S/V/O/C/M をラベル付きで明示。入れ子節は階層で\n"
+    "3. **📍 本文の根拠** (長文問題の場合): 該当箇所を「\" \"」で引用 + 段落番号\n"
+    "4. **❌ 誤答 NG 理由** (multiple_choice の場合): 各誤答について構造的・本質的な NG 理由を 1 行ずつ\n"
+    "学習者が「次に同じパターンに出会ったら自力で解ける」レベルの本質的理解を目指す。\n"
+)
+
+# 📚 国語問題の解説指針 (記述式・読解論述)
+_TUTOR_JAPANESE_PHILOSOPHY = (
+    "\n\n## 📕 国語問題の解説指針 (subject='japanese' 判定時に厳守)\n"
+    "explanation_jp は以下の 4 セクション構造で 600-1500 字で記述:\n"
+    "1. **🎯 設問の要求**: 何を問うているか・字数制限・解答形式を明確化\n"
+    "2. **📍 本文の根拠**: 該当段落を引用 + 「ここから〇〇という主張が読み取れる」\n"
+    "3. **🔬 論理構造**: 本文の主張と根拠・反論を整理\n"
+    "4. **✍️ 解答構築の手順**: 引用→言い換え→自分の言葉での要約 の流れで模範解答化\n"
+)
+
+_SOLVE_AI_DEFINITIONS = {
+    "claude": {
+        "label": "🎯 Claude Opus 4.7 (数式・論理重視)",
+        "model": "claude-opus-4-7",
+        "kind": "anthropic",
+        "system": (
+            "You are an expert tutor for Japanese students preparing for university entrance exams. "
+            "Read the image (photo of a problem or PDF page) carefully and solve it COMPLETELY.\n\n"
+            "Priorities:\n"
+            "1. Accurate OCR/reading of the problem (especially math formulas, kanji, structured layouts)\n"
+            "2. Step-by-step solution with intermediate reasoning visible\n"
+            "3. Final answer clearly marked\n"
+            "4. Subject-aware explanation in Japanese (philosophy below)\n\n"
+            "Return ONLY valid JSON (no markdown fence):\n"
+            '{"subject": "<math|english|japanese|physics|chemistry|biology|social|other>",\n'
+            ' "topic": "<具体的単元: 例 \\"三角関数 加法定理\\" \\"関係代名詞 which\\">",\n'
+            ' "difficulty_level": "<easy|standard|hard>",\n'
+            ' "problem_text": "<画像から読み取った問題文 (要約可)>",\n'
+            ' "solution_steps": ["<手順1>", "<手順2>", "..."],\n'
+            ' "final_answer": "<最終解答>",\n'
+            ' "explanation_jp": "<subject に応じた日本語解説・下記 philosophy 厳守>",\n'
+            ' "confidence_self": "<high|medium|low: 自身の解答への自信>"}\n'
+            "All Japanese-facing text in Japanese.\n\n"
+            "## 📐 explanation_jp の長さガイドライン (subject 連動)\n"
+            "- math/physics/chemistry/biology/social: 200-400 字で簡潔に\n"
+            "- english: 600-1200 字 (下記英語 philosophy 厳守・4 セクション構造)\n"
+            "- japanese: 600-1500 字 (下記国語 philosophy 厳守・4 セクション構造)"
+            + _TUTOR_ENGLISH_PHILOSOPHY
+            + _TUTOR_JAPANESE_PHILOSOPHY
+            + _TUTOR_TEACHER_NAME_BAN
+        ),
+    },
+    "openai": {
+        "label": "💡 GPT-4o (柔軟解釈・図形読み取り)",
+        "model": "gpt-4o",
+        "kind": "openai",
+        "system": (
+            "You are an expert tutor specialized in flexible problem interpretation. "
+            "Read the image carefully and solve the problem with focus on:\n"
+            "1. Alternative interpretations if the problem is ambiguous\n"
+            "2. Diagrams, figures, tables (you excel at visual reasoning)\n"
+            "3. Step-by-step solution\n"
+            "4. Brief explanation in Japanese\n\n"
+            "Return ONLY valid JSON (same schema as Claude):\n"
+            '{"subject": "...", "topic": "...", "difficulty_level": "...", '
+            '"problem_text": "...", "solution_steps": [...], "final_answer": "...", '
+            '"explanation_jp": "...", "confidence_self": "..."}\n'
+            "All Japanese-facing text in Japanese."
+            + _TUTOR_TEACHER_NAME_BAN
+        ),
+    },
+    "gemini": {
+        "label": "📚 Gemini 2.5 Pro (補完・別解)",
+        "model": "gemini-2.5-pro",
+        "kind": "gemini",
+        "system": (
+            "You are an expert tutor specialized in providing complementary perspectives and alternative solutions. "
+            "Read the image carefully and solve the problem with focus on:\n"
+            "1. Long-form context understanding (especially for 国語 reading comprehension)\n"
+            "2. Alternative solution methods (別解) if applicable\n"
+            "3. Step-by-step solution\n"
+            "4. Brief explanation in Japanese\n\n"
+            "Return ONLY valid JSON (same schema):\n"
+            '{"subject": "...", "topic": "...", "difficulty_level": "...", '
+            '"problem_text": "...", "solution_steps": [...], "final_answer": "...", '
+            '"explanation_jp": "...", "confidence_self": "..."}\n'
+            "All Japanese-facing text in Japanese."
+            + _TUTOR_TEACHER_NAME_BAN
+        ),
+    },
+}
+
+# rate limit (重 endpoint・3 AI 並列 + 2 回チェックで最大 6 LLM call)
+_SOLVE_RATE_LIMIT: dict = {}  # {student_id: [ts, ...]}
+_SOLVE_RATE_LIMIT_PER_HOUR = 10
+
+def _check_solve_rate(student_id: int) -> None:
+    import time as _t
+    now = _t.time()
+    h_ago = now - 3600
+    ts = _SOLVE_RATE_LIMIT.get(student_id, [])
+    ts = [t for t in ts if t > h_ago]
+    if len(ts) >= _SOLVE_RATE_LIMIT_PER_HOUR:
+        oldest = min(ts)
+        retry_after_min = max(1, int((oldest + 3600 - now) / 60))
+        raise HTTPException(
+            status_code=429,
+            detail=f"3 AI 写真解答は 1 時間あたり {_SOLVE_RATE_LIMIT_PER_HOUR} 回まで。約 {retry_after_min} 分後に再試行してください。"
+        )
+    ts.append(now)
+    _SOLVE_RATE_LIMIT[student_id] = ts
+
+
+def _solve_one_ai(ai_id: str, image_b64: Optional[str], mime: str, mime_pdf: bool,
+                   problem_text: Optional[str], prior_answers: Optional[list] = None) -> dict:
+    """1 AI で 1 round の解答を実行 (sync・thread pool から呼ぶ)。
+    prior_answers が指定された場合 = Round 2: 他 AI の解答を参考に再評価。
+    返却: {ai_id, model, subject, topic, ..., elapsed_ms} or {ai_id, model, error, elapsed_ms}
+    """
+    import time as _t
+    t0 = _t.time()
+    ai_def = _SOLVE_AI_DEFINITIONS[ai_id]
+
+    # 🛡️ 3視点 review 致命#1 対応 (2026-05-13): PDF は Anthropic (Claude) のみ対応
+    # _call_gemini / _call_openai の content converter は type="document" を黙って捨てるため、
+    # PDF を渡すと「PDF 無しテキストのみ」で解答してしまい、誤答を「自信 high」で返す silent fail 発生。
+    # memory: feedback_ai_tutor_demo_fallback.md と同パターン → 明示エラーで早期 fail させる。
+    if mime_pdf and ai_def["kind"] != "anthropic":
+        return {
+            "ai_id": ai_id,
+            "label": ai_def["label"],
+            "model": ai_def["model"],
+            "error": "PDF は Claude のみ対応 (現状 Gemini/OpenAI は PDF 直接読込み不可)",
+            "elapsed_ms": int((_t.time() - t0) * 1000),
+        }
+
+    # user text 構築
+    user_parts = []
+    if problem_text:
+        user_parts.append(f"## 補足説明 (生徒からの追加情報)\n{problem_text}\n")
+    if image_b64:
+        user_parts.append("画像に問題が写っています。OCR/読解してから解いてください。\n")
+    if prior_answers:
+        # Round 2: 他 AI の解答を見せて再検証
+        user_parts.append(
+            "## 🔄 Round 2 (相互検証): 以下は他 AI の Round 1 解答です。\n"
+            "もし他 AI の解答に誤り・見落としがあれば指摘し、必要なら自分の解答を修正してください。\n"
+            "完全一致する場合は self confidence を high にして同じ解答を返してください。\n\n"
+        )
+        for pa in prior_answers:
+            if pa.get("ai_id") == ai_id:
+                continue  # 自分の Round 1 はスキップ
+            user_parts.append(
+                f"### {pa.get('label', pa.get('ai_id'))} の解答:\n"
+                f"- 単元: {pa.get('topic', '?')}\n"
+                f"- 手順: {' / '.join((pa.get('solution_steps') or [])[:4])}\n"
+                f"- 最終解答: {pa.get('final_answer', '?')}\n"
+                f"- 自信: {pa.get('confidence_self', '?')}\n\n"
+            )
+        user_parts.append("以上を踏まえて、もう一度同じ JSON 形式で最終解答を返してください。")
+    else:
+        user_parts.append("Solve completely and return JSON.")
+    user_text = "\n".join(user_parts)
+
+    # Anthropic 互換 content blocks
+    content_blocks = []
+    if image_b64:
+        if mime_pdf:
+            # Anthropic PDF input: type=document, source=base64
+            content_blocks.append({
+                "type": "document",
+                "source": {"type": "base64", "media_type": "application/pdf", "data": image_b64},
+            })
+        else:
+            content_blocks.append({
+                "type": "image",
+                "source": {"type": "base64", "media_type": mime, "data": image_b64},
+            })
+    content_blocks.append({"type": "text", "text": user_text})
+
+    body = {
+        "model": ai_def["model"],
+        "max_tokens": 2000,
+        "system": ai_def["system"],
+        "messages": [{"role": "user", "content": content_blocks}],
+    }
+    # Opus 4.7 必須パラメータ (memory: feedback_opus47_proxy_required.md)
+    if ai_def["model"].startswith("claude-opus-4-7"):
+        body["thinking"] = {"type": "adaptive"}
+        body["output_config"] = {"effort": "high"}
+        body["temperature"] = 1.0
+
+    try:
+        if ai_def["kind"] == "anthropic":
+            data = _call_anthropic_safe(body, kind=f"tutor_solve_{ai_id}", student_id=None)
+        elif ai_def["kind"] == "openai":
+            data = _call_openai(body, kind=f"tutor_solve_{ai_id}")
+        elif ai_def["kind"] == "gemini":
+            data = _call_gemini(body, kind=f"tutor_solve_{ai_id}")
+        else:
+            raise RuntimeError(f"unknown ai kind: {ai_def['kind']}")
+
+        text = (data.get("content") or [{}])[0].get("text", "") if data.get("content") else ""
+        cleaned = text.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.split("\n", 1)[1] if "\n" in cleaned else cleaned
+            if cleaned.endswith("```"):
+                cleaned = cleaned.rsplit("```", 1)[0]
+        try:
+            parsed = json.loads(cleaned)
+        except Exception:
+            parsed = {"explanation_jp": text[:600] if text else "JSON parse 失敗",
+                      "final_answer": "", "solution_steps": [],
+                      "subject": "other", "topic": "?", "confidence_self": "low"}
+
+        return {
+            "ai_id": ai_id,
+            "label": ai_def["label"],
+            "model": data.get("_actual_model") or ai_def["model"],
+            "provider": data.get("_provider") or ai_def["kind"],
+            "subject": (parsed.get("subject") or "other").strip().lower(),
+            "topic": (parsed.get("topic") or "").strip(),
+            "difficulty_level": (parsed.get("difficulty_level") or "standard").strip(),
+            "problem_text": (parsed.get("problem_text") or "").strip(),
+            "solution_steps": parsed.get("solution_steps") or [],
+            "final_answer": (parsed.get("final_answer") or "").strip(),
+            "explanation_jp": (parsed.get("explanation_jp") or "").strip(),
+            "confidence_self": (parsed.get("confidence_self") or "medium").strip().lower(),
+            "elapsed_ms": int((_t.time() - t0) * 1000),
+        }
+    except Exception as e:
+        return {
+            "ai_id": ai_id,
+            "label": ai_def["label"],
+            "model": ai_def["model"],
+            "error": f"{type(e).__name__}: {str(e)[:200]}",
+            "elapsed_ms": int((_t.time() - t0) * 1000),
+        }
+
+
+def _consolidate_solve_answers(successful: list) -> dict:
+    """3 AI の解答から consensus + confidence を計算。
+    - 全 AI 一致 (final_answer 正規化後で同じ) → confidence=high
+    - 過半数一致 → confidence=medium・多数派採用
+    - バラバラ → confidence=low・最も confidence_self が高い解答を primary に
+    """
+    if not successful:
+        return {"final_answer": "", "confidence": "low", "consensus": "no_data"}
+
+    def _norm(s):
+        return (s or "").strip().lower().replace(" ", "").replace("　", "")
+
+    answers = [(_norm(s.get("final_answer")), s) for s in successful]
+    # group by normalized answer
+    from collections import Counter as _C
+    counter = _C([a[0] for a in answers if a[0]])
+    if not counter:
+        # 全 AI が空 final_answer → low
+        return {
+            "final_answer": (successful[0].get("explanation_jp") or "")[:300],
+            "confidence": "low",
+            "consensus": "no_final_answer",
+            "primary_ai": successful[0].get("ai_id"),
+        }
+    top_norm, top_count = counter.most_common(1)[0]
+    matching = [a[1] for a in answers if a[0] == top_norm]
+    if top_count == len(successful):
+        # 全員一致
+        primary = matching[0]
+        return {
+            "final_answer": primary.get("final_answer"),
+            "explanation_jp": primary.get("explanation_jp"),
+            "confidence": "high",
+            "consensus": f"unanimous_{len(successful)}",
+            "primary_ai": primary.get("ai_id"),
+        }
+    if top_count >= 2:
+        # 過半数一致 (3 AI 中 2)
+        primary = matching[0]
+        return {
+            "final_answer": primary.get("final_answer"),
+            "explanation_jp": primary.get("explanation_jp"),
+            "confidence": "medium",
+            "consensus": f"majority_{top_count}_of_{len(successful)}",
+            "primary_ai": primary.get("ai_id"),
+            "dissenting_ai": [a[1].get("ai_id") for a in answers if a[0] != top_norm],
+        }
+    # バラバラ → confidence_self が最も高い解答を primary
+    rank = {"high": 3, "medium": 2, "low": 1}
+    primary = max(successful, key=lambda s: rank.get(s.get("confidence_self"), 0))
+    return {
+        "final_answer": primary.get("final_answer"),
+        "explanation_jp": primary.get("explanation_jp"),
+        "confidence": "low",
+        "consensus": "split",
+        "primary_ai": primary.get("ai_id"),
+        "note": "3 AI の解答が分かれました。各解答を比較学習の機会としてご活用ください。",
+    }
+
+
+@app.post("/api/ai-tutor/solve-from-image")
+async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] = Header(None)):
+    """🌟 3 AI 写真/PDF 完璧解答 + 2 回チェック (essay_review mode)
+    塾長指示 2026-05-13「アプリ使いやすさアピール」の実装。
+
+    payload:
+      {
+        "image_base64": "<base64>" (image or PDF),
+        "mime_type": "image/jpeg" | "image/png" | "image/webp" | "application/pdf",
+        "problem_text": "<生徒の補足説明>" (optional),
+        "mode": "standard" | "essay_review" (default: "standard"),
+        "auto_mode": true (default true・記述式/国語を auto 検出して essay_review へ昇格),
+        "student_id": <int>
+      }
+
+    mode:
+      - standard: 3 AI 並列 1 回 (~15s, 計算/標準問題向き)
+      - essay_review: 3 AI Round 1 → Round 2 相互検証 (~30s, 記述式/国語の精度↑)
+
+    rate limit: 1h 10 回 / student。
+    """
+    import asyncio as _asyncio
+    import base64 as _b64
+
+    image_b64 = (payload.get("image_base64") or "").strip()
+    mime = (payload.get("mime_type") or "image/jpeg").strip()
+    problem_text = (payload.get("problem_text") or "").strip()
+    mode = (payload.get("mode") or "standard").strip().lower()
+    auto_mode = bool(payload.get("auto_mode", True))
+    student_id = payload.get("student_id")
+
+    if mode not in ("standard", "essay_review"):
+        mode = "standard"
+
+    # 🛡️ 認証 + rate limit
+    is_admin_call = False
+    if authorization and authorization.startswith("Bearer "):
+        _admin_token_try = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(_admin_token_try):
+            is_admin_call = True
+
+    try:
+        student_id = int(student_id) if student_id else 0
+    except (TypeError, ValueError):
+        student_id = 0
+
+    if not is_admin_call:
+        if not student_id or student_id <= 0:
+            raise HTTPException(status_code=403, detail="ログインが必要です (student_id 未提供)")
+        conn_auth = db()
+        try:
+            c_auth = conn_auth.cursor()
+            c_auth.execute("SELECT id FROM students WHERE id = ?", (student_id,))
+            if not c_auth.fetchone():
+                raise HTTPException(status_code=403, detail="存在しない生徒 ID です")
+        finally:
+            conn_auth.close()
+        _check_solve_rate(student_id)
+
+    # validation
+    if not image_b64 and not problem_text:
+        raise HTTPException(status_code=400, detail="image_base64 か problem_text のいずれか必須")
+    mime_pdf = (mime == "application/pdf")
+    if image_b64:
+        try:
+            decoded = _b64.b64decode(image_b64, validate=True)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"image_base64 decode 失敗: {e}")
+        max_size = 10 * 1024 * 1024 if mime_pdf else 5 * 1024 * 1024
+        if len(decoded) > max_size:
+            raise HTTPException(status_code=400,
+                                detail=f"ファイルが大きすぎます ({'PDF 10MB' if mime_pdf else '画像 5MB'} 以内)")
+        if mime not in ("image/jpeg", "image/png", "image/webp", "application/pdf"):
+            raise HTTPException(status_code=400, detail="mime_type は jpeg/png/webp/pdf のみ")
+    if problem_text and len(problem_text) > 4000:
+        raise HTTPException(status_code=400, detail="problem_text が長すぎます (4000 文字以内)")
+
+    # Round 1: 3 AI 並列で独立解答
+    import time as _t
+    t0_total = _t.time()
+    loop = _asyncio.get_running_loop()
+    ai_ids = list(_SOLVE_AI_DEFINITIONS.keys())
+    tasks_r1 = []
+    for aid in ai_ids:
+        future = loop.run_in_executor(
+            None, _solve_one_ai, aid, image_b64, mime, mime_pdf, problem_text, None
+        )
+        tasks_r1.append(_asyncio.wait_for(future, timeout=90))
+
+    r1_results = await _asyncio.gather(*tasks_r1, return_exceptions=True)
+    round1 = []
+    for i, aid in enumerate(ai_ids):
+        r = r1_results[i]
+        if isinstance(r, (_asyncio.TimeoutError, TimeoutError)):
+            round1.append({"ai_id": aid, "label": _SOLVE_AI_DEFINITIONS[aid]["label"],
+                           "model": _SOLVE_AI_DEFINITIONS[aid]["model"], "error": "timeout (90s)"})
+        elif isinstance(r, Exception):
+            round1.append({"ai_id": aid, "label": _SOLVE_AI_DEFINITIONS[aid]["label"],
+                           "model": _SOLVE_AI_DEFINITIONS[aid]["model"],
+                           "error": f"{type(r).__name__}: {str(r)[:200]}"})
+        else:
+            round1.append(r)
+
+    successful_r1 = [r for r in round1 if "final_answer" in r and "error" not in r]
+    # 3視点 review 致命#1 対応: PDF は Claude のみ対応のため最低 1 AI で許容、画像は 2 AI 以上必須
+    min_required = 1 if mime_pdf else 2
+    if len(successful_r1) < min_required:
+        raise HTTPException(
+            status_code=502,
+            detail=f"3 AI 中 {len(successful_r1)} のみ応答 (必要 {min_required}+)。再試行を推奨します。"
+        )
+
+    # auto_mode 判定: Round 1 の subject から essay_review 昇格判定
+    auto_promoted = False
+    if auto_mode and mode == "standard":
+        # 過半数が「japanese / english」かつ topic に「記述/作文/読解/論述」を含む → 昇格
+        subjects = [r.get("subject", "") for r in successful_r1]
+        topics = [r.get("topic", "") for r in successful_r1]
+        essay_keywords = ("記述", "作文", "論述", "読解", "essay", "要約", "summary")
+        is_japanese = any(s == "japanese" for s in subjects)
+        is_english_essay = sum(1 for s in subjects if s == "english") >= 2 and any(
+            any(k in t for k in essay_keywords) for t in topics
+        )
+        # 難問判定: hard が過半数
+        is_hard = sum(1 for r in successful_r1 if r.get("difficulty_level") == "hard") >= 2
+        if is_japanese or is_english_essay or is_hard:
+            mode = "essay_review"
+            auto_promoted = True
+
+    # Round 2 (essay_review mode のみ): 各 AI に他 AI の Round 1 解答を見せて再評価
+    round2 = None
+    if mode == "essay_review":
+        tasks_r2 = []
+        for aid in ai_ids:
+            future = loop.run_in_executor(
+                None, _solve_one_ai, aid, image_b64, mime, mime_pdf, problem_text, successful_r1
+            )
+            tasks_r2.append(_asyncio.wait_for(future, timeout=90))
+        r2_results = await _asyncio.gather(*tasks_r2, return_exceptions=True)
+        round2 = []
+        for i, aid in enumerate(ai_ids):
+            r = r2_results[i]
+            if isinstance(r, (_asyncio.TimeoutError, TimeoutError)):
+                round2.append({"ai_id": aid, "label": _SOLVE_AI_DEFINITIONS[aid]["label"],
+                               "model": _SOLVE_AI_DEFINITIONS[aid]["model"], "error": "timeout (90s)"})
+            elif isinstance(r, Exception):
+                round2.append({"ai_id": aid, "label": _SOLVE_AI_DEFINITIONS[aid]["label"],
+                               "model": _SOLVE_AI_DEFINITIONS[aid]["model"],
+                               "error": f"{type(r).__name__}: {str(r)[:200]}"})
+            else:
+                round2.append(r)
+
+    # 統合 (Round 2 があればそれを優先・なければ Round 1)
+    successful_final = [r for r in (round2 or round1) if "final_answer" in r and "error" not in r]
+    if not successful_final:
+        successful_final = successful_r1  # fallback
+    consensus = _consolidate_solve_answers(successful_final)
+    elapsed_ms_total = int((_t.time() - t0_total) * 1000)
+
+    # subject_guess / topic_guess (多数派採用)
+    subjects = [r.get("subject", "other") for r in successful_final]
+    topics = [r.get("topic", "") for r in successful_final if r.get("topic")]
+    from collections import Counter as _Counter
+    subject_guess = _Counter(subjects).most_common(1)[0][0] if subjects else "other"
+    topic_guess = _Counter(topics).most_common(1)[0][0] if topics else ""
+
+    # ai_tutor_solve_log に保存 (弱点ストック準備)
+    try:
+        conn_log = db()
+        c_log = conn_log.cursor()
+        c_log.execute(
+            "INSERT INTO ai_tutor_solve_log "
+            "(student_id, mode, subject_guess, topic_guess, problem_text, has_image, "
+            " round_count, final_answer, confidence, ai_models, elapsed_ms) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                student_id or None,
+                mode,
+                subject_guess,
+                topic_guess[:200] if topic_guess else None,
+                (problem_text or successful_final[0].get("problem_text", ""))[:1000] if successful_final else None,
+                1 if image_b64 else 0,
+                2 if round2 else 1,
+                (consensus.get("final_answer") or "")[:1000],
+                consensus.get("confidence", "low"),
+                ",".join(r.get("ai_id", "?") for r in successful_final),
+                elapsed_ms_total,
+            ),
+        )
+        conn_log.commit()
+        conn_log.close()
+    except Exception as ee:
+        log.warning(f"[solve-from-image] db log failed: {ee}")
+
+    # event 記録
+    try:
+        _record_ai_critical_event("tutor_solve_done", {
+            "mode": mode,
+            "auto_promoted": auto_promoted,
+            "subject_guess": subject_guess,
+            "topic_guess": topic_guess[:80] if topic_guess else None,
+            "confidence": consensus.get("confidence"),
+            "successful_r1": len(successful_r1),
+            "successful_final": len(successful_final),
+            "round_count": 2 if round2 else 1,
+            "elapsed_ms": elapsed_ms_total,
+            "student_id": student_id,
+            "is_admin": is_admin_call,
+        })
+    except Exception as ee:
+        log.warning(f"[solve-from-image] event log failed: {ee}")
+
+    return {
+        "ok": True,
+        "mode": mode,
+        "auto_promoted": auto_promoted,
+        "subject_guess": subject_guess,
+        "topic_guess": topic_guess,
+        "round1": round1,
+        "round2": round2,  # essay_review 時のみ存在
+        "consensus": consensus,
         "elapsed_ms_total": elapsed_ms_total,
     }
 

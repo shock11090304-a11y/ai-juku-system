@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script src="cache-purge.js?v=20260513-1"></script>
+<title>📷 写真で質問・3 AI 完璧解答 | AI学習コーチ塾</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  .tp-container { max-width: 900px; margin: 1.5rem auto; padding: 0 1rem; }
+  .tp-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 1.2rem; margin-bottom: 1rem; }
+  .tp-card h2 { font-size: 1.1rem; color: #a78bfa; margin: 0 0 0.6rem; }
+  .tp-drop { border: 2px dashed rgba(167,139,250,0.4); border-radius: 12px; padding: 2.2rem 1rem; text-align: center; cursor: pointer; background: rgba(99,102,241,0.04); transition: all 0.2s; }
+  .tp-drop:hover, .tp-drop.dragover { background: rgba(99,102,241,0.12); border-color: #a78bfa; }
+  .tp-drop input { display: none; }
+  .tp-preview { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.8rem; }
+  .tp-preview .thumb { position: relative; width: 120px; min-height: 80px; border-radius: 8px; overflow: hidden; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; }
+  .tp-preview img { width: 100%; height: 100%; object-fit: cover; }
+  .tp-preview .pdf-icon { font-size: 2rem; color: #a78bfa; }
+  .tp-preview .filename { font-size: 0.7rem; color: #a1a1aa; padding: 0.2rem; word-break: break-all; }
+  .tp-preview .x { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.7); color: white; border: none; width: 22px; height: 22px; border-radius: 50%; cursor: pointer; font-weight: 800; }
+  .tp-form textarea { width: 100%; padding: 0.6rem 0.8rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #e4e4e7; font-size: 0.95rem; box-sizing: border-box; min-height: 80px; resize: vertical; }
+  .tp-form label { display: block; font-size: 0.82rem; color: #a1a1aa; margin-bottom: 0.3rem; font-weight: 700; }
+  .tp-mode { display: flex; gap: 0.7rem; flex-wrap: wrap; margin-top: 0.6rem; }
+  .tp-mode label { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 0.5rem 0.8rem; cursor: pointer; font-weight: 600; color: #e4e4e7; font-size: 0.9rem; }
+  .tp-mode input[type="radio"] { margin-right: 0.3rem; }
+  .tp-mode label.active { background: rgba(167,139,250,0.18); border-color: #a78bfa; }
+  .tp-btn { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; padding: 0.8rem 1.6rem; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 1rem; }
+  .tp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .tp-loading { color: #a1a1aa; font-size: 0.9rem; text-align: center; padding: 1rem; }
+  .tp-loading .spinner { display: inline-block; width: 1.2rem; height: 1.2rem; border: 2px solid rgba(167,139,250,0.3); border-top-color: #a78bfa; border-radius: 50%; animation: tp-spin 0.8s linear infinite; vertical-align: middle; margin-right: 0.5rem; }
+  @keyframes tp-spin { to { transform: rotate(360deg); } }
+  .tp-confidence { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 6px; font-weight: 700; font-size: 0.82rem; margin-left: 0.5rem; }
+  .tp-confidence.high { background: rgba(34,197,94,0.2); color: #4ade80; border: 1px solid rgba(34,197,94,0.4); }
+  .tp-confidence.medium { background: rgba(251,191,36,0.18); color: #fbbf24; border: 1px solid rgba(251,191,36,0.4); }
+  .tp-confidence.low { background: rgba(248,113,113,0.18); color: #fca5a5; border: 1px solid rgba(248,113,113,0.4); }
+  .tp-result-final { background: rgba(99,102,241,0.12); border: 1px solid rgba(167,139,250,0.3); border-radius: 10px; padding: 1rem; margin-bottom: 1rem; }
+  .tp-result-final h3 { color: #a78bfa; margin: 0 0 0.5rem; font-size: 1.05rem; }
+  .tp-result-final .final-answer { font-size: 1.05rem; font-weight: 700; color: #fde68a; margin-bottom: 0.5rem; }
+  .tp-result-final .explanation { color: #e4e4e7; font-size: 0.92rem; white-space: pre-wrap; line-height: 1.6; }
+  .tp-ai-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 0.9rem; margin-bottom: 0.7rem; }
+  .tp-ai-card h4 { margin: 0 0 0.5rem; font-size: 0.95rem; color: #c4b5fd; }
+  .tp-ai-card .ai-meta { color: #a1a1aa; font-size: 0.78rem; margin-bottom: 0.4rem; }
+  .tp-ai-card .ai-answer { color: #fde68a; font-weight: 700; margin: 0.4rem 0; }
+  .tp-ai-card details { margin-top: 0.4rem; }
+  .tp-ai-card details summary { cursor: pointer; color: #a78bfa; font-size: 0.85rem; font-weight: 700; }
+  .tp-ai-card details .step-list { list-style: decimal inside; color: #d4d4d8; font-size: 0.88rem; line-height: 1.7; margin: 0.4rem 0 0 0; padding-left: 0.5rem; }
+  .tp-ai-card details .explanation { color: #e4e4e7; font-size: 0.88rem; white-space: pre-wrap; line-height: 1.6; margin-top: 0.5rem; padding: 0.5rem; background: rgba(0,0,0,0.25); border-radius: 6px; }
+  .tp-meta-info { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.82rem; color: #a1a1aa; margin-bottom: 0.8rem; }
+  .tp-meta-info span { background: rgba(255,255,255,0.05); padding: 0.2rem 0.6rem; border-radius: 5px; }
+  .tp-error { background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.3); color: #fca5a5; padding: 0.8rem; border-radius: 8px; font-size: 0.88rem; }
+  .tp-note { font-size: 0.85rem; color: #a1a1aa; padding: 0.7rem; background: rgba(0,0,0,0.2); border-radius: 8px; line-height: 1.6; margin-top: 0.6rem; }
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="header-inner">
+    <a href="index.html" class="logo">🎓 AI学習コーチ塾</a>
+    <nav><a href="mypage.html">マイページ</a></nav>
+  </div>
+</header>
+
+<main class="tp-container">
+  <h1 style="font-size:1.6rem;color:#e4e4e7;">📷 写真で質問・3 AI 完璧解答</h1>
+  <p style="color:#a1a1aa;font-size:0.92rem;line-height:1.7;">
+    分からない問題の写真や PDF をアップロードすると、<strong style="color:#fde68a;">3 つの AI (Claude / GPT / Gemini)</strong> が並列で解答を作成し、答えを照合して最も信頼性の高い解答をお届けします。
+    記述式・国語問題は <strong style="color:#fbbf24;">2 回チェック</strong> モードで精度を更に高めます。
+  </p>
+
+  <section class="tp-card">
+    <h2>① 問題の写真 or PDF をアップロード</h2>
+    <label for="tpFile" class="tp-drop" id="tpDrop">
+      <div style="font-size:2.5rem;">📷📄</div>
+      <div style="font-weight:700;color:#e4e4e7;margin:0.5rem 0;">タップしてファイルを選択 / ここにドロップ</div>
+      <div style="font-size:0.82rem;color:#a1a1aa;">JPG / PNG / WEBP (5MBまで) / PDF (10MBまで)</div>
+      <input type="file" id="tpFile" accept="image/jpeg,image/png,image/webp,application/pdf" />
+    </label>
+    <div class="tp-preview" id="tpPreview"></div>
+  </section>
+
+  <section class="tp-card tp-form">
+    <h2>② 補足説明 (任意・問題の状況を補足)</h2>
+    <textarea id="tpProblemText" placeholder="例: 数学 II の章末問題です・(3) で詰まっています など"></textarea>
+  </section>
+
+  <section class="tp-card">
+    <h2>③ 解答モードを選択</h2>
+    <div class="tp-mode" id="tpModeRow">
+      <label class="active"><input type="radio" name="tpMode" value="auto" checked /> 🤖 自動 (おすすめ)</label>
+      <label><input type="radio" name="tpMode" value="standard" /> ⚡ 通常 (3 AI · ~15 秒)</label>
+      <label><input type="radio" name="tpMode" value="essay_review" /> 🎯 精密 (3 AI × 2 回 · ~30 秒)</label>
+    </div>
+    <div class="tp-note">
+      <strong>自動モード</strong>: AI が問題を見て「記述式・国語」と判定したら自動的に「精密モード」に切り替えます。<br>
+      <strong>通常モード</strong>: 計算問題・標準問題向き (1 時間 10 回まで)。<br>
+      <strong>精密モード</strong>: 記述式・国語の論述・大学入試難問向き (Round 1 独立解答 → Round 2 相互検証で精度↑)。
+    </div>
+  </section>
+
+  <div style="text-align:center;margin:1.5rem 0;">
+    <button class="tp-btn" id="tpSolve" disabled>🔍 AI に解いてもらう</button>
+  </div>
+
+  <section class="tp-card" id="tpResultCard" style="display:none;">
+    <h2>④ 解答結果</h2>
+    <div id="tpResult"></div>
+  </section>
+</main>
+
+<script>
+'use strict';
+(function(){
+  const state = { file: null, base64: '', mime: '', isPdf: false };
+
+  const $drop = document.getElementById('tpDrop');
+  const $file = document.getElementById('tpFile');
+  const $preview = document.getElementById('tpPreview');
+  const $problemText = document.getElementById('tpProblemText');
+  const $modeRow = document.getElementById('tpModeRow');
+  const $solve = document.getElementById('tpSolve');
+  const $resultCard = document.getElementById('tpResultCard');
+  const $result = document.getElementById('tpResult');
+
+  function updateButton() {
+    const hasFile = !!state.base64;
+    const hasText = ($problemText.value || '').trim().length > 0;
+    $solve.disabled = !(hasFile || hasText);
+  }
+
+  function readFile(file) {
+    if (!file) return;
+    const allowed = ['image/jpeg','image/png','image/webp','application/pdf'];
+    if (!allowed.includes(file.type)) {
+      alert('JPG / PNG / WEBP / PDF のみ対応です');
+      return;
+    }
+    const isPdf = file.type === 'application/pdf';
+    const max = isPdf ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (file.size > max) {
+      alert((isPdf ? 'PDF は 10MB' : '画像は 5MB') + ' 以内にしてください');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function() {
+      const dataUrl = reader.result;
+      const b64 = dataUrl.split(',')[1] || '';
+      state.file = file;
+      state.base64 = b64;
+      state.mime = file.type;
+      state.isPdf = isPdf;
+      renderPreview();
+      updateButton();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function renderPreview() {
+    $preview.innerHTML = '';
+    if (!state.file) return;
+    const thumb = document.createElement('div');
+    thumb.className = 'thumb';
+    if (state.isPdf) {
+      thumb.innerHTML = '<div style="text-align:center;"><div class="pdf-icon">📄</div><div class="filename">' + escapeHTML(state.file.name) + '</div></div>';
+    } else {
+      const img = document.createElement('img');
+      img.src = 'data:' + state.mime + ';base64,' + state.base64;
+      thumb.appendChild(img);
+    }
+    const xBtn = document.createElement('button');
+    xBtn.className = 'x';
+    xBtn.textContent = '×';
+    xBtn.onclick = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      state.file = null; state.base64 = ''; state.mime = ''; state.isPdf = false;
+      $file.value = '';
+      renderPreview();
+      updateButton();
+    };
+    thumb.appendChild(xBtn);
+    $preview.appendChild(thumb);
+  }
+
+  function escapeHTML(s) {
+    return String(s || '').replace(/[&<>"']/g, function(c) {
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+    });
+  }
+
+  $file.addEventListener('change', function() {
+    if ($file.files && $file.files[0]) readFile($file.files[0]);
+  });
+
+  ['dragenter','dragover'].forEach(function(ev){
+    $drop.addEventListener(ev, function(e){ e.preventDefault(); $drop.classList.add('dragover'); });
+  });
+  ['dragleave','drop'].forEach(function(ev){
+    $drop.addEventListener(ev, function(e){ e.preventDefault(); $drop.classList.remove('dragover'); });
+  });
+  $drop.addEventListener('drop', function(e){
+    e.preventDefault();
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+      readFile(e.dataTransfer.files[0]);
+    }
+  });
+
+  $problemText.addEventListener('input', updateButton);
+
+  // mode radio active class
+  $modeRow.addEventListener('change', function() {
+    $modeRow.querySelectorAll('label').forEach(function(l) { l.classList.remove('active'); });
+    const checked = $modeRow.querySelector('input:checked');
+    if (checked) checked.parentElement.classList.add('active');
+  });
+
+  function getStudentId() {
+    // 既存 ai-juku 共通: localStorage に保存されている student_id
+    try {
+      const sid = parseInt(localStorage.getItem('student_id') || '0', 10);
+      return sid > 0 ? sid : null;
+    } catch (e) { return null; }
+  }
+
+  $solve.addEventListener('click', async function() {
+    const sid = getStudentId();
+    if (!sid) {
+      alert('ログインが必要です。マイページからログインしてください。');
+      location.href = 'auth.html';
+      return;
+    }
+    const modeChoice = ($modeRow.querySelector('input:checked') || {}).value || 'auto';
+    let mode = 'standard';
+    let auto_mode = true;
+    if (modeChoice === 'standard') { mode = 'standard'; auto_mode = false; }
+    else if (modeChoice === 'essay_review') { mode = 'essay_review'; auto_mode = false; }
+    else { mode = 'standard'; auto_mode = true; }
+
+    $solve.disabled = true;
+    $resultCard.style.display = 'block';
+    $result.innerHTML = '<div class="tp-loading"><span class="spinner"></span>3 AI が並列で解答を作成中…' +
+      (mode === 'essay_review' ? ' (精密モード・~30 秒)' : ' (~15 秒)') + '</div>';
+
+    const payload = {
+      student_id: sid,
+      mode: mode,
+      auto_mode: auto_mode,
+      problem_text: $problemText.value || '',
+    };
+    if (state.base64) {
+      payload.image_base64 = state.base64;
+      payload.mime_type = state.mime;
+    }
+
+    try {
+      const r = await fetch('/api/ai-tutor/solve-from-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await r.json();
+      if (!r.ok || !data.ok) {
+        $result.innerHTML = '<div class="tp-error">エラー: ' + escapeHTML(data.detail || data.error || JSON.stringify(data)) + '</div>';
+        $solve.disabled = false;
+        return;
+      }
+      renderResult(data);
+    } catch (e) {
+      $result.innerHTML = '<div class="tp-error">通信エラー: ' + escapeHTML(String(e)) + '</div>';
+    } finally {
+      $solve.disabled = false;
+    }
+  });
+
+  function renderResult(data) {
+    const consensus = data.consensus || {};
+    const conf = (consensus.confidence || 'low');
+    const confLabel = {high:'信頼度: 高 ✅', medium:'信頼度: 中 ⚠️', low:'信頼度: 低 ❓'}[conf] || conf;
+
+    let html = '';
+    // メタ情報
+    html += '<div class="tp-meta-info">';
+    html += '<span>📚 ' + escapeHTML(data.subject_guess || '?') + '</span>';
+    if (data.topic_guess) html += '<span>📌 ' + escapeHTML(data.topic_guess) + '</span>';
+    html += '<span>⏱ ' + Math.round((data.elapsed_ms_total || 0) / 1000) + ' 秒</span>';
+    html += '<span>🔄 ' + (data.round2 ? '2 回チェック' : '1 回解答') + '</span>';
+    if (data.auto_promoted) html += '<span style="color:#fbbf24;">🤖 自動で精密モードへ昇格</span>';
+    html += '</div>';
+
+    // 統合解答
+    html += '<div class="tp-result-final">';
+    html += '<h3>🎯 最終解答 <span class="tp-confidence ' + conf + '">' + confLabel + '</span></h3>';
+    html += '<div class="final-answer">' + escapeHTML(consensus.final_answer || '(解答抽出できず)') + '</div>';
+    if (consensus.explanation_jp) {
+      html += '<div class="explanation">' + escapeHTML(consensus.explanation_jp) + '</div>';
+    }
+    if (consensus.consensus === 'split' && consensus.note) {
+      html += '<div style="margin-top:0.6rem;color:#fbbf24;font-size:0.85rem;">⚠ ' + escapeHTML(consensus.note) + '</div>';
+    }
+    html += '</div>';
+
+    // 各 AI の解答 (Round 2 があればそれ・なければ Round 1)
+    const finalRound = data.round2 || data.round1 || [];
+    html += '<h3 style="color:#a78bfa;font-size:1rem;margin:1rem 0 0.5rem;">📊 3 AI それぞれの解答</h3>';
+    finalRound.forEach(function(ai) {
+      html += '<div class="tp-ai-card">';
+      html += '<h4>' + escapeHTML(ai.label || ai.ai_id) + '</h4>';
+      html += '<div class="ai-meta">' + escapeHTML(ai.model || '') + ' · ' + Math.round((ai.elapsed_ms || 0) / 1000) + 's';
+      if (ai.confidence_self) html += ' · 自信: ' + escapeHTML(ai.confidence_self);
+      html += '</div>';
+      if (ai.error) {
+        html += '<div class="tp-error" style="margin:0.4rem 0;">⚠ ' + escapeHTML(ai.error) + '</div>';
+      } else {
+        if (ai.final_answer) html += '<div class="ai-answer">→ ' + escapeHTML(ai.final_answer) + '</div>';
+        if (ai.solution_steps && ai.solution_steps.length) {
+          html += '<details><summary>解答手順 (' + ai.solution_steps.length + ' steps)</summary>';
+          html += '<ol class="step-list">';
+          ai.solution_steps.forEach(function(s) { html += '<li>' + escapeHTML(s) + '</li>'; });
+          html += '</ol></details>';
+        }
+        if (ai.explanation_jp) {
+          html += '<details><summary>解説</summary><div class="explanation">' + escapeHTML(ai.explanation_jp) + '</div></details>';
+        }
+      }
+      html += '</div>';
+    });
+    $result.innerHTML = html;
+  }
+
+  updateButton();
+})();
+</script>
+</body>
+</html>
