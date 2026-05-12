@@ -66,6 +66,7 @@
   <button class="tab" data-tab="history">📅 月別履歴</button>
   <button class="tab" data-tab="import">📥 CSV/PDF取込</button>
   <button class="tab" data-tab="invoice">📄 請求書PDF</button>
+  <button class="tab" data-tab="monthend" style="background:linear-gradient(135deg,rgba(239,68,68,0.18),rgba(245,158,11,0.15));border:1px solid rgba(239,68,68,0.45);">💳 月末引き落とし</button>
   <button class="tab" data-tab="communication">📨 連絡</button>
   <button class="tab" data-tab="chat">💬 チャット<span id="chatGlobalUnread" class="chat-global-badge hidden">0</span></button>
 </nav>
@@ -365,6 +366,85 @@
       <strong>使い方:</strong> 楽天銀行ビジネス → 入出金明細CSVをDL → ここにD&D → 自動マッチを確認 → 「確定して入金反映」で <strong>翌月分</strong> の payments に書込まれます。<br>
       <strong>除外パターン:</strong> <code>ラクテンショウケン</code> / <code>カ−ド出金</code> / <code>口座振替</code> / <code>ATM</code> / <code>テレボ</code> など自動でノイズ判定。<br>
       <strong>振込人名学習:</strong> 一度紐付けると <code>payerNames</code> に保存され、次回CSVでは自動マッチします（親名義↔子供生徒）。
+    </div>
+  </section>
+
+  <!-- 💳 月末一斉引き落とし (Stripe Setup Mode + 月末バッチ請求) ・2026-05-13 塾長指示で実装 -->
+  <section class="panel hidden" data-panel="monthend">
+    <div class="panel-head">
+      <h2>💳 月末一斉引き落とし <span class="month-tag" id="monthEndMonthTag">—</span></h2>
+      <div class="panel-actions">
+        <input type="password" class="search-input" id="monthEndAdminPw" placeholder="🔒 管理パスワード" style="width:200px" autocomplete="current-password">
+        <button class="btn btn-ghost btn-sm" id="monthEndRefreshBtn">🔄 プレビュー更新</button>
+      </div>
+    </div>
+
+    <div class="hint" style="margin-bottom:1rem;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);">
+      <strong>⚠️ 重要な運用ルール</strong><br>
+      ① 月末頃にこのタブで顧客一覧 (生徒名 × 月額) を確認<br>
+      ② 「📊 ドライラン」で実行前にシミュレーション (実際の課金は発生しない)<br>
+      ③ 金額に問題なければ「🚀 一斉引き落とし実行」(赤いボタン) を押下 → 全カードに同時請求<br>
+      ④ 当月既に引き落とし済みの顧客は自動 skip (重複請求防止)<br>
+      ⑤ 失敗した顧客はリストに赤色で表示 → 個別対応<br>
+      <span style="color:var(--text-dim);font-size:0.85rem;">※ AI塾の課金 (¥14,500/月) とは完全に分離されています</span>
+    </div>
+
+    <div id="monthEndSummary" class="dash-cards" style="margin-bottom:1rem;display:none">
+      <div class="dash-card">
+        <div class="dash-card-label">登録顧客数</div>
+        <div class="dash-card-value" id="monthEndTotalCustomers">—</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card-label">引き落とし可能</div>
+        <div class="dash-card-value" id="monthEndReadyCount" style="color:var(--success);">—</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card-label">合計引き落とし額</div>
+        <div class="dash-card-value" id="monthEndTotalAmount" style="color:var(--primary-light);">—</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card-label">当月引き落とし済</div>
+        <div class="dash-card-value" id="monthEndAlreadyCount" style="color:var(--text-dim);">—</div>
+      </div>
+    </div>
+
+    <!-- 安全配慮: CSV → ドライラン → (空白) → 実行 の順で並べ、危険ボタンと他のボタンの距離を確保 -->
+    <div id="monthEndActionBar" style="margin-bottom:1rem;display:none;gap:0.5rem;flex-wrap:wrap;align-items:center;display:flex;">
+      <button class="btn btn-ghost" id="monthEndExportCsvBtn">📥 CSV エクスポート</button>
+      <button class="btn btn-ghost" id="monthEndDryRunBtn">📊 ドライラン (シミュレーション)</button>
+      <span style="flex:1;min-width:1rem"></span>
+      <button class="btn" id="monthEndExecuteBtn" style="background:linear-gradient(135deg,#ef4444,#f59e0b);color:#fff;border:2px solid #ef4444;font-weight:700;padding:0.6rem 1.5rem;box-shadow:0 4px 14px rgba(239,68,68,0.3);">🚀 一斉引き落とし実行</button>
+    </div>
+
+    <div id="monthEndStatus" style="margin-bottom:1rem;"></div>
+
+    <div class="table-wrap">
+      <table class="table" id="monthEndTable">
+        <thead>
+          <tr>
+            <th>生徒氏名</th>
+            <th>学年</th>
+            <th>保護者</th>
+            <th>メール</th>
+            <th class="ta-r">月額 (¥)</th>
+            <th>内訳</th>
+            <th>状態</th>
+          </tr>
+        </thead>
+        <tbody id="monthEndTbody">
+          <tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:2rem">管理パスワードを入力して「🔄 プレビュー更新」を押してください</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="monthEndResultModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" style="display:none;">
+      <div class="modal-card" style="max-width:720px;">
+        <h2 id="monthEndResultTitle">実行結果</h2>
+        <div id="monthEndResultBody" style="max-height:60vh;overflow-y:auto;"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn-back" id="monthEndResultClose">閉じる</button>
+        </div>
+      </div>
     </div>
   </section>
 

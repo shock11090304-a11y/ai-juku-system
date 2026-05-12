@@ -16722,6 +16722,13 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
         meta = session.get("metadata", {}) or {}
+        # 🚨 2026-05-13: AI塾と juku-payment 月謝の完全分離 (二重保険)
+        # juku-payment 系イベント (system=juku-payment-monthly) は ai-juku DB に一切触らずに skip
+        # commit 308d8c4 の VALID_PLAN_KEYS check に加え、metadata.system で明示的に分岐する
+        _meta_system = (meta.get("system") or "").strip()
+        if _meta_system.startswith("juku-payment"):
+            log.info(f"[Stripe webhook] Skipping juku-payment event (system={_meta_system}) - handled by Vercel /payment/api/stripe-webhook")
+            return JSONResponse({"received": True, "skipped_reason": "juku-payment system tag"}, status_code=200)
         purchase_type = meta.get("purchase_type", "monthly")  # 既定は月額（旧互換）
         plan = meta.get("plan")
         student_id = meta.get("student_id")
@@ -16947,6 +16954,11 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
 
     elif event["type"] == "invoice.payment_succeeded":
         invoice = event["data"]["object"]
+        # 🚨 2026-05-13: AI塾と juku-payment 月謝の完全分離 (二重保険)
+        _inv_meta = invoice.get("metadata", {}) or {}
+        if (_inv_meta.get("system") or "").startswith("juku-payment"):
+            log.info(f"[Stripe webhook] Skipping juku-payment invoice (system={_inv_meta.get('system')}) - handled by Vercel webhook")
+            return JSONResponse({"received": True, "skipped_reason": "juku-payment system tag"}, status_code=200)
         conn = db()
         c = conn.cursor()
         c.execute(
@@ -16956,6 +16968,18 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
         )
         conn.commit()
         conn.close()
+
+    elif event["type"] in ("payment_intent.succeeded", "payment_intent.payment_failed", "setup_intent.succeeded"):
+        # 🚨 2026-05-13: AI塾は subscription/invoice ベースなので PaymentIntent / SetupIntent はすべて juku-payment 系として skip
+        # (もし将来 ai-juku でも PaymentIntent 直接利用する場合は metadata.system を明示的に区別すること)
+        obj = event["data"]["object"]
+        _meta = obj.get("metadata", {}) or {}
+        _sys = (_meta.get("system") or "").strip()
+        if _sys.startswith("juku-payment"):
+            log.info(f"[Stripe webhook] {event['type']} from juku-payment (system={_sys}) - handled by Vercel webhook")
+        else:
+            log.info(f"[Stripe webhook] {event['type']} from unknown source (system={_sys or 'none'}) - skip")
+        return JSONResponse({"received": True, "skipped_reason": "PaymentIntent/SetupIntent not handled by ai-juku"}, status_code=200)
 
     elif event["type"] in ("customer.subscription.deleted", "customer.subscription.canceled"):
         sub = event["data"]["object"]

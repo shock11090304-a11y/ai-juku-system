@@ -1,4 +1,8 @@
-"""Vercel Function: 月謝カード払い 自己登録 → Stripe Checkout Session 生成
+"""Vercel Function: 月謝カード払い 自己登録 → Stripe Checkout Session (Setup Mode) 生成
+
+🆕 v2 (2026-05-13): mode=subscription → mode=setup に変更。
+カード登録時の即時引き落としを廃止し、月末バッチで一斉引き落とす運用に切替。
+塾長指示「カード登録した瞬間に引き落としが確定するのは困る・月末に一斉に」(2026-05-13)。
 
 Endpoint: POST /payment/api/register-subscribe
   (vercel.json の rewrites で /api/register-subscribe に流れる)
@@ -22,9 +26,13 @@ Env:
 
 Response (200):
   { "checkoutUrl": "https://checkout.stripe.com/...", "amount": 33500, "registrationId": "reg_..." }
+  ※ amount は「月額予定」として保存するだけで即課金されない (setup mode)
 Response (400): バリデーションエラー
 Response (503): STRIPE_SECRET_KEY 未設定
 Response (502): Stripe API エラー
+
+🚨 AI塾との分離強化:
+  全 Stripe Object に metadata.system="juku-payment-monthly" を付与し、ai-juku webhook 側で skip 可能。
 """
 
 from http.server import BaseHTTPRequestHandler
@@ -212,13 +220,20 @@ def _calculate_fee(courses, options):
 # ─────────────── Stripe Checkout Session ───────────────
 
 def _create_checkout_session(secret_key, payload, fee, breakdown, registration_id, base_url):
+    """🆕 v2: mode=setup でカード保存のみ (即課金なし)。月末バッチで一斉引き落とし。
+
+    Stripe Checkout で:
+      - Customer を新規作成 (customer_creation=always)
+      - SetupIntent で card を保存
+      - 完了後、ai-juku webhook 経由で customer_id + payment_method_id を KV 保存
+    """
     student = payload["studentName"]
-    description = f"AI学習コーチ塾 月謝 — {student} ({payload['grade']})"
     desc_detail = " / ".join(breakdown)[:240]
 
     # Stripe metadata は各 value 500 字制限。安全側で 240 でtruncate
     def _cap(s, n=240):
         return (str(s) or "")[:n]
+    # 🆕 AI塾との完全分離: system=juku-payment-monthly を必ず付与
     metadata = {
         "registration_id": _cap(registration_id, 60),
         "student_name": _cap(student, 80),
@@ -229,28 +244,28 @@ def _create_checkout_session(secret_key, payload, fee, breakdown, registration_i
         "courses": _cap(",".join(payload["courses"])),
         "options": _cap(",".join(payload["options"])),
         "fee_breakdown": _cap(desc_detail),
-        "source": "self-register-v1",
+        "monthly_fee": str(fee),  # 月額 (yen) を metadata に保存 → 月末バッチで参照
+        "source": "self-register-v2-setup",
+        "system": "juku-payment-monthly",  # ai-juku webhook と区別する識別子
     }
 
+    # mode=setup: カード保存のみ・即課金なし (mode=setup の場合 customer_creation は不要・自動作成)
+    # setup_intent_data[usage]=off_session: 月末バッチで off_session 請求するための明示宣言
     form = [
-        ("mode", "subscription"),
+        ("mode", "setup"),
         ("payment_method_types[]", "card"),
         ("customer_email", payload["email"]),
         ("locale", "ja"),
         ("success_url", f"{base_url}/payment/register-complete.html?session_id={{CHECKOUT_SESSION_ID}}"),
         ("cancel_url", f"{base_url}/payment/register.html?canceled=1"),
-        ("line_items[0][price_data][currency]", "jpy"),
-        ("line_items[0][price_data][unit_amount]", str(fee)),
-        ("line_items[0][price_data][recurring][interval]", "month"),
-        ("line_items[0][price_data][product_data][name]", description),
-        ("line_items[0][price_data][product_data][description]", desc_detail),
-        ("line_items[0][quantity]", "1"),
+        ("setup_intent_data[usage]", "off_session"),
     ]
     for k, v in metadata.items():
         if v is None:
             continue
         form.append((f"metadata[{k}]", str(v)))
-        form.append((f"subscription_data[metadata][{k}]", str(v)))
+        # setup_intent_data にも同じ metadata を載せる → SetupIntent + PaymentMethod に伝播
+        form.append((f"setup_intent_data[metadata][{k}]", str(v)))
 
     body = urllib.parse.urlencode(form).encode()
     req = urllib.request.Request(

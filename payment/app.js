@@ -1289,6 +1289,7 @@ function switchTab(name) {
   else if (name === 'enrollment') renderEnrollment();
   else if (name === 'communication') renderCommunication();
   else if (name === 'chat') renderChat();
+  else if (name === 'monthend') renderMonthEnd();
 }
 
 // === Refresh all visible ===
@@ -1303,6 +1304,288 @@ function refresh() {
   else if (active === 'enrollment') renderEnrollment();
   else if (active === 'communication') renderCommunication();
   else if (active === 'chat') renderChat();
+  else if (active === 'monthend') renderMonthEnd();
+}
+
+// ===========================================================================
+// 💳 月末一斉引き落とし (Stripe Setup Mode + 月末バッチ請求) - 2026-05-13
+// ===========================================================================
+const MONTHEND_STATE = { lastPreview: null, busy: false };
+
+function fmtYenME(n) {
+  try { return '¥' + Number(n || 0).toLocaleString('ja-JP'); }
+  catch (_) { return '¥' + (n || 0); }
+}
+
+function getMonthEndAdminPw() {
+  // monthend タブ + chat タブの両方でパスワードを共有
+  const pw1 = document.getElementById('monthEndAdminPw')?.value?.trim();
+  const pw2 = document.getElementById('chatAdminPw')?.value?.trim();
+  return pw1 || pw2 || '';
+}
+
+function setMonthEndStatus(html, level) {
+  const el = document.getElementById('monthEndStatus');
+  if (!el) return;
+  const colorMap = {
+    'info':    'rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.3); color:var(--primary-light)',
+    'success': 'rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); color:var(--success)',
+    'error':   'rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); color:#f87171',
+    'warn':    'rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); color:#fbbf24',
+  };
+  const bg = colorMap[level || 'info'];
+  if (!html) { el.innerHTML = ''; el.style.cssText = ''; return; }
+  el.innerHTML = html;
+  el.style.cssText = `padding:0.75rem 1rem;border-radius:8px;background:${bg};`;
+}
+
+async function renderMonthEnd() {
+  // タブを開いた直後の初期表示。パスワード入力前は何もしない
+  const tag = document.getElementById('monthEndMonthTag');
+  if (tag) {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    tag.textContent = `${y}-${m}`;
+  }
+  // パスワード自動入力 (chat タブと共有)
+  const pwShared = document.getElementById('chatAdminPw')?.value?.trim();
+  if (pwShared && !document.getElementById('monthEndAdminPw').value) {
+    document.getElementById('monthEndAdminPw').value = pwShared;
+  }
+}
+
+async function fetchMonthEndPreview() {
+  const pw = getMonthEndAdminPw();
+  if (!pw) {
+    setMonthEndStatus('🔒 管理パスワードを入力してください', 'warn');
+    return;
+  }
+  if (MONTHEND_STATE.busy) return;
+  MONTHEND_STATE.busy = true;
+  setMonthEndStatus('⏳ プレビュー取得中...', 'info');
+  try {
+    const res = await fetch('/payment/api/admin-charge-month-end-preview', {
+      method: 'GET',
+      headers: { 'X-Admin-Password': pw },
+    });
+    if (res.status === 401) {
+      setMonthEndStatus('❌ 認証失敗。管理パスワードを確認してください', 'error');
+      MONTHEND_STATE.busy = false;
+      return;
+    }
+    const data = await res.json();
+    if (!res.ok) {
+      setMonthEndStatus(`❌ エラー: ${data.message || data.error || 'unknown'}`, 'error');
+      MONTHEND_STATE.busy = false;
+      return;
+    }
+    MONTHEND_STATE.lastPreview = data;
+    renderMonthEndTable(data);
+    setMonthEndStatus(`✅ 月 <strong>${data.month}</strong> のプレビュー取得完了 (${data.total_customers} 名)`, 'success');
+  } catch (e) {
+    setMonthEndStatus(`❌ ネットワークエラー: ${e.message}`, 'error');
+  } finally {
+    MONTHEND_STATE.busy = false;
+  }
+}
+
+function renderMonthEndTable(data) {
+  document.getElementById('monthEndMonthTag').textContent = data.month;
+  document.getElementById('monthEndTotalCustomers').textContent = data.total_customers;
+  document.getElementById('monthEndReadyCount').textContent = data.ready_count;
+  document.getElementById('monthEndTotalAmount').textContent = fmtYenME(data.total_amount);
+  document.getElementById('monthEndAlreadyCount').textContent = data.previously_charged_this_month;
+  document.getElementById('monthEndSummary').style.display = '';
+  document.getElementById('monthEndActionBar').style.display = 'flex';
+
+  const tbody = document.getElementById('monthEndTbody');
+  if (!data.customers || data.customers.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:2rem">カード登録済の顧客がまだいません</td></tr>';
+    return;
+  }
+  const rows = data.customers.map(c => {
+    let statusBadge = '';
+    if (c.alreadyChargedThisMonth) {
+      statusBadge = '<span style="color:var(--text-dim);">✅ 当月引き落とし済</span>';
+    } else if (c.ready) {
+      statusBadge = '<span style="color:var(--success);">🟢 ready</span>';
+    } else {
+      statusBadge = `<span style="color:#f87171;">⚠️ ${escapeHtmlME(c.issue || 'NG')}</span>`;
+    }
+    return `<tr>
+      <td>${escapeHtmlME(c.studentName)}</td>
+      <td>${escapeHtmlME(c.grade)}</td>
+      <td>${escapeHtmlME(c.parentName)}</td>
+      <td style="font-size:0.85rem">${escapeHtmlME(c.email)}</td>
+      <td class="ta-r"><strong>${fmtYenME(c.monthlyFee)}</strong></td>
+      <td style="font-size:0.85rem;color:var(--text-dim)">${escapeHtmlME(c.feeBreakdown)}</td>
+      <td>${statusBadge}</td>
+    </tr>`;
+  }).join('');
+  tbody.innerHTML = rows;
+}
+
+function escapeHtmlME(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+async function executeMonthEndCharge(dryRun) {
+  if (MONTHEND_STATE.busy) return;
+  const pw = getMonthEndAdminPw();
+  if (!pw) { setMonthEndStatus('🔒 管理パスワードを入力してください', 'warn'); return; }
+  const preview = MONTHEND_STATE.lastPreview;
+  if (!preview) { setMonthEndStatus('⚠️ 先に「🔄 プレビュー更新」を押してください', 'warn'); return; }
+
+  // 🚨 freshness check: preview が 10 分以上前 or 月が変わっている場合は再取得を強制
+  const previewAge = Date.now() / 1000 - (preview.preview_at || 0);
+  const nowMonth = (function() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  })();
+  if (preview.month !== nowMonth) {
+    setMonthEndStatus(`⚠️ プレビューの月 (${preview.month}) と現在月 (${nowMonth}) が一致しません。「🔄 プレビュー更新」を押してください`, 'error');
+    return;
+  }
+  if (previewAge > 600 && !dryRun) {
+    setMonthEndStatus(`⚠️ プレビューが古いです (${Math.floor(previewAge / 60)} 分前)。再度「🔄 プレビュー更新」を押してください`, 'warn');
+    return;
+  }
+
+  const month = preview.month;
+  if (!dryRun) {
+    const totalYen = fmtYenME(preview.total_amount);
+    const msg = `🚨 本当に実行しますか?\n\n${preview.ready_count} 名から合計 ${totalYen} を一斉引き落としします。\n月: ${month}\n\n実行後は取り消せません。`;
+    if (!confirm(msg)) return;
+    // 2 回目の確認: 月名を手動で入力させて typo 防止
+    const typed = prompt(`安全のため、現在月を入力してください (例: ${month}) して OK を押してください。\nキャンセルで中止できます。`);
+    if (typed === null) return;
+    if ((typed || '').trim() !== month) {
+      alert(`入力 (${typed}) が現在月 (${month}) と一致しません。中止します。`);
+      return;
+    }
+  }
+  MONTHEND_STATE.busy = true;
+  setMonthEndStatus(dryRun ? '⏳ ドライラン実行中...' : '⏳ 一斉引き落とし実行中... (数分かかる場合があります)', 'info');
+  try {
+    const res = await fetch('/payment/api/admin-charge-month-end-execute', {
+      method: 'POST',
+      headers: { 'X-Admin-Password': pw, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dryRun: dryRun, confirmMonth: month }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setMonthEndStatus(`❌ 実行エラー: ${data.message || data.error || 'unknown'}`, 'error');
+      MONTHEND_STATE.busy = false;
+      return;
+    }
+    showMonthEndResultModal(data, dryRun);
+    if (!dryRun) {
+      // プレビュー再取得 (already_charged 反映)
+      setTimeout(() => fetchMonthEndPreview(), 500);
+    }
+  } catch (e) {
+    setMonthEndStatus(`❌ ネットワークエラー: ${e.message}`, 'error');
+  } finally {
+    MONTHEND_STATE.busy = false;
+  }
+}
+
+function showMonthEndResultModal(data, dryRun) {
+  // 結果を STATE に保存 (CSV エクスポート用)
+  MONTHEND_STATE.lastResult = data;
+  const modal = document.getElementById('monthEndResultModal');
+  const title = document.getElementById('monthEndResultTitle');
+  const body = document.getElementById('monthEndResultBody');
+  title.textContent = dryRun ? '📊 ドライラン結果' : '✅ 実行結果';
+  const s = data.summary || {};
+  let html = `
+    <div style="margin-bottom:1rem;padding:1rem;background:rgba(99,102,241,0.08);border-radius:8px;">
+      <strong>月: ${data.month}</strong> ${dryRun ? '(ドライラン)' : ''}<br>
+      対象 <strong>${s.total || 0}</strong> 名・成功 <span style="color:var(--success)"><strong>${s.success || 0}</strong></span>・失敗 <span style="color:#f87171"><strong>${s.failed || 0}</strong></span>・skip <span style="color:var(--text-dim)"><strong>${s.skipped || 0}</strong></span><br>
+      合計引き落とし額: <strong style="color:var(--primary-light)">${fmtYenME(s.total_amount_charged || 0)}</strong>
+    </div>
+    <div style="margin-bottom:0.5rem;display:flex;gap:0.5rem;">
+      <button type="button" class="btn btn-ghost btn-sm" id="monthEndResultCsvBtn">📥 結果 CSV ダウンロード</button>
+    </div>
+  `;
+  if (data.results && data.results.length) {
+    html += '<table class="table" style="margin-top:0.5rem"><thead><tr><th>生徒名</th><th>メール</th><th>電話</th><th class="ta-r">金額</th><th>状態</th><th>詳細 / 対応</th></tr></thead><tbody>';
+    for (const r of data.results) {
+      let badge = '';
+      let rowStyle = '';
+      if (r.status === 'success' || r.status === 'dry_run') badge = '<span style="color:var(--success)">✅ ' + r.status + '</span>';
+      else if (r.status === 'failed') { badge = '<span style="color:#f87171">❌ failed</span>'; rowStyle = 'background:rgba(239,68,68,0.06);'; }
+      else if (r.status === 'requires_action') { badge = '<span style="color:#fbbf24">🔐 3DS 認証要</span>'; rowStyle = 'background:rgba(245,158,11,0.06);'; }
+      else if (r.status === 'uncertain') { badge = '<span style="color:#fbbf24">⚠️ 不確定 (要確認)</span>'; rowStyle = 'background:rgba(245,158,11,0.12);'; }
+      else if (r.status === 'skipped') badge = '<span style="color:var(--text-dim)">⏭ skipped</span>';
+      const detail = r.error || r.reason || r.paymentIntentId || '';
+      const email = r.email || '';
+      const phone = r.phone || '';
+      html += `<tr style="${rowStyle}">
+        <td>${escapeHtmlME(r.studentName || r.registrationId)}</td>
+        <td style="font-size:0.82rem">${escapeHtmlME(email)}</td>
+        <td style="font-size:0.82rem">${escapeHtmlME(phone)}</td>
+        <td class="ta-r">${fmtYenME(r.amount || 0)}</td>
+        <td>${badge}</td>
+        <td style="font-size:0.82rem;color:var(--text-dim);max-width:280px;word-break:break-word;">${escapeHtmlME(detail)}</td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+  }
+  body.innerHTML = html;
+  modal.classList.remove('hidden');
+  modal.style.display = 'flex';
+  // 結果 CSV ボタン bind
+  document.getElementById('monthEndResultCsvBtn')?.addEventListener('click', downloadMonthEndResultCsv);
+}
+
+function downloadMonthEndResultCsv() {
+  const data = MONTHEND_STATE.lastResult;
+  if (!data || !data.results) return;
+  const rows = [['月','生徒名','メール','電話','金額','状態','Stripe状態','PaymentIntentId','エラーコード','拒否コード','詳細','registrationId']];
+  for (const r of data.results) {
+    rows.push([
+      data.month, r.studentName || '', r.email || '', r.phone || '',
+      r.amount || 0, r.status || '', r.stripeStatus || '', r.paymentIntentId || '',
+      r.errorCode || '', r.declineCode || '',
+      (r.error || r.reason || '').replace(/[\r\n]/g, ' '),
+      r.registrationId || '',
+    ]);
+  }
+  const csv = rows.map(row => row.map(x => '"' + String(x || '').replace(/"/g, '""') + '"').join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `juku-monthly-result-${data.month}-${data.dry_run ? 'dryrun' : 'live'}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function downloadMonthEndCsv() {
+  const data = MONTHEND_STATE.lastPreview;
+  if (!data || !data.customers) return;
+  const rows = [['月','生徒氏名','学年','保護者氏名','メール','電話','月額','内訳','状態','registrationId','customerId']];
+  for (const c of data.customers) {
+    rows.push([
+      data.month, c.studentName, c.grade, c.parentName, c.email, c.phone || '',
+      c.monthlyFee, c.feeBreakdown, c.ready ? 'ready' : (c.issue || ''),
+      c.registrationId, c.customerId,
+    ]);
+  }
+  const csv = rows.map(r => r.map(x => '"' + String(x || '').replace(/"/g, '""') + '"').join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `juku-monthly-preview-${data.month}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // === Phase 2: CSV Import ===
@@ -4057,6 +4340,19 @@ function setupModals() {
   document.getElementById('importFile').addEventListener('change', (e) => {
     const f = e.target.files[0]; if (f) importAll(f);
     e.target.value = '';
+  });
+
+  // 💳 月末一斉引き落とし (2026-05-13 塾長指示)
+  document.getElementById('monthEndRefreshBtn')?.addEventListener('click', fetchMonthEndPreview);
+  document.getElementById('monthEndDryRunBtn')?.addEventListener('click', () => executeMonthEndCharge(true));
+  document.getElementById('monthEndExecuteBtn')?.addEventListener('click', () => executeMonthEndCharge(false));
+  document.getElementById('monthEndExportCsvBtn')?.addEventListener('click', downloadMonthEndCsv);
+  document.getElementById('monthEndAdminPw')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') fetchMonthEndPreview();
+  });
+  document.getElementById('monthEndResultClose')?.addEventListener('click', () => {
+    const modal = document.getElementById('monthEndResultModal');
+    if (modal) { modal.classList.add('hidden'); modal.style.display = 'none'; }
   });
 }
 

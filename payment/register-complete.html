@@ -56,33 +56,43 @@
     <div class="check-icon">
       <svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 7"></polyline></svg>
     </div>
-    <h1>登録が完了しました</h1>
-    <p class="lead">クレジットカードでの月謝自動引き落としの設定が完了しました。<br>ご登録のメールアドレス宛に Stripe より領収書が届きます。</p>
+    <h1>カード登録が完了しました</h1>
+    <p class="lead">クレジットカードの登録が完了しました。<br><strong style="color:var(--success);">本日の引き落としはありません</strong>。月謝は <strong>月末</strong> に自動で引き落とされます。</p>
 
     <div class="info-box">
-      <strong>📅 今後の流れ</strong>
+      <strong>📅 引き落としについて</strong>
       <ul>
-        <li>本日付で初回のお支払いが完了しています (前払い分)</li>
-        <li>次回引き落とし予定日: <strong id="nextBillDate" style="color:var(--primary-light);">計算中...</strong></li>
-        <li>以降毎月同日に自動で引き落とされます</li>
-        <li>カード情報の変更・解約は領収書メール内のリンクからいつでも可能です</li>
-        <li>ご不明点は塾長 LINE までお問い合わせください</li>
+        <li><strong>本日の課金は発生しません</strong> (カード情報の保存のみ)</li>
+        <li>初回引き落とし予定日: <strong id="nextBillDate" style="color:var(--primary-light);">計算中...</strong> (今月末)</li>
+        <li>以降毎月の月末に、塾長が金額を確認した上で一斉に引き落とされます</li>
+        <li>カード情報の変更・解約は塾長 LINE までご連絡ください</li>
+        <li>ご不明点もすべて塾長 LINE までお問い合わせください</li>
       </ul>
     </div>
 
     <p class="footer-note">このページは閉じていただいて構いません。<br>ご登録ありがとうございました 🙏</p>
+    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.1);font-size:0.85rem;color:var(--text-dim);">
+      💬 ご質問・カード変更・解約は <strong style="color:var(--primary-light);">塾長 LINE</strong> までご連絡ください。
+    </div>
     <script>
       (function() {
+        // 月末日を表示
+        // edge case: 今日が月末日の場合は「来月末」を表示 (本日課金なし vs 今月末 = 矛盾を回避)
         const today = new Date();
-        const next = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
-        // 月末跨ぎ補正 (例: 1/31 登録 → 2/28 ではなく 2/末)
-        if (next.getDate() !== today.getDate()) {
-          next.setDate(0); // 翌月の月末
+        const thisMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0); // 今月末
+        let target, label;
+        // 今日 >= 今月末 (= 月末当日以降) なら来月末
+        if (today.getDate() >= thisMonthEnd.getDate()) {
+          target = new Date(today.getFullYear(), today.getMonth() + 2, 0); // 来月末
+          label = '来月末';
+        } else {
+          target = thisMonthEnd;
+          label = '今月末';
         }
-        const y = next.getFullYear();
-        const m = String(next.getMonth() + 1).padStart(2, '0');
-        const d = String(next.getDate()).padStart(2, '0');
-        document.getElementById('nextBillDate').textContent = `${y}年${m}月${d}日`;
+        const y = target.getFullYear();
+        const m = String(target.getMonth() + 1).padStart(2, '0');
+        const d = String(target.getDate()).padStart(2, '0');
+        document.getElementById('nextBillDate').textContent = `${y}年${m}月${d}日 (${label})`;
       })();
     </script>
   </div>

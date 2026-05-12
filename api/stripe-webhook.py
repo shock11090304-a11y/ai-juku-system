@@ -8,7 +8,10 @@ Stripe Dashboard 設定:
     URL:    https://www.trillion-ai-juku.com/payment/api/stripe-webhook
     Events: checkout.session.completed
             invoice.payment_failed
+            invoice.payment_succeeded
             customer.subscription.deleted
+            payment_intent.succeeded   (🆕 v2 月末バッチ請求用)
+            payment_intent.payment_failed   (🆕 v2 バッチ請求失敗時)
 
 Env:
   STRIPE_WEBHOOK_SECRET   Stripe webhook signing secret (whsec_...)
@@ -103,53 +106,109 @@ def _verify_signature(raw_payload: bytes, sig_header: str, secret: str, toleranc
     return any(hmac.compare_digest(expected, s) for s in sigs)
 
 
+def _stripe_get(secret_key, path):
+    """Stripe GET API helper (SetupIntent 取得用)"""
+    if not secret_key:
+        return None
+    try:
+        req = urllib.request.Request(
+            f"https://api.stripe.com/v1/{path}",
+            headers={
+                "Authorization": f"Bearer {secret_key}",
+                "Stripe-Version": "2024-06-20",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        _log(f"stripe GET {path} error: {e}")
+        return None
+
+
 def _handle_checkout_completed(event):
+    """🆕 v2 (2026-05-13): mode=setup 対応。
+    旧 mode=subscription も後方互換のため一応動くようにしておく。
+    """
     obj = event.get("data", {}).get("object", {})
     session_id = obj.get("id", "")
     metadata = obj.get("metadata", {}) or {}
     reg_id = metadata.get("registration_id", "")
     customer = obj.get("customer", "")
-    subscription = obj.get("subscription", "")
+    subscription = obj.get("subscription", "")  # mode=subscription 時のみ存在
+    setup_intent_id = obj.get("setup_intent", "")  # mode=setup 時のみ存在
+    mode = obj.get("mode", "")
     amount = obj.get("amount_total", 0)
     email = obj.get("customer_email") or obj.get("customer_details", {}).get("email", "")
 
+    # 🚨 AI塾との完全分離: system metadata で識別
+    # juku-payment 系 (system=juku-payment-monthly or reg_id 有り) 以外は skip
+    system_tag = metadata.get("system", "")
+    if not reg_id and system_tag != "juku-payment-monthly":
+        _log(f"webhook: not juku-payment event (mode={mode} system={system_tag}) — skip")
+        return
+
+    if not reg_id:
+        _log(f"webhook: missing registration_id (mode={mode}) — skip")
+        return
+
+    # 🆕 mode=setup: SetupIntent から payment_method を取得
+    payment_method = ""
+    monthly_fee = 0
+    if mode == "setup" and setup_intent_id:
+        secret_key = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+        si = _stripe_get(secret_key, f"setup_intents/{setup_intent_id}")
+        if si and isinstance(si, dict):
+            payment_method = si.get("payment_method") or ""
+        # metadata.monthly_fee は register-subscribe.py で必ず設定される
+        try:
+            monthly_fee = int(metadata.get("monthly_fee", "0"))
+        except Exception:
+            monthly_fee = 0
+
     # pending → completed (KV 失敗時は metadata から最低限復元)
-    if reg_id:
-        existing_raw = _redis_safe("GET", f"reg:pending:{reg_id}")
-        existing = {}
-        if existing_raw and isinstance(existing_raw, dict):
-            r = existing_raw.get("result")
-            if r:
-                try: existing = json.loads(r)
-                except Exception: pass
-        # KV pending が消失していても Stripe metadata から最低限の情報を復元
-        if not existing:
-            existing = {
-                "registration_id": reg_id,
-                "student_name": metadata.get("student_name", ""),
-                "grade": metadata.get("grade", ""),
-                "parent_name": metadata.get("parent_name", ""),
-                "phone": metadata.get("phone", ""),
-                "courses": [c for c in metadata.get("courses", "").split(",") if c],
-                "options": [o for o in metadata.get("options", "").split(",") if o],
-                "fee_breakdown": metadata.get("fee_breakdown", ""),
-                "restored_from_metadata": True,
-            }
-        record = {
-            **existing,
+    existing_raw = _redis_safe("GET", f"reg:pending:{reg_id}")
+    existing = {}
+    if existing_raw and isinstance(existing_raw, dict):
+        r = existing_raw.get("result")
+        if r:
+            try: existing = json.loads(r)
+            except Exception: pass
+    # KV pending が消失していても Stripe metadata から最低限の情報を復元
+    if not existing:
+        existing = {
             "registration_id": reg_id,
-            "session_id": session_id,
-            "stripe_customer_id": customer,
-            "stripe_subscription_id": subscription,
-            "status": "completed",
-            "completed_at": int(time.time()),
-            "amount": amount,
-            "email": email or existing.get("email", ""),
+            "student_name": metadata.get("student_name", ""),
+            "grade": metadata.get("grade", ""),
+            "parent_name": metadata.get("parent_name", ""),
+            "phone": metadata.get("phone", ""),
+            "courses": [c for c in metadata.get("courses", "").split(",") if c],
+            "options": [o for o in metadata.get("options", "").split(",") if o],
+            "fee_breakdown": metadata.get("fee_breakdown", ""),
+            "restored_from_metadata": True,
         }
-        _redis_safe("SET", f"reg:completed:{reg_id}", json.dumps(record, ensure_ascii=False))
-        _redis_safe("DEL", f"reg:pending:{reg_id}")
-        _redis_safe("ZADD", "reg:completed:index", str(record["completed_at"]), reg_id)
-        _log(f"webhook: completed reg={reg_id} sub={subscription} amount={amount}")
+    # 🆕 mode によって record の意味が異なる:
+    #   mode=setup       : amount=0 / payment_method 必須 / monthly_fee で月額保存
+    #   mode=subscription: amount=初回課金額 / subscription_id 必須 (legacy)
+    record = {
+        **existing,
+        "registration_id": reg_id,
+        "session_id": session_id,
+        "stripe_customer_id": customer,
+        "stripe_subscription_id": subscription,  # setup 時は空
+        "stripe_payment_method_id": payment_method,  # 🆕 setup 時のみ
+        "stripe_setup_intent_id": setup_intent_id,  # 🆕 setup 時のみ
+        "checkout_mode": mode,  # "setup" or "subscription"
+        "status": "completed",
+        "completed_at": int(time.time()),
+        "amount": amount,  # setup 時は 0
+        "monthly_fee": monthly_fee or existing.get("monthly_fee", 0),  # 🆕 月額 (バッチ請求用)
+        "email": email or existing.get("email", ""),
+        "system": "juku-payment-monthly",
+    }
+    _redis_safe("SET", f"reg:completed:{reg_id}", json.dumps(record, ensure_ascii=False))
+    _redis_safe("DEL", f"reg:pending:{reg_id}")
+    _redis_safe("ZADD", "reg:completed:index", str(record["completed_at"]), reg_id)
+    _log(f"webhook: completed reg={reg_id} mode={mode} customer={customer} pm={payment_method} monthly_fee={monthly_fee}")
 
 
 def _handle_payment_failed(event):
