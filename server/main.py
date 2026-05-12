@@ -6768,6 +6768,14 @@ EXAM_QUESTION_ROTATION = [
     ("daigaku", "r_long",        "center"),
     ("daigaku", "r_grammar",     "center"),
     ("daigaku", "l_listening",   "center"),
+    # 📜 国語 (古文・漢文) ・2026-05-13 塾長指示で新規追加
+    # 共通テスト国語の古文・漢文部分 (現代文は r_summary 東大などで一部対応)
+    ("daigaku", "kobun",         "kyotsu"),  # 古文 (本文 + 設問・現代語訳・文法)
+    ("daigaku", "kanbun",        "kyotsu"),  # 漢文 (返り点・書き下し・現代語訳)
+    ("daigaku", "kobun",         "todai"),    # 東大国語 (記述式古文)
+    ("daigaku", "kanbun",        "todai"),    # 東大国語 (記述式漢文)
+    ("daigaku", "kobun",         "kyodai"),   # 京大国語 (記述式古文)
+    ("daigaku", "kanbun",        "kyodai"),   # 京大国語 (記述式漢文)
     # 🔬 大学入試 理系科目 (数学/物理/化学/生物/地学・eiken_grade に大学キー)
     # 共通テスト 理系
     ("rikei", "math_1a",      "kyotsu_rikei"),
