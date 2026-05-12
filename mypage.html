@@ -1040,17 +1040,21 @@
                 📊 過去 30 日の質問頻度: <strong style="color:#a78bfa;font-size:0.95rem;">${w.question_count} 回</strong>${confNote}
               </div>`;
 
-            // 教育観点 review 致命 fix: practice.html 不在 → ai-tutor-photo.html へ統一誘導 + topic 単元名を引数で渡す
-            // 「弱点単元の練習問題を解く」CTA: 該当 subject の topic を補足説明欄にプリセットして写真質問へ
+            // 推薦リンク: ai-tutor-photo.html へ subject/topic プリセット遷移
+            // 🎯 Task 1 (2026-05-13): topic LIKE 絞り込み完了 → match_quality でピンポイント表示
             const subjectQuery = encodeURIComponent(w.subject || '');
             const topicQuery = encodeURIComponent(w.topic || '');
+            const recCount = (w.recommended || []).length;
+            const topicMatched = (w.recommended || []).filter(r => r.match_quality === 'topic').length;
             const recHtml = `
               <div style="margin-top:0.6rem;padding-top:0.5rem;border-top:1px dashed rgba(255,255,255,0.10);">
                 <div style="font-size:0.78rem;color:#a1a1aa;margin-bottom:0.4rem;">📚 この単元の練習方法:</div>
                 <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
                   <a href="ai-tutor-photo.html?subject=${subjectQuery}&topic=${topicQuery}" style="display:inline-block;padding:0.35rem 0.75rem;background:rgba(34,197,94,0.20);border:1px solid rgba(34,197,94,0.40);border-radius:8px;color:#86efac;font-size:0.78rem;font-weight:700;text-decoration:none;">📷 写真で質問 + 3 AI 解答</a>
-                  ${w.recommended && w.recommended.length > 0 ? `<span style="display:inline-block;padding:0.35rem 0.75rem;background:rgba(99,102,241,0.10);border:1px dashed rgba(99,102,241,0.35);border-radius:8px;color:#a1a1aa;font-size:0.74rem;">📂 関連 pool: ${w.recommended.length} 件 (※ 単元 topic 完全一致の絞り込みは準備中)</span>` : ''}
+                  <button type="button" data-subj="${escapeHTML(w.subject || '')}" data-topic="${escapeHTML(w.topic || '')}" class="weakness-progress-btn" style="display:inline-block;padding:0.35rem 0.75rem;background:rgba(251,191,36,0.18);border:1px solid rgba(251,191,36,0.40);border-radius:8px;color:#fde68a;font-size:0.78rem;font-weight:700;cursor:pointer;">📈 進捗を見る (30日)</button>
+                  ${recCount > 0 ? `<span style="display:inline-block;padding:0.35rem 0.75rem;background:rgba(99,102,241,0.10);border:1px dashed rgba(99,102,241,0.35);border-radius:8px;color:#a1a1aa;font-size:0.74rem;">📂 関連 pool: ${recCount} 件${topicMatched > 0 ? ` <span style="color:#86efac;">(うち ${topicMatched} 件 = topic 一致 🎯)</span>` : ''}</span>` : ''}
                 </div>
+                <div class="weakness-progress-graph" data-subj="${escapeHTML(w.subject || '')}" data-topic="${escapeHTML(w.topic || '')}" style="display:none;margin-top:0.5rem;padding:0.6rem;background:rgba(0,0,0,0.30);border:1px solid rgba(251,191,36,0.20);border-radius:8px;"></div>
               </div>`;
 
             html += `
@@ -1080,6 +1084,65 @@
           fetchAndRender();
         });
       }
+
+      // 📈 Task 2 (2026-05-13): 進捗グラフ展開ボタン (click ハンドラ 委任)
+      list.addEventListener('click', async function(ev) {
+        const btn = ev.target.closest('.weakness-progress-btn');
+        if (!btn) return;
+        ev.preventDefault();
+        const subj = btn.getAttribute('data-subj') || '';
+        const topic = btn.getAttribute('data-topic') || '';
+        // 同 subj/topic のグラフ要素を探す (data-subj/data-topic match)
+        const graphEl = list.querySelector(`.weakness-progress-graph[data-subj="${CSS.escape(subj)}"][data-topic="${CSS.escape(topic)}"]`);
+        if (!graphEl) return;
+        // 既に開いていれば閉じる
+        if (graphEl.style.display !== 'none') {
+          graphEl.style.display = 'none';
+          btn.textContent = '📈 進捗を見る (30日)';
+          return;
+        }
+        graphEl.style.display = '';
+        graphEl.innerHTML = '<div style="color:#a1a1aa;font-size:0.8rem;">📊 取得中…</div>';
+        btn.textContent = '📈 閉じる';
+        try {
+          const tokenP = localStorage.getItem('ai_juku_session_token') || '';
+          const headersP = tokenP ? { 'Authorization': 'Bearer ' + tokenP } : {};
+          const qs = `student_id=${encodeURIComponent(student.id)}&subject=${encodeURIComponent(subj)}&topic=${encodeURIComponent(topic)}&days=30`;
+          const res = await fetch(`${API_BASE}/api/student/weakness-progress?${qs}`, { headers: headersP });
+          if (!res.ok) { graphEl.innerHTML = `<div style="color:#fca5a5;font-size:0.78rem;">取得失敗 (${res.status})</div>`; return; }
+          const data = await res.json();
+          if (!data.ok || !data.daily || data.daily.length === 0) {
+            graphEl.innerHTML = '<div style="color:#a1a1aa;font-size:0.78rem;">過去 30 日にこの単元の質問データがありません。</div>';
+            return;
+          }
+          // 簡易グラフ (CSS バー)
+          const maxCount = Math.max(...data.daily.map(d => d.count), 1);
+          const bars = data.daily.map(d => {
+            const h = Math.max(8, Math.round((d.count / maxCount) * 60));
+            const scoreColor = d.avg_score == null ? '#475569'
+                              : d.avg_score >= 0.7 ? '#4ade80'
+                              : d.avg_score >= 0.4 ? '#fbbf24' : '#fca5a5';
+            return `<div title="${d.date}: ${d.count}回 (avg ${d.avg_score != null ? (d.avg_score * 100).toFixed(0) + '%' : '-'})" style="display:inline-block;width:8px;height:${h}px;background:${scoreColor};margin-right:2px;border-radius:2px;vertical-align:bottom;"></div>`;
+          }).join('');
+          const trendLabel = data.trend === 'improved' ? '📈 改善傾向'
+                            : data.trend === 'declined' ? '📉 悪化傾向'
+                            : data.trend === 'stable' ? '➡️ 横ばい' : '';
+          graphEl.innerHTML = `
+            <div style="font-size:0.78rem;color:#fde68a;margin-bottom:0.4rem;">
+              📊 過去 30 日: <strong>${data.total_count}回</strong> 質問
+              ${trendLabel ? ` · <strong style="color:${data.trend === 'improved' ? '#4ade80' : data.trend === 'declined' ? '#fca5a5' : '#a1a1aa'};">${trendLabel}</strong>` : ''}
+            </div>
+            <div style="white-space:nowrap;overflow-x:auto;padding:0.3rem 0;">${bars}</div>
+            <div style="display:flex;gap:0.6rem;margin-top:0.3rem;font-size:0.7rem;color:#a1a1aa;flex-wrap:wrap;">
+              <span style="display:inline-flex;align-items:center;gap:0.2rem;"><span style="display:inline-block;width:8px;height:8px;background:#4ade80;border-radius:2px;"></span> 自信高</span>
+              <span style="display:inline-flex;align-items:center;gap:0.2rem;"><span style="display:inline-block;width:8px;height:8px;background:#fbbf24;border-radius:2px;"></span> 中</span>
+              <span style="display:inline-flex;align-items:center;gap:0.2rem;"><span style="display:inline-block;width:8px;height:8px;background:#fca5a5;border-radius:2px;"></span> 低</span>
+              <span style="margin-left:auto;color:#94a3b8;">高さ = 質問件数 / 色 = 平均自信スコア</span>
+            </div>`;
+        } catch (e) {
+          graphEl.innerHTML = '<div style="color:#fca5a5;font-size:0.78rem;">通信エラー: ' + escapeHTML(String(e)) + '</div>';
+        }
+      });
     }
 
     // 📖 AI 単語帳 (Leitner SRS) ウィジェット — 今日復習する単語数 + Box 進捗

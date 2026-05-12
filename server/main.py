@@ -2555,33 +2555,71 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
             except (TypeError, KeyError, IndexError):
                 subj, topic, cnt, avg_score, last = r[0], r[1], r[2], r[3], r[4]
             # 該当 subject に紐づく pool から問題を推薦
+            # 🎯 Task 1 (2026-05-13): topic LIKE 検索でピンポイント絞り込み
+            # 弱点 topic (例「三角関数 加法定理」) を分かち書きキーワードに分解し、
+            # exam_questions.question_data JSON 内に該当キーワードを含む問題を優先。
+            # マッチなしなら subject 全体から最新で fallback (従来挙動)。
             pool_keys = _WEAKNESS_SUBJECT_TO_POOL.get((subj or "").lower(), [])
             recommended = []
+            seen_ids = set()  # 重複防止
+
+            # topic キーワード抽出 (空白/句読点で分割・1 文字超のみ・上位 3 keyword)
+            topic_keywords = []
+            if topic:
+                import re as _re_t
+                raw = _re_t.split(r"[\s　、。・/,.()\[\]【】「」『』]+", str(topic))
+                topic_keywords = [k.strip() for k in raw if k and len(k.strip()) >= 2][:3]
+
+            def _try_fetch(exam_id, part_key, kw=None):
+                """specified pool key + optional keyword で問題を fetch"""
+                nonlocal recommended, seen_ids
+                if len(recommended) >= recommend_each:
+                    return
+                like_clause = ""
+                params = [exam_id]
+                if part_key:
+                    sql_base = "SELECT id, exam_id, part_key, eiken_grade FROM exam_questions WHERE exam_id = ? AND part_key = ?"
+                    params.append(part_key)
+                else:
+                    sql_base = "SELECT id, exam_id, part_key, eiken_grade FROM exam_questions WHERE exam_id = ?"
+                if kw:
+                    like_clause = " AND question_data LIKE ?"
+                    params.append(f"%{kw}%")
+                sql = sql_base + like_clause + " ORDER BY created_at DESC LIMIT ?"
+                params.append(recommend_each - len(recommended) + 2)  # +2 で seen 除外余地
+                c.execute(sql, tuple(params))
+                for qrow in c.fetchall():
+                    if len(recommended) >= recommend_each:
+                        break
+                    try:
+                        qid = qrow["id"]; eid = qrow["exam_id"]; pk = qrow["part_key"]
+                        try:
+                            eg = qrow.get("eiken_grade")
+                        except AttributeError:
+                            eg = qrow["eiken_grade"]
+                    except (TypeError, KeyError, IndexError):
+                        qid, eid, pk = qrow[0], qrow[1], qrow[2]
+                        eg = qrow[3] if len(qrow) > 3 else None
+                    if qid in seen_ids:
+                        continue
+                    seen_ids.add(qid)
+                    recommended.append({
+                        "question_id": qid, "exam_id": eid, "part_key": pk, "eiken_grade": eg,
+                        "match_quality": "topic" if kw else "subject",  # 推薦根拠を UI 側へ
+                    })
+
+            # Phase A: topic keyword で LIKE 検索 (ピンポイント推薦)
+            for kw in topic_keywords:
+                for (exam_id, part_key) in pool_keys:
+                    _try_fetch(exam_id, part_key, kw)
+                if len(recommended) >= recommend_each:
+                    break
+
+            # Phase B: 不足分は subject だけで fallback (従来挙動)
             for (exam_id, part_key) in pool_keys:
                 if len(recommended) >= recommend_each:
                     break
-                if part_key:
-                    c.execute(
-                        "SELECT id, exam_id, part_key, eiken_grade "
-                        "FROM exam_questions WHERE exam_id = ? AND part_key = ? "
-                        "ORDER BY created_at DESC LIMIT ?",
-                        (exam_id, part_key, recommend_each - len(recommended)),
-                    )
-                else:
-                    c.execute(
-                        "SELECT id, exam_id, part_key, eiken_grade "
-                        "FROM exam_questions WHERE exam_id = ? "
-                        "ORDER BY created_at DESC LIMIT ?",
-                        (exam_id, recommend_each - len(recommended)),
-                    )
-                for qrow in c.fetchall():
-                    try:
-                        rec = {"question_id": qrow["id"], "exam_id": qrow["exam_id"],
-                               "part_key": qrow["part_key"], "eiken_grade": qrow.get("eiken_grade")}
-                    except (TypeError, KeyError, AttributeError):
-                        rec = {"question_id": qrow[0], "exam_id": qrow[1],
-                               "part_key": qrow[2], "eiken_grade": qrow[3] if len(qrow) > 3 else None}
-                    recommended.append(rec)
+                _try_fetch(exam_id, part_key, None)
             weaknesses.append({
                 "subject": subj,
                 "topic": topic or "",
@@ -2591,6 +2629,204 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
                 "recommended": recommended,
             })
         return {"ok": True, "student_id": student_id, "weaknesses": weaknesses}
+    finally:
+        conn.close()
+
+
+@app.get("/api/student/weakness-progress")
+def student_weakness_progress(request: Request, student_id: int, subject: str, topic: Optional[str] = None,
+                              days: int = 30, authorization: Optional[str] = Header(None)):
+    """📈 弱点克服進捗トラッキング (2026-05-13 Task 2)
+    特定 subject (+ optional topic) の写真質問 confidence 推移を日次でグラフ用 JSON で返す。
+
+    認証: weakness-top3 と同じ (本人 session token or admin Bearer・rate limit 30/60s)
+
+    query:
+      - student_id (required)
+      - subject (required・例 "math" "english" "japanese")
+      - topic (optional・空なら subject 全体)
+      - days (default 30・最大 90)
+
+    返却:
+      {ok, daily: [{date: "2026-05-13", count: N, avg_score: 0.0-1.0, high: N, medium: N, low: N}]}
+    """
+    # rate limit (前 endpoint と統一)
+    _check_rate_limit_ip(request, bucket="weakness_progress", limit=30, window=60)
+
+    # 認証
+    is_admin = False
+    auth_student_id: Optional[int] = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            is_admin = True
+        else:
+            claims = _verify_session_token(token)
+            if claims and claims.get("student_id"):
+                try:
+                    auth_student_id = int(claims["student_id"])
+                except (TypeError, ValueError):
+                    auth_student_id = None
+    try:
+        student_id = int(student_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="student_id 不正")
+    if student_id <= 0:
+        raise HTTPException(status_code=400, detail="student_id 必須")
+    if not subject or not subject.strip():
+        raise HTTPException(status_code=400, detail="subject 必須")
+    if not is_admin:
+        if not auth_student_id:
+            raise HTTPException(status_code=403, detail="ログインが必要です (session token 未提供)")
+        if auth_student_id != student_id:
+            raise HTTPException(status_code=403, detail="他生徒のデータにはアクセスできません")
+    days = max(1, min(int(days or 30), 90))
+
+    from datetime import timedelta as _td
+    cutoff = datetime.utcnow() - _td(days=days)
+    conn = db()
+    try:
+        c = conn.cursor()
+        # subject + topic でフィルタ (topic は前方/部分一致で柔軟に)
+        params = [student_id, subject.strip().lower(), cutoff]
+        sql = ("SELECT created_at, subject_guess, topic_guess, confidence "
+               "FROM ai_tutor_solve_log "
+               "WHERE student_id = ? AND LOWER(subject_guess) = ? AND created_at >= ?")
+        if topic and topic.strip():
+            sql += " AND (topic_guess LIKE ? OR topic_guess LIKE ? OR topic_guess LIKE ?)"
+            kw = topic.strip()
+            params.extend([f"%{kw}%"] + [f"%{k}%" for k in kw.split()[:2]])
+            # 不足分は同じ kw でパディング
+            while len(params) < 6:
+                params.append(f"%{kw}%")
+        sql += " ORDER BY created_at ASC"
+        c.execute(sql, tuple(params))
+        rows = c.fetchall()
+
+        # 日付ごとに集計
+        from collections import defaultdict as _dd
+        daily: dict = _dd(lambda: {"count": 0, "score_sum": 0.0, "score_n": 0,
+                                    "high": 0, "medium": 0, "low": 0})
+        conf_score_map = {"high": 1.0, "medium": 0.6, "low": 0.2}
+        for r in rows:
+            try:
+                created = r["created_at"]; conf = r["confidence"]
+            except (TypeError, KeyError, IndexError):
+                created = r[0]; conf = r[3]
+            # 日付文字列に変換 (YYYY-MM-DD)
+            date_str = str(created)[:10] if created else "?"
+            d = daily[date_str]
+            d["count"] += 1
+            conf_norm = (conf or "").lower()
+            sc = conf_score_map.get(conf_norm)
+            if sc is not None:
+                d["score_sum"] += sc
+                d["score_n"] += 1
+            if conf_norm in d:
+                d[conf_norm] += 1
+
+        # 整形: 日付昇順
+        daily_list = []
+        for date_str in sorted(daily.keys()):
+            d = daily[date_str]
+            avg = (d["score_sum"] / d["score_n"]) if d["score_n"] > 0 else None
+            daily_list.append({
+                "date": date_str,
+                "count": d["count"],
+                "avg_score": round(avg, 3) if avg is not None else None,
+                "high": d["high"], "medium": d["medium"], "low": d["low"],
+            })
+
+        # 進捗トレンド (最初 / 最後の avg_score 比較)
+        trend = None
+        scored = [d for d in daily_list if d["avg_score"] is not None]
+        if len(scored) >= 2:
+            delta = scored[-1]["avg_score"] - scored[0]["avg_score"]
+            trend = "improved" if delta >= 0.1 else ("declined" if delta <= -0.1 else "stable")
+
+        return {
+            "ok": True,
+            "student_id": student_id,
+            "subject": subject,
+            "topic": topic or "",
+            "days": days,
+            "daily": daily_list,
+            "total_count": len(rows),
+            "trend": trend,
+        }
+    finally:
+        conn.close()
+
+
+# 🏫 CEO ダッシュ用: 全生徒弱点ヒートマップ (Task 3)
+# 共通弱点 = 教材/問題作成優先度の発見
+@app.get("/api/admin/weakness-heatmap")
+def admin_weakness_heatmap(request: Request, days: int = 30, top_n: int = 20,
+                          authorization: Optional[str] = Header(None)):
+    """🏫 全生徒の弱点を subject × topic で集計 (admin 専用)。
+    塾長指示 2026-05-13「共通弱点 = 教材作成優先度」の意思決定支援。
+
+    認証: admin Bearer only
+    query:
+      - days (default 30・cutoff・最大 90)
+      - top_n (default 20・最大 50)
+    返却:
+      {ok, items: [{subject, topic, student_count, total_questions, avg_score, percentile}]}
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=403, detail="admin 認証が必要")
+    token = authorization[len("Bearer "):].strip()
+    if not _verify_admin_token(token):
+        raise HTTPException(status_code=403, detail="admin 認証失敗")
+    _check_rate_limit_ip(request, bucket="weakness_heatmap", limit=20, window=60)
+    days = max(1, min(int(days or 30), 90))
+    top_n = max(1, min(int(top_n or 20), 50))
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        # student_weakness を直接集計 (subject × topic で全生徒分を合算)
+        c.execute(
+            "SELECT subject, topic, "
+            " COUNT(DISTINCT student_id) AS student_count, "
+            " SUM(question_count) AS total_questions, "
+            " AVG(avg_confidence_score) AS avg_score "
+            "FROM student_weakness "
+            "GROUP BY subject, topic "
+            "ORDER BY student_count DESC, total_questions DESC "
+            "LIMIT ?",
+            (top_n,),
+        )
+        rows = c.fetchall()
+        items = []
+        for r in rows:
+            try:
+                subj = r["subject"]; topic = r["topic"]
+                sc = r["student_count"]; tq = r["total_questions"]
+                avg = r["avg_score"]
+            except (TypeError, KeyError, IndexError):
+                subj, topic, sc, tq, avg = r[0], r[1], r[2], r[3], r[4]
+            items.append({
+                "subject": subj,
+                "topic": topic or "",
+                "student_count": int(sc or 0),
+                "total_questions": int(tq or 0),
+                "avg_confidence_score": (round(float(avg), 3) if avg is not None else None),
+            })
+        # 全生徒数の取得 (percentile 計算用)
+        c.execute("SELECT COUNT(*) FROM students WHERE status IN ('active', 'trial')")
+        total_students_row = c.fetchone()
+        try:
+            total_students = int(total_students_row[0] or 1)
+        except (TypeError, KeyError, IndexError):
+            try:
+                total_students = int(list(total_students_row.values())[0] or 1)
+            except Exception:
+                total_students = 1
+        # percentile を付与
+        for item in items:
+            item["coverage_percent"] = round((item["student_count"] / total_students) * 100, 1) if total_students > 0 else 0.0
+        return {"ok": True, "days": days, "top_n": top_n, "total_students": total_students, "items": items}
     finally:
         conn.close()
 

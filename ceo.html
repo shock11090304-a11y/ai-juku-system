@@ -387,6 +387,21 @@
       </div>
     </section>
 
+    <!-- 🎯 全生徒弱点ヒートマップ (2026-05-13 Task 3) - 教材作成優先度の意思決定支援 -->
+    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(248,113,113,0.06); border: 1px solid rgba(248,113,113,0.30); border-radius: 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem;">
+        <h2 style="font-size:1.15rem;color:#fca5a5;margin:0;">🎯 全生徒弱点ヒートマップ <span style="font-size:0.7rem;color:#71717a;font-weight:400;">(教材作成優先度)</span></h2>
+        <div style="display:flex;gap:0.4rem;">
+          <button id="refreshWeaknessHeatmap" style="background:rgba(248,113,113,0.18);color:#fca5a5;border:1px solid rgba(248,113,113,0.40);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">🔄 更新</button>
+        </div>
+      </div>
+      <div id="weaknessHeatmapMeta" style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.6rem;">過去 30 日の写真質問から AI が判定した弱点を、subject × topic で全生徒合算。<strong style="color:#fde68a;">共通弱点 = 教材/問題作成の優先度</strong>として活用。</div>
+      <div id="weaknessHeatmapList" style="display:grid;gap:0.5rem;"></div>
+      <div id="weaknessHeatmapEmpty" style="display:none;padding:0.8rem;color:#a1a1aa;font-size:0.85rem;text-align:center;background:rgba(0,0,0,0.2);border-radius:8px;">
+        まだ弱点データがありません (写真質問 + 日次 cron 集計 = JST 4:00 で更新)
+      </div>
+    </section>
+
     <!-- 申込状況サマリ (60秒ごとに自動更新) -->
     <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
@@ -6052,6 +6067,91 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => setTimeout(start, 1500));
     } else { setTimeout(start, 1500); }
+  })();
+  </script>
+
+  <!-- 🎯 全生徒弱点ヒートマップ (Task 3 / 2026-05-13) -->
+  <script>
+  (function() {
+    'use strict';
+    const subjectLabel = {
+      math: '🧮 数学', physics: '⚛️ 物理', chemistry: '🧪 化学', biology: '🧬 生物',
+      english: '📘 英語', japanese: '📕 国語', social: '🌏 社会', other: '📚 その他'
+    };
+    const escapeHTML = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+
+    async function loadHeatmap() {
+      const list = document.getElementById('weaknessHeatmapList');
+      const empty = document.getElementById('weaknessHeatmapEmpty');
+      if (!list || !empty) return;
+      list.innerHTML = '<div style="color:#94a3b8;font-size:0.85rem;">🔄 取得中…</div>';
+      empty.style.display = 'none';
+      try {
+        const res = await AdminAuth.fetch('/api/admin/weakness-heatmap?days=30&top_n=20');
+        if (!res.ok) {
+          list.innerHTML = `<div style="color:#fca5a5;font-size:0.85rem;">取得失敗 (${res.status})</div>`;
+          return;
+        }
+        const data = await res.json();
+        if (!data.ok || !data.items || data.items.length === 0) {
+          list.innerHTML = '';
+          empty.style.display = '';
+          return;
+        }
+        const totalStudents = data.total_students || 1;
+        const maxQ = Math.max(...data.items.map(it => it.total_questions || 0), 1);
+        let html = '';
+        data.items.forEach((it, idx) => {
+          const subj = subjectLabel[(it.subject || '').toLowerCase()] || ('📚 ' + (it.subject || '?'));
+          const topic = it.topic ? `<span style="color:#fde68a;">「${escapeHTML(it.topic)}」</span>` : '<span style="color:#94a3b8;">(topic 未判定)</span>';
+          const qBarPct = Math.min(100, Math.round((it.total_questions / maxQ) * 100));
+          const cov = it.coverage_percent || 0;
+          const covColor = cov >= 30 ? '#fca5a5' : cov >= 10 ? '#fbbf24' : '#86efac';
+          const avgPct = (it.avg_confidence_score != null) ? (it.avg_confidence_score * 100).toFixed(0) : '-';
+          const avgColor = it.avg_confidence_score == null ? '#94a3b8'
+                          : it.avg_confidence_score >= 0.7 ? '#4ade80'
+                          : it.avg_confidence_score >= 0.4 ? '#fbbf24' : '#fca5a5';
+          html += `
+            <div style="padding:0.6rem 0.8rem;background:rgba(0,0,0,0.30);border:1px solid rgba(248,113,113,0.20);border-radius:8px;">
+              <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;font-size:0.88rem;">
+                <span style="display:inline-block;width:1.6rem;height:1.6rem;line-height:1.6rem;text-align:center;background:linear-gradient(135deg,#f87171,#fbbf24);border-radius:50%;color:#fff;font-weight:800;font-size:0.78rem;">${idx + 1}</span>
+                <strong style="color:#fff;">${subj}</strong> ${topic}
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;margin-top:0.4rem;font-size:0.78rem;">
+                <div>
+                  <div style="color:#a1a1aa;">影響範囲</div>
+                  <div style="color:${covColor};font-weight:800;font-size:0.95rem;">${it.student_count} 名 (${cov}%)</div>
+                </div>
+                <div>
+                  <div style="color:#a1a1aa;">質問総数</div>
+                  <div style="color:#a78bfa;font-weight:800;font-size:0.95rem;">${it.total_questions} 件</div>
+                </div>
+                <div>
+                  <div style="color:#a1a1aa;">平均自信</div>
+                  <div style="color:${avgColor};font-weight:800;font-size:0.95rem;">${avgPct}${avgPct === '-' ? '' : '%'}</div>
+                </div>
+              </div>
+              <div style="margin-top:0.4rem;height:5px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;">
+                <div style="height:100%;width:${qBarPct}%;background:linear-gradient(90deg,#f87171,#fbbf24);border-radius:3px;"></div>
+              </div>
+            </div>`;
+        });
+        html += `<div style="font-size:0.75rem;color:#71717a;margin-top:0.5rem;">📊 ${data.items.length} 件 / 全生徒 ${totalStudents} 名から集計 · <strong style="color:#fca5a5;">影響範囲 30%+ = 緊急優先</strong></div>`;
+        list.innerHTML = html;
+      } catch (e) {
+        list.innerHTML = `<div style="color:#fca5a5;font-size:0.85rem;">通信エラー: ${escapeHTML(e.message || String(e))}</div>`;
+      }
+    }
+    function bind() {
+      const btn = document.getElementById('refreshWeaknessHeatmap');
+      if (btn) btn.addEventListener('click', loadHeatmap);
+      // 初回表示は admin ログイン後に呼ばれる (AdminAuth.fetch 内で auth 確認)
+      setTimeout(loadHeatmap, 2000);
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bind);
+    } else { bind(); }
   })();
   </script>
 
