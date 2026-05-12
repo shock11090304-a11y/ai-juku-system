@@ -14309,6 +14309,8 @@ def admin_ai_recent_failures(limit: int = 30, x_cron_secret: Optional[str] = Hea
         "WHERE name IN ('ai_call_failure', 'ai_total_failure', 'ai_credit_low', 'ai_fallback_used', "
         "'ai_fallback_gemini', 'ai_fallback_gemini_credit_low', "
         "'ai_fallback_openai', 'ai_fallback_openai_credit_low', "  # 2026-05-10 OpenAI Tier 5 追加
+        # 2026-05-13 塾長指摘「3 AI 中 1 のみ応答」の診断用に追加
+        "'tutor_solve_individual_failure', 'tutor_solve_total_failure', "
         "'frontend_error') "
         "ORDER BY created_at DESC LIMIT ?",
         (limit,),
@@ -21639,6 +21641,20 @@ def _solve_one_ai(ai_id: str, image_b64: Optional[str], mime: str, mime_pdf: boo
             parse_failed = True
 
         if parse_failed:
+            # 🛡️ 2026-05-13 致命盲点 fix: parse_failed パスは except 節を通らず events 記録なし
+            # → 原因解明不能だったので明示的に critical event 記録 (raw text 込み)
+            try:
+                _record_ai_critical_event("tutor_solve_individual_failure", {
+                    "ai_id": ai_id,
+                    "model": actual_model,
+                    "kind": actual_provider,
+                    "error": "json_parse_failed",
+                    "raw_text_preview": text[:500] if text else "",  # ★ 重要: 実応答を 500 字保存
+                    "round": "round2" if prior_answers else "round1",
+                    "system_prompt_length": len(ai_def.get("system") or ""),
+                })
+            except Exception:
+                pass
             return {
                 "ai_id": ai_id,
                 "label": label,
