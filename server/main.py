@@ -14492,6 +14492,153 @@ def admin_test_gemini(model: Optional[str] = None, strict: int = 0,
         }
 
 
+@app.post("/api/admin/ai/test-anthropic")
+def admin_test_anthropic(model: Optional[str] = None,
+                          authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """🔬 Anthropic API 疎通確認 (2026-05-13 追加)
+    塾長指示「3 AI 中 0 のみ応答」事故の原因究明用。Anthropic 専用 test endpoint が
+    存在しなかったため、Anthropic の生死 / credit / quota 状況を確認する手段がなかった。
+
+    admin Bearer or x-cron-secret 認証。
+    Anthropic API を直接 (fallback chain 経由せず) 叩いて raw error を返す。
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    if not ANTHROPIC_API_KEY:
+        return {"ok": False, "configured": False,
+                "error": "ANTHROPIC_API_KEY が未設定"}
+
+    target_model = model or "claude-haiku-4-5"  # cost 最小で疎通確認
+    t0 = time.time()
+    body = {
+        "model": target_model,
+        "max_tokens": 50,
+        "messages": [{"role": "user", "content": "Say only the word: OK"}],
+    }
+    try:
+        req = urllib.request.Request(
+            "https://api.anthropic.com/v1/messages",
+            data=json.dumps(body).encode("utf-8"),
+            headers={
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            text = (data.get("content") or [{}])[0].get("text", "")
+            usage = data.get("usage", {})
+            return {
+                "ok": True,
+                "configured": True,
+                "model": target_model,
+                "sample": text[:100],
+                "usage": usage,
+                "latency_ms": int((time.time() - t0) * 1000),
+            }
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode("utf-8", errors="ignore")
+        return {
+            "ok": False, "configured": True, "model": target_model,
+            "http_status": e.code,
+            "error": err_body[:500],
+            "credit_low": "credit balance is too low" in err_body.lower() or "credit_balance" in err_body.lower(),
+            "rate_limited": e.code == 429 or "rate" in err_body.lower(),
+            "latency_ms": int((time.time() - t0) * 1000),
+        }
+    except Exception as e:
+        return {
+            "ok": False, "configured": True, "model": target_model,
+            "error": f"{type(e).__name__}: {str(e)[:300]}",
+            "latency_ms": int((time.time() - t0) * 1000),
+        }
+
+
+@app.post("/api/admin/ai/test-anthropic-pdf")
+def admin_test_anthropic_pdf(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """🔬 Anthropic PDF 入力疎通確認 (2026-05-13 追加)
+    PDF 専用テスト。最小 PDF (1 page・空白) を Anthropic に送り、PDF 処理機能が
+    動作しているか確認する。塾長スクショの「PDF + 3 AI 全失敗」事故原因切分け用。
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    if not ANTHROPIC_API_KEY:
+        return {"ok": False, "configured": False}
+
+    # 最小 valid PDF (1 page・"hello" テキストのみ・~500 bytes)
+    # PDF 1.4 minimum spec の base64 encoded blob
+    minimal_pdf_b64 = (
+        "JVBERi0xLjQKJeLjz9MKMyAwIG9iaiA8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9SZX"
+        "NvdXJjZXMgPDwgL0ZvbnQgPDwgL0YxIDQgMCBSID4+ID4+IC9NZWRpYUJveCBbMCAwIDYxMiA3"
+        "OTJdIC9Db250ZW50cyA1IDAgUiA+PiBlbmRvYmoKNCAwIG9iaiA8PCAvVHlwZSAvRm9udCAvU3"
+        "VidHlwZSAvVHlwZTEgL0Jhc2VGb250IC9IZWx2ZXRpY2EgPj4gZW5kb2JqCjUgMCBvYmogPDwg"
+        "L0xlbmd0aCA0NCA+PiBzdHJlYW0KQlQKL0YxIDI0IFRmCjUwIDcwMCBUZAooaGVsbG8pIFRqCk"
+        "VUCmVuZHN0cmVhbQplbmRvYmoKMSAwIG9iaiA8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAw"
+        "IFIgPj4gZW5kb2JqCjIgMCBvYmogPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFsgMyAwIFIgXSAvQ2"
+        "91bnQgMSA+PiBlbmRvYmoKeHJlZgowIDYKMDAwMDAwMDAwMCA2NTUzNSBmCjAwMDAwMDAzNTcg"
+        "MDAwMDAgbgowMDAwMDAwNDAyIDAwMDAwIG4KMDAwMDAwMDAwOSAwMDAwMCBuCjAwMDAwMDAxMj"
+        "ggMDAwMDAgbgowMDAwMDAwMTkzIDAwMDAwIG4KdHJhaWxlciA8PCAvU2l6ZSA2IC9Sb290IDEg"
+        "MCBSID4+CnN0YXJ0eHJlZgo0NTYKJSVFT0YK"
+    )
+    t0 = time.time()
+    body = {
+        "model": "claude-haiku-4-5",
+        "max_tokens": 100,
+        "messages": [{
+            "role": "user",
+            "content": [
+                {"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": minimal_pdf_b64}},
+                {"type": "text", "text": "Read this PDF and tell me what word is on it. One word only."},
+            ],
+        }],
+    }
+    try:
+        req = urllib.request.Request(
+            "https://api.anthropic.com/v1/messages",
+            data=json.dumps(body).encode("utf-8"),
+            headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            text = (data.get("content") or [{}])[0].get("text", "")
+            return {
+                "ok": True, "configured": True,
+                "pdf_works": "hello" in text.lower(),
+                "sample": text[:200],
+                "latency_ms": int((time.time() - t0) * 1000),
+            }
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode("utf-8", errors="ignore")
+        return {
+            "ok": False, "http_status": e.code,
+            "error": err_body[:500],
+            "diagnosis": "PDF サポートが PR 単位で利用不可・または beta 必須" if "document" in err_body.lower() or "pdf" in err_body.lower() else "Anthropic API 一般エラー (詳細は error)",
+            "latency_ms": int((time.time() - t0) * 1000),
+        }
+    except Exception as e:
+        return {"ok": False, "error": f"{type(e).__name__}: {str(e)[:300]}",
+                "latency_ms": int((time.time() - t0) * 1000)}
+
+
 @app.post("/api/admin/ai/test-openai")
 def admin_test_openai(model: Optional[str] = None,
                        authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
