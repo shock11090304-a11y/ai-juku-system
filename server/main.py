@@ -13183,15 +13183,26 @@ class StudentDeleteRequest(BaseModel):
 
 
 @app.post("/api/admin/students/{student_id}/delete")
-def admin_student_delete(student_id: int, payload: StudentDeleteRequest, authorization: Optional[str] = Header(None)):
+def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
+                          authorization: Optional[str] = Header(None),
+                          x_cron_secret: Optional[str] = Header(None)):
     """顧客データ完全削除 (admin only)。生徒本体 + 全関連データを cascade delete。
     安全装置: payload.confirm_name が student.name と完全一致する場合のみ実行。
     Stripe 有効サブスクがある場合、payload.cancel_stripe=true でない限り 409 で拒否。
-    events テーブルに削除前スナップショット audit log を残す。"""
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="未認証")
-    token = authorization[len("Bearer "):].strip()
-    if not _verify_admin_token(token):
+    events テーブルに削除前スナップショット audit log を残す。
+
+    認証: admin Bearer または X-Cron-Secret (2026-05-13 追加・塾長離席中 Claude 経由緊急対応用)
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+        else:
+            raise HTTPException(status_code=401, detail="未認証")
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
         raise HTTPException(status_code=401, detail="未認証")
 
     conn = db()
