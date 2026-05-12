@@ -21416,8 +21416,11 @@ _TUTOR_JAPANESE_PHILOSOPHY = (
 
 _SOLVE_AI_DEFINITIONS = {
     "claude": {
-        "label": "🎯 Claude Opus 4.7 (数式・論理重視)",
-        "model": "claude-opus-4-7",
+        # 🛡️ 2026-05-13 致命 fix: Opus 4.7 は thinking adaptive で max_tokens を食い尽くし
+        # text content が空になる事故が頻発 → Sonnet 4.6 に降格 (JSON 安定性 + コスト 1/5)
+        # 数式・論理は Sonnet 4.6 でも十分高品質
+        "label": "🎯 Claude Sonnet 4.6 (数式・論理重視)",
+        "model": "claude-sonnet-4-6",
         "kind": "anthropic",
         "system": (
             "⚠️ CRITICAL OUTPUT FORMAT REQUIREMENT ⚠️\n"
@@ -21584,13 +21587,18 @@ def _solve_one_ai(ai_id: str, image_b64: Optional[str], mime: str, mime_pdf: boo
             })
     content_blocks.append({"type": "text", "text": user_text})
 
+    # 🛡️ 2026-05-13 致命 fix: max_tokens=2000 が小さすぎて
+    # - Gemini: explanation_jp 600-1500字を出力する前に上限到達 → JSON 途中で切れる
+    # - Claude Opus 4.7: thinking adaptive + effort=high で thinking に tokens 全消費 → text content 空
+    # → max_tokens を 8000 に増量 + Opus 4.7 は Sonnet 4.6 に降格 (JSON 安定性 + コスト削減)
     body = {
         "model": ai_def["model"],
-        "max_tokens": 2000,
+        "max_tokens": 8000,
         "system": ai_def["system"],
         "messages": [{"role": "user", "content": content_blocks}],
     }
-    # Opus 4.7 必須パラメータ (memory: feedback_opus47_proxy_required.md)
+    # Opus 4.7 は thinking で max_tokens を食い尽くす問題があるため Sonnet 4.6 に降格済み (_SOLVE_AI_DEFINITIONS 変更)
+    # 万一 Opus 4.7 が指定された場合の互換性パラメータは残す (memory: feedback_opus47_proxy_required.md)
     if ai_def["model"].startswith("claude-opus-4-7"):
         body["thinking"] = {"type": "adaptive"}
         body["output_config"] = {"effort": "high"}
