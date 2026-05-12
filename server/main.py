@@ -2373,6 +2373,124 @@ async def _weekly_reports_scheduler():
             await asyncio.sleep(3600)
 
 
+async def _anthropic_credit_monitor_scheduler():
+    """💸 Anthropic credit_low 監視 scheduler (2026-05-13 塾長指示)
+    毎日 JST 8:00 に credit-status を確認 → critical/warning なら塾長メール通知。
+    補充忘れによるサービス停止を予防。1 日 1 回・events で dedup。"""
+    JST = timezone(timedelta(hours=9))
+    TARGET_HOUR_JST = 8
+    log.info(f"[CreditMonitor] Scheduler started, target hour JST {TARGET_HOUR_JST}:00 daily")
+
+    while True:
+        try:
+            now_jst = datetime.now(JST)
+            target = now_jst.replace(hour=TARGET_HOUR_JST, minute=0, second=0, microsecond=0)
+            if target <= now_jst:
+                target += timedelta(days=1)
+            sleep_secs = (target - now_jst).total_seconds()
+            log.info(f"[CreditMonitor] Next run at {target.isoformat()} (in {int(sleep_secs)}s)")
+            await asyncio.sleep(sleep_secs)
+            if _check_scheduler_ran_today_jst("credit_monitor_run"):
+                log.info("[CreditMonitor] Skipped (already ran today)")
+                continue
+            try:
+                result = _run_credit_monitor()
+                log.info(f"[CreditMonitor] result: {result}")
+                _record_scheduler_run("credit_monitor_run", result)
+            except Exception as e:
+                log.error(f"[CreditMonitor] failed: {type(e).__name__}: {e}", exc_info=True)
+                _record_scheduler_run("credit_monitor_run", {"error": f"{type(e).__name__}: {e}"})
+        except asyncio.CancelledError:
+            log.info("[CreditMonitor] Scheduler cancelled")
+            raise
+        except Exception as e:
+            log.error(f"[CreditMonitor] Scheduler loop error: {e}", exc_info=True)
+            await asyncio.sleep(3600)
+
+
+def _run_credit_monitor() -> dict:
+    """credit-status を内部計算 → critical/warning なら塾長メール通知。
+    返却: {status_level, days_remaining, notified}"""
+    from datetime import timedelta as _td
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 累計補充
+        c.execute("SELECT COALESCE(SUM(amount_usd), 0) FROM anthropic_credit_recharge")
+        row = c.fetchone()
+        try:
+            total_recharged = float(row[0] or 0)
+        except Exception:
+            try: total_recharged = float(list(row.values())[0] or 0)
+            except Exception: total_recharged = 0.0
+        # 累計使用
+        c.execute("SELECT COALESCE(SUM(cost_usd), 0) FROM anthropic_usage_log")
+        row = c.fetchone()
+        try:
+            total_used = float(row[0] or 0)
+        except Exception:
+            try: total_used = float(list(row.values())[0] or 0)
+            except Exception: total_used = 0.0
+        # 直近 7 日
+        cutoff_7d = datetime.utcnow() - _td(days=7)
+        c.execute("SELECT COALESCE(SUM(cost_usd), 0) FROM anthropic_usage_log WHERE created_at >= ?", (cutoff_7d,))
+        row = c.fetchone()
+        try:
+            last_7d = float(row[0] or 0)
+        except Exception:
+            try: last_7d = float(list(row.values())[0] or 0)
+            except Exception: last_7d = 0.0
+    finally:
+        conn.close()
+
+    remaining = max(0.0, total_recharged - total_used)
+    avg_daily = last_7d / 7.0
+    days_remaining = (remaining / avg_daily) if avg_daily > 0.001 else None
+
+    if total_recharged <= 0:
+        return {"status_level": "unknown", "notified": False, "reason": "no recharge record"}
+    if days_remaining is None:
+        return {"status_level": "ok", "notified": False, "reason": "no usage data"}
+    if days_remaining >= 7:
+        return {"status_level": "ok", "notified": False, "days_remaining": round(days_remaining, 1)}
+
+    # critical / warning → メール通知
+    status_level = "critical" if days_remaining < 3 else "warning"
+    icon = "🚨" if status_level == "critical" else "⚠️"
+    subject = f"{icon} Anthropic credit 残量 {status_level} (残り {round(days_remaining,1)} 日)"
+    body_text = (
+        f"ai-juku-system Anthropic credit 残量 monitor\n\n"
+        f"状態: {status_level}\n"
+        f"残額: ${round(remaining, 2)}\n"
+        f"累計補充: ${round(total_recharged, 2)}\n"
+        f"累計使用: ${round(total_used, 4)}\n"
+        f"直近 7 日使用: ${round(last_7d, 4)}\n"
+        f"日平均使用: ${round(avg_daily, 4)}\n"
+        f"予測残日数: 約 {round(days_remaining, 1)} 日\n\n"
+        f"→ Anthropic Console で補充してください: https://console.anthropic.com/settings/billing\n"
+        f"→ 補充後、CEO ダッシュ「💰 補充を記録」で金額を入力してください\n"
+    )
+    notified = False
+    if MONITORING_TO_EMAIL and RESEND_API_KEY:
+        try:
+            _send_resend_email(
+                MONITORING_TO_EMAIL,
+                subject,
+                body_text,
+                from_email=f"alert@{EMAIL_FROM_DOMAIN}" if EMAIL_FROM_DOMAIN else None,
+            )
+            notified = True
+            log.info(f"[CreditMonitor] alert sent: {subject}")
+        except Exception as e:
+            log.error(f"[CreditMonitor] alert send failed: {e}")
+    return {
+        "status_level": status_level,
+        "days_remaining": round(days_remaining, 1),
+        "remaining_usd": round(remaining, 2),
+        "notified": notified,
+    }
+
+
 async def _weakness_aggregation_scheduler():
     """🎯 弱点分類 cron: 毎日 JST 4:00 (低トラフィック帯) に ai_tutor_solve_log → student_weakness 集計。
     塾長指示 2026-05-13「個別問題推薦」の基盤。multi-replica 重複防止付き。"""
@@ -21888,9 +22006,12 @@ def _extract_json_robust(text: str) -> Optional[dict]:
 
 def _consolidate_solve_answers(successful: list) -> dict:
     """3 AI の解答から consensus + confidence を計算。
-    - 全 AI 一致 (final_answer 正規化後で同じ) → confidence=high
+    - 全 AI 一致 (文字列類似度) → confidence=high
     - 過半数一致 → confidence=medium・多数派採用
     - バラバラ → confidence=low・最も confidence_self が高い解答を primary に
+
+    🛡️ 2026-05-13 P1 課題 fix: 短答 (10文字以下) は完全一致基準、長い解答は
+    difflib.SequenceMatcher >= 0.7 で類似グループ化。記述式・数式の表記揺れを許容。
     """
     if not successful:
         return {
@@ -21903,11 +22024,32 @@ def _consolidate_solve_answers(successful: list) -> dict:
     def _norm(s):
         return (s or "").strip().lower().replace(" ", "").replace("　", "")
 
-    answers = [(_norm(s.get("final_answer")), s) for s in successful]
-    # group by normalized answer
-    from collections import Counter as _C
-    counter = _C([a[0] for a in answers if a[0]])
-    if not counter:
+    # 🛡️ 類似度判定で類似グループ化 (記述式・数式の表記揺れ吸収)
+    from difflib import SequenceMatcher as _SM
+    def _similar(a, b, threshold=0.7):
+        """短答 (10字以下) は完全一致・長い解答は類似度 >= threshold"""
+        if not a or not b:
+            return False
+        if len(a) <= 10 and len(b) <= 10:
+            return a == b
+        return _SM(None, a, b).ratio() >= threshold
+
+    # successful を similar 関係でグループ化 (transitive closure 不要・代表との比較で十分)
+    normed = [(_norm(s.get("final_answer")), s) for s in successful]
+    groups: list = []  # [(rep_answer, [s, s, ...])]
+    for ans, s in normed:
+        if not ans:
+            continue
+        placed = False
+        for i, (rep, lst) in enumerate(groups):
+            if _similar(ans, rep):
+                lst.append(s)
+                placed = True
+                break
+        if not placed:
+            groups.append((ans, [s]))
+
+    if not groups:
         # 🛡️ 致命 fix (2026-05-13): 旧実装は explanation_jp[:300] を final_answer に
         # 流していたため、JSON parse 失敗で生 JSON が「最終解答」として表示される事故が発生。
         # → 明示的なエラーメッセージのみ表示し、生 JSON を絶対に流さない。
@@ -21919,8 +22061,11 @@ def _consolidate_solve_answers(successful: list) -> dict:
             "primary_ai": successful[0].get("ai_id"),
             "retry_recommended": True,
         }
-    top_norm, top_count = counter.most_common(1)[0]
-    matching = [a[1] for a in answers if a[0] == top_norm]
+
+    # 最大グループ (top group) を特定
+    groups.sort(key=lambda g: -len(g[1]))
+    top_norm, matching = groups[0][0], groups[0][1]
+    top_count = len(matching)
     if top_count == len(successful):
         # 全員一致
         # 🛡️ 致命 fix (2026-05-13): 1 AI のみ応答時の「全員一致」誤判定を防ぐ
@@ -21945,13 +22090,16 @@ def _consolidate_solve_answers(successful: list) -> dict:
     if top_count >= 2:
         # 過半数一致 (3 AI 中 2)
         primary = matching[0]
+        # dissenting AI 取得 (top group 以外の AI)
+        top_ai_ids = {s.get("ai_id") for s in matching}
+        dissenting = [s.get("ai_id") for s in successful if s.get("ai_id") not in top_ai_ids]
         return {
             "final_answer": primary.get("final_answer"),
             "explanation_jp": primary.get("explanation_jp"),
             "confidence": "medium",
             "consensus": f"majority_{top_count}_of_{len(successful)}",
             "primary_ai": primary.get("ai_id"),
-            "dissenting_ai": [a[1].get("ai_id") for a in answers if a[0] != top_norm],
+            "dissenting_ai": dissenting,
         }
     # バラバラ → confidence_self が最も高い解答を primary
     rank = {"high": 3, "medium": 2, "low": 1}
