@@ -547,9 +547,14 @@
           <div style="color:#94a3b8;margin-bottom:0.2rem;">Resend Email</div>
           <div id="monEmail" style="font-size:1.2rem;font-weight:900;">--</div>
         </div>
-        <div style="background:rgba(0,0,0,0.25);border-radius:8px;padding:0.6rem;text-align:center;">
-          <div style="color:#94a3b8;margin-bottom:0.2rem;">Anthropic API</div>
+        <div style="background:rgba(0,0,0,0.25);border-radius:8px;padding:0.6rem;text-align:center;" title="2026-05-13 追加: Claude credit_low / quota / PDF 機能を 1 クリック診断">
+          <div style="color:#94a3b8;margin-bottom:0.2rem;">Anthropic (Tier 1)</div>
           <div id="monAnthropic" style="font-size:1.2rem;font-weight:900;">--</div>
+          <div style="display:flex;gap:0.25rem;justify-content:center;margin-top:0.4rem;">
+            <button id="testAnthropicBtn" onclick="testAnthropic()" style="background:rgba(248,113,113,0.18);color:#fca5a5;border:1px solid rgba(248,113,113,0.40);padding:0.25rem 0.45rem;border-radius:6px;font-size:0.68rem;font-weight:700;cursor:pointer;">⚡ Claude</button>
+            <button id="testAnthropicPdfBtn" onclick="testAnthropicPdf()" style="background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.40);padding:0.25rem 0.45rem;border-radius:6px;font-size:0.68rem;font-weight:700;cursor:pointer;">📄 PDF</button>
+          </div>
+          <div id="testAnthropicResult" style="margin-top:0.3rem;font-size:0.65rem;color:#94a3b8;"></div>
         </div>
         <div style="background:rgba(0,0,0,0.25);border-radius:8px;padding:0.6rem;text-align:center;">
           <div style="color:#94a3b8;margin-bottom:0.2rem;">Gemini (Tier 4)</div>
@@ -2660,6 +2665,74 @@
     }
     // 🚨 IIFE scope → global export (HTML inline `onclick="testGemini()"` から呼ぶため必須)
     window.testGemini = testGemini;
+
+    // 🔬 Anthropic 疎通テスト (2026-05-13 塾長指示・credit_low 事故再発防止)
+    // credit_low / rate_limited / PDF 機能を 1 クリックで切分け診断可能に
+    async function testAnthropic() {
+      const btn = document.getElementById('testAnthropicBtn');
+      const result = document.getElementById('testAnthropicResult');
+      if (!window.AdminAuth || !AdminAuth.getToken()) {
+        result.innerHTML = '<span style="color:#f87171;">未認証</span>';
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = '⏳';
+      result.innerHTML = '';
+      try {
+        const res = await AdminAuth.fetch('/api/admin/ai/test-anthropic', { method: 'POST' });
+        const data = await res.json();
+        if (data.ok) {
+          result.innerHTML = `<span style="color:#34d399;">✅ ${data.model} (${data.latency_ms}ms)</span><br><span style="color:#94a3b8;font-size:0.6rem;">${(data.sample || '').substring(0, 60)}</span>`;
+        } else if (!data.configured) {
+          result.innerHTML = `<span style="color:#fbbf24;">⚠️ env 未設定</span><br><span style="color:#94a3b8;font-size:0.6rem;">ANTHROPIC_API_KEY を Railway に追加</span>`;
+        } else if (data.credit_low) {
+          result.innerHTML = `<span style="color:#f87171;">💸 credit_low</span><br><a href="https://console.anthropic.com/settings/billing" target="_blank" rel="noopener" style="color:#fbbf24;font-size:0.62rem;text-decoration:underline;">→ クレジット補充</a>`;
+        } else if (data.rate_limited) {
+          result.innerHTML = `<span style="color:#fbbf24;">⚠️ rate_limited (${data.http_status})</span><br><span style="color:#94a3b8;font-size:0.6rem;">数分待ってから再試行</span>`;
+        } else {
+          result.innerHTML = `<span style="color:#f87171;">❌ ${data.http_status || ''}</span><br><span style="color:#94a3b8;font-size:0.58rem;word-break:break-all;">${(data.error || '').substring(0, 100)}</span>`;
+        }
+      } catch (e) {
+        result.innerHTML = `<span style="color:#f87171;">❌ ${e.message}</span>`;
+      }
+      btn.disabled = false;
+      btn.textContent = '⚡ Claude';
+    }
+    window.testAnthropic = testAnthropic;
+
+    // 📄 Anthropic PDF 機能テスト (最小 PDF "hello.pdf" を送信して読み取れるか確認)
+    async function testAnthropicPdf() {
+      const btn = document.getElementById('testAnthropicPdfBtn');
+      const result = document.getElementById('testAnthropicResult');  // 結果は同じ枠に表示
+      if (!window.AdminAuth || !AdminAuth.getToken()) {
+        result.innerHTML = '<span style="color:#f87171;">未認証</span>';
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = '⏳';
+      result.innerHTML = '<span style="color:#94a3b8;">📄 PDF テスト中...</span>';
+      try {
+        const res = await AdminAuth.fetch('/api/admin/ai/test-anthropic-pdf', { method: 'POST' });
+        const data = await res.json();
+        if (data.ok && data.pdf_works) {
+          result.innerHTML = `<span style="color:#34d399;">✅ PDF OK (${data.latency_ms}ms)</span><br><span style="color:#94a3b8;font-size:0.6rem;">"${(data.sample || '').substring(0, 40)}"</span>`;
+        } else if (data.ok && !data.pdf_works) {
+          result.innerHTML = `<span style="color:#fbbf24;">⚠️ PDF 応答異常</span><br><span style="color:#94a3b8;font-size:0.6rem;">"${(data.sample || '').substring(0, 60)}"</span>`;
+        } else {
+          const isCredit = (data.error || '').toLowerCase().includes('credit');
+          if (isCredit) {
+            result.innerHTML = `<span style="color:#f87171;">💸 credit_low</span><br><a href="https://console.anthropic.com/settings/billing" target="_blank" rel="noopener" style="color:#fbbf24;font-size:0.62rem;text-decoration:underline;">→ クレジット補充</a>`;
+          } else {
+            result.innerHTML = `<span style="color:#f87171;">❌ PDF NG</span><br><span style="color:#94a3b8;font-size:0.58rem;">${(data.diagnosis || data.error || '').substring(0, 100)}</span>`;
+          }
+        }
+      } catch (e) {
+        result.innerHTML = `<span style="color:#f87171;">❌ ${e.message}</span>`;
+      }
+      btn.disabled = false;
+      btn.textContent = '📄 PDF';
+    }
+    window.testAnthropicPdf = testAnthropicPdf;
 
     // 2026-05-10 OpenAI Tier 5 fallback テスト
     async function testOpenAI() {
