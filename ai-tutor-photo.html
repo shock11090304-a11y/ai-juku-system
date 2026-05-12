@@ -139,18 +139,18 @@
     modal.id = 'tpPdfModal';
     modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem;';
     modal.innerHTML = `
-      <div role="dialog" aria-labelledby="tpPdfModalTitle" style="background:#1f1f2e;border:2px solid #fbbf24;border-radius:14px;padding:1.4rem;max-width:480px;width:100%;color:#e4e4e7;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
-        <h3 id="tpPdfModalTitle" style="margin:0 0 0.8rem;color:#fbbf24;font-size:1.1rem;">⚠️ PDF についてのお知らせ</h3>
+      <div role="dialog" aria-labelledby="tpPdfModalTitle" style="background:#1f1f2e;border:2px solid #4ade80;border-radius:14px;padding:1.4rem;max-width:480px;width:100%;color:#e4e4e7;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+        <h3 id="tpPdfModalTitle" style="margin:0 0 0.8rem;color:#86efac;font-size:1.1rem;">📄 PDF についてのお知らせ</h3>
         <p style="margin:0 0 0.8rem;font-size:0.92rem;line-height:1.7;">
-          PDF は今のところ <strong style="color:#fde68a;">1 つの AI (Claude) しか対応できません</strong>。<br>
-          3 つの AI で答え合わせしたい時は、<strong style="color:#86efac;">1 ページずつ写真を撮ってもらう</strong>と一番正確です。
+          PDF は<strong style="color:#86efac;">自動的にページ画像に変換</strong>されて、<strong style="color:#fde68a;">3 つの AI 全部で並列解析</strong>されます。<br>
+          ページが複数ある場合は<strong style="color:#fde68a;">最初の 3 ページ</strong>まで処理します。
         </p>
         <p style="margin:0 0 1rem;font-size:0.85rem;color:#a1a1aa;line-height:1.6;">
-          PDF のまま進めると「信頼度: 低」になります。それでも PDF で進めますか?
+          続行しますか?
         </p>
         <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
-          <button id="tpPdfModalCancel" style="flex:1;padding:0.7rem 0.8rem;background:linear-gradient(135deg,#22c55e,#3b82f6);border:0;border-radius:10px;color:#fff;font-weight:800;cursor:pointer;font-size:0.92rem;min-height:44px;">📷 写真で撮り直す (推奨)</button>
-          <button id="tpPdfModalAccept" style="flex:1;padding:0.7rem 0.8rem;background:rgba(251,191,36,0.18);border:1px solid rgba(251,191,36,0.45);border-radius:10px;color:#fbbf24;font-weight:700;cursor:pointer;font-size:0.88rem;min-height:44px;">PDF で進める (Claude 1 AI のみ)</button>
+          <button id="tpPdfModalAccept" style="flex:1;padding:0.7rem 0.8rem;background:linear-gradient(135deg,#22c55e,#3b82f6);border:0;border-radius:10px;color:#fff;font-weight:800;cursor:pointer;font-size:0.92rem;min-height:44px;">✅ PDF で進める (3 AI 並列)</button>
+          <button id="tpPdfModalCancel" style="flex:1;padding:0.7rem 0.8rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#a1a1aa;font-weight:700;cursor:pointer;font-size:0.88rem;min-height:44px;">✕ キャンセル</button>
         </div>
       </div>`;
     document.body.appendChild(modal);
@@ -387,6 +387,26 @@
                     : '❌ 不足';
 
     let html = '';
+
+    // 🛡️ Task 2 (2026-05-13): Anthropic credit_low 時の自動代替バナー
+    if (data.ai_health && data.ai_health.fallback_active) {
+      html += '<div style="margin-bottom:0.8rem;padding:0.7rem 0.9rem;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.40);border-radius:10px;color:#fde68a;font-size:0.85rem;line-height:1.5;">';
+      html += '<strong>🔧 AI 体制について:</strong> ' + escapeHTML(data.ai_health.message || '');
+      html += '<div style="font-size:0.78rem;color:#a1a1aa;margin-top:0.3rem;">現在稼働: ' + escapeHTML((data.ai_health.active_ais || []).join(' + ')) + ' (' + data.ai_health.active_count + ' AI)</div>';
+      html += '</div>';
+    }
+
+    // 🛡️ Task 1 (2026-05-13): PDF→画像変換情報の表示
+    if (data.pdf_conversion && data.pdf_conversion.converted) {
+      html += '<div style="margin-bottom:0.8rem;padding:0.6rem 0.85rem;background:rgba(34,197,94,0.10);border:1px solid rgba(34,197,94,0.30);border-radius:10px;color:#86efac;font-size:0.82rem;line-height:1.5;">';
+      html += '📄 PDF を画像化して 3 AI 全部で並列解析しました (' + data.pdf_conversion.pages_used + '/' + data.pdf_conversion.page_count + ' ページ・' + data.pdf_conversion.size_kb + ' KB)';
+      html += '</div>';
+    } else if (data.pdf_conversion && !data.pdf_conversion.converted) {
+      html += '<div style="margin-bottom:0.8rem;padding:0.6rem 0.85rem;background:rgba(248,113,113,0.10);border:1px solid rgba(248,113,113,0.30);border-radius:10px;color:#fca5a5;font-size:0.82rem;line-height:1.5;">';
+      html += '⚠️ PDF の画像変換に失敗 (' + escapeHTML(data.pdf_conversion.error || '不明') + ')。PDF のまま処理を試みました。';
+      html += '</div>';
+    }
+
     // メタ情報
     html += '<div class="tp-meta-info">';
     html += '<span>📚 ' + escapeHTML(data.subject_guess || '?') + '</span>';
@@ -397,12 +417,19 @@
     if (data.auto_promoted) html += '<span style="color:#fbbf24;">🤖 自動で精密モードへ昇格</span>';
     html += '</div>';
 
-    // 🛡️ 致命 fix: 1 AI のみ応答 / parse 失敗時の重要警告を最上部に表示
+    // 🛡️ 致命 fix v2 (2026-05-13 review C-3): 1 AI のみ応答 / parse 失敗時の重要警告
+    // 「PDF は Claude のみ対応」言及を削除 (PDF も画像変換で 3 AI 並列対応になったため)
     if (successCount < 2) {
+      const ahFallback = data.ai_health && data.ai_health.fallback_active;
       html += '<div style="margin-bottom:1rem;padding:0.85rem;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.50);border-radius:10px;color:#fca5a5;font-size:0.92rem;line-height:1.6;">';
       html += '<strong>⚠️ 3 AI 並列検証が成立しませんでした</strong><br>';
-      html += '応答した AI が ' + successCount + ' 件のみです。原因として: ①PDF は Claude のみ対応 (画像は 3 AI 並列) ②AI 応答の JSON 形式不正 ③問題が読みづらい・等が考えられます。<br>';
-      html += '<strong>推奨対応:</strong> 画像 (JPG/PNG) で撮り直し or「補足説明」欄に問題文を手入力して再試行してください。';
+      html += '応答した AI が ' + successCount + ' 件のみです。';
+      if (ahFallback) {
+        html += '<br>主因: 一部 AI サービスが一時的に利用不可です (上の黄色バナー参照)。';
+      } else {
+        html += '原因として: ①AI 応答の JSON 形式不正 ②問題が読みづらい (写真がブレている・暗い等) ③一時的な AI 通信エラー・等が考えられます。';
+      }
+      html += '<br><strong>推奨対応:</strong> 問題の写真を撮り直す or「補足説明」欄に問題文を手入力して再試行してください。';
       html += '</div>';
     }
 

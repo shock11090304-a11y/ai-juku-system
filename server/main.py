@@ -21421,6 +21421,126 @@ def _solve_one_ai(ai_id: str, image_b64: Optional[str], mime: str, mime_pdf: boo
         }
 
 
+def _pdf_to_image_b64(pdf_bytes: bytes, *, dpi: int = 150, max_pages: int = 3,
+                       max_image_bytes: int = 4 * 1024 * 1024,
+                       max_combined_pixels: int = 50_000_000) -> dict:
+    """🛡️ PDF → 画像変換 (2026-05-13 塾長指示 v2・review 致命 fix 込み)
+    塾長指摘「PDF だと 3 AI 並列不可」の根本解決。PDF を PyMuPDF でページ単位 JPG に変換し、
+    すべての AI (Claude/GPT-4o/Gemini) に画像として送信できるようにする。
+
+    引数:
+      - pdf_bytes: PDF の raw bytes (caller 側で b64decode 済・致命 fix H-4: 二重 decode 防止)
+
+    返却:
+      {ok, image_b64, mime, page_count, pages_used, size_bytes} or {ok=False, error}
+
+    パラメータ:
+      - dpi: 150 (印刷物の最低読み取り精度)
+      - max_pages: 3 (実用上 1-3 ページで足りる)
+      - max_image_bytes: 4MB (各 AI 画像上限 5MB の安全マージン)
+      - max_combined_pixels: 5000万 (memory DoS 防御・review H-1)
+    """
+    import base64 as _b64
+    import io as _io
+    try:
+        import fitz  # PyMuPDF
+    except ImportError:
+        return {"ok": False, "error": "PyMuPDF (fitz) 未 install。Railway redeploy 後に再試行してください"}
+    try:
+        from PIL import Image
+    except ImportError:
+        return {"ok": False, "error": "Pillow 未 install"}
+
+    if not isinstance(pdf_bytes, (bytes, bytearray)):
+        return {"ok": False, "error": "pdf_bytes は bytes 必須"}
+
+    try:
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    except Exception as e:
+        return {"ok": False, "error": f"PDF を開けません (壊れている可能性): {e}"}
+
+    # 🛡️ review CRITICAL C-1 fix: doc.close() 後の page_count アクセスは例外発生する
+    # → ローカル変数に保存してから close() する
+    try:
+        total_pages = int(doc.page_count)
+        if total_pages == 0:
+            return {"ok": False, "error": "PDF にページがありません"}
+        pages_used = min(total_pages, max_pages)
+
+        # zoom factor: 150 DPI / 72 DPI (PDF default) = 約 2.08
+        zoom = dpi / 72.0
+        mat = fitz.Matrix(zoom, zoom)
+
+        page_imgs = []
+        for i in range(pages_used):
+            page = doc.load_page(i)
+            pix = page.get_pixmap(matrix=mat, alpha=False)
+            img_bytes = pix.tobytes(output="jpeg")
+            page_imgs.append(Image.open(_io.BytesIO(img_bytes)).convert("RGB"))
+    except Exception as e:
+        # 🛡️ review CRITICAL C-2 fix: 例外時も必ず doc.close() を保証
+        try:
+            doc.close()
+        except Exception:
+            pass
+        return {"ok": False, "error": f"PDF ページ読込失敗: {type(e).__name__}: {str(e)[:200]}"}
+    finally:
+        # 通常パスでも doc.close() を保証
+        try:
+            doc.close()
+        except Exception:
+            pass
+
+    if not page_imgs:
+        return {"ok": False, "error": "ページ画像化できませんでした"}
+
+    if len(page_imgs) == 1:
+        combined = page_imgs[0]
+    else:
+        # 縦並び結合 (各ページのオリジナル height を保つ)
+        total_h = sum(im.height for im in page_imgs)
+        max_w = max(im.width for im in page_imgs)
+        # 🛡️ review HIGH H-1 fix: combined pixel 数の sanity check (memory DoS 防御)
+        if max_w * total_h > max_combined_pixels:
+            return {
+                "ok": False,
+                "error": f"PDF サイズが大きすぎます (combined {max_w}x{total_h} px > {max_combined_pixels:,} 上限)。ページ数を減らすか、低解像度の PDF にしてください。",
+            }
+        combined = Image.new("RGB", (max_w, total_h), "white")
+        y_offset = 0
+        for im in page_imgs:
+            combined.paste(im, (0, y_offset))
+            y_offset += im.height
+
+    # JPEG 圧縮 (4MB 以下に収まるまで quality 落とす)
+    quality = 85
+    out_bytes = b""
+    while quality >= 40:
+        buf = _io.BytesIO()
+        combined.save(buf, format="JPEG", quality=quality, optimize=True)
+        out_bytes = buf.getvalue()
+        if len(out_bytes) <= max_image_bytes:
+            break
+        quality -= 10
+    # まだ大きい場合は解像度を縮小
+    if len(out_bytes) > max_image_bytes:
+        scale = 1500 / max(combined.size)
+        new_size = (max(1, int(combined.size[0] * scale)), max(1, int(combined.size[1] * scale)))
+        combined = combined.resize(new_size, Image.LANCZOS)
+        buf = _io.BytesIO()
+        combined.save(buf, format="JPEG", quality=80, optimize=True)
+        out_bytes = buf.getvalue()
+
+    return {
+        "ok": True,
+        "image_b64": _b64.b64encode(out_bytes).decode("ascii"),
+        "mime": "image/jpeg",
+        "page_count": total_pages,  # 🛡️ C-1 fix: ローカル変数を使う
+        "pages_used": pages_used,
+        "size_bytes": len(out_bytes),
+    }
+
+
 def _extract_json_robust(text: str) -> Optional[dict]:
     """🛡️ Markdown fence / 前後説明文 / invalid escape を含む生テキストから JSON を抽出。
     塾長指摘 2026-05-13「最終解答が JSON 生のまま表示」事故への対処。
@@ -21629,6 +21749,29 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
     if problem_text and len(problem_text) > 4000:
         raise HTTPException(status_code=400, detail="problem_text が長すぎます (4000 文字以内)")
 
+    # 🛡️ Task 1 (2026-05-13 塾長指示・review fix v2): PDF → 画像変換で 3 AI 全部対応
+    # 旧: PDF は Claude のみ → Claude 失敗 (credit_low 等) で 3 AI 全失敗
+    # 新: PDF を PyMuPDF で JPG 化 → Claude/GPT-4o/Gemini すべてで処理可能
+    # review H-4 fix: 既に validation で decoded した bytes を再利用 (二重 decode 防止)
+    pdf_conversion_info = None
+    if mime_pdf and image_b64:
+        conv = _pdf_to_image_b64(decoded, dpi=150, max_pages=3)
+        if conv.get("ok"):
+            image_b64 = conv["image_b64"]
+            mime = conv["mime"]
+            mime_pdf = False  # 内部画像化したので以降は画像として扱う
+            pdf_conversion_info = {
+                "converted": True,
+                "page_count": conv.get("page_count"),
+                "pages_used": conv.get("pages_used"),
+                "size_kb": round((conv.get("size_bytes") or 0) / 1024, 1),
+            }
+            log.info(f"[solve-from-image] PDF→JPG converted: {pdf_conversion_info}")
+        else:
+            # 変換失敗 → PDF のまま Anthropic に投げる (従来挙動)
+            log.warning(f"[solve-from-image] PDF conversion failed, falling back to native PDF: {conv.get('error')}")
+            pdf_conversion_info = {"converted": False, "error": conv.get("error")}
+
     # Round 1: 3 AI 並列で独立解答
     import time as _t
     t0_total = _t.time()
@@ -21764,6 +21907,14 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
     except Exception as ee:
         log.warning(f"[solve-from-image] event log failed: {ee}")
 
+    # 🛡️ Task 2 (2026-05-13 塾長指示): Anthropic credit_low 状態を response に含めて UI で代替表示
+    import time as _time_ai
+    anthropic_credit_low = _AI_CIRCUIT_BREAKER.get("credit_low_until", 0) > _time_ai.time()
+    active_ais = []
+    if not anthropic_credit_low:
+        active_ais.append("claude")
+    active_ais.extend(["gemini", "openai"])  # この 2 つは別 provider なので常時 active
+
     return {
         "ok": True,
         "mode": mode,
@@ -21774,6 +21925,17 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
         "round2": round2,  # essay_review 時のみ存在
         "consensus": consensus,
         "elapsed_ms_total": elapsed_ms_total,
+        "pdf_conversion": pdf_conversion_info,  # PDF→画像変換情報 (PDF 受信時のみ非 null)
+        "ai_health": {
+            "anthropic_credit_low": anthropic_credit_low,
+            "active_count": len(active_ais),
+            "active_ais": active_ais,
+            "fallback_active": anthropic_credit_low,
+            "message": (
+                "⚠️ Anthropic Claude が一時的に利用不可です。Gemini + OpenAI の 2 AI 体制で動作中。"
+                "塾長に「Anthropic クレジット補充」をお伝えください。"
+            ) if anthropic_credit_low else None,
+        },
     }
 
 
