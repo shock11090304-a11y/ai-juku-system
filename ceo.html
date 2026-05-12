@@ -396,7 +396,8 @@
     <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(248,113,113,0.06); border: 1px solid rgba(248,113,113,0.30); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem;">
         <h2 style="font-size:1.15rem;color:#fca5a5;margin:0;">🎯 全生徒弱点ヒートマップ <span style="font-size:0.7rem;color:#71717a;font-weight:400;">(教材作成優先度)</span></h2>
-        <div style="display:flex;gap:0.4rem;">
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+          <button id="aggregateWeaknessNow" onclick="aggregateWeaknessNow()" style="background:rgba(34,197,94,0.18);color:#86efac;border:1px solid rgba(34,197,94,0.40);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;" title="毎朝 4:00 JST 自動集計だが、塾長が「翌朝待たず今すぐ反映」したい時に押す">⚡ 今すぐ集計</button>
           <button id="refreshWeaknessHeatmap" style="background:rgba(248,113,113,0.18);color:#fca5a5;border:1px solid rgba(248,113,113,0.40);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">🔄 更新</button>
         </div>
       </div>
@@ -6307,6 +6308,31 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       // 初回表示は admin ログイン後に呼ばれる (AdminAuth.fetch 内で auth 確認)
       setTimeout(loadHeatmap, 2000);
     }
+
+    // ⚡ 弱点集計を今すぐ実行 (2026-05-13 塾長指示・mypage 動作確認用)
+    async function aggregateWeaknessNow() {
+      const btn = document.getElementById('aggregateWeaknessNow');
+      if (!btn) return;
+      if (!confirm('弱点集計を今すぐ実行しますか? (通常は毎朝 4:00 JST 自動・約 5 秒で完了)')) return;
+      btn.disabled = true;
+      btn.textContent = '⏳ 集計中...';
+      try {
+        const res = await AdminAuth.fetch('/api/admin/weakness/aggregate-now', { method: 'POST' });
+        const d = await res.json();
+        if (d.ok) {
+          const r = d.result || {};
+          alert('✅ 弱点集計完了\n生徒数: ' + (r.students_processed || 0) + ' 名\n新規: ' + (r.weaknesses_inserted || 0) + ' 件 / 更新: ' + (r.weaknesses_updated || 0) + ' 件\n対象 log: ' + (r.rows_examined || 0) + ' 件\n\n生徒の mypage で「弱点 TOP3」が表示されているか確認してください');
+          loadHeatmap();
+        } else {
+          alert('❌ 失敗: ' + JSON.stringify(d));
+        }
+      } catch (e) {
+        alert('通信エラー: ' + e.message);
+      }
+      btn.disabled = false;
+      btn.textContent = '⚡ 今すぐ集計';
+    }
+    window.aggregateWeaknessNow = aggregateWeaknessNow;
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', bind);
     } else { bind(); }

@@ -1040,6 +1040,13 @@ async def _start_background_tasks():
         _BACKGROUND_TASKS.append(task)
         log.info("[Startup] Weakness aggregation scheduler launched (target JST 4:00 daily)")
 
+    # 💸 Anthropic credit_low 監視 scheduler (毎日 JST 8:00) - 塾長指示 2026-05-13
+    # critical (<3日) / warning (<7日) で Resend メール自動通知
+    if CRON_SECRET:
+        task = asyncio.create_task(_anthropic_credit_monitor_scheduler())
+        _BACKGROUND_TASKS.append(task)
+        log.info("[Startup] Anthropic credit monitor scheduler launched (target JST 8:00 daily)")
+
 
 async def _post_deploy_smoke_test():
     """uvicorn 起動から 30 秒後に 1 回だけ実行される自動 smoke test。
@@ -2471,18 +2478,14 @@ def _run_credit_monitor() -> dict:
         f"→ 補充後、CEO ダッシュ「💰 補充を記録」で金額を入力してください\n"
     )
     notified = False
-    if MONITORING_TO_EMAIL and RESEND_API_KEY:
-        try:
-            _send_resend_email(
-                MONITORING_TO_EMAIL,
-                subject,
-                body_text,
-                from_email=f"alert@{EMAIL_FROM_DOMAIN}" if EMAIL_FROM_DOMAIN else None,
-            )
-            notified = True
+    try:
+        body_html = "<pre style='font-family:monospace;font-size:13px;'>" + body_text.replace("<", "&lt;").replace(">", "&gt;") + "</pre>"
+        result = _send_monitor_email(subject, body_html)
+        notified = bool(result and result.get("sent"))
+        if notified:
             log.info(f"[CreditMonitor] alert sent: {subject}")
-        except Exception as e:
-            log.error(f"[CreditMonitor] alert send failed: {e}")
+    except Exception as e:
+        log.error(f"[CreditMonitor] alert send failed: {e}")
     return {
         "status_level": status_level,
         "days_remaining": round(days_remaining, 1),
@@ -2622,6 +2625,51 @@ _WEAKNESS_SUBJECT_TO_POOL = {
     "japanese": [("daigaku", "r_summary"), ("daigaku", "r_long")],  # 国語 pool が少ないため英語長文も
     "social": [("daigaku", "r_long")],  # 社会専門 pool 未整備のため英語長文 (general topic) で代用
 }
+
+
+@app.post("/api/admin/weakness/aggregate-now")
+def admin_weakness_aggregate_now(authorization: Optional[str] = Header(None),
+                                  x_cron_secret: Optional[str] = Header(None)):
+    """🎯 弱点集計を即時実行 (CEO ダッシュ「今すぐ集計」ボタン用・2026-05-13 塾長指示)
+    通常は毎朝 JST 4:00 cron で集計だが、塾長が「動作確認したい」「翌朝待たずに反映」時に使用。
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    try:
+        result = _run_weakness_aggregation()
+        return {"ok": True, "result": result}
+    except Exception as e:
+        log.error(f"[weakness/aggregate-now] failed: {type(e).__name__}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {str(e)[:300]}")
+
+
+@app.post("/api/admin/anthropic/credit-monitor-now")
+def admin_credit_monitor_now(authorization: Optional[str] = Header(None),
+                              x_cron_secret: Optional[str] = Header(None)):
+    """💸 credit 監視を即時実行 (CEO ダッシュテスト用)
+    通常は毎朝 JST 8:00 cron で実行・警告メール送信。手動テスト時に使用。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    try:
+        result = _run_credit_monitor()
+        return {"ok": True, "result": result}
+    except Exception as e:
+        log.error(f"[credit-monitor-now] failed: {type(e).__name__}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {str(e)[:300]}")
 
 
 @app.get("/api/student/weakness-top3")
