@@ -21221,15 +21221,12 @@ def _solve_one_ai(ai_id: str, image_b64: Optional[str], mime: str, mime_pdf: boo
         if parse_failed:
             parsed = {}  # 全 field 空で扱う・explanation_jp は別 field でエラー明示
 
-        # 🛡️ 致命 fix: provider が fallback (claude→gemini 等) で変わった場合、label にも明示
+        # 🛡️ 致命 fix v2 (2026-05-13): provider fallback の表示は UI 側 (provider_fallback フラグ)
+        # のみで行う。バックエンドの label 改変は UI 側表示と重複し「⚠️」が 2 回出るバグになるため削除。
         actual_provider = data.get("_provider") or ai_def["kind"]
         actual_model = data.get("_actual_model") or ai_def["model"]
-        label = ai_def["label"]
-        provider_fallback = False
-        if actual_provider != ai_def["kind"]:
-            provider_fallback = True
-            # 例: "🎯 Claude Opus 4.7 (数式・論理重視)" → "🎯 Claude Opus 4.7 (代替: gemini-2.5-flash・混雑時 fallback)"
-            label = f"{ai_def['label']} ⚠️ 代替モデル: {actual_model}"
+        label = ai_def["label"]  # 元のラベルをそのまま保持
+        provider_fallback = (actual_provider != ai_def["kind"])
 
         # final_answer / explanation_jp の clean up (生 JSON を絶対に流さない)
         raw_final = (parsed.get("final_answer") or "").strip() if isinstance(parsed.get("final_answer"), str) else ""

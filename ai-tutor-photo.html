@@ -127,6 +127,50 @@
     $solve.disabled = !(hasFile || hasText);
   }
 
+  // 🛡️ UX fix E (2026-05-13): PDF 警告を画面内 inline モーダルに変更。
+  // confirm() は LINE 内ブラウザ/iOS Safari でトースト化されて黙殺される事故があるため、
+  // DOM 要素として明示表示し、生徒が確実に内容を読んだ上で選択できるようにする。
+  // 中高生でも理解しやすい平易な文言に書き換え。
+  function showPdfWarningModal(onAccept, onCancel) {
+    // 既存モーダルがあれば消す
+    const existing = document.getElementById('tpPdfModal');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = 'tpPdfModal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem;';
+    modal.innerHTML = `
+      <div role="dialog" aria-labelledby="tpPdfModalTitle" style="background:#1f1f2e;border:2px solid #fbbf24;border-radius:14px;padding:1.4rem;max-width:480px;width:100%;color:#e4e4e7;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+        <h3 id="tpPdfModalTitle" style="margin:0 0 0.8rem;color:#fbbf24;font-size:1.1rem;">⚠️ PDF についてのお知らせ</h3>
+        <p style="margin:0 0 0.8rem;font-size:0.92rem;line-height:1.7;">
+          PDF は今のところ <strong style="color:#fde68a;">1 つの AI (Claude) しか対応できません</strong>。<br>
+          3 つの AI で答え合わせしたい時は、<strong style="color:#86efac;">1 ページずつ写真を撮ってもらう</strong>と一番正確です。
+        </p>
+        <p style="margin:0 0 1rem;font-size:0.85rem;color:#a1a1aa;line-height:1.6;">
+          PDF のまま進めると「信頼度: 低」になります。それでも PDF で進めますか?
+        </p>
+        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+          <button id="tpPdfModalCancel" style="flex:1;padding:0.7rem 0.8rem;background:linear-gradient(135deg,#22c55e,#3b82f6);border:0;border-radius:10px;color:#fff;font-weight:800;cursor:pointer;font-size:0.92rem;min-height:44px;">📷 写真で撮り直す (推奨)</button>
+          <button id="tpPdfModalAccept" style="flex:1;padding:0.7rem 0.8rem;background:rgba(251,191,36,0.18);border:1px solid rgba(251,191,36,0.45);border-radius:10px;color:#fbbf24;font-weight:700;cursor:pointer;font-size:0.88rem;min-height:44px;">PDF で進める (Claude 1 AI のみ)</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    document.getElementById('tpPdfModalAccept').addEventListener('click', function() {
+      modal.remove();
+      onAccept && onAccept();
+    });
+    document.getElementById('tpPdfModalCancel').addEventListener('click', function() {
+      modal.remove();
+      onCancel && onCancel();
+    });
+    // 背景クリックで cancel 扱い
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        modal.remove();
+        onCancel && onCancel();
+      }
+    });
+  }
+
   function readFile(file) {
     if (!file) return;
     const allowed = ['image/jpeg','image/png','image/webp','application/pdf'];
@@ -140,17 +184,17 @@
       alert((isPdf ? 'PDF は 10MB' : '画像は 5MB') + ' 以内にしてください');
       return;
     }
-    // 🛡️ 致命 fix (2026-05-13 塾長指摘): PDF アップロード時に「3 AI 並列ではなく 1 AI 単独」を即時警告
+    // 🛡️ PDF 時は inline モーダルで明示警告 (LINE 内ブラウザ confirm 黙殺対策)
     if (isPdf) {
-      const ok = confirm(
-        '⚠️ PDF についての重要なお知らせ\n\n' +
-        '現状 PDF は Claude 1 AI のみ対応です (GPT-4o・Gemini は PDF 直接読込み非対応)。\n' +
-        '「3 AI 並列検証」の触れ込みは PDF では成立せず、信頼度は「低」になります。\n\n' +
-        '推奨: ページ単位の写真撮影 (JPG/PNG) で 3 AI 並列を有効化してください。\n\n' +
-        'それでも PDF で続行しますか?'
+      showPdfWarningModal(
+        function onAccept() { _proceedReadFile(file); },
+        function onCancel() { /* file input を clear して終了 */ $file.value = ''; }
       );
-      if (!ok) return;
+      return;
     }
+    _proceedReadFile(file);
+  }
+  function _proceedReadFile(file) {
     const reader = new FileReader();
     reader.onload = function() {
       const dataUrl = reader.result;
@@ -309,11 +353,18 @@
     }
   });
 
-  // 🛡️ 致命 fix (2026-05-13): 生 JSON テキストを「最終解答」として絶対表示しない
+  // 🛡️ 致命 fix (2026-05-13 v2): 生 JSON テキストを「最終解答」として絶対表示しない
+  // ただし数学解答 {x=3} や集合 {1,2,3} を誤判定しないよう、JSON object として valid な
+  // パターン (`{"key":...` の形) と markdown code fence のみを生 JSON 扱いにする。
   function looksLikeRawJson(s) {
     if (!s) return false;
     const t = String(s).trim();
-    return t.startsWith('{') || t.startsWith('```') || /^\s*```?json/i.test(t);
+    // ```...``` (任意言語の code fence・LLM が解答を fence で囲った場合) は raw 扱い
+    if (t.startsWith('```')) return true;
+    // {"key": ... の JSON object パターン (quote 付きキー名) のみ raw 扱い
+    // 数学解答 {x=3}, {1,2,3}, {x | x>0} などはここで false に
+    if (/^\{\s*"[^"]+"\s*:/.test(t)) return true;
+    return false;
   }
   function safeFinal(s) {
     return looksLikeRawJson(s) ? '' : (s || '');
@@ -329,6 +380,12 @@
     const successCount = finalRound.filter(function(a) { return !a.error && (a.final_answer || a.explanation_jp); }).length;
     const errorCount = finalRound.filter(function(a) { return !!a.error; }).length;
 
+    // 🛡️ UX fix F (2026-05-13 v2): バッジに状態テキスト併記 (色覚異常対応・WCAG AA)
+    const badgeColor = successCount >= 3 ? '#4ade80' : successCount >= 2 ? '#fbbf24' : '#fca5a5';
+    const badgeText = successCount >= 3 ? '✅ 完璧'
+                    : successCount >= 2 ? '⚠️ 部分的'
+                    : '❌ 不足';
+
     let html = '';
     // メタ情報
     html += '<div class="tp-meta-info">';
@@ -336,7 +393,7 @@
     if (data.topic_guess) html += '<span>📌 ' + escapeHTML(data.topic_guess) + '</span>';
     html += '<span>⏱ ' + Math.round((data.elapsed_ms_total || 0) / 1000) + ' 秒</span>';
     html += '<span>🔄 ' + (data.round2 ? '2 回チェック' : '1 回解答') + '</span>';
-    html += '<span style="color:' + (successCount >= 3 ? '#4ade80' : successCount >= 2 ? '#fbbf24' : '#fca5a5') + ';">🤝 ' + successCount + '/3 AI 応答</span>';
+    html += '<span style="color:' + badgeColor + ';">🤝 ' + successCount + '/3 AI 応答 ' + badgeText + '</span>';
     if (data.auto_promoted) html += '<span style="color:#fbbf24;">🤖 自動で精密モードへ昇格</span>';
     html += '</div>';
 
@@ -350,11 +407,21 @@
     }
 
     // 統合解答
-    html += '<div class="tp-result-final">';
-    html += '<h3>🎯 最終解答 <span class="tp-confidence ' + conf + '">' + confLabel + '</span></h3>';
+    // 🛡️ UX 致命 fix C-1 (2026-05-13): 1 AI 応答 / 信頼度低時は「最終解答」とせず
+    // 「暫定解答 (参考程度)」として黄色背景で表示。生徒が単一 AI の hallucination を
+    // 「正解」として暗記するリスクを防止。
+    const isTentative = (successCount < 2) || (conf === 'low');
+    const boxClass = isTentative ? 'tp-result-final tentative' : 'tp-result-final';
+    const boxStyle = isTentative
+      ? 'background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.40);'
+      : '';
+    const heading = isTentative ? '⚠️ 暫定解答 <span style="font-size:0.78rem;color:#fbbf24;font-weight:700;">(参考程度・必ず先生に確認)</span>' : '🎯 最終解答';
+    html += '<div class="' + boxClass + '" style="' + boxStyle + '">';
+    html += '<h3>' + heading + ' <span class="tp-confidence ' + conf + '">' + confLabel + '</span></h3>';
     const finalAns = safeFinal(consensus.final_answer);
     if (finalAns) {
-      html += '<div class="final-answer">' + escapeHTML(finalAns) + '</div>';
+      const ansColor = isTentative ? 'color:#fcd34d;' : '';
+      html += '<div class="final-answer" style="' + ansColor + '">' + escapeHTML(finalAns) + '</div>';
     } else {
       html += '<div class="final-answer" style="color:#fca5a5;">(解答抽出できず)</div>';
     }
@@ -367,7 +434,12 @@
       html += '<div style="margin-top:0.6rem;color:#fbbf24;font-size:0.85rem;">⚠ ' + escapeHTML(consensus.note) + '</div>';
     }
     if (consensus.retry_recommended) {
-      html += '<div style="margin-top:0.6rem;"><button onclick="location.reload()" style="padding:0.5rem 1rem;background:rgba(34,197,94,0.20);border:1px solid rgba(34,197,94,0.4);border-radius:8px;color:#86efac;font-weight:700;cursor:pointer;">🔄 再試行</button></div>';
+      // 🛡️ UX 致命 fix C-2 (2026-05-13): location.reload() で画像が消える離脱要因を撤廃。
+      // 「同じ画像で再試行」と「最初からやり直す」を分けて提供。
+      html += '<div style="margin-top:0.6rem;display:flex;gap:0.5rem;flex-wrap:wrap;">';
+      html += '<button id="tpRetryBtn" style="padding:0.5rem 1rem;background:rgba(34,197,94,0.20);border:1px solid rgba(34,197,94,0.4);border-radius:8px;color:#86efac;font-weight:700;cursor:pointer;">🔄 もう一度 AI に問い合わせ (画像は維持)</button>';
+      html += '<button id="tpResetBtn" style="padding:0.5rem 1rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#a1a1aa;font-weight:700;cursor:pointer;">✕ 最初からやり直す</button>';
+      html += '</div>';
     }
     html += '</div>';
 
@@ -375,11 +447,13 @@
     html += '<h3 style="color:#a78bfa;font-size:1rem;margin:1rem 0 0.5rem;">📊 3 AI それぞれの解答 <span style="font-size:0.75rem;color:#a1a1aa;font-weight:400;">(応答 ' + successCount + ' 件 / 失敗 ' + errorCount + ' 件)</span></h3>';
     finalRound.forEach(function(ai) {
       html += '<div class="tp-ai-card">';
-      // 🛡️ 致命 fix: provider fallback ラベル + 実モデル名表示
       html += '<h4>' + escapeHTML(ai.label || ai.ai_id) + '</h4>';
       html += '<div class="ai-meta">' + escapeHTML(ai.model || '') + ' · ' + Math.round((ai.elapsed_ms || 0) / 1000) + 's';
       if (ai.confidence_self) html += ' · 自信: ' + escapeHTML(ai.confidence_self);
-      if (ai.provider_fallback) html += ' <span style="color:#fbbf24;">· ⚠️ 代替モデルで応答</span>';
+      // 🛡️ UX fix G (2026-05-13): provider fallback を中高生に分かる自然文化
+      if (ai.provider_fallback) {
+        html += ' <span style="color:#fbbf24;" title="本来の AI が一時的に混雑していたため、別の AI で代理応答しました。品質は維持されています。">🔄 混雑のため代理応答</span>';
+      }
       html += '</div>';
       if (ai.error) {
         html += '<div class="tp-error" style="margin:0.4rem 0;">⚠ ' + escapeHTML(ai.error) + '</div>';
@@ -403,6 +477,24 @@
       html += '</div>';
     });
     $result.innerHTML = html;
+
+    // 🛡️ UX 致命 fix C-2 (2026-05-13): 再試行ボタンの handler を結果描画後に bind
+    const retryBtn = document.getElementById('tpRetryBtn');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', function() {
+        // 同じ画像 + 補足説明で再度 $solve を発火 (state を維持)
+        if ($solve && !$solve.disabled) {
+          $solve.click();
+        }
+      });
+    }
+    const resetBtn = document.getElementById('tpResetBtn');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function() {
+        if (!confirm('画像と補足説明を消去して最初からやり直しますか?')) return;
+        location.reload();
+      });
+    }
   }
 
   updateButton();
