@@ -635,6 +635,29 @@ def init_db():
     );
     CREATE INDEX IF NOT EXISTS idx_weakness_student_count ON student_weakness(student_id, question_count DESC);
     CREATE INDEX IF NOT EXISTS idx_weakness_aggregated ON student_weakness(aggregated_at DESC);
+    -- 💸 Anthropic credit 使用量ログ (2026-05-13 塾長指示: 残量予測バナー)
+    -- 各 Anthropic API call の token と推定 cost を記録し、CEO ダッシュで残日数予測表示
+    CREATE TABLE IF NOT EXISTS anthropic_usage_log (
+        id {pk},
+        model TEXT NOT NULL,
+        input_tokens INTEGER NOT NULL DEFAULT 0,
+        output_tokens INTEGER NOT NULL DEFAULT 0,
+        cost_usd REAL NOT NULL DEFAULT 0,
+        kind TEXT,
+        student_id INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_anthropic_usage_created ON anthropic_usage_log(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_anthropic_usage_model ON anthropic_usage_log(model, created_at DESC);
+    -- 💰 Anthropic credit 補充記録 (塾長が console で補充した金額を手動記録)
+    CREATE TABLE IF NOT EXISTS anthropic_credit_recharge (
+        id {pk},
+        amount_usd REAL NOT NULL,
+        note TEXT,
+        recorded_by TEXT,
+        recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_anthropic_recharge_at ON anthropic_credit_recharge(recorded_at DESC);
     -- 大学別 過去問風オリジナル問題プール (塾長指示 2026-05-03)
     -- 著作権配慮: 全て Claude 生成のオリジナル。過去問の「スタイル・出題パターン」のみを参考にし、
     -- 実問題文の転載は禁止。inspired_by フィールドで「東大2022年第1問の長文読解スタイル」など出典明示。
@@ -5714,6 +5737,57 @@ _AI_PROXY_RATE = {}  # session_id → [unix timestamps]
 # - credit 不足検知時は ai_credit_low イベント発火 (CEO ダッシュ緊急バナー)
 # ==========================================================================
 _AI_CIRCUIT_BREAKER = {"credit_low_until": 0.0, "last_error": None}
+
+# 💸 Anthropic API 価格表 USD per 1M tokens (2026-05-13 塾長指示・credit 残量予測バナー用)
+# 出典: https://www.anthropic.com/pricing (公開価格)
+# 不明 model は claude-sonnet 価格で fallback
+ANTHROPIC_PRICES_USD_PER_MTOK = {
+    # Opus 4.x
+    "claude-opus-4-7": {"input": 15.0, "output": 75.0},
+    "claude-opus-4": {"input": 15.0, "output": 75.0},
+    # Sonnet 4.x
+    "claude-sonnet-4-6": {"input": 3.0, "output": 15.0},
+    "claude-sonnet-4-5": {"input": 3.0, "output": 15.0},
+    "claude-sonnet-4": {"input": 3.0, "output": 15.0},
+    # Haiku 4.x
+    "claude-haiku-4-5": {"input": 0.25, "output": 1.25},
+    "claude-haiku-4": {"input": 0.25, "output": 1.25},
+}
+
+
+def _estimate_anthropic_cost_usd(model: str, input_tokens: int, output_tokens: int) -> float:
+    """model + token 数から推定 cost USD を計算 (cache tokens は input 扱いで割安計算は省略)"""
+    # model 名から prefix で fuzzy match (例: "claude-opus-4-7-20251130" → "claude-opus-4-7")
+    prices = None
+    if model:
+        for known_model, p in ANTHROPIC_PRICES_USD_PER_MTOK.items():
+            if model.startswith(known_model):
+                prices = p
+                break
+    if not prices:
+        prices = {"input": 3.0, "output": 15.0}  # Sonnet 価格で安全側 fallback
+    return (input_tokens * prices["input"] + output_tokens * prices["output"]) / 1_000_000.0
+
+
+def _record_anthropic_usage(model: str, input_tokens: int, output_tokens: int,
+                              *, kind: Optional[str] = None, student_id: Optional[int] = None) -> None:
+    """🛡️ Anthropic API 成功時に usage を anthropic_usage_log に記録 (best-effort・例外時 silent)"""
+    if not model or (input_tokens <= 0 and output_tokens <= 0):
+        return
+    try:
+        cost = _estimate_anthropic_cost_usd(model, input_tokens, output_tokens)
+        conn = db()
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO anthropic_usage_log (model, input_tokens, output_tokens, cost_usd, kind, student_id) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (model, int(input_tokens), int(output_tokens), float(cost), kind, student_id),
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        # usage 記録の失敗は API call 自体には影響させない
+        log.debug(f"[_record_anthropic_usage] log failed (silent): {e}")
 # 🚨 2026-05-07: Gemini quota exhausted (429) を一定回数検知したら一時的に Gemini を skip
 # 設計: 5 分間で 3 回以上 429 → 30 分間 Gemini をスキップして直接 Anthropic 経由
 _GEMINI_QUOTA_FAIL = {"count_in_window": 0, "window_start": 0.0, "skip_until": 0.0}
@@ -6079,6 +6153,17 @@ def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = No
                             "student_id": student_id,
                         })
                     data["_actual_model"] = model  # caller に降格情報を渡す
+                    # 💸 credit 残量予測用に usage 記録 (2026-05-13)
+                    try:
+                        usage_obj = data.get("usage") or {}
+                        _record_anthropic_usage(
+                            model,
+                            int(usage_obj.get("input_tokens") or 0),
+                            int(usage_obj.get("output_tokens") or 0),
+                            kind=kind, student_id=student_id,
+                        )
+                    except Exception:
+                        pass
                     return data
             except urllib.error.HTTPError as e:
                 err_body = e.read().decode("utf-8", errors="ignore")
@@ -14562,6 +14647,147 @@ def admin_test_anthropic(model: Optional[str] = None,
             "error": f"{type(e).__name__}: {str(e)[:300]}",
             "latency_ms": int((time.time() - t0) * 1000),
         }
+
+
+@app.get("/api/admin/anthropic/credit-status")
+def admin_anthropic_credit_status(authorization: Optional[str] = Header(None),
+                                    x_cron_secret: Optional[str] = Header(None)):
+    """💸 Anthropic credit 残量予測 (2026-05-13 塾長指示)
+    補充記録 (anthropic_credit_recharge) - 累計使用 (anthropic_usage_log) = 推定残額
+    直近 7 日の日平均使用 → 残額 / 日平均 = 残日数
+
+    認証: admin Bearer または X-Cron-Secret"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    from datetime import timedelta as _td
+    conn = db()
+    try:
+        c = conn.cursor()
+
+        # 累計補充
+        c.execute("SELECT COALESCE(SUM(amount_usd), 0) FROM anthropic_credit_recharge")
+        row = c.fetchone()
+        try:
+            total_recharged = float(row[0] or 0)
+        except (TypeError, KeyError, IndexError):
+            try:
+                total_recharged = float(list(row.values())[0] or 0)
+            except Exception:
+                total_recharged = 0.0
+
+        # 累計使用
+        c.execute("SELECT COALESCE(SUM(cost_usd), 0) FROM anthropic_usage_log")
+        row = c.fetchone()
+        try:
+            total_used = float(row[0] or 0)
+        except (TypeError, KeyError, IndexError):
+            try:
+                total_used = float(list(row.values())[0] or 0)
+            except Exception:
+                total_used = 0.0
+
+        # 直近 7 日の日平均使用
+        cutoff_7d = datetime.utcnow() - _td(days=7)
+        c.execute("SELECT COALESCE(SUM(cost_usd), 0) FROM anthropic_usage_log WHERE created_at >= ?", (cutoff_7d,))
+        row = c.fetchone()
+        try:
+            last_7d_used = float(row[0] or 0)
+        except (TypeError, KeyError, IndexError):
+            try:
+                last_7d_used = float(list(row.values())[0] or 0)
+            except Exception:
+                last_7d_used = 0.0
+        avg_daily_used = last_7d_used / 7.0
+
+        remaining = max(0.0, total_recharged - total_used)
+        days_remaining = (remaining / avg_daily_used) if avg_daily_used > 0.001 else None
+
+        # 状態判定 (色分け用)
+        # データ不足 (補充記録なし) → unknown / 残日数 < 3 → critical / < 7 → warning / その他 → ok
+        if total_recharged <= 0:
+            status_level = "unknown"
+        elif days_remaining is None:
+            status_level = "ok"  # 使用記録ないがチャージ済
+        elif days_remaining < 3:
+            status_level = "critical"
+        elif days_remaining < 7:
+            status_level = "warning"
+        else:
+            status_level = "ok"
+
+        # 直近補充記録
+        c.execute(
+            "SELECT amount_usd, note, recorded_at FROM anthropic_credit_recharge "
+            "ORDER BY recorded_at DESC LIMIT 5"
+        )
+        recharges = []
+        for r in c.fetchall():
+            try:
+                amt = r["amount_usd"]; note = r["note"]; ts = r["recorded_at"]
+            except (TypeError, KeyError, IndexError):
+                amt, note, ts = r[0], r[1], r[2]
+            recharges.append({"amount_usd": float(amt or 0), "note": note or "", "recorded_at": str(ts) if ts else None})
+
+        return {
+            "ok": True,
+            "total_recharged_usd": round(total_recharged, 2),
+            "total_used_usd": round(total_used, 4),
+            "remaining_usd": round(remaining, 2),
+            "last_7d_used_usd": round(last_7d_used, 4),
+            "avg_daily_used_usd": round(avg_daily_used, 4),
+            "days_remaining": (round(days_remaining, 1) if days_remaining is not None else None),
+            "status_level": status_level,  # unknown / ok / warning / critical
+            "recharges": recharges,
+        }
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/anthropic/credit-recharge")
+def admin_anthropic_credit_recharge(payload: dict,
+                                      authorization: Optional[str] = Header(None),
+                                      x_cron_secret: Optional[str] = Header(None)):
+    """💰 Anthropic credit 補充記録 (塾長が Anthropic console で補充した時に手動記録)
+    payload: {"amount_usd": 50.0, "note": "Tier 1 初回補充"}"""
+    authed = False
+    recorded_by = "x-cron-secret"
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+            recorded_by = "admin"
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    try:
+        amount = float(payload.get("amount_usd") or 0)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="amount_usd 不正")
+    if amount <= 0 or amount > 10000:
+        raise HTTPException(status_code=400, detail="amount_usd は 0 < x <= 10000 の範囲で")
+    note = (payload.get("note") or "")[:300]
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO anthropic_credit_recharge (amount_usd, note, recorded_by) VALUES (?, ?, ?)",
+            (amount, note, recorded_by),
+        )
+        conn.commit()
+        return {"ok": True, "amount_usd": amount, "note": note, "recorded_by": recorded_by}
+    finally:
+        conn.close()
 
 
 @app.post("/api/admin/ai/test-anthropic-pdf")

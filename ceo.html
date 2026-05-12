@@ -332,6 +332,11 @@
   </nav>
 
   <main class="ceo-main">
+    <!-- 💸 Anthropic credit 残量予測バナー (2026-05-13 塾長指示) -->
+    <section id="anthropicCreditBanner" style="display:none;margin:0 0 1rem 0;padding:0.85rem 1rem;border-radius:12px;font-size:0.9rem;">
+      <!-- JS で動的描画 -->
+    </section>
+
     <!-- KPI Hero -->
     <section class="ceo-hero">
       <div class="hero-metric main">
@@ -2733,6 +2738,86 @@
       btn.textContent = '📄 PDF';
     }
     window.testAnthropicPdf = testAnthropicPdf;
+
+    // 💸 Anthropic credit 残量予測バナー (2026-05-13 塾長指示)
+    // CEO ダッシュ最上部に「残り N 日」表示。<3 日=赤 / <7 日=黄 / それ以上=緑
+    async function loadAnthropicCreditBanner() {
+      const banner = document.getElementById('anthropicCreditBanner');
+      if (!banner) return;
+      if (!window.AdminAuth || !AdminAuth.getToken()) return;
+      try {
+        const res = await AdminAuth.fetch('/api/admin/anthropic/credit-status');
+        if (!res.ok) return;
+        const d = await res.json();
+        if (!d.ok) return;
+
+        // 色とアイコン決定
+        const styleMap = {
+          unknown: {bg:'rgba(99,102,241,0.10)', border:'rgba(99,102,241,0.40)', color:'#a78bfa', icon:'💸', label:'未記録'},
+          ok:      {bg:'rgba(34,197,94,0.10)',  border:'rgba(34,197,94,0.40)',  color:'#86efac', icon:'✅', label:'残量十分'},
+          warning: {bg:'rgba(251,191,36,0.12)', border:'rgba(251,191,36,0.45)', color:'#fbbf24', icon:'⚠️', label:'残量警告'},
+          critical:{bg:'rgba(248,113,113,0.15)',border:'rgba(248,113,113,0.50)',color:'#fca5a5', icon:'🚨', label:'残量危機'},
+        };
+        const st = styleMap[d.status_level] || styleMap.unknown;
+        banner.style.cssText = 'display:block;margin:0 0 1rem 0;padding:0.85rem 1rem;border-radius:12px;font-size:0.9rem;background:'+st.bg+';border:1px solid '+st.border+';color:'+st.color+';';
+
+        let html = '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;">';
+        html += '<div style="flex:1 1 auto;min-width:240px;">';
+        html += '<strong style="font-size:1rem;">'+st.icon+' Anthropic '+st.label+'</strong>';
+        if (d.status_level === 'unknown') {
+          html += '<div style="font-size:0.82rem;color:#94a3b8;margin-top:0.3rem;">補充履歴が未記録です。「💰 補充を記録」で初回 $50 等を登録してください。</div>';
+        } else {
+          const daysText = (d.days_remaining != null)
+            ? '残り <strong style="font-size:1.15rem;">約 '+d.days_remaining+' 日</strong> '
+            : '使用量データ蓄積中 ';
+          html += '<div style="font-size:0.85rem;margin-top:0.3rem;">'+daysText+'<span style="color:#94a3b8;">(残額 $'+d.remaining_usd+' / 累計補充 $'+d.total_recharged_usd+' - 累計使用 $'+d.total_used_usd+')</span></div>';
+          html += '<div style="font-size:0.75rem;color:#94a3b8;margin-top:0.2rem;">直近 7 日: $'+d.last_7d_used_usd+' 消費 / 日平均 $'+d.avg_daily_used_usd+'</div>';
+        }
+        html += '</div>';
+        html += '<div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">';
+        if (d.status_level !== 'ok') {
+          html += '<a href="https://console.anthropic.com/settings/billing" target="_blank" rel="noopener" style="padding:0.4rem 0.8rem;background:rgba(0,0,0,0.30);border:1px solid rgba(255,255,255,0.20);border-radius:8px;color:#fff;font-size:0.78rem;font-weight:700;text-decoration:none;">🔗 Anthropic Console</a>';
+        }
+        html += '<button onclick="recordAnthropicRecharge()" style="padding:0.4rem 0.8rem;background:rgba(34,197,94,0.20);border:1px solid rgba(34,197,94,0.40);border-radius:8px;color:#86efac;font-size:0.78rem;font-weight:700;cursor:pointer;">💰 補充を記録</button>';
+        html += '<button onclick="loadAnthropicCreditBanner()" style="padding:0.4rem 0.6rem;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#a1a1aa;font-size:0.78rem;font-weight:700;cursor:pointer;">🔄</button>';
+        html += '</div></div>';
+        banner.innerHTML = html;
+      } catch (e) {
+        console.warn('[loadAnthropicCreditBanner] failed:', e);
+      }
+    }
+    window.loadAnthropicCreditBanner = loadAnthropicCreditBanner;
+
+    async function recordAnthropicRecharge() {
+      const amountStr = prompt('Anthropic console で補充した金額 (USD) を入力してください\n例: 50 (=$50)\n税抜き金額を入力 (税金 10% は除く):', '50');
+      if (!amountStr) return;
+      const amount = parseFloat(amountStr);
+      if (!(amount > 0 && amount <= 10000)) {
+        alert('0 < 金額 <= 10000 の範囲で入力してください');
+        return;
+      }
+      const note = prompt('補充の memo (任意・例: "2026-05-13 Tier 1 初回補充 $50")', '') || '';
+      try {
+        const res = await AdminAuth.fetch('/api/admin/anthropic/credit-recharge', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({amount_usd: amount, note: note}),
+        });
+        const d = await res.json();
+        if (d.ok) {
+          alert('✅ 補充記録しました: $'+d.amount_usd);
+          loadAnthropicCreditBanner();
+        } else {
+          alert('❌ 記録失敗: '+JSON.stringify(d));
+        }
+      } catch (e) {
+        alert('通信エラー: '+e.message);
+      }
+    }
+    window.recordAnthropicRecharge = recordAnthropicRecharge;
+
+    // 初期描画 (admin token 取得後・既存 start() フローと並列で 1 度 fetch)
+    setTimeout(loadAnthropicCreditBanner, 2500);
 
     // 2026-05-10 OpenAI Tier 5 fallback テスト
     async function testOpenAI() {
