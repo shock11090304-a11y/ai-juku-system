@@ -13180,6 +13180,9 @@ class StudentDeleteRequest(BaseModel):
     confirm_name: Optional[str] = None  # 後方互換 (email 未設定の生徒向け fallback)
     dry_run: Optional[bool] = False
     cancel_stripe: Optional[bool] = False  # Stripe 解約も同時実行する場合 true
+    # 🛡️ 2026-05-13 追加: ai-juku DB 削除のみで Stripe 解約しない (外部システム継続用)
+    # 例: 塾の月謝として juku-payment 側で課金継続中・ai-juku 側に誤登録された行のみ削除
+    force_skip_stripe: Optional[bool] = False
 
 
 @app.post("/api/admin/students/{student_id}/delete")
@@ -13227,14 +13230,20 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
                 if not provided_name or provided_name != student_name:
                     raise HTTPException(status_code=400, detail="確認のため生徒名を正確に入力してください (この生徒は email 未設定のため名前で確認)")
 
-        # Stripe ガード: 有効サブスクがあり cancel_stripe=false なら 409
+        # 🛡️ Stripe サブスク取扱い (2026-05-13 force_skip_stripe 追加):
+        # - cancel_stripe=true       → ai-juku で Stripe 解約 + DB 削除 (通常の退会)
+        # - force_skip_stripe=true   → DB のみ削除・Stripe は外部システム (juku-payment 等) で継続
+        # - 上記いずれも未指定       → 409 (安全装置・誤削除防止)
         sub_id = student["stripe_subscription_id"]
         if sub_id and not payload.dry_run:
-            if not payload.cancel_stripe:
+            if not payload.cancel_stripe and not payload.force_skip_stripe:
                 raise HTTPException(
                     status_code=409,
-                    detail="Stripe 有効サブスクがあります。先に Stripe ダッシュで解約するか、cancel_stripe=true を付けて再送してください"
+                    detail="Stripe 有効サブスクがあります。Stripe 解約も同時実行する場合は cancel_stripe=true、外部システムで課金継続する場合は force_skip_stripe=true を付けて再送してください"
                 )
+            if payload.force_skip_stripe:
+                log.warning(f"[StudentDelete] force_skip_stripe=true: ai-juku DB のみ削除・Stripe sub {sub_id} は継続 (student_id={student_id})")
+        if sub_id and not payload.dry_run and payload.cancel_stripe and not payload.force_skip_stripe:
             _stripe = get_stripe()
             if not _stripe:
                 raise HTTPException(status_code=503, detail="Stripe が構成されていません")
@@ -16753,7 +16762,18 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
 
         else:  # purchase_type == "monthly" (旧互換含む)
             # 月額サブスク登録: status='paid'、入塾金 InvoiceItem 作成
+            # 🛡️ 2026-05-13 塾長指摘 fix:
+            # ai-juku 申込フォーム経由以外 (Stripe Payment Link 直接決済・juku-payment 月謝等) で
+            # 来た webhook は plan metadata が無い → 旧実装は「（新規）」+ plan=null で INSERT してしまい
+            # 「塾の月謝が ai-juku MRR に混入」する致命傷だった。
+            # 修正: 有効 plan key (founder_special/founder1/premium/family/standard/student_addon) でない場合、
+            #       student_id 既存ならそのまま UPDATE (signup flow からの再決済を許容)、
+            #       新規 INSERT は skip して warning ログ + critical event 記録 (audit 用)。
+            _VALID_PLAN_KEYS = {"founder_special", "founder1", "premium", "family", "standard", "student_addon"}
+            plan_valid = bool(plan) and plan in _VALID_PLAN_KEYS
+
             if student_id and student_id != "":
+                # 既存 ID 指定: ai-juku 申込フォーム経由なので plan が空でも UPDATE 続行 (後方互換)
                 c.execute(
                     """UPDATE students SET status='paid', stripe_customer_id=?, stripe_subscription_id=?,
                            paid_since=CURRENT_TIMESTAMP, plan=?, updated_at=CURRENT_TIMESTAMP
@@ -16764,6 +16784,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                 c.execute("SELECT id FROM students WHERE email=?", (email,))
                 row = c.fetchone()
                 if row:
+                    # 既存 email: trial → paid 化等の正常 case
                     c.execute(
                         """UPDATE students SET status='paid', stripe_customer_id=?, stripe_subscription_id=?,
                                paid_since=CURRENT_TIMESTAMP, plan=?, updated_at=CURRENT_TIMESTAMP
@@ -16771,11 +16792,29 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                         (customer, subscription, plan, row[0])
                     )
                 else:
-                    c.execute(
-                        """INSERT INTO students (name, email, plan, status, stripe_customer_id, stripe_subscription_id, paid_since)
-                           VALUES (?, ?, ?, 'paid', ?, ?, CURRENT_TIMESTAMP)""",
-                        ("（新規）", email, plan, customer, subscription)
-                    )
+                    # 新規 email: ai-juku で初登場の顧客
+                    # plan が ai-juku の有効 key でない場合は INSERT skip (juku-payment 月謝など外部経路の混入を防ぐ)
+                    if plan_valid:
+                        c.execute(
+                            """INSERT INTO students (name, email, plan, status, stripe_customer_id, stripe_subscription_id, paid_since)
+                               VALUES (?, ?, ?, 'paid', ?, ?, CURRENT_TIMESTAMP)""",
+                            (name_from_meta or "（新規）", email, plan, customer, subscription)
+                        )
+                    else:
+                        log.warning(
+                            f"[Stripe webhook] Skipping INSERT: plan='{plan}' is not in ai-juku VALID_PLAN_KEYS "
+                            f"(likely external system like juku-payment 月謝). email={email} customer={customer}"
+                        )
+                        try:
+                            _record_ai_critical_event("stripe_webhook_skipped_unknown_plan", {
+                                "email": email,
+                                "customer": customer,
+                                "subscription": subscription,
+                                "plan_received": plan,
+                                "reason": "plan not in VALID_PLAN_KEYS - likely juku-payment 月謝 or external Payment Link",
+                            })
+                        except Exception:
+                            pass
             conn.commit()
 
             # 入塾金 InvoiceItem (月額のみ・先着100名キャンペーン適用時はスキップ)
