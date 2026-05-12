@@ -1040,12 +1040,9 @@ async def _start_background_tasks():
         _BACKGROUND_TASKS.append(task)
         log.info("[Startup] Weakness aggregation scheduler launched (target JST 4:00 daily)")
 
-    # 💸 Anthropic credit_low 監視 scheduler (毎日 JST 8:00) - 塾長指示 2026-05-13
-    # critical (<3日) / warning (<7日) で Resend メール自動通知
-    if CRON_SECRET:
-        task = asyncio.create_task(_anthropic_credit_monitor_scheduler())
-        _BACKGROUND_TASKS.append(task)
-        log.info("[Startup] Anthropic credit monitor scheduler launched (target JST 8:00 daily)")
+    # 💸 Anthropic credit_low 監視 scheduler は塾長判断で起動見送り (2026-05-13)
+    # 理由: CEO ダッシュバナーでリアルタイム把握可能・自動リロード設定で credit 切れ自体回避
+    # 関数 (_anthropic_credit_monitor_scheduler / _run_credit_monitor) は残置・再有効化可能
 
 
 async def _post_deploy_smoke_test():
