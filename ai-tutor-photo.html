@@ -206,6 +206,28 @@
 
   $problemText.addEventListener('input', updateButton);
 
+  // 🎯 弱点 TOP3 からの遷移: subject/topic query を補足説明にプリセット (2026-05-13)
+  (function presetFromQuery() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const subj = params.get('subject') || '';
+      const topic = params.get('topic') || '';
+      if (!subj && !topic) return;
+      const subjLabel = { math: '数学', physics: '物理', chemistry: '化学', biology: '生物',
+                          english: '英語', japanese: '国語', social: '社会' };
+      const label = subjLabel[subj.toLowerCase()] || subj;
+      const preset = [
+        label ? `【弱点 TOP3 から】${label}` : '',
+        topic ? `単元「${topic}」` : '',
+        'を強化したい・関連問題で詰まったところを撮影しました。'
+      ].filter(Boolean).join(' ');
+      if (preset) {
+        $problemText.value = preset;
+        updateButton();
+      }
+    } catch (e) { /* no-op */ }
+  })();
+
   // mode radio active class
   $modeRow.addEventListener('change', function() {
     $modeRow.querySelectorAll('label').forEach(function(l) { l.classList.remove('active'); });
@@ -214,8 +236,13 @@
   });
 
   function getStudentId() {
-    // 既存 ai-juku 共通: localStorage に保存されている student_id
+    // 既存 ai-juku 共通: ai_juku_session_student (JSON) から取得 (mypage.html / その他 page 同じパターン)
     try {
+      const student = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null');
+      if (student && student.id && parseInt(student.id, 10) > 0) {
+        return parseInt(student.id, 10);
+      }
+      // fallback: 旧形式 (student_id 直接保存)
       const sid = parseInt(localStorage.getItem('student_id') || '0', 10);
       return sid > 0 ? sid : null;
     } catch (e) { return null; }

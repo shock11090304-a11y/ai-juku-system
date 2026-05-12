@@ -619,6 +619,22 @@ def init_db():
     );
     CREATE INDEX IF NOT EXISTS idx_tutor_solve_student_created ON ai_tutor_solve_log(student_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_tutor_solve_subject ON ai_tutor_solve_log(subject_guess, created_at DESC);
+    -- 🎯 弱点分類: ai_tutor_solve_log → 日次 cron で集計 → 生徒個別問題推薦に活用 (2026-05-13)
+    -- subject (math/english/japanese/...) + topic (具体的単元) ごとに 30 日内の質問頻度を集計。
+    -- 日次更新で常に最新弱点を反映。生徒ダッシュ「あなたの弱点 TOP3」で参照。
+    CREATE TABLE IF NOT EXISTS student_weakness (
+        id {pk},
+        student_id INTEGER NOT NULL,
+        subject TEXT NOT NULL,
+        topic TEXT,
+        question_count INTEGER NOT NULL DEFAULT 0,
+        avg_confidence_score REAL,
+        last_seen_at TIMESTAMP,
+        aggregated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (student_id, subject, topic)
+    );
+    CREATE INDEX IF NOT EXISTS idx_weakness_student_count ON student_weakness(student_id, question_count DESC);
+    CREATE INDEX IF NOT EXISTS idx_weakness_aggregated ON student_weakness(aggregated_at DESC);
     -- 大学別 過去問風オリジナル問題プール (塾長指示 2026-05-03)
     -- 著作権配慮: 全て Claude 生成のオリジナル。過去問の「スタイル・出題パターン」のみを参考にし、
     -- 実問題文の転載は禁止。inspired_by フィールドで「東大2022年第1問の長文読解スタイル」など出典明示。
@@ -992,6 +1008,14 @@ async def _start_background_tasks():
         task = asyncio.create_task(_weekly_reports_scheduler())
         _BACKGROUND_TASKS.append(task)
         log.info("[Startup] Weekly reports scheduler launched (target Sun JST 19:00)")
+
+    # 🎯 弱点分類 scheduler (毎日 JST 4:00): ai_tutor_solve_log → student_weakness 集計
+    # 塾長指示 2026-05-13「個別問題推薦」の基盤。過去 30 日の写真質問から弱点を抽出し、
+    # 該当 pool 問題 (exam_questions) を生徒ダッシュで TOP3 推薦。
+    if CRON_SECRET:
+        task = asyncio.create_task(_weakness_aggregation_scheduler())
+        _BACKGROUND_TASKS.append(task)
+        log.info("[Startup] Weakness aggregation scheduler launched (target JST 4:00 daily)")
 
 
 async def _post_deploy_smoke_test():
@@ -2324,6 +2348,251 @@ async def _weekly_reports_scheduler():
         except Exception as e:
             log.error(f"[WeeklyReports] Scheduler loop error: {e}", exc_info=True)
             await asyncio.sleep(3600)
+
+
+async def _weakness_aggregation_scheduler():
+    """🎯 弱点分類 cron: 毎日 JST 4:00 (低トラフィック帯) に ai_tutor_solve_log → student_weakness 集計。
+    塾長指示 2026-05-13「個別問題推薦」の基盤。multi-replica 重複防止付き。"""
+    JST = timezone(timedelta(hours=9))
+    TARGET_HOUR_JST = 4
+    log.info(f"[Weakness] Scheduler started, target hour JST {TARGET_HOUR_JST}:00 daily")
+
+    while True:
+        try:
+            now_jst = datetime.now(JST)
+            target = now_jst.replace(hour=TARGET_HOUR_JST, minute=0, second=0, microsecond=0)
+            if target <= now_jst:
+                target += timedelta(days=1)
+            sleep_secs = (target - now_jst).total_seconds()
+            log.info(f"[Weakness] Next run at {target.isoformat()} (in {int(sleep_secs)}s)")
+            await asyncio.sleep(sleep_secs)
+            if _check_scheduler_ran_today_jst("weakness_aggregation_run"):
+                log.info("[Weakness] Skipped (already ran today by another replica)")
+                continue
+            try:
+                result = _run_weakness_aggregation()
+                log.info(f"[Weakness] result: {result}")
+                _record_scheduler_run("weakness_aggregation_run", result)
+            except Exception as e:
+                log.error(f"[Weakness] failed: {type(e).__name__}: {e}", exc_info=True)
+                _record_scheduler_run("weakness_aggregation_run", {"error": f"{type(e).__name__}: {e}"})
+        except asyncio.CancelledError:
+            log.info("[Weakness] Scheduler cancelled")
+            raise
+        except Exception as e:
+            log.error(f"[Weakness] Scheduler loop error: {e}", exc_info=True)
+            await asyncio.sleep(3600)
+
+
+def _run_weakness_aggregation() -> dict:
+    """ai_tutor_solve_log (過去 30 日) を student × subject × topic で集計し student_weakness を更新。
+    既存レコードは UPSERT (UNIQUE 制約に依拠)。
+    confidence score: high=1.0 / medium=0.6 / low=0.2 → 平均値が低いほど「正確には解けていない弱点」。
+    返却: {students_processed, weaknesses_inserted, weaknesses_updated}
+    """
+    from datetime import timedelta as _td
+    conn = db()
+    c = conn.cursor()
+    try:
+        # 過去 30 日の写真解答ログを集計
+        cutoff = datetime.utcnow() - _td(days=30)
+        c.execute(
+            "SELECT student_id, subject_guess, topic_guess, confidence, created_at "
+            "FROM ai_tutor_solve_log "
+            "WHERE student_id IS NOT NULL AND student_id > 0 "
+            "AND subject_guess IS NOT NULL "
+            "AND created_at >= ?",
+            (cutoff,),
+        )
+        rows = c.fetchall()
+        if not rows:
+            return {"students_processed": 0, "weaknesses_inserted": 0, "weaknesses_updated": 0, "note": "no logs in last 30 days"}
+
+        # 集計: (student_id, subject, topic) → count + avg_score + last_seen
+        from collections import defaultdict
+        agg: dict = defaultdict(lambda: {"count": 0, "score_sum": 0.0, "score_n": 0, "last": None})
+        conf_score_map = {"high": 1.0, "medium": 0.6, "low": 0.2}
+        for r in rows:
+            # row tuple / dict_row 両対応
+            try:
+                sid = r["student_id"]; subj = r["subject_guess"]; topic = r["topic_guess"]
+                conf = r["confidence"]; created = r["created_at"]
+            except (TypeError, KeyError, IndexError):
+                sid, subj, topic, conf, created = r[0], r[1], r[2], r[3], r[4]
+            if not sid or not subj:
+                continue
+            topic_norm = (topic or "")[:120]
+            key = (int(sid), str(subj).strip().lower(), topic_norm)
+            agg[key]["count"] += 1
+            sc = conf_score_map.get((conf or "").lower())
+            if sc is not None:
+                agg[key]["score_sum"] += sc
+                agg[key]["score_n"] += 1
+            if created and (agg[key]["last"] is None or str(created) > str(agg[key]["last"])):
+                agg[key]["last"] = created
+
+        # UPSERT 風処理: 既存削除して INSERT (UNIQUE 制約で簡潔に)
+        # 過去 30 日に登場した (student, subject, topic) のみ更新・他は古いまま残す
+        students_processed = len({k[0] for k in agg.keys()})
+        inserted = 0; updated = 0
+        for (sid, subj, topic), v in agg.items():
+            avg_score = (v["score_sum"] / v["score_n"]) if v["score_n"] > 0 else None
+            # 既存 check
+            c.execute(
+                "SELECT id FROM student_weakness WHERE student_id = ? AND subject = ? AND topic = ?",
+                (sid, subj, topic),
+            )
+            existing = c.fetchone()
+            if existing:
+                c.execute(
+                    "UPDATE student_weakness SET question_count = ?, avg_confidence_score = ?, "
+                    "last_seen_at = ?, aggregated_at = CURRENT_TIMESTAMP "
+                    "WHERE student_id = ? AND subject = ? AND topic = ?",
+                    (v["count"], avg_score, v["last"], sid, subj, topic),
+                )
+                updated += 1
+            else:
+                c.execute(
+                    "INSERT INTO student_weakness (student_id, subject, topic, question_count, "
+                    " avg_confidence_score, last_seen_at) VALUES (?, ?, ?, ?, ?, ?)",
+                    (sid, subj, topic, v["count"], avg_score, v["last"]),
+                )
+                inserted += 1
+        conn.commit()
+        return {
+            "students_processed": students_processed,
+            "weaknesses_inserted": inserted,
+            "weaknesses_updated": updated,
+            "rows_examined": len(rows),
+        }
+    finally:
+        conn.close()
+
+
+# 🎯 弱点 subject → exam_questions 検索のマッピング (UI 推薦用)
+# 弱点の subject (math/english/japanese/...) と pool 側 (exam_questions の exam_id/part_key) を対応付け。
+_WEAKNESS_SUBJECT_TO_POOL = {
+    "math": [("rikei", None), ("daigaku", "r_long")],  # 数学は rikei pool 優先
+    "physics": [("rikei", None)],
+    "chemistry": [("rikei", None)],
+    "biology": [("rikei", None)],
+    "english": [("daigaku", "r_long"), ("daigaku", "g_grammar"), ("daigaku", "w_essay"),
+                ("eiken", "r_q1"), ("eiken", "r_q3")],
+    "japanese": [("daigaku", "r_summary"), ("daigaku", "r_long")],  # 国語 pool が少ないため英語長文も
+    "social": [("daigaku", "r_long")],  # 社会専門 pool 未整備のため英語長文 (general topic) で代用
+}
+
+
+@app.get("/api/student/weakness-top3")
+def student_weakness_top3(request: Request, student_id: int, limit: int = 3, recommend_each: int = 3,
+                          authorization: Optional[str] = Header(None)):
+    """🎯 生徒の弱点 TOP3 + 該当 exam_questions pool 問題推薦
+    塾長指示 2026-05-13「個別問題推薦 UI」の核 endpoint。
+
+    query:
+      - student_id (required・本人 session token or admin のみアクセス可)
+      - limit (default 3・最大 5)
+      - recommend_each (default 3・各弱点に対する pool 推薦問題数)
+
+    認証 (3視点 review CRITICAL fix 2026-05-13):
+      - admin Bearer (_verify_admin_token) → 任意の student_id にアクセス可
+      - student Bearer (_verify_session_token) → claims["student_id"] == query student_id のみ
+      - 認証なし → 403
+      - rate limit: per-IP 30 回 / 60 秒 (enumerate 防御)
+
+    返却:
+      {weaknesses: [{subject, topic, count, avg_score, last_seen, recommended: [{exam_id, part_key, eiken_grade, question_id}]}]}
+    """
+    # 🛡️ rate limit (IDOR enumerate 防御・3視点 review CRITICAL 2026-05-13)
+    _check_rate_limit_ip(request, bucket="weakness_top3", limit=30, window=60)
+
+    # 認証: admin or 本人 session token のみ
+    is_admin = False
+    auth_student_id: Optional[int] = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            is_admin = True
+        else:
+            claims = _verify_session_token(token)
+            if claims and claims.get("student_id"):
+                try:
+                    auth_student_id = int(claims["student_id"])
+                except (TypeError, ValueError):
+                    auth_student_id = None
+    try:
+        student_id = int(student_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="student_id 不正")
+    if student_id <= 0:
+        raise HTTPException(status_code=400, detail="student_id 必須")
+
+    # 🛡️ IDOR fix: 本人 only (admin Bearer は例外)
+    if not is_admin:
+        if not auth_student_id:
+            raise HTTPException(status_code=403, detail="ログインが必要です (session token 未提供)")
+        if auth_student_id != student_id:
+            raise HTTPException(status_code=403, detail="他生徒のデータにはアクセスできません")
+
+    limit = max(1, min(int(limit or 3), 5))
+    recommend_each = max(1, min(int(recommend_each or 3), 5))
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT subject, topic, question_count, avg_confidence_score, last_seen_at "
+            "FROM student_weakness WHERE student_id = ? "
+            "ORDER BY question_count DESC, last_seen_at DESC LIMIT ?",
+            (student_id, limit),
+        )
+        rows = c.fetchall()
+        weaknesses = []
+        for r in rows:
+            try:
+                subj = r["subject"]; topic = r["topic"]; cnt = r["question_count"]
+                avg_score = r["avg_confidence_score"]; last = r["last_seen_at"]
+            except (TypeError, KeyError, IndexError):
+                subj, topic, cnt, avg_score, last = r[0], r[1], r[2], r[3], r[4]
+            # 該当 subject に紐づく pool から問題を推薦
+            pool_keys = _WEAKNESS_SUBJECT_TO_POOL.get((subj or "").lower(), [])
+            recommended = []
+            for (exam_id, part_key) in pool_keys:
+                if len(recommended) >= recommend_each:
+                    break
+                if part_key:
+                    c.execute(
+                        "SELECT id, exam_id, part_key, eiken_grade "
+                        "FROM exam_questions WHERE exam_id = ? AND part_key = ? "
+                        "ORDER BY created_at DESC LIMIT ?",
+                        (exam_id, part_key, recommend_each - len(recommended)),
+                    )
+                else:
+                    c.execute(
+                        "SELECT id, exam_id, part_key, eiken_grade "
+                        "FROM exam_questions WHERE exam_id = ? "
+                        "ORDER BY created_at DESC LIMIT ?",
+                        (exam_id, recommend_each - len(recommended)),
+                    )
+                for qrow in c.fetchall():
+                    try:
+                        rec = {"question_id": qrow["id"], "exam_id": qrow["exam_id"],
+                               "part_key": qrow["part_key"], "eiken_grade": qrow.get("eiken_grade")}
+                    except (TypeError, KeyError, AttributeError):
+                        rec = {"question_id": qrow[0], "exam_id": qrow[1],
+                               "part_key": qrow[2], "eiken_grade": qrow[3] if len(qrow) > 3 else None}
+                    recommended.append(rec)
+            weaknesses.append({
+                "subject": subj,
+                "topic": topic or "",
+                "question_count": int(cnt or 0),
+                "avg_confidence_score": float(avg_score) if avg_score is not None else None,
+                "last_seen_at": str(last) if last else None,
+                "recommended": recommended,
+            })
+        return {"ok": True, "student_id": student_id, "weaknesses": weaknesses}
+    finally:
+        conn.close()
 
 
 async def _daily_sns_scheduler():

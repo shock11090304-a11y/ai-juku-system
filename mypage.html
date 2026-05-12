@@ -57,6 +57,36 @@
       <div id="slqcMessage" role="status" aria-live="polite" style="margin-top:0.55rem; font-size:0.82rem; min-height:1em; color:#a78bfa;"></div>
     </section>
 
+    <!-- 📷 写真で質問・3 AI 完璧解答 CTA (2026-05-13 塾長指示)
+         全生徒対象 (course 条件なし)。ai-tutor-photo.html へ導線。
+         アプリ使いやすさアピールの核機能を mypage 上部から 1 タップで -->
+    <section class="ai-tutor-photo-cta" style="margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(34,197,94,0.18), rgba(59,130,246,0.15)); border: 1px solid rgba(74,222,128,0.4); border-radius: 14px; box-shadow: 0 8px 24px rgba(34,197,94,0.15);">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:0.9rem; flex-wrap:wrap;">
+        <div style="flex:1 1 240px; min-width:220px;">
+          <div style="display:inline-block; padding:0.18rem 0.65rem; background: linear-gradient(135deg,#4ade80,#3b82f6); border-radius:999px; font-size:0.7rem; font-weight:800; color:#fff; margin-bottom:0.4rem; letter-spacing:0.02em;">📷 NEW</div>
+          <h3 style="margin:0 0 0.25rem 0; font-size:1.1rem; color:#fff; font-weight:800; line-height:1.35;">写真で質問・3 AI 完璧解答</h3>
+          <p style="margin:0; font-size:0.82rem; color:#bfdbfe; line-height:1.5;">わからない問題を撮影 → Claude・GPT・Gemini が並列で解いて答えを照合。記述式・国語は 2 回チェックで精度↑</p>
+        </div>
+        <div style="display:flex; gap:0.45rem; flex-wrap:wrap; align-items:center;">
+          <a href="ai-tutor-photo.html" aria-label="写真で質問する画面を開く" style="display:inline-block; padding:0.6rem 1.2rem; background: linear-gradient(135deg,#22c55e,#3b82f6); border-radius:10px; color:#fff; font-weight:800; font-size:0.92rem; text-decoration:none; min-height:44px; line-height:1.7; box-shadow:0 4px 14px rgba(34,197,94,0.35);">📷 質問する →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 🎯 弱点 TOP3 + 該当問題推薦 (2026-05-13 塾長指示)
+         ai_tutor_solve_log → student_weakness の日次集計 cron で生成された弱点を表示。
+         「練習問題を解く」CTA で exam_questions pool から該当 subject/topic の問題へ遷移。 -->
+    <section class="weakness-section" id="weaknessSection" style="display:none; margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(248,113,113,0.13), rgba(251,191,36,0.10)); border: 1px solid rgba(248,113,113,0.35); border-radius: 14px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:0.6rem; margin-bottom:0.6rem; flex-wrap:wrap;">
+        <h3 style="margin:0; font-size:1.05rem; color:#fff; font-weight:800;">🎯 あなたの弱点 TOP3 <span style="font-size:0.65em; color:#fbbf24; font-weight:600;">(過去 30 日の質問から AI が判定)</span></h3>
+        <button type="button" id="weaknessRefreshBtn" aria-label="弱点リストを再取得" style="padding:0.35rem 0.7rem; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.20); border-radius:8px; color:#fbbf24; font-weight:700; font-size:0.78rem; cursor:pointer;">🔄 更新</button>
+      </div>
+      <div id="weaknessList" style="display:grid; gap:0.6rem;"></div>
+      <div id="weaknessEmpty" style="display:none; padding:0.8rem; color:#a1a1aa; font-size:0.85rem; text-align:center; background:rgba(0,0,0,0.2); border-radius:8px;">
+        まだ弱点データが蓄積されていません。「📷 写真で質問」を使うと、毎朝 4:00 (JST) の自動集計で過去 30 日分の質問から弱点を抽出します。
+      </div>
+    </section>
+
     <!-- 🎓 既存通塾生向け: AI塾アドオン 永年¥9,800 案内バナー -->
     <section class="student-addon-banner">
       <div class="sab-inner">
@@ -894,6 +924,7 @@
         renderUsageQuotaWidget('usageQuotaWidget');
         renderCurriculumWeekWidget('curriculumWeekWidget');
         renderVocabSrsWidget('vocabSrsWidget', studentId);
+        renderWeaknessTop3(student); // 🎯 2026-05-13 塾長指示「個別問題推薦」
       }
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initWidgets);
@@ -954,6 +985,100 @@
       } catch (e) {
         console.warn('Usage quota widget fetch failed:', e);
         el.innerHTML = '';
+      }
+    }
+
+    // 🎯 弱点 TOP3 ウィジェット (2026-05-13 塾長指示)
+    // ai_tutor_solve_log → student_weakness 日次集計から TOP3 + 該当 pool 問題推薦
+    async function renderWeaknessTop3(student) {
+      const section = document.getElementById('weaknessSection');
+      const list = document.getElementById('weaknessList');
+      const empty = document.getElementById('weaknessEmpty');
+      const refreshBtn = document.getElementById('weaknessRefreshBtn');
+      if (!section || !list || !empty) return;
+      if (!student || !student.id) { section.style.display = 'none'; return; }
+
+      const API_BASE = (window.location.origin.includes(':8090') || window.location.origin.includes('localhost:8090'))
+        ? 'http://localhost:8000' : window.location.origin;
+
+      const subjectLabel = {
+        math: '🧮 数学', physics: '⚛️ 物理', chemistry: '🧪 化学', biology: '🧬 生物',
+        english: '📘 英語', japanese: '📕 国語', social: '🌏 社会', other: '📚 その他'
+      };
+      const escapeHTML = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+
+      async function fetchAndRender() {
+        try {
+          // 🛡️ 3視点 review CRITICAL fix 2026-05-13: session token を Authorization header に必ず付与
+          // 認証不一致 / token なし → 403 / endpoint で本人 only に限定 (IDOR 防御)
+          const token = localStorage.getItem('ai_juku_session_token') || '';
+          const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+          const res = await fetch(`${API_BASE}/api/student/weakness-top3?student_id=${encodeURIComponent(student.id)}&limit=3&recommend_each=3`, { headers });
+          if (!res.ok) { section.style.display = 'none'; return; }
+          const data = await res.json();
+          if (!data.ok) { section.style.display = 'none'; return; }
+          section.style.display = '';
+
+          const items = data.weaknesses || [];
+          if (items.length === 0) {
+            list.innerHTML = '';
+            empty.style.display = '';
+            return;
+          }
+          empty.style.display = 'none';
+
+          let html = '';
+          items.forEach((w, idx) => {
+            const subj = subjectLabel[(w.subject || '').toLowerCase()] || ('📚 ' + (w.subject || '?'));
+            const topic = w.topic ? `<span style="font-size:0.85rem;color:#fbbf24;font-weight:700;">「${escapeHTML(w.topic)}」</span>` : '';
+            // 教育観点 review 致命 fix: ranking 基準 (count) を主表示・自信スコアは補足注記
+            const confNote = (w.avg_confidence_score != null) ? `
+                <span style="font-size:0.72rem;color:#a1a1aa;margin-left:0.4rem;">(うち自信スコア平均 ${(w.avg_confidence_score * 100).toFixed(0)}% — 低いほど未理解)</span>` : '';
+            const countRow = `
+              <div style="font-size:0.84rem;color:#fde68a;margin-top:0.25rem;">
+                📊 過去 30 日の質問頻度: <strong style="color:#a78bfa;font-size:0.95rem;">${w.question_count} 回</strong>${confNote}
+              </div>`;
+
+            // 教育観点 review 致命 fix: practice.html 不在 → ai-tutor-photo.html へ統一誘導 + topic 単元名を引数で渡す
+            // 「弱点単元の練習問題を解く」CTA: 該当 subject の topic を補足説明欄にプリセットして写真質問へ
+            const subjectQuery = encodeURIComponent(w.subject || '');
+            const topicQuery = encodeURIComponent(w.topic || '');
+            const recHtml = `
+              <div style="margin-top:0.6rem;padding-top:0.5rem;border-top:1px dashed rgba(255,255,255,0.10);">
+                <div style="font-size:0.78rem;color:#a1a1aa;margin-bottom:0.4rem;">📚 この単元の練習方法:</div>
+                <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                  <a href="ai-tutor-photo.html?subject=${subjectQuery}&topic=${topicQuery}" style="display:inline-block;padding:0.35rem 0.75rem;background:rgba(34,197,94,0.20);border:1px solid rgba(34,197,94,0.40);border-radius:8px;color:#86efac;font-size:0.78rem;font-weight:700;text-decoration:none;">📷 写真で質問 + 3 AI 解答</a>
+                  ${w.recommended && w.recommended.length > 0 ? `<span style="display:inline-block;padding:0.35rem 0.75rem;background:rgba(99,102,241,0.10);border:1px dashed rgba(99,102,241,0.35);border-radius:8px;color:#a1a1aa;font-size:0.74rem;">📂 関連 pool: ${w.recommended.length} 件 (※ 単元 topic 完全一致の絞り込みは準備中)</span>` : ''}
+                </div>
+              </div>`;
+
+            html += `
+              <div style="padding:0.8rem;background:rgba(0,0,0,0.30);border:1px solid rgba(248,113,113,0.25);border-radius:10px;">
+                <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
+                  <span style="display:inline-block;width:1.6rem;height:1.6rem;line-height:1.6rem;text-align:center;background:linear-gradient(135deg,#f87171,#fbbf24);border-radius:50%;color:#fff;font-weight:800;font-size:0.78rem;">${idx + 1}</span>
+                  <strong style="color:#fff;font-size:0.95rem;">${subj}</strong> ${topic}
+                </div>
+                ${countRow}
+                ${recHtml}
+              </div>`;
+          });
+          list.innerHTML = html;
+        } catch (e) {
+          console.warn('Weakness TOP3 fetch failed:', e);
+          section.style.display = 'none';
+        }
+      }
+
+      // 初回描画
+      fetchAndRender();
+      // リフレッシュボタン
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+          list.innerHTML = '<div style="padding:0.6rem;color:#a1a1aa;font-size:0.85rem;">🔄 更新中…</div>';
+          empty.style.display = 'none';
+          fetchAndRender();
+        });
       }
     }
 
