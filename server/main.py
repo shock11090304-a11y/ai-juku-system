@@ -21212,31 +21212,59 @@ def _solve_one_ai(ai_id: str, image_b64: Optional[str], mime: str, mime_pdf: boo
             raise RuntimeError(f"unknown ai kind: {ai_def['kind']}")
 
         text = (data.get("content") or [{}])[0].get("text", "") if data.get("content") else ""
-        cleaned = text.strip()
-        if cleaned.startswith("```"):
-            cleaned = cleaned.split("\n", 1)[1] if "\n" in cleaned else cleaned
-            if cleaned.endswith("```"):
-                cleaned = cleaned.rsplit("```", 1)[0]
-        try:
-            parsed = json.loads(cleaned)
-        except Exception:
-            parsed = {"explanation_jp": text[:600] if text else "JSON parse 失敗",
-                      "final_answer": "", "solution_steps": [],
-                      "subject": "other", "topic": "?", "confidence_self": "low"}
+
+        # 🛡️ 致命 fix (2026-05-13 塾長指摘):
+        # 旧実装は parse 失敗時 explanation_jp に生 JSON を流し込んで UI で生 JSON が
+        # 「最終解答」として表示される事故 → JSON 抽出を堅牢化 + 失敗時は明示エラー化。
+        parsed = _extract_json_robust(text)
+        parse_failed = parsed is None
+        if parse_failed:
+            parsed = {}  # 全 field 空で扱う・explanation_jp は別 field でエラー明示
+
+        # 🛡️ 致命 fix: provider が fallback (claude→gemini 等) で変わった場合、label にも明示
+        actual_provider = data.get("_provider") or ai_def["kind"]
+        actual_model = data.get("_actual_model") or ai_def["model"]
+        label = ai_def["label"]
+        provider_fallback = False
+        if actual_provider != ai_def["kind"]:
+            provider_fallback = True
+            # 例: "🎯 Claude Opus 4.7 (数式・論理重視)" → "🎯 Claude Opus 4.7 (代替: gemini-2.5-flash・混雑時 fallback)"
+            label = f"{ai_def['label']} ⚠️ 代替モデル: {actual_model}"
+
+        # final_answer / explanation_jp の clean up (生 JSON を絶対に流さない)
+        raw_final = (parsed.get("final_answer") or "").strip() if isinstance(parsed.get("final_answer"), str) else ""
+        raw_expl = (parsed.get("explanation_jp") or "").strip() if isinstance(parsed.get("explanation_jp"), str) else ""
+        # 生 JSON 混入の sanitize: { や ``` で始まる explanation はエラー扱い
+        if raw_expl.startswith("{") or raw_expl.startswith("```"):
+            raw_expl = ""
+            parse_failed = True
+
+        if parse_failed:
+            return {
+                "ai_id": ai_id,
+                "label": label,
+                "model": actual_model,
+                "provider": actual_provider,
+                "provider_fallback": provider_fallback,
+                "error": "AI 応答の解答抽出に失敗 (JSON フォーマット不正)",
+                "raw_text_preview": text[:200] if text else "",
+                "elapsed_ms": int((_t.time() - t0) * 1000),
+            }
 
         return {
             "ai_id": ai_id,
-            "label": ai_def["label"],
-            "model": data.get("_actual_model") or ai_def["model"],
-            "provider": data.get("_provider") or ai_def["kind"],
-            "subject": (parsed.get("subject") or "other").strip().lower(),
-            "topic": (parsed.get("topic") or "").strip(),
-            "difficulty_level": (parsed.get("difficulty_level") or "standard").strip(),
-            "problem_text": (parsed.get("problem_text") or "").strip(),
+            "label": label,
+            "model": actual_model,
+            "provider": actual_provider,
+            "provider_fallback": provider_fallback,
+            "subject": (parsed.get("subject") or "other").strip().lower() if isinstance(parsed.get("subject"), str) else "other",
+            "topic": (parsed.get("topic") or "").strip() if isinstance(parsed.get("topic"), str) else "",
+            "difficulty_level": (parsed.get("difficulty_level") or "standard").strip() if isinstance(parsed.get("difficulty_level"), str) else "standard",
+            "problem_text": (parsed.get("problem_text") or "").strip() if isinstance(parsed.get("problem_text"), str) else "",
             "solution_steps": parsed.get("solution_steps") or [],
-            "final_answer": (parsed.get("final_answer") or "").strip(),
-            "explanation_jp": (parsed.get("explanation_jp") or "").strip(),
-            "confidence_self": (parsed.get("confidence_self") or "medium").strip().lower(),
+            "final_answer": raw_final,
+            "explanation_jp": raw_expl,
+            "confidence_self": (parsed.get("confidence_self") or "medium").strip().lower() if isinstance(parsed.get("confidence_self"), str) else "medium",
             "elapsed_ms": int((_t.time() - t0) * 1000),
         }
     except Exception as e:
@@ -21249,6 +21277,57 @@ def _solve_one_ai(ai_id: str, image_b64: Optional[str], mime: str, mime_pdf: boo
         }
 
 
+def _extract_json_robust(text: str) -> Optional[dict]:
+    """🛡️ Markdown fence / 前後説明文 / invalid escape を含む生テキストから JSON を抽出。
+    塾長指摘 2026-05-13「最終解答が JSON 生のまま表示」事故への対処。
+
+    対応パターン:
+    - ```json\n{...}\n```        (標準 markdown fence)
+    - ```{...}```                (json タグなし fence)
+    - 前後に説明文 + {...}        (Gemini が混入させがち)
+    - 単一 { ... } のみ           (理想形)
+
+    返却: parse 成功 → dict / 失敗 → None
+    """
+    if not text:
+        return None
+    import re as _re
+    src = text.strip()
+
+    # Step 1: markdown fence 内の JSON を抽出 (greedy・複数行対応)
+    m = _re.search(r"```(?:json)?\s*\n?(.+?)\n?```", src, _re.DOTALL)
+    if m:
+        candidate = m.group(1).strip()
+    else:
+        # Step 2: 最初の { から最後の } までを抽出 (前後の説明文を除去)
+        s = src.find("{")
+        e = src.rfind("}")
+        if s >= 0 and e > s:
+            candidate = src[s:e+1]
+        else:
+            candidate = src
+
+    # Step 3: parse 試行
+    try:
+        result = json.loads(candidate)
+        return result if isinstance(result, dict) else None
+    except json.JSONDecodeError:
+        pass
+
+    # Step 4: invalid escape を緩和 (LaTeX 等の \n や日本語 \" を許容)
+    # 多くの LLM が \\n を出力してしまうケースを救済
+    try:
+        # JSON 内の改行を許容 (multi-line string は許容しないが Gemini が出すケース)
+        repaired = candidate.replace("\n", "\\n").replace("\r", "")
+        # ただし \\" は壊れる可能性大 → 慎重に
+        result = json.loads(repaired)
+        return result if isinstance(result, dict) else None
+    except json.JSONDecodeError:
+        pass
+
+    return None
+
+
 def _consolidate_solve_answers(successful: list) -> dict:
     """3 AI の解答から consensus + confidence を計算。
     - 全 AI 一致 (final_answer 正規化後で同じ) → confidence=high
@@ -21256,7 +21335,12 @@ def _consolidate_solve_answers(successful: list) -> dict:
     - バラバラ → confidence=low・最も confidence_self が高い解答を primary に
     """
     if not successful:
-        return {"final_answer": "", "confidence": "low", "consensus": "no_data"}
+        return {
+            "final_answer": "",
+            "explanation_jp": "⚠️ AI 応答なし。再試行してください。",
+            "confidence": "low",
+            "consensus": "no_data",
+        }
 
     def _norm(s):
         return (s or "").strip().lower().replace(" ", "").replace("　", "")
@@ -21266,18 +21350,33 @@ def _consolidate_solve_answers(successful: list) -> dict:
     from collections import Counter as _C
     counter = _C([a[0] for a in answers if a[0]])
     if not counter:
-        # 全 AI が空 final_answer → low
+        # 🛡️ 致命 fix (2026-05-13): 旧実装は explanation_jp[:300] を final_answer に
+        # 流していたため、JSON parse 失敗で生 JSON が「最終解答」として表示される事故が発生。
+        # → 明示的なエラーメッセージのみ表示し、生 JSON を絶対に流さない。
         return {
-            "final_answer": (successful[0].get("explanation_jp") or "")[:300],
+            "final_answer": "",
+            "explanation_jp": "⚠️ AI が問題を読み取れませんでした。考えられる原因: ①写真が暗い/ブレている ②問題文が日本語以外で複雑 ③PDF の場合は文字認識困難。撮り直し or「補足説明」欄に問題文を手入力してから再試行してください。",
             "confidence": "low",
             "consensus": "no_final_answer",
             "primary_ai": successful[0].get("ai_id"),
+            "retry_recommended": True,
         }
     top_norm, top_count = counter.most_common(1)[0]
     matching = [a[1] for a in answers if a[0] == top_norm]
     if top_count == len(successful):
         # 全員一致
+        # 🛡️ 致命 fix (2026-05-13): 1 AI のみ応答時の「全員一致」誤判定を防ぐ
+        # 1 AI だけで confidence=high にすると「3 AI 並列検証」の触れ込みが嘘になる
         primary = matching[0]
+        if len(successful) == 1:
+            return {
+                "final_answer": primary.get("final_answer"),
+                "explanation_jp": primary.get("explanation_jp"),
+                "confidence": "low",
+                "consensus": "single_ai_only",
+                "primary_ai": primary.get("ai_id"),
+                "note": "⚠️ 3 AI のうち 1 AI のみ応答。3 AI 並列検証が成立していません。再試行 or 画像形式 (JPG/PNG) で投稿し直してください。",
+            }
         return {
             "final_answer": primary.get("final_answer"),
             "explanation_jp": primary.get("explanation_jp"),

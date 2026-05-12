@@ -140,6 +140,17 @@
       alert((isPdf ? 'PDF は 10MB' : '画像は 5MB') + ' 以内にしてください');
       return;
     }
+    // 🛡️ 致命 fix (2026-05-13 塾長指摘): PDF アップロード時に「3 AI 並列ではなく 1 AI 単独」を即時警告
+    if (isPdf) {
+      const ok = confirm(
+        '⚠️ PDF についての重要なお知らせ\n\n' +
+        '現状 PDF は Claude 1 AI のみ対応です (GPT-4o・Gemini は PDF 直接読込み非対応)。\n' +
+        '「3 AI 並列検証」の触れ込みは PDF では成立せず、信頼度は「低」になります。\n\n' +
+        '推奨: ページ単位の写真撮影 (JPG/PNG) で 3 AI 並列を有効化してください。\n\n' +
+        'それでも PDF で続行しますか?'
+      );
+      if (!ok) return;
+    }
     const reader = new FileReader();
     reader.onload = function() {
       const dataUrl = reader.result;
@@ -298,10 +309,25 @@
     }
   });
 
+  // 🛡️ 致命 fix (2026-05-13): 生 JSON テキストを「最終解答」として絶対表示しない
+  function looksLikeRawJson(s) {
+    if (!s) return false;
+    const t = String(s).trim();
+    return t.startsWith('{') || t.startsWith('```') || /^\s*```?json/i.test(t);
+  }
+  function safeFinal(s) {
+    return looksLikeRawJson(s) ? '' : (s || '');
+  }
+
   function renderResult(data) {
     const consensus = data.consensus || {};
     const conf = (consensus.confidence || 'low');
     const confLabel = {high:'信頼度: 高 ✅', medium:'信頼度: 中 ⚠️', low:'信頼度: 低 ❓'}[conf] || conf;
+
+    // 🛡️ 応答した AI 数を集計 (致命 fix: 「3 AI と謳って 1 AI のみ」のミスリードを UI で明示)
+    const finalRound = data.round2 || data.round1 || [];
+    const successCount = finalRound.filter(function(a) { return !a.error && (a.final_answer || a.explanation_jp); }).length;
+    const errorCount = finalRound.filter(function(a) { return !!a.error; }).length;
 
     let html = '';
     // メタ情報
@@ -310,42 +336,68 @@
     if (data.topic_guess) html += '<span>📌 ' + escapeHTML(data.topic_guess) + '</span>';
     html += '<span>⏱ ' + Math.round((data.elapsed_ms_total || 0) / 1000) + ' 秒</span>';
     html += '<span>🔄 ' + (data.round2 ? '2 回チェック' : '1 回解答') + '</span>';
+    html += '<span style="color:' + (successCount >= 3 ? '#4ade80' : successCount >= 2 ? '#fbbf24' : '#fca5a5') + ';">🤝 ' + successCount + '/3 AI 応答</span>';
     if (data.auto_promoted) html += '<span style="color:#fbbf24;">🤖 自動で精密モードへ昇格</span>';
     html += '</div>';
+
+    // 🛡️ 致命 fix: 1 AI のみ応答 / parse 失敗時の重要警告を最上部に表示
+    if (successCount < 2) {
+      html += '<div style="margin-bottom:1rem;padding:0.85rem;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.50);border-radius:10px;color:#fca5a5;font-size:0.92rem;line-height:1.6;">';
+      html += '<strong>⚠️ 3 AI 並列検証が成立しませんでした</strong><br>';
+      html += '応答した AI が ' + successCount + ' 件のみです。原因として: ①PDF は Claude のみ対応 (画像は 3 AI 並列) ②AI 応答の JSON 形式不正 ③問題が読みづらい・等が考えられます。<br>';
+      html += '<strong>推奨対応:</strong> 画像 (JPG/PNG) で撮り直し or「補足説明」欄に問題文を手入力して再試行してください。';
+      html += '</div>';
+    }
 
     // 統合解答
     html += '<div class="tp-result-final">';
     html += '<h3>🎯 最終解答 <span class="tp-confidence ' + conf + '">' + confLabel + '</span></h3>';
-    html += '<div class="final-answer">' + escapeHTML(consensus.final_answer || '(解答抽出できず)') + '</div>';
-    if (consensus.explanation_jp) {
-      html += '<div class="explanation">' + escapeHTML(consensus.explanation_jp) + '</div>';
+    const finalAns = safeFinal(consensus.final_answer);
+    if (finalAns) {
+      html += '<div class="final-answer">' + escapeHTML(finalAns) + '</div>';
+    } else {
+      html += '<div class="final-answer" style="color:#fca5a5;">(解答抽出できず)</div>';
     }
-    if (consensus.consensus === 'split' && consensus.note) {
+    // explanation も生 JSON 防御
+    const expl = safeFinal(consensus.explanation_jp);
+    if (expl) {
+      html += '<div class="explanation">' + escapeHTML(expl) + '</div>';
+    }
+    if (consensus.note) {
       html += '<div style="margin-top:0.6rem;color:#fbbf24;font-size:0.85rem;">⚠ ' + escapeHTML(consensus.note) + '</div>';
+    }
+    if (consensus.retry_recommended) {
+      html += '<div style="margin-top:0.6rem;"><button onclick="location.reload()" style="padding:0.5rem 1rem;background:rgba(34,197,94,0.20);border:1px solid rgba(34,197,94,0.4);border-radius:8px;color:#86efac;font-weight:700;cursor:pointer;">🔄 再試行</button></div>';
     }
     html += '</div>';
 
     // 各 AI の解答 (Round 2 があればそれ・なければ Round 1)
-    const finalRound = data.round2 || data.round1 || [];
-    html += '<h3 style="color:#a78bfa;font-size:1rem;margin:1rem 0 0.5rem;">📊 3 AI それぞれの解答</h3>';
+    html += '<h3 style="color:#a78bfa;font-size:1rem;margin:1rem 0 0.5rem;">📊 3 AI それぞれの解答 <span style="font-size:0.75rem;color:#a1a1aa;font-weight:400;">(応答 ' + successCount + ' 件 / 失敗 ' + errorCount + ' 件)</span></h3>';
     finalRound.forEach(function(ai) {
       html += '<div class="tp-ai-card">';
+      // 🛡️ 致命 fix: provider fallback ラベル + 実モデル名表示
       html += '<h4>' + escapeHTML(ai.label || ai.ai_id) + '</h4>';
       html += '<div class="ai-meta">' + escapeHTML(ai.model || '') + ' · ' + Math.round((ai.elapsed_ms || 0) / 1000) + 's';
       if (ai.confidence_self) html += ' · 自信: ' + escapeHTML(ai.confidence_self);
+      if (ai.provider_fallback) html += ' <span style="color:#fbbf24;">· ⚠️ 代替モデルで応答</span>';
       html += '</div>';
       if (ai.error) {
         html += '<div class="tp-error" style="margin:0.4rem 0;">⚠ ' + escapeHTML(ai.error) + '</div>';
+        if (ai.raw_text_preview) {
+          html += '<details style="margin-top:0.3rem;"><summary style="color:#94a3b8;font-size:0.78rem;cursor:pointer;">生 AI 応答 (デバッグ用・最初の 200 文字)</summary><pre style="font-size:0.72rem;color:#71717a;background:rgba(0,0,0,0.30);padding:0.4rem;border-radius:6px;margin-top:0.3rem;white-space:pre-wrap;word-break:break-all;">' + escapeHTML(ai.raw_text_preview) + '</pre></details>';
+        }
       } else {
-        if (ai.final_answer) html += '<div class="ai-answer">→ ' + escapeHTML(ai.final_answer) + '</div>';
+        const aiAns = safeFinal(ai.final_answer);
+        if (aiAns) html += '<div class="ai-answer">→ ' + escapeHTML(aiAns) + '</div>';
         if (ai.solution_steps && ai.solution_steps.length) {
           html += '<details><summary>解答手順 (' + ai.solution_steps.length + ' steps)</summary>';
           html += '<ol class="step-list">';
           ai.solution_steps.forEach(function(s) { html += '<li>' + escapeHTML(s) + '</li>'; });
           html += '</ol></details>';
         }
-        if (ai.explanation_jp) {
-          html += '<details><summary>解説</summary><div class="explanation">' + escapeHTML(ai.explanation_jp) + '</div></details>';
+        const aiExpl = safeFinal(ai.explanation_jp);
+        if (aiExpl) {
+          html += '<details><summary>解説</summary><div class="explanation">' + escapeHTML(aiExpl) + '</div></details>';
         }
       }
       html += '</div>';
