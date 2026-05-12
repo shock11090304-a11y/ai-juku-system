@@ -21435,8 +21435,10 @@ _SOLVE_AI_DEFINITIONS = {
         ),
     },
     "openai": {
-        "label": "💡 GPT-4o (柔軟解釈・図形読み取り)",
-        "model": "gpt-4o",
+        # 🛡️ 2026-05-13 3視点review fix: Tier 1 RPM 制限で gpt-4o は 429 多発 → test 同等の
+        # gpt-4o-mini (vision 対応・Tier 1 で安定) に変更。実証済の動作モデル
+        "label": "💡 GPT-4o mini (柔軟解釈・図形読み取り)",
+        "model": "gpt-4o-mini",
         "kind": "openai",
         "system": (
             "You are an expert tutor specialized in flexible problem interpretation. "
@@ -21454,8 +21456,10 @@ _SOLVE_AI_DEFINITIONS = {
         ),
     },
     "gemini": {
-        "label": "📚 Gemini 2.5 Pro (補完・別解)",
-        "model": "gemini-2.5-pro",
+        # 🛡️ 2026-05-13 3視点review fix: gemini-2.5-pro は Tier 1 RPM 制限が厳しく vision で
+        # 429/timeout → test 同等の gemini-2.5-flash (vision 対応・Tier 1 で安定・高速) に変更
+        "label": "📚 Gemini 2.5 Flash (補完・別解・高速)",
+        "model": "gemini-2.5-flash",
         "kind": "gemini",
         "system": (
             "You are an expert tutor specialized in providing complementary perspectives and alternative solutions. "
@@ -21578,9 +21582,12 @@ def _solve_one_ai(ai_id: str, image_b64: Optional[str], mime: str, mime_pdf: boo
         if ai_def["kind"] == "anthropic":
             data = _call_anthropic_safe(body, kind=f"tutor_solve_{ai_id}", student_id=None)
         elif ai_def["kind"] == "openai":
-            data = _call_openai(body, kind=f"tutor_solve_{ai_id}")
+            # 🛡️ 致命 fix (2026-05-13 3視点review): body["model"] が無視され env default model
+            # で動作する bug → model= を明示渡し。これで Gemini/OpenAI が _SOLVE_AI_DEFINITIONS の
+            # 指定 model (gemini-2.5-flash / gpt-4o-mini) で確実に動作する
+            data = _call_openai(body, model=ai_def["model"], kind=f"tutor_solve_{ai_id}")
         elif ai_def["kind"] == "gemini":
-            data = _call_gemini(body, kind=f"tutor_solve_{ai_id}")
+            data = _call_gemini(body, model=ai_def["model"], kind=f"tutor_solve_{ai_id}")
         else:
             raise RuntimeError(f"unknown ai kind: {ai_def['kind']}")
 
