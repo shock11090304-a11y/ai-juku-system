@@ -12586,7 +12586,8 @@ def admin_send_magic_link_to_address(payload: dict, authorization: Optional[str]
 
 
 @app.post("/api/admin/students/issue-otp-direct")
-def admin_issue_otp_direct(payload: dict, authorization: Optional[str] = Header(None)):
+def admin_issue_otp_direct(payload: dict, authorization: Optional[str] = Header(None),
+                            x_cron_secret: Optional[str] = Header(None)):
     """🔑 緊急エスケープハッチ: 指定生徒の OTP コードを admin 画面に直接表示する。
     塾長指示 2026-05-11: 室坂さん等「どのメアドにしても届かない」生徒に対し、塾長が
     LINE/電話/対面で OTP を口頭伝達できるようにするため。メール経路を一切経由しない。
@@ -12595,12 +12596,18 @@ def admin_issue_otp_direct(payload: dict, authorization: Optional[str] = Header(
     成功時: { ok, otp, expires_at, student: {id, name, email, status} }
 
     監査ログ: events.admin_otp_direct_issue に記録 (誰の OTP を誰に発行したか追跡)。
-    認証: admin Bearer のみ。"""
-    if not authorization or not authorization.startswith("Bearer "):
+    認証: admin Bearer または X-Cron-Secret (2026-05-13 追加・塾長離席中 Claude 経由緊急対応用)"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+        else:
+            raise HTTPException(status_code=401, detail="セッション期限切れ")
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
         raise HTTPException(status_code=401, detail="未認証")
-    token = authorization[len("Bearer "):].strip()
-    if not _verify_admin_token(token):
-        raise HTTPException(status_code=401, detail="セッション期限切れ")
 
     sid_arg = payload.get("student_id") or payload.get("id")
     email_arg = (payload.get("email") or "").strip().lower()
