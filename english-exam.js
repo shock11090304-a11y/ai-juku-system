@@ -2920,6 +2920,19 @@ function renderCurriculum(data) {
 document.addEventListener('DOMContentLoaded', () => {
   updateModeBadge();
   bindExamCards();
+  // 🎯 URL ?focus= で初期 exam-card auto-select (2026-05-13 塾長指示・大学入試問題演習 tab 分離対応)
+  // index.html の「📚 大学入試問題演習」タブ → english-exam.html?focus=daigaku で自動選択
+  try {
+    const focusExam = new URLSearchParams(window.location.search).get('focus');
+    const allowedFocus = ['toefl', 'toeic', 'ielts', 'eiken', 'daigaku', 'rikei'];
+    if (focusExam && allowedFocus.includes(focusExam)) {
+      const card = document.querySelector(`.exam-card[data-exam="${focusExam}"]`);
+      if (card) {
+        // DOM bind 完了後に発火させるため 1 tick 遅延
+        setTimeout(() => { try { card.click(); } catch (e) {} }, 0);
+      }
+    }
+  } catch (e) { /* silent */ }
   // currentLevel state 同期
   document.getElementById('currentLevel').addEventListener('change', e => {
     state.currentLevel = e.target.value;

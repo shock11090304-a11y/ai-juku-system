@@ -185,7 +185,10 @@
     <button class="tab" data-tab="family" id="familyTabBtn">👨‍👩‍👧 家族ダッシュボード</button>
     <button class="tab" data-tab="email">✉️ 保護者メール</button>
     <button class="tab" data-tab="speaking">🎙 スピーキング練習</button>
-    <a href="english-exam.html" class="tab" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;background:linear-gradient(135deg,rgba(30,64,175,0.15),rgba(220,38,38,0.15));border:1px solid rgba(99,102,241,0.4);">🎓 英語試験対策 <span style="font-size:0.65rem;background:#dc2626;color:white;padding:0.05rem 0.35rem;border-radius:3px;font-weight:900;">4試験対応</span></a>
+    <!-- 🎓 英語試験対策 (eiken/toefl/toeic/ielts 4 試験のみ) -->
+    <a href="english-exam.html?focus=eiken" class="tab" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;background:linear-gradient(135deg,rgba(30,64,175,0.15),rgba(220,38,38,0.15));border:1px solid rgba(99,102,241,0.4);">🎓 英語試験対策 <span style="font-size:0.65rem;background:#dc2626;color:white;padding:0.05rem 0.35rem;border-radius:3px;font-weight:900;">4試験対応</span></a>
+    <!-- 📚 大学入試問題演習 (daigaku 英語 + rikei 数学/物理/化学/生物・2026-05-13 塾長指示で分離) -->
+    <a href="english-exam.html?focus=daigaku" class="tab" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;background:linear-gradient(135deg,rgba(34,197,94,0.18),rgba(59,130,246,0.15));border:1px solid rgba(74,222,128,0.45);">📚 大学入試問題演習 <span style="font-size:0.65rem;background:#22c55e;color:white;padding:0.05rem 0.35rem;border-radius:3px;font-weight:900;">英語+理系</span></a>
     <a href="vocab.html" class="tab" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;background:linear-gradient(135deg,rgba(99,102,241,0.18),rgba(16,185,129,0.10));border:1px solid rgba(99,102,241,0.45);">📖 AI単語帳 (SRS) <span id="indexVocabDueBadge" style="display:none;font-size:0.65rem;background:#10b981;color:white;padding:0.05rem 0.35rem;border-radius:3px;font-weight:900;">●</span></a>
     <!-- メンター管理タブは生徒画面では非表示 (講師/塾長機能のため) — 2026-05-02 -->
   </nav>
