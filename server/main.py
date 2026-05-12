@@ -5910,13 +5910,19 @@ def _call_gemini(body: dict, *, model: str = None, kind: str = "chat") -> dict:
     last_err = None
     for idx, gm_name in enumerate(candidate_models):
         try:
+            # 🛡️ 2026-05-13 塾長指摘 fix: body["response_format"]={"type":"json_object"} (OpenAI 流)
+            # 指定時、Gemini でも JSON 強制モードを有効化 → markdown fence や natural language 出力を防止
+            _gen_cfg = {
+                "max_output_tokens": max_tokens,
+                "temperature": float(body.get("temperature") or 0.7),
+            }
+            _rf = body.get("response_format") or {}
+            if isinstance(_rf, dict) and _rf.get("type") == "json_object":
+                _gen_cfg["response_mime_type"] = "application/json"
             gen_model = genai.GenerativeModel(
                 model_name=gm_name,
                 system_instruction=system_text or None,
-                generation_config={
-                    "max_output_tokens": max_tokens,
-                    "temperature": float(body.get("temperature") or 0.7),
-                },
+                generation_config=_gen_cfg,
                 safety_settings=safety_settings,
             )
             chat = gen_model.start_chat(history=history)
@@ -6034,6 +6040,10 @@ def _call_openai(body: dict, *, model: str = None, kind: str = "chat") -> dict:
                 "max_tokens": max_tokens,
                 "temperature": temperature,
             }
+            # 🛡️ 2026-05-13 塾長指摘 fix: body["response_format"] が指定されていたら透過 (JSON mode 等)
+            _rf = body.get("response_format")
+            if isinstance(_rf, dict) and _rf.get("type"):
+                req_body["response_format"] = _rf
             req = urllib.request.Request(
                 "https://api.openai.com/v1/chat/completions",
                 data=json.dumps(req_body).encode("utf-8"),
@@ -21408,6 +21418,12 @@ _SOLVE_AI_DEFINITIONS = {
         "model": "claude-opus-4-7",
         "kind": "anthropic",
         "system": (
+            "⚠️ CRITICAL OUTPUT FORMAT REQUIREMENT ⚠️\n"
+            "YOU MUST output a single valid JSON object. Start your response with `{` and end with `}`.\n"
+            "ABSOLUTELY DO NOT output any text before the JSON or after the JSON.\n"
+            "ABSOLUTELY DO NOT use markdown code fences (```).\n"
+            "ABSOLUTELY DO NOT add any preamble, thinking text, or explanation outside the JSON.\n"
+            "If you cannot solve the problem, still output a valid JSON with final_answer=\"\" and explanation_jp describing why.\n\n"
             "You are an expert tutor for Japanese students preparing for university entrance exams. "
             "Read the image (photo of a problem or PDF page) carefully and solve it COMPLETELY.\n\n"
             "Priorities:\n"
@@ -21577,6 +21593,12 @@ def _solve_one_ai(ai_id: str, image_b64: Optional[str], mime: str, mime_pdf: boo
         body["thinking"] = {"type": "adaptive"}
         body["output_config"] = {"effort": "high"}
         body["temperature"] = 1.0
+    # 🛡️ 2026-05-13 塾長指摘 fix: OpenAI/Gemini 用 JSON 強制モード指定
+    # Anthropic 系は API が response_format を理解しないため指定しない (Anthropic は system prompt で JSON 強制)
+    # OpenAI: response_format={"type":"json_object"} → API 側で JSON 形式強制
+    # Gemini: _call_gemini が response_format を読んで generation_config.response_mime_type に変換
+    if ai_def["kind"] in ("openai", "gemini"):
+        body["response_format"] = {"type": "json_object"}
 
     try:
         if ai_def["kind"] == "anthropic":
