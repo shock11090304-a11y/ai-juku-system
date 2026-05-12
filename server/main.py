@@ -21638,11 +21638,26 @@ def _solve_one_ai(ai_id: str, image_b64: Optional[str], mime: str, mime_pdf: boo
             "elapsed_ms": int((_t.time() - t0) * 1000),
         }
     except Exception as e:
+        # 🛡️ 2026-05-13 塾長指摘「3 AI 中 1 のみ応答」の原因不明 fix:
+        # 旧実装は個別 AI 失敗を events に記録していなかったため診断不能 → critical event 記録
+        err_summary = f"{type(e).__name__}: {str(e)[:300]}"
+        try:
+            _record_ai_critical_event("tutor_solve_individual_failure", {
+                "ai_id": ai_id,
+                "model": ai_def["model"],
+                "kind": ai_def["kind"],
+                "error": err_summary,
+                "mime_pdf": mime_pdf,
+                "has_image": bool(image_b64),
+                "round": "round2" if prior_answers else "round1",
+            })
+        except Exception:
+            pass
         return {
             "ai_id": ai_id,
             "label": ai_def["label"],
             "model": ai_def["model"],
-            "error": f"{type(e).__name__}: {str(e)[:200]}",
+            "error": err_summary,
             "elapsed_ms": int((_t.time() - t0) * 1000),
         }
 
@@ -22028,10 +22043,27 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
     # 3視点 review 致命#1 対応: PDF は Claude のみ対応のため最低 1 AI で許容、画像は 2 AI 以上必須
     min_required = 1 if mime_pdf else 2
     if len(successful_r1) < min_required:
-        raise HTTPException(
-            status_code=502,
-            detail=f"3 AI 中 {len(successful_r1)} のみ応答 (必要 {min_required}+)。再試行を推奨します。"
-        )
+        # 🛡️ 2026-05-13 塾長指摘 fix: 全失敗時も各 AI のエラー詳細を返す (診断可能化)
+        error_summary = []
+        for r in round1:
+            if r.get("error"):
+                error_summary.append(f"[{r.get('ai_id', '?')}/{r.get('model', '?')}] {r['error']}")
+        detail_str = f"3 AI 中 {len(successful_r1)} のみ応答 (必要 {min_required}+)。再試行を推奨します。"
+        if error_summary:
+            detail_str += "\n各 AI のエラー: " + " ; ".join(error_summary)
+        # 親 endpoint レベルでも critical event 記録 (失敗の総括)
+        try:
+            _record_ai_critical_event("tutor_solve_total_failure", {
+                "successful": len(successful_r1),
+                "min_required": min_required,
+                "errors": [{"ai_id": r.get("ai_id"), "error": r.get("error")} for r in round1 if r.get("error")],
+                "mime_pdf": mime_pdf,
+                "had_pdf_conversion": bool(pdf_conversion_info),
+                "student_id": student_id,
+            })
+        except Exception:
+            pass
+        raise HTTPException(status_code=502, detail=detail_str)
 
     # auto_mode 判定: Round 1 の subject から essay_review 昇格判定
     auto_promoted = False
