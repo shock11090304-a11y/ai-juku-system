@@ -21643,6 +21643,32 @@ _TUTOR_TEACHER_NAME_BAN = (
     "- コアイメージ・文構造分析・論理展開で説明する\n"
 )
 
+# 🔢 ai-juku 数式表記の哲学 (2026-05-13 塾長指示「紙の参考書のような数式」)
+# 全 AI (Claude / GPT / Gemini) に LaTeX 形式での数式出力を強制
+# フロントエンドの KaTeX で組版表示される
+_TUTOR_LATEX_FORMAT = (
+    "\n\n## 🔢 数式の出力形式 (全 subject で厳守)\n"
+    "数式は **必ず LaTeX 形式** で記述すること:\n"
+    "- インライン数式: `$..$` で囲む (例: 解は $x = \\frac{\\pi}{3}$)\n"
+    "- ブロック数式: `$$..$$` で囲む (例: $$\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}$$)\n"
+    "- 分数: `\\frac{a}{b}` または `\\dfrac{a}{b}` (大きい分数は dfrac)\n"
+    "- 平方根: `\\sqrt{n}` 立方根: `\\sqrt[3]{n}`\n"
+    "- 指数: `x^{2}` `e^{i\\pi}` 添字: `a_{n}` `x_{i,j}`\n"
+    "- ギリシャ文字: `\\pi \\alpha \\beta \\theta \\phi \\omega \\Delta \\Sigma`\n"
+    "- 三角関数: `\\sin x \\cos\\theta \\tan(2x)` (バックスラッシュ必須)\n"
+    "- 対数: `\\log_{a} b` `\\ln x`\n"
+    "- 不等号: `\\leqq \\geqq \\neq \\approx \\pm`\n"
+    "- 同値・含意: `\\iff \\Rightarrow \\Leftarrow`\n"
+    "- 極限: `\\lim_{n \\to \\infty}` 積分: `\\int_{a}^{b} f(x)\\,dx`\n"
+    "- 場合分け: `\\begin{cases} ... \\\\ ... \\end{cases}`\n"
+    "- 行列: `\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}`\n"
+    "- 例: 「2x - 1 = 0 ⇔ x = 1/2」→ 「$2x - 1 = 0 \\iff x = \\dfrac{1}{2}$」\n"
+    "- 例: 「sin 2x = 2 sin x cos x」→ 「$\\sin 2x = 2 \\sin x \\cos x$」\n"
+    "- 例: 「√(5) ≒ 2.236」→ 「$\\sqrt{5} \\approx 2.236$」\n"
+    "**plain text で数式を書かない**。π → $\\pi$、x^2 → $x^{2}$、a/b → $\\dfrac{a}{b}$ を徹底。\n"
+    "解説文の中に数式が混在する場合も全て $..$ で囲むこと。"
+)
+
 # 🇯🇵 ai-juku 英語解説の哲学 (memory: project_ai_juku_english_philosophy.md)
 # 関正生・富田両氏のスタイルを参考にしつつ「教師名は出力に一切出さない」絶対ルール。
 # 英語 problem の場合は subject=english と AI が判定した時点でこの philosophy を解説に反映させる。
@@ -21704,6 +21730,7 @@ _SOLVE_AI_DEFINITIONS = {
             "- japanese: 600-1500 字 (下記国語 philosophy 厳守・4 セクション構造)"
             + _TUTOR_ENGLISH_PHILOSOPHY
             + _TUTOR_JAPANESE_PHILOSOPHY
+            + _TUTOR_LATEX_FORMAT
             + _TUTOR_TEACHER_NAME_BAN
         ),
     },
@@ -21725,6 +21752,7 @@ _SOLVE_AI_DEFINITIONS = {
             '"problem_text": "...", "solution_steps": [...], "final_answer": "...", '
             '"explanation_jp": "...", "confidence_self": "..."}\n'
             "All Japanese-facing text in Japanese."
+            + _TUTOR_LATEX_FORMAT
             + _TUTOR_TEACHER_NAME_BAN
         ),
     },
@@ -21746,6 +21774,7 @@ _SOLVE_AI_DEFINITIONS = {
             '"problem_text": "...", "solution_steps": [...], "final_answer": "...", '
             '"explanation_jp": "...", "confidence_self": "..."}\n'
             "All Japanese-facing text in Japanese."
+            + _TUTOR_LATEX_FORMAT
             + _TUTOR_TEACHER_NAME_BAN
         ),
     },

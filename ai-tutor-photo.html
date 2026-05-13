@@ -3,9 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<script src="cache-purge.js?v=20260513-1"></script>
+<script src="cache-purge.js?v=20260513-2-katex"></script>
 <title>📷 写真で質問・3 AI 完璧解答 | AI学習コーチ塾</title>
 <link rel="stylesheet" href="style.css" />
+<!-- 🔢 2026-05-13 塾長指示「紙の参考書のような数式」: KaTeX で数式組版表示 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
 <style>
   .tp-container { max-width: 900px; margin: 1.5rem auto; padding: 0 1rem; }
   .tp-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 1.2rem; margin-bottom: 1rem; }
@@ -239,6 +243,88 @@
   function escapeHTML(s) {
     return String(s || '').replace(/[&<>"']/g, function(c) {
       return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+    });
+  }
+
+  // 🔢 2026-05-13: AI 応答の plain text 数式を $LaTeX$ に変換
+  // - AI が prompt 指示を忘れて plain text で書いた時の fallback
+  // - 既に $ を含む text node は触らない (二重変換防止)
+  // - code/pre/kbd/samp/.katex 内は触らない (DOM 保護)
+  // - 数式部分を <span>$..$</span> 化して renderMathInElement で組版
+  function pretifyMath(container) {
+    if (!container) return;
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
+      acceptNode: function(node) {
+        let p = node.parentNode;
+        while (p && p !== container) {
+          const tag = (p.tagName || '').toLowerCase();
+          if (tag === 'code' || tag === 'pre' || tag === 'kbd' || tag === 'samp') return NodeFilter.FILTER_REJECT;
+          if (p.classList && (p.classList.contains('katex') || p.classList.contains('katex-display') || p.classList.contains('katex-html'))) return NodeFilter.FILTER_REJECT;
+          p = p.parentNode;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    const nodes = [];
+    let n;
+    while ((n = walker.nextNode())) nodes.push(n);
+
+    nodes.forEach(function(node) {
+      const original = node.nodeValue;
+      if (!original || original.length < 2) return;
+      // 🛡️ 既に LaTeX delimiter を含む text node は触らない
+      if (original.indexOf('$') >= 0 || original.indexOf('\\(') >= 0 || original.indexOf('\\[') >= 0) return;
+
+      let t = original;
+      // 1. 分数 (π/n, √n/m, π/√n) — π or √ を含むときのみ反応 (URL/日付の誤反応回避)
+      t = t.replace(/(π|√\d+)\s*\/\s*(\d+|π|√\d+)/g, function(_m, a, b) {
+        const conv = function(s) { return s.replace(/π/g, '\\pi').replace(/√(\d+)/g, '\\sqrt{$1}'); };
+        return '$\\dfrac{' + conv(a) + '}{' + conv(b) + '}$';
+      });
+      // 2. √n → $\sqrt{n}$
+      t = t.replace(/√(\d+)/g, '$\\sqrt{$1}$');
+      // 3. 単独 π → $\pi$
+      t = t.replace(/π/g, '$\\pi$');
+      // 4. 指数 x^2, t^{n}, n^k
+      t = t.replace(/([a-zA-Z0-9\)])\^(\{[^{}]+\}|-?\d+|[a-zA-Z])/g, function(_m, base, exp) {
+        const e = exp.charAt(0) === '{' ? exp : '{' + exp + '}';
+        return '$' + base + '^' + e + '$';
+      });
+      // 5. 不等号 / 同値
+      t = t.replace(/≦/g, '$\\leqq$').replace(/≧/g, '$\\geqq$').replace(/≠/g, '$\\neq$')
+           .replace(/⇔/g, '$\\iff$').replace(/⇒/g, '$\\Rightarrow$').replace(/⇐/g, '$\\Leftarrow$');
+      // 6. ギリシャ文字 (頻出のみ)
+      t = t.replace(/α/g, '$\\alpha$').replace(/β/g, '$\\beta$').replace(/γ/g, '$\\gamma$')
+           .replace(/θ/g, '$\\theta$').replace(/φ/g, '$\\phi$').replace(/ω/g, '$\\omega$')
+           .replace(/Δ/g, '$\\Delta$').replace(/Σ/g, '$\\Sigma$');
+      // 7. 数学記号
+      t = t.replace(/±/g, '$\\pm$').replace(/×/g, '$\\times$').replace(/÷/g, '$\\div$')
+           .replace(/∞/g, '$\\infty$').replace(/[≈≒]/g, '$\\approx$');
+      // 連続 $$ を空白に
+      t = t.replace(/\$\s*\$/g, ' ');
+
+      if (t === original) return;
+
+      // 数式と plain text を分離して fragment 化
+      const fragments = document.createDocumentFragment();
+      const re = /\$[^$\n]+?\$/g;
+      let lastIdx = 0;
+      let match;
+      while ((match = re.exec(t)) !== null) {
+        if (match.index > lastIdx) {
+          fragments.appendChild(document.createTextNode(t.substring(lastIdx, match.index)));
+        }
+        const mathSpan = document.createElement('span');
+        mathSpan.textContent = match[0]; // $..$ を text として保持 → renderMathInElement で組版
+        fragments.appendChild(mathSpan);
+        lastIdx = match.index + match[0].length;
+      }
+      if (lastIdx < t.length) {
+        fragments.appendChild(document.createTextNode(t.substring(lastIdx)));
+      }
+      if (fragments.childNodes.length > 0) {
+        node.parentNode.replaceChild(fragments, node);
+      }
     });
   }
 
@@ -504,6 +590,26 @@
       html += '</div>';
     });
     $result.innerHTML = html;
+
+    // 🔢 2026-05-13 塾長指示「紙の参考書のような数式」: KaTeX で組版表示
+    // ① pretifyMath: plain text 数式記号 (π/2, √5, x^2 等) を $LaTeX$ に変換
+    // ② renderMathInElement: $..$ / $$..$$ / \(..\) / \[..\] を KaTeX で組版
+    try { pretifyMath($result); } catch (e) { console.warn('pretifyMath failed:', e); }
+    if (window.renderMathInElement) {
+      try {
+        window.renderMathInElement($result, {
+          delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false },
+            { left: '\\[', right: '\\]', display: true },
+            { left: '\\(', right: '\\)', display: false },
+          ],
+          throwOnError: false,
+          errorColor: '#fca5a5',
+          strict: 'ignore',
+        });
+      } catch (e) { console.warn('renderMathInElement failed:', e); }
+    }
 
     // 🛡️ UX 致命 fix C-2 (2026-05-13): 再試行ボタンの handler を結果描画後に bind
     const retryBtn = document.getElementById('tpRetryBtn');
