@@ -117,6 +117,9 @@ const EXAMS = {
       // 共通テスト・センター
       { key: 'kyotsu',    name: '共通テスト',       cefr: 'A2-B2', target: '2021年〜・全国共通・Reading 80分/Listening 60分' },
       { key: 'center',    name: 'センター試験',     cefr: 'A2-B1', target: '2020年廃止・1990-2020年過去問・基礎重視' },
+      // 📘 基礎 / 定期テスト (2026-05-13 塾長指示で追加)
+      { key: 'kiso',      name: '基礎',             cefr: 'A2-B1', target: '高校英語の基礎固め・受験勉強の入り口・200-400 語の標準英文' },
+      { key: 'teiki',     name: '定期テスト対策',   cefr: 'A2-B1', target: '高校 中間/期末試験・教科書傍用・学校文法 単元別カバー' },
     ],
     // 大学別 part 構造 (主要大学のみ実装、他は generic)
     sectionsByGrade: {
@@ -239,6 +242,20 @@ const EXAMS = {
         { key: 'r_grammar',   name: '発音・アクセント・文法 (大問1-3)', icon: '📝', timeMin: 25, qCount: 20, scoreMax: 50, desc: '2020年廃止のセンター型・基礎重視' },
         { key: 'r_long',      name: '長文読解 (大問4-6)',               icon: '📖', timeMin: 50, qCount: 20, scoreMax: 100, desc: 'グラフ/評論/物語の3題' },
         { key: 'l_listening', name: 'リスニング',                       icon: '🎧', timeMin: 30, qCount: 25, scoreMax: 50, desc: '日常会話/講義 (大問1-4)' },
+      ],
+      // 📘 基礎 (kiso) ・受験勉強の入り口・高校 1-2 年レベル
+      kiso: [
+        { key: 'r_short',   name: '基礎短文読解',     icon: '📝', timeMin: 15, qCount: 5,  scoreMax: 20, desc: '広告/メール/お知らせ等の実用英語 (100-200 語)' },
+        { key: 'r_long',    name: '基礎長文読解',     icon: '📖', timeMin: 25, qCount: 5,  scoreMax: 30, desc: '読みやすい標準英文 (200-400 語) ・主旨と詳細を捉える' },
+        { key: 'r_grammar', name: '基礎文法・語法',   icon: '🔀', timeMin: 15, qCount: 10, scoreMax: 30, desc: '高校 1-2 年で学習する文法事項 (関係詞/分詞/不定詞/仮定法 基本形)' },
+        { key: 'w_essay',   name: '基礎英作文',       icon: '✍️', timeMin: 15, qCount: 1,  scoreMax: 20, desc: '30-50 語の身近なテーマ (賛否/好み/経験)' },
+      ],
+      // 📗 定期テスト対策 (teiki) ・高校 中間/期末・教科書傍用
+      teiki: [
+        { key: 'r_short',   name: '定期テスト短文',   icon: '📝', timeMin: 15, qCount: 5,  scoreMax: 20, desc: '会話/物語の入門 (100-200 語) ・教科書トピック' },
+        { key: 'r_long',    name: '定期テスト長文',   icon: '📖', timeMin: 25, qCount: 5,  scoreMax: 35, desc: '教科書系長文 (400-500 語) ・授業で扱う標準英文' },
+        { key: 'r_grammar', name: '定期テスト文法',   icon: '🔀', timeMin: 15, qCount: 10, scoreMax: 30, desc: '関係詞節/分詞構文/仮定法/比較構文 単元別' },
+        { key: 'w_essay',   name: '定期テスト英作文', icon: '✍️', timeMin: 15, qCount: 1,  scoreMax: 20, desc: '40-60 語の授業ノート活用テーマ (環境/教育/技術 入門)' },
       ],
       // 他大学のデフォルト (汎用 4 part)
       _default: [
@@ -3966,6 +3983,17 @@ function renderCurriculum(data) {
 document.addEventListener('DOMContentLoaded', () => {
   updateModeBadge();
   bindExamCards();
+
+  // 🎯 2026-05-13 塾長指示「画像の部分は生徒には見せる必要はないので隠して」:
+  //   アーカイブ overview (pool 蓄積数を可視化) は admin/CEO 内部用 → 生徒画面では非表示
+  //   admin token 保持時のみ archiveSection を表示。生徒 session token のみなら完全 hide。
+  try {
+    const hasAdmin = !!localStorage.getItem('ai_juku_admin_token');
+    if (!hasAdmin) {
+      const archSec = document.getElementById('archiveSection');
+      if (archSec) archSec.style.display = 'none';
+    }
+  } catch (e) { /* silent: localStorage 不可ブラウザでもエラー化させない */ }
 
   // 🎯 2026-05-13: クイックスタート CTA bar (画面最上部) のボタン bind
   // ヘッダー直下から直接「試験→プルダウン」フローに飛べる導線
