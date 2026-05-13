@@ -3910,11 +3910,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   } catch (e) { /* silent */ }
-  // currentLevel state 同期
-  document.getElementById('currentLevel').addEventListener('change', e => {
-    state.currentLevel = e.target.value;
-  });
-  state.currentLevel = document.getElementById('currentLevel').value || 'B1';
+  // 🎯 2026-05-13 塾長指示「現在の CEFR は不要」: UI から削除済。
+  //    AI prompt 用に内部デフォルト ('B1') のみ保持。受験予定試験の grade/score で
+  //    十分にレベルが推定できるため自己申告 UI は冗長だった。
+  const _curLvEl = document.getElementById('currentLevel');
+  if (_curLvEl) {
+    _curLvEl.addEventListener('change', e => { state.currentLevel = e.target.value; });
+    state.currentLevel = _curLvEl.value || 'B1';
+  } else {
+    state.currentLevel = 'B1';
+  }
 
   // 問題数 / 即時採点モード 設定 (localStorage 永続化)
   const qcSel = document.getElementById('qCountPref');
