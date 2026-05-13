@@ -44,6 +44,28 @@
 
   <main class="ee-main">
 
+    <!-- 🎯 2026-05-13 塾長指示: 「プルダウンで早稲田→r_long」フロー導線を最上部に目立たせる
+         ヘッダー直下に「クイックスタート」CTA バー (試験別に直接プルダウンへ飛ぶ) -->
+    <section id="quickStartBar" style="max-width:1200px; margin:1.2rem auto 0; padding:0 1rem;">
+      <div style="background:linear-gradient(135deg, rgba(99,102,241,0.18), rgba(236,72,153,0.12)); border:1px solid rgba(167,139,250,0.45); border-radius:14px; padding:1rem 1.2rem; box-shadow:0 8px 24px rgba(99,102,241,0.15);">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.8rem; flex-wrap:wrap;">
+          <div style="flex:1 1 280px;">
+            <div style="font-size:0.78rem; color:#fbbf24; font-weight:800; letter-spacing:0.08em; margin-bottom:0.3rem;">⚡ クイックスタート</div>
+            <h3 style="margin:0 0 0.25rem 0; font-size:1.1rem; color:#fff; font-weight:800;">試験を選んで今すぐ問題挑戦</h3>
+            <p style="margin:0; font-size:0.82rem; color:#c7d2fe; line-height:1.5;">大学・大問を選んでその場で AI が問題を生成。同じ問題が出ないよう履歴も自動記録。</p>
+          </div>
+          <div style="display:flex; gap:0.45rem; flex-wrap:wrap;">
+            <button type="button" class="qs-btn" data-qs-exam="daigaku" style="padding:0.7rem 1.1rem; background:linear-gradient(135deg,#fbbf24,#ec4899); border:0; border-radius:10px; color:#fff; font-weight:800; font-size:0.9rem; cursor:pointer; min-height:48px; box-shadow:0 4px 12px rgba(236,72,153,0.3);">🎓 大学入試英語</button>
+            <button type="button" class="qs-btn" data-qs-exam="rikei" style="padding:0.7rem 1.1rem; background:linear-gradient(135deg,#22c55e,#3b82f6); border:0; border-radius:10px; color:#fff; font-weight:800; font-size:0.9rem; cursor:pointer; min-height:48px; box-shadow:0 4px 12px rgba(59,130,246,0.3);">🔬 理系科目</button>
+            <button type="button" class="qs-btn" data-qs-exam="eiken" style="padding:0.7rem 1.1rem; background:rgba(99,102,241,0.18); border:1px solid rgba(167,139,250,0.5); border-radius:10px; color:#fff; font-weight:800; font-size:0.9rem; cursor:pointer; min-height:48px;">🇯🇵 英検</button>
+            <button type="button" class="qs-btn" data-qs-exam="toefl" style="padding:0.7rem 1.1rem; background:rgba(99,102,241,0.18); border:1px solid rgba(167,139,250,0.5); border-radius:10px; color:#fff; font-weight:800; font-size:0.9rem; cursor:pointer; min-height:48px;">🇺🇸 TOEFL</button>
+            <button type="button" class="qs-btn" data-qs-exam="toeic" style="padding:0.7rem 1.1rem; background:rgba(99,102,241,0.18); border:1px solid rgba(167,139,250,0.5); border-radius:10px; color:#fff; font-weight:800; font-size:0.9rem; cursor:pointer; min-height:48px;">💼 TOEIC</button>
+            <button type="button" class="qs-btn" data-qs-exam="ielts" style="padding:0.7rem 1.1rem; background:rgba(99,102,241,0.18); border:1px solid rgba(167,139,250,0.5); border-radius:10px; color:#fff; font-weight:800; font-size:0.9rem; cursor:pointer; min-height:48px;">🇬🇧 IELTS</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ========================================================== -->
     <!-- Section 1: 試験選択カード                                  -->
     <!-- ========================================================== -->
@@ -180,6 +202,12 @@
         <div class="ee-eyebrow">📚 QUESTION ARCHIVE</div>
         <h2>🗄️ 蓄積問題アーカイブ</h2>
         <p class="ee-section-desc">AI が日々蓄積した問題プールを直接ブラウズ。<strong>カードをクリックするだけで問題一覧</strong>が表示されます。同じ問題には2度出会わないよう履歴も自動記録。</p>
+      </div>
+      <!-- 🎯 2026-05-13: アーカイブに無い大学を選びたい時の導線案内 -->
+      <div style="margin: 0 0 1.2rem; padding: 0.85rem 1.1rem; background: rgba(99,102,241,0.06); border: 1px dashed rgba(167,139,250,0.35); border-radius: 10px; font-size: 0.88rem; color: #c7d2fe; line-height: 1.6;">
+        💡 <strong>探している大学が無い場合は</strong>、ページ最上部の「⚡ クイックスタート」から
+        <strong>「🎓 大学入試英語」or「🔬 理系科目」</strong>をクリック → プルダウンで大学選択 → AI が即時生成します。
+        <button type="button" onclick="window.scrollTo({top:0, behavior:'smooth'})" style="margin-left:0.5rem; padding:0.3rem 0.7rem; background:rgba(167,139,250,0.18); border:1px solid rgba(167,139,250,0.5); border-radius:6px; color:#fff; font-weight:700; font-size:0.78rem; cursor:pointer;">↑ クイックスタートに戻る</button>
       </div>
       <!-- 🔍 検索バー -->
       <div class="archive-search-row">
@@ -488,6 +516,6 @@
     /* 写真 drop area ホバー */
     .ee-photo-drop:hover { background: rgba(99,102,241,0.10) !important; border-color: rgba(167,139,250,0.7) !important; }
   </style>
-  <script src="english-exam.js?v=20260513-pro-ux-v1"></script>
+  <script src="english-exam.js?v=20260513-quickstart-bar"></script>
 </body>
 </html>

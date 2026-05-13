@@ -3465,6 +3465,24 @@ function renderCurriculum(data) {
 document.addEventListener('DOMContentLoaded', () => {
   updateModeBadge();
   bindExamCards();
+
+  // 🎯 2026-05-13: クイックスタート CTA bar (画面最上部) のボタン bind
+  // ヘッダー直下から直接「試験→プルダウン」フローに飛べる導線
+  document.querySelectorAll('.qs-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const examId = btn.dataset.qsExam;
+      if (!examId) return;
+      try { pickExam(examId); } catch (e) { console.warn('quick-start failed:', e); }
+      // gradePickSection or examDetailSection までスクロール
+      setTimeout(() => {
+        const target = document.getElementById('gradePickSection') || document.getElementById('examDetailSection');
+        if (target && target.style.display !== 'none') {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    });
+  });
+
   // 🎯 URL ?focus= で初期 exam-card auto-select (2026-05-13 塾長指示・大学入試問題演習 tab 分離対応)
   // index.html の「📚 大学入試問題演習」タブ → english-exam.html?focus=daigaku で自動選択
   try {
@@ -3473,8 +3491,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (focusExam && allowedFocus.includes(focusExam)) {
       const card = document.querySelector(`.exam-card[data-exam="${focusExam}"]`);
       if (card) {
-        // DOM bind 完了後に発火させるため 1 tick 遅延
-        setTimeout(() => { try { card.click(); } catch (e) {} }, 0);
+        // DOM bind 完了後に発火させるため 1 tick 遅延 + 完了後に gradePickSection へスクロール
+        setTimeout(() => {
+          try { card.click(); } catch (e) {}
+          // gradePicker が出たらそこにスクロール (200ms 後)
+          setTimeout(() => {
+            const target = document.getElementById('gradePickSection');
+            if (target && target.style.display !== 'none') {
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }, 250);
+        }, 0);
       }
     }
   } catch (e) { /* silent */ }
