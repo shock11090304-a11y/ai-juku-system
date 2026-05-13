@@ -1437,8 +1437,184 @@ function initStudyPlan() {
     // AI 機能 (A+B+C)
     bindStudyPlanAiButtons();
     loadMyStudyPlans();
+    // 📚 マイ参考書 (塾長指示 2026-05-14)
+    initMyMaterials();
   };
   tryInit(10);
+}
+
+// ==========================================================================
+// 📚 マイ参考書/問題集 (塾長指示 2026-05-14)
+// 生徒が自分で使っている参考書を登録 → カリキュラム AI 生成時に継続使用前提で組み込み
+// ==========================================================================
+const MM_SUBJECTS = [
+  '英語', '数学', '国語', '現代文', '古文', '漢文',
+  '理科', '物理', '化学', '生物', '地学',
+  '社会', '日本史', '世界史', '地理', '倫理', '政経',
+  '情報', '小論文', '面接対策', 'その他',
+];
+const MM_STATUS_LABEL = {using: '📖 使用中', completed: '✅ 完了', paused: '⏸ お休み中'};
+const MM_STATUS_COLOR = {using: '#22d3ee', completed: '#34d399', paused: '#a1a1aa'};
+
+function initMyMaterials() {
+  // 🛡️ プレミアム外生徒は UI 非表示 (study-plan-section の eligibility 判定に従う)
+  // initStudyPlan の eligible 経路から呼ばれるが、念のため二重ガード
+  const section = document.getElementById('myMaterialsSection');
+  if (!section) return;
+  // 重複初期化防止 (★★★ Reviewer 2 #3 対応)
+  if (initMyMaterials._inited) {
+    loadMyMaterials();
+    return;
+  }
+  initMyMaterials._inited = true;
+  // populate subject dropdown
+  const subjSel = document.getElementById('mmSubject');
+  if (subjSel && !subjSel.options.length) {
+    MM_SUBJECTS.forEach(s => {
+      const o = document.createElement('option');
+      o.value = s; o.textContent = s;
+      subjSel.appendChild(o);
+    });
+  }
+  // toggle form
+  const toggleBtn = document.getElementById('mmToggleFormBtn');
+  const wrap = document.getElementById('mmFormWrap');
+  if (toggleBtn && !toggleBtn._mmBound) {
+    toggleBtn.addEventListener('click', () => {
+      wrap.style.display = wrap.style.display === 'none' ? '' : 'none';
+      if (wrap.style.display !== 'none') {
+        document.getElementById('mmName').focus();
+      }
+    });
+    toggleBtn._mmBound = true;
+  }
+  const cancelBtn = document.getElementById('mmCancelBtn');
+  if (cancelBtn && !cancelBtn._mmBound) {
+    cancelBtn.addEventListener('click', () => {
+      wrap.style.display = 'none';
+      clearMmForm();
+    });
+    cancelBtn._mmBound = true;
+  }
+  const saveBtn = document.getElementById('mmSaveBtn');
+  if (saveBtn && !saveBtn._mmBound) {
+    saveBtn.addEventListener('click', submitMyMaterial);
+    saveBtn._mmBound = true;
+  }
+  // 初回 load
+  loadMyMaterials();
+}
+
+function clearMmForm() {
+  const name = document.getElementById('mmName');
+  const note = document.getElementById('mmNote');
+  const status = document.getElementById('mmStatus');
+  const msg = document.getElementById('mmFormMsg');
+  if (name) name.value = '';
+  if (note) note.value = '';
+  if (status) status.value = 'using';
+  if (msg) msg.textContent = '';
+}
+
+async function submitMyMaterial() {
+  const name = (document.getElementById('mmName').value || '').trim();
+  const subject = document.getElementById('mmSubject').value;
+  const status = document.getElementById('mmStatus').value;
+  const note = (document.getElementById('mmNote').value || '').trim() || null;
+  const msg = document.getElementById('mmFormMsg');
+  const saveBtn = document.getElementById('mmSaveBtn');
+  if (!name) {
+    if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '⚠️ 参考書名を入力してください'; }
+    return;
+  }
+  if (!subject) {
+    if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '⚠️ 科目を選択してください'; }
+    return;
+  }
+  saveBtn.disabled = true; saveBtn.textContent = '登録中...';
+  try {
+    await slApiFetch('/api/student/materials', {
+      method: 'POST',
+      body: JSON.stringify({name, subject, status, note}),
+    });
+    if (msg) { msg.style.color = '#86efac'; msg.textContent = '✅ 登録しました'; }
+    clearMmForm();
+    document.getElementById('mmFormWrap').style.display = 'none';
+    await loadMyMaterials();
+  } catch (e) {
+    if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || '登録失敗'); }
+  } finally {
+    saveBtn.disabled = false; saveBtn.textContent = '💾 登録';
+  }
+}
+
+async function loadMyMaterials() {
+  const list = document.getElementById('mmList');
+  if (!list) return;
+  try {
+    const data = await slApiFetch('/api/student/materials/me');
+    const materials = data.materials || [];
+    if (!materials.length) {
+      list.innerHTML = '<div style="color:#71717a; font-size:0.78rem; padding:0.5rem;">📚 まだ登録された参考書がありません。「＋追加」から登録すると AI が継続使用前提でカリキュラムを組みます。</div>';
+      return;
+    }
+    list.innerHTML = materials.map(m => {
+      const c = MM_STATUS_COLOR[m.status] || '#22d3ee';
+      const lab = MM_STATUS_LABEL[m.status] || m.status;
+      return `
+        <div class="mm-item" data-id="${m.id}" style="background:rgba(0,0,0,0.3); border:1px solid ${c}33; border-radius:8px; padding:0.45rem 0.6rem; display:inline-flex; align-items:center; gap:0.4rem;">
+          <span style="color:${c}; font-weight:700; font-size:0.78rem;">${escapeHtml(m.subject)}</span>
+          <span style="color:#e4e4e7; font-size:0.82rem;">${escapeHtml(m.name)}</span>
+          <span style="color:${c}; font-size:0.7rem;">${lab}</span>
+          ${m.note ? `<span style="color:#71717a; font-size:0.7rem;">(${escapeHtml(m.note)})</span>` : ''}
+          <button class="mm-cycle-btn" data-id="${m.id}" data-status="${m.status}" aria-label="状態を変更 (使用中→完了→お休み)" title="状態を変更 (使用中→完了→お休み→使用中)" style="background:rgba(255,255,255,0.08); border:0; color:#a1a1aa; padding:0.15rem 0.35rem; border-radius:4px; cursor:pointer; font-size:0.7rem;">↻</button>
+          <button class="mm-delete-btn" data-id="${m.id}" data-name="${escapeHtml(m.name)}" data-subject="${escapeHtml(m.subject)}" aria-label="削除" title="削除" style="background:rgba(239,68,68,0.15); border:0; color:#fca5a5; padding:0.15rem 0.35rem; border-radius:4px; cursor:pointer; font-size:0.7rem;">✕</button>
+        </div>`;
+    }).join('');
+    list.querySelectorAll('.mm-cycle-btn').forEach(b => b.addEventListener('click', () => cycleMaterialStatus(b.getAttribute('data-id'), b.getAttribute('data-status'), b)));
+    list.querySelectorAll('.mm-delete-btn').forEach(b => b.addEventListener('click', () => deleteMyMaterial(b.getAttribute('data-id'), b.getAttribute('data-name'), b.getAttribute('data-subject'))));
+  } catch (e) {
+    console.error('loadMyMaterials failed:', e);
+    list.innerHTML = `<div style="color:#fca5a5; font-size:0.78rem;">⚠️ 読み込み失敗 (${escapeHtml(e.message || '')}) <button onclick="loadMyMaterials()" style="margin-left:0.4rem; background:rgba(99,102,241,0.2); border:0; color:#c7d2fe; padding:0.2rem 0.4rem; border-radius:4px; cursor:pointer; font-size:0.72rem;">再試行</button></div>`;
+  }
+}
+
+async function cycleMaterialStatus(id, currentStatus, btn) {
+  // 連打防止 (★★★ Reviewer 2 #2 対応): ボタン disable + 通信中なら抜ける
+  if (btn && btn.disabled) return;
+  if (btn) btn.disabled = true;
+  const next = currentStatus === 'using' ? 'completed' : (currentStatus === 'completed' ? 'paused' : 'using');
+  try {
+    await slApiFetch(`/api/student/materials/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({status: next}),
+    });
+    await loadMyMaterials();
+  } catch (e) {
+    alert('状態変更失敗: ' + (e.message || ''));
+    // エラー時も真の状態を反映するため refetch
+    await loadMyMaterials();
+  }
+  // 注: loadMyMaterials が DOM を innerHTML で書き換えるので btn は GC される (disabled 解除不要)
+}
+
+async function deleteMyMaterial(id, name, subject) {
+  // 対象名を明示して誤削除防止 (★★ Reviewer 2 #6 対応)
+  const label = name ? `「${name}」(${subject || ''})` : 'この参考書';
+  if (!confirm(`${label} を削除しますか?`)) return;
+  try {
+    await slApiFetch(`/api/student/materials/${encodeURIComponent(id)}`, {method: 'DELETE'});
+    await loadMyMaterials();
+  } catch (e) {
+    alert('削除失敗: ' + (e.message || ''));
+  }
+}
+
+// inline onclick から呼べるよう global export (memory: feedback_iife_onclick_pitfall.md)
+if (typeof window !== 'undefined') {
+  window.loadMyMaterials = loadMyMaterials;
+  window.cycleMaterialStatus = cycleMaterialStatus;
+  window.deleteMyMaterial = deleteMyMaterial;
 }
 
 // ==========================================================================
@@ -1574,11 +1750,23 @@ async function generateStudyPlanWithAi() {
   try {
     const days = Math.max(1, Math.round((new Date(end) - new Date(start)) / 86400000) + 1);
     const totalMin = days * dailyMin;
+    // 📚 マイ参考書 (使用中) を取得して AI prompt に注入 (塾長指示 2026-05-14)
+    let ownMaterialsSnippet = '';
+    try {
+      const mm = await slApiFetch('/api/student/materials/me?status=using');
+      const mats = (mm && mm.materials) || [];
+      if (mats.length) {
+        const bySubj = {};
+        mats.forEach(m => { (bySubj[m.subject] = bySubj[m.subject] || []).push(m.name); });
+        const lines = Object.entries(bySubj).map(([s, names]) => `- ${s}: ${names.slice(0, 8).join(', ')}`);
+        ownMaterialsSnippet = `\n\n## 📚 生徒が現在使用中の参考書/問題集 (継続活用を前提とすること):\n${lines.join('\n')}\n→ これらの教材は既に持っている前提で計画に組み込み、不足分のみ新規提案すること。`;
+      }
+    } catch (_) { /* マイ参考書取得失敗時は無視して通常生成 */ }
     const sysPrompt = '受験戦略を立てる学習プランナーです。指定の志望校に必要な科目構成を考慮し、現実的な学習計画を立てます。教師名や塾名は出さず、純粋な JSON だけ返答します。';
     // 2026-05-07 致命修正: max_tokens を 2500→4500 に増量
     // (3〜5件 × 9 field の JSON は出力 3000-4000 token 必要・2500 だと途中で切れて parse 失敗していた)
     // 同時に rationale を 40 文字以内に短縮 + color は省略可に変更してトークン節約
-    const userPrompt = `志望校: ${goal}\n${material ? '優先教材: ' + material + '\n' : ''}期間: ${start} 〜 ${end} (${days}日間)\n1日確保時間: ${dailyMin} 分 (期間総計 ${totalMin} 分)\n\n上記期間に並列で進めるべき計画を 3〜4件 提案してください。各計画は study_plans に登録される単位 (1 教材 or 1 単元 単位)。\n\n出力形式 (フェンスや前置きなし、純粋な JSON だけ・改行最小):\n[\n  {\n    "title": "タイトル(40文字以内)",\n    "subject": "次から1つ: 英語/数学/国語/現代文/古文/漢文/理科/物理/化学/生物/地学/社会/日本史/世界史/地理/倫理/政経/情報/小論文/面接対策/その他",\n    "material": "推奨教材名(40文字以内)",\n    "start_date": "${start}",\n    "end_date": "YYYY-MM-DD",\n    "target_minutes": 整数,\n    "target_pages": 整数 or null,\n    "color": "#6366f1(英)/#10b981(数)/#ec4899(国)/#f59e0b(理)/#8b5cf6(社) 該当色",\n    "rationale": "理由(40文字以内)"\n  }\n]\n注: target_minutes 合計は期間総計の 80〜100%。期間 30日以下なら 3件、それ以上 4件。短文・簡潔に。`;
+    const userPrompt = `志望校: ${goal}\n${material ? '優先教材: ' + material + '\n' : ''}期間: ${start} 〜 ${end} (${days}日間)\n1日確保時間: ${dailyMin} 分 (期間総計 ${totalMin} 分)${ownMaterialsSnippet}\n\n上記期間に並列で進めるべき計画を 3〜4件 提案してください。各計画は study_plans に登録される単位 (1 教材 or 1 単元 単位)。\n\n出力形式 (フェンスや前置きなし、純粋な JSON だけ・改行最小):\n[\n  {\n    "title": "タイトル(40文字以内)",\n    "subject": "次から1つ: 英語/数学/国語/現代文/古文/漢文/理科/物理/化学/生物/地学/社会/日本史/世界史/地理/倫理/政経/情報/小論文/面接対策/その他",\n    "material": "推奨教材名(40文字以内)",\n    "start_date": "${start}",\n    "end_date": "YYYY-MM-DD",\n    "target_minutes": 整数,\n    "target_pages": 整数 or null,\n    "color": "#6366f1(英)/#10b981(数)/#ec4899(国)/#f59e0b(理)/#8b5cf6(社) 該当色",\n    "rationale": "理由(40文字以内)"\n  }\n]\n注: target_minutes 合計は期間総計の 80〜100%。期間 30日以下なら 3件、それ以上 4件。短文・簡潔に。`;
     // max_tokens を 4500 に増量 (Gemini truncation 対策)
     const proposals = await _spCallAi(sysPrompt, userPrompt, 4500);
     if (!Array.isArray(proposals) || !proposals.length) throw new Error('提案が空でした');

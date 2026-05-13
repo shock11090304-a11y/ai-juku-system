@@ -835,6 +835,22 @@ def init_db():
     );
     CREATE INDEX IF NOT EXISTS idx_exam_results_student ON exam_results(student_id, exam_date);
     CREATE INDEX IF NOT EXISTS idx_exam_results_subject ON exam_results(student_id, subject, exam_date);
+    -- 📚 マイ参考書/問題集 (生徒が自分で使用中の教材を登録) - 塾長指示 2026-05-14
+    -- カリキュラム AI 生成時に「現在使用中の参考書を継続活用」する設計に inject される
+    CREATE TABLE IF NOT EXISTS student_materials (
+        id {pk},
+        student_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        status TEXT DEFAULT 'using',
+        note TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_student_materials_student ON student_materials(student_id, status, created_at);
+    -- 同一生徒・同名・同科目の重複登録防止 (異なる status 間でも一意)
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_student_materials_unique
+        ON student_materials(student_id, name, subject);
     -- 国公立難関大学コース 申込フォーム (Phase 4.8 - クレカなし申込)
     -- 塾長指示 2026-05-06: 専用 LP からクレカ登録なしで申込
     CREATE TABLE IF NOT EXISTS course_applications (
@@ -23987,6 +24003,186 @@ def get_my_study_plans(authorization: Optional[str] = Header(None), status: Opti
         conn.close()
 
 
+# 📚 マイ参考書/問題集 endpoints (塾長指示 2026-05-14)
+# 生徒が「自分で使っている参考書」を登録し、カリキュラム AI 生成時に継続使用前提で組み込む
+_MATERIAL_STATUSES = {"using", "completed", "paused"}
+# SSoT: 既存の _STUDY_SUBJECTS を参照 (将来 "韓国語" 等を追加した時の整合性破綻を防止)
+_MATERIAL_SUBJECTS = _STUDY_SUBJECTS
+
+
+class StudentMaterialCreateRequest(BaseModel):
+    name: str
+    subject: str
+    status: Optional[str] = "using"
+    note: Optional[str] = None
+
+
+class StudentMaterialUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    subject: Optional[str] = None
+    status: Optional[str] = None
+    note: Optional[str] = None
+
+
+@app.post("/api/student/materials")
+def create_student_material(payload: StudentMaterialCreateRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒: マイ参考書を登録。"""
+    _check_rate_limit_ip(request, bucket="sm_create", limit=30, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+    name = _sanitize_text(payload.name, 120)
+    if not name:
+        raise HTTPException(status_code=400, detail="参考書名は必須")
+    subject = _sanitize_text(payload.subject, 30)
+    if subject not in _MATERIAL_SUBJECTS:
+        raise HTTPException(status_code=400, detail=f"科目が不正です (許可: {', '.join(sorted(_MATERIAL_SUBJECTS))})")
+    status = (payload.status or "using").strip()
+    if status not in _MATERIAL_STATUSES:
+        raise HTTPException(status_code=400, detail="status は using/completed/paused")
+    note = _sanitize_text(payload.note, 300) if payload.note else None
+    conn = db()
+    try:
+        c = conn.cursor()
+        try:
+            # RETURNING で 1 query 完結 (race-safe・既存 study_plans/curricula と統一)
+            c.execute(
+                "INSERT INTO student_materials (student_id, name, subject, status, note) "
+                "VALUES (?,?,?,?,?) RETURNING id, name, subject, status, note, created_at",
+                (student["id"], name, subject, status, note)
+            )
+            row = c.fetchone()
+            conn.commit()
+        except IntegrityError:
+            try: conn.rollback()
+            except Exception: pass
+            raise HTTPException(status_code=409, detail="同じ参考書名・科目で既に登録済みです")
+        log.info(f"[StudentMaterial] create student={student['id']} name={name} subject={subject}")
+        return {
+            "ok": True,
+            "material": {
+                "id": row["id"], "name": row["name"], "subject": row["subject"],
+                "status": row["status"], "note": row["note"],
+                "created_at": str(row["created_at"]) if row["created_at"] else None,
+            }
+        }
+    finally:
+        conn.close()
+
+
+@app.get("/api/student/materials/me")
+def list_my_materials(authorization: Optional[str] = Header(None), status: Optional[str] = None):
+    """生徒: 自分のマイ参考書一覧 (status filter 可)。"""
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+    if status and status not in _MATERIAL_STATUSES:
+        raise HTTPException(status_code=400, detail="status が不正です")
+    conn = db()
+    try:
+        c = conn.cursor()
+        if status:
+            c.execute(
+                "SELECT id, name, subject, status, note, created_at, updated_at FROM student_materials "
+                "WHERE student_id = ? AND status = ? ORDER BY created_at DESC",
+                (student["id"], status)
+            )
+        else:
+            c.execute(
+                "SELECT id, name, subject, status, note, created_at, updated_at FROM student_materials "
+                "WHERE student_id = ? ORDER BY status, created_at DESC",
+                (student["id"],)
+            )
+        rows = c.fetchall()
+        materials = [{
+            "id": r["id"], "name": r["name"], "subject": r["subject"],
+            "status": r["status"], "note": r["note"],
+            "created_at": str(r["created_at"]) if r["created_at"] else None,
+            "updated_at": str(r["updated_at"]) if r["updated_at"] else None,
+        } for r in rows]
+        return {"ok": True, "materials": materials, "count": len(materials)}
+    finally:
+        conn.close()
+
+
+@app.patch("/api/student/materials/{material_id}")
+def update_student_material(material_id: int, payload: StudentMaterialUpdateRequest, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒: マイ参考書を更新 (科目/状態/メモ等)。"""
+    _check_rate_limit_ip(request, bucket="sm_update", limit=60, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, student_id FROM student_materials WHERE id = ?", (material_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="参考書が見つかりません")
+        if int(row["student_id"]) != int(student["id"]):
+            raise HTTPException(status_code=403, detail="権限がありません")
+        updates, params = [], []
+        if payload.name is not None:
+            v = _sanitize_text(payload.name, 120)
+            if not v:
+                raise HTTPException(status_code=400, detail="参考書名が空です")
+            updates.append("name = ?"); params.append(v)
+        if payload.subject is not None:
+            v = _sanitize_text(payload.subject, 30)
+            if v not in _MATERIAL_SUBJECTS:
+                raise HTTPException(status_code=400, detail="科目が不正です")
+            updates.append("subject = ?"); params.append(v)
+        if payload.status is not None:
+            if payload.status not in _MATERIAL_STATUSES:
+                raise HTTPException(status_code=400, detail="status が不正")
+            updates.append("status = ?"); params.append(payload.status)
+        if payload.note is not None:
+            updates.append("note = ?"); params.append(_sanitize_text(payload.note, 300) or None)
+        if not updates:
+            raise HTTPException(status_code=400, detail="更新項目がありません")
+        updates.append("updated_at = CURRENT_TIMESTAMP")
+        params.append(material_id)
+        try:
+            c.execute(f"UPDATE student_materials SET {', '.join(updates)} WHERE id = ?", params)
+            conn.commit()
+        except IntegrityError:
+            try: conn.rollback()
+            except Exception: pass
+            raise HTTPException(status_code=409, detail="同名・同科目の参考書が既に登録済みです")
+        log.info(f"[StudentMaterial] update id={material_id} student={student['id']}")
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
+@app.delete("/api/student/materials/{material_id}")
+def delete_student_material(material_id: int, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒: マイ参考書を削除。"""
+    _check_rate_limit_ip(request, bucket="sm_delete", limit=30, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, student_id FROM student_materials WHERE id = ?", (material_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="参考書が見つかりません")
+        if int(row["student_id"]) != int(student["id"]):
+            raise HTTPException(status_code=403, detail="権限がありません")
+        c.execute("DELETE FROM student_materials WHERE id = ?", (material_id,))
+        conn.commit()
+        log.info(f"[StudentMaterial] delete id={material_id} student={student['id']}")
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
 @app.get("/api/admin/study-plans/gantt")
 def admin_study_plans_gantt(request: Request, authorization: Optional[str] = Header(None), days: int = 60, student_id: Optional[int] = None):
     """塾長: 全コース受講生のガントチャート用データ (期間+進捗)。"""
@@ -25784,6 +25980,49 @@ def get_my_curricula(authorization: Optional[str] = Header(None)):
         conn.close()
 
 
+def _build_own_materials_prompt_snippet(student_id: int) -> str:
+    """📚 生徒のマイ参考書 (使用中) を AI prompt 用 snippet に整形 (塾長指示 2026-05-14)。
+
+    AI カリキュラム生成 + AI 学習計画生成の双方から呼び出される共通 helper。
+    例外時は connection leak を防ぐため try/finally で close を保証する。
+    """
+    out = ""
+    conn = None
+    try:
+        conn = db()
+        c = conn.cursor()
+        # 科目別に偏り防止のため、まず status='using' を全件取得 (LIMIT 200) してから科目別に上位 8 件採用
+        c.execute(
+            "SELECT name, subject, note FROM student_materials "
+            "WHERE student_id = ? AND status = 'using' ORDER BY created_at DESC LIMIT 200",
+            (student_id,)
+        )
+        own = c.fetchall()
+        if not own:
+            return ""
+        by_subj = {}
+        for r in own:
+            by_subj.setdefault(r["subject"], []).append({"name": r["name"], "note": r["note"]})
+        lines = ["", "## 📚 生徒が現在使用中の参考書/問題集 (継続活用を前提とすること):"]
+        for s, items in by_subj.items():
+            parts = []
+            for it in items[:8]:
+                if it.get("note"):
+                    parts.append(f"{it['name']} ({it['note']})")
+                else:
+                    parts.append(it["name"])
+            lines.append(f"- {s}: {', '.join(parts)}")
+        lines.append("→ これらの教材は **既に持っている前提** で計画/フェーズの materials に組み込み、不足分のみ新規提案すること。")
+        out = "\n".join(lines)
+    except Exception as e:
+        log.warning(f"[OwnMaterialsInject] failed for student={student_id}: {type(e).__name__}: {str(e)[:200]}")
+    finally:
+        if conn is not None:
+            try: conn.close()
+            except Exception: pass
+    return out
+
+
 @app.post("/api/curricula/ai-generate")
 def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, authorization: Optional[str] = Header(None)):
     """生徒: AI で全体カリキュラムを生成 (DB に保存はしない、生徒が確認後に POST /api/curricula で保存)。"""
@@ -25833,12 +26072,15 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
     except Exception as e:
         log.warning(f"[Curriculum] exam inject failed: {e}")
 
+    # 📚 マイ参考書 (生徒が現在使用中) を自動 inject (塾長指示 2026-05-14)
+    own_materials_summary = _build_own_materials_prompt_snippet(student["id"])
+
     sys_prompt = "受験戦略を立てる学習プランナーです。難関大学 (国公立・難関私立) 志望者に対し、入試日から逆算した全体カリキュラムを 4-6 フェーズに分割して提案します。各フェーズは現実的な期間と教材 + スタディサプリ (スタサプ) の対応講義で構成。スタサプ講義は商品名そのまま (例: 『高3 トップレベル英語 〈読解編〉』『高3 ハイレベル数学IAIIB』『古文文法ベーシックレベル』) で記載。市販の参考書教材とスタサプ講義は別フィールドに分けて出力。純粋な JSON のみ返答 (前置きや解説不要)。"
     user_prompt = f"""志望校: {target_university}{(' / ' + target_faculty) if target_faculty else ''}
 開始日: {sd.isoformat()}
 入試日: {ed.isoformat()} (期間 {months} ヶ月)
 1日確保時間: {daily} 分
-現状: {baseline}{exam_summary}
+現状: {baseline}{exam_summary}{own_materials_summary}
 
 上記から、難関大学合格までの全体カリキュラムを 4-6 フェーズに分割して JSON で返してください。
 模試結果が含まれている場合は、特に偏差値が低い科目に厚めの教材配分をしてください。
