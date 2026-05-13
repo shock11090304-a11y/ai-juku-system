@@ -25865,7 +25865,8 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
 - 各フェーズに市販教材 2-4 件、スタサプ講義 2-4 件、マイルストーン 2-4 件
 - 受験科目構成 (志望校に必要な科目) を考慮
 - スタサプ講義はレベル (ベーシック/スタンダード/ハイレベル/トップレベル) と科目を明示した商品名で記載
-- フェーズ進行に応じて段階的にレベルを上げる (例: 基礎期=ベーシック→標準期=スタンダード→応用期=ハイレベル→直前期=トップレベル)"""
+- フェーズ進行に応じて段階的にレベルを上げる (例: 基礎期=ベーシック→標準期=スタンダード→応用期=ハイレベル→直前期=トップレベル)
+- **🔑 重要 (重複回避ルール)**: 各フェーズには **必ず前フェーズにはなかった新規教材を 1 件以上含めること**。単語帳 (例: ターゲット1900) のような通年使用教材は OK だが、それ以外は段階に応じて教材を切り替える。生徒の学習計画 UI で「同じ参考書がずっと並ぶ」状態を避けるため、フェーズごとに最低 1 つの差分教材があるように構成"""
 
     body = {
         "model": "gemini-2.5-flash",
@@ -26203,52 +26204,88 @@ def expand_curriculum_to_plans(curr_id: int, request: Request, authorization: Op
             if "小論" in material: return "小論文"
             return "その他"
 
-        added, skipped = 0, 0
+        # 🔧 2026-05-14 塾長指示「あおと生徒バグ」対応: 同じ参考書が複数 phase に登場する場合に
+        # 「ずっと同じ参考書で登録される」現象を解消するため、material 単位で全 phase の登場期間を
+        # 集計し、最小 start_date 〜 最大 end_date の 1 plan に統合する (重複統合)。
+        # 例: phase1+2+3+4 全てに「ターゲット1900」がある場合 → 1 plan (全期間) として登録。
+        # phase ごとに異なる参考書 (例: phase1=英文法ポラリス1, phase2=ポラリス2) は別 plan で登録される。
+        material_map = {}  # key=(material_clean, source_tag), value=list of {start, end, name, focus}
         for ph in phases:
             ph_start = ph.get("start_date")
             ph_end = ph.get("end_date")
             if not ph_start or not ph_end:
                 continue
-            # フェーズ期間日数
             try:
                 p_sd = datetime.strptime(ph_start, "%Y-%m-%d").date()
                 p_ed = datetime.strptime(ph_end, "%Y-%m-%d").date()
             except Exception:
                 continue
-            ph_days = max(1, (p_ed - p_sd).days + 1)
             materials = ph.get("materials") or []
             sapuri_lectures = ph.get("sapuri_lectures") or []
-            # 市販教材 + スタサプ講義 を「教材 + 出典タグ」のペアで結合
             combined = [(m, "市販") for m in materials] + [(s, "スタサプ") for s in sapuri_lectures]
-            if not combined:
-                continue
-            # 1項目あたり目標分数 = フェーズ総分数 / 全項目数
-            per_item_min = max(60, (ph_days * daily) // max(1, len(combined)))
             for (mat, source_tag) in combined:
                 mat_clean = (mat or "").strip()[:100]
                 if not mat_clean:
                     continue
-                subject = _guess_subject(mat_clean)
-                color = subject_colors.get(subject, "#6366f1")
-                # スタサプは識別しやすいよう [📺 スタサプ] prefix
-                src_prefix = "📺 " if source_tag == "スタサプ" else ""
-                title = f"[{ph.get('name','フェーズ')}] {src_prefix}{mat_clean}"[:100]
-                try:
-                    c.execute(
-                        "INSERT INTO study_plans (student_id, title, subject, material, start_date, end_date, target_minutes, color, note) "
-                        "VALUES (?,?,?,?,?,?,?,?,?)",
-                        (student["id"], title, subject, mat_clean, ph_start, ph_end, per_item_min, color,
-                         f"カリキュラム自動展開 / 出典: {source_tag} / フェーズ: {ph.get('name','')} / focus: {ph.get('focus','')}"[:1000])
-                    )
-                    added += 1
-                except IntegrityError:
-                    skipped += 1
-                except Exception as ee:
-                    log.warning(f"[Curriculum] expand insert failed: {ee}")
-                    skipped += 1
+                key = (mat_clean, source_tag)
+                material_map.setdefault(key, []).append({
+                    "start": ph_start, "end": ph_end,
+                    "name": ph.get("name", "フェーズ"),
+                    "focus": ph.get("focus", "")
+                })
+
+        if not material_map:
+            return {"ok": True, "added": 0, "skipped": 0, "note": "No materials found in phases"}
+
+        # 教材総数で 1 教材あたり目標分数を計算 (期間全体 × daily / 教材数)
+        total_unique = len(material_map)
+        added, skipped = 0, 0
+        for (mat_clean, source_tag), occurrences in material_map.items():
+            if not occurrences:
+                continue
+            # 最小 start 〜 最大 end を採用 (ISO date 文字列は辞書順 = 時系列順)
+            starts = sorted(o["start"] for o in occurrences)
+            ends = sorted(o["end"] for o in occurrences)
+            start_date = starts[0]
+            end_date = ends[-1]
+            phase_names = [o["name"] for o in occurrences]
+            unique_phase_names = list(dict.fromkeys(phase_names))  # 順序保持 dedup
+            if len(unique_phase_names) > 1:
+                title_prefix = f"[{unique_phase_names[0]}〜{unique_phase_names[-1]}]"
+            else:
+                title_prefix = f"[{unique_phase_names[0]}]"
+            subject = _guess_subject(mat_clean)
+            color = subject_colors.get(subject, "#6366f1")
+            src_prefix = "📺 " if source_tag == "スタサプ" else ""
+            title = f"{title_prefix} {src_prefix}{mat_clean}"[:100]
+            # 目標分数: 統合期間日数 × daily / 教材総数
+            try:
+                sd_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
+                ed_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
+                merged_days = max(1, (ed_obj - sd_obj).days + 1)
+            except Exception:
+                merged_days = 30
+            per_item_min = max(60, (merged_days * daily) // max(1, total_unique))
+            note = (
+                f"カリキュラム自動展開 / 出典: {source_tag} / "
+                f"登場フェーズ: {', '.join(unique_phase_names[:4])}"
+                f"{' 他' if len(unique_phase_names) > 4 else ''}"
+            )[:1000]
+            try:
+                c.execute(
+                    "INSERT INTO study_plans (student_id, title, subject, material, start_date, end_date, target_minutes, color, note) "
+                    "VALUES (?,?,?,?,?,?,?,?,?)",
+                    (student["id"], title, subject, mat_clean, start_date, end_date, per_item_min, color, note)
+                )
+                added += 1
+            except IntegrityError:
+                skipped += 1
+            except Exception as ee:
+                log.warning(f"[Curriculum] expand insert failed: {ee}")
+                skipped += 1
         conn.commit()
-        log.info(f"[Curriculum] expand-to-plans curr={curr_id} added={added} skipped={skipped}")
-        return {"ok": True, "added": added, "skipped": skipped}
+        log.info(f"[Curriculum] expand-to-plans curr={curr_id} added={added} skipped={skipped} unique_materials={total_unique}")
+        return {"ok": True, "added": added, "skipped": skipped, "unique_materials": total_unique}
     finally:
         conn.close()
 
