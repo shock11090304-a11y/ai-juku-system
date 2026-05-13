@@ -429,10 +429,11 @@
             <th class="ta-r">月額 (¥)</th>
             <th>内訳</th>
             <th>状態</th>
+            <th title="退塾">操作</th>
           </tr>
         </thead>
         <tbody id="monthEndTbody">
-          <tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:2rem">管理パスワードを入力して「🔄 プレビュー更新」を押してください</td></tr>
+          <tr><td colspan="8" style="text-align:center;color:var(--text-dim);padding:2rem">管理パスワードを入力して「🔄 プレビュー更新」を押してください</td></tr>
         </tbody>
       </table>
     </div>
@@ -443,6 +444,39 @@
         <div id="monthEndResultBody" style="max-height:60vh;overflow-y:auto;"></div>
         <div class="modal-actions">
           <button type="button" class="btn-back" id="monthEndResultClose">閉じる</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 📜 過去の引き落とし履歴・失敗者一覧・要対応 (2026-05-13 review 反映) -->
+    <details style="margin-top:1.5rem;padding:1rem;border:1px solid rgba(245,158,11,0.3);border-radius:8px;background:rgba(245,158,11,0.04);">
+      <summary style="cursor:pointer;font-weight:600;color:#fbbf24;">📜 過去の履歴・失敗者一覧・要対応 (clicking to expand)</summary>
+      <div style="margin-top:1rem;">
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;margin-bottom:0.75rem;">
+          <label style="color:var(--text-dim);font-size:0.9rem">月:</label>
+          <input type="month" id="historyMonthInput" class="search-input" style="width:140px">
+          <select id="historyTypeFilter" class="select" style="width:180px">
+            <option value="all">全部</option>
+            <option value="success">✅ 成功</option>
+            <option value="failed">❌ 失敗 (card_declined 等)</option>
+            <option value="requires_action">🔐 3DS 認証要</option>
+            <option value="uncertain">⚠️ 不確定 (timeout)</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" id="historyFetchBtn">🔄 履歴取得</button>
+          <button class="btn btn-ghost btn-sm" id="historyCsvBtn">📥 CSV</button>
+        </div>
+        <div id="historyStatus" style="margin-bottom:0.75rem;"></div>
+        <div id="historyResults"></div>
+      </div>
+    </details>
+
+    <!-- ⚠️ uncertain reconcile + 退塾解除 モーダル -->
+    <div id="reconcileModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" style="display:none;">
+      <div class="modal-card" style="max-width:600px;">
+        <h2 id="reconcileModalTitle">⚠️ 不確定 (uncertain) の手動 reconcile</h2>
+        <div id="reconcileModalBody"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn-back" id="reconcileModalClose">閉じる</button>
         </div>
       </div>
     </div>

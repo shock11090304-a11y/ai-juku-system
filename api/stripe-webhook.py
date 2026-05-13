@@ -152,18 +152,28 @@ def _handle_checkout_completed(event):
         return
 
     # 🆕 mode=setup: SetupIntent から payment_method を取得
+    # 🚨 2nd review fix: STRIPE_SECRET_KEY 未設定時の warning + customer 取得 fallback
     payment_method = ""
     monthly_fee = 0
+    setup_intent_customer = ""  # SetupIntent.customer (Customer 取得 fallback)
     if mode == "setup" and setup_intent_id:
         secret_key = os.environ.get("STRIPE_SECRET_KEY", "").strip()
-        si = _stripe_get(secret_key, f"setup_intents/{setup_intent_id}")
+        if not secret_key:
+            _log(f"webhook CRITICAL: STRIPE_SECRET_KEY missing in webhook env (rid={reg_id}) - payment_method will be empty")
+        si = _stripe_get(secret_key, f"setup_intents/{setup_intent_id}") if secret_key else None
         if si and isinstance(si, dict):
             payment_method = si.get("payment_method") or ""
+            setup_intent_customer = si.get("customer") or ""
         # metadata.monthly_fee は register-subscribe.py で必ず設定される
         try:
             monthly_fee = int(metadata.get("monthly_fee", "0"))
         except Exception:
             monthly_fee = 0
+
+    # 🚨 fallback: session.customer が空でも SetupIntent.customer から復元
+    if not customer and setup_intent_customer:
+        customer = setup_intent_customer
+        _log(f"webhook: customer fallback from SetupIntent rid={reg_id} customer={customer}")
 
     # pending → completed (KV 失敗時は metadata から最低限復元)
     existing_raw = _redis_safe("GET", f"reg:pending:{reg_id}")
@@ -285,11 +295,111 @@ def _handle_payment_succeeded(event):
         _log(f"webhook: payment_succeeded invoice={invoice_id} amount={amount_paid}")
 
 
+def _handle_payment_intent_succeeded(event):
+    """🆕 v2 (2026-05-13): 月末バッチ請求の PaymentIntent 成功 event を非同期 reconcile 用に記録。
+    execute.py が同期 response で既に charge:history を書いているが、SCA 後の銀行 async 承認 etc で
+    後から成功になる case を捕捉するための補完。
+    """
+    obj = event.get("data", {}).get("object", {})
+    meta = obj.get("metadata", {}) or {}
+    if (meta.get("system") or "") != "juku-payment-monthly":
+        return  # 他システムの PI は無視
+    pi_id = obj.get("id", "")
+    customer = obj.get("customer", "")
+    amount = obj.get("amount_received", 0) or obj.get("amount", 0)
+    rid = meta.get("registration_id", "")
+    month = meta.get("month", "")
+    record = {
+        "payment_intent_id": pi_id,
+        "stripe_customer_id": customer,
+        "registration_id": rid,
+        "month": month,
+        "amount": amount,
+        "metadata": meta,
+        "status": "succeeded",
+        "succeeded_at": int(time.time()),
+        "source_event": "payment_intent.succeeded",
+    }
+    _redis_safe("SET", f"pi:succeeded:{pi_id}", json.dumps(record, ensure_ascii=False), "EX", "31536000")
+    _redis_safe("ZADD", "pi:succeeded:index", str(record["succeeded_at"]), pi_id)
+    # 🚨 2nd/3rd review fix: uncertain 状態だった場合のみ自動 reconcile (= success に昇格)
+    # done_key が既に他の status (succeeded/manually_reconciled/retry) で確定済なら override しない
+    # tombstone (unpaid マーク済) があれば auto-reconcile を完全に skip (幽霊復活防止)
+    if rid and month:
+        # 🚨 3rd review fix: tombstone (mark_unpaid 履歴) があれば auto-reconcile を完全 skip
+        tombstone_key = f"charge:unpaid-tombstone:{rid}:{month}"
+        tombstone_check = _redis_safe("GET", tombstone_key)
+        if tombstone_check and isinstance(tombstone_check, dict) and tombstone_check.get("result"):
+            _log(f"webhook: tombstone found, skipping auto-reconcile rid={rid} month={month} pi={pi_id}")
+        else:
+            uncertain_key = f"charge:uncertain:{rid}:{month}"
+            existing_uncertain = _redis_safe("GET", uncertain_key)
+            if existing_uncertain and isinstance(existing_uncertain, dict) and existing_uncertain.get("result"):
+                done_key = f"charge:done:{rid}:{month}"
+                # done_key の既存状態を check
+                existing_done_raw = _redis_safe("GET", done_key)
+                existing_done = None
+                if existing_done_raw and isinstance(existing_done_raw, dict):
+                    ed_s = existing_done_raw.get("result")
+                    if ed_s:
+                        try: existing_done = json.loads(ed_s)
+                        except Exception: pass
+                # 既存 done が succeeded 等で確定済なら、上書きせず uncertain だけ削除
+                if existing_done and existing_done.get("status") in ("succeeded", "processing"):
+                    _redis_safe("DEL", uncertain_key)
+                    _log(f"webhook: uncertain cleared (done already succeeded) rid={rid} month={month} pi={pi_id}")
+                else:
+                    # uncertain → succeeded に自動昇格 (done_key が pending or 不在の case)
+                    _redis_safe("SET", done_key, json.dumps({
+                        "payment_intent_id": pi_id, "status": "succeeded",
+                        "amount": amount, "charged_at": int(time.time()),
+                        "auto_reconciled_from": "uncertain",
+                    }, ensure_ascii=False), "EX", "5184000")
+                    _redis_safe("DEL", uncertain_key)
+                    _log(f"webhook: auto-reconciled uncertain → succeeded rid={rid} month={month} pi={pi_id}")
+    _log(f"webhook: payment_intent.succeeded rid={rid} month={month} pi={pi_id} amount={amount}")
+
+
+def _handle_payment_intent_failed(event):
+    """🆕 v2 (2026-05-13): 月末バッチ請求の PaymentIntent 失敗 event を記録。
+    execute.py が同期 HTTPError で既に charge:failed を書いているが、SCA 後の銀行 async 拒否で
+    後から失敗になる case を捕捉するための補完。
+    """
+    obj = event.get("data", {}).get("object", {})
+    meta = obj.get("metadata", {}) or {}
+    if (meta.get("system") or "") != "juku-payment-monthly":
+        return  # 他システムの PI は無視
+    pi_id = obj.get("id", "")
+    rid = meta.get("registration_id", "")
+    month = meta.get("month", "")
+    last_error = obj.get("last_payment_error", {}) or {}
+    error_code = last_error.get("code", "")
+    decline_code = last_error.get("decline_code", "")
+    error_msg = last_error.get("message", "")[:300]
+    record = {
+        "payment_intent_id": pi_id,
+        "registration_id": rid,
+        "month": month,
+        "amount": obj.get("amount", 0),
+        "metadata": meta,
+        "error_code": error_code,
+        "decline_code": decline_code,
+        "error_message": error_msg,
+        "failed_at": int(time.time()),
+        "source_event": "payment_intent.payment_failed",
+    }
+    _redis_safe("SET", f"pi:failed:{pi_id}", json.dumps(record, ensure_ascii=False), "EX", "31536000")
+    _redis_safe("ZADD", "pi:failed:index", str(record["failed_at"]), pi_id)
+    _log(f"webhook: payment_intent.payment_failed rid={rid} month={month} pi={pi_id} code={error_code} decline={decline_code}")
+
+
 HANDLERS = {
     "checkout.session.completed": _handle_checkout_completed,
     "invoice.payment_failed": _handle_payment_failed,
     "invoice.payment_succeeded": _handle_payment_succeeded,
     "customer.subscription.deleted": _handle_subscription_deleted,
+    "payment_intent.succeeded": _handle_payment_intent_succeeded,
+    "payment_intent.payment_failed": _handle_payment_intent_failed,
 }
 
 

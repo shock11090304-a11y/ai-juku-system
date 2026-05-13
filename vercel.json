@@ -29,6 +29,26 @@
       "destination": "/api/registered-customers"
     },
     {
+      "source": "/payment/api/admin-charge-month-end-preview",
+      "destination": "/api/admin-charge-month-end-preview"
+    },
+    {
+      "source": "/payment/api/admin-charge-month-end-execute",
+      "destination": "/api/admin-charge-month-end-execute"
+    },
+    {
+      "source": "/payment/api/admin-charge-history",
+      "destination": "/api/admin-charge-history"
+    },
+    {
+      "source": "/payment/api/admin-charge-reconcile",
+      "destination": "/api/admin-charge-reconcile"
+    },
+    {
+      "source": "/payment/api/admin-registration-cancel",
+      "destination": "/api/admin-registration-cancel"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://ai-juku-api-production.up.railway.app/api/:path*"
     },

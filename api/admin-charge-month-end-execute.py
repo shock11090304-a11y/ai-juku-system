@@ -281,7 +281,7 @@ class handler(BaseHTTPRequestHandler):
                         # 履歴に記録
                         _redis("ZADD", "charge:history:index", str(int(time.time())),
                                f"{rid}:{current_month}")
-                        _redis("SET", f"charge:history:{rid}:{current_month}", json.dumps({
+                        _history_record = {
                             "payment_intent_id": pi_id,
                             "registration_id": rid,
                             "month": current_month,
@@ -291,7 +291,13 @@ class handler(BaseHTTPRequestHandler):
                             "phone": r.get("phone", ""),
                             "charged_at": int(time.time()),
                             "status": pi_status,
-                        }, ensure_ascii=False), "EX", "31536000")  # 1 year
+                            "source": "month-end-batch-v1",
+                        }
+                        _redis("SET", f"charge:history:{rid}:{current_month}", json.dumps(_history_record, ensure_ascii=False), "EX", "31536000")  # 1 year
+                        # 🚨 3rd review fix: append-only 監査ログ (RPUSH list・税務監査用)
+                        # メイン history は上書き OK だが、audit log は全試行を順序保存
+                        _redis("RPUSH", f"charge:history:audit:{rid}:{current_month}", json.dumps(_history_record, ensure_ascii=False))
+                        _redis("EXPIRE", f"charge:history:audit:{rid}:{current_month}", "31536000")  # 1 year
                         summary["success"] += 1
                         summary["total_amount_charged"] += monthly_fee
                         results.append({

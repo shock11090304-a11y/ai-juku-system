@@ -1401,7 +1401,7 @@ function renderMonthEndTable(data) {
 
   const tbody = document.getElementById('monthEndTbody');
   if (!data.customers || data.customers.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:2rem">カード登録済の顧客がまだいません</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-dim);padding:2rem">カード登録済の顧客がまだいません</td></tr>';
     return;
   }
   const rows = data.customers.map(c => {
@@ -1421,6 +1421,7 @@ function renderMonthEndTable(data) {
       <td class="ta-r"><strong>${fmtYenME(c.monthlyFee)}</strong></td>
       <td style="font-size:0.85rem;color:var(--text-dim)">${escapeHtmlME(c.feeBreakdown)}</td>
       <td>${statusBadge}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="cancelRegistration('${escapeHtmlME(c.registrationId)}', '${escapeHtmlME(c.studentName)}')" style="color:#f87171" title="退塾処理">🗑</button></td>
     </tr>`;
   }).join('');
   tbody.innerHTML = rows;
@@ -1538,6 +1539,285 @@ function showMonthEndResultModal(data, dryRun) {
   modal.style.display = 'flex';
   // 結果 CSV ボタン bind
   document.getElementById('monthEndResultCsvBtn')?.addEventListener('click', downloadMonthEndResultCsv);
+}
+
+// ===========================================================================
+// 📜 履歴・失敗者一覧・要対応・退塾処理 (2026-05-13 2nd review 反映)
+// ===========================================================================
+
+async function fetchChargeHistory() {
+  const pw = getMonthEndAdminPw();
+  if (!pw) { setMonthEndStatus('🔒 管理パスワードを入力してください', 'warn'); return; }
+  const monthInput = document.getElementById('historyMonthInput').value;
+  const month = monthInput || (new Date()).toISOString().slice(0, 7);
+  const type = document.getElementById('historyTypeFilter').value || 'all';
+  const statusEl = document.getElementById('historyStatus');
+  statusEl.innerHTML = '<span style="color:var(--text-dim)">⏳ 取得中...</span>';
+  try {
+    const res = await fetch(`/payment/api/admin-charge-history?month=${encodeURIComponent(month)}&type=${encodeURIComponent(type)}`, {
+      method: 'GET', headers: { 'X-Admin-Password': pw },
+    });
+    if (res.status === 401) { statusEl.innerHTML = '<span style="color:#f87171">❌ 認証失敗</span>'; return; }
+    const data = await res.json();
+    if (!res.ok) { statusEl.innerHTML = `<span style="color:#f87171">❌ ${data.message || data.error}</span>`; return; }
+    MONTHEND_STATE.lastHistory = data;
+    renderChargeHistory(data, type);
+    statusEl.innerHTML = `<span style="color:var(--success)">✅ ${month} 取得完了</span>`;
+  } catch (e) {
+    statusEl.innerHTML = `<span style="color:#f87171">❌ ${e.message}</span>`;
+  }
+}
+
+function renderChargeHistory(data, filterType) {
+  const s = data.summary || {};
+  const target = document.getElementById('historyResults');
+  let html = `
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+      <span class="count-tag" style="background:rgba(16,185,129,0.15);color:var(--success);">成功: ${s.success_count || 0}</span>
+      <span class="count-tag" style="background:rgba(239,68,68,0.15);color:#f87171;">失敗: ${s.failed_count || 0}</span>
+      <span class="count-tag" style="background:rgba(245,158,11,0.15);color:#fbbf24;">3DS要: ${s.requires_action_count || 0}</span>
+      <span class="count-tag" style="background:rgba(245,158,11,0.25);color:#fbbf24;">不確定: ${s.uncertain_count || 0}</span>
+      <span class="count-tag" style="background:rgba(99,102,241,0.15);color:var(--primary-light);">合計引落額: ${fmtYenME(s.total_amount_charged || 0)}</span>
+    </div>
+  `;
+  // ⚠️ uncertain (最重要・手動 reconcile が必要)
+  if ((filterType === 'all' || filterType === 'uncertain') && data.uncertain && data.uncertain.length) {
+    html += '<h3 style="margin-top:1rem;color:#fbbf24;">⚠️ 不確定 (timeout) — 要手動確認</h3>';
+    html += '<div class="hint" style="font-size:0.85rem;margin-bottom:0.5rem;">Stripe Dashboard で実際の状態を確認後、下のボタンで状態を確定してください</div>';
+    html += '<table class="table"><thead><tr><th>生徒名</th><th>メール</th><th>電話</th><th class="ta-r">金額</th><th>Idempotency Key</th><th>操作</th></tr></thead><tbody>';
+    for (const r of data.uncertain) {
+      html += `<tr>
+        <td>${escapeHtmlME(r.studentName)}</td>
+        <td style="font-size:0.82rem">${escapeHtmlME(r.email)}</td>
+        <td style="font-size:0.82rem">${escapeHtmlME(r.phone)}</td>
+        <td class="ta-r">${fmtYenME(r.amount)}</td>
+        <td style="font-size:0.7rem;font-family:monospace;word-break:break-all;max-width:200px">${escapeHtmlME(r.idempotencyKey)}</td>
+        <td>
+          <button class="btn btn-ghost btn-sm" onclick="openReconcileModal('${escapeHtmlME(r.registrationId)}', '${escapeHtmlME(data.month)}', '${escapeHtmlME(r.studentName)}', ${r.amount})">🔧 確定</button>
+        </td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+  }
+  // 失敗 (再請求可能)
+  if ((filterType === 'all' || filterType === 'failed') && data.failed && data.failed.length) {
+    html += '<h3 style="margin-top:1rem;color:#f87171;">❌ 失敗 (個別再請求可能)</h3>';
+    html += '<table class="table"><thead><tr><th>生徒名</th><th>メール</th><th>電話</th><th class="ta-r">金額</th><th>エラー</th><th>操作</th></tr></thead><tbody>';
+    for (const r of data.failed) {
+      html += `<tr>
+        <td>${escapeHtmlME(r.studentName)}</td>
+        <td style="font-size:0.82rem">${escapeHtmlME(r.email)}</td>
+        <td style="font-size:0.82rem">${escapeHtmlME(r.phone)}</td>
+        <td class="ta-r">${fmtYenME(r.amount)}</td>
+        <td style="font-size:0.82rem;color:var(--text-dim);max-width:250px;word-break:break-word">${escapeHtmlME(r.errorCode || '')} / ${escapeHtmlME(r.declineCode || '')}<br>${escapeHtmlME(r.errorDetail || '').substring(0, 100)}</td>
+        <td>
+          <button class="btn btn-ghost btn-sm" onclick="retryCharge('${escapeHtmlME(r.registrationId)}', '${escapeHtmlME(data.month)}', '${escapeHtmlME(r.studentName)}', ${r.amount})">🔁 再請求</button>
+        </td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+  }
+  // 3DS 要
+  if ((filterType === 'all' || filterType === 'requires_action') && data.requires_action && data.requires_action.length) {
+    html += '<h3 style="margin-top:1rem;color:#fbbf24;">🔐 3DS 認証要</h3>';
+    html += '<table class="table"><thead><tr><th>生徒名</th><th>メール</th><th class="ta-r">金額</th><th>確認URL</th></tr></thead><tbody>';
+    for (const r of data.requires_action) {
+      const link = r.redirectUrl ? `<a href="${escapeHtmlME(r.redirectUrl)}" target="_blank" rel="noopener" style="color:var(--primary-light)">🔗 顧客に送る URL</a>` : '<span style="color:var(--text-dim)">URL なし</span>';
+      html += `<tr>
+        <td>${escapeHtmlME(r.studentName)}</td>
+        <td style="font-size:0.82rem">${escapeHtmlME(r.email)}</td>
+        <td class="ta-r">${fmtYenME(r.amount)}</td>
+        <td style="font-size:0.82rem">${link}</td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+  }
+  // 成功
+  if ((filterType === 'all' || filterType === 'success') && data.success && data.success.length) {
+    html += `<h3 style="margin-top:1rem;color:var(--success);">✅ 成功 (${data.success.length} 名)</h3>`;
+    html += '<table class="table"><thead><tr><th>生徒名</th><th>メール</th><th class="ta-r">金額</th><th>PaymentIntentId</th><th>日時</th></tr></thead><tbody>';
+    for (const r of data.success) {
+      const dt = r.chargedAt ? new Date(r.chargedAt * 1000).toLocaleString('ja-JP') : '';
+      html += `<tr>
+        <td>${escapeHtmlME(r.studentName)}</td>
+        <td style="font-size:0.82rem">${escapeHtmlME(r.email)}</td>
+        <td class="ta-r">${fmtYenME(r.amount)}</td>
+        <td style="font-size:0.7rem;font-family:monospace">${escapeHtmlME(r.paymentIntentId)}</td>
+        <td style="font-size:0.82rem">${escapeHtmlME(dt)}</td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+  }
+  target.innerHTML = html;
+}
+
+// 📥 履歴 CSV
+function downloadHistoryCsv() {
+  const data = MONTHEND_STATE.lastHistory;
+  if (!data) return;
+  const rows = [['月','状態','生徒名','メール','電話','金額','PaymentIntentId','エラーコード','詳細','registrationId']];
+  const push = (status, r) => rows.push([
+    data.month, status, r.studentName || '', r.email || '', r.phone || '',
+    r.amount || 0, r.paymentIntentId || '',
+    r.errorCode || '', (r.errorDetail || r.idempotencyKey || '').replace(/[\r\n]/g, ' '),
+    r.registrationId || '',
+  ]);
+  (data.success || []).forEach(r => push('success', r));
+  (data.failed || []).forEach(r => push('failed', r));
+  (data.requires_action || []).forEach(r => push('requires_action', r));
+  (data.uncertain || []).forEach(r => push('uncertain', r));
+  const csv = rows.map(row => row.map(x => '"' + String(x || '').replace(/"/g, '""') + '"').join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `juku-monthly-history-${data.month}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// 🔧 uncertain reconcile モーダル
+function openReconcileModal(rid, month, studentName, amount) {
+  const modal = document.getElementById('reconcileModal');
+  const body = document.getElementById('reconcileModalBody');
+  body.innerHTML = `
+    <div style="padding:1rem;background:rgba(245,158,11,0.08);border-radius:8px;margin-bottom:1rem;">
+      <strong>${escapeHtmlME(studentName)}</strong> (月: ${escapeHtmlME(month)}・${fmtYenME(amount)})<br>
+      <span style="font-size:0.85rem;color:var(--text-dim)">Stripe Dashboard で実際の状態を確認してから操作してください。</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.75rem;">
+      <button class="btn" onclick="reconcileCharge('${escapeHtmlME(rid)}', '${escapeHtmlME(month)}', 'mark_paid')" style="background:rgba(16,185,129,0.15);color:var(--success);border:1px solid var(--success);text-align:left;">
+        ✅ <strong>実際は課金されていた</strong> → 成功として記録 (PI ID 任意入力)
+      </button>
+      <input type="text" id="reconcilePiId" placeholder="(任意) pi_xxx — PI ID を入れると Stripe で verify します" class="search-input" style="font-family:monospace;font-size:0.85rem">
+      <button class="btn" onclick="reconcileCharge('${escapeHtmlME(rid)}', '${escapeHtmlME(month)}', 'mark_unpaid')" style="background:rgba(99,102,241,0.15);color:var(--primary-light);border:1px solid var(--primary-light);text-align:left;">
+        ❌ <strong>実際は未課金だった</strong> → ロック解除 (この後 retry または手動で再請求)
+      </button>
+      <button class="btn" onclick="reconcileCharge('${escapeHtmlME(rid)}', '${escapeHtmlME(month)}', 'retry')" style="background:linear-gradient(135deg,#ef4444,#f59e0b);color:#fff;border:none;text-align:left;">
+        🔁 <strong>未課金として即時再請求</strong> → 新しい PaymentIntent で再請求実行 (実際にカードに課金されます)
+      </button>
+    </div>
+  `;
+  modal.classList.remove('hidden');
+  modal.style.display = 'flex';
+}
+
+async function reconcileCharge(rid, month, action) {
+  // 🚨 3rd review fix: UI busy lock で連打防止
+  if (MONTHEND_STATE.reconcileBusy === `${rid}:${month}`) {
+    alert('既に処理中です。完了までお待ちください');
+    return;
+  }
+  MONTHEND_STATE.reconcileBusy = `${rid}:${month}`;
+  const pw = getMonthEndAdminPw();
+  if (!pw) { alert('管理パスワードを入力してください'); MONTHEND_STATE.reconcileBusy = null; return; }
+  let body = { action, registrationId: rid, month };
+  if (action === 'mark_paid') {
+    const piEl = document.getElementById('reconcilePiId');
+    if (piEl) body.paymentIntentId = piEl.value.trim();
+  }
+  if (action === 'retry') {
+    if (!confirm(`🚨 ${rid} の月 ${month} を即時再請求します (実際にカードに課金されます)。\n\n本当に実行しますか?`)) return;
+  } else if (action === 'mark_paid') {
+    if (!confirm(`${rid} を「成功」として確定します。本当によろしいですか? (Stripe Dashboard で確認済みであることを前提)`)) return;
+  } else if (action === 'mark_unpaid') {
+    if (!confirm(`${rid} のロックを解除します。これで月末バッチで再度引き落とし対象になります。`)) return;
+  }
+  try {
+    const res = await fetch('/payment/api/admin-charge-reconcile', {
+      method: 'POST',
+      headers: { 'X-Admin-Password': pw, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) { alert(`❌ ${data.message || data.error || 'エラー'}`); return; }
+    alert(`✅ ${action} 完了`);
+    document.getElementById('reconcileModal').style.display = 'none';
+    // 履歴を再取得
+    fetchChargeHistory();
+  } catch (e) {
+    alert(`❌ ${e.message}`);
+  } finally {
+    MONTHEND_STATE.reconcileBusy = null;
+  }
+}
+
+// 🔁 個別再請求 (failed 状態から)
+async function retryCharge(rid, month, studentName, amount) {
+  // 🚨 3rd review fix: UI busy lock で連打防止 (server 側 lock 429 と二重防御)
+  if (MONTHEND_STATE.retryBusy === `${rid}:${month}`) {
+    alert('既に再請求処理中です。完了までお待ちください');
+    return;
+  }
+  MONTHEND_STATE.retryBusy = `${rid}:${month}`;
+  const pw = getMonthEndAdminPw();
+  if (!pw) { alert('管理パスワードを入力してください'); MONTHEND_STATE.retryBusy = null; return; }
+  if (!confirm(`🚨 ${studentName} (${fmtYenME(amount)}) を即時再請求します (実際にカードに課金されます)。\n\n本当に実行しますか?`)) { MONTHEND_STATE.retryBusy = null; return; }
+  // failed → 先に mark_unpaid で lock 解除 (= done_key 削除) してから retry
+  try {
+    // 1. mark_unpaid
+    const r1 = await fetch('/payment/api/admin-charge-reconcile', {
+      method: 'POST', headers: { 'X-Admin-Password': pw, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'mark_unpaid', registrationId: rid, month }),
+    });
+    const d1 = await r1.json();
+    if (!r1.ok || d1.error) { alert(`❌ unlock 失敗: ${d1.message || d1.error}`); return; }
+    // 2. retry
+    const r2 = await fetch('/payment/api/admin-charge-reconcile', {
+      method: 'POST', headers: { 'X-Admin-Password': pw, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'retry', registrationId: rid, month }),
+    });
+    const d2 = await r2.json();
+    if (!r2.ok || d2.error) { alert(`❌ retry 失敗: ${d2.message || d2.error}\n${d2.detail || ''}`); return; }
+    alert(`✅ retry 完了: ${d2.paymentIntentId || ''} (${d2.stripeStatus || ''})`);
+    fetchChargeHistory();
+  } catch (e) {
+    alert(`❌ ${e.message}`);
+  } finally {
+    MONTHEND_STATE.retryBusy = null;
+  }
+}
+
+// 🗑 退塾処理 (preview の各行からも呼ばれる想定)
+async function cancelRegistration(rid, studentName) {
+  // 🚨 3rd review fix: UI busy lock で連打防止
+  if (MONTHEND_STATE.cancelBusy === rid) {
+    alert('既に退塾処理中です。完了までお待ちください');
+    return;
+  }
+  MONTHEND_STATE.cancelBusy = rid;
+  const pw = getMonthEndAdminPw();
+  if (!pw) { alert('管理パスワードを入力してください'); MONTHEND_STATE.cancelBusy = null; return; }
+  // 🚨 2nd review fix: studentName が空文字の case を弾く
+  if (!studentName || !studentName.trim()) { alert('生徒氏名が空です。データ破損の可能性があるため中止します。'); MONTHEND_STATE.cancelBusy = null; return; }
+  if (!confirm(`🗑 ${studentName} の登録を解除します。\n\nこの操作で:\n- カード情報が Stripe から detach されます\n- 以降の月末バッチに表示されません\n- 過去の引き落とし履歴は残ります (1 年)\n\n続行しますか?`)) { MONTHEND_STATE.cancelBusy = null; return; }
+  const typed = prompt(`安全のため生徒氏名を正確に入力してください: ${studentName}`);
+  if (typed === null) { MONTHEND_STATE.cancelBusy = null; return; }
+  // 🚨 2nd review fix: 空文字 typed や trim 後一致を厳密に
+  if (!typed || typed.trim() !== studentName.trim()) {
+    alert(`氏名 (${typed}) が一致しません (期待: ${studentName})。中止します。`);
+    MONTHEND_STATE.cancelBusy = null; return;
+  }
+  const reason = prompt('退塾理由 (任意・空欄可):', '退塾');
+  try {
+    const res = await fetch('/payment/api/admin-registration-cancel', {
+      method: 'POST', headers: { 'X-Admin-Password': pw, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ registrationId: rid, reason: reason || '退塾', confirmStudentName: studentName }),
+    });
+    const data = await res.json();
+    // 🚨 2nd review fix: 502 (Stripe detach 失敗) の case を明示的に handle
+    if (res.status === 502) {
+      const errs = (data.stripe_errors || []).join('\n');
+      alert(`⚠️ Stripe detach 失敗のため退塾処理を中断しました。KV は変更されていません。\n\nエラー:\n${errs}\n\nStripe Dashboard で状態を確認後、再度お試しください。`);
+      return;
+    }
+    if (!res.ok || data.error) { alert(`❌ ${data.message || data.error}`); return; }
+    alert(`✅ ${data.message || '退塾処理完了'}`);
+    fetchMonthEndPreview();
+  } catch (e) {
+    alert(`❌ ${e.message}`);
+  } finally {
+    MONTHEND_STATE.cancelBusy = null;
+  }
 }
 
 function downloadMonthEndResultCsv() {
@@ -4354,6 +4634,19 @@ function setupModals() {
     const modal = document.getElementById('monthEndResultModal');
     if (modal) { modal.classList.add('hidden'); modal.style.display = 'none'; }
   });
+
+  // 📜 履歴 / 🔧 reconcile / 🗑 退塾 (2nd review 反映)
+  document.getElementById('historyFetchBtn')?.addEventListener('click', fetchChargeHistory);
+  document.getElementById('historyCsvBtn')?.addEventListener('click', downloadHistoryCsv);
+  document.getElementById('reconcileModalClose')?.addEventListener('click', () => {
+    const modal = document.getElementById('reconcileModal');
+    if (modal) { modal.classList.add('hidden'); modal.style.display = 'none'; }
+  });
+  // 📌 inline onclick で呼ぶ関数を global にエクスポート (memory: feedback_iife_onclick_pitfall.md)
+  window.cancelRegistration = cancelRegistration;
+  window.openReconcileModal = openReconcileModal;
+  window.reconcileCharge = reconcileCharge;
+  window.retryCharge = retryCharge;
 }
 
 async function init() {

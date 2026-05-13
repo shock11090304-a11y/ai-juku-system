@@ -16983,6 +16983,13 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
 
     elif event["type"] in ("customer.subscription.deleted", "customer.subscription.canceled"):
         sub = event["data"]["object"]
+        # 🚨 2026-05-13: AI塾と juku-payment 月謝の完全分離 (二重保険)
+        # juku-payment は setup mode で subscription を持たない設計だが、
+        # 将来 Stripe Dashboard 等で手動 subscription が作られた場合に ai-juku DB 誤更新を防ぐ
+        _sub_meta = sub.get("metadata", {}) or {}
+        if (_sub_meta.get("system") or "").startswith("juku-payment"):
+            log.info(f"[Stripe webhook] Skipping juku-payment subscription event (system={_sub_meta.get('system')})")
+            return JSONResponse({"received": True, "skipped_reason": "juku-payment system tag"}, status_code=200)
         conn = db()
         c = conn.cursor()
         c.execute("UPDATE students SET status='canceled', updated_at=CURRENT_TIMESTAMP WHERE stripe_subscription_id=?",

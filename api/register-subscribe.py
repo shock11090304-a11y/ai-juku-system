@@ -219,13 +219,53 @@ def _calculate_fee(courses, options):
 
 # ─────────────── Stripe Checkout Session ───────────────
 
-def _create_checkout_session(secret_key, payload, fee, breakdown, registration_id, base_url):
-    """🆕 v2: mode=setup でカード保存のみ (即課金なし)。月末バッチで一斉引き落とし。
+def _stripe_post(secret_key, path, form, idempotency_key=None):
+    """Stripe POST API helper"""
+    body = urllib.parse.urlencode(form).encode()
+    headers = {
+        "Authorization": f"Bearer {secret_key}",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Stripe-Version": "2024-06-20",
+    }
+    if idempotency_key:
+        headers["Idempotency-Key"] = idempotency_key
+    req = urllib.request.Request(
+        f"https://api.stripe.com/v1/{path}",
+        data=body,
+        headers=headers,
+    )
+    with urllib.request.urlopen(req, timeout=20) as resp:
+        return json.loads(resp.read().decode("utf-8"))
 
-    Stripe Checkout で:
-      - Customer を新規作成 (customer_creation=always)
-      - SetupIntent で card を保存
-      - 完了後、ai-juku webhook 経由で customer_id + payment_method_id を KV 保存
+
+def _create_or_find_customer(secret_key, payload, registration_id, metadata):
+    """🆕 v2 (CRITICAL fix 2026-05-13): Customer を明示的に先行作成。
+    mode=setup の Customer 自動作成挙動に依存せず、確実に customer_id を確保する。
+    Idempotency-Key に registration_id を含めるので 1 registration につき 1 Customer のみ作成される。
+    """
+    student = payload["studentName"]
+    parent = payload["parentName"]
+    form = [
+        ("email", payload["email"]),
+        ("name", f"{parent} (生徒: {student})"[:240]),
+        ("phone", payload.get("phone", "") or ""),
+        ("description", f"AI学習コーチ塾 月謝 — 保護者: {parent} / 生徒: {student} ({payload.get('grade', '')})"[:240]),
+    ]
+    for k, v in metadata.items():
+        if v is None: continue
+        form.append((f"metadata[{k}]", str(v)))
+    # 同じ registration_id で再叩きされても 1 customer のみ作成
+    idempotency = f"juku-customer-{registration_id}"
+    return _stripe_post(secret_key, "customers", form, idempotency_key=idempotency)
+
+
+def _create_checkout_session(secret_key, payload, fee, breakdown, registration_id, base_url):
+    """🆕 v2 (2026-05-13 CRITICAL fix): mode=setup でカード保存のみ (即課金なし)。
+
+    変更点:
+      - Customer を明示的に先行作成 (mode=setup の自動作成に頼らない・全件 skip 事故防止)
+      - SetupIntent で card を保存 → 自動的に customer に attach
+      - 月末バッチで一斉引き落とし
     """
     student = payload["studentName"]
     desc_detail = " / ".join(breakdown)[:240]
@@ -249,12 +289,20 @@ def _create_checkout_session(secret_key, payload, fee, breakdown, registration_i
         "system": "juku-payment-monthly",  # ai-juku webhook と区別する識別子
     }
 
-    # mode=setup: カード保存のみ・即課金なし (mode=setup の場合 customer_creation は不要・自動作成)
+    # 🚨 Step 1: Customer を先行作成 (CRITICAL fix・Stripe mode=setup の自動作成挙動に依存しない)
+    # Stripe doc 公式: mode=setup でも customer or customer_email + customer_creation の組合せ
+    # 明示的に customer 作成 → session に customer=cus_xxx を渡す方が安全 (全件 skip 事故防止)
+    customer = _create_or_find_customer(secret_key, payload, registration_id, metadata)
+    customer_id = customer.get("id", "")
+    if not customer_id:
+        raise RuntimeError("Customer 作成に失敗しました (customer.id 取得不能)")
+
+    # Step 2: Checkout Session (mode=setup) で customer=cus_xxx を明示
     # setup_intent_data[usage]=off_session: 月末バッチで off_session 請求するための明示宣言
     form = [
         ("mode", "setup"),
         ("payment_method_types[]", "card"),
-        ("customer_email", payload["email"]),
+        ("customer", customer_id),  # 🆕 明示的に customer を渡す
         ("locale", "ja"),
         ("success_url", f"{base_url}/payment/register-complete.html?session_id={{CHECKOUT_SESSION_ID}}"),
         ("cancel_url", f"{base_url}/payment/register.html?canceled=1"),
@@ -267,18 +315,10 @@ def _create_checkout_session(secret_key, payload, fee, breakdown, registration_i
         # setup_intent_data にも同じ metadata を載せる → SetupIntent + PaymentMethod に伝播
         form.append((f"setup_intent_data[metadata][{k}]", str(v)))
 
-    body = urllib.parse.urlencode(form).encode()
-    req = urllib.request.Request(
-        "https://api.stripe.com/v1/checkout/sessions",
-        data=body,
-        headers={
-            "Authorization": f"Bearer {secret_key}",
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Stripe-Version": "2024-06-20",
-        },
-    )
-    with urllib.request.urlopen(req, timeout=20) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    session = _stripe_post(secret_key, "checkout/sessions", form)
+    # KV pending に customer_id も保存 (webhook 失敗時の復元用)
+    session["_juku_customer_id"] = customer_id
+    return session
 
 
 # ─────────────── ハンドラ ───────────────
@@ -356,14 +396,21 @@ class handler(BaseHTTPRequestHandler):
                 return
 
             # 登録待ちレコードを KV に保存 (best-effort)
+            # 🆕 v2: customer_id を pending 時点で保存 (webhook 失敗時のフォールバック復元用)
             now_ts = int(time.time())
+            preset_customer_id = session.get("_juku_customer_id", "") or session.get("customer", "")
             record = {
                 "registration_id": registration_id,
                 "session_id": session_id,
                 "status": "pending",
                 "created_at": now_ts,
                 "fee": fee,
+                "monthly_fee": fee,  # 月末バッチ参照用
                 "breakdown": breakdown,
+                "fee_breakdown": " / ".join(breakdown)[:240],
+                "stripe_customer_id": preset_customer_id,  # 🆕 先行作成済 customer_id
+                "checkout_mode": "setup",  # 🆕 mode 識別
+                "system": "juku-payment-monthly",
                 **clean,
             }
             _redis_safe("SET", f"reg:pending:{registration_id}", json.dumps(record, ensure_ascii=False), "EX", "604800")  # 7 days TTL
