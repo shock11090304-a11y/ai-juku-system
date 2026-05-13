@@ -132,6 +132,10 @@ class handler(BaseHTTPRequestHandler):
                 payment_method_id = r.get("stripe_payment_method_id", "")
                 monthly_fee = int(r.get("monthly_fee", 0) or 0)
                 checkout_mode = r.get("checkout_mode", "")
+                # 🚨 2026-05-13: legacy subscription 移行直後の二重課金回避 check
+                # migrated_at から計算した「Stripe Subscription が当月分を自動課金済」のフラグ
+                legacy_sub_period_end = r.get("legacy_subscription_period_end")
+                legacy_sub_cancel_pending = r.get("legacy_subscription_canceled_at_period_end", False)
 
                 # 当月既に引き落とし済かチェック (charge:done:{rid}:{month})
                 already_key = f"charge:done:{rid}:{month_str}"
@@ -154,7 +158,25 @@ class handler(BaseHTTPRequestHandler):
                     elif monthly_fee <= 0:
                         issue = "月額 0 (登録不備)"
                     else:
-                        ready = True
+                        # 🚨 2026-05-13: legacy subscription 移行直後の二重課金回避
+                        # Stripe Subscription が当月分を自動課金済の場合は ready=false にして
+                        # 月末バッチから除外 (二重課金防止)
+                        if legacy_sub_cancel_pending and legacy_sub_period_end:
+                            try:
+                                period_end_dt = datetime.fromtimestamp(int(legacy_sub_period_end), tz=timezone(timedelta(hours=9)))
+                                now_jst = datetime.now(timezone(timedelta(hours=9)))
+                                # period_end が当月の月末以降にある = 当月は Stripe が課金担当
+                                # (例: 5/13 migrate, period_end=6/3 → 5月分は Stripe 課金 / 6月から月末バッチ)
+                                current_month_end = (now_jst.replace(day=1) + timedelta(days=32)).replace(day=1) - timedelta(seconds=1)
+                                if period_end_dt > current_month_end:
+                                    ready = False
+                                    issue = f"⏳ 移行月のため当月 skip (Stripe Subscription が {period_end_dt.strftime('%Y-%m-%d')} まで active・当月分は Stripe 自動課金済)"
+                                else:
+                                    ready = True
+                            except Exception:
+                                ready = True
+                        else:
+                            ready = True
                 elif checkout_mode == "subscription":
                     # legacy: Stripe が自動課金しているはずなのでバッチ対象外
                     issue = "legacy subscription (Stripe が自動課金中・バッチ対象外)"
