@@ -136,6 +136,11 @@ class handler(BaseHTTPRequestHandler):
             month = (payload.get("month") or "").strip()
             pi_id = (payload.get("paymentIntentId") or "").strip()
 
+            # 🚨 2026-05-13: Vercel Hobby plan 12 function 上限のため migrate_legacy 機能を統合
+            # 旧 Subscription mode 顧客を Setup mode に移行 (1-shot 操作)
+            if action == "migrate_legacy_batch":
+                return _handle_migrate_legacy_batch(self, payload)
+
             if action not in ("mark_paid", "mark_unpaid", "retry"):
                 _json(self, 400, {"error": "INVALID_ACTION", "message": "action は mark_paid / mark_unpaid / retry のいずれか"})
                 return
@@ -363,3 +368,160 @@ class handler(BaseHTTPRequestHandler):
         except Exception as e:
             _log(f"reconcile internal error: {e!r}")
             _json(self, 500, {"error": "INTERNAL_ERROR", "message": str(e)})
+
+
+# ============================================================================
+# 🚨 2026-05-13: 旧 Subscription mode → Setup mode 移行 (Vercel 12 function 上限のため統合)
+# 塾長指示「既存 3 名を手間ゼロで月末バッチに自動移行」(2026-05-13)
+# 処理: Stripe Customer から PaymentMethod 取得 + Subscription を cancel_at_period_end
+#       + KV reg:completed を新形式に更新 (checkout_mode='setup' + monthly_fee + payment_method_id)
+# ============================================================================
+
+def _ml_stripe_get(secret_key, path):
+    """Stripe GET helper"""
+    req = urllib.request.Request(
+        f"https://api.stripe.com/v1/{path}",
+        headers={"Authorization": f"Bearer {secret_key}", "Stripe-Version": "2024-06-20"},
+    )
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def _ml_resolve_payment_method(secret_key, customer_id, subscription):
+    """Customer/Subscription から有効な PaymentMethod ID を取得"""
+    if subscription:
+        pm = subscription.get("default_payment_method")
+        if pm: return pm if isinstance(pm, str) else pm.get("id")
+    customer = _ml_stripe_get(secret_key, f"customers/{customer_id}")
+    inv = customer.get("invoice_settings", {}) or {}
+    pm = inv.get("default_payment_method")
+    if pm: return pm if isinstance(pm, str) else pm.get("id")
+    # fallback: list attached card payment methods
+    pm_list = _ml_stripe_get(secret_key, f"payment_methods?customer={customer_id}&type=card&limit=10")
+    pms = pm_list.get("data", [])
+    if pms: return pms[0].get("id")
+    return None
+
+
+def _handle_migrate_legacy_batch(handler_self, payload):
+    """旧 mode=subscription 顧客を Setup mode に一括移行"""
+    confirm = (payload.get("confirmText") or "").strip()
+    if confirm != "MIGRATE_LEGACY_SUBSCRIPTIONS":
+        _json(handler_self, 400, {
+            "error": "CONFIRM_TEXT_MISMATCH",
+            "message": "confirmText に 'MIGRATE_LEGACY_SUBSCRIPTIONS' を指定してください",
+        })
+        return
+    rids = payload.get("registrationIds") or []
+    if not isinstance(rids, list) or not rids:
+        _json(handler_self, 400, {"error": "MISSING_RIDS"})
+        return
+    dry_run = bool(payload.get("dryRun", False))
+    secret_key = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+    if not secret_key:
+        _json(handler_self, 503, {"error": "STRIPE_SECRET_KEY_NOT_SET"})
+        return
+
+    migrated = []
+    failed = []
+    for rid in rids[:50]:
+        try:
+            reg = _get_record(f"reg:completed:{rid}")
+            if not reg:
+                failed.append({"registrationId": rid, "error": "registration not found in KV"})
+                continue
+            student_name = reg.get("studentName") or reg.get("student_name") or ""
+            customer_id = reg.get("stripe_customer_id", "")
+            subscription_id = reg.get("stripe_subscription_id", "")
+            monthly_fee = int(reg.get("monthly_fee", 0) or reg.get("amount", 0) or 0)
+            if not customer_id:
+                failed.append({"registrationId": rid, "studentName": student_name, "error": "stripe_customer_id 欠落"})
+                continue
+            if monthly_fee <= 0:
+                failed.append({"registrationId": rid, "studentName": student_name, "error": "monthly_fee/amount 欠落 or 0"})
+                continue
+
+            subscription_obj = None
+            if subscription_id:
+                try:
+                    subscription_obj = _ml_stripe_get(secret_key, f"subscriptions/{subscription_id}")
+                except urllib.error.HTTPError as e:
+                    _log(f"migrate {rid}: subscription {subscription_id} fetch failed: {e.code}")
+
+            payment_method_id = _ml_resolve_payment_method(secret_key, customer_id, subscription_obj)
+            if not payment_method_id:
+                failed.append({"registrationId": rid, "studentName": student_name,
+                              "error": "PaymentMethod 取得不能 (Customer に attach されていない)"})
+                continue
+
+            sub_canceled = False
+            sub_period_end = None
+            if subscription_obj and not dry_run:
+                sub_status = subscription_obj.get("status", "")
+                if sub_status in ("active", "trialing", "past_due"):
+                    try:
+                        updated_sub = _stripe_post(
+                            secret_key,
+                            f"subscriptions/{subscription_id}",
+                            [("cancel_at_period_end", "true"),
+                             ("metadata[migrated_to_setup_mode]", "true"),
+                             ("metadata[migration_rid]", rid),
+                             ("metadata[system]", "juku-payment-monthly")],
+                            idempotency_key=f"migrate-cancel-{rid}-{int(time.time())}",
+                        )
+                        sub_canceled = bool(updated_sub.get("cancel_at_period_end"))
+                        sub_period_end = updated_sub.get("current_period_end")
+                    except urllib.error.HTTPError as e:
+                        detail_raw = b""
+                        try: detail_raw = e.read()
+                        except Exception: pass
+                        detail = detail_raw.decode("utf-8", errors="replace")[:300]
+                        failed.append({"registrationId": rid, "studentName": student_name,
+                                      "error": f"subscription cancel 失敗: {detail}"})
+                        continue
+                elif sub_status == "canceled":
+                    sub_canceled = True
+                    sub_period_end = subscription_obj.get("current_period_end")
+
+            if not dry_run:
+                now_ts = int(time.time())
+                updated_rec = {
+                    **reg,
+                    "checkout_mode": "setup",
+                    "stripe_payment_method_id": payment_method_id,
+                    "monthly_fee": monthly_fee,
+                    "system": "juku-payment-monthly",
+                    "migrated_at": now_ts,
+                    "migration_source": "legacy-subscription-to-setup-v1",
+                    "legacy_subscription_id": subscription_id,
+                    "legacy_subscription_canceled_at_period_end": sub_canceled,
+                    "legacy_subscription_period_end": sub_period_end,
+                }
+                _redis("SET", f"reg:completed:{rid}", json.dumps(updated_rec, ensure_ascii=False))
+
+            migrated.append({
+                "registrationId": rid,
+                "studentName": student_name,
+                "customerId": customer_id,
+                "paymentMethodId": payment_method_id,
+                "monthlyFee": monthly_fee,
+                "legacySubscriptionId": subscription_id,
+                "subscriptionCanceledAtPeriodEnd": sub_canceled,
+                "subscriptionPeriodEnd": sub_period_end,
+                "dryRun": dry_run,
+            })
+        except urllib.error.HTTPError as e:
+            detail_raw = b""
+            try: detail_raw = e.read()
+            except Exception: pass
+            detail = detail_raw.decode("utf-8", errors="replace")[:300]
+            failed.append({"registrationId": rid, "error": f"Stripe API error: {detail}"})
+        except Exception as e:
+            failed.append({"registrationId": rid, "error": f"{type(e).__name__}: {str(e)[:200]}"})
+
+    _json(handler_self, 200, {
+        "migrated": migrated,
+        "failed": failed,
+        "summary": {"total": len(rids), "migrated": len(migrated), "failed": len(failed)},
+        "dryRun": dry_run,
+    })
