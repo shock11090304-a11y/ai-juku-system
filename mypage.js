@@ -1437,8 +1437,10 @@ function initStudyPlan() {
     // AI 機能 (A+B+C)
     bindStudyPlanAiButtons();
     loadMyStudyPlans();
-    // 📚 マイ参考書 (塾長指示 2026-05-14)
-    initMyMaterials();
+    // 📚 マイ参考書 (塾長指示 2026-05-14): 学習計画タブ内 + カリキュラム生成画面 両方 init
+    initMyMaterials('mm');
+    initMyMaterials('cum');
+    loadMyMaterials();  // 1 fetch で両 list ([data-mm-list]) 同時更新
   };
   tryInit(10);
 }
@@ -1456,19 +1458,14 @@ const MM_SUBJECTS = [
 const MM_STATUS_LABEL = {using: '📖 使用中', completed: '✅ 完了', paused: '⏸ お休み中'};
 const MM_STATUS_COLOR = {using: '#22d3ee', completed: '#34d399', paused: '#a1a1aa'};
 
-function initMyMaterials() {
-  // 🛡️ プレミアム外生徒は UI 非表示 (study-plan-section の eligibility 判定に従う)
-  // initStudyPlan の eligible 経路から呼ばれるが、念のため二重ガード
-  const section = document.getElementById('myMaterialsSection');
-  if (!section) return;
-  // 重複初期化防止 (★★★ Reviewer 2 #3 対応)
-  if (initMyMaterials._inited) {
-    loadMyMaterials();
-    return;
-  }
-  initMyMaterials._inited = true;
+// 🔧 2026-05-14 塾長指示「カリキュラムの欄にも入れる」: prefix で複数 UI 対応
+// - prefix 'mm' = 学習計画タブ内 (mmList, mmName, mmSubject, mmStatus, mmNote, mmFormWrap, etc.)
+// - prefix 'cum' = カリキュラム生成 AI フォーム内 (cumList, cumName, ...)
+// 両 UI 同時動作: 一方で追加/削除/状態変更すると、loadMyMaterials() が両 [data-mm-list] を同時更新
+function initMyMaterials(prefix) {
+  prefix = prefix || 'mm';
   // populate subject dropdown
-  const subjSel = document.getElementById('mmSubject');
+  const subjSel = document.getElementById(`${prefix}Subject`);
   if (subjSel && !subjSel.options.length) {
     MM_SUBJECTS.forEach(s => {
       const o = document.createElement('option');
@@ -1477,52 +1474,54 @@ function initMyMaterials() {
     });
   }
   // toggle form
-  const toggleBtn = document.getElementById('mmToggleFormBtn');
-  const wrap = document.getElementById('mmFormWrap');
+  const toggleBtn = document.getElementById(`${prefix}ToggleFormBtn`);
+  const wrap = document.getElementById(`${prefix}FormWrap`);
   if (toggleBtn && !toggleBtn._mmBound) {
     toggleBtn.addEventListener('click', () => {
+      if (!wrap) return;
       wrap.style.display = wrap.style.display === 'none' ? '' : 'none';
       if (wrap.style.display !== 'none') {
-        document.getElementById('mmName').focus();
+        const nameEl = document.getElementById(`${prefix}Name`);
+        if (nameEl) nameEl.focus();
       }
     });
     toggleBtn._mmBound = true;
   }
-  const cancelBtn = document.getElementById('mmCancelBtn');
+  const cancelBtn = document.getElementById(`${prefix}CancelBtn`);
   if (cancelBtn && !cancelBtn._mmBound) {
     cancelBtn.addEventListener('click', () => {
-      wrap.style.display = 'none';
-      clearMmForm();
+      if (wrap) wrap.style.display = 'none';
+      clearMmForm(prefix);
     });
     cancelBtn._mmBound = true;
   }
-  const saveBtn = document.getElementById('mmSaveBtn');
+  const saveBtn = document.getElementById(`${prefix}SaveBtn`);
   if (saveBtn && !saveBtn._mmBound) {
-    saveBtn.addEventListener('click', submitMyMaterial);
+    saveBtn.addEventListener('click', () => submitMyMaterial(prefix));
     saveBtn._mmBound = true;
   }
-  // 初回 load
-  loadMyMaterials();
 }
 
-function clearMmForm() {
-  const name = document.getElementById('mmName');
-  const note = document.getElementById('mmNote');
-  const status = document.getElementById('mmStatus');
-  const msg = document.getElementById('mmFormMsg');
+function clearMmForm(prefix) {
+  prefix = prefix || 'mm';
+  const name = document.getElementById(`${prefix}Name`);
+  const note = document.getElementById(`${prefix}Note`);
+  const status = document.getElementById(`${prefix}Status`);
+  const msg = document.getElementById(`${prefix}FormMsg`);
   if (name) name.value = '';
   if (note) note.value = '';
   if (status) status.value = 'using';
   if (msg) msg.textContent = '';
 }
 
-async function submitMyMaterial() {
-  const name = (document.getElementById('mmName').value || '').trim();
-  const subject = document.getElementById('mmSubject').value;
-  const status = document.getElementById('mmStatus').value;
-  const note = (document.getElementById('mmNote').value || '').trim() || null;
-  const msg = document.getElementById('mmFormMsg');
-  const saveBtn = document.getElementById('mmSaveBtn');
+async function submitMyMaterial(prefix) {
+  prefix = prefix || 'mm';
+  const name = (document.getElementById(`${prefix}Name`).value || '').trim();
+  const subject = document.getElementById(`${prefix}Subject`).value;
+  const status = document.getElementById(`${prefix}Status`).value;
+  const note = (document.getElementById(`${prefix}Note`).value || '').trim() || null;
+  const msg = document.getElementById(`${prefix}FormMsg`);
+  const saveBtn = document.getElementById(`${prefix}SaveBtn`);
   if (!name) {
     if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '⚠️ 参考書名を入力してください'; }
     return;
@@ -1538,8 +1537,9 @@ async function submitMyMaterial() {
       body: JSON.stringify({name, subject, status, note}),
     });
     if (msg) { msg.style.color = '#86efac'; msg.textContent = '✅ 登録しました'; }
-    clearMmForm();
-    document.getElementById('mmFormWrap').style.display = 'none';
+    clearMmForm(prefix);
+    const wrap = document.getElementById(`${prefix}FormWrap`);
+    if (wrap) wrap.style.display = 'none';
     await loadMyMaterials();
   } catch (e) {
     if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || '登録失敗'); }
@@ -1548,34 +1548,41 @@ async function submitMyMaterial() {
   }
 }
 
+function _renderMmListInto(list, materials) {
+  if (!materials.length) {
+    list.innerHTML = '<div style="color:#71717a; font-size:0.78rem; padding:0.5rem;">📚 まだ登録された参考書がありません。「＋追加」から登録すると AI が継続使用前提でカリキュラムを組みます。</div>';
+    return;
+  }
+  list.innerHTML = materials.map(m => {
+    const c = MM_STATUS_COLOR[m.status] || '#22d3ee';
+    const lab = MM_STATUS_LABEL[m.status] || m.status;
+    return `
+      <div class="mm-item" data-id="${m.id}" style="background:rgba(0,0,0,0.3); border:1px solid ${c}33; border-radius:8px; padding:0.45rem 0.6rem; display:inline-flex; align-items:center; gap:0.4rem;">
+        <span style="color:${c}; font-weight:700; font-size:0.78rem;">${escapeHtml(m.subject)}</span>
+        <span style="color:#e4e4e7; font-size:0.82rem;">${escapeHtml(m.name)}</span>
+        <span style="color:${c}; font-size:0.7rem;">${lab}</span>
+        ${m.note ? `<span style="color:#71717a; font-size:0.7rem;">(${escapeHtml(m.note)})</span>` : ''}
+        <button class="mm-cycle-btn" data-id="${m.id}" data-status="${m.status}" aria-label="状態を変更" title="状態を変更 (使用中→完了→お休み→使用中)" style="background:rgba(255,255,255,0.08); border:0; color:#a1a1aa; padding:0.15rem 0.35rem; border-radius:4px; cursor:pointer; font-size:0.7rem;">↻</button>
+        <button class="mm-delete-btn" data-id="${m.id}" data-name="${escapeHtml(m.name)}" data-subject="${escapeHtml(m.subject)}" aria-label="削除" title="削除" style="background:rgba(239,68,68,0.15); border:0; color:#fca5a5; padding:0.15rem 0.35rem; border-radius:4px; cursor:pointer; font-size:0.7rem;">✕</button>
+      </div>`;
+  }).join('');
+  list.querySelectorAll('.mm-cycle-btn').forEach(b => b.addEventListener('click', () => cycleMaterialStatus(b.getAttribute('data-id'), b.getAttribute('data-status'), b)));
+  list.querySelectorAll('.mm-delete-btn').forEach(b => b.addEventListener('click', () => deleteMyMaterial(b.getAttribute('data-id'), b.getAttribute('data-name'), b.getAttribute('data-subject'))));
+}
+
 async function loadMyMaterials() {
-  const list = document.getElementById('mmList');
-  if (!list) return;
+  // 全 [data-mm-list] containers (mmList + cumList) を同時更新
+  const lists = document.querySelectorAll('[data-mm-list]');
+  if (!lists.length) return;
   try {
     const data = await slApiFetch('/api/student/materials/me');
     const materials = data.materials || [];
-    if (!materials.length) {
-      list.innerHTML = '<div style="color:#71717a; font-size:0.78rem; padding:0.5rem;">📚 まだ登録された参考書がありません。「＋追加」から登録すると AI が継続使用前提でカリキュラムを組みます。</div>';
-      return;
-    }
-    list.innerHTML = materials.map(m => {
-      const c = MM_STATUS_COLOR[m.status] || '#22d3ee';
-      const lab = MM_STATUS_LABEL[m.status] || m.status;
-      return `
-        <div class="mm-item" data-id="${m.id}" style="background:rgba(0,0,0,0.3); border:1px solid ${c}33; border-radius:8px; padding:0.45rem 0.6rem; display:inline-flex; align-items:center; gap:0.4rem;">
-          <span style="color:${c}; font-weight:700; font-size:0.78rem;">${escapeHtml(m.subject)}</span>
-          <span style="color:#e4e4e7; font-size:0.82rem;">${escapeHtml(m.name)}</span>
-          <span style="color:${c}; font-size:0.7rem;">${lab}</span>
-          ${m.note ? `<span style="color:#71717a; font-size:0.7rem;">(${escapeHtml(m.note)})</span>` : ''}
-          <button class="mm-cycle-btn" data-id="${m.id}" data-status="${m.status}" aria-label="状態を変更 (使用中→完了→お休み)" title="状態を変更 (使用中→完了→お休み→使用中)" style="background:rgba(255,255,255,0.08); border:0; color:#a1a1aa; padding:0.15rem 0.35rem; border-radius:4px; cursor:pointer; font-size:0.7rem;">↻</button>
-          <button class="mm-delete-btn" data-id="${m.id}" data-name="${escapeHtml(m.name)}" data-subject="${escapeHtml(m.subject)}" aria-label="削除" title="削除" style="background:rgba(239,68,68,0.15); border:0; color:#fca5a5; padding:0.15rem 0.35rem; border-radius:4px; cursor:pointer; font-size:0.7rem;">✕</button>
-        </div>`;
-    }).join('');
-    list.querySelectorAll('.mm-cycle-btn').forEach(b => b.addEventListener('click', () => cycleMaterialStatus(b.getAttribute('data-id'), b.getAttribute('data-status'), b)));
-    list.querySelectorAll('.mm-delete-btn').forEach(b => b.addEventListener('click', () => deleteMyMaterial(b.getAttribute('data-id'), b.getAttribute('data-name'), b.getAttribute('data-subject'))));
+    lists.forEach(list => _renderMmListInto(list, materials));
   } catch (e) {
     console.error('loadMyMaterials failed:', e);
-    list.innerHTML = `<div style="color:#fca5a5; font-size:0.78rem;">⚠️ 読み込み失敗 (${escapeHtml(e.message || '')}) <button onclick="loadMyMaterials()" style="margin-left:0.4rem; background:rgba(99,102,241,0.2); border:0; color:#c7d2fe; padding:0.2rem 0.4rem; border-radius:4px; cursor:pointer; font-size:0.72rem;">再試行</button></div>`;
+    lists.forEach(list => {
+      list.innerHTML = `<div style="color:#fca5a5; font-size:0.78rem;">⚠️ 読み込み失敗 (${escapeHtml(e.message || '')}) <button onclick="loadMyMaterials()" style="margin-left:0.4rem; background:rgba(99,102,241,0.2); border:0; color:#c7d2fe; padding:0.2rem 0.4rem; border-radius:4px; cursor:pointer; font-size:0.72rem;">再試行</button></div>`;
+    });
   }
 }
 
@@ -2520,6 +2527,10 @@ let _cuLastList = [];
 let _cuLastPreview = null;
 
 function bindCurriculumButtons() {
+  // 📚 マイ参考書 UI (カリキュラム生成フォーム内・塾長指示 2026-05-14)
+  // 学習計画タブを開いてない生徒でも、カリキュラム生成画面から直接登録できるよう init
+  initMyMaterials('cum');
+  loadMyMaterials();
   const toggleBtn = document.getElementById('cuToggleAiBtn');
   const cancelBtn = document.getElementById('cuAiCancelBtn');
   const submitBtn = document.getElementById('cuAiGenSubmit');
