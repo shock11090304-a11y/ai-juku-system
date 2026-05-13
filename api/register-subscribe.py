@@ -373,20 +373,38 @@ class handler(BaseHTTPRequestHandler):
                 session = _create_checkout_session(secret_key, clean, fee, breakdown, registration_id, base_url)
             except urllib.error.HTTPError as e:
                 detail = ""
+                stripe_error_code = ""
+                stripe_error_message = ""
                 try:
                     detail = e.read().decode("utf-8", errors="replace")
+                    err_obj = json.loads(detail).get("error", {})
+                    stripe_error_code = err_obj.get("code", "") or err_obj.get("type", "")
+                    stripe_error_message = err_obj.get("message", "")
                 except Exception:
                     pass
                 _log(f"stripe HTTPError {e.code} reg={registration_id}: {detail[:1000]}")
+                # 🚨 2026-05-13: 塾長からの「決済エラーありえない」緊急対応で、Stripe error detail を response に含めて即座に診断可能化
                 _json(self, 502, {
                     "error": "STRIPE_API_ERROR",
                     "message": "決済セッションの作成に失敗しました。しばらくしてから再度お試しください。",
                     "registrationId": registration_id,
+                    "stripeErrorCode": stripe_error_code,
+                    "stripeErrorMessage": stripe_error_message[:500],
+                    "stripeHttpCode": e.code,
                 })
                 return
             except urllib.error.URLError as e:
                 _log(f"stripe URLError reg={registration_id}: {e}")
-                _json(self, 502, {"error": "NETWORK_ERROR", "message": "決済システムへの接続に失敗しました。"})
+                _json(self, 502, {"error": "NETWORK_ERROR", "message": "決済システムへの接続に失敗しました。", "detail": str(e)[:200]})
+                return
+            except RuntimeError as e:
+                # _create_or_find_customer の Customer 作成失敗
+                _log(f"customer creation failed reg={registration_id}: {e}")
+                _json(self, 502, {"error": "CUSTOMER_CREATION_FAILED", "message": str(e)[:200], "registrationId": registration_id})
+                return
+            except Exception as e:
+                _log(f"register-subscribe unexpected error reg={registration_id}: {type(e).__name__}: {e}")
+                _json(self, 500, {"error": "UNEXPECTED_ERROR", "message": f"{type(e).__name__}: {str(e)[:200]}", "registrationId": registration_id})
                 return
 
             checkout_url = session.get("url")
