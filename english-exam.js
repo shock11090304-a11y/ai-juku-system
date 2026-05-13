@@ -1318,19 +1318,105 @@ Speaking/Writing の場合: choices=[], answer に模範解答テキスト全文
       if (poolData && poolData.selected && Array.isArray(poolData.selected.questions) && poolData.selected.questions.length > 0) {
         // 🎯 Pool HIT: 即時利用 (AI 呼び出しなし・コスト¥0)
         const sel = poolData.selected;
+        // 🎯 A 案 (2026-05-13): qCount 未達なら data.all から複数 payload の questions を集約
+        //   - context-bound (passage/audio_script/prompt あり) は単一 payload のみ使用 (Reading 等で
+        //     異なる passage の question を混ぜると教材として破綻するため)
+        //   - 大問サブ問題チェーン ((1)→(2)→(3) で前問の結果を使う共テ/二次型) も集約禁止
+        //   - 図/グラフを参照する question は parent payload の figure_svg と一緒でないと破綻
+        //   - 重複 dedup は backend が割る _question_id (server/main.py:13607) を優先・stem 比較は fallback
+
+        // 🛡 review fix #1: 空白文字列も context として扱う (whitespace truthy 落とし穴)
+        const _ctxStr = (s) => (typeof s === 'string' ? s.trim() : '');
+        const hasContext = !!(_ctxStr(sel.passage) || _ctxStr(sel.audio_script) || _ctxStr(sel.prompt));
+
+        // 🛡 review fix #2 (pedagogy CRITICAL): 大問サブ問題チェーン検知
+        //   primary payload が「(1)(2)(3)...」または「問1 問2」の連続 sub-question 型なら
+        //   chain 内の問題は単一 payload で完結させる必要があるため aggregation を禁止
+        const _isSubQuestionStem = (s) => {
+          const t = (typeof s === 'string' ? s.trim() : '');
+          if (!t) return false;
+          // 数字 (半/全角)・丸数字・括弧書き・問N
+          return /^(\(?\s*[12２３3]\s*\)?|（\s*[12２３3]\s*）|[②③]|問\s*[2-9])/.test(t);
+        };
+        const isDaimonChain = sel.questions.length >= 2 && _isSubQuestionStem(sel.questions[1]?.stem);
+
+        // 🛡 review fix #3 (UX CRITICAL): 図参照を含む質問は parent payload の figure_svg が
+        //   無いと破綻 (「図1を見よ」「the graph below」等)。集約候補に取り込まない。
+        const _refsFigure = (q) => {
+          const s = (typeof q?.stem === 'string' ? q.stem : '') + ' ' + (typeof q?.explanation === 'string' ? q.explanation : '');
+          return /図\s*\d*|グラフ|表\s*\d|the\s+(figure|graph|diagram|chart)|下\s*記?\s*の\s*(図|グラフ|表)/i.test(s);
+        };
+
+        let aggregated = [...sel.questions];
+        let aggregatedFrom = 1; // 集約元の payload 数
+        let aggregateBlocked = ''; // 集約禁止理由 (UI 用)
+        if (hasContext) aggregateBlocked = 'context';
+        else if (isDaimonChain) aggregateBlocked = 'daimon_chain';
+
+        if (!aggregateBlocked && aggregated.length < qCount && Array.isArray(poolData.all)) {
+          // dedup 用: selected の _question_id と stem を baseline に
+          const seenIds = new Set();
+          const seenStems = new Set();
+          if (sel._question_id != null) seenIds.add(sel._question_id);
+          aggregated.forEach(q => { if (q?.stem) seenStems.add(String(q.stem).trim()); });
+
+          for (const item of poolData.all) {
+            if (aggregated.length >= qCount) break;
+            if (!item) continue;
+            // 重複 payload skip (selected と同一)
+            if (item._question_id != null && seenIds.has(item._question_id)) continue;
+            // context-bound payload skip (passage 混在防止)
+            if (_ctxStr(item.passage) || _ctxStr(item.audio_script) || _ctxStr(item.prompt)) continue;
+            if (!Array.isArray(item.questions) || item.questions.length === 0) continue;
+            // この item 自体が大問チェーン型なら丸ごと skip (1 問だけ取り出すと破綻)
+            if (item.questions.length >= 2 && _isSubQuestionStem(item.questions[1]?.stem)) continue;
+
+            // この item の図 SVG が無いと figure 参照 question は採用不可
+            const itemHasFigure = !!_ctxStr(item.figure_svg);
+
+            const need = qCount - aggregated.length;
+            let takenFromItem = 0;
+            for (const q of item.questions) {
+              if (aggregated.length >= qCount || takenFromItem >= need) break;
+              if (!q) continue;
+              // ⚠️ review fix #3: 図参照 question は parent の figure_svg が無いか
+              //    集約後の payload に figure_svg がない場合 skip
+              if (_refsFigure(q) && !itemHasFigure) continue;
+              // ⚠️ review fix #4: dedup は _question_id 優先 (stem は fallback)
+              //    q 単位の _question_id は存在しないので item 単位の id + question 内 id で代替
+              const qStem = (typeof q.stem === 'string' ? q.stem.trim() : '');
+              if (qStem && seenStems.has(qStem)) continue;
+              aggregated.push(q);
+              if (qStem) seenStems.add(qStem);
+              takenFromItem++;
+            }
+            if (item._question_id != null) seenIds.add(item._question_id);
+            if (takenFromItem > 0) aggregatedFrom++;
+          }
+        }
+        // ID を q1, q2, ... に振り直し (集約で衝突する可能性があるため)
+        aggregated = aggregated.map((q, i) => ({ ...q, id: `q${i + 1}` }));
         payload = {
           passage: sel.passage || '',
           audio_script: sel.audio_script || '',
           prompt: sel.prompt || '',
           figure_svg: sel.figure_svg || '',
-          questions: sel.questions.slice(0, qCount),
+          questions: aggregated.slice(0, qCount),
         };
-        // pool 取り出し問題数が要求数より少ない場合の警告
-        if (sel.questions.length < qCount) {
-          payload._warning = `📚 pool から ${sel.questions.length} 問取得 (リクエスト ${qCount} 問・残りは復習モードで AI 生成可)`;
+        // 🛡 review fix #5: warning 文言は「pool/集約」等の技術用語を避け生徒向けに
+        if (payload.questions.length < qCount) {
+          if (aggregateBlocked === 'context') {
+            payload._warning = `📝 ${payload.questions.length} 問を表示中 (リクエスト ${qCount} 問)・本セクションは長文/音声単位のため複数組み合わせは不可。「🎯 復習用に AI で類題作成」で残りを生成できます。`;
+          } else if (aggregateBlocked === 'daimon_chain') {
+            payload._warning = `📝 ${payload.questions.length} 問を表示中 (リクエスト ${qCount} 問)・本問は大問サブ問題が連結しているため単一の組から出題しています。`;
+          } else {
+            payload._warning = `📝 ${payload.questions.length} 問を表示中 (リクエスト ${qCount} 問)。本セクションのストックが不足しています。「🎯 復習用に AI で類題作成」で個別最適化された残りを生成できます。`;
+          }
+        } else if (aggregatedFrom > 1) {
+          payload._warning = `📚 本セクション全体から ${payload.questions.length} 問を組み合わせて出題`;
         }
         questionSource = 'pool';
-        console.log(`[exam] 📚 pool hit: ${payload.questions.length}/${qCount} questions (${Math.round(poolMs)}ms, total in pool=${poolData.count})`);
+        console.log(`[exam] 📚 pool hit: ${payload.questions.length}/${qCount} questions (aggregated from ${aggregatedFrom} payloads, blocked=${aggregateBlocked || 'none'}, ${Math.round(poolMs)}ms, total in pool=${poolData.count})`);
       } else {
         console.log(`[exam] 📚 pool miss for ${exam.id}/${section.key}/${state.eikenGrade || '-'} (${Math.round(poolMs)}ms) → AI 生成にフォールバック`);
       }

@@ -13677,7 +13677,10 @@ def public_exam_questions_bank(
         except Exception as e:
             log.warning(f"[ExamQ:Served] event recording failed: {e}")
 
-    return {"exam": exam, "part": part, "eiken_grade": eiken_grade, "count": len(items), "selected": selected, "all": items[:5]}
+    # 🎯 2026-05-13 塾長指示「pool から複数 payload 集約で qCount を満たす」(A 案):
+    #    `all` を items[:limit] (デフォルト 20・最大 50) まで広げてフロントで集約可能化。
+    #    後方互換: 旧 consumer は `all` の先頭 5 件で十分動くため影響なし。
+    return {"exam": exam, "part": part, "eiken_grade": eiken_grade, "count": len(items), "selected": selected, "all": items[:limit]}
 
 
 @app.get("/api/exam-questions/archive")
