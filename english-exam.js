@@ -788,7 +788,11 @@ function showGradePicker(examId = 'eiken') {
   // 英検 (12 級) はカード式のままにする (適切な数 + 視覚的に魅力的)。
   if (examId === 'daigaku' || examId === 'rikei') {
     _renderGradeSelect(grid, examId, items);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // 🎯 ページ最上部ではなく gradePickSection にスクロール (プルダウンが画面中央)
+    const gradeSec = document.getElementById('gradePickSection');
+    if (gradeSec) {
+      setTimeout(() => gradeSec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    }
     return;
   }
 
@@ -852,7 +856,13 @@ function showGradePicker(examId = 'eiken') {
     }
     grid.appendChild(btn);
   });
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // 🎯 2026-05-13: ページ最上部ではなく gradePickSection (= 級/大学選択画面) にスクロール
+  const gradeSec = document.getElementById('gradePickSection');
+  if (gradeSec) {
+    setTimeout(() => gradeSec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  } else {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }
 
 function pickExam(examId) {
@@ -941,7 +951,14 @@ function pickExamSections(examId) {
   // 模試 (フル) ボタン
   document.getElementById('startMockBtn').onclick = () => startFullMock(exam);
 
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // 🎯 2026-05-13 塾長指示「上にスクロールされて探すのが面倒」: ページ最上部ではなく
+  // examDetailSection (= 大問選択画面) にスムーズスクロールしてユーザの注意を導く
+  const detail = document.getElementById('examDetailSection');
+  if (detail) {
+    setTimeout(() => detail.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  } else {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }
 
 // ==========================================================================
