@@ -124,6 +124,8 @@ class handler(BaseHTTPRequestHandler):
             params = parse_qs(parsed.query)
             month = (params.get("month", [None])[0] or _current_month_jst()).strip()
             filter_type = (params.get("type", ["all"])[0] or "all").strip()
+            include_audit = (params.get("include_audit", ["0"])[0] or "0").strip() == "1"
+            audit_rid = (params.get("audit_rid", [""])[0] or "").strip()
 
             result = {
                 "month": month,
@@ -214,6 +216,23 @@ class handler(BaseHTTPRequestHandler):
                             "notedAt": r.get("noted_at", 0),
                         })
                         result["summary"]["uncertain_count"] += 1
+
+            # 🚨 Round 4 fix (H3): audit log を取得可能に (税務監査・トラブル時の全試行履歴)
+            if include_audit and audit_rid:
+                audit_key = f"charge:history:audit:{audit_rid}:{month}"
+                audit_zr = _redis("LRANGE", audit_key, "0", "-1")
+                audit_list = []
+                if audit_zr and isinstance(audit_zr, dict):
+                    raw_list = audit_zr.get("result") or []
+                    if isinstance(raw_list, list):
+                        for s in raw_list:
+                            try:
+                                audit_list.append(json.loads(s))
+                            except Exception:
+                                pass
+                result["audit_log"] = audit_list
+                result["audit_rid"] = audit_rid
+                result["audit_count"] = len(audit_list)
 
             _json(self, 200, result)
         except Exception as e:

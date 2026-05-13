@@ -378,6 +378,21 @@ class handler(BaseHTTPRequestHandler):
                         decline_code = err_obj.get("decline_code", "")
                     except Exception:
                         pass
+                    # 🚨 Round 4 fix (BUG-2): "No such customer" / resource_missing → zombie 化して毎月失敗ループ防止
+                    # Stripe Dashboard で塾長が直接 Customer 削除した場合等を捕捉
+                    if error_code == "resource_missing" or "No such customer" in detail or "No such payment_method" in detail:
+                        _redis("SET", f"reg:zombie:{rid}", json.dumps({
+                            "registration_id": rid, "month": current_month,
+                            "student_name": student_name, "email": email,
+                            "reason": "Stripe customer/PM not found",
+                            "error_code": error_code, "error_detail": detail[:200],
+                            "marked_zombie_at": int(time.time()),
+                        }, ensure_ascii=False), "EX", "31536000")
+                        _redis("ZADD", "reg:zombie:index", str(int(time.time())), rid)
+                        # 🚨 Round 5 fix (H1): reg:completed:index から削除のみ (preview に出ないが本体は保持)
+                        # 本体を残すことで過去 history で studentName 引ける + 後で復活可能
+                        _redis("ZREM", "reg:completed:index", rid)
+                        _log(f"CRITICAL: reg={rid} zombie化 (Stripe customer/PM 消失・本体は保持) - 塾長要確認")
                     _redis("DEL", done_key)  # 重複防止 lock を解除 (Stripe 側で課金されていない確認済)
                     _redis("SET", f"charge:failed:{rid}:{current_month}", json.dumps({
                         "registration_id": rid,

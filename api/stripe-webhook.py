@@ -222,7 +222,14 @@ def _handle_checkout_completed(event):
 
 
 def _handle_payment_failed(event):
+    # 🚨 Round 4 fix (C-EXIST-1): juku-payment 系のみ処理 (AI塾 invoice event の混入防止)
     obj = event.get("data", {}).get("object", {})
+    meta = obj.get("metadata", {}) or {}
+    sub_meta = (obj.get("subscription_details") or {}).get("metadata", {}) or {}
+    sys_tag = (meta.get("system") or sub_meta.get("system") or "").strip()
+    if sys_tag and not sys_tag.startswith("juku-payment"):
+        _log(f"webhook: invoice.payment_failed skipped (system={sys_tag} - not juku-payment)")
+        return
     invoice_id = obj.get("id", "")
     customer = obj.get("customer", "")
     subscription = obj.get("subscription", "")
@@ -247,7 +254,13 @@ def _handle_payment_failed(event):
 
 
 def _handle_subscription_deleted(event):
+    # 🚨 Round 4 fix (C-EXIST-1): juku-payment 系のみ処理 (AI塾 subscription event の混入防止)
     obj = event.get("data", {}).get("object", {})
+    meta = obj.get("metadata", {}) or {}
+    sys_tag = (meta.get("system") or "").strip()
+    if sys_tag and not sys_tag.startswith("juku-payment"):
+        _log(f"webhook: subscription_deleted skipped (system={sys_tag} - not juku-payment)")
+        return
     sub_id = obj.get("id", "")
     customer = obj.get("customer", "")
     canceled_at = obj.get("canceled_at") or int(time.time())
@@ -255,7 +268,7 @@ def _handle_subscription_deleted(event):
         "stripe_subscription_id": sub_id,
         "stripe_customer_id": customer,
         "canceled_at": canceled_at,
-        "metadata": obj.get("metadata", {}) or {},
+        "metadata": meta,
     }
     _redis_safe("SET", f"sub:canceled:{sub_id}", json.dumps(record, ensure_ascii=False))
     _redis_safe("ZADD", "sub:canceled:index", str(canceled_at), sub_id)
@@ -265,11 +278,16 @@ def _handle_subscription_deleted(event):
 def _handle_payment_succeeded(event):
     """invoice.payment_succeeded — 月次サブスク or 過去未納分の請求書が支払われた時"""
     obj = event.get("data", {}).get("object", {})
+    # 🚨 Round 4 fix (C-EXIST-1): juku-payment 系のみ処理 (AI塾 invoice 混入防止)
+    metadata = obj.get("metadata", {}) or {}
+    sys_tag = (metadata.get("system") or "").strip()
+    if sys_tag and not sys_tag.startswith("juku-payment"):
+        _log(f"webhook: invoice.payment_succeeded skipped (system={sys_tag} - not juku-payment)")
+        return
     invoice_id = obj.get("id", "")
     customer = obj.get("customer", "")
     subscription = obj.get("subscription", "")
     amount_paid = obj.get("amount_paid", 0)
-    metadata = obj.get("metadata", {}) or {}
     source = metadata.get("source", "")
     student_name = metadata.get("student_name", "")
     month = metadata.get("month", "")
@@ -302,8 +320,12 @@ def _handle_payment_intent_succeeded(event):
     """
     obj = event.get("data", {}).get("object", {})
     meta = obj.get("metadata", {}) or {}
-    if (meta.get("system") or "") != "juku-payment-monthly":
-        return  # 他システムの PI は無視
+    # 🚨 Round 5 fix (C2): 既存 3 handler と統一して startswith 判定 (空文字 = 既存挙動維持)
+    # 将来 juku-payment-yearly 等の派生 system を追加した時にも自動的に処理対象になる
+    _pi_sys = (meta.get("system") or "").strip()
+    if _pi_sys and not _pi_sys.startswith("juku-payment"):
+        _log(f"webhook: PaymentIntent skipped (system={_pi_sys} - not juku-payment)")
+        return
     pi_id = obj.get("id", "")
     customer = obj.get("customer", "")
     amount = obj.get("amount_received", 0) or obj.get("amount", 0)
@@ -322,20 +344,32 @@ def _handle_payment_intent_succeeded(event):
     }
     _redis_safe("SET", f"pi:succeeded:{pi_id}", json.dumps(record, ensure_ascii=False), "EX", "31536000")
     _redis_safe("ZADD", "pi:succeeded:index", str(record["succeeded_at"]), pi_id)
-    # 🚨 2nd/3rd review fix: uncertain 状態だった場合のみ自動 reconcile (= success に昇格)
+    # 🚨 2nd/3rd/4th review fix: 自動 reconcile (uncertain + requires_action 両方の case を処理)
     # done_key が既に他の status (succeeded/manually_reconciled/retry) で確定済なら override しない
     # tombstone (unpaid マーク済) があれば auto-reconcile を完全に skip (幽霊復活防止)
     if rid and month:
-        # 🚨 3rd review fix: tombstone (mark_unpaid 履歴) があれば auto-reconcile を完全 skip
         tombstone_key = f"charge:unpaid-tombstone:{rid}:{month}"
         tombstone_check = _redis_safe("GET", tombstone_key)
         if tombstone_check and isinstance(tombstone_check, dict) and tombstone_check.get("result"):
             _log(f"webhook: tombstone found, skipping auto-reconcile rid={rid} month={month} pi={pi_id}")
         else:
             uncertain_key = f"charge:uncertain:{rid}:{month}"
+            requires_action_key = f"charge:requires_action:{rid}:{month}"
+            done_key = f"charge:done:{rid}:{month}"
             existing_uncertain = _redis_safe("GET", uncertain_key)
+            existing_requires_action = _redis_safe("GET", requires_action_key)
+            should_auto_reconcile = False
+            source_state = None
             if existing_uncertain and isinstance(existing_uncertain, dict) and existing_uncertain.get("result"):
-                done_key = f"charge:done:{rid}:{month}"
+                should_auto_reconcile = True
+                source_state = "uncertain"
+            # 🚨 Round 4 fix (C-BUG-1): requires_action → succeeded の遷移を捕捉
+            # SCA 認証完了後の async PI.succeeded で正常に charge:history を書く
+            elif existing_requires_action and isinstance(existing_requires_action, dict) and existing_requires_action.get("result"):
+                should_auto_reconcile = True
+                source_state = "requires_action"
+
+            if should_auto_reconcile:
                 # done_key の既存状態を check
                 existing_done_raw = _redis_safe("GET", done_key)
                 existing_done = None
@@ -344,19 +378,61 @@ def _handle_payment_intent_succeeded(event):
                     if ed_s:
                         try: existing_done = json.loads(ed_s)
                         except Exception: pass
-                # 既存 done が succeeded 等で確定済なら、上書きせず uncertain だけ削除
-                if existing_done and existing_done.get("status") in ("succeeded", "processing"):
-                    _redis_safe("DEL", uncertain_key)
-                    _log(f"webhook: uncertain cleared (done already succeeded) rid={rid} month={month} pi={pi_id}")
+                # 既存 done が succeeded/manually_reconciled なら、上書きせず source state だけ削除
+                # 🚨 Round 5 fix (H3): manually_reconciled も skip 条件に追加 (mark_paid との race 防御)
+                if existing_done and (
+                    existing_done.get("status") in ("succeeded", "processing") or
+                    existing_done.get("manually_reconciled") is True
+                ):
+                    if source_state == "uncertain": _redis_safe("DEL", uncertain_key)
+                    elif source_state == "requires_action":
+                        _redis_safe("DEL", requires_action_key)
+                        _redis_safe("ZREM", "charge:requires_action:index", f"{rid}:{month}")
+                    _log(f"webhook: {source_state} cleared (done already finalized) rid={rid} month={month} pi={pi_id}")
                 else:
-                    # uncertain → succeeded に自動昇格 (done_key が pending or 不在の case)
-                    _redis_safe("SET", done_key, json.dumps({
+                    # 🚨 Round 5 fix (C1): SET NX で atomic に書き込む (手動 mark_paid との同時実行 race 防御)
+                    # NX が失敗 = 別経路 (mark_paid 等) で既に書き込まれた → 自分の SET は skip
+                    now_ts = int(time.time())
+                    nx_result = _redis_safe("SET", done_key, json.dumps({
                         "payment_intent_id": pi_id, "status": "succeeded",
-                        "amount": amount, "charged_at": int(time.time()),
-                        "auto_reconciled_from": "uncertain",
-                    }, ensure_ascii=False), "EX", "5184000")
-                    _redis_safe("DEL", uncertain_key)
-                    _log(f"webhook: auto-reconciled uncertain → succeeded rid={rid} month={month} pi={pi_id}")
+                        "amount": amount, "charged_at": now_ts,
+                        "auto_reconciled_from": source_state,
+                    }, ensure_ascii=False), "NX", "EX", "5184000")
+                    nx_ok = nx_result and isinstance(nx_result, dict) and nx_result.get("result") == "OK"
+                    if not nx_ok:
+                        # 手動 mark_paid が先に書いた → source state だけ削除して終了
+                        if source_state == "uncertain": _redis_safe("DEL", uncertain_key)
+                        elif source_state == "requires_action":
+                            _redis_safe("DEL", requires_action_key)
+                            _redis_safe("ZREM", "charge:requires_action:index", f"{rid}:{month}")
+                        _log(f"webhook: race detected (manual mark_paid won) {source_state} cleared rid={rid} month={month}")
+                        return
+                    # 🚨 Round 4 fix: requires_action → succeeded の場合も charge:history に記録
+                    # (売上集計から漏れる致命傷を防ぐ)
+                    if source_state == "requires_action":
+                        student_name = meta.get("student_name", "")
+                        email = meta.get("email", "")
+                        _history_rec = {
+                            "payment_intent_id": pi_id,
+                            "registration_id": rid,
+                            "month": month,
+                            "amount": amount,
+                            "student_name": student_name,
+                            "email": email,
+                            "charged_at": now_ts,
+                            "status": "succeeded",
+                            "auto_reconciled_from": "requires_action",
+                            "source": "sca-async-completion",
+                        }
+                        _redis_safe("ZADD", "charge:history:index", str(now_ts), f"{rid}:{month}")
+                        _redis_safe("SET", f"charge:history:{rid}:{month}", json.dumps(_history_rec, ensure_ascii=False), "EX", "31536000")
+                        _redis_safe("RPUSH", f"charge:history:audit:{rid}:{month}", json.dumps(_history_rec, ensure_ascii=False))
+                        _redis_safe("EXPIRE", f"charge:history:audit:{rid}:{month}", "31536000")
+                        _redis_safe("DEL", requires_action_key)
+                        _redis_safe("ZREM", "charge:requires_action:index", f"{rid}:{month}")
+                    else:
+                        _redis_safe("DEL", uncertain_key)
+                    _log(f"webhook: auto-reconciled {source_state} → succeeded rid={rid} month={month} pi={pi_id} amount={amount}")
     _log(f"webhook: payment_intent.succeeded rid={rid} month={month} pi={pi_id} amount={amount}")
 
 
@@ -367,8 +443,12 @@ def _handle_payment_intent_failed(event):
     """
     obj = event.get("data", {}).get("object", {})
     meta = obj.get("metadata", {}) or {}
-    if (meta.get("system") or "") != "juku-payment-monthly":
-        return  # 他システムの PI は無視
+    # 🚨 Round 5 fix (C2): 既存 3 handler と統一して startswith 判定 (空文字 = 既存挙動維持)
+    # 将来 juku-payment-yearly 等の派生 system を追加した時にも自動的に処理対象になる
+    _pi_sys = (meta.get("system") or "").strip()
+    if _pi_sys and not _pi_sys.startswith("juku-payment"):
+        _log(f"webhook: PaymentIntent skipped (system={_pi_sys} - not juku-payment)")
+        return
     pi_id = obj.get("id", "")
     rid = meta.get("registration_id", "")
     month = meta.get("month", "")

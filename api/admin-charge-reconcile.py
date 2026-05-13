@@ -199,6 +199,8 @@ class handler(BaseHTTPRequestHandler):
                 _redis("DEL", uncertain_key)
                 # uncertain index からも削除
                 _redis("ZREM", "charge:uncertain:index", f"{rid}:{month}")
+                # 🚨 Round 4 fix (H1): tombstone も削除 (mark_unpaid → mark_paid 順序の整合性)
+                _redis("DEL", f"charge:unpaid-tombstone:{rid}:{month}")
                 _log(f"reconcile: mark_paid rid={rid} month={month} pi={pi_id}")
                 _json(self, 200, {"ok": True, "action": "mark_paid", "registrationId": rid, "month": month})
                 return

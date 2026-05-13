@@ -1715,12 +1715,19 @@ async function reconcileCharge(rid, month, action) {
     const piEl = document.getElementById('reconcilePiId');
     if (piEl) body.paymentIntentId = piEl.value.trim();
   }
+  // 🚨 Round 4 fix: confirm キャンセル時に lock を必ず null に戻す (永久 lock 残留 bug 防止)
   if (action === 'retry') {
-    if (!confirm(`🚨 ${rid} の月 ${month} を即時再請求します (実際にカードに課金されます)。\n\n本当に実行しますか?`)) return;
+    if (!confirm(`🚨 ${rid} の月 ${month} を即時再請求します (実際にカードに課金されます)。\n\n本当に実行しますか?`)) {
+      MONTHEND_STATE.reconcileBusy = null; return;
+    }
   } else if (action === 'mark_paid') {
-    if (!confirm(`${rid} を「成功」として確定します。本当によろしいですか? (Stripe Dashboard で確認済みであることを前提)`)) return;
+    if (!confirm(`${rid} を「成功」として確定します。本当によろしいですか? (Stripe Dashboard で確認済みであることを前提)`)) {
+      MONTHEND_STATE.reconcileBusy = null; return;
+    }
   } else if (action === 'mark_unpaid') {
-    if (!confirm(`${rid} のロックを解除します。これで月末バッチで再度引き落とし対象になります。`)) return;
+    if (!confirm(`${rid} のロックを解除します。これで月末バッチで再度引き落とし対象になります。`)) {
+      MONTHEND_STATE.reconcileBusy = null; return;
+    }
   }
   try {
     const res = await fetch('/payment/api/admin-charge-reconcile', {
@@ -1749,6 +1756,7 @@ async function retryCharge(rid, month, studentName, amount) {
     return;
   }
   MONTHEND_STATE.retryBusy = `${rid}:${month}`;
+  // 🚨 Round 4 fix: 既に lock cleanup OK (retryBusy = null on all returns)
   const pw = getMonthEndAdminPw();
   if (!pw) { alert('管理パスワードを入力してください'); MONTHEND_STATE.retryBusy = null; return; }
   if (!confirm(`🚨 ${studentName} (${fmtYenME(amount)}) を即時再請求します (実際にカードに課金されます)。\n\n本当に実行しますか?`)) { MONTHEND_STATE.retryBusy = null; return; }
