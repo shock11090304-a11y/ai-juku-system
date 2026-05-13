@@ -39,8 +39,11 @@
   <main class="mypage-main">
     <!-- 📝 学習記録 クイック CTA (国公立難関大学コース or プレミアム以上のみ JS で表示制御)
          2026-05-11 塾長指示: ページ最上部 (header 直下) に固定配置。
-         入力フォーム埋もれ engagement 問題への対処 + 上部 #todayMinutes を real data 反映 -->
-    <section class="study-log-quick-cta" style="display:none; margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(99,102,241,0.20), rgba(236,72,153,0.13)); border: 1px solid rgba(167,139,250,0.45); border-radius: 14px; box-shadow: 0 8px 24px rgba(99,102,241,0.18);">
+         入力フォーム埋もれ engagement 問題への対処 + 上部 #todayMinutes を real data 反映
+         🚨 2026-05-13 塾長指示「絶対に消えない」: display:none 撤廃。auth-guard 状態に応じて
+         skeleton → eligible / ineligible / fallback の 4 状態を JS で切替。
+         (visibility:hidden → opacity:0 → opacity:1 でフラッシュ防止) -->
+    <section class="study-log-quick-cta" style="margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(99,102,241,0.20), rgba(236,72,153,0.13)); border: 1px solid rgba(167,139,250,0.45); border-radius: 14px; box-shadow: 0 8px 24px rgba(99,102,241,0.18);">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:0.9rem; flex-wrap:wrap;">
         <div style="flex:1 1 220px; min-width:200px;">
           <div id="slqcBadge" style="display:inline-block; padding:0.18rem 0.65rem; background: linear-gradient(135deg,#fbbf24,#ec4899); border-radius:999px; font-size:0.7rem; font-weight:800; color:#fff; margin-bottom:0.4rem; letter-spacing:0.02em;">📝 今日の学習</div>
@@ -328,8 +331,11 @@
       </div>
     </section>
 
-    <!-- 📚 学習記録 (Studyplus 代替・Phase 1) - 国公立難関大学コース受講生限定 (JSで表示制御) -->
-    <section class="study-log-section" style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:14px; display:none;">
+    <!-- 📚 学習記録 (Studyplus 代替・Phase 1) - 国公立難関大学コース受講生限定 (JSで表示制御)
+         🚨 2026-05-13 塾長指示「絶対に消えない」: display:none を撤廃。
+         JS が auth-guard を判定して中身を切り替える (eligible=full / ineligible=upgrade / loading=skeleton)。
+         認証失敗 / network エラー時もセクション枠は残し、塾長 LINE 導線を出す -->
+    <section class="study-log-section" style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:14px;">
       <div class="section-title"><h2>📚 学習記録 <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">プレミアム限定</span></h2></div>
       <p style="font-size:0.85rem; color:#a1a1aa; margin-bottom:1rem;">
         今日勉強した内容を記録しよう。塾長があなたの頑張りを見て、いいねやコメントを送ります。
@@ -426,8 +432,9 @@
       </div>
     </section>
 
-    <!-- 📊 模試結果 (Phase 4.5 - 国公立難関大学コース限定) -->
-    <section class="exam-section" style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:14px; display:none;">
+    <!-- 📊 模試結果 (Phase 4.5 - 国公立難関大学コース限定)
+         🚨 2026-05-13 塾長指示「絶対に消えない」: display:none 撤廃。JS 制御に統一 -->
+    <section class="exam-section" style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:14px;">
       <div class="section-title"><h2>📊 模試結果 <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">プレミアム限定</span></h2></div>
       <p style="font-size:0.85rem; color:#a1a1aa; margin-bottom:1rem;">河合・駿台・東進などの外部模試結果を登録 → AI カリキュラム生成時に自動反映されます。</p>
 
@@ -556,8 +563,9 @@
       </div>
     </section>
 
-    <!-- 🎓 合格カリキュラム (Phase 4 - 国公立難関大学コース限定 / 難関私立も対象) -->
-    <section class="curriculum-section" style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:14px; display:none;">
+    <!-- 🎓 合格カリキュラム (Phase 4 - 国公立難関大学コース限定 / 難関私立も対象)
+         🚨 2026-05-13 塾長指示「絶対に消えない」: display:none 撤廃 -->
+    <section class="curriculum-section" style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:14px;">
       <div class="section-title"><h2>🎓 合格カリキュラム <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">プレミアム限定</span></h2></div>
       <p style="font-size:0.85rem; color:#a1a1aa; margin-bottom:1rem;">入試日から逆算した合格までの全体ロードマップ。フェーズ分割で「いつまでに何を」が一目瞭然。</p>
 
@@ -618,8 +626,9 @@
       <div id="cuList"></div>
     </section>
 
-    <!-- 📅 学習計画 (Phase 2 - 国公立難関大学コース受講生限定) -->
-    <section class="study-plan-section" style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:14px; display:none;">
+    <!-- 📅 学習計画 (Phase 2 - 国公立難関大学コース受講生限定)
+         🚨 2026-05-13 塾長指示「絶対に消えない」: display:none 撤廃 -->
+    <section class="study-plan-section" style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:14px;">
       <div class="section-title"><h2>📅 学習計画 <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">プレミアム限定</span></h2></div>
       <p style="font-size:0.85rem; color:#a1a1aa; margin-bottom:1rem;">
         志望校合格までの学習計画を立てよう。期間内の達成率は学習記録から自動集計されます。

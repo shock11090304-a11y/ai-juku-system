@@ -664,14 +664,80 @@ async function slApiFetch(path, options = {}) {
 }
 
 function initStudyLog() {
-  // 国公立難関大学コース受講生のみ section を表示。
-  // auth-guard の /api/auth/me 非同期更新を待つため最大2秒 polling (200ms × 10)
+  // 🚨 2026-05-13 塾長指示「絶対に消えない」: section の display は **絶対に none にしない**。
+  // - eligible: 元の HTML (chart/history/form) をそのまま表示
+  // - ineligible: innerHTML を upgrade banner に置換
+  // - auth pending: 元の HTML のまま表示 (空 chart は loadMyStudyLogs で埋まる)
+  // - auth fail (10 retry 後も student 不明): 元の HTML のまま + 上部に notice 表示
   const section = document.querySelector('.study-log-section');
+  if (!section) return;
+  // 絶対に display:none にしない (常に visible)
+  section.style.display = '';
+
+  // 元の HTML を保存 (eligible 状態で復元可能にする)
+  if (!section._originalHTML) {
+    section._originalHTML = section.innerHTML;
+  }
+
+  const renderUpgradeBanner = () => {
+    section.innerHTML = `
+      <div class="section-title"><h2>📚 学習記録 <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">プレミアム限定</span></h2></div>
+      <div style="padding:1.2rem; background:rgba(251,191,36,0.06); border:1px dashed rgba(251,191,36,0.35); border-radius:12px; text-align:center;">
+        <div style="font-size:2.5rem; margin-bottom:0.5rem;">🎯</div>
+        <div style="color:#fbbf24; font-weight:700; font-size:1.05rem; margin-bottom:0.5rem;">プレミアム以上で利用可</div>
+        <p style="color:#a1a1aa; font-size:0.88rem; margin:0.5rem 0 1rem 0;">毎日の学習時間・教材・科目を記録し、AI が学習進捗を分析。プレミアムプラン以上で利用可能です。</p>
+        <button type="button" class="course-inquiry-btn" data-course="kokuritsu_nankan" data-source="study-log" style="display:inline-block; padding:0.85rem 1.5rem; background:linear-gradient(135deg,#fbbf24,#ec4899); color:#fff; border:0; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(236,72,153,0.3);">⭐ プレミアムにアップグレード</button>
+        <div class="course-inquiry-msg" style="margin-top:0.7rem; font-size:0.82rem;"></div>
+      </div>`;
+    bindCourseInquiryButtons(section);
+  };
+
+  // auth pending → 元の HTML 表示・bind は skip (再試行で bind する)
+  // auth fail → 元の HTML 表示 + 上部に notice
+  const showAuthRetryNotice = () => {
+    // 既存 HTML の上部に notice を挿入
+    const notice = document.createElement('div');
+    notice.id = 'studyLogAuthNotice';
+    notice.style.cssText = 'padding:0.7rem 1rem; background:rgba(245,158,11,0.10); border:1px solid rgba(245,158,11,0.35); border-radius:10px; margin-bottom:1rem; font-size:0.85rem; color:#fbbf24; display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;';
+    notice.innerHTML = `
+      <span>⚠️ 認証情報の取得に時間がかかっています。表示が崩れている場合は再読込してください。</span>
+      <button type="button" onclick="window.location.reload()" style="padding:0.35rem 0.8rem; background:rgba(245,158,11,0.2); border:1px solid rgba(245,158,11,0.5); border-radius:6px; color:#fbbf24; font-weight:700; cursor:pointer; font-size:0.8rem;">🔄 再読込</button>
+    `;
+    // section の先頭に挿入 (既に挿入済ならスキップ)
+    if (!document.getElementById('studyLogAuthNotice')) {
+      section.insertBefore(notice, section.firstChild);
+    }
+  };
+
+  const bindStudyLogForm = () => {
+    const dateInput = document.getElementById('slDate');
+    if (dateInput) dateInput.value = _slJstDate(0);
+    const btn = document.getElementById('slSubmitBtn');
+    if (btn && !btn._slBound) {
+      btn.addEventListener('click', submitStudyLog);
+      btn._slBound = true;
+    }
+    const photoBtn = document.getElementById('slMaterialPhotoBtn');
+    const photoInput = document.getElementById('slMaterialPhotoInput');
+    if (photoBtn && !photoBtn._slBound) {
+      photoBtn.addEventListener('click', () => photoInput && photoInput.click());
+      photoBtn._slBound = true;
+    }
+    if (photoInput && !photoInput._slBound) {
+      photoInput.addEventListener('change', handleMaterialPhoto);
+      photoInput._slBound = true;
+    }
+  };
+
   const tryInit = (retries) => {
     const student = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || null;
     if (!student) {
-      if (section) section.style.display = 'none';
-      if (retries > 0) setTimeout(() => tryInit(retries - 1), 200);
+      if (retries > 0) {
+        setTimeout(() => tryInit(retries - 1), 200);
+      } else {
+        // 認証情報取得失敗: 元 HTML のまま + notice 表示 (絶対に hide しない)
+        showAuthRetryNotice();
+      }
       return;
     }
     // course フィールドが未取得 (auth refresh 待ち) の場合は polling 継続
@@ -683,40 +749,11 @@ function initStudyLog() {
     const isTarget = _canUseStudyMgmt(student);
     if (!isTarget) {
       // 一般生徒には機能の存在告知 + 申込導線 (機会損失防止)
-      if (section) {
-        section.style.display = '';
-        section.innerHTML = `
-          <div class="section-title"><h2>📚 学習記録 <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">プレミアム限定</span></h2></div>
-          <div style="padding:1.2rem; background:rgba(251,191,36,0.06); border:1px dashed rgba(251,191,36,0.35); border-radius:12px; text-align:center;">
-            <div style="font-size:2.5rem; margin-bottom:0.5rem;">🎯</div>
-            <div style="color:#fbbf24; font-weight:700; font-size:1.05rem; margin-bottom:0.5rem;">プレミアム以上で利用可</div>
-            <p style="color:#a1a1aa; font-size:0.88rem; margin:0.5rem 0 1rem 0;">毎日の学習時間・教材・科目を記録し、AI が学習進捗を分析。プレミアムプラン以上で利用可能です。</p>
-            <button type="button" class="course-inquiry-btn" data-course="kokuritsu_nankan" data-source="study-log" style="display:inline-block; padding:0.85rem 1.5rem; background:linear-gradient(135deg,#fbbf24,#ec4899); color:#fff; border:0; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(236,72,153,0.3);">⭐ プレミアムにアップグレード</button>
-            <div class="course-inquiry-msg" style="margin-top:0.7rem; font-size:0.82rem;"></div>
-          </div>`;
-        bindCourseInquiryButtons(section);
-      }
+      renderUpgradeBanner();
       return;
     }
-    if (section) section.style.display = '';
-    const dateInput = document.getElementById('slDate');
-    if (dateInput) dateInput.value = _slJstDate(0);
-    const btn = document.getElementById('slSubmitBtn');
-    if (btn && !btn._slBound) {
-      btn.addEventListener('click', submitStudyLog);
-      btn._slBound = true;
-    }
-    // 📷 教材写真 AI読取
-    const photoBtn = document.getElementById('slMaterialPhotoBtn');
-    const photoInput = document.getElementById('slMaterialPhotoInput');
-    if (photoBtn && !photoBtn._slBound) {
-      photoBtn.addEventListener('click', () => photoInput && photoInput.click());
-      photoBtn._slBound = true;
-    }
-    if (photoInput && !photoInput._slBound) {
-      photoInput.addEventListener('change', handleMaterialPhoto);
-      photoInput._slBound = true;
-    }
+    // Eligible: 元の HTML がそのまま表示されているはず・form を bind して logs ロード
+    bindStudyLogForm();
     loadMyStudyLogs();
   };
   tryInit(10);
@@ -730,11 +767,43 @@ function initStudyLog() {
 function initStudyLogQuickCta() {
   const section = document.querySelector('.study-log-quick-cta');
   if (!section) return;
+  // 🚨 2026-05-13 塾長指示「絶対に消えない」: section の display は **絶対に none にしない**。
+  // - eligible: 「今日の学習を記録しよう」+ 1-tap buttons
+  // - ineligible: 「📚 学習記録 (プレミアム限定)」案内 + アップグレード導線
+  // - auth pending: eligible の見た目で polling (button 押下は loadMyStudyLogs 内 auth check で弾く)
+  // - auth fail: eligible の見た目でそのまま (再読込導線は study-log-section に表示)
+  section.style.display = '';
+
+  // 元の HTML を保存 (ineligible → eligible に変化した時の復元用)
+  if (!section._originalHTML) {
+    section._originalHTML = section.innerHTML;
+  }
+
+  // ineligible 用: 「プレミアム限定」アップグレード CTA に置換
+  const renderUpgradeCta = () => {
+    section.style.background = 'linear-gradient(135deg, rgba(251,191,36,0.12), rgba(236,72,153,0.10))';
+    section.style.borderColor = 'rgba(251,191,36,0.4)';
+    section.innerHTML = `
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:0.9rem; flex-wrap:wrap;">
+        <div style="flex:1 1 220px; min-width:200px;">
+          <div style="display:inline-block; padding:0.18rem 0.65rem; background: linear-gradient(135deg,#fbbf24,#ec4899); border-radius:999px; font-size:0.7rem; font-weight:800; color:#fff; margin-bottom:0.4rem; letter-spacing:0.02em;">⭐ プレミアム限定</div>
+          <h3 style="margin:0 0 0.25rem 0; font-size:1.1rem; color:#fff; font-weight:800; line-height:1.35;">📚 学習記録で日々の頑張りを可視化</h3>
+          <p style="margin:0; font-size:0.82rem; color:#fef3c7; line-height:1.5;">毎日の学習時間・教材を記録 → 30 日グラフと履歴で振り返り。プレミアム以上で開放。</p>
+        </div>
+        <div style="display:flex; gap:0.45rem; flex-wrap:wrap; align-items:center;">
+          <button type="button" class="course-inquiry-btn" data-course="kokuritsu_nankan" data-source="study-log-quick" style="padding:0.6rem 1.1rem; background: linear-gradient(135deg,#fbbf24,#ec4899); border:0; border-radius:10px; color:#fff; font-weight:800; font-size:0.88rem; cursor:pointer; min-height:44px; box-shadow:0 4px 12px rgba(236,72,153,0.3);">⭐ アップグレード →</button>
+        </div>
+      </div>
+      <div class="course-inquiry-msg" style="margin-top:0.55rem; font-size:0.82rem;"></div>
+    `;
+    bindCourseInquiryButtons(section);
+  };
 
   const tryShow = (retries) => {
     const student = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || null;
     if (!student) {
       if (retries > 0) setTimeout(() => tryShow(retries - 1), 200);
+      // 認証取得失敗時も section は visible のまま (元 HTML 表示・button は loadMyStudyLogs 等で弾かれる)
       return;
     }
     // course フィールドが auth refresh 待ちの場合は polling 継続
@@ -743,8 +812,10 @@ function initStudyLogQuickCta() {
       return;
     }
     // 学習管理機能と同じ判定 (kokuritsu_nankan / premium / family / founder_special / student_addon)
-    if (!_canUseStudyMgmt(student)) return;
-    section.style.display = '';
+    if (!_canUseStudyMgmt(student)) {
+      renderUpgradeCta();
+      return;
+    }
 
     // 今日の学習時間を表示 + #todayMinutes (上部 stats) も real data に上書き
     refreshSlQuickCtaToday();
@@ -1234,11 +1305,13 @@ const SP_SUBJECTS = ['英語','数学','国語','現代文','古文','漢文','�
 let _spLastPlans = []; // editStudyPlan で再 fetch 不要 (Frontend M-5)
 
 function initStudyPlan() {
+  // 🚨 2026-05-13 塾長指示「絶対に消えない」: section の display は **絶対に none にしない**。
   const section = document.querySelector('.study-plan-section');
+  if (section) section.style.display = '';  // 初期から表示
   const tryInit = (retries) => {
     const student = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || null;
     if (!student) {
-      if (section) section.style.display = 'none';
+      // ⚠️ auth pending: hide しない (元 HTML のまま polling 継続)
       if (retries > 0) setTimeout(() => tryInit(retries - 1), 200);
       return;
     }
@@ -2159,11 +2232,13 @@ function bindCourseInquiryButtons(scope) {
 // 🎓 合格カリキュラム (Phase 4 - 国公立難関大学コース限定 / 難関私立も対象)
 // ==========================================================================
 function initCurriculum() {
+  // 🚨 2026-05-13 塾長指示「絶対に消えない」: section の display は **絶対に none にしない**。
   const section = document.querySelector('.curriculum-section');
+  if (section) section.style.display = '';  // 初期から表示
   const tryInit = (retries) => {
     const student = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || null;
     if (!student) {
-      if (section) section.style.display = 'none';
+      // ⚠️ auth pending: hide しない (元 HTML のまま polling 継続)
       if (retries > 0) setTimeout(() => tryInit(retries - 1), 200);
       return;
     }
@@ -2442,11 +2517,13 @@ async function deleteCurriculum(curriculumId) {
 let _exTrendChart = null;
 
 function initExamResults() {
+  // 🚨 2026-05-13 塾長指示「絶対に消えない」: section の display は **絶対に none にしない**。
   const section = document.querySelector('.exam-section');
+  if (section) section.style.display = '';  // 初期から表示
   const tryInit = (retries) => {
     const student = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || null;
     if (!student) {
-      if (section) section.style.display = 'none';
+      // ⚠️ auth pending: hide しない (元 HTML のまま polling 継続)
       if (retries > 0) setTimeout(() => tryInit(retries - 1), 200);
       return;
     }
