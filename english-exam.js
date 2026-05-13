@@ -1007,7 +1007,17 @@ function showRunner(exam, section, isMock = false) {
   document.getElementById('examRunnerSection').style.display = '';
   document.getElementById('runnerExamLabel').textContent = `${exam.flag} ${exam.name}${isMock ? ' • 模試 (縮小版)' : ''}`;
   document.getElementById('runnerSectionTitle').textContent = `${section.icon} ${section.name}`;
-  document.getElementById('questionBox').innerHTML = '<p class="ee-loading">⏳ AI が問題を生成中... (10〜30秒)</p>';
+  // 🎯 2026-05-13 pool-first: 通常は pool から即取り出し (~0.5 秒) なので
+  //    「AI が生成中」と決めつけない。復習モード時のみ AI 生成 (10-30 秒)
+  const _isReviewLoading = (() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      return sp.get('review') === '1' || !!(state && state.currentTopic);
+    } catch { return false; }
+  })();
+  document.getElementById('questionBox').innerHTML = _isReviewLoading
+    ? '<p class="ee-loading">🤖 AI が復習用に類題を生成中... <span style="color:#94a3b8; font-size:0.85em;">(個別最適化のため 10〜30 秒)</span></p>'
+    : '<p class="ee-loading">📚 問題を準備中... <span style="color:#94a3b8; font-size:0.85em;">(pool から即取得 ~0.5 秒)</span></p>';
   document.getElementById('submitAnswersBtn').disabled = true;
   state.startedAt = Date.now();
   startTimer(section.timeMin);
