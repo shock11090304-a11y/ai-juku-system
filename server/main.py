@@ -2620,7 +2620,9 @@ _WEAKNESS_SUBJECT_TO_POOL = {
     "english": [("daigaku", "r_long"), ("daigaku", "g_grammar"), ("daigaku", "w_essay"),
                 ("eiken", "r_q1"), ("eiken", "r_q3")],
     "japanese": [("daigaku", "r_summary"), ("daigaku", "r_long")],  # 国語 pool が少ないため英語長文も
-    "social": [("daigaku", "r_long")],  # 社会専門 pool 未整備のため英語長文 (general topic) で代用
+    "social": [("daigaku", "nihonshi"), ("daigaku", "sekaishi"),
+               ("daigaku", "chiri"), ("daigaku", "kouminka"),
+               ("daigaku", "r_long")],  # 2026-05-14 社会専門 pool 整備済 (4 科目) + r_long フォールバック
 }
 
 
@@ -6832,6 +6834,12 @@ EXAM_QUESTION_ROTATION = [
     ("rikei", "math_basic",   "march_rikei"),
     ("rikei", "phys_basic_q", "march_rikei"),
     ("rikei", "chem_basic_q", "march_rikei"),
+    # 🏛️ 大学入試 社会 (共通テスト + 難関大) ・2026-05-14 塾長指示「古文の基礎問、理科、社会の問題を作成」追加
+    # 共通テスト 社会 (基礎レベル・高校教科書範囲)
+    ("daigaku", "nihonshi",   "kyotsu"),   # 共通テスト日本史 (古代~近現代・通史)
+    ("daigaku", "sekaishi",   "kyotsu"),   # 共通テスト世界史 (古代~現代・東西通史)
+    ("daigaku", "chiri",      "kyotsu"),   # 共通テスト地理 (自然/人文/地誌)
+    ("daigaku", "kouminka",   "kyotsu"),   # 共通テスト公民 (政経/倫理/現社の融合)
 ]
 
 
