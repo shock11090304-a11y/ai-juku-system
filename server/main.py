@@ -9976,22 +9976,35 @@ def admin_enrollment_waiver_reset(payload: dict = None, authorization: Optional[
 
 
 @app.post("/api/admin/exam-questions/purge")
-def admin_exam_questions_purge(payload: dict, authorization: Optional[str] = Header(None)):
+def admin_exam_questions_purge(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """🗑️ 蓄積問題プールの選択削除 (品質悪い問題を一括削除→次 tick で再蓄積)。
     payload: {
       "exam_id": "daigaku" (optional),
       "part_key": "r_long" (optional),
       "eiken_grade": "todai" (optional),
+      "model": "test-probe" (optional・特定 model のみ削除),
       "older_than_days": 30 (optional, 指定日数より古いものだけ削除)
     }
-    引数なしの場合は安全のため 422 (誤爆防止)。"""
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="未認証")
-    token = authorization[len("Bearer "):].strip()
-    if not _verify_admin_token(token):
+    引数なしの場合は安全のため 422 (誤爆防止)。
+
+    認証:
+    - admin Bearer (従来): どの filter でも実行可
+    - x-cron-secret: 安全のため **model filter が指定されている時のみ許可** (test probe / 旧 model の cleanup 用途)。
+      理由: model は内部識別子なので CRON_SECRET 経由でも bulk wipe 事故が起きにくい。"""
+    authed_admin = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed_admin = True
+    # 🎯 2026-05-13 塾長指示「test probe row 削除」: model filter 指定時のみ CRON_SECRET 許可
+    authed_cron_model = False
+    if (not authed_admin) and payload.get("model") and CRON_SECRET and x_cron_secret \
+            and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed_cron_model = True
+    if not (authed_admin or authed_cron_model):
         raise HTTPException(status_code=401, detail="未認証")
     if not isinstance(payload, dict) or not payload:
-        raise HTTPException(status_code=422, detail="filter parameter が必須 (exam_id/part_key/eiken_grade/older_than_days のいずれか)")
+        raise HTTPException(status_code=422, detail="filter parameter が必須 (exam_id/part_key/eiken_grade/model/older_than_days のいずれか)")
 
     where = []
     params = []
@@ -10004,6 +10017,9 @@ def admin_exam_questions_purge(payload: dict, authorization: Optional[str] = Hea
     if payload.get("eiken_grade"):
         where.append("eiken_grade = ?")
         params.append(payload["eiken_grade"])
+    if payload.get("model"):
+        where.append("model = ?")
+        params.append(payload["model"])
     older_than = payload.get("older_than_days")
     if older_than:
         cutoff = datetime.now(timezone.utc) - timedelta(days=int(older_than))
@@ -10011,6 +10027,9 @@ def admin_exam_questions_purge(payload: dict, authorization: Optional[str] = Hea
         params.append(cutoff.isoformat())
     if not where:
         raise HTTPException(status_code=422, detail="少なくとも 1 つの filter が必要")
+    # 🛡 cron-secret 経由は model filter 必須 (admin Bearer はこの制約なし)
+    if authed_cron_model and not payload.get("model"):
+        raise HTTPException(status_code=403, detail="cron-secret 経由の purge は model filter 必須")
 
     where_sql = " WHERE " + " AND ".join(where)
     conn = db()
