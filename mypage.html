@@ -422,13 +422,22 @@
       <!-- 30日チャート -->
       <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:1rem; margin-bottom:1.25rem;">
         <div style="font-size:0.85rem; color:#a1a1aa; margin-bottom:0.5rem;">📊 直近30日の学習時間 (分)</div>
-        <div style="position:relative; height:200px;"><canvas id="slDailyChart"></canvas></div>
+        <div style="position:relative; height:200px;">
+          <canvas id="slDailyChart"></canvas>
+          <!-- 🚨 2026-05-13: auth pending 中の空 canvas を覆う skeleton (loadMyStudyLogs で hide) -->
+          <div id="slDailyChartSkeleton" style="position:absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.15); border-radius:8px; color:#71717a; font-size:0.85rem;">
+            <span>📊 読み込み中...</span>
+          </div>
+        </div>
       </div>
 
       <!-- 履歴一覧 -->
       <div>
         <div style="font-size:0.85rem; color:#a1a1aa; margin-bottom:0.5rem;">📋 最近の記録</div>
-        <div id="slLogList" style="max-height:400px; overflow-y:auto;"></div>
+        <div id="slLogList" style="max-height:400px; overflow-y:auto;">
+          <!-- 初期 skeleton (loadMyStudyLogs で書き換えられる) -->
+          <div id="slLogListSkeleton" style="padding:1rem; color:#71717a; font-size:0.85rem; text-align:center;">📋 記録を読み込み中...</div>
+        </div>
       </div>
     </section>
 

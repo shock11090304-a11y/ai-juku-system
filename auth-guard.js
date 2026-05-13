@@ -76,9 +76,16 @@
       const res = await fetch(getBackendUrl() + '/api/auth/me', {
         headers: { 'Authorization': 'Bearer ' + token }
       });
-      if (!res.ok) {
+      // 🚨 2026-05-13 塾長指示「学習管理が絶対に消えない」: 401/403 (= 認証失敗) のみ login redirect
+      // 5xx (= サーバ一時障害) や 429 (= rate limit) はローカル session で継続表示 (画面消失防止)
+      if (res.status === 401 || res.status === 403) {
         clearSession();
         redirectToLogin('invalid_session');
+        return;
+      }
+      if (!res.ok) {
+        // 5xx / 429 / その他: 一時的エラーとしてローカル session で継続 (画面ごと消えない)
+        console.warn('auth-guard: /api/auth/me status=' + res.status + ' (transient) - keeping local session');
         return;
       }
       const data = await res.json();

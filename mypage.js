@@ -1177,6 +1177,11 @@ async function submitStudyLog() {
 async function loadMyStudyLogs() {
   const list = document.getElementById('slLogList');
   const summary = document.getElementById('slSummary');
+  // 🚨 2026-05-13: chart / list の skeleton を hide (loadMyStudyLogs が走ったら本物データへ遷移)
+  const chartSkel = document.getElementById('slDailyChartSkeleton');
+  if (chartSkel) chartSkel.style.display = 'none';
+  const listSkel = document.getElementById('slLogListSkeleton');
+  if (listSkel) listSkel.style.display = 'none';
   try {
     const data = await slApiFetch('/api/study-logs/me?days=30&limit=200');
     const logs = data.logs || [];
