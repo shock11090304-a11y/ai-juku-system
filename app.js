@@ -2941,6 +2941,12 @@ async function generateCurriculum() {
 ✅ 週単位ではなく、<strong>曜日単位</strong>の具体タスクを示す（月曜は何、火曜は何）
 ✅ 教材の使い方（周回数、書き込み方法、理解の確認方法）も指示
 ✅ フェーズの切替条件を明示（例: 「青チャ例題を2周して正答率80%超えたら次へ」）
+✅ <strong>🔑 フェーズ別教材切替必須</strong> (塾長指示 2026-05-14):
+   - 各フェーズで <strong>異なる教材を必ず提示</strong>。同じ教材を 3 フェーズ全部に並べることは禁止
+   - 単語帳 (ターゲット1900 / シス単 / 速読英単語 等) や 構文書 (基本はここだ / ポレポレ 等) のような <strong>通年使用教材</strong> は例外として OK だが、それ以外の問題集・過去問は <strong>必ずレベル別に切替</strong>
+   - 例 (英語): 基礎期 = ポラリス1 → 標準期 = ポラリス2 + やっておきたい 500 → 過去問期 = 過去問題集 (赤本) + やっておきたい 700
+   - 例 (数学): 基礎期 = 青チャ例題 → 標準期 = 1対1対応 + プラチカ → 過去問期 = 過去問 + やさしい理系数学
+   - 生徒が「同じ参考書ばかり並んで飽きる・進歩感がない」と感じないよう、<strong>段階的にレベルアップする教材構成</strong> を必ず提示
 
 【出力形式】Markdown で以下の構造:
 # 🎯 ${goal || '志望校'}合格カリキュラム
@@ -2975,7 +2981,7 @@ ${textbookContext}`;
       const bySubj = {};
       mats.forEach(m => { (bySubj[m.subject] = bySubj[m.subject] || []).push(m.name); });
       const lines = Object.entries(bySubj).map(([s, names]) => `- ${s}: ${names.slice(0, 8).join(', ')}`);
-      ownMaterialsSnippet = `\n\n📚 生徒が現在使用中の参考書/問題集 (継続活用を前提・既に持っている前提で組み込み、不足分のみ新規提案):\n${lines.join('\n')}`;
+      ownMaterialsSnippet = `\n\n📚 生徒が現在使用中の参考書/問題集 (既に持っている前提):\n${lines.join('\n')}\n→ これらは基礎期から継続使用 OK。ただし **これらだけ** をフェーズ全部に並べるのは禁止 (生徒は「同じ教材ばかりで飽きる」と感じる)。**各フェーズで上記マイ参考書 + 新規教材 (レベル別) の組合せ** で提案すること。`;
     }
   } catch (_) { /* 取得失敗時は無視して通常生成 */ }
 
@@ -3011,22 +3017,67 @@ const IDX_MM_SUBJECTS = [
 const IDX_MM_STATUS_LABEL = {using: '📖 使用中', completed: '✅ 完了', paused: '⏸ お休み中'};
 const IDX_MM_STATUS_COLOR = {using: '#22d3ee', completed: '#34d399', paused: '#9ca3af'};
 
+// 🔧 2026-05-14 塾長指示「[object Object] エラー修正」: FastAPI 422 validation の detail
+// は配列形式 ([{loc, msg, type}]) で返ることがあり、そのまま new Error() に渡すと
+// JavaScript が [object Object] と stringify してしまう。配列/オブジェクトを適切に整形する。
+function _idxFormatErrDetail(detail) {
+  if (detail == null) return '';
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    return detail.map(d => {
+      if (typeof d === 'string') return d;
+      if (d && typeof d === 'object') {
+        // FastAPI validation: {loc: [...], msg: '...', type: '...'}
+        const loc = Array.isArray(d.loc) ? d.loc.join('.') : (d.loc || '');
+        const msg = d.msg || d.message || '';
+        if (loc && msg) return `${loc}: ${msg}`;
+        return msg || JSON.stringify(d);
+      }
+      return String(d);
+    }).join('; ');
+  }
+  if (typeof detail === 'object') {
+    return detail.msg || detail.message || JSON.stringify(detail);
+  }
+  return String(detail);
+}
+
 async function idxMmApiFetch(path, options) {
-  // AuthGuard.authFetch があればそれを使う (mypage と統一動作)
+  // 🔧 2026-05-14: auth token 取得を多段化 (AuthGuard → localStorage)
+  // CEO 画面経由で生徒切替時にも対応 (session_token は生徒として有効・admin token とは別)
+  let token = '';
+  try {
+    if (window.AuthGuard && AuthGuard.getToken) token = AuthGuard.getToken() || '';
+  } catch (_) {}
+  if (!token) {
+    try { token = localStorage.getItem('ai_juku_session_token') || ''; } catch (_) {}
+  }
+
+  // Content-Type は POST/PATCH 時に必須 (FastAPI が JSON body を解釈するため)
+  const opts = Object.assign({}, options || {});
+  const headers = new Headers(opts.headers || {});
+  if (opts.body && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', 'Bearer ' + token);
+  }
+  opts.headers = headers;
+
+  const url = (typeof BACKEND_URL !== 'undefined' ? BACKEND_URL : '') + path;
+  // AuthGuard.authFetch があれば優先利用 (401 で auto-redirect が効く)
   const fetcher = (window.AuthGuard && AuthGuard.authFetch)
     ? AuthGuard.authFetch.bind(AuthGuard)
-    : (url, opts) => fetch(url, Object.assign({}, opts, {
-        headers: Object.assign({'Content-Type': 'application/json'},
-          (opts && opts.headers) || {},
-          {Authorization: 'Bearer ' + (localStorage.getItem('ai_juku_session_token') || '')})
-      }));
-  const url = (typeof BACKEND_URL !== 'undefined' ? BACKEND_URL : '') + path;
-  const res = await fetcher(url, options || {});
+    : fetch;
+  const res = await fetcher(url, opts);
   let data;
   try { data = await res.json(); } catch { data = {}; }
   if (!res.ok) {
-    const msg = (data && data.detail) || `HTTP ${res.status}`;
-    throw new Error(msg);
+    const msg = _idxFormatErrDetail(data && data.detail) || `HTTP ${res.status}`;
+    const err = new Error(msg);
+    err.status = res.status;
+    err.detail = data && data.detail;
+    throw err;
   }
   return data;
 }

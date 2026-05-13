@@ -698,20 +698,45 @@ function _slToken() {
   return (window.AuthGuard && window.AuthGuard.getToken()) || localStorage.getItem('ai_juku_session_token');
 }
 
+// 🔧 2026-05-14 塾長指示「[object Object] エラー修正」: FastAPI 422 validation の detail
+// は配列形式で返ることがあり new Error(arr) が [object Object] 化する。整形 helper。
+function _slFormatErrDetail(detail) {
+  if (detail == null) return '';
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    return detail.map(d => {
+      if (typeof d === 'string') return d;
+      if (d && typeof d === 'object') {
+        const loc = Array.isArray(d.loc) ? d.loc.join('.') : (d.loc || '');
+        const msg = d.msg || d.message || '';
+        if (loc && msg) return `${loc}: ${msg}`;
+        return msg || JSON.stringify(d);
+      }
+      return String(d);
+    }).join('; ');
+  }
+  if (typeof detail === 'object') {
+    return detail.msg || detail.message || JSON.stringify(detail);
+  }
+  return String(detail);
+}
+
 async function slApiFetch(path, options = {}) {
   const token = _slToken();
   const headers = Object.assign({'Content-Type': 'application/json'}, options.headers || {});
   if (token) headers['Authorization'] = 'Bearer ' + token;
   const res = await fetch(SL_API_BASE + path, Object.assign({}, options, { headers }));
   if (!res.ok) {
-    let detail = '';
-    try { const j = await res.json(); detail = j.detail || ''; } catch {}
+    let detailRaw = '';
+    try { const j = await res.json(); detailRaw = j.detail; } catch {}
     if (res.status === 401 && window.AuthGuard) {
       // session expired
       try { window.AuthGuard.clearSession && window.AuthGuard.clearSession(); } catch {}
     }
-    const err = new Error(detail || `HTTP ${res.status}`);
+    const msg = _slFormatErrDetail(detailRaw) || `HTTP ${res.status}`;
+    const err = new Error(msg);
     err.status = res.status;
+    err.detail = detailRaw;
     throw err;
   }
   return res.json();
