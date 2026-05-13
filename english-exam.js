@@ -367,6 +367,49 @@ const EXAMS = {
     topics: ['二次関数', '微積分', 'ベクトル', '確率', '整数', '力学', '電磁気', '波動', '熱力学', '化学平衡', '酸化還元', '有機化学', '遺伝子発現', '生態系'],
   },
 
+  // 📚 大学入試 文系 (古文・漢文・現代文要約・日本史・世界史・地理・公民) - 塾長指示 2026-05-14
+  // exam_id は backend では 'daigaku' に mapping される (_getBackendExamParams 経由)
+  bunkei: {
+    id: 'bunkei',
+    name: '大学入試 文系',
+    flag: '📚',
+    color: '#f472b6',
+    scoreMin: 0, scoreMax: 100, scoreUnit: '点',
+    requiresGrade: true,
+    grades: [
+      // 古文
+      { key: 'kobun_kyotsu',    name: '古文 (共通テスト)',  cefr: '基礎',   target: '共通テスト 古文 (本文 + 設問・現代語訳・文法)' },
+      { key: 'kobun_todai',     name: '古文 (東大)',        cefr: '最難関', target: '東大 国語 古文 (記述式・心理把握・比喩解釈)' },
+      { key: 'kobun_kyodai',    name: '古文 (京大)',        cefr: '最難関', target: '京大 国語 古文 (記述式)' },
+      // 漢文
+      { key: 'kanbun_kyotsu',   name: '漢文 (共通テスト)',  cefr: '基礎',   target: '共通テスト 漢文 (返り点・書き下し・現代語訳)' },
+      { key: 'kanbun_todai',    name: '漢文 (東大)',        cefr: '最難関', target: '東大 国語 漢文 (記述式・思想把握)' },
+      { key: 'kanbun_kyodai',   name: '漢文 (京大)',        cefr: '最難関', target: '京大 国語 漢文 (記述式)' },
+      // 現代文要約
+      { key: 'r_summary_todai', name: '現代文要約 (東大)', cefr: '最難関', target: '東大 国語 大問1B 要約 60-80字' },
+      // 社会
+      { key: 'nihonshi_kyotsu', name: '日本史 (共通テスト)', cefr: '基礎',  target: '共通テスト 日本史 (古代~近現代 通史・史料読解)' },
+      { key: 'sekaishi_kyotsu', name: '世界史 (共通テスト)', cefr: '基礎',  target: '共通テスト 世界史 (古代~現代 東西通史)' },
+      { key: 'chiri_kyotsu',    name: '地理 (共通テスト)',   cefr: '基礎',  target: '共通テスト 地理 (自然/人文/地誌)' },
+      { key: 'kouminka_kyotsu', name: '公民 (共通テスト)',   cefr: '基礎',  target: '共通テスト 公民 (政経/倫理 融合)' },
+    ],
+    // 各 grade に対する単一 section。_backendPart/_backendGrade で backend マッピング
+    sectionsByGrade: {
+      kobun_kyotsu:    [{ key: 'kobun',     name: '古文 演習 (共通テスト型)', icon: '📜', timeMin: 25, qCount: 5, scoreMax: 50, desc: '本文 + 設問・現代語訳・文法', _backendPart: 'kobun',     _backendGrade: 'kyotsu' }],
+      kobun_todai:     [{ key: 'kobun',     name: '古文 演習 (東大型)',       icon: '📜', timeMin: 30, qCount: 5, scoreMax: 50, desc: '東大型 記述式古文 (心理把握・比喩解釈)', _backendPart: 'kobun',     _backendGrade: 'todai' }],
+      kobun_kyodai:    [{ key: 'kobun',     name: '古文 演習 (京大型)',       icon: '📜', timeMin: 30, qCount: 5, scoreMax: 50, desc: '京大型 記述式古文 (抽象的論理思想)', _backendPart: 'kobun',     _backendGrade: 'kyodai' }],
+      kanbun_kyotsu:   [{ key: 'kanbun',    name: '漢文 演習 (共通テスト型)', icon: '🀄', timeMin: 25, qCount: 5, scoreMax: 50, desc: '返り点 + 書き下し + 現代語訳', _backendPart: 'kanbun',    _backendGrade: 'kyotsu' }],
+      kanbun_todai:    [{ key: 'kanbun',    name: '漢文 演習 (東大型)',       icon: '🀄', timeMin: 30, qCount: 5, scoreMax: 50, desc: '東大型 記述式漢文 (思想把握・哲学的議論)', _backendPart: 'kanbun',    _backendGrade: 'todai' }],
+      kanbun_kyodai:   [{ key: 'kanbun',    name: '漢文 演習 (京大型)',       icon: '🀄', timeMin: 30, qCount: 5, scoreMax: 50, desc: '京大型 記述式漢文 (抽象的論理思想)', _backendPart: 'kanbun',    _backendGrade: 'kyodai' }],
+      r_summary_todai: [{ key: 'r_summary', name: '現代文要約 演習 (東大型)', icon: '✍️', timeMin: 25, qCount: 1, scoreMax: 30, desc: '東大 国語 大問1B 要約 60-80字', _backendPart: 'r_summary', _backendGrade: 'todai' }],
+      nihonshi_kyotsu: [{ key: 'nihonshi',  name: '日本史 演習 (共通テスト型)', icon: '🗾', timeMin: 25, qCount: 5, scoreMax: 50, desc: '古代~近現代 通史・年代並べ替え・史料読解', _backendPart: 'nihonshi',  _backendGrade: 'kyotsu' }],
+      sekaishi_kyotsu: [{ key: 'sekaishi',  name: '世界史 演習 (共通テスト型)', icon: '🌍', timeMin: 25, qCount: 5, scoreMax: 50, desc: '東西通史・年代/文化史', _backendPart: 'sekaishi',  _backendGrade: 'kyotsu' }],
+      chiri_kyotsu:    [{ key: 'chiri',     name: '地理 演習 (共通テスト型)',   icon: '🗺️', timeMin: 25, qCount: 5, scoreMax: 50, desc: '自然/人文/地誌・気候/プレート/災害', _backendPart: 'chiri',     _backendGrade: 'kyotsu' }],
+      kouminka_kyotsu: [{ key: 'kouminka',  name: '公民 演習 (共通テスト型)',   icon: '⚖️', timeMin: 25, qCount: 5, scoreMax: 50, desc: '政経/倫理 融合・憲法/三権分立/基本的人権', _backendPart: 'kouminka',  _backendGrade: 'kyotsu' }],
+    },
+    topics: ['古典文法', '助動詞', '係り結び', '敬語', '漢文句法', '再読文字', '通史 (日本史)', '通史 (世界史)', '気候区分', 'プレートテクトニクス', '人口', '憲法', '三権分立', '基本的人権'],
+  },
+
   eiken: {
     id: 'eiken',
     name: '英検',
@@ -694,6 +737,16 @@ function _renderGradeSelect(grid, examId, items) {
       if (['igakubu_kokoritsu_rikei', 'igakubu_shiritsu_rikei'].includes(k)) return { cat: '医学部', order: 4 };
       if (k === 'march_rikei') return { cat: '私立 (MARCH 等)', order: 3 };
       return { cat: '私立', order: 2 };
+    } else if (examId === 'bunkei') {
+      // 大学入試文系: 科目別グルーピング (塾長指示 2026-05-14)
+      if (k.startsWith('kobun_'))     return { cat: '📜 古文', order: 0 };
+      if (k.startsWith('kanbun_'))    return { cat: '🀄 漢文', order: 1 };
+      if (k.startsWith('r_summary_')) return { cat: '✍️ 現代文要約', order: 2 };
+      if (k.startsWith('nihonshi_'))  return { cat: '🗾 日本史', order: 3 };
+      if (k.startsWith('sekaishi_'))  return { cat: '🌍 世界史', order: 4 };
+      if (k.startsWith('chiri_'))     return { cat: '🗺️ 地理', order: 5 };
+      if (k.startsWith('kouminka_'))  return { cat: '⚖️ 公民', order: 6 };
+      return { cat: 'その他', order: 99 };
     }
     return { cat: 'その他', order: 99 };
   };
@@ -710,7 +763,10 @@ function _renderGradeSelect(grid, examId, items) {
   const wrapper = document.createElement('div');
   wrapper.className = 'grade-select-wrapper';
   wrapper.style.cssText = 'max-width: 640px; margin: 1.5rem auto; padding: 0 1rem;';
-  const label = examId === 'daigaku' ? '🎓 受験する大学/試験を選択' : '🔬 大学/レベルを選択';
+  const label = examId === 'daigaku' ? '🎓 受験する大学/試験を選択'
+              : examId === 'rikei'   ? '🔬 大学/レベルを選択'
+              : examId === 'bunkei'  ? '📚 科目とレベルを選択'
+              : '大学/レベルを選択';
   wrapper.innerHTML = `
     <label style="display:block; font-size:1rem; color:#a78bfa; font-weight:700; margin-bottom:0.6rem;">${label}</label>
     <select id="gradeSelectPulldown" style="
@@ -735,7 +791,7 @@ function _renderGradeSelect(grid, examId, items) {
       }).join('')}
     </select>
     <p style="margin-top: 0.6rem; font-size: 0.82rem; color: #94a3b8; line-height: 1.55;">
-      💡 ${examId === 'daigaku' ? '志望大学の出題傾向に完全準拠した問題で演習できます。共通テスト・センター試験 (2005年〜) も網羅。' : '大学ごとの数学/物理/化学/生物の出題傾向に準拠。図/数式 (LaTeX) 対応。'}
+      💡 ${examId === 'daigaku' ? '志望大学の出題傾向に完全準拠した問題で演習できます。共通テスト・センター試験 (2005年〜) も網羅。' : examId === 'bunkei' ? '古文・漢文・現代文要約・日本史・世界史・地理・公民 — 共通テスト / 東大型 / 京大型 に完全準拠。' : '大学ごとの数学/物理/化学/生物の出題傾向に準拠。図/数式 (LaTeX) 対応。'}
     </p>
     <div id="gradeSelectInfo" style="margin-top: 1rem; padding: 1rem; background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.20); border-radius: 10px; display: none;">
       <div id="gradeSelectInfoName" style="font-size:1.05rem; color:#fbbf24; font-weight:800; margin-bottom:0.3rem;"></div>
@@ -790,6 +846,10 @@ function showGradePicker(examId = 'eiken') {
       if (eyebrow) eyebrow.textContent = 'STEP 2 / 理系科目';
       if (h2) h2.textContent = '🔬 大学/レベルを選んでください';
       if (desc) desc.textContent = '大学ごとの数学/物理/化学/生物の出題傾向に準拠。図やグラフ・数式 (LaTeX) を含む本格問題を AI が即時生成。';
+    } else if (examId === 'bunkei') {
+      if (eyebrow) eyebrow.textContent = 'STEP 2 / 大学入試 文系';
+      if (h2) h2.textContent = '📚 科目とレベルを選んでください';
+      if (desc) desc.textContent = '古文・漢文・現代文要約・日本史・世界史・地理・公民 — 共通テスト / 東大型 / 京大型 を網羅。';
     } else {
       if (eyebrow) eyebrow.textContent = 'STEP 2 / 英検';
       if (h2) h2.textContent = '🇯🇵 受験する級を選んでください';
@@ -802,8 +862,9 @@ function showGradePicker(examId = 'eiken') {
 
   // 🎯 2026-05-13 塾長指示「もっと選択しやすいプルダウン式」:
   // daigaku (30+ 大学) / rikei (11 大学) はカテゴリ別 optgroup の select に切替。
+  // bunkei (11 グレード) も同じく optgroup pulldown (塾長指示 2026-05-14)。
   // 英検 (12 級) はカード式のままにする (適切な数 + 視覚的に魅力的)。
-  if (examId === 'daigaku' || examId === 'rikei') {
+  if (examId === 'daigaku' || examId === 'rikei' || examId === 'bunkei') {
     _renderGradeSelect(grid, examId, items);
     // 🎯 ページ最上部ではなく gradePickSection にスクロール (プルダウンが画面中央)
     const gradeSec = document.getElementById('gradePickSection');
@@ -954,7 +1015,9 @@ function pickExamSections(examId) {
       ? getDaigakuSections(state.eikenGrade)
       : (examId === 'rikei' && state.eikenGrade)
         ? getRikeiSections(state.eikenGrade)
-        : exam.sections;
+        : (examId === 'bunkei' && state.eikenGrade)
+          ? ((EXAMS.bunkei && EXAMS.bunkei.sectionsByGrade && EXAMS.bunkei.sectionsByGrade[state.eikenGrade]) || [])
+          : exam.sections;
   state.currentSections = sections;
   const grid = document.getElementById('sectionGrid');
   grid.innerHTML = '';
@@ -1127,14 +1190,35 @@ function getCurrentTopicHint() {
 
 // バックエンドから DB蓄積問題を取得して AUTO_GENERATED_BANKS にセット
 // 戻り値: { selected, count, all } または null (失敗時)
+// 📚 大学入試文系 (bunkei) → backend は daigaku 扱い (塾長指示 2026-05-14)
+// state.examId='bunkei' / state.eikenGrade='kobun_todai' / state.sectionKey='kobun'
+// → backend (exam_id='daigaku', part_key='kobun', eiken_grade='todai')
+function _getBackendExamParams(examId, sectionKey, eikenGrade) {
+  if (examId === 'bunkei') {
+    const sections = (EXAMS.bunkei && EXAMS.bunkei.sectionsByGrade && EXAMS.bunkei.sectionsByGrade[eikenGrade]) || [];
+    const sec = sections.find(s => s.key === sectionKey) || sections[0];
+    return {
+      exam: 'daigaku',
+      part: (sec && sec._backendPart) || sectionKey,
+      grade: (sec && sec._backendGrade) || eikenGrade,
+    };
+  }
+  return { exam: examId, part: sectionKey, grade: eikenGrade };
+}
+
 // 🎯 pool-first 戦略 (2026-05-13): generateAndShowQuestions が await して即時利用する
 async function prefetchAutoGenerated(examId, sectionKey, eikenGrade) {
   try {
     const backend = (window.location.hostname === 'localhost' && window.location.port === '8090')
       ? 'http://localhost:8000' : window.location.origin;
-    const params = new URLSearchParams({ exam: examId, part: sectionKey, limit: 20 });
-    if (eikenGrade) params.set('eiken_grade', eikenGrade);
-    if (examId === 'daigaku' && eikenGrade) params.set('univ', eikenGrade);
+    // bunkei → daigaku に backend params をマッピング (塾長指示 2026-05-14)
+    const _be = _getBackendExamParams(examId, sectionKey, eikenGrade);
+    const backendExam = _be.exam;
+    const backendPart = _be.part;
+    const backendGrade = _be.grade;
+    const params = new URLSearchParams({ exam: backendExam, part: backendPart, limit: 20 });
+    if (backendGrade) params.set('eiken_grade', backendGrade);
+    if (backendExam === 'daigaku' && backendGrade) params.set('univ', backendGrade);
     // 新 backend ロジック: student_id があれば「既出題回避 + 弱点優先」、topic があれば単元一致優先
     const studentId = getCurrentStudentId();
     if (studentId) params.set('student_id', String(studentId));
@@ -1151,7 +1235,7 @@ async function prefetchAutoGenerated(examId, sectionKey, eikenGrade) {
     window.AUTO_GENERATED_BANKS = window.AUTO_GENERATED_BANKS || {};
     window.AUTO_GENERATED_BANKS[examId] = window.AUTO_GENERATED_BANKS[examId] || {};
     // 英検 / 大学入試 は compoundKey で保存
-    const storeKey = ((examId === 'eiken' || examId === 'daigaku') && eikenGrade) ? `${eikenGrade}_${sectionKey}` : sectionKey;
+    const storeKey = ((examId === 'eiken' || examId === 'daigaku' || examId === 'bunkei') && eikenGrade) ? `${eikenGrade}_${sectionKey}` : sectionKey;
     window.AUTO_GENERATED_BANKS[examId][storeKey] = data.selected;
     console.log(`[exam] 📚 pool hit ${data.count} questions for ${examId}/${storeKey}` + (studentId ? ` (student=${studentId})` : '') + (topicHint ? ` topic=${topicHint}` : ''));
     // セッション attempt push hook (app.js の sessionState を共有・関数があれば活用)
@@ -1167,7 +1251,7 @@ async function prefetchAutoGenerated(examId, sectionKey, eikenGrade) {
               window.__examSessionState.problems.push({
                 pid,
                 topic: q.topic || topicHint || '',
-                univ: (examId === 'daigaku' || examId === 'rikei') ? (eikenGrade || '') : '',
+                univ: (examId === 'daigaku' || examId === 'rikei' || examId === 'bunkei') ? (eikenGrade || '') : '',
                 year: q.year || (data.selected && data.selected.year_simulated) || '',
                 source: examId + '/' + (storeKey || sectionKey),
               });
@@ -1224,16 +1308,23 @@ async function generateAndShowQuestions(exam, section, full = false) {
     eikenGradeLabel = `（${state.eikenGradeName}・CEFR ${(EXAMS.daigaku.grades.find(g => g.key === state.eikenGrade) || {}).cefr || ''} 相当）`;
   } else if (state.examId === 'rikei' && state.eikenGradeName) {
     eikenGradeLabel = `（${state.eikenGradeName}・${(EXAMS.rikei.grades.find(g => g.key === state.eikenGrade) || {}).cefr || ''}）`;
+  } else if (state.examId === 'bunkei' && state.eikenGradeName) {
+    eikenGradeLabel = `（${state.eikenGradeName}・${(EXAMS.bunkei.grades.find(g => g.key === state.eikenGrade) || {}).cefr || ''}）`;
   }
 
   // 大学入試: ランダムに 2005-2026 の年度を選んで「○○大学 ○年度入試の類題」スタイルで生成
-  const daigakuYear = (state.examId === 'daigaku' || state.examId === 'rikei') ? (2005 + Math.floor(Math.random() * 22)) : null;
+  const daigakuYear = (state.examId === 'daigaku' || state.examId === 'rikei' || state.examId === 'bunkei') ? (2005 + Math.floor(Math.random() * 22)) : null;
 
   // 試験別の出題ニュアンス
   const daigakuUniv = state.examId === 'daigaku' ? (state.eikenGradeName || '大学入試') : '';
   const daigakuTargets = state.examId === 'daigaku' ? ((EXAMS.daigaku.grades.find(g => g.key === state.eikenGrade) || {}).target || '') : '';
   const rikeiUniv = state.examId === 'rikei' ? (state.eikenGradeName || '大学入試 理系') : '';
   const rikeiTargets = state.examId === 'rikei' ? ((EXAMS.rikei.grades.find(g => g.key === state.eikenGrade) || {}).target || '') : '';
+  // 文系科目 (bunkei) の科目・レベル抽出
+  const bunkeiTargets = state.examId === 'bunkei' ? ((EXAMS.bunkei.grades.find(g => g.key === state.eikenGrade) || {}).target || '') : '';
+  const bunkeiName = state.examId === 'bunkei' ? (state.eikenGradeName || '大学入試 文系') : '';
+  const bunkeiBackendPart = state.examId === 'bunkei' && section ? (section._backendPart || section.key) : '';
+  const bunkeiBackendGrade = state.examId === 'bunkei' && section ? (section._backendGrade || '') : '';
   // 科目判定 (section.key の prefix から: math_/phys_/chem_/bio_/earth_)
   const subjectMap = { math: '数学', phys: '物理', chem: '化学', bio: '生物', earth: '地学' };
   const subjectKey = (section.key.match(/^(math|phys|chem|bio|earth)/) || [])[1] || '';
@@ -1268,8 +1359,37 @@ async function generateAndShowQuestions(exam, section, full = false) {
     }
 - 解答は記述式 (途中式 + 計算過程 + 答え) または 4択 (プレ計算済み)。choices には LaTeX を使う。
 - 解説は日本語で「考え方→立式→計算→答え→補足」を必ず段階分け (3行以上)。`,
+    bunkei: `日本の大学入試 文系科目 (${bunkeiName}・${daigakuYear || 2024}年度入試レベル相当)。出題傾向: ${bunkeiTargets}。
+重要原則:
+- **問題文・選択肢・解答・解説のすべてを日本語で出力** (英語 NG)。古典 (古文・漢文) は原文 + 書き下し + 現代語訳を含む。
+- 過去問の丸写しは著作権上 NG。「出題形式に完全準拠した類題」を作成すること。
+- ${bunkeiBackendPart === 'kobun' ? '古文: 公有財産の古典 (枕草子/徒然草/源氏物語/伊勢物語/土佐日記/紫式部日記 等) または教育用創作。本文末に【出典】を明記。古典文法 (助動詞・係り結び・敬語) と古今異義語を必ず織り込む。'
+       : bunkeiBackendPart === 'kanbun' ? '漢文: 公有財産の古典 (論語/孟子/荘子/史記/老子/韓非子/荀子 等 pre-1500 PD)。【白文】【書き下し文】【現代語訳】の 3 段構成。再読文字・反語・使役・置き字を必ず織り込む。'
+       : bunkeiBackendPart === 'r_summary' ? '現代文要約: 評論/エッセイ系の本格的日本語文章 (800-1200 字)。設問は「60-80字で要約」型。論理構造把握と圧縮表現が中核。'
+       : bunkeiBackendPart === 'nihonshi' ? '日本史: 古代~近現代の通史。年代並べ替え・史料読解・テーマ史 (政治/経済/外交/文化) を織り交ぜる。1 史料 + 5 設問構成が標準。'
+       : bunkeiBackendPart === 'sekaishi' ? '世界史: 古代~現代の東西通史。年代/文化史/西洋哲学/東洋思想を織り交ぜる。地図/系図/年表があれば figure_svg に inline SVG で。'
+       : bunkeiBackendPart === 'chiri' ? '地理: 自然 (気候/プレート/災害) ・人文 (人口/都市/農業) ・地誌の融合。ケッペン気候区分・統計データ読解・地図問題が頻出。'
+       : bunkeiBackendPart === 'kouminka' ? '公民: 日本国憲法・三権分立・基本的人権・国際政治経済の融合。政経 (経済理論/財政/金融) と倫理 (西洋哲学/東洋思想) を織り交ぜる。'
+       : '文系科目の出題傾向に準拠。'}
+- ${bunkeiBackendGrade === 'todai' ? '東大型: 記述式中心。心理把握・比喩解釈・思想史的構造把握など深い論理力を問う設問。'
+       : bunkeiBackendGrade === 'kyodai' ? '京大型: 抽象的論理・思想対比 (東洋 vs 西洋哲学等) ・難解な記述式。'
+       : '共通テスト型: 4 択多肢選択中心。教科書頻出範囲から出題、基礎~標準難度。'}
+- 解説は **日本語** で「本文の解釈→正解の根拠→誤答の不適切な理由→関連知識」の構造。
+- **絶対遵守**: 出力に教師名 (関正生・富田・林修 等) を一切含めない。`,
   }[exam.id] || '';
 
+  // 📚 bunkei (文系科目) / rikei (理系科目) は日本語問題で英語前提を除外する
+  const isJapaneseSubject = (state.examId === 'bunkei' || state.examId === 'rikei');
+  const _commonStrict = isJapaneseSubject
+    ? `- 公式の出題形式と完全に一致させる
+- 問題文・選択肢・解答・解説のすべてを **日本語** で出力 (英語の使用は引用/原典のみ)
+- 解説は日本語で、正解の根拠 + 誤答の不適切な理由 + 関連知識を3行以上
+- ${state.examId === 'bunkei' ? '古典 (古文・漢文) は本文 + 書き下し (漢文の場合) + 現代語訳 + 出典を必ず含める' : '理系は数式 LaTeX + 図 SVG (必要に応じて)'}`
+    : `- 公式の出題形式と完全に一致させる (TOEIC Part 2 なら3択、TOEFL Reading なら長文+設問、IELTS Listening Section 1 なら社会的会話のみ、英検準1級 Reading 大問1 なら短文穴埋め4択 18問形式)
+- 設問の英文は ETS / British Council / 英検協会 が出すレベルのナチュラル英語 (機械翻訳臭/不自然な語彙NG)
+- 解説は日本語で、正解の根拠 + 他選択肢の誤りポイント + 関連語彙/文法 を3行以上
+- Speaking / Writing は採点ルーブリック (構成 / 語彙 / 文法 / 流暢さ or 一貫性) に基づく評価コメント付きの模範解答
+- 英検なら級レベルの語彙統制 (1級は CEFR C1 語彙、5級は中学初級語彙)`;
   const system = `あなたは ${exam.name} 対策の専門コーチで、過去20年の出題傾向と公式採点基準を完全に把握しています。
 
 【今回の対象 part】
@@ -1283,11 +1403,7 @@ async function generateAndShowQuestions(exam, section, full = false) {
 ${examFlavor}
 
 【厳守】
-- 公式の出題形式と完全に一致させる (TOEIC Part 2 なら3択、TOEFL Reading なら長文+設問、IELTS Listening Section 1 なら社会的会話のみ、英検準1級 Reading 大問1 なら短文穴埋め4択 18問形式)
-- 設問の英文は ETS / British Council / 英検協会 が出すレベルのナチュラル英語 (機械翻訳臭/不自然な語彙NG)
-- 解説は日本語で、正解の根拠 + 他選択肢の誤りポイント + 関連語彙/文法 を3行以上
-- Speaking / Writing は採点ルーブリック (構成 / 語彙 / 文法 / 流暢さ or 一貫性) に基づく評価コメント付きの模範解答
-- 英検なら級レベルの語彙統制 (1級は CEFR C1 語彙、5級は中学初級語彙)`;
+${_commonStrict}`;
 
   const user = `${exam.name}${eikenGradeLabel} の **${section.name}** の問題を ${qCount} 問生成してください。
 
@@ -2692,8 +2808,8 @@ function getPartBank(examId, sectionKey) {
   const autoBank = auto[examId] && auto[examId][sectionKey];
   // 2) 静的サンプル
   const staticBank = SAMPLE_BANKS[examId] && SAMPLE_BANKS[examId][sectionKey];
-  // 英検は g{N}_{key}、大学入試は {univ}_{key} の compound key で sectionsByGrade を区別
-  if (!autoBank && !staticBank && (examId === 'eiken' || examId === 'daigaku') && state && state.eikenGrade) {
+  // 英検は g{N}_{key}、大学入試 (英語/文系) は {univ}_{key} の compound key で sectionsByGrade を区別
+  if (!autoBank && !staticBank && (examId === 'eiken' || examId === 'daigaku' || examId === 'bunkei') && state && state.eikenGrade) {
     const compoundKey = state.eikenGrade + '_' + sectionKey;
     // AUTO_GENERATED_BANKS にも compound key で問い合わせ
     const autoCompound = auto[examId] && auto[examId][compoundKey];
@@ -4023,7 +4139,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // index.html の「📚 大学入試問題演習」タブ → english-exam.html?focus=daigaku で自動選択
   try {
     const focusExam = new URLSearchParams(window.location.search).get('focus');
-    const allowedFocus = ['toefl', 'toeic', 'ielts', 'eiken', 'daigaku', 'rikei'];
+    const allowedFocus = ['toefl', 'toeic', 'ielts', 'eiken', 'daigaku', 'rikei', 'bunkei'];
     if (focusExam && allowedFocus.includes(focusExam)) {
       const card = document.querySelector(`.exam-card[data-exam="${focusExam}"]`);
       if (card) {
