@@ -1460,8 +1460,34 @@ async function submitAnswers() {
   document.getElementById('submitAnswersBtn').textContent = '⏳ 採点中...';
 
   const exam = EXAMS[state.examId];
-  const sections = state.currentSections || exam.sections;
-  const section = sections.find(s => s.key === state.sectionKey);
+  if (!exam) {
+    alert('試験データが見つかりません (state.examId=' + state.examId + ')。最初からやり直してください。');
+    document.getElementById('submitAnswersBtn').disabled = false;
+    document.getElementById('submitAnswersBtn').textContent = '📤 回答を提出して採点';
+    return;
+  }
+  const sections = state.currentSections || exam.sections || [];
+  // 🚨 2026-05-13 致命傷 fix: section が undefined になる経路を完全防御
+  // 原因: state.sectionKey が currentSections のどの key とも一致しない
+  // (例: 大学入試/理系で sectionKey が古い形式・archive 復元時の不整合等)
+  // 対策: find で見つからない場合は fallback object を構築して採点続行
+  let section = sections.find(s => s.key === state.sectionKey);
+  if (!section) {
+    console.warn('[submitAnswers] section not found in currentSections - using fallback', {
+      examId: state.examId, sectionKey: state.sectionKey, sectionsCount: sections.length,
+      availableKeys: sections.map(s => s.key),
+    });
+    // sections の先頭 or 完全 fallback object
+    section = sections[0] || {
+      key: state.sectionKey || 'unknown',
+      name: state.sectionKey || '採点',
+      icon: '📝',
+      timeMin: 30,
+      qCount: (state.questions || []).length || 5,
+      scoreMax: 30,
+      desc: '',
+    };
+  }
   let result;
   try {
     if (isLiveMode()) {
@@ -1554,7 +1580,7 @@ ${JSON.stringify(userPayload, null, 2)}
 
   return {
     sectionScore: aiResult.section_score ?? Math.round((mcScore / Math.max(1, mcTotal)) * sectionScoreMax),
-    overallScore: aiResult.overall_score ?? Math.round((mcScore / Math.max(1, mcTotal)) * exam.scoreMax),
+    overallScore: aiResult.overall_score ?? Math.round((mcScore / Math.max(1, mcTotal)) * (exam.scoreMax || sectionScoreMax || 30)),
     cefr: aiResult.cefr || 'B1',
     strengths: aiResult.strengths || [],
     weaknesses: aiResult.weaknesses || [],
@@ -1597,9 +1623,10 @@ function scoreLocally(exam, section) {
     }
   }
   const sectionScoreMax = section.scoreMax || 30;
+  const examScoreMaxLocal = exam.scoreMax || sectionScoreMax || 30;
   const ratio = mcTotal > 0 ? mcScore / mcTotal : 0;
   const sectionScore = Math.round(ratio * sectionScoreMax * 10) / 10;
-  const overallScore = Math.round(ratio * exam.scoreMax * 10) / 10;
+  const overallScore = Math.round(ratio * examScoreMaxLocal * 10) / 10;
   const cefr = scoreToCefr(exam.id, overallScore);
   return {
     sectionScore, overallScore, cefr,
@@ -1619,19 +1646,29 @@ function showResult(exam, section, result) {
   document.getElementById('examRunnerSection').style.display = 'none';
   document.getElementById('examResultSection').style.display = '';
 
+  // 🚨 2026-05-13 致命傷防御: section / exam が undefined でも crash しない
+  if (!section) {
+    section = { key: 'unknown', name: '採点', icon: '📝', scoreMax: 30, qCount: (state.questions || []).length || 5, timeMin: 30, desc: '' };
+  }
+  if (!exam) {
+    exam = { name: state.examId || '試験', flag: '📝', color: '#a78bfa', scoreMax: section.scoreMax || 30, scoreUnit: '点', sections: [section] };
+  }
+
   // ヒーロー
   const targetScore = parseFloat(document.getElementById('targetScore')?.value || '0');
-  const percent = Math.round((result.overallScore / exam.scoreMax) * 100);
+  const examScoreMax = exam.scoreMax || section.scoreMax || 30;
+  const sectionScoreMaxSafe = section.scoreMax || 30;
+  const percent = Math.round((result.overallScore / examScoreMax) * 100);
   document.getElementById('resultScoreHero').innerHTML = `
     <div class="result-hero-inner" style="border-color:${exam.color}">
       <div class="result-hero-flag">${exam.flag}</div>
       <div class="result-hero-exam">${exam.name}</div>
       <div class="result-hero-score" style="color:${exam.color}">
         <span class="result-hero-num">${result.overallScore}</span>
-        <span class="result-hero-unit">/ ${exam.scoreMax}${exam.scoreUnit}</span>
+        <span class="result-hero-unit">/ ${examScoreMax}${exam.scoreUnit || '点'}</span>
       </div>
       <div class="result-hero-cefr">CEFR <strong>${result.cefr}</strong> 相当</div>
-      <div class="result-hero-section">${section.icon} ${section.name}: ${result.sectionScore} / ${section.scoreMax}</div>
+      <div class="result-hero-section">${section.icon || '📝'} ${section.name || ''}: ${result.sectionScore} / ${sectionScoreMaxSafe}</div>
       ${targetScore > 0 ? `<div class="result-hero-target">🎯 目標 ${targetScore} まで <strong>${(targetScore - result.overallScore).toFixed(1)}</strong></div>` : ''}
       <div class="result-hero-bar"><div class="result-hero-bar-fill" style="width:${percent}%;background:${exam.color}"></div></div>
     </div>`;
