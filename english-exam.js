@@ -1181,19 +1181,103 @@ function sanitizeSvg(svgStr) {
 }
 
 // 🧮 KaTeX で要素内の数式を自動レンダリング (CDN ロード後に呼出)
+// 2026-05-13 塾長指示「紙の参考書のような数式」: $..$ inline delimiter を追加 + pretifyMath 前処理
 function applyKatex(rootEl) {
-  if (!rootEl || typeof window.renderMathInElement !== 'function') return;
+  if (!rootEl) return;
+  // 🔢 Plain text 数式 (π/2, √5, x^2 等) を先に $LaTeX$ に変換 (AI tutor と同じ品質)
+  try { pretifyMath(rootEl); } catch (e) { console.warn('[katex] pretifyMath failed', e); }
+  if (typeof window.renderMathInElement !== 'function') return;
   try {
     window.renderMathInElement(rootEl, {
       delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '$', right: '$', display: false },
         { left: '\\[', right: '\\]', display: true },
         { left: '\\(', right: '\\)', display: false },
-        { left: '$$', right: '$$', display: true },
       ],
       throwOnError: false,
       errorColor: '#f87171',
+      strict: 'ignore',
     });
   } catch (e) { console.warn('[katex] render failed', e); }
+}
+
+// 🔢 2026-05-13: Plain text 数式記号 → $LaTeX$ 変換 (AI tutor と共通仕様)
+// 既存の exam_questions pool データ (主に AI 生成・plain text 数式) を紙の参考書品質に昇格。
+// 既に $ を含む text node は触らない (二重変換防止)・code/pre/.katex 内は触らない (DOM 保護)
+function pretifyMath(container) {
+  if (!container || !window.NodeFilter) return;
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
+    acceptNode: function(node) {
+      let p = node.parentNode;
+      while (p && p !== container) {
+        const tag = (p.tagName || '').toLowerCase();
+        if (tag === 'code' || tag === 'pre' || tag === 'kbd' || tag === 'samp') return NodeFilter.FILTER_REJECT;
+        if (p.classList && (p.classList.contains('katex') || p.classList.contains('katex-display') || p.classList.contains('katex-html'))) return NodeFilter.FILTER_REJECT;
+        p = p.parentNode;
+      }
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  const nodes = [];
+  let n;
+  while ((n = walker.nextNode())) nodes.push(n);
+
+  nodes.forEach(function(node) {
+    const original = node.nodeValue;
+    if (!original || original.length < 2) return;
+    if (original.indexOf('$') >= 0 || original.indexOf('\\(') >= 0 || original.indexOf('\\[') >= 0) return;
+
+    let t = original;
+    // 1. 分数 (π/n, √n/m, π/√n)
+    t = t.replace(/(π|√\d+)\s*\/\s*(\d+|π|√\d+)/g, function(_m, a, b) {
+      const conv = function(s) { return s.replace(/π/g, '\\pi').replace(/√(\d+)/g, '\\sqrt{$1}'); };
+      return '$\\dfrac{' + conv(a) + '}{' + conv(b) + '}$';
+    });
+    // 2. √n → $\sqrt{n}$
+    t = t.replace(/√(\d+)/g, '$\\sqrt{$1}$');
+    // 3. 単独 π → $\pi$
+    t = t.replace(/π/g, '$\\pi$');
+    // 4. 指数 x^2, t^{n}
+    t = t.replace(/([a-zA-Z0-9\)])\^(\{[^{}]+\}|-?\d+|[a-zA-Z])/g, function(_m, base, exp) {
+      const e = exp.charAt(0) === '{' ? exp : '{' + exp + '}';
+      return '$' + base + '^' + e + '$';
+    });
+    // 5. 不等号 / 同値
+    t = t.replace(/≦/g, '$\\leqq$').replace(/≧/g, '$\\geqq$').replace(/≠/g, '$\\neq$')
+         .replace(/⇔/g, '$\\iff$').replace(/⇒/g, '$\\Rightarrow$').replace(/⇐/g, '$\\Leftarrow$');
+    // 6. ギリシャ文字
+    t = t.replace(/α/g, '$\\alpha$').replace(/β/g, '$\\beta$').replace(/γ/g, '$\\gamma$')
+         .replace(/θ/g, '$\\theta$').replace(/φ/g, '$\\phi$').replace(/ω/g, '$\\omega$')
+         .replace(/Δ/g, '$\\Delta$').replace(/Σ/g, '$\\Sigma$');
+    // 7. 数学記号
+    t = t.replace(/±/g, '$\\pm$').replace(/×/g, '$\\times$').replace(/÷/g, '$\\div$')
+         .replace(/∞/g, '$\\infty$').replace(/[≈≒]/g, '$\\approx$');
+    // 連続 $$ を空白に
+    t = t.replace(/\$\s*\$/g, ' ');
+
+    if (t === original) return;
+
+    const fragments = document.createDocumentFragment();
+    const re = /\$[^$\n]+?\$/g;
+    let lastIdx = 0;
+    let match;
+    while ((match = re.exec(t)) !== null) {
+      if (match.index > lastIdx) {
+        fragments.appendChild(document.createTextNode(t.substring(lastIdx, match.index)));
+      }
+      const mathSpan = document.createElement('span');
+      mathSpan.textContent = match[0];
+      fragments.appendChild(mathSpan);
+      lastIdx = match.index + match[0].length;
+    }
+    if (lastIdx < t.length) {
+      fragments.appendChild(document.createTextNode(t.substring(lastIdx)));
+    }
+    if (fragments.childNodes.length > 0) {
+      node.parentNode.replaceChild(fragments, node);
+    }
+  });
 }
 
 // 数式を含むテキストの安全レンダリング: HTML escape → \(...\) のバックスラッシュは保持
@@ -1590,9 +1674,13 @@ function showResult(exam, section, result) {
     }
   });
   document.getElementById('resultFeedback').innerHTML = fb;
+  // 🔢 2026-05-13: 結果フィードバックの数式を KaTeX 組版 (大学入試 r_long/解説/理系問題対応)
+  try { applyKatex(document.getElementById('resultFeedback')); } catch (_) {}
 
   // 学習プラン
   document.getElementById('learningPlanBox').innerHTML = `<div class="plan-text">${escapeHtml(result.studyPlan).replace(/\n/g,'<br>')}</div>`;
+  // 学習プランにも数式が含まれる可能性 (rikei 理系等)
+  try { applyKatex(document.getElementById('learningPlanBox')); } catch (_) {}
 
   // ボタン
   document.getElementById('retryBtn').onclick = () => {
