@@ -49,6 +49,10 @@
       "destination": "/api/admin-registration-cancel"
     },
     {
+      "source": "/payment/api/admin-migrate-legacy-subscription",
+      "destination": "/api/admin-migrate-legacy-subscription"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://ai-juku-api-production.up.railway.app/api/:path*"
     },
