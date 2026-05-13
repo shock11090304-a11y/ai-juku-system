@@ -513,6 +513,19 @@ function bindTrialOnboarding() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // 🛡️ 2026-05-13 塾長指示「学習管理が絶対に消えない」: MutationObserver で能動的に防御
+  // 万一どこかのコードが section.style.display='none' に setしても自動で復元する。
+  // ブラウザ拡張・Service Worker・第三者 JS・将来追加コードの暴走でも消えない設計。
+  try {
+    _installNeverHideGuard([
+      '.study-log-section',
+      '.study-log-quick-cta',
+      '.study-plan-section',
+      '.curriculum-section',
+      '.exam-section',
+    ]);
+  } catch (e) { console.error('never-hide guard install failed:', e); }
+
   // 各初期化を独立に try/catch して、1つの失敗で以降の初期化が連鎖停止しないようにする
   try { render(); } catch (e) { console.error('render failed:', e); }
   try { logActivity('mypage_view'); } catch (e) { console.error('logActivity failed:', e); }
@@ -526,6 +539,47 @@ document.addEventListener('DOMContentLoaded', () => {
   try { initMessages(); } catch (e) { console.error('initMessages failed:', e); }
   try { initReferralSection(); } catch (e) { console.error('initReferralSection failed:', e); }
 });
+
+// 🛡️ 「絶対に消えない」能動的防御: MutationObserver で display:none を阻止
+// 教育アプリの可用性として、学習管理セクションが消えた状態をユーザーに見せない
+function _installNeverHideGuard(selectors) {
+  if (!('MutationObserver' in window)) return;
+  const targets = [];
+  selectors.forEach(sel => {
+    document.querySelectorAll(sel).forEach(el => targets.push({ el, sel }));
+  });
+  if (targets.length === 0) return;
+  const observer = new MutationObserver((mutations) => {
+    for (const m of mutations) {
+      if (m.type !== 'attributes' || m.attributeName !== 'style') continue;
+      const el = m.target;
+      // display:none / visibility:hidden / opacity:0 を検出 → 復元
+      const cs = window.getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden') {
+        const sel = targets.find(t => t.el === el)?.sel || el.className;
+        console.warn(`[never-hide-guard] 学習管理 ${sel} が hide されました → 自動復元`);
+        el.style.display = '';
+        el.style.visibility = '';
+        // 監視用 event 記録 (デバッグ + 塾長の CEO ダッシュで可視化可能)
+        try {
+          if (window.AuthGuard?.getToken && navigator.sendBeacon) {
+            const ev = JSON.stringify({
+              event: 'study_mgmt_hide_blocked',
+              selector: sel,
+              ts: Date.now(),
+              ua: navigator.userAgent.slice(0, 200),
+            });
+            navigator.sendBeacon('/api/events/client', ev);
+          }
+        } catch (_) {}
+      }
+    }
+  });
+  targets.forEach(({ el }) => {
+    observer.observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
+  });
+  console.info(`[never-hide-guard] ${targets.length} 学習管理セクションを能動監視中 (display:none 自動復元)`);
+}
 
 // ==========================================================================
 // 🎁 紹介ループ UI
