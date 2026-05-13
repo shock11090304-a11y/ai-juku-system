@@ -362,12 +362,51 @@ class handler(BaseHTTPRequestHandler):
                 _json(self, 400, {"error": "INVALID_FEE", "message": "月額が 0 円になっています"})
                 return
 
+            # 🚨 2026-05-13 H1 fix: 同じ email で既に completed 登録があれば重複登録を拒否
+            # (= Stripe に同じ保護者の Customer が複数作られて二重課金されるリスク回避)
+            # 既存 reg を上書きしたい場合は塾長が先に「🗑 退塾処理」してから再登録するフロー
+            try:
+                email_norm = (clean.get("email") or "").strip().lower()
+                if email_norm:
+                    # reg:completed:index を辿って同じ email の record があるかチェック
+                    zr = _redis_safe("ZRANGE", "reg:completed:index", "0", "-1", "REV")
+                    if zr and isinstance(zr, dict):
+                        rids = zr.get("result") or []
+                        if isinstance(rids, list):
+                            for rid_existing in rids[:200]:  # 最新 200 件のみチェック (性能配慮)
+                                got = _redis_safe("GET", f"reg:completed:{rid_existing}")
+                                if got and isinstance(got, dict):
+                                    s = got.get("result")
+                                    if s:
+                                        try:
+                                            r = json.loads(s)
+                                            existing_email = (r.get("email") or "").strip().lower()
+                                            if existing_email == email_norm:
+                                                _log(f"register: duplicate email blocked - {email_norm} existing rid={rid_existing}")
+                                                _json(self, 409, {
+                                                    "error": "ALREADY_REGISTERED",
+                                                    "message": f"このメールアドレス ({clean['email']}) は既に登録されています。カード情報の変更や月額の更新は塾長 LINE までご連絡ください。",
+                                                    "existingRegistrationId": rid_existing,
+                                                })
+                                                return
+                                        except Exception:
+                                            pass
+            except Exception as _e:
+                # 重複チェック失敗は best-effort (KV 通信失敗時は通過させる・登録停止しない)
+                _log(f"duplicate-email check failed (best-effort skip): {_e}")
+
+
             registration_id = "reg_" + secrets.token_urlsafe(12)
 
+            # 🚨 2026-05-13: 塾長指示の apex primary 運用 (memory: feedback_vercel_apex_primary.md) に整合
+            # success_url / cancel_url の host が apex/www mismatch すると Stripe Checkout から complete page への
+            # 遷移時に session_id query が失われる致命傷を防ぐため、apex (trillion-ai-juku.com) を明示 fallback
             base_url = os.environ.get("PUBLIC_BASE_URL", "").strip().rstrip("/")
             if not base_url:
-                # vercel deployment URL fallback
-                host = self.headers.get("X-Forwarded-Host") or self.headers.get("Host") or "www.trillion-ai-juku.com"
+                host = self.headers.get("X-Forwarded-Host") or self.headers.get("Host") or "trillion-ai-juku.com"
+                # www. prefix が来た場合は apex に正規化
+                if host.startswith("www."):
+                    host = host[4:]
                 proto = self.headers.get("X-Forwarded-Proto") or "https"
                 base_url = f"{proto}://{host}"
 
