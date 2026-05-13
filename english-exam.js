@@ -871,6 +871,16 @@ function pickExam(examId) {
   state.examId = examId;
   state.sectionKey = null;
   state.eikenGrade = null;
+  // 🚫 2026-05-13 塾長指示「大学入試の部分にこれは不要」: 大学入試/理系では LIVE NEWS READING を非表示
+  // 英語試験 (英検/TOEFL/TOEIC/IELTS) でのみ意味があるセクション
+  const newsSec = document.getElementById('newsReadingSection');
+  if (newsSec) {
+    if (examId === 'daigaku' || examId === 'rikei') {
+      newsSec.style.display = 'none';
+    } else {
+      newsSec.style.display = '';
+    }
+  }
   // 英検 / 大学入試 は級・大学選択を先に挟む (requiresGrade=true)
   if (exam.requiresGrade) {
     showGradePicker(examId);
@@ -1896,11 +1906,29 @@ async function submitAnswers() {
       desc: '',
     };
   }
+  // 🎯 2026-05-13 塾長指示「最初に解答を用意している問題なので記述以外は AI 採点不要」:
+  // 採点方式を ハイブリッド化:
+  //   - 全問が multiple_choice/short_answer のみ → ローカル即時採点 (1 秒・AI コスト 0)
+  //   - 記述問題 (essay/translation/speaking/open) を含む → AI 採点
+  // 大学入試・英検等で multiple_choice 中心の問題は瞬時に結果が出る
+  const hasOpenAnswer = (state.questions || []).some(q => {
+    const t = (q && q.type) || 'multiple_choice';
+    return t !== 'multiple_choice' && t !== 'short_answer';
+  });
+  // submit ボタン表示更新 (採点中の心理的ケア)
+  const submitBtn = document.getElementById('submitAnswersBtn');
+  if (submitBtn) {
+    submitBtn.textContent = hasOpenAnswer
+      ? '⏳ AI が記述採点中... (10-30 秒)'
+      : '⚡ 即採点中...';
+  }
   let result;
   try {
-    if (isLiveMode()) {
+    if (hasOpenAnswer && isLiveMode()) {
+      // 記述問題あり: AI 採点 (Claude による多視点採点)
       result = await scoreWithClaude(exam, section);
     } else {
+      // 全問 mc/short のみ OR Live mode 無効: ローカル即時採点
       result = scoreLocally(exam, section);
     }
   } catch (e) {
@@ -2114,14 +2142,71 @@ function scoreLocally(exam, section) {
   const sectionScore = Math.round(ratio * sectionScoreMax * 10) / 10;
   const overallScore = Math.round(ratio * examScoreMaxLocal * 10) / 10;
   const cefr = scoreToCefr(exam.id, overallScore);
+
+  // 🎯 2026-05-13 塾長指示「mc は AI 採点不要」: ローカル採点でも質の高い feedback を生成
+  // 正答率に応じた具体的な strengths/weaknesses/studyPlan を出す
+  const correctCount = mcScore;
+  const wrongCount = mcTotal - mcScore;
+  const accuracy = mcTotal > 0 ? Math.round((mcScore / mcTotal) * 100) : 0;
+
+  const strengths = [];
+  const weaknesses = [];
+  if (correctCount >= mcTotal * 0.8 && mcTotal > 0) {
+    strengths.push(`正答率 ${accuracy}% — このレベルの問題は十分対応できています`);
+    strengths.push('ケアレスミス防止と時間配分の最適化が次のステップ');
+  } else if (correctCount >= mcTotal * 0.5 && mcTotal > 0) {
+    strengths.push(`正答率 ${accuracy}% — 基礎力は身についています`);
+    weaknesses.push(`誤答した ${wrongCount} 問について、解説をしっかり読み込んで類題を解きましょう`);
+  } else if (mcTotal > 0) {
+    weaknesses.push(`正答率 ${accuracy}% — まずは「解説」を熟読して類題演習が必要`);
+    weaknesses.push('1 問ずつ「なぜその答えになるのか」を声に出して説明する練習が効果的');
+  } else {
+    strengths.push('全問記述式のため、ローカル即時採点には対応していません');
+  }
+
+  // 誤答した問題の単元を集計 (subject ベース)
+  const wrongSubjects = {};
+  perQuestion.forEach(pq => {
+    if (pq.isCorrect === false) {
+      const stem = (pq.stem || '').slice(0, 30);
+      wrongSubjects[stem] = (wrongSubjects[stem] || 0) + 1;
+    }
+  });
+
+  // 学習プラン
+  let studyPlan;
+  if (correctCount >= mcTotal * 0.8 && mcTotal > 0) {
+    studyPlan = `🏆 高得点おめでとうございます!次は ${exam.name} の更に上のレベルや、別の大問形式に挑戦して総合力を伸ばしましょう。\n\n` +
+      `毎日の推奨:\n` +
+      `- ${section.name} を週 3 回 (15-20 分) で時間配分を最適化\n` +
+      `- 他の大問 (長文・文法・英作文等) を週 2 回 ローテーション\n` +
+      `- 誤答した ${wrongCount} 問の解説を翌日再確認 (記憶定着)`;
+  } else if (correctCount >= mcTotal * 0.5 && mcTotal > 0) {
+    studyPlan = `👍 良いペース!誤答した ${wrongCount} 問の「解説」を必ず読み、自分の言葉で言い換えてノートに書いてください。\n\n` +
+      `毎日の推奨:\n` +
+      `- ${section.name} の類題を毎日 5-10 問 (15 分)\n` +
+      `- 誤答パターンの分析 (なぜ間違えたかをノート化)\n` +
+      `- 1 週間後に同じ問題を再挑戦して定着確認`;
+  } else if (mcTotal > 0) {
+    studyPlan = `💪 まだ伸び代があります。焦らず基礎から積み上げましょう。\n\n` +
+      `毎日の推奨:\n` +
+      `- 解説 を熟読 → 用語・文法事項をノート化\n` +
+      `- ${section.name} の簡単な類題から段階的に\n` +
+      `- 1 週間後に同じ問題を再挑戦 (正答率が上がれば定着の証拠)\n` +
+      `- 困ったら塾長 LINE で個別質問してください`;
+  } else {
+    studyPlan = '記述式問題は AI 採点が必要なので、改めて AI 接続が安定した時に再提出してください。';
+  }
+
   return {
     sectionScore, overallScore, cefr,
-    strengths: ['基本的な解答パターンを理解しています'],
-    weaknesses: ['詳細な分析は次回 AI 接続が安定した時にご提供します'],
+    strengths,
+    weaknesses,
     feedback: [],
-    studyPlan: '今回の結果を踏まえ、毎日30分の集中学習を推奨します。次回ログイン時に AI による詳細プランをご提示します。',
+    studyPlan,
     perQuestion,
     mcScore, mcTotal,
+    scoringMethod: 'local-instant', // 採点方式を明示 (UI で「⚡ 即採点」を表示する用)
   };
 }
 
@@ -2211,9 +2296,9 @@ function showResult(exam, section, result) {
     // 大学入試・理系では converter 全体を非表示・タイトルも適切に
     if (converterEl) converterEl.style.display = 'none';
     if (titleEl) {
-      if (state.examId === 'daigaku') titleEl.textContent = '🎯 採点結果';
-      else if (state.examId === 'rikei') titleEl.textContent = '🎯 採点結果';
-      else titleEl.textContent = '🎯 採点結果';
+      // 🎯 2026-05-13: 採点方式 (即採点 or AI) をタイトルに併記
+      const methodBadge = result.scoringMethod === 'local-instant' ? ' <span style="font-size:0.6em;background:rgba(16,185,129,0.2);color:#86efac;padding:0.15rem 0.5rem;border-radius:6px;margin-left:0.5rem;vertical-align:middle;">⚡ 即採点</span>' : ' <span style="font-size:0.6em;background:rgba(167,139,250,0.2);color:#a78bfa;padding:0.15rem 0.5rem;border-radius:6px;margin-left:0.5rem;vertical-align:middle;">🤖 AI 採点</span>';
+      titleEl.innerHTML = '🎯 採点結果' + methodBadge;
     }
   }
 
