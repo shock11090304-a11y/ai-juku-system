@@ -298,7 +298,10 @@ def _create_checkout_session(secret_key, payload, fee, breakdown, registration_i
         raise RuntimeError("Customer 作成に失敗しました (customer.id 取得不能)")
 
     # Step 2: Checkout Session (mode=setup) で customer=cus_xxx を明示
-    # setup_intent_data[usage]=off_session: 月末バッチで off_session 請求するための明示宣言
+    # 🚨 2026-05-13 緊急 fix: Round 5 で誤って追加した setup_intent_data[usage] は
+    # Stripe Checkout Session API で「parameter_unknown」エラー (400) を返す無効パラメータだった。
+    # Setup Mode では SetupIntent.usage は自動的に "off_session" になるため明示指定は不要。
+    # ※ /v1/setup_intents 直接 API では usage は有効だが、Checkout Session の setup_intent_data 下では拒否される
     form = [
         ("mode", "setup"),
         ("payment_method_types[]", "card"),
@@ -306,7 +309,6 @@ def _create_checkout_session(secret_key, payload, fee, breakdown, registration_i
         ("locale", "ja"),
         ("success_url", f"{base_url}/payment/register-complete.html?session_id={{CHECKOUT_SESSION_ID}}"),
         ("cancel_url", f"{base_url}/payment/register.html?canceled=1"),
-        ("setup_intent_data[usage]", "off_session"),
     ]
     for k, v in metadata.items():
         if v is None:
