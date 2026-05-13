@@ -2966,6 +2966,19 @@ ${textbookContext}`;
     ? `\n\n【⚡ 学習時間を合格ライン逆算で調整】\n生徒申告: 週${weeklyHours}h → 合格必要時間: 週${adjustedHours}h\n偏差値ギャップ +${analysis.gap} / 試験まで${analysis.monthsLeft}ヶ月\n→ 週${adjustedHours}hで実行可能なカリキュラムを設計してください。\n→ 冒頭の「現状分析と戦略」セクションで、なぜ週${adjustedHours}hが必要か生徒に説明してください。`
     : '';
 
+  // 📚 マイ参考書 (使用中) を取得して AI prompt に注入 (塾長指示 2026-05-14)
+  let ownMaterialsSnippet = '';
+  try {
+    const mm = await idxMmApiFetch('/api/student/materials/me?status=using');
+    const mats = (mm && mm.materials) || [];
+    if (mats.length) {
+      const bySubj = {};
+      mats.forEach(m => { (bySubj[m.subject] = bySubj[m.subject] || []).push(m.name); });
+      const lines = Object.entries(bySubj).map(([s, names]) => `- ${s}: ${names.slice(0, 8).join(', ')}`);
+      ownMaterialsSnippet = `\n\n📚 生徒が現在使用中の参考書/問題集 (継続活用を前提・既に持っている前提で組み込み、不足分のみ新規提案):\n${lines.join('\n')}`;
+    }
+  } catch (_) { /* 取得失敗時は無視して通常生成 */ }
+
   const userMsg = `生徒: ${student.name} (${student.grade})
 志望校: ${goal}
 目標日: ${date || '未設定'}
@@ -2973,7 +2986,7 @@ ${textbookContext}`;
 ${level}
 
 週の学習可能時間: ${adjustedHours || '?'}h
-重点科目: ${focus || '全科目'}${upliftNote}
+重点科目: ${focus || '全科目'}${upliftNote}${ownMaterialsSnippet}
 
 上記データベースから生徒のレベル・志望校に合う教材を具体的に指定し、曜日単位の実行可能なカリキュラムを設計してください。ページ範囲・問題番号も示してください。`;
 
@@ -2982,6 +2995,209 @@ ${level}
   // 「学習計画・管理」タブが取込で参照する最終生成結果を保存
   window._lastCurriculumMarkdown = response;
   try { localStorage.setItem('ai_juku_last_curriculum', response); } catch {}
+}
+
+
+// ==========================================================================
+// 📚 マイ参考書/問題集 (index.html #tab-curriculum 内) - 塾長指示 2026-05-14
+// 生徒が自分で使っている参考書を登録 → カリキュラム自動生成時に AI に伝える
+// ==========================================================================
+const IDX_MM_SUBJECTS = [
+  '英語', '数学', '国語', '現代文', '古文', '漢文',
+  '理科', '物理', '化学', '生物', '地学',
+  '社会', '日本史', '世界史', '地理', '倫理', '政経',
+  '情報', '小論文', '面接対策', 'その他',
+];
+const IDX_MM_STATUS_LABEL = {using: '📖 使用中', completed: '✅ 完了', paused: '⏸ お休み中'};
+const IDX_MM_STATUS_COLOR = {using: '#22d3ee', completed: '#34d399', paused: '#9ca3af'};
+
+async function idxMmApiFetch(path, options) {
+  // AuthGuard.authFetch があればそれを使う (mypage と統一動作)
+  const fetcher = (window.AuthGuard && AuthGuard.authFetch)
+    ? AuthGuard.authFetch.bind(AuthGuard)
+    : (url, opts) => fetch(url, Object.assign({}, opts, {
+        headers: Object.assign({'Content-Type': 'application/json'},
+          (opts && opts.headers) || {},
+          {Authorization: 'Bearer ' + (localStorage.getItem('ai_juku_session_token') || '')})
+      }));
+  const url = (typeof BACKEND_URL !== 'undefined' ? BACKEND_URL : '') + path;
+  const res = await fetcher(url, options || {});
+  let data;
+  try { data = await res.json(); } catch { data = {}; }
+  if (!res.ok) {
+    const msg = (data && data.detail) || `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  return data;
+}
+
+function initIdxMaterials() {
+  const box = document.getElementById('idxMmBox');
+  if (!box) return;
+  // 二重 init 防止
+  if (initIdxMaterials._inited) {
+    loadIdxMaterials();
+    return;
+  }
+  initIdxMaterials._inited = true;
+  // populate subject dropdown
+  const subjSel = document.getElementById('idxMmSubject');
+  if (subjSel && !subjSel.options.length) {
+    IDX_MM_SUBJECTS.forEach(s => {
+      const o = document.createElement('option');
+      o.value = s; o.textContent = s;
+      subjSel.appendChild(o);
+    });
+  }
+  const toggleBtn = document.getElementById('idxMmToggleFormBtn');
+  const wrap = document.getElementById('idxMmFormWrap');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      if (!wrap) return;
+      wrap.style.display = wrap.style.display === 'none' ? '' : 'none';
+      if (wrap.style.display !== 'none') {
+        const nameEl = document.getElementById('idxMmName');
+        if (nameEl) nameEl.focus();
+      }
+    });
+  }
+  const cancelBtn = document.getElementById('idxMmCancelBtn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      if (wrap) wrap.style.display = 'none';
+      clearIdxMmForm();
+    });
+  }
+  const saveBtn = document.getElementById('idxMmSaveBtn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', submitIdxMaterial);
+  }
+  // 初回 load
+  loadIdxMaterials();
+}
+
+function clearIdxMmForm() {
+  const name = document.getElementById('idxMmName');
+  const note = document.getElementById('idxMmNote');
+  const status = document.getElementById('idxMmStatus');
+  const msg = document.getElementById('idxMmFormMsg');
+  if (name) name.value = '';
+  if (note) note.value = '';
+  if (status) status.value = 'using';
+  if (msg) msg.textContent = '';
+}
+
+async function submitIdxMaterial() {
+  const nameEl = document.getElementById('idxMmName');
+  const subjEl = document.getElementById('idxMmSubject');
+  const statusEl = document.getElementById('idxMmStatus');
+  const noteEl = document.getElementById('idxMmNote');
+  const msg = document.getElementById('idxMmFormMsg');
+  const saveBtn = document.getElementById('idxMmSaveBtn');
+  if (!nameEl || !subjEl) return;
+  const name = (nameEl.value || '').trim();
+  const subject = subjEl.value;
+  const status = statusEl ? statusEl.value : 'using';
+  const note = noteEl ? ((noteEl.value || '').trim() || null) : null;
+  if (!name) {
+    if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '⚠️ 参考書名を入力してください'; }
+    return;
+  }
+  if (!subject) {
+    if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '⚠️ 科目を選択してください'; }
+    return;
+  }
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '登録中...'; }
+  try {
+    await idxMmApiFetch('/api/student/materials', {
+      method: 'POST',
+      body: JSON.stringify({name, subject, status, note}),
+    });
+    if (msg) { msg.style.color = '#86efac'; msg.textContent = '✅ 登録しました'; }
+    clearIdxMmForm();
+    const wrap = document.getElementById('idxMmFormWrap');
+    if (wrap) wrap.style.display = 'none';
+    await loadIdxMaterials();
+  } catch (e) {
+    if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || '登録失敗'); }
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 登録'; }
+  }
+}
+
+async function loadIdxMaterials() {
+  const list = document.getElementById('idxMmList');
+  if (!list) return;
+  try {
+    const data = await idxMmApiFetch('/api/student/materials/me');
+    const materials = (data && data.materials) || [];
+    if (!materials.length) {
+      list.innerHTML = '<div style="color:#9ca3af; font-size:0.78rem; padding:0.5rem;">📚 まだ登録された参考書がありません。「＋追加」から登録すると AI が継続使用前提でカリキュラムを組みます。</div>';
+      return;
+    }
+    list.innerHTML = materials.map(m => {
+      const c = IDX_MM_STATUS_COLOR[m.status] || '#22d3ee';
+      const lab = IDX_MM_STATUS_LABEL[m.status] || m.status;
+      const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+      return `
+        <div class="idx-mm-item" data-id="${m.id}" style="background:rgba(0,0,0,0.3); border:1px solid ${c}33; border-radius:8px; padding:0.45rem 0.6rem; display:inline-flex; align-items:center; gap:0.4rem;">
+          <span style="color:${c}; font-weight:700; font-size:0.78rem;">${esc(m.subject)}</span>
+          <span style="color:#e4e4e7; font-size:0.82rem;">${esc(m.name)}</span>
+          <span style="color:${c}; font-size:0.7rem;">${lab}</span>
+          ${m.note ? `<span style="color:#9ca3af; font-size:0.7rem;">(${esc(m.note)})</span>` : ''}
+          <button class="idx-mm-cycle-btn" data-id="${m.id}" data-status="${m.status}" aria-label="状態を変更" title="状態を変更 (使用中→完了→お休み→使用中)" style="background:rgba(255,255,255,0.08); border:0; color:#9ca3af; padding:0.15rem 0.35rem; border-radius:4px; cursor:pointer; font-size:0.7rem;">↻</button>
+          <button class="idx-mm-delete-btn" data-id="${m.id}" data-name="${esc(m.name)}" data-subject="${esc(m.subject)}" aria-label="削除" title="削除" style="background:rgba(239,68,68,0.15); border:0; color:#fca5a5; padding:0.15rem 0.35rem; border-radius:4px; cursor:pointer; font-size:0.7rem;">✕</button>
+        </div>`;
+    }).join('');
+    list.querySelectorAll('.idx-mm-cycle-btn').forEach(b => b.addEventListener('click', () => cycleIdxMaterialStatus(b.getAttribute('data-id'), b.getAttribute('data-status'), b)));
+    list.querySelectorAll('.idx-mm-delete-btn').forEach(b => b.addEventListener('click', () => deleteIdxMaterial(b.getAttribute('data-id'), b.getAttribute('data-name'), b.getAttribute('data-subject'))));
+  } catch (e) {
+    console.warn('loadIdxMaterials skipped:', e);
+    const errMsg = String(e.message || '');
+    // 401/403 (未ログイン or プレミアム外) は赤エラーではなく静かな notice
+    if (errMsg.includes('401') || errMsg.includes('403') || errMsg.includes('未ログイン') || errMsg.includes('プレミアム') || errMsg.includes('国公立難関')) {
+      // マイ参考書セクション全体を hide (UI 邪魔にならないように)
+      const box = document.getElementById('idxMmBox');
+      if (box) box.style.display = 'none';
+      return;
+    }
+    const safeMsg = errMsg.replace(/[<>]/g, '');
+    list.innerHTML = `<div style="color:#fca5a5; font-size:0.78rem;">⚠️ 読み込み失敗 (${safeMsg}) <button onclick="loadIdxMaterials()" style="margin-left:0.4rem; background:rgba(99,102,241,0.2); border:0; color:#c7d2fe; padding:0.2rem 0.4rem; border-radius:4px; cursor:pointer; font-size:0.72rem;">再試行</button></div>`;
+  }
+}
+
+async function cycleIdxMaterialStatus(id, currentStatus, btn) {
+  if (btn && btn.disabled) return;
+  if (btn) btn.disabled = true;
+  const next = currentStatus === 'using' ? 'completed' : (currentStatus === 'completed' ? 'paused' : 'using');
+  try {
+    await idxMmApiFetch(`/api/student/materials/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({status: next}),
+    });
+    await loadIdxMaterials();
+  } catch (e) {
+    alert('状態変更失敗: ' + (e.message || ''));
+    await loadIdxMaterials();
+  }
+}
+
+async function deleteIdxMaterial(id, name, subject) {
+  const label = name ? `「${name}」(${subject || ''})` : 'この参考書';
+  if (!confirm(`${label} を削除しますか?`)) return;
+  try {
+    await idxMmApiFetch(`/api/student/materials/${encodeURIComponent(id)}`, {method: 'DELETE'});
+    await loadIdxMaterials();
+  } catch (e) {
+    alert('削除失敗: ' + (e.message || ''));
+  }
+}
+
+// inline onclick から呼べるよう global export
+if (typeof window !== 'undefined') {
+  window.loadIdxMaterials = loadIdxMaterials;
+  window.cycleIdxMaterialStatus = cycleIdxMaterialStatus;
+  window.deleteIdxMaterial = deleteIdxMaterial;
 }
 
 
@@ -4038,6 +4254,8 @@ function bindEvents() {
   // Other features
   document.getElementById('analyzeBtn').addEventListener('click', runDiagnostic);
   document.getElementById('generateCurriculumBtn').addEventListener('click', generateCurriculum);
+  // 📚 マイ参考書 UI init (塾長指示 2026-05-14)
+  try { initIdxMaterials(); } catch (e) { console.warn('initIdxMaterials failed:', e); }
   document.getElementById('correctEssayBtn').addEventListener('click', correctEssay);
 
   // 英作文 画像添付ハンドラ

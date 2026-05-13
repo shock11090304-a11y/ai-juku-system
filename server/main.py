@@ -14168,7 +14168,7 @@ def public_exam_questions_recommend(payload: dict):
 
 
 @app.post("/api/curriculum/generate")
-def public_curriculum_generate(payload: dict):
+def public_curriculum_generate(payload: dict, authorization: Optional[str] = Header(None)):
     """🎯 受験日逆算 個別 AI カリキュラム生成。
     payload: {
       "exam_id": "daigaku|toefl|toeic|ielts|eiken",
@@ -14233,6 +14233,17 @@ def public_curriculum_generate(payload: dict):
         for h in history_summary[:8]
     ]) if history_summary else "(履歴なし)"
 
+    # 📚 マイ参考書 inject (塾長指示 2026-05-14): Authorization header があれば opportunistic に取得
+    # public endpoint (匿名 OK) のまま、認証済生徒のみ snippet 注入
+    own_materials_snippet = ""
+    if authorization:
+        try:
+            _student = _get_current_student(authorization)
+            if _student:
+                own_materials_snippet = _build_own_materials_prompt_snippet(_student["id"])
+        except Exception as _e:
+            log.warning(f"[PublicCurriculum] own_materials opportunistic inject failed: {_e}")
+
     system = """あなたは英語試験対策の専門学習コーチです。日本人受験者向けに、受験日逆算の個別カリキュラムを設計してください。
 
 【設計指針】
@@ -14251,7 +14262,7 @@ def public_curriculum_generate(payload: dict):
 - 1日学習可能時間: {daily_minutes}分
 - 弱点 part (直近履歴より): {weak_parts_text}
 - 履歴サマリ:
-{history_text}
+{history_text}{own_materials_snippet}
 
 【出力形式 (純粋な JSON)】
 {{

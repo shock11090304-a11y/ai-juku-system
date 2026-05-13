@@ -3866,8 +3866,15 @@ async function generateCurriculum() {
   try {
     const backend = (window.location.hostname === 'localhost' && window.location.port === '8090')
       ? 'http://localhost:8000' : window.location.origin;
+    // 📚 マイ参考書 inject (塾長指示 2026-05-14): ログイン済なら Authorization header 付与
+    // backend `public_curriculum_generate` が Authorization を opportunistic に解釈して使用中マイ参考書を inject する
+    const headers = { 'Content-Type': 'application/json' };
+    try {
+      const token = localStorage.getItem('ai_juku_session_token');
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+    } catch (_) {}
     const res = await fetch(`${backend}/api/curriculum/generate`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers,
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
