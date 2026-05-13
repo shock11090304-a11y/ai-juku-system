@@ -1302,6 +1302,57 @@ function sanitizeSvg(svgStr) {
 
 // 🧮 KaTeX で要素内の数式を自動レンダリング (CDN ロード後に呼出)
 // 2026-05-13 塾長指示「紙の参考書のような数式」: $..$ inline delimiter を追加 + pretifyMath 前処理
+// 🎯 2026-05-13 教育アプリ UX: 進捗バー (Q3/10 + bar fill + 残り表示)
+function _initProgressBar() {
+  const wrap = document.getElementById('progressWrap');
+  if (!wrap) return;
+  const total = (state.questions || []).length;
+  if (total === 0) {
+    wrap.style.display = 'none';
+    return;
+  }
+  wrap.style.display = '';
+  _updateProgressBar();
+}
+
+function _updateProgressBar() {
+  const wrap = document.getElementById('progressWrap');
+  if (!wrap) return;
+  const questions = state.questions || [];
+  const total = questions.length;
+  if (total === 0) return;
+
+  // 回答済 = userAnswers に値があるか photo upload 済
+  let done = 0;
+  questions.forEach(q => {
+    const ans = state.userAnswers ? state.userAnswers[q.id] : undefined;
+    const photo = state.userAnswerPhotos ? state.userAnswerPhotos[q.id] : undefined;
+    if ((ans !== undefined && ans !== null && String(ans).trim() !== '') || photo) {
+      done++;
+    }
+  });
+
+  const todo = total - done;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  const labelEl = document.getElementById('progressLabel');
+  const doneEl = document.getElementById('progressDone');
+  const todoEl = document.getElementById('progressTodo');
+  const fillEl = document.getElementById('progressBarFill');
+
+  if (labelEl) labelEl.textContent = `進捗: ${done} / ${total} 問 (${pct}%)`;
+  if (doneEl) doneEl.textContent = done;
+  if (todoEl) todoEl.textContent = todo;
+  if (fillEl) fillEl.style.width = pct + '%';
+
+  // 全問回答済になったら submit ボタンを目立たせる
+  const submitBtn = document.getElementById('submitAnswersBtn');
+  if (submitBtn && done === total && total > 0) {
+    submitBtn.style.animation = 'ee-pulse 2s ease-in-out infinite';
+    submitBtn.style.boxShadow = '0 0 24px rgba(167,139,250,0.6)';
+  }
+}
+
 function applyKatex(rootEl) {
   if (!rootEl) return;
   // 🔢 Plain text 数式 (π/2, √5, x^2 等) を先に $LaTeX$ に変換 (AI tutor と同じ品質)
@@ -1502,9 +1553,17 @@ function renderQuestions() {
         <textarea class="ee-textarea" name="${q.id}" rows="6" placeholder="${q.type === 'speaking' ? '口頭で話す内容を文字に書き起こしてください' : 'エッセイをここに書いてください'}"></textarea>
       </div>
       <div class="ee-answer-photo" data-qid="${q.id}" style="display:none;">
+        <!-- 🎯 2026-05-13 教育アプリ UX: 撮影ガイドを 開く前 / 後で表示 -->
+        <div style="padding:0.7rem 0.9rem; background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.30); border-radius:10px; margin-bottom:0.6rem; font-size:0.85rem; line-height:1.6; color:#93c5fd;">
+          <strong style="color:#3b82f6;">📸 きれいに撮るコツ</strong><br>
+          ① ☀️ <strong>明るい場所</strong>で撮影 (蛍光灯の真下 or 窓際)<br>
+          ② 📱 答案を<strong>正面から</strong> (斜めは避ける・影が入らないように)<br>
+          ③ 🔍 文字が<strong>くっきり読める</strong>大きさで (ぼやけは AI 読み取り失敗の原因)<br>
+          ④ 📄 答案全体が<strong>1 枚に収まる</strong>ように (複数枚は最後の 1 枚のみ採点)
+        </div>
         <label class="ee-photo-drop" for="ee-photo-${q.id}" style="display:block; border:2px dashed rgba(167,139,250,0.4); border-radius:12px; padding:1.5rem 1rem; text-align:center; cursor:pointer; background:rgba(99,102,241,0.04); transition: all 0.2s;">
           <div style="font-size:2.2rem; margin-bottom:0.4rem;">📷</div>
-          <div style="color:#a78bfa; font-weight:700; font-size:0.95rem; margin-bottom:0.3rem;">紙に書いた答えを撮影してアップロード</div>
+          <div style="color:#a78bfa; font-weight:700; font-size:0.95rem; margin-bottom:0.3rem;">タップして紙の答案を撮影</div>
           <div style="color:#94a3b8; font-size:0.78rem; line-height:1.5;">JPG / PNG / HEIC 対応・最大 10MB<br>AI が OCR + 採点します (テキスト入力と同じ結果)</div>
           <input type="file" id="ee-photo-${q.id}" data-qid="${q.id}" accept="image/*" capture="environment" style="display:none;">
         </label>
@@ -1574,6 +1633,19 @@ function renderQuestions() {
       inp.addEventListener('change', () => { state.userAnswers[q.id] = inp.value; });
       inp.addEventListener('input', () => { state.userAnswers[q.id] = inp.value; });
     });
+  });
+
+  // 🎯 2026-05-13 教育アプリ UX: 進捗バー初期化 + 更新 hook
+  _initProgressBar();
+  // 全 input/textarea/button change で progress 更新
+  box.querySelectorAll('input, textarea, button').forEach(el => {
+    el.addEventListener('change', _updateProgressBar);
+    if (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && el.type === 'text')) {
+      el.addEventListener('input', _updateProgressBar);
+    }
+    if (el.classList && el.classList.contains('ee-choice-btn')) {
+      el.addEventListener('click', _updateProgressBar);
+    }
   });
 
   // 🆕 2026-05-13: 写真アップロード handlers (記述式 essay/translation/speaking 用)
@@ -1718,7 +1790,50 @@ async function submitAnswers() {
     }
   } catch (e) {
     console.error(e);
-    alert('採点中にエラーが発生しました: ' + (e.message || e));
+    // 🎯 2026-05-13 教育アプリ UX: エラー時に塾長 LINE 連絡 CTA + 応援メッセージ
+    // 単なる alert ではなく、生徒が「諦めずに次に進める」UX
+    const errMsg = (e && (e.message || String(e))) || '不明なエラー';
+    // フレンドリーな error message を box 内に表示
+    const box = document.getElementById('questionBox');
+    if (box) {
+      const errBanner = document.createElement('div');
+      errBanner.style.cssText = 'margin: 1rem 0; padding: 1.2rem; background: rgba(245,158,11,0.10); border: 1px solid rgba(245,158,11,0.40); border-radius: 12px; color: #fde68a;';
+      errBanner.innerHTML = `
+        <div style="font-size:1.05rem; font-weight:800; color:#fbbf24; margin-bottom:0.5rem;">⚠️ 採点処理が止まってしまいました</div>
+        <p style="margin:0.5rem 0; font-size:0.88rem; line-height:1.6;">
+          一時的なエラーのようです。あなたの回答自体は問題なく入力できています。<br>
+          以下のいずれかで再開してください:
+        </p>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin:0.8rem 0;">
+          <button id="ee-retry-submit" style="padding:0.7rem 1.1rem; background:linear-gradient(135deg,#6366f1,#8b5cf6); border:0; border-radius:8px; color:#fff; font-weight:700; cursor:pointer; min-height:44px;">🔄 もう一度採点する</button>
+          <button id="ee-back-top" style="padding:0.7rem 1.1rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.20); border-radius:8px; color:#a1a1aa; font-weight:700; cursor:pointer; min-height:44px;">← 一覧に戻る</button>
+        </div>
+        <details style="margin-top:0.7rem; font-size:0.82rem; color:#a1a1aa;">
+          <summary style="cursor:pointer; color:#fbbf24;">⚙️ エラー詳細 (塾長に共有用)</summary>
+          <code style="display:block; margin-top:0.4rem; padding:0.5rem; background:rgba(0,0,0,0.3); border-radius:6px; font-size:0.78rem; word-break:break-all;">${escapeHtml(errMsg)}</code>
+          <div style="margin-top:0.5rem;">💬 解決しない場合は <strong>塾長 LINE</strong> にこの詳細を貼り付けてご連絡ください。</div>
+        </details>
+        <p style="margin:0.8rem 0 0; font-size:0.85rem; color:#86efac; text-align:center;">
+          💪 採点が動かなくても、あなたの今日の頑張りは記録に残っています。次の問題に進みましょう!
+        </p>
+      `;
+      box.prepend(errBanner);
+      // 「もう一度」ボタン
+      const retryBtn = document.getElementById('ee-retry-submit');
+      if (retryBtn) retryBtn.addEventListener('click', () => {
+        errBanner.remove();
+        document.getElementById('submitAnswersBtn').click();
+      });
+      const backBtn = document.getElementById('ee-back-top');
+      if (backBtn) backBtn.addEventListener('click', () => {
+        document.getElementById('examRunnerSection').style.display = 'none';
+        document.getElementById('examPickSection').style.display = '';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    } else {
+      // box が存在しないなら fallback alert
+      alert('採点中にエラーが発生しました: ' + errMsg + '\n\n塾長 LINE までご連絡ください。');
+    }
     document.getElementById('submitAnswersBtn').disabled = false;
     document.getElementById('submitAnswersBtn').textContent = '📤 回答を提出して採点';
     return;
@@ -1915,8 +2030,40 @@ function showResult(exam, section, result) {
   const examScoreMax = exam.scoreMax || section.scoreMax || 30;
   const sectionScoreMaxSafe = section.scoreMax || 30;
   const percent = Math.round((result.overallScore / examScoreMax) * 100);
+
+  // 🎯 2026-05-13 教育アプリ UX: 一言評価 + 大アイコン (Duolingo 流)
+  // ユーザーが結果画面を見た瞬間に「自分の状態」が分かる
+  let bigIcon, summaryText, summaryColor, summaryBg;
+  if (percent >= 80) {
+    bigIcon = '🏆';
+    summaryText = 'お見事!合格圏内の高得点です';
+    summaryColor = '#10b981';
+    summaryBg = 'rgba(16,185,129,0.10)';
+  } else if (percent >= 60) {
+    bigIcon = '👍';
+    summaryText = '良いペース!あと少しで合格圏内';
+    summaryColor = '#3b82f6';
+    summaryBg = 'rgba(59,130,246,0.10)';
+  } else if (percent >= 40) {
+    bigIcon = '💪';
+    summaryText = '基礎は固まっています。重点復習で伸びます';
+    summaryColor = '#f59e0b';
+    summaryBg = 'rgba(245,158,11,0.10)';
+  } else {
+    bigIcon = '🌱';
+    summaryText = '基礎から積み上げよう。1問ずつ着実に';
+    summaryColor = '#a78bfa';
+    summaryBg = 'rgba(167,139,250,0.10)';
+  }
+
   document.getElementById('resultScoreHero').innerHTML = `
     <div class="result-hero-inner" style="border-color:${exam.color}">
+      <!-- 🎯 大アイコン + 一言評価 (一目で「できた/できなかった」が分かる) -->
+      <div style="text-align:center; padding:1.2rem 1rem; margin-bottom:1rem; background:${summaryBg}; border-radius:14px; border:1px solid ${summaryColor}55;">
+        <div style="font-size:3.5rem; line-height:1; margin-bottom:0.4rem;">${bigIcon}</div>
+        <div style="font-size:1.05rem; color:${summaryColor}; font-weight:800; line-height:1.4;">${summaryText}</div>
+      </div>
+
       <div class="result-hero-flag">${exam.flag}</div>
       <div class="result-hero-exam">${exam.name}</div>
       <div class="result-hero-score" style="color:${exam.color}">
