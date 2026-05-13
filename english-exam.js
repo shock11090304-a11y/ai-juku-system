@@ -559,13 +559,30 @@ function updateModeBadge() {
 // ==========================================================================
 // Claude API 呼び出し (JSON出力強制)
 // ==========================================================================
-async function callClaudeJson({ system, user, model = MODEL_DEFAULT, maxTokens = 4000 }) {
+async function callClaudeJson({ system, user, model = MODEL_DEFAULT, maxTokens = 4000, images = null }) {
   // 1) 生徒ログイン済みなら backend proxy 経由 (生徒ブラウザにキー不要・本番Live)
   // 2) フォールバック: localStorage に APIキーがあれば従来の直接呼び出し (CEO/管理者用)
   const sessionToken = localStorage.getItem('ai_juku_session_token')
     || localStorage.getItem('ai_juku_admin_token');
   const backend = (window.location.hostname === 'localhost' && window.location.port === '8090')
     ? 'http://localhost:8000' : window.location.origin;
+
+  // 🆕 2026-05-13: 写真採点対応 - images があれば Anthropic content array に image block を追加
+  // images: [{ media_type: 'image/jpeg', data: 'base64...', label: 'Q1' }, ...]
+  let content;
+  if (Array.isArray(images) && images.length > 0) {
+    content = [];
+    images.forEach(img => {
+      if (img.label) content.push({ type: 'text', text: `--- ${img.label} (写真で提出された答案) ---` });
+      content.push({
+        type: 'image',
+        source: { type: 'base64', media_type: img.media_type, data: img.data },
+      });
+    });
+    content.push({ type: 'text', text: user });
+  } else {
+    content = user;
+  }
 
   let data;
   if (sessionToken) {
@@ -580,7 +597,7 @@ async function callClaudeJson({ system, user, model = MODEL_DEFAULT, maxTokens =
         model,
         max_tokens: maxTokens,
         system,
-        messages: [{ role: 'user', content: user }],
+        messages: [{ role: 'user', content: content }],
       }),
     });
     if (!res.ok) {
@@ -604,7 +621,7 @@ async function callClaudeJson({ system, user, model = MODEL_DEFAULT, maxTokens =
         model,
         max_tokens: maxTokens,
         system,
-        messages: [{ role: 'user', content: user }],
+        messages: [{ role: 'user', content: content }],
       }),
     });
     if (!res.ok) {
@@ -644,6 +661,99 @@ function bindExamCards() {
   });
 }
 
+// 🎯 2026-05-13: daigaku/rikei 用 select-based grade picker
+// 30+ 大学を category 別 optgroup でまとめる + select change で即遷移
+function _renderGradeSelect(grid, examId, items) {
+  // カテゴリ分類
+  const categorize = (k) => {
+    if (examId === 'daigaku') {
+      if (['todai', 'kyodai', 'osaka', 'tokoda', 'hitotsu', 'nagoya', 'hokudai', 'tohoku', 'kyushu', 'kobe', 'yokokoku', 'chiba', 'tsukuba'].includes(k)) return { cat: '国公立', order: 1 };
+      if (['igakubu_kokoritsu', 'igakubu_shiritsu'].includes(k)) return { cat: '医学部', order: 4 };
+      if (k === 'kyotsu' || k === 'center') return { cat: '共通テスト・センター', order: 0 };
+      return { cat: '私立', order: 2 };
+    } else if (examId === 'rikei') {
+      if (k === 'kyotsu_rikei') return { cat: '共通テスト・センター', order: 0 };
+      if (['todai_rikei', 'kyodai_rikei', 'osaka_rikei', 'tokoda_rikei', 'nagoya_rikei'].includes(k)) return { cat: '国公立', order: 1 };
+      if (['igakubu_kokoritsu_rikei', 'igakubu_shiritsu_rikei'].includes(k)) return { cat: '医学部', order: 4 };
+      if (k === 'march_rikei') return { cat: '私立 (MARCH 等)', order: 3 };
+      return { cat: '私立', order: 2 };
+    }
+    return { cat: 'その他', order: 99 };
+  };
+  // group by category
+  const groups = {};
+  items.forEach(g => {
+    const cat = categorize(g.key);
+    if (!groups[cat.cat]) groups[cat.cat] = { order: cat.order, items: [] };
+    groups[cat.cat].items.push(g);
+  });
+  const sortedCats = Object.keys(groups).sort((a, b) => groups[a].order - groups[b].order);
+
+  // build select
+  const wrapper = document.createElement('div');
+  wrapper.className = 'grade-select-wrapper';
+  wrapper.style.cssText = 'max-width: 640px; margin: 1.5rem auto; padding: 0 1rem;';
+  const label = examId === 'daigaku' ? '🎓 受験する大学/試験を選択' : '🔬 大学/レベルを選択';
+  wrapper.innerHTML = `
+    <label style="display:block; font-size:1rem; color:#a78bfa; font-weight:700; margin-bottom:0.6rem;">${label}</label>
+    <select id="gradeSelectPulldown" style="
+      width: 100%;
+      padding: 0.9rem 1rem;
+      background: rgba(0,0,0,0.4);
+      border: 2px solid rgba(167,139,250,0.5);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      appearance: auto;
+      -webkit-appearance: menulist;
+    ">
+      <option value="">-- 選んでください --</option>
+      ${sortedCats.map(catName => {
+        const grp = groups[catName];
+        return `<optgroup label="${escapeHtml(catName)} (${grp.items.length}校)" style="background:#1f2937; color:#fbbf24;">
+          ${grp.items.map(g => `<option value="${escapeHtml(g.key)}" style="background:#0f172a; color:#fff;">${escapeHtml(g.name)}${g.target ? ' — ' + escapeHtml(g.target) : ''}</option>`).join('')}
+        </optgroup>`;
+      }).join('')}
+    </select>
+    <p style="margin-top: 0.6rem; font-size: 0.82rem; color: #94a3b8; line-height: 1.55;">
+      💡 ${examId === 'daigaku' ? '志望大学の出題傾向に完全準拠した問題で演習できます。共通テスト・センター試験 (2005年〜) も網羅。' : '大学ごとの数学/物理/化学/生物の出題傾向に準拠。図/数式 (LaTeX) 対応。'}
+    </p>
+    <div id="gradeSelectInfo" style="margin-top: 1rem; padding: 1rem; background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.20); border-radius: 10px; display: none;">
+      <div id="gradeSelectInfoName" style="font-size:1.05rem; color:#fbbf24; font-weight:800; margin-bottom:0.3rem;"></div>
+      <div id="gradeSelectInfoTarget" style="font-size:0.88rem; color:#cbd5e1; margin-bottom:0.4rem;"></div>
+      <div id="gradeSelectInfoCefr" style="font-size:0.85rem; color:#94a3b8;"></div>
+    </div>
+  `;
+  grid.appendChild(wrapper);
+
+  const sel = document.getElementById('gradeSelectPulldown');
+  const info = document.getElementById('gradeSelectInfo');
+  const infoName = document.getElementById('gradeSelectInfoName');
+  const infoTarget = document.getElementById('gradeSelectInfoTarget');
+  const infoCefr = document.getElementById('gradeSelectInfoCefr');
+
+  sel.addEventListener('change', () => {
+    const key = sel.value;
+    if (!key) {
+      info.style.display = 'none';
+      return;
+    }
+    const g = items.find(x => x.key === key);
+    if (!g) return;
+    // 選択した大学の info を表示
+    if (info) info.style.display = '';
+    if (infoName) infoName.textContent = g.name;
+    if (infoTarget) infoTarget.textContent = g.target ? '🎯 ' + g.target : '';
+    if (infoCefr) infoCefr.textContent = g.cefr ? 'CEFR ' + g.cefr + ' 相当' : '';
+    // state 更新 + pickExamSections へ自動遷移 (300ms 遅延でアニメーション表示)
+    state.eikenGrade = g.key;
+    state.eikenGradeName = g.name;
+    setTimeout(() => pickExamSections(examId), 250);
+  });
+}
+
 function showGradePicker(examId = 'eiken') {
   document.getElementById('examPickSection').style.display = 'none';
   document.getElementById('examDetailSection').style.display = 'none';
@@ -672,6 +782,16 @@ function showGradePicker(examId = 'eiken') {
   const grid = document.getElementById('gradeGrid');
   grid.innerHTML = '';
   const items = exam.grades || EXAMS.eiken.grades;
+
+  // 🎯 2026-05-13 塾長指示「もっと選択しやすいプルダウン式」:
+  // daigaku (30+ 大学) / rikei (11 大学) はカテゴリ別 optgroup の select に切替。
+  // 英検 (12 級) はカード式のままにする (適切な数 + 視覚的に魅力的)。
+  if (examId === 'daigaku' || examId === 'rikei') {
+    _renderGradeSelect(grid, examId, items);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+
   items.forEach(g => {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -1372,7 +1492,30 @@ function renderQuestions() {
     } else if (q.type === 'short_answer') {
       html += `<input type="text" class="ee-text-input" name="${q.id}" placeholder="回答を入力">`;
     } else {
-      html += `<textarea class="ee-textarea" name="${q.id}" rows="6" placeholder="${q.type === 'speaking' ? '口頭で話す内容を文字に書き起こしてください' : 'エッセイをここに書いてください'}"></textarea>`;
+      // 🆕 2026-05-13: 記述式 (essay/speaking/translation) に写真アップロード機能追加
+      // 紙に書いた答えを撮影 → AI が OCR + 採点 (textarea/photo どちらでも OK)
+      html += `<div class="ee-answer-tabs" data-qid="${q.id}" style="display:flex; gap:0.4rem; margin-bottom:0.5rem;">
+        <button type="button" class="ee-tab-btn ee-tab-active" data-mode="text" data-qid="${q.id}" style="padding:0.45rem 0.9rem; border-radius:8px; background:rgba(167,139,250,0.20); border:1px solid rgba(167,139,250,0.5); color:#fff; font-weight:700; font-size:0.85rem; cursor:pointer;">📝 テキストで入力</button>
+        <button type="button" class="ee-tab-btn" data-mode="photo" data-qid="${q.id}" style="padding:0.45rem 0.9rem; border-radius:8px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15); color:#a1a1aa; font-weight:700; font-size:0.85rem; cursor:pointer;">📷 写真で提出</button>
+      </div>
+      <div class="ee-answer-text" data-qid="${q.id}">
+        <textarea class="ee-textarea" name="${q.id}" rows="6" placeholder="${q.type === 'speaking' ? '口頭で話す内容を文字に書き起こしてください' : 'エッセイをここに書いてください'}"></textarea>
+      </div>
+      <div class="ee-answer-photo" data-qid="${q.id}" style="display:none;">
+        <label class="ee-photo-drop" for="ee-photo-${q.id}" style="display:block; border:2px dashed rgba(167,139,250,0.4); border-radius:12px; padding:1.5rem 1rem; text-align:center; cursor:pointer; background:rgba(99,102,241,0.04); transition: all 0.2s;">
+          <div style="font-size:2.2rem; margin-bottom:0.4rem;">📷</div>
+          <div style="color:#a78bfa; font-weight:700; font-size:0.95rem; margin-bottom:0.3rem;">紙に書いた答えを撮影してアップロード</div>
+          <div style="color:#94a3b8; font-size:0.78rem; line-height:1.5;">JPG / PNG / HEIC 対応・最大 10MB<br>AI が OCR + 採点します (テキスト入力と同じ結果)</div>
+          <input type="file" id="ee-photo-${q.id}" data-qid="${q.id}" accept="image/*" capture="environment" style="display:none;">
+        </label>
+        <div class="ee-photo-preview" data-qid="${q.id}" style="display:none; margin-top:0.6rem;">
+          <img class="ee-photo-img" data-qid="${q.id}" alt="アップロードした答案" style="max-width:100%; max-height:300px; border-radius:8px; border:1px solid rgba(255,255,255,0.15);">
+          <div style="display:flex; gap:0.5rem; align-items:center; margin-top:0.4rem; flex-wrap:wrap;">
+            <span class="ee-photo-status" data-qid="${q.id}" style="font-size:0.82rem; color:#86efac;">✅ 撮影完了 (採点時に AI が読み取ります)</span>
+            <button type="button" class="ee-photo-remove" data-qid="${q.id}" style="padding:0.3rem 0.7rem; background:rgba(248,113,113,0.15); border:1px solid rgba(248,113,113,0.4); border-radius:6px; color:#fca5a5; font-size:0.78rem; cursor:pointer;">🗑 削除</button>
+          </div>
+        </div>
+      </div>`;
     }
     html += '</div>';
   });
@@ -1430,6 +1573,84 @@ function renderQuestions() {
     inputs.forEach(inp => {
       inp.addEventListener('change', () => { state.userAnswers[q.id] = inp.value; });
       inp.addEventListener('input', () => { state.userAnswers[q.id] = inp.value; });
+    });
+  });
+
+  // 🆕 2026-05-13: 写真アップロード handlers (記述式 essay/translation/speaking 用)
+  if (!state.userAnswerPhotos) state.userAnswerPhotos = {};
+
+  // タブ切替 (テキスト ⇄ 写真)
+  box.querySelectorAll('.ee-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qid = btn.dataset.qid;
+      const mode = btn.dataset.mode;
+      // タブのアクティブ状態切替
+      box.querySelectorAll(`.ee-tab-btn[data-qid="${qid}"]`).forEach(b => {
+        const isActive = b.dataset.mode === mode;
+        b.classList.toggle('ee-tab-active', isActive);
+        b.style.background = isActive ? 'rgba(167,139,250,0.20)' : 'rgba(0,0,0,0.3)';
+        b.style.borderColor = isActive ? 'rgba(167,139,250,0.5)' : 'rgba(255,255,255,0.15)';
+        b.style.color = isActive ? '#fff' : '#a1a1aa';
+      });
+      // 表示切替
+      const textPanel = box.querySelector(`.ee-answer-text[data-qid="${qid}"]`);
+      const photoPanel = box.querySelector(`.ee-answer-photo[data-qid="${qid}"]`);
+      if (textPanel) textPanel.style.display = mode === 'text' ? '' : 'none';
+      if (photoPanel) photoPanel.style.display = mode === 'photo' ? '' : 'none';
+    });
+  });
+
+  // 写真 file input handler
+  box.querySelectorAll('input[type="file"][id^="ee-photo-"]').forEach(input => {
+    input.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const qid = input.dataset.qid;
+      // サイズ check (10 MB 上限)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('画像が大きすぎます (最大 10MB)。別の写真でお試しください。');
+        return;
+      }
+      // base64 化
+      try {
+        const dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        });
+        state.userAnswerPhotos[qid] = {
+          dataUrl: dataUrl,
+          mimeType: file.type || 'image/jpeg',
+          fileName: file.name || 'answer.jpg',
+          sizeKb: Math.round(file.size / 1024),
+        };
+        // preview 表示
+        const preview = box.querySelector(`.ee-photo-preview[data-qid="${qid}"]`);
+        const img = box.querySelector(`.ee-photo-img[data-qid="${qid}"]`);
+        if (img) img.src = dataUrl;
+        if (preview) preview.style.display = '';
+        // userAnswers に「写真で提出」マーカーを入れる (空欄判定回避)
+        state.userAnswers[qid] = '[📷 写真で提出済み]';
+      } catch (err) {
+        console.error('photo read failed:', err);
+        alert('写真の読み込みに失敗しました: ' + (err.message || err));
+      }
+    });
+  });
+
+  // 写真 削除
+  box.querySelectorAll('.ee-photo-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const qid = btn.dataset.qid;
+      delete state.userAnswerPhotos[qid];
+      const input = box.querySelector(`input[type="file"][id="ee-photo-${qid}"]`);
+      if (input) input.value = '';
+      const preview = box.querySelector(`.ee-photo-preview[data-qid="${qid}"]`);
+      if (preview) preview.style.display = 'none';
+      if (state.userAnswers[qid] === '[📷 写真で提出済み]') {
+        delete state.userAnswers[qid];
+      }
     });
   });
 
@@ -1549,12 +1770,19 @@ async function scoreWithClaude(exam, section) {
     sectionScoreMax,
     multiple_choice_correct: mcScore,
     multiple_choice_total: mcTotal,
-    open_answers: perQuestion.filter(q => q.modelAnswer !== undefined).map(q => ({
-      stem: q.stem, user_answer: q.userAnswer, model_answer: q.modelAnswer
-    })),
+    open_answers: perQuestion.filter(q => q.modelAnswer !== undefined).map(q => {
+      // 🆕 写真で提出されている場合は user_answer に photo マーカー + 画像参照を明示
+      const hasPhoto = state.userAnswerPhotos && state.userAnswerPhotos[q.qid];
+      return {
+        stem: q.stem,
+        user_answer: hasPhoto ? `[📷 写真で提出 - 画像内容を OCR して採点してください]` : q.userAnswer,
+        model_answer: q.modelAnswer,
+        is_photo_answer: !!hasPhoto,
+      };
+    }),
     target_level: state.currentLevel || 'B1',
   };
-  const userMsg = `以下の受験データを採点してください:
+  let userMsg = `以下の受験データを採点してください:
 ${JSON.stringify(userPayload, null, 2)}
 
 【出力形式】純粋なJSONのみ:
@@ -1570,12 +1798,40 @@ ${JSON.stringify(userPayload, null, 2)}
   "study_plan": "今後2-4週間の学習プラン (毎日のタスクと推奨教材を具体的に・日本語)"
 }`;
 
+  // 🆕 2026-05-13: 写真採点 - userAnswerPhotos があれば画像を Claude vision に渡す
+  // photo answer のある質問: Claude が OCR + 採点する
+  let photoImages = null;
+  if (state.userAnswerPhotos && Object.keys(state.userAnswerPhotos).length > 0) {
+    photoImages = [];
+    state.questions.forEach((q, idx) => {
+      const p = state.userAnswerPhotos[q.id];
+      if (p && p.dataUrl) {
+        // dataUrl から base64 部分を抽出
+        const m = p.dataUrl.match(/^data:(image\/[a-z+]+);base64,(.+)$/);
+        if (m) {
+          photoImages.push({
+            media_type: m[1],
+            data: m[2],
+            label: `Q${idx + 1} (${q.stem ? q.stem.slice(0, 40) + '...' : ''}) の答案`,
+          });
+        }
+      }
+    });
+    if (photoImages.length > 0) {
+      // user prompt の最後に「写真の答案も含めて採点」指示を追記
+      const photoInstruction = `\n\n【🆕 写真で提出された答案 (${photoImages.length} 件)】\n上の画像 ${photoImages.length} 枚は生徒が紙に書いた答案を撮影したものです。\n各画像の冒頭ラベル (例: \"Q1 ... の答案\") で対応問題を確認し、画像内の手書き答案を OCR で読み取った上で、テキスト入力と同じ基準で採点してください。\n- 手書き文字の読み取り誤差は考慮 (致命的誤読でない限り減点しない)\n- 解答ロジック・キーワード・構成・文法を重視\n- feedback_per_open_answer の comment 冒頭に「📷 (写真から判読)」と明示`;
+      userMsg = userMsg + photoInstruction;
+    } else {
+      photoImages = null;
+    }
+  }
+
   let aiResult;
   try {
-    aiResult = await callClaudeJson({ system, user: userMsg, model: MODEL_HEAVY, maxTokens: 3500 });
+    aiResult = await callClaudeJson({ system, user: userMsg, model: MODEL_HEAVY, maxTokens: 3500, images: photoImages });
   } catch (e) {
     console.warn('[score] Heavy model failed, fallback:', e);
-    aiResult = await callClaudeJson({ system, user: userMsg, model: MODEL_DEFAULT, maxTokens: 3500 });
+    aiResult = await callClaudeJson({ system, user: userMsg, model: MODEL_DEFAULT, maxTokens: 3500, images: photoImages });
   }
 
   return {
@@ -1667,20 +1923,37 @@ function showResult(exam, section, result) {
         <span class="result-hero-num">${result.overallScore}</span>
         <span class="result-hero-unit">/ ${examScoreMax}${exam.scoreUnit || '点'}</span>
       </div>
-      <div class="result-hero-cefr">CEFR <strong>${result.cefr}</strong> 相当</div>
+      ${(['eiken','toefl','toeic','ielts'].indexOf(state.examId) >= 0) ? `<div class="result-hero-cefr">CEFR <strong>${result.cefr}</strong> 相当</div>` : ''}
       <div class="result-hero-section">${section.icon || '📝'} ${section.name || ''}: ${result.sectionScore} / ${sectionScoreMaxSafe}</div>
       ${targetScore > 0 ? `<div class="result-hero-target">🎯 目標 ${targetScore} まで <strong>${(targetScore - result.overallScore).toFixed(1)}</strong></div>` : ''}
       <div class="result-hero-bar"><div class="result-hero-bar-fill" style="width:${percent}%;background:${exam.color}"></div></div>
     </div>`;
 
-  // 4試験換算
-  const allScores = cefrToAllScores(result.cefr);
-  document.getElementById('resultConverterGrid').innerHTML = `
-    <div class="conv-card"><div class="conv-flag">🇺🇸</div><div class="conv-name">TOEFL iBT</div><div class="conv-score">${allScores.toefl}</div></div>
-    <div class="conv-card"><div class="conv-flag">💼</div><div class="conv-name">TOEIC L&R</div><div class="conv-score">${allScores.toeic}</div></div>
-    <div class="conv-card"><div class="conv-flag">🇬🇧</div><div class="conv-name">IELTS</div><div class="conv-score">${allScores.ielts}</div></div>
-    <div class="conv-card"><div class="conv-flag">🇯🇵</div><div class="conv-name">英検</div><div class="conv-score">${allScores.eiken}</div></div>
-  `;
+  // 4試験換算 (大学入試・理系科目では非表示・2026-05-13 塾長指示)
+  // 英検/TOEFL/TOEIC/IELTS は 4 試験対策の試験 (eiken/toefl/toeic/ielts) でのみ意味がある。
+  // 大学入試 (daigaku) や 理系 (rikei) では CEFR 換算は文脈不一致なので hide。
+  const converterEl = document.getElementById('resultConverter');
+  const titleEl = document.getElementById('examResultTitle');
+  const isEnglishExam = ['eiken', 'toefl', 'toeic', 'ielts'].indexOf(state.examId) >= 0;
+  if (isEnglishExam) {
+    if (converterEl) converterEl.style.display = '';
+    if (titleEl) titleEl.textContent = '🎯 採点結果 + 4試験スコア換算';
+    const allScores = cefrToAllScores(result.cefr);
+    document.getElementById('resultConverterGrid').innerHTML = `
+      <div class="conv-card"><div class="conv-flag">🇺🇸</div><div class="conv-name">TOEFL iBT</div><div class="conv-score">${allScores.toefl}</div></div>
+      <div class="conv-card"><div class="conv-flag">💼</div><div class="conv-name">TOEIC L&R</div><div class="conv-score">${allScores.toeic}</div></div>
+      <div class="conv-card"><div class="conv-flag">🇬🇧</div><div class="conv-name">IELTS</div><div class="conv-score">${allScores.ielts}</div></div>
+      <div class="conv-card"><div class="conv-flag">🇯🇵</div><div class="conv-name">英検</div><div class="conv-score">${allScores.eiken}</div></div>
+    `;
+  } else {
+    // 大学入試・理系では converter 全体を非表示・タイトルも適切に
+    if (converterEl) converterEl.style.display = 'none';
+    if (titleEl) {
+      if (state.examId === 'daigaku') titleEl.textContent = '🎯 採点結果';
+      else if (state.examId === 'rikei') titleEl.textContent = '🎯 採点結果';
+      else titleEl.textContent = '🎯 採点結果';
+    }
+  }
 
   // 強み・弱点・解説
   let fb = '<h3>🔍 強み</h3><ul>';
