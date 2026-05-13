@@ -13056,6 +13056,188 @@ def admin_issue_otp_direct(payload: dict, authorization: Optional[str] = Header(
         conn.close()
 
 
+@app.post("/api/admin/course/kokuritsu-nankan/send-url-bundle")
+def admin_send_kokuritsu_url_bundle(
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🎓 国公立難関大コース 専用URLバンドルを塾長 Gmail に 1 通でまとめて送信。
+
+    塾長指示 2026-05-13: 「AI塾の国公立難関大の子達専用のURLを僕のgmailに送って」
+    + 「全部まとめて」+ 「塾長の既知メアド (= DAILY_SNS_TO_EMAIL)」。
+
+    送信内容:
+      ① LP (新規申込/SNS 告知用): /course-kokuritsu-nankan.html
+      ② 在籍生 専用機能ページ: mypage.html (学習記録/学習計画/メッセージ)
+      ③ 在籍生一人ひとりの 24h 有効ワンクリック auto-login URL
+
+    認証: admin Bearer または X-Cron-Secret (Claude → production パイプライン用)
+    宛先: MONITORING_TO_EMAIL → DAILY_SNS_TO_EMAIL (塾長の Gmail)。env で固定済み。
+    監査ログ: events.kokuritsu_url_bundle_send (送信件数 + recipient hint + resend_id)
+    """
+    from urllib.parse import urlencode as _urlencode
+
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+        else:
+            raise HTTPException(status_code=401, detail="セッション期限切れ")
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    owner_email = (MONITORING_TO_EMAIL or os.getenv("DAILY_SNS_TO_EMAIL") or "").strip()
+    if not owner_email or "@" not in owner_email:
+        raise HTTPException(status_code=500, detail="塾長メアド未設定 (MONITORING_TO_EMAIL/DAILY_SNS_TO_EMAIL env)")
+
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(
+            """SELECT id, name, email, status, plan FROM students
+               WHERE course = ? AND status IN ('paid','trial')
+               ORDER BY status DESC, id ASC""",
+            ("kokuritsu_nankan",),
+        )
+        students_rows = c.fetchall()
+
+        OTP_TTL_24H = 86400
+        student_links = []
+        skipped_no_email = 0
+        for row in students_rows:
+            sid = int(row["id"])
+            email_addr = (row["email"] or "").strip()
+            name = row["name"] or "(名前未設定)"
+            if not email_addr or "@" not in email_addr:
+                skipped_no_email += 1
+                continue
+            try:
+                _invalidate_active_otps(sid)
+                otp_code = _create_otp(sid, ttl_seconds=OTP_TTL_24H)
+            except Exception as e:
+                log.warning(f"[KokuritsuBundle] OTP issue failed sid={sid}: {e}")
+                try: conn.rollback()
+                except Exception: pass
+                continue
+            qs = _urlencode({"email": email_addr, "code": otp_code, "skip_send": "1"})
+            login_url = f"{BASE_URL}/login.html?{qs}"
+            student_links.append({
+                "id": sid,
+                "name": name,
+                "email": email_addr,
+                "status": row["status"],
+                "plan": row["plan"] or "",
+                "login_url": login_url,
+            })
+
+        base = BASE_URL.rstrip("/")
+        lp_url = f"{base}/course-kokuritsu-nankan.html"
+        mypage_url = f"{base}/mypage.html"
+
+        if student_links:
+            rows_html = "".join([
+                "<tr>"
+                f'<td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;font-family:monospace;">#{s["id"]}</td>'
+                f'<td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;">{_html_mod.escape(s["name"])}</td>'
+                f'<td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;font-size:0.78rem;">{_html_mod.escape(s["email"])}</td>'
+                f'<td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;font-size:0.78rem;">{_html_mod.escape(s["status"] or "")}</td>'
+                f'<td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;">'
+                f'<a href="{_html_mod.escape(s["login_url"], quote=True)}" style="color:#6366f1;font-weight:700;word-break:break-all;font-size:0.78rem;">ワンクリック<br>ログイン →</a>'
+                "</td></tr>"
+                for s in student_links
+            ])
+        else:
+            rows_html = '<tr><td colspan="5" style="padding:14px;text-align:center;color:#6b7280;">在籍生 0 名 (course=\'kokuritsu_nankan\' AND status IN paid/trial)</td></tr>'
+
+        now_jst_str = (datetime.now(timezone.utc) + timedelta(hours=9)).strftime("%Y-%m-%d %H:%M JST")
+        skipped_note = f"<p style='color:#dc2626;font-size:0.82rem;'>※ メアド未登録 {skipped_no_email} 名は対象外 (口頭伝達運用)。CEO ダッシュ「🔑 OTP 緊急発行」で個別対応してください。</p>" if skipped_no_email else ""
+
+        body_html = f"""<div style="font-family:'Hiragino Sans','Yu Gothic',sans-serif;max-width:780px;margin:0 auto;color:#111827;line-height:1.6;">
+  <h1 style="background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;color:transparent;font-size:1.5rem;margin-bottom:0.3rem;">🎓 国公立難関大コース 専用URLバンドル</h1>
+  <p style="color:#6b7280;font-size:0.88rem;margin-top:0;">{now_jst_str} 時点 / 在籍生 {len(student_links)} 名分 / 塾長指示 2026-05-13</p>
+
+  <h2 style="font-size:1.05rem;border-left:4px solid #6366f1;padding-left:10px;margin-top:1.6rem;">① LP (新規申込・SNS 告知用)</h2>
+  <p style="margin-left:14px;">👉 <a href="{_html_mod.escape(lp_url, quote=True)}" style="color:#6366f1;font-weight:700;word-break:break-all;">{_html_mod.escape(lp_url)}</a></p>
+  <p style="margin-left:14px;color:#6b7280;font-size:0.85rem;">国公立難関大コース 申込 LP。Threads / X / Instagram の DM・プロフィール url に貼り付け可。</p>
+
+  <h2 style="font-size:1.05rem;border-left:4px solid #6366f1;padding-left:10px;margin-top:1.6rem;">② 在籍生 専用機能ページ</h2>
+  <ul style="margin-left:14px;padding-left:1.2rem;">
+    <li>📋 マイページ (ログイン後ハブ): <a href="{_html_mod.escape(mypage_url, quote=True)}" style="color:#6366f1;">{_html_mod.escape(mypage_url)}</a></li>
+    <li>📚 学習記録 (Studyplus 代替・Phase 1)</li>
+    <li>📅 学習計画 (Phase 2)</li>
+    <li>💬 塾長↔生徒 メッセージ送信フォーム (Phase 3・kokuritsu_nankan 限定表示)</li>
+    <li>📷 AI チューター 3 AI 写真/PDF 完璧解答</li>
+    <li>🎯 弱点 TOP3 個別推薦</li>
+  </ul>
+  <p style="margin-left:14px;color:#6b7280;font-size:0.85rem;">※ 学習記録/計画/メッセージは mypage.html 内のセクション (kokuritsu_nankan の生徒のみ JS で表示制御)。下記 ③ のワンクリック URL からログインすれば全機能利用可。</p>
+
+  <h2 style="font-size:1.05rem;border-left:4px solid #6366f1;padding-left:10px;margin-top:1.6rem;">③ 在籍生 ワンクリック ログイン URL (24 時間有効)</h2>
+  <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin:0.6rem 0 1rem;">
+    <p style="margin:0;color:#dc2626;font-size:0.85rem;font-weight:700;">⚠️ セキュリティ注意</p>
+    <p style="margin:6px 0 0;color:#7f1d1d;font-size:0.82rem;">このリンクをクリック/転送すると即時 auto-login されます。<br>
+      ・LINE 等で <strong>各生徒本人にだけ</strong> 転送してください。<br>
+      ・Gmail 受信ボックスに放置しないこと推奨 (使用後はアーカイブ/削除)。<br>
+      ・24h で失効。失効後は再度この endpoint を叩いて発行し直してください。</p>
+  </div>
+  <table style="border-collapse:collapse;width:100%;font-size:0.85rem;">
+    <thead><tr style="background:#f3f4f6;">
+      <th style="padding:8px 10px;text-align:left;">ID</th>
+      <th style="padding:8px 10px;text-align:left;">名前</th>
+      <th style="padding:8px 10px;text-align:left;">メアド</th>
+      <th style="padding:8px 10px;text-align:left;">状態</th>
+      <th style="padding:8px 10px;text-align:left;">ワンクリック URL</th>
+    </tr></thead>
+    <tbody>{rows_html}</tbody>
+  </table>
+  {skipped_note}
+
+  <hr style="margin:2rem 0;border:none;border-top:1px solid #e5e7eb;">
+  <p style="font-size:0.78rem;color:#6b7280;">events.kokuritsu_url_bundle_send で送信ログ記録済 / 再送は `POST /api/admin/course/kokuritsu-nankan/send-url-bundle` (CRON_SECRET 経由)</p>
+</div>"""
+
+        subject = f"🎓 国公立難関大コース 専用URLバンドル ({len(student_links)} 名分・24h 有効)"
+        send_result = _send_monitor_email(subject=subject, body_html=body_html, to_email=owner_email)
+
+        try:
+            domain_part = owner_email.split("@", 1)[1] if "@" in owner_email else ""
+            recipient_hint = (owner_email[:3] + "***@" + domain_part) if domain_part else "***"
+            c.execute(
+                "INSERT INTO events (name, props, created_at) VALUES (?, ?, ?)",
+                (
+                    "kokuritsu_url_bundle_send",
+                    json.dumps({
+                        "student_count": len(student_links),
+                        "skipped_no_email": skipped_no_email,
+                        "recipient_hint": recipient_hint,
+                        "sent": bool(send_result.get("sent")),
+                        "resend_id": send_result.get("resend_id"),
+                    }, ensure_ascii=False),
+                    datetime.now(timezone.utc),
+                ),
+            )
+            conn.commit()
+        except Exception:
+            try: conn.rollback()
+            except Exception: pass
+
+        return {
+            "ok": True,
+            "sent": bool(send_result.get("sent")),
+            "recipient_hint": recipient_hint,
+            "student_count": len(student_links),
+            "skipped_no_email": skipped_no_email,
+            "lp_url": lp_url,
+            "mypage_url": mypage_url,
+            "resend_id": send_result.get("resend_id"),
+            "error": send_result.get("error"),
+        }
+    finally:
+        conn.close()
+
+
 @app.post("/api/admin/login-as-student")
 def admin_login_as_student(payload: dict, authorization: Optional[str] = Header(None)):
     """🔐 塾長が生徒として直接ログインする (magic link 不要の admin 迂回)。
@@ -15592,6 +15774,68 @@ def admin_email_send_custom(
         return {"sent": False, "error": f"HTTP {e.code}: {err_body}", "to": to_email}
     except Exception as e:
         return {"sent": False, "error": f"{type(e).__name__}: {str(e)[:200]}", "to": to_email}
+
+
+@app.post("/api/admin/email/send-to-owner")
+def admin_email_send_to_owner(
+    payload: dict,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🔑 塾長 (owner) 自身に subject/body を送信。宛先は MONITORING_TO_EMAIL env から自動解決。
+    payload: { subject: str, body: str, is_html: bool=False }
+    認証: admin Bearer または X-Cron-Secret"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    subject = (payload.get("subject") or "").strip()
+    body = payload.get("body") or ""
+    is_html = bool(payload.get("is_html", False))
+    if not subject:
+        raise HTTPException(status_code=400, detail="subject が必要です")
+    if not body:
+        raise HTTPException(status_code=400, detail="body が必要です")
+
+    owner_email = (MONITORING_TO_EMAIL or os.getenv("DAILY_SNS_TO_EMAIL") or "").strip()
+    if not owner_email or "@" not in owner_email:
+        raise HTTPException(status_code=500, detail="塾長メアド未設定 (MONITORING_TO_EMAIL/DAILY_SNS_TO_EMAIL env)")
+
+    import urllib.request, urllib.error
+    if not RESEND_API_KEY:
+        return {"sent": False, "error": "RESEND_API_KEY 未設定"}
+    email_body = {"from": FROM_EMAIL, "to": [owner_email], "subject": subject}
+    if is_html:
+        email_body["html"] = body
+    else:
+        email_body["text"] = body
+    try:
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps(email_body).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json",
+                "User-Agent": "ai-juku-system/1.0",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            res_body = json.loads(resp.read().decode())
+            # PII 防御: 宛先は伏字 (先頭 3 文字 + 末尾ドメイン) で返却
+            masked = owner_email[:3] + "***@" + (owner_email.split("@", 1)[1] if "@" in owner_email else "***")
+            return {"sent": True, "resend_id": res_body.get("id"), "to_masked": masked, "subject": subject}
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode("utf-8", errors="replace")[:300]
+        return {"sent": False, "error": f"HTTPError {e.code}: {err_body}"}
+    except Exception as e:
+        return {"sent": False, "error": f"{type(e).__name__}: {str(e)[:200]}"}
 
 
 @app.post("/api/admin/monitor/synthetic-checkout-now")
