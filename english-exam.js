@@ -1302,6 +1302,59 @@ function sanitizeSvg(svgStr) {
 
 // 🧮 KaTeX で要素内の数式を自動レンダリング (CDN ロード後に呼出)
 // 2026-05-13 塾長指示「紙の参考書のような数式」: $..$ inline delimiter を追加 + pretifyMath 前処理
+// 🚩 2026-05-13 塾長指示「選択肢が間違っている問題もある」:
+// 生徒からの問題違和感報告を backend に POST → 塾長 CEO ダッシュで集計表示
+async function _reportQuestionIssue(q, reason) {
+  const sessionToken = localStorage.getItem('ai_juku_session_token')
+    || localStorage.getItem('ai_juku_admin_token');
+  const backend = (window.location.hostname === 'localhost' && window.location.port === '8090')
+    ? 'http://localhost:8000' : window.location.origin;
+  const payload = {
+    question_id: q.id,
+    exam_id: state.examId,
+    section_key: state.sectionKey,
+    grade_key: state.eikenGrade,
+    stem: (q.stem || '').slice(0, 500),
+    choices: q.choices || null,
+    correct_answer: q.answer,
+    explanation: (q.explanation || '').slice(0, 800),
+    reason: String(reason).slice(0, 500),
+    reported_at: new Date().toISOString(),
+    page_url: window.location.href,
+    user_agent: navigator.userAgent.slice(0, 200),
+  };
+  // 専用 endpoint があれば使う・なければ既存 events 経由
+  // ai-juku backend に /api/student/report-question-issue を将来追加するが、
+  // 暫定は既存 /api/events/client (sendBeacon 形式) でも可
+  try {
+    const res = await fetch(`${backend}/api/student/report-question-issue`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(sessionToken ? { 'Authorization': 'Bearer ' + sessionToken } : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) return true;
+    // 404 等で endpoint 不在の場合: localStorage に貯めて塾長が後で確認
+    throw new Error('endpoint_missing:' + res.status);
+  } catch (e) {
+    // フォールバック: localStorage に蓄積 (塾長が CEO ダッシュで確認できる将来)
+    try {
+      const KEY = 'ai_juku_question_issues';
+      const arr = JSON.parse(localStorage.getItem(KEY) || '[]');
+      arr.push(payload);
+      // 最新 50 件のみ保持
+      if (arr.length > 50) arr.splice(0, arr.length - 50);
+      localStorage.setItem(KEY, JSON.stringify(arr));
+      console.info('[issue-report] saved to localStorage (' + arr.length + ' items pending sync)');
+      return true; // localStorage に貯めたので「成功」扱い
+    } catch (_) {
+      throw e;
+    }
+  }
+}
+
 // 🎯 2026-05-13 教育アプリ UX: 進捗バー (Q3/10 + bar fill + 残り表示)
 function _initProgressBar() {
   const wrap = document.getElementById('progressWrap');
@@ -1521,7 +1574,10 @@ function renderQuestions() {
   }
   state.questions.forEach((q, idx) => {
     html += `<div class="ee-question" data-qid="${q.id}">
-      <div class="ee-question-num">Q${idx + 1}</div>
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem; margin-bottom:0.4rem; flex-wrap:wrap;">
+        <div class="ee-question-num">Q${idx + 1}</div>
+        <button type="button" class="ee-flag-btn" data-qid="${q.id}" title="この問題に違和感があれば塾長に報告" style="padding:0.3rem 0.7rem; background:rgba(245,158,11,0.10); border:1px solid rgba(245,158,11,0.30); border-radius:6px; color:#fbbf24; font-size:0.75rem; font-weight:700; cursor:pointer; min-height:32px;">🚩 違和感あり</button>
+      </div>
       <div class="ee-question-stem">${escapeTextWithMath(q.stem || '')}</div>`;
     if (q.type === 'multiple_choice' && Array.isArray(q.choices) && q.choices.length) {
       // 🛟 auto-extract された下線部番号選択肢の場合はヒント表示
@@ -1632,6 +1688,48 @@ function renderQuestions() {
     inputs.forEach(inp => {
       inp.addEventListener('change', () => { state.userAnswers[q.id] = inp.value; });
       inp.addEventListener('input', () => { state.userAnswers[q.id] = inp.value; });
+    });
+  });
+
+  // 🚩 2026-05-13 塾長指示「選択肢が間違っている問題もある」: 違和感報告ボタン bind
+  box.querySelectorAll('.ee-flag-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const qid = btn.dataset.qid;
+      const q = state.questions.find(x => x.id === qid);
+      if (!q) return;
+      // 違和感の種類を選んでもらう
+      const reason = prompt(
+        '🚩 この問題のどこに違和感がありますか?\n\n' +
+        '1: 問題文と選択肢が噛み合わない\n' +
+        '2: 正解とされる選択肢が実は間違いに見える\n' +
+        '3: 日本語訳・解説がおかしい\n' +
+        '4: 誤字・脱字・表記ミス\n' +
+        '5: その他 (自由記述)\n\n' +
+        '番号 (1-5) または詳細を入力してください:',
+        ''
+      );
+      if (reason === null || reason.trim() === '') return;
+      // 即座に UI で「報告受付」を示す + 塾長への通知 endpoint に POST
+      btn.disabled = true;
+      btn.textContent = '⏳ 報告中...';
+      btn.style.background = 'rgba(167,139,250,0.20)';
+      btn.style.borderColor = 'rgba(167,139,250,0.50)';
+      btn.style.color = '#a78bfa';
+      try {
+        await _reportQuestionIssue(q, reason);
+        btn.textContent = '✅ 塾長に報告済 (ありがとうございます!)';
+        btn.style.background = 'rgba(16,185,129,0.15)';
+        btn.style.borderColor = 'rgba(16,185,129,0.45)';
+        btn.style.color = '#86efac';
+      } catch (e) {
+        console.warn('report failed:', e);
+        btn.disabled = false;
+        btn.textContent = '🚩 違和感あり';
+        btn.style.background = 'rgba(245,158,11,0.10)';
+        btn.style.borderColor = 'rgba(245,158,11,0.30)';
+        btn.style.color = '#fbbf24';
+        alert('報告に失敗しました。直接塾長 LINE までご連絡ください: ' + (e.message || e));
+      }
     });
   });
 

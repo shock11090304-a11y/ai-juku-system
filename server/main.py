@@ -7139,7 +7139,32 @@ explanation フィールドは Markdown で **以下4セクションを必ず明
   - 下線部誤り選択 (①②③④ を本文中にインライン挿入する形式) の場合: ["①", "②", "③", "④"]
   - 空欄補充: ["where", "that", "which", "when"] のように単語/句で
 - **choices: [] (空配列) を返すのは絶対禁止**。テキスト記述式の問題なら type を "short_answer" にすること。
-- 「下線部の番号は問題文中にあるから choices は要らない」は誤り。フロントは choices を見てボタン描画する。"""
+- 「下線部の番号は問題文中にあるから choices は要らない」は誤り。フロントは choices を見てボタン描画する。
+
+【🚨 問題と選択肢の整合性 self-check (2026-05-13 致命バグ対応・絶対遵守)】
+塾長報告「選択肢が間違っている問題もある」の致命傷を防ぐため、出力前に下記を必ず self-verify:
+
+**整合性チェックリスト** (全て YES でないと不良問題):
+✅ check-1: 「stem (問題文)」で問うていることと、「answer (正解)」が論理的に対応しているか?
+✅ check-2: 「正解の選択肢の中身」が、その問題の答えとして実際に正しいか?
+✅ check-3: 「choices」に **本当の正解そのもの** が含まれているか?
+   (例: 「3 番目と 6 番目の語を選べ」と問うなら、正解の組合せが選択肢にあるか)
+✅ check-4: 「explanation」で「正解は X だが選択肢にないので Y を選ぶ」のような
+   苦しい言い訳をしていないか? (= これは出題自体のミスのサイン)
+✅ check-5: 答えの順番・組合せ・形式が選択肢の形式と完全一致しているか?
+   (例: 選択肢が ["A","B","C","D"] なら answer は "0"〜"3" の文字列 or A〜D の英字)
+
+**もし check-1〜5 のいずれかに違和感を感じたら、出力前に問題全体を作り直す**:
+- 選択肢を 正解 + 3 つの自然な誤答に組み直す
+- stem と choices と answer の三者が完全整合する状態にする
+- explanation で「正解は X だが選択肢に無い」のような言い訳を絶対書かない
+
+**禁止例 (2026-05-13 実際に塾長から報告された不良問題)**:
+❌ stem「3 番目と 6 番目の語を選べ」、choices=[B.long/we, C.been/last, D.it/since]、
+   answer=B、explanation「正解は has/since だが選択肢にないため long/we を選ぶ」
+→ これは出題ミス。choices に「A. has/since」を入れるか、stem を「2 番目と 7 番目」に変える。
+
+**self-check FAIL = 不良問題なので絶対に出力しない**。整合性が取れるまで作り直す。"""
 
     # ===== 🔬 理系科目: 数学/物理/化学/生物/地学 (図/数式必須) =====
     elif exam_id == "rikei":
@@ -7273,7 +7298,32 @@ explanation フィールドは Markdown で **以下4セクションを必ず明
   - 下線部誤り選択 (①②③④ を本文中にインライン挿入する形式) の場合: ["①", "②", "③", "④"]
   - 空欄補充: ["where", "that", "which", "when"] のように単語/句で
 - **choices: [] (空配列) を返すのは絶対禁止**。テキスト記述式の問題なら type を "short_answer" にすること。
-- 「下線部の番号は問題文中にあるから choices は要らない」は誤り。フロントは choices を見てボタン描画する。"""
+- 「下線部の番号は問題文中にあるから choices は要らない」は誤り。フロントは choices を見てボタン描画する。
+
+【🚨 問題と選択肢の整合性 self-check (2026-05-13 致命バグ対応・絶対遵守)】
+塾長報告「選択肢が間違っている問題もある」の致命傷を防ぐため、出力前に下記を必ず self-verify:
+
+**整合性チェックリスト** (全て YES でないと不良問題):
+✅ check-1: 「stem (問題文)」で問うていることと、「answer (正解)」が論理的に対応しているか?
+✅ check-2: 「正解の選択肢の中身」が、その問題の答えとして実際に正しいか?
+✅ check-3: 「choices」に **本当の正解そのもの** が含まれているか?
+   (例: 「3 番目と 6 番目の語を選べ」と問うなら、正解の組合せが選択肢にあるか)
+✅ check-4: 「explanation」で「正解は X だが選択肢にないので Y を選ぶ」のような
+   苦しい言い訳をしていないか? (= これは出題自体のミスのサイン)
+✅ check-5: 答えの順番・組合せ・形式が選択肢の形式と完全一致しているか?
+   (例: 選択肢が ["A","B","C","D"] なら answer は "0"〜"3" の文字列 or A〜D の英字)
+
+**もし check-1〜5 のいずれかに違和感を感じたら、出力前に問題全体を作り直す**:
+- 選択肢を 正解 + 3 つの自然な誤答に組み直す
+- stem と choices と answer の三者が完全整合する状態にする
+- explanation で「正解は X だが選択肢に無い」のような言い訳を絶対書かない
+
+**禁止例 (2026-05-13 実際に塾長から報告された不良問題)**:
+❌ stem「3 番目と 6 番目の語を選べ」、choices=[B.long/we, C.been/last, D.it/since]、
+   answer=B、explanation「正解は has/since だが選択肢にないため long/we を選ぶ」
+→ これは出題ミス。choices に「A. has/since」を入れるか、stem を「2 番目と 7 番目」に変える。
+
+**self-check FAIL = 不良問題なので絶対に出力しない**。整合性が取れるまで作り直す。"""
 
     try:
         # AI never-fail: _call_anthropic_safe 経由で Tier 4 (Gemini) まで自動 fallback
@@ -25968,6 +26018,80 @@ def admin_ai_draft(payload: AdminAiDraftRequest, request: Request, authorization
 class CourseInquiryRequest(BaseModel):
     course: str  # 'kokuritsu_nankan'
     note: Optional[str] = None  # 任意の追記
+
+
+# 🚩 2026-05-13 塾長指示「選択肢が間違っている問題もある」:
+# 生徒から AI 生成問題の違和感報告を受け付ける endpoint
+class QuestionIssueReport(BaseModel):
+    question_id: Optional[str] = None
+    exam_id: Optional[str] = None
+    section_key: Optional[str] = None
+    grade_key: Optional[str] = None
+    stem: Optional[str] = None
+    choices: Optional[list] = None
+    correct_answer: Optional[str] = None
+    explanation: Optional[str] = None
+    reason: str
+    reported_at: Optional[str] = None
+    page_url: Optional[str] = None
+    user_agent: Optional[str] = None
+
+
+@app.post("/api/student/report-question-issue")
+def student_report_question_issue(payload: QuestionIssueReport, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒からの問題違和感報告を events に記録 → CEO ダッシュで集計表示。
+
+    塾長指示「選択肢が間違っている問題もある」(2026-05-13) で実装。
+    AI 生成問題の品質バグを生徒が即報告できる UX。
+    """
+    _check_rate_limit_ip(request, bucket="question_issue_report", limit=20, window=600)
+    student = _get_current_student(authorization)
+    # 未ログイン状態でも報告は受け付ける (匿名・体験中の生徒も対象)
+    student_id = (student or {}).get("id") if student else None
+    student_name = (student or {}).get("name") if student else "(未ログイン)"
+    student_email = (student or {}).get("email") if student else None
+
+    # text を sanitize
+    reason = _sanitize_text(payload.reason, 500) or ""
+    stem = _sanitize_text(payload.stem, 500) or ""
+    explanation = _sanitize_text(payload.explanation, 800) or ""
+
+    if not reason.strip():
+        raise HTTPException(status_code=400, detail="reason が空です")
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        # events に記録 (CEO ダッシュで grep 集計可能)
+        c.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            ("question_issue_report", json.dumps({
+                "student_id": student_id,
+                "student_name": student_name,
+                "student_email": student_email,
+                "question_id": payload.question_id,
+                "exam_id": payload.exam_id,
+                "section_key": payload.section_key,
+                "grade_key": payload.grade_key,
+                "stem": stem,
+                "choices": payload.choices,
+                "correct_answer": payload.correct_answer,
+                "explanation": explanation,
+                "reason": reason,
+                "page_url": payload.page_url,
+                "user_agent": (payload.user_agent or "")[:200],
+                "reported_at": payload.reported_at,
+            }, ensure_ascii=False), f"issue-report-{student_id or 'anon'}")
+        )
+        conn.commit()
+    except Exception as e:
+        log.warning(f"[report-question-issue] event log failed: {e}")
+    finally:
+        try: conn.close()
+        except Exception: pass
+
+    # 塾長への 24h 集計通知は ai-juku CEO ダッシュ側で実装 (後続)
+    return {"ok": True, "message": "報告を受け付けました。塾長が確認後、問題プールから修正・除外します。"}
 
 
 @app.post("/api/student/course-inquiry")
