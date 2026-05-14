@@ -2971,6 +2971,12 @@ async function generateCurriculum() {
 - ② 第N表記: 「マドンナ古文 第1講」「やっておきたい700 第1題」「世界史B 第1章」
 - ③ Lesson/Unit/Chapter: 「Lesson 1」「Unit 5」「Chapter 3」
 **絶対禁止**: 単元名で固定表記 (例: 「世界史B 古代オリエント章」「英文法 関係詞節」)。生徒が複数週にわたって同じ単元名を見ると「進歩感がない」と感じる。代わりに「世界史B 第1章 (古代オリエント)」「英文法 第3講 (関係詞節)」のように **第N表記 + 補足説明** を使うこと。
+
+🔑 **逆算設計 (1 週間に 1 講ずつ進める前提・塾長指示 2026-05-14)**:
+- 「## ⏰ 週間スケジュール例」セクションは **1 週目 (= week 1)** のタスクのみを出力すること。フロントは自動で 2 週目 (第2講) / 3 週目 (第3講) ... と進める
+- 教材の総講数を意識して逆算: 例) マドンナ古文 全 12 講 → 12 週で消化 → 13 週目から別教材 (源氏物語 添削問題集 等) に切替
+- 「シス単 No.1-60」のような数字範囲表記なら週ごとに +span (例: span=60 なら 61-120, 121-180...) で自動進行
+- 試験までの残り週数を計算し、各教材を「何週で消化するか」を「## 📚 使用教材リスト」に明示すること (例: 「マドンナ古文 (12 講・12 週で完了予定)」)
 ## 🏁 月次マイルストーン
 ## 💡 完走のコツ
 
@@ -3599,6 +3605,11 @@ function spImportFromCurriculum() {
       const diffDays = Math.floor((cursor - phase.startDate) / 86400000);
       weekInPhase = Math.max(0, Math.floor(diffDays / 7));
     }
+    // 🔧 2026-05-14 塾長指摘「1 週間に 1 講義ずつ進めるとか逆算して組み込め」対応:
+    // phase 認識失敗 (phases.length=0) 時に weekInPhase=0 のままで _advanceTaskRange が
+    // 何もせず「マドンナ古文 第1講」が毎週同一表示される致命バグを根絶。
+    // 全体経過週 weekIdx を fallback で使うことで、phase の有無に関わらず確実に進む。
+    const advanceOffset = (phase && weekInPhase > 0) ? weekInPhase : weekIdx;
 
     // フェーズ開始週ならマイルストーンタスクを追加
     if (phase && weekInPhase === 0 && cursor.getTime() !== startMonday.getTime()) {
@@ -3623,7 +3634,7 @@ function spImportFromCurriculum() {
 
       const dayTasks = weeklyTemplate[dayKeys[dow]] || [];
       for (const t of dayTasks) {
-        const advancedTitle = _advanceTaskRange(t.title, weekInPhase);
+        const advancedTitle = _advanceTaskRange(t.title, advanceOffset);
         imported.push({
           id: 'c_' + Math.random().toString(36).slice(2, 12),
           source: 'curriculum',
