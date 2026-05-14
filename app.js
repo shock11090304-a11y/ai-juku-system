@@ -2958,11 +2958,19 @@ async function generateCurriculum() {
 - 各科目の具体タスク
 ### フェーズ2: 標準演習 (XX月-XX月)
 ### フェーズ3: 過去問演習 (XX月-XX月)
-## ⏰ 週間スケジュール例
+## ⏰ 週間スケジュール例 (🔑 必須: 数字範囲または「第N題/第N章」表記)
 ### 月曜
-- 英語: 〇〇 P.20-30 例題1-15 (60分)
-- 数学: 〇〇 P.50-60 問題21-30 (60分)
+- 英語: ターゲット1900 No.1-60 (30分)
+- 数学: 青チャート IA P.20-45 例題1-15 (60分)
+- 国語: マドンナ古文 第1講 (30分)
 ### 火曜 ... (以下各曜日)
+
+🔑 **絶対必須 (週次自動進捗のため・塾長指示 2026-05-14)**:
+タスク表記は必ず以下のいずれかの形式で記載すること。これにより週が進むごとに範囲が自動で前進する:
+- ① 数字範囲付き: 「シス単 No.1-60」「ターゲット1900 1-100」「P.20-45 例題1-15」
+- ② 第N表記: 「マドンナ古文 第1講」「やっておきたい700 第1題」「世界史B 第1章」
+- ③ Lesson/Unit/Chapter: 「Lesson 1」「Unit 5」「Chapter 3」
+**絶対禁止**: 単元名で固定表記 (例: 「世界史B 古代オリエント章」「英文法 関係詞節」)。生徒が複数週にわたって同じ単元名を見ると「進歩感がない」と感じる。代わりに「世界史B 第1章 (古代オリエント)」「英文法 第3講 (関係詞節)」のように **第N表記 + 補足説明** を使うこと。
 ## 🏁 月次マイルストーン
 ## 💡 完走のコツ
 
@@ -3442,19 +3450,53 @@ function _parsePhases(md) {
   return phases;
 }
 
-// 週次テンプレを開始週数オフセットで"進捗"させる
-// 例: "シス単 No.1-60" → week 2 → "シス単 No.61-120"
+// 週次テンプレを開始週数オフセットで"進捗"させる (塾長指示 2026-05-14 強化)
+// 旧版は "No.X-Y" "例題X-Y" 等の prefix 付きパターンのみ対応 → 「シス単 1201-1400」
+// 「第1題」「第1章」等で進まないバグがあった。3 パターン段階的にカバーするよう拡張。
 function _advanceTaskRange(title, weekOffset) {
+  if (!title || typeof title !== 'string') return title || '';
   if (!weekOffset) return title;
-  // "No.X-Y" / "P.X-Y" / "例題X-Y" / "問X-Y" パターン
-  return title.replace(/(No\.|P\.|例題|問|問題)\s*(\d+)\s*[-〜~]\s*(\d+)/g,
+  let result = title;
+  let matched = false;
+
+  // Pattern 1: prefix + 数字範囲 (No.1-60 / p.20-45 / P.20-45 / 例題1-5 / 問題1-3 / 問1-3)
+  result = result.replace(/(No\.|p\.|P\.|例題|問題|問)\s*(\d+)\s*[-〜~–]\s*(\d+)/gi,
     (full, prefix, s, e) => {
+      matched = true;
       const start = parseInt(s), end = parseInt(e);
       const span = end - start + 1;
-      const newStart = start + weekOffset * span;
-      const newEnd = end + weekOffset * span;
-      return `${prefix}${newStart}-${newEnd}`;
+      return `${prefix}${start + weekOffset * span}-${end + weekOffset * span}`;
     });
+  if (matched) return result;
+
+  // Pattern 2: 第N題 / 第N章 / 第N講 / 第N節 / 第N課 / Lesson N / Unit N / Chapter N (単独カウントアップ)
+  result = result.replace(/(第\s*)(\d+)(\s*(?:題|章|講|節|課))/g,
+    (full, pre, n, sfx) => {
+      matched = true;
+      return `${pre}${parseInt(n) + weekOffset}${sfx}`;
+    });
+  if (matched) return result;
+  result = result.replace(/(Lesson|Unit|Chapter)\s*(\d+)/gi,
+    (full, kw, n) => {
+      matched = true;
+      return `${kw} ${parseInt(n) + weekOffset}`;
+    });
+  if (matched) return result;
+
+  // Pattern 3: prefix なしの数字範囲 (シス単 1201-1400 / ターゲット 1-100)
+  // 左辺は 1-5 桁許可 (1-100 のような小さい範囲もカバー)・右辺は 2 桁以上 (年号 2026 や時刻 9-17 の誤マッチ抑制)
+  result = result.replace(/(\d{1,5})\s*[-〜~–]\s*(\d{2,5})/g,
+    (full, s, e) => {
+      const start = parseInt(s), end = parseInt(e);
+      // 範囲幅が大きすぎる場合 (2000 以上) は単語帳の全範囲指定なので進めない
+      const span = end - start + 1;
+      if (span >= 2000) return full;
+      // 不正範囲 (end <= start) は skip
+      if (span <= 0) return full;
+      matched = true;
+      return `${start + weekOffset * span}-${end + weekOffset * span}`;
+    });
+  return result;
 }
 
 // 指定日がどのフェーズに属するかを判定
