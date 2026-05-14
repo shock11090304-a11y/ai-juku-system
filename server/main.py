@@ -1055,6 +1055,29 @@ REFERENCE_BOOKS_SEED = [
     {"name": "難問題の系統とその解き方 物理", "publisher": "ニュートンプレス", "subject": "物理", "sub_genre": "最難関演習", "total_units": 200, "unit_type": "問題", "suitable_dev_min": 65, "suitable_dev_max": 78, "level": "最難関", "weeks_to_complete": 20, "notes": "通称「難系」・東大/京大/医学部志望者の最終仕上げ教材・物理究極の難問集"},
     {"name": "大学への数学 スタンダード演習", "publisher": "東京出版", "subject": "数学", "sub_genre": "上級演習", "total_units": 100, "unit_type": "問題", "suitable_dev_min": 60, "suitable_dev_max": 72, "level": "上級", "weeks_to_complete": 12, "notes": "1対1対応の演習の次ステップ・東京出版の月刊誌増刊・旧帝大・早慶レベル"},
     {"name": "古文上達 中級編", "publisher": "Z会出版", "subject": "国語", "sub_genre": "古文読解", "total_units": 30, "unit_type": "題", "suitable_dev_min": 53, "suitable_dev_max": 63, "level": "標準-上級", "weeks_to_complete": 10, "notes": "古文上達基礎編 (45 題) と読解と演習 56 の間を埋める中級書・MARCH 〜難関国公立"},
+    # 🔧 Round 2 改善 (2026-05-14 post-deploy) - 塾長指示
+    # 残課題 1: 偏差値 40-45 帯の理科系教材追加 (高 2・伸び悩み生徒の基礎の基礎層救済)
+    # 残課題 2: 公民教材追加 (政経・倫理・現代社会・共通テスト対象生徒の選択肢拡充)
+    # 物理 基礎の基礎層 (偏差値 38-55)
+    # Round 1 review 修正: 橋元 max 52→50 (力学編単独・基礎の基礎)、漆原タイトルを正確版に
+    {"name": "橋元の物理をはじめからていねいに 力学編", "publisher": "東進ブックス", "subject": "物理", "sub_genre": "基礎講義", "total_units": 30, "unit_type": "講", "suitable_dev_min": 35, "suitable_dev_max": 50, "level": "基礎の基礎", "weeks_to_complete": 8, "notes": "物理ゼロからの定番講義書・力学編・偏差値 35-45 帯の独学スタートに最適・※ 熱・波動編 / 電磁気・原子編 も別冊"},
+    {"name": "漆原晃の物理基礎・物理 [力学・熱・波動編] が面白いほどわかる本", "publisher": "KADOKAWA", "subject": "物理", "sub_genre": "基礎講義", "total_units": 40, "unit_type": "講", "suitable_dev_min": 38, "suitable_dev_max": 55, "level": "基礎-標準", "weeks_to_complete": 10, "notes": "解法パターンを体系化した講義書・力学/熱/波動編・※ [電磁気・原子編] も別冊"},
+    # 化学 基礎の基礎層 (偏差値 38-55)
+    # Round 1 review 修正: 岡野の化学は出版社の実在性に疑義 → より確実な「宇宙一わかりやすい高校化学」に置き換え
+    {"name": "宇宙一わかりやすい高校化学 理論化学", "publisher": "学研プラス", "subject": "化学", "sub_genre": "基礎講義", "total_units": 22, "unit_type": "章", "suitable_dev_min": 35, "suitable_dev_max": 52, "level": "基礎の基礎", "weeks_to_complete": 8, "notes": "化学ゼロからの定番講義書・図解豊富・※ 無機化学編 / 有機化学編 も別冊"},
+    {"name": "鎌田の理論化学の講義", "publisher": "旺文社", "subject": "化学", "sub_genre": "基礎-標準講義", "total_units": 25, "unit_type": "講", "suitable_dev_min": 45, "suitable_dev_max": 62, "level": "基礎-標準", "weeks_to_complete": 8, "notes": "理論化学の体系的講義書・※ 福間の無機化学の講義・鎌田の有機化学の講義 とセットで使うのが定番"},
+    # 生物 基礎の基礎層 (偏差値 38-55)
+    # Round 1 review 修正: 田部の生物基礎 weeks 7→8 (実態に合わせ)
+    {"name": "田部の生物基礎をはじめからていねいに", "publisher": "東進ブックス", "subject": "生物", "sub_genre": "基礎講義", "total_units": 14, "unit_type": "章", "suitable_dev_min": 35, "suitable_dev_max": 52, "level": "基礎の基礎", "weeks_to_complete": 8, "notes": "生物基礎ゼロからの定番講義書・※ 生物選択者は別冊『生物をはじめからていねいに』も併用"},
+    {"name": "大森徹の最強講義 117 講", "publisher": "文英堂", "subject": "生物", "sub_genre": "標準-上級講義", "total_units": 117, "unit_type": "講", "suitable_dev_min": 50, "suitable_dev_max": 68, "level": "標準-上級", "weeks_to_complete": 16, "notes": "生物の体系的講義書・難関国公立向けの基礎-上級レベル"},
+    # 公民 (政経・倫理・現代社会) 5 教材追加
+    # Round 1 review 修正: 「倫理ハンドブック」「現代社会の点数が面白いほど」は実在性に疑義 → 削除
+    {"name": "畠山のスッキリわかる政治・経済", "publisher": "東進ブックス", "subject": "公民", "sub_genre": "政経講義", "total_units": 28, "unit_type": "テーマ", "suitable_dev_min": 42, "suitable_dev_max": 65, "level": "基礎-標準", "weeks_to_complete": 8, "notes": "政経の体系的講義書・共通テスト〜MARCH レベル"},
+    {"name": "政治・経済 一問一答 完全版", "publisher": "東進ブックス", "subject": "公民", "sub_genre": "政経暗記演習", "total_units": 250, "unit_type": "見開き", "suitable_dev_min": 50, "suitable_dev_max": 72, "level": "標準-上級", "weeks_to_complete": 10, "notes": "政経用語暗記の決定版・頻出度別・難関私大対応"},
+    {"name": "倫理一問一答 完全版", "publisher": "東進ブックス", "subject": "公民", "sub_genre": "倫理暗記演習", "total_units": 220, "unit_type": "見開き", "suitable_dev_min": 50, "suitable_dev_max": 72, "level": "標準-上級", "weeks_to_complete": 10, "notes": "倫理用語暗記の定番・思想家・学派・経典を頻出度別"},
+    # Round 2 修正: 「倫理、政治・経済の点数が面白いほどとれる本」は実在性疑義あり削除 → より確実な「蔭山の共通テスト倫理」(学研プラス) に置換 (既存「蔭山の共通テスト政治・経済」と同シリーズ・倫理基礎層対応)
+    {"name": "蔭山の共通テスト倫理", "publisher": "学研プラス", "subject": "公民", "sub_genre": "倫理共通テスト", "total_units": 60, "unit_type": "テーマ", "suitable_dev_min": 42, "suitable_dev_max": 65, "level": "基礎-標準", "weeks_to_complete": 8, "notes": "倫理の体系的講義書・共通テスト対策・思想史を時代別/学派別で整理・※ 既存『蔭山の共通テスト政治・経済』(同シリーズ) と並ぶ"},
+    {"name": "現代社会一問一答 完全版", "publisher": "東進ブックス", "subject": "公民", "sub_genre": "現社暗記演習", "total_units": 180, "unit_type": "見開き", "suitable_dev_min": 48, "suitable_dev_max": 68, "level": "標準", "weeks_to_complete": 8, "notes": "現代社会用語暗記の定番・頻出度別"},
 ]
 
 
@@ -1087,8 +1110,17 @@ def _seed_reference_books():
             log.warning(f"[seed_reference_books] {book['name']}: {type(e).__name__}: {str(e)[:100]}")
             skipped += 1
     conn.close()
+    # 🔧 Round 2 改善 (2026-05-14): multi-replica log noise 最適化 (案 B: idempotent check)
+    # 新規 INSERT 有り → info / 全件 skip (idempotent) → debug / 想定外パターン → warning
+    total_seed = len(REFERENCE_BOOKS_SEED)
     if inserted > 0:
-        log.info(f"[seed_reference_books] inserted={inserted} skipped={skipped} (total seed={len(REFERENCE_BOOKS_SEED)})")
+        log.info(f"[seed_reference_books] inserted={inserted} skipped={skipped} (total seed={total_seed})")
+    elif skipped == total_seed:
+        # multi-replica の primary 以外: 全件 idempotent skip → debug でログ抑制 (運用観察性 OK)
+        log.debug(f"[seed_reference_books] all skipped - idempotent state (seed={total_seed})")
+    else:
+        # 想定外 (例: 一部 INSERT 失敗で count 不一致) → warning で alert
+        log.warning(f"[seed_reference_books] UNEXPECTED state: inserted={inserted} skipped={skipped} != {total_seed}")
     return inserted, skipped
 
 
