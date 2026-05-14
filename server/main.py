@@ -851,6 +851,27 @@ def init_db():
     -- 同一生徒・同名・同科目の重複登録防止 (異なる status 間でも一意)
     CREATE UNIQUE INDEX IF NOT EXISTS uq_student_materials_unique
         ON student_materials(student_id, name, subject);
+    -- 📚 受験参考書 DB (塾長指示 2026-05-14): 主要教材の総講数・偏差値分布を蓄積
+    -- 「マドンナ古文 第13講」のような実在しない数字をなくし、偏差値ベースで自動マッチング
+    CREATE TABLE IF NOT EXISTS reference_books (
+        id {pk},
+        name TEXT NOT NULL,
+        publisher TEXT,
+        subject TEXT NOT NULL,
+        sub_genre TEXT,
+        total_units INTEGER,
+        unit_type TEXT,
+        suitable_dev_min INTEGER,
+        suitable_dev_max INTEGER,
+        level TEXT,
+        weeks_to_complete INTEGER,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_reference_books_subject ON reference_books(subject, level);
+    CREATE INDEX IF NOT EXISTS idx_reference_books_dev ON reference_books(subject, suitable_dev_min, suitable_dev_max);
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_reference_books_name_subject
+        ON reference_books(name, subject);
     -- 国公立難関大学コース 申込フォーム (Phase 4.8 - クレカなし申込)
     -- 塾長指示 2026-05-06: 専用 LP からクレカ登録なしで申込
     CREATE TABLE IF NOT EXISTS course_applications (
@@ -967,6 +988,114 @@ def init_db():
             log.debug(f"[init_db] Skip ALTER for {col_name}: {type(e).__name__}: {str(e)[:100]}")
     conn.close()
 init_db()
+
+
+# 📚 受験参考書 DB 初期データ (塾長指示 2026-05-14)
+# 各科目エキスパート 4 視点 review で選定された主要 45 教材
+# AI カリキュラム生成時に偏差値マッチング + 教材総数を inject して
+# 「マドンナ古文 第13講」のような実在しない数字を防止
+REFERENCE_BOOKS_SEED = [
+    # 英語 10 教材
+    {"name": "システム英単語", "publisher": "駿台文庫", "subject": "英語", "sub_genre": "単語", "total_units": 2021, "unit_type": "語", "suitable_dev_min": 50, "suitable_dev_max": 70, "level": "標準", "weeks_to_complete": 12, "notes": "ミニマルフレーズ方式・全 2021 語 5 章構成・共通テスト〜難関国公立まで"},
+    {"name": "英単語ターゲット1900", "publisher": "旺文社", "subject": "英語", "sub_genre": "単語", "total_units": 1900, "unit_type": "語", "suitable_dev_min": 50, "suitable_dev_max": 68, "level": "標準", "weeks_to_complete": 12, "notes": "出る順・3 部構成・大学入試最頻出のロングセラー"},
+    {"name": "鉄壁", "publisher": "KADOKAWA", "subject": "英語", "sub_genre": "単語", "total_units": 3000, "unit_type": "語", "suitable_dev_min": 60, "suitable_dev_max": 75, "level": "最難関", "weeks_to_complete": 20, "notes": "東大・医学部志望者向け約 3000 語・語源/関連語/イラスト・70 章構成だが unit としては語数で管理"},
+    {"name": "速読英単語 必修編", "publisher": "Z会出版", "subject": "英語", "sub_genre": "単語", "total_units": 70, "unit_type": "長文", "suitable_dev_min": 52, "suitable_dev_max": 65, "level": "標準", "weeks_to_complete": 14, "notes": "長文中で単語を覚える文脈学習・速読力 + 語彙同時養成"},
+    {"name": "Next Stage 英文法・語法問題", "publisher": "桐原書店", "subject": "英語", "sub_genre": "文法", "total_units": 1400, "unit_type": "問", "suitable_dev_min": 50, "suitable_dev_max": 65, "level": "標準", "weeks_to_complete": 16, "notes": "文法/語法/イディオム/会話/発音アクセントを 1 冊で網羅・年度版により約 1200-1500 問"},
+    {"name": "Vintage 英文法・語法", "publisher": "いいずな書店", "subject": "英語", "sub_genre": "文法", "total_units": 1400, "unit_type": "問", "suitable_dev_min": 50, "suitable_dev_max": 65, "level": "標準", "weeks_to_complete": 16, "notes": "Next Stage と並ぶ 4 択文法問題集の定番・年度版により約 1350-1500 問"},
+    {"name": "基礎英文解釈の技術100", "publisher": "桐原書店", "subject": "英語", "sub_genre": "構文", "total_units": 100, "unit_type": "例題", "suitable_dev_min": 50, "suitable_dev_max": 62, "level": "標準", "weeks_to_complete": 14, "notes": "SVOC 振りと構文把握 100 テーマ"},
+    {"name": "ポレポレ英文読解プロセス50", "publisher": "代々木ライブラリー", "subject": "英語", "sub_genre": "構文", "total_units": 50, "unit_type": "例題", "suitable_dev_min": 60, "suitable_dev_max": 72, "level": "最難関", "weeks_to_complete": 8, "notes": "難関大の難文構造 50 例題で解剖・東大/京大/早慶志望必修"},
+    {"name": "やっておきたい英語長文500", "publisher": "河合出版", "subject": "英語", "sub_genre": "長文", "total_units": 20, "unit_type": "題", "suitable_dev_min": 52, "suitable_dev_max": 62, "level": "標準", "weeks_to_complete": 8, "notes": "中堅〜上位私大レベル長文 20 題・全訳 + 設問解説・※ タイトルの『500』はワード数の目安、題数は 20 題"},
+    {"name": "ドラゴン・イングリッシュ", "publisher": "KADOKAWA", "subject": "英語", "sub_genre": "英作文", "total_units": 100, "unit_type": "例文", "suitable_dev_min": 55, "suitable_dev_max": 70, "level": "上級", "weeks_to_complete": 10, "notes": "和文英訳の核となる 100 例文・難関大自由英作文の発想と表現"},
+    # 数学 10 教材
+    {"name": "青チャート 数学IA", "publisher": "数研出版", "subject": "数学", "sub_genre": "網羅系", "total_units": 350, "unit_type": "例題", "suitable_dev_min": 50, "suitable_dev_max": 65, "level": "標準", "weeks_to_complete": 16, "notes": "最も使われる定番網羅系・例題 + 練習問題 + EXERCISES"},
+    {"name": "青チャート 数学IIB", "publisher": "数研出版", "subject": "数学", "sub_genre": "網羅系", "total_units": 400, "unit_type": "例題", "suitable_dev_min": 50, "suitable_dev_max": 65, "level": "標準", "weeks_to_complete": 18, "notes": "数列ベクトル微積分含む網羅系・IA より問題数多め"},
+    {"name": "Focus Gold 数学IA", "publisher": "啓林館", "subject": "数学", "sub_genre": "網羅系", "total_units": 320, "unit_type": "例題", "suitable_dev_min": 55, "suitable_dev_max": 70, "level": "標準", "weeks_to_complete": 16, "notes": "青チャより少し難易度高い網羅系・Step Up + Challenge 編"},
+    {"name": "基礎問題精講 数学IA", "publisher": "旺文社", "subject": "数学", "sub_genre": "演習系", "total_units": 145, "unit_type": "例題", "suitable_dev_min": 45, "suitable_dev_max": 58, "level": "基礎", "weeks_to_complete": 8, "notes": "基礎固め短期集中・MARCH 関関同立基礎レベル"},
+    {"name": "標準問題精講 数学IA", "publisher": "旺文社", "subject": "数学", "sub_genre": "演習系", "total_units": 110, "unit_type": "例題", "suitable_dev_min": 58, "suitable_dev_max": 68, "level": "上級", "weeks_to_complete": 10, "notes": "MARCH 上位〜旧帝大標準レベル"},
+    {"name": "1対1対応の演習 数学IA", "publisher": "東京出版", "subject": "数学", "sub_genre": "演習系", "total_units": 120, "unit_type": "例題", "suitable_dev_min": 60, "suitable_dev_max": 70, "level": "上級", "weeks_to_complete": 10, "notes": "1 例題 + 1 演習問題・旧帝大・早慶レベル数学の定番"},
+    {"name": "文系数学の良問プラチカ", "publisher": "河合出版", "subject": "数学", "sub_genre": "演習系", "total_units": 149, "unit_type": "問題", "suitable_dev_min": 60, "suitable_dev_max": 72, "level": "最難関", "weeks_to_complete": 12, "notes": "文系最難関向け良問厳選・京大・一橋・東大文系対策"},
+    {"name": "理系数学の良問プラチカ 数学IAIIB", "publisher": "河合出版", "subject": "数学", "sub_genre": "演習系", "total_units": 153, "unit_type": "問題", "suitable_dev_min": 58, "suitable_dev_max": 68, "level": "上級", "weeks_to_complete": 12, "notes": "理系標準〜上級・旧帝大理系・早慶理工レベル"},
+    {"name": "やさしい理系数学", "publisher": "河合出版", "subject": "数学", "sub_genre": "応用", "total_units": 200, "unit_type": "例題+演習", "suitable_dev_min": 62, "suitable_dev_max": 72, "level": "最難関", "weeks_to_complete": 14, "notes": "題名と裏腹に難易度高め・最難関理系向け別解豊富"},
+    {"name": "鉄緑会 東大数学問題集", "publisher": "KADOKAWA", "subject": "数学", "sub_genre": "過去問", "total_units": 60, "unit_type": "問題", "suitable_dev_min": 65, "suitable_dev_max": 75, "level": "最難関", "weeks_to_complete": 16, "notes": "東大過去 10 年分超詳細解説・東大理三/理一志望者の必携"},
+    # 国語 10 教材
+    {"name": "マドンナ古文", "publisher": "学研プラス", "subject": "国語", "sub_genre": "古文文法", "total_units": 33, "unit_type": "講", "suitable_dev_min": 45, "suitable_dev_max": 60, "level": "基礎-標準", "weeks_to_complete": 8, "notes": "古文文法/古文常識 全 33 講・イラスト豊富で初学者向け定番"},
+    {"name": "古文単語ゴロゴ プレミアム+", "publisher": "スタディカンパニー", "subject": "国語", "sub_genre": "古文単語", "total_units": 635, "unit_type": "語", "suitable_dev_min": 45, "suitable_dev_max": 65, "level": "基礎-上級", "weeks_to_complete": 12, "notes": "ゴロ合わせで覚える古文単語 635 語"},
+    {"name": "古文上達 基礎編 読解と演習45", "publisher": "Z会", "subject": "国語", "sub_genre": "古文読解", "total_units": 45, "unit_type": "題", "suitable_dev_min": 50, "suitable_dev_max": 60, "level": "標準", "weeks_to_complete": 12, "notes": "文法 30 + 読解 15 題・中堅私大〜MARCH レベル定番"},
+    {"name": "古文上達 読解と演習56", "publisher": "Z会", "subject": "国語", "sub_genre": "古文読解", "total_units": 56, "unit_type": "題", "suitable_dev_min": 55, "suitable_dev_max": 70, "level": "上級-最難関", "weeks_to_complete": 16, "notes": "難関国公立/早慶上智レベル 全 56 題"},
+    {"name": "漢文ヤマのヤマ", "publisher": "学研プラス", "subject": "国語", "sub_genre": "漢文句法", "total_units": 66, "unit_type": "句法", "suitable_dev_min": 45, "suitable_dev_max": 65, "level": "基礎-上級", "weeks_to_complete": 8, "notes": "漢文句法 66 テーマ + 実戦問題・共通テスト〜難関大・本書では『ヤマ』と呼ばれる"},
+    {"name": "漢文早覚え速答法", "publisher": "学研プラス", "subject": "国語", "sub_genre": "漢文句法", "total_units": 10, "unit_type": "章", "suitable_dev_min": 45, "suitable_dev_max": 60, "level": "基礎-標準", "weeks_to_complete": 4, "notes": "いがよみ 10 字 + 重要句法を最短攻略・共通テスト 8 割狙い"},
+    {"name": "入試現代文へのアクセス 基本編", "publisher": "河合出版", "subject": "国語", "sub_genre": "現代文読解", "total_units": 16, "unit_type": "題", "suitable_dev_min": 45, "suitable_dev_max": 55, "level": "基礎", "weeks_to_complete": 8, "notes": "現代文読解の入門書・全 16 題"},
+    {"name": "入試現代文へのアクセス 発展編", "publisher": "河合出版", "subject": "国語", "sub_genre": "現代文読解", "total_units": 16, "unit_type": "題", "suitable_dev_min": 55, "suitable_dev_max": 65, "level": "標準-上級", "weeks_to_complete": 8, "notes": "MARCH〜難関国公立レベル・全 16 題"},
+    {"name": "現代文読解力の開発講座", "publisher": "駿台文庫", "subject": "国語", "sub_genre": "現代文読解", "total_units": 10, "unit_type": "講", "suitable_dev_min": 60, "suitable_dev_max": 72, "level": "上級-最難関", "weeks_to_complete": 10, "notes": "難関国公立/早慶上智レベル 全 10 講・構造分析重視"},
+    {"name": "現代文と格闘する", "publisher": "河合出版", "subject": "国語", "sub_genre": "現代文総合", "total_units": 14, "unit_type": "章", "suitable_dev_min": 60, "suitable_dev_max": 75, "level": "最難関", "weeks_to_complete": 16, "notes": "東大/京大/早慶レベル・語彙 + 読解 全 14 章"},
+    # 理科 8 教材
+    {"name": "物理のエッセンス 力学・波動", "publisher": "河合出版", "subject": "物理", "sub_genre": "基礎演習", "total_units": 140, "unit_type": "例題", "suitable_dev_min": 45, "suitable_dev_max": 60, "level": "基礎", "weeks_to_complete": 14, "notes": "物理 基礎演習の定番・力学/波動編・例題 140 + 別冊練習問題で計約 220・別冊『熱・電磁気・原子』編は別書"},
+    {"name": "良問の風 物理", "publisher": "河合出版", "subject": "物理", "sub_genre": "標準演習", "total_units": 150, "unit_type": "問題", "suitable_dev_min": 50, "suitable_dev_max": 62, "level": "標準", "weeks_to_complete": 12, "notes": "物理のエッセンスからのステップアップ・中堅大対応"},
+    {"name": "名問の森 物理", "publisher": "河合出版", "subject": "物理", "sub_genre": "上級演習", "total_units": 140, "unit_type": "問題", "suitable_dev_min": 58, "suitable_dev_max": 70, "level": "上級", "weeks_to_complete": 14, "notes": "難関大物理の定番・力学/熱/波動 + 電磁気/原子の 2 冊"},
+    {"name": "化学 基礎問題精講", "publisher": "旺文社", "subject": "化学", "sub_genre": "基礎演習", "total_units": 120, "unit_type": "問題", "suitable_dev_min": 45, "suitable_dev_max": 58, "level": "基礎", "weeks_to_complete": 10, "notes": "化学基礎固めの定番・典型問題網羅"},
+    {"name": "化学 重要問題集", "publisher": "数研出版", "subject": "化学", "sub_genre": "標準演習", "total_units": 260, "unit_type": "問題", "suitable_dev_min": 52, "suitable_dev_max": 65, "level": "標準", "weeks_to_complete": 16, "notes": "化学受験の最王道・A/B 問題で難易度分け・年度版により約 190-290 問で変動"},
+    {"name": "化学の新演習", "publisher": "三省堂", "subject": "化学", "sub_genre": "最難関演習", "total_units": 330, "unit_type": "問題", "suitable_dev_min": 62, "suitable_dev_max": 75, "level": "最難関", "weeks_to_complete": 20, "notes": "東大/京大/医学部レベルの化学難問集"},
+    {"name": "生物 基礎問題精講", "publisher": "旺文社", "subject": "生物", "sub_genre": "基礎演習", "total_units": 89, "unit_type": "問題", "suitable_dev_min": 45, "suitable_dev_max": 58, "level": "基礎", "weeks_to_complete": 9, "notes": "生物基礎固めの定番・各単元バランス良く配置"},
+    {"name": "生物 標準問題精講", "publisher": "旺文社", "subject": "生物", "sub_genre": "上級演習", "total_units": 113, "unit_type": "問題", "suitable_dev_min": 58, "suitable_dev_max": 72, "level": "上級", "weeks_to_complete": 14, "notes": "難関大生物の定番・考察問題と実験考察に強い"},
+    # 社会 7 教材
+    {"name": "石川日本史B講義の実況中継", "publisher": "語学春秋社", "subject": "日本史", "sub_genre": "通史講義", "total_units": 200, "unit_type": "テーマ", "suitable_dev_min": 48, "suitable_dev_max": 65, "level": "標準", "weeks_to_complete": 16, "notes": "日本史通史の決定版・5 巻構成・流れと因果を講義形式"},
+    {"name": "日本史B一問一答 完全版", "publisher": "東進ブックス", "subject": "日本史", "sub_genre": "暗記演習", "total_units": 320, "unit_type": "見開き", "suitable_dev_min": 50, "suitable_dev_max": 72, "level": "上級", "weeks_to_complete": 12, "notes": "日本史用語暗記の最強ツール・星マークで頻出度可視化"},
+    {"name": "ナビゲーター世界史B", "publisher": "山川出版社", "subject": "世界史", "sub_genre": "通史講義", "total_units": 180, "unit_type": "節", "suitable_dev_min": 48, "suitable_dev_max": 65, "level": "標準", "weeks_to_complete": 16, "notes": "世界史通史の定番・4 巻構成で各時代を体系的に整理"},
+    {"name": "世界史B一問一答 完全版", "publisher": "東進ブックス", "subject": "世界史", "sub_genre": "暗記演習", "total_units": 300, "unit_type": "見開き", "suitable_dev_min": 50, "suitable_dev_max": 72, "level": "上級", "weeks_to_complete": 12, "notes": "世界史用語暗記の決定版・頻出度別"},
+    {"name": "村瀬のゼロからわかる地理B", "publisher": "学研プラス", "subject": "地理", "sub_genre": "基礎講義", "total_units": 100, "unit_type": "テーマ", "suitable_dev_min": 42, "suitable_dev_max": 58, "level": "基礎", "weeks_to_complete": 10, "notes": "地理ゼロからの定番・系統地理と地誌の 2 分冊"},
+    {"name": "瀬川聡の共通テスト地理B講義の実況中継", "publisher": "語学春秋社", "subject": "地理", "sub_genre": "標準演習", "total_units": 80, "unit_type": "講義", "suitable_dev_min": 50, "suitable_dev_max": 65, "level": "標準", "weeks_to_complete": 10, "notes": "共通テスト地理対策の定番・系統地理 + 地誌編"},
+    {"name": "蔭山の共通テスト政治・経済", "publisher": "学研プラス", "subject": "公民", "sub_genre": "共通テスト対策", "total_units": 60, "unit_type": "テーマ", "suitable_dev_min": 45, "suitable_dev_max": 65, "level": "標準", "weeks_to_complete": 8, "notes": "共通テスト政経の決定版・時事もカバー"},
+    # 🔧 Round 1 review で発見された基礎層欠落を補填 (2026-05-14)
+    # 英語基礎層 (45-50) / 日本史・世界史基礎 / 化学上級 / 物理最難関 / 数学上級 / 古文中級
+    {"name": "大岩のいちばんはじめの英文法 超基礎文法編", "publisher": "東進ブックス", "subject": "英語", "sub_genre": "文法基礎", "total_units": 27, "unit_type": "講", "suitable_dev_min": 40, "suitable_dev_max": 55, "level": "基礎", "weeks_to_complete": 6, "notes": "中学英文法レベルからの再入門・偏差値 40-50 帯の基礎固め定番"},
+    {"name": "肘井学のゼロから英文法が面白いほどわかる本", "publisher": "KADOKAWA", "subject": "英語", "sub_genre": "文法基礎", "total_units": 33, "unit_type": "講", "suitable_dev_min": 42, "suitable_dev_max": 58, "level": "基礎-標準", "weeks_to_complete": 8, "notes": "文法を体系的に整理した基礎-標準書・大学受験文法のゼロからのつまずきポイント網羅"},
+    {"name": "詳説日本史B", "publisher": "山川出版社", "subject": "日本史", "sub_genre": "教科書", "total_units": 14, "unit_type": "章", "suitable_dev_min": 45, "suitable_dev_max": 70, "level": "基礎-上級", "weeks_to_complete": 24, "notes": "高校日本史教科書の最定番・東大/京大/早慶受験生も基盤として使用・全 14 章"},
+    {"name": "詳説世界史B", "publisher": "山川出版社", "subject": "世界史", "sub_genre": "教科書", "total_units": 15, "unit_type": "章", "suitable_dev_min": 45, "suitable_dev_max": 70, "level": "基礎-上級", "weeks_to_complete": 24, "notes": "高校世界史教科書の最定番・東大/京大/早慶受験生も基盤として使用・全 15 章"},
+    {"name": "化学 標準問題精講", "publisher": "旺文社", "subject": "化学", "sub_genre": "上級演習", "total_units": 120, "unit_type": "例題", "suitable_dev_min": 58, "suitable_dev_max": 70, "level": "上級", "weeks_to_complete": 14, "notes": "化学重要問題集と化学新演習の間を埋める良問集・難関大標準レベル"},
+    {"name": "難問題の系統とその解き方 物理", "publisher": "ニュートンプレス", "subject": "物理", "sub_genre": "最難関演習", "total_units": 200, "unit_type": "問題", "suitable_dev_min": 65, "suitable_dev_max": 78, "level": "最難関", "weeks_to_complete": 20, "notes": "通称「難系」・東大/京大/医学部志望者の最終仕上げ教材・物理究極の難問集"},
+    {"name": "大学への数学 スタンダード演習", "publisher": "東京出版", "subject": "数学", "sub_genre": "上級演習", "total_units": 100, "unit_type": "問題", "suitable_dev_min": 60, "suitable_dev_max": 72, "level": "上級", "weeks_to_complete": 12, "notes": "1対1対応の演習の次ステップ・東京出版の月刊誌増刊・旧帝大・早慶レベル"},
+    {"name": "古文上達 中級編", "publisher": "Z会出版", "subject": "国語", "sub_genre": "古文読解", "total_units": 30, "unit_type": "題", "suitable_dev_min": 53, "suitable_dev_max": 63, "level": "標準-上級", "weeks_to_complete": 10, "notes": "古文上達基礎編 (45 題) と読解と演習 56 の間を埋める中級書・MARCH 〜難関国公立"},
+]
+
+
+def _seed_reference_books():
+    """主要教材の初期データを reference_books に投入 (重複は skip・冪等)。"""
+    conn = db()
+    c = conn.cursor()
+    inserted = 0
+    skipped = 0
+    for book in REFERENCE_BOOKS_SEED:
+        try:
+            c.execute(
+                "INSERT INTO reference_books (name, publisher, subject, sub_genre, total_units, unit_type, "
+                "suitable_dev_min, suitable_dev_max, level, weeks_to_complete, notes) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                (book["name"], book.get("publisher"), book["subject"], book.get("sub_genre"),
+                 book.get("total_units"), book.get("unit_type"),
+                 book.get("suitable_dev_min"), book.get("suitable_dev_max"),
+                 book.get("level"), book.get("weeks_to_complete"), book.get("notes"))
+            )
+            conn.commit()
+            inserted += 1
+        except IntegrityError:
+            try: conn.rollback()
+            except Exception: pass
+            skipped += 1
+        except Exception as e:
+            try: conn.rollback()
+            except Exception: pass
+            log.warning(f"[seed_reference_books] {book['name']}: {type(e).__name__}: {str(e)[:100]}")
+            skipped += 1
+    conn.close()
+    if inserted > 0:
+        log.info(f"[seed_reference_books] inserted={inserted} skipped={skipped} (total seed={len(REFERENCE_BOOKS_SEED)})")
+    return inserted, skipped
+
+
+try:
+    _seed_reference_books()
+except Exception as _se:
+    log.warning(f"[seed_reference_books] failed: {_se}")
 
 # ==========================================================================
 # FastAPI App
@@ -25993,6 +26122,102 @@ def get_my_curricula(authorization: Optional[str] = Header(None)):
         conn.close()
 
 
+def _build_reference_books_prompt_snippet(target_dev: Optional[float] = None, subjects: Optional[list] = None) -> str:
+    """📚 受験参考書 DB から偏差値マッチング + 科目フィルタした推薦教材を AI prompt 用に整形。
+
+    塾長指示 2026-05-14: 主要教材の総講数・偏差値分布を AI に渡して「マドンナ古文 第13講」
+    のような実在しない数字を防止し、適切なレベルの教材を提案させる。
+
+    Args:
+      target_dev: 生徒の現状偏差値 (None なら制限なし)
+      subjects: 提案対象科目 ['英語', '数学'] 等 (None なら全科目)
+
+    Returns:
+      AI prompt 用の snippet (空文字なら inject なし)
+    """
+    out = ""
+    conn = None
+    try:
+        conn = db()
+        c = conn.cursor()
+        sql = "SELECT name, publisher, subject, sub_genre, total_units, unit_type, suitable_dev_min, suitable_dev_max, level, weeks_to_complete, notes FROM reference_books"
+        params = []
+        clauses = []
+        if target_dev is not None:
+            # 生徒の偏差値が教材の suitable_dev_min - 5 〜 suitable_dev_max + 5 の範囲内 (緩め)
+            clauses.append("suitable_dev_min - 5 <= ? AND suitable_dev_max + 5 >= ?")
+            params.extend([target_dev, target_dev])
+        if subjects:
+            placeholders = ",".join(["?"] * len(subjects))
+            clauses.append(f"subject IN ({placeholders})")
+            params.extend(subjects)
+        if clauses:
+            sql += " WHERE " + " AND ".join(clauses)
+        # LIMIT 100: REFERENCE_BOOKS_SEED が 53 件 → 全件カバー。将来 100 件超過時は要調整。
+        sql += " ORDER BY subject, suitable_dev_min, name LIMIT 100"
+        c.execute(sql, params)
+        rows = c.fetchall()
+        if not rows:
+            return ""
+        lines = ["", "## 📚 主要教材 DB (偏差値マッチング済・教材総数は実数値):"]
+        by_subj = {}
+        for r in rows:
+            by_subj.setdefault(r["subject"], []).append(r)
+        for subj, books in by_subj.items():
+            lines.append(f"\n### {subj}")
+            for b in books:
+                tu = f"全{b['total_units']}{b['unit_type']}" if b['total_units'] and b['unit_type'] else ""
+                wk = f"{b['weeks_to_complete']}週で完了予定" if b['weeks_to_complete'] else ""
+                dev_range = f"偏差値{b['suitable_dev_min']}-{b['suitable_dev_max']}" if b['suitable_dev_min'] else ""
+                level = f"[{b['level']}]" if b['level'] else ""
+                details = " / ".join(x for x in [tu, wk, dev_range, level] if x)
+                lines.append(f"- **{b['name']}** ({b['publisher']}・{b['sub_genre'] or ''}): {details}")
+        lines.append("\n→ **上記教材から偏差値レベルに合うものを選択し、教材の総講数を超えないように週次計画を立てること**。")
+        lines.append("例: 「マドンナ古文 全 33 講・8 週で完了予定」→ 8 週間で 第1講→第33講 まで進める計画を組む (12 週かけて 33 講 = 1 週約 4 講ペース など)。")
+        out = "\n".join(lines)
+    except Exception as e:
+        log.warning(f"[ReferenceBooks] inject failed: {type(e).__name__}: {str(e)[:200]}")
+    finally:
+        if conn is not None:
+            try: conn.close()
+            except Exception: pass
+    return out
+
+
+@app.get("/api/reference-books")
+def get_reference_books(subject: Optional[str] = None, dev: Optional[float] = None, limit: int = 50):
+    """📚 主要受験参考書 DB を生徒向けに公開 (admin auth 不要・読み取り専用)。
+    塾長指示 2026-05-14: 生徒が偏差値マッチング推薦を見られるように。
+    """
+    conn = db()
+    try:
+        c = conn.cursor()
+        sql = "SELECT name, publisher, subject, sub_genre, total_units, unit_type, suitable_dev_min, suitable_dev_max, level, weeks_to_complete, notes FROM reference_books"
+        params = []
+        clauses = []
+        if subject:
+            clauses.append("subject = ?")
+            params.append(subject)
+        if dev is not None:
+            clauses.append("suitable_dev_min - 5 <= ? AND suitable_dev_max + 5 >= ?")
+            params.extend([dev, dev])
+        if clauses:
+            sql += " WHERE " + " AND ".join(clauses)
+        sql += " ORDER BY subject, suitable_dev_min, name LIMIT ?"
+        params.append(min(max(1, int(limit or 50)), 200))
+        c.execute(sql, params)
+        rows = c.fetchall()
+        books = [{
+            "name": r["name"], "publisher": r["publisher"], "subject": r["subject"],
+            "sub_genre": r["sub_genre"], "total_units": r["total_units"], "unit_type": r["unit_type"],
+            "suitable_dev_min": r["suitable_dev_min"], "suitable_dev_max": r["suitable_dev_max"],
+            "level": r["level"], "weeks_to_complete": r["weeks_to_complete"], "notes": r["notes"],
+        } for r in rows]
+        return {"ok": True, "books": books, "count": len(books)}
+    finally:
+        conn.close()
+
+
 def _build_own_materials_prompt_snippet(student_id: int) -> str:
     """📚 生徒のマイ参考書 (使用中) を AI prompt 用 snippet に整形 (塾長指示 2026-05-14)。
 
@@ -26089,12 +26314,25 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
     # 📚 マイ参考書 (生徒が現在使用中) を自動 inject (塾長指示 2026-05-14)
     own_materials_summary = _build_own_materials_prompt_snippet(student["id"])
 
+    # 📚 受験参考書 DB から偏差値マッチング推薦を AI に渡す (塾長指示 2026-05-14)
+    # 「マドンナ古文 全 33 講」のような実数値を AI に明示 → 「第13講」等の架空数字を防止
+    target_dev = None
+    try:
+        if recent:
+            # 科目別偏差値の平均を target_dev とする
+            devs = [r["deviation"] for r in recent if r.get("deviation") is not None]
+            if devs:
+                target_dev = sum(devs) / len(devs)
+    except Exception:
+        pass
+    reference_books_summary = _build_reference_books_prompt_snippet(target_dev=target_dev)
+
     sys_prompt = "受験戦略を立てる学習プランナーです。難関大学 (国公立・難関私立) 志望者に対し、入試日から逆算した全体カリキュラムを 4-6 フェーズに分割して提案します。各フェーズは現実的な期間と教材 + スタディサプリ (スタサプ) の対応講義で構成。スタサプ講義は商品名そのまま (例: 『高3 トップレベル英語 〈読解編〉』『高3 ハイレベル数学IAIIB』『古文文法ベーシックレベル』) で記載。市販の参考書教材とスタサプ講義は別フィールドに分けて出力。純粋な JSON のみ返答 (前置きや解説不要)。"
     user_prompt = f"""志望校: {target_university}{(' / ' + target_faculty) if target_faculty else ''}
 開始日: {sd.isoformat()}
 入試日: {ed.isoformat()} (期間 {months} ヶ月)
 1日確保時間: {daily} 分
-現状: {baseline}{exam_summary}{own_materials_summary}
+現状: {baseline}{exam_summary}{own_materials_summary}{reference_books_summary}
 
 上記から、難関大学合格までの全体カリキュラムを 4-6 フェーズに分割して JSON で返してください。
 模試結果が含まれている場合は、特に偏差値が低い科目に厚めの教材配分をしてください。

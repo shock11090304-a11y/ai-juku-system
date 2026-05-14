@@ -2999,6 +2999,46 @@ ${textbookContext}`;
     }
   } catch (_) { /* 取得失敗時は無視して通常生成 */ }
 
+  // 📚 受験参考書 DB から偏差値マッチング推薦を取得 (塾長指示 2026-05-14)
+  // 「マドンナ古文 全 33 講」のような実数値を AI に渡して架空数字 (第13講等) を防止
+  let referenceBooksSnippet = '';
+  try {
+    // 学力メモから偏差値を推定 (例: "国語62" → 62)
+    // 「2026年」「令和8年」のような年号誤抽出を防ぐため、後続が「年」「月」「日」「時」「分」の場合は除外
+    const levelText = (level || '');
+    const devMatches = [];
+    const re = /(\d{2,3})(?!\s*[年月日時分])/g;
+    let m;
+    while ((m = re.exec(levelText)) !== null) devMatches.push(m[1]);
+    const devs = devMatches.map(s => parseInt(s, 10)).filter(n => n >= 30 && n <= 80);
+    const targetDev = devs.length ? Math.round(devs.reduce((a, b) => a + b, 0) / devs.length) : null;
+    const params = new URLSearchParams({ limit: '50' });
+    if (targetDev !== null) params.set('dev', String(targetDev));
+    const rb = await fetch(`${BACKEND_URL || ''}/api/reference-books?${params}`);
+    if (rb.ok) {
+      const rbData = await rb.json();
+      const books = (rbData && rbData.books) || [];
+      if (books.length) {
+        const bySubj = {};
+        books.forEach(b => { (bySubj[b.subject] = bySubj[b.subject] || []).push(b); });
+        const lines = ['', '📚 主要教材 DB (偏差値マッチング・教材総数は実数値・架空の数字を出すな):'];
+        Object.entries(bySubj).forEach(([s, list]) => {
+          lines.push(`### ${s}`);
+          list.slice(0, 8).forEach(b => {
+            const tu = b.total_units && b.unit_type ? `全${b.total_units}${b.unit_type}` : '';
+            const wk = b.weeks_to_complete ? `${b.weeks_to_complete}週で完了` : '';
+            const dev = b.suitable_dev_min ? `偏差値${b.suitable_dev_min}-${b.suitable_dev_max}` : '';
+            const lv = b.level ? `[${b.level}]` : '';
+            const details = [tu, wk, dev, lv].filter(x => x).join(' / ');
+            lines.push(`- **${b.name}** (${b.publisher}・${b.sub_genre || ''}): ${details}`);
+          });
+        });
+        lines.push('→ **上記教材から偏差値レベルに合うものを選択し、教材の総講数を超えないように週次計画を立てること**。');
+        referenceBooksSnippet = '\n\n' + lines.join('\n');
+      }
+    }
+  } catch (_) { /* 取得失敗時は無視 */ }
+
   const userMsg = `生徒: ${student.name} (${student.grade})
 志望校: ${goal}
 目標日: ${date || '未設定'}
@@ -3006,9 +3046,10 @@ ${textbookContext}`;
 ${level}
 
 週の学習可能時間: ${adjustedHours || '?'}h
-重点科目: ${focus || '全科目'}${upliftNote}${ownMaterialsSnippet}
+重点科目: ${focus || '全科目'}${upliftNote}${ownMaterialsSnippet}${referenceBooksSnippet}
 
-上記データベースから生徒のレベル・志望校に合う教材を具体的に指定し、曜日単位の実行可能なカリキュラムを設計してください。ページ範囲・問題番号も示してください。`;
+上記データベースから生徒のレベル・志望校に合う教材を具体的に指定し、曜日単位の実行可能なカリキュラムを設計してください。ページ範囲・問題番号も示してください。
+**重要**: 主要教材 DB に記載のある教材は、その「全○講/問」の実数値を厳守すること。マドンナ古文が全33講なら第34講以降を出すのは禁止。教材総数を超えない範囲で週次の進捗を逆算配分すること。`;
 
   const response = await callClaude(systemPrompt, userMsg, { kind: 'curriculum', maxTokens: 6000 });
   out.innerHTML = formatMarkdown(escapeHtml(response));
