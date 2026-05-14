@@ -2621,7 +2621,20 @@ async function generateCurriculumWithAi() {
     previewEl.innerHTML = renderCurriculumPreview(preview);
     document.getElementById('cuPreviewSaveBtn').addEventListener('click', saveCurriculumFromPreview);
   } catch (e) {
-    msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || '生成失敗');
+    msg.style.color = '#fca5a5';
+    msg.textContent = '❌ ' + (e.message || '生成失敗');
+    // 🔧 2026-05-14 塾長指示: 503 (AI 生成失敗) 時に「もう一度試す」ボタンを即提示
+    // 単発失敗は AI 一時的不調が主因 → リトライで多くは解消
+    const isRetryable = e && e.status === 503;
+    if (isRetryable && previewEl) {
+      previewEl.innerHTML = `
+        <div style="margin-top:0.6rem; padding:0.8rem; background:rgba(251,113,133,0.08); border:1px solid rgba(251,113,133,0.3); border-radius:8px; text-align:center;">
+          <p style="margin:0 0 0.5rem 0; font-size:0.85rem; color:#fda4af;">AI が一時的に応答できませんでした。再試行で多くは解消されます。</p>
+          <button id="cuRetryBtn" type="button" style="padding:0.55rem 1.2rem; background:linear-gradient(135deg,#a78bfa,#ec4899); border:0; border-radius:8px; color:#fff; font-weight:700; font-size:0.85rem; cursor:pointer;">↻ もう一度試す</button>
+        </div>`;
+      const retryBtn = document.getElementById('cuRetryBtn');
+      if (retryBtn) retryBtn.addEventListener('click', () => { previewEl.innerHTML = ''; generateCurriculumWithAi(); });
+    }
   } finally {
     btn.disabled = false; btn.textContent = '✨ カリキュラムを生成する';
   }

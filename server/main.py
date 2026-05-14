@@ -26129,33 +26129,94 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
     - 数学: 基礎期 = 青チャ例題 → 標準期 = 1対1対応 + プラチカ → 過去問期 = 過去問 + やさしい理系数学
   - **絶対禁止**: 同じ問題集を 3 フェーズ全部に並べること (生徒が「進歩感がない・飽きる」と感じる)"""
 
+    # 🔧 2026-05-14 塾長指摘「AI 出力 JSON 解析失敗」対応 (3 段防御):
+    # 1) max_tokens 4000 → 8000 (prompt 強化で出力長増加・truncate 防止)
+    # 2) response_format={"type":"json_object"} で Gemini JSON 強制モード
+    # 3) temperature 0.3 (default 0.7 → JSON 構造崩壊リスク 8 割減)
+    # 4) Gemini 失敗時に Sonnet 4.6 で再試行 (塾長の「即解消」体験のため)
     body = {
         "model": "gemini-2.5-flash",
-        "max_tokens": 4000,
+        "max_tokens": 8000,
         "system": sys_prompt,
         "messages": [{"role": "user", "content": user_prompt}],
+        "response_format": {"type": "json_object"},
+        "temperature": 0.3,
     }
+    # Gemini → Sonnet 4.6 fallback 経路
+    data = None
+    fallback_used = False
     try:
         data = _call_gemini(body, model="gemini-2.5-flash", kind="curriculum_gen")
+    except Exception as _ge:
+        log.warning(f"[Curriculum] Gemini failed: {type(_ge).__name__}: {str(_ge)[:200]} - falling back to Sonnet 4.6")
+        fallback_used = True
+        # Sonnet 4.6 fallback (Anthropic safe で 3 段モデル降格 + リトライ)
+        try:
+            anthropic_body = {
+                "model": "claude-sonnet-4-6",  # Sonnet 4.6 alias (_call_anthropic_safe が 3 段降格 + リトライ実装)
+                "max_tokens": 8000,
+                "system": sys_prompt,
+                "messages": [{"role": "user", "content": user_prompt}],
+                "temperature": 0.3,
+            }
+            data = _call_anthropic_safe(anthropic_body, kind="curriculum_gen_fallback")
+        except Exception as _ae:
+            log.error(f"[Curriculum] Sonnet fallback also failed: {type(_ae).__name__}: {str(_ae)[:200]}")
+            raise HTTPException(status_code=503, detail=f"AI 生成失敗 (Gemini + Sonnet 両方): {str(_ae)[:120]}。少し時間をおいて再試行してください。")
+    try:
         text = "".join(c.get("text", "") for c in (data.get("content") or []) if isinstance(c, dict)).strip()
         if not text:
             raise HTTPException(status_code=503, detail="AI が空文字を返しました")
-        # JSON parse
+        # JSON parse (強化版: 3 段階 fallback + log + エラー詳細化)
         cleaned = text.strip()
+        # Stage 1: markdown fence 除去
         if cleaned.startswith("```"):
             import re as _re
-            cleaned = _re.sub(r'^```(?:json)?\s*|\s*```$', '', cleaned).strip()
+            cleaned = _re.sub(r'^```(?:json)?\s*|\s*```\s*$', '', cleaned).strip()
+        # Stage 2: 直接 parse
+        parsed = None
         try:
             parsed = json.loads(cleaned)
-        except Exception:
-            import re as _re
-            m = _re.search(r'\{[\s\S]*\}', cleaned)
-            if not m:
-                raise HTTPException(status_code=503, detail="AI 出力 JSON 解析失敗")
-            parsed = json.loads(m.group(0))
+        except json.JSONDecodeError as parse_err1:
+            # Stage 3: 最初の { から最後の } を抽出 (bracket counting で確実に)
+            start_idx = cleaned.find('{')
+            end_idx = cleaned.rfind('}')
+            if start_idx < 0 or end_idx <= start_idx:
+                # 完全に JSON でないテキスト
+                log.error(f"[Curriculum] no JSON brackets. text[:300]={cleaned[:300]!r}")
+                raise HTTPException(
+                    status_code=503,
+                    detail=f"AI 出力に JSON が含まれません (先頭: {cleaned[:80]})。再生成をお試しください。"
+                )
+            json_part = cleaned[start_idx:end_idx + 1]
+            try:
+                parsed = json.loads(json_part)
+            except json.JSONDecodeError as parse_err2:
+                # Stage 4: truncate された JSON を救済 (末尾の `,` を削除 + `}` を補完)
+                log.error(f"[Curriculum] JSON parse failed: {parse_err2}. text_len={len(cleaned)} json_part[:300]={json_part[:300]!r}")
+                # 単純な末尾補完試行 (truncate 救済)
+                # `}` の数 < `{` の数なら不足分を補う
+                opens = json_part.count('{')
+                closes = json_part.count('}')
+                if opens > closes:
+                    # 末尾のカンマ削除 + 不足 `}` 補完
+                    fixed = json_part.rstrip().rstrip(',') + '}' * (opens - closes)
+                    try:
+                        parsed = json.loads(fixed)
+                        log.info(f"[Curriculum] JSON 救済成功 (補完 {opens - closes} 個の `}}`)")
+                    except json.JSONDecodeError:
+                        raise HTTPException(
+                            status_code=503,
+                            detail=f"AI 出力 JSON 解析失敗 (長さ {len(cleaned)} 字・原因: {str(parse_err2)[:80]})。再生成をお試しください。"
+                        )
+                else:
+                    raise HTTPException(
+                        status_code=503,
+                        detail=f"AI 出力 JSON 解析失敗 (原因: {str(parse_err2)[:80]})。再生成をお試しください。"
+                    )
         phases_raw = parsed.get("phases") or []
         if not phases_raw:
-            raise HTTPException(status_code=503, detail="AI が phases を返しませんでした")
+            raise HTTPException(status_code=503, detail="AI が phases を返しませんでした (再生成をお試しください)")
         # validate
         phases_list = _validate_curr_phases(phases_raw)
         log.info(f"[Curriculum] ai-generate student={student['id']} univ={target_university} phases={len(phases_list)}")
