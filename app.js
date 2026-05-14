@@ -3039,6 +3039,44 @@ ${textbookContext}`;
     }
   } catch (_) { /* 取得失敗時は無視 */ }
 
+  // 📺 スタサプ講座 DB から偏差値マッチング推薦を取得 (塾長指示 2026-05-14)
+  // 「高3 トップレベル英語〈構文編〉」のような実在しない講座名を AI が出力するのを防止
+  let sapuriLecturesSnippet = '';
+  try {
+    const levelText2 = (level || '');
+    const re2 = /(\d{2,3})(?!\s*[年月日時分])/g;
+    const dm2 = [];
+    let mm2;
+    while ((mm2 = re2.exec(levelText2)) !== null) dm2.push(mm2[1]);
+    const devs2 = dm2.map(s => parseInt(s, 10)).filter(n => n >= 30 && n <= 80);
+    const targetDev2 = devs2.length ? Math.round(devs2.reduce((a, b) => a + b, 0) / devs2.length) : null;
+    const params2 = new URLSearchParams({ limit: '80' });
+    if (targetDev2 !== null) params2.set('dev', String(targetDev2));
+    const sl = await fetch(`${BACKEND_URL || ''}/api/sapuri-lectures?${params2}`);
+    if (sl.ok) {
+      const slData = await sl.json();
+      const lectures = (slData && slData.lectures) || [];
+      if (lectures.length) {
+        const bySubj2 = {};
+        lectures.forEach(l => { (bySubj2[l.subject] = bySubj2[l.subject] || []).push(l); });
+        const lines2 = ['', '📺 スタディサプリ講座 DB (偏差値マッチング・実在講座のみ):'];
+        Object.entries(bySubj2).forEach(([s, list]) => {
+          lines2.push(`### ${s}`);
+          list.slice(0, 8).forEach(l => {
+            const tl = l.total_lessons ? `全${l.total_lessons}講` : '';
+            const wk = l.weeks_to_complete ? `${l.weeks_to_complete}週で完了` : '';
+            const dev = l.suitable_dev_min ? `偏差値${l.suitable_dev_min}-${l.suitable_dev_max}` : '';
+            const lv = l.level ? `[${l.level}]` : '';
+            const details = [tl, wk, dev, lv].filter(x => x).join(' / ');
+            lines2.push(`- **${l.name}**: ${details}`);
+          });
+        });
+        lines2.push('→ **上記 DB の講座名のみ使用すること**。架空講義名 (例: 「高3 トップレベル英語〈構文編〉」のような実在しない講座) は出力禁止。');
+        sapuriLecturesSnippet = '\n\n' + lines2.join('\n');
+      }
+    }
+  } catch (_) { /* 取得失敗時は無視 */ }
+
   const userMsg = `生徒: ${student.name} (${student.grade})
 志望校: ${goal}
 目標日: ${date || '未設定'}
@@ -3046,10 +3084,11 @@ ${textbookContext}`;
 ${level}
 
 週の学習可能時間: ${adjustedHours || '?'}h
-重点科目: ${focus || '全科目'}${upliftNote}${ownMaterialsSnippet}${referenceBooksSnippet}
+重点科目: ${focus || '全科目'}${upliftNote}${ownMaterialsSnippet}${referenceBooksSnippet}${sapuriLecturesSnippet}
 
 上記データベースから生徒のレベル・志望校に合う教材を具体的に指定し、曜日単位の実行可能なカリキュラムを設計してください。ページ範囲・問題番号も示してください。
-**重要**: 主要教材 DB に記載のある教材は、その「全○講/問」の実数値を厳守すること。マドンナ古文が全33講なら第34講以降を出すのは禁止。教材総数を超えない範囲で週次の進捗を逆算配分すること。`;
+**重要**: 主要教材 DB に記載のある教材は、その「全○講/問」の実数値を厳守すること。マドンナ古文が全33講なら第34講以降を出すのは禁止。教材総数を超えない範囲で週次の進捗を逆算配分すること。
+**スタサプ講座**: 上記スタサプ講座 DB に記載のある講座名のみ使用すること。DB にない講座名 (架空) は絶対に出力しないこと。`;
 
   const response = await callClaude(systemPrompt, userMsg, { kind: 'curriculum', maxTokens: 6000 });
   out.innerHTML = formatMarkdown(escapeHtml(response));

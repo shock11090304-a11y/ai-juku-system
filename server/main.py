@@ -872,6 +872,27 @@ def init_db():
     CREATE INDEX IF NOT EXISTS idx_reference_books_dev ON reference_books(subject, suitable_dev_min, suitable_dev_max);
     CREATE UNIQUE INDEX IF NOT EXISTS uq_reference_books_name_subject
         ON reference_books(name, subject);
+    -- 📺 スタディサプリ講義 DB (塾長指示 2026-05-14): 主要講座のレベル・科目・偏差値を蓄積
+    -- AI カリキュラム生成時に偏差値マッチング + 商品名そのまま AI に渡して架空講義名を防止
+    -- 教師名禁止ルール (project_ai_juku_english_philosophy.md) に従い、講師名抜きの汎用商品名で登録
+    CREATE TABLE IF NOT EXISTS sapuri_lectures (
+        id {pk},
+        name TEXT NOT NULL,
+        level TEXT,
+        grade TEXT,
+        subject TEXT NOT NULL,
+        sub_genre TEXT,
+        total_lessons INTEGER,
+        suitable_dev_min INTEGER,
+        suitable_dev_max INTEGER,
+        weeks_to_complete INTEGER,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_sapuri_lectures_subject ON sapuri_lectures(subject, level);
+    CREATE INDEX IF NOT EXISTS idx_sapuri_lectures_dev ON sapuri_lectures(subject, suitable_dev_min, suitable_dev_max);
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_sapuri_lectures_name_subject
+        ON sapuri_lectures(name, subject);
     -- 国公立難関大学コース 申込フォーム (Phase 4.8 - クレカなし申込)
     -- 塾長指示 2026-05-06: 専用 LP からクレカ登録なしで申込
     CREATE TABLE IF NOT EXISTS course_applications (
@@ -1128,6 +1149,129 @@ try:
     _seed_reference_books()
 except Exception as _se:
     log.warning(f"[seed_reference_books] failed: {_se}")
+
+
+# 📺 スタディサプリ講義 DB 初期データ (塾長指示 2026-05-14・選択肢 A: 講師名抜き商品名)
+# 4 レベル (ベーシック/スタンダード/ハイ/トップ) × 主要科目で代表約 60 講座を選定
+# AI カリキュラム生成時に偏差値マッチング + 講義名を inject して架空講義名を防止
+# 教師名禁止ルール (ai-juku 不変) に従い、講師名抜きの汎用商品名で登録
+SAPURI_LECTURES_SEED = [
+    # 英語 12 講座 (英文法・読解・英作文 / 共通テスト英語 R/L は別カテゴリ)
+    {"name": "高1 ベーシックレベル英文法", "level": "ベーシック", "grade": "高1", "subject": "英語", "sub_genre": "文法", "total_lessons": 24, "suitable_dev_min": 35, "suitable_dev_max": 52, "weeks_to_complete": 12, "notes": "中学英文法の復習〜高校英文法導入・偏差値 35-50 帯の独学スタートに最適"},
+    {"name": "高1 スタンダードレベル英文法", "level": "スタンダード", "grade": "高1", "subject": "英語", "sub_genre": "文法", "total_lessons": 24, "suitable_dev_min": 48, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "高 1 学年の標準英文法・中堅大対応"},
+    {"name": "高2 スタンダードレベル英文法", "level": "スタンダード", "grade": "高2", "subject": "英語", "sub_genre": "文法", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "高 2 学年の標準英文法・MARCH 関関同立対応"},
+    {"name": "高2 ハイレベル英文法", "level": "ハイ", "grade": "高2", "subject": "英語", "sub_genre": "文法", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 70, "weeks_to_complete": 12, "notes": "高 2 で難関大学レベルへ・GMARCH 上位〜旧帝大向け"},
+    {"name": "高3 ベーシックレベル英文法", "level": "ベーシック", "grade": "高3", "subject": "英語", "sub_genre": "文法", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "高 3 で英文法をゼロから復習する基礎の基礎"},
+    {"name": "高3 スタンダードレベル英文法", "level": "スタンダード", "grade": "高3", "subject": "英語", "sub_genre": "文法", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅私大の英文法対策"},
+    {"name": "高3 ハイレベル英文法", "level": "ハイ", "grade": "高3", "subject": "英語", "sub_genre": "文法", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 70, "weeks_to_complete": 12, "notes": "MARCH 上位〜難関国公立の英文法対策"},
+    {"name": "高3 トップレベル英文法", "level": "トップ", "grade": "高3", "subject": "英語", "sub_genre": "文法", "total_lessons": 24, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "東大/京大/早慶上智の英文法対策"},
+    {"name": "高3 スタンダードレベル英語 〈読解編〉", "level": "スタンダード", "grade": "高3", "subject": "英語", "sub_genre": "読解", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "中堅大の英語長文読解対策"},
+    {"name": "高3 ハイレベル英語 〈読解編〉", "level": "ハイ", "grade": "高3", "subject": "英語", "sub_genre": "読解", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 70, "weeks_to_complete": 12, "notes": "MARCH〜難関国公立の英語長文読解対策"},
+    {"name": "高3 トップレベル英語 〈読解編〉", "level": "トップ", "grade": "高3", "subject": "英語", "sub_genre": "読解", "total_lessons": 24, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "東大/京大/早慶上智の英語長文読解対策"},
+    {"name": "高3 英作文対策講座", "level": "ハイ", "grade": "高3", "subject": "英語", "sub_genre": "英作文", "total_lessons": 24, "suitable_dev_min": 55, "suitable_dev_max": 75, "weeks_to_complete": 12, "notes": "和文英訳 + 自由英作文の難関大対策"},
+    # 数学 9 講座 (共通テスト数学 IA/IIB は別カテゴリ)
+    {"name": "高1 スタンダードレベル数学IA", "level": "スタンダード", "grade": "高1", "subject": "数学", "sub_genre": "IA", "total_lessons": 40, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 20, "notes": "高 1 学年の数学 IA 標準・中堅大対応"},
+    {"name": "高2 スタンダードレベル数学IIB", "level": "スタンダード", "grade": "高2", "subject": "数学", "sub_genre": "IIB", "total_lessons": 40, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 20, "notes": "高 2 学年の数学 IIB 標準・中堅大対応"},
+    {"name": "高3 ベーシックレベル数学IAIIB", "level": "ベーシック", "grade": "高3", "subject": "数学", "sub_genre": "IAIIB", "total_lessons": 40, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 20, "notes": "数学 IAIIB をゼロから復習する基礎の基礎"},
+    {"name": "高3 スタンダードレベル数学IAIIB", "level": "スタンダード", "grade": "高3", "subject": "数学", "sub_genre": "IAIIB", "total_lessons": 40, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 20, "notes": "共通テスト〜中堅大の数学 IAIIB 対策"},
+    {"name": "高3 ハイレベル数学IAIIB", "level": "ハイ", "grade": "高3", "subject": "数学", "sub_genre": "IAIIB", "total_lessons": 40, "suitable_dev_min": 58, "suitable_dev_max": 70, "weeks_to_complete": 20, "notes": "MARCH 上位〜難関国公立の数学 IAIIB 対策"},
+    {"name": "高3 トップレベル数学IAIIB", "level": "トップ", "grade": "高3", "subject": "数学", "sub_genre": "IAIIB", "total_lessons": 40, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 20, "notes": "東大/京大/早慶の数学 IAIIB 対策"},
+    {"name": "高3 スタンダードレベル数学III", "level": "スタンダード", "grade": "高3", "subject": "数学", "sub_genre": "III", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "理系標準の数学 III 対策"},
+    {"name": "高3 ハイレベル数学III", "level": "ハイ", "grade": "高3", "subject": "数学", "sub_genre": "III", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 70, "weeks_to_complete": 12, "notes": "難関国公立理系の数学 III 対策"},
+    {"name": "高3 トップレベル数学III", "level": "トップ", "grade": "高3", "subject": "数学", "sub_genre": "III", "total_lessons": 24, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "東大/京大/医学部の数学 III 対策"},
+    # 国語 10 講座 (古文文法/古文読解/漢文/現代文 / 共通テスト国語は別カテゴリ)
+    {"name": "古文文法ベーシックレベル", "level": "ベーシック", "grade": "高1高2高3", "subject": "国語", "sub_genre": "古文文法", "total_lessons": 12, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 6, "notes": "古文文法の基礎の基礎・全学年対応"},
+    {"name": "古文文法スタンダードレベル", "level": "スタンダード", "grade": "高1高2高3", "subject": "国語", "sub_genre": "古文文法", "total_lessons": 12, "suitable_dev_min": 48, "suitable_dev_max": 62, "weeks_to_complete": 6, "notes": "古文文法の標準・中堅大対応"},
+    {"name": "高3 スタンダードレベル古文", "level": "スタンダード", "grade": "高3", "subject": "国語", "sub_genre": "古文読解", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の古文読解対策"},
+    {"name": "高3 ハイレベル古文", "level": "ハイ", "grade": "高3", "subject": "国語", "sub_genre": "古文読解", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 12, "notes": "難関国公立/早慶の古文読解対策"},
+    {"name": "漢文ベーシックレベル", "level": "ベーシック", "grade": "高1高2高3", "subject": "国語", "sub_genre": "漢文", "total_lessons": 12, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 6, "notes": "漢文句法の基礎の基礎・全学年対応"},
+    {"name": "漢文スタンダードレベル", "level": "スタンダード", "grade": "高1高2高3", "subject": "国語", "sub_genre": "漢文", "total_lessons": 12, "suitable_dev_min": 48, "suitable_dev_max": 65, "weeks_to_complete": 6, "notes": "漢文句法 + 読解の標準・共通テスト〜難関大"},
+    {"name": "高3 ベーシックレベル現代文", "level": "ベーシック", "grade": "高3", "subject": "国語", "sub_genre": "現代文", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "現代文読解の基礎の基礎"},
+    {"name": "高3 スタンダードレベル現代文", "level": "スタンダード", "grade": "高3", "subject": "国語", "sub_genre": "現代文", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の現代文読解対策"},
+    {"name": "高3 ハイレベル現代文", "level": "ハイ", "grade": "高3", "subject": "国語", "sub_genre": "現代文", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 12, "notes": "MARCH 上位〜難関国公立の現代文読解対策"},
+    {"name": "高3 トップレベル現代文", "level": "トップ", "grade": "高3", "subject": "国語", "sub_genre": "現代文", "total_lessons": 24, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "東大/京大/早慶の現代文読解対策"},
+    # 物理 4 講座
+    {"name": "高3 ベーシックレベル物理", "level": "ベーシック", "grade": "高3", "subject": "物理", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "物理基礎の復習〜高校物理導入・偏差値 38-50 帯"},
+    {"name": "高3 スタンダードレベル物理", "level": "スタンダード", "grade": "高3", "subject": "物理", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の物理対策"},
+    {"name": "高3 ハイレベル物理", "level": "ハイ", "grade": "高3", "subject": "物理", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 12, "notes": "難関国公立/早慶理工の物理対策"},
+    {"name": "高3 トップレベル物理", "level": "トップ", "grade": "高3", "subject": "物理", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "東大/京大/医学部の物理対策"},
+    # 化学 4 講座
+    {"name": "高3 ベーシックレベル化学", "level": "ベーシック", "grade": "高3", "subject": "化学", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "化学基礎の復習〜高校化学導入・偏差値 38-50 帯"},
+    {"name": "高3 スタンダードレベル化学", "level": "スタンダード", "grade": "高3", "subject": "化学", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の化学対策"},
+    {"name": "高3 ハイレベル化学", "level": "ハイ", "grade": "高3", "subject": "化学", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 12, "notes": "難関国公立/早慶理工の化学対策"},
+    {"name": "高3 トップレベル化学", "level": "トップ", "grade": "高3", "subject": "化学", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "東大/京大/医学部の化学対策"},
+    # 生物 3 講座
+    {"name": "高3 ベーシックレベル生物", "level": "ベーシック", "grade": "高3", "subject": "生物", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "生物基礎の復習〜高校生物導入・偏差値 38-50 帯"},
+    {"name": "高3 スタンダードレベル生物", "level": "スタンダード", "grade": "高3", "subject": "生物", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の生物対策"},
+    {"name": "高3 ハイレベル生物", "level": "ハイ", "grade": "高3", "subject": "生物", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 12, "notes": "難関国公立/医学部の生物対策"},
+    # 日本史 3 講座
+    {"name": "高3 ベーシックレベル日本史", "level": "ベーシック", "grade": "高3", "subject": "日本史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "日本史通史の基礎の基礎"},
+    {"name": "高3 スタンダードレベル日本史", "level": "スタンダード", "grade": "高3", "subject": "日本史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の日本史対策"},
+    {"name": "高3 トップ&ハイレベル日本史", "level": "トップ&ハイ", "grade": "高3", "subject": "日本史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "MARCH 上位〜東大/京大/早慶の日本史対策"},
+    # 世界史 3 講座
+    {"name": "高3 ベーシックレベル世界史", "level": "ベーシック", "grade": "高3", "subject": "世界史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "世界史通史の基礎の基礎"},
+    {"name": "高3 スタンダードレベル世界史", "level": "スタンダード", "grade": "高3", "subject": "世界史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の世界史対策"},
+    {"name": "高3 トップ&ハイレベル世界史", "level": "トップ&ハイ", "grade": "高3", "subject": "世界史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "MARCH 上位〜東大/京大/早慶の世界史対策"},
+    # 地理 2 講座
+    {"name": "高3 ベーシックレベル地理", "level": "ベーシック", "grade": "高3", "subject": "地理", "sub_genre": "系統地理+地誌", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "地理の基礎の基礎・共通テスト導入"},
+    {"name": "高3 スタンダード&ハイレベル地理", "level": "スタンダード&ハイ", "grade": "高3", "subject": "地理", "sub_genre": "系統地理+地誌", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 72, "weeks_to_complete": 12, "notes": "共通テスト〜難関国公立の地理対策"},
+    # 公民 3 講座
+    {"name": "高3 ベーシックレベル政治・経済", "level": "ベーシック", "grade": "高3", "subject": "公民", "sub_genre": "政治・経済", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "政経の基礎の基礎"},
+    {"name": "高3 スタンダード&ハイレベル政治・経済", "level": "スタンダード&ハイ", "grade": "高3", "subject": "公民", "sub_genre": "政治・経済", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 72, "weeks_to_complete": 12, "notes": "共通テスト〜MARCH 上位の政経対策"},
+    {"name": "高3 ベーシックレベル現代社会", "level": "ベーシック", "grade": "高3", "subject": "公民", "sub_genre": "現代社会", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 58, "weeks_to_complete": 12, "notes": "現代社会の共通テスト対策"},
+    # 共通テスト対策 5 講座 (subject 別では 英語 R/L → 英語 2 / 数学 IA/IIB → 数学 2 / 国語 1)
+    {"name": "共通テスト対策講座 英語(リーディング)", "level": "共通テスト", "grade": "高3", "subject": "英語", "sub_genre": "共通テスト", "total_lessons": 12, "suitable_dev_min": 45, "suitable_dev_max": 68, "weeks_to_complete": 6, "notes": "共通テスト英語リーディング対策・直前期向け"},
+    {"name": "共通テスト対策講座 英語(リスニング)", "level": "共通テスト", "grade": "高3", "subject": "英語", "sub_genre": "共通テスト", "total_lessons": 12, "suitable_dev_min": 45, "suitable_dev_max": 68, "weeks_to_complete": 6, "notes": "共通テスト英語リスニング対策・直前期向け"},
+    {"name": "共通テスト対策講座 数学IA", "level": "共通テスト", "grade": "高3", "subject": "数学", "sub_genre": "共通テスト", "total_lessons": 12, "suitable_dev_min": 45, "suitable_dev_max": 68, "weeks_to_complete": 6, "notes": "共通テスト数学 IA 対策・直前期向け"},
+    {"name": "共通テスト対策講座 数学IIB", "level": "共通テスト", "grade": "高3", "subject": "数学", "sub_genre": "共通テスト", "total_lessons": 12, "suitable_dev_min": 45, "suitable_dev_max": 68, "weeks_to_complete": 6, "notes": "共通テスト数学 IIB 対策・直前期向け"},
+    {"name": "共通テスト対策講座 国語", "level": "共通テスト", "grade": "高3", "subject": "国語", "sub_genre": "共通テスト", "total_lessons": 12, "suitable_dev_min": 45, "suitable_dev_max": 68, "weeks_to_complete": 6, "notes": "共通テスト国語 (現代文/古文/漢文) 対策・直前期向け"},
+]
+
+
+def _seed_sapuri_lectures():
+    """スタディサプリ主要講座の初期データを sapuri_lectures に投入 (重複は skip・冪等)。"""
+    conn = db()
+    c = conn.cursor()
+    inserted = 0
+    skipped = 0
+    for lec in SAPURI_LECTURES_SEED:
+        try:
+            c.execute(
+                "INSERT INTO sapuri_lectures (name, level, grade, subject, sub_genre, "
+                "total_lessons, suitable_dev_min, suitable_dev_max, weeks_to_complete, notes) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?)",
+                (lec["name"], lec.get("level"), lec.get("grade"), lec["subject"], lec.get("sub_genre"),
+                 lec.get("total_lessons"), lec.get("suitable_dev_min"), lec.get("suitable_dev_max"),
+                 lec.get("weeks_to_complete"), lec.get("notes"))
+            )
+            conn.commit()
+            inserted += 1
+        except IntegrityError:
+            try: conn.rollback()
+            except Exception: pass
+            skipped += 1
+        except Exception as e:
+            try: conn.rollback()
+            except Exception: pass
+            log.warning(f"[seed_sapuri_lectures] {lec['name']}: {type(e).__name__}: {str(e)[:100]}")
+            skipped += 1
+    conn.close()
+    # multi-replica log noise 最適化 (案 B: idempotent check)
+    total_seed = len(SAPURI_LECTURES_SEED)
+    if inserted > 0:
+        log.info(f"[seed_sapuri_lectures] inserted={inserted} skipped={skipped} (total seed={total_seed})")
+    elif skipped == total_seed:
+        log.debug(f"[seed_sapuri_lectures] all skipped - idempotent state (seed={total_seed})")
+    else:
+        log.warning(f"[seed_sapuri_lectures] UNEXPECTED state: inserted={inserted} skipped={skipped} != {total_seed}")
+    return inserted, skipped
+
+
+try:
+    _seed_sapuri_lectures()
+except Exception as _se:
+    log.warning(f"[seed_sapuri_lectures] failed: {_se}")
+
 
 # ==========================================================================
 # FastAPI App
@@ -25776,7 +25920,7 @@ def generate_weak_points_worksheet(payload: WorksheetGenRequest, request: Reques
     except Exception as e:
         log.warning(f"[Worksheet] exam context fetch failed: {e}")
 
-    sys_prompt = "難関大学受験の問題作成のプロです。生徒の弱点科目に合わせて練習問題を作成し、解答・解説・対応するスタディサプリ講義も提案します。教師名は塾長指示で出さない方針 (ただし sapuri_lectures は商品名そのままなので講師名を含む)。純粋な JSON のみ返答 (前置きや解説不要)。"
+    sys_prompt = "難関大学受験の問題作成のプロです。生徒の弱点科目に合わせて練習問題を作成し、解答・解説・対応するスタディサプリ講義も提案します。教師名 (講師名) は塾長指示で出力禁止。スタサプ講座は『高3 トップレベル英文法』のような講師名抜きの汎用商品名のみで記載すること。純粋な JSON のみ返答 (前置きや解説不要)。"
     user_prompt = f"""科目: {subject}
 {('テーマ/単元: ' + topic) if topic else 'テーマ/単元: AI が模試結果から推測して設定'}
 {('志望校: ' + target_uni) if target_uni else ''}
@@ -26250,6 +26394,102 @@ def get_reference_books(subject: Optional[str] = None, dev: Optional[float] = No
         conn.close()
 
 
+def _build_sapuri_lectures_prompt_snippet(target_dev: Optional[float] = None, subjects: Optional[list] = None) -> str:
+    """📺 スタディサプリ講義 DB から偏差値マッチング + 科目フィルタした推薦講座を AI prompt 用に整形。
+
+    塾長指示 2026-05-14: スタサプ講義名を AI に渡して「実在しない講座名」(架空) を防止し、
+    レベル × 偏差値で適切な講座を提案させる。
+
+    Args:
+      target_dev: 生徒の現状偏差値 (None なら制限なし)
+      subjects: 提案対象科目 ['英語', '数学'] 等 (None なら全科目)
+
+    Returns:
+      AI prompt 用の snippet (空文字なら inject なし)
+    """
+    out = ""
+    conn = None
+    try:
+        conn = db()
+        c = conn.cursor()
+        sql = "SELECT name, level, grade, subject, sub_genre, total_lessons, suitable_dev_min, suitable_dev_max, weeks_to_complete, notes FROM sapuri_lectures"
+        params = []
+        clauses = []
+        if target_dev is not None:
+            clauses.append("suitable_dev_min - 5 <= ? AND suitable_dev_max + 5 >= ?")
+            params.extend([target_dev, target_dev])
+        if subjects:
+            placeholders = ",".join(["?"] * len(subjects))
+            clauses.append(f"subject IN ({placeholders})")
+            params.extend(subjects)
+        if clauses:
+            sql += " WHERE " + " AND ".join(clauses)
+        # LIMIT 100: 現 SAPURI_LECTURES_SEED 約 60 件 → 全件カバー。将来 100 件超過時は要調整。
+        sql += " ORDER BY subject, suitable_dev_min, name LIMIT 100"
+        c.execute(sql, params)
+        rows = c.fetchall()
+        if not rows:
+            return ""
+        lines = ["", "## 📺 スタディサプリ講座 DB (偏差値マッチング済・実在講座のみ):"]
+        by_subj = {}
+        for r in rows:
+            by_subj.setdefault(r["subject"], []).append(r)
+        for subj, lectures in by_subj.items():
+            lines.append(f"\n### {subj}")
+            for l in lectures:
+                tl = f"全{l['total_lessons']}講" if l['total_lessons'] else ""
+                wk = f"{l['weeks_to_complete']}週で完了予定" if l['weeks_to_complete'] else ""
+                dev_range = f"偏差値{l['suitable_dev_min']}-{l['suitable_dev_max']}" if l['suitable_dev_min'] else ""
+                lv = f"[{l['level']}]" if l['level'] else ""
+                details = " / ".join(x for x in [tl, wk, dev_range, lv] if x)
+                lines.append(f"- **{l['name']}**: {details}")
+        lines.append("\n→ **上記講座から偏差値レベルに合うものを選択し、講座の総講数を超えないように週次計画を立てること**。")
+        lines.append("**重要**: 上記 DB に記載のないスタサプ講座名 (例: 「高3 トップレベル英語〈構文編〉」のような実在しない講座) は出力禁止。")
+        out = "\n".join(lines)
+    except Exception as e:
+        log.warning(f"[SapuriLectures] inject failed: {type(e).__name__}: {str(e)[:200]}")
+    finally:
+        if conn is not None:
+            try: conn.close()
+            except Exception: pass
+    return out
+
+
+@app.get("/api/sapuri-lectures")
+def get_sapuri_lectures(subject: Optional[str] = None, dev: Optional[float] = None, limit: int = 50):
+    """📺 スタディサプリ主要講座 DB を生徒向けに公開 (admin auth 不要・読み取り専用)。
+    塾長指示 2026-05-14: 生徒が偏差値マッチング講座推薦を見られるように。
+    """
+    conn = db()
+    try:
+        c = conn.cursor()
+        sql = "SELECT name, level, grade, subject, sub_genre, total_lessons, suitable_dev_min, suitable_dev_max, weeks_to_complete, notes FROM sapuri_lectures"
+        params = []
+        clauses = []
+        if subject:
+            clauses.append("subject = ?")
+            params.append(subject)
+        if dev is not None:
+            clauses.append("suitable_dev_min - 5 <= ? AND suitable_dev_max + 5 >= ?")
+            params.extend([dev, dev])
+        if clauses:
+            sql += " WHERE " + " AND ".join(clauses)
+        sql += " ORDER BY subject, suitable_dev_min, name LIMIT ?"
+        params.append(min(max(1, int(limit or 50)), 200))
+        c.execute(sql, params)
+        rows = c.fetchall()
+        lectures = [{
+            "name": r["name"], "level": r["level"], "grade": r["grade"],
+            "subject": r["subject"], "sub_genre": r["sub_genre"],
+            "total_lessons": r["total_lessons"],
+            "suitable_dev_min": r["suitable_dev_min"], "suitable_dev_max": r["suitable_dev_max"],
+            "weeks_to_complete": r["weeks_to_complete"], "notes": r["notes"],
+        } for r in rows]
+        return {"ok": True, "lectures": lectures, "count": len(lectures)}
+    finally:
+        conn.close()
+
+
 def _build_own_materials_prompt_snippet(student_id: int) -> str:
     """📚 生徒のマイ参考書 (使用中) を AI prompt 用 snippet に整形 (塾長指示 2026-05-14)。
 
@@ -26358,13 +26598,15 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
     except Exception:
         pass
     reference_books_summary = _build_reference_books_prompt_snippet(target_dev=target_dev)
+    # 📺 スタサプ講座 DB を AI に渡す (塾長指示 2026-05-14) → 架空講義名の出力を防止
+    sapuri_lectures_summary = _build_sapuri_lectures_prompt_snippet(target_dev=target_dev)
 
-    sys_prompt = "受験戦略を立てる学習プランナーです。難関大学 (国公立・難関私立) 志望者に対し、入試日から逆算した全体カリキュラムを 4-6 フェーズに分割して提案します。各フェーズは現実的な期間と教材 + スタディサプリ (スタサプ) の対応講義で構成。スタサプ講義は商品名そのまま (例: 『高3 トップレベル英語 〈読解編〉』『高3 ハイレベル数学IAIIB』『古文文法ベーシックレベル』) で記載。市販の参考書教材とスタサプ講義は別フィールドに分けて出力。純粋な JSON のみ返答 (前置きや解説不要)。"
+    sys_prompt = "受験戦略を立てる学習プランナーです。難関大学 (国公立・難関私立) 志望者に対し、入試日から逆算した全体カリキュラムを 4-6 フェーズに分割して提案します。各フェーズは現実的な期間と教材 + スタディサプリ (スタサプ) の対応講義で構成。スタサプ講義は **必ずプロンプト内の『スタディサプリ講座 DB』に記載されている講座名のみ** を使用すること (例: 『高3 トップレベル英語 〈読解編〉』『高3 ハイレベル数学IAIIB』『古文文法ベーシックレベル』)。DB にない講座名は出力禁止 (架空講義回避)。市販の参考書教材とスタサプ講義は別フィールドに分けて出力。純粋な JSON のみ返答 (前置きや解説不要)。"
     user_prompt = f"""志望校: {target_university}{(' / ' + target_faculty) if target_faculty else ''}
 開始日: {sd.isoformat()}
 入試日: {ed.isoformat()} (期間 {months} ヶ月)
 1日確保時間: {daily} 分
-現状: {baseline}{exam_summary}{own_materials_summary}{reference_books_summary}
+現状: {baseline}{exam_summary}{own_materials_summary}{reference_books_summary}{sapuri_lectures_summary}
 
 上記から、難関大学合格までの全体カリキュラムを 4-6 フェーズに分割して JSON で返してください。
 模試結果が含まれている場合は、特に偏差値が低い科目に厚めの教材配分をしてください。
@@ -26588,7 +26830,7 @@ def curriculum_gap_analyze(curr_id: int, request: Request, authorization: Option
         phase_lines.append(f"  フェーズ{i+1}: {p.get('name','')} ({p.get('start_date','')}〜{p.get('end_date','')}) focus: {p.get('focus','')} / 教材: {mats} / スタサプ: {sapuri}")
     phase_block = "\n".join(phase_lines) if phase_lines else "  (なし)"
 
-    sys_prompt = "難関大学受験の戦略アドバイザーです。生徒の現状偏差値と志望校に必要な偏差値のギャップを科目別に分析し、現行カリキュラムに具体的な修正提案を行います。教師名は出さない (ただし sapuri_lectures は商品名そのまま)。純粋な JSON のみ返答 (前置き解説不要)。"
+    sys_prompt = "難関大学受験の戦略アドバイザーです。生徒の現状偏差値と志望校に必要な偏差値のギャップを科目別に分析し、現行カリキュラムに具体的な修正提案を行います。教師名 (講師名) は塾長指示で出力禁止。スタサプ講座は『高3 トップレベル英文法』のような講師名抜きの汎用商品名のみで記載すること。純粋な JSON のみ返答 (前置き解説不要)。"
     user_prompt = f"""## 志望校
 {row['target_university']}{(' / ' + row['target_faculty']) if row['target_faculty'] else ''}
 
