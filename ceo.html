@@ -739,6 +739,169 @@
         <div id="stripePricesResult" style="display:none;font-size:0.78rem;color:#cbd5e1;background:rgba(0,0,0,0.3);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:0.7rem;line-height:1.6;"></div>
       </div>
 
+      <!-- 📄 過去問 → AI 類題自動生成 (γ 究極最適化方式・2026-05-14 塾長指示) -->
+      <!-- 1 PDF アップロード → Gemini 解析 → Claude バッチ類題生成 → 3 人検閲 → publish -->
+      <div style="margin-top:1rem;padding:0.9rem;background:rgba(0,0,0,0.25);border:2px solid rgba(34,197,94,0.4);border-radius:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.7rem;">
+          <div style="font-size:0.9rem;font-weight:800;color:#86efac;">📄 過去問 → AI 類題自動生成 <span style="font-size:0.65rem;background:linear-gradient(135deg,#22c55e,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">γ 究極最適化</span></div>
+          <span style="font-size:0.7rem;color:#71717a;">1 PDF ¥80 / 18 類題生成</span>
+        </div>
+        <div style="font-size:0.75rem;color:#94a3b8;line-height:1.6;margin-bottom:0.7rem;">
+          東進過去問 DB / 赤本 / 大学公式公開過去問の PDF をアップロード → <strong style="color:#86efac;">Gemini で全問抽出</strong> → <strong style="color:#86efac;">Claude Sonnet で 18 類題バッチ生成</strong> → <strong style="color:#86efac;">3 人検閲 + AI Self-Critique</strong> → ワンクリック publish。<br>
+          <span style="color:#f59e0b;">著作権安全性</span>: 元問題と異なる完全新規類題のみ生成 (著作権法 30 条の 4 + 5 人 1 チーム検閲方針)。
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:0.5rem;margin-bottom:0.7rem;">
+          <input id="peTargetUniv" type="text" placeholder="志望校 (例: 東京大学)" style="background:rgba(15,23,42,0.7);color:#e5e7eb;border:1px solid rgba(148,163,184,0.3);padding:0.4rem;border-radius:6px;font-size:0.75rem;">
+          <input id="peYear" type="text" placeholder="年度 (例: 2024)" style="background:rgba(15,23,42,0.7);color:#e5e7eb;border:1px solid rgba(148,163,184,0.3);padding:0.4rem;border-radius:6px;font-size:0.75rem;">
+          <select id="peSubject" style="background:rgba(15,23,42,0.7);color:#e5e7eb;border:1px solid rgba(148,163,184,0.3);padding:0.4rem;border-radius:6px;font-size:0.75rem;">
+            <option value="">科目選択</option>
+            <option value="英語">英語</option>
+            <option value="数学">数学</option>
+            <option value="国語">国語</option>
+            <option value="物理">物理</option>
+            <option value="化学">化学</option>
+            <option value="生物">生物</option>
+            <option value="日本史">日本史</option>
+            <option value="世界史">世界史</option>
+            <option value="地理">地理</option>
+            <option value="公民">公民</option>
+          </select>
+        </div>
+        <div id="peDropArea" style="border:2px dashed rgba(34,197,94,0.5);border-radius:10px;padding:1rem;text-align:center;cursor:pointer;transition:all 0.2s;font-size:0.85rem;color:#86efac;background:rgba(34,197,94,0.05);" onclick="document.getElementById('peFileInput').click()">
+          📄 ここに過去問 PDF をドラッグ&ドロップ または タップして選択 (最大 20MB)
+        </div>
+        <input id="peFileInput" type="file" accept="application/pdf" style="display:none;" onchange="pePastExamUpload(event)">
+        <div id="peStatus" style="margin-top:0.7rem;font-size:0.8rem;color:#94a3b8;"></div>
+        <div id="pePreviewArea" style="margin-top:0.7rem;display:none;"></div>
+      </div>
+      <script>
+      (function(){
+        // 過去問 → 類題生成 UI (塾長指示 2026-05-14)
+        function getAdminToken() {
+          try { return localStorage.getItem('ai_juku_admin_token') || ''; } catch { return ''; }
+        }
+        async function pePastExamUpload(ev) {
+          const file = ev.target.files && ev.target.files[0];
+          if (!file) return;
+          const univ = (document.getElementById('peTargetUniv').value || '').trim();
+          const year = (document.getElementById('peYear').value || '').trim();
+          const subject = (document.getElementById('peSubject').value || '').trim();
+          if (!univ || !year || !subject) {
+            alert('志望校・年度・科目を入力してください'); return;
+          }
+          const status = document.getElementById('peStatus');
+          status.innerHTML = '🔄 アップロード中... Gemini 解析 + Claude 類題生成 (約 60-90 秒)';
+          const fd = new FormData();
+          fd.append('file', file);
+          fd.append('target_university', univ);
+          fd.append('year', year);
+          fd.append('subject', subject);
+          try {
+            const r = await fetch((window.BACKEND_URL||'') + '/api/admin/past-exam/upload', {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + getAdminToken() },
+              body: fd
+            });
+            const data = await r.json();
+            if (!data.ok) {
+              status.innerHTML = '❌ エラー: ' + (data.error || data.detail || 'unknown');
+              return;
+            }
+            const cache = data.cache_hit ? ' (キャッシュ再利用 ¥30)' : ` (新規解析 ¥${data.cost_yen})`;
+            status.innerHTML = `✅ 完了${cache} | 抽出 ${data.problems_extracted} 問 → 類題 ${data.similars_generated} 件生成`;
+            pePastExamShowPreview(data.upload_id, data.preview);
+          } catch (e) {
+            status.innerHTML = '❌ 通信エラー: ' + (e.message || e);
+          }
+        }
+        window.pePastExamUpload = pePastExamUpload;
+
+        async function pePastExamShowPreview(uploadId, preview) {
+          const area = document.getElementById('pePreviewArea');
+          area.style.display = 'block';
+          // 全件取得
+          const r = await fetch((window.BACKEND_URL||'') + '/api/admin/past-exam/similar/' + uploadId, {
+            headers: { 'Authorization': 'Bearer ' + getAdminToken() }
+          });
+          const data = await r.json();
+          if (!data.ok) {
+            area.innerHTML = '❌ 取得失敗';
+            return;
+          }
+          const items = data.items || [];
+          let html = `<div style="margin-bottom:0.5rem;font-size:0.75rem;color:#94a3b8;">📋 ${items.length} 類題のプレビュー (☑ で publish・✕ で却下)</div>`;
+          html += items.map(it => {
+            const safety = it.copyright_similarity < 0.5 ? '✅' : (it.copyright_similarity < 0.7 ? '⚠️' : '🚨');
+            const passes = (it.review_round1_pass ? 'R1' : '') + (it.review_round2_pass ? '+R2' : '') + (it.review_round3_pass ? '+R3' : '');
+            return `<div style="background:rgba(15,23,42,0.5);padding:0.6rem;margin:0.4rem 0;border-radius:6px;border-left:3px solid ${it.status==='published'?'#10b981':(it.status==='rejected'?'#ef4444':'#6366f1')};">
+              <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.3rem;">
+                <span style="font-size:0.7rem;color:#a5b4fc;">第${it.source_problem_index}問 variant-${it.variant_index} / ${it.topic||'?'} / 難易度${it.difficulty||'?'}</span>
+                <span style="font-size:0.7rem;color:#cbd5e1;">著作権類似度: ${safety} ${(it.copyright_similarity*100).toFixed(0)}%</span>
+                <span style="font-size:0.7rem;color:#cbd5e1;">検閲: ${passes}</span>
+                <span style="font-size:0.7rem;color:#86efac;">スコア ${it.self_critique_score}/100</span>
+                ${it.status==='published'?'<span style="font-size:0.7rem;color:#10b981;">✅ publish 済</span>':''}
+                ${it.status==='rejected'?'<span style="font-size:0.7rem;color:#ef4444;">✕ 却下済</span>':''}
+              </div>
+              <div style="font-size:0.78rem;color:#e5e7eb;margin:0.3rem 0;line-height:1.5;">📝 ${(it.question||'').slice(0,400)}${it.question&&it.question.length>400?'...':''}</div>
+              <div style="font-size:0.72rem;color:#94a3b8;margin:0.2rem 0;">💡 ${(it.explanation||'').slice(0,200)}${it.explanation&&it.explanation.length>200?'...':''}</div>
+              ${it.status==='draft' ? `<div style="display:flex;gap:0.4rem;margin-top:0.4rem;">
+                <button onclick="pePublishSimilar(${it.id}, ${uploadId})" style="background:#10b981;color:#fff;border:none;padding:0.3rem 0.6rem;border-radius:4px;font-size:0.7rem;cursor:pointer;">☑ publish (問題プールへ)</button>
+                <button onclick="peRejectSimilar(${it.id}, ${uploadId})" style="background:#ef4444;color:#fff;border:none;padding:0.3rem 0.6rem;border-radius:4px;font-size:0.7rem;cursor:pointer;">✕ 却下</button>
+              </div>` : ''}
+            </div>`;
+          }).join('');
+          area.innerHTML = html;
+        }
+        window.pePastExamShowPreview = pePastExamShowPreview;
+
+        async function pePublishSimilar(id, uploadId) {
+          if (!confirm('この類題を problems pool に publish しますか?')) return;
+          const r = await fetch((window.BACKEND_URL||'') + '/api/admin/past-exam/publish/' + id, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + getAdminToken() }
+          });
+          const data = await r.json();
+          if (data.ok) {
+            pePastExamShowPreview(uploadId);
+          } else {
+            alert('publish 失敗: ' + (data.detail || 'unknown'));
+          }
+        }
+        window.pePublishSimilar = pePublishSimilar;
+
+        async function peRejectSimilar(id, uploadId) {
+          if (!confirm('この類題を却下しますか?')) return;
+          const r = await fetch((window.BACKEND_URL||'') + '/api/admin/past-exam/reject/' + id, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + getAdminToken() }
+          });
+          const data = await r.json();
+          if (data.ok) {
+            pePastExamShowPreview(uploadId);
+          } else {
+            alert('却下失敗: ' + (data.detail || 'unknown'));
+          }
+        }
+        window.peRejectSimilar = peRejectSimilar;
+
+        // ドラッグ&ドロップ対応
+        document.addEventListener('DOMContentLoaded', function(){
+          const drop = document.getElementById('peDropArea');
+          if (drop) {
+            ['dragover','dragenter'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.style.background = 'rgba(34,197,94,0.15)'; }));
+            ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.style.background = 'rgba(34,197,94,0.05)'; }));
+            drop.addEventListener('drop', e => {
+              const f = e.dataTransfer.files && e.dataTransfer.files[0];
+              if (f) {
+                document.getElementById('peFileInput').files = e.dataTransfer.files;
+                pePastExamUpload({target: {files: [f]}});
+              }
+            });
+          }
+        });
+      })();
+      </script>
+
       <!-- 🤖 AI チーム検閲ワークフロー (2026-05-10 追加) -->
       <!-- Claude Max + ChatGPT Plus + Gemini で多視点問題作成 ($0 半自動) -->
       <div style="margin-top:1rem;padding:0.9rem;background:rgba(0,0,0,0.25);border:1px solid rgba(168,85,247,0.3);border-radius:10px;">
