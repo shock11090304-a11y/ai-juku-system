@@ -1156,7 +1156,7 @@ except Exception as _se:
 # AI カリキュラム生成時に偏差値マッチング + 講義名を inject して架空講義名を防止
 # 教師名禁止ルール (ai-juku 不変) に従い、講師名抜きの汎用商品名で登録
 SAPURI_LECTURES_SEED = [
-    # 英語 12 講座 (英文法・読解・英作文 / 共通テスト英語 R/L は別カテゴリ)
+    # 英語 20 講座 (文法 8 / 読解 3 / 英作文 1 / 英文解釈 3 / 長文演習 3 / リスニング 2 ・共通テスト R/L は別カテゴリ)
     {"name": "高1 ベーシックレベル英文法", "level": "ベーシック", "grade": "高1", "subject": "英語", "sub_genre": "文法", "total_lessons": 24, "suitable_dev_min": 35, "suitable_dev_max": 52, "weeks_to_complete": 12, "notes": "中学英文法の復習〜高校英文法導入・偏差値 35-50 帯の独学スタートに最適"},
     {"name": "高1 スタンダードレベル英文法", "level": "スタンダード", "grade": "高1", "subject": "英語", "sub_genre": "文法", "total_lessons": 24, "suitable_dev_min": 48, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "高 1 学年の標準英文法・中堅大対応"},
     {"name": "高2 スタンダードレベル英文法", "level": "スタンダード", "grade": "高2", "subject": "英語", "sub_genre": "文法", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "高 2 学年の標準英文法・MARCH 関関同立対応"},
@@ -1169,21 +1169,30 @@ SAPURI_LECTURES_SEED = [
     {"name": "高3 ハイレベル英語 〈読解編〉", "level": "ハイ", "grade": "高3", "subject": "英語", "sub_genre": "読解", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 70, "weeks_to_complete": 12, "notes": "MARCH〜難関国公立の英語長文読解対策"},
     {"name": "高3 トップレベル英語 〈読解編〉", "level": "トップ", "grade": "高3", "subject": "英語", "sub_genre": "読解", "total_lessons": 24, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "東大/京大/早慶上智の英語長文読解対策"},
     {"name": "高3 英作文対策講座", "level": "ハイ", "grade": "高3", "subject": "英語", "sub_genre": "英作文", "total_lessons": 24, "suitable_dev_min": 55, "suitable_dev_max": 75, "weeks_to_complete": 12, "notes": "和文英訳 + 自由英作文の難関大対策"},
-    # 数学 9 講座 (共通テスト数学 IA/IIB は別カテゴリ)
+    # Round 4 改善 (2026-05-14): 公式分野 (英文解釈編・長文演習編・リスニング編) を追加
+    {"name": "高3 スタンダードレベル英語〈英文解釈編〉", "level": "スタンダード", "grade": "高3", "subject": "英語", "sub_genre": "英文解釈", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "中堅大の英文解釈 (SVOC 振り・構文把握) 対策"},
+    {"name": "高3 ハイレベル英語〈英文解釈編〉", "level": "ハイ", "grade": "高3", "subject": "英語", "sub_genre": "英文解釈", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 70, "weeks_to_complete": 12, "notes": "MARCH〜難関国公立の英文解釈対策"},
+    {"name": "高3 トップレベル英語〈英文解釈編〉", "level": "トップ", "grade": "高3", "subject": "英語", "sub_genre": "英文解釈", "total_lessons": 24, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "東大/京大/早慶上智の英文解釈対策"},
+    {"name": "高3 スタンダードレベル英語〈長文演習編〉", "level": "スタンダード", "grade": "高3", "subject": "英語", "sub_genre": "長文演習", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "中堅大の長文演習 (時間配分・問題形式) 対策"},
+    {"name": "高3 ハイレベル英語〈長文演習編〉", "level": "ハイ", "grade": "高3", "subject": "英語", "sub_genre": "長文演習", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 70, "weeks_to_complete": 12, "notes": "MARCH〜難関国公立の長文演習対策"},
+    {"name": "高3 トップレベル英語〈長文演習編〉", "level": "トップ", "grade": "高3", "subject": "英語", "sub_genre": "長文演習", "total_lessons": 24, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "東大/京大/早慶上智の長文演習対策"},
+    {"name": "高3 スタンダードレベル英語〈リスニング編〉", "level": "スタンダード", "grade": "高3", "subject": "英語", "sub_genre": "リスニング", "total_lessons": 12, "suitable_dev_min": 50, "suitable_dev_max": 65, "weeks_to_complete": 6, "notes": "共通テスト〜中堅大のリスニング対策"},
+    {"name": "高3 ハイレベル英語〈リスニング編〉", "level": "ハイ", "grade": "高3", "subject": "英語", "sub_genre": "リスニング", "total_lessons": 12, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 6, "notes": "難関国公立・東大リスニング対策"},
+    # 数学 9 講座 (新課程対応: IAIIB+C(ベクトル) / III+C(平面上の曲線・複素数平面) / 共通テスト数学 IA/IIB は別カテゴリ)
     {"name": "高1 スタンダードレベル数学IA", "level": "スタンダード", "grade": "高1", "subject": "数学", "sub_genre": "IA", "total_lessons": 40, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 20, "notes": "高 1 学年の数学 IA 標準・中堅大対応"},
     {"name": "高2 スタンダードレベル数学IIB", "level": "スタンダード", "grade": "高2", "subject": "数学", "sub_genre": "IIB", "total_lessons": 40, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 20, "notes": "高 2 学年の数学 IIB 標準・中堅大対応"},
-    {"name": "高3 ベーシックレベル数学IAIIB", "level": "ベーシック", "grade": "高3", "subject": "数学", "sub_genre": "IAIIB", "total_lessons": 40, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 20, "notes": "数学 IAIIB をゼロから復習する基礎の基礎"},
-    {"name": "高3 スタンダードレベル数学IAIIB", "level": "スタンダード", "grade": "高3", "subject": "数学", "sub_genre": "IAIIB", "total_lessons": 40, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 20, "notes": "共通テスト〜中堅大の数学 IAIIB 対策"},
-    {"name": "高3 ハイレベル数学IAIIB", "level": "ハイ", "grade": "高3", "subject": "数学", "sub_genre": "IAIIB", "total_lessons": 40, "suitable_dev_min": 58, "suitable_dev_max": 70, "weeks_to_complete": 20, "notes": "MARCH 上位〜難関国公立の数学 IAIIB 対策"},
-    {"name": "高3 トップレベル数学IAIIB", "level": "トップ", "grade": "高3", "subject": "数学", "sub_genre": "IAIIB", "total_lessons": 40, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 20, "notes": "東大/京大/早慶の数学 IAIIB 対策"},
-    {"name": "高3 スタンダードレベル数学III", "level": "スタンダード", "grade": "高3", "subject": "数学", "sub_genre": "III", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "理系標準の数学 III 対策"},
-    {"name": "高3 ハイレベル数学III", "level": "ハイ", "grade": "高3", "subject": "数学", "sub_genre": "III", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 70, "weeks_to_complete": 12, "notes": "難関国公立理系の数学 III 対策"},
-    {"name": "高3 トップレベル数学III", "level": "トップ", "grade": "高3", "subject": "数学", "sub_genre": "III", "total_lessons": 24, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "東大/京大/医学部の数学 III 対策"},
+    {"name": "高3 ベーシックレベル数学IAIIB+C(ベクトル)", "level": "ベーシック", "grade": "高3", "subject": "数学", "sub_genre": "IAIIB+C", "total_lessons": 40, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 20, "notes": "新課程 (2025 年度〜) 対応・IAIIB+C(ベクトル) をゼロから復習"},
+    {"name": "高3 スタンダードレベル数学IAIIB+C(ベクトル)", "level": "スタンダード", "grade": "高3", "subject": "数学", "sub_genre": "IAIIB+C", "total_lessons": 40, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 20, "notes": "新課程対応・共通テスト〜中堅大の IAIIB+C 対策"},
+    {"name": "高3 ハイレベル数学IAIIB+C(ベクトル)", "level": "ハイ", "grade": "高3", "subject": "数学", "sub_genre": "IAIIB+C", "total_lessons": 40, "suitable_dev_min": 58, "suitable_dev_max": 70, "weeks_to_complete": 20, "notes": "新課程対応・MARCH 上位〜難関国公立の IAIIB+C 対策"},
+    {"name": "高3 トップレベル数学IAIIB+C(ベクトル)", "level": "トップ", "grade": "高3", "subject": "数学", "sub_genre": "IAIIB+C", "total_lessons": 40, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 20, "notes": "新課程対応・東大/京大/早慶の IAIIB+C 対策"},
+    {"name": "高3 スタンダードレベル数学III+C(平面上の曲線・複素数平面)", "level": "スタンダード", "grade": "高3", "subject": "数学", "sub_genre": "III+C", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "新課程対応・理系標準の III+C 対策"},
+    {"name": "高3 ハイレベル数学III+C(平面上の曲線・複素数平面)", "level": "ハイ", "grade": "高3", "subject": "数学", "sub_genre": "III+C", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 70, "weeks_to_complete": 12, "notes": "新課程対応・難関国公立理系の III+C 対策"},
+    {"name": "高3 トップレベル数学III+C(平面上の曲線・複素数平面)", "level": "トップ", "grade": "高3", "subject": "数学", "sub_genre": "III+C", "total_lessons": 24, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "新課程対応・東大/京大/医学部の III+C 対策"},
     # 国語 10 講座 (古文文法/古文読解/漢文/現代文 / 共通テスト国語は別カテゴリ)
     {"name": "古文文法ベーシックレベル", "level": "ベーシック", "grade": "高1高2高3", "subject": "国語", "sub_genre": "古文文法", "total_lessons": 12, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 6, "notes": "古文文法の基礎の基礎・全学年対応"},
     {"name": "古文文法スタンダードレベル", "level": "スタンダード", "grade": "高1高2高3", "subject": "国語", "sub_genre": "古文文法", "total_lessons": 12, "suitable_dev_min": 48, "suitable_dev_max": 62, "weeks_to_complete": 6, "notes": "古文文法の標準・中堅大対応"},
-    {"name": "高3 スタンダードレベル古文", "level": "スタンダード", "grade": "高3", "subject": "国語", "sub_genre": "古文読解", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の古文読解対策"},
-    {"name": "高3 ハイレベル古文", "level": "ハイ", "grade": "高3", "subject": "国語", "sub_genre": "古文読解", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 12, "notes": "難関国公立/早慶の古文読解対策"},
+    {"name": "高3 スタンダードレベル古文〈読解編〉", "level": "スタンダード", "grade": "高3", "subject": "国語", "sub_genre": "古文読解", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の古文読解対策"},
+    {"name": "高3 ハイレベル古文〈読解編〉", "level": "ハイ", "grade": "高3", "subject": "国語", "sub_genre": "古文読解", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 12, "notes": "難関国公立/早慶の古文読解対策"},
     {"name": "漢文ベーシックレベル", "level": "ベーシック", "grade": "高1高2高3", "subject": "国語", "sub_genre": "漢文", "total_lessons": 12, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 6, "notes": "漢文句法の基礎の基礎・全学年対応"},
     {"name": "漢文スタンダードレベル", "level": "スタンダード", "grade": "高1高2高3", "subject": "国語", "sub_genre": "漢文", "total_lessons": 12, "suitable_dev_min": 48, "suitable_dev_max": 65, "weeks_to_complete": 6, "notes": "漢文句法 + 読解の標準・共通テスト〜難関大"},
     {"name": "高3 ベーシックレベル現代文", "level": "ベーシック", "grade": "高3", "subject": "国語", "sub_genre": "現代文", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "現代文読解の基礎の基礎"},
@@ -1195,23 +1204,31 @@ SAPURI_LECTURES_SEED = [
     {"name": "高3 スタンダードレベル物理", "level": "スタンダード", "grade": "高3", "subject": "物理", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の物理対策"},
     {"name": "高3 ハイレベル物理", "level": "ハイ", "grade": "高3", "subject": "物理", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 12, "notes": "難関国公立/早慶理工の物理対策"},
     {"name": "高3 トップレベル物理", "level": "トップ", "grade": "高3", "subject": "物理", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "東大/京大/医学部の物理対策"},
-    # 化学 4 講座
-    {"name": "高3 ベーシックレベル化学", "level": "ベーシック", "grade": "高3", "subject": "化学", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "化学基礎の復習〜高校化学導入・偏差値 38-50 帯"},
-    {"name": "高3 スタンダードレベル化学", "level": "スタンダード", "grade": "高3", "subject": "化学", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の化学対策"},
-    {"name": "高3 ハイレベル化学", "level": "ハイ", "grade": "高3", "subject": "化学", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 12, "notes": "難関国公立/早慶理工の化学対策"},
-    {"name": "高3 トップレベル化学", "level": "トップ", "grade": "高3", "subject": "化学", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "東大/京大/医学部の化学対策"},
+    # 化学 12 講座 (公式分野: 〈理論編〉4 + 〈無機編〉4 + 〈有機編〉4 × ベーシック/スタンダード/ハイ/トップ)
+    {"name": "高3 ベーシックレベル化学〈理論編〉", "level": "ベーシック", "grade": "高3", "subject": "化学", "sub_genre": "理論", "total_lessons": 12, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 6, "notes": "化学理論ゼロからの基礎の基礎・偏差値 38-50 帯"},
+    {"name": "高3 スタンダードレベル化学〈理論編〉", "level": "スタンダード", "grade": "高3", "subject": "化学", "sub_genre": "理論", "total_lessons": 12, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 6, "notes": "共通テスト〜中堅大の理論化学対策"},
+    {"name": "高3 ハイレベル化学〈理論編〉", "level": "ハイ", "grade": "高3", "subject": "化学", "sub_genre": "理論", "total_lessons": 12, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 6, "notes": "難関国公立/早慶理工の理論化学対策"},
+    {"name": "高3 トップレベル化学〈理論編〉", "level": "トップ", "grade": "高3", "subject": "化学", "sub_genre": "理論", "total_lessons": 12, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 6, "notes": "東大/京大/医学部の理論化学対策"},
+    {"name": "高3 ベーシックレベル化学〈無機編〉", "level": "ベーシック", "grade": "高3", "subject": "化学", "sub_genre": "無機", "total_lessons": 8, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 4, "notes": "無機化学ゼロからの基礎の基礎・暗記主体"},
+    {"name": "高3 スタンダードレベル化学〈無機編〉", "level": "スタンダード", "grade": "高3", "subject": "化学", "sub_genre": "無機", "total_lessons": 8, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 4, "notes": "共通テスト〜中堅大の無機化学対策"},
+    {"name": "高3 ハイレベル化学〈無機編〉", "level": "ハイ", "grade": "高3", "subject": "化学", "sub_genre": "無機", "total_lessons": 8, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 4, "notes": "難関国公立/早慶理工の無機化学対策"},
+    {"name": "高3 トップレベル化学〈無機編〉", "level": "トップ", "grade": "高3", "subject": "化学", "sub_genre": "無機", "total_lessons": 8, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 4, "notes": "東大/京大/医学部の無機化学対策"},
+    {"name": "高3 ベーシックレベル化学〈有機編〉", "level": "ベーシック", "grade": "高3", "subject": "化学", "sub_genre": "有機", "total_lessons": 12, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 6, "notes": "有機化学ゼロからの基礎の基礎・構造決定の入門"},
+    {"name": "高3 スタンダードレベル化学〈有機編〉", "level": "スタンダード", "grade": "高3", "subject": "化学", "sub_genre": "有機", "total_lessons": 12, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 6, "notes": "共通テスト〜中堅大の有機化学対策"},
+    {"name": "高3 ハイレベル化学〈有機編〉", "level": "ハイ", "grade": "高3", "subject": "化学", "sub_genre": "有機", "total_lessons": 12, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 6, "notes": "難関国公立/早慶理工の有機化学・構造決定対策"},
+    {"name": "高3 トップレベル化学〈有機編〉", "level": "トップ", "grade": "高3", "subject": "化学", "sub_genre": "有機", "total_lessons": 12, "suitable_dev_min": 65, "suitable_dev_max": 78, "weeks_to_complete": 6, "notes": "東大/京大/医学部の有機化学・天然有機化合物対策"},
     # 生物 3 講座
     {"name": "高3 ベーシックレベル生物", "level": "ベーシック", "grade": "高3", "subject": "生物", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "生物基礎の復習〜高校生物導入・偏差値 38-50 帯"},
     {"name": "高3 スタンダードレベル生物", "level": "スタンダード", "grade": "高3", "subject": "生物", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の生物対策"},
     {"name": "高3 ハイレベル生物", "level": "ハイ", "grade": "高3", "subject": "生物", "sub_genre": "全範囲", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 72, "weeks_to_complete": 12, "notes": "難関国公立/医学部の生物対策"},
-    # 日本史 3 講座
-    {"name": "高3 ベーシックレベル日本史", "level": "ベーシック", "grade": "高3", "subject": "日本史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "日本史通史の基礎の基礎"},
-    {"name": "高3 スタンダードレベル日本史", "level": "スタンダード", "grade": "高3", "subject": "日本史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の日本史対策"},
-    {"name": "高3 トップ&ハイレベル日本史", "level": "トップ&ハイ", "grade": "高3", "subject": "日本史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "MARCH 上位〜東大/京大/早慶の日本史対策"},
-    # 世界史 3 講座
-    {"name": "高3 ベーシックレベル世界史", "level": "ベーシック", "grade": "高3", "subject": "世界史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "世界史通史の基礎の基礎"},
-    {"name": "高3 スタンダードレベル世界史", "level": "スタンダード", "grade": "高3", "subject": "世界史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の世界史対策"},
-    {"name": "高3 トップ&ハイレベル世界史", "level": "トップ&ハイ", "grade": "高3", "subject": "世界史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "MARCH 上位〜東大/京大/早慶の世界史対策"},
+    # 日本史 3 講座 (公式分野: 〈通史編〉)
+    {"name": "高3 ベーシックレベル日本史〈通史編〉", "level": "ベーシック", "grade": "高3", "subject": "日本史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "日本史通史の基礎の基礎"},
+    {"name": "高3 スタンダードレベル日本史〈通史編〉", "level": "スタンダード", "grade": "高3", "subject": "日本史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の日本史対策"},
+    {"name": "高3 トップ&ハイレベル日本史〈通史編〉", "level": "トップ&ハイ", "grade": "高3", "subject": "日本史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "MARCH 上位〜東大/京大/早慶の日本史対策"},
+    # 世界史 3 講座 (公式分野: 〈通史編〉)
+    {"name": "高3 ベーシックレベル世界史〈通史編〉", "level": "ベーシック", "grade": "高3", "subject": "世界史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "世界史通史の基礎の基礎"},
+    {"name": "高3 スタンダードレベル世界史〈通史編〉", "level": "スタンダード", "grade": "高3", "subject": "世界史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 62, "weeks_to_complete": 12, "notes": "共通テスト〜中堅大の世界史対策"},
+    {"name": "高3 トップ&ハイレベル世界史〈通史編〉", "level": "トップ&ハイ", "grade": "高3", "subject": "世界史", "sub_genre": "通史", "total_lessons": 24, "suitable_dev_min": 58, "suitable_dev_max": 78, "weeks_to_complete": 12, "notes": "MARCH 上位〜東大/京大/早慶の世界史対策"},
     # 地理 2 講座
     {"name": "高3 ベーシックレベル地理", "level": "ベーシック", "grade": "高3", "subject": "地理", "sub_genre": "系統地理+地誌", "total_lessons": 24, "suitable_dev_min": 38, "suitable_dev_max": 55, "weeks_to_complete": 12, "notes": "地理の基礎の基礎・共通テスト導入"},
     {"name": "高3 スタンダード&ハイレベル地理", "level": "スタンダード&ハイ", "grade": "高3", "subject": "地理", "sub_genre": "系統地理+地誌", "total_lessons": 24, "suitable_dev_min": 50, "suitable_dev_max": 72, "weeks_to_complete": 12, "notes": "共通テスト〜難関国公立の地理対策"},
@@ -1228,8 +1245,79 @@ SAPURI_LECTURES_SEED = [
 ]
 
 
+def _cleanup_old_sapuri_lectures():
+    """🔧 Round 2 cleanup migration (2026-05-14・スタサプ公式 URL 検証後 B 案):
+    旧名レコードを削除して production DB を新名のみに統一する。
+
+    対象:
+      - 数学旧表記 (IAIIB / III 単独) → 新課程 IAIIB+C / III+C に置換するため
+      - 化学旧表記 (全範囲) → 編別分割 (理論編/無機編/有機編) に置換するため
+      - 古文旧表記 (講師名抜き) → 〈読解編〉 表記に置換するため
+      - 日本史/世界史旧表記 → 〈通史編〉 表記に置換するため
+
+    冪等性: 削除対象が存在しない場合は count=0 で正常終了。
+    UNIQUE constraint 違反でレコードが残る場合は warning ログ。
+    """
+    conn = db()
+    c = conn.cursor()
+    deleted_total = 0
+    try:
+        # 旧名 18 件削除パターン (新 SEED 投入前に実行)
+        cleanup_patterns = [
+            # 数学旧表記 (新課程 IAIIB+C / III+C に置換)
+            ("DELETE FROM sapuri_lectures WHERE subject = '数学' AND name = '高3 ベーシックレベル数学IAIIB'", "数学IAIIB ベーシック"),
+            ("DELETE FROM sapuri_lectures WHERE subject = '数学' AND name = '高3 スタンダードレベル数学IAIIB'", "数学IAIIB スタンダード"),
+            ("DELETE FROM sapuri_lectures WHERE subject = '数学' AND name = '高3 ハイレベル数学IAIIB'", "数学IAIIB ハイ"),
+            ("DELETE FROM sapuri_lectures WHERE subject = '数学' AND name = '高3 トップレベル数学IAIIB'", "数学IAIIB トップ"),
+            ("DELETE FROM sapuri_lectures WHERE subject = '数学' AND name = '高3 スタンダードレベル数学III'", "数学III スタンダード"),
+            ("DELETE FROM sapuri_lectures WHERE subject = '数学' AND name = '高3 ハイレベル数学III'", "数学III ハイ"),
+            ("DELETE FROM sapuri_lectures WHERE subject = '数学' AND name = '高3 トップレベル数学III'", "数学III トップ"),
+            # 化学旧表記 (編別分割に置換)
+            ("DELETE FROM sapuri_lectures WHERE subject = '化学' AND sub_genre = '全範囲'", "化学 全範囲 (旧 4 件)"),
+            # 古文旧表記 (〈読解編〉に置換)
+            ("DELETE FROM sapuri_lectures WHERE subject = '国語' AND name = '高3 スタンダードレベル古文'", "古文 スタンダード"),
+            ("DELETE FROM sapuri_lectures WHERE subject = '国語' AND name = '高3 ハイレベル古文'", "古文 ハイ"),
+            # 日本史旧表記 (〈通史編〉に置換)
+            ("DELETE FROM sapuri_lectures WHERE subject = '日本史' AND name = '高3 ベーシックレベル日本史'", "日本史 ベーシック"),
+            ("DELETE FROM sapuri_lectures WHERE subject = '日本史' AND name = '高3 スタンダードレベル日本史'", "日本史 スタンダード"),
+            ("DELETE FROM sapuri_lectures WHERE subject = '日本史' AND name = '高3 トップ&ハイレベル日本史'", "日本史 トップ&ハイ"),
+            # 世界史旧表記 (〈通史編〉に置換)
+            ("DELETE FROM sapuri_lectures WHERE subject = '世界史' AND name = '高3 ベーシックレベル世界史'", "世界史 ベーシック"),
+            ("DELETE FROM sapuri_lectures WHERE subject = '世界史' AND name = '高3 スタンダードレベル世界史'", "世界史 スタンダード"),
+            ("DELETE FROM sapuri_lectures WHERE subject = '世界史' AND name = '高3 トップ&ハイレベル世界史'", "世界史 トップ&ハイ"),
+        ]
+        for sql, label in cleanup_patterns:
+            try:
+                c.execute(sql)
+                rows = c.rowcount if c.rowcount > 0 else 0
+                if rows > 0:
+                    deleted_total += rows
+                conn.commit()
+            except Exception as e:
+                try: conn.rollback()
+                except Exception: pass
+                log.warning(f"[cleanup_old_sapuri_lectures] {label}: {type(e).__name__}: {str(e)[:100]}")
+    finally:
+        try: conn.close()
+        except Exception: pass
+    if deleted_total > 0:
+        log.info(f"[cleanup_old_sapuri_lectures] deleted {deleted_total} old records (B案改修 migration)")
+    else:
+        # 冪等: 既にクリーンアップ済 or 新規環境 → debug でログ抑制
+        log.debug(f"[cleanup_old_sapuri_lectures] no old records to delete (already clean)")
+    return deleted_total
+
+
 def _seed_sapuri_lectures():
-    """スタディサプリ主要講座の初期データを sapuri_lectures に投入 (重複は skip・冪等)。"""
+    """スタディサプリ主要講座の初期データを sapuri_lectures に投入 (重複は skip・冪等)。
+
+    Round 2 改修 (2026-05-14・B 案): 新規 INSERT 前に旧名レコードのクリーンアップ migration を実行。
+    """
+    # 🔧 B 案改修: 旧名レコードを cleanup してから新名 INSERT
+    try:
+        _cleanup_old_sapuri_lectures()
+    except Exception as _ce:
+        log.warning(f"[seed_sapuri_lectures] cleanup phase failed (continue with seed): {_ce}")
     conn = db()
     c = conn.cursor()
     inserted = 0
@@ -26601,7 +26689,7 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
     # 📺 スタサプ講座 DB を AI に渡す (塾長指示 2026-05-14) → 架空講義名の出力を防止
     sapuri_lectures_summary = _build_sapuri_lectures_prompt_snippet(target_dev=target_dev)
 
-    sys_prompt = "受験戦略を立てる学習プランナーです。難関大学 (国公立・難関私立) 志望者に対し、入試日から逆算した全体カリキュラムを 4-6 フェーズに分割して提案します。各フェーズは現実的な期間と教材 + スタディサプリ (スタサプ) の対応講義で構成。スタサプ講義は **必ずプロンプト内の『スタディサプリ講座 DB』に記載されている講座名のみ** を使用すること (例: 『高3 トップレベル英語 〈読解編〉』『高3 ハイレベル数学IAIIB』『古文文法ベーシックレベル』)。DB にない講座名は出力禁止 (架空講義回避)。市販の参考書教材とスタサプ講義は別フィールドに分けて出力。純粋な JSON のみ返答 (前置きや解説不要)。"
+    sys_prompt = "受験戦略を立てる学習プランナーです。難関大学 (国公立・難関私立) 志望者に対し、入試日から逆算した全体カリキュラムを 4-6 フェーズに分割して提案します。各フェーズは現実的な期間と教材 + スタディサプリ (スタサプ) の対応講義で構成。スタサプ講義は **必ずプロンプト内の『スタディサプリ講座 DB』に記載されている講座名のみ** を使用すること (例: 『高3 トップレベル英語 〈読解編〉』『高3 ハイレベル数学IAIIB+C(ベクトル)』『高3 スタンダードレベル化学〈理論編〉』『古文文法ベーシックレベル』)。DB にない講座名は出力禁止 (架空講義回避)。市販の参考書教材とスタサプ講義は別フィールドに分けて出力。純粋な JSON のみ返答 (前置きや解説不要)。"
     user_prompt = f"""志望校: {target_university}{(' / ' + target_faculty) if target_faculty else ''}
 開始日: {sd.isoformat()}
 入試日: {ed.isoformat()} (期間 {months} ヶ月)
