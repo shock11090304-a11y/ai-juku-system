@@ -86,15 +86,7 @@ function getMypageData() {
     streakHistory: [1, 1, 1, 1, 1, 1, 1], // 7 days
     todayMinutes: 45,
     todayQuestions: 5,
-    todayXp: 120,
-    todayDoneQuests: 2,
-    quests: [
-      { id: 1, title: '英単語15分', desc: '英検準1級の単語帳を15分', xp: 30, done: true },
-      { id: 2, title: 'AIに1問質問', desc: 'わからない問題をAIチューターに聞く', xp: 20, done: true },
-      { id: 3, title: '数学演習30分', desc: '青チャート例題3問', xp: 50, done: false },
-      { id: 4, title: '英作文1本', desc: 'AIが添削してくれる', xp: 40, done: false },
-      { id: 5, title: '学習日記を書く', desc: '今日の振り返りを3行で', xp: 15, done: false },
-    ],
+    // todayXp/todayDoneQuests/quests は塾長指示 2026-05-15 で削除 (XP/クエスト gamification 廃止)
     weeklyMinutes: [60, 45, 80, 30, 90, 75, 45],
     lastLogin: todayKeyJST(),
   };
@@ -132,10 +124,7 @@ function render() {
   document.getElementById('xpGap').textContent = xpNeeded - xpInLevel;
   document.getElementById('xpBar').style.width = `${pct}%`;
 
-  // Quests
-  renderQuests(data.quests);
-  const done = data.quests.filter(q => q.done).length;
-  document.getElementById('questProgress').textContent = `${done}/${data.quests.length} 完了`;
+  // Quests: 塾長指示 2026-05-15 でクエスト機能廃止
 
   // Today stats
   // 学習管理機能 (kokuritsu_nankan / premium 以上) の生徒は CTA の refreshSlQuickCtaToday が
@@ -152,8 +141,7 @@ function render() {
     }
   }
   document.getElementById('todayQ').textContent = data.todayQuestions;
-  document.getElementById('todayDone').textContent = done;
-  document.getElementById('todayXp').textContent = data.todayXp;
+  // todayDone / todayXp は塾長指示 2026-05-15 でクエスト機能廃止に伴い削除済
   // AI 質問数を backend events から取得して上書き (端末跨ぎでも正確)
   _refreshAiQuestionsFromBackend();
 
@@ -201,43 +189,7 @@ function renderStreakBars(history) {
   });
 }
 
-function renderQuests(quests) {
-  const container = document.getElementById('questList');
-  container.innerHTML = quests.map(q => `
-    <div class="quest ${q.done ? 'done' : ''}" data-id="${q.id}">
-      <div class="quest-check">${q.done ? '✓' : ''}</div>
-      <div class="quest-body">
-        <div class="quest-title">${escapeHtml(q.title)}</div>
-        <div class="quest-desc">${escapeHtml(q.desc)}</div>
-      </div>
-      <div class="quest-xp">+${q.xp} XP</div>
-    </div>
-  `).join('');
-
-  // Toggle quests
-  container.querySelectorAll('.quest').forEach(el => {
-    el.addEventListener('click', () => toggleQuest(parseInt(el.dataset.id)));
-  });
-}
-
-function toggleQuest(id) {
-  const data = getMypageData();
-  const q = data.quests.find(q => q.id === id);
-  if (!q) return;
-  q.done = !q.done;
-  // Update XP
-  if (q.done) {
-    data.xp += q.xp;
-    data.todayXp += q.xp;
-    // Celebrate
-    celebrate();
-  } else {
-    data.xp -= q.xp;
-    data.todayXp -= q.xp;
-  }
-  saveMypageData(data);
-  render();
-}
+// renderQuests / toggleQuest は塾長指示 2026-05-15 でクエスト機能廃止に伴い削除
 
 function celebrate() {
   const celebration = document.createElement('div');
