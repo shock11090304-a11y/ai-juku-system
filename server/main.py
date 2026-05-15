@@ -14278,18 +14278,43 @@ def public_exam_questions_bank(
         eiken_grade = univ
     conn = db()
     c = conn.cursor()
+    # 🎯 2026-05-16 塾長指示「新規投入で旧問題は置いたままに」: topic 指定時は SQL レベルで LIKE フィルタ。
+    # 旧設計では created_at DESC + LIMIT 50 → topic Python filter だったため、新規投入で旧 topic の問題が
+    # 押し出される現象が発生。SQL レベル LIKE で pool 全体から topic マッチを取得することで、旧問題が
+    # limit から外れなくなる。topic 一致 0 件なら従来通り全 pool fallback。
+    # DoS 対策: topic 長を 200 文字でキャップ (4MB LIKE pattern 防止)
+    topic_norm = (str(topic).strip()[:200] if topic else "")
+    # LIKE wildcard escape (Postgres/SQLite 互換: backslash escape) — 順序重要 (\\ 最初)
+    topic_like_escaped = topic_norm.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") if topic_norm else ""
+    topic_pattern = f"%{topic_like_escaped}%" if topic_like_escaped else None
     try:
-        if eiken_grade:
-            c.execute(
-                "SELECT id, question_data, created_at FROM exam_questions WHERE exam_id = ? AND part_key = ? AND eiken_grade = ? ORDER BY created_at DESC LIMIT ?",
-                (exam, part, eiken_grade, limit),
-            )
-        else:
-            c.execute(
-                "SELECT id, question_data, created_at FROM exam_questions WHERE exam_id = ? AND part_key = ? ORDER BY created_at DESC LIMIT ?",
-                (exam, part, limit),
-            )
-        rows = c.fetchall()
+        rows = []
+        if topic_pattern:
+            # topic 指定時: SQL の LIKE で「【単元】<topic>」を含む行のみ取得
+            if eiken_grade:
+                c.execute(
+                    "SELECT id, question_data, created_at FROM exam_questions WHERE exam_id = ? AND part_key = ? AND eiken_grade = ? AND question_data LIKE ? ESCAPE '\\' ORDER BY created_at DESC LIMIT ?",
+                    (exam, part, eiken_grade, topic_pattern, limit),
+                )
+            else:
+                c.execute(
+                    "SELECT id, question_data, created_at FROM exam_questions WHERE exam_id = ? AND part_key = ? AND question_data LIKE ? ESCAPE '\\' ORDER BY created_at DESC LIMIT ?",
+                    (exam, part, topic_pattern, limit),
+                )
+            rows = c.fetchall()
+        if not rows:
+            # topic 未指定 or topic マッチ 0 件 → 通常の取得 (fallback)
+            if eiken_grade:
+                c.execute(
+                    "SELECT id, question_data, created_at FROM exam_questions WHERE exam_id = ? AND part_key = ? AND eiken_grade = ? ORDER BY created_at DESC LIMIT ?",
+                    (exam, part, eiken_grade, limit),
+                )
+            else:
+                c.execute(
+                    "SELECT id, question_data, created_at FROM exam_questions WHERE exam_id = ? AND part_key = ? ORDER BY created_at DESC LIMIT ?",
+                    (exam, part, limit),
+                )
+            rows = c.fetchall()
     except Exception as e:
         log.error(f"[ExamQ] bank query failed: {e}")
         rows = []
@@ -14305,10 +14330,10 @@ def public_exam_questions_bank(
         except Exception:
             pass
 
-    # 🎯 2026-05-15 塾長指示「定期テスト単元プルダウン」: topic 指定があれば
-    #    explanation or stem の「【単元】〜」タグで pool 内をフィルタ。該当 0 件は全表示で fallback。
-    if topic and items:
-        topic_norm = str(topic).strip()
+    # 🎯 SQL LIKE で取得済の場合は Python レベル再フィルタ不要 (本来確実にマッチしているため)
+    # ただし fallback (topic マッチ 0 件で全 pool 取得) や旧データで raw text が JSON 内になく
+    # explanation/stem 内のみの topic 表現を捕捉するため Python filter は二重防御として残す。
+    if topic_norm and items:
         def _matches_topic(it):
             try:
                 qs = it.get("questions") or []
