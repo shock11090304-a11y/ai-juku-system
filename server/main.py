@@ -24812,7 +24812,15 @@ _MSG_BROADCAST_FILTERS = {"all", "kokuritsu_nankan", "paid_only", "trial_only"}
 
 
 def _send_message_email(to_email: str, subject: str, body_text: str, student_name: Optional[str] = None) -> dict:
-    """Resend 経由でメッセージを送信。in-app メッセージとは別の email 通知。"""
+    """Resend 経由でメッセージを送信。in-app メッセージとは別の email 通知。
+
+    🔧 2026-05-15 致命傷 fix (塾長指示「メールが届かない・文字化け」):
+    - subject (メール件名) を HTML escape していたため「Q&A」→「Q&amp;A」のような entity が
+      メール件名にそのまま表示される文字化けが発生していた → subject は raw text で送る
+    - text フィールドが未設定で HTML 解釈できない client で HTML タグが見えていた
+      → text fallback を追加
+    - HTML body 内の件名表示は引き続き escape 版を使用 (XSS 防御維持)
+    """
     if not RESEND_API_KEY:
         return {"sent": False, "error": "RESEND_API_KEY not configured"}
     # 合成監視向け bounce 防止 (memory: feedback_synthetic_monitor_quota.md)
@@ -24823,15 +24831,18 @@ def _send_message_email(to_email: str, subject: str, body_text: str, student_nam
         return (str(s or "")
                 .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                 .replace('"', "&quot;").replace("'", "&#39;"))
-    # subject: HTML escape + CRLF 除去 (header injection 二重防御 / Security M-1)
+    # subject: CRLF 除去のみ (header injection 防御)・HTML escape はメール件名には適用しない
+    # メール件名は raw text として受信クライアントに表示されるため escape すると「Q&amp;A」のように
+    # entity がそのまま見えてしまう (2026-05-15 致命傷 fix)
     raw_subject = (subject or "AI学習コーチ塾より新着メッセージ").replace("\r", "").replace("\n", " ")
-    safe_subject = _esc(raw_subject)
+    # HTML body 内で <h2> に表示する件名のみ escape 版を使う (XSS 防御)
+    safe_subject_html = _esc(raw_subject)
     # body: HTML escape + CRLF 正規化
     body_normalized = (body_text or "").replace("\r\n", "\n").replace("\r", "\n")
     safe_body_html = _esc(body_normalized).replace("\n", "<br>")
     greeting = f"<p>{_esc(student_name)}さん</p>" if student_name else ""
     html = f"""<!DOCTYPE html><html><body style="font-family:sans-serif; line-height:1.7; color:#333; padding:1.5rem; max-width:600px; margin:0 auto;">
-<h2 style="color:#6366f1; border-bottom:2px solid #6366f1; padding-bottom:0.5rem;">📨 {safe_subject}</h2>
+<h2 style="color:#6366f1; border-bottom:2px solid #6366f1; padding-bottom:0.5rem;">📨 {safe_subject_html}</h2>
 {greeting}
 <div style="background:#fafafa; border-left:4px solid #6366f1; padding:1rem 1.2rem; border-radius:6px; margin:1rem 0;">
 {safe_body_html}
@@ -24843,12 +24854,28 @@ def _send_message_email(to_email: str, subject: str, body_text: str, student_nam
 <hr style="margin:2rem 0; border:none; border-top:1px solid #eee;">
 <p style="font-size:0.78rem; color:#999;">配信元: AI学習コーチ塾 / 配信停止やお問い合わせは塾長まで</p>
 </body></html>"""
+    # text fallback (HTML を解釈できない client / spam filter 対応)
+    greeting_plain = f"{student_name}さん\n\n" if student_name else ""
+    text = (
+        f"📨 {raw_subject}\n\n"
+        f"{greeting_plain}{body_normalized}\n\n"
+        f"────────────────────\n"
+        f"このメッセージは AI学習コーチ塾 のマイページからも確認できます:\n"
+        f"https://trillion-ai-juku.com/mypage.html\n\n"
+        f"配信元: AI学習コーチ塾 / 配信停止やお問い合わせは塾長まで"
+    )
     try:
         import urllib.request
         req = urllib.request.Request(
             "https://api.resend.com/emails",
-            data=json.dumps({"from": FROM_EMAIL, "to": [to_email], "subject": safe_subject, "html": html}).encode("utf-8"),
-            headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json", "User-Agent": "ai-juku-system/1.0"},
+            data=json.dumps({
+                "from": FROM_EMAIL,
+                "to": [to_email],
+                "subject": raw_subject,  # 🔧 fix: raw text・HTML escape なし
+                "html": html,
+                "text": text,  # 🔧 fix: plain text fallback 追加
+            }, ensure_ascii=False).encode("utf-8"),  # 🔧 fix: 日本語を UTF-8 escape せず生で送る
+            headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json; charset=utf-8", "User-Agent": "ai-juku-system/1.0"},
             method="POST",
         )
         with urllib.request.urlopen(req, timeout=10) as resp:
