@@ -127,6 +127,51 @@
       </div>
     </section>
 
+    <!-- 🎯 2026-05-15 塾長指示「定期テスト勉強に単元プルダウン」: 大学を経由せず単元を直接選んで問題演習に直行 -->
+    <style>
+      .teiki-unit-bar { max-width:1200px; margin:0.6rem auto 0; padding:0 1rem; }
+      .teiki-unit-inner {
+        background:linear-gradient(135deg, rgba(34,197,94,0.12), rgba(251,191,36,0.10));
+        border:1px solid rgba(34,197,94,0.40);
+        border-radius:14px; padding:0.95rem 1.2rem;
+      }
+      .teiki-unit-head { display:flex; align-items:center; gap:0.55rem; flex-wrap:wrap; margin-bottom:0.55rem; }
+      .teiki-unit-eyebrow { font-size:0.78rem; color:#22c55e; font-weight:800; letter-spacing:0.06em; }
+      .teiki-unit-title { margin:0; font-size:1.0rem; font-weight:800; color:#fff; }
+      .teiki-unit-desc { margin:0; font-size:0.8rem; color:#bbf7d0; line-height:1.55; }
+      .teiki-unit-row { display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin-top:0.4rem; }
+      .teiki-unit-select {
+        flex:1 1 200px; min-width:200px;
+        padding:0.55rem 0.7rem; background:rgba(0,0,0,0.45);
+        border:1.5px solid rgba(34,197,94,0.45); border-radius:8px;
+        color:#fff; font-size:0.92rem; font-weight:700; cursor:pointer;
+      }
+      .teiki-unit-go {
+        padding:0.55rem 1.1rem; background:linear-gradient(135deg,#22c55e,#10b981);
+        border:0; border-radius:8px; color:#fff; font-weight:800; font-size:0.92rem;
+        cursor:pointer; min-height:40px; box-shadow:0 4px 12px rgba(34,197,94,0.3);
+      }
+      .teiki-unit-go:disabled { opacity:0.5; cursor:not-allowed; }
+    </style>
+    <section id="teikiUnitBar" class="teiki-unit-bar">
+      <div class="teiki-unit-inner">
+        <div class="teiki-unit-head">
+          <span class="teiki-unit-eyebrow">📝 定期テスト勉強モード</span>
+          <h3 class="teiki-unit-title">単元から直接選んで今すぐ問題演習</h3>
+        </div>
+        <p class="teiki-unit-desc">高校 1-2 年の定期テスト〜共通テスト基礎範囲。大学プルダウンを経由せず、単元を選ぶだけで該当問題が出題されます。</p>
+        <div class="teiki-unit-row">
+          <select id="teikiSubjectSel" class="teiki-unit-select" aria-label="科目">
+            <option value="">-- 科目を選択 --</option>
+          </select>
+          <select id="teikiUnitSel" class="teiki-unit-select" aria-label="単元" disabled>
+            <option value="">-- 単元を選択 --</option>
+          </select>
+          <button type="button" id="teikiUnitGo" class="teiki-unit-go" disabled>この単元の問題を解く →</button>
+        </div>
+      </div>
+    </section>
+
     <!-- ========================================================== -->
     <!-- Section 1: 試験選択カード                                  -->
     <!-- ========================================================== -->

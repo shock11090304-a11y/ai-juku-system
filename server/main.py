@@ -14305,6 +14305,25 @@ def public_exam_questions_bank(
         except Exception:
             pass
 
+    # 🎯 2026-05-15 塾長指示「定期テスト単元プルダウン」: topic 指定があれば
+    #    explanation or stem の「【単元】〜」タグで pool 内をフィルタ。該当 0 件は全表示で fallback。
+    if topic and items:
+        topic_norm = str(topic).strip()
+        def _matches_topic(it):
+            try:
+                qs = it.get("questions") or []
+                if not isinstance(qs, list): return False
+                for q in qs:
+                    text = (q.get("explanation","") + " " + q.get("stem","")) if isinstance(q, dict) else ""
+                    if topic_norm in text:
+                        return True
+                return False
+            except Exception:
+                return False
+        filtered = [it for it in items if _matches_topic(it)]
+        if filtered:
+            items = filtered
+
     # 直近 7 日除外 (相対的多様性): student_id があれば過去出題と同じ (univ, year) を後回しに
     exclude_combinations = _get_recent_exam_combinations(student_id, days=7) if student_id else []
     excluded_set = set((str(u), int(y)) for (u, y) in exclude_combinations)
