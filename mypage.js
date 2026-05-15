@@ -284,185 +284,12 @@ function logActivity(type) {
 }
 
 // ==========================================================================
-// 7日間トライアル体験導線 (Trial Onboarding)
-// Day 1-3 で基本機能をマスター → Day 4-7 は自由活用期間
+// 7日間トライアル体験導線 (Trial Onboarding) は塾長指示 2026-05-15 で削除
+// (本契約生徒の mypage に体験プログラムを表示する意味がないため)
 // ==========================================================================
-const TRIAL_KEY = 'ai_juku_trial_onboarding';
-
-const TRIAL_DAYS = [
-  {
-    day: 1,
-    title: '志望校カリキュラム作成 & 初質問',
-    sub: 'まずあなた専用のカリキュラムを作り、AIチューターに最初の質問をしてみましょう。所要時間: 約15分',
-    tasks: [
-      { id: 'd1_curriculum', title: '志望校カリキュラムを自動生成', desc: '志望校・現状を入力 → AIが3フェーズ計画を作成', url: 'index.html#tab-curriculum', action: '作成する' },
-      { id: 'd1_diagnosis', title: '学習診断を受ける', desc: '今週の学習状況からAIが弱点を分析', url: 'index.html#tab-diagnostic', action: '診断する' },
-      { id: 'd1_first_q', title: 'AIチューターに1問質問する', desc: '今わからない問題を1つだけ聞いてみる', url: 'index.html#tab-tutor', action: '質問する' },
-    ]
-  },
-  {
-    day: 2,
-    title: 'AI問題で弱点を深掘り',
-    sub: 'Day 1 の診断から見えた弱点を、AI生成問題で10問練習します。所要時間: 約30分',
-    tasks: [
-      { id: 'd2_gen_problems', title: 'AI問題を10問生成する', desc: '弱点単元に絞ったオリジナル問題', url: 'index.html#tab-problems', action: '生成する' },
-      { id: 'd2_review', title: '今日の復習を完了する', desc: 'エビングハウス復習で「✓正解/✗不正解」を記録', url: 'mypage.html#lbTodayReview', action: '復習する' },
-      { id: 'd2_textbook', title: '自分だけの参考書を作る', desc: '弱点特化の教材をAIが執筆', url: 'textbook-generator.html', action: '作成する' },
-    ]
-  },
-  {
-    day: 3,
-    title: '保護者レポート & 学習計画展開',
-    sub: 'カリキュラムを学習計画に取込み、保護者に届くレポートをプレビューします。所要時間: 約5分',
-    tasks: [
-      { id: 'd3_studyplan', title: 'カリキュラムを学習計画に取込', desc: '試験日まで全期間のタスクを自動展開', url: 'index.html#tab-studyplan', action: '取込む' },
-      { id: 'd3_preview_report', title: '保護者向けレポートをプレビュー', desc: '保護者にメールで届く週次レポートを確認', url: 'index.html#tab-parent', action: 'プレビュー' },
-      { id: 'd3_moshi', title: '模試結果をアップロード', desc: '画像から偏差値・弱点を自動抽出', url: 'index.html#tab-moshi', action: 'アップロード' },
-    ]
-  }
-];
-
-function getTrialState() {
-  const saved = JSON.parse(localStorage.getItem(TRIAL_KEY) || 'null');
-  if (saved) return saved;
-  // 初回起動 = 今日がトライアル開始日
-  const today = todayKeyJST();
-  const fresh = {
-    startDate: today,
-    completed: {}, // { taskId: timestamp }
-    dismissed: false,
-  };
-  localStorage.setItem(TRIAL_KEY, JSON.stringify(fresh));
-  return fresh;
-}
-function saveTrialState(s) {
-  localStorage.setItem(TRIAL_KEY, JSON.stringify(s));
-}
-
-function getTrialDayNumber(startDate) {
-  const start = new Date(startDate + 'T00:00:00+09:00');
-  const now = new Date(new Date().toISOString());
-  const diffDays = Math.floor((now - start) / (1000 * 60 * 60 * 24));
-  return Math.min(7, Math.max(1, diffDays + 1));
-}
-
-function renderTrialOnboarding() {
-  const section = document.getElementById('trialOnboarding');
-  if (!section) return;
-  const state = getTrialState();
-  // ユーザーが「体験モード終了」を押した、またはトライアル期間(7日)を超えたら非表示
-  const todayDayNum = getTrialDayNumber(state.startDate);
-  const allTasks = TRIAL_DAYS.flatMap(d => d.tasks);
-  const doneTaskCount = allTasks.filter(t => state.completed[t.id]).length;
-  const allCompleted = doneTaskCount >= allTasks.length;
-  const dayOverflow = todayDayNum > 7;
-
-  if (state.dismissed || (dayOverflow && allCompleted)) {
-    section.style.display = 'none';
-    return;
-  }
-  // 期間超過かつ未完了の場合も表示するが終了予告を出す
-  section.style.display = 'block';
-
-  // viewingDay が指定されていればそれを優先 (ユーザーが pill をクリックして任意の日を見ている)
-  const viewingDayNum = state.viewingDay || todayDayNum;
-  const currentDay = TRIAL_DAYS.find(d => d.day === viewingDayNum) || TRIAL_DAYS[2];
-  const isPreview = state.viewingDay && state.viewingDay !== todayDayNum;
-  document.getElementById('toDayLabel').textContent = `Day ${currentDay.day}`;
-  document.getElementById('toDayTitle').textContent = currentDay.title + (isPreview ? '（プレビュー）' : '');
-  document.getElementById('toDaySub').textContent = currentDay.sub;
-  document.getElementById('toProgressCurrent').textContent = doneTaskCount;
-  document.getElementById('toProgressTotal').textContent = allTasks.length;
-
-  // Day pills (クリックで切替可能)
-  section.querySelectorAll('.to-day-pill').forEach(pill => {
-    const d = parseInt(pill.dataset.day, 10);
-    const dayDef = TRIAL_DAYS.find(x => x.day === d);
-    const dayTasks = dayDef ? dayDef.tasks : [];
-    const dayDone = dayTasks.every(t => state.completed[t.id]);
-    pill.classList.remove('active', 'completed');
-    if (dayDone) pill.classList.add('completed');
-    if (d === currentDay.day) pill.classList.add('active');
-    const check = pill.querySelector('.to-day-pill-check');
-    if (check) check.textContent = dayDone ? '✓' : (d === currentDay.day ? '…' : '○');
-    pill.style.cursor = 'pointer';
-    pill.title = `Day ${d} のタスクを表示`;
-    // 既存リスナーを置き換える (再描画毎に bind しても重複しないよう onclick 直接代入)
-    pill.onclick = () => {
-      const s = getTrialState();
-      s.viewingDay = d;
-      saveTrialState(s);
-      renderTrialOnboarding();
-    };
-  });
-
-  // Tasks for current day
-  const tasksEl = document.getElementById('toTasks');
-  tasksEl.innerHTML = currentDay.tasks.map(t => {
-    const done = !!state.completed[t.id];
-    return `
-      <div class="to-task ${done ? 'done' : ''}" data-task-id="${t.id}">
-        <div class="to-task-check">${done ? '✓' : ''}</div>
-        <div class="to-task-body">
-          <div class="to-task-title">${escapeHtml(t.title)}</div>
-          <div class="to-task-desc">${escapeHtml(t.desc)}</div>
-        </div>
-        ${done
-          ? `<button class="to-task-action to-task-undo" data-task-id="${t.id}" title="完了を取り消す">✓ 完了 <small style="opacity:0.6;">(取消)</small></button>`
-          : `<a href="${escapeHtml(t.url)}" class="to-task-action" data-task-id="${t.id}">${escapeHtml(t.action)} →</a>`}
-      </div>
-    `;
-  }).join('');
-
-  // クリックしたらそのタスクを完了にマーク（ユーザーがリンク先で実行したと仮定）
-  tasksEl.querySelectorAll('.to-task-action[href]').forEach(a => {
-    a.addEventListener('click', (e) => {
-      const taskId = a.dataset.taskId;
-      state.completed[taskId] = Date.now();
-      saveTrialState(state);
-      // リンク先で実行中にタブが残るので、戻ってきたとき反映
-      setTimeout(renderTrialOnboarding, 100);
-    });
-  });
-
-  // 「✓ 完了」ボタン → クリックで完了取消(誤タップ救済)
-  tasksEl.querySelectorAll('.to-task-undo').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const taskId = btn.dataset.taskId;
-      if (confirm('このタスクの完了を取り消しますか？')) {
-        delete state.completed[taskId];
-        saveTrialState(state);
-        renderTrialOnboarding();
-      }
-    });
-  });
-
-  // 残り時間表示
-  const startMs = new Date(state.startDate + 'T00:00:00+09:00').getTime();
-  const endMs = startMs + 3 * 24 * 60 * 60 * 1000;
-  const leftMs = endMs - Date.now();
-  const timeLeft = document.getElementById('toTimeLeft');
-  if (leftMs > 0) {
-    const hrs = Math.floor(leftMs / (1000 * 60 * 60));
-    const d = Math.floor(hrs / 24), h = hrs % 24;
-    timeLeft.innerHTML = `⏳ トライアル残り <strong>${d}日 ${h}時間</strong>`;
-  } else {
-    timeLeft.innerHTML = `⏰ <strong>トライアル期間終了</strong> — 体験を継続するにはプランへアップグレード`;
-  }
-}
-
-function bindTrialOnboarding() {
-  const dismissBtn = document.getElementById('toDismissBtn');
-  if (dismissBtn) {
-    dismissBtn.addEventListener('click', () => {
-      if (!confirm('体験モードを終了しますか？（再表示はできません）')) return;
-      const s = getTrialState();
-      s.dismissed = true;
-      saveTrialState(s);
-      renderTrialOnboarding();
-    });
-  }
-}
+// (Trial Onboarding 関連の全関数を削除: getTrialState / saveTrialState /
+//  getTrialDayNumber / renderTrialOnboarding / bindTrialOnboarding / TRIAL_DAYS / TRIAL_KEY)
+// 本契約生徒の mypage には体験プログラムを表示しないため不要
 
 document.addEventListener('DOMContentLoaded', () => {
   // 🛡️ 2026-05-13 塾長指示「学習管理が絶対に消えない」: MutationObserver で能動的に防御
@@ -481,8 +308,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // 各初期化を独立に try/catch して、1つの失敗で以降の初期化が連鎖停止しないようにする
   try { render(); } catch (e) { console.error('render failed:', e); }
   try { logActivity('mypage_view'); } catch (e) { console.error('logActivity failed:', e); }
-  try { bindTrialOnboarding(); } catch (e) { console.error('bindTrialOnboarding failed:', e); }
-  try { renderTrialOnboarding(); } catch (e) { console.error('renderTrialOnboarding failed:', e); }
   try { initStudyLog(); } catch (e) { console.error('initStudyLog failed:', e); }
   try { initStudyLogQuickCta(); } catch (e) { console.error('initStudyLogQuickCta failed:', e); }
   try { initExamResults(); } catch (e) { console.error('initExamResults failed:', e); }
