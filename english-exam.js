@@ -751,6 +751,28 @@ function _qsHintMatchesKey(key, hint) {
   };
   return prefixMap[hint] ? prefixMap[hint].test(key) : true;
 }
+// 大学が subject hint に該当する section を持つかチェック (大学プルダウン filter 用)
+function _univHasSubjectSections(examId, univKey, hint) {
+  if (!hint) return true;
+  const exam = EXAMS[examId];
+  if (!exam || !exam.sectionsByGrade) return true;
+  const sections = exam.sectionsByGrade[univKey] || exam.sectionsByGrade._default || [];
+  return sections.some(s => _qsHintMatchesKey(s.key, hint));
+}
+// 大学プルダウン option の subject-specific label を生成
+// (例: hint=phys + univKey=todai_rikei → "物理 大問1 (力学) / 物理 大問2 (電磁気) / 物理 大問3 (波/熱)")
+function _univSubjectLabel(examId, univKey, hint) {
+  if (!hint) return '';
+  const exam = EXAMS[examId];
+  if (!exam || !exam.sectionsByGrade) return '';
+  const matching = (exam.sectionsByGrade[univKey] || exam.sectionsByGrade._default || [])
+    .filter(s => _qsHintMatchesKey(s.key, hint));
+  if (matching.length === 0) return '';
+  if (matching.length > 3) {
+    return matching.slice(0, 3).map(s => s.name).join(' / ') + ` 他 ${matching.length - 3} 大問`;
+  }
+  return matching.map(s => s.name).join(' / ');
+}
 
 // 🎯 2026-05-13: daigaku/rikei 用 select-based grade picker
 // 30+ 大学を category 別 optgroup でまとめる + select change で即遷移
@@ -781,13 +803,18 @@ function _renderGradeSelect(grid, examId, items) {
     }
     return { cat: 'その他', order: 99 };
   };
-  // 🎯 2026-05-15 クイックスタート科目フィルタ: bunkei では subject hint で grades を絞り込む
-  // (例: hint=kokugo なら kobun_*/kanbun_*/r_summary_* のみ、jhist なら nihonshi_* のみ)
+  // 🎯 2026-05-15 クイックスタート科目フィルタ:
+  //   bunkei は grade key そのものが subject を表すので prefix で絞り込む (例: hint=kokugo → kobun_*)
+  //   rikei は大学 key で subject 別に区別できないので sectionsByGrade を見て「その subject の大問がある大学のみ」表示
+  // どちらも該当 0 件なら fallback で全表示
   const _qsHint = _getQsSubjectHint();
   let _filteredItems = items;
   if (examId === 'bunkei' && _qsHint) {
     _filteredItems = items.filter(g => _qsHintMatchesKey(g.key, _qsHint));
-    if (_filteredItems.length === 0) _filteredItems = items; // 該当無しなら fallback で全表示
+    if (_filteredItems.length === 0) _filteredItems = items;
+  } else if (examId === 'rikei' && _qsHint) {
+    _filteredItems = items.filter(g => _univHasSubjectSections('rikei', g.key, _qsHint));
+    if (_filteredItems.length === 0) _filteredItems = items;
   }
   // group by category
   const groups = {};
@@ -802,12 +829,18 @@ function _renderGradeSelect(grid, examId, items) {
   const wrapper = document.createElement('div');
   wrapper.className = 'grade-select-wrapper';
   wrapper.style.cssText = 'max-width: 640px; margin: 1.5rem auto; padding: 0 1rem;';
+  // 🎯 2026-05-15 hint が設定されているときはラベルに subject を明示
+  const _subjLabel = _qsHint ? _qsSubjectHintLabel(_qsHint) : '';
   const label = examId === 'daigaku' ? '🎓 受験する大学/試験を選択'
-              : examId === 'rikei'   ? '🔬 大学/レベルを選択'
-              : examId === 'bunkei'  ? '📚 科目とレベルを選択'
+              : examId === 'rikei'   ? (_subjLabel ? `${_subjLabel} を受験する大学/レベルを選択` : '🔬 大学/レベルを選択')
+              : examId === 'bunkei'  ? (_subjLabel ? `${_subjLabel} を学ぶ大学/レベルを選択` : '📚 科目とレベルを選択')
               : '大学/レベルを選択';
+  // 🎯 hint clear ボタン (科目フィルタが効いている時のみ)
+  const _clearBtnHtml = _qsHint
+    ? `<button type="button" id="qsGradeClearBtn" style="margin-left:0.6rem; padding:0.3rem 0.7rem; background:rgba(99,102,241,0.4); border:0; border-radius:6px; color:#fff; font-weight:700; font-size:0.78rem; cursor:pointer;">✕ ${escapeHtml(_subjLabel)} 解除</button>`
+    : '';
   wrapper.innerHTML = `
-    <label style="display:block; font-size:1rem; color:#a78bfa; font-weight:700; margin-bottom:0.6rem;">${label}</label>
+    <label style="display:block; font-size:1rem; color:#a78bfa; font-weight:700; margin-bottom:0.6rem;">${label}${_clearBtnHtml}</label>
     <select id="gradeSelectPulldown" style="
       width: 100%;
       padding: 0.9rem 1rem;
@@ -825,7 +858,12 @@ function _renderGradeSelect(grid, examId, items) {
       ${sortedCats.map(catName => {
         const grp = groups[catName];
         return `<optgroup label="${escapeHtml(catName)} (${grp.items.length}校)" style="background:#1f2937; color:#fbbf24;">
-          ${grp.items.map(g => `<option value="${escapeHtml(g.key)}" style="background:#0f172a; color:#fff;">${escapeHtml(g.name)}${g.target ? ' — ' + escapeHtml(g.target) : ''}</option>`).join('')}
+          ${grp.items.map(g => {
+            // 🎯 hint があれば subject-specific label を優先表示 (例: "東京大学 理系 — 物理 大問1/2/3")
+            const subjText = _qsHint ? _univSubjectLabel(examId, g.key, _qsHint) : '';
+            const suffix = subjText ? (' — ' + subjText) : (g.target ? ' — ' + g.target : '');
+            return `<option value="${escapeHtml(g.key)}" style="background:#0f172a; color:#fff;">${escapeHtml(g.name)}${escapeHtml(suffix)}</option>`;
+          }).join('')}
         </optgroup>`;
       }).join('')}
     </select>
@@ -1544,8 +1582,22 @@ Speaking/Writing の場合: choices=[], answer に模範解答テキスト全文
         let aggregated = [...sel.questions];
         let aggregatedFrom = 1; // 集約元の payload 数
         let aggregateBlocked = ''; // 集約禁止理由 (UI 用)
-        if (hasContext) aggregateBlocked = 'context';
-        else if (isDaimonChain) aggregateBlocked = 'daimon_chain';
+        // 🎯 2026-05-15 塾長指示「600 問の反映数が少ない」: context-bound (長文付き) でも
+        //   passage を「【長文1】【長文2】」と連結して複数 payload から集約するように変更。
+        //   大問サブ問題チェーンは引き続き禁止 (1 問だけ取り出すと破綻)。
+        if (isDaimonChain) aggregateBlocked = 'daimon_chain';
+
+        // 🎯 multi-passage 集約用: 長文 block を順に保持
+        const passageBlocks = [];
+        if (hasContext) {
+          passageBlocks.push({
+            passage: _ctxStr(sel.passage),
+            audio_script: _ctxStr(sel.audio_script),
+            prompt: _ctxStr(sel.prompt),
+            figure_svg: _ctxStr(sel.figure_svg),
+            label: '長文 1',
+          });
+        }
 
         if (!aggregateBlocked && aggregated.length < qCount && Array.isArray(poolData.all)) {
           // dedup 用: selected の _question_id と stem を baseline に
@@ -1559,55 +1611,108 @@ Speaking/Writing の場合: choices=[], answer に模範解答テキスト全文
             if (!item) continue;
             // 重複 payload skip (selected と同一)
             if (item._question_id != null && seenIds.has(item._question_id)) continue;
-            // context-bound payload skip (passage 混在防止)
-            if (_ctxStr(item.passage) || _ctxStr(item.audio_script) || _ctxStr(item.prompt)) continue;
             if (!Array.isArray(item.questions) || item.questions.length === 0) continue;
-            // この item 自体が大問チェーン型なら丸ごと skip (1 問だけ取り出すと破綻)
+            // この item 自体が大問チェーン型なら丸ごと skip
             if (item.questions.length >= 2 && _isSubQuestionStem(item.questions[1]?.stem)) continue;
 
-            // この item の図 SVG が無いと figure 参照 question は採用不可
+            const itemHasAudio = !!_ctxStr(item.audio_script);
+            const itemHasPassage = !!_ctxStr(item.passage);
+            const itemHasPrompt = !!_ctxStr(item.prompt);
+            const itemHasContext = itemHasAudio || itemHasPassage || itemHasPrompt;
             const itemHasFigure = !!_ctxStr(item.figure_svg);
+
+            // 🎯 context-bound section では context-bound payload のみ採用 (passage 混在は OK)。
+            //    context-free section では context-bound payload を skip (既存挙動)。
+            //    ただし audio (listening) の混在は UX 破綻のため別 audio を持つ payload は skip。
+            if (hasContext && !itemHasContext) continue;
+            if (!hasContext && itemHasContext) continue;
+            if (hasContext && _ctxStr(sel.audio_script) && itemHasAudio
+                && _ctxStr(sel.audio_script) !== _ctxStr(item.audio_script)) {
+              // 元 selected が audio script を持つ場合、別 script との混在は禁止 (listening UX 破綻)
+              continue;
+            }
 
             const need = qCount - aggregated.length;
             let takenFromItem = 0;
+            const _willBePassageNum = passageBlocks.length + 1; // この item から取った question に付ける長文番号
             for (const q of item.questions) {
               if (aggregated.length >= qCount || takenFromItem >= need) break;
               if (!q) continue;
-              // ⚠️ review fix #3: 図参照 question は parent の figure_svg が無いか
-              //    集約後の payload に figure_svg がない場合 skip
+              // 図参照 question は parent の figure_svg が無いと skip
               if (_refsFigure(q) && !itemHasFigure) continue;
-              // ⚠️ review fix #4: dedup は _question_id 優先 (stem は fallback)
-              //    q 単位の _question_id は存在しないので item 単位の id + question 内 id で代替
               const qStem = (typeof q.stem === 'string' ? q.stem.trim() : '');
               if (qStem && seenStems.has(qStem)) continue;
-              aggregated.push(q);
+              const taken = hasContext ? { ...q, _passageLabel: `長文 ${_willBePassageNum}` } : q;
+              aggregated.push(taken);
               if (qStem) seenStems.add(qStem);
               takenFromItem++;
             }
             if (item._question_id != null) seenIds.add(item._question_id);
-            if (takenFromItem > 0) aggregatedFrom++;
+            if (takenFromItem > 0) {
+              aggregatedFrom++;
+              if (hasContext) {
+                passageBlocks.push({
+                  passage: _ctxStr(item.passage),
+                  audio_script: _ctxStr(item.audio_script),
+                  prompt: _ctxStr(item.prompt),
+                  figure_svg: _ctxStr(item.figure_svg),
+                  label: `長文 ${_willBePassageNum}`,
+                });
+              }
+            }
           }
         }
+
+        // 🎯 hasContext mode で multi-passage 集約が発生した場合: passage を結合 + 各 question に prefix
+        let _outPassage = sel.passage || '';
+        let _outAudio = sel.audio_script || '';
+        let _outPrompt = sel.prompt || '';
+        let _outFigure = sel.figure_svg || '';
+        if (hasContext && passageBlocks.length > 1) {
+          // selected の questions (最初の n 問) には「長文 1」prefix を付与
+          const firstLabel = passageBlocks[0].label;
+          const _selCount = sel.questions.length;
+          aggregated = aggregated.map((q, idx) => {
+            const stem = (q && typeof q.stem === 'string') ? q.stem : '';
+            const cleanStem = stem.replace(/^【長文\s*\d+】\s*/, '');
+            const label = q?._passageLabel || (idx < _selCount ? firstLabel : firstLabel);
+            return { ...q, stem: `【${label}】 ${cleanStem}` };
+          });
+          _outPassage = passageBlocks
+            .filter(p => p.passage)
+            .map(p => `【${p.label}】\n\n${p.passage}`)
+            .join('\n\n──────────\n\n');
+          _outAudio = passageBlocks.filter(p => p.audio_script)
+            .map(p => `【${p.label}】\n${p.audio_script}`).join('\n\n');
+          _outPrompt = passageBlocks.filter(p => p.prompt)
+            .map(p => `【${p.label}】 ${p.prompt}`).join('\n\n');
+          // figure_svg は最初に見つかった 1 つを表示 (multi-figure は UI 困難)
+          const firstFig = passageBlocks.find(p => p.figure_svg);
+          if (firstFig) _outFigure = firstFig.figure_svg;
+        }
+
         // ID を q1, q2, ... に振り直し (集約で衝突する可能性があるため)
         aggregated = aggregated.map((q, i) => ({ ...q, id: `q${i + 1}` }));
         payload = {
-          passage: sel.passage || '',
-          audio_script: sel.audio_script || '',
-          prompt: sel.prompt || '',
-          figure_svg: sel.figure_svg || '',
+          passage: _outPassage,
+          audio_script: _outAudio,
+          prompt: _outPrompt,
+          figure_svg: _outFigure,
           questions: aggregated.slice(0, qCount),
         };
         // 🛡 review fix #5: warning 文言は「pool/集約」等の技術用語を避け生徒向けに
         if (payload.questions.length < qCount) {
-          if (aggregateBlocked === 'context') {
-            payload._warning = `📝 ${payload.questions.length} 問を表示中 (リクエスト ${qCount} 問)・本セクションは長文/音声単位のため複数組み合わせは不可。「🎯 復習用に AI で類題作成」で残りを生成できます。`;
-          } else if (aggregateBlocked === 'daimon_chain') {
+          if (aggregateBlocked === 'daimon_chain') {
             payload._warning = `📝 ${payload.questions.length} 問を表示中 (リクエスト ${qCount} 問)・本問は大問サブ問題が連結しているため単一の組から出題しています。`;
           } else {
             payload._warning = `📝 ${payload.questions.length} 問を表示中 (リクエスト ${qCount} 問)。本セクションのストックが不足しています。「🎯 復習用に AI で類題作成」で個別最適化された残りを生成できます。`;
           }
         } else if (aggregatedFrom > 1) {
-          payload._warning = `📚 本セクション全体から ${payload.questions.length} 問を組み合わせて出題`;
+          if (hasContext && passageBlocks.length > 1) {
+            payload._warning = `📚 ${passageBlocks.length} つの長文 (本セクションのストック) から計 ${payload.questions.length} 問を出題`;
+          } else {
+            payload._warning = `📚 本セクション全体から ${payload.questions.length} 問を組み合わせて出題`;
+          }
         }
         questionSource = 'pool';
         console.log(`[exam] 📚 pool hit: ${payload.questions.length}/${qCount} questions (aggregated from ${aggregatedFrom} payloads, blocked=${aggregateBlocked || 'none'}, ${Math.round(poolMs)}ms, total in pool=${poolData.count})`);
