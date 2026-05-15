@@ -2936,12 +2936,14 @@
             : '使用量データ蓄積中 ';
           html += '<div style="font-size:0.85rem;margin-top:0.3rem;">'+daysText+'<span style="color:#94a3b8;">(残額 $'+d.remaining_usd+' / 累計補充 $'+d.total_recharged_usd+' - 累計使用 $'+d.total_used_usd+')</span></div>';
           html += '<div style="font-size:0.75rem;color:#94a3b8;margin-top:0.2rem;">直近 7 日: $'+d.last_7d_used_usd+' 消費 / 日平均 $'+d.avg_daily_used_usd+'</div>';
+          html += '<div style="font-size:0.72rem;color:#a78bfa;margin-top:0.25rem;">💡 残高が Console と合わない時は <strong>📥 残高を直接同期</strong> / 補充した時は <strong>💰 補充を記録</strong></div>';
         }
         html += '</div>';
         html += '<div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">';
         if (d.status_level !== 'ok') {
           html += '<a href="https://console.anthropic.com/settings/billing" target="_blank" rel="noopener" style="padding:0.4rem 0.8rem;background:rgba(0,0,0,0.30);border:1px solid rgba(255,255,255,0.20);border-radius:8px;color:#fff;font-size:0.78rem;font-weight:700;text-decoration:none;">🔗 Anthropic Console</a>';
         }
+        html += '<button onclick="syncAnthropicBalance()" style="padding:0.4rem 0.8rem;background:rgba(168,85,247,0.25);border:1px solid rgba(168,85,247,0.50);border-radius:8px;color:#d8b4fe;font-size:0.78rem;font-weight:700;cursor:pointer;" title="Console で表示されている現在の残高を直接入力">📥 残高を直接同期</button>';
         html += '<button onclick="recordAnthropicRecharge()" style="padding:0.4rem 0.8rem;background:rgba(34,197,94,0.20);border:1px solid rgba(34,197,94,0.40);border-radius:8px;color:#86efac;font-size:0.78rem;font-weight:700;cursor:pointer;">💰 補充を記録</button>';
         html += '<button onclick="loadAnthropicCreditBanner()" style="padding:0.4rem 0.6rem;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#a1a1aa;font-size:0.78rem;font-weight:700;cursor:pointer;">🔄</button>';
         html += '</div></div>';
@@ -2979,6 +2981,37 @@
       }
     }
     window.recordAnthropicRecharge = recordAnthropicRecharge;
+
+    // 📥 2026-05-15 塾長指示「$48.70 残高が CEO で 0 になる」: Console 表示残高を直接同期
+    // 累計補充 vs 累計使用の差を後付け補正する 1-click 機能
+    async function syncAnthropicBalance() {
+      const balStr = prompt('Anthropic Console で表示されている現在の残高 (USD) を入力してください\n例: 48.70 (=$48.70)\n0 以上 10000 未満:', '48.70');
+      if (balStr === null) return;
+      const balance = parseFloat(balStr);
+      if (!(balance >= 0 && balance <= 10000)) {
+        alert('0 <= 残高 <= 10000 の範囲で入力してください');
+        return;
+      }
+      if (!confirm('CEO ダッシュの残高を $' + balance.toFixed(2) + ' に同期します。\n\n内部処理: 累計補充に「実残高 - (補充-使用)」の差分を 1 行 INSERT して、表示残高を Console と一致させます。よろしいですか?')) return;
+      const note = 'Console 残高同期 ' + new Date().toISOString().slice(0,10);
+      try {
+        const res = await AdminAuth.fetch('/api/admin/anthropic/credit-set-balance', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({balance_usd: balance, note: note}),
+        });
+        const d = await res.json();
+        if (d.ok) {
+          alert('✅ 残高を $' + d.balance_usd + ' に同期しました\n(累計補充に $' + d.delta_inserted_usd + ' の差分を INSERT)');
+          loadAnthropicCreditBanner();
+        } else {
+          alert('❌ 同期失敗: '+JSON.stringify(d));
+        }
+      } catch (e) {
+        alert('通信エラー: '+e.message);
+      }
+    }
+    window.syncAnthropicBalance = syncAnthropicBalance;
 
     // 初期描画 (admin token 取得後・既存 start() フローと並列で 1 度 fetch)
     setTimeout(loadAnthropicCreditBanner, 2500);

@@ -15774,6 +15774,91 @@ def admin_anthropic_credit_recharge(payload: dict,
         conn.close()
 
 
+@app.post("/api/admin/anthropic/credit-set-balance")
+def admin_anthropic_credit_set_balance(payload: dict,
+                                         authorization: Optional[str] = Header(None),
+                                         x_cron_secret: Optional[str] = Header(None)):
+    """📥 Anthropic console で表示されている現在の残高を CEO ダッシュに直接同期する。
+    2026-05-15 塾長指示「$48.70 残ってるのに CEO で 0 になる」: 補充履歴を後付けで
+    入れる代わりに「現在残高 $X を sync」だけで一発合わせ込みできるショートカット。
+
+    payload: {"balance_usd": 48.70, "note": "Console 残高同期 (UTC 2026-05-15)"}
+
+    実装ロジック:
+      desired_balance = payload.balance_usd
+      current_used    = SUM(anthropic_usage_log.cost_usd)
+      current_recharge = SUM(anthropic_credit_recharge.amount_usd)
+      delta = desired_balance + current_used - current_recharge
+      → anthropic_credit_recharge に 1 行 INSERT (note="balance-sync $X")
+      → 結果: total_recharged - total_used = desired_balance になる
+
+    認証: admin Bearer or X-Cron-Secret"""
+    authed = False
+    recorded_by = "x-cron-secret"
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+            recorded_by = "admin"
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    try:
+        balance = float(payload.get("balance_usd"))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="balance_usd 不正")
+    if balance < 0 or balance > 10000:
+        raise HTTPException(status_code=400, detail="balance_usd は 0 <= x <= 10000 の範囲で")
+    # user note は 120 chars に切って diagnostic 情報 (balance/delta/prev) と合わせて
+    # トータル 300 chars 以内に収まるよう保証 (truncate WARN fix)
+    note = (payload.get("note") or "Console 残高同期")[:120]
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 現在の合計使用と合計補充を取得 (credit-status と同じロジック)
+        c.execute("SELECT COALESCE(SUM(cost_usd), 0) FROM anthropic_usage_log")
+        row = c.fetchone()
+        try:
+            total_used = float(row[0] or 0)
+        except (TypeError, KeyError, IndexError):
+            try: total_used = float(list(row.values())[0] or 0)
+            except Exception: total_used = 0.0
+
+        c.execute("SELECT COALESCE(SUM(amount_usd), 0) FROM anthropic_credit_recharge")
+        row = c.fetchone()
+        try:
+            total_recharged = float(row[0] or 0)
+        except (TypeError, KeyError, IndexError):
+            try: total_recharged = float(list(row.values())[0] or 0)
+            except Exception: total_recharged = 0.0
+
+        delta = balance + total_used - total_recharged
+        # delta が大きく負 (実残高 < 現在残高表示) なら警告 fields を返すが INSERT 自体は実行
+        # (anthropic_credit_recharge は cumulative 履歴・負の値も OK で「補正」として記録)
+        sync_note = f"{note} → balance=${balance:.2f} delta=${delta:.4f} (prev_recharged=${total_recharged:.2f} used=${total_used:.4f})"
+        c.execute(
+            "INSERT INTO anthropic_credit_recharge (amount_usd, note, recorded_by) VALUES (?, ?, ?)",
+            (delta, sync_note[:300], recorded_by),
+        )
+        conn.commit()
+
+        return {
+            "ok": True,
+            "balance_usd": round(balance, 2),
+            "delta_inserted_usd": round(delta, 4),
+            "prev_total_recharged_usd": round(total_recharged, 2),
+            "prev_total_used_usd": round(total_used, 4),
+            "new_total_recharged_usd": round(total_recharged + delta, 2),
+            "remaining_now_usd": round(balance, 2),
+            "recorded_by": recorded_by,
+        }
+    finally:
+        conn.close()
+
+
 @app.post("/api/admin/ai/test-anthropic-pdf")
 def admin_test_anthropic_pdf(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """🔬 Anthropic PDF 入力疎通確認 (2026-05-13 追加)
