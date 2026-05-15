@@ -721,6 +721,37 @@ function bindExamCards() {
   });
 }
 
+// 🎯 2026-05-15 塾長指示「科目別に変更」: クイックスタートで選んだ科目 (math/phys/chem/bio/earth/
+//   kokugo/jhist/whist/geo/civ/ethics) を localStorage から取得して、grade/section をフィルタする。
+const QS_SUBJECT_HINT_KEY = 'ai_juku_qs_subject_hint';
+function _getQsSubjectHint() {
+  try { return localStorage.getItem(QS_SUBJECT_HINT_KEY) || ''; } catch (_) { return ''; }
+}
+function _qsSubjectHintLabel(hint) {
+  return ({
+    math:'📐 数学', phys:'⚛️ 物理', chem:'🧪 化学', bio:'🧬 生物', earth:'🌍 地学',
+    kokugo:'📖 国語', jhist:'🗾 日本史', whist:'🌐 世界史', geo:'🗺 地理', civ:'⚖️ 政経', ethics:'📿 倫理',
+  })[hint] || '';
+}
+function _qsHintMatchesKey(key, hint) {
+  if (!hint || !key) return true;
+  // section の key prefix で判定 (math_q1, phys_basic, kobun, kanbun, nihonshi 等)
+  const prefixMap = {
+    math:   /^math/,
+    phys:   /^phys/,
+    chem:   /^chem/,
+    bio:    /^bio/,
+    earth:  /^earth/,
+    kokugo: /^(kobun|kanbun|r_summary)/,
+    jhist:  /^nihonshi/,
+    whist:  /^sekaishi/,
+    geo:    /^chiri/,
+    civ:    /^kouminka/,  // 公民は政経/倫理一体
+    ethics: /^kouminka/,
+  };
+  return prefixMap[hint] ? prefixMap[hint].test(key) : true;
+}
+
 // 🎯 2026-05-13: daigaku/rikei 用 select-based grade picker
 // 30+ 大学を category 別 optgroup でまとめる + select change で即遷移
 function _renderGradeSelect(grid, examId, items) {
@@ -750,9 +781,17 @@ function _renderGradeSelect(grid, examId, items) {
     }
     return { cat: 'その他', order: 99 };
   };
+  // 🎯 2026-05-15 クイックスタート科目フィルタ: bunkei では subject hint で grades を絞り込む
+  // (例: hint=kokugo なら kobun_*/kanbun_*/r_summary_* のみ、jhist なら nihonshi_* のみ)
+  const _qsHint = _getQsSubjectHint();
+  let _filteredItems = items;
+  if (examId === 'bunkei' && _qsHint) {
+    _filteredItems = items.filter(g => _qsHintMatchesKey(g.key, _qsHint));
+    if (_filteredItems.length === 0) _filteredItems = items; // 該当無しなら fallback で全表示
+  }
   // group by category
   const groups = {};
-  items.forEach(g => {
+  _filteredItems.forEach(g => {
     const cat = categorize(g.key);
     if (!groups[cat.cat]) groups[cat.cat] = { order: cat.order, items: [] };
     groups[cat.cat].items.push(g);
@@ -1018,10 +1057,32 @@ function pickExamSections(examId) {
         : (examId === 'bunkei' && state.eikenGrade)
           ? ((EXAMS.bunkei && EXAMS.bunkei.sectionsByGrade && EXAMS.bunkei.sectionsByGrade[state.eikenGrade]) || [])
           : exam.sections;
-  state.currentSections = sections;
+  // 🎯 2026-05-15 クイックスタート科目フィルタ: rikei/bunkei では subject hint で sections を絞り込む
+  const _qsHint2 = _getQsSubjectHint();
+  let _filteredSections = sections;
+  if ((examId === 'rikei' || examId === 'bunkei') && _qsHint2) {
+    _filteredSections = sections.filter(s => _qsHintMatchesKey(s.key, _qsHint2));
+    if (_filteredSections.length === 0) _filteredSections = sections; // 該当無しは全表示
+  }
+  state.currentSections = _filteredSections;
   const grid = document.getElementById('sectionGrid');
   grid.innerHTML = '';
-  sections.forEach(sec => {
+  // フィルタ表示バナー (hint があり実際に絞られた場合のみ)
+  if (_qsHint2 && _filteredSections.length < sections.length) {
+    const banner = document.createElement('div');
+    banner.className = 'qs-filter-banner';
+    banner.style.cssText = 'grid-column:1/-1; margin-bottom:0.8rem; padding:0.7rem 1rem; background:rgba(251,191,36,0.15); border:1px solid rgba(251,191,36,0.5); border-radius:10px; color:#fef3c7; font-size:0.88rem; font-weight:700; display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;';
+    banner.innerHTML = `
+      <span>⚡ クイックスタート: ${escapeHtml(_qsSubjectHintLabel(_qsHint2))} の大問のみ表示中</span>
+      <button type="button" id="qsClearFilterBtn" style="margin-left:auto; padding:0.35rem 0.8rem; background:rgba(99,102,241,0.4); border:0; border-radius:6px; color:#fff; font-weight:700; font-size:0.82rem; cursor:pointer;">すべて表示</button>
+    `;
+    grid.appendChild(banner);
+    banner.querySelector('#qsClearFilterBtn').addEventListener('click', () => {
+      try { localStorage.removeItem(QS_SUBJECT_HINT_KEY); } catch (_) {}
+      pickExamSections(examId); // 再描画
+    });
+  }
+  _filteredSections.forEach(sec => {
     const card = document.createElement('button');
     card.type = 'button';
     card.className = 'section-card';
@@ -4118,13 +4179,50 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   } catch (e) { /* silent: localStorage 不可ブラウザでもエラー化させない */ }
 
-  // 🎯 2026-05-13: クイックスタート CTA bar (画面最上部) のボタン bind
-  // ヘッダー直下から直接「試験→プルダウン」フローに飛べる導線
-  document.querySelectorAll('.qs-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+  // 🎯 2026-05-15 塾長指示「科目別に変更」: クイックスタートを 5 科目 (国語/英語/理科/社会/数学) に再編
+  // 英語・理科・社会はプルダウン展開、国語・数学は直接 pickExam に遷移。
+  // data-qs-subject は localStorage (QS_SUBJECT_HINT_KEY) に hint 保存 → grade/sections フィルタで参照。
+  // (QS_SUBJECT_HINT_KEY 定数 + helper 関数群は L724 付近にファイル先頭で定義済)
+
+  // 1) プルダウン toggle (▾ ボタン)
+  document.querySelectorAll('.qs-toggle').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const dropdown = btn.closest('.qs-dropdown');
+      const menu = dropdown ? dropdown.querySelector('.qs-menu') : null;
+      if (!menu) return;
+      // 他の menu を全て閉じる
+      document.querySelectorAll('.qs-menu').forEach(m => { if (m !== menu) m.hidden = true; });
+      document.querySelectorAll('.qs-toggle').forEach(t => { if (t !== btn) t.setAttribute('aria-expanded', 'false'); });
+      const willOpen = menu.hidden;
+      menu.hidden = !willOpen;
+      btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    });
+  });
+
+  // 2) document クリックで全 menu を閉じる
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.qs-dropdown')) return; // dropdown 内クリックは無視
+    document.querySelectorAll('.qs-menu').forEach(m => { m.hidden = true; });
+    document.querySelectorAll('.qs-toggle').forEach(t => t.setAttribute('aria-expanded', 'false'));
+  });
+
+  // 3) 全 [data-qs-exam] 要素 (直接ボタン + プルダウン内ボタン) を bind
+  document.querySelectorAll('[data-qs-exam]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
       const examId = btn.dataset.qsExam;
       if (!examId) return;
-      try { pickExam(examId); } catch (e) { console.warn('quick-start failed:', e); }
+      const subject = btn.dataset.qsSubject;
+      // subject hint を localStorage に保存 (sections フィルタで参照)
+      try {
+        if (subject) localStorage.setItem(QS_SUBJECT_HINT_KEY, subject);
+        else localStorage.removeItem(QS_SUBJECT_HINT_KEY);
+      } catch (_) { /* localStorage 不可ブラウザ無視 */ }
+      // menu を閉じる
+      document.querySelectorAll('.qs-menu').forEach(m => { m.hidden = true; });
+      document.querySelectorAll('.qs-toggle').forEach(t => t.setAttribute('aria-expanded', 'false'));
+      try { pickExam(examId); } catch (err) { console.warn('quick-start failed:', err); }
       // gradePickSection or examDetailSection までスクロール
       setTimeout(() => {
         const target = document.getElementById('gradePickSection') || document.getElementById('examDetailSection');

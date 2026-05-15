@@ -44,24 +44,84 @@
 
   <main class="ee-main">
 
-    <!-- 🎯 2026-05-13 塾長指示: 「プルダウンで早稲田→r_long」フロー導線を最上部に目立たせる
-         ヘッダー直下に「クイックスタート」CTA バー (試験別に直接プルダウンへ飛ぶ) -->
+    <!-- 🎯 2026-05-15 塾長指示「科目別に変更」: 試験種別 (daigaku/rikei/bunkei/英検 etc.) ではなく
+         生徒の学習科目 (国語/英語/理科/社会/数学) を一次キーに変更。
+         理科・社会・英語はクリックでプルダウン展開、国語・数学は直接遷移。
+         data-qs-exam で内部の試験種別にマップ、data-qs-subject で subject hint を localStorage に保存。 -->
+    <style>
+      .qs-bar { display:flex; gap:0.45rem; flex-wrap:wrap; }
+      .qs-btn { padding:0.7rem 1.1rem; border:0; border-radius:10px; color:#fff; font-weight:800; font-size:0.95rem; cursor:pointer; min-height:48px; }
+      .qs-btn-kokugo  { background:linear-gradient(135deg,#ef4444,#f97316); box-shadow:0 4px 12px rgba(239,68,68,0.3); }
+      .qs-btn-eigo    { background:linear-gradient(135deg,#3b82f6,#6366f1); box-shadow:0 4px 12px rgba(59,130,246,0.3); }
+      .qs-btn-rika    { background:linear-gradient(135deg,#22c55e,#10b981); box-shadow:0 4px 12px rgba(34,197,94,0.3); }
+      .qs-btn-shakai  { background:linear-gradient(135deg,#a855f7,#ec4899); box-shadow:0 4px 12px rgba(168,85,247,0.3); }
+      .qs-btn-math    { background:linear-gradient(135deg,#fbbf24,#f97316); box-shadow:0 4px 12px rgba(251,191,36,0.3); }
+      .qs-dropdown { position:relative; }
+      .qs-menu {
+        position:absolute; top:calc(100% + 0.4rem); left:0; z-index:50;
+        background:#1e1b4b; border:1px solid rgba(167,139,250,0.45);
+        border-radius:10px; padding:0.4rem; min-width:200px;
+        box-shadow:0 12px 32px rgba(0,0,0,0.4);
+        display:flex; flex-direction:column; gap:0.25rem;
+      }
+      .qs-menu[hidden] { display:none; }
+      .qs-menu button {
+        text-align:left; padding:0.55rem 0.8rem; background:transparent; border:0;
+        border-radius:6px; color:#e0e7ff; font-weight:700; font-size:0.88rem;
+        cursor:pointer; min-height:38px;
+      }
+      .qs-menu button:hover { background:rgba(99,102,241,0.25); color:#fff; }
+      .qs-caret { font-size:0.7em; margin-left:0.25rem; opacity:0.85; }
+    </style>
     <section id="quickStartBar" style="max-width:1200px; margin:1.2rem auto 0; padding:0 1rem;">
       <div style="background:linear-gradient(135deg, rgba(99,102,241,0.18), rgba(236,72,153,0.12)); border:1px solid rgba(167,139,250,0.45); border-radius:14px; padding:1rem 1.2rem; box-shadow:0 8px 24px rgba(99,102,241,0.15);">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:0.8rem; flex-wrap:wrap;">
           <div style="flex:1 1 280px;">
             <div style="font-size:0.78rem; color:#fbbf24; font-weight:800; letter-spacing:0.08em; margin-bottom:0.3rem;">⚡ クイックスタート</div>
-            <h3 style="margin:0 0 0.25rem 0; font-size:1.1rem; color:#fff; font-weight:800;">試験を選んで今すぐ問題挑戦</h3>
-            <p style="margin:0; font-size:0.82rem; color:#c7d2fe; line-height:1.5;">大学・大問を選んでその場で AI が問題を生成。同じ問題が出ないよう履歴も自動記録。</p>
+            <h3 style="margin:0 0 0.25rem 0; font-size:1.1rem; color:#fff; font-weight:800;">科目を選んで今すぐ問題挑戦</h3>
+            <p style="margin:0; font-size:0.82rem; color:#c7d2fe; line-height:1.5;">5 科目から選択 → 大学・大問を指定して AI が即時生成。履歴は自動記録され同じ問題は出ません。</p>
           </div>
-          <div style="display:flex; gap:0.45rem; flex-wrap:wrap;">
-            <button type="button" class="qs-btn" data-qs-exam="daigaku" style="padding:0.7rem 1.1rem; background:linear-gradient(135deg,#fbbf24,#ec4899); border:0; border-radius:10px; color:#fff; font-weight:800; font-size:0.9rem; cursor:pointer; min-height:48px; box-shadow:0 4px 12px rgba(236,72,153,0.3);">🎓 大学入試英語</button>
-            <button type="button" class="qs-btn" data-qs-exam="rikei" style="padding:0.7rem 1.1rem; background:linear-gradient(135deg,#22c55e,#3b82f6); border:0; border-radius:10px; color:#fff; font-weight:800; font-size:0.9rem; cursor:pointer; min-height:48px; box-shadow:0 4px 12px rgba(59,130,246,0.3);">🔬 理系科目</button>
-            <button type="button" class="qs-btn" data-qs-exam="bunkei" style="padding:0.7rem 1.1rem; background:linear-gradient(135deg,#f472b6,#a855f7); border:0; border-radius:10px; color:#fff; font-weight:800; font-size:0.9rem; cursor:pointer; min-height:48px; box-shadow:0 4px 12px rgba(168,85,247,0.3);">📚 文系科目</button>
-            <button type="button" class="qs-btn" data-qs-exam="eiken" style="padding:0.7rem 1.1rem; background:rgba(99,102,241,0.18); border:1px solid rgba(167,139,250,0.5); border-radius:10px; color:#fff; font-weight:800; font-size:0.9rem; cursor:pointer; min-height:48px;">🇯🇵 英検</button>
-            <button type="button" class="qs-btn" data-qs-exam="toefl" style="padding:0.7rem 1.1rem; background:rgba(99,102,241,0.18); border:1px solid rgba(167,139,250,0.5); border-radius:10px; color:#fff; font-weight:800; font-size:0.9rem; cursor:pointer; min-height:48px;">🇺🇸 TOEFL</button>
-            <button type="button" class="qs-btn" data-qs-exam="toeic" style="padding:0.7rem 1.1rem; background:rgba(99,102,241,0.18); border:1px solid rgba(167,139,250,0.5); border-radius:10px; color:#fff; font-weight:800; font-size:0.9rem; cursor:pointer; min-height:48px;">💼 TOEIC</button>
-            <button type="button" class="qs-btn" data-qs-exam="ielts" style="padding:0.7rem 1.1rem; background:rgba(99,102,241,0.18); border:1px solid rgba(167,139,250,0.5); border-radius:10px; color:#fff; font-weight:800; font-size:0.9rem; cursor:pointer; min-height:48px;">🇬🇧 IELTS</button>
+          <div class="qs-bar">
+            <!-- 国語: bunkei (文系) flow + subject hint=kokugo -->
+            <button type="button" class="qs-btn qs-btn-kokugo" data-qs-exam="bunkei" data-qs-subject="kokugo">📖 国語</button>
+
+            <!-- 英語: 5 試験種別プルダウン -->
+            <div class="qs-dropdown">
+              <button type="button" class="qs-btn qs-btn-eigo qs-toggle" aria-haspopup="true" aria-expanded="false">🇬🇧 英語<span class="qs-caret">▾</span></button>
+              <div class="qs-menu" hidden>
+                <button type="button" data-qs-exam="daigaku">🎓 大学入試英語</button>
+                <button type="button" data-qs-exam="eiken">🇯🇵 英検</button>
+                <button type="button" data-qs-exam="toefl">🇺🇸 TOEFL iBT</button>
+                <button type="button" data-qs-exam="toeic">💼 TOEIC L&amp;R</button>
+                <button type="button" data-qs-exam="ielts">🇬🇧 IELTS</button>
+              </div>
+            </div>
+
+            <!-- 理科: 4 subject プルダウン (rikei flow) -->
+            <div class="qs-dropdown">
+              <button type="button" class="qs-btn qs-btn-rika qs-toggle" aria-haspopup="true" aria-expanded="false">🔬 理科<span class="qs-caret">▾</span></button>
+              <div class="qs-menu" hidden>
+                <button type="button" data-qs-exam="rikei" data-qs-subject="phys">⚛️ 物理</button>
+                <button type="button" data-qs-exam="rikei" data-qs-subject="chem">🧪 化学</button>
+                <button type="button" data-qs-exam="rikei" data-qs-subject="bio">🧬 生物</button>
+                <button type="button" data-qs-exam="rikei" data-qs-subject="earth">🌍 地学</button>
+              </div>
+            </div>
+
+            <!-- 社会: 5 subject プルダウン (bunkei flow) -->
+            <div class="qs-dropdown">
+              <button type="button" class="qs-btn qs-btn-shakai qs-toggle" aria-haspopup="true" aria-expanded="false">🏛 社会<span class="qs-caret">▾</span></button>
+              <div class="qs-menu" hidden>
+                <button type="button" data-qs-exam="bunkei" data-qs-subject="jhist">🗾 日本史</button>
+                <button type="button" data-qs-exam="bunkei" data-qs-subject="whist">🌐 世界史</button>
+                <button type="button" data-qs-exam="bunkei" data-qs-subject="geo">🗺 地理</button>
+                <button type="button" data-qs-exam="bunkei" data-qs-subject="civ">⚖️ 政経</button>
+                <button type="button" data-qs-exam="bunkei" data-qs-subject="ethics">📿 倫理</button>
+              </div>
+            </div>
+
+            <!-- 数学: rikei flow + subject hint=math -->
+            <button type="button" class="qs-btn qs-btn-math" data-qs-exam="rikei" data-qs-subject="math">📐 数学</button>
           </div>
         </div>
       </div>
