@@ -3198,14 +3198,19 @@ function getPartBank(examId, sectionKey) {
   const autoBank = auto[examId] && auto[examId][sectionKey];
   // 2) 静的サンプル
   const staticBank = SAMPLE_BANKS[examId] && SAMPLE_BANKS[examId][sectionKey];
-  // 英検は g{N}_{key}、大学入試 (英語/文系) は {univ}_{key} の compound key で sectionsByGrade を区別
-  if (!autoBank && !staticBank && (examId === 'eiken' || examId === 'daigaku' || examId === 'bunkei') && state && state.eikenGrade) {
+  // 英検は g{N}_{key}、大学入試 (英語/文系/理系) は {univ}_{key} の compound key で sectionsByGrade を区別
+  // 🛟 2026-05-16 QA audit (3 視点 review): rikei が compound list から除外されていた致命バグ修正
+  //   旧: rikei では auto[rikei][todai_rikei_phys_q1] / SAMPLE_BANKS[rikei][todai_rikei_phys_q1] を
+  //       lookup できず、未来 univ 別 bank 追加でもヒットしなかった。rikei を fallback list に追加。
+  if (!autoBank && !staticBank && (examId === 'eiken' || examId === 'daigaku' || examId === 'bunkei' || examId === 'rikei') && state && state.eikenGrade) {
     const compoundKey = state.eikenGrade + '_' + sectionKey;
     // AUTO_GENERATED_BANKS にも compound key で問い合わせ
     const autoCompound = auto[examId] && auto[examId][compoundKey];
     const staticCompound = SAMPLE_BANKS[examId] && SAMPLE_BANKS[examId][compoundKey];
     if (autoCompound && staticCompound) return Math.random() < 0.6 ? autoCompound : staticCompound;
-    return autoCompound || staticCompound;
+    if (autoCompound || staticCompound) return autoCompound || staticCompound;
+    // 🛟 compound miss でも flat lookup を最後に試行 (rikei の math_basic/phys_basic_q 等
+    //    _default grade での共通バンク用)
   }
   // ランダム選択 (AI生成があれば優先・無ければ静的)
   if (autoBank && staticBank) {
