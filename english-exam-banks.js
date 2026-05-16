@@ -284,6 +284,74 @@ window.SAMPLE_BANKS.daigaku = {
   },
 };
 
+// ============================================================================
+// 🔬 理系科目 SAMPLE_BANKS (共通テスト基礎 / safe-mode 静的フォールバック)
+// ============================================================================
+// 🛟 2026-05-16 塾長指示「pool 部分提供で時短+問題提供失敗の解決」+ 3 視点 review:
+//   pool fetch が失敗した時の最終 fallback。各 part 5 問の高品質静的問題を仕込み、
+//   demoQuestions が getPartBank で必ず HIT するようにして「空 warning」を物理的に排除。
+//   問題内容は教科書例題 + 共通テスト典型 (各 part 主要トピック 5 問)。
+window.SAMPLE_BANKS.rikei = {
+  math_1a: {
+    questions: [
+      { stem: '二次関数 \\(y=x^2-4x+3\\) の頂点座標を求めよ。', choices: ['\\((1, 0)\\)', '\\((2, -1)\\)', '\\((3, 0)\\)', '\\((-2, 15)\\)'], answer: '1', explanation: '平方完成: \\(y=(x-2)^2-1\\)。頂点は \\((2, -1)\\)。trap: \\(x\\) 切片 \\((1,0)/(3,0)\\) を頂点と混同しやすい。【単元】二次関数 (共通テスト基礎)' },
+      { stem: 'サイコロ 2 個を同時に振った時、出目の和が 7 になる確率を求めよ。', choices: ['\\(\\frac{1}{6}\\)', '\\(\\frac{5}{36}\\)', '\\(\\frac{1}{12}\\)', '\\(\\frac{7}{36}\\)'], answer: '0', explanation: '和 7 の組合せは (1,6)(2,5)(3,4)(4,3)(5,2)(6,1) の 6 通り。全 36 通り中 6 通りなので \\(\\frac{6}{36}=\\frac{1}{6}\\)。【単元】確率 (共通テスト基礎)' },
+      { stem: 'データ \\(\\{2, 4, 5, 7, 12\\}\\) の中央値を求めよ。', choices: ['4', '5', '6', '7'], answer: '1', explanation: '5 個のデータをソート: 2, 4, 5, 7, 12。中央値は中央の値 5。trap: 平均 (= 6) と混同しやすい。【単元】データ (共通テスト基礎)' },
+      { stem: '二次方程式 \\(x^2-5x+6=0\\) の解を求めよ。', choices: ['\\(x=1, 6\\)', '\\(x=2, 3\\)', '\\(x=-2, -3\\)', '\\(x=-1, -6\\)'], answer: '1', explanation: '因数分解 \\((x-2)(x-3)=0\\) より \\(x=2, 3\\)。解と係数 \\(\\alpha+\\beta=5\\)、\\(\\alpha\\beta=6\\) で検算 OK。【単元】二次方程式 (共通テスト基礎)' },
+      { stem: '\\(\\triangle ABC\\) で \\(a=5, b=6, C=60°\\) の時、辺 \\(c\\) を求めよ。', choices: ['\\(\\sqrt{11}\\)', '\\(\\sqrt{21}\\)', '\\(\\sqrt{31}\\)', '\\(\\sqrt{61}\\)'], answer: '2', explanation: '余弦定理 \\(c^2=a^2+b^2-2ab\\cos C=25+36-60\\cdot\\frac{1}{2}=31\\)。\\(c=\\sqrt{31}\\)。【単元】図形と計量 (共通テスト基礎)' },
+    ],
+  },
+  math_2b: {
+    questions: [
+      { stem: '\\(\\sin 60°+\\cos 30°\\) の値を求めよ。', choices: ['\\(\\frac{\\sqrt{3}}{2}\\)', '\\(\\sqrt{3}\\)', '1', '\\(\\frac{1}{2}\\)'], answer: '1', explanation: '\\(\\sin 60°=\\cos 30°=\\frac{\\sqrt{3}}{2}\\)。よって \\(\\frac{\\sqrt{3}}{2}+\\frac{\\sqrt{3}}{2}=\\sqrt{3}\\)。【単元】三角関数 (共通テスト基礎)' },
+      { stem: '\\(\\log_2 8\\) の値を求めよ。', choices: ['2', '3', '4', '8'], answer: '1', explanation: '\\(8=2^3\\) より \\(\\log_2 8=3\\)。対数の定義 \\(a^x=b \\Leftrightarrow x=\\log_a b\\)。【単元】指数対数 (共通テスト基礎)' },
+      { stem: '\\(f(x)=x^3-3x\\) の極小値を求めよ。', choices: ['\\(-2\\)', '\\(-1\\)', '\\(0\\)', '\\(2\\)'], answer: '0', explanation: '\\(f\'(x)=3x^2-3=0\\) より \\(x=\\pm 1\\)。\\(f(1)=-2\\) (極小)、\\(f(-1)=2\\) (極大)。【単元】微積 (共通テスト基礎)' },
+      { stem: '初項 2、公差 3 の等差数列の第 10 項を求めよ。', choices: ['27', '29', '30', '32'], answer: '1', explanation: '一般項 \\(a_n=a_1+(n-1)d=2+9\\cdot 3=29\\)。【単元】数列 (共通テスト基礎)' },
+      { stem: 'ベクトル \\(\\vec{a}=(3, 4)\\) の大きさを求めよ。', choices: ['5', '7', '12', '25'], answer: '0', explanation: '\\(|\\vec{a}|=\\sqrt{3^2+4^2}=\\sqrt{25}=5\\)。【単元】ベクトル (共通テスト基礎)' },
+    ],
+  },
+  phys_basic: {
+    questions: [
+      { stem: '抵抗 \\(R=4\\,\\Omega\\) に電圧 \\(V=12\\,\\mathrm{V}\\) を加えた時、流れる電流 \\(I\\) を求めよ。', choices: ['1 A', '3 A', '4 A', '48 A'], answer: '1', explanation: 'オームの法則 \\(V=IR\\) より \\(I=V/R=12/4=3\\,\\mathrm{A}\\)。trap: \\(VR=48\\) は逆計算ミス。【単元】電気 (共通テスト基礎)' },
+      { stem: '質量 \\(m=2\\,\\mathrm{kg}\\) の物体に力 \\(F=10\\,\\mathrm{N}\\) を加えた時の加速度を求めよ。', choices: ['\\(2\\,\\mathrm{m/s^2}\\)', '\\(5\\,\\mathrm{m/s^2}\\)', '\\(10\\,\\mathrm{m/s^2}\\)', '\\(20\\,\\mathrm{m/s^2}\\)'], answer: '1', explanation: '運動方程式 \\(F=ma\\) より \\(a=F/m=10/2=5\\,\\mathrm{m/s^2}\\)。【単元】力 (共通テスト基礎)' },
+      { stem: '速さ 10 m/s で運動する質量 2 kg の物体の運動エネルギーを求めよ。', choices: ['10 J', '20 J', '50 J', '100 J'], answer: '3', explanation: '運動エネルギー \\(K=\\frac{1}{2}mv^2=\\frac{1}{2}\\cdot 2\\cdot 100=100\\,\\mathrm{J}\\)。trap: \\(mv=20\\) は運動量で別物。【単元】エネルギー (共通テスト基礎)' },
+      { stem: '波の速さが 340 m/s、振動数が 680 Hz の時、波長を求めよ。', choices: ['0.2 m', '0.5 m', '2 m', '5 m'], answer: '1', explanation: '\\(v=f\\lambda\\) より \\(\\lambda=v/f=340/680=0.5\\,\\mathrm{m}\\)。【単元】波 (共通テスト基礎)' },
+      { stem: '100 g の水を 20℃から 80℃に上げるのに必要な熱量はいくらか。水の比熱 4.2 J/(g・K)。', choices: ['252 J', '2520 J', '25200 J', '252000 J'], answer: '2', explanation: '\\(Q=mc\\Delta T=100\\cdot 4.2\\cdot 60=25200\\,\\mathrm{J}\\)。【単元】熱 (共通テスト基礎)' },
+    ],
+  },
+  chem_basic: {
+    questions: [
+      { stem: '水 \\(\\mathrm{H_2O}\\) 18 g は何 mol か。原子量 H=1、O=16。', choices: ['0.5 mol', '1 mol', '2 mol', '18 mol'], answer: '1', explanation: '水のモル質量 \\(M=2+16=18\\,\\mathrm{g/mol}\\)。物質量 \\(n=m/M=18/18=1\\,\\mathrm{mol}\\)。【単元】mol (共通テスト基礎)' },
+      { stem: 'pH=2 の塩酸の水素イオン濃度 \\([\\mathrm{H^+}]\\) はいくらか。', choices: ['\\(10^{-1}\\) mol/L', '\\(10^{-2}\\) mol/L', '\\(10^{-7}\\) mol/L', '\\(2\\) mol/L'], answer: '1', explanation: 'pH=−log[H⁺] より \\([\\mathrm{H^+}]=10^{-\\text{pH}}=10^{-2}\\,\\mathrm{mol/L}\\)。【単元】酸塩基 (共通テスト基礎)' },
+      { stem: '次のうち酸化還元反応はどれか。', choices: ['\\(\\mathrm{HCl+NaOH \\to NaCl+H_2O}\\)', '\\(\\mathrm{Zn+2HCl \\to ZnCl_2+H_2}\\)', '\\(\\mathrm{AgNO_3+NaCl \\to AgCl+NaNO_3}\\)', '\\(\\mathrm{NaCl \\to Na^++Cl^-}\\)'], answer: '1', explanation: 'Zn(0)→Zn(+2) で酸化、H(+1)→H(0) で還元。他は中和・沈殿・電離で酸化数変化なし。【単元】酸化還元 (共通テスト基礎)' },
+      { stem: '1 族アルカリ金属に該当しないものを選べ。', choices: ['Li', 'Na', 'K', 'Mg'], answer: '3', explanation: 'アルカリ金属は 1 族 (Li/Na/K/Rb/Cs/Fr)。Mg は 2 族 (アルカリ土類金属)。【単元】周期表 (共通テスト基礎)' },
+      { stem: '次の結合のうちイオン結合はどれか。', choices: ['\\(\\mathrm{H_2O}\\)', '\\(\\mathrm{NaCl}\\)', '\\(\\mathrm{CH_4}\\)', '\\(\\mathrm{Cl_2}\\)'], answer: '1', explanation: 'NaCl は Na⁺ と Cl⁻ のイオン結合。他は共有結合 (H2O/CH4/Cl2)。【単元】結合 (共通テスト基礎)' },
+    ],
+  },
+  bio_basic: {
+    questions: [
+      { stem: '次の細胞小器官のうち、ATP を産生する主役はどれか。', choices: ['核', '葉緑体', 'ミトコンドリア', 'リボソーム'], answer: '2', explanation: 'ミトコンドリアは細胞呼吸 (酸化的リン酸化) で ATP を産生。葉緑体は光合成、核は DNA 保管、リボソームはタンパク質合成。【単元】細胞 (共通テスト基礎)' },
+      { stem: 'DNA の塩基対として正しい組合せはどれか。', choices: ['A-G, C-T', 'A-T, G-C', 'A-C, G-T', 'A-U, G-C'], answer: '1', explanation: 'DNA は A-T, G-C の相補的塩基対 (シャルガフの規則)。A-U は RNA の組合せ。【単元】DNA (共通テスト基礎)' },
+      { stem: '血糖値を下げるホルモンを選べ。', choices: ['アドレナリン', 'グルカゴン', 'インスリン', 'チロキシン'], answer: '2', explanation: 'インスリンは膵臓のランゲルハンス島 B 細胞から分泌され血糖値を下げる。他は上げる/別作用。【単元】体内環境 (共通テスト基礎)' },
+      { stem: '自然免疫を担う細胞を選べ。', choices: ['B 細胞', 'T 細胞', 'マクロファージ', '形質細胞'], answer: '2', explanation: 'マクロファージ・好中球・NK 細胞は自然免疫。B 細胞・T 細胞は獲得免疫。【単元】免疫 (共通テスト基礎)' },
+      { stem: '食物連鎖で「分解者」に該当する生物を選べ。', choices: ['植物', '草食動物', '肉食動物', '細菌・菌類'], answer: '3', explanation: '分解者は遺体・排出物を無機物に分解する細菌・菌類。植物=生産者、動物=消費者。【単元】生態系 (共通テスト基礎)' },
+    ],
+  },
+};
+
+// 🇯🇵 大学入試 共通テスト・基礎レベル fallback (rikei 同様 safe-mode)
+window.SAMPLE_BANKS.daigaku = window.SAMPLE_BANKS.daigaku || {};
+window.SAMPLE_BANKS.daigaku.kyotsu_r_long = window.SAMPLE_BANKS.daigaku.kyotsu_r_long || {
+  passage: `Reading is one of the most important skills a student can develop. Through reading, we gain access to ideas, cultures, and ways of thinking that go far beyond our own experience. Many studies have shown that students who read regularly perform better in school, even in subjects unrelated to language arts. They tend to have larger vocabularies, stronger writing skills, and better critical thinking abilities. However, in recent years, the amount of time students spend reading for pleasure has declined significantly. Smartphones and social media compete for their attention, and many young people now prefer short videos to long-form text. Educators worry that this shift may have long-term consequences for academic performance and cultural literacy.`,
+  questions: [
+    { stem: 'What is the main idea of the passage?', choices: ['Smartphones are harmful to students', 'Reading benefits students broadly, but reading time is declining', 'Social media improves cultural literacy', 'Vocabulary tests are unreliable'], answer: '1', explanation: '本文は読書の効用と最近の読書時間減少の両面を述べる。' },
+    { stem: 'According to the passage, regular readers tend to have:', choices: ['Better short-form attention', 'Stronger writing and vocabulary skills', 'Lower test scores in math', 'More smartphone usage'], answer: '1', explanation: '「larger vocabularies, stronger writing skills」が根拠。' },
+    { stem: 'Why are educators concerned?', choices: ['Smartphones are too expensive', 'Decline in reading may affect academic performance long-term', 'Books are becoming rare', 'Teachers cannot keep up with technology'], answer: '1', explanation: '「Educators worry that this shift may have long-term consequences」が根拠。' },
+    { stem: 'The word "compete" in the passage most nearly means:', choices: ['Cooperate', 'Vie for', 'Reward', 'Eliminate'], answer: '1', explanation: 'compete for X = X を求めて争う。「smartphones compete for their attention」=注目を奪い合う。' },
+    { stem: 'Which is NOT mentioned as a benefit of reading?', choices: ['Better critical thinking', 'Stronger writing skills', 'Higher exam scores in math directly', 'Larger vocabulary'], answer: '2', explanation: '本文は「even in subjects unrelated to language arts」と一般的に効果ありとは書くが「math 直接の効果」とは限定していない。' },
+  ],
+};
+
 // AI 接続が安定後、バックエンドが生成した問題を window.AUTO_GENERATED_BANKS に格納可能
 // english-exam.js は SAMPLE_BANKS と AUTO_GENERATED_BANKS の両方から出題を試みる
 window.AUTO_GENERATED_BANKS = window.AUTO_GENERATED_BANKS || {};
