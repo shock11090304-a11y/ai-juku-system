@@ -1198,6 +1198,12 @@ function showRunner(exam, section, isMock = false) {
     ? '<p class="ee-loading">🤖 AI が復習用に類題を生成中... <span style="color:#94a3b8; font-size:0.85em;">(個別最適化のため 10〜30 秒)</span></p>'
     : '<p class="ee-loading">📚 問題を準備中... <span style="color:#94a3b8; font-size:0.85em;">(pool から即取得 ~0.5 秒)</span></p>';
   document.getElementById('submitAnswersBtn').disabled = true;
+  // 💡 「解答・解説を見る」ボタンも問題ロード前は無効化 (renderQuestions 完了後に有効化)
+  const _revealBtnReset = document.getElementById('revealAnswersBtn');
+  if (_revealBtnReset) {
+    _revealBtnReset.disabled = true;
+    _revealBtnReset.textContent = '💡 解答・解説を見る';
+  }
   state.startedAt = Date.now();
   startTimer(section.timeMin);
   document.getElementById('cancelRunBtn').onclick = () => {
@@ -1763,6 +1769,12 @@ Speaking/Writing の場合: choices=[], answer に模範解答テキスト全文
     renderQuestions();
     document.getElementById('submitAnswersBtn').disabled = false;
     document.getElementById('submitAnswersBtn').onclick = submitAnswers;
+    // 💡 「解答・解説を見る」ボタンも有効化 (解かずに学習する用)
+    const _revealBtn = document.getElementById('revealAnswersBtn');
+    if (_revealBtn) {
+      _revealBtn.disabled = false;
+      _revealBtn.onclick = revealAllAnswersAndExplanations;
+    }
   } catch (e) {
     console.error(e);
     document.getElementById('questionBox').innerHTML = `
@@ -1772,6 +1784,103 @@ Speaking/Writing の場合: choices=[], answer に模範解答テキスト全文
       </div>`;
   }
 }
+
+// 💡 2026-05-16 塾長指示「解かなくても解説が出るようにシステムを追加」:
+// 「解答・解説を見る」button → 全問の正解 + 解説を一括表示 (採点 endpoint を経由せず即時)
+// multiple_choice: 正答 choice をハイライト + 解説をその場に展開
+// short_answer/essay/speaking/translation: 模範解答 + 解説 を展開
+function revealAllAnswersAndExplanations() {
+  if (!Array.isArray(state.questions) || state.questions.length === 0) {
+    alert('問題が読み込まれていません。');
+    return;
+  }
+  if (!confirm('解かずに全問の正解と解説を表示します。\n\n⚠️ 学習用機能のため:\n・採点記録・スコア換算には残りません\n・弱点 TOP3 分析の対象外になります\n・本番想定なら「📤 提出して採点」を選んでください\n\n表示しますか?')) return;
+  const box = document.getElementById('questionBox');
+  if (!box) return;
+  state.questions.forEach((q) => {
+    // 1) multiple_choice: 正答ハイライト + 解説展開
+    if (q.type === 'multiple_choice' && Array.isArray(q.choices) && q.choices.length) {
+      const correct = parseInt(q.answer, 10);
+      const validIdx = Number.isInteger(correct) && correct >= 0 && correct < q.choices.length;
+      box.querySelectorAll(`.ee-choice-btn[data-qid="${q.id}"]`).forEach(b => {
+        b.classList.add('graded');
+        const cci = parseInt(b.dataset.choice, 10);
+        if (validIdx && cci === correct) b.classList.add('is-correct');
+        b.disabled = true;
+      });
+      const explainBox = box.querySelector(`.ee-instant-explain[data-qid="${q.id}"]`);
+      if (explainBox) {
+        explainBox.style.display = '';
+        explainBox.classList.add('locked', 'reveal');
+        const correctLabel = validIdx
+          ? `${String.fromCharCode(65 + correct)} (${escapeTextWithMath(q.choices[correct] || '')})`
+          : '(正答未登録)';
+        explainBox.innerHTML = `
+          <div class="ee-instant-head" style="color:#fbbf24;">📖 解答表示 (学習用) <span class="ee-instant-correct">正解: ${correctLabel}</span></div>
+          <div class="ee-instant-body">${escapeTextWithMath(q.explanation || '解説はありません。')}</div>`;
+        if (typeof applyKatex === 'function') applyKatex(explainBox);
+      }
+    } else {
+      // 2) 記述系 (short_answer/essay/speaking/translation): 模範解答 + 解説
+      const qBlock = box.querySelector(`.ee-question[data-qid="${q.id}"]`);
+      if (qBlock && !qBlock.querySelector('.ee-reveal-essay')) {
+        // q.answer は string 想定だが、import 経路によっては object/array の可能性 → safe stringify
+        const modelAnswer = (typeof q.answer === 'string' && q.answer.trim())
+          ? q.answer
+          : (q.answer != null ? JSON.stringify(q.answer) : '(模範解答が登録されていません)');
+        const div = document.createElement('div');
+        div.className = 'ee-reveal-essay ee-instant-explain locked reveal';
+        div.style.cssText = 'display:block; margin-top:0.8rem; padding:1rem; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.35); border-radius:10px;';
+        div.innerHTML = `
+          <div class="ee-instant-head" style="color:#fbbf24; font-weight:700; margin-bottom:0.5rem;">📖 解答表示 (学習用)</div>
+          <div style="margin-bottom:0.6rem; color:#e5e7eb;"><strong style="color:#fbbf24;">模範解答:</strong><br>${escapeTextWithMath(modelAnswer)}</div>
+          <div style="color:#cbd5e1; line-height:1.7;"><strong style="color:#fbbf24;">解説:</strong><br>${escapeTextWithMath(q.explanation || '解説はありません。')}</div>`;
+        qBlock.appendChild(div);
+        if (typeof applyKatex === 'function') applyKatex(div);
+      }
+      // textarea は disabled に
+      qBlock?.querySelectorAll('textarea, .ee-text-input').forEach(el => { el.disabled = true; });
+    }
+  });
+  // 💡 events 記録: study_mode reveal 使用回数を analytics で追跡 (CEO ダッシュ集計用)
+  try {
+    const backend = (window.location.hostname === 'localhost' && window.location.port === '8090')
+      ? 'http://localhost:8000' : window.location.origin;
+    const studentId = (typeof getCurrentStudentId === 'function') ? getCurrentStudentId() : null;
+    const meta = {
+      student_id: studentId, exam_id: state.examId, part_key: state.sectionKey,
+      eiken_grade: state.eikenGrade, q_count: state.questions.length,
+      revealed_at: new Date().toISOString(),
+    };
+    if (typeof fetch === 'function') {
+      fetch(backend + '/api/track', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'exam_answer_revealed', props: meta,
+          session_id: studentId ? `student:${studentId}` : 'anonymous',
+        }),
+      }).catch(() => {});  // fire-and-forget
+    }
+  } catch (e) { /* analytics 失敗は学習体験に影響させない */ }
+  // 採点ボタンは無効化 (学習モードと整合)
+  const submitBtn = document.getElementById('submitAnswersBtn');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = '✓ 学習モード (採点対象外)';
+  }
+  const revealBtn = document.getElementById('revealAnswersBtn');
+  if (revealBtn) {
+    revealBtn.disabled = true;
+    revealBtn.textContent = '✓ 表示済み';
+  }
+  // 最初の解説までスクロール
+  setTimeout(() => {
+    const firstExplain = box.querySelector('.ee-instant-explain.reveal');
+    if (firstExplain) firstExplain.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 100);
+}
+// global export (HTML inline onclick から呼ばれない設計だが、testability + IIFE 対策で export)
+if (typeof window !== 'undefined') window.revealAllAnswersAndExplanations = revealAllAnswersAndExplanations;
 
 // ==========================================================================
 // ⚙️ 学習設定 (問題数・即時採点モード) - localStorage 永続化
