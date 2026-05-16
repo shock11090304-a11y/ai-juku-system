@@ -437,7 +437,7 @@ function renderExpiredUsers(expired) {
         <button onclick="expiredAction('followup',${s.id})" style="padding:0.4rem 0.8rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;border-radius:6px;font-size:0.8rem;cursor:pointer;white-space:nowrap;" title="フォローアップメールを送信">
           📧 メール送信
         </button>
-        <button onclick="expiredAction('extend',${s.id})" style="padding:0.4rem 0.8rem;background:linear-gradient(135deg,#22c55e,#16a34a);color:white;border:none;border-radius:6px;font-size:0.8rem;cursor:pointer;white-space:nowrap;" title="体験を7日間延長">
+        <button onclick="expiredAction('extend',${s.id})" style="padding:0.4rem 0.8rem;background:linear-gradient(135deg,#22c55e,#16a34a);color:white;border:none;border-radius:6px;font-size:0.8rem;cursor:pointer;white-space:nowrap;" title="体験を10日間延長">
           🔄 体験延長
         </button>
       </div>`;
@@ -481,7 +481,7 @@ async function expiredAction(action, studentId) {
     ? '/api/admin/students/extend-trial'
     : '/api/admin/students/send-followup';
   const confirmMsg = action === 'extend'
-    ? 'この生徒の体験期間を7日間延長しますか？'
+    ? 'この生徒の体験期間を10日間延長しますか？'
     : 'この生徒にフォローアップメールを送信しますか？';
   if (!confirm(confirmMsg)) return;
 
