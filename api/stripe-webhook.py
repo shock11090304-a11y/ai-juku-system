@@ -140,7 +140,7 @@ def _handle_checkout_completed(event):
     amount = obj.get("amount_total", 0)
     email = obj.get("customer_email") or obj.get("customer_details", {}).get("email", "")
 
-    # 🚨 AI塾との完全分離: system metadata で識別
+    # 🚨 AIコーチングとの完全分離: system metadata で識別
     # juku-payment 系 (system=juku-payment-monthly or reg_id 有り) 以外は skip
     system_tag = metadata.get("system", "")
     if not reg_id and system_tag != "juku-payment-monthly":
@@ -222,7 +222,7 @@ def _handle_checkout_completed(event):
 
 
 def _handle_payment_failed(event):
-    # 🚨 Round 4 fix (C-EXIST-1): juku-payment 系のみ処理 (AI塾 invoice event の混入防止)
+    # 🚨 Round 4 fix (C-EXIST-1): juku-payment 系のみ処理 (AIコーチング invoice event の混入防止)
     obj = event.get("data", {}).get("object", {})
     meta = obj.get("metadata", {}) or {}
     sub_meta = (obj.get("subscription_details") or {}).get("metadata", {}) or {}
@@ -254,7 +254,7 @@ def _handle_payment_failed(event):
 
 
 def _handle_subscription_deleted(event):
-    # 🚨 Round 4 fix (C-EXIST-1): juku-payment 系のみ処理 (AI塾 subscription event の混入防止)
+    # 🚨 Round 4 fix (C-EXIST-1): juku-payment 系のみ処理 (AIコーチング subscription event の混入防止)
     obj = event.get("data", {}).get("object", {})
     meta = obj.get("metadata", {}) or {}
     sys_tag = (meta.get("system") or "").strip()
@@ -278,7 +278,7 @@ def _handle_subscription_deleted(event):
 def _handle_payment_succeeded(event):
     """invoice.payment_succeeded — 月次サブスク or 過去未納分の請求書が支払われた時"""
     obj = event.get("data", {}).get("object", {})
-    # 🚨 Round 4 fix (C-EXIST-1): juku-payment 系のみ処理 (AI塾 invoice 混入防止)
+    # 🚨 Round 4 fix (C-EXIST-1): juku-payment 系のみ処理 (AIコーチング invoice 混入防止)
     metadata = obj.get("metadata", {}) or {}
     sys_tag = (metadata.get("system") or "").strip()
     if sys_tag and not sys_tag.startswith("juku-payment"):

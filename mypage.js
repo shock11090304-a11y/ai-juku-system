@@ -423,12 +423,12 @@ async function initReferralSection() {
     if (isStudentAddon) {
       return {
         url,
-        text: '塾の友達に教えたい📣 AI学習コーチ塾 — 入塾金¥10,000免除キャンペーン中！\n24時間 AI 質問対応・東大/京大レベルの問題AI自動生成。\n紹介で僕も¥3,000 OFF (Stripe 自動適用)',
+        text: '塾の友達に教えたい📣 AIコーチング — 入塾金¥10,000免除キャンペーン中！\n24時間 AI 質問対応・東大/京大レベルの問題AI自動生成。\n紹介で僕も¥3,000 OFF (Stripe 自動適用)',
       };
     }
     return {
       url,
-      text: 'AI学習コーチ塾 — 友達紹介で入塾金¥10,000免除！\n24時間 AI 質問対応・個別カリキュラム自動設計。\n\n👇 紹介URLから登録するとお得',
+      text: 'AIコーチング — 友達紹介で入塾金¥10,000免除！\n24時間 AI 質問対応・個別カリキュラム自動設計。\n\n👇 紹介URLから登録するとお得',
     };
   }
   const wireShare = (id, builder) => {
@@ -444,7 +444,7 @@ async function initReferralSection() {
   wireShare('shareLineBtn', s => `https://line.me/R/msg/text/?${encodeURIComponent(s.text + '\n' + s.url)}`);
   wireShare('shareThreadsBtn', s => `https://www.threads.net/intent/post?text=${encodeURIComponent(s.text + '\n' + s.url)}`);
   wireShare('shareXBtn', s => `https://twitter.com/intent/tweet?text=${encodeURIComponent(s.text)}&url=${encodeURIComponent(s.url)}`);
-  wireShare('shareEmailBtn', s => `mailto:?subject=${encodeURIComponent('AI学習コーチ塾 紹介URL')}&body=${encodeURIComponent(s.text + '\n\n' + s.url)}`);
+  wireShare('shareEmailBtn', s => `mailto:?subject=${encodeURIComponent('AIコーチング 紹介URL')}&body=${encodeURIComponent(s.text + '\n\n' + s.url)}`);
 
   // 既存リアル塾生 (student_addon プラン) には専用の audience copy
   // FIX (review): localStorage key 修正 — 'ai_juku_user' は存在しない、AuthGuard.getStudent() を使用

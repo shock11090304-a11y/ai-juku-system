@@ -120,7 +120,7 @@ def slide_1_hero(img):
     f_foot = load_font(FONT_BOLD, 36)
 
     # ブランド (上)
-    draw.text((PADDING, PADDING + 20), "AI学習コーチ塾 / LAUNCH", font=f_brand, fill=BRAND_PURPLE)
+    draw.text((PADDING, PADDING + 20), "AIコーチング / LAUNCH", font=f_brand, fill=BRAND_PURPLE)
 
     # タイトル (中央)
     draw_gradient_text(img, "塾の限界を、", f_title_big, (PADDING, 280), GRAD_TITLE_FROM, GRAD_TITLE_TO)
@@ -222,7 +222,7 @@ def slide_4_compare(img):
     right_x = PADDING + col_w + 40
     # 左 (普通の塾) - 暗めの半透明白
     od.rounded_rectangle([left_x, box_y, left_x + col_w, box_y + box_h], radius=24, fill=(255, 255, 255, 18))
-    # 右 (AI塾) - 強調ボーダー付き
+    # 右 (AIコーチング) - 強調ボーダー付き
     od.rounded_rectangle([right_x, box_y, right_x + col_w, box_y + box_h], radius=24, fill=(99, 102, 241, 60), outline=(129, 140, 248, 200), width=4)
     # RGBAをRGB画像に合成
     img_rgba = img.convert("RGBA")
@@ -238,7 +238,7 @@ def slide_4_compare(img):
     draw.text((left_x + 30, box_y + 300), "月1回の手書き報告", font=f_col_sub, fill=TEXT_MUTED)
 
     # 右カラム内テキスト
-    draw.text((right_x + 30, box_y + 30), "AI学習コーチ塾", font=f_col_label, fill=BRAND_PURPLE)
+    draw.text((right_x + 30, box_y + 30), "AIコーチング", font=f_col_label, fill=BRAND_PURPLE)
     draw_gradient_text(img, "¥0", f_price_big, (right_x + 30, box_y + 110), GRAD_PRICE_FROM, GRAD_PRICE_TO)
     draw = ImageDraw.Draw(img)
     draw.text((right_x + 30, box_y + 260), "24時間対応", font=f_col_sub, fill=(199, 210, 254))

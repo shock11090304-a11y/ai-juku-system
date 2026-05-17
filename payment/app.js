@@ -1093,7 +1093,7 @@ async function sendPastDueInvoiceFor(studentId) {
     const res = await fetch('/payment/api/past-due-invoice', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Admin-Password': pw },
-      body: JSON.stringify({ items: [{ customerId: cust.customerId, studentName: s.name, month, amount: fee, description: `AI学習コーチ塾 ${month} 月謝` }] }),
+      body: JSON.stringify({ items: [{ customerId: cust.customerId, studentName: s.name, month, amount: fee, description: `AIコーチング ${month} 月謝` }] }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { alert(`エラー: ${data.message || data.error || 'unknown'}`); return; }
@@ -1128,7 +1128,7 @@ async function sendBulkPastDueInvoices() {
   for (const s of unpaid) {
     const cust = matchCustomerForStudent(s);
     if (cust && cust.customerId && (s.fee || 0) > 0) {
-      items.push({ customerId: cust.customerId, studentName: s.name, month, amount: s.fee, description: `AI学習コーチ塾 ${month} 月謝` });
+      items.push({ customerId: cust.customerId, studentName: s.name, month, amount: s.fee, description: `AIコーチング ${month} 月謝` });
     }
   }
   if (!items.length) { alert(`Stripe 登録済の未払い者がいません (${month})`); return; }
@@ -3084,7 +3084,7 @@ function buildInvoiceHTML(s, month) {
     </div>
 
     <div style="margin-top:36px; padding-top:18px; border-top:1px solid #e5e7eb; font-size:12px; color:#6b7280; line-height:1.7;">
-      <div style="font-weight:600; color:#374151; margin-bottom:4px;">${escapeHtml(SETTINGS.jukuName || 'AI学習コーチ塾')}</div>
+      <div style="font-weight:600; color:#374151; margin-bottom:4px;">${escapeHtml(SETTINGS.jukuName || 'AIコーチング')}</div>
       ${SETTINGS.ownerName ? `<div>塾長: ${escapeHtml(SETTINGS.ownerName)}</div>` : ''}
       ${SETTINGS.ownerEmail ? `<div>📧 ${escapeHtml(SETTINGS.ownerEmail)}</div>` : ''}
       ${SETTINGS.ownerPhone ? `<div>📞 ${escapeHtml(SETTINGS.ownerPhone)}</div>` : ''}

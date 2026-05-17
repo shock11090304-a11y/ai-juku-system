@@ -124,7 +124,7 @@ const MOCKUPS = {
   tutor: () => `
     <div class="mock-app mock-tutor">
       <div class="mock-toolbar">
-        <div class="mock-logo">🎓 AI学習コーチ塾</div>
+        <div class="mock-logo">🎓 AIコーチング</div>
         <div class="mock-badge-live">🟢 AI稼働中</div>
       </div>
       <div class="mock-chat">
@@ -292,7 +292,7 @@ const MOCKUPS = {
       <div class="mock-line-header">
         <div class="line-avatar">🎓</div>
         <div>
-          <div class="line-name">AI学習コーチ塾</div>
+          <div class="line-name">AIコーチング</div>
           <div class="line-status">公式アカウント</div>
         </div>
       </div>

@@ -152,7 +152,7 @@ def scene_transition(out_path):
     f_brand = font(FONT_BOLD, 50)
     f_body = font(FONT_BLACK, 105)
 
-    center_text(draw, "— AI学習コーチ塾なら —", f_brand, 650, PRIMARY_LIGHT)
+    center_text(draw, "— AIコーチングなら —", f_brand, 650, PRIMARY_LIGHT)
 
     grad_text(img, "3分で解決します。", f_body, (110, 830), GRAD_T1, GRAD_T2)
 
@@ -429,7 +429,7 @@ def scene_cta(out_path):
 
     center_text(draw, "— プロフィールのリンクから —", f_foot, box_y + box_h + 80, PRIMARY_LIGHT)
 
-    center_text(draw, "AI学習コーチ塾", font(FONT_BLACK, 52), 1560, TEXT)
+    center_text(draw, "AIコーチング", font(FONT_BLACK, 52), 1560, TEXT)
 
     img.save(out_path, "PNG")
     return img

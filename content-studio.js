@@ -45,14 +45,14 @@ async function generateArticle() {
   actions.style.display = 'none';
   tabs.style.display = 'none';
 
-  const systemPrompt = `あなたはSEOに精通した教育系メディアの編集者です。AI学習塾「AI学習コーチ塾」のブログ記事を、検索エンジンからの流入を最大化する形で執筆してください。
+  const systemPrompt = `あなたはSEOに精通した教育系メディアの編集者です。AI学習塾「AIコーチング」のブログ記事を、検索エンジンからの流入を最大化する形で執筆してください。
 
 【厳守事項】
 - タイトル（h1）は32-40文字、クリック率の高い形式（問いかけ・数字・ベネフィット）
 - 見出し（h2）は5-7個、各見出しの下に2-3段落
 - ターゲットキーワードを自然に配置（不自然な詰め込みNG）
 - 読者の悩みに共感→解決策→具体例→CTAの構造
-- 最後に必ず「AI学習コーチ塾」への自然なCTA
+- 最後に必ず「AIコーチング」への自然なCTA
 - ${length}字程度
 
 【出力形式】
@@ -129,7 +129,7 @@ function generateDemoArticle(topic, category, keywords, target) {
   return {
     slug,
     title: topic + '：実践的な活用ガイド',
-    description: `${target}向けに、${topic}について徹底解説。具体的な方法、注意点、成功事例を紹介します。AI学習コーチ塾の教育専門家が監修。`,
+    description: `${target}向けに、${topic}について徹底解説。具体的な方法、注意点、成功事例を紹介します。AIコーチングの教育専門家が監修。`,
     category,
     tags: (keywords || '学習,AI,教育').split(/[,、\s]+/).filter(Boolean).slice(0, 5),
     excerpt: `${topic}についてお悩みの${target}の方へ。この記事を読めば、明日から実践できる具体的な方法がわかります。`,
@@ -171,7 +171,7 @@ function generateDemoArticle(topic, category, keywords, target) {
 </ul>
 
 <h2>5. 成功事例：実際に成果を出した${target}の声</h2>
-<p>実際にAI学習コーチ塾を活用して成果を出した方々の声をご紹介します：</p>
+<p>実際にAIコーチングを活用して成果を出した方々の声をご紹介します：</p>
 <blockquote>「毎日の学習習慣が定着し、偏差値が半年で8上がりました。AIチューターに深夜でも質問できるのが本当に助かります」──実績者談</blockquote>
 
 <h2>まとめ：今日から始める3つのアクション</h2>
@@ -181,7 +181,7 @@ function generateDemoArticle(topic, category, keywords, target) {
   <li><strong>3ヶ月後の目標を書き出す</strong>：10分で完了</li>
   <li><strong>AI学習塾の無料体験に申し込む</strong>：5分で完了</li>
 </ol>
-<p>AI学習コーチ塾では、<strong>10日間 完全無料体験</strong>を実施中です。クレジットカード登録不要で、気軽にお試しいただけます。${topic}でお悩みの${target}の方、ぜひこの機会にお試しください。</p>
+<p>AIコーチングでは、<strong>10日間 完全無料体験</strong>を実施中です。クレジットカード登録不要で、気軽にお試しいただけます。${topic}でお悩みの${target}の方、ぜひこの機会にお試しください。</p>
 <p><em>💡 デモ応答：APIキーを設定すると、実際のAIが各条件に応じた本格的な記事を生成します。</em></p>
     `,
   };
@@ -252,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
       description: lastJson.description,
       category: lastJson.category,
       tags: lastJson.tags,
-      author: 'AI学習コーチ塾 編集部',
+      author: 'AIコーチング 編集部',
       date: new Date().toISOString().slice(0, 10),
       readMinutes: lastJson.readMinutes,
       coverEmoji: lastJson.coverEmoji,

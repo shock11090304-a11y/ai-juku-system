@@ -31,7 +31,7 @@ Response (400): バリデーションエラー
 Response (503): STRIPE_SECRET_KEY 未設定
 Response (502): Stripe API エラー
 
-🚨 AI塾との分離強化:
+🚨 AIコーチングとの分離強化:
   全 Stripe Object に metadata.system="juku-payment-monthly" を付与し、ai-juku webhook 側で skip 可能。
 """
 
@@ -249,7 +249,7 @@ def _create_or_find_customer(secret_key, payload, registration_id, metadata):
         ("email", payload["email"]),
         ("name", f"{parent} (生徒: {student})"[:240]),
         ("phone", payload.get("phone", "") or ""),
-        ("description", f"AI学習コーチ塾 月謝 — 保護者: {parent} / 生徒: {student} ({payload.get('grade', '')})"[:240]),
+        ("description", f"AIコーチング 月謝 — 保護者: {parent} / 生徒: {student} ({payload.get('grade', '')})"[:240]),
     ]
     for k, v in metadata.items():
         if v is None: continue
@@ -273,7 +273,7 @@ def _create_checkout_session(secret_key, payload, fee, breakdown, registration_i
     # Stripe metadata は各 value 500 字制限。安全側で 240 でtruncate
     def _cap(s, n=240):
         return (str(s) or "")[:n]
-    # 🆕 AI塾との完全分離: system=juku-payment-monthly を必ず付与
+    # 🆕 AIコーチングとの完全分離: system=juku-payment-monthly を必ず付与
     metadata = {
         "registration_id": _cap(registration_id, 60),
         "student_name": _cap(student, 80),

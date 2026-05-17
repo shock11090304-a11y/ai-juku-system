@@ -102,7 +102,7 @@ def base_canvas(h=H_SQ):
 
 def draw_brand_header(img, draw, label):
     f_logo = load_font(FONT_BLACK, 30)
-    draw.text((PADDING, PADDING - 10), "AI学習コーチ塾", font=f_logo, fill=BRAND_PURPLE)
+    draw.text((PADDING, PADDING - 10), "AIコーチング", font=f_logo, fill=BRAND_PURPLE)
     if label:
         f2 = load_font(FONT_BOLD, 22)
         draw.text((PADDING, PADDING + 28), label, font=f2, fill=TEXT_MUTED)
@@ -214,7 +214,7 @@ def slide_2():
     draw_brand_header(img, draw, "02 / 比べてみてください")
 
     f_h2 = load_font(FONT_BLACK, 64)
-    draw_centered(draw, "従来の塾 vs AI学習コーチ塾", f_h2, 170, TEXT)
+    draw_centered(draw, "従来の塾 vs AIコーチング", f_h2, 170, TEXT)
 
     # 2カラム比較
     col_w = 430
@@ -248,14 +248,14 @@ def slide_2():
         draw.text((left_x + 70, y), txt, font=f_item, fill=TEXT_DIM)
         y += 56
 
-    # 右カラム: AI塾 (gold glow + ハイライト)
+    # 右カラム: AIコーチング (gold glow + ハイライト)
     # glow effect
     for offset in range(12, 0, -2):
         draw.rounded_rectangle(
             (right_x - offset, top_y - offset, right_x + col_w + offset, top_y + col_h + offset),
             radius=24 + offset, outline=BRAND_GOLD, width=1)
     draw_card(draw, right_x, top_y, col_w, col_h, fill=(28, 24, 60), border_color=BRAND_GOLD, radius=24, border_width=3)
-    draw.text((right_x + 30, top_y + 30), "AI学習コーチ塾", font=f_label, fill=BRAND_GOLD)
+    draw.text((right_x + 30, top_y + 30), "AIコーチング", font=f_label, fill=BRAND_GOLD)
     draw.text((right_x + 30, top_y + 80), "月額", font=f_unit, fill=TEXT)
     draw.text((right_x + 30, top_y + 110), "¥24,980~", font=f_price, fill=BRAND_GOLD)
     f_trial = load_font(FONT_BOLD, 22)

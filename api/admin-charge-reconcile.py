@@ -274,7 +274,7 @@ class handler(BaseHTTPRequestHandler):
                     ("payment_method", payment_method_id),
                     ("off_session", "true"),
                     ("confirm", "true"),
-                    ("description", f"AI学習コーチ塾 月謝 — {student_name} ({month}・手動 retry)"[:220]),
+                    ("description", f"AIコーチング 月謝 — {student_name} ({month}・手動 retry)"[:220]),
                 ]
                 if email and "@" in email:
                     form.append(("receipt_email", email))

@@ -438,7 +438,7 @@
     `).join('');
 
     // シェア URL
-    const shareText = `AI学習コーチ塾の完全模試で偏差値 ${data.deviation_estimate} (${data.percentage}%) でした! AI が動的に生成する模試で本番想定の演習ができます`;
+    const shareText = `AIコーチングの完全模試で偏差値 ${data.deviation_estimate} (${data.percentage}%) でした! AI が動的に生成する模試で本番想定の演習ができます`;
     const shareUrl = window.location.origin + '/lp.html';
     document.getElementById('meShareTwitter').onclick = () => {
       window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank');

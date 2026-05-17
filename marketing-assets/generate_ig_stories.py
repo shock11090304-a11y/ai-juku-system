@@ -89,7 +89,7 @@ def story_1():
 
     # 上部: ブランド
     f_b = load_font(FONT_BLACK, 36)
-    draw_centered(d, "AI学習コーチ塾", f_b, 100, BRAND_PURPLE)
+    draw_centered(d, "AIコーチング", f_b, 100, BRAND_PURPLE)
 
     # メインフック
     f_huge = load_font(FONT_BLACK, 130)
@@ -145,7 +145,7 @@ def story_2():
     d = ImageDraw.Draw(img)
 
     f_b = load_font(FONT_BLACK, 36)
-    draw_centered(d, "AI学習コーチ塾", f_b, 100, BRAND_PURPLE)
+    draw_centered(d, "AIコーチング", f_b, 100, BRAND_PURPLE)
 
     # フック (保護者の不安)
     f_h = load_font(FONT_BLACK, 70)
@@ -183,7 +183,7 @@ def story_2():
     bub_y2 = msg_y2 + 26
     d.rounded_rectangle((bub_x2, bub_y2, bub_x2 + bub_w, bub_y2 + 250),
                         radius=16, fill=(140, 220, 255))
-    d.text((bub_x2 + 20, bub_y2 + 18), "うちは AI学習コーチ塾に切替えて", font=f_msg, fill=(20, 30, 60))
+    d.text((bub_x2 + 20, bub_y2 + 18), "うちは AIコーチングに切替えて", font=f_msg, fill=(20, 30, 60))
     d.text((bub_x2 + 20, bub_y2 + 50), "スタンダード¥24,980/月。", font=f_msg, fill=(20, 30, 60))
     d.text((bub_x2 + 20, bub_y2 + 82), "24時間AIが個別指導 + 9機能。", font=f_msg, fill=(20, 30, 60))
     d.text((bub_x2 + 20, bub_y2 + 114), "週次レポートで進捗わかるし、", font=f_msg, fill=(20, 30, 60))
@@ -216,7 +216,7 @@ def story_3():
     d = ImageDraw.Draw(img)
 
     f_b = load_font(FONT_BLACK, 36)
-    draw_centered(d, "AI学習コーチ塾", f_b, 100, BRAND_PURPLE)
+    draw_centered(d, "AIコーチング", f_b, 100, BRAND_PURPLE)
 
     # フック
     f_h = load_font(FONT_BLACK, 76)

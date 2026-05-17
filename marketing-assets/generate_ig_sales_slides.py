@@ -103,7 +103,7 @@ def base_canvas():
 def draw_brand_header(img, draw, label):
     """ヘッダー: ロゴ + ラベル"""
     f = load_font(FONT_BOLD, 28)
-    draw.text((PADDING, PADDING - 10), "🎓 AI学習コーチ塾", font=f, fill=BRAND_PURPLE)
+    draw.text((PADDING, PADDING - 10), "🎓 AIコーチング", font=f, fill=BRAND_PURPLE)
     if label:
         f2 = load_font(FONT_BOLD, 24)
         draw.text((PADDING, PADDING + 30), label, font=f2, fill=TEXT_MUTED)
@@ -143,7 +143,7 @@ def slide_1():
 
     draw_centered(draw, "もう、要りません。", f_med, 590, TEXT_DIM)
 
-    # ¥0 でAI塾
+    # ¥0 でAIコーチング
     draw_centered(draw, "AIで、7日間 完全無料 から", f_red, 720, BRAND_GOLD)
 
     f_sub = load_font(FONT_BOLD, 38)
@@ -163,7 +163,7 @@ def slide_2():
     draw_brand_header(img, draw, "02 / 比べてみてください")
 
     f_h2 = load_font(FONT_BLACK, 70)
-    draw_centered(draw, "従来の塾 vs AI学習コーチ塾", f_h2, 180, TEXT)
+    draw_centered(draw, "従来の塾 vs AIコーチング", f_h2, 180, TEXT)
 
     # 2カラム比較
     col_w = 430
@@ -195,9 +195,9 @@ def slide_2():
         draw.text((left_x + 30, y), item, font=f_item, fill=TEXT_DIM)
         y += 56
 
-    # 右カラム: AI塾
+    # 右カラム: AIコーチング
     draw_card(draw, right_x, top_y, col_w, col_h, fill=(20, 40, 50), border_color=BRAND_GOLD, radius=24)
-    draw.text((right_x + 30, top_y + 30), "AI学習コーチ塾", font=f_label, fill=BRAND_GOLD)
+    draw.text((right_x + 30, top_y + 30), "AIコーチング", font=f_label, fill=BRAND_GOLD)
     draw.text((right_x + 30, top_y + 80), "3日体験", font=f_label, fill=TEXT)
     draw.text((right_x + 30, top_y + 120), "¥0", font=f_price, fill=BRAND_GOLD)
 

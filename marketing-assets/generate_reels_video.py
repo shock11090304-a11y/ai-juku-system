@@ -132,7 +132,7 @@ def scene_problem_intro(out_path):
     f_body = font(FONT_BLACK, 90)
     f_sub = font(FONT_BOLD, 50)
 
-    center_text(draw, "— AI学習コーチ塾 塾長 —", f_brand, 450, PRIMARY_LIGHT)
+    center_text(draw, "— AIコーチング 塾長 —", f_brand, 450, PRIMARY_LIGHT)
 
     grad_text(img, "塾講師歴12年で", f_body, (120, 650), GRAD_T1, GRAD_T2)
     grad_text(img, "見つけた限界。", f_body, (120, 800), GRAD_T1, GRAD_T2)
@@ -376,11 +376,11 @@ def scene_price_comparison(out_path):
     for i, b in enumerate(bullets):
         draw.text((120, box_y + 310 + i * 70), "• " + b, font=font(FONT_BOLD, 26), fill=TEXT_MUTED)
 
-    # AI塾 (強調)
+    # AIコーチング (強調)
     x2 = 100 + col_w + 40
     draw.rounded_rectangle([x2, box_y, x2 + col_w, box_y + box_h], radius=32,
                            fill=(50, 50, 100), outline=PRIMARY_LIGHT, width=5)
-    draw.text((x2 + 20, box_y + 40), "AI学習コーチ塾", font=font(FONT_BOLD, 32), fill=PRIMARY_LIGHT)
+    draw.text((x2 + 20, box_y + 40), "AIコーチング", font=font(FONT_BOLD, 32), fill=PRIMARY_LIGHT)
     # 体験価格 大
     grad_text(img, "¥0", font(FONT_BLACK, 80), (x2 + 20, box_y + 140), GRAD_P1, GRAD_P2)
     draw = ImageDraw.Draw(img)
@@ -455,7 +455,7 @@ def scene_cta(out_path):
     center_text(draw, "— プロフィールのリンクから —", f_foot, box_y + box_h + 80, PRIMARY_LIGHT)
 
     # ロゴ
-    center_text(draw, "AI学習コーチ塾", font(FONT_BLACK, 52), 1600, TEXT)
+    center_text(draw, "AIコーチング", font(FONT_BLACK, 52), 1600, TEXT)
 
     img.save(out_path, "PNG")
     return img

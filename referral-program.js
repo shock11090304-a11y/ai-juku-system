@@ -112,10 +112,10 @@
 
   function buildShareText(code) {
     const url = buildShareUrl(code);
-    return `🎓 AI学習コーチ塾を使ってる！毎日のAI個別指導で偏差値が伸びるよ。
+    return `🎓 AIコーチングを使ってる！毎日のAI個別指導で偏差値が伸びるよ。
 紹介コード ${code} で初月50%OFF (¥12,490) になります。
 ${url}
-#AI塾 #個別指導 #受験`;
+#AIコーチング #個別指導 #受験`;
   }
 
   function renderReferralWidget(containerId, student) {

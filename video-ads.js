@@ -38,7 +38,7 @@ document.querySelectorAll('.sc-copy-btn').forEach(btn => {
 // ==========================================================================
 const DEMO_FRAMES = [
   { emoji: '🌙', title: '深夜2時...', sub: '娘「もうわかんない…泣」', duration: 3000 },
-  { emoji: '📱', title: 'アプリを開く', sub: 'AI学習コーチ塾', duration: 2000 },
+  { emoji: '📱', title: 'アプリを開く', sub: 'AIコーチング', duration: 2000 },
   { emoji: '💬', title: '質問を入力', sub: '「関係代名詞のwhichとthatの違いは？」', duration: 3000 },
   { emoji: '🤖', title: 'AIが即回答', sub: '30秒で丁寧な解説を生成', duration: 3000 },
   { emoji: '📊', title: '学習診断も自動', sub: '弱点を自動分析、毎週レポート', duration: 2500 },

@@ -115,7 +115,7 @@ def _create_payment_intent(secret_key, customer_id, payment_method_id, amount, m
         form.append(("receipt_email", _email))
     # description (Stripe Dashboard 表示用)
     student = metadata.get("student_name", "")
-    desc = f"AI学習コーチ塾 月謝 — {student} ({metadata.get('month', '')})"[:220]
+    desc = f"AIコーチング 月謝 — {student} ({metadata.get('month', '')})"[:220]
     form.append(("description", desc))
     for k, v in metadata.items():
         if v is None: continue

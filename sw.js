@@ -1,4 +1,4 @@
-// Service Worker — AI学習コーチ塾
+// Service Worker — AIコーチング
 // 一時的なキャッシュ完全無効化版（v4 nuke）
 //
 // 経緯: PWA SW が古い HTML/JS を返し続け、CEO ダッシュボードに

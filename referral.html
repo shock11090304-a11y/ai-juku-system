@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="cache-purge.js?v=20260425-1"></script>
-  <title>🎁 お友達紹介プログラム | AI学習コーチ塾</title>
-  <meta name="description" content="AI学習コーチ塾のお友達紹介プログラム。紹介1名につき1ヶ月無料、紹介された方も体験期間+15日。">
+  <title>🎁 お友達紹介プログラム | AIコーチング</title>
+  <meta name="description" content="AIコーチングのお友達紹介プログラム。紹介1名につき1ヶ月無料、紹介された方も体験期間+15日。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='80' font-size='80'%3E%F0%9F%8E%81%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="lp.css">
   <link rel="stylesheet" href="referral.css">
@@ -20,7 +20,7 @@
     <div class="nav-inner">
       <a href="lp.html" class="nav-logo">
         <span class="logo-icon">🎓</span>
-        <span class="logo-text">AI学習コーチ塾</span>
+        <span class="logo-text">AIコーチング</span>
       </a>
       <div class="nav-cta">
         <a href="index.html" class="btn-ghost">アプリへ →</a>
@@ -219,7 +219,7 @@
   </main>
 
   <footer class="footer">
-    <div class="footer-bottom">© 2026 AI学習コーチ塾</div>
+    <div class="footer-bottom">© 2026 AIコーチング</div>
   </footer>
 
   <script src="referral-program.js?v=20260425-1"></script>
@@ -288,18 +288,18 @@
 
     function shareLine() {
       const url = encodeURIComponent(document.getElementById('refUrl').value);
-      const text = encodeURIComponent('AI学習コーチ塾、良かったよ！10日間 完全無料で試せるから見てみて🎓');
+      const text = encodeURIComponent('AIコーチング、良かったよ！10日間 完全無料で試せるから見てみて🎓');
       window.open(`https://line.me/R/msg/text/?${text}%0A${url}`);
     }
     function shareTwitter() {
       const url = encodeURIComponent(document.getElementById('refUrl').value);
-      const text = encodeURIComponent('AI学習コーチ塾を紹介します！24時間AIチューターで勉強できる次世代の塾。10日間 完全無料体験あり🎓');
+      const text = encodeURIComponent('AIコーチングを紹介します！24時間AIチューターで勉強できる次世代の塾。10日間 完全無料体験あり🎓');
       window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`);
     }
     function shareEmail() {
       const url = document.getElementById('refUrl').value;
-      const subject = encodeURIComponent('【AI学習コーチ塾】良さそうな塾があったので紹介します');
-      const body = encodeURIComponent(`こんにちは。\n\nAI学習コーチ塾という新しい形の塾を紹介したくてメールしました。\n24時間いつでもAIに質問できて、月謝も従来塾の1/3程度です。\n\n10日間 完全無料で試せます（クレカ登録不要）：\n${url}\n\nぜひ見てみてください！`);
+      const subject = encodeURIComponent('【AIコーチング】良さそうな塾があったので紹介します');
+      const body = encodeURIComponent(`こんにちは。\n\nAIコーチングという新しい形の塾を紹介したくてメールしました。\n24時間いつでもAIに質問できて、月謝も従来塾の1/3程度です。\n\n10日間 完全無料で試せます（クレカ登録不要）：\n${url}\n\nぜひ見てみてください！`);
       window.location.href = `mailto:?subject=${subject}&body=${body}`;
     }
 

@@ -1,5 +1,5 @@
 """
-AI学習コーチ塾 — Backend API
+AIコーチング — Backend API
 FastAPI + SQLite + Stripe + LINE Messaging API
 
 起動方法:
@@ -268,7 +268,7 @@ SESSION_TTL_SECONDS = int(os.getenv("SESSION_TTL_SECONDS", str(30 * 86400)))  # 
 
 # Resend (メール送信) — 未設定時はコンソール出力にフォールバック
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
-FROM_EMAIL = os.getenv("FROM_EMAIL", "AI学習コーチ塾 <onboarding@resend.dev>")
+FROM_EMAIL = os.getenv("FROM_EMAIL", "AIコーチング <onboarding@resend.dev>")
 
 # Stripe SDK (lazy import)
 stripe = None
@@ -1417,7 +1417,7 @@ except Exception as _se:
 # ==========================================================================
 # FastAPI App
 # ==========================================================================
-app = FastAPI(title="AI学習コーチ塾 API", version="1.0.0")
+app = FastAPI(title="AIコーチング API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -2121,16 +2121,16 @@ def _send_trial_unused_warning_email(to_email: str, student_name: str, stage: st
     greeting = f"{safe_name}さまの保護者さま" if safe_name else "保護者さま"
 
     if stage == "early":
-        subject = "【AI学習コーチ塾】まだログインされていません — 体験を始めてみませんか?"
+        subject = "【AIコーチング】まだログインされていません — 体験を始めてみませんか?"
         body_intro = (
             f"お申込みありがとうございます。\n\n"
-            f"無料体験のお申込みから {days_unused} 日経過しましたが、まだ AI 学習コーチ塾にログインされていないようです。\n\n"
+            f"無料体験のお申込みから {days_unused} 日経過しましたが、まだ AI AIコーチングにログインされていないようです。\n\n"
             f"AI チューターや問題生成・学習記録など、体験できる機能はすべて無料で使えます。"
         )
         cta_label = "🎓 ログインして体験を始める"
         bottom = "体験期間は 10 日間。何もしなければ自動終了し、課金は一切発生しません。"
     elif stage == "late":
-        subject = f"【AI学習コーチ塾】無料体験 終了まで {days_unused} 日 — まだ未利用です"
+        subject = f"【AIコーチング】無料体験 終了まで {days_unused} 日 — まだ未利用です"
         body_intro = (
             f"無料体験の終了が近づいています。\n\n"
             f"残り {days_unused} 日 ですが、まだログイン履歴がありません。\n\n"
@@ -2140,14 +2140,14 @@ def _send_trial_unused_warning_email(to_email: str, student_name: str, stage: st
         cta_label = "📅 ログインして残り日数を体験する"
         bottom = "体験期間終了後は自動的にアクセスが失効します (課金は発生しません・データは保持)。"
     else:
-        subject = "【AI学習コーチ塾】体験のご案内"
-        body_intro = "AI 学習コーチ塾の体験のご案内です。"
+        subject = "【AIコーチング】体験のご案内"
+        body_intro = "AI AIコーチングの体験のご案内です。"
         cta_label = "🎓 体験を始める"
         bottom = ""
 
     html = f"""<!DOCTYPE html>
 <html><body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 560px; margin: 0 auto; padding: 2rem;">
-<h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AI学習コーチ塾</h1>
+<h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AIコーチング</h1>
 <p>{greeting}、こんにちは。</p>
 <p style="white-space:pre-line;">{_html.escape(body_intro)}</p>
 
@@ -2194,10 +2194,10 @@ def _send_trial_ending_email(to_email: str, student_name: str, days_left: int, u
     safe_name = _html.escape(student_name or "")
     greeting = f"{safe_name}さまの保護者さま" if safe_name else "保護者さま"
     days_text = "あと1日" if days_left <= 1 else f"あと{days_left}日"
-    subject = f"【AI学習コーチ塾】体験は{days_text}で終了 — 継続のご案内"
+    subject = f"【AIコーチング】体験は{days_text}で終了 — 継続のご案内"
     html = f"""<!DOCTYPE html>
 <html><body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 560px; margin: 0 auto; padding: 2rem;">
-<h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AI学習コーチ塾</h1>
+<h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AIコーチング</h1>
 <p>{greeting}、体験のご利用ありがとうございます。</p>
 
 <p style="background:#f8f9fc; padding:1rem; border-left:4px solid #6366f1; border-radius:4px; margin: 1.5rem 0;">
@@ -2245,7 +2245,7 @@ def _send_trial_ending_email(to_email: str, student_name: str, days_left: int, u
 # Daily SNS 研究員: 塾長キャラのThreads投稿を毎朝5本生成→Gmail送信
 # ==========================================================================
 JUKUCHO_PERSONA = """あなたは「足立翔平」、200名規模の塾を10年運営してきた元塾講師。
-2026-04-26 にAI学習塾「AI学習コーチ塾」をローンチしたCEOです。
+2026-04-26 にAI学習塾「AIコーチング」をローンチしたCEOです。
 - 月¥5万の塾で苦しむ家庭への憤りがエネルギー源
 - AIで質を落とさず1/3価格を実現した
 - Threadsでフォロワー集客中(現在地は0からのスタート)
@@ -2264,7 +2264,7 @@ THREADS_RULES = """【Threadsアルゴリズム最適化ルール (絶対遵守)
 - 売り込み臭は出さない(価格訴求は5本中最大1本まで)"""
 
 POST_TYPES = [
-    {"name": "逆説型", "desc": "業界常識を破る断定+逆説。例: 『正直な話、〇〇は古いです』『AI塾なんて流行らないと思ってました』"},
+    {"name": "逆説型", "desc": "業界常識を破る断定+逆説。例: 『正直な話、〇〇は古いです』『AIコーチングなんて流行らないと思ってました』"},
     {"name": "保護者あるある共感型", "desc": "保護者の『あるある』相談を引用→意外な原因→解決の方向性。例: 『うちの子、頭は悪くないんですけど…』"},
     {"name": "数字×権威型", "desc": "10年で2,000人見てきた等の数字+共通点リスト3つ"},
     {"name": "体験談ストーリー型", "desc": "ある日の電話・相談の具体的エピソード→気づき(『昨日、ある中3の母から…』)"},
@@ -2663,7 +2663,7 @@ def _send_daily_sns_email(posts: list, to_email: str) -> dict:
 2. 反応の良かった型を覚えておく → 翌日以降の生成にフィードバック<br>
 3. 5本全部使う必要なし。気に入ったものだけでOK
 </div>
-<p style="font-size:0.78rem;color:#999;text-align:center;margin-top:1.5rem;">🤖 AI塾SNS研究員 (claude-sonnet-4-6) / 毎朝{DAILY_SNS_HOUR_JST}時に自動配信</p>
+<p style="font-size:0.78rem;color:#999;text-align:center;margin-top:1.5rem;">🤖 AIコーチングSNS研究員 (claude-sonnet-4-6) / 毎朝{DAILY_SNS_HOUR_JST}時に自動配信</p>
 </body></html>"""
 
     try:
@@ -3881,7 +3881,7 @@ def _format_alert_email(alerts: list, snapshot: dict) -> tuple:
     """アラートメールの subject + html を生成"""
     severity_max = "critical" if any(a["severity"] == "critical" for a in alerts) else "warning"
     icon = "🚨" if severity_max == "critical" else "⚠️"
-    subject = f"{icon} AI塾 監視アラート ({len(alerts)}件) - {datetime.now(timezone.utc).strftime('%H:%M UTC')}"
+    subject = f"{icon} AIコーチング 監視アラート ({len(alerts)}件) - {datetime.now(timezone.utc).strftime('%H:%M UTC')}"
     rows = ""
     for a in alerts:
         bg = "#fee2e2" if a["severity"] == "critical" else "#fef3c7"
@@ -3929,14 +3929,14 @@ def _format_daily_summary(snapshot: dict) -> tuple:
     """毎朝7時のサマリメール"""
     JST = timezone(timedelta(hours=9))
     today = datetime.now(JST).strftime("%Y-%m-%d (%a)")
-    subject = f"📊 AI塾 朝のサマリ {today} / 申込{snapshot['signups_24h']}名・契約{snapshot['paid_24h']}名"
+    subject = f"📊 AIコーチング 朝のサマリ {today} / 申込{snapshot['signups_24h']}名・契約{snapshot['paid_24h']}名"
     snapshot_html = _format_alert_email([], snapshot)[1]
     # _format_alert_email は alerts を中心にするので、サマリ用に整形しなおす
     body_html = f"""<!DOCTYPE html>
 <html lang="ja"><head><meta charset="UTF-8"></head>
 <body style="font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;line-height:1.7;color:#333;max-width:680px;margin:0 auto;padding:1.5rem;background:#f5f5f7;">
 <div style="background:white;border-radius:14px;padding:1.5rem;margin-bottom:1.2rem;">
-  <h1 style="font-size:1.3rem;color:#6366f1;margin:0 0 0.4rem;">📊 AI塾 朝のサマリ</h1>
+  <h1 style="font-size:1.3rem;color:#6366f1;margin:0 0 0.4rem;">📊 AIコーチング 朝のサマリ</h1>
   <p style="color:#666;font-size:0.85rem;margin:0;">{today} 過去24時間の申込→決済フロー</p>
 </div>
 <div style="background:white;border-radius:14px;padding:1.5rem;margin-bottom:1.2rem;">
@@ -5132,8 +5132,8 @@ def _create_otp(student_id: int, ttl_seconds: int = 600) -> str:
 def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, otp_code: str = "", is_welcome: bool = False) -> dict:
     """Resend 経由でマジックリンクメール送信。OTPコードも含める。未設定ならコンソール出力。"""
     import html as _html
-    subject_welcome = "【AI学習コーチ塾】ご登録ありがとうございます（ログインコード）"
-    subject_relogin = "【AI学習コーチ塾】ログインコードをお送りします"
+    subject_welcome = "【AIコーチング】ご登録ありがとうございます（ログインコード）"
+    subject_relogin = "【AIコーチング】ログインコードをお送りします"
     subject = subject_welcome if is_welcome else subject_relogin
 
     # XSS対策: student_name に含まれる特殊文字をエスケープ
@@ -5158,7 +5158,7 @@ def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, otp
     html = f"""<!DOCTYPE html>
 <html>
 <body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 560px; margin: 0 auto; padding: 2rem;">
-  <h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AI学習コーチ塾</h1>
+  <h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AIコーチング</h1>
   {body_intro}
   {otp_block}
   <p style="font-size:0.85rem; color:#666; text-align:center;">または以下のリンクから直接ログイン（30日間有効）:</p>
@@ -8095,7 +8095,7 @@ def admin_stripe_setup_founder_special(authorization: Optional[str] = Header(Non
         # name 一致の既存 Product があれば再利用
         prods = s.Product.list(active=True, limit=100)
         for p in prods.data:
-            if p.name == "AI学習コーチ塾 創設メンバー":
+            if p.name == "AIコーチング 創設メンバー":
                 product_id = p.id
                 break
     except Exception as e:
@@ -8103,7 +8103,7 @@ def admin_stripe_setup_founder_special(authorization: Optional[str] = Header(Non
     if not product_id:
         try:
             prod = s.Product.create(
-                name="AI学習コーチ塾 創設メンバー",
+                name="AIコーチング 創設メンバー",
                 description="期間限定 50名・永年¥14,500/月・全機能無制限 (premium 相当)",
                 metadata={"plan": "founder_special", "tier": "premium-equivalent", "perpetual": "true"},
             )
@@ -8152,35 +8152,35 @@ _STRIPE_PLAN_SPECS = [
     {
         "lookup_key": "founder_special",
         "amount": 14500,
-        "product_name": "AI学習コーチ塾 創設メンバー",
+        "product_name": "AIコーチング 創設メンバー",
         "description": "期間限定 50名・永年¥14,500/月・全機能無制限",
         "metadata": {"plan": "founder_special", "tier": "premium-equivalent", "perpetual": "true"},
     },
     {
         "lookup_key": "premium",
         "amount": 39800,
-        "product_name": "AI学習コーチ塾 プレミアム",
+        "product_name": "AIコーチング プレミアム",
         "description": "AI 全機能無制限 + 学習管理 + 合格カリキュラム自動生成 + ZOOM 授業",
         "metadata": {"plan": "premium", "tier": "premium"},
     },
     {
         "lookup_key": "family",
         "amount": 59800,
-        "product_name": "AI学習コーチ塾 家族プラン",
+        "product_name": "AIコーチング 家族プラン",
         "description": "兄弟姉妹3名まで使える・1人あたり実質¥19,933/月",
         "metadata": {"plan": "family", "tier": "premium", "max_students": "3"},
     },
     {
         "lookup_key": "standard",
         "amount": 24980,
-        "product_name": "AI学習コーチ塾 スタンダード",
+        "product_name": "AIコーチング スタンダード",
         "description": "24時間AIチューター + 問題生成月50回 + 添削月20回 + 参考書月5冊",
         "metadata": {"plan": "standard", "tier": "standard"},
     },
     {
         "lookup_key": "student_addon",
         "amount": 5000,
-        "product_name": "AI学習コーチ塾 通塾生プラン",
+        "product_name": "AIコーチング 通塾生プラン",
         "description": "通塾生限定 (塾長招待制)・永年¥5,000/月・全機能無制限・入塾金免除",
         "metadata": {"plan": "student_addon", "perpetual": "true", "invite_only": "true"},
     },
@@ -8634,7 +8634,7 @@ async def admin_send_ig_carousel(
     DEFAULT_CAPTION_RESULTS = (
         "うちの子の机に、今こんなプリントが置いてあります。\n\n"
         "数学Ⅱ・三角関数 30問。AI が昨夜のうちに自動で作ったやつです。\n\n"
-        "正直、最初は半信半疑でした。「AI塾」って響きだけで中身ペラペラなんじゃないかって。だから今回は、機能を語るのをやめて、画面そのものを置きます。\n\n"
+        "正直、最初は半信半疑でした。「AIコーチング」って響きだけで中身ペラペラなんじゃないかって。だから今回は、機能を語るのをやめて、画面そのものを置きます。\n\n"
         "━━━━━━━━━━━━━━━\n\n"
         "▼ Slide 2 / 学習管理画面\n"
         "朝、子どもがスマホを開くと「今日のタスク」が3つ並んでいる。連続学習47日。校内ランキング学年12位、5つ上昇。これだけで「今日もやるか」になる。親の LINE にも日次レポート。\n\n"
@@ -8735,7 +8735,7 @@ async def admin_send_ig_carousel(
 # ==========================================================================
 # 🎓 通塾生 招待リンク (HMAC 署名付き・期限付き)
 # ==========================================================================
-# 塾長運用: 既存通塾生から「DM で AI塾アドオンの招待ください」と来たら、
+# 塾長運用: 既存通塾生から「DM で AIコーチングアドオンの招待ください」と来たら、
 # CEO ダッシュ or admin endpoint で email 1件 → invite URL 発行 → DM 返信。
 # student-upgrade.html は invite gate で未認可訪問を LP に redirect する。
 # ==========================================================================
@@ -9069,13 +9069,13 @@ def _send_student_invite_email(to_email: str, name: str, invite_url: str, expire
     safe_name = _html.escape(name or "")
     safe_invite_url = _html.escape(invite_url)  # FIX (review): href 値も XSS 対策エスケープ
     greeting = f"{safe_name}さま" if safe_name else "保護者さま"
-    subject = "【AI学習コーチ塾】通塾生限定 永年¥9,800/月 招待のご案内"
+    subject = "【AIコーチング】通塾生限定 永年¥9,800/月 招待のご案内"
     html = f"""<!DOCTYPE html>
 <html><body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 580px; margin: 0 auto; padding: 2rem;">
 <h1 style="font-size: 1.4rem; color: #6366f1;">🎓 通塾生限定 AI 学習アドオン</h1>
 <p>{greeting}、いつもありがとうございます。</p>
 
-<p>AI学習コーチ塾 (オンライン) を、通塾生のみなさまに<strong>特別価格でご案内</strong>させていただきます。</p>
+<p>AIコーチング (オンライン) を、通塾生のみなさまに<strong>特別価格でご案内</strong>させていただきます。</p>
 
 <div style="background: linear-gradient(135deg, #f0fdf4, #dbeafe); padding: 1.2rem; border-radius: 10px; margin: 1.5rem 0; border: 1px solid rgba(99,102,241,0.3);">
   <div style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.3rem;">通常価格 <s>¥39,800/月</s></div>
@@ -9807,7 +9807,7 @@ def _build_custom_gpt_announcement_templates(gpt_id: str, gpt_name: str, gpt_des
             f"{desc_x}\n\n"
             f"無料体験→{gpt_url_for_x}\n"
             f"本格指導→{x_url}\n"
-            f"#大学受験 #AI塾"
+            f"#大学受験 #AIコーチング"
         ),
         "instagram": (
             f"🎓 ChatGPT Store に新しい AI コーチを公開しました\n\n"
@@ -13543,7 +13543,7 @@ def admin_send_kokuritsu_url_bundle(
 ):
     """🎓 国公立難関大コース 専用URLバンドルを塾長 Gmail に 1 通でまとめて送信。
 
-    塾長指示 2026-05-13: 「AI塾の国公立難関大の子達専用のURLを僕のgmailに送って」
+    塾長指示 2026-05-13: 「AIコーチングの国公立難関大の子達専用のURLを僕のgmailに送って」
     + 「全部まとめて」+ 「塾長の既知メアド (= DAILY_SNS_TO_EMAIL)」。
 
     送信内容:
@@ -16206,7 +16206,7 @@ def admin_email_test_send(payload: dict, authorization: Optional[str] = Header(N
             data=json.dumps({
                 "from": FROM_EMAIL,
                 "to": [to_email],
-                "subject": "【AI学習コーチ塾】メール送信テスト",
+                "subject": "【AIコーチング】メール送信テスト",
                 "html": "<h2>✅ メール送信テスト成功</h2><p>Resend API 経由の送信が正常に動作しています。</p>",
             }).encode("utf-8"),
             headers={
@@ -17190,7 +17190,7 @@ def create_trial_checkout(payload: dict):
             "price_data": {
                 "currency": "jpy",
                 "product_data": {
-                    "name": f"AI学習コーチ塾 - {FOUNDER_TRIAL_DAYS}日間体験",
+                    "name": f"AIコーチング - {FOUNDER_TRIAL_DAYS}日間体験",
                     "description": f"AIチューター・教材生成・学習分析をフル活用できる{FOUNDER_TRIAL_DAYS}日間。"
                 },
                 "unit_amount": FOUNDER_TRIAL_PRICE,
@@ -17675,7 +17675,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
         meta = session.get("metadata", {}) or {}
-        # 🚨 2026-05-13: AI塾と juku-payment 月謝の完全分離 (二重保険)
+        # 🚨 2026-05-13: AIコーチングと juku-payment 月謝の完全分離 (二重保険)
         # juku-payment 系イベント (system=juku-payment-monthly) は ai-juku DB に一切触らずに skip
         # commit 308d8c4 の VALID_PLAN_KEYS check に加え、metadata.system で明示的に分岐する
         _meta_system = (meta.get("system") or "").strip()
@@ -17907,7 +17907,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
 
     elif event["type"] == "invoice.payment_succeeded":
         invoice = event["data"]["object"]
-        # 🚨 2026-05-13: AI塾と juku-payment 月謝の完全分離 (二重保険)
+        # 🚨 2026-05-13: AIコーチングと juku-payment 月謝の完全分離 (二重保険)
         _inv_meta = invoice.get("metadata", {}) or {}
         if (_inv_meta.get("system") or "").startswith("juku-payment"):
             log.info(f"[Stripe webhook] Skipping juku-payment invoice (system={_inv_meta.get('system')}) - handled by Vercel webhook")
@@ -17923,7 +17923,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
         conn.close()
 
     elif event["type"] in ("payment_intent.succeeded", "payment_intent.payment_failed", "setup_intent.succeeded"):
-        # 🚨 2026-05-13: AI塾は subscription/invoice ベースなので PaymentIntent / SetupIntent はすべて juku-payment 系として skip
+        # 🚨 2026-05-13: AIコーチングは subscription/invoice ベースなので PaymentIntent / SetupIntent はすべて juku-payment 系として skip
         # (もし将来 ai-juku でも PaymentIntent 直接利用する場合は metadata.system を明示的に区別すること)
         obj = event["data"]["object"]
         _meta = obj.get("metadata", {}) or {}
@@ -17936,7 +17936,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
 
     elif event["type"] in ("customer.subscription.deleted", "customer.subscription.canceled"):
         sub = event["data"]["object"]
-        # 🚨 2026-05-13: AI塾と juku-payment 月謝の完全分離 (二重保険)
+        # 🚨 2026-05-13: AIコーチングと juku-payment 月謝の完全分離 (二重保険)
         # juku-payment は setup mode で subscription を持たない設計だが、
         # 将来 Stripe Dashboard 等で手動 subscription が作られた場合に ai-juku DB 誤更新を防ぐ
         _sub_meta = sub.get("metadata", {}) or {}
@@ -17991,7 +17991,7 @@ LINE_TEMPLATES = {
     # メールが届かない (キャリアメール / 迷惑振り分け) 生徒向け fallback
     "magic_link_login": lambda p: {
         "type": "text",
-        "text": f"🎓 AI学習コーチ塾 ログイン\n\n"
+        "text": f"🎓 AIコーチング ログイン\n\n"
                 f"{p.get('name', '生徒')}さん、ログインリンクをお送りします。\n\n"
                 f"🔢 ログインコード（10分間有効）: {p.get('otp_code', '')}\n\n"
                 f"または下記リンクから直接ログイン（30日間有効）👇\n"
@@ -18132,10 +18132,10 @@ def _send_weekly_report_email(to_email: str, student_name: str, stats: dict) -> 
           AI チューターに質問して苦手を克服しましょう。
         </div>"""
 
-    subject = f"【AI学習コーチ塾】{safe_name}さんの週次学習レポート"
+    subject = f"【AIコーチング】{safe_name}さんの週次学習レポート"
     html = f"""<!DOCTYPE html>
 <html><body style="font-family: -apple-system, 'Hiragino Sans', sans-serif; line-height:1.7; color:#333; max-width:560px; margin:0 auto; padding:2rem;">
-<h1 style="font-size:1.3rem;color:#6366f1;margin-bottom:0.3rem;">🎓 AI学習コーチ塾</h1>
+<h1 style="font-size:1.3rem;color:#6366f1;margin-bottom:0.3rem;">🎓 AIコーチング</h1>
 <h2 style="font-size:1.1rem;color:#475569;margin-top:0;">📊 {safe_name}さんの今週のレポート</h2>
 
 <p>{safe_name}さまの保護者さま、いつもお世話になっております。<br>今週の学習状況をお知らせいたします。</p>
@@ -18171,7 +18171,7 @@ def _send_weekly_report_email(to_email: str, student_name: str, stats: dict) -> 
 
 <hr style="margin:2rem 0;border:none;border-top:1px solid #e2e8f0;">
 <p style="font-size:0.8rem;color:#94a3b8;">
-  AI学習コーチ塾 | <a href="mailto:info@trillion-ai-juku.com" style="color:#6366f1;">info@trillion-ai-juku.com</a>
+  AIコーチング | <a href="mailto:info@trillion-ai-juku.com" style="color:#6366f1;">info@trillion-ai-juku.com</a>
 </p>
 </body></html>"""
 
@@ -18312,7 +18312,7 @@ def _send_trial_followup_email(to_email: str, student_name: str, days_since: int
     greeting = f"{safe_name}さまの保護者さま" if safe_name else "保護者さま"
 
     if days_since <= 1:
-        subject = "【AI学習コーチ塾】体験期間が終了しました — いつでも再開できます"
+        subject = "【AIコーチング】体験期間が終了しました — いつでも再開できます"
         headline = "体験期間が終了しました"
         body_msg = """
 <p>10日間の無料体験をご利用いただき、ありがとうございました。</p>
@@ -18322,7 +18322,7 @@ def _send_trial_followup_email(to_email: str, student_name: str, days_since: int
   🎁 <strong>体験終了後3日以内のご登録で、入塾金(¥10,000)を免除</strong>いたします。
 </p>"""
     elif days_since <= 3:
-        subject = "【AI学習コーチ塾】入塾金免除はあと数日です"
+        subject = "【AIコーチング】入塾金免除はあと数日です"
         headline = "入塾金免除の期限が近づいています"
         body_msg = """
 <p>体験終了から数日が経ちました。お子さまの学習データはそのまま保存されています。</p>
@@ -18333,7 +18333,7 @@ def _send_trial_followup_email(to_email: str, student_name: str, days_since: int
 <p>AI学習コーチが24時間お子さまの学習をサポートします。<br>
 分からない問題はAIがその場で丁寧に解説。保護者さまへの学習レポートも毎週お届けします。</p>"""
     else:
-        subject = "【AI学習コーチ塾】学習の遅れが気になっていませんか？"
+        subject = "【AIコーチング】学習の遅れが気になっていませんか？"
         headline = "学習の継続をサポートします"
         body_msg = """
 <p>体験期間終了から1週間が経ちました。</p>
@@ -18347,7 +18347,7 @@ AIが毎日の学習計画を自動作成し、苦手分野を集中的に克服
 
     html = f"""<!DOCTYPE html>
 <html><body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 560px; margin: 0 auto; padding: 2rem;">
-<h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AI学習コーチ塾</h1>
+<h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AIコーチング</h1>
 <p>{greeting}</p>
 <h2 style="font-size:1.15rem;color:#374151;">{headline}</h2>
 {body_msg}
@@ -18491,7 +18491,7 @@ def _generate_personalized_followup(student: dict) -> dict:
     if ANTHROPIC_API_KEY or GEMINI_API_KEY or OPENAI_API_KEY:
         try:
             system = (
-                "あなたは AI 学習コーチ塾の塾長です。体験中の生徒が失速しています。"
+                "あなたは AI AIコーチングの塾長です。体験中の生徒が失速しています。"
                 "親身で温かい、押し付けがましくない follow-up メッセージを書いてください。"
                 "ai-juku の AI チューター・学習計画・5 AI 多視点添削の活用を自然に促してください。"
                 "教師名 (関正生・富田・林修等) は一切出さないこと。"
@@ -18546,7 +18546,7 @@ def _generate_personalized_followup(student: dict) -> dict:
     return {
         "subject": f"{name}さんへ — 体験を再開しませんか? 🎓",
         "body": (
-            f"{name}さん、こんにちは。AI 学習コーチ塾の塾長です。\n\n"
+            f"{name}さん、こんにちは。AI AIコーチングの塾長です。\n\n"
             f"前回のログインから {days_since} 日経ちました。体験はあと数日で終わりますが、まだ AI チューターや学習計画を試していない場合はぜひ。"
             f"分からない問題は深夜でも AI が即解説します。\n\n"
             f"マイページからすぐ再開できます。"
@@ -18566,7 +18566,7 @@ def _send_trial_rescue_email(to_email: str, student_name: str, subject: str, bod
     body_html = _html.escape(body).replace("\n", "<br>")
     html_body = f"""<!DOCTYPE html>
 <html><body style="font-family:-apple-system,sans-serif;line-height:1.7;color:#333;max-width:560px;margin:0 auto;padding:2rem;">
-<h1 style="font-size:1.3rem;color:#6366f1;">🎓 AI学習コーチ塾</h1>
+<h1 style="font-size:1.3rem;color:#6366f1;">🎓 AIコーチング</h1>
 <p style="white-space:pre-line;font-size:0.98rem;">{body_html}</p>
 <p style="text-align:center;margin:2rem 0;">
   <a href="{login_url}" style="display:inline-block;padding:1rem 2rem;background:linear-gradient(135deg,#6366f1,#ec4899);color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">
@@ -24963,7 +24963,7 @@ def _send_message_email(to_email: str, subject: str, body_text: str, student_nam
     # subject: CRLF 除去のみ (header injection 防御)・HTML escape はメール件名には適用しない
     # メール件名は raw text として受信クライアントに表示されるため escape すると「Q&amp;A」のように
     # entity がそのまま見えてしまう (2026-05-15 致命傷 fix)
-    raw_subject = (subject or "AI学習コーチ塾より新着メッセージ").replace("\r", "").replace("\n", " ")
+    raw_subject = (subject or "AIコーチングより新着メッセージ").replace("\r", "").replace("\n", " ")
     # HTML body 内で <h2> に表示する件名のみ escape 版を使う (XSS 防御)
     safe_subject_html = _esc(raw_subject)
     # body: HTML escape + CRLF 正規化
@@ -24977,11 +24977,11 @@ def _send_message_email(to_email: str, subject: str, body_text: str, student_nam
 {safe_body_html}
 </div>
 <p style="font-size:0.85rem; color:#666; margin-top:1.5rem;">
-このメッセージは AI学習コーチ塾 のマイページからも確認できます:<br>
+このメッセージは AIコーチング のマイページからも確認できます:<br>
 <a href="https://trillion-ai-juku.com/mypage.html" style="color:#6366f1;">https://trillion-ai-juku.com/mypage.html</a>
 </p>
 <hr style="margin:2rem 0; border:none; border-top:1px solid #eee;">
-<p style="font-size:0.78rem; color:#999;">配信元: AI学習コーチ塾 / 配信停止やお問い合わせは塾長まで</p>
+<p style="font-size:0.78rem; color:#999;">配信元: AIコーチング / 配信停止やお問い合わせは塾長まで</p>
 </body></html>"""
     # text fallback (HTML を解釈できない client / spam filter 対応)
     greeting_plain = f"{student_name}さん\n\n" if student_name else ""
@@ -24989,9 +24989,9 @@ def _send_message_email(to_email: str, subject: str, body_text: str, student_nam
         f"📨 {raw_subject}\n\n"
         f"{greeting_plain}{body_normalized}\n\n"
         f"────────────────────\n"
-        f"このメッセージは AI学習コーチ塾 のマイページからも確認できます:\n"
+        f"このメッセージは AIコーチング のマイページからも確認できます:\n"
         f"https://trillion-ai-juku.com/mypage.html\n\n"
-        f"配信元: AI学習コーチ塾 / 配信停止やお問い合わせは塾長まで"
+        f"配信元: AIコーチング / 配信停止やお問い合わせは塾長まで"
     )
     try:
         import urllib.request
@@ -25142,7 +25142,7 @@ def admin_send_message(payload: MessageSendRequest, background_tasks: Background
     body = _sanitize_text(payload.body, 5000)
     if not body:
         raise HTTPException(status_code=400, detail="本文は必須です")
-    subject = _sanitize_text(payload.subject, 200) or "AI学習コーチ塾より新着メッセージ"
+    subject = _sanitize_text(payload.subject, 200) or "AIコーチングより新着メッセージ"
 
     conn = db()
     try:
