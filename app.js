@@ -3536,12 +3536,169 @@ function _parsePhases(md) {
   return phases;
 }
 
-// 週次テンプレを開始週数オフセットで"進捗"させる (塾長指示 2026-05-14 強化)
+// 教材ごとの総 unit 数 (server/main.py REFERENCE_BOOKS_SEED / SAPURI_LECTURES_SEED と一致)
+// 進捗 advance 時に total_units を超えると「(N 周目)」表記で循環させる (塾長指示 2026-05-17)
+// 「ポラリスやスタサプの講義数や章数が反映されていないので実際のページ数との乖離が激しい」報告対応
+// 新しい教材を server seed に追加する際はここにも追記すること
+const TEXTBOOK_TOTAL_UNITS = {
+  // 英語 単語帳
+  'システム英単語': 2021, 'シス単': 2021,
+  '英単語ターゲット1900': 1900, 'ターゲット1900': 1900,
+  '鉄壁': 3000,
+  '速読英単語 必修編': 70, '速読英単語': 70,
+  // 英語 文法
+  'Next Stage': 1400, 'ネクステージ': 1400, 'ネクステ': 1400,
+  'Vintage': 1400, 'ヴィンテージ': 1400,
+  '大岩のいちばんはじめの英文法': 27,
+  '肘井学のゼロから英文法': 33,
+  // スタサプ レベル別英文法・読解・解釈 (24 講)
+  'ベーシックレベル英文法': 24, 'スタンダードレベル英文法': 24,
+  'ハイレベル英文法': 24, 'トップレベル英文法': 24,
+  'スタンダードレベル英語 〈読解編〉': 24, 'ハイレベル英語 〈読解編〉': 24,
+  'トップレベル英語 〈読解編〉': 24,
+  'スタンダードレベル英語〈読解編〉': 24, 'ハイレベル英語〈読解編〉': 24,
+  'トップレベル英語〈読解編〉': 24,
+  'スタンダードレベル英語〈英文解釈編〉': 24, 'ハイレベル英語〈英文解釈編〉': 24,
+  'トップレベル英語〈英文解釈編〉': 24,
+  'スタンダードレベル英語〈長文演習編〉': 24, 'ハイレベル英語〈長文演習編〉': 24,
+  'トップレベル英語〈長文演習編〉': 24,
+  '英作文対策講座': 24,
+  'スタンダードレベル英語〈リスニング編〉': 12, 'ハイレベル英語〈リスニング編〉': 12,
+  // スタサプ 数学
+  'スタンダードレベル数学IA': 40, 'スタンダードレベル数学IIB': 40,
+  'ベーシックレベル数学IAIIB': 40, 'スタンダードレベル数学IAIIB': 40,
+  'ハイレベル数学IAIIB': 40, 'トップレベル数学IAIIB': 40,
+  'スタンダードレベル数学III': 24, 'ハイレベル数学III': 24, 'トップレベル数学III': 24,
+  // スタサプ 古文・漢文
+  'スタンダードレベル古文〈読解編〉': 24, 'ハイレベル古文〈読解編〉': 24,
+  '漢文ベーシックレベル': 12,
+  // 英語 構文・読解 (参考書)
+  '基礎英文解釈の技術100': 100, '英文解釈の技術100': 100,
+  'ポレポレ英文読解プロセス50': 50, 'ポレポレ': 50,
+  // 英語 長文 (参考書)
+  'やっておきたい英語長文500': 20, 'やっておきたい英語長文700': 15,
+  'やっておきたい英語長文1000': 10, 'やっておきたい英語長文300': 30,
+  // ポラリス (KADOKAWA・参考書 DB 未登録だが LP/プロンプトで例示されるため hardcode)
+  'ポラリス英語長文1': 12, 'ポラリス英語長文2': 12, 'ポラリス英語長文3': 10,
+  'ポラリス英語長文': 12, // ポラリス英語長文 (level 不明) は最大値で fallback
+  // ポラリス英文法/現代文 は KADOKAWA 公式仕様に合わせて実数値で cap (data review 2026-05-17 指摘)
+  'ポラリス英文法1': 148, 'ポラリス英文法2': 148, 'ポラリス英文法3': 151,
+  'ポラリス現代文1': 10, 'ポラリス現代文2': 10, 'ポラリス現代文3': 8,
+  // 英語 英作文
+  'ドラゴン・イングリッシュ': 100, 'ドラゴンイングリッシュ': 100,
+  // 数学 (参考書)
+  '青チャート 数学IA': 350, '青チャート 数学IIB': 400, '青チャート 数学III': 300,
+  '青チャ 数IA': 350, '青チャ 数IIB': 400, '青チャ 数III': 300,
+  'Focus Gold 数学IA': 320, 'Focus Gold 数学IIB': 380,
+  '基礎問題精講 数学IA': 145, '基礎問題精講 数学IIB': 167, '基礎問題精講 数学III': 130,
+  '標準問題精講 数学IA': 110, '標準問題精講 数学IIB': 145,
+  '1対1対応の演習 数学IA': 120, '1対1対応の演習 数学IIB': 130, '1対1対応の演習': 120,
+  '文系数学の良問プラチカ': 149,
+  '理系数学の良問プラチカ': 153,
+  'やさしい理系数学': 200, 'ハイレベル理系数学': 200,
+  '鉄緑会 東大数学問題集': 60,
+  '大学への数学 スタンダード演習': 100,
+  // 古文 (参考書)
+  'マドンナ古文': 33,
+  '古文単語ゴロゴ': 635, 'ゴロゴ': 635,
+  '古文上達 基礎編 読解と演習45': 45, '古文上達 基礎編': 45, '古文上達45': 45,
+  '古文上達 中級編': 30,
+  '古文上達 読解と演習56': 56,
+  // 漢文 (参考書)
+  '漢文ヤマのヤマ': 66,
+  '漢文早覚え速答法': 10, '漢文早覚え': 10,
+  // 現代文 (参考書)
+  '入試現代文へのアクセス 基本編': 16,
+  '入試現代文へのアクセス 発展編': 16,
+  '現代文読解力の開発講座': 10,
+  '現代文と格闘する': 14,
+  '現代文キーワード読解': 240,
+  // 物理 (参考書)
+  '物理のエッセンス': 140,
+  '良問の風': 150,
+  '名問の森': 140,
+  '橋元の物理をはじめからていねいに': 30,
+  '漆原晃の物理基礎・物理': 40,
+  '難問題の系統とその解き方': 200,
+  // 化学 (参考書)
+  '化学 基礎問題精講': 120,
+  '化学 重要問題集': 260,
+  '化学の新演習': 330,
+  '化学 標準問題精講': 120,
+  '宇宙一わかりやすい高校化学': 22,
+  '鎌田の理論化学の講義': 25,
+  // 生物 (参考書)
+  '生物 基礎問題精講': 89,
+  '生物 標準問題精講': 113,
+  '田部の生物基礎をはじめからていねいに': 14,
+  '大森徹の最強講義': 117,
+  // 日本史 (参考書)
+  '石川日本史B講義の実況中継': 200,
+  '日本史B一問一答': 320,
+  '詳説日本史B': 14,
+  // 世界史 (参考書)
+  'ナビゲーター世界史B': 180,
+  '世界史B一問一答': 300,
+  '詳説世界史B': 15,
+  // 地理 (参考書)
+  '村瀬のゼロからわかる地理B': 100,
+  '瀬川聡の共通テスト地理B講義の実況中継': 80,
+  // 公民 (参考書)
+  '蔭山の共通テスト政治・経済': 60,
+  '蔭山の共通テスト倫理': 60,
+  '畠山のスッキリわかる政治・経済': 28,
+  '政治・経済 一問一答': 250,
+  '倫理一問一答': 220,
+  '現代社会一問一答': 180,
+};
+
+// title から教材を検出し総 unit 数を返す。検出失敗時は null (cap なし = 従来通り無制限 advance)
+function _getTextbookCap(title) {
+  if (!title) return null;
+  // 部分一致でルックアップ・長い key を優先 ("シス単" より "システム英単語" を先に評価)
+  const keys = Object.keys(TEXTBOOK_TOTAL_UNITS).sort((a, b) => b.length - a.length);
+  for (const k of keys) {
+    if (title.indexOf(k) !== -1) return TEXTBOOK_TOTAL_UNITS[k];
+  }
+  return null;
+}
+
+// 週次テンプレを開始週数オフセットで"進捗"させる (塾長指示 2026-05-14 強化・2026-05-17 cap 追加)
 // 旧版は "No.X-Y" "例題X-Y" 等の prefix 付きパターンのみ対応 → 「シス単 1201-1400」
 // 「第1題」「第1章」等で進まないバグがあった。3 パターン段階的にカバーするよう拡張。
+// 2026-05-17 追加: 教材の total_units を超えたら「(N 周目)」表記で循環。
+// 「ポラリスやスタサプの講義数や章数が反映されていない」報告対応 (塾長指示 2026-05-17)
 function _advanceTaskRange(title, weekOffset) {
   if (!title || typeof title !== 'string') return title || '';
   if (!weekOffset) return title;
+
+  // 教材ごとの cap を検出 (検出失敗時は null = 従来通り無制限)
+  const cap = _getTextbookCap(title);
+
+  // Helper: 単独カウンタ (第N講・Lesson N) を cap 内に循環
+  // n=42, cap=33 → {n:9, cycle:1} → 表示「第9講 (2周目)」
+  function _capSingle(n) {
+    if (!cap || n <= cap) return { n: n, cycle: 0 };
+    const cycle = Math.floor((n - 1) / cap);
+    return { n: ((n - 1) % cap) + 1, cycle: cycle };
+  }
+
+  // Helper: 範囲 (No.X-Y) を cap 内に循環
+  function _capRange(start, end) {
+    if (!cap) return { start: start, end: end, cycle: 0 };
+    const span = end - start + 1;
+    if (end <= cap) return { start: start, end: end, cycle: 0 };
+    if (start > cap) {
+      // 両端とも cap 超え → 周回
+      const cycle = Math.floor((start - 1) / cap);
+      const ns = ((start - 1) % cap) + 1;
+      const ne = Math.min(ns + span - 1, cap);
+      return { start: ns, end: ne, cycle: cycle };
+    }
+    // 末尾だけ cap 超え → cap で打ち切り (1 周目内)
+    return { start: start, end: cap, cycle: 0 };
+  }
+
   let result = title;
   let matched = false;
 
@@ -3551,7 +3708,9 @@ function _advanceTaskRange(title, weekOffset) {
       matched = true;
       const start = parseInt(s), end = parseInt(e);
       const span = end - start + 1;
-      return `${prefix}${start + weekOffset * span}-${end + weekOffset * span}`;
+      const r = _capRange(start + weekOffset * span, end + weekOffset * span);
+      const suffix = r.cycle > 0 ? ` (${r.cycle + 1}周目)` : '';
+      return `${prefix}${r.start}-${r.end}${suffix}`;
     });
   if (matched) return result;
 
@@ -3559,13 +3718,17 @@ function _advanceTaskRange(title, weekOffset) {
   result = result.replace(/(第\s*)(\d+)(\s*(?:題|章|講|節|課))/g,
     (full, pre, n, sfx) => {
       matched = true;
-      return `${pre}${parseInt(n) + weekOffset}${sfx}`;
+      const r = _capSingle(parseInt(n) + weekOffset);
+      const suffix = r.cycle > 0 ? ` (${r.cycle + 1}周目)` : '';
+      return `${pre}${r.n}${sfx}${suffix}`;
     });
   if (matched) return result;
   result = result.replace(/(Lesson|Unit|Chapter)\s*(\d+)/gi,
     (full, kw, n) => {
       matched = true;
-      return `${kw} ${parseInt(n) + weekOffset}`;
+      const r = _capSingle(parseInt(n) + weekOffset);
+      const suffix = r.cycle > 0 ? ` (${r.cycle + 1}周目)` : '';
+      return `${kw} ${r.n}${suffix}`;
     });
   if (matched) return result;
 
@@ -3580,7 +3743,9 @@ function _advanceTaskRange(title, weekOffset) {
       // 不正範囲 (end <= start) は skip
       if (span <= 0) return full;
       matched = true;
-      return `${start + weekOffset * span}-${end + weekOffset * span}`;
+      const r = _capRange(start + weekOffset * span, end + weekOffset * span);
+      const suffix = r.cycle > 0 ? ` (${r.cycle + 1}周目)` : '';
+      return `${r.start}-${r.end}${suffix}`;
     });
   return result;
 }
