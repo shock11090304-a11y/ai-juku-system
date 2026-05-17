@@ -14882,12 +14882,22 @@ def _curriculum_fallback(exam_id, target_grade_name, days_remaining, weeks_remai
 
 
 @app.get("/api/admin/exam-questions/pool-status")
-def admin_exam_questions_pool_status(authorization: Optional[str] = Header(None)):
-    """全 part の pool 蓄積数を返す (CEO ダッシュボード用)。admin Bearer 認証必須。"""
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="未認証")
-    token = authorization[len("Bearer "):].strip()
-    if not _verify_admin_token(token):
+def admin_exam_questions_pool_status(
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """全 part の pool 蓄積数を返す (CEO ダッシュボード用)。
+    認証: admin Bearer または X-Cron-Secret (audit script 経由)。
+    🛟 2026-05-17 audit limit=50 cap 問題発覚で CRON_SECRET 経路を追加 (塾長指示
+    「pool チェック」で正確な count が必要なため)。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
         raise HTTPException(status_code=401, detail="未認証")
     counts = _exam_pool_counts()
     JST = timezone(timedelta(hours=9))
