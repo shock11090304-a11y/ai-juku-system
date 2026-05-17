@@ -3359,7 +3359,24 @@ function spStorageKey() {
 function spLoad() {
   try {
     const raw = localStorage.getItem(spStorageKey());
-    return raw ? JSON.parse(raw) : { tasks: [], streak: { current: 0, best: 0, last_active: null } };
+    const data = raw ? JSON.parse(raw) : { tasks: [], streak: { current: 0, best: 0, last_active: null } };
+    // 旧 _advanceTaskRange (cap 無し) で生成された「マドンナ古文 第41講」等を後付け cap
+    // 塾長指示 2026-05-17 (小川くん端末で deploy 後も既存データが残留・続発)
+    // _recapTaskTitle は idempotent なので何度呼んでも安全 (cap 内 or 周目付きは no-op)
+    if (typeof _recapTaskTitle === 'function' && Array.isArray(data.tasks)) {
+      let recapChanged = 0;
+      for (const t of data.tasks) {
+        if (t && t.source === 'curriculum' && typeof t.title === 'string') {
+          const newTitle = _recapTaskTitle(t.title);
+          if (newTitle !== t.title) { t.title = newTitle; recapChanged++; }
+        }
+      }
+      if (recapChanged > 0) {
+        try { localStorage.setItem(spStorageKey(), JSON.stringify(data)); } catch {}
+        try { console.log(`[recap] ${recapChanged} 件の旧バグタイトルを cap で正規化しました`); } catch {}
+      }
+    }
+    return data;
   } catch { return { tasks: [], streak: { current: 0, best: 0, last_active: null } }; }
 }
 function spSave(data) {
@@ -3747,6 +3764,57 @@ function _advanceTaskRange(title, weekOffset) {
       const suffix = r.cycle > 0 ? ` (${r.cycle + 1}周目)` : '';
       return `${r.start}-${r.end}${suffix}`;
     });
+  return result;
+}
+
+// 旧 _advanceTaskRange (cap 無し版) で localStorage に保存済の「第41講」「No.9601-9840」等
+// を後付けで cap 内に正規化する。塾長指示 2026-05-17 (小川くん端末で既存データが残留)。
+// 進捗 advance は行わず、cap 超過分のみ循環表記に変換する純粋関数。
+function _recapTaskTitle(title) {
+  if (!title || typeof title !== 'string') return title || '';
+  // 既に「(N周目)」付き → 再 cap 不要 (idempotent)
+  if (/[\((]\s*\d+\s*周目\s*[\))]/.test(title)) return title;
+  const cap = _getTextbookCap(title);
+  if (!cap) return title;
+
+  let result = title;
+
+  // Pattern 1: prefix + 範囲
+  result = result.replace(/(No\.|p\.|P\.|例題|問題|問)\s*(\d+)\s*[-〜~–]\s*(\d+)/gi,
+    (full, prefix, s, e) => {
+      const start = parseInt(s), end = parseInt(e);
+      if (end <= cap) return full; // cap 内なら触らない
+      const span = end - start + 1;
+      if (start > cap) {
+        const cycle = Math.floor((start - 1) / cap);
+        const ns = ((start - 1) % cap) + 1;
+        const ne = Math.min(ns + span - 1, cap);
+        return `${prefix}${ns}-${ne} (${cycle + 1}周目)`;
+      }
+      // 末尾だけ cap 超 → cap で打ち切り (1周目内)
+      return `${prefix}${start}-${cap}`;
+    });
+
+  // Pattern 2: 第N題/章/講/節/課
+  result = result.replace(/(第\s*)(\d+)(\s*(?:題|章|講|節|課))/g,
+    (full, pre, n, sfx) => {
+      const num = parseInt(n);
+      if (num <= cap) return full;
+      const cycle = Math.floor((num - 1) / cap);
+      const newN = ((num - 1) % cap) + 1;
+      return `${pre}${newN}${sfx} (${cycle + 1}周目)`;
+    });
+
+  // Pattern 3: Lesson/Unit/Chapter N
+  result = result.replace(/(Lesson|Unit|Chapter)\s*(\d+)/gi,
+    (full, kw, n) => {
+      const num = parseInt(n);
+      if (num <= cap) return full;
+      const cycle = Math.floor((num - 1) / cap);
+      const newN = ((num - 1) % cap) + 1;
+      return `${kw} ${newN} (${cycle + 1}周目)`;
+    });
+
   return result;
 }
 
