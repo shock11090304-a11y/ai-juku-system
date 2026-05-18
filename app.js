@@ -4066,22 +4066,51 @@ function spAddManualTask() {
   spRender();
 }
 
+// 🎯 学習計画 toast (sp 系の右下通知・3 秒で自動消える)
+function _spToast(msg, kind) {
+  try {
+    let el = document.getElementById('spToast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'spToast';
+      el.style.cssText = 'position:fixed; bottom:1.5rem; right:1.5rem; z-index:9999; padding:0.8rem 1.1rem; border-radius:10px; font-size:0.88rem; font-weight:700; box-shadow:0 8px 24px rgba(0,0,0,0.4); pointer-events:none; transition:opacity 0.3s; max-width:380px;';
+      document.body.appendChild(el);
+    }
+    const colors = {
+      ok: { bg: 'rgba(16,185,129,0.92)', color: '#fff' },
+      warn: { bg: 'rgba(245,158,11,0.92)', color: '#fff' },
+      err: { bg: 'rgba(239,68,68,0.92)', color: '#fff' },
+      info: { bg: 'rgba(99,102,241,0.92)', color: '#fff' },
+    };
+    const c = colors[kind] || colors.info;
+    el.style.background = c.bg;
+    el.style.color = c.color;
+    el.style.opacity = '1';
+    el.textContent = msg;
+    clearTimeout(window._spToastTimer);
+    window._spToastTimer = setTimeout(() => { el.style.opacity = '0'; }, 3500);
+  } catch (_) {}
+}
+
 // 🎯 学習記録へ自動同期 (塾長指示 2026-05-18): 完了時 actual_min > 0 なら study_logs に POST
-// 制限: 国公立難関大学コースのみ受付 (403 は silent skip)・session token 必須
+// 制限: 国公立難関大学コースのみ受付・session token 必須
 // 重複防止: t.synced_at が既に set されてれば skip
+// 2026-05-18 fix: silent skip を廃止し、toast で同期結果を可視化 (「反映してない」報告対応)
 async function _spSyncToStudyLog(task) {
-  if (!task || task.synced_at) return false;  // 既同期 → skip
+  if (!task || task.synced_at) return false;
   if (!task.actual_min || task.actual_min <= 0) return false;
-  const token = (typeof localStorage !== 'undefined') ? (localStorage.getItem('ai_juku_session_token') || '') : '';
-  if (!token) return false;  // ログイン必須
-  // 計画時間 0 (マイルストーン等) は除外
   if (task.subject === 'マイルストーン') return false;
+  const token = (typeof localStorage !== 'undefined') ? (localStorage.getItem('ai_juku_session_token') || '') : '';
+  if (!token) {
+    _spToast('⚠️ 学習記録未同期: ログインが必要です (localStorage に session_token なし)', 'warn');
+    return false;
+  }
   try {
     const resp = await fetch(`${BACKEND_URL || ''}/api/study-logs`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({
-        studied_date: task.planned_date,  // YYYY-MM-DD
+        studied_date: task.planned_date,
         subject: task.subject || 'その他',
         material: (task.title || '').slice(0, 200),
         minutes: task.actual_min,
@@ -4092,15 +4121,28 @@ async function _spSyncToStudyLog(task) {
       const data = spLoad();
       const t = data.tasks.find(x => x.id === task.id);
       if (t) { t.synced_at = new Date().toISOString(); spSave(data); }
+      _spToast(`✅ 学習記録に同期しました: ${task.subject} ${task.actual_min}分`, 'ok');
       try { console.log(`[study-log] synced ${task.actual_min}分 / ${task.subject} / ${task.title}`); } catch {}
       return true;
     }
-    // 403 (国公立難関大学コース外) は silent skip・他エラーは debug log のみ
-    if (resp.status !== 401 && resp.status !== 403) {
-      try { console.warn(`[study-log] sync failed ${resp.status}`); } catch {}
+    // 失敗ケースを明示
+    let reason = '';
+    try {
+      const j = await resp.json();
+      reason = j.detail || j.message || '';
+    } catch (_) {}
+    if (resp.status === 401) {
+      _spToast(`⚠️ 学習記録未同期: セッション切れ (再ログイン必要)`, 'warn');
+    } else if (resp.status === 403) {
+      // course != kokuritsu_nankan の場合
+      _spToast(`ℹ️ 学習記録: 国公立難関大学コース受講生のみ DB に保存されます (localStorage には実績あり)`, 'info');
+    } else {
+      _spToast(`❌ 学習記録同期失敗: HTTP ${resp.status} ${reason ? '/ ' + reason : ''}`, 'err');
     }
+    try { console.warn(`[study-log] sync failed ${resp.status} ${reason}`); } catch {}
     return false;
   } catch (e) {
+    _spToast(`❌ 学習記録同期エラー: ${e.message || 'network failure'}`, 'err');
     try { console.warn('[study-log] sync error:', e); } catch {}
     return false;
   }
