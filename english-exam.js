@@ -1187,11 +1187,14 @@ function showRunner(exam, section, isMock = false) {
   document.getElementById('runnerExamLabel').textContent = `${exam.flag} ${exam.name}${isMock ? ' • 模試 (縮小版)' : ''}`;
   document.getElementById('runnerSectionTitle').textContent = `${section.icon} ${section.name}`;
   // 🎯 2026-05-13 pool-first: 通常は pool から即取り出し (~0.5 秒) なので
-  //    「AI が生成中」と決めつけない。復習モード時のみ AI 生成 (10-30 秒)
+  //    「AI が生成中」と決めつけない。
+  // 🛠 2026-05-18 fix (塾長指摘「30秒かかる」): topic 指定 (state.currentTopic) 時も
+  //    backend が topic LIKE 検索対応済 (main.py:14292) のため pool-first で十分。
+  //    ?review=1 明示時のみ AI 生成 message 表示。
   const _isReviewLoading = (() => {
     try {
       const sp = new URLSearchParams(window.location.search);
-      return sp.get('review') === '1' || !!(state && state.currentTopic);
+      return sp.get('review') === '1';
     } catch { return false; }
   })();
   document.getElementById('questionBox').innerHTML = _isReviewLoading
@@ -1459,17 +1462,20 @@ async function generateAndShowQuestions(exam, section, full = false) {
   // 「元々データがあるものは即時 pool から取り出し (¥0・~200ms)、
   //  AI を使うのは復習で最適化したい時のみ」
   //
-  // 判定ルール:
-  // - URL ?review=1 or ?topic=XXX → 復習モード (AI で弱点最適化)
-  // - state.currentTopic 設定済 → 復習モード
-  // - 上記以外 → pool から即取り出し (¥0・速い)
-  // - pool miss (count=0) or AI 失敗 → 安全フォールバック
+  // 判定ルール (2026-05-18 fix・pool-first 徹底):
+  // - URL ?review=1 → 明示的に復習モード (AI で弱点最適化)
+  // - ?topic=XXX or state.currentTopic → topic LIKE 検索の hint として pool fetch に渡す
+  //   (backend は topic 一致を優先・miss しても全 pool fallback で返却)
+  // - 通常 → pool から即取り出し (¥0・~0.5 秒)
+  // - pool miss (count=0) → AI 生成 → AI 失敗 → 静的フォールバック
   const reviewParams = (() => {
     try {
       const sp = new URLSearchParams(window.location.search);
       const topicParam = sp.get('topic');
       if (topicParam) state.currentTopic = topicParam;
-      return { isReview: sp.get('review') === '1' || !!state.currentTopic, topicParam };
+      // 🛠 fix: topic 指定でも pool-first にする (backend が topic LIKE 対応済)
+      // ?review=1 明示時のみ AI 生成直行
+      return { isReview: sp.get('review') === '1', topicParam };
     } catch { return { isReview: false, topicParam: null }; }
   })();
   const isReviewMode = reviewParams.isReview;
