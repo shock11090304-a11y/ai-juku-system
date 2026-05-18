@@ -3851,10 +3851,12 @@ function _phaseForDate(date, phases, startDate) {
 }
 
 function _spDateStr(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${dd}`;
+  // 🛠 3視点 audit fix (2026-05-18): JST 正規化で TZ off-by-one bug 修正
+  // 旧版は d.getFullYear/Month/Date を local TZ で読むため、非 JST 端末で spTodayJST と
+  // 日付が 1 日ズレる致命傷 (海外在住生徒・US サーバー preview で全機能 1 日ズレ)
+  // 新版: UTC ms に +9h して JST 正規化後 toISOString → YYYY-MM-DD slice
+  const jstMs = d.getTime() + 9 * 3600 * 1000;
+  return new Date(jstMs).toISOString().slice(0, 10);
 }
 
 function _spParseDateStr(s) {
@@ -4106,10 +4108,17 @@ function _spToast(msg, kind) {
 async function _spSyncToStudyLog(task) {
   if (!task) return false;
   if (task.subject === 'マイルストーン') return false;
+  // 🛠 3視点 audit fix (2026-05-18) #5: 複数タブ二重投稿対策
+  // 旧版は task 引数を直接使用 → 別タブが先に sync 済でも知らずに二重 POST
+  // 新版: localStorage から最新 task を再 load し synced_min 最新値で delta 計算
+  // ※ 完全な dedup には BroadcastChannel が理想・現状は partial fix
+  const freshData = spLoad();
+  const freshTask = freshData.tasks.find(x => x.id === task.id);
+  if (freshTask) task = freshTask;
   const totalMin = task.actual_min || 0;
   const syncedMin = task.synced_min || 0;
   const delta = totalMin - syncedMin;
-  if (delta <= 0) return false;  // 新規実績なし → skip (idempotent)
+  if (delta <= 0) return false;  // 別タブが既に sync 済 / 新規実績なし → skip (idempotent)
   const token = (typeof localStorage !== 'undefined') ? (localStorage.getItem('ai_juku_session_token') || '') : '';
   if (!token) {
     _spToast('⚠️ 学習記録未同期: ログインが必要です (localStorage に session_token なし)', 'warn');
@@ -4838,29 +4847,39 @@ async function spApplyWeaknessToplan() {
 function spReplanOverdue() {
   const data = spLoad();
   const today = spTodayJST();
-  const overdue = data.tasks.filter(t => !t.completed && t.planned_date < today && t.source !== 'milestone');
+  // 🛠 3視点 audit fix (2026-05-18) #1+#3: 実行中タイマー (started_at != null) を除外
+  // → 再計画で UI から消えてタイマー停止不能になる致命バグ防止
+  const overdue = data.tasks.filter(t =>
+    !t.completed && t.planned_date < today && t.source !== 'milestone' && !t.started_at
+  );
+  const runningOverdueCount = data.tasks.filter(t =>
+    !t.completed && t.planned_date < today && t.started_at
+  ).length;
   if (overdue.length === 0) {
-    alert('遅延タスクはありません 🎉');
+    alert(runningOverdueCount > 0
+      ? `遅延タスクは ${runningOverdueCount} 件ありますが、全て実行中タイマーのため再計画対象外です。\n先に ⏹ で停止してから再実行してください。`
+      : '遅延タスクはありません 🎉');
     return;
   }
-  if (!confirm(`📅 ${overdue.length} 件の遅延タスクを次週の月-土に圧縮再計画します。\n\n優先順位:\n1. 重要度の高いカリキュラム由来タスクを優先\n2. 残り時間で 1 日上限 4h まで\n3. 上限超過分は廃棄 (削除)\n\n続行しますか?`)) return;
-  // 次週 6 日分の配置先 (月-土)
+  const note = runningOverdueCount > 0 ? `\n\n※ 実行中タイマー ${runningOverdueCount} 件は対象外 (停止後に再実行)` : '';
+  if (!confirm(`📅 ${overdue.length} 件の遅延タスクを次週の月-土に圧縮再計画します。${note}\n\n優先順位:\n1. 重要度の高いカリキュラム由来タスクを優先\n2. 残り時間で 1 日上限 4h まで\n3. 上限超過分は廃棄 (削除)\n\n続行しますか?`)) return;
   const monday = spWeekMonday(1);
-  const dayCapacityMin = 240; // 1 日 4 時間まで
+  const dayCapacityMin = 240;
   const daySlots = Array.from({ length: 6 }, (_, i) => ({
     date: spAddDays(monday, i),
     usedMin: 0,
   }));
-  // 既存タスクで既に予定されている時間を加算
   for (const t of data.tasks) {
     const slot = daySlots.find(s => s.date === t.planned_date);
     if (slot && !t.completed) slot.usedMin += (t.duration_min || 30);
   }
-  // 重要度ソート: curriculum > weakness > manual (source 順)
   const priority = { curriculum: 1, weakness: 2, manual: 3 };
   overdue.sort((a, b) => (priority[a.source] || 9) - (priority[b.source] || 9));
+  // 🛠 3視点 audit fix #1: dropped ID を fit 失敗時に直接記録
+  // → 旧版 `overdue.slice(-dropped)` は sort 末尾 (低優先) を削除する誤った想定で、
+  //   実際に fit 失敗したタスクと一致しない致命 data loss バグ
+  const droppedIds = new Set();
   let replanned = 0;
-  let dropped = 0;
   for (const t of overdue) {
     const need = t.duration_min || 30;
     const slot = daySlots.find(s => s.usedMin + need <= dayCapacityMin);
@@ -4869,18 +4888,15 @@ function spReplanOverdue() {
       slot.usedMin += need;
       replanned++;
     } else {
-      // 1 日 4h 上限超過 → 削除
-      dropped++;
+      droppedIds.add(t.id);
     }
   }
-  // 廃棄分を tasks から除去
-  if (dropped > 0) {
-    const droppedIds = new Set(overdue.slice(-dropped).map(t => t.id));
+  if (droppedIds.size > 0) {
     data.tasks = data.tasks.filter(t => !droppedIds.has(t.id));
   }
   spSave(data);
   spRender();
-  alert(`✅ 遅延 ${overdue.length} 件のうち ${replanned} 件を次週に再配置${dropped > 0 ? `、${dropped} 件は容量超過のため廃棄` : ''}。\n\n来週は月-土 各 4h 以内で挽回します。`);
+  alert(`✅ 遅延 ${overdue.length} 件のうち ${replanned} 件を次週に再配置${droppedIds.size > 0 ? `、${droppedIds.size} 件は容量超過のため廃棄` : ''}。\n\n来週は月-土 各 4h 以内で挽回します。`);
 }
 
 // 🍅 Pomodoro モード (塾長指示 2026-05-18)
@@ -4899,8 +4915,27 @@ function spPomodoroEnabled() {
   try { return localStorage.getItem(_spPomodoroKey()) === '1'; } catch { return false; }
 }
 function spTogglePomodoro() {
+  const wasOff = !spPomodoroEnabled();
   const newState = !spPomodoroEnabled();
   try { localStorage.setItem(_spPomodoroKey(), newState ? '1' : '0'); } catch {}
+  // 🛠 3視点 audit fix (2026-05-18) #4: Pomodoro ON 切替時、実行中タイマーの過去 cycle を suppress
+  // → 旧版は 27 分稼働中に ON すると pomodoro_notified_cycles=0 のまま cycle=1 検出 → 即「25分達成」誤通知
+  // 新版: ON 時に経過済 cycle 数を notified に set し、次の boundary から通知開始
+  if (wasOff && newState) {
+    const data = spLoad();
+    let updated = false;
+    for (const t of data.tasks) {
+      if (t.started_at && !t.completed) {
+        const elapsedSec = Math.floor((Date.now() - new Date(t.started_at).getTime()) / 1000);
+        const pastCycles = Math.floor(elapsedSec / (POMODORO_FOCUS_MIN * 60));
+        if (pastCycles > 0) {
+          t.pomodoro_notified_cycles = pastCycles;
+          updated = true;
+        }
+      }
+    }
+    if (updated) spSave(data);
+  }
   _spToast(newState ? '🍅 Pomodoro モード ON (25分集中 + 5分休憩)' : '⏱ 通常タイマーモード', 'info');
   spRender();
 }
