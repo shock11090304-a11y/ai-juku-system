@@ -4154,11 +4154,16 @@ function spToggleTask(taskId) {
   if (!t) return;
   t.completed = !t.completed;
   t.completed_at = t.completed ? new Date().toISOString() : null;
-  // 🎯 タイマー実行中なら自動停止 + 実績時間記録 (塾長指示 2026-05-18)
-  if (t.completed && t.started_at && !t.actual_min) {
+  // 🛠 3視点 review fix (2026-05-18): !t.actual_min ガード除去 — 停止後再開→完了で経過時間が消失するバグ修正
+  // タイマー実行中なら経過時間を actual_min に累積 (加算式・既存値保持)
+  if (t.completed && t.started_at) {
     const elapsedMs = new Date(t.completed_at) - new Date(t.started_at);
-    t.actual_min = Math.max(1, Math.round(elapsedMs / 60000));
-    t.started_at = null; // タイマー停止
+    t.actual_min = (t.actual_min || 0) + Math.max(1, Math.round(elapsedMs / 60000));
+    t.started_at = null;
+  }
+  // 🛠 3視点 review fix (2026-05-18): completed=false 化時に synced_at もクリア → 再完了で sync 再実行可能
+  if (!t.completed) {
+    t.synced_at = null;
   }
   // streak 更新: 今日完了ならストリーク++
   const today = spTodayJST();
@@ -4172,7 +4177,6 @@ function spToggleTask(taskId) {
     }
   }
   spSave(data);
-  // 🎯 完了 & actual_min > 0 → study_logs へ自動 POST (await しない・UI 即応)
   if (t.completed && t.actual_min > 0 && !t.synced_at) {
     _spSyncToStudyLog(t).catch(() => {});
   }
@@ -4211,7 +4215,18 @@ function spStopTimer(taskId) {
   const min = Math.max(1, Math.round(elapsedMs / 60000));
   t.actual_min = (t.actual_min || 0) + min;
   t.started_at = null;
+  // 🛠 3視点 review fix (2026-05-18) — 根本原因: 停止時に sync 呼ばれていなかった (toast 出ない問題)
+  // 高校生 UX は「⏹ = 終わった」と認識するので停止時点で study_logs DB へ送信
+  // 既に sync 済 (synced_at set) なら _spSyncToStudyLog 内で skip → 二重投稿なし
+  // 再開→再停止で actual_min 増えた場合は synced_at がクリアされていない → 増分が DB に届かない問題は要別途対処 (TODO)
   spSave(data);
+  if (t.actual_min > 0 && !t.synced_at) {
+    _spSyncToStudyLog(t).catch(() => {});
+  } else if (t.synced_at) {
+    _spToast(`⏸ タイマー停止 (${min}分追加・合計 ${t.actual_min}分)。新規分は次回完了時に同期されます`, 'info');
+  } else {
+    _spToast(`⏸ タイマー停止 (${min}分追加・合計 ${t.actual_min}分)`, 'info');
+  }
   spRender();
 }
 
