@@ -93,7 +93,7 @@
     <!-- 通塾生 限定特典 CTA (¥9,800/月) は塾長指示 2026-05-15 で削除
          理由: 本契約生徒には不要・通塾生の実際価格は別管理 -->
 
-    <!-- Trial Onboarding (10日間 完全無料体験プログラム) は塾長指示 2026-05-15 で削除 -->
+    <!-- Trial Onboarding (14日間 完全無料体験プログラム) は塾長指示 2026-05-15 で削除 -->
 
     <!-- Streak & XP Bar -->
     <section class="streak-section">
@@ -1303,7 +1303,7 @@
         const s = data.student;
         if (!s) return;
         const statusText = {
-          'trial': '🎖 10日間 完全無料体験中（クレカ登録なし）',
+          'trial': '🎖 14日間 完全無料体験中（クレカ登録なし）',
           'paid': '✅ 月額プラン契約中',
           'canceled': '⏹ 解約済み（期間終了まで利用可）',
           'expired': '⏱ 体験終了',
@@ -1361,7 +1361,7 @@
 
     // 解約ボタン (トライアル中心、有料でもStripe API経由)
     cancelBtn.addEventListener('click', async () => {
-      if (!confirm('本当に解約しますか？\n\n・10日間の無料体験期間が残っている場合は、期間終了まで利用可能です\n・体験中は元々課金されていないため返金は発生しません\n・後日再契約は可能です')) return;
+      if (!confirm('本当に解約しますか？\n\n・14日間の無料体験期間が残っている場合は、期間終了まで利用可能です\n・体験中は元々課金されていないため返金は発生しません\n・後日再契約は可能です')) return;
       cancelBtn.disabled = true;
       cancelBtn.textContent = '⏳ 処理中...';
       try {

@@ -128,9 +128,9 @@ ENROLLMENT_FEE = 10000
 STUDENT_ADDON_PRICE = 5000
 
 # 創設メンバー体験は完全無料化 (CVR最大化方針)
-# 10日間 = GW長期休みに集中体験 → 休み明けに本契約継続を狙う設計
+# 14日間 = 2 週間で学習習慣変化 + 集中体験 → 本契約継続を狙う設計 (2026-05-19 10→14 拡張)
 FOUNDER_TRIAL_PRICE = 0
-FOUNDER_TRIAL_DAYS = 10  # 旧 7→10 日に拡張 (塾長指示 2026-05-06: 学習管理 + ZOOM 授業を体感する適度な期間)
+FOUNDER_TRIAL_DAYS = 14  # 10→14 日に拡張 (塾長指示 2026-05-19: スタサプ/Duolingo の 14 日標準に合わせ、学習習慣変化の最小単位 = 14日に到達。集客 funnel 改善 #1)
 # 旧 100名 → 新 50名限定 (2026-04-28 ピボット・¥14,500/月 永年・premium全機能)
 FOUNDER_LIMIT = int(os.getenv("FOUNDER_LIMIT", "50"))
 
@@ -1048,6 +1048,17 @@ def init_db():
         ("msg_attachment_mime", "ALTER TABLE messages ADD COLUMN attachment_mime TEXT"),
         ("msg_attachment_size", "ALTER TABLE messages ADD COLUMN attachment_size INTEGER"),
         ("msg_attachment_data_b64", "ALTER TABLE messages ADD COLUMN attachment_data_b64 TEXT"),
+        # 📊 集客 attribution (塾長指示 2026-05-19): paid 化した生徒の流入元を分析するため utm 列追加
+        # signup_utm_source: threads/x/instagram/chatgpt_store/google/youtube 等のチャネル識別
+        # signup_utm_content: 投稿型識別 (authority/testimonial 等の SNS 学習用)
+        # signup_utm_campaign: campaign 識別 (custom_gpt_funnel_xxx 等)
+        # signup_lp_variant: LP A/B variant 識別 (v2_baseline / v3_50limit / v3_results)
+        # signup_referrer: HTTP referer (utm 無し時の補助情報・最大 500 字)
+        ("signup_utm_source", "ALTER TABLE students ADD COLUMN signup_utm_source TEXT DEFAULT NULL"),
+        ("signup_utm_content", "ALTER TABLE students ADD COLUMN signup_utm_content TEXT DEFAULT NULL"),
+        ("signup_utm_campaign", "ALTER TABLE students ADD COLUMN signup_utm_campaign TEXT DEFAULT NULL"),
+        ("signup_lp_variant", "ALTER TABLE students ADD COLUMN signup_lp_variant TEXT DEFAULT NULL"),
+        ("signup_referrer", "ALTER TABLE students ADD COLUMN signup_referrer TEXT DEFAULT NULL"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -1637,6 +1648,12 @@ class TrialSignup(BaseModel):
     goal: Optional[str] = None
     plan: Optional[str] = "hybrid"
     ref: Optional[str] = None  # 紹介URLの ref コード (ある時は referrer に coupon 付与経路を作る)
+    # 📊 集客 attribution (塾長指示 2026-05-19): paid 化分析のため utm をフロント送信
+    utm_source: Optional[str] = None  # threads/x/instagram/chatgpt_store/google/youtube
+    utm_content: Optional[str] = None  # authority/testimonial/cta_footer/cta_inline 等
+    utm_campaign: Optional[str] = None  # custom_gpt_funnel_xxx 等
+    lp_variant: Optional[str] = None  # v2_baseline/v3_50limit/v3_results
+    referrer: Optional[str] = None  # HTTP referer (utm 無し時の補助情報)
 
     @field_validator("name")
     @classmethod
@@ -2128,7 +2145,7 @@ def _send_trial_unused_warning_email(to_email: str, student_name: str, stage: st
             f"AI チューターや問題生成・学習記録など、体験できる機能はすべて無料で使えます。"
         )
         cta_label = "🎓 ログインして体験を始める"
-        bottom = "体験期間は 10 日間。何もしなければ自動終了し、課金は一切発生しません。"
+        bottom = "体験期間は 14 日間。何もしなければ自動終了し、課金は一切発生しません。"
     elif stage == "late":
         subject = f"【AIコーチング】無料体験 終了まで {days_unused} 日 — まだ未利用です"
         body_intro = (
@@ -2201,7 +2218,7 @@ def _send_trial_ending_email(to_email: str, student_name: str, days_left: int, u
 <p>{greeting}、体験のご利用ありがとうございます。</p>
 
 <p style="background:#f8f9fc; padding:1rem; border-left:4px solid #6366f1; border-radius:4px; margin: 1.5rem 0;">
-  📅 <strong>10日間の無料体験は{days_text}で終了します</strong>
+  📅 <strong>14日間の無料体験は{days_text}で終了します</strong>
 </p>
 
 <p><strong>継続してご利用されたい方</strong>は、以下のボタンから月額プランの本登録をお願いします。</p>
@@ -2249,7 +2266,7 @@ JUKUCHO_PERSONA = """あなたは「足立翔平」、200名規模の塾を10年
 - 月¥5万の塾で苦しむ家庭への憤りがエネルギー源
 - AIで質を落とさず1/3価格を実現した
 - Threadsでフォロワー集客中(現在地は0からのスタート)
-- 創設メンバー50名限定 永年¥14,500/月 / 10日間 完全無料体験(クレカ不要)
+- 創設メンバー50名限定 永年¥14,500/月 / 14日間 完全無料体験(クレカ不要)
 - 元現場の本音を語るキャラ・売り込み臭は出さない"""
 
 THREADS_RULES = """【Threadsアルゴリズム最適化ルール (絶対遵守)】
@@ -2557,7 +2574,7 @@ def _generate_daily_sns_posts() -> list:
 - **数字×権威型**: 末尾に「→ https://trillion-ai-juku.com/lp.html?utm_source=threads&utm_content=authority」
 - **体験談ストーリー型**: 末尾に「→ https://trillion-ai-juku.com/lp.html?utm_source=threads&utm_content=testimonial」
 
-リンク前には「気になる方は」「詳細はこちら」「10日間無料体験」などの自然な導入文を1行で書いてください。
+リンク前には「気になる方は」「詳細はこちら」「14日間無料体験」などの自然な導入文を1行で書いてください。
 他の3 type (逆説型/保護者あるある共感型/二択問いかけ型) はリンクを含めないこと。
 
 【出力形式】純粋なJSONのみ、他のテキストは含めない:
@@ -5141,7 +5158,7 @@ def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, otp
     greeting = f"{safe_name}さまの保護者さま" if safe_name else "保護者さま"
     body_intro = (
         f"""<p>{greeting}、ご登録ありがとうございます 🎉</p>
-    <p>10日間の無料体験が始まりました。<strong>以下の6桁コードをアプリに入力</strong>してログインしてください。</p>"""
+    <p>14日間の無料体験が始まりました。<strong>以下の6桁コードをアプリに入力</strong>してログインしてください。</p>"""
         if is_welcome else
         f"<p>{greeting}、以下の6桁コードをアプリに入力してログインしてください。</p>"
     )
@@ -8622,7 +8639,7 @@ async def admin_send_ig_carousel(
         "【¥14,500/月 永年保証】\n"
         "創設メンバー50名限定 / 契約後も値上げなし\n"
         "通常¥39,800のところ、永年この価格。\n\n"
-        "【10日間 完全無料】\n"
+        "【14日間 完全無料】\n"
         "クレカ登録なし。自動課金なし。\n\n"
         "【申込】\n"
         "プロフィールURL、または\n"
@@ -8650,7 +8667,7 @@ async def admin_send_ig_carousel(
         "ここまでの5機能を全部回すと、市販の参考書+個別塾+添削サービスを足したくらいの体験になります。\n\n"
         "それを月¥14,500。通常 ¥39,800 のところ、創設メンバー50名は永年¥14,500で固定。残り18席。\n\n"
         "「説明されて納得する」より「画面を見て確信する」ほうが、たぶん早い。\n\n"
-        "10日間、完全無料で全機能触れます。クレカ登録なし。MARCH・関関同立から東大まで対応。中堅大学を切り捨てた塾ではありません。\n\n"
+        "14日間、完全無料で全機能触れます。クレカ登録なし。MARCH・関関同立から東大まで対応。中堅大学を切り捨てた塾ではありません。\n\n"
         "見たら、止まらないです。\n\n"
         "trillion-ai-juku.com/lp.html\n\n"
         "#ai塾 #大学受験 #高校受験 #塾選び #家庭教師 #英検 #自宅学習 #生成ai #高校生勉強垢 #中学生勉強垢"
@@ -10220,6 +10237,108 @@ def admin_autopilot_dashboard(authorization: Optional[str] = Header(None)):
         }
     finally:
         conn.close()
+
+
+@app.get("/api/admin/marketing/paid-attribution")
+def admin_paid_attribution(days: int = 90, authorization: Optional[str] = Header(None),
+                            x_cron_secret: Optional[str] = Header(None)):
+    """📊 paid 化した生徒の流入元 attribution (塾長指示 2026-05-19 集客 audit)
+    students テーブルの signup_utm_* / signup_lp_variant 列から
+    paid 顧客の流入経路を集計。「どの channel/variant/SNS post が paid 化したか」を可視化。
+
+    認証: admin Bearer or X-Cron-Secret (autonomous audit 用)
+    クエリ: ?days=90 (default 過去 90 日の paid_since 範囲・最大 365)
+
+    返却:
+      - by_source: {utm_source: {paid: n, trial: m, conversion_rate: p}}
+      - by_content: {utm_content: {同上}}
+      - by_variant: {lp_variant: {同上}}
+      - top_paid_sources: 上位 5 流入元
+      - data_quality: utm 欠落率
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    if days < 1 or days > 365:
+        days = 90
+    conn = db()
+    c = conn.cursor()
+    try:
+        # 過去 days 日内の signup で paid 化した students + trial のまま
+        threshold = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        c.execute(
+            """SELECT signup_utm_source, signup_utm_content, signup_utm_campaign, signup_lp_variant,
+                      status, plan
+               FROM students
+               WHERE created_at >= ?""",
+            (threshold,)
+        )
+        rows = c.fetchall()
+    except Exception as e:
+        log.warning(f"[paid-attribution] query failed: {e}")
+        conn.close()
+        raise HTTPException(status_code=500, detail=f"query failed: {type(e).__name__}")
+    conn.close()
+    # 集計
+    def _agg_by(key_idx):
+        agg = {}
+        for r in rows:
+            k = r[key_idx] or "(unknown)"
+            if k not in agg:
+                agg[k] = {"paid": 0, "trial": 0, "canceled": 0, "expired": 0, "other": 0}
+            status = (r[4] or "other")
+            if status == "paid":
+                agg[k]["paid"] += 1
+            elif status == "trial":
+                agg[k]["trial"] += 1
+            elif status == "canceled":
+                agg[k]["canceled"] += 1
+            elif status == "expired":
+                agg[k]["expired"] += 1
+            else:
+                agg[k]["other"] += 1
+        # conversion_rate 算出 (paid / (paid + trial + canceled + expired))
+        for k, v in agg.items():
+            total = v["paid"] + v["trial"] + v["canceled"] + v["expired"]
+            v["total"] = total
+            v["conversion_rate"] = round(v["paid"] / total, 3) if total > 0 else 0
+        return agg
+    by_source = _agg_by(0)
+    by_content = _agg_by(1)
+    by_campaign = _agg_by(2)
+    by_variant = _agg_by(3)
+    # top 5 paid sources
+    top_paid_sources = sorted(
+        [{"source": k, **v} for k, v in by_source.items() if v["paid"] > 0],
+        key=lambda x: x["paid"], reverse=True
+    )[:5]
+    # data quality: utm 欠落率
+    total_rows = len(rows)
+    missing_source = sum(1 for r in rows if not r[0])
+    missing_variant = sum(1 for r in rows if not r[3])
+    return {
+        "ok": True,
+        "days": days,
+        "total_signups": total_rows,
+        "by_source": by_source,
+        "by_content": by_content,
+        "by_campaign": by_campaign,
+        "by_variant": by_variant,
+        "top_paid_sources": top_paid_sources,
+        "data_quality": {
+            "missing_utm_source": missing_source,
+            "missing_utm_source_pct": round(missing_source / total_rows, 3) if total_rows > 0 else 0,
+            "missing_lp_variant": missing_variant,
+            "missing_lp_variant_pct": round(missing_variant / total_rows, 3) if total_rows > 0 else 0,
+            "note": "2026-05-19 以降の signup のみ utm 保存。それ以前は (unknown) で集計される。",
+        },
+    }
 
 
 @app.get("/api/admin/marketing/channel-bandit-status")
@@ -16946,19 +17065,27 @@ def trial_signup(payload: TrialSignup, request: Request):
     grade = (payload.grade or "")[:50]
     goal = (payload.goal or "")[:500]
     plan = (payload.plan or "hybrid")[:50]
+    # 📊 集客 attribution (2026-05-19): フロントから送信された utm を最大長 cap 付きで保存
+    utm_source = (payload.utm_source or "")[:50] or None
+    utm_content = (payload.utm_content or "")[:100] or None
+    utm_campaign = (payload.utm_campaign or "")[:100] or None
+    lp_variant = (payload.lp_variant or "")[:50] or None
+    referrer = (payload.referrer or "")[:500] or None
 
     now = datetime.now(timezone.utc)
-    trial_end = now + timedelta(days=FOUNDER_TRIAL_DAYS)  # 10 日間の完全無料体験 (2026-05-06)
+    trial_end = now + timedelta(days=FOUNDER_TRIAL_DAYS)  # 14 日間の完全無料体験 (2026-05-19 拡張)
     conn = db()
     c = conn.cursor()
     is_existing = False
     try:
         c.execute(
-            """INSERT INTO students (name, email, student_email, grade, goal, plan, status, trial_start, trial_end)
-               VALUES (?, ?, ?, ?, ?, ?, 'trial', ?, ?)
+            """INSERT INTO students (name, email, student_email, grade, goal, plan, status, trial_start, trial_end,
+                signup_utm_source, signup_utm_content, signup_utm_campaign, signup_lp_variant, signup_referrer)
+               VALUES (?, ?, ?, ?, ?, ?, 'trial', ?, ?, ?, ?, ?, ?, ?)
                RETURNING id""",
             (payload.name, email_norm, student_email_norm, grade, goal,
-             plan, now.isoformat(), trial_end.isoformat())
+             plan, now.isoformat(), trial_end.isoformat(),
+             utm_source, utm_content, utm_campaign, lp_variant, referrer)
         )
         returned = c.fetchone()
         student_id = returned["id"] if returned else None
@@ -17127,7 +17254,7 @@ def trial_signup(payload: TrialSignup, request: Request):
 # ==========================================================================
 @app.post("/api/stripe/trial-checkout")
 def create_trial_checkout(payload: dict):
-    """10日間 完全無料 体験 (GW 集中体験戦略)。Stripe 決済は発生しない。
+    """14日間 完全無料 体験 (GW 集中体験戦略)。Stripe 決済は発生しない。
     創設メンバー50名枠は本契約 (paid) のみでカウント。体験は無制限に受付。
     2026-05-07: 通塾生プラン (student_addon) は invite_code 検証必須化 (Reviewer A CRITICAL #1)
     """
@@ -17230,7 +17357,7 @@ def create_checkout_session(payload: CheckoutRequest):
     - 創設メンバープラン (founder_special): 永年¥14,500/月 (50名限定・全機能無制限)
     - 通常プラン (premium/family): 月額サブスク
     - 通塾生プラン (student_addon): ¥5,000/月・**招待コード必須** (HMAC トークン)
-    - 体験は別途 /api/stripe/trial-checkout で 10日間 完全無料 (Stripe を経由しない)
+    - 体験は別途 /api/stripe/trial-checkout で 14日間 完全無料 (Stripe を経由しない)
     """
     price_info = PRICE_MAP.get(payload.plan)
     if not price_info:
@@ -17410,7 +17537,7 @@ def create_checkout_session(payload: CheckoutRequest):
         }
 
     # 継続本契約: 月額サブスク。トライアル無し（即時課金）。
-    # 体験期間は別途 /api/stripe/trial-checkout で 10日間 完全無料 (Stripe 不経由)。
+    # 体験期間は別途 /api/stripe/trial-checkout で 14日間 完全無料 (Stripe 不経由)。
     # 入塾金はWebhook (checkout.session.completed) で InvoiceItem として
     # 顧客に作成 → 初回請求書に自動的に乗る。
     # 先着100名キャンペーン枠が残っていれば入塾金免除フラグを立てる
@@ -17992,7 +18119,7 @@ LINE_TEMPLATES = {
     "trial_ending": lambda p: {
         "type": "text",
         "text": f"⏰ 無料体験終了まであと{p.get('days_left', 3)}日\n\n"
-                f"{p.get('name', '生徒')}さんは10日間で:\n"
+                f"{p.get('name', '生徒')}さんは14日間で:\n"
                 f"⏱ {p.get('hours', 0)}時間学習\n"
                 f"💬 AI質問 {p.get('questions', 0)}回\n\n"
                 f"継続するにはこちら👇\n"
@@ -18325,7 +18452,7 @@ def _send_trial_followup_email(to_email: str, student_name: str, days_since: int
         subject = "【AIコーチング】体験期間が終了しました — いつでも再開できます"
         headline = "体験期間が終了しました"
         body_msg = """
-<p>10日間の無料体験をご利用いただき、ありがとうございました。</p>
+<p>14日間の無料体験をご利用いただき、ありがとうございました。</p>
 <p>体験中の学習データはすべて保存されています。<br>
 いつでも月額プランに登録いただければ、続きから学習を再開できます。</p>
 <p style="background:#f0fdf4;padding:1rem;border-left:4px solid #22c55e;border-radius:4px;">
@@ -21925,7 +22052,7 @@ LP_VARIANT_POOL = {
         "description": "成果訴求 (合格実績/学習量)",
         "config": {
             "headline": "🎓 AI が君だけのカリキュラムを設計 — 24時間質問できる個別指導",
-            "cta_text": "10日間の無料体験を始める",
+            "cta_text": "14日間の無料体験を始める",
         },
         "active": True,
     },

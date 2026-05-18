@@ -176,6 +176,24 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     }
   } catch (e) { /* noop */ }
 
+  // 📊 集客 attribution (塾長指示 2026-05-19): URL params + sessionStorage から utm 収集
+  // フロントが追跡してきた流入元を signup と一緒に backend に送る → students テーブルに保存 → paid 化分析の基盤データ
+  function _collectAttribution() {
+    const attr = { utm_source: null, utm_content: null, utm_campaign: null, lp_variant: null, referrer: null };
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      attr.utm_source = sp.get('utm_source') || null;
+      attr.utm_content = sp.get('utm_content') || null;
+      attr.utm_campaign = sp.get('utm_campaign') || null;
+      // lp_variant は lp.html (bandit) が localStorage.aj_lp_variant に書き込む
+      attr.lp_variant = localStorage.getItem('aj_lp_variant') || null;
+      // referrer (utm 無し時の補助)
+      attr.referrer = document.referrer ? document.referrer.slice(0, 500) : null;
+    } catch (_) { /* graceful */ }
+    return attr;
+  }
+  const attribution = _collectAttribution();
+
   const payload = {
     plan,
     name: `${lastName}${firstName}`,
@@ -184,6 +202,7 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     grade,
     goal: document.getElementById('goal').value,
     ref: refCode || undefined,
+    ...attribution,  // utm_source / utm_content / utm_campaign / lp_variant / referrer
   };
 
   submitBtn.disabled = true;
