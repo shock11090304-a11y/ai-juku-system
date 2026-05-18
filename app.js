@@ -3971,6 +3971,43 @@ function spImportFromCurriculum() {
           completed_at: null,
           notes: phase ? `フェーズ${phase.num}` : '',
         });
+
+        // 🎯 A: SRS (Spaced Repetition) - 単語帳タスクに 3日後・1週後 復習を自動挿入 (塾長指示 2026-05-18)
+        // 忘却曲線に沿って同じ範囲を 2 回追加。各 10 分の高速復習で定着率を 2-3 倍に
+        const VOCAB_BOOKS = ['シス単','システム英単語','ターゲット1900','英単語ターゲット','鉄壁','速読英単語','古文単語ゴロゴ','ゴロゴ','現代文キーワード読解'];
+        const isVocab = VOCAB_BOOKS.some(v => advancedTitle.indexOf(v) !== -1);
+        if (isVocab) {
+          // +3 日後 復習
+          const day3 = new Date(dayDate); day3.setDate(day3.getDate() + 3);
+          if (day3 <= endDate) {
+            imported.push({
+              id: 'c_' + Math.random().toString(36).slice(2, 12),
+              source: 'curriculum',
+              planned_date: _spDateStr(day3),
+              subject: t.subject,
+              title: `🔁 復習: ${advancedTitle} (3日前範囲・高速)`,
+              duration_min: 10,
+              completed: false,
+              completed_at: null,
+              notes: 'SRS 3日後 自動挿入 (忘却曲線対策)',
+            });
+          }
+          // +7 日後 復習
+          const day7 = new Date(dayDate); day7.setDate(day7.getDate() + 7);
+          if (day7 <= endDate) {
+            imported.push({
+              id: 'c_' + Math.random().toString(36).slice(2, 12),
+              source: 'curriculum',
+              planned_date: _spDateStr(day7),
+              subject: t.subject,
+              title: `🔁 復習: ${advancedTitle} (1週前範囲・高速)`,
+              duration_min: 10,
+              completed: false,
+              completed_at: null,
+              notes: 'SRS 1週後 自動挿入 (忘却曲線対策)',
+            });
+          }
+        }
       }
     }
     cursor.setDate(cursor.getDate() + 7);
@@ -4151,10 +4188,206 @@ function spRenderProgress() {
     </div>`;
 }
 
+// 📚 教材別進捗バー (塾長指示 2026-05-18 C: 完走予測)
+// 各タスクから教材名を検出 → 進捗計算 → 完走予定日 を表示
+function spRenderTextbookProgress() {
+  const out = document.getElementById('spTextbookProgress');
+  const card = document.getElementById('spTextbookProgressCard');
+  if (!out || !card) return;
+  const data = spLoad();
+  if (!Array.isArray(data.tasks) || data.tasks.length === 0) {
+    card.style.display = 'none';
+    return;
+  }
+  // 各 task から教材名を検出
+  const today = spTodayJST();
+  const byBook = {};
+  for (const t of data.tasks) {
+    if (!t.title) continue;
+    // TEXTBOOK_TOTAL_UNITS の長い key を優先で検出
+    const keys = Object.keys(TEXTBOOK_TOTAL_UNITS).sort((a, b) => b.length - a.length);
+    let detectedBook = null;
+    for (const k of keys) {
+      if (t.title.indexOf(k) !== -1) { detectedBook = k; break; }
+    }
+    if (!detectedBook) continue;
+    if (!byBook[detectedBook]) {
+      byBook[detectedBook] = {
+        total: TEXTBOOK_TOTAL_UNITS[detectedBook],
+        completedTasks: 0,
+        totalTasks: 0,
+        maxUnit: 0,
+        firstDate: null,
+        lastDate: null,
+      };
+    }
+    const b = byBook[detectedBook];
+    b.totalTasks++;
+    if (t.completed) b.completedTasks++;
+    // 範囲・第N から到達した unit 番号を抽出
+    const rangeM = t.title.match(/(\d+)\s*[-〜~–]\s*(\d+)/);
+    const singleM = t.title.match(/第\s*(\d+)\s*[題章講節課]/) || t.title.match(/(?:Lesson|Unit|Chapter)\s*(\d+)/i);
+    let n = 0;
+    if (rangeM) n = parseInt(rangeM[2]);
+    else if (singleM) n = parseInt(singleM[1]);
+    if (n > b.maxUnit) b.maxUnit = n;
+    if (!b.firstDate || t.planned_date < b.firstDate) b.firstDate = t.planned_date;
+    if (!b.lastDate || t.planned_date > b.lastDate) b.lastDate = t.planned_date;
+  }
+  const books = Object.entries(byBook).sort((a, b) => b[1].totalTasks - a[1].totalTasks).slice(0, 8);
+  if (books.length === 0) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = '';
+  // 各教材の進捗バー
+  const html = books.map(([name, b]) => {
+    const pct = Math.min(100, Math.round((b.maxUnit / b.total) * 100));
+    // 完走予定日: 今までの進度から線形外挿
+    let etaStr = '';
+    if (b.firstDate && b.lastDate && b.maxUnit > 0 && b.maxUnit < b.total) {
+      const days = (new Date(b.lastDate) - new Date(b.firstDate)) / 86400000 + 1;
+      const speed = b.maxUnit / Math.max(1, days);
+      const remaining = b.total - b.maxUnit;
+      const etaDays = Math.ceil(remaining / Math.max(0.01, speed));
+      const eta = new Date(); eta.setDate(eta.getDate() + etaDays);
+      etaStr = `<span class="stat" style="font-size:0.72rem;">完走予定 ${_spDateStr(eta)}</span>`;
+    } else if (b.maxUnit >= b.total) {
+      etaStr = '<span class="stat ok" style="font-size:0.72rem;">🎉 全範囲到達</span>';
+    }
+    const barColor = pct >= 80 ? '#10b981' : pct >= 40 ? '#3b82f6' : '#a78bfa';
+    return `<div style="margin-bottom:0.7rem;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:0.82rem; margin-bottom:0.2rem;">
+        <strong style="color:#e2e8f0;">${escapeHtml(name)}</strong>
+        <span style="color:#94a3b8; font-size:0.75rem;">${b.maxUnit} / ${b.total} (${pct}%)</span>
+      </div>
+      <div style="height:8px; background:rgba(0,0,0,0.3); border-radius:4px; overflow:hidden;">
+        <div style="height:100%; background:linear-gradient(90deg,${barColor},${barColor}80); width:${pct}%; transition:width 0.4s;"></div>
+      </div>
+      ${etaStr ? `<div style="margin-top:0.2rem;">${etaStr}</div>` : ''}
+    </div>`;
+  }).join('');
+  out.innerHTML = html;
+}
+
 function spRender() {
   spRenderProgress();
+  spRenderTextbookProgress();
   spRenderToday();
   spRenderWeek();
+}
+
+// 🎯 D: 弱点 TOP3 を学習計画に自動反映 (塾長指示 2026-05-18)
+// session token があれば /api/student/weakness-top3 を fetch → 各弱点に対し
+// 次週の月-金 から 1-2 件、復習タスクを追加 (subject + topic で識別)
+async function spApplyWeaknessToplan() {
+  const token = (typeof localStorage !== 'undefined') ? (localStorage.getItem('ai_juku_session_token') || '') : '';
+  const s = getCurrentStudent ? getCurrentStudent() : null;
+  if (!s || !s.id || s.id === 'guest') {
+    alert('生徒情報が取得できません。ログインしてから再実行してください。');
+    return;
+  }
+  if (!token) {
+    alert('セッショントークンがありません。生徒ページからログインしてください。');
+    return;
+  }
+  try {
+    const url = `${BACKEND_URL || ''}/api/student/weakness-top3?student_id=${encodeURIComponent(s.id)}&limit=3`;
+    const resp = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!resp.ok) { alert(`弱点データ取得失敗 (${resp.status})`); return; }
+    const json = await resp.json();
+    if (!json.ok) { alert('弱点データ取得失敗'); return; }
+    const weaknesses = json.weaknesses || [];
+    if (weaknesses.length === 0) {
+      alert('現在記録されている弱点データはありません。学習を続けると自動で TOP3 が抽出されます。');
+      return;
+    }
+    // 次週の月-金 を計算
+    const monday = spWeekMonday(1); // 次週月曜
+    const data = spLoad();
+    const subjectMap = { math: '数学', physics: '理科', chemistry: '理科', biology: '理科', english: '英語', japanese: '国語', social: '社会', other: 'その他' };
+    const SUBJECTS = ['英語', '数学', '国語', '理科', '社会', 'その他'];
+    let added = 0;
+    weaknesses.slice(0, 3).forEach((w, i) => {
+      const subj = subjectMap[(w.subject || '').toLowerCase()] || (w.subject || '英語');
+      const topic = w.topic || '基礎復習';
+      // 月/水/金 等にバラけて挿入 (i=0→月, i=1→水, i=2→金)
+      const dayOffset = i * 2;
+      const planned = spAddDays(monday, dayOffset);
+      const taskTitle = `🎯 弱点復習: ${topic} (出題頻度 ${w.question_count || '?'}回)`;
+      // 同じ title/date が既に存在する場合はスキップ (idempotent)
+      const exists = data.tasks.some(t => t.planned_date === planned && t.title === taskTitle);
+      if (exists) return;
+      data.tasks.push({
+        id: 'w_' + Math.random().toString(36).slice(2, 12),
+        source: 'weakness',
+        planned_date: planned,
+        subject: SUBJECTS.includes(subj) ? subj : 'その他',
+        title: taskTitle,
+        duration_min: 30,
+        completed: false,
+        completed_at: null,
+        notes: `自動挿入: 弱点 TOP${i + 1} (${w.subject}/${topic})`,
+      });
+      added++;
+    });
+    spSave(data);
+    spRender();
+    alert(`✅ ${added} 件の弱点復習タスクを次週に追加しました。\n弱点 TOP3 に基づき、月/水/金 にバラけて配置。`);
+  } catch (e) {
+    console.error('[weakness-to-plan]', e);
+    alert('弱点反映でエラー: ' + (e.message || 'unknown'));
+  }
+}
+
+// 🎯 B: 遅延タスクを次週に圧縮再計画 (塾長指示 2026-05-18)
+// 過去 (planned_date < today) で未完のタスクを抽出 → 次週月-土に均等配分
+function spReplanOverdue() {
+  const data = spLoad();
+  const today = spTodayJST();
+  const overdue = data.tasks.filter(t => !t.completed && t.planned_date < today && t.source !== 'milestone');
+  if (overdue.length === 0) {
+    alert('遅延タスクはありません 🎉');
+    return;
+  }
+  if (!confirm(`📅 ${overdue.length} 件の遅延タスクを次週の月-土に圧縮再計画します。\n\n優先順位:\n1. 重要度の高いカリキュラム由来タスクを優先\n2. 残り時間で 1 日上限 4h まで\n3. 上限超過分は廃棄 (削除)\n\n続行しますか?`)) return;
+  // 次週 6 日分の配置先 (月-土)
+  const monday = spWeekMonday(1);
+  const dayCapacityMin = 240; // 1 日 4 時間まで
+  const daySlots = Array.from({ length: 6 }, (_, i) => ({
+    date: spAddDays(monday, i),
+    usedMin: 0,
+  }));
+  // 既存タスクで既に予定されている時間を加算
+  for (const t of data.tasks) {
+    const slot = daySlots.find(s => s.date === t.planned_date);
+    if (slot && !t.completed) slot.usedMin += (t.duration_min || 30);
+  }
+  // 重要度ソート: curriculum > weakness > manual (source 順)
+  const priority = { curriculum: 1, weakness: 2, manual: 3 };
+  overdue.sort((a, b) => (priority[a.source] || 9) - (priority[b.source] || 9));
+  let replanned = 0;
+  let dropped = 0;
+  for (const t of overdue) {
+    const need = t.duration_min || 30;
+    const slot = daySlots.find(s => s.usedMin + need <= dayCapacityMin);
+    if (slot) {
+      t.planned_date = slot.date;
+      slot.usedMin += need;
+      replanned++;
+    } else {
+      // 1 日 4h 上限超過 → 削除
+      dropped++;
+    }
+  }
+  // 廃棄分を tasks から除去
+  if (dropped > 0) {
+    const droppedIds = new Set(overdue.slice(-dropped).map(t => t.id));
+    data.tasks = data.tasks.filter(t => !droppedIds.has(t.id));
+  }
+  spSave(data);
+  spRender();
+  alert(`✅ 遅延 ${overdue.length} 件のうち ${replanned} 件を次週に再配置${dropped > 0 ? `、${dropped} 件は容量超過のため廃棄` : ''}。\n\n来週は月-土 各 4h 以内で挽回します。`);
 }
 
 function spInit() {
@@ -4168,6 +4401,8 @@ function spInit() {
   hook('spNextWeek', () => { _spWeekOffset++; spRender(); });
   hook('spAddBtn', spAddManualTask);
   hook('spClearBtn', spClearAll);
+  hook('spWeaknessBtn', spApplyWeaknessToplan);
+  hook('spDelayReplanBtn', spReplanOverdue);
   spRender();
 }
 // window に公開してタブ起動時・チェック時に呼び出せるように
