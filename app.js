@@ -4072,6 +4072,12 @@ function spToggleTask(taskId) {
   if (!t) return;
   t.completed = !t.completed;
   t.completed_at = t.completed ? new Date().toISOString() : null;
+  // 🎯 タイマー実行中なら自動停止 + 実績時間記録 (塾長指示 2026-05-18)
+  if (t.completed && t.started_at && !t.actual_min) {
+    const elapsedMs = new Date(t.completed_at) - new Date(t.started_at);
+    t.actual_min = Math.max(1, Math.round(elapsedMs / 60000));
+    t.started_at = null; // タイマー停止
+  }
   // streak 更新: 今日完了ならストリーク++
   const today = spTodayJST();
   if (t.completed) {
@@ -4083,6 +4089,42 @@ function spToggleTask(taskId) {
       if (data.streak.current > data.streak.best) data.streak.best = data.streak.current;
     }
   }
+  spSave(data);
+  spRender();
+}
+
+// 🎯 タイマー開始/停止 (塾長指示 2026-05-18 学習時間自動計測)
+// started_at を記録 → 完了時に経過時間を actual_min に保存
+function spStartTimer(taskId) {
+  const data = spLoad();
+  const t = data.tasks.find(x => x.id === taskId);
+  if (!t) return;
+  // 他に実行中のタイマーがあれば停止して時間を保存 (1 タスクずつしか実行できない)
+  let stoppedOther = null;
+  for (const ot of data.tasks) {
+    if (ot.id !== taskId && ot.started_at && !ot.completed) {
+      const elapsedMs = Date.now() - new Date(ot.started_at).getTime();
+      ot.actual_min = (ot.actual_min || 0) + Math.max(1, Math.round(elapsedMs / 60000));
+      ot.started_at = null;
+      stoppedOther = ot.title;
+    }
+  }
+  t.started_at = new Date().toISOString();
+  spSave(data);
+  spRender();
+  if (stoppedOther) {
+    setTimeout(() => alert(`他のタイマーが実行中だったため停止しました:\n「${stoppedOther}」`), 100);
+  }
+}
+
+function spStopTimer(taskId) {
+  const data = spLoad();
+  const t = data.tasks.find(x => x.id === taskId);
+  if (!t || !t.started_at) return;
+  const elapsedMs = Date.now() - new Date(t.started_at).getTime();
+  const min = Math.max(1, Math.round(elapsedMs / 60000));
+  t.actual_min = (t.actual_min || 0) + min;
+  t.started_at = null;
   spSave(data);
   spRender();
 }
@@ -4107,15 +4149,41 @@ function spEscape(s) {
 
 function spTaskCard(t, isToday) {
   const overdue = !t.completed && t.planned_date < spTodayJST();
-  const cls = ['sp-task', t.completed ? 'completed' : '', overdue ? 'overdue' : ''].filter(Boolean).join(' ');
+  const isRunning = !!t.started_at && !t.completed;
+  const cls = ['sp-task', t.completed ? 'completed' : '', overdue ? 'overdue' : '', isRunning ? 'running' : ''].filter(Boolean).join(' ');
   const subjClass = `sp-subject-${t.subject}`;
-  const dur = t.duration_min ? ` · ${t.duration_min}分` : '';
+  const planDur = t.duration_min ? `${t.duration_min}分` : '';
+  // 🎯 実績時間表示: 計画 / 実績 を併記 (塾長指示 2026-05-18)
+  let durStr = '';
+  if (t.actual_min && planDur) {
+    const ratio = t.actual_min / t.duration_min;
+    const ratioClass = ratio > 1.3 ? 'danger' : (ratio < 0.7 ? 'warn' : 'ok');
+    durStr = ` · 計画${planDur} / <span class="sp-actual sp-actual-${ratioClass}">実績${t.actual_min}分</span>`;
+  } else if (t.actual_min) {
+    durStr = ` · 実績${t.actual_min}分`;
+  } else if (planDur) {
+    durStr = ` · ${planDur}`;
+  }
+  // 🎯 タイマー UI: 未開始は ▶️ 開始 / 実行中は ⏹ 停止 (経過秒表示) を表示
+  let timerBtn = '';
+  if (!t.completed && isToday) {
+    if (isRunning) {
+      const startedMs = new Date(t.started_at).getTime();
+      const elapsedSec = Math.floor((Date.now() - startedMs) / 1000);
+      const mm = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+      const ss = String(elapsedSec % 60).padStart(2, '0');
+      timerBtn = `<button class="sp-timer-btn sp-timer-stop" data-tid="${t.id}" onclick="event.stopPropagation(); spStopTimer('${t.id}')" title="タイマー停止">⏹ ${mm}:${ss}</button>`;
+    } else if (!t.actual_min) {
+      timerBtn = `<button class="sp-timer-btn sp-timer-start" data-tid="${t.id}" onclick="event.stopPropagation(); spStartTimer('${t.id}')" title="タイマー開始">▶️</button>`;
+    }
+  }
   return `<div class="${cls}" data-id="${t.id}">
     <input type="checkbox" ${t.completed ? 'checked' : ''} onclick="event.stopPropagation(); spToggleTask('${t.id}')" aria-label="完了">
     <div class="sp-task-meta">
       <div class="sp-task-title"><span class="sp-task-subject ${subjClass}">${spEscape(t.subject)}</span>${spEscape(t.title)}</div>
-      <div class="sp-task-sub">${isToday ? '今日' : t.planned_date}${dur}${t.source === 'manual' ? ' · 手動' : ''}</div>
+      <div class="sp-task-sub">${isToday ? '今日' : t.planned_date}${durStr}${t.source === 'manual' ? ' · 手動' : ''}</div>
     </div>
+    ${timerBtn}
     <button class="sp-task-del" onclick="event.stopPropagation(); spDeleteTask('${t.id}')" title="削除">×</button>
   </div>`;
 }
@@ -4179,12 +4247,33 @@ function spRenderProgress() {
   const overdue = data.tasks.filter(t => !t.completed && t.planned_date < today).length;
   const pct = totalAll === 0 ? 0 : Math.round((doneAll / totalAll) * 100);
   const streak = data.streak?.current || 0;
+  // 🎯 学習時間集計: 今日 + 今週 の actual_min 合計 + 実行中タイマー (塾長指示 2026-05-18)
+  const todayTasks = data.tasks.filter(t => t.planned_date === today);
+  let todayActualMin = todayTasks.reduce((sum, t) => sum + (t.actual_min || 0), 0);
+  let weekActualMin = weekTasks.reduce((sum, t) => sum + (t.actual_min || 0), 0);
+  // 実行中タイマー分も加算
+  const runningTasks = data.tasks.filter(t => t.started_at && !t.completed);
+  for (const rt of runningTasks) {
+    const liveMin = Math.max(0, Math.round((Date.now() - new Date(rt.started_at).getTime()) / 60000));
+    if (rt.planned_date === today) todayActualMin += liveMin;
+    if (rt.planned_date >= mon && rt.planned_date <= sun) weekActualMin += liveMin;
+  }
+  const todayPlanMin = todayTasks.reduce((sum, t) => sum + (t.duration_min || 0), 0);
+  const weekPlanMin = weekTasks.reduce((sum, t) => sum + (t.duration_min || 0), 0);
+  const fmt = (m) => m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ''}` : `${m}分`;
+  const timeStats = (todayActualMin + weekActualMin > 0) ? `
+    <span class="stat ${todayActualMin >= todayPlanMin * 0.8 ? 'ok' : ''}" title="今日の実績学習時間">⏱ 今日 ${fmt(todayActualMin)}${todayPlanMin ? ` / 計画 ${fmt(todayPlanMin)}` : ''}</span>
+    <span class="stat" title="今週の累計学習時間">📊 今週 ${fmt(weekActualMin)}${weekPlanMin ? ` / 計画 ${fmt(weekPlanMin)}` : ''}</span>
+  ` : '';
+  const runningNote = runningTasks.length > 0 ? `<span class="stat warn" style="animation:pulse 2s infinite;">▶️ 計測中 ${runningTasks.length} 件</span>` : '';
   out.innerHTML = `
     <div class="sp-progress-bar"><div class="sp-progress-fill" style="width:${pct}%"></div></div>
     <div class="sp-progress-stats">
       <span class="stat ${pct >= 70 ? 'ok' : ''}">今週 ${doneAll}/${totalAll} 件 (${pct}%)</span>
       <span class="stat ${streak >= 3 ? 'ok' : ''}">🔥 連続 ${streak}日</span>
       ${overdue > 0 ? `<span class="stat danger">⚠️ 遅延 ${overdue}件</span>` : '<span class="stat ok">遅延なし</span>'}
+      ${runningNote}
+      ${timeStats}
     </div>`;
 }
 
@@ -4404,11 +4493,24 @@ function spInit() {
   hook('spWeaknessBtn', spApplyWeaknessToplan);
   hook('spDelayReplanBtn', spReplanOverdue);
   spRender();
+  // 🎯 タイマー表示更新: 5 秒ごとに実行中タイマーの経過時間を更新 (塾長指示 2026-05-18)
+  if (!window._spTimerInterval) {
+    window._spTimerInterval = setInterval(() => {
+      const data = spLoad();
+      if (Array.isArray(data.tasks) && data.tasks.some(t => t.started_at && !t.completed)) {
+        // 実行中タイマーがあれば再描画 (今日のタスクのみ更新)
+        spRenderToday();
+        spRenderProgress();
+      }
+    }, 5000);
+  }
 }
 // window に公開してタブ起動時・チェック時に呼び出せるように
 window.spInit = spInit;
 window.spToggleTask = spToggleTask;
 window.spDeleteTask = spDeleteTask;
+window.spStartTimer = spStartTimer;
+window.spStopTimer = spStopTimer;
 
 // ==========================================================================
 // TAB: Essay Correction
