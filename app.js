@@ -4226,6 +4226,9 @@ function spStartTimer(taskId) {
     }
   }
   t.started_at = new Date().toISOString();
+  // 🛠 3視点 review fix (2026-05-18): Pomodoro 再開時に notified_cycles リセット (新しい cycle 開始)
+  // これ無しでは再開後 25 分到達しても通知 fire しない
+  t.pomodoro_notified_cycles = 0;
   spSave(data);
   spRender();
   if (stoppedOther) {
@@ -4307,9 +4310,21 @@ function spTaskCard(t, isToday) {
     if (isRunning) {
       const startedMs = new Date(t.started_at).getTime();
       const elapsedSec = Math.floor((Date.now() - startedMs) / 1000);
-      const mm = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
-      const ss = String(elapsedSec % 60).padStart(2, '0');
-      timerBtn = `<button class="sp-timer-btn sp-timer-stop" data-tid="${t.id}" onclick="event.stopPropagation(); spStopTimer('${t.id}')" title="タイマー停止">⏹ ${mm}:${ss}</button>`;
+      // 🍅 Pomodoro モード時: 25 分カウントダウン表示 (集中残り mm:ss)
+      if (spPomodoroEnabled()) {
+        const focusSec = POMODORO_FOCUS_MIN * 60;
+        // 現在の cycle 内の経過秒
+        const inCycle = elapsedSec % focusSec;
+        const remaining = focusSec - inCycle;
+        const mm = String(Math.floor(remaining / 60)).padStart(2, '0');
+        const ss = String(remaining % 60).padStart(2, '0');
+        const cycleNum = Math.floor(elapsedSec / focusSec) + 1;
+        timerBtn = `<button class="sp-timer-btn sp-timer-stop sp-timer-pomodoro" data-tid="${t.id}" onclick="event.stopPropagation(); spStopTimer('${t.id}')" title="Pomodoro 集中中 (停止) 残り時間表示">🍅 残${mm}:${ss}<span class="sp-pomo-cycle">${cycleNum}</span></button>`;
+      } else {
+        const mm = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+        const ss = String(elapsedSec % 60).padStart(2, '0');
+        timerBtn = `<button class="sp-timer-btn sp-timer-stop" data-tid="${t.id}" onclick="event.stopPropagation(); spStopTimer('${t.id}')" title="タイマー停止">⏹ ${mm}:${ss}</button>`;
+      }
     } else if (t.actual_min > 0) {
       // 停止済みで実績あり → 再開ボタン
       // 🛠 round 2 UX fix: 「+再開」は日本語として不自然 → 「再開」 + aria-label で意味伝達
@@ -4615,10 +4630,142 @@ function spRenderCountdown() {
   }
 }
 
+// 📊 学習効率分析ダッシュボード (塾長指示 2026-05-18)
+// 過去 14 日の actual_min データを集計し以下を表示:
+//   - 時間帯別合計時間 (朝/昼/夜)
+//   - 曜日別合計時間
+//   - 科目別配分
+//   - 直近 7 日 vs 前 7 日の比較
+// データ: localStorage の task.started_at + actual_min
+function spRenderEfficiency() {
+  const out = document.getElementById('spEfficiency');
+  const card = document.getElementById('spEfficiencyCard');
+  if (!out || !card) return;
+  const data = spLoad();
+  // 完了 + actual_min > 0 のタスクのみ集計対象
+  const eligibleTasks = data.tasks.filter(t => t.completed && t.actual_min > 0 && t.completed_at);
+  // 🛠 3視点 review fix (2026-05-18 UX): < 3件は hide ではなく「あと N 件で分析開始」表示
+  if (eligibleTasks.length < 3) {
+    // タスク自体は計画されているか確認
+    const hasAnyTask = data.tasks.length > 0;
+    if (!hasAnyTask) {
+      card.style.display = 'none';
+      return;
+    }
+    card.style.display = '';
+    const need = 3 - eligibleTasks.length;
+    const progressPct = Math.round((eligibleTasks.length / 3) * 100);
+    out.innerHTML = `
+      <div style="text-align:center;padding:0.5rem 0;">
+        <div style="font-size:0.85rem;color:#94a3b8;margin-bottom:0.5rem;">
+          ⏳ あと <strong style="color:#a78bfa;">${need}件</strong> のタスク完了で<br>学習効率分析が始まります
+        </div>
+        <div style="height:6px;background:rgba(0,0,0,0.3);border-radius:3px;overflow:hidden;margin:0.5rem 0;">
+          <div style="height:100%;width:${progressPct}%;background:linear-gradient(90deg,#a78bfa,#7c3aed);transition:width 0.4s;"></div>
+        </div>
+        <div style="font-size:0.7rem;color:#6b7280;">現在 ${eligibleTasks.length}/3 件完了</div>
+      </div>`;
+    return;
+  }
+  card.style.display = '';
+  // 時間帯別: 朝 (5-11) / 昼 (11-17) / 夜 (17-24) / 深夜 (0-5)
+  const byTime = { '🌅 朝(5-11時)': 0, '☀️ 昼(11-17時)': 0, '🌙 夜(17-24時)': 0, '🌃 深夜(0-5時)': 0 };
+  // 曜日別 (月-日)
+  const byDow = [0, 0, 0, 0, 0, 0, 0]; // 月=0
+  const dowNames = ['月', '火', '水', '木', '金', '土', '日'];
+  // 科目別
+  const bySubject = {};
+  // 直近 7 日 vs 前 7 日
+  const now = new Date();
+  const sevenAgo = new Date(now); sevenAgo.setDate(sevenAgo.getDate() - 7);
+  const fourteenAgo = new Date(now); fourteenAgo.setDate(fourteenAgo.getDate() - 14);
+  let recent7Min = 0, prev7Min = 0;
+  for (const t of eligibleTasks) {
+    const completedAt = new Date(t.completed_at);
+    const hour = completedAt.getHours();
+    const dow = (completedAt.getDay() + 6) % 7; // 月曜=0
+    const min = t.actual_min || 0;
+    if (hour >= 5 && hour < 11) byTime['🌅 朝(5-11時)'] += min;
+    else if (hour >= 11 && hour < 17) byTime['☀️ 昼(11-17時)'] += min;
+    else if (hour >= 17 && hour < 24) byTime['🌙 夜(17-24時)'] += min;
+    else byTime['🌃 深夜(0-5時)'] += min;
+    byDow[dow] += min;
+    bySubject[t.subject] = (bySubject[t.subject] || 0) + min;
+    if (completedAt >= sevenAgo) recent7Min += min;
+    else if (completedAt >= fourteenAgo) prev7Min += min;
+  }
+  const fmt = (m) => m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ''}` : `${m}分`;
+  // 最高効率時間帯 (最多)
+  const sortedTime = Object.entries(byTime).sort((a, b) => b[1] - a[1]).filter(x => x[1] > 0);
+  const topTime = sortedTime.length > 0 ? sortedTime[0] : null;
+  // 最多曜日
+  const topDowIdx = byDow.indexOf(Math.max(...byDow));
+  // 比較 (recent vs prev)
+  let comparison = '';
+  if (prev7Min > 0) {
+    const diff = recent7Min - prev7Min;
+    const pct = Math.round((diff / prev7Min) * 100);
+    const trendEmoji = pct >= 10 ? '📈' : pct <= -10 ? '📉' : '➡️';
+    const trendColor = pct >= 10 ? '#86efac' : pct <= -10 ? '#f87171' : '#94a3b8';
+    comparison = `<div style="font-size:0.78rem;color:${trendColor};margin-bottom:0.6rem;">${trendEmoji} 直近7日 ${fmt(recent7Min)} (前週比 ${pct >= 0 ? '+' : ''}${pct}%)</div>`;
+  } else {
+    comparison = `<div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.6rem;">直近7日 ${fmt(recent7Min)}</div>`;
+  }
+  // 時間帯バー (max=topTime 値で正規化)
+  const timeMax = topTime ? topTime[1] : 1;
+  const timeBars = Object.entries(byTime).map(([label, min]) => {
+    const pct = Math.round((min / timeMax) * 100);
+    const isTop = topTime && label === topTime[0];
+    return `<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.25rem;font-size:0.72rem;">
+      <span style="min-width:90px;color:${isTop ? '#fbbf24' : '#94a3b8'};font-weight:${isTop ? '700' : '400'};">${label}</span>
+      <div style="flex:1;height:6px;background:rgba(0,0,0,0.3);border-radius:3px;overflow:hidden;">
+        <div style="height:100%;background:${isTop ? '#fbbf24' : '#6366f1'};width:${pct}%;"></div>
+      </div>
+      <span style="min-width:55px;text-align:right;color:#cbd5e1;">${fmt(min)}</span>
+    </div>`;
+  }).join('');
+  // 曜日バー
+  const dowMax = Math.max(...byDow, 1);
+  const dowBars = byDow.map((min, i) => {
+    const pct = Math.round((min / dowMax) * 100);
+    const isTop = i === topDowIdx && min > 0;
+    return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:0.15rem;">
+      <div style="font-size:0.65rem;color:#cbd5e1;height:0.8rem;">${min > 0 ? Math.round(min / 60 * 10) / 10 + 'h' : ''}</div>
+      <div style="height:32px;width:100%;display:flex;align-items:flex-end;">
+        <div style="width:100%;height:${pct}%;background:${isTop ? '#fbbf24' : 'rgba(99,102,241,0.5)'};border-radius:3px 3px 0 0;min-height:2px;"></div>
+      </div>
+      <div style="font-size:0.7rem;color:${isTop ? '#fbbf24' : '#94a3b8'};font-weight:${isTop ? '700' : '400'};">${dowNames[i]}</div>
+    </div>`;
+  }).join('');
+  // 科目円グラフ (テキスト型)
+  const subjEntries = Object.entries(bySubject).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const subjTotal = subjEntries.reduce((s, [, m]) => s + m, 0) || 1;
+  const subjList = subjEntries.map(([s, m]) => {
+    const pct = Math.round((m / subjTotal) * 100);
+    return `<div style="display:flex;justify-content:space-between;font-size:0.72rem;margin-bottom:0.15rem;"><span>${spEscape(s)}</span><span style="color:#94a3b8;">${fmt(m)} (${pct}%)</span></div>`;
+  }).join('');
+  // 推奨メッセージ
+  let recommendation = '';
+  if (topTime && topTime[1] > 0) {
+    recommendation += `<div style="font-size:0.72rem;color:#fde68a;background:rgba(251,191,36,0.10);border-left:3px solid #fbbf24;padding:0.4rem 0.6rem;border-radius:4px;margin-top:0.6rem;">💡 最も学習している時間帯: <strong>${topTime[0]}</strong> — この時間帯の集中力を維持しましょう</div>`;
+  }
+  out.innerHTML = `
+    ${comparison}
+    <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:0.3rem;font-weight:700;">⏰ 時間帯別</div>
+    ${timeBars}
+    <div style="font-size:0.72rem;color:#94a3b8;margin-top:0.7rem;margin-bottom:0.3rem;font-weight:700;">📅 曜日別 (今週分含む)</div>
+    <div style="display:flex;gap:0.25rem;align-items:flex-end;">${dowBars}</div>
+    <div style="font-size:0.72rem;color:#94a3b8;margin-top:0.7rem;margin-bottom:0.3rem;font-weight:700;">📚 科目配分 TOP5</div>
+    ${subjList}
+    ${recommendation}
+    <div style="font-size:0.65rem;color:#6b7280;margin-top:0.5rem;">対象: 完了 + 実績ありタスク ${eligibleTasks.length} 件</div>`;
+}
+
 function spRender() {
   spRenderCountdown();
   spRenderProgress();
   spRenderTextbookProgress();
+  spRenderEfficiency();
   spRenderToday();
   spRenderWeek();
 }
@@ -4736,6 +4883,54 @@ function spReplanOverdue() {
   alert(`✅ 遅延 ${overdue.length} 件のうち ${replanned} 件を次週に再配置${dropped > 0 ? `、${dropped} 件は容量超過のため廃棄` : ''}。\n\n来週は月-土 各 4h 以内で挽回します。`);
 }
 
+// 🍅 Pomodoro モード (塾長指示 2026-05-18)
+// 25 分集中 + 5 分休憩 を 1 サイクル・4 サイクルで 15 分大休憩
+// localStorage `ai_juku_pomodoro_enabled` で生徒ごと ON/OFF
+const POMODORO_FOCUS_MIN = 25;
+const POMODORO_BREAK_MIN = 5;
+const POMODORO_LONG_BREAK_MIN = 15;
+const POMODORO_CYCLES_FOR_LONG = 4;
+
+function _spPomodoroKey() {
+  const s = getCurrentStudent ? getCurrentStudent() : null;
+  return `ai_juku_pomodoro_enabled_${s && s.id ? s.id : 'guest'}`;
+}
+function spPomodoroEnabled() {
+  try { return localStorage.getItem(_spPomodoroKey()) === '1'; } catch { return false; }
+}
+function spTogglePomodoro() {
+  const newState = !spPomodoroEnabled();
+  try { localStorage.setItem(_spPomodoroKey(), newState ? '1' : '0'); } catch {}
+  _spToast(newState ? '🍅 Pomodoro モード ON (25分集中 + 5分休憩)' : '⏱ 通常タイマーモード', 'info');
+  spRender();
+}
+
+// 25 分到達検知: 直前 5 秒間隔 tick で 25*60 を跨いだら toast
+// 重複通知防止: task.pomodoro_notified_cycles で記録
+function _spCheckPomodoroBoundary(task) {
+  if (!task.started_at || task.completed) return;
+  if (!spPomodoroEnabled()) return;
+  const elapsedSec = Math.floor((Date.now() - new Date(task.started_at).getTime()) / 1000);
+  const cycle = Math.floor(elapsedSec / (POMODORO_FOCUS_MIN * 60)); // 0=0-25min, 1=25-50min...
+  if (cycle <= 0) return;
+  const notified = task.pomodoro_notified_cycles || 0;
+  if (cycle <= notified) return;
+  // 新規 boundary 到達
+  const data = spLoad();
+  const t = data.tasks.find(x => x.id === task.id);
+  if (!t) return;
+  t.pomodoro_notified_cycles = cycle;
+  t.pomodoro_cycles = (t.pomodoro_cycles || 0) + 1;
+  spSave(data);
+  // 通知
+  const isLongBreak = t.pomodoro_cycles % POMODORO_CYCLES_FOR_LONG === 0;
+  if (isLongBreak) {
+    _spToast(`🎉 ${t.pomodoro_cycles}サイクル完了! ${POMODORO_LONG_BREAK_MIN}分の大休憩を取りましょう`, 'ok');
+  } else {
+    _spToast(`🍅 集中 ${POMODORO_FOCUS_MIN}分達成 (${t.pomodoro_cycles}サイクル目)! ${POMODORO_BREAK_MIN}分休憩 → ⏹ で停止 or 続行`, 'info');
+  }
+}
+
 function spInit() {
   // 初期化: date input に今日をセット、ボタン hook
   const dateInp = document.getElementById('spAddDate');
@@ -4749,12 +4944,24 @@ function spInit() {
   hook('spClearBtn', spClearAll);
   hook('spWeaknessBtn', spApplyWeaknessToplan);
   hook('spDelayReplanBtn', spReplanOverdue);
+  hook('spPomodoroBtn', spTogglePomodoro);
+  // Pomodoro ボタンの ON/OFF 状態を視覚反映
+  const pomoBtn = document.getElementById('spPomodoroBtn');
+  if (pomoBtn) {
+    pomoBtn.style.opacity = spPomodoroEnabled() ? '1' : '0.55';
+    pomoBtn.textContent = spPomodoroEnabled() ? '🍅 Pomodoro ON' : '🍅 Pomodoro';
+  }
   spRender();
   // 🎯 タイマー表示更新: 5 秒ごとに実行中タイマーの経過時間を更新 (塾長指示 2026-05-18)
   if (!window._spTimerInterval) {
     window._spTimerInterval = setInterval(() => {
       const data = spLoad();
-      if (Array.isArray(data.tasks) && data.tasks.some(t => t.started_at && !t.completed)) {
+      const running = data.tasks.filter(t => t.started_at && !t.completed);
+      if (running.length > 0) {
+        // 🍅 Pomodoro boundary check: 25 分到達時に toast 通知
+        for (const t of running) {
+          _spCheckPomodoroBoundary(t);
+        }
         // 実行中タイマーがあれば再描画 (今日のタスクのみ更新)
         spRenderToday();
         spRenderProgress();

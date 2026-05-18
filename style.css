@@ -2217,6 +2217,10 @@ select:focus, input:focus, textarea:focus {
 .sp-timer-resume:hover { background:rgba(251,191,36,0.30); }
 .sp-timer-stop { background:rgba(239,68,68,0.18); border-color:rgba(239,68,68,0.40); color:#fca5a5; font-family:'SF Mono','Monaco',monospace; min-width:60px; }
 .sp-timer-stop:hover { background:rgba(239,68,68,0.30); }
+/* 🍅 Pomodoro モード時のタイマー表示 (集中フェーズ・カウントダウン色) */
+.sp-timer-pomodoro { background:rgba(244,114,182,0.18); border-color:rgba(244,114,182,0.40); color:#f9a8d4; min-width:75px; position:relative; }
+.sp-timer-pomodoro:hover { background:rgba(244,114,182,0.30); }
+.sp-pomo-cycle { font-size:0.55em; background:#ec4899; color:white; border-radius:50%; padding:0.05em 0.35em; margin-left:0.2em; font-family:system-ui; }
 .sp-actual { font-weight:700; }
 .sp-actual-ok { color:#86efac; }
 .sp-actual-warn { color:#fbbf24; }
