@@ -2214,6 +2214,24 @@ function escapeTextWithMath(s) {
     .replace(/\n/g, '<br>');
 }
 
+// 🀄 漢文の返り点 (一二三・上中下・甲乙丙・レ点) を視覚的にマーク (塾長指示 2026-05-18)
+// 「子曰、學而時習之、不亦説乎」のような白文に対し、選択肢「不レ亦説乎」「不二亦説一乎」等で
+// レ点・一二点が CJK 文字と同サイズで並ぶと判別困難。<span class="kaeriten"> で小さく右下配置。
+// state.sectionKey === 'kanbun' 時のみ適用 (古文・現代文・英語等の通常テキストには適用しない)
+function _maybeMarkKaeriten(html) {
+  if (!html) return html;
+  try {
+    if (!state || state.sectionKey !== 'kanbun') return html;
+  } catch (_) { return html; }
+  // CJK 漢字の直後に来る 一/二/三/四/上/中/下/甲/乙/丙/レ をマーキング
+  // 過剰検出回避: マーカー後に CJK / 句読点 / スペース / 文末 が来る場合のみ適用
+  // 「第一問」のような通常日本語混入を許容したいが、漢文選択肢内では極めて稀なので許容
+  return String(html).replace(
+    /([一-鿿])([一二三四上中下甲乙丙レ])(?=[一-鿿、。，,.\s<]|$)/g,
+    '$1<span class="kaeriten">$2</span>'
+  );
+}
+
 // 🛟 緊急救済: AI が multiple_choice なのに choices: [] を返した場合、
 // stem 内の ①②③④⑤⑥⑦⑧ を検出して自動的に選択肢へ昇格させる
 // (下線部誤り選択問題で AI が「番号は問題文に既にある」と判断して空配列を返すケース)
@@ -2312,7 +2330,7 @@ function renderQuestions() {
     html += `<div class="ee-warning-box">${escapeHtml(state.warning)}${retryBtn}</div>`;
   }
   if (state.passage) {
-    html += `<div class="ee-passage"><h3>📖 ${state.examId === 'rikei' ? '問題設定' : 'Passage'}</h3><p>${escapeTextWithMath(state.passage)}</p></div>`;
+    html += `<div class="ee-passage"><h3>📖 ${state.examId === 'rikei' ? '問題設定' : 'Passage'}</h3><p>${_maybeMarkKaeriten(escapeTextWithMath(state.passage))}</p></div>`;
   }
   // 🔬 理系: figure_svg を表示 (sanitize 後 inline)
   if (state.figureSvg) {
@@ -2334,7 +2352,7 @@ function renderQuestions() {
         <div class="ee-question-num">Q${idx + 1}</div>
         <button type="button" class="ee-flag-btn" data-qid="${q.id}" title="この問題に違和感があれば塾長に報告" style="padding:0.3rem 0.7rem; background:rgba(245,158,11,0.10); border:1px solid rgba(245,158,11,0.30); border-radius:6px; color:#fbbf24; font-size:0.75rem; font-weight:700; cursor:pointer; min-height:32px;">🚩 違和感あり</button>
       </div>
-      <div class="ee-question-stem">${escapeTextWithMath(q.stem || '')}</div>`;
+      <div class="ee-question-stem">${_maybeMarkKaeriten(escapeTextWithMath(q.stem || ''))}</div>`;
     if (q.type === 'multiple_choice' && Array.isArray(q.choices) && q.choices.length) {
       // 🛟 auto-extract された下線部番号選択肢の場合はヒント表示
       if (q._auto_extracted_choices) {
@@ -2345,7 +2363,7 @@ function renderQuestions() {
       q.choices.forEach((c, ci) => {
         html += `<button type="button" class="ee-choice-btn" data-qid="${q.id}" data-choice="${ci}" role="radio" aria-checked="false">
           <span class="ee-choice-letter">${String.fromCharCode(65 + ci)}</span>
-          <span class="ee-choice-text">${escapeTextWithMath(c)}</span>
+          <span class="ee-choice-text">${_maybeMarkKaeriten(escapeTextWithMath(c))}</span>
           <span class="ee-choice-icon"></span>
         </button>`;
       });

@@ -495,6 +495,18 @@ body {
   min-width: 24px;
 }
 .ee-choice-text { flex: 1; font-size: 0.92rem; }
+
+/* 🀄 漢文 返り点 (一二三・上中下・甲乙丙・レ点) を小さく右下配置 (塾長指示 2026-05-18)
+   通常の CJK 文字と同サイズで並ぶと判別困難なため、subscript 風に縮小し色も区別 */
+.kaeriten {
+  display: inline-block;
+  font-size: 0.62em;
+  vertical-align: -0.25em;
+  margin: 0 0.05em;
+  color: #fbbf24;
+  font-weight: 700;
+  line-height: 1;
+}
 .ee-text-input, .ee-textarea {
   width: 100%; box-sizing: border-box;
   padding: 0.7rem;
