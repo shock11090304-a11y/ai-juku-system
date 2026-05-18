@@ -4066,6 +4066,46 @@ function spAddManualTask() {
   spRender();
 }
 
+// 🎯 学習記録へ自動同期 (塾長指示 2026-05-18): 完了時 actual_min > 0 なら study_logs に POST
+// 制限: 国公立難関大学コースのみ受付 (403 は silent skip)・session token 必須
+// 重複防止: t.synced_at が既に set されてれば skip
+async function _spSyncToStudyLog(task) {
+  if (!task || task.synced_at) return false;  // 既同期 → skip
+  if (!task.actual_min || task.actual_min <= 0) return false;
+  const token = (typeof localStorage !== 'undefined') ? (localStorage.getItem('ai_juku_session_token') || '') : '';
+  if (!token) return false;  // ログイン必須
+  // 計画時間 0 (マイルストーン等) は除外
+  if (task.subject === 'マイルストーン') return false;
+  try {
+    const resp = await fetch(`${BACKEND_URL || ''}/api/study-logs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({
+        studied_date: task.planned_date,  // YYYY-MM-DD
+        subject: task.subject || 'その他',
+        material: (task.title || '').slice(0, 200),
+        minutes: task.actual_min,
+        note: `学習計画タイマーから自動記録 (計画 ${task.duration_min || '?'}分)`,
+      }),
+    });
+    if (resp.ok) {
+      const data = spLoad();
+      const t = data.tasks.find(x => x.id === task.id);
+      if (t) { t.synced_at = new Date().toISOString(); spSave(data); }
+      try { console.log(`[study-log] synced ${task.actual_min}分 / ${task.subject} / ${task.title}`); } catch {}
+      return true;
+    }
+    // 403 (国公立難関大学コース外) は silent skip・他エラーは debug log のみ
+    if (resp.status !== 401 && resp.status !== 403) {
+      try { console.warn(`[study-log] sync failed ${resp.status}`); } catch {}
+    }
+    return false;
+  } catch (e) {
+    try { console.warn('[study-log] sync error:', e); } catch {}
+    return false;
+  }
+}
+
 function spToggleTask(taskId) {
   const data = spLoad();
   const t = data.tasks.find(x => x.id === taskId);
@@ -4090,6 +4130,10 @@ function spToggleTask(taskId) {
     }
   }
   spSave(data);
+  // 🎯 完了 & actual_min > 0 → study_logs へ自動 POST (await しない・UI 即応)
+  if (t.completed && t.actual_min > 0 && !t.synced_at) {
+    _spSyncToStudyLog(t).catch(() => {});
+  }
   spRender();
 }
 
