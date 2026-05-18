@@ -4945,6 +4945,9 @@ function spInit() {
   hook('spWeaknessBtn', spApplyWeaknessToplan);
   hook('spDelayReplanBtn', spReplanOverdue);
   hook('spPomodoroBtn', spTogglePomodoro);
+  hook('spFlashcardBtn', spFlashcardOpen);
+  hook('spFlashcardClose', spFlashcardClose);
+  hook('spFlashcardOverlay', spFlashcardClose);
   // Pomodoro ボタンの ON/OFF 状態を視覚反映
   const pomoBtn = document.getElementById('spPomodoroBtn');
   if (pomoBtn) {
@@ -4970,11 +4973,231 @@ function spInit() {
   }
 }
 // window に公開してタブ起動時・チェック時に呼び出せるように
+// 🎴 Flashcard モード - SRS 5 box システム (塾長指示 2026-05-18)
+// localStorage `ai_juku_flashcards_${id}`: [{ id, front, back, box: 1-5, next_review, last_reviewed, history }]
+// Box → interval (days): 1=翌日, 2=3日後, 3=7日後, 4=14日後, 5=30日後
+// 「覚えた」→ box+1 / 「もう一度」→ box=1 にリセット
+const FLASHCARD_BOX_INTERVALS = [1, 3, 7, 14, 30];
+
+function _spFlashcardKey() {
+  const s = getCurrentStudent ? getCurrentStudent() : null;
+  return `ai_juku_flashcards_${s && s.id ? s.id : 'guest'}`;
+}
+function spFlashcardLoad() {
+  try {
+    const raw = localStorage.getItem(_spFlashcardKey());
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+function spFlashcardSave(cards) {
+  try { localStorage.setItem(_spFlashcardKey(), JSON.stringify(cards)); } catch {}
+}
+function _spFlashcardAddInterval(date, days) {
+  // 🛠 3視点 review fix (2026-05-18): 既存 spAddDays helper (JST 正規化済) を使用
+  // _spDateStr は local TZ で getFullYear 等を読むため非 JST 端末で off-by-one bug があった
+  return spAddDays(date, days);
+}
+function spFlashcardGetDue(cards, today) {
+  return cards.filter(c => !c.next_review || c.next_review <= today);
+}
+
+function spFlashcardOpen() {
+  const modal = document.getElementById('spFlashcardModal');
+  if (!modal) return;
+  modal.style.display = '';
+  document.body.style.overflow = 'hidden';
+  spFlashcardRender();
+}
+function spFlashcardClose() {
+  const modal = document.getElementById('spFlashcardModal');
+  if (!modal) return;
+  modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+let _spFlashcardCurrentIndex = 0;
+let _spFlashcardShowBack = false;
+let _spFlashcardDueQueue = [];
+
+function spFlashcardRender() {
+  const body = document.getElementById('spFlashcardBody');
+  const stats = document.getElementById('spFlashcardStats');
+  if (!body) return;
+  const cards = spFlashcardLoad();
+  const today = spTodayJST();
+  _spFlashcardDueQueue = spFlashcardGetDue(cards, today);
+  if (stats) stats.textContent = `今日復習 ${_spFlashcardDueQueue.length}枚 / 累計 ${cards.length}枚`;
+
+  if (_spFlashcardCurrentIndex >= _spFlashcardDueQueue.length) {
+    _spFlashcardCurrentIndex = 0;
+    _spFlashcardShowBack = false;
+  }
+
+  // 🎴 復習対象なし / 0 枚: 追加 form のみ
+  if (cards.length === 0) {
+    body.innerHTML = `
+      <div style="text-align:center;padding:1.5rem 0;color:#94a3b8;">
+        <div style="font-size:3rem;margin-bottom:0.5rem;">🎴</div>
+        <div style="font-size:0.95rem;margin-bottom:0.3rem;">まだ単語カードがありません</div>
+        <div style="font-size:0.78rem;">下のフォームから単語を追加して、SRS で覚えましょう</div>
+      </div>
+      ${_spFlashcardAddForm()}`;
+    _spFlashcardBindForm();
+    return;
+  }
+  if (_spFlashcardDueQueue.length === 0) {
+    body.innerHTML = `
+      <div style="text-align:center;padding:1.5rem 0;color:#86efac;">
+        <div style="font-size:3rem;margin-bottom:0.5rem;">🎉</div>
+        <div style="font-size:0.95rem;font-weight:700;margin-bottom:0.3rem;">今日の復習は完了!</div>
+        <div style="font-size:0.78rem;color:#94a3b8;">次の復習: ${_spFlashcardNextDue(cards) || '—'}</div>
+      </div>
+      ${_spFlashcardListPreview(cards)}
+      ${_spFlashcardAddForm()}`;
+    _spFlashcardBindForm();
+    return;
+  }
+
+  const card = _spFlashcardDueQueue[_spFlashcardCurrentIndex];
+  const boxColors = ['#94a3b8', '#a78bfa', '#7c3aed', '#fbbf24', '#10b981', '#ec4899'];
+  const boxColor = boxColors[card.box || 1];
+  body.innerHTML = `
+    <div style="margin-bottom:0.8rem;font-size:0.75rem;color:#94a3b8;">${_spFlashcardCurrentIndex + 1} / ${_spFlashcardDueQueue.length}・Box ${card.box || 1}/5</div>
+    <div class="sp-flashcard-card" id="spFlashcardCardFlip" style="cursor:pointer;background:rgba(99,102,241,0.10);border:2px solid ${boxColor}40;border-radius:14px;padding:2rem 1.5rem;min-height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+      <div style="font-size:0.7rem;color:${boxColor};margin-bottom:0.6rem;font-weight:700;">${_spFlashcardShowBack ? '答え' : '問題 (タップで答えを表示)'}</div>
+      <div style="font-size:${(_spFlashcardShowBack ? (card.back || '') : (card.front || '')).length > 30 ? '1.1rem' : '1.5rem'};font-weight:700;color:#e2e8f0;line-height:1.4;word-break:break-word;">
+        ${spEscape(_spFlashcardShowBack ? (card.back || '') : (card.front || ''))}
+      </div>
+    </div>
+    ${_spFlashcardShowBack ? `
+      <div style="display:flex;gap:0.5rem;margin-top:0.8rem;">
+        <button class="btn-secondary" id="spFlashcardAgain" style="flex:1;background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.40);color:#fca5a5;padding:0.7rem;font-weight:700;">❌ もう一度 (Box 1)</button>
+        <button class="btn-primary" id="spFlashcardKnown" style="flex:1;padding:0.7rem;font-weight:700;">✅ 覚えた (Box ${Math.min(5, (card.box || 1) + 1)})</button>
+      </div>
+    ` : ''}
+    ${_spFlashcardListPreview(cards)}
+    ${_spFlashcardAddForm()}`;
+
+  // Bind events
+  const flipEl = document.getElementById('spFlashcardCardFlip');
+  if (flipEl) flipEl.addEventListener('click', () => {
+    _spFlashcardShowBack = !_spFlashcardShowBack;
+    spFlashcardRender();
+  });
+  const againBtn = document.getElementById('spFlashcardAgain');
+  if (againBtn) againBtn.addEventListener('click', () => spFlashcardRate(card.id, false));
+  const knownBtn = document.getElementById('spFlashcardKnown');
+  if (knownBtn) knownBtn.addEventListener('click', () => spFlashcardRate(card.id, true));
+  _spFlashcardBindForm();
+}
+
+function _spFlashcardAddForm() {
+  return `
+    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.08);">
+      <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.4rem;font-weight:700;">➕ 新規カード追加</div>
+      <input type="text" id="spFlashcardNewFront" placeholder="表 (英単語・古語・公式)" style="width:100%;box-sizing:border-box;padding:0.5rem;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.10);border-radius:6px;color:#e2e8f0;font-size:0.88rem;margin-bottom:0.3rem;">
+      <input type="text" id="spFlashcardNewBack" placeholder="裏 (意味・現代語訳・解説)" style="width:100%;box-sizing:border-box;padding:0.5rem;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.10);border-radius:6px;color:#e2e8f0;font-size:0.88rem;margin-bottom:0.3rem;">
+      <button class="btn-primary btn-small" id="spFlashcardAddBtn" style="width:100%;">➕ カード追加</button>
+    </div>`;
+}
+function _spFlashcardBindForm() {
+  const btn = document.getElementById('spFlashcardAddBtn');
+  if (btn) btn.addEventListener('click', () => {
+    const front = (document.getElementById('spFlashcardNewFront') || {}).value || '';
+    const back = (document.getElementById('spFlashcardNewBack') || {}).value || '';
+    if (!front.trim() || !back.trim()) { _spToast('表・裏どちらも入力してください', 'warn'); return; }
+    spFlashcardAdd(front.trim(), back.trim());
+    spFlashcardRender();
+  });
+}
+function _spFlashcardListPreview(cards) {
+  const recent = cards.slice(-5).reverse();
+  if (recent.length === 0) return '';
+  return `
+    <details style="margin-top:1rem;font-size:0.78rem;">
+      <summary style="cursor:pointer;color:#94a3b8;padding:0.3rem 0;">📋 最近追加したカード (${recent.length}件)</summary>
+      <div style="margin-top:0.4rem;">
+        ${recent.map(c => `<div style="padding:0.4rem 0.6rem;background:rgba(0,0,0,0.2);border-radius:6px;margin-bottom:0.25rem;display:flex;justify-content:space-between;gap:0.5rem;">
+          <span style="flex:1;min-width:0;color:#cbd5e1;"><strong>${spEscape((c.front || '').slice(0, 30))}</strong> — ${spEscape((c.back || '').slice(0, 40))}</span>
+          <span style="color:#94a3b8;font-size:0.7rem;white-space:nowrap;">Box ${c.box || 1}</span>
+        </div>`).join('')}
+      </div>
+    </details>`;
+}
+function _spFlashcardNextDue(cards) {
+  const future = cards.map(c => c.next_review).filter(d => d).sort();
+  return future[0] || null;
+}
+
+function spFlashcardAdd(front, back) {
+  if (!front || !back) return;
+  const cards = spFlashcardLoad();
+  cards.push({
+    id: 'fc_' + Math.random().toString(36).slice(2, 12),
+    front: front.slice(0, 200),
+    back: back.slice(0, 500),
+    box: 1,
+    next_review: spTodayJST(), // 今日から
+    created_at: new Date().toISOString(),
+    last_reviewed: null,
+    history: [],
+  });
+  spFlashcardSave(cards);
+  _spToast(`🎴 カード追加: ${front.slice(0, 20)}`, 'ok');
+}
+
+// 🛠 3視点 review fix (2026-05-18): 早押し連打 guard で異カード上書き防止
+let _spFlashcardRating = false;
+function spFlashcardRate(cardId, ok) {
+  if (_spFlashcardRating) return; // 連打 guard
+  _spFlashcardRating = true;
+  try {
+    const cards = spFlashcardLoad();
+    const c = cards.find(x => x.id === cardId);
+    if (!c) return;
+    const today = spTodayJST();
+    c.last_reviewed = today;
+    c.history = c.history || [];
+    c.history.push({ date: today, ok });
+    // 🛠 review fix: history を直近 30 件に cap (localStorage quota 防御)
+    if (c.history.length > 30) c.history = c.history.slice(-30);
+    if (ok) {
+      c.box = Math.min(5, (c.box || 1) + 1);
+    } else {
+      c.box = 1;
+    }
+    const days = FLASHCARD_BOX_INTERVALS[Math.max(0, Math.min(4, (c.box || 1) - 1))];
+    c.next_review = _spFlashcardAddInterval(today, days);
+    spFlashcardSave(cards);
+    _spFlashcardShowBack = false;
+    _spFlashcardCurrentIndex++;
+    spFlashcardRender();
+  } finally {
+    // 短い delay で再有効化 (連打防止)
+    setTimeout(() => { _spFlashcardRating = false; }, 300);
+  }
+}
+
+// 🛠 review fix: Esc キーで Flashcard モーダルを閉じる
+if (typeof window !== 'undefined' && !window._spFlashcardEscBound) {
+  window._spFlashcardEscBound = true;
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const modal = document.getElementById('spFlashcardModal');
+      if (modal && modal.style.display !== 'none') {
+        spFlashcardClose();
+      }
+    }
+  });
+}
+
 window.spInit = spInit;
 window.spToggleTask = spToggleTask;
 window.spDeleteTask = spDeleteTask;
 window.spStartTimer = spStartTimer;
 window.spStopTimer = spStopTimer;
+window.spFlashcardOpen = spFlashcardOpen;
+window.spFlashcardClose = spFlashcardClose;
 
 // ==========================================================================
 // TAB: Essay Correction

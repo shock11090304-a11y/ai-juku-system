@@ -2221,6 +2221,19 @@ select:focus, input:focus, textarea:focus {
 .sp-timer-pomodoro { background:rgba(244,114,182,0.18); border-color:rgba(244,114,182,0.40); color:#f9a8d4; min-width:75px; position:relative; }
 .sp-timer-pomodoro:hover { background:rgba(244,114,182,0.30); }
 .sp-pomo-cycle { font-size:0.55em; background:#ec4899; color:white; border-radius:50%; padding:0.05em 0.35em; margin-left:0.2em; font-family:system-ui; }
+
+/* 🎴 Flashcard モーダル (塾長指示 2026-05-18 Tier 2) */
+.sp-flashcard-modal { position:fixed; top:0; left:0; right:0; bottom:0; z-index:1000; display:flex; align-items:center; justify-content:center; padding:1rem; box-sizing:border-box; }
+.sp-flashcard-overlay { position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); }
+.sp-flashcard-panel { position:relative; background:#1e293b; border:1px solid rgba(99,102,241,0.30); border-radius:14px; padding:1.2rem; max-width:540px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 12px 40px rgba(0,0,0,0.5); }
+.sp-flashcard-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding-bottom:0.7rem; border-bottom:1px solid rgba(255,255,255,0.08); }
+.sp-flashcard-header h3 { margin:0; font-size:1.05rem; color:#a5b4fc; }
+.sp-flashcard-card { transition:transform 0.18s, border-color 0.2s; }
+.sp-flashcard-card:hover { transform:scale(1.01); }
+.sp-flashcard-card:active { transform:scale(0.99); }
+@media (max-width: 640px) {
+  .sp-flashcard-panel { padding:1rem; max-height:95vh; }
+}
 .sp-actual { font-weight:700; }
 .sp-actual-ok { color:#86efac; }
 .sp-actual-warn { color:#fbbf24; }

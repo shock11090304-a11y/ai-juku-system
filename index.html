@@ -397,10 +397,23 @@
         <button class="btn-secondary" id="spNextWeek" title="次の週">次週 →</button>
         <span id="spWeekLabel" class="sp-week-label"></span>
         <span style="flex:1;"></span>
+        <button class="btn-secondary" id="spFlashcardBtn" title="単語帳 (Flashcard) を開く - SRS 5 box システム" style="background:rgba(99,102,241,0.18); border:1px solid rgba(99,102,241,0.40); color:#a5b4fc;">🎴 単語帳</button>
         <button class="btn-secondary" id="spPomodoroBtn" title="Pomodoro モード切替 (25分集中 + 5分休憩)" style="background:rgba(244,114,182,0.18); border:1px solid rgba(244,114,182,0.40); color:#f9a8d4;">🍅 Pomodoro</button>
         <button class="btn-secondary" id="spWeaknessBtn" title="弱点 TOP3 を学習計画に自動反映" style="background:rgba(251,191,36,0.18); border:1px solid rgba(251,191,36,0.40); color:#fde68a;">🎯 弱点反映</button>
         <button class="btn-secondary" id="spDelayReplanBtn" title="遅延タスクを次週に圧縮再計画" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); color:#fca5a5;">📅 遅延再計画</button>
         <button class="btn-secondary" id="spClearBtn" title="この生徒の全タスクを削除">🗑 全削除</button>
+      </div>
+
+      <!-- 🎴 Flashcard モーダル (塾長指示 2026-05-18) -->
+      <div id="spFlashcardModal" class="sp-flashcard-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="spFlashcardTitle">
+        <div class="sp-flashcard-overlay" id="spFlashcardOverlay" aria-label="閉じる"></div>
+        <div class="sp-flashcard-panel">
+          <div class="sp-flashcard-header">
+            <h3 id="spFlashcardTitle">🎴 単語帳 (SRS) <span id="spFlashcardStats" style="font-size:0.75rem;font-weight:400;color:#94a3b8;margin-left:0.5rem;"></span></h3>
+            <button id="spFlashcardClose" class="btn-secondary btn-small" aria-label="単語帳モーダルを閉じる (Esc キーでも可)">✕</button>
+          </div>
+          <div id="spFlashcardBody"></div>
+        </div>
       </div>
 
       <div class="sp-grid">
@@ -1125,7 +1138,7 @@
   <script src="learning-brain.js?v=20260425-2"></script>
   <script src="exam-prep.js?v=20260425-1"></script>
   <script src="referral-program.js?v=20260425-1"></script>
-  <script src="app.js?v=20260518-pomodoro-efficiency"></script>
+  <script src="app.js?v=20260518-flashcard-srs"></script>
   <script>
   // 定期テスト連携: exam-prep.html から ?examPrep=1&subject=&topic=&examId= で来た時、
   // 問題ジェネレーターに自動入力 + タブ切替 + 通知バナー
