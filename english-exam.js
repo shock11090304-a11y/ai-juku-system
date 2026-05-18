@@ -2215,17 +2215,29 @@ function escapeTextWithMath(s) {
 }
 
 // 🀄 漢文の返り点 (一二三・上中下・甲乙丙・レ点) を視覚的にマーク (塾長指示 2026-05-18)
-// 「子曰、學而時習之、不亦説乎」のような白文に対し、選択肢「不レ亦説乎」「不二亦説一乎」等で
-// レ点・一二点が CJK 文字と同サイズで並ぶと判別困難。<span class="kaeriten"> で小さく右下配置。
-// state.sectionKey === 'kanbun' 時のみ適用 (古文・現代文・英語等の通常テキストには適用しない)
+// 「不レ亦説乎」「不二亦説一乎」等の選択肢で、レ点・一二点が CJK 文字と同サイズで並ぶと判別困難。
+// <span class="kaeriten"> で小さく右下配置。
+//
+// ⚠️ 過剰検出回避 (塾長フィードバック 2026-05-18 「天下」「適中」等の通常熟語まで誤マーク):
+//   1. state.sectionKey === 'kanbun' 時のみ適用
+//   2. テキストに ひらがな・カタカナ (レ 除く) が含まれていれば skip
+//      → 「天下に五方の地有り」(書き下し) / 「天下には」(現代語訳) 等は不適用
+//   3. 白文 passage は混在テキスト (白文 + 書き下し + 現代語訳) のため呼び出し側で除外
+//      → 選択肢 (choices) と設問 (stem) のみに適用
 function _maybeMarkKaeriten(html) {
   if (!html) return html;
   try {
     if (!state || state.sectionKey !== 'kanbun') return html;
   } catch (_) { return html; }
-  // CJK 漢字の直後に来る 一/二/三/四/上/中/下/甲/乙/丙/レ をマーキング
-  // 過剰検出回避: マーカー後に CJK / 句読点 / スペース / 文末 が来る場合のみ適用
-  // 「第一問」のような通常日本語混入を許容したいが、漢文選択肢内では極めて稀なので許容
+  // ひらがな or レ 以外のカタカナを含む = 書き下し/現代語訳 → skip
+  // 純粋な classical Chinese choices は基本的に hiragana/katakana を含まない (レ点除く)
+  const hasKana = /[ぁ-んァ-ヶ]/.test(String(html));
+  if (hasKana) {
+    // レ点のみ含む例外: テキスト全体がカタカナ非含 OR レ のみ → 適用継続
+    // hasKana=true でも全カタカナが「レ」だけならクラシカル判定
+    const nonReKana = String(html).replace(/レ/g, '').match(/[ぁ-んァ-ヶ]/);
+    if (nonReKana) return html;  // ひらがな or レ 以外のカタカナあり → skip
+  }
   return String(html).replace(
     /([一-鿿])([一二三四上中下甲乙丙レ])(?=[一-鿿、。，,.\s<]|$)/g,
     '$1<span class="kaeriten">$2</span>'
@@ -2330,7 +2342,9 @@ function renderQuestions() {
     html += `<div class="ee-warning-box">${escapeHtml(state.warning)}${retryBtn}</div>`;
   }
   if (state.passage) {
-    html += `<div class="ee-passage"><h3>📖 ${state.examId === 'rikei' ? '問題設定' : 'Passage'}</h3><p>${_maybeMarkKaeriten(escapeTextWithMath(state.passage))}</p></div>`;
+    // 漢文 passage は【白文】【書き下し文】【現代語訳】の混在テキストのため kaeriten 自動マーキングを適用しない
+    // (「天下」「適中」等の通常熟語を誤マークする問題のため・塾長指示 2026-05-18)
+    html += `<div class="ee-passage"><h3>📖 ${state.examId === 'rikei' ? '問題設定' : 'Passage'}</h3><p>${escapeTextWithMath(state.passage)}</p></div>`;
   }
   // 🔬 理系: figure_svg を表示 (sanitize 後 inline)
   if (state.figureSvg) {
