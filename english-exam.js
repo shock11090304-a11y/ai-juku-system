@@ -2229,19 +2229,32 @@ function _maybeMarkKaeriten(html) {
   try {
     if (!state || state.sectionKey !== 'kanbun') return html;
   } catch (_) { return html; }
+  const text = String(html);
+  // 長文 skip (passage 等で誤検出回避): 選択肢は通常 30 字以下なので 60 字超えたら skip
+  // 万一 passage 描画ルートに渡されても、長さで弾いて誤マーク防止
+  if (text.length > 60) return html;
   // ひらがな or レ 以外のカタカナを含む = 書き下し/現代語訳 → skip
   // 純粋な classical Chinese choices は基本的に hiragana/katakana を含まない (レ点除く)
-  const hasKana = /[ぁ-んァ-ヶ]/.test(String(html));
+  const hasKana = /[ぁ-んァ-ヶ]/.test(text);
   if (hasKana) {
     // レ点のみ含む例外: テキスト全体がカタカナ非含 OR レ のみ → 適用継続
-    // hasKana=true でも全カタカナが「レ」だけならクラシカル判定
-    const nonReKana = String(html).replace(/レ/g, '').match(/[ぁ-んァ-ヶ]/);
+    const nonReKana = text.replace(/レ/g, '').match(/[ぁ-んァ-ヶ]/);
     if (nonReKana) return html;  // ひらがな or レ 以外のカタカナあり → skip
   }
-  return String(html).replace(
+  // 漢字熟語の誤検出回避: 「天下」「適中」「上下」等の通常2字熟語は kaeriten ではない
+  // 既知の誤検出パターンを explicit に除外 (純漢文選択肢には影響しないリスト)
+  const COMMON_COMPOUNDS = ['天下', '適中', '上下', '左右', '中央', '中心', '中国', '下記', '上記', '以下', '以上'];
+  let result = text;
+  // 一旦 marker 候補を全て探す → COMMON_COMPOUNDS と重複しないものだけ wrap
+  result = result.replace(
     /([一-鿿])([一二三四上中下甲乙丙レ])(?=[一-鿿、。，,.\s<]|$)/g,
-    '$1<span class="kaeriten">$2</span>'
+    (match, k1, marker) => {
+      const compound = k1 + marker;
+      if (COMMON_COMPOUNDS.includes(compound)) return match; // 通常熟語 → skip
+      return `${k1}<span class="kaeriten">${marker}</span>`;
+    }
   );
+  return result;
 }
 
 // 🛟 緊急救済: AI が multiple_choice なのに choices: [] を返した場合、
