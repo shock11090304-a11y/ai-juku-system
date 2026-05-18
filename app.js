@@ -4289,12 +4289,13 @@ function spRenderTextbookProgress() {
     return;
   }
   // 各 task から教材名を検出
+  // 🛠 2026-05-18 fix: 「全て 100%」バグ修正 — maxUnit/firstDate/lastDate は完了済タスクのみで計算
+  // (未来の予定タスクまで max を取ると、最終週の範囲が 2021 になり常に 100% 表示される致命バグ)
   const today = spTodayJST();
   const byBook = {};
+  const keys = Object.keys(TEXTBOOK_TOTAL_UNITS).sort((a, b) => b.length - a.length);
   for (const t of data.tasks) {
     if (!t.title) continue;
-    // TEXTBOOK_TOTAL_UNITS の長い key を優先で検出
-    const keys = Object.keys(TEXTBOOK_TOTAL_UNITS).sort((a, b) => b.length - a.length);
     let detectedBook = null;
     for (const k of keys) {
       if (t.title.indexOf(k) !== -1) { detectedBook = k; break; }
@@ -4305,23 +4306,29 @@ function spRenderTextbookProgress() {
         total: TEXTBOOK_TOTAL_UNITS[detectedBook],
         completedTasks: 0,
         totalTasks: 0,
-        maxUnit: 0,
-        firstDate: null,
-        lastDate: null,
+        plannedMaxUnit: 0, // 計画上の最大 unit (全タスク・完走予定の参考)
+        maxUnit: 0,        // 完了済の最大 unit (進捗バー本体)
+        firstCompletedDate: null,
+        lastCompletedDate: null,
       };
     }
     const b = byBook[detectedBook];
     b.totalTasks++;
-    if (t.completed) b.completedTasks++;
-    // 範囲・第N から到達した unit 番号を抽出
+    // 範囲・第N から unit 番号を抽出
     const rangeM = t.title.match(/(\d+)\s*[-〜~–]\s*(\d+)/);
     const singleM = t.title.match(/第\s*(\d+)\s*[題章講節課]/) || t.title.match(/(?:Lesson|Unit|Chapter)\s*(\d+)/i);
     let n = 0;
     if (rangeM) n = parseInt(rangeM[2]);
     else if (singleM) n = parseInt(singleM[1]);
-    if (n > b.maxUnit) b.maxUnit = n;
-    if (!b.firstDate || t.planned_date < b.firstDate) b.firstDate = t.planned_date;
-    if (!b.lastDate || t.planned_date > b.lastDate) b.lastDate = t.planned_date;
+    // 計画上の最大値 (全タスクから集計)
+    if (n > b.plannedMaxUnit) b.plannedMaxUnit = n;
+    // 進捗バー本体: 完了済のみ
+    if (t.completed) {
+      b.completedTasks++;
+      if (n > b.maxUnit) b.maxUnit = n;
+      if (!b.firstCompletedDate || t.planned_date < b.firstCompletedDate) b.firstCompletedDate = t.planned_date;
+      if (!b.lastCompletedDate || t.planned_date > b.lastCompletedDate) b.lastCompletedDate = t.planned_date;
+    }
   }
   const books = Object.entries(byBook).sort((a, b) => b[1].totalTasks - a[1].totalTasks).slice(0, 8);
   if (books.length === 0) {
@@ -4329,22 +4336,25 @@ function spRenderTextbookProgress() {
     return;
   }
   card.style.display = '';
-  // 各教材の進捗バー
+  // 各教材の進捗バー (進捗 = 完了済の maxUnit / total)
   const html = books.map(([name, b]) => {
     const pct = Math.min(100, Math.round((b.maxUnit / b.total) * 100));
-    // 完走予定日: 今までの進度から線形外挿
+    // 完走予定日: 完了済タスクの実進度から線形外挿
     let etaStr = '';
-    if (b.firstDate && b.lastDate && b.maxUnit > 0 && b.maxUnit < b.total) {
-      const days = (new Date(b.lastDate) - new Date(b.firstDate)) / 86400000 + 1;
+    if (b.firstCompletedDate && b.lastCompletedDate && b.maxUnit > 0 && b.maxUnit < b.total) {
+      const days = (new Date(b.lastCompletedDate) - new Date(b.firstCompletedDate)) / 86400000 + 1;
       const speed = b.maxUnit / Math.max(1, days);
       const remaining = b.total - b.maxUnit;
       const etaDays = Math.ceil(remaining / Math.max(0.01, speed));
       const eta = new Date(); eta.setDate(eta.getDate() + etaDays);
       etaStr = `<span class="stat" style="font-size:0.72rem;">完走予定 ${_spDateStr(eta)}</span>`;
     } else if (b.maxUnit >= b.total) {
-      etaStr = '<span class="stat ok" style="font-size:0.72rem;">🎉 全範囲到達</span>';
+      etaStr = '<span class="stat ok" style="font-size:0.72rem;">🎉 全範囲完了</span>';
+    } else if (b.completedTasks === 0 && b.totalTasks > 0) {
+      // 計画はあるが未着手
+      etaStr = `<span class="stat" style="font-size:0.72rem;color:#94a3b8;">📅 計画済 (${b.totalTasks}件) / 未着手</span>`;
     }
-    const barColor = pct >= 80 ? '#10b981' : pct >= 40 ? '#3b82f6' : '#a78bfa';
+    const barColor = pct >= 80 ? '#10b981' : pct >= 40 ? '#3b82f6' : pct > 0 ? '#a78bfa' : '#475569';
     return `<div style="margin-bottom:0.7rem;">
       <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:0.82rem; margin-bottom:0.2rem;">
         <strong style="color:#e2e8f0;">${escapeHtml(name)}</strong>
