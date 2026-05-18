@@ -3373,20 +3373,26 @@ function spLoad() {
     const raw = localStorage.getItem(spStorageKey());
     const data = raw ? JSON.parse(raw) : { tasks: [], streak: { current: 0, best: 0, last_active: null } };
     // 旧 _advanceTaskRange (cap 無し) で生成された「マドンナ古文 第41講」等を後付け cap
-    // 塾長指示 2026-05-17 (小川くん端末で deploy 後も既存データが残留・続発)
     // _recapTaskTitle は idempotent なので何度呼んでも安全 (cap 内 or 周目付きは no-op)
+    let mutated = 0;
     if (typeof _recapTaskTitle === 'function' && Array.isArray(data.tasks)) {
-      let recapChanged = 0;
       for (const t of data.tasks) {
         if (t && t.source === 'curriculum' && typeof t.title === 'string') {
           const newTitle = _recapTaskTitle(t.title);
-          if (newTitle !== t.title) { t.title = newTitle; recapChanged++; }
+          if (newTitle !== t.title) { t.title = newTitle; mutated++; }
+        }
+        // 🛠 3視点 review fix (2026-05-18 round 2): 既存 sync 済 task に synced_min を遡及補完
+        // 旧仕様で synced_at だけ set されてた task は synced_min undefined → 二重投稿の致命リスク
+        // 「synced_at あるが synced_min 未設定 = 過去に全量 sync 済」と判定し synced_min = actual_min で初期化
+        if (t && t.synced_at && typeof t.synced_min === 'undefined' && t.actual_min > 0) {
+          t.synced_min = t.actual_min;
+          mutated++;
         }
       }
-      if (recapChanged > 0) {
-        try { localStorage.setItem(spStorageKey(), JSON.stringify(data)); } catch {}
-        try { console.log(`[recap] ${recapChanged} 件の旧バグタイトルを cap で正規化しました`); } catch {}
-      }
+    }
+    if (mutated > 0) {
+      try { localStorage.setItem(spStorageKey(), JSON.stringify(data)); } catch {}
+      try { console.log(`[sp-migration] ${mutated} 件のタスクをマイグレーション (recap/synced_min)`); } catch {}
     }
     return data;
   } catch { return { tasks: [], streak: { current: 0, best: 0, last_active: null } }; }
@@ -4092,14 +4098,18 @@ function _spToast(msg, kind) {
   } catch (_) {}
 }
 
-// 🎯 学習記録へ自動同期 (塾長指示 2026-05-18): 完了時 actual_min > 0 なら study_logs に POST
+// 🎯 学習記録へ自動同期 (塾長指示 2026-05-18・3視点review 2026-05-18 で増分 sync 対応)
+// 🛠 致命 fix: 再開→停止で actual_min 増分が DB に届かない問題 → synced_min で delta sync
+//    delta = actual_min - (synced_min || 0) を POST。成功時 synced_min = actual_min 更新。
+//    backend は INSERT only なので idempotency は frontend 側で保証 (delta > 0 の場合のみ送信)
 // 制限: 国公立難関大学コースのみ受付・session token 必須
-// 重複防止: t.synced_at が既に set されてれば skip
-// 2026-05-18 fix: silent skip を廃止し、toast で同期結果を可視化 (「反映してない」報告対応)
 async function _spSyncToStudyLog(task) {
-  if (!task || task.synced_at) return false;
-  if (!task.actual_min || task.actual_min <= 0) return false;
+  if (!task) return false;
   if (task.subject === 'マイルストーン') return false;
+  const totalMin = task.actual_min || 0;
+  const syncedMin = task.synced_min || 0;
+  const delta = totalMin - syncedMin;
+  if (delta <= 0) return false;  // 新規実績なし → skip (idempotent)
   const token = (typeof localStorage !== 'undefined') ? (localStorage.getItem('ai_juku_session_token') || '') : '';
   if (!token) {
     _spToast('⚠️ 学習記録未同期: ログインが必要です (localStorage に session_token なし)', 'warn');
@@ -4113,16 +4123,21 @@ async function _spSyncToStudyLog(task) {
         studied_date: task.planned_date,
         subject: task.subject || 'その他',
         material: (task.title || '').slice(0, 200),
-        minutes: task.actual_min,
-        note: `学習計画タイマーから自動記録 (計画 ${task.duration_min || '?'}分)`,
+        minutes: delta,  // 増分のみ送信
+        note: `学習計画タイマー (計画 ${task.duration_min || '?'}分 / 実績 ${totalMin}分・今回追加 ${delta}分)`,
       }),
     });
     if (resp.ok) {
       const data = spLoad();
       const t = data.tasks.find(x => x.id === task.id);
-      if (t) { t.synced_at = new Date().toISOString(); spSave(data); }
-      _spToast(`✅ 学習記録に同期しました: ${task.subject} ${task.actual_min}分`, 'ok');
-      try { console.log(`[study-log] synced ${task.actual_min}分 / ${task.subject} / ${task.title}`); } catch {}
+      if (t) {
+        t.synced_at = new Date().toISOString();
+        t.synced_min = totalMin;  // 同期済の累積実績を記録 (次回 delta 計算用)
+        spSave(data);
+      }
+      const incrementalNote = syncedMin > 0 ? ` (今回 +${delta}分)` : '';
+      _spToast(`✅ 学習記録に同期: ${task.subject} ${totalMin}分${incrementalNote}`, 'ok');
+      try { console.log(`[study-log] synced delta=${delta} total=${totalMin}分 / ${task.subject} / ${task.title}`); } catch {}
       return true;
     }
     // 失敗ケースを明示
@@ -4155,11 +4170,14 @@ function spToggleTask(taskId) {
   t.completed = !t.completed;
   t.completed_at = t.completed ? new Date().toISOString() : null;
   // 🛠 3視点 review fix (2026-05-18): !t.actual_min ガード除去 — 停止後再開→完了で経過時間が消失するバグ修正
-  // タイマー実行中なら経過時間を actual_min に累積 (加算式・既存値保持)
+  // round 2 fix: 8h cap (_spClampElapsedMin) を適用 → スマホスリープ等の異常値防止
   if (t.completed && t.started_at) {
     const elapsedMs = new Date(t.completed_at) - new Date(t.started_at);
-    t.actual_min = (t.actual_min || 0) + Math.max(1, Math.round(elapsedMs / 60000));
+    const { min, discarded } = _spClampElapsedMin(elapsedMs);
     t.started_at = null;
+    if (!discarded) {
+      t.actual_min = (t.actual_min || 0) + min;
+    }
   }
   // 🛠 3視点 review fix (2026-05-18): completed=false 化時に synced_at もクリア → 再完了で sync 再実行可能
   if (!t.completed) {
@@ -4177,7 +4195,9 @@ function spToggleTask(taskId) {
     }
   }
   spSave(data);
-  if (t.completed && t.actual_min > 0 && !t.synced_at) {
+  // 🛠 3視点 review fix (2026-05-18): !synced_at ガード除去 (delta sync で idempotency 保証)
+  // 再開→停止後の増分も完了時に確実に DB に送信される
+  if (t.completed && t.actual_min > 0) {
     _spSyncToStudyLog(t).catch(() => {});
   }
   spRender();
@@ -4190,12 +4210,18 @@ function spStartTimer(taskId) {
   const t = data.tasks.find(x => x.id === taskId);
   if (!t) return;
   // 他に実行中のタイマーがあれば停止して時間を保存 (1 タスクずつしか実行できない)
+  // 🛠 3視点 review fix (2026-05-18 round 2): 同 cap 適用 + sync 呼び出しを追加
   let stoppedOther = null;
   for (const ot of data.tasks) {
     if (ot.id !== taskId && ot.started_at && !ot.completed) {
       const elapsedMs = Date.now() - new Date(ot.started_at).getTime();
-      ot.actual_min = (ot.actual_min || 0) + Math.max(1, Math.round(elapsedMs / 60000));
+      const { min, discarded } = _spClampElapsedMin(elapsedMs);
       ot.started_at = null;
+      if (!discarded) {
+        ot.actual_min = (ot.actual_min || 0) + min;
+        // sync 増分を即送信 (round 1 で欠落していた)
+        _spSyncToStudyLog(ot).catch(() => {});
+      }
       stoppedOther = ot.title;
     }
   }
@@ -4207,26 +4233,35 @@ function spStartTimer(taskId) {
   }
 }
 
+// 🛠 3視点 review round 2 fix (2026-05-18): タイマー経過時間を 8h cap + 放置検出
+// 戻り値: { min: 加算分, discarded: true=放置として破棄 (actual_min 触らない) }
+// confirm キャンセル時は破棄 (min=0 で false 加算しない・round 1 で min=1 にしてた致命バグ修正)
+function _spClampElapsedMin(elapsedMs) {
+  const rawMin = Math.max(1, Math.round(elapsedMs / 60000));
+  const CAP_MIN = 480;
+  if (rawMin <= CAP_MIN) return { min: rawMin, discarded: false };
+  const hours = (rawMin / 60).toFixed(1);
+  const ok = confirm(`⚠️ タイマーが ${hours}時間 連続稼働しました。\n\nスマホスリープ等で停止忘れの可能性があります。\n\n「OK」: 480分 (8時間) として記録\n「キャンセル」: 記録破棄 (この時間は学習時間に加算しません)`);
+  if (!ok) return { min: 0, discarded: true };
+  return { min: CAP_MIN, discarded: false };
+}
+
 function spStopTimer(taskId) {
   const data = spLoad();
   const t = data.tasks.find(x => x.id === taskId);
   if (!t || !t.started_at) return;
   const elapsedMs = Date.now() - new Date(t.started_at).getTime();
-  const min = Math.max(1, Math.round(elapsedMs / 60000));
-  t.actual_min = (t.actual_min || 0) + min;
+  const { min, discarded } = _spClampElapsedMin(elapsedMs);
   t.started_at = null;
-  // 🛠 3視点 review fix (2026-05-18) — 根本原因: 停止時に sync 呼ばれていなかった (toast 出ない問題)
-  // 高校生 UX は「⏹ = 終わった」と認識するので停止時点で study_logs DB へ送信
-  // 既に sync 済 (synced_at set) なら _spSyncToStudyLog 内で skip → 二重投稿なし
-  // 再開→再停止で actual_min 増えた場合は synced_at がクリアされていない → 増分が DB に届かない問題は要別途対処 (TODO)
-  spSave(data);
-  if (t.actual_min > 0 && !t.synced_at) {
-    _spSyncToStudyLog(t).catch(() => {});
-  } else if (t.synced_at) {
-    _spToast(`⏸ タイマー停止 (${min}分追加・合計 ${t.actual_min}分)。新規分は次回完了時に同期されます`, 'info');
-  } else {
-    _spToast(`⏸ タイマー停止 (${min}分追加・合計 ${t.actual_min}分)`, 'info');
+  if (discarded) {
+    spSave(data);
+    _spToast(`⏸ タイマー停止 (放置扱いで破棄)`, 'warn');
+    spRender();
+    return;
   }
+  t.actual_min = (t.actual_min || 0) + min;
+  spSave(data);
+  _spSyncToStudyLog(t).catch(() => {});
   spRender();
 }
 
@@ -4265,7 +4300,8 @@ function spTaskCard(t, isToday) {
   } else if (planDur) {
     durStr = ` · ${planDur}`;
   }
-  // 🎯 タイマー UI: 未開始は ▶️ 開始 / 実行中は ⏹ 停止 (経過秒表示) を表示
+  // 🎯 タイマー UI: 実行中は ⏹ 停止 / 未開始は ▶️ 開始 / 停止後 (actual_min>0) は ▶️ 再開
+  // 塾長指示 2026-05-18: 「一度止めると再開できない」報告 → actual_min 残ってても ▶️ 再開ボタン表示
   let timerBtn = '';
   if (!t.completed && isToday) {
     if (isRunning) {
@@ -4274,7 +4310,12 @@ function spTaskCard(t, isToday) {
       const mm = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
       const ss = String(elapsedSec % 60).padStart(2, '0');
       timerBtn = `<button class="sp-timer-btn sp-timer-stop" data-tid="${t.id}" onclick="event.stopPropagation(); spStopTimer('${t.id}')" title="タイマー停止">⏹ ${mm}:${ss}</button>`;
-    } else if (!t.actual_min) {
+    } else if (t.actual_min > 0) {
+      // 停止済みで実績あり → 再開ボタン
+      // 🛠 round 2 UX fix: 「+再開」は日本語として不自然 → 「再開」 + aria-label で意味伝達
+      timerBtn = `<button class="sp-timer-btn sp-timer-resume" data-tid="${t.id}" onclick="event.stopPropagation(); spStartTimer('${t.id}')" aria-label="タイマーを再開して実績に時間を加算" title="タイマー再開 (実績に加算されます)">▶️ 再開</button>`;
+    } else {
+      // 未着手 → 通常の開始ボタン
       timerBtn = `<button class="sp-timer-btn sp-timer-start" data-tid="${t.id}" onclick="event.stopPropagation(); spStartTimer('${t.id}')" title="タイマー開始">▶️</button>`;
     }
   }
