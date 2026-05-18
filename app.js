@@ -4511,7 +4511,112 @@ function spRenderTextbookProgress() {
   out.innerHTML = html;
 }
 
+// 🎯 試験までのカウントダウン (塾長指示 2026-05-18)
+// localStorage の `ai_juku_exam_date_${student.id}` から取得 (未設定なら 共通テスト デフォルト)
+// 色分け: >100日=青(余裕)/30-100=橙(警戒)/<30=赤(直前)
+function _spExamDateKey() {
+  const s = getCurrentStudent ? getCurrentStudent() : null;
+  return `ai_juku_exam_date_${s && s.id ? s.id : 'guest'}`;
+}
+function _spExamLabelKey() {
+  const s = getCurrentStudent ? getCurrentStudent() : null;
+  return `ai_juku_exam_label_${s && s.id ? s.id : 'guest'}`;
+}
+function _spDefaultExamDate() {
+  // 共通テスト の最新土曜 (1月第3週前後)。年度自動推定
+  // 🛠 review fix: 1/18 当日も「未経過」として当年扱い (<= で境界 inclusive)
+  const now = new Date();
+  let year = now.getFullYear();
+  let target = new Date(year + 1, 0, 18);
+  if (now.getMonth() === 0 && now.getDate() <= 18) target = new Date(year, 0, 18);
+  return _spDateStr(target);
+}
+function spRenderCountdown() {
+  const out = document.getElementById('spCountdown');
+  if (!out) return;
+  let examDate = '';
+  let examLabel = '';
+  try {
+    examDate = localStorage.getItem(_spExamDateKey()) || '';
+    examLabel = localStorage.getItem(_spExamLabelKey()) || '共通テスト';
+  } catch {}
+  if (!examDate) examDate = _spDefaultExamDate();
+  const today = new Date(spTodayJST() + 'T00:00:00+09:00');
+  const exam = new Date(examDate + 'T00:00:00+09:00');
+  const daysLeft = Math.ceil((exam - today) / 86400000);
+  let bg, color, statusEmoji, statusText;
+  if (daysLeft < 0) {
+    bg = 'rgba(107,114,128,0.18)'; color = '#9ca3af';
+    statusEmoji = '🎓'; statusText = '試験日経過';
+  } else if (daysLeft < 30) {
+    bg = 'rgba(239,68,68,0.18)'; color = '#fca5a5';
+    statusEmoji = '🔥'; statusText = '直前期';
+  } else if (daysLeft < 100) {
+    bg = 'rgba(245,158,11,0.18)'; color = '#fbbf24';
+    statusEmoji = '⏰'; statusText = '警戒期';
+  } else {
+    bg = 'rgba(59,130,246,0.18)'; color = '#7dd3fc';
+    statusEmoji = '📅'; statusText = '余裕期';
+  }
+  // ペース診断: 計画タスク完了率 × 残日数で完走可能性を表示
+  // 🛠 review fix: 整数件数表示 (Math.ceil) + 完走 100% 時メッセージ
+  const data = spLoad();
+  const totalCurriculum = data.tasks.filter(t => t.source === 'curriculum').length;
+  const doneCurriculum = data.tasks.filter(t => t.source === 'curriculum' && t.completed).length;
+  let paceNote = '';
+  if (totalCurriculum > 0 && daysLeft > 0) {
+    const remaining = totalCurriculum - doneCurriculum;
+    if (remaining === 0) {
+      paceNote = `<div style="margin-top:0.4rem;font-size:0.78rem;color:#86efac;">🎉 計画完走済・本番に向けて過去問演習・弱点復習へ</div>`;
+    } else {
+      const speedNeeded = Math.ceil(remaining / Math.max(1, daysLeft));
+      paceNote = `<div style="margin-top:0.4rem;font-size:0.78rem;color:#94a3b8;">📈 残 ${remaining} タスク / ${daysLeft}日 → 1日 <strong style="color:${color};">${speedNeeded} 件</strong> ペース必要</div>`;
+    }
+  }
+  out.innerHTML = `
+    <div style="background:${bg};border:1px solid ${color}40;border-radius:10px;padding:0.85rem 1rem;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:0.5rem;flex-wrap:wrap;">
+        <span style="font-size:0.78rem;color:#94a3b8;">${statusEmoji} ${spEscape(examLabel)} まで</span>
+        <button id="spExamEditBtn" style="font-size:0.7rem;background:none;border:none;color:#94a3b8;cursor:pointer;padding:0;" title="試験日編集">⚙️ 編集</button>
+      </div>
+      <div style="font-size:1.8rem;font-weight:900;color:${color};line-height:1.1;margin-top:0.3rem;">
+        ${daysLeft >= 0 ? daysLeft : '—'} <span style="font-size:0.85rem;font-weight:600;color:#94a3b8;">日 (${statusText})</span>
+      </div>
+      <div style="font-size:0.72rem;color:#6b7280;margin-top:0.2rem;">試験日: ${examDate}</div>
+      ${paceNote}
+    </div>`;
+  // 編集ボタン (毎 render で要素再生成のため毎回 bind・無害)
+  // 🛠 review fix: innerHTML 再生成で参照失効するため _spBound flag は使わず常時 bind
+  // 🛠 review fix: Date.parse 検証で 13月45日等の不正値を弾く
+  const editBtn = document.getElementById('spExamEditBtn');
+  if (editBtn) {
+    editBtn.setAttribute('aria-label', '試験日と試験名を編集');
+    editBtn.addEventListener('click', () => {
+      const newLabel = prompt('試験名 (例: 共通テスト・東大入試・〜大学 2次):', examLabel || '共通テスト');
+      if (newLabel == null) return;
+      const newDate = prompt('試験日 (YYYY-MM-DD):', examDate);
+      if (newDate == null) return;
+      const m = newDate.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (!m) { alert('日付の形式が不正です (YYYY-MM-DD)'); return; }
+      // Date 検証 (13月45日等の不正値 reject)
+      const testDate = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+      if (isNaN(testDate.getTime()) ||
+          testDate.getFullYear() !== parseInt(m[1]) ||
+          testDate.getMonth() !== parseInt(m[2]) - 1 ||
+          testDate.getDate() !== parseInt(m[3])) {
+        alert('存在しない日付です (例: 2/30, 13/1 等)'); return;
+      }
+      try {
+        localStorage.setItem(_spExamLabelKey(), newLabel.trim() || '共通テスト');
+        localStorage.setItem(_spExamDateKey(), newDate);
+        spRenderCountdown();
+      } catch { alert('保存失敗しました'); }
+    });
+  }
+}
+
 function spRender() {
+  spRenderCountdown();
   spRenderProgress();
   spRenderTextbookProgress();
   spRenderToday();

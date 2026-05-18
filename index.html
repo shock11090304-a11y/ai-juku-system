@@ -405,6 +405,10 @@
       <div class="sp-grid">
         <!-- 左: 今日のタスク + 進捗 -->
         <aside class="sp-side">
+          <!-- 🎯 試験までのカウントダウン (塾長指示 2026-05-18) -->
+          <div class="sp-countdown-card" id="spCountdownCard">
+            <div id="spCountdown"></div>
+          </div>
           <div class="sp-progress-card">
             <h3>📊 進捗</h3>
             <div id="spProgressSummary"><p class="placeholder">カリキュラムから取込してください</p></div>
@@ -1116,7 +1120,7 @@
   <script src="learning-brain.js?v=20260425-2"></script>
   <script src="exam-prep.js?v=20260425-1"></script>
   <script src="referral-program.js?v=20260425-1"></script>
-  <script src="app.js?v=20260518-resume-delta-sync-cap"></script>
+  <script src="app.js?v=20260518-exam-countdown"></script>
   <script>
   // 定期テスト連携: exam-prep.html から ?examPrep=1&subject=&topic=&examId= で来た時、
   // 問題ジェネレーターに自動入力 + タブ切替 + 通知バナー
