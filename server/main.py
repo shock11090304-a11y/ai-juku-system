@@ -14499,8 +14499,14 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
             log.warning(f"[StudentDelete] messages cleanup failed: {e}")
             deleted_counts["messages"] = -1
         # course_applications: 監査保存のため student_id を NULL にして履歴は残す
+        # 🛡️ 2026-05-19 fix (defense in depth): email も anonymize して再申込時の重複 hit を防止
+        # 小川碧斗事例: 削除後の再申込で「メールアドレス登録済み」現象。
+        # POST /api/course-applications 側の student_id IS NOT NULL 条件追加と併せて二重防御。
         try:
-            c.execute("UPDATE course_applications SET student_id=NULL WHERE student_id=?", (student_id,))
+            c.execute(
+                "UPDATE course_applications SET student_id=NULL, email = 'deleted-' || id || '@deleted.invalid' WHERE student_id=?",
+                (student_id,)
+            )
             deleted_counts["course_applications_anonymized"] = related_counts.get("course_applications", 0)
         except Exception as e:
             log.warning(f"[StudentDelete] course_applications anonymize failed: {e}")
@@ -26634,8 +26640,11 @@ def public_course_application(payload: CourseApplicationRequest, request: Reques
     try:
         c = conn.cursor()
         # 同 email で 'pending' or 'approved' の申込が既にあれば 409 (重複防止)
+        # 🛡️ 2026-05-19 fix: 削除済み生徒 (student_id=NULL = anonymized) は重複扱いしない
+        # 小川碧斗事例: 削除後の再申込で「メールアドレス登録済み」と弾かれる現象を修正。
+        # student_id IS NOT NULL を重複条件に追加し、削除済み生徒の古い申込は無視する。
         c.execute(
-            "SELECT id, status FROM course_applications WHERE LOWER(email) = ? AND status IN ('pending','approved') ORDER BY id DESC LIMIT 1",
+            "SELECT id, status FROM course_applications WHERE LOWER(email) = ? AND status IN ('pending','approved') AND student_id IS NOT NULL ORDER BY id DESC LIMIT 1",
             (email_lower,)
         )
         existing = c.fetchone()
