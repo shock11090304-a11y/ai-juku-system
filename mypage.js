@@ -710,55 +710,170 @@ function initStudyLogQuickCta() {
 }
 
 // 今日の学習時間を /api/study-logs/me から取得して CTA + 上部 #todayMinutes を更新
+// 🛡️ retry button cleanup helper (2026-05-19 audit re-review): orphan setInterval 防止
+// 任意 path から msgEl の retry timer を解除 (success cleanup / 連続失敗 path で必須)
+function _slClearRetryTimer(msgEl) {
+  if (!msgEl) return;
+  if (msgEl._slRetryTimer) {
+    clearInterval(msgEl._slRetryTimer);
+    msgEl._slRetryTimer = null;
+  }
+  msgEl.onkeydown = null;
+}
+
+// 🛡️ retry button helper (2026-05-19): iPhone Safari でも「タップ可能」が伝わるよう
+// underline + 背景色 + padding + border-radius で物理ボタン化。429/5xx は countdown 付き disable で連打防止。
+// audit re-review fix:
+//   - msgEl._slRetryTimer に保存 → 連続呼出で前回 clearInterval (orphan 防止)
+//   - 内部 span#_slRetryInner の textContent だけ毎秒更新 (innerHTML 全書換 reflow 回避)
+//   - keydown (Enter/Space) で click 発火 (accessibility)
+function _slMakeRetryButton(msgEl, label, opts) {
+  if (!msgEl) return;
+  _slClearRetryTimer(msgEl);
+  opts = opts || {};
+  const countdown = Math.max(0, Number(opts.countdown || 0));
+  const color = opts.color || '#fbbf24';
+  const bg = opts.bg || 'rgba(251,191,36,0.15)';
+  msgEl.style.color = color;
+  msgEl.setAttribute('role', 'button');
+  msgEl.setAttribute('tabindex', '0');
+  // span 構造を 1 度だけ生成 (毎秒 reflow を避ける)
+  msgEl.innerHTML = '<span id="_slRetryInner" style="display:inline-block; padding:6px 12px; background:' + bg + '; border-radius:6px; text-decoration:underline; cursor:pointer;"></span>';
+  const inner = msgEl.querySelector('#_slRetryInner');
+  if (!inner) return;
+  const setText = (sec) => {
+    inner.textContent = (sec > 0) ? (label + ' (' + sec + '秒)') : label;
+  };
+  const enable = () => {
+    msgEl.style.pointerEvents = '';
+    msgEl.style.opacity = '';
+    setText(0);
+    msgEl.onclick = () => {
+      _slClearRetryTimer(msgEl);
+      msgEl.textContent = '読込中...';
+      window._slqcInflight = false;
+      refreshSlQuickCtaToday();
+    };
+    msgEl.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (typeof msgEl.onclick === 'function') msgEl.onclick();
+      }
+    };
+  };
+  let remaining = countdown;
+  if (remaining > 0) {
+    msgEl.style.pointerEvents = 'none';
+    msgEl.style.opacity = '0.7';
+    msgEl.onclick = null;
+    msgEl.onkeydown = null;
+    setText(remaining);
+    msgEl._slRetryTimer = setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        _slClearRetryTimer(msgEl);
+        enable();
+      } else {
+        setText(remaining);
+      }
+    }, 1000);
+  } else {
+    enable();
+  }
+}
+
 async function refreshSlQuickCtaToday() {
+  // 🛡️ race condition guard (audit #7 / 2026-05-19): concurrent 呼出で
+  // 「成功してるのに retry CTA 残留」を防ぐ。in-flight 中は即 return。
+  if (window._slqcInflight) return;
+  window._slqcInflight = true;
   const titleEl = document.getElementById('slqcTitle');
   const subEl = document.getElementById('slqcSub');
   const badgeEl = document.getElementById('slqcBadge');
   const todayStatEl = document.getElementById('todayMinutes');
   const msgEl = document.getElementById('slqcMessage');
   let todayMin = 0;
+  // 🛡️ try/finally で inflight guard を保証 (regression audit #6 / 2026-05-19):
+  // unhandled exception path でも _slqcInflight=false にして tab 切替後 stuck を防止
   try {
-    // days=2 にして 0 件でも空配列が返る (days=0 は backend バリデーションで拒否)
-    const data = await slApiFetch('/api/study-logs/me?days=2&limit=20');
-    const today = _slJstDate(0);
-    (data.daily || []).forEach(d => {
-      if (d && String(d.date).slice(0, 10) === today) todayMin += (d.minutes || 0);
-    });
-  } catch (e) {
-    console.warn('[StudyLog] today refresh failed:', e && e.message);
-    // 🛡️ silent fail 修正 (塾長指示 2026-05-19): API 失敗を生徒に可視化
-    // 「ボタン押しても何も起きない」現象の根絶 — 401 expired や network エラーを明示
+    try {
+      // days=2 にして 0 件でも空配列が返る (days=0 は backend バリデーションで拒否)
+      const data = await slApiFetch('/api/study-logs/me?days=2&limit=20');
+      const today = _slJstDate(0);
+      (data.daily || []).forEach(d => {
+        if (d && String(d.date).slice(0, 10) === today) todayMin += (d.minutes || 0);
+      });
+    } catch (e) {
+      console.warn('[StudyLog] today refresh failed:', e && e.message, 'status=', e && e.status);
+      // 🛡️ silent fail 修正 (塾長指示 2026-05-19): API 失敗を生徒に可視化
+      // audit #5 fix: status code 優先で判定 (regex on message は脆弱 / 403/429/500 取りこぼし防止)
+      if (msgEl) {
+        const status = (e && typeof e.status === 'number') ? e.status : 0;
+        const errStr = (e && e.message) || '';
+        const isAuth = (status === 401) || /401|unauthorized|expired/i.test(errStr);
+        const isPerm = (status === 403);
+        const isRate = (status === 429);
+        const isServer = (status >= 500 && status < 600);
+        // audit re-review: orphan timer 防止と a11y state clean
+        _slClearRetryTimer(msgEl);
+        msgEl.removeAttribute('role');
+        msgEl.removeAttribute('tabindex');
+        msgEl.style.pointerEvents = '';
+        msgEl.style.opacity = '';
+        if (isAuth) {
+          msgEl.innerHTML = '⚠️ ログイン状態が切れたようです — <a href="login.html" style="display:inline-block; padding:6px 12px; background:rgba(125,211,252,0.15); border-radius:6px; color:#7dd3fc; text-decoration:underline;">再ログイン</a>';
+          msgEl.style.color = '#fca5a5';
+          msgEl.style.cursor = '';
+          msgEl.onclick = null;
+        } else if (isPerm) {
+          msgEl.innerHTML = '⚠️ アクセス権がありません — <a href="mailto:info@trillion-ai-juku.com" style="display:inline-block; padding:6px 12px; background:rgba(252,165,165,0.15); border-radius:6px; color:#fca5a5; text-decoration:underline;">塾長にメール</a>';
+          msgEl.style.color = '#fca5a5';
+          msgEl.style.cursor = '';
+          msgEl.onclick = null;
+        } else if (isRate) {
+          // 429: 30 秒 countdown 付き disable で連打防止 (UX 致命 #2 fix / サーバ保護も兼ねる)
+          _slMakeRetryButton(msgEl, '⚠️ アクセスが集中しています — 待ってから再試行', { countdown: 30 });
+        } else if (isServer) {
+          // 5xx: 10 秒 countdown で過剰連打防止 (中学生でも分かる言葉に変換)
+          _slMakeRetryButton(msgEl, '⚠️ いまサーバーで問題が発生しました — タップで再試行', { countdown: 10 });
+        } else {
+          _slMakeRetryButton(msgEl, '⚠️ 学習記録の読込に失敗 — タップで再試行', { countdown: 0 });
+        }
+      }
+      return;
+    }
+    // 上部 stats #todayMinutes を実データで上書き (これまで demo の 45 が固定表示されていた)
+    if (todayStatEl) todayStatEl.textContent = String(todayMin);
+    // 🛡️ silent fail fix (2026-05-19): retry 成功時の状態 cleanup (前回エラー残留防止)
     if (msgEl) {
-      const errStr = (e && e.message) || '';
-      if (/401|unauthorized|expired/i.test(errStr)) {
-        msgEl.innerHTML = '⚠️ セッションが切れました — <a href="login.html" style="color:#7dd3fc; text-decoration:underline;">再ログイン</a>';
-        msgEl.style.color = '#fca5a5';
-      } else {
-        msgEl.textContent = '⚠️ 学習記録の読込に失敗 — タップで再試行';
-        msgEl.style.color = '#fbbf24';
-        msgEl.style.cursor = 'pointer';
-        msgEl.onclick = () => { msgEl.textContent = '読込中...'; refreshSlQuickCtaToday(); };
+      // audit re-review: setInterval orphan 防止 (success path で必ず clearInterval)
+      _slClearRetryTimer(msgEl);
+      msgEl.onclick = null;
+      msgEl.style.cursor = '';
+      msgEl.style.color = '#a78bfa';
+      msgEl.style.pointerEvents = '';
+      msgEl.style.opacity = '';
+      msgEl.removeAttribute('role');
+      msgEl.removeAttribute('tabindex');
+      // ⚠️ アイコン残留判定 — innerHTML/textContent 両方を check (link 含む 401 ケース対応)
+      const txt = (msgEl.textContent || '');
+      if (txt.includes('⚠️') || txt === '読込中...') {
+        msgEl.innerHTML = '';
       }
     }
-    return;
-  }
-  // 上部 stats #todayMinutes を実データで上書き (これまで demo の 45 が固定表示されていた)
-  if (todayStatEl) todayStatEl.textContent = String(todayMin);
-  // 🛡️ silent fail fix (2026-05-19): retry 成功時の状態 cleanup (前回エラー残留防止)
-  if (msgEl) {
-    msgEl.onclick = null;
-    msgEl.style.cursor = '';
-    msgEl.style.color = '#a78bfa';
-    if (msgEl.textContent.includes('⚠️') || msgEl.textContent === '読込中...') msgEl.textContent = '';
-  }
-  if (todayMin > 0) {
-    if (badgeEl) badgeEl.textContent = '⚡ 今日 進行中';
-    if (titleEl) titleEl.textContent = `今日 ${todayMin} 分 学習中`;
-    if (subEl) subEl.textContent = '追加で記録すれば塾長への報告も自動。1日の合計が積み上がります。';
-  } else {
-    if (badgeEl) badgeEl.textContent = '📝 今日の学習';
-    if (titleEl) titleEl.textContent = '今日の学習を記録しよう';
-    if (subEl) subEl.textContent = '塾長があなたの頑張りを見て、いいねやコメントを送ります。';
+    if (todayMin > 0) {
+      if (badgeEl) badgeEl.textContent = '⚡ 今日 進行中';
+      if (titleEl) titleEl.textContent = `今日 ${todayMin} 分 学習中`;
+      if (subEl) subEl.textContent = '追加で記録すれば塾長への報告も自動。1日の合計が積み上がります。';
+    } else {
+      if (badgeEl) badgeEl.textContent = '📝 今日の学習';
+      if (titleEl) titleEl.textContent = '今日の学習を記録しよう';
+      if (subEl) subEl.textContent = '塾長があなたの頑張りを見て、いいねやコメントを送ります。';
+    }
+  } finally {
+    // 🛡️ inflight guard release (audit #7 + regression #6 / 2026-05-19):
+    // 全 path (success / catch / unhandled exception) で必ず解除して stuck を防止
+    window._slqcInflight = false;
   }
 }
 
@@ -767,6 +882,8 @@ async function refreshSlQuickCtaToday() {
 async function quickLogMinutes(minutes, btn) {
   if (!minutes || minutes < 1) return;
   const msg = document.getElementById('slqcMessage');
+  // audit re-review: retry button 中の orphan timer 防止 (msg を上書きする前に clearInterval)
+  _slClearRetryTimer(msg);
   // 直近 14 日の最新 log から subject を推定。なければ「詳しく記録」に誘導 (UX review: 英語デフォは複数科目生徒で誤分類リスク)
   let subject = null;
   try {
@@ -851,6 +968,8 @@ async function quickLogMinutes(minutes, btn) {
 async function undoQuickLog(logId) {
   const msg = document.getElementById('slqcMessage');
   if (!logId) return;
+  // audit re-review: retry button 中の orphan timer 防止
+  _slClearRetryTimer(msg);
   if (msg) { msg.textContent = '取り消し中...'; msg.style.color = '#a78bfa'; }
   try {
     await slApiFetch('/api/study-logs/' + encodeURIComponent(logId), { method: 'DELETE' });
