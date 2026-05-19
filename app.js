@@ -244,6 +244,53 @@ const BACKEND_URL = (window.location.hostname === 'localhost' && window.location
   : 'https://ai-juku-api-production.up.railway.app';
 let BACKEND_AI_AVAILABLE = null;  // Auto-detected on init
 
+// 🛡️ silent fail diagnostic reporter (2026-05-19 audit fix)
+// console.warn のみの catch block で実 server に observation を残す。
+// fire-and-forget で UX に影響を与えず、CEO ダッシュで「frontend_error」events 経由で
+// 真原因 (例: localStorage 容量超過 / DOM 不在 / null 参照) を把握可能化。
+const _reportedSilentFailSignatures = new Set();
+function _reportSilentFail(context, err, extras) {
+  try {
+    const errStr = (err && err.message) || String(err || '');
+    const sig = context + '|' + errStr.slice(0, 100);
+    if (_reportedSilentFailSignatures.has(sig)) return;  // 同一エラー連発 dedup
+    _reportedSilentFailSignatures.add(sig);
+    if (_reportedSilentFailSignatures.size > 50) {
+      // メモリ保護: 50 件超で 1 件 (oldest) 削除
+      const it = _reportedSilentFailSignatures.values().next();
+      if (!it.done) _reportedSilentFailSignatures.delete(it.value);
+    }
+    // audit fix: extras を先に展開 → core field で上書き不能化
+    const payload = {
+      ...(extras || {}),
+      kind: 'silent_fail',
+      type: context,
+      error_message: errStr.slice(0, 300),
+      full_error: ((err && err.stack) || errStr).slice(0, 600),
+      user_agent: (navigator && navigator.userAgent) ? navigator.userAgent.slice(0, 200) : '',
+    };
+    const body = JSON.stringify(payload);
+    const url = `${BACKEND_URL}/api/admin/log-frontend-error`;
+    // Bearer token は student auth_guard が設定する localStorage から取得 (任意)
+    // audit fix: 正しい key 名は `ai_juku_session_token` (auth.html/login.html で setItem 確認済)
+    // admin fallback も `ai_juku_admin_token` (ceo.html:149 TOKEN_KEY / admin-only.js:22 と一致) に統一。`admin_token` は実在しない
+    const headers = { 'Content-Type': 'application/json' };
+    try {
+      const tk = localStorage.getItem('ai_juku_session_token') || localStorage.getItem('ai_juku_admin_token');
+      if (tk) headers['Authorization'] = 'Bearer ' + tk;
+    } catch (_) {}
+    // fire-and-forget: keepalive で page unload 中にも漏らさない
+    if (navigator.sendBeacon && !headers['Authorization']) {
+      const blob = new Blob([body], { type: 'application/json' });
+      navigator.sendBeacon(url, blob);
+    } else {
+      fetch(url, { method: 'POST', headers, body, keepalive: true }).catch(() => {});
+    }
+  } catch (_) {
+    // 自分自身が落ちても何もしない (再帰防止)
+  }
+}
+
 async function detectBackendAI() {
   if (BACKEND_AI_AVAILABLE === true) return true;  // 成功はキャッシュ。失敗は毎回再試行 (一過性の network 障害で permanent demo に陥る不具合の修正 2026-05-06)
   try {
@@ -5743,7 +5790,7 @@ function bindEvents() {
   document.getElementById('analyzeBtn').addEventListener('click', runDiagnostic);
   document.getElementById('generateCurriculumBtn').addEventListener('click', generateCurriculum);
   // 📚 マイ参考書 UI init (塾長指示 2026-05-14)
-  try { initIdxMaterials(); } catch (e) { console.warn('initIdxMaterials failed:', e); }
+  try { initIdxMaterials(); } catch (e) { console.warn('initIdxMaterials failed:', e); _reportSilentFail('initIdxMaterials', e); }
   document.getElementById('correctEssayBtn').addEventListener('click', correctEssay);
 
   // 英作文 画像添付ハンドラ
@@ -6944,7 +6991,7 @@ JSON文字列の中でバックスラッシュを使う場合は必ず二重に�
         }
       }
     }
-  } catch (e) { console.warn('Learning Brain hook failed:', e); }
+  } catch (e) { console.warn('Learning Brain hook failed:', e); _reportSilentFail('learning_brain_hook', e); }
 }
 
 // ===========================================================================
@@ -7246,7 +7293,23 @@ function _saveSessionHistory(ss, agg) {
     // LRU: 古いものを削除
     all.sessions = sessions.slice(0, SESSION_HISTORY_MAX);
     localStorage.setItem(SESSION_STATS_KEY, JSON.stringify(all));
-  } catch (e) { console.warn('save session failed', e); }
+  } catch (e) {
+    console.warn('save session failed', e);
+    _reportSilentFail('save_session', e);
+    // 履歴保存失敗は学習データ消失リスク。1 session で 1 回だけ toast (連発防止)
+    // audit fix: QuotaExceeded だと reload で再失敗するので「スクショ保存」を案内 (誤誘導防止)
+    // err kind は 6 秒 TTL (3.5 秒だと読み切れない懸念)
+    if (!window._saveSessionFailToasted) {
+      window._saveSessionFailToasted = true;
+      try {
+        _spToast('⚠️ 今回の結果が記録できませんでした — 画面のスクショ保存をお勧めします', 'err');
+        // toast の TTL を上書き (err は 6 秒に延長 — 高校生の読速 + 警告重要度)
+        clearTimeout(window._spToastTimer);
+        const el = document.getElementById('spToast');
+        if (el) window._spToastTimer = setTimeout(() => { el.style.opacity = '0'; }, 6000);
+      } catch (_) {}
+    }
+  }
 }
 
 // finalize: モーダル表示 + 履歴保存
@@ -7446,7 +7509,7 @@ function renderProblems(data, layout, source) {
         && window.__examSessionState.attempts.length > 0) {
       _finalizeExamSession('auto-switch');
     }
-  } catch (e) { console.warn('auto-finalize skipped:', e); }
+  } catch (e) { console.warn('auto-finalize skipped:', e); _reportSilentFail('auto_finalize_exam', e); }
 
   // ========= セッショントラッキング初期化 (塾長指示 2026-05-01) =========
   // probSubject / probTopic から context を取り、問題 pid <-> topic マップを作る
@@ -7486,7 +7549,7 @@ function renderProblems(data, layout, source) {
       };
       _initExamSession(_sessionMeta);
     }
-  } catch (e) { console.warn('session init failed', e); }
+  } catch (e) { console.warn('session init failed', e); _reportSilentFail('exam_session_init', e); }
 
   // 問題番号の横に出典大学名バッジを出す
   const sourceBadge = (p) => {
