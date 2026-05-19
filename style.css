@@ -2165,8 +2165,44 @@ select:focus, input:focus, textarea:focus {
 .sp-progress-stats .stat.ok { background:rgba(16,185,129,0.2); color:#34d399; }
 
 .sp-today-list { display:flex; flex-direction:column; gap:0.4rem; font-size:0.9rem; }
-.sp-add-form { display:flex; flex-wrap:wrap; gap:0.4rem; align-items:stretch; }
-.sp-add-form input, .sp-add-form select { flex:1; min-width:0; padding:0.4rem 0.6rem; background:rgba(0,0,0,0.3); border:1px solid rgba(99,102,241,0.3); border-radius:6px; color:var(--text); font-size:0.85rem; }
+/* 🛡️ 2026-05-19 fix (塾長指示「日にちの枠を広げて」): iPhone Safari で input 圧縮を解消
+ * 戦略: PC でも mobile でも 2 列 grid に統一 → サイドバー 300px 内に確実収容
+ * iOS Safari auto-zoom 防止のため font-size: 16px (1rem) 固定 */
+.sp-add-form {
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:0.55rem;
+  align-items:stretch;
+}
+.sp-add-form input,
+.sp-add-form select {
+  min-width:0;
+  padding:0.55rem 0.7rem;
+  background:rgba(0,0,0,0.3);
+  border:1px solid rgba(99,102,241,0.3);
+  border-radius:6px;
+  color:var(--text);
+  font-size:1rem;            /* 16px: iOS Safari auto-zoom 防止 (audit fix 軽微) */
+  min-height:44px;           /* Apple HIG タップターゲット */
+  box-sizing:border-box;
+  grid-column: span 1;
+}
+/* text input (material/title) は 2 列分使って full-width 表示 */
+.sp-add-form input[type="text"] {
+  grid-column: span 2;
+}
+/* number input の inline max-width:6rem が grid セル幅を破壊するので override (audit fix 重大) */
+.sp-add-form input[type="number"] {
+  max-width:none !important;
+  grid-column: span 1;
+}
+.sp-add-form button {
+  min-width:0;
+  min-height:48px;           /* mobile 用に少し大きめ */
+  padding:0.55rem 1rem;
+  font-size:1rem;
+  grid-column: span 1;
+}
 
 .sp-week-grid { display:grid; grid-template-columns: repeat(7, 1fr); gap:0.5rem; }
 @media (max-width: 1200px) { .sp-week-grid { grid-template-columns: repeat(4, 1fr); } }
