@@ -2200,6 +2200,133 @@ def _send_trial_unused_warning_email(to_email: str, student_name: str, stage: st
         return {"sent": False, "error": str(e)}
 
 
+def _send_trial_nurture_day2_email(to_email: str, student_name: str, login_url: str) -> dict:
+    """📧 体験 Day 2 nurture メール (集客 funnel #3・塾長指示 2026-05-19)
+    体験開始 2 日目に「学習習慣を作る」エンカレッジを送信。
+    目的: 体験初期離脱を防ぎ・14日完走 → paid 化率を上げる。
+    """
+    import html as _html
+    if not RESEND_API_KEY:
+        log.warning(f"[DEV-MODE] Trial Day 2 nurture skipped for {to_email}")
+        return {"sent": False, "dev_mode": True}
+    safe_name = _html.escape(student_name or "")
+    greeting = f"{safe_name}さま" if safe_name else "保護者さま"
+    subject = "体験 2 日目のおすすめ — 学習習慣を作る 3 つのコツ"
+    html = f"""<!DOCTYPE html>
+<html><body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 560px; margin: 0 auto; padding: 2rem;">
+<h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AIコーチング</h1>
+<p>{greeting}、体験 2 日目になりました。</p>
+
+<p style="background:#f0f7ff; padding:1rem; border-left:4px solid #3b82f6; border-radius:4px; margin: 1.5rem 0;">
+  💡 <strong>2 週間の体験で成果を出すコツ</strong><br>
+  最初の 3 日で「1 日 30 分」のリズムを作れると、その後の継続率が大きく変わります。短時間でも毎日触れることが大切です。
+</p>
+
+<p><strong>今日のおすすめアクション (5 分でOK):</strong></p>
+<ul>
+  <li>📝 学習計画タブで「今日のタスク」を確認</li>
+  <li>🤖 AI チューターに 1 問質問してみる (どんな科目でも OK)</li>
+  <li>🎯 弱点 TOP3 が表示されていれば 1 つ復習</li>
+</ul>
+
+<p style="text-align:center; margin: 2rem 0;">
+  <a href="{login_url}" style="display:inline-block; padding: 1rem 2rem; background:linear-gradient(135deg,#3b82f6,#6366f1); color:white; text-decoration:none; border-radius:8px; font-weight:700; font-size:1.05rem;">
+    📱 アプリを開く
+  </a>
+</p>
+
+<div style="background:#fafafa; padding:1rem; border-radius:6px; margin: 1.5rem 0; font-size: 0.9rem;">
+  <strong>💬 困ったら気軽にお問い合わせください</strong><br>
+  分からないこと・使い方の不明点は、アプリ内メッセージか LINE 連携 (任意) で気軽にご相談ください。
+</div>
+
+<hr style="margin:2rem 0; border:none; border-top:1px solid #eee;">
+<p style="font-size:0.8rem; color:#999;">
+  お問い合わせ: <a href="mailto:info@trillion-ai-juku.com" style="color:#6366f1;">info@trillion-ai-juku.com</a><br>
+  体験期間中の自動課金は発生しません。
+</p>
+</body></html>"""
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({"from": FROM_EMAIL, "to": [to_email], "subject": subject, "html": html}).encode("utf-8"),
+            headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json", "User-Agent": "ai-juku-system/1.0"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode())
+            log.info(f"Trial Day 2 nurture sent to {to_email}: {result.get('id')}")
+            return {"sent": True, "resend_id": result.get("id")}
+    except Exception as e:
+        log.error(f"Trial Day 2 nurture email failed for {to_email}: {type(e).__name__}: {e}")
+        return {"sent": False, "error": str(e)}
+
+
+def _send_trial_nurture_day5_email(to_email: str, student_name: str, login_url: str) -> dict:
+    """📧 体験 Day 5 nurture メール (集客 funnel #3・塾長指示 2026-05-19)
+    体験開始 5 日目に「中間振り返り + 残り半分の活用」エンカレッジ。
+    目的: 中盤離脱を防ぎ・終盤に向けて学習量を増やす motivation 喚起。
+    """
+    import html as _html
+    if not RESEND_API_KEY:
+        log.warning(f"[DEV-MODE] Trial Day 5 nurture skipped for {to_email}")
+        return {"sent": False, "dev_mode": True}
+    safe_name = _html.escape(student_name or "")
+    greeting = f"{safe_name}さま" if safe_name else "保護者さま"
+    subject = "体験 5 日目のおすすめ — 残り 9 日の活用方法"
+    html = f"""<!DOCTYPE html>
+<html><body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 560px; margin: 0 auto; padding: 2rem;">
+<h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AIコーチング</h1>
+<p>{greeting}、体験開始から 5 日目になりました。</p>
+
+<p style="background:#fef3c7; padding:1rem; border-left:4px solid #f59e0b; border-radius:4px; margin: 1.5rem 0;">
+  ⏰ <strong>残り 9 日 — 後半に向けて</strong><br>
+  2 週間続けると学習リズムが定着しやすくなります。残りの 9 日で機能をフル活用してみてください。
+</p>
+
+<p><strong>残り 9 日でやってほしいこと:</strong></p>
+<ul>
+  <li>📊 学習効率分析ダッシュボードで「自分の最高効率時間帯」を確認</li>
+  <li>🍅 Pomodoro モード (25 分集中 + 5 分休憩のサイクル機能) で 1 時間集中</li>
+  <li>🎴 Flashcard (SRS 復習機能) で苦手単語を反復</li>
+  <li>📷 写真で質問機能 (問題写真を上げると 3 つの AI が並列解説) をフル活用</li>
+</ul>
+
+<p style="text-align:center; margin: 2rem 0;">
+  <a href="{login_url}" style="display:inline-block; padding: 1rem 2rem; background:linear-gradient(135deg,#f59e0b,#ec4899); color:white; text-decoration:none; border-radius:8px; font-weight:700; font-size:1.05rem;">
+    📱 続きを学習する
+  </a>
+</p>
+
+<div style="background:#f0fdf4; padding:1rem; border-radius:6px; margin: 1.5rem 0; font-size: 0.9rem;">
+  <strong>💡 体験後の継続をご検討の方へ</strong><br>
+  創設メンバープラン (現在お申込みの方は ¥14,500/月・契約期間中の月額変更対象外) もご用意しております。<br>
+  体験完走後に検討いただければ十分なので、今は学習に集中してください。
+</div>
+
+<hr style="margin:2rem 0; border:none; border-top:1px solid #eee;">
+<p style="font-size:0.8rem; color:#999;">
+  お問い合わせ: <a href="mailto:info@trillion-ai-juku.com" style="color:#6366f1;">info@trillion-ai-juku.com</a>
+</p>
+</body></html>"""
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({"from": FROM_EMAIL, "to": [to_email], "subject": subject, "html": html}).encode("utf-8"),
+            headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json", "User-Agent": "ai-juku-system/1.0"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode())
+            log.info(f"Trial Day 5 nurture sent to {to_email}: {result.get('id')}")
+            return {"sent": True, "resend_id": result.get("id")}
+    except Exception as e:
+        log.error(f"Trial Day 5 nurture email failed for {to_email}: {type(e).__name__}: {e}")
+        return {"sent": False, "error": str(e)}
+
+
 def _send_trial_ending_email(to_email: str, student_name: str, days_left: int, upgrade_url: str) -> dict:
     """体験終了リマインダーメール。継続したい人向けに本契約フォームへの誘導。
     体験終了時の自動課金は行わないので、何もしなければアカウントは自動失効する（データは保持）。
@@ -2791,7 +2918,7 @@ async def _trial_management_scheduler():
                 log.info("[TrialMgr] Skipped (already ran today by another replica)")
                 continue
 
-            # 5 タスクを順次実行 (例外は個別に握りつぶしてループ継続)
+            # 6 タスクを順次実行 (例外は個別に握りつぶしてループ継続)
             tasks = [
                 ("expire-trials", lambda: cron_expire_trials(x_cron_secret=secret, dry_run=False)),
                 ("trial-reminders", lambda: cron_trial_reminders(x_cron_secret=secret, dry_run=False)),
@@ -2799,6 +2926,8 @@ async def _trial_management_scheduler():
                 ("trial-unused-warning", lambda: cron_trial_unused_warning(x_cron_secret=secret, dry_run=False)),
                 # 🚨 体験中・離脱予兆者への AI 個別フォロー (2026-05-11 追加)
                 ("trial-rescue", lambda: admin_trial_rescue_now(payload={"dry_run": False}, x_cron_secret=secret)),
+                # 📧 体験 Day 2 / Day 5 nurture メール (集客 funnel #3・2026-05-19 追加)
+                ("trial-nurture", lambda: cron_trial_nurture(x_cron_secret=secret, dry_run=False)),
             ]
             results = {}
             for task_name, fn in tasks:
@@ -19164,6 +19293,122 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
     conn.commit()
     conn.close()
     return {"sent": sent, "skipped": skipped, "skipped_silent": skipped_silent, "candidates": len(candidates), "preview": preview if dry_run else None}
+
+
+@app.post("/api/cron/trial-nurture")
+def cron_trial_nurture(x_cron_secret: str = Header(None), dry_run: bool = False):
+    """📧 体験中の盛り上げメール (集客 funnel #3・塾長指示 2026-05-19)
+    Day 2 (登録 1-2 日経過) + Day 5 (登録 4-5 日経過) に学習習慣エンカレッジ送信。
+    既存 cron_trial_reminders (終了 1-2 日前) と orthogonal: 本 endpoint は体験「中盤」担当。
+    notifications テーブルで dedup (template='trial_nurture_day2' / 'trial_nurture_day5').
+
+    silent customer (last_login_at IS NULL) は cron_trial_unused_warning に任せ
+    本 endpoint では skip (二重送信 + サイレントスキップ ルール準拠)。
+    """
+    if not CRON_SECRET:
+        raise HTTPException(status_code=503, detail="Cron not configured")
+    if not x_cron_secret or not hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    conn = db()
+    c = conn.cursor()
+    now = datetime.now(timezone.utc)
+    sent_day2 = 0
+    sent_day5 = 0
+    skipped_silent = 0
+    skipped_already = 0
+    preview = []
+    try:
+        # 🛡 edge case fix (review 2026-05-19): trial_end が 48h 以内の生徒は
+        # cron_trial_reminders 専管にして二重送信を排除 (legacy 7d 生徒救済 + race ハードニング)
+        trial_end_threshold = (now + timedelta(hours=48)).isoformat()
+        # Day 2: 登録 1-2 日経過 (24-48 時間後)・status='trial' or 'paid'
+        d2_lower = now - timedelta(hours=48)  # 上限: 48 時間前
+        d2_upper = now - timedelta(hours=24)  # 下限: 24 時間前
+        c.execute(
+            """SELECT id, name, email, last_login_at, created_at FROM students
+               WHERE status IN ('trial', 'paid') AND email IS NOT NULL
+                 AND created_at > ? AND created_at <= ?
+                 AND (trial_end IS NULL OR trial_end > ?)""",
+            (d2_lower.isoformat(), d2_upper.isoformat(), trial_end_threshold)
+        )
+        for row in c.fetchall():
+            # silent skip (last_login_at IS NULL) - cron_trial_unused_warning に任せる
+            try: _last_login = row["last_login_at"]
+            except (KeyError, IndexError): _last_login = None
+            if not _last_login:
+                skipped_silent += 1
+                continue
+            # dedup
+            c.execute(
+                "SELECT id FROM notifications WHERE student_id=? AND template='trial_nurture_day2' AND success=1 LIMIT 1",
+                (row["id"],)
+            )
+            if c.fetchone():
+                skipped_already += 1
+                continue
+            if dry_run:
+                preview.append({"day": 2, "student_id": row["id"], "email": row["email"]})
+                continue
+            login_url = f"{BASE_URL}/mypage.html"
+            result = _send_trial_nurture_day2_email(row["email"], row["name"] or "", login_url)
+            c.execute(
+                """INSERT INTO notifications (student_id, channel, template, payload, success, error)
+                   VALUES (?, 'email', 'trial_nurture_day2', ?, ?, ?)""",
+                (row["id"], json.dumps({"day": 2}), 1 if result.get("sent") else 0, result.get("error", ""))
+            )
+            if result.get("sent"): sent_day2 += 1
+
+        # Day 5: 登録 4-5 日経過 (96-120 時間後)・trial_end 48h 以内除外 (上記同様)
+        d5_lower = now - timedelta(hours=120)  # 上限: 120 時間前
+        d5_upper = now - timedelta(hours=96)   # 下限: 96 時間前
+        c.execute(
+            """SELECT id, name, email, last_login_at, created_at FROM students
+               WHERE status IN ('trial', 'paid') AND email IS NOT NULL
+                 AND created_at > ? AND created_at <= ?
+                 AND (trial_end IS NULL OR trial_end > ?)""",
+            (d5_lower.isoformat(), d5_upper.isoformat(), trial_end_threshold)
+        )
+        for row in c.fetchall():
+            try: _last_login = row["last_login_at"]
+            except (KeyError, IndexError): _last_login = None
+            if not _last_login:
+                skipped_silent += 1
+                continue
+            c.execute(
+                "SELECT id FROM notifications WHERE student_id=? AND template='trial_nurture_day5' AND success=1 LIMIT 1",
+                (row["id"],)
+            )
+            if c.fetchone():
+                skipped_already += 1
+                continue
+            if dry_run:
+                preview.append({"day": 5, "student_id": row["id"], "email": row["email"]})
+                continue
+            login_url = f"{BASE_URL}/mypage.html"
+            result = _send_trial_nurture_day5_email(row["email"], row["name"] or "", login_url)
+            c.execute(
+                """INSERT INTO notifications (student_id, channel, template, payload, success, error)
+                   VALUES (?, 'email', 'trial_nurture_day5', ?, ?, ?)""",
+                (row["id"], json.dumps({"day": 5}), 1 if result.get("sent") else 0, result.get("error", ""))
+            )
+            if result.get("sent"): sent_day5 += 1
+
+        conn.commit()
+    except Exception as e:
+        log.error(f"[trial-nurture] failed: {e}", exc_info=True)
+        try: conn.rollback()
+        except Exception: pass
+        conn.close()
+        raise HTTPException(status_code=500, detail=f"trial-nurture failed: {type(e).__name__}")
+    conn.close()
+    return {
+        "sent_day2": sent_day2,
+        "sent_day5": sent_day5,
+        "skipped_silent": skipped_silent,
+        "skipped_already": skipped_already,
+        "preview": preview if dry_run else None,
+    }
 
 
 @app.post("/api/cron/trial-unused-warning")
