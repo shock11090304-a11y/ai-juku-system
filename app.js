@@ -4121,6 +4121,119 @@ function spAddManualTask() {
   spRender();
 }
 
+// 📝 API 経由の study_logs を取得して進捗カード「今日 X 分」表示に反映 (塾長指示 2026-05-19)
+// spRenderProgress は localStorage の actual_min のみ集計するので、手動入力した study_logs (API 経由) が
+// 反映されない不一致を解消。spLogManualStudy 成功後に呼んで、進捗カードのテキストに API 集計値を追記。
+async function _spFetchAndShowApiToday() {
+  const token = (typeof localStorage !== 'undefined') ? (localStorage.getItem('ai_juku_session_token') || '') : '';
+  if (!token) return;
+  try {
+    const resp = await fetch(`${BACKEND_URL || ''}/api/study-logs/me?days=2&limit=20`, {
+      headers: { 'Authorization': 'Bearer ' + token },
+    });
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const todayJst = spTodayJST();
+    let apiToday = 0;
+    (data.daily || []).forEach(d => {
+      if (d && String(d.date).slice(0, 10) === todayJst) apiToday += (d.minutes || 0);
+    });
+    // audit re-review fix (2026-05-19): API banner を spProgressSummary の外 (sibling) に配置
+    // spRenderProgress L4593 が `out.innerHTML = ...` で spProgressSummary を上書きするので、
+    // 内部に append すると spRender 毎に消える。親 `.sp-progress-card` の最後に sibling として置く。
+    const summaryEl = document.getElementById('spProgressSummary');
+    if (!summaryEl) return;
+    const cardEl = summaryEl.closest('.sp-progress-card') || summaryEl.parentElement;
+    if (!cardEl) return;
+    let apiBanner = document.getElementById('spApiTodayBanner');
+    if (!apiBanner) {
+      apiBanner = document.createElement('div');
+      apiBanner.id = 'spApiTodayBanner';
+      apiBanner.style.cssText = 'margin-top:0.6rem; padding:0.55rem 0.75rem; background:rgba(134,239,172,0.10); border:1px solid rgba(134,239,172,0.35); border-radius:8px; font-size:0.82rem; color:#86efac; font-weight:700;';
+      cardEl.appendChild(apiBanner);
+    }
+    apiBanner.textContent = '📝 今日の学習記録 (手動入力 + タイマー 合算): ' + apiToday + ' 分';
+  } catch (_) { /* fail-soft: 既存表示を妨げない */ }
+}
+
+// 📝 学習時間を手動で記録 (塾長指示 2026-05-19): タイマー不要で実績だけ入力できる
+// 「タスクを追加」(計画 = localStorage) と異なり、こちらは /api/study-logs POST で実績を直接記録。
+// 記録は進捗カード「今日 X 分 / 計画 5h」に即反映。失敗時は明示エラー表示 (silent fail 防止)。
+async function spLogManualStudy() {
+  const dateEl = document.getElementById('spLogDate');
+  const subjEl = document.getElementById('spLogSubject');
+  const materialEl = document.getElementById('spLogMaterial');
+  const minEl = document.getElementById('spLogMinutes');
+  const msgEl = document.getElementById('spLogMsg');
+  const btn = document.getElementById('spLogBtn');
+  const showMsg = (text, color) => {
+    if (msgEl) { msgEl.textContent = text; msgEl.style.color = color || '#a78bfa'; }
+  };
+  const studied_date = (dateEl && dateEl.value) ? dateEl.value : spTodayJST();
+  const subject = (subjEl && subjEl.value) ? subjEl.value : 'その他';
+  const material = (materialEl && materialEl.value) ? materialEl.value.trim() : '';
+  const minutes = parseInt(minEl && minEl.value, 10);
+  if (!minutes || minutes < 1 || minutes > 1440) {
+    showMsg('⚠️ 勉強時間は 1〜1440 分で入力してください', '#fbbf24');
+    if (minEl) try { minEl.focus(); } catch (_) {}
+    return;
+  }
+  const token = (typeof localStorage !== 'undefined') ? (localStorage.getItem('ai_juku_session_token') || '') : '';
+  if (!token) {
+    showMsg('⚠️ ログインが必要です — login.html から再ログインしてください', '#fca5a5');
+    return;
+  }
+  if (btn) { btn.disabled = true; btn._origText = btn._origText || btn.textContent; btn.textContent = '記録中...'; }
+  showMsg('記録中...', '#a78bfa');
+  try {
+    const resp = await fetch(`${BACKEND_URL || ''}/api/study-logs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({
+        studied_date,
+        subject,
+        material: material ? material.slice(0, 200) : null,
+        minutes,
+        note: '手動入力 (学習計画・管理タブ)',
+      }),
+    });
+    if (resp.status === 401) {
+      showMsg('⚠️ ログインが切れました — login.html から再ログインしてください', '#fca5a5');
+      return;
+    }
+    if (resp.status === 403) {
+      showMsg('ℹ️ 学習記録機能はプレミアム以上 / 国公立難関コースの方のみご利用いただけます', '#fbbf24');
+      return;
+    }
+    if (resp.status === 429) {
+      showMsg('⚠️ アクセスが集中しています — 30 秒後に再試行してください', '#fbbf24');
+      return;
+    }
+    if (!resp.ok) {
+      let detail = '';
+      try { const j = await resp.json(); detail = j.detail || j.message || ''; } catch (_) {}
+      showMsg('⚠️ 失敗: ' + (detail || ('HTTP ' + resp.status)), '#fca5a5');
+      return;
+    }
+    // 成功: input クリア + 進捗再描画 + toast
+    showMsg('✅ ' + minutes + ' 分を記録しました (' + subject + ')', '#86efac');
+    if (minEl) minEl.value = '';
+    if (materialEl) materialEl.value = '';
+    try { _spToast('✅ 学習記録: ' + subject + ' ' + minutes + '分', 'ok'); } catch (_) {}
+    // 進捗カード再描画 + API 集計値で「今日 X 分」を上書き (audit 重大 fix 2026-05-19)
+    // spRenderProgress は localStorage の actual_min のみ合算するので、API 経由の study_logs は別途取得
+    try { spRender(); } catch (_) {}
+    try { await _spFetchAndShowApiToday(); } catch (_) {}
+  } catch (e) {
+    showMsg('⚠️ ネットワークエラー: ' + ((e && e.message) || ''), '#fca5a5');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = btn._origText || '記録';
+    }
+  }
+}
+
 // 🎯 学習計画 toast (sp 系の右下通知・3 秒で自動消える)
 function _spToast(msg, kind) {
   try {
@@ -5017,13 +5130,19 @@ function spInit() {
   // 初期化: date input に今日をセット、ボタン hook
   const dateInp = document.getElementById('spAddDate');
   if (dateInp && !dateInp.value) dateInp.value = spTodayJST();
+  // 📝 学習時間 手動入力 (塾長指示 2026-05-19): date input 初期化
+  const logDate = document.getElementById('spLogDate');
+  if (logDate && !logDate.value) logDate.value = spTodayJST();
   const hook = (id, fn) => { const el = document.getElementById(id); if (el && !el._spBound) { el.addEventListener('click', fn); el._spBound = true; } };
   hook('spImportBtn', spImportFromCurriculum);
   hook('spPrevWeek', () => { _spWeekOffset--; spRender(); });
   hook('spThisWeek', () => { _spWeekOffset = 0; spRender(); });
   hook('spNextWeek', () => { _spWeekOffset++; spRender(); });
   hook('spAddBtn', spAddManualTask);
+  hook('spLogBtn', spLogManualStudy);  // 📝 学習時間 手動記録 button bind
   hook('spClearBtn', spClearAll);
+  // 📝 API 集計の「今日の学習記録」初回表示 (audit 重大 fix 2026-05-19): 既存 study_log を反映
+  try { _spFetchAndShowApiToday(); } catch (_) {}
   hook('spWeaknessBtn', spApplyWeaknessToplan);
   hook('spDelayReplanBtn', spReplanOverdue);
   hook('spPomodoroBtn', spTogglePomodoro);
