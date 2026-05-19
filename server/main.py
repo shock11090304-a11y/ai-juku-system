@@ -6624,8 +6624,11 @@ def _call_gemini(body: dict, *, model: str = None, kind: str = "chat") -> dict:
     msgs = body.get("messages") or []
     max_tokens = int(body.get("max_tokens") or 4000)
 
-    # Gemini は max_tokens=8192 (Flash) / 8192 (Pro) が上限。clamp。
-    max_tokens = min(max_tokens, 8000)
+    # 🛡️ 2026-05-19 audit fix: Gemini 2.5 Flash/Pro の実上限は 65536 (旧コメントは古い情報)
+    # 旧 8000 clamp で silent truncation が起き、長 output 教材生成 (daigaku r_long etc) で
+    # JSON parse fail → return None 連発の隠れ原因。上限 32000 に引き上げ (sonnet-4-6 16000 より大きく
+    # 安全マージン込みで設定)。
+    max_tokens = min(max_tokens, 32000)
 
     # Gemini の history 形式: [{"role": "user|model", "parts": [text or {inline_data:...}]}]
     # Anthropic の messages: [{"role": "user|assistant", "content": "..." | [{type:text|image,...}]}]
@@ -7972,9 +7975,12 @@ explanation フィールドは Markdown で **以下4セクションを必ず明
     # Phase 2 検証: kiso/r_short 2/10 (短)・kiso/w_essay 7/10 (短)・kiso/r_long 0/10 (長)・kiso/r_grammar 0/10 (長)
     # 解決: exam_id 別に max_tokens を引き上げる (sonnet-4-6 上限 16000)
     # eiken は 4000 で安定動作中 (39 秒/問 成功) なので不変。
+    # 🛡️ 2026-05-19 Round 3 fix: 8000 でも r_long/l_listening は依然 0 件失敗 (Round 2 検証)
+    # → r_long (passage 500 語) + l_listening (script 200 語+設問) は 12000 必要
+    # claude-sonnet-4-6 上限 16000 内で安全
     max_tokens_by_exam = {
-        "daigaku": 8000,  # 長 passage + 4 section explanation
-        "rikei":   8000,  # 数式 LaTeX + SVG figure + 解説
+        "daigaku": 12000,  # 長 passage + 4 section explanation (r_long で 8000 不足判明)
+        "rikei":   12000,  # 数式 LaTeX + SVG figure + 解説 (math/phys/chem/bio で同じ理由)
     }
     mtok = max_tokens_by_exam.get(exam_id, 4000)
     # audit fix (review): data を None で初期化 — _call_anthropic_safe が raise した場合の
