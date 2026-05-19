@@ -1874,6 +1874,21 @@
           </div>
         </div>
       </div>
+
+      <!-- 🎯 使ってるが記録ゼロ バナー (塾長指示 2026-05-19): 85% 無記録現象の主因対応 -->
+      <div id="activeNoRecordAlert" style="display:none;margin:0.75rem 0;padding:0.9rem 1rem;background:linear-gradient(90deg,rgba(167,139,250,0.18),rgba(167,139,250,0.05));border:1px solid rgba(167,139,250,0.45);border-radius:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+          <div style="flex:1;min-width:240px;">
+            <div style="color:#c4b5fd;font-weight:700;font-size:0.95rem;">🎯 <span id="activeNoRecordCount">0</span>名 が「使ってるが学習記録ゼロ」 <span id="activeNoRecordUsingTutor" style="color:#a78bfa;font-weight:600;font-size:0.78rem;">(うち AI チューター利用 0 名)</span></div>
+            <div style="color:#ddd6fe;font-size:0.78rem;margin-top:0.25rem;">過去 7 日にログイン形跡があるのに study_logs ゼロ。次の打ち手: ①LINE で個別 nudge ②AI チューター利用時の半自動記録 prompt ③mypage 上部の警告 banner。</div>
+          </div>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <button id="activeNoRecordPreview" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;border:none;padding:0.55rem 1.1rem;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:700;" title="対象生徒一覧を表示 (氏名/学年/最終ログイン/AI チューター利用回数)">👀 対象を確認</button>
+            <button id="activeNoRecordRefresh" style="background:rgba(255,255,255,0.08);color:#e4e4e7;border:1px solid rgba(255,255,255,0.2);padding:0.55rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.82rem;">🔄 再集計</button>
+          </div>
+        </div>
+        <div id="activeNoRecordList" style="display:none;margin-top:0.85rem;padding:0.65rem 0.85rem;background:rgba(15,23,42,0.55);border-radius:8px;max-height:300px;overflow-y:auto;font-size:0.78rem;color:#cbd5e1;"></div>
+      </div>
       <div class="roster-table-wrapper">
         <table class="roster-table">
           <thead>
@@ -2410,6 +2425,28 @@
             window.__neverLoginStudents = [];
           }
         }
+
+        // 🎯 「使ってるが学習記録ゼロ」一覧 (塾長指示 2026-05-19): roster load と並列で取得
+        try {
+          const ar = await AdminAuth.fetch('/api/admin/students/active-no-record?days=7');
+          if (ar.ok) {
+            const ad = await ar.json();
+            const arEl = document.getElementById('activeNoRecordAlert');
+            const arCount = document.getElementById('activeNoRecordCount');
+            const arUsing = document.getElementById('activeNoRecordUsingTutor');
+            if (arEl && arCount) {
+              if (ad.total > 0) {
+                arCount.textContent = ad.total;
+                if (arUsing) arUsing.textContent = `(うち AI チューター利用 ${ad.using_but_no_record} 名)`;
+                arEl.style.display = 'block';
+                window.__activeNoRecordStudents = ad.students || [];
+              } else {
+                arEl.style.display = 'none';
+                window.__activeNoRecordStudents = [];
+              }
+            }
+          }
+        } catch (_e) { /* fail-soft: 既存 roster 表示を妨げない */ }
 
         // === 💰 MRR 内訳: 有料生徒の月謝を一覧化して合計を MRR と突合 ===
         const paidStudents = apiStudents.filter(st => st.status === 'paid');
@@ -6910,6 +6947,60 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         if (list.length === 0) { alert('未ログインの生徒はいません'); return; }
         const lines = list.map((s, i) => `${i+1}. ${s.name || '(名前なし)'} (${s.email || '?'}) [${s.status}]`).join('\n');
         alert(`📋 招待送信対象 (${list.length}名):\n\n${lines}`);
+      }
+
+      // 🎯 「使ってるが記録ゼロ」preview (2026-05-19)
+      const arPreviewBtn = e.target.closest && e.target.closest('#activeNoRecordPreview');
+      if (arPreviewBtn) {
+        // audit re-review fix: debounce で連打防止
+        if (arPreviewBtn._inflight) return;
+        arPreviewBtn._inflight = true;
+        try {
+          const list = window.__activeNoRecordStudents || [];
+          const listEl = document.getElementById('activeNoRecordList');
+          if (list.length === 0) { alert('対象なし — 全 active 生徒が学習記録あり 🎉'); return; }
+          if (listEl) {
+            if (listEl.style.display === 'block') { listEl.style.display = 'none'; return; }
+            // audit re-review fix: escape を map 外に lift (per-row 再定義 → 1 度のみ)
+            const _htmlEsc = (v) => String(v || '').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[c]);
+            // audit re-review fix: mailto: href は encodeURIComponent (HTML escape では `?` `&` `=` survived で query injection リスク)
+            // 簡易メール書式チェック追加: 不正形式は href を `#` にして disable
+            const _safeMailto = (email) => {
+              const e2 = String(email || '').trim();
+              if (!/^[^\s<>@]+@[^\s<>@.]+\.[^\s<>@]+$/.test(e2)) return '#';
+              return 'mailto:' + encodeURIComponent(e2).replace(/%40/g, '@');
+            };
+            listEl.innerHTML = list.map((s, i) => {
+              const tutorBadge = (s.tutor_count_window > 0)
+                ? `<span style="background:rgba(139,92,246,0.25);color:#c4b5fd;padding:2px 6px;border-radius:4px;font-size:0.72rem;font-weight:700;margin-left:6px;">AI ${s.tutor_count_window}回</span>`
+                : '';
+              const hourTxt = s.hours_since_login !== null ? `${s.hours_since_login}h前` : '--';
+              const mailHref = _safeMailto(s.email);
+              const mailDisabled = mailHref === '#';
+              return `<div style="padding:0.4rem 0;border-bottom:1px solid rgba(255,255,255,0.08);">
+                <span style="color:#a78bfa;font-weight:700;">${i+1}.</span>
+                <strong style="color:#e4e4e7;">${_htmlEsc(s.name)}</strong>
+                <span style="color:#71717a;font-size:0.72rem;">(${_htmlEsc(s.grade || '?')} / ${_htmlEsc(s.course || '?')} / ${_htmlEsc(s.status)})</span>
+                <span style="color:#94a3b8;font-size:0.72rem;margin-left:6px;">最終 ${hourTxt}</span>
+                ${tutorBadge}
+                <a href="${mailHref}" ${mailDisabled ? 'aria-disabled="true" onclick="return false;" style="color:#71717a;text-decoration:line-through;margin-left:8px;font-size:0.72rem;cursor:not-allowed;"' : 'style="color:#7dd3fc;text-decoration:underline;margin-left:8px;font-size:0.72rem;"'}>メール</a>
+              </div>`;
+            }).join('');
+            listEl.style.display = 'block';
+          }
+        } finally {
+          arPreviewBtn._inflight = false;
+        }
+      }
+
+      const arRefreshBtn = e.target.closest && e.target.closest('#activeNoRecordRefresh');
+      if (arRefreshBtn) {
+        arRefreshBtn.disabled = true;
+        const orig = arRefreshBtn.textContent;
+        arRefreshBtn.textContent = '⏳ 集計中...';
+        try { await loadLiveRoster(); } catch (_) {}
+        arRefreshBtn.disabled = false;
+        arRefreshBtn.textContent = orig;
       }
       const purgeBtn = e.target.closest && e.target.closest('#purgeStaleBtn');
       if (purgeBtn) {

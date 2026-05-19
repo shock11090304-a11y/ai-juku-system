@@ -13320,6 +13320,118 @@ def admin_students_never_logged_in(
     }
 
 
+@app.get("/api/admin/students/active-no-record")
+def admin_students_active_no_record(
+    days: int = 7,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🎯 「使ってるが学習記録ゼロ」生徒一覧 (塾長指示 2026-05-19).
+
+    UI を使っている (last_login_at IS NOT NULL かつ ログイン経路や AI チューター利用が
+    過去 N 日以内) のに、study_logs への投稿がゼロの生徒を抽出。
+    85% 無記録現象の主因 (使ってるがボタン押下していない層) を可視化し、
+    LINE nudge / 自動 prompt / banner 強化の対象を特定する。
+
+    判定条件:
+      - status IN ('trial', 'paid')
+      - last_login_at IS NOT NULL かつ N 日以内 (active 判定)
+      - study_logs に 1 件もない (records=0)
+      - 補助指標: 過去 N 日の ai_tutor_solve_log 件数 (使ってる証拠)
+
+    認証: admin Bearer or x-cron-secret
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    days = max(1, min(int(days or 7), 90))
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+    conn = db()
+    c = conn.cursor()
+    students = []
+    try:
+        # LEFT JOIN で study_logs 0 件、かつ ai_tutor_solve_log で使用形跡確認。
+        # 「使ってるが記録ゼロ」 = active かつ records=0 かつ (ai_tutor_count>0 or login が最近)
+        try:
+            c.execute(
+                """SELECT s.id, s.name, s.email, s.grade, s.course, s.plan, s.status,
+                          s.last_login_at, s.created_at,
+                          COALESCE(sl.records, 0) AS records,
+                          COALESCE(tl.tutor_count, 0) AS tutor_count
+                   FROM students s
+                   LEFT JOIN (
+                     SELECT student_id, COUNT(*) AS records FROM study_logs GROUP BY student_id
+                   ) sl ON sl.student_id = s.id
+                   LEFT JOIN (
+                     SELECT student_id, COUNT(*) AS tutor_count
+                       FROM ai_tutor_solve_log
+                       WHERE created_at >= ?
+                       GROUP BY student_id
+                   ) tl ON tl.student_id = s.id
+                   WHERE s.status IN ('trial', 'paid')
+                     AND s.last_login_at IS NOT NULL
+                     AND s.last_login_at >= ?
+                     AND COALESCE(sl.records, 0) = 0
+                   ORDER BY tl.tutor_count DESC NULLS LAST, s.last_login_at DESC""",
+                (cutoff, cutoff),
+            )
+            rows = c.fetchall()
+        except Exception as _e:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            log.warning(f"[active-no-record] JOIN failed, falling back: {_e}")
+            rows = []
+
+        now = datetime.now(timezone.utc)
+        for r in rows:
+            d = dict(r)
+            ll = d.get("last_login_at")
+            hours_since_login = None
+            if ll:
+                try:
+                    sa = datetime.fromisoformat(str(ll).replace("Z", "+00:00")) if isinstance(ll, str) else ll
+                    if hasattr(sa, "tzinfo") and sa.tzinfo is None:
+                        sa = sa.replace(tzinfo=timezone.utc)
+                    hours_since_login = round((now - sa).total_seconds() / 3600, 1)
+                except Exception:
+                    hours_since_login = None
+            students.append({
+                "id": d.get("id"),
+                "name": d.get("name"),
+                "email": d.get("email"),
+                "grade": d.get("grade"),
+                "course": d.get("course"),
+                "plan": d.get("plan"),
+                "status": d.get("status"),
+                "last_login_at": str(ll) if ll else None,
+                "hours_since_login": hours_since_login,
+                "tutor_count_window": int(d.get("tutor_count") or 0),
+                "study_log_count": int(d.get("records") or 0),
+            })
+    finally:
+        conn.close()
+
+    # tutor_count>0 (確実に使ってる) を優先抽出
+    using_count = sum(1 for s in students if s["tutor_count_window"] > 0)
+    return {
+        "ok": True,
+        "days": days,
+        "total": len(students),
+        "using_but_no_record": using_count,
+        "students": students,
+    }
+
+
 @app.post("/api/admin/students/backfill-last-login")
 def admin_students_backfill_last_login(payload: dict = None, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """events テーブルから last_login_at を遡及推定して埋める。
