@@ -676,6 +676,10 @@ function initStudyLogQuickCta() {
     // 今日の学習時間を表示 + #todayMinutes (上部 stats) も real data に上書き
     refreshSlQuickCtaToday();
 
+    // 🚨 streak 途切れ banner: 3 日以上未記録の active 生徒に表示 (塾長指示 2026-05-19)
+    _slStreakBannerCheck();
+    _slBindStreakDismiss();
+
     // 「詳しく記録」 → study-log section へ smooth scroll + 分入力欄 focus
     const detailBtn = document.getElementById('slqcDetailBtn');
     if (detailBtn && !detailBtn._slBound) {
@@ -780,6 +784,80 @@ function _slMakeRetryButton(msgEl, label, opts) {
   } else {
     enable();
   }
+}
+
+// 🚨 streak 途切れ warning banner check (塾長指示 2026-05-19): 「使ってるが記録ゼロ」85% 現象対応
+// 表示条件: 3 日以上連続で記録なし AND 過去 14 日に 1 件以上の記録あり (= かつて記録した経験あり)
+// 非表示条件: ①今日記録あり ②今日 dismiss 済 ③新規生徒 (記録 0 件)
+// ポジティブ訴求 (「今日記録すると streak 再スタート」) で罪悪感誘導は避ける
+async function _slStreakBannerCheck() {
+  const banner = document.getElementById('slStreakWarning');
+  const daysEl = document.getElementById('slStreakDays');
+  if (!banner || !daysEl) return;
+  try {
+    // 今日 dismiss 済か (localStorage)
+    const dismissKey = 'ai_juku_streak_warning_dismissed';
+    const dismissedDate = (function() {
+      try { return localStorage.getItem(dismissKey) || ''; } catch (_) { return ''; }
+    })();
+    const today = _slJstDate(0);
+    if (dismissedDate === today) {
+      banner.style.display = 'none';
+      return;
+    }
+    // 過去 14 日の学習記録を取得
+    const data = await slApiFetch('/api/study-logs/me?days=14&limit=200');
+    const daily = (data && data.daily) || [];
+    if (daily.length === 0) {
+      // 新規生徒 (記録 0 件) → 表示しない
+      banner.style.display = 'none';
+      return;
+    }
+    // 日付別に min を合計 (JST date string)
+    const dayMap = {};
+    daily.forEach(function(d) {
+      if (!d || !d.date) return;
+      const k = String(d.date).slice(0, 10);
+      dayMap[k] = (dayMap[k] || 0) + (d.minutes || 0);
+    });
+    // 過去 14 日で記録があった日が 1 つもないなら「実質新規」扱いで非表示
+    const recordedDays = Object.keys(dayMap).filter(function(k) { return dayMap[k] > 0; });
+    if (recordedDays.length === 0) {
+      banner.style.display = 'none';
+      return;
+    }
+    // 今日 (JST) を起点に連続未記録日数を計算
+    let streakBroken = 0;
+    for (let i = 0; i < 14; i++) {
+      const d = _slJstDate(i);
+      if ((dayMap[d] || 0) > 0) break;
+      streakBroken += 1;
+    }
+    if (streakBroken >= 3) {
+      daysEl.textContent = String(streakBroken);
+      banner.style.display = 'block';
+    } else {
+      banner.style.display = 'none';
+    }
+  } catch (e) {
+    // 失敗時は banner 表示せず (silent skip OK · 既存 CTA で代替可能)
+    console.warn('[Streak] banner check failed:', e && e.message);
+    banner.style.display = 'none';
+  }
+}
+
+// 🚨 streak 途切れ banner dismiss button handler (今日中は閉じる)
+function _slBindStreakDismiss() {
+  const btn = document.getElementById('slStreakDismiss');
+  const banner = document.getElementById('slStreakWarning');
+  if (!btn || !banner || btn._slStreakBound) return;
+  btn._slStreakBound = true;
+  btn.addEventListener('click', function() {
+    try {
+      localStorage.setItem('ai_juku_streak_warning_dismissed', _slJstDate(0));
+    } catch (_) {}
+    banner.style.display = 'none';
+  });
 }
 
 async function refreshSlQuickCtaToday() {
@@ -953,6 +1031,8 @@ async function quickLogMinutes(minutes, btn) {
     try { window.track && window.track('sl_quick_log', { minutes, subject }); } catch (_) {}
     // CTA 上部表示・stats・詳細セクション全部 refresh
     await refreshSlQuickCtaToday();
+    // streak banner 再計算 (今日記録したので消えるはず)
+    _slStreakBannerCheck();
     if (typeof loadMyStudyLogs === 'function') {
       try { await loadMyStudyLogs(); } catch (_) {}
     }
@@ -975,6 +1055,8 @@ async function undoQuickLog(logId) {
     await slApiFetch('/api/study-logs/' + encodeURIComponent(logId), { method: 'DELETE' });
     if (msg) { msg.textContent = '🗑️ 取り消しました'; msg.style.color = '#a1a1aa'; }
     await refreshSlQuickCtaToday();
+    // streak banner 再計算 (取り消しで今日 0 分に戻った場合の表示判定)
+    _slStreakBannerCheck();
     if (typeof loadMyStudyLogs === 'function') {
       try { await loadMyStudyLogs(); } catch (_) {}
     }
