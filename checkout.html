@@ -204,6 +204,29 @@
           <div class="trust-item">🏢 決済情報は弊社サーバーに保存されません</div>
         </div>
 
+        <!-- 🎁 集客 funnel #4 (塾長指示 2026-05-19): +7 日延長 opt-in
+             クレカ事前登録 → 14日 + 7日 = 21日 完全無料・終了 24h 前に Stripe メール通知
+             デフォルト OFF (off 時はクレカ不要の 14 日体験)・チェックで Stripe Subscription 経路 -->
+        <div style="margin: 1.2rem 0; padding: 1rem 1.1rem; background: linear-gradient(135deg, rgba(34,197,94,0.10), rgba(251,191,36,0.08)); border: 1px solid rgba(74,222,128,0.40); border-radius: 10px;">
+          <label style="display:flex; align-items:flex-start; gap:0.7rem; cursor:pointer;">
+            <input type="checkbox" id="enableCardExtension" style="margin-top:0.3rem; min-width:1.1rem; min-height:1.1rem; accent-color:#22c55e;">
+            <div style="flex:1; min-width:0;">
+              <div style="font-weight:800; font-size:0.95rem; color:#86efac; margin-bottom:0.25rem;">
+                🎁 クレジットカード登録で +7 日延長 (合計 21 日体験)
+              </div>
+              <div style="font-size:0.82rem; color:#cbd5e1; line-height:1.5;">
+                ・カード情報は <strong>Stripe</strong> に直接登録され弊社は保存しません<br>
+                ・体験期間中 (21 日間) は<strong>一切課金されません</strong><br>
+                ・<strong>21 日経過後、選択中プランの月額が Stripe より自動課金</strong>されます<br>
+                  &nbsp;&nbsp;(創設メンバープラン例: ¥14,500/月・税込)<br>
+                ・体験終了 24 時間前に Stripe から課金開始日・金額の通知メール<br>
+                ・続けない場合は終了 24 時間前までに Stripe Portal から 1 クリック解約可<br>
+                ・解約手続きを忘れない安心が欲しい方向け (チェックなしでも 14 日完全無料体験 OK)
+              </div>
+            </div>
+          </label>
+        </div>
+
         <button type="submit" id="submitBtn" class="btn-primary btn-lg btn-block">
           🎁 14日間 無料体験を開始する →
         </button>
@@ -228,7 +251,46 @@
     <div class="footer-bottom">© 2026 AIコーチング | Powered by Claude AI</div>
   </footer>
 
-  <script src="checkout.js?v=20260519-trial14-utm"></script>
+  <script src="checkout.js?v=20260519-trial-extension"></script>
+  <script>
+    // 🎁 +7 日延長 toggle: ボタン文言を動的更新 + チェック時 二段階確認 (2026-05-19 集客 funnel #4)
+    // R3 review 致命: silent auto-charge → chargeback リスク高 → 確認 dialog で「課金されることを把握済」を明示
+    (function() {
+      const cb = document.getElementById('enableCardExtension');
+      const btn = document.getElementById('submitBtn');
+      if (!cb || !btn) return;
+      function updateBtn() {
+        const planEl = document.querySelector('input[name="plan"]:checked');
+        const plan = (planEl?.value || window.__urlPlanOverride || 'founder_special');
+        if (plan === 'student_addon') return;
+        btn.textContent = cb.checked
+          ? '🎁 21日間 完全無料体験を開始する (クレカ登録) →'
+          : '🎁 14日間 無料体験を開始する →';
+      }
+      cb.addEventListener('change', function(e) {
+        // OFF→ON 時の二段階確認 (自動課金理解の明示同意)
+        if (cb.checked) {
+          const ok = confirm(
+            '⚠️ クレジットカード登録の確認\n\n' +
+            '21 日経過後、選択中プランの月額が自動課金されます。\n' +
+            '(創設メンバープラン: ¥14,500/月 税込)\n\n' +
+            '✅ 体験期間中 (21 日間) は一切課金されません\n' +
+            '✅ 終了 24h 前に Stripe からメール通知あり\n' +
+            '✅ Stripe Portal から 1 クリックで解約可\n' +
+            '✅ 解約手続きを忘れない安心が欲しい方向け\n\n' +
+            '上記を理解の上、クレカ登録で +7 日延長を希望しますか?\n' +
+            '(チェックを外せば 14 日完全無料体験のままで OK)'
+          );
+          if (!ok) {
+            cb.checked = false;
+            return;
+          }
+        }
+        updateBtn();
+      });
+      updateBtn();
+    })();
+  </script>
   <script>
     // 入塾金免除キャンペーン残枠取得 + summary 表示にも反映
     (function() {

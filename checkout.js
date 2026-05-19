@@ -29,12 +29,16 @@ function updateSummary() {
   }
   // 🚨 2026-05-07: submit ボタン文言を plan で動的に変える (致命修正)
   // student_addon は本契約 (即課金) なので「無料体験」文言は誤誘導
+  // 🎁 2026-05-19: +7 日延長 opt-in を反映 (14日 ↔ 21日 動的切替)
   const submitBtn = document.getElementById('submitBtn');
   if (submitBtn && !submitBtn.disabled) {
     if (plan === 'student_addon') {
       submitBtn.textContent = '💳 ¥5,000/月で登録する →';
     } else {
-      submitBtn.textContent = '🎁 10日間 無料体験を開始する →';
+      const ext = !!document.getElementById('enableCardExtension')?.checked;
+      submitBtn.textContent = ext
+        ? '🎁 21日間 完全無料体験を開始する (クレカ登録) →'
+        : '🎁 14日間 無料体験を開始する →';
     }
   }
   // 体験期間説明セクションも plan に応じて切替
@@ -245,7 +249,14 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     // 招待コード (通塾生 student_addon プラン用) を取得して送信
     // 2026-05-07: URL params だけでなく入力欄 #inviteCode の手入力も受け付ける (塾長指示)
     // 体験フローでは backend は invite_code を保管・本契約時に検証 (memory: feedback_student_invite_link)
-    const checkoutBody = { email: payload.email, name: payload.name, student_id: signupData.student_id };
+    // 🎁 2026-05-19 集客 funnel #4: クレカ登録 +7 日延長 opt-in
+    const enableCardExt = !!document.getElementById('enableCardExtension')?.checked;
+    const checkoutBody = {
+      email: payload.email,
+      name: payload.name,
+      student_id: signupData.student_id,
+      enable_card_for_extension: enableCardExt,  // true: Stripe Subscription 21 日 trial / false: free 14 日
+    };
     // Reviewer B H2: 全角空白も除去 (DM コピペで全角混入対策)
     const inviteFromInput = (document.getElementById('inviteCode')?.value || '')
       .trim()
@@ -302,9 +313,10 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     submitBtn.disabled = false;
     // plan に応じてボタン文言を復元 (student_addon は本契約の文言)
     const errPlan = (document.querySelector('input[name="plan"]:checked')?.value || window.__urlPlanOverride || 'founder_special');
+    const _ext = !!document.getElementById('enableCardExtension')?.checked;
     submitBtn.textContent = (errPlan === 'student_addon')
       ? '💳 ¥5,000/月で登録する →'
-      : '🎁 10日間 無料体験を開始する →';
+      : (_ext ? '🎁 21日間 完全無料体験を開始する (クレカ登録) →' : '🎁 14日間 無料体験を開始する →');
 
     // BACKEND_DOWN 時の「自動で成功画面へ進行」を削除。
     // 以前は決済せずに localStorage に学生を作って「成功」画面へ遷移していたが、

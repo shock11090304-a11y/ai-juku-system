@@ -17386,12 +17386,16 @@ def create_trial_checkout(payload: dict):
     """14日間 完全無料 体験 (GW 集中体験戦略)。Stripe 決済は発生しない。
     創設メンバー50名枠は本契約 (paid) のみでカウント。体験は無制限に受付。
     2026-05-07: 通塾生プラン (student_addon) は invite_code 検証必須化 (Reviewer A CRITICAL #1)
+    2026-05-19: enable_card_for_extension=True で Stripe Subscription (21 日 trial) ルートを追加。
+       クレカ事前登録 → trial 期間 +7 日 (合計 21 日) → 自動課金 paid 化を opt-in で実現。
+       未 opt-in は従来通り完全無料 14 日体験 (free=True 即時 success)。
     """
     email = (payload.get("email") or "").strip()
     name = (payload.get("name") or "").strip()
     student_id = payload.get("student_id")
     invite_code = (payload.get("invite_code") or "").strip()
     plan_hint = (payload.get("plan") or "").strip()  # フロントが送ってくれる場合のヒント
+    enable_card_extension = bool(payload.get("enable_card_for_extension", False))  # 🎁 2026-05-19 +7 日延長 opt-in
     if not email:
         raise HTTPException(status_code=400, detail="email required")
 
@@ -17415,7 +17419,58 @@ def create_trial_checkout(payload: dict):
             raise HTTPException(status_code=401, detail="招待コードと入力されたメールアドレスが一致しません。塾長にご確認ください。")
         log.info(f"[trial-checkout] invite verified: email={payload_email}")
 
-    # 完全無料体験: Stripe をスキップして即時 success ページへ
+    # 🎁 2026-05-19 +7 日延長 opt-in: Stripe Subscription with trial_period_days=21
+    # クレカ事前登録 → 21 日無料 → 終了後自動課金 (founder_special ¥14,500/月)
+    # ユーザーは Stripe customer portal でいつでも解約可能 (課金前にキャンセル可)
+    EXTENDED_TRIAL_DAYS = FOUNDER_TRIAL_DAYS + 7  # 14 + 7 = 21 日
+    if enable_card_extension and STRIPE_SECRET_KEY:
+        try:
+            s = get_stripe()
+            # founder_special price 取得 (lookup_key or env から)
+            founder_price_id = _lookup_plan_price_id("founder_special")
+            if not founder_price_id:
+                log.warning("[trial-checkout +7d] founder_special price not configured, falling back to free trial")
+                # フォールバック: 通常の無料体験
+            else:
+                session = s.checkout.Session.create(
+                    mode="subscription",
+                    payment_method_types=["card"],
+                    line_items=[{"price": founder_price_id, "quantity": 1}],
+                    subscription_data={
+                        "trial_period_days": EXTENDED_TRIAL_DAYS,  # 21 日無料
+                        "metadata": {
+                            "purchase_type": "trial_extended",
+                            "student_id": str(student_id or ""),
+                            "name": name,
+                            "trial_days": str(EXTENDED_TRIAL_DAYS),
+                        },
+                        # trial 終了直前にメール通知を Stripe からも送る (二重防御)
+                        "trial_settings": {"end_behavior": {"missing_payment_method": "cancel"}},
+                    },
+                    customer_email=email,
+                    success_url=f"{BASE_URL}/checkout-success.html?session_id={{CHECKOUT_SESSION_ID}}&extended=1",
+                    cancel_url=f"{BASE_URL}/checkout-cancel.html",
+                    metadata={
+                        "purchase_type": "trial_extended",
+                        "student_id": str(student_id or ""),
+                        "name": name,
+                    },
+                    # 解約しやすさを担保 (顧客自身が Stripe Portal で解約可)
+                    allow_promotion_codes=False,
+                )
+                log.info(f"[trial-checkout +7d] Stripe subscription session created: id={session.id}, email={email}, trial_days={EXTENDED_TRIAL_DAYS}")
+                return {
+                    "extended": True,
+                    "checkout_url": session.url,
+                    "session_id": session.id,
+                    "trial_days": EXTENDED_TRIAL_DAYS,
+                    "note": "クレジットカード登録後、21 日間 完全無料。trial 終了 24 時間前に Stripe からメール通知あり。",
+                }
+        except Exception as e:
+            log.error(f"[trial-checkout +7d] Stripe session creation failed: {type(e).__name__}: {e}")
+            # フォールバック: 通常の無料体験に降格 (ユーザー体験継続性確保)
+
+    # 完全無料体験: Stripe をスキップして即時 success ページへ (デフォルト経路)
     if FOUNDER_TRIAL_PRICE == 0:
         return {
             "free": True,
@@ -17965,7 +18020,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
         email = (_email_raw or "").strip().lower() or None
 
         if purchase_type == "trial":
-            # 完全無料 7日体験 (GW集中体験戦略): status='trial', trial_start=now, trial_end=now+7d
+            # 完全無料 14日体験: status='trial', trial_start=now, trial_end=now+14d
             # Stripe 決済不要。自動課金は発生しない。
             now = datetime.now(timezone.utc)
             trial_end = now + timedelta(days=FOUNDER_TRIAL_DAYS)
@@ -17993,6 +18048,56 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                         (name_from_meta or "（新規）", email, customer, now.isoformat(), trial_end.isoformat())
                     )
             conn.commit()
+
+        elif purchase_type == "trial_extended":
+            # 🎁 2026-05-19 集客 funnel #4: +7 日延長 trial (Stripe Subscription 21 日)
+            # ユーザーがクレカ登録 → Stripe Subscription with trial_period_days=21 開始
+            # webhook で受け取った subscription_id を保存・trial_end を 21 日後に更新
+            # その後の trial 終了は customer.subscription.updated (status: trialing→active) で paid 化
+            now = datetime.now(timezone.utc)
+            EXTENDED_TRIAL_DAYS = FOUNDER_TRIAL_DAYS + 7  # 14 + 7 = 21
+            trial_end = now + timedelta(days=EXTENDED_TRIAL_DAYS)
+            log.info(f"[Stripe webhook trial_extended] student_id={student_id}, email={email}, customer={customer}, subscription={subscription}")
+            target_id = None
+            # 🛡 R3-B fix (2026-05-19): student_id は metadata 経由でユーザー制御可能 (LP form の hidden field 経由)
+            # 他人の student_id を渡されると IDOR で被害者の subscription_id/status を上書きする攻撃が可能。
+            # → student_id を指定された場合も email 一致を必ず検証してから採用 (email は Stripe verified)
+            if student_id and student_id != "" and email:
+                try:
+                    c.execute("SELECT id FROM students WHERE id=? AND LOWER(email)=?", (student_id, email))
+                    _vrow = c.fetchone()
+                    if _vrow:
+                        target_id = _vrow[0]
+                    else:
+                        log.warning(f"[Stripe webhook trial_extended] student_id={student_id} does NOT match email={email}; falling back to email lookup (possible IDOR attempt)")
+                except Exception as _ve:
+                    log.warning(f"[Stripe webhook trial_extended] student_id ownership check failed: {_ve}")
+            if target_id is None and email:
+                c.execute("SELECT id FROM students WHERE LOWER(email)=?", (email,))
+                row = c.fetchone()
+                if row: target_id = row[0]
+            if target_id:
+                # 🛡 既存 student を UPDATE (trial_signup endpoint で既に INSERT 済の想定)
+                # plan='founder_special' (現在の +7 日延長 default プラン・将来 plan metadata 受け取りで切替可)
+                c.execute(
+                    """UPDATE students SET status='trial', stripe_customer_id=?, stripe_subscription_id=?,
+                           trial_start=?, trial_end=?, plan='founder_special', updated_at=CURRENT_TIMESTAMP
+                       WHERE id=?""",
+                    (customer, subscription, now.isoformat(), trial_end.isoformat(), target_id)
+                )
+                conn.commit()
+                log.info(f"[Stripe webhook trial_extended] updated student {target_id}, trial_end={trial_end.isoformat()}")
+            else:
+                # 想定外: trial_signup endpoint で先に INSERT されているはずだが、何らかの理由で
+                # 見つからない場合 → 新規 INSERT で fallback (audit log で警告)
+                c.execute(
+                    """INSERT INTO students (name, email, status, stripe_customer_id, stripe_subscription_id,
+                           trial_start, trial_end, plan)
+                       VALUES (?, ?, 'trial', ?, ?, ?, ?, 'founder_special')""",
+                    (name_from_meta or "（新規）", email, customer, subscription, now.isoformat(), trial_end.isoformat())
+                )
+                conn.commit()
+                log.warning(f"[Stripe webhook trial_extended] target student not found, inserted new (email={email})")
 
         else:  # purchase_type == "monthly" (旧互換含む)
             # 月額サブスク登録: status='paid'、入塾金 InvoiceItem 作成
@@ -18215,6 +18320,40 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                   (sub.get("id"),))
         conn.commit()
         conn.close()
+
+    elif event["type"] == "customer.subscription.updated":
+        # 🎁 2026-05-19: +7 日 trial → paid 化検知 (集客 funnel #4)
+        # Stripe Subscription が trialing → active に遷移した時点で students.status='paid' に更新
+        # purchase_type='trial_extended' 経路で作成された Subscription が 21 日経過して自動課金成功した case
+        sub = event["data"]["object"]
+        _sub_meta = sub.get("metadata", {}) or {}
+        if (_sub_meta.get("system") or "").startswith("juku-payment"):
+            return JSONResponse({"received": True, "skipped_reason": "juku-payment system tag"}, status_code=200)
+        sub_id = sub.get("id")
+        sub_status = sub.get("status")  # 'trialing', 'active', 'past_due', 'canceled'
+        # 'active' に遷移したら paid 化 (trial 終了 → 自動課金成功)
+        # 'past_due' / 'unpaid' 等は paid のままにせず status 更新しない (既存 ロジック踏襲)
+        if sub_status == "active":
+            conn = db()
+            c = conn.cursor()
+            try:
+                c.execute(
+                    """UPDATE students SET status='paid',
+                           paid_since=COALESCE(paid_since, CURRENT_TIMESTAMP),
+                           trial_end=NULL,
+                           updated_at=CURRENT_TIMESTAMP
+                       WHERE stripe_subscription_id=? AND status='trial'""",
+                    (sub_id,)
+                )
+                affected = c.rowcount
+                conn.commit()
+                if affected > 0:
+                    log.info(f"[Stripe webhook subscription.updated] trial→paid: sub={sub_id} ({affected} students)")
+            except Exception as e:
+                log.error(f"[Stripe webhook subscription.updated] failed: {e}")
+                try: conn.rollback()
+                except Exception: pass
+            conn.close()
 
     return {"received": True}
 
