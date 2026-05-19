@@ -7966,12 +7966,27 @@ explanation フィールドは Markdown で **以下4セクションを必ず明
 
 **self-check FAIL = 不良問題なので絶対に出力しない**。整合性が取れるまで作り直す。"""
 
+    # 🛡️ 2026-05-19 塾長指示 (autonomous mode) 修正:
+    # daigaku/rikei は passage (200-500 語) + 設問 4-5 問 + Markdown 4 セクション explanation で
+    # 4000 token を超える長 output が頻発 → truncation で json.loads fail → generated=0 続出。
+    # Phase 2 検証: kiso/r_short 2/10 (短)・kiso/w_essay 7/10 (短)・kiso/r_long 0/10 (長)・kiso/r_grammar 0/10 (長)
+    # 解決: exam_id 別に max_tokens を引き上げる (sonnet-4-6 上限 16000)
+    # eiken は 4000 で安定動作中 (39 秒/問 成功) なので不変。
+    max_tokens_by_exam = {
+        "daigaku": 8000,  # 長 passage + 4 section explanation
+        "rikei":   8000,  # 数式 LaTeX + SVG figure + 解説
+    }
+    mtok = max_tokens_by_exam.get(exam_id, 4000)
+    # audit fix (review): data を None で初期化 — _call_anthropic_safe が raise した場合の
+    # UnboundLocalError を防ぎ、except 句 preview 抽出を確実に動作させる
+    data = None
+
     try:
         # AI never-fail: _call_anthropic_safe 経由で Tier 4 (Gemini) まで自動 fallback
         data = _call_anthropic_safe(
             {
                 "model": EXAM_QUESTIONS_MODEL,
-                "max_tokens": 4000,
+                "max_tokens": mtok,
                 "system": system,
                 "messages": [{"role": "user", "content": user}],
             },
@@ -7988,7 +8003,13 @@ explanation フィールドは Markdown で **以下4セクションを必ず明
         log.error(f"[ExamQ] Generation failed for {exam_id}/{part_key}: HTTP {e.status_code}: {e.detail}")
         return None
     except Exception as e:
-        log.error(f"[ExamQ] Generation failed for {exam_id}/{part_key}: {type(e).__name__}: {e}")
+        # json.loads エラーも含む — preview を log に出して原因把握可能化
+        preview = ""
+        try:
+            preview = (data.get('content', [{}])[0].get('text', '')[:200] if isinstance(data, dict) else "")
+        except Exception:
+            preview = ""
+        log.error(f"[ExamQ] Generation failed for {exam_id}/{part_key}: {type(e).__name__}: {e} (max_tokens={mtok}, preview={preview!r})")
         return None
 
 
