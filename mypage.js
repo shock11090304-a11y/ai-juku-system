@@ -715,6 +715,7 @@ async function refreshSlQuickCtaToday() {
   const subEl = document.getElementById('slqcSub');
   const badgeEl = document.getElementById('slqcBadge');
   const todayStatEl = document.getElementById('todayMinutes');
+  const msgEl = document.getElementById('slqcMessage');
   let todayMin = 0;
   try {
     // days=2 にして 0 件でも空配列が返る (days=0 は backend バリデーションで拒否)
@@ -725,10 +726,31 @@ async function refreshSlQuickCtaToday() {
     });
   } catch (e) {
     console.warn('[StudyLog] today refresh failed:', e && e.message);
+    // 🛡️ silent fail 修正 (塾長指示 2026-05-19): API 失敗を生徒に可視化
+    // 「ボタン押しても何も起きない」現象の根絶 — 401 expired や network エラーを明示
+    if (msgEl) {
+      const errStr = (e && e.message) || '';
+      if (/401|unauthorized|expired/i.test(errStr)) {
+        msgEl.innerHTML = '⚠️ セッションが切れました — <a href="login.html" style="color:#7dd3fc; text-decoration:underline;">再ログイン</a>';
+        msgEl.style.color = '#fca5a5';
+      } else {
+        msgEl.textContent = '⚠️ 学習記録の読込に失敗 — タップで再試行';
+        msgEl.style.color = '#fbbf24';
+        msgEl.style.cursor = 'pointer';
+        msgEl.onclick = () => { msgEl.textContent = '読込中...'; refreshSlQuickCtaToday(); };
+      }
+    }
     return;
   }
   // 上部 stats #todayMinutes を実データで上書き (これまで demo の 45 が固定表示されていた)
   if (todayStatEl) todayStatEl.textContent = String(todayMin);
+  // 🛡️ silent fail fix (2026-05-19): retry 成功時の状態 cleanup (前回エラー残留防止)
+  if (msgEl) {
+    msgEl.onclick = null;
+    msgEl.style.cursor = '';
+    msgEl.style.color = '#a78bfa';
+    if (msgEl.textContent.includes('⚠️') || msgEl.textContent === '読込中...') msgEl.textContent = '';
+  }
   if (todayMin > 0) {
     if (badgeEl) badgeEl.textContent = '⚡ 今日 進行中';
     if (titleEl) titleEl.textContent = `今日 ${todayMin} 分 学習中`;
