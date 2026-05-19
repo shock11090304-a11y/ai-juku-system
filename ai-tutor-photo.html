@@ -589,7 +589,189 @@
       }
       html += '</div>';
     });
+
+    // 🎯 半自動学習記録 prompt (塾長指示 2026-05-19): 「使ってるが記録ゼロ」85% 現象の本丸対応
+    // AI チューターを使った直後 = 学習している証拠なので 1-tap で記録を促す。
+    // course='kokuritsu_nankan' OR plan IN {premium/family/founder_special/student_addon} のみ POST 通過 (server 制約)。
+    // それ以外は 403 → silent skip でメッセージ表示。
+    // audit re-review 致命修正:
+    //   - subject を _STUDY_SUBJECTS に丸める (推定値 raw → 400 防止)
+    //   - studied_date 省略で server _today_jst() を使用 (JST 日付ずれ防止)
+    //   - subject chip で生徒が編集可 (誤分類リスク低減)
+    //   - default を 30 分 → 15 分 (過大申告誘導防止)
+    //   - 401 / 403 / non-2xx 全 path で button re-enable (永久 disable 防止)
+    //   - topic / source は note に組み込む (model に無い field の silent drop 対策)
+    const _STUDY_SUBJECTS_FRONT = ['英語','数学','国語','現代文','古文','漢文','理科','物理','化学','生物','地学','社会','日本史','世界史','地理','倫理','政経','情報','小論文','面接対策','その他'];
+    // 🛡️ audit re-review 致命 fix (2026-05-19): server AI prompt は英語小文字で返す (math/english/...)
+    // mapping table 無いと常時「その他」fallback になる致命 bug。L23304 prompt と一致させる。
+    const _SUBJECT_EN_TO_JP = {
+      'math': '数学', 'mathematics': '数学',
+      'english': '英語',
+      'japanese': '国語', 'kokugo': '国語',
+      'physics': '物理',
+      'chemistry': '化学', 'chem': '化学',
+      'biology': '生物', 'bio': '生物',
+      'social': '社会', 'social_studies': '社会',
+      'history': '社会',
+      'geography': '地理',
+      'information': '情報', 'informatics': '情報',
+      'essay': '小論文',
+      'other': 'その他', '': 'その他',
+    };
+    const subjGuessRaw = (data.subject_guess || '').trim();
+    const topicGuess = (data.topic_guess || '').trim();
+    // 推定 subject を _STUDY_SUBJECTS にマップ: 英語コード → 日本語 / 日本語完全一致 / その他 fallback
+    let subjMapped = 'その他';
+    if (subjGuessRaw) {
+      const lower = subjGuessRaw.toLowerCase();
+      if (_SUBJECT_EN_TO_JP[lower]) {
+        subjMapped = _SUBJECT_EN_TO_JP[lower];
+      } else if (_STUDY_SUBJECTS_FRONT.indexOf(subjGuessRaw) >= 0) {
+        subjMapped = subjGuessRaw;  // AI が日本語で返した場合
+      }
+    }
+    html += '<div id="tpAutoLogPrompt" style="margin-top:1.5rem; padding:1rem 1.1rem; background:linear-gradient(90deg, rgba(167,139,250,0.18), rgba(167,139,250,0.05)); border:1px solid rgba(167,139,250,0.40); border-radius:12px;">';
+    html += '<div style="display:flex; flex-direction:column; gap:0.65rem;">';
+    html += '<div style="color:#c4b5fd; font-weight:800; font-size:0.95rem;">📝 今の学習を 1 タップで記録</div>';
+    html += '<div style="color:#ddd6fe; font-size:0.83rem; line-height:1.55;">AI チューターを使った時間を学習記録に追加できます。塾長が進捗を確認 → いいねや個別コメントが届きます。</div>';
+    // subject chip (編集可・誤分類防止): 推定値 highlight + 候補で切替可
+    // audit re-review: 古文・物理・化学 を含めて理系/文系細目も chip 表示
+    // 推定 subject に応じて関連候補を優先 (例: 数学推定なら数学+物理+化学を表示)
+    const _candPool = {
+      '数学': ['数学','物理','化学','英語','その他'],
+      '物理': ['物理','化学','数学','生物','その他'],
+      '化学': ['化学','物理','生物','数学','その他'],
+      '生物': ['生物','化学','物理','地学','その他'],
+      '英語': ['英語','国語','小論文','社会','その他'],
+      '国語': ['国語','古文','漢文','現代文','その他'],
+      '社会': ['社会','日本史','世界史','地理','その他'],
+      'その他': ['英語','数学','国語','物理','化学'],
+    };
+    const candList = _candPool[subjMapped] || _candPool['その他'];
+    const altSubjects = candList.filter(function(s) { return s !== subjMapped; }).slice(0, 4);
+    html += '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;align-items:center;">';
+    html += '<span style="color:#a78bfa;font-size:0.78rem;">科目:</span>';
+    html += '<button type="button" data-subj="' + escapeHTML(subjMapped) + '" class="tp-subj-chip" data-active="1" style="padding:0.25rem 0.65rem;background:rgba(139,92,246,0.45);color:#fff;border:1px solid rgba(139,92,246,0.7);border-radius:999px;font-size:0.78rem;font-weight:700;cursor:pointer;">' + escapeHTML(subjMapped) + ' ✓</button>';
+    altSubjects.forEach(function(s) {
+      html += '<button type="button" data-subj="' + escapeHTML(s) + '" class="tp-subj-chip" style="padding:0.25rem 0.65rem;background:rgba(255,255,255,0.06);color:#a1a1aa;border:1px solid rgba(255,255,255,0.18);border-radius:999px;font-size:0.78rem;cursor:pointer;">' + escapeHTML(s) + '</button>';
+    });
+    html += '</div>';
+    if (topicGuess) {
+      html += '<div style="color:#94a3b8; font-size:0.75rem;">推定トピック: ' + escapeHTML(topicGuess) + '</div>';
+    }
+    html += '<div style="display:flex; gap:0.5rem; flex-wrap:wrap;">';
+    // audit fix: 15 分を default (gradient)、過大申告誘導防止 (写真採点は実時間 1-2 分が多い)
+    html += '<button data-autolog-min="15" class="tp-autolog-btn" style="padding:0.55rem 0.95rem; background:linear-gradient(135deg,#8b5cf6,#7c3aed); color:#fff; border:none; border-radius:8px; font-weight:800; font-size:0.85rem; cursor:pointer; min-height:44px;">+ 15 分</button>';
+    html += '<button data-autolog-min="30" class="tp-autolog-btn" style="padding:0.55rem 0.95rem; background:rgba(139,92,246,0.25); color:#e9d5ff; border:1px solid rgba(139,92,246,0.5); border-radius:8px; font-weight:800; font-size:0.85rem; cursor:pointer; min-height:44px;">+ 30 分</button>';
+    html += '<button data-autolog-min="60" class="tp-autolog-btn" style="padding:0.55rem 0.95rem; background:rgba(139,92,246,0.25); color:#e9d5ff; border:1px solid rgba(139,92,246,0.5); border-radius:8px; font-weight:800; font-size:0.85rem; cursor:pointer; min-height:44px;">+ 60 分</button>';
+    html += '<a href="mypage.html#study-log" style="padding:0.55rem 0.95rem; background:rgba(255,255,255,0.06); color:#a1a1aa; border:1px solid rgba(255,255,255,0.15); border-radius:8px; font-weight:700; font-size:0.85rem; text-decoration:none; min-height:44px; display:inline-flex; align-items:center;">詳しく記録</a>';
+    html += '</div>';
+    html += '<div id="tpAutoLogMsg" style="color:#a78bfa; font-size:0.82rem; min-height:1em;" aria-live="polite"></div>';
+    html += '</div></div>';
+
     $result.innerHTML = html;
+
+    // 🎯 半自動記録 button handler (autonomous record posting)
+    // 共通 re-enable helper (全 error path で disable 解除を保証)
+    const autoLogBtns = $result.querySelectorAll('.tp-autolog-btn');
+    const subjChips = $result.querySelectorAll('.tp-subj-chip');
+    const autoLogMsg = document.getElementById('tpAutoLogMsg');
+    let selectedSubj = subjMapped;
+    // subject chip toggle
+    subjChips.forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        subjChips.forEach(function(c) {
+          c.style.background = 'rgba(255,255,255,0.06)';
+          c.style.color = '#a1a1aa';
+          c.style.border = '1px solid rgba(255,255,255,0.18)';
+          c.removeAttribute('data-active');
+          // 末尾の ✓ を取り除く
+          c.textContent = c.getAttribute('data-subj');
+        });
+        chip.style.background = 'rgba(139,92,246,0.45)';
+        chip.style.color = '#fff';
+        chip.style.border = '1px solid rgba(139,92,246,0.7)';
+        chip.setAttribute('data-active', '1');
+        chip.textContent = chip.getAttribute('data-subj') + ' ✓';
+        selectedSubj = chip.getAttribute('data-subj');
+      });
+    });
+    const _reEnableBtns = function() {
+      autoLogBtns.forEach(function(b) {
+        b.disabled = false;
+        b.style.opacity = '';
+        b.style.cursor = 'pointer';
+      });
+    };
+    autoLogBtns.forEach(function(btn) {
+      btn.addEventListener('click', async function() {
+        const minutes = parseInt(btn.getAttribute('data-autolog-min'), 10);
+        if (!minutes || minutes < 1) return;
+        // 連打防止
+        autoLogBtns.forEach(function(b) { b.disabled = true; });
+        if (autoLogMsg) { autoLogMsg.textContent = '記録中...'; autoLogMsg.style.color = '#a78bfa'; }
+        try {
+          // localStorage から token を取得 (生徒 session)
+          const token = localStorage.getItem('ai_juku_session_token');
+          if (!token) {
+            if (autoLogMsg) { autoLogMsg.innerHTML = '⚠️ ログインが必要です — <a href="login.html" style="color:#7dd3fc;text-decoration:underline;">ログイン</a>'; autoLogMsg.style.color = '#fca5a5'; }
+            _reEnableBtns();
+            return;
+          }
+          // audit fix: studied_date 省略で server が JST 今日を使う (UTC ずれ防止)
+          // topic / source は server pydantic model に無いので note に組み込む
+          const noteParts = ['📷 AI チューター (写真質問)'];
+          if (topicGuess) noteParts.push('トピック: ' + topicGuess);
+          if (subjGuessRaw && subjGuessRaw !== selectedSubj) noteParts.push('AI 推定: ' + subjGuessRaw);
+          const body = {
+            minutes: minutes,
+            subject: selectedSubj,
+            note: noteParts.join(' / ').slice(0, 500),
+          };
+          const r = await fetch('/api/study-logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify(body),
+          });
+          if (r.status === 401) {
+            if (autoLogMsg) { autoLogMsg.innerHTML = '⚠️ セッションが切れました — <a href="login.html" style="color:#7dd3fc;text-decoration:underline;">再ログイン</a>'; autoLogMsg.style.color = '#fca5a5'; }
+            _reEnableBtns();
+            return;
+          }
+          if (r.status === 403) {
+            // course / plan 制限 — 詳細メッセージで案内
+            if (autoLogMsg) {
+              autoLogMsg.innerHTML = 'ℹ️ 学習記録機能はプレミアム以上 / 国公立難関コースの方のみご利用いただけます。<a href="upgrade.html" style="color:#7dd3fc;text-decoration:underline;">プラン詳細</a>';
+              autoLogMsg.style.color = '#fbbf24';
+            }
+            // 403 は plan 変更しないと解消しないので button は disable のまま
+            return;
+          }
+          if (!r.ok) {
+            const d = await r.json().catch(function() { return {}; });
+            if (autoLogMsg) { autoLogMsg.textContent = '⚠️ 失敗: ' + (d.detail || r.status); autoLogMsg.style.color = '#fca5a5'; }
+            _reEnableBtns();
+            return;
+          }
+          if (autoLogMsg) {
+            autoLogMsg.innerHTML = '✅ ' + minutes + ' 分を記録しました — 続けて 3 AI の解答も確認できます。<a href="mypage.html" style="color:#86efac;text-decoration:underline;margin-left:6px;">あとでマイページ</a>';
+            autoLogMsg.style.color = '#86efac';
+          }
+          // 連投防止: 成功後はボタンを 'X 分記録済' に書換
+          autoLogBtns.forEach(function(b) {
+            b.style.opacity = '0.5';
+            b.style.cursor = 'not-allowed';
+            b.disabled = true;
+            if (parseInt(b.getAttribute('data-autolog-min'), 10) === minutes) {
+              b.textContent = '✓ ' + minutes + ' 分 記録済';
+            }
+          });
+        } catch (e) {
+          if (autoLogMsg) { autoLogMsg.textContent = '⚠️ ネットワークエラー: ' + ((e && e.message) || ''); autoLogMsg.style.color = '#fca5a5'; }
+          _reEnableBtns();
+        }
+      });
+    });
 
     // 🔢 2026-05-13 塾長指示「紙の参考書のような数式」: KaTeX で組版表示
     // ① pretifyMath: plain text 数式記号 (π/2, √5, x^2 等) を $LaTeX$ に変換
