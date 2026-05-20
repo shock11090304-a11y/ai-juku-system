@@ -1,0 +1,35 @@
+<!-- 🚨 緊急障害告知バナー (Railway 全体障害時に挿入・復旧後に該当 commit を revert) -->
+<!-- 各 HTML の <body> 直後に <iframe src="outage-banner.html" ...> または fetch で挿入 -->
+<!-- ただし最も simple は各 HTML に直接 HTML スニペット挿入。これは reference 用 -->
+<div id="ai-juku-outage-banner" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;padding:max(14px,env(safe-area-inset-top,14px)) max(18px,env(safe-area-inset-right,18px)) 14px max(18px,env(safe-area-inset-left,18px));font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.55;box-shadow:0 4px 16px rgba(0,0,0,0.35);border-bottom:2px solid #fca5a5;">
+  <div style="max-width:1200px;margin:0 auto;display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+    <div style="font-size:22px;line-height:1;flex-shrink:0;">🚨</div>
+    <div style="flex:1;min-width:240px;">
+      <strong style="font-size:15px;display:block;margin-bottom:4px;">サーバ障害復旧中 (2026-05-20 朝〜)</strong>
+      <span>外部クラウド (Railway) の全体障害により、ログイン・mypage・admin が一時的にご利用いただけません。LP・コンテンツ閲覧は通常通りご利用可能です。</span>
+      <div style="margin-top:6px;font-size:12.5px;opacity:0.92;">
+        Railway 公式 status: <a href="https://status.railway.com/" target="_blank" rel="noopener noreferrer" style="color:#fef3c7;text-decoration:underline;">status.railway.com</a> &nbsp;|&nbsp;
+        お問い合わせ: <a href="mailto:info@trillion-ai-juku.com" style="color:#fef3c7;text-decoration:underline;">info@trillion-ai-juku.com</a>
+      </div>
+    </div>
+    <button onclick="this.parentElement.parentElement.style.display='none';document.body.style.paddingTop='';" aria-label="バナーを閉じる" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:13px;flex-shrink:0;">閉じる</button>
+  </div>
+</div>
+<script>
+  // body 上部を banner 分だけ押し下げる (固定 banner で他コンテンツが隠れないように)
+  (function(){
+    try {
+      var b = document.getElementById('ai-juku-outage-banner');
+      if (b) {
+        var h = b.offsetHeight || 90;
+        document.body.style.paddingTop = (h + 4) + 'px';
+        // resize 対応 (mobile で改行発生時)
+        window.addEventListener('resize', function(){
+          if (b.style.display !== 'none') {
+            document.body.style.paddingTop = (b.offsetHeight + 4) + 'px';
+          }
+        });
+      }
+    } catch(e) { /* noop */ }
+  })();
+</script>
