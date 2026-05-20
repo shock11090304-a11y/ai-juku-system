@@ -214,16 +214,62 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
   errorBox.style.display = 'none';
   loadingBox.style.display = 'block';
 
+  // 🛡️ 2026-05-21 P0-3: cache-purge.js が submit 中に location.reload() を
+  // 発火する race を防ぐためのフラグ。完了時 (try/catch/finally) で false に戻す。
+  window.__checkout_in_flight = true;
+
+  // 🛡️ 2026-05-21 P0-2: fetch timeout wrapper (iPhone Safari 背景タブ stall 対策)
+  // 20 秒で abort して loadingBox を強制 hide。
+  async function fetchWithTimeout(url, opts, timeoutMs = 20000) {
+    const ctrl = new AbortController();
+    const tm = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...opts, signal: ctrl.signal });
+    } finally {
+      clearTimeout(tm);
+    }
+  }
+
+  // 🛡️ 2026-05-21 P0-1: response.json() を読んで具体エラー文言を user に表示
+  // (429 / 422 / 400 を全て BACKEND_DOWN に丸めていた silent 機会損失 fix)
+  async function readErrorDetail(res, defaultMsg) {
+    try {
+      const data = await res.json();
+      if (data && typeof data.detail === 'string' && data.detail) return data.detail;
+      if (data && typeof data.message === 'string' && data.message) return data.message;
+    } catch (_e) { /* JSON ない場合 */ }
+    return defaultMsg;
+  }
+
+  // 🛡️ 2026-05-21 XSS 防御: backend detail を errorBox.innerHTML に表示する前に escape
+  // HTTPException(detail=...) が user 入力を echo する可能性があるため必須 (Agent review)
+  function _esc(s) {
+    const d = document.createElement('div');
+    d.textContent = String(s == null ? '' : s);
+    return d.innerHTML;
+  }
+
   try {
     // 1. Register trial (creates student record)
-    const signupRes = await fetch(`${API_BASE}/api/trial/signup`, {
+    const signupRes = await fetchWithTimeout(`${API_BASE}/api/trial/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
-    });
+    }, 20000);
 
     if (!signupRes.ok) {
-      // Backend not running - fall back to direct app
+      // 🛡️ P0-1: status 別に具体エラー表示 (silent 化 解消)
+      if (signupRes.status === 429) {
+        const detail = await readErrorDetail(signupRes,
+          'ただ今混み合っています。5 分ほど待ってから再度お試しください。');
+        throw new Error('RATE_LIMITED: ' + detail);
+      }
+      if (signupRes.status === 422 || signupRes.status === 400) {
+        const detail = await readErrorDetail(signupRes,
+          '入力内容に不備があります。フルネーム + Gmail 等のメールアドレスをご確認ください。');
+        throw new Error('INPUT_ERROR: ' + detail);
+      }
+      // 500 系 / その他は BACKEND_DOWN として扱う (旧挙動互換)
       throw new Error('BACKEND_DOWN');
     }
 
@@ -284,15 +330,31 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     // 体験中の trial student (signupData.student_id) は維持されるので学習履歴は継承される。
     const isPaidPlan = (selectedPlanForBody === 'student_addon');
     const checkoutEndpoint = isPaidPlan ? '/api/stripe/checkout' : '/api/stripe/trial-checkout';
-    const checkoutRes = await fetch(`${API_BASE}${checkoutEndpoint}`, {
+    // 🛡️ 2026-05-21 P0-2: trial-checkout は Railway cold-start で 5-16s かかる事があるため
+    // timeout は 25 秒に設定 (signup より長め)。
+    const checkoutRes = await fetchWithTimeout(`${API_BASE}${checkoutEndpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(checkoutBody),
-    });
+    }, 25000);
     // 創設メンバー50名達成時は403で停止する。URL直打ち経由の51名目以降をブロック。
     if (checkoutRes.status === 403) {
       const errData = await checkoutRes.json().catch(() => ({ detail: '募集終了' }));
       throw new Error(errData.detail || '創設メンバーの募集は終了しました');
+    }
+    // 🛡️ 2026-05-21 P0-1: 429 / 422 / 400 を具体エラー表示
+    if (checkoutRes.status === 429) {
+      const detail = await readErrorDetail(checkoutRes,
+        'ただ今混み合っています。5 分ほど待ってから再度お試しください。');
+      throw new Error('RATE_LIMITED: ' + detail);
+    }
+    if (checkoutRes.status === 422 || checkoutRes.status === 400) {
+      const detail = await readErrorDetail(checkoutRes,
+        '入力内容に不備があります。プラン選択 / 招待コードをご確認ください。');
+      throw new Error('INPUT_ERROR: ' + detail);
+    }
+    if (!checkoutRes.ok) {
+      throw new Error('BACKEND_DOWN');
     }
     const checkoutData = await checkoutRes.json();
 
@@ -323,22 +385,54 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     // 攻撃者がバックエンドを一時ブロックすれば無料でアカウント作成できてしまう上、
     // 保護者が「決済したつもり」の誤認を起こす（クレーム直結）。常にエラーのみ表示。
     const supportLine = '<br><br>📞 お困りの場合は <a href="mailto:info@trillion-ai-juku.com" style="color:var(--primary-light);">info@trillion-ai-juku.com</a> まで。';
-    if (err.message === 'BACKEND_DOWN' || (err.message || '').includes('Failed to fetch')) {
+
+    // 🛡️ 2026-05-21 P0-1/P0-2: 具体エラー pattern を user に表示 (silent BACKEND_DOWN 解消)
+    const msg = (err && err.message) || '';
+    const isAbort = (err && err.name === 'AbortError') || msg.includes('aborted');
+    if (msg.startsWith('RATE_LIMITED:')) {
+      const detail = msg.slice('RATE_LIMITED:'.length).trim();
+      errorBox.innerHTML = `
+        <strong>⏱ ただ今混み合っています</strong><br>
+        ${_esc(detail)}<br>
+        <strong>5 分ほど待ってから</strong>もう一度「無料体験を開始する」ボタンをお押しください。${supportLine}
+      `;
+      errorBox.style.display = 'block';
+    } else if (msg.startsWith('INPUT_ERROR:')) {
+      const detail = msg.slice('INPUT_ERROR:'.length).trim();
+      errorBox.innerHTML = `
+        <strong>⚠️ 入力内容に不備があります</strong><br>
+        ${_esc(detail)}${supportLine}
+      `;
+      errorBox.style.display = 'block';
+    } else if (isAbort) {
+      // P0-2: timeout 経過時 (iPhone Safari 背景タブ stall 等)
+      errorBox.innerHTML = `
+        <strong>⏱ 接続が遅延しています</strong><br>
+        ネットワークが不安定か、サーバ起動中の可能性があります。<br>
+        <strong>もう一度「無料体験を開始する」ボタン</strong>を押してください。${supportLine}
+      `;
+      errorBox.style.display = 'block';
+    } else if (msg === 'BACKEND_DOWN' || msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
       errorBox.innerHTML = `
         <strong>⚠️ 決済サービスに接続できませんでした</strong><br>
         ただ今混み合っているか、ネットワークが不安定な可能性があります。<br>
         <strong>もう一度「無料体験を開始する」ボタンを押してお試しいただくか</strong>、少し時間をおいて再度お試しください。${supportLine}
       `;
       errorBox.style.display = 'block';
-    } else if ((err.message || '').includes('募集終了')) {
+    } else if (msg.includes('募集終了')) {
       errorBox.innerHTML = `
         <strong>🙏 創設メンバー50名の募集は終了しました</strong><br>
         通常プランからお申込みいただけます。${supportLine}
       `;
       errorBox.style.display = 'block';
+    } else if (msg === 'INVITE_CODE_REQUIRED') {
+      // すでに alert で案内済み (招待コード欄に focus)
     } else {
-      errorBox.innerHTML = `<strong>エラー:</strong> ${(err.message || '不明なエラー')}<br>もう一度お試しください。${supportLine}`;
+      errorBox.innerHTML = `<strong>エラー:</strong> ${_esc(msg || '不明なエラー')}<br>もう一度お試しください。${supportLine}`;
       errorBox.style.display = 'block';
     }
+  } finally {
+    // 🛡️ 2026-05-21 P0-3: cache-purge.js race フラグを必ずリセット
+    window.__checkout_in_flight = false;
   }
 });

@@ -58,6 +58,11 @@
         }
         log.push(now);
         localStorage.setItem(KEY, JSON.stringify(log));
+        // 🛡️ 2026-05-21 P0-3: checkout / submit 進行中は reload 抑止 (form state 損失防止)
+        if (window.__checkout_in_flight) {
+          console.warn('[cache-purge] Reload skipped: checkout submit in flight');
+          return;
+        }
         console.warn('[cache-purge] Stale render suspected (transferSize=0, type=' + nav.type + ') — reloading');
         location.reload();
       } catch (e) { /* iOS 古いバージョンで fail しても無視 */ }
@@ -85,12 +90,21 @@
           sessionStorage.setItem(REL, '1');
           localStorage.setItem('ai_juku_cache_version', serverVer);
           console.warn('[cache-purge] New cache_version detected: ' + (localVer || 'none') + ' → ' + serverVer + ' — purging + reloading');
+          // 🛡️ 2026-05-21 P0-3: checkout submit 進行中は reload を遅延 (form state 損失防止)
+          var doReload = function () {
+            if (window.__checkout_in_flight) {
+              console.warn('[cache-purge] Reload deferred: checkout submit in flight (retry in 5s)');
+              setTimeout(doReload, 5000);
+              return;
+            }
+            location.reload();
+          };
           if (typeof caches !== 'undefined') {
             caches.keys().then(function (keys) {
               return Promise.all(keys.map(function (k) { return caches.delete(k); }));
-            }).finally(function () { location.reload(); });
+            }).finally(doReload);
           } else {
-            location.reload();
+            doReload();
           }
         }).catch(function () { /* オフライン時は何もしない */ });
       } catch (e) { /* fetch 不可なブラウザは無視 */ }

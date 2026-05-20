@@ -17518,7 +17518,9 @@ def trial_signup(payload: TrialSignup, request: Request):
     # レート制限 (4番手 監査 2026-04-30): 1 IP あたり 5分で 3 申込まで。
     # Resend 経由で welcome email を送るため、無制限だと
     # (1) Resend abuse 判定で送信ブロック、(2) DB に dummy student を量産される。
-    _check_rate_limit_ip(request, bucket="trial_signup", limit=3, window=300)
+    # 🛡️ 2026-05-21: 同 Wi-Fi の家族・兄弟同時申込み + 入力ミス再試行による偶発抵触を
+    # 軽減するため 3→5 に緩和 (限度の妥当性は週次で events.rate_limit_hit を確認)。
+    _check_rate_limit_ip(request, bucket="trial_signup", limit=5, window=300)
 
     # 入力検証: TrialSignup の field_validator (フルネーム必須・XSS 対策) は通過済み。
     # メール小文字化 + grade/goal/plan の長さ制限 (XSS 対策の二重防御)
