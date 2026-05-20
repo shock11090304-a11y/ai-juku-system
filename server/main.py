@@ -1513,6 +1513,18 @@ async def _start_background_tasks():
         _BACKGROUND_TASKS.append(task)
         log.info("[Startup] Weakness aggregation scheduler launched (target JST 4:00 daily)")
 
+    # 🗄️ R2 daily DB backup scheduler (毎日 JST R2_BACKUP_HOUR_JST=3:00):
+    # 2026-05-20 Railway 全体障害で「DB と app の同居 = DB も道連れ」教訓から実装。
+    # Supabase 自身も daily backup を持つが、別事業者 (Cloudflare R2) に dump を
+    # 保存する 2nd backup で真の DR を確保。R2_ACCOUNT_ID 未設定時は scheduler は
+    # 起動するが backup 時に skip ログを出すだけ (env 後付けで有効化)。
+    if os.getenv('R2_ACCOUNT_ID'):
+        task = asyncio.create_task(_r2_backup_scheduler())
+        _BACKGROUND_TASKS.append(task)
+        log.info(f"[Startup] R2 backup scheduler launched (target JST {os.getenv('R2_BACKUP_HOUR_JST', '3')}:00 daily)")
+    else:
+        log.warning("[Startup] R2 backup scheduler NOT launched (R2_ACCOUNT_ID not set). Add R2 credentials to enable daily DB backup to Cloudflare R2.")
+
     # 💸 Anthropic credit_low 監視 scheduler は塾長判断で起動見送り (2026-05-13)
     # 理由: CEO ダッシュバナーでリアルタイム把握可能・自動リロード設定で credit 切れ自体回避
     # 関数 (_anthropic_credit_monitor_scheduler / _run_credit_monitor) は残置・再有効化可能
@@ -28765,6 +28777,250 @@ def get_my_unread_count(authorization: Optional[str] = Header(None)):
         return {"ok": True, "unread_count": int((row["n"] if row else 0) or 0)}
     finally:
         conn.close()
+
+
+# ==========================================================================
+# 🗄️ R2 daily DB backup (Cloudflare R2 = vendor-separated 真の DR)
+# 2026-05-20 Railway 全体障害で「DB と app の同居 = DB も道連れ」教訓から実装。
+# Supabase 自身も daily backup を持つが、Supabase アカウント自体が飛ぶ catastrophic
+# 障害に備え別事業者 (Cloudflare R2) に dump を保存する 2nd backup。
+# pure Python (psycopg + json + gzip + boto3) で pg_dump binary 不要。
+# env: R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_BUCKET
+#      / R2_BACKUP_HOUR_JST (default 3) / R2_BACKUP_RETENTION_DAYS (default 30)
+# memory: feedback_in_process_scheduler.md パターン踏襲
+# ==========================================================================
+def _record_r2_event(name: str, meta: dict):
+    """R2 backup 専用 events 記録 (失敗しても backup 本体は止めない)。
+    既存 main.py に `_record_event` ヘルパーが存在しないため専用に inline 定義。
+    feedback_silent_fail_send_email.md パターンで events に必ず audit log を残す。"""
+    try:
+        conn = db()
+        try:
+            conn.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                (name, json.dumps(meta, ensure_ascii=False, default=str), 'r2_backup_scheduler')
+            )
+            try: conn.commit()
+            except Exception: pass
+        finally:
+            try: conn.close()
+            except Exception: pass
+    except Exception as _e:
+        log.warning(f'[r2_backup] events 記録失敗 (non-fatal): {_e}')
+
+
+def _dump_db_to_jsonl_gz() -> bytes:
+    """全 public schema table を JSONL (gzip) で dump。
+    各行は {"_table": "students", "_data": {col: val, ...}} 形式。restore 時は
+    table 別に再分割可能。timestamp/uuid/date 等は default=str で文字列化
+    (psycopg restore 時に自動 cast)。bytea 列は現 schema 0 件で問題なし
+    (将来追加時は base64 化必須・3 視点 review で再確認)。"""
+    import gzip, json, io as _io, re as _re
+    # table 名 sanity check (情報スキーマ由来でも防衛的に regex 確認)
+    _safe_ident = _re.compile(r'^[a-z_][a-z0-9_]*$')
+    out = _io.BytesIO()
+    with gzip.GzipFile(fileobj=out, mode='wb', compresslevel=6) as gz:
+        gz.write(b'-- ai-juku R2 backup (jsonl.gz)\n')
+        gz.write(f'-- generated_at: {datetime.now(timezone.utc).isoformat()}\n'.encode())
+        conn = db()
+        try:
+            cur = conn.execute(
+                "SELECT table_name FROM information_schema.tables "
+                "WHERE table_schema='public' AND table_type='BASE TABLE' "
+                "ORDER BY table_name"
+            )
+            tables = [r[0] for r in cur.fetchall()]
+            total_rows = 0
+            skipped_unsafe = []
+            for t in tables:
+                # 防衛的: info_schema 由来でも regex で確認 (PostgreSQL は " 含む table 名を許容)
+                if not _safe_ident.match(t):
+                    skipped_unsafe.append(t)
+                    log.warning(f'[r2_backup] skip unsafe table name: {t!r}')
+                    continue
+                gz.write(f'\n-- TABLE: {t}\n'.encode())
+                # _safe_ident regex を通った table 名のみ実行 (実質的に SQL injection 不可能)
+                cur = conn.execute(f'SELECT * FROM "{t}"')
+                cols = [d.name for d in cur.description] if cur.description else []
+                n = 0
+                for row in cur.fetchall():
+                    rec = {cols[i]: row[i] for i in range(len(cols))} if isinstance(row, tuple) else dict(row)
+                    line = json.dumps({'_table': t, '_data': rec}, default=str, ensure_ascii=False)
+                    gz.write((line + '\n').encode('utf-8'))
+                    n += 1
+                gz.write(f'-- {t}: {n} rows\n'.encode())
+                total_rows += n
+            gz.write(f'\n-- TOTAL: {len(tables) - len(skipped_unsafe)} tables, {total_rows} rows\n'.encode())
+            if skipped_unsafe:
+                gz.write(f'-- SKIPPED unsafe: {skipped_unsafe}\n'.encode())
+        finally:
+            try: conn.close()
+            except Exception: pass
+    return out.getvalue()
+
+
+def _r2_client():
+    """boto3 S3 client (Cloudflare R2 endpoint)。env 未設定なら ValueError。"""
+    account_id = os.getenv('R2_ACCOUNT_ID', '').strip()
+    access_key = os.getenv('R2_ACCESS_KEY_ID', '').strip()
+    secret_key = os.getenv('R2_SECRET_ACCESS_KEY', '').strip()
+    if not (account_id and access_key and secret_key):
+        raise ValueError('R2 env vars not configured (R2_ACCOUNT_ID/R2_ACCESS_KEY_ID/R2_SECRET_ACCESS_KEY)')
+    import boto3  # type: ignore
+    return boto3.client(
+        's3',
+        endpoint_url=f'https://{account_id}.r2.cloudflarestorage.com',
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
+        region_name='auto',
+    )
+
+
+def _r2_upload_backup(data: bytes, key: str) -> dict:
+    """R2 に PUT。bucket は R2_BUCKET env (default ai-juku-db-backup)。"""
+    bucket = os.getenv('R2_BUCKET', 'ai-juku-db-backup').strip() or 'ai-juku-db-backup'
+    cli = _r2_client()
+    cli.put_object(
+        Bucket=bucket, Key=key, Body=data,
+        ContentType='application/gzip',
+        Metadata={'source': 'ai-juku-system', 'generated_at': datetime.now(timezone.utc).isoformat()},
+    )
+    return {'bucket': bucket, 'key': key, 'size': len(data)}
+
+
+def _r2_prune_old_backups(retention_days: int) -> int:
+    """retention_days より古い backup を R2 から削除。削除件数を返す。"""
+    bucket = os.getenv('R2_BUCKET', 'ai-juku-db-backup').strip() or 'ai-juku-db-backup'
+    cli = _r2_client()
+    cutoff = datetime.now(timezone.utc) - timedelta(days=max(1, retention_days))
+    deleted = 0
+    paginator = cli.get_paginator('list_objects_v2')
+    for page in paginator.paginate(Bucket=bucket, Prefix='ai-juku/'):
+        for obj in page.get('Contents') or []:
+            lm = obj.get('LastModified')
+            if lm and lm < cutoff:
+                cli.delete_object(Bucket=bucket, Key=obj['Key'])
+                deleted += 1
+    return deleted
+
+
+def _run_r2_backup() -> dict:
+    """1 回分の backup 実行。成功で {ok:True, key, size, ...}、失敗で例外。"""
+    now = datetime.now(timezone(timedelta(hours=9)))
+    data = _dump_db_to_jsonl_gz()
+    key = f'ai-juku/{now.strftime("%Y/%m")}/db-{now.strftime("%Y%m%d-%H%M%S")}.jsonl.gz'
+    result = _r2_upload_backup(data, key)
+    retention = int(os.getenv('R2_BACKUP_RETENTION_DAYS', '30'))
+    pruned = 0
+    try:
+        pruned = _r2_prune_old_backups(retention)
+    except Exception as e:
+        log.warning(f'[r2_backup] prune failed (non-fatal): {e}')
+    try:
+        _record_r2_event('r2_backup_success', {'key': key, 'size': result['size'], 'pruned': pruned})
+    except Exception:
+        pass
+    return {**result, 'pruned': pruned, 'retention_days': retention}
+
+
+async def _r2_backup_scheduler():
+    """毎日 R2_BACKUP_HOUR_JST (default 3:00 JST) に backup 実行。
+    feedback_in_process_scheduler.md パターン + notifications dedup なし
+    (毎日 1 回確実に走らせる・events.r2_backup_success で audit)。"""
+    target_h = int(os.getenv('R2_BACKUP_HOUR_JST', '3'))
+    log.info(f'[r2_backup_scheduler] launched (target JST {target_h}:00 daily)')
+    last_run_date = None
+    while True:
+        try:
+            now = datetime.now(timezone(timedelta(hours=9)))
+            today_str = now.strftime('%Y-%m-%d')
+            if now.hour == target_h and last_run_date != today_str:
+                try:
+                    if not os.getenv('R2_ACCOUNT_ID'):
+                        log.warning('[r2_backup_scheduler] R2_ACCOUNT_ID not set, skip')
+                    else:
+                        result = _run_r2_backup()
+                        log.info(f'[r2_backup_scheduler] success: {result}')
+                    last_run_date = today_str
+                except Exception as e:
+                    log.error(f'[r2_backup_scheduler] failed: {e}')
+                    try:
+                        _record_r2_event('r2_backup_failed', {'error': str(e)[:500]})
+                    except Exception: pass
+                    # failure でも last_run_date 更新で 1 日 1 回 retry に留める
+                    last_run_date = today_str
+                await asyncio.sleep(3600)  # 1h sleep to avoid double fire
+            else:
+                await asyncio.sleep(300)  # 5 min poll
+        except asyncio.CancelledError:
+            return
+        except Exception as e:
+            log.error(f'[r2_backup_scheduler] outer: {e}')
+            await asyncio.sleep(300)
+
+
+@app.post('/api/admin/db/snapshot-to-r2')
+def admin_db_snapshot_to_r2(
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🗄️ R2 への DB snapshot 手動 trigger (CEO ダッシュ + cron 両用)。
+    認証: admin Bearer または X-Cron-Secret。"""
+    authed = False
+    if authorization and authorization.startswith('Bearer '):
+        token = authorization[len('Bearer '):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail='未認証')
+    try:
+        result = _run_r2_backup()
+        return {'ok': True, **result}
+    except ValueError as e:
+        # R2 env 未設定
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        log.error(f'[admin_db_snapshot_to_r2] {e}')
+        raise HTTPException(status_code=500, detail=f'backup failed: {str(e)[:200]}')
+
+
+@app.get('/api/admin/db/r2-backups')
+def admin_db_r2_backups(
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+    limit: int = 30,
+):
+    """🗄️ R2 上の backup 一覧 (CEO ダッシュ表示用)。
+    認証: admin Bearer または X-Cron-Secret。"""
+    authed = False
+    if authorization and authorization.startswith('Bearer '):
+        token = authorization[len('Bearer '):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail='未認証')
+    try:
+        bucket = os.getenv('R2_BUCKET', 'ai-juku-db-backup').strip() or 'ai-juku-db-backup'
+        cli = _r2_client()
+        resp = cli.list_objects_v2(Bucket=bucket, Prefix='ai-juku/', MaxKeys=max(1, min(limit, 1000)))
+        items = []
+        for obj in (resp.get('Contents') or [])[:limit]:
+            items.append({
+                'key': obj['Key'],
+                'size': obj.get('Size'),
+                'last_modified': obj['LastModified'].isoformat() if obj.get('LastModified') else None,
+            })
+        items.sort(key=lambda x: x.get('last_modified') or '', reverse=True)
+        return {'ok': True, 'bucket': bucket, 'count': len(items), 'items': items}
+    except ValueError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        log.error(f'[admin_db_r2_backups] {e}')
+        raise HTTPException(status_code=500, detail=str(e)[:200])
 
 
 # ==========================================================================
