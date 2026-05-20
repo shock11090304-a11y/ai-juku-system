@@ -10962,11 +10962,67 @@ async def admin_exam_questions_burst_seed(payload: dict = None, authorization: O
     }
 
 
+def _mirror_questions_to_supabase(mirror_url: str, ok_questions: list, valid_rotation: set) -> dict:
+    """Supabase staging に exam_questions を mirror INSERT (staging-first flow 用)。
+    env SUPABASE_MIRROR_URL 設定時のみ呼ばれる。失敗時は警告のみ・本番 import を止めない。
+    memory: feedback_supabase_staging.md (Phase 1・C 採用) の自動 mirror 化。
+    psycopg3 仕様: `?` ではなく `%s` placeholder・dict は Jsonb wrap 必須。"""
+    if not mirror_url:
+        return {"ok": False, "reason": "SUPABASE_MIRROR_URL not set"}
+    # 🛡️ 防御: mirror_url に Railway 本番 host 含有なら refuse (3 視点 review data Agent 推奨)
+    # mirror_url を誤って Railway URL に設定した場合に本番 DB を mirror 上書き / TRUNCATE する事故防止
+    _railway_markers = ['railway.app', 'rlwy.net', 'railway.internal', 'proxy.rlwy.net']
+    if any(m in mirror_url for m in _railway_markers):
+        return {"ok": False, "reason": f"mirror_url contains Railway production marker; refusing to mirror to prevent accidental TRUNCATE/overwrite of Railway production DB"}
+    # Supabase 想定 host のみ allow (誤設定検知)
+    if 'supabase.com' not in mirror_url and 'supabase.co' not in mirror_url:
+        log.warning(f"[ExamQ:Mirror] mirror_url does not contain 'supabase.com'/'supabase.co' — proceeding but verify it's the intended staging DB")
+    try:
+        import psycopg as _psycopg
+        from psycopg.types.json import Jsonb as _Jsonb
+    except ImportError:
+        return {"ok": False, "reason": "psycopg not installed"}
+    mirror_inserted = 0
+    mirror_failed = 0
+    try:
+        with _psycopg.connect(mirror_url, connect_timeout=10, autocommit=True) as conn:
+            for q in ok_questions:
+                exam_id = q.get("exam_id")
+                part_key = q.get("part_key")
+                eiken_grade = q.get("eiken_grade")
+                question_data = q.get("question_data")
+                model = q.get("model") or "claude-max-plan"
+                if not exam_id or not part_key or not question_data:
+                    continue
+                if (exam_id, part_key, eiken_grade) not in valid_rotation:
+                    continue
+                try:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "INSERT INTO exam_questions (exam_id, part_key, eiken_grade, question_data, model) VALUES (%s, %s, %s, %s, %s)",
+                            (
+                                exam_id, part_key, eiken_grade,
+                                _Jsonb(question_data) if isinstance(question_data, (dict, list)) else question_data,
+                                model,
+                            ),
+                        )
+                    mirror_inserted += 1
+                except Exception:
+                    mirror_failed += 1
+        return {"ok": True, "mirrored": mirror_inserted, "mirror_failed": mirror_failed}
+    except Exception as e:
+        return {"ok": False, "reason": str(e)[:200]}
+
+
 def _exam_questions_import_core(questions: list, skip_full: bool = False) -> dict:
     """exam_questions 一括インサートのコアロジック (admin endpoint と AI チームワークフロー両方から再利用)。
 
     入力 validation は呼び出し側で行うこと (questions が list で空ではないことを保証)。
     重複 import の防御は呼び出し側責任 (memory: feedback_seed_import_no_loop.md)。
+
+    Supabase mirror (Phase 1・staging-first flow): env SUPABASE_MIRROR_URL が設定されていれば、
+    Railway 本番 INSERT 後に同 questions を Supabase にも自動 mirror INSERT する。失敗時は警告のみ・
+    本番 import を止めない。memory: feedback_supabase_staging.md
     """
     counts = _exam_pool_counts() if skip_full else {}
     valid_rotation = {(e, p, g) for (e, p, g) in EXAM_QUESTION_ROTATION}
@@ -11013,6 +11069,21 @@ def _exam_questions_import_core(questions: list, skip_full: bool = False) -> dic
         conn.close()
 
     log.info(f"[ExamQ:Import] inserted={inserted} skipped={skipped} failed={len(failed)}")
+
+    # 🪞 Supabase staging mirror (Phase 1・自動 mirror 化)
+    mirror_result = None
+    mirror_url = os.getenv("SUPABASE_MIRROR_URL", "").strip()
+    if mirror_url and inserted > 0:
+        # 失敗した index を集めて、それ以外を mirror 対象に
+        failed_idx = {f.get("i") for f in failed if isinstance(f, dict)}
+        ok_questions = [q for i, q in enumerate(questions) if i not in failed_idx]
+        try:
+            mirror_result = _mirror_questions_to_supabase(mirror_url, ok_questions, valid_rotation)
+            log.info(f"[ExamQ:Mirror→Supabase] {mirror_result}")
+        except Exception as e:
+            mirror_result = {"ok": False, "reason": str(e)[:200]}
+            log.warning(f"[ExamQ:Mirror→Supabase] non-fatal exception: {e}")
+
     return {
         "ok": True,
         "received": len(questions),
@@ -11020,6 +11091,7 @@ def _exam_questions_import_core(questions: list, skip_full: bool = False) -> dic
         "skipped_full": skipped,
         "failed": len(failed),
         "failed_details": failed[:20],
+        "mirror": mirror_result,  # Supabase mirror result (None if SUPABASE_MIRROR_URL not set)
         "message": f"✅ {inserted}問 import (skip {skipped}・失敗 {len(failed)})",
     }
 
@@ -11054,6 +11126,107 @@ def admin_exam_questions_import(payload: dict, authorization: Optional[str] = He
 
     skip_full = bool(payload.get("skip_full", False))
     return _exam_questions_import_core(questions, skip_full)
+
+
+@app.post("/api/admin/exam-questions/mirror-all-to-supabase")
+def admin_mirror_all_to_supabase(
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+    truncate_first: bool = False,
+):
+    """🪞 Railway exam_questions 全件を Supabase staging に一括 mirror INSERT。
+    Phase 1 staging-first flow 採用後の **初回補完** + **緊急切替先準備** 用。
+    env SUPABASE_MIRROR_URL 必須・admin Bearer or x-cron-secret 認証。
+    実行時間目安: 16,000+ records で 30-60 分・per-row INSERT で transaction abort 回避。
+
+    query parameter:
+      truncate_first=true で実行前に Supabase 側 exam_questions を TRUNCATE。
+      再実行時の重複爆発防止 (3 視点 review 指摘で追加・2026-05-20)。
+      ⚠️ destructive 操作なので明示的 OPT-IN のみ。
+
+    memory: feedback_supabase_staging.md (Phase A 補完手段)"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    mirror_url = os.getenv("SUPABASE_MIRROR_URL", "").strip()
+    if not mirror_url:
+        raise HTTPException(status_code=503, detail="SUPABASE_MIRROR_URL env not set")
+    # Railway 本番から SELECT *
+    questions: list = []
+    try:
+        conn = db()
+        try:
+            cur = conn.execute(
+                "SELECT exam_id, part_key, eiken_grade, question_data, model FROM exam_questions ORDER BY id"
+            )
+            for row in cur.fetchall():
+                # row order: exam_id, part_key, eiken_grade, question_data, model
+                qd = row[3]
+                if isinstance(qd, str):
+                    try:
+                        qd = json.loads(qd)
+                    except Exception:
+                        pass  # raw string のままで mirror
+                questions.append({
+                    "exam_id": row[0],
+                    "part_key": row[1],
+                    "eiken_grade": row[2],
+                    "question_data": qd,
+                    "model": row[4] or "claude-max-plan",
+                })
+        finally:
+            conn.close()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Railway SELECT failed: {str(e)[:200]}")
+    if not questions:
+        return {"ok": True, "total_railway": 0, "mirrored": 0, "message": "Railway 側に exam_questions が無い"}
+    # 🛡️ 重複爆発防止 (truncate_first=true で OPT-IN)
+    # ⚠️ CRITICAL: TRUNCATE は Railway 本番 URL に誤実行すると本番 16,000+ wipe 致命
+    # → _mirror_questions_to_supabase と同じ Railway URL reject check を TRUNCATE 直前にも実行
+    truncated = 0
+    if truncate_first:
+        # 🛡️ 同 helper と同じ防御ガード (3 視点 review data Agent 致命指摘 fix・2026-05-20)
+        _railway_markers_truncate = ['railway.app', 'rlwy.net', 'railway.internal', 'proxy.rlwy.net']
+        if any(m in mirror_url for m in _railway_markers_truncate):
+            raise HTTPException(
+                status_code=400,
+                detail=f"SUPABASE_MIRROR_URL contains Railway production marker; refusing TRUNCATE to prevent accidental wipe of Railway production DB",
+            )
+        if 'supabase.com' not in mirror_url and 'supabase.co' not in mirror_url:
+            raise HTTPException(
+                status_code=400,
+                detail=f"SUPABASE_MIRROR_URL does not contain 'supabase.com'/'supabase.co'; refusing destructive TRUNCATE on unknown host",
+            )
+        try:
+            import psycopg as _psycopg
+            with _psycopg.connect(mirror_url, connect_timeout=10, autocommit=True) as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT count(*) FROM exam_questions")
+                    truncated = cur.fetchone()[0]
+                    cur.execute("TRUNCATE exam_questions RESTART IDENTITY")
+            log.info(f"[ExamQ:MirrorAll] TRUNCATE done (deleted {truncated} prior rows)")
+        except HTTPException:
+            raise
+        except Exception as e:
+            log.error(f"[ExamQ:MirrorAll] TRUNCATE failed: {e}")
+            raise HTTPException(status_code=500, detail=f"truncate failed: {str(e)[:200]}")
+    # Supabase に mirror
+    valid_rotation = {(e, p, g) for (e, p, g) in EXAM_QUESTION_ROTATION}
+    log.info(f"[ExamQ:MirrorAll] starting Supabase mirror of {len(questions)} questions (truncated_first={truncate_first})")
+    result = _mirror_questions_to_supabase(mirror_url, questions, valid_rotation)
+    return {
+        "ok": result.get("ok", False),
+        "total_railway": len(questions),
+        "truncated_first": truncate_first,
+        "truncated_rows": truncated,
+        **result,
+    }
 
 
 # ==========================================================================
