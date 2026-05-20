@@ -4580,11 +4580,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   } catch (e) { /* silent: localStorage 不可ブラウザでもエラー化させない */ }
 
-  // 🎯 2026-05-15 塾長指示「科目別に変更」: クイックスタートを 5 科目 (国語/英語/理科/社会/数学) に再編
-  // 英語・理科・社会はプルダウン展開、国語・数学は直接 pickExam に遷移。
-  // data-qs-subject は localStorage (QS_SUBJECT_HINT_KEY) に hint 保存 → grade/sections フィルタで参照。
-  // (QS_SUBJECT_HINT_KEY 定数 + helper 関数群は L724 付近にファイル先頭で定義済)
+  // ⚠️ DEPRECATED (2026-05-21 塾長指示): クイックスタート + 定期テスト勉強モードは quick-start.html に分離。
+  //   このページの quickStartBar / teikiUnitBar セクションは削除済 → 以下の handler は DOM 要素無しで no-op になる。
+  //   実体は quick-start.js (TEIKI_UNIT_INDEX も含む)。URL ?focus= / ?teiki_unit=1 経由でこのページに戻る。
+  //   将来 quickStartBar を復活させたい場合のために handler は残置 (Chesterton's Fence)。
 
+  // 🎯 2026-05-15 (deprecated 2026-05-21) クイックスタートを 5 科目 (国語/英語/理科/社会/数学) に再編
   // 1) プルダウン toggle (▾ ボタン)
   document.querySelectorAll('.qs-toggle').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -4634,9 +4635,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 🎯 2026-05-15 塾長指示「定期テスト単元プルダウン」: 大学/大問を経由せず単元で直接問題演習
-  //  Phase 1-15 で投入した teiki/kyotsu 系単元を統合 (各単元 = exam_id/part_key/eiken_grade/topic 4 値)
-  //  単元選択 → state にセット → pickExamSections + auto-select section + startSection で直行
+  // ⚠️ DEPRECATED (2026-05-21): TEIKI_UNIT_INDEX + bindTeikiUnit IIFE は quick-start.js に移植済。
+  //   teikiUnitBar セクション削除に伴い、bindTeikiUnit() 内の getElementById は全 null → 早期 return で no-op。
+  //   実体 (live source) は quick-start.js を編集すること。ここは Chesterton's Fence で残置 (復活時の reference)。
+  // 🎯 2026-05-15 (deprecated 2026-05-21) 定期テスト単元プルダウンの単元インデックス
   const TEIKI_UNIT_INDEX = {
     '📐 数学 IA (共通テスト基礎)': [
       { label: '二次関数 (最大最小・頂点)', exam_id:'rikei', part_key:'math_1a', eiken_grade:'kyotsu_rikei', topic:'二次関数' },
@@ -4853,6 +4855,57 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           }, 250);
         }, 0);
+      }
+    }
+  } catch (e) { /* silent */ }
+
+  // 🎯 URL ?teiki_unit=1&exam_id=...&part_key=...&eiken_grade=...&topic=... で定期テスト単元演習を直接起動
+  // (2026-05-21 塾長指示: quick-start.html 分離対応・元の bindTeikiUnit goBtn click ハンドラを URL params 駆動化)
+  // 🔒 URL params は untrusted — 全 4 値を whitelist 検証 (eikenGrade / partKey も exam.grades / allSections に存在チェック)。
+  //    検証漏れは AI prompt injection 経路になる (state.eikenGradeName / state.currentTopic が prompt template に注入されるため)。
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('teiki_unit') === '1') {
+      const examId = params.get('exam_id');
+      const partKey = params.get('part_key');
+      const eikenGrade = params.get('eiken_grade');
+      // topic は AI prompt に流入 → 長さ制限 + 改行/タブ除去で injection 緩和
+      const topic = (params.get('topic') || '').slice(0, 40).replace(/[\n\r\t]/g, ' ').trim();
+      const allowedExam = ['daigaku', 'rikei', 'bunkei'];
+      if (examId && partKey && eikenGrade && allowedExam.includes(examId)) {
+        const exam = EXAMS[examId];
+        // 🔒 eikenGrade は exam.grades の登録キーに限定 (一致しない値の raw 注入を遮断)
+        const gradeItem = exam ? (exam.grades || []).find(g => g.key === eikenGrade) : null;
+        if (exam && gradeItem) {
+          // 🔒 partKey は実際の allSections に存在するキーに限定 (silent fallback で別大問が暴発するのを防ぐ)
+          const allSections = (exam.sectionsByGrade && exam.sectionsByGrade[eikenGrade])
+            || exam.sections || [];
+          const section = allSections.find(s => s.key === partKey);
+          if (section) {
+            state.examId = examId;
+            state.eikenGrade = eikenGrade;
+            state.eikenGradeName = gradeItem.name;
+            state.currentTopic = topic || null;
+            state.isReviewMode = false;
+            state.sectionKey = section.key;
+            // DOM bind 完了後に発火 (focus= と同じ 1 tick 遅延パターン)
+            setTimeout(() => {
+              try { pickExamSections(examId); } catch (e) { console.warn('[teiki-unit-url] pickExamSections failed:', e); }
+              setTimeout(() => {
+                document.querySelectorAll('.section-card').forEach(c => {
+                  c.classList.toggle('selected', c.dataset.section === section.key);
+                });
+                try { startSection(section); } catch (e) { console.warn('[teiki-unit-url] startSection failed:', e); }
+                const qBox = document.getElementById('questionBox') || document.getElementById('examDetailSection');
+                if (qBox) setTimeout(() => qBox.scrollIntoView({ behavior:'smooth', block:'start' }), 200);
+              }, 80);
+            }, 0);
+          } else {
+            console.warn('[teiki-unit-url] invalid part_key, ignored:', partKey);
+          }
+        } else {
+          console.warn('[teiki-unit-url] invalid exam_id / eiken_grade, ignored:', examId, eikenGrade);
+        }
       }
     }
   } catch (e) { /* silent */ }

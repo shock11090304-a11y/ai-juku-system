@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="pragma" content="no-cache">
+  <meta http-equiv="expires" content="0">
+  <title>⚡ クイックスタート | 科目を選んで今すぐ問題挑戦 | ai-juku</title>
+  <meta name="description" content="5科目 (国語/英語/理科/社会/数学) から選択 → AI が即時生成。定期テスト勉強モード対応 (単元から直接出題)。">
+  <link rel="stylesheet" href="style.css?v=20260521-quickstart-split">
+  <script src="cache-purge.js?v=20260521-quickstart-split"></script>
+  <script src="frontend-error-monitor.js?v=20260521-quickstart-split"></script>
+  <style>
+    .qs-page-header {
+      max-width:1200px; margin:1.4rem auto 0; padding:0 1rem;
+      display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;
+    }
+    .qs-page-title { margin:0; font-size:1.35rem; color:#fff; font-weight:800; }
+    .qs-page-title .accent { color:#fbbf24; }
+    .qs-page-sub { margin:0.2rem 0 0; font-size:0.85rem; color:#c7d2fe; }
+    .qs-nav-link {
+      display:inline-flex; align-items:center; gap:0.3rem;
+      padding:0.5rem 0.9rem; background:rgba(99,102,241,0.18);
+      border:1px solid rgba(167,139,250,0.4); border-radius:8px;
+      color:#e0e7ff; font-weight:700; font-size:0.85rem; text-decoration:none;
+    }
+    .qs-nav-link:hover { background:rgba(99,102,241,0.32); color:#fff; }
+    .qs-main { max-width:1200px; margin:0 auto 2rem; padding:0 1rem; }
+
+    .qs-bar { display:flex; gap:0.45rem; flex-wrap:wrap; }
+    .qs-btn { padding:0.7rem 1.1rem; border:0; border-radius:10px; color:#fff; font-weight:800; font-size:0.95rem; cursor:pointer; min-height:48px; }
+    .qs-btn-kokugo  { background:linear-gradient(135deg,#ef4444,#f97316); box-shadow:0 4px 12px rgba(239,68,68,0.3); }
+    .qs-btn-eigo    { background:linear-gradient(135deg,#3b82f6,#6366f1); box-shadow:0 4px 12px rgba(59,130,246,0.3); }
+    .qs-btn-rika    { background:linear-gradient(135deg,#22c55e,#10b981); box-shadow:0 4px 12px rgba(34,197,94,0.3); }
+    .qs-btn-shakai  { background:linear-gradient(135deg,#a855f7,#ec4899); box-shadow:0 4px 12px rgba(168,85,247,0.3); }
+    .qs-btn-math    { background:linear-gradient(135deg,#fbbf24,#f97316); box-shadow:0 4px 12px rgba(251,191,36,0.3); }
+    .qs-dropdown { position:relative; }
+    .qs-menu {
+      position:absolute; top:calc(100% + 0.4rem); left:0; z-index:50;
+      background:#1e1b4b; border:1px solid rgba(167,139,250,0.45);
+      border-radius:10px; padding:0.4rem; min-width:200px;
+      box-shadow:0 12px 32px rgba(0,0,0,0.4);
+      display:flex; flex-direction:column; gap:0.25rem;
+    }
+    .qs-menu[hidden] { display:none; }
+    .qs-menu button {
+      text-align:left; padding:0.55rem 0.8rem; background:transparent; border:0;
+      border-radius:6px; color:#e0e7ff; font-weight:700; font-size:0.88rem;
+      cursor:pointer; min-height:38px;
+    }
+    .qs-menu button:hover { background:rgba(99,102,241,0.25); color:#fff; }
+    .qs-caret { font-size:0.7em; margin-left:0.25rem; opacity:0.85; }
+
+    .teiki-unit-bar { margin:0.6rem auto 0; }
+    .teiki-unit-inner {
+      background:linear-gradient(135deg, rgba(34,197,94,0.12), rgba(251,191,36,0.10));
+      border:1px solid rgba(34,197,94,0.40);
+      border-radius:14px; padding:0.95rem 1.2rem;
+    }
+    .teiki-unit-head { display:flex; align-items:center; gap:0.55rem; flex-wrap:wrap; margin-bottom:0.55rem; }
+    .teiki-unit-eyebrow { font-size:0.78rem; color:#22c55e; font-weight:800; letter-spacing:0.06em; }
+    .teiki-unit-title { margin:0; font-size:1.0rem; font-weight:800; color:#fff; }
+    .teiki-unit-desc { margin:0; font-size:0.8rem; color:#bbf7d0; line-height:1.55; }
+    .teiki-unit-row { display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin-top:0.4rem; }
+    .teiki-unit-select {
+      flex:1 1 200px; min-width:200px;
+      padding:0.55rem 0.7rem; background:rgba(0,0,0,0.45);
+      border:1.5px solid rgba(34,197,94,0.45); border-radius:8px;
+      color:#fff; font-size:0.92rem; font-weight:700; cursor:pointer;
+    }
+    .teiki-unit-go {
+      padding:0.55rem 1.1rem; background:linear-gradient(135deg,#22c55e,#10b981);
+      border:0; border-radius:8px; color:#fff; font-weight:800; font-size:0.92rem;
+      cursor:pointer; min-height:40px; box-shadow:0 4px 12px rgba(34,197,94,0.3);
+    }
+    .teiki-unit-go:disabled { opacity:0.5; cursor:not-allowed; }
+
+    .qs-hint {
+      max-width:1200px; margin:1.2rem auto 0; padding:0.85rem 1.1rem;
+      background:rgba(99,102,241,0.06); border:1px dashed rgba(167,139,250,0.35);
+      border-radius:10px; font-size:0.85rem; color:#c7d2fe; line-height:1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <header class="qs-page-header">
+    <div>
+      <h1 class="qs-page-title"><span class="accent">⚡</span> クイックスタート</h1>
+      <p class="qs-page-sub">5 科目から選択 → AI が即時生成。同じ問題は出ません。</p>
+    </div>
+    <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+      <a href="mypage.html" class="qs-nav-link" title="マイページに戻る">🏠 マイページ</a>
+      <a href="english-exam.html" class="qs-nav-link" title="試験対策スタジオ">🎓 試験対策スタジオ</a>
+    </div>
+  </header>
+
+  <main class="qs-main">
+
+    <!-- 🎯 2026-05-21 塾長指示「クイックスタート + 定期テストを別ページ化」-->
+    <section id="quickStartBar" style="margin:1.2rem auto 0;">
+      <div style="background:linear-gradient(135deg, rgba(99,102,241,0.18), rgba(236,72,153,0.12)); border:1px solid rgba(167,139,250,0.45); border-radius:14px; padding:1rem 1.2rem; box-shadow:0 8px 24px rgba(99,102,241,0.15);">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.8rem; flex-wrap:wrap;">
+          <div style="flex:1 1 280px;">
+            <div style="font-size:0.78rem; color:#fbbf24; font-weight:800; letter-spacing:0.08em; margin-bottom:0.3rem;">⚡ クイックスタート</div>
+            <h3 style="margin:0 0 0.25rem 0; font-size:1.1rem; color:#fff; font-weight:800;">科目を選んで今すぐ問題挑戦</h3>
+            <p style="margin:0; font-size:0.82rem; color:#c7d2fe; line-height:1.5;">5 科目から選択 → 大学・大問を指定して AI が即時生成。履歴は自動記録され同じ問題は出ません。</p>
+          </div>
+          <div class="qs-bar">
+            <!-- 国語: bunkei (文系) flow + subject hint=kokugo -->
+            <button type="button" class="qs-btn qs-btn-kokugo" data-qs-exam="bunkei" data-qs-subject="kokugo">📖 国語</button>
+
+            <!-- 英語: 5 試験種別プルダウン -->
+            <div class="qs-dropdown">
+              <button type="button" class="qs-btn qs-btn-eigo qs-toggle" aria-haspopup="true" aria-expanded="false">🇬🇧 英語<span class="qs-caret">▾</span></button>
+              <div class="qs-menu" hidden>
+                <button type="button" data-qs-exam="daigaku">🎓 大学入試英語</button>
+                <button type="button" data-qs-exam="eiken">🇯🇵 英検</button>
+                <button type="button" data-qs-exam="toefl">🇺🇸 TOEFL iBT</button>
+                <button type="button" data-qs-exam="toeic">💼 TOEIC L&amp;R</button>
+                <button type="button" data-qs-exam="ielts">🇬🇧 IELTS</button>
+              </div>
+            </div>
+
+            <!-- 理科: 4 subject プルダウン (rikei flow) -->
+            <div class="qs-dropdown">
+              <button type="button" class="qs-btn qs-btn-rika qs-toggle" aria-haspopup="true" aria-expanded="false">🔬 理科<span class="qs-caret">▾</span></button>
+              <div class="qs-menu" hidden>
+                <button type="button" data-qs-exam="rikei" data-qs-subject="phys">⚛️ 物理</button>
+                <button type="button" data-qs-exam="rikei" data-qs-subject="chem">🧪 化学</button>
+                <button type="button" data-qs-exam="rikei" data-qs-subject="bio">🧬 生物</button>
+                <button type="button" data-qs-exam="rikei" data-qs-subject="earth">🌍 地学</button>
+              </div>
+            </div>
+
+            <!-- 社会: 5 subject プルダウン (bunkei flow) -->
+            <div class="qs-dropdown">
+              <button type="button" class="qs-btn qs-btn-shakai qs-toggle" aria-haspopup="true" aria-expanded="false">🏛 社会<span class="qs-caret">▾</span></button>
+              <div class="qs-menu" hidden>
+                <button type="button" data-qs-exam="bunkei" data-qs-subject="jhist">🗾 日本史</button>
+                <button type="button" data-qs-exam="bunkei" data-qs-subject="whist">🌐 世界史</button>
+                <button type="button" data-qs-exam="bunkei" data-qs-subject="geo">🗺 地理</button>
+                <button type="button" data-qs-exam="bunkei" data-qs-subject="civ">⚖️ 政経</button>
+                <button type="button" data-qs-exam="bunkei" data-qs-subject="ethics">📿 倫理</button>
+              </div>
+            </div>
+
+            <!-- 数学: rikei flow + subject hint=math -->
+            <button type="button" class="qs-btn qs-btn-math" data-qs-exam="rikei" data-qs-subject="math">📐 数学</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="teikiUnitBar" class="teiki-unit-bar">
+      <div class="teiki-unit-inner">
+        <div class="teiki-unit-head">
+          <span class="teiki-unit-eyebrow">📝 定期テスト勉強モード</span>
+          <h3 class="teiki-unit-title">単元から直接選んで今すぐ問題演習</h3>
+        </div>
+        <p class="teiki-unit-desc">高校 1-2 年の定期テスト〜共通テスト基礎範囲。大学プルダウンを経由せず、単元を選ぶだけで該当問題が出題されます。</p>
+        <div class="teiki-unit-row">
+          <select id="teikiSubjectSel" class="teiki-unit-select" aria-label="科目">
+            <option value="">-- 科目を選択 --</option>
+          </select>
+          <select id="teikiUnitSel" class="teiki-unit-select" aria-label="単元" disabled>
+            <option value="">-- 単元を選択 --</option>
+          </select>
+          <button type="button" id="teikiUnitGo" class="teiki-unit-go" disabled>この単元の問題を解く →</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="qs-hint">
+      💡 <strong>使い方:</strong> クイックスタートは「<strong>大学を選んで AI 生成</strong>」、定期テスト勉強モードは「<strong>単元を選んで直接出題</strong>」です。どちらも自動的に <a href="english-exam.html" style="color:#fbbf24;font-weight:700;text-decoration:underline;">試験対策スタジオ</a> に遷移して問題演習が始まります。
+    </div>
+
+  </main>
+
+  <script src="quick-start.js?v=20260521-quickstart-split"></script>
+</body>
+</html>

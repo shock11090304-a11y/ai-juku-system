@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🎓 試験対策スタジオ | TOEFL・TOEIC・IELTS・英検・大学入試・理系 6試験完全対応 | AIコーチング</title>
   <meta name="description" content="TOEFL iBT・TOEIC L&R・IELTS Academic・英検・大学入試英語・理系科目 (数学/物理/化学/生物/地学) を AI が完全対応。模試生成・スコア予測・CEFR換算・弱点分析・図やグラフを含む理系問題まで一気通貫。Claude AI による個別最適化。">
-  <link rel="stylesheet" href="style.css?v=20260519-input-widen">
-  <link rel="stylesheet" href="english-exam.css?v=20260518-kanbun-kaeriten-r2">
-  <script src="cache-purge.js"></script>
+  <link rel="stylesheet" href="style.css?v=20260521-quickstart-split">
+  <link rel="stylesheet" href="english-exam.css?v=20260521-quickstart-split">
+  <script src="cache-purge.js?v=20260521-quickstart-split"></script>
 
-  <script src="frontend-error-monitor.js?v=20260427-init"></script>
+  <script src="frontend-error-monitor.js?v=20260521-quickstart-split"></script>
   <!-- KaTeX: 数式レンダリング (理系科目用・auto-render で\(...\) \[...\] を自動変換) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
@@ -44,131 +44,16 @@
 
   <main class="ee-main">
 
-    <!-- 🎯 2026-05-15 塾長指示「科目別に変更」: 試験種別 (daigaku/rikei/bunkei/英検 etc.) ではなく
-         生徒の学習科目 (国語/英語/理科/社会/数学) を一次キーに変更。
-         理科・社会・英語はクリックでプルダウン展開、国語・数学は直接遷移。
-         data-qs-exam で内部の試験種別にマップ、data-qs-subject で subject hint を localStorage に保存。 -->
-    <style>
-      .qs-bar { display:flex; gap:0.45rem; flex-wrap:wrap; }
-      .qs-btn { padding:0.7rem 1.1rem; border:0; border-radius:10px; color:#fff; font-weight:800; font-size:0.95rem; cursor:pointer; min-height:48px; }
-      .qs-btn-kokugo  { background:linear-gradient(135deg,#ef4444,#f97316); box-shadow:0 4px 12px rgba(239,68,68,0.3); }
-      .qs-btn-eigo    { background:linear-gradient(135deg,#3b82f6,#6366f1); box-shadow:0 4px 12px rgba(59,130,246,0.3); }
-      .qs-btn-rika    { background:linear-gradient(135deg,#22c55e,#10b981); box-shadow:0 4px 12px rgba(34,197,94,0.3); }
-      .qs-btn-shakai  { background:linear-gradient(135deg,#a855f7,#ec4899); box-shadow:0 4px 12px rgba(168,85,247,0.3); }
-      .qs-btn-math    { background:linear-gradient(135deg,#fbbf24,#f97316); box-shadow:0 4px 12px rgba(251,191,36,0.3); }
-      .qs-dropdown { position:relative; }
-      .qs-menu {
-        position:absolute; top:calc(100% + 0.4rem); left:0; z-index:50;
-        background:#1e1b4b; border:1px solid rgba(167,139,250,0.45);
-        border-radius:10px; padding:0.4rem; min-width:200px;
-        box-shadow:0 12px 32px rgba(0,0,0,0.4);
-        display:flex; flex-direction:column; gap:0.25rem;
-      }
-      .qs-menu[hidden] { display:none; }
-      .qs-menu button {
-        text-align:left; padding:0.55rem 0.8rem; background:transparent; border:0;
-        border-radius:6px; color:#e0e7ff; font-weight:700; font-size:0.88rem;
-        cursor:pointer; min-height:38px;
-      }
-      .qs-menu button:hover { background:rgba(99,102,241,0.25); color:#fff; }
-      .qs-caret { font-size:0.7em; margin-left:0.25rem; opacity:0.85; }
-    </style>
-    <section id="quickStartBar" style="max-width:1200px; margin:1.2rem auto 0; padding:0 1rem;">
-      <div style="background:linear-gradient(135deg, rgba(99,102,241,0.18), rgba(236,72,153,0.12)); border:1px solid rgba(167,139,250,0.45); border-radius:14px; padding:1rem 1.2rem; box-shadow:0 8px 24px rgba(99,102,241,0.15);">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.8rem; flex-wrap:wrap;">
-          <div style="flex:1 1 280px;">
-            <div style="font-size:0.78rem; color:#fbbf24; font-weight:800; letter-spacing:0.08em; margin-bottom:0.3rem;">⚡ クイックスタート</div>
-            <h3 style="margin:0 0 0.25rem 0; font-size:1.1rem; color:#fff; font-weight:800;">科目を選んで今すぐ問題挑戦</h3>
-            <p style="margin:0; font-size:0.82rem; color:#c7d2fe; line-height:1.5;">5 科目から選択 → 大学・大問を指定して AI が即時生成。履歴は自動記録され同じ問題は出ません。</p>
-          </div>
-          <div class="qs-bar">
-            <!-- 国語: bunkei (文系) flow + subject hint=kokugo -->
-            <button type="button" class="qs-btn qs-btn-kokugo" data-qs-exam="bunkei" data-qs-subject="kokugo">📖 国語</button>
-
-            <!-- 英語: 5 試験種別プルダウン -->
-            <div class="qs-dropdown">
-              <button type="button" class="qs-btn qs-btn-eigo qs-toggle" aria-haspopup="true" aria-expanded="false">🇬🇧 英語<span class="qs-caret">▾</span></button>
-              <div class="qs-menu" hidden>
-                <button type="button" data-qs-exam="daigaku">🎓 大学入試英語</button>
-                <button type="button" data-qs-exam="eiken">🇯🇵 英検</button>
-                <button type="button" data-qs-exam="toefl">🇺🇸 TOEFL iBT</button>
-                <button type="button" data-qs-exam="toeic">💼 TOEIC L&amp;R</button>
-                <button type="button" data-qs-exam="ielts">🇬🇧 IELTS</button>
-              </div>
-            </div>
-
-            <!-- 理科: 4 subject プルダウン (rikei flow) -->
-            <div class="qs-dropdown">
-              <button type="button" class="qs-btn qs-btn-rika qs-toggle" aria-haspopup="true" aria-expanded="false">🔬 理科<span class="qs-caret">▾</span></button>
-              <div class="qs-menu" hidden>
-                <button type="button" data-qs-exam="rikei" data-qs-subject="phys">⚛️ 物理</button>
-                <button type="button" data-qs-exam="rikei" data-qs-subject="chem">🧪 化学</button>
-                <button type="button" data-qs-exam="rikei" data-qs-subject="bio">🧬 生物</button>
-                <button type="button" data-qs-exam="rikei" data-qs-subject="earth">🌍 地学</button>
-              </div>
-            </div>
-
-            <!-- 社会: 5 subject プルダウン (bunkei flow) -->
-            <div class="qs-dropdown">
-              <button type="button" class="qs-btn qs-btn-shakai qs-toggle" aria-haspopup="true" aria-expanded="false">🏛 社会<span class="qs-caret">▾</span></button>
-              <div class="qs-menu" hidden>
-                <button type="button" data-qs-exam="bunkei" data-qs-subject="jhist">🗾 日本史</button>
-                <button type="button" data-qs-exam="bunkei" data-qs-subject="whist">🌐 世界史</button>
-                <button type="button" data-qs-exam="bunkei" data-qs-subject="geo">🗺 地理</button>
-                <button type="button" data-qs-exam="bunkei" data-qs-subject="civ">⚖️ 政経</button>
-                <button type="button" data-qs-exam="bunkei" data-qs-subject="ethics">📿 倫理</button>
-              </div>
-            </div>
-
-            <!-- 数学: rikei flow + subject hint=math -->
-            <button type="button" class="qs-btn qs-btn-math" data-qs-exam="rikei" data-qs-subject="math">📐 数学</button>
-          </div>
+    <!-- 🎯 2026-05-21 塾長指示: クイックスタート + 定期テスト勉強モード は quick-start.html に分離。
+         動線: mypage.html → quick-start.html → english-exam.html (?focus=... or ?teiki_unit=1&...)。
+         このページに直接来た生徒向けに、上部に quick-start.html へのリンクを残す。 -->
+    <section style="max-width:1200px; margin:1.2rem auto 0; padding:0 1rem;">
+      <div style="background:linear-gradient(135deg, rgba(99,102,241,0.18), rgba(236,72,153,0.12)); border:1px solid rgba(167,139,250,0.45); border-radius:14px; padding:0.85rem 1.2rem; display:flex; align-items:center; justify-content:space-between; gap:0.8rem; flex-wrap:wrap;">
+        <div style="flex:1 1 280px;">
+          <div style="font-size:0.78rem; color:#fbbf24; font-weight:800; letter-spacing:0.08em; margin-bottom:0.2rem;">⚡ クイックスタート / 📝 定期テスト勉強モード</div>
+          <p style="margin:0; font-size:0.85rem; color:#c7d2fe; line-height:1.5;">科目を選んで今すぐ AI 出題 + 単元から直接演習。<strong>専用ページに移動しました。</strong></p>
         </div>
-      </div>
-    </section>
-
-    <!-- 🎯 2026-05-15 塾長指示「定期テスト勉強に単元プルダウン」: 大学を経由せず単元を直接選んで問題演習に直行 -->
-    <style>
-      .teiki-unit-bar { max-width:1200px; margin:0.6rem auto 0; padding:0 1rem; }
-      .teiki-unit-inner {
-        background:linear-gradient(135deg, rgba(34,197,94,0.12), rgba(251,191,36,0.10));
-        border:1px solid rgba(34,197,94,0.40);
-        border-radius:14px; padding:0.95rem 1.2rem;
-      }
-      .teiki-unit-head { display:flex; align-items:center; gap:0.55rem; flex-wrap:wrap; margin-bottom:0.55rem; }
-      .teiki-unit-eyebrow { font-size:0.78rem; color:#22c55e; font-weight:800; letter-spacing:0.06em; }
-      .teiki-unit-title { margin:0; font-size:1.0rem; font-weight:800; color:#fff; }
-      .teiki-unit-desc { margin:0; font-size:0.8rem; color:#bbf7d0; line-height:1.55; }
-      .teiki-unit-row { display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin-top:0.4rem; }
-      .teiki-unit-select {
-        flex:1 1 200px; min-width:200px;
-        padding:0.55rem 0.7rem; background:rgba(0,0,0,0.45);
-        border:1.5px solid rgba(34,197,94,0.45); border-radius:8px;
-        color:#fff; font-size:0.92rem; font-weight:700; cursor:pointer;
-      }
-      .teiki-unit-go {
-        padding:0.55rem 1.1rem; background:linear-gradient(135deg,#22c55e,#10b981);
-        border:0; border-radius:8px; color:#fff; font-weight:800; font-size:0.92rem;
-        cursor:pointer; min-height:40px; box-shadow:0 4px 12px rgba(34,197,94,0.3);
-      }
-      .teiki-unit-go:disabled { opacity:0.5; cursor:not-allowed; }
-    </style>
-    <section id="teikiUnitBar" class="teiki-unit-bar">
-      <div class="teiki-unit-inner">
-        <div class="teiki-unit-head">
-          <span class="teiki-unit-eyebrow">📝 定期テスト勉強モード</span>
-          <h3 class="teiki-unit-title">単元から直接選んで今すぐ問題演習</h3>
-        </div>
-        <p class="teiki-unit-desc">高校 1-2 年の定期テスト〜共通テスト基礎範囲。大学プルダウンを経由せず、単元を選ぶだけで該当問題が出題されます。</p>
-        <div class="teiki-unit-row">
-          <select id="teikiSubjectSel" class="teiki-unit-select" aria-label="科目">
-            <option value="">-- 科目を選択 --</option>
-          </select>
-          <select id="teikiUnitSel" class="teiki-unit-select" aria-label="単元" disabled>
-            <option value="">-- 単元を選択 --</option>
-          </select>
-          <button type="button" id="teikiUnitGo" class="teiki-unit-go" disabled>この単元の問題を解く →</button>
-        </div>
+        <a href="quick-start.html" style="padding:0.55rem 1.05rem; background:linear-gradient(135deg,#fbbf24,#f97316); border-radius:10px; color:#fff; font-weight:800; font-size:0.92rem; text-decoration:none; box-shadow:0 4px 12px rgba(251,191,36,0.3); white-space:nowrap;">→ クイックスタートを開く</a>
       </div>
     </section>
 
@@ -291,9 +176,9 @@
       </div>
       <!-- 🎯 2026-05-13: アーカイブに無い大学を選びたい時の導線案内 -->
       <div style="margin: 0 0 1.2rem; padding: 0.85rem 1.1rem; background: rgba(99,102,241,0.06); border: 1px dashed rgba(167,139,250,0.35); border-radius: 10px; font-size: 0.88rem; color: #c7d2fe; line-height: 1.6;">
-        💡 <strong>探している大学が無い場合は</strong>、ページ最上部の「⚡ クイックスタート」から
+        💡 <strong>探している大学が無い場合は</strong>、<a href="quick-start.html" style="color:#fbbf24;font-weight:700;text-decoration:underline;">⚡ クイックスタートページ</a>から
         <strong>「🎓 大学入試英語」or「🔬 理系科目」</strong>をクリック → プルダウンで大学選択 → AI が即時生成します。
-        <button type="button" onclick="window.scrollTo({top:0, behavior:'smooth'})" style="margin-left:0.5rem; padding:0.3rem 0.7rem; background:rgba(167,139,250,0.18); border:1px solid rgba(167,139,250,0.5); border-radius:6px; color:#fff; font-weight:700; font-size:0.78rem; cursor:pointer;">↑ クイックスタートに戻る</button>
+        <a href="quick-start.html" style="margin-left:0.5rem; padding:0.3rem 0.7rem; background:rgba(167,139,250,0.18); border:1px solid rgba(167,139,250,0.5); border-radius:6px; color:#fff; font-weight:700; font-size:0.78rem; text-decoration:none; display:inline-block;">→ クイックスタートを開く</a>
       </div>
       <!-- 🔍 検索バー -->
       <div class="archive-search-row">
@@ -591,6 +476,6 @@
     /* 写真 drop area ホバー */
     .ee-photo-drop:hover { background: rgba(99,102,241,0.10) !important; border-color: rgba(167,139,250,0.7) !important; }
   </style>
-  <script src="english-exam.js?v=20260518-pool-first-with-topic"></script>
+  <script src="english-exam.js?v=20260521-quickstart-split"></script>
 </body>
 </html>

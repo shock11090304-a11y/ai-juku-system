@@ -6577,7 +6577,9 @@ function quickFillFromDiagnostic() {
     return;
   }
   document.getElementById('probTopic').value = '📊 前回の診断から:\n' + text.slice(0, 500);
-  document.querySelectorAll('.tab')[6].click();
+  // 🔧 2026-05-21: index.html タブ追加で hardcoded index が +1 ずれる事故対策 → data-tab selector で固定
+  const problemsTab = document.querySelector('.tab[data-tab="problems"]');
+  if (problemsTab) problemsTab.click();
   const status = document.getElementById('qfMoshiStatus');
   status.style.display = 'block';
   status.className = 'qf-status success';
