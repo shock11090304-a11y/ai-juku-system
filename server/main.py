@@ -7411,6 +7411,11 @@ EXAM_QUESTION_ROTATION = [
     ("daigaku", "kanbun",        "todai"),    # 東大国語 (記述式漢文)
     ("daigaku", "kobun",         "kyodai"),   # 京大国語 (記述式古文)
     ("daigaku", "kanbun",        "kyodai"),   # 京大国語 (記述式漢文)
+    # 📰 現代文 (gendai) ・2026-05-20 塾長指示 (Phase A・Staging-first flow 試運用) で新規追加
+    # 共通テスト現代文 (評論+小説) + 東大現代文 (記述式) + 京大現代文 (記述式長文)
+    ("daigaku", "gendai",        "kyotsu"),  # 共通テスト現代文 (評論+小説・指示語/語彙/趣旨)
+    ("daigaku", "gendai",        "todai"),    # 東大現代文 (記述式・100字要約 + 傍線部説明)
+    ("daigaku", "gendai",        "kyodai"),   # 京大現代文 (記述式・抽象論評論・段落要約)
     # 📘 大学入試 基礎 (kiso) ・2026-05-13 塾長指示「大学入試の基礎問」追加
     # 高校英語の基礎固め (CEFR A2-B1・語彙 1500-2500 程度) で受験勉強の入り口
     ("daigaku", "r_long",        "kiso"),   # 基礎長文 (200-300 語・標準語彙)
