@@ -352,10 +352,12 @@
           showMsg('success', `✅ ようこそ、${data.student.name || 'ゲスト'}さま！学習環境へ移動します...`);
           setTimeout(() => {
             // オープンリダイレクト対策: 同一オリジンの相対パスのみ許可
+            // 🎯 2026-05-21 塾長指示: 生徒は新規ログイン時 quick-start.html に直行 (5 科目クイック演習 + 定期テスト UI)
+            //   redirect param 指定時 (例: ?redirect=mypage.html) は従来通り遷移先優先
             const params = new URLSearchParams(window.location.search);
-            const raw = params.get('redirect') || 'index.html';
+            const raw = params.get('redirect') || 'quick-start.html';
             const safe = /^[a-z0-9_\-./?#=&]+$/i.test(raw) && !raw.startsWith('//') && !raw.startsWith('http');
-            window.location.href = safe ? raw : 'index.html';
+            window.location.href = safe ? raw : 'quick-start.html';
           }, 800);
         } else {
           showMsg('error', '⚠️ ' + (data.detail || 'コードが正しくありません'));

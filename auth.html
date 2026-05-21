@@ -225,9 +225,11 @@
         showSuccess(data.student.name || 'ゲスト');
         setTimeout(() => {
           // オープンリダイレクト対策: 同一オリジンの相対パスのみ許可
-          const raw = params.get('redirect') || 'index.html';
+          // 🎯 2026-05-21 塾長指示: magic link / OTP 緊急発行 → 生徒は quick-start.html に直行
+          //   (magic link は ?redirect= 未指定が多数 → default を quick-start に揃えないと届かない)
+          const raw = params.get('redirect') || 'quick-start.html';
           const safe = /^[a-z0-9_\-./?#=&]+$/i.test(raw) && !raw.startsWith('//') && !raw.startsWith('http');
-          window.location.href = safe ? raw : 'index.html';
+          window.location.href = safe ? raw : 'quick-start.html';
         }, 1200);
       } catch (e) {
         showError('ネットワークエラーが発生しました。<br>しばらくしてから再度お試しください。');
