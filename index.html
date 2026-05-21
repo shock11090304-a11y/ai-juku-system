@@ -690,6 +690,12 @@
         <h2>🧪 AI問題自動生成 <span style="font-size:0.7em;background:linear-gradient(135deg,#818cf8,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">競合が真似できない差別化機能</span></h2>
         <p>弱点分野を入力するだけで、AIがオリジナルの練習問題を自動生成。解答・解説付き。</p>
       </div>
+      <!-- 📚 解いた問題の履歴ボタン (2026-05-21 塾長指示「もう一度解き直すための履歴」) -->
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin: 0 0 1rem;">
+        <button id="openProblemHistoryBtn" type="button" class="problem-history-btn">
+          📚 解いた問題の履歴 <span style="font-size:0.75em; opacity:0.85;">— もう一度解く</span>
+        </button>
+      </div>
       <a href="textbook-generator.html" class="student-textbook-cta" title="もっと本格的な教材をAIで自動作成">
         <div class="stc-icon">📚</div>
         <div class="stc-body">
@@ -1178,6 +1184,137 @@
     <!-- 全 null-guard 入りで残存。将来 ceo.html or 専用 staff page に移行可能 -->
   </main>
 
+  <!-- 📚 解いた問題セッション履歴 modal (2026-05-21 塾長指示「もう一度解き直すための履歴」) -->
+  <style>
+    .problem-history-btn {
+      padding: 0.7rem 1.2rem;
+      background: linear-gradient(135deg, #6366f1, #ec4899);
+      color: #fff;
+      border: 0;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 0.92rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .problem-history-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .problem-history-btn:active { transform: translateY(0); }
+
+    .phist-modal {
+      position: fixed; inset: 0; z-index: 1000;
+      display: none;
+      align-items: center; justify-content: center;
+      padding: 1rem;
+    }
+    .phist-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+    }
+    .phist-content {
+      position: relative;
+      background: #1a1a2e;
+      border: 1px solid rgba(167, 139, 250, 0.4);
+      border-radius: 16px;
+      max-width: 720px; width: 100%;
+      max-height: 90vh; display: flex; flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+    .phist-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem 1.4rem;
+      border-bottom: 1px solid rgba(167, 139, 250, 0.25);
+    }
+    .phist-header h3 {
+      margin: 0; font-size: 1.15rem; color: #fff; font-weight: 800;
+    }
+    .phist-close {
+      background: rgba(255, 255, 255, 0.1);
+      border: 0; color: #fff;
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      cursor: pointer; font-size: 1.1rem;
+    }
+    .phist-close:hover { background: rgba(255, 255, 255, 0.2); }
+    .phist-list {
+      padding: 1rem 1.4rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .phist-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(167, 139, 250, 0.25);
+      border-radius: 12px;
+      padding: 0.9rem 1.1rem;
+      margin-bottom: 0.7rem;
+    }
+    .phist-card:hover { background: rgba(255, 255, 255, 0.06); }
+    .phist-head {
+      display: flex; gap: 0.6rem; align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 0.4rem;
+      font-size: 0.82rem;
+    }
+    .phist-date { color: #a78bfa; font-weight: 700; }
+    .phist-badge {
+      padding: 2px 8px; border-radius: 100px;
+      font-size: 0.72rem; font-weight: 800;
+    }
+    .phist-badge-pool { background: rgba(34, 197, 94, 0.2); color: #bbf7d0; }
+    .phist-badge-ai { background: rgba(99, 102, 241, 0.2); color: #c7d2fe; }
+    .phist-count { margin-left: auto; color: #fbbf24; font-weight: 700; }
+    .phist-body { margin-bottom: 0.6rem; }
+    .phist-subject {
+      font-size: 1rem; font-weight: 800; color: #fff;
+      margin-bottom: 0.2rem;
+    }
+    .phist-unit { font-weight: 600; color: #c7d2fe; font-size: 0.9rem; }
+    .phist-topic { font-size: 0.84rem; color: #94a3b8; margin-bottom: 0.2rem; }
+    .phist-meta { font-size: 0.8rem; color: #cbd5e1; }
+    .phist-stats strong { color: #fbbf24; font-weight: 800; }
+    .phist-stats-empty { color: #64748b; font-style: italic; }
+    .phist-actions {
+      display: flex; gap: 0.4rem; flex-wrap: wrap;
+    }
+    .phist-replay-btn {
+      flex: 1 1 180px;
+      padding: 0.65rem 1rem;
+      background: linear-gradient(135deg, #22c55e, #10b981);
+      color: #fff; border: 0;
+      border-radius: 8px;
+      font-weight: 800; font-size: 0.92rem;
+      cursor: pointer;
+      min-height: 44px;
+    }
+    .phist-replay-btn:hover { filter: brightness(1.1); }
+    .phist-delete-btn {
+      padding: 0.65rem 0.85rem;
+      background: rgba(239, 68, 68, 0.18);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      min-height: 44px;
+      min-width: 44px;
+    }
+    .phist-delete-btn:hover { background: rgba(239, 68, 68, 0.3); }
+  </style>
+  <div id="problemHistoryModal" class="phist-modal" role="dialog" aria-labelledby="phistTitle" aria-modal="true">
+    <div class="phist-overlay"></div>
+    <div class="phist-content">
+      <div class="phist-header">
+        <h3 id="phistTitle">📚 解いた問題の履歴</h3>
+        <button class="phist-close" type="button" title="閉じる" aria-label="閉じる">✕</button>
+      </div>
+      <div class="phist-list"></div>
+    </div>
+  </div>
+
   <footer class="footer">
     <p>© 2026 AIコーチング | Powered by Claude AI | MVP v0.1</p>
   </footer>
@@ -1186,7 +1323,7 @@
   <script src="learning-brain.js?v=20260425-2"></script>
   <script src="exam-prep.js?v=20260425-1"></script>
   <script src="referral-program.js?v=20260425-1"></script>
-  <script src="app.js?v=20260521-pool-multi-unit"></script>
+  <script src="app.js?v=20260521-problem-history"></script>
   <script>
   // 定期テスト連携: exam-prep.html から ?examPrep=1&subject=&topic=&examId= で来た時、
   // 問題ジェネレーターに自動入力 + タブ切替 + 通知バナー

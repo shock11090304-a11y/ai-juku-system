@@ -7323,6 +7323,16 @@ JSON文字列の中でバックスラッシュを使う場合は必ず二重に�
   window._lastProblemsData = data;
   window._lastProblemsMarkdown = convertDataToMarkdown(data, pastExamSource);
 
+  // 📚 セッション履歴に保存 (2026-05-21 塾長指示・もう一度解き直し対応)
+  try {
+    _saveProblemSession({
+      subject, units, topic, count, difficulty, format, layout,
+      problems: data.problems,
+      title: data.title, subtitle: data.subtitle, summary: data.summary,
+      _fromPool: !!data._fromPool,
+    });
+  } catch (_) { /* silent: 履歴保存失敗で問題表示を止めない */ }
+
   // 🧠 Learning Brain: 生成された問題をエビングハウス復習カードとして自動登録
   try {
     const student = getCurrentStudent();
@@ -9358,3 +9368,290 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fire a custom event so iframe parents can detect readiness
   try { window.parent.postMessage({ type: 'juku_ready' }, '*'); } catch {}
 });
+
+// ==========================================================================
+// 📚 解いた問題セッション履歴 (2026-05-21 塾長指示「もう一度解き直すための履歴ボタン」)
+// ==========================================================================
+//   - 各 generateProblems 成功時に localStorage に session (params + problems) を保存
+//   - 履歴ボタン → modal で list 表示 → 「もう一度解く」で renderProblems 再描画
+//   - 最大 30 件のローリング、超過時は古いものから削除 (localStorage 容量保護)
+const PROBLEM_SESSIONS_KEY = 'ai_juku_problem_sessions';
+// 容量見積もり: 1 session = 50 問 × 各 ~3KB (question/answer/explanation/choices) = ~150KB / session。
+// 他 localStorage key (problem_stats / LB cards / study_plan 等) と合算で 5MB limit を圧迫しないよう 15 cap に。
+const PROBLEM_SESSIONS_MAX = 15;
+
+function _saveProblemSession(session) {
+  try {
+    if (!session || !Array.isArray(session.problems) || session.problems.length === 0) return;
+    const arr = JSON.parse(localStorage.getItem(PROBLEM_SESSIONS_KEY) || '[]');
+    const entry = {
+      id: 'ps_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+      ts: Date.now(),
+      subject: session.subject || '',
+      units: Array.isArray(session.units) ? session.units : [],
+      topic: (session.topic || '').slice(0, 200),
+      count: String(session.count || ''),
+      difficulty: session.difficulty || '',
+      format: session.format || '',
+      layout: session.layout || 'end',
+      problems: session.problems,
+      title: session.title || '',
+      subtitle: session.subtitle || '',
+      summary: session.summary || '',
+      _fromPool: !!session._fromPool,
+    };
+    arr.unshift(entry);
+    if (arr.length > PROBLEM_SESSIONS_MAX) arr.length = PROBLEM_SESSIONS_MAX;
+    // 容量超過時は古い順から削る (QuotaExceeded 防御)
+    let attempt = 0;
+    while (attempt < 5) {
+      try {
+        localStorage.setItem(PROBLEM_SESSIONS_KEY, JSON.stringify(arr));
+        return;
+      } catch (e) {
+        if ((e.name === 'QuotaExceededError' || /quota/i.test(String(e))) && arr.length > 3) {
+          arr.length = Math.max(3, Math.floor(arr.length * 0.7));
+          attempt++;
+        } else { throw e; }
+      }
+    }
+  } catch (e) { console.warn('[problem-session] save failed:', e); }
+}
+
+function _loadProblemSessions() {
+  try { return JSON.parse(localStorage.getItem(PROBLEM_SESSIONS_KEY) || '[]'); }
+  catch (_) { return []; }
+}
+
+function _deleteProblemSession(sid) {
+  try {
+    const arr = _loadProblemSessions().filter(s => s.id !== sid);
+    localStorage.setItem(PROBLEM_SESSIONS_KEY, JSON.stringify(arr));
+  } catch (_) {}
+}
+
+// session の問題ごとに pid を再計算して stats 集計 (正解率表示用)
+function _getSessionStats(session) {
+  if (!session || !Array.isArray(session.problems)) return { attempted: 0, correct: 0, percent: 0 };
+  let attempted = 0;
+  let correct = 0;
+  for (const p of session.problems) {
+    try {
+      const parsed = (typeof _parseChoicesFromQuestion === 'function')
+        ? _parseChoicesFromQuestion(p.question || '') : { stem: p.question || '', choices: [] };
+      const pid = (typeof _problemId === 'function') ? _problemId(parsed.stem, parsed.choices) : null;
+      if (pid && typeof _getProblemStats === 'function') {
+        const stats = _getProblemStats(pid);
+        if (stats && stats.attempts > 0) {
+          attempted += stats.attempts;
+          correct += stats.correct;
+        }
+      }
+    } catch (_) {}
+  }
+  return { attempted, correct, percent: attempted > 0 ? Math.round((correct / attempted) * 100) : 0 };
+}
+
+function _fmtSessionDate(ts) {
+  try {
+    const d = new Date(ts);
+    const Y = d.getFullYear();
+    const M = String(d.getMonth() + 1).padStart(2, '0');
+    const D = String(d.getDate()).padStart(2, '0');
+    const h = String(d.getHours()).padStart(2, '0');
+    const m = String(d.getMinutes()).padStart(2, '0');
+    return `${Y}/${M}/${D} ${h}:${m}`;
+  } catch (_) { return ''; }
+}
+
+function _renderProblemHistoryModal() {
+  const sessions = _loadProblemSessions();
+  const modal = document.getElementById('problemHistoryModal');
+  if (!modal) return;
+  const listEl = modal.querySelector('.phist-list');
+  if (!listEl) return;
+  if (sessions.length === 0) {
+    listEl.innerHTML = '<div style="padding:2rem;text-align:center;color:#94a3b8;line-height:1.7;">📭 まだ履歴がありません。<br><span style="font-size:0.88rem;">問題を生成するとここに自動で蓄積されます (最大 ' + PROBLEM_SESSIONS_MAX + ' 件)。</span></div>';
+  } else {
+    listEl.innerHTML = sessions.map(s => {
+      const dateStr = _fmtSessionDate(s.ts);
+      const units = Array.isArray(s.units) ? s.units.filter(Boolean).join('・') : '';
+      const stats = _getSessionStats(s);
+      const badge = s._fromPool
+        ? '<span class="phist-badge phist-badge-pool">📚 問題プール</span>'
+        : '<span class="phist-badge phist-badge-ai">🎲 AI 生成</span>';
+      const statsHtml = stats.attempted > 0
+        ? `<span class="phist-stats">正解率 <strong>${stats.percent}%</strong> (${stats.correct}/${stats.attempted})</span>`
+        : '<span class="phist-stats phist-stats-empty">未挑戦</span>';
+      return `
+        <div class="phist-card" data-sid="${escapeHtml(s.id)}">
+          <div class="phist-head">
+            <span class="phist-date">${escapeHtml(dateStr)}</span>
+            ${badge}
+            <span class="phist-count">${(s.problems || []).length}問</span>
+          </div>
+          <div class="phist-body">
+            <div class="phist-subject">${escapeHtml(s.subject || '')}${units ? ` <span class="phist-unit">— ${escapeHtml(units)}</span>` : ''}</div>
+            ${s.topic ? `<div class="phist-topic">テーマ: ${escapeHtml(s.topic.slice(0, 80))}</div>` : ''}
+            <div class="phist-meta">難易度: <strong>${escapeHtml(s.difficulty)}</strong> / 形式: <strong>${escapeHtml(s.format)}</strong> / ${statsHtml}</div>
+          </div>
+          <div class="phist-actions">
+            <button class="phist-replay-btn" data-sid="${escapeHtml(s.id)}">▶ もう一度解く</button>
+            <button class="phist-delete-btn" data-sid="${escapeHtml(s.id)}" title="この履歴を削除">🗑</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+    // Bind replay
+    listEl.querySelectorAll('.phist-replay-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const sid = btn.dataset.sid;
+        const session = _loadProblemSessions().find(s => s.id === sid);
+        if (session) {
+          _hideProblemHistoryModal();
+          _replayProblemSession(session);
+        }
+      });
+    });
+    // Bind delete
+    listEl.querySelectorAll('.phist-delete-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const sid = btn.dataset.sid;
+        if (!confirm('この履歴を削除しますか? (問題は二度と表示できなくなります)')) return;
+        _deleteProblemSession(sid);
+        _renderProblemHistoryModal();  // 再描画
+      });
+    });
+  }
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';  // background scroll lock
+}
+
+function _hideProblemHistoryModal() {
+  const modal = document.getElementById('problemHistoryModal');
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function _replayProblemSession(session) {
+  // problems タブに移動
+  const problemsTab = document.querySelector('.tab[data-tab="problems"]');
+  if (problemsTab) problemsTab.click();
+  // フォーム params を復元 (生徒が「同じ条件で生成」したい時のため)
+  try {
+    if (document.getElementById('probSubject')) document.getElementById('probSubject').value = session.subject || '英語（文法）';
+    if (document.getElementById('probTopic')) document.getElementById('probTopic').value = session.topic || '';
+    if (document.getElementById('probCount')) document.getElementById('probCount').value = session.count || '5';
+    if (document.getElementById('probDifficulty')) document.getElementById('probDifficulty').value = session.difficulty || '標準';
+    if (document.getElementById('probFormat')) document.getElementById('probFormat').value = session.format || '4択';
+    const layoutRadio = document.querySelector(`input[name="probLayout"][value="${session.layout || 'end'}"]`);
+    if (layoutRadio) layoutRadio.checked = true;
+  } catch (_) {}
+  // 同じ問題を render
+  const out = document.getElementById('problemsResult');
+  const actions = document.getElementById('problemsActions');
+  if (!out || typeof renderProblems !== 'function') return;
+  const data = {
+    title: session.title || `${session.subject} 練習問題`,
+    subtitle: (session.subtitle ? session.subtitle + ' / ' : '') + '📚 履歴から復元',
+    problems: session.problems || [],
+    summary: session.summary || '',
+    _replay: true,
+    _replayedFrom: session.id,
+  };
+  out.innerHTML = renderProblems(data, session.layout || 'end', null);
+  if (typeof renderMathInNode === 'function') renderMathInNode(out);
+  // reveal buttons (hidden layout)
+  if (session.layout === 'hidden') {
+    out.querySelectorAll('.reveal-problem-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = out.querySelector('#' + btn.dataset.target);
+        if (target) {
+          target.classList.toggle('show');
+          btn.textContent = target.classList.contains('show') ? '✨ 答えを隠す' : '🙈 まず考えてみよう';
+        }
+      });
+    });
+  }
+  // 4 択即採点 binding (再演習でも正解率に加算する)
+  out.querySelectorAll('.problem-choices').forEach(group => {
+    const pid = group.dataset.pid;
+    const correctIdx = parseInt(group.dataset.correct, 10);
+    group.querySelectorAll('.problem-choice-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (group.querySelector('.problem-choice-btn.correct, .problem-choice-btn.incorrect')) return;
+        const idx = parseInt(btn.dataset.idx, 10);
+        const isCorrect = (correctIdx >= 0) && (idx === correctIdx);
+        group.querySelectorAll('.problem-choice-btn').forEach(b => {
+          b.disabled = true;
+          const bIdx = parseInt(b.dataset.idx, 10);
+          if (bIdx === correctIdx) b.classList.add('correct-answer');
+        });
+        btn.classList.add(isCorrect ? 'correct' : 'incorrect');
+        const fb = out.querySelector(`.problem-feedback[data-pid="${pid}"]`);
+        if (fb) {
+          if (correctIdx < 0) {
+            fb.innerHTML = `<div class="pf-mark pf-skip">⚠️ 正答情報が読み取れませんでした (記述式の可能性)。下の解答をご確認ください。</div>`;
+          } else {
+            fb.innerHTML = isCorrect
+              ? `<div class="pf-mark pf-correct">✅ 正解!</div>`
+              : `<div class="pf-mark pf-incorrect">❌ 不正解。正解は ${'①②③④⑤⑥⑦⑧⑨'[correctIdx] || (correctIdx + 1)} です。</div>`;
+          }
+          fb.style.display = '';
+        }
+        if (correctIdx >= 0 && pid && typeof _recordProblemAttempt === 'function') {
+          _recordProblemAttempt(pid, isCorrect);
+        }
+      });
+    });
+  });
+  // 状態 cache を復元 (regenerate/save 機能のため)
+  window._lastProblemsData = data;
+  window._lastProblemsContext = {
+    subject: session.subject, topic: session.topic, count: session.count,
+    difficulty: session.difficulty, format: session.format, layout: session.layout,
+    pastExamSource: null,
+  };
+  if (typeof convertDataToMarkdown === 'function') {
+    try { window._lastProblemsMarkdown = convertDataToMarkdown(data, null); } catch (_) {}
+  }
+  if (actions) actions.style.display = 'flex';
+  // スクロール (履歴 modal → render 直後)
+  setTimeout(() => out.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+}
+
+// 履歴ボタン bind + ?openHistory=1 ハンドラ (mypage CTA からの動線)
+document.addEventListener('DOMContentLoaded', () => {
+  const openBtn = document.getElementById('openProblemHistoryBtn');
+  if (openBtn) openBtn.addEventListener('click', _renderProblemHistoryModal);
+  const closeBtn = document.querySelector('.phist-close');
+  if (closeBtn) closeBtn.addEventListener('click', _hideProblemHistoryModal);
+  const overlay = document.querySelector('.phist-overlay');
+  if (overlay) overlay.addEventListener('click', _hideProblemHistoryModal);
+  // Escape key で閉じる
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const m = document.getElementById('problemHistoryModal');
+      if (m && m.style.display !== 'none') _hideProblemHistoryModal();
+    }
+  });
+  // URL ?openHistory=1 → 自動で問題タブ + 履歴 modal 表示 (mypage CTA からの動線)
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('openHistory') === '1') {
+      // 🛟 URL を cleanup (reload / share 時に modal が再展開されるのを防止)
+      try {
+        params.delete('openHistory');
+        const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
+        window.history.replaceState({}, '', newUrl);
+      } catch (_) { /* old browser fallback: そのまま */ }
+      setTimeout(() => {
+        const tab = document.querySelector('.tab[data-tab="problems"]');
+        if (tab) tab.click();
+        setTimeout(() => _renderProblemHistoryModal(), 250);
+      }, 200);
+    }
+  } catch (_) {}
+});
+
