@@ -856,8 +856,50 @@ function _renderGradeSelect(grid, examId, items) {
   const _clearBtnHtml = _qsHint
     ? `<button type="button" id="qsGradeClearBtn" style="margin-left:0.6rem; padding:0.3rem 0.7rem; background:rgba(99,102,241,0.4); border:0; border-radius:6px; color:#fff; font-weight:700; font-size:0.78rem; cursor:pointer;">✕ ${escapeHtml(_subjLabel)} 解除</button>`
     : '';
+  // 🎚️ 2026-05-21 塾長指示: 難易度レベル絞り込みプルダウン (rikei + bunkei 用)
+  // cefr フィールドを使った filter。レベル選択で大学プルダウン options を hide/show 連動
+  // 🚨 daigaku の cefr は "B2-C1"/"B1-B2" 等 CEFR 表記なので、日本語ラベル (基礎/最難関 等) のみ抽出
+  const _levelOrder = ['基礎', '中上級', '上級', '難関', '最難関'];
+  const _availableLevels = Array.from(new Set(_filteredItems.map(g => g.cefr).filter(lv => lv && _levelOrder.includes(lv))));
+  const _levelEmojis = { '基礎': '🌱', '中上級': '📘', '上級': '🔬', '難関': '🎯', '最難関': '🏆' };
+  const _levelTooltips = {
+    '基礎': '共通テスト・基礎演習中心 (高 1-2 / 基礎固め)',
+    '中上級': 'MARCH 理工・標準演習',
+    '上級': '早慶上智・東工大・私立医 等',
+    '難関': '阪大・名大・東工大',
+    '最難関': '東大・京大・国公立医学部',
+  };
+  _availableLevels.sort((a, b) => (_levelOrder.indexOf(a) - _levelOrder.indexOf(b)));
+  const _levelSelectHtml = (_availableLevels.length >= 2) ? `
+    <div style="margin-bottom: 0.9rem;">
+      <label style="display:block; font-size:0.95rem; color:#10b981; font-weight:700; margin-bottom:0.4rem;">🎚️ 難易度レベルで絞り込み (任意)</label>
+      <select id="levelSelectPulldown" style="
+        width: 100%;
+        padding: 0.7rem 1rem;
+        background: rgba(16,185,129,0.08);
+        border: 2px solid rgba(16,185,129,0.4);
+        border-radius: 10px;
+        color: #fff;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        appearance: auto;
+        -webkit-appearance: menulist;
+      ">
+        <option value="">すべてのレベル (${_filteredItems.length}校)</option>
+        ${_availableLevels.map(lv => {
+          const cnt = _filteredItems.filter(g => g.cefr === lv).length;
+          const emoji = _levelEmojis[lv] || '';
+          const tip = _levelTooltips[lv] || '';
+          return `<option value="${escapeHtml(lv)}" style="background:#0f172a; color:#fff;">${emoji} ${escapeHtml(lv)} (${cnt}校${tip ? '・' + escapeHtml(tip) : ''})</option>`;
+        }).join('')}
+      </select>
+      <p style="margin-top: 0.3rem; font-size: 0.78rem; color: #94a3b8;">レベルを選ぶと、下の大学プルダウンが絞り込まれます。</p>
+    </div>
+  ` : '';
   wrapper.innerHTML = `
     <label style="display:block; font-size:1rem; color:#a78bfa; font-weight:700; margin-bottom:0.6rem;">${label}${_clearBtnHtml}</label>
+    ${_levelSelectHtml}
     <select id="gradeSelectPulldown" style="
       width: 100%;
       padding: 0.9rem 1rem;
@@ -900,6 +942,35 @@ function _renderGradeSelect(grid, examId, items) {
   const infoName = document.getElementById('gradeSelectInfoName');
   const infoTarget = document.getElementById('gradeSelectInfoTarget');
   const infoCefr = document.getElementById('gradeSelectInfoCefr');
+
+  // 🎚️ 2026-05-21 塾長指示: レベル絞り込みプルダウンの change ハンドラ
+  // レベル選択 → 大学プルダウンの option を cefr で hide/show + optgroup の visible 制御
+  const levelSel = document.getElementById('levelSelectPulldown');
+  if (levelSel && sel) {
+    levelSel.addEventListener('change', () => {
+      const level = levelSel.value;
+      // 全 option を見て、cefr 一致のものだけ hidden=false に
+      Array.from(sel.querySelectorAll('option')).forEach(opt => {
+        if (!opt.value) { opt.hidden = false; return; } // -- 選んでください --
+        const g = _filteredItems.find(x => x.key === opt.value);
+        if (!g) { opt.hidden = false; return; }
+        opt.hidden = !!level && g.cefr !== level;
+      });
+      // optgroup の表示制御 (全 option が hidden なら optgroup も hide)
+      Array.from(sel.querySelectorAll('optgroup')).forEach(grp => {
+        const visible = Array.from(grp.querySelectorAll('option')).some(o => !o.hidden);
+        grp.hidden = !visible;
+        // 件数表示も更新
+        const visibleCount = Array.from(grp.querySelectorAll('option')).filter(o => !o.hidden).length;
+        const origLabel = (grp.getAttribute('data-orig-label') || grp.label || '').replace(/ \(\d+校\)$/, '');
+        if (!grp.getAttribute('data-orig-label')) grp.setAttribute('data-orig-label', origLabel);
+        grp.label = `${origLabel} (${visibleCount}校)`;
+      });
+      // 既存選択をクリア + info を隠す
+      sel.value = '';
+      if (info) info.style.display = 'none';
+    });
+  }
 
   sel.addEventListener('change', () => {
     const key = sel.value;
