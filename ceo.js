@@ -2048,3 +2048,148 @@ async function loadCourseApps() {
     list.innerHTML = `<div style="color:#fca5a5; padding:1rem;">エラー: ${escapeHtml(e.message || '')}</div>`;
   }
 }
+
+// ==========================================================================
+// 💾 DB Backup (Cloudflare R2) — 2026-05-21 塾長指示「DB の保存の昨日の続き」
+// ==========================================================================
+//   GET /api/admin/db/r2-backups (一覧) → 503 で env 未設定判定
+//   POST /api/admin/db/snapshot-to-r2 (手動 trigger・cron 兼用)
+function _fmtBytes(n) {
+  if (!n || n < 0) return '-';
+  if (n < 1024) return n + ' B';
+  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+  if (n < 1024 * 1024 * 1024) return (n / 1024 / 1024).toFixed(1) + ' MB';
+  return (n / 1024 / 1024 / 1024).toFixed(2) + ' GB';
+}
+
+function _fmtBackupDate(iso) {
+  try {
+    const d = new Date(iso);
+    const Y = d.getFullYear();
+    const M = String(d.getMonth() + 1).padStart(2, '0');
+    const D = String(d.getDate()).padStart(2, '0');
+    const h = String(d.getHours()).padStart(2, '0');
+    const m = String(d.getMinutes()).padStart(2, '0');
+    return `${Y}/${M}/${D} ${h}:${m}`;
+  } catch (_) { return iso || '-'; }
+}
+
+async function loadR2BackupStatus() {
+  const statusEl = document.getElementById('r2Status');
+  const listEl = document.getElementById('r2BackupList');
+  const envHint = document.getElementById('r2EnvHint');
+  const resultEl = document.getElementById('r2Result');
+  if (!statusEl || !listEl) return;
+  if (!window.AdminAuth || !window.AdminAuth.getToken()) {
+    statusEl.textContent = '🔒 管理者認証が必要です';
+    return;
+  }
+  statusEl.textContent = '⏳ 取得中...';
+  if (envHint) envHint.style.display = 'none';
+  if (resultEl) resultEl.style.display = 'none';
+  try {
+    const res = await window.AdminAuth.fetch('/api/admin/db/r2-backups?limit=30');
+    if (res.status === 503) {
+      const body = await res.json().catch(() => ({}));
+      statusEl.innerHTML = '<span style="color:#fca5a5;">⚠️ ' + escapeHtml(body.detail || 'env 未設定') + '</span>';
+      if (envHint) envHint.style.display = 'block';
+      listEl.innerHTML = '<div style="color:#71717a;font-size:0.78rem;">env 設定後に再読み込み</div>';
+      return;
+    }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(`HTTP ${res.status}: ${body.detail || res.statusText}`);
+    }
+    const data = await res.json();
+    const items = Array.isArray(data.items) ? data.items : [];
+    const count = data.count || items.length;
+    const latest = items[0];
+    if (latest) {
+      const ageMs = Date.now() - new Date(latest.last_modified).getTime();
+      const ageHours = Math.floor(ageMs / 1000 / 60 / 60);
+      // 🛟 daily backup 想定: < 24h 緑 / 24-48h 黄 / > 48h 赤 (1 日途切れたら警告)
+      const ageColor = ageHours < 24 ? '#bbf7d0' : (ageHours < 48 ? '#fde68a' : '#fca5a5');
+      const ageMark = ageHours < 24 ? '✅' : (ageHours < 48 ? '⚠️' : '🚨');
+      statusEl.innerHTML = `<span style="color:${ageColor};">${ageMark} 最新: ${escapeHtml(_fmtBackupDate(latest.last_modified))} (${ageHours}h 前) / 合計 ${count} 件 / bucket: <code>${escapeHtml(data.bucket || '-')}</code></span>`;
+    } else {
+      statusEl.innerHTML = `<span style="color:#fde68a;">⚠️ Backup 未取得 (env は設定済・bucket: ${escapeHtml(data.bucket || '-')})。「📸 今すぐ Backup」で初回実行を。</span>`;
+    }
+    if (items.length === 0) {
+      listEl.innerHTML = '<div style="color:#71717a;font-size:0.78rem;padding:0.5rem;">📭 まだ Backup がありません</div>';
+    } else {
+      listEl.innerHTML = items.map(it => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:0.45rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.78rem;gap:0.5rem;flex-wrap:wrap;">
+          <span style="color:#dbeafe;font-family:monospace;flex:1 1 240px;word-break:break-all;">${escapeHtml(it.key || '')}</span>
+          <span style="color:#fbbf24;font-weight:700;min-width:80px;text-align:right;">${escapeHtml(_fmtBytes(it.size))}</span>
+          <span style="color:#94a3b8;min-width:140px;text-align:right;">${escapeHtml(_fmtBackupDate(it.last_modified))}</span>
+        </div>
+      `).join('');
+    }
+  } catch (e) {
+    statusEl.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(e.message || String(e))}</span>`;
+    listEl.innerHTML = `<div style="color:#fca5a5;font-size:0.78rem;padding:0.5rem;">取得失敗: ${escapeHtml(e.message || '')}</div>`;
+  }
+}
+
+async function triggerR2Snapshot() {
+  const btn = document.getElementById('r2SnapshotBtn');
+  const statusEl = document.getElementById('r2Status');
+  const resultEl = document.getElementById('r2Result');
+  if (!btn) return;
+  if (!window.AdminAuth || !window.AdminAuth.getToken()) {
+    if (statusEl) statusEl.textContent = '🔒 管理者認証が必要です';
+    return;
+  }
+  if (!confirm('今すぐ R2 に DB Backup を取りますか? (数十秒〜数分かかります)')) return;
+  btn.disabled = true;
+  const origText = btn.textContent;
+  btn.textContent = '⏳ Backup 実行中... (10-60 秒)';
+  if (resultEl) resultEl.style.display = 'none';
+  try {
+    const res = await window.AdminAuth.fetch('/api/admin/db/snapshot-to-r2', { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 503) {
+      if (statusEl) statusEl.innerHTML = '<span style="color:#fca5a5;">⚠️ ' + escapeHtml(data.detail || 'env 未設定') + '</span>';
+      const envHint = document.getElementById('r2EnvHint');
+      if (envHint) envHint.style.display = 'block';
+      return;
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${data.detail || res.statusText}`);
+    if (resultEl) {
+      resultEl.style.display = 'block';
+      resultEl.innerHTML = `
+        ✅ <strong style="color:#22c55e;">Backup 成功</strong><br>
+        <span style="font-family:monospace;font-size:0.78rem;">key: ${escapeHtml(data.key || '-')}</span><br>
+        <span style="font-size:0.78rem;">size: ${escapeHtml(_fmtBytes(data.size_bytes))} / tables: ${data.tables_count || '-'} / 所要: ${data.duration_sec ? data.duration_sec.toFixed(1) + 's' : '-'}</span>
+      `;
+    }
+    await loadR2BackupStatus();
+  } catch (e) {
+    if (statusEl) statusEl.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(e.message || String(e))}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+}
+
+// ボタン bind + AdminAuth 認証完了後 auto-load (DR の重要度を考慮し開幕で状態可視化)
+document.addEventListener('DOMContentLoaded', () => {
+  const refreshBtn = document.getElementById('r2RefreshBtn');
+  const snapshotBtn = document.getElementById('r2SnapshotBtn');
+  if (refreshBtn) refreshBtn.addEventListener('click', loadR2BackupStatus);
+  if (snapshotBtn) snapshotBtn.addEventListener('click', triggerR2Snapshot);
+  // 認証完了を待つ retry: 300ms × 最大 20 回 (6 秒) で AdminAuth ready → 1 回 auto-load
+  // (magic link verify / Bearer decode で 3s 超える case を許容)
+  let tries = 0;
+  const tickerR2 = setInterval(() => {
+    tries++;
+    if (window.AdminAuth && window.AdminAuth.getToken()) {
+      clearInterval(tickerR2);
+      try { loadR2BackupStatus(); } catch (_) {}
+    } else if (tries >= 20) {
+      clearInterval(tickerR2);  // abandon 時は塾長に明示 (操作迷いゼロ化)
+      const statusEl = document.getElementById('r2Status');
+      if (statusEl) statusEl.innerHTML = '<span style="color:#94a3b8;">🔄 自動取得タイムアウト — 認証後に「状態更新」ボタンを押してください</span>';
+    }
+  }, 300);
+});

@@ -2201,14 +2201,60 @@
         <div id="msgHistory" style="max-height:500px; overflow-y:auto;"></div>
       </div>
     </section>
+
+    <!-- ========================================== -->
+    <!-- 💾 DB Backup (Cloudflare R2・DR の保険・2026-05-21 塾長指示で UI 追加) -->
+    <!-- ========================================== -->
+    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 14px;" id="dbBackupSection">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7rem;flex-wrap:wrap;gap:0.5rem;">
+        <h2 style="font-size:1.15rem;color:#60a5fa;margin:0;">💾 DB Backup (Cloudflare R2)</h2>
+        <span style="font-size:0.7rem;color:#71717a;">Phase 1 真の DR・catastrophic 障害用 2nd backup</span>
+      </div>
+      <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.9rem;line-height:1.6;">
+        DB を毎日 JST 3:00 に Cloudflare R2 (別事業者) に自動 dump。
+        Supabase アカウント自体が飛ぶ <strong style="color:#fca5a5;">catastrophic 障害</strong>に備える保険。
+        env <code style="background:rgba(255,255,255,0.08);padding:0.05rem 0.3rem;border-radius:3px;">R2_ACCOUNT_ID</code> / <code style="background:rgba(255,255,255,0.08);padding:0.05rem 0.3rem;border-radius:3px;">R2_ACCESS_KEY_ID</code> / <code style="background:rgba(255,255,255,0.08);padding:0.05rem 0.3rem;border-radius:3px;">R2_SECRET_ACCESS_KEY</code> 設定で有効化。
+      </div>
+
+      <!-- ステータス + 手動トリガー -->
+      <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;margin-bottom:0.9rem;">
+        <button id="r2RefreshBtn" type="button" style="padding:0.55rem 1rem;background:rgba(59,130,246,0.2);border:1px solid rgba(59,130,246,0.45);border-radius:8px;color:#dbeafe;font-weight:700;font-size:0.85rem;cursor:pointer;min-height:40px;">🔄 状態更新</button>
+        <button id="r2SnapshotBtn" type="button" style="padding:0.55rem 1.1rem;background:linear-gradient(135deg,#3b82f6,#22c55e);border:0;border-radius:8px;color:#fff;font-weight:800;font-size:0.85rem;cursor:pointer;min-height:40px;box-shadow:0 4px 12px rgba(59,130,246,0.3);">📸 今すぐ Backup を取る</button>
+        <span id="r2Status" style="font-size:0.82rem;color:#94a3b8;">起動時に「状態更新」を押してください</span>
+      </div>
+
+      <!-- 結果 / エラー / env 未設定 ガイド -->
+      <div id="r2EnvHint" style="display:none;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.4);border-radius:10px;padding:0.85rem 1rem;font-size:0.82rem;color:#fde68a;line-height:1.6;margin-bottom:0.9rem;">
+        <strong style="color:#fbbf24;">⚠️ R2 env vars 未設定 — backup は取れていません</strong><br>
+        <ol style="margin:0.4rem 0 0;padding-left:1.4rem;">
+          <li>Cloudflare R2 dashboard で bucket <code>ai-juku-db-backup</code> + API token を発行 (Object Read &amp; Write)</li>
+          <li>Vercel dashboard → ai-juku project → Settings → Environment Variables で以下を追加:
+            <ul style="margin:0.25rem 0;padding-left:1.2rem;">
+              <li><code>R2_ACCOUNT_ID</code> = dashboard 右上の Account ID</li>
+              <li><code>R2_ACCESS_KEY_ID</code> = 発行された Access Key ID</li>
+              <li><code>R2_SECRET_ACCESS_KEY</code> = 発行された Secret Access Key</li>
+            </ul>
+          </li>
+          <li>Vercel が auto redeploy 後 → 「🔄 状態更新」 → 「📸 今すぐ Backup」で初回起動</li>
+        </ol>
+      </div>
+
+      <div id="r2Result" style="display:none;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.4);border-radius:10px;padding:0.85rem 1rem;font-size:0.82rem;color:#bbf7d0;line-height:1.6;margin-bottom:0.9rem;"></div>
+
+      <!-- backup 一覧 -->
+      <div style="background:rgba(0,0,0,0.35);border:1px solid rgba(59,130,246,0.25);border-radius:10px;padding:1rem;min-height:80px;">
+        <div style="font-size:0.85rem;color:#93c5fd;font-weight:700;margin-bottom:0.5rem;">📋 蓄積された Backup (最新 30 件)</div>
+        <div id="r2BackupList" style="font-size:0.8rem;color:#94a3b8;">「🔄 状態更新」を押して取得</div>
+      </div>
+    </section>
   </main>
 
   <footer class="footer">
     <p>© 2026 AIコーチング | CEO Dashboard v1.0</p>
   </footer>
 
-  <script src="plans.js?v=20260521-admin-fetch-timeout"></script>
-  <script src="ceo.js?v=20260521-admin-fetch-timeout"></script>
+  <script src="plans.js?v=20260521-r2-backup-ui"></script>
+  <script src="ceo.js?v=20260521-r2-backup-ui"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {

@@ -28976,7 +28976,9 @@ def _record_r2_event(name: str, meta: dict):
     try:
         conn = db()
         try:
-            conn.execute(
+            # 🚨 _Connection に execute() 無し → .cursor().execute() 経由 (main.py:476)
+            cur = conn.cursor()
+            cur.execute(
                 "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
                 (name, json.dumps(meta, ensure_ascii=False, default=str), 'r2_backup_scheduler')
             )
@@ -29004,12 +29006,18 @@ def _dump_db_to_jsonl_gz() -> bytes:
         gz.write(f'-- generated_at: {datetime.now(timezone.utc).isoformat()}\n'.encode())
         conn = db()
         try:
-            cur = conn.execute(
+            # 🚨 _Connection に execute() 無し → .cursor().execute() 経由 (main.py:476)
+            cur = conn.cursor()
+            cur.execute(
                 "SELECT table_name FROM information_schema.tables "
                 "WHERE table_schema='public' AND table_type='BASE TABLE' "
                 "ORDER BY table_name"
             )
-            tables = [r[0] for r in cur.fetchall()]
+            # _Row wrapper (main.py:401) で row[0] / row["table_name"] 両対応
+            tables = []
+            for r in cur.fetchall():
+                try: tables.append(r["table_name"])
+                except (KeyError, TypeError): tables.append(r[0])
             total_rows = 0
             skipped_unsafe = []
             for t in tables:
@@ -29020,11 +29028,15 @@ def _dump_db_to_jsonl_gz() -> bytes:
                     continue
                 gz.write(f'\n-- TABLE: {t}\n'.encode())
                 # _safe_ident regex を通った table 名のみ実行 (実質的に SQL injection 不可能)
-                cur = conn.execute(f'SELECT * FROM "{t}"')
-                cols = [d.name for d in cur.description] if cur.description else []
+                # psycopg は dict_row factory (main.py:483) / sqlite3 は Row 行で dict() 可能
+                cur = conn.cursor()
+                cur.execute(f'SELECT * FROM "{t}"')
                 n = 0
                 for row in cur.fetchall():
-                    rec = {cols[i]: row[i] for i in range(len(cols))} if isinstance(row, tuple) else dict(row)
+                    try:
+                        rec = dict(row)  # _Row / sqlite3.Row 両対応
+                    except Exception:
+                        rec = {'_raw': str(row)}
                     line = json.dumps({'_table': t, '_data': rec}, default=str, ensure_ascii=False)
                     gz.write((line + '\n').encode('utf-8'))
                     n += 1
@@ -29085,11 +29097,37 @@ def _r2_prune_old_backups(retention_days: int) -> int:
 
 
 def _run_r2_backup() -> dict:
-    """1 回分の backup 実行。成功で {ok:True, key, size, ...}、失敗で例外。"""
+    """1 回分の backup 実行。成功で {ok:True, key, size, size_bytes, tables_count, duration_sec, ...}、失敗で例外。
+
+    2026-05-21: ceo.js (CEO ダッシュ UI) との shape 整合のため `size_bytes` / `tables_count` /
+    `duration_sec` を追加。`size` も後方互換で残す (events / 既存 log 用)。
+    """
+    import time as _t
+    t0 = _t.monotonic()
     now = datetime.now(timezone(timedelta(hours=9)))
+    # table 数を先に取得 (events / UI 表示用・5ms 追加 query)
+    # memory: feedback_postgres_dict_row.md — _Row wrapper (main.py:401) で row["n"] / row[0] 両対応
+    # 🚨 _Connection に execute() 無し (main.py:476) → 必ず .cursor().execute() で経由する
+    tables_count = None
+    try:
+        conn = db()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT COUNT(*) AS n FROM information_schema.tables "
+                "WHERE table_schema='public' AND table_type='BASE TABLE'"
+            )
+            row = cur.fetchone()
+            if row: tables_count = int(row["n"])
+        finally:
+            try: conn.close()
+            except Exception: pass
+    except Exception as e:
+        log.warning(f'[r2_backup] tables_count fetch failed (non-fatal): {e}')
     data = _dump_db_to_jsonl_gz()
     key = f'ai-juku/{now.strftime("%Y/%m")}/db-{now.strftime("%Y%m%d-%H%M%S")}.jsonl.gz'
     result = _r2_upload_backup(data, key)
+    duration_sec = round(_t.monotonic() - t0, 2)
     retention = int(os.getenv('R2_BACKUP_RETENTION_DAYS', '30'))
     pruned = 0
     try:
@@ -29097,10 +29135,21 @@ def _run_r2_backup() -> dict:
     except Exception as e:
         log.warning(f'[r2_backup] prune failed (non-fatal): {e}')
     try:
-        _record_r2_event('r2_backup_success', {'key': key, 'size': result['size'], 'pruned': pruned})
+        _record_r2_event('r2_backup_success', {
+            'key': key, 'size': result.get('size'), 'tables_count': tables_count,
+            'duration_sec': duration_sec, 'pruned': pruned,
+        })
     except Exception:
         pass
-    return {**result, 'pruned': pruned, 'retention_days': retention}
+    return {
+        **result,
+        # 🎯 ceo.js が参照する alias / 追加フィールド (2026-05-21 shape 整合)
+        'size_bytes': result.get('size'),
+        'tables_count': tables_count,
+        'duration_sec': duration_sec,
+        'pruned': pruned,
+        'retention_days': retention,
+    }
 
 
 async def _r2_backup_scheduler():
