@@ -143,9 +143,12 @@
   <!-- 管理者認証スクリプト (ページロード前に実行) -->
   <script>
     (function() {
+      // 🚨 2026-05-21: Railway 直 hostname (*.up.railway.app) が timeout する事故対策。
+      //   Vercel proxy (window.location.origin = trillion-ai-juku.com) 経由なら rewrite で同 backend に到達。
+      //   localhost:8090 preview 時は従来通り local backend (port 8000) を叩く。
       const API_BASE = (window.location.origin.includes(':8090') || window.location.origin.includes('localhost:8090'))
         ? 'http://localhost:8000'
-        : 'https://ai-juku-api-production.up.railway.app';
+        : window.location.origin;
       const TOKEN_KEY = 'ai_juku_admin_token';
       const EXP_KEY = 'ai_juku_admin_expires';
 
@@ -219,13 +222,19 @@
         if (!password) return;
         btn.disabled = true; btn.textContent = '⏳ 認証中...';
         msg.className = 'admin-gate-msg';
+        // 🚨 2026-05-21: AbortController 15s timeout 追加。Railway cold start / 障害時に
+        //   button が永遠「⏳ 認証中...」のまま固まる事故 (塾長報告) を防止。
+        const _ctrl = new AbortController();
+        const _timer = setTimeout(() => _ctrl.abort(), 15000);
         try {
           const res = await fetch(API_BASE + '/api/admin/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ password }),
+            signal: _ctrl.signal,
           });
-          const data = await res.json();
+          // 502/504/HTML エラーで JSON parse 失敗しても catch に渡さず空 obj 化
+          const data = await res.json().catch(() => ({}));
           if (res.ok) {
             saveSession(data.token, data.expires_at);
             msg.className = 'admin-gate-msg';
@@ -237,6 +246,8 @@
               msg.textContent = '⏳ 試行回数上限。5分ほど待ってから再度お試しください (keychain 自動入力で誤値が連続送信されている可能性)。';
             } else if (res.status === 401) {
               msg.textContent = '⚠️ パスワードが正しくありません。keychain の候補ではなく手入力してください。';
+            } else if (res.status >= 500) {
+              msg.textContent = '⚠️ サーバーが応答していません (HTTP ' + res.status + ')。しばらくしてから再度お試しください。';
             } else {
               msg.textContent = '⚠️ ' + (data.detail || '認証に失敗しました');
             }
@@ -245,8 +256,13 @@
           }
         } catch (err) {
           msg.className = 'admin-gate-msg error';
-          msg.textContent = '⚠️ ネットワークエラー。しばらくしてから再度お試しください。';
+          if (err && err.name === 'AbortError') {
+            msg.textContent = '⏱ タイムアウト (15秒)。サーバー応答無し。しばらくしてから再度お試しください。';
+          } else {
+            msg.textContent = '⚠️ ネットワークエラー。しばらくしてから再度お試しください。';
+          }
         } finally {
+          clearTimeout(_timer);
           btn.disabled = false; btn.textContent = '🔓 ログイン';
         }
       });
@@ -2191,8 +2207,8 @@
     <p>© 2026 AIコーチング | CEO Dashboard v1.0</p>
   </footer>
 
-  <script src="plans.js?v=20260519-cache-bump-sweep"></script>
-  <script src="ceo.js?v=20260519-cache-bump-sweep"></script>
+  <script src="plans.js?v=20260521-admin-fetch-timeout"></script>
+  <script src="ceo.js?v=20260521-admin-fetch-timeout"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {

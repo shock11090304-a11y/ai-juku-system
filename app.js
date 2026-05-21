@@ -6846,6 +6846,89 @@ async function _fetchProblemsFromPool(subject, units, topic, count) {
   return null;
 }
 
+// 複数単元 (chip 2 つ以上) で pool-first を効かせる版 (2026-05-21 塾長指示「瞬間的に出てこない」対応)
+// 各 unit を並列 fetch (Promise.allSettled) → 端数前詰めで均等配分マージ → 50% 未満 hit なら null で live AI fallback
+async function _fetchProblemsFromPoolMulti(subject, units, topic, count) {
+  if (!Array.isArray(units) || units.length < 2) {
+    // 単一 unit / unit 無し は通常版を委譲
+    return _fetchProblemsFromPool(subject, units, topic, count);
+  }
+  // 🛟 6 単元以上は pool skip → live AI で全 unit を均等配分 (pool で 5 cap すると live AI と挙動分岐)
+  if (units.length > 5) {
+    console.log(`[pool-multi] units.length=${units.length} > cap 5 → live AI fallback (全 unit を統一処理)`);
+    return null;
+  }
+  const usedUnits = units;
+  const totalCount = parseInt(count, 10) || 5;
+  const perUnit = Math.ceil(totalCount / usedUnits.length);  // 端数前詰めで配分
+  // 🛟 各 unit fetch に buffer (perUnit * 2 か totalCount) — 薄い unit を他で補填可能にする under-fetch fix
+  const fetchPerUnit = Math.min(Math.max(perUnit * 2, perUnit + 3), totalCount);
+
+  // 各 unit で並列 fetch (1 つ失敗しても他は採用)
+  const settled = await Promise.allSettled(
+    usedUnits.map(u => _fetchProblemsFromPool(subject, [u], u, fetchPerUnit))
+  );
+  const results = settled.map(s => (s.status === 'fulfilled' ? s.value : null));
+  // 🛟 hit 判定厳格化: 1 unit に対して perUnit の半分以上 hit したら「実質 hit」とカウント (浅い hit を許容しない)
+  const minPerUnitHit = Math.max(1, Math.ceil(perUnit / 2));
+  const hitCount = results.filter(r => r && Array.isArray(r.problems) && r.problems.length >= minPerUnitHit).length;
+  // 🛟 50% 未満 hit → null 返却 → 既存 live AI fallback (片方 pool・片方 AI 混乱回避)
+  if (hitCount * 2 < usedUnits.length) {
+    console.log(`[pool-multi] insufficient hits (${hitCount}/${usedUnits.length} units passed minPerUnit=${minPerUnitHit}) → live AI fallback`);
+    return null;
+  }
+
+  // 端数前詰めで unit ごとに slice → merge → 重複 dedup (passage 共有問題を誤って捨てない fix: 末尾 200 chars + answer 結合で hash)
+  const merged = [];
+  const seenStems = new Set();
+  let remaining = totalCount;
+  for (let i = 0; i < results.length && remaining > 0; i++) {
+    const r = results[i];
+    if (!r || !Array.isArray(r.problems)) continue;
+    // 残り数 / 残り unit 数 で動的配分 (どこかが薄かった時に他で補填)
+    const remainingUnits = results.slice(i).filter(x => x && Array.isArray(x.problems) && x.problems.length > 0).length || 1;
+    const take = Math.min(r.problems.length, Math.ceil(remaining / remainingUnits));
+    const unitLabel = usedUnits[i] || '';
+    let takenThisUnit = 0;
+    for (const p of r.problems) {
+      if (merged.length >= totalCount || takenThisUnit >= take) break;
+      // 🛟 dedup key: passage 共有の複数問が「先頭 200 chars 同じ」で誤 dedup される事故対策。
+      //   question 末尾 (実 stem 部分) + answer 結合で個別性を担保。
+      if (p && p.question) {
+        const q = String(p.question);
+        const tail = q.length > 200 ? q.slice(-200) : q;
+        const key = tail + '|' + String(p.answer || '');
+        if (seenStems.has(key)) continue;
+        seenStems.add(key);
+      }
+      // source に unit ラベルを付加して UI 識別
+      const annotated = { ...p, source: (p.source || '問題プール') + (unitLabel ? ` (${unitLabel})` : '') };
+      merged.push(annotated);
+      takenThisUnit++;
+    }
+    remaining = totalCount - merged.length;
+  }
+
+  if (merged.length === 0) {
+    console.log('[pool-multi] all units returned 0 problems → live AI fallback');
+    return null;
+  }
+  // 連番再付与 (live AI と parity)
+  merged.forEach((p, i) => { p.number = i + 1; });
+
+  // 各 unit の total 問数を合算 (subtitle 表示用)
+  const totalPool = results.reduce((sum, r) => sum + (r && r._poolMeta && r._poolMeta.total ? r._poolMeta.total : 0), 0);
+  console.log(`[pool-multi] ✅ ${merged.length} 問 hit (${hitCount}/${usedUnits.length} units・pool=${totalPool})`);
+  return {
+    title: `${subject} (${usedUnits.join('・')}) 練習問題`,
+    subtitle: `📚 問題プールから抽出 (${usedUnits.length} 単元・累計 ${totalPool} 問から ${merged.length} 問)`,
+    problems: merged,
+    summary: '',
+    _fromPool: true,
+    _poolMeta: { multi: true, units: usedUnits, hitCount, totalPool },
+  };
+}
+
 async function generateProblems() {
   const subject = document.getElementById('probSubject').value;
   // 単元複数選択対応 (chip UI から取得、1 つでも複数でも OK)
@@ -7105,18 +7188,21 @@ JSON文字列の中でバックスラッシュを使う場合は必ず二重に�
     // 🎯 STEP 1: pool-first 試行 (2026-05-21 塾長指示・体感 100x 改善)
     //   既存 exam_questions pool から topic LIKE 検索で即時抽出。hit 時は AI 呼び出し 0・Anthropic 課金 ¥0
     //   miss (subject 未マップ / 該当問題なし / fetch error) 時は live AI 並列バッチに自動 fallback
+    //   複数単元選択時は _fetchProblemsFromPoolMulti が各 unit を並列 fetch + merge (2026-05-21 second pass)
     //
     // 🚨 例外 (pool skip 条件・regression 回避):
-    //   1. 過去問モード (pastExamToggle = ON): 「東大 2020 大問2」の傾向注入は live AI でしかできない
+    //   過去問モード (pastExamToggle = ON): 「東大 2020 大問2」の傾向注入は live AI でしかできない
     //      → pool で別大学類題を出すと UI で「東大 2020」と誤表示する不実表示 regression
-    //   2. 複数単元選択 (units.length >= 2): pool は topic LIKE が 1 つしか送れないため
-    //      「2 単元を均等配分」の生徒意図を満たせない → live AI prompt で各単元配分する経路に
     const _poolSkipReason = (() => {
       if (pastExamToggle && pastExamToggle.checked) return 'past_exam_mode';
-      if (Array.isArray(units) && units.length >= 2) return 'multi_unit';
       return null;
     })();
-    const poolData = _poolSkipReason ? null : await _fetchProblemsFromPool(subject, units, topic, totalCount);
+    const _isMultiUnit = Array.isArray(units) && units.length >= 2;
+    const poolData = _poolSkipReason
+      ? null
+      : (_isMultiUnit
+          ? await _fetchProblemsFromPoolMulti(subject, units, topic, totalCount)
+          : await _fetchProblemsFromPool(subject, units, topic, totalCount));
     if (_poolSkipReason) console.log(`[pool-first] skip (${_poolSkipReason}) → live AI`);
     if (poolData) {
       data = poolData;
