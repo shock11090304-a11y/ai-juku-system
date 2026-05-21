@@ -7487,6 +7487,7 @@ EXAM_QUESTION_ROTATION = [
     ("rikei", "phys_q1",      "waseda_rikei"),
     ("rikei", "math_q1",      "keio_rikei"),
     ("rikei", "math_q2",      "keio_rikei"),
+    ("rikei", "phys_q1",      "keio_rikei"),  # 2026-05-21 塾長指示: 発展レベル補強 (frontend UI 既存・ROTATION 漏れを修正)
     ("rikei", "bio_q1",       "keio_rikei"),
     ("rikei", "math_q1",      "sophia_rikei"),
     # 医学部
