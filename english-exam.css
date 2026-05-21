@@ -441,6 +441,25 @@ body {
 .ee-passage h3 { margin: 0 0 0.6rem; font-size: 1rem; color: var(--ee-primary); }
 .ee-passage.ee-audio { border-left-color: var(--ee-toeic); }
 .ee-passage.ee-audio h3 { color: var(--ee-toeic); }
+
+/* 🎯 試験問題 下線部マーク (実 模試風・2026-05-21 塾長指示)
+   AI 出力の <u>(1) ...</u> を escapeTextWithMath で <u class="exam-underline"> に変換し、
+   実 underline + 番号 (1) を視覚的にハイライト。SAT/大学入試/英検の長文に共通する表記。 */
+.exam-underline {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--ee-primary);
+  text-underline-offset: 3px;  /* 4px → 3px: 行間 1.8 で descender との衝突回避 (UX review 2026-05-21) */
+  /* 番号 (1) (2) は inline で自然に表示・微 highlight で見やすく
+     色を ee-primary (#6366f1 indigo) と統一 (UX review: indigo underline + indigo highlight) */
+  background: linear-gradient(transparent 60%, rgba(99,102,241,0.18) 60%);
+  padding: 0 2px;
+  /* 印刷 / PDF 出力でも highlight を保持 (Chrome / Safari の Print to PDF 対応) */
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+/* 解説 / 質問 stem 内でも underline を維持 (例: 「下線部 (1) の意味は?」) */
+.ee-question u, .ee-question .exam-underline { color: inherit; }
 .ee-note { font-size: 0.78rem; color: var(--ee-text-muted); margin-top: 0.6rem; }
 .ee-tts-btn {
   display: inline-block;
@@ -1362,34 +1381,62 @@ body {
   .ee-mode-badge { font-size: 0.65rem; padding: 0.15rem 0.4rem; }
 }
 
-/* ========== 🖨 印刷モード (問題本文のみ印刷・解答/タイマー/UI を隠す) ========== */
+/* ========== 🖨 印刷モード (問題本文 / 採点結果のみ印刷・UI を隠す) ========== */
 @media print {
   /* ヘッダ・ナビ・他セクションすべて非表示 */
   body * { visibility: hidden; }
+  /* 問題演習中 (.ee-section-runner) と 採点結果 (.ee-section-result) を両方印刷対象に
+     (2026-05-21 塾長指示「解答解説を PDF で保存」対応) */
   .ee-section-runner,
-  .ee-section-runner * { visibility: visible; }
-  .ee-section-runner {
+  .ee-section-runner *,
+  .ee-section-result,
+  .ee-section-result * { visibility: visible; }
+  .ee-section-runner,
+  .ee-section-result {
     position: absolute; left: 0; top: 0; width: 100%;
     background: white !important; color: #000 !important;
     padding: 1rem !important;
     border: none !important;
   }
-  /* 印刷時に隠す: タイマー・操作ボタン・Vision プレビュー等 */
+  /* 印刷時に隠す: タイマー・操作ボタン・CTA 行・DL ボタン等 */
   .ee-timer,
   .ee-runner-actions,
   .ee-runner-head .ee-eyebrow,
   #cancelRunBtn,
   #submitAnswersBtn,
-  #printRunnerBtn { display: none !important; }
+  #printRunnerBtn,
+  #retryBtn, #newExamBtn, #backToTopBtn,
+  #downloadExamResultBtn, #downloadExamResultPdfBtn,
+  .ee-cta-row { display: none !important; }
   /* 問題本文・選択肢・passage は印刷向けに整形 */
-  .ee-question-box {
+  .ee-question-box,
+  .result-q,
+  .ee-passage,
+  .result-score-hero,
+  .result-converter,
+  .result-feedback,
+  .result-plan {
     background: white !important;
     color: #000 !important;
     border: 1px solid #888 !important;
-    page-break-inside: auto;
+    page-break-inside: avoid;
+    margin-bottom: 1rem !important;
   }
-  .ee-question-box * {
+  .ee-question-box *,
+  .result-q *,
+  .ee-passage *,
+  .result-score-hero *,
+  .result-converter *,
+  .result-feedback *,
+  .result-plan * {
     color: #000 !important;
+    background: transparent !important;
+  }
+  /* 下線部 (.exam-underline) は印刷時も視認できる黒線で */
+  .exam-underline {
+    text-decoration: underline !important;
+    text-decoration-color: #000 !important;
+    text-decoration-thickness: 1.5px !important;
     background: transparent !important;
   }
   /* リスニング audio プレイヤー等は印刷不要 */

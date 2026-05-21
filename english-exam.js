@@ -2210,14 +2210,27 @@ function pretifyMath(container) {
 // 数式を含むテキストの安全レンダリング: HTML escape → \(...\) のバックスラッシュは保持
 function escapeTextWithMath(s) {
   if (s == null) return '';
-  // HTML escape
-  return String(s)
+  // HTML escape (XSS 防御)
+  let out = String(s)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
     .replace(/\n/g, '<br>');
+  // 🎯 2026-05-21 塾長指示「下線部を実際の模試のように」:
+  //    AI 出力 `<u>(1) ...</u>` が literal text として表示される問題を解消。
+  //    HTML escape 後の `&lt;u&gt;` / `&lt;/u&gt;` のみを実タグに戻す (whitelist 方式・他タグは escape 維持で XSS 安全)。
+  //    .exam-underline class で 模試風の太い underline + 番号 (N) を視覚強調。
+  out = out
+    .replace(/&lt;u&gt;/gi, '<u class="exam-underline">')
+    .replace(/&lt;\/u&gt;/gi, '</u>')
+    // 模試らしい強調: <em>/<strong> も AI が emit する可能性あり (XSS リスク無し)
+    .replace(/&lt;em&gt;/gi, '<em>')
+    .replace(/&lt;\/em&gt;/gi, '</em>')
+    .replace(/&lt;strong&gt;/gi, '<strong>')
+    .replace(/&lt;\/strong&gt;/gi, '</strong>');
+  return out;
 }
 
 // 🀄 漢文の返り点 (一二三・上中下・甲乙丙・レ点) を視覚的にマーク (塾長指示 2026-05-18)
@@ -3243,6 +3256,16 @@ function showResult(exam, section, result) {
       catch (e) { console.warn('[exam-result-dl] failed:', e); alert('ダウンロード失敗: ' + (e.message || e)); }
     };
   }
+  // 📄 PDF 保存ボタン (2026-05-21 塾長指示「PDF で保存できるように」)
+  //    window.print() で browser の印刷ダイアログを呼び出し、ユーザーが「PDF として保存」を選択する pattern。
+  //    @media print stylesheet で .ee-section-result のみを A4 white background で表示 (CSS で実装)。
+  const _pdfBtn = document.getElementById('downloadExamResultPdfBtn');
+  if (_pdfBtn) {
+    _pdfBtn.onclick = () => {
+      try { window.print(); }
+      catch (e) { console.warn('[exam-result-pdf] failed:', e); alert('印刷ダイアログ起動失敗: ' + (e.message || e)); }
+    };
+  }
 
   // 🎯 2026-05-21 塾長指示「点数が画面トップに来るように」:
   //   旧: window.scrollTo({top:0}) → header しか見えず採点結果は画面外
@@ -3941,7 +3964,8 @@ function renderNewsQuestion(data) {
     <span class="news-q-source">出典: <a href="${escapeHtml(article.link || '#')}" target="_blank" rel="noopener noreferrer">${escapeHtml(article.title || '原文記事')}</a></span>
   </div>`;
   if (q.passage) {
-    html += `<div class="ee-passage"><h3>📖 Reading Passage (AI が記事テーマで独自執筆・250-350語)</h3><p>${escapeHtml(q.passage).replace(/\n/g, '<br>')}</p></div>`;
+    // escapeTextWithMath で <u>/<em>/<strong> を whitelist 復活 (2026-05-21 塾長指示「下線部を模試のように」)
+    html += `<div class="ee-passage"><h3>📖 Reading Passage (AI が記事テーマで独自執筆・250-350語)</h3><p>${escapeTextWithMath(q.passage)}</p></div>`;
   }
   if (q.included_link_message) {
     html += `<div class="news-q-cta">${escapeHtml(q.included_link_message)} → <a href="${escapeHtml(article.link || '#')}" target="_blank" rel="noopener noreferrer">${escapeHtml(article.link || '')}</a></div>`;

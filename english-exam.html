@@ -6,7 +6,7 @@
   <title>🎓 試験対策スタジオ | TOEFL・TOEIC・IELTS・英検・大学入試・理系 6試験完全対応 | AIコーチング</title>
   <meta name="description" content="TOEFL iBT・TOEIC L&R・IELTS Academic・英検・大学入試英語・理系科目 (数学/物理/化学/生物/地学) を AI が完全対応。模試生成・スコア予測・CEFR換算・弱点分析・図やグラフを含む理系問題まで一気通貫。Claude AI による個別最適化。">
   <link rel="stylesheet" href="style.css?v=20260521-quickstart-split">
-  <link rel="stylesheet" href="english-exam.css?v=20260521-quickstart-split">
+  <link rel="stylesheet" href="english-exam.css?v=20260521-passage-underline">
   <script src="cache-purge.js?v=20260521-quickstart-split"></script>
 
   <script src="frontend-error-monitor.js?v=20260521-quickstart-split"></script>
@@ -421,10 +421,11 @@
         <button class="ee-btn ee-btn-secondary" id="newExamBtn" style="flex:1 1 240px; min-height:56px; font-size:1rem; font-weight:800;">📝 別の大問・別の大学に挑戦</button>
         <button class="ee-btn ee-btn-ghost" id="backToTopBtn" style="flex:1 1 180px; min-height:48px; font-size:0.9rem;">← トップに戻る</button>
       </div>
-      <!-- 📥 解答解説 DL (2026-05-21 塾長指示「解答解説も DL できるように」) -->
+      <!-- 📥 解答解説 DL (2026-05-21 塾長指示「Markdown + PDF 両方で DL」) -->
       <div style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.7rem; align-items:center; justify-content:center;">
-        <button class="ee-btn" id="downloadExamResultBtn" type="button" style="padding:0.7rem 1.3rem; background:linear-gradient(135deg,#3b82f6,#10b981); border:0; border-radius:10px; color:#fff; font-weight:800; font-size:0.95rem; cursor:pointer; min-height:48px; box-shadow:0 4px 12px rgba(59,130,246,0.3);">📥 解答解説をダウンロード (Markdown)</button>
-        <span style="font-size:0.78rem; color:#94a3b8;">復習用に手元に保存できます</span>
+        <button class="ee-btn" id="downloadExamResultPdfBtn" type="button" style="padding:0.7rem 1.3rem; background:linear-gradient(135deg,#ef4444,#f97316); border:0; border-radius:10px; color:#fff; font-weight:800; font-size:0.95rem; cursor:pointer; min-height:48px; box-shadow:0 4px 12px rgba(239,68,68,0.3);">📄 解答解説を PDF で保存</button>
+        <button class="ee-btn" id="downloadExamResultBtn" type="button" style="padding:0.7rem 1.3rem; background:linear-gradient(135deg,#3b82f6,#10b981); border:0; border-radius:10px; color:#fff; font-weight:800; font-size:0.95rem; cursor:pointer; min-height:48px; box-shadow:0 4px 12px rgba(59,130,246,0.3);">📥 Markdown でダウンロード</button>
+        <span style="font-size:0.78rem; color:#94a3b8; display:block; flex-basis:100%; text-align:center;">復習用に手元に保存 (PDF は印刷ダイアログから「PDF として保存」)</span>
       </div>
       <p style="text-align:center; margin-top:0.8rem; font-size:0.85rem; color:#a78bfa; font-weight:600;">
         💪 1 問解くたびに合格に近づきます。今日もう 1 問やってみませんか?
@@ -481,6 +482,6 @@
     /* 写真 drop area ホバー */
     .ee-photo-drop:hover { background: rgba(99,102,241,0.10) !important; border-color: rgba(167,139,250,0.7) !important; }
   </style>
-  <script src="english-exam.js?v=20260521-result-dl-scroll"></script>
+  <script src="english-exam.js?v=20260521-passage-underline"></script>
 </body>
 </html>
