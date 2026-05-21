@@ -6703,6 +6703,149 @@ function _markBatch(idx, state) {
 // ==========================================================================
 // TAB: AI Problem Generator (真の差別化機能)
 // ==========================================================================
+
+// 🎯 pool-first 戦略 (2026-05-21 塾長指示・体感 100x 改善・Anthropic 課金 ¥0)
+// 既存 16,631 問の exam_questions pool から即時抽出を試行 → miss 時のみ live AI fallback
+// probSubject (UI ラベル) → backend exam_id + part_key にマッピング (1 subject に複数候補)
+const _POOL_SUBJECT_MAP = {
+  '英語（文法）':      [{ exam: 'daigaku', part: 'g_grammar' }, { exam: 'eiken', part: 'r_q1' }],
+  // 🚫 英作文 (w_essay) は pool-first 対象外: 専用の 5 AI 多視点採点 UI (mock-exam) と機能重複・
+  //    payload shape も essay 模範解答型で問題自動生成 tab の 4 択即採点と不整合 → 常に live AI へ
+  '英語（英作文）':    [],
+  '英語（長文読解）':  [{ exam: 'daigaku', part: 'r_long' }],
+  // 🔁 「語彙」は g_grammar の語彙穴埋めの方が r_q1 (語彙統制した文法問題) より意味的に妥当 → 順序入れ替え
+  '英語（語彙）':      [{ exam: 'daigaku', part: 'g_grammar' }, { exam: 'eiken', part: 'r_q1' }],
+  '数学（代数）':      [{ exam: 'rikei', part: 'math_q1' }, { exam: 'rikei', part: 'math_2b' }, { exam: 'rikei', part: 'math_1a' }],
+  '数学（幾何）':      [{ exam: 'rikei', part: 'math_q2' }, { exam: 'rikei', part: 'math_1a' }],
+  '数学（解析）':      [{ exam: 'rikei', part: 'math_q3' }, { exam: 'rikei', part: 'math_2b' }],
+  // 🔍 注: 国語/社会の pool は exam_id='daigaku' で保存されている (memory: 2026-05-14 整備済)
+  //        bunkei は exam_questions テーブルに row なし (2026-05-21 prod 実測)。
+  '国語（現代文）':    [{ exam: 'daigaku', part: 'gendai' }],
+  '国語（古文）':      [{ exam: 'daigaku', part: 'kobun' }],
+  '国語（漢文）':      [{ exam: 'daigaku', part: 'kanbun' }],
+  '物理':              [{ exam: 'rikei', part: 'phys_q1' }, { exam: 'rikei', part: 'phys_q2' }, { exam: 'rikei', part: 'phys_basic' }],
+  '化学':              [{ exam: 'rikei', part: 'chem_q1' }, { exam: 'rikei', part: 'chem_q2' }, { exam: 'rikei', part: 'chem_basic' }],
+  '生物':              [{ exam: 'rikei', part: 'bio_q1' }, { exam: 'rikei', part: 'bio_basic' }],
+  '日本史':            [{ exam: 'daigaku', part: 'nihonshi' }],
+  '世界史':            [{ exam: 'daigaku', part: 'sekaishi' }],
+};
+
+// pool 1 payload (passage + questions[]) → app.js の flat problems[] 形式に変換
+function _flattenPoolPayload(payload, startNumber) {
+  const out = [];
+  const passage = (payload && payload.passage) || '';
+  const prompt = (payload && payload.prompt) || '';
+  const univ = (payload && payload.univ_simulated) || '';
+  const year = (payload && payload.year_simulated) || '';
+  const source = univ
+    ? `${univ}${year ? ' ' + year + '年度' : ''} 過去問プール 類題`
+    : '問題プール';
+  const questions = (payload && Array.isArray(payload.questions)) ? payload.questions : [];
+  for (const q of questions) {
+    if (!q || !q.stem) continue;
+    // 質問文: passage + prompt + stem + choices を連結 (renderProblems が改行保持)
+    let questionText = '';
+    if (passage) questionText += passage + '\n\n';
+    if (prompt) questionText += prompt + '\n';
+    questionText += q.stem;
+    const choices = Array.isArray(q.choices) ? q.choices : [];
+    if (choices.length) {
+      const marks = '①②③④⑤⑥⑦⑧⑨';
+      questionText += '\n' + choices.map((c, i) => `${marks[i] || (i + 1)} ${c}`).join('\n');
+    }
+    // 解答: answer が "0"〜"N" の数値文字列なら ①②… にラベル化、それ以外はそのまま
+    let answerText = q.answer != null ? String(q.answer) : '';
+    if (/^\d+$/.test(answerText) && choices.length) {
+      const idx = parseInt(answerText, 10);
+      if (idx >= 0 && idx < choices.length) {
+        const marks = '①②③④⑤⑥⑦⑧⑨';
+        answerText = `${marks[idx] || (idx + 1)} ${choices[idx]}`;
+      }
+    }
+    out.push({
+      number: startNumber + out.length,
+      source,
+      question: questionText,
+      answer: answerText,
+      explanation: q.explanation || '',
+    });
+  }
+  return out;
+}
+
+// pool 検索 (subject + 単元 chip = topic で SQL LIKE フィルタ). hit (>=min) → data オブジェクト・miss → null
+async function _fetchProblemsFromPool(subject, units, topic, count) {
+  const candidates = _POOL_SUBJECT_MAP[subject];
+  if (!candidates || candidates.length === 0) return null;
+
+  // topic: 単元 chip の先頭優先 (単元なら確実に pool に存在)、fallback で弱点 textarea の冒頭
+  const topicHint = (Array.isArray(units) && units.length > 0) ? String(units[0]) : (topic ? String(topic).slice(0, 40) : '');
+  const minNeeded = Math.min(parseInt(count, 10) || 5, 3);  // pool hit 判定の最低問題数
+  const requestLimit = Math.max(20, (parseInt(count, 10) || 5) + 5);
+
+  let studentId = null;
+  try { studentId = (typeof getCurrentStudent === 'function') ? (getCurrentStudent().id || null) : null; } catch (_) {}
+
+  for (const cand of candidates) {
+    try {
+      const params = new URLSearchParams({
+        exam: cand.exam,
+        part: cand.part,
+        limit: String(Math.min(50, requestLimit)),
+      });
+      if (topicHint) params.set('topic', topicHint);
+      if (studentId) params.set('student_id', String(studentId));
+
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 5000);  // pool は速い前提・5s timeout
+      let res;
+      try {
+        res = await fetch(`${BACKEND_URL}/api/exam-questions/bank?${params}`, {
+          signal: ctrl.signal,
+          cache: 'no-store',
+          credentials: 'same-origin',
+        });
+      } finally {
+        clearTimeout(timer);
+      }
+      if (!res || !res.ok) continue;
+      const data = await res.json();
+      const items = (data && Array.isArray(data.all)) ? data.all : [];
+      if (items.length === 0) continue;
+
+      // 各 payload を flatten して問題リストを組み立て (count 達成で打ち切り)
+      const problems = [];
+      for (const payload of items) {
+        const flattened = _flattenPoolPayload(payload, problems.length + 1);
+        for (const p of flattened) {
+          problems.push(p);
+          if (problems.length >= (parseInt(count, 10) || 5)) break;
+        }
+        if (problems.length >= (parseInt(count, 10) || 5)) break;
+      }
+      if (problems.length < minNeeded) continue;  // 薄すぎ → 次候補へ
+
+      // 念のため connection number を 1..N で再付与 (live AI 並列バッチと parity)
+      problems.forEach((p, i) => { p.number = i + 1; });
+
+      console.log(`[pool-first] ✅ ${problems.length} 問 hit (exam=${cand.exam} part=${cand.part} topic=${topicHint || '-'} / pool=${data.count || items.length})`);
+      return {
+        title: `${subject}${topicHint ? ' (' + topicHint + ')' : ''} 練習問題`,
+        subtitle: `📚 問題プールから抽出 (${data.count || items.length} 問の蓄積から ${problems.length} 問)`,
+        problems,
+        summary: '',
+        _fromPool: true,
+        _poolMeta: { exam: cand.exam, part: cand.part, total: data.count || items.length, topic: topicHint },
+      };
+    } catch (e) {
+      console.warn(`[pool-first] candidate failed (exam=${cand.exam} part=${cand.part}):`, e?.message || e);
+      continue;
+    }
+  }
+  console.log(`[pool-first] miss for ${subject} topic=${topicHint || '-'} → live AI fallback`);
+  return null;
+}
+
 async function generateProblems() {
   const subject = document.getElementById('probSubject').value;
   // 単元複数選択対応 (chip UI から取得、1 つでも複数でも OK)
@@ -6933,8 +7076,8 @@ JSON文字列の中でバックスラッシュを使う場合は必ず二重に�
   };
   window.addEventListener('beforeunload', beforeUnloadHandler);
 
-  // 進捗UI（バッチステータス）を初期化
-  _renderGenProgress(out, batchSizes, tStart, totalCount);
+  // 🎯 pool-first 用の初期 UI (live AI に落ちる場合は下の _renderGenProgress で上書き)
+  out.innerHTML = '<div style="padding:1.5rem;text-align:center;color:#a78bfa;font-size:0.95rem;line-height:1.6;">⚡ 問題プールから検索中...<br><span style="font-size:0.82rem;color:#94a3b8;">既存 16,000+ 問の蓄積から AI 呼び出しなしで即抽出を試行</span></div>';
 
   // セッションIDで abortKey を一意化（連続生成時に前回バッチ0が次回バッチ0を中断するのを防ぐ）
   const genSessionId = tStart.toString(36) + '_' + Math.random().toString(36).slice(2, 6);
@@ -6959,29 +7102,51 @@ JSON文字列の中でバックスラッシュを使う場合は必ず二重に�
 
   let data;
   try {
-    // Promise.allSettled で部分失敗に耐性を持たせる。1バッチが落ちても残りを採用。
-    const settled = await Promise.allSettled(batchSizes.map((sz, i) => runBatch(i, sz)));
-    const batchResults = settled.map((s, i) => {
-      if (s.status === 'fulfilled') return s.value;
-      console.warn(`Batch ${i} failed:`, s.reason);
-      _markBatch(i, 'done');  // UIをリセット（バッジは完了表示で見た目は綺麗に）
+    // 🎯 STEP 1: pool-first 試行 (2026-05-21 塾長指示・体感 100x 改善)
+    //   既存 exam_questions pool から topic LIKE 検索で即時抽出。hit 時は AI 呼び出し 0・Anthropic 課金 ¥0
+    //   miss (subject 未マップ / 該当問題なし / fetch error) 時は live AI 並列バッチに自動 fallback
+    //
+    // 🚨 例外 (pool skip 条件・regression 回避):
+    //   1. 過去問モード (pastExamToggle = ON): 「東大 2020 大問2」の傾向注入は live AI でしかできない
+    //      → pool で別大学類題を出すと UI で「東大 2020」と誤表示する不実表示 regression
+    //   2. 複数単元選択 (units.length >= 2): pool は topic LIKE が 1 つしか送れないため
+    //      「2 単元を均等配分」の生徒意図を満たせない → live AI prompt で各単元配分する経路に
+    const _poolSkipReason = (() => {
+      if (pastExamToggle && pastExamToggle.checked) return 'past_exam_mode';
+      if (Array.isArray(units) && units.length >= 2) return 'multi_unit';
       return null;
-    });
-    const failedCount = settled.filter(s => s.status === 'rejected').length;
+    })();
+    const poolData = _poolSkipReason ? null : await _fetchProblemsFromPool(subject, units, topic, totalCount);
+    if (_poolSkipReason) console.log(`[pool-first] skip (${_poolSkipReason}) → live AI`);
+    if (poolData) {
+      data = poolData;
+    } else {
+      // 🎯 STEP 2: pool miss → live AI 並列バッチ生成 (既存ロジック)
+      _renderGenProgress(out, batchSizes, tStart, totalCount);
+      // Promise.allSettled で部分失敗に耐性を持たせる。1バッチが落ちても残りを採用。
+      const settled = await Promise.allSettled(batchSizes.map((sz, i) => runBatch(i, sz)));
+      const batchResults = settled.map((s, i) => {
+        if (s.status === 'fulfilled') return s.value;
+        console.warn(`Batch ${i} failed:`, s.reason);
+        _markBatch(i, 'done');  // UIをリセット（バッジは完了表示で見た目は綺麗に）
+        return null;
+      });
+      const failedCount = settled.filter(s => s.status === 'rejected').length;
 
-    // マージ: 最初の成功バッチのタイトル/サマリーを採用、problems を結合して連番付与
-    const allProblems = [];
-    batchResults.forEach(b => { if (b && Array.isArray(b.problems)) allProblems.push(...b.problems); });
-    allProblems.forEach((p, i) => { p.number = i + 1; });
-    if (allProblems.length === 0) throw new Error('No problems generated (all batches failed)');
-    const firstOk = batchResults.find(b => b);
-    data = {
-      title: firstOk?.title || `${subject} 練習問題`,
-      subtitle: firstOk?.subtitle || '',
-      problems: allProblems,
-      summary: batchResults.map(b => b?.summary).filter(Boolean).join('\n'),
-      _partialFailure: failedCount > 0 ? { failedBatches: failedCount, totalBatches: batchSizes.length, generatedCount: allProblems.length, requestedCount: totalCount } : null,
-    };
+      // マージ: 最初の成功バッチのタイトル/サマリーを採用、problems を結合して連番付与
+      const allProblems = [];
+      batchResults.forEach(b => { if (b && Array.isArray(b.problems)) allProblems.push(...b.problems); });
+      allProblems.forEach((p, i) => { p.number = i + 1; });
+      if (allProblems.length === 0) throw new Error('No problems generated (all batches failed)');
+      const firstOk = batchResults.find(b => b);
+      data = {
+        title: firstOk?.title || `${subject} 練習問題`,
+        subtitle: firstOk?.subtitle || '',
+        problems: allProblems,
+        summary: batchResults.map(b => b?.summary).filter(Boolean).join('\n'),
+        _partialFailure: failedCount > 0 ? { failedBatches: failedCount, totalBatches: batchSizes.length, generatedCount: allProblems.length, requestedCount: totalCount } : null,
+      };
+    }
   } catch (e) {
     clearInterval(elapsedTimer);
     window.removeEventListener('beforeunload', beforeUnloadHandler);
