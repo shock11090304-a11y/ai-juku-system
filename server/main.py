@@ -6728,6 +6728,32 @@ def _call_gemini(body: dict, *, model: str = None, kind: str = "chat") -> dict:
             # 単一 text の場合は string でも list でも OK だが、list 統一で安全
             resp = chat.send_message(last_user_parts)
             text = resp.text or ""
+
+            # 🚨 2026-05-21 塾長指示「Curriculum silent fail 修正」(小川くん事例):
+            #   Gemini の finish_reason == MAX_TOKENS で truncate されているのに「正常終了」として返していた致命傷。
+            #   Anthropic 互換 stop_reason に「max_tokens」を反映 + 例外 raise で次 fallback (Sonnet 4.6) を発火。
+            _finish_reason_raw = None
+            _stop_reason = "end_turn"
+            try:
+                _cands = getattr(resp, "candidates", None) or []
+                if _cands:
+                    _fr = getattr(_cands[0], "finish_reason", None)
+                    if _fr is not None:
+                        _finish_reason_raw = _fr.name if hasattr(_fr, "name") else str(_fr)
+            except Exception:
+                pass
+            if _finish_reason_raw and 'MAX_TOKENS' in str(_finish_reason_raw).upper():
+                # truncate 検知 → 例外で fallback 経路発火 (silent fail 防止)
+                log.warning(f"[Gemini] {gm_name} truncated at MAX_TOKENS (max_tokens={max_tokens}) → raise for fallback")
+                raise RuntimeError(f"Gemini response truncated (finish_reason=MAX_TOKENS, max_tokens={max_tokens})")
+            # SAFETY / RECITATION 等の異常終了も検知 (silent fail 防止)
+            if _finish_reason_raw and str(_finish_reason_raw).upper() in ('SAFETY', 'RECITATION', 'PROHIBITED_CONTENT', 'SPII', 'BLOCKLIST'):
+                log.warning(f"[Gemini] {gm_name} non-normal finish_reason={_finish_reason_raw} → raise for fallback")
+                raise RuntimeError(f"Gemini response blocked (finish_reason={_finish_reason_raw})")
+            if _finish_reason_raw and str(_finish_reason_raw).upper() not in ('STOP', 'FINISH_REASON_STOP', '1'):
+                # STOP 以外で truncate でもないケースは log のみで通過 (例: OTHER / unknown)
+                _stop_reason = "end_turn"
+
             if idx > 0:
                 log.warning(f"[Gemini] succeeded with fallback model {gm_name} after {target_model} failed")
             # Anthropic 互換形式に詰め直す
@@ -6739,7 +6765,8 @@ def _call_gemini(body: dict, *, model: str = None, kind: str = "chat") -> dict:
                 "content": [{"type": "text", "text": text}],
                 "_actual_model": gm_name,
                 "_provider": "gemini",
-                "stop_reason": "end_turn",
+                "stop_reason": _stop_reason,
+                "_gemini_finish_reason": _finish_reason_raw,
                 "usage": {
                     "input_tokens": getattr(resp.usage_metadata, "prompt_token_count", 0) if hasattr(resp, "usage_metadata") else 0,
                     "output_tokens": getattr(resp.usage_metadata, "candidates_token_count", 0) if hasattr(resp, "usage_metadata") else 0,
@@ -28252,13 +28279,15 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
   - **絶対禁止**: 同じ問題集を 3 フェーズ全部に並べること (生徒が「進歩感がない・飽きる」と感じる)"""
 
     # 🔧 2026-05-14 塾長指摘「AI 出力 JSON 解析失敗」対応 (3 段防御):
-    # 1) max_tokens 4000 → 8000 (prompt 強化で出力長増加・truncate 防止)
+    # 1) max_tokens 4000 → 8000 → 16000 (2026-05-21・小川くん事例で再 truncate 確認・倍増)
     # 2) response_format={"type":"json_object"} で Gemini JSON 強制モード
     # 3) temperature 0.3 (default 0.7 → JSON 構造崩壊リスク 8 割減)
     # 4) Gemini 失敗時に Sonnet 4.6 で再試行 (塾長の「即解消」体験のため)
+    # 🚨 2026-05-21 小川くん事例 fix B: max_tokens 8000 → 16000 (phases 4-6 × materials/sapuri/milestones 各 2-4 件
+    #    で実質 borderline → Gemini Flash の上限 65536 内で安全マージン確保)
     body = {
         "model": "gemini-2.5-flash",
-        "max_tokens": 8000,
+        "max_tokens": 16000,
         "system": sys_prompt,
         "messages": [{"role": "user", "content": user_prompt}],
         "response_format": {"type": "json_object"},
@@ -28276,7 +28305,7 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
         try:
             anthropic_body = {
                 "model": "claude-sonnet-4-6",  # Sonnet 4.6 alias (_call_anthropic_safe が 3 段降格 + リトライ実装)
-                "max_tokens": 8000,
+                "max_tokens": 16000,
                 "system": sys_prompt,
                 "messages": [{"role": "user", "content": user_prompt}],
                 "temperature": 0.3,
@@ -28303,33 +28332,118 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
             # Stage 3: 最初の { から最後の } を抽出 (bracket counting で確実に)
             start_idx = cleaned.find('{')
             end_idx = cleaned.rfind('}')
-            if start_idx < 0 or end_idx <= start_idx:
-                # 完全に JSON でないテキスト
-                log.error(f"[Curriculum] no JSON brackets. text[:300]={cleaned[:300]!r}")
+            if start_idx < 0:
+                # 完全に JSON でないテキスト (先頭 `{` すら無い)
+                log.error(f"[Curriculum] no opening `{{`. text[:300]={cleaned[:300]!r}")
                 raise HTTPException(
                     status_code=503,
                     detail=f"AI 出力に JSON が含まれません (先頭: {cleaned[:80]})。再生成をお試しください。"
                 )
-            json_part = cleaned[start_idx:end_idx + 1]
+            # 🚨 2026-05-21 小川くん事例 fix C: end_idx <= start_idx (= 末尾 `}` 無し or 先頭 `{` 後に無し) でも
+            #    Stage 4 救済 (`}` 補完) を試行。従来は即 503 で「JSON が含まれません」誤エラーを表示していた。
+            if end_idx <= start_idx:
+                json_part = cleaned[start_idx:]
+                log.warning(f"[Curriculum] no closing `}}` (truncate 疑い)・救済試行 text_len={len(cleaned)}")
+            else:
+                json_part = cleaned[start_idx:end_idx + 1]
             try:
                 parsed = json.loads(json_part)
             except json.JSONDecodeError as parse_err2:
-                # Stage 4: truncate された JSON を救済 (末尾の `,` を削除 + `}` を補完)
+                # Stage 4: truncate された JSON を救済 (末尾の不完全要素を削除 + `}` 補完)
                 log.error(f"[Curriculum] JSON parse failed: {parse_err2}. text_len={len(cleaned)} json_part[:300]={json_part[:300]!r}")
-                # 単純な末尾補完試行 (truncate 救済)
-                # `}` の数 < `{` の数なら不足分を補う
                 opens = json_part.count('{')
                 closes = json_part.count('}')
+                arr_opens = json_part.count('[')
+                arr_closes = json_part.count(']')
                 if opens > closes:
-                    # 末尾のカンマ削除 + 不足 `}` 補完
-                    fixed = json_part.rstrip().rstrip(',') + '}' * (opens - closes)
+                    # 1) 末尾の文字列 truncate を救済: 最後の `"` まで安全に巻き戻し
+                    fixed = json_part.rstrip()
+                    # 末尾が string 途中 (例: `"start_date": "2026-05`) なら最後の string 開始 quote まで戻して切る
+                    try:
+                        # 末尾から quote 数をカウント
+                        in_string = False
+                        last_safe = len(fixed)
+                        i = 0
+                        while i < len(fixed):
+                            ch = fixed[i]
+                            if ch == '\\' and i + 1 < len(fixed):
+                                i += 2
+                                continue
+                            if ch == '"':
+                                in_string = not in_string
+                                if not in_string:
+                                    last_safe = i + 1  # 閉じ quote までを安全圏とマーク
+                            i += 1
+                        if in_string:
+                            # 末尾で string 開きっぱなし → last_safe 以降を切り捨て
+                            fixed = fixed[:last_safe]
+                    except Exception:
+                        pass
+                    # 2) 末尾の不完全要素 (カンマ + colon + 開き括弧等) を巻き戻し
+                    fixed = fixed.rstrip().rstrip(',:').rstrip()
+                    # 末尾が `,` `[` `{` 等の場合は安全な位置まで巻き戻し
+                    while fixed and fixed[-1] in ',:{[':
+                        fixed = fixed[:-1].rstrip()
+                    # 🚨 2026-05-21 小川くん事例 fix: orphan key 除去
+                    #   末尾が `, "key"` or `, "key":` or `, "key": <未完 value>` で truncate されたら
+                    #   直前の `,` まで巻き戻して、その `,` も除去 → 1 つ前の完成済要素までを採用
+                    for _trim_attempt in range(3):  # 最大 3 段巻き戻し (深い nest の orphan 対応)
+                        _last_comma = fixed.rfind(',')
+                        if _last_comma <= 0: break
+                        _tail = fixed[_last_comma + 1:].strip()
+                        # complete kv 判定 (どれかに該当しなければ orphan の疑い)
+                        _is_orphan = (
+                            (':' not in _tail)                  # `"key"` のみ・value 無し
+                            or (_tail.count('"') % 2 != 0)      # 不完全な文字列 (quote 数奇数)
+                            or (_tail.rstrip().endswith(':'))   # `"key":` で value 完全に無し
+                            or (_tail.rstrip().endswith((',', '{', '[')))  # `"key": {` 等の未完 nest
+                        )
+                        if not _is_orphan: break  # complete kv なので OK
+                        fixed = fixed[:_last_comma].rstrip()
+                    # 3+4) Stack-based proper closing (順序保証・string 内 brace を skip)
+                    #   curriculum 構造 `{phases:[{...}]}` で、深い nest 時 `]→}` ではなく `}→]→}` の
+                    #   正しい順序で閉じる。string 内 `{` `[` も walker で正確に skip (naive count bug 解消)
+                    try:
+                        _stack = []
+                        _in_s = False
+                        _j = 0
+                        while _j < len(fixed):
+                            _ch = fixed[_j]
+                            if _ch == '\\' and _j + 1 < len(fixed):
+                                _j += 2
+                                continue
+                            if _ch == '"':
+                                _in_s = not _in_s
+                            elif not _in_s:
+                                if _ch in '{[':
+                                    _stack.append(_ch)
+                                elif _ch == '}' and _stack and _stack[-1] == '{':
+                                    _stack.pop()
+                                elif _ch == ']' and _stack and _stack[-1] == '[':
+                                    _stack.pop()
+                            _j += 1
+                        # Close in reverse order of opening (proper JSON nest)
+                        _closing = ''.join(('}' if _o == '{' else ']') for _o in reversed(_stack))
+                        fixed += _closing
+                    except Exception as _stack_err:
+                        # Stack walker 失敗時は naive count にフォールバック (旧挙動)
+                        log.warning(f"[Curriculum] stack-based close failed, fallback to naive: {_stack_err}")
+                        arr_opens2 = fixed.count('[')
+                        arr_closes2 = fixed.count(']')
+                        if arr_opens2 > arr_closes2:
+                            fixed += ']' * (arr_opens2 - arr_closes2)
+                        opens2 = fixed.count('{')
+                        closes2 = fixed.count('}')
+                        if opens2 > closes2:
+                            fixed += '}' * (opens2 - closes2)
                     try:
                         parsed = json.loads(fixed)
-                        log.info(f"[Curriculum] JSON 救済成功 (補完 {opens - closes} 個の `}}`)")
-                    except json.JSONDecodeError:
+                        log.info(f"[Curriculum] JSON 救済成功 (元 {len(json_part)} → 救済後 {len(fixed)} 字)")
+                    except json.JSONDecodeError as parse_err3:
+                        log.error(f"[Curriculum] 救済失敗: {parse_err3}. fixed[-200:]={fixed[-200:]!r}")
                         raise HTTPException(
                             status_code=503,
-                            detail=f"AI 出力 JSON 解析失敗 (長さ {len(cleaned)} 字・原因: {str(parse_err2)[:80]})。再生成をお試しください。"
+                            detail=f"AI 出力 JSON 解析失敗 (長さ {len(cleaned)} 字・救済も失敗・原因: {str(parse_err2)[:60]})。再生成をお試しください。"
                         )
                 else:
                     raise HTTPException(
