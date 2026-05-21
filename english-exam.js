@@ -619,9 +619,11 @@ function updateModeBadge() {
 // ==========================================================================
 // Claude API 呼び出し (JSON出力強制)
 // ==========================================================================
-async function callClaudeJson({ system, user, model = MODEL_DEFAULT, maxTokens = 4000, images = null }) {
+async function callClaudeJson({ system, user, model = MODEL_DEFAULT, maxTokens = 4000, images = null, timeoutMs = 30000 }) {
   // 1) 生徒ログイン済みなら backend proxy 経由 (生徒ブラウザにキー不要・本番Live)
   // 2) フォールバック: localStorage に APIキーがあれば従来の直接呼び出し (CEO/管理者用)
+  // 🚨 2026-05-21 塾長指示「pool/AI 両 hang で『準備中』永遠 pending 防止」:
+  //   AbortController + 30s timeout を実装 (Anthropic API は通常 5-20s で返るので 30s は十分なマージン)
   const sessionToken = localStorage.getItem('ai_juku_session_token')
     || localStorage.getItem('ai_juku_admin_token');
   const backend = (window.location.hostname === 'localhost' && window.location.port === '8090')
@@ -644,51 +646,66 @@ async function callClaudeJson({ system, user, model = MODEL_DEFAULT, maxTokens =
     content = user;
   }
 
+  // 🛟 AbortController で hang を物理的に断つ (clearTimeout で正常完了時の memory leak 防止)
+  const _ctrl = new AbortController();
+  const _timer = setTimeout(() => _ctrl.abort(), timeoutMs);
+
   let data;
-  if (sessionToken) {
-    // Backend proxy 経由 (Anthropic key はサーバー側に存在)
-    const res = await fetch(`${backend}/api/ai/messages`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + sessionToken,
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: maxTokens,
-        system,
-        messages: [{ role: 'user', content: content }],
-      }),
-    });
-    if (!res.ok) {
-      const t = await res.text();
-      throw new Error(`Backend AI ${res.status}: ${t.slice(0, 200)}`);
+  try {
+    if (sessionToken) {
+      // Backend proxy 経由 (Anthropic key はサーバー側に存在)
+      const res = await fetch(`${backend}/api/ai/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + sessionToken,
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: maxTokens,
+          system,
+          messages: [{ role: 'user', content: content }],
+        }),
+        signal: _ctrl.signal,
+      });
+      if (!res.ok) {
+        const t = await res.text();
+        throw new Error(`Backend AI ${res.status}: ${t.slice(0, 200)}`);
+      }
+      data = await res.json();
+    } else {
+      // 直接呼び出し (ログインしていない/プレビュー用)
+      const apiKey = getApiKey();
+      if (!apiKey) throw new Error('NO_AUTH');
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: maxTokens,
+          system,
+          messages: [{ role: 'user', content: content }],
+        }),
+        signal: _ctrl.signal,
+      });
+      if (!res.ok) {
+        const t = await res.text();
+        throw new Error(`Claude API ${res.status}: ${t.slice(0, 200)}`);
+      }
+      data = await res.json();
     }
-    data = await res.json();
-  } else {
-    // 直接呼び出し (ログインしていない/プレビュー用)
-    const apiKey = getApiKey();
-    if (!apiKey) throw new Error('NO_AUTH');
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: maxTokens,
-        system,
-        messages: [{ role: 'user', content: content }],
-      }),
-    });
-    if (!res.ok) {
-      const t = await res.text();
-      throw new Error(`Claude API ${res.status}: ${t.slice(0, 200)}`);
+  } catch (e) {
+    if (e && e.name === 'AbortError') {
+      throw new Error(`AI 応答タイムアウト (${Math.round(timeoutMs / 1000)} 秒)。再試行してください。`);
     }
-    data = await res.json();
+    throw e;
+  } finally {
+    clearTimeout(_timer);
   }
 
   let text = (data.content?.[0]?.text || '').trim();
@@ -1827,7 +1844,11 @@ Speaking/Writing の場合: choices=[], answer に模範解答テキスト全文
       questionSource = isReviewMode ? 'ai_review' : 'ai_fresh';
       console.log(`[exam] 🤖 AI generated (${questionSource}): ${(payload && payload.questions || []).length} questions`);
     } catch (e) {
+      // 🚨 2026-05-21 塾長指示 fix: timeout / network error を state.lastAiError に保存 (silent fallback の罠回避)
+      //   旧: console.warn のみ → demo にすり替え → 生徒は「タイムアウトしたから再試行を」と気付けない
+      //   新: state.lastAiError に message 保存 → renderQuestions で生徒に明示エラー + 再試行 button 表示
       console.warn('[exam] AI generation failed, falling back to sample bank:', e);
+      state.lastAiError = (e && e.message) || String(e || 'AI 生成失敗');
       payload = null;
     }
   } else if (!payload && !isLiveMode()) {
@@ -1840,6 +1861,14 @@ Speaking/Writing の場合: choices=[], answer に模範解答テキスト全文
     payload = demoQuestions(exam, section, qCount, topic);
     // pool miss → AI fail → demo の場合と、no-live の場合を区別
     questionSource = (!isLiveMode() && prevSource === 'unknown') ? 'fallback_no_live' : 'fallback';
+    // lastAiError がある時は「タイムアウト/通信エラーで再試行を」と payload に明示メッセージ
+    if (state.lastAiError) {
+      payload._warning = `⚠️ AI 生成に失敗 (${state.lastAiError.slice(0, 80)})。下記は参考問題です。`;
+      payload._retryable = true;
+    }
+  } else {
+    // 成功 path で lastAiError を clear (前回失敗 → 今回成功なら badge 不要)
+    delete state.lastAiError;
   }
 
   // UI badge 用: state に源泉を記録
@@ -1853,6 +1882,7 @@ Speaking/Writing の場合: choices=[], answer に模範解答テキスト全文
     state.prompt = payload.prompt || '';
     state.figureSvg = payload.figure_svg || '';
     state.warning = payload._warning || '';  // フォールバック警告 (偽問題なし設計)
+    state.retryable = payload._retryable === true;  // 🚨 2026-05-21: AI 失敗 → demo fallback 時の retry button gate (silent fallback 防止)
     state.userAnswers = {};
     renderQuestions();
     document.getElementById('submitAnswersBtn').disabled = false;
@@ -2367,7 +2397,9 @@ function renderQuestions() {
   if (state.warning) {
     // 🔁 2026-05-16 塾長指示: 「再試行」ボタンを warning 内に併設
     //   従来 warning だけ表示で「次に何をすればいいか」が不明 → button で明示
-    const showRetry = (!state.questions || state.questions.length === 0);
+    // 🚨 2026-05-21 fix: questions が空でなくても (AI 失敗 → demo fallback 時)、_retryable=true
+    //   なら再試行ボタンを表示 (生徒が「タイムアウトしたから再試行を」と気付ける)
+    const showRetry = (!state.questions || state.questions.length === 0) || state.retryable === true;
     const retryBtn = showRetry
       ? `<button type="button" id="retryLoadBtn" style="margin-top:0.75rem; padding:0.6rem 1.2rem; background:linear-gradient(135deg,#a78bfa 0%,#6366f1 100%); border:none; color:white; font-weight:800; border-radius:8px; cursor:pointer; font-size:0.95rem;">🔁 もう一度読み込む</button>`
       : '';

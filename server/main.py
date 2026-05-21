@@ -7340,6 +7340,7 @@ EXAM_QUESTION_ROTATION = [
     # 英検 (受験者多い順: 準1級, 2級, 3級, 準2級, 1級, 4級, 5級)
     ("eiken", "r_q1", "gp1"),
     ("eiken", "r_q3", "gp1"),
+    ("eiken", "r_q4", "gp1"),       # 2026-05-21 塾長指示: 準1級 Eメール返信 (新形式 2024〜・小川くん事例 fix)
     ("eiken", "w_essay", "gp1"),
     ("eiken", "r_q1", "g2"),
     ("eiken", "r_q3", "g2"),        # 2026-05-03 復活: 2級長文 (旧形式但し import 既存データあり)
@@ -7701,6 +7702,11 @@ def _generate_exam_question(
         "w_task2": "Writing Task 2: prompt + 250語模範エッセイ",
         "r_q1": "Reading 大問1: 短文穴埋め 5問 (語彙レベル統制)",
         "r_q3": "Reading 大問3: 長文内容一致 3問",
+        # 🚨 2026-05-21 注意: r_q4 は grade ごとに別形式 (gp1=Eメール返信新形式 / g4=掲示+Eメール+長文 / g5=長文)
+        # 詳細は part_hints_eiken_grade (line ~7950) で grade-aware lookup。ここは fallback 用の neutral 説明のみ
+        "r_q4": "Reading 大問4 (英検: grade ごとに形式異なる・gp1 Eメール返信 / g4 掲示+Eメール+長文 / g5 長文)",
+        "w_email": "Writing Email 返信 (準2級 新形式 2024〜・1問 5分): 与えられた英文メールを読み、下線部の質問に 40-50 語で英語返信",
+        "w_summary": "Writing 要約 (1級・2級 新形式 2024〜・200-300語の英文を 60-70 語で要約)",
         "w_essay": "Writing エッセイ模範回答 (新形式)",
         "w_opinion": "Writing 意見論述模範回答 (新形式)",
     }
@@ -7935,7 +7941,15 @@ explanation フィールドは Markdown で **以下4セクションを必ず明
 
     else:
         exam_label = exam_hints.get(exam_id, exam_id)
-        part_label = part_hints.get(part_key, part_key)
+        # 🚨 2026-05-21 塾長指示 fix: r_q4 は grade ごとに別形式 (gp1=Eメール返信新形式 / g4=掲示+Eメール+長文 / g5=長文)
+        #   旧: part_hints.get(part_key) → grade-agnostic で混同 → g4/g5 が gp1 用 prompt で生成され pool poisoning 致命傷
+        #   新: (part_key, eiken_grade) で先に lookup → 該当なしで一般 part_key fallback
+        part_hints_eiken_grade = {
+            ("r_q4", "gp1"): "Reading 大問4: Eメール返信 (新形式 2024〜・準1級 1問 5分・5点) 与えられた英文メール (100-120語) を読み、本文中の下線部の質問 2つに 40-50 語の英語で返信する。要点抽出 + 自然な英語応答 + 適切な丁寧さ。質問は本文末尾 'Hi, ...' で始まる友人/同僚からの質問形式 (例: 'What do you think about ...?' 'Could you tell me more about ...?')。回答は同形式 (greeting + body + closing) で、質問内容に即した具体例を 2つ含む",
+            ("r_q4", "g4"): "Reading 大問4: 掲示+Eメール+長文 (4級 7問・12分・3種類の文章を読み取り) 掲示・Eメール・短い物語の 3種類の英文を順に提示し、それぞれの内容に関する4択 multiple_choice を 2-3 問ずつ。基本語彙 + 平易な文法で英検 4級レベルに統制",
+            ("r_q4", "g5"): "Reading 大問4: 長文 (5級 5問・8分・物語/掲示/Eメール) 簡単な物語・掲示・Eメールいずれかの 60-100語の英文 + 4択 multiple_choice 5問。中学初級レベルの語彙・文法で 5級基準に統制",
+        }
+        part_label = part_hints_eiken_grade.get((part_key, eiken_grade)) or part_hints.get(part_key, part_key)
 
         system = f"""あなたは {exam_label} の試験対策専門家です。公式の出題形式に完全準拠した問題を生成してください。
 
@@ -11308,6 +11322,10 @@ def _build_ai_team_author_prompt(exam_id: str, exam_label: str, part_key: str, p
     既存 _generate_exam_question の system prompt の知見を流用 (コアイメージ×文構造分析)"""
     topic_clause = f"- 単元固定: 「{topic_hint}」が問題の核心となる出題のみ" if topic_hint else "- 単元: 出題範囲内で多様性確保"
     year_clause = f"- 年度準拠: {year} 年度の出題傾向を強く反映" if year else "- 年度: 近年トレンド優先"
+    # 🚨 2026-05-21 fix: f-string expression part cannot include a backslash (Python <3.12)
+    #   旧: {("\"" + eiken_grade + "\"") if eiken_grade else "null"} → Python 3.11 で SyntaxError
+    #   新: 事前に変数化することで backslash を expression 外に追い出す (forward-compat)
+    eiken_grade_json = f'"{eiken_grade}"' if eiken_grade else "null"
     return f"""あなたは {exam_label} の問題作成専門家です。直前に取得した過去問検索結果を踏まえ、新規 **類題** を {count} 問作成してください。
 
 【Phase 0 検索結果 (ChatGPT Project からの引用付き出力)】
@@ -11350,7 +11368,7 @@ explanation フィールドは Markdown で **以下4セクションを必ず明
     {{
       "exam_id": "{exam_id}",
       "part_key": "{part_key}",
-      "eiken_grade": {("\"" + eiken_grade + "\"") if eiken_grade else "null"},
+      "eiken_grade": {eiken_grade_json},
       "question_data": {{
         "passage": "...",
         "stem": "...",
