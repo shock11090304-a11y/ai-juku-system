@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Instagram CTA — トリリオン AIコーチング</title>
+<script src="cache-purge.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', 'Noto Sans JP', -apple-system, 'Hiragino Sans', sans-serif;
+    background: #0a0a1a;
+    color: #f1f5f9;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  /* Instagram 縦 1080x1350 — 0.8 倍率で view fit */
+  .cta-slide {
+    width: 1080px;
+    height: 1350px;
+    background: linear-gradient(180deg, #0f0f23 0%, #1a1a3e 50%, #2d1b4e 100%);
+    position: relative;
+    overflow: hidden;
+    border-radius: 24px;
+    padding: 80px 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .glow-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.5;
+    z-index: 0;
+  }
+  .orb-1 { width: 500px; height: 500px; background: #6366f1; top: -150px; right: -150px; }
+  .orb-2 { width: 400px; height: 400px; background: #ec4899; bottom: -100px; left: -100px; }
+  .orb-3 { width: 300px; height: 300px; background: #fbbf24; top: 40%; left: 60%; opacity: 0.3; }
+
+  .top { position: relative; z-index: 2; }
+  .badge {
+    display: inline-block;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #fbbf24, #f97316);
+    color: #fff;
+    font-weight: 900;
+    font-size: 24px;
+    border-radius: 100px;
+    letter-spacing: 0.08em;
+    margin-bottom: 32px;
+    box-shadow: 0 8px 24px rgba(251, 191, 36, 0.4);
+  }
+  h1 {
+    font-size: 96px;
+    font-weight: 900;
+    line-height: 1.05;
+    margin: 0 0 20px;
+    background: linear-gradient(135deg, #a78bfa 0%, #f0abfc 50%, #fbbf24 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.02em;
+  }
+  .sub {
+    font-size: 36px;
+    color: #c7d2fe;
+    line-height: 1.4;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .accent {
+    color: #fbbf24;
+    font-weight: 900;
+  }
+
+  .center {
+    position: relative; z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+  .qr-box {
+    background: #fff;
+    padding: 24px;
+    border-radius: 24px;
+    box-shadow: 0 16px 48px rgba(99, 102, 241, 0.4);
+  }
+  .qr-box img { width: 360px; height: 360px; display: block; }
+  .qr-caption {
+    font-size: 28px;
+    color: #e0e7ff;
+    text-align: center;
+    font-weight: 700;
+    line-height: 1.5;
+  }
+  .qr-caption .url-text {
+    display: block;
+    margin-top: 12px;
+    font-size: 32px;
+    color: #fbbf24;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+  }
+
+  .bottom { position: relative; z-index: 2; }
+  .features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+  .feat {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(167, 139, 250, 0.3);
+    border-radius: 16px;
+    padding: 20px 16px;
+    text-align: center;
+  }
+  .feat-icon { font-size: 48px; margin-bottom: 8px; }
+  .feat-label { font-size: 22px; font-weight: 800; color: #fff; line-height: 1.3; }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 20px;
+    border-top: 2px solid rgba(167, 139, 250, 0.25);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand-logo { font-size: 56px; }
+  .brand-name {
+    font-size: 32px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 0.02em;
+  }
+  .handle {
+    font-size: 26px;
+    color: #a78bfa;
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+  <div class="cta-slide" id="ctaSlide">
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="glow-orb orb-3"></div>
+
+    <div class="top">
+      <div class="badge">⚡ 今すぐ無料体験</div>
+      <h1>5 科目<br>AI コーチング</h1>
+      <p class="sub">国語・英語・理科・社会・数学</p>
+      <p class="sub"><span class="accent">24 時間</span> いつでも AI が個別指導</p>
+    </div>
+
+    <div class="center">
+      <div class="qr-box">
+        <img id="qrImg" alt="QR Code" src="">
+      </div>
+      <div class="qr-caption">
+        スマホで QR を読み取り
+        <span class="url-text">trillion-ai-juku.com</span>
+      </div>
+    </div>
+
+    <div class="bottom">
+      <div class="features">
+        <div class="feat"><div class="feat-icon">⚡</div><div class="feat-label">クイック<br>スタート</div></div>
+        <div class="feat"><div class="feat-icon">📝</div><div class="feat-label">定期テスト<br>勉強モード</div></div>
+        <div class="feat"><div class="feat-icon">📷</div><div class="feat-label">写真 → 3 AI<br>並列解答</div></div>
+      </div>
+      <div class="footer">
+        <div class="brand">
+          <span class="brand-logo">🎓</span>
+          <span class="brand-name">トリリオン AI コーチング</span>
+        </div>
+        <div class="handle">@trillion_ai_juku</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // QR コード生成 (cdn から qrcode.js loader 経由・load 失敗時は textual URL fallback)
+    (function generateQR() {
+      const URL_TEXT = 'https://trillion-ai-juku.com';
+      const img = document.getElementById('qrImg');
+      // Google Chart API は廃止予定だが、Image-based fallback として qrserver.com を使用
+      // 360x360 サイズで高解像度 QR を生成
+      img.src = `https://api.qrserver.com/v1/create-qr-code/?size=360x360&data=${encodeURIComponent(URL_TEXT)}&margin=10&color=0a0a1a&bgcolor=ffffff`;
+      img.onerror = () => {
+        // フォールバック: data URI placeholder
+        img.style.display = 'none';
+        img.parentElement.innerHTML = '<div style="width:360px;height:360px;background:#1e1b4b;color:#fff;font-size:32px;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;font-weight:800;">QR 生成失敗<br>URL を直接入力</div>';
+      };
+    })();
+  </script>
+</body>
+</html>
