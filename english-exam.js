@@ -3761,7 +3761,54 @@ showResult = function(exam, section, result) {
   renderHistorySection();
   // ヒートマップも自動更新
   if (typeof renderHeatmap === 'function') renderHeatmap();
+  // 📝 2026-05-22 塾長指示: question_attempts に DB 保存 (弱点プリント基盤)
+  // localStorage に加えてサーバ側にも記録し、_run_weakness_aggregation で集計
+  try { _postQuestionAttempt(exam, section, result); } catch (e) { console.warn('postQuestionAttempt failed (non-fatal):', e); }
 };
+
+// 📝 2026-05-22 弱点プリント基盤: 解答結果を /api/question-attempts に POST
+async function _postQuestionAttempt(exam, section, result) {
+  // ログインしている生徒のみ送信 (auth token なしの体験中は localStorage のみ)
+  // ✅ 2026-05-22 fix: 既存 key 'ai_juku_session_token' に統一 (mypage.html L1102 と同一)
+  const token = localStorage.getItem('ai_juku_session_token') || null;
+  if (!token) return;
+  // backend 用に exam_id / part_key を mapping
+  const exam_id = (typeof _getBackendExamParams === 'function') ? (_getBackendExamParams(state.examId)?.exam || state.examId) : state.examId;
+  const part_key = state.sectionKey || section.key || null;
+  // 正解判定: overallScore が scoreMax の 70% 以上で is_correct=1 (簡易判定・部分点も score_got で記録)
+  const score_got = Math.max(0, Math.round(result.sectionScore ?? result.overallScore ?? 0));
+  const score_max = Math.max(score_got, Math.round(section.scoreMax ?? result.sectionScoreMax ?? 100));
+  const is_correct = (score_max > 0 && score_got / score_max >= 0.7) ? 1 : 0;
+  const body = {
+    source: 'practice',
+    exam_id,
+    part_key,
+    subject: null,  // backend で _infer_subject_from_pool が推定
+    topic: state.eikenGradeName || null,
+    is_correct,
+    score_got,
+    score_max,
+    metadata: {
+      examId: state.examId,
+      sectionKey: state.sectionKey,
+      grade: state.eikenGrade,
+      gradeName: state.eikenGradeName,
+      cefr: result.cefr,
+    }
+  };
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 5000);
+  try {
+    await fetch('/api/question-attempts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(body),
+      signal: ctrl.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function renderHistorySection() {
   let host = document.getElementById('historySection');

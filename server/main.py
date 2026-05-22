@@ -635,6 +635,44 @@ def init_db():
     );
     CREATE INDEX IF NOT EXISTS idx_weakness_student_count ON student_weakness(student_id, question_count DESC);
     CREATE INDEX IF NOT EXISTS idx_weakness_aggregated ON student_weakness(aggregated_at DESC);
+    -- 📝 2026-05-22 塾長指示: 弱点プリント週次配信のため解答履歴を統合的に DB 保存
+    -- source で起源を区別し、_run_weakness_aggregation で UNION 集計するための共通テーブル
+    CREATE TABLE IF NOT EXISTS question_attempts (
+        id {pk},
+        student_id INTEGER NOT NULL,
+        source TEXT NOT NULL,                -- 'mock_exam' / 'practice' / 'essay_grade' / 'ai_tutor'
+        exam_question_id INTEGER,            -- exam_questions.id (NULL if not from pool)
+        subject TEXT,                        -- e.g. 'math', 'english_reading', 'kobun'
+        topic TEXT,                          -- e.g. '関係代名詞', '微積分'
+        is_correct INTEGER,                  -- 0/1 (NULL for essay/partial)
+        score_got INTEGER,                   -- 部分点
+        score_max INTEGER,                   -- 満点
+        elapsed_ms INTEGER,
+        metadata TEXT,                       -- JSON: section_name, sub_id, etc
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_qa_student_created ON question_attempts(student_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_qa_student_subject_topic ON question_attempts(student_id, subject, topic);
+    CREATE INDEX IF NOT EXISTS idx_qa_source ON question_attempts(source, created_at DESC);
+    -- 📅 2026-05-22 塾長指示: 週次弱点プリント生成履歴
+    -- 毎週日曜朝に生成され、生徒は mypage から閲覧 + 印刷可能
+    CREATE TABLE IF NOT EXISTS worksheet_archives (
+        id {pk},
+        student_id INTEGER NOT NULL,
+        week_start_date TEXT NOT NULL,       -- ISO date (e.g. '2026-05-25')
+        subject_topics TEXT,                 -- JSON: 弱点TOP3の subject+topic 一覧
+        questions_json TEXT NOT NULL,        -- 生成された問題セット (5-15 問)
+        question_count INTEGER NOT NULL DEFAULT 0,
+        attempted_at TIMESTAMP,              -- 生徒が解答した日時 (NULL = 未着手)
+        score_total INTEGER,                 -- 解答後の得点
+        score_max INTEGER,
+        delivered_via TEXT,                  -- 'email' / 'line' / 'both'
+        delivered_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (student_id, week_start_date)
+    );
+    CREATE INDEX IF NOT EXISTS idx_wa_student_week ON worksheet_archives(student_id, week_start_date DESC);
+    CREATE INDEX IF NOT EXISTS idx_wa_created ON worksheet_archives(created_at DESC);
     -- 💸 Anthropic credit 使用量ログ (2026-05-13 塾長指示: 残量予測バナー)
     -- 各 Anthropic API call の token と推定 cost を記録し、CEO ダッシュで残日数予測表示
     CREATE TABLE IF NOT EXISTS anthropic_usage_log (
@@ -1512,6 +1550,14 @@ async def _start_background_tasks():
         task = asyncio.create_task(_weakness_aggregation_scheduler())
         _BACKGROUND_TASKS.append(task)
         log.info("[Startup] Weakness aggregation scheduler launched (target JST 4:00 daily)")
+
+    # 📅 週次弱点プリント scheduler (毎週日曜 JST 5:00): 全生徒の弱点 TOP3 から問題選別 → worksheet_archives 保存 + メール/LINE 通知
+    # 塾長指示 2026-05-22「データを蓄積して 1 週間に 1 度でも弱点プリントを出題」の実装。
+    # AI 生成は使わず既存 pool から選別 ($0)・notifications dedup 付き。
+    if CRON_SECRET:
+        task = asyncio.create_task(_weekly_worksheet_scheduler())
+        _BACKGROUND_TASKS.append(task)
+        log.info("[Startup] Weekly worksheet scheduler launched (target Sun JST 5:00)")
 
     # 🗄️ R2 daily DB backup scheduler (毎日 JST R2_BACKUP_HOUR_JST=3:00):
     # 2026-05-20 Railway 全体障害で「DB と app の同居 = DB も道連れ」教訓から実装。
@@ -2997,6 +3043,324 @@ async def _weekly_reports_scheduler():
             await asyncio.sleep(3600)
 
 
+async def _weekly_worksheet_scheduler():
+    """📅 2026-05-22 塾長指示: 週次弱点プリント自動配信 scheduler。
+    毎週日曜 JST 05:00 に全生徒の弱点 TOP3 から問題を選別し worksheet_archives へ保存 + メール/LINE 通知。
+    AI 生成は使わず pool から選別 ($0 / 既存問題プール 1500+ 問活用)。multi-replica dedup 付き。"""
+    JST = timezone(timedelta(hours=9))
+    TARGET_HOUR_JST = 5
+    TARGET_WEEKDAY = 6  # Sunday
+    log.info(f"[WeeklyWorksheet] Scheduler started, target Sun JST {TARGET_HOUR_JST}:00")
+
+    while True:
+        try:
+            now_jst = datetime.now(JST)
+            days_ahead = (TARGET_WEEKDAY - now_jst.weekday()) % 7
+            target = now_jst.replace(hour=TARGET_HOUR_JST, minute=0, second=0, microsecond=0)
+            if days_ahead == 0 and target <= now_jst:
+                days_ahead = 7
+            target += timedelta(days=days_ahead)
+            sleep_secs = (target - now_jst).total_seconds()
+            log.info(f"[WeeklyWorksheet] Next run at {target.isoformat()} (in {int(sleep_secs)}s)")
+            await asyncio.sleep(sleep_secs)
+            if _check_scheduler_ran_today_jst("weekly_worksheet_run"):
+                log.info("[WeeklyWorksheet] Skipped (already ran today by another replica)")
+                continue
+            try:
+                result = _run_weekly_worksheet_generation()
+                log.info(f"[WeeklyWorksheet] result: {result}")
+                _record_scheduler_run("weekly_worksheet_run", result)
+            except Exception as e:
+                log.error(f"[WeeklyWorksheet] failed: {type(e).__name__}: {e}", exc_info=True)
+                _record_scheduler_run("weekly_worksheet_run", {"error": f"{type(e).__name__}: {e}"})
+        except asyncio.CancelledError:
+            log.info("[WeeklyWorksheet] Scheduler cancelled")
+            raise
+        except Exception as e:
+            log.error(f"[WeeklyWorksheet] Scheduler loop error: {e}", exc_info=True)
+            await asyncio.sleep(3600)
+
+
+def _run_weekly_worksheet_generation() -> dict:
+    """📅 全生徒の弱点プリント生成・保存。
+    各生徒の student_weakness TOP3 (count desc + low score) から bank endpoint で 3 問ずつ抽出、
+    worksheet_archives に保存 + メール/LINE 通知。
+    返却: {students_processed, worksheets_created, notifications_sent, errors}
+    """
+    conn = db()
+    c = conn.cursor()
+    try:
+        # 今週月曜の日付 (ISO date) を week_start_date として記録
+        JST = timezone(timedelta(hours=9))
+        now_jst = datetime.now(JST)
+        # 今日の日曜 (= 翌週月曜から始まる週の前日) 基準
+        week_start = (now_jst + timedelta(days=1)).date().isoformat()  # 月曜日付
+
+        # 全アクティブ生徒 (paid または trial・最終ログイン 60 日以内)
+        # Postgres / SQLite 両対応: cutoff を Python 側で計算してパラメータ化
+        login_cutoff = (datetime.now(timezone.utc) - timedelta(days=60)).isoformat()
+        c.execute(
+            "SELECT id, name, email, line_user_id FROM students "
+            "WHERE status IN ('paid', 'trial') "
+            "AND (last_login_at IS NULL OR last_login_at >= ?) "
+            "LIMIT 500",
+            (login_cutoff,)
+        )
+        students = c.fetchall() or []
+
+        worksheets_created = 0
+        notifications_sent = 0
+        errors = []
+
+        for st in students:
+            try:
+                sid = st["id"] if hasattr(st, "keys") else st[0]
+                sname = (st["name"] if hasattr(st, "keys") else st[1]) or ""
+                semail = (st["email"] if hasattr(st, "keys") else st[2]) or ""
+                sline = (st["line_user_id"] if hasattr(st, "keys") else st[3]) or ""
+
+                # 既に今週分が生成済か (dedup)
+                c.execute("SELECT id FROM worksheet_archives WHERE student_id=? AND week_start_date=?", (sid, week_start))
+                if c.fetchone():
+                    continue
+
+                # 弱点 TOP3 取得 (count desc, score asc - 低スコアほど弱点)
+                c.execute(
+                    "SELECT subject, topic, question_count, avg_confidence_score "
+                    "FROM student_weakness "
+                    "WHERE student_id=? AND question_count >= 1 "
+                    "ORDER BY question_count DESC, COALESCE(avg_confidence_score, 0.5) ASC "
+                    "LIMIT 3",
+                    (sid,)
+                )
+                weaknesses = c.fetchall() or []
+                if not weaknesses:
+                    continue  # 弱点データが無ければスキップ
+
+                # 各弱点について pool から 3 問 fetch
+                all_problems = []
+                subject_topics = []
+                for w in weaknesses:
+                    wsubj = w["subject"] if hasattr(w, "keys") else w[0]
+                    wtopic = (w["topic"] if hasattr(w, "keys") else w[1]) or None
+                    pool_keys = _WEAKNESS_SUBJECT_TO_POOL.get((wsubj or "").lower(), [])
+                    if not pool_keys:
+                        continue
+                    subject_topics.append({"subject": wsubj, "topic": wtopic})
+                    for (pool_exam, pool_part) in pool_keys[:2]:  # 最大 2 pool まで試す
+                        try:
+                            params = ["exam_id=?"]
+                            args = [pool_exam]
+                            if pool_part:
+                                params.append("part_key=?")
+                                args.append(pool_part)
+                            sql = f"SELECT id, exam_id, part_key, eiken_grade, question_data FROM exam_questions WHERE {' AND '.join(params)} ORDER BY RANDOM() LIMIT 3"
+                            c.execute(sql, tuple(args))
+                            rows = c.fetchall() or []
+                            for r in rows:
+                                qd_raw = r["question_data"] if hasattr(r, "keys") else r[4]
+                                try:
+                                    qd = json.loads(qd_raw) if isinstance(qd_raw, str) else (qd_raw or {})
+                                except Exception:
+                                    qd = {}
+                                all_problems.append({
+                                    "question_id": r["id"] if hasattr(r, "keys") else r[0],
+                                    "exam_id": r["exam_id"] if hasattr(r, "keys") else r[1],
+                                    "part_key": r["part_key"] if hasattr(r, "keys") else r[2],
+                                    "eiken_grade": r["eiken_grade"] if hasattr(r, "keys") else r[3],
+                                    "weakness_subject": wsubj,
+                                    "weakness_topic": wtopic,
+                                    "question_data": qd,
+                                })
+                            if rows:
+                                break  # 取得できたら次の pool は不要
+                        except Exception as e:
+                            log.warning(f"[WeeklyWorksheet] pool fetch failed for sid={sid} subj={wsubj}: {e}")
+
+                if not all_problems:
+                    continue
+
+                # worksheet_archives に保存
+                c.execute(
+                    "INSERT INTO worksheet_archives (student_id, week_start_date, subject_topics, questions_json, question_count, delivered_via, delivered_at, created_at) "
+                    "VALUES (?,?,?,?,?,?,?,?) RETURNING id",
+                    (
+                        sid,
+                        week_start,
+                        json.dumps(subject_topics, ensure_ascii=False),
+                        json.dumps(all_problems, ensure_ascii=False),
+                        len(all_problems),
+                        None,  # 後で UPDATE
+                        None,
+                        datetime.now(timezone.utc).isoformat(),
+                    )
+                )
+                row = c.fetchone()
+                wid = None
+                if row:
+                    try:
+                        wid = row["id"] if hasattr(row, "keys") else row[0]
+                    except (KeyError, IndexError, TypeError):
+                        wid = row[0] if row else None
+                worksheets_created += 1
+
+                # メール通知 (Resend 経由)・LINE 通知 (line_user_id があれば)
+                delivered_via = []
+                # subject 概要文字列 (LINE/メール本文用)
+                subject_summary = ', '.join(((s.get('subject') or '') for s in subject_topics)) or '弱点 TOP3'
+                try:
+                    if semail and ("@" in semail and not semail.endswith("@synthetic-monitor.local")):
+                        # 既存 _send_weekly_report_email パターンに合わせて simple HTML を組み立て
+                        subj = "📅 今週の弱点プリント (AI が選んだ 9-15 問) が届きました"
+                        body_html = (
+                            f"<p>{sname or 'こんにちは'} さん、</p>"
+                            f"<p>今週の弱点プリントを準備しました。マイページから確認できます:</p>"
+                            f"<p><a href='{BASE_URL}/mypage.html?focus=worksheet'>📅 今週の弱点プリントを開く</a></p>"
+                            f"<p>苦手分野 ({subject_summary}) から計 {len(all_problems)} 問を抽出しました。</p>"
+                        )
+                        # 既存 _send_monitor_email 関数を流用 (subject + body_html + to_email)
+                        if "_send_monitor_email" in globals():
+                            mail_resp = _send_monitor_email(subj, body_html, to_email=semail)
+                            # _send_monitor_email 戻り値は {"sent": True/False} (他 callsite と整合)
+                            if isinstance(mail_resp, dict) and mail_resp.get("sent"):
+                                delivered_via.append("email")
+                                notifications_sent += 1
+                except Exception as e:
+                    log.warning(f"[WeeklyWorksheet] email failed for sid={sid}: {e}")
+
+                try:
+                    if sline and isinstance(sid, int):
+                        # _do_line_push(student_id:int, template:str, params:dict) の正規 signature
+                        params = {
+                            "name": sname,
+                            "subject_summary": subject_summary,
+                            "question_count": len(all_problems),
+                            "url": BASE_URL,
+                        }
+                        line_resp = _do_line_push(int(sid), "weekly_worksheet", params)
+                        if isinstance(line_resp, dict) and line_resp.get("ok"):
+                            delivered_via.append("line")
+                except Exception as e:
+                    log.warning(f"[WeeklyWorksheet] line failed for sid={sid}: {e}")
+
+                if delivered_via and wid:
+                    c.execute(
+                        "UPDATE worksheet_archives SET delivered_via=?, delivered_at=? WHERE id=?",
+                        (",".join(delivered_via), datetime.now(timezone.utc).isoformat(), wid)
+                    )
+            except Exception as e:
+                errors.append(f"sid={sid}: {type(e).__name__}: {e}")
+                log.warning(f"[WeeklyWorksheet] student loop error: {e}")
+
+        conn.commit()
+        return {
+            "students_processed": len(students),
+            "worksheets_created": worksheets_created,
+            "notifications_sent": notifications_sent,
+            "errors": errors[:10],  # 最初の 10 件のみ
+            "week_start_date": week_start,
+        }
+    finally:
+        conn.close()
+
+
+@app.get("/api/student/worksheet/this-week")
+def student_worksheet_this_week(authorization: Optional[str] = Header(None)):
+    """📅 mypage 表示用: 今週の弱点プリントを取得 (生徒自身)。
+    返却: {ok, worksheet: {id, week_start_date, subject_topics, questions, question_count, attempted_at, score_total, score_max}}
+    """
+    student = _get_current_student(authorization) if "_get_current_student" in globals() else None
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    sid = student["id"]
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(
+            "SELECT id, week_start_date, subject_topics, questions_json, question_count, attempted_at, score_total, score_max, delivered_via, created_at "
+            "FROM worksheet_archives WHERE student_id=? ORDER BY week_start_date DESC LIMIT 1",
+            (sid,)
+        )
+        row = c.fetchone()
+        if not row:
+            return {"ok": True, "worksheet": None}
+        def _g(key, idx):
+            return row[key] if hasattr(row, "keys") and key in row.keys() else row[idx]
+        ws = {
+            "id": _g("id", 0),
+            "week_start_date": _g("week_start_date", 1),
+            "subject_topics": json.loads(_g("subject_topics", 2) or "[]") if _g("subject_topics", 2) else [],
+            "questions": json.loads(_g("questions_json", 3) or "[]"),
+            "question_count": _g("question_count", 4),
+            "attempted_at": _g("attempted_at", 5),
+            "score_total": _g("score_total", 6),
+            "score_max": _g("score_max", 7),
+            "delivered_via": _g("delivered_via", 8),
+            "created_at": _g("created_at", 9),
+        }
+        return {"ok": True, "worksheet": ws}
+    finally:
+        conn.close()
+
+
+@app.get("/api/student/worksheet/history")
+def student_worksheet_history(authorization: Optional[str] = Header(None), limit: int = 12):
+    """📅 mypage 履歴表示: 過去の弱点プリント一覧 (生徒自身)。"""
+    student = _get_current_student(authorization) if "_get_current_student" in globals() else None
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    sid = student["id"]
+    limit = max(1, min(50, int(limit or 12)))
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(
+            "SELECT id, week_start_date, subject_topics, question_count, attempted_at, score_total, score_max, created_at "
+            "FROM worksheet_archives WHERE student_id=? ORDER BY week_start_date DESC LIMIT ?",
+            (sid, limit)
+        )
+        rows = c.fetchall() or []
+        out = []
+        for row in rows:
+            def _g(key, idx):
+                return row[key] if hasattr(row, "keys") and key in row.keys() else row[idx]
+            out.append({
+                "id": _g("id", 0),
+                "week_start_date": _g("week_start_date", 1),
+                "subject_topics": json.loads(_g("subject_topics", 2) or "[]") if _g("subject_topics", 2) else [],
+                "question_count": _g("question_count", 3),
+                "attempted_at": _g("attempted_at", 4),
+                "score_total": _g("score_total", 5),
+                "score_max": _g("score_max", 6),
+                "created_at": _g("created_at", 7),
+            })
+        return {"ok": True, "history": out}
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/worksheet/run-weekly-now")
+def admin_run_weekly_worksheet_now(authorization: Optional[str] = Header(None),
+                                    x_cron_secret: Optional[str] = Header(None)):
+    """🧪 週次弱点プリント生成を即時実行 (CEO ダッシュ「今すぐ生成」/ 動作確認用)
+    通常は毎週日曜 JST 5:00 だが、手動でテスト時に使用。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    try:
+        result = _run_weekly_worksheet_generation()
+        return {"ok": True, **result}
+    except Exception as e:
+        log.error(f"[WeeklyWorksheet] manual run failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 async def _anthropic_credit_monitor_scheduler():
     """💸 Anthropic credit_low 監視 scheduler (2026-05-13 塾長指示)
     毎日 JST 8:00 に credit-status を確認 → critical/warning なら塾長メール通知。
@@ -3146,17 +3510,23 @@ async def _weakness_aggregation_scheduler():
 
 
 def _run_weakness_aggregation() -> dict:
-    """ai_tutor_solve_log (過去 30 日) を student × subject × topic で集計し student_weakness を更新。
+    """🎯 2026-05-22 塾長指示で UNION 拡張: ai_tutor_solve_log + question_attempts (mock_exam/practice/essay_grade)
+    の 2 系統 (過去 30 日) を student × subject × topic で集計し student_weakness を更新。
     既存レコードは UPSERT (UNIQUE 制約に依拠)。
-    confidence score: high=1.0 / medium=0.6 / low=0.2 → 平均値が低いほど「正確には解けていない弱点」。
-    返却: {students_processed, weaknesses_inserted, weaknesses_updated}
+    confidence/正誤 score: high=1.0 / medium=0.6 / low=0.2 / 正解=1.0 / 不正解=0.0 → 低いほど弱点。
+    返却: {students_processed, weaknesses_inserted, weaknesses_updated, rows_examined}
     """
     from datetime import timedelta as _td
+    from collections import defaultdict
     conn = db()
     c = conn.cursor()
     try:
-        # 過去 30 日の写真解答ログを集計
         cutoff = datetime.utcnow() - _td(days=30)
+        agg: dict = defaultdict(lambda: {"count": 0, "score_sum": 0.0, "score_n": 0, "last": None})
+        conf_score_map = {"high": 1.0, "medium": 0.6, "low": 0.2}
+        rows_examined = 0
+
+        # === 系統 1: 過去 30 日の ai_tutor_solve_log (写真質問) ===
         c.execute(
             "SELECT student_id, subject_guess, topic_guess, confidence, created_at "
             "FROM ai_tutor_solve_log "
@@ -3165,16 +3535,9 @@ def _run_weakness_aggregation() -> dict:
             "AND created_at >= ?",
             (cutoff,),
         )
-        rows = c.fetchall()
-        if not rows:
-            return {"students_processed": 0, "weaknesses_inserted": 0, "weaknesses_updated": 0, "note": "no logs in last 30 days"}
-
-        # 集計: (student_id, subject, topic) → count + avg_score + last_seen
-        from collections import defaultdict
-        agg: dict = defaultdict(lambda: {"count": 0, "score_sum": 0.0, "score_n": 0, "last": None})
-        conf_score_map = {"high": 1.0, "medium": 0.6, "low": 0.2}
-        for r in rows:
-            # row tuple / dict_row 両対応
+        tutor_rows = c.fetchall()
+        rows_examined += len(tutor_rows)
+        for r in tutor_rows:
             try:
                 sid = r["student_id"]; subj = r["subject_guess"]; topic = r["topic_guess"]
                 conf = r["confidence"]; created = r["created_at"]
@@ -3192,9 +3555,47 @@ def _run_weakness_aggregation() -> dict:
             if created and (agg[key]["last"] is None or str(created) > str(agg[key]["last"])):
                 agg[key]["last"] = created
 
+        # === 系統 2: 過去 30 日の question_attempts (mock_exam / practice / essay_grade) ===
+        c.execute(
+            "SELECT student_id, subject, topic, is_correct, score_got, score_max, created_at "
+            "FROM question_attempts "
+            "WHERE student_id IS NOT NULL AND student_id > 0 "
+            "AND subject IS NOT NULL "
+            "AND created_at >= ?",
+            (cutoff,),
+        )
+        qa_rows = c.fetchall()
+        rows_examined += len(qa_rows)
+        for r in qa_rows:
+            try:
+                sid = r["student_id"]; subj = r["subject"]; topic = r["topic"]
+                ic = r["is_correct"]; sg = r["score_got"]; sm = r["score_max"]; created = r["created_at"]
+            except (TypeError, KeyError, IndexError):
+                sid, subj, topic, ic, sg, sm, created = r[0], r[1], r[2], r[3], r[4], r[5], r[6]
+            if not sid or not subj:
+                continue
+            topic_norm = (topic or "")[:120]
+            key = (int(sid), str(subj).strip().lower(), topic_norm)
+            agg[key]["count"] += 1
+            # score 推定: is_correct 優先 → score_got/score_max
+            sc = None
+            if ic is not None:
+                sc = 1.0 if int(ic) == 1 else 0.0
+            elif sg is not None and sm is not None and int(sm) > 0:
+                sc = max(0.0, min(1.0, float(sg) / float(sm)))
+            if sc is not None:
+                agg[key]["score_sum"] += sc
+                agg[key]["score_n"] += 1
+            if created and (agg[key]["last"] is None or str(created) > str(agg[key]["last"])):
+                agg[key]["last"] = created
+
+        if not agg:
+            return {"students_processed": 0, "weaknesses_inserted": 0, "weaknesses_updated": 0, "rows_examined": rows_examined, "note": "no logs in last 30 days"}
+
         # UPSERT 風処理: 既存削除して INSERT (UNIQUE 制約で簡潔に)
         # 過去 30 日に登場した (student, subject, topic) のみ更新・他は古いまま残す
         students_processed = len({k[0] for k in agg.keys()})
+        rows = list(agg.keys())  # backward-compatible for rows_examined fallback
         inserted = 0; updated = 0
         for (sid, subj, topic), v in agg.items():
             avg_score = (v["score_sum"] / v["score_n"]) if v["score_n"] > 0 else None
@@ -3224,7 +3625,7 @@ def _run_weakness_aggregation() -> dict:
             "students_processed": students_processed,
             "weaknesses_inserted": inserted,
             "weaknesses_updated": updated,
-            "rows_examined": len(rows),
+            "rows_examined": rows_examined,
         }
     finally:
         conn.close()
@@ -3244,6 +3645,53 @@ _WEAKNESS_SUBJECT_TO_POOL = {
                ("daigaku", "chiri"), ("daigaku", "kouminka"),
                ("daigaku", "r_long")],  # 2026-05-14 社会専門 pool 整備済 (4 科目) + r_long フォールバック
 }
+
+# 📝 2026-05-22 塾長指示: (exam_id, part_key) → subject の逆引きマッピング
+# mock_exam_submit と /api/question-attempts で subject 推定に使用
+_WEAKNESS_POOL_TO_SUBJECT = {
+    # 数学
+    ("rikei", "math_1a"): "math", ("rikei", "math_2b"): "math",
+    ("rikei", "math_q1"): "math", ("rikei", "math_q2"): "math", ("rikei", "math_q3"): "math",
+    ("rikei", "math_basic"): "math",
+    # 物理
+    ("rikei", "phys_basic"): "physics",
+    ("rikei", "phys_q1"): "physics", ("rikei", "phys_q2"): "physics", ("rikei", "phys_q3"): "physics",
+    ("rikei", "phys_basic_q"): "physics",
+    # 化学
+    ("rikei", "chem_basic"): "chemistry",
+    ("rikei", "chem_q1"): "chemistry", ("rikei", "chem_q2"): "chemistry", ("rikei", "chem_q3"): "chemistry",
+    ("rikei", "chem_basic_q"): "chemistry",
+    # 生物
+    ("rikei", "bio_basic"): "biology",
+    ("rikei", "bio_q1"): "biology", ("rikei", "bio_basic_q"): "biology",
+    # 地学
+    ("rikei", "earth_basic"): "earth",
+    # 英語 (daigaku / eiken)
+    ("daigaku", "r_long"): "english", ("daigaku", "r_short"): "english",
+    ("daigaku", "r_summary"): "english", ("daigaku", "r_translation"): "english",
+    ("daigaku", "r_grammar"): "english", ("daigaku", "g_grammar"): "english",
+    ("daigaku", "w_essay"): "english", ("daigaku", "w_freeform"): "english",
+    ("daigaku", "l_listening"): "english", ("daigaku", "l_part1_2"): "english",
+    ("daigaku", "l_part3_4"): "english", ("daigaku", "l_part5_6"): "english",
+    # 国語 (古文・漢文・現代文)
+    ("daigaku", "kobun"): "japanese", ("daigaku", "kanbun"): "japanese", ("daigaku", "gendai"): "japanese",
+    # 社会
+    ("daigaku", "nihonshi"): "social", ("daigaku", "sekaishi"): "social",
+    ("daigaku", "chiri"): "social", ("daigaku", "kouminka"): "social",
+}
+def _infer_subject_from_pool(exam_id: str, part_key: Optional[str] = None) -> str:
+    """(exam_id, part_key) から subject を推定。マッピング無しは exam_id を fallback として返す。"""
+    if not exam_id:
+        return "unknown"
+    s = _WEAKNESS_POOL_TO_SUBJECT.get((exam_id, part_key))
+    if s:
+        return s
+    # eiken は全て english、その他は exam_id をそのまま subject に
+    if exam_id == "eiken":
+        return "english"
+    if exam_id in ("toefl", "toeic", "ielts"):
+        return "english"
+    return exam_id
 
 
 @app.post("/api/admin/weakness/aggregate-now")
@@ -15203,6 +15651,68 @@ def public_exam_questions_archive_detail(question_id: int):
     }
 
 
+@app.post("/api/question-attempts")
+def record_question_attempt(payload: dict, authorization: Optional[str] = Header(None)):
+    """📝 2026-05-22 塾長指示: 生徒の問題プール解答を DB に永続化 (弱点プリント基盤)。
+    payload: {
+      "student_id": int (or via Authorization header),
+      "source": "practice" | "essay_grade" | "ai_tutor",  -- 'mock_exam' は別 endpoint
+      "exam_question_id": int (optional),
+      "exam_id": str (optional, subject 推定用),
+      "part_key": str (optional, subject 推定用),
+      "topic": str (optional),
+      "is_correct": 0/1 (optional),
+      "score_got": int (optional),
+      "score_max": int (optional),
+      "elapsed_ms": int (optional),
+      "metadata": dict (optional)
+    }
+    返却: {ok: True, attempt_id: int}
+    """
+    # ✅ 2026-05-22: 既存 _get_current_student を流用 (IDOR 防御)
+    student = _get_current_student(authorization) if authorization else None
+    student_id = student["id"] if student else None
+    if not student_id:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    source = (payload.get("source") or "practice").strip()
+    if source not in ("practice", "essay_grade", "ai_tutor", "mock_exam"):
+        raise HTTPException(status_code=400, detail="invalid source")
+    exam_question_id = payload.get("exam_question_id")
+    exam_id = payload.get("exam_id")
+    part_key = payload.get("part_key")
+    # ✅ 2026-05-22: operator precedence fix (subject 単独送信時の unknown 化を防ぐ)
+    subject = payload.get("subject")
+    if not subject:
+        subject = _infer_subject_from_pool(exam_id, part_key) if exam_id else "unknown"
+    topic = payload.get("topic")
+    is_correct = payload.get("is_correct")
+    if is_correct is not None:
+        is_correct = 1 if int(is_correct) == 1 else 0
+    score_got = payload.get("score_got")
+    score_max = payload.get("score_max")
+    elapsed_ms = payload.get("elapsed_ms")
+    meta = payload.get("metadata")
+    meta_json = json.dumps(meta, ensure_ascii=False) if meta else None
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(
+            "INSERT INTO question_attempts (student_id, source, exam_question_id, subject, topic, is_correct, score_got, score_max, elapsed_ms, metadata, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?) RETURNING id",
+            (int(student_id), source, exam_question_id, subject, topic, is_correct, score_got, score_max, elapsed_ms, meta_json, datetime.now(timezone.utc).isoformat()),
+        )
+        row = c.fetchone()
+        attempt_id = None
+        if row:
+            try:
+                attempt_id = row["id"] if hasattr(row, 'keys') else row[0]
+            except (KeyError, IndexError, TypeError):
+                attempt_id = row[0] if row else None
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True, "attempt_id": attempt_id}
+
+
 @app.post("/api/exam-questions/recommend")
 def public_exam_questions_recommend(payload: dict):
     """生徒の学習履歴 (localStorage の history) から AI で「次に解くべき問題」を推薦する。
@@ -18798,6 +19308,15 @@ LINE_TEMPLATES = {
                 f"※ メールが届かない場合の代替送信です。\n"
                 f"心当たりがない場合は無視してください。"
     },
+    # 📅 2026-05-22 塾長指示: 週次弱点プリント自動配信
+    "weekly_worksheet": lambda p: {
+        "type": "text",
+        "text": f"📅 今週の弱点プリントが届きました\n\n"
+                f"{p.get('name', '生徒')}さんの苦手分野 ({p.get('subject_summary', '弱点 TOP3')}) から\n"
+                f"計 {p.get('question_count', 0)} 問を準備しました。\n\n"
+                f"マイページから確認できます👇\n"
+                f"{p.get('url', BASE_URL)}/mypage.html?focus=worksheet"
+    },
 }
 
 def _do_line_push(student_id: int, template: str, params: Optional[dict] = None) -> dict:
@@ -22226,10 +22745,30 @@ def mock_exam_submit(payload: dict):
     score_total = 0
     section_scores = {}
     weak_topics = []
+    # 📝 2026-05-22 塾長指示: 各 sub-question を question_attempts に記録 (弱点プリント基盤)
+    attempts_to_insert = []  # list of (subject, topic, is_correct, score_got, score_max, eq_id, sub_id, section_name)
     for ak in answer_key:
         sec_name = ak["section_name"]
         eq_id = ak["exam_question_id"]
         sec = section_scores.setdefault(sec_name, {"got": 0, "max": 0})
+        # exam_questions から subject/topic を取得 (1 query per eq_id)
+        eq_subject, eq_topic = None, None
+        try:
+            c.execute("SELECT exam_id, part_key, question_data FROM exam_questions WHERE id=?", (eq_id,))
+            eqrow = c.fetchone()
+            if eqrow:
+                eq_exam = eqrow[0] if not hasattr(eqrow, 'keys') else eqrow["exam_id"]
+                eq_part = eqrow[1] if not hasattr(eqrow, 'keys') else eqrow["part_key"]
+                eq_qdata = eqrow[2] if not hasattr(eqrow, 'keys') else eqrow["question_data"]
+                # subject 推定: exam_id + part_key (例: rikei + math_q1 → 'math')
+                eq_subject = _infer_subject_from_pool(eq_exam, eq_part)
+                try:
+                    qd = json.loads(eq_qdata) if isinstance(eq_qdata, str) else (eq_qdata or {})
+                    eq_topic = qd.get("topic") or qd.get("univ_simulated") or None
+                except Exception:
+                    eq_topic = None
+        except Exception:
+            pass
         for sq in ak["sub_questions"]:
             sub_id = sq.get("id")
             correct = str(sq.get("answer", ""))
@@ -22237,11 +22776,23 @@ def mock_exam_submit(payload: dict):
             sec["max"] += points
             user_ans_key = f"{eq_id}_{sub_id}"
             user_ans = str(answers.get(user_ans_key, "")).strip()
-            if user_ans and user_ans == correct:
+            is_correct = 1 if (user_ans and user_ans == correct) else 0
+            score_got = points if is_correct == 1 else 0
+            if is_correct == 1:
                 score_total += points
                 sec["got"] += points
             elif points > 0:
                 weak_topics.append({"section": sec_name, "exam_question_id": eq_id, "sub_id": sub_id})
+            attempts_to_insert.append((
+                eq_subject or sec_name,  # subject (fallback to section_name)
+                eq_topic,                # topic (may be None)
+                is_correct,
+                score_got,
+                points,
+                eq_id,
+                sub_id,
+                sec_name,
+            ))
 
     pct = round(100 * score_total / score_max, 1) if score_max > 0 else 0
     # 偏差値の簡易推定: 50 + (pct - 60) / 2 (60% = 50, 80% = 60, 40% = 40)
@@ -22255,6 +22806,17 @@ def mock_exam_submit(payload: dict):
         "UPDATE mock_exam_sessions SET submitted_at=?, score_total=?, deviation_estimate=?, section_scores=?, answers_json=? WHERE id=?",
         (datetime.now(timezone.utc).isoformat(), score_total, deviation_estimate, json.dumps(section_scores_list, ensure_ascii=False), json.dumps(answers, ensure_ascii=False), session_id),
     )
+    # 📝 2026-05-22 塾長指示: 各 sub-question を question_attempts に記録 (弱点プリント基盤)
+    try:
+        now_iso = datetime.now(timezone.utc).isoformat()
+        for (a_subject, a_topic, a_is_correct, a_score_got, a_score_max, a_eq_id, a_sub_id, a_sec_name) in attempts_to_insert:
+            meta = json.dumps({"section_name": a_sec_name, "sub_id": a_sub_id, "session_id": session_id}, ensure_ascii=False)
+            c.execute(
+                "INSERT INTO question_attempts (student_id, source, exam_question_id, subject, topic, is_correct, score_got, score_max, metadata, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                (student_id, 'mock_exam', a_eq_id, a_subject, a_topic, a_is_correct, a_score_got, a_score_max, meta, now_iso),
+            )
+    except Exception as e:
+        log.warning(f"[mock_exam_submit] question_attempts INSERT failed (non-fatal): {e}")
     conn.commit()
     conn.close()
 

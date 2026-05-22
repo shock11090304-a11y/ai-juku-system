@@ -7,14 +7,14 @@
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="0">
   <title>マイページ | AIコーチング</title>
-  <script src="cache-purge.js?v=20260521-history-cta"></script>
+  <script src="cache-purge.js?v=20260522-weekly-worksheet"></script>
 
-  <script src="frontend-error-monitor.js?v=20260521-history-cta"></script>
+  <script src="frontend-error-monitor.js?v=20260522-weekly-worksheet"></script>
   <link rel="stylesheet" href="style.css?v=20260519-input-widen">
-  <link rel="stylesheet" href="mypage.css?v=20260521-history-cta">
+  <link rel="stylesheet" href="mypage.css?v=20260522-weekly-worksheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="auth-guard.js?v=20260521-history-cta"></script>
+  <script src="auth-guard.js?v=20260522-weekly-worksheet"></script>
 </head>
 <body class="mypage-body">
   <div class="bg-gradient"></div>
@@ -104,6 +104,23 @@
       <div id="weaknessEmpty" style="display:none; padding:0.8rem; color:#a1a1aa; font-size:0.85rem; text-align:center; background:rgba(0,0,0,0.2); border-radius:8px;">
         まだ弱点データが蓄積されていません。「📷 写真で質問」を使うと、毎朝 4:00 (JST) の自動集計で過去 30 日分の質問から弱点を抽出します。
       </div>
+    </section>
+
+    <!-- 📅 2026-05-22 塾長指示: 週次弱点プリント (毎週日曜朝 5:00 JST 自動配信) -->
+    <section id="weeklyWorksheetSection" style="display:none; margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(59,130,246,0.10)); border: 1px solid rgba(16,185,129,0.35); border-radius: 14px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:0.6rem; margin-bottom:0.6rem; flex-wrap:wrap;">
+        <h3 style="margin:0; font-size:1.05rem; color:#fff; font-weight:800;">📅 今週の弱点プリント <span style="font-size:0.65em; color:#10b981; font-weight:600;">(毎週日曜 5:00 自動生成)</span></h3>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <button type="button" id="worksheetPrintBtn" style="padding:0.35rem 0.8rem; background:rgba(16,185,129,0.30); border:1px solid rgba(16,185,129,0.50); border-radius:8px; color:#fff; font-weight:700; font-size:0.82rem; cursor:pointer;">🖨️ 印刷</button>
+          <button type="button" id="worksheetHistoryBtn" style="padding:0.35rem 0.7rem; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.20); border-radius:8px; color:#cbd5e1; font-weight:700; font-size:0.78rem; cursor:pointer;">📚 履歴</button>
+        </div>
+      </div>
+      <div id="worksheetMeta" style="margin-bottom:0.7rem; font-size:0.85rem; color:#a7f3d0;"></div>
+      <div id="worksheetProblems" style="display:grid; gap:0.7rem; max-height: 520px; overflow-y: auto;"></div>
+      <div id="worksheetEmpty" style="display:none; padding:0.9rem; color:#a1a1aa; font-size:0.85rem; text-align:center; background:rgba(0,0,0,0.2); border-radius:8px;">
+        今週の弱点プリントはまだ生成されていません。模試・問題演習で 1 週間データを蓄積すると、次の日曜朝 5:00 に AI が自動生成します。
+      </div>
+      <div id="worksheetHistoryList" style="display:none; margin-top:0.8rem; padding-top:0.8rem; border-top:1px solid rgba(255,255,255,0.10);"></div>
     </section>
 
     <!-- 通塾生 限定特典 CTA (¥9,800/月) は塾長指示 2026-05-15 で削除
@@ -976,9 +993,9 @@
     <p>© 2026 AIコーチング | Mypage v1.0</p>
   </footer>
 
-  <script src="learning-brain.js?v=20260521-history-cta"></script>
-  <script src="exam-prep.js?v=20260521-history-cta"></script>
-  <script src="referral-program.js?v=20260521-history-cta"></script>
+  <script src="learning-brain.js?v=20260522-weekly-worksheet"></script>
+  <script src="exam-prep.js?v=20260522-weekly-worksheet"></script>
+  <script src="referral-program.js?v=20260522-weekly-worksheet"></script>
   <script src="mypage.js?v=20260519-streak-banner"></script>
   <script>
     // ウィジェット初期描画
@@ -995,6 +1012,7 @@
         renderCurriculumWeekWidget('curriculumWeekWidget');
         renderVocabSrsWidget('vocabSrsWidget', studentId);
         renderWeaknessTop3(student); // 🎯 2026-05-13 塾長指示「個別問題推薦」
+        renderWeeklyWorksheet(student); // 📅 2026-05-22 塾長指示「週次弱点プリント」
       }
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initWidgets);
@@ -1213,6 +1231,108 @@
           graphEl.innerHTML = '<div style="color:#fca5a5;font-size:0.78rem;">通信エラー: ' + escapeHTML(String(e)) + '</div>';
         }
       });
+    }
+
+    // 📅 2026-05-22 塾長指示: 週次弱点プリント表示 (毎週日曜朝 5:00 JST 自動生成)
+    async function renderWeeklyWorksheet(student) {
+      const section = document.getElementById('weeklyWorksheetSection');
+      const metaEl = document.getElementById('worksheetMeta');
+      const probEl = document.getElementById('worksheetProblems');
+      const emptyEl = document.getElementById('worksheetEmpty');
+      const histList = document.getElementById('worksheetHistoryList');
+      const histBtn = document.getElementById('worksheetHistoryBtn');
+      const printBtn = document.getElementById('worksheetPrintBtn');
+      if (!section || !probEl) return;
+      if (!student || !student.id) { section.style.display = 'none'; return; }
+
+      const API_BASE = (window.location.origin.includes(':8090') || window.location.origin.includes('localhost:8090'))
+        ? 'http://localhost:8000' : window.location.origin;
+      const escHtml = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+      const token = localStorage.getItem('ai_juku_session_token') || '';
+      const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+
+      try {
+        const res = await fetch(`${API_BASE}/api/student/worksheet/this-week`, { headers });
+        if (!res.ok) { section.style.display = 'none'; return; }
+        const data = await res.json();
+        section.style.display = '';
+        const ws = data.worksheet;
+        if (!ws || !ws.questions || ws.questions.length === 0) {
+          metaEl.innerHTML = '';
+          probEl.innerHTML = '';
+          emptyEl.style.display = '';
+          return;
+        }
+        emptyEl.style.display = 'none';
+        const dateLabel = ws.week_start_date || '?';
+        const subjList = (ws.subject_topics || []).map(s => escHtml(s.subject + (s.topic ? '・' + s.topic : ''))).join(' / ') || '（弱点情報なし）';
+        metaEl.innerHTML = `📅 <strong>${escHtml(dateLabel)}</strong> の週・対象弱点: <span style="color:#fde68a;">${subjList}</span>・全 ${ws.question_count} 問`;
+        let html = '';
+        (ws.questions || []).forEach((q, i) => {
+          const qd = q.question_data || {};
+          const stem = qd.questions && qd.questions[0] ? (qd.questions[0].stem || qd.questions[0].question || '') : (qd.passage || qd.prompt || '');
+          const wsubj = q.weakness_subject || '?';
+          const wtopic = q.weakness_topic ? `「${escHtml(q.weakness_topic)}」` : '';
+          html += `
+            <div class="ws-problem" style="padding:0.7rem;background:rgba(0,0,0,0.30);border:1px solid rgba(16,185,129,0.25);border-radius:10px;">
+              <div style="font-size:0.78rem;color:#10b981;margin-bottom:0.3rem;font-weight:700;">問題 ${i + 1} — <span style="color:#a7f3d0;">${escHtml(wsubj)}</span> ${wtopic} <span style="color:#94a3b8;font-weight:500;">(${escHtml(q.exam_id || '')}/${escHtml(q.part_key || '')})</span></div>
+              <div style="font-size:0.88rem;color:#e2e8f0;white-space:pre-wrap;line-height:1.55;">${escHtml(String(stem).slice(0, 600))}${String(stem).length > 600 ? '…' : ''}</div>
+            </div>`;
+        });
+        probEl.innerHTML = html;
+      } catch (e) {
+        console.warn('Worksheet fetch failed:', e);
+        section.style.display = 'none';
+        return;
+      }
+
+      // 印刷ボタン
+      if (printBtn) {
+        printBtn.addEventListener('click', () => {
+          // 弱点プリント部分のみ印刷したいので、印刷用 stylesheet を当てる
+          const w = window.open('', '_blank');
+          if (!w) { window.print(); return; }
+          const cloned = section.cloneNode(true);
+          // ボタンは印刷不要なので除去
+          cloned.querySelectorAll('button').forEach(b => b.remove());
+          const histDiv = cloned.querySelector('#worksheetHistoryList');
+          if (histDiv) histDiv.remove();
+          w.document.write(`<html><head><title>今週の弱点プリント</title><style>body{font-family:system-ui,sans-serif;padding:1.5rem;color:#222;background:#fff;}h3{color:#0a5a3a;}.ws-problem{margin:0 0 1.2rem;padding:0.8rem;border:1px solid #ccc;border-radius:6px;background:#fafafa;}div{line-height:1.6;}</style></head><body>${cloned.innerHTML}</body></html>`);
+          w.document.close();
+          setTimeout(() => { w.print(); }, 400);
+        });
+      }
+
+      // 履歴ボタン
+      if (histBtn && histList) {
+        histBtn.addEventListener('click', async () => {
+          if (histList.style.display !== 'none') { histList.style.display = 'none'; histBtn.textContent = '📚 履歴'; return; }
+          histList.style.display = '';
+          histBtn.textContent = '📚 閉じる';
+          histList.innerHTML = '<div style="color:#a1a1aa;font-size:0.85rem;">📂 取得中…</div>';
+          try {
+            const r = await fetch(`${API_BASE}/api/student/worksheet/history?limit=12`, { headers });
+            const d = await r.json();
+            const items = (d && d.history) || [];
+            if (items.length === 0) {
+              histList.innerHTML = '<div style="color:#a1a1aa;font-size:0.85rem;">過去の弱点プリントはまだありません。</div>';
+              return;
+            }
+            histList.innerHTML = `
+              <div style="font-size:0.85rem;color:#cbd5e1;margin-bottom:0.4rem;font-weight:700;">📚 過去の弱点プリント (最新 ${items.length} 件)</div>
+              <div style="display:grid;gap:0.4rem;">
+                ${items.map(it => `
+                  <div style="padding:0.55rem 0.7rem;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.10);border-radius:8px;">
+                    <div style="font-size:0.85rem;color:#fff;">📅 ${escHtml(it.week_start_date || '')} 週 — ${it.question_count} 問</div>
+                    <div style="font-size:0.75rem;color:#94a3b8;margin-top:0.2rem;">対象: ${(it.subject_topics || []).map(s => escHtml(s.subject + (s.topic ? '・' + s.topic : ''))).join(' / ') || '（情報なし）'}</div>
+                  </div>`).join('')}
+              </div>`;
+          } catch (e) {
+            histList.innerHTML = '<div style="color:#fca5a5;font-size:0.78rem;">取得エラー</div>';
+          }
+        });
+      }
     }
 
     // 📖 AI 単語帳 (Leitner SRS) ウィジェット — 今日復習する単語数 + Box 進捗
