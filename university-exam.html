@@ -272,7 +272,7 @@
               ${p.choices.map((c, i) => `
                 <div class="ux-choice-row" data-key="${String.fromCharCode(65+i)}" data-idx="${i}">
                   <div class="ux-choice-key">${String.fromCharCode(65+i)}.</div>
-                  <div>${escapeHtml(c)}</div>
+                  <div>${formatScientific(c)}</div>
                 </div>
               `).join('')}
             </div>
@@ -284,7 +284,7 @@
               <strong>${escapeHtml(p.university)}</strong> ${p.faculty ? '/ ' + escapeHtml(p.faculty) : ''} · ${escapeHtml(p.subject)} · <span style="color:#fcd34d;">${escapeHtml(p.difficulty || '標準')}</span><br>
               <span style="font-size:0.78rem;">${escapeHtml(p.inspired_by || '')}</span>
             </div>
-            <div class="ux-question">${escapeHtml(p.question_text)}</div>
+            <div class="ux-question">${formatScientific(p.question_text)}</div>
             ${choicesHtml}
             <div class="ux-actions">
               ${isMC ? '' : '<button type="button" class="btn-secondary btn-small" id="uxRevealBtn">解答・解説を表示</button>'}
@@ -292,11 +292,11 @@
             </div>
             <div class="ux-answer-block" id="uxAnswerBlock">
               <div class="ux-answer-label">📝 解答</div>
-              <div class="ux-answer-text">${escapeHtml(p.answer)}</div>
+              <div class="ux-answer-text">${formatScientific(p.answer)}</div>
             </div>
             <div class="ux-explanation-block" id="uxExplanationBlock">
               <div class="ux-explanation-label">💡 解説</div>
-              <div class="ux-answer-text">${escapeHtml(p.explanation)}</div>
+              <div class="ux-answer-text">${formatScientific(p.explanation)}</div>
             </div>
           </div>
         `;
@@ -340,6 +340,34 @@
         return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
           '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
         })[c]);
+      }
+
+      // 化学式・数式・設問番号を読みやすくレンダリング (2026-05-22 塾長指示・3 視点 review 致命 2 件 fix 反映)
+      function formatScientific(s) {
+        let html = escapeHtml(s);
+        // S_N1, S_N2 (求核置換) → S<sub>N</sub>1, S<sub>N</sub>2
+        html = html.replace(/\bS_N([12])\b/g, 'S<sub>N</sub>$1');
+        // (CH_3)_3, (NH_4)_2 → (CH<sub>3</sub>)<sub>3</sub>, (NH<sub>4</sub>)<sub>2</sub>
+        html = html.replace(/\)_(\d+)/g, ')<sub>$1</sub>');
+        // 元素_数字: H_2O, CO_2, NH_3, AlCl_3, CH_3, H_2SO_4, Na_2CO_3 等 (大文字 + (小文字)? + _数字)
+        html = html.replace(/([A-Z][a-z]?)_(\d+)/g, '$1<sub>$2</sub>');
+        // 速度定数・平衡定数等 K_a, K_b, K_w, K_eq, k_1, k_obs (大小文字 + _単一英小文字 1〜3)
+        html = html.replace(/\b([A-Za-z])_([a-z]{1,3})\b/g, '$1<sub>$2</sub>');
+        // 数式の単一文字下付き x_n, y_n, a_1, t_0 (大小文字 + _数字 但し既に上で処理した [A-Z][a-z]?_\d+ を除き 1 文字限定)
+        html = html.replace(/\b([a-z])_(\d+)\b/g, '$1<sub>$2</sub>');
+        // 上付き: 括弧 ^(...) を最優先 (ネスト未対応・実用上問題なし)
+        html = html.replace(/\^\(([^)]+)\)/g, '<sup>$1</sup>');
+        // 数字 + 符号 ^2+, ^3-, ^2- 等 (電荷表記 Mg^2+, Fe^3+, SO_4^2- 等で必須・3 視点 review CRITICAL fix)
+        html = html.replace(/\^(\d+[-+])/g, '<sup>$1</sup>');
+        // 符号 + 数字 ^-3, ^+5, ^-10 等 (指数表記 10^-3, 10^-5 等・3 視点 review CRITICAL fix)
+        html = html.replace(/\^([-+]\d+)/g, '<sup>$1</sup>');
+        // 単独 ^- ^+ ^数字 ^文字 → <sup>...</sup>
+        html = html.replace(/\^(-|\+|\d+|[A-Za-z](?![A-Za-z0-9]))/g, '<sup>$1</sup>');
+        // 設問番号 (1) (2) ... を行頭のみ強調 (「(1次)」等は除外)
+        html = html.replace(/(^|\n)\((\d+)\)\s?/g, '$1<strong style="color:#fcd34d;display:inline-block;min-width:2.6em;">($2)</strong> ');
+        // 反応矢印 → ⇌ ⇄ ⟶ の前後に半角スペース確保
+        html = html.replace(/\s*([→⇌⇄⟶])\s*/g, ' $1 ');
+        return html;
       }
 
       document.addEventListener('DOMContentLoaded', loadMeta);
