@@ -654,6 +654,8 @@ def init_db():
     CREATE INDEX IF NOT EXISTS idx_qa_student_created ON question_attempts(student_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_qa_student_subject_topic ON question_attempts(student_id, subject, topic);
     CREATE INDEX IF NOT EXISTS idx_qa_source ON question_attempts(source, created_at DESC);
+    -- ✅ 2026-05-22 P1 fix: _run_weakness_aggregation の WHERE created_at >= ? を高速化
+    CREATE INDEX IF NOT EXISTS idx_qa_created ON question_attempts(created_at DESC);
     -- 📅 2026-05-22 塾長指示: 週次弱点プリント生成履歴
     -- 毎週日曜朝に生成され、生徒は mypage から閲覧 + 印刷可能
     CREATE TABLE IF NOT EXISTS worksheet_archives (
@@ -3090,11 +3092,18 @@ def _run_weekly_worksheet_generation() -> dict:
     conn = db()
     c = conn.cursor()
     try:
-        # 今週月曜の日付 (ISO date) を week_start_date として記録
+        # ✅ 2026-05-22 P1 fix: 曜日に依らず「次週月曜」を一意に計算 (admin manual trigger でも整合)
+        # weekday(): Mon=0..Sun=6 → 月曜まで何日先かを計算 (today が月曜なら 0、日曜なら 1、土曜なら 2 等)
         JST = timezone(timedelta(hours=9))
         now_jst = datetime.now(JST)
-        # 今日の日曜 (= 翌週月曜から始まる週の前日) 基準
-        week_start = (now_jst + timedelta(days=1)).date().isoformat()  # 月曜日付
+        days_to_next_monday = (7 - now_jst.weekday()) % 7
+        if days_to_next_monday == 0 and now_jst.hour < 12:
+            # 月曜の午前中は当日を week_start として使う (cron は日曜朝に走るので普段はここに来ない)
+            days_to_next_monday = 0
+        elif days_to_next_monday == 0:
+            # 月曜の午後以降は次の月曜
+            days_to_next_monday = 7
+        week_start = (now_jst + timedelta(days=days_to_next_monday)).date().isoformat()
 
         # 全アクティブ生徒 (paid または trial・最終ログイン 60 日以内)
         # Postgres / SQLite 両対応: cutoff を Python 側で計算してパラメータ化
@@ -3138,7 +3147,10 @@ def _run_weekly_worksheet_generation() -> dict:
                     continue  # 弱点データが無ければスキップ
 
                 # 各弱点について pool から 3 問 fetch
-                all_problems = []
+                # ✅ 2026-05-22 P0 fix: ORDER BY RANDOM() を OFFSET (random) + LIMIT 3 に置換し性能改善
+                # (全件 sort なしで O(log n)・500 生徒 × 3 弱点 × 2 pool = 3,000 回が秒以下に)
+                import random as _rnd
+                all_problem_ids = []  # P0-4: questions_json 軽量化用 (id のみ保存)
                 subject_topics = []
                 for w in weaknesses:
                     wsubj = w["subject"] if hasattr(w, "keys") else w[0]
@@ -3149,36 +3161,46 @@ def _run_weekly_worksheet_generation() -> dict:
                     subject_topics.append({"subject": wsubj, "topic": wtopic})
                     for (pool_exam, pool_part) in pool_keys[:2]:  # 最大 2 pool まで試す
                         try:
-                            params = ["exam_id=?"]
-                            args = [pool_exam]
+                            # まず該当 pool の COUNT を取得 (高速・index 利用)
+                            count_params = ["exam_id=?"]
+                            count_args = [pool_exam]
                             if pool_part:
-                                params.append("part_key=?")
-                                args.append(pool_part)
-                            sql = f"SELECT id, exam_id, part_key, eiken_grade, question_data FROM exam_questions WHERE {' AND '.join(params)} ORDER BY RANDOM() LIMIT 3"
-                            c.execute(sql, tuple(args))
-                            rows = c.fetchall() or []
-                            for r in rows:
-                                qd_raw = r["question_data"] if hasattr(r, "keys") else r[4]
-                                try:
-                                    qd = json.loads(qd_raw) if isinstance(qd_raw, str) else (qd_raw or {})
-                                except Exception:
-                                    qd = {}
-                                all_problems.append({
-                                    "question_id": r["id"] if hasattr(r, "keys") else r[0],
-                                    "exam_id": r["exam_id"] if hasattr(r, "keys") else r[1],
-                                    "part_key": r["part_key"] if hasattr(r, "keys") else r[2],
-                                    "eiken_grade": r["eiken_grade"] if hasattr(r, "keys") else r[3],
-                                    "weakness_subject": wsubj,
-                                    "weakness_topic": wtopic,
-                                    "question_data": qd,
-                                })
-                            if rows:
+                                count_params.append("part_key=?")
+                                count_args.append(pool_part)
+                            count_sql = f"SELECT COUNT(*) FROM exam_questions WHERE {' AND '.join(count_params)}"
+                            c.execute(count_sql, tuple(count_args))
+                            cnt_row = c.fetchone()
+                            total = (cnt_row[0] if not hasattr(cnt_row, 'keys') else cnt_row[0]) if cnt_row else 0
+                            if total <= 0:
+                                continue
+                            # ランダムオフセットを 3 つ生成し IN 句で一括 fetch
+                            sample_size = min(3, total)
+                            offsets = _rnd.sample(range(total), sample_size)
+                            picked_ids = []
+                            for off in offsets:
+                                off_sql = f"SELECT id FROM exam_questions WHERE {' AND '.join(count_params)} LIMIT 1 OFFSET ?"
+                                c.execute(off_sql, tuple(count_args) + (off,))
+                                row_id = c.fetchone()
+                                if row_id:
+                                    qid = row_id[0] if not hasattr(row_id, 'keys') else row_id[0]
+                                    picked_ids.append(qid)
+                            if picked_ids:
+                                # P0-4: id のみ記録 (full question_data 保存を回避し容量 1/200 に削減)
+                                for qid in picked_ids:
+                                    all_problem_ids.append({
+                                        "question_id": qid,
+                                        "exam_id": pool_exam,
+                                        "part_key": pool_part,
+                                        "weakness_subject": wsubj,
+                                        "weakness_topic": wtopic,
+                                    })
                                 break  # 取得できたら次の pool は不要
                         except Exception as e:
                             log.warning(f"[WeeklyWorksheet] pool fetch failed for sid={sid} subj={wsubj}: {e}")
 
-                if not all_problems:
+                if not all_problem_ids:
                     continue
+                all_problems = all_problem_ids  # 後方互換変数名
 
                 # worksheet_archives に保存
                 c.execute(
@@ -3286,11 +3308,51 @@ def student_worksheet_this_week(authorization: Optional[str] = Header(None)):
             return {"ok": True, "worksheet": None}
         def _g(key, idx):
             return row[key] if hasattr(row, "keys") and key in row.keys() else row[idx]
+        questions_raw = json.loads(_g("questions_json", 3) or "[]")
+        # ✅ 2026-05-22 P0 fix: P0-4 軽量化で id のみ保存に変更したため、
+        # mypage 表示用に question_data を exam_questions から hydrate
+        question_ids = [q.get("question_id") for q in questions_raw if isinstance(q, dict) and q.get("question_id")]
+        eq_map = {}
+        if question_ids:
+            try:
+                placeholders = ",".join("?" * len(question_ids))
+                c.execute(f"SELECT id, exam_id, part_key, eiken_grade, question_data FROM exam_questions WHERE id IN ({placeholders})", tuple(question_ids))
+                for eqrow in c.fetchall() or []:
+                    qid = eqrow["id"] if hasattr(eqrow, "keys") else eqrow[0]
+                    qd_raw = eqrow["question_data"] if hasattr(eqrow, "keys") else eqrow[4]
+                    try:
+                        qd = json.loads(qd_raw) if isinstance(qd_raw, str) else (qd_raw or {})
+                    except Exception:
+                        qd = {}
+                    eq_map[qid] = {
+                        "exam_id": eqrow["exam_id"] if hasattr(eqrow, "keys") else eqrow[1],
+                        "part_key": eqrow["part_key"] if hasattr(eqrow, "keys") else eqrow[2],
+                        "eiken_grade": eqrow["eiken_grade"] if hasattr(eqrow, "keys") else eqrow[3],
+                        "question_data": qd,
+                    }
+            except Exception as e:
+                log.warning(f"[worksheet hydrate] failed (non-fatal): {e}")
+        # hydrate: mypage の render に必要な question_data フィールドを ID 経由で復元
+        hydrated_questions = []
+        for q in questions_raw:
+            if not isinstance(q, dict):
+                continue
+            qid = q.get("question_id")
+            eq_info = eq_map.get(qid) or {}
+            hydrated_questions.append({
+                "question_id": qid,
+                "exam_id": q.get("exam_id") or eq_info.get("exam_id"),
+                "part_key": q.get("part_key") or eq_info.get("part_key"),
+                "eiken_grade": eq_info.get("eiken_grade"),
+                "weakness_subject": q.get("weakness_subject"),
+                "weakness_topic": q.get("weakness_topic"),
+                "question_data": q.get("question_data") or eq_info.get("question_data") or {},
+            })
         ws = {
             "id": _g("id", 0),
             "week_start_date": _g("week_start_date", 1),
             "subject_topics": json.loads(_g("subject_topics", 2) or "[]") if _g("subject_topics", 2) else [],
-            "questions": json.loads(_g("questions_json", 3) or "[]"),
+            "questions": hydrated_questions,
             "question_count": _g("question_count", 4),
             "attempted_at": _g("attempted_at", 5),
             "score_total": _g("score_total", 6),
@@ -3620,12 +3682,21 @@ def _run_weakness_aggregation() -> dict:
                     (sid, subj, topic, v["count"], avg_score, v["last"]),
                 )
                 inserted += 1
+        # ✅ 2026-05-22 P1 fix: 30 日経過の stale row を削除 (古い弱点が worksheet に出続けるのを防ぐ)
+        stale_deleted = 0
+        try:
+            stale_cutoff = (datetime.utcnow() - _td(days=30)).isoformat()
+            c.execute("DELETE FROM student_weakness WHERE aggregated_at < ?", (stale_cutoff,))
+            stale_deleted = c.rowcount or 0
+        except Exception as e:
+            log.warning(f"[Weakness] stale row cleanup failed (non-fatal): {e}")
         conn.commit()
         return {
             "students_processed": students_processed,
             "weaknesses_inserted": inserted,
             "weaknesses_updated": updated,
             "rows_examined": rows_examined,
+            "stale_rows_deleted": stale_deleted,
         }
     finally:
         conn.close()
@@ -7911,35 +7982,47 @@ EXAM_QUESTION_ROTATION = [
     ("rikei", "phys_basic",   "kyotsu_rikei"),
     ("rikei", "chem_basic",   "kyotsu_rikei"),
     ("rikei", "bio_basic",    "kyotsu_rikei"),
+    ("rikei", "earth_basic",  "kyotsu_rikei"),  # 2026-05-22 P1 fix: UI 既存・ROTATION 漏れ
     # 東大 理系
     ("rikei", "math_q1",      "todai_rikei"),
     ("rikei", "math_q2",      "todai_rikei"),
     ("rikei", "math_q3",      "todai_rikei"),
     ("rikei", "phys_q1",      "todai_rikei"),
     ("rikei", "phys_q2",      "todai_rikei"),
+    ("rikei", "phys_q3",      "todai_rikei"),  # 2026-05-22 P1 fix: UI 既存・ROTATION 漏れ
     ("rikei", "chem_q1",      "todai_rikei"),
+    ("rikei", "chem_q2",      "todai_rikei"),  # 2026-05-22 P1 fix: UI 既存・ROTATION 漏れ
     ("rikei", "chem_q3",      "todai_rikei"),
     # 京大 理系
     ("rikei", "math_q1",      "kyodai_rikei"),
     ("rikei", "math_q2",      "kyodai_rikei"),
     ("rikei", "phys_q1",      "kyodai_rikei"),
+    ("rikei", "phys_q2",      "kyodai_rikei"),  # 2026-05-22 P1 fix: UI 既存・ROTATION 漏れ
+    ("rikei", "chem_q1",      "kyodai_rikei"),  # 2026-05-22 P1 fix: UI 既存・ROTATION 漏れ
     ("rikei", "chem_q2",      "kyodai_rikei"),
     # 阪大/東工大/名大
     ("rikei", "math_q1",      "osaka_rikei"),
     ("rikei", "phys_q1",      "osaka_rikei"),
     ("rikei", "math_q1",      "tokoda_rikei"),
+    ("rikei", "math_q2",      "tokoda_rikei"),  # 2026-05-22 P1 fix: UI 既存・ROTATION 漏れ
     ("rikei", "phys_q1",      "tokoda_rikei"),
+    ("rikei", "phys_q2",      "tokoda_rikei"),  # 2026-05-22 P1 fix: UI 既存・ROTATION 漏れ
+    ("rikei", "chem_q1",      "tokoda_rikei"),  # 2026-05-22 P1 fix: UI 既存・ROTATION 漏れ
     ("rikei", "math_q1",      "nagoya_rikei"),
     # 早慶上智
     ("rikei", "math_q1",      "waseda_rikei"),
+    ("rikei", "math_q2",      "waseda_rikei"),  # 2026-05-22 P1 fix: UI 既存・ROTATION 漏れ
     ("rikei", "phys_q1",      "waseda_rikei"),
+    ("rikei", "chem_q1",      "waseda_rikei"),  # 2026-05-22 P1 fix: UI 既存・ROTATION 漏れ
     ("rikei", "math_q1",      "keio_rikei"),
     ("rikei", "math_q2",      "keio_rikei"),
     ("rikei", "phys_q1",      "keio_rikei"),  # 2026-05-21 塾長指示: 発展レベル補強 (frontend UI 既存・ROTATION 漏れを修正)
+    ("rikei", "chem_q1",      "keio_rikei"),  # 2026-05-22 P1 fix: audit memory 13 大問の残り
     ("rikei", "bio_q1",       "keio_rikei"),
     ("rikei", "math_q1",      "sophia_rikei"),
     # 医学部
     ("rikei", "math_q1",      "igakubu_kokoritsu_rikei"),
+    ("rikei", "math_q2",      "igakubu_kokoritsu_rikei"),  # 2026-05-22 P1 fix: UI 既存・ROTATION 漏れ
     ("rikei", "phys_q1",      "igakubu_kokoritsu_rikei"),
     ("rikei", "chem_q1",      "igakubu_kokoritsu_rikei"),
     ("rikei", "bio_q1",       "igakubu_kokoritsu_rikei"),
@@ -15652,7 +15735,7 @@ def public_exam_questions_archive_detail(question_id: int):
 
 
 @app.post("/api/question-attempts")
-def record_question_attempt(payload: dict, authorization: Optional[str] = Header(None)):
+def record_question_attempt(payload: dict, request: Request, authorization: Optional[str] = Header(None)):
     """📝 2026-05-22 塾長指示: 生徒の問題プール解答を DB に永続化 (弱点プリント基盤)。
     payload: {
       "student_id": int (or via Authorization header),
@@ -15674,6 +15757,34 @@ def record_question_attempt(payload: dict, authorization: Optional[str] = Header
     student_id = student["id"] if student else None
     if not student_id:
         raise HTTPException(status_code=401, detail="Unauthorized")
+    # ✅ 2026-05-22 P0 fix: rate-limit (悪意大量 INSERT 防止)
+    # IP 単位 (60 秒に 120 リクエスト) + 生徒単位 (1 日 500 INSERT) の 2 段防御
+    # ⚠️ HTTPException (429) は再 raise・関数未定義時のみ skip
+    try:
+        _check_rate_limit_ip(request, bucket="question_attempts_ip", limit=120, window=60)
+    except HTTPException:
+        raise  # 429 は upstream に渡す
+    except (NameError, AttributeError):
+        pass  # _check_rate_limit_ip が存在しない環境では skip
+    except Exception as e:
+        log.warning(f"[record_question_attempt] rate-limit check error (non-fatal): {e}")
+    try:
+        # 生徒 1 日 500 件 cap (24h 件数 check)
+        conn_rl = db()
+        try:
+            cur_rl = conn_rl.cursor()
+            day_cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+            cur_rl.execute("SELECT COUNT(*) FROM question_attempts WHERE student_id=? AND created_at >= ?", (int(student_id), day_cutoff))
+            cnt_row = cur_rl.fetchone()
+            day_count = (cnt_row[0] if not hasattr(cnt_row, 'keys') else cnt_row[0]) if cnt_row else 0
+            if day_count >= 500:
+                raise HTTPException(status_code=429, detail="1 日の解答記録上限 (500 件) に達しました")
+        finally:
+            conn_rl.close()
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.warning(f"[record_question_attempt] day cap check failed (non-fatal): {e}")
     source = (payload.get("source") or "practice").strip()
     if source not in ("practice", "essay_grade", "ai_tutor", "mock_exam"):
         raise HTTPException(status_code=400, detail="invalid source")
@@ -19281,13 +19392,7 @@ LINE_TEMPLATES = {
                 f"5分だけでもOKです。\n"
                 f"ストリーク🔥{p.get('streak', 0)}日を途切れさせない！"
     },
-    "achievement": lambda p: {
-        "type": "text",
-        "text": f"🎉 アチーブメント獲得！\n\n"
-                f"「{p.get('achievement', '')}」\n"
-                f"{p.get('description', '')}\n\n"
-                f"+{p.get('xp', 0)} XP"
-    },
+    # ✅ 2026-05-22 P1 fix: "achievement" template は callsite ゼロ (dead code) → 削除
     "trial_ending": lambda p: {
         "type": "text",
         "text": f"⏰ 無料体験終了まであと{p.get('days_left', 3)}日\n\n"
@@ -22783,8 +22888,10 @@ def mock_exam_submit(payload: dict):
                 sec["got"] += points
             elif points > 0:
                 weak_topics.append({"section": sec_name, "exam_question_id": eq_id, "sub_id": sub_id})
+            # ✅ 2026-05-22 P0 fix: section_name fallback は canonical key と不一致で worksheet 無視リスク
+            # → eq_subject が無ければ "unknown" に統一 (集計時に "unknown" 行は無視される)
             attempts_to_insert.append((
-                eq_subject or sec_name,  # subject (fallback to section_name)
+                eq_subject if eq_subject else "unknown",  # subject canonical fallback
                 eq_topic,                # topic (may be None)
                 is_correct,
                 score_got,

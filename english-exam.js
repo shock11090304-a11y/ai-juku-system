@@ -3775,16 +3775,26 @@ async function _postQuestionAttempt(exam, section, result) {
   // backend 用に exam_id / part_key を mapping
   const exam_id = (typeof _getBackendExamParams === 'function') ? (_getBackendExamParams(state.examId)?.exam || state.examId) : state.examId;
   const part_key = state.sectionKey || section.key || null;
-  // 正解判定: overallScore が scoreMax の 70% 以上で is_correct=1 (簡易判定・部分点も score_got で記録)
+  // ✅ 2026-05-22 P1 fix: section.scoreMax が undefined のとき max(score_got, 100) で score_max が膨らみ
+  // is_correct 常に 0 誤判定。明示的に section.scoreMax → result.sectionScoreMax → 100 の順で取得し
+  // score_got > score_max にならないよう先に max を確定する。
   const score_got = Math.max(0, Math.round(result.sectionScore ?? result.overallScore ?? 0));
-  const score_max = Math.max(score_got, Math.round(section.scoreMax ?? result.sectionScoreMax ?? 100));
-  const is_correct = (score_max > 0 && score_got / score_max >= 0.7) ? 1 : 0;
+  // ⚠️ score_max は section.scoreMax を最優先 (score_got とは独立に決定)
+  let score_max = section.scoreMax;
+  if (typeof score_max !== 'number' || score_max <= 0) score_max = result.sectionScoreMax;
+  if (typeof score_max !== 'number' || score_max <= 0) score_max = 100;
+  score_max = Math.round(score_max);
+  // is_correct 判定 (score_max >= score_got を保証してから比率判定)
+  const safe_max = Math.max(score_max, score_got, 1);
+  const is_correct = (safe_max > 0 && score_got / safe_max >= 0.7) ? 1 : 0;
   const body = {
     source: 'practice',
     exam_id,
     part_key,
     subject: null,  // backend で _infer_subject_from_pool が推定
-    topic: state.eikenGradeName || null,
+    // ✅ 2026-05-22 P0 fix: topic は学習単元名を入れる列で grade 名 ("東大"/"準1級") は意味的に汚染。
+    // grade 情報は metadata.grade に既に入っているため null を送信。
+    topic: null,
     is_correct,
     score_got,
     score_max,
