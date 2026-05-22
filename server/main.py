@@ -15463,6 +15463,27 @@ def admin_exam_questions_generate(payload: dict, authorization: Optional[str] = 
         return _run_exam_questions_generation(quota=count or EXAM_QUESTIONS_DAILY_QUOTA)
 
 
+@app.get("/api/exam-questions/pool-counts")
+def public_exam_pool_counts():
+    """🆕 公開API: 全 ROTATION 組合せの現在 pool 蓄積数を返す。
+    生徒画面の section card で「N問」表示の前に在庫確認するため・認証不要 (count 値のみで機密性なし)。
+    response: {"items": [{"exam":"daigaku","part":"kobun","grade":"kyotsu","count":20}, ...], "total": 17226}
+    UI 用途: section_qCount > pool_count なら「(在庫 N問)」併記、pool_count == 0 なら「準備中」表示 + button disable。
+    2026-05-23 塾長指示「P0: 古文 5問→1問 ミスマッチ事象を全 part に網羅対応」"""
+    counts = _exam_pool_counts()
+    out = []
+    total = 0
+    for (exam_id, part_key, eiken_grade), n in counts.items():
+        out.append({
+            "exam": exam_id,
+            "part": part_key,
+            "grade": eiken_grade or "_default",
+            "count": int(n),
+        })
+        total += int(n)
+    return {"items": out, "total": total}
+
+
 @app.get("/api/exam-questions/bank")
 def public_exam_questions_bank(
     exam: str,

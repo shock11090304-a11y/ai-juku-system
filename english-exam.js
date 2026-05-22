@@ -1192,7 +1192,42 @@ function pickExam(examId) {
   pickExamSections(examId);
 }
 
-function pickExamSections(examId) {
+// 🆕 2026-05-23 塾長指示「P0: qCount vs 実 pool ミスマッチ可視化」
+// pool-counts public endpoint からの cache (TTL 5min)
+// 致命対応 (3 視点 review): null sentinel で「fetch 失敗 → 在庫表示なし fallback」を表現
+// 致命対応: 1.5s timeout で section card 描画固まり防止
+let _poolCountCache = null;
+let _poolCountCacheAt = 0;
+async function _fetchPoolCounts() {
+  const now = Date.now();
+  if (_poolCountCache && (now - _poolCountCacheAt) < 5 * 60 * 1000) return _poolCountCache;
+  try {
+    const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    const timer = ctrl ? setTimeout(() => { try { ctrl.abort(); } catch (_) {} }, 1500) : null;
+    const r = await fetch(`${BACKEND_URL}/api/exam-questions/pool-counts`, ctrl ? { signal: ctrl.signal } : {});
+    if (timer) clearTimeout(timer);
+    if (!r.ok) return null; // sentinel: fetch 失敗 → 在庫表示なし fallback
+    const d = await r.json();
+    const map = {};
+    for (const it of (d.items || [])) {
+      map[`${it.exam}/${it.part}/${it.grade}`] = Number(it.count) || 0;
+    }
+    _poolCountCache = map;
+    _poolCountCacheAt = now;
+    return map;
+  } catch (e) {
+    return null; // sentinel: timeout/network エラー → 在庫表示なし fallback (全 disable は致命傷)
+  }
+}
+function _getPoolCount(poolMap, examId, partKey, grade) {
+  if (poolMap === null || poolMap === undefined) return null; // sentinel propagate
+  const g = grade || '_default';
+  // 大学入試は eiken_grade に大学キーが入っている (rikei/daigaku/bunkei は state.eikenGrade)
+  const v = poolMap[`${examId}/${partKey}/${g}`];
+  return (v === undefined) ? 0 : v;
+}
+
+async function pickExamSections(examId) {
   const exam = EXAMS[examId];
   if (!exam) return;
 
@@ -1257,18 +1292,48 @@ function pickExamSections(examId) {
       pickExamSections(examId); // 再描画
     });
   }
+  // 🆕 P0: 各 section の実 pool 在庫を取得 (cache 5min・1 fetch で全 ROTATION の count を得る)
+  const poolMap = await _fetchPoolCounts();
+  const _grade = state.eikenGrade || '_default';
+
   _filteredSections.forEach(sec => {
     const card = document.createElement('button');
     card.type = 'button';
     card.className = 'section-card';
     card.dataset.section = sec.key;
+    // 🆕 P0: pool 在庫を qCount と比較し UI 表示制御
+    // poolCount === null → fetch 失敗 (sentinel) → 在庫表示なし・従来通り (致命対応)
+    const poolCount = _getPoolCount(poolMap, examId, sec.key, _grade);
+    const hasPool = poolCount !== null;
+    const isZero = hasPool && poolCount === 0;
+    const isLow = hasPool && poolCount > 0 && poolCount < (sec.qCount || 1);
+    let specHtml;
+    if (isZero) {
+      // pool=0: 「準備中」+ disable
+      specHtml = `${sec.timeMin}分 / <span style="color:#f87171;font-weight:700;">⚠️ 準備中</span>`;
+    } else if (isLow) {
+      // pool < qCount: 在庫数を黄色で併記
+      specHtml = `${sec.timeMin}分 / ${sec.qCount}問 <span style="color:#fbbf24;font-size:0.85em;font-weight:700;">(在庫 ${poolCount}問)</span>`;
+    } else {
+      // 在庫充足 or fetch 失敗 (sentinel フォールバック・従来表示)
+      specHtml = `${sec.timeMin}分 / ${sec.qCount}問`;
+    }
     card.innerHTML = `
       <div class="section-card-icon">${sec.icon}</div>
       <div class="section-card-name">${sec.name}</div>
-      <div class="section-card-spec">${sec.timeMin}分 / ${sec.qCount}問</div>
+      <div class="section-card-spec">${specHtml}</div>
       <div class="section-card-desc">${sec.desc}</div>
     `;
+    if (isZero) {
+      card.disabled = true;
+      card.style.opacity = '0.5';
+      card.style.cursor = 'not-allowed';
+      card.setAttribute('aria-disabled', 'true');
+      card.setAttribute('aria-label', `${sec.name}: 問題プール準備中・別の大問を選んでください`);
+      card.title = '問題プール準備中: 別の大問を選んでください';
+    }
     card.addEventListener('click', () => {
+      // disabled は HTML attribute で click event が発火しないため alert 不要 (UX 視点改善案)
       document.querySelectorAll('.section-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
       state.sectionKey = sec.key;
