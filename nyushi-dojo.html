@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="pragma" content="no-cache">
+  <meta http-equiv="expires" content="0">
+  <title>🏛️ 入試問題 道場 | AIコーチング</title>
+  <script src="cache-purge.js?v=20260522-nyushi-dojo"></script>
+  <script src="frontend-error-monitor.js?v=20260522-nyushi-dojo"></script>
+  <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost-r2">
+  <link rel="stylesheet" href="vocab.css?v=20260503-quiz4-levels">
+  <style>
+    body { background: linear-gradient(135deg, #0f0f1e, #1a1a2e); color: #e4e4e7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; margin: 0; }
+    .dojo-nav { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; background: rgba(0,0,0,0.4); border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .dojo-nav-title { font-size: 1.05rem; font-weight: 800; background: linear-gradient(135deg, #fcd34d, #f59e0b); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .dojo-nav-links { display: flex; gap: 0.5rem; }
+    .dojo-nav-link {
+      padding: 0.45rem 0.9rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px; color: #e4e4e7; text-decoration: none; font-size: 0.82rem; font-weight: 700;
+    }
+    .dojo-nav-link:hover { background: rgba(99,102,241,0.18); border-color: rgba(99,102,241,0.45); }
+
+    .dojo-container { max-width: 1080px; margin: 1.5rem auto; padding: 0 1rem 4rem; }
+    .dojo-hero {
+      text-align: center; margin: 2rem 0 2.5rem;
+      padding: 1.8rem 1rem;
+      background: linear-gradient(135deg, rgba(245,158,11,0.10), rgba(220,38,38,0.06));
+      border: 1px solid rgba(245,158,11,0.30);
+      border-radius: 16px;
+    }
+    .dojo-hero h1 {
+      font-size: 2.2rem; margin: 0 0 0.5rem;
+      background: linear-gradient(135deg, #fcd34d, #f59e0b);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .dojo-hero-sub { color: #cbd5e1; font-size: 1rem; line-height: 1.7; margin: 0.3rem 0; }
+    .dojo-hero-count {
+      display: inline-block; margin-top: 0.8rem;
+      padding: 0.5rem 1.2rem;
+      background: rgba(34,197,94,0.18); border: 1px solid rgba(34,197,94,0.4);
+      color: #86efac; border-radius: 999px; font-weight: 800; font-size: 0.95rem;
+    }
+
+    .dojo-modes { display: grid; grid-template-columns: 1fr; gap: 1.2rem; }
+    @media (min-width: 720px) { .dojo-modes { grid-template-columns: repeat(3, 1fr); } }
+
+    .dojo-mode-card {
+      display: flex; flex-direction: column;
+      padding: 1.5rem 1.3rem;
+      background: rgba(0,0,0,0.30);
+      border: 2px solid rgba(255,255,255,0.10);
+      border-radius: 16px;
+      transition: all 0.2s;
+      text-decoration: none; color: #e4e4e7;
+      position: relative;
+      min-height: 280px;
+    }
+    .dojo-mode-card:hover { transform: translateY(-4px); border-color: rgba(99,102,241,0.5); box-shadow: 0 8px 24px rgba(99,102,241,0.25); }
+    .dojo-mode-icon { font-size: 2.6rem; margin-bottom: 0.6rem; }
+    .dojo-mode-title { font-size: 1.25rem; font-weight: 800; margin-bottom: 0.4rem; }
+    .dojo-mode-count {
+      display: inline-block; padding: 0.2rem 0.6rem;
+      background: rgba(99,102,241,0.18); border: 1px solid rgba(99,102,241,0.4);
+      color: #c7d2fe; border-radius: 999px; font-size: 0.78rem; font-weight: 700;
+      margin-bottom: 0.6rem; width: fit-content;
+    }
+    .dojo-mode-desc { color: #cbd5e1; font-size: 0.88rem; line-height: 1.6; flex: 1; }
+    .dojo-mode-tag {
+      display: inline-block; padding: 0.18rem 0.55rem;
+      border-radius: 6px; font-size: 0.7rem; font-weight: 700; margin-top: 0.8rem; width: fit-content;
+    }
+    .dojo-mode-tag.tag-practice { background: rgba(34,197,94,0.2); color: #86efac; border: 1px solid rgba(34,197,94,0.4); }
+    .dojo-mode-tag.tag-detail { background: rgba(167,139,250,0.2); color: #c4b5fd; border: 1px solid rgba(167,139,250,0.4); }
+    .dojo-mode-tag.tag-mock { background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); }
+
+    .dojo-mode-cta {
+      margin-top: 1rem;
+      padding: 0.55rem 0.9rem;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      color: white; border-radius: 8px;
+      text-align: center; font-weight: 800; font-size: 0.9rem;
+    }
+
+    .dojo-guidance {
+      margin-top: 2.5rem;
+      padding: 1.2rem 1.4rem;
+      background: rgba(34,197,94,0.06); border: 1px solid rgba(34,197,94,0.25);
+      border-radius: 12px; line-height: 1.7;
+    }
+    .dojo-guidance h3 { margin: 0 0 0.6rem; font-size: 1rem; color: #86efac; }
+    .dojo-guidance ul { margin: 0; padding-left: 1.2rem; color: #cbd5e1; font-size: 0.88rem; }
+    .dojo-guidance li { margin-bottom: 0.4rem; }
+  </style>
+</head>
+<body>
+  <nav class="dojo-nav">
+    <div class="dojo-nav-title">🏛️ 入試問題 道場</div>
+    <div class="dojo-nav-links">
+      <a href="mypage.html" class="dojo-nav-link">マイページ</a>
+      <a href="index.html" class="dojo-nav-link">トップ</a>
+    </div>
+  </nav>
+
+  <main class="dojo-container">
+    <section class="dojo-hero">
+      <h1>🏛️ 入試問題 道場</h1>
+      <p class="dojo-hero-sub">単元別演習・大学別深掘り・本番想定模試 — 入試対策のすべてが、ここに。</p>
+      <span class="dojo-hero-count">📊 全 18,000 問+ の演習プール</span>
+    </section>
+
+    <section class="dojo-modes">
+      <!-- Mode 1: 単元別演習 -->
+      <a href="english-exam.html" class="dojo-mode-card">
+        <div class="dojo-mode-icon">📚</div>
+        <div class="dojo-mode-title">単元別 演習</div>
+        <span class="dojo-mode-count">16,900 問+ プール</span>
+        <div class="dojo-mode-desc">
+          英検 / TOEFL / IELTS / TOEIC + 大学入試 (英語・理系数物化生・文系古漢現社) を <strong>単元別に演習</strong>。
+          AI チューター質問・正解率トラッキング付き。日々の演習・SRS 学習に最適。
+        </div>
+        <span class="dojo-mode-tag tag-practice">🟢 日々の演習</span>
+        <div class="dojo-mode-cta">→ 単元別演習をはじめる</div>
+      </a>
+
+      <!-- Mode 2: 大学別 1問深掘り -->
+      <a href="university-exam.html" class="dojo-mode-card">
+        <div class="dojo-mode-icon">🎓</div>
+        <div class="dojo-mode-title">大学別 1問深掘り</div>
+        <span class="dojo-mode-count">1,240 問・88 大学</span>
+        <div class="dojo-mode-desc">
+          東大・京大・早慶・一橋・MARCH・医学部・関関同立 等の <strong>AI オリジナル問題</strong> を 1 問単位で。
+          5-15 行の詳細解説で深く理解。志望校の出題スタイルに慣れたい時に。
+        </div>
+        <span class="dojo-mode-tag tag-detail">🟣 1問深掘り</span>
+        <div class="dojo-mode-cta">→ 大学別 過去問風 を開く</div>
+      </a>
+
+      <!-- Mode 3: 本番想定模試 -->
+      <a href="mock-exam.html" class="dojo-mode-card">
+        <div class="dojo-mode-icon">🎯</div>
+        <div class="dojo-mode-title">本番想定 完全模試</div>
+        <span class="dojo-mode-count">1,170 問プール・AI 採点</span>
+        <div class="dojo-mode-desc">
+          時間制限あり + 偏差値推定 + Claude 5 AI 多視点採点。
+          月 1〜2 回の腕試し用。本番形式 (英語・共通テスト中心) で実力測定。
+        </div>
+        <span class="dojo-mode-tag tag-mock">🔴 本番想定</span>
+        <div class="dojo-mode-cta">→ 完全模試を受験する</div>
+      </a>
+    </section>
+
+    <section class="dojo-guidance">
+      <h3>💡 使い分けのコツ</h3>
+      <ul>
+        <li><strong>日常学習</strong>: 📚 単元別演習で苦手分野を反復 → AI 単語帳で語彙固め</li>
+        <li><strong>志望校対策</strong>: 🎓 大学別 1問深掘りで出題スタイルに慣れる → 詳細解説で論点把握</li>
+        <li><strong>月 1-2 回</strong>: 🎯 本番想定 完全模試で偏差値推定・時間配分の練習</li>
+        <li><strong>困ったら</strong>: マイページの <a href="ai-tutor-photo.html" style="color:#86efac;font-weight:700;">📷 写真で質問</a> で AI チューターに直接相談</li>
+      </ul>
+    </section>
+  </main>
+
+  <script src="auth-guard.js?v=20260522-nyushi-dojo"></script>
+</body>
+</html>
