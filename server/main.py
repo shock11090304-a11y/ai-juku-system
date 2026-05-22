@@ -8020,6 +8020,9 @@ EXAM_QUESTION_ROTATION = [
     ("rikei", "chem_q1",      "keio_rikei"),  # 2026-05-22 P1 fix: audit memory 13 大問の残り
     ("rikei", "bio_q1",       "keio_rikei"),
     ("rikei", "math_q1",      "sophia_rikei"),
+    ("rikei", "phys_q1",      "sophia_rikei"),  # 2026-05-22 塾長指示: 上級レベル補強 (UI mismatch fix)
+    ("rikei", "chem_q1",      "sophia_rikei"),  # 2026-05-22 塾長指示: 上級レベル補強 (UI mismatch fix)
+    # note: sophia 機能創造/情報理工は生物選択不可 (物理/化学/数学のみ) → bio_q1 は意図的に含めない
     # 医学部
     ("rikei", "math_q1",      "igakubu_kokoritsu_rikei"),
     ("rikei", "math_q2",      "igakubu_kokoritsu_rikei"),  # 2026-05-22 P1 fix: UI 既存・ROTATION 漏れ
@@ -8028,10 +8031,16 @@ EXAM_QUESTION_ROTATION = [
     ("rikei", "bio_q1",       "igakubu_kokoritsu_rikei"),
     ("rikei", "math_q1",      "igakubu_shiritsu_rikei"),
     ("rikei", "phys_q1",      "igakubu_shiritsu_rikei"),
-    # MARCH 理工 (汎用)
+    ("rikei", "chem_q1",      "igakubu_shiritsu_rikei"),  # 2026-05-22 塾長指示: 上級レベル補強 (UI mismatch fix)
+    ("rikei", "bio_q1",       "igakubu_shiritsu_rikei"),  # 2026-05-22 塾長指示: 上級レベル補強 (UI mismatch fix)
+    # MARCH 理工 (基礎演習 + 本試水準 q1 系)
     ("rikei", "math_basic",   "march_rikei"),
     ("rikei", "phys_basic_q", "march_rikei"),
     ("rikei", "chem_basic_q", "march_rikei"),
+    ("rikei", "math_q1",      "march_rikei"),  # 2026-05-22 塾長指示: 中レベル本試水準補強
+    ("rikei", "phys_q1",      "march_rikei"),  # 2026-05-22 塾長指示: 中レベル本試水準補強
+    ("rikei", "chem_q1",      "march_rikei"),  # 2026-05-22 塾長指示: 中レベル本試水準補強
+    ("rikei", "bio_q1",       "march_rikei"),  # 2026-05-22 塾長指示: 中レベル本試水準補強
     # 🏛️ 大学入試 社会 (共通テスト + 難関大) ・2026-05-14 塾長指示「古文の基礎問、理科、社会の問題を作成」追加
     # 共通テスト 社会 (基礎レベル・高校教科書範囲)
     ("daigaku", "nihonshi",   "kyotsu"),   # 共通テスト日本史 (古代~近現代・通史)
