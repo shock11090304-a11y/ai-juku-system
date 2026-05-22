@@ -427,8 +427,33 @@
 
     // ✅ 2026-05-22 致命 fix: onclick 文字列補間で問題文 (apostrophe/quote 含む) を生埋め込みすると
     // JS が壊れて全カードのボタンが silent fail。data-* + addEventListener + escapeHtml に置換。
-    const _escHtml = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, ch =>
-      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch]);
+    // 🎯 2026-05-22 塾長指示: 「下線部が引けていない」bug fix
+    //   ① 問題データに <u>...</u> タグがあれば実 underline として復活 (whitelist 方式・XSS 安全)
+    //   ② <u> 無し + 「下線部」を含む + (A)(B)(C)(D) 全揃いの正誤問題は自動で下線ラップ
+    //   english-exam.js の escapeTextWithMath パターン準拠
+    const _UL_STYLE = 'text-decoration:underline;text-decoration-thickness:2px;text-decoration-color:#a78bfa;text-underline-offset:3px;background:linear-gradient(transparent 60%, rgba(167,139,250,0.20) 60%);padding:0 2px;';
+    const _escHtml = (s) => {
+      if (s == null) return '';
+      let out = String(s).replace(/[&<>"']/g, ch =>
+        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch]);
+      // ① <u>...</u> whitelist 復活 (他タグは escape 維持で XSS 安全)
+      out = out
+        .replace(/&lt;u&gt;/gi, `<u style="${_UL_STYLE}">`)
+        .replace(/&lt;\/u&gt;/gi, '</u>');
+      // ② 「下線部」かつ (A)(B)(C)(D) 全揃いかつ既存 <u> 無しの場合のみ自動ラップ
+      //   (TOEIC 写真説明等の (A)(B)(C)(D) 選択肢には「下線部」が無いので発火しない)
+      const hasUTag = /<u[\s>]/i.test(out);
+      const hasMarker = /下線部/.test(out) && /\(A\)[\s\S]*?\(B\)[\s\S]*?\(C\)[\s\S]*?\(D\)/.test(out);
+      if (!hasUTag && hasMarker) {
+        // nested 括弧対応: (A) the man (who is tired) (B) ... のような関係詞節を破壊しない
+        // `(?:[^(\n]|\([^)\n]*\))+?` = 「( でない文字」 or 「(...) 括弧 (改行と ) を含まない単純括弧)」
+        out = out.replace(
+          /\(([A-D])\)\s*((?:[^(\n]|\([^)\n]*\))+?)(?=\s*\([A-D]\)|[.!?\n]|$)/g,
+          (_m, letter, content) => `<u style="${_UL_STYLE}">(${letter}) ${content.trim()}</u>`
+        );
+      }
+      return out;
+    };
     const _escAttr = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, ch =>
       ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch]);
     // ✅ 2026-05-22 塾長指示: 選択肢 (A)(B)(C)(D) パターンを解析して click 自動採点 UI を有効化

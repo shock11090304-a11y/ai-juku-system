@@ -92,9 +92,9 @@
   }
 
   function renderQuestion(sec, q, sIdx, qIdx) {
-    const passage = q.passage ? `<div class="me-passage"><pre>${escapeHtml(q.passage)}</pre></div>` : '';
-    const audio = q.audio_script ? `<details class="me-audio-script"><summary>📢 音声スクリプト</summary><pre>${escapeHtml(q.audio_script)}</pre></details>` : '';
-    const prompt = q.prompt ? `<div class="me-prompt"><strong>${escapeHtml(q.prompt)}</strong></div>` : '';
+    const passage = q.passage ? `<div class="me-passage"><pre>${escapeHtmlBody(q.passage)}</pre></div>` : '';
+    const audio = q.audio_script ? `<details class="me-audio-script"><summary>📢 音声スクリプト</summary><pre>${escapeHtmlBody(q.audio_script)}</pre></details>` : '';
+    const prompt = q.prompt ? `<div class="me-prompt"><strong>${escapeHtmlBody(q.prompt)}</strong></div>` : '';
     const yearLabel = q.year_simulated || q.univ_simulated ? `<div class="me-q-meta">${escapeHtml(q.univ_simulated || '')} ${q.year_simulated || ''}</div>` : '';
 
     const subQs = (q.questions || []).map(sq => {
@@ -108,7 +108,7 @@
         `).join('');
         return `
           <div class="me-subq">
-            <div class="me-subq-stem">${escapeHtml(sq.stem)}</div>
+            <div class="me-subq-stem">${escapeHtmlBody(sq.stem)}</div>
             <div class="me-choices">${choices}</div>
           </div>
         `;
@@ -117,11 +117,12 @@
         // /api/mock-exam/grade-essay-multiview に POST → Claude Opus / GPT-4o / Sonnet / Gemini Pro / Haiku の
         // 5 視点で並列採点して accordion 表示
         const subqUid = `${q.exam_question_id}_${sq.id}`;
-        const stemEsc = escapeHtml(sq.stem || '');
+        const stemEscAttr = escapeHtml(sq.stem || '');  // data-* attribute 用 (素 escape)
+        const stemEscBody = escapeHtmlBody(sq.stem || '');  // body 表示用 (<u> + 自動下線)
         const examLevel = (currentSession && currentSession.exam_type) || 'todai';
         return `
           <div class="me-subq me-subq-essay" data-uid="${subqUid}">
-            <div class="me-subq-stem">${stemEsc}</div>
+            <div class="me-subq-stem">${stemEscBody}</div>
             <textarea class="me-essay-input" id="meEssay_${subqUid}" rows="6"
                       placeholder="ここに英作文を入力 (or 下の📷ボタンで答案写真 upload)"></textarea>
             <div class="me-essay-actions">
@@ -133,7 +134,7 @@
               </label>
               <span class="me-photo-name" id="mePhotoName_${subqUid}"></span>
               <button class="me-grade-btn btn-primary" data-uid="${subqUid}"
-                      data-stem="${stemEsc}" data-level="${escapeHtml(examLevel)}">
+                      data-stem="${stemEscAttr}" data-level="${escapeHtml(examLevel)}">
                 🌟 5 AI 多視点で採点
               </button>
             </div>
@@ -463,6 +464,28 @@
   function escapeHtml(s) {
     if (s == null) return '';
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // 🎯 2026-05-22 塾長指示: 「下線部が引けていない」bug fix (HTML body 用)
+  //   ① 問題データに <u>...</u> タグがあれば実 underline として復活 (whitelist 方式・XSS 安全)
+  //   ② <u> 無し + 「下線部」を含む + (A)(B)(C)(D) 全揃いの正誤問題は自動で下線ラップ
+  //   ※ HTML attribute (data-*) には escapeHtml を使うこと (この関数は <u> タグ出力するので attribute 用途では NG)
+  const _UL_STYLE_ME = 'text-decoration:underline;text-decoration-thickness:2px;text-decoration-color:#6366f1;text-underline-offset:3px;background:linear-gradient(transparent 60%, rgba(99,102,241,0.18) 60%);padding:0 2px;';
+  function escapeHtmlBody(s) {
+    let out = escapeHtml(s);
+    out = out
+      .replace(/&lt;u&gt;/gi, `<u style="${_UL_STYLE_ME}">`)
+      .replace(/&lt;\/u&gt;/gi, '</u>');
+    const hasUTag = /<u[\s>]/i.test(out);
+    const hasMarker = /下線部/.test(out) && /\(A\)[\s\S]*?\(B\)[\s\S]*?\(C\)[\s\S]*?\(D\)/.test(out);
+    if (!hasUTag && hasMarker) {
+      // nested 括弧対応: (A) the man (who is tired) (B) ... を破壊しない
+      out = out.replace(
+        /\(([A-D])\)\s*((?:[^(\n]|\([^)\n]*\))+?)(?=\s*\([A-D]\)|[.!?\n]|$)/g,
+        (_m, letter, content) => `<u style="${_UL_STYLE_ME}">(${letter}) ${content.trim()}</u>`
+      );
+    }
+    return out;
   }
 
   // === 初期化 ===
