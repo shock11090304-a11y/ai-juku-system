@@ -2535,6 +2535,42 @@ function renderMathInNode(el) {
   }
 }
 
+// 教科書準拠の数式レンダリング (2026-05-22 塾長指示「分数の表記などを教科書に準じて」)
+// escapeHtml + plain text の分数 (a/b) を \(\frac{a}{b}\) に LaTeX 化 + KaTeX render 可能化。
+// 既存 \(...\) / \[...\] / $$...$$ / $...$ 内部は保護してそのまま render に委譲。
+function formatMath(s) {
+  if (s == null) return '';
+  let html = String(s);
+  // 1. 先に LaTeX delimiter 内部を stash (escape 前に保護)
+  //    通常テキスト衝突なしの不可視 sentinel (\u0001\u0002 = SOH+STX)
+  const ph = [];
+  const SENT = '\u0001\u0002';
+  const stash = (m) => { ph.push(m); return SENT + (ph.length - 1) + SENT; };
+  html = html.replace(/\\\(([\s\S]*?)\\\)/g, stash);
+  html = html.replace(/\\\[([\s\S]*?)\\\]/g, stash);
+  html = html.replace(/\$\$([\s\S]*?)\$\$/g, stash);
+  // 注: $...$ single dollar は通貨表記 ($10 等) と衝突するため stash しない
+  // 2. HTML escape (math 外のみ対象・stash 済み内部は不変)
+  html = html.replace(/&/g, '&amp;')
+             .replace(/</g, '&lt;')
+             .replace(/>/g, '&gt;')
+             .replace(/"/g, '&quot;')
+             .replace(/'/g, '&#39;');
+  // 3. plain text 分数 (a/b) → \(\frac{a}{b}\) (1-4 桁数字・括弧付きのみ)
+  html = html.replace(/\((\d{1,4})\s*\/\s*(\d{1,4})\)/g, '\\(\\frac{$1}{$2}\\)');
+  // 4. 改行 (LaTeX delimiter 復元前なので display math 内 \n は影響なし)
+  html = html.replace(/\n/g, '<br>');
+  // 5. restore (sentinel + 番号 + sentinel)
+  const restoreRe = new RegExp(SENT + '(\\d+)' + SENT, 'g');
+  html = html.replace(restoreRe, (m, idx) => {
+    const v = ph[parseInt(idx)];
+    if (v === undefined) return m;
+    // CRITICAL fix: math 内部の <, >, & も escape (innerHTML 時の DOM 破壊回避・KaTeX は &lt; &gt; を理解)
+    return v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  });
+  return html;
+}
+
 function appendMessage(role, content, save = true) {
   const container = document.getElementById('chatMessages');
   const div = document.createElement('div');
@@ -7958,18 +7994,18 @@ function renderProblems(data, layout, source) {
     }
     if (!choices) {
       // 4択でない問題 (記述等) は plain text
-      return `<div class="problem-block-body">${escapeHtml(p.question || '').replace(/\n/g, '<br>')}</div>`;
+      return `<div class="problem-block-body">${formatMath(p.question || '')}</div>`;
     }
     const ansIdx = _extractAnswerIndex(p.answer, choices);
     const pid = _problemId(stem, choices);
     const stats = _getProblemStats(pid);
     const circles = '①②③④⑤⑥⑦⑧⑨';
-    let body = `<div class="problem-block-body">${escapeHtml(stem).replace(/\n/g, '<br>')}</div>`;
+    let body = `<div class="problem-block-body">${formatMath(stem)}</div>`;
     body += `<div class="problem-choices" data-pid="${pid}" data-correct="${ansIdx}">`;
     choices.forEach((c, i) => {
       body += `<button type="button" class="problem-choice-btn" data-idx="${i}">
         <span class="choice-letter">${circles[i] || (i + 1)}</span>
-        <span class="choice-text">${escapeHtml(c)}</span>
+        <span class="choice-text">${formatMath(c)}</span>
       </button>`;
     });
     body += `</div>`;
@@ -8004,8 +8040,8 @@ function renderProblems(data, layout, source) {
       html += `<div class="answer-block-v2">
         <div class="ab-label">問題 ${p.number || ''} の解答</div>
         <div class="ab-content">
-          <p><strong>答え:</strong> ${escapeHtml(p.answer || '').replace(/\n/g, '<br>')}</p>
-          ${p.explanation ? `<p style="margin-top:0.75rem;"><strong>解説:</strong><br>${escapeHtml(p.explanation).replace(/\n/g, '<br>')}</p>` : ''}
+          <p><strong>答え:</strong> ${formatMath(p.answer || '')}</p>
+          ${p.explanation ? `<p style="margin-top:0.75rem;"><strong>解説:</strong><br>${formatMath(p.explanation)}</p>` : ''}
         </div>
       </div>`;
     });
@@ -8023,8 +8059,8 @@ function renderProblems(data, layout, source) {
       <div class="answer-block-v2">
         <div class="ab-label">解答・解説</div>
         <div class="ab-content">
-          <p><strong>答え:</strong> ${escapeHtml(p.answer || '').replace(/\n/g, '<br>')}</p>
-          ${p.explanation ? `<p style="margin-top:0.75rem;"><strong>解説:</strong><br>${escapeHtml(p.explanation).replace(/\n/g, '<br>')}</p>` : ''}
+          <p><strong>答え:</strong> ${formatMath(p.answer || '')}</p>
+          ${p.explanation ? `<p style="margin-top:0.75rem;"><strong>解説:</strong><br>${formatMath(p.explanation)}</p>` : ''}
         </div>
       </div>`;
     });
@@ -8044,8 +8080,8 @@ function renderProblems(data, layout, source) {
           <div class="answer-block-v2" style="margin-top:1rem;">
             <div class="ab-label">解答・解説</div>
             <div class="ab-content">
-              <p><strong>答え:</strong> ${escapeHtml(p.answer || '').replace(/\n/g, '<br>')}</p>
-              ${p.explanation ? `<p style="margin-top:0.75rem;"><strong>解説:</strong><br>${escapeHtml(p.explanation).replace(/\n/g, '<br>')}</p>` : ''}
+              <p><strong>答え:</strong> ${formatMath(p.answer || '')}</p>
+              ${p.explanation ? `<p style="margin-top:0.75rem;"><strong>解説:</strong><br>${formatMath(p.explanation)}</p>` : ''}
             </div>
           </div>
         </div>
@@ -8054,7 +8090,7 @@ function renderProblems(data, layout, source) {
   }
 
   if (data.summary) {
-    html += `<h2 style="margin-top:2rem;">📌 まとめ・学習のポイント</h2><div style="line-height:2;font-size:0.95rem;">${escapeHtml(data.summary).replace(/\n/g, '<br>')}</div>`;
+    html += `<h2 style="margin-top:2rem;">📌 まとめ・学習のポイント</h2><div style="line-height:2;font-size:0.95rem;">${formatMath(data.summary)}</div>`;
   }
   return html;
 }
