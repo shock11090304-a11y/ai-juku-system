@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>大学別 過去問風オリジナル | AIコーチング</title>
-  <script src="cache-purge.js?v=20260523-social-subdivide"></script>
+  <script src="cache-purge.js?v=20260523-social-subtabs"></script>
   <script src="frontend-error-monitor.js"></script>
   <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost-r2">
   <link rel="stylesheet" href="vocab.css?v=20260503-quiz4-levels">
@@ -199,6 +199,14 @@
         <button type="button" class="ux-subject-btn" data-subject="英語">📝 英語</button>
         <button type="button" class="ux-subject-btn" data-subject="国語">📜 国語</button>
         <button type="button" class="ux-subject-btn" data-subject="社会">🌍 社会</button>
+        <!-- 🏛️ 社会サブタブ (2026-05-23 塾長指示「ここにタブの追加をして」) -->
+        <button type="button" class="ux-subject-btn" data-subject="日本史">🏯 日本史</button>
+        <button type="button" class="ux-subject-btn" data-subject="世界史">🌐 世界史</button>
+        <button type="button" class="ux-subject-btn" data-subject="地理">🗺️ 地理</button>
+        <button type="button" class="ux-subject-btn" data-subject="政治経済">⚖️ 政治経済</button>
+        <button type="button" class="ux-subject-btn" data-subject="倫理">🧠 倫理</button>
+        <button type="button" class="ux-subject-btn" data-subject="公共">🏛️ 公共</button>
+        <button type="button" class="ux-subject-btn" data-subject="現代社会">📰 現代社会</button>
       </div>
     </div>
 
@@ -241,6 +249,28 @@
         return ''; // それ以外 (英文法問題等) は「全科目」のみで表示
       }
 
+      // 🏛️ 社会サブタブ → DB subject 完全一致セット (2026-05-23 塾長指示「ここにタブの追加をして」)
+      // 表記揺れ (政治経済 vs 政治・経済、日本史 vs 日本史B 等) を吸収
+      const SOCIAL_SUB_MAP = {
+        '日本史':   ['日本史','日本史B'],
+        '世界史':   ['世界史','世界史B'],
+        '地理':     ['地理'],
+        '政治経済': ['政治経済','政治・経済'],
+        '倫理':     ['倫理','倫理政治経済'],
+        '公共':     ['公共','公共・政治経済','公共・倫理'],
+        '現代社会': ['現代社会'],
+      };
+      function matchesSubjectFilter(itemSubject, filter) {
+        // filter が空 = 全科目
+        if (!filter) return true;
+        // 社会サブタブ → 完全一致セット
+        if (SOCIAL_SUB_MAP[filter]) {
+          return SOCIAL_SUB_MAP[filter].includes(itemSubject);
+        }
+        // それ以外 → 正規化一致
+        return normalizeSubject(itemSubject) === filter;
+      }
+
       async function loadMeta() {
         const grid = document.getElementById('uxUnivGrid');
         try {
@@ -278,10 +308,8 @@
         const byUniv = {};
         allMetaItems.forEach(it => {
           // currentSubject が指定されていれば、該当科目のみカウント (大学カードに表示する科目別件数も filter)
-          if (currentSubject) {
-            const norm = normalizeSubject(it.subject);
-            if (norm !== currentSubject) return;
-          }
+          // 社会サブタブ (日本史/世界史/etc) は完全一致モード・他は正規化モード (matchesSubjectFilter で吸収)
+          if (currentSubject && !matchesSubjectFilter(it.subject, currentSubject)) return;
           if (!byUniv[it.university]) byUniv[it.university] = { count: 0, subjects: [] };
           byUniv[it.university].count += it.count;
           byUniv[it.university].subjects.push(`${it.subject}:${it.count}`);
@@ -316,9 +344,9 @@
           // 科目フィルター適用時は subject パラメータも付与 (DB 細分化 subject 全件 OR で fetch するため複数 fetch を merge)
           let items = [];
           if (currentSubject) {
-            // 該当大学の (subject 正規化 → currentSubject 一致) の細分化 subject を全件 fetch
+            // 該当大学の subject を social-sub (完全一致) or 正規化マッチで絞り込み
             const subjectsToFetch = allMetaItems
-              .filter(it => it.university === univ && normalizeSubject(it.subject) === currentSubject)
+              .filter(it => it.university === univ && matchesSubjectFilter(it.subject, currentSubject))
               .map(it => it.subject);
             const fetched = await Promise.all(subjectsToFetch.map(s =>
               fetch(`${BACKEND_URL}/api/university-problems?university=${encodeURIComponent(univ)}&subject=${encodeURIComponent(s)}&limit=50`).then(r => r.json())
