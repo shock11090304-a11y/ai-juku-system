@@ -425,25 +425,34 @@
         </div>`
       : '';
 
+    // ✅ 2026-05-22 致命 fix: onclick 文字列補間で問題文 (apostrophe/quote 含む) を生埋め込みすると
+    // JS が壊れて全カードのボタンが silent fail。data-* + addEventListener + escapeHtml に置換。
+    const _escHtml = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, ch =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch]);
+    const _escAttr = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, ch =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch]);
     const dueHtml = due.length === 0
       ? `<div style="color: #34d399; padding: 1rem; text-align: center;">✅ 今日の復習は完了しました！</div>`
       : `<div class="lb-due-list">
           ${due.slice(0, 10).map(c => {
             const overdue = c.dueDate < _todayStr();
+            const probText = (c.problem || '').slice(0, 100) + (c.problem && c.problem.length > 100 ? '...' : '');
+            const ansText = (c.answer || '').slice(0, 300);
+            const explText = (c.explanation || '').slice(0, 500);
             return `
             <div class="lb-card" style="background: rgba(255,255,255,0.04); border: 1px solid ${overdue ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.1)'}; border-radius: 10px; padding: 0.85rem; margin: 0.5rem 0;">
               <div style="display: flex; justify-content: space-between; align-items: start; gap: 0.5rem;">
                 <div style="flex: 1; min-width: 0;">
-                  <div style="font-size: 0.7rem; color: #818cf8; font-weight: 700;">${c.subject}${c.topic ? ` > ${c.topic}` : ''}${overdue ? ' ⚠️ 遅延' : ''}</div>
-                  <div style="font-size: 0.92rem; color: #e4e4e7; margin: 0.3rem 0; line-height: 1.5;">${(c.problem || '').slice(0, 100)}${c.problem.length > 100 ? '...' : ''}</div>
+                  <div style="font-size: 0.7rem; color: #818cf8; font-weight: 700;">${_escHtml(c.subject)}${c.topic ? ` > ${_escHtml(c.topic)}` : ''}${overdue ? ' ⚠️ 遅延' : ''}</div>
+                  <div style="font-size: 0.92rem; color: #e4e4e7; margin: 0.3rem 0; line-height: 1.5;">${_escHtml(probText)}</div>
                   <div style="font-size: 0.72rem; color: #71717a;">復習${c.repetitions}回 / 次回間隔${c.interval}日 / lapses${c.lapses}</div>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 0.4rem; flex-shrink: 0;">
-                  <button onclick="LB.markCard('${c.key}', true, '${studentId}')" style="background: #10b981; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.8rem;">✓ 正解</button>
-                  <button onclick="LB.markCard('${c.key}', false, '${studentId}')" style="background: #ef4444; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.8rem;">✗ 不正解</button>
+                  <button type="button" class="lb-btn-correct" data-key="${_escAttr(c.key)}" data-sid="${_escAttr(studentId)}" style="background: #10b981; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.8rem;">✓ 正解</button>
+                  <button type="button" class="lb-btn-wrong" data-key="${_escAttr(c.key)}" data-sid="${_escAttr(studentId)}" style="background: #ef4444; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.8rem;">✗ 不正解</button>
                 </div>
               </div>
-              ${c.answer ? `<details style="margin-top: 0.5rem; font-size: 0.82rem;"><summary style="cursor: pointer; color: #a78bfa;">📖 解答を見る</summary><div style="padding: 0.5rem; background: rgba(0,0,0,0.3); border-radius: 6px; margin-top: 0.3rem; color: #cbd5e1;">${(c.answer || '').slice(0, 300)}${c.explanation ? `<br><br><strong>解説:</strong> ${(c.explanation || '').slice(0, 500)}` : ''}</div></details>` : ''}
+              ${c.answer ? `<details style="margin-top: 0.5rem; font-size: 0.82rem;"><summary style="cursor: pointer; color: #a78bfa;">📖 解答を見る</summary><div style="padding: 0.5rem; background: rgba(0,0,0,0.3); border-radius: 6px; margin-top: 0.3rem; color: #cbd5e1;">${_escHtml(ansText)}${explText ? `<br><br><strong>解説:</strong> ${_escHtml(explText)}` : ''}</div></details>` : ''}
             </div>`;
           }).join('')}
         </div>`;
@@ -460,6 +469,21 @@
       ${stumblingHtml}
       ${dueHtml}
     `;
+    // ✅ 2026-05-22 致命 fix: data-* + event 委任で click ハンドラを必ず attach
+    // (旧 inline onclick は問題文の ' / " で JS が壊れて 79 件全カードが silent fail していた)
+    if (!el.dataset.lbHandlerAttached) {
+      el.addEventListener('click', (ev) => {
+        const btn = ev.target.closest('button.lb-btn-correct, button.lb-btn-wrong');
+        if (!btn) return;
+        ev.preventDefault();
+        const key = btn.dataset.key;
+        const sid = btn.dataset.sid || 'guest';
+        const isCorrect = btn.classList.contains('lb-btn-correct');
+        if (!key) return;
+        try { markCard(key, isCorrect, sid); } catch (e) { console.warn('LB.markCard failed:', e); }
+      });
+      el.dataset.lbHandlerAttached = '1';
+    }
   }
 
   /**
