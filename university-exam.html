@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>大学別 過去問風オリジナル | AIコーチング</title>
-  <script src="cache-purge.js?v=20260503-univexam"></script>
+  <script src="cache-purge.js?v=20260522-subject-filter"></script>
   <script src="frontend-error-monitor.js"></script>
   <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost-r2">
   <link rel="stylesheet" href="vocab.css?v=20260503-quiz4-levels">
@@ -40,6 +40,26 @@
     }
     .ux-univ-card:hover { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.5); }
     .ux-univ-card.active { background: rgba(99,102,241,0.22); border-color: rgba(99,102,241,0.7); }
+    .ux-univ-card.hidden { display: none; }
+
+    /* 科目フィルター bar (2026-05-22) */
+    .ux-subject-btn {
+      padding: 0.45rem 0.95rem;
+      background: rgba(255,255,255,0.06);
+      border: 1.5px solid rgba(255,255,255,0.15);
+      color: #e4e4e7;
+      border-radius: 8px;
+      font-size: 0.86rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .ux-subject-btn:hover { background: rgba(99,102,241,0.18); border-color: rgba(99,102,241,0.45); }
+    .ux-subject-btn.active {
+      background: linear-gradient(135deg, rgba(99,102,241,0.35), rgba(168,85,247,0.25));
+      border-color: rgba(99,102,241,0.7);
+      color: #fff;
+    }
     .ux-univ-name { font-size: 1.1rem; font-weight: 800; color: #c7d2fe; }
     .ux-univ-meta { font-size: 0.75rem; color: #94a3b8; margin-top: 0.3rem; }
 
@@ -167,6 +187,21 @@
       🎯 本番想定 (時間制限+偏差値推定) は <a href="mock-exam.html" style="color:#fca5a5;font-weight:700;text-decoration:underline;">🎯 完全模試</a> へ。
     </div>
 
+    <!-- 科目フィルター bar (2026-05-22 塾長指示: 理系/文系ではなく科目で選択) -->
+    <div id="uxSubjectBar" style="margin:1rem 0 1.2rem;padding:0.9rem 1.1rem;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.30);border-radius:10px;">
+      <div style="font-size:0.85rem;color:#cbd5e1;margin-bottom:0.6rem;font-weight:700;">🔎 科目から絞り込む:</div>
+      <div id="uxSubjectButtons" style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+        <button type="button" class="ux-subject-btn active" data-subject="">📚 全科目</button>
+        <button type="button" class="ux-subject-btn" data-subject="数学">📐 数学</button>
+        <button type="button" class="ux-subject-btn" data-subject="物理">⚛️ 物理</button>
+        <button type="button" class="ux-subject-btn" data-subject="化学">🧪 化学</button>
+        <button type="button" class="ux-subject-btn" data-subject="生物">🧬 生物</button>
+        <button type="button" class="ux-subject-btn" data-subject="英語">📝 英語</button>
+        <button type="button" class="ux-subject-btn" data-subject="国語">📜 国語</button>
+        <button type="button" class="ux-subject-btn" data-subject="社会">🌍 社会</button>
+      </div>
+    </div>
+
     <!-- 大学カード -->
     <div id="uxUnivGrid" class="ux-univ-grid">
       <div class="ux-loading">大学一覧を読み込み中...</div>
@@ -186,6 +221,25 @@
         : window.location.origin;
 
       let currentUniv = null;
+      let currentSubject = ''; // 2026-05-22 塾長指示: 科目フィルター
+      let allMetaItems = []; // 全 (university, subject, count) を保持・科目フィルターで再描画
+
+      // 科目正規化マッピング (DB の細分化 subject → 7 大科目)
+      // 例: 「国語(古文)」「漢文」「小論文」→ 「国語」, 「物理基礎」→ 「物理」 等
+      function normalizeSubject(s) {
+        const x = String(s || '').trim();
+        if (!x) return '';
+        if (x.startsWith('数学') || x === '算数') return '数学';
+        if (x.startsWith('物理')) return '物理';
+        if (x.startsWith('化学')) return '化学';
+        if (x.startsWith('生物')) return '生物';
+        if (x.startsWith('英語')) return '英語';
+        if (x.startsWith('国語') || x === '漢文' || x === '小論文') return '国語';
+        if (['世界史','世界史B','日本史','日本史B','地理','政治経済','倫理','倫理政治経済','現代社会','社会'].includes(x)) return '社会';
+        // 地学・地学基礎は科目ボタンが無いため「全科目」のみで表示 (社会に混入させない)
+        if (x.startsWith('地学')) return '';
+        return ''; // それ以外 (英文法問題等) は「全科目」のみで表示
+      }
 
       async function loadMeta() {
         const grid = document.getElementById('uxUnivGrid');
@@ -197,25 +251,55 @@
             grid.innerHTML = '<div class="ux-loading">問題はまだ登録されていません</div>';
             return;
           }
-          // 大学単位で集約 (同大学に複数科目がある可能性)
-          const byUniv = {};
-          d.items.forEach(it => {
-            if (!byUniv[it.university]) byUniv[it.university] = { count: 0, subjects: [] };
-            byUniv[it.university].count += it.count;
-            byUniv[it.university].subjects.push(`${it.subject}:${it.count}`);
-          });
-          grid.innerHTML = Object.entries(byUniv).map(([u, info]) => `
-            <div class="ux-univ-card" data-univ="${escapeHtml(u)}">
-              <div class="ux-univ-name">${escapeHtml(u)}</div>
-              <div class="ux-univ-meta">${info.subjects.join(' / ')} <br>合計 ${info.count} 問</div>
-            </div>
-          `).join('');
-          grid.querySelectorAll('.ux-univ-card').forEach(card => {
-            card.addEventListener('click', () => selectUniv(card.dataset.univ));
+          allMetaItems = d.items;
+          renderUnivGrid();
+          // 科目フィルターボタンのバインド
+          document.querySelectorAll('#uxSubjectButtons .ux-subject-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              currentSubject = btn.dataset.subject || '';
+              document.querySelectorAll('#uxSubjectButtons .ux-subject-btn').forEach(b =>
+                b.classList.toggle('active', b === btn));
+              renderUnivGrid();
+              // 既選択の問題リスト・詳細をリセット
+              document.getElementById('uxList').style.display = 'none';
+              document.getElementById('uxDetail').style.display = 'none';
+              currentUniv = null;
+              document.querySelectorAll('.ux-univ-card').forEach(c => c.classList.remove('active'));
+            });
           });
         } catch (e) {
           grid.innerHTML = `<div class="ux-loading">読込エラー: ${e.message}</div>`;
         }
+      }
+
+      function renderUnivGrid() {
+        const grid = document.getElementById('uxUnivGrid');
+        // 大学単位で集約 (科目フィルター適用)
+        const byUniv = {};
+        allMetaItems.forEach(it => {
+          // currentSubject が指定されていれば、該当科目のみカウント (大学カードに表示する科目別件数も filter)
+          if (currentSubject) {
+            const norm = normalizeSubject(it.subject);
+            if (norm !== currentSubject) return;
+          }
+          if (!byUniv[it.university]) byUniv[it.university] = { count: 0, subjects: [] };
+          byUniv[it.university].count += it.count;
+          byUniv[it.university].subjects.push(`${it.subject}:${it.count}`);
+        });
+        const entries = Object.entries(byUniv);
+        if (entries.length === 0) {
+          grid.innerHTML = `<div class="ux-loading">「${currentSubject || '全科目'}」に該当する大学なし</div>`;
+          return;
+        }
+        grid.innerHTML = entries.map(([u, info]) => `
+          <div class="ux-univ-card" data-univ="${escapeHtml(u)}">
+            <div class="ux-univ-name">${escapeHtml(u)}</div>
+            <div class="ux-univ-meta">${info.subjects.join(' / ')} <br>合計 ${info.count} 問</div>
+          </div>
+        `).join('');
+        grid.querySelectorAll('.ux-univ-card').forEach(card => {
+          card.addEventListener('click', () => selectUniv(card.dataset.univ));
+        });
       }
 
       async function selectUniv(univ) {
@@ -226,9 +310,26 @@
         list.style.display = '';
         list.innerHTML = '<div class="ux-loading">問題一覧を読み込み中...</div>';
         document.getElementById('uxDetail').style.display = 'none';
+        // 2026-05-22 塾長指示: 大学カードクリック後、問題リストへ自動スクロール
+        setTimeout(() => list.scrollIntoView({block: 'start', behavior: 'smooth'}), 100);
         try {
-          const r = await fetch(`${BACKEND_URL}/api/university-problems?university=${encodeURIComponent(univ)}&limit=50`);
-          const d = await r.json();
+          // 科目フィルター適用時は subject パラメータも付与 (DB 細分化 subject 全件 OR で fetch するため複数 fetch を merge)
+          let items = [];
+          if (currentSubject) {
+            // 該当大学の (subject 正規化 → currentSubject 一致) の細分化 subject を全件 fetch
+            const subjectsToFetch = allMetaItems
+              .filter(it => it.university === univ && normalizeSubject(it.subject) === currentSubject)
+              .map(it => it.subject);
+            const fetched = await Promise.all(subjectsToFetch.map(s =>
+              fetch(`${BACKEND_URL}/api/university-problems?university=${encodeURIComponent(univ)}&subject=${encodeURIComponent(s)}&limit=50`).then(r => r.json())
+            ));
+            fetched.forEach(d => { if (d.items) items.push(...d.items); });
+          } else {
+            const r = await fetch(`${BACKEND_URL}/api/university-problems?university=${encodeURIComponent(univ)}&limit=50`);
+            const d = await r.json();
+            items = d.items || [];
+          }
+          const d = { items };
           if (!d.items || d.items.length === 0) {
             list.innerHTML = '<div class="ux-loading">該当問題なし</div>'; return;
           }
