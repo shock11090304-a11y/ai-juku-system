@@ -431,6 +431,58 @@
       ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch]);
     const _escAttr = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, ch =>
       ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch]);
+    // ✅ 2026-05-22 塾長指示: 選択肢 (A)(B)(C)(D) パターンを解析して click 自動採点 UI を有効化
+    // 問題文に (A) ... (B) ... 等のパターンがあれば main stem + 選択肢配列に分割
+    const _parseChoices = (text) => {
+      if (!text || typeof text !== 'string') return null;
+      const re = /\(([A-Dア-エ1-4])\)\s*([\s\S]+?)(?=\(([A-Dア-エ1-4])\)|$)/g;
+      const choices = [];
+      let m;
+      while ((m = re.exec(text)) !== null) {
+        choices.push({ letter: m[1], text: m[2].replace(/\s+$/, '').trim() });
+        if (choices.length >= 6) break;
+      }
+      if (choices.length < 2) return null;  // 最低 2 択以上で有効
+      const firstIdx = text.indexOf('(' + choices[0].letter + ')');
+      const stem = firstIdx > 0 ? text.slice(0, firstIdx).trim() : '';
+      return { stem, choices };
+    };
+    // 正解選択肢を answer から抽出 (seed data の各種 format 対応)
+    // choicesLetters: parseChoices.choices.map(c=>c.letter) で choice 側の letter list を渡すと
+    // bare digit answer ("0"/"1"/"2") の zero-indexed vs one-indexed を choices と整合判定
+    // e.g., choices=[1,2,3,4] + answer="2" → "2" (one-indexed) / choices=[A,B,C,D] + answer="2" → "C"
+    const _extractCorrectLetter = (answer, choicesLetters) => {
+      // 整数防御: String 化 + trim 後に空文字なら null
+      const text = String(answer == null ? '' : answer).trim();
+      if (!text) return null;
+      // 1) (X) パターン (最優先・確実)
+      const m1 = text.match(/\(([A-Dア-エ])\)/);
+      if (m1) return m1[1];
+      // 2) "正解: X" / "答え: X" / "回答: X" / "答え X" 系 (半角/全角コロン両対応)
+      const m2 = text.match(/(?:正解|答え|回答|解答|答)[::\s\t]*\s*\(?([A-Dア-エ])\)?/);
+      if (m2) return m2[1];
+      // 3) 文頭の単独文字 (X / X. / X、 / X」 等)
+      const m3 = text.match(/^[\s「『]*([A-Dア-エ])(?:[\s.。、」』:：]|$)/);
+      if (m3) return m3[1];
+      // 4) bare digit answer: choicesLetters に [1-4] が含まれれば one-indexed そのまま返却
+      //    含まれていなければ zero-indexed → A/B/C/D 変換 (backend seed format)
+      const isOneIndexedChoices = Array.isArray(choicesLetters)
+        && choicesLetters.some(l => /^[1-4]$/.test(String(l)));
+      if (/^[0-3]$/.test(text)) {
+        if (isOneIndexedChoices && /^[1-3]$/.test(text)) return text;  // one-indexed digit choices
+        return ['A', 'B', 'C', 'D'][parseInt(text, 10)];  // zero-indexed (default)
+      }
+      // 5) "正解: 0" 系も同様
+      const m5 = text.match(/(?:正解|答え|回答|解答|答)[::\s\t]*\s*([0-3])(?:\b|$)/);
+      if (m5) {
+        const dig = m5[1];
+        if (isOneIndexedChoices && /^[1-3]$/.test(dig)) return dig;
+        return ['A', 'B', 'C', 'D'][parseInt(dig, 10)];
+      }
+      // 6) "4" 単独 → one-indexed の 4 として返す ("4" は zero-indexed 範囲外)
+      if (/^4$/.test(text)) return '4';
+      return null;
+    };
     const dueHtml = due.length === 0
       ? `<div style="color: #34d399; padding: 1rem; text-align: center;">✅ 今日の復習は完了しました！</div>`
       : `<div class="lb-due-list">
@@ -453,6 +505,27 @@
             const explHtml = explIsLong
               ? `${_escHtml(explShort)}<details style="display:inline; margin-left:0.3rem;"><summary style="cursor:pointer; color:#a78bfa; display:inline; font-size:0.78rem;">… 全文を見る</summary><div style="margin-top:0.3rem; padding:0.5rem; background:rgba(0,0,0,0.25); border-radius:6px; white-space:pre-wrap; max-height:300px; overflow-y:auto;">${_escHtml(c.explanation)}</div></details>`
               : _escHtml(explShort);
+            // ✅ 2026-05-22 塾長指示: 選択肢自動採点 UI (問題文に (A)(B)(C)(D) パターンがあれば有効化)
+            const parsed = _parseChoices(c.problem);
+            const hasInteractive = parsed && parsed.choices && parsed.choices.length >= 2;
+            // ✅ 2026-05-22: choices の letter list を渡して one-indexed vs zero-indexed を文脈判定
+            const correctLetter = hasInteractive
+              ? _extractCorrectLetter(c.answer, parsed.choices.map(ch => ch.letter))
+              : null;
+            const interactiveHtml = hasInteractive ? `
+              <details class="lb-interactive" data-key="${_escAttr(c.key)}" data-sid="${_escAttr(studentId)}" data-correct="${_escAttr(correctLetter || '')}" style="margin-top: 0.6rem; font-size: 0.85rem;">
+                <summary style="cursor: pointer; color: #10b981; font-weight: 700; padding: 0.4rem 0.7rem; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35); border-radius: 8px;">📝 解いてみる (選択肢から選ぶ・自動採点)</summary>
+                <div style="padding: 0.8rem; background: rgba(0,0,0,0.30); border: 1px solid rgba(16,185,129,0.25); border-radius: 8px; margin-top: 0.4rem;">
+                  ${parsed.stem ? `<div style="margin-bottom: 0.7rem; white-space: pre-wrap; line-height: 1.6; color: #e4e4e7;">${_escHtml(parsed.stem)}</div>` : ''}
+                  <div class="lb-choices" style="display: grid; gap: 0.4rem;">
+                    ${parsed.choices.map(ch => `
+                      <button type="button" class="lb-choice-btn" data-choice="${_escAttr(ch.letter)}" style="text-align: left; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 0.55rem 0.85rem; color: #e4e4e7; font-size: 0.88rem; cursor: pointer; line-height: 1.5;">(${_escHtml(ch.letter)}) ${_escHtml(ch.text)}</button>
+                    `).join('')}
+                  </div>
+                  <div class="lb-feedback" style="display: none; margin-top: 0.6rem; padding: 0.5rem 0.7rem; border-radius: 8px; font-weight: 700; font-size: 0.92rem;"></div>
+                </div>
+              </details>
+            ` : '';
             return `
             <div class="lb-card" style="background: rgba(255,255,255,0.04); border: 1px solid ${overdue ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.1)'}; border-radius: 10px; padding: 0.85rem; margin: 0.5rem 0;">
               <div style="display: flex; justify-content: space-between; align-items: start; gap: 0.5rem;">
@@ -466,6 +539,7 @@
                   <button type="button" class="lb-btn-wrong" data-key="${_escAttr(c.key)}" data-sid="${_escAttr(studentId)}" style="background: #ef4444; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.8rem;">✗ 不正解</button>
                 </div>
               </div>
+              ${interactiveHtml}
               ${c.answer ? `<details style="margin-top: 0.5rem; font-size: 0.82rem;"><summary style="cursor: pointer; color: #a78bfa;">📖 解答を見る</summary><div style="padding: 0.5rem; background: rgba(0,0,0,0.3); border-radius: 6px; margin-top: 0.3rem; color: #cbd5e1;">${ansHtml}${c.explanation ? `<br><br><strong>解説:</strong> ${explHtml}` : ''}</div></details>` : ''}
             </div>`;
           }).join('')}
@@ -487,6 +561,61 @@
     // (旧 inline onclick は問題文の ' / " で JS が壊れて 79 件全カードが silent fail していた)
     if (!el.dataset.lbHandlerAttached) {
       el.addEventListener('click', (ev) => {
+        // 🆕 2026-05-22 塾長指示: 選択肢ボタン (lb-choice-btn) → 自動採点 + markCard
+        const choiceBtn = ev.target.closest('button.lb-choice-btn');
+        if (choiceBtn) {
+          ev.preventDefault();
+          const details = choiceBtn.closest('details.lb-interactive');
+          if (!details) return;
+          const key = details.dataset.key;
+          const sid = details.dataset.sid || 'guest';
+          const correctLetter = details.dataset.correct || '';
+          const chosen = choiceBtn.dataset.choice || '';
+          if (!key) return;
+          const isCorrect = correctLetter && chosen === correctLetter;
+          // フィードバック表示
+          const feedback = details.querySelector('.lb-feedback');
+          if (feedback) {
+            feedback.style.display = '';
+            if (isCorrect) {
+              feedback.style.background = 'rgba(16,185,129,0.20)';
+              feedback.style.color = '#86efac';
+              feedback.textContent = `✅ 正解! (${correctLetter}) — 1.5 秒後に SRS が更新されます`;
+            } else if (correctLetter) {
+              feedback.style.background = 'rgba(239,68,68,0.20)';
+              feedback.style.color = '#fca5a5';
+              feedback.textContent = `❌ 不正解 (あなたの選択: ${chosen} / 正解: ${correctLetter}) — 1.5 秒後に SRS が更新されます`;
+            } else {
+              feedback.style.background = 'rgba(251,191,36,0.20)';
+              feedback.style.color = '#fde68a';
+              feedback.textContent = `⚠️ 正解情報が登録されていないので採点できません。手動で「✓ 正解 / ✗ 不正解」を押してください`;
+            }
+          }
+          // 選択肢 button を視覚化 + disable
+          details.querySelectorAll('button.lb-choice-btn').forEach(b => {
+            b.disabled = true;
+            b.style.cursor = 'default';
+            if (correctLetter && b.dataset.choice === correctLetter) {
+              b.style.background = 'rgba(16,185,129,0.30)';
+              b.style.borderColor = 'rgba(16,185,129,0.60)';
+              b.style.color = '#fff';
+            } else if (b === choiceBtn) {
+              b.style.background = 'rgba(239,68,68,0.30)';
+              b.style.borderColor = 'rgba(239,68,68,0.60)';
+              b.style.color = '#fff';
+            } else {
+              b.style.opacity = '0.4';
+            }
+          });
+          // 正解情報があれば 1.5 秒後に SRS 更新
+          if (correctLetter) {
+            setTimeout(() => {
+              try { markCard(key, !!isCorrect, sid); } catch (e) { console.warn('LB.markCard (choice) failed:', e); }
+            }, 1500);
+          }
+          return;
+        }
+        // 既存の手動「正解/不正解」ボタン (記述式 fallback)
         const btn = ev.target.closest('button.lb-btn-correct, button.lb-btn-wrong');
         if (!btn) return;
         ev.preventDefault();
