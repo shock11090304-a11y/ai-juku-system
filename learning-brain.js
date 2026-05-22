@@ -436,15 +436,29 @@
       : `<div class="lb-due-list">
           ${due.slice(0, 10).map(c => {
             const overdue = c.dueDate < _todayStr();
-            const probText = (c.problem || '').slice(0, 100) + (c.problem && c.problem.length > 100 ? '...' : '');
-            const ansText = (c.answer || '').slice(0, 300);
-            const explText = (c.explanation || '').slice(0, 500);
+            // ✅ 2026-05-22 塾長指示: 問題文が 100 字超過時は details で「全文を見る」展開
+            const probShort = (c.problem || '').slice(0, 100);
+            const probIsLong = c.problem && c.problem.length > 100;
+            const probFullHtml = probIsLong
+              ? `${_escHtml(probShort)}<details style="display:inline; margin-left:0.3rem;"><summary style="cursor:pointer; color:#a78bfa; display:inline; font-size:0.82rem;">… 全文を見る</summary><div style="margin-top:0.4rem; padding:0.6rem; background:rgba(0,0,0,0.30); border:1px solid rgba(167,139,250,0.20); border-radius:6px; color:#e4e4e7; white-space:pre-wrap; line-height:1.6; max-height:300px; overflow-y:auto;">${_escHtml(c.problem)}</div></details>`
+              : _escHtml(probShort);
+            // 解答・解説も同様に全文展開可能に
+            const ansShort = (c.answer || '').slice(0, 300);
+            const ansIsLong = c.answer && c.answer.length > 300;
+            const explShort = (c.explanation || '').slice(0, 500);
+            const explIsLong = c.explanation && c.explanation.length > 500;
+            const ansHtml = ansIsLong
+              ? `${_escHtml(ansShort)}<details style="display:inline; margin-left:0.3rem;"><summary style="cursor:pointer; color:#a78bfa; display:inline; font-size:0.78rem;">… 全文を見る</summary><div style="margin-top:0.3rem; padding:0.5rem; background:rgba(0,0,0,0.25); border-radius:6px; white-space:pre-wrap; max-height:300px; overflow-y:auto;">${_escHtml(c.answer)}</div></details>`
+              : _escHtml(ansShort);
+            const explHtml = explIsLong
+              ? `${_escHtml(explShort)}<details style="display:inline; margin-left:0.3rem;"><summary style="cursor:pointer; color:#a78bfa; display:inline; font-size:0.78rem;">… 全文を見る</summary><div style="margin-top:0.3rem; padding:0.5rem; background:rgba(0,0,0,0.25); border-radius:6px; white-space:pre-wrap; max-height:300px; overflow-y:auto;">${_escHtml(c.explanation)}</div></details>`
+              : _escHtml(explShort);
             return `
             <div class="lb-card" style="background: rgba(255,255,255,0.04); border: 1px solid ${overdue ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.1)'}; border-radius: 10px; padding: 0.85rem; margin: 0.5rem 0;">
               <div style="display: flex; justify-content: space-between; align-items: start; gap: 0.5rem;">
                 <div style="flex: 1; min-width: 0;">
                   <div style="font-size: 0.7rem; color: #818cf8; font-weight: 700;">${_escHtml(c.subject)}${c.topic ? ` > ${_escHtml(c.topic)}` : ''}${overdue ? ' ⚠️ 遅延' : ''}</div>
-                  <div style="font-size: 0.92rem; color: #e4e4e7; margin: 0.3rem 0; line-height: 1.5;">${_escHtml(probText)}</div>
+                  <div style="font-size: 0.92rem; color: #e4e4e7; margin: 0.3rem 0; line-height: 1.5;">${probFullHtml}</div>
                   <div style="font-size: 0.72rem; color: #71717a;">復習${c.repetitions}回 / 次回間隔${c.interval}日 / lapses${c.lapses}</div>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 0.4rem; flex-shrink: 0;">
@@ -452,7 +466,7 @@
                   <button type="button" class="lb-btn-wrong" data-key="${_escAttr(c.key)}" data-sid="${_escAttr(studentId)}" style="background: #ef4444; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.8rem;">✗ 不正解</button>
                 </div>
               </div>
-              ${c.answer ? `<details style="margin-top: 0.5rem; font-size: 0.82rem;"><summary style="cursor: pointer; color: #a78bfa;">📖 解答を見る</summary><div style="padding: 0.5rem; background: rgba(0,0,0,0.3); border-radius: 6px; margin-top: 0.3rem; color: #cbd5e1;">${_escHtml(ansText)}${explText ? `<br><br><strong>解説:</strong> ${_escHtml(explText)}` : ''}</div></details>` : ''}
+              ${c.answer ? `<details style="margin-top: 0.5rem; font-size: 0.82rem;"><summary style="cursor: pointer; color: #a78bfa;">📖 解答を見る</summary><div style="padding: 0.5rem; background: rgba(0,0,0,0.3); border-radius: 6px; margin-top: 0.3rem; color: #cbd5e1;">${ansHtml}${c.explanation ? `<br><br><strong>解説:</strong> ${explHtml}` : ''}</div></details>` : ''}
             </div>`;
           }).join('')}
         </div>`;
