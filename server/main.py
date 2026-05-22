@@ -816,6 +816,8 @@ def init_db():
         ON study_log_reactions(log_id, actor_type, kind)
         WHERE actor_type = 'admin' AND kind = 'like';
     -- 学習計画 (Phase 2 - 国公立難関大学コース限定・塾長指示 2026-05-05)
+    -- week_pattern (2026-05-22 塾長指示): 'all' = 毎日 / "1,3,5" = 月水金 / "2,4,6" = 火木土 等
+    --   1=月 2=火 3=水 4=木 5=金 6=土 7=日 (isoweekday 準拠)
     CREATE TABLE IF NOT EXISTS study_plans (
         id {pk},
         student_id INTEGER NOT NULL,
@@ -829,6 +831,7 @@ def init_db():
         color TEXT DEFAULT '#6366f1',
         status TEXT DEFAULT 'active',
         note TEXT,
+        week_pattern TEXT DEFAULT 'all',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
@@ -1099,6 +1102,10 @@ def init_db():
         ("signup_utm_campaign", "ALTER TABLE students ADD COLUMN signup_utm_campaign TEXT DEFAULT NULL"),
         ("signup_lp_variant", "ALTER TABLE students ADD COLUMN signup_lp_variant TEXT DEFAULT NULL"),
         ("signup_referrer", "ALTER TABLE students ADD COLUMN signup_referrer TEXT DEFAULT NULL"),
+        # 📅 隔日学習計画 (塾長指示 2026-05-22): study_plans に曜日パターン列追加
+        # week_pattern = 'all' (毎日) / "1,3,5" (月水金) / "2,4,6" (火木土) 等
+        # 1=月 2=火 3=水 4=木 5=金 6=土 7=日 (isoweekday 準拠)
+        ("study_plan_week_pattern", "ALTER TABLE study_plans ADD COLUMN week_pattern TEXT DEFAULT 'all'"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -25870,6 +25877,7 @@ class StudyPlanCreateRequest(BaseModel):
     target_pages: Optional[int] = None
     color: Optional[str] = None
     note: Optional[str] = None
+    week_pattern: Optional[str] = None  # 'all' or '1,3,5' (1=月..7=日) - 2026-05-22 塾長指示
 
 
 class StudyPlanUpdateRequest(BaseModel):
@@ -25882,7 +25890,28 @@ class StudyPlanUpdateRequest(BaseModel):
     target_pages: Optional[int] = None
     color: Optional[str] = None
     status: Optional[str] = None
-    note: Optional[str] = None
+    note: Optional[str] = None  # 2026-05-22 fix: 元から欠落していたが PUT endpoint で参照あり (AttributeError fix)
+    week_pattern: Optional[str] = None  # 'all' or '1,3,5' (1=月..7=日) - 2026-05-22 塾長指示
+
+
+# 📅 week_pattern validator (2026-05-22 塾長指示: 隔日学習計画)
+def _validate_week_pattern(pattern: Optional[str]) -> str:
+    """week_pattern を validate。'all' or '1,3,5' (1-7 の int 群) を受け付け、正規化された string を返す。
+    無効値や None は 'all' を返す (default = 毎日)。"""
+    if not pattern or not isinstance(pattern, str):
+        return 'all'
+    p = pattern.strip().lower()
+    if p == 'all' or p == '':
+        return 'all'
+    try:
+        days = sorted(set(int(x.strip()) for x in p.split(',') if x.strip()))
+        if not days or not all(1 <= d <= 7 for d in days):
+            return 'all'
+        if len(days) == 7:
+            return 'all'
+        return ','.join(str(d) for d in days)
+    except (ValueError, TypeError):
+        return 'all'
 
 
 _PLAN_STATUSES = {"active", "completed", "archived"}
@@ -25958,14 +25987,17 @@ def create_study_plan(payload: StudyPlanCreateRequest, request: Request, authori
         except (TypeError, ValueError):
             raise HTTPException(status_code=400, detail="目標ページが不正です")
 
+    # 📅 隔日学習計画 (2026-05-22 塾長指示): week_pattern validate
+    week_pattern = _validate_week_pattern(payload.week_pattern)
+
     conn = db()
     try:
         c = conn.cursor()
         try:
             c.execute(
-                "INSERT INTO study_plans (student_id, title, subject, material, start_date, end_date, target_minutes, target_pages, color, note) "
-                "VALUES (?,?,?,?,?,?,?,?,?,?) RETURNING id",
-                (student["id"], title, subject, material, sd.isoformat(), ed.isoformat(), target_minutes, target_pages, color, note)
+                "INSERT INTO study_plans (student_id, title, subject, material, start_date, end_date, target_minutes, target_pages, color, note, week_pattern) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?) RETURNING id",
+                (student["id"], title, subject, material, sd.isoformat(), ed.isoformat(), target_minutes, target_pages, color, note, week_pattern)
             )
             returned = c.fetchone()
             new_id = returned["id"] if returned else None
@@ -26044,6 +26076,10 @@ def update_study_plan(plan_id: int, payload: StudyPlanUpdateRequest, request: Re
                 updates["target_pages"] = tp
             except (TypeError, ValueError):
                 raise HTTPException(status_code=400, detail="目標ページが不正です")
+
+        # 📅 隔日学習計画 (2026-05-22 塾長指示): week_pattern 更新
+        if payload.week_pattern is not None:
+            updates["week_pattern"] = _validate_week_pattern(payload.week_pattern)
 
         if not updates:
             return {"ok": True, "no_change": True}
@@ -26164,13 +26200,13 @@ def get_my_study_plans(authorization: Optional[str] = Header(None), status: Opti
         c = conn.cursor()
         if status:
             c.execute(
-                "SELECT id, student_id, title, subject, material, start_date, end_date, target_minutes, target_pages, color, status, note, created_at "
+                "SELECT id, student_id, title, subject, material, start_date, end_date, target_minutes, target_pages, color, status, note, week_pattern, created_at "
                 "FROM study_plans WHERE student_id = ? AND status = ? ORDER BY start_date DESC",
                 (student["id"], status)
             )
         else:
             c.execute(
-                "SELECT id, student_id, title, subject, material, start_date, end_date, target_minutes, target_pages, color, status, note, created_at "
+                "SELECT id, student_id, title, subject, material, start_date, end_date, target_minutes, target_pages, color, status, note, week_pattern, created_at "
                 "FROM study_plans WHERE student_id = ? ORDER BY start_date DESC",
                 (student["id"],)
             )
@@ -26190,6 +26226,7 @@ def get_my_study_plans(authorization: Optional[str] = Header(None), status: Opti
                 "color": r["color"] or '#6366f1',
                 "status": r["status"],
                 "note": r["note"],
+                "week_pattern": (r["week_pattern"] if "week_pattern" in r.keys() else 'all') or 'all',
                 "created_at": str(r["created_at"]) if r["created_at"] else None,
             })
         plans = _enrich_plans_with_progress(c, plans)

@@ -1459,6 +1459,8 @@ function initStudyPlan() {
       saveBtn.addEventListener('click', submitStudyPlan);
       saveBtn._spBound = true;
     }
+    // 📅 隔日学習計画 (2026-05-22 塾長指示): preset ボタン + checkbox の event bind
+    _bindWeekPatternUI();
     // AI 機能 (A+B+C)
     bindStudyPlanAiButtons();
     loadMyStudyPlans();
@@ -1970,6 +1972,54 @@ function clearSpForm() {
   if (saveBtn) saveBtn.textContent = '📝 計画を保存';
   const msg = document.getElementById('spFormMessage');
   if (msg) msg.textContent = '';
+  // 📅 隔日学習計画: form reset 時に week_pattern も 'all' (毎日) に戻す
+  _setWeekPatternUI('all');
+}
+
+// 📅 隔日学習計画 (2026-05-22 塾長指示): week_pattern UI helpers
+function _setWeekPatternUI(pattern) {
+  const wpInput = document.getElementById('spWeekPattern');
+  if (wpInput) wpInput.value = pattern || 'all';
+  // checkbox 反映
+  const days = (pattern && pattern !== 'all') ? String(pattern).split(',').map(d => parseInt(d, 10)) : [1,2,3,4,5,6,7];
+  document.querySelectorAll('.sp-wp-day').forEach(cb => {
+    const d = parseInt(cb.dataset.day, 10);
+    cb.checked = (pattern === 'all') ? false : days.includes(d);
+  });
+  // preset ボタンの active 状態
+  document.querySelectorAll('.sp-wp-preset').forEach(btn => {
+    const isActive = btn.dataset.pattern === (pattern || 'all');
+    btn.style.opacity = isActive ? '1' : '0.55';
+    btn.style.transform = isActive ? 'scale(1.05)' : 'scale(1)';
+  });
+}
+
+function _bindWeekPatternUI() {
+  document.querySelectorAll('.sp-wp-preset').forEach(btn => {
+    if (btn._wpBound) return;
+    btn.addEventListener('click', () => _setWeekPatternUI(btn.dataset.pattern));
+    btn._wpBound = true;
+  });
+  document.querySelectorAll('.sp-wp-day').forEach(cb => {
+    if (cb._wpBound) return;
+    cb.addEventListener('change', () => {
+      const checked = Array.from(document.querySelectorAll('.sp-wp-day:checked'))
+        .map(c => parseInt(c.dataset.day, 10))
+        .sort();
+      const pattern = (checked.length === 0 || checked.length === 7) ? 'all' : checked.join(',');
+      const wpInput = document.getElementById('spWeekPattern');
+      if (wpInput) wpInput.value = pattern;
+      // preset 同期 (custom 入力時は preset 全部非 active)
+      document.querySelectorAll('.sp-wp-preset').forEach(b => {
+        const isActive = b.dataset.pattern === pattern;
+        b.style.opacity = isActive ? '1' : '0.55';
+        b.style.transform = isActive ? 'scale(1.05)' : 'scale(1)';
+      });
+    });
+    cb._wpBound = true;
+  });
+  // 初期 active 表示 (毎日 default)
+  _setWeekPatternUI('all');
 }
 
 async function submitStudyPlan() {
@@ -1996,6 +2046,10 @@ async function submitStudyPlan() {
   if (!start_date || !end_date) { if (msg) { msg.textContent = '開始日と終了日を入力してください'; msg.style.color = '#fca5a5'; } return; }
   if (end_date < start_date) { if (msg) { msg.textContent = '終了日は開始日以降にしてください'; msg.style.color = '#fca5a5'; } return; }
 
+  // 📅 隔日学習計画 (2026-05-22 塾長指示): week_pattern を form から取得
+  const wpInput = document.getElementById('spWeekPattern');
+  const week_pattern = (wpInput && wpInput.value) || 'all';
+
   const body = {
     title, subject,
     material: material || undefined,
@@ -2003,6 +2057,7 @@ async function submitStudyPlan() {
     target_minutes: target_minutes_raw ? parseInt(target_minutes_raw, 10) : undefined,
     target_pages: target_pages_raw ? parseInt(target_pages_raw, 10) : undefined,
     color, note: note || undefined,
+    week_pattern,
   };
 
   btn.disabled = true;
@@ -2062,6 +2117,35 @@ async function loadMyStudyPlans() {
   }
 }
 
+// 📅 隔日学習計画 helper (2026-05-22 塾長指示): week_pattern → 表示文字列
+function _formatWeekPattern(pattern) {
+  if (!pattern || pattern === 'all') return '毎日';
+  const names = {1:'月',2:'火',3:'水',4:'木',5:'金',6:'土',7:'日'};
+  const days = String(pattern).split(',').map(d => parseInt(d, 10)).filter(d => d>=1 && d<=7).sort();
+  if (!days.length) return '毎日';
+  const key = days.join(',');
+  if (key === '1,2,3,4,5') return '平日';
+  if (key === '6,7') return '週末';
+  if (key === '1,3,5') return '月水金';
+  if (key === '2,4,6') return '火木土';
+  return days.map(d => names[d]).join('');
+}
+
+// 「今日学習する日か」(week_pattern と現在の曜日を比較)
+// 🛡️ 2026-05-22 fix: ブラウザ TZ ではなく JST (Asia/Tokyo) で曜日判定。
+// 海外在住・端末 TZ ズレ・JST 深夜帯で「今日の学習日」誤判定を防ぐ。
+// _slJstDate(0) で 'YYYY-MM-DD' (JST) を取得 → noon UTC で Date 化して getUTCDay() で曜日抽出。
+// (時刻部分は 12:00 UTC 固定なので DST 等の影響を受けず安全)
+function _isTodayLearningDay(pattern) {
+  if (!pattern || pattern === 'all') return true;
+  const jstYmd = _slJstDate(0); // 'YYYY-MM-DD' (JST)
+  const d = new Date(jstYmd + 'T12:00:00Z'); // noon UTC で固定 → 曜日は JST と同一日付
+  const dayNum = d.getUTCDay(); // 0=日, 1=月..6=土
+  const iso = dayNum === 0 ? 7 : dayNum; // 1=月..7=日 に正規化
+  const days = String(pattern).split(',').map(d => parseInt(d, 10));
+  return days.includes(iso);
+}
+
 function renderSpPlanGroup(label, plans, accentColor) {
   if (!plans.length) return '';
   const cards = plans.map(p => {
@@ -2072,18 +2156,26 @@ function renderSpPlanGroup(label, plans, accentColor) {
     const dayPct = Math.round(elapsedDays / totalDays * 100);
     const minPct = p.progress_minutes_pct;
     const pagePct = p.progress_pages_pct;
+    // 📅 隔日学習計画 (2026-05-22 塾長指示)
+    const wp = p.week_pattern || 'all';
+    const wpLabel = _formatWeekPattern(wp);
+    const isToday = p.status === 'active' && _isTodayLearningDay(wp);
+    const cardBg = isToday ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.04)';
+    const cardBorder = isToday ? '4px solid #22c55e' : `4px solid ${escapeHtml(p.color)}`;
     return `
-      <div style="background:rgba(255,255,255,0.04); border-left:4px solid ${escapeHtml(p.color)}; border-radius:8px; padding:0.85rem; margin-bottom:0.6rem;">
+      <div style="background:${cardBg}; border-left:${cardBorder}; border-radius:8px; padding:0.85rem; margin-bottom:0.6rem;">
         <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.4rem;">
           <div style="flex:1;">
-            <div style="font-weight:700; color:#e4e4e7; font-size:0.95rem;">${escapeHtml(p.title)}</div>
+            <div style="font-weight:700; color:#e4e4e7; font-size:0.95rem;">${isToday ? '<span style="color:#86efac;margin-right:0.3rem;">🟢</span>' : ''}${escapeHtml(p.title)}</div>
             <div style="font-size:0.78rem; color:#a1a1aa; margin-top:0.2rem;">
               <span style="background:rgba(99,102,241,0.2); color:#c7d2fe; padding:0.1rem 0.4rem; border-radius:4px; font-size:0.72rem;">${escapeHtml(p.subject)}</span>
+              <span style="background:${wp==='all'?'rgba(148,163,184,0.2)':'rgba(167,139,250,0.22)'}; color:${wp==='all'?'#cbd5e1':'#c4b5fd'}; padding:0.1rem 0.4rem; border-radius:4px; font-size:0.72rem; margin-left:0.3rem;">📅 ${escapeHtml(wpLabel)}</span>
               ${p.material ? `<span style="margin-left:0.3rem;">${escapeHtml(p.material)}</span>` : ''}
             </div>
             <div style="font-size:0.75rem; color:#71717a; margin-top:0.2rem;">
               ${escapeHtml(p.start_date)} 〜 ${escapeHtml(p.end_date)}
               ${p.status === 'active' ? `<span style="color:${remainDays <= 7 ? '#fca5a5' : '#a1a1aa'}; margin-left:0.5rem;">残り ${remainDays} 日</span>` : ''}
+              ${isToday ? '<span style="color:#86efac;margin-left:0.5rem;font-weight:700;">📌 今日の学習日</span>' : ''}
             </div>
           </div>
           <div style="display:flex; gap:0.3rem;">
@@ -2146,6 +2238,8 @@ async function editStudyPlan(id) {
     document.getElementById('spTargetPages').value = plan.target_pages || '';
     document.getElementById('spColor').value = plan.color || '#6366f1';
     document.getElementById('spNote').value = plan.note || '';
+    // 📅 隔日学習計画: week_pattern を form に反映
+    _setWeekPatternUI(plan.week_pattern || 'all');
     const wrap = document.getElementById('spFormWrap');
     wrap.dataset.editId = id;
     wrap.style.display = '';
