@@ -360,15 +360,28 @@ const EXAMS = {
       // note: sophia 機能創造/情報理工は生物選択不可 → bio_q1 を意図的に含めない
       sophia_rikei: [
         { key: 'math_q1',  name: '数学 大問1', icon: '📐', timeMin: 25, qCount: 1, scoreMax: 25, desc: '機能創造/情報理工 数学' },
+        { key: 'math_q2',  name: '数学 大問2', icon: '📐', timeMin: 25, qCount: 1, scoreMax: 25, desc: 'ベクトル/数列/複素数 標準' },
         { key: 'phys_q1',  name: '物理 大問1', icon: '⚛️', timeMin: 25, qCount: 1, scoreMax: 25, desc: '力学/電磁気/波動' },
         { key: 'chem_q1',  name: '化学 大問1', icon: '🧪', timeMin: 25, qCount: 1, scoreMax: 25, desc: '理論/無機/有機' },
       ],
       // 私立医学部 (2026-05-22 塾長指示: 上級レベル UI mismatch fix)
       igakubu_shiritsu_rikei: [
         { key: 'math_q1',  name: '数学 大問1', icon: '📐', timeMin: 30, qCount: 1, scoreMax: 25, desc: '医療系数学 (微積/確率)' },
+        { key: 'math_q2',  name: '数学 大問2', icon: '📐', timeMin: 30, qCount: 1, scoreMax: 25, desc: 'ベクトル/数列/複素数' },
         { key: 'phys_q1',  name: '物理 大問1', icon: '⚛️', timeMin: 30, qCount: 1, scoreMax: 25, desc: '医療系物理 (放射線/光学)' },
         { key: 'chem_q1',  name: '化学 大問1', icon: '🧪', timeMin: 30, qCount: 1, scoreMax: 25, desc: '医薬化学/生化学' },
         { key: 'bio_q1',   name: '生物 大問1', icon: '🧬', timeMin: 30, qCount: 1, scoreMax: 25, desc: 'DNA/タンパク質/免疫/代謝' },
+      ],
+      // 阪大 理工 (2026-05-22 塾長指示: math_q2 + UI mismatch fix)
+      osaka_rikei: [
+        { key: 'math_q1',  name: '数学 大問1', icon: '📐', timeMin: 30, qCount: 1, scoreMax: 30, desc: '微積/極限/数列 等の難関融合' },
+        { key: 'math_q2',  name: '数学 大問2', icon: '📐', timeMin: 30, qCount: 1, scoreMax: 30, desc: 'ベクトル/複素数/整数' },
+        { key: 'phys_q1',  name: '物理 大問1', icon: '⚛️', timeMin: 30, qCount: 1, scoreMax: 30, desc: '力学/電磁気 (理工系)' },
+      ],
+      // 名大 理工 (2026-05-22 塾長指示: math_q2 + UI mismatch fix)
+      nagoya_rikei: [
+        { key: 'math_q1',  name: '数学 大問1', icon: '📐', timeMin: 30, qCount: 1, scoreMax: 30, desc: '微積/ベクトル/確率 標準' },
+        { key: 'math_q2',  name: '数学 大問2', icon: '📐', timeMin: 30, qCount: 1, scoreMax: 30, desc: '整数論/複素数/数列' },
       ],
       // MARCH 理工 (2026-05-22 塾長指示: 中レベル本試水準 q1 系を追加)
       march_rikei: [

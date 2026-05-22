@@ -8002,6 +8002,7 @@ EXAM_QUESTION_ROTATION = [
     ("rikei", "chem_q2",      "kyodai_rikei"),
     # 阪大/東工大/名大
     ("rikei", "math_q1",      "osaka_rikei"),
+    ("rikei", "math_q2",      "osaka_rikei"),  # 2026-05-22 塾長指示: math_q2 ROTATION 未登録 fix
     ("rikei", "phys_q1",      "osaka_rikei"),
     ("rikei", "math_q1",      "tokoda_rikei"),
     ("rikei", "math_q2",      "tokoda_rikei"),  # 2026-05-22 P1 fix: UI 既存・ROTATION 漏れ
@@ -8009,6 +8010,7 @@ EXAM_QUESTION_ROTATION = [
     ("rikei", "phys_q2",      "tokoda_rikei"),  # 2026-05-22 P1 fix: UI 既存・ROTATION 漏れ
     ("rikei", "chem_q1",      "tokoda_rikei"),  # 2026-05-22 P1 fix: UI 既存・ROTATION 漏れ
     ("rikei", "math_q1",      "nagoya_rikei"),
+    ("rikei", "math_q2",      "nagoya_rikei"),  # 2026-05-22 塾長指示: math_q2 ROTATION 未登録 fix
     # 早慶上智
     ("rikei", "math_q1",      "waseda_rikei"),
     ("rikei", "math_q2",      "waseda_rikei"),  # 2026-05-22 P1 fix: UI 既存・ROTATION 漏れ
@@ -8020,6 +8022,7 @@ EXAM_QUESTION_ROTATION = [
     ("rikei", "chem_q1",      "keio_rikei"),  # 2026-05-22 P1 fix: audit memory 13 大問の残り
     ("rikei", "bio_q1",       "keio_rikei"),
     ("rikei", "math_q1",      "sophia_rikei"),
+    ("rikei", "math_q2",      "sophia_rikei"),  # 2026-05-22 塾長指示: math_q2 ROTATION 未登録 fix
     ("rikei", "phys_q1",      "sophia_rikei"),  # 2026-05-22 塾長指示: 上級レベル補強 (UI mismatch fix)
     ("rikei", "chem_q1",      "sophia_rikei"),  # 2026-05-22 塾長指示: 上級レベル補強 (UI mismatch fix)
     # note: sophia 機能創造/情報理工は生物選択不可 (物理/化学/数学のみ) → bio_q1 は意図的に含めない
@@ -8030,6 +8033,7 @@ EXAM_QUESTION_ROTATION = [
     ("rikei", "chem_q1",      "igakubu_kokoritsu_rikei"),
     ("rikei", "bio_q1",       "igakubu_kokoritsu_rikei"),
     ("rikei", "math_q1",      "igakubu_shiritsu_rikei"),
+    ("rikei", "math_q2",      "igakubu_shiritsu_rikei"),  # 2026-05-22 塾長指示: math_q2 ROTATION 未登録 fix
     ("rikei", "phys_q1",      "igakubu_shiritsu_rikei"),
     ("rikei", "chem_q1",      "igakubu_shiritsu_rikei"),  # 2026-05-22 塾長指示: 上級レベル補強 (UI mismatch fix)
     ("rikei", "bio_q1",       "igakubu_shiritsu_rikei"),  # 2026-05-22 塾長指示: 上級レベル補強 (UI mismatch fix)
