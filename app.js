@@ -4550,7 +4550,43 @@ function spTaskCard(t, isToday) {
   </div>`;
 }
 
-function spRenderWeek() {
+// 📅 study_plans (DB・week_pattern 付) を spRenderWeek に統合 (2026-05-22 塾長指示「学習計画に反映されていない」fix)
+let _spDbPlansCache = null;
+let _spDbPlansFetchedAt = 0;
+
+async function _spFetchDbStudyPlans() {
+  // 5 分 cache
+  if (_spDbPlansCache && (Date.now() - _spDbPlansFetchedAt) < 5 * 60 * 1000) {
+    return _spDbPlansCache;
+  }
+  try {
+    const token = (typeof localStorage !== 'undefined') ? (localStorage.getItem('ai_juku_session_token') || '') : '';
+    if (!token) return [];
+    const r = await fetch('/api/study-plans/me?status=active', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!r.ok) return [];
+    const d = await r.json();
+    _spDbPlansCache = (d.plans || []).filter(p => p.status === 'active');
+    _spDbPlansFetchedAt = Date.now();
+    return _spDbPlansCache;
+  } catch (e) {
+    console.warn('[sp] fetch db study_plans failed:', e);
+    return [];
+  }
+}
+
+// 任意日付 (YYYY-MM-DD) が week_pattern に該当するか
+function _spIsStudyDayForPattern(pattern, dateStr) {
+  if (!pattern || pattern === 'all') return true;
+  const d = new Date(dateStr + 'T12:00:00');
+  const dayNum = d.getDay(); // 0=日, 1=月..6=土
+  const iso = dayNum === 0 ? 7 : dayNum; // 1=月..7=日 に正規化
+  const days = String(pattern).split(',').map(x => parseInt(x, 10));
+  return days.includes(iso);
+}
+
+async function spRenderWeek() {
   const grid = document.getElementById('spWeekGrid');
   const label = document.getElementById('spWeekLabel');
   if (!grid) return;
@@ -4558,24 +4594,44 @@ function spRenderWeek() {
   const sun = spAddDays(mon, 6);
   const today = spTodayJST();
   const data = spLoad();
-  if (label) label.textContent = `${mon} 〜 ${sun}${_spWeekOffset === 0 ? '（今週）' : ''}`;
+  // 📅 DB study_plans を fetch (5 分 cache・失敗時は空配列)
+  const dbPlans = await _spFetchDbStudyPlans();
+  if (label) label.textContent = `${mon} 〜 ${sun}${_spWeekOffset === 0 ? '(今週)' : ''}`;
   const dayNames = ['月', '火', '水', '木', '金', '土', '日'];
   let html = '';
   for (let i = 0; i < 7; i++) {
     const date = spAddDays(mon, i);
     const dayTasks = data.tasks.filter(t => t.planned_date === date)
       .sort((a, b) => (a.subject || '').localeCompare(b.subject || ''));
+    // 📅 該当日付かつ week_pattern 一致する DB plan を抽出
+    const dayDbPlans = dbPlans.filter(p =>
+      p.start_date <= date && date <= p.end_date &&
+      _spIsStudyDayForPattern(p.week_pattern, date)
+    );
     const done = dayTasks.filter(t => t.completed).length;
+    const totalCount = dayTasks.length + dayDbPlans.length;
     const classes = ['sp-day'];
     if (date === today) classes.push('today');
     if (i >= 5) classes.push('weekend');
+    // DB plan カード (read-only・mypage の学習計画タブで編集する旨を tooltip 化)
+    const dbPlanCards = dayDbPlans.map(p => `
+      <div class="sp-task-card sp-db-plan" title="📋 学習計画 (mypage の「学習計画」で編集)" style="border-left:3px solid ${escapeHtml(p.color || '#a78bfa')}; padding:0.45rem 0.6rem; background:rgba(167,139,250,0.10); border-radius:6px; margin-bottom:0.4rem;">
+        <div style="font-size:0.68rem; color:#c4b5fd; font-weight:700; display:flex; justify-content:space-between;">
+          <span>📋 ${escapeHtml(p.subject)}</span>
+          ${p.target_minutes ? `<span style="color:#86efac;">${p.target_minutes}分</span>` : ''}
+        </div>
+        <div style="font-size:0.78rem; color:#e4e4e7; margin-top:0.2rem; font-weight:600;">${escapeHtml(p.title)}</div>
+        ${p.material ? `<div style="font-size:0.7rem; color:#a1a1aa; margin-top:0.15rem;">${escapeHtml(p.material)}</div>` : ''}
+      </div>
+    `).join('');
     html += `<div class="${classes.join(' ')}">
       <div class="sp-day-header">
         <span class="sp-day-name">${dayNames[i]} ${date.slice(5)}</span>
-        <span class="sp-day-count">${done}/${dayTasks.length}</span>
+        <span class="sp-day-count">${done}/${totalCount}</span>
       </div>
       <div class="sp-day-body">
-        ${dayTasks.length === 0 ? '<p class="placeholder" style="font-size:0.75rem;margin:0;">—</p>' : dayTasks.map(t => spTaskCard(t, false)).join('')}
+        ${dbPlanCards}
+        ${dayTasks.length === 0 && dayDbPlans.length === 0 ? '<p class="placeholder" style="font-size:0.75rem;margin:0;">—</p>' : dayTasks.map(t => spTaskCard(t, false)).join('')}
       </div>
     </div>`;
   }
