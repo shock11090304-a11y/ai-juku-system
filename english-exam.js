@@ -987,16 +987,23 @@ function _renderGradeSelect(grid, examId, items) {
     levelSel.addEventListener('change', () => {
       const level = levelSel.value;
       // 全 option を見て、cefr 一致のものだけ hidden=false に
+      // 🚨 2026-05-22 塾長指摘 fix: Safari の <select> 内 option は hidden 属性を無視するため、
+      //    display:none + disabled 多重化で WebKit でも確実に hide (Chrome/Firefox の hidden も維持)
       Array.from(sel.querySelectorAll('option')).forEach(opt => {
-        if (!opt.value) { opt.hidden = false; return; } // -- 選んでください --
+        if (!opt.value) { opt.hidden = false; opt.disabled = false; opt.style.display = ''; return; } // -- 選んでください --
         const g = _filteredItems.find(x => x.key === opt.value);
-        if (!g) { opt.hidden = false; return; }
-        opt.hidden = !!level && g.cefr !== level;
+        if (!g) { opt.hidden = false; opt.disabled = false; opt.style.display = ''; return; }
+        const shouldHide = !!level && g.cefr !== level;
+        opt.hidden = shouldHide;
+        opt.disabled = shouldHide;           // Safari: hidden 無視するが disabled は効く (選択不可化)
+        opt.style.display = shouldHide ? 'none' : '';  // Chrome/Firefox: display:none で完全消失
       });
       // optgroup の表示制御 (全 option が hidden なら optgroup も hide)
       Array.from(sel.querySelectorAll('optgroup')).forEach(grp => {
         const visible = Array.from(grp.querySelectorAll('option')).some(o => !o.hidden);
         grp.hidden = !visible;
+        grp.disabled = !visible;             // Safari fallback (optgroup ごと選択不可)
+        grp.style.display = visible ? '' : 'none';  // Chrome/Firefox: 完全消失
         // 件数表示も更新
         const visibleCount = Array.from(grp.querySelectorAll('option')).filter(o => !o.hidden).length;
         const origLabel = (grp.getAttribute('data-orig-label') || grp.label || '').replace(/ \(\d+校\)$/, '');
