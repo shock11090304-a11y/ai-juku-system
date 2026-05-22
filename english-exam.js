@@ -378,10 +378,15 @@ const EXAMS = {
         { key: 'math_q2',  name: '数学 大問2', icon: '📐', timeMin: 30, qCount: 1, scoreMax: 30, desc: 'ベクトル/複素数/整数' },
         { key: 'phys_q1',  name: '物理 大問1', icon: '⚛️', timeMin: 30, qCount: 1, scoreMax: 30, desc: '力学/電磁気 (理工系)' },
       ],
-      // 名大 理工 (2026-05-22 塾長指示: math_q2 + UI mismatch fix)
+      // 名大 理工 (2026-05-23 塾長指示「名大が極端に少ない」: phys/chem/bio 系を全 part 追加して他大学と揃える)
       nagoya_rikei: [
         { key: 'math_q1',  name: '数学 大問1', icon: '📐', timeMin: 30, qCount: 1, scoreMax: 30, desc: '微積/ベクトル/確率 標準' },
         { key: 'math_q2',  name: '数学 大問2', icon: '📐', timeMin: 30, qCount: 1, scoreMax: 30, desc: '整数論/複素数/数列' },
+        { key: 'phys_q1',  name: '物理 大問1', icon: '⚛️', timeMin: 30, qCount: 1, scoreMax: 30, desc: '力学 + 電磁気 融合' },
+        { key: 'phys_q2',  name: '物理 大問2', icon: '⚛️', timeMin: 30, qCount: 1, scoreMax: 30, desc: '波動/熱力学/原子物理' },
+        { key: 'chem_q1',  name: '化学 大問1', icon: '🧪', timeMin: 30, qCount: 1, scoreMax: 30, desc: '理論化学 (平衡/反応速度)' },
+        { key: 'chem_q2',  name: '化学 大問2', icon: '🧪', timeMin: 30, qCount: 1, scoreMax: 30, desc: '有機化学 (構造決定/合成)' },
+        { key: 'bio_q1',   name: '生物 大問1', icon: '🧬', timeMin: 30, qCount: 1, scoreMax: 30, desc: '分子生物/遺伝/代謝 (医学部含)' },
       ],
       // MARCH 理工 (2026-05-22 塾長指示: 中レベル本試水準 q1 系を追加)
       march_rikei: [

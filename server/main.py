@@ -8018,6 +8018,11 @@ EXAM_QUESTION_ROTATION = [
     ("rikei", "chem_q1",      "tokoda_rikei"),  # 2026-05-22 P1 fix: UI 既存・ROTATION 漏れ
     ("rikei", "math_q1",      "nagoya_rikei"),
     ("rikei", "math_q2",      "nagoya_rikei"),  # 2026-05-22 塾長指示: math_q2 ROTATION 未登録 fix
+    ("rikei", "phys_q1",      "nagoya_rikei"),  # 2026-05-23 塾長指示「名大が極端に少ない」: 物理 fix
+    ("rikei", "phys_q2",      "nagoya_rikei"),  # 2026-05-23 塾長指示「名大が極端に少ない」: 物理 fix
+    ("rikei", "chem_q1",      "nagoya_rikei"),  # 2026-05-23 塾長指示「名大が極端に少ない」: 化学 fix
+    ("rikei", "chem_q2",      "nagoya_rikei"),  # 2026-05-23 塾長指示「名大が極端に少ない」: 化学 fix
+    ("rikei", "bio_q1",       "nagoya_rikei"),  # 2026-05-23 塾長指示「名大が極端に少ない」: 生物 fix
     # 早慶上智
     ("rikei", "math_q1",      "waseda_rikei"),
     ("rikei", "math_q2",      "waseda_rikei"),  # 2026-05-22 P1 fix: UI 既存・ROTATION 漏れ
