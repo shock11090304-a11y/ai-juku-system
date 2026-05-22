@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>大学別 過去問風オリジナル | AIコーチング</title>
-  <script src="cache-purge.js?v=20260522-subject-filter"></script>
+  <script src="cache-purge.js?v=20260523-social-subdivide"></script>
   <script src="frontend-error-monitor.js"></script>
   <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost-r2">
   <link rel="stylesheet" href="vocab.css?v=20260503-quiz4-levels">
@@ -235,7 +235,7 @@
         if (x.startsWith('生物')) return '生物';
         if (x.startsWith('英語')) return '英語';
         if (x.startsWith('国語') || x === '漢文' || x === '小論文') return '国語';
-        if (['世界史','世界史B','日本史','日本史B','地理','政治経済','倫理','倫理政治経済','現代社会','社会'].includes(x)) return '社会';
+        if (['世界史','世界史B','日本史','日本史B','地理','政治経済','政治・経済','倫理','倫理政治経済','現代社会','公共','公共・政治経済','公共・倫理','社会'].includes(x)) return '社会';
         // 地学・地学基礎は科目ボタンが無いため「全科目」のみで表示 (社会に混入させない)
         if (x.startsWith('地学')) return '';
         return ''; // それ以外 (英文法問題等) は「全科目」のみで表示
