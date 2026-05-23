@@ -18012,13 +18012,13 @@ def admin_test_openai_image(
 
     import urllib.request as _ur
     import urllib.error as _ue
-    # 🔧 2026-05-23 dall-e-3 廃止対応試行: gpt-image-1 (2026 新 model)
+    # 🔧 2026-05-23 dall-e-3 廃止対応: gpt-image-1 (新 model) + quality=medium (低/中/高/auto に変更)
     body = {
         "model": "gpt-image-1",
         "prompt": "A simple test diagram for educational use: a triangle with labeled vertices A, B, C on white background.",
         "n": 1,
         "size": "1024x1024",
-        "quality": "standard",
+        "quality": "medium",
     }
     req = _ur.Request(
         "https://api.openai.com/v1/images/generations",
