@@ -7450,6 +7450,202 @@ def _call_openai(body: dict, *, model: str = None, kind: str = "chat") -> dict:
     raise last_err if last_err else RuntimeError("OpenAI all models failed")
 
 
+# 🎨 2026-05-23 塾長指示「ChatGPT × ai-juku coraboration」C2:
+# DALL-E 3 で教材図解 (数学/物理/化学/生物の図形・地理の地図・歴史人物画 等) を自動生成。
+# 教材生成時 or CEO ダッシュから手動 trigger で呼び出し、生成済 URL を教材 figure_url field に保存。
+# コスト: standard $0.040/枚 (1024x1024) / hd $0.080/枚 (1024x1024)。月 500 枚で $20-40 想定。
+def _generate_image_dalle(
+    prompt: str,
+    size: str = "1024x1024",
+    quality: str = "standard",
+    model: str = "dall-e-3",
+    style: str = "natural",  # "vivid" は派手・"natural" は教材向き
+) -> dict:
+    """DALL-E 3 (OpenAI Image API) で画像生成。
+    返却: {"url": "https://...", "revised_prompt": "...", "model": "dall-e-3", "cost_usd": 0.04}
+    エラー: RuntimeError (API key 不在 or 4xx/5xx)。教材生成 pipeline からは try/except でラップして使う。
+    """
+    if not OPENAI_API_KEY:
+        raise RuntimeError("OPENAI_API_KEY not configured (DALL-E 3 requires same key as OpenAI text models)")
+    if not prompt or len(prompt.strip()) < 5:
+        raise ValueError("prompt が短すぎる (5 文字以上必須)")
+    if len(prompt) > 4000:
+        prompt = prompt[:4000]
+    valid_sizes = {"1024x1024", "1792x1024", "1024x1792"}
+    if size not in valid_sizes:
+        size = "1024x1024"
+    if quality not in {"standard", "hd"}:
+        quality = "standard"
+    if style not in {"natural", "vivid"}:
+        style = "natural"
+    cost_map = {
+        ("standard", "1024x1024"): 0.040,
+        ("standard", "1792x1024"): 0.080,
+        ("standard", "1024x1792"): 0.080,
+        ("hd",       "1024x1024"): 0.080,
+        ("hd",       "1792x1024"): 0.120,
+        ("hd",       "1024x1792"): 0.120,
+    }
+    cost_usd = cost_map.get((quality, size), 0.040)
+    body_bytes = json.dumps({
+        "model": model, "prompt": prompt, "n": 1, "size": size,
+        "quality": quality, "style": style, "response_format": "url",
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        "https://api.openai.com/v1/images/generations",
+        data=body_bytes,
+        headers={
+            "Authorization": f"Bearer {OPENAI_API_KEY}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            raw = resp.read().decode("utf-8")
+            data = json.loads(raw)
+    except urllib.error.HTTPError as e:
+        try:
+            err_body = json.loads(e.read().decode("utf-8"))
+        except Exception:
+            err_body = {"text": str(e)[:200]}
+        raise RuntimeError(f"DALL-E {e.code}: {json.dumps(err_body, ensure_ascii=False)[:300]}")
+    except Exception as e:
+        raise RuntimeError(f"DALL-E network error: {type(e).__name__}: {e}")
+    items = data.get("data") or []
+    if not items:
+        raise RuntimeError("DALL-E response empty (no images)")
+    first = items[0]
+    return {
+        "url": first.get("url"),
+        "revised_prompt": first.get("revised_prompt"),
+        "model": model, "size": size, "quality": quality, "style": style,
+        "cost_usd": cost_usd,
+    }
+
+
+@app.post("/api/admin/dalle/generate")
+def admin_dalle_generate(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """🎨 DALL-E 3 で教材図解を生成 (admin endpoint)。
+    payload: {"prompt": "<日本語 or 英語の画像生成プロンプト>",
+              "subject": "数学|物理|化学|生物|地理|歴史" (option・prefix prepend),
+              "size": "1024x1024|1792x1024|1024x1792" (default 1024x1024),
+              "quality": "standard|hd" (default standard・$0.04 vs $0.08),
+              "style": "natural|vivid" (default natural・教材向き)}
+    認証: admin Bearer or x-cron-secret
+    返却: {"ok":true,"url":"...","revised_prompt":"...","cost_usd":0.04,...}
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    user_prompt = (payload.get("prompt") or "").strip()
+    if not user_prompt:
+        raise HTTPException(status_code=400, detail="prompt 必須")
+    subject = (payload.get("subject") or "").strip()
+    subject_prefixes = {
+        "数学": "Educational diagram for Japanese high school mathematics. Clean line art, white background, labeled axes/points/figures, no decorative elements. ",
+        "物理": "Educational physics diagram for Japanese high school. Clear vectors, forces, labels, white background, schematic style. ",
+        "化学": "Educational chemistry diagram for Japanese high school. Structural formulas, reaction arrows, labels, white background, textbook style. ",
+        "生物": "Educational biology illustration for Japanese high school. Anatomical/cellular diagram, labeled parts, white background, scientific style. ",
+        "地理": "Educational geography map for Japanese high school. Clean cartographic style, labeled regions, white/light blue background. ",
+        "歴史": "Educational historical illustration for Japanese high school. Period-accurate, neutral style, no text overlay. ",
+        # UX review 反映: 国語・社会系も追加
+        "古文": "Educational illustration for Japanese classical literature (古文). Heian/Kamakura/Edo period scene, painterly style, traditional Japanese art aesthetic, no modern elements. ",
+        "漢文": "Educational illustration for classical Chinese literature (漢文). Ancient Chinese scholarly scene, ink wash painting style, no modern elements. ",
+        "公民": "Educational diagram for Japanese high school civics. Clean infographic style, labeled diagram (政治制度/経済構造), white background. ",
+        "政治経済": "Educational diagram for Japanese high school politics and economics. Clean infographic, charts, labeled, white background. ",
+        "倫理": "Educational illustration for Japanese high school ethics/philosophy. Portrait or conceptual diagram, neutral style, no text overlay. ",
+        "現代社会": "Educational infographic for Japanese high school contemporary society. Charts, statistics, clean layout, white background. ",
+    }
+    prefix = subject_prefixes.get(subject, "")
+    final_prompt = (prefix + user_prompt).strip()
+    # subject 不一致時の silent degradation 警告
+    subject_warning = None
+    if subject and not prefix:
+        subject_warning = f"subject '{subject}' に対応する prefix なし (使用可能: {', '.join(subject_prefixes.keys())})"
+
+    size = payload.get("size", "1024x1024")
+    quality = payload.get("quality", "standard")
+    style = payload.get("style", "natural")
+
+    # 🛡️ Security review 致命 1 対応: daily quota (CRON_SECRET 漏洩での暴走防止)
+    # standard $0.04 → 200/日 cap = $8/日 / hd $0.08 → 50/日 cap = $4/日
+    # 合計最悪 $12/日・月 $360 で credit 枯渇による AI チューター fallback chain 全滅を防ぐ
+    DAILY_STANDARD_CAP = 200
+    DAILY_HD_CAP = 50
+    try:
+        conn = db(); c = conn.cursor()
+        JST = timezone(timedelta(hours=9))
+        midnight_jst = datetime.now(JST).replace(hour=0, minute=0, second=0, microsecond=0)
+        midnight_utc = midnight_jst.astimezone(timezone.utc).replace(tzinfo=None)
+        c.execute(
+            "SELECT COUNT(*) FROM events WHERE name = 'dalle_image_generated' "
+            "AND created_at >= ? AND json_extract(props, '$.quality') = ?",
+            (midnight_utc, quality),
+        )
+        today_count = (c.fetchone() or [0])[0]
+        conn.close()
+        cap = DAILY_HD_CAP if quality == "hd" else DAILY_STANDARD_CAP
+        if today_count >= cap:
+            raise HTTPException(
+                status_code=429,
+                detail=f"DALL-E daily quota 超過 (quality={quality}: 当日 {today_count} 件 ≥ cap {cap})。"
+                f"明日 JST 00:00 に reset。標準 cap=$8/日 / hd cap=$4/日 (合計最悪 $12/日)",
+            )
+    except HTTPException:
+        raise
+    except Exception:
+        # quota check 失敗時は safe-fail で許容 (生成優先・後で events で監査)
+        pass
+
+    try:
+        result = _generate_image_dalle(final_prompt, size=size, quality=quality, style=style)
+    except (RuntimeError, ValueError) as e:
+        raise HTTPException(status_code=502, detail=f"DALL-E 生成失敗: {str(e)[:300]}")
+
+    # 🛡️ Security review 致命 2 対応: events.dalle_image_generated で audit log
+    try:
+        import hashlib as _hashlib
+        auth_method = "admin_bearer" if (authorization and authorization.startswith("Bearer ")) else "cron_secret"
+        prompt_hash = _hashlib.sha256(final_prompt.encode("utf-8")).hexdigest()[:16]
+        audit_props = json.dumps({
+            "subject": subject or None,
+            "size": size, "quality": quality, "style": style,
+            "cost_usd": result.get("cost_usd"),
+            "prompt_hash": prompt_hash,
+            "prompt_len": len(final_prompt),
+            "auth_method": auth_method,
+            "subject_warning": bool(subject_warning),
+        }, ensure_ascii=False)
+        conn = db(); c = conn.cursor()
+        c.execute(
+            "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+            ("dalle_image_generated", audit_props, "admin_dalle_endpoint"),
+        )
+        conn.commit(); conn.close()
+    except Exception:
+        pass  # audit log 失敗は生成自体を妨げない
+
+    return {
+        "ok": True,
+        "url": result.get("url"),
+        "revised_prompt": result.get("revised_prompt"),
+        "subject_prefix": prefix or None,
+        "subject_warning": subject_warning,
+        "size": size, "quality": quality, "style": style,
+        "cost_usd": result.get("cost_usd"),
+        "model": "dall-e-3",
+        "note": "URL は OpenAI 側で 60 分後失効。永続化には画像を別途ダウンロードして保存推奨",
+    }
+
+
 def _call_anthropic_safe(body: dict, *, kind: str = "chat", student_id: int = None) -> dict:
     """全 Anthropic API 呼び出しの統一エントリ。絶対に止まらない設計。
     - 3 段モデルフォールバック (要求 → Sonnet 4.6 → Haiku 4.5)
@@ -15462,6 +15658,98 @@ def admin_exam_questions_generate(payload: dict, authorization: Optional[str] = 
     else:
         # ローテ全件 (quota 使用)
         return _run_exam_questions_generation(quota=count or EXAM_QUESTIONS_DAILY_QUOTA)
+
+
+# =====================================================================
+# 🤖 Custom GPT Action 連携 endpoint (2026-05-23 塾長指示「A」)
+# 既存 Custom GPT 6 体が ChatGPT 上で ai-juku 問題プールを直接取得できる。
+# OpenAPI 3.1 spec + ランダム問題取得 + 無料体験 CTA の 3 endpoint。public.
+# =====================================================================
+
+@app.get("/api/custom-gpt-action/openapi.json")
+def custom_gpt_action_openapi():
+    """🤖 ChatGPT Custom GPT の Action 設定で読み込ませる OpenAPI 3.1 spec。"""
+    return {
+        "openapi": "3.1.0",
+        "info": {
+            "title": "ai-juku Custom GPT Action API",
+            "description": "ai-juku 問題プール 17,500 問+ を ChatGPT 上で取得する公開 API。",
+            "version": "1.0.0",
+        },
+        "servers": [{"url": BASE_URL}],
+        "paths": {
+            "/api/custom-gpt-action/random-question": {
+                "get": {
+                    "operationId": "getRandomQuestion",
+                    "summary": "ai-juku 問題プールからランダム 1 問取得",
+                    "parameters": [
+                        {"name": "exam", "in": "query", "required": True, "schema": {"type": "string", "enum": ["toefl","toeic","ielts","eiken","daigaku","rikei"]}},
+                        {"name": "part", "in": "query", "required": True, "schema": {"type": "string"}},
+                        {"name": "grade", "in": "query", "required": False, "schema": {"type": "string"}},
+                    ],
+                    "responses": {"200": {"description": "問題 1 件", "content": {"application/json": {"schema": {"type": "object"}}}}},
+                }
+            },
+            "/api/custom-gpt-action/cta-status": {
+                "get": {
+                    "operationId": "getAiJukuCTA",
+                    "summary": "ai-juku 7 日間無料体験 CTA 情報",
+                    "parameters": [{"name": "gpt_id", "in": "query", "required": False, "schema": {"type": "string"}}],
+                    "responses": {"200": {"description": "CTA 情報", "content": {"application/json": {"schema": {"type": "object"}}}}},
+                }
+            },
+        },
+    }
+
+
+@app.get("/api/custom-gpt-action/random-question")
+def custom_gpt_action_random_question(exam: str, part: str, grade: Optional[str] = None):
+    """🤖 Custom GPT Action: ai-juku 問題プールからランダム 1 問取得 (認証不要)。"""
+    import random as _rd
+    conn = db(); c = conn.cursor()
+    try:
+        params = [exam, part]
+        sql = "SELECT id, question_data FROM exam_questions WHERE exam_id = ? AND part_key = ?"
+        if grade:
+            sql += " AND eiken_grade = ?"
+            params.append(grade)
+        sql += " ORDER BY id DESC LIMIT 30"
+        c.execute(sql, params)
+        rows = c.fetchall()
+    finally:
+        conn.close()
+    if not rows:
+        raise HTTPException(status_code=404, detail=f"No question for {exam}/{part}/{grade}")
+    row = _rd.choice(list(rows))
+    qd_raw = row[1] if not hasattr(row, "keys") else row["question_data"]
+    qd = json.loads(qd_raw) if isinstance(qd_raw, str) else qd_raw
+    aj_url = f"{BASE_URL}/english-exam.html?exam={exam}&part={part}"
+    if grade:
+        aj_url += f"&grade={grade}"
+    return {
+        "exam": exam, "part": part, "grade": grade or "",
+        "passage": qd.get("passage", ""),
+        "questions": qd.get("questions", []),
+        "ai_juku_url": aj_url,
+        "branding": "powered by ai-juku — 5 AI 多視点採点 / 写真採点 / 学習計画 AI は ai-juku 本体で",
+    }
+
+
+@app.get("/api/custom-gpt-action/cta-status")
+def custom_gpt_action_cta_status(gpt_id: Optional[str] = None):
+    """🤖 Custom GPT Action: 連続正解時の「ai-juku 無料体験」CTA 情報。"""
+    utm = f"?utm_source=chatgpt&utm_medium=custom_gpt_action&utm_campaign={gpt_id or 'unknown'}&utm_content=correct_streak"
+    return {
+        "cta_message": "🎉 連続正解おめでとうございます!ai-juku 本体なら写真採点・5 AI 多視点添削・学習計画 AI が使えます。今なら 7 日間無料体験 (クレカ不要)。",
+        "trial_url": f"{BASE_URL}/lp.html{utm}#trial",
+        "features": [
+            "📷 写真採点 (手書き答案を撮影 → 5 AI が多視点採点)",
+            "🤖 AI 個別カリキュラム (志望校・現状から 30 秒)",
+            "📊 学習計画 + 進捗ガントチャート (隔日学習対応)",
+            "🎓 17,500 問+ の問題プール (東大 / 京大 / 早慶 / 医学部 / 共テ)",
+        ],
+        "trial_days": 7, "cost": "¥0 (クレカ不要)",
+    }
 
 
 @app.get("/api/exam-questions/pool-counts")
