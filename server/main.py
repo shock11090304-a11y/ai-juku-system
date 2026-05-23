@@ -15807,20 +15807,64 @@ def custom_gpt_action_openapi():
                 "get": {
                     "operationId": "getRandomQuestion",
                     "summary": "ai-juku 問題プールからランダム 1 問取得",
+                    "description": "exam (toefl/toeic/ielts/eiken/daigaku/rikei) と part (r_q1, math_q1, w_essay 等) を指定。grade は eiken なら級 (gp1/g2 等)・daigaku/rikei なら大学キー (todai/kyodai/waseda 等)。",
                     "parameters": [
-                        {"name": "exam", "in": "query", "required": True, "schema": {"type": "string", "enum": ["toefl","toeic","ielts","eiken","daigaku","rikei"]}},
-                        {"name": "part", "in": "query", "required": True, "schema": {"type": "string"}},
-                        {"name": "grade", "in": "query", "required": False, "schema": {"type": "string"}},
+                        {"name": "exam", "in": "query", "required": True, "schema": {"type": "string", "enum": ["toefl","toeic","ielts","eiken","daigaku","rikei"]}, "description": "試験種別"},
+                        {"name": "part", "in": "query", "required": True, "schema": {"type": "string"}, "description": "大問キー (r_q1, math_q1, w_essay 等)"},
+                        {"name": "grade", "in": "query", "required": False, "schema": {"type": "string"}, "description": "級 (gp1/g1/g2 等) または大学キー (todai/kyodai/waseda 等)"},
                     ],
-                    "responses": {"200": {"description": "問題 1 件", "content": {"application/json": {"schema": {"type": "object"}}}}},
+                    "responses": {
+                        "200": {
+                            "description": "問題 1 件",
+                            "content": {"application/json": {"schema": {
+                                "type": "object",
+                                "properties": {
+                                    "exam": {"type": "string", "description": "試験種別"},
+                                    "part": {"type": "string", "description": "大問キー"},
+                                    "grade": {"type": "string", "description": "級または大学キー"},
+                                    "passage_title": {"type": "string", "description": "本文タイトル (kobun 等の長文時)"},
+                                    "passage": {"type": "string", "description": "問題本文 (長文型) / 短文型は空"},
+                                    "questions": {
+                                        "type": "array",
+                                        "description": "設問配列 (passage 形式は複数 / 短文型は 1 件)",
+                                        "items": {"type": "object", "properties": {
+                                            "id": {"type": "string"},
+                                            "type": {"type": "string", "description": "multiple_choice / essay 等"},
+                                            "stem": {"type": "string", "description": "設問文"},
+                                            "choices": {"type": "array", "items": {"type": "string"}, "description": "選択肢 (essay 型は空)"},
+                                            "answer": {"type": "string", "description": "正解 (番号文字列 or 模範解答)"},
+                                            "explanation": {"type": "string", "description": "解説"},
+                                        }}
+                                    },
+                                    "ai_juku_url": {"type": "string", "description": "ai-juku 本体で更に学習する URL"},
+                                    "branding": {"type": "string", "description": "出典 / 上位機能の誘導文"},
+                                }
+                            }}}
+                        }
+                    },
                 }
             },
             "/api/custom-gpt-action/cta-status": {
                 "get": {
                     "operationId": "getAiJukuCTA",
                     "summary": "ai-juku 7 日間無料体験 CTA 情報",
-                    "parameters": [{"name": "gpt_id", "in": "query", "required": False, "schema": {"type": "string"}}],
-                    "responses": {"200": {"description": "CTA 情報", "content": {"application/json": {"schema": {"type": "object"}}}}},
+                    "description": "Custom GPT 内で生徒が連続正解した時等に呼び出して ai-juku 無料体験への CTA 文言・URL・特典を取得。",
+                    "parameters": [{"name": "gpt_id", "in": "query", "required": False, "schema": {"type": "string"}, "description": "Custom GPT 識別子 (todai_math_60days 等)"}],
+                    "responses": {
+                        "200": {
+                            "description": "CTA 情報",
+                            "content": {"application/json": {"schema": {
+                                "type": "object",
+                                "properties": {
+                                    "cta_message": {"type": "string", "description": "生徒に表示する CTA 文言"},
+                                    "trial_url": {"type": "string", "description": "7 日間無料体験 LP URL (utm 付与済)"},
+                                    "features": {"type": "array", "items": {"type": "string"}, "description": "ai-juku 本体の機能一覧 (4-5 項目)"},
+                                    "trial_days": {"type": "integer", "description": "無料体験日数"},
+                                    "cost": {"type": "string", "description": "費用 (¥0 等)"},
+                                }
+                            }}}
+                        }
+                    },
                 }
             },
         },
