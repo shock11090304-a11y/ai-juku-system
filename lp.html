@@ -732,6 +732,29 @@
         </a>
       </div>
     </div>
+    <!-- 🔗 2026-05-23 塾長指示「B: LP の Custom GPT 連携強化」: クリック時 utm 自動付与 -->
+    <script>
+    (function(){
+      try {
+        var anchors = document.querySelectorAll('#custom-gpts a[data-gpt-id]');
+        anchors.forEach(function(a){
+          a.addEventListener('click', function(e){
+            try {
+              var gptId = a.getAttribute('data-gpt-id') || '';
+              var url = new URL(a.href);
+              url.searchParams.set('utm_source', 'ai_juku_lp');
+              url.searchParams.set('utm_medium', 'custom_gpt_section');
+              url.searchParams.set('utm_campaign', gptId);
+              url.searchParams.set('utm_content', 'lp_card');
+              a.href = url.toString();
+              // analytics.js 計測 (存在すれば)
+              if (window.aijukuTrack) window.aijukuTrack('custom_gpt_click', { gpt_id: gptId, source: 'lp' });
+            } catch (_) {}
+          }, { once: true });
+        });
+      } catch (e) { console.warn('[lp custom-gpt utm] init failed:', e); }
+    })();
+    </script>
   </section>
 
   <!-- How it works -->

@@ -7311,6 +7311,129 @@ def _call_gemini(body: dict, *, model: str = None, kind: str = "chat") -> dict:
     raise last_err if last_err else RuntimeError("Gemini all models failed")
 
 
+# 🎨 2026-05-23 塾長指示「D: DALL-E 3 で図解自動生成」
+def _call_openai_image(prompt: str, *, size: str = "1024x1024", quality: str = "standard", style: str = "natural") -> dict:
+    """OpenAI DALL-E 3 で画像 1 枚生成。教材の図解 (数学/物理/化学の図表) 用。
+
+    raise: OPENAI_API_KEY 未設定 / API 失敗 / 不正 prompt は RuntimeError。
+    return: {"url": "<image url>", "revised_prompt": "<DALL-E が解釈した prompt>"}
+    cost: standard 1024x1024 = $0.040/枚 / hd = $0.080/枚 (月 100 枚で $4-8)
+    """
+    if not OPENAI_API_KEY:
+        raise RuntimeError("OPENAI_API_KEY not configured")
+    if not prompt or not prompt.strip():
+        raise RuntimeError("prompt is empty")
+    # ai-juku の教材図解として安全 prompt に整形
+    # 教師名・人物の顔・著作権物の禁止
+    safe_prompt = (prompt.strip()[:3500] +
+        " | Style: clean educational diagram, white/light background, clear labels, no human faces, no copyrighted logos or brand names")
+    try:
+        import urllib.request as _ur
+        req = _ur.Request(
+            "https://api.openai.com/v1/images/generations",
+            data=json.dumps({
+                "model": "dall-e-3",
+                "prompt": safe_prompt,
+                "size": size if size in ("1024x1024", "1024x1792", "1792x1024") else "1024x1024",
+                "quality": quality if quality in ("standard", "hd") else "standard",
+                "style": style if style in ("natural", "vivid") else "natural",
+                "n": 1,
+                "response_format": "url",
+            }).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {OPENAI_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        with _ur.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        items = data.get("data") or []
+        if not items:
+            raise RuntimeError("DALL-E returned no images")
+        return {
+            "url": items[0].get("url"),
+            "revised_prompt": items[0].get("revised_prompt") or safe_prompt,
+            "model": "dall-e-3",
+            "size": size, "quality": quality,
+        }
+    except Exception as e:
+        log.warning(f"[DALL-E] image generation failed: {type(e).__name__}: {str(e)[:200]}")
+        raise
+
+
+@app.post("/api/admin/textbooks/generate-figure")
+def admin_textbook_generate_figure(
+    payload: dict,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🎨 教材の図解を DALL-E 3 で 1 枚生成 (admin 専用)。
+    payload: {"subject": "数学IIB", "topic": "二次関数", "description": "...図の内容..."}
+    response: {"url": "<dall-e url>", "revised_prompt": "..."}
+
+    塾長指示 2026-05-23「D: DALL-E 3 で図解自動生成」
+    教材プールの content.examples[].figure_url に保存可能・CEO ダッシュから 1 クリック生成。
+    cost: ~ $0.04/枚 (月 100 枚で ~ $4)
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    subject = (payload.get("subject") or "").strip()
+    topic = (payload.get("topic") or "").strip()
+    description = (payload.get("description") or "").strip()
+    if not description:
+        raise HTTPException(status_code=400, detail="description (図の内容) が必須")
+
+    # 科目別に prompt 補強
+    style_hints = {
+        "数学": "Mathematical diagram with axes, curves, points labeled with coordinates. LaTeX-style notation rendered as plain text labels.",
+        "物理": "Physics diagram with vectors (arrows), forces, motion paths. Clear labels for variables (F, v, m, etc.).",
+        "化学": "Chemistry molecular structure / reaction diagram. Bond lines, atom symbols, arrows for electron movement.",
+        "生物": "Biology cellular / anatomical diagram. Labeled organelles, processes, color-coded for clarity.",
+        "地学": "Earth science diagram. Geological layers, weather systems, planetary motion with clear scale.",
+    }
+    subj_hint = ""
+    for k, v in style_hints.items():
+        if k in subject:
+            subj_hint = v
+            break
+
+    full_prompt = (
+        f"Educational diagram for Japanese high school students. "
+        f"Subject: {subject or 'general'}. Topic: {topic or 'general'}. "
+        f"{subj_hint} "
+        f"Description: {description}"
+    )
+
+    try:
+        result = _call_openai_image(
+            full_prompt,
+            size=payload.get("size") or "1024x1024",
+            quality=payload.get("quality") or "standard",
+            style="natural",
+        )
+        try:
+            _record_ai_critical_event("dalle_figure_generated", {
+                "subject": subject, "topic": topic, "size": result.get("size"),
+            })
+        except Exception:
+            pass
+        return {"ok": True, **result, "subject": subject, "topic": topic}
+    except RuntimeError as e:
+        msg = str(e)
+        if "OPENAI_API_KEY" in msg:
+            raise HTTPException(status_code=503, detail="OPENAI_API_KEY 未設定 (Railway env で設定要)")
+        raise HTTPException(status_code=502, detail=f"DALL-E 生成失敗: {msg[:200]}")
+
+
 def _call_openai(body: dict, *, model: str = None, kind: str = "chat") -> dict:
     """OpenAI Chat Completions API 呼び出し (Anthropic body 互換 → OpenAI 形式変換)。
 
@@ -15669,6 +15792,8 @@ def admin_exam_questions_generate(payload: dict, authorization: Optional[str] = 
 @app.get("/api/custom-gpt-action/openapi.json")
 def custom_gpt_action_openapi():
     """🤖 ChatGPT Custom GPT の Action 設定で読み込ませる OpenAPI 3.1 spec。"""
+    # 3 視点 review fix: BASE_URL の localhost fallback が production OpenAPI に焼き付かないよう hardening
+    _safe_base = BASE_URL if BASE_URL.startswith("https://") else "https://trillion-ai-juku.com"
     return {
         "openapi": "3.1.0",
         "info": {
@@ -15676,7 +15801,7 @@ def custom_gpt_action_openapi():
             "description": "ai-juku 問題プール 17,500 問+ を ChatGPT 上で取得する公開 API。",
             "version": "1.0.0",
         },
-        "servers": [{"url": BASE_URL}],
+        "servers": [{"url": _safe_base}],
         "paths": {
             "/api/custom-gpt-action/random-question": {
                 "get": {

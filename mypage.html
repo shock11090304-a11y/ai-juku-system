@@ -152,6 +152,21 @@
       </div>
     </section>
 
+    <!-- 🤖 ai-juku 公式 Custom GPT (2026-05-23 塾長指示「C: 生徒画面に Custom GPT 案内」)
+         streak-section 直後 (memory feedback_study_log_engagement_cta: engagement CTA 最上部) -->
+    <section id="customGptSection" style="display:none; margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(34,197,94,0.13), rgba(99,102,241,0.10)); border: 1px solid rgba(34,197,94,0.35); border-radius: 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7rem;flex-wrap:wrap;gap:0.5rem;">
+        <h3 style="margin:0;font-size:1.0rem;font-weight:800;color:#34d399;">🤖 ai-juku 公式 Custom GPT (ChatGPT で追加練習)</h3>
+        <button type="button" id="customGptToggle" aria-expanded="true" style="padding:0.3rem 0.7rem;background:rgba(0,0,0,0.3);border:1px solid rgba(34,197,94,0.4);border-radius:6px;color:#34d399;font-weight:700;font-size:0.78rem;cursor:pointer;">▼ 折りたたむ</button>
+      </div>
+      <div id="customGptBody" style="display:block;">
+        <p style="margin:0 0 0.8rem 0;color:#cbd5e1;font-size:0.85rem;line-height:1.55;">
+          ChatGPT アカウントだけで <strong style="color:#34d399;">無料で 24h 質問し放題</strong>。ai-juku 本体と併用すると学習効率 1.5 倍。
+        </p>
+        <div id="customGptList" style="display:grid;gap:0.55rem;"></div>
+      </div>
+    </section>
+
     <!-- Today's Quest: 塾長指示 2026-05-15 で削除 (XP/クエスト gamification 機能廃止) -->
 
     <div class="dashboard-grid">
@@ -1011,7 +1026,7 @@
   <script src="learning-brain.js?v=20260522-underline-fix"></script>
   <script src="exam-prep.js?v=20260522-weekly-worksheet"></script>
   <script src="referral-program.js?v=20260522-weekly-worksheet"></script>
-  <script src="mypage.js?v=20260522-week-pattern"></script>
+  <script src="mypage.js?v=20260523-custom-gpt-block"></script>
   <script>
     // ウィジェット初期描画
     (function() {
