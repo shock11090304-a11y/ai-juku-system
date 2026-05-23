@@ -7409,11 +7409,19 @@ def _call_openai_image(prompt: str, *, size: str = "1024x1024", quality: str = "
         # body 最小化・b64_json / url どちらが返っても caller で吸収
         req = _ur.Request(
             "https://api.openai.com/v1/images/generations",
+            # 🔧 2026-05-23 gpt-image-1 仕様:
+            #   - size: 1024x1024 / 1024x1536 / 1536x1024 (1024x1792 は dall-e-3 旧仕様)
+            #   - quality: "low" / "medium" / "high" / "auto" (旧 standard/hd は invalid)
+            _quality_map = {"standard": "medium", "hd": "high"}
+            _q = _quality_map.get(quality, quality)
+            if _q not in ("low", "medium", "high", "auto"):
+                _q = "medium"
+            _size = size if size in ("1024x1024", "1024x1536", "1536x1024") else "1024x1024"
             data=json.dumps({
                 "model": "gpt-image-1",
                 "prompt": safe_prompt,
-                "size": size if size in ("1024x1024", "1024x1792", "1792x1024") else "1024x1024",
-                "quality": quality if quality in ("standard", "hd") else "standard",
+                "size": _size,
+                "quality": _q,
                 "n": 1,
             }).encode("utf-8"),
             headers={
