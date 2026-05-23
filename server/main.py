@@ -15829,7 +15829,13 @@ def custom_gpt_action_openapi():
 
 @app.get("/api/custom-gpt-action/random-question")
 def custom_gpt_action_random_question(exam: str, part: str, grade: Optional[str] = None):
-    """🤖 Custom GPT Action: ai-juku 問題プールからランダム 1 問取得 (認証不要)。"""
+    """🤖 Custom GPT Action: ai-juku 問題プールからランダム 1 問取得 (認証不要)。
+
+    schema variant 対応 (致命 fix 2026-05-23):
+    - passage 形式 (kobun/long form): {"passage":..., "questions":[...]}
+    - 単発形式 (eiken r_q1 短文穴埋め): {"stem":..., "choices":[...], "answer":...}
+    両方に正規化して questions[] に詰める。
+    """
     import random as _rd
     conn = db(); c = conn.cursor()
     try:
@@ -15848,13 +15854,28 @@ def custom_gpt_action_random_question(exam: str, part: str, grade: Optional[str]
     row = _rd.choice(list(rows))
     qd_raw = row[1] if not hasattr(row, "keys") else row["question_data"]
     qd = json.loads(qd_raw) if isinstance(qd_raw, str) else qd_raw
+
+    # schema 正規化: passage 形式 / 単発形式 両対応
+    qs = qd.get("questions") or []
+    if not qs and qd.get("stem"):
+        # 単発形式 (eiken r_q1 等) → questions[] に変換
+        qs = [{
+            "id": "q1",
+            "type": qd.get("type", "multiple_choice"),
+            "stem": qd.get("stem"),
+            "choices": qd.get("choices", []),
+            "answer": qd.get("answer"),
+            "explanation": qd.get("explanation", ""),
+        }]
+
     aj_url = f"{BASE_URL}/english-exam.html?exam={exam}&part={part}"
     if grade:
         aj_url += f"&grade={grade}"
     return {
         "exam": exam, "part": part, "grade": grade or "",
+        "passage_title": qd.get("passage_title", ""),
         "passage": qd.get("passage", ""),
-        "questions": qd.get("questions", []),
+        "questions": qs,
         "ai_juku_url": aj_url,
         "branding": "powered by ai-juku — 5 AI 多視点採点 / 写真採点 / 学習計画 AI は ai-juku 本体で",
     }
