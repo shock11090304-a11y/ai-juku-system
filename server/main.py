@@ -7405,18 +7405,18 @@ def _call_openai_image(prompt: str, *, size: str = "1024x1024", quality: str = "
         " | Style: clean educational diagram, white/light background, clear labels, no human faces, no copyrighted logos or brand names")
     try:
         import urllib.request as _ur
-        # 🔧 2026-05-23 fix: OpenAI Image API は 2026 仕様で style + response_format 廃止
-        # body 最小化・b64_json / url どちらが返っても caller で吸収
+        # 🔧 2026-05-23 fix: OpenAI Image API は 2026 仕様で
+        # - model: dall-e-3 廃止 → gpt-image-1
+        # - quality: standard/hd 廃止 → low/medium/high/auto
+        # - size: 1024x1024 / 1024x1536 / 1536x1024 のみ (1024x1792 は旧 dall-e-3)
+        # - style / response_format 廃止
+        _quality_map = {"standard": "medium", "hd": "high"}
+        _q = _quality_map.get(quality, quality)
+        if _q not in ("low", "medium", "high", "auto"):
+            _q = "medium"
+        _size = size if size in ("1024x1024", "1024x1536", "1536x1024") else "1024x1024"
         req = _ur.Request(
             "https://api.openai.com/v1/images/generations",
-            # 🔧 2026-05-23 gpt-image-1 仕様:
-            #   - size: 1024x1024 / 1024x1536 / 1536x1024 (1024x1792 は dall-e-3 旧仕様)
-            #   - quality: "low" / "medium" / "high" / "auto" (旧 standard/hd は invalid)
-            _quality_map = {"standard": "medium", "hd": "high"}
-            _q = _quality_map.get(quality, quality)
-            if _q not in ("low", "medium", "high", "auto"):
-                _q = "medium"
-            _size = size if size in ("1024x1024", "1024x1536", "1536x1024") else "1024x1024"
             data=json.dumps({
                 "model": "gpt-image-1",
                 "prompt": safe_prompt,
