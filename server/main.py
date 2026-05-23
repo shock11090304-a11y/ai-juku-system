@@ -7383,8 +7383,10 @@ def _generate_figure_b64_safe(figure_description: str, subject_hint: str = "", t
             "figure_source": "dalle-3",
         }
     except Exception as e:
-        log.warning(f"[DALL-E figure] failed: {type(e).__name__}: {str(e)[:200]}")
-        return None
+        # 🔧 2026-05-23 debug: 例外詳細を caller に渡す dict で返す (None だと原因不明になる)
+        err_msg = f"{type(e).__name__}: {str(e)[:300]}"
+        log.warning(f"[DALL-E figure] failed: {err_msg}")
+        return {"_error": err_msg}
 
 
 # 🎨 2026-05-23 塾長指示「D: DALL-E 3 で図解自動生成」
@@ -16146,8 +16148,9 @@ def admin_generate_pending_figures(
                 subj_hint = qd.get("subject_hint") or qd.get("subject") or ""
                 topic_hint = qd.get("topic_hint") or qd.get("topic") or qd.get("passage_title") or ""
                 fig = _generate_figure_b64_safe(qd["figure_description"], subj_hint, topic_hint)
-                if not fig:
-                    failed.append({"id": rid, "reason": "DALL-E call failed"})
+                if not fig or fig.get("_error"):
+                    err = (fig or {}).get("_error", "fig=None (figure_description 空 or 不明)")
+                    failed.append({"id": rid, "reason": err})
                     continue
                 qd["figure_b64"] = fig["figure_b64"]
                 qd["figure_revised_prompt"] = fig["figure_revised_prompt"]
