@@ -7410,7 +7410,7 @@ def _call_openai_image(prompt: str, *, size: str = "1024x1024", quality: str = "
         req = _ur.Request(
             "https://api.openai.com/v1/images/generations",
             data=json.dumps({
-                "model": "dall-e-3",
+                "model": "gpt-image-1",
                 "prompt": safe_prompt,
                 "size": size if size in ("1024x1024", "1024x1792", "1792x1024") else "1024x1024",
                 "quality": quality if quality in ("standard", "hd") else "standard",
@@ -7437,7 +7437,7 @@ def _call_openai_image(prompt: str, *, size: str = "1024x1024", quality: str = "
         return {
             "url": url_value,
             "revised_prompt": first.get("revised_prompt") or safe_prompt,
-            "model": "dall-e-3",
+            "model": "gpt-image-1",
             "size": size, "quality": quality,
         }
     except Exception as e:
@@ -7664,11 +7664,11 @@ def _generate_image_dalle(
     prompt: str,
     size: str = "1024x1024",
     quality: str = "standard",
-    model: str = "dall-e-3",
+    model: str = "gpt-image-1",
     style: str = "natural",  # "vivid" は派手・"natural" は教材向き
 ) -> dict:
     """DALL-E 3 (OpenAI Image API) で画像生成。
-    返却: {"url": "https://...", "revised_prompt": "...", "model": "dall-e-3", "cost_usd": 0.04}
+    返却: {"url": "https://...", "revised_prompt": "...", "model": "gpt-image-1", "cost_usd": 0.04}
     エラー: RuntimeError (API key 不在 or 4xx/5xx)。教材生成 pipeline からは try/except でラップして使う。
     """
     if not OPENAI_API_KEY:
@@ -7849,7 +7849,7 @@ def admin_dalle_generate(payload: dict, authorization: Optional[str] = Header(No
         "subject_warning": subject_warning,
         "size": size, "quality": quality, "style": style,
         "cost_usd": result.get("cost_usd"),
-        "model": "dall-e-3",
+        "model": "gpt-image-1",
         "note": "URL は OpenAI 側で 60 分後失効。永続化には画像を別途ダウンロードして保存推奨",
     }
 
