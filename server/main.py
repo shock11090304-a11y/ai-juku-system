@@ -222,7 +222,7 @@ QUOTA_FEATURES = {"problems", "essays", "textbooks"}
 
 # 本番で許可するフロントエンドのオリジン
 # カンマ区切りで env 上書き可能: ALLOWED_ORIGINS=https://foo.com,https://bar.com
-_default_origins = "https://trillion-ai-juku.com,https://www.trillion-ai-juku.com,http://localhost:8090,http://localhost:8000"
+_default_origins = "https://trillion-ai-juku.com,https://www.trillion-ai-juku.com,https://chatgpt.com,https://chat.openai.com,http://localhost:8090,http://localhost:8000"
 ALLOWED_ORIGINS = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", _default_origins).split(",") if o.strip()]
 
 # 1日あたり1生徒が消費できるAIトークン上限 (input+output の合計)
@@ -1480,6 +1480,9 @@ app = FastAPI(title="AIコーチング API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    # 🔧 2026-05-23 塾長指示「Custom GPT Failed Outbound Call」fix:
+    # ChatGPT 関連 subdomain (oaiusercontent / oaistatic 等) も自動許可で将来変更耐性
+    allow_origin_regex=r"https://(.*\.)?(chatgpt\.com|openai\.com|oaiusercontent\.com|oaistatic\.com)$",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "x-cron-secret", "stripe-signature", "x-line-signature"],
@@ -15896,7 +15899,16 @@ def custom_gpt_action_random_question(exam: str, part: str, grade: Optional[str]
     finally:
         conn.close()
     if not rows:
-        raise HTTPException(status_code=404, detail=f"No question for {exam}/{part}/{grade}")
+        # 🔧 2026-05-23 fix: Custom GPT Action は 404 で Failed Outbound Call → 200 + 空 response で graceful fail
+        return {
+            "exam": exam, "part": part, "grade": grade or "",
+            "passage_title": "",
+            "passage": "",
+            "questions": [],
+            "ai_juku_url": f"{BASE_URL}/english-exam.html?exam={exam}&part={part}" + (f"&grade={grade}" if grade else ""),
+            "branding": "powered by ai-juku — 5 AI 多視点採点 / 写真採点 / 学習計画 AI は ai-juku 本体で",
+            "message": f"問題プール準備中 ({exam}/{part}/{grade or 'default'})。別の単元を指定するか、ai_juku_url から ai-juku 本体で類題をお試しください。",
+        }
     row = _rd.choice(list(rows))
     qd_raw = row[1] if not hasattr(row, "keys") else row["question_data"]
     qd = json.loads(qd_raw) if isinstance(qd_raw, str) else qd_raw
