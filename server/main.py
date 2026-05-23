@@ -16046,7 +16046,7 @@ def custom_gpt_action_cta_status(gpt_id: Optional[str] = None):
 # 別 endpoint で 1 件ずつ DALL-E call → UPDATE する方式 (background 処理)
 @app.post("/api/admin/exam-questions/generate-pending-figures")
 def admin_generate_pending_figures(
-    payload: dict = None,
+    payload: Optional[dict] = None,
     authorization: Optional[str] = Header(None),
     x_cron_secret: Optional[str] = Header(None),
 ):
