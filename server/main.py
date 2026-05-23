@@ -17989,6 +17989,77 @@ def admin_test_anthropic_pdf(authorization: Optional[str] = Header(None), x_cron
                 "latency_ms": int((time.time() - t0) * 1000)}
 
 
+@app.post("/api/admin/ai/test-openai-image")
+def admin_test_openai_image(
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🔧 2026-05-23 DALL-E 3 diagnostic: raw OpenAI Image API error を返す debug endpoint。
+    auth: admin Bearer or x-cron-secret。
+    direct OpenAI API call で raw error body を返却 (本番 endpoint で 500 になる原因特定用)。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    if not OPENAI_API_KEY:
+        return {"ok": False, "configured": False, "error": "OPENAI_API_KEY not set"}
+
+    import urllib.request as _ur
+    import urllib.error as _ue
+    body = {
+        "model": "dall-e-3",
+        "prompt": "A simple test diagram for educational use: a triangle with labeled vertices A, B, C on white background.",
+        "n": 1,
+        "size": "1024x1024",
+        "quality": "standard",
+    }
+    req = _ur.Request(
+        "https://api.openai.com/v1/images/generations",
+        data=json.dumps(body).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {OPENAI_API_KEY}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with _ur.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        items = data.get("data") or []
+        first = items[0] if items else {}
+        return {
+            "ok": True,
+            "raw_keys": list(data.keys()),
+            "items_count": len(items),
+            "first_url_prefix": (first.get("url") or "")[:80],
+            "first_b64_prefix": (first.get("b64_json") or "")[:80],
+            "revised_prompt": first.get("revised_prompt"),
+        }
+    except _ue.HTTPError as e:
+        # OpenAI から 4xx/5xx 返却 → raw error body を返す
+        body_text = ""
+        try:
+            body_text = e.read().decode("utf-8")[:1000]
+        except Exception:
+            pass
+        return {
+            "ok": False, "http_status": e.code, "raw_error_body": body_text,
+            "openai_key_prefix": OPENAI_API_KEY[:10] + "...",
+            "request_body_sent": body,
+        }
+    except Exception as e:
+        return {
+            "ok": False, "exception": f"{type(e).__name__}: {str(e)[:500]}",
+            "openai_key_prefix": OPENAI_API_KEY[:10] + "...",
+        }
+
+
 @app.post("/api/admin/ai/test-openai")
 def admin_test_openai(model: Optional[str] = None,
                        authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
