@@ -7610,9 +7610,11 @@ def _generate_image_dalle(
         ("hd",       "1024x1792"): 0.120,
     }
     cost_usd = cost_map.get((quality, size), 0.040)
+    # 2026 時点: OpenAI Image API は style パラメータ廃止 (400 Unknown parameter)。
+    # caller 引数は維持しつつ送信 body から削除 (caller 互換性確保)。
     body_bytes = json.dumps({
         "model": model, "prompt": prompt, "n": 1, "size": size,
-        "quality": quality, "style": style, "response_format": "url",
+        "quality": quality, "response_format": "url",
     }).encode("utf-8")
     req = urllib.request.Request(
         "https://api.openai.com/v1/images/generations",
