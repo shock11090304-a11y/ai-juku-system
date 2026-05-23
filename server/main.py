@@ -15987,14 +15987,18 @@ def custom_gpt_action_openapi():
 
 
 @app.get("/api/custom-gpt-action/random-question")
-def custom_gpt_action_random_question(exam: str, part: str, grade: Optional[str] = None):
+def custom_gpt_action_random_question(exam: str, part: str, grade: Optional[str] = None, request: Request = None):
     """🤖 Custom GPT Action: ai-juku 問題プールからランダム 1 問取得 (認証不要)。
 
     schema variant 対応 (致命 fix 2026-05-23):
     - passage 形式 (kobun/long form): {"passage":..., "questions":[...]}
     - 単発形式 (eiken r_q1 短文穴埋め): {"stem":..., "choices":[...], "answer":...}
     両方に正規化して questions[] に詰める。
+    rate limit (2026-05-23 P1): 60/min/IP で bot scraping 防御。
     """
+    # 🛡️ 2026-05-23 security audit fix P1: bot scraping 防御
+    if request is not None:
+        _check_rate_limit_ip(request, bucket="custom_gpt_random", limit=60, window=60)
     import random as _rd
     conn = db(); c = conn.cursor()
     try:
@@ -16178,23 +16182,45 @@ def admin_generate_pending_figures(
 
 
 @app.get("/api/exam-questions/pool-counts")
-def public_exam_pool_counts():
+def public_exam_pool_counts(request: Request = None):
     """🆕 公開API: 全 ROTATION 組合せの現在 pool 蓄積数を返す。
+    rate limit (2026-05-23 P1): 30/min/IP で DB 過負荷防御 (1 query GROUP BY 化済)。
     生徒画面の section card で「N問」表示の前に在庫確認するため・認証不要 (count 値のみで機密性なし)。
     response: {"items": [{"exam":"daigaku","part":"kobun","grade":"kyotsu","count":20}, ...], "total": 17226}
     UI 用途: section_qCount > pool_count なら「(在庫 N問)」併記、pool_count == 0 なら「準備中」表示 + button disable。
-    2026-05-23 塾長指示「P0: 古文 5問→1問 ミスマッチ事象を全 part に網羅対応」"""
-    counts = _exam_pool_counts()
+    2026-05-23 塾長指示「P0: 古文 5問→1問 ミスマッチ事象を全 part に網羅対応」
+    2026-05-23 P2 fix: 180 query → 1 query (GROUP BY) + rate limit 30/min/IP"""
+    # 🛡️ 2026-05-23 security audit fix P1: bot 連打防御
+    if request is not None:
+        _check_rate_limit_ip(request, bucket="pool_counts", limit=30, window=60)
+    # 🚀 P2 fix: 旧 _exam_pool_counts は 180 query 実行 → 1 query GROUP BY で 180x 高速化
+    conn = db(); c = conn.cursor()
+    try:
+        c.execute(
+            "SELECT exam_id, part_key, eiken_grade, COUNT(*) as n FROM exam_questions "
+            "GROUP BY exam_id, part_key, eiken_grade"
+        )
+        rows = c.fetchall()
+    finally:
+        conn.close()
+    # ROTATION 全件を埋める (pool=0 の組合せも返す)
+    counts_map = {}
+    for row in rows:
+        if hasattr(row, "keys"):
+            counts_map[(row["exam_id"], row["part_key"], row["eiken_grade"])] = int(row["n"])
+        else:
+            counts_map[(row[0], row[1], row[2])] = int(row[3])
     out = []
     total = 0
-    for (exam_id, part_key, eiken_grade), n in counts.items():
+    for (exam_id, part_key, eiken_grade) in EXAM_QUESTION_ROTATION:
+        n = counts_map.get((exam_id, part_key, eiken_grade), 0)
         out.append({
             "exam": exam_id,
             "part": part_key,
             "grade": eiken_grade or "_default",
-            "count": int(n),
+            "count": n,
         })
-        total += int(n)
+        total += n
     return {"items": out, "total": total}
 
 
@@ -18060,15 +18086,16 @@ def admin_test_openai_image(
             body_text = e.read().decode("utf-8")[:1000]
         except Exception:
             pass
+        # 🛡️ 2026-05-23 security audit P3: API key prefix 漏洩防止 (4 文字のみ・accidental log/transcript 共有耐性)
         return {
             "ok": False, "http_status": e.code, "raw_error_body": body_text,
-            "openai_key_prefix": OPENAI_API_KEY[:10] + "...",
+            "openai_key_prefix": OPENAI_API_KEY[:4] + "***",
             "request_body_sent": body,
         }
     except Exception as e:
         return {
             "ok": False, "exception": f"{type(e).__name__}: {str(e)[:500]}",
-            "openai_key_prefix": OPENAI_API_KEY[:10] + "...",
+            "openai_key_prefix": OPENAI_API_KEY[:4] + "***",
         }
 
 
