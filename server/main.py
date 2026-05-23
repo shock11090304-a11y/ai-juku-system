@@ -18012,8 +18012,9 @@ def admin_test_openai_image(
 
     import urllib.request as _ur
     import urllib.error as _ue
+    # 🔧 2026-05-23 dall-e-3 廃止対応試行: gpt-image-1 (2026 新 model)
     body = {
-        "model": "dall-e-3",
+        "model": "gpt-image-1",
         "prompt": "A simple test diagram for educational use: a triangle with labeled vertices A, B, C on white background.",
         "n": 1,
         "size": "1024x1024",
