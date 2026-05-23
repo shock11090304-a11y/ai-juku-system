@@ -7354,11 +7354,19 @@ def _generate_figure_b64_safe(figure_description: str, subject_hint: str = "", t
         url = result.get("url")
         if not url:
             return None
-        # URL から fetch & base64 化
-        import urllib.request as _ur
-        with _ur.urlopen(url, timeout=30) as r:
-            img_bytes = r.read()
-        b64 = base64.b64encode(img_bytes).decode("ascii")
+        # 🔧 2026-05-23 fix: 2026 仕様で url が data:URI (b64_json fallback) で返るケースに対応
+        if url.startswith("data:image/"):
+            # 既に data URI なので fetch 不要・そのまま使う
+            data_uri = url
+            # log 用に b64 部分だけ抽出
+            b64 = url.split(",", 1)[1] if "," in url else ""
+        else:
+            # http URL → fetch & base64 化
+            import urllib.request as _ur
+            with _ur.urlopen(url, timeout=30) as r:
+                img_bytes = r.read()
+            b64 = base64.b64encode(img_bytes).decode("ascii")
+            data_uri = "data:image/png;base64," + b64
         # 致命 2 fix: audit log で cost monitoring
         try:
             _record_ai_critical_event("dalle_figure_embedded", {
@@ -7370,7 +7378,7 @@ def _generate_figure_b64_safe(figure_description: str, subject_hint: str = "", t
         except Exception:
             pass
         return {
-            "figure_b64": "data:image/png;base64," + b64,
+            "figure_b64": data_uri,
             "figure_revised_prompt": result.get("revised_prompt", ""),
             "figure_source": "dalle-3",
         }
@@ -7397,6 +7405,8 @@ def _call_openai_image(prompt: str, *, size: str = "1024x1024", quality: str = "
         " | Style: clean educational diagram, white/light background, clear labels, no human faces, no copyrighted logos or brand names")
     try:
         import urllib.request as _ur
+        # 🔧 2026-05-23 fix: OpenAI Image API は 2026 仕様で style + response_format 廃止
+        # body 最小化・b64_json / url どちらが返っても caller で吸収
         req = _ur.Request(
             "https://api.openai.com/v1/images/generations",
             data=json.dumps({
@@ -7404,9 +7414,7 @@ def _call_openai_image(prompt: str, *, size: str = "1024x1024", quality: str = "
                 "prompt": safe_prompt,
                 "size": size if size in ("1024x1024", "1024x1792", "1792x1024") else "1024x1024",
                 "quality": quality if quality in ("standard", "hd") else "standard",
-                "style": style if style in ("natural", "vivid") else "natural",
                 "n": 1,
-                "response_format": "url",
             }).encode("utf-8"),
             headers={
                 "Authorization": f"Bearer {OPENAI_API_KEY}",
@@ -7419,9 +7427,16 @@ def _call_openai_image(prompt: str, *, size: str = "1024x1024", quality: str = "
         items = data.get("data") or []
         if not items:
             raise RuntimeError("DALL-E returned no images")
+        # 🔧 2026-05-23 fix: 2026 仕様で url / b64_json どちらが返るか不定 → 両対応
+        first = items[0]
+        url_value = first.get("url") or ""
+        b64_value = first.get("b64_json") or ""
+        if not url_value and b64_value:
+            # b64_json が返った場合は data URI を url として返す (caller 互換性)
+            url_value = "data:image/png;base64," + b64_value
         return {
-            "url": items[0].get("url"),
-            "revised_prompt": items[0].get("revised_prompt") or safe_prompt,
+            "url": url_value,
+            "revised_prompt": first.get("revised_prompt") or safe_prompt,
             "model": "dall-e-3",
             "size": size, "quality": quality,
         }
