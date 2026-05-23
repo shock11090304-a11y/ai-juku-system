@@ -7314,6 +7314,71 @@ def _call_gemini(body: dict, *, model: str = None, kind: str = "chat") -> dict:
     raise last_err if last_err else RuntimeError("Gemini all models failed")
 
 
+# 🎨 2026-05-23 塾長指示「DALL-E 図解で問題プール」: figure_description → base64 化 helper
+# 3 視点 review fix:
+# - 致命 1 (timeout): import 同期内で大量 figure 生成すると Railway timeout 超過 → env gate (default OFF) + 1 batch max 数制限
+# - 致命 2 (audit): _record_ai_critical_event で cost monitoring
+# - 致命 3 (DB size): 1024 PNG ≈ 2MB base64・list endpoint では projection 除外推奨 (別 commit)
+EXAM_IMPORT_AUTO_DALLE = os.getenv("EXAM_IMPORT_AUTO_DALLE", "0") == "1"
+EXAM_IMPORT_DALLE_MAX_PER_BATCH = int(os.getenv("EXAM_IMPORT_DALLE_MAX_PER_BATCH", "10"))
+
+def _generate_figure_b64_safe(figure_description: str, subject_hint: str = "", topic_hint: str = "") -> Optional[dict]:
+    """DALL-E 3 で図解 1 枚生成 → base64 data URI 化。失敗時 None を返す (致命にしない)。
+
+    呼び出し元: _exam_questions_import_core 内で question_data.figure_description を検出時に自動 call。
+    用途: 物理の力学図 / 化学の構造式 / 数学の図形 / 生物の細胞図 等を batch import 時に自動付与。
+    cost: $0.04/枚 (standard 1024x1024)。
+    """
+    try:
+        if not figure_description or not figure_description.strip():
+            return None
+        # 科目別 style 補強
+        style_hints = {
+            "数学": "Mathematical diagram with axes, curves, points labeled with coordinates.",
+            "物理": "Physics diagram with vectors (arrows), forces, motion paths. Clear labels (F, v, m, etc.).",
+            "化学": "Chemistry molecular structure / reaction diagram with bond lines and atom symbols.",
+            "生物": "Biology cellular / anatomical diagram with labeled organelles.",
+            "地学": "Earth science diagram with geological layers / weather systems / planetary motion.",
+        }
+        subj_hint_text = ""
+        for k, v in style_hints.items():
+            if k in (subject_hint or ""):
+                subj_hint_text = v
+                break
+        full_prompt = (
+            f"Educational diagram for Japanese high school students. "
+            f"Subject: {subject_hint or 'general'}. Topic: {topic_hint or 'general'}. "
+            f"{subj_hint_text} Description: {figure_description}"
+        )
+        result = _call_openai_image(full_prompt, size="1024x1024", quality="standard", style="natural")
+        url = result.get("url")
+        if not url:
+            return None
+        # URL から fetch & base64 化
+        import urllib.request as _ur
+        with _ur.urlopen(url, timeout=30) as r:
+            img_bytes = r.read()
+        b64 = base64.b64encode(img_bytes).decode("ascii")
+        # 致命 2 fix: audit log で cost monitoring
+        try:
+            _record_ai_critical_event("dalle_figure_embedded", {
+                "subject": subject_hint or "",
+                "topic": topic_hint or "",
+                "b64_kb": int(len(b64) / 1024),
+                "cost_estimate_usd": 0.04,
+            })
+        except Exception:
+            pass
+        return {
+            "figure_b64": "data:image/png;base64," + b64,
+            "figure_revised_prompt": result.get("revised_prompt", ""),
+            "figure_source": "dalle-3",
+        }
+    except Exception as e:
+        log.warning(f"[DALL-E figure] failed: {type(e).__name__}: {str(e)[:200]}")
+        return None
+
+
 # 🎨 2026-05-23 塾長指示「D: DALL-E 3 で図解自動生成」
 def _call_openai_image(prompt: str, *, size: str = "1024x1024", quality: str = "standard", style: str = "natural") -> dict:
     """OpenAI DALL-E 3 で画像 1 枚生成。教材の図解 (数学/物理/化学の図表) 用。
@@ -11995,6 +12060,26 @@ def _exam_questions_import_core(questions: list, skip_full: bool = False) -> dic
                     skipped += 1
                     continue
 
+                # 🎨 2026-05-23 塾長指示「DALL-E 図解付き問題プール生成」:
+                # 致命 1 fix: 同期 DALL-E call は Railway timeout (60-300s) 超過リスクのため env gate (default OFF)
+                # default OFF: figure_description のみ DB 保存 → 別 endpoint /api/admin/exam-questions/generate-pending-figures で後追い生成
+                # ON 時: 1 batch max 10 figure まで (それ超は figure_description のみ保存・後追い処理)
+                if EXAM_IMPORT_AUTO_DALLE and isinstance(question_data, dict):
+                    fig_desc = question_data.get("figure_description")
+                    if fig_desc and not question_data.get("figure_b64") and inserted < EXAM_IMPORT_DALLE_MAX_PER_BATCH:
+                        try:
+                            subj_hint = question_data.get("subject_hint") or question_data.get("subject") or ""
+                            topic_hint = question_data.get("topic_hint") or question_data.get("topic") or question_data.get("passage_title") or ""
+                            fig = _generate_figure_b64_safe(fig_desc, subj_hint, topic_hint)
+                            if fig:
+                                question_data["figure_b64"] = fig["figure_b64"]
+                                question_data["figure_revised_prompt"] = fig["figure_revised_prompt"]
+                                question_data["figure_source"] = fig["figure_source"]
+                                log.info(f"[ExamQ:Import] DALL-E figure embedded for {exam_id}/{part_key} (b64 len={len(fig['figure_b64'])})")
+                        except Exception as fe:
+                            log.warning(f"[ExamQ:Import] DALL-E figure generation skipped: {type(fe).__name__}: {fe}")
+                            # 致命にしない (figure なしでも問題は使える)
+
                 c.execute(
                     "INSERT INTO exam_questions (exam_id, part_key, eiken_grade, question_data, model) VALUES (?, ?, ?, ?, ?)",
                     (exam_id, part_key, eiken_grade,
@@ -15953,6 +16038,116 @@ def custom_gpt_action_cta_status(gpt_id: Optional[str] = None):
             "🎓 17,500 問+ の問題プール (東大 / 京大 / 早慶 / 医学部 / 共テ)",
         ],
         "trial_days": 7, "cost": "¥0 (クレカ不要)",
+    }
+
+
+# 🎨 2026-05-23 塾長指示「DALL-E 図解付き問題プール」: 後追い生成 endpoint
+# import 時に同期生成すると timeout 超過するため、figure_description を持つ row に対し
+# 別 endpoint で 1 件ずつ DALL-E call → UPDATE する方式 (background 処理)
+@app.post("/api/admin/exam-questions/generate-pending-figures")
+def admin_generate_pending_figures(
+    payload: dict = None,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """exam_questions で figure_description は ある が figure_b64 が無い row を上限 N 件まで処理。
+    各 row で DALL-E 3 call → base64 → UPDATE。
+
+    payload: {"limit": 5, "exam_id": "rikei", "part_key": "phys_q1"} (limit default 5・max 30)
+    cost: $0.04 × limit (5 件 = $0.20 / 30 件 = $1.20)
+
+    塾長指示 2026-05-23: import から DALL-E を切り離して後追い処理にすることで Railway timeout 回避。
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    payload = payload or {}
+    limit = max(1, min(int(payload.get("limit") or 5), 30))
+    exam_filter = payload.get("exam_id")
+    part_filter = payload.get("part_key")
+    grade_filter = payload.get("eiken_grade")
+
+    conn = db(); c = conn.cursor()
+    candidates = []
+    try:
+        sql = "SELECT id, exam_id, part_key, eiken_grade, question_data FROM exam_questions WHERE 1=1"
+        params = []
+        if exam_filter:
+            sql += " AND exam_id = ?"
+            params.append(exam_filter)
+        if part_filter:
+            sql += " AND part_key = ?"
+            params.append(part_filter)
+        if grade_filter:
+            sql += " AND eiken_grade = ?"
+            params.append(grade_filter)
+        # 簡素実装: 直近 200 件から候補抽出 (大規模ならインデックス検討)
+        sql += " ORDER BY id DESC LIMIT 200"
+        c.execute(sql, params)
+        rows = c.fetchall()
+        # python 側で figure_description あり / figure_b64 なし を filter
+        for row in rows:
+            if hasattr(row, "keys"):
+                rid, eid, pkey, gr, qd_raw = row["id"], row["exam_id"], row["part_key"], row["eiken_grade"], row["question_data"]
+            else:
+                rid, eid, pkey, gr, qd_raw = row[0], row[1], row[2], row[3], row[4]
+            try:
+                qd = json.loads(qd_raw) if isinstance(qd_raw, str) else qd_raw
+            except Exception:
+                continue
+            if not isinstance(qd, dict):
+                continue
+            if qd.get("figure_description") and not qd.get("figure_b64"):
+                candidates.append((rid, eid, pkey, gr, qd))
+            if len(candidates) >= limit:
+                break
+    finally:
+        conn.close()
+
+    if not candidates:
+        return {"ok": True, "processed": 0, "message": "対象 row なし (figure_description あり & figure_b64 なし の row が見つからない)"}
+
+    # 各候補で DALL-E call + UPDATE
+    processed, failed = 0, []
+    conn = db(); c = conn.cursor()
+    try:
+        for rid, eid, pkey, gr, qd in candidates:
+            try:
+                subj_hint = qd.get("subject_hint") or qd.get("subject") or ""
+                topic_hint = qd.get("topic_hint") or qd.get("topic") or qd.get("passage_title") or ""
+                fig = _generate_figure_b64_safe(qd["figure_description"], subj_hint, topic_hint)
+                if not fig:
+                    failed.append({"id": rid, "reason": "DALL-E call failed"})
+                    continue
+                qd["figure_b64"] = fig["figure_b64"]
+                qd["figure_revised_prompt"] = fig["figure_revised_prompt"]
+                qd["figure_source"] = fig["figure_source"]
+                c.execute(
+                    "UPDATE exam_questions SET question_data = ? WHERE id = ?",
+                    (json.dumps(qd, ensure_ascii=False), rid),
+                )
+                processed += 1
+            except Exception as e:
+                failed.append({"id": rid, "reason": f"{type(e).__name__}: {str(e)[:100]}"})
+                try: conn.rollback()
+                except Exception: pass
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {
+        "ok": True,
+        "processed": processed,
+        "failed": failed,
+        "remaining_estimate": "別途 GET /api/admin/exam-questions/pending-figures-count で確認可能",
+        "cost_estimate_usd": round(0.04 * processed, 2),
     }
 
 
