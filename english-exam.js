@@ -2066,6 +2066,7 @@ Speaking/Writing の場合: choices=[], answer に模範解答テキスト全文
     state.audioScript = payload.audio_script || '';
     state.prompt = payload.prompt || '';
     state.figureSvg = payload.figure_svg || '';
+    state.figureB64 = payload.figure_b64 || '';  // 🎨 2026-05-23: DALL-E 生成図解 (data:image/png;base64,...)
     state.warning = payload._warning || '';  // フォールバック警告 (偽問題なし設計)
     state.retryable = payload._retryable === true;  // 🚨 2026-05-21: AI 失敗 → demo fallback 時の retry button gate (silent fallback 防止)
     state.userAnswers = {};
@@ -2600,6 +2601,14 @@ function renderQuestions() {
     const safe = sanitizeSvg(state.figureSvg);
     if (safe) {
       html += `<div class="ee-figure"><h3>📐 図</h3><div class="ee-figure-svg">${safe}</div></div>`;
+    }
+  }
+  // 🎨 2026-05-23 塾長指示「DALL-E 図解付き問題プール」: figure_b64 (data URI) があれば img として表示
+  // sanitize: data:image/png|jpeg|webp;base64,... 形式のみ許可 (XSS 防御)
+  if (state.figureB64) {
+    const m = String(state.figureB64).match(/^data:image\/(png|jpeg|jpg|webp);base64,[A-Za-z0-9+/=]+$/);
+    if (m) {
+      html += `<div class="ee-figure"><h3>🎨 図 (AI 生成)</h3><div class="ee-figure-img" style="text-align:center;"><img src="${state.figureB64}" alt="図解" style="max-width:100%;max-height:480px;border-radius:8px;background:#fff;padding:0.5rem;"/></div></div>`;
     }
   }
   if (state.audioScript) {
