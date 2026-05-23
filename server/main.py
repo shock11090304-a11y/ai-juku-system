@@ -7868,6 +7868,7 @@ EXAM_QUESTION_ROTATION = [
     ("eiken", "r_q3", "gp1"),
     ("eiken", "r_q4", "gp1"),       # 2026-05-21 塾長指示: 準1級 Eメール返信 (新形式 2024〜・小川くん事例 fix)
     ("eiken", "w_essay", "gp1"),
+    ("eiken", "w_summary", "gp1"),  # 2026-05-23 塾長指摘: 準1級も新形式 2024〜で要約問題あり (UI mismatch fix・frontend は既存)
     ("eiken", "r_q1", "g2"),
     ("eiken", "r_q3", "g2"),        # 2026-05-03 復活: 2級長文 (旧形式但し import 既存データあり)
     ("eiken", "r_q3b", "g2"),       # 2026-04-30 追加: 2級長文内容一致
@@ -8284,7 +8285,7 @@ def _generate_exam_question(
         # 詳細は part_hints_eiken_grade (line ~7950) で grade-aware lookup。ここは fallback 用の neutral 説明のみ
         "r_q4": "Reading 大問4 (英検: grade ごとに形式異なる・gp1 Eメール返信 / g4 掲示+Eメール+長文 / g5 長文)",
         "w_email": "Writing Email 返信 (準2級 新形式 2024〜・1問 5分): 与えられた英文メールを読み、下線部の質問に 40-50 語で英語返信",
-        "w_summary": "Writing 要約 (1級・2級 新形式 2024〜・200-300語の英文を 60-70 語で要約)",
+        "w_summary": "Writing 要約 (1級・準1級・2級 新形式 2024〜・1級=200-300語→90-110語要約 / 準1級=150-200語→60-70語要約 / 2級=100-150語→45-55語要約)",
         "w_essay": "Writing エッセイ模範回答 (新形式)",
         "w_opinion": "Writing 意見論述模範回答 (新形式)",
     }
