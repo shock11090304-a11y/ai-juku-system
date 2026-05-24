@@ -6788,6 +6788,16 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         row('本契約開始日', fmtDate(st.paid_since)),
         row('最終ログイン', lastLoginHtml),
         row('生徒ID',       `<code style="color:#71717a;font-size:0.78rem;">${esc(st.id)}</code>`),
+        // 💳 個別請求発行 (Stripe Invoice) — 2026-05-24 塾長指示
+        `<div style="margin-top:20px;padding:14px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);border-radius:10px;">
+          <div style="color:#a5b4fc;font-weight:600;font-size:0.88rem;margin-bottom:8px;">💳 個別請求 (模試代・教材代・追加補講代 など)</div>
+          <button type="button" class="sd-create-invoice-btn" data-student-id="${esc(st.id)}" data-student-name="${esc(st.name || '')}" data-student-email="${esc(st.email || '')}" style="width:100%;padding:11px 16px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:0.92rem;cursor:pointer;">
+            🧾 Stripe 請求書を発行 (任意金額 1 クリック)
+          </button>
+          <div style="margin-top:6px;color:#71717a;font-size:0.75rem;line-height:1.5;">
+            プリセット 6 種 (模試代 ¥5,500 / 教材代 ¥3,300 等) + 自由入力対応。発行後 Stripe から自動メール送信、生徒は支払 URL から card / 銀行振込 で決済可能。
+          </div>
+        </div>`,
       ].join('');
 
       // アクティビティと統計タブはまだ未取得 → タブクリック時に lazy fetch
@@ -6929,6 +6939,17 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         const id = link.getAttribute('data-student-id');
         if (id) showStudentDetail(id);
       }
+      // 💳 個別請求書発行ボタン (2026-05-24)
+      const invBtn = e.target.closest && e.target.closest('.sd-create-invoice-btn');
+      if (invBtn) {
+        e.preventDefault();
+        openCreateInvoiceModal({
+          studentId: invBtn.dataset.studentId,
+          studentName: invBtn.dataset.studentName,
+          studentEmail: invBtn.dataset.studentEmail,
+        });
+        return;
+      }
       // タブ切り替え
       const tabBtn = e.target.closest && e.target.closest('.sd-tab-btn');
       if (tabBtn && tabBtn.closest('#studentDetailModal')) {
@@ -6951,11 +6972,199 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         }
       }
     });
-    // ESC キーで閉じる
+    // ESC キーで閉じる (sub-modal 優先: 開いていれば sub のみ閉じる)
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        const modal = document.getElementById('studentDetailModal');
-        if (modal && modal.style.display === 'flex') modal.style.display = 'none';
+      if (e.key !== 'Escape') return;
+      const invModal = document.getElementById('createInvoiceModal');
+      if (invModal && invModal.style.display === 'flex') {
+        invModal.style.display = 'none';
+        return; // sub-modal 閉じたら親はそのまま
+      }
+      const modal = document.getElementById('studentDetailModal');
+      if (modal && modal.style.display === 'flex') modal.style.display = 'none';
+    });
+
+    // 💳 個別 Stripe 請求書発行モーダル (2026-05-24 塾長指示)
+    const INVOICE_PRESETS = [
+      { label: '模試代 (マーク)', amount: 5500, item: '模試代 (マーク)' },
+      { label: '模試代 (記述)', amount: 7700, item: '模試代 (記述)' },
+      { label: '教材代 (通常)', amount: 3300, item: '教材代' },
+      { label: '教材代 (上級)', amount: 5500, item: '教材代 (上級)' },
+      { label: '特別補講代 (1コマ)', amount: 11000, item: '特別補講代 (1コマ)' },
+      { label: '入塾金 (追加)', amount: 27500, item: '入塾金 (追加分)' },
+    ];
+
+    function ensureCreateInvoiceModal() {
+      let modal = document.getElementById('createInvoiceModal');
+      if (modal) return modal;
+      modal = document.createElement('div');
+      modal.id = 'createInvoiceModal';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);backdrop-filter:blur(8px);z-index:10000;align-items:center;justify-content:center;padding:20px;';
+      modal.innerHTML = `
+        <div style="background:linear-gradient(160deg,#1e1b4b 0%,#0a0a1a 70%);border:1px solid rgba(99,102,241,0.5);border-radius:16px;max-width:560px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 30px 80px rgba(99,102,241,0.5);">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.1);">
+            <h3 style="margin:0;font-size:1.1rem;color:#a5b4fc;">🧾 Stripe 請求書を発行</h3>
+            <button type="button" id="createInvoiceClose" style="background:rgba(255,255,255,0.08);color:#e4e4e7;border:1px solid rgba(255,255,255,0.15);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:0.95rem;line-height:1;">✕</button>
+          </div>
+          <form id="createInvoiceForm" style="padding:20px 22px;color:#e4e4e7;font-size:0.9rem;line-height:1.55;" autocomplete="off">
+            <div id="ciStudentHeader" style="background:rgba(255,255,255,0.04);border-left:3px solid #6366f1;padding:10px 14px;border-radius:6px;margin-bottom:16px;font-size:0.86rem;"></div>
+            <div style="margin-bottom:14px;">
+              <label style="display:block;color:#a5b4fc;font-weight:600;font-size:0.82rem;margin-bottom:6px;">プリセット (クリックで金額・品目反映)</label>
+              <div id="ciPresetChips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <label style="display:block;color:#a5b4fc;font-weight:600;font-size:0.82rem;margin-bottom:6px;">金額 (円・税込) <span style="color:#fbbf24;">*</span></label>
+              <input type="number" id="ciAmount" min="100" max="1000000" step="100" required placeholder="例: 5500" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.96rem;">
+              <div style="color:#71717a;font-size:0.72rem;margin-top:3px;">100 〜 1,000,000 円の範囲 (安全上限)</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <label style="display:block;color:#a5b4fc;font-weight:600;font-size:0.82rem;margin-bottom:6px;">品目名 (請求書に表示) <span style="color:#fbbf24;">*</span></label>
+              <input type="text" id="ciItemName" required maxlength="200" placeholder="例: 5月分模試代 (マーク)" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.92rem;">
+            </div>
+            <div style="margin-bottom:14px;">
+              <label style="display:block;color:#a5b4fc;font-weight:600;font-size:0.82rem;margin-bottom:6px;">メモ (任意・請求書 description)</label>
+              <textarea id="ciMemo" maxlength="250" rows="2" placeholder="例: 5/25 第3回マーク模試の受験料です" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.88rem;resize:vertical;font-family:inherit;"></textarea>
+            </div>
+            <div style="margin-bottom:18px;">
+              <label style="display:block;color:#a5b4fc;font-weight:600;font-size:0.82rem;margin-bottom:6px;">支払期限</label>
+              <select id="ciDays" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.92rem;">
+                <option value="3">3 日後</option>
+                <option value="7" selected>7 日後 (default)</option>
+                <option value="14">14 日後</option>
+                <option value="30">30 日後</option>
+              </select>
+            </div>
+            <div id="ciResult" style="margin-bottom:14px;display:none;"></div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+              <button type="button" id="ciCancel" style="padding:10px 18px;background:rgba(255,255,255,0.08);color:#a1a1aa;border:1px solid rgba(255,255,255,0.15);border-radius:8px;cursor:pointer;">キャンセル</button>
+              <button type="submit" id="ciSubmit" style="padding:10px 22px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;">🧾 発行する</button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      // close handlers
+      modal.addEventListener('click', (ev) => {
+        if (ev.target.id === 'createInvoiceModal' || ev.target.id === 'createInvoiceClose' || ev.target.id === 'ciCancel') {
+          modal.style.display = 'none';
+        }
+      });
+      return modal;
+    }
+
+    function openCreateInvoiceModal({ studentId, studentName, studentEmail }) {
+      const modal = ensureCreateInvoiceModal();
+      const header = modal.querySelector('#ciStudentHeader');
+      header.innerHTML = `<strong style="color:#fff;">${esc(studentName || '(名前未登録)')}</strong> さん宛て<br><span style="color:#34d399;">${esc(studentEmail || '⚠ email 未登録 — 発行不可')}</span>　<code style="color:#71717a;font-size:0.74rem;">id=${esc(studentId)}</code>`;
+      // preset chips
+      const chips = modal.querySelector('#ciPresetChips');
+      chips.innerHTML = '';
+      INVOICE_PRESETS.forEach(p => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.style.cssText = 'padding:6px 11px;background:rgba(99,102,241,0.18);color:#c7d2fe;border:1px solid rgba(99,102,241,0.35);border-radius:18px;cursor:pointer;font-size:0.78rem;';
+        b.textContent = `${p.label} ¥${p.amount.toLocaleString()}`;
+        b.addEventListener('click', () => {
+          modal.querySelector('#ciAmount').value = String(p.amount);
+          modal.querySelector('#ciItemName').value = p.item;
+        });
+        chips.appendChild(b);
+      });
+      // reset
+      modal.querySelector('#ciAmount').value = '';
+      modal.querySelector('#ciItemName').value = '';
+      modal.querySelector('#ciMemo').value = '';
+      modal.querySelector('#ciDays').value = '7';
+      modal.querySelector('#ciResult').style.display = 'none';
+      modal.querySelector('#ciResult').innerHTML = '';
+      const submitBtn = modal.querySelector('#ciSubmit');
+      submitBtn.disabled = !studentEmail;
+      submitBtn.style.opacity = studentEmail ? '1' : '0.45';
+      submitBtn.style.cursor = studentEmail ? 'pointer' : 'not-allowed';
+      modal.dataset.studentId = studentId;
+      modal.style.display = 'flex';
+      setTimeout(() => modal.querySelector('#ciAmount').focus(), 60);
+    }
+
+    // form submit handler
+    document.addEventListener('submit', async (e) => {
+      if (e.target.id !== 'createInvoiceForm') return;
+      e.preventDefault();
+      const modal = document.getElementById('createInvoiceModal');
+      const studentId = modal.dataset.studentId;
+      const amount = parseInt(modal.querySelector('#ciAmount').value, 10);
+      const itemName = modal.querySelector('#ciItemName').value.trim();
+      const memo = modal.querySelector('#ciMemo').value.trim();
+      const days = parseInt(modal.querySelector('#ciDays').value, 10) || 7;
+      const result = modal.querySelector('#ciResult');
+      const submitBtn = modal.querySelector('#ciSubmit');
+      if (!studentId || !amount || !itemName) {
+        result.style.display = 'block';
+        result.innerHTML = '<div style="padding:10px;background:rgba(251,191,36,0.12);border-left:3px solid #fbbf24;border-radius:6px;color:#fde68a;">⚠ 金額と品目名は必須です。</div>';
+        return;
+      }
+      // 🛡 高額誤発行ガード (¥50,000 以上で 2 段確認)
+      if (amount >= 50000) {
+        const okHigh = window.confirm(`【高額請求の確認】\n\n金額: ¥${amount.toLocaleString()}\n品目: ${itemName}\n\n本当に発行してよろしいですか? (¥50,000 以上は本確認を必須にしています)`);
+        if (!okHigh) return;
+      }
+      submitBtn.disabled = true;
+      submitBtn.textContent = '⏳ 発行中...';
+      result.style.display = 'block';
+      result.innerHTML = '<div style="padding:10px;background:rgba(99,102,241,0.1);border-left:3px solid #6366f1;border-radius:6px;color:#c7d2fe;">⏳ Stripe で請求書を作成中... (約 3-5 秒)</div>';
+      try {
+        const res = await AdminAuth.fetch(`/api/admin/students/${encodeURIComponent(studentId)}/create-invoice`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount_jpy: amount,
+            item_name: itemName,
+            memo: memo,
+            days_until_due: days,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          // detail が object (FastAPI 422 配列) の場合に [object Object] にならないよう stringify
+          const detail = data.detail || data.message || 'unknown error';
+          const detailStr = (typeof detail === 'string') ? detail : JSON.stringify(detail);
+          result.innerHTML = `<div style="padding:12px;background:rgba(239,68,68,0.12);border-left:3px solid #ef4444;border-radius:6px;color:#fecaca;"><strong>❌ HTTP ${res.status}</strong><br>${esc(detailStr)}</div>`;
+          submitBtn.disabled = false;
+          submitBtn.textContent = '🧾 発行する';
+          return;
+        }
+        const hostedUrl = data.hosted_invoice_url || '';
+        const pdfUrl = data.invoice_pdf || '';
+        const invNumber = data.invoice_number || data.invoice_id || '';
+        const modeBadge = data.stripe_mode === 'test'
+          ? '<span style="display:inline-block;padding:2px 8px;background:#fbbf24;color:#1c1917;border-radius:4px;font-size:0.72rem;font-weight:bold;margin-left:6px;">🧪 TEST MODE</span>'
+          : '<span style="display:inline-block;padding:2px 8px;background:#10b981;color:#fff;border-radius:4px;font-size:0.72rem;font-weight:bold;margin-left:6px;">🟢 LIVE MODE</span>';
+        const mailLabel = data.auto_email_sent
+          ? '<span style="color:#34d399;">✅ 送信済</span>'
+          : `<span style="color:#fbbf24;">⚠ 未送信の可能性 (Stripe Dashboard > Settings > Emails を確認)</span>`;
+        result.innerHTML = `<div style="padding:14px;background:rgba(52,211,153,0.1);border-left:3px solid #34d399;border-radius:6px;">
+          <div style="color:#6ee7b7;font-weight:bold;margin-bottom:8px;">✅ 請求書発行成功 #${esc(invNumber)}${modeBadge}</div>
+          <div style="color:#e4e4e7;font-size:0.85rem;line-height:1.7;">
+            金額: <strong>¥${amount.toLocaleString()}</strong><br>
+            品目: ${esc(itemName)}<br>
+            支払期限: ${days} 日後<br>
+            Stripe 自動メール: ${mailLabel}
+          </div>
+          ${hostedUrl ? `<div style="margin-top:10px;"><a href="${esc(hostedUrl)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:8px 14px;background:#6366f1;color:#fff;text-decoration:none;border-radius:6px;font-size:0.86rem;margin-right:8px;">🔗 Stripe 請求書を見る</a>${pdfUrl ? `<a href="${esc(pdfUrl)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:8px 14px;background:rgba(255,255,255,0.08);color:#a5b4fc;text-decoration:none;border-radius:6px;font-size:0.86rem;border:1px solid rgba(167,139,250,0.3);">📄 PDF</a>` : ''}</div>` : ''}
+          <div style="margin-top:10px;color:#71717a;font-size:0.72rem;line-height:1.5;">📌 取消は Stripe Dashboard > 該当 Invoice > Void invoice から実行できます。</div>
+        </div>`;
+        // 連続発行モード: form 入力値を初期化 (誤って同じ金額を再発行する事故防止)
+        modal.querySelector('#ciAmount').value = '';
+        modal.querySelector('#ciItemName').value = '';
+        modal.querySelector('#ciMemo').value = '';
+        submitBtn.disabled = false;
+        submitBtn.textContent = '🧾 続けて別の請求書を発行';
+      } catch (err) {
+        result.innerHTML = `<div style="padding:12px;background:rgba(239,68,68,0.12);border-left:3px solid #ef4444;border-radius:6px;color:#fecaca;">❌ 通信エラー: ${esc(String(err && err.message || err))}</div>`;
+        submitBtn.disabled = false;
+        submitBtn.textContent = '🧾 発行する';
       }
     });
 

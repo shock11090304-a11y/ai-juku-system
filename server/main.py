@@ -16038,6 +16038,226 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
         conn.close()
 
 
+@app.post("/api/admin/students/{student_id}/create-invoice")
+def admin_create_invoice_for_student(
+    student_id: int,
+    payload: dict,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🧾 個別生徒に Stripe 請求書 (Invoice) を発行 + 自動メール送信 (admin only)。
+
+    塾長指示 (2026-05-24): CEO ダッシュ「生徒詳細」モーダルから 1 クリックで
+    任意金額・任意品目の請求書 を発行できるようにする。模試代・教材代・追加補講代
+    などの個別 spot 請求 を想定。
+
+    payload: {
+      "amount_jpy": int (必須・100-1000000 範囲・安全上限 100 万円),
+      "item_name": str (必須・1-200 文字・例「5月分模試代」),
+      "memo": str (任意・250 文字以下・請求書 description に追記),
+      "days_until_due": int (任意・default 7・1-90 範囲)
+    }
+
+    動作:
+    1. 認証 (admin Bearer or X-Cron-Secret)
+    2. STRIPE_SECRET_KEY 必須・テスト/本番 mode は env で決定
+    3. student 存在確認 (email 必須)
+    4. stripe_customer_id 取得 → 無ければ Stripe customer を auto-create + DB UPDATE
+    5. InvoiceItem 作成 → Invoice 作成 (collection_method=send_invoice) → finalize → send_invoice
+    6. events.admin_invoice_issued に audit 記録
+    7. invoice URL (hosted_invoice_url + invoice_pdf) を返却
+
+    認証: admin Bearer または X-Cron-Secret"""
+    # auth
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="STRIPE_SECRET_KEY 未設定")
+
+    # payload validation
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=422, detail="payload (object) が必要")
+    try:
+        amount = int(payload.get("amount_jpy"))
+    except Exception:
+        raise HTTPException(status_code=422, detail="amount_jpy (positive int) が必要")
+    if amount < 100 or amount > 1_000_000:
+        raise HTTPException(status_code=422, detail="amount_jpy は 100 〜 1,000,000 円の範囲")
+    item_name = (payload.get("item_name") or "").strip()
+    if not item_name:
+        raise HTTPException(status_code=422, detail="item_name (品目名) が必要")
+    if len(item_name) > 200:
+        item_name = item_name[:200]
+    memo = (payload.get("memo") or "").strip()[:250]
+    try:
+        days_until_due = int(payload.get("days_until_due") or 7)
+    except Exception:
+        days_until_due = 7
+    days_until_due = max(1, min(days_until_due, 90))
+
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT id, name, email, stripe_customer_id, status FROM students WHERE id=?", (student_id,))
+        st = c.fetchone()
+        if not st:
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        student_email = (st["email"] or "").strip()
+        if not student_email:
+            raise HTTPException(status_code=400, detail="生徒に email が登録されていないため Stripe 請求書を送れません。")
+        student_name = (st["name"] or "").strip()
+        customer_id = st["stripe_customer_id"]
+
+        s = get_stripe()
+
+        # 🛡 mode 判定 (test/livemode 混同事故予防)
+        stripe_mode = "test" if STRIPE_SECRET_KEY.startswith("sk_test_") else "live"
+
+        # 🛡 error message sanitizer (Stripe SDK exception に sk_ key prefix が混じる稀ケースを除去)
+        import re as _re
+        def _sanitize_err(msg: str) -> str:
+            return _re.sub(r"sk_(test|live)_[A-Za-z0-9]+", "sk_[REDACTED]", str(msg))[:200]
+
+        # 🛡 idempotency_key 共通 prefix (秒粒度・同 student の同秒 retry を 1 回にまとめる)
+        import time as _time
+        _idem_ts = int(_time.time())
+        _idem_prefix = f"si_{student_id}_{_idem_ts}"
+
+        # Stripe customer auto-create (なければ・metadata.student_id で重複検索を試行)
+        if not customer_id:
+            try:
+                # 重複防止: 過去に同 student_id で作成済の customer を search
+                found = None
+                try:
+                    search_res = s.Customer.search(
+                        query=f"metadata['student_id']:'{student_id}'",
+                        limit=1,
+                    )
+                    if search_res.data:
+                        found = search_res.data[0]
+                except Exception as _se:
+                    # search 失敗は致命でない (古い API version で未対応の場合あり) → 通常 create に fallback
+                    log.info(f"[admin/create-invoice] Customer.search skipped: {type(_se).__name__}")
+                if found:
+                    customer_id = found.id
+                    log.info(f"[admin/create-invoice] Stripe customer 重複検出 (再利用): {customer_id}")
+                else:
+                    cust = s.Customer.create(
+                        email=student_email,
+                        name=student_name or None,
+                        metadata={"student_id": str(student_id), "source": "admin_spot_invoice"},
+                        idempotency_key=f"{_idem_prefix}_cust",
+                    )
+                    customer_id = cust.id
+                    log.info(f"[admin/create-invoice] Stripe customer auto-created: {customer_id} for student_id={student_id}")
+                # DB 反映 (Stripe 側に customer 確実に存在するため commit 安全)
+                c.execute("UPDATE students SET stripe_customer_id=? WHERE id=?", (customer_id, student_id))
+                conn.commit()
+            except Exception as e:
+                log.error(f"[admin/create-invoice] Stripe customer create/search failed: {type(e).__name__}: {e}")
+                raise HTTPException(status_code=500, detail=f"Stripe customer 作成失敗: {type(e).__name__}: {_sanitize_err(e)}")
+
+        # InvoiceItem → Invoice → finalize → send
+        # 🛡 二重請求リスク対策: pending_invoice_items_behavior="exclude" + InvoiceItem を明示紐付け
+        try:
+            inv_item = s.InvoiceItem.create(
+                customer=customer_id,
+                amount=amount,
+                currency="jpy",
+                description=item_name,
+                metadata={"student_id": str(student_id), "source": "admin_spot_invoice"},
+                idempotency_key=f"{_idem_prefix}_item",
+            )
+            inv = s.Invoice.create(
+                customer=customer_id,
+                collection_method="send_invoice",
+                days_until_due=days_until_due,
+                description=(memo or item_name)[:1000],
+                metadata={
+                    "student_id": str(student_id),
+                    "item_name": item_name,
+                    "source": "admin_spot_invoice",
+                },
+                auto_advance=False,           # finalize を明示的に呼ぶ
+                pending_invoice_items_behavior="exclude",  # 既存 pending item の混入防止
+                idempotency_key=f"{_idem_prefix}_inv",
+            )
+            # InvoiceItem を本 Invoice に明示紐付け (exclude で除外された分を取込)
+            try:
+                s.InvoiceItem.modify(inv_item.id, invoice=inv.id)
+            except Exception as _me:
+                # modify 失敗時は警告のみ (Stripe ロジック上 InvoiceItem が orphan 化するが finalize 前なら影響軽微)
+                log.warning(f"[admin/create-invoice] InvoiceItem.modify(invoice) 失敗: {type(_me).__name__}: {_me}")
+            finalized = s.Invoice.finalize_invoice(inv.id)
+            sent = s.Invoice.send_invoice(finalized.id)
+        except Exception as e:
+            log.error(f"[admin/create-invoice] Stripe invoice create/send failed: {type(e).__name__}: {e}")
+            raise HTTPException(status_code=500, detail=f"Stripe 請求書発行失敗: {type(e).__name__}: {_sanitize_err(e)}")
+
+        # 🛡 sent.status check (送信成功検証・"open" であれば正常)
+        sent_status = getattr(sent, "status", None)
+        auto_mail_ok = (sent_status == "open")
+        if not auto_mail_ok:
+            log.warning(f"[admin/create-invoice] sent.status={sent_status} (expected 'open') — email 自動送信失敗の可能性")
+
+        # events 監査ログ
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("admin_invoice_issued", json.dumps({
+                    "student_id": student_id,
+                    "email": student_email,
+                    "stripe_customer_id": customer_id,
+                    "invoice_id": sent.id,
+                    "invoice_number": getattr(sent, "number", None),
+                    "amount_jpy": amount,
+                    "item_name": item_name,
+                    "days_until_due": days_until_due,
+                    "hosted_invoice_url": getattr(sent, "hosted_invoice_url", None),
+                }, ensure_ascii=False), "admin"),
+            )
+            conn.commit()
+        except Exception as e:
+            log.warning(f"[admin/create-invoice] events 記録失敗 (請求書発行は成功): {e}")
+
+        return {
+            "ok": True,
+            "invoice_id": sent.id,
+            "invoice_number": getattr(sent, "number", None),
+            "amount_jpy": amount,
+            "currency": "jpy",
+            "status": sent_status,
+            "hosted_invoice_url": getattr(sent, "hosted_invoice_url", None),
+            "invoice_pdf": getattr(sent, "invoice_pdf", None),
+            "days_until_due": days_until_due,
+            "customer_id": customer_id,
+            "auto_email_sent": auto_mail_ok,
+            "stripe_mode": stripe_mode,  # "test" or "live" — UI で 🧪 TEST MODE バッジ表示用
+            "message": (
+                f"✅ 請求書 #{getattr(sent, 'number', sent.id)} を発行・{student_email} へ自動送信しました"
+                if auto_mail_ok
+                else f"⚠ 請求書 #{getattr(sent, 'number', sent.id)} は作成しましたが、自動メール送信に失敗した可能性があります (status={sent_status})。Stripe Dashboard > Settings > Emails を確認してください。"
+            ),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        try: conn.rollback()
+        except Exception: pass
+        log.error(f"[admin/create-invoice] unexpected: {type(e).__name__}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"内部エラー: {type(e).__name__}")
+    finally:
+        conn.close()
+
+
 @app.post("/api/admin/textbooks/purge")
 def admin_textbook_pool_purge(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """textbook_pool の特定レコードを削除する admin endpoint。
