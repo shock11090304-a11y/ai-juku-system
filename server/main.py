@@ -1787,9 +1787,18 @@ class JSErrorReport(BaseModel):
 # ==========================================================================
 @app.get("/api/health")
 def health():
+    # 🔍 2026-05-24 塾長指示「production 何 commit で動いているか可視化」P2 audit fix:
+    # git_sha は Railway build 時に env で渡される (RAILWAY_GIT_COMMIT_SHA) or build 内で git rev-parse
+    git_sha = (
+        os.getenv("RAILWAY_GIT_COMMIT_SHA")
+        or os.getenv("RAILWAY_DEPLOYMENT_ID", "")[:8]
+        or os.getenv("GIT_SHA")
+        or "unknown"
+    )
     return {
         "status": "ok",
         "time": datetime.now(timezone.utc).isoformat(),
+        "git_sha": git_sha[:12] if git_sha else "unknown",  # 12 chars で簡素表示
         "stripe_configured": bool(STRIPE_SECRET_KEY),
         "line_configured": bool(LINE_CHANNEL_ACCESS_TOKEN),
         "anthropic_configured": bool(ANTHROPIC_API_KEY),
