@@ -841,6 +841,23 @@ def init_db():
     CREATE UNIQUE INDEX IF NOT EXISTS uq_study_plans_no_dup
         ON study_plans(student_id, subject, COALESCE(material,''), start_date, end_date)
         WHERE status != 'archived';
+    -- 宿題 (Phase 5 - 国公立難関大学コース + 同等プラン限定・塾長指示 2026-05-24)
+    -- admin が個別生徒に宿題を割当て、生徒が完了マーク。study_plans と独立 (1 回限り task vs 期間継続)。
+    CREATE TABLE IF NOT EXISTS homework_assignments (
+        id {pk},
+        student_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        subject TEXT,
+        due_date DATE,
+        status TEXT DEFAULT 'open',
+        student_note TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        completed_at TIMESTAMP,
+        created_by TEXT DEFAULT 'admin'
+    );
+    CREATE INDEX IF NOT EXISTS idx_homework_student_status ON homework_assignments(student_id, status, due_date);
+    CREATE INDEX IF NOT EXISTS idx_homework_due ON homework_assignments(due_date, status);
     -- 合格カリキュラム (Phase 4 - 国公立難関大学コース限定・塾長指示 2026-05-06)
     -- 難関大学 (国公立 + 難関私立) 志望者向けの全体ロードマップ。1生徒に通常1件 active。
     CREATE TABLE IF NOT EXISTS curricula (
@@ -27064,8 +27081,353 @@ def admin_study_logs_students_summary(authorization: Optional[str] = Header(None
 _VALID_PLANS = {"standard", "premium", "family", "student_addon", "founder_special", "founder1"}
 
 
-class StudentPlanSetRequest(BaseModel):
-    plan: str
+# ============================================================
+# 📚 宿題機能 (Phase 5・国公立難関大学コース + 同等プラン限定)
+# 塾長指示 2026-05-24: 国公立難関大学コースの子達に宿題タブを追加
+# admin が個別生徒に宿題を割当て、生徒が完了マーク
+# ============================================================
+
+class HomeworkAssignRequest(BaseModel):
+    student_id: int
+    title: str
+    description: Optional[str] = None
+    subject: Optional[str] = None
+    due_date: Optional[str] = None  # YYYY-MM-DD
+
+
+class HomeworkCompleteRequest(BaseModel):
+    student_note: Optional[str] = None
+
+
+@app.get("/api/student/homework")
+def get_my_homework(authorization: Optional[str] = Header(None), status_filter: Optional[str] = None, limit: int = 100):
+    """生徒が自分の宿題一覧を取得。
+    status_filter: 'open' | 'completed' | None (両方)
+    最新の宿題を上から (status=open は due_date 昇順、completed は completed_at 降順)。"""
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)  # kokuritsu_nankan + 同等プラン に限定
+
+    try:
+        limit = max(1, min(int(limit or 100), 500))
+    except Exception:
+        limit = 100
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        if status_filter == "open":
+            c.execute(
+                "SELECT id, title, description, subject, due_date, status, student_note, "
+                "       created_at, completed_at, created_by "
+                "FROM homework_assignments WHERE student_id = ? AND status = 'open' "
+                "ORDER BY (due_date IS NULL), due_date ASC, created_at DESC LIMIT ?",
+                (student["id"], limit),
+            )
+        elif status_filter == "completed":
+            c.execute(
+                "SELECT id, title, description, subject, due_date, status, student_note, "
+                "       created_at, completed_at, created_by "
+                "FROM homework_assignments WHERE student_id = ? AND status = 'completed' "
+                "ORDER BY completed_at DESC LIMIT ?",
+                (student["id"], limit),
+            )
+        else:
+            c.execute(
+                "SELECT id, title, description, subject, due_date, status, student_note, "
+                "       created_at, completed_at, created_by "
+                "FROM homework_assignments WHERE student_id = ? "
+                "ORDER BY (status = 'open') DESC, (due_date IS NULL), due_date ASC, created_at DESC LIMIT ?",
+                (student["id"], limit),
+            )
+        rows = c.fetchall()
+        items = []
+        for r in rows:
+            items.append({
+                "id": r["id"],
+                "title": r["title"],
+                "description": r["description"],
+                "subject": r["subject"],
+                "due_date": str(r["due_date"]) if r["due_date"] else None,
+                "status": r["status"],
+                "student_note": r["student_note"],
+                "created_at": str(r["created_at"]) if r["created_at"] else None,
+                "completed_at": str(r["completed_at"]) if r["completed_at"] else None,
+                "created_by": r["created_by"],
+            })
+        # 簡易集計
+        open_count = sum(1 for it in items if it["status"] == "open")
+        completed_count = sum(1 for it in items if it["status"] == "completed")
+        # 期限切れ未完了件数
+        today = _today_jst().isoformat()
+        overdue_count = sum(
+            1 for it in items
+            if it["status"] == "open" and it["due_date"] and it["due_date"] < today
+        )
+        return {
+            "ok": True,
+            "items": items,
+            "summary": {
+                "open": open_count,
+                "completed": completed_count,
+                "overdue": overdue_count,
+                "total": len(items),
+            },
+        }
+    finally:
+        conn.close()
+
+
+@app.post("/api/student/homework/{homework_id}/complete")
+def complete_my_homework(homework_id: int, payload: HomeworkCompleteRequest, authorization: Optional[str] = Header(None)):
+    """生徒が宿題を完了マーク (任意で完了時メモを追加)。"""
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_study_log_course(student)
+
+    student_note = (payload.student_note or "").strip()[:1000] if payload and payload.student_note else None
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT id, student_id, status FROM homework_assignments WHERE id = ?",
+            (homework_id,),
+        )
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="該当の宿題が見つかりません")
+        if row["student_id"] != student["id"]:
+            raise HTTPException(status_code=403, detail="他の生徒の宿題は操作できません")
+        if row["status"] == "completed":
+            return {"ok": True, "already_completed": True, "homework_id": homework_id}
+        c.execute(
+            "UPDATE homework_assignments SET status = 'completed', completed_at = CURRENT_TIMESTAMP, "
+            "       student_note = COALESCE(?, student_note) "
+            "WHERE id = ? AND student_id = ?",
+            (student_note, homework_id, student["id"]),
+        )
+        conn.commit()
+        # 監査 events
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("homework_completed", json.dumps({
+                    "homework_id": homework_id, "student_id": student["id"],
+                }, ensure_ascii=False), f"student_{student['id']}"),
+            )
+            conn.commit()
+        except Exception:
+            pass
+        return {"ok": True, "homework_id": homework_id, "status": "completed"}
+    except HTTPException:
+        raise
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/homework/assign")
+def admin_homework_assign(
+    payload: HomeworkAssignRequest,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🧑‍🏫 admin が個別生徒に宿題を割当て。
+    payload: { student_id, title (必須・1-200c), description?, subject?, due_date? (YYYY-MM-DD) }
+    認証: admin Bearer または X-Cron-Secret"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    title = (payload.title or "").strip()
+    if not title:
+        raise HTTPException(status_code=422, detail="title (宿題タイトル) が必要")
+    if len(title) > 200:
+        title = title[:200]
+    description = (payload.description or "").strip()[:2000] if payload.description else None
+    subject = (payload.subject or "").strip()[:50] if payload.subject else None
+    due_date = (payload.due_date or "").strip() if payload.due_date else None
+    if due_date:
+        # YYYY-MM-DD 形式 validation
+        try:
+            datetime.strptime(due_date, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(status_code=422, detail="due_date は YYYY-MM-DD 形式")
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 生徒存在 + 学習管理対象コース確認
+        c.execute("SELECT id, name, course, plan, status FROM students WHERE id = ?", (payload.student_id,))
+        st = c.fetchone()
+        if not st:
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        # 学習管理対象判定 (helper を流用)
+        try:
+            _require_study_log_course({
+                "course": st["course"],
+                "plan": st["plan"],
+                "status": st["status"],
+            })
+        except HTTPException as e:
+            if e.status_code in (403,):
+                raise HTTPException(status_code=400, detail=f"この生徒 ({st['name']}) は学習管理機能の対象外コース/プランです (course={st['course']} / plan={st['plan']})")
+            raise
+
+        c.execute(
+            "INSERT INTO homework_assignments (student_id, title, description, subject, due_date, status, created_by) "
+            "VALUES (?, ?, ?, ?, ?, 'open', 'admin')",
+            (payload.student_id, title, description, subject, due_date),
+        )
+        conn.commit()
+        # PostgreSQL の場合 lastrowid 不可 → RETURNING 必要だが既存 INSERT パターン踏襲
+        try:
+            hw_id = c.lastrowid
+        except Exception:
+            hw_id = None
+        if not hw_id:
+            # fallback: SELECT で取得
+            c.execute(
+                "SELECT id FROM homework_assignments WHERE student_id = ? AND title = ? "
+                "ORDER BY id DESC LIMIT 1",
+                (payload.student_id, title),
+            )
+            r = c.fetchone()
+            hw_id = r["id"] if r else None
+        # 監査 events
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("homework_assigned", json.dumps({
+                    "homework_id": hw_id, "student_id": payload.student_id,
+                    "title": title, "due_date": due_date, "subject": subject,
+                }, ensure_ascii=False), "admin"),
+            )
+            conn.commit()
+        except Exception:
+            pass
+        return {
+            "ok": True,
+            "homework_id": hw_id,
+            "student_id": payload.student_id,
+            "student_name": st["name"],
+            "title": title,
+            "due_date": due_date,
+            "message": f"✅ {st['name']} さんに宿題「{title}」を割当てました",
+        }
+    except HTTPException:
+        raise
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/homework/list")
+def admin_homework_list(
+    student_id: int,
+    limit: int = 100,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🧑‍🏫 admin: 特定生徒の宿題一覧を取得。
+    クエリ: ?student_id=N&limit=100"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    try:
+        limit = max(1, min(int(limit or 100), 500))
+    except Exception:
+        limit = 100
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT id, title, description, subject, due_date, status, student_note, "
+            "       created_at, completed_at, created_by "
+            "FROM homework_assignments WHERE student_id = ? "
+            "ORDER BY (status = 'open') DESC, (due_date IS NULL), due_date ASC, created_at DESC LIMIT ?",
+            (student_id, limit),
+        )
+        rows = c.fetchall()
+        items = []
+        for r in rows:
+            items.append({
+                "id": r["id"],
+                "title": r["title"],
+                "description": r["description"],
+                "subject": r["subject"],
+                "due_date": str(r["due_date"]) if r["due_date"] else None,
+                "status": r["status"],
+                "student_note": r["student_note"],
+                "created_at": str(r["created_at"]) if r["created_at"] else None,
+                "completed_at": str(r["completed_at"]) if r["completed_at"] else None,
+                "created_by": r["created_by"],
+            })
+        open_count = sum(1 for it in items if it["status"] == "open")
+        completed_count = sum(1 for it in items if it["status"] == "completed")
+        return {
+            "ok": True,
+            "student_id": student_id,
+            "items": items,
+            "summary": {"open": open_count, "completed": completed_count, "total": len(items)},
+        }
+    finally:
+        conn.close()
+
+
+@app.delete("/api/admin/homework/{homework_id}")
+def admin_homework_delete(
+    homework_id: int,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🧑‍🏫 admin: 宿題を削除 (誤割当ての撤回用)。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, student_id, title FROM homework_assignments WHERE id = ?", (homework_id,))
+        row = c.fetchone()
+        if not row:
+            return {"ok": True, "deleted": 0, "message": "既に存在しません (no-op)"}
+        info = {"id": row["id"], "student_id": row["student_id"], "title": row["title"]}
+        c.execute("DELETE FROM homework_assignments WHERE id = ?", (homework_id,))
+        conn.commit()
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("homework_deleted", json.dumps(info, ensure_ascii=False), "admin"),
+            )
+            conn.commit()
+        except Exception:
+            pass
+        return {"ok": True, "deleted": 1, "removed": info}
+    finally:
+        conn.close()
 
 
 @app.post("/api/admin/students/{student_id}/plan")

@@ -316,6 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
   try { initMessages(); } catch (e) { console.error('initMessages failed:', e); }
   try { initReferralSection(); } catch (e) { console.error('initReferralSection failed:', e); }
   try { initCustomGptBlock(); } catch (e) { console.error('initCustomGptBlock failed:', e); }
+  try { initHomeworkSection(); } catch (e) { console.error('initHomeworkSection failed:', e); }
 });
 
 // 🤖 ai-juku 公式 Custom GPT 案内 block (2026-05-23 塾長指示「C: 生徒画面に Custom GPT 案内」)
@@ -3847,4 +3848,176 @@ function showGapAnalysisModal(state, ctx) {
       applyBtn.disabled = false; applyBtn.textContent = `✨ AI 提案をカリキュラムに反映 (${adjustments.length} 件)`;
     }
   });
+}
+
+// ============================================================
+// 📚 宿題セクション (Phase 5 - 国公立難関大学コース + 同等プラン限定)
+// 塾長指示 2026-05-24: 国公立難関大学コースの子達に宿題タブを追加
+// ============================================================
+function _hwEscape(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+function _hwDueDateBadge(dueDate, status) {
+  if (!dueDate) return '';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const due = new Date(dueDate + 'T00:00:00');
+  const days = Math.floor((due - today) / 86400000);
+  if (status === 'completed') {
+    return `<span style="font-size:0.74rem; padding:2px 7px; background:rgba(52,211,153,0.18); color:#6ee7b7; border-radius:8px;">期限 ${_hwEscape(dueDate)}</span>`;
+  }
+  if (days < 0) {
+    return `<span style="font-size:0.74rem; padding:2px 7px; background:rgba(239,68,68,0.18); color:#fca5a5; border-radius:8px; font-weight:bold;">⚠ 期限超過 (${_hwEscape(dueDate)})</span>`;
+  }
+  if (days === 0) {
+    return `<span style="font-size:0.74rem; padding:2px 7px; background:rgba(251,191,36,0.22); color:#fde68a; border-radius:8px; font-weight:bold;">🔥 今日が期限</span>`;
+  }
+  if (days <= 3) {
+    return `<span style="font-size:0.74rem; padding:2px 7px; background:rgba(251,191,36,0.16); color:#fde68a; border-radius:8px;">あと ${days} 日 (${_hwEscape(dueDate)})</span>`;
+  }
+  return `<span style="font-size:0.74rem; padding:2px 7px; background:rgba(255,255,255,0.06); color:#a1a1aa; border-radius:8px;">期限 ${_hwEscape(dueDate)}</span>`;
+}
+
+function _renderHomeworkItem(item) {
+  const isOpen = item.status === 'open';
+  const dueBadge = _hwDueDateBadge(item.due_date, item.status);
+  const subjectBadge = item.subject
+    ? `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(99,102,241,0.2); color:#a5b4fc; border-radius:8px; margin-right:6px;">${_hwEscape(item.subject)}</span>`
+    : '';
+  const desc = item.description
+    ? `<div style="color:#cbd5e1; font-size:0.86rem; line-height:1.6; margin-top:6px; white-space:pre-wrap;">${_hwEscape(item.description)}</div>`
+    : '';
+  const completedBlock = (!isOpen && item.completed_at)
+    ? `<div style="margin-top:8px; padding:8px 11px; background:rgba(52,211,153,0.08); border-left:3px solid #34d399; border-radius:6px; font-size:0.78rem; color:#6ee7b7;">
+         ✅ 完了 (${_hwEscape(String(item.completed_at).slice(0,16).replace('T',' '))})
+         ${item.student_note ? `<div style="color:#cbd5e1; margin-top:4px; white-space:pre-wrap;">${_hwEscape(item.student_note)}</div>` : ''}
+       </div>`
+    : '';
+  const completeBtn = isOpen
+    ? `<button type="button" data-hw-complete="${_hwEscape(item.id)}" style="margin-top:10px; padding:8px 16px; background:linear-gradient(135deg,#34d399,#10b981); color:#fff; border:0; border-radius:8px; font-weight:bold; font-size:0.86rem; cursor:pointer;">✅ 完了する</button>`
+    : '';
+  return `<div class="hw-item" data-hw-id="${_hwEscape(item.id)}" style="padding:14px 16px; background:${isOpen ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.02)'}; border:1px solid ${isOpen ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.06)'}; border-radius:10px; margin-bottom:10px;">
+    <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
+      ${subjectBadge}${dueBadge}
+    </div>
+    <div style="margin-top:8px; color:${isOpen ? '#fff' : '#a1a1aa'}; font-weight:bold; font-size:0.96rem; ${isOpen ? '' : 'text-decoration:line-through;'}">${_hwEscape(item.title)}</div>
+    ${desc}
+    ${completedBlock}
+    ${completeBtn}
+  </div>`;
+}
+
+async function initHomeworkSection() {
+  const section = document.querySelector('.homework-section');
+  if (!section) return;
+  const student = getCurrentStudent();
+  if (!_canUseStudyMgmt(student)) {
+    // 対象外コース/プランは section ごと非表示 (study-log のように upgrade banner は出さない・1機能 1 banner で十分)
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+
+  const list = section.querySelector('#homeworkList');
+  const badge = section.querySelector('#homeworkBadge');
+  const toggleWrap = section.querySelector('#homeworkCompletedToggle');
+  const toggleBtn = section.querySelector('#homeworkShowCompleted');
+  if (!list) return;
+
+  let openItems = [];
+  let completedItems = [];
+  let showCompleted = false;
+
+  async function refresh() {
+    try {
+      const data = await slApiFetch('/api/student/homework?limit=100');
+      const items = (data && data.items) || [];
+      openItems = items.filter(it => it.status === 'open');
+      completedItems = items.filter(it => it.status === 'completed');
+      // badge
+      const overdueN = (data.summary && data.summary.overdue) || 0;
+      if (openItems.length > 0) {
+        badge.style.display = 'inline-block';
+        if (overdueN > 0) {
+          badge.textContent = `⚠ 期限超過 ${overdueN} / 未完了 ${openItems.length}`;
+          badge.style.background = '#ef4444';
+        } else {
+          badge.textContent = `未完了 ${openItems.length}`;
+          badge.style.background = '#6366f1';
+        }
+      } else {
+        badge.style.display = 'none';
+      }
+      render();
+    } catch (e) {
+      list.innerHTML = `<div style="color:#fca5a5; padding:12px; background:rgba(239,68,68,0.08); border-radius:8px; font-size:0.85rem;">⚠ 宿題の取得に失敗しました (${_hwEscape(e.message || e)})</div>`;
+    }
+  }
+
+  function render() {
+    if (openItems.length === 0 && completedItems.length === 0) {
+      list.innerHTML = `<div style="color:#71717a; text-align:center; padding:1.5rem 0; font-size:0.88rem;">📭 現在、塾長から割当てられている宿題はありません。<br><span style="font-size:0.74rem;">塾長が割当てると、ここに表示されます。</span></div>`;
+      toggleWrap.style.display = 'none';
+      return;
+    }
+    let html = '';
+    if (openItems.length > 0) {
+      html += openItems.map(_renderHomeworkItem).join('');
+    } else {
+      html += `<div style="color:#86efac; text-align:center; padding:1rem 0; font-size:0.9rem;">🎉 未完了の宿題はありません。素晴らしい!</div>`;
+    }
+    if (showCompleted && completedItems.length > 0) {
+      html += `<div style="margin-top:1.5rem; padding-top:1rem; border-top:1px dashed rgba(255,255,255,0.08);">
+        <div style="color:#a1a1aa; font-size:0.78rem; margin-bottom:8px;">✅ 過去の完了宿題 (直近 ${completedItems.length} 件)</div>
+        ${completedItems.map(_renderHomeworkItem).join('')}
+      </div>`;
+    }
+    list.innerHTML = html;
+    // toggle 表示制御
+    if (completedItems.length > 0) {
+      toggleWrap.style.display = 'block';
+      toggleBtn.textContent = showCompleted
+        ? `過去の完了宿題を隠す ▴`
+        : `過去の完了宿題を表示 (${completedItems.length}) ▾`;
+    } else {
+      toggleWrap.style.display = 'none';
+    }
+  }
+
+  // 完了ボタン (event delegation)
+  list.addEventListener('click', async (e) => {
+    const btn = e.target.closest && e.target.closest('[data-hw-complete]');
+    if (!btn) return;
+    const hwId = btn.getAttribute('data-hw-complete');
+    if (!hwId) return;
+    if (!confirm('この宿題を完了にしますか?')) return;
+    btn.disabled = true; btn.textContent = '⏳ 送信中...';
+    try {
+      await slApiFetch(`/api/student/homework/${encodeURIComponent(hwId)}/complete`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+      });
+      // 軽い祝福 toast
+      try {
+        const toast = document.createElement('div');
+        toast.textContent = '🎉 お疲れさま! 完了しました';
+        toast.style.cssText = 'position:fixed; top:80px; left:50%; transform:translateX(-50%); padding:12px 24px; background:linear-gradient(135deg,#34d399,#10b981); color:#fff; border-radius:10px; font-weight:bold; box-shadow:0 8px 24px rgba(0,0,0,0.3); z-index:10000;';
+        document.body.appendChild(toast);
+        setTimeout(() => { toast.style.transition = 'opacity 0.4s'; toast.style.opacity = '0'; }, 2200);
+        setTimeout(() => toast.remove(), 2700);
+      } catch {}
+      await refresh();
+    } catch (e2) {
+      alert('❌ 完了処理に失敗しました: ' + (e2.message || e2));
+      btn.disabled = false; btn.textContent = '✅ 完了する';
+    }
+  });
+
+  // toggle 完了履歴
+  toggleBtn.addEventListener('click', () => {
+    showCompleted = !showCompleted;
+    render();
+  });
+
+  await refresh();
 }

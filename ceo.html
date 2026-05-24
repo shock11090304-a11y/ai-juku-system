@@ -6695,12 +6695,14 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         <button class="sd-tab-btn active" data-tab="info" style="flex:1;padding:12px 16px;background:none;color:#a78bfa;border:none;border-bottom:2px solid #a78bfa;cursor:pointer;font-size:0.92rem;font-weight:600;">📋 申込内容</button>
         <button class="sd-tab-btn" data-tab="activity" style="flex:1;padding:12px 16px;background:none;color:#71717a;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.92rem;font-weight:600;">⚡ アクティビティ履歴</button>
         <button class="sd-tab-btn" data-tab="stats" style="flex:1;padding:12px 16px;background:none;color:#71717a;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.92rem;font-weight:600;">📊 利用統計</button>
+        <button class="sd-tab-btn" data-tab="homework" style="flex:1;padding:12px 16px;background:none;color:#71717a;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.92rem;font-weight:600;">📚 宿題</button>
       </div>
       <!-- タブパネル -->
       <div id="studentDetailBody" style="padding:24px;color:#e4e4e7;font-size:0.92rem;line-height:1.7;">
         <div class="sd-tab-pane" data-pane="info"><!-- JS で埋める --></div>
         <div class="sd-tab-pane" data-pane="activity" style="display:none;">読み込み中...</div>
         <div class="sd-tab-pane" data-pane="stats" style="display:none;">読み込み中...</div>
+        <div class="sd-tab-pane" data-pane="homework" style="display:none;">読み込み中...</div>
       </div>
     </div>
   </div>
@@ -6807,7 +6809,165 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       statsPane.dataset.loaded = '';
       activityPane.innerHTML = '<div style="color:#71717a;text-align:center;padding:1.5rem;">タブをクリックして読み込みます</div>';
       statsPane.innerHTML = '<div style="color:#71717a;text-align:center;padding:1.5rem;">タブをクリックして読み込みます</div>';
+      // 📚 宿題タブ (新規 2026-05-24): 同じ lazy fetch パターン
+      const homeworkPane = modal.querySelector('[data-pane="homework"]');
+      if (homeworkPane) {
+        homeworkPane.dataset.studentId = String(st.id);
+        homeworkPane.dataset.studentName = String(st.name || '');
+        homeworkPane.dataset.studentCourse = String(st.course || '');
+        homeworkPane.dataset.studentPlan = String(st.plan || '');
+        homeworkPane.dataset.loaded = '';
+        homeworkPane.innerHTML = '<div style="color:#71717a;text-align:center;padding:1.5rem;">タブをクリックして読み込みます</div>';
+      }
       modal.style.display = 'flex';
+    }
+
+    // 📚 宿題タブ load (新規 2026-05-24)
+    const _HW_MGMT_PLANS = new Set(['premium','family','founder_special','student_addon']);
+    function _canUseHomework(course, plan) {
+      if (course === 'kokuritsu_nankan') return true;
+      return _HW_MGMT_PLANS.has(String(plan || '').toLowerCase());
+    }
+    function _hwBadge(item) {
+      if (item.status === 'completed') {
+        return '<span style="font-size:0.72rem;padding:2px 7px;background:rgba(52,211,153,0.2);color:#6ee7b7;border-radius:8px;">✅ 完了</span>';
+      }
+      if (!item.due_date) {
+        return '<span style="font-size:0.72rem;padding:2px 7px;background:rgba(99,102,241,0.2);color:#a5b4fc;border-radius:8px;">未完了</span>';
+      }
+      const today = new Date(); today.setHours(0,0,0,0);
+      const due = new Date(item.due_date + 'T00:00:00');
+      const days = Math.floor((due - today) / 86400000);
+      if (days < 0) return `<span style="font-size:0.72rem;padding:2px 7px;background:rgba(239,68,68,0.25);color:#fca5a5;border-radius:8px;font-weight:bold;">⚠ 期限超過</span>`;
+      if (days === 0) return `<span style="font-size:0.72rem;padding:2px 7px;background:rgba(251,191,36,0.25);color:#fde68a;border-radius:8px;font-weight:bold;">🔥 今日が期限</span>`;
+      if (days <= 3) return `<span style="font-size:0.72rem;padding:2px 7px;background:rgba(251,191,36,0.18);color:#fde68a;border-radius:8px;">あと${days}日</span>`;
+      return `<span style="font-size:0.72rem;padding:2px 7px;background:rgba(99,102,241,0.18);color:#a5b4fc;border-radius:8px;">あと${days}日</span>`;
+    }
+    async function loadStudentHomework(studentId, pane) {
+      const studentName = pane.dataset.studentName || '';
+      const course = pane.dataset.studentCourse || '';
+      const plan = pane.dataset.studentPlan || '';
+      const eligible = _canUseHomework(course, plan);
+
+      // 対象外: warning + 過去履歴のみ
+      const eligibleNote = eligible
+        ? `<div style="padding:8px 12px;background:rgba(52,211,153,0.08);border-left:3px solid #34d399;border-radius:6px;color:#6ee7b7;font-size:0.82rem;">✅ 学習管理対象 (course=${esc(course)} / plan=${esc(plan || '無し')})</div>`
+        : `<div style="padding:8px 12px;background:rgba(251,191,36,0.1);border-left:3px solid #fbbf24;border-radius:6px;color:#fde68a;font-size:0.82rem;">⚠ 学習管理対象外コース/プランです (course=${esc(course)} / plan=${esc(plan || '無し')})。宿題は割当てできません (生徒画面で表示されません)。</div>`;
+
+      pane.innerHTML = `
+        <div style="margin-bottom:14px;">${eligibleNote}</div>
+        <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.3);border-radius:10px;padding:14px;margin-bottom:18px;${eligible ? '' : 'opacity:0.5;pointer-events:none;'}">
+          <div style="color:#a5b4fc;font-weight:600;font-size:0.88rem;margin-bottom:10px;">🧑‍🏫 ${esc(studentName)} さんに新規宿題を割当て</div>
+          <input type="text" class="hw-form-title" maxlength="200" placeholder="タイトル (例: 数学IIIの極限 演習問題 #4-6)" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.92rem;margin-bottom:8px;">
+          <textarea class="hw-form-desc" maxlength="2000" rows="3" placeholder="詳細・指示 (任意・問題範囲や注意点など)" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.88rem;resize:vertical;font-family:inherit;margin-bottom:8px;"></textarea>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+            <select class="hw-form-subject" style="padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.88rem;">
+              <option value="">— 科目 (任意) —</option>
+              <option>英語</option><option>数学</option><option>国語</option><option>現代文</option><option>古文</option><option>漢文</option><option>物理</option><option>化学</option><option>生物</option><option>地学</option><option>日本史</option><option>世界史</option><option>地理</option><option>政治経済</option><option>倫理</option><option>その他</option>
+            </select>
+            <input type="date" class="hw-form-due" style="padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.88rem;">
+          </div>
+          <button type="button" class="hw-form-submit" data-student-id="${esc(studentId)}" style="width:100%;padding:10px 16px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;${eligible ? '' : 'opacity:0.5;cursor:not-allowed;'}" ${eligible ? '' : 'disabled'}>📚 宿題を割当てる</button>
+          <div class="hw-form-msg" style="margin-top:8px;font-size:0.85rem;"></div>
+        </div>
+        <div style="color:#a78bfa;font-weight:600;font-size:0.88rem;margin-bottom:8px;">📋 宿題履歴</div>
+        <div class="hw-history" style="min-height:60px;"><div style="color:#71717a;text-align:center;padding:1rem;">⏳ 読み込み中...</div></div>
+      `;
+
+      const histBox = pane.querySelector('.hw-history');
+      const formMsg = pane.querySelector('.hw-form-msg');
+      const submitBtn = pane.querySelector('.hw-form-submit');
+
+      async function refreshList() {
+        try {
+          const res = await AdminAuth.fetch(`/api/admin/homework/list?student_id=${encodeURIComponent(studentId)}&limit=100`);
+          if (!res.ok) {
+            histBox.innerHTML = `<div style="color:#fca5a5;padding:10px;background:rgba(239,68,68,0.08);border-radius:6px;font-size:0.85rem;">⚠ 取得失敗 HTTP ${res.status}</div>`;
+            return;
+          }
+          const data = await res.json();
+          const items = (data && data.items) || [];
+          if (items.length === 0) {
+            histBox.innerHTML = `<div style="color:#71717a;text-align:center;padding:1rem;font-size:0.86rem;">📭 まだ宿題はありません</div>`;
+            return;
+          }
+          histBox.innerHTML = items.map(it => {
+            const badge = _hwBadge(it);
+            const subj = it.subject ? `<span style="font-size:0.7rem;padding:2px 6px;background:rgba(167,139,250,0.15);color:#a5b4fc;border-radius:6px;margin-right:6px;">${esc(it.subject)}</span>` : '';
+            const due = it.due_date ? `<span style="color:#a1a1aa;font-size:0.75rem;margin-left:6px;">期限: ${esc(it.due_date)}</span>` : '';
+            const completedAt = it.completed_at ? `<div style="color:#6ee7b7;font-size:0.72rem;margin-top:4px;">✅ 完了 ${esc(String(it.completed_at).slice(0,16).replace('T',' '))}</div>` : '';
+            const studentNote = it.student_note ? `<div style="color:#cbd5e1;font-size:0.78rem;margin-top:4px;padding:6px 8px;background:rgba(0,0,0,0.25);border-radius:5px;white-space:pre-wrap;">💬 ${esc(it.student_note)}</div>` : '';
+            const desc = it.description ? `<div style="color:#a1a1aa;font-size:0.78rem;margin-top:4px;white-space:pre-wrap;">${esc(it.description)}</div>` : '';
+            const delBtn = `<button type="button" class="hw-delete-btn" data-hw-id="${esc(it.id)}" style="padding:3px 8px;background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);border-radius:5px;cursor:pointer;font-size:0.7rem;">🗑 削除</button>`;
+            return `<div style="padding:10px 12px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:8px;margin-bottom:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${subj}${badge}${due}</div>
+                ${delBtn}
+              </div>
+              <div style="font-weight:bold;color:#fff;margin-top:6px;font-size:0.9rem;">${esc(it.title)}</div>
+              ${desc}${completedAt}${studentNote}
+            </div>`;
+          }).join('');
+          // 削除ボタン bind
+          histBox.querySelectorAll('.hw-delete-btn').forEach(b => {
+            b.addEventListener('click', async () => {
+              const hwId = b.dataset.hwId;
+              if (!hwId || !window.confirm('この宿題を削除しますか? (生徒の画面からも消えます)')) return;
+              b.disabled = true; b.textContent = '⏳';
+              try {
+                const r = await AdminAuth.fetch(`/api/admin/homework/${encodeURIComponent(hwId)}`, { method: 'DELETE' });
+                if (!r.ok) { alert(`削除失敗 HTTP ${r.status}`); return; }
+                await refreshList();
+              } catch (e) { alert('削除エラー: ' + (e.message || e)); }
+            });
+          });
+        } catch (e) {
+          histBox.innerHTML = `<div style="color:#fca5a5;padding:10px;font-size:0.85rem;">⚠ ${esc(String(e.message || e))}</div>`;
+        }
+      }
+
+      // submit
+      submitBtn.addEventListener('click', async () => {
+        const title = pane.querySelector('.hw-form-title').value.trim();
+        const desc = pane.querySelector('.hw-form-desc').value.trim();
+        const subject = pane.querySelector('.hw-form-subject').value;
+        const due = pane.querySelector('.hw-form-due').value;
+        if (!title) { formMsg.style.color = '#fbbf24'; formMsg.textContent = '⚠ タイトルは必須です'; return; }
+        submitBtn.disabled = true; submitBtn.textContent = '⏳ 送信中...';
+        formMsg.style.color = '#a1a1aa'; formMsg.textContent = '送信中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/homework/assign', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              student_id: parseInt(studentId, 10),
+              title, description: desc || null, subject: subject || null, due_date: due || null,
+            }),
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            formMsg.style.color = '#fca5a5';
+            const det = data.detail || data.message || 'unknown error';
+            formMsg.textContent = '❌ ' + (typeof det === 'string' ? det : JSON.stringify(det));
+            submitBtn.disabled = false; submitBtn.textContent = '📚 宿題を割当てる';
+            return;
+          }
+          formMsg.style.color = '#86efac';
+          formMsg.textContent = `✅ ${data.message || '割当て完了'}`;
+          // reset form
+          pane.querySelector('.hw-form-title').value = '';
+          pane.querySelector('.hw-form-desc').value = '';
+          pane.querySelector('.hw-form-subject').value = '';
+          pane.querySelector('.hw-form-due').value = '';
+          submitBtn.disabled = false; submitBtn.textContent = '📚 宿題を割当てる';
+          await refreshList();
+        } catch (e) {
+          formMsg.style.color = '#fca5a5'; formMsg.textContent = '❌ ' + (e.message || e);
+          submitBtn.disabled = false; submitBtn.textContent = '📚 宿題を割当てる';
+        }
+      });
+
+      await refreshList();
     }
 
     // タブ切り替え + lazy fetch
@@ -6968,6 +7128,15 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
               else if (target === 'stats') renderStatsPane(pane, data);
               pane.dataset.loaded = 'done';
             });
+          }
+        }
+        // 📚 宿題タブ (新規 2026-05-24): typeof loadStudentHomework で fallback safe
+        if (target === 'homework' && pane && !pane.dataset.loaded) {
+          const sid = pane.dataset.studentId;
+          if (sid && typeof loadStudentHomework === 'function') {
+            pane.dataset.loaded = 'loading';
+            loadStudentHomework(sid, pane).then(() => { pane.dataset.loaded = 'done'; })
+              .catch(e => { pane.innerHTML = `<div style="color:#fca5a5;padding:1rem;">⚠ ${String(e.message || e)}</div>`; pane.dataset.loaded = ''; });
           }
         }
       }

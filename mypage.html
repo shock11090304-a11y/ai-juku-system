@@ -152,6 +152,22 @@
       </div>
     </section>
 
+    <!-- 📚 宿題 (Phase 5 - 国公立難関大学コース + 同等プラン限定・塾長指示 2026-05-24)
+         3 視点 UX review 致命指摘で streak-section 直後に配置 (期限超過バッジを即座に発見可能)
+         JS の initHomeworkSection() が auth/course を判定して表示制御 (ineligible は section ごと非表示) -->
+    <section class="homework-section" style="margin: 0 0 1.5rem 0; padding:1.25rem 1.25rem; background:linear-gradient(135deg,rgba(99,102,241,0.16),rgba(139,92,246,0.10)); border:1px solid rgba(99,102,241,0.4); border-radius:14px; display:none; box-shadow:0 8px 24px rgba(99,102,241,0.15);">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.6rem;">
+        <h3 style="margin:0;font-size:1.05rem;font-weight:800;color:#a5b4fc;">📚 宿題 <span id="homeworkBadge" style="display:none; font-size:0.72em; padding:2px 8px; background:#ef4444; color:#fff; border-radius:10px; vertical-align:middle; margin-left:6px;"></span></h3>
+      </div>
+      <p style="font-size:0.82rem; color:#cbd5e1; margin:0 0 0.9rem 0;">塾長から割当てられた宿題です。完了したら「✅ 完了する」を押してください。</p>
+      <div id="homeworkList" style="min-height:60px;">
+        <div style="color:#71717a; text-align:center; padding:1.2rem 0; font-size:0.85rem;">⏳ 読み込み中...</div>
+      </div>
+      <div id="homeworkCompletedToggle" style="margin-top:0.8rem; text-align:center; display:none;">
+        <button type="button" id="homeworkShowCompleted" style="padding:6px 14px; background:rgba(255,255,255,0.05); color:#a1a1aa; border:1px solid rgba(255,255,255,0.12); border-radius:18px; cursor:pointer; font-size:0.76rem;">過去の完了宿題を表示 ▾</button>
+      </div>
+    </section>
+
     <!-- 🤖 ai-juku 公式 Custom GPT (2026-05-23 塾長指示「C: 生徒画面に Custom GPT 案内」)
          streak-section 直後 (memory feedback_study_log_engagement_cta: engagement CTA 最上部) -->
     <section id="customGptSection" style="display:none; margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(34,197,94,0.13), rgba(99,102,241,0.10)); border: 1px solid rgba(34,197,94,0.35); border-radius: 14px;">
@@ -1026,7 +1042,7 @@
   <script src="learning-brain.js?v=20260522-underline-fix"></script>
   <script src="exam-prep.js?v=20260522-weekly-worksheet"></script>
   <script src="referral-program.js?v=20260522-weekly-worksheet"></script>
-  <script src="mypage.js?v=20260523-custom-gpt-block"></script>
+  <script src="mypage.js?v=20260525-homework"></script>
   <script>
     // ウィジェット初期描画
     (function() {
