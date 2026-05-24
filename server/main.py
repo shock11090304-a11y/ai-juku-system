@@ -12034,6 +12034,81 @@ def admin_exam_questions_purge(payload: dict, authorization: Optional[str] = Hea
     }
 
 
+@app.post("/api/admin/exam-questions/delete-by-id")
+def admin_exam_questions_delete_by_id(
+    payload: dict,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🎯 単一 id 指定で exam_questions 1 record を狙い撃ち削除。
+    payload: {"id": 16767}
+    認証: admin Bearer または x-cron-secret (単一 id 限定なので CRON_SECRET 経由でも安全)。
+    用途: 旧 batch の致命データ corruption (stem 空 / answer=None 等) を 1 record 単位で削除。
+    purge endpoint は filter で複数 record 一括削除する設計のため、単一狙い撃ちには適さない。
+    """
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if (not authed) and CRON_SECRET and x_cron_secret \
+            and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    qid_raw = payload.get("id") if isinstance(payload, dict) else None
+    try:
+        qid = int(qid_raw)
+    except Exception:
+        raise HTTPException(status_code=422, detail="id (positive int) が必須")
+    if qid <= 0:
+        raise HTTPException(status_code=422, detail="id は positive int が必須")
+
+    conn = db()
+    c = conn.cursor()
+    info = None
+    try:
+        c.execute(
+            "SELECT id, exam_id, part_key, eiken_grade FROM exam_questions WHERE id = ?",
+            (qid,),
+        )
+        row = c.fetchone()
+        if not row:
+            return {"ok": True, "deleted": 0, "id": qid, "message": f"id={qid} は既に存在しません (no-op)"}
+        # row → dict 抽出 (sqlite Row / psycopg dict_row 両対応)
+        if hasattr(row, "keys") and "id" in row.keys():
+            info = {
+                "id": row["id"],
+                "exam_id": row["exam_id"],
+                "part_key": row["part_key"],
+                "eiken_grade": row["eiken_grade"],
+            }
+        else:
+            info = {"id": row[0], "exam_id": row[1], "part_key": row[2], "eiken_grade": row[3]}
+        c.execute("DELETE FROM exam_questions WHERE id = ?", (qid,))
+        conn.commit()
+        # events 監査ログ
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("exam_questions_delete_by_id", json.dumps(info, ensure_ascii=False), "admin"),
+            )
+            conn.commit()
+        except Exception as e:
+            log.warning(f"[ExamQ:DeleteById] events 記録失敗 (削除は成功): {e}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        try: conn.rollback()
+        except Exception: pass
+        raise HTTPException(status_code=500, detail=f"削除失敗: {e}")
+    finally:
+        conn.close()
+
+    return {"ok": True, "deleted": 1, "removed": info}
+
+
 @app.post("/api/admin/exam-questions/burst-seed")
 async def admin_exam_questions_burst_seed(payload: dict = None, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """🚀 全 ROTATION 枠を最低 N 問まで一括生成 (初期投入・サービスローンチ前用)。
