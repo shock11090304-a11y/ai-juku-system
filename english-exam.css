@@ -1267,6 +1267,27 @@ body {
   font-size: 0.88rem;
   line-height: 1.7;
 }
+/* 🔧 2026-05-24 塾長指示「解答・解説が表示されない」bug fix:
+   reveal 後の visual feedback 強化 (背景色 + fade-in animation) → ユーザが「動いた」と気付ける */
+.ee-instant-explain.reveal {
+  background: rgba(245,158,11,0.10);
+  border-color: rgba(245,158,11,0.45);
+  animation: ee-reveal-fade-in 0.5s ease-out;
+}
+.ee-reveal-essay {
+  background: rgba(245,158,11,0.10);
+  border: 1px solid rgba(245,158,11,0.45);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  margin-top: 0.7rem;
+  font-size: 0.88rem;
+  line-height: 1.7;
+  animation: ee-reveal-fade-in 0.5s ease-out;
+}
+@keyframes ee-reveal-fade-in {
+  0% { opacity: 0; transform: translateY(-6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
 .ee-instant-explain.correct {
   background: rgba(34,197,94,0.08);
   border-color: rgba(34,197,94,0.4);

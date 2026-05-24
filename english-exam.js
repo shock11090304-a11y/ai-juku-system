@@ -2177,11 +2177,37 @@ function revealAllAnswersAndExplanations() {
     revealBtn.disabled = true;
     revealBtn.textContent = '✓ 表示済み';
   }
-  // 最初の解説までスクロール
+  // 🔧 2026-05-24 塾長指示「解答・解説が表示されない」bug fix:
+  // 旧: 最初の解説 (Q1) に scroll jump → ユーザが Q4 を表示中だと「画面が上に飛んだだけで Q4 変化なし」と誤認
+  // 新: ユーザが現在見ている viewport に最も近い explanation に scroll (Q4 表示中なら Q4 の解説に scroll)
   setTimeout(() => {
-    const firstExplain = box.querySelector('.ee-instant-explain.reveal');
-    if (firstExplain) firstExplain.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const explains = Array.from(box.querySelectorAll('.ee-instant-explain.reveal, .ee-reveal-essay'));
+    if (!explains.length) return;
+    const vpMid = window.scrollY + window.innerHeight / 2;
+    let nearestEl = explains[0];
+    let nearestDist = Infinity;
+    explains.forEach(el => {
+      const r = el.getBoundingClientRect();
+      const elY = window.scrollY + r.top + r.height / 2;
+      const d = Math.abs(elY - vpMid);
+      if (d < nearestDist) { nearestDist = d; nearestEl = el; }
+    });
+    nearestEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, 100);
+  // 🔔 toast 通知で「動作した」を視覚的に明示 (画面外で reveal されていても気付ける)
+  try {
+    const toast = document.createElement('div');
+    toast.textContent = `📖 全 ${state.questions.length} 問の解答・解説を表示しました`;
+    toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#f59e0b,#ec4899);color:#fff;padding:0.8rem 1.4rem;border-radius:10px;font-weight:700;font-size:0.95rem;z-index:99999;box-shadow:0 10px 24px rgba(0,0,0,0.4);animation:fadeInOut 3s ease-in-out forwards;';
+    document.body.appendChild(toast);
+    if (!document.getElementById('reveal-toast-keyframes')) {
+      const style = document.createElement('style');
+      style.id = 'reveal-toast-keyframes';
+      style.textContent = '@keyframes fadeInOut{0%{opacity:0;transform:translateX(-50%) translateY(-10px);}10%{opacity:1;transform:translateX(-50%) translateY(0);}80%{opacity:1;}100%{opacity:0;transform:translateX(-50%) translateY(-10px);}}';
+      document.head.appendChild(style);
+    }
+    setTimeout(() => { try { toast.remove(); } catch (_) {} }, 3200);
+  } catch (_) {}
 }
 // global export (HTML inline onclick から呼ばれない設計だが、testability + IIFE 対策で export)
 if (typeof window !== 'undefined') window.revealAllAnswersAndExplanations = revealAllAnswersAndExplanations;
