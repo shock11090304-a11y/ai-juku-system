@@ -27081,6 +27081,12 @@ def admin_study_logs_students_summary(authorization: Optional[str] = Header(None
 _VALID_PLANS = {"standard", "premium", "family", "student_addon", "founder_special", "founder1"}
 
 
+# 🛡 2026-05-25 復活: 直前 commit c18ef35 で誤削除した model を restore
+# (admin_set_student_plan endpoint が forward reference できず Deploy Logs で NameError → healthcheck failure)
+class StudentPlanSetRequest(BaseModel):
+    plan: str
+
+
 # ============================================================
 # 📚 宿題機能 (Phase 5・国公立難関大学コース + 同等プラン限定)
 # 塾長指示 2026-05-24: 国公立難関大学コースの子達に宿題タブを追加
