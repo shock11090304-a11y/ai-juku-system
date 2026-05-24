@@ -8639,6 +8639,7 @@ EXAM_QUESTION_ROTATION = [
     # 🏛️ 大学入試 社会 (共通テスト + 難関大) ・2026-05-14 塾長指示「古文の基礎問、理科、社会の問題を作成」追加
     # 共通テスト 社会 (基礎レベル・高校教科書範囲)
     ("daigaku", "nihonshi",   "kyotsu"),   # 共通テスト日本史 (古代~近現代・通史)
+    ("daigaku", "nihonshi",   "waseda"),   # 早稲田大日本史 (語群選択 9 択 + 0=該当なし型・通史)・2026-05-24 塾長指示
     ("daigaku", "sekaishi",   "kyotsu"),   # 共通テスト世界史 (古代~現代・東西通史)
     ("daigaku", "chiri",      "kyotsu"),   # 共通テスト地理 (自然/人文/地誌)
     ("daigaku", "kouminka",   "kyotsu"),   # 共通テスト公民 (政経/倫理/現社の融合)
@@ -8648,6 +8649,17 @@ EXAM_QUESTION_ROTATION = [
     ("daigaku", "koukyou",       "kyotsu"),  # 共通テスト 公共 (新課程 2025〜・主体的市民・公共性・倫理+政経の入門)
     ("daigaku", "gendaishakai",  "kyotsu"),  # 共通テスト 現代社会 (旧課程 2024〜2024・時事問題/SDGs/グローバル化)
 ]
+
+
+# 🛡 2026-05-24 塾長指示「Claude Max 経由 $0 維持」: AI 自動生成を skip する手動投入専用 set
+# 以下 3 callsite で参照される (import endpoint は通常通り受理):
+#   1. _run_exam_questions_generation (scheduler 6h 周期): skip → AI 課金回避
+#   2. burst-seed (admin endpoint): skip → AI 一括生成回避
+#   3. bank API on-demand refill (生徒 fetch 時): skip → AI 補充回避
+# memory: feedback_claude_max_seed.md「売上前は Anthropic API 課金禁止」
+EXAM_QUESTION_AUTO_GENERATE_SKIP = {
+    ("daigaku", "nihonshi", "waseda"),  # 早稲田大日本史 (語群選択 9 択 + 0 = 該当なし型・手動投入のみ)
+}
 
 
 # 大学×大問 ごとの出題スタイル定義 (AI プロンプトに注入)
@@ -9308,10 +9320,12 @@ def _run_exam_questions_generation(quota: int = None, respect_daily_max: bool = 
     counts = _exam_pool_counts()
 
     # ターゲット未達のものだけを対象に、pool が少ない順にソート
+    # 🛡 EXAM_QUESTION_AUTO_GENERATE_SKIP に含まれる枠は AI 課金回避のため scheduler 経由生成しない
     candidates = [
         (exam_id, part_key, grade)
         for (exam_id, part_key, grade) in EXAM_QUESTION_ROTATION
-        if counts.get((exam_id, part_key, grade), 0) < EXAM_QUESTIONS_TARGET_POOL
+        if (exam_id, part_key, grade) not in EXAM_QUESTION_AUTO_GENERATE_SKIP
+        and counts.get((exam_id, part_key, grade), 0) < EXAM_QUESTIONS_TARGET_POOL
     ]
     candidates.sort(key=lambda t: counts.get(t, 0))
     sorted_targets = candidates[:quota]
@@ -12146,13 +12160,19 @@ async def admin_exam_questions_burst_seed(payload: dict = None, authorization: O
 
     counts = _exam_pool_counts()
     # 不足枠を抽出 (count < target)
+    # 🛡 EXAM_QUESTION_AUTO_GENERATE_SKIP に含まれる枠は AI 課金回避のため burst-seed 経由生成しない
     needs = []
     for (exam_id, part_key, grade), n in counts.items():
+        if (exam_id, part_key, grade) in EXAM_QUESTION_AUTO_GENERATE_SKIP:
+            continue
         deficit = max(0, target - n)
         if deficit > 0:
             for _ in range(deficit):
                 needs.append((exam_id, part_key, grade))
-    parts_under_target = sum(1 for (_, _, _), n in counts.items() if n < target)
+    parts_under_target = sum(
+        1 for (e, p, g), n in counts.items()
+        if (e, p, g) not in EXAM_QUESTION_AUTO_GENERATE_SKIP and n < target
+    )
     # max_total キャップ
     if len(needs) > max_total:
         needs = needs[:max_total]
@@ -16582,7 +16602,10 @@ def public_exam_questions_bank(
 
     # 🔁 オンデマンド補充: pool が薄い part を生徒が引いた瞬間に裏で補充キューイング
     # (ExamQ scheduler は N時間おき・interval=6h なので、その間でも必要なら即補充)
-    if EXAM_QUESTIONS_ENABLED and len(items) < EXAM_QUESTIONS_MIN_POOL:
+    # 🛡 EXAM_QUESTION_AUTO_GENERATE_SKIP に含まれる枠は AI 課金回避のためオンデマンド refill しない
+    if (EXAM_QUESTIONS_ENABLED
+            and (exam, part, eiken_grade) not in EXAM_QUESTION_AUTO_GENERATE_SKIP
+            and len(items) < EXAM_QUESTIONS_MIN_POOL):
         try:
             asyncio.create_task(_refill_part_async(
                 exam, part, eiken_grade,
