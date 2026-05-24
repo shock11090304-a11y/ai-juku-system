@@ -5765,6 +5765,161 @@ def admin_rollback_history(authorization: Optional[str] = Header(None)):
     }
 
 
+# 🚀 2026-05-24 塾長指示「経路 2: server 側 admin git push endpoint」:
+# Claude (autonomous) が CRON_SECRET 経由で複数 file の atomic commit + push を実行できる仕組み。
+# 既存 GITHUB_REVERT_PAT (contents:write 権限) を再利用・GitHub Git Database API (blob/tree/commit/ref) で実装。
+# 塾長は terminal 不要・Mac keychain 設定不要・clipboard 制御不要 → 私が直接 push 可能に。
+@app.post("/api/admin/git/apply-patch")
+def admin_git_apply_patch(
+    payload: dict,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🚀 複数 file を 1 commit で atomic push (autonomous mode 専用)。
+    payload: {
+        "files": [
+            {"path": "english-exam.js", "content_b64": "<base64 encoded content>"},
+            {"path": "english-exam.css", "content_b64": "..."},
+            ...
+        ],
+        "message": "fix(reveal): ...",
+        "branch": "main"  (optional・default "main")
+    }
+    認証: admin Bearer or x-cron-secret
+    return: {ok, commit_sha, files_count, branch, github_url}
+
+    GitHub Git Database API 6 step:
+    1. GET refs/heads/{branch} → 現在の sha
+    2. GET commits/{sha} → base tree sha
+    3. POST blobs (各 file ごとに・base64 内容を blob として登録)
+    4. POST trees (base_tree + 各 file の blob sha)
+    5. POST commits (parent + tree + message)
+    6. PATCH refs/heads/{branch} → 新 commit sha
+    """
+    # 認証
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    if not GITHUB_REVERT_PAT:
+        raise HTTPException(status_code=503, detail="GITHUB_REVERT_PAT 未設定")
+
+    files = payload.get("files") or []
+    message = (payload.get("message") or "").strip()
+    branch = (payload.get("branch") or "main").strip()
+    if not files or not isinstance(files, list):
+        raise HTTPException(status_code=400, detail="files が空 or list 以外")
+    if not message:
+        raise HTTPException(status_code=400, detail="message 必須")
+    if len(files) > 50:
+        raise HTTPException(status_code=400, detail="files は 50 件以下 (大量変更は分割推奨)")
+
+    # validate each file
+    for i, f in enumerate(files):
+        if not isinstance(f, dict) or not f.get("path") or "content_b64" not in f:
+            raise HTTPException(status_code=400, detail=f"file[{i}]: path/content_b64 必須")
+        # path traversal 防御
+        path = f["path"]
+        if path.startswith("/") or ".." in path or path.startswith("~"):
+            raise HTTPException(status_code=400, detail=f"file[{i}]: 不正な path ({path})")
+
+    owner, repo = GITHUB_REPO.split("/", 1) if "/" in GITHUB_REPO else ("shock11090304-a11y", "ai-juku-system")
+
+    # Step 1: GET refs/heads/{branch}
+    r1 = _github_api("GET", f"/repos/{owner}/{repo}/git/refs/heads/{branch}")
+    if not r1.get("ok"):
+        raise HTTPException(status_code=502, detail=f"refs 取得失敗: {r1.get('error','')[:200]}")
+    head_sha = r1["json"].get("object", {}).get("sha")
+    if not head_sha:
+        raise HTTPException(status_code=502, detail="head sha 取得失敗")
+
+    # Step 2: GET commits/{sha} → base tree sha
+    r2 = _github_api("GET", f"/repos/{owner}/{repo}/git/commits/{head_sha}")
+    if not r2.get("ok"):
+        raise HTTPException(status_code=502, detail=f"commit 取得失敗: {r2.get('error','')[:200]}")
+    base_tree_sha = r2["json"].get("tree", {}).get("sha")
+    if not base_tree_sha:
+        raise HTTPException(status_code=502, detail="base tree sha 取得失敗")
+
+    # Step 3: POST blobs (各 file)
+    tree_entries = []
+    for f in files:
+        r_blob = _github_api("POST", f"/repos/{owner}/{repo}/git/blobs", body={
+            "content": f["content_b64"],
+            "encoding": "base64",
+        })
+        if not r_blob.get("ok"):
+            raise HTTPException(status_code=502, detail=f"blob 作成失敗 ({f['path']}): {r_blob.get('error','')[:200]}")
+        blob_sha = r_blob["json"].get("sha")
+        if not blob_sha:
+            raise HTTPException(status_code=502, detail=f"blob sha 取得失敗 ({f['path']})")
+        tree_entries.append({
+            "path": f["path"],
+            "mode": "100644",  # regular file
+            "type": "blob",
+            "sha": blob_sha,
+        })
+
+    # Step 4: POST trees (base_tree + 変更 file)
+    r_tree = _github_api("POST", f"/repos/{owner}/{repo}/git/trees", body={
+        "base_tree": base_tree_sha,
+        "tree": tree_entries,
+    })
+    if not r_tree.get("ok"):
+        raise HTTPException(status_code=502, detail=f"tree 作成失敗: {r_tree.get('error','')[:200]}")
+    new_tree_sha = r_tree["json"].get("sha")
+    if not new_tree_sha:
+        raise HTTPException(status_code=502, detail="new tree sha 取得失敗")
+
+    # Step 5: POST commits
+    r_commit = _github_api("POST", f"/repos/{owner}/{repo}/git/commits", body={
+        "message": message,
+        "tree": new_tree_sha,
+        "parents": [head_sha],
+    })
+    if not r_commit.get("ok"):
+        raise HTTPException(status_code=502, detail=f"commit 作成失敗: {r_commit.get('error','')[:200]}")
+    new_commit_sha = r_commit["json"].get("sha")
+    if not new_commit_sha:
+        raise HTTPException(status_code=502, detail="new commit sha 取得失敗")
+
+    # Step 6: PATCH refs/heads/{branch}
+    r_ref = _github_api("PATCH", f"/repos/{owner}/{repo}/git/refs/heads/{branch}", body={
+        "sha": new_commit_sha,
+        "force": False,  # 通常 push (force push なし・並列 commit 衝突時は失敗で安全)
+    })
+    if not r_ref.get("ok"):
+        raise HTTPException(status_code=502, detail=f"ref 更新失敗: {r_ref.get('error','')[:200]}")
+
+    # audit log
+    try:
+        _record_ai_critical_event("admin_git_apply_patch", {
+            "branch": branch,
+            "commit_sha": new_commit_sha[:12],
+            "files_count": len(files),
+            "files_paths": [f["path"] for f in files][:10],
+            "message_head": message[:100],
+        })
+    except Exception:
+        pass
+
+    log.info(f"[git apply-patch] {len(files)} files → commit {new_commit_sha[:12]} on {branch}")
+    return {
+        "ok": True,
+        "commit_sha": new_commit_sha,
+        "commit_sha_short": new_commit_sha[:12],
+        "files_count": len(files),
+        "branch": branch,
+        "github_url": f"https://github.com/{owner}/{repo}/commit/{new_commit_sha}",
+        "message": "✅ atomic push 完了 (Railway 自動 redeploy 開始)",
+    }
+
+
 _LAST_OTP_GC_TS = {"ts": 0.0}
 
 def _create_otp(student_id: int, ttl_seconds: int = 600) -> str:
