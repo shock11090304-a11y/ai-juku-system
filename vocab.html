@@ -7,7 +7,7 @@
   <script src="cache-purge.js?v=20260503-vocab-init"></script>
   <script src="frontend-error-monitor.js"></script>
   <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost-r2">
-  <link rel="stylesheet" href="vocab.css?v=20260503-quiz4-levels">
+  <link rel="stylesheet" href="vocab.css?v=20260525-mistakes-tag">
   <script src="analytics.js" defer></script>
 </head>
 <body>
@@ -55,9 +55,31 @@
             <div class="vc-stat-label">正答率 (%)</div>
           </div>
           <div class="vc-stat-cell">
+            <div class="vc-stat-num vc-stat-mistakes" id="vcMistakes">--</div>
+            <div class="vc-stat-label">🔴 間違えた単語</div>
+          </div>
+          <div class="vc-stat-cell">
             <div class="vc-stat-num" id="vcTotal">--</div>
             <div class="vc-stat-label">総単語数</div>
           </div>
+        </div>
+      </div>
+
+      <!-- 🔴 間違えた単語タグ (塾長指示 2026-05-25 / 生徒要望) -->
+      <div class="vc-mistakes-panel" id="vcMistakesPanel" style="display:none;">
+        <div class="vc-mistakes-header">
+          <div>
+            <div class="vc-mistakes-title">🔴 間違えた単語タグ</div>
+            <div class="vc-mistakes-sub">過去に1回以上間違えた単語を自動保存。集中復習で苦手を一気に潰しましょう。</div>
+          </div>
+          <div class="vc-mistakes-count-big" id="vcMistakesCountBig">0</div>
+        </div>
+        <div class="vc-mistakes-actions">
+          <button id="vcMistakeReviewBtn" class="btn-primary btn-mistake">🔴 間違えた単語だけクイズ →</button>
+          <button id="vcMistakeListToggleBtn" class="btn-ghost btn-small">📋 一覧を見る</button>
+        </div>
+        <div class="vc-mistakes-list" id="vcMistakesList" style="display:none;">
+          <div class="vc-mistakes-list-loading">読み込み中…</div>
         </div>
       </div>
 
@@ -179,6 +201,6 @@
     </section>
   </main>
 
-  <script src="vocab.js?v=20260503-quiz4"></script>
+  <script src="vocab.js?v=20260525-mistakes-tag"></script>
 </body>
 </html>

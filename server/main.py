@@ -24623,6 +24623,14 @@ def vocab_stats(student_id: int):
     rr = c.fetchone()
     total_reviews = int(_val(rr, 0, 'rsum'))
     total_correct = int(_val(rr, 1, 'csum'))
+
+    # 🔴 間違えた単語数: 一度でも間違えた単語 (review_count > correct_count) を母数とする
+    # 塾長指示 2026-05-25: 生徒からの要望「間違えた単語を別タグに保存」
+    try:
+        c.execute("SELECT COUNT(*) AS cnt FROM vocab_progress WHERE student_id=? AND review_count > correct_count", (student_id,))
+        mistakes_count = int(_val(c.fetchone(), 0, 'cnt'))
+    except Exception:
+        mistakes_count = 0
     conn.close()
     accuracy = round(100 * total_correct / max(total_reviews, 1), 1)
     return {
@@ -24632,6 +24640,7 @@ def vocab_stats(student_id: int):
         "due_now": due_now,
         "total_reviews": total_reviews,
         "accuracy_percent": accuracy,
+        "mistakes_count": mistakes_count,
     }
 
 
@@ -24714,15 +24723,94 @@ def _expand_levels(level: Optional[str]) -> list:
     return out
 
 
+@app.get("/api/vocab/mistaken-words")
+def vocab_mistaken_words(student_id: int, level: Optional[str] = None, univ: Optional[str] = None, limit: int = 100):
+    """🔴 間違えた単語一覧 (一度でも誤答した全単語)。
+    塾長指示 2026-05-25 (生徒要望): 間違えた単語を別タグに保存して復習可能に。
+    定義: review_count > correct_count → 過去に1回以上誤答ありの単語。
+    並び順: 誤答回数多い順 → 直近誤答順 (mistake_count DESC, last_reviewed_at DESC)。
+    """
+    # limit clamp
+    if limit is None or limit < 1:
+        limit = 100
+    if limit > 500:
+        limit = 500
+    conn = db()
+    c = conn.cursor()
+    levels = _expand_levels(level)
+    placeholders = ",".join(["?"] * len(levels)) if levels else ""
+    sql = """
+        SELECT vw.id, vw.word, vw.pos, vw.meaning_jp, vw.example_en, vw.example_jp, vw.level, vw.tags,
+               vp.box, vp.review_count, vp.correct_count, vp.last_reviewed_at, vp.next_review_at
+        FROM vocab_progress vp
+        JOIN vocab_words vw ON vw.id = vp.word_id
+        WHERE vp.student_id = ? AND vp.review_count > vp.correct_count
+    """
+    params = [student_id]
+    if levels:
+        sql += f" AND vw.level IN ({placeholders})"
+        params.extend(levels)
+    sql += " ORDER BY (vp.review_count - vp.correct_count) DESC, vp.last_reviewed_at DESC LIMIT ?"
+    # univ filter は post-fetch なので余裕を持って取得
+    fetch_limit = limit * 3 if univ else limit
+    params.append(fetch_limit)
+    c.execute(sql, tuple(params))
+    items = []
+    for r in c.fetchall():
+        d = dict(r) if hasattr(r, 'keys') else {
+            "id": r[0], "word": r[1], "pos": r[2], "meaning_jp": r[3],
+            "example_en": r[4], "example_jp": r[5], "level": r[6], "tags": r[7],
+            "box": r[8], "review_count": r[9], "correct_count": r[10],
+            "last_reviewed_at": r[11], "next_review_at": r[12],
+        }
+        tags_s = d.get("tags") or ""
+        if univ and f"univ:{univ}" not in tags_s:
+            continue
+        wpos = (d.get("pos") or "").strip()
+        review_count = int(d.get("review_count") or 0)
+        correct_count = int(d.get("correct_count") or 0)
+        mistake_count = max(0, review_count - correct_count)
+        accuracy_per_word = round(100 * correct_count / max(review_count, 1), 1)
+        transitivity = _detect_transitivity(wpos, d.get("meaning_jp") or "", tags_s)
+        items.append({
+            "id": d["id"],
+            "word": d["word"],
+            "pos": wpos,
+            "pos_label_jp": _pos_label_jp(wpos),
+            "transitivity": transitivity,
+            "transitivity_label_jp": _transitivity_label_jp(transitivity),
+            "meaning_jp": d["meaning_jp"],
+            "example_en": d.get("example_en") or "",
+            "example_jp": d.get("example_jp") or "",
+            "level": d["level"],
+            "tags": tags_s,
+            "box": int(d.get("box") or 0),
+            "review_count": review_count,
+            "correct_count": correct_count,
+            "mistake_count": mistake_count,
+            "accuracy_percent": accuracy_per_word,
+            "last_reviewed_at": d.get("last_reviewed_at"),
+            "next_review_at": d.get("next_review_at"),
+        })
+        if len(items) >= limit:
+            break
+    conn.close()
+    return {"items": items, "count": len(items), "limit": limit}
+
+
 @app.get("/api/vocab/quiz")
-def vocab_quiz(student_id: int, level: Optional[str] = None, limit: int = 10, univ: Optional[str] = None):
+def vocab_quiz(student_id: int, level: Optional[str] = None, limit: int = 10, univ: Optional[str] = None, mistakes_only: int = 0):
     """4 択形式の単語クイズキュー。各 item は target word + 同 pos の distractor 3 個 + 品詞 + 自他動詞ラベル。
     塾長指示 (2026-05-03): 4 択は同品詞で固める / 自他動詞 + 品詞を表示。
     フロントが distractors を shuffle して出題する想定 (server は shuffle 済み choices も返す)。
     レベル指定時は _LEVEL_RELATED の関連レベルからも引いて実プールを拡張する。
 
     limit clamp: max=100 / min=1。 過大値 (99999 等) は内部で limit*3 を distractor SQL に渡して
-    silent fallback (count=0) になっていた致命 issue の修正 (2026-05-03)。"""
+    silent fallback (count=0) になっていた致命 issue の修正 (2026-05-03)。
+
+    mistakes_only=1: 過去に誤答ありの単語 (review_count > correct_count) のみ。
+    SRS スケジュール無視で即出題。塾長指示 2026-05-25 (生徒要望「間違えた単語を別タグに」)。
+    """
     import random as _r
     # limit clamp (silent fallback 防止)
     orig_limit = limit
@@ -24735,45 +24823,69 @@ def vocab_quiz(student_id: int, level: Optional[str] = None, limit: int = 10, un
     now = datetime.now(timezone.utc).isoformat()
     levels = _expand_levels(level)
     placeholders = ",".join(["?"] * len(levels)) if levels else ""
-    # 1) 期限到来の progress (queue と同じ優先順位)
-    sql_due = """
-        SELECT vw.id, vw.word, vw.pos, vw.meaning_jp, vw.example_en, vw.example_jp, vw.level, vw.tags, vp.box
-        FROM vocab_progress vp
-        JOIN vocab_words vw ON vw.id = vp.word_id
-        WHERE vp.student_id = ? AND vp.next_review_at <= ?
-    """
-    params = [student_id, now]
-    if levels:
-        sql_due += f" AND vw.level IN ({placeholders})"
-        params.extend(levels)
-    sql_due += " ORDER BY vp.next_review_at ASC LIMIT ?"
-    params.append(limit * 3)  # univ filter で絞られる可能性があるので余裕めに
-    c.execute(sql_due, tuple(params))
     candidates = []
     seen_ids = set()
-    for r in c.fetchall():
-        d = dict(r) if hasattr(r, 'keys') else {"id": r[0], "word": r[1], "pos": r[2], "meaning_jp": r[3], "example_en": r[4], "example_jp": r[5], "level": r[6], "tags": r[7], "box": r[8]}
-        d["status"] = "review"
-        candidates.append(d); seen_ids.add(d["id"])
 
-    if len(candidates) < limit:
-        sql_new = """
-            SELECT id, word, pos, meaning_jp, example_en, example_jp, level, tags
-            FROM vocab_words
-            WHERE id NOT IN (SELECT word_id FROM vocab_progress WHERE student_id = ?)
+    if mistakes_only:
+        # 🔴 mistakes_only モード: 誤答ある単語だけ・SRS 無視・新単語 fallback なし
+        sql_m = """
+            SELECT vw.id, vw.word, vw.pos, vw.meaning_jp, vw.example_en, vw.example_jp, vw.level, vw.tags, vp.box
+            FROM vocab_progress vp
+            JOIN vocab_words vw ON vw.id = vp.word_id
+            WHERE vp.student_id = ? AND vp.review_count > vp.correct_count
         """
-        params2 = [student_id]
+        params_m = [student_id]
         if levels:
-            sql_new += f" AND level IN ({placeholders})"
-            params2.extend(levels)
-        sql_new += " ORDER BY id LIMIT ?"
-        params2.append((limit - len(candidates)) * 3)
-        c.execute(sql_new, tuple(params2))
+            sql_m += f" AND vw.level IN ({placeholders})"
+            params_m.extend(levels)
+        sql_m += " ORDER BY (vp.review_count - vp.correct_count) DESC, vp.last_reviewed_at DESC LIMIT ?"
+        # univ post-fetch filter で削られる分を考慮し fetch_limit を増やす (致命 fix 2026-05-25)
+        fetch_limit_m = limit * 10 if univ else limit * 3
+        params_m.append(fetch_limit_m)
+        c.execute(sql_m, tuple(params_m))
         for r in c.fetchall():
-            d = dict(r) if hasattr(r, 'keys') else {"id": r[0], "word": r[1], "pos": r[2], "meaning_jp": r[3], "example_en": r[4], "example_jp": r[5], "level": r[6], "tags": r[7]}
-            d["box"] = 0; d["status"] = "new"
+            d = dict(r) if hasattr(r, 'keys') else {"id": r[0], "word": r[1], "pos": r[2], "meaning_jp": r[3], "example_en": r[4], "example_jp": r[5], "level": r[6], "tags": r[7], "box": r[8]}
+            d["status"] = "mistake"
             if d["id"] not in seen_ids:
                 candidates.append(d); seen_ids.add(d["id"])
+    else:
+        # 1) 期限到来の progress (queue と同じ優先順位)
+        sql_due = """
+            SELECT vw.id, vw.word, vw.pos, vw.meaning_jp, vw.example_en, vw.example_jp, vw.level, vw.tags, vp.box
+            FROM vocab_progress vp
+            JOIN vocab_words vw ON vw.id = vp.word_id
+            WHERE vp.student_id = ? AND vp.next_review_at <= ?
+        """
+        params = [student_id, now]
+        if levels:
+            sql_due += f" AND vw.level IN ({placeholders})"
+            params.extend(levels)
+        sql_due += " ORDER BY vp.next_review_at ASC LIMIT ?"
+        params.append(limit * 3)  # univ filter で絞られる可能性があるので余裕めに
+        c.execute(sql_due, tuple(params))
+        for r in c.fetchall():
+            d = dict(r) if hasattr(r, 'keys') else {"id": r[0], "word": r[1], "pos": r[2], "meaning_jp": r[3], "example_en": r[4], "example_jp": r[5], "level": r[6], "tags": r[7], "box": r[8]}
+            d["status"] = "review"
+            candidates.append(d); seen_ids.add(d["id"])
+
+        if len(candidates) < limit:
+            sql_new = """
+                SELECT id, word, pos, meaning_jp, example_en, example_jp, level, tags
+                FROM vocab_words
+                WHERE id NOT IN (SELECT word_id FROM vocab_progress WHERE student_id = ?)
+            """
+            params2 = [student_id]
+            if levels:
+                sql_new += f" AND level IN ({placeholders})"
+                params2.extend(levels)
+            sql_new += " ORDER BY id LIMIT ?"
+            params2.append((limit - len(candidates)) * 3)
+            c.execute(sql_new, tuple(params2))
+            for r in c.fetchall():
+                d = dict(r) if hasattr(r, 'keys') else {"id": r[0], "word": r[1], "pos": r[2], "meaning_jp": r[3], "example_en": r[4], "example_jp": r[5], "level": r[6], "tags": r[7]}
+                d["box"] = 0; d["status"] = "new"
+                if d["id"] not in seen_ids:
+                    candidates.append(d); seen_ids.add(d["id"])
 
     # univ tag filter
     if univ:

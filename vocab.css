@@ -25,7 +25,7 @@
 }
 .vc-stat-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 1rem;
 }
 .vc-stat-cell { text-align: center; }
@@ -381,4 +381,132 @@
   font-weight: 700;
   color: #94a3b8;
   letter-spacing: 0.06em;
+}
+
+/* ============================================================
+   🔴 間違えた単語タグ panel (塾長指示 2026-05-25 / 生徒要望)
+   ============================================================ */
+.vc-stat-num.vc-stat-mistakes { color: #ef4444; }
+
+.vc-mistakes-panel {
+  margin: 1.25rem 0 2rem;
+  padding: 1.1rem 1.25rem;
+  background: linear-gradient(135deg, rgba(239,68,68,0.10), rgba(239,68,68,0.04));
+  border: 1px solid rgba(239,68,68,0.35);
+  border-radius: 12px;
+}
+.vc-mistakes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+.vc-mistakes-title {
+  font-weight: 800;
+  color: #fecaca;
+  font-size: 1rem;
+}
+.vc-mistakes-sub {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin-top: 0.2rem;
+  line-height: 1.5;
+}
+.vc-mistakes-count-big {
+  font-weight: 900;
+  font-size: 1.4rem;
+  color: #ef4444;
+  white-space: nowrap;
+}
+.vc-mistakes-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.btn-mistake {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  border: none !important;
+  color: white !important;
+  font-weight: 800;
+}
+.btn-mistake:hover { filter: brightness(1.08); }
+
+.vc-mistakes-list {
+  margin-top: 1rem;
+  max-height: 380px;
+  overflow-y: auto;
+  background: rgba(15,23,42,0.45);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+}
+.vc-mistakes-list-inner { padding: 0.5rem; }
+.vc-mistakes-list-loading,
+.vc-mistakes-list-empty {
+  padding: 1.5rem;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.88rem;
+}
+.vc-mistake-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.2fr) 1.6fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.6rem 0.7rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.vc-mistake-row:last-child { border-bottom: none; }
+.vc-mistake-word { font-weight: 800; color: #f8fafc; }
+.vc-mistake-meta {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+}
+.vc-mistake-pos {
+  background: rgba(99,102,241,0.18);
+  border: 1px solid rgba(99,102,241,0.35);
+  color: #c7d2fe;
+  padding: 0.05rem 0.4rem;
+  border-radius: 4px;
+}
+.vc-mistake-level {
+  color: #94a3b8;
+  padding: 0.05rem 0.3rem;
+}
+.vc-mistake-meaning {
+  color: #cbd5e1;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+.vc-mistake-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-end;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+.vc-mistake-count-badge {
+  background: rgba(239,68,68,0.18);
+  border: 1px solid rgba(239,68,68,0.4);
+  color: #fecaca;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  font-weight: 700;
+}
+.vc-mistake-acc { color: #94a3b8; }
+
+@media (max-width: 640px) {
+  .vc-mistake-row {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+  .vc-mistake-stats {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .vc-mistakes-header { flex-direction: column; align-items: flex-start; }
 }

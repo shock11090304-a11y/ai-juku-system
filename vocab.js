@@ -15,6 +15,14 @@
   let reviewedCount = 0;
   let correctCount = 0;
   let answered = false; // 現在の単語が既に回答済みか
+  let mistakesOnly = false; // 🔴 mistakes-only モード (塾長指示 2026-05-25)
+  let mistakesListLoaded = false;
+
+  // === HTML escape (XSS 防止) ===
+  function esc(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
 
   // === Web Speech API 音声読み上げ ===
   function speak(text, rate = 0.9) {
@@ -46,18 +54,85 @@
       document.getElementById('vcMastered').textContent = s.mastered || 0;
       document.getElementById('vcAccuracy').textContent = (s.accuracy_percent || 0) + '%';
       document.getElementById('vcTotal').textContent = s.total_words_in_pool || 0;
+      const mc = s.mistakes_count || 0;
+      const mEl = document.getElementById('vcMistakes');
+      if (mEl) mEl.textContent = mc;
+      // 🔴 間違えた単語タグ panel の表示制御
+      const panel = document.getElementById('vcMistakesPanel');
+      const countBig = document.getElementById('vcMistakesCountBig');
+      const listEl = document.getElementById('vcMistakesList');
+      const listBtn = document.getElementById('vcMistakeListToggleBtn');
+      if (panel) {
+        if (mc > 0) {
+          panel.style.display = '';
+          if (countBig) countBig.textContent = mc + ' 件';
+        } else {
+          // 0 件になったら panel 自体を隠す + 一覧/ボタンの状態も初期化
+          panel.style.display = 'none';
+          if (listEl) listEl.style.display = 'none';
+          if (listBtn) listBtn.textContent = '📋 一覧を見る';
+        }
+      }
+      // 統計が更新されたら一覧 cache を無効化
+      mistakesListLoaded = false;
+      if (listEl && listEl.style.display !== 'none' && panel && panel.style.display !== 'none') {
+        await renderMistakesList();
+      }
     } catch (e) {
       console.warn('stats load failed', e);
     }
   }
 
+  // === 🔴 間違えた単語一覧取得 + 描画 ===
+  async function renderMistakesList() {
+    const listEl = document.getElementById('vcMistakesList');
+    if (!listEl) return;
+    listEl.innerHTML = '<div class="vc-mistakes-list-loading">読み込み中…</div>';
+    try {
+      const studentId = getStudentId();
+      const params = new URLSearchParams({ student_id: studentId, limit: 100 });
+      if (currentLevel) params.set('level', currentLevel);
+      if (currentUniv) params.set('univ', currentUniv);
+      const res = await fetch(`${BACKEND_URL}/api/vocab/mistaken-words?${params}`);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      const items = data.items || [];
+      if (items.length === 0) {
+        listEl.innerHTML = '<div class="vc-mistakes-list-empty">該当する間違えた単語はありません。レベル/大学フィルタを外すと表示されるかもしれません。</div>';
+        mistakesListLoaded = true;
+        return;
+      }
+      const rows = items.map(it => {
+        const posLabel = it.pos_label_jp ? `<span class="vc-mistake-pos">${esc(it.pos_label_jp)}</span>` : '';
+        const acc = (it.accuracy_percent != null) ? `${it.accuracy_percent}%` : '--';
+        return `
+          <div class="vc-mistake-row">
+            <div class="vc-mistake-word-block">
+              <div class="vc-mistake-word">${esc(it.word)}</div>
+              <div class="vc-mistake-meta">${posLabel}<span class="vc-mistake-level">${esc(it.level || '')}</span></div>
+            </div>
+            <div class="vc-mistake-meaning">${esc(it.meaning_jp || '')}</div>
+            <div class="vc-mistake-stats">
+              <span class="vc-mistake-count-badge" title="誤答回数">❌ ${esc(it.mistake_count)}</span>
+              <span class="vc-mistake-acc" title="正答率">正答 ${esc(acc)}</span>
+            </div>
+          </div>`;
+      }).join('');
+      listEl.innerHTML = `<div class="vc-mistakes-list-inner">${rows}</div>`;
+      mistakesListLoaded = true;
+    } catch (e) {
+      listEl.innerHTML = `<div class="vc-mistakes-list-empty">一覧取得失敗: ${esc(e.message)}</div>`;
+    }
+  }
+
   // === キュー取得 (4 択クイズ endpoint) ===
-  async function loadQueue(level, univ) {
+  async function loadQueue(level, univ, useMistakesOnly) {
     const studentId = getStudentId();
     const fetchLimit = univ ? 60 : 20;
     const params = new URLSearchParams({ student_id: studentId, limit: fetchLimit });
     if (level) params.set('level', level);
     if (univ) params.set('univ', univ);
+    if (useMistakesOnly) params.set('mistakes_only', '1');
     try {
       const res = await fetch(`${BACKEND_URL}/api/vocab/quiz?${params}`);
       if (!res.ok) throw new Error(`Quiz fetch failed: ${res.status}`);
@@ -68,10 +143,16 @@
       correctCount = 0;
       currentLevel = level;
       currentUniv = univ;
+      mistakesOnly = !!useMistakesOnly;
       if (queue.length === 0) {
-        const msg = univ
-          ? `${univ.toUpperCase()} 頻出単語の在庫がまだ少ないです。別大学/全レベルでお試しください。`
-          : '現在復習対象の単語がありません。別レベルを選ぶか、新規単語の追加をお待ちください。';
+        let msg;
+        if (useMistakesOnly) {
+          msg = '🎉 該当する間違えた単語はありません。レベル/大学フィルタを外して再試行するか、通常クイズを進めてください。';
+        } else if (univ) {
+          msg = `${univ.toUpperCase()} 頻出単語の在庫がまだ少ないです。別大学/全レベルでお試しください。`;
+        } else {
+          msg = '現在復習対象の単語がありません。別レベルを選ぶか、新規単語の追加をお待ちください。';
+        }
         alert(msg);
         return false;
       }
@@ -201,7 +282,7 @@
   }
 
   async function startReview() {
-    const ok = await loadQueue(currentLevel, currentUniv);
+    const ok = await loadQueue(currentLevel, currentUniv, false);
     if (!ok) return;
     document.getElementById('vcSetup').style.display = 'none';
     document.getElementById('vcReview').style.display = 'block';
@@ -210,27 +291,71 @@
     renderCard();
   }
 
+  // === 🔴 間違えた単語だけのクイズ開始 ===
+  async function startMistakeReview() {
+    const ok = await loadQueue(currentLevel, currentUniv, true);
+    if (!ok) return;
+    document.getElementById('vcSetup').style.display = 'none';
+    document.getElementById('vcReview').style.display = 'block';
+    document.getElementById('vcComplete').style.display = 'none';
+    if (typeof window.track === 'function') window.track('vocab_session_start', { level: currentLevel, mode: 'mistakes_only' });
+    renderCard();
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     loadStats();
+
+    // フィルタ変更時は mistakes 一覧 cache を無効化し、開いていれば再描画
+    async function invalidateMistakesListOnFilterChange() {
+      mistakesListLoaded = false;
+      const listEl = document.getElementById('vcMistakesList');
+      const panel = document.getElementById('vcMistakesPanel');
+      if (listEl && listEl.style.display !== 'none' && panel && panel.style.display !== 'none') {
+        await renderMistakesList();
+      }
+    }
 
     document.querySelectorAll('.vc-level-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.vc-level-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentLevel = btn.dataset.level || '';
+        invalidateMistakesListOnFilterChange();
       });
     });
-    document.querySelector('.vc-level-btn[data-level=""]').classList.add('active');
+    const defaultLevelBtn = document.querySelector('.vc-level-btn[data-level=""]');
+    if (defaultLevelBtn) defaultLevelBtn.classList.add('active');
 
     document.querySelectorAll('.vc-univ-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.vc-univ-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentUniv = btn.dataset.univ || '';
+        invalidateMistakesListOnFilterChange();
       });
     });
 
     document.getElementById('vcStartBtn').addEventListener('click', startReview);
+
+    // 🔴 間違えた単語タグ panel buttons
+    const mistakeBtn = document.getElementById('vcMistakeReviewBtn');
+    if (mistakeBtn) mistakeBtn.addEventListener('click', startMistakeReview);
+    const mistakeListBtn = document.getElementById('vcMistakeListToggleBtn');
+    if (mistakeListBtn) {
+      mistakeListBtn.addEventListener('click', async () => {
+        const listEl = document.getElementById('vcMistakesList');
+        if (!listEl) return;
+        const isHidden = listEl.style.display === 'none';
+        if (isHidden) {
+          listEl.style.display = '';
+          mistakeListBtn.textContent = '📋 一覧を閉じる';
+          if (!mistakesListLoaded) await renderMistakesList();
+        } else {
+          listEl.style.display = 'none';
+          mistakeListBtn.textContent = '📋 一覧を見る';
+        }
+      });
+    }
 
     // 4 択ボタン bind
     document.querySelectorAll('.vc-choice').forEach((btn) => {
