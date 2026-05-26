@@ -188,6 +188,40 @@
     <!-- Today's Quest: 塾長指示 2026-05-15 で削除 (XP/クエスト gamification 機能廃止) -->
 
     <div class="dashboard-grid">
+      <!-- 🎯 AI 合格判定 ダッシュボード (塾長指示 2026-05-26) -->
+      <section id="admissionLikelihoodSection" style="display:none; margin: 0 0 1.5rem 0; padding: 1.2rem 1.4rem; background: linear-gradient(135deg, rgba(239,68,68,0.13), rgba(251,191,36,0.10)); border: 2px solid rgba(239,68,68,0.4); border-radius: 16px; box-shadow: 0 8px 24px rgba(239,68,68,0.15);">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.8rem; flex-wrap:wrap; margin-bottom:0.8rem;">
+          <h3 style="margin:0; font-size:1.1rem; font-weight:800; color:#fff;">📊 AI 合格判定 <span style="font-size:0.65em; color:#fca5a5; font-weight:600;">(現状の合格可能性・残り日数)</span></h3>
+          <button type="button" id="admissionRefreshBtn" style="padding:0.35rem 0.7rem; background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.4); border-radius:8px; color:#fca5a5; font-weight:700; font-size:0.78rem; cursor:pointer;">🔄 再計算</button>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:0.8rem; margin-bottom:0.8rem;">
+          <div style="padding:0.8rem; background:rgba(0,0,0,0.30); border-radius:10px; text-align:center;">
+            <div style="font-size:0.7rem; color:#fca5a5; font-weight:700; margin-bottom:0.3rem;">合格可能性</div>
+            <div style="display:flex; align-items:baseline; justify-content:center; gap:0.3rem;">
+              <span id="admScore" style="font-size:2.2rem; font-weight:900; color:#fff;">--</span>
+              <span style="font-size:0.85rem; color:#cbd5e1;">%</span>
+              <span id="admScoreDelta" style="font-size:0.75rem; color:#86efac; margin-left:0.3rem;"></span>
+            </div>
+          </div>
+          <div style="padding:0.8rem; background:rgba(0,0,0,0.30); border-radius:10px; text-align:center;">
+            <div style="font-size:0.7rem; color:#fca5a5; font-weight:700; margin-bottom:0.3rem;">志望校</div>
+            <div id="admUniv" style="font-size:1.0rem; font-weight:800; color:#fde68a;">--</div>
+          </div>
+          <div style="padding:0.8rem; background:rgba(0,0,0,0.30); border-radius:10px; text-align:center;">
+            <div style="font-size:0.7rem; color:#fca5a5; font-weight:700; margin-bottom:0.3rem;">本番まで</div>
+            <div style="display:flex; align-items:baseline; justify-content:center; gap:0.2rem;">
+              <span id="admDays" style="font-size:1.8rem; font-weight:900; color:#fff;">--</span>
+              <span style="font-size:0.85rem; color:#cbd5e1;">日</span>
+            </div>
+          </div>
+        </div>
+        <div id="admAnalysis" style="padding:0.7rem 0.9rem; background:rgba(0,0,0,0.20); border-left:3pt solid #fbbf24; border-radius:6px; font-size:0.85rem; color:#fde68a; line-height:1.6; margin-bottom:0.6rem;">⏳ 計算中…</div>
+        <details style="background:rgba(0,0,0,0.15); border-radius:8px; padding:0.5rem 0.7rem;">
+          <summary style="cursor:pointer; font-size:0.78rem; color:#cbd5e1; font-weight:700;">📊 スコア内訳</summary>
+          <div id="admBreakdown" style="margin-top:0.6rem; font-size:0.75rem; color:#a1a1aa; line-height:1.7;"></div>
+        </details>
+      </section>
+
       <!-- Quick Actions -->
       <section class="action-card-section">
         <div class="section-title"><h2>⚡ クイックアクション</h2></div>
@@ -279,6 +313,12 @@
         <div id="lessonPrintsRecommended" style="display:none; margin-bottom:1rem; padding:0.8rem; background:rgba(251,191,36,0.08); border:1px dashed rgba(251,191,36,0.30); border-radius:10px;">
           <div style="font-size:0.85rem; color:#fbbf24; font-weight:700; margin-bottom:0.5rem;">🎯 あなたの弱点にマッチするプリント (AI が選定)</div>
           <div id="lessonPrintsRecommendedList" style="display:grid; gap:0.5rem;"></div>
+        </div>
+
+        <!-- 🏛 大学完全一致 (過去問プリント・最優先) -->
+        <div id="lessonPrintsByUniv" style="display:none; margin-bottom:1rem; padding:0.8rem; background:rgba(239,68,68,0.10); border:2px solid rgba(239,68,68,0.40); border-radius:10px;">
+          <div style="font-size:0.9rem; color:#fca5a5; font-weight:800; margin-bottom:0.5rem;">🏆 <span id="lpUnivLabel">志望校</span> 専用プリント <span style="font-size:0.65em; background:rgba(239,68,68,0.25); color:#fff; padding:1px 6px; border-radius:4px; font-weight:700;">最優先</span></div>
+          <div id="lessonPrintsByUnivList" style="display:grid; gap:0.5rem;"></div>
         </div>
 
         <!-- 🏛 志望校レベル おすすめプリント (塾長指示 2026-05-26: 各個人の志望校に応じた推薦) -->
@@ -1134,6 +1174,7 @@
         renderWeaknessTop3(student); // 🎯 2026-05-13 塾長指示「個別問題推薦」
         renderWeeklyWorksheet(student); // 📅 2026-05-22 塾長指示「週次弱点プリント」
         renderLessonPrints(student); // 📚 2026-05-26 塾長指示「配布プリント全自動」
+        renderAdmissionLikelihood(student); // 🎯 2026-05-26 塾長指示「AI 合格判定ダッシュボード」
       }
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initWidgets);
@@ -1553,6 +1594,63 @@
         </div>`;
     }
 
+    // 🎯 AI 合格判定 (2026-05-26 塾長指示)
+    async function renderAdmissionLikelihood(student) {
+      const section = document.getElementById('admissionLikelihoodSection');
+      if (!section) return;
+      if (!student || !student.id) { section.style.display = 'none'; return; }
+      const API_BASE = (window.location.origin.includes(':8090') || window.location.origin.includes('localhost:8090'))
+        ? 'http://localhost:8000' : window.location.origin;
+      const escapeHTML = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+
+      async function fetchAndRender() {
+        try {
+          const token = localStorage.getItem('ai_juku_session_token') || '';
+          const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+          const res = await fetch(`${API_BASE}/api/student/admission-likelihood?student_id=${encodeURIComponent(student.id)}`, { headers });
+          if (!res.ok) { section.style.display = 'none'; return; }
+          const data = await res.json();
+          if (!data || data.score == null) { section.style.display = 'none'; return; }
+          section.style.display = '';
+          document.getElementById('admScore').textContent = data.score;
+          const delta = (data.score || 0) - (data.previous_score || 0);
+          const deltaEl = document.getElementById('admScoreDelta');
+          if (deltaEl) {
+            if (data.previous_score && delta !== 0) {
+              deltaEl.textContent = (delta > 0 ? '▲ +' : '▼ ') + delta;
+              deltaEl.style.color = delta > 0 ? '#86efac' : '#fca5a5';
+            } else {
+              deltaEl.textContent = '';
+            }
+          }
+          document.getElementById('admUniv').textContent = data.target_university || '志望校未設定';
+          document.getElementById('admDays').textContent = data.days_remaining || '--';
+          document.getElementById('admAnalysis').textContent = data.analysis || '';
+          // 内訳
+          const b = data.breakdown || {};
+          const breakdownEl = document.getElementById('admBreakdown');
+          if (breakdownEl) {
+            let html = '<table style="width:100%; border-collapse:collapse; font-size:0.74rem;">';
+            html += `<tr><td style="padding:2px 6px;">志望校レベルベース</td><td style="text-align:right; color:#cbd5e1;">${b.baseline || 0}</td></tr>`;
+            html += `<tr><td style="padding:2px 6px;">学習時間 (過去30日)</td><td style="text-align:right; color:#86efac;">${b.study_hours_30d || 0}h → +${b.study_bonus || 0}</td></tr>`;
+            html += `<tr><td style="padding:2px 6px;">配布プリント DL</td><td style="text-align:right; color:#86efac;">${b.lesson_print_downloads || 0} 件 → +${b.dl_bonus || 0}</td></tr>`;
+            html += `<tr><td style="padding:2px 6px;">単語帳 進捗</td><td style="text-align:right; color:#86efac;">${b.vocab_progress || 0} 単語 → +${b.vocab_bonus || 0}</td></tr>`;
+            html += `<tr><td style="padding:2px 6px;">弱点単元数</td><td style="text-align:right; color:#fca5a5;">${b.weakness_count || 0} 件 → ${b.weakness_penalty || 0}</td></tr>`;
+            html += '</table>';
+            html += '<div style="margin-top:0.4rem; font-size:0.7rem; color:#71717a;">※ AI 推定値・参考程度に活用してください。</div>';
+            breakdownEl.innerHTML = html;
+          }
+        } catch (e) {
+          console.warn('Admission likelihood fetch failed:', e);
+          section.style.display = 'none';
+        }
+      }
+      fetchAndRender();
+      const refreshBtn = document.getElementById('admissionRefreshBtn');
+      if (refreshBtn) refreshBtn.addEventListener('click', fetchAndRender);
+    }
+
     // 📚 配布プリント (2026-05-26 塾長指示「全自動・公開a・改訂a」)
     // GET /api/student/lesson-prints + GET /api/student/lesson-prints/recommended
     // 弱点 TOP3 マッチプリントを上部・以下は科目/レベル/形式 でフィルタ可能な一覧
@@ -1667,6 +1765,18 @@
           if (matched.length === 0 || !data.goal || !data.matched_keyword) {
             goalBlock.style.display = 'none';
             return;
+          }
+          // 🏛 大学完全一致セクション (最優先表示)
+          const univBlock = document.getElementById('lessonPrintsByUniv');
+          const univList = document.getElementById('lessonPrintsByUnivList');
+          const univLabel = document.getElementById('lpUnivLabel');
+          if (univBlock && univList && data.university_match && data.university_match.prints && data.university_match.prints.length > 0) {
+            if (univLabel) univLabel.textContent = data.university_match.university;
+            const univGrouped = groupAnswerPrints(data.university_match.prints);
+            univList.innerHTML = univGrouped.map(p => renderPrintCard(p, true)).join('');
+            univBlock.style.display = '';
+          } else if (univBlock) {
+            univBlock.style.display = 'none';
           }
           // ラベル: 志望校 (matched_keyword あれば併記)
           const label = data.goal_label || data.goal || '志望校';
@@ -1814,6 +1924,8 @@
       if (recommendedList) recommendedList.addEventListener('click', dlHandler);
       const goalListEl = document.getElementById('lessonPrintsByGoalList');
       if (goalListEl) goalListEl.addEventListener('click', dlHandler);
+      const univListEl = document.getElementById('lessonPrintsByUnivList');
+      if (univListEl) univListEl.addEventListener('click', dlHandler);
     }
   </script>
   <script>

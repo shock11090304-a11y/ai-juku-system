@@ -1077,6 +1077,23 @@ def init_db():
     -- 2026-05-07: URL 焼き込み方式は塾長 typo で email 不一致 → 顧客失敗の事故あり (森澤さん)
     -- → 短い code (AJK-XXXXXXXX) を発行し、checkout.html の入力欄に貼ってもらう運用に切替
     -- code は server で DB lookup → email/expires/kind を解決 (typo 不可・iab 安全)
+    -- 🎯 AI 合格判定 (塾長指示 2026-05-26): 生徒の学習データから AI が合格可能性を判定
+    -- score (0-100): 現状の合格可能性パーセント
+    -- breakdown_json: 科目別偏差値・必要改善ポイント・残り日数の JSON
+    -- generated_at: 計算時刻 (日次 cron で更新)
+    CREATE TABLE IF NOT EXISTS admission_likelihood (
+        id {pk},
+        student_id INTEGER NOT NULL UNIQUE,
+        target_university TEXT,
+        score INTEGER DEFAULT 0,
+        previous_score INTEGER DEFAULT 0,
+        breakdown_json TEXT,
+        analysis_text TEXT,
+        days_remaining INTEGER,
+        generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_admission_student ON admission_likelihood(student_id);
+    CREATE INDEX IF NOT EXISTS idx_admission_generated ON admission_likelihood(generated_at DESC);
     CREATE TABLE IF NOT EXISTS invite_codes (
         id {pk},
         code TEXT UNIQUE NOT NULL,
@@ -1158,6 +1175,10 @@ def init_db():
         # week_pattern = 'all' (毎日) / "1,3,5" (月水金) / "2,4,6" (火木土) 等
         # 1=月 2=火 3=水 4=木 5=金 6=土 7=日 (isoweekday 準拠)
         ("study_plan_week_pattern", "ALTER TABLE study_plans ADD COLUMN week_pattern TEXT DEFAULT 'all'"),
+        # 🏛 大学別過去問プリント (塾長指示 2026-05-26): lesson_prints に対象大学列追加
+        # target_university = "東京医科歯科" / "東大" / "早稲田" 等 (sync スクリプトで抽出)
+        # by-goal endpoint で大学完全一致を最優先で推薦
+        ("lp_target_university", "ALTER TABLE lesson_prints ADD COLUMN target_university TEXT"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -4493,6 +4514,235 @@ def student_lesson_prints_recommended(
         conn.close()
 
 
+def _calculate_admission_likelihood(student_id: int) -> dict:
+    """🎯 合格可能性を簡易計算 (塾長指示 2026-05-26)。
+    学習時間・弱点 TOP3 数・模試成績・残り日数から 0-100 スコアを算出。
+    Claude/Gemini を使わず SQL ベースで高速計算 (cron で日次更新可)。
+
+    返却: {score, breakdown, analysis, target_university, days_remaining}
+    """
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 生徒情報取得
+        c.execute("SELECT goal, created_at FROM students WHERE id = ?", (student_id,))
+        srow = c.fetchone()
+        if not srow:
+            return None
+        try:
+            goal = srow["goal"]; created_at = srow["created_at"]
+        except (TypeError, KeyError, IndexError):
+            goal = srow[0]; created_at = srow[1]
+        levels, goal_label, matched_kw = _infer_levels_from_goal(goal or "")
+
+        # ベースライン score: マッチした志望校レベルから
+        # 東大レベル=40, 医学部レベル=35, 発展=50, 標準=60, 基礎=70 (難関ほど初期スコア低)
+        baseline = 55
+        if "東大レベル" in levels and levels[0] == "東大レベル":
+            baseline = 35
+        elif "医学部レベル" in levels and levels[0] == "医学部レベル":
+            baseline = 30
+        elif "発展" in levels and levels[0] == "発展":
+            baseline = 50
+        elif "標準" in levels and levels[0] == "標準":
+            baseline = 65
+        elif "基礎" in levels and levels[0] == "基礎":
+            baseline = 75
+
+        # 学習時間ボーナス (過去 30 日)
+        # 🛡️ 3 視点 review 致命傷 fix 2026-05-26:
+        # (1) カラム名は studied_date (DATE) ─ logged_at は存在しない
+        # (2) Postgres と SQLite で日付関数が違う → USE_POSTGRES で分岐
+        date_30d = "studied_date >= (NOW() - INTERVAL '30 days')::date" if USE_POSTGRES else "studied_date >= date('now', '-30 days')"
+        c.execute(
+            f"SELECT COALESCE(SUM(minutes), 0) AS total_min FROM study_logs "
+            f"WHERE student_id = ? AND {date_30d}",
+            (student_id,),
+        )
+        row_min = c.fetchone()
+        try:
+            study_min = row_min["total_min"] or 0
+        except (TypeError, KeyError, IndexError):
+            study_min = (row_min[0] if row_min else 0) or 0
+        study_hours = study_min / 60.0
+        # 月 60h で +15, 月 30h で +7
+        study_bonus = min(20, int(study_hours / 4))
+
+        # 弱点数ペナルティ (弱点が多いほど -)
+        # 🛡️ fix: fetchone() 二重呼び出しバグを単一呼び出しに統一
+        c.execute("SELECT COUNT(*) AS cnt FROM student_weakness WHERE student_id = ?", (student_id,))
+        rw = c.fetchone()
+        try:
+            weakness_cnt = rw["cnt"] or 0
+        except (TypeError, KeyError, IndexError):
+            weakness_cnt = (rw[0] if rw else 0) or 0
+        weakness_penalty = min(20, weakness_cnt * 2)
+
+        # 配布プリント DL ボーナス
+        c.execute("SELECT COUNT(*) AS cnt FROM lesson_print_downloads WHERE student_id = ?", (student_id,))
+        rd = c.fetchone()
+        try:
+            dl_cnt = rd["cnt"] or 0
+        except (TypeError, KeyError, IndexError):
+            dl_cnt = (rd[0] if rd else 0) or 0
+        dl_bonus = min(10, dl_cnt)
+
+        # 単語帳 SRS 進捗ボーナス
+        c.execute("SELECT COUNT(*) AS cnt FROM vocab_progress WHERE student_id = ? AND correct_count > 0", (student_id,))
+        rv = c.fetchone()
+        try:
+            vocab_cnt = rv["cnt"] or 0
+        except (TypeError, KeyError, IndexError):
+            vocab_cnt = (rv[0] if rv else 0) or 0
+        vocab_bonus = min(10, vocab_cnt // 50)
+
+        score = max(5, min(95, baseline + study_bonus + dl_bonus + vocab_bonus - weakness_penalty))
+
+        # 残り日数 (志望校試験日が不明なため受験年度の 2月初旬まで)
+        import datetime
+        today = datetime.date.today()
+        exam_date = datetime.date(today.year if today.month < 3 else today.year + 1, 2, 25)
+        days_remaining = max(0, (exam_date - today).days)
+
+        # breakdown JSON
+        import json as _json
+        breakdown = {
+            "baseline": baseline,
+            "study_hours_30d": round(study_hours, 1),
+            "study_bonus": study_bonus,
+            "weakness_count": weakness_cnt,
+            "weakness_penalty": -weakness_penalty,
+            "lesson_print_downloads": dl_cnt,
+            "dl_bonus": dl_bonus,
+            "vocab_progress": vocab_cnt,
+            "vocab_bonus": vocab_bonus,
+            "goal_levels": levels,
+        }
+        breakdown_str = _json.dumps(breakdown, ensure_ascii=False)
+
+        # analysis text
+        target_univ = goal_label or "志望校"
+        # 🛡️ 3 視点 review nice-to-have fix 2026-05-26: 新規生徒 (登録から 7 日未満) は判定保留
+        is_new_student = False
+        if created_at:
+            try:
+                if isinstance(created_at, str):
+                    ca = datetime.datetime.fromisoformat(created_at.replace("Z", "+00:00").split(".")[0])
+                else:
+                    ca = created_at
+                if isinstance(ca, datetime.datetime):
+                    days_since_signup = (datetime.datetime.now(ca.tzinfo) if ca.tzinfo else datetime.datetime.now() - ca).days if False else (datetime.datetime.now() - ca.replace(tzinfo=None)).days
+                    is_new_student = days_since_signup < 7
+            except Exception:
+                is_new_student = False
+        # 学習データがほぼ無い場合も「データ蓄積中」として扱う (study_min == 0 かつ dl_cnt == 0)
+        has_no_activity = (study_min == 0 and dl_cnt == 0 and vocab_cnt == 0)
+        if is_new_student or has_no_activity:
+            analysis = f"📊 データ蓄積中 ({target_univ} 志望)。学習記録・配布プリント DL・単語帳練習を進めると、より正確な合格判定が表示されます。"
+        elif score >= 70:
+            analysis = f"順調です ✨ {target_univ} 合格可能性は高水準。引き続き弱点 TOP3 の解消に集中。"
+        elif score >= 50:
+            analysis = f"標準的な水準 📊 {target_univ} 合格に向けてはあと {100 - score}% の余地。学習時間を月 +5h、弱点プリント DL を増やすと加速。"
+        elif score >= 30:
+            analysis = f"要注力 ⚠️ {target_univ} 合格には学習時間 (月 60h+) と弱点プリント活用が必須。残り {days_remaining} 日。"
+        else:
+            analysis = f"危機水準 🔴 {target_univ} 志望なら今すぐ毎日 2h 学習を継続。塾長相談を推奨。"
+
+        # previous score (前回計算値) を取得
+        c.execute("SELECT score FROM admission_likelihood WHERE student_id = ?", (student_id,))
+        prev_row = c.fetchone()
+        try:
+            previous_score = prev_row["score"] if prev_row else 0
+        except (TypeError, KeyError, IndexError):
+            previous_score = prev_row[0] if prev_row else 0
+
+        return {
+            "student_id": student_id,
+            "target_university": target_univ,
+            "score": score,
+            "previous_score": previous_score,
+            "breakdown": breakdown,
+            "breakdown_json": breakdown_str,
+            "analysis": analysis,
+            "days_remaining": days_remaining,
+        }
+    finally:
+        conn.close()
+
+
+@app.get("/api/student/admission-likelihood")
+def student_admission_likelihood(
+    request: Request, student_id: int,
+    authorization: Optional[str] = Header(None),
+):
+    """🎯 AI 合格判定 (塾長指示 2026-05-26: 個別生徒の合格可能性を可視化)。
+    認証: admin Bearer or 本人 session token のみ。
+    SQL ベースで高速計算 → admission_likelihood テーブルにキャッシュ。
+    """
+    _check_rate_limit_ip(request, bucket="admission_likelihood", limit=30, window=60)
+
+    is_admin = False
+    auth_student_id: Optional[int] = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            is_admin = True
+        else:
+            claims = _verify_session_token(token)
+            if claims and claims.get("student_id"):
+                try:
+                    auth_student_id = int(claims["student_id"])
+                except (TypeError, ValueError):
+                    auth_student_id = None
+    try:
+        student_id = int(student_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="student_id 不正")
+    if not is_admin:
+        if not auth_student_id:
+            raise HTTPException(status_code=403, detail="ログインが必要です")
+        if auth_student_id != student_id:
+            raise HTTPException(status_code=403, detail="他生徒のデータにはアクセスできません")
+
+    result = _calculate_admission_likelihood(student_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="生徒が見つかりません")
+
+    # キャッシュ更新
+    # 🛡️ 3 視点 review 致命傷 fix 2026-05-26: race condition 対策で UPSERT を原子化
+    # SELECT → INSERT 非原子的だと連打で UniqueViolation 500 が出る
+    conn = db()
+    try:
+        c = conn.cursor()
+        if USE_POSTGRES:
+            # Postgres: ON CONFLICT で原子的に upsert
+            c.execute(
+                "INSERT INTO admission_likelihood (student_id, target_university, score, previous_score, "
+                "breakdown_json, analysis_text, days_remaining) VALUES (?, ?, ?, ?, ?, ?, ?) "
+                "ON CONFLICT (student_id) DO UPDATE SET "
+                "target_university = EXCLUDED.target_university, score = EXCLUDED.score, "
+                "previous_score = EXCLUDED.previous_score, breakdown_json = EXCLUDED.breakdown_json, "
+                "analysis_text = EXCLUDED.analysis_text, days_remaining = EXCLUDED.days_remaining, "
+                "generated_at = CURRENT_TIMESTAMP",
+                (student_id, result["target_university"], result["score"], result["previous_score"],
+                 result["breakdown_json"], result["analysis"], result["days_remaining"]),
+            )
+        else:
+            # SQLite: INSERT OR REPLACE で原子的に upsert
+            c.execute(
+                "INSERT OR REPLACE INTO admission_likelihood "
+                "(student_id, target_university, score, previous_score, breakdown_json, analysis_text, days_remaining, generated_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                (student_id, result["target_university"], result["score"], result["previous_score"],
+                 result["breakdown_json"], result["analysis"], result["days_remaining"]),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+    return result
+
+
 @app.get("/api/student/lesson-prints/by-goal")
 def student_lesson_prints_by_goal(
     request: Request, student_id: int,
@@ -4546,8 +4796,79 @@ def student_lesson_prints_by_goal(
             goal = row[0]
         levels, goal_label, matched_kw = _infer_levels_from_goal(goal)
 
-        recommendations = []
+        # 🏛 大学別過去問プリント (塾長指示 2026-05-26): 志望校完全一致を最優先で取得
+        # students.goal に "東京大学 医学部" 等が入っている場合、target_university カラムから完全一致を抽出
+        univ_match_section = None
         seen_ids = set()
+        recommendations = []
+        if goal:
+            _univ_patterns = [
+                ("東京医科歯科", "東京医科歯科"), ("医科歯科", "東京医科歯科"),
+                ("東京大学", "東京大学"), ("東大", "東京大学"),
+                ("京都大学", "京都大学"), ("京大", "京都大学"),
+                ("東京工業", "東京工業大学"), ("東工大", "東京工業大学"),
+                ("一橋", "一橋大学"),
+                ("早稲田", "早稲田大学"), ("早大", "早稲田大学"),
+                ("慶應", "慶應義塾大学"), ("慶応", "慶應義塾大学"),
+                ("上智大学", "上智大学"),
+                ("明治大学", "明治大学"),
+                ("青山学院", "青山学院大学"), ("青学", "青山学院大学"),
+                ("立教大学", "立教大学"),
+                ("中央大学", "中央大学"),
+                ("法政大学", "法政大学"),
+                ("関西学院", "関西学院大学"), ("関学", "関西学院大学"),
+                ("同志社", "同志社大学"),
+                ("立命館", "立命館大学"),
+                ("千葉大学", "千葉大学"),
+                ("横浜国立", "横浜国立大学"),
+                ("筑波大学", "筑波大学"),
+                ("神戸大学", "神戸大学"),
+            ]
+            # 高校系除外 (志望校マッピングと同じガード)
+            is_high_school = any(ex in str(goal) for ex in _GOAL_EXCLUDE_KEYWORDS)
+            if not is_high_school:
+                # 「東大寺」「東大阪」を replace してから match
+                g_for_match = str(goal)
+                for decoy in _GOAL_DECOY_KEYWORDS:
+                    g_for_match = g_for_match.replace(decoy, "")
+                for kw, full_name in _univ_patterns:
+                    if kw in g_for_match:
+                        c.execute(
+                            "SELECT id, title, subtitle, subject, topic, level, target_grade, target_type, "
+                            "description, file_path, pages, download_count, created_at "
+                            "FROM lesson_prints WHERE is_published = 1 AND target_university = ? "
+                            "AND COALESCE(target_type, '') != '解答解説' "
+                            "ORDER BY created_at DESC LIMIT 10"
+                        , (full_name,))
+                        univ_prints = []
+                        for r in c.fetchall():
+                            try:
+                                pid = r["id"]
+                            except (TypeError, KeyError, IndexError):
+                                pid = r[0]
+                            if pid in seen_ids:
+                                continue
+                            seen_ids.add(pid)
+                            try:
+                                univ_prints.append({
+                                    "id": r["id"], "title": r["title"], "subject": r["subject"],
+                                    "topic": r["topic"], "level": r["level"],
+                                    "target_type": r["target_type"], "file_path": r["file_path"],
+                                    "pages": r["pages"],
+                                })
+                            except (TypeError, KeyError, IndexError):
+                                univ_prints.append({
+                                    "id": r[0], "title": r[1], "subject": r[3], "topic": r[4],
+                                    "level": r[5], "target_type": r[7], "file_path": r[9],
+                                    "pages": r[10],
+                                })
+                        if univ_prints:
+                            univ_match_section = {
+                                "university": full_name,
+                                "prints": univ_prints,
+                            }
+                        break  # 最初にマッチした大学のみで取得
+
         for lvl in levels:
             c.execute(
                 "SELECT id, title, subtitle, subject, topic, level, target_grade, target_type, "
@@ -4590,6 +4911,7 @@ def student_lesson_prints_by_goal(
             "matched_keyword": matched_kw,
             "levels": levels,
             "recommendations": recommendations,
+            "university_match": univ_match_section,  # 🏛 大学完全一致プリント (なければ None)
         }
     finally:
         conn.close()
@@ -4711,15 +5033,17 @@ async def admin_lesson_prints_sync(request: Request, x_cron_secret: Optional[str
                 continue
             c.execute("SELECT id FROM lesson_prints WHERE file_path = ?", (fp,))
             existing = c.fetchone()
+            # 🏛 大学別過去問プリント (塾長指示 2026-05-26): target_university を受信して保存
+            target_univ = p.get("target_university")
             if existing:
                 c.execute(
                     "UPDATE lesson_prints SET title = ?, subtitle = ?, subject = ?, topic = ?, "
-                    "level = ?, target_grade = ?, target_type = ?, description = ?, "
+                    "level = ?, target_grade = ?, target_type = ?, target_university = ?, description = ?, "
                     "pages = ?, file_size_kb = ?, is_published = ?, updated_at = CURRENT_TIMESTAMP "
                     "WHERE file_path = ?",
                     (
                         title, p.get("subtitle"), subject, p.get("topic"),
-                        p.get("level"), p.get("target_grade"), p.get("target_type"),
+                        p.get("level"), p.get("target_grade"), p.get("target_type"), target_univ,
                         p.get("description"), p.get("pages", 0), p.get("file_size_kb", 0),
                         1 if p.get("is_published", True) else 0, fp,
                     ),
@@ -4728,11 +5052,11 @@ async def admin_lesson_prints_sync(request: Request, x_cron_secret: Optional[str
             else:
                 c.execute(
                     "INSERT INTO lesson_prints (title, subtitle, subject, topic, level, target_grade, "
-                    "target_type, description, file_path, pages, file_size_kb, is_published) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "target_type, target_university, description, file_path, pages, file_size_kb, is_published) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         title, p.get("subtitle"), subject, p.get("topic"),
-                        p.get("level"), p.get("target_grade"), p.get("target_type"),
+                        p.get("level"), p.get("target_grade"), p.get("target_type"), target_univ,
                         p.get("description"), fp, p.get("pages", 0), p.get("file_size_kb", 0),
                         1 if p.get("is_published", True) else 0,
                     ),
