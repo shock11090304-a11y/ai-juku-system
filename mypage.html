@@ -123,63 +123,7 @@
       <div id="worksheetHistoryList" style="display:none; margin-top:0.8rem; padding-top:0.8rem; border-top:1px solid rgba(255,255,255,0.10);"></div>
     </section>
 
-    <!-- 📚 配布プリント (塾長指示 2026-05-26 全自動モード)
-         Claude が ~/Desktop/問題生成/ で作成した PDF を全生徒に配信。
-         弱点 TOP3 マッチプリントを最上部・以下は科目フィルタで一覧 -->
-    <section id="lessonPrintsSection" style="margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(59,130,246,0.13), rgba(168,85,247,0.10)); border: 1px solid rgba(59,130,246,0.35); border-radius: 14px;">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:0.6rem; margin-bottom:0.7rem; flex-wrap:wrap;">
-        <h3 style="margin:0; font-size:1.05rem; color:#fff; font-weight:800;">📚 配布プリント <span style="font-size:0.65em; color:#93c5fd; font-weight:600;">(授業用・自習用・演習問題集 PDF)</span></h3>
-        <button type="button" id="lessonPrintsRefreshBtn" aria-label="プリント一覧を再取得" style="padding:0.35rem 0.7rem; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.20); border-radius:8px; color:#93c5fd; font-weight:700; font-size:0.78rem; cursor:pointer;">🔄 更新</button>
-      </div>
-
-      <!-- 🎯 弱点 TOP3 マッチ おすすめプリント -->
-      <div id="lessonPrintsRecommended" style="display:none; margin-bottom:1rem; padding:0.8rem; background:rgba(251,191,36,0.08); border:1px dashed rgba(251,191,36,0.30); border-radius:10px;">
-        <div style="font-size:0.85rem; color:#fbbf24; font-weight:700; margin-bottom:0.5rem;">🎯 あなたの弱点にマッチするプリント (AI が選定)</div>
-        <div id="lessonPrintsRecommendedList" style="display:grid; gap:0.5rem;"></div>
-      </div>
-
-      <!-- フィルタ -->
-      <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.8rem;">
-        <select id="lpFilterSubject" style="padding:0.4rem 0.6rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#cbd5e1; font-size:0.83rem;">
-          <option value="">📚 全科目</option>
-          <option value="国語">📖 国語</option>
-          <option value="英語">🇬🇧 英語</option>
-          <option value="数学">🔢 数学</option>
-          <option value="物理">⚛️ 物理</option>
-          <option value="化学">🧪 化学</option>
-          <option value="生物">🧬 生物</option>
-          <option value="日本史">🏯 日本史</option>
-          <option value="世界史">🌍 世界史</option>
-          <option value="地理">🗺️ 地理</option>
-          <option value="公民">⚖️ 公民</option>
-          <option value="社会">📜 社会</option>
-          <option value="小論文">✍️ 小論文</option>
-          <option value="模試">📝 模試</option>
-        </select>
-        <select id="lpFilterLevel" style="padding:0.4rem 0.6rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#cbd5e1; font-size:0.83rem;">
-          <option value="">🎚️ 全レベル</option>
-          <option value="基礎">基礎</option>
-          <option value="標準">標準</option>
-          <option value="発展">発展</option>
-          <option value="医学部レベル">医学部レベル</option>
-          <option value="東大レベル">東大レベル</option>
-          <option value="本番レベル">本番レベル</option>
-        </select>
-        <select id="lpFilterType" style="padding:0.4rem 0.6rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#cbd5e1; font-size:0.83rem;">
-          <option value="">📋 全形式</option>
-          <option value="授業用">📖 授業用</option>
-          <option value="自習用">📚 自習用</option>
-          <option value="演習問題集">✏️ 演習問題集</option>
-          <option value="模試">📝 模試</option>
-        </select>
-      </div>
-
-      <div id="lessonPrintsList" style="display:grid; gap:0.55rem; max-height:520px; overflow-y:auto;"></div>
-      <div id="lessonPrintsEmpty" style="display:none; padding:0.9rem; color:#a1a1aa; font-size:0.85rem; text-align:center; background:rgba(0,0,0,0.2); border-radius:8px;">
-        該当するプリントが見つかりませんでした。フィルタを変更してお試しください。
-      </div>
-      <div id="lessonPrintsTotal" style="margin-top:0.6rem; font-size:0.75rem; color:#a1a1aa; text-align:right;"></div>
-    </section>
+    <!-- 📚 配布プリント section は塾長指示 2026-05-26 で Quick Actions 直下に移動 -->
 
     <!-- 通塾生 限定特典 CTA (¥9,800/月) は塾長指示 2026-05-15 で削除
          理由: 本契約生徒には不要・通塾生の実際価格は別管理 -->
@@ -311,7 +255,73 @@
               <div class="action-desc">忘却曲線対応 Leitner Box・科学的暗記</div>
             </div>
           </a>
+          <!-- 📚 配布プリント CTA (塾長指示 2026-05-26: クイックアクション内に追加) -->
+          <a href="#lessonPrintsSection" class="action-btn action-btn-highlight" id="quickActionLessonPrints" style="background:linear-gradient(135deg,rgba(59,130,246,0.22),rgba(168,85,247,0.12));border:2px solid rgba(59,130,246,0.55);">
+            <div class="action-icon">📚</div>
+            <div>
+              <div class="action-title">配布プリント <span class="action-badge-new">NEW</span> <span id="lpQuickCount" style="background:rgba(34,197,94,0.22);color:#86efac;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:700;margin-left:0.3rem;">…</span></div>
+              <div class="action-desc"><strong>解説付き PDF を配布</strong>: 授業用 / 自習用 / 演習問題集 + 詳細解説 ─ 弱点に合わせて AI が推薦</div>
+            </div>
+          </a>
         </div>
+      </section>
+
+      <!-- 📚 配布プリント (塾長指示 2026-05-26 — Quick Actions 直下に配置)
+           Claude が ~/Desktop/問題生成/ で作成した PDF を全生徒に配信。
+           弱点 TOP3 マッチプリントを上部・以下は科目フィルタで一覧 -->
+      <section id="lessonPrintsSection" style="margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(59,130,246,0.13), rgba(168,85,247,0.10)); border: 1px solid rgba(59,130,246,0.35); border-radius: 14px; scroll-margin-top: 80px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.6rem; margin-bottom:0.7rem; flex-wrap:wrap;">
+          <h3 style="margin:0; font-size:1.05rem; color:#fff; font-weight:800;">📚 配布プリント <span style="font-size:0.65em; color:#93c5fd; font-weight:600;">(授業用・自習用・演習問題集 PDF + 詳細解説)</span></h3>
+          <button type="button" id="lessonPrintsRefreshBtn" aria-label="プリント一覧を再取得" style="padding:0.35rem 0.7rem; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.20); border-radius:8px; color:#93c5fd; font-weight:700; font-size:0.78rem; cursor:pointer;">🔄 更新</button>
+        </div>
+
+        <!-- 🎯 弱点 TOP3 マッチ おすすめプリント -->
+        <div id="lessonPrintsRecommended" style="display:none; margin-bottom:1rem; padding:0.8rem; background:rgba(251,191,36,0.08); border:1px dashed rgba(251,191,36,0.30); border-radius:10px;">
+          <div style="font-size:0.85rem; color:#fbbf24; font-weight:700; margin-bottom:0.5rem;">🎯 あなたの弱点にマッチするプリント (AI が選定)</div>
+          <div id="lessonPrintsRecommendedList" style="display:grid; gap:0.5rem;"></div>
+        </div>
+
+        <!-- フィルタ -->
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.8rem;">
+          <select id="lpFilterSubject" style="padding:0.4rem 0.6rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#cbd5e1; font-size:0.83rem; min-width:120px;">
+            <option value="">📚 全科目</option>
+            <option value="国語">📖 国語</option>
+            <option value="英語">🇬🇧 英語</option>
+            <option value="数学">🔢 数学</option>
+            <option value="物理">⚛️ 物理</option>
+            <option value="化学">🧪 化学</option>
+            <option value="生物">🧬 生物</option>
+            <option value="日本史">🏯 日本史</option>
+            <option value="世界史">🌍 世界史</option>
+            <option value="地理">🗺️ 地理</option>
+            <option value="公民">⚖️ 公民</option>
+            <option value="社会">📜 社会</option>
+            <option value="小論文">✍️ 小論文</option>
+            <option value="模試">📝 模試</option>
+          </select>
+          <select id="lpFilterLevel" style="padding:0.4rem 0.6rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#cbd5e1; font-size:0.83rem; min-width:120px;">
+            <option value="">🎚️ 全レベル</option>
+            <option value="基礎">基礎</option>
+            <option value="標準">標準</option>
+            <option value="発展">発展</option>
+            <option value="医学部レベル">医学部レベル</option>
+            <option value="東大レベル">東大レベル</option>
+            <option value="本番レベル">本番レベル</option>
+          </select>
+          <select id="lpFilterType" style="padding:0.4rem 0.6rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#cbd5e1; font-size:0.83rem; min-width:120px;">
+            <option value="">📋 全形式</option>
+            <option value="授業用">📖 授業用</option>
+            <option value="自習用">📚 自習用</option>
+            <option value="演習問題集">✏️ 演習問題集</option>
+            <option value="模試">📝 模試</option>
+          </select>
+        </div>
+
+        <div id="lessonPrintsList" style="display:grid; gap:0.55rem; max-height:520px; overflow-y:auto;"></div>
+        <div id="lessonPrintsEmpty" style="display:none; padding:0.9rem; color:#a1a1aa; font-size:0.85rem; text-align:center; background:rgba(0,0,0,0.2); border-radius:8px;">
+          該当するプリントが見つかりませんでした。フィルタを変更してお試しください。
+        </div>
+        <div id="lessonPrintsTotal" style="margin-top:0.6rem; font-size:0.75rem; color:#a1a1aa; text-align:right;"></div>
       </section>
 
       <!-- Today's Stats -->
@@ -1630,10 +1640,15 @@
           if (filterLevel.value) params.set('level', filterLevel.value);
           if (filterType.value) params.set('target_type', filterType.value);
           params.set('limit', '50');
+          // loading state (3 視点 review UX 改善)
+          list.innerHTML = '<div style="padding:0.8rem; color:#a1a1aa; font-size:0.85rem; text-align:center;">⏳ 読み込み中…</div>';
           const res = await fetch(`${API_BASE}/api/student/lesson-prints?${params.toString()}`);
           if (!res.ok) { list.innerHTML = ''; empty.style.display = ''; return; }
           const data = await res.json();
           const prints = (data && data.prints) || [];
+          // Quick Action バッジ更新 (件数)
+          const lpQuickCount = document.getElementById('lpQuickCount');
+          if (lpQuickCount && data.total != null) lpQuickCount.textContent = data.total + ' 件';
           if (prints.length === 0) {
             list.innerHTML = '';
             empty.style.display = '';
