@@ -253,20 +253,6 @@
       "file_path": "/lesson-prints/2026-05-26_一橋大学_数学_過去問風_整数論.pdf"
     },
     {
-      "title": "京大理系数学 本番水準 自習プリント",
-      "subject": "数学",
-      "topic": "京大理系数学_本番水準_自習プリント",
-      "level": "標準",
-      "target_grade": "高校生",
-      "target_type": "自習用",
-      "target_university": "京都大学",
-      "video_url": null,
-      "video_duration_sec": 0,
-      "pages": 11,
-      "file_size_kb": 1050,
-      "file_path": "/lesson-prints/2026-05-26_京大理系数学_本番水準_自習プリント.pdf"
-    },
-    {
       "title": "京大理系数学 自習プリント",
       "subject": "数学",
       "topic": "京大理系数学_自習プリント",
@@ -335,6 +321,20 @@
       "pages": 15,
       "file_size_kb": 747,
       "file_path": "/lesson-prints/2026-05-26_東大ベクトル_自習プリント.pdf"
+    },
+    {
+      "title": "東大実践模試 理系数学 自習プリント",
+      "subject": "数学",
+      "topic": "東大実践模試_理系数学_自習プリント",
+      "level": "東大レベル",
+      "target_grade": "高校生",
+      "target_type": "自習用",
+      "target_university": "東京大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 11,
+      "file_size_kb": 1058,
+      "file_path": "/lesson-prints/2026-05-26_東大実践模試_理系数学_自習プリント.pdf"
     },
     {
       "title": "横浜国立大学 数学 過去問風 微積分",
@@ -1204,5 +1204,6 @@
       "file_size_kb": 412,
       "file_path": "/lesson-prints/2026-05-26_青山学院大学経済_英語_過去問風.pdf"
     }
-  ]
+  ],
+  "purge_missing": true
 }
