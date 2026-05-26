@@ -740,6 +740,8 @@ def init_db():
         source TEXT DEFAULT 'claude_max',
         pdf_url TEXT,
         pdf_title TEXT,
+        answer_pdf_url TEXT,
+        answer_pdf_title TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     CREATE INDEX IF NOT EXISTS idx_university_problems ON university_problems(university, subject, status, created_at);
@@ -1214,6 +1216,9 @@ def init_db():
         # university-exam.html で「📄 配布プリント版で開く」ボタンを表示
         ("up_pdf_url", "ALTER TABLE university_problems ADD COLUMN pdf_url TEXT"),
         ("up_pdf_title", "ALTER TABLE university_problems ADD COLUMN pdf_title TEXT"),
+        # 塾長指示 2026-05-27 「解答と解説もPDF版がほしい」: 解答解説 PDF (lesson_prints の target_type='解答解説') を別途紐付け
+        ("up_answer_pdf_url", "ALTER TABLE university_problems ADD COLUMN answer_pdf_url TEXT"),
+        ("up_answer_pdf_title", "ALTER TABLE university_problems ADD COLUMN answer_pdf_title TEXT"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -26002,7 +26007,7 @@ def university_problems_list(university: Optional[str] = None, subject: Optional
     """大学別問題一覧。重い question_text 等は含めず、ID + メタのみ。
     🛡️ 2026-05-27: pdf_url を含めることで生徒画面で「📄 配布プリント版」ボタンを直接表示可能に。"""
     conn = db(); c = conn.cursor()
-    sql = "SELECT id, university, faculty, year, subject, topic, problem_type, difficulty, inspired_by, tags, pdf_url, pdf_title, created_at FROM university_problems WHERE status='published'"
+    sql = "SELECT id, university, faculty, year, subject, topic, problem_type, difficulty, inspired_by, tags, pdf_url, pdf_title, answer_pdf_url, answer_pdf_title, created_at FROM university_problems WHERE status='published'"
     params = []
     if university:
         sql += " AND university = ?"; params.append(university)
@@ -26026,7 +26031,7 @@ def university_problems_detail(pid: int):
     """1 問の詳細 (問題文・選択肢・解答・解説 全て返す)。
     🛡️ 2026-05-27: pdf_url / pdf_title を含めて返す (生徒画面で「📄 配布プリント版で開く」ボタン用)。"""
     conn = db(); c = conn.cursor()
-    c.execute("SELECT id, university, faculty, year, subject, topic, problem_type, question_text, choices, answer, explanation, difficulty, inspired_by, tags, pdf_url, pdf_title, created_at FROM university_problems WHERE id=? AND status='published'", (pid,))
+    c.execute("SELECT id, university, faculty, year, subject, topic, problem_type, question_text, choices, answer, explanation, difficulty, inspired_by, tags, pdf_url, pdf_title, answer_pdf_url, answer_pdf_title, created_at FROM university_problems WHERE id=? AND status='published'", (pid,))
     r = c.fetchone()
     conn.close()
     if not r:
@@ -26178,8 +26183,12 @@ def university_problems_backfill_pdf_links(
     try:
         # 1. lesson_prints から PDF 一覧取得
         # 🛡️ 3 視点 review fix: target_type='模試' も除外 (東大実践模試 PDF が東大過去問に誤マッチする致命傷防止)
+        # 🛡️ 2026-05-27 塾長指示「解答解説 PDF も」: 本編と解答解説を別々のリストで取得
         c.execute("SELECT id, title, subject, target_university, file_path, target_type FROM lesson_prints WHERE is_published = 1 AND COALESCE(target_type, '') NOT IN ('解答解説', '模試', '模擬試験')")
         lp_rows = c.fetchall()
+        # 解答解説 PDF 一覧 (target_type='解答解説' or タイトルに「解答解説」を含む)
+        c.execute("SELECT id, title, subject, target_university, file_path, target_type FROM lesson_prints WHERE is_published = 1 AND (COALESCE(target_type, '') = '解答解説' OR title LIKE '%解答解説%' OR file_path LIKE '%_answers.pdf%')")
+        lp_ans_rows = c.fetchall()
         pdfs = []
         for row in lp_rows:
             if isinstance(row, dict):
@@ -26195,6 +26204,20 @@ def university_problems_backfill_pdf_links(
                 pdfs.append({"id": row[0], "title": row[1] or "", "subject": row[2] or "",
                              "target_university": row[3] or "", "file_path": row[4] or "",
                              "target_type": (row[5] if len(row) > 5 else "") or ""})
+        # 解答解説 PDF リスト
+        ans_pdfs = []
+        for row in lp_ans_rows:
+            if isinstance(row, dict):
+                ans_pdfs.append({
+                    "id": row.get("id"),
+                    "title": row.get("title") or "",
+                    "subject": row.get("subject") or "",
+                    "target_university": row.get("target_university") or "",
+                    "file_path": row.get("file_path") or "",
+                })
+            else:
+                ans_pdfs.append({"id": row[0], "title": row[1] or "", "subject": row[2] or "",
+                                 "target_university": row[3] or "", "file_path": row[4] or ""})
 
         # 2. university_problems を SELECT (filter 適用)
         sql = "SELECT id, university, subject FROM university_problems WHERE status='published'"
@@ -26248,16 +26271,52 @@ def university_problems_backfill_pdf_links(
                         best_pdf = pdf
                         break  # 致命 2 fix: title 一致は 1 件目で固定 (上書きしない)
 
+            # 🛡️ 2026-05-27 塾長指示「解答解説 PDF も」: 同じマッチングロジックで ans_pdfs からも検索
+            best_ans_pdf = None
+            for pdf in ans_pdfs:
+                lp_univ = pdf["target_university"]
+                lp_subj = pdf["subject"]
+                if lp_univ in aliases and lp_subj == subj_normalized:
+                    best_ans_pdf = pdf
+                    break
+            if not best_ans_pdf:
+                for pdf in ans_pdfs:
+                    lp_title = pdf["title"]
+                    lp_subj = pdf["subject"]
+                    if lp_title and any(a in lp_title for a in aliases) and lp_subj == subj_normalized:
+                        best_ans_pdf = pdf
+                        break
+
             if best_pdf:
                 matched += 1
                 match_log.append({
                     "up_id": up_id, "up_univ": up_univ, "up_subj": up_subj,
-                    "pdf_title": best_pdf["title"], "pdf_path": best_pdf["file_path"]
+                    "pdf_title": best_pdf["title"], "pdf_path": best_pdf["file_path"],
+                    "answer_pdf_title": (best_ans_pdf["title"] if best_ans_pdf else None),
+                    "answer_pdf_path": (best_ans_pdf["file_path"] if best_ans_pdf else None),
                 })
                 if not dry_run:
                     c.execute(
-                        "UPDATE university_problems SET pdf_url = ?, pdf_title = ? WHERE id = ?",
-                        (best_pdf["file_path"], best_pdf["title"], up_id)
+                        "UPDATE university_problems SET pdf_url = ?, pdf_title = ?, answer_pdf_url = ?, answer_pdf_title = ? WHERE id = ?",
+                        (best_pdf["file_path"], best_pdf["title"],
+                         (best_ans_pdf["file_path"] if best_ans_pdf else None),
+                         (best_ans_pdf["title"] if best_ans_pdf else None),
+                         up_id)
+                    )
+                    updated += 1
+            elif best_ans_pdf:
+                # 本編なし・解答解説のみ存在 (稀)
+                matched += 1
+                match_log.append({
+                    "up_id": up_id, "up_univ": up_univ, "up_subj": up_subj,
+                    "pdf_title": None, "pdf_path": None,
+                    "answer_pdf_title": best_ans_pdf["title"],
+                    "answer_pdf_path": best_ans_pdf["file_path"],
+                })
+                if not dry_run:
+                    c.execute(
+                        "UPDATE university_problems SET answer_pdf_url = ?, answer_pdf_title = ? WHERE id = ?",
+                        (best_ans_pdf["file_path"], best_ans_pdf["title"], up_id)
                     )
                     updated += 1
             else:
