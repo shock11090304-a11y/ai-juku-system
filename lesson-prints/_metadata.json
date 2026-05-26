@@ -758,7 +758,7 @@
     },
     {
       "title": "京大世界史 自習プリント",
-      "subject": "英語",
+      "subject": "世界史",
       "topic": "京大世界史_自習プリント",
       "level": "標準",
       "target_grade": "高校生",
@@ -772,7 +772,7 @@
     },
     {
       "title": "京大化学 自習プリント",
-      "subject": "英語",
+      "subject": "化学",
       "topic": "京大化学_自習プリント",
       "level": "標準",
       "target_grade": "高校生",
@@ -786,7 +786,7 @@
     },
     {
       "title": "京大物理 自習プリント",
-      "subject": "英語",
+      "subject": "物理",
       "topic": "京大物理_自習プリント",
       "level": "標準",
       "target_grade": "高校生",
