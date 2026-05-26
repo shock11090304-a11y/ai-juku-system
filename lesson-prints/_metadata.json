@@ -337,6 +337,20 @@
       "file_path": "/lesson-prints/2026-05-26_東大実践模試_理系数学_自習プリント.pdf"
     },
     {
+      "title": "東大実践模試 理系数学 自習プリント (解答解説)",
+      "subject": "数学",
+      "topic": "東大実践模試_理系数学_自習プリント",
+      "level": "東大レベル",
+      "target_grade": "高校生",
+      "target_type": "解答解説",
+      "target_university": "東京大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 14,
+      "file_size_kb": 1081,
+      "file_path": "/lesson-prints/2026-05-26_東大実践模試_理系数学_自習プリント_answers.pdf"
+    },
+    {
       "title": "横浜国立大学 数学 過去問風 微積分",
       "subject": "数学",
       "topic": "横浜国立大学_数学_過去問風_微積分",
@@ -475,6 +489,20 @@
       "pages": 8,
       "file_size_kb": 1064,
       "file_path": "/lesson-prints/2026-05-26_東大化学_本番水準_自習プリント.pdf"
+    },
+    {
+      "title": "東大化学 本番水準 自習プリント (解答解説)",
+      "subject": "化学",
+      "topic": "東大化学_本番水準_自習プリント",
+      "level": "東大レベル",
+      "target_grade": "高校生",
+      "target_type": "解答解説",
+      "target_university": "東京大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 8,
+      "file_size_kb": 1080,
+      "file_path": "/lesson-prints/2026-05-26_東大化学_本番水準_自習プリント_answers.pdf"
     },
     {
       "title": "東大実践模試 化学 自習プリント",
@@ -1035,6 +1063,20 @@
       "pages": 20,
       "file_size_kb": 1680,
       "file_path": "/lesson-prints/2026-05-26_早稲田文化構想_英語_自習プリント.pdf"
+    },
+    {
+      "title": "早稲田文化構想 英語 自習プリント (解答解説)",
+      "subject": "英語",
+      "topic": "早稲田文化構想_英語_自習プリント",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "解答解説",
+      "target_university": "早稲田大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 20,
+      "file_size_kb": 1695,
+      "file_path": "/lesson-prints/2026-05-26_早稲田文化構想_英語_自習プリント_answers.pdf"
     },
     {
       "title": "早稲田文構 英語自習プリント",
