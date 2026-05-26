@@ -1132,6 +1132,23 @@
       </p>
     </section>
 
+    <!-- 📊 保護者メール設定 (塾長指示 2026-05-26: 週次レポート保護者並行配信) -->
+    <section id="parentEmailSection" style="margin-top:1.5rem; padding:1.2rem 1.4rem; background:linear-gradient(135deg, rgba(99,102,241,0.10), rgba(168,85,247,0.08)); border:1px solid rgba(99,102,241,0.30); border-radius:14px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:0.6rem; margin-bottom:0.6rem; flex-wrap:wrap;">
+        <h3 style="margin:0; font-size:1.0rem; color:#a5b4fc; font-weight:800;">📊 保護者向け週次レポート</h3>
+        <span style="font-size:0.7rem; color:#94a3b8;">毎週日曜 19:00 配信</span>
+      </div>
+      <p style="font-size:0.8rem; color:#a1a1aa; line-height:1.6; margin:0 0 0.7rem 0;">保護者の方の email を登録すると、お子様の学習時間・正答率・科目別成績・弱点を <strong style="color:#c4b5fd;">週 1 回 自動でお知らせ</strong>します。生徒本人の email にも同時に配信されます。<br><span style="font-size:0.72rem; color:#94a3b8;">※ 登録は保護者の方の同意の上で行ってください。</span></p>
+      <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; margin-bottom:0.5rem;">
+        <input type="email" id="parentEmailInput" placeholder="parent@example.com" style="flex:1; min-width:240px; padding:0.5rem 0.7rem; background:rgba(0,0,0,0.30); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.88rem;">
+        <button id="parentEmailSaveBtn" type="button" style="padding:0.5rem 1.2rem; background:linear-gradient(135deg,#6366f1,#8b5cf6); border:none; border-radius:6px; color:#fff; font-weight:700; font-size:0.85rem; cursor:pointer; min-height:40px;">💾 保存</button>
+      </div>
+      <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; color:#cbd5e1; cursor:pointer;">
+        <input type="checkbox" id="parentEmailEnabledCheck" checked> 配信を有効にする
+      </label>
+      <div id="parentEmailStatus" style="margin-top:0.5rem; font-size:0.78rem; color:#86efac; min-height:1.2em;"></div>
+    </section>
+
     <section class="billing-section" style="margin-top:2rem; padding: 1.5rem; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;">
       <div class="section-title"><h2>⚙️ 契約管理</h2></div>
       <div id="billingInfo" style="font-size:0.9rem; color: #cbd5e1; margin-bottom: 1rem; line-height: 1.7;">
@@ -1593,6 +1610,62 @@
           <a href="english-exam.html#curriculumSection" style="display:inline-block;margin-top:0.4rem;background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);padding:0.35rem 0.7rem;border-radius:6px;font-size:0.78rem;font-weight:700;text-decoration:none;">→ 全週ロードマップを見る</a>
         </div>`;
     }
+
+    // 📊 保護者メール設定 (2026-05-26 塾長指示「保護者向け週次レポート」)
+    (function() {
+      const API_BASE = (window.location.origin.includes(':8090') || window.location.origin.includes('localhost:8090'))
+        ? 'http://localhost:8000' : window.location.origin;
+      const input = document.getElementById('parentEmailInput');
+      const checkbox = document.getElementById('parentEmailEnabledCheck');
+      const saveBtn = document.getElementById('parentEmailSaveBtn');
+      const status = document.getElementById('parentEmailStatus');
+      if (!input || !saveBtn || !checkbox || !status) return;
+      const token = localStorage.getItem('ai_juku_session_token') || '';
+      if (!token) return;
+      // 初期取得
+      fetch(`${API_BASE}/api/student/parent-email`, { headers: { 'Authorization': 'Bearer ' + token } })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (!d) return;
+          input.value = d.parent_email || '';
+          checkbox.checked = !!d.enabled;
+          if (d.parent_email) status.textContent = '✅ 配信中: ' + d.parent_email;
+        }).catch(() => {});
+      // 保存
+      saveBtn.addEventListener('click', async function() {
+        const email = (input.value || '').trim();
+        const enabled = !!checkbox.checked;
+        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          status.style.color = '#fca5a5';
+          status.textContent = '⚠️ メールアドレスの形式が正しくありません';
+          return;
+        }
+        saveBtn.disabled = true;
+        const origText = saveBtn.textContent;
+        saveBtn.textContent = '⏳ 保存中…';
+        try {
+          const res = await fetch(`${API_BASE}/api/student/parent-email`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ parent_email: email, enabled }),
+          });
+          const j = await res.json();
+          if (res.ok && j.ok) {
+            status.style.color = '#86efac';
+            status.textContent = email ? `✅ 保存しました: ${email} (${enabled ? '配信中' : '配信停止中'})` : '✅ 保存しました (email 未設定)';
+          } else {
+            status.style.color = '#fca5a5';
+            status.textContent = '⚠️ ' + (j.detail || '保存に失敗しました');
+          }
+        } catch (e) {
+          status.style.color = '#fca5a5';
+          status.textContent = '⚠️ ネットワークエラー';
+        } finally {
+          saveBtn.textContent = origText;
+          saveBtn.disabled = false;
+        }
+      });
+    })();
 
     // 🎯 AI 合格判定 (2026-05-26 塾長指示)
     async function renderAdmissionLikelihood(student) {

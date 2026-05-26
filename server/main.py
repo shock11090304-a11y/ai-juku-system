@@ -1183,6 +1183,10 @@ def init_db():
         # video_url = "/lesson-prints/videos/2026-05-26_古文_助動詞マスター講座.mp4"
         ("lp_video_url", "ALTER TABLE lesson_prints ADD COLUMN video_url TEXT"),
         ("lp_video_duration", "ALTER TABLE lesson_prints ADD COLUMN video_duration_sec INTEGER"),
+        # 📊 保護者向け週次レポート (塾長指示 2026-05-26): 保護者 email を別カラムで保管
+        # NULL なら配信なし・mypage の「保護者メール設定」で登録
+        ("parent_email", "ALTER TABLE students ADD COLUMN parent_email TEXT DEFAULT NULL"),
+        ("parent_email_enabled", "ALTER TABLE students ADD COLUMN parent_email_enabled INTEGER DEFAULT 1"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -23208,7 +23212,8 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
     conn = db()
     c = conn.cursor()
     # kokuritsu_nankan コース生も含めるため course も取得
-    c.execute("SELECT id, name, email, line_user_id, course FROM students WHERE status IN ('trial', 'paid')")
+    # 🛡️ 塾長指示 2026-05-26: 保護者 email 並行配信用に parent_email / parent_email_enabled を取得
+    c.execute("SELECT id, name, email, line_user_id, course, parent_email, parent_email_enabled FROM students WHERE status IN ('trial', 'paid')")
     students = list(c.fetchall())
     conn.close()
 
@@ -23276,6 +23281,48 @@ def cron_weekly_reports(x_cron_secret: str = Header(None), dry_run: bool = False
                         sent_email += 1
                     else:
                         failed += 1
+            # --- 📊 保護者向け並行配信 (塾長指示 2026-05-26) ---
+            try:
+                parent_email = row.get("parent_email") if hasattr(row, "get") else (row["parent_email"] if "parent_email" in row.keys() else None)
+                parent_enabled = row.get("parent_email_enabled") if hasattr(row, "get") else (row["parent_email_enabled"] if "parent_email_enabled" in row.keys() else 1)
+            except Exception:
+                parent_email = None
+                parent_enabled = 0
+            # 保護者 email が生徒 email と同じなら 2 重送信防止で skip
+            if parent_email and parent_enabled and parent_email != row.get("email"):
+                if sent_email >= WEEKLY_REPORT_EMAIL_CAP:
+                    capped += 1
+                else:
+                    # 週次 dedup: per parent_email per template
+                    _pdup_conn = db()
+                    _pdup_c = _pdup_conn.cursor()
+                    _seven_days_ago = (datetime.now(timezone.utc) - timedelta(days=6)).isoformat()
+                    _pdup_c.execute(
+                        "SELECT id FROM notifications WHERE student_id=? AND template='weekly_report_parent_email' AND success=1 AND sent_at > ? LIMIT 1",
+                        (row["id"], _seven_days_ago)
+                    )
+                    already_sent_p = _pdup_c.fetchone()
+                    _pdup_conn.close()
+                    if not already_sent_p:
+                        if email_index > 0:
+                            _t.sleep(1.5)
+                        email_index += 1
+                        pres = _send_weekly_report_email(parent_email, row["name"], stats)
+                        _pok = pres.get("sent", False)
+                        _pn_conn = db()
+                        _pn_c = _pn_conn.cursor()
+                        _pn_c.execute(
+                            """INSERT INTO notifications (student_id, channel, template, payload, success, error)
+                               VALUES (?, 'email', 'weekly_report_parent_email', ?, ?, ?)""",
+                            (row["id"], json.dumps({"to": parent_email, **stats}, ensure_ascii=False)[:500], 1 if _pok else 0,
+                             pres.get("error", "")[:200] if not _pok else None)
+                        )
+                        _pn_conn.commit()
+                        _pn_conn.close()
+                        if _pok:
+                            sent_email += 1
+                        else:
+                            failed += 1
             # --- LINE 配信 (連携済みのみ・従来互換) ---
             if row.get("line_user_id"):
                 try:
@@ -29139,6 +29186,78 @@ class StudentMaterialUpdateRequest(BaseModel):
     subject: Optional[str] = None
     status: Optional[str] = None
     note: Optional[str] = None
+
+
+@app.post("/api/student/parent-email")
+async def student_set_parent_email(request: Request, authorization: Optional[str] = Header(None)):
+    """📊 保護者 email 設定 (本人 only・塾長指示 2026-05-26)
+    POST body: {"parent_email": "...", "enabled": true/false}
+    enabled=false で配信停止 (parent_email は保持)
+    """
+    _check_rate_limit_ip(request, bucket="parent_email_set", limit=10, window=60)
+    if not (authorization and authorization.startswith("Bearer ")):
+        raise HTTPException(status_code=403, detail="ログインが必要です")
+    token = authorization[len("Bearer "):].strip()
+    claims = _verify_session_token(token)
+    if not claims or not claims.get("student_id"):
+        raise HTTPException(status_code=403, detail="認証エラー")
+    try:
+        student_id = int(claims["student_id"])
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="student_id 不正")
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="JSON body 不正")
+    parent_email = (body.get("parent_email") or "").strip()
+    enabled = 1 if body.get("enabled", True) else 0
+    # email format 簡易 validate
+    import re as _re
+    if parent_email and not _re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", parent_email):
+        raise HTTPException(status_code=400, detail="メールアドレスの形式が不正です")
+    if len(parent_email) > 200:
+        raise HTTPException(status_code=400, detail="email が長すぎます")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "UPDATE students SET parent_email = ?, parent_email_enabled = ? WHERE id = ?",
+            (parent_email or None, enabled, student_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True, "parent_email": parent_email or None, "enabled": bool(enabled)}
+
+
+@app.get("/api/student/parent-email")
+def student_get_parent_email(request: Request, authorization: Optional[str] = Header(None)):
+    """📊 保護者 email 取得 (本人 only)"""
+    _check_rate_limit_ip(request, bucket="parent_email_get", limit=30, window=60)
+    if not (authorization and authorization.startswith("Bearer ")):
+        raise HTTPException(status_code=403, detail="ログインが必要です")
+    token = authorization[len("Bearer "):].strip()
+    claims = _verify_session_token(token)
+    if not claims or not claims.get("student_id"):
+        raise HTTPException(status_code=403, detail="認証エラー")
+    try:
+        student_id = int(claims["student_id"])
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="student_id 不正")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT parent_email, COALESCE(parent_email_enabled, 1) AS enabled FROM students WHERE id = ?", (student_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        try:
+            pe = row["parent_email"]; en = row["enabled"]
+        except (TypeError, KeyError, IndexError):
+            pe = row[0]; en = row[1]
+        return {"parent_email": pe or "", "enabled": bool(en)}
+    finally:
+        conn.close()
 
 
 @app.post("/api/student/materials")
