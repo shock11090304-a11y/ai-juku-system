@@ -567,6 +567,26 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     CREATE INDEX IF NOT EXISTS idx_exam_questions ON exam_questions(exam_id, part_key, created_at);
+    -- 🛡️ 2026-05-27 塾長指示「既存問題の差し替え + rollback 必須」: archive テーブル
+    -- 差し替え前の question_data を保存し、いつでも 1-click rollback できるように。
+    -- batch_id でグループ化 (同一 batch で差し替えた N 問を一括 rollback 可能)
+    CREATE TABLE IF NOT EXISTS exam_questions_archive (
+        id {pk},
+        original_id INTEGER NOT NULL,
+        exam_id TEXT NOT NULL,
+        part_key TEXT NOT NULL,
+        eiken_grade TEXT,
+        question_data TEXT NOT NULL,
+        original_model TEXT,
+        original_created_at TIMESTAMP,
+        replaced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        replacement_batch_id TEXT,
+        replacement_reason TEXT,
+        rollback_at TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_eqa_original ON exam_questions_archive(original_id);
+    CREATE INDEX IF NOT EXISTS idx_eqa_batch ON exam_questions_archive(replacement_batch_id);
+    CREATE INDEX IF NOT EXISTS idx_eqa_replaced_at ON exam_questions_archive(replaced_at);
     CREATE TABLE IF NOT EXISTS textbook_pool (
         id {pk},
         subject TEXT NOT NULL,
@@ -13705,6 +13725,262 @@ def admin_exam_questions_import(payload: dict, authorization: Optional[str] = He
 
     skip_full = bool(payload.get("skip_full", False))
     return _exam_questions_import_core(questions, skip_full)
+
+
+@app.post("/api/admin/exam-questions/replace-explanation")
+def admin_exam_questions_replace_explanation(
+    payload: dict,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🛡️ 塾長指示 2026-05-27「自習レベル解説への差し替え + archive 必須 + rollback 可能」:
+    既存 exam_questions レコードの question_data を新しい高品質版に差し替える。
+
+    payload:
+      {
+        "batch_id": "20260527_kyodai_phys_lv5",  // group identifier for rollback
+        "reason": "Level 5 自習解説に差し替え",
+        "replacements": [
+          {"id": 12345, "new_question_data": {...}, "new_model": "claude-max-plan"},
+          ...
+        ]
+      }
+
+    動作:
+    1. 各 id の元 question_data を exam_questions_archive に保存
+    2. exam_questions.question_data を新版に UPDATE
+    3. 差し替え件数 + archive id リストを返却 (rollback 時に使用)
+
+    認証: admin Bearer or x-cron-secret"""
+    import hmac as _hmac
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and _hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    replacements = payload.get("replacements") or []
+    if not isinstance(replacements, list) or not replacements:
+        raise HTTPException(status_code=400, detail="replacements が空")
+
+    batch_id = str(payload.get("batch_id") or "").strip()[:128] or f"batch_{int(time.time())}"
+    reason = str(payload.get("reason") or "")[:500]
+
+    archived = 0
+    updated = 0
+    failed = []
+    archive_ids = []
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 🛡️ 同時実行の race 防止 (Postgres advisory lock)
+        try:
+            if USE_POSTGRES:
+                c.execute("SELECT pg_advisory_xact_lock(8675310)")
+        except Exception:
+            pass
+
+        for rep in replacements:
+            qid = rep.get("id")
+            new_qd = rep.get("new_question_data")
+            if not qid or not isinstance(new_qd, (dict, str)):
+                failed.append({"id": qid, "reason": "invalid input"})
+                continue
+
+            # 既存レコード取得
+            c.execute("SELECT id, exam_id, part_key, eiken_grade, question_data, model, created_at FROM exam_questions WHERE id = ?", (qid,))
+            row = c.fetchone()
+            if not row:
+                failed.append({"id": qid, "reason": "not found"})
+                continue
+            # row → dict (Postgres/SQLite 両対応)
+            if isinstance(row, dict):
+                r = row
+            else:
+                r = {"id": row[0], "exam_id": row[1], "part_key": row[2], "eiken_grade": row[3],
+                     "question_data": row[4], "model": row[5], "created_at": row[6]}
+
+            # archive に保存
+            c.execute(
+                "INSERT INTO exam_questions_archive "
+                "(original_id, exam_id, part_key, eiken_grade, question_data, original_model, original_created_at, replacement_batch_id, replacement_reason) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (r["id"], r["exam_id"], r["part_key"], r["eiken_grade"], r["question_data"],
+                 r["model"], r["created_at"], batch_id, reason)
+            )
+            # archive id 取得 (Postgres は RETURNING、SQLite は lastrowid)
+            try:
+                if USE_POSTGRES:
+                    c.execute("SELECT currval(pg_get_serial_sequence('exam_questions_archive','id'))")
+                    arch_id = c.fetchone()
+                    arch_id = arch_id[0] if not isinstance(arch_id, dict) else arch_id.get("currval")
+                else:
+                    arch_id = c.lastrowid
+            except Exception:
+                arch_id = None
+            if arch_id:
+                archive_ids.append(arch_id)
+            archived += 1
+
+            # exam_questions を UPDATE
+            new_qd_json = new_qd if isinstance(new_qd, str) else json.dumps(new_qd, ensure_ascii=False)
+            new_model = rep.get("new_model") or r.get("model") or "claude-max-plan"
+            c.execute(
+                "UPDATE exam_questions SET question_data = ?, model = ? WHERE id = ?",
+                (new_qd_json, new_model, qid)
+            )
+            updated += 1
+
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {
+        "ok": True,
+        "batch_id": batch_id,
+        "archived": archived,
+        "updated": updated,
+        "failed_count": len(failed),
+        "failed": failed,
+        "archive_ids": archive_ids,
+    }
+
+
+@app.post("/api/admin/exam-questions/rollback-batch")
+def admin_exam_questions_rollback_batch(
+    payload: dict,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🛡️ 塾長指示 2026-05-27: 差し替えた batch を 1-click rollback する。
+
+    payload: {"batch_id": "20260527_kyodai_phys_lv5"}
+
+    動作:
+    1. archive から該当 batch_id のレコードを SELECT
+    2. それぞれ exam_questions の question_data を archive の値に戻す
+    3. archive レコードに rollback_at を記録 (履歴は残す)
+    """
+    import hmac as _hmac
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and _hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    batch_id = str(payload.get("batch_id") or "").strip()
+    if not batch_id:
+        raise HTTPException(status_code=400, detail="batch_id 必須")
+
+    restored = 0
+    conn = db()
+    try:
+        c = conn.cursor()
+        try:
+            if USE_POSTGRES:
+                c.execute("SELECT pg_advisory_xact_lock(8675311)")
+        except Exception:
+            pass
+        # 未 rollback の archive を取得
+        c.execute(
+            "SELECT id, original_id, question_data, original_model FROM exam_questions_archive "
+            "WHERE replacement_batch_id = ? AND rollback_at IS NULL",
+            (batch_id,)
+        )
+        rows = c.fetchall()
+        for row in rows:
+            if isinstance(row, dict):
+                arch_id = row.get("id")
+                orig_id = row.get("original_id")
+                orig_qd = row.get("question_data")
+                orig_model = row.get("original_model")
+            else:
+                arch_id, orig_id, orig_qd, orig_model = row[0], row[1], row[2], row[3]
+            c.execute(
+                "UPDATE exam_questions SET question_data = ?, model = ? WHERE id = ?",
+                (orig_qd, orig_model or "claude-max-plan", orig_id)
+            )
+            c.execute(
+                "UPDATE exam_questions_archive SET rollback_at = CURRENT_TIMESTAMP WHERE id = ?",
+                (arch_id,)
+            )
+            restored += 1
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {"ok": True, "batch_id": batch_id, "restored": restored}
+
+
+@app.get("/api/admin/exam-questions/replacement-batches")
+def admin_exam_questions_replacement_batches(
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+    limit: int = 50,
+):
+    """🛡️ 塾長指示 2026-05-27: 差し替え batch 一覧 (ceo ダッシュ表示用)。
+    rollback 可否 + 各 batch の件数を返す。"""
+    import hmac as _hmac
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and _hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    limit = max(1, min(int(limit or 50), 200))
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT replacement_batch_id, "
+            "COUNT(*) AS total_count, "
+            "SUM(CASE WHEN rollback_at IS NULL THEN 1 ELSE 0 END) AS active_count, "
+            "MAX(replaced_at) AS replaced_at, "
+            "MAX(replacement_reason) AS reason "
+            "FROM exam_questions_archive "
+            "WHERE replacement_batch_id IS NOT NULL "
+            "GROUP BY replacement_batch_id "
+            "ORDER BY MAX(replaced_at) DESC "
+            "LIMIT ?",
+            (limit,)
+        )
+        rows = c.fetchall()
+        batches = []
+        for row in rows:
+            if isinstance(row, dict):
+                batches.append({
+                    "batch_id": row.get("replacement_batch_id"),
+                    "total": row.get("total_count"),
+                    "active": row.get("active_count"),
+                    "replaced_at": str(row.get("replaced_at") or ""),
+                    "reason": row.get("reason") or "",
+                    "can_rollback": (row.get("active_count") or 0) > 0,
+                })
+            else:
+                batches.append({
+                    "batch_id": row[0],
+                    "total": row[1],
+                    "active": row[2],
+                    "replaced_at": str(row[3] or ""),
+                    "reason": row[4] or "",
+                    "can_rollback": (row[2] or 0) > 0,
+                })
+    finally:
+        conn.close()
+    return {"ok": True, "batches": batches}
 
 
 @app.post("/api/admin/exam-questions/mirror-all-to-supabase")

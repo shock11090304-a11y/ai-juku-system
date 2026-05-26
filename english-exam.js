@@ -429,6 +429,8 @@ const EXAMS = {
       { key: 'kanbun_kyodai',   name: '漢文 (京大)',        cefr: '最難関', target: '京大 国語 漢文 (記述式)' },
       // 現代文要約
       { key: 'r_summary_todai', name: '現代文要約 (東大)', cefr: '最難関', target: '東大 国語 大問1B 要約 60-80字' },
+      // 現代文 (記述式) ─ 2026-05-27 塾長指示で京大 gendai を追加 (大学別問題プール 5 大学投入時)
+      { key: 'gendai_kyodai',   name: '現代文 (京大)',     cefr: '最難関', target: '京大 国語 現代文 (記述式・思想評論)' },
       // 社会
       { key: 'nihonshi_kyotsu', name: '日本史 (共通テスト)', cefr: '基礎',  target: '共通テスト 日本史 (古代~近現代 通史・史料読解)' },
       { key: 'sekaishi_kyotsu', name: '世界史 (共通テスト)', cefr: '基礎',  target: '共通テスト 世界史 (古代~現代 東西通史)' },
@@ -444,6 +446,7 @@ const EXAMS = {
       kanbun_todai:    [{ key: 'kanbun',    name: '漢文 演習 (東大型)',       icon: '🀄', timeMin: 30, qCount: 5, scoreMax: 50, desc: '東大型 記述式漢文 (思想把握・哲学的議論)', _backendPart: 'kanbun',    _backendGrade: 'todai' }],
       kanbun_kyodai:   [{ key: 'kanbun',    name: '漢文 演習 (京大型)',       icon: '🀄', timeMin: 30, qCount: 5, scoreMax: 50, desc: '京大型 記述式漢文 (抽象的論理思想)', _backendPart: 'kanbun',    _backendGrade: 'kyodai' }],
       r_summary_todai: [{ key: 'r_summary', name: '現代文要約 演習 (東大型)', icon: '✍️', timeMin: 25, qCount: 1, scoreMax: 30, desc: '東大 国語 大問1B 要約 60-80字', _backendPart: 'r_summary', _backendGrade: 'todai' }],
+      gendai_kyodai:   [{ key: 'gendai',    name: '現代文 演習 (京大型)',     icon: '📖', timeMin: 30, qCount: 2, scoreMax: 50, desc: '京大 国語 現代文 (記述式・思想評論・字数規定 80-200字)', _backendPart: 'gendai',    _backendGrade: 'kyodai' }],
       nihonshi_kyotsu: [{ key: 'nihonshi',  name: '日本史 演習 (共通テスト型)', icon: '🗾', timeMin: 25, qCount: 5, scoreMax: 50, desc: '古代~近現代 通史・年代並べ替え・史料読解', _backendPart: 'nihonshi',  _backendGrade: 'kyotsu' }],
       sekaishi_kyotsu: [{ key: 'sekaishi',  name: '世界史 演習 (共通テスト型)', icon: '🌍', timeMin: 25, qCount: 5, scoreMax: 50, desc: '東西通史・年代/文化史', _backendPart: 'sekaishi',  _backendGrade: 'kyotsu' }],
       chiri_kyotsu:    [{ key: 'chiri',     name: '地理 演習 (共通テスト型)',   icon: '🗺️', timeMin: 25, qCount: 5, scoreMax: 50, desc: '自然/人文/地誌・気候/プレート/災害', _backendPart: 'chiri',     _backendGrade: 'kyotsu' }],
@@ -801,7 +804,7 @@ function _qsHintMatchesKey(key, hint) {
     chem:   /^chem/,
     bio:    /^bio/,
     earth:  /^earth/,
-    kokugo: /^(kobun|kanbun|r_summary)/,
+    kokugo: /^(kobun|kanbun|r_summary|gendai)/,
     jhist:  /^nihonshi/,
     whist:  /^sekaishi/,
     geo:    /^chiri/,
@@ -854,6 +857,7 @@ function _renderGradeSelect(grid, examId, items) {
       if (k.startsWith('kobun_'))     return { cat: '📜 古文', order: 0 };
       if (k.startsWith('kanbun_'))    return { cat: '🀄 漢文', order: 1 };
       if (k.startsWith('r_summary_')) return { cat: '✍️ 現代文要約', order: 2 };
+      if (k.startsWith('gendai_'))    return { cat: '📖 現代文', order: 2 };
       if (k.startsWith('nihonshi_'))  return { cat: '🗾 日本史', order: 3 };
       if (k.startsWith('sekaishi_'))  return { cat: '🌍 世界史', order: 4 };
       if (k.startsWith('chiri_'))     return { cat: '🗺️ 地理', order: 5 };
