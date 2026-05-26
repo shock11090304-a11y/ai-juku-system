@@ -28,10 +28,21 @@
       "topic": "古文_助動詞マスター講座",
       "level": "標準",
       "target_grade": "高校生",
-      "target_type": "演習問題集",
+      "target_type": "授業用",
       "pages": 15,
-      "file_size_kb": 604,
+      "file_size_kb": 636,
       "file_path": "/lesson-prints/2026-05-26_古文_助動詞マスター講座.pdf"
+    },
+    {
+      "title": "古文 助動詞マスター講座 answers",
+      "subject": "国語",
+      "topic": "古文_助動詞マスター講座_answers",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "授業用",
+      "pages": 9,
+      "file_size_kb": 430,
+      "file_path": "/lesson-prints/2026-05-26_古文_助動詞マスター講座_answers.pdf"
     },
     {
       "title": "授業テキスト 微分のグラフ応用",
