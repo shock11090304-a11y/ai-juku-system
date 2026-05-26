@@ -920,8 +920,11 @@ function updateModeIndicator() {
 function renderStudentSelector() {
   const sel = document.getElementById('studentSelect');
   const prepSel = document.getElementById('prepStudent');
+  // 🛡️ XSS fix 2026-05-26: s.name / s.grade を escape (pre-existing bug)
+  // grade 編集口が増えたので addStudent prompt 経路以外でも payload 注入可能になった
+  const _esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
   const opts = state.students.map(s =>
-    `<option value="${s.id}" ${s.id === state.currentStudentId ? 'selected' : ''}>${s.name} (${s.grade})</option>`
+    `<option value="${_esc(s.id)}" ${s.id === state.currentStudentId ? 'selected' : ''}>${_esc(s.name)} (${_esc(s.grade)})</option>`
   ).join('');
   sel.innerHTML = opts;
   if (prepSel) prepSel.innerHTML = opts;
@@ -949,8 +952,152 @@ function getCurrentStudent() {
 function updateStudentInfo() {
   const s = getCurrentStudent();
   if (!s) return;
-  document.getElementById('studentGrade').textContent = `📚 ${s.grade}`;
-  document.getElementById('studentGoal').textContent = `🎯 ${s.goal}`;
+  const gradeBtn = document.getElementById('studentGrade');
+  const goalBtn = document.getElementById('studentGoal');
+  if (gradeBtn) {
+    const isGradeUnset = !s.grade || s.grade === '学年未設定';
+    gradeBtn.textContent = `📚 ${s.grade || '学年未設定'}`;
+    gradeBtn.classList.toggle('is-unset', isGradeUnset);
+  }
+  if (goalBtn) {
+    const isGoalUnset = !s.goal || s.goal === '志望校未設定';
+    goalBtn.textContent = `🎯 ${s.goal || '志望校未設定'}`;
+    goalBtn.classList.toggle('is-unset', isGoalUnset);
+  }
+}
+
+// 🎓 学年・志望校 設定モーダル (塾長指示 2026-05-26)
+function openStudentProfileModal(field /* 'grade' or 'goal' */) {
+  const s = getCurrentStudent();
+  if (!s || !s.id) { alert('生徒が選択されていません'); return; }
+  const modal = document.getElementById('studentProfileModal');
+  if (!modal) return;
+  const titleSubject = document.getElementById('profileModalSubject');
+  const studentNameEl = document.getElementById('profileStudentName');
+  const gradeSection = document.getElementById('profileGradeSection');
+  const goalSection = document.getElementById('profileGoalSection');
+  const gradeInput = document.getElementById('profileGradeInput');
+  const goalInput = document.getElementById('profileGoalInput');
+  studentNameEl.textContent = `📌 生徒: ${s.name}`;
+  if (field === 'grade') {
+    titleSubject.textContent = '学年';
+    gradeSection.style.display = '';
+    goalSection.style.display = 'none';
+    const currentVal = (s.grade && s.grade !== '学年未設定') ? s.grade : '';
+    gradeInput.value = currentVal;
+    document.querySelectorAll('.grade-preset-btn').forEach(btn => {
+      btn.classList.toggle('is-selected', btn.dataset.grade === currentVal);
+    });
+  } else {
+    titleSubject.textContent = '志望校';
+    gradeSection.style.display = 'none';
+    goalSection.style.display = '';
+    const currentVal = (s.goal && s.goal !== '志望校未設定') ? s.goal : '';
+    goalInput.value = currentVal;
+    document.querySelectorAll('.goal-preset-btn').forEach(btn => {
+      btn.classList.toggle('is-selected', btn.dataset.goal === currentVal);
+    });
+  }
+  modal._field = field;
+  modal.style.display = 'flex';
+  // 自動 focus
+  setTimeout(() => {
+    const input = field === 'grade' ? gradeInput : goalInput;
+    if (input) input.focus();
+  }, 100);
+}
+
+function closeStudentProfileModal() {
+  const modal = document.getElementById('studentProfileModal');
+  if (!modal) return;
+  modal.style.display = 'none';
+  // 🛡️ a11y fix: 元のトリガーボタンへ focus を戻す (キーボードユーザー context 保持)
+  const field = modal._field;
+  const origBtn = document.getElementById(field === 'grade' ? 'studentGrade' : 'studentGoal');
+  if (origBtn && typeof origBtn.focus === 'function') {
+    setTimeout(() => origBtn.focus(), 0);
+  }
+}
+
+function saveStudentProfileModal() {
+  const modal = document.getElementById('studentProfileModal');
+  if (!modal) return;
+  const field = modal._field;
+  const s = state.students.find(x => x.id === state.currentStudentId);
+  if (!s) { alert('生徒が見つかりません'); return; }
+  let newVal = '';
+  if (field === 'grade') {
+    newVal = (document.getElementById('profileGradeInput').value || '').trim();
+  } else if (field === 'goal') {
+    newVal = (document.getElementById('profileGoalInput').value || '').trim();
+  }
+  if (!newVal) { alert('値を選択 or 入力してください'); return; }
+  if (newVal.length > 60) { alert('60 文字以内で入力してください'); return; }
+  s[field] = newVal;
+  storage.set(STORAGE_KEYS.STUDENTS, state.students);
+  updateStudentInfo();
+  renderStudentSelector();
+  closeStudentProfileModal();
+  // Toast 風通知
+  const fieldLabel = field === 'grade' ? '学年' : '志望校';
+  if (typeof showToast === 'function') {
+    showToast(`✅ ${fieldLabel} を「${newVal}」に設定しました`);
+  }
+}
+
+// プリセット ボタンクリックで input にコピー
+function setupProfileModalHandlers() {
+  // grade preset
+  document.querySelectorAll('.grade-preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const v = btn.dataset.grade || '';
+      document.getElementById('profileGradeInput').value = v;
+      document.querySelectorAll('.grade-preset-btn').forEach(b => b.classList.remove('is-selected'));
+      btn.classList.add('is-selected');
+    });
+  });
+  // goal preset
+  document.querySelectorAll('.goal-preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const v = btn.dataset.goal || '';
+      document.getElementById('profileGoalInput').value = v;
+      document.querySelectorAll('.goal-preset-btn').forEach(b => b.classList.remove('is-selected'));
+      btn.classList.add('is-selected');
+    });
+  });
+  // 学年/志望校 ボタンクリック (init で1回だけ)
+  const gradeBtn = document.getElementById('studentGrade');
+  const goalBtn = document.getElementById('studentGoal');
+  if (gradeBtn) gradeBtn.addEventListener('click', () => openStudentProfileModal('grade'));
+  if (goalBtn) goalBtn.addEventListener('click', () => openStudentProfileModal('goal'));
+  // modal 操作
+  const closeBtn = document.getElementById('profileModalClose');
+  const cancelBtn = document.getElementById('profileModalCancel');
+  const saveBtn = document.getElementById('profileModalSave');
+  if (closeBtn) closeBtn.addEventListener('click', closeStudentProfileModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeStudentProfileModal);
+  if (saveBtn) saveBtn.addEventListener('click', saveStudentProfileModal);
+  // ESC キー
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape') {
+      const modal = document.getElementById('studentProfileModal');
+      if (modal && modal.style.display !== 'none') closeStudentProfileModal();
+    }
+  });
+  // 背景クリックで閉じる
+  const modal = document.getElementById('studentProfileModal');
+  if (modal) {
+    modal.addEventListener('click', (ev) => {
+      if (ev.target === modal) closeStudentProfileModal();
+    });
+  }
+}
+
+// init 関数末尾で呼出
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setupProfileModalHandlers);
+} else {
+  setupProfileModalHandlers();
 }
 
 // フルネームバリデーション (server/main.py の _validate_fullname と同じ規則)
