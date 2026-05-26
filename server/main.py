@@ -1179,6 +1179,10 @@ def init_db():
         # target_university = "東京医科歯科" / "東大" / "早稲田" 等 (sync スクリプトで抽出)
         # by-goal endpoint で大学完全一致を最優先で推薦
         ("lp_target_university", "ALTER TABLE lesson_prints ADD COLUMN target_university TEXT"),
+        # 🎬 動画解説 (塾長指示 2026-05-26): lesson_prints に動画 URL 列追加
+        # video_url = "/lesson-prints/videos/2026-05-26_古文_助動詞マスター講座.mp4"
+        ("lp_video_url", "ALTER TABLE lesson_prints ADD COLUMN video_url TEXT"),
+        ("lp_video_duration", "ALTER TABLE lesson_prints ADD COLUMN video_duration_sec INTEGER"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -4986,6 +4990,75 @@ def student_lesson_print_download(
         conn.close()
 
 
+@app.post("/api/admin/tts/generate")
+async def admin_tts_generate(request: Request, x_cron_secret: Optional[str] = Header(None)):
+    """🎬 OpenAI TTS proxy (塾長指示 2026-05-26: 動画解説生成用)。
+    ローカル動画生成スクリプトから text → mp3 base64 を返却。
+    既存 OPENAI_API_KEY を共有利用 (ローカルに key 不要)。
+    認証: CRON_SECRET (hmac.compare_digest)。
+    Rate limit なし (CRON_SECRET 保護で十分)。
+
+    POST body (JSON): {"text": "...", "voice": "nova", "model": "tts-1-hd"}
+    返却: {"ok": true, "audio_base64": "...", "format": "mp3", "size_bytes": N}
+    """
+    if not OPENAI_API_KEY:
+        raise HTTPException(status_code=503, detail="OPENAI_API_KEY 未設定")
+    if not CRON_SECRET:
+        raise HTTPException(status_code=503, detail="CRON_SECRET 未設定")
+    import hmac as _hmac
+    if not _hmac.compare_digest(str(x_cron_secret or ""), CRON_SECRET):
+        raise HTTPException(status_code=403, detail="CRON_SECRET 不一致")
+    try:
+        raw = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="JSON body 不正")
+    text = (raw or {}).get("text", "").strip() if isinstance(raw, dict) else ""
+    voice = (raw or {}).get("voice", "nova") if isinstance(raw, dict) else "nova"
+    model = (raw or {}).get("model", "tts-1-hd") if isinstance(raw, dict) else "tts-1-hd"
+    response_format = (raw or {}).get("response_format", "mp3") if isinstance(raw, dict) else "mp3"
+    if not text:
+        raise HTTPException(status_code=400, detail="text 必須")
+    if len(text) > 4096:  # OpenAI TTS は 4096 chars/req
+        raise HTTPException(status_code=400, detail=f"text 長すぎ: {len(text)} > 4096")
+    if voice not in ("alloy", "echo", "fable", "onyx", "nova", "shimmer"):
+        voice = "nova"
+    if model not in ("tts-1", "tts-1-hd"):
+        model = "tts-1-hd"
+    if response_format not in ("mp3", "opus", "aac", "flac", "wav", "pcm"):
+        response_format = "mp3"
+    # OpenAI TTS 呼出
+    import urllib.request as _ur
+    import urllib.error as _ue
+    import json as _json
+    import base64 as _b64
+    payload = _json.dumps({"model": model, "voice": voice, "input": text, "response_format": response_format}).encode("utf-8")
+    req = _ur.Request(
+        "https://api.openai.com/v1/audio/speech",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {OPENAI_API_KEY}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with _ur.urlopen(req, timeout=60) as resp:
+            audio_bytes = resp.read()
+    except _ue.HTTPError as e:
+        err_body = e.read().decode("utf-8", errors="replace")[:500]
+        raise HTTPException(status_code=502, detail=f"OpenAI TTS error {e.code}: {err_body}")
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"OpenAI TTS error: {type(e).__name__}: {e}")
+    return {
+        "ok": True,
+        "audio_base64": _b64.b64encode(audio_bytes).decode("ascii"),
+        "format": response_format,
+        "size_bytes": len(audio_bytes),
+        "voice": voice,
+        "model": model,
+    }
+
+
 @app.post("/api/admin/lesson-prints/sync")
 async def admin_lesson_prints_sync(request: Request, x_cron_secret: Optional[str] = Header(None)):
     """🔄 配布プリント sync endpoint (CRON_SECRET 認証)。
@@ -5034,31 +5107,38 @@ async def admin_lesson_prints_sync(request: Request, x_cron_secret: Optional[str
             c.execute("SELECT id FROM lesson_prints WHERE file_path = ?", (fp,))
             existing = c.fetchone()
             # 🏛 大学別過去問プリント (塾長指示 2026-05-26): target_university を受信して保存
+            # 🎬 動画解説 (塾長指示 2026-05-26): video_url, video_duration_sec も受信
             target_univ = p.get("target_university")
+            video_url = p.get("video_url")
+            video_dur = p.get("video_duration_sec", 0) or 0
             if existing:
                 c.execute(
                     "UPDATE lesson_prints SET title = ?, subtitle = ?, subject = ?, topic = ?, "
                     "level = ?, target_grade = ?, target_type = ?, target_university = ?, description = ?, "
-                    "pages = ?, file_size_kb = ?, is_published = ?, updated_at = CURRENT_TIMESTAMP "
+                    "pages = ?, file_size_kb = ?, is_published = ?, video_url = ?, video_duration_sec = ?, "
+                    "updated_at = CURRENT_TIMESTAMP "
                     "WHERE file_path = ?",
                     (
                         title, p.get("subtitle"), subject, p.get("topic"),
                         p.get("level"), p.get("target_grade"), p.get("target_type"), target_univ,
                         p.get("description"), p.get("pages", 0), p.get("file_size_kb", 0),
-                        1 if p.get("is_published", True) else 0, fp,
+                        1 if p.get("is_published", True) else 0,
+                        video_url, video_dur, fp,
                     ),
                 )
                 updated += 1
             else:
                 c.execute(
                     "INSERT INTO lesson_prints (title, subtitle, subject, topic, level, target_grade, "
-                    "target_type, target_university, description, file_path, pages, file_size_kb, is_published) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "target_type, target_university, description, file_path, pages, file_size_kb, is_published, "
+                    "video_url, video_duration_sec) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         title, p.get("subtitle"), subject, p.get("topic"),
                         p.get("level"), p.get("target_grade"), p.get("target_type"), target_univ,
                         p.get("description"), fp, p.get("pages", 0), p.get("file_size_kb", 0),
                         1 if p.get("is_published", True) else 0,
+                        video_url, video_dur,
                     ),
                 )
                 inserted += 1
