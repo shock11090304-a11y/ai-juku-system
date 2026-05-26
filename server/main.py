@@ -26229,21 +26229,22 @@ def university_problems_backfill_pdf_links(
             # subject 表記揺れ対策 (例: "国語(現代文)" "国語(現代文)" → "国語")。半角/全角両対応。
             subj_normalized = up_subj.split("(")[0].split("(")[0].strip()
 
-            # マッチング: 2 パス方式 (致命 2 fix・規則 2 上書き bug 解消)
-            # Pass 1: target_university 厳密一致 + subject 一致 (最優先)
+            # 🛡️ 3 視点 review Round 4 致命 fix: subject 部分一致が「英語 in 世界史」のような
+            # 全く違う科目をマッチさせていた → 厳密一致のみに変更。
+            # Pass 1: target_university + subject **厳密一致** (最優先)
             best_pdf = None
             for pdf in pdfs:
                 lp_univ = pdf["target_university"]
                 lp_subj = pdf["subject"]
-                if lp_univ in aliases and (lp_subj == subj_normalized or subj_normalized in lp_subj):
+                if lp_univ in aliases and lp_subj == subj_normalized:
                     best_pdf = pdf
                     break
-            # Pass 2: Pass 1 不一致時のみ title 部分マッチ (1 件目で確定・上書きしない)
+            # Pass 2: Pass 1 不一致時のみ title + subject の両方マッチ (subject は厳密一致 / title は alias 含有)
             if not best_pdf:
                 for pdf in pdfs:
                     lp_title = pdf["title"]
                     lp_subj = pdf["subject"]
-                    if lp_title and any(a in lp_title for a in aliases) and (subj_normalized in lp_title or subj_normalized in lp_subj):
+                    if lp_title and any(a in lp_title for a in aliases) and lp_subj == subj_normalized:
                         best_pdf = pdf
                         break  # 致命 2 fix: title 一致は 1 件目で固定 (上書きしない)
 
