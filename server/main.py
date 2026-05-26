@@ -738,6 +738,8 @@ def init_db():
         tags TEXT,
         status TEXT DEFAULT 'published',
         source TEXT DEFAULT 'claude_max',
+        pdf_url TEXT,
+        pdf_title TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     CREATE INDEX IF NOT EXISTS idx_university_problems ON university_problems(university, subject, status, created_at);
@@ -1207,6 +1209,11 @@ def init_db():
         # NULL なら配信なし・mypage の「保護者メール設定」で登録
         ("parent_email", "ALTER TABLE students ADD COLUMN parent_email TEXT DEFAULT NULL"),
         ("parent_email_enabled", "ALTER TABLE students ADD COLUMN parent_email_enabled INTEGER DEFAULT 1"),
+        # 📄 大学別問題 → 配布プリント PDF 連携 (塾長指示 2026-05-27 案 A)
+        # 各 university_problems record に対応する PDF (lesson_prints) の URL + title を紐付け
+        # university-exam.html で「📄 配布プリント版で開く」ボタンを表示
+        ("up_pdf_url", "ALTER TABLE university_problems ADD COLUMN pdf_url TEXT"),
+        ("up_pdf_title", "ALTER TABLE university_problems ADD COLUMN pdf_title TEXT"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -25992,9 +25999,10 @@ def mock_exam_submit(payload: dict, request: Request, authorization: Optional[st
 @app.get("/api/university-problems")
 def university_problems_list(university: Optional[str] = None, subject: Optional[str] = None,
                               year: Optional[int] = None, limit: int = 30, offset: int = 0):
-    """大学別問題一覧。重い question_text 等は含めず、ID + メタのみ。"""
+    """大学別問題一覧。重い question_text 等は含めず、ID + メタのみ。
+    🛡️ 2026-05-27: pdf_url を含めることで生徒画面で「📄 配布プリント版」ボタンを直接表示可能に。"""
     conn = db(); c = conn.cursor()
-    sql = "SELECT id, university, faculty, year, subject, topic, problem_type, difficulty, inspired_by, tags, created_at FROM university_problems WHERE status='published'"
+    sql = "SELECT id, university, faculty, year, subject, topic, problem_type, difficulty, inspired_by, tags, pdf_url, pdf_title, created_at FROM university_problems WHERE status='published'"
     params = []
     if university:
         sql += " AND university = ?"; params.append(university)
@@ -26015,9 +26023,10 @@ def university_problems_list(university: Optional[str] = None, subject: Optional
 
 @app.get("/api/university-problems/{pid}")
 def university_problems_detail(pid: int):
-    """1 問の詳細 (問題文・選択肢・解答・解説 全て返す)。"""
+    """1 問の詳細 (問題文・選択肢・解答・解説 全て返す)。
+    🛡️ 2026-05-27: pdf_url / pdf_title を含めて返す (生徒画面で「📄 配布プリント版で開く」ボタン用)。"""
     conn = db(); c = conn.cursor()
-    c.execute("SELECT id, university, faculty, year, subject, topic, problem_type, question_text, choices, answer, explanation, difficulty, inspired_by, tags, created_at FROM university_problems WHERE id=? AND status='published'", (pid,))
+    c.execute("SELECT id, university, faculty, year, subject, topic, problem_type, question_text, choices, answer, explanation, difficulty, inspired_by, tags, pdf_url, pdf_title, created_at FROM university_problems WHERE id=? AND status='published'", (pid,))
     r = c.fetchone()
     conn.close()
     if not r:
@@ -26094,6 +26103,188 @@ def university_problems_import(payload: dict, authorization: Optional[str] = Hea
     finally:
         conn.close()
     return {"ok": True, "inserted": inserted, "failed": failed, "failed_details": failed_details[:5]}
+
+
+@app.post("/api/admin/university-problems/backfill-pdf-links")
+def university_problems_backfill_pdf_links(
+    payload: dict = None,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🛡️ 塾長指示 2026-05-27 (案 A): university_problems の各 record に対応する PDF を
+    lesson_prints から自動マッチングして pdf_url / pdf_title を埋める。
+
+    マッチング規則 (優先順位):
+    1. lesson_prints.target_university が university と一致 + lesson_prints.subject が subject と一致
+    2. lesson_prints.title or filename に university + subject が含まれる (LIKE マッチ)
+
+    payload (optional): {"dry_run": true, "university": "京大", "subject": "物理"} で部分実行可
+
+    認証: admin Bearer or x-cron-secret"""
+    import hmac as _hmac
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and _hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    payload = payload or {}
+    dry_run = bool(payload.get("dry_run", False))
+    filter_univ = payload.get("university")
+    filter_subj = payload.get("subject")
+
+    # 大学名の正規化マップ (双方向): どちらの表記でも引けるよう、各 alias がキーになるよう構築
+    # 🛡️ 3 視点 review fix 2026-05-27 (致命 1 / 準致命 A 対応):
+    # - 「東大実践模試」を「東大」alias から除外 (本物の東大過去問が模試 PDF にハイジャックされる致命傷)
+    # - 双方向 alias: 旧字体「慶應」と新字体「慶応」両方を引けるようにする
+    # - MARCH / 関関同立 / その他大学を追加
+    _ALIAS_GROUPS = [
+        ["東大", "東京大学"],
+        ["京大", "京都大学"],
+        ["早稲田", "早稲田大学", "早稲田文化構想"],
+        ["一橋", "一橋大学"],
+        ["慶応", "慶應", "慶応大学", "慶應大学", "慶應義塾", "慶応義塾"],
+        ["上智", "上智大学"],
+        ["ICU", "国際基督教大学"],
+        ["明治", "明治大学"],
+        ["青山学院", "青山", "青学"],
+        ["立教", "立教大学"],
+        ["中央", "中央大学"],
+        ["法政", "法政大学"],
+        ["同志社", "同志社大学"],
+        ["立命館", "立命館大学"],
+        ["関西大", "関西大学", "関大"],
+        ["関学", "関西学院", "関西学院大学"],
+        ["横浜国立", "横浜国立大学", "横国"],
+        ["千葉医", "千葉大学医", "千葉大学", "千葉大"],
+        ["東工大", "東京工業大学", "東京工大"],
+        ["神戸大", "神戸", "神戸大学"],
+        ["東医歯", "東京医科歯科", "東京医科歯科大学"],
+        ["お茶の水", "お茶の水女子大学", "お茶大"],
+        ["MARCH", "march"],
+        ["医学部", "医学部受験"],
+    ]
+    UNIV_ALIASES = {}
+    for group in _ALIAS_GROUPS:
+        for name in group:
+            UNIV_ALIASES[name] = group
+
+    conn = db()
+    c = conn.cursor()
+    try:
+        # 1. lesson_prints から PDF 一覧取得
+        # 🛡️ 3 視点 review fix: target_type='模試' も除外 (東大実践模試 PDF が東大過去問に誤マッチする致命傷防止)
+        c.execute("SELECT id, title, subject, target_university, file_path, target_type FROM lesson_prints WHERE is_published = 1 AND COALESCE(target_type, '') NOT IN ('解答解説', '模試', '模擬試験')")
+        lp_rows = c.fetchall()
+        pdfs = []
+        for row in lp_rows:
+            if isinstance(row, dict):
+                pdfs.append({
+                    "id": row.get("id"),
+                    "title": row.get("title") or "",
+                    "subject": row.get("subject") or "",
+                    "target_university": row.get("target_university") or "",
+                    "file_path": row.get("file_path") or "",
+                    "target_type": row.get("target_type") or "",
+                })
+            else:
+                pdfs.append({"id": row[0], "title": row[1] or "", "subject": row[2] or "",
+                             "target_university": row[3] or "", "file_path": row[4] or "",
+                             "target_type": (row[5] if len(row) > 5 else "") or ""})
+
+        # 2. university_problems を SELECT (filter 適用)
+        sql = "SELECT id, university, subject FROM university_problems WHERE status='published'"
+        params = []
+        if filter_univ:
+            sql += " AND university = ?"; params.append(filter_univ)
+        if filter_subj:
+            sql += " AND subject = ?"; params.append(filter_subj)
+        c.execute(sql, tuple(params))
+        up_rows = c.fetchall()
+
+        matched = 0
+        updated = 0
+        no_match = []
+        match_log = []
+
+        for row in up_rows:
+            if isinstance(row, dict):
+                up_id = row.get("id")
+                up_univ = (row.get("university") or "").strip()
+                up_subj = (row.get("subject") or "").strip()
+            else:
+                up_id = row[0]
+                up_univ = (row[1] or "").strip()
+                up_subj = (row[2] or "").strip()
+
+            if not up_univ or not up_subj:
+                continue
+
+            # 大学名のエイリアス取得 (双方向 alias 化済 → どの表記でも引ける)
+            aliases = UNIV_ALIASES.get(up_univ, [up_univ])
+            # subject 表記揺れ対策 (例: "国語(現代文)" "国語(現代文)" → "国語")。半角/全角両対応。
+            subj_normalized = up_subj.split("(")[0].split("(")[0].strip()
+
+            # マッチング: 2 パス方式 (致命 2 fix・規則 2 上書き bug 解消)
+            # Pass 1: target_university 厳密一致 + subject 一致 (最優先)
+            best_pdf = None
+            for pdf in pdfs:
+                lp_univ = pdf["target_university"]
+                lp_subj = pdf["subject"]
+                if lp_univ in aliases and (lp_subj == subj_normalized or subj_normalized in lp_subj):
+                    best_pdf = pdf
+                    break
+            # Pass 2: Pass 1 不一致時のみ title 部分マッチ (1 件目で確定・上書きしない)
+            if not best_pdf:
+                for pdf in pdfs:
+                    lp_title = pdf["title"]
+                    lp_subj = pdf["subject"]
+                    if lp_title and any(a in lp_title for a in aliases) and (subj_normalized in lp_title or subj_normalized in lp_subj):
+                        best_pdf = pdf
+                        break  # 致命 2 fix: title 一致は 1 件目で固定 (上書きしない)
+
+            if best_pdf:
+                matched += 1
+                match_log.append({
+                    "up_id": up_id, "up_univ": up_univ, "up_subj": up_subj,
+                    "pdf_title": best_pdf["title"], "pdf_path": best_pdf["file_path"]
+                })
+                if not dry_run:
+                    c.execute(
+                        "UPDATE university_problems SET pdf_url = ?, pdf_title = ? WHERE id = ?",
+                        (best_pdf["file_path"], best_pdf["title"], up_id)
+                    )
+                    updated += 1
+            else:
+                no_match.append({"up_id": up_id, "up_univ": up_univ, "up_subj": up_subj})
+
+        if not dry_run:
+            conn.commit()
+    finally:
+        conn.close()
+
+    # 🛡️ 3 視点 review fix (準致命 C): 複数 up が同一 PDF にマッピングされたケースを検出
+    pdf_to_ups = {}
+    for entry in match_log:
+        pdf_path = entry.get("pdf_path", "")
+        if pdf_path:
+            pdf_to_ups.setdefault(pdf_path, []).append(entry["up_id"])
+    duplicates = {k: v for k, v in pdf_to_ups.items() if len(v) > 1}
+    return {
+        "ok": True,
+        "dry_run": dry_run,
+        "matched": matched,
+        "updated": updated,
+        "no_match_count": len(no_match),
+        "no_match_sample": no_match[:30],  # 視認性向上 (10 → 30)
+        "match_log_sample": match_log[:50],  # 視認性向上 (10 → 50)
+        "duplicate_pdf_assignments": len(duplicates),  # 同一 PDF が複数問題に紐付いた数
+        "duplicate_sample": dict(list(duplicates.items())[:5]),
+    }
 
 
 @app.get("/api/mock-exam/history")

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>大学別 過去問風オリジナル | AIコーチング</title>
-  <script src="cache-purge.js?v=20260523-social-subtabs"></script>
+  <script src="cache-purge.js?v=20260527-pdf-link-badge"></script>
   <script src="frontend-error-monitor.js"></script>
   <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost-r2">
   <link rel="stylesheet" href="vocab.css?v=20260525-mistakes-tag">
@@ -364,13 +364,14 @@
           list.innerHTML = `
             <h3 style="color:#c7d2fe;margin-bottom:0.7rem;">${escapeHtml(univ)} の問題 (${d.items.length} 問)</h3>
           ` + d.items.map(it => `
-            <div class="ux-item" data-id="${it.id}">
+            <div class="ux-item${it.pdf_url ? ' ux-item-has-pdf' : ''}" data-id="${it.id}">
               <div class="ux-item-row1">
                 <div class="ux-topic">${escapeHtml(it.topic || '問題')}</div>
                 <div class="ux-badges">
                   ${it.faculty ? `<span class="ux-badge">${escapeHtml(it.faculty)}</span>` : ''}
                   <span class="ux-badge">${it.problem_type === 'multiple_choice' ? '4択' : '記述'}</span>
                   <span class="ux-badge diff-${escapeHtml(it.difficulty || '')}">${escapeHtml(it.difficulty || '標準')}</span>
+                  ${it.pdf_url ? '<span class="ux-badge" style="background:linear-gradient(135deg,#f59e0b,#dc2626);color:#fff;border:none;">📄 PDF 版あり</span>' : ''}
                 </div>
               </div>
               <div class="ux-inspired">${escapeHtml(it.inspired_by || '')}</div>
@@ -414,6 +415,17 @@
             </div>
           `;
         }
+        // 🛡️ 2026-05-27 塾長指示「該当問題ボタン → 配布プリント PDF 表示」(案 A):
+        // pdf_url があれば「📄 配布プリント版で開く」ボタンを併設。新タブで開いて演習機能と両立。
+        // 🛡️ URL scheme guard (3 視点 review・frontend 軽微指摘 fix):
+        // 内部パス (/lesson-prints/...) と https:// のみ許可。javascript: 等を弾く
+        const _isPdfUrlSafe = (u) => typeof u === 'string' && (u.startsWith('/lesson-prints/') || u.startsWith('https://'));
+        const pdfButtonHtml = _isPdfUrlSafe(p.pdf_url) ? `
+          <a href="${escapeHtml(p.pdf_url)}" target="_blank" rel="noopener noreferrer"
+             class="btn-primary btn-small ux-pdf-btn"
+             style="background:linear-gradient(135deg,#f59e0b,#dc2626);color:#fff;text-decoration:none;display:inline-block;padding:0.45rem 0.9rem;border-radius:6px;font-size:0.85rem;font-weight:700;margin-right:6px;"
+             title="${escapeHtml(p.pdf_title || '配布プリント')}">📄 配布プリント版で開く</a>
+        ` : '';
         detail.innerHTML = `
           <div class="ux-detail-card">
             <div class="ux-detail-meta">
@@ -423,6 +435,7 @@
             <div class="ux-question">${formatScientific(p.question_text)}</div>
             ${choicesHtml}
             <div class="ux-actions">
+              ${pdfButtonHtml}
               ${isMC ? '' : '<button type="button" class="btn-secondary btn-small" id="uxRevealBtn">解答・解説を表示</button>'}
               <button type="button" class="btn-ghost btn-small" id="uxBackBtn">← 一覧に戻る</button>
             </div>
