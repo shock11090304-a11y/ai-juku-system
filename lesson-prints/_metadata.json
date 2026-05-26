@@ -346,8 +346,8 @@
       "target_university": "東京大学",
       "video_url": null,
       "video_duration_sec": 0,
-      "pages": 14,
-      "file_size_kb": 1081,
+      "pages": 12,
+      "file_size_kb": 1056,
       "file_path": "/lesson-prints/2026-05-26_東大実践模試_理系数学_自習プリント_answers.pdf"
     },
     {
@@ -419,6 +419,20 @@
       "pages": 9,
       "file_size_kb": 851,
       "file_path": "/lesson-prints/2026-05-26_京大物理_本番水準_自習プリント.pdf"
+    },
+    {
+      "title": "京大物理 本番水準 自習プリント (解答解説)",
+      "subject": "物理",
+      "topic": "京大物理_本番水準_自習プリント",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "解答解説",
+      "target_university": "京都大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 7,
+      "file_size_kb": 788,
+      "file_path": "/lesson-prints/2026-05-26_京大物理_本番水準_自習プリント_answers.pdf"
     },
     {
       "title": "千葉大学医 生物 過去問風 遺伝子",
@@ -500,8 +514,8 @@
       "target_university": "東京大学",
       "video_url": null,
       "video_duration_sec": 0,
-      "pages": 8,
-      "file_size_kb": 1080,
+      "pages": 7,
+      "file_size_kb": 1032,
       "file_path": "/lesson-prints/2026-05-26_東大化学_本番水準_自習プリント_answers.pdf"
     },
     {
@@ -517,6 +531,20 @@
       "pages": 8,
       "file_size_kb": 1064,
       "file_path": "/lesson-prints/2026-05-26_東大実践模試_化学_自習プリント.pdf"
+    },
+    {
+      "title": "東大実践模試 化学 自習プリント (解答解説)",
+      "subject": "化学",
+      "topic": "東大実践模試_化学_自習プリント",
+      "level": "東大レベル",
+      "target_grade": "高校生",
+      "target_type": "解答解説",
+      "target_university": "東京大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 6,
+      "file_size_kb": 1024,
+      "file_path": "/lesson-prints/2026-05-26_東大実践模試_化学_自習プリント_answers.pdf"
     },
     {
       "title": "sample biology",
@@ -1074,8 +1102,8 @@
       "target_university": "早稲田大学",
       "video_url": null,
       "video_duration_sec": 0,
-      "pages": 20,
-      "file_size_kb": 1695,
+      "pages": 11,
+      "file_size_kb": 1649,
       "file_path": "/lesson-prints/2026-05-26_早稲田文化構想_英語_自習プリント_answers.pdf"
     },
     {
