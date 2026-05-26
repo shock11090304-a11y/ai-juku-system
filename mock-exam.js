@@ -182,13 +182,13 @@
     const uid = e.target.dataset.uid;
     if (!file || !uid) return;
     if (file.size > 5 * 1024 * 1024) {
-      alert('画像が大きすぎます (5MB 以内)');
+      _toastOrAlert('画像が大きすぎます (5MB 以内)', 'warn');
       e.target.value = '';
       return;
     }
     const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!allowedMimes.includes(file.type)) {
-      alert('画像形式は JPEG / PNG / WebP のみ対応');
+      _toastOrAlert('画像形式は JPEG / PNG / WebP のみ対応', 'warn');
       e.target.value = '';
       return;
     }
@@ -209,7 +209,7 @@
       }
     };
     reader.onerror = () => {
-      alert('画像の読み込みに失敗しました');
+      _toastOrAlert('画像の読み込みに失敗しました', 'error');
       e.target.value = '';
     };
     reader.readAsDataURL(file);
@@ -227,11 +227,11 @@
     const imageMime = btn.dataset.imageMime || 'image/jpeg';
 
     if (!essay && !imageB64) {
-      alert('テキスト入力 or 写真アップロードのいずれかが必要です');
+      _toastOrAlert('テキスト入力 or 写真アップロードのいずれかが必要です', 'warn');
       return;
     }
     if (essay && essay.length < 20 && !imageB64) {
-      alert('英作文が短すぎます (20 文字以上 or 写真をアップロード)');
+      _toastOrAlert('英作文が短すぎます (20 文字以上 or 写真をアップロード)', 'warn');
       return;
     }
 
@@ -436,7 +436,8 @@
       if (typeof window.track === 'function') window.track('mock_exam_submit', { exam_type: currentSession.exam_type, percentage: data.percentage });
       renderResult(data);
     } catch (e) {
-      alert(`採点エラー: ${e.message}`);
+      // 🎯 2026-05-26 audit Phase 3: toast UI 化 (alert は fallback)
+      _toastOrAlert(`採点エラー: ${e.message}`, 'error');
       submitBtn.disabled = false;
       submitBtn.textContent = '📊 採点する';
     }
@@ -495,6 +496,16 @@
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
+  // 🎯 2026-05-26 audit Phase 3: 共通 toast/alert helper
+  // toast.js が読まれていれば window.showToast を使用、未読み時は alert に fallback。
+  function _toastOrAlert(msg, type) {
+    if (typeof window.showToast === 'function') {
+      window.showToast(msg, type || 'info');
+    } else {
+      alert(msg);
+    }
+  }
+
   // 🎯 2026-05-22 塾長指示: 「下線部が引けていない」bug fix (HTML body 用)
   //   ① 問題データに <u>...</u> タグがあれば実 underline として復活 (whitelist 方式・XSS 安全)
   //   ② <u> 無し + 「下線部」を含む + (A)(B)(C)(D) 全揃いの正誤問題は自動で下線ラップ
@@ -523,7 +534,7 @@
     document.getElementById('meSubmitBtn').addEventListener('click', () => {
       const total = Object.keys(answers).length;
       if (total === 0) {
-        alert('まだ何も解答されていません。');
+        _toastOrAlert('まだ何も解答されていません。', 'warn');
         return;
       }
       if (confirm('採点しますか? (途中提出も可能です)')) submitExam();
