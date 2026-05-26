@@ -107,7 +107,7 @@ function renderFamilyDashboard() {
     return `
       <div class="family-student-card ${s.id === state.currentStudentId ? 'active' : ''}">
         <div class="fsc-header">
-          <div class="fsc-avatar">${s.name.charAt(0)}</div>
+          <div class="fsc-avatar">${escapeHtml((s.name || '').charAt(0))}</div>
           <div>
             <div class="fsc-name">${escapeHtml(s.name)}</div>
             <div class="fsc-grade">${escapeHtml(s.grade)}</div>
@@ -129,8 +129,9 @@ function renderFamilyDashboard() {
           </div>
         </div>
         <div class="fsc-actions">
-          ${s.id !== state.currentStudentId ? `<button class="btn-small" onclick="switchStudent(${s.id})">🔄 この生徒に切替</button>` : '<button class="btn-small btn-disabled" disabled>✓ 現在の生徒</button>'}
-          ${students.length > 1 ? `<button class="btn-small btn-delete" onclick="removeStudent(${s.id})">🗑 削除</button>` : ''}
+          ${/* 🛡️ XSS fix 2026-05-26: s.id を Number 強制で JS-context 注入塞ぐ (juku-manager import で string id 混入の可能性) */''}
+          ${s.id !== state.currentStudentId ? `<button class="btn-small" onclick="switchStudent(${Number(s.id) || 0})">🔄 この生徒に切替</button>` : '<button class="btn-small btn-disabled" disabled>✓ 現在の生徒</button>'}
+          ${students.length > 1 ? `<button class="btn-small btn-delete" onclick="removeStudent(${Number(s.id) || 0})">🗑 削除</button>` : ''}
         </div>
       </div>
     `;
@@ -551,8 +552,9 @@ function getEmailLog() {
 function renderEmailStudentsList() {
   const list = document.getElementById('emailStudentsList');
   if (!list) return;
+  // 🛡️ XSS fix 2026-05-26: data-id="${s.id}" 属性も escape (juku-manager import で string id 混入の可能性)
   list.innerHTML = state.students.map(s => `
-    <div class="email-student-item" data-id="${s.id}">
+    <div class="email-student-item" data-id="${escapeHtml(s.id)}">
       <div class="esi-info">
         <div class="esi-name">${escapeHtml(s.name)} <span class="esi-grade">${escapeHtml(s.grade)}</span></div>
         <div class="esi-email">
@@ -562,10 +564,10 @@ function renderEmailStudentsList() {
         </div>
       </div>
       <div class="esi-actions">
-        <button class="btn-small email-edit-btn" data-id="${s.id}" title="保護者メール編集">✏️</button>
-        <button class="btn-small email-quick-btn" data-id="${s.id}" data-tpl="monthly_report" title="月次レポート送信">📈</button>
-        <button class="btn-small email-quick-btn" data-id="${s.id}" data-tpl="meeting_request" title="面談案内">👥</button>
-        <button class="btn-small email-select-btn" data-id="${s.id}" title="この保護者にメール作成">✉️</button>
+        <button class="btn-small email-edit-btn" data-id="${escapeHtml(s.id)}" title="保護者メール編集">✏️</button>
+        <button class="btn-small email-quick-btn" data-id="${escapeHtml(s.id)}" data-tpl="monthly_report" title="月次レポート送信">📈</button>
+        <button class="btn-small email-quick-btn" data-id="${escapeHtml(s.id)}" data-tpl="meeting_request" title="面談案内">👥</button>
+        <button class="btn-small email-select-btn" data-id="${escapeHtml(s.id)}" title="この保護者にメール作成">✉️</button>
       </div>
     </div>
   `).join('');
@@ -670,8 +672,9 @@ function initEmailTab() {
   // 宛先プルダウン
   const sel = document.getElementById('emailToStudent');
   if (!sel) return;
+  // 🛡️ XSS fix 2026-05-26: s.name / s.grade を escape (pre-existing bug, renderStudentSelector と同じ)
   sel.innerHTML = state.students.map(s =>
-    `<option value="${s.id}">${s.name}（${s.grade}）${s.parentEmail ? ' 📧' : ' ⚠️未登録'}</option>`
+    `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}（${escapeHtml(s.grade)}）${s.parentEmail ? ' 📧' : ' ⚠️未登録'}</option>`
   ).join('');
 
   renderEmailStudentsList();
@@ -920,11 +923,9 @@ function updateModeIndicator() {
 function renderStudentSelector() {
   const sel = document.getElementById('studentSelect');
   const prepSel = document.getElementById('prepStudent');
-  // 🛡️ XSS fix 2026-05-26: s.name / s.grade を escape (pre-existing bug)
-  // grade 編集口が増えたので addStudent prompt 経路以外でも payload 注入可能になった
-  const _esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  // 🛡️ XSS fix 2026-05-26: s.name / s.grade を escape (canonical escapeHtml で統一)
   const opts = state.students.map(s =>
-    `<option value="${_esc(s.id)}" ${s.id === state.currentStudentId ? 'selected' : ''}>${_esc(s.name)} (${_esc(s.grade)})</option>`
+    `<option value="${escapeHtml(s.id)}" ${s.id === state.currentStudentId ? 'selected' : ''}>${escapeHtml(s.name)} (${escapeHtml(s.grade)})</option>`
   ).join('');
   sel.innerHTML = opts;
   if (prepSel) prepSel.innerHTML = opts;
@@ -3526,14 +3527,17 @@ async function loadIdxMaterials() {
       const c = IDX_MM_STATUS_COLOR[m.status] || '#22d3ee';
       const lab = IDX_MM_STATUS_LABEL[m.status] || m.status;
       const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+      // 🛡️ XSS fix 2026-05-26: m.id / m.status は student_materials.id (BIGSERIAL integer) /
+      // status TEXT で server-issued。Number 化したいが UUID 移行に備え esc() で attribute escape
+      // のみに留める (Number(integer)=integer なので Number 化しても安全だが、最小変更で攻撃面塞ぐ)。
       return `
-        <div class="idx-mm-item" data-id="${m.id}" style="background:rgba(0,0,0,0.3); border:1px solid ${c}33; border-radius:8px; padding:0.45rem 0.6rem; display:inline-flex; align-items:center; gap:0.4rem;">
+        <div class="idx-mm-item" data-id="${esc(m.id)}" style="background:rgba(0,0,0,0.3); border:1px solid ${c}33; border-radius:8px; padding:0.45rem 0.6rem; display:inline-flex; align-items:center; gap:0.4rem;">
           <span style="color:${c}; font-weight:700; font-size:0.78rem;">${esc(m.subject)}</span>
           <span style="color:#e4e4e7; font-size:0.82rem;">${esc(m.name)}</span>
-          <span style="color:${c}; font-size:0.7rem;">${lab}</span>
+          <span style="color:${c}; font-size:0.7rem;">${esc(lab)}</span>
           ${m.note ? `<span style="color:#9ca3af; font-size:0.7rem;">(${esc(m.note)})</span>` : ''}
-          <button class="idx-mm-cycle-btn" data-id="${m.id}" data-status="${m.status}" aria-label="状態を変更" title="状態を変更 (使用中→完了→お休み→使用中)" style="background:rgba(255,255,255,0.08); border:0; color:#9ca3af; padding:0.15rem 0.35rem; border-radius:4px; cursor:pointer; font-size:0.7rem;">↻</button>
-          <button class="idx-mm-delete-btn" data-id="${m.id}" data-name="${esc(m.name)}" data-subject="${esc(m.subject)}" aria-label="削除" title="削除" style="background:rgba(239,68,68,0.15); border:0; color:#fca5a5; padding:0.15rem 0.35rem; border-radius:4px; cursor:pointer; font-size:0.7rem;">✕</button>
+          <button class="idx-mm-cycle-btn" data-id="${esc(m.id)}" data-status="${esc(m.status)}" aria-label="状態を変更" title="状態を変更 (使用中→完了→お休み→使用中)" style="background:rgba(255,255,255,0.08); border:0; color:#9ca3af; padding:0.15rem 0.35rem; border-radius:4px; cursor:pointer; font-size:0.7rem;">↻</button>
+          <button class="idx-mm-delete-btn" data-id="${esc(m.id)}" data-name="${esc(m.name)}" data-subject="${esc(m.subject)}" aria-label="削除" title="削除" style="background:rgba(239,68,68,0.15); border:0; color:#fca5a5; padding:0.15rem 0.35rem; border-radius:4px; cursor:pointer; font-size:0.7rem;">✕</button>
         </div>`;
     }).join('');
     list.querySelectorAll('.idx-mm-cycle-btn').forEach(b => b.addEventListener('click', () => cycleIdxMaterialStatus(b.getAttribute('data-id'), b.getAttribute('data-status'), b)));
@@ -4657,6 +4661,11 @@ function spTaskCard(t, isToday) {
   }
   // 🎯 タイマー UI: 実行中は ⏹ 停止 / 未開始は ▶️ 開始 / 停止後 (actual_min>0) は ▶️ 再開
   // 塾長指示 2026-05-18: 「一度止めると再開できない」報告 → actual_min 残ってても ▶️ 再開ボタン表示
+  // 🛡️ XSS fix 2026-05-26: t.id は **client localStorage 由来 string** (line 4184/4295 で
+  // 'c_'+Math.random() / 'm_'+Math.random() 生成)。Number 化 NG (NaN→0 化で全 task 衝突 →
+  // spStopTimer の find(x.id===taskId) が全失敗する致命 regression)。
+  // spEscape で attribute breakout のみ塞ぐ (id 自体は client 自己生成で attacker 注入経路無し)。
+  const safeTid = spEscape(t.id == null ? '' : t.id);
   let timerBtn = '';
   if (!t.completed && isToday) {
     if (isRunning) {
@@ -4671,29 +4680,29 @@ function spTaskCard(t, isToday) {
         const mm = String(Math.floor(remaining / 60)).padStart(2, '0');
         const ss = String(remaining % 60).padStart(2, '0');
         const cycleNum = Math.floor(elapsedSec / focusSec) + 1;
-        timerBtn = `<button class="sp-timer-btn sp-timer-stop sp-timer-pomodoro" data-tid="${t.id}" onclick="event.stopPropagation(); spStopTimer('${t.id}')" title="Pomodoro 集中中 (停止) 残り時間表示">🍅 残${mm}:${ss}<span class="sp-pomo-cycle">${cycleNum}</span></button>`;
+        timerBtn = `<button class="sp-timer-btn sp-timer-stop sp-timer-pomodoro" data-tid="${safeTid}" onclick="event.stopPropagation(); spStopTimer('${safeTid}')" title="Pomodoro 集中中 (停止) 残り時間表示">🍅 残${mm}:${ss}<span class="sp-pomo-cycle">${cycleNum}</span></button>`;
       } else {
         const mm = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
         const ss = String(elapsedSec % 60).padStart(2, '0');
-        timerBtn = `<button class="sp-timer-btn sp-timer-stop" data-tid="${t.id}" onclick="event.stopPropagation(); spStopTimer('${t.id}')" title="タイマー停止">⏹ ${mm}:${ss}</button>`;
+        timerBtn = `<button class="sp-timer-btn sp-timer-stop" data-tid="${safeTid}" onclick="event.stopPropagation(); spStopTimer('${safeTid}')" title="タイマー停止">⏹ ${mm}:${ss}</button>`;
       }
     } else if (t.actual_min > 0) {
       // 停止済みで実績あり → 再開ボタン
       // 🛠 round 2 UX fix: 「+再開」は日本語として不自然 → 「再開」 + aria-label で意味伝達
-      timerBtn = `<button class="sp-timer-btn sp-timer-resume" data-tid="${t.id}" onclick="event.stopPropagation(); spStartTimer('${t.id}')" aria-label="タイマーを再開して実績に時間を加算" title="タイマー再開 (実績に加算されます)">▶️ 再開</button>`;
+      timerBtn = `<button class="sp-timer-btn sp-timer-resume" data-tid="${safeTid}" onclick="event.stopPropagation(); spStartTimer('${safeTid}')" aria-label="タイマーを再開して実績に時間を加算" title="タイマー再開 (実績に加算されます)">▶️ 再開</button>`;
     } else {
       // 未着手 → 通常の開始ボタン
-      timerBtn = `<button class="sp-timer-btn sp-timer-start" data-tid="${t.id}" onclick="event.stopPropagation(); spStartTimer('${t.id}')" title="タイマー開始">▶️</button>`;
+      timerBtn = `<button class="sp-timer-btn sp-timer-start" data-tid="${safeTid}" onclick="event.stopPropagation(); spStartTimer('${safeTid}')" title="タイマー開始">▶️</button>`;
     }
   }
-  return `<div class="${cls}" data-id="${t.id}">
-    <input type="checkbox" ${t.completed ? 'checked' : ''} onclick="event.stopPropagation(); spToggleTask('${t.id}')" aria-label="完了">
+  return `<div class="${cls}" data-id="${safeTid}">
+    <input type="checkbox" ${t.completed ? 'checked' : ''} onclick="event.stopPropagation(); spToggleTask('${safeTid}')" aria-label="完了">
     <div class="sp-task-meta">
       <div class="sp-task-title"><span class="sp-task-subject ${subjClass}">${spEscape(t.subject)}</span>${spEscape(t.title)}</div>
-      <div class="sp-task-sub">${isToday ? '今日' : t.planned_date}${durStr}${t.source === 'manual' ? ' · 手動' : ''}</div>
+      <div class="sp-task-sub">${isToday ? '今日' : spEscape(String(t.planned_date || ''))}${durStr}${t.source === 'manual' ? ' · 手動' : ''}</div>
     </div>
     ${timerBtn}
-    <button class="sp-task-del" onclick="event.stopPropagation(); spDeleteTask('${t.id}')" title="削除">×</button>
+    <button class="sp-task-del" onclick="event.stopPropagation(); spDeleteTask('${safeTid}')" title="削除">×</button>
   </div>`;
 }
 
@@ -8672,8 +8681,12 @@ function importStudentsFromData(data) {
 
   for (const s of data.students) {
     if (!s.name || s.status !== '通塾') { skipped++; continue; }
+    // 🛡️ XSS fix 2026-05-26: s.id を整数強制 (string id だと Math.max 計算が NaN になり addStudent 破綻 + onclick/data-id 注入)
+    const importId = Number.parseInt(s.id, 10);
+    if (!Number.isFinite(importId)) { skipped++; continue; }
+    const newId = importId + 1000;
     // Merge: skip if already in system
-    if (existingIds.has(s.id + 1000)) { skipped++; continue; }
+    if (existingIds.has(newId)) { skipped++; continue; }
 
     const courses = Array.isArray(s.courses) ? s.courses.join(', ') : '';
     const subjects = { 英語: 60, 数学: 60, 国語: 60 };
@@ -8682,7 +8695,7 @@ function importStudentsFromData(data) {
     else if (courses.includes('英検2級') || courses.includes('英文解釈')) subjects.英語 = 70;
 
     existing.push({
-      id: s.id + 1000, // Offset to avoid collision with seed
+      id: newId, // Offset to avoid collision with seed
       name: s.name,
       grade: s.grade || '未設定',
       goal: courses || '未設定',
@@ -8757,8 +8770,13 @@ function renderMoshiList() {
     list.innerHTML = '<p class="placeholder">まだ模試が登録されていません。左側のフォームから追加してください。</p>';
     return;
   }
-  list.innerHTML = items.map(m => `
-    <div class="moshi-card" data-id="${m.id}">
+  // 🛡️ XSS fix 2026-05-26: data-id attribute は localStorage 由来 (`moshi_<ts>`) で attacker
+  // による直接 inject 経路は無いが、defense-in-depth で escapeHtml で attribute breakout 塞ぐ。
+  // Number 化 NG: id は 'moshi_xxx' 形式の string で Number()=NaN→0 化で全 moshi 衝突する。
+  list.innerHTML = items.map(m => {
+    const safeId = escapeHtml(String(m.id == null ? '' : m.id));
+    return `
+    <div class="moshi-card" data-id="${safeId}">
       <div class="moshi-card-header">
         <div class="moshi-card-title">${escapeHtml(m.name || '無題の模試')}</div>
         <div class="moshi-card-date">${escapeHtml(m.date || '日付不明')}</div>
@@ -8770,14 +8788,15 @@ function renderMoshiList() {
         ${m.scores ? `<div class="moshi-scores">${escapeHtml(String(m.scores).slice(0, 100))}${String(m.scores).length > 100 ? '…' : ''}</div>` : ''}
       </div>
       <div class="moshi-card-actions">
-        <button class="btn-small btn-detail" data-id="${m.id}">📖 詳細</button>
-        <button class="btn-small btn-gen-problems" data-id="${m.id}" title="この弱点から問題を生成">🧪 問題生成</button>
-        <button class="btn-small btn-update-curriculum" data-id="${m.id}" title="この模試結果でカリキュラムを再生成"
+        <button class="btn-small btn-detail" data-id="${safeId}">📖 詳細</button>
+        <button class="btn-small btn-gen-problems" data-id="${safeId}" title="この弱点から問題を生成">🧪 問題生成</button>
+        <button class="btn-small btn-update-curriculum" data-id="${safeId}" title="この模試結果でカリキュラムを再生成"
                 style="background:linear-gradient(135deg,#6366f1,#ec4899);color:white;border:none;">🔄 カリキュラム更新</button>
-        <button class="btn-small btn-delete-moshi" data-id="${m.id}">🗑 削除</button>
+        <button class="btn-small btn-delete-moshi" data-id="${safeId}">🗑 削除</button>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   list.querySelectorAll('.btn-detail').forEach(btn => {
     btn.addEventListener('click', () => showMoshiDetail(btn.dataset.id));
@@ -9038,9 +9057,9 @@ function showMoshiDetail(id) {
     ${m.weakness ? `<h3>🔴 弱点分野</h3><p>${escapeHtml(m.weakness)}</p>` : ''}
     ${m.notes ? `<h3>📝 メモ・所感</h3><p>${escapeHtml(m.notes).replace(/\n/g, '<br>')}</p>` : ''}
     ${m.aiAnalysis ? `<h3>🤖 AI解析結果（画像から抽出）</h3><pre class="moshi-ai-analysis">${escapeHtml(m.aiAnalysis)}</pre>` : ''}
-    ${m.imageDataUrl ? `<h3>📷 画像</h3><img src="${m.imageDataUrl}" alt="模試画像" style="max-width:100%;border-radius:8px;">` : ''}
+    ${m.imageDataUrl && /^data:image\/(jpeg|jpg|png|webp|gif);base64,/i.test(String(m.imageDataUrl)) ? `<h3>📷 画像</h3><img src="${escapeHtml(String(m.imageDataUrl))}" alt="模試画像" style="max-width:100%;border-radius:8px;">` : ''}
     <div style="margin-top:1.5rem;">
-      <button class="btn-primary" onclick="generateProblemsFromMoshi('${m.id}')">🧪 この弱点から問題を生成</button>
+      <button class="btn-primary" onclick="generateProblemsFromMoshi('${escapeHtml(String(m.id))}')">🧪 この弱点から問題を生成</button>
     </div>
   `;
   document.getElementById('moshiDetail').style.display = 'flex';
