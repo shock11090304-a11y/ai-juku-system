@@ -44,9 +44,14 @@
     grid.innerHTML = '<p>模試を生成中...</p>';
     try {
       const studentId = localStorage.getItem('aj_current_student_id');
+      // 🛡️ IDOR fix 2026-05-26: session token あれば送る (backend で claims 経由 student_id 確定)
+      // 未ログイン (token 無し) でも fetch 可能・backend がゲスト session として処理
+      const sessionToken = localStorage.getItem('ai_juku_session_token') || '';
+      const headers = { 'Content-Type': 'application/json' };
+      if (sessionToken) headers['Authorization'] = 'Bearer ' + sessionToken;
       const res = await fetch(`${BACKEND_URL}/api/mock-exam/generate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify({ exam_type: examType, student_id: studentId ? parseInt(studentId) : null }),
       });
       if (!res.ok) throw new Error(`Generate failed: ${res.status}`);
@@ -268,9 +273,14 @@
         payload.image_base64 = imageB64;
         payload.mime_type = imageMime;
       }
+      // 🛡️ IDOR fix 2026-05-26: session token あれば送る (backend で claims["student_id"] override)
+      // → 攻撃者が他生徒の student_id を payload に入れて rate-limit 消費 / weakness 汚染防御
+      const multiviewToken = localStorage.getItem('ai_juku_session_token') || '';
+      const multiviewHeaders = { 'Content-Type': 'application/json' };
+      if (multiviewToken) multiviewHeaders['Authorization'] = 'Bearer ' + multiviewToken;
       const res = await fetch(`${BACKEND_URL}/api/mock-exam/grade-essay-multiview`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: multiviewHeaders,
         body: JSON.stringify(payload),
       });
       const data = await res.json();
@@ -404,9 +414,14 @@
     submitBtn.textContent = '採点中...';
     if (timerInterval) clearInterval(timerInterval);
     try {
+      // 🛡️ IDOR fix 2026-05-26: session token あれば送る (本人 session の改竄防御)
+      // ゲスト session (student_id=NULL) は token 無しでも採点可
+      const submitToken = localStorage.getItem('ai_juku_session_token') || '';
+      const submitHeaders = { 'Content-Type': 'application/json' };
+      if (submitToken) submitHeaders['Authorization'] = 'Bearer ' + submitToken;
       const res = await fetch(`${BACKEND_URL}/api/mock-exam/submit`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: submitHeaders,
         body: JSON.stringify({ session_id: currentSession.session_id, answers }),
       });
       if (!res.ok) throw new Error(`Submit failed: ${res.status}`);

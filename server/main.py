@@ -25230,16 +25230,52 @@ def mock_exam_templates():
 
 
 @app.post("/api/mock-exam/generate")
-def mock_exam_generate(payload: dict):
+def mock_exam_generate(payload: dict, request: Request, authorization: Optional[str] = Header(None)):
     """模試を動的に生成。
     payload: {"exam_type": "kyotsu" | "todai" | ..., "student_id": optional}
     既存の exam_questions プールから section ごとに最新順 N 件を取得。
     返却: {session_id, label, duration_min, sections: [{name, questions: [...]}], max_score}
+
+    🛡️ IDOR fix 2026-05-26 (3視点 audit 発見・hybrid pattern):
+    - admin Bearer: payload student_id をそのまま使用 (任意生徒として作成可)
+    - 生徒 session_token: claims["student_id"] を採用 (payload 値は信用しない・他生徒 ID enumerate 防御)
+    - 未認証: student_id=NULL で「ゲスト体験 session」として作成 (LP 訪問者用)
+    - rate limit: per-IP 20 req/60s で空 session 量産 DoS 防御
     """
+    # 🛡️ rate limit (空 session 量産 DoS 防御)
+    _check_rate_limit_ip(request, bucket="mock_exam_generate", limit=20, window=60)
+
     exam_type = payload.get("exam_type")
     if exam_type not in MOCK_EXAM_TEMPLATES:
         raise HTTPException(status_code=400, detail=f"Unknown exam_type: {exam_type}")
-    student_id = payload.get("student_id")
+
+    # 認証 + student_id 決定
+    is_admin = False
+    auth_student_id: Optional[int] = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            is_admin = True
+        else:
+            claims = _verify_session_token(token)
+            if claims and claims.get("student_id"):
+                try:
+                    auth_student_id = int(claims["student_id"])
+                except (TypeError, ValueError):
+                    auth_student_id = None
+
+    # student_id 確定 (admin → payload / 生徒 → claims / 未認証 → NULL ゲスト)
+    payload_student_id = payload.get("student_id")
+    if is_admin:
+        try:
+            student_id = int(payload_student_id) if payload_student_id else None
+        except (TypeError, ValueError):
+            student_id = None
+    elif auth_student_id:
+        student_id = auth_student_id  # payload を信用しない (IDOR 防御)
+    else:
+        student_id = None  # ゲスト体験 session
+
     tpl = MOCK_EXAM_TEMPLATES[exam_type]
 
     conn = db()
@@ -25312,19 +25348,32 @@ def mock_exam_generate(payload: dict):
 
 
 @app.post("/api/mock-exam/submit")
-def mock_exam_submit(payload: dict):
+def mock_exam_submit(payload: dict, request: Request, authorization: Optional[str] = Header(None)):
     """模試の採点。
     payload: {"session_id": N, "answers": {"<exam_question_id>_<sub_id>": "<choice_index>"}}
     返却: {score_total, score_max, percentage, deviation_estimate, section_scores, weak_topics}
+
+    🛡️ Write IDOR fix 2026-05-26 (3視点 audit 発見・最大破壊力 endpoint):
+    - 旧実装: 無認証 + session_id query のみで他生徒の成績・偏差値を**改竄可**だった
+    - 修正: session.student_id IS NULL (ゲスト体験) → 誰でも採点可 / IS NOT NULL → 本人 session_token or admin Bearer 必須
+    - rate limit: per-IP 30 req/60s で同 session への spam 攻撃防御
     """
+    # 🛡️ rate limit (session spam 攻撃防御)
+    _check_rate_limit_ip(request, bucket="mock_exam_submit", limit=30, window=60)
+
     session_id = payload.get("session_id")
     answers = payload.get("answers") or {}
     if not session_id:
         raise HTTPException(status_code=400, detail="session_id required")
+    # 🛡️ probe 防御 2026-05-26 (M2): session_id を integer cast (文字列 ID で 404 enumerate 防御)
+    try:
+        session_id = int(session_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="session_id 不正")
 
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT student_id, exam_type, score_max, questions_json FROM mock_exam_sessions WHERE id=?", (session_id,))
+    c.execute("SELECT student_id, exam_type, score_max, questions_json, submitted_at FROM mock_exam_sessions WHERE id=?", (session_id,))
     row = c.fetchone()
     if not row:
         conn.close()
@@ -25333,6 +25382,33 @@ def mock_exam_submit(payload: dict):
     exam_type = row[1] if not hasattr(row, 'keys') else row["exam_type"]
     score_max = row[2] if not hasattr(row, 'keys') else row["score_max"]
     snap_json = row[3] if not hasattr(row, 'keys') else row["questions_json"]
+    already_submitted = (row[4] if not hasattr(row, 'keys') else row["submitted_at"]) is not None
+
+    # 🛡️ IDOR check: 本人 only (ゲスト session = student_id NULL は誰でも更新可)
+    if student_id is not None:
+        is_admin = False
+        auth_student_id: Optional[int] = None
+        if authorization and authorization.startswith("Bearer "):
+            token = authorization[len("Bearer "):].strip()
+            if _verify_admin_token(token):
+                is_admin = True
+            else:
+                claims = _verify_session_token(token)
+                if claims and claims.get("student_id"):
+                    try:
+                        auth_student_id = int(claims["student_id"])
+                    except (TypeError, ValueError):
+                        auth_student_id = None
+        if not is_admin and auth_student_id != int(student_id):
+            conn.close()
+            raise HTTPException(status_code=403, detail="他生徒の模試にはアクセスできません")
+
+    # 🛡️ 二重採点防止 2026-05-26 (M1): submitted_at IS NOT NULL なら 409
+    # ゲスト session でも二重採点で他人が上書きするのを防御
+    if already_submitted:
+        conn.close()
+        raise HTTPException(status_code=409, detail="この模試は既に採点済みです")
+
     snap = json.loads(snap_json)
     answer_key = snap.get("answer_key", [])
 
@@ -25403,16 +25479,19 @@ def mock_exam_submit(payload: dict):
         (datetime.now(timezone.utc).isoformat(), score_total, deviation_estimate, json.dumps(section_scores_list, ensure_ascii=False), json.dumps(answers, ensure_ascii=False), session_id),
     )
     # 📝 2026-05-22 塾長指示: 各 sub-question を question_attempts に記録 (弱点プリント基盤)
-    try:
-        now_iso = datetime.now(timezone.utc).isoformat()
-        for (a_subject, a_topic, a_is_correct, a_score_got, a_score_max, a_eq_id, a_sub_id, a_sec_name) in attempts_to_insert:
-            meta = json.dumps({"section_name": a_sec_name, "sub_id": a_sub_id, "session_id": session_id}, ensure_ascii=False)
-            c.execute(
-                "INSERT INTO question_attempts (student_id, source, exam_question_id, subject, topic, is_correct, score_got, score_max, metadata, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                (student_id, 'mock_exam', a_eq_id, a_subject, a_topic, a_is_correct, a_score_got, a_score_max, meta, now_iso),
-            )
-    except Exception as e:
-        log.warning(f"[mock_exam_submit] question_attempts INSERT failed (non-fatal): {e}")
+    # 🛡️ 2026-05-26 audit fix (C): ゲスト session (student_id IS NULL) は question_attempts.student_id
+    # NOT NULL 違反で transaction abort し UPDATE mock_exam_sessions も巻き戻る regression を防止 → skip
+    if student_id is not None:
+        try:
+            now_iso = datetime.now(timezone.utc).isoformat()
+            for (a_subject, a_topic, a_is_correct, a_score_got, a_score_max, a_eq_id, a_sub_id, a_sec_name) in attempts_to_insert:
+                meta = json.dumps({"section_name": a_sec_name, "sub_id": a_sub_id, "session_id": session_id}, ensure_ascii=False)
+                c.execute(
+                    "INSERT INTO question_attempts (student_id, source, exam_question_id, subject, topic, is_correct, score_got, score_max, metadata, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                    (student_id, 'mock_exam', a_eq_id, a_subject, a_topic, a_is_correct, a_score_got, a_score_max, meta, now_iso),
+                )
+        except Exception as e:
+            log.warning(f"[mock_exam_submit] question_attempts INSERT failed (non-fatal): {e}")
     conn.commit()
     conn.close()
 
@@ -25428,7 +25507,6 @@ def mock_exam_submit(payload: dict):
     }
 
 
-@app.get("/api/mock-exam/history")
 # ==========================================================================
 # 🎓 大学別 過去問風オリジナル問題 (塾長指示 2026-05-03)
 # 著作権: 全て Claude 生成のオリジナル問題。過去問の出題スタイル・トピックのみ参考、
@@ -25436,6 +25514,11 @@ def mock_exam_submit(payload: dict):
 # のメタ情報を保存するが、これは事実情報 (どの大学のどの年度のどの形式の問題を模した
 # かの説明) で、原問題のテキスト自体は含まない。
 # ==========================================================================
+# 🛡️ 2026-05-26 audit fix: 上の `@app.get("/api/mock-exam/history")` decorator は
+# 旧 commit で残された orphan で、本来 university_problems_list には適用すべきでなかった。
+# FastAPI の decorator chain で同一関数が 2 path に登録され、
+# /api/mock-exam/history が university_problems_list を呼び出す bug 状態になっていた。
+# 正規の mock_exam_history (auth gate 付き) は別途下で定義されているので orphan を削除。
 @app.get("/api/university-problems")
 def university_problems_list(university: Optional[str] = None, subject: Optional[str] = None,
                               year: Optional[int] = None, limit: int = 30, offset: int = 0):
@@ -25544,8 +25627,44 @@ def university_problems_import(payload: dict, authorization: Optional[str] = Hea
 
 
 @app.get("/api/mock-exam/history")
-def mock_exam_history(student_id: int):
-    """生徒の模試履歴 (mypage 用)。"""
+def mock_exam_history(request: Request, student_id: int, authorization: Optional[str] = Header(None)):
+    """生徒の模試履歴 (mypage 用)。
+
+    🛡️ IDOR fix 2026-05-26 (3視点 audit 発見・student_weakness_top3 と同パターン):
+    - 旧実装: 無認証 + student_id query のみで他生徒の履歴が enumerate 可能だった
+    - 修正: admin Bearer or 本人 session token のみ。per-IP rate limit 付き。
+    """
+    # 🛡️ rate limit (IDOR enumerate 防御)
+    _check_rate_limit_ip(request, bucket="mock_exam_history", limit=30, window=60)
+
+    # 認証: admin or 本人 session token のみ
+    is_admin = False
+    auth_student_id: Optional[int] = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            is_admin = True
+        else:
+            claims = _verify_session_token(token)
+            if claims and claims.get("student_id"):
+                try:
+                    auth_student_id = int(claims["student_id"])
+                except (TypeError, ValueError):
+                    auth_student_id = None
+    try:
+        student_id = int(student_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="student_id 不正")
+    if student_id <= 0:
+        raise HTTPException(status_code=400, detail="student_id 必須")
+
+    # 🛡️ IDOR fix: 本人 only (admin Bearer は例外)
+    if not is_admin:
+        if not auth_student_id:
+            raise HTTPException(status_code=403, detail="ログインが必要です (session token 未提供)")
+        if auth_student_id != student_id:
+            raise HTTPException(status_code=403, detail="他生徒のデータにはアクセスできません")
+
     conn = db()
     c = conn.cursor()
     c.execute("SELECT id, exam_type, target_label, score_total, score_max, deviation_estimate, submitted_at FROM mock_exam_sessions WHERE student_id=? AND submitted_at IS NOT NULL ORDER BY submitted_at DESC LIMIT 30", (student_id,))
@@ -26605,16 +26724,31 @@ async def mock_exam_grade_essay_multiview(payload: dict, authorization: Optional
 
     # 🛡️ 認証 + rate limit (重 endpoint 暴走防御・3視点 review 致命対応 2026-05-10)
     # 2026-05-11 追加: admin Bearer 経路では student_id 任意 + rate limit skip (CEO ダッシュ demo 用)
+    # 🛡️ IDOR fix 2026-05-26 (重大 S1・3視点 audit 発見): 生徒 session_token があれば claims["student_id"]
+    # を強制 override (payload を信用しない・他生徒 ID 入れて rate-limit 消費 / weakness 集計汚染防御)。
+    # token 無し経路は既存仕様維持 (payload student_id + DB check・後方互換)。
     is_admin_call = False
+    _auth_student_id_from_claims: Optional[int] = None
     if authorization and authorization.startswith("Bearer "):
         _admin_token_try = authorization[len("Bearer "):].strip()
         if _verify_admin_token(_admin_token_try):
             is_admin_call = True
+        else:
+            _claims_try = _verify_session_token(_admin_token_try)
+            if _claims_try and _claims_try.get("student_id"):
+                try:
+                    _auth_student_id_from_claims = int(_claims_try["student_id"])
+                except (TypeError, ValueError):
+                    _auth_student_id_from_claims = None
 
     try:
         student_id = int(student_id) if student_id else 0
     except (TypeError, ValueError):
         student_id = 0
+
+    # 🛡️ session_token あれば payload を override (IDOR 防御)
+    if not is_admin_call and _auth_student_id_from_claims:
+        student_id = _auth_student_id_from_claims
 
     if not is_admin_call:
         # 通常 student 経路: student_id 必須化 + DB 存在 check + 1h あたり 10 回制限
@@ -27700,7 +27834,7 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
 
 
 @app.post("/api/mock-exam/grade-essay")
-def mock_exam_grade_essay(payload: dict):
+def mock_exam_grade_essay(payload: dict, request: Request, authorization: Optional[str] = Header(None)):
     """模試内 essay (英作文) を AI で採点 — 単一 AI シンプル版 (高速・後方互換)。
     payload: {"prompt": "...", "essay": "...", "level": "todai" | "kyodai" | "eiken_g1" | ...}
     返却: {scores: {structure, content, language}, overall, total_points, feedback_jp}
@@ -27708,7 +27842,32 @@ def mock_exam_grade_essay(payload: dict):
     2026-05-10 修正: 旧 _call_anthropic_safe(system=, user=, max_tokens=) signature mismatch
     bug を修正 (`body: dict` 形式に統一・AI never-fail 5 段防御に乗る)。
     多視点採点が欲しい場合は /api/mock-exam/grade-essay-multiview を使用。
+
+    🛡️ IDOR + AI 課金 DoS fix 2026-05-26 (3視点 audit 発見):
+    - 旧実装: auth gate + rate-limit ゼロで AI 課金経路 ($$ 暴走可能)
+    - 修正: admin Bearer or 本人 session_token 必須 (frontend caller 0 件・将来の安全網)
+    - rate limit: per-IP 10 req/60s (AI 課金保護・grade-essay-multiview と同等)
     """
+    # 🛡️ rate limit (AI 課金保護)
+    _check_rate_limit_ip(request, bucket="mock_exam_grade_essay", limit=10, window=60)
+
+    # 認証: admin or 本人 session token 必須
+    is_admin = False
+    auth_student_id: Optional[int] = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            is_admin = True
+        else:
+            claims = _verify_session_token(token)
+            if claims and claims.get("student_id"):
+                try:
+                    auth_student_id = int(claims["student_id"])
+                except (TypeError, ValueError):
+                    auth_student_id = None
+    if not is_admin and not auth_student_id:
+        raise HTTPException(status_code=401, detail="ログインが必要です")
+
     prompt = (payload.get("prompt") or "").strip()
     essay = (payload.get("essay") or "").strip()
     level = (payload.get("level") or "todai").strip()
