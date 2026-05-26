@@ -4104,7 +4104,7 @@ def student_weakness_progress(request: Request, student_id: int, subject: str, t
       {ok, daily: [{date: "2026-05-13", count: N, avg_score: 0.0-1.0, high: N, medium: N, low: N}]}
     """
     # rate limit (前 endpoint と統一)
-    _check_rate_limit_ip(request, bucket="weakness_progress", limit=30, window=60)
+    _check_rate_limit_caller(request, authorization, bucket="weakness_progress", limit=30, window=60)
 
     # 認証
     is_admin = False
@@ -4426,7 +4426,7 @@ def student_lesson_prints_recommended(
     認証 (3 視点 review 準拠): admin Bearer or 本人 session token のみ。
     rate limit: per-IP 30 / 60 秒 (enumerate 防御)。
     """
-    _check_rate_limit_ip(request, bucket="lesson_prints_recommended", limit=30, window=60)
+    _check_rate_limit_caller(request, authorization, bucket="lesson_prints_recommended", limit=30, window=60)
 
     is_admin = False
     auth_student_id: Optional[int] = None
@@ -4713,7 +4713,7 @@ def student_admission_likelihood(
     認証: admin Bearer or 本人 session token のみ。
     SQL ベースで高速計算 → admission_likelihood テーブルにキャッシュ。
     """
-    _check_rate_limit_ip(request, bucket="admission_likelihood", limit=30, window=60)
+    _check_rate_limit_caller(request, authorization, bucket="admission_likelihood", limit=30, window=60)
 
     is_admin = False
     auth_student_id: Optional[int] = None
@@ -4790,7 +4790,7 @@ def student_lesson_prints_by_goal(
 
     返却: {goal, goal_label, matched_keyword, levels: [...], recommendations: [{level, prints: [...]}, ...]}
     """
-    _check_rate_limit_ip(request, bucket="lesson_prints_by_goal", limit=30, window=60)
+    _check_rate_limit_caller(request, authorization, bucket="lesson_prints_by_goal", limit=30, window=60)
 
     is_admin = False
     auth_student_id: Optional[int] = None
@@ -4959,7 +4959,7 @@ def student_lesson_print_download(
     """📥 配布プリント DL 履歴記録 + file_path 返却。
     認証: student session token 必須 (admin Bearer も可)。
     """
-    _check_rate_limit_ip(request, bucket="lesson_print_dl", limit=60, window=60)
+    _check_rate_limit_caller(request, authorization, bucket="lesson_print_dl", limit=60, window=60)
 
     is_admin = False
     auth_student_id: Optional[int] = None
@@ -18160,7 +18160,7 @@ def record_question_attempt(payload: dict, request: Request, authorization: Opti
     # IP 単位 (60 秒に 120 リクエスト) + 生徒単位 (1 日 500 INSERT) の 2 段防御
     # ⚠️ HTTPException (429) は再 raise・関数未定義時のみ skip
     try:
-        _check_rate_limit_ip(request, bucket="question_attempts_ip", limit=120, window=60)
+        _check_rate_limit_caller(request, authorization, bucket="question_attempts_ip", limit=120, window=60)
     except HTTPException:
         raise  # 429 は upstream に渡す
     except (NameError, AttributeError):
@@ -24120,14 +24120,34 @@ def cron_daily_alerts(x_cron_secret: str = Header(None)):
 # Routes: Problem Library (保存・再利用)
 # ==========================================================================
 @app.post("/api/problems/save")
-def save_problem(payload: dict, request: Request):
+def save_problem(payload: dict, request: Request, authorization: Optional[str] = Header(None)):
     """生成した問題をDBに保存（後で再利用可能）。
-    DB書込DoS/PII注入防止: Origin検証・サイズ上限・生徒存在確認。"""
+    DB書込DoS/PII注入防止: Origin検証・サイズ上限・生徒存在確認。
+
+    🛡️ 2026-05-26 audit fix (payload-IDOR sweep): 旧実装は payload.student_id を素通しで保存し
+    他生徒に紐づく問題を量産可能だった。session_token あれば claims["student_id"] を強制 override。
+    """
     if not _origin_allowed(request):
         raise HTTPException(status_code=403, detail="Origin not allowed")
     if len(json.dumps(payload, ensure_ascii=False)) > 20000:
         raise HTTPException(status_code=413, detail="payload too large")
+
+    # 🛡️ session_token あれば claims override (payload-driven IDOR 防御)
+    auth_student_id: Optional[int] = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        # admin Bearer は payload student_id 自由 (CEO demo 用)
+        if not _verify_admin_token(token):
+            claims = _verify_session_token(token)
+            if claims and claims.get("student_id"):
+                try:
+                    auth_student_id = int(claims["student_id"])
+                except (TypeError, ValueError):
+                    auth_student_id = None
+
     sid = payload.get("student_id")
+    if auth_student_id:
+        sid = auth_student_id  # 生徒 token あれば payload を信用しない (IDOR 防御)
     if sid:
         try:
             _verify_student_active(int(sid))
@@ -24148,12 +24168,15 @@ def save_problem(payload: dict, request: Request):
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    # 🛡️ 2026-05-26 audit C1 致命 fix: 旧コードは payload.get("student_id") を直接 created_by に
+    # 渡し、line 24148-24150 で sid を auth_student_id で override してた防御が無効化されてた。
+    # sid 経由で claims override が反映されるように修正。
     c.execute(
         """INSERT INTO problems (subject, topic, difficulty, format, content, created_by)
            VALUES (?, ?, ?, ?, ?, ?)
            RETURNING id""",
         (payload.get("subject"), payload.get("topic"), payload.get("difficulty"),
-         payload.get("format"), payload.get("content"), payload.get("student_id"))
+         payload.get("format"), payload.get("content"), sid)
     )
     returned = c.fetchone()
     new_id = returned["id"] if returned else None
@@ -28035,7 +28058,7 @@ class StudyLogCreateRequest(BaseModel):
 @app.post("/api/study-logs")
 def create_study_log(payload: StudyLogCreateRequest, request: Request, authorization: Optional[str] = Header(None)):
     """生徒が学習記録を投稿。国公立難関大学コース限定。"""
-    _check_rate_limit_ip(request, bucket="study_log_create", limit=30, window=60)
+    _check_rate_limit_caller(request, authorization, bucket="study_log_create", limit=30, window=60)
     student = _get_current_student(authorization)
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -28114,7 +28137,7 @@ def create_study_log(payload: StudyLogCreateRequest, request: Request, authoriza
 @app.delete("/api/study-logs/{log_id}")
 def delete_my_study_log(log_id: int, request: Request, authorization: Optional[str] = Header(None)):
     """生徒が自分の学習記録を削除 (誤投稿対策)。"""
-    _check_rate_limit_ip(request, bucket="study_log_delete", limit=20, window=60)
+    _check_rate_limit_caller(request, authorization, bucket="study_log_delete", limit=20, window=60)
     student = _get_current_student(authorization)
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -29067,7 +29090,7 @@ def _validate_plan_color(color: Optional[str]) -> Optional[str]:
 @app.post("/api/study-plans")
 def create_study_plan(payload: StudyPlanCreateRequest, request: Request, authorization: Optional[str] = Header(None)):
     """生徒が学習計画を作成。"""
-    _check_rate_limit_ip(request, bucket="study_plan_create", limit=20, window=60)
+    _check_rate_limit_caller(request, authorization, bucket="study_plan_create", limit=20, window=60)
     student = _get_current_student(authorization)
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -29131,7 +29154,7 @@ def create_study_plan(payload: StudyPlanCreateRequest, request: Request, authori
 @app.put("/api/study-plans/{plan_id}")
 def update_study_plan(plan_id: int, payload: StudyPlanUpdateRequest, request: Request, authorization: Optional[str] = Header(None)):
     """生徒が自分の学習計画を更新。"""
-    _check_rate_limit_ip(request, bucket="study_plan_update", limit=30, window=60)
+    _check_rate_limit_caller(request, authorization, bucket="study_plan_update", limit=30, window=60)
     student = _get_current_student(authorization)
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -29219,7 +29242,7 @@ def update_study_plan(plan_id: int, payload: StudyPlanUpdateRequest, request: Re
 @app.delete("/api/study-plans/{plan_id}")
 def delete_my_study_plan(plan_id: int, request: Request, authorization: Optional[str] = Header(None)):
     """生徒が自分の学習計画を削除。"""
-    _check_rate_limit_ip(request, bucket="study_plan_delete", limit=20, window=60)
+    _check_rate_limit_caller(request, authorization, bucket="study_plan_delete", limit=20, window=60)
     student = _get_current_student(authorization)
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
