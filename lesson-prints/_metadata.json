@@ -393,6 +393,20 @@
       "file_path": "/lesson-prints/2026-05-25_東大物理_ばねと弾性衝突.pdf"
     },
     {
+      "title": "京大物理 本番水準 自習プリント",
+      "subject": "物理",
+      "topic": "京大物理_本番水準_自習プリント",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "自習用",
+      "target_university": "京都大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 9,
+      "file_size_kb": 851,
+      "file_path": "/lesson-prints/2026-05-26_京大物理_本番水準_自習プリント.pdf"
+    },
+    {
       "title": "千葉大学医 生物 過去問風 遺伝子",
       "subject": "生物",
       "topic": "千葉大学医_生物_過去問風_遺伝子",
@@ -447,6 +461,20 @@
       "pages": 15,
       "file_size_kb": 1239,
       "file_path": "/lesson-prints/2026-05-26_東大化学_化学平衡自習プリント.pdf"
+    },
+    {
+      "title": "東大化学 本番水準 自習プリント",
+      "subject": "化学",
+      "topic": "東大化学_本番水準_自習プリント",
+      "level": "東大レベル",
+      "target_grade": "高校生",
+      "target_type": "自習用",
+      "target_university": "東京大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 8,
+      "file_size_kb": 1024,
+      "file_path": "/lesson-prints/2026-05-26_東大化学_本番水準_自習プリント.pdf"
     },
     {
       "title": "東大実践模試 化学 自習プリント",
@@ -993,6 +1021,20 @@
       "pages": 19,
       "file_size_kb": 1247,
       "file_path": "/lesson-prints/2026-05-26_早稲田教育_英語自習プリント.pdf"
+    },
+    {
+      "title": "早稲田文化構想 英語 自習プリント",
+      "subject": "英語",
+      "topic": "早稲田文化構想_英語_自習プリント",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "自習用",
+      "target_university": "早稲田大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 11,
+      "file_size_kb": 1190,
+      "file_path": "/lesson-prints/2026-05-26_早稲田文化構想_英語_自習プリント.pdf"
     },
     {
       "title": "早稲田文構 英語自習プリント",
