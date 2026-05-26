@@ -26141,6 +26141,9 @@ def university_problems_backfill_pdf_links(
     dry_run = bool(payload.get("dry_run", False))
     filter_univ = payload.get("university")
     filter_subj = payload.get("subject")
+    # 🛡️ 2026-05-27 「A: topic 必須化」 と組み合わせ: clear_first=True で全 pdf_url を NULL に戻してから紐付け直す
+    # (旧 univ+subj だけマッチで誤紐付けされたデータを clean state にしてから topic 一致のみで再紐付け)
+    clear_first = bool(payload.get("clear_first", False))
 
     # 大学名の正規化マップ (双方向): どちらの表記でも引けるよう、各 alias がキーになるよう構築
     # 🛡️ 3 視点 review fix 2026-05-27 (致命 1 / 準致命 A 対応):
@@ -26181,6 +26184,15 @@ def university_problems_backfill_pdf_links(
     conn = db()
     c = conn.cursor()
     try:
+        # 🛡️ 2026-05-27 「A: topic 必須化」: clear_first=True なら旧紐付けを全 NULL に戻してから新マッチング
+        cleared_count = 0
+        if clear_first and not dry_run:
+            c.execute("UPDATE university_problems SET pdf_url = NULL, pdf_title = NULL, answer_pdf_url = NULL, answer_pdf_title = NULL WHERE pdf_url IS NOT NULL OR answer_pdf_url IS NOT NULL")
+            try:
+                cleared_count = c.rowcount or 0
+            except Exception:
+                cleared_count = -1
+            conn.commit()
         # 1. lesson_prints から PDF 一覧取得
         # 🛡️ 3 視点 review fix: target_type='模試' も除外 (東大実践模試 PDF が東大過去問に誤マッチする致命傷防止)
         # 🛡️ 2026-05-27 塾長指示「解答解説 PDF も」: 本編と解答解説を別々のリストで取得
@@ -26220,7 +26232,7 @@ def university_problems_backfill_pdf_links(
                                  "target_university": row[3] or "", "file_path": row[4] or ""})
 
         # 2. university_problems を SELECT (filter 適用)
-        sql = "SELECT id, university, subject FROM university_problems WHERE status='published'"
+        sql = "SELECT id, university, subject, topic FROM university_problems WHERE status='published'"
         params = []
         if filter_univ:
             sql += " AND university = ?"; params.append(filter_univ)
@@ -26239,10 +26251,12 @@ def university_problems_backfill_pdf_links(
                 up_id = row.get("id")
                 up_univ = (row.get("university") or "").strip()
                 up_subj = (row.get("subject") or "").strip()
+                up_topic = (row.get("topic") or "").strip()
             else:
                 up_id = row[0]
                 up_univ = (row[1] or "").strip()
                 up_subj = (row[2] or "").strip()
+                up_topic = (row[3] if len(row) > 3 else "" or "").strip() if (row[3] if len(row) > 3 else None) else ""
 
             if not up_univ or not up_subj:
                 continue
@@ -26252,38 +26266,104 @@ def university_problems_backfill_pdf_links(
             # subject 表記揺れ対策 (例: "国語(現代文)" "国語(現代文)" → "国語")。半角/全角両対応。
             subj_normalized = up_subj.split("(")[0].split("(")[0].strip()
 
-            # 🛡️ 3 視点 review Round 4 致命 fix: subject 部分一致が「英語 in 世界史」のような
-            # 全く違う科目をマッチさせていた → 厳密一致のみに変更。
-            # Pass 1: target_university + subject **厳密一致** (最優先)
+            # 🛡️ 2026-05-27 塾長指示「A: トピック一致必須」(整合性致命傷修正):
+            # 旧 bug: univ+subject 厳密一致だけでは「東大数学」配下の全問題が
+            #   「東大ベクトル PDF」一つに紐付き、放物線問題にベクトル PDF が出る致命傷。
+            # 新規則: topic キーワードが PDF タイトル/path に含まれることを必須化。
+            # topic なし問題は紐付けない (整合性優先・誤マッチ防止)。
+
+            # 🛡️ 3 視点 review Round 4-6 致命 fix (2026-05-27):
+            # Round 4: 助詞 split / 双方向 match
+            # Round 5: stop_words 拡張 (univ 名/形式語)
+            # Round 6: 大学 prefix strip (「東大数学」kw が PDF「東大数学 自習プリント」と全 math 問題で誤マッチする致命)
+            # 全大学 alias を 1 set にまとめて prefix strip 用に使う
+            _all_univ_aliases_sorted = sorted({a for grp in _ALIAS_GROUPS for a in grp}, key=len, reverse=True)
+            def _strip_univ_prefix(kw):
+                """kw が大学 alias で始まれば prefix を除去して残りを返す。
+                例: '東大数学' → '数学' / '京大物理' → '物理' / '東大放物線' → '放物線'"""
+                for alias in _all_univ_aliases_sorted:
+                    if kw.startswith(alias) and len(kw) > len(alias):
+                        return kw[len(alias):]
+                return kw
+
+            def _extract_topic_kws(topic_str):
+                if not topic_str:
+                    return []
+                s = topic_str.replace("スタイル", "").replace("型", "").strip()
+                # 助詞を空白に置換 (split delimiter として使う)
+                s = re.sub(r"(の|と|を|に|へ|で|から|まで|や|か|が|は|も|だ|に対して)", " ", s)
+                # separator: 中黒/句読点/全角括弧/半角括弧/空白
+                parts = re.split(r"[・/、,。\s()()「」『』【】「」]+", s)
+                # 🛡️ 3 視点 review Round 5-6 fix: ノイズ kw を除外 + 大学 prefix strip
+                stop_words = {
+                    # 学習段階
+                    "基礎", "標準", "発展", "応用", "演習", "問題", "対策", "練習", "解説",
+                    # 文書形式 (単語 + 合成語)
+                    "自習", "プリント", "本番", "模試", "模擬", "テキスト", "過去問", "過去問風", "風", "形式",
+                    "自習プリント", "英語自習プリント", "本番水準", "授業テキスト",
+                    # 大学/学部名 (univ alias で別途処理するため kw からは除外)
+                    "大学", "大学院", "学部", "予備校", "入試", "受験",
+                    # 科目名 (subject カラムで処理するため kw からは除外)
+                    # 🛡️ Round 8 fix: 「現代文/古文/漢文」は国語 sub_genre なので除外しない
+                    # (除外すると国語系 PDF タイトルが univ 名のみに痩せて kw=[] になり国語 PDF 全消失)
+                    "数学", "物理", "化学", "生物", "国語", "英語",
+                    "日本史", "世界史", "地理", "公民", "倫理", "政治経済",
+                    # 汎用副詞
+                    "について", "ため", "ものを", "ことを",
+                }
+                # 大学 prefix を strip してから stop_words フィルタ + 長さフィルタ
+                stripped = [_strip_univ_prefix(p) for p in parts]
+                return [p for p in stripped if len(p) >= 2 and p not in stop_words]
+
+            topic_kws = _extract_topic_kws(up_topic)
+
+            def _topic_match(pdf):
+                """🛡️ 双方向 substring match:
+                ① topic kw が PDF タイトル/path に含まれる (例: 「放物線」が「東大放物線 自習プリント」に含まれる)
+                ② PDF タイトルから抽出した kw が up_topic に含まれる (逆方向)
+                topic なしの場合は False (紐付けない・整合性優先)"""
+                if not topic_kws:
+                    return False
+                hay = (pdf.get("title", "") + " " + pdf.get("file_path", ""))
+                # 方向 ①: topic_kw が hay に含まれる
+                if any(kw in hay for kw in topic_kws):
+                    return True
+                # 方向 ②: PDF タイトル kw が up_topic 文字列に含まれる
+                pdf_kws = _extract_topic_kws(pdf.get("title", ""))
+                if pdf_kws and any(kw in up_topic for kw in pdf_kws):
+                    return True
+                return False
+
+            # Pass 1: target_university 一致 + subject 厳密一致 + topic 一致
             best_pdf = None
             for pdf in pdfs:
                 lp_univ = pdf["target_university"]
                 lp_subj = pdf["subject"]
-                if lp_univ in aliases and lp_subj == subj_normalized:
+                if lp_univ in aliases and lp_subj == subj_normalized and _topic_match(pdf):
                     best_pdf = pdf
                     break
-            # Pass 2: Pass 1 不一致時のみ title + subject の両方マッチ (subject は厳密一致 / title は alias 含有)
+            # Pass 2: title に大学 alias 含有 + subject 厳密一致 + topic 一致
             if not best_pdf:
                 for pdf in pdfs:
                     lp_title = pdf["title"]
                     lp_subj = pdf["subject"]
-                    if lp_title and any(a in lp_title for a in aliases) and lp_subj == subj_normalized:
+                    if lp_title and any(a in lp_title for a in aliases) and lp_subj == subj_normalized and _topic_match(pdf):
                         best_pdf = pdf
-                        break  # 致命 2 fix: title 一致は 1 件目で固定 (上書きしない)
+                        break
 
-            # 🛡️ 2026-05-27 塾長指示「解答解説 PDF も」: 同じマッチングロジックで ans_pdfs からも検索
+            # 🛡️ 2026-05-27 塾長指示「解答解説 PDF も」+「A: topic 一致必須」
             best_ans_pdf = None
             for pdf in ans_pdfs:
                 lp_univ = pdf["target_university"]
                 lp_subj = pdf["subject"]
-                if lp_univ in aliases and lp_subj == subj_normalized:
+                if lp_univ in aliases and lp_subj == subj_normalized and _topic_match(pdf):
                     best_ans_pdf = pdf
                     break
             if not best_ans_pdf:
                 for pdf in ans_pdfs:
                     lp_title = pdf["title"]
                     lp_subj = pdf["subject"]
-                    if lp_title and any(a in lp_title for a in aliases) and lp_subj == subj_normalized:
+                    if lp_title and any(a in lp_title for a in aliases) and lp_subj == subj_normalized and _topic_match(pdf):
                         best_ans_pdf = pdf
                         break
 
@@ -26337,12 +26417,14 @@ def university_problems_backfill_pdf_links(
     return {
         "ok": True,
         "dry_run": dry_run,
+        "clear_first": clear_first,
+        "cleared_count": cleared_count if clear_first else 0,
         "matched": matched,
         "updated": updated,
         "no_match_count": len(no_match),
-        "no_match_sample": no_match[:30],  # 視認性向上 (10 → 30)
-        "match_log_sample": match_log[:50],  # 視認性向上 (10 → 50)
-        "duplicate_pdf_assignments": len(duplicates),  # 同一 PDF が複数問題に紐付いた数
+        "no_match_sample": no_match[:30],
+        "match_log_sample": match_log[:50],
+        "duplicate_pdf_assignments": len(duplicates),
         "duplicate_sample": dict(list(duplicates.items())[:5]),
     }
 
