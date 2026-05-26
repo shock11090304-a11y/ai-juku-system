@@ -2285,6 +2285,32 @@ def _check_rate_limit_ip(request, bucket: str, limit: int = 10, window: int = 60
                 del _RATE_LIMIT_STORE[k]
 
 
+def _check_rate_limit_caller(request, authorization: Optional[str], bucket: str, limit: int = 10, window: int = 60) -> None:
+    """🛡️ 2026-05-26 audit M5 fix: 生徒 session_token があれば student_id 単位、無ければ IP 単位。
+    校内 NAT で複数生徒が同時に同 endpoint を叩く scene で false positive 429 を防ぐ。
+    admin Bearer は IP fallback (CEO ダッシュ少人数想定で支障なし)。"""
+    import time as _t
+    caller_key: str = f"ip:{_client_ip(request)}"
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if not _verify_admin_token(token):
+            claims = _verify_session_token(token)
+            if claims and claims.get("student_id"):
+                try:
+                    sid = int(claims["student_id"])
+                    caller_key = f"sid:{sid}"
+                except (TypeError, ValueError):
+                    pass
+    key = (caller_key, bucket)
+    now = _t.time()
+    timestamps = _RATE_LIMIT_STORE.get(key, [])
+    timestamps = [t for t in timestamps if now - t < window]
+    if len(timestamps) >= limit:
+        raise HTTPException(status_code=429, detail="リクエストが多すぎます。しばらく待ってから再度お試しください。")
+    timestamps.append(now)
+    _RATE_LIMIT_STORE[key] = timestamps
+
+
 def _send_trial_unused_warning_email(to_email: str, student_name: str, stage: str, login_url: str, days_unused: int) -> dict:
     """体験中で未利用 (last_login_at IS NULL) の生徒に通告メール。
     stage='early' (登録 3 日経過): 「使ってみませんか?」
@@ -25242,8 +25268,8 @@ def mock_exam_generate(payload: dict, request: Request, authorization: Optional[
     - 未認証: student_id=NULL で「ゲスト体験 session」として作成 (LP 訪問者用)
     - rate limit: per-IP 20 req/60s で空 session 量産 DoS 防御
     """
-    # 🛡️ rate limit (空 session 量産 DoS 防御)
-    _check_rate_limit_ip(request, bucket="mock_exam_generate", limit=20, window=60)
+    # 🛡️ rate limit (空 session 量産 DoS 防御・校内 NAT 対応で生徒単位 audit M5 fix)
+    _check_rate_limit_caller(request, authorization, bucket="mock_exam_generate", limit=20, window=60)
 
     exam_type = payload.get("exam_type")
     if exam_type not in MOCK_EXAM_TEMPLATES:
@@ -25358,8 +25384,8 @@ def mock_exam_submit(payload: dict, request: Request, authorization: Optional[st
     - 修正: session.student_id IS NULL (ゲスト体験) → 誰でも採点可 / IS NOT NULL → 本人 session_token or admin Bearer 必須
     - rate limit: per-IP 30 req/60s で同 session への spam 攻撃防御
     """
-    # 🛡️ rate limit (session spam 攻撃防御)
-    _check_rate_limit_ip(request, bucket="mock_exam_submit", limit=30, window=60)
+    # 🛡️ rate limit (session spam 攻撃防御・校内 NAT 対応で生徒単位 audit M5 fix)
+    _check_rate_limit_caller(request, authorization, bucket="mock_exam_submit", limit=30, window=60)
 
     session_id = payload.get("session_id")
     answers = payload.get("answers") or {}
@@ -25634,8 +25660,8 @@ def mock_exam_history(request: Request, student_id: int, authorization: Optional
     - 旧実装: 無認証 + student_id query のみで他生徒の履歴が enumerate 可能だった
     - 修正: admin Bearer or 本人 session token のみ。per-IP rate limit 付き。
     """
-    # 🛡️ rate limit (IDOR enumerate 防御)
-    _check_rate_limit_ip(request, bucket="mock_exam_history", limit=30, window=60)
+    # 🛡️ rate limit (IDOR enumerate 防御・校内 NAT 対応で生徒単位 audit M5 fix)
+    _check_rate_limit_caller(request, authorization, bucket="mock_exam_history", limit=30, window=60)
 
     # 認証: admin or 本人 session token のみ
     is_admin = False
@@ -27848,8 +27874,8 @@ def mock_exam_grade_essay(payload: dict, request: Request, authorization: Option
     - 修正: admin Bearer or 本人 session_token 必須 (frontend caller 0 件・将来の安全網)
     - rate limit: per-IP 10 req/60s (AI 課金保護・grade-essay-multiview と同等)
     """
-    # 🛡️ rate limit (AI 課金保護)
-    _check_rate_limit_ip(request, bucket="mock_exam_grade_essay", limit=10, window=60)
+    # 🛡️ rate limit (AI 課金保護・校内 NAT 対応で生徒単位 audit M5 fix)
+    _check_rate_limit_caller(request, authorization, bucket="mock_exam_grade_essay", limit=10, window=60)
 
     # 認証: admin or 本人 session token 必須
     is_admin = False

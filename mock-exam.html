@@ -90,6 +90,13 @@
         <button id="meRetryBtn" class="btn-secondary btn-lg">もう一度挑戦</button>
         <a href="vocab.html" class="btn-primary btn-lg">📚 弱点を単語帳で復習 →</a>
       </div>
+      <!-- 🎯 2026-05-26 audit: ゲスト (未ログイン) 体験者のみ表示する signup 誘導 CTA。
+           token 検出は mock-exam.js renderResult 内で localStorage check し display 切替。 -->
+      <div id="meGuestCTA" class="me-guest-cta" style="display:none; margin-top:1.5rem; padding:1.25rem; background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(236,72,153,0.15)); border:1px solid rgba(99,102,241,0.4); border-radius:12px; text-align:center;">
+        <p style="font-size:1.1rem; font-weight:700; margin:0 0 0.5rem;">📝 結果を保存して学習を続けるには会員登録</p>
+        <p style="color:#9ca3af; font-size:0.9rem; margin:0 0 1rem;">学習履歴の保存 / 弱点 AI 分析 / 無制限の模試・問題演習</p>
+        <a href="lp.html#trial" class="btn-primary btn-lg" style="display:inline-block;">→ 無料体験を始める</a>
+      </div>
       <div class="me-share">
         <p class="me-share-prompt">📣 結果をシェア</p>
         <button id="meShareTwitter" class="btn-ghost">𝕏 Twitter にシェア</button>
@@ -98,6 +105,6 @@
     </section>
   </main>
 
-  <script src="mock-exam.js?v=20260526-idor-fix"></script>
+  <script src="mock-exam.js?v=20260526-followup"></script>
 </body>
 </html>

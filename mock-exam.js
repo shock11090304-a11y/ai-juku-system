@@ -54,8 +54,11 @@
         headers: headers,
         body: JSON.stringify({ exam_type: examType, student_id: studentId ? parseInt(studentId) : null }),
       });
-      if (!res.ok) throw new Error(`Generate failed: ${res.status}`);
-      const data = await res.json();
+      // 🛡️ 2026-05-26 audit fix: backend detail を error message に通す (429/400 等の日本語 message を生徒に表示)
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.detail || `HTTP ${res.status}`);
+      }
       if (typeof window.track === 'function') window.track('mock_exam_start', { exam_type: examType });
       currentSession = data;
       answers = {};
@@ -424,8 +427,12 @@
         headers: submitHeaders,
         body: JSON.stringify({ session_id: currentSession.session_id, answers }),
       });
-      if (!res.ok) throw new Error(`Submit failed: ${res.status}`);
-      const data = await res.json();
+      // 🛡️ 2026-05-26 audit fix: backend detail を error message に通す (multiview pattern と統一)
+      // 409「既に採点済み」/ 400「session_id 不正」/ 429「リクエスト多すぎ」等の日本語 message を生徒に表示
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.detail || `HTTP ${res.status}`);
+      }
       if (typeof window.track === 'function') window.track('mock_exam_submit', { exam_type: currentSession.exam_type, percentage: data.percentage });
       renderResult(data);
     } catch (e) {
@@ -472,6 +479,13 @@
       answers = {};
       loadTemplates();
     };
+
+    // 🎯 2026-05-26 audit: ゲスト (未ログイン) 体験者のみ signup CTA 表示 / 本人ログインなら hide
+    const guestCTA = document.getElementById('meGuestCTA');
+    if (guestCTA) {
+      const isGuest = !localStorage.getItem('ai_juku_session_token');
+      guestCTA.style.display = isGuest ? 'block' : 'none';
+    }
 
     window.scrollTo(0, 0);
   }
