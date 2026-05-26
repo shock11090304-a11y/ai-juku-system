@@ -287,6 +287,39 @@
       "file_path": "/lesson-prints/2026-05-25_第1回模試_英語.pdf"
     },
     {
+      "title": "早稲田商 英語自習プリント",
+      "subject": "英語",
+      "topic": "早稲田商_英語自習プリント",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "自習用",
+      "pages": 24,
+      "file_size_kb": 1320,
+      "file_path": "/lesson-prints/2026-05-26_早稲田商_英語自習プリント.pdf"
+    },
+    {
+      "title": "早稲田政経 英語自習プリント",
+      "subject": "英語",
+      "topic": "早稲田政経_英語自習プリント",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "自習用",
+      "pages": 23,
+      "file_size_kb": 1261,
+      "file_path": "/lesson-prints/2026-05-26_早稲田政経_英語自習プリント.pdf"
+    },
+    {
+      "title": "早稲田文構 英語自習プリント",
+      "subject": "英語",
+      "topic": "早稲田文構_英語自習プリント",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "自習用",
+      "pages": 22,
+      "file_size_kb": 1286,
+      "file_path": "/lesson-prints/2026-05-26_早稲田文構_英語自習プリント.pdf"
+    },
+    {
       "title": "早稲田文構英語 自習プリント",
       "subject": "英語",
       "topic": "早稲田文構英語_自習プリント",
@@ -296,6 +329,17 @@
       "pages": 20,
       "file_size_kb": 1069,
       "file_path": "/lesson-prints/2026-05-26_早稲田文構英語_自習プリント.pdf"
+    },
+    {
+      "title": "早稲田法 英語自習プリント",
+      "subject": "英語",
+      "topic": "早稲田法_英語自習プリント",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "自習用",
+      "pages": 23,
+      "file_size_kb": 1296,
+      "file_path": "/lesson-prints/2026-05-26_早稲田法_英語自習プリント.pdf"
     }
   ]
 }
