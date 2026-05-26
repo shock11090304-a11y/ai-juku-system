@@ -7,14 +7,14 @@
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="0">
   <title>マイページ | AIコーチング</title>
-  <script src="cache-purge.js?v=20260522-weekly-worksheet"></script>
+  <script src="cache-purge.js?v=20260526-lesson-prints"></script>
 
-  <script src="frontend-error-monitor.js?v=20260522-weekly-worksheet"></script>
-  <link rel="stylesheet" href="style.css?v=20260519-input-widen">
-  <link rel="stylesheet" href="mypage.css?v=20260522-weekly-worksheet">
+  <script src="frontend-error-monitor.js?v=20260526-lesson-prints"></script>
+  <link rel="stylesheet" href="style.css?v=20260526-lesson-prints">
+  <link rel="stylesheet" href="mypage.css?v=20260526-lesson-prints">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="auth-guard.js?v=20260522-weekly-worksheet"></script>
+  <script src="auth-guard.js?v=20260526-lesson-prints"></script>
 </head>
 <body class="mypage-body">
   <div class="bg-gradient"></div>
@@ -121,6 +121,64 @@
         今週の弱点プリントはまだ生成されていません。模試・問題演習で 1 週間データを蓄積すると、次の日曜朝 5:00 に AI が自動生成します。
       </div>
       <div id="worksheetHistoryList" style="display:none; margin-top:0.8rem; padding-top:0.8rem; border-top:1px solid rgba(255,255,255,0.10);"></div>
+    </section>
+
+    <!-- 📚 配布プリント (塾長指示 2026-05-26 全自動モード)
+         Claude が ~/Desktop/問題生成/ で作成した PDF を全生徒に配信。
+         弱点 TOP3 マッチプリントを最上部・以下は科目フィルタで一覧 -->
+    <section id="lessonPrintsSection" style="margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(59,130,246,0.13), rgba(168,85,247,0.10)); border: 1px solid rgba(59,130,246,0.35); border-radius: 14px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:0.6rem; margin-bottom:0.7rem; flex-wrap:wrap;">
+        <h3 style="margin:0; font-size:1.05rem; color:#fff; font-weight:800;">📚 配布プリント <span style="font-size:0.65em; color:#93c5fd; font-weight:600;">(授業用・自習用・演習問題集 PDF)</span></h3>
+        <button type="button" id="lessonPrintsRefreshBtn" aria-label="プリント一覧を再取得" style="padding:0.35rem 0.7rem; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.20); border-radius:8px; color:#93c5fd; font-weight:700; font-size:0.78rem; cursor:pointer;">🔄 更新</button>
+      </div>
+
+      <!-- 🎯 弱点 TOP3 マッチ おすすめプリント -->
+      <div id="lessonPrintsRecommended" style="display:none; margin-bottom:1rem; padding:0.8rem; background:rgba(251,191,36,0.08); border:1px dashed rgba(251,191,36,0.30); border-radius:10px;">
+        <div style="font-size:0.85rem; color:#fbbf24; font-weight:700; margin-bottom:0.5rem;">🎯 あなたの弱点にマッチするプリント (AI が選定)</div>
+        <div id="lessonPrintsRecommendedList" style="display:grid; gap:0.5rem;"></div>
+      </div>
+
+      <!-- フィルタ -->
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.8rem;">
+        <select id="lpFilterSubject" style="padding:0.4rem 0.6rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#cbd5e1; font-size:0.83rem;">
+          <option value="">📚 全科目</option>
+          <option value="国語">📖 国語</option>
+          <option value="英語">🇬🇧 英語</option>
+          <option value="数学">🔢 数学</option>
+          <option value="物理">⚛️ 物理</option>
+          <option value="化学">🧪 化学</option>
+          <option value="生物">🧬 生物</option>
+          <option value="日本史">🏯 日本史</option>
+          <option value="世界史">🌍 世界史</option>
+          <option value="地理">🗺️ 地理</option>
+          <option value="公民">⚖️ 公民</option>
+          <option value="社会">📜 社会</option>
+          <option value="小論文">✍️ 小論文</option>
+          <option value="模試">📝 模試</option>
+        </select>
+        <select id="lpFilterLevel" style="padding:0.4rem 0.6rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#cbd5e1; font-size:0.83rem;">
+          <option value="">🎚️ 全レベル</option>
+          <option value="基礎">基礎</option>
+          <option value="標準">標準</option>
+          <option value="発展">発展</option>
+          <option value="医学部レベル">医学部レベル</option>
+          <option value="東大レベル">東大レベル</option>
+          <option value="本番レベル">本番レベル</option>
+        </select>
+        <select id="lpFilterType" style="padding:0.4rem 0.6rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#cbd5e1; font-size:0.83rem;">
+          <option value="">📋 全形式</option>
+          <option value="授業用">📖 授業用</option>
+          <option value="自習用">📚 自習用</option>
+          <option value="演習問題集">✏️ 演習問題集</option>
+          <option value="模試">📝 模試</option>
+        </select>
+      </div>
+
+      <div id="lessonPrintsList" style="display:grid; gap:0.55rem; max-height:520px; overflow-y:auto;"></div>
+      <div id="lessonPrintsEmpty" style="display:none; padding:0.9rem; color:#a1a1aa; font-size:0.85rem; text-align:center; background:rgba(0,0,0,0.2); border-radius:8px;">
+        該当するプリントが見つかりませんでした。フィルタを変更してお試しください。
+      </div>
+      <div id="lessonPrintsTotal" style="margin-top:0.6rem; font-size:0.75rem; color:#a1a1aa; text-align:right;"></div>
     </section>
 
     <!-- 通塾生 限定特典 CTA (¥9,800/月) は塾長指示 2026-05-15 で削除
@@ -1039,10 +1097,10 @@
     <p>© 2026 AIコーチング | Mypage v1.0</p>
   </footer>
 
-  <script src="learning-brain.js?v=20260522-underline-fix"></script>
-  <script src="exam-prep.js?v=20260522-weekly-worksheet"></script>
-  <script src="referral-program.js?v=20260522-weekly-worksheet"></script>
-  <script src="mypage.js?v=20260525-homework"></script>
+  <script src="learning-brain.js?v=20260526-lesson-prints"></script>
+  <script src="exam-prep.js?v=20260526-lesson-prints"></script>
+  <script src="referral-program.js?v=20260526-lesson-prints"></script>
+  <script src="mypage.js?v=20260526-lesson-prints"></script>
   <script>
     // ウィジェット初期描画
     (function() {
@@ -1059,6 +1117,7 @@
         renderVocabSrsWidget('vocabSrsWidget', studentId);
         renderWeaknessTop3(student); // 🎯 2026-05-13 塾長指示「個別問題推薦」
         renderWeeklyWorksheet(student); // 📅 2026-05-22 塾長指示「週次弱点プリント」
+        renderLessonPrints(student); // 📚 2026-05-26 塾長指示「配布プリント全自動」
       }
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initWidgets);
@@ -1476,6 +1535,171 @@
           ${isDone ? '<div style="color:#22c55e;font-size:0.85rem;font-weight:700;">✅ Week完了済</div>' : ''}
           <a href="english-exam.html#curriculumSection" style="display:inline-block;margin-top:0.4rem;background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);padding:0.35rem 0.7rem;border-radius:6px;font-size:0.78rem;font-weight:700;text-decoration:none;">→ 全週ロードマップを見る</a>
         </div>`;
+    }
+
+    // 📚 配布プリント (2026-05-26 塾長指示「全自動・公開a・改訂a」)
+    // GET /api/student/lesson-prints + GET /api/student/lesson-prints/recommended
+    // 弱点 TOP3 マッチプリントを上部・以下は科目/レベル/形式 でフィルタ可能な一覧
+    async function renderLessonPrints(student) {
+      const section = document.getElementById('lessonPrintsSection');
+      const list = document.getElementById('lessonPrintsList');
+      const empty = document.getElementById('lessonPrintsEmpty');
+      const totalEl = document.getElementById('lessonPrintsTotal');
+      const refreshBtn = document.getElementById('lessonPrintsRefreshBtn');
+      const recommendedBlock = document.getElementById('lessonPrintsRecommended');
+      const recommendedList = document.getElementById('lessonPrintsRecommendedList');
+      const filterSubject = document.getElementById('lpFilterSubject');
+      const filterLevel = document.getElementById('lpFilterLevel');
+      const filterType = document.getElementById('lpFilterType');
+      // 🛡️ 3 視点 review CRITICAL fix 2026-05-26: 要素 null guard 強化
+      if (!section || !list || !empty || !totalEl || !filterSubject || !filterLevel || !filterType) return;
+
+      const API_BASE = (window.location.origin.includes(':8090') || window.location.origin.includes('localhost:8090'))
+        ? 'http://localhost:8000' : window.location.origin;
+      const escapeHTML = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+
+      const subjectIcon = {
+        '国語':'📖','英語':'🇬🇧','数学':'🔢','物理':'⚛️','化学':'🧪','生物':'🧬',
+        '日本史':'🏯','世界史':'🌍','地理':'🗺️','公民':'⚖️','社会':'📜','小論文':'✍️','模試':'📝',
+      };
+      const levelColor = {
+        '基礎':'#34d399','標準':'#60a5fa','発展':'#a78bfa',
+        '医学部レベル':'#f87171','東大レベル':'#fb923c','本番レベル':'#fbbf24',
+      };
+
+      function renderPrintCard(p, compact) {
+        const ic = subjectIcon[p.subject] || '📚';
+        const lvColor = levelColor[p.level] || '#94a3b8';
+        const pages = p.pages ? `<span style="color:#a1a1aa;font-size:0.72rem;">${p.pages} ページ</span>` : '';
+        const dl = (p.download_count > 0) ? `<span style="color:#fbbf24;font-size:0.7rem;">📥 ${p.download_count}</span>` : '';
+        const matchBadge = p.match_keyword ? `<span style="background:rgba(251,191,36,0.20);color:#fbbf24;padding:1px 6px;border-radius:4px;font-size:0.7rem;font-weight:700;">🎯 ${escapeHTML(p.match_keyword)}</span>` : '';
+        return `
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:0.6rem;padding:0.6rem 0.8rem;background:rgba(0,0,0,0.30);border:1px solid rgba(255,255,255,0.10);border-radius:8px;">
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.2rem;">
+                <span style="font-size:0.95rem;">${ic}</span>
+                <strong style="color:#fff;font-size:0.88rem;line-height:1.3;">${escapeHTML(p.title || '')}</strong>
+                ${matchBadge}
+              </div>
+              <div style="display:flex;gap:0.5rem;flex-wrap:wrap;font-size:0.72rem;">
+                <span style="color:${lvColor};font-weight:700;">${escapeHTML(p.level || '')}</span>
+                <span style="color:#a1a1aa;">${escapeHTML(p.target_type || '')}</span>
+                ${pages}
+                ${dl}
+              </div>
+            </div>
+            <button type="button" data-print-id="${p.id}" data-file-path="${escapeHTML(p.file_path || '')}" data-title="${escapeHTML(p.title || '')}" class="lesson-print-dl-btn" style="flex-shrink:0;padding:0.4rem 0.8rem;background:linear-gradient(135deg,#3b82f6,#6366f1);border:none;border-radius:8px;color:#fff;font-weight:700;font-size:0.78rem;cursor:pointer;min-height:36px;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;">📥 PDF</button>
+          </div>`;
+      }
+
+      async function fetchRecommended() {
+        if (!student || !student.id) {
+          if (recommendedBlock) recommendedBlock.style.display = 'none';
+          return;
+        }
+        try {
+          const token = localStorage.getItem('ai_juku_session_token') || '';
+          const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+          const res = await fetch(`${API_BASE}/api/student/lesson-prints/recommended?student_id=${encodeURIComponent(student.id)}&limit_per_weakness=2`, { headers });
+          if (!res.ok) { if (recommendedBlock) recommendedBlock.style.display = 'none'; return; }
+          const data = await res.json();
+          const recs = (data && data.recommendations) || [];
+          const matched = recs.filter(r => r.prints && r.prints.length > 0);
+          if (matched.length === 0) {
+            if (recommendedBlock) recommendedBlock.style.display = 'none';
+            return;
+          }
+          let html = '';
+          matched.forEach(rec => {
+            (rec.prints || []).forEach(p => {
+              html += renderPrintCard(p, true);
+            });
+          });
+          if (recommendedList) recommendedList.innerHTML = html;
+          if (recommendedBlock) recommendedBlock.style.display = '';
+        } catch (e) {
+          if (recommendedBlock) recommendedBlock.style.display = 'none';
+        }
+      }
+
+      async function fetchList() {
+        try {
+          const params = new URLSearchParams();
+          if (filterSubject.value) params.set('subject', filterSubject.value);
+          if (filterLevel.value) params.set('level', filterLevel.value);
+          if (filterType.value) params.set('target_type', filterType.value);
+          params.set('limit', '50');
+          const res = await fetch(`${API_BASE}/api/student/lesson-prints?${params.toString()}`);
+          if (!res.ok) { list.innerHTML = ''; empty.style.display = ''; return; }
+          const data = await res.json();
+          const prints = (data && data.prints) || [];
+          if (prints.length === 0) {
+            list.innerHTML = '';
+            empty.style.display = '';
+            totalEl.textContent = '';
+            return;
+          }
+          empty.style.display = 'none';
+          list.innerHTML = prints.map(p => renderPrintCard(p, false)).join('');
+          totalEl.textContent = `全 ${data.total || prints.length} 件中 ${prints.length} 件表示`;
+        } catch (e) {
+          console.warn('lesson-prints fetch failed:', e);
+          list.innerHTML = '';
+          empty.style.display = '';
+        }
+      }
+
+      // 初期描画
+      fetchRecommended();
+      fetchList();
+
+      // フィルタ変更
+      [filterSubject, filterLevel, filterType].forEach(el => {
+        if (el) el.addEventListener('change', fetchList);
+      });
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+          list.innerHTML = '<div style="padding:0.6rem;color:#a1a1aa;font-size:0.85rem;">🔄 更新中…</div>';
+          fetchRecommended();
+          fetchList();
+        });
+      }
+
+      // DL ボタン (delegation)
+      const dlHandler = async function(ev) {
+        const btn = ev.target.closest('.lesson-print-dl-btn');
+        if (!btn) return;
+        ev.preventDefault();
+        const pid = btn.getAttribute('data-print-id');
+        const fpath = btn.getAttribute('data-file-path');
+        const title = btn.getAttribute('data-title') || 'プリント';
+        if (!pid || !fpath) return;
+        // 🛡️ 3 視点 review CRITICAL fix 2026-05-26: file_path scheme guard
+        // '/lesson-prints/' で始まる相対パスのみ許可。javascript:/http(s)://外部/../ は全拒否
+        if (!/^\/lesson-prints\/[^?#\s]+\.pdf$/i.test(fpath) || fpath.includes('..')) {
+          alert('⚠️ 不正な PDF パスです: ' + fpath);
+          return;
+        }
+        btn.disabled = true;
+        const origText = btn.textContent;
+        btn.textContent = '⏳ 準備中…';
+        try {
+          const token = localStorage.getItem('ai_juku_session_token') || '';
+          const headers = { 'Content-Type': 'application/json' };
+          if (token) headers['Authorization'] = 'Bearer ' + token;
+          // DL 履歴記録 (失敗してもダウンロードは継続)
+          fetch(`${API_BASE}/api/student/lesson-prints/${encodeURIComponent(pid)}/download`, {
+            method: 'POST', headers
+          }).catch(() => {});
+          // 新タブで PDF 開く (Vercel static asset・guard 済み)
+          window.open(fpath, '_blank', 'noopener,noreferrer');
+        } finally {
+          setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 800);
+        }
+      };
+      list.addEventListener('click', dlHandler);
+      if (recommendedList) recommendedList.addEventListener('click', dlHandler);
     }
   </script>
   <script>

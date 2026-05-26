@@ -1,0 +1,268 @@
+{
+  "prints": [
+    {
+      "title": "授業テキスト 現代文評論の読み方",
+      "subject": "国語",
+      "topic": "授業テキスト_現代文評論の読み方",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "授業用",
+      "pages": 10,
+      "file_size_kb": 639,
+      "file_path": "/lesson-prints/2026-05-25_授業テキスト_現代文評論の読み方.pdf"
+    },
+    {
+      "title": "第1回模試 国語",
+      "subject": "国語",
+      "topic": "第1回模試_国語",
+      "level": "本番レベル",
+      "target_grade": "高校生",
+      "target_type": "模試",
+      "pages": 30,
+      "file_size_kb": 1178,
+      "file_path": "/lesson-prints/2026-05-25_第1回模試_国語.pdf"
+    },
+    {
+      "title": "授業テキスト 微分のグラフ応用",
+      "subject": "数学",
+      "topic": "授業テキスト_微分のグラフ応用",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "授業用",
+      "pages": 8,
+      "file_size_kb": 501,
+      "file_path": "/lesson-prints/2026-05-25_授業テキスト_微分のグラフ応用.pdf"
+    },
+    {
+      "title": "東京医科歯科 数学自習プリント",
+      "subject": "数学",
+      "topic": "東京医科歯科_数学自習プリント",
+      "level": "医学部レベル",
+      "target_grade": "高校生",
+      "target_type": "自習用",
+      "pages": 17,
+      "file_size_kb": 986,
+      "file_path": "/lesson-prints/2026-05-26_東京医科歯科_数学自習プリント.pdf"
+    },
+    {
+      "title": "東大ベクトル 自習プリント",
+      "subject": "数学",
+      "topic": "東大ベクトル_自習プリント",
+      "level": "東大レベル",
+      "target_grade": "高校生",
+      "target_type": "自習用",
+      "pages": 15,
+      "file_size_kb": 747,
+      "file_path": "/lesson-prints/2026-05-26_東大ベクトル_自習プリント.pdf"
+    },
+    {
+      "title": "授業テキスト 運動方程式の立て方",
+      "subject": "物理",
+      "topic": "授業テキスト_運動方程式の立て方",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "授業用",
+      "pages": 8,
+      "file_size_kb": 566,
+      "file_path": "/lesson-prints/2026-05-25_授業テキスト_運動方程式の立て方.pdf"
+    },
+    {
+      "title": "東大物理 ばねと弾性衝突",
+      "subject": "物理",
+      "topic": "東大物理_ばねと弾性衝突",
+      "level": "東大レベル",
+      "target_grade": "高校生",
+      "target_type": "演習問題集",
+      "pages": 14,
+      "file_size_kb": 785,
+      "file_path": "/lesson-prints/2026-05-25_東大物理_ばねと弾性衝突.pdf"
+    },
+    {
+      "title": "東大化学 化学平衡自習プリント",
+      "subject": "化学",
+      "topic": "東大化学_化学平衡自習プリント",
+      "level": "東大レベル",
+      "target_grade": "高校生",
+      "target_type": "自習用",
+      "pages": 15,
+      "file_size_kb": 1239,
+      "file_path": "/lesson-prints/2026-05-26_東大化学_化学平衡自習プリント.pdf"
+    },
+    {
+      "title": "sample biology",
+      "subject": "生物",
+      "topic": "sample_biology",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "サンプル",
+      "pages": 5,
+      "file_size_kb": 415,
+      "file_path": "/lesson-prints/sample_biology.pdf"
+    },
+    {
+      "title": "sample chemistry",
+      "subject": "化学",
+      "topic": "sample_chemistry",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "サンプル",
+      "pages": 4,
+      "file_size_kb": 391,
+      "file_path": "/lesson-prints/sample_chemistry.pdf"
+    },
+    {
+      "title": "sample physics",
+      "subject": "物理",
+      "topic": "sample_physics",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "サンプル",
+      "pages": 4,
+      "file_size_kb": 352,
+      "file_path": "/lesson-prints/sample_physics.pdf"
+    },
+    {
+      "title": "授業テキスト 明治維新まとめ",
+      "subject": "日本史",
+      "topic": "授業テキスト_明治維新まとめ",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "授業用",
+      "pages": 9,
+      "file_size_kb": 1091,
+      "file_path": "/lesson-prints/2026-05-25_授業テキスト_明治維新まとめ.pdf"
+    },
+    {
+      "title": "sample civics",
+      "subject": "公民",
+      "topic": "sample_civics",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "サンプル",
+      "pages": 4,
+      "file_size_kb": 587,
+      "file_path": "/lesson-prints/sample_civics.pdf"
+    },
+    {
+      "title": "sample geography",
+      "subject": "地理",
+      "topic": "sample_geography",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "サンプル",
+      "pages": 4,
+      "file_size_kb": 484,
+      "file_path": "/lesson-prints/sample_geography.pdf"
+    },
+    {
+      "title": "sample japanese history",
+      "subject": "日本史",
+      "topic": "sample_japanese_history",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "サンプル",
+      "pages": 4,
+      "file_size_kb": 536,
+      "file_path": "/lesson-prints/sample_japanese_history.pdf"
+    },
+    {
+      "title": "sample world history",
+      "subject": "世界史",
+      "topic": "sample_world_history",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "サンプル",
+      "pages": 4,
+      "file_size_kb": 602,
+      "file_path": "/lesson-prints/sample_world_history.pdf"
+    },
+    {
+      "title": "授業1回 文法長文ミックス",
+      "subject": "英語",
+      "topic": "授業1回_文法長文ミックス",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "授業用",
+      "pages": 10,
+      "file_size_kb": 366,
+      "file_path": "/lesson-prints/2026-05-25_授業1回_文法長文ミックス.pdf"
+    },
+    {
+      "title": "授業テキスト 仮定法マスター",
+      "subject": "英語",
+      "topic": "授業テキスト_仮定法マスター",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "授業用",
+      "pages": 9,
+      "file_size_kb": 736,
+      "file_path": "/lesson-prints/2026-05-25_授業テキスト_仮定法マスター.pdf"
+    },
+    {
+      "title": "文法 基礎レベル 30問",
+      "subject": "英語",
+      "topic": "文法_基礎レベル_30問",
+      "level": "基礎",
+      "target_grade": "高校生",
+      "target_type": "演習問題集",
+      "pages": 12,
+      "file_size_kb": 300,
+      "file_path": "/lesson-prints/2026-05-25_文法_基礎レベル_30問.pdf"
+    },
+    {
+      "title": "文法 標準レベル 30問",
+      "subject": "英語",
+      "topic": "文法_標準レベル_30問",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "演習問題集",
+      "pages": 14,
+      "file_size_kb": 321,
+      "file_path": "/lesson-prints/2026-05-25_文法_標準レベル_30問.pdf"
+    },
+    {
+      "title": "文法 発展レベル 30問",
+      "subject": "英語",
+      "topic": "文法_発展レベル_30問",
+      "level": "発展",
+      "target_grade": "高校生",
+      "target_type": "演習問題集",
+      "pages": 15,
+      "file_size_kb": 319,
+      "file_path": "/lesson-prints/2026-05-25_文法_発展レベル_30問.pdf"
+    },
+    {
+      "title": "文法ドリル 30問",
+      "subject": "英語",
+      "topic": "文法ドリル_30問",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "演習問題集",
+      "pages": 12,
+      "file_size_kb": 273,
+      "file_path": "/lesson-prints/2026-05-25_文法ドリル_30問.pdf"
+    },
+    {
+      "title": "標準長文 Stories",
+      "subject": "英語",
+      "topic": "標準長文_Stories",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "演習問題集",
+      "pages": 5,
+      "file_size_kb": 299,
+      "file_path": "/lesson-prints/2026-05-25_標準長文_Stories.pdf"
+    },
+    {
+      "title": "第1回模試 英語",
+      "subject": "英語",
+      "topic": "第1回模試_英語",
+      "level": "本番レベル",
+      "target_grade": "高校生",
+      "target_type": "模試",
+      "pages": 8,
+      "file_size_kb": 312,
+      "file_path": "/lesson-prints/2026-05-25_第1回模試_英語.pdf"
+    }
+  ]
+}

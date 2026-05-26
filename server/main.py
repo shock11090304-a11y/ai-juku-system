@@ -1090,6 +1090,41 @@ def init_db():
     );
     CREATE INDEX IF NOT EXISTS idx_invite_codes_email ON invite_codes(email);
     CREATE INDEX IF NOT EXISTS idx_invite_codes_expires ON invite_codes(expires_at);
+    -- 📚 配布プリント (塾長指示 2026-05-26): Claude が作成した PDF 教材を生徒に配信
+    -- subject (国語/英語/数学/理科/社会/小論文/模試) × topic (具体テーマ) × level (基礎/標準/発展/医学部/東大)
+    -- file_path は Vercel static asset の URL (/lesson-prints/2026-05-26_xxx.pdf)
+    -- 公開 (a) 全生徒・改訂 (a) Claude 即自動公開 設定で運用
+    CREATE TABLE IF NOT EXISTS lesson_prints (
+        id {pk},
+        title TEXT NOT NULL,
+        subtitle TEXT,
+        subject TEXT NOT NULL,
+        topic TEXT,
+        level TEXT,
+        target_grade TEXT,
+        target_type TEXT,
+        description TEXT,
+        file_path TEXT NOT NULL UNIQUE,
+        pages INTEGER DEFAULT 0,
+        file_size_kb INTEGER DEFAULT 0,
+        is_published INTEGER DEFAULT 1,
+        download_count INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_lesson_prints_subject ON lesson_prints(subject, is_published, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_lesson_prints_topic ON lesson_prints(topic);
+    CREATE INDEX IF NOT EXISTS idx_lesson_prints_level ON lesson_prints(level);
+    CREATE INDEX IF NOT EXISTS idx_lesson_prints_created ON lesson_prints(created_at DESC);
+    CREATE TABLE IF NOT EXISTS lesson_print_downloads (
+        id {pk},
+        student_id INTEGER NOT NULL,
+        print_id INTEGER NOT NULL,
+        downloaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        ip_hash TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_lpd_student ON lesson_print_downloads(student_id, downloaded_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_lpd_print ON lesson_print_downloads(print_id, downloaded_at DESC);
     """)
     # 既存DBに不足列を追加 (idempotent migration)
     # Postgres: 「column already exists」エラーで トランザクションが abort されると
@@ -4116,6 +4151,438 @@ def student_weakness_progress(request: Request, student_id: int, subject: str, t
             "daily": daily_list,
             "total_count": len(rows),
             "trend": trend,
+        }
+    finally:
+        conn.close()
+
+
+# ============================================================
+# 📚 配布プリント (Lesson Prints) API ─ 塾長指示 2026-05-26 で実装
+# Claude が ~/Desktop/問題生成/ で作成した PDF を ai-juku 全生徒に配信。
+# 公開 (a) 全生徒・改訂 (a) Claude 即自動公開 で運用。
+# ============================================================
+
+# 弱点 subject の英→日 マッピング (lesson_prints.subject と weakness.subject の橋渡し)
+_LESSON_PRINT_SUBJECT_MAP = {
+    "math": ["数学"], "physics": ["理科", "物理"], "chemistry": ["理科", "化学"],
+    "biology": ["理科", "生物"], "english": ["英語"], "japanese": ["国語"],
+    "social": ["社会", "日本史", "世界史", "地理", "公民"],
+}
+
+
+def _extract_topic_keywords(topic: str) -> list:
+    """弱点 topic 文字列をキーワードリストに分解 (LIKE 検索用)。
+    🛡️ 3 視点 review 致命傷 fix 2026-05-26: 助詞 (の/を/と/は/が) も separator に追加。
+    「微分のグラフ応用」→ ['微分', 'グラフ応用'] のように複合名詞も分解できるよう改善。
+    """
+    if not topic:
+        return []
+    import re as _re
+    raw = _re.split(r"[\s　、。・/,.()\[\]【】「」『』のをとはがで]+", str(topic))
+    return [k.strip() for k in raw if k and len(k.strip()) >= 2][:5]
+
+
+@app.get("/api/student/lesson-prints")
+def student_lesson_prints(
+    request: Request,
+    subject: Optional[str] = None,
+    level: Optional[str] = None,
+    target_type: Optional[str] = None,
+    limit: int = 30,
+    offset: int = 0,
+):
+    """📚 公開中の配布プリント一覧 (全生徒アクセス可・認証不要・閲覧用)。
+    塾長指示 2026-05-26「公開 (a) 全生徒」設定に従う。
+
+    query:
+      - subject: 数学 / 英語 / 国語 / 理科 / 社会 / 小論文 / 模試
+      - level: 基礎 / 標準 / 発展 / 医学部レベル / 東大レベル
+      - target_type: 授業用 / 自習用 / 演習問題集 / 模試
+      - limit: max 100, offset: pagination
+    返却: {prints: [...], total: int}
+    """
+    _check_rate_limit_ip(request, bucket="lesson_prints_list", limit=60, window=60)
+    limit = max(1, min(int(limit or 30), 100))
+    offset = max(0, int(offset or 0))
+
+    where_clauses = ["is_published = 1"]
+    params: list = []
+    if subject:
+        where_clauses.append("subject = ?")
+        params.append(subject)
+    if level:
+        where_clauses.append("level = ?")
+        params.append(level)
+    if target_type:
+        where_clauses.append("target_type = ?")
+        params.append(target_type)
+    where_sql = " AND ".join(where_clauses)
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(f"SELECT COUNT(*) AS cnt FROM lesson_prints WHERE {where_sql}", params)
+        cnt_row = c.fetchone()
+        try:
+            total = cnt_row["cnt"]
+        except (TypeError, KeyError, IndexError):
+            total = cnt_row[0] if cnt_row else 0
+        c.execute(
+            f"SELECT id, title, subtitle, subject, topic, level, target_grade, target_type, "
+            f"description, file_path, pages, file_size_kb, download_count, created_at "
+            f"FROM lesson_prints WHERE {where_sql} "
+            f"ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            params + [limit, offset],
+        )
+        rows = c.fetchall()
+        prints = []
+        for r in rows:
+            try:
+                prints.append({
+                    "id": r["id"], "title": r["title"], "subtitle": r["subtitle"],
+                    "subject": r["subject"], "topic": r["topic"], "level": r["level"],
+                    "target_grade": r["target_grade"], "target_type": r["target_type"],
+                    "description": r["description"], "file_path": r["file_path"],
+                    "pages": r["pages"], "file_size_kb": r["file_size_kb"],
+                    "download_count": r["download_count"], "created_at": str(r["created_at"]) if r["created_at"] else None,
+                })
+            except (TypeError, KeyError, IndexError):
+                prints.append({
+                    "id": r[0], "title": r[1], "subtitle": r[2], "subject": r[3], "topic": r[4],
+                    "level": r[5], "target_grade": r[6], "target_type": r[7], "description": r[8],
+                    "file_path": r[9], "pages": r[10], "file_size_kb": r[11],
+                    "download_count": r[12], "created_at": str(r[13]) if r[13] else None,
+                })
+        return {"prints": prints, "total": int(total or 0)}
+    finally:
+        conn.close()
+
+
+@app.get("/api/student/lesson-prints/recommended")
+def student_lesson_prints_recommended(
+    request: Request, student_id: int, limit_per_weakness: int = 2,
+    authorization: Optional[str] = Header(None),
+):
+    """🎯 弱点 TOP3 にマッチする配布プリント推薦 (本人 only)。
+    student_weakness.subject + topic を lesson_prints.subject + topic LIKE で照合。
+    マッチなしなら subject 全体から最新で fallback。
+
+    認証 (3 視点 review 準拠): admin Bearer or 本人 session token のみ。
+    rate limit: per-IP 30 / 60 秒 (enumerate 防御)。
+    """
+    _check_rate_limit_ip(request, bucket="lesson_prints_recommended", limit=30, window=60)
+
+    is_admin = False
+    auth_student_id: Optional[int] = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            is_admin = True
+        else:
+            claims = _verify_session_token(token)
+            if claims and claims.get("student_id"):
+                try:
+                    auth_student_id = int(claims["student_id"])
+                except (TypeError, ValueError):
+                    auth_student_id = None
+    try:
+        student_id = int(student_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="student_id 不正")
+    if not is_admin:
+        if not auth_student_id:
+            raise HTTPException(status_code=403, detail="ログインが必要です")
+        if auth_student_id != student_id:
+            raise HTTPException(status_code=403, detail="他生徒のデータにはアクセスできません")
+
+    limit_per_weakness = max(1, min(int(limit_per_weakness or 2), 5))
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT subject, topic FROM student_weakness WHERE student_id = ? "
+            "ORDER BY question_count DESC, last_seen_at DESC LIMIT 3",
+            (student_id,),
+        )
+        weaknesses = c.fetchall() or []
+        recommendations = []
+        seen_ids = set()
+        for w in weaknesses:
+            try:
+                w_subj = w["subject"]; w_topic = w["topic"]
+            except (TypeError, KeyError, IndexError):
+                w_subj, w_topic = w[0], w[1]
+            jp_subjects = _LESSON_PRINT_SUBJECT_MAP.get((w_subj or "").lower(), [w_subj])
+            kw_list = _extract_topic_keywords(w_topic)
+            matched_prints = []
+            # Strategy 1: subject + topic LIKE
+            if kw_list and jp_subjects:
+                placeholders = ",".join(["?"] * len(jp_subjects))
+                for kw in kw_list:
+                    c.execute(
+                        f"SELECT id, title, subject, topic, level, target_type, file_path, pages "
+                        f"FROM lesson_prints WHERE is_published = 1 AND subject IN ({placeholders}) "
+                        f"AND (topic LIKE ? OR title LIKE ?) "
+                        f"ORDER BY created_at DESC LIMIT ?",
+                        jp_subjects + [f"%{kw}%", f"%{kw}%", limit_per_weakness],
+                    )
+                    for r in c.fetchall():
+                        try:
+                            pid = r["id"]
+                        except (TypeError, KeyError, IndexError):
+                            pid = r[0]
+                        if pid in seen_ids:
+                            continue
+                        seen_ids.add(pid)
+                        try:
+                            matched_prints.append({
+                                "id": r["id"], "title": r["title"], "subject": r["subject"],
+                                "topic": r["topic"], "level": r["level"],
+                                "target_type": r["target_type"], "file_path": r["file_path"],
+                                "pages": r["pages"], "match_keyword": kw,
+                            })
+                        except (TypeError, KeyError, IndexError):
+                            matched_prints.append({
+                                "id": r[0], "title": r[1], "subject": r[2], "topic": r[3],
+                                "level": r[4], "target_type": r[5], "file_path": r[6],
+                                "pages": r[7], "match_keyword": kw,
+                            })
+                        if len(matched_prints) >= limit_per_weakness:
+                            break
+                    if len(matched_prints) >= limit_per_weakness:
+                        break
+            # Strategy 2: subject only fallback
+            if not matched_prints and jp_subjects:
+                placeholders = ",".join(["?"] * len(jp_subjects))
+                c.execute(
+                    f"SELECT id, title, subject, topic, level, target_type, file_path, pages "
+                    f"FROM lesson_prints WHERE is_published = 1 AND subject IN ({placeholders}) "
+                    f"ORDER BY created_at DESC LIMIT ?",
+                    jp_subjects + [limit_per_weakness],
+                )
+                for r in c.fetchall():
+                    try:
+                        pid = r["id"]
+                    except (TypeError, KeyError, IndexError):
+                        pid = r[0]
+                    if pid in seen_ids:
+                        continue
+                    seen_ids.add(pid)
+                    try:
+                        matched_prints.append({
+                            "id": r["id"], "title": r["title"], "subject": r["subject"],
+                            "topic": r["topic"], "level": r["level"],
+                            "target_type": r["target_type"], "file_path": r["file_path"],
+                            "pages": r["pages"], "match_keyword": None,
+                        })
+                    except (TypeError, KeyError, IndexError):
+                        matched_prints.append({
+                            "id": r[0], "title": r[1], "subject": r[2], "topic": r[3],
+                            "level": r[4], "target_type": r[5], "file_path": r[6],
+                            "pages": r[7], "match_keyword": None,
+                        })
+            recommendations.append({
+                "weakness_subject": w_subj,
+                "weakness_topic": w_topic,
+                "prints": matched_prints,
+            })
+        return {"recommendations": recommendations}
+    finally:
+        conn.close()
+
+
+@app.post("/api/student/lesson-prints/{print_id}/download")
+def student_lesson_print_download(
+    print_id: int, request: Request,
+    authorization: Optional[str] = Header(None),
+):
+    """📥 配布プリント DL 履歴記録 + file_path 返却。
+    認証: student session token 必須 (admin Bearer も可)。
+    """
+    _check_rate_limit_ip(request, bucket="lesson_print_dl", limit=60, window=60)
+
+    is_admin = False
+    auth_student_id: Optional[int] = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            is_admin = True
+        else:
+            claims = _verify_session_token(token)
+            if claims and claims.get("student_id"):
+                try:
+                    auth_student_id = int(claims["student_id"])
+                except (TypeError, ValueError):
+                    auth_student_id = None
+    if not is_admin and not auth_student_id:
+        raise HTTPException(status_code=403, detail="ログインが必要です")
+
+    try:
+        print_id = int(print_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="print_id 不正")
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT id, file_path, title, is_published FROM lesson_prints WHERE id = ?",
+            (print_id,),
+        )
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="プリントが見つかりません")
+        try:
+            pid = row["id"]; fpath = row["file_path"]; title = row["title"]; published = row["is_published"]
+        except (TypeError, KeyError, IndexError):
+            pid = row[0]; fpath = row[1]; title = row[2]; published = row[3]
+        if not published:
+            raise HTTPException(status_code=403, detail="このプリントは現在非公開です")
+
+        # DL 履歴記録 (admin Bearer は student_id=0 で記録)
+        sid = auth_student_id if auth_student_id else 0
+        import hashlib as _hl
+        ip = _client_ip(request) or ""
+        ip_hash = _hl.sha256(ip.encode("utf-8")).hexdigest()[:16] if ip else None
+        c.execute(
+            "INSERT INTO lesson_print_downloads (student_id, print_id, ip_hash) VALUES (?, ?, ?)",
+            (sid, pid, ip_hash),
+        )
+        # download_count incr
+        c.execute(
+            "UPDATE lesson_prints SET download_count = COALESCE(download_count, 0) + 1, "
+            "updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (pid,),
+        )
+        conn.commit()
+        return {"ok": True, "id": pid, "title": title, "file_path": fpath}
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/lesson-prints/sync")
+async def admin_lesson_prints_sync(request: Request, x_cron_secret: Optional[str] = Header(None)):
+    """🔄 配布プリント sync endpoint (CRON_SECRET 認証)。
+    POST body (JSON): {"prints": [{title, subject, topic, level, target_grade, target_type, description, file_path, pages, file_size_kb, subtitle}, ...]}
+    file_path が既存なら UPDATE、新規なら INSERT (upsert)。
+    Claude 自動公開 (Phase 4) で利用。
+
+    塾長指示 2026-05-26「改訂 (a) Claude 即自動公開」に対応。
+    """
+    if not CRON_SECRET:
+        raise HTTPException(status_code=503, detail="CRON_SECRET 未設定")
+    # 🛡️ 3 視点 review CRITICAL fix 2026-05-26: timing attack 対策 (hmac.compare_digest)
+    import hmac as _hmac
+    if not _hmac.compare_digest(str(x_cron_secret or ""), CRON_SECRET):
+        raise HTTPException(status_code=403, detail="CRON_SECRET 不一致")
+    try:
+        raw = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="JSON body 不正")
+    prints = raw.get("prints") if isinstance(raw, dict) else None
+    if not isinstance(prints, list) or not prints:
+        raise HTTPException(status_code=400, detail="prints 配列が必要")
+
+    inserted = 0
+    updated = 0
+    skipped = 0
+    conn = db()
+    try:
+        c = conn.cursor()
+        for p in prints:
+            fp = (p or {}).get("file_path")
+            title = (p or {}).get("title")
+            subject = (p or {}).get("subject")
+            # 🛡️ 3 視点 review CRITICAL fix 2026-05-26: file_path 検証 (path traversal / scheme injection 防止)
+            # 受け入れる形式: '/lesson-prints/<ファイル名>' のみ。'..', '//', 'javascript:', 'http://' は全拒否
+            if (
+                not fp or not title or not subject
+                or not isinstance(fp, str)
+                or not fp.startswith("/lesson-prints/")
+                or ".." in fp
+                or "//" in fp.replace("//", "/", 1)  # double-slash 検知 (// は normalize 後に残れば外部 URL の兆候)
+                or any(ord(c2) < 0x20 for c2 in fp)
+            ):
+                skipped += 1
+                continue
+            c.execute("SELECT id FROM lesson_prints WHERE file_path = ?", (fp,))
+            existing = c.fetchone()
+            if existing:
+                c.execute(
+                    "UPDATE lesson_prints SET title = ?, subtitle = ?, subject = ?, topic = ?, "
+                    "level = ?, target_grade = ?, target_type = ?, description = ?, "
+                    "pages = ?, file_size_kb = ?, is_published = ?, updated_at = CURRENT_TIMESTAMP "
+                    "WHERE file_path = ?",
+                    (
+                        title, p.get("subtitle"), subject, p.get("topic"),
+                        p.get("level"), p.get("target_grade"), p.get("target_type"),
+                        p.get("description"), p.get("pages", 0), p.get("file_size_kb", 0),
+                        1 if p.get("is_published", True) else 0, fp,
+                    ),
+                )
+                updated += 1
+            else:
+                c.execute(
+                    "INSERT INTO lesson_prints (title, subtitle, subject, topic, level, target_grade, "
+                    "target_type, description, file_path, pages, file_size_kb, is_published) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        title, p.get("subtitle"), subject, p.get("topic"),
+                        p.get("level"), p.get("target_grade"), p.get("target_type"),
+                        p.get("description"), fp, p.get("pages", 0), p.get("file_size_kb", 0),
+                        1 if p.get("is_published", True) else 0,
+                    ),
+                )
+                inserted += 1
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True, "inserted": inserted, "updated": updated, "skipped": skipped, "total": len(prints)}
+
+
+@app.get("/api/admin/lesson-prints/stats")
+def admin_lesson_prints_stats(authorization: Optional[str] = Header(None)):
+    """📊 CEO ダッシュ用 ─ プリント別 DL 統計。
+    Top10 DL + 公開数 + 未読プリント数。
+    """
+    if not (authorization and authorization.startswith("Bearer ") and
+            _verify_admin_token(authorization[len("Bearer "):].strip())):
+        raise HTTPException(status_code=403, detail="admin auth required")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT id, title, subject, level, download_count, created_at "
+            "FROM lesson_prints WHERE is_published = 1 "
+            "ORDER BY download_count DESC, created_at DESC LIMIT 10"
+        )
+        top = []
+        for r in c.fetchall():
+            try:
+                top.append({"id": r["id"], "title": r["title"], "subject": r["subject"],
+                            "level": r["level"], "download_count": r["download_count"],
+                            "created_at": str(r["created_at"]) if r["created_at"] else None})
+            except (TypeError, KeyError, IndexError):
+                top.append({"id": r[0], "title": r[1], "subject": r[2], "level": r[3],
+                            "download_count": r[4], "created_at": str(r[5]) if r[5] else None})
+        # 🛡️ 3 視点 review 致命傷 fix 2026-05-26: 二重 fetchone 削除 (dead code)
+        c.execute("SELECT COUNT(*) AS cnt FROM lesson_prints WHERE is_published = 1")
+        row = c.fetchone()
+        try:
+            published_cnt = row["cnt"]
+        except (TypeError, KeyError, IndexError):
+            published_cnt = row[0] if row else 0
+        c.execute("SELECT COUNT(*) AS cnt FROM lesson_print_downloads")
+        row2 = c.fetchone()
+        try:
+            total_dls = row2["cnt"]
+        except (TypeError, KeyError, IndexError):
+            total_dls = row2[0] if row2 else 0
+        return {
+            "top10_downloaded": top,
+            "published_count": int(published_cnt or 0),
+            "total_downloads": int(total_dls or 0),
         }
     finally:
         conn.close()

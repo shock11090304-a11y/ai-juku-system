@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <script src="cache-purge.js?v=20260524-cache-bump"></script>
+  <script src="cache-purge.js?v=20260526-lesson-prints"></script>
   <!-- html2canvas: テンプレートから画像生成 (templates → PNG) 用 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
     integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA=="
@@ -11,7 +11,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CEO経営ダッシュボード | AIコーチング</title>
-  <link rel="stylesheet" href="style.css?v=20260519-input-widen">
+  <link rel="stylesheet" href="style.css?v=20260526-lesson-prints">
   <link rel="stylesheet" href="ceo.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
@@ -659,6 +659,15 @@
           <button id="refreshTbReqBtn" type="button" style="background:rgba(251,191,36,0.18);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);padding:0.3rem 0.7rem;border-radius:6px;font-size:0.72rem;font-weight:700;cursor:pointer;">🔄 更新</button>
         </div>
         <div id="tbMissingReqList" style="font-size:0.78rem;color:#cbd5e1;">読み込み中...</div>
+      </div>
+
+      <!-- 📚 配布プリント 管理 (2026-05-26 全自動モード: Claude 即自動公開) -->
+      <div style="margin-top:1rem;padding:0.9rem;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.3);border-radius:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.6rem;">
+          <div style="font-size:0.85rem;font-weight:800;color:#93c5fd;">📚 配布プリント (Claude 自動公開) — DL TOP10 + 配信統計</div>
+          <button id="refreshLpStatsBtn" type="button" style="background:rgba(59,130,246,0.18);color:#93c5fd;border:1px solid rgba(59,130,246,0.4);padding:0.3rem 0.7rem;border-radius:6px;font-size:0.72rem;font-weight:700;cursor:pointer;">🔄 更新</button>
+        </div>
+        <div id="lpStatsList" style="font-size:0.78rem;color:#cbd5e1;">読み込み中...</div>
       </div>
 
       <!-- 🛡️ E2E 合成監視 + JS エラー (24/365 自動検知 - Phase 14: 2026-04-27 追加) -->
@@ -2253,8 +2262,8 @@
     <p>© 2026 AIコーチング | CEO Dashboard v1.0</p>
   </footer>
 
-  <script src="plans.js?v=20260521-r2-backup-ui"></script>
-  <script src="ceo.js?v=20260521-r2-backup-ui"></script>
+  <script src="plans.js?v=20260526-lesson-prints"></script>
+  <script src="ceo.js?v=20260526-lesson-prints"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {
@@ -3467,6 +3476,48 @@
       // 教材プール 未作成リクエスト 手動更新
       const refreshTbReqBtn = document.getElementById('refreshTbReqBtn');
       if (refreshTbReqBtn) refreshTbReqBtn.addEventListener('click', loadTextbookMissingRequests);
+
+      // 📚 配布プリント DL 統計 (2026-05-26 塾長指示「全自動・Claude 即自動公開」)
+      async function loadLessonPrintsStats() {
+        const box = document.getElementById('lpStatsList');
+        if (!box) return;
+        try {
+          const r = await AdminAuth.fetch('/api/admin/lesson-prints/stats');
+          if (!r.ok) { box.innerHTML = '<div style="color:#f87171;">取得失敗 (' + r.status + ')</div>'; return; }
+          const j = await r.json();
+          const top = j.top10_downloaded || [];
+          const pub = j.published_count || 0;
+          const tdls = j.total_downloads || 0;
+          const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+          let html = '';
+          html += '<div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin-bottom:0.7rem;">';
+          html += '  <div style="padding:0.5rem 0.8rem;background:rgba(0,0,0,0.25);border-radius:6px;"><span style="color:#71717a;font-size:0.7rem;">公開中:</span> <strong style="color:#93c5fd;font-size:1.05rem;">' + pub + '</strong> 件</div>';
+          html += '  <div style="padding:0.5rem 0.8rem;background:rgba(0,0,0,0.25);border-radius:6px;"><span style="color:#71717a;font-size:0.7rem;">累計 DL:</span> <strong style="color:#86efac;font-size:1.05rem;">' + tdls + '</strong> 回</div>';
+          html += '</div>';
+          if (top.length === 0) {
+            html += '<div style="color:#a1a1aa;font-size:0.78rem;">まだ DL 履歴がありません。</div>';
+          } else {
+            html += '<table style="width:100%;border-collapse:collapse;font-size:0.74rem;">';
+            html += '<thead><tr style="background:rgba(0,0,0,0.30);"><th style="text-align:left;padding:0.3rem 0.5rem;">タイトル</th><th style="padding:0.3rem 0.5rem;">科目</th><th style="padding:0.3rem 0.5rem;">レベル</th><th style="padding:0.3rem 0.5rem;text-align:right;">DL</th></tr></thead><tbody>';
+            top.forEach(p => {
+              html += '<tr style="border-top:1px solid rgba(255,255,255,0.05);">'
+                   + '<td style="padding:0.3rem 0.5rem;color:#e4e4e7;">' + esc(p.title) + '</td>'
+                   + '<td style="padding:0.3rem 0.5rem;color:#cbd5e1;text-align:center;">' + esc(p.subject) + '</td>'
+                   + '<td style="padding:0.3rem 0.5rem;color:#a78bfa;text-align:center;">' + esc(p.level) + '</td>'
+                   + '<td style="padding:0.3rem 0.5rem;color:#fbbf24;text-align:right;font-weight:700;">' + (p.download_count || 0) + '</td>'
+                   + '</tr>';
+            });
+            html += '</tbody></table>';
+          }
+          box.innerHTML = html;
+        } catch (e) {
+          box.innerHTML = '<div style="color:#f87171;">取得エラー: ' + e.message + '</div>';
+        }
+      }
+      loadLessonPrintsStats();
+      setInterval(loadLessonPrintsStats, 120000);
+      const refreshLpBtn = document.getElementById('refreshLpStatsBtn');
+      if (refreshLpBtn) refreshLpBtn.addEventListener('click', loadLessonPrintsStats);
 
       // 🔗 magic link 指定アドレス送信 (親の携帯で登録 → 子供の email に送り直す等)
       const mlSendBtn = document.getElementById('mlSendBtn');
