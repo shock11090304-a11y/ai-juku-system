@@ -71,6 +71,20 @@
       "file_path": "/lesson-prints/2026-05-25_授業テキスト_微分のグラフ応用.pdf"
     },
     {
+      "title": "一橋大学 数学 過去問風 整数論",
+      "subject": "数学",
+      "topic": "一橋大学_数学_過去問風_整数論",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "演習問題集",
+      "target_university": "一橋大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 3,
+      "file_size_kb": 193,
+      "file_path": "/lesson-prints/2026-05-26_一橋大学_数学_過去問風_整数論.pdf"
+    },
+    {
       "title": "京大理系数学 自習プリント",
       "subject": "数学",
       "topic": "京大理系数学_自習プリント",
@@ -83,6 +97,20 @@
       "pages": 16,
       "file_size_kb": 909,
       "file_path": "/lesson-prints/2026-05-26_京大理系数学_自習プリント.pdf"
+    },
+    {
+      "title": "京都大学 数学 過去問風 確率漸化式",
+      "subject": "数学",
+      "topic": "京都大学_数学_過去問風_確率漸化式",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "演習問題集",
+      "target_university": "京都大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 3,
+      "file_size_kb": 218,
+      "file_path": "/lesson-prints/2026-05-26_京都大学_数学_過去問風_確率漸化式.pdf"
     },
     {
       "title": "東京医科歯科 数学自習プリント",
@@ -127,6 +155,34 @@
       "file_path": "/lesson-prints/2026-05-26_東大ベクトル_自習プリント.pdf"
     },
     {
+      "title": "横浜国立大学 数学 過去問風 微積分",
+      "subject": "数学",
+      "topic": "横浜国立大学_数学_過去問風_微積分",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "演習問題集",
+      "target_university": "横浜国立大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 3,
+      "file_size_kb": 218,
+      "file_path": "/lesson-prints/2026-05-26_横浜国立大学_数学_過去問風_微積分.pdf"
+    },
+    {
+      "title": "神戸大学 文系数学 過去問風 確率",
+      "subject": "数学",
+      "topic": "神戸大学_文系数学_過去問風_確率",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "演習問題集",
+      "target_university": "神戸大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 3,
+      "file_size_kb": 208,
+      "file_path": "/lesson-prints/2026-05-26_神戸大学_文系数学_過去問風_確率.pdf"
+    },
+    {
       "title": "授業テキスト 運動方程式の立て方",
       "subject": "物理",
       "topic": "授業テキスト_運動方程式の立て方",
@@ -155,6 +211,20 @@
       "file_path": "/lesson-prints/2026-05-25_東大物理_ばねと弾性衝突.pdf"
     },
     {
+      "title": "千葉大学医 生物 過去問風 遺伝子",
+      "subject": "生物",
+      "topic": "千葉大学医_生物_過去問風_遺伝子",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "演習問題集",
+      "target_university": "千葉大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 3,
+      "file_size_kb": 352,
+      "file_path": "/lesson-prints/2026-05-26_千葉大学医_生物_過去問風_遺伝子.pdf"
+    },
+    {
       "title": "東京医科歯科 物理 過去問風 力学",
       "subject": "物理",
       "topic": "東京医科歯科_物理_過去問風_力学",
@@ -167,6 +237,20 @@
       "pages": 4,
       "file_size_kb": 388,
       "file_path": "/lesson-prints/2026-05-26_東京医科歯科_物理_過去問風_力学.pdf"
+    },
+    {
+      "title": "東京工業大学 物理 過去問風 電磁誘導",
+      "subject": "物理",
+      "topic": "東京工業大学_物理_過去問風_電磁誘導",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "演習問題集",
+      "target_university": "東京工業大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 3,
+      "file_size_kb": 267,
+      "file_path": "/lesson-prints/2026-05-26_東京工業大学_物理_過去問風_電磁誘導.pdf"
     },
     {
       "title": "東大化学 化学平衡自習プリント",
@@ -435,6 +519,20 @@
       "file_path": "/lesson-prints/2026-05-26_上智_英語自習プリント.pdf"
     },
     {
+      "title": "上智大学 英語 過去問風 長文",
+      "subject": "英語",
+      "topic": "上智大学_英語_過去問風_長文",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "演習問題集",
+      "target_university": "上智大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 6,
+      "file_size_kb": 447,
+      "file_path": "/lesson-prints/2026-05-26_上智大学_英語_過去問風_長文.pdf"
+    },
+    {
       "title": "京大世界史 自習プリント",
       "subject": "英語",
       "topic": "京大世界史_自習プリント",
@@ -517,6 +615,20 @@
       "pages": 18,
       "file_size_kb": 994,
       "file_path": "/lesson-prints/2026-05-26_同志社_英語自習プリント.pdf"
+    },
+    {
+      "title": "同志社大学 英語 過去問風 長文",
+      "subject": "英語",
+      "topic": "同志社大学_英語_過去問風_長文",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "演習問題集",
+      "target_university": "同志社大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 7,
+      "file_size_kb": 415,
+      "file_path": "/lesson-prints/2026-05-26_同志社大学_英語_過去問風_長文.pdf"
     },
     {
       "title": "同志社政策 英語自習プリント",
@@ -757,6 +869,20 @@
       "file_path": "/lesson-prints/2026-05-26_明治_英語自習プリント.pdf"
     },
     {
+      "title": "明治大学商 英語 過去問風",
+      "subject": "英語",
+      "topic": "明治大学商_英語_過去問風",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "演習問題集",
+      "target_university": "明治大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 6,
+      "file_size_kb": 391,
+      "file_path": "/lesson-prints/2026-05-26_明治大学商_英語_過去問風.pdf"
+    },
+    {
       "title": "立命館 英語自習プリント",
       "subject": "英語",
       "topic": "立命館_英語自習プリント",
@@ -769,6 +895,20 @@
       "pages": 17,
       "file_size_kb": 1037,
       "file_path": "/lesson-prints/2026-05-26_立命館_英語自習プリント.pdf"
+    },
+    {
+      "title": "立命館大学 英語 過去問風 長文",
+      "subject": "英語",
+      "topic": "立命館大学_英語_過去問風_長文",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "演習問題集",
+      "target_university": "立命館大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 6,
+      "file_size_kb": 429,
+      "file_path": "/lesson-prints/2026-05-26_立命館大学_英語_過去問風_長文.pdf"
     },
     {
       "title": "立命館経済 英語自習プリント",
@@ -797,6 +937,20 @@
       "pages": 18,
       "file_size_kb": 1123,
       "file_path": "/lesson-prints/2026-05-26_立教_英語自習プリント.pdf"
+    },
+    {
+      "title": "立教大学 英語 過去問風 長文",
+      "subject": "英語",
+      "topic": "立教大学_英語_過去問風_長文",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "演習問題集",
+      "target_university": "立教大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 5,
+      "file_size_kb": 472,
+      "file_path": "/lesson-prints/2026-05-26_立教大学_英語_過去問風_長文.pdf"
     },
     {
       "title": "関大文 英語自習プリント",
@@ -853,6 +1007,34 @@
       "pages": 17,
       "file_size_kb": 1015,
       "file_path": "/lesson-prints/2026-05-26_関西大_英語自習プリント.pdf"
+    },
+    {
+      "title": "関西学院大学経済 英語 過去問風",
+      "subject": "英語",
+      "topic": "関西学院大学経済_英語_過去問風",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "演習問題集",
+      "target_university": "関西学院大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 5,
+      "file_size_kb": 442,
+      "file_path": "/lesson-prints/2026-05-26_関西学院大学経済_英語_過去問風.pdf"
+    },
+    {
+      "title": "青山学院大学経済 英語 過去問風",
+      "subject": "英語",
+      "topic": "青山学院大学経済_英語_過去問風",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "演習問題集",
+      "target_university": "青山学院大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 5,
+      "file_size_kb": 412,
+      "file_path": "/lesson-prints/2026-05-26_青山学院大学経済_英語_過去問風.pdf"
     }
   ]
 }
