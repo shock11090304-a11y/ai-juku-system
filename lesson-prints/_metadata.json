@@ -547,6 +547,34 @@
       "file_path": "/lesson-prints/2026-05-26_東大実践模試_化学_自習プリント_answers.pdf"
     },
     {
+      "title": "東大生物 本番水準 自習プリント",
+      "subject": "生物",
+      "topic": "東大生物_本番水準_自習プリント",
+      "level": "東大レベル",
+      "target_grade": "高校生",
+      "target_type": "自習用",
+      "target_university": "東京大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 7,
+      "file_size_kb": 1134,
+      "file_path": "/lesson-prints/2026-05-27_東大生物_本番水準_自習プリント.pdf"
+    },
+    {
+      "title": "東大生物 本番水準 自習プリント (解答解説)",
+      "subject": "生物",
+      "topic": "東大生物_本番水準_自習プリント",
+      "level": "東大レベル",
+      "target_grade": "高校生",
+      "target_type": "解答解説",
+      "target_university": "東京大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 7,
+      "file_size_kb": 1194,
+      "file_path": "/lesson-prints/2026-05-27_東大生物_本番水準_自習プリント_answers.pdf"
+    },
+    {
       "title": "sample biology",
       "subject": "生物",
       "topic": "sample_biology",
