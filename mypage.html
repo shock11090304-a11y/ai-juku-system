@@ -281,6 +281,12 @@
           <div id="lessonPrintsRecommendedList" style="display:grid; gap:0.5rem;"></div>
         </div>
 
+        <!-- 🏛 志望校レベル おすすめプリント (塾長指示 2026-05-26: 各個人の志望校に応じた推薦) -->
+        <div id="lessonPrintsByGoal" style="display:none; margin-bottom:1rem; padding:0.8rem; background:rgba(167,139,250,0.08); border:1px dashed rgba(167,139,250,0.35); border-radius:10px;">
+          <div style="font-size:0.85rem; color:#c4b5fd; font-weight:700; margin-bottom:0.5rem;">🏛 <span id="lpGoalLabel">志望校</span> 向けおすすめプリント (レベル別)</div>
+          <div id="lessonPrintsByGoalList" style="display:grid; gap:0.5rem;"></div>
+        </div>
+
         <!-- フィルタ -->
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.8rem;">
           <select id="lpFilterSubject" style="padding:0.4rem 0.6rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#cbd5e1; font-size:0.83rem; min-width:120px;">
@@ -1641,6 +1647,56 @@
           </div>`;
       }
 
+      // 🏛 志望校ベース推薦 (塾長指示 2026-05-26)
+      async function fetchByGoal() {
+        const goalBlock = document.getElementById('lessonPrintsByGoal');
+        const goalList = document.getElementById('lessonPrintsByGoalList');
+        const goalLabel = document.getElementById('lpGoalLabel');
+        if (!goalBlock || !goalList) return;
+        if (!student || !student.id) { goalBlock.style.display = 'none'; return; }
+        try {
+          const token = localStorage.getItem('ai_juku_session_token') || '';
+          const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+          const res = await fetch(`${API_BASE}/api/student/lesson-prints/by-goal?student_id=${encodeURIComponent(student.id)}&limit_per_level=3`, { headers });
+          if (!res.ok) { goalBlock.style.display = 'none'; return; }
+          const data = await res.json();
+          const recs = (data && data.recommendations) || [];
+          const matched = recs.filter(r => r.prints && r.prints.length > 0);
+          // 🛡️ 3 視点 review nice-to-have fix 2026-05-26: 大学マッチなし時は section 非表示
+          // 「日本大学第三高校」等の高校 goal で大学レベル推薦が誤配信されるのを防ぐ
+          if (matched.length === 0 || !data.goal || !data.matched_keyword) {
+            goalBlock.style.display = 'none';
+            return;
+          }
+          // ラベル: 志望校 (matched_keyword あれば併記)
+          const label = data.goal_label || data.goal || '志望校';
+          if (goalLabel) {
+            goalLabel.textContent = label + (data.matched_keyword && data.matched_keyword !== label ? ` (${data.matched_keyword}相当)` : '');
+          }
+          // 各 level の prints を集約 → groupAnswerPrints
+          const allByLevel = matched.flatMap(rec => (rec.prints || []).map(p => ({ ...p, _level_section: rec.level })));
+          const grouped = groupAnswerPrints(allByLevel);
+          // level 別グループ分けして見出し付き表示
+          const byLevel = {};
+          grouped.forEach(p => {
+            const lv = p._level_section || p.level || 'その他';
+            if (!byLevel[lv]) byLevel[lv] = [];
+            byLevel[lv].push(p);
+          });
+          const lvOrder = matched.map(r => r.level);
+          let html = '';
+          lvOrder.forEach(lv => {
+            if (!byLevel[lv] || byLevel[lv].length === 0) return;
+            html += `<div style="font-size:0.7rem;color:#c4b5fd;font-weight:700;margin:0.4rem 0 0.2rem 0;">▸ ${escapeHTML(lv)}</div>`;
+            byLevel[lv].forEach(p => { html += renderPrintCard(p, true); });
+          });
+          goalList.innerHTML = html;
+          goalBlock.style.display = '';
+        } catch (e) {
+          goalBlock.style.display = 'none';
+        }
+      }
+
       async function fetchRecommended() {
         if (!student || !student.id) {
           if (recommendedBlock) recommendedBlock.style.display = 'none';
@@ -1706,6 +1762,7 @@
 
       // 初期描画
       fetchRecommended();
+      fetchByGoal();
       fetchList();
 
       // フィルタ変更
@@ -1716,6 +1773,7 @@
         refreshBtn.addEventListener('click', function() {
           list.innerHTML = '<div style="padding:0.6rem;color:#a1a1aa;font-size:0.85rem;">🔄 更新中…</div>';
           fetchRecommended();
+          fetchByGoal();
           fetchList();
         });
       }
@@ -1754,6 +1812,8 @@
       };
       list.addEventListener('click', dlHandler);
       if (recommendedList) recommendedList.addEventListener('click', dlHandler);
+      const goalListEl = document.getElementById('lessonPrintsByGoalList');
+      if (goalListEl) goalListEl.addEventListener('click', dlHandler);
     }
   </script>
   <script>

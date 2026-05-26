@@ -4163,6 +4163,107 @@ def student_weakness_progress(request: Request, student_id: int, subject: str, t
 # ============================================================
 
 # 弱点 subject の英→日 マッピング (lesson_prints.subject と weakness.subject の橋渡し)
+# 🏛 志望校 → レベル変換マップ (塾長指示 2026-05-26)
+# 3 視点 review 致命傷 fix (2026-05-26): 高校系除外 / 国立中堅追加 / 「東大寺」「青山」誤マッチ防止
+_GOAL_TO_LEVELS = [
+    # ===== 国立医学部 (最高難度・優先) =====
+    (["医学部", "医大", "医科大学", "東京医科歯科", "東京医歯", "防衛医大", "防衛医科"], ["医学部レベル", "東大レベル", "発展"]),
+    # ===== 旧帝大・東工大・一橋 (東大レベル) =====
+    (["東京大学", "東大"], ["東大レベル", "発展", "医学部レベル"]),
+    (["京都大学", "京大"], ["東大レベル", "発展", "医学部レベル"]),
+    (["東京工業大学", "東工大"], ["東大レベル", "発展"]),
+    (["一橋大学", "一橋"], ["東大レベル", "発展"]),
+    (["東北大学", "東北大"], ["東大レベル", "発展"]),
+    (["名古屋大学", "名大"], ["東大レベル", "発展"]),
+    (["大阪大学", "阪大"], ["東大レベル", "発展"]),
+    (["九州大学", "九大"], ["東大レベル", "発展"]),
+    (["北海道大学", "北大"], ["東大レベル", "発展"]),  # 致命傷 fix: 他旧帝と揃える
+    # ===== 国立中堅 (致命傷 fix 2026-05-26: 千葉/横浜国立/筑波等が DEFAULT に落ちていた) =====
+    (["千葉大学", "千葉大"], ["発展", "標準"]),
+    (["横浜国立", "横国"], ["発展", "標準"]),
+    (["筑波大学", "筑波"], ["発展", "標準"]),
+    (["神戸大学", "神大"], ["発展", "標準"]),
+    (["お茶の水", "お茶女"], ["発展", "標準"]),
+    (["東京外国語", "東京外語", "外大"], ["発展", "標準"]),
+    (["広島大学", "広大"], ["発展", "標準"]),
+    (["金沢大学", "金大"], ["発展", "標準"]),
+    (["岡山大学", "岡大"], ["発展", "標準"]),
+    (["熊本大学", "熊大"], ["発展", "標準"]),
+    # ===== 早慶上智 ICU =====
+    (["早稲田", "早大"], ["発展", "東大レベル", "標準"]),
+    (["慶應", "慶応", "慶大"], ["発展", "東大レベル", "標準"]),
+    (["上智大学", "上智"], ["発展", "標準"]),
+    (["ICU", "国際基督教"], ["発展", "標準"]),
+    # ===== MARCH =====
+    (["明治大学", "明治大", "明大"], ["標準", "発展"]),
+    (["青山学院", "青学"], ["標準", "発展"]),  # 致命傷 fix: 「青山」単独 pattern 削除 (青山高校等の誤マッチ防止)
+    (["立教大学", "立教"], ["標準", "発展"]),
+    (["中央大学", "中央大", "中大"], ["標準", "発展"]),
+    (["法政大学", "法政"], ["標準", "発展"]),
+    (["MARCH", "march", "マーチ"], ["標準", "発展"]),
+    # ===== 関関同立 =====
+    (["関西学院", "関学"], ["標準", "発展"]),
+    (["関西大学", "関大"], ["標準", "発展"]),
+    (["同志社"], ["標準", "発展"]),
+    (["立命館", "立命"], ["標準", "発展"]),
+    (["関関同立"], ["標準", "発展"]),
+    # ===== 日東駒専 =====
+    (["日本大学", "日大"], ["標準", "基礎"]),
+    (["東洋大学", "東洋大"], ["標準", "基礎"]),
+    (["駒澤大学", "駒沢", "駒澤"], ["標準", "基礎"]),
+    (["専修大学", "専修"], ["標準", "基礎"]),
+    (["日東駒専"], ["標準", "基礎"]),
+    # ===== 産近甲龍 =====
+    (["近畿大学", "近大"], ["標準", "基礎"]),
+    (["甲南大学", "甲南"], ["標準", "基礎"]),
+    (["龍谷大学", "龍谷"], ["標準", "基礎"]),
+    (["京都産業", "産大"], ["標準", "基礎"]),
+    (["産近甲龍"], ["標準", "基礎"]),
+    # ===== カテゴリ系 (フリーテキスト用) =====
+    (["共通テスト", "共テ", "センター"], ["本番レベル", "標準"]),
+    (["国公立"], ["標準", "発展"]),
+    (["中堅"], ["標準", "基礎"]),
+]
+
+
+# 🛡️ 致命傷 fix 2026-05-26: 高校・中学・附属校・学園は大学レベルに誤マッチさせない
+# 例: 「日本大学第三高校」「中央大学杉並高校」「東大寺学園」「東洋大学京北高校」
+_GOAL_EXCLUDE_KEYWORDS = ["高校", "高等学校", "中学", "中等", "附属", "付属", "学園", "学院高", "学園高"]
+# 「学院」単独は青山学院など大学にも使われるので除外しない (「学院高」「学園高」のみ)
+# 「東大寺」「東大阪」など固有の誤マッチ語
+_GOAL_DECOY_KEYWORDS = ["東大寺", "東大阪", "京大附属"]
+
+
+def _infer_levels_from_goal(goal: str) -> tuple:
+    """志望校テキストから推薦レベルリストと志望校ラベルを推定。
+    返却: (levels: list[str], goal_label: str | None, matched_keyword: str | None)
+
+    🛡️ 致命傷 fix 2026-05-26:
+    1. 高校・中学・附属校が goal に含まれる場合 → デフォルトを返す (高校生が現籍校を書く運用対策)
+    2. 「東大寺」「東大阪」等の固有名詞は decoy として skip
+    3. priority order で医学部 → 旧帝 → 早慶 → MARCH → 中堅 の順
+    """
+    if not goal:
+        return (["標準", "発展"], None, None)
+    g = str(goal).strip()
+    if not g:
+        return (["標準", "発展"], None, None)
+    # 高校・中学等を含む場合は大学マッチを skip (誤配信防止)
+    for ex in _GOAL_EXCLUDE_KEYWORDS:
+        if ex in g:
+            return (["標準", "発展"], g, None)
+    # 「東大寺」「東大阪」等の固有名詞は priority で先に固有処理 → マッチ無効化
+    g_for_match = g
+    for decoy in _GOAL_DECOY_KEYWORDS:
+        if decoy in g_for_match:
+            g_for_match = g_for_match.replace(decoy, "")  # 該当語を削除してから substring match
+    for patterns, levels in _GOAL_TO_LEVELS:
+        for pat in patterns:
+            if pat in g_for_match:
+                return (list(levels), g, pat)
+    return (["標準", "発展"], g, None)
+
+
 _LESSON_PRINT_SUBJECT_MAP = {
     "math": ["数学"], "physics": ["理科", "物理"], "chemistry": ["理科", "化学"],
     "biology": ["理科", "生物"], "english": ["英語"], "japanese": ["国語"],
@@ -4388,6 +4489,108 @@ def student_lesson_prints_recommended(
                 "prints": matched_prints,
             })
         return {"recommendations": recommendations}
+    finally:
+        conn.close()
+
+
+@app.get("/api/student/lesson-prints/by-goal")
+def student_lesson_prints_by_goal(
+    request: Request, student_id: int,
+    limit_per_level: int = 3,
+    authorization: Optional[str] = Header(None),
+):
+    """🏛 志望校レベルに合うプリント推薦 (本人 only)。
+    塾長指示 2026-05-26: 「各個人の志望校の入力に応じておすすめで出てくる」
+    students.goal → _infer_levels_from_goal → 各レベルの最新 N 件を返却。
+    target_type='解答解説' は除外、is_published=1 のみ。
+
+    返却: {goal, goal_label, matched_keyword, levels: [...], recommendations: [{level, prints: [...]}, ...]}
+    """
+    _check_rate_limit_ip(request, bucket="lesson_prints_by_goal", limit=30, window=60)
+
+    is_admin = False
+    auth_student_id: Optional[int] = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            is_admin = True
+        else:
+            claims = _verify_session_token(token)
+            if claims and claims.get("student_id"):
+                try:
+                    auth_student_id = int(claims["student_id"])
+                except (TypeError, ValueError):
+                    auth_student_id = None
+    try:
+        student_id = int(student_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="student_id 不正")
+    if not is_admin:
+        if not auth_student_id:
+            raise HTTPException(status_code=403, detail="ログインが必要です")
+        if auth_student_id != student_id:
+            raise HTTPException(status_code=403, detail="他生徒のデータにはアクセスできません")
+
+    limit_per_level = max(1, min(int(limit_per_level or 3), 10))
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT goal FROM students WHERE id = ?", (student_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        try:
+            goal = row["goal"]
+        except (TypeError, KeyError, IndexError):
+            goal = row[0]
+        levels, goal_label, matched_kw = _infer_levels_from_goal(goal)
+
+        recommendations = []
+        seen_ids = set()
+        for lvl in levels:
+            c.execute(
+                "SELECT id, title, subtitle, subject, topic, level, target_grade, target_type, "
+                "description, file_path, pages, download_count, created_at "
+                "FROM lesson_prints WHERE is_published = 1 AND level = ? "
+                "AND COALESCE(target_type, '') != '解答解説' "
+                "ORDER BY created_at DESC LIMIT ?",
+                (lvl, limit_per_level),
+            )
+            prints_for_level = []
+            for r in c.fetchall():
+                try:
+                    pid = r["id"]
+                except (TypeError, KeyError, IndexError):
+                    pid = r[0]
+                if pid in seen_ids:
+                    continue
+                seen_ids.add(pid)
+                try:
+                    prints_for_level.append({
+                        "id": r["id"], "title": r["title"], "subject": r["subject"],
+                        "topic": r["topic"], "level": r["level"],
+                        "target_type": r["target_type"], "file_path": r["file_path"],
+                        "pages": r["pages"],
+                    })
+                except (TypeError, KeyError, IndexError):
+                    prints_for_level.append({
+                        "id": r[0], "title": r[1], "subject": r[3], "topic": r[4],
+                        "level": r[5], "target_type": r[7], "file_path": r[9],
+                        "pages": r[10],
+                    })
+            if prints_for_level:
+                recommendations.append({
+                    "level": lvl,
+                    "prints": prints_for_level,
+                })
+        return {
+            "goal": goal,
+            "goal_label": goal_label,
+            "matched_keyword": matched_kw,
+            "levels": levels,
+            "recommendations": recommendations,
+        }
     finally:
         conn.close()
 
