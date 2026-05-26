@@ -5265,10 +5265,62 @@ async def admin_lesson_prints_sync(request: Request, x_cron_secret: Optional[str
                     ),
                 )
                 inserted += 1
+        # 🛡️ 塾長指示 2026-05-26: rename / 削除した PDF が DB に zombie として残ると
+        # 生徒画面に「ファイルなし」リンクが表示されるので、metadata に無いレコードを purge する option。
+        # body に "purge_missing": true を入れた時のみ動作 (デフォルト OFF・誤削除防止)。
+        # 🛡️ 3 視点 review CRITICAL fix 2026-05-26 (6 件一括 fix):
+        #  - skipped fp も kept_paths に protective 追加 → 検証 skipped で purge 巻き込み防止
+        #  - lesson_print_downloads は物理削除しない (FK 無いので orphan OK)
+        #    → 生徒の dl_bonus (admission_likelihood) スコアが rename 作業だけで下がる副作用を回避
+        #  - Postgres advisory lock で同時 sync の race condition 防止
+        purged = 0
+        purged_titles = []  # screen 表示用 (誤削除検知)
+        if raw.get("purge_missing"):
+            # 🛡️ race condition fix: advisory lock (Postgres) / no-op (SQLite)
+            try:
+                if USE_POSTGRES:
+                    c.execute("SELECT pg_advisory_xact_lock(8675309)")  # 任意の固定 key
+            except Exception:
+                pass
+            # skipped fp も protective に保持: prints 全件から file_path 抽出 (検証通過/不通過関係なく)
+            kept_paths = set()
+            for p in prints:
+                fp = (p or {}).get("file_path") if isinstance(p, dict) else None
+                if isinstance(fp, str) and fp:
+                    kept_paths.add(fp)
+            c.execute("SELECT id, file_path, title FROM lesson_prints")
+            existing_rows = c.fetchall()
+            stale = []
+            for row in existing_rows:
+                # 🛡️ Postgres + SQLite 両対応: row が dict_row でも tuple でも取れるよう defensive
+                if isinstance(row, dict):
+                    rid = row.get("id")
+                    rfp = row.get("file_path")
+                    rtitle = row.get("title")
+                else:
+                    rid = row[0]
+                    rfp = row[1]
+                    rtitle = row[2] if len(row) > 2 else ""
+                if rfp and rfp not in kept_paths:
+                    stale.append((rid, rtitle))
+            for sid, stitle in stale:
+                # 🛡️ UX fix: lesson_print_downloads は物理削除しない
+                # → dl_bonus が rename だけで下がる副作用を回避 (FK 無いので orphan で問題なし)
+                c.execute("DELETE FROM lesson_prints WHERE id = ?", (sid,))
+                purged_titles.append(stitle or f"id={sid}")
+            purged = len(stale)
         conn.commit()
     finally:
         conn.close()
-    return {"ok": True, "inserted": inserted, "updated": updated, "skipped": skipped, "total": len(prints)}
+    return {
+        "ok": True,
+        "inserted": inserted,
+        "updated": updated,
+        "skipped": skipped,
+        "purged": purged,
+        "purged_titles": purged_titles,  # 誤削除検知用 (sync 画面表示)
+        "total": len(prints),
+    }
 
 
 @app.get("/api/admin/lesson-prints/stats")
