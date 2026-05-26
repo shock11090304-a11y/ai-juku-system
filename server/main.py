@@ -1565,7 +1565,7 @@ app.add_middleware(
     # ChatGPT 関連 subdomain (oaiusercontent / oaistatic 等) も自動許可で将来変更耐性
     allow_origin_regex=r"https://(.*\.)?(chatgpt\.com|openai\.com|oaiusercontent\.com|oaistatic\.com)$",
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "x-cron-secret", "stripe-signature", "x-line-signature"],
 )
 
@@ -4336,6 +4336,99 @@ def _extract_topic_keywords(topic: str) -> list:
     import re as _re
     raw = _re.split(r"[\s　、。・/,.()\[\]【】「」『』のをとはがで]+", str(topic))
     return [k.strip() for k in raw if k and len(k.strip()) >= 2][:5]
+
+
+# ==========================================================================
+# 🎓 生徒プロフィール更新 (grade / goal) — 2026-05-26 audit 発見の致命的 UX bug 修正
+# ==========================================================================
+# 旧設計: index.html の studentProfileModal が localStorage のみで保存し DB に永続化されなかった。
+# 別端末で消える + CEO ダッシュに反映されない致命傷。本 endpoint で server 同期を実現。
+@app.patch("/api/student/profile")
+def update_student_profile(
+    payload: dict,
+    request: Request,
+    authorization: Optional[str] = Header(None),
+):
+    """生徒の grade (学年) / goal (志望校) を更新。
+
+    payload: {"student_id": int, "grade": Optional[str], "goal": Optional[str]}
+    認証 (hybrid pattern・weakness_top3 と同等):
+      - admin Bearer (_verify_admin_token) → 任意の student_id にアクセス可
+      - student Bearer (_verify_session_token) → claims["student_id"] == query student_id のみ
+      - 認証なし → 403
+    rate-limit: per-caller 10/60s (校内 NAT 対応・caller-aware)
+    入力制限: grade ≤ 20 文字、goal ≤ 60 文字 (modal の maxlength と整合)
+    """
+    # 🛡️ rate limit (caller-aware・校内 NAT 対応)
+    _check_rate_limit_caller(request, authorization, bucket="profile_update", limit=10, window=60)
+
+    # 認証 (hybrid pattern)
+    is_admin = False
+    auth_student_id: Optional[int] = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            is_admin = True
+        else:
+            claims = _verify_session_token(token)
+            if claims and claims.get("student_id"):
+                try:
+                    auth_student_id = int(claims["student_id"])
+                except (TypeError, ValueError):
+                    auth_student_id = None
+
+    student_id_raw = payload.get("student_id")
+    if not student_id_raw:
+        raise HTTPException(status_code=400, detail="student_id required")
+    try:
+        student_id = int(student_id_raw)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="student_id 不正")
+    if student_id <= 0:
+        raise HTTPException(status_code=400, detail="student_id 必須")
+
+    # 🛡️ IDOR check: 本人 only (admin Bearer は例外)
+    if not is_admin:
+        if not auth_student_id:
+            raise HTTPException(status_code=403, detail="ログインが必要です")
+        if auth_student_id != student_id:
+            raise HTTPException(status_code=403, detail="他生徒の情報は変更できません")
+
+    # 入力 validation (modal の maxlength と整合)
+    grade = payload.get("grade")
+    goal = payload.get("goal")
+    if grade is None and goal is None:
+        raise HTTPException(status_code=400, detail="grade or goal 必須")
+    if grade is not None:
+        grade = str(grade).strip()[:20]
+    if goal is not None:
+        goal = str(goal).strip()[:60]
+
+    conn = db()
+    c = conn.cursor()
+    try:
+        # 既存 student 確認
+        c.execute("SELECT id, grade, goal FROM students WHERE id=?", (student_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="student not found")
+
+        # 部分更新 (grade only / goal only / both)
+        if grade is not None and goal is not None:
+            c.execute("UPDATE students SET grade=?, goal=? WHERE id=?", (grade, goal, student_id))
+        elif grade is not None:
+            c.execute("UPDATE students SET grade=? WHERE id=?", (grade, student_id))
+        elif goal is not None:
+            c.execute("UPDATE students SET goal=? WHERE id=?", (goal, student_id))
+        conn.commit()
+
+        # 更新後の値を返却
+        c.execute("SELECT id, grade, goal FROM students WHERE id=?", (student_id,))
+        row = c.fetchone()
+        d = dict(row) if hasattr(row, 'keys') else {"id": row[0], "grade": row[1], "goal": row[2]}
+        return {"ok": True, "student": d}
+    finally:
+        conn.close()
 
 
 @app.get("/api/student/lesson-prints")

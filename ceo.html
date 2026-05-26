@@ -6832,12 +6832,17 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       const lastLoginHtml = st.last_login_at
         ? fmtDate(st.last_login_at)
         : '<span style="color:#71717a;">未ログイン</span>';
+      // 🎯 2026-05-26 audit fix: 学年/志望校 を CEO ダッシュから直接編集できる button を追加
+      // (旧設計は read-only で SQL 直接実行が唯一の変更手段だった致命的 UX bug を解消)
+      const editBtnStyle = 'margin-left:8px;padding:3px 10px;background:rgba(99,102,241,0.18);border:1px solid rgba(99,102,241,0.4);color:#c7d2fe;border-radius:5px;font-size:0.72rem;cursor:pointer;font-weight:600;';
+      const editGradeBtn = `<button class="sd-edit-profile-btn" data-student-id="${esc(st.id)}" data-field="grade" data-current="${esc(st.grade || '')}" style="${editBtnStyle}">✏️ 編集</button>`;
+      const editGoalBtn = `<button class="sd-edit-profile-btn" data-student-id="${esc(st.id)}" data-field="goal" data-current="${esc(st.goal || '')}" style="${editBtnStyle}">✏️ 編集</button>`;
       infoPane.innerHTML = [
         row('申込日時',     fmtDate(st.created_at)),
         row('お名前',       `<strong style="font-size:1.05rem;color:#fff;">${esc(st.name || '(未登録)')}</strong>`),
         row('保護者メール', emailHtml),
-        row('学年',         esc(st.grade || '未登録')),
-        row('志望校・目標', esc(st.goal || '未登録')),
+        row('学年',         esc(st.grade || '未登録') + editGradeBtn),
+        row('志望校・目標', esc(st.goal || '未登録') + editGoalBtn),
         row('選択プラン',   planLabel),
         row('現在の状態',   `<strong>${esc(statusLabel)}</strong>`),
         row('体験終了日',   fmtDate(st.trial_end)),
@@ -6855,6 +6860,48 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           </div>
         </div>`,
       ].join('');
+
+      // 🎯 2026-05-26 audit fix: 学年/志望校 編集 button の listener 配線
+      infoPane.querySelectorAll('.sd-edit-profile-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const sid = Number(btn.dataset.studentId) || 0;
+          const field = btn.dataset.field;
+          const current = btn.dataset.current || '';
+          const label = field === 'grade' ? '学年' : '志望校・目標';
+          const maxLen = field === 'grade' ? 20 : 60;
+          const newVal = prompt(`${label} を入力 (現在: ${current || '未登録'}・${maxLen} 文字以内)`, current);
+          if (newVal === null) return;
+          const trimmed = String(newVal).trim();
+          if (trimmed === current) return;
+          if (!trimmed) { alert('空欄は不可'); return; }
+          if (trimmed.length > maxLen) { alert(`${maxLen} 文字以内で入力してください`); return; }
+          if (sid <= 0) { alert('student_id 不正'); return; }
+          try {
+            const body = { student_id: sid };
+            body[field] = trimmed;
+            const res = await AdminAuth.fetch('/api/student/profile', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            });
+            if (!res.ok) {
+              const data = await res.json().catch(() => ({}));
+              alert(`更新失敗: ${data.detail || 'HTTP ' + res.status}`);
+              return;
+            }
+            alert(`✅ ${label}を「${trimmed}」に更新しました`);
+            // 🎯 2026-05-26 audit follow-up (Regression G fix): in-memory も更新で再 click 時に新値表示
+            if (st) st[field] = trimmed;
+            btn.dataset.current = trimmed;
+            // 詳細モーダル閉じる (再 click で最新値表示)
+            const closeBtn = document.getElementById('studentDetailClose');
+            if (closeBtn) closeBtn.click();
+            else document.getElementById('studentDetailModal').style.display = 'none';
+          } catch (e) {
+            alert(`エラー: ${e.message}`);
+          }
+        });
+      });
 
       // アクティビティと統計タブはまだ未取得 → タブクリック時に lazy fetch
       activityPane.dataset.studentId = String(st.id);

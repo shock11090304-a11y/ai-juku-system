@@ -1020,7 +1020,7 @@ function closeStudentProfileModal() {
   }
 }
 
-function saveStudentProfileModal() {
+async function saveStudentProfileModal() {
   const modal = document.getElementById('studentProfileModal');
   if (!modal) return;
   const field = modal._field;
@@ -1033,16 +1033,42 @@ function saveStudentProfileModal() {
     newVal = (document.getElementById('profileGoalInput').value || '').trim();
   }
   if (!newVal) { alert('値を選択 or 入力してください'); return; }
-  if (newVal.length > 60) { alert('60 文字以内で入力してください'); return; }
+  // 🎯 2026-05-26 audit fix: maxlength は grade=20 / goal=60 で別管理 (server endpoint と整合)
+  const maxLen = field === 'grade' ? 20 : 60;
+  if (newVal.length > maxLen) { alert(`${maxLen} 文字以内で入力してください`); return; }
+  // Optimistic UI: 即 localStorage 反映で UX 速い (server 失敗時も localStorage は維持)
   s[field] = newVal;
   storage.set(STORAGE_KEYS.STUDENTS, state.students);
   updateStudentInfo();
   renderStudentSelector();
   closeStudentProfileModal();
-  // Toast 風通知
   const fieldLabel = field === 'grade' ? '学年' : '志望校';
   if (typeof showToast === 'function') {
-    showToast(`✅ ${fieldLabel} を「${newVal}」に設定しました`);
+    showToast(`✅ ${fieldLabel}を「${newVal}」に設定しました`, 'success');
+  }
+  // 🎯 2026-05-26 audit fix: server 同期で別端末 / CEO ダッシュにも反映
+  // 失敗してもエラー toast のみ・localStorage は維持で UX 継続
+  try {
+    const token = (typeof localStorage !== 'undefined') ? (localStorage.getItem('ai_juku_session_token') || '') : '';
+    const sid = Number(s.id) || 0;
+    if (token && sid > 0) {
+      const body = { student_id: sid };
+      body[field] = newVal;
+      const apiBase = (typeof BACKEND_URL !== 'undefined' && BACKEND_URL) ? BACKEND_URL : '';
+      const res = await fetch(`${apiBase}/api/student/profile`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (typeof showToast === 'function') {
+          showToast(`⚠️ サーバー同期失敗: ${data.detail || 'HTTP ' + res.status}`, 'warn');
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[profile] server sync failed:', e);
   }
 }
 
