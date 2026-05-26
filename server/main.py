@@ -4322,7 +4322,7 @@ def student_lesson_prints_recommended(
                 for kw in kw_list:
                     c.execute(
                         f"SELECT id, title, subject, topic, level, target_type, file_path, pages "
-                        f"FROM lesson_prints WHERE is_published = 1 AND subject IN ({placeholders}) "
+                        f"FROM lesson_prints WHERE is_published = 1 AND COALESCE(target_type, '') != '解答解説' AND subject IN ({placeholders}) "
                         f"AND (topic LIKE ? OR title LIKE ?) "
                         f"ORDER BY created_at DESC LIMIT ?",
                         jp_subjects + [f"%{kw}%", f"%{kw}%", limit_per_weakness],
@@ -4357,7 +4357,7 @@ def student_lesson_prints_recommended(
                 placeholders = ",".join(["?"] * len(jp_subjects))
                 c.execute(
                     f"SELECT id, title, subject, topic, level, target_type, file_path, pages "
-                    f"FROM lesson_prints WHERE is_published = 1 AND subject IN ({placeholders}) "
+                    f"FROM lesson_prints WHERE is_published = 1 AND COALESCE(target_type, '') != '解答解説' AND subject IN ({placeholders}) "
                     f"ORDER BY created_at DESC LIMIT ?",
                     jp_subjects + [limit_per_weakness],
                 )

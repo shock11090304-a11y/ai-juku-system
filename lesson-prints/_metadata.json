@@ -34,12 +34,12 @@
       "file_path": "/lesson-prints/2026-05-26_古文_助動詞マスター講座.pdf"
     },
     {
-      "title": "古文 助動詞マスター講座 answers",
+      "title": "古文 助動詞マスター講座 (解答解説)",
       "subject": "国語",
-      "topic": "古文_助動詞マスター講座_answers",
+      "topic": "古文_助動詞マスター講座",
       "level": "標準",
       "target_grade": "高校生",
-      "target_type": "授業用",
+      "target_type": "解答解説",
       "pages": 9,
       "file_size_kb": 430,
       "file_path": "/lesson-prints/2026-05-26_古文_助動詞マスター講座_answers.pdf"
@@ -285,6 +285,17 @@
       "pages": 8,
       "file_size_kb": 312,
       "file_path": "/lesson-prints/2026-05-25_第1回模試_英語.pdf"
+    },
+    {
+      "title": "早稲田文構英語 自習プリント",
+      "subject": "英語",
+      "topic": "早稲田文構英語_自習プリント",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "自習用",
+      "pages": 20,
+      "file_size_kb": 1069,
+      "file_path": "/lesson-prints/2026-05-26_早稲田文構英語_自習プリント.pdf"
     }
   ]
 }

@@ -3494,12 +3494,15 @@
           html += '  <div style="padding:0.5rem 0.8rem;background:rgba(0,0,0,0.25);border-radius:6px;"><span style="color:#71717a;font-size:0.7rem;">公開中:</span> <strong style="color:#93c5fd;font-size:1.05rem;">' + pub + '</strong> 件</div>';
           html += '  <div style="padding:0.5rem 0.8rem;background:rgba(0,0,0,0.25);border-radius:6px;"><span style="color:#71717a;font-size:0.7rem;">累計 DL:</span> <strong style="color:#86efac;font-size:1.05rem;">' + tdls + '</strong> 回</div>';
           html += '</div>';
-          if (top.length === 0) {
+          // 🛡️ 塾長指示 2026-05-26 UX 改善: TOP10 から解答解説を除外 (本編のみ表示)
+          // backend は target_type を返さないため title ベースで判定
+          const topFiltered = top.filter(p => !((p.title || '').includes('(解答解説)') || (p.title || '').endsWith(' answers')));
+          if (topFiltered.length === 0) {
             html += '<div style="color:#a1a1aa;font-size:0.78rem;">まだ DL 履歴がありません。</div>';
           } else {
             html += '<table style="width:100%;border-collapse:collapse;font-size:0.74rem;">';
             html += '<thead><tr style="background:rgba(0,0,0,0.30);"><th style="text-align:left;padding:0.3rem 0.5rem;">タイトル</th><th style="padding:0.3rem 0.5rem;">科目</th><th style="padding:0.3rem 0.5rem;">レベル</th><th style="padding:0.3rem 0.5rem;text-align:right;">DL</th></tr></thead><tbody>';
-            top.forEach(p => {
+            topFiltered.forEach(p => {
               html += '<tr style="border-top:1px solid rgba(255,255,255,0.05);">'
                    + '<td style="padding:0.3rem 0.5rem;color:#e4e4e7;">' + esc(p.title) + '</td>'
                    + '<td style="padding:0.3rem 0.5rem;color:#cbd5e1;text-align:center;">' + esc(p.subject) + '</td>'

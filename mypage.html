@@ -1578,19 +1578,54 @@
         '医学部レベル':'#f87171','東大レベル':'#fb923c','本番レベル':'#fbbf24',
       };
 
+      // 🛡️ 塾長指示 2026-05-26 UX 改善: 本編 PDF と解答解説 PDF (_answers.pdf) を 1 カードに集約
+      // 🛡️ 3 視点 review 致命傷 fix: orphan 答え (本編なし単独解答) も消失させない fallback
+      function groupAnswerPrints(prints) {
+        const mainPrints = [];
+        const answersByPrefix = {};
+        (prints || []).forEach(p => {
+          const fp = p.file_path || '';
+          if (fp.endsWith('_answers.pdf')) {
+            const prefix = fp.replace('_answers.pdf', '');
+            answersByPrefix[prefix] = p;
+          } else {
+            mainPrints.push(p);
+          }
+        });
+        const matchedPrefixes = new Set();
+        mainPrints.forEach(p => {
+          const prefix = (p.file_path || '').replace('.pdf', '');
+          if (answersByPrefix[prefix]) {
+            p.answerPrint = answersByPrefix[prefix];
+            matchedPrefixes.add(prefix);
+          }
+        });
+        // orphan 答え (本編が同一フィルタ結果に無い場合) は単独カードで表示 → 消失防止
+        Object.keys(answersByPrefix).forEach(prefix => {
+          if (!matchedPrefixes.has(prefix)) {
+            mainPrints.push(answersByPrefix[prefix]);
+          }
+        });
+        return mainPrints;
+      }
+
       function renderPrintCard(p, compact) {
         const ic = subjectIcon[p.subject] || '📚';
         const lvColor = levelColor[p.level] || '#94a3b8';
         const pages = p.pages ? `<span style="color:#a1a1aa;font-size:0.72rem;">${p.pages} ページ</span>` : '';
         const dl = (p.download_count > 0) ? `<span style="color:#fbbf24;font-size:0.7rem;">📥 ${p.download_count}</span>` : '';
         const matchBadge = p.match_keyword ? `<span style="background:rgba(251,191,36,0.20);color:#fbbf24;padding:1px 6px;border-radius:4px;font-size:0.7rem;font-weight:700;">🎯 ${escapeHTML(p.match_keyword)}</span>` : '';
+        // 解答解説 PDF ボタン (本編にぶら下がっている場合のみ表示)
+        const ans = p.answerPrint;
+        const answerBtn = ans ? `<button type="button" data-print-id="${ans.id}" data-file-path="${escapeHTML(ans.file_path || '')}" data-title="${escapeHTML(ans.title || '')}" class="lesson-print-dl-btn" style="flex-shrink:0;padding:0.4rem 0.7rem;background:linear-gradient(135deg,#dc2626,#7c2d12);border:none;border-radius:8px;color:#fff;font-weight:700;font-size:0.74rem;cursor:pointer;min-height:36px;text-decoration:none;display:inline-flex;align-items:center;gap:0.25rem;" title="解答解説 PDF (${ans.pages || '?'} ページ)">📄 解答</button>` : '';
         return `
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:0.6rem;padding:0.6rem 0.8rem;background:rgba(0,0,0,0.30);border:1px solid rgba(255,255,255,0.10);border-radius:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;padding:0.6rem 0.8rem;background:rgba(0,0,0,0.30);border:1px solid rgba(255,255,255,0.10);border-radius:8px;">
             <div style="flex:1;min-width:0;">
               <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.2rem;">
                 <span style="font-size:0.95rem;">${ic}</span>
                 <strong style="color:#fff;font-size:0.88rem;line-height:1.3;">${escapeHTML(p.title || '')}</strong>
                 ${matchBadge}
+                ${ans ? '<span style="background:rgba(220,38,38,0.20);color:#fca5a5;padding:1px 6px;border-radius:4px;font-size:0.65rem;font-weight:700;">📄 解答付き</span>' : ''}
               </div>
               <div style="display:flex;gap:0.5rem;flex-wrap:wrap;font-size:0.72rem;">
                 <span style="color:${lvColor};font-weight:700;">${escapeHTML(p.level || '')}</span>
@@ -1599,7 +1634,10 @@
                 ${dl}
               </div>
             </div>
-            <button type="button" data-print-id="${p.id}" data-file-path="${escapeHTML(p.file_path || '')}" data-title="${escapeHTML(p.title || '')}" class="lesson-print-dl-btn" style="flex-shrink:0;padding:0.4rem 0.8rem;background:linear-gradient(135deg,#3b82f6,#6366f1);border:none;border-radius:8px;color:#fff;font-weight:700;font-size:0.78rem;cursor:pointer;min-height:36px;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;">📥 PDF</button>
+            <div style="display:flex;gap:0.3rem;flex-shrink:0;">
+              <button type="button" data-print-id="${p.id}" data-file-path="${escapeHTML(p.file_path || '')}" data-title="${escapeHTML(p.title || '')}" class="lesson-print-dl-btn" style="padding:0.4rem 0.8rem;background:linear-gradient(135deg,#3b82f6,#6366f1);border:none;border-radius:8px;color:#fff;font-weight:700;font-size:0.78rem;cursor:pointer;min-height:36px;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;">📥 PDF</button>
+              ${answerBtn}
+            </div>
           </div>`;
       }
 
@@ -1621,11 +1659,10 @@
             return;
           }
           let html = '';
-          matched.forEach(rec => {
-            (rec.prints || []).forEach(p => {
-              html += renderPrintCard(p, true);
-            });
-          });
+          // 🛡️ 塾長指示 2026-05-26: 推薦リストも本編+解答 集約
+          const allRecommended = matched.flatMap(rec => rec.prints || []);
+          const groupedRec = groupAnswerPrints(allRecommended);
+          groupedRec.forEach(p => { html += renderPrintCard(p, true); });
           if (recommendedList) recommendedList.innerHTML = html;
           if (recommendedBlock) recommendedBlock.style.display = '';
         } catch (e) {
@@ -1656,8 +1693,10 @@
             return;
           }
           empty.style.display = 'none';
-          list.innerHTML = prints.map(p => renderPrintCard(p, false)).join('');
-          totalEl.textContent = `全 ${data.total || prints.length} 件中 ${prints.length} 件表示`;
+          // 🛡️ 塾長指示 2026-05-26: 本編+解答 PDF を集約 (解答単独表示を抑制)
+          const grouped = groupAnswerPrints(prints);
+          list.innerHTML = grouped.map(p => renderPrintCard(p, false)).join('');
+          totalEl.textContent = `全 ${data.total || prints.length} 件 (${grouped.length} セット表示)`;
         } catch (e) {
           console.warn('lesson-prints fetch failed:', e);
           list.innerHTML = '';
