@@ -26127,6 +26127,7 @@ def university_problems_backfill_pdf_links(
 
     認証: admin Bearer or x-cron-secret"""
     import hmac as _hmac
+    import re  # 🛡️ 2026-05-27 hotfix: 関数内で re.compile を使うため明示 import (top-level に re 無し)
     authed = False
     if authorization and authorization.startswith("Bearer "):
         token = authorization[len("Bearer "):].strip()
@@ -26246,6 +26247,35 @@ def university_problems_backfill_pdf_links(
         no_match = []
         match_log = []
 
+        # 🛡️ ヘルパー関数を loop 外で 1 回定義 (パフォーマンス + scope 明確化)
+        _all_univ_aliases_sorted = sorted({a for grp in _ALIAS_GROUPS for a in grp}, key=len, reverse=True)
+        def _strip_univ_prefix(kw):
+            for alias in _all_univ_aliases_sorted:
+                if kw.startswith(alias) and len(kw) > len(alias):
+                    return kw[len(alias):]
+            return kw
+
+        _STOP_WORDS = {
+            "基礎", "標準", "発展", "応用", "演習", "問題", "対策", "練習", "解説",
+            "自習", "プリント", "本番", "模試", "模擬", "テキスト", "過去問", "過去問風", "風", "形式",
+            "自習プリント", "英語自習プリント", "本番水準", "授業テキスト",
+            "大学", "大学院", "学部", "予備校", "入試", "受験",
+            "数学", "物理", "化学", "生物", "国語", "英語",
+            "日本史", "世界史", "地理", "公民", "倫理", "政治経済",
+            "について", "ため", "ものを", "ことを",
+        }
+        _PARTICLE_RE = re.compile(r"(の|と|を|に|へ|で|から|まで|や|か|が|は|も|だ|に対して)")
+        _SEPARATOR_RE = re.compile(r"[・/、,。\s()()「」『』【】「」]+")
+
+        def _extract_topic_kws(topic_str):
+            if not topic_str:
+                return []
+            s = topic_str.replace("スタイル", "").replace("型", "").strip()
+            s = _PARTICLE_RE.sub(" ", s)
+            parts = _SEPARATOR_RE.split(s)
+            stripped = [_strip_univ_prefix(p) for p in parts]
+            return [p for p in stripped if len(p) >= 2 and p not in _STOP_WORDS]
+
         for row in up_rows:
             if isinstance(row, dict):
                 up_id = row.get("id")
@@ -26256,7 +26286,10 @@ def university_problems_backfill_pdf_links(
                 up_id = row[0]
                 up_univ = (row[1] or "").strip()
                 up_subj = (row[2] or "").strip()
-                up_topic = (row[3] if len(row) > 3 else "" or "").strip() if (row[3] if len(row) > 3 else None) else ""
+                # 🛡️ row[3] safe access (簡略化 + None ガード)
+                up_topic = ""
+                if len(row) > 3 and row[3]:
+                    up_topic = str(row[3]).strip()
 
             if not up_univ or not up_subj:
                 continue
@@ -26271,49 +26304,6 @@ def university_problems_backfill_pdf_links(
             #   「東大ベクトル PDF」一つに紐付き、放物線問題にベクトル PDF が出る致命傷。
             # 新規則: topic キーワードが PDF タイトル/path に含まれることを必須化。
             # topic なし問題は紐付けない (整合性優先・誤マッチ防止)。
-
-            # 🛡️ 3 視点 review Round 4-6 致命 fix (2026-05-27):
-            # Round 4: 助詞 split / 双方向 match
-            # Round 5: stop_words 拡張 (univ 名/形式語)
-            # Round 6: 大学 prefix strip (「東大数学」kw が PDF「東大数学 自習プリント」と全 math 問題で誤マッチする致命)
-            # 全大学 alias を 1 set にまとめて prefix strip 用に使う
-            _all_univ_aliases_sorted = sorted({a for grp in _ALIAS_GROUPS for a in grp}, key=len, reverse=True)
-            def _strip_univ_prefix(kw):
-                """kw が大学 alias で始まれば prefix を除去して残りを返す。
-                例: '東大数学' → '数学' / '京大物理' → '物理' / '東大放物線' → '放物線'"""
-                for alias in _all_univ_aliases_sorted:
-                    if kw.startswith(alias) and len(kw) > len(alias):
-                        return kw[len(alias):]
-                return kw
-
-            def _extract_topic_kws(topic_str):
-                if not topic_str:
-                    return []
-                s = topic_str.replace("スタイル", "").replace("型", "").strip()
-                # 助詞を空白に置換 (split delimiter として使う)
-                s = re.sub(r"(の|と|を|に|へ|で|から|まで|や|か|が|は|も|だ|に対して)", " ", s)
-                # separator: 中黒/句読点/全角括弧/半角括弧/空白
-                parts = re.split(r"[・/、,。\s()()「」『』【】「」]+", s)
-                # 🛡️ 3 視点 review Round 5-6 fix: ノイズ kw を除外 + 大学 prefix strip
-                stop_words = {
-                    # 学習段階
-                    "基礎", "標準", "発展", "応用", "演習", "問題", "対策", "練習", "解説",
-                    # 文書形式 (単語 + 合成語)
-                    "自習", "プリント", "本番", "模試", "模擬", "テキスト", "過去問", "過去問風", "風", "形式",
-                    "自習プリント", "英語自習プリント", "本番水準", "授業テキスト",
-                    # 大学/学部名 (univ alias で別途処理するため kw からは除外)
-                    "大学", "大学院", "学部", "予備校", "入試", "受験",
-                    # 科目名 (subject カラムで処理するため kw からは除外)
-                    # 🛡️ Round 8 fix: 「現代文/古文/漢文」は国語 sub_genre なので除外しない
-                    # (除外すると国語系 PDF タイトルが univ 名のみに痩せて kw=[] になり国語 PDF 全消失)
-                    "数学", "物理", "化学", "生物", "国語", "英語",
-                    "日本史", "世界史", "地理", "公民", "倫理", "政治経済",
-                    # 汎用副詞
-                    "について", "ため", "ものを", "ことを",
-                }
-                # 大学 prefix を strip してから stop_words フィルタ + 長さフィルタ
-                stripped = [_strip_univ_prefix(p) for p in parts]
-                return [p for p in stripped if len(p) >= 2 and p not in stop_words]
 
             topic_kws = _extract_topic_kws(up_topic)
 
