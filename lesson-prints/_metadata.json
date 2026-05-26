@@ -449,6 +449,20 @@
       "file_path": "/lesson-prints/2026-05-26_東大化学_化学平衡自習プリント.pdf"
     },
     {
+      "title": "東大実践模試 化学 自習プリント",
+      "subject": "化学",
+      "topic": "東大実践模試_化学_自習プリント",
+      "level": "東大レベル",
+      "target_grade": "高校生",
+      "target_type": "自習用",
+      "target_university": "東京大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 6,
+      "file_size_kb": 1053,
+      "file_path": "/lesson-prints/2026-05-26_東大実践模試_化学_自習プリント.pdf"
+    },
+    {
       "title": "sample biology",
       "subject": "生物",
       "topic": "sample_biology",
@@ -1204,6 +1218,5 @@
       "file_size_kb": 412,
       "file_path": "/lesson-prints/2026-05-26_青山学院大学経済_英語_過去問風.pdf"
     }
-  ],
-  "purge_missing": true
+  ]
 }
