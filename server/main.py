@@ -26265,7 +26265,9 @@ def university_problems_backfill_pdf_links(
             "について", "ため", "ものを", "ことを",
         }
         _PARTICLE_RE = re.compile(r"(の|と|を|に|へ|で|から|まで|や|か|が|は|も|だ|に対して)")
-        _SEPARATOR_RE = re.compile(r"[・/、,。\s()()「」『』【】「」]+")
+        # 🛡️ 2026-05-27 fix: _ と + も separator として扱う (ファイル名連結記法対応)
+        # 例: "東大生物_遺伝子発現+代謝+生態系" → ["東大生物","遺伝子発現","代謝","生態系"]
+        _SEPARATOR_RE = re.compile(r"[・/、,。\s()()「」『』【】「」_+]+")
 
         def _extract_topic_kws(topic_str):
             if not topic_str:
