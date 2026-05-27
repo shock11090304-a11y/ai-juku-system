@@ -1834,5 +1834,6 @@
       "file_size_kb": 412,
       "file_path": "/lesson-prints/2026-05-26_青山学院大学経済_英語_過去問風.pdf"
     }
-  ]
+  ],
+  "purge_missing": true
 }
