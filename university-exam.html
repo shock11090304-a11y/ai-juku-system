@@ -360,17 +360,84 @@
         return [idx, name];
       }
 
+      // 🔗 大学名 alias 統合マップ (2026-05-27 塾長指示「同じものは一つにまとめてください」)
+      // DB 表記揺れ (慶應 / 慶應義塾大学 等) を canonical 名に統合。
+      // 値が canonical 名、key は variant (短縮形 / 正式名 両方)。canonical は値リストに重複登録 OK (恒等写像)。
+      const UNIV_CANONICAL = {
+        // 早慶上理
+        '慶應':       '慶應',
+        '慶應義塾大学': '慶應',
+        '東京理科':    '東京理科',
+        '東京理科大学': '東京理科',
+        // 国公立
+        '東京外国語大学': '東京外語',
+        '東京外語':    '東京外語',
+        '国立看護':    '国立看護',
+        '国立看護大学校': '国立看護',
+        '東京医科歯科': '東京医科歯科',
+        '東京医科歯科大学': '東京医科歯科',
+        // 医歯系 (私立)
+        '慈恵会医科':       '慈恵会医科',
+        '東京慈恵会医科大学': '慈恵会医科',
+        '日本医科':    '日本医科',
+        '日本医科大学': '日本医科',
+        '順天堂医':    '順天堂大学',
+        '順天堂大学':  '順天堂大学',
+        '昭和大医':    '昭和大学',
+        '昭和大学':    '昭和大学',
+        '東京医科':    '東京医科',
+        '東京医科大学': '東京医科',
+        '北里':       '北里大学',
+        '北里大学':    '北里大学',
+        '日本大医':    '日本大学',
+        '日本大学':    '日本大学',
+        '東京歯科':    '東京歯科',
+        '東京歯科大学': '東京歯科',
+        '日本歯科':    '日本歯科',
+        '日本歯科大学': '日本歯科',
+        '共立薬科':    '共立薬科',
+        '共立薬科大学(現慶應義塾大学薬学部)': '共立薬科',
+        // 体育・看護
+        '日本体育':    '日本体育大学',
+        '日本体育大学': '日本体育大学',
+        '聖路加':      '聖路加国際大学',
+        '聖路加国際大学': '聖路加国際大学',
+        '東京医療保健': '東京医療保健大学',
+        '東京医療保健大学': '東京医療保健大学',
+        // 美術
+        '東京芸大':    '東京藝術大学',
+        '東京藝術大学': '東京藝術大学',
+      };
+      function _canonicalUniv(name) {
+        return UNIV_CANONICAL[name] || name;
+      }
+      // canonical 名 → variant 全リスト (selectUniv で全 variant を fetch するため)
+      const _univVariantsByCanonical = (() => {
+        const m = {};
+        Object.entries(UNIV_CANONICAL).forEach(([variant, canonical]) => {
+          if (!m[canonical]) m[canonical] = [];
+          m[canonical].push(variant);
+        });
+        return m;
+      })();
+
       function renderUnivGrid() {
         const grid = document.getElementById('uxUnivGrid');
-        // 大学単位で集約 (科目フィルター適用)
+        // 大学単位で集約 (科目フィルター適用) — 🔗 表記揺れは canonical 名で merge
         const byUniv = {};
         allMetaItems.forEach(it => {
           // currentSubject が指定されていれば、該当科目のみカウント (大学カードに表示する科目別件数も filter)
           // 社会サブタブ (日本史/世界史/etc) は完全一致モード・他は正規化モード (matchesSubjectFilter で吸収)
           if (currentSubject && !matchesSubjectFilter(it.subject, currentSubject)) return;
-          if (!byUniv[it.university]) byUniv[it.university] = { count: 0, subjects: [] };
-          byUniv[it.university].count += it.count;
-          byUniv[it.university].subjects.push(`${it.subject}:${it.count}`);
+          const canonical = _canonicalUniv(it.university);
+          if (!byUniv[canonical]) byUniv[canonical] = { count: 0, subjectMap: {} };
+          byUniv[canonical].count += it.count;
+          // 🔗 同一 canonical 内で同じ subject (例: 物理) が複数 variant に分散している場合は合算
+          byUniv[canonical].subjectMap[it.subject] = (byUniv[canonical].subjectMap[it.subject] || 0) + it.count;
+        });
+        // subjects を表示用 "subject:count" 文字列リストに変換
+        Object.values(byUniv).forEach(info => {
+          info.subjects = Object.entries(info.subjectMap).map(([s, c]) => `${s}:${c}`);
         });
         // 🏛️ 東進サイト順で sort (2026-05-27 塾長指示)
         const entries = Object.entries(byUniv).sort((a, b) => {
@@ -395,6 +462,7 @@
       }
 
       async function selectUniv(univ) {
+        // univ は canonical 名 (renderUnivGrid 経由なので保証)
         currentUniv = univ;
         document.querySelectorAll('.ux-univ-card').forEach(c =>
           c.classList.toggle('active', c.dataset.univ === univ));
@@ -405,22 +473,36 @@
         // 2026-05-22 塾長指示: 大学カードクリック後、問題リストへ自動スクロール
         setTimeout(() => list.scrollIntoView({block: 'start', behavior: 'smooth'}), 100);
         try {
+          // 🔗 canonical → 全 variant を fetch して merge (例: 慶應 + 慶應義塾大学)
+          const univVariants = _univVariantsByCanonical[univ] || [univ];
           // 科目フィルター適用時は subject パラメータも付与 (DB 細分化 subject 全件 OR で fetch するため複数 fetch を merge)
           let items = [];
           if (currentSubject) {
-            // 該当大学の subject を social-sub (完全一致) or 正規化マッチで絞り込み
-            const subjectsToFetch = allMetaItems
-              .filter(it => it.university === univ && matchesSubjectFilter(it.subject, currentSubject))
-              .map(it => it.subject);
-            const fetched = await Promise.all(subjectsToFetch.map(s =>
-              fetch(`${BACKEND_URL}/api/university-problems?university=${encodeURIComponent(univ)}&subject=${encodeURIComponent(s)}&limit=50`).then(r => r.json())
+            // 該当大学 (全 variant) の subject を social-sub (完全一致) or 正規化マッチで絞り込み
+            const subjectsToFetch = [];
+            allMetaItems.forEach(it => {
+              if (univVariants.includes(it.university) && matchesSubjectFilter(it.subject, currentSubject)) {
+                subjectsToFetch.push({ univ: it.university, subj: it.subject });
+              }
+            });
+            const fetched = await Promise.all(subjectsToFetch.map(({univ: u, subj: s}) =>
+              fetch(`${BACKEND_URL}/api/university-problems?university=${encodeURIComponent(u)}&subject=${encodeURIComponent(s)}&limit=50`).then(r => r.json())
             ));
             fetched.forEach(d => { if (d.items) items.push(...d.items); });
           } else {
-            const r = await fetch(`${BACKEND_URL}/api/university-problems?university=${encodeURIComponent(univ)}&limit=50`);
-            const d = await r.json();
-            items = d.items || [];
+            // 全 variant を並列 fetch
+            const fetched = await Promise.all(univVariants.map(u =>
+              fetch(`${BACKEND_URL}/api/university-problems?university=${encodeURIComponent(u)}&limit=50`).then(r => r.json())
+            ));
+            fetched.forEach(d => { if (d.items) items.push(...d.items); });
           }
+          // 🔗 dedup: 同じ id が複数 variant fetch で重複しないように
+          const seen = new Set();
+          items = items.filter(it => {
+            if (seen.has(it.id)) return false;
+            seen.add(it.id);
+            return true;
+          });
           const d = { items };
           if (!d.items || d.items.length === 0) {
             list.innerHTML = '<div class="ux-loading">該当問題なし</div>'; return;
