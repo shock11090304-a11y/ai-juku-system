@@ -1,4 +1,12 @@
 {
+  "redirects": [
+    {
+      "_comment": "🛡️ 2026-05-27 致命fix: lesson-prints/ PDF (230MB) が Vercel Lambda 250MB 制限超過で deploy 失敗。PDF を Cloudflare R2 (ai-juku-lesson-prints bucket, 日本語ファイル名対応) に移行し、既存 /lesson-prints/*.pdf URL は 302 redirect で互換性維持。frontend/backend/DB 一切変更不要。GitHub Releases は日本語ファイル名が `.` に文字化けする問題により採用見送り。",
+      "source": "/lesson-prints/:filename",
+      "destination": "https://pub-f58791ee7e7c4937bd07514487ce3f8a.r2.dev/:filename",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/payment/api/stripe-charges",

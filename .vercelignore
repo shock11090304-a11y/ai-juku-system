@@ -1,0 +1,4 @@
+# 🛡️ 2026-05-27 致命 fix: lesson-prints/ PDF (240MB) を Vercel deploy から除外
+# PDF は GitHub Releases から配信 (vercel.json の redirects 経由)
+# 詳細: deploy 容量上限超過で 14:37 以降 6 連続失敗 → PDF 外部化で復旧
+lesson-prints/*.pdf
