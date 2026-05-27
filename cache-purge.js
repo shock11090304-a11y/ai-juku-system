@@ -89,6 +89,9 @@
           }
           sessionStorage.setItem(REL, '1');
           localStorage.setItem('ai_juku_cache_version', serverVer);
+          // 🛡️ 2026-05-27 PWA cache 致命傷 fix: version bump 検知時は throttle (10 分 1 回制限) もリセット
+          // → 古い HTML cache が transferSize=0 で reload trigger を発火し損ねた場合のリカバリ
+          try { localStorage.removeItem('ai_juku_sw_purge_log_v2'); } catch (_) {}
           console.warn('[cache-purge] New cache_version detected: ' + (localVer || 'none') + ' → ' + serverVer + ' — purging + reloading');
           // 🛡️ 2026-05-21 P0-3: checkout submit 進行中は reload を遅延 (form state 損失防止)
           var doReload = function () {
