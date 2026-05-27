@@ -416,8 +416,8 @@
       "target_university": "京都大学",
       "video_url": null,
       "video_duration_sec": 0,
-      "pages": 9,
-      "file_size_kb": 851,
+      "pages": 7,
+      "file_size_kb": 774,
       "file_path": "/lesson-prints/2026-05-26_京大物理_本番水準_自習プリント.pdf"
     },
     {
@@ -547,23 +547,23 @@
       "file_path": "/lesson-prints/2026-05-26_東大実践模試_化学_自習プリント_answers.pdf"
     },
     {
-      "title": "東大生物 本番水準 自習プリント",
+      "title": "東大生物 遺伝子発現+代謝+生態系 本番水準",
       "subject": "生物",
-      "topic": "東大生物_本番水準_自習プリント",
+      "topic": "東大生物_遺伝子発現+代謝+生態系_本番水準",
       "level": "東大レベル",
       "target_grade": "高校生",
-      "target_type": "自習用",
+      "target_type": "演習問題集",
       "target_university": "東京大学",
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 7,
       "file_size_kb": 1134,
-      "file_path": "/lesson-prints/2026-05-27_東大生物_本番水準_自習プリント.pdf"
+      "file_path": "/lesson-prints/2026-05-27_東大生物_遺伝子発現+代謝+生態系_本番水準.pdf"
     },
     {
-      "title": "東大生物 本番水準 自習プリント (解答解説)",
+      "title": "東大生物 遺伝子発現+代謝+生態系 本番水準 (解答解説)",
       "subject": "生物",
-      "topic": "東大生物_本番水準_自習プリント",
+      "topic": "東大生物_遺伝子発現+代謝+生態系_本番水準",
       "level": "東大レベル",
       "target_grade": "高校生",
       "target_type": "解答解説",
@@ -572,7 +572,7 @@
       "video_duration_sec": 0,
       "pages": 7,
       "file_size_kb": 1194,
-      "file_path": "/lesson-prints/2026-05-27_東大生物_本番水準_自習プリント_answers.pdf"
+      "file_path": "/lesson-prints/2026-05-27_東大生物_遺伝子発現+代謝+生態系_本番水準_answers.pdf"
     },
     {
       "title": "sample biology",
@@ -892,8 +892,8 @@
       "target_university": "京都大学",
       "video_url": null,
       "video_duration_sec": 0,
-      "pages": 18,
-      "file_size_kb": 1041,
+      "pages": 3,
+      "file_size_kb": 357,
       "file_path": "/lesson-prints/2026-05-26_京大英語_自習プリント.pdf"
     },
     {
