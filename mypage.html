@@ -7,14 +7,14 @@
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="0">
   <title>マイページ | AIコーチング</title>
-  <script src="cache-purge.js?v=20260526-lesson-prints"></script>
+  <script src="cache-purge.js?v=20260527-strict-pdf-group"></script>
 
-  <script src="frontend-error-monitor.js?v=20260526-lesson-prints"></script>
-  <link rel="stylesheet" href="style.css?v=20260526-lesson-prints">
-  <link rel="stylesheet" href="mypage.css?v=20260526-lesson-prints">
+  <script src="frontend-error-monitor.js?v=20260527-strict-pdf-group"></script>
+  <link rel="stylesheet" href="style.css?v=20260527-strict-pdf-group">
+  <link rel="stylesheet" href="mypage.css?v=20260527-strict-pdf-group">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="auth-guard.js?v=20260526-lesson-prints"></script>
+  <script src="auth-guard.js?v=20260527-strict-pdf-group"></script>
 </head>
 <body class="mypage-body">
   <div class="bg-gradient"></div>
@@ -1170,10 +1170,10 @@
     <p>© 2026 AIコーチング | Mypage v1.0</p>
   </footer>
 
-  <script src="learning-brain.js?v=20260526-lesson-prints"></script>
-  <script src="exam-prep.js?v=20260526-lesson-prints"></script>
-  <script src="referral-program.js?v=20260526-lesson-prints"></script>
-  <script src="mypage.js?v=20260526-lesson-prints"></script>
+  <script src="learning-brain.js?v=20260527-strict-pdf-group"></script>
+  <script src="exam-prep.js?v=20260527-strict-pdf-group"></script>
+  <script src="referral-program.js?v=20260527-strict-pdf-group"></script>
+  <script src="mypage.js?v=20260527-strict-pdf-group"></script>
   <script>
     // ウィジェット初期描画
     (function() {
@@ -1757,30 +1757,46 @@
 
       // 🛡️ 塾長指示 2026-05-26 UX 改善: 本編 PDF と解答解説 PDF (_answers.pdf) を 1 カードに集約
       // 🛡️ 3 視点 review 致命傷 fix: orphan 答え (本編なし単独解答) も消失させない fallback
+      // 🛡️ 塾長指示 2026-05-27 拡張: 本番試験版 PDF (_strict.pdf) も同じカードに集約
       function groupAnswerPrints(prints) {
         const mainPrints = [];
         const answersByPrefix = {};
+        const strictByPrefix = {};
         (prints || []).forEach(p => {
           const fp = p.file_path || '';
           if (fp.endsWith('_answers.pdf')) {
             const prefix = fp.replace('_answers.pdf', '');
             answersByPrefix[prefix] = p;
+          } else if (fp.endsWith('_strict.pdf')) {
+            const prefix = fp.replace('_strict.pdf', '');
+            strictByPrefix[prefix] = p;
           } else {
             mainPrints.push(p);
           }
         });
-        const matchedPrefixes = new Set();
+        const matchedAnsPrefixes = new Set();
+        const matchedStrictPrefixes = new Set();
         mainPrints.forEach(p => {
           const prefix = (p.file_path || '').replace('.pdf', '');
           if (answersByPrefix[prefix]) {
             p.answerPrint = answersByPrefix[prefix];
-            matchedPrefixes.add(prefix);
+            matchedAnsPrefixes.add(prefix);
+          }
+          if (strictByPrefix[prefix]) {
+            p.strictPrint = strictByPrefix[prefix];
+            matchedStrictPrefixes.add(prefix);
           }
         });
         // orphan 答え (本編が同一フィルタ結果に無い場合) は単独カードで表示 → 消失防止
         Object.keys(answersByPrefix).forEach(prefix => {
-          if (!matchedPrefixes.has(prefix)) {
+          if (!matchedAnsPrefixes.has(prefix)) {
             mainPrints.push(answersByPrefix[prefix]);
+          }
+        });
+        // orphan 本番試験版 (本編なし) も同様に表示
+        Object.keys(strictByPrefix).forEach(prefix => {
+          if (!matchedStrictPrefixes.has(prefix)) {
+            mainPrints.push(strictByPrefix[prefix]);
           }
         });
         return mainPrints;
@@ -1795,6 +1811,9 @@
         // 解答解説 PDF ボタン (本編にぶら下がっている場合のみ表示)
         const ans = p.answerPrint;
         const answerBtn = ans ? `<button type="button" data-print-id="${ans.id}" data-file-path="${escapeHTML(ans.file_path || '')}" data-title="${escapeHTML(ans.title || '')}" class="lesson-print-dl-btn" style="flex-shrink:0;padding:0.4rem 0.7rem;background:linear-gradient(135deg,#dc2626,#7c2d12);border:none;border-radius:8px;color:#fff;font-weight:700;font-size:0.74rem;cursor:pointer;min-height:36px;text-decoration:none;display:inline-flex;align-items:center;gap:0.25rem;" title="解答解説 PDF (${ans.pages || '?'} ページ)">📄 解答</button>` : '';
+        // 🛡️ 2026-05-27 塾長指示「途中のヒント無しの問題だけのパターン」: 本番試験版 PDF ボタン
+        const strict = p.strictPrint;
+        const strictBtn = strict ? `<button type="button" data-print-id="${strict.id}" data-file-path="${escapeHTML(strict.file_path || '')}" data-title="${escapeHTML(strict.title || '')}" class="lesson-print-dl-btn" style="flex-shrink:0;padding:0.4rem 0.7rem;background:linear-gradient(135deg,#fbbf24,#b45309);border:none;border-radius:8px;color:#fff;font-weight:700;font-size:0.74rem;cursor:pointer;min-height:36px;text-decoration:none;display:inline-flex;align-items:center;gap:0.25rem;" title="本番試験版 PDF・ヒント無し (${strict.pages || '?'} ページ)">📓 本番版</button>` : '';
         return `
           <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;padding:0.6rem 0.8rem;background:rgba(0,0,0,0.30);border:1px solid rgba(255,255,255,0.10);border-radius:8px;">
             <div style="flex:1;min-width:0;">
@@ -1803,6 +1822,7 @@
                 <strong style="color:#fff;font-size:0.88rem;line-height:1.3;">${escapeHTML(p.title || '')}</strong>
                 ${matchBadge}
                 ${ans ? '<span style="background:rgba(220,38,38,0.20);color:#fca5a5;padding:1px 6px;border-radius:4px;font-size:0.65rem;font-weight:700;">📄 解答付き</span>' : ''}
+                ${strict ? '<span style="background:rgba(251,191,36,0.20);color:#fde68a;padding:1px 6px;border-radius:4px;font-size:0.65rem;font-weight:700;">📓 本番試験版</span>' : ''}
               </div>
               <div style="display:flex;gap:0.5rem;flex-wrap:wrap;font-size:0.72rem;">
                 <span style="color:${lvColor};font-weight:700;">${escapeHTML(p.level || '')}</span>
@@ -1813,6 +1833,7 @@
             </div>
             <div style="display:flex;gap:0.3rem;flex-shrink:0;">
               <button type="button" data-print-id="${p.id}" data-file-path="${escapeHTML(p.file_path || '')}" data-title="${escapeHTML(p.title || '')}" class="lesson-print-dl-btn" style="padding:0.4rem 0.8rem;background:linear-gradient(135deg,#3b82f6,#6366f1);border:none;border-radius:8px;color:#fff;font-weight:700;font-size:0.78rem;cursor:pointer;min-height:36px;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;">📥 PDF</button>
+              ${strictBtn}
               ${answerBtn}
             </div>
           </div>`;

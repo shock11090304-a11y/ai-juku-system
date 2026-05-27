@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>大学別 過去問風オリジナル | AIコーチング</title>
-  <script src="cache-purge.js?v=20260527-answer-pdf-button"></script>
+  <script src="cache-purge.js?v=20260527-strict-pdf-button"></script>
   <script src="frontend-error-monitor.js"></script>
   <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost-r2">
   <link rel="stylesheet" href="vocab.css?v=20260525-mistakes-tag">
@@ -373,6 +373,7 @@
                   <span class="ux-badge diff-${escapeHtml(it.difficulty || '')}">${escapeHtml(it.difficulty || '標準')}</span>
                   ${it.pdf_url ? '<span class="ux-badge" style="background:linear-gradient(135deg,#f59e0b,#dc2626);color:#fff;border:none;">📄 PDF</span>' : ''}
                   ${it.answer_pdf_url ? '<span class="ux-badge" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;">📝 解答PDF</span>' : ''}
+                  ${it.strict_pdf_url ? '<span class="ux-badge" style="background:linear-gradient(135deg,#fbbf24,#b45309);color:#fff;border:none;">📓 本番試験版</span>' : ''}
                 </div>
               </div>
               <div class="ux-inspired">${escapeHtml(it.inspired_by || '')}</div>
@@ -435,6 +436,13 @@
              style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;text-decoration:none;display:inline-block;padding:0.45rem 0.9rem;border-radius:6px;font-size:0.85rem;font-weight:700;margin-right:6px;"
              title="${escapeHtml(p.answer_pdf_title || '解答解説')}">📝 解答解説 PDF で開く</a>
         ` : '';
+        // 🛡️ 2026-05-27 塾長指示「途中のヒント無しの問題だけのパターン」: 本番試験版 PDF ボタン (黄系 gradient)
+        const strictPdfButtonHtml = _isPdfUrlSafe(p.strict_pdf_url) ? `
+          <a href="${escapeHtml(p.strict_pdf_url)}" target="_blank" rel="noopener noreferrer"
+             class="btn-primary btn-small ux-strict-pdf-btn"
+             style="background:linear-gradient(135deg,#fbbf24,#b45309);color:#fff;text-decoration:none;display:inline-block;padding:0.45rem 0.9rem;border-radius:6px;font-size:0.85rem;font-weight:700;margin-right:6px;"
+             title="${escapeHtml(p.strict_pdf_title || '本番試験版・ヒント無し')}">📓 本番試験版で開く</a>
+        ` : '';
         detail.innerHTML = `
           <div class="ux-detail-card">
             <div class="ux-detail-meta">
@@ -445,6 +453,7 @@
             ${choicesHtml}
             <div class="ux-actions">
               ${pdfButtonHtml}
+              ${strictPdfButtonHtml}
               ${answerPdfButtonHtml}
               ${isMC ? '' : '<button type="button" class="btn-secondary btn-small" id="uxRevealBtn">解答・解説を表示</button>'}
               <button type="button" class="btn-ghost btn-small" id="uxBackBtn">← 一覧に戻る</button>
