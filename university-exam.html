@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>大学別 過去問風オリジナル | AIコーチング</title>
-  <script src="cache-purge.js?v=20260527-strict-pdf-button"></script>
+  <script src="cache-purge.js?v=20260527-vercel-plus-fix"></script>
   <script src="frontend-error-monitor.js"></script>
   <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost-r2">
   <link rel="stylesheet" href="vocab.css?v=20260525-mistakes-tag">
@@ -424,21 +424,25 @@
         // 🛡️ URL scheme guard (3 視点 review・frontend 軽微指摘 fix):
         // 内部パス (/lesson-prints/...) と https:// のみ許可。javascript: 等を弾く
         const _isPdfUrlSafe = (u) => typeof u === 'string' && (u.startsWith('/lesson-prints/') || u.startsWith('https://'));
+        // 🛡️ 2026-05-27 Vercel bug fix: ファイル名に `+` がある場合、Vercel が space と解釈して 404 になる
+        // (RFC 3986 では path 内の `+` は literal だが Vercel static serving が application/x-www-form-urlencoded ルール適用)
+        // 対策: href に渡す前に `+` を `%2B` に escape (escapeHtml 後・URL safe を維持)
+        const _pdfHref = (u) => escapeHtml((u || '').replace(/\+/g, '%2B'));
         const pdfButtonHtml = _isPdfUrlSafe(p.pdf_url) ? `
-          <a href="${escapeHtml(p.pdf_url)}" target="_blank" rel="noopener noreferrer"
+          <a href="${_pdfHref(p.pdf_url)}" target="_blank" rel="noopener noreferrer"
              class="btn-primary btn-small ux-pdf-btn"
              style="background:linear-gradient(135deg,#f59e0b,#dc2626);color:#fff;text-decoration:none;display:inline-block;padding:0.45rem 0.9rem;border-radius:6px;font-size:0.85rem;font-weight:700;margin-right:6px;"
              title="${escapeHtml(p.pdf_title || '配布プリント')}">📄 配布プリント版で開く</a>
         ` : '';
         const answerPdfButtonHtml = _isPdfUrlSafe(p.answer_pdf_url) ? `
-          <a href="${escapeHtml(p.answer_pdf_url)}" target="_blank" rel="noopener noreferrer"
+          <a href="${_pdfHref(p.answer_pdf_url)}" target="_blank" rel="noopener noreferrer"
              class="btn-primary btn-small ux-ans-pdf-btn"
              style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;text-decoration:none;display:inline-block;padding:0.45rem 0.9rem;border-radius:6px;font-size:0.85rem;font-weight:700;margin-right:6px;"
              title="${escapeHtml(p.answer_pdf_title || '解答解説')}">📝 解答解説 PDF で開く</a>
         ` : '';
         // 🛡️ 2026-05-27 塾長指示「途中のヒント無しの問題だけのパターン」: 本番試験版 PDF ボタン (黄系 gradient)
         const strictPdfButtonHtml = _isPdfUrlSafe(p.strict_pdf_url) ? `
-          <a href="${escapeHtml(p.strict_pdf_url)}" target="_blank" rel="noopener noreferrer"
+          <a href="${_pdfHref(p.strict_pdf_url)}" target="_blank" rel="noopener noreferrer"
              class="btn-primary btn-small ux-strict-pdf-btn"
              style="background:linear-gradient(135deg,#fbbf24,#b45309);color:#fff;text-decoration:none;display:inline-block;padding:0.45rem 0.9rem;border-radius:6px;font-size:0.85rem;font-weight:700;margin-right:6px;"
              title="${escapeHtml(p.strict_pdf_title || '本番試験版・ヒント無し')}">📓 本番試験版で開く</a>

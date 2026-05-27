@@ -7,14 +7,14 @@
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="0">
   <title>マイページ | AIコーチング</title>
-  <script src="cache-purge.js?v=20260527-strict-pdf-group"></script>
+  <script src="cache-purge.js?v=20260527-vercel-plus-fix"></script>
 
-  <script src="frontend-error-monitor.js?v=20260527-strict-pdf-group"></script>
-  <link rel="stylesheet" href="style.css?v=20260527-strict-pdf-group">
-  <link rel="stylesheet" href="mypage.css?v=20260527-strict-pdf-group">
+  <script src="frontend-error-monitor.js?v=20260527-vercel-plus-fix"></script>
+  <link rel="stylesheet" href="style.css?v=20260527-vercel-plus-fix">
+  <link rel="stylesheet" href="mypage.css?v=20260527-vercel-plus-fix">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="auth-guard.js?v=20260527-strict-pdf-group"></script>
+  <script src="auth-guard.js?v=20260527-vercel-plus-fix"></script>
 </head>
 <body class="mypage-body">
   <div class="bg-gradient"></div>
@@ -1170,10 +1170,10 @@
     <p>© 2026 AIコーチング | Mypage v1.0</p>
   </footer>
 
-  <script src="learning-brain.js?v=20260527-strict-pdf-group"></script>
-  <script src="exam-prep.js?v=20260527-strict-pdf-group"></script>
-  <script src="referral-program.js?v=20260527-strict-pdf-group"></script>
-  <script src="mypage.js?v=20260527-strict-pdf-group"></script>
+  <script src="learning-brain.js?v=20260527-vercel-plus-fix"></script>
+  <script src="exam-prep.js?v=20260527-vercel-plus-fix"></script>
+  <script src="referral-program.js?v=20260527-vercel-plus-fix"></script>
+  <script src="mypage.js?v=20260527-vercel-plus-fix"></script>
   <script>
     // ウィジェット初期描画
     (function() {
@@ -2008,8 +2008,12 @@
           fetch(`${API_BASE}/api/student/lesson-prints/${encodeURIComponent(pid)}/download`, {
             method: 'POST', headers
           }).catch(() => {});
+          // 🛡️ 2026-05-27 Vercel bug fix: ファイル名に `+` がある場合、Vercel が space と解釈して 404 になる
+          // (RFC 3986 では path 内の `+` は literal だが Vercel static serving が application/x-www-form-urlencoded ルール適用)
+          // 対策: window.open に渡す前に `+` を `%2B` に escape
+          const fpathSafe = fpath.replace(/\+/g, '%2B');
           // 新タブで PDF 開く (Vercel static asset・guard 済み)
-          window.open(fpath, '_blank', 'noopener,noreferrer');
+          window.open(fpathSafe, '_blank', 'noopener,noreferrer');
         } finally {
           setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 800);
         }
