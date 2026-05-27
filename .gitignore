@@ -49,3 +49,6 @@ marketing-assets/video-frames-v2/
 juku-manager-data.json
 *-data.json
 .claude/settings.local.json
+
+# 2026-05-27: PDF を Cloudflare R2 へ移行・Vercel deploy bundle から除外
+lesson-prints/*.pdf
