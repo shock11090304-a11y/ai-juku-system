@@ -593,17 +593,24 @@
              style="background:linear-gradient(135deg,#fbbf24,#b45309);color:#fff;text-decoration:none;display:inline-block;padding:0.45rem 0.9rem;border-radius:6px;font-size:0.85rem;font-weight:700;margin-right:6px;"
              title="${escapeHtml(p.strict_pdf_title || '本番試験版・ヒント無し')}">📓 本番試験版で開く</a>
         ` : '';
-        // 🛡️ 2026-05-27 塾長指示「差し替えた問題に関してはこの下にある解説は不要」:
-        // 解答解説 PDF が紐付いている問題のみ、テキスト 解答+解説 を非表示にして PDF への誘導案内のみ表示
-        // → PDF と重複表示が解消され、生徒は質の高い PDF 版で学習できる
-        // 注意: 本編 PDF や 本番試験版 PDF だけ存在し、解答解説 PDF が無い場合は dead-end 防止のため
-        //       テキスト解答+解説 は残す (3 視点 review で UX bug 指摘 → 厳密条件化 fix)
+        // 🛡️ 2026-05-27 塾長指示「PDFが問題としてある場合、上の画面に映っているような問題の画面は不要」:
+        // 本編 PDF または 本番試験版 PDF が存在する問題は、Web 上の問題文・選択肢を非表示にして
+        // PDF 版で完結する UI に変更 (問題文+選択肢の重複表示を廃止)
+        // pdf_url または strict_pdf_url がある = 「PDF 版が問題として成立」と判定
+        const hasMainPdf = _isPdfUrlSafe(p.pdf_url) || _isPdfUrlSafe(p.strict_pdf_url);
         const hasAnswerPdf = _isPdfUrlSafe(p.answer_pdf_url);
-        const answerExplanationHtml = hasAnswerPdf ? `
-            <div style="margin-top:1rem;padding:0.9rem 1.1rem;background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.35);border-radius:8px;color:#fde68a;font-size:0.88rem;line-height:1.6;">
-              📄 この問題の <strong style="color:#fbbf24;">解答・解説</strong> は上記の <strong>「📝 解答解説 PDF で開く」</strong> ボタンから PDF 版でご覧ください。<br>
-              <span style="font-size:0.78rem;color:#a1a1aa;">PDF 版では模範解答・採点ポイント・頻出ミスを段組レイアウトで詳しく解説しています。</span>
+        // PDF 紐付き問題: 問題文・選択肢の代わりに PDF 誘導案内
+        // PDF 無し問題: 従来通り問題文+選択肢を表示 (Web 版で完結)
+        const questionAndChoicesHtml = hasMainPdf ? `
+            <div style="margin: 1rem 0; padding: 1.4rem 1.6rem; background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.10)); border: 1px solid rgba(99,102,241,0.4); border-radius: 12px; text-align: center;">
+              <div style="font-size: 1.1rem; color: #c7d2fe; margin-bottom: 0.6rem; font-weight: 600;">📄 この問題は <span style="color: #fff; background: linear-gradient(135deg,#f59e0b,#dc2626); padding: 0.1em 0.5em; border-radius: 4px;">PDF 版</span> でご利用ください</div>
+              <div style="font-size: 0.85rem; color: #a1a1aa; line-height: 1.6;">問題文・選択肢・解答解説をすべて PDF で詳しく掲載しています。<br>下記の <strong style="color: #fbbf24;">「📄 配布プリント版で開く」</strong> ボタンから PDF を開いてください。</div>
             </div>` : `
+            <div class="ux-question">${formatScientific(p.question_text)}</div>
+            ${choicesHtml}`;
+        // PDF 紐付き問題はテキスト 解答+解説 を非表示 (PDF に統合済)
+        // PDF 無し問題で Free response の場合: 「解答・解説を表示」ボタンで開示 (従来通り)
+        const answerExplanationHtml = hasMainPdf ? '' : `
             <div class="ux-answer-block" id="uxAnswerBlock">
               <div class="ux-answer-label">📝 解答</div>
               <div class="ux-answer-text">${formatScientific(p.answer)}</div>
@@ -618,13 +625,12 @@
               <strong>${escapeHtml(p.university)}</strong> ${p.faculty ? '/ ' + escapeHtml(p.faculty) : ''} · ${escapeHtml(p.subject)} · <span style="color:#fcd34d;">${escapeHtml(p.difficulty || '標準')}</span><br>
               <span style="font-size:0.78rem;">${escapeHtml(p.inspired_by || '')}</span>
             </div>
-            <div class="ux-question">${formatScientific(p.question_text)}</div>
-            ${choicesHtml}
+            ${questionAndChoicesHtml}
             <div class="ux-actions">
               ${pdfButtonHtml}
               ${strictPdfButtonHtml}
               ${answerPdfButtonHtml}
-              ${(isMC || hasAnswerPdf) ? '' : '<button type="button" class="btn-secondary btn-small" id="uxRevealBtn">解答・解説を表示</button>'}
+              ${(isMC || hasMainPdf) ? '' : '<button type="button" class="btn-secondary btn-small" id="uxRevealBtn">解答・解説を表示</button>'}
               <button type="button" class="btn-ghost btn-small" id="uxBackBtn">← 一覧に戻る</button>
             </div>
             ${answerExplanationHtml}
