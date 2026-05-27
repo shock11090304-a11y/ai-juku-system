@@ -302,6 +302,64 @@
         }
       }
 
+      // 🏛️ 大学並び順 (2026-05-27 塾長指示「東進のサイトのようにわかりやすい順番にして」)
+      // 東進サイトの並び (旧帝大 → 難関国公立 → 地方国公立 → 早慶上理 → MARCH → 関関同立 → 医薬 → 試験別 → 受験区分)
+      // ※ DB の表記揺れ (慶應 / 慶應義塾大学 / 東京理科 / 東京理科大学 等) は両方を含める
+      // 🔖 sentinel: UNIV_ORDER に未登録の大学はここに挿入 (中学/高校受験より前で名前順)
+      const UNV_UNLISTED_SENTINEL = '__UNLISTED__';
+      const UNIV_ORDER = [
+        // ── 国公立: 旧七帝大 + 東工大 ──
+        '東大', '京大', '北大', '東北大', '名大', '阪大', '九大', '東工大',
+        // ── 国公立: 難関 ──
+        '一橋', '神戸大', 'お茶の水', '筑波', '千葉', '横国',
+        '東京外国語大学', '東京外語', '都立大',
+        '東京医科歯科', '東京医科歯科大学',  // 国立医歯系最難関
+        // ── 国公立: 公立 ──
+        '大阪府立', '京都府立', '横浜市立',
+        // ── 国公立: 看護・福祉 (公立) ──
+        '国立看護', '国立看護大学校', '神奈川県立保健福祉大学',
+        // ── 私立: 早慶上理 ──
+        '早稲田', '慶應', '慶應義塾大学', '上智', '東京理科', '東京理科大学',
+        // ── 私立: MARCH + 学習院 ──
+        '明治', '青学', '立教', '中央', '法政', '学習院',
+        // ── 私立: 関関同立 ──
+        '関学', '関大', '同志社', '立命館',
+        // ── 私立: 医学部・歯学部 ──
+        '慈恵会医科', '東京慈恵会医科大学',
+        '日本医科', '日本医科大学',
+        '順天堂医', '順天堂大学',
+        '昭和大医', '昭和大学',
+        '東京医科', '東京医科大学',
+        '北里', '北里大学',
+        '日本大医', '日本大学',
+        '東京歯科', '東京歯科大学',
+        '日本歯科', '日本歯科大学',
+        '共立薬科', '共立薬科大学(現慶應義塾大学薬学部)',
+        // ── 私立: 国際・成成明学 ──
+        'ICU', '成蹊', '明治学院', '武蔵', '南山', '神田外語',
+        // ── 私立: 西南・福岡 ──
+        '西南学院', '福岡',
+        // ── 私立: 体育・看護 ──
+        '日本体育', '日本体育大学', '聖路加', '聖路加国際大学',
+        '神奈川看護', '東京医療保健', '東京医療保健大学',
+        '日本社会事業', '日本福祉',
+        // ── 私立: 美術 ──
+        '東京芸大', '東京藝術大学', '多摩美術', '武蔵野美術',
+        // ── 試験別 ──
+        '共通テスト', 'TEAP', 'TOEFL', 'IELTS', '英検', '英文法問題',
+        // ── 🔖 sentinel: 将来 DB に追加される未登録大学はここに集まる ──
+        UNV_UNLISTED_SENTINEL,
+        // ── 受験区分 (末尾) ──
+        '中学受験', '高校受験',
+      ];
+      const _univOrderIndex = new Map(UNIV_ORDER.map((u, i) => [u, i]));
+      const _univUnlistedIdx = _univOrderIndex.get(UNV_UNLISTED_SENTINEL);
+      function _univSortKey(name) {
+        // UNIV_ORDER にあればその順、無ければ sentinel 位置 (中学/高校受験より前) で名前順
+        const idx = _univOrderIndex.has(name) ? _univOrderIndex.get(name) : _univUnlistedIdx;
+        return [idx, name];
+      }
+
       function renderUnivGrid() {
         const grid = document.getElementById('uxUnivGrid');
         // 大学単位で集約 (科目フィルター適用)
@@ -314,7 +372,13 @@
           byUniv[it.university].count += it.count;
           byUniv[it.university].subjects.push(`${it.subject}:${it.count}`);
         });
-        const entries = Object.entries(byUniv);
+        // 🏛️ 東進サイト順で sort (2026-05-27 塾長指示)
+        const entries = Object.entries(byUniv).sort((a, b) => {
+          const [ka, na] = _univSortKey(a[0]);
+          const [kb, nb] = _univSortKey(b[0]);
+          if (ka !== kb) return ka - kb;
+          return String(na).localeCompare(String(nb), 'ja');
+        });
         if (entries.length === 0) {
           grid.innerHTML = `<div class="ux-loading">「${currentSubject || '全科目'}」に該当する大学なし</div>`;
           return;
