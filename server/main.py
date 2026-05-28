@@ -1209,6 +1209,12 @@ def init_db():
         # video_url = "/lesson-prints/videos/2026-05-26_古文_助動詞マスター講座.mp4"
         ("lp_video_url", "ALTER TABLE lesson_prints ADD COLUMN video_url TEXT"),
         ("lp_video_duration", "ALTER TABLE lesson_prints ADD COLUMN video_duration_sec INTEGER"),
+        # 🎯 小問単位 単元マッピング (塾長指示 2026-05-28「間違えた番号から苦手単元抽出」):
+        # sub_question_topics = JSON 配列。各要素は { daimon: 1, sub_q: 1, topic: "数列・特性方程式" }
+        # 例: [{"daimon":1,"sub_q":1,"topic":"数列・特性方程式"}, {"daimon":1,"sub_q":2,"topic":"数列・一般項"}, ...]
+        # university-exam.html の解答入力 UI で間違えた小問の topic を抽出 → question_attempts.metadata
+        # → _weakness_aggregation_scheduler で sub_topic 単位の苦手単元集計
+        ("lp_sub_question_topics", "ALTER TABLE lesson_prints ADD COLUMN sub_question_topics TEXT"),
         # 📊 保護者向け週次レポート (塾長指示 2026-05-26): 保護者 email を別カラムで保管
         # NULL なら配信なし・mypage の「保護者メール設定」で登録
         ("parent_email", "ALTER TABLE students ADD COLUMN parent_email TEXT DEFAULT NULL"),
@@ -5271,11 +5277,14 @@ async def admin_lesson_prints_sync(request: Request, x_cron_secret: Optional[str
             target_univ = p.get("target_university")
             video_url = p.get("video_url")
             video_dur = p.get("video_duration_sec", 0) or 0
+            # 🎯 2026-05-28 塾長指示「間違えた番号→苦手単元」: sub_question_topics 受信 + 保存
+            sub_q_topics = p.get("sub_question_topics")  # JSON string or None
             if existing:
                 c.execute(
                     "UPDATE lesson_prints SET title = ?, subtitle = ?, subject = ?, topic = ?, "
                     "level = ?, target_grade = ?, target_type = ?, target_university = ?, description = ?, "
                     "pages = ?, file_size_kb = ?, is_published = ?, video_url = ?, video_duration_sec = ?, "
+                    "sub_question_topics = ?, "
                     "updated_at = CURRENT_TIMESTAMP "
                     "WHERE file_path = ?",
                     (
@@ -5283,7 +5292,7 @@ async def admin_lesson_prints_sync(request: Request, x_cron_secret: Optional[str
                         p.get("level"), p.get("target_grade"), p.get("target_type"), target_univ,
                         p.get("description"), p.get("pages", 0), p.get("file_size_kb", 0),
                         1 if p.get("is_published", True) else 0,
-                        video_url, video_dur, fp,
+                        video_url, video_dur, sub_q_topics, fp,
                     ),
                 )
                 updated += 1
@@ -5291,14 +5300,14 @@ async def admin_lesson_prints_sync(request: Request, x_cron_secret: Optional[str
                 c.execute(
                     "INSERT INTO lesson_prints (title, subtitle, subject, topic, level, target_grade, "
                     "target_type, target_university, description, file_path, pages, file_size_kb, is_published, "
-                    "video_url, video_duration_sec) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "video_url, video_duration_sec, sub_question_topics) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         title, p.get("subtitle"), subject, p.get("topic"),
                         p.get("level"), p.get("target_grade"), p.get("target_type"), target_univ,
                         p.get("description"), fp, p.get("pages", 0), p.get("file_size_kb", 0),
                         1 if p.get("is_published", True) else 0,
-                        video_url, video_dur,
+                        video_url, video_dur, sub_q_topics,
                     ),
                 )
                 inserted += 1
@@ -26034,17 +26043,34 @@ def university_problems_list(university: Optional[str] = None, subject: Optional
 @app.get("/api/university-problems/{pid}")
 def university_problems_detail(pid: int):
     """1 問の詳細 (問題文・選択肢・解答・解説 全て返す)。
-    🛡️ 2026-05-27: pdf_url / pdf_title を含めて返す (生徒画面で「📄 配布プリント版で開く」ボタン用)。"""
+    🛡️ 2026-05-27: pdf_url / pdf_title を含めて返す (生徒画面で「📄 配布プリント版で開く」ボタン用)。
+    🎯 2026-05-28: lesson_prints と JOIN して sub_question_topics (小問単位 単元 mapping) も返す
+       (university-exam.html の解答入力 UI で間違えた小問の topic 抽出に使用)"""
     conn = db(); c = conn.cursor()
     c.execute("SELECT id, university, faculty, year, subject, topic, problem_type, question_text, choices, answer, explanation, difficulty, inspired_by, tags, pdf_url, pdf_title, answer_pdf_url, answer_pdf_title, strict_pdf_url, strict_pdf_title, created_at FROM university_problems WHERE id=? AND status='published'", (pid,))
     r = c.fetchone()
-    conn.close()
     if not r:
+        conn.close()
         raise HTTPException(status_code=404, detail="not found")
     d = dict(r) if hasattr(r, 'keys') else {}
     if d.get("choices"):
         try: d["choices"] = json.loads(d["choices"])
         except: pass
+    # 🎯 sub_question_topics を lesson_prints から取得 (pdf_url で JOIN)
+    if d.get("pdf_url"):
+        try:
+            c.execute("SELECT sub_question_topics FROM lesson_prints WHERE file_path = ?", (d["pdf_url"],))
+            lp_row = c.fetchone()
+            if lp_row:
+                sqt = lp_row["sub_question_topics"] if hasattr(lp_row, "keys") else lp_row[0]
+                if sqt:
+                    try:
+                        d["sub_question_topics"] = json.loads(sqt)
+                    except Exception:
+                        d["sub_question_topics"] = None
+        except Exception:
+            pass  # lesson_prints 連携 fail でも problem 詳細は返す
+    conn.close()
     return d
 
 
