@@ -601,26 +601,45 @@
         const hasAnswerPdf = _isPdfUrlSafe(p.answer_pdf_url);
         // PDF 紐付き問題: 問題文・選択肢の代わりに PDF 誘導案内 + 🆕 答え合わせフォーム
         // PDF 無し問題: 従来通り問題文+選択肢を表示 (Web 版で完結)
-        // 🛡️ 2026-05-28 塾長指示「解答入力欄をつけて正答率で弱点分析」:
-        // PDF で問題を解いた後、Web に答えを入力 → DB 記録 → 弱点分析へ反映
+        // 🛡️ 2026-05-28 塾長指示「分析が甘い → A+B+C 実装」:
+        //   A: 小問別○× (大問は通常 3-6 小問なので 5 行用意 + 追加可)
+        //   B: 不正解小問の理由カテゴリ (理解不足/ケアレスミス/時間切れ/読み違い)
+        //   C: 大問全体の体感難易度 (楽勝/ちょうど/難しすぎ)
+        // → 1 大問 = 1 attempt にまとめ、metadata.sub_attempts[] に小問単位データ保存
         const pdfAnswerFormHtml = hasMainPdf ? `
             <div id="uxPdfAnswerForm" style="margin: 1rem 0; padding: 1.2rem 1.4rem; background: rgba(16,185,129,0.10); border: 1px solid rgba(16,185,129,0.35); border-radius: 10px;">
-              <div style="font-size: 1.0rem; color: #6ee7b7; margin-bottom: 0.7rem; font-weight: 600;">✏️ 答え合わせ <span style="font-size: 0.75rem; color: #a1a1aa; font-weight: normal;">(PDF で解いた後、こちらに答えを入力)</span></div>
-              ${isMC ? `
-                <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.8rem;">
-                  ${['A','B','C','D','E'].slice(0, Array.isArray(p.choices) ? p.choices.length : 4).map(k => `
-                    <button type="button" class="ux-pdf-ans-btn" data-key="${k}" style="min-width:3rem; padding:0.5rem 0.9rem; border:1px solid rgba(99,102,241,0.5); border-radius:6px; background:rgba(99,102,241,0.12); color:#c7d2fe; font-weight:700; font-size:1.05rem; cursor:pointer;">${k}</button>
-                  `).join('')}
-                </div>
-                <button type="button" id="uxPdfAnsCheck" class="btn-primary btn-small" disabled style="opacity:0.5;">✅ 答え合わせ</button>
-              ` : `
-                <div style="font-size:0.85rem; color:#a1a1aa; margin-bottom:0.5rem;">記述問題: 自分の答えと PDF 解答を見比べて、自己採点してください。</div>
-                <div style="display:flex; gap:0.5rem;">
-                  <button type="button" class="ux-pdf-self-btn" data-correct="1" style="padding:0.5rem 1.2rem; border:1px solid rgba(16,185,129,0.5); border-radius:6px; background:rgba(16,185,129,0.15); color:#6ee7b7; font-weight:700; cursor:pointer;">⭕ 正解できた</button>
-                  <button type="button" class="ux-pdf-self-btn" data-correct="0" style="padding:0.5rem 1.2rem; border:1px solid rgba(239,68,68,0.5); border-radius:6px; background:rgba(239,68,68,0.12); color:#fca5a5; font-weight:700; cursor:pointer;">❌ 間違えた</button>
-                </div>
-              `}
-              <div id="uxPdfAnsResult" style="margin-top:0.8rem; font-size:0.9rem; line-height:1.5; display:none;"></div>
+              <div style="font-size: 1.0rem; color: #6ee7b7; margin-bottom: 0.7rem; font-weight: 600;">✏️ 答え合わせ <span style="font-size: 0.75rem; color: #a1a1aa; font-weight: normal;">(PDF で解いた後、小問ごとに ⭕/❌ をタップ)</span></div>
+
+              <div style="margin-bottom: 0.6rem; font-size: 0.85rem; color: #fde68a; font-weight: 600;">📋 小問別 ○×</div>
+              <div id="uxSubQuestionList" style="margin-bottom: 1rem;">
+                ${[1,2,3,4,5].map(n => `
+                  <div class="ux-sub-q-row" data-sub-q="${n}" style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.45rem; flex-wrap:wrap;">
+                    <span style="min-width:2.6rem; font-weight:700; color:#c7d2fe;">問${n}:</span>
+                    <button type="button" class="ux-sub-mark-btn" data-mark="correct" data-sub-q="${n}" style="padding:0.35rem 0.75rem; border:1px solid rgba(16,185,129,0.4); border-radius:5px; background:rgba(16,185,129,0.10); color:#6ee7b7; cursor:pointer; font-size:0.9rem;">⭕</button>
+                    <button type="button" class="ux-sub-mark-btn" data-mark="wrong" data-sub-q="${n}" style="padding:0.35rem 0.75rem; border:1px solid rgba(239,68,68,0.4); border-radius:5px; background:rgba(239,68,68,0.08); color:#fca5a5; cursor:pointer; font-size:0.9rem;">❌</button>
+                    <select class="ux-sub-reason" data-sub-q="${n}" style="display:none; padding:0.3rem 0.5rem; background:rgba(0,0,0,0.3); color:#fde68a; border:1px solid rgba(245,158,11,0.4); border-radius:5px; font-size:0.82rem;">
+                      <option value="">原因を選択 ▼</option>
+                      <option value="understanding">🧠 理解不足 (公式・概念)</option>
+                      <option value="careless">✏️ ケアレスミス (計算/転記)</option>
+                      <option value="time">⏰ 時間切れ</option>
+                      <option value="misread">🔍 読み違い (問題文)</option>
+                      <option value="other">その他</option>
+                    </select>
+                  </div>
+                `).join('')}
+              </div>
+              <button type="button" id="uxAddSubQ" style="padding:0.3rem 0.7rem; margin-bottom:0.8rem; background:rgba(99,102,241,0.15); border:1px dashed rgba(99,102,241,0.5); border-radius:5px; color:#c7d2fe; font-size:0.8rem; cursor:pointer;">+ 小問を追加</button>
+
+              <div style="margin: 0.6rem 0 0.4rem; font-size: 0.85rem; color: #fde68a; font-weight: 600;">📊 大問全体の体感難易度</div>
+              <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom: 1rem;">
+                <button type="button" class="ux-difficulty-btn" data-diff="easy" style="padding:0.45rem 0.85rem; border:1px solid rgba(16,185,129,0.4); border-radius:6px; background:rgba(16,185,129,0.10); color:#6ee7b7; cursor:pointer; font-size:0.88rem;">😊 楽勝</button>
+                <button type="button" class="ux-difficulty-btn" data-diff="medium" style="padding:0.45rem 0.85rem; border:1px solid rgba(245,158,11,0.4); border-radius:6px; background:rgba(245,158,11,0.10); color:#fde68a; cursor:pointer; font-size:0.88rem;">🤔 ちょうど良い</button>
+                <button type="button" class="ux-difficulty-btn" data-diff="hard" style="padding:0.45rem 0.85rem; border:1px solid rgba(239,68,68,0.4); border-radius:6px; background:rgba(239,68,68,0.08); color:#fca5a5; cursor:pointer; font-size:0.88rem;">😰 難しすぎ</button>
+              </div>
+
+              <button type="button" id="uxPdfFinalize" class="btn-primary btn-small" disabled style="opacity:0.5;">📝 採点を確定</button>
+              <div id="uxPdfFinalizeHint" style="margin-top:0.4rem; font-size:0.78rem; color:#fde68a;">↑ ボタンを押すには: 小問に ⭕/❌ + 不正解の原因 + 体感難易度 をすべて入力してください</div>
+              <div id="uxPdfAnsResult" style="margin-top:0.8rem; font-size:0.9rem; line-height:1.6; display:none;"></div>
             </div>` : '';
         const questionAndChoicesHtml = hasMainPdf ? `
             <div style="margin: 1rem 0; padding: 1.4rem 1.6rem; background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.10)); border: 1px solid rgba(99,102,241,0.4); border-radius: 12px; text-align: center;">
@@ -698,43 +717,183 @@
           document.getElementById('uxList').scrollIntoView({block:'start', behavior:'smooth'});
         });
 
-        // 🛡️ 2026-05-28 塾長指示「解答入力欄で弱点分析」: PDF 紐付き問題の答え合わせ UI
+        // 🛡️ 2026-05-28 塾長指示 A+B+C 実装: 小問別○× + 理由カテゴリ + 体感難易度
         if (hasMainPdf) {
-          let selectedKey = null;
-          // MC: A/B/C/D ボタン
-          document.querySelectorAll('.ux-pdf-ans-btn').forEach(btn => {
+          // 状態管理: 各小問の結果 { subQ: 1, mark: 'correct'|'wrong', reason: 'understanding'|... }
+          const subResults = {};  // key: subQ番号 → {mark, reason}
+          let selectedDifficulty = null;
+          let subQMax = 5;  // 初期 5 小問 (+ 追加可能)
+
+          function updateFinalizeBtn() {
+            const hasAnyMark = Object.keys(subResults).length > 0;
+            const allWrongHaveReason = Object.entries(subResults).every(([k, v]) => v.mark === 'correct' || (v.mark === 'wrong' && v.reason));
+            const btn = document.getElementById('uxPdfFinalize');
+            const hint = document.getElementById('uxPdfFinalizeHint');
+            if (btn) {
+              const ok = hasAnyMark && allWrongHaveReason && selectedDifficulty;
+              btn.disabled = !ok;
+              btn.style.opacity = ok ? '1' : '0.5';
+              // 🛡️ 2026-05-28 3 視点 review UX 致命 fix: disabled の理由を動的ヒントで明示
+              if (hint) {
+                if (ok) {
+                  hint.textContent = '✅ 準備完了。「採点を確定」ボタンを押してください。';
+                  hint.style.color = '#6ee7b7';
+                } else {
+                  const missing = [];
+                  if (!hasAnyMark) missing.push('小問の ⭕/❌');
+                  if (!allWrongHaveReason) missing.push('❌ の原因 (プルダウン)');
+                  if (!selectedDifficulty) missing.push('体感難易度');
+                  hint.textContent = '↑ あと入力が必要: ' + missing.join(' / ');
+                  hint.style.color = '#fde68a';
+                }
+              }
+            }
+          }
+
+          // A: 小問 ○/× ボタン
+          function bindSubMarkBtns() {
+            document.querySelectorAll('.ux-sub-mark-btn').forEach(btn => {
+              if (btn._bound) return;
+              btn._bound = true;
+              btn.addEventListener('click', () => {
+                if (btn.disabled) return;
+                const subQ = btn.dataset.subQ;
+                const mark = btn.dataset.mark;
+                subResults[subQ] = subResults[subQ] || {};
+                subResults[subQ].mark = mark;
+                // ボタン視覚更新
+                document.querySelectorAll(`.ux-sub-mark-btn[data-sub-q="${subQ}"]`).forEach(b => {
+                  if (b.dataset.mark === mark) {
+                    b.style.background = mark === 'correct' ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)';
+                    b.style.color = '#fff';
+                    b.style.fontWeight = '700';
+                  } else {
+                    b.style.background = b.dataset.mark === 'correct' ? 'rgba(16,185,129,0.10)' : 'rgba(239,68,68,0.08)';
+                    b.style.color = b.dataset.mark === 'correct' ? '#6ee7b7' : '#fca5a5';
+                    b.style.fontWeight = '400';
+                  }
+                });
+                // B: 不正解の場合のみ「理由」セレクトを表示
+                const reasonEl = document.querySelector(`.ux-sub-reason[data-sub-q="${subQ}"]`);
+                if (reasonEl) {
+                  if (mark === 'wrong') {
+                    reasonEl.style.display = '';
+                    if (!subResults[subQ].reason) subResults[subQ].reason = '';
+                  } else {
+                    reasonEl.style.display = 'none';
+                    reasonEl.value = '';
+                    delete subResults[subQ].reason;
+                  }
+                }
+                updateFinalizeBtn();
+              });
+            });
+            // 理由セレクト変更
+            document.querySelectorAll('.ux-sub-reason').forEach(sel => {
+              if (sel._bound) return;
+              sel._bound = true;
+              sel.addEventListener('change', () => {
+                const subQ = sel.dataset.subQ;
+                if (subResults[subQ]) {
+                  subResults[subQ].reason = sel.value;
+                  updateFinalizeBtn();
+                }
+              });
+            });
+          }
+          bindSubMarkBtns();
+
+          // 「+ 小問を追加」ボタン
+          const addBtn = document.getElementById('uxAddSubQ');
+          if (addBtn) {
+            addBtn.addEventListener('click', () => {
+              subQMax += 1;
+              const n = subQMax;
+              const newRow = document.createElement('div');
+              newRow.className = 'ux-sub-q-row';
+              newRow.dataset.subQ = n;
+              newRow.style.cssText = 'display:flex; align-items:center; gap:0.5rem; margin-bottom:0.45rem; flex-wrap:wrap;';
+              newRow.innerHTML = `
+                <span style="min-width:2.6rem; font-weight:700; color:#c7d2fe;">問${n}:</span>
+                <button type="button" class="ux-sub-mark-btn" data-mark="correct" data-sub-q="${n}" style="padding:0.35rem 0.75rem; border:1px solid rgba(16,185,129,0.4); border-radius:5px; background:rgba(16,185,129,0.10); color:#6ee7b7; cursor:pointer; font-size:0.9rem;">⭕</button>
+                <button type="button" class="ux-sub-mark-btn" data-mark="wrong" data-sub-q="${n}" style="padding:0.35rem 0.75rem; border:1px solid rgba(239,68,68,0.4); border-radius:5px; background:rgba(239,68,68,0.08); color:#fca5a5; cursor:pointer; font-size:0.9rem;">❌</button>
+                <select class="ux-sub-reason" data-sub-q="${n}" style="display:none; padding:0.3rem 0.5rem; background:rgba(0,0,0,0.3); color:#fde68a; border:1px solid rgba(245,158,11,0.4); border-radius:5px; font-size:0.82rem;">
+                  <option value="">原因を選択 ▼</option>
+                  <option value="understanding">🧠 理解不足 (公式・概念)</option>
+                  <option value="careless">✏️ ケアレスミス (計算/転記)</option>
+                  <option value="time">⏰ 時間切れ</option>
+                  <option value="misread">🔍 読み違い (問題文)</option>
+                  <option value="other">その他</option>
+                </select>`;
+              document.getElementById('uxSubQuestionList').appendChild(newRow);
+              bindSubMarkBtns();
+            });
+          }
+
+          // C: 体感難易度ボタン
+          document.querySelectorAll('.ux-difficulty-btn').forEach(btn => {
             btn.addEventListener('click', () => {
               if (btn.disabled) return;
-              document.querySelectorAll('.ux-pdf-ans-btn').forEach(b => {
-                b.style.background = 'rgba(99,102,241,0.12)';
-                b.style.color = '#c7d2fe';
+              selectedDifficulty = btn.dataset.diff;
+              document.querySelectorAll('.ux-difficulty-btn').forEach(b => {
+                if (b.dataset.diff === selectedDifficulty) {
+                  b.style.transform = 'scale(1.05)';
+                  b.style.fontWeight = '700';
+                  b.style.boxShadow = '0 0 0 2px rgba(99,102,241,0.5)';
+                } else {
+                  b.style.transform = 'scale(1)';
+                  b.style.fontWeight = '400';
+                  b.style.boxShadow = 'none';
+                }
               });
-              btn.style.background = 'rgba(99,102,241,0.45)';
-              btn.style.color = '#fff';
-              selectedKey = btn.dataset.key;
-              const chk = document.getElementById('uxPdfAnsCheck');
-              if (chk) { chk.disabled = false; chk.style.opacity = '1'; }
+              updateFinalizeBtn();
             });
           });
-          // MC: 答え合わせボタン
-          const chkBtn = document.getElementById('uxPdfAnsCheck');
-          if (chkBtn) {
-            chkBtn.addEventListener('click', async () => {
-              if (!selectedKey) return;
-              const correctKey = String(p.answer || '').trim().toUpperCase().slice(0,1);
-              const isCorrect = selectedKey === correctKey;
+
+          // 「📝 採点を確定」ボタン → 1 大問 = 1 attempt に集約して POST
+          const finalBtn = document.getElementById('uxPdfFinalize');
+          if (finalBtn) {
+            finalBtn.addEventListener('click', async () => {
+              if (finalBtn.disabled) return;
+              const total = Object.keys(subResults).length;
+              const correct = Object.values(subResults).filter(r => r.mark === 'correct').length;
+              const wrong = total - correct;
+              const correctRate = total > 0 ? correct / total : 0;
+              const isCorrect = correctRate >= 0.7 ? 1 : 0;  // 70% 以上で正解扱い
+              // 理由別カウント
+              const reasonCounts = {};
+              Object.values(subResults).forEach(r => {
+                if (r.reason) reasonCounts[r.reason] = (reasonCounts[r.reason] || 0) + 1;
+              });
+              const reasonLabels = {
+                understanding: '🧠 理解不足', careless: '✏️ ケアレスミス',
+                time: '⏰ 時間切れ', misread: '🔍 読み違い', other: 'その他'
+              };
+              const difficultyLabels = { easy: '😊 楽勝', medium: '🤔 ちょうど良い', hard: '😰 難しすぎ' };
+              // 結果 box
               const resultEl = document.getElementById('uxPdfAnsResult');
-              if (resultEl) {
-                resultEl.style.display = 'block';
-                resultEl.innerHTML = isCorrect
-                  ? `<div style="padding:0.7rem; background:rgba(16,185,129,0.18); border-radius:6px; color:#6ee7b7; font-weight:700;">⭕ 正解! あなたの答え: ${selectedKey} / 正解: ${correctKey}</div><div style="margin-top:0.5rem; font-size:0.82rem; color:#a1a1aa;">記録しました。詳しい解説は「📝 解答解説 PDF で開く」でご確認ください。</div>`
-                  : `<div style="padding:0.7rem; background:rgba(239,68,68,0.18); border-radius:6px; color:#fca5a5; font-weight:700;">❌ 不正解。あなたの答え: ${selectedKey} / 正解: ${correctKey}</div><div style="margin-top:0.5rem; font-size:0.82rem; color:#a1a1aa;">記録しました。詳しい解説は「📝 解答解説 PDF で開く」をご確認ください。次回頑張りましょう!</div>`;
-              }
-              document.querySelectorAll('.ux-pdf-ans-btn').forEach(b => b.disabled = true);
-              chkBtn.disabled = true;
-              chkBtn.textContent = '✓ 採点済み';
-              chkBtn.style.opacity = '0.5';
-              // DB 記録 (失敗しても UI は維持)
+              const bgColor = isCorrect ? 'rgba(16,185,129,0.18)' : 'rgba(239,68,68,0.15)';
+              const fgColor = isCorrect ? '#6ee7b7' : '#fca5a5';
+              const reasonHtml = Object.keys(reasonCounts).length > 0
+                ? `<div style="margin-top:0.6rem;"><strong style="color:#fde68a;">間違えた原因:</strong> ${Object.entries(reasonCounts).map(([k, v]) => `${reasonLabels[k] || k} × ${v}`).join(' / ')}</div>`
+                : '';
+              resultEl.style.display = 'block';
+              resultEl.innerHTML = `
+                <div style="padding:0.85rem; background:${bgColor}; border-radius:8px; color:${fgColor}; font-weight:700; font-size:1.0rem;">
+                  ${isCorrect ? '⭕' : '❌'} ${correct} / ${total} 問正解 (${Math.round(correctRate*100)}%)
+                </div>
+                <div style="margin-top:0.5rem; font-size:0.85rem; color:#c7d2fe;">
+                  <strong style="color:#fde68a;">体感難易度:</strong> ${difficultyLabels[selectedDifficulty] || selectedDifficulty}
+                  ${reasonHtml}
+                </div>
+                <div style="margin-top:0.6rem; font-size:0.78rem; color:#a1a1aa;">記録しました。マイページの「🎯 弱点 TOP3」に反映されます。詳しい解説は「📝 解答解説 PDF」でご確認ください。</div>`;
+              // UI lock
+              document.querySelectorAll('.ux-sub-mark-btn, .ux-difficulty-btn, .ux-sub-reason').forEach(el => { el.disabled = true; el.style.cursor = 'default'; });
+              if (addBtn) addBtn.style.display = 'none';
+              finalBtn.disabled = true;
+              finalBtn.textContent = '✓ 採点済み';
+              finalBtn.style.opacity = '0.5';
+              // DB 記録 (1 大問 = 1 attempt・metadata に小問詳細)
               try {
                 const token = localStorage.getItem('ai_juku_token') || '';
                 if (token) {
@@ -745,49 +904,27 @@
                       source: 'practice',
                       subject: p.subject,
                       topic: p.topic,
-                      is_correct: isCorrect ? 1 : 0,
-                      score_got: isCorrect ? 1 : 0,
-                      score_max: 1,
-                      metadata: { problem_source: 'university_problems', up_id: p.id, university: p.university, faculty: p.faculty, user_answer: selectedKey, correct_answer: correctKey }
+                      is_correct: isCorrect,
+                      score_got: correct,
+                      score_max: total,
+                      metadata: {
+                        problem_source: 'university_problems',
+                        up_id: p.id,
+                        university: p.university,
+                        faculty: p.faculty,
+                        sub_attempts: Object.entries(subResults).map(([k, v]) => ({
+                          sub_q: parseInt(k), mark: v.mark, reason: v.reason || null
+                        })),
+                        perceived_difficulty: selectedDifficulty,
+                        reason_counts: reasonCounts,
+                        correct_rate: correctRate
+                      }
                     })
                   });
                 }
               } catch (e) { console.warn('attempt record failed:', e); }
             });
           }
-          // 自由記述: 自己採点ボタン
-          document.querySelectorAll('.ux-pdf-self-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-              if (btn.disabled) return;
-              const isCorrect = btn.dataset.correct === '1';
-              const resultEl = document.getElementById('uxPdfAnsResult');
-              if (resultEl) {
-                resultEl.style.display = 'block';
-                resultEl.innerHTML = isCorrect
-                  ? `<div style="padding:0.7rem; background:rgba(16,185,129,0.18); border-radius:6px; color:#6ee7b7; font-weight:700;">⭕ 正解として記録しました</div>`
-                  : `<div style="padding:0.7rem; background:rgba(239,68,68,0.18); border-radius:6px; color:#fca5a5; font-weight:700;">❌ 間違えた問題として記録しました</div><div style="margin-top:0.5rem; font-size:0.82rem; color:#a1a1aa;">弱点分析の精度向上のため、正直な自己採点をありがとうございます!</div>`;
-              }
-              document.querySelectorAll('.ux-pdf-self-btn').forEach(b => { b.disabled = true; b.style.opacity = '0.5'; b.style.cursor = 'default'; });
-              try {
-                const token = localStorage.getItem('ai_juku_token') || '';
-                if (token) {
-                  await fetch(`${BACKEND_URL}/api/question-attempts`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({
-                      source: 'practice',
-                      subject: p.subject,
-                      topic: p.topic,
-                      is_correct: isCorrect ? 1 : 0,
-                      score_got: isCorrect ? 1 : 0,
-                      score_max: 1,
-                      metadata: { problem_source: 'university_problems', up_id: p.id, university: p.university, faculty: p.faculty, self_graded: true }
-                    })
-                  });
-                }
-              } catch (e) { console.warn('attempt record failed:', e); }
-            });
-          });
         }
       }
 
