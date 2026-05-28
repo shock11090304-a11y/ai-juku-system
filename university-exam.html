@@ -610,12 +610,12 @@
             <div id="uxPdfAnswerForm" style="margin: 1rem 0; padding: 1.2rem 1.4rem; background: rgba(16,185,129,0.10); border: 1px solid rgba(16,185,129,0.35); border-radius: 10px;">
               <div style="font-size: 1.0rem; color: #6ee7b7; margin-bottom: 0.7rem; font-weight: 600;">✏️ 答え合わせ <span style="font-size: 0.75rem; color: #a1a1aa; font-weight: normal;">(PDF で解いた後、大問・小問ごとに ⭕/❌ をタップ)</span></div>
 
-              <div style="margin-bottom: 0.5rem; font-size: 0.85rem; color: #fde68a; font-weight: 600;">📚 大問を選択</div>
+              <div style="margin-bottom: 0.5rem; font-size: 0.85rem; color: #fde68a; font-weight: 600;">📚 大問を選択 <span id="uxPdfStructureNote" style="font-size:0.7rem; color:#a1a1aa; font-weight:normal;"></span></div>
               <div id="uxDaimonTabs" style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:0.6rem; align-items:center;">
-                <button type="button" class="ux-daimon-tab active" data-daimon="1" style="padding:0.45rem 0.95rem; border:2px solid rgba(99,102,241,0.7); border-radius:6px; background:rgba(99,102,241,0.30); color:#fff; font-weight:700; cursor:pointer; font-size:0.9rem;">大問 1</button>
+                <!-- 初期タブは renderDetail で動的生成 -->
                 <button type="button" id="uxAddDaimon" style="padding:0.4rem 0.7rem; background:rgba(99,102,241,0.15); border:1px dashed rgba(99,102,241,0.5); border-radius:5px; color:#c7d2fe; font-size:0.8rem; cursor:pointer;">+ 大問を追加</button>
               </div>
-              <div id="uxDaimonStatus" style="margin-bottom:0.8rem; font-size:0.75rem; color:#a1a1aa;">📊 大問 1 を入力中</div>
+              <div id="uxDaimonStatus" style="margin-bottom:0.8rem; font-size:0.75rem; color:#a1a1aa;">📊 大問を入力中</div>
 
               <div id="uxDaimonContainer">
                 <!-- 動的に各大問の入力エリアが挿入される (uxDaimonPane class) -->
@@ -701,23 +701,45 @@
           document.getElementById('uxList').scrollIntoView({block:'start', behavior:'smooth'});
         });
 
-        // 🛡️ 2026-05-28 塾長指示 A+B+C + 大問タブ対応:
-        //   - daimonResults[d] = { subResults: {sq: {mark, reason}}, difficulty }
-        //   - 大問タブ切替で各大問の小問入力欄を表示
+        // 🛡️ 2026-05-28 塾長指示 A+B+C + 大問タブ対応 + 🆕 PDF 構造自動反映:
+        //   - daimonResults[d] = { subResults: {sq: {mark, reason}}, difficulty, subQMax }
+        //   - p.sub_question_topics から 大問数 + 各大問の小問数 を自動抽出 (動的生成)
         //   - 確定時に全大問のデータを 1 attempt にまとめて POST
         if (hasMainPdf) {
-          const daimonResults = { 1: { subResults: {}, difficulty: null, subQMax: 5 } };
-          let activeDaimon = 1;
-          let daimonCount = 1;
+          // 🎯 2026-05-28 fix: p.sub_question_topics を解析して PDF 構造を反映
+          //   例: [{daimon:1,sub_q:1},...,{daimon:1,sub_q:6},{daimon:2,sub_q:1},...,{daimon:4,sub_q:6}]
+          //   → 大問 4 つ・各大問 6 小問 を PDF 構造に合わせて生成
+          //   構造情報なし PDF (sub_question_topics=null) は大問 1 ・小問 5 で fallback
+          const pdfStructure = {};  // {daimon: maxSubQ}
+          if (Array.isArray(p.sub_question_topics) && p.sub_question_topics.length > 0) {
+            p.sub_question_topics.forEach(t => {
+              const d = parseInt(t.daimon);
+              const sq = parseInt(t.sub_q);
+              if (d && sq) {
+                pdfStructure[d] = Math.max(pdfStructure[d] || 0, sq);
+              }
+            });
+          }
+          // 初期 大問 数と subQMax を決定 (構造情報なし時は 1 大問・5 小問)
+          const initialDaimonNums = Object.keys(pdfStructure).map(d => parseInt(d)).sort((a,b) => a-b);
+          const startDaimons = initialDaimonNums.length > 0 ? initialDaimonNums : [1];
+          const daimonResults = {};
+          startDaimons.forEach(d => {
+            daimonResults[d] = { subResults: {}, difficulty: null, subQMax: pdfStructure[d] || 5 };
+          });
+          let activeDaimon = startDaimons[0];
+          let daimonCount = Math.max(...startDaimons);
 
-          // 各大問の入力 pane HTML を生成
+          // 各大問の入力 pane HTML を生成 (subQMax 個の小問を動的生成)
           function buildDaimonPaneHtml(d) {
             const d_ = daimonResults[d];
+            const subQNums = Array.from({length: d_ ? d_.subQMax : 5}, (_, i) => i + 1);
+            const isPdfDefined = !!pdfStructure[d];  // PDF YAML 由来の構造か (true) or 手動追加 (false)
             return `
               <div class="ux-daimon-pane" data-daimon="${d}" style="${d === activeDaimon ? '' : 'display:none;'}">
-                <div style="margin-bottom: 0.6rem; font-size: 0.85rem; color: #fde68a; font-weight: 600;">📋 大問 ${d} の小問別 ○×</div>
+                <div style="margin-bottom: 0.6rem; font-size: 0.85rem; color: #fde68a; font-weight: 600;">📋 大問 ${d} の小問別 ○× ${isPdfDefined ? `<span style="font-size:0.7rem; color:#a1a1aa; font-weight:normal;">(PDF に合わせて ${subQNums.length} 小問)</span>` : ''}</div>
                 <div class="ux-sub-list" data-daimon="${d}" style="margin-bottom: 1rem;">
-                  ${[1,2,3,4,5].map(n => `
+                  ${subQNums.map(n => `
                     <div class="ux-sub-q-row" data-daimon="${d}" data-sub-q="${n}" style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.45rem; flex-wrap:wrap;">
                       <span style="min-width:2.6rem; font-weight:700; color:#c7d2fe;">問${n}:</span>
                       <button type="button" class="ux-sub-mark-btn" data-mark="correct" data-daimon="${d}" data-sub-q="${n}" style="padding:0.35rem 0.75rem; border:1px solid rgba(16,185,129,0.4); border-radius:5px; background:rgba(16,185,129,0.10); color:#6ee7b7; cursor:pointer; font-size:0.9rem;">⭕</button>
@@ -744,8 +766,34 @@
               </div>`;
           }
 
-          // 初期 pane を描画
-          document.getElementById('uxDaimonContainer').innerHTML = buildDaimonPaneHtml(1);
+          // 初期 pane を描画 (全大問分・PDF 構造に基づく)
+          document.getElementById('uxDaimonContainer').innerHTML = startDaimons.map(d => buildDaimonPaneHtml(d)).join('');
+          // 大問タブを動的生成 (PDF 構造から)
+          const tabsEl = document.getElementById('uxDaimonTabs');
+          const addDaimonBtn = document.getElementById('uxAddDaimon');
+          startDaimons.forEach(d => {
+            const tab = document.createElement('button');
+            tab.type = 'button';
+            tab.className = 'ux-daimon-tab' + (d === activeDaimon ? ' active' : '');
+            tab.dataset.daimon = d;
+            const isActive = d === activeDaimon;
+            tab.style.cssText = `padding:0.45rem 0.95rem; border:2px solid ${isActive ? 'rgba(99,102,241,0.7)' : 'rgba(99,102,241,0.3)'}; border-radius:6px; background:${isActive ? 'rgba(99,102,241,0.30)' : 'rgba(0,0,0,0.2)'}; color:${isActive ? '#fff' : '#c7d2fe'}; font-weight:700; cursor:pointer; font-size:0.9rem;`;
+            tab.textContent = `大問 ${d}`;
+            tabsEl.insertBefore(tab, addDaimonBtn);
+          });
+          // PDF 構造の説明文を表示
+          const structureNote = document.getElementById('uxPdfStructureNote');
+          if (structureNote) {
+            if (Object.keys(pdfStructure).length > 0) {
+              const summary = startDaimons.map(d => `大問${d}: ${pdfStructure[d]}小問`).join(' / ');
+              structureNote.textContent = `(📄 PDF と同じ構成: ${summary})`;
+              structureNote.style.color = '#6ee7b7';
+            } else {
+              structureNote.textContent = '(PDF に合わせて自由に入力してください)';
+              structureNote.style.color = '#a1a1aa';
+            }
+          }
+          document.getElementById('uxDaimonStatus').textContent = `📊 大問 ${activeDaimon} を入力中`;
 
           function isDaimonComplete(d) {
             const dr = daimonResults[d];
@@ -991,7 +1039,7 @@
                 ? `<div style="margin-top:0.6rem;"><strong style="color:#fde68a;">全大問の間違えた原因:</strong> ${Object.entries(allReasonCounts).map(([k,v]) => `${reasonLabels[k] || k} × ${v}`).join(' / ')}</div>` : '';
               // 🎯 2026-05-28: 苦手単元の表示 (3 視点 review UX fix 反映)
               // - TOP3 に縮小 (TOP5 は認知負荷高)
-              // - sub_question_topics 未整備時 (大問 topic flat) は別文言で表示
+              // - sub_question_topics 構造情報なし時 (大問 topic flat) は別文言で表示
               // - 全部 1 問のみ + 全 topic 同じなら「単元別解析できず」
               const missedTopicSorted = Object.entries(missedTopicCounts).sort((a,b) => b[1]-a[1]).slice(0,3);
               const hasSubTopicMap = Array.isArray(p.sub_question_topics) && p.sub_question_topics.length > 0;
@@ -1000,7 +1048,7 @@
                 if (hasSubTopicMap) {
                   missedTopicsHtml = `<div style="margin-top:0.6rem; padding:0.7rem 0.9rem; background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.35); border-radius:6px;"><strong style="color:#d8b4fe;">🎯 今回の苦手単元 TOP${Math.min(3, missedTopicSorted.length)}:</strong><ul style="margin:0.4rem 0 0 1.2rem; padding:0; font-size:0.85rem; color:#e9d5ff;">${missedTopicSorted.map(([t,c]) => `<li>${t} <span style="color:#a1a1aa;">(× ${c} 問)</span></li>`).join('')}</ul><div style="margin-top:0.3rem; font-size:0.72rem; color:#a1a1aa;">マイページの「🎯 弱点 TOP3」に反映されます。</div></div>`;
                 } else {
-                  // sub_question_topics 未整備の PDF: 大問単位の単元のみ表示
+                  // sub_question_topics 構造情報なし PDF: 大問単位の単元のみ表示
                   missedTopicsHtml = `<div style="margin-top:0.6rem; padding:0.7rem 0.9rem; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.25); border-radius:6px;"><strong style="color:#d8b4fe;">📚 間違えた大問の単元:</strong> <span style="color:#e9d5ff;">${missedTopicSorted.map(([t,c]) => `${t} (× ${c} 問)`).join(' / ')}</span><div style="margin-top:0.3rem; font-size:0.72rem; color:#a1a1aa;">※ この PDF は小問単位の単元解析未対応のため、大問単位の単元を表示しています。</div></div>`;
                 }
               }
