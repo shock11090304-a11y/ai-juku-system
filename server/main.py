@@ -4550,6 +4550,55 @@ def student_lesson_prints(
         conn.close()
 
 
+def _attach_companion_prints(cursor, prints: list, seen_ids: set) -> None:
+    """🛡️ 2026-05-28 塾長指示「AI 推薦カードにも 📄 解答 ボタン」:
+    本編 PDF の companion (_answers.pdf / _strict.pdf) を file_path prefix で fetch して
+    prints list に append。frontend の groupAnswerPrints() が pair 化可能になる。
+    seen_ids は別 weakness / level の重複防止のため共有 set を渡す。"""
+    if not prints:
+        return
+    main_paths = [
+        p["file_path"] for p in prints
+        if p.get("file_path") and p["file_path"].endswith(".pdf")
+        and not p["file_path"].endswith("_answers.pdf")
+        and not p["file_path"].endswith("_strict.pdf")
+    ]
+    if not main_paths:
+        return
+    companion_paths = []
+    for fp in main_paths:
+        base = fp[:-4]  # strip .pdf
+        companion_paths.append(base + "_answers.pdf")
+        companion_paths.append(base + "_strict.pdf")
+    placeholders = ",".join(["?"] * len(companion_paths))
+    cursor.execute(
+        f"SELECT id, title, subject, topic, level, target_type, file_path, pages "
+        f"FROM lesson_prints WHERE is_published = 1 AND file_path IN ({placeholders})",
+        companion_paths,
+    )
+    for r in cursor.fetchall():
+        try:
+            pid = r["id"]
+        except (TypeError, KeyError, IndexError):
+            pid = r[0]
+        if pid in seen_ids:
+            continue
+        seen_ids.add(pid)
+        try:
+            prints.append({
+                "id": r["id"], "title": r["title"], "subject": r["subject"],
+                "topic": r["topic"], "level": r["level"],
+                "target_type": r["target_type"], "file_path": r["file_path"],
+                "pages": r["pages"],
+            })
+        except (TypeError, KeyError, IndexError):
+            prints.append({
+                "id": r[0], "title": r[1], "subject": r[2], "topic": r[3],
+                "level": r[4], "target_type": r[5], "file_path": r[6],
+                "pages": r[7],
+            })
+
+
 @app.get("/api/student/lesson-prints/recommended")
 def student_lesson_prints_recommended(
     request: Request, student_id: int, limit_per_weakness: int = 2,
@@ -4674,6 +4723,8 @@ def student_lesson_prints_recommended(
                             "level": r[4], "target_type": r[5], "file_path": r[6],
                             "pages": r[7], "match_keyword": None,
                         })
+            # 🛡️ 2026-05-28: companion PDF (_answers / _strict) を append → groupAnswerPrints で pair 化
+            _attach_companion_prints(c, matched_prints, seen_ids)
             recommendations.append({
                 "weakness_subject": w_subj,
                 "weakness_topic": w_topic,
@@ -5032,6 +5083,8 @@ def student_lesson_prints_by_goal(
                                     "level": r[5], "target_type": r[7], "file_path": r[9],
                                     "pages": r[10],
                                 })
+                        # 🛡️ 2026-05-28: companion PDF (_answers / _strict) を append → groupAnswerPrints で pair 化
+                        _attach_companion_prints(c, univ_prints, seen_ids)
                         if univ_prints:
                             univ_match_section = {
                                 "university": full_name,
@@ -5070,6 +5123,8 @@ def student_lesson_prints_by_goal(
                         "level": r[5], "target_type": r[7], "file_path": r[9],
                         "pages": r[10],
                     })
+            # 🛡️ 2026-05-28: companion PDF (_answers / _strict) を append → groupAnswerPrints で pair 化
+            _attach_companion_prints(c, prints_for_level, seen_ids)
             if prints_for_level:
                 recommendations.append({
                     "level": lvl,
