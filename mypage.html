@@ -7,14 +7,14 @@
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="0">
   <title>マイページ | AIコーチング</title>
-  <script src="cache-purge.js?v=20260527-pwa-plus-strip"></script>
+  <script src="cache-purge.js?v=20260529-pdf-rename"></script>
 
-  <script src="frontend-error-monitor.js?v=20260527-pwa-plus-strip"></script>
-  <link rel="stylesheet" href="style.css?v=20260527-pwa-plus-strip">
-  <link rel="stylesheet" href="mypage.css?v=20260527-pwa-plus-strip">
+  <script src="frontend-error-monitor.js?v=20260529-pdf-rename"></script>
+  <link rel="stylesheet" href="style.css?v=20260529-pdf-rename">
+  <link rel="stylesheet" href="mypage.css?v=20260529-pdf-rename">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="auth-guard.js?v=20260527-pwa-plus-strip"></script>
+  <script src="auth-guard.js?v=20260529-pdf-rename"></script>
 </head>
 <body class="mypage-body">
   <div class="bg-gradient"></div>
@@ -1170,10 +1170,10 @@
     <p>© 2026 AIコーチング | Mypage v1.0</p>
   </footer>
 
-  <script src="learning-brain.js?v=20260527-pwa-plus-strip"></script>
-  <script src="exam-prep.js?v=20260527-pwa-plus-strip"></script>
-  <script src="referral-program.js?v=20260527-pwa-plus-strip"></script>
-  <script src="mypage.js?v=20260527-pwa-plus-strip"></script>
+  <script src="learning-brain.js?v=20260529-pdf-rename"></script>
+  <script src="exam-prep.js?v=20260529-pdf-rename"></script>
+  <script src="referral-program.js?v=20260529-pdf-rename"></script>
+  <script src="mypage.js?v=20260529-pdf-rename"></script>
   <script>
     // ウィジェット初期描画
     (function() {
@@ -1771,14 +1771,19 @@
         const mainPrints = [];
         const answersByPrefix = {};
         const strictByPrefix = {};
+        // 🛡️ 2026-05-29 塾長指示「ファイル名を分かりやすく」: 日本語接尾辞 (_解説/_問題/_ヒント付き問題)
+        //   を新標準として追加。旧 _answers/_strict + 無印本編も後方互換維持。
+        //   _解説→解答扱い / _問題→本番版(ヒント無し)扱い / _ヒント付き問題→本編(main)扱い。
         (prints || []).forEach(p => {
           const fp = p.file_path || '';
           if (fp.endsWith('_answers.pdf')) {
-            const prefix = fp.replace('_answers.pdf', '');
-            answersByPrefix[prefix] = p;
+            answersByPrefix[fp.replace('_answers.pdf', '')] = p;
+          } else if (fp.endsWith('_解説.pdf')) {
+            answersByPrefix[fp.replace('_解説.pdf', '')] = p;
           } else if (fp.endsWith('_strict.pdf')) {
-            const prefix = fp.replace('_strict.pdf', '');
-            strictByPrefix[prefix] = p;
+            strictByPrefix[fp.replace('_strict.pdf', '')] = p;
+          } else if (fp.endsWith('_問題.pdf')) {
+            strictByPrefix[fp.replace('_問題.pdf', '')] = p;
           } else {
             mainPrints.push(p);
           }
@@ -1786,7 +1791,11 @@
         const matchedAnsPrefixes = new Set();
         const matchedStrictPrefixes = new Set();
         mainPrints.forEach(p => {
-          const prefix = (p.file_path || '').replace('.pdf', '');
+          const fp = p.file_path || '';
+          // 新スキームの本編は _ヒント付き問題.pdf → そのぶん除去して prefix を求める
+          const prefix = fp.endsWith('_ヒント付き問題.pdf')
+            ? fp.replace('_ヒント付き問題.pdf', '')
+            : fp.replace(/\.pdf$/, '');
           if (answersByPrefix[prefix]) {
             p.answerPrint = answersByPrefix[prefix];
             matchedAnsPrefixes.add(prefix);
