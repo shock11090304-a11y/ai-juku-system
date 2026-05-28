@@ -28194,7 +28194,7 @@ def _solve_one_ai(ai_id: str, image_b64: Optional[str], mime: str, mime_pdf: boo
         }
 
 
-def _pdf_to_image_b64(pdf_bytes: bytes, *, dpi: int = 150, max_pages: int = 3,
+def _pdf_to_image_b64(pdf_bytes: bytes, *, dpi: int = 150, max_pages: int = 7,
                        max_image_bytes: int = 4 * 1024 * 1024,
                        max_combined_pixels: int = 50_000_000) -> dict:
     """🛡️ PDF → 画像変換 (2026-05-13 塾長指示 v2・review 致命 fix 込み)
@@ -28209,7 +28209,7 @@ def _pdf_to_image_b64(pdf_bytes: bytes, *, dpi: int = 150, max_pages: int = 3,
 
     パラメータ:
       - dpi: 150 (印刷物の最低読み取り精度)
-      - max_pages: 3 (実用上 1-3 ページで足りる)
+      - max_pages: 7 (2026-05-28 塾長指示「PDF 上限拡張」で 3 → 7。複数ページ問題集対応)
       - max_image_bytes: 4MB (各 AI 画像上限 5MB の安全マージン)
       - max_combined_pixels: 5000万 (memory DoS 防御・review H-1)
     """
@@ -28543,10 +28543,11 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
             decoded = _b64.b64decode(image_b64, validate=True)
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"image_base64 decode 失敗: {e}")
-        max_size = 10 * 1024 * 1024 if mime_pdf else 5 * 1024 * 1024
+        # 🛡️ 2026-05-28 塾長指示「PDF 上限拡張」: PDF 10MB → 20MB
+        max_size = 20 * 1024 * 1024 if mime_pdf else 5 * 1024 * 1024
         if len(decoded) > max_size:
             raise HTTPException(status_code=400,
-                                detail=f"ファイルが大きすぎます ({'PDF 10MB' if mime_pdf else '画像 5MB'} 以内)")
+                                detail=f"ファイルが大きすぎます ({'PDF 20MB' if mime_pdf else '画像 5MB'} 以内)")
         if mime not in ("image/jpeg", "image/png", "image/webp", "application/pdf"):
             raise HTTPException(status_code=400, detail="mime_type は jpeg/png/webp/pdf のみ")
     if problem_text and len(problem_text) > 4000:
@@ -28558,7 +28559,8 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
     # review H-4 fix: 既に validation で decoded した bytes を再利用 (二重 decode 防止)
     pdf_conversion_info = None
     if mime_pdf and image_b64:
-        conv = _pdf_to_image_b64(decoded, dpi=150, max_pages=3)
+        # 🛡️ 2026-05-28 塾長指示「PDF 上限拡張」: max_pages 3 → 7
+        conv = _pdf_to_image_b64(decoded, dpi=150, max_pages=7)
         if conv.get("ok"):
             image_b64 = conv["image_b64"]
             mime = conv["mime"]

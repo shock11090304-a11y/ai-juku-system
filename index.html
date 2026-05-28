@@ -312,17 +312,18 @@
             </div>
           </div>
           <div id="chatAttachPreview" class="chat-attach-preview" style="display:none;">
-            <img id="chatAttachImg" alt="添付画像">
+            <img id="chatAttachImg" alt="添付ファイル">
             <div class="attach-info">
               <span id="chatAttachName">image.png</span>
-              <span class="attach-hint">📷 この画像を質問と一緒に送信します</span>
+              <span id="chatAttachHint" class="attach-hint">📷 この画像を質問と一緒に送信します</span>
             </div>
-            <button id="chatAttachRemove" class="attach-remove" title="画像を削除">✕</button>
+            <button id="chatAttachRemove" class="attach-remove" title="ファイルを削除">✕</button>
           </div>
           <div class="chat-input-area">
-            <input type="file" id="chatFileInput" accept="image/*" style="display:none;">
-            <button id="chatAttachBtn" class="btn-attach" title="📎 画像・スクリーンショットを添付">📎</button>
-            <textarea id="chatInput" placeholder="質問を入力... (Enter送信 / Shift+Enterで改行) / 📎ボタンで画像添付" rows="2"></textarea>
+            <!-- 🛡️ 2026-05-28 塾長指示「AI チューターに PDF の読み込みができるようにしてほしい」: PDF 添付対応 (Claude native document) -->
+            <input type="file" id="chatFileInput" accept="image/jpeg,image/png,image/webp,application/pdf" style="display:none;">
+            <button id="chatAttachBtn" class="btn-attach" title="📎 画像・PDF を添付 (画像 5MB / PDF 10MB)">📎</button>
+            <textarea id="chatInput" placeholder="質問を入力... (Enter送信 / Shift+Enterで改行) / 📎ボタンで画像・PDF 添付" rows="2"></textarea>
             <button id="sendBtn" class="btn-primary">送信</button>
           </div>
         </div>
@@ -1408,7 +1409,7 @@
   <script src="exam-prep.js?v=20260425-1"></script>
   <script src="referral-program.js?v=20260425-1"></script>
   <script src="toast.js?v=20260526-profile-sync"></script>
-  <script src="app.js?v=20260526-profile-sync"></script>
+  <script src="app.js?v=20260528-chat-pdf"></script>
   <script>
   // 定期テスト連携: exam-prep.html から ?examPrep=1&subject=&topic=&examId= で来た時、
   // 問題ジェネレーターに自動入力 + タブ切替 + 通知バナー

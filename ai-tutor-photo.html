@@ -76,7 +76,7 @@
     <label for="tpFile" class="tp-drop" id="tpDrop">
       <div style="font-size:2.5rem;">📷📄</div>
       <div style="font-weight:700;color:#e4e4e7;margin:0.5rem 0;">タップしてファイルを選択 / ここにドロップ</div>
-      <div style="font-size:0.82rem;color:#a1a1aa;">JPG / PNG / WEBP (5MBまで) / PDF (10MBまで)</div>
+      <div style="font-size:0.82rem;color:#a1a1aa;">JPG / PNG / WEBP (5MBまで) / PDF (20MBまで・最大7ページ)</div>
       <input type="file" id="tpFile" accept="image/jpeg,image/png,image/webp,application/pdf" />
     </label>
     <div class="tp-preview" id="tpPreview"></div>
@@ -183,9 +183,10 @@
       return;
     }
     const isPdf = file.type === 'application/pdf';
-    const max = isPdf ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
+    // 🛡️ 2026-05-28 塾長指示「PDF 上限拡張」: PDF 10MB → 20MB
+    const max = isPdf ? 20 * 1024 * 1024 : 5 * 1024 * 1024;
     if (file.size > max) {
-      alert((isPdf ? 'PDF は 10MB' : '画像は 5MB') + ' 以内にしてください');
+      alert((isPdf ? 'PDF は 20MB' : '画像は 5MB') + ' 以内にしてください');
       return;
     }
     // 🛡️ PDF 時は inline モーダルで明示警告 (LINE 内ブラウザ confirm 黙殺対策)
