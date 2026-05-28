@@ -608,37 +608,21 @@
         // → 1 大問 = 1 attempt にまとめ、metadata.sub_attempts[] に小問単位データ保存
         const pdfAnswerFormHtml = hasMainPdf ? `
             <div id="uxPdfAnswerForm" style="margin: 1rem 0; padding: 1.2rem 1.4rem; background: rgba(16,185,129,0.10); border: 1px solid rgba(16,185,129,0.35); border-radius: 10px;">
-              <div style="font-size: 1.0rem; color: #6ee7b7; margin-bottom: 0.7rem; font-weight: 600;">✏️ 答え合わせ <span style="font-size: 0.75rem; color: #a1a1aa; font-weight: normal;">(PDF で解いた後、小問ごとに ⭕/❌ をタップ)</span></div>
+              <div style="font-size: 1.0rem; color: #6ee7b7; margin-bottom: 0.7rem; font-weight: 600;">✏️ 答え合わせ <span style="font-size: 0.75rem; color: #a1a1aa; font-weight: normal;">(PDF で解いた後、大問・小問ごとに ⭕/❌ をタップ)</span></div>
 
-              <div style="margin-bottom: 0.6rem; font-size: 0.85rem; color: #fde68a; font-weight: 600;">📋 小問別 ○×</div>
-              <div id="uxSubQuestionList" style="margin-bottom: 1rem;">
-                ${[1,2,3,4,5].map(n => `
-                  <div class="ux-sub-q-row" data-sub-q="${n}" style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.45rem; flex-wrap:wrap;">
-                    <span style="min-width:2.6rem; font-weight:700; color:#c7d2fe;">問${n}:</span>
-                    <button type="button" class="ux-sub-mark-btn" data-mark="correct" data-sub-q="${n}" style="padding:0.35rem 0.75rem; border:1px solid rgba(16,185,129,0.4); border-radius:5px; background:rgba(16,185,129,0.10); color:#6ee7b7; cursor:pointer; font-size:0.9rem;">⭕</button>
-                    <button type="button" class="ux-sub-mark-btn" data-mark="wrong" data-sub-q="${n}" style="padding:0.35rem 0.75rem; border:1px solid rgba(239,68,68,0.4); border-radius:5px; background:rgba(239,68,68,0.08); color:#fca5a5; cursor:pointer; font-size:0.9rem;">❌</button>
-                    <select class="ux-sub-reason" data-sub-q="${n}" style="display:none; padding:0.3rem 0.5rem; background:rgba(0,0,0,0.3); color:#fde68a; border:1px solid rgba(245,158,11,0.4); border-radius:5px; font-size:0.82rem;">
-                      <option value="">原因を選択 ▼</option>
-                      <option value="understanding">🧠 理解不足 (公式・概念)</option>
-                      <option value="careless">✏️ ケアレスミス (計算/転記)</option>
-                      <option value="time">⏰ 時間切れ</option>
-                      <option value="misread">🔍 読み違い (問題文)</option>
-                      <option value="other">その他</option>
-                    </select>
-                  </div>
-                `).join('')}
+              <div style="margin-bottom: 0.5rem; font-size: 0.85rem; color: #fde68a; font-weight: 600;">📚 大問を選択</div>
+              <div id="uxDaimonTabs" style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:0.6rem; align-items:center;">
+                <button type="button" class="ux-daimon-tab active" data-daimon="1" style="padding:0.45rem 0.95rem; border:2px solid rgba(99,102,241,0.7); border-radius:6px; background:rgba(99,102,241,0.30); color:#fff; font-weight:700; cursor:pointer; font-size:0.9rem;">大問 1</button>
+                <button type="button" id="uxAddDaimon" style="padding:0.4rem 0.7rem; background:rgba(99,102,241,0.15); border:1px dashed rgba(99,102,241,0.5); border-radius:5px; color:#c7d2fe; font-size:0.8rem; cursor:pointer;">+ 大問を追加</button>
               </div>
-              <button type="button" id="uxAddSubQ" style="padding:0.3rem 0.7rem; margin-bottom:0.8rem; background:rgba(99,102,241,0.15); border:1px dashed rgba(99,102,241,0.5); border-radius:5px; color:#c7d2fe; font-size:0.8rem; cursor:pointer;">+ 小問を追加</button>
+              <div id="uxDaimonStatus" style="margin-bottom:0.8rem; font-size:0.75rem; color:#a1a1aa;">📊 大問 1 を入力中</div>
 
-              <div style="margin: 0.6rem 0 0.4rem; font-size: 0.85rem; color: #fde68a; font-weight: 600;">📊 大問全体の体感難易度</div>
-              <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom: 1rem;">
-                <button type="button" class="ux-difficulty-btn" data-diff="easy" style="padding:0.45rem 0.85rem; border:1px solid rgba(16,185,129,0.4); border-radius:6px; background:rgba(16,185,129,0.10); color:#6ee7b7; cursor:pointer; font-size:0.88rem;">😊 楽勝</button>
-                <button type="button" class="ux-difficulty-btn" data-diff="medium" style="padding:0.45rem 0.85rem; border:1px solid rgba(245,158,11,0.4); border-radius:6px; background:rgba(245,158,11,0.10); color:#fde68a; cursor:pointer; font-size:0.88rem;">🤔 ちょうど良い</button>
-                <button type="button" class="ux-difficulty-btn" data-diff="hard" style="padding:0.45rem 0.85rem; border:1px solid rgba(239,68,68,0.4); border-radius:6px; background:rgba(239,68,68,0.08); color:#fca5a5; cursor:pointer; font-size:0.88rem;">😰 難しすぎ</button>
+              <div id="uxDaimonContainer">
+                <!-- 動的に各大問の入力エリアが挿入される (uxDaimonPane class) -->
               </div>
 
-              <button type="button" id="uxPdfFinalize" class="btn-primary btn-small" disabled style="opacity:0.5;">📝 採点を確定</button>
-              <div id="uxPdfFinalizeHint" style="margin-top:0.4rem; font-size:0.78rem; color:#fde68a;">↑ ボタンを押すには: 小問に ⭕/❌ + 不正解の原因 + 体感難易度 をすべて入力してください</div>
+              <button type="button" id="uxPdfFinalize" class="btn-primary btn-small" disabled style="opacity:0.5;">📝 全大問の採点を確定</button>
+              <div id="uxPdfFinalizeHint" style="margin-top:0.4rem; font-size:0.78rem; color:#fde68a;">↑ ボタンを押すには: 各大問に小問の ⭕/❌ + 不正解の原因 + 体感難易度 をすべて入力してください</div>
               <div id="uxPdfAnsResult" style="margin-top:0.8rem; font-size:0.9rem; line-height:1.6; display:none;"></div>
             </div>` : '';
         const questionAndChoicesHtml = hasMainPdf ? `
@@ -717,85 +701,170 @@
           document.getElementById('uxList').scrollIntoView({block:'start', behavior:'smooth'});
         });
 
-        // 🛡️ 2026-05-28 塾長指示 A+B+C 実装: 小問別○× + 理由カテゴリ + 体感難易度
+        // 🛡️ 2026-05-28 塾長指示 A+B+C + 大問タブ対応:
+        //   - daimonResults[d] = { subResults: {sq: {mark, reason}}, difficulty }
+        //   - 大問タブ切替で各大問の小問入力欄を表示
+        //   - 確定時に全大問のデータを 1 attempt にまとめて POST
         if (hasMainPdf) {
-          // 状態管理: 各小問の結果 { subQ: 1, mark: 'correct'|'wrong', reason: 'understanding'|... }
-          const subResults = {};  // key: subQ番号 → {mark, reason}
-          let selectedDifficulty = null;
-          let subQMax = 5;  // 初期 5 小問 (+ 追加可能)
+          const daimonResults = { 1: { subResults: {}, difficulty: null, subQMax: 5 } };
+          let activeDaimon = 1;
+          let daimonCount = 1;
+
+          // 各大問の入力 pane HTML を生成
+          function buildDaimonPaneHtml(d) {
+            const d_ = daimonResults[d];
+            return `
+              <div class="ux-daimon-pane" data-daimon="${d}" style="${d === activeDaimon ? '' : 'display:none;'}">
+                <div style="margin-bottom: 0.6rem; font-size: 0.85rem; color: #fde68a; font-weight: 600;">📋 大問 ${d} の小問別 ○×</div>
+                <div class="ux-sub-list" data-daimon="${d}" style="margin-bottom: 1rem;">
+                  ${[1,2,3,4,5].map(n => `
+                    <div class="ux-sub-q-row" data-daimon="${d}" data-sub-q="${n}" style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.45rem; flex-wrap:wrap;">
+                      <span style="min-width:2.6rem; font-weight:700; color:#c7d2fe;">問${n}:</span>
+                      <button type="button" class="ux-sub-mark-btn" data-mark="correct" data-daimon="${d}" data-sub-q="${n}" style="padding:0.35rem 0.75rem; border:1px solid rgba(16,185,129,0.4); border-radius:5px; background:rgba(16,185,129,0.10); color:#6ee7b7; cursor:pointer; font-size:0.9rem;">⭕</button>
+                      <button type="button" class="ux-sub-mark-btn" data-mark="wrong" data-daimon="${d}" data-sub-q="${n}" style="padding:0.35rem 0.75rem; border:1px solid rgba(239,68,68,0.4); border-radius:5px; background:rgba(239,68,68,0.08); color:#fca5a5; cursor:pointer; font-size:0.9rem;">❌</button>
+                      <select class="ux-sub-reason" data-daimon="${d}" data-sub-q="${n}" style="display:none; padding:0.3rem 0.5rem; background:rgba(0,0,0,0.3); color:#fde68a; border:1px solid rgba(245,158,11,0.4); border-radius:5px; font-size:0.82rem;">
+                        <option value="">原因を選択 ▼</option>
+                        <option value="understanding">🧠 理解不足 (公式・概念)</option>
+                        <option value="careless">✏️ ケアレスミス (計算/転記)</option>
+                        <option value="time">⏰ 時間切れ</option>
+                        <option value="misread">🔍 読み違い (問題文)</option>
+                        <option value="other">その他</option>
+                      </select>
+                    </div>
+                  `).join('')}
+                </div>
+                <button type="button" class="ux-add-sub-q-btn" data-daimon="${d}" style="padding:0.3rem 0.7rem; margin-bottom:0.8rem; background:rgba(99,102,241,0.15); border:1px dashed rgba(99,102,241,0.5); border-radius:5px; color:#c7d2fe; font-size:0.8rem; cursor:pointer;">+ 小問を追加</button>
+
+                <div style="margin: 0.6rem 0 0.4rem; font-size: 0.85rem; color: #fde68a; font-weight: 600;">📊 大問 ${d} の体感難易度</div>
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom: 1rem;">
+                  <button type="button" class="ux-difficulty-btn" data-daimon="${d}" data-diff="easy" style="padding:0.45rem 0.85rem; border:1px solid rgba(16,185,129,0.4); border-radius:6px; background:rgba(16,185,129,0.10); color:#6ee7b7; cursor:pointer; font-size:0.88rem;">😊 楽勝</button>
+                  <button type="button" class="ux-difficulty-btn" data-daimon="${d}" data-diff="medium" style="padding:0.45rem 0.85rem; border:1px solid rgba(245,158,11,0.4); border-radius:6px; background:rgba(245,158,11,0.10); color:#fde68a; cursor:pointer; font-size:0.88rem;">🤔 ちょうど良い</button>
+                  <button type="button" class="ux-difficulty-btn" data-daimon="${d}" data-diff="hard" style="padding:0.45rem 0.85rem; border:1px solid rgba(239,68,68,0.4); border-radius:6px; background:rgba(239,68,68,0.08); color:#fca5a5; cursor:pointer; font-size:0.88rem;">😰 難しすぎ</button>
+                </div>
+              </div>`;
+          }
+
+          // 初期 pane を描画
+          document.getElementById('uxDaimonContainer').innerHTML = buildDaimonPaneHtml(1);
+
+          function isDaimonComplete(d) {
+            const dr = daimonResults[d];
+            if (!dr) return false;
+            const hasAnyMark = Object.keys(dr.subResults).length > 0;
+            const allWrongHaveReason = Object.entries(dr.subResults).every(([k, v]) => v.mark === 'correct' || (v.mark === 'wrong' && v.reason));
+            return hasAnyMark && allWrongHaveReason && dr.difficulty;
+          }
 
           function updateFinalizeBtn() {
-            const hasAnyMark = Object.keys(subResults).length > 0;
-            const allWrongHaveReason = Object.entries(subResults).every(([k, v]) => v.mark === 'correct' || (v.mark === 'wrong' && v.reason));
+            const allComplete = Object.keys(daimonResults).every(d => isDaimonComplete(d));
             const btn = document.getElementById('uxPdfFinalize');
             const hint = document.getElementById('uxPdfFinalizeHint');
             if (btn) {
-              const ok = hasAnyMark && allWrongHaveReason && selectedDifficulty;
-              btn.disabled = !ok;
-              btn.style.opacity = ok ? '1' : '0.5';
-              // 🛡️ 2026-05-28 3 視点 review UX 致命 fix: disabled の理由を動的ヒントで明示
+              btn.disabled = !allComplete;
+              btn.style.opacity = allComplete ? '1' : '0.5';
               if (hint) {
-                if (ok) {
-                  hint.textContent = '✅ 準備完了。「採点を確定」ボタンを押してください。';
+                if (allComplete) {
+                  hint.textContent = '✅ 準備完了。「全大問の採点を確定」ボタンを押してください。';
                   hint.style.color = '#6ee7b7';
                 } else {
-                  const missing = [];
-                  if (!hasAnyMark) missing.push('小問の ⭕/❌');
-                  if (!allWrongHaveReason) missing.push('❌ の原因 (プルダウン)');
-                  if (!selectedDifficulty) missing.push('体感難易度');
-                  hint.textContent = '↑ あと入力が必要: ' + missing.join(' / ');
+                  const incomplete = Object.keys(daimonResults).filter(d => !isDaimonComplete(d));
+                  hint.textContent = '↑ 未入力の大問: ' + incomplete.map(d => `大問 ${d}`).join(', ');
                   hint.style.color = '#fde68a';
                 }
               }
             }
+            // 大問タブの完了マーク更新
+            document.querySelectorAll('.ux-daimon-tab').forEach(tab => {
+              const d = tab.dataset.daimon;
+              const completed = isDaimonComplete(d);
+              const isActive = parseInt(d) === activeDaimon;
+              tab.style.background = isActive ? 'rgba(99,102,241,0.30)' : (completed ? 'rgba(16,185,129,0.20)' : 'rgba(0,0,0,0.2)');
+              tab.style.borderColor = isActive ? 'rgba(99,102,241,0.7)' : (completed ? 'rgba(16,185,129,0.5)' : 'rgba(99,102,241,0.3)');
+              tab.textContent = `大問 ${d}${completed ? ' ✓' : ''}`;
+            });
           }
 
-          // A: 小問 ○/× ボタン
+          // 大問タブクリック切替
+          function bindDaimonTabs() {
+            document.querySelectorAll('.ux-daimon-tab').forEach(tab => {
+              if (tab._bound) return; tab._bound = true;
+              tab.addEventListener('click', () => {
+                activeDaimon = parseInt(tab.dataset.daimon);
+                document.querySelectorAll('.ux-daimon-pane').forEach(p => {
+                  p.style.display = (parseInt(p.dataset.daimon) === activeDaimon) ? '' : 'none';
+                });
+                document.getElementById('uxDaimonStatus').textContent = `📊 大問 ${activeDaimon} を入力中`;
+                updateFinalizeBtn();
+              });
+            });
+          }
+          bindDaimonTabs();
+
+          // 「+ 大問を追加」
+          document.getElementById('uxAddDaimon').addEventListener('click', () => {
+            if (daimonCount >= 6) return;  // 最大 6 大問
+            daimonCount += 1;
+            const d = daimonCount;
+            daimonResults[d] = { subResults: {}, difficulty: null, subQMax: 5 };
+            // タブ追加
+            const addBtn = document.getElementById('uxAddDaimon');
+            const newTab = document.createElement('button');
+            newTab.type = 'button';
+            newTab.className = 'ux-daimon-tab';
+            newTab.dataset.daimon = d;
+            newTab.style.cssText = 'padding:0.45rem 0.95rem; border:2px solid rgba(99,102,241,0.3); border-radius:6px; background:rgba(0,0,0,0.2); color:#c7d2fe; font-weight:700; cursor:pointer; font-size:0.9rem;';
+            newTab.textContent = `大問 ${d}`;
+            addBtn.parentNode.insertBefore(newTab, addBtn);
+            // pane 追加
+            document.getElementById('uxDaimonContainer').insertAdjacentHTML('beforeend', buildDaimonPaneHtml(d));
+            bindDaimonTabs();
+            bindSubMarkBtns();
+            bindAddSubQBtns();
+            bindDifficultyBtns();
+            updateFinalizeBtn();
+          });
+
+          // A: 小問 ○/× ボタン (大問対応)
           function bindSubMarkBtns() {
             document.querySelectorAll('.ux-sub-mark-btn').forEach(btn => {
-              if (btn._bound) return;
-              btn._bound = true;
+              if (btn._bound) return; btn._bound = true;
               btn.addEventListener('click', () => {
                 if (btn.disabled) return;
+                const d = btn.dataset.daimon;
                 const subQ = btn.dataset.subQ;
                 const mark = btn.dataset.mark;
-                subResults[subQ] = subResults[subQ] || {};
-                subResults[subQ].mark = mark;
-                // ボタン視覚更新
-                document.querySelectorAll(`.ux-sub-mark-btn[data-sub-q="${subQ}"]`).forEach(b => {
+                if (!daimonResults[d]) return;
+                daimonResults[d].subResults[subQ] = daimonResults[d].subResults[subQ] || {};
+                daimonResults[d].subResults[subQ].mark = mark;
+                document.querySelectorAll(`.ux-sub-mark-btn[data-daimon="${d}"][data-sub-q="${subQ}"]`).forEach(b => {
                   if (b.dataset.mark === mark) {
                     b.style.background = mark === 'correct' ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)';
-                    b.style.color = '#fff';
-                    b.style.fontWeight = '700';
+                    b.style.color = '#fff'; b.style.fontWeight = '700';
                   } else {
                     b.style.background = b.dataset.mark === 'correct' ? 'rgba(16,185,129,0.10)' : 'rgba(239,68,68,0.08)';
-                    b.style.color = b.dataset.mark === 'correct' ? '#6ee7b7' : '#fca5a5';
-                    b.style.fontWeight = '400';
+                    b.style.color = b.dataset.mark === 'correct' ? '#6ee7b7' : '#fca5a5'; b.style.fontWeight = '400';
                   }
                 });
-                // B: 不正解の場合のみ「理由」セレクトを表示
-                const reasonEl = document.querySelector(`.ux-sub-reason[data-sub-q="${subQ}"]`);
+                const reasonEl = document.querySelector(`.ux-sub-reason[data-daimon="${d}"][data-sub-q="${subQ}"]`);
                 if (reasonEl) {
                   if (mark === 'wrong') {
                     reasonEl.style.display = '';
-                    if (!subResults[subQ].reason) subResults[subQ].reason = '';
+                    if (!daimonResults[d].subResults[subQ].reason) daimonResults[d].subResults[subQ].reason = '';
                   } else {
-                    reasonEl.style.display = 'none';
-                    reasonEl.value = '';
-                    delete subResults[subQ].reason;
+                    reasonEl.style.display = 'none'; reasonEl.value = '';
+                    delete daimonResults[d].subResults[subQ].reason;
                   }
                 }
                 updateFinalizeBtn();
               });
             });
-            // 理由セレクト変更
             document.querySelectorAll('.ux-sub-reason').forEach(sel => {
-              if (sel._bound) return;
-              sel._bound = true;
+              if (sel._bound) return; sel._bound = true;
               sel.addEventListener('change', () => {
+                const d = sel.dataset.daimon;
                 const subQ = sel.dataset.subQ;
-                if (subResults[subQ]) {
-                  subResults[subQ].reason = sel.value;
+                if (daimonResults[d] && daimonResults[d].subResults[subQ]) {
+                  daimonResults[d].subResults[subQ].reason = sel.value;
                   updateFinalizeBtn();
                 }
               });
@@ -803,97 +872,112 @@
           }
           bindSubMarkBtns();
 
-          // 「+ 小問を追加」ボタン
-          const addBtn = document.getElementById('uxAddSubQ');
-          if (addBtn) {
-            addBtn.addEventListener('click', () => {
-              subQMax += 1;
-              const n = subQMax;
-              const newRow = document.createElement('div');
-              newRow.className = 'ux-sub-q-row';
-              newRow.dataset.subQ = n;
-              newRow.style.cssText = 'display:flex; align-items:center; gap:0.5rem; margin-bottom:0.45rem; flex-wrap:wrap;';
-              newRow.innerHTML = `
-                <span style="min-width:2.6rem; font-weight:700; color:#c7d2fe;">問${n}:</span>
-                <button type="button" class="ux-sub-mark-btn" data-mark="correct" data-sub-q="${n}" style="padding:0.35rem 0.75rem; border:1px solid rgba(16,185,129,0.4); border-radius:5px; background:rgba(16,185,129,0.10); color:#6ee7b7; cursor:pointer; font-size:0.9rem;">⭕</button>
-                <button type="button" class="ux-sub-mark-btn" data-mark="wrong" data-sub-q="${n}" style="padding:0.35rem 0.75rem; border:1px solid rgba(239,68,68,0.4); border-radius:5px; background:rgba(239,68,68,0.08); color:#fca5a5; cursor:pointer; font-size:0.9rem;">❌</button>
-                <select class="ux-sub-reason" data-sub-q="${n}" style="display:none; padding:0.3rem 0.5rem; background:rgba(0,0,0,0.3); color:#fde68a; border:1px solid rgba(245,158,11,0.4); border-radius:5px; font-size:0.82rem;">
-                  <option value="">原因を選択 ▼</option>
-                  <option value="understanding">🧠 理解不足 (公式・概念)</option>
-                  <option value="careless">✏️ ケアレスミス (計算/転記)</option>
-                  <option value="time">⏰ 時間切れ</option>
-                  <option value="misread">🔍 読み違い (問題文)</option>
-                  <option value="other">その他</option>
-                </select>`;
-              document.getElementById('uxSubQuestionList').appendChild(newRow);
-              bindSubMarkBtns();
+          // 「+ 小問を追加」ボタン (各大問内)
+          function bindAddSubQBtns() {
+            document.querySelectorAll('.ux-add-sub-q-btn').forEach(btn => {
+              if (btn._bound) return; btn._bound = true;
+              btn.addEventListener('click', () => {
+                const d = btn.dataset.daimon;
+                if (!daimonResults[d]) return;
+                daimonResults[d].subQMax += 1;
+                const n = daimonResults[d].subQMax;
+                const newRow = document.createElement('div');
+                newRow.className = 'ux-sub-q-row';
+                newRow.dataset.daimon = d; newRow.dataset.subQ = n;
+                newRow.style.cssText = 'display:flex; align-items:center; gap:0.5rem; margin-bottom:0.45rem; flex-wrap:wrap;';
+                newRow.innerHTML = `
+                  <span style="min-width:2.6rem; font-weight:700; color:#c7d2fe;">問${n}:</span>
+                  <button type="button" class="ux-sub-mark-btn" data-mark="correct" data-daimon="${d}" data-sub-q="${n}" style="padding:0.35rem 0.75rem; border:1px solid rgba(16,185,129,0.4); border-radius:5px; background:rgba(16,185,129,0.10); color:#6ee7b7; cursor:pointer; font-size:0.9rem;">⭕</button>
+                  <button type="button" class="ux-sub-mark-btn" data-mark="wrong" data-daimon="${d}" data-sub-q="${n}" style="padding:0.35rem 0.75rem; border:1px solid rgba(239,68,68,0.4); border-radius:5px; background:rgba(239,68,68,0.08); color:#fca5a5; cursor:pointer; font-size:0.9rem;">❌</button>
+                  <select class="ux-sub-reason" data-daimon="${d}" data-sub-q="${n}" style="display:none; padding:0.3rem 0.5rem; background:rgba(0,0,0,0.3); color:#fde68a; border:1px solid rgba(245,158,11,0.4); border-radius:5px; font-size:0.82rem;">
+                    <option value="">原因を選択 ▼</option>
+                    <option value="understanding">🧠 理解不足 (公式・概念)</option>
+                    <option value="careless">✏️ ケアレスミス (計算/転記)</option>
+                    <option value="time">⏰ 時間切れ</option>
+                    <option value="misread">🔍 読み違い (問題文)</option>
+                    <option value="other">その他</option>
+                  </select>`;
+                const list = document.querySelector(`.ux-sub-list[data-daimon="${d}"]`);
+                if (list) list.appendChild(newRow);
+                bindSubMarkBtns();
+              });
             });
           }
+          bindAddSubQBtns();
 
-          // C: 体感難易度ボタン
-          document.querySelectorAll('.ux-difficulty-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-              if (btn.disabled) return;
-              selectedDifficulty = btn.dataset.diff;
-              document.querySelectorAll('.ux-difficulty-btn').forEach(b => {
-                if (b.dataset.diff === selectedDifficulty) {
-                  b.style.transform = 'scale(1.05)';
-                  b.style.fontWeight = '700';
-                  b.style.boxShadow = '0 0 0 2px rgba(99,102,241,0.5)';
-                } else {
-                  b.style.transform = 'scale(1)';
-                  b.style.fontWeight = '400';
-                  b.style.boxShadow = 'none';
-                }
+          // C: 体感難易度ボタン (大問対応)
+          function bindDifficultyBtns() {
+            document.querySelectorAll('.ux-difficulty-btn').forEach(btn => {
+              if (btn._bound) return; btn._bound = true;
+              btn.addEventListener('click', () => {
+                if (btn.disabled) return;
+                const d = btn.dataset.daimon;
+                const diff = btn.dataset.diff;
+                if (!daimonResults[d]) return;
+                daimonResults[d].difficulty = diff;
+                document.querySelectorAll(`.ux-difficulty-btn[data-daimon="${d}"]`).forEach(b => {
+                  if (b.dataset.diff === diff) {
+                    b.style.transform = 'scale(1.05)'; b.style.fontWeight = '700';
+                    b.style.boxShadow = '0 0 0 2px rgba(99,102,241,0.5)';
+                  } else {
+                    b.style.transform = 'scale(1)'; b.style.fontWeight = '400'; b.style.boxShadow = 'none';
+                  }
+                });
+                updateFinalizeBtn();
               });
-              updateFinalizeBtn();
             });
-          });
+          }
+          bindDifficultyBtns();
 
-          // 「📝 採点を確定」ボタン → 1 大問 = 1 attempt に集約して POST
+          // 「📝 全大問の採点を確定」
           const finalBtn = document.getElementById('uxPdfFinalize');
           if (finalBtn) {
             finalBtn.addEventListener('click', async () => {
               if (finalBtn.disabled) return;
-              const total = Object.keys(subResults).length;
-              const correct = Object.values(subResults).filter(r => r.mark === 'correct').length;
-              const wrong = total - correct;
-              const correctRate = total > 0 ? correct / total : 0;
-              const isCorrect = correctRate >= 0.7 ? 1 : 0;  // 70% 以上で正解扱い
-              // 理由別カウント
-              const reasonCounts = {};
-              Object.values(subResults).forEach(r => {
-                if (r.reason) reasonCounts[r.reason] = (reasonCounts[r.reason] || 0) + 1;
+              // 全大問の集計
+              let totalCorrect = 0, totalQ = 0;
+              const allReasonCounts = {};
+              const daimonSummaries = [];
+              Object.entries(daimonResults).forEach(([d, dr]) => {
+                const subList = Object.entries(dr.subResults);
+                const correct = subList.filter(([k,v]) => v.mark === 'correct').length;
+                const total = subList.length;
+                totalCorrect += correct; totalQ += total;
+                const reasonCounts = {};
+                subList.forEach(([k,v]) => { if (v.reason) reasonCounts[v.reason] = (reasonCounts[v.reason] || 0) + 1; });
+                Object.entries(reasonCounts).forEach(([k,v]) => { allReasonCounts[k] = (allReasonCounts[k] || 0) + v; });
+                daimonSummaries.push({
+                  daimon: parseInt(d), correct, total,
+                  difficulty: dr.difficulty,
+                  reason_counts: reasonCounts,
+                  sub_attempts: subList.map(([sq, v]) => ({ sub_q: parseInt(sq), mark: v.mark, reason: v.reason || null }))
+                });
               });
-              const reasonLabels = {
-                understanding: '🧠 理解不足', careless: '✏️ ケアレスミス',
-                time: '⏰ 時間切れ', misread: '🔍 読み違い', other: 'その他'
-              };
+              const correctRate = totalQ > 0 ? totalCorrect / totalQ : 0;
+              const isCorrect = correctRate >= 0.7 ? 1 : 0;
+              const reasonLabels = { understanding: '🧠 理解不足', careless: '✏️ ケアレスミス', time: '⏰ 時間切れ', misread: '🔍 読み違い', other: 'その他' };
               const difficultyLabels = { easy: '😊 楽勝', medium: '🤔 ちょうど良い', hard: '😰 難しすぎ' };
               // 結果 box
               const resultEl = document.getElementById('uxPdfAnsResult');
               const bgColor = isCorrect ? 'rgba(16,185,129,0.18)' : 'rgba(239,68,68,0.15)';
               const fgColor = isCorrect ? '#6ee7b7' : '#fca5a5';
-              const reasonHtml = Object.keys(reasonCounts).length > 0
-                ? `<div style="margin-top:0.6rem;"><strong style="color:#fde68a;">間違えた原因:</strong> ${Object.entries(reasonCounts).map(([k, v]) => `${reasonLabels[k] || k} × ${v}`).join(' / ')}</div>`
-                : '';
+              const daimonHtml = daimonSummaries.map(s =>
+                `<li>大問 ${s.daimon}: ${s.correct}/${s.total} 問正解 (${Math.round((s.correct/Math.max(s.total,1))*100)}%) — ${difficultyLabels[s.difficulty] || s.difficulty}</li>`
+              ).join('');
+              const reasonHtml = Object.keys(allReasonCounts).length > 0
+                ? `<div style="margin-top:0.6rem;"><strong style="color:#fde68a;">全大問の間違えた原因:</strong> ${Object.entries(allReasonCounts).map(([k,v]) => `${reasonLabels[k] || k} × ${v}`).join(' / ')}</div>` : '';
               resultEl.style.display = 'block';
               resultEl.innerHTML = `
                 <div style="padding:0.85rem; background:${bgColor}; border-radius:8px; color:${fgColor}; font-weight:700; font-size:1.0rem;">
-                  ${isCorrect ? '⭕' : '❌'} ${correct} / ${total} 問正解 (${Math.round(correctRate*100)}%)
+                  ${isCorrect ? '⭕' : '❌'} 合計 ${totalCorrect} / ${totalQ} 問正解 (${Math.round(correctRate*100)}%)
                 </div>
-                <div style="margin-top:0.5rem; font-size:0.85rem; color:#c7d2fe;">
-                  <strong style="color:#fde68a;">体感難易度:</strong> ${difficultyLabels[selectedDifficulty] || selectedDifficulty}
-                  ${reasonHtml}
-                </div>
+                <ul style="margin:0.6rem 0 0 1.2rem; padding:0; font-size:0.85rem; color:#c7d2fe; line-height:1.7;">${daimonHtml}</ul>
+                ${reasonHtml}
                 <div style="margin-top:0.6rem; font-size:0.78rem; color:#a1a1aa;">記録しました。マイページの「🎯 弱点 TOP3」に反映されます。詳しい解説は「📝 解答解説 PDF」でご確認ください。</div>`;
               // UI lock
-              document.querySelectorAll('.ux-sub-mark-btn, .ux-difficulty-btn, .ux-sub-reason').forEach(el => { el.disabled = true; el.style.cursor = 'default'; });
-              if (addBtn) addBtn.style.display = 'none';
-              finalBtn.disabled = true;
-              finalBtn.textContent = '✓ 採点済み';
-              finalBtn.style.opacity = '0.5';
-              // DB 記録 (1 大問 = 1 attempt・metadata に小問詳細)
+              document.querySelectorAll('.ux-sub-mark-btn, .ux-difficulty-btn, .ux-sub-reason, .ux-add-sub-q-btn, .ux-daimon-tab, #uxAddDaimon').forEach(el => { el.disabled = true; el.style.cursor = 'default'; });
+              finalBtn.disabled = true; finalBtn.textContent = '✓ 採点済み'; finalBtn.style.opacity = '0.5';
+              // DB 記録 (1 PDF = 1 attempt・metadata に大問別 + 小問詳細)
               try {
                 const token = localStorage.getItem('ai_juku_token') || '';
                 if (token) {
@@ -901,22 +985,13 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({
-                      source: 'practice',
-                      subject: p.subject,
-                      topic: p.topic,
-                      is_correct: isCorrect,
-                      score_got: correct,
-                      score_max: total,
+                      source: 'practice', subject: p.subject, topic: p.topic,
+                      is_correct: isCorrect, score_got: totalCorrect, score_max: totalQ,
                       metadata: {
-                        problem_source: 'university_problems',
-                        up_id: p.id,
-                        university: p.university,
-                        faculty: p.faculty,
-                        sub_attempts: Object.entries(subResults).map(([k, v]) => ({
-                          sub_q: parseInt(k), mark: v.mark, reason: v.reason || null
-                        })),
-                        perceived_difficulty: selectedDifficulty,
-                        reason_counts: reasonCounts,
+                        problem_source: 'university_problems', up_id: p.id,
+                        university: p.university, faculty: p.faculty,
+                        daimon_results: daimonSummaries,
+                        total_reason_counts: allReasonCounts,
                         correct_rate: correctRate
                       }
                     })
