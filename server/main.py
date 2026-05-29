@@ -29228,16 +29228,32 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
         mode = "standard"
 
     # 🛡️ 認証 + rate limit
+    # 🛡️ IDOR fix 2026-05-30 (logic/security レビュアー LOW 指摘・正パターン= grade-essay-multiview 28371):
+    # 生徒 session_token があれば claims["student_id"] を強制 override (payload を信用しない)。
+    # → ログイン中の有効生徒が別の有効生徒の ID を payload に入れて rate-limit 消費 / weakness 集計を
+    #   他生徒 ID に付け替える軽微な IDOR を防御。token 無し経路は後方互換 (payload student_id 維持)。
     is_admin_call = False
+    _auth_student_id_from_claims: Optional[int] = None
     if authorization and authorization.startswith("Bearer "):
         _admin_token_try = authorization[len("Bearer "):].strip()
         if _verify_admin_token(_admin_token_try):
             is_admin_call = True
+        else:
+            _claims_try = _verify_session_token(_admin_token_try)
+            if _claims_try and _claims_try.get("student_id"):
+                try:
+                    _auth_student_id_from_claims = int(_claims_try["student_id"])
+                except (TypeError, ValueError):
+                    _auth_student_id_from_claims = None
 
     try:
         student_id = int(student_id) if student_id else 0
     except (TypeError, ValueError):
         student_id = 0
+
+    # 🛡️ session_token あれば payload を override (IDOR 防御)
+    if not is_admin_call and _auth_student_id_from_claims:
+        student_id = _auth_student_id_from_claims
 
     if not is_admin_call:
         if not student_id or student_id <= 0:
