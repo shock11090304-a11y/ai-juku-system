@@ -50,6 +50,11 @@ function updateSummary() {
   if (studentAddonNote) {
     studentAddonNote.style.display = (plan === 'student_addon') ? '' : 'none';
   }
+  // 🚀 2026-05-29: 即時本契約 第2 CTA は student_addon (元々即課金) では不要 → 非表示
+  const immBlock = document.getElementById('immediateBlock');
+  if (immBlock) {
+    immBlock.style.display = (plan === 'student_addon') ? 'none' : '';
+  }
 }
 
 // Pre-fill from URL params (from LP link)
@@ -98,6 +103,32 @@ if (params.get('goal')) document.getElementById('goal').value = params.get('goal
 updateSummary();
 document.querySelectorAll('input[name="plan"]').forEach(r => r.addEventListener('change', updateSummary));
 
+// 🚀 2026-05-29 塾長指示: 体験スキップ即時本契約 第2 CTA。
+//   クリックで __skipTrialImmediate を立て、共通の submit ハンドラ (バリデーション込み) を再利用。
+//   submit ハンドラ側で endpoint が /api/stripe/checkout (即課金) に切り替わる。
+(function () {
+  const immBtn = document.getElementById('immediateBtn');
+  const form = document.getElementById('checkoutForm');
+  if (immBtn && form) {
+    immBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (immBtn.disabled) return;
+      window.__skipTrialImmediate = true;
+      immBtn.disabled = true;
+      immBtn.textContent = '📮 送信中... (1〜2秒)';
+      // 即時送信 in-flight 中は体験ボタンも無効化 (二重 submit ハンドラ起動防止・UX クリーン化)
+      const _sb = document.getElementById('submitBtn');
+      if (_sb) _sb.disabled = true;
+      // requestSubmit で submit イベントを発火 (バリデーション + 既存ロジックを共用)
+      if (typeof form.requestSubmit === 'function') {
+        form.requestSubmit();
+      } else {
+        form.dispatchEvent(new Event('submit', { cancelable: true }));
+      }
+    });
+  }
+})();
+
 // キャリアメール (ezweb / docomo / au / softbank) を判定。
 // 受信許可設定が無いと magic link 招待メールがブロックされやすい現実があるため、
 // checkout 時に明示注意 + checkout-success / auth で対処手順を強調する。
@@ -130,6 +161,10 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
   const errorBox = document.getElementById('errorBox');
   const loadingBox = document.getElementById('loadingBox');
 
+  // 🚀 2026-05-29: 即時本契約フラグを one-shot で消費 (この submit だけに適用・次回 submit に漏らさない)
+  const _immediateSubmit = (window.__skipTrialImmediate === true);
+  window.__skipTrialImmediate = false;
+
   // URL ?plan=founder_special で来た場合は radio に対応無しのため override を優先
   const plan = window.__urlPlanOverride || document.querySelector('input[name="plan"]:checked').value;
   const lastName = (document.getElementById('lastName').value || '').trim();
@@ -142,12 +177,14 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     errorBox.textContent = '⚠️ フルネーム（姓と名の両方）を入力してください。';
     errorBox.style.display = 'block';
     submitBtn.disabled = false;
+    { const _ib = document.getElementById('immediateBtn'); if (_ib) { _ib.disabled = false; _ib.textContent = '⚡ 体験をスキップして今すぐ本契約で始める →'; } }
     return;
   }
   if (!isValidEmailFormat(email)) {
     errorBox.textContent = '⚠️ メールアドレスの形式が正しくありません。 (例: parent@example.com)';
     errorBox.style.display = 'block';
     submitBtn.disabled = false;
+    { const _ib = document.getElementById('immediateBtn'); if (_ib) { _ib.disabled = false; _ib.textContent = '⚡ 体験をスキップして今すぐ本契約で始める →'; } }
     return;
   }
   // 生徒メールは任意。入力されていれば形式チェック
@@ -155,12 +192,14 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     errorBox.textContent = '⚠️ 生徒様メールアドレスの形式が正しくありません。空欄でも構いません。';
     errorBox.style.display = 'block';
     submitBtn.disabled = false;
+    { const _ib = document.getElementById('immediateBtn'); if (_ib) { _ib.disabled = false; _ib.textContent = '⚡ 体験をスキップして今すぐ本契約で始める →'; } }
     return;
   }
   if (!grade) {
     errorBox.textContent = '⚠️ 学年を選択してください。';
     errorBox.style.display = 'block';
     submitBtn.disabled = false;
+    { const _ib = document.getElementById('immediateBtn'); if (_ib) { _ib.disabled = false; _ib.textContent = '⚡ 体験をスキップして今すぐ本契約で始める →'; } }
     return;
   }
   // 紹介コード: URL ?ref= or localStorage に保存されていれば payload に乗せる (30日 TTL)
@@ -328,7 +367,11 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     // /api/stripe/checkout (即課金 ¥5,000/月) に流す。これまで student_addon 選択しても
     // 無料体験ループに陥り、本契約に至れない致命バグ (塾長指摘・森澤さん事故時)。
     // 体験中の trial student (signupData.student_id) は維持されるので学習履歴は継承される。
-    const isPaidPlan = (selectedPlanForBody === 'student_addon');
+    // 🚀 2026-05-29 塾長指示: 体験をスキップして即時本契約で始める第2導線。
+    //   #immediateBtn が window.__skipTrialImmediate=true を立てて submit すると
+    //   一般プラン (founder_special 等) でも即課金 /api/stripe/checkout に流す。
+    //   (体験 14日無料はデフォルト主導線として維持・#submitBtn 経由は従来通り trial)
+    const isPaidPlan = (selectedPlanForBody === 'student_addon') || _immediateSubmit;
     const checkoutEndpoint = isPaidPlan ? '/api/stripe/checkout' : '/api/stripe/trial-checkout';
     // 🛡️ 2026-05-21 P0-2: trial-checkout は Railway cold-start で 5-16s かかる事があるため
     // timeout は 25 秒に設定 (signup より長め)。
@@ -373,6 +416,13 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
   } catch (err) {
     loadingBox.style.display = 'none';
     submitBtn.disabled = false;
+    // 🚀 即時本契約フラグをリセット + 第2ボタンの状態復帰 (失敗が次回 submit に残らないように)
+    window.__skipTrialImmediate = false;
+    const _immBtn = document.getElementById('immediateBtn');
+    if (_immBtn) {
+      _immBtn.disabled = false;
+      _immBtn.textContent = '⚡ 体験をスキップして今すぐ本契約で始める →';
+    }
     // plan に応じてボタン文言を復元 (student_addon は本契約の文言)
     const errPlan = (document.querySelector('input[name="plan"]:checked')?.value || window.__urlPlanOverride || 'founder_special');
     const _ext = !!document.getElementById('enableCardExtension')?.checked;

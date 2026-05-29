@@ -231,6 +231,19 @@
           🎁 14日間 無料体験を開始する →
         </button>
 
+        <!-- 🚀 2026-05-29 塾長指示: 体験をスキップして即時本契約で始める 第2 CTA。
+             体験 (14日無料) はデフォルト主導線として維持し、これは「すぐ使いたい本気層」向けの副導線。
+             student_addon プラン時は checkout.js が #immediateBlock を非表示にする (元々即課金のため)。 -->
+        <div id="immediateBlock" style="margin-top:0.9rem;text-align:center;">
+          <div style="font-size:0.8rem;color:#9ca3af;margin-bottom:0.4rem;">― または ―</div>
+          <button type="button" id="immediateBtn" class="btn-block" style="background:transparent;border:1.5px solid var(--primary-light,#a5b4fc);color:var(--primary-light,#a5b4fc);padding:0.7rem 1rem;border-radius:10px;font-weight:700;font-size:0.95rem;cursor:pointer;">
+            ⚡ 体験をスキップして今すぐ本契約で始める →
+          </button>
+          <p style="font-size:0.78rem;color:#9ca3af;margin-top:0.45rem;line-height:1.55;">
+            体験せずすぐ使いたい方向け。本日 <strong>選択プランの初月月額 + 入塾金 ¥10,000</strong> を Stripe で決済 → 決済完了後すぐにご利用開始できます（先着キャンペーン中は入塾金が自動免除されます）。
+          </p>
+        </div>
+
         <p class="legal-note">
           ご登録により、<a href="legal.html#terms">利用規約</a>・<a href="legal.html#privacy">プライバシーポリシー</a>・<a href="legal.html#tokusho">特商法に基づく表記</a>に同意したものとみなされます。
         </p>
@@ -251,7 +264,7 @@
     <div class="footer-bottom">© 2026 AIコーチング | Powered by Claude AI</div>
   </footer>
 
-  <script src="checkout.js?v=20260521-stripe-stuck-fix"></script>
+  <script src="checkout.js?v=20260529-immediate-signup"></script>
   <script>
     // 🎁 +7 日延長 toggle: ボタン文言を動的更新 + チェック時 二段階確認 (2026-05-19 集客 funnel #4)
     // R3 review 致命: silent auto-charge → chargeback リスク高 → 確認 dialog で「課金されることを把握済」を明示
