@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <script src="cache-purge.js?v=20260526-lesson-prints"></script>
+  <script src="cache-purge.js?v=20260529-waive-enrollment"></script>
   <!-- html2canvas: テンプレートから画像生成 (templates → PNG) 用 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
     integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA=="
@@ -11,7 +11,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CEO経営ダッシュボード | AIコーチング</title>
-  <link rel="stylesheet" href="style.css?v=20260526-lesson-prints">
+  <link rel="stylesheet" href="style.css?v=20260529-waive-enrollment">
   <link rel="stylesheet" href="ceo.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
@@ -2262,8 +2262,8 @@
     <p>© 2026 AIコーチング | CEO Dashboard v1.0</p>
   </footer>
 
-  <script src="plans.js?v=20260526-lesson-prints"></script>
-  <script src="ceo.js?v=20260526-lesson-prints"></script>
+  <script src="plans.js?v=20260529-waive-enrollment"></script>
+  <script src="ceo.js?v=20260529-waive-enrollment"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {
@@ -6859,6 +6859,14 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             プリセット 6 種 (模試代 ¥5,500 / 教材代 ¥3,300 等) + 自由入力対応。発行後 Stripe から自動メール送信、生徒は支払 URL から card / 銀行振込 で決済可能。
           </div>
         </div>`,
+        // 🆓 入塾金免除 (2026-05-29 塾長指示) — 任意の生徒の入塾金 ¥10,000 を 1 クリック免除
+        `<div style="margin-top:12px;padding:14px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:10px;">
+          <div style="color:#86efac;font-weight:600;font-size:0.88rem;margin-bottom:8px;">🆓 入塾金 (¥10,000)</div>
+          ${st.enrollment_fee_waived
+            ? `<div style="color:#6ee7b7;font-weight:bold;font-size:0.9rem;">✅ 免除済み</div>`
+            : `<button type="button" class="sd-waive-enrollment-btn" data-student-id="${esc(st.id)}" data-student-name="${esc(st.name || '')}" style="width:100%;padding:11px 16px;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:0.92rem;cursor:pointer;">🆓 入塾金を免除する</button>`}
+          <div style="margin-top:6px;color:#71717a;font-size:0.75rem;line-height:1.5;">体験→有料転換時の初回請求に乗る入塾金 ¥10,000 を免除します (Stripe の保留請求も自動削除)。</div>
+        </div>`,
       ].join('');
 
       // 🎯 2026-05-26 audit fix: 学年/志望校 編集 button の listener 配線
@@ -7209,6 +7217,36 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           studentName: invBtn.dataset.studentName,
           studentEmail: invBtn.dataset.studentEmail,
         });
+        return;
+      }
+      // 🆓 入塾金免除ボタン (2026-05-29 塾長指示)
+      const waiveBtn = e.target.closest && e.target.closest('.sd-waive-enrollment-btn');
+      if (waiveBtn) {
+        e.preventDefault();
+        const sid = waiveBtn.dataset.studentId;
+        const sname = waiveBtn.dataset.studentName || ('生徒 #' + sid);
+        if (!confirm(`${sname} の入塾金 ¥10,000 を免除します。\n体験→有料転換時の初回請求から入塾金が外れ、Stripe に保留中の入塾金請求があれば自動削除されます。\n続行しますか?`)) return;
+        waiveBtn.disabled = true;
+        const _orig = waiveBtn.textContent;
+        waiveBtn.textContent = '処理中...';
+        (async () => {
+          try {
+            const res = await AdminAuth.fetch(`/api/admin/students/${encodeURIComponent(sid)}/waive-enrollment-fee`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) {
+              alert(data.message || '✅ 入塾金を免除しました');
+              waiveBtn.outerHTML = '<div style="color:#6ee7b7;font-weight:bold;font-size:0.9rem;">✅ 免除済み</div>';
+            } else {
+              alert('⚠ 免除に失敗しました: ' + (data.detail || data.message || ('HTTP ' + res.status)));
+              waiveBtn.disabled = false; waiveBtn.textContent = _orig;
+            }
+          } catch (err) {
+            alert('⚠ 通信エラー: ' + (err && err.message ? err.message : err));
+            waiveBtn.disabled = false; waiveBtn.textContent = _orig;
+          }
+        })();
         return;
       }
       // タブ切り替え

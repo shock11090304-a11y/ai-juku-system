@@ -8146,7 +8146,7 @@ def admin_stats(authorization: Optional[str] = Header(None)):
     c = conn.cursor()
     # last_login_at は migration 直後の旧 DB に存在しない可能性あり → try/except でフォールバック
     try:
-        c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at, line_user_id, course FROM students ORDER BY id DESC")
+        c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at, line_user_id, course, enrollment_fee_waived FROM students ORDER BY id DESC")
         rows = c.fetchall()
         has_last_login = True
     except Exception:
@@ -8235,6 +8235,8 @@ def admin_stats(authorization: Optional[str] = Header(None)):
             "has_line": bool(_line_uid),
             "is_carrier_email": _is_carrier_email(_email),
             "course": (row["course"] if "course" in row.keys() else None),
+            # 🆓 2026-05-29: 入塾金免除バッジ表示用 (生徒詳細モーダル)
+            "enrollment_fee_waived": (bool(row["enrollment_fee_waived"]) if "enrollment_fee_waived" in row.keys() else False),
         })
     # 集計
     c.execute("SELECT COUNT(*) AS n FROM students WHERE status='paid'")
@@ -17885,6 +17887,194 @@ def admin_create_invoice_for_student(
         try: conn.rollback()
         except Exception: pass
         log.error(f"[admin/create-invoice] unexpected: {type(e).__name__}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"内部エラー: {type(e).__name__}")
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/students/{student_id}/waive-enrollment-fee")
+def admin_waive_enrollment_fee(
+    student_id: int,
+    payload: dict = None,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🆓 個別生徒の入塾金 (¥10,000) を免除する (admin only)。
+
+    塾長指示 (2026-05-29): CEO ダッシュ「生徒詳細」から 1 クリックで任意の生徒の
+    入塾金を免除できるようにする。これまでは ①先着キャンペーン枠 ②紹介された側 のみ
+    自動免除で、塾長が任意指定する手段が無かった。
+
+    動作:
+    1. 認証 (admin Bearer or X-Cron-Secret)
+    2. student 存在確認
+    3. DB: enrollment_fee_waived=1 + enrollment_waiver_applied_at をセット (冪等)
+    4. Stripe (customer_id があれば): 保留中 InvoiceItem のうち
+       metadata.type=='enrollment_fee' または description に「入塾金」を含むものを削除
+       (= 体験→有料転換時の初回請求から入塾金を外す)。**他の課金品目は絶対に触らない**。
+    5. アクティブ subscription の metadata needs_enrollment_fee=0 を defensive にセット
+    6. events.admin_enrollment_fee_waived に audit 記録
+
+    返却: {ok, already_waived, db_updated, stripe_items_deleted, stripe_mode, message}
+    認証: admin Bearer または X-Cron-Secret"""
+    # auth
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(
+            "SELECT id, name, email, stripe_customer_id, enrollment_fee_waived FROM students WHERE id=?",
+            (student_id,),
+        )
+        st = c.fetchone()
+        if not st:
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        try:
+            already_waived = bool(st["enrollment_fee_waived"]) if "enrollment_fee_waived" in st.keys() else False
+        except Exception:
+            already_waived = False
+        customer_id = st["stripe_customer_id"]
+        student_name = (st["name"] or "").strip()
+
+        # 1) DB フラグ (冪等: 既に免除でも applied_at が NULL なら埋める)
+        c.execute(
+            "UPDATE students SET enrollment_fee_waived = 1, "
+            "enrollment_waiver_applied_at = COALESCE(enrollment_waiver_applied_at, CURRENT_TIMESTAMP) "
+            "WHERE id = ?",
+            (student_id,),
+        )
+        conn.commit()
+        db_updated = True
+
+        # 2) Stripe 保留入塾金 InvoiceItem 削除 (安全: enrollment_fee 限定)
+        stripe_items_deleted = 0
+        stripe_subs_updated = 0
+        stripe_mode = None
+        stripe_error = None
+        if STRIPE_SECRET_KEY and customer_id:
+            stripe_mode = "test" if STRIPE_SECRET_KEY.startswith("sk_test_") else "live"
+            try:
+                s = get_stripe()
+                # 保留中 (まだ Invoice に乗っていない) InvoiceItem を列挙
+                try:
+                    items = s.InvoiceItem.list(customer=customer_id, pending=True, limit=100)
+                    item_list = items.data if hasattr(items, "data") else items.get("data", [])
+                except Exception:
+                    # pending param 非対応の古い API 向け fallback (全件取得して未請求のみ)
+                    items = s.InvoiceItem.list(customer=customer_id, limit=100)
+                    item_list = [it for it in (items.data if hasattr(items, "data") else items.get("data", []))
+                                 if not getattr(it, "invoice", None)]
+                for it in item_list:
+                    meta = getattr(it, "metadata", None) or {}
+                    itype = (meta.get("type") if hasattr(meta, "get") else None) or ""
+                    isource = (meta.get("source") if hasattr(meta, "get") else None) or ""
+                    desc = getattr(it, "description", "") or ""
+                    # ★ enrollment_fee 限定で削除 (他の spot 請求・模試代等は絶対に消さない)
+                    #   ① metadata.type=='enrollment_fee' を最優先 (確実)
+                    #   ② 旧 item で type 欠落の場合のみ description 厳密一致で救済。ただし
+                    #      admin_spot_invoice (塾長の任意命名請求) は description に「入塾金」を
+                    #      含んでも絶対に対象外 (誤削除防止・review A MAJOR-1)
+                    is_enrollment = (
+                        itype == "enrollment_fee"
+                        or (isource != "admin_spot_invoice" and desc == "入塾金（システム登録費用・初回のみ）")
+                    )
+                    if is_enrollment:
+                        try:
+                            s.InvoiceItem.delete(it.id)
+                            stripe_items_deleted += 1
+                            log.info(f"[waive-enrollment] deleted InvoiceItem {it.id} student={student_id}")
+                        except Exception as _de:
+                            log.warning(f"[waive-enrollment] InvoiceItem.delete 失敗 {getattr(it,'id','?')}: {type(_de).__name__}")
+                # defensive: active/trialing subscription の metadata を needs_enrollment_fee=0 に
+                try:
+                    subs = s.Subscription.list(customer=customer_id, status="all", limit=10)
+                    sub_list = subs.data if hasattr(subs, "data") else subs.get("data", [])
+                    for sub in sub_list:
+                        if getattr(sub, "status", "") in ("trialing", "active", "past_due"):
+                            try:
+                                s.Subscription.modify(sub.id, metadata={"needs_enrollment_fee": "0"})
+                                stripe_subs_updated += 1
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
+            except Exception as e:
+                import re as _re
+                stripe_error = _re.sub(r"sk_(test|live)_[A-Za-z0-9]+", "sk_[REDACTED]", str(e))[:160]
+                log.error(f"[waive-enrollment] Stripe 処理失敗 student={student_id}: {type(e).__name__}: {stripe_error}")
+
+        # 3) audit
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("admin_enrollment_fee_waived", json.dumps({
+                    "student_id": student_id,
+                    "student_name": student_name,
+                    "already_waived": already_waived,
+                    "stripe_items_deleted": stripe_items_deleted,
+                    "stripe_subs_updated": stripe_subs_updated,
+                    "stripe_mode": stripe_mode,
+                }, ensure_ascii=False), "admin"),
+            )
+            conn.commit()
+        except Exception as e:
+            log.warning(f"[waive-enrollment] events 記録失敗 (免除自体は成功): {e}")
+
+        # 🛡️ review A MAJOR-2: Stripe 失敗時は DB は免除済みでも保留入塾金が残り次回課金される
+        #   恐れがあるため、強い警告 + ok=False で塾長に再実行/手動確認を促す。
+        if stripe_error:
+            msg = (
+                f"⚠️ {student_name or ('生徒 #'+str(student_id))} の DB 免除フラグは立てましたが、"
+                f"Stripe への反映に失敗しました。Stripe に入塾金 ¥10,000 の保留請求が残っている可能性があります。"
+                f"このボタンを再実行するか、Stripe ダッシュボードで該当顧客の保留請求を確認してください。"
+                f"（詳細: {stripe_error}）"
+            )
+            return {
+                "ok": False,
+                "student_id": student_id,
+                "already_waived": already_waived,
+                "db_updated": db_updated,
+                "stripe_items_deleted": stripe_items_deleted,
+                "stripe_subs_updated": stripe_subs_updated,
+                "stripe_mode": stripe_mode,
+                "stripe_error": stripe_error,
+                "message": msg,
+            }
+
+        msg = f"✅ {student_name or ('生徒 #'+str(student_id))} の入塾金を免除しました"
+        if stripe_items_deleted > 0:
+            msg += f" (Stripe 保留請求 {stripe_items_deleted} 件を削除)"
+        elif STRIPE_SECRET_KEY and customer_id:
+            msg += "（Stripe に保留中の入塾金請求は見つかりませんでした＝既に免除済み/未作成）"
+        elif not customer_id:
+            msg += "（Stripe 顧客未作成のため DB フラグのみ。今後の請求で入塾金は加算されません）"
+
+        return {
+            "ok": True,
+            "student_id": student_id,
+            "already_waived": already_waived,
+            "db_updated": db_updated,
+            "stripe_items_deleted": stripe_items_deleted,
+            "stripe_subs_updated": stripe_subs_updated,
+            "stripe_mode": stripe_mode,
+            "stripe_error": stripe_error,
+            "message": msg,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        try: conn.rollback()
+        except Exception: pass
+        log.error(f"[waive-enrollment] unexpected: {type(e).__name__}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"内部エラー: {type(e).__name__}")
     finally:
         conn.close()
