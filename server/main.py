@@ -28401,16 +28401,16 @@ async def mock_exam_grade_essay_multiview(payload: dict, authorization: Optional
                 status_code=403,
                 detail="ログインが必要です (student_id 未提供)。マイページから採点してください。"
             )
-        # DB 存在 check
-        conn_auth = db()
+        # 🛡️ 契約 status 検証 (2026-05-29 塾長指示・コスト保護): 存在確認のみ → _verify_student_active に置換。
+        # trial 期限切れ / canceled / past_due(grace 超過) の生徒が 5 AI 並列採点 ($0.30/req) を
+        # タダ使いするのを防ぐ。/api/ai/call と同じく HTTPException(403/404) は伝搬・DB 異常のみ 500 化。
         try:
-            c_auth = conn_auth.cursor()
-            c_auth.execute("SELECT id FROM students WHERE id = ?", (student_id,))
-            row_auth = c_auth.fetchone()
-            if not row_auth:
-                raise HTTPException(status_code=403, detail="存在しない生徒 ID です")
-        finally:
-            conn_auth.close()
+            _verify_student_active(student_id)
+        except HTTPException:
+            raise
+        except Exception as e:
+            log.error(f"[grade-essay-multiview] _verify_student_active error: {type(e).__name__}: {e}")
+            raise HTTPException(status_code=500, detail="契約状態の確認に失敗しました")
         # rate limit (5 AI 並列の重 endpoint・$0.10-0.30/req 級の暴走防御)
         _check_grade_multiview_rate(student_id)
     # is_admin_call = True の場合: student_id 任意・DB check skip・rate limit skip (塾長 demo/監査用)
@@ -29242,14 +29242,16 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
     if not is_admin_call:
         if not student_id or student_id <= 0:
             raise HTTPException(status_code=403, detail="ログインが必要です (student_id 未提供)")
-        conn_auth = db()
+        # 🛡️ 契約 status 検証 (2026-05-29 塾長指示・コスト保護): 存在確認のみ → _verify_student_active に置換。
+        # trial 期限切れ / canceled / past_due(grace 超過) の生徒が 3 AI 並列解答 ($0.10-0.30/req) を
+        # タダ使いするのを防ぐ。/api/ai/call と同じく HTTPException(403/404) は伝搬・DB 異常のみ 500 化。
         try:
-            c_auth = conn_auth.cursor()
-            c_auth.execute("SELECT id FROM students WHERE id = ?", (student_id,))
-            if not c_auth.fetchone():
-                raise HTTPException(status_code=403, detail="存在しない生徒 ID です")
-        finally:
-            conn_auth.close()
+            _verify_student_active(student_id)
+        except HTTPException:
+            raise
+        except Exception as e:
+            log.error(f"[solve-from-image] _verify_student_active error: {type(e).__name__}: {e}")
+            raise HTTPException(status_code=500, detail="契約状態の確認に失敗しました")
         _check_solve_rate(student_id)
 
     # validation
