@@ -131,6 +131,11 @@ STUDENT_ADDON_PRICE = 5000
 # 14日間 = 2 週間で学習習慣変化 + 集中体験 → 本契約継続を狙う設計 (2026-05-19 10→14 拡張)
 FOUNDER_TRIAL_PRICE = 0
 FOUNDER_TRIAL_DAYS = 14  # 10→14 日に拡張 (塾長指示 2026-05-19: スタサプ/Duolingo の 14 日標準に合わせ、学習習慣変化の最小単位 = 14日に到達。集客 funnel 改善 #1)
+# 💳 月次課金 決済失敗の猶予期間 (塾長指示 2026-05-29「猶予期間あり」): past_due 降格後この日数は
+# アクセスを維持し、生徒にカード更新を案内。Stripe の自動リトライ成功で paid 復帰。GRACE 超過 (= Stripe の
+# dunning が無効/枯渇で past_due のまま) なら scheduler が canceled 化してアクセス停止 (無料使い放題を防ぐ)。
+# Stripe Smart Retries 標準 (~2-3 週) より長めに設定し、通常は Stripe 側の解約遷移が先に効く。
+PAST_DUE_GRACE_DAYS = 30
 # 旧 100名 → 新 50名限定 (2026-04-28 ピボット・¥14,500/月 永年・premium全機能)
 FOUNDER_LIMIT = int(os.getenv("FOUNDER_LIMIT", "50"))
 
@@ -1230,6 +1235,10 @@ def init_db():
         # 塾長指示 2026-05-27 「途中のヒント無しの問題だけのパターンも作れる?」: 本番試験版 PDF (margin notes 全削除) を別途紐付け
         ("up_strict_pdf_url", "ALTER TABLE university_problems ADD COLUMN strict_pdf_url TEXT"),
         ("up_strict_pdf_title", "ALTER TABLE university_problems ADD COLUMN strict_pdf_title TEXT"),
+        # 💳 月次課金 決済失敗の猶予期間管理 (塾長指示 2026-05-29): past_due に降格した時刻を記録。
+        # 猶予 (grace) 期間中はアクセス維持、GRACE 日数超過で scheduler が canceled 化する基準時刻。
+        # 課金回復 (paid) 時は NULL に戻す。
+        ("past_due_since", "ALTER TABLE students ADD COLUMN past_due_since TIMESTAMP DEFAULT NULL"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -3147,7 +3156,7 @@ async def _trial_management_scheduler():
                 log.info("[TrialMgr] Skipped (already ran today by another replica)")
                 continue
 
-            # 6 タスクを順次実行 (例外は個別に握りつぶしてループ継続)
+            # 7 タスクを順次実行 (例外は個別に握りつぶしてループ継続)
             tasks = [
                 ("expire-trials", lambda: cron_expire_trials(x_cron_secret=secret, dry_run=False)),
                 ("trial-reminders", lambda: cron_trial_reminders(x_cron_secret=secret, dry_run=False)),
@@ -3157,6 +3166,9 @@ async def _trial_management_scheduler():
                 ("trial-rescue", lambda: admin_trial_rescue_now(payload={"dry_run": False}, x_cron_secret=secret)),
                 # 📧 体験 Day 2 / Day 5 nurture メール (集客 funnel #3・2026-05-19 追加)
                 ("trial-nurture", lambda: cron_trial_nurture(x_cron_secret=secret, dry_run=False)),
+                # 🔄 Stripe ↔ DB 整合性同期 (webhook 取りこぼし救済・双方向・2026-05-29 追加)
+                # 昇格(active→paid) + 降格(past_due/canceled) を毎日 reconcile。STRIPE 未設定なら内部で 503→例外で skip。
+                ("stripe-reconcile", lambda: admin_stripe_reconcile(authorization=None, x_cron_secret=secret)),
             ]
             results = {}
             for task_name, fn in tasks:
@@ -5710,6 +5722,14 @@ def _collect_health_snapshot() -> dict:
     snapshot["webhooks_processed_24h"] = safe_count(
         "SELECT COUNT(*) FROM processed_events WHERE processed_at >= ?", (h24,)
     )
+    # 🔴 月次課金 決済失敗 (past_due 降格): 直近48hの件数 + 現在 past_due 状態の在籍数 (2026-05-29)
+    snapshot["payment_failed_48h"] = safe_count(
+        "SELECT COUNT(*) FROM events WHERE name='stripe_payment_failed' AND created_at >= ?",
+        ((now - timedelta(hours=48)).isoformat(),)
+    )
+    snapshot["past_due_total"] = safe_count(
+        "SELECT COUNT(*) FROM students WHERE status='past_due'"
+    )
 
     # ファネル (events): page_view → cta_click → form_submit → checkout_initiated → checkout_completed
     def event_count(name, since):
@@ -5910,11 +5930,36 @@ def _evaluate_alerts(snapshot: dict) -> list:
                 "title": f"⚠️ 決済完了率が低い ({int(complete_rate*100)}%)",
                 "detail": f"checkout 開始 {snapshot['checkout_initiated_24h']} 件中、完了は {snapshot['checkout_completed_24h']} 件のみ。Stripe 決済画面でユーザーが詰まっている可能性。",
             })
-    # 6. Webhook 沈黙: paid_total > 0 なのに 48時間 webhook がゼロ
-    if snapshot["paid_total"] > 0 and snapshot["webhooks_processed_24h"] == 0 and snapshot["paid_24h"] == 0:
-        # paid 顧客がいるなら invoice.paid が月次で来るはず。来ないのは Webhook 不通の兆候
-        # (ただし新規 paid が直近24h 0件なら通常)
-        pass  # 今は判定保留
+    # 6. Webhook 沈黙: paid_total >= 10 なのに 24時間 webhook がゼロ
+    # paid 顧客が一定数いれば月次 invoice.payment_succeeded が日々分散して届くはず。
+    # 24h ゼロは Webhook 不通 (Stripe → Railway 配信障害 or endpoint 落ち) の兆候。
+    # 少人数だと「たまたま当日 0 件」誤検知があるため閾値を 10 名に設定 + warning レベル。
+    if snapshot["paid_total"] >= 10 and snapshot["webhooks_processed_24h"] == 0:
+        alerts.append({
+            "key": "stripe_webhook_silence_24h", "severity": "warning",
+            "title": f"⚠️ Stripe Webhook が24h ゼロ (paid {snapshot['paid_total']} 名在籍)",
+            "detail": (
+                f"有料 {snapshot['paid_total']} 名が在籍していますが、直近24h で処理した Stripe webhook が 0 件です。"
+                "月次の自動課金 (invoice.payment_succeeded) が届かなくなると、決済成功/失敗を検知できず "
+                "status と実入金が乖離します。Stripe Dashboard → Developers → Webhooks で "
+                "endpoint の配信エラー (4xx/5xx) を確認してください。"
+            ),
+        })
+
+    # 6b. 🔴 直近 Stripe 決済失敗 (past_due 降格) の検知 (2026-05-29 追加)
+    # invoice.payment_failed / subscription.updated(past_due) で記録した critical event を拾う。
+    # 件数は _collect_health_snapshot で算出済 (safe_count は当関数スコープ外のため snapshot 経由)。
+    _pf_48h = snapshot.get("payment_failed_48h", 0)
+    if _pf_48h > 0:
+        alerts.append({
+            "key": "stripe_payment_failed_recent", "severity": "critical",
+            "title": f"🔴 月次課金の決済失敗 {_pf_48h} 件 (過去48h)",
+            "detail": (
+                f"過去48hで {_pf_48h} 件の月次決済失敗を検知しました (現在 past_due {snapshot.get('past_due_total', 0)} 名)。"
+                "カード期限切れ・残高不足の可能性が高いです。生徒に連絡してカード更新を案内してください。"
+                "猶予期間中はアクセス維持され、更新後にリトライが成功すれば自動で paid に復帰します。"
+            ),
+        })
     # 7. 🔥 申込→ログイン経路 監視 (2026-04-30 追加)
     # 過去24h 申込 3 名以上で、ログイン率 50% 未満なら critical
     sg = snapshot.get("login_signups_24h", 0)
@@ -7663,12 +7708,33 @@ def _send_login_link_multi(student_id: int, email: str, name: str, magic_url: st
     return out
 
 
+def _is_past_due_within_grace(past_due_since) -> bool:
+    """💳 past_due (決済失敗) がアクセス猶予期間内かを判定 (塾長指示 2026-05-29「猶予期間あり」)。
+    past_due_since (降格時刻) から PAST_DUE_GRACE_DAYS 以内なら True (アクセス維持)。
+    past_due_since が NULL/解析不能なら安全側で True (scheduler が後で打刻 or canceled 化する)。
+    アクセス/AI コストを伴う全ゲート (_get_current_student / _verify_student_active) で共通利用し、
+    grace 判定の非対称 (例: AI 経路だけ grace を無視して使い放題) を防ぐ。"""
+    if not past_due_since:
+        return True
+    try:
+        if isinstance(past_due_since, str):
+            _pds_dt = datetime.fromisoformat(past_due_since.replace("Z", "+00:00"))
+        else:
+            _pds_dt = past_due_since
+        if _pds_dt.tzinfo is None:
+            _pds_dt = _pds_dt.replace(tzinfo=timezone.utc)
+        return (datetime.now(timezone.utc) - _pds_dt) < timedelta(days=PAST_DUE_GRACE_DAYS)
+    except Exception:
+        return True  # 解析失敗時は安全側 (アクセス維持)
+
+
 def _get_current_student(authorization: Optional[str], allow_canceled: bool = False) -> Optional[dict]:
     """Authorization: Bearer <token> ヘッダからセッション検証し生徒レコードを返す。
 
     ステータスゲート:
     - 'paid': 常に許可
     - 'trial': trial_end が未来なら許可（体験期間中）
+    - 'past_due': 決済失敗の猶予期間中 (past_due_since から PAST_DUE_GRACE_DAYS 以内) なら許可（塾長指示 2026-05-29「猶予期間あり」）
     - 'canceled' / 'expired': 拒否（allow_canceled=True の時のみ canceled は許可）
     """
     if not authorization or not authorization.startswith("Bearer "):
@@ -7679,7 +7745,7 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
         return None
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT id, name, email, grade, goal, plan, status, stripe_customer_id, trial_end, enrollment_fee_waived, course FROM students WHERE id = ?", (claims["student_id"],))
+    c.execute("SELECT id, name, email, grade, goal, plan, status, stripe_customer_id, trial_end, enrollment_fee_waived, course, past_due_since FROM students WHERE id = ?", (claims["student_id"],))
     row = c.fetchone()
     conn.close()
     if not row:
@@ -7705,6 +7771,14 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
                     is_allowed = True
             except Exception:
                 pass
+    elif status == "past_due":
+        # 💳 猶予期間 (grace): 決済失敗から PAST_DUE_GRACE_DAYS 以内はアクセス維持し、カード更新を促す。
+        try:
+            _pds = row["past_due_since"] if "past_due_since" in row.keys() else None
+        except (KeyError, TypeError, IndexError):
+            _pds = None
+        if _is_past_due_within_grace(_pds):
+            is_allowed = True
     elif status == "canceled" and allow_canceled:
         is_allowed = True
 
@@ -7773,6 +7847,9 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
     if row:
         _row_course = row["course"] if "course" in row.keys() else None
         if row["status"] == "paid":
+            is_sendable = True
+        elif row["status"] == "past_due":
+            # 💳 決済失敗の猶予期間中もログイン可 (カード更新のため mypage/Stripe ポータルへ到達させる・2026-05-29)
             is_sendable = True
         elif _row_course == "kokuritsu_nankan":
             is_sendable = True
@@ -7889,6 +7966,9 @@ def verify_code(payload: VerifyCodeRequest, request: Request):
     if student:
         _st_course = student["course"] if "course" in student.keys() else None
         if student["status"] == "paid":
+            _active = True
+        elif student["status"] == "past_due":
+            # 💳 決済失敗の猶予期間中もログイン許可 (カード更新導線・2026-05-29)
             _active = True
         elif _st_course == "kokuritsu_nankan":
             _active = True
@@ -8012,6 +8092,10 @@ def verify_magic_link(t: str):
     _allowed = False
     _v_course = row["course"] if "course" in row.keys() else None
     if row["status"] == "paid":
+        _allowed = True
+    elif row["status"] == "past_due":
+        # 💳 決済失敗の猶予期間中もログイン許可 (カード更新導線・2026-05-29)。
+        # grace 超過は scheduler が canceled 化するため、ここで past_due ならまだ猶予内。
         _allowed = True
     elif _v_course == "kokuritsu_nankan":
         _allowed = True
@@ -8673,6 +8757,97 @@ def _record_ai_critical_event(event_name: str, props: dict):
         conn.close()
     except Exception as e:
         log.error(f"[AI failsafe] failed to record critical event {event_name}: {e}")
+
+
+def _send_payment_failed_dunning_email(student_id: int, student_name: str, to_email: str) -> dict:
+    """💳 月次課金の決済失敗時、生徒にカード更新を案内するメール (塾長指示 2026-05-29「猶予期間あり」)。
+    - dedup: 同一生徒に直近7日で送信済みなら再送しない (リトライ毎の連投を防ぐ)
+    - 文面: 猶予期間中はアクセス維持・mypage からカード更新を案内 (Stripe Customer Portal はログイン後に開く)
+    - 成否は notifications テーブルに記録 (success=1/0)
+    戻り値: {sent: bool, ...}"""
+    if not to_email:
+        return {"sent": False, "reason": "no_email"}
+    # dedup (7日以内に送信成功済みなら skip)
+    _dedup_conn = None
+    try:
+        _dedup_conn = db()
+        c = _dedup_conn.cursor()
+        seven_days_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+        c.execute(
+            "SELECT id FROM notifications WHERE student_id=? AND template='payment_failed_dunning' AND success=1 AND sent_at > ? LIMIT 1",
+            (student_id, seven_days_ago),
+        )
+        if c.fetchone():
+            log.info(f"[Dunning] skip (already sent within 7d) student_id={student_id}")
+            return {"sent": False, "reason": "deduped"}
+    except Exception as _e:
+        log.warning(f"[Dunning] dedup check failed for {student_id}: {_e}")
+    finally:
+        if _dedup_conn is not None:
+            try: _dedup_conn.close()
+            except Exception: pass
+
+    if not RESEND_API_KEY:
+        log.warning(f"[DEV-MODE] Dunning email skipped for {to_email}")
+        return {"sent": False, "dev_mode": True}
+
+    import html as _html
+    safe_name = _html.escape(student_name or "")
+    greeting = f"{safe_name}さま" if safe_name else "ご利用者さま"
+    mypage_url = f"{BASE_URL}/mypage.html"
+    subject = "【AIコーチング】お支払いを確認できませんでした（カード情報のご確認をお願いします）"
+    body_html = f"""<!DOCTYPE html>
+<html><body style="font-family:-apple-system,sans-serif;line-height:1.7;color:#333;max-width:560px;margin:0 auto;padding:2rem;">
+<h1 style="font-size:1.4rem;color:#6366f1;">🎓 AIコーチング</h1>
+<p>{greeting}</p>
+<h2 style="font-size:1.15rem;color:#b91c1c;">月額のお支払いを確認できませんでした</h2>
+<p>今月の月額料金の自動決済が完了できませんでした。カードの有効期限切れ・残高不足などが考えられます。</p>
+<p style="background:#fffbeb;padding:1rem;border-left:4px solid #f59e0b;border-radius:4px;">
+  ✅ <strong>ご安心ください。</strong>しばらくの間は引き続きご利用いただけます。<br>
+  カード情報を更新いただくと自動で再決済され、これまで通りご利用が続きます。
+</p>
+<p style="text-align:center;margin:2rem 0;">
+  <a href="{mypage_url}" style="display:inline-block;padding:1rem 2rem;background:linear-gradient(135deg,#6366f1,#ec4899);color:white;text-decoration:none;border-radius:8px;font-weight:700;font-size:1.05rem;">
+    マイページでカード情報を更新する
+  </a>
+</p>
+<p style="font-size:0.9rem;color:#666;">マイページにログイン後、「お支払い方法を変更」からカード情報をご更新ください。</p>
+<hr style="margin:2rem 0;border:none;border-top:1px solid #eee;">
+<p style="font-size:0.8rem;color:#999;">お問い合わせ: <a href="mailto:info@trillion-ai-juku.com" style="color:#6366f1;">info@trillion-ai-juku.com</a></p>
+</body></html>"""
+    sent_ok = False
+    err_msg = None
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({"from": FROM_EMAIL, "to": [to_email], "subject": subject, "html": body_html}).encode("utf-8"),
+            headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json", "User-Agent": "ai-juku-system/1.0"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            sent_ok = (200 <= resp.status < 300)
+    except Exception as e:
+        err_msg = f"{type(e).__name__}: {e}"
+        log.error(f"[Dunning] send failed for {to_email}: {err_msg}")
+    # notifications 記録
+    _rec_conn = None
+    try:
+        _rec_conn = db()
+        c = _rec_conn.cursor()
+        c.execute(
+            """INSERT INTO notifications (student_id, channel, template, payload, success, error)
+               VALUES (?, 'email', 'payment_failed_dunning', ?, ?, ?)""",
+            (student_id, json.dumps({"to": to_email[:120]}, ensure_ascii=False), 1 if sent_ok else 0, (err_msg or "")[:200] if not sent_ok else None),
+        )
+        _rec_conn.commit()
+    except Exception as _e:
+        log.warning(f"[Dunning] notification record failed for {student_id}: {_e}")
+    finally:
+        if _rec_conn is not None:
+            try: _rec_conn.close()
+            except Exception: pass
+    return {"sent": sent_ok, "error": err_msg}
 
 
 def _anthropic_max_tokens_cap(model: str, requested: int) -> int:
@@ -11254,18 +11429,25 @@ def admin_stripe_check_prices(authorization: Optional[str] = Header(None)):
 # ============================================================================
 
 @app.post("/api/admin/stripe/reconcile")
-def admin_stripe_reconcile(authorization: Optional[str] = Header(None)):
+def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
     """🔄 Stripe ↔ DB 整合性同期 (失敗 webhook 取りこぼし救済)
 
-    Stripe API から現在 active な subscription を全て取得し、DB と差分があれば
-    DB を Stripe に合わせて更新する。webhook 配信失敗で「Stripe では課金中・
-    DB では trial」というゴースト顧客を救済できる。冪等。
+    Stripe API から subscription を取得し、DB と差分があれば DB を Stripe に合わせて更新する。
+    webhook 配信失敗で生じる status ズレを双方向に救済できる (冪等):
+      - upgrade: Stripe active なのに DB が trial/past_due → paid に昇格
+      - downgrade: Stripe past_due/canceled なのに DB が paid → past_due/canceled に降格
+    認証: admin Bearer または X-Cron-Secret (日次 scheduler から呼ぶため)。
 
     返り値: {reconciled: N, details: [...]}"""
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="未認証")
-    token = authorization[len("Bearer "):].strip()
-    if not _verify_admin_token(token):
+    # 認証: admin Bearer OR CRON_SECRET (scheduler 経由)
+    _authed = False
+    if authorization and authorization.startswith("Bearer "):
+        _tok = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(_tok):
+            _authed = True
+    if not _authed and x_cron_secret and CRON_SECRET and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        _authed = True
+    if not _authed:
         raise HTTPException(status_code=401, detail="未認証")
     if not STRIPE_SECRET_KEY:
         raise HTTPException(status_code=503, detail="STRIPE_SECRET_KEY が未設定")
@@ -11274,15 +11456,19 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None)):
     reconciled = []
     orphans = []
     errors = []
+    # auto_paging_iter で 100 件上限を超えても全 active sub を走査 (在籍 200+ でも取りこぼさない)
     try:
-        subs = s.Subscription.list(status="active", limit=100)
+        active_subs = list(s.Subscription.list(status="active", limit=100).auto_paging_iter())
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Stripe Subscription.list 失敗: {e}")
 
     conn = db()
     c = conn.cursor()
-    for sub in subs.data:
+    for sub in active_subs:
         try:
+            # juku-payment 系 subscription は ai-juku DB に触れない (二重保険)
+            if (getattr(sub, "metadata", None) or {}).get("system", "").startswith("juku-payment"):
+                continue
             customer = sub.customer
             plan = (sub.metadata or {}).get("plan", "")
             email = None
@@ -11323,16 +11509,70 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None)):
             errors.append({"sub_id": sub.id, "error": str(e)})
             try: conn.rollback()
             except Exception: pass
+
+    # 🔻 downgrade pass (2026-05-29 追加): webhook 取りこぼしで「Stripe は past_due/unpaid/canceled
+    # なのに DB は paid のまま」の生徒を救済。Stripe を真実として paid → past_due/canceled に降格。
+    # ・paid のみ対象 (trial/expired/canceled には触れない)。subscription_id 厳密照合で誤降格を防ぐ。
+    # ・unpaid → past_due (webhook と統一・回復経路を生かす。canceled に潰すと paid 復帰できなくなる)
+    # ・canceled → canceled。canceled sub は永久蓄積するため created で直近 90 日に限定 (上限取りこぼし回避)
+    # ・past_due 化時は past_due_since を打刻 (grace 起点)
+    downgraded = []
+    now_ts = datetime.now(timezone.utc)
+    _downgrade_map = {"past_due": "past_due", "unpaid": "past_due", "canceled": "canceled"}
+    for _stripe_st, _db_st in _downgrade_map.items():
+        try:
+            # list() で materialize し、全ページ取得 (network) を outer try 内に収める
+            # → for ループ中の page fetch 例外で関数が中断し conn.close() 漏れになるのを防ぐ
+            if _stripe_st == "canceled":
+                _cutoff = int((now_ts - timedelta(days=90)).timestamp())
+                _iter = list(s.Subscription.list(status="canceled", limit=100, created={"gte": _cutoff}).auto_paging_iter())
+            else:
+                _iter = list(s.Subscription.list(status=_stripe_st, limit=100).auto_paging_iter())
+        except Exception as e:
+            errors.append({"downgrade_list": _stripe_st, "error": str(e)})
+            continue
+        for sub in _iter:
+            try:
+                if (getattr(sub, "metadata", None) or {}).get("system", "").startswith("juku-payment"):
+                    continue
+                c.execute("SELECT id, status FROM students WHERE stripe_subscription_id=?", (sub.id,))
+                row = c.fetchone()
+                if not row:
+                    continue
+                sid, cur_status = row[0], row[1]
+                if cur_status == "paid":
+                    if _db_st == "past_due":
+                        c.execute(
+                            """UPDATE students SET status='past_due',
+                                   past_due_since=COALESCE(past_due_since, CURRENT_TIMESTAMP),
+                                   updated_at=CURRENT_TIMESTAMP
+                               WHERE id=? AND status='paid'""",
+                            (sid,),
+                        )
+                    else:
+                        c.execute(
+                            "UPDATE students SET status=?, updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='paid'",
+                            (_db_st, sid),
+                        )
+                    if c.rowcount > 0:
+                        conn.commit()
+                        downgraded.append({"student_id": sid, "old_status": "paid", "new_status": _db_st, "stripe_status": _stripe_st})
+                        log.warning(f"[Reconcile downgrade] student_id={sid} paid→{_db_st} (Stripe {_stripe_st}) sub={sub.id}")
+            except Exception as e:
+                errors.append({"downgrade_sub_id": getattr(sub, "id", "?"), "error": str(e)})
+                try: conn.rollback()
+                except Exception: pass
     conn.close()
 
     return {
         "ok": True,
-        "stripe_active_subscriptions": len(subs.data),
+        "stripe_active_subscriptions": len(active_subs),
         "reconciled": len(reconciled),
+        "downgraded": len(downgraded),
         "orphans": len(orphans),
         "errors": len(errors),
-        "details": {"reconciled": reconciled, "orphans": orphans, "errors": errors},
-        "message": f"✅ {len(reconciled)} 件を Stripe に合わせて更新。orphan {len(orphans)} 件は手動確認推奨。",
+        "details": {"reconciled": reconciled, "downgraded": downgraded, "orphans": orphans, "errors": errors},
+        "message": f"✅ 昇格 {len(reconciled)} 件 / 降格 {len(downgraded)} 件を Stripe に同期。orphan {len(orphans)} 件は手動確認推奨。",
     }
 
 
@@ -12881,6 +13121,7 @@ def admin_autopilot_dashboard(authorization: Optional[str] = Header(None)):
             "referral_paid_credit": "💸 紹介ループ ¥3,000 OFF 付与",
             "textbook_generated": "📚 教材プール 自動生成",
             "exam_question_generated": "📝 問題プール 自動生成",
+            "stripe_payment_failed": "🔴 月次課金 決済失敗 (past_due 降格)",
         }
         actions_summary = []
         try:
@@ -13054,21 +13295,23 @@ def admin_paid_attribution(days: int = 90, authorization: Optional[str] = Header
         for r in rows:
             k = r[key_idx] or "(unknown)"
             if k not in agg:
-                agg[k] = {"paid": 0, "trial": 0, "canceled": 0, "expired": 0, "other": 0}
+                agg[k] = {"paid": 0, "trial": 0, "past_due": 0, "canceled": 0, "expired": 0, "other": 0}
             status = (r[4] or "other")
             if status == "paid":
                 agg[k]["paid"] += 1
             elif status == "trial":
                 agg[k]["trial"] += 1
+            elif status == "past_due":
+                agg[k]["past_due"] += 1
             elif status == "canceled":
                 agg[k]["canceled"] += 1
             elif status == "expired":
                 agg[k]["expired"] += 1
             else:
                 agg[k]["other"] += 1
-        # conversion_rate 算出 (paid / (paid + trial + canceled + expired))
+        # conversion_rate 算出 (paid / (paid + trial + past_due + canceled + expired))
         for k, v in agg.items():
-            total = v["paid"] + v["trial"] + v["canceled"] + v["expired"]
+            total = v["paid"] + v["trial"] + v.get("past_due", 0) + v["canceled"] + v["expired"]
             v["total"] = total
             v["conversion_rate"] = round(v["paid"] / total, 3) if total > 0 else 0
         return agg
@@ -19679,6 +19922,7 @@ def admin_ai_recent_failures(limit: int = 30, x_cron_secret: Optional[str] = Hea
         "'ai_fallback_openai', 'ai_fallback_openai_credit_low', "  # 2026-05-10 OpenAI Tier 5 追加
         # 2026-05-13 塾長指摘「3 AI 中 1 のみ応答」の診断用に追加
         "'tutor_solve_individual_failure', 'tutor_solve_total_failure', "
+        "'stripe_payment_failed', "  # 2026-05-29 月次課金 決済失敗 (past_due 降格) を失敗 feed にも表示
         "'frontend_error') "
         "ORDER BY created_at DESC LIMIT ?",
         (limit,),
@@ -21421,17 +21665,54 @@ def trial_signup(payload: TrialSignup, request: Request):
             raise HTTPException(status_code=400, detail="Email conflict")
         try:
             existing_status = row["status"] if row else None
-            if existing_status in ("trial", "canceled", "expired", None, ""):
-                # 既存生徒の student_email も更新 (空白のままなら新値で上書き、既存値があれば保持)
-                c.execute(
-                    """UPDATE students SET status='trial', trial_start=?, trial_end=?,
-                       student_email = CASE WHEN COALESCE(student_email, '') = '' THEN ? ELSE student_email END,
-                       updated_at=CURRENT_TIMESTAMP
-                       WHERE id=?""",
-                    (now.isoformat(), trial_end.isoformat(), student_email_norm, student_id)
-                )
-                conn.commit()
-                log.info(f"[Signup] Re-activated trial for existing student {student_id} ({email_norm}) prev_status={existing_status}")
+            prev_trial_end = row["trial_end"] if row else None
+            # 🚫 無限トライアル抑制 (2026-05-29): 直前 trial 終了から COOLDOWN 日未満の再申込では
+            # 新しい 14 日体験を付与しない。expired→即再申込 を繰り返して永久に無料で使う抜け道を遮断する。
+            # ・paid / past_due は一切変更しない (paid を trial 降格させない / 決済失敗者に無料体験を与えない)
+            # ・canceled (旧 paid の出戻り) は win-back として常に許可
+            # ・再エンゲージメント funnel のフォローメールは有料 checkout へ誘導しているため funnel は阻害しない
+            TRIAL_REGRANT_COOLDOWN_DAYS = 60
+            allow_regrant = False
+            if existing_status == "canceled":
+                allow_regrant = True
+            elif existing_status in ("trial", "expired", None, ""):
+                if not prev_trial_end:
+                    allow_regrant = True
+                else:
+                    try:
+                        if isinstance(prev_trial_end, str):
+                            _pte = datetime.fromisoformat(prev_trial_end.replace("Z", "+00:00"))
+                        else:
+                            _pte = prev_trial_end
+                        if _pte.tzinfo is None:
+                            _pte = _pte.replace(tzinfo=timezone.utc)
+                        if (now - _pte) >= timedelta(days=TRIAL_REGRANT_COOLDOWN_DAYS):
+                            allow_regrant = True
+                    except Exception:
+                        allow_regrant = True  # parse 失敗時は安全側 (ユーザー体験優先) で従来通り許可
+            if existing_status not in ("paid", "past_due"):
+                if allow_regrant:
+                    # 既存生徒の student_email も更新 (空白のままなら新値で上書き、既存値があれば保持)
+                    c.execute(
+                        """UPDATE students SET status='trial', trial_start=?, trial_end=?,
+                           student_email = CASE WHEN COALESCE(student_email, '') = '' THEN ? ELSE student_email END,
+                           updated_at=CURRENT_TIMESTAMP
+                           WHERE id=?""",
+                        (now.isoformat(), trial_end.isoformat(), student_email_norm, student_id)
+                    )
+                    conn.commit()
+                    log.info(f"[Signup] Re-activated trial for existing student {student_id} ({email_norm}) prev_status={existing_status}")
+                else:
+                    # クールダウン中: 体験は再付与せず status/データ据え置き。student_email だけ補完。
+                    c.execute(
+                        """UPDATE students SET
+                           student_email = CASE WHEN COALESCE(student_email, '') = '' THEN ? ELSE student_email END,
+                           updated_at=CURRENT_TIMESTAMP
+                           WHERE id=?""",
+                        (student_email_norm, student_id)
+                    )
+                    conn.commit()
+                    log.info(f"[Signup] Trial re-grant SKIPPED (cooldown {TRIAL_REGRANT_COOLDOWN_DAYS}d) student {student_id} ({email_norm}) prev_status={existing_status} prev_trial_end={prev_trial_end}")
         except Exception as _e:
             log.warning(f"[Signup] re-activation update failed for student {student_id}: {_e}")
     conn.close()
@@ -21672,7 +21953,8 @@ def create_trial_checkout(payload: dict):
     c_fc = conn_fc.cursor()
     try:
         c_fc.execute(
-            "SELECT COUNT(*) FROM students WHERE status='paid' AND plan IS NOT NULL AND plan != 'student_addon'"
+            # past_due (決済失敗の猶予中) も枠を占有しているとみなす (回復見込みのため枠を空けない・2026-05-29)
+            "SELECT COUNT(*) FROM students WHERE status IN ('paid','past_due') AND plan IS NOT NULL AND plan != 'student_addon'"
         )
         taken = c_fc.fetchone()[0]
     except Exception:
@@ -21843,7 +22125,8 @@ def create_checkout_session(payload: CheckoutRequest):
         c_fc = conn_fc.cursor()
         try:
             c_fc.execute(
-                "SELECT COUNT(*) FROM students WHERE status='paid' AND plan IS NOT NULL AND plan != '' AND plan != 'student_addon'"
+                # past_due (決済失敗の猶予中) も枠を占有しているとみなす (2026-05-29)
+                "SELECT COUNT(*) FROM students WHERE status IN ('paid','past_due') AND plan IS NOT NULL AND plan != '' AND plan != 'student_addon'"
             )
             paid_count = c_fc.fetchone()[0]
         except Exception as e:
@@ -22034,7 +22317,8 @@ def founders_count(public: bool = False):
     c = conn.cursor()
     try:
         c.execute(
-            "SELECT COUNT(*) FROM students WHERE status='paid' AND plan IS NOT NULL AND plan != '' AND plan != 'student_addon'"
+            # past_due (決済失敗の猶予中) も枠を占有しているとみなす (2026-05-29)
+            "SELECT COUNT(*) FROM students WHERE status IN ('paid','past_due') AND plan IS NOT NULL AND plan != '' AND plan != 'student_addon'"
         )
         paid = c.fetchone()[0]
     except Exception as e:
@@ -22501,8 +22785,116 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                VALUES (?, ?, 'paid', CURRENT_TIMESTAMP)""",
             (invoice.get("payment_intent"), invoice.get("amount_paid", 0))
         )
+        # payments 記録を先に確定 (回復 UPDATE 失敗で入金記録まで巻き戻らないよう txn 分離)
         conn.commit()
+        # 🔁 2026-05-29 課金回復: 過去に決済失敗で past_due 化した生徒が、
+        # リトライ成功 (invoice.payment_succeeded) したら自動で paid に戻す (二重保険)。
+        # 主経路は customer.subscription.updated (status active) だが、webhook 順序や
+        # 取りこぼしに備えてこちらでも回復させる。canceled/expired には触れない。
+        _inv_sub_id = invoice.get("subscription")
+        if _inv_sub_id:
+            try:
+                c.execute(
+                    """UPDATE students SET status='paid',
+                           paid_since=COALESCE(paid_since, CURRENT_TIMESTAMP),
+                           past_due_since=NULL,
+                           updated_at=CURRENT_TIMESTAMP
+                       WHERE stripe_subscription_id=? AND status='past_due'""",
+                    (_inv_sub_id,)
+                )
+                conn.commit()
+                if c.rowcount > 0:
+                    log.info(f"[Stripe webhook invoice.payment_succeeded] past_due→paid recovered: sub={_inv_sub_id} ({c.rowcount} students)")
+            except Exception as _rec_e:
+                log.error(f"[Stripe webhook invoice.payment_succeeded] recovery update failed: {_rec_e}")
+                try: conn.rollback()
+                except Exception: pass
         conn.close()
+
+    elif event["type"] == "invoice.payment_failed":
+        # 🔴 2026-05-29 MAJOR fix: 月次サブスクの決済失敗を検知して status='past_due' に降格。
+        # これが無いと「カード期限切れ・残高不足で実際は入金停止なのに DB は paid のまま」
+        # となり MRR と実入金が乖離する。
+        # ・降格対象は **paid のみ** (trial は除外: trial_extended の初回課金失敗で「転換寸前の体験生」を
+        #   誤ロックしないため。trial 終了は trial_end / expire scheduler が担当)
+        # ・塾長指示「猶予期間あり」: past_due は grace 期間中アクセス維持 (access gate)、past_due_since を打刻
+        # ・$0 invoice (trial/100%クーポン) は amount_due=0 で skip
+        # ・リトライ成功時は invoice.payment_succeeded / subscription.updated(active) で自動 paid 回復
+        # ・CEO へ critical event 記録 + 生徒へカード更新案内メール (dedup)
+        invoice = event["data"]["object"]
+        _inv_meta = invoice.get("metadata", {}) or {}
+        if (_inv_meta.get("system") or "").startswith("juku-payment"):
+            log.info(f"[Stripe webhook] Skipping juku-payment invoice.payment_failed (system={_inv_meta.get('system')}) - handled by Vercel webhook")
+            return JSONResponse({"received": True, "skipped_reason": "juku-payment system tag"}, status_code=200)
+        _fail_sub_id = invoice.get("subscription")
+        _fail_customer = invoice.get("customer")
+        _amount_due = invoice.get("amount_due", 0)
+        _attempt = invoice.get("attempt_count", 0)
+        # $0 invoice は実課金でないため降格しない (trial 期間の $0 invoice 等)
+        if not _amount_due or _amount_due <= 0:
+            log.info(f"[Stripe webhook invoice.payment_failed] skip $0 invoice (sub={_fail_sub_id})")
+            return {"received": True, "skipped_reason": "zero amount invoice"}
+        conn = db()
+        c = conn.cursor()
+        matched_rows = []
+        try:
+            # subscription_id 優先で照合 (最も正確)。無ければ customer_id で fallback。降格対象は paid のみ。
+            if _fail_sub_id:
+                c.execute(
+                    "SELECT id, name, email, plan, status FROM students WHERE stripe_subscription_id=? AND status='paid'",
+                    (_fail_sub_id,)
+                )
+                matched_rows = list(c.fetchall())
+            if not matched_rows and _fail_customer:
+                c.execute(
+                    "SELECT id, name, email, plan, status FROM students WHERE stripe_customer_id=? AND status='paid'",
+                    (_fail_customer,)
+                )
+                matched_rows = list(c.fetchall())
+            for _mr in matched_rows:
+                _sid = _mr["id"]
+                # past_due_since は COALESCE で初回失敗時刻を保持 (grace の起点・リトライ毎にリセットしない)
+                c.execute(
+                    """UPDATE students SET status='past_due',
+                           past_due_since=COALESCE(past_due_since, CURRENT_TIMESTAMP),
+                           updated_at=CURRENT_TIMESTAMP
+                       WHERE id=? AND status='paid'""",
+                    (_sid,)
+                )
+            conn.commit()
+        except Exception as _fe:
+            log.error(f"[Stripe webhook invoice.payment_failed] update failed: {_fe}")
+            try: conn.rollback()
+            except Exception: pass
+        conn.close()
+        if matched_rows:
+            for _mr in matched_rows:
+                log.error(
+                    f"🔴 [Stripe webhook invoice.payment_failed] paid→past_due: "
+                    f"student_id={_mr['id']} email={_mr['email']} plan={_mr['plan']} "
+                    f"prev_status={_mr['status']} amount_due={_amount_due} attempt={_attempt} sub={_fail_sub_id}"
+                )
+                _record_ai_critical_event("stripe_payment_failed", {
+                    "student_id": _mr["id"],
+                    "name": _mr["name"],
+                    "email": _mr["email"],
+                    "plan": _mr["plan"],
+                    "prev_status": _mr["status"],
+                    "amount_due": _amount_due,
+                    "attempt_count": _attempt,
+                    "subscription": _fail_sub_id,
+                    "customer": _fail_customer,
+                })
+                # 💳 生徒へカード更新案内メール (dedup: 7日以内に送信済みなら再送しない)
+                try:
+                    _send_payment_failed_dunning_email(_mr["id"], _mr["name"], _mr["email"])
+                except Exception as _de:
+                    log.error(f"[Stripe webhook invoice.payment_failed] dunning email failed for {_mr['id']}: {_de}")
+        else:
+            log.warning(
+                f"[Stripe webhook invoice.payment_failed] no matching paid/trial student "
+                f"(sub={_fail_sub_id} customer={_fail_customer} amount_due={_amount_due})"
+            )
 
     elif event["type"] in ("payment_intent.succeeded", "payment_intent.payment_failed", "setup_intent.succeeded"):
         # 🚨 2026-05-13: AIコーチングは subscription/invoice ベースなので PaymentIntent / SetupIntent はすべて juku-payment 系として skip
@@ -22534,17 +22926,19 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
 
     elif event["type"] == "customer.subscription.updated":
         # 🎁 2026-05-19: +7 日 trial → paid 化検知 (集客 funnel #4)
-        # Stripe Subscription が trialing → active に遷移した時点で students.status='paid' に更新
-        # purchase_type='trial_extended' 経路で作成された Subscription が 21 日経過して自動課金成功した case
+        # 🔴 2026-05-29 MAJOR fix: Subscription の status 遷移を双方向で DB に同期する。
+        #   - 'active'  : trial 終了 or past_due 回復 → status='paid'
+        #   - 'past_due'/'unpaid' : 月次決済失敗 → status='past_due' (access gate が拒否) + CEO 通知
+        #   - 'canceled': 解約 → status='canceled' (deleted ハンドラの二重保険)
+        # purchase_type='trial_extended' 経路で作成された Subscription が 21 日経過して自動課金成功した case を含む
         sub = event["data"]["object"]
         _sub_meta = sub.get("metadata", {}) or {}
         if (_sub_meta.get("system") or "").startswith("juku-payment"):
             return JSONResponse({"received": True, "skipped_reason": "juku-payment system tag"}, status_code=200)
         sub_id = sub.get("id")
-        sub_status = sub.get("status")  # 'trialing', 'active', 'past_due', 'canceled'
-        # 'active' に遷移したら paid 化 (trial 終了 → 自動課金成功)
-        # 'past_due' / 'unpaid' 等は paid のままにせず status 更新しない (既存 ロジック踏襲)
+        sub_status = sub.get("status")  # 'trialing', 'active', 'past_due', 'unpaid', 'canceled'
         if sub_status == "active":
+            # trial → paid (自動課金成功) もしくは past_due → paid (リトライ成功で回復)。past_due_since もクリア。
             conn = db()
             c = conn.cursor()
             try:
@@ -22552,16 +22946,80 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                     """UPDATE students SET status='paid',
                            paid_since=COALESCE(paid_since, CURRENT_TIMESTAMP),
                            trial_end=NULL,
+                           past_due_since=NULL,
                            updated_at=CURRENT_TIMESTAMP
-                       WHERE stripe_subscription_id=? AND status='trial'""",
+                       WHERE stripe_subscription_id=? AND status IN ('trial','past_due')""",
                     (sub_id,)
                 )
                 affected = c.rowcount
                 conn.commit()
                 if affected > 0:
-                    log.info(f"[Stripe webhook subscription.updated] trial→paid: sub={sub_id} ({affected} students)")
+                    log.info(f"[Stripe webhook subscription.updated] →paid (trial/past_due解消): sub={sub_id} ({affected} students)")
             except Exception as e:
-                log.error(f"[Stripe webhook subscription.updated] failed: {e}")
+                log.error(f"[Stripe webhook subscription.updated active] failed: {e}")
+                try: conn.rollback()
+                except Exception: pass
+            conn.close()
+        elif sub_status in ("past_due", "unpaid"):
+            # 月次決済失敗で Stripe が past_due/unpaid に遷移 → DB も past_due に降格。
+            # **paid のみ対象** (trial は除外: trial_extended 初回課金失敗での誤ロック防止。canceled/expired にも触れない)。
+            # 塾長指示「猶予期間あり」: past_due_since を打刻し grace 期間中はアクセス維持。
+            conn = db()
+            c = conn.cursor()
+            notify_rows = []
+            try:
+                c.execute(
+                    "SELECT id, name, email, plan, status FROM students WHERE stripe_subscription_id=? AND status='paid'",
+                    (sub_id,)
+                )
+                notify_rows = list(c.fetchall())
+                for _nr in notify_rows:
+                    c.execute(
+                        """UPDATE students SET status='past_due',
+                               past_due_since=COALESCE(past_due_since, CURRENT_TIMESTAMP),
+                               updated_at=CURRENT_TIMESTAMP
+                           WHERE id=? AND status='paid'""",
+                        (_nr["id"],)
+                    )
+                conn.commit()
+            except Exception as e:
+                log.error(f"[Stripe webhook subscription.updated past_due] failed: {e}")
+                try: conn.rollback()
+                except Exception: pass
+            conn.close()
+            for _nr in notify_rows:
+                log.error(
+                    f"🔴 [Stripe webhook subscription.updated] {sub_status}: "
+                    f"student_id={_nr['id']} email={_nr['email']} plan={_nr['plan']} "
+                    f"prev_status={_nr['status']} sub={sub_id}"
+                )
+                _record_ai_critical_event("stripe_payment_failed", {
+                    "student_id": _nr["id"],
+                    "name": _nr["name"],
+                    "email": _nr["email"],
+                    "plan": _nr["plan"],
+                    "prev_status": _nr["status"],
+                    "subscription": sub_id,
+                    "source": f"subscription.updated:{sub_status}",
+                })
+                try:
+                    _send_payment_failed_dunning_email(_nr["id"], _nr["name"], _nr["email"])
+                except Exception as _de:
+                    log.error(f"[Stripe webhook subscription.updated past_due] dunning email failed for {_nr['id']}: {_de}")
+        elif sub_status == "canceled":
+            # subscription.deleted ハンドラの二重保険 (updated でも canceled が来うる)
+            conn = db()
+            c = conn.cursor()
+            try:
+                c.execute(
+                    "UPDATE students SET status='canceled', updated_at=CURRENT_TIMESTAMP WHERE stripe_subscription_id=? AND status IN ('paid','trial','past_due')",
+                    (sub_id,)
+                )
+                if c.rowcount > 0:
+                    log.info(f"[Stripe webhook subscription.updated] →canceled: sub={sub_id} ({c.rowcount} students)")
+                conn.commit()
+            except Exception as e:
+                log.error(f"[Stripe webhook subscription.updated canceled] failed: {e}")
                 try: conn.rollback()
                 except Exception: pass
             conn.close()
@@ -22889,7 +23347,9 @@ def _compute_weekly_stats(student_id: int, days: int = 7) -> dict:
 @app.post("/api/cron/expire-trials")
 def cron_expire_trials(x_cron_secret: str = Header(None), dry_run: bool = False):
     """体験期間終了した trial ユーザーを 'expired' に変更。毎日実行。
-    自動課金は行わないので、何もしなければデータは保持されたまま失効する。"""
+    自動課金は行わないので、何もしなければデータは保持されたまま失効する。
+    🔴 2026-05-29 追加: past_due (決済失敗) が grace 期間 (PAST_DUE_GRACE_DAYS) を超えても
+    回復しない生徒を 'canceled' に降格 (Stripe の dunning が無効/枯渇でも無料使い放題を防ぐ backstop)。"""
     if not CRON_SECRET:
         raise HTTPException(status_code=503, detail="Cron not configured")
     if not x_cron_secret or not hmac.compare_digest(x_cron_secret, CRON_SECRET):
@@ -22911,10 +23371,39 @@ def cron_expire_trials(x_cron_secret: str = Header(None), dry_run: bool = False)
             continue
         c.execute("UPDATE students SET status='expired', updated_at=CURRENT_TIMESTAMP WHERE id=?", (row["id"],))
         expired_ids.append(row["id"])
+
+    # 💳 past_due の grace 超過 backstop: past_due_since から PAST_DUE_GRACE_DAYS 超過で canceled に。
+    # past_due_since が NULL の past_due (旧行/エッジ) はまず now を打刻して grace を開始 (即 canceled にはしない)。
+    _grace_cutoff = (now - timedelta(days=PAST_DUE_GRACE_DAYS)).isoformat()
+    past_due_canceled = []
+    try:
+        c.execute("SELECT id, email FROM students WHERE status='past_due' AND past_due_since IS NULL")
+        for _r in list(c.fetchall()):
+            if not dry_run:
+                c.execute("UPDATE students SET past_due_since=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='past_due' AND past_due_since IS NULL", (_r["id"],))
+        c.execute(
+            "SELECT id, name, email FROM students WHERE status='past_due' AND past_due_since IS NOT NULL AND past_due_since < ?",
+            (_grace_cutoff,)
+        )
+        for _r in list(c.fetchall()):
+            if dry_run:
+                past_due_canceled.append({"id": _r["id"], "email": _r["email"]})
+                continue
+            c.execute("UPDATE students SET status='canceled', updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='past_due'", (_r["id"],))
+            past_due_canceled.append(_r["id"])
+            log.warning(f"[Grace backstop] past_due→canceled (grace {PAST_DUE_GRACE_DAYS}d 超過) student_id={_r['id']} email={_r['email']}")
+    except Exception as _ge:
+        log.error(f"[Grace backstop] failed: {_ge}")
+
     conn.commit()
     conn.close()
-    log.info(f"Trial expiry: {len(expired_ids)} students marked as expired")
-    return {"expired": len(expired_ids), "candidates": len(candidates), "preview": expired_ids if dry_run else None}
+    log.info(f"Trial expiry: {len(expired_ids)} expired / {len(past_due_canceled)} past_due→canceled (grace超過)")
+    return {
+        "expired": len(expired_ids),
+        "candidates": len(candidates),
+        "past_due_canceled": len(past_due_canceled),
+        "preview": expired_ids if dry_run else None,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -24200,7 +24689,7 @@ def _verify_student_active(student_id: int) -> dict:
     conn = db()
     c = conn.cursor()
     c.execute(
-        "SELECT id, status, trial_end, plan, course FROM students WHERE id = ?",
+        "SELECT id, status, trial_end, plan, course, past_due_since FROM students WHERE id = ?",
         (student_id,),
     )
     row = c.fetchone()
@@ -24211,6 +24700,13 @@ def _verify_student_active(student_id: int) -> dict:
     status = row["status"]
     if status == "paid":
         return dict(row)
+    # 💳 決済失敗の猶予期間中のみアクセス許可 (grace 超過は拒否 → AI コスト経路の使い放題を防ぐ・2026-05-29)
+    # _get_current_student と同一の grace 判定を共有し、AI 代理実行 (/api/ai/call 等) も grace bound する。
+    if status == "past_due":
+        _pds = row["past_due_since"] if "past_due_since" in row.keys() else None
+        if _is_past_due_within_grace(_pds):
+            return dict(row)
+        raise HTTPException(status_code=403, detail="お支払いの確認ができていません。カード情報を更新してください。")
     # 国公立難関大学コース = premium 同等 → trial_end に関係なく永久アクセス (塾長指示)
     if _row_course == "kokuritsu_nankan":
         return dict(row)

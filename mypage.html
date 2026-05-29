@@ -7,14 +7,14 @@
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="0">
   <title>マイページ | AIコーチング</title>
-  <script src="cache-purge.js?v=20260529-pdf-rename"></script>
+  <script src="cache-purge.js?v=20260529-past-due-grace"></script>
 
-  <script src="frontend-error-monitor.js?v=20260529-pdf-rename"></script>
-  <link rel="stylesheet" href="style.css?v=20260529-pdf-rename">
-  <link rel="stylesheet" href="mypage.css?v=20260529-pdf-rename">
+  <script src="frontend-error-monitor.js?v=20260529-past-due-grace"></script>
+  <link rel="stylesheet" href="style.css?v=20260529-past-due-grace">
+  <link rel="stylesheet" href="mypage.css?v=20260529-past-due-grace">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="auth-guard.js?v=20260529-pdf-rename"></script>
+  <script src="auth-guard.js?v=20260529-past-due-grace"></script>
 </head>
 <body class="mypage-body">
   <div class="bg-gradient"></div>
@@ -1154,6 +1154,10 @@
       <div id="billingInfo" style="font-size:0.9rem; color: #cbd5e1; margin-bottom: 1rem; line-height: 1.7;">
         <span id="billingStatusLabel">—</span>
       </div>
+      <div id="dunningBanner" style="display:none; margin-bottom:1rem; padding:1rem 1.2rem; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); border-radius:10px; color:#fecaca; font-size:0.88rem; line-height:1.7;">
+        ⚠️ <strong>月額のお支払いを確認できませんでした。</strong><br>
+        カードの有効期限切れ・残高不足などが考えられます。<strong style="color:#fca5a5;">猶予期間中は引き続きご利用いただけます。</strong>下の「💳 支払い・プラン変更」からカード情報を更新してください。更新後に再決済が成功すると自動で通常状態に戻ります。
+      </div>
       <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
         <a id="upgradeBtn" class="btn-primary btn-small" style="display:none; text-decoration:none; background: linear-gradient(135deg, #6366f1, #ec4899); color:white;" href="upgrade.html">🎓 継続登録する（月額プラン）</a>
         <button id="openPortalBtn" class="btn-secondary btn-small" style="display:none;">💳 支払い・プラン変更</button>
@@ -1170,10 +1174,10 @@
     <p>© 2026 AIコーチング | Mypage v1.0</p>
   </footer>
 
-  <script src="learning-brain.js?v=20260529-pdf-rename"></script>
-  <script src="exam-prep.js?v=20260529-pdf-rename"></script>
-  <script src="referral-program.js?v=20260529-pdf-rename"></script>
-  <script src="mypage.js?v=20260529-pdf-rename"></script>
+  <script src="learning-brain.js?v=20260529-past-due-grace"></script>
+  <script src="exam-prep.js?v=20260529-past-due-grace"></script>
+  <script src="referral-program.js?v=20260529-past-due-grace"></script>
+  <script src="mypage.js?v=20260529-past-due-grace"></script>
   <script>
     // ウィジェット初期描画
     (function() {
@@ -2068,6 +2072,7 @@
         const statusText = {
           'trial': '🎖 14日間 完全無料体験中（クレカ登録なし）',
           'paid': '✅ 月額プラン契約中',
+          'past_due': '⚠️ お支払いを確認できませんでした（カード情報の更新をお願いします）',
           'canceled': '⏹ 解約済み（期間終了まで利用可）',
           'expired': '⏱ 体験終了',
         }[s.status] || s.status;
@@ -2076,6 +2081,15 @@
           ? `<br><span style="background:rgba(251,191,36,0.18);color:#fbbf24;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.78rem;font-weight:700;">🎁 入塾金 ¥10,000 免除キャンペーン適用済み</span>`
           : '';
         statusLabel.innerHTML = `ステータス: <strong style="color:#c7d2fe;">${statusText}</strong><br>プラン: <strong>${s.plan || '—'}</strong> / メール: ${s.email}${waivedBadge}`;
+        // 💳 past_due (決済失敗・猶予期間中): カード更新を促す赤バナーを表示
+        const dunningBanner = document.getElementById('dunningBanner');
+        if (dunningBanner) {
+          if (s.status === 'past_due') {
+            dunningBanner.style.display = '';
+          } else {
+            dunningBanner.style.display = 'none';
+          }
+        }
         // trial ユーザーは継続登録ボタンを表示
         const upgradeBtn = document.getElementById('upgradeBtn');
         if (upgradeBtn) {
@@ -2084,11 +2098,11 @@
             upgradeBtn.href = 'upgrade.html?email=' + encodeURIComponent(s.email);
           }
         }
-        // Stripe顧客情報がある場合はポータルを表示
-        if (s.status === 'paid' || s.status === 'canceled') {
+        // Stripe顧客情報がある場合はポータルを表示 (past_due もカード更新のため表示)
+        if (s.status === 'paid' || s.status === 'canceled' || s.status === 'past_due') {
           portalBtn.style.display = '';
         }
-        if (s.status === 'trial' || s.status === 'paid') {
+        if (s.status === 'trial' || s.status === 'paid' || s.status === 'past_due') {
           cancelBtn.style.display = '';
         }
       } catch (e) {
