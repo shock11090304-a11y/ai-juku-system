@@ -21918,6 +21918,29 @@ def create_checkout_session(payload: CheckoutRequest):
         and _is_waiver_eligible()
     )
     needs_enrollment_fee = (payload.plan not in ENROLLMENT_FEE_EXEMPT) and not waiver_eligible
+    # 🛡️ 2026-05-29: 個別免除フラグ (CEO ダッシュ「🆓 入塾金免除」ボタン) を尊重。
+    #   campaign 枠とは独立に、DB で enrollment_fee_waived=1 の生徒は入塾金を必ず免除する。
+    #   これが無いと「免除ボタンを押したのに本契約 checkout で ¥10,000 課金」の silent fail になる。
+    #   enrollment_waiver_applied は "0" のまま (campaign カウンタを二重消費しない) で needs_enrollment_fee だけ落とす。
+    if needs_enrollment_fee and (payload.student_id or payload.email):
+        _conn_w = None
+        try:
+            _conn_w = db(); _c_w = _conn_w.cursor()
+            if payload.student_id:
+                _c_w.execute("SELECT enrollment_fee_waived FROM students WHERE id=?", (payload.student_id,))
+            else:
+                # email は大文字小文字を無視して照合 (免除の取りこぼし防止・他箇所と統一)
+                _c_w.execute("SELECT enrollment_fee_waived FROM students WHERE LOWER(email)=LOWER(?)", (payload.email,))
+            _rw = _c_w.fetchone()
+            if _rw and ("enrollment_fee_waived" in _rw.keys()) and _rw["enrollment_fee_waived"]:
+                needs_enrollment_fee = False
+                log.info(f"[Checkout] 個別免除フラグ適用: 入塾金スキップ student_id={payload.student_id} email={payload.email}")
+        except Exception as _we:
+            log.warning(f"[Checkout] manual waiver lookup failed: {type(_we).__name__}: {_we}")
+        finally:
+            if _conn_w is not None:
+                try: _conn_w.close()
+                except Exception: pass
     subscription_data = {
         "metadata": {
             "plan": payload.plan,
