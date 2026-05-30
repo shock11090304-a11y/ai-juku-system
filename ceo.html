@@ -661,6 +661,42 @@
         <div id="tbMissingReqList" style="font-size:0.78rem;color:#cbd5e1;">読み込み中...</div>
       </div>
 
+      <!-- 📄 過去問 PDF 解析 (2026-05-30 塾長指示: 共通テスト過去問→ 教科書準拠 解説 自動生成) -->
+      <div style="margin-top:1rem;padding:0.9rem;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.35);border-radius:10px;">
+        <div style="font-size:0.85rem;font-weight:800;color:#c4b5fd;margin-bottom:0.4rem;">📄 過去問 PDF → 教科書準拠 解説 自動生成</div>
+        <p style="font-size:0.72rem;color:#a1a1aa;margin:0 0 0.6rem 0;line-height:1.5;">
+          共通テスト等の過去問 PDF をアップ → Gemini が問題抽出 → Claude が <strong style="color:#fbbf24;">教科書準拠 (山川/数研/桐原 等) + 2 段構造</strong> で解答 + 解説生成。約 ¥80 + ¥15/問・60-120 秒。
+        </p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.4rem;margin-bottom:0.5rem;">
+          <input type="text" id="peSolverUniv" value="共通テスト" placeholder="対象 (共通テスト)" style="padding:0.45rem;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fff;font-size:0.78rem;">
+          <input type="text" id="peSolverYear" value="2024" placeholder="年度" style="padding:0.45rem;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fff;font-size:0.78rem;">
+          <select id="peSolverSubject" style="padding:0.45rem;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fff;font-size:0.78rem;">
+            <option value="英語">英語</option>
+            <option value="リーディング">英語リーディング</option>
+            <option value="リスニング">英語リスニング</option>
+            <option value="数学">数学</option>
+            <option value="現代文">現代文</option>
+            <option value="古文">古文</option>
+            <option value="漢文">漢文</option>
+            <option value="物理">物理</option>
+            <option value="化学">化学</option>
+            <option value="生物">生物</option>
+            <option value="日本史">日本史</option>
+            <option value="世界史">世界史</option>
+            <option value="地理">地理</option>
+            <option value="政治・経済">政治・経済</option>
+            <option value="倫理">倫理</option>
+            <option value="公民">公民 (政経+倫理 融合)</option>
+          </select>
+        </div>
+        <input type="file" id="peSolverFile" accept="application/pdf" style="display:none;">
+        <button id="peSolverPickBtn" type="button" style="width:100%;padding:0.6rem;background:linear-gradient(135deg,#a78bfa,#8b5cf6);border:0;border-radius:8px;color:#fff;font-weight:800;font-size:0.82rem;cursor:pointer;margin-bottom:0.4rem;">📂 PDF を選択 (最大 20MB)</button>
+        <div id="peSolverFileName" style="font-size:0.72rem;color:#fbbf24;margin-bottom:0.4rem;min-height:1em;"></div>
+        <button id="peSolverSubmitBtn" type="button" disabled style="width:100%;padding:0.7rem;background:linear-gradient(135deg,#a78bfa,#ec4899);border:0;border-radius:8px;color:#fff;font-weight:800;font-size:0.88rem;cursor:pointer;opacity:0.5;">✨ 解析 + 解説生成 (待機中)</button>
+        <div id="peSolverMsg" style="margin-top:0.5rem;font-size:0.75rem;min-height:1em;"></div>
+        <div id="peSolverResults" style="margin-top:0.5rem;"></div>
+      </div>
+
       <!-- 📚 配布プリント 管理 (2026-05-26 全自動モード: Claude 即自動公開) -->
       <div style="margin-top:1rem;padding:0.9rem;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.3);border-radius:10px;">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.6rem;">
@@ -2263,7 +2299,7 @@
   </footer>
 
   <script src="plans.js?v=20260529-waive-enrollment"></script>
-  <script src="ceo.js?v=20260529-waive-enrollment"></script>
+  <script src="ceo.js?v=20260530-pastexam-solver"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {
@@ -3521,6 +3557,91 @@
       setInterval(loadLessonPrintsStats, 120000);
       const refreshLpBtn = document.getElementById('refreshLpStatsBtn');
       if (refreshLpBtn) refreshLpBtn.addEventListener('click', loadLessonPrintsStats);
+
+      // 📄 過去問 PDF → 教科書準拠 解説 自動生成 (2026-05-30 塾長指示)
+      const peSolverFile = document.getElementById('peSolverFile');
+      const peSolverPickBtn = document.getElementById('peSolverPickBtn');
+      const peSolverFileName = document.getElementById('peSolverFileName');
+      const peSolverSubmitBtn = document.getElementById('peSolverSubmitBtn');
+      const peSolverMsg = document.getElementById('peSolverMsg');
+      const peSolverResults = document.getElementById('peSolverResults');
+      let _peSolverPickedFile = null;
+      if (peSolverPickBtn && peSolverFile) {
+        peSolverPickBtn.addEventListener('click', () => peSolverFile.click());
+        peSolverFile.addEventListener('change', (ev) => {
+          const f = ev.target.files && ev.target.files[0];
+          if (!f) return;
+          if (f.size > 20 * 1024 * 1024) { alert('PDF は 20MB 以内にしてください'); peSolverFile.value = ''; return; }
+          if (f.type !== 'application/pdf' && !f.name.toLowerCase().endsWith('.pdf')) {
+            alert('PDF ファイルを選択してください'); peSolverFile.value = ''; return;
+          }
+          _peSolverPickedFile = f;
+          peSolverFileName.textContent = `📄 ${f.name} (${(f.size/1024/1024).toFixed(1)} MB)`;
+          peSolverSubmitBtn.disabled = false;
+          peSolverSubmitBtn.style.opacity = '1';
+          peSolverSubmitBtn.textContent = '✨ 解析 + 解説生成 (60-120 秒)';
+        });
+      }
+      if (peSolverSubmitBtn) {
+        peSolverSubmitBtn.addEventListener('click', async () => {
+          if (!_peSolverPickedFile) { alert('PDF を選択してください'); return; }
+          const univ = (document.getElementById('peSolverUniv').value || '共通テスト').trim();
+          const year = (document.getElementById('peSolverYear').value || '').trim();
+          const subject = document.getElementById('peSolverSubject').value;
+          peSolverSubmitBtn.disabled = true; peSolverSubmitBtn.textContent = '🤖 解析中... (60-120 秒)';
+          peSolverMsg.style.color = '#c4b5fd'; peSolverMsg.textContent = '📤 PDF アップ + Gemini PDF 解析中...';
+          peSolverResults.innerHTML = '';
+          try {
+            const fd = new FormData();
+            fd.append('file', _peSolverPickedFile);
+            fd.append('target_university', univ);
+            fd.append('year', year);
+            fd.append('subject', subject);
+            const tok = localStorage.getItem('ai_juku_admin_token') || '';
+            const r = await fetch('/api/admin/past-exam-solver', {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + tok },
+              body: fd,
+            });
+            const d = await r.json();
+            if (!r.ok || !d.ok) {
+              peSolverMsg.style.color = '#fca5a5';
+              peSolverMsg.textContent = '❌ ' + (d.detail || d.error || ('HTTP ' + r.status));
+              return;
+            }
+            peSolverMsg.style.color = '#86efac';
+            // ⚠️ 上限 8 問 truncation 警告 (backend _generate_pastexam_explanations は problems[:8])
+            const truncNote = d.problems_extracted > 8
+              ? ` ⚠️ ${d.problems_extracted} 問抽出されましたが、解説は最初の 8 問のみ生成 (token 制限)。残りは別 PDF (大問 9 以降) で再アップしてください`
+              : '';
+            peSolverMsg.textContent = `✅ 抽出 ${d.problems_extracted} 問・解説 ${d.explanations.length} 件 (推定コスト ¥${d.cost_yen_estimate})${truncNote}`;
+            // 結果表示
+            const html = d.explanations.map(e => {
+              const conf = e.confidence === 'high' ? '🟢 high' : (e.confidence === 'low' ? '🔴 low' : '🟡 medium');
+              const point = (e.point || '').replace(/</g, '&lt;').replace(/\n/g, '<br>');
+              const det = (e.detailed || '').replace(/</g, '&lt;').replace(/\n/g, '<br>');
+              const q = (e.question || '').slice(0, 300).replace(/</g, '&lt;');
+              return `<div style="margin-top:0.6rem;padding:0.7rem;background:rgba(0,0,0,0.3);border:1px solid rgba(167,139,250,0.25);border-radius:8px;">
+                <div style="font-size:0.78rem;color:#c4b5fd;font-weight:700;">問 ${e.index} (${e.topic || '-'}) ${conf}</div>
+                <div style="font-size:0.72rem;color:#a1a1aa;margin:0.3rem 0;line-height:1.5;">${q}${q.length >= 300 ? '…' : ''}</div>
+                <div style="font-size:0.78rem;color:#fde68a;font-weight:700;">正解: ${e.answer_confirmed || '(未確定)'}</div>
+                <div style="margin-top:0.3rem;font-size:0.75rem;color:#86efac;line-height:1.6;">${point}</div>
+                <details style="margin-top:0.4rem;font-size:0.74rem;color:#cbd5e1;">
+                  <summary style="cursor:pointer;color:#a78bfa;font-weight:700;">▼ 詳しい解説</summary>
+                  <div style="margin-top:0.4rem;line-height:1.7;">${det}</div>
+                </details>
+              </div>`;
+            }).join('');
+            peSolverResults.innerHTML = html;
+          } catch (e) {
+            peSolverMsg.style.color = '#fca5a5';
+            peSolverMsg.textContent = '❌ ' + (e.message || '送信失敗');
+          } finally {
+            peSolverSubmitBtn.disabled = false;
+            peSolverSubmitBtn.textContent = '✨ 解析 + 解説生成 (再実行)';
+          }
+        });
+      }
 
       // 🔗 magic link 指定アドレス送信 (親の携帯で登録 → 子供の email に送り直す等)
       const mlSendBtn = document.getElementById('mlSendBtn');

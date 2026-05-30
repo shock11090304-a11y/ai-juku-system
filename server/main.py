@@ -33379,6 +33379,129 @@ def _call_gemini_pdf_analysis(pdf_bytes: bytes, target_university: str, year: st
             return {"problems": []}
 
 
+def _generate_pastexam_explanations(problems: list, subject: str, target_university: str, year: str) -> list:
+    """🛡️ 2026-05-30 塾長指示「共通テスト過去問 PDF → 解説 自動生成」:
+    抽出された各問題に v1.4 ルール 9 (2 段構造) + ルール 15 (教科書準拠) で解説生成。
+
+    入力: _call_gemini_pdf_analysis の出力 (problems: [{index, question, answer, topic, difficulty}])
+    出力: [{index, question, answer, topic, point (📌 3 行), detailed (📖 4 ブロック), confidence}, ...]
+    """
+    if not problems:
+        return []
+
+    # 教科書準拠 prompt 注入 (v1.4 ルール 15)
+    textbook_map = {
+        "数学": "数研出版 教科書 (チャート式・4STEP・Focus Gold 準拠の用語/公式)",
+        "物理": "数研出版 物理 (橋元淳一郎風 NG・標準用語)",
+        "化学": "数研出版 化学 (mol 中心・ルイス構造式や形式電荷など準大学用語禁止)",
+        "生物": "数研出版 生物 (実教出版併用)",
+        "現代文": "共通テスト過去問の解答解説級 (赤本・河合/駿台レベル)",
+        "古文": "古文単語 315 (桐原) + マドンナ古文 (学研) 準拠",
+        "漢文": "漢文ヤマのヤマ (学研) 準拠",
+        "日本史": "山川出版社 詳説日本史 + 詳説日本史用語集",
+        "世界史": "山川出版社 詳説世界史 + 詳説世界史用語集",
+        "地理": "帝国書院 新詳地理",
+        "公民": "東京書籍/実教出版 政治・経済 + 倫理",
+        "倫理": "東京書籍/実教出版 倫理",
+        "政治・経済": "東京書籍/実教出版 政治・経済",
+    }
+    # 英語は例外: 関・富田式 (コアイメージ × 文構造分析)
+    is_english = subject in ("英語", "リーディング", "リスニング") or "英語" in subject
+    if is_english:
+        textbook_note = "**英語のみ例外**: コアイメージ × 文構造分析 (関正生・富田一彦スタイル)。文構造は S/V/O/C/M ラベル明示。"
+    else:
+        textbook_note = textbook_map.get(subject, f"{subject} の標準教科書準拠")
+
+    src_json = json.dumps([
+        {
+            "index": p.get("index"),
+            "question": (p.get("question") or "")[:2500],
+            "answer": (p.get("answer") or "")[:500],
+            "topic": p.get("topic") or "",
+        }
+        for p in problems[:8]  # 上限 8 問 (token 制限考慮)
+    ], ensure_ascii=False)
+
+    sys_prompt = (
+        f"あなたは {target_university} の {subject} 専門講師です。"
+        f"共通テスト等の過去問に対し、{textbook_note} で解説を作成します。\n"
+        "【絶対遵守ルール (PDF 生成ルール v1.4 #9 + #15)】\n"
+        "・解説は 2 段構造: 📌 ポイント (3 行以内・核心理由/キーワード/即決パターン)\n"
+        "  → 📖 詳しい解説 (4 ブロック: ①根拠箇所 ②文構造/設問分析 ③論理マーカー/概念 ④他選択肢の誤り + 関連知識)\n"
+        "・教師名/講師名 (関先生・富田先生 等の個人名) は一切出力禁止 (商品名 OK)\n"
+        "・大学受験用の独自造語 (神技/コアアイディア等) 禁止\n"
+        "・用語は教科書 (山川詳説日本史/数研数学/桐原 315 等) 準拠\n"
+        "純粋な JSON のみ返答 (前置き解説不要)。"
+    )
+    user_prompt = f"""対象: {target_university} {year} 年度 / {subject}
+準拠: {textbook_note}
+
+【抽出された問題】
+{src_json}
+
+【依頼】
+各問題 (index 1〜) について「忠実な解答 + 教科書準拠の解説」を作成してください。
+PDF の元解答が空 (answer="") の場合は、本文を読んで正解を確定してから解説。
+
+【出力形式 (JSON のみ・フェンス不要)】
+{{
+  "explanations": [
+    {{
+      "index": 1,
+      "answer_confirmed": "(確定した正解。選択肢問題なら 'A' 'B' 等・記述なら模範解答 60-200 字)",
+      "point": "📌 ポイント\\n- 正解の核心理由: ...\\n- キーワード: A / B / C\\n- 即決パターン: ...",
+      "detailed": "📖 詳しい解説\\n【1. 根拠箇所】本文 X 段「...」が根拠。\\n【2. 文構造/設問分析】S=... V=... 指示語=...\\n【3. 論理マーカー/概念】対比 (A vs B)・コアイメージ ...\\n【4. 他選択肢の誤り + 関連知識】(a) ... = NG (b) ... ← 正解 (c) ... = NG (d) ... = NG / 関連: ...",
+      "confidence": "high|medium|low (high=自信あり / medium=参考程度 / low=要再確認)"
+    }},
+    ...
+  ]
+}}
+
+【注意】
+- 各問の point は **3 行厳守** (核心理由 1 行 + キーワード 1 行 + 即決パターン 1 行)
+- detailed は **4 ブロック固定** (【1. 】【2. 】【3. 】【4. 】の見出しを必ず含める)
+- PDF からの問題抽出が不完全 (図表 「[図表あり:...]」記述等) でも、できる範囲で解説。confidence で品質明示
+"""
+
+    body = {
+        "model": "claude-sonnet-4-6",
+        "max_tokens": 12000,
+        "system": sys_prompt,
+        "messages": [{"role": "user", "content": user_prompt}],
+        "temperature": 0.3,
+    }
+    try:
+        data = _call_anthropic_safe(body, kind="pastexam_explanations")
+        text = (data.get("content", [{}])[0].get("text") or "").strip()
+        # JSON parse (fence 除去)
+        for fence in ("```json", "```"):
+            text = text.replace(fence, "")
+        text = text.strip()
+        parsed = _extract_json_robust(text) or {}
+        explanations = parsed.get("explanations", []) if isinstance(parsed, dict) else []
+        # source problem を merge
+        out = []
+        by_idx = {p.get("index"): p for p in problems}
+        for e in explanations:
+            idx = e.get("index")
+            src = by_idx.get(idx, {})
+            out.append({
+                "index": idx,
+                "question": src.get("question", ""),
+                "topic": src.get("topic", ""),
+                "difficulty": src.get("difficulty"),
+                "original_answer": src.get("answer", ""),
+                "answer_confirmed": e.get("answer_confirmed", ""),
+                "point": e.get("point", ""),
+                "detailed": e.get("detailed", ""),
+                "confidence": e.get("confidence", "medium"),
+            })
+        return out
+    except Exception as e:
+        log.warning(f"[PastExamSolver] explanation gen failed: {type(e).__name__}: {str(e)[:200]}")
+        return []
+
+
 def _generate_similar_problems_batch(source_problems: list, target_university: str, subject: str) -> list:
     """🤖 Claude Sonnet 4.6 でバッチ類題生成 (1 PDF → 18 類題)。
     各元問題から 3 種類の類題 (難易度同等/易/難) を生成。
@@ -33498,6 +33621,93 @@ def _text_cosine_similarity(a: str, b: str) -> float:
     if norm_a == 0 or norm_b == 0:
         return 0.0
     return common / (norm_a * norm_b)
+
+
+@app.post("/api/admin/past-exam-solver")
+async def past_exam_solver(
+    file: UploadFile = File(...),
+    target_university: str = Form("共通テスト"),
+    year: str = Form(""),
+    subject: str = Form(...),
+    authorization: Optional[str] = Header(None),
+):
+    """📄 共通テスト等 過去問 PDF → 教科書準拠 解説 を自動生成 (塾長指示 2026-05-30)。
+
+    類題生成の past-exam/upload とは違い、**元の問題そのものに対する忠実な解答 + 解説**
+    を作成。教科書準拠 (v1.4 ルール 15) + 2 段構造 (v1.4 ルール 9) で生徒に届ける。
+
+    フロー:
+      1. PDF (20 MB / 100 ページまで) を Gemini で解析 → problems 抽出
+      2. Claude Sonnet 4.6 で v1.4 準拠の解説生成
+      3. JSON 返却 (CEO UI で表示・後で PDF 化可能)
+
+    Returns:
+      {ok, upload_id, problems_extracted, explanations: [...], preview: top 3}
+    """
+    _require_admin(authorization)
+    pdf_bytes = await file.read()
+    if not pdf_bytes:
+        raise HTTPException(status_code=400, detail="empty file")
+    if len(pdf_bytes) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="file too large (>20MB)")
+    pdf_hash = _hash_pdf_bytes(pdf_bytes)
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 1. Gemini で PDF 解析 (既存 helper 再利用)
+        try:
+            analysis = _call_gemini_pdf_analysis(pdf_bytes, target_university, year, subject)
+        except Exception as e:
+            log.warning(f"[PastExamSolver] Gemini failed: {type(e).__name__}: {e}")
+            raise HTTPException(status_code=500, detail=f"Gemini PDF 解析失敗: {type(e).__name__}")
+        problems = analysis.get("problems", []) if isinstance(analysis, dict) else []
+        if not problems:
+            return {"ok": False, "error": "no problems extracted from PDF"}
+
+        # past_exam_uploads に履歴記録 (cache はしない・analysis は in-memory のみ)
+        topics = list({(p.get("topic") or "").strip() for p in problems if p.get("topic")})
+        summary = json.dumps({
+            "problem_count": len(problems),
+            "topics": [t for t in topics if t][:10],
+            "purpose": "solver",  # past-exam/upload (類題) と区別
+        }, ensure_ascii=False)
+        c.execute(
+            "INSERT INTO past_exam_uploads (pdf_hash, original_filename, file_size, target_university, year, subject, "
+            "analysis_summary, problems_extracted, status, analyzed_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)",
+            (pdf_hash, file.filename, len(pdf_bytes), target_university, year, subject,
+             summary, len(problems), 'solver_analyzed')
+        )
+        upload_id = c.lastrowid
+        if not upload_id:
+            c.execute("SELECT id FROM past_exam_uploads WHERE pdf_hash = ? ORDER BY id DESC LIMIT 1", (pdf_hash,))
+            _r = c.fetchone()
+            upload_id = _r["id"] if _r else None
+        conn.commit()
+
+        # 2. Claude で教科書準拠 解説 生成 (v1.4 #9 + #15)
+        explanations = _generate_pastexam_explanations(problems, subject, target_university, year)
+        if not explanations:
+            return {"ok": False, "upload_id": upload_id, "error": "解説生成失敗 (Claude)", "problems_extracted": len(problems)}
+
+        # 3. preview (上位 3 件)
+        preview = explanations[:3]
+        cost_yen = 80 + 15 * len(explanations)  # Gemini PDF 解析 ¥80 + Claude 解説 ¥15/問
+
+        return {
+            "ok": True,
+            "upload_id": upload_id,
+            "target_university": target_university,
+            "year": year,
+            "subject": subject,
+            "problems_extracted": len(problems),
+            "explanations": explanations,
+            "preview": preview,
+            "cost_yen_estimate": cost_yen,
+        }
+    finally:
+        conn.close()
 
 
 @app.post("/api/admin/past-exam/upload")
