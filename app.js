@@ -4165,11 +4165,33 @@ function _spParseDateStr(s) {
   return d;
 }
 
-function spImportFromCurriculum() {
+async function spImportFromCurriculum() {
   const md = window._lastCurriculumMarkdown || localStorage.getItem('ai_juku_last_curriculum') || '';
   if (!md) {
     alert('先に「🎯 カリキュラム生成」タブでカリキュラムを作成してください。');
     return;
+  }
+
+  // 🗓 2026-05-30 塾長指示「設定時間と実際の計画の合計時間があっていない」:
+  //   curricula から weekly_minutes (曜日別上限) を取得して、タスク追加時に上限超過を skip
+  //   weekly_minutes が null なら daily_minutes を全曜日に適用 (下位互換)
+  //   index: [0]=月 ... [6]=日 (isoweekday 1-7 → 0-6)
+  let dailyLimits = null;
+  try {
+    if (typeof _spDowApi === 'function') {
+      const cd = await _spDowApi('/api/curricula/me');
+      const arr = (cd && cd.curricula) || [];
+      const curr = arr.find(c => c.status === 'active') || arr[0];
+      if (curr) {
+        if (curr.weekly_minutes && Array.isArray(curr.weekly_minutes) && curr.weekly_minutes.length === 7) {
+          dailyLimits = curr.weekly_minutes.map(n => Math.max(0, Math.min(720, parseInt(n, 10) || 0)));
+        } else if (curr.daily_minutes) {
+          dailyLimits = [curr.daily_minutes, curr.daily_minutes, curr.daily_minutes, curr.daily_minutes, curr.daily_minutes, curr.daily_minutes, curr.daily_minutes];
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[spImport] weekly_minutes fetch failed (continue without limit):', e);
   }
 
   // 壊れた curriculum 自動検出 (demoChat の「学習サポート」「効果的な学習ステップ」等が含まれてたら破棄)
@@ -4223,8 +4245,29 @@ function spImportFromCurriculum() {
 
   // === STAGE 3: Materialize ===
   const imported = [];
+  const srsQueue = [];  // 🗓 2026-05-30: SRS 復習は main task の後に追加 (優先順位逆転回避)
   let weekIdx = 0;
   let cursor = new Date(startMonday);
+  // 🗓 2026-05-30: 曜日別累積時間 (日付 string → 分) で上限管理
+  const dailyAccum = {};
+  let skippedOverLimit = 0;
+  const _tryAdd = (task) => {
+    if (!dailyLimits) { imported.push(task); return true; }
+    const date = task.planned_date;
+    const dt = new Date(date + 'T00:00:00');
+    const dow = (dt.getDay() === 0) ? 6 : dt.getDay() - 1;  // 0=月 ... 6=日
+    const limit = dailyLimits[dow] || 0;
+    const cur = dailyAccum[date] || 0;
+    const dur = task.duration_min || 0;
+    // マイルストーン (duration_min=0) は上限超過でも通す
+    if (dur === 0 || cur + dur <= limit || limit === 0) {
+      imported.push(task);
+      dailyAccum[date] = cur + dur;
+      return true;
+    }
+    skippedOverLimit++;
+    return false;
+  };
 
   while (cursor <= endDate && weekIdx < maxWeeks) {
     // このフェーズ内で何週目か(タスク進捗用)
@@ -4242,7 +4285,7 @@ function spImportFromCurriculum() {
 
     // フェーズ開始週ならマイルストーンタスクを追加
     if (phase && weekInPhase === 0 && cursor.getTime() !== startMonday.getTime()) {
-      imported.push({
+      _tryAdd({
         id: 'c_' + Math.random().toString(36).slice(2, 12),
         source: 'curriculum',
         planned_date: _spDateStr(cursor),
@@ -4264,7 +4307,7 @@ function spImportFromCurriculum() {
       const dayTasks = weeklyTemplate[dayKeys[dow]] || [];
       for (const t of dayTasks) {
         const advancedTitle = _advanceTaskRange(t.title, advanceOffset);
-        imported.push({
+        _tryAdd({
           id: 'c_' + Math.random().toString(36).slice(2, 12),
           source: 'curriculum',
           planned_date: _spDateStr(dayDate),
@@ -4281,10 +4324,12 @@ function spImportFromCurriculum() {
         const VOCAB_BOOKS = ['シス単','システム英単語','ターゲット1900','英単語ターゲット','鉄壁','速読英単語','古文単語ゴロゴ','ゴロゴ','現代文キーワード読解'];
         const isVocab = VOCAB_BOOKS.some(v => advancedTitle.indexOf(v) !== -1);
         if (isVocab) {
+          // 🗓 2026-05-30: SRS 復習は srsQueue に貯めて main task の後にまとめて _tryAdd
+          //   (優先順位: 新規学習 > 復習)
           // +3 日後 復習
           const day3 = new Date(dayDate); day3.setDate(day3.getDate() + 3);
           if (day3 <= endDate) {
-            imported.push({
+            srsQueue.push({
               id: 'c_' + Math.random().toString(36).slice(2, 12),
               source: 'curriculum',
               planned_date: _spDateStr(day3),
@@ -4299,7 +4344,7 @@ function spImportFromCurriculum() {
           // +7 日後 復習
           const day7 = new Date(dayDate); day7.setDate(day7.getDate() + 7);
           if (day7 <= endDate) {
-            imported.push({
+            srsQueue.push({
               id: 'c_' + Math.random().toString(36).slice(2, 12),
               source: 'curriculum',
               planned_date: _spDateStr(day7),
@@ -4318,6 +4363,12 @@ function spImportFromCurriculum() {
     weekIdx++;
   }
 
+  // 🗓 2026-05-30: 全 main task 追加後に SRS 復習をまとめて追加 (優先順位逆転回避)
+  //   これで「重要な新規学習タスクが skip され、復習だけ残る」事故を防止
+  for (const srs of srsQueue) {
+    _tryAdd(srs);
+  }
+
   if (imported.length === 0) {
     alert('取込対象のタスクが生成されませんでした。カリキュラムを再生成してください。');
     return;
@@ -4332,7 +4383,11 @@ function spImportFromCurriculum() {
   const fillNote = meta
     ? `\n【補完】AI生成: ${meta.aiFilledDays}曜 / 自動補完: ${meta.autoFilledDays}曜 (標準テンプレートから)`
     : '';
-  const confirmMsg = `🎯 ${imported.length}件のタスクを ${weeks}週分 取り込みます。${phaseSummary}${fillNote}\n\n※今日以降の「カリキュラム由来」タスクは置き換わります (手動追加分は保持)。\n\nよろしいですか？`;
+  // 🗓 2026-05-30: 曜日別上限超過 skip 件数を確認ダイアログに表示
+  const skipNote = (dailyLimits && skippedOverLimit > 0)
+    ? `\n【⚠️ 曜日別上限超過】${skippedOverLimit} 件のタスクが設定時間を超えるため省略されました (時間内に収める自動調整)。`
+    : '';
+  const confirmMsg = `🎯 ${imported.length}件のタスクを ${weeks}週分 取り込みます。${phaseSummary}${fillNote}${skipNote}\n\n※今日以降の「カリキュラム由来」タスクは置き換わります (手動追加分は保持)。\n\nよろしいですか？`;
   if (!confirm(confirmMsg)) return;
 
   // === Persist: 既存curriculumタスクは今日以降のみ削除 ===
@@ -4342,7 +4397,10 @@ function spImportFromCurriculum() {
   data.tasks.push(...imported);
   spSave(data);
 
-  alert(`✅ ${imported.length}件を取り込みました。\n期間: ${todayStr} 〜 ${_spDateStr(endDate)}`);
+  const finalSkipNote = (dailyLimits && skippedOverLimit > 0)
+    ? `\n⚠️ 曜日別上限超過で ${skippedOverLimit} 件省略 (設定時間内に最適化済み)`
+    : '';
+  alert(`✅ ${imported.length}件を取り込みました。\n期間: ${todayStr} 〜 ${_spDateStr(endDate)}${finalSkipNote}`);
   spRender();
 }
 
