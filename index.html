@@ -505,7 +505,8 @@
             <p style="margin:0 0 0.8rem 0; font-size:0.85rem; color:#a1a1aa; line-height:1.6;">
               <strong style="color:#c7d2fe;">現在のカリキュラム</strong>:
               <span id="spDowCurrInfo" style="color:#fbbf24;">読み込み中...</span><br>
-              下のフォームで各曜日の勉強時間 (分) を設定して「✨ 再作成する」を押すと、<strong style="color:#fbbf24;">AI が曜日別時間を考慮してカリキュラムを再生成</strong>します。
+              下のフォームで各曜日の勉強時間 (分) を設定して「✨ 再作成する」を押すと、<strong style="color:#fbbf24;">AI が曜日別時間を考慮してカリキュラムを再生成</strong>します。<br>
+              <span style="color:#86efac; font-size:0.78rem;">🗓 曜日別設定は<strong>今後 30 日間のみ反映</strong>されます (それ以降は AI の標準配分・翌月に再設定してください)</span>
             </p>
             <div style="margin-bottom:0.7rem; padding:0.7rem 0.85rem; background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.3); border-radius:8px;">
               <div style="font-size:0.7rem; color:#a1a1aa; margin-bottom:0.5rem;">各曜日の勉強可能時間 (分)。空欄/0 = その日は休む。</div>
@@ -1471,7 +1472,7 @@
   <script src="exam-prep.js?v=20260425-1"></script>
   <script src="referral-program.js?v=20260425-1"></script>
   <script src="toast.js?v=20260526-profile-sync"></script>
-  <script src="app.js?v=20260530-dow-limit-enforce"></script>
+  <script src="app.js?v=20260530-dow-30day-window"></script>
   <script>
   // 定期テスト連携: exam-prep.html から ?examPrep=1&subject=&topic=&examId= で来た時、
   // 問題ジェネレーターに自動入力 + タブ切替 + 通知バナー

@@ -4251,10 +4251,20 @@ async function spImportFromCurriculum() {
   // 🗓 2026-05-30: 曜日別累積時間 (日付 string → 分) で上限管理
   const dailyAccum = {};
   let skippedOverLimit = 0;
+  // 🗓 2026-05-30 塾長指示「曜日ごとの時間の設定の範囲は1ヶ月後まで反映」:
+  //   today + 30 日まで weekly_minutes を enforcement・それ以降は AI の標準配分 (上限なし)
+  //   生徒が月次で「曜日別で再作成」して当月分を再設定する想定運用
+  const enforceUntil = new Date(today);
+  enforceUntil.setDate(enforceUntil.getDate() + 30);
   const _tryAdd = (task) => {
     if (!dailyLimits) { imported.push(task); return true; }
     const date = task.planned_date;
     const dt = new Date(date + 'T00:00:00');
+    // 🗓 30 日境界: 境界外のタスクは上限なし (AI の標準配分を尊重)
+    if (dt > enforceUntil) {
+      imported.push(task);
+      return true;
+    }
     const dow = (dt.getDay() === 0) ? 6 : dt.getDay() - 1;  // 0=月 ... 6=日
     const limit = dailyLimits[dow] || 0;
     const cur = dailyAccum[date] || 0;
@@ -4384,9 +4394,11 @@ async function spImportFromCurriculum() {
     ? `\n【補完】AI生成: ${meta.aiFilledDays}曜 / 自動補完: ${meta.autoFilledDays}曜 (標準テンプレートから)`
     : '';
   // 🗓 2026-05-30: 曜日別上限超過 skip 件数を確認ダイアログに表示
+  //   30 日境界明示: 「今後 30 日間のみ反映」と「翌月の再設定」を促す
+  const enforceUntilStr = _spDateStr(enforceUntil);
   const skipNote = (dailyLimits && skippedOverLimit > 0)
-    ? `\n【⚠️ 曜日別上限超過】${skippedOverLimit} 件のタスクが設定時間を超えるため省略されました (時間内に収める自動調整)。`
-    : '';
+    ? `\n【⚠️ 曜日別上限超過】${skippedOverLimit} 件のタスクが設定時間を超えるため省略 (今後 30 日間のみ自動調整)。\n  対象期間: 〜 ${enforceUntilStr}\n  ${enforceUntilStr} 以降は AI の標準配分 (再設定したい時はまた「⚙️ 曜日別で再作成」を押してください)`
+    : (dailyLimits ? `\n【曜日別設定】今後 30 日間 (〜${enforceUntilStr}) のみ反映・以降は AI 標準配分` : '');
   const confirmMsg = `🎯 ${imported.length}件のタスクを ${weeks}週分 取り込みます。${phaseSummary}${fillNote}${skipNote}\n\n※今日以降の「カリキュラム由来」タスクは置き換わります (手動追加分は保持)。\n\nよろしいですか？`;
   if (!confirm(confirmMsg)) return;
 
@@ -4398,8 +4410,8 @@ async function spImportFromCurriculum() {
   spSave(data);
 
   const finalSkipNote = (dailyLimits && skippedOverLimit > 0)
-    ? `\n⚠️ 曜日別上限超過で ${skippedOverLimit} 件省略 (設定時間内に最適化済み)`
-    : '';
+    ? `\n⚠️ 曜日別上限超過で ${skippedOverLimit} 件省略 (今後 30 日間のみ自動調整・${enforceUntilStr} 以降は AI 標準配分)`
+    : (dailyLimits ? `\n🗓 曜日別設定は今後 30 日間 (〜${enforceUntilStr}) のみ反映` : '');
   alert(`✅ ${imported.length}件を取り込みました。\n期間: ${todayStr} 〜 ${_spDateStr(endDate)}${finalSkipNote}`);
   spRender();
 }
