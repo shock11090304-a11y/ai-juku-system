@@ -2808,6 +2808,64 @@ function bindCurriculumButtons() {
     submitBtn.addEventListener('click', generateCurriculumWithAi);
     submitBtn._cuBound = true;
   }
+
+  // 🗓 2026-05-30: 曜日別カスタマイズ toggle + 自動計算
+  const dowToggle = document.getElementById('cuToggleByDowBtn');
+  if (dowToggle && !dowToggle._cuBound) {
+    dowToggle.addEventListener('click', () => {
+      const wrap = document.getElementById('cuByDowWrap');
+      const arrow = document.getElementById('cuToggleByDowArrow');
+      const isOpen = wrap.style.display !== 'none';
+      wrap.style.display = isOpen ? 'none' : 'block';
+      if (arrow) arrow.textContent = isOpen ? '▼' : '▲';
+      if (!isOpen) {
+        // 開いた時に既存の daily_minutes でプリフィル (空欄のみ)
+        const daily = parseInt(document.getElementById('cuAiDailyMin').value, 10) || 60;
+        for (let i = 1; i <= 7; i++) {
+          const el = document.getElementById('cuDow' + i);
+          if (el && !el.value) el.value = (i >= 6 ? Math.min(daily * 2, 720) : daily); // 土日は 2 倍を提案
+        }
+        _cuRecalcDowTotal();
+      }
+    });
+    dowToggle._cuBound = true;
+  }
+  // 各 input 変更で自動計算
+  for (let i = 1; i <= 7; i++) {
+    const el = document.getElementById('cuDow' + i);
+    if (el && !el._cuBound) {
+      el.addEventListener('input', _cuRecalcDowTotal);
+      el._cuBound = true;
+    }
+  }
+  // リセット (均等に戻す) ボタン
+  const clearBtn = document.getElementById('cuDowClearBtn');
+  if (clearBtn && !clearBtn._cuBound) {
+    clearBtn.addEventListener('click', () => {
+      for (let i = 1; i <= 7; i++) {
+        const el = document.getElementById('cuDow' + i);
+        if (el) el.value = '';
+      }
+      document.getElementById('cuByDowWrap').style.display = 'none';
+      const arrow = document.getElementById('cuToggleByDowArrow');
+      if (arrow) arrow.textContent = '▼';
+    });
+    clearBtn._cuBound = true;
+  }
+}
+
+function _cuRecalcDowTotal() {
+  let total = 0;
+  let filled = 0;
+  for (let i = 1; i <= 7; i++) {
+    const el = document.getElementById('cuDow' + i);
+    const n = el ? parseInt(el.value, 10) : NaN;
+    if (!isNaN(n) && n >= 0) { total += Math.min(n, 720); filled++; }
+  }
+  const totalEl = document.getElementById('cuDowWeekTotal');
+  const avgEl = document.getElementById('cuDowDailyAvg');
+  if (totalEl) totalEl.textContent = String(total);
+  if (avgEl) avgEl.textContent = String(filled > 0 ? Math.round(total / 7) : 0);
 }
 
 async function generateCurriculumWithAi() {
@@ -2826,6 +2884,21 @@ async function generateCurriculumWithAi() {
   if (!exam) { msg.style.color = '#fca5a5'; msg.textContent = '入試日は必須です'; return; }
   if (start && exam <= start) { msg.style.color = '#fca5a5'; msg.textContent = '入試日は開始日より後である必要があります'; return; }
 
+  // 🗓 2026-05-30: 曜日別カスタマイズが有効なら weekly_minutes 配列を送信
+  let weeklyMinutes = null;
+  const byDowWrap = document.getElementById('cuByDowWrap');
+  if (byDowWrap && byDowWrap.style.display !== 'none') {
+    const _wm = [];
+    let _hasAny = false;
+    for (let i = 1; i <= 7; i++) {
+      const _v = document.getElementById('cuDow' + i);
+      const _n = _v ? parseInt(_v.value, 10) : NaN;
+      if (!isNaN(_n) && _n >= 0) { _wm.push(Math.min(_n, 720)); _hasAny = true; }
+      else _wm.push(dailyMin);  // 空欄は daily_minutes で補完
+    }
+    if (_hasAny) weeklyMinutes = _wm;
+  }
+
   btn.disabled = true; btn.textContent = '🤖 AI 生成中... (15-40秒)';
   msg.style.color = '#c4b5fd'; msg.textContent = '🤖 入試日から逆算してフェーズ分割しています...';
   previewEl.innerHTML = '';
@@ -2838,6 +2911,7 @@ async function generateCurriculumWithAi() {
         exam_date: exam,
         start_date: start || undefined,
         daily_minutes: dailyMin,
+        weekly_minutes: weeklyMinutes || undefined,
         baseline_note: baseline || undefined,
       }),
     });
@@ -2910,6 +2984,7 @@ async function saveCurriculumFromPreview() {
         exam_date: _cuLastPreview.exam_date,
         start_date: _cuLastPreview.start_date,
         daily_minutes: _cuLastPreview.daily_minutes,
+        weekly_minutes: _cuLastPreview.weekly_minutes || undefined,  // 🗓 2026-05-30
         baseline_note: _cuLastPreview.baseline_note,
         phases: _cuLastPreview.phases,
         ai_model: _cuLastPreview.ai_model,

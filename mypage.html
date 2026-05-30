@@ -736,6 +736,52 @@
           </div>
         </div>
 
+        <!-- 🗓 2026-05-30 塾長指示「曜日ごとに個々でできる時間が異なる」: 曜日別勉強時間 toggle -->
+        <div style="margin-bottom:0.8rem;">
+          <button type="button" id="cuToggleByDowBtn" style="width:100%; padding:0.5rem 0.7rem; background:rgba(99,102,241,0.10); border:1px dashed rgba(99,102,241,0.45); border-radius:8px; color:#c7d2fe; font-size:0.78rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:space-between;">
+            <span>⚙️ 曜日別にカスタマイズ (平日と休日で時間が違う場合)</span>
+            <span id="cuToggleByDowArrow" style="font-size:0.9rem;">▼</span>
+          </button>
+          <div id="cuByDowWrap" style="display:none; margin-top:0.5rem; padding:0.7rem 0.85rem; background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.3); border-radius:8px;">
+            <div style="font-size:0.7rem; color:#a1a1aa; margin-bottom:0.5rem;">各曜日の勉強可能時間 (分) を入力。空欄/0 = その日は休む。</div>
+            <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:0.35rem;">
+              <div style="text-align:center;">
+                <div style="font-size:0.7rem; color:#c4b5fd; margin-bottom:0.15rem; font-weight:700;">月</div>
+                <input type="number" id="cuDow1" min="0" max="720" placeholder="60" style="width:100%; padding:0.35rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:5px; color:#fff; font-size:0.78rem; text-align:center;">
+              </div>
+              <div style="text-align:center;">
+                <div style="font-size:0.7rem; color:#c4b5fd; margin-bottom:0.15rem; font-weight:700;">火</div>
+                <input type="number" id="cuDow2" min="0" max="720" placeholder="60" style="width:100%; padding:0.35rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:5px; color:#fff; font-size:0.78rem; text-align:center;">
+              </div>
+              <div style="text-align:center;">
+                <div style="font-size:0.7rem; color:#c4b5fd; margin-bottom:0.15rem; font-weight:700;">水</div>
+                <input type="number" id="cuDow3" min="0" max="720" placeholder="60" style="width:100%; padding:0.35rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:5px; color:#fff; font-size:0.78rem; text-align:center;">
+              </div>
+              <div style="text-align:center;">
+                <div style="font-size:0.7rem; color:#c4b5fd; margin-bottom:0.15rem; font-weight:700;">木</div>
+                <input type="number" id="cuDow4" min="0" max="720" placeholder="60" style="width:100%; padding:0.35rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:5px; color:#fff; font-size:0.78rem; text-align:center;">
+              </div>
+              <div style="text-align:center;">
+                <div style="font-size:0.7rem; color:#c4b5fd; margin-bottom:0.15rem; font-weight:700;">金</div>
+                <input type="number" id="cuDow5" min="0" max="720" placeholder="60" style="width:100%; padding:0.35rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:5px; color:#fff; font-size:0.78rem; text-align:center;">
+              </div>
+              <div style="text-align:center;">
+                <div style="font-size:0.7rem; color:#fbbf24; margin-bottom:0.15rem; font-weight:700;">土</div>
+                <input type="number" id="cuDow6" min="0" max="720" placeholder="120" style="width:100%; padding:0.35rem; background:rgba(0,0,0,0.4); border:1px solid rgba(251,191,36,0.3); border-radius:5px; color:#fff; font-size:0.78rem; text-align:center;">
+              </div>
+              <div style="text-align:center;">
+                <div style="font-size:0.7rem; color:#fbbf24; margin-bottom:0.15rem; font-weight:700;">日</div>
+                <input type="number" id="cuDow7" min="0" max="720" placeholder="120" style="width:100%; padding:0.35rem; background:rgba(0,0,0,0.4); border:1px solid rgba(251,191,36,0.3); border-radius:5px; color:#fff; font-size:0.78rem; text-align:center;">
+              </div>
+            </div>
+            <div style="margin-top:0.5rem; padding:0.4rem 0.6rem; background:rgba(0,0,0,0.3); border-radius:5px; font-size:0.72rem; color:#c4b5fd;">
+              <span>週合計: <strong id="cuDowWeekTotal" style="color:#fbbf24;">420</strong> 分</span>
+              <span style="margin-left:0.8rem;">1日平均: <strong id="cuDowDailyAvg" style="color:#fbbf24;">60</strong> 分</span>
+              <button type="button" id="cuDowClearBtn" style="float:right; padding:0.15rem 0.5rem; background:rgba(248,113,113,0.15); border:1px solid rgba(248,113,113,0.4); border-radius:4px; color:#fca5a5; font-size:0.65rem; cursor:pointer;">✕ リセット (均等に戻す)</button>
+            </div>
+          </div>
+        </div>
+
         <!-- 📚 マイ参考書/問題集 (塾長指示 2026-05-14: カリキュラム生成画面でも追加・編集できるよう duplicate UI) -->
         <div id="cumMaterialsBox" style="background:rgba(34,211,238,0.06); border:1px solid rgba(34,211,238,0.3); border-radius:10px; padding:0.8rem; margin-bottom:0.8rem;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
@@ -1177,7 +1223,7 @@
   <script src="learning-brain.js?v=20260529-past-due-grace"></script>
   <script src="exam-prep.js?v=20260529-past-due-grace"></script>
   <script src="referral-program.js?v=20260529-past-due-grace"></script>
-  <script src="mypage.js?v=20260529-past-due-grace"></script>
+  <script src="mypage.js?v=20260530-weekday-minutes"></script>
   <script>
     // ウィジェット初期描画
     (function() {

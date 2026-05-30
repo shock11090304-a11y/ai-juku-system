@@ -1206,6 +1206,10 @@ def init_db():
         # week_pattern = 'all' (毎日) / "1,3,5" (月水金) / "2,4,6" (火木土) 等
         # 1=月 2=火 3=水 4=木 5=金 6=土 7=日 (isoweekday 準拠)
         ("study_plan_week_pattern", "ALTER TABLE study_plans ADD COLUMN week_pattern TEXT DEFAULT 'all'"),
+        # 🗓 曜日別勉強時間 (塾長指示 2026-05-30「曜日ごとに個々でできる時間が異なる」):
+        # JSON 形式 {"1":60,"2":90,"3":60,"4":120,"5":60,"6":180,"7":120} (1=月 ... 7=日)
+        # NULL の場合は既存 daily_minutes を全曜日に適用 (下位互換)。
+        ("cur_daily_minutes_by_dow", "ALTER TABLE curricula ADD COLUMN daily_minutes_by_dow TEXT"),
         # 🏛 大学別過去問プリント (塾長指示 2026-05-26): lesson_prints に対象大学列追加
         # target_university = "東京医科歯科" / "東大" / "早稲田" 等 (sync スクリプトで抽出)
         # by-goal endpoint で大学完全一致を最優先で推薦
@@ -32802,6 +32806,8 @@ class CurriculumCreateRequest(BaseModel):
     exam_date: str  # YYYY-MM-DD
     start_date: str
     daily_minutes: Optional[int] = None
+    # 🗓 2026-05-30 曜日別勉強時間 (月-日 7 要素・分)・NULL なら daily_minutes を全曜日適用
+    weekly_minutes: Optional[List[int]] = None
     baseline_note: Optional[str] = None  # 現状学力メモ
     phases: List[CurriculumPhase]
     ai_model: Optional[str] = None
@@ -32814,6 +32820,7 @@ class CurriculumUpdateRequest(BaseModel):
     exam_date: Optional[str] = None
     start_date: Optional[str] = None
     daily_minutes: Optional[int] = None
+    weekly_minutes: Optional[List[int]] = None  # 🗓 2026-05-30
     baseline_note: Optional[str] = None
     phases: Optional[List[CurriculumPhase]] = None
     status: Optional[str] = None
@@ -32827,6 +32834,10 @@ class CurriculumAiGenRequest(BaseModel):
     start_date: Optional[str] = None  # 省略時は today (JST)
     daily_minutes: int = 60
     baseline_note: Optional[str] = None  # 現状偏差値や状況
+    # 🗓 2026-05-30 塾長指示「曜日ごとに個々でできる時間が異なる」: 曜日別勉強時間 (月-日 7 要素・分)
+    # NULL/省略時は daily_minutes を全曜日に適用 (下位互換)。配列の各要素は 0-720 分。
+    # インデックス: [0]=月 [1]=火 [2]=水 [3]=木 [4]=金 [5]=土 [6]=日
+    weekly_minutes: Optional[List[int]] = None
 
 
 _CURR_STATUSES = {"active", "completed", "archived"}
@@ -32920,13 +32931,22 @@ def create_curriculum(payload: CurriculumCreateRequest, request: Request, author
     baseline_note = _sanitize_text(payload.baseline_note, 1000)
     note = _sanitize_text(payload.note, 1000)
 
+    # 🗓 2026-05-30: 曜日別勉強時間 (月-日 7 要素・分)・JSON 文字列で保存
+    daily_by_dow_json = None
+    if payload.weekly_minutes and isinstance(payload.weekly_minutes, list) and len(payload.weekly_minutes) == 7:
+        try:
+            _wm = [max(0, min(int(m), 720)) for m in payload.weekly_minutes]
+            daily_by_dow_json = json.dumps({str(i+1): _wm[i] for i in range(7)}, ensure_ascii=False)
+        except (TypeError, ValueError):
+            daily_by_dow_json = None
+
     conn = db()
     try:
         c = conn.cursor()
         c.execute(
-            "INSERT INTO curricula (student_id, target_university, target_faculty, exam_date, start_date, daily_minutes, baseline_note, phases, ai_model, note) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?) RETURNING id",
-            (student["id"], target_university, target_faculty, ed.isoformat(), sd.isoformat(), daily, baseline_note,
+            "INSERT INTO curricula (student_id, target_university, target_faculty, exam_date, start_date, daily_minutes, daily_minutes_by_dow, baseline_note, phases, ai_model, note) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?) RETURNING id",
+            (student["id"], target_university, target_faculty, ed.isoformat(), sd.isoformat(), daily, daily_by_dow_json, baseline_note,
              json.dumps(phases_list, ensure_ascii=False), _sanitize_text(payload.ai_model, 50), note)
         )
         returned = c.fetchone()
@@ -32978,6 +32998,18 @@ def update_curriculum(curr_id: int, payload: CurriculumUpdateRequest, request: R
                 updates["daily_minutes"] = d
             except (TypeError, ValueError):
                 raise HTTPException(status_code=400, detail="daily_minutes が不正")
+        # 🗓 2026-05-30: 曜日別勉強時間更新 (空配列 [] で reset 可能・None なら変更なし)
+        if payload.weekly_minutes is not None:
+            if payload.weekly_minutes == []:
+                updates["daily_minutes_by_dow"] = None  # クリア
+            elif isinstance(payload.weekly_minutes, list) and len(payload.weekly_minutes) == 7:
+                try:
+                    _wm = [max(0, min(int(m), 720)) for m in payload.weekly_minutes]
+                    updates["daily_minutes_by_dow"] = json.dumps({str(i+1): _wm[i] for i in range(7)}, ensure_ascii=False)
+                except (TypeError, ValueError):
+                    raise HTTPException(status_code=400, detail="weekly_minutes が不正 (各値は 0〜720)")
+            else:
+                raise HTTPException(status_code=400, detail="weekly_minutes は 7 要素配列が必要")
         if payload.start_date is not None or payload.exam_date is not None:
             new_sd = payload.start_date or str(row["start_date"])
             new_ed = payload.exam_date or str(row["exam_date"])
@@ -33039,7 +33071,7 @@ def get_my_curricula(authorization: Optional[str] = Header(None)):
     try:
         c = conn.cursor()
         c.execute(
-            "SELECT id, target_university, target_faculty, exam_date, start_date, daily_minutes, baseline_note, phases, ai_model, status, note, created_at "
+            "SELECT id, target_university, target_faculty, exam_date, start_date, daily_minutes, daily_minutes_by_dow, baseline_note, phases, ai_model, status, note, created_at "
             "FROM curricula WHERE student_id = ? ORDER BY status ASC, exam_date ASC",
             (student["id"],)
         )
@@ -33050,6 +33082,15 @@ def get_my_curricula(authorization: Optional[str] = Header(None)):
                 phases = json.loads(r["phases"] or "[]")
             except Exception:
                 phases = []
+            # 🗓 2026-05-30: daily_minutes_by_dow JSON → weekly_minutes [月,火,水,木,金,土,日] 配列に変換
+            weekly_minutes = None
+            try:
+                _by_dow_raw = r["daily_minutes_by_dow"]
+                if _by_dow_raw:
+                    _by_dow = json.loads(_by_dow_raw)
+                    weekly_minutes = [int(_by_dow.get(str(i+1), r["daily_minutes"] or 60)) for i in range(7)]
+            except (Exception, KeyError, TypeError):
+                weekly_minutes = None
             items.append({
                 "id": r["id"],
                 "target_university": r["target_university"],
@@ -33057,6 +33098,7 @@ def get_my_curricula(authorization: Optional[str] = Header(None)):
                 "exam_date": str(r["exam_date"]),
                 "start_date": str(r["start_date"]),
                 "daily_minutes": r["daily_minutes"],
+                "weekly_minutes": weekly_minutes,  # null なら均等 (daily_minutes 全曜日適用)
                 "baseline_note": r["baseline_note"],
                 "phases": phases,
                 "ai_model": r["ai_model"],
@@ -33769,6 +33811,28 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
     baseline = _sanitize_text(payload.baseline_note, 500) or "未指定"
     months = max(1, round((ed - sd).days / 30))
 
+    # 🗓 2026-05-30 曜日別勉強時間 (月-日 7 要素・分)
+    # validation: 配列長 7 + 各要素 0-720 分。不正な場合は均等分配 (daily 値) にフォールバック。
+    weekly_minutes = None
+    if payload.weekly_minutes and isinstance(payload.weekly_minutes, list) and len(payload.weekly_minutes) == 7:
+        try:
+            weekly_minutes = [max(0, min(int(m), 720)) for m in payload.weekly_minutes]
+        except (TypeError, ValueError):
+            weekly_minutes = None
+    weekly_str = ""
+    if weekly_minutes:
+        _dow_labels = ["月", "火", "水", "木", "金", "土", "日"]
+        _lines = [f"  - {_dow_labels[i]}: {weekly_minutes[i]}分" for i in range(7)]
+        _week_total = sum(weekly_minutes)
+        _week_avg = round(_week_total / 7)
+        weekly_str = (
+            f"\n曜日別学習可能時間 (生徒が曜日別にカスタマイズ済):\n"
+            + "\n".join(_lines)
+            + f"\n  → 週合計: {_week_total}分 / 1日平均: {_week_avg}分\n"
+            f"  ⚠️ 各フェーズの material 配分はこの曜日別時間を反映してください "
+            f"(時間が長い曜日に教材を多めに割り当て、短い曜日は復習中心に)。"
+        )
+
     # 直近模試結果を自動 inject (科目別偏差値+判定 / 最大3件)
     exam_summary = ""
     try:
@@ -33818,7 +33882,7 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
     user_prompt = f"""志望校: {target_university}{(' / ' + target_faculty) if target_faculty else ''}
 開始日: {sd.isoformat()}
 入試日: {ed.isoformat()} (期間 {months} ヶ月)
-1日確保時間: {daily} 分
+1日確保時間 (平均): {daily} 分{weekly_str}
 現状: {baseline}{exam_summary}{own_materials_summary}{reference_books_summary}{sapuri_lectures_summary}
 
 上記から、難関大学合格までの全体カリキュラムを 4-6 フェーズに分割して JSON で返してください。
@@ -34040,6 +34104,7 @@ def ai_generate_curriculum(payload: CurriculumAiGenRequest, request: Request, au
                 "exam_date": ed.isoformat(),
                 "start_date": sd.isoformat(),
                 "daily_minutes": daily,
+                "weekly_minutes": weekly_minutes,  # 🗓 2026-05-30: preview に echo (フロントが保存時に渡せるよう)
                 "baseline_note": baseline if baseline != "未指定" else None,
                 "phases": phases_list,
                 "ai_model": data.get("_actual_model"),
