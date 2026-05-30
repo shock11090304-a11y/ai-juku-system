@@ -5410,6 +5410,152 @@ function spTogglePomodoro() {
   spRender();
 }
 
+// 🗓 2026-05-30 塾長指示「もうすでに作成してしまった子達が再修正をする」: 曜日別で再作成 modal
+let _spDowCurrentCurr = null;  // 開いたときの最新カリキュラム (再作成時に流用)
+
+async function spDowReplanOpen() {
+  const modal = document.getElementById('spDowModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  const msg = document.getElementById('spDowMsg');
+  const info = document.getElementById('spDowCurrInfo');
+  if (msg) { msg.textContent = ''; msg.style.color = ''; }
+  if (info) info.textContent = 'カリキュラム読み込み中...';
+  try {
+    const data = await slApiFetch('/api/curricula/me');
+    const arr = (data && data.curricula) || [];
+    // 最新の active カリキュラムを選択
+    const curr = arr.find(c => c.status === 'active') || arr[0];
+    if (!curr) {
+      if (info) { info.textContent = 'カリキュラム未作成です。'; info.style.color = '#fca5a5'; }
+      if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '先に「カリキュラム生成」タブで作成してください。'; }
+      return;
+    }
+    _spDowCurrentCurr = curr;
+    if (info) {
+      info.textContent = `${curr.target_university}${curr.target_faculty ? ' / ' + curr.target_faculty : ''} (入試日: ${curr.exam_date})`;
+      info.style.color = '#fbbf24';
+    }
+    // 既存 weekly_minutes があれば pre-fill、無ければ daily_minutes で均等 + 土日 2 倍提案
+    const wm = curr.weekly_minutes;
+    const daily = curr.daily_minutes || 60;
+    for (let i = 1; i <= 7; i++) {
+      const el = document.getElementById('spDow' + i);
+      if (!el) continue;
+      if (wm && Array.isArray(wm) && wm.length === 7) {
+        el.value = wm[i - 1];
+      } else {
+        el.value = (i >= 6) ? Math.min(daily * 2, 720) : daily;
+      }
+    }
+    _spDowRecalc();
+  } catch (e) {
+    if (info) { info.textContent = '読み込み失敗: ' + (e.message || ''); info.style.color = '#fca5a5'; }
+  }
+}
+
+function spDowReplanClose() {
+  const modal = document.getElementById('spDowModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function _spDowRecalc() {
+  let total = 0;
+  for (let i = 1; i <= 7; i++) {
+    const el = document.getElementById('spDow' + i);
+    const n = el ? parseInt(el.value, 10) : NaN;
+    if (!isNaN(n) && n >= 0) total += Math.min(n, 720);
+  }
+  const totalEl = document.getElementById('spDowWeekTotal');
+  const avgEl = document.getElementById('spDowDailyAvg');
+  if (totalEl) totalEl.textContent = String(total);
+  if (avgEl) avgEl.textContent = String(Math.round(total / 7));
+}
+
+async function spDowReplanSubmit() {
+  const btn = document.getElementById('spDowReplanSubmit');
+  const msg = document.getElementById('spDowMsg');
+  if (!_spDowCurrentCurr) {
+    if (msg) { msg.style.color = '#fca5a5'; msg.textContent = 'カリキュラム情報がありません。'; }
+    return;
+  }
+  const curr = _spDowCurrentCurr;
+  const wm = [];
+  for (let i = 1; i <= 7; i++) {
+    const el = document.getElementById('spDow' + i);
+    const n = el ? parseInt(el.value, 10) : NaN;
+    wm.push(!isNaN(n) && n >= 0 ? Math.min(n, 720) : 0);
+  }
+  const total = wm.reduce((a, b) => a + b, 0);
+  if (total < 30) {
+    if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '週合計が短すぎます (最低 30 分以上)。'; }
+    return;
+  }
+  if (!confirm(`現在のカリキュラム (${curr.target_university}) を曜日別時間で再作成します。\n\n週合計: ${total} 分 / 1日平均: ${Math.round(total/7)} 分\n\n古いカリキュラムは archived になり、新しいカリキュラムが active になります。続行しますか?`)) return;
+  btn.disabled = true; btn.textContent = '🤖 AI 再生成中... (15-40秒)';
+  if (msg) { msg.style.color = '#c4b5fd'; msg.textContent = '🤖 曜日別時間を考慮したカリキュラムを再生成中...'; }
+  try {
+    // 1. AI 再生成 (既存パラメータ + 新 weekly_minutes)
+    const dailyAvg = Math.round(total / 7);
+    const genRes = await slApiFetch('/api/curricula/ai-generate', {
+      method: 'POST',
+      body: JSON.stringify({
+        target_university: curr.target_university,
+        target_faculty: curr.target_faculty || undefined,
+        exam_date: curr.exam_date,
+        start_date: curr.start_date,
+        daily_minutes: dailyAvg,
+        weekly_minutes: wm,
+        baseline_note: curr.baseline_note || undefined,
+      }),
+    });
+    const preview = genRes && genRes.preview;
+    if (!preview || !preview.phases || !preview.phases.length) throw new Error('AI が phases を返しませんでした');
+    // 🛡️ 3 視点 review fix: 順序逆転 (新 curr POST → 成功時のみ旧 archive)
+    //   旧順序: archive → POST だと POST 失敗時に旧データが orphan archived 状態に
+    //   新順序: POST → archive だと POST 失敗時は旧 active のまま (rollback 不要)
+    // 2. 新 curr を save (失敗時は旧 active 維持)
+    await slApiFetch('/api/curricula', {
+      method: 'POST',
+      body: JSON.stringify({
+        target_university: preview.target_university,
+        target_faculty: preview.target_faculty,
+        exam_date: preview.exam_date,
+        start_date: preview.start_date,
+        daily_minutes: preview.daily_minutes,
+        weekly_minutes: (preview.weekly_minutes && preview.weekly_minutes.length === 7) ? preview.weekly_minutes : wm,
+        baseline_note: preview.baseline_note,
+        phases: preview.phases,
+        ai_model: preview.ai_model,
+      }),
+    });
+    // 3. 新 curr 保存成功後に旧 curr を archive (失敗してもユーザに警告のみ)
+    try {
+      await slApiFetch('/api/curricula/' + curr.id, {
+        method: 'PUT',
+        body: JSON.stringify({ status: 'archived' }),
+      });
+    } catch (archErr) {
+      // 旧 curr archive 失敗: 2 つ active になるが新 curr は最新で save 済み → 致命ではない
+      console.warn('Old curriculum archive failed (new curriculum is active):', archErr);
+    }
+    if (msg) { msg.style.color = '#86efac'; msg.textContent = '✅ カリキュラムを再作成しました。カレンダーが自動更新されます。'; }
+    // 4. 学習計画画面のタスクを取込み直し
+    setTimeout(async () => {
+      try {
+        if (typeof spImportFromCurriculum === 'function') await spImportFromCurriculum();
+        spDowReplanClose();
+        spRender();
+      } catch (_e) {}
+    }, 1200);
+  } catch (e) {
+    if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || '再生成失敗'); }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ この曜日別時間で再作成する';
+  }
+}
+
 // 25 分到達検知: 直前 5 秒間隔 tick で 25*60 を跨いだら toast
 // 重複通知防止: task.pomodoro_notified_cycles で記録
 function _spCheckPomodoroBoundary(task) {
@@ -5455,6 +5601,16 @@ function spInit() {
   try { _spFetchAndShowApiToday(); } catch (_) {}
   hook('spWeaknessBtn', spApplyWeaknessToplan);
   hook('spDelayReplanBtn', spReplanOverdue);
+  // 🗓 2026-05-30: 曜日別で再作成 modal
+  hook('spDowReplanBtn', spDowReplanOpen);
+  hook('spDowClose', spDowReplanClose);
+  hook('spDowOverlay', spDowReplanClose);
+  hook('spDowCancelBtn', spDowReplanClose);
+  hook('spDowReplanSubmit', spDowReplanSubmit);
+  for (let i = 1; i <= 7; i++) {
+    const el = document.getElementById('spDow' + i);
+    if (el && !el._spDowBound) { el.addEventListener('input', _spDowRecalc); el._spDowBound = true; }
+  }
   hook('spPomodoroBtn', spTogglePomodoro);
   hook('spFlashcardBtn', spFlashcardOpen);
   hook('spFlashcardClose', spFlashcardClose);

@@ -488,7 +488,69 @@
         <button class="btn-secondary" id="spPomodoroBtn" title="Pomodoro モード切替 (25分集中 + 5分休憩)" style="background:rgba(244,114,182,0.18); border:1px solid rgba(244,114,182,0.40); color:#f9a8d4;">🍅 Pomodoro</button>
         <button class="btn-secondary" id="spWeaknessBtn" title="弱点 TOP3 を学習計画に自動反映" style="background:rgba(251,191,36,0.18); border:1px solid rgba(251,191,36,0.40); color:#fde68a;">🎯 弱点反映</button>
         <button class="btn-secondary" id="spDelayReplanBtn" title="遅延タスクを次週に圧縮再計画" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); color:#fca5a5;">📅 遅延再計画</button>
+        <!-- 🗓 2026-05-30 塾長指示「もうすでに作成してしまった子達が再修正をするためにこの画面にも曜日別を作成して再作成ボタンを追加」 -->
+        <button class="btn-secondary" id="spDowReplanBtn" title="曜日別の勉強時間を設定してカリキュラムを再作成" style="background:rgba(99,102,241,0.20); border:1px solid rgba(99,102,241,0.45); color:#c7d2fe;">⚙️ 曜日別で再作成</button>
         <button class="btn-secondary" id="spClearBtn" title="この生徒の全タスクを削除">🗑 全削除</button>
+      </div>
+
+      <!-- 🗓 2026-05-30: 曜日別時間設定モーダル (既存カリキュラム生徒の再作成用) -->
+      <div id="spDowModal" class="sp-flashcard-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="spDowTitle">
+        <div class="sp-flashcard-overlay" id="spDowOverlay" aria-label="閉じる"></div>
+        <div class="sp-flashcard-panel" style="max-width:560px;">
+          <div class="sp-flashcard-header">
+            <h3 id="spDowTitle">⚙️ 曜日別 勉強時間設定 + 再作成</h3>
+            <button id="spDowClose" class="btn-secondary btn-small" aria-label="閉じる">✕</button>
+          </div>
+          <div style="padding:1rem 1.2rem;">
+            <p style="margin:0 0 0.8rem 0; font-size:0.85rem; color:#a1a1aa; line-height:1.6;">
+              <strong style="color:#c7d2fe;">現在のカリキュラム</strong>:
+              <span id="spDowCurrInfo" style="color:#fbbf24;">読み込み中...</span><br>
+              下のフォームで各曜日の勉強時間 (分) を設定して「✨ 再作成する」を押すと、<strong style="color:#fbbf24;">AI が曜日別時間を考慮してカリキュラムを再生成</strong>します。
+            </p>
+            <div style="margin-bottom:0.7rem; padding:0.7rem 0.85rem; background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.3); border-radius:8px;">
+              <div style="font-size:0.7rem; color:#a1a1aa; margin-bottom:0.5rem;">各曜日の勉強可能時間 (分)。空欄/0 = その日は休む。</div>
+              <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:0.4rem;">
+                <div style="text-align:center;">
+                  <div style="font-size:0.72rem; color:#c4b5fd; margin-bottom:0.2rem; font-weight:700;">月</div>
+                  <input type="number" id="spDow1" min="0" max="720" placeholder="60" style="width:100%; padding:0.45rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.85rem; text-align:center;">
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-size:0.72rem; color:#c4b5fd; margin-bottom:0.2rem; font-weight:700;">火</div>
+                  <input type="number" id="spDow2" min="0" max="720" placeholder="60" style="width:100%; padding:0.45rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.85rem; text-align:center;">
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-size:0.72rem; color:#c4b5fd; margin-bottom:0.2rem; font-weight:700;">水</div>
+                  <input type="number" id="spDow3" min="0" max="720" placeholder="60" style="width:100%; padding:0.45rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.85rem; text-align:center;">
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-size:0.72rem; color:#c4b5fd; margin-bottom:0.2rem; font-weight:700;">木</div>
+                  <input type="number" id="spDow4" min="0" max="720" placeholder="60" style="width:100%; padding:0.45rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.85rem; text-align:center;">
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-size:0.72rem; color:#c4b5fd; margin-bottom:0.2rem; font-weight:700;">金</div>
+                  <input type="number" id="spDow5" min="0" max="720" placeholder="60" style="width:100%; padding:0.45rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.85rem; text-align:center;">
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-size:0.72rem; color:#fbbf24; margin-bottom:0.2rem; font-weight:700;">土</div>
+                  <input type="number" id="spDow6" min="0" max="720" placeholder="120" style="width:100%; padding:0.45rem; background:rgba(0,0,0,0.4); border:1px solid rgba(251,191,36,0.3); border-radius:6px; color:#fff; font-size:0.85rem; text-align:center;">
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-size:0.72rem; color:#fbbf24; margin-bottom:0.2rem; font-weight:700;">日</div>
+                  <input type="number" id="spDow7" min="0" max="720" placeholder="120" style="width:100%; padding:0.45rem; background:rgba(0,0,0,0.4); border:1px solid rgba(251,191,36,0.3); border-radius:6px; color:#fff; font-size:0.85rem; text-align:center;">
+                </div>
+              </div>
+              <div style="margin-top:0.6rem; padding:0.45rem 0.65rem; background:rgba(0,0,0,0.3); border-radius:6px; font-size:0.78rem; color:#c4b5fd;">
+                <span>週合計: <strong id="spDowWeekTotal" style="color:#fbbf24;">0</strong> 分</span>
+                <span style="margin-left:0.9rem;">1日平均: <strong id="spDowDailyAvg" style="color:#fbbf24;">0</strong> 分</span>
+              </div>
+            </div>
+            <div style="display:flex; gap:0.6rem; align-items:center;">
+              <button id="spDowReplanSubmit" type="button" style="flex:1; padding:0.7rem; background:linear-gradient(135deg,#a78bfa,#ec4899); border:0; border-radius:8px; color:#fff; font-weight:800; font-size:0.95rem; cursor:pointer;">✨ この曜日別時間で再作成する</button>
+              <button id="spDowCancelBtn" type="button" style="padding:0.7rem 1rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#a1a1aa; font-size:0.85rem; cursor:pointer;">キャンセル</button>
+            </div>
+            <div id="spDowMsg" style="margin-top:0.6rem; font-size:0.8rem; min-height:1em;"></div>
+          </div>
+        </div>
       </div>
 
       <!-- 🎴 Flashcard モーダル (塾長指示 2026-05-18) -->
@@ -1409,7 +1471,7 @@
   <script src="exam-prep.js?v=20260425-1"></script>
   <script src="referral-program.js?v=20260425-1"></script>
   <script src="toast.js?v=20260526-profile-sync"></script>
-  <script src="app.js?v=20260528-chat-pdf"></script>
+  <script src="app.js?v=20260530-dow-replan"></script>
   <script>
   // 定期テスト連携: exam-prep.html から ?examPrep=1&subject=&topic=&examId= で来た時、
   // 問題ジェネレーターに自動入力 + タブ切替 + 通知バナー
