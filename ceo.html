@@ -692,6 +692,11 @@
         <input type="file" id="peSolverFile" accept="application/pdf" style="display:none;">
         <button id="peSolverPickBtn" type="button" style="width:100%;padding:0.6rem;background:linear-gradient(135deg,#a78bfa,#8b5cf6);border:0;border-radius:8px;color:#fff;font-weight:800;font-size:0.82rem;cursor:pointer;margin-bottom:0.4rem;">📂 PDF を選択 (最大 20MB)</button>
         <div id="peSolverFileName" style="font-size:0.72rem;color:#fbbf24;margin-bottom:0.4rem;min-height:1em;"></div>
+        <!-- 🛡️ 2026-05-30 Phase 2: PDF 自動生成 option -->
+        <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.78rem;color:#c4b5fd;margin-bottom:0.4rem;cursor:pointer;">
+          <input type="checkbox" id="peSolverGenPdf" style="cursor:pointer;">
+          <span>📄 解説 PDF を自動生成 (3 種: 問題/ヒント付き問題/解説) — +60 秒</span>
+        </label>
         <button id="peSolverSubmitBtn" type="button" disabled style="width:100%;padding:0.7rem;background:linear-gradient(135deg,#a78bfa,#ec4899);border:0;border-radius:8px;color:#fff;font-weight:800;font-size:0.88rem;cursor:pointer;opacity:0.5;">✨ 解析 + 解説生成 (待機中)</button>
         <div id="peSolverMsg" style="margin-top:0.5rem;font-size:0.75rem;min-height:1em;"></div>
         <div id="peSolverResults" style="margin-top:0.5rem;"></div>
@@ -2299,7 +2304,7 @@
   </footer>
 
   <script src="plans.js?v=20260529-waive-enrollment"></script>
-  <script src="ceo.js?v=20260530-pastexam-solver"></script>
+  <script src="ceo.js?v=20260530-pastexam-pdf-gen"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {
@@ -3588,7 +3593,8 @@
           const univ = (document.getElementById('peSolverUniv').value || '共通テスト').trim();
           const year = (document.getElementById('peSolverYear').value || '').trim();
           const subject = document.getElementById('peSolverSubject').value;
-          peSolverSubmitBtn.disabled = true; peSolverSubmitBtn.textContent = '🤖 解析中... (60-120 秒)';
+          const genPdf = document.getElementById('peSolverGenPdf').checked;
+          peSolverSubmitBtn.disabled = true; peSolverSubmitBtn.textContent = genPdf ? '🤖 解析 + PDF 生成中... (90-180 秒)' : '🤖 解析中... (60-120 秒)';
           peSolverMsg.style.color = '#c4b5fd'; peSolverMsg.textContent = '📤 PDF アップ + Gemini PDF 解析中...';
           peSolverResults.innerHTML = '';
           try {
@@ -3597,6 +3603,7 @@
             fd.append('target_university', univ);
             fd.append('year', year);
             fd.append('subject', subject);
+            fd.append('generate_pdf', genPdf ? 'true' : 'false');
             const tok = localStorage.getItem('ai_juku_admin_token') || '';
             const r = await fetch('/api/admin/past-exam-solver', {
               method: 'POST',
@@ -3615,24 +3622,52 @@
               ? ` ⚠️ ${d.problems_extracted} 問抽出されましたが、解説は最初の 8 問のみ生成 (token 制限)。残りは別 PDF (大問 9 以降) で再アップしてください`
               : '';
             peSolverMsg.textContent = `✅ 抽出 ${d.problems_extracted} 問・解説 ${d.explanations.length} 件 (推定コスト ¥${d.cost_yen_estimate})${truncNote}`;
-            // 結果表示
+
+            // 🛡️ 2026-05-30 Phase 2: PDF auto-generated → download buttons 表示
+            if (d.pdf_result && d.pdf_result.ok && d.pdf_result.pdfs_b64) {
+              const b64ToBlob = (b64) => {
+                const bytes = atob(b64);
+                const buf = new Uint8Array(bytes.length);
+                for (let i = 0; i < bytes.length; i++) buf[i] = bytes.charCodeAt(i);
+                return new Blob([buf], { type: 'application/pdf' });
+              };
+              const dlBtn = (label, key, color) => {
+                const b64 = d.pdf_result.pdfs_b64[key];
+                if (!b64) return '';
+                const url = URL.createObjectURL(b64ToBlob(b64));
+                const fname = `${d.pdf_result.base_name}_${key === 'pdf_hint' ? 'ヒント付き問題' : key === 'pdf_strict' ? '問題' : '解説'}.pdf`;
+                return `<a href="${url}" download="${fname}" style="display:inline-block;padding:0.45rem 0.8rem;background:${color};color:#fff;border-radius:6px;font-size:0.78rem;font-weight:700;text-decoration:none;margin:0.2rem;">📄 ${label}</a>`;
+              };
+              const pdfHtml = `<div style="margin:0.6rem 0;padding:0.6rem;background:rgba(34,197,94,0.10);border:1px solid rgba(34,197,94,0.4);border-radius:8px;">
+                <div style="font-size:0.82rem;color:#86efac;font-weight:800;margin-bottom:0.4rem;">✅ 解説 PDF が自動生成されました (${d.pdf_result.base_name})</div>
+                ${dlBtn('問題 (ヒント無し本番版)', 'pdf_strict', 'linear-gradient(135deg,#f59e0b,#d97706)')}
+                ${dlBtn('ヒント付き問題', 'pdf_hint', 'linear-gradient(135deg,#3b82f6,#6366f1)')}
+                ${dlBtn('解説 (📌 ポイント + 📖 詳しい解説)', 'pdf_explain', 'linear-gradient(135deg,#a78bfa,#8b5cf6)')}
+              </div>`;
+              peSolverResults.innerHTML = pdfHtml;
+            } else if (d.pdf_result && !d.pdf_result.ok) {
+              peSolverResults.innerHTML = `<div style="margin:0.6rem 0;padding:0.6rem;background:rgba(248,113,113,0.10);border:1px solid rgba(248,113,113,0.4);border-radius:8px;color:#fca5a5;font-size:0.78rem;">⚠️ PDF 生成失敗: ${d.pdf_result.error}</div>`;
+            }
+            // 結果表示 (各問の解説・PDF download buttons の後に追加)
             const html = d.explanations.map(e => {
               const conf = e.confidence === 'high' ? '🟢 high' : (e.confidence === 'low' ? '🔴 low' : '🟡 medium');
               const point = (e.point || '').replace(/</g, '&lt;').replace(/\n/g, '<br>');
               const det = (e.detailed || '').replace(/</g, '&lt;').replace(/\n/g, '<br>');
               const q = (e.question || '').slice(0, 300).replace(/</g, '&lt;');
+              const svgBlock = e.svg ? `<details style="margin-top:0.4rem;"><summary style="cursor:pointer;color:#67e8f9;font-weight:700;font-size:0.74rem;">▼ SVG 図解</summary><div style="margin-top:0.3rem;background:#fff;padding:0.4rem;border-radius:6px;">${e.svg}</div></details>` : '';
               return `<div style="margin-top:0.6rem;padding:0.7rem;background:rgba(0,0,0,0.3);border:1px solid rgba(167,139,250,0.25);border-radius:8px;">
                 <div style="font-size:0.78rem;color:#c4b5fd;font-weight:700;">問 ${e.index} (${e.topic || '-'}) ${conf}</div>
                 <div style="font-size:0.72rem;color:#a1a1aa;margin:0.3rem 0;line-height:1.5;">${q}${q.length >= 300 ? '…' : ''}</div>
                 <div style="font-size:0.78rem;color:#fde68a;font-weight:700;">正解: ${e.answer_confirmed || '(未確定)'}</div>
                 <div style="margin-top:0.3rem;font-size:0.75rem;color:#86efac;line-height:1.6;">${point}</div>
+                ${svgBlock}
                 <details style="margin-top:0.4rem;font-size:0.74rem;color:#cbd5e1;">
                   <summary style="cursor:pointer;color:#a78bfa;font-weight:700;">▼ 詳しい解説</summary>
                   <div style="margin-top:0.4rem;line-height:1.7;">${det}</div>
                 </details>
               </div>`;
             }).join('');
-            peSolverResults.innerHTML = html;
+            peSolverResults.insertAdjacentHTML('beforeend', html);
           } catch (e) {
             peSolverMsg.style.color = '#fca5a5';
             peSolverMsg.textContent = '❌ ' + (e.message || '送信失敗');

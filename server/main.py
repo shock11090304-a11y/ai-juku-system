@@ -33451,7 +33451,8 @@ PDF の元解答が空 (answer="") の場合は、本文を読んで正解を確
       "answer_confirmed": "(確定した正解。選択肢問題なら 'A' 'B' 等・記述なら模範解答 60-200 字)",
       "point": "📌 ポイント\\n- 正解の核心理由: ...\\n- キーワード: A / B / C\\n- 即決パターン: ...",
       "detailed": "📖 詳しい解説\\n【1. 根拠箇所】本文 X 段「...」が根拠。\\n【2. 文構造/設問分析】S=... V=... 指示語=...\\n【3. 論理マーカー/概念】対比 (A vs B)・コアイメージ ...\\n【4. 他選択肢の誤り + 関連知識】(a) ... = NG (b) ... ← 正解 (c) ... = NG (d) ... = NG / 関連: ...",
-      "confidence": "high|medium|low (high=自信あり / medium=参考程度 / low=要再確認)"
+      "confidence": "high|medium|low (high=自信あり / medium=参考程度 / low=要再確認)",
+      "svg": "(任意・問題理解を助ける SVG 図解があれば生成。なければ空文字)"
     }},
     ...
   ]
@@ -33461,6 +33462,23 @@ PDF の元解答が空 (answer="") の場合は、本文を読んで正解を確
 - 各問の point は **3 行厳守** (核心理由 1 行 + キーワード 1 行 + 即決パターン 1 行)
 - detailed は **4 ブロック固定** (【1. 】【2. 】【3. 】【4. 】の見出しを必ず含める)
 - PDF からの問題抽出が不完全 (図表 「[図表あり:...]」記述等) でも、できる範囲で解説。confidence で品質明示
+
+【SVG 図解の生成基準 (v1.4 ルール 8 準拠)】
+以下のパターンの問題には積極的に svg を生成し、なければ "" で OK:
+- 数学: 関数グラフ・幾何図形・確率分布・ベクトル図
+- 物理: 力学図 (運動方程式・斜面・ばね)・回路図・波動図
+- 化学: 反応経路・結晶構造・滴定曲線・モル概念図
+- 生物: 細胞構造・遺伝子発現・生態系ピラミッド・代謝経路
+- 英語/国語: テーマ別概念マップ・論理展開図 (対比/因果)
+- 社会: 年表・地図 (簡略)・統計グラフ・経済モデル図
+
+【SVG 仕様 (v1.4 ルール 8 厳守)】
+- viewBox は最低 180×130 (推奨 600×280)
+- font-size 最低 5.5 (太字見出し 6.5+)
+- 長文は 2 行分割 (<text> を 2 個並べる)
+- 色: #5a8acd 青 / #cd8a5a 茶 / #5acd8a 緑 / #aa5acd 紫 / #aa0000 赤
+- 純粋な inline SVG のみ (外部 file 参照禁止・<img> 禁止)
+- 例: <svg viewBox="0 0 600 280" xmlns="http://www.w3.org/2000/svg"><rect/><text/></svg>
 """
 
     body = {
@@ -33485,6 +33503,22 @@ PDF の元解答が空 (answer="") の場合は、本文を読んで正解を確
         for e in explanations:
             idx = e.get("index")
             src = by_idx.get(idx, {})
+            # 🛡️ SVG 検証 (v1.4 + Phase 2 security): blacklist 拡張 + foreignObject reject
+            svg_raw = (e.get("svg") or "").strip()
+            svg_safe = ""
+            if svg_raw and "<svg" in svg_raw.lower() and "</svg>" in svg_raw.lower():
+                lower = svg_raw.lower()
+                _bad_tokens = (
+                    "<script", "<iframe", "<object", "<embed", "<foreignobject",
+                    "javascript:", "data:text/", "data:application/",
+                    # 全 event handler (on で始まる属性)
+                    "onerror=", "onclick=", "onload=", "onmouseover=", "oninput=",
+                    "onwheel=", "onfocus=", "onblur=", "onchange=", "onsubmit=",
+                    "onanimation", "ontransition", "onresize=", "onscroll=",
+                    "@import",  # CSS exfiltration
+                )
+                if not any(b in lower for b in _bad_tokens):
+                    svg_safe = svg_raw
             out.append({
                 "index": idx,
                 "question": src.get("question", ""),
@@ -33495,6 +33529,7 @@ PDF の元解答が空 (answer="") の場合は、本文を読んで正解を確
                 "point": e.get("point", ""),
                 "detailed": e.get("detailed", ""),
                 "confidence": e.get("confidence", "medium"),
+                "svg": svg_safe,
             })
         return out
     except Exception as e:
@@ -33623,12 +33658,167 @@ def _text_cosine_similarity(a: str, b: str) -> float:
     return common / (norm_a * norm_b)
 
 
+def _subject_to_generator_path(subject: str) -> Optional[str]:
+    """🛡️ 2026-05-30 Phase 2: subject → generate.py のパス mapping。
+    7 科目 (英語/数学/理科/社会/国語/小論文/模試) の generate.py を呼び出す。
+    """
+    s = (subject or "").strip()
+    base = os.path.expanduser("~/Desktop/問題生成")
+    # 英語系
+    if s in ("英語", "リーディング", "リスニング") or "英語" in s:
+        return os.path.join(base, "英語/english-textbook-pdf 2")
+    # 数学系
+    if "数学" in s:
+        return os.path.join(base, "数学/math-textbook-pdf 2")
+    # 理科系 (物理/化学/生物)
+    if s in ("物理", "化学", "生物") or any(k in s for k in ("物理", "化学", "生物")):
+        return os.path.join(base, "理科/science-textbook-pdf")
+    # 社会系 (日本史/世界史/地理/公民/倫理/政経)
+    if s in ("日本史", "世界史", "地理", "公民", "倫理", "政治・経済") or any(k in s for k in ("史", "地理", "公民", "倫理", "政経")):
+        return os.path.join(base, "社会/social-textbook-pdf")
+    # 国語系
+    if s in ("現代文", "古文", "漢文") or "国語" in s:
+        return os.path.join(base, "国語/kokugo-textbook-pdf 2")
+    return None
+
+
+def _build_pastexam_yaml(meta_info: dict, explanations: list) -> str:
+    """🛡️ 2026-05-30 Phase 2-B: 解説 JSON → v1.4 YAML 文字列に変換。
+    各 explanation を 1 section に展開。approach + solution + figure (SVG) + margin_notes 構築。
+    """
+    import yaml as _yaml
+    sections = []
+    subject = meta_info.get("subject", "")
+    title_base = f"{meta_info.get('target_university', '共通テスト')} {meta_info.get('year', '')}年度 {subject}"
+    # 第 0 章 (オリエン)
+    sections.append({
+        "label": f"第0章 (オリエンテーション・{title_base}・3 分)",
+        "instruction": f"{title_base} の 過去問解説 (自動生成・教科書準拠 + 2 段構造)",
+        "problem": f"★ {title_base} 解説\n\n本資料は {len(explanations)} 問の過去問について、教科書準拠の解答と 2 段構造解説を自動生成したものです。\n\n・📌 ポイント (簡潔)\n・📖 詳しい解説 (4 ブロック: 根拠/文構造/論理/他選択肢)",
+    })
+    # 各問を section に展開
+    for ex in explanations:
+        idx = ex.get("index", 0)
+        topic = ex.get("topic") or ""
+        question = ex.get("question") or ""
+        answer = ex.get("answer_confirmed") or ex.get("original_answer") or ""
+        point = ex.get("point") or ""
+        detailed = ex.get("detailed") or ""
+        svg = ex.get("svg") or ""
+        difficulty = ex.get("difficulty", 3)
+        score = max(5, min(int(difficulty) * 4, 25))  # difficulty 1-5 → 配点 5-25
+        sec = {
+            "label": f"第 {idx} 問 ({topic}・{title_base})",
+            "instruction": f"自動生成解説・confidence={ex.get('confidence', 'medium')}",
+            "score": score,
+            "problem": question[:4000] if question else "(問題本文は元 PDF を参照)",
+            "approach": f"📌 正解: {answer}\n\n{point}",
+            "solution": detailed,
+            "margin_notes": [
+                {"tag": "正解", "text": answer or "(自動確定不可)"},
+                {"tag": "分野", "text": topic or "-"},
+                {"tag": "信頼度", "text": ex.get("confidence", "medium")},
+            ],
+        }
+        if svg:
+            sec["figure"] = {
+                "label": f"{idx}-1",
+                "svg": svg,
+                "caption": f"図 {idx}-1 ({topic} の解説図解)",
+            }
+        sections.append(sec)
+    data = {
+        "meta": {
+            "title": title_base + " 過去問解説",
+            "subtitle": "Past Exam Solver 自動生成・教科書準拠 (v1.4 ルール 9 + 15)",
+            "date": _today_jst().isoformat(),
+            "grade": "高3",
+            "subject": subject,
+            "org": "Trillion 塾",
+            "template": _detect_self_study_template(subject),
+            "cover_label": "過去問解説",
+        },
+        "sections": sections,
+    }
+    return _yaml.safe_dump(data, allow_unicode=True, default_flow_style=False, sort_keys=False)
+
+
+def _detect_self_study_template(subject: str) -> str:
+    """subject 別 self_study template 名 (固定マッピング)。"""
+    s = (subject or "").lower()
+    if any(k in subject for k in ("数学", "math")):
+        return "math_self_study.html"
+    if any(k in subject for k in ("物理", "化学", "生物")):
+        return "science_self_study.html"
+    if any(k in subject for k in ("史", "地理", "公民", "倫理", "政経")):
+        return "social_self_study.html"
+    if any(k in subject for k in ("国語", "現代文", "古文", "漢文")):
+        return "textbook.html"  # 国語 縦書き
+    return "english_self_study.html"  # 英語 default
+
+
+def _render_pastexam_pdf_via_generate_py(yaml_str: str, subject: str, base_name: str) -> dict:
+    """🛡️ 2026-05-30 Phase 2-C: subprocess で 科目別 generate.py を呼んで PDF 生成。
+    Returns: {ok, pdf_main, pdf_hint, pdf_explain, error}
+    """
+    import subprocess as _subprocess
+    import tempfile as _tempfile
+
+    gen_dir = _subject_to_generator_path(subject)
+    if not gen_dir or not os.path.isdir(gen_dir):
+        return {"ok": False, "error": f"generator path not found for subject={subject}"}
+    samples_dir = os.path.join(gen_dir, "samples")
+    output_dir = os.path.join(gen_dir, "output")
+    if not os.path.isdir(samples_dir):
+        return {"ok": False, "error": f"samples dir not found: {samples_dir}"}
+
+    # YAML を samples/ に書き込み
+    yaml_path = os.path.join(samples_dir, f"{base_name}.yaml")
+    try:
+        with open(yaml_path, "w", encoding="utf-8") as f:
+            f.write(yaml_str)
+    except Exception as e:
+        return {"ok": False, "error": f"YAML write failed: {e}"}
+
+    # venv の python で generate.py 実行
+    py = os.path.join(gen_dir, "venv/bin/python")
+    if not os.path.isfile(py):
+        return {"ok": False, "error": f"venv python not found: {py}"}
+    try:
+        result = _subprocess.run(
+            [py, "generate.py", f"samples/{base_name}.yaml", "--mode", "all"],
+            cwd=gen_dir,
+            capture_output=True,
+            timeout=120,
+            text=True,
+        )
+        if result.returncode != 0:
+            return {"ok": False, "error": f"generate.py failed (code {result.returncode}): {result.stderr[:500]}"}
+    except _subprocess.TimeoutExpired:
+        return {"ok": False, "error": "generate.py timeout (>120s)"}
+    except Exception as e:
+        return {"ok": False, "error": f"subprocess failed: {e}"}
+
+    # 出力ファイル確認 (3 種類)
+    pdf_main = os.path.join(output_dir, f"{base_name}_ヒント付き問題.pdf")
+    pdf_strict = os.path.join(output_dir, f"{base_name}_問題.pdf")
+    pdf_explain = os.path.join(output_dir, f"{base_name}_解説.pdf")
+    return {
+        "ok": True,
+        "yaml_path": yaml_path,
+        "pdf_hint": pdf_main if os.path.isfile(pdf_main) else None,
+        "pdf_strict": pdf_strict if os.path.isfile(pdf_strict) else None,
+        "pdf_explain": pdf_explain if os.path.isfile(pdf_explain) else None,
+    }
+
+
 @app.post("/api/admin/past-exam-solver")
 async def past_exam_solver(
     file: UploadFile = File(...),
     target_university: str = Form("共通テスト"),
     year: str = Form(""),
     subject: str = Form(...),
+    generate_pdf: bool = Form(False),  # Phase 2: True なら YAML + PDF 自動生成
     authorization: Optional[str] = Header(None),
 ):
     """📄 共通テスト等 過去問 PDF → 教科書準拠 解説 を自動生成 (塾長指示 2026-05-30)。
@@ -33695,6 +33885,53 @@ async def past_exam_solver(
         preview = explanations[:3]
         cost_yen = 80 + 15 * len(explanations)  # Gemini PDF 解析 ¥80 + Claude 解説 ¥15/問
 
+        # 4. Phase 2: YAML 自動生成 + PDF 化 (generate_pdf=True 時のみ)
+        pdf_result = None
+        if generate_pdf:
+            try:
+                meta_info = {
+                    "subject": subject,
+                    "target_university": target_university,
+                    "year": year,
+                }
+                yaml_str = _build_pastexam_yaml(meta_info, explanations)
+                # ファイル名: YYYY-MM-DD_共通テスト_2024_subject_解説
+                # 🛡️ Path traversal 防御: /, \, . (parent dir), null byte, Unicode separators 等を全部 _ に
+                def _safe_filename_part(s: str) -> str:
+                    if not s: return ""
+                    # ASCII / Unicode の path separator + dot + null + 制御文字を全部 reject
+                    return re.sub(r"[\\/\.\x00-\x1f․‥…．／＼]", "_", s)[:80]
+                _safe_subj = _safe_filename_part(subject)
+                _safe_year = _safe_filename_part(year or "")
+                _safe_univ = _safe_filename_part(target_university)
+                base_name = f"{_today_jst().isoformat()}_{_safe_univ}_{_safe_year}_{_safe_subj}_過去問解説"
+                pdf_result = _render_pastexam_pdf_via_generate_py(yaml_str, subject, base_name)
+                # PDF を base64 で response に含める (option) or static URL
+                if pdf_result.get("ok"):
+                    pdfs_b64 = {}
+                    # 🛡️ Response bloat 防御: 各 PDF max 8MB (base64 → 10.6MB)・超過は skip + warning
+                    _MAX_PDF_B64 = 8 * 1024 * 1024
+                    skipped_too_large = []
+                    for key in ("pdf_hint", "pdf_strict", "pdf_explain"):
+                        path = pdf_result.get(key)
+                        if path and os.path.isfile(path):
+                            try:
+                                size = os.path.getsize(path)
+                                if size > _MAX_PDF_B64:
+                                    skipped_too_large.append({"key": key, "size_mb": round(size / 1024 / 1024, 1)})
+                                    continue
+                                with open(path, "rb") as _f:
+                                    pdfs_b64[key] = base64.b64encode(_f.read()).decode("ascii")
+                            except Exception as _e:
+                                log.warning(f"[PastExamSolver] read {key} failed: {_e}")
+                    pdf_result["pdfs_b64"] = pdfs_b64
+                    pdf_result["base_name"] = base_name
+                    if skipped_too_large:
+                        pdf_result["skipped_too_large"] = skipped_too_large
+            except Exception as e:
+                log.warning(f"[PastExamSolver] PDF generation failed: {type(e).__name__}: {str(e)[:200]}")
+                pdf_result = {"ok": False, "error": f"{type(e).__name__}: {str(e)[:200]}"}
+
         return {
             "ok": True,
             "upload_id": upload_id,
@@ -33705,6 +33942,7 @@ async def past_exam_solver(
             "explanations": explanations,
             "preview": preview,
             "cost_yen_estimate": cost_yen,
+            "pdf_result": pdf_result,  # generate_pdf=True 時に {ok, pdfs_b64: {pdf_hint, pdf_strict, pdf_explain}, base_name}
         }
     finally:
         conn.close()
