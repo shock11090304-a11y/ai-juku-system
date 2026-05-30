@@ -5413,6 +5413,23 @@ function spTogglePomodoro() {
 // 🗓 2026-05-30 塾長指示「もうすでに作成してしまった子達が再修正をする」: 曜日別で再作成 modal
 let _spDowCurrentCurr = null;  // 開いたときの最新カリキュラム (再作成時に流用)
 
+// 🛡️ 2026-05-30 hotfix: slApiFetch は mypage.js の関数で app.js 文脈では使えない
+//   → app.js 内で fetch + Bearer token (既存 sp* と同じパターン) で代替
+async function _spDowApi(path, opts) {
+  const token = (typeof localStorage !== 'undefined') ? (localStorage.getItem('ai_juku_session_token') || '') : '';
+  if (!token) throw new Error('ログインが必要です (session token なし)');
+  const headers = Object.assign({ 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, (opts && opts.headers) || {});
+  const r = await fetch(path, Object.assign({}, opts || {}, { headers }));
+  if (!r.ok) {
+    let detail = '';
+    try { const j = await r.json(); detail = j.detail || j.error || ''; } catch (_) {}
+    const err = new Error('HTTP ' + r.status + (detail ? ': ' + detail : ''));
+    err.status = r.status;
+    throw err;
+  }
+  return await r.json();
+}
+
 async function spDowReplanOpen() {
   const modal = document.getElementById('spDowModal');
   if (!modal) return;
@@ -5422,7 +5439,7 @@ async function spDowReplanOpen() {
   if (msg) { msg.textContent = ''; msg.style.color = ''; }
   if (info) info.textContent = 'カリキュラム読み込み中...';
   try {
-    const data = await slApiFetch('/api/curricula/me');
+    const data = await _spDowApi('/api/curricula/me');
     const arr = (data && data.curricula) || [];
     // 最新の active カリキュラムを選択
     const curr = arr.find(c => c.status === 'active') || arr[0];
@@ -5497,7 +5514,7 @@ async function spDowReplanSubmit() {
   try {
     // 1. AI 再生成 (既存パラメータ + 新 weekly_minutes)
     const dailyAvg = Math.round(total / 7);
-    const genRes = await slApiFetch('/api/curricula/ai-generate', {
+    const genRes = await _spDowApi('/api/curricula/ai-generate', {
       method: 'POST',
       body: JSON.stringify({
         target_university: curr.target_university,
@@ -5515,7 +5532,7 @@ async function spDowReplanSubmit() {
     //   旧順序: archive → POST だと POST 失敗時に旧データが orphan archived 状態に
     //   新順序: POST → archive だと POST 失敗時は旧 active のまま (rollback 不要)
     // 2. 新 curr を save (失敗時は旧 active 維持)
-    await slApiFetch('/api/curricula', {
+    await _spDowApi('/api/curricula', {
       method: 'POST',
       body: JSON.stringify({
         target_university: preview.target_university,
@@ -5531,7 +5548,7 @@ async function spDowReplanSubmit() {
     });
     // 3. 新 curr 保存成功後に旧 curr を archive (失敗してもユーザに警告のみ)
     try {
-      await slApiFetch('/api/curricula/' + curr.id, {
+      await _spDowApi('/api/curricula/' + curr.id, {
         method: 'PUT',
         body: JSON.stringify({ status: 'archived' }),
       });
