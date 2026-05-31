@@ -83,6 +83,22 @@ STRIPE_PRICE_ENROLLMENT = os.getenv("STRIPE_PRICE_ENROLLMENT", "price_enrollment
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET", "")
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
+# 🔑 2026-05-31 塾長指示「マジックリンク再発行してもすぐログインできない子が多い → 時間制限を無しに」:
+#   OTP = single-use + 5 回失敗ロックアウトで安全 → 完全無期限 (0 = 無期限)
+#   マジックリンク (URL) は複数回クリック可 → 30 日 (実質無制限 + 漏れた時の保険)
+#   env で上書き可能: OTP_TTL_SECONDS=0 (無期限) / MAGIC_LINK_TTL_SECONDS=2592000 (30日)
+#   _OTP_TTL_SECONDS <= 0 の場合は「期限チェックなし (無期限)」として扱う。
+try:
+    _OTP_TTL_SECONDS = int(os.getenv("OTP_TTL_SECONDS", "0"))  # 0 = 無期限
+except (TypeError, ValueError):
+    _OTP_TTL_SECONDS = 0
+try:
+    _MAGIC_LINK_TTL_SECONDS = int(os.getenv("MAGIC_LINK_TTL_SECONDS", str(30 * 24 * 3600)))  # 30 日
+except (TypeError, ValueError):
+    _MAGIC_LINK_TTL_SECONDS = 30 * 24 * 3600
+# 無期限 OTP でも DB 上は遠未来の expires_at を入れる (expires_at > CURRENT_TIMESTAMP 判定を常に true にするため)
+# 100 年後 = 実質無期限。NULL にすると既存 SQL の比較が壊れるため遠未来日時で表現。
+_OTP_INFINITE_TTL_SECONDS = 100 * 365 * 24 * 3600  # 約 100 年
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 # Gemini Tier 4 fallback (AI never-fail 原則: Anthropic 完全障害でも止まらない)
 # Google AI Studio で無料発行: https://aistudio.google.com/app/apikey
@@ -2214,10 +2230,13 @@ def _sign_session_token(student_id: int, ttl_seconds: int = SESSION_TTL_SECONDS,
     return base64.urlsafe_b64encode(raw.encode()).decode().rstrip("=")
 
 
-def _create_magic_link_token(student_id: int, ttl_seconds: int = 3600) -> str:
-    """Magic link 用の短命トークン (デフォルト1時間)。
-    URL に直入れするため漏洩リスクを最小化する目的で session token と分離。"""
-    return _sign_session_token(student_id, ttl_seconds=ttl_seconds, token_type="magic")
+def _create_magic_link_token(student_id: int, ttl_seconds: int = None) -> str:
+    """Magic link 用のトークン。
+    🔑 2026-05-31 塾長指示「時間制限を無しに」: デフォルト 30 日 (_MAGIC_LINK_TTL_SECONDS)。
+    URL に直入れ + 複数回クリック可なので、漏洩時の保険として 30 日で eventual expiry を残す。
+    ttl_seconds 明示指定が無ければ env (_MAGIC_LINK_TTL_SECONDS・default 30 日) を使用。"""
+    _eff = ttl_seconds if ttl_seconds is not None else _MAGIC_LINK_TTL_SECONDS
+    return _sign_session_token(student_id, ttl_seconds=_eff, token_type="magic")
 
 
 def _verify_session_token(token: str, expected_type: str = "session") -> Optional[dict]:
@@ -7347,18 +7366,26 @@ def admin_git_apply_patch(
 
 _LAST_OTP_GC_TS = {"ts": 0.0}
 
-def _create_otp(student_id: int, ttl_seconds: int = 600) -> str:
-    """6桁数字のOTPコードを生成しDBに保存。10分有効。
+def _create_otp(student_id: int, ttl_seconds: int = None) -> str:
+    """6桁数字のOTPコードを生成しDBに保存。
+
+    🔑 2026-05-31 塾長指示「時間制限を無しに」: デフォルト無期限 (_OTP_TTL_SECONDS=0)。
+    ttl_seconds=None なら env (_OTP_TTL_SECONDS) を参照。0 以下 = 無期限 (遠未来 expires_at)。
+    OTP は single-use + 5 回失敗ロックアウトで保護されているため無期限でも安全。
 
     DB 肥大化対策 (4番手 監査 2026-04-30):
     - 同一 student の未使用 active OTP が3件以上ある場合、最も古い1件を invalidate
-      (1人で12時間に大量発行→DB 行が無限に増えるのを防ぐ)
-    - グローバル GC: 1時間に1回、全体の expires_at < now-7days な行を物理削除
+      (1人で大量発行→DB 行が無限に増えるのを防ぐ)
+    - グローバル GC: 1時間に1回、全体の used_at IS NOT NULL かつ古い行を物理削除
     """
     import secrets
     import time as _time
     code = f"{secrets.randbelow(1000000):06d}"
-    expires_at = datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds)
+    # ttl_seconds 明示指定が無ければ env 設定を使用
+    _eff_ttl = ttl_seconds if ttl_seconds is not None else _OTP_TTL_SECONDS
+    # 0 以下 = 無期限 → 遠未来 (100 年後) の expires_at を入れて常に有効扱い
+    _store_ttl = _eff_ttl if (_eff_ttl and _eff_ttl > 0) else _OTP_INFINITE_TTL_SECONDS
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=_store_ttl)
     conn = db()
     c = conn.cursor()
     # 1) 同一 student の active OTP を最大 3件に制限
@@ -7386,20 +7413,31 @@ def _create_otp(student_id: int, ttl_seconds: int = 600) -> str:
     )
     conn.commit()
     conn.close()
-    # 3) Opportunistic global GC (1時間に1回): 7日前以前の expired を物理削除
+    # 3) Opportunistic global GC (1時間に1回):
+    #    🔑 2026-05-31 無期限 OTP 対応: expires_at が遠未来 (100年後) になり従来の
+    #    「expires_at < now-7days」だけでは used 行が永久に残り DB 肥大化する。
+    #    → 「使用済み (used_at) が 7 日以上前」も削除対象に追加 (両条件 OR)。
     now_ts = _time.time()
     if now_ts - _LAST_OTP_GC_TS["ts"] > 3600:
         _LAST_OTP_GC_TS["ts"] = now_ts
         try:
             conn2 = db(); c2 = conn2.cursor()
             if USE_POSTGRES:
-                c2.execute("DELETE FROM otp_codes WHERE expires_at < CURRENT_TIMESTAMP - INTERVAL '7 days'")
+                c2.execute(
+                    "DELETE FROM otp_codes WHERE "
+                    "(used_at IS NOT NULL AND used_at < CURRENT_TIMESTAMP - INTERVAL '7 days') "
+                    "OR (expires_at < CURRENT_TIMESTAMP - INTERVAL '7 days')"
+                )
             else:
-                c2.execute("DELETE FROM otp_codes WHERE expires_at < datetime('now', '-7 days')")
+                c2.execute(
+                    "DELETE FROM otp_codes WHERE "
+                    "(used_at IS NOT NULL AND used_at < datetime('now', '-7 days')) "
+                    "OR (expires_at < datetime('now', '-7 days'))"
+                )
             deleted = c2.rowcount or 0
             conn2.commit(); conn2.close()
             if deleted > 0:
-                log.info(f"[OTP-GC] purged {deleted} expired otp_codes rows (>7 days old)")
+                log.info(f"[OTP-GC] purged {deleted} otp_codes rows (used>7d or expired>7d)")
         except Exception as _e:
             log.warning(f"[OTP-GC] cleanup failed: {_e}")
     return code
@@ -7423,9 +7461,11 @@ def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, otp
     )
 
     # OTPコード表示ブロック (視認性重視、コピーしやすいフォーマット)
+    _otp_validity_label = "1 回使うと無効・有効期限なし" if not (_OTP_TTL_SECONDS and _OTP_TTL_SECONDS > 0) else f"{_OTP_TTL_SECONDS // 60}分間有効"
     otp_block = f"""
   <div style="text-align:center; margin: 2rem 0;">
-    <p style="font-size:0.8rem; color:#666; margin-bottom:0.5rem;">ログインコード（10分間有効）</p>
+    <p style="font-size:0.8rem; color:#666; margin-bottom:0.5rem;">ログインコード（{_otp_validity_label}）</p>"""
+    otp_block += f"""
     <p style="font-size: 2.5rem; font-weight: 900; letter-spacing: 0.5rem; font-family: 'SF Mono', monospace; color: #6366f1; background: #f5f5f5; padding: 1rem; border-radius: 12px; margin: 0;">
       {otp_code}
     </p>
@@ -7445,7 +7485,7 @@ def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, otp
   </p>
   <hr style="margin:2rem 0; border:none; border-top:1px solid #eee;">
   <p style="font-size:0.8rem; color:#999;">
-    このメールに心当たりがない場合は無視してください（コードは10分、リンクは30日で自動失効します）。<br>
+    このメールに心当たりがない場合は無視してください（{_otp_validity_label}、リンクは30日で自動失効します）。<br>
     お問い合わせ: <a href="mailto:info@trillion-ai-juku.com" style="color:#6366f1;">info@trillion-ai-juku.com</a>
   </p>
 </body>
@@ -17286,18 +17326,20 @@ def admin_issue_otp_direct(payload: dict, authorization: Optional[str] = Header(
             try: conn.rollback()
             except Exception: pass
 
-        # 有効期限: _create_otp の TTL は 600 秒 (10 分)。クライアント表示用に絶対時刻も返す
-        import time as _t
+        # 🔑 2026-05-31 塾長指示「時間制限を無しに」: OTP は無期限 (_OTP_TTL_SECONDS=0)。
         # ワンクリック URL: ?email=xxx&code=xxx で login.html Step1 スキップ + Step2 自動 submit
         # (login.html 側の対応必要。skip_send=1 で Step1 の magic-link 再発行を抑止)
+        import time as _t
         from urllib.parse import urlencode
         qs = urlencode({"email": row["email"], "code": otp_code, "skip_send": "1"})
         direct_login_url = f"{BASE_URL}/login.html?{qs}"
+        _is_infinite = not (_OTP_TTL_SECONDS and _OTP_TTL_SECONDS > 0)
         return {
             "ok": True,
             "otp": otp_code,
-            "expires_at": int(_t.time()) + 600,
-            "ttl_seconds": 600,
+            "expires_at": None if _is_infinite else int(_t.time()) + _OTP_TTL_SECONDS,
+            "ttl_seconds": 0 if _is_infinite else _OTP_TTL_SECONDS,
+            "no_expiry": _is_infinite,
             "direct_login_url": direct_login_url,
             "student": {
                 "id": sid,
@@ -17305,7 +17347,7 @@ def admin_issue_otp_direct(payload: dict, authorization: Optional[str] = Header(
                 "email": row["email"],
                 "status": row["status"],
             },
-            "instructions": "【伝達方法 2 通り】(A) ワンクリック URL を LINE で送る → 生徒は URL クリックで即ログイン。(B) 6 桁コードを口頭/電話で伝える → 生徒は login.html で登録メアド入力 → コード入力。10 分以内に使ってください。",
+            "instructions": "【伝達方法 2 通り】(A) ワンクリック URL を LINE で送る → 生徒は URL クリックで即ログイン。(B) 6 桁コードを口頭/電話で伝える → 生徒は login.html で登録メアド入力 → コード入力。" + ("⏱ 有効期限なし (いつでも使えます・1 回使うと無効)。" if _is_infinite else f"{_OTP_TTL_SECONDS // 60} 分以内に使ってください。"),
         }
     finally:
         conn.close()
@@ -17359,7 +17401,7 @@ def admin_send_kokuritsu_url_bundle(
         )
         students_rows = c.fetchall()
 
-        OTP_TTL_24H = 86400
+        # 🔑 2026-05-31 塾長指示「時間制限を無しに」: 旧 24h 固定 → env (_OTP_TTL_SECONDS・default 無期限) 統一
         student_links = []
         skipped_no_email = 0
         for row in students_rows:
@@ -17371,7 +17413,7 @@ def admin_send_kokuritsu_url_bundle(
                 continue
             try:
                 _invalidate_active_otps(sid)
-                otp_code = _create_otp(sid, ttl_seconds=OTP_TTL_24H)
+                otp_code = _create_otp(sid)  # ttl 未指定 = env 設定 (無期限)
             except Exception as e:
                 log.warning(f"[KokuritsuBundle] OTP issue failed sid={sid}: {e}")
                 try: conn.rollback()
@@ -23065,7 +23107,7 @@ LINE_TEMPLATES = {
         "type": "text",
         "text": f"🎓 AIコーチング ログイン\n\n"
                 f"{p.get('name', '生徒')}さん、ログインリンクをお送りします。\n\n"
-                f"🔢 ログインコード（10分間有効）: {p.get('otp_code', '')}\n\n"
+                f"🔢 ログインコード（1 回使うと無効）: {p.get('otp_code', '')}\n\n"
                 f"または下記リンクから直接ログイン（30日間有効）👇\n"
                 f"{p.get('magic_url', '')}\n\n"
                 f"※ メールが届かない場合の代替送信です。\n"
@@ -32600,7 +32642,8 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
         # _create_otp は student_id を取る
         # _send_magic_link_email がある (推定) → なければ直接 send
         # 簡略化: magic link URL を直接生成して email 送信
-        magic_token = _sign_session_token(student_id, ttl_seconds=3600, token_type="magic")  # 1h
+        # 🔑 2026-05-31 統一: magic link は _create_magic_link_token (default 30 日) 経由に
+        magic_token = _create_magic_link_token(student_id)
         login_url = f"https://trillion-ai-juku.com/auth.html?t={magic_token}"
         body_text = (
             f"{name} さん\n\n"

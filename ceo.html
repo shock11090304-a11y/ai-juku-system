@@ -626,7 +626,7 @@
         <!-- 🔑 OTP 緊急発行: メール届かない生徒に admin が OTP 直接発行 (2026-05-11 室坂さん対応で追加) -->
         <div style="margin-top:0.8rem;padding:0.7rem;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;">
           <div style="font-weight:800;color:#fca5a5;font-size:0.82rem;margin-bottom:0.4rem;">🔑 OTP 緊急発行 — どのメアドにしても届かない生徒向け</div>
-          <div style="font-size:0.72rem;color:#fca5a5;margin-bottom:0.5rem;line-height:1.55;">メール経路を一切経由せず、塾長が LINE/電話/対面で OTP を伝達できます。発行後 10 分間有効。</div>
+          <div style="font-size:0.72rem;color:#fca5a5;margin-bottom:0.5rem;line-height:1.55;">メール経路を一切経由せず、塾長が LINE/電話/対面で OTP を伝達できます。<strong style="color:#86efac;">有効期限なし・1 回使うと無効</strong> (いつでも使えます)。</div>
           <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
             <input type="text" id="otpIssueQuery" placeholder="生徒名 (例: 室坂) / ID / メアド" style="flex:1;min-width:170px;padding:0.4rem 0.55rem;background:rgba(0,0,0,0.4);border:1px solid rgba(239,68,68,0.3);border-radius:6px;color:#e4e4e7;font-size:0.78rem;font-family:inherit;">
             <button id="otpIssueBtn" type="button" style="background:rgba(239,68,68,0.25);color:#fca5a5;border:1px solid rgba(239,68,68,0.5);padding:0.4rem 0.85rem;border-radius:6px;font-size:0.78rem;font-weight:800;cursor:pointer;">🔑 発行</button>
@@ -2304,7 +2304,7 @@
   </footer>
 
   <script src="plans.js?v=20260529-waive-enrollment"></script>
-  <script src="ceo.js?v=20260530-pastexam-pdf-gen"></script>
+  <script src="ceo.js?v=20260531-otp-no-expiry"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {
@@ -5187,7 +5187,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             <div style="color:#34d399;font-weight:800;margin-bottom:0.5rem;">✅ #${s.id} ${s.name} さま (${s.status})</div>
             <div style="font-size:0.7rem;color:#a3a3a3;margin-bottom:0.4rem;">登録メアド: ${s.email}</div>
             <div style="background:rgba(0,0,0,0.5);padding:0.8rem;border-radius:8px;text-align:center;margin:0.6rem 0;">
-              <div style="font-size:0.7rem;color:#a3a3a3;margin-bottom:0.3rem;">6 桁ログインコード (10 分有効)</div>
+              <div style="font-size:0.7rem;color:#a3a3a3;margin-bottom:0.3rem;">6 桁ログインコード (${d.no_expiry ? '有効期限なし・1 回使うと無効' : (d.ttl_seconds ? Math.round(d.ttl_seconds/60)+' 分有効' : '10 分有効')})</div>
               <div id="otpCodeDisplay" style="font-size:2rem;font-weight:900;letter-spacing:0.5rem;color:#6ee7b7;font-family:'SF Mono',monospace;">${otp}</div>
               <button type="button" id="otpCopyBtn" style="margin-top:0.4rem;background:rgba(110,231,183,0.2);color:#6ee7b7;border:1px solid rgba(110,231,183,0.4);padding:0.3rem 0.7rem;border-radius:5px;font-size:0.72rem;font-weight:700;cursor:pointer;">📋 コピー</button>
             </div>
