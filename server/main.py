@@ -7880,7 +7880,14 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
 
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT id, name, email, status, trial_end, course FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
+    # 🔑 2026-05-31 塾長指示「親には届くが子には届かない」: email (親) だけでなく
+    #   student_email (子) でも検索できるようにする。子供が自分のアドレスでログイン要求しても
+    #   見つかるように LOWER(email)=? OR LOWER(student_email)=? で照合。
+    c.execute(
+        "SELECT id, name, email, student_email, status, trial_end, course FROM students "
+        "WHERE LOWER(email) = ? OR LOWER(COALESCE(student_email, '')) = ? LIMIT 1",
+        (email_lower, email_lower),
+    )
     row = c.fetchone()
     conn.close()
 
@@ -7930,9 +7937,22 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
         token = _create_magic_link_token(row["id"])
         magic_url = f"{BASE_URL}/auth.html?t={token}"
         otp_code = _create_otp(row["id"])
+        # 🔑 2026-05-31 塾長指示「親には届くが子には届かない」: 親 (email) + 子 (student_email)
+        #   両方に送信する (signup の CC ロジックを再ログインにも適用)。
+        #   同一 OTP/magic_url を両方に送るので、どちらの端末からでもログイン可能。
+        _row_keys = row.keys()
+        _parent_email = (row["email"] or "").strip()
+        _student_email = (row["student_email"] if "student_email" in _row_keys else "") or ""
+        _student_email = _student_email.strip()
         send_result = _send_magic_link_with_retry(
-            row["email"], row["name"] or "", magic_url, otp_code=otp_code, is_welcome=False,
+            _parent_email, row["name"] or "", magic_url, otp_code=otp_code, is_welcome=False,
         ) or {}
+        # 子メールが設定済 + 親メールと異なる → 子にも同じリンク/コードを送信
+        student_send_result = {}
+        if _student_email and _student_email.lower() != _parent_email.lower():
+            student_send_result = _send_magic_link_with_retry(
+                _student_email, row["name"] or "", magic_url, otp_code=otp_code, is_welcome=False,
+            ) or {}
         send_event_props.update({
             "email_sent": bool(send_result.get("sent")),
             "error": (send_result.get("error") or "")[:200] if not send_result.get("sent") else None,
@@ -7940,11 +7960,17 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
             "retried": bool(send_result.get("retried")),
             "synthetic": bool(send_result.get("synthetic")),
             "reason": "sent" if send_result.get("sent") else "send_failed",
+            "student_email_sent": bool(student_send_result.get("sent")) if _student_email else None,
         })
         if not send_result.get("sent"):
             log.error(
-                f"[MagicLink] Send FAILED for student_id={row['id']} email={row['email']}: "
+                f"[MagicLink] Send FAILED for student_id={row['id']} email={_parent_email}: "
                 f"{send_result.get('error')} (permanent={send_result.get('permanent')}, retried={send_result.get('retried')})"
+            )
+        if _student_email and not student_send_result.get("sent"):
+            log.warning(
+                f"[MagicLink] 子メール送信 FAILED student_id={row['id']} student_email={_student_email}: "
+                f"{student_send_result.get('error')}"
             )
     elif is_trial_expired:
         log.info(f"Magic link requested but trial expired: {email_lower}")
@@ -8274,12 +8300,12 @@ def admin_stats(authorization: Optional[str] = Header(None)):
     c = conn.cursor()
     # last_login_at は migration 直後の旧 DB に存在しない可能性あり → try/except でフォールバック
     try:
-        c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at, line_user_id, course, enrollment_fee_waived FROM students ORDER BY id DESC")
+        c.execute("SELECT id, name, email, student_email, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at, line_user_id, course, enrollment_fee_waived FROM students ORDER BY id DESC")
         rows = c.fetchall()
         has_last_login = True
     except Exception:
         try:
-            c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, paid_since, created_at, line_user_id, course FROM students ORDER BY id DESC")
+            c.execute("SELECT id, name, email, student_email, grade, goal, plan, status, trial_end, paid_since, created_at, line_user_id, course FROM students ORDER BY id DESC")
             rows = c.fetchall()
             has_last_login = False
         except Exception:
@@ -8351,6 +8377,8 @@ def admin_stats(authorization: Optional[str] = Header(None)):
             "id": row["id"],
             "name": row["name"],
             "email": row["email"],
+            # 🔑 2026-05-31: 子供メール (3つ目 fallback SELECT には無いので row.keys() で安全取得)
+            "student_email": (row["student_email"] if "student_email" in row.keys() else None),
             "grade": row["grade"],
             "goal": row["goal"],
             "plan": row["plan"],
@@ -30582,6 +30610,75 @@ def admin_set_student_plan(student_id: int, payload: StudentPlanSetRequest, auth
 # 塾長: 生徒のコース割当 (国公立難関大学コース 加入/離脱)
 class StudentCourseSetRequest(BaseModel):
     course: Optional[str] = None  # 'kokuritsu_nankan' or null
+
+
+class StudentEmailSetRequest(BaseModel):
+    student_email: Optional[str] = None  # 子供のメールアドレス (空文字/null でクリア)
+
+
+@app.post("/api/admin/students/{student_id}/student-email")
+def admin_set_student_email(student_id: int, payload: StudentEmailSetRequest,
+                            authorization: Optional[str] = Header(None),
+                            x_cron_secret: Optional[str] = Header(None)):
+    """🔑 2026-05-31 塾長指示「親には届くが子には届かない」: 塾長が生徒の student_email
+    (子供のメール) を後から設定/更新できる。設定後、マジックリンク再発行は親 (email) +
+    子 (student_email) の両方に送信される。空文字/null でクリア。
+
+    認証: admin Bearer または X-Cron-Secret (塾長離席中 Claude 経由対応用)。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    new_email = (payload.student_email or "").strip()
+    # 簡易 email validation (空はクリア扱いで許可)
+    if new_email and ("@" not in new_email or "." not in new_email.split("@")[-1] or len(new_email) > 254):
+        raise HTTPException(status_code=400, detail="有効なメールアドレスを入力してください")
+    new_email_norm = new_email.lower() or None
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, email, student_email FROM students WHERE id = ?", (student_id,))
+        row = c.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        old_email = (row["student_email"] if "student_email" in row.keys() else None)
+        parent_email = (row["email"] or "").strip().lower()
+        # 親 email と同一の子メールは無意味 (両方送信時に重複) なので警告だけ・保存は許可
+        same_as_parent = bool(new_email_norm and new_email_norm == parent_email)
+        c.execute("UPDATE students SET student_email = ? WHERE id = ?", (new_email_norm, student_id))
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("student_email_set", json.dumps({
+                    "student_id": student_id,
+                    "old_domain": (old_email.split("@")[-1] if old_email and "@" in old_email else None),
+                    "new_domain": (new_email_norm.split("@")[-1] if new_email_norm and "@" in new_email_norm else None),
+                    "actor": "admin",
+                }, ensure_ascii=False), "admin_action")
+            )
+        except Exception:
+            pass
+        conn.commit()
+        return {
+            "ok": True,
+            "student_id": student_id,
+            "student_email": new_email_norm,
+            "same_as_parent_warning": same_as_parent,
+            "message": (
+                "子メールをクリアしました" if not new_email_norm
+                else ("⚠️ 親メールと同じです (両方送信時に重複)" if same_as_parent
+                      else "子メールを登録しました。今後のマジックリンク再発行は親+子の両方に届きます。")
+            ),
+        }
+    finally:
+        conn.close()
 
 
 @app.post("/api/admin/students/{student_id}/course")

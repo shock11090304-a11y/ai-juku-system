@@ -2304,7 +2304,7 @@
   </footer>
 
   <script src="plans.js?v=20260529-waive-enrollment"></script>
-  <script src="ceo.js?v=20260531-otp-no-expiry"></script>
+  <script src="ceo.js?v=20260531-student-email"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {
@@ -6993,10 +6993,17 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       const editBtnStyle = 'margin-left:8px;padding:3px 10px;background:rgba(99,102,241,0.18);border:1px solid rgba(99,102,241,0.4);color:#c7d2fe;border-radius:5px;font-size:0.72rem;cursor:pointer;font-weight:600;';
       const editGradeBtn = `<button class="sd-edit-profile-btn" data-student-id="${esc(st.id)}" data-field="grade" data-current="${esc(st.grade || '')}" style="${editBtnStyle}">✏️ 編集</button>`;
       const editGoalBtn = `<button class="sd-edit-profile-btn" data-student-id="${esc(st.id)}" data-field="goal" data-current="${esc(st.goal || '')}" style="${editBtnStyle}">✏️ 編集</button>`;
+      // 🔑 2026-05-31 塾長指示「親には届くが子には届かない」: 子供メール (student_email) を編集可能に
+      // 設定すると、マジックリンク再発行が親 (保護者メール) + 子 (子供メール) の両方に届く。
+      const editStudentEmailBtn = `<button class="sd-edit-profile-btn" data-student-id="${esc(st.id)}" data-field="student_email" data-current="${esc(st.student_email || '')}" style="${editBtnStyle}">✏️ 編集</button>`;
+      const studentEmailDisplay = st.student_email
+        ? `<span style="color:#86efac;">${esc(st.student_email)}</span>`
+        : `<span style="color:#71717a;">未登録 (親メールのみ)</span>`;
       infoPane.innerHTML = [
         row('申込日時',     fmtDate(st.created_at)),
         row('お名前',       `<strong style="font-size:1.05rem;color:#fff;">${esc(st.name || '(未登録)')}</strong>`),
         row('保護者メール', emailHtml),
+        row('子供メール',   studentEmailDisplay + editStudentEmailBtn),
         row('学年',         esc(st.grade || '未登録') + editGradeBtn),
         row('志望校・目標', esc(st.goal || '未登録') + editGoalBtn),
         row('選択プラン',   planLabel),
@@ -7031,6 +7038,35 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           const sid = Number(btn.dataset.studentId) || 0;
           const field = btn.dataset.field;
           const current = btn.dataset.current || '';
+          if (sid <= 0) { alert('student_id 不正'); return; }
+
+          // 🔑 2026-05-31: student_email は別 endpoint (admin) + email validation + 空欄でクリア許可
+          if (field === 'student_email') {
+            const newVal = prompt(`子供のメールアドレスを入力 (現在: ${current || '未登録'})\n空欄で登録解除。設定すると今後のマジックリンクが親+子の両方に届きます。`, current);
+            if (newVal === null) return;
+            const trimmed = String(newVal).trim();
+            if (trimmed === current) return;
+            if (trimmed && (!trimmed.includes('@') || !trimmed.split('@').pop().includes('.') || trimmed.length > 254)) {
+              alert('有効なメールアドレスを入力してください'); return;
+            }
+            try {
+              const res = await AdminAuth.fetch(`/api/admin/students/${sid}/student-email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ student_email: trimmed }),
+              });
+              const data = await res.json().catch(() => ({}));
+              if (!res.ok || !data.ok) { alert(`更新失敗: ${data.detail || data.message || 'HTTP ' + res.status}`); return; }
+              alert(`✅ ${data.message || '子供メールを更新しました'}`);
+              if (st) st.student_email = trimmed || null;
+              btn.dataset.current = trimmed;
+              const closeBtn = document.getElementById('studentDetailClose');
+              if (closeBtn) closeBtn.click();
+              else document.getElementById('studentDetailModal').style.display = 'none';
+            } catch (e) { alert(`エラー: ${e.message}`); }
+            return;
+          }
+
           const label = field === 'grade' ? '学年' : '志望校・目標';
           const maxLen = field === 'grade' ? 20 : 60;
           const newVal = prompt(`${label} を入力 (現在: ${current || '未登録'}・${maxLen} 文字以内)`, current);
@@ -7039,7 +7075,6 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           if (trimmed === current) return;
           if (!trimmed) { alert('空欄は不可'); return; }
           if (trimmed.length > maxLen) { alert(`${maxLen} 文字以内で入力してください`); return; }
-          if (sid <= 0) { alert('student_id 不正'); return; }
           try {
             const body = { student_id: sid };
             body[field] = trimmed;
