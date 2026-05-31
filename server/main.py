@@ -27153,16 +27153,27 @@ def university_problems_backfill_pdf_links(
                     return True
                 return False
 
+            # 🛡️ 2026-05-31 塾長指示「英文法と英検」: 問題 ID ベース 1:1 直接リンク (最優先)
+            # 1 問 = 1 PDF のファイル名には `_id{up_id}_` が含まれる (例: ..._id826_問題.pdf)。
+            # topic が非ユニークな問題群 (英文法 210 問が全て topic「正誤問題」等) でも、
+            # ファイル名の id token で確実に 1:1 紐付けできる。trailing `_` で部分一致を防止
+            # (`_id82_` は `_id826_` にマッチしない)。
+            _id_token = f"_id{up_id}_"
+            best_pdf = next((p for p in pdfs if _id_token in (p.get("file_path") or "")), None)
+            best_ans_pdf = next((p for p in ans_pdfs if _id_token in (p.get("file_path") or "")), None)
+            best_strict_pdf = next((p for p in strict_pdfs if _id_token in (p.get("file_path") or "")), None)
+
+            # ── id-match しなかった種別のみ従来 topic-based fallback ──
             # Pass 1: target_university 一致 + subject 厳密一致 + topic 一致
-            best_pdf = None
-            for pdf in pdfs:
-                lp_univ = pdf["target_university"]
-                lp_subj = pdf["subject"]
-                if lp_univ in aliases and lp_subj == subj_normalized and _topic_match(pdf):
-                    best_pdf = pdf
-                    break
+            if best_pdf is None:
+                for pdf in pdfs:
+                    lp_univ = pdf["target_university"]
+                    lp_subj = pdf["subject"]
+                    if lp_univ in aliases and lp_subj == subj_normalized and _topic_match(pdf):
+                        best_pdf = pdf
+                        break
             # Pass 2: title に大学 alias 含有 + subject 厳密一致 + topic 一致
-            if not best_pdf:
+            if best_pdf is None:
                 for pdf in pdfs:
                     lp_title = pdf["title"]
                     lp_subj = pdf["subject"]
@@ -27171,14 +27182,14 @@ def university_problems_backfill_pdf_links(
                         break
 
             # 🛡️ 2026-05-27 塾長指示「解答解説 PDF も」+「A: topic 一致必須」
-            best_ans_pdf = None
-            for pdf in ans_pdfs:
-                lp_univ = pdf["target_university"]
-                lp_subj = pdf["subject"]
-                if lp_univ in aliases and lp_subj == subj_normalized and _topic_match(pdf):
-                    best_ans_pdf = pdf
-                    break
-            if not best_ans_pdf:
+            if best_ans_pdf is None:
+                for pdf in ans_pdfs:
+                    lp_univ = pdf["target_university"]
+                    lp_subj = pdf["subject"]
+                    if lp_univ in aliases and lp_subj == subj_normalized and _topic_match(pdf):
+                        best_ans_pdf = pdf
+                        break
+            if best_ans_pdf is None:
                 for pdf in ans_pdfs:
                     lp_title = pdf["title"]
                     lp_subj = pdf["subject"]
@@ -27187,14 +27198,14 @@ def university_problems_backfill_pdf_links(
                         break
 
             # 🛡️ 2026-05-27 塾長指示「途中のヒント無しの問題だけのパターン」: 本番試験版 PDF も同様に紐付け
-            best_strict_pdf = None
-            for pdf in strict_pdfs:
-                lp_univ = pdf["target_university"]
-                lp_subj = pdf["subject"]
-                if lp_univ in aliases and lp_subj == subj_normalized and _topic_match(pdf):
-                    best_strict_pdf = pdf
-                    break
-            if not best_strict_pdf:
+            if best_strict_pdf is None:
+                for pdf in strict_pdfs:
+                    lp_univ = pdf["target_university"]
+                    lp_subj = pdf["subject"]
+                    if lp_univ in aliases and lp_subj == subj_normalized and _topic_match(pdf):
+                        best_strict_pdf = pdf
+                        break
+            if best_strict_pdf is None:
                 for pdf in strict_pdfs:
                     lp_title = pdf["title"]
                     lp_subj = pdf["subject"]
