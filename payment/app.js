@@ -972,11 +972,17 @@ function statusSelect(student) {
 // Stripe 登録顧客キャッシュ (60秒)
 const STRIPE_CUST_CACHE = { customers: [], loadedAt: 0, loading: false };
 
+// チャット管理パスワードの読込 (CHAT_STATE 優先 → localStorage)。registered-customers の取得と
+// 「カード列が出ない理由」ヒントが pw 有無を同一ソースで判定するため共通化 (2026-06-01)。
+function getChatPw() {
+  return (typeof CHAT_STATE !== 'undefined' && CHAT_STATE.pw) || localStorage.getItem('juku-payment-chat-pw-v1') || '';
+}
+
 async function loadRegisteredCustomers(force = false) {
   const now = Date.now();
   if (!force && STRIPE_CUST_CACHE.loadedAt && now - STRIPE_CUST_CACHE.loadedAt < 60000) return STRIPE_CUST_CACHE.customers;
   if (STRIPE_CUST_CACHE.loading) return STRIPE_CUST_CACHE.customers;
-  const pw = (typeof CHAT_STATE !== 'undefined' && CHAT_STATE.pw) || localStorage.getItem('juku-payment-chat-pw-v1') || '';
+  const pw = getChatPw();
   if (!pw) return [];
   STRIPE_CUST_CACHE.loading = true;
   try {
@@ -1159,6 +1165,24 @@ async function addStudentFromReg(reg) {
 function renderUnlinkedRegsPanel() {
   const panel = document.getElementById('unlinkedRegsPanel');
   if (!panel) return;
+  // 管理パスワード未入力の端末では registered-customers を取得できず、カード列が無言で
+  // 全員「未登録」になる。原因 (pw 未入力) を明示し、チャットタブへ誘導する
+  // (sendPastDueInvoiceFor / sendBulkPastDueInvoices の switchTab('chat') 誘導と同方針)。
+  if (!getChatPw()) {
+    panel.innerHTML = `
+      <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.4);border-radius:10px;padding:12px 16px;margin-bottom:16px;">
+        <div style="font-weight:700;color:#fbbf24;margin-bottom:4px;">🔒 管理パスワード未入力</div>
+        <div style="color:#9ca3af;font-size:0.85rem;line-height:1.6;">
+          この端末ではまだ管理パスワードを入力していないため、右端の<strong style="color:#e5e7eb;">「カード」列にカード登録状況が反映されていません</strong> (未登録と表示されます)。<br>
+          チャットタブで管理パスワードを入力するとカード登録状況が表示されます。
+        </div>
+        <button class="btn btn-primary btn-sm" data-action="goto-chat-pw" style="margin-top:10px;">💬 チャットタブで管理パスワードを入力</button>
+      </div>`;
+    panel.onclick = (e) => {
+      if (e.target.closest('[data-action="goto-chat-pw"]')) switchTab('chat');
+    };
+    return;
+  }
   const regs = STRIPE_CUST_CACHE.customers || [];
   if (!regs.length) { panel.innerHTML = ''; return; }
   const linkedRegIds = new Set(Object.values(STATE.overrides.regLinks || {}).map(l => l && l.regId).filter(Boolean));
@@ -1297,7 +1321,12 @@ function updateStripeStatusBar(unpaid) {
   const total = STRIPE_CUST_CACHE.customers.length;
   if (total === 0) {
     bar.style.display = 'block';
-    text.textContent = `💳 Stripe 登録者: 0 名 — まだカード登録した保護者がいません (登録 URL: /payment/register.html)`;
+    if (!getChatPw()) {
+      // pw 未入力では総数を取得できず 0 に見えるだけ。「登録者ゼロ」と誤認させない。
+      text.innerHTML = `🔒 管理パスワード未入力のためカード登録状況を取得できません — <strong>チャットタブ</strong>で管理パスワードを入力してください`;
+    } else {
+      text.textContent = `💳 Stripe 登録者: 0 名 — まだカード登録した保護者がいません (登録 URL: /payment/register.html)`;
+    }
     if (btn) btn.disabled = true;
     return;
   }
@@ -4761,6 +4790,11 @@ function setupModals() {
     pwEl.addEventListener('change', (e) => {
       CHAT_STATE.pw = e.target.value.trim();
       localStorage.setItem(CHAT_PW_KEY, CHAT_STATE.pw);
+      // 管理パスワード変更時は Stripe 登録キャッシュを無効化 → 全生徒タブのカード列が
+      // 新 pw で再取得される (旧 pw 時の「全員未登録」表示が残るのを防ぐ)。
+      STRIPE_CUST_CACHE.customers = [];
+      STRIPE_CUST_CACHE.loadedAt = 0;
+      STRIPE_CUST_CACHE._allTabTried = false;
       fetchThreads().catch(() => {});
     });
   }
