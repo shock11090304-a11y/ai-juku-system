@@ -976,7 +976,7 @@ async function loadRegisteredCustomers(force = false) {
   const now = Date.now();
   if (!force && STRIPE_CUST_CACHE.loadedAt && now - STRIPE_CUST_CACHE.loadedAt < 60000) return STRIPE_CUST_CACHE.customers;
   if (STRIPE_CUST_CACHE.loading) return STRIPE_CUST_CACHE.customers;
-  const pw = (typeof CHAT_STATE !== 'undefined' && CHAT_STATE.pw) || localStorage.getItem('juku-chat-pw-v1') || '';
+  const pw = (typeof CHAT_STATE !== 'undefined' && CHAT_STATE.pw) || localStorage.getItem('juku-payment-chat-pw-v1') || '';
   if (!pw) return [];
   STRIPE_CUST_CACHE.loading = true;
   try {
@@ -1317,7 +1317,7 @@ async function sendPastDueInvoiceFor(studentId) {
   if (!fee) { alert('月謝額が 0 円です'); return; }
   if (!confirm(`#${s.id} ${s.name} に ${month} 分の請求書を発行します。\n\n金額: ¥${fee.toLocaleString()}\n送信先: ${cust.email || '(Stripe 登録時メアド)'}\n支払期限: 7 日後\n\n保護者の登録メアド宛に Stripe から自動でメール送信されます。\n同じ生徒・同月の重複発行は自動で防がれます (90日間)。\n続行しますか?`)) return;
 
-  const pw = (typeof CHAT_STATE !== 'undefined' && CHAT_STATE.pw) || localStorage.getItem('juku-chat-pw-v1') || '';
+  const pw = (typeof CHAT_STATE !== 'undefined' && CHAT_STATE.pw) || localStorage.getItem('juku-payment-chat-pw-v1') || '';
   if (!pw) { alert('管理パスワード未入力です。チャットタブで入力してください。'); switchTab('chat'); return; }
 
   // 二重送信防止: 同一行のボタンを一時 disabled
@@ -1372,7 +1372,7 @@ async function sendBulkPastDueInvoices() {
   const more = items.length > 10 ? `\n  ...他 ${items.length - 10} 名` : '';
   if (!confirm(`【${month} 分 Stripe 請求書 一括発行】\n\n対象: ${items.length} 名\n合計: ¥${total.toLocaleString()}\n支払期限: 発行から 7 日後\n\n${itemList}${more}\n\n各保護者の Stripe 登録メアド宛に Stripe からメール送信されます。\n同じ生徒・同月の重複発行は自動で防がれます (90日間)。\n\n続行しますか?`)) return;
 
-  const pw = (typeof CHAT_STATE !== 'undefined' && CHAT_STATE.pw) || localStorage.getItem('juku-chat-pw-v1') || '';
+  const pw = (typeof CHAT_STATE !== 'undefined' && CHAT_STATE.pw) || localStorage.getItem('juku-payment-chat-pw-v1') || '';
   if (!pw) { alert('管理パスワード未入力。チャットタブで入力してください。'); switchTab('chat'); return; }
 
   if (btn) {
