@@ -18842,6 +18842,62 @@ def public_exam_pool_counts(request: Request = None):
     return {"items": out, "total": total}
 
 
+@app.get("/api/admin/exam-questions/dump")
+def admin_exam_questions_dump(
+    exam: str, part: str, eiken_grade: Optional[str] = None,
+    offset: int = 0, limit: int = 200,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🗄️ 全 instance を offset/limit でページング取得 (read-only)。
+    公開 bank は最新50件上限のため、PDF 全網羅用に全件を順次取得する管理用 endpoint。
+    認証: admin Bearer or x-cron-secret。ORDER BY id で安定ページング。"""
+    import hmac as _hmac
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        if _verify_admin_token(authorization[len("Bearer "):].strip()):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and _hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    limit = max(1, min(limit, 500))
+    offset = max(0, offset)
+    use_grade = bool(eiken_grade) and eiken_grade != "_default"
+    conn = db(); c = conn.cursor()
+    try:
+        sql = "SELECT id, question_data FROM exam_questions WHERE exam_id = ? AND part_key = ?"
+        params = [exam, part]
+        if use_grade:
+            sql += " AND eiken_grade = ?"; params.append(eiken_grade)
+        sql += " ORDER BY id LIMIT ? OFFSET ?"; params += [limit, offset]
+        c.execute(sql, tuple(params))
+        rows = c.fetchall()
+        csql = "SELECT COUNT(*) AS n FROM exam_questions WHERE exam_id = ? AND part_key = ?"
+        cparams = [exam, part]
+        if use_grade:
+            csql += " AND eiken_grade = ?"; cparams.append(eiken_grade)
+        c.execute(csql, tuple(cparams))
+        trow = c.fetchone()
+        if trow is None:
+            total = 0
+        elif hasattr(trow, "keys"):
+            total = int(trow["n"])
+        else:
+            total = int(trow[0])
+    finally:
+        conn.close()
+    items = []
+    for row in rows:
+        rid = row["id"] if hasattr(row, "keys") else row[0]
+        qd = row["question_data"] if hasattr(row, "keys") else row[1]
+        if isinstance(qd, str):
+            try: qd = json.loads(qd)
+            except Exception: pass
+        items.append({"id": rid, "question_data": qd})
+    return {"items": items, "count": len(items), "total": total, "offset": offset}
+
+
 @app.get("/api/exam-questions/bank")
 def public_exam_questions_bank(
     exam: str,
