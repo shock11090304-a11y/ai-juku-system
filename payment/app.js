@@ -1619,7 +1619,7 @@ function refresh() {
 // ===========================================================================
 // 💳 月末一斉引き落とし (Stripe Setup Mode + 月末バッチ請求) - 2026-05-13
 // ===========================================================================
-const MONTHEND_STATE = { lastPreview: null, busy: false };
+const MONTHEND_STATE = { lastPreview: null, busy: false, excluded: new Set() };
 
 function fmtYenME(n) {
   try { return '¥' + Number(n || 0).toLocaleString('ja-JP'); }
@@ -1702,19 +1702,19 @@ async function fetchMonthEndPreview() {
 function renderMonthEndTable(data) {
   document.getElementById('monthEndMonthTag').textContent = data.month;
   document.getElementById('monthEndTotalCustomers').textContent = data.total_customers;
-  document.getElementById('monthEndReadyCount').textContent = data.ready_count;
-  document.getElementById('monthEndTotalAmount').textContent = fmtYenME(data.total_amount);
   document.getElementById('monthEndAlreadyCount').textContent = data.previously_charged_this_month;
   document.getElementById('monthEndSummary').style.display = '';
   document.getElementById('monthEndActionBar').style.display = 'flex';
 
   const tbody = document.getElementById('monthEndTbody');
   if (!data.customers || data.customers.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-dim);padding:2rem">カード登録済の顧客がまだいません</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-dim);padding:2rem">カード登録済の顧客がまだいません</td></tr>';
+    updateMonthEndSelectionSummary();
     return;
   }
   const rows = data.customers.map(c => {
     let statusBadge = '';
+    const chargeable = !!c.ready && !c.alreadyChargedThisMonth;
     if (c.alreadyChargedThisMonth) {
       statusBadge = '<span style="color:var(--text-dim);">✅ 当月引き落とし済</span>';
     } else if (c.ready) {
@@ -1722,7 +1722,17 @@ function renderMonthEndTable(data) {
     } else {
       statusBadge = `<span style="color:#f87171;">⚠️ ${escapeHtmlME(c.issue || 'NG')}</span>`;
     }
+    const rid = escapeHtmlME(c.registrationId);
+    // 対象トグル: 請求可能な行のみ。OFF (excluded) は一斉実行の対象から外れる (サーバ側でも除外を強制)。
+    const toggleCell = chargeable
+      ? `<td class="ta-c"><input type="checkbox" class="me-toggle" ${MONTHEND_STATE.excluded.has(c.registrationId) ? '' : 'checked'} onchange="toggleMonthEndRow('${rid}', this.checked)" title="今回の一斉引き落としの対象にする / 外す" style="width:18px;height:18px;cursor:pointer;"></td>`
+      : `<td class="ta-c" style="color:var(--text-dim)">—</td>`;
+    // 個別「この人だけ」請求 + 退塾
+    const oneBtn = chargeable
+      ? `<button class="btn btn-ghost btn-sm" onclick="chargeOneMonthEnd('${rid}')" title="この人だけ今すぐ引き落とし" style="color:#34d399;border-color:rgba(16,185,129,0.45);">💳 この人だけ</button> `
+      : '';
     return `<tr>
+      ${toggleCell}
       <td>${escapeHtmlME(c.studentName)}</td>
       <td>${escapeHtmlME(c.grade)}</td>
       <td>${escapeHtmlME(c.parentName)}</td>
@@ -1730,11 +1740,86 @@ function renderMonthEndTable(data) {
       <td class="ta-r"><strong>${fmtYenME(c.monthlyFee)}</strong></td>
       <td style="font-size:0.85rem;color:var(--text-dim)">${escapeHtmlME(c.feeBreakdown)}</td>
       <td>${statusBadge}</td>
-      <td><button class="btn btn-ghost btn-sm" onclick="cancelRegistration('${escapeHtmlME(c.registrationId)}', '${escapeHtmlME(c.studentName)}')" style="color:#f87171" title="退塾処理">🗑</button></td>
+      <td style="white-space:nowrap">${oneBtn}<button class="btn btn-ghost btn-sm" onclick="cancelRegistration('${rid}', '${escapeHtmlME(c.studentName)}')" style="color:#f87171" title="退塾処理">🗑</button></td>
     </tr>`;
   }).join('');
   tbody.innerHTML = rows;
+  updateMonthEndSelectionSummary();
 }
+
+// 対象トグル ON/OFF → excluded セット更新 + 集計再計算 (2026-06-01: 塾長要望の引き落としスイッチ)
+function toggleMonthEndRow(rid, checked) {
+  if (!rid) return;
+  if (checked) MONTHEND_STATE.excluded.delete(rid);
+  else MONTHEND_STATE.excluded.add(rid);
+  updateMonthEndSelectionSummary();
+}
+window.toggleMonthEndRow = toggleMonthEndRow;
+
+// 一斉実行の対象 rid (ready ∧ 当月未請求 ∧ トグル ON) の配列。これだけをサーバに送る。
+function selectedMonthEndIds() {
+  const prev = MONTHEND_STATE.lastPreview;
+  if (!prev || !Array.isArray(prev.customers)) return [];
+  return prev.customers
+    .filter(c => c.ready && !c.alreadyChargedThisMonth && !MONTHEND_STATE.excluded.has(c.registrationId))
+    .map(c => c.registrationId)
+    .filter(Boolean);
+}
+
+// サマリーカード「引き落とし可能 / 合計引き落とし額」を選択中の人数・合計で更新 (= 実行で実際に請求される額)
+function updateMonthEndSelectionSummary() {
+  const prev = MONTHEND_STATE.lastPreview;
+  const cntEl = document.getElementById('monthEndReadyCount');
+  const amtEl = document.getElementById('monthEndTotalAmount');
+  if (!prev || !Array.isArray(prev.customers)) return;
+  const chargeable = prev.customers.filter(c => c.ready && !c.alreadyChargedThisMonth);
+  const sel = chargeable.filter(c => !MONTHEND_STATE.excluded.has(c.registrationId));
+  const sum = sel.reduce((a, c) => a + (Number(c.monthlyFee) || 0), 0);
+  if (cntEl) {
+    cntEl.innerHTML = (sel.length < chargeable.length)
+      ? `${sel.length}<span style="font-size:0.5em;color:var(--text-dim);font-weight:400;"> / ${chargeable.length} 名を選択中</span>`
+      : `${sel.length}`;
+  }
+  if (amtEl) amtEl.textContent = fmtYenME(sum);
+}
+
+// 「💳 この人だけ」個別引き落とし。同じ execute エンドポイントに registrationIds:[rid] を渡す
+// (サーバ側で当月二重請求は SET NX で防止済み)。
+async function chargeOneMonthEnd(rid) {
+  if (MONTHEND_STATE.busy) return;
+  const pw = getMonthEndAdminPw();
+  if (!pw) { setMonthEndStatus('🔒 管理パスワードを入力してください', 'warn'); return; }
+  const preview = MONTHEND_STATE.lastPreview;
+  if (!preview) { setMonthEndStatus('⚠️ 先に「🔄 プレビュー更新」を押してください', 'warn'); return; }
+  const c = (preview.customers || []).find(x => x.registrationId === rid);
+  if (!c) { setMonthEndStatus('対象が見つかりません。「🔄 プレビュー更新」を押してください', 'warn'); return; }
+  if (!c.ready || c.alreadyChargedThisMonth) { setMonthEndStatus('この人は請求対象外です (未 ready または当月請求済)', 'warn'); return; }
+  const nowMonth = (function () { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; })();
+  if (preview.month !== nowMonth) {
+    setMonthEndStatus(`⚠️ プレビューの月 (${preview.month}) と現在月 (${nowMonth}) が不一致。「🔄 プレビュー更新」を押してください`, 'error');
+    return;
+  }
+  const amt = Number(c.monthlyFee) || 0;
+  if (!confirm(`💳 ${c.studentName} さん 1 名だけを今すぐ引き落とします。\n\n金額: ${fmtYenME(amt)}\n月: ${preview.month}\n\n実行後は取り消せません。よろしいですか?`)) return;
+  MONTHEND_STATE.busy = true;
+  setMonthEndStatus(`⏳ ${c.studentName} さんを引き落とし中...`, 'info');
+  try {
+    const res = await fetch('/payment/api/admin-charge-month-end-execute', {
+      method: 'POST',
+      headers: { 'X-Admin-Password': pw, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dryRun: false, confirmMonth: preview.month, registrationIds: [rid] }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setMonthEndStatus(`❌ 実行エラー: ${data.message || data.error || 'unknown'}`, 'error'); MONTHEND_STATE.busy = false; return; }
+    showMonthEndResultModal(data, false);
+    setTimeout(() => fetchMonthEndPreview(), 500);
+  } catch (e) {
+    setMonthEndStatus(`❌ ネットワークエラー: ${e.message}`, 'error');
+  } finally {
+    MONTHEND_STATE.busy = false;
+  }
+}
+window.chargeOneMonthEnd = chargeOneMonthEnd;
 
 function escapeHtmlME(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -1763,9 +1848,21 @@ async function executeMonthEndCharge(dryRun) {
   }
 
   const month = preview.month;
+
+  // 対象トグルで選択された人だけを請求 (ready ∧ 当月未請求 ∧ ON)。
+  // 0 名なら必ずここで中止 (サーバ側も空配列/不正値は fail-closed で「対象0件」扱いだが、
+  // フロントでも空配列を送らず二重に防ぐ)。
+  const selectedIds = selectedMonthEndIds();
+  if (selectedIds.length === 0) {
+    setMonthEndStatus('⚠️ 対象が 0 名です (対象トグルが全て OFF か、請求可能な人がいません)。1 名以上を ON にしてください', 'warn');
+    return;
+  }
+  const selCustomers = (preview.customers || []).filter(c => selectedIds.indexOf(c.registrationId) !== -1);
+  const selTotal = selCustomers.reduce((a, c) => a + (Number(c.monthlyFee) || 0), 0);
+
   if (!dryRun) {
-    const totalYen = fmtYenME(preview.total_amount);
-    const msg = `🚨 本当に実行しますか?\n\n${preview.ready_count} 名から合計 ${totalYen} を一斉引き落としします。\n月: ${month}\n\n実行後は取り消せません。`;
+    const totalYen = fmtYenME(selTotal);
+    const msg = `🚨 本当に実行しますか?\n\n${selectedIds.length} 名から合計 ${totalYen} を一斉引き落としします。\n月: ${month}\n\n(対象トグルで OFF の人は請求されません)\n実行後は取り消せません。`;
     if (!confirm(msg)) return;
     // 2 回目の確認: 月名を手動で入力させて typo 防止
     const typed = prompt(`安全のため、現在月を入力してください (例: ${month}) して OK を押してください。\nキャンセルで中止できます。`);
@@ -1781,7 +1878,7 @@ async function executeMonthEndCharge(dryRun) {
     const res = await fetch('/payment/api/admin-charge-month-end-execute', {
       method: 'POST',
       headers: { 'X-Admin-Password': pw, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dryRun: dryRun, confirmMonth: month }),
+      body: JSON.stringify({ dryRun: dryRun, confirmMonth: month, registrationIds: selectedIds }),
     });
     const data = await res.json();
     if (!res.ok) {

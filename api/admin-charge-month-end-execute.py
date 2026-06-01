@@ -153,6 +153,11 @@ class handler(BaseHTTPRequestHandler):
 
             dry_run = bool(payload.get("dryRun", False))
             confirm_month = (payload.get("confirmMonth") or "").strip()
+            # registrationIds の扱い (誤一斉課金を防ぐ fail-closed 設計):
+            #   キー無し / null              → 全 ready 対象 (従来動作・「未指定」扱い)
+            #   1件以上のリスト              → その ID のみ請求
+            #   空配列 [] / リスト以外の不正値 → 対象 0 件 (フロントのバグや壊れた入力で全員へ誤課金しない安全側)
+            has_filter = ("registrationIds" in payload) and (payload.get("registrationIds") is not None)
             filter_ids = payload.get("registrationIds") or []
             if not isinstance(filter_ids, list):
                 filter_ids = []
@@ -179,8 +184,9 @@ class handler(BaseHTTPRequestHandler):
                 if isinstance(result, list):
                     ids = result
 
-            # filter (任意・特定 ID のみ)
-            if filter_ids:
+            # filter (任意・特定 ID のみ)。has_filter=True なら空配列でも適用し、
+            # 「空配列=全員」フォールバックを防ぐ (誤一斉課金の防止)。
+            if has_filter:
                 allowed = set(filter_ids)
                 ids = [rid for rid in ids if rid in allowed]
 
