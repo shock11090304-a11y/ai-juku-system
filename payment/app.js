@@ -230,6 +230,7 @@ async function loadData() {
   if (!STATE.overrides.mailSent) STATE.overrides.mailSent = {};
   if (!STATE.overrides.status) STATE.overrides.status = {};
   if (!STATE.overrides.newStudents) STATE.overrides.newStudents = [];   // 2026-05-07: 生徒追加機能
+  if (!STATE.overrides.regLinks) STATE.overrides.regLinks = {};         // 2026-06-01: Stripe登録↔名簿 紐付け
   // newStudents を STATE.data.students に in-memory merge (id 重複は新生徒側を採用)
   mergeNewStudentsIntoData();
 }
@@ -478,6 +479,7 @@ const API_BASE = (location.hostname === 'localhost' || location.hostname === '12
 const OVERRIDE_VALID_KEYS = new Set([
   'payments', 'emails', 'payerNames', 'mailSent', 'status', 'stripeInviteSent',
   'newStudents',   // 2026-05-07: 生徒追加機能
+  'regLinks',      // 2026-06-01: Stripe登録(reg_id/cus_id)↔生徒名簿(studentId) の確定紐付け
 ]);
 function _isValidOverrides(obj) {
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
@@ -597,16 +599,35 @@ const CloudSync = {
           const data = await pullRes.json();
           if (data.exists && data.value) {
             const remoteOv = JSON.parse(data.value);
-            if (_isValidOverrides(remoteOv) && Array.isArray(remoteOv.newStudents)) {
-              const localIds = new Set((STATE.overrides.newStudents || []).map(s => s.id));
-              const toAdd = remoteOv.newStudents.filter(s => s && typeof s.id === 'number' && !localIds.has(s.id));
-              if (toAdd.length) {
-                STATE.overrides.newStudents = (STATE.overrides.newStudents || []).concat(toAdd);
-                localStorage.setItem(LS_KEY, JSON.stringify(STATE.overrides));
-                if (typeof mergeNewStudentsIntoData === 'function') mergeNewStudentsIntoData();
-                if (typeof populateAllFilters === 'function') populateAllFilters();
-                if (typeof refresh === 'function') refresh();
-                console.log('[CloudSync] pushNow: merged', toAdd.length, 'remote newStudents before push');
+            if (_isValidOverrides(remoteOv)) {
+              if (Array.isArray(remoteOv.newStudents)) {
+                const localIds = new Set((STATE.overrides.newStudents || []).map(s => s.id));
+                const toAdd = remoteOv.newStudents.filter(s => s && typeof s.id === 'number' && !localIds.has(s.id));
+                if (toAdd.length) {
+                  STATE.overrides.newStudents = (STATE.overrides.newStudents || []).concat(toAdd);
+                  localStorage.setItem(LS_KEY, JSON.stringify(STATE.overrides));
+                  if (typeof mergeNewStudentsIntoData === 'function') mergeNewStudentsIntoData();
+                  if (typeof populateAllFilters === 'function') populateAllFilters();
+                  if (typeof refresh === 'function') refresh();
+                  console.log('[CloudSync] pushNow: merged', toAdd.length, 'remote newStudents before push');
+                }
+              }
+              // 2026-06-01: regLinks も「remote にあって local に無い studentId」を merge (同時紐付けの消失防止)
+              if (remoteOv.regLinks && typeof remoteOv.regLinks === 'object' && !Array.isArray(remoteOv.regLinks)) {
+                if (!STATE.overrides.regLinks) STATE.overrides.regLinks = {};
+                const delSet = this._deletedRegLinkSids || null;
+                let regMerged = 0;
+                for (const sid of Object.keys(remoteOv.regLinks)) {
+                  // local に無く、かつ「このセッションで解除した sid」でなければ取り込む (解除の即復活を防ぐ)
+                  if (!(sid in STATE.overrides.regLinks) && !(delSet && delSet.has(sid))) {
+                    STATE.overrides.regLinks[sid] = remoteOv.regLinks[sid];
+                    regMerged++;
+                  }
+                }
+                if (regMerged) {
+                  localStorage.setItem(LS_KEY, JSON.stringify(STATE.overrides));
+                  console.log('[CloudSync] pushNow: merged', regMerged, 'remote regLinks before push');
+                }
               }
             }
           }
@@ -664,6 +685,7 @@ const CloudSync = {
           if (!STATE.overrides.mailSent) STATE.overrides.mailSent = {};
           if (!STATE.overrides.status) STATE.overrides.status = {};
           if (!STATE.overrides.newStudents) STATE.overrides.newStudents = [];
+          if (!STATE.overrides.regLinks) STATE.overrides.regLinks = {};
           localStorage.setItem(LS_KEY, JSON.stringify(STATE.overrides));
           // remote 側の newStudents を STATE.data.students に in-memory merge (= 別デバイスで追加した生徒を取り込む)
           mergeNewStudentsIntoData();
@@ -783,6 +805,44 @@ function setPayment(month, studentId, paid, date = '', note = '', amount = null)
   if (!STATE.overrides.payments[month]) STATE.overrides.payments[month] = {};
   STATE.overrides.payments[month][studentId] = { paid, date, note, amount };
   saveOverrides();
+}
+
+// === regLinks: Stripe登録(reg_id/cus_id) ↔ 生徒名簿(studentId) の確定紐付け (2026-06-01) ===
+function getRegLink(studentId) {
+  return (STATE.overrides.regLinks && STATE.overrides.regLinks[studentId]) || null;
+}
+function setRegLink(studentId, regId, customerId, by = 'manual') {
+  if (!STATE.overrides.regLinks) STATE.overrides.regLinks = {};
+  STATE.overrides.regLinks[studentId] = {
+    regId: regId || '',
+    customerId: customerId || '',
+    linkedAt: new Date().toISOString(),
+    linkedBy: by,
+  };
+  // 再紐付けしたら「解除済み」記録から外す (再確定を尊重)
+  if (typeof CloudSync !== 'undefined' && CloudSync._deletedRegLinkSids) CloudSync._deletedRegLinkSids.delete(String(studentId));
+  saveOverrides();
+}
+function deleteRegLink(studentId) {
+  if (STATE.overrides.regLinks && (studentId in STATE.overrides.regLinks)) {
+    delete STATE.overrides.regLinks[studentId];
+    // 解除した sid を記録 → 直後の pushNow pre-pull merge で remote から復活させない (CloudSync ON 時も自端末の解除を確実化)
+    if (typeof CloudSync !== 'undefined') {
+      if (!CloudSync._deletedRegLinkSids) CloudSync._deletedRegLinkSids = new Set();
+      CloudSync._deletedRegLinkSids.add(String(studentId));
+    }
+    saveOverrides();
+  }
+}
+// regId → studentId の逆引き Map (Step2 の入金自動反映で使用)
+function buildRegIdToStudentMap() {
+  const m = {};
+  const links = STATE.overrides.regLinks || {};
+  for (const sid of Object.keys(links)) {
+    const rid = links[sid] && links[sid].regId;
+    if (rid) m[rid] = parseInt(sid, 10);
+  }
+  return m;
 }
 
 // 2026-05-07 追加: 即反映ボタン用の Undo トースト
@@ -959,6 +1019,70 @@ function matchCustomerForStudent(student) {
     }
   }
   return null;
+}
+
+// 生徒の Stripe 登録状態を解決 (2026-06-01)
+//   linked    = regLinks で確定済み (reg が現存 or cache 未ロード)
+//   candidate = 未確定だが matchCustomerForStudent がヒット (塾長が「✓確定」で linked 化)
+//   none      = 該当 Stripe 登録なし
+function resolveRegForStudent(student) {
+  if (!student) return { reg: null, status: 'none', link: null };
+  const link = getRegLink(student.id);
+  if (link && link.regId) {
+    if (STRIPE_CUST_CACHE.customers.length) {
+      const reg = STRIPE_CUST_CACHE.customers.find(c => c.registrationId === link.regId);
+      if (reg) return { reg, status: 'linked', link };
+      // cache はあるが reg が消えている (キャンセル/退塾処理済) → 確定無効化して候補に落とす
+    } else {
+      // cache 未ロード時は確定情報だけで linked 扱い
+      return { reg: { registrationId: link.regId, customerId: link.customerId, studentName: student.name }, status: 'linked', link };
+    }
+  }
+  const cand = matchCustomerForStudent(student);
+  if (cand) return { reg: cand, status: 'candidate', link: null };
+  return { reg: null, status: 'none', link: null };
+}
+
+// 紐付け状態バッジ (確定=緑 / 候補=黄+確定ボタン / 無=灰)。data 属性は renderAll の onclick が拾う。
+function stripeRegBadge(student) {
+  const r = resolveRegForStudent(student);
+  if (r.status === 'linked') {
+    const cid = (r.reg && r.reg.customerId) || (r.link && r.link.customerId) || '';
+    const regName = (r.reg && r.reg.studentName) || '';
+    const titleTxt = regName ? `Stripe登録: ${regName} (${cid})` : cid;
+    return `<span class="badge" style="background:rgba(16,185,129,0.18);color:#34d399;padding:2px 8px;border-radius:6px;font-size:0.78rem;font-weight:600;" title="${escapeHtml(titleTxt)}">✓ 紐付け済</span>`
+      + ` <button class="icon-btn" data-action="unlink-reg" title="この紐付けを解除">解除</button>`;
+  }
+  if (r.status === 'candidate') {
+    const nm = escapeHtml(r.reg.studentName || '');
+    return `<span class="badge" style="background:rgba(245,158,11,0.18);color:#fbbf24;padding:2px 8px;border-radius:6px;font-size:0.78rem;font-weight:600;" title="候補: ${nm}">候補</span>`
+      + ` <button class="icon-btn" data-action="link-reg" data-reg-id="${escapeHtml(r.reg.registrationId || '')}" data-customer-id="${escapeHtml(r.reg.customerId || '')}" title="${nm} の登録と紐付けを確定">✓確定</button>`;
+  }
+  return `<span class="badge" style="background:rgba(107,114,128,0.18);color:#9ca3af;padding:2px 8px;border-radius:6px;font-size:0.78rem;">未登録</span>`;
+}
+
+// 候補バッジの「✓確定」ボタン → 手動で紐付け確定 (renderAll 等で共通利用)
+function handleLinkRegClick(studentId, regId, customerId) {
+  if (!regId) { alert('登録情報が見つかりません。画面を再読込してください。'); return; }
+  const student = STATE.data.students.find(x => x.id === studentId);
+  const nm = student ? student.name : `#${studentId}`;
+  // Stripe 側の登録名を提示し、fuzzy マッチの誤紐付け(別人の登録)を塾長が確認できるようにする
+  const regCust = STRIPE_CUST_CACHE.customers.find(c => c.registrationId === regId);
+  const regName = regCust ? regCust.studentName : '';
+  const regLine = regName ? `Stripe登録名「${regName}」(${customerId || regId})` : `Stripe登録 (${customerId || regId})`;
+  if (!confirm(`名簿「${nm}」さん を ${regLine} と紐付けますか?\n\n⚠ 名前が一致しているか確認してください。別人の登録を誤って紐付けると、その生徒の入金が誤って反映されます。\n\n以降この生徒は月末引き落とし結果が自動で入金反映の対象になります。\n紐付けは「解除」ボタンでいつでも取り消せます。`)) return;
+  setRegLink(studentId, regId, customerId, 'manual');
+  refresh();
+}
+
+// 紐付け済みバッジの「解除」ボタン → 確定紐付けを取り消す (誤紐付けの復旧用)
+function handleUnlinkRegClick(studentId) {
+  const student = STATE.data.students.find(x => x.id === studentId);
+  const nm = student ? student.name : `#${studentId}`;
+  if (!getRegLink(studentId)) { refresh(); return; }
+  if (!confirm(`${nm} さんの Stripe 登録との紐付けを解除しますか?\n\n入金の自動反映の対象から外れます。再度「✓確定」で紐付け直せます。`)) return;
+  deleteRegLink(studentId);
+  refresh();
 }
 
 async function renderUnpaid() {
@@ -1192,8 +1316,15 @@ function renderAll() {
 
   document.getElementById('allCountTag').textContent = `${students.length}名 / ${STATE.data.students.length}名中`;
 
+  // Stripe 登録顧客を遅延ロード → 取得できたら「カード」列込みで再描画
+  // 試行は1回だけ (無限ループ + 失敗時の毎描画再fetch を防止)。成功したらフラグを戻して再描画。
+  if (!STRIPE_CUST_CACHE.customers.length && !STRIPE_CUST_CACHE.loadedAt && !STRIPE_CUST_CACHE._allTabTried) {
+    STRIPE_CUST_CACHE._allTabTried = true;
+    loadRegisteredCustomers().then((custs) => { if (custs && custs.length) { STRIPE_CUST_CACHE._allTabTried = false; renderAll(); } });
+  }
+
   if (!students.length) {
-    tbody.innerHTML = `<tr><td colspan="9" class="empty">該当する生徒はいません</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="empty">該当する生徒はいません</td></tr>`;
     return;
   }
 
@@ -1213,18 +1344,27 @@ function renderAll() {
       <td class="ta-c">
         <button class="pay-toggle ${paid ? 'paid' : ''}" data-action="toggle" title="${paid ? '入金済' : '未払い'}">${paid ? '✓' : '○'}</button>
       </td>
+      <td class="ta-c">${stripeRegBadge(s)}</td>
     </tr>`;
   }).join('');
 
   tbody.onclick = (e) => {
-    const btn = e.target.closest('[data-action="toggle"]');
+    const btn = e.target.closest('[data-action]');
     if (!btn) return;
+    const a = btn.dataset.action;
+    if (a !== 'toggle' && a !== 'link-reg' && a !== 'unlink-reg') return;  // email/payer/status は oninput/onchange 側で処理
     const tr = btn.closest('tr');
     const id = parseInt(tr.dataset.studentId, 10);
-    const pay = getPayment(month, id);
-    const newPaid = !(pay && pay.paid);
-    setPayment(month, id, newPaid, newPaid ? new Date().toISOString().slice(0, 10) : '', newPaid ? '手動チェック' : '', null);
-    refresh();
+    if (a === 'toggle') {
+      const pay = getPayment(month, id);
+      const newPaid = !(pay && pay.paid);
+      setPayment(month, id, newPaid, newPaid ? new Date().toISOString().slice(0, 10) : '', newPaid ? '手動チェック' : '', null);
+      refresh();
+    } else if (a === 'link-reg') {
+      handleLinkRegClick(id, btn.dataset.regId, btn.dataset.customerId);
+    } else if (a === 'unlink-reg') {
+      handleUnlinkRegClick(id);
+    }
   };
   tbody.onchange = (e) => {
     const sel = e.target.closest('select[data-action="status"]');
