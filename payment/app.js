@@ -1988,7 +1988,8 @@ async function executeMonthEndCharge(dryRun) {
       }
     }
     const agg = {
-      month: month + (calls.length > 1 ? ' ＋滞納' : ''),
+      month: month,
+      dry_run: dryRun,   // 結果CSVのファイル名ラベル (dryrun/live) を正しくするため
       summary: { total: 0, success: 0, failed: 0, skipped: 0, total_amount_charged: 0 },
       results: [],
     };
