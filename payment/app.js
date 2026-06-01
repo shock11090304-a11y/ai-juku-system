@@ -1092,6 +1092,26 @@ function handleUnlinkRegClick(studentId) {
 }
 
 // === Step3: カード登録あり・名簿未登録 の取り込み (2026-06-01) ===
+// コースID → コース名 マップ (courses.json から構築。register登録のID を名簿のコース名に変換)
+let COURSE_NAME_MAP = null;
+async function loadCourseMap() {
+  if (COURSE_NAME_MAP) return COURSE_NAME_MAP;
+  const map = {};
+  try {
+    const res = await fetch('courses.json?t=' + Date.now());
+    if (res.ok) {
+      const json = await res.json();
+      for (const c of (json.courses || [])) if (c && c.id) map[c.id] = c.name;
+      for (const o of (json.options || [])) if (o && o.id) map[o.id] = o.name;
+    }
+  } catch (e) { console.warn('[courseMap] load failed:', e); }
+  COURSE_NAME_MAP = map;
+  return COURSE_NAME_MAP;
+}
+function courseNameFromId(id) {
+  return (COURSE_NAME_MAP && COURSE_NAME_MAP[id]) || id;
+}
+
 // reg (Stripe登録) → 名簿の生徒を逆引き (matchCustomerForStudent の逆方向)
 function findStudentForReg(reg) {
   if (!reg) return null;
@@ -1115,27 +1135,35 @@ async function addStudentFromReg(reg) {
   const name = (reg.studentName || '').trim();
   if (!name) { alert('登録者名が空です。'); return; }
   const fee = parseInt(reg.amount || reg.monthly_fee || 0, 10) || 0;
+  // register で選択したコースID → コース名に変換して名簿に反映
+  await loadCourseMap();
+  const courseNames = (Array.isArray(reg.courses) ? reg.courses : []).map(courseNameFromId);
+  const optionNames = (Array.isArray(reg.options) ? reg.options : []).map(courseNameFromId);
   // 同名チェック (空白除去で正規化) — 重複登録/同一人物の二重追加を防ぐ
   const normName = name.replace(/[\s　]/g, '');
   const dup = STATE.data.students.find(s => (s.name || '').replace(/[\s　]/g, '') === normName);
   if (dup) {
     if (!confirm(`既に同名の生徒「${dup.name}」(ID #${dup.id}) が名簿にいます。\n\n別人として新規追加しますか?\n(同一人物なら「キャンセル」して、その生徒の「カード」列から「✓確定」で紐付けてください)`)) return;
   }
-  if (!confirm(`「${name}」さん (${reg.grade || '学年未設定'}) を名簿に追加しますか?\n\n月謝 ¥${fee.toLocaleString()} / 保護者 ${reg.parentName || '—'}\n\nカード登録 (${reg.customerId || reg.registrationId}) と自動で紐付けます。`)) return;
+  const courseLine = courseNames.length ? `\nコース: ${courseNames.join('・')}` : '';
+  const optionLine = optionNames.length ? `\nオプション: ${optionNames.join('・')}` : '';
+  if (!confirm(`「${name}」さん (${reg.grade || '学年未設定'}) を名簿に追加しますか?${courseLine}${optionLine}\n月謝 ¥${fee.toLocaleString()} / 保護者 ${reg.parentName || '—'}\n\nカード登録 (${reg.customerId || reg.registrationId}) と自動で紐付けます。`)) return;
   // id 採番 (saveNewStudent と同一ロジック・衝突回避)
   const usedIds = new Set(STATE.data.students.map(s => s.id));
   const newStudentsMax = (STATE.overrides.newStudents || []).reduce((mx, s) => Math.max(mx, s.id || 0), 0);
   let id = Math.max(STATE.data.nextStudentId || 1, newStudentsMax + 1);
   while (usedIds.has(id)) id += 1;
+  const notesParts = ['カード登録から追加'];
+  if (optionNames.length) notesParts.push('オプション: ' + optionNames.join('・'));
   const newStudent = {
     id, name,
     grade: reg.grade || '',
     email: reg.email || '',
-    courses: Array.isArray(reg.courses) ? reg.courses : [],
+    courses: courseNames,
     enrollDate: STATE.currentMonth || '',
     status: '通塾',
     fee,
-    notes: 'カード登録から追加',
+    notes: notesParts.join(' / '),
     addedVia: 'reg-auto-add',
     addedAt: new Date().toISOString(),
   };
@@ -4949,6 +4977,7 @@ async function init() {
 
   loadSettings();
   await loadData();
+  loadCourseMap();  // コースID→名前マップを先読み (名簿追加・パネル表示で使用)
   // 2026-05-07: クラウド sync 初期化 (token があれば pull → local 上書き)
   updateSyncStatusBar();
   await CloudSync.bootstrap();
