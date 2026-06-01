@@ -99,6 +99,23 @@ def _current_month_jst():
     return datetime.now(JST).strftime("%Y-%m")
 
 
+def _allowed_charge_months(current_ym, back=3):
+    """current_ym ("YYYY-MM") と直前 back ヶ月の集合を返す (滞納請求の対象月をサーバ側で限定)。
+    任意月・未来月・古すぎる月を弾くためのホワイトリスト。集合の要素は必ず整形済み YYYY-MM。"""
+    try:
+        y, m = int(current_ym[:4]), int(current_ym[5:7])
+    except Exception:
+        return {current_ym}
+    out = set()
+    for i in range(0, back + 1):
+        yy, mm = y, m - i
+        while mm <= 0:
+            mm += 12
+            yy -= 1
+        out.add(f"{yy:04d}-{mm:02d}")
+    return out
+
+
 def _create_payment_intent(secret_key, customer_id, payment_method_id, amount, metadata, idempotency_key):
     """Stripe PaymentIntent 作成 + off_session 即時確定 (=保存済カードから引き落とし)"""
     form = [
@@ -170,6 +187,24 @@ class handler(BaseHTTPRequestHandler):
                     "expected_month": current_month,
                 })
                 return
+
+            # 滞納分対応 (2026-06-01): chargeMonth が指定されたら、その月を請求対象にする。
+            # 安全のためサーバ側で「現在月＋直前3ヶ月」に限定 (任意月・未来月・古すぎる月は弾く)。
+            # 未指定なら従来どおり現在月。confirmMonth ガードは上で「現在月」に対して既に通過済み
+            # (operator は現在月を確認済み)。金額は常にサーバ保存の monthly_fee (クライアント金額は不使用)。
+            # current_month を target 月に rebind するだけで、以降の done_key / idempotency / history /
+            # results が全てその月になる (請求ループ本体は無改変)。
+            charge_month_req = (payload.get("chargeMonth") or "").strip()
+            if charge_month_req:
+                allowed_months = _allowed_charge_months(current_month, 3)
+                if charge_month_req not in allowed_months:
+                    _json(self, 400, {
+                        "error": "CHARGE_MONTH_OUT_OF_RANGE",
+                        "message": f"chargeMonth ({charge_month_req}) は対象外です。現在月＋直前3ヶ月のみ請求できます。",
+                        "allowed_months": sorted(allowed_months),
+                    })
+                    return
+                current_month = charge_month_req
 
             secret_key = os.environ.get("STRIPE_SECRET_KEY", "").strip()
             if not secret_key:

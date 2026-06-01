@@ -409,6 +409,13 @@
       </div>
     </div>
 
+    <!-- 🕒 滞納分も含める トグル (2026-06-01 塾長要望: 過去3ヶ月の未払い月もカード一括引き落とし) -->
+    <div style="margin-bottom:1rem;display:flex;align-items:center;gap:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:10px 14px;">
+      <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:0.9rem;line-height:1.5;">
+        <input type="checkbox" id="monthEndIncludeArrears" style="width:18px;height:18px;cursor:pointer;margin-top:1px;flex-shrink:0;">
+        <span>🕒 <strong>滞納分も含める</strong>（過去3ヶ月の未払い月もカードから一括引き落とし）<br><span style="font-size:0.78rem;color:var(--text-dim)">※ カード紐付け✓確定済みの生徒のみ対象。名簿で未払いの月だけ請求し、既に引落済みの月は自動スキップ。実行前に「📊 ドライラン」で明細をご確認ください。</span></span>
+      </label>
+    </div>
     <!-- 安全配慮: CSV → ドライラン → (空白) → 実行 の順で並べ、危険ボタンと他のボタンの距離を確保 -->
     <div id="monthEndActionBar" style="margin-bottom:1rem;display:none;gap:0.5rem;flex-wrap:wrap;align-items:center;display:flex;">
       <button class="btn btn-ghost" id="monthEndExportCsvBtn">📥 CSV エクスポート</button>
@@ -988,6 +995,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="app.js?v=20260601-chargetoggle"></script>
+<script src="app.js?v=20260601-arrears"></script>
 </body>
 </html>

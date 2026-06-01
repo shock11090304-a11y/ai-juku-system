@@ -1619,7 +1619,7 @@ function refresh() {
 // ===========================================================================
 // 💳 月末一斉引き落とし (Stripe Setup Mode + 月末バッチ請求) - 2026-05-13
 // ===========================================================================
-const MONTHEND_STATE = { lastPreview: null, busy: false, excluded: new Set() };
+const MONTHEND_STATE = { lastPreview: null, busy: false, excluded: new Set(), includeArrears: false };
 
 function fmtYenME(n) {
   try { return '¥' + Number(n || 0).toLocaleString('ja-JP'); }
@@ -1699,6 +1699,36 @@ async function fetchMonthEndPreview() {
   }
 }
 
+// === 滞納分 (過去の未払い月) 一括引き落とし 用ヘルパー (2026-06-01 塾長要望) ===
+// 月文字列 "YYYY-MM" の n ヶ月前リストを返す (新しい順)。
+function monthEndPriorMonths(month, n) {
+  const out = [];
+  const parts = String(month || '').split('-');
+  const y = parseInt(parts[0], 10), m = parseInt(parts[1], 10);
+  if (!y || !m) return out;
+  for (let i = 1; i <= n; i++) {
+    let yy = y, mm = m - i;
+    while (mm <= 0) { mm += 12; yy -= 1; }
+    out.push(`${yy}-${String(mm).padStart(2, '0')}`);
+  }
+  return out;
+}
+
+// プレビュー顧客 c の「滞納分」を返す。紐付け✓確定済み (regLinks) の生徒のみ対象 (曖昧マッチでの誤請求を防ぐ)。
+// priorMonths のうち名簿で未払いの月を抽出。滞納なし/未紐付けは null。金額はサーバ側で登録月謝を使うが、
+// 表示・集計用に c.monthlyFee を fee として返す。
+function monthEndArrearsFor(c, regToStudent, priorMonths) {
+  if (!c || !c.ready || c.alreadyChargedThisMonth) return null;
+  const sid = regToStudent[c.registrationId];
+  if (sid === undefined || sid === null) return null;   // 紐付け未確定 → 滞納対象外
+  const months = priorMonths.filter(pm => {
+    const pay = getPayment(pm, sid);
+    return !(pay && pay.paid);                            // 名簿で未払いの月だけ
+  });
+  if (!months.length) return null;
+  return { studentId: sid, months: months, fee: Number(c.monthlyFee) || 0 };
+}
+
 function renderMonthEndTable(data) {
   document.getElementById('monthEndMonthTag').textContent = data.month;
   document.getElementById('monthEndTotalCustomers').textContent = data.total_customers;
@@ -1712,6 +1742,8 @@ function renderMonthEndTable(data) {
     updateMonthEndSelectionSummary();
     return;
   }
+  const meRegToStudent = buildRegIdToStudentMap();
+  const mePriorMonths = monthEndPriorMonths(data.month, 3);
   const rows = data.customers.map(c => {
     let statusBadge = '';
     const chargeable = !!c.ready && !c.alreadyChargedThisMonth;
@@ -1723,6 +1755,15 @@ function renderMonthEndTable(data) {
       statusBadge = `<span style="color:#f87171;">⚠️ ${escapeHtmlME(c.issue || 'NG')}</span>`;
     }
     const rid = escapeHtmlME(c.registrationId);
+    // 滞納分の明細 (includeArrears ON ∧ 紐付け✓確定済み ∧ 過去に未払い月あり のとき)
+    let arrearsSub = '';
+    if (MONTHEND_STATE.includeArrears && chargeable) {
+      const a = monthEndArrearsFor(c, meRegToStudent, mePriorMonths);
+      if (a) {
+        const lbl = a.months.map(m => `${parseInt(m.slice(5), 10)}月`).join('・');
+        arrearsSub = `<div style="font-size:0.74rem;color:#fbbf24;margin-top:3px;white-space:nowrap;">＋滞納 ${lbl} ¥${(a.fee * a.months.length).toLocaleString()}</div>`;
+      }
+    }
     // 対象トグル: 請求可能な行のみ。OFF (excluded) は一斉実行の対象から外れる (サーバ側でも除外を強制)。
     const toggleCell = chargeable
       ? `<td class="ta-c"><input type="checkbox" class="me-toggle" ${MONTHEND_STATE.excluded.has(c.registrationId) ? '' : 'checked'} onchange="toggleMonthEndRow('${rid}', this.checked)" title="今回の一斉引き落としの対象にする / 外す" style="width:18px;height:18px;cursor:pointer;"></td>`
@@ -1737,7 +1778,7 @@ function renderMonthEndTable(data) {
       <td>${escapeHtmlME(c.grade)}</td>
       <td>${escapeHtmlME(c.parentName)}</td>
       <td style="font-size:0.85rem">${escapeHtmlME(c.email)}</td>
-      <td class="ta-r"><strong>${fmtYenME(c.monthlyFee)}</strong></td>
+      <td class="ta-r"><strong>${fmtYenME(c.monthlyFee)}</strong>${arrearsSub}</td>
       <td style="font-size:0.85rem;color:var(--text-dim)">${escapeHtmlME(c.feeBreakdown)}</td>
       <td>${statusBadge}</td>
       <td style="white-space:nowrap">${oneBtn}<button class="btn btn-ghost btn-sm" onclick="cancelRegistration('${rid}', '${escapeHtmlME(c.studentName)}')" style="color:#f87171" title="退塾処理">🗑</button></td>
@@ -1774,13 +1815,28 @@ function updateMonthEndSelectionSummary() {
   if (!prev || !Array.isArray(prev.customers)) return;
   const chargeable = prev.customers.filter(c => c.ready && !c.alreadyChargedThisMonth);
   const sel = chargeable.filter(c => !MONTHEND_STATE.excluded.has(c.registrationId));
-  const sum = sel.reduce((a, c) => a + (Number(c.monthlyFee) || 0), 0);
+  const curSum = sel.reduce((a, c) => a + (Number(c.monthlyFee) || 0), 0);
+  // 滞納分の合計 (includeArrears ON のとき・選択中の人のみ)。実行で実際に請求される総額に反映。
+  let arrearsSum = 0;
+  if (MONTHEND_STATE.includeArrears) {
+    const regToStudent = buildRegIdToStudentMap();
+    const priorMonths = monthEndPriorMonths(prev.month, 3);
+    for (const c of sel) {
+      const a = monthEndArrearsFor(c, regToStudent, priorMonths);
+      if (a) arrearsSum += a.fee * a.months.length;
+    }
+  }
+  const total = curSum + arrearsSum;
   if (cntEl) {
     cntEl.innerHTML = (sel.length < chargeable.length)
       ? `${sel.length}<span style="font-size:0.5em;color:var(--text-dim);font-weight:400;"> / ${chargeable.length} 名を選択中</span>`
       : `${sel.length}`;
   }
-  if (amtEl) amtEl.textContent = fmtYenME(sum);
+  if (amtEl) {
+    amtEl.innerHTML = (arrearsSum > 0)
+      ? `${fmtYenME(total)}<span style="font-size:0.5em;color:#fbbf24;font-weight:400;"> (当月 ${fmtYenME(curSum)} ＋滞納 ${fmtYenME(arrearsSum)})</span>`
+      : fmtYenME(total);
+  }
 }
 
 // 「💳 この人だけ」個別引き落とし。同じ execute エンドポイントに registrationIds:[rid] を渡す
@@ -1825,6 +1881,34 @@ function escapeHtmlME(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// 月末 execute エンドポイントへの単一 POST (当月 or 滞納月)。
+async function postMonthEndExecuteCall(pw, body) {
+  const res = await fetch('/payment/api/admin-charge-month-end-execute', {
+    method: 'POST',
+    headers: { 'X-Admin-Password': pw, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, data };
+}
+
+// 実請求 (dry-run でない) の success を名簿に「入金済」反映 (紐付け✓確定済み生徒のみ)。
+// カード引落と名簿が連動していなかったギャップ (二重徴収リスク) もこれで解消。
+function markMonthEndChargedPaid(month, results, regToStudent) {
+  let n = 0;
+  const today = new Date().toISOString().slice(0, 10);
+  for (const r of (results || [])) {
+    if (r.status !== 'success') continue;
+    const sid = regToStudent[r.registrationId];
+    if (sid === undefined || sid === null) continue;
+    const pay = getPayment(month, sid);
+    if (pay && pay.paid) continue;
+    setPayment(month, sid, true, today, `カード引落 ${month}`, Number(r.amount) || null);
+    n++;
+  }
+  return n;
+}
+
 async function executeMonthEndCharge(dryRun) {
   if (MONTHEND_STATE.busy) return;
   const pw = getMonthEndAdminPw();
@@ -1849,20 +1933,40 @@ async function executeMonthEndCharge(dryRun) {
 
   const month = preview.month;
 
-  // 対象トグルで選択された人だけを請求 (ready ∧ 当月未請求 ∧ ON)。
-  // 0 名なら必ずここで中止 (サーバ側も空配列/不正値は fail-closed で「対象0件」扱いだが、
-  // フロントでも空配列を送らず二重に防ぐ)。
+  // 対象トグルで選択された人だけを請求 (ready ∧ 当月未請求 ∧ ON)。0 名なら必ず中止 (空配列を送らない)。
   const selectedIds = selectedMonthEndIds();
   if (selectedIds.length === 0) {
     setMonthEndStatus('⚠️ 対象が 0 名です (対象トグルが全て OFF か、請求可能な人がいません)。1 名以上を ON にしてください', 'warn');
     return;
   }
-  const selCustomers = (preview.customers || []).filter(c => selectedIds.indexOf(c.registrationId) !== -1);
+  const selSet = new Set(selectedIds);
+  const selCustomers = (preview.customers || []).filter(c => selSet.has(c.registrationId));
   const selTotal = selCustomers.reduce((a, c) => a + (Number(c.monthlyFee) || 0), 0);
 
+  // === 滞納分の計画 (includeArrears ON のとき・紐付け✓確定済みの選択中生徒のみ) ===
+  const regToStudent = buildRegIdToStudentMap();
+  const priorMonths = monthEndPriorMonths(month, 3);
+  const arrearsPlan = {};            // { "YYYY-MM": [registrationId, ...] }
+  const arrearsLines = [];
+  let arrearsTotal = 0;
+  if (MONTHEND_STATE.includeArrears) {
+    for (const c of selCustomers) {
+      const a = monthEndArrearsFor(c, regToStudent, priorMonths);
+      if (!a) continue;
+      for (const pm of a.months) {
+        (arrearsPlan[pm] = arrearsPlan[pm] || []).push(c.registrationId);
+        arrearsTotal += a.fee;
+      }
+      arrearsLines.push(`  • ${c.studentName}: ${a.months.map(m => `${parseInt(m.slice(5), 10)}月`).join('・')} (¥${(a.fee * a.months.length).toLocaleString()})`);
+    }
+  }
+  const grandTotal = selTotal + arrearsTotal;
+
   if (!dryRun) {
-    const totalYen = fmtYenME(selTotal);
-    const msg = `🚨 本当に実行しますか?\n\n${selectedIds.length} 名から合計 ${totalYen} を一斉引き落としします。\n月: ${month}\n\n(対象トグルで OFF の人は請求されません)\n実行後は取り消せません。`;
+    const arrearsMsg = (MONTHEND_STATE.includeArrears && arrearsTotal > 0)
+      ? `\n\n🕒 滞納分 (過去最大3ヶ月): ¥${arrearsTotal.toLocaleString()}\n${arrearsLines.slice(0, 10).join('\n')}${arrearsLines.length > 10 ? `\n  ...他 ${arrearsLines.length - 10} 名` : ''}\n合計 (当月＋滞納): ¥${grandTotal.toLocaleString()}`
+      : '';
+    const msg = `🚨 本当に実行しますか?\n\n当月 (${month}): ${selectedIds.length} 名 / ¥${selTotal.toLocaleString()}${arrearsMsg}\n\n(対象トグル OFF の人・既に引落済みの月は自動で除外されます)\n実行後は取り消せません。`;
     if (!confirm(msg)) return;
     // 2 回目の確認: 月名を手動で入力させて typo 防止
     const typed = prompt(`安全のため、現在月を入力してください (例: ${month}) して OK を押してください。\nキャンセルで中止できます。`);
@@ -1875,20 +1979,47 @@ async function executeMonthEndCharge(dryRun) {
   MONTHEND_STATE.busy = true;
   setMonthEndStatus(dryRun ? '⏳ ドライラン実行中...' : '⏳ 一斉引き落とし実行中... (数分かかる場合があります)', 'info');
   try {
-    const res = await fetch('/payment/api/admin-charge-month-end-execute', {
-      method: 'POST',
-      headers: { 'X-Admin-Password': pw, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dryRun: dryRun, confirmMonth: month, registrationIds: selectedIds }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setMonthEndStatus(`❌ 実行エラー: ${data.message || data.error || 'unknown'}`, 'error');
+    // 請求コール一覧: 当月 (registrationIds) + 滞納各月 (chargeMonth + その月を未払いの生徒)。各月 1 コール。
+    const calls = [{ month: month, ids: selectedIds, arrears: false }];
+    if (MONTHEND_STATE.includeArrears) {
+      for (const pm of priorMonths) {
+        const ids = arrearsPlan[pm];
+        if (ids && ids.length) calls.push({ month: pm, ids: ids, arrears: true });
+      }
+    }
+    const agg = {
+      month: month + (calls.length > 1 ? ' ＋滞納' : ''),
+      summary: { total: 0, success: 0, failed: 0, skipped: 0, total_amount_charged: 0 },
+      results: [],
+    };
+    let writeBackN = 0;
+    let lastError = '';
+    for (const call of calls) {
+      const body = { dryRun: dryRun, confirmMonth: month, registrationIds: call.ids };
+      if (call.arrears) body.chargeMonth = call.month;   // 滞納月はサーバ側で「直前3ヶ月」に限定検証される
+      const { ok, data } = await postMonthEndExecuteCall(pw, body);
+      if (!ok) { lastError = data.message || data.error || 'unknown'; continue; }
+      const s = data.summary || {};
+      agg.summary.total += s.total || 0;
+      agg.summary.success += s.success || 0;
+      agg.summary.failed += s.failed || 0;
+      agg.summary.skipped += s.skipped || 0;
+      agg.summary.total_amount_charged += s.total_amount_charged || 0;
+      for (const r of (data.results || [])) {
+        agg.results.push(call.arrears
+          ? Object.assign({}, r, { studentName: `[${parseInt(call.month.slice(5), 10)}月分] ${r.studentName || r.registrationId}` })
+          : r);
+      }
+      if (!dryRun) writeBackN += markMonthEndChargedPaid(call.month, data.results, regToStudent);
+    }
+    if (lastError && agg.results.length === 0) {
+      setMonthEndStatus(`❌ 実行エラー: ${lastError}`, 'error');
       MONTHEND_STATE.busy = false;
       return;
     }
-    showMonthEndResultModal(data, dryRun);
+    showMonthEndResultModal(agg, dryRun);
     if (!dryRun) {
-      // プレビュー再取得 (already_charged 反映)
+      // プレビュー再取得 (already_charged 反映) + 名簿への入金反映を他タブにも反映
       setTimeout(() => fetchMonthEndPreview(), 500);
     }
   } catch (e) {
@@ -5045,6 +5176,11 @@ function setupModals() {
   document.getElementById('monthEndRefreshBtn')?.addEventListener('click', fetchMonthEndPreview);
   document.getElementById('monthEndDryRunBtn')?.addEventListener('click', () => executeMonthEndCharge(true));
   document.getElementById('monthEndExecuteBtn')?.addEventListener('click', () => executeMonthEndCharge(false));
+  // 🕒 滞納分も含める トグル (2026-06-01): ON で過去3ヶ月の未払い月もカード一括対象に
+  document.getElementById('monthEndIncludeArrears')?.addEventListener('change', (e) => {
+    MONTHEND_STATE.includeArrears = !!e.target.checked;
+    if (MONTHEND_STATE.lastPreview) renderMonthEndTable(MONTHEND_STATE.lastPreview);
+  });
   document.getElementById('monthEndExportCsvBtn')?.addEventListener('click', downloadMonthEndCsv);
   document.getElementById('monthEndAdminPw')?.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') fetchMonthEndPreview();
