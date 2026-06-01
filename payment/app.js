@@ -1085,6 +1085,116 @@ function handleUnlinkRegClick(studentId) {
   refresh();
 }
 
+// === Step3: カード登録あり・名簿未登録 の取り込み (2026-06-01) ===
+// reg (Stripe登録) → 名簿の生徒を逆引き (matchCustomerForStudent の逆方向)
+function findStudentForReg(reg) {
+  if (!reg) return null;
+  const rNorm = normalizeName(reg.studentName);
+  if (!rNorm) return null;
+  for (const s of STATE.data.students) {
+    const sNorm = normalizeName(s.name);
+    if (sNorm && (sNorm === rNorm || sNorm.includes(rNorm) || rNorm.includes(sNorm))) return s;
+  }
+  // 括弧内候補との一致
+  const rCands = extractNameCandidates(reg.studentName).map(normalizeName).filter(Boolean);
+  for (const s of STATE.data.students) {
+    const sCands = extractNameCandidates(s.name).map(normalizeName).filter(Boolean);
+    for (const rc of rCands) for (const sc of sCands) if (rc === sc) return s;
+  }
+  return null;
+}
+
+// 未紐付けの登録者を名簿に追加 + カード紐付け (saveNewStudent の採番/同名チェックを流用)
+async function addStudentFromReg(reg) {
+  const name = (reg.studentName || '').trim();
+  if (!name) { alert('登録者名が空です。'); return; }
+  const fee = parseInt(reg.amount || reg.monthly_fee || 0, 10) || 0;
+  // 同名チェック (空白除去で正規化) — 重複登録/同一人物の二重追加を防ぐ
+  const normName = name.replace(/[\s　]/g, '');
+  const dup = STATE.data.students.find(s => (s.name || '').replace(/[\s　]/g, '') === normName);
+  if (dup) {
+    if (!confirm(`既に同名の生徒「${dup.name}」(ID #${dup.id}) が名簿にいます。\n\n別人として新規追加しますか?\n(同一人物なら「キャンセル」して、その生徒の「カード」列から「✓確定」で紐付けてください)`)) return;
+  }
+  if (!confirm(`「${name}」さん (${reg.grade || '学年未設定'}) を名簿に追加しますか?\n\n月謝 ¥${fee.toLocaleString()} / 保護者 ${reg.parentName || '—'}\n\nカード登録 (${reg.customerId || reg.registrationId}) と自動で紐付けます。`)) return;
+  // id 採番 (saveNewStudent と同一ロジック・衝突回避)
+  const usedIds = new Set(STATE.data.students.map(s => s.id));
+  const newStudentsMax = (STATE.overrides.newStudents || []).reduce((mx, s) => Math.max(mx, s.id || 0), 0);
+  let id = Math.max(STATE.data.nextStudentId || 1, newStudentsMax + 1);
+  while (usedIds.has(id)) id += 1;
+  const newStudent = {
+    id, name,
+    grade: reg.grade || '',
+    email: reg.email || '',
+    courses: Array.isArray(reg.courses) ? reg.courses : [],
+    enrollDate: STATE.currentMonth || '',
+    status: '通塾',
+    fee,
+    notes: 'カード登録から追加',
+    addedVia: 'reg-auto-add',
+    addedAt: new Date().toISOString(),
+  };
+  if (!STATE.overrides.newStudents) STATE.overrides.newStudents = [];
+  STATE.overrides.newStudents.push(newStudent);
+  STATE.data.students.push(newStudent);
+  STATE.data.nextStudentId = id + 1;
+  // 追加と同時にカード紐付け (原子化・再追加防止) + 振込人名/メール学習
+  setRegLink(id, reg.registrationId, reg.customerId, 'auto-add');
+  if (reg.parentName) setPayerName(id, reg.parentName);
+  if (reg.email) setEmail(id, reg.email);
+  saveOverrides();
+  populateAllFilters();
+  refresh();
+  // 即 push (タブ閉じ・通信不安定での消失防止) — saveNewStudent と同様に await で成否を反映
+  let cloudMsg = '';
+  if (typeof CloudSync !== 'undefined' && CloudSync.bootstrapped && CloudSync.getToken()) {
+    const ok = await CloudSync.pushNow();
+    cloudMsg = ok ? '\n\n✓ クラウド同期完了 (携帯/PC 共有)' : '\n\n⚠ クラウド同期に失敗しました (右上の同期アイコンから再試行できます)';
+  } else {
+    cloudMsg = '\n\nℹ クラウド未ログイン: この端末のみに保存されました';
+  }
+  alert(`✓ ${name} さん (ID #${id}) を名簿に追加し、カード登録と紐付けました。${cloudMsg}`);
+}
+
+// 全生徒タブ上部の「カード登録あり・名簿未登録」パネル
+function renderUnlinkedRegsPanel() {
+  const panel = document.getElementById('unlinkedRegsPanel');
+  if (!panel) return;
+  const regs = STRIPE_CUST_CACHE.customers || [];
+  if (!regs.length) { panel.innerHTML = ''; return; }
+  const linkedRegIds = new Set(Object.values(STATE.overrides.regLinks || {}).map(l => l && l.regId).filter(Boolean));
+  const unlinked = regs.filter(r => {
+    if (linkedRegIds.has(r.registrationId)) return false;  // 既に紐付け済み
+    if (findStudentForReg(r)) return false;                // 名簿にいる → カード列で候補表示
+    return true;                                           // 名簿に無い → 取り込み対象
+  });
+  if (!unlinked.length) { panel.innerHTML = ''; return; }
+  panel._unlinked = unlinked;
+  panel.innerHTML = `
+    <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.4);border-radius:10px;padding:12px 16px;margin-bottom:16px;">
+      <div style="font-weight:700;color:#fbbf24;margin-bottom:4px;">💳 カード登録あり・名簿未登録 (${unlinked.length}件)</div>
+      <div style="color:#9ca3af;font-size:0.8rem;margin-bottom:10px;">カード登録したが名簿にいない方です。「名簿に追加」で取り込み＋カード紐付けされます。</div>
+      <table class="table" style="width:100%;font-size:0.86rem;">
+        <thead><tr style="color:#9ca3af;text-align:left;"><th>氏名</th><th>学年</th><th>保護者</th><th class="ta-r">月謝</th><th></th></tr></thead>
+        <tbody>
+        ${unlinked.map((r, i) => `<tr>
+          <td class="name-cell">${escapeHtml(r.studentName || '')}</td>
+          <td>${escapeHtml(r.grade || '—')}</td>
+          <td>${escapeHtml(r.parentName || '—')}</td>
+          <td class="ta-r fee-cell">${yen(r.amount || r.monthly_fee || 0)}</td>
+          <td class="ta-r"><button class="btn btn-primary btn-sm" data-action="add-from-reg" data-reg-idx="${i}">名簿に追加</button></td>
+        </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  panel.onclick = (e) => {
+    const btn = e.target.closest('[data-action="add-from-reg"]');
+    if (!btn) return;
+    const idx = parseInt(btn.dataset.regIdx, 10);
+    const reg = panel._unlinked && panel._unlinked[idx];
+    if (reg) addStudentFromReg(reg);
+  };
+}
+
 async function renderUnpaid() {
   const month = STATE.currentMonth;
   document.getElementById('unpaidMonthTag').textContent = month;
@@ -1322,6 +1432,8 @@ function renderAll() {
     STRIPE_CUST_CACHE._allTabTried = true;
     loadRegisteredCustomers().then((custs) => { if (custs && custs.length) { STRIPE_CUST_CACHE._allTabTried = false; renderAll(); } });
   }
+  // Step3: カード登録あり・名簿未登録の取り込みパネル
+  renderUnlinkedRegsPanel();
 
   if (!students.length) {
     tbody.innerHTML = `<tr><td colspan="10" class="empty">該当する生徒はいません</td></tr>`;

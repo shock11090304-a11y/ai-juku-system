@@ -111,6 +111,7 @@ class handler(BaseHTTPRequestHandler):
                                 "email": r.get("email", ""),
                                 "phone": r.get("phone", ""),
                                 "amount": r.get("amount", 0),
+                                "monthly_fee": r.get("monthly_fee", 0),
                                 "completedAt": r.get("completed_at", 0),
                                 "courses": r.get("courses", []),
                                 "options": r.get("options", []),
