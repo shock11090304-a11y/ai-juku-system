@@ -606,6 +606,23 @@ select:focus, input:focus, textarea:focus {
   padding: 0;
 }
 
+/* チャット回答が maxTokens で途切れた時の「続き」ボタン (2026-06-02) */
+.chat-continue-btn {
+  display: inline-block;
+  margin-top: 0.6rem;
+  padding: 0.4rem 0.9rem;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  color: var(--primary-light);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.chat-continue-btn:hover { background: rgba(99, 102, 241, 0.25); }
+.chat-continue-btn:disabled { opacity: 0.6; cursor: default; }
+
 /* メッセージ内の画像表示 */
 .message .msg-body img {
   max-width: 100%;

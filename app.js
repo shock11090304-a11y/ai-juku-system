@@ -1280,6 +1280,9 @@ function showQuotaExhaustedDialog(feature, message) {
 }
 
 async function callClaude(systemPrompt, userMessage, options = {}) {
+  // 🛡️ 2026-06-02: 直近呼び出しの打ち切り理由を side-channel で公開 (chat の「続き」ボタン判定用)。
+  // 成功時のみ data.stop_reason を入れる。エラー/デモ経路は null のまま (誤判定防止)。
+  window._lastAiStopReason = null;
   const messages = options.messages || [{ role: 'user', content: userMessage }];
   const kind = options.kind || 'chat';
   const config = MODEL_MAP[kind] || MODEL_MAP.chat;
@@ -1358,6 +1361,7 @@ async function callClaude(systemPrompt, userMessage, options = {}) {
         if (!text) {
           return isJsonKind ? jsonSafeFallback('empty response') : '（応答が取得できませんでした）';
         }
+        window._lastAiStopReason = data.stop_reason || data.stopReason || 'end_turn';
         return text;
       }
       // res.ok が false の場合: JSON kind なら安全なフォールバックで即抜け。
@@ -2921,6 +2925,49 @@ function formatMarkdown(text) {
     .replace(/^\d+\. (.+)$/gm, '$&');
 }
 
+// 🛡️ 2026-06-02: 回答が maxTokens で途切れた時だけ「続き」ボタンを出し、続きを取得して同じ吹き出しに
+// 連結 + KaTeX 再レンダリング (途中で割れた数式 \( … が続きで閉じて正しく表示される)。
+function maybeAttachContinueButton(aiDiv, currentText, systemPrompt, histEntry) {
+  const truncated = (window._lastAiStopReason === 'max_tokens' || window._lastAiStopReason === 'length');
+  if (!truncated || !aiDiv) return;
+  const body = aiDiv.querySelector('.msg-body');
+  if (!body) return;
+  const existing = aiDiv.querySelector('.chat-continue-btn');
+  if (existing) existing.remove();
+  const btn = document.createElement('button');
+  btn.className = 'chat-continue-btn';
+  btn.type = 'button';
+  btn.textContent = '▼ 続きを表示';
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    btn.textContent = '… 続きを生成中';
+    try {
+      const contMessages = [
+        ...state.chatHistory.slice(-6).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content })),
+        { role: 'user', content: '直前の回答が途中で切れました。同じ内容を繰り返さず、途切れたところから自然に続きだけを書いてください。' }
+      ];
+      const cont = await callClaude(systemPrompt, '続き', { messages: contMessages, kind: 'chat', maxTokens: 4000, abortKey: 'chat_continue' });
+      const merged = currentText + (cont || '');
+      body.innerHTML = formatMarkdown(escapeHtml(merged));
+      renderMathInNode(aiDiv);
+      // この応答の履歴エントリ(参照捕捉)を merged で更新 (reverse-scan の取り違えレースを回避)
+      if (histEntry) histEntry.content = merged;
+      storage.set(STORAGE_KEYS.CHAT_HISTORY, state.chatHistory.slice(-30));
+      btn.remove();
+      // まだ途切れていれば再度「続き」ボタン (どんな長さでも完結できる)
+      maybeAttachContinueButton(aiDiv, merged, systemPrompt, histEntry);
+      const container = document.getElementById('chatMessages');
+      if (container) container.scrollTop = container.scrollHeight;
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = '▼ 続きを表示 (再試行)';
+    }
+  });
+  aiDiv.appendChild(btn);
+  const container = document.getElementById('chatMessages');
+  if (container) container.scrollTop = container.scrollHeight;
+}
+
 async function sendChatMessage() {
   const input = document.getElementById('chatInput');
   const text = input.value.trim();
@@ -3081,20 +3128,26 @@ ${attached.length ? (attached.some(a => a.isPdf) ? '- 添付された PDF (問�
     response = await callClaude(systemPrompt, text || (hasPdf ? 'PDF 解説' : '画像解説'), {
       messages: visionMessages,
       kind: 'vision',  // Use Sonnet for vision/document (cheaper)
-      maxTokens: 2000
+      maxTokens: 4000  // 2026-06-02: 数式の長い解説が途中で切れないよう増量 (超過時は「続き」ボタン)
     });
   } else {
     const messages = [
       ...state.chatHistory.slice(-8).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content })),
       { role: 'user', content: text }
     ];
-    response = await callClaude(systemPrompt, text, { messages, kind: 'chat', maxTokens: 1500 });
+    response = await callClaude(systemPrompt, text, { messages, kind: 'chat', maxTokens: 4000 });  // 2026-06-02: 1500→4000 (長い解説の途切れ対策・超過時は「続き」ボタン)
   }
 
   thinkingEl.remove();
-  appendMessage('assistant', response);
-  state.chatHistory.push({ role: 'assistant', content: response });
+  // save=false: appendMessage 内の push を抑止し、下の明示 push 1 回に統一する。
+  // (「続き」連結時に末尾 assistant を merged 更新する際、二重 push の古い断片が残らないようにするため)
+  const aiDiv = appendMessage('assistant', response, false);
+  const aiHistEntry = { role: 'assistant', content: response };
+  state.chatHistory.push(aiHistEntry);
   storage.set(STORAGE_KEYS.CHAT_HISTORY, state.chatHistory.slice(-30));
+  // 🛡️ 2026-06-02 塾長指示「数学の長い解説が途中で切れる」対策: maxTokens で打ち切られたら「続き」ボタン。
+  // aiHistEntry の参照を渡し、続き連結時はその参照を直接更新 (reverse-scan のレース回避)
+  maybeAttachContinueButton(aiDiv, response, systemPrompt, aiHistEntry);
 
   // Update stats
   const stats = storage.get(STORAGE_KEYS.STATS, { total: 0, today: { date: '', count: 0 } });
