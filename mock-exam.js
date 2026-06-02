@@ -528,9 +528,101 @@
     return out;
   }
 
+  // ==========================================================
+  // 📄 PDF版の模試 一覧 (2026-06-02 塾長指示「模試も大学別と同じPDFボタンに」)
+  //   公開済み lesson_prints (subject=模試) を取得 → 問題PDF+解答PDF ボタン付きリスト表示。
+  //   大学別 (university-exam) の問題リストと同じ UX。
+  // ==========================================================
+  // file_path scheme guard: '/lesson-prints/...pdf' のみ許可 (mypage DL handler と同一基準)
+  function _isMockPdfPathSafe(fp) {
+    return typeof fp === 'string' && /^\/lesson-prints\/[^?#\s]+\.pdf$/i.test(fp) && !fp.includes('..');
+  }
+  function _mockSubjectIcon(title) {
+    const t = title || '';
+    if (/英検/.test(t)) return '🎖';
+    if (/英語/.test(t)) return '📝';
+    if (/国語|現代文|古文|漢文/.test(t)) return '📜';
+    if (/数学/.test(t)) return '📐';
+    if (/化学/.test(t)) return '🧪';
+    if (/物理/.test(t)) return '⚛️';
+    if (/生物/.test(t)) return '🧬';
+    return '🎯';
+  }
+  // 問題PDF (_問題.pdf or 無印) と 解答PDF (_解説.pdf) を file_path prefix で対にする。
+  // mypage の groupAnswerPrints は _問題 を「本番試験版」扱いするため模試には流用不可 → 専用ロジック。
+  function groupMockPdfs(prints) {
+    const byPrefix = {};
+    (prints || []).forEach(p => {
+      if (!p || !p.file_path) return;
+      const fp = String(p.file_path).replace(/\+/g, '-'); // PWA cache 正規化 (旧 + URL → -)
+      p.file_path = fp;
+      let prefix, role;
+      if (fp.endsWith('_解説.pdf')) { prefix = fp.slice(0, -'_解説.pdf'.length); role = 'answer'; }
+      else if (fp.endsWith('_問題.pdf')) { prefix = fp.slice(0, -'_問題.pdf'.length); role = 'problem'; }
+      else { prefix = fp.replace(/\.pdf$/i, ''); role = 'problem'; }
+      (byPrefix[prefix] = byPrefix[prefix] || {})[role] = p;
+    });
+    return Object.keys(byPrefix)
+      .map(k => ({ problem: byPrefix[k].problem || byPrefix[k].answer, answer: byPrefix[k].answer || null }))
+      .filter(g => g.problem && _isMockPdfPathSafe(g.problem.file_path));
+  }
+  async function loadMockPdfs() {
+    const wrap = document.getElementById('mePdfList');
+    if (!wrap) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/student/lesson-prints?subject=${encodeURIComponent('模試')}&limit=100`);
+      const data = await res.json().catch(() => ({}));
+      const groups = groupMockPdfs(data.prints || []);
+      if (!groups.length) { wrap.innerHTML = '<p class="me-pdf-empty">PDF版の模試は準備中です。</p>'; return; }
+      wrap.innerHTML = groups.map(g => {
+        const p = g.problem;
+        const title = (p.title || '模試').replace(/\s*\(解答解説\)\s*$/, '');
+        const icon = _mockSubjectIcon(title);
+        const lvl = p.level ? `<span class="me-pdf-tag">${escapeHtml(p.level)}</span>` : '';
+        const pages = p.pages ? `<span class="me-pdf-meta-item">${parseInt(p.pages, 10) || ''} ページ</span>` : '';
+        const probBtn = `<button type="button" class="me-pdf-btn me-pdf-btn-q" data-pid="${escapeHtml(String(p.id))}" data-fp="${escapeHtml(p.file_path)}" title="問題PDFを開く">📄 問題PDF</button>`;
+        const a = g.answer;
+        const ansBtn = (a && _isMockPdfPathSafe(a.file_path))
+          ? `<button type="button" class="me-pdf-btn me-pdf-btn-a" data-pid="${escapeHtml(String(a.id))}" data-fp="${escapeHtml(a.file_path)}" title="解答解説PDFを開く">📝 解答PDF</button>`
+          : '';
+        return `
+          <div class="me-pdf-row">
+            <div class="me-pdf-info">
+              <div class="me-pdf-title"><span class="me-pdf-icon">${icon}</span><strong>${escapeHtml(title)}</strong>${a ? '<span class="me-pdf-badge">📄 解答付き</span>' : ''}</div>
+              <div class="me-pdf-meta">${lvl}<span class="me-pdf-meta-item">模試</span>${pages}</div>
+            </div>
+            <div class="me-pdf-actions">${probBtn}${ansBtn}</div>
+          </div>`;
+      }).join('');
+      if (typeof window.track === 'function') window.track('mock_pdf_list_view', { count: groups.length });
+    } catch (e) {
+      wrap.innerHTML = '<p class="me-pdf-empty">PDF一覧の読み込みに失敗しました。時間をおいて再度お試しください。</p>';
+    }
+  }
+  // PDF ボタン click (delegation): DL履歴記録 (fire-and-forget) → 新タブで開く
+  function _onMockPdfClick(ev) {
+    const btn = ev.target.closest('.me-pdf-btn');
+    if (!btn) return;
+    ev.preventDefault();
+    const pid = btn.getAttribute('data-pid');
+    const fp = btn.getAttribute('data-fp') || '';
+    if (!_isMockPdfPathSafe(fp)) { _toastOrAlert('不正な PDF パスです', 'warn'); return; }
+    const fpSafe = fp.replace(/\+/g, '-');
+    if (pid) {
+      const token = localStorage.getItem('ai_juku_session_token') || '';
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      fetch(`${BACKEND_URL}/api/student/lesson-prints/${encodeURIComponent(pid)}/download`, { method: 'POST', headers }).catch(() => {});
+    }
+    window.open(fpSafe, '_blank', 'noopener,noreferrer');
+  }
+
   // === 初期化 ===
   document.addEventListener('DOMContentLoaded', () => {
     loadTemplates();
+    loadMockPdfs();
+    const _pdfListEl = document.getElementById('mePdfList');
+    if (_pdfListEl) _pdfListEl.addEventListener('click', _onMockPdfClick);
     document.getElementById('meSubmitBtn').addEventListener('click', () => {
       const total = Object.keys(answers).length;
       if (total === 0) {

@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>完全模試 | AIコーチング</title>
-  <script src="cache-purge.js?v=20260602-print-fix2"></script>
+  <script src="cache-purge.js?v=20260602-mock-pdf-list"></script>
   <script src="frontend-error-monitor.js"></script>
   <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost-r2">
-  <link rel="stylesheet" href="mock-exam.css?v=20260602-print-fix2">
+  <link rel="stylesheet" href="mock-exam.css?v=20260602-mock-pdf-list">
   <script src="analytics.js" defer></script>
 </head>
 <body>
@@ -42,6 +42,15 @@
       <div class="me-templates" id="meTemplates">
         <!-- JS で動的生成 -->
         <div class="me-loading">読み込み中...</div>
+      </div>
+
+      <!-- 📄 PDF版の模試 (印刷して解く・全教科) — 2026-06-02 塾長指示「模試も大学別と同じPDFボタンに」 -->
+      <div class="me-pdf-section" id="mePdfSection">
+        <div class="me-pdf-head">
+          <h2>📄 PDF版の模試 <span class="me-pdf-sub">印刷して解く・全教科対応</span></h2>
+          <p class="me-pdf-desc">画面で解く模試とは別に、<strong>問題・解答解説をPDF</strong>でダウンロードできます。印刷して本番形式で演習しましょう。</p>
+        </div>
+        <div id="mePdfList" class="me-pdf-list"><div class="me-loading">PDF版の模試を読み込み中...</div></div>
       </div>
     </section>
 
@@ -107,6 +116,6 @@
   </main>
 
   <script src="toast.js?v=20260526-toast"></script>
-  <script src="mock-exam.js?v=20260526-toast"></script>
+  <script src="mock-exam.js?v=20260602-mock-pdf-list"></script>
 </body>
 </html>
