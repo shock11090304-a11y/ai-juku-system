@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>大学別 過去問風オリジナル | AIコーチング</title>
-  <script src="cache-purge.js?v=20260602-pdf-print-btn"></script>
+  <script src="cache-purge.js?v=20260602-print-fix2"></script>
   <script src="frontend-error-monitor.js"></script>
   <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost-r2">
   <link rel="stylesheet" href="vocab.css?v=20260525-mistakes-tag">
@@ -152,21 +152,26 @@
        操作ボタン (.ux-actions) 等の UI chrome は非表示。
        解答・解説 (.ux-answer-block/.ux-explanation-block) は表示中 (.show) のみ印刷される。 */
     @media print {
-      /* 🛡️ Safari は印刷時に背景を既定描画 → ダーク紺背景で黒文字が読めなくなるのを防ぐ (3視点 review M1) */
-      html, body { background: #fff !important; }
+      /* 🛡️ Safari は印刷時に背景を既定描画 → ダーク紺背景で黒文字が読めなくなるのを防ぐ (3視点 review M1)。
+         body min-height:100vh を解除しないと末尾に空白ページが出る (実機検証 fix) */
+      html, body { background: #fff !important; min-height: 0 !important; }
+      .ux-container { margin: 0 !important; padding: 0 !important; min-height: 0 !important; }
+      /* 🛡️ chrome (ナビ/背景装飾/一覧/フィルタ等) は display:none で領域ごと消す → #uxDetail が
+         先頭から自然に流れ、長い問題でも複数ページに正しく分割される (2026-06-02 実機検証 fix) */
+      nav, .bg-gradient, .floating-orbs, .ux-container > *:not(#uxDetail) { display: none !important; }
+      /* 残りの未知要素は visibility で保険的に非表示 */
       body * { visibility: hidden; }
       #uxDetail, #uxDetail * { visibility: visible; }
-      #uxDetail {
-        position: absolute; left: 0; top: 0; width: 100%;
-      }
       .ux-detail-card {
         background: #fff !important; color: #000 !important;
-        border: none !important; padding: 1rem !important;
+        border: none !important; padding: 0 !important;
       }
       .ux-detail-card * { color: #000 !important; background: transparent !important; }
       .ux-actions { display: none !important; }
       .ux-detail-meta { color: #000 !important; border-bottom: 1px solid #888 !important; padding-bottom: 0.5rem; }
-      .ux-question, .ux-answer-block, .ux-explanation-block { page-break-inside: avoid; margin-bottom: 0.8rem !important; }
+      /* 解答・解説/問題文は長文になり得るので avoid しない (1ページ超で空白ページ事故を防ぐ・
+         mock 側と同じ思想。avoid は分割で困らない最小単位=選択肢のみ) (3視点 review B 指摘 fix) */
+      .ux-answer-block, .ux-explanation-block, .ux-question { margin-bottom: 0.8rem !important; }
       .ux-choice-row { border: 1px solid #888 !important; page-break-inside: avoid; }
       /* 採点後に印刷する場合: 色分け (緑/赤) は B/W で消えるため、正解=太枠+✓ / 不正解=取消線 で区別を残す (3視点 review M2) */
       .ux-choice-row.correct { border: 2px solid #000 !important; font-weight: 700 !important; }

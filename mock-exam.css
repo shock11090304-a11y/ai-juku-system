@@ -326,19 +326,25 @@
    ========================================================== */
 @media print {
   /* 🛡️ Safari は印刷時に背景を既定で描画する → ダークテーマの紺背景が紙に出て
-     黒文字が読めなくなるのを防ぐため、用紙全体を白に強制 (3視点 review M1) */
-  html, body { background: #fff !important; }
-  /* ヘッダ・ナビ・他セクションすべて非表示 */
+     黒文字が読めなくなるのを防ぐため、用紙全体を白に強制 (3視点 review M1)。
+     min-height:100vh (lp.css body) を解除しないと末尾に空白ページが出る (実機検証 fix) */
+  html, body { background: #fff !important; min-height: 0 !important; }
+  .me-container { margin: 0 !important; padding: 0 !important; min-height: 0 !important; }
+  /* 🛡️ chrome (ナビ/背景装飾/選択画面/結果画面) は display:none で「場所ごと」消す。
+     visibility:hidden だけだと領域が残り #meExam が下に押し下げられ、position:absolute だと
+     複数ページの模試が 2 ページ目に飛ぶ事故が起きた (実機 PDF 目視で検出) →
+     display:none + 通常フローで先頭から自然分割させる (2026-06-02 実機検証 fix) */
+  nav, .bg-gradient, .floating-orbs, .me-header, #meSetup, #meResult { display: none !important; }
+  /* 残りの未知要素は visibility で保険的に非表示 */
   body * { visibility: hidden; }
-  /* 模試の問題本文 (#meExam) のみ印刷対象に */
+  /* 模試の問題本文 (#meExam) のみ印刷対象に (通常フロー維持・absolute は使わない) */
   #meExam, #meExam * { visibility: visible; }
   #meExam {
-    position: absolute; left: 0; top: 0; width: 100%;
     background: #fff !important; color: #000 !important;
-    padding: 1rem !important; border: none !important;
+    padding: 0 !important; border: none !important;
   }
-  /* 試験ヘッダのパネル背景 (半透明ダーク) は印刷時 透明に */
-  .me-exam-header { background: transparent !important; backdrop-filter: none !important; border: none !important; box-shadow: none !important; }
+  /* 試験ヘッダのパネル背景 (半透明ダーク/sticky) は印刷時 透明・通常配置に */
+  .me-exam-header { background: transparent !important; backdrop-filter: none !important; border: none !important; box-shadow: none !important; position: static !important; }
   /* 印刷時に隠す: タイマー・進捗・採点/印刷ボタン行 */
   .me-exam-timer, .me-progress, .me-submit-row { display: none !important; }
   /* タイトル・問題本文を印刷向けに黒文字・白背景へ */
@@ -346,7 +352,12 @@
   #meSections, #meSections * { color: #000 !important; background: transparent !important; }
   /* 下線 (<u>) は印刷時も黒線で視認可能に (既定の indigo 装飾色を上書き) */
   #meSections u { text-decoration-color: #000 !important; background: transparent !important; }
-  .me-section-block { page-break-inside: avoid; margin-bottom: 1.2rem !important; }
+  /* 改ページ制御: 大問/設問は長文を含み 1 ページを超え得るので avoid しない (避けると空白ページ事故)。
+     分割されると困る最小単位 = 個々の選択肢のみ avoid (2026-06-02 実機検証 fix) */
+  .me-choice { page-break-inside: avoid; }
+  /* 設問文がページ末尾に取り残されない (選択肢と一緒に次ページへ送る・unbreakable にはしない) */
+  .me-subq-stem { page-break-after: avoid; }
+  .me-section-block { margin-bottom: 1.2rem !important; }
   .me-section-block h3 { color: #000 !important; border-bottom: 1px solid #888 !important; }
   /* 解答欄 (radio/input/textarea) は枠を残し、現在の入力値も印刷に残す */
   input, textarea, select {
