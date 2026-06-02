@@ -28840,11 +28840,23 @@ _SOLVE_AI_DEFINITIONS = {
 # rate limit (重 endpoint・3 AI 並列 + 2 回チェックで最大 6 LLM call)
 _SOLVE_RATE_LIMIT: dict = {}  # {student_id: [ts, ...]}
 _SOLVE_RATE_LIMIT_PER_HOUR = 10
+# 複数画像対応 (2026-06-02): 1 リクエストの画像枚数上限。
+# rate limit は「枚数」で加重消費する (5 枚送れば 5 ユニット消費) ことで、複数画像でも
+# 1 時間あたりの AI 解析量 (= コスト) を単一画像時と同等の上限に保つ (コスト暴走防御)。
+_SOLVE_MAX_IMAGES = 5
 
-def _check_solve_rate(student_id: int) -> None:
+def _check_solve_rate(student_id: int, weight: int = 1) -> None:
+    """重 endpoint の per-student rate limit。
+    weight: このリクエストが消費するユニット数 (= 画像枚数)。複数画像で AI コストが比例増するため
+            枚数分のユニットを消費させ、1 時間あたりの総解析量を一定に保つ。weight=1 は従来挙動。
+    """
     import time as _t
     now = _t.time()
     h_ago = now - 3600
+    try:
+        weight = max(1, min(int(weight), _SOLVE_MAX_IMAGES))
+    except (TypeError, ValueError):
+        weight = 1
     ts = _SOLVE_RATE_LIMIT.get(student_id, [])
     ts = [t for t in ts if t > h_ago]
     if len(ts) >= _SOLVE_RATE_LIMIT_PER_HOUR:
@@ -28852,15 +28864,18 @@ def _check_solve_rate(student_id: int) -> None:
         retry_after_min = max(1, int((oldest + 3600 - now) / 60))
         raise HTTPException(
             status_code=429,
-            detail=f"3 AI 写真解答は 1 時間あたり {_SOLVE_RATE_LIMIT_PER_HOUR} 回まで。約 {retry_after_min} 分後に再試行してください。"
+            detail=f"3 AI 写真解答は 1 時間あたり画像 {_SOLVE_RATE_LIMIT_PER_HOUR} 枚まで。約 {retry_after_min} 分後に再試行してください。"
         )
-    ts.append(now)
+    # weight ユニット分のタイムスタンプを記録 (複数画像は枚数分消費・単一は従来どおり 1)
+    ts.extend([now] * weight)
     _SOLVE_RATE_LIMIT[student_id] = ts
 
 
-def _solve_one_ai(ai_id: str, image_b64: Optional[str], mime: str, mime_pdf: bool,
+def _solve_one_ai(ai_id: str, images: Optional[list], mime_pdf: bool,
                    problem_text: Optional[str], prior_answers: Optional[list] = None) -> dict:
     """1 AI で 1 round の解答を実行 (sync・thread pool から呼ぶ)。
+    images: [{"b64": <base64>, "mime": <mime>}, ...] の配列 (2026-06-02 複数画像対応・最大 5 枚)。
+      mime_pdf=True のときは images[0] を PDF document として扱う (PDF は単一のみ)。
     prior_answers が指定された場合 = Round 2: 他 AI の解答を参考に再評価。
     返却: {ai_id, model, subject, topic, ..., elapsed_ms} or {ai_id, model, error, elapsed_ms}
     """
@@ -28885,8 +28900,11 @@ def _solve_one_ai(ai_id: str, image_b64: Optional[str], mime: str, mime_pdf: boo
     user_parts = []
     if problem_text:
         user_parts.append(f"## 補足説明 (生徒からの追加情報)\n{problem_text}\n")
-    if image_b64:
-        user_parts.append("画像に問題が写っています。OCR/読解してから解いてください。\n")
+    if images:
+        if not mime_pdf and len(images) > 1:
+            user_parts.append(f"{len(images)} 枚の画像に問題が写っています。すべての画像を順に読み取り、関連づけて 1 つの問題として解いてください。\n")
+        else:
+            user_parts.append("画像に問題が写っています。OCR/読解してから解いてください。\n")
     if prior_answers:
         # Round 2: 他 AI の解答を見せて再検証
         user_parts.append(
@@ -28909,20 +28927,24 @@ def _solve_one_ai(ai_id: str, image_b64: Optional[str], mime: str, mime_pdf: boo
         user_parts.append("Solve completely and return JSON.")
     user_text = "\n".join(user_parts)
 
-    # Anthropic 互換 content blocks
+    # Anthropic 互換 content blocks (2026-06-02: 複数画像対応)
     content_blocks = []
-    if image_b64:
+    if images:
         if mime_pdf:
-            # Anthropic PDF input: type=document, source=base64
+            # Anthropic PDF input: type=document (PDF は単一のみ・images[0] を使用)
             content_blocks.append({
                 "type": "document",
-                "source": {"type": "base64", "media_type": "application/pdf", "data": image_b64},
+                "source": {"type": "base64", "media_type": "application/pdf", "data": images[0]["b64"]},
             })
         else:
-            content_blocks.append({
-                "type": "image",
-                "source": {"type": "base64", "media_type": mime, "data": image_b64},
-            })
+            # 画像 1〜5 枚をそれぞれ image block として添付。
+            # OpenAI/Gemini の content converter も content list 内の全 image block をループ変換するため、
+            # 複数画像はそのまま 3 AI すべてに渡る。
+            for _im in images:
+                content_blocks.append({
+                    "type": "image",
+                    "source": {"type": "base64", "media_type": _im.get("mime") or "image/jpeg", "data": _im["b64"]},
+                })
     content_blocks.append({"type": "text", "text": user_text})
 
     # 🛡️ 2026-05-13 致命 fix: max_tokens=2000 が小さすぎて
@@ -29039,7 +29061,7 @@ def _solve_one_ai(ai_id: str, image_b64: Optional[str], mime: str, mime_pdf: boo
                 "kind": ai_def["kind"],
                 "error": err_summary,
                 "mime_pdf": mime_pdf,
-                "has_image": bool(image_b64),
+                "has_image": bool(images),
                 "round": "round2" if prior_answers else "round1",
             })
         except Exception:
@@ -29341,7 +29363,8 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
 
     payload:
       {
-        "image_base64": "<base64>" (image or PDF),
+        "images": [{"image_base64": "<b64>", "mime_type": "image/jpeg"}, ...]  (複数画像・最大5枚・jpeg/png/webp),
+        "image_base64": "<base64>" (単一・image or PDF・後方互換),
         "mime_type": "image/jpeg" | "image/png" | "image/webp" | "application/pdf",
         "problem_text": "<生徒の補足説明>" (optional),
         "mode": "standard" | "essay_review" (default: "standard"),
@@ -29409,13 +29432,46 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
         except Exception as e:
             log.error(f"[solve-from-image] _verify_student_active error: {type(e).__name__}: {e}")
             raise HTTPException(status_code=500, detail="契約状態の確認に失敗しました")
-        _check_solve_rate(student_id)
+        # 複数画像は枚数で rate limit を加重消費 (AI コスト比例・枚数は _check_solve_rate 内で上限 clamp)
+        _raw_imgs_for_rate = payload.get("images")
+        _img_weight = len(_raw_imgs_for_rate) if isinstance(_raw_imgs_for_rate, list) and _raw_imgs_for_rate else 1
+        _check_solve_rate(student_id, weight=_img_weight)
 
-    # validation
-    if not image_b64 and not problem_text:
-        raise HTTPException(status_code=400, detail="image_base64 か problem_text のいずれか必須")
-    mime_pdf = (mime == "application/pdf")
-    if image_b64:
+    # ---- 入力画像の正規化 (2026-06-02: 複数画像アップロード対応・最大 5 枚) ----
+    # 優先: images 配列 [{image_base64, mime_type}, ...] (jpeg/png/webp のみ・PDF 不可)。
+    # 後方互換: 単一 image_base64 + mime_type (画像 or PDF) も従来通り受け付ける。
+    # PDF は単一アップロードのみ対応 (複数 PDF や 画像との混在は不可)。
+    # (_SOLVE_MAX_IMAGES はモジュール定数・rate limit と共有)
+    raw_images = payload.get("images")
+    image_items = []   # [{"b64": str, "mime": str}] — 各 AI に渡す画像群
+    mime_pdf = False
+    pdf_conversion_info = None
+
+    if isinstance(raw_images, list) and len(raw_images) > 0:
+        # --- 複数画像モード (jpeg/png/webp のみ) ---
+        if len(raw_images) > _SOLVE_MAX_IMAGES:
+            raise HTTPException(status_code=400, detail=f"画像は最大 {_SOLVE_MAX_IMAGES} 枚までです")
+        for _idx, _it in enumerate(raw_images):
+            if not isinstance(_it, dict):
+                continue
+            _b = (_it.get("image_base64") or _it.get("b64") or "").strip()
+            _m = (_it.get("mime_type") or _it.get("mime") or "image/jpeg").strip()
+            if not _b:
+                continue
+            try:
+                _dec = _b64.b64decode(_b, validate=True)
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"画像 {_idx + 1} の base64 decode 失敗: {e}")
+            if len(_dec) > 5 * 1024 * 1024:
+                raise HTTPException(status_code=400, detail=f"画像 {_idx + 1} が大きすぎます (1 枚 5MB 以内)")
+            if _m not in ("image/jpeg", "image/png", "image/webp"):
+                raise HTTPException(status_code=400, detail=f"画像 {_idx + 1} の mime_type は jpeg/png/webp のみ (PDF は単一アップロードのみ対応)")
+            image_items.append({"b64": _b, "mime": _m})
+        if not image_items:
+            raise HTTPException(status_code=400, detail="images 配列に有効な画像がありません")
+    elif image_b64:
+        # --- 単一ファイルモード (画像 or PDF) — 従来ロジック ---
+        mime_pdf = (mime == "application/pdf")
         try:
             decoded = _b64.b64decode(image_b64, validate=True)
         except Exception as e:
@@ -29427,32 +29483,34 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
                                 detail=f"ファイルが大きすぎます ({'PDF 20MB' if mime_pdf else '画像 5MB'} 以内)")
         if mime not in ("image/jpeg", "image/png", "image/webp", "application/pdf"):
             raise HTTPException(status_code=400, detail="mime_type は jpeg/png/webp/pdf のみ")
+        # 🛡️ Task 1 (2026-05-13・review fix v2): PDF → 画像変換で 3 AI 全部対応
+        # 旧: PDF は Claude のみ → Claude 失敗 (credit_low 等) で 3 AI 全失敗
+        # 新: PDF を PyMuPDF で JPG 化 → Claude/GPT-4o/Gemini すべてで処理可能
+        if mime_pdf:
+            # 🛡️ 2026-05-28 塾長指示「PDF 上限拡張」: max_pages 3 → 7
+            conv = _pdf_to_image_b64(decoded, dpi=150, max_pages=7)
+            if conv.get("ok"):
+                image_b64 = conv["image_b64"]
+                mime = conv["mime"]
+                mime_pdf = False  # 内部画像化したので以降は画像として扱う
+                pdf_conversion_info = {
+                    "converted": True,
+                    "page_count": conv.get("page_count"),
+                    "pages_used": conv.get("pages_used"),
+                    "size_kb": round((conv.get("size_bytes") or 0) / 1024, 1),
+                }
+                log.info(f"[solve-from-image] PDF→JPG converted: {pdf_conversion_info}")
+            else:
+                # 変換失敗 → PDF のまま Anthropic に投げる (従来挙動)
+                log.warning(f"[solve-from-image] PDF conversion failed, falling back to native PDF: {conv.get('error')}")
+                pdf_conversion_info = {"converted": False, "error": conv.get("error")}
+        image_items = [{"b64": image_b64, "mime": mime}]
+
+    # 画像 (単一/複数) か 補足テキストのいずれかは必須
+    if not image_items and not problem_text:
+        raise HTTPException(status_code=400, detail="画像 (image_base64 / images) か problem_text のいずれか必須")
     if problem_text and len(problem_text) > 4000:
         raise HTTPException(status_code=400, detail="problem_text が長すぎます (4000 文字以内)")
-
-    # 🛡️ Task 1 (2026-05-13 塾長指示・review fix v2): PDF → 画像変換で 3 AI 全部対応
-    # 旧: PDF は Claude のみ → Claude 失敗 (credit_low 等) で 3 AI 全失敗
-    # 新: PDF を PyMuPDF で JPG 化 → Claude/GPT-4o/Gemini すべてで処理可能
-    # review H-4 fix: 既に validation で decoded した bytes を再利用 (二重 decode 防止)
-    pdf_conversion_info = None
-    if mime_pdf and image_b64:
-        # 🛡️ 2026-05-28 塾長指示「PDF 上限拡張」: max_pages 3 → 7
-        conv = _pdf_to_image_b64(decoded, dpi=150, max_pages=7)
-        if conv.get("ok"):
-            image_b64 = conv["image_b64"]
-            mime = conv["mime"]
-            mime_pdf = False  # 内部画像化したので以降は画像として扱う
-            pdf_conversion_info = {
-                "converted": True,
-                "page_count": conv.get("page_count"),
-                "pages_used": conv.get("pages_used"),
-                "size_kb": round((conv.get("size_bytes") or 0) / 1024, 1),
-            }
-            log.info(f"[solve-from-image] PDF→JPG converted: {pdf_conversion_info}")
-        else:
-            # 変換失敗 → PDF のまま Anthropic に投げる (従来挙動)
-            log.warning(f"[solve-from-image] PDF conversion failed, falling back to native PDF: {conv.get('error')}")
-            pdf_conversion_info = {"converted": False, "error": conv.get("error")}
 
     # Round 1: 3 AI 並列で独立解答
     import time as _t
@@ -29462,7 +29520,7 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
     tasks_r1 = []
     for aid in ai_ids:
         future = loop.run_in_executor(
-            None, _solve_one_ai, aid, image_b64, mime, mime_pdf, problem_text, None
+            None, _solve_one_ai, aid, image_items, mime_pdf, problem_text, None
         )
         tasks_r1.append(_asyncio.wait_for(future, timeout=90))
 
@@ -29529,7 +29587,7 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
         tasks_r2 = []
         for aid in ai_ids:
             future = loop.run_in_executor(
-                None, _solve_one_ai, aid, image_b64, mime, mime_pdf, problem_text, successful_r1
+                None, _solve_one_ai, aid, image_items, mime_pdf, problem_text, successful_r1
             )
             tasks_r2.append(_asyncio.wait_for(future, timeout=90))
         r2_results = await _asyncio.gather(*tasks_r2, return_exceptions=True)
@@ -29575,7 +29633,7 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
                 subject_guess,
                 topic_guess[:200] if topic_guess else None,
                 (problem_text or successful_final[0].get("problem_text", ""))[:1000] if successful_final else None,
-                1 if image_b64 else 0,
+                1 if image_items else 0,
                 2 if round2 else 1,
                 (consensus.get("final_answer") or "")[:1000],
                 consensus.get("confidence", "low"),

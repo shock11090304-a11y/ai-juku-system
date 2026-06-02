@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<script src="cache-purge.js?v=20260530-solve-idor"></script>
+<script src="cache-purge.js?v=20260602-multi-image"></script>
 <title>📷 写真で質問・3 AI 完璧解答 | AIコーチング</title>
 <link rel="stylesheet" href="style.css?v=20260519-input-widen" />
 <!-- 🔢 2026-05-13 塾長指示「紙の参考書のような数式」: KaTeX で数式組版表示 -->
@@ -76,8 +76,8 @@
     <label for="tpFile" class="tp-drop" id="tpDrop">
       <div style="font-size:2.5rem;">📷📄</div>
       <div style="font-weight:700;color:#e4e4e7;margin:0.5rem 0;">タップしてファイルを選択 / ここにドロップ</div>
-      <div style="font-size:0.82rem;color:#a1a1aa;">JPG / PNG / WEBP (5MBまで) / PDF (20MBまで・最大7ページ)</div>
-      <input type="file" id="tpFile" accept="image/jpeg,image/png,image/webp,application/pdf" />
+      <div style="font-size:0.82rem;color:#a1a1aa;">JPG / PNG / WEBP (1枚5MBまで・最大5枚) / PDF (20MBまで・最大7ページ)</div>
+      <input type="file" id="tpFile" accept="image/jpeg,image/png,image/webp,application/pdf" multiple />
     </label>
     <div class="tp-preview" id="tpPreview"></div>
   </section>
@@ -114,7 +114,9 @@
 <script>
 'use strict';
 (function(){
-  const state = { file: null, base64: '', mime: '', isPdf: false };
+  const MAX_IMAGES = 5;
+  // 複数画像対応 (2026-06-02): items = [{base64, mime, name, isPdf}]。画像は最大5枚 / PDF は単一のみ (混在不可)。
+  const state = { items: [] };
 
   const $drop = document.getElementById('tpDrop');
   const $file = document.getElementById('tpFile');
@@ -126,7 +128,7 @@
   const $result = document.getElementById('tpResult');
 
   function updateButton() {
-    const hasFile = !!state.base64;
+    const hasFile = state.items.length > 0;
     const hasText = ($problemText.value || '').trim().length > 0;
     $solve.disabled = !(hasFile || hasText);
   }
@@ -147,7 +149,7 @@
         <h3 id="tpPdfModalTitle" style="margin:0 0 0.8rem;color:#86efac;font-size:1.1rem;">📄 PDF についてのお知らせ</h3>
         <p style="margin:0 0 0.8rem;font-size:0.92rem;line-height:1.7;">
           PDF は<strong style="color:#86efac;">自動的にページ画像に変換</strong>されて、<strong style="color:#fde68a;">3 つの AI 全部で並列解析</strong>されます。<br>
-          ページが複数ある場合は<strong style="color:#fde68a;">最初の 3 ページ</strong>まで処理します。
+          ページが複数ある場合は<strong style="color:#fde68a;">最初の 7 ページ</strong>まで処理します。
         </p>
         <p style="margin:0 0 1rem;font-size:0.85rem;color:#a1a1aa;line-height:1.6;">
           続行しますか?
@@ -175,70 +177,91 @@
     });
   }
 
-  function readFile(file) {
-    if (!file) return;
+  // 複数ファイル対応 (2026-06-02): 画像は最大 MAX_IMAGES 枚 / PDF は単一のみ (混在不可)。
+  function addFiles(fileList) {
+    const files = Array.prototype.slice.call(fileList || []);
+    if (!files.length) return;
     const allowed = ['image/jpeg','image/png','image/webp','application/pdf'];
-    if (!allowed.includes(file.type)) {
-      alert('JPG / PNG / WEBP / PDF のみ対応です');
-      return;
+    const valid = files.filter(function(f){ return allowed.includes(f.type); });
+    if (valid.length < files.length) {
+      alert('JPG / PNG / WEBP / PDF のみ対応です (対応外のファイルはスキップしました)');
     }
-    const isPdf = file.type === 'application/pdf';
-    // 🛡️ 2026-05-28 塾長指示「PDF 上限拡張」: PDF 10MB → 20MB
-    const max = isPdf ? 20 * 1024 * 1024 : 5 * 1024 * 1024;
-    if (file.size > max) {
-      alert((isPdf ? 'PDF は 20MB' : '画像は 5MB') + ' 以内にしてください');
-      return;
-    }
-    // 🛡️ PDF 時は inline モーダルで明示警告 (LINE 内ブラウザ confirm 黙殺対策)
-    if (isPdf) {
+    if (!valid.length) { $file.value = ''; return; }
+
+    // PDF が含まれる場合: PDF は単一のみ → 最初の PDF を採用し、他ファイル・既存画像は破棄。
+    const pdf = valid.find(function(f){ return f.type === 'application/pdf'; });
+    if (pdf) {
+      if (pdf.size > 20 * 1024 * 1024) { alert('PDF は 20MB 以内にしてください'); $file.value = ''; return; }
+      // 🛡️ PDF 時は inline モーダルで明示警告 (LINE 内ブラウザ confirm 黙殺対策)
       showPdfWarningModal(
-        function onAccept() { _proceedReadFile(file); },
-        function onCancel() { /* file input を clear して終了 */ $file.value = ''; }
+        function onAccept() {
+          readOne(pdf, true, function(item){ state.items = [item]; renderPreview(); updateButton(); });
+          $file.value = '';
+        },
+        function onCancel() { $file.value = ''; }
       );
       return;
     }
-    _proceedReadFile(file);
+
+    // 画像モード: 既存に PDF があれば破棄して画像モードへ切替。
+    if (state.items.some(function(it){ return it.isPdf; })) state.items = [];
+    const imgs = valid;  // ここでは全て画像 (PDF は上で return 済み)
+    const remaining = MAX_IMAGES - state.items.length;
+    if (remaining <= 0) { alert('写真は最大 ' + MAX_IMAGES + ' 枚までです'); $file.value = ''; return; }
+    if (imgs.length > remaining) {
+      alert('写真は最大 ' + MAX_IMAGES + ' 枚まで。今回は ' + remaining + ' 枚を追加します。');
+    }
+    imgs.slice(0, remaining).forEach(function(f){
+      if (f.size > 5 * 1024 * 1024) { alert(f.name + ' は 5MB を超えています (スキップ)'); return; }
+      readOne(f, false, function(item){ state.items.push(item); renderPreview(); updateButton(); });
+    });
+    $file.value = '';  // 同じファイルの再選択を許可
   }
-  function _proceedReadFile(file) {
+  function readOne(file, isPdf, cb) {
     const reader = new FileReader();
     reader.onload = function() {
-      const dataUrl = reader.result;
-      const b64 = dataUrl.split(',')[1] || '';
-      state.file = file;
-      state.base64 = b64;
-      state.mime = file.type;
-      state.isPdf = isPdf;
-      renderPreview();
-      updateButton();
+      const b64 = (String(reader.result).split(',')[1]) || '';
+      if (!b64) { alert((file.name || 'ファイル') + ' の読み込みに失敗しました'); return; }
+      cb({ base64: b64, mime: file.type, name: file.name, isPdf: !!isPdf });
     };
+    reader.onerror = function() { alert((file.name || 'ファイル') + ' の読み込みに失敗しました'); };
     reader.readAsDataURL(file);
   }
 
   function renderPreview() {
     $preview.innerHTML = '';
-    if (!state.file) return;
-    const thumb = document.createElement('div');
-    thumb.className = 'thumb';
-    if (state.isPdf) {
-      thumb.innerHTML = '<div style="text-align:center;"><div class="pdf-icon">📄</div><div class="filename">' + escapeHTML(state.file.name) + '</div></div>';
-    } else {
-      const img = document.createElement('img');
-      img.src = 'data:' + state.mime + ';base64,' + state.base64;
-      thumb.appendChild(img);
+    state.items.forEach(function(it, idx) {
+      const thumb = document.createElement('div');
+      thumb.className = 'thumb';
+      if (it.isPdf) {
+        thumb.innerHTML = '<div style="text-align:center;"><div class="pdf-icon">📄</div><div class="filename">' + escapeHTML(it.name || 'PDF') + '</div></div>';
+      } else {
+        const img = document.createElement('img');
+        img.src = 'data:' + it.mime + ';base64,' + it.base64;
+        thumb.appendChild(img);
+      }
+      const xBtn = document.createElement('button');
+      xBtn.className = 'x';
+      xBtn.textContent = '×';
+      xBtn.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        state.items.splice(idx, 1);
+        $file.value = '';
+        renderPreview();
+        updateButton();
+      };
+      thumb.appendChild(xBtn);
+      $preview.appendChild(thumb);
+    });
+    // 枚数表示 (画像が 1 枚以上のとき)
+    const imgCount = state.items.filter(function(it){ return !it.isPdf; }).length;
+    if (imgCount > 0) {
+      const cnt = document.createElement('div');
+      cnt.style.cssText = 'width:100%;font-size:0.78rem;color:#a1a1aa;margin-top:0.2rem;';
+      cnt.textContent = '🖼 ' + imgCount + ' / ' + MAX_IMAGES + ' 枚';
+      $preview.appendChild(cnt);
     }
-    const xBtn = document.createElement('button');
-    xBtn.className = 'x';
-    xBtn.textContent = '×';
-    xBtn.onclick = function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      state.file = null; state.base64 = ''; state.mime = ''; state.isPdf = false;
-      $file.value = '';
-      renderPreview();
-      updateButton();
-    };
-    thumb.appendChild(xBtn);
-    $preview.appendChild(thumb);
   }
 
   function escapeHTML(s) {
@@ -330,7 +353,7 @@
   }
 
   $file.addEventListener('change', function() {
-    if ($file.files && $file.files[0]) readFile($file.files[0]);
+    if ($file.files && $file.files.length) addFiles($file.files);
   });
 
   ['dragenter','dragover'].forEach(function(ev){
@@ -341,8 +364,8 @@
   });
   $drop.addEventListener('drop', function(e){
     e.preventDefault();
-    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
-      readFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+      addFiles(e.dataTransfer.files);
     }
   });
 
@@ -415,9 +438,14 @@
       auto_mode: auto_mode,
       problem_text: $problemText.value || '',
     };
-    if (state.base64) {
-      payload.image_base64 = state.base64;
-      payload.mime_type = state.mime;
+    const pdfItem = state.items.find(function(it){ return it.isPdf; });
+    if (pdfItem) {
+      // PDF は単一・後方互換フィールドで送信 (バックエンドがページ画像へ変換)
+      payload.image_base64 = pdfItem.base64;
+      payload.mime_type = pdfItem.mime;
+    } else if (state.items.length) {
+      // 画像 1〜5 枚は images 配列で送信
+      payload.images = state.items.map(function(it){ return { image_base64: it.base64, mime_type: it.mime }; });
     }
 
     try {
