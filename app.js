@@ -2685,8 +2685,18 @@ function loadChatHistory() {
     if (m.role !== 'assistant' || !m.content) return true;
     return !DEMO_SIGNATURES.some(sig => m.content.includes(sig));
   });
-  if (cleanHistory.length !== history.length) {
-    console.warn(`[chatHistory] purged ${history.length - cleanHistory.length} demo responses`);
+  // 🛡️ 2026-06-02: 既存履歴に残った 📷/📄/img/span (複数画像バグの残骸) を除去。
+  //   これが残ると次ターンで AI に「画像が届いていない📷」と誤認させるため読み込み時にサニタイズ。
+  //   (cleanHistory は history と同一オブジェクト参照なので mutate で表示・state 両方に反映される)
+  let _sanitizedCount = 0;
+  cleanHistory.forEach(m => {
+    if (m && typeof m.content === 'string' && /[📷📄]|<img|<span/.test(m.content)) {
+      const c = stripChatAttachMarkers(m.content);
+      if (c !== m.content) { m.content = c; _sanitizedCount++; }
+    }
+  });
+  if (cleanHistory.length !== history.length || _sanitizedCount > 0) {
+    console.warn(`[chatHistory] purged ${history.length - cleanHistory.length} demo / sanitized ${_sanitizedCount} attach-marker entries`);
     storage.set(STORAGE_KEYS.CHAT_HISTORY, cleanHistory);
   }
   state.chatHistory = cleanHistory;
@@ -2767,6 +2777,21 @@ function appendMessage(role, content, save = true) {
   return div;
 }
 
+// 履歴保存用: 添付の img / PDF span・📷/📄 マーカーをクリーンなテキスト注記に正規化する。
+// 🛡️ 2026-06-02 バグ修正: 複数画像時に旧ロジック (.replace(/\n\n📷 /, '')・先頭1回のみ) では
+//   2 枚目以降の「📷」が履歴に残り、次ターンで AI が「📷 は見えるが画像データが届いていない」と
+//   誤認していた。単一/複数画像・PDF いずれも [画像] / 「PDF: 名前」のテキストに統一する。
+function stripChatAttachMarkers(s) {
+  if (!s || typeof s !== 'string') return s || '';
+  return s
+    .replace(/<img[^>]*>/g, '[画像]')
+    .replace(/<span[^>]*>(.*?)<\/span>/g, '$1')
+    .replace(/📷\s*/g, '')
+    .replace(/📄\s*/g, '')
+    .replace(/[ \t]*\n{2,}[ \t]*/g, '\n')
+    .trim();
+}
+
 // 画像付きメッセージ用（HTMLを直接レンダリング、imgタグは保持）
 function appendMessageHtml(role, htmlContent) {
   const container = document.getElementById('chatMessages');
@@ -2787,8 +2812,9 @@ function appendMessageHtml(role, htmlContent) {
   container.appendChild(div);
   renderMathInNode(div);
   container.scrollTop = container.scrollHeight;
-  // Don't save image data to history (too big), save text only
-  const textOnly = htmlContent.replace(/<img[^>]*>/g, '[画像]').replace(/\n\n📷 /g, '');
+  // Don't save image data to history (too big), save text only.
+  // 📷/📄 マーカー・img/span を全除去 (複数画像で「📷」が残り AI が画像誤認するバグ修正)
+  const textOnly = stripChatAttachMarkers(htmlContent);
   state.chatHistory.push({ role, content: textOnly });
   storage.set(STORAGE_KEYS.CHAT_HISTORY, state.chatHistory.slice(-30));
   return div;
