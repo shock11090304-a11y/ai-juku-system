@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>AIコーチング | 次世代型個別最適化学習プラットフォーム</title>
-  <script src="cache-purge.js?v=20260521-quickstart-tab"></script>
+  <script src="cache-purge.js?v=20260602-chat-multi-image"></script>
 
   <!-- 紹介ループ: ?ref= を 30 日間 localStorage に保存 (signup 時に送信) -->
   <script>
@@ -22,7 +22,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon-192.svg">
   <meta name="theme-color" content="#6366f1">
-  <link rel="stylesheet" href="style.css?v=20260526-profile-modal">
+  <link rel="stylesheet" href="style.css?v=20260602-chat-multi-image">
   <!-- KaTeX: 数学/物理/化学のLaTeX記法を描画（プロンプトで \( ... \) / \[ ... \] を強制しているため必要） -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
@@ -312,17 +312,14 @@
             </div>
           </div>
           <div id="chatAttachPreview" class="chat-attach-preview" style="display:none;">
-            <img id="chatAttachImg" alt="添付ファイル">
-            <div class="attach-info">
-              <span id="chatAttachName">image.png</span>
-              <span id="chatAttachHint" class="attach-hint">📷 この画像を質問と一緒に送信します</span>
-            </div>
-            <button id="chatAttachRemove" class="attach-remove" title="ファイルを削除">✕</button>
+            <div id="chatAttachThumbs" class="attach-thumbs"></div>
+            <span id="chatAttachHint" class="attach-hint">📷 画像を質問と一緒に送信します</span>
+            <button id="chatAttachRemove" class="attach-remove" title="すべて削除">✕</button>
           </div>
           <div class="chat-input-area">
             <!-- 🛡️ 2026-05-28 塾長指示「AI チューターに PDF の読み込みができるようにしてほしい」: PDF 添付対応 (Claude native document) -->
-            <input type="file" id="chatFileInput" accept="image/jpeg,image/png,image/webp,application/pdf" style="display:none;">
-            <button id="chatAttachBtn" class="btn-attach" title="📎 画像・PDF を添付 (画像 5MB / PDF 10MB)">📎</button>
+            <input type="file" id="chatFileInput" accept="image/jpeg,image/png,image/webp,application/pdf" multiple style="display:none;">
+            <button id="chatAttachBtn" class="btn-attach" title="📎 画像 (最大5枚) ・PDF を添付 (画像 5MB / PDF 10MB)">📎</button>
             <textarea id="chatInput" placeholder="質問を入力... (Enter送信 / Shift+Enterで改行) / 📎ボタンで画像・PDF 添付" rows="2"></textarea>
             <button id="sendBtn" class="btn-primary">送信</button>
           </div>
@@ -1472,7 +1469,7 @@
   <script src="exam-prep.js?v=20260425-1"></script>
   <script src="referral-program.js?v=20260425-1"></script>
   <script src="toast.js?v=20260526-profile-sync"></script>
-  <script src="app.js?v=20260530-dow-30day-window"></script>
+  <script src="app.js?v=20260602-chat-multi-image"></script>
   <script>
   // 定期テスト連携: exam-prep.html から ?examPrep=1&subject=&topic=&examId= で来た時、
   // 問題ジェネレーターに自動入力 + タブ切替 + 通知バナー

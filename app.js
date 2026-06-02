@@ -2793,60 +2793,110 @@ function appendMessageHtml(role, htmlContent) {
 // チャット添付ファイル (画像 / PDF) の管理
 // 🛡️ 2026-05-28 塾長指示「AI チューターに PDF の読み込みができるようにしてほしい」:
 // 画像 (5MB) + PDF (10MB) 両対応。Claude Sonnet native PDF (type:document) で処理。
+// 🛡️ 2026-06-02 塾長指示「AI チューターも複数画像対応に」: 画像は最大5枚 / PDF は単一のみ (混在不可)。
 async function handleChatFileUpload(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const isPdf = file.type === 'application/pdf';
+  const files = Array.prototype.slice.call(event.target.files || []);
+  if (!files.length) return;
+  const CHAT_MAX_IMAGES = 5;
   const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-  if (!allowed.includes(file.type)) {
-    alert('JPG / PNG / WebP / PDF のみ添付できます');
+  const valid = files.filter(f => allowed.includes(f.type));
+  if (valid.length < files.length) alert('JPG / PNG / WebP / PDF のみ添付できます (対応外のファイルはスキップ)');
+  if (!valid.length) { document.getElementById('chatFileInput').value = ''; return; }
+  if (!Array.isArray(window._chatAttachedImages)) window._chatAttachedImages = [];
+
+  // PDF が含まれる場合: PDF は単一のみ → 最初の PDF を採用し、他ファイル・既存添付は破棄。
+  const pdf = valid.find(f => f.type === 'application/pdf');
+  if (pdf) {
+    if (pdf.size > 10 * 1024 * 1024) { alert('PDF は 10MB 以下にしてください'); document.getElementById('chatFileInput').value = ''; return; }
+    try { window._chatAttachedImages = [await readChatFile(pdf, true)]; }
+    catch (e) { alert('PDF の読み込みに失敗しました'); }
+    document.getElementById('chatFileInput').value = '';
+    renderChatAttachPreview();
     return;
   }
 
-  // Check size: PDF 10MB / 画像 5MB
-  const maxSize = isPdf ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
-  if (file.size > maxSize) {
-    alert((isPdf ? 'PDF は 10MB' : '画像は 5MB') + ' 以下にしてください');
-    return;
+  // 画像モード: 既存に PDF があれば破棄して画像モードへ切替。
+  if (window._chatAttachedImages.some(it => it.isPdf)) window._chatAttachedImages = [];
+  const remaining = CHAT_MAX_IMAGES - window._chatAttachedImages.length;
+  if (remaining <= 0) { alert('画像は最大 ' + CHAT_MAX_IMAGES + ' 枚までです'); document.getElementById('chatFileInput').value = ''; return; }
+  if (valid.length > remaining) alert('画像は最大 ' + CHAT_MAX_IMAGES + ' 枚まで。今回は ' + remaining + ' 枚を追加します。');
+  for (const f of valid.slice(0, remaining)) {
+    if (f.size > 5 * 1024 * 1024) { alert(f.name + ' は 5MB を超えています (スキップ)'); continue; }
+    try { window._chatAttachedImages.push(await readChatFile(f, false)); }
+    catch (e) { alert(f.name + ' の読み込みに失敗しました'); }
   }
+  document.getElementById('chatFileInput').value = '';  // 同じファイル再選択を許可
+  renderChatAttachPreview();
+}
 
-  const dataUrl = await new Promise((resolve) => {
+// 添付ファイルを読み込み {dataUrl, mediaType, base64Data, name, isPdf} を返す
+function readChatFile(file, isPdf) {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      const base64Data = String(dataUrl).split(',')[1] || '';
+      if (!base64Data) { reject(new Error('empty')); return; }
+      resolve({ dataUrl, mediaType: file.type || 'image/jpeg', base64Data, name: file.name, isPdf: !!isPdf });
+    };
+    reader.onerror = () => reject(new Error('read failed'));
     reader.readAsDataURL(file);
   });
+}
 
-  const mediaType = file.type || 'image/jpeg';
-  const base64Data = dataUrl.split(',')[1];
-
-  window._chatAttachedImage = { file, dataUrl, mediaType, base64Data, name: file.name, isPdf };
-
-  // Show preview (PDF はアイコン表示・画像は thumbnail)
-  const imgEl = document.getElementById('chatAttachImg');
+// 複数添付のプレビュー描画 (画像は最大5枚サムネ+個別削除 / PDF は単一アイコン)
+function renderChatAttachPreview() {
+  const items = window._chatAttachedImages || [];
+  const thumbs = document.getElementById('chatAttachThumbs');
   const hintEl = document.getElementById('chatAttachHint');
-  if (isPdf) {
-    // PDF: data URI で SVG アイコン表示
-    imgEl.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">' +
-      '<rect x="6" y="4" width="48" height="52" rx="4" fill="#dc2626"/>' +
-      '<text x="30" y="38" font-family="sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">PDF</text>' +
-      '</svg>'
-    );
-    if (hintEl) hintEl.textContent = '📄 この PDF を質問と一緒に送信します (Claude が読解)';
-  } else {
-    imgEl.src = dataUrl;
-    if (hintEl) hintEl.textContent = '📷 この画像を質問と一緒に送信します';
+  const preview = document.getElementById('chatAttachPreview');
+  const btn = document.getElementById('chatAttachBtn');
+  const input = document.getElementById('chatInput');
+  if (!items.length) { clearChatAttachment(); return; }
+  if (thumbs) {
+    thumbs.innerHTML = '';
+    items.forEach((it, idx) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'attach-thumb';
+      if (it.isPdf) {
+        const d = document.createElement('div');
+        d.className = 'attach-thumb-pdf';
+        d.textContent = 'PDF';
+        wrap.appendChild(d);
+      } else {
+        const img = document.createElement('img');
+        img.src = it.dataUrl;
+        img.alt = '添付画像';
+        wrap.appendChild(img);
+      }
+      const x = document.createElement('button');
+      x.className = 'attach-thumb-x';
+      x.textContent = '×';
+      x.title = '削除';
+      x.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        window._chatAttachedImages.splice(idx, 1);
+        renderChatAttachPreview();
+      };
+      wrap.appendChild(x);
+      thumbs.appendChild(wrap);
+    });
   }
-  document.getElementById('chatAttachName').textContent = file.name;
-  document.getElementById('chatAttachPreview').style.display = 'flex';
-  document.getElementById('chatAttachBtn').classList.add('has-file');
-  document.getElementById('chatInput').placeholder = (isPdf ? 'PDF' : '画像') +
+  const isPdf = items[0] && items[0].isPdf;
+  if (hintEl) hintEl.textContent = isPdf
+    ? '📄 この PDF を質問と一緒に送信します (Claude が読解)'
+    : ('📷 ' + items.length + ' 枚の画像を質問と一緒に送信します');
+  if (preview) preview.style.display = 'flex';
+  if (btn) btn.classList.add('has-file');
+  if (input) input.placeholder = (isPdf ? 'PDF' : '画像') +
     'の質問を入力... (空欄で送信すると「この' + (isPdf ? 'PDF' : '画像') + 'を解説して」と聞きます)';
 }
 
 function clearChatAttachment() {
-  window._chatAttachedImage = null;
+  window._chatAttachedImages = [];
+  const thumbs = document.getElementById('chatAttachThumbs');
+  if (thumbs) thumbs.innerHTML = '';
   document.getElementById('chatAttachPreview').style.display = 'none';
   document.getElementById('chatAttachBtn').classList.remove('has-file');
   document.getElementById('chatFileInput').value = '';
@@ -2874,9 +2924,9 @@ function formatMarkdown(text) {
 async function sendChatMessage() {
   const input = document.getElementById('chatInput');
   const text = input.value.trim();
-  const attachedImage = window._chatAttachedImage;
+  const attached = window._chatAttachedImages || [];
 
-  if (!text && !attachedImage) return;
+  if (!text && !attached.length) return;
 
   // 科目は AI が質問内容から自動判定する設計 (2026-04-30 UI から科目 selectbox 削除)
   // subject は全 regex マッチ対象に固定 = system prompt の全科目別ブロックを常時 inline
@@ -2889,14 +2939,13 @@ async function sendChatMessage() {
   // Build display message (with image preview if attached)
   // 🛡️ 2026-05-28: PDF 添付時はアイコン + ファイル名表示 (data URL を img src にすると 10MB 級で重い)
   let displayContent = text;
-  if (attachedImage) {
-    if (attachedImage.isPdf) {
-      displayContent = (text || '（PDF をアップロードしました）') +
-        `\n\n📄 <span style="display:inline-block;padding:0.3rem 0.6rem;background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.4);border-radius:6px;font-size:0.85rem;">PDF: ${escapeHtml(attachedImage.name)}</span>`;
-    } else {
-      displayContent = (text || '（画像をアップロードしました）') +
-        `\n\n📷 <img src="${attachedImage.dataUrl}" alt="添付画像" />`;
-    }
+  if (attached.length) {
+    const hasPdf = attached.some(a => a.isPdf);
+    const parts = attached.map(a => a.isPdf
+      ? `📄 <span style="display:inline-block;padding:0.3rem 0.6rem;background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.4);border-radius:6px;font-size:0.85rem;">PDF: ${escapeHtml(a.name)}</span>`
+      : `📷 <img src="${a.dataUrl}" alt="添付画像" />`);
+    displayContent = (text || (hasPdf ? '（PDF をアップロードしました）' : '（画像をアップロードしました）')) +
+      '\n\n' + parts.join(' ');
   }
   appendMessageHtml('user', displayContent);
 
@@ -3006,27 +3055,30 @@ ${/英語|英文|英作文|長文|語彙|単語|英検|TOEFL|TOEIC|IELTS/.test(s
 - 【英作文添削】語彙難度 (CEFR B1/B2/C1)・文法ミス・コロケーション・文章構造 (Topic-Support-Conclusion) の 4 軸で採点
 - ⚠️ 単純な語彙質問 (例「rain の意味は？」) でも 🎯 コアイメージは必須 (rain の語源・派生・コロケーション)。文法/長文の場合は 🔬 文構造分析を絶対省略禁止
 ` : ''}
-${attachedImage ? (attachedImage.isPdf ? '- 添付された PDF (問題プリント・参考書ページ等) の内容を正確に読み取り、解説してください。PDF が複数ページの場合は全ページを参照する' : '- 添付された画像（問題の写真・スクリーンショット）の内容を正確に読み取り、解説してください') : ''}`;
+${attached.length ? (attached.some(a => a.isPdf) ? '- 添付された PDF (問題プリント・参考書ページ等) の内容を正確に読み取り、解説してください。PDF が複数ページの場合は全ページを参照する' : ('- 添付された' + (attached.length > 1 ? attached.length + ' 枚の画像' : '画像') + '（問題の写真・スクリーンショット）の内容を正確に読み取り、' + (attached.length > 1 ? 'すべての画像を関連づけて 1 つの問題として ' : '') + '解説してください')) : ''}`;
 
   let response;
-  if (attachedImage) {
-    // Vision / Document AI: 画像 (type:image) または PDF (type:document) で callClaude
+  if (attached.length) {
+    // Vision / Document AI: 画像 (type:image・最大5枚) または PDF (type:document・単一) で callClaude
     // 🛡️ 2026-05-28: PDF 添付は Claude Sonnet native PDF サポート (type:document) で処理
-    const attachContent = attachedImage.isPdf
-      ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: attachedImage.base64Data } }
-      : { type: 'image', source: { type: 'base64', media_type: attachedImage.mediaType, data: attachedImage.base64Data } };
-    const defaultPrompt = attachedImage.isPdf ? 'この PDF の問題を解説してください。' : 'この画像の問題を解説してください。';
+    // 🛡️ 2026-06-02: 複数画像対応。content list に image block を複数並べる
+    //   (backend /api/ai/call → _call_anthropic_safe・OpenAI/Gemini converter とも content 内の全 image をループ変換)
+    const hasPdf = attached.some(a => a.isPdf);
+    const attachBlocks = attached.map(a => a.isPdf
+      ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: a.base64Data } }
+      : { type: 'image', source: { type: 'base64', media_type: a.mediaType, data: a.base64Data } });
+    const defaultPrompt = hasPdf ? 'この PDF の問題を解説してください。' : (attached.length > 1 ? 'これらの画像の問題を解説してください。' : 'この画像の問題を解説してください。');
     const visionMessages = [
       ...state.chatHistory.slice(-6).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content })),
       {
         role: 'user',
         content: [
-          attachContent,
+          ...attachBlocks,
           { type: 'text', text: text || defaultPrompt }
         ]
       }
     ];
-    response = await callClaude(systemPrompt, text || (attachedImage.isPdf ? 'PDF 解説' : '画像解説'), {
+    response = await callClaude(systemPrompt, text || (hasPdf ? 'PDF 解説' : '画像解説'), {
       messages: visionMessages,
       kind: 'vision',  // Use Sonnet for vision/document (cheaper)
       maxTokens: 2000

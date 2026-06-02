@@ -25137,6 +25137,22 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
     if _msg_text_total > 40000:
         _record_ai_call_failure("messages_too_long", 413, f"total_chars={_msg_text_total}", payload, request)
         raise HTTPException(status_code=413, detail="messages too long")
+    # 🛡️ 2026-06-02: image/document ブロック数の上限 (AI コスト/DoS 保護)。
+    # frontend は chat=最大5枚・写真採点=2枚に制限するが、直接 POST で content 配列に大量の
+    # image block を詰めて単発で高コスト呼び出しする迂回を防ぐ。全 caller 中の正当な最大は 5 枚
+    # なので余裕を見て 10 で hard cap (正当用途は阻害しない・kind 分岐不要)。
+    # _check_ai_budget は「過去 24h の累積」しか見ず、この単発の巨大コール自体は抑止できないため、
+    # ここで枚数を直接制限するのが最後の砦。
+    _img_block_total = 0
+    for m in (payload.messages or []):
+        content = m.get("content") if isinstance(m, dict) else None
+        if isinstance(content, list):
+            for part in content:
+                if isinstance(part, dict) and part.get("type") in ("image", "document"):
+                    _img_block_total += 1
+    if _img_block_total > 10:
+        _record_ai_call_failure("too_many_images", 413, f"image_blocks={_img_block_total}", payload, request)
+        raise HTTPException(status_code=413, detail="添付画像/PDF が多すぎます (1 リクエストあたり 10 個まで)")
 
     body = {
         "model": payload.model,

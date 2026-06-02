@@ -556,6 +556,56 @@ select:focus, input:focus, textarea:focus {
   transform: scale(1.05);
 }
 
+/* 複数画像添付のサムネイル (2026-06-02 最大5枚対応) */
+.attach-thumbs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+.attach-thumb {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+}
+.attach-thumb img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--panel-border);
+}
+.attach-thumb .attach-thumb-pdf {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #dc2626;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.7rem;
+  border-radius: 8px;
+}
+.attach-thumb-x {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0;
+}
+
 /* メッセージ内の画像表示 */
 .message .msg-body img {
   max-width: 100%;
