@@ -317,3 +317,43 @@
   .me-grade-btn { width: 100%; }
   .me-grade-total-num { font-size: 1.6rem; }
 }
+
+/* ==========================================================
+   🖨 印刷 / PDF 保存 (2026-06-02 塾長指示「問題画面から PDF 出力」)
+   #meExam (問題本文) のみを A4 白背景で印刷対象に。
+   タイマー・進捗バー・採点/印刷ボタン等の UI chrome は非表示。
+   english-exam.css の @media print と同じ「全非表示→対象のみ可視」方式。
+   ========================================================== */
+@media print {
+  /* 🛡️ Safari は印刷時に背景を既定で描画する → ダークテーマの紺背景が紙に出て
+     黒文字が読めなくなるのを防ぐため、用紙全体を白に強制 (3視点 review M1) */
+  html, body { background: #fff !important; }
+  /* ヘッダ・ナビ・他セクションすべて非表示 */
+  body * { visibility: hidden; }
+  /* 模試の問題本文 (#meExam) のみ印刷対象に */
+  #meExam, #meExam * { visibility: visible; }
+  #meExam {
+    position: absolute; left: 0; top: 0; width: 100%;
+    background: #fff !important; color: #000 !important;
+    padding: 1rem !important; border: none !important;
+  }
+  /* 試験ヘッダのパネル背景 (半透明ダーク) は印刷時 透明に */
+  .me-exam-header { background: transparent !important; backdrop-filter: none !important; border: none !important; box-shadow: none !important; }
+  /* 印刷時に隠す: タイマー・進捗・採点/印刷ボタン行 */
+  .me-exam-timer, .me-progress, .me-submit-row { display: none !important; }
+  /* タイトル・問題本文を印刷向けに黒文字・白背景へ */
+  .me-exam-title { color: #000 !important; font-size: 1.3rem !important; }
+  #meSections, #meSections * { color: #000 !important; background: transparent !important; }
+  /* 下線 (<u>) は印刷時も黒線で視認可能に (既定の indigo 装飾色を上書き) */
+  #meSections u { text-decoration-color: #000 !important; background: transparent !important; }
+  .me-section-block { page-break-inside: avoid; margin-bottom: 1.2rem !important; }
+  .me-section-block h3 { color: #000 !important; border-bottom: 1px solid #888 !important; }
+  /* 解答欄 (radio/input/textarea) は枠を残し、現在の入力値も印刷に残す */
+  input, textarea, select {
+    border: 1px solid #888 !important; background: #fff !important; color: #000 !important;
+  }
+  /* リンクの URL を脚注で出さない */
+  a[href]:after { content: ''; }
+  /* ページ余白 */
+  @page { margin: 1.5cm; }
+}

@@ -1404,6 +1404,9 @@ body {
 
 /* ========== 🖨 印刷モード (問題本文 / 採点結果のみ印刷・UI を隠す) ========== */
 @media print {
+  /* 🛡️ Safari は印刷時に背景を既定描画する → ダーク紺背景で黒文字が読めなくなるのを防ぐため
+     用紙全体を白に強制 (2026-06-02 3視点 review M1・大学別/模試と統一) */
+  html, body { background: #fff !important; }
   /* ヘッダ・ナビ・他セクションすべて非表示 */
   body * { visibility: hidden; }
   /* 問題演習中 (.ee-section-runner) と 採点結果 (.ee-section-result) を両方印刷対象に

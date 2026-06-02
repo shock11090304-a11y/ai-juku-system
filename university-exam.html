@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>大学別 過去問風オリジナル | AIコーチング</title>
-  <script src="cache-purge.js?v=20260527-pdf-hides-textexp"></script>
+  <script src="cache-purge.js?v=20260602-pdf-print-btn"></script>
   <script src="frontend-error-monitor.js"></script>
   <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost-r2">
   <link rel="stylesheet" href="vocab.css?v=20260525-mistakes-tag">
@@ -145,6 +145,38 @@
 
     @media (max-width: 640px) {
       .ux-univ-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* 🖨 印刷 / PDF 保存 (2026-06-02 塾長指示「問題画面から PDF 出力」)
+       選択した問題詳細 (#uxDetail 内の .ux-detail-card) のみを A4 白背景で印刷。
+       操作ボタン (.ux-actions) 等の UI chrome は非表示。
+       解答・解説 (.ux-answer-block/.ux-explanation-block) は表示中 (.show) のみ印刷される。 */
+    @media print {
+      /* 🛡️ Safari は印刷時に背景を既定描画 → ダーク紺背景で黒文字が読めなくなるのを防ぐ (3視点 review M1) */
+      html, body { background: #fff !important; }
+      body * { visibility: hidden; }
+      #uxDetail, #uxDetail * { visibility: visible; }
+      #uxDetail {
+        position: absolute; left: 0; top: 0; width: 100%;
+      }
+      .ux-detail-card {
+        background: #fff !important; color: #000 !important;
+        border: none !important; padding: 1rem !important;
+      }
+      .ux-detail-card * { color: #000 !important; background: transparent !important; }
+      .ux-actions { display: none !important; }
+      .ux-detail-meta { color: #000 !important; border-bottom: 1px solid #888 !important; padding-bottom: 0.5rem; }
+      .ux-question, .ux-answer-block, .ux-explanation-block { page-break-inside: avoid; margin-bottom: 0.8rem !important; }
+      .ux-choice-row { border: 1px solid #888 !important; page-break-inside: avoid; }
+      /* 採点後に印刷する場合: 色分け (緑/赤) は B/W で消えるため、正解=太枠+✓ / 不正解=取消線 で区別を残す (3視点 review M2) */
+      .ux-choice-row.correct { border: 2px solid #000 !important; font-weight: 700 !important; }
+      .ux-choice-row.correct .ux-choice-key:after { content: " ✓"; }
+      .ux-choice-row.wrong { text-decoration: line-through !important; opacity: 0.7; }
+      input, textarea, select {
+        border: 1px solid #888 !important; background: #fff !important; color: #000 !important;
+      }
+      a[href]:after { content: ''; }
+      @page { margin: 1.5cm; }
     }
   </style>
 </head>
@@ -656,6 +688,7 @@
               ${strictPdfButtonHtml}
               ${answerPdfButtonHtml}
               ${(isMC || hasMainPdf) ? '' : '<button type="button" class="btn-secondary btn-small" id="uxRevealBtn">解答・解説を表示</button>'}
+              ${hasMainPdf ? '' : '<button type="button" class="btn-ghost btn-small" id="uxPrintBtn" onclick="window.print()" title="この問題を PDF 保存 / 印刷">🖨 PDF保存</button>'}
               <button type="button" class="btn-ghost btn-small" id="uxBackBtn">← 一覧に戻る</button>
             </div>
             ${answerExplanationHtml}

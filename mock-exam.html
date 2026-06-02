@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>完全模試 | AIコーチング</title>
-  <script src="cache-purge.js?v=20260526-audit"></script>
+  <script src="cache-purge.js?v=20260602-pdf-print-btn"></script>
   <script src="frontend-error-monitor.js"></script>
   <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost-r2">
-  <link rel="stylesheet" href="mock-exam.css?v=20260510-multiview-grade">
+  <link rel="stylesheet" href="mock-exam.css?v=20260602-pdf-print-btn">
   <script src="analytics.js" defer></script>
 </head>
 <body>
@@ -61,6 +61,7 @@
       <div id="meSections" class="me-sections-wrap"></div>
       <div class="me-submit-row">
         <button id="meSubmitBtn" class="btn-primary btn-lg">📊 採点する</button>
+        <button type="button" id="mePrintBtn" class="btn-ghost btn-lg" onclick="window.print()" title="この模試を PDF 保存 / 印刷 (解答用紙として)">🖨 PDF保存</button>
       </div>
     </section>
 
