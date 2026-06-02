@@ -304,9 +304,9 @@ async function saveNewStudent() {
   if (fee > 1000000) {
     if (!confirm(`月謝 ¥${fee.toLocaleString()} は通常より大きい値です。本当によろしいですか?`)) return;
   }
-  // Reviewer A HIGH #4: 同名生徒の重複チェック (空白除去で正規化)
-  const normName = name.replace(/[\s　]/g, '');
-  const dup = STATE.data.students.find(s => (s.name || '').replace(/[\s　]/g, '') === normName);
+  // Reviewer A HIGH #4: 同名生徒の重複チェック (異体字/かな差も吸収して正規化・2026-06-02)
+  const normName = normalizeName(name);
+  const dup = normName ? STATE.data.students.find(s => normalizeName(s.name) === normName) : null;
   if (dup) {
     if (!confirm(`既に同名の生徒「${dup.name}」(ID #${dup.id}) が登録されています。\n本当に新規で追加しますか?\n(同姓同名なら OK / 兄弟登録ミス防止)`)) return;
   }
@@ -835,12 +835,24 @@ function deleteRegLink(studentId) {
   }
 }
 // regId → studentId の逆引き Map (Step2 の入金自動反映で使用)
+// 二端末競合等で同一カードが複数生徒に紐付いた場合は、最新 (linkedAt) の紐付けを採用し警告を出す
+// (挿入順の非決定的な後勝ちを避け、入金反映先を一意・決定的にする・2026-06-02 強化)。
 function buildRegIdToStudentMap() {
   const m = {};
+  const at = {};  // rid → 採用中の linkedAt
   const links = STATE.overrides.regLinks || {};
   for (const sid of Object.keys(links)) {
-    const rid = links[sid] && links[sid].regId;
-    if (rid) m[rid] = parseInt(sid, 10);
+    const link = links[sid];
+    const rid = link && link.regId;
+    if (!rid) continue;
+    const t = link.linkedAt || '';
+    if (rid in m) {
+      console.warn('[regLink] 同一カードが複数生徒に紐付いています:', rid, '→ #' + m[rid], '/ #' + parseInt(sid, 10), '(最新の紐付けを採用)');
+      if (t >= (at[rid] || '')) { m[rid] = parseInt(sid, 10); at[rid] = t; }
+    } else {
+      m[rid] = parseInt(sid, 10);
+      at[rid] = t;
+    }
   }
   return m;
 }
@@ -1139,11 +1151,14 @@ async function addStudentFromReg(reg) {
   await loadCourseMap();
   const courseNames = (Array.isArray(reg.courses) ? reg.courses : []).map(courseNameFromId);
   const optionNames = (Array.isArray(reg.options) ? reg.options : []).map(courseNameFromId);
-  // 同名チェック (空白除去で正規化) — 重複登録/同一人物の二重追加を防ぐ
-  const normName = name.replace(/[\s　]/g, '');
-  const dup = STATE.data.students.find(s => (s.name || '').replace(/[\s　]/g, '') === normName);
+  // 同名チェック (異体字/かな差も吸収して正規化) — 重複登録/同一人物の二重追加を防ぐ。
+  // 既存生徒が見つかれば、新規追加せず「その生徒への紐付け」を第一候補として提示する。
+  const nn = normalizeName(name);
+  const dup = nn ? STATE.data.students.find(s => normalizeName(s.name) === nn) : null;
   if (dup) {
-    if (!confirm(`既に同名の生徒「${dup.name}」(ID #${dup.id}) が名簿にいます。\n\n別人として新規追加しますか?\n(同一人物なら「キャンセル」して、その生徒の「カード」列から「✓確定」で紐付けてください)`)) return;
+    const linkInstead = confirm(`既に名簿に「${dup.name}」(ID #${dup.id}) がいます。\n\n【OK】= この生徒のカードに紐付ける (重複を作りません・推奨)\n【キャンセル】= 別人として新規追加するか選び直す`);
+    if (linkInstead) { await linkRegToStudent(reg, dup.id); return; }
+    if (!confirm(`「${name}」さんを別人として新規追加します。よろしいですか?\n(同一人物の場合は中止してください)`)) return;
   }
   const courseLine = courseNames.length ? `\nコース: ${courseNames.join('・')}` : '';
   const optionLine = optionNames.length ? `\nオプション: ${optionNames.join('・')}` : '';
@@ -1189,6 +1204,142 @@ async function addStudentFromReg(reg) {
   alert(`✓ ${name} さん (ID #${id}) を名簿に追加し、カード登録と紐付けました。${cloudMsg}`);
 }
 
+// カード登録(reg) を「既存の名簿生徒」に紐付け (新規追加せず重複を防ぐ・2026-06-02)
+// 名前の字体ゆれ(澤/沢・髙/高)やかな漢字差で自動マッチしない既存生徒に、塾長が手動で紐付ける共通処理。
+// 既存の手動「✓確定」(handleLinkRegClick) と同じ信頼モデル。1カード=1生徒の不変条件を保ち、誤紐付けは「解除」で取消可。
+async function linkRegToStudent(reg, studentId, by = 'manual-existing') {
+  const student = STATE.data.students.find(s => s.id === studentId);
+  if (!student) { alert('生徒が見つかりません。画面を再読込してください。'); return; }
+  if (!reg || !reg.registrationId) { alert('カード登録情報が見つかりません。'); return; }
+  // 1) この生徒に既に別カードが紐付いていれば付け替え確認
+  const existing = getRegLink(studentId);
+  if (existing && existing.regId && existing.regId !== reg.registrationId) {
+    if (!confirm(`${student.name} さんには既に別のカード登録が紐付いています。\n今回の登録 (${reg.customerId || reg.registrationId}) に付け替えますか?`)) return;
+  }
+  // 2) このカードが既に別の生徒に紐付いていれば、1カード=1生徒を保つため元を「全件」解除
+  const links = STATE.overrides.regLinks || {};
+  const otherSids = Object.keys(links).filter(sid => links[sid] && links[sid].regId === reg.registrationId && parseInt(sid, 10) !== studentId);
+  if (otherSids.length) {
+    const names = otherSids.map(sid => { const os = STATE.data.students.find(x => x.id === parseInt(sid, 10)); return os ? os.name : '#' + sid; }).join('、');
+    if (!confirm(`このカード登録は既に「${names}」さんに紐付いています。\n${student.name} さんに付け替えますか? (元の紐付けは解除されます)`)) return;
+    otherSids.forEach(sid => deleteRegLink(parseInt(sid, 10)));
+  }
+  // 3) 確定 — payerName/メールとも既存の手入力値は上書きしない (誤上書き防止)
+  setRegLink(studentId, reg.registrationId, reg.customerId, by);
+  if (reg.parentName && !getPayerName(studentId)) setPayerName(studentId, reg.parentName);
+  if (reg.email && !getEmail(studentId)) setEmail(studentId, reg.email);
+  saveOverrides();
+  if (typeof populateAllFilters === 'function') populateAllFilters();
+  refresh();
+  let cloudMsg = '';
+  if (typeof CloudSync !== 'undefined' && CloudSync.bootstrapped && CloudSync.getToken()) {
+    const ok = await CloudSync.pushNow();
+    cloudMsg = ok ? '\n\n✓ クラウド同期完了 (携帯/PC 共有)' : '\n\n⚠ クラウド同期に失敗しました (右上の同期アイコンから再試行できます)';
+  } else {
+    cloudMsg = '\n\nℹ クラウド未ログイン: この端末のみに保存されました';
+  }
+  alert(`✓ ${student.name} さん (ID #${student.id}) にカード登録を紐付けました。\n以降この生徒は月末引き落とし結果が自動で入金反映の対象になります。${cloudMsg}`);
+}
+
+// 「カード登録あり・名簿未登録」パネルの「👤 既存に紐付け」→ 名簿生徒を検索して選ぶピッカー (2026-06-02)
+// 自動照合が外れた既存生徒を、塾長が名前で探して紐付ける。新規追加(=重複)を回避するための導線。
+function openLinkExistingPicker(reg) {
+  if (!reg) return;
+  const old = document.getElementById('linkExistingOverlay');
+  if (old) old.remove();
+  const regName = (reg.studentName || '').trim();
+  const rNorm = normalizeName(regName);
+  const rSurname = normalizeName(extractSurname(regName));
+  // 候補スコア: 完全一致 > 部分一致 > 姓一致 > 通塾中 の順で上位に
+  const rankOf = (s) => {
+    const sn = normalizeName(s.name);
+    if (!sn || !rNorm) return getStatus(s) === '通塾' ? 10 : 0;
+    if (sn === rNorm) return 100;
+    if (sn.includes(rNorm) || rNorm.includes(sn)) return 80;
+    if (rSurname && rSurname.length >= 1 && sn.includes(rSurname)) return 50;
+    return getStatus(s) === '通塾' ? 10 : 5;
+  };
+  const sorted = STATE.data.students.slice().sort((a, b) => rankOf(b) - rankOf(a) || a.id - b.id);
+
+  const overlay = document.createElement('div');
+  overlay.id = 'linkExistingOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.62);z-index:10000;display:flex;align-items:flex-start;justify-content:center;padding:48px 16px;overflow:auto;';
+  const box = document.createElement('div');
+  box.style.cssText = 'background:#141426;border:1px solid rgba(255,255,255,0.12);border-radius:14px;max-width:560px;width:100%;box-shadow:0 18px 50px rgba(0,0,0,0.5);overflow:hidden;';
+  box.innerHTML = `
+    <div style="padding:16px 18px;border-bottom:1px solid rgba(255,255,255,0.08);">
+      <div style="font-weight:700;color:#e5e7eb;font-size:1rem;">👤 既存の生徒に紐付け</div>
+      <div style="color:#9ca3af;font-size:0.84rem;margin-top:4px;line-height:1.5;">
+        カード登録 <strong style="color:#fbbf24;">「${escapeHtml(regName || '—')}」</strong>${reg.grade ? '（' + escapeHtml(reg.grade) + '）' : ''} を名簿の生徒に紐付けます。<br>
+        新規追加せず<strong style="color:#34d399;">重複を防ぎます</strong>。名前の字体・ふりがな差があっても選べます。
+      </div>
+    </div>
+    <div style="padding:12px 18px 0;">
+      <input id="linkPickSearch" type="text" placeholder="氏名・学年・IDで検索" autocomplete="off"
+        style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.16);background:#0d0d1c;color:#e5e7eb;font-size:0.92rem;">
+    </div>
+    <div id="linkPickList" style="max-height:46vh;overflow:auto;padding:8px 12px 4px;"></div>
+    <div style="padding:12px 18px;border-top:1px solid rgba(255,255,255,0.08);text-align:right;">
+      <button data-link-cancel style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.16);color:#e5e7eb;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:0.88rem;">キャンセル</button>
+    </div>`;
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  const listEl = box.querySelector('#linkPickList');
+  const searchEl = box.querySelector('#linkPickSearch');
+  const renderList = () => {
+    const raw = searchEl.value.trim();
+    const q = normalizeName(raw);
+    let filtered = sorted.filter(s => {
+      if (!raw) return true;
+      if (String(s.id) === raw) return true;
+      return normalizeName(s.name).includes(q) || normalizeName(s.grade || '').includes(q);
+    });
+    // ID完全一致は80件打ち切りで消えないよう最優先で先頭へ
+    if (raw && /^\d+$/.test(raw)) {
+      const i = filtered.findIndex(s => String(s.id) === raw);
+      if (i > 0) filtered.unshift(filtered.splice(i, 1)[0]);
+    }
+    filtered = filtered.slice(0, 80);
+    if (!filtered.length) {
+      listEl.innerHTML = '<div style="color:#9ca3af;padding:14px;text-align:center;font-size:0.88rem;">該当する生徒がいません</div>';
+      return 0;
+    }
+    listEl.innerHTML = filtered.map(s => {
+      const r = rankOf(s);
+      const linked = getRegLink(s.id);
+      const otherLinked = linked && linked.regId && linked.regId !== reg.registrationId;
+      const hi = r >= 80;
+      const badge = hi ? ' <span style="color:#34d399;font-size:0.72rem;">候補</span>' : '';
+      const warn = otherLinked ? ' <span style="color:#fbbf24;font-size:0.72rem;">別カード紐付け済</span>' : '';
+      const st = getStatus(s);
+      const stCol = st === '通塾' ? '#34d399' : (st === '退塾' ? '#f87171' : '#9ca3af');
+      return `<button class="link-pick-row" data-sid="${s.id}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;background:${hi ? 'rgba(16,185,129,0.10)' : 'transparent'};border:1px solid ${hi ? 'rgba(16,185,129,0.35)' : 'rgba(255,255,255,0.07)'};border-radius:8px;padding:9px 12px;margin-bottom:6px;cursor:pointer;color:#e5e7eb;">
+        <span style="font-weight:600;">${escapeHtml(s.name)}${badge}${warn}</span>
+        <span style="color:#9ca3af;font-size:0.78rem;white-space:nowrap;">${escapeHtml(s.grade || '')} · <span style="color:${stCol};">${escapeHtml(st)}</span> · #${s.id}</span>
+      </button>`;
+    }).join('');
+    return filtered.length;
+  };
+  // 姓で初期フィルタ → 0件なら全件に戻す
+  searchEl.value = extractSurname(regName) || '';
+  if (renderList() === 0 && searchEl.value) { searchEl.value = ''; renderList(); }
+  setTimeout(() => { searchEl.focus(); searchEl.select(); }, 30);
+  searchEl.addEventListener('input', renderList);
+
+  const closeOverlay = () => { overlay.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = (e) => { if (e.key === 'Escape') closeOverlay(); };
+  document.addEventListener('keydown', onKey);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay || e.target.closest('[data-link-cancel]')) { closeOverlay(); return; }
+    const row = e.target.closest('.link-pick-row');
+    if (!row) return;
+    const sid = parseInt(row.dataset.sid, 10);
+    closeOverlay();
+    linkRegToStudent(reg, sid);
+  });
+}
+
 // 全生徒タブ上部の「カード登録あり・名簿未登録」パネル
 function renderUnlinkedRegsPanel() {
   const panel = document.getElementById('unlinkedRegsPanel');
@@ -1223,8 +1374,8 @@ function renderUnlinkedRegsPanel() {
   panel._unlinked = unlinked;
   panel.innerHTML = `
     <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.4);border-radius:10px;padding:12px 16px;margin-bottom:16px;">
-      <div style="font-weight:700;color:#fbbf24;margin-bottom:4px;">💳 カード登録あり・名簿未登録 (${unlinked.length}件)</div>
-      <div style="color:#9ca3af;font-size:0.8rem;margin-bottom:10px;">カード登録したが名簿にいない方です。「名簿に追加」で取り込み＋カード紐付けされます。</div>
+      <div style="font-weight:700;color:#fbbf24;margin-bottom:4px;">💳 カード登録あり・名簿と自動照合できず (${unlinked.length}件)</div>
+      <div style="color:#9ca3af;font-size:0.8rem;margin-bottom:10px;">カード登録があるのに名簿と自動照合できなかった方です。<strong style="color:#e5e7eb;">既に名簿にいる場合は「👤 既存に紐付け」</strong>で重複を作らず紐付けてください。本当に名簿にいない新規の方だけ「＋名簿に追加」を使います。</div>
       <table class="table" style="width:100%;font-size:0.86rem;">
         <thead><tr style="color:#9ca3af;text-align:left;"><th>氏名</th><th>学年</th><th>保護者</th><th class="ta-r">月謝</th><th></th></tr></thead>
         <tbody>
@@ -1233,17 +1384,26 @@ function renderUnlinkedRegsPanel() {
           <td>${escapeHtml(r.grade || '—')}</td>
           <td>${escapeHtml(r.parentName || '—')}</td>
           <td class="ta-r fee-cell">${yen(r.amount || r.monthly_fee || 0)}</td>
-          <td class="ta-r"><button class="btn btn-primary btn-sm" data-action="add-from-reg" data-reg-idx="${i}">名簿に追加</button></td>
+          <td class="ta-r" style="white-space:nowrap;">
+            <button class="btn btn-ghost btn-sm" data-action="link-existing-reg" data-reg-idx="${i}" title="既に名簿にいる生徒に紐付け (重複を作りません)">👤 既存に紐付け</button>
+            <button class="btn btn-primary btn-sm" data-action="add-from-reg" data-reg-idx="${i}" title="名簿にいない新規の方として追加">＋名簿に追加</button>
+          </td>
         </tr>`).join('')}
         </tbody>
       </table>
     </div>`;
   panel.onclick = (e) => {
-    const btn = e.target.closest('[data-action="add-from-reg"]');
-    if (!btn) return;
-    const idx = parseInt(btn.dataset.regIdx, 10);
-    const reg = panel._unlinked && panel._unlinked[idx];
-    if (reg) addStudentFromReg(reg);
+    const linkBtn = e.target.closest('[data-action="link-existing-reg"]');
+    if (linkBtn) {
+      const reg = panel._unlinked && panel._unlinked[parseInt(linkBtn.dataset.regIdx, 10)];
+      if (reg) openLinkExistingPicker(reg);
+      return;
+    }
+    const addBtn = e.target.closest('[data-action="add-from-reg"]');
+    if (addBtn) {
+      const reg = panel._unlinked && panel._unlinked[parseInt(addBtn.dataset.regIdx, 10)];
+      if (reg) addStudentFromReg(reg);
+    }
   };
 }
 
@@ -2448,6 +2608,21 @@ const HW_KANA_MAP = {
   'ﾜ':'ワ','ﾝ':'ン',
 };
 
+// 異体字 / 旧字体 → 常用字体 (姓名で同一人物を表す字体ゆれを吸収・2026-06-02)
+// 例: 名簿「野澤」⇄カード登録「野沢」、「髙田」⇄「高田」が別人扱いされて重複登録される事故の防止。
+// 同じ名前を表す字体ペアのみ収録 (別の名前を誤って同一視しないよう保守的に維持)。
+const KANJI_VARIANTS = {
+  '澤':'沢','髙':'高','﨑':'崎','嵜':'崎','邊':'辺','邉':'辺','齋':'斎','齊':'斉',
+  '廣':'広','濵':'浜','濱':'浜','國':'国','圀':'国','萬':'万','惠':'恵','桒':'桑',
+  '眞':'真','靜':'静','晉':'晋','應':'応','戶':'戸','黑':'黒','條':'条','圓':'円',
+  '樂':'楽','數':'数','藥':'薬','寬':'寛','冨':'富','嶋':'島','嶌':'島','槇':'槙',
+  '龍':'竜','假':'仮','兒':'児','莊':'荘','顯':'顕','賴':'頼','禮':'礼','來':'来',
+  '學':'学','櫻':'桜','龜':'亀','濟':'済','鄕':'郷','縣':'県','澁':'渋','瀧':'滝',
+  '瀨':'瀬','增':'増','德':'徳','凉':'涼','渕':'淵','渊':'淵','萊':'莱','緖':'緒',
+  '𠮷':'吉',
+};
+const KANJI_VARIANT_RE = new RegExp(Object.keys(KANJI_VARIANTS).join('|'), 'gu');
+
 const IMPORT = { rows: [], candidates: [], filterTab: 'pending' };
 
 function normalizeName(raw) {
@@ -2458,6 +2633,7 @@ function normalizeName(raw) {
   s = s.replace(/(.)[゜ﾟ]/g, (m, c) => HANDAKUTEN[c] || c);
   s = s.replace(/[ァ-ヶ]/g, m => String.fromCharCode(m.charCodeAt(0) - 0x60));
   s = s.replace(/づ/g, 'ず').replace(/ぢ/g, 'じ');
+  s = s.replace(KANJI_VARIANT_RE, c => KANJI_VARIANTS[c] || c);  // 異体字/旧字体を常用字体に寄せる
   s = s.replace(/[\s　]+/g, '');
   s = s.replace(/(英語(塾代|代|月謝)?|月謝|塾代)$/, '');
   s = s.toLowerCase();
