@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <script src="cache-purge.js?v=20260529-waive-enrollment"></script>
+  <script src="cache-purge.js?v=20260602-section-reorder"></script>
   <!-- html2canvas: テンプレートから画像生成 (templates → PNG) 用 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
     integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA=="
@@ -2297,6 +2297,23 @@
         <div id="r2BackupList" style="font-size:0.8rem;color:#94a3b8;">「🔄 状態更新」を押して取得</div>
       </div>
     </section>
+    <!-- 🔀 2026-06-02 塾長指示: ダッシュボードのセクション表示順を入れ替え (DOM で並べ替え) -->
+    <!-- 上から: 19生徒ロスター, 20MRR内訳, 25学習記録, 27国公立申込待ち, 12magic link, 9招待URL → 残りは使用頻度が高そうな順 -->
+    <!-- order = 元のソース順での section 番号(1始まり)。並びを変えたい時はこの配列だけ編集すれば良い。 -->
+    <!-- 全セクション + 各種スコープ style/script は元のまま (チャート初期化等は parse 時に実行済) なので、 -->
+    <!-- このスクリプトは可視セクションを新しい順に並べ替えるだけ。セクション数が変わったら安全に no-op (元順維持)。 -->
+    <script>
+    (function () {
+      try {
+        var main = document.querySelector('.ceo-main');
+        if (!main) return;
+        var order = [19, 20, 25, 27, 12, 9, 8, 26, 28, 5, 2, 3, 1, 7, 21, 22, 4, 13, 14, 23, 24, 18, 10, 11, 15, 16, 17, 6, 29];
+        var secs = Array.prototype.slice.call(main.querySelectorAll(':scope > section'));
+        if (secs.length !== order.length) return; // 構成変化時は安全に no-op (元の順序を維持)
+        order.forEach(function (i) { var el = secs[i - 1]; if (el) main.appendChild(el); });
+      } catch (e) { /* 失敗時は元の順序のまま (ダッシュボードは絶対に壊さない) */ }
+    })();
+    </script>
   </main>
 
   <footer class="footer">
