@@ -1472,12 +1472,29 @@ function courseNameFromId(id) {
 // courses.json の正式名 (英語長文レベル１ / 早慶クラス 等) に正規化し、名前版と同一視する。
 // data.json (元データ) は不変・STATE.data 上の in-memory のみ書き換え。編集して保存すれば恒久反映。
 // COURSE_NAME_MAP 未ロード時は no-op (init で loadCourseMap を await してから呼ぶ)。
+// 2026-06-03: 表記ゆれ統合 — 末尾の「生」「コース」を外して正式名に完全一致する時だけ寄せる。
+// (曖昧/部分マッチはしない。カタログ正式名に exact 一致した場合のみなので誤統合しない。
+//  例: 中学2年生→中学2年 / 国公立難関大学コース→国公立難関大学。浪人生 等の正式名は先に
+//  catalog 判定で素通りするため削られない。中学1年生 は「中学1年」が正式名に無いので残る)
+const COURSE_VARIANT_SUFFIXES = ['生', 'コース'];
+function canonicalCourseName(c, catalogNames) {
+  const mapped = courseNameFromId(c);            // id→正式名 (正式名/未知文字列はそのまま)
+  if (catalogNames.has(mapped)) return mapped;   // 既に正式名 (id由来含む) ならそれが正
+  for (const suf of COURSE_VARIANT_SUFFIXES) {   // 表記ゆれ: 末尾を外して exact 一致のみ寄せる
+    if (mapped.length > suf.length && mapped.endsWith(suf)) {
+      const stripped = mapped.slice(0, -suf.length);
+      if (catalogNames.has(stripped)) return stripped;
+    }
+  }
+  return mapped;
+}
 function normalizeStudentCourses() {
   if (!COURSE_NAME_MAP || !STATE.data || !STATE.data.students) return;
+  const catalogNames = new Set(Object.values(COURSE_NAME_MAP));   // 照合先 = courses.json の正式名集合
   for (const s of STATE.data.students) {
     if (!Array.isArray(s.courses) || !s.courses.length) continue;
-    const mapped = s.courses.map(c => courseNameFromId(c));   // id→正式名 (名前はそのまま)
-    const deduped = [...new Set(mapped)];                     // id版+名前版の重複を統合
+    const mapped = s.courses.map(c => canonicalCourseName(c, catalogNames));  // id正規化 + 表記ゆれ統合
+    const deduped = [...new Set(mapped)];                                       // 重複を統合
     if (deduped.length !== s.courses.length || deduped.some((c, i) => c !== s.courses[i])) {
       s.courses = deduped;
     }
