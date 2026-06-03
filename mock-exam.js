@@ -14,27 +14,35 @@
   let endsAt = null;
 
   // === Step 1: テンプレート読み込み ===
+  // 2026-06-03 塾長指示「カードはプルダウンで」: 画面受験(AI採点)の模試をプルダウン選択に変更。
   async function loadTemplates() {
     const grid = document.getElementById('meTemplates');
     try {
       const res = await fetch(`${BACKEND_URL}/api/mock-exam/templates`);
       const data = await res.json();
-      grid.innerHTML = data.templates.map(t => `
-        <div class="me-template-card" data-exam-type="${t.exam_type}">
-          <div class="me-template-label">${t.label}</div>
-          <div class="me-template-meta">
-            <span>⏱ ${t.duration_min} 分</span>
-            <span>📊 満点 ${t.max_score}</span>
-            <span>📝 ${t.section_count} セクション</span>
+      const tps = (data && data.templates) || [];
+      if (!tps.length) { grid.innerHTML = '<p class="me-pdf-empty">受験できる模試は準備中です。</p>'; return; }
+      grid.innerHTML = `
+        <div class="me-pick">
+          <label class="me-pick-label" for="meTemplateSelect">📝 画面で受験する模試 (AI採点) を選択</label>
+          <div class="me-pick-row">
+            <select id="meTemplateSelect" class="me-dropdown" aria-label="受験する模試を選択">
+              ${tps.map(t => `<option value="${escapeHtml(String(t.exam_type))}" data-min="${escapeHtml(String(t.duration_min))}" data-max="${escapeHtml(String(t.max_score))}" data-sec="${escapeHtml(String(t.section_count))}">${escapeHtml(String(t.label))}</option>`).join('')}
+            </select>
+            <button id="meTemplateStart" type="button" class="btn-primary me-template-start">受験を開始 →</button>
           </div>
-          <button class="btn-primary me-template-start" data-exam-type="${t.exam_type}">受験を開始 →</button>
-        </div>
-      `).join('');
-      grid.querySelectorAll('.me-template-start').forEach(btn => {
-        btn.addEventListener('click', (e) => startExam(e.target.dataset.examType));
-      });
+          <div id="meTemplateMeta" class="me-template-meta"></div>
+        </div>`;
+      const sel = document.getElementById('meTemplateSelect');
+      const meta = document.getElementById('meTemplateMeta');
+      const updMeta = () => {
+        const o = sel.options[sel.selectedIndex]; if (!o) return;
+        meta.innerHTML = `<span>⏱ ${escapeHtml(o.dataset.min)} 分</span><span>📊 満点 ${escapeHtml(o.dataset.max)}</span><span>📝 ${escapeHtml(o.dataset.sec)} セクション</span>`;
+      };
+      sel.addEventListener('change', updMeta); updMeta();
+      document.getElementById('meTemplateStart').addEventListener('click', () => { if (sel.value) startExam(sel.value); });
     } catch (e) {
-      grid.innerHTML = `<p style="color:#ef4444;">テンプレート読み込みに失敗しました: ${e.message}</p>`;
+      grid.innerHTML = `<p style="color:#ef4444;">テンプレート読み込みに失敗しました: ${escapeHtml(e.message || String(e))}</p>`;
     }
   }
 
@@ -566,6 +574,51 @@
       .map(k => ({ problem: byPrefix[k].problem || byPrefix[k].answer, answer: byPrefix[k].answer || null }))
       .filter(g => g.problem && _isMockPdfPathSafe(g.problem.file_path));
   }
+  // 2026-06-03 塾長指示「区分→大学→科目のプルダウンで見つけやすく」: 142セットを3段絞り込み。
+  const ME_KUBUN = {
+    '旧帝大': ['東大', '京大', '阪大', '名大', '東北大', '北大', '九大'],
+    '難関国公立': ['一橋', '東工大', '神戸大', '筑波大', '横国大', '千葉大'],
+    '中堅国公立': ['埼玉大', '静岡大', '新潟大', '岡山大'],
+    '私大': ['早稲田', '慶應', '明治', '青学', '立教', '中央', '法政', '関西大', '関西学院', '同志社', '立命館'],
+    '共通テスト型': ['共通テスト'],
+  };
+  const ME_KUBUN_ORDER = ['旧帝大', '難関国公立', '中堅国公立', '私大', '共通テスト型', 'その他'];
+  const ME_SUBJ_ORDER = ['英語R', '英語', '理系数学', '文系数学', '数学IA', '数学IIB', '国語', '物理', '化学', '生物', '日本史', '世界史', '地理'];
+  // topic ("東大実践模試_理系数学" / "共通テスト_数学IA") → {kubun?, univ, subj}
+  function _meParseTopic(p) {
+    const topic = String((p && p.topic) || '');
+    // 将来の topic 命名ゆれ対策: 末尾の補助接尾辞を科目名から除去 (本番は接尾辞なしで no-op)
+    const _strip = (s) => String(s).replace(/_(自習プリント|演習問題集|本番水準|マーク式|ヒント付き問題)$/, '');
+    if (topic.indexOf('共通テスト_') === 0) return { kubun: '共通テスト型', univ: '共通テスト', subj: _strip(topic.slice('共通テスト_'.length)) };
+    const idx = topic.indexOf('実践模試_');
+    if (idx >= 0) return { kubun: null, univ: topic.slice(0, idx), subj: _strip(topic.slice(idx + '実践模試_'.length)) };
+    return { kubun: 'その他', univ: 'その他', subj: String((p && p.title) || '模試') };
+  }
+  function _meSortByOrder(arr, order) {
+    const rank = (x) => { const i = order.indexOf(x); return i < 0 ? 999 : i; };
+    return arr.slice().sort((a, b) => (rank(a) - rank(b)) || (a < b ? -1 : a > b ? 1 : 0));
+  }
+  function _meRenderPdfRow(g) {
+    if (!g || !g.problem) return '';
+    const p = g.problem;
+    const title = (p.title || '模試').replace(/\s*\(解答解説\)\s*$/, '');
+    const icon = _mockSubjectIcon(title);
+    const lvl = p.level ? `<span class="me-pdf-tag">${escapeHtml(p.level)}</span>` : '';
+    const pages = p.pages ? `<span class="me-pdf-meta-item">${parseInt(p.pages, 10) || ''} ページ</span>` : '';
+    const probBtn = `<button type="button" class="me-pdf-btn me-pdf-btn-q" data-pid="${escapeHtml(String(p.id))}" data-fp="${escapeHtml(p.file_path)}" title="問題PDFを開く">📄 問題PDF</button>`;
+    const a = g.answer;
+    const ansBtn = (a && _isMockPdfPathSafe(a.file_path))
+      ? `<button type="button" class="me-pdf-btn me-pdf-btn-a" data-pid="${escapeHtml(String(a.id))}" data-fp="${escapeHtml(a.file_path)}" title="解答解説PDFを開く">📝 解答PDF</button>`
+      : '';
+    return `
+      <div class="me-pdf-row">
+        <div class="me-pdf-info">
+          <div class="me-pdf-title"><span class="me-pdf-icon">${icon}</span><strong>${escapeHtml(title)}</strong>${a ? '<span class="me-pdf-badge">📄 解答付き</span>' : ''}</div>
+          <div class="me-pdf-meta">${lvl}<span class="me-pdf-meta-item">模試</span>${pages}</div>
+        </div>
+        <div class="me-pdf-actions">${probBtn}${ansBtn}</div>
+      </div>`;
+  }
   async function loadMockPdfs() {
     const wrap = document.getElementById('mePdfList');
     if (!wrap) return;
@@ -574,26 +627,52 @@
       const data = await res.json().catch(() => ({}));
       const groups = groupMockPdfs(data.prints || []);
       if (!groups.length) { wrap.innerHTML = '<p class="me-pdf-empty">PDF版の模試は準備中です。</p>'; return; }
-      wrap.innerHTML = groups.map(g => {
-        const p = g.problem;
-        const title = (p.title || '模試').replace(/\s*\(解答解説\)\s*$/, '');
-        const icon = _mockSubjectIcon(title);
-        const lvl = p.level ? `<span class="me-pdf-tag">${escapeHtml(p.level)}</span>` : '';
-        const pages = p.pages ? `<span class="me-pdf-meta-item">${parseInt(p.pages, 10) || ''} ページ</span>` : '';
-        const probBtn = `<button type="button" class="me-pdf-btn me-pdf-btn-q" data-pid="${escapeHtml(String(p.id))}" data-fp="${escapeHtml(p.file_path)}" title="問題PDFを開く">📄 問題PDF</button>`;
-        const a = g.answer;
-        const ansBtn = (a && _isMockPdfPathSafe(a.file_path))
-          ? `<button type="button" class="me-pdf-btn me-pdf-btn-a" data-pid="${escapeHtml(String(a.id))}" data-fp="${escapeHtml(a.file_path)}" title="解答解説PDFを開く">📝 解答PDF</button>`
-          : '';
-        return `
-          <div class="me-pdf-row">
-            <div class="me-pdf-info">
-              <div class="me-pdf-title"><span class="me-pdf-icon">${icon}</span><strong>${escapeHtml(title)}</strong>${a ? '<span class="me-pdf-badge">📄 解答付き</span>' : ''}</div>
-              <div class="me-pdf-meta">${lvl}<span class="me-pdf-meta-item">模試</span>${pages}</div>
-            </div>
-            <div class="me-pdf-actions">${probBtn}${ansBtn}</div>
-          </div>`;
-      }).join('');
+      const u2k = {};
+      Object.keys(ME_KUBUN).forEach(k => ME_KUBUN[k].forEach(u => { u2k[u] = k; }));
+      // index[区分][大学][科目] = group
+      const index = {};
+      groups.forEach(g => {
+        const m = _meParseTopic(g.problem);
+        const kubun = m.kubun || u2k[m.univ] || 'その他';
+        ((index[kubun] = index[kubun] || {})[m.univ] = index[kubun][m.univ] || {})[m.subj] = g;
+      });
+      const kubunList = ME_KUBUN_ORDER.filter(k => index[k]);
+      const univList = (k) => _meSortByOrder(Object.keys(index[k] || {}), ME_KUBUN[k] || []);
+      const subjList = (k, u) => _meSortByOrder(Object.keys((index[k] || {})[u] || {}), ME_SUBJ_ORDER);
+      wrap.innerHTML = `
+        <div class="me-pdf-filters">
+          <select id="mePdfKubun" class="me-dropdown" aria-label="区分を選択"></select>
+          <select id="mePdfUniv" class="me-dropdown" aria-label="大学を選択"></select>
+          <select id="mePdfSubj" class="me-dropdown" aria-label="科目を選択"></select>
+        </div>
+        <div id="mePdfResult" class="me-pdf-list"></div>`;
+      const kSel = document.getElementById('mePdfKubun');
+      const uSel = document.getElementById('mePdfUniv');
+      const sSel = document.getElementById('mePdfSubj');
+      const result = document.getElementById('mePdfResult');
+      kSel.innerHTML = kubunList.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}（${univList(k).length}大学）</option>`).join('');
+      const renderResult = () => {
+        const k = kSel.value, u = uSel.value, s = sSel.value;
+        const subs = (s === '__all__') ? subjList(k, u) : [s];
+        const html = subs.map(subj => _meRenderPdfRow((index[k] || {})[u] && index[k][u][subj])).join('');
+        result.innerHTML = html || '<p class="me-pdf-empty">該当する模試がありません。</p>';
+      };
+      const renderSubj = () => {
+        const k = kSel.value, u = uSel.value;
+        const ss = subjList(k, u);
+        sSel.innerHTML = `<option value="__all__">すべての科目（${ss.length}）</option>` + ss.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+        renderResult();
+      };
+      const renderUniv = () => {
+        const k = kSel.value;
+        const us = univList(k);
+        uSel.innerHTML = us.map(u => `<option value="${escapeHtml(u)}">${escapeHtml(u)}（${subjList(k, u).length}科目）</option>`).join('');
+        renderSubj();
+      };
+      kSel.addEventListener('change', renderUniv);
+      uSel.addEventListener('change', renderSubj);
+      sSel.addEventListener('change', renderResult);
+      renderUniv();
       if (typeof window.track === 'function') window.track('mock_pdf_list_view', { count: groups.length });
     } catch (e) {
       wrap.innerHTML = '<p class="me-pdf-empty">PDF一覧の読み込みに失敗しました。時間をおいて再度お試しください。</p>';
