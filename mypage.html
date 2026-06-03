@@ -38,6 +38,26 @@
   </header>
 
   <main class="mypage-main">
+    <!-- 🧒 中学生/小学生モード 専用ヒーロー + 色アクセント (2026-06-04・専用ページではなくモード作り込み) -->
+    <style>
+      #juniorModeHero { margin: 0 0 1.25rem 0; padding: 1.1rem 1.3rem; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.18); }
+      body.aj-mode-chugaku #juniorModeHero { background: linear-gradient(135deg, rgba(16,185,129,0.22), rgba(14,165,233,0.13)); border: 1px solid rgba(16,185,129,0.5); }
+      body.aj-mode-shougaku #juniorModeHero { background: linear-gradient(135deg, rgba(245,158,11,0.22), rgba(249,115,22,0.13)); border: 1px solid rgba(245,158,11,0.5); }
+      #juniorModeHero .jmh-title { margin: 0 0 0.3rem 0; font-size: 1.15rem; font-weight: 800; color: #fff; line-height: 1.35; }
+      #juniorModeHero .jmh-sub { margin: 0; font-size: 0.85rem; line-height: 1.55; color: #e5e7eb; }
+      body.aj-mode-chugaku #juniorModeHero .jmh-sub { color: #a7f3d0; }
+      body.aj-mode-shougaku #juniorModeHero .jmh-sub { color: #fed7aa; }
+      #juniorModeHero .jmh-chips { margin-top: 0.7rem; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+      #juniorModeHero .jmh-chip { font-size: 0.72rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 999px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.28); color: #fff; }
+      /* モードバッジを学年色に */
+      body.aj-mode-chugaku #studentModeBadge { background: rgba(16,185,129,0.22) !important; border-color: rgba(16,185,129,0.5) !important; color: #6ee7b7 !important; }
+      body.aj-mode-shougaku #studentModeBadge { background: rgba(245,158,11,0.22) !important; border-color: rgba(245,158,11,0.5) !important; color: #fcd34d !important; }
+    </style>
+    <section id="juniorModeHero" style="display:none;" role="region" aria-label="学年モードのご案内">
+      <div class="jmh-title" id="jmhTitle"></div>
+      <p class="jmh-sub" id="jmhSub"></p>
+      <div class="jmh-chips" id="jmhChips"></div>
+    </section>
     <!-- 📝 学習記録 クイック CTA (国公立難関大学コース or プレミアム以上のみ JS で表示制御)
          2026-05-11 塾長指示: ページ最上部 (header 直下) に固定配置。
          入力フォーム埋もれ engagement 問題への対処 + 上部 #todayMinutes を real data 反映
@@ -1233,16 +1253,32 @@
         if (typeof LB === 'undefined' || typeof ExamPrep === 'undefined' || typeof ReferralProgram === 'undefined') { setTimeout(initWidgets, 200); return; }
         const student = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null');
         const studentId = student ? student.id : 'guest';
-        // 🧒 中学生モード (2026-06-04): 学年でモード判定 → body class + バッジ表示。kosei(高校生) は現行どおり。
+        // 🧒 中学生モード (2026-06-04): 学年でモード判定 → body class + バッジ + 専用ヒーロー。kosei(高校生) は現行どおり。
+        let _ajMode = 'kosei';
         try {
-          const _mode = (typeof window.ajStudentMode === 'function') ? window.ajStudentMode(student && student.grade) : 'kosei';
-          const _meta = (window.AJ_MODE_META && window.AJ_MODE_META[_mode]) || null;
+          _ajMode = (typeof window.ajCurrentMode === 'function') ? window.ajCurrentMode() : 'kosei';
+          const _meta = (window.AJ_MODE_META && window.AJ_MODE_META[_ajMode]) || null;
           document.body.classList.remove('aj-mode-kosei', 'aj-mode-chugaku', 'aj-mode-shougaku');
-          document.body.classList.add('aj-mode-' + _mode);
+          document.body.classList.add('aj-mode-' + _ajMode);
           const _badge = document.getElementById('studentModeBadge');
-          if (_badge && _meta && _mode !== 'kosei') {
+          if (_badge && _meta && _ajMode !== 'kosei') {
             _badge.textContent = _meta.emoji + ' ' + _meta.label;
             _badge.style.display = '';
+          }
+          // 中学生/小学生モード専用ヒーロー (高校受験/中学受験向けの文言・チップ)
+          if (_ajMode !== 'kosei') {
+            const _heroMap = {
+              chugaku: { t: '🧒 高校受験モード', s: '内申点アップと志望校合格まで、AI が 5 教科をまるごと伴走します。', c: ['📐 5教科対応', '📄 高校入試の模試', '✍️ AI が答案添削'] },
+              shougaku: { t: '🎒 中学受験モード', s: '算数・国語・理科・社会の 4 教科を、AI がやさしく伴走します。', c: ['📚 4教科対応', '🎯 志望校別の対策'] }
+            };
+            const _h = _heroMap[_ajMode];
+            const _hEl = document.getElementById('juniorModeHero');
+            if (_h && _hEl) {
+              const _t = document.getElementById('jmhTitle'); if (_t) _t.textContent = _h.t;
+              const _s = document.getElementById('jmhSub'); if (_s) _s.textContent = _h.s;
+              const _c = document.getElementById('jmhChips'); if (_c) _c.innerHTML = _h.c.map(function (x) { return '<span class="jmh-chip">' + x + '</span>'; }).join('');
+              _hEl.style.display = '';
+            }
           }
         } catch (_e) { /* モード判定失敗時は現行表示 */ }
         LB.renderTodayReview('lbTodayReview', studentId);
@@ -1252,10 +1288,14 @@
         renderUsageQuotaWidget('usageQuotaWidget');
         renderCurriculumWeekWidget('curriculumWeekWidget');
         renderVocabSrsWidget('vocabSrsWidget', studentId);
-        renderWeaknessTop3(student); // 🎯 2026-05-13 塾長指示「個別問題推薦」
-        renderWeeklyWorksheet(student); // 📅 2026-05-22 塾長指示「週次弱点プリント」
-        renderLessonPrints(student); // 📚 2026-05-26 塾長指示「配布プリント全自動」
-        renderAdmissionLikelihood(student); // 🎯 2026-05-26 塾長指示「AI 合格判定ダッシュボード」
+        renderLessonPrints(student); // 📚 2026-05-26 塾長指示「配布プリント全自動」(モード絞り込み内蔵)
+        // 🧒 中学生モード (2026-06-04): 大学受験オリエンテッドなウィジェットは高校生(kosei)のみ表示。
+        //   中学生/小学生では大学レベルの推薦・志望大学合格判定を出さない(専用コンテンツ拡充までゲート)。
+        if (_ajMode === 'kosei') {
+          renderWeaknessTop3(student); // 🎯 2026-05-13 塾長指示「個別問題推薦」(大学受験プール)
+          renderWeeklyWorksheet(student); // 📅 2026-05-22 塾長指示「週次弱点プリント」
+          renderAdmissionLikelihood(student); // 🎯 2026-05-26 塾長指示「AI 合格判定ダッシュボード」(志望大学)
+        }
       }
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initWidgets);
