@@ -278,6 +278,7 @@ function applyStudentEdits() {
     if (Array.isArray(e.courses)) s.courses = e.courses.slice();  // slice で studentEdits との参照共有を切る
     if (typeof e.fee === 'number' && isFinite(e.fee) && e.fee >= 0) s.fee = e.fee;
   }
+  normalizeStudentCourses();   // コースID→正式名 正規化 (map ロード後の全 sync 経路で適用)
 }
 
 // 2026-05-07: モーダル閉じる safe helper (インライン style 上書き対策の二重保険)
@@ -1465,6 +1466,22 @@ async function loadCourseMap() {
 }
 function courseNameFromId(id) {
   return (COURSE_NAME_MAP && COURSE_NAME_MAP[id]) || id;
+}
+
+// 2026-06-03: カード登録サイト由来のコースID (long-1 / soukei / grammar-2 / kou2-grammar 等) を
+// courses.json の正式名 (英語長文レベル１ / 早慶クラス 等) に正規化し、名前版と同一視する。
+// data.json (元データ) は不変・STATE.data 上の in-memory のみ書き換え。編集して保存すれば恒久反映。
+// COURSE_NAME_MAP 未ロード時は no-op (init で loadCourseMap を await してから呼ぶ)。
+function normalizeStudentCourses() {
+  if (!COURSE_NAME_MAP || !STATE.data || !STATE.data.students) return;
+  for (const s of STATE.data.students) {
+    if (!Array.isArray(s.courses) || !s.courses.length) continue;
+    const mapped = s.courses.map(c => courseNameFromId(c));   // id→正式名 (名前はそのまま)
+    const deduped = [...new Set(mapped)];                     // id版+名前版の重複を統合
+    if (deduped.length !== s.courses.length || deduped.some((c, i) => c !== s.courses[i])) {
+      s.courses = deduped;
+    }
+  }
 }
 
 // reg (Stripe登録) → 名簿の生徒を逆引き (matchCustomerForStudent の逆方向)
@@ -5762,10 +5779,12 @@ async function init() {
 
   loadSettings();
   await loadData();
-  loadCourseMap();  // コースID→名前マップを先読み (名簿追加・パネル表示で使用)
+  await loadCourseMap();         // コースID→名前マップを確定 (正規化に必須なので await)
+  normalizeStudentCourses();     // long-1 等のID を 英語長文レベル１ 等の正式名に統合
   // 2026-05-07: クラウド sync 初期化 (token があれば pull → local 上書き)
   updateSyncStatusBar();
   await CloudSync.bootstrap();
+  normalizeStudentCourses();     // pull で取り込んだ生徒も正規化
   populateAllFilters();
   refresh();
 
