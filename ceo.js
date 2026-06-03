@@ -212,12 +212,27 @@ function renderRoster(students) {
   const tbody = document.getElementById('rosterBody');
   const search = (document.getElementById('rosterSearch').value || '').toLowerCase();
   const sort = document.getElementById('rosterSort').value;
+  // 🧒 中学生/高校生 トグル (2026-06-04): 学年でモード絞り込み + モード別カウント
+  const gradeModeEl = document.getElementById('rosterGradeMode');
+  const gradeMode = (gradeModeEl && gradeModeEl.value) || 'all';
+  const _modeOf = (g) => (typeof window.ajStudentMode === 'function')
+    ? window.ajStudentMode(g)
+    : (/小学|小[1-6]年?|中学受験|中受/.test(String(g || '')) ? 'shougaku' : /中学|中[1-3]年?/.test(String(g || '')) ? 'chugaku' : 'kosei');
 
   let list = students.filter(s =>
-    !search ||
-    (s.name || '').toLowerCase().includes(search) ||
-    (s.grade || '').toLowerCase().includes(search)
+    (!search ||
+      (s.name || '').toLowerCase().includes(search) ||
+      (s.grade || '').toLowerCase().includes(search)) &&
+    (gradeMode === 'all' || _modeOf(s.grade) === gradeMode)
   );
+
+  // ロスター見出しにモード別人数を表示
+  const _counter = document.getElementById('rosterCounter');
+  if (_counter) {
+    const _c = { kosei: 0, chugaku: 0, shougaku: 0 };
+    students.forEach(s => { const m = _modeOf(s.grade); _c[m] = (_c[m] || 0) + 1; });
+    _counter.textContent = `🎓 高校生 ${_c.kosei} / 🧒 中学生 ${_c.chugaku}` + (_c.shougaku ? ` / 🎒 小学生 ${_c.shougaku}` : '');
+  }
 
   const sorters = {
     'fee-desc': (a, b) => (b.fee || 0) - (a.fee || 0),
@@ -784,6 +799,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('rosterSort').addEventListener('change', () => {
     renderRoster(getStudents());
   });
+  const _rgmEl = document.getElementById('rosterGradeMode');
+  if (_rgmEl) _rgmEl.addEventListener('change', () => { renderRoster(getStudents()); });
 
   document.querySelectorAll('.chart-toggle').forEach(btn => {
     btn.addEventListener('click', () => {

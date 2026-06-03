@@ -1916,6 +1916,12 @@
       <div class="section-header-row">
         <h2>📋 生徒ロスター (課金状況) <span id="rosterCounter" style="font-size:0.75rem;color:#94a3b8;font-weight:400;margin-left:0.5rem;"></span></h2>
         <div class="roster-controls">
+          <select id="rosterGradeMode" title="学年モードで絞り込み">
+            <option value="all">全モード</option>
+            <option value="kosei">🎓 高校生 (大学受験)</option>
+            <option value="chugaku">🧒 中学生 (高校受験)</option>
+            <option value="shougaku">🎒 小学生 (中学受験)</option>
+          </select>
           <input type="text" id="rosterSearch" placeholder="名前/学年で検索..." />
           <select id="rosterSort">
             <option value="fee-desc">月謝順(高→低)</option>
@@ -2321,7 +2327,8 @@
   </footer>
 
   <script src="plans.js?v=20260529-waive-enrollment"></script>
-  <script src="ceo.js?v=20260531-student-email"></script>
+  <script src="student-mode.js?v=20260604-junior-mode"></script>
+  <script src="ceo.js?v=20260604-grade-toggle"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {

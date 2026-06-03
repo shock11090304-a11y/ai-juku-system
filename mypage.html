@@ -32,6 +32,7 @@
       <div class="user-info">
         <div id="userName" class="user-name">読み込み中…</div>
         <div id="userLevel" class="user-level">&nbsp;</div>
+        <div id="studentModeBadge" style="display:none;margin-top:0.15rem;font-size:0.7rem;font-weight:700;padding:1px 8px;border-radius:999px;background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.45);color:#c4b5fd;white-space:nowrap;"></div>
       </div>
     </div>
   </header>
@@ -1223,6 +1224,7 @@
   <script src="learning-brain.js?v=20260529-past-due-grace"></script>
   <script src="exam-prep.js?v=20260529-past-due-grace"></script>
   <script src="referral-program.js?v=20260529-past-due-grace"></script>
+  <script src="student-mode.js?v=20260604-junior-mode"></script>
   <script src="mypage.js?v=20260530-weekday-minutes"></script>
   <script>
     // ウィジェット初期描画
@@ -1231,6 +1233,18 @@
         if (typeof LB === 'undefined' || typeof ExamPrep === 'undefined' || typeof ReferralProgram === 'undefined') { setTimeout(initWidgets, 200); return; }
         const student = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null');
         const studentId = student ? student.id : 'guest';
+        // 🧒 中学生モード (2026-06-04): 学年でモード判定 → body class + バッジ表示。kosei(高校生) は現行どおり。
+        try {
+          const _mode = (typeof window.ajStudentMode === 'function') ? window.ajStudentMode(student && student.grade) : 'kosei';
+          const _meta = (window.AJ_MODE_META && window.AJ_MODE_META[_mode]) || null;
+          document.body.classList.remove('aj-mode-kosei', 'aj-mode-chugaku', 'aj-mode-shougaku');
+          document.body.classList.add('aj-mode-' + _mode);
+          const _badge = document.getElementById('studentModeBadge');
+          if (_badge && _meta && _mode !== 'kosei') {
+            _badge.textContent = _meta.emoji + ' ' + _meta.label;
+            _badge.style.display = '';
+          }
+        } catch (_e) { /* モード判定失敗時は現行表示 */ }
         LB.renderTodayReview('lbTodayReview', studentId);
         LB.renderStudyTimeWidget('lbStudyTimeWidget', studentId);
         ExamPrep.renderUpcomingWidget('examPrepWidget');
@@ -1914,6 +1928,13 @@
         const goalLabel = document.getElementById('lpGoalLabel');
         if (!goalBlock || !goalList) return;
         if (!student || !student.id) { goalBlock.style.display = 'none'; return; }
+        // 🧒 中学生モード (2026-06-04): 志望大学ベースの推薦は高校生(大学受験)モードのみ表示。中学生/小学生では非表示。
+        if (((typeof window.ajCurrentMode === 'function') ? window.ajCurrentMode() : 'kosei') !== 'kosei') {
+          goalBlock.style.display = 'none';
+          const _ub2 = document.getElementById('lessonPrintsByUniv');
+          if (_ub2) _ub2.style.display = 'none';
+          return;
+        }
         try {
           const token = localStorage.getItem('ai_juku_session_token') || '';
           const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
@@ -1974,6 +1995,12 @@
           if (recommendedBlock) recommendedBlock.style.display = 'none';
           return;
         }
+        // 🧒 中学生モード (2026-06-04): 弱点ベース推薦は大学受験(高校生)モードのみ表示。
+        //   recommended API は target_grade を返さないため、中学生/小学生では非表示にして大学レベル推薦の流入を防ぐ。
+        if (((typeof window.ajCurrentMode === 'function') ? window.ajCurrentMode() : 'kosei') !== 'kosei') {
+          if (recommendedBlock) recommendedBlock.style.display = 'none';
+          return;
+        }
         try {
           const token = localStorage.getItem('ai_juku_session_token') || '';
           const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
@@ -2011,10 +2038,13 @@
           if (!res.ok) { list.innerHTML = ''; empty.style.display = ''; return; }
           const data = await res.json();
           const prints = (data && data.prints) || [];
+          // 🧒 中学生モード (2026-06-04): 学年に合うプリントだけ表示。kosei(高校生) は中学/小学専用のみ除外 = 既存挙動を維持。
+          const _modeL = (typeof window.ajCurrentMode === 'function') ? window.ajCurrentMode() : 'kosei';
+          const printsForMode = (typeof window.ajPrintMatchesMode === 'function') ? prints.filter(p => window.ajPrintMatchesMode(p, _modeL)) : prints;
           // Quick Action バッジ更新 (件数)
           const lpQuickCount = document.getElementById('lpQuickCount');
-          if (lpQuickCount && data.total != null) lpQuickCount.textContent = data.total + ' 件';
-          if (prints.length === 0) {
+          if (lpQuickCount && data.total != null) lpQuickCount.textContent = (_modeL === 'kosei' ? data.total : printsForMode.length) + ' 件';
+          if (printsForMode.length === 0) {
             list.innerHTML = '';
             empty.style.display = '';
             totalEl.textContent = '';
@@ -2022,9 +2052,10 @@
           }
           empty.style.display = 'none';
           // 🛡️ 塾長指示 2026-05-26: 本編+解答 PDF を集約 (解答単独表示を抑制)
-          const grouped = groupAnswerPrints(prints);
+          const grouped = groupAnswerPrints(printsForMode);
           list.innerHTML = grouped.map(p => renderPrintCard(p, false)).join('');
-          totalEl.textContent = `全 ${data.total || prints.length} 件 (${grouped.length} セット表示)`;
+          const _displayTotal = (_modeL === 'kosei') ? (data.total || printsForMode.length) : printsForMode.length;
+          totalEl.textContent = `全 ${_displayTotal} 件 (${grouped.length} セット表示)`;
         } catch (e) {
           console.warn('lesson-prints fetch failed:', e);
           list.innerHTML = '';

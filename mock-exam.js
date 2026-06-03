@@ -643,6 +643,7 @@
       const univList = (k) => _meSortByOrder(Object.keys(index[k] || {}), ME_KUBUN[k] || []);
       const subjList = (k, u) => _meSortByOrder(Object.keys((index[k] || {})[u] || {}), ME_SUBJ_ORDER);
       wrap.innerHTML = `
+        <div id="mePdfModeNote" style="display:none;"></div>
         <div class="me-pdf-filters">
           <select id="mePdfKubun" class="me-dropdown" aria-label="区分を選択"></select>
           <select id="mePdfUniv" class="me-dropdown" aria-label="大学を選択"></select>
@@ -654,6 +655,22 @@
       const sSel = document.getElementById('mePdfSubj');
       const result = document.getElementById('mePdfResult');
       kSel.innerHTML = kubunList.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}（${univList(k).length}大学）</option>`).join('');
+      // 🧒 中学生モード (2026-06-04): ログイン中の生徒の学年に応じて初期区分を自動選択。
+      //   中学生 → 高校受験 / 小学生 → 中学受験 (該当区分にコンテンツがある時のみ)。高校生・ゲストは現行どおり既定の先頭区分。
+      try {
+        const _mode = (typeof window.ajCurrentMode === 'function') ? window.ajCurrentMode() : 'kosei';
+        const _meta = (window.AJ_MODE_META && window.AJ_MODE_META[_mode]) || null;
+        const _prefKubun = _meta ? _meta.kubun : null;
+        if (_prefKubun && kubunList.indexOf(_prefKubun) >= 0) {
+          kSel.value = _prefKubun;
+          const _note = document.getElementById('mePdfModeNote');
+          if (_note && _meta) {
+            _note.innerHTML = `${_meta.emoji} <strong>${escapeHtml(_meta.label)}</strong>：${escapeHtml(_prefKubun)}の模試を表示中（他区分はプルダウンで選べます）`;
+            _note.style.cssText = 'display:block;margin-bottom:0.6rem;padding:0.5rem 0.8rem;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.4);border-radius:8px;color:#c4b5fd;font-size:0.82rem;font-weight:700;';
+          }
+          if (typeof window.track === 'function') window.track('mock_pdf_mode_autoselect', { mode: _mode, kubun: _prefKubun });
+        }
+      } catch (_e) { /* モード判定失敗時は現行どおり既定表示 */ }
       const renderResult = () => {
         const k = kSel.value, u = uSel.value, s = sSel.value;
         const subs = (s === '__all__') ? subjList(k, u) : [s];
