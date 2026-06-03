@@ -1922,6 +1922,7 @@
             <option value="chugaku">🧒 中学生 (高校受験)</option>
             <option value="shougaku">🎒 小学生 (中学受験)</option>
           </select>
+          <button type="button" id="previewModeBtn" title="選択中の学年モードで完全模試を別タブ表示 (実生徒不要・塾長プレビュー)">👁 このモードを見る</button>
           <input type="text" id="rosterSearch" placeholder="名前/学年で検索..." />
           <select id="rosterSort">
             <option value="fee-desc">月謝順(高→低)</option>
@@ -2327,8 +2328,8 @@
   </footer>
 
   <script src="plans.js?v=20260529-waive-enrollment"></script>
-  <script src="student-mode.js?v=20260604-junior-mode"></script>
-  <script src="ceo.js?v=20260604-grade-toggle"></script>
+  <script src="student-mode.js?v=20260604-junior-preview"></script>
+  <script src="ceo.js?v=20260604-grade-preview"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {

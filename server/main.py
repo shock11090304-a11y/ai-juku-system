@@ -17585,9 +17585,9 @@ def admin_login_as_student(payload: dict, authorization: Optional[str] = Header(
     c = conn.cursor()
     try:
         if sid_arg:
-            c.execute("SELECT id, name, email, status, plan FROM students WHERE id=?", (int(sid_arg),))
+            c.execute("SELECT id, name, email, grade, status, plan FROM students WHERE id=?", (int(sid_arg),))
         elif email_arg:
-            c.execute("SELECT id, name, email, status, plan FROM students WHERE LOWER(email)=? LIMIT 1", (email_arg,))
+            c.execute("SELECT id, name, email, grade, status, plan FROM students WHERE LOWER(email)=? LIMIT 1", (email_arg,))
         else:
             raise HTTPException(status_code=400, detail="id or email required")
         row = c.fetchone()
@@ -17616,6 +17616,7 @@ def admin_login_as_student(payload: dict, authorization: Optional[str] = Header(
                 "id": sid,
                 "name": row["name"],
                 "email": row["email"],
+                "grade": row["grade"],  # 🧒 中学生モード判定用 (2026-06-04): 代行ログインでも中学生モードを正しく表示
                 "status": row["status"],
                 "plan": row["plan"],
             },

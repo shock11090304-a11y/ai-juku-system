@@ -38,7 +38,16 @@
   }
 
   function ajCurrentGrade() { var s = ajSessionStudent(); return (s && s.grade) || ''; }
-  function ajCurrentMode() { return ajStudentMode(ajCurrentGrade()); }
+  // 🧒 塾長プレビュー (2026-06-04): URL に ?preview_mode=chugaku|shougaku|kosei が付いていれば、
+  //   ログイン生徒の学年に関係なくそのモードを強制表示 (CEO ダッシュの「このモードを見る」用)。
+  function ajPreviewMode() {
+    try {
+      var p = new URLSearchParams(window.location.search).get('preview_mode');
+      if (p === 'chugaku' || p === 'shougaku' || p === 'kosei') return p;
+    } catch (e) {}
+    return null;
+  }
+  function ajCurrentMode() { return ajPreviewMode() || ajStudentMode(ajCurrentGrade()); }
 
   // lesson_prints レコード p が指定モードに適合するか。
   //   DB 実値: target_grade ∈ {高校生(494件), 中学生(6件), 小学生(0), 無タグ}
@@ -61,5 +70,6 @@
   window.ajSessionStudent = ajSessionStudent;
   window.ajCurrentGrade = ajCurrentGrade;
   window.ajCurrentMode = ajCurrentMode;
+  window.ajPreviewMode = ajPreviewMode;
   window.ajPrintMatchesMode = ajPrintMatchesMode;
 })();

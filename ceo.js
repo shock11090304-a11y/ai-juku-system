@@ -801,6 +801,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   const _rgmEl = document.getElementById('rosterGradeMode');
   if (_rgmEl) _rgmEl.addEventListener('change', () => { renderRoster(getStudents()); });
+  // 🧒 中学生モードのプレビュー (2026-06-04): 選択中モードで完全模試を別タブ表示 (実生徒不要)。
+  //   高校生/全モード選択時は中学生モードをプレビュー (現行=高校生は見る意味が薄いため)。
+  const _pvBtn = document.getElementById('previewModeBtn');
+  if (_pvBtn) _pvBtn.addEventListener('click', () => {
+    const sel = (document.getElementById('rosterGradeMode') || {}).value || 'chugaku';
+    const mode = (sel === 'chugaku' || sel === 'shougaku') ? sel : 'chugaku';
+    window.open('mock-exam.html?preview_mode=' + encodeURIComponent(mode), '_blank', 'noopener');
+  });
 
   document.querySelectorAll('.chart-toggle').forEach(btn => {
     btn.addEventListener('click', () => {
