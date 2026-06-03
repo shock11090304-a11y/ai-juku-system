@@ -1472,28 +1472,44 @@ function courseNameFromId(id) {
 // courses.json の正式名 (英語長文レベル１ / 早慶クラス 等) に正規化し、名前版と同一視する。
 // data.json (元データ) は不変・STATE.data 上の in-memory のみ書き換え。編集して保存すれば恒久反映。
 // COURSE_NAME_MAP 未ロード時は no-op (init で loadCourseMap を await してから呼ぶ)。
-// 2026-06-03: 表記ゆれ統合 — 末尾の「生」「コース」を外して正式名に完全一致する時だけ寄せる。
-// (曖昧/部分マッチはしない。カタログ正式名に exact 一致した場合のみなので誤統合しない。
-//  例: 中学2年生→中学2年 / 国公立難関大学コース→国公立難関大学。浪人生 等の正式名は先に
-//  catalog 判定で素通りするため削られない。中学1年生 は「中学1年」が正式名に無いので残る)
+// 2026-06-03: 表記ゆれ統合 — 末尾の「生」「コース」を外す + NFKC(全角半角)吸収で正式名に
+// 完全一致した時だけ寄せる。曖昧/部分マッチはせず、必ず courses.json の正式名(正規形)を返すので
+// 誤統合しない。例: 中学2年生→中学2年 / 国公立難関大学コース→国公立難関大学 / 英検準2級(半角)→英検準２級。
+// 浪人生 等の正式名は先に catalog 判定で素通りするため削られない。
 const COURSE_VARIANT_SUFFIXES = ['生', 'コース'];
-function canonicalCourseName(c, catalogNames) {
+// 塾長承認済みの明示エイリアス (2026-06-03): 完全一致のみ・曖昧マッチは増やさない。
+const COURSE_ALIASES = {
+  '中学1年': '中学基礎中学1年',
+  '中学1年生': '中学基礎中学1年',
+};
+function nfkcKey(s) { try { return s.normalize('NFKC'); } catch (e) { return s; } }
+// nfkcToName: NFKC キー → 正式名。catalog を後入れして alias より優先 (正式名を絶対に壊さない)。
+function buildNfkcToName(catalogNames) {
+  const m = new Map();
+  for (const [k, v] of Object.entries(COURSE_ALIASES)) m.set(nfkcKey(k), v);
+  for (const n of catalogNames) m.set(nfkcKey(n), n);   // catalog が最優先
+  return m;
+}
+function canonicalCourseName(c, catalogNames, nfkcToName) {
   const mapped = courseNameFromId(c);            // id→正式名 (正式名/未知文字列はそのまま)
-  if (catalogNames.has(mapped)) return mapped;   // 既に正式名 (id由来含む) ならそれが正
-  for (const suf of COURSE_VARIANT_SUFFIXES) {   // 表記ゆれ: 末尾を外して exact 一致のみ寄せる
+  if (catalogNames.has(mapped)) return mapped;   // 既に正式名 (id由来含む) はそのまま (最優先・誤変換防止)
+  let hit = nfkcToName.get(nfkcKey(mapped));      // NFKC/エイリアスで正式名に一致 (全角半角ゆれ吸収)
+  if (hit) return hit;
+  for (const suf of COURSE_VARIANT_SUFFIXES) {   // 末尾「生」「コース」を外して再照合
     if (mapped.length > suf.length && mapped.endsWith(suf)) {
-      const stripped = mapped.slice(0, -suf.length);
-      if (catalogNames.has(stripped)) return stripped;
+      hit = nfkcToName.get(nfkcKey(mapped.slice(0, -suf.length)));
+      if (hit) return hit;
     }
   }
-  return mapped;
+  return mapped;                                 // どれにも当たらなければ原文字列のまま
 }
 function normalizeStudentCourses() {
   if (!COURSE_NAME_MAP || !STATE.data || !STATE.data.students) return;
   const catalogNames = new Set(Object.values(COURSE_NAME_MAP));   // 照合先 = courses.json の正式名集合
+  const nfkcToName = buildNfkcToName(catalogNames);
   for (const s of STATE.data.students) {
     if (!Array.isArray(s.courses) || !s.courses.length) continue;
-    const mapped = s.courses.map(c => canonicalCourseName(c, catalogNames));  // id正規化 + 表記ゆれ統合
+    const mapped = s.courses.map(c => canonicalCourseName(c, catalogNames, nfkcToName));  // id正規化 + 表記ゆれ統合
     const deduped = [...new Set(mapped)];                                       // 重複を統合
     if (deduped.length !== s.courses.length || deduped.some((c, i) => c !== s.courses[i])) {
       s.courses = deduped;
