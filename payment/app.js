@@ -231,8 +231,18 @@ async function loadData() {
   if (!STATE.overrides.status) STATE.overrides.status = {};
   if (!STATE.overrides.newStudents) STATE.overrides.newStudents = [];   // 2026-05-07: 生徒追加機能
   if (!STATE.overrides.regLinks) STATE.overrides.regLinks = {};         // 2026-06-01: Stripe登録↔名簿 紐付け
+  if (!STATE.overrides.studentEdits) STATE.overrides.studentEdits = {}; // 2026-06-03: 既存生徒の編集 上書き
   // newStudents を STATE.data.students に in-memory merge (id 重複は新生徒側を採用)
   mergeNewStudentsIntoData();
+  // 編集 (コース/月謝/学年/氏名) を上書き適用
+  applyStudentEdits();
+}
+
+// 2026-06-03: newStudents の元オブジェクトを STATE.data.students と参照共有しないための安全コピー。
+// applyStudentEdits は STATE.data.students を破壊的に書き換えるため、コピーを入れておかないと
+// overrides.newStudents (= 追加時の素の値) まで汚染され、「編集を取消」で元に戻せなくなる (C-1)。
+function cloneStudentForData(s) {
+  return { ...s, courses: Array.isArray(s.courses) ? s.courses.slice() : s.courses };
 }
 
 // 2026-05-07 追加: クラウド同期で取得した newStudents を data.json と合体する
@@ -245,13 +255,29 @@ function mergeNewStudentsIntoData() {
   for (const ns of newStudents) {
     if (!ns || typeof ns.id !== 'number') continue;
     if (!existingIds.has(ns.id)) {
-      STATE.data.students.push(ns);
+      STATE.data.students.push(cloneStudentForData(ns));  // 参照共有を切る (C-1)
       existingIds.add(ns.id);
     }
   }
   // nextStudentId も追従 (= 次の追加で重複しないよう)
   const maxId = Math.max(STATE.data.nextStudentId || 1, ...newStudents.map(s => (s.id || 0) + 1));
   STATE.data.nextStudentId = maxId;
+}
+
+// 2026-06-03 追加: 既存生徒の編集 (コース/月謝/学年/氏名) を STATE.data.students に上書き適用。
+// data.json (元データ) は不変のまま、studentEdits[id] にある変更フィールドだけを in-memory で重ねる。
+// load / cloud pull のたびに再適用 (= 元データ再取得で編集が消えないよう冪等に重ねる)。
+function applyStudentEdits() {
+  if (!STATE.data || !STATE.data.students) return;
+  const edits = STATE.overrides.studentEdits || {};
+  for (const s of STATE.data.students) {
+    const e = edits[s.id];
+    if (!e || typeof e !== 'object') continue;
+    if (typeof e.name === 'string' && e.name.trim()) s.name = e.name;
+    if (typeof e.grade === 'string') s.grade = e.grade;
+    if (Array.isArray(e.courses)) s.courses = e.courses.slice();  // slice で studentEdits との参照共有を切る
+    if (typeof e.fee === 'number' && isFinite(e.fee) && e.fee >= 0) s.fee = e.fee;
+  }
 }
 
 // 2026-05-07: モーダル閉じる safe helper (インライン style 上書き対策の二重保険)
@@ -353,8 +379,8 @@ async function saveNewStudent() {
   }
   saveOverrides();          // localStorage 保存 + CloudSync push (debounced)
 
-  // in-memory にも追加 (即時反映)
-  STATE.data.students.push(newStudent);
+  // in-memory にも追加 (即時反映)。参照共有を切る (C-1: 後で編集しても newStudents 原本を汚さない)
+  STATE.data.students.push(cloneStudentForData(newStudent));
   STATE.data.nextStudentId = id + 1;
 
   closeAddStudentModalSafe();
@@ -383,6 +409,218 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('click', (e) => {
   const m = document.getElementById('addStudentModal');
   if (m && !m.classList.contains('hidden') && e.target === m) closeAddStudentModalSafe();
+});
+
+// =============================================================
+// 2026-06-03: 生徒編集モーダル (コース変更などを名簿から直接行う)
+// =============================================================
+function openEditStudentModalSafe() {
+  const m = document.getElementById('editStudentModal');
+  if (!m) return;
+  m.classList.remove('hidden');
+  m.style.display = '';        // inline 削除で CSS 定義 (display: grid) を復活
+}
+function closeEditStudentModalSafe() {
+  const m = document.getElementById('editStudentModal');
+  if (!m) return;
+  m.classList.add('hidden');
+  m.style.display = 'none';    // class が効かなくても確実に消す
+}
+
+// コース単価リスト (name → price) を courses.json から取得 (キャッシュ)
+let COURSE_PRICE_LIST = null;
+async function loadCoursePriceList() {
+  if (COURSE_PRICE_LIST) return COURSE_PRICE_LIST;
+  const list = [];
+  try {
+    const res = await fetch('courses.json?t=' + Date.now());
+    if (res.ok) {
+      const json = await res.json();
+      for (const c of (json.courses || [])) if (c && c.name) list.push({ name: c.name, price: Number(c.price) || 0 });
+      for (const o of (json.options || [])) if (o && o.name) list.push({ name: o.name, price: Number(o.price) || 0 });
+    }
+  } catch (e) { console.warn('[coursePriceList] load failed:', e); }
+  COURSE_PRICE_LIST = list;
+  return COURSE_PRICE_LIST;
+}
+
+// textarea のコース文字列 → 配列 (改行区切り・1行=1コース・重複除去)。
+// カンマでは分割しない: カタログに「設備費 (¥1,500)」等カンマを含む名称があり、
+// カンマ分割すると「設備費 (¥1」「500)」に破損してコース絞り込み等に波及するため (HIGH 修正)。
+function parseCoursesText(text) {
+  const arr = (text || '').split(/\n/).map(s => s.trim()).filter(Boolean);
+  return [...new Set(arr)];
+}
+
+async function openEditStudentModal(id) {
+  const s = STATE.data.students.find(st => st.id === id);
+  if (!s) { alert('生徒が見つかりません (ID #' + id + ')'); return; }
+  document.getElementById('editStudentId').value = String(id);
+  document.getElementById('editStudentSubtitle').textContent = `ID #${id}（現在の氏名: ${s.name || '—'}）`;
+  document.getElementById('editStudentName').value = s.name || '';
+  // 学年 select: 既存値が option に無ければ動的追加してから選択
+  const gradeSel = document.getElementById('editStudentGrade');
+  const grade = s.grade || '';
+  if (grade && ![...gradeSel.options].some(o => o.value === grade || o.textContent === grade)) {
+    const opt = document.createElement('option'); opt.value = grade; opt.textContent = grade; gradeSel.appendChild(opt);
+  }
+  gradeSel.value = grade;
+  document.getElementById('editStudentFee').value = (typeof s.fee === 'number') ? s.fee : '';
+  document.getElementById('editStudentCourses').value = (s.courses || []).join('\n');  // 1行=1コース
+  document.getElementById('editStudentRecalcNote').textContent = '';
+  // 「編集を取消」ボタンは studentEdits 済みの生徒だけ表示
+  const hasEdit = !!(STATE.overrides.studentEdits && STATE.overrides.studentEdits[id]);
+  const resetBtn = document.getElementById('editStudentResetBtn');
+  if (resetBtn) resetBtn.style.display = hasEdit ? '' : 'none';
+  await renderEditCourseChips();
+  openEditStudentModalSafe();
+  setTimeout(() => document.getElementById('editStudentName').focus(), 50);
+}
+
+// コース単価カタログ + 名簿に存在する全コースをチップ表示 (クリックでトグル)
+async function renderEditCourseChips() {
+  const wrap = document.getElementById('editStudentCourseChips');
+  if (!wrap) return;
+  const list = await loadCoursePriceList();
+  const seen = new Set();
+  const chips = [];
+  for (const c of list) { if (!seen.has(c.name)) { seen.add(c.name); chips.push({ name: c.name, price: c.price }); } }
+  // 名簿に存在する非カタログコースも候補に追加 (price 不明)
+  for (const st of STATE.data.students) for (const cn of (st.courses || [])) {
+    if (cn && !seen.has(cn)) { seen.add(cn); chips.push({ name: cn, price: null }); }
+  }
+  wrap.innerHTML = chips.map(c =>
+    `<button type="button" class="course-chip" data-course="${escapeHtml(c.name)}">${escapeHtml(c.name)}${c.price ? `<span style="opacity:.55;margin-left:5px;">¥${c.price.toLocaleString()}</span>` : ''}</button>`
+  ).join('');
+  wrap.onclick = (e) => {
+    const b = e.target.closest('.course-chip'); if (!b) return;
+    const name = b.dataset.course;
+    const ta = document.getElementById('editStudentCourses');
+    const cur = parseCoursesText(ta.value);
+    if (cur.includes(name)) ta.value = cur.filter(x => x !== name).join('\n');  // トグル off
+    else { cur.push(name); ta.value = cur.join('\n'); }                          // トグル on (1行=1コース)
+    syncEditChipActive();
+  };
+  // textarea 直接編集にも追従
+  const ta = document.getElementById('editStudentCourses');
+  if (ta) ta.oninput = syncEditChipActive;
+  syncEditChipActive();
+}
+
+// textarea の内容に合わせてチップの active 表示を同期
+function syncEditChipActive() {
+  const ta = document.getElementById('editStudentCourses');
+  if (!ta) return;
+  const cur = new Set(parseCoursesText(ta.value));
+  document.querySelectorAll('#editStudentCourseChips .course-chip').forEach(b => {
+    b.classList.toggle('chip-active', cur.has(b.dataset.course));
+  });
+}
+
+// コース → 月謝 再計算 (courses.json の単価合計・例外があるので手動ボタン)
+async function recalcEditFeeFromCourses() {
+  const list = await loadCoursePriceList();
+  const priceMap = {}; for (const c of list) priceMap[c.name] = c.price;
+  const courses = parseCoursesText(document.getElementById('editStudentCourses').value);
+  let sum = 0; const missing = [];
+  for (const cn of courses) {
+    if (priceMap[cn] != null) sum += priceMap[cn];
+    else missing.push(cn);
+  }
+  document.getElementById('editStudentFee').value = sum;
+  const note = document.getElementById('editStudentRecalcNote');
+  if (!courses.length) note.textContent = 'コースが未入力です';
+  else if (missing.length) note.textContent = `合計 ¥${sum.toLocaleString()}（カタログ未登録: ${missing.join('・')} は ¥0 換算 → 手動調整してください）`;
+  else note.textContent = `合計 ¥${sum.toLocaleString()} を反映（設備費・割引があれば手動調整）`;
+}
+
+async function saveStudentEdit() {
+  const id = parseInt(document.getElementById('editStudentId').value, 10);
+  const s = STATE.data.students.find(st => st.id === id);
+  if (!s) { alert('生徒が見つかりません'); return; }
+  const name = document.getElementById('editStudentName').value.trim();
+  const grade = document.getElementById('editStudentGrade').value.trim();
+  // 月謝: 全角数字→半角・カンマ/空白除去で「165,000」「１６５００」の取りこぼし/silent切り捨てを防ぐ
+  const feeRaw = document.getElementById('editStudentFee').value
+    .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .replace(/[,，\s]/g, '')
+    .trim();
+  const courses = parseCoursesText(document.getElementById('editStudentCourses').value);
+  if (!name) { alert('氏名は必須です'); return; }
+  const fee = parseInt(feeRaw, 10);
+  if (isNaN(fee) || fee < 0) { alert('月謝は 0 以上の整数を入力してください'); return; }
+  if (fee > 1000000) {
+    if (!confirm(`月謝 ¥${fee.toLocaleString()} は通常より大きい値です。よろしいですか?`)) return;
+  }
+  // 月謝の桁ミス防止 (請求書 invoice は編集後 fee をそのまま請求額に使うため): 既存額と大きく乖離する場合は確認
+  const oldFee = (typeof s.fee === 'number') ? s.fee : null;
+  if (oldFee && oldFee > 0 && fee !== oldFee && fee <= 1000000) {
+    const ratio = fee / oldFee;
+    if (ratio >= 3 || ratio <= 1 / 3 || Math.abs(fee - oldFee) >= 50000) {
+      if (!confirm(`月謝を ¥${oldFee.toLocaleString()} → ¥${fee.toLocaleString()} に変更します。\n変更幅が大きいため確認します（桁ミスにご注意ください）。\n\n※ 未払い者へ「請求書(invoice)」を発行すると、この金額がそのまま請求額になります。\n\nこの金額でよろしいですか?`)) return;
+    }
+  }
+  // 氏名変更は Stripe 照合/振込人名マッチに影響するため軽く確認
+  if (name !== (s.name || '')) {
+    if (!confirm(`氏名を「${s.name}」→「${name}」に変更します。\n(銀行明細・カード照合は振込人名/カナで行うため通常は影響しませんが念のため確認)\n\n続行しますか?`)) return;
+  }
+
+  if (!STATE.overrides.studentEdits) STATE.overrides.studentEdits = {};
+  STATE.overrides.studentEdits[id] = { name, grade, courses, fee, editedAt: new Date().toISOString() };
+  // 取消後の再編集を尊重: tombstone から外す (= 再び remote merge 対象に戻す・regLinks と同方式)
+  if (typeof CloudSync !== 'undefined' && CloudSync._deletedStudentEditSids) CloudSync._deletedStudentEditSids.delete(String(id));
+  applyStudentEdits();   // in-memory 即反映
+  saveOverrides();       // localStorage + CloudSync push (debounced)
+  closeEditStudentModalSafe();
+  populateAllFilters();
+  refresh();
+
+  // 即時 push (debounce 待たずに) — タブ閉じ・通信不安定で消失防止
+  let cloudMsg = '';
+  if (typeof CloudSync !== 'undefined' && CloudSync.bootstrapped && CloudSync.getToken()) {
+    const ok = await CloudSync.pushNow();
+    cloudMsg = ok ? '✓ クラウド同期完了 (携帯/PC 共有)' : '⚠ クラウド同期失敗 (右上 ⚠ アイコンクリックで再試行)';
+  } else {
+    cloudMsg = 'ℹ クラウド未ログイン: localStorage のみに保存 (右上 🔒 でログインすると同期)';
+  }
+  alert(`✓ ${name} さん (ID #${id}) の情報を更新しました。\n\n学年: ${grade || '未設定'} / 月謝: ¥${fee.toLocaleString()}\nコース: ${courses.join('・') || '(なし)'}\n\n${cloudMsg}`);
+}
+
+// 編集を取消して元データ (data.json) の値に戻す
+async function resetStudentEdit() {
+  const id = parseInt(document.getElementById('editStudentId').value, 10);
+  if (!STATE.overrides.studentEdits || !STATE.overrides.studentEdits[id]) { closeEditStudentModalSafe(); return; }
+  if (!confirm('この生徒の編集を取り消して、元データ (data.json) の値に戻しますか?\n(元データを再反映するためページを再読込します)')) return;
+  delete STATE.overrides.studentEdits[id];
+  // 取消した sid を記録 → 直後の pushNow pre-pull merge で remote から復活させない (regLinks と同方式・CRITICAL C-2)
+  if (typeof CloudSync !== 'undefined') {
+    if (!CloudSync._deletedStudentEditSids) CloudSync._deletedStudentEditSids = new Set();
+    CloudSync._deletedStudentEditSids.add(String(id));
+  }
+  saveOverrides();
+  closeEditStudentModalSafe();
+  if (typeof CloudSync !== 'undefined' && CloudSync.bootstrapped && CloudSync.getToken()) {
+    const ok = await CloudSync.pushNow();
+    if (!ok) {
+      // push 失敗のまま reload すると、pull で別端末の古い edit が復活しうる → reload を止める
+      alert('⚠ クラウド同期に失敗しました。取消をクラウドに反映できていません。\n通信を確認し、右上の ⚠ アイコンから再同期してください。\n(このまま再読込すると別端末の古い編集が復活する可能性があります)');
+      return;
+    }
+  }
+  alert('↺ 編集を取り消しました。元データを反映するため再読込します。');
+  location.reload();
+}
+
+// ESC / overlay クリックで編集モーダルを閉じる
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const m = document.getElementById('editStudentModal');
+    if (m && !m.classList.contains('hidden')) closeEditStudentModalSafe();
+  }
+});
+document.addEventListener('click', (e) => {
+  const m = document.getElementById('editStudentModal');
+  if (m && !m.classList.contains('hidden') && e.target === m) closeEditStudentModalSafe();
 });
 
 function getStatus(student) {
@@ -480,11 +718,19 @@ const OVERRIDE_VALID_KEYS = new Set([
   'payments', 'emails', 'payerNames', 'mailSent', 'status', 'stripeInviteSent',
   'newStudents',   // 2026-05-07: 生徒追加機能
   'regLinks',      // 2026-06-01: Stripe登録(reg_id/cus_id)↔生徒名簿(studentId) の確定紐付け
+  'studentEdits',  // 2026-06-03: 既存生徒の編集 (コース/月謝/学年/氏名) 上書き
 ]);
+// 2026-06-03 (H-1) 後方互換のため寛容化: shape (object か) だけ厳格に見て、未知の top-level key は
+// 「拒否」ではなく「無視」する。旧来は未知 key が1つでもあると false を返し、呼び出し側が
+// 「remote を捨てて自分の local を push で上書き」してしまうため、新クライアントが追加した
+// 新 key (regLinks→studentEdits 等) を旧クライアントが pull するたびに remote 全体を巻き戻す
+// データ消失ベクトルがあった。未知 key は読み飛ばす設計に変更し、将来の key 追加でも壊れないようにする。
 function _isValidOverrides(obj) {
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
-  for (const k of Object.keys(obj)) {
-    if (!OVERRIDE_VALID_KEYS.has(k)) return false;
+  const unknown = Object.keys(obj).filter(k => !OVERRIDE_VALID_KEYS.has(k));
+  if (unknown.length) {
+    // 拒否はしない (= 後方互換)。新しいバージョンが追加した key の可能性が高い。
+    console.warn('[overrides] 未知の top-level key を無視します (新バージョン由来の可能性):', unknown);
   }
   return true;
 }
@@ -629,6 +875,25 @@ const CloudSync = {
                   console.log('[CloudSync] pushNow: merged', regMerged, 'remote regLinks before push');
                 }
               }
+              // 2026-06-03: studentEdits も「remote にあって local に無い studentId」を merge (別デバイスでの編集消失防止)
+              if (remoteOv.studentEdits && typeof remoteOv.studentEdits === 'object' && !Array.isArray(remoteOv.studentEdits)) {
+                if (!STATE.overrides.studentEdits) STATE.overrides.studentEdits = {};
+                const editDelSet = this._deletedStudentEditSids || null;  // 取消した sid は remote から復活させない
+                let editMerged = 0;
+                for (const sid of Object.keys(remoteOv.studentEdits)) {
+                  if (!(sid in STATE.overrides.studentEdits) && !(editDelSet && editDelSet.has(sid))) {
+                    STATE.overrides.studentEdits[sid] = remoteOv.studentEdits[sid];
+                    editMerged++;
+                  }
+                }
+                if (editMerged) {
+                  localStorage.setItem(LS_KEY, JSON.stringify(STATE.overrides));
+                  if (typeof applyStudentEdits === 'function') applyStudentEdits();
+                  if (typeof populateAllFilters === 'function') populateAllFilters();
+                  if (typeof refresh === 'function') refresh();
+                  console.log('[CloudSync] pushNow: merged', editMerged, 'remote studentEdits before push');
+                }
+              }
             }
           }
         }
@@ -686,9 +951,12 @@ const CloudSync = {
           if (!STATE.overrides.status) STATE.overrides.status = {};
           if (!STATE.overrides.newStudents) STATE.overrides.newStudents = [];
           if (!STATE.overrides.regLinks) STATE.overrides.regLinks = {};
+          if (!STATE.overrides.studentEdits) STATE.overrides.studentEdits = {};
           localStorage.setItem(LS_KEY, JSON.stringify(STATE.overrides));
           // remote 側の newStudents を STATE.data.students に in-memory merge (= 別デバイスで追加した生徒を取り込む)
           mergeNewStudentsIntoData();
+          // remote 側の編集 (コース/月謝等) も上書き適用
+          applyStudentEdits();
         } else {
           console.warn('[CloudSync] remote overrides shape invalid, ignoring:', Object.keys(remoteOverrides));
           this.errorMsg = 'remote データ形式不正 (= 古い/壊れたデータ。push で上書きします)';
@@ -777,9 +1045,12 @@ async function promptAdminLogin() {
         if (!STATE.overrides.mailSent) STATE.overrides.mailSent = {};
         if (!STATE.overrides.status) STATE.overrides.status = {};
         if (!STATE.overrides.newStudents) STATE.overrides.newStudents = [];
+        if (!STATE.overrides.studentEdits) STATE.overrides.studentEdits = {};
         localStorage.setItem(LS_KEY, JSON.stringify(STATE.overrides));
         // 別デバイスで追加した生徒を in-memory merge
         if (typeof mergeNewStudentsIntoData === 'function') mergeNewStudentsIntoData();
+        // 別デバイスでの編集 (コース/月謝等) を上書き適用
+        if (typeof applyStudentEdits === 'function') applyStudentEdits();
         if (typeof populateAllFilters === 'function') populateAllFilters();
         if (typeof refresh === 'function') refresh();
       } catch (e) {}
@@ -1184,7 +1455,7 @@ async function addStudentFromReg(reg) {
   };
   if (!STATE.overrides.newStudents) STATE.overrides.newStudents = [];
   STATE.overrides.newStudents.push(newStudent);
-  STATE.data.students.push(newStudent);
+  STATE.data.students.push(cloneStudentForData(newStudent));  // 参照共有を切る (C-1)
   STATE.data.nextStudentId = id + 1;
   // 追加と同時にカード紐付け (原子化・再追加防止) + 振込人名/メール学習
   setRegLink(id, reg.registrationId, reg.customerId, 'auto-add');
@@ -1665,7 +1936,7 @@ function renderAll() {
       <td class="id-cell">#${s.id}</td>
       <td class="name-cell">${escapeHtml(s.name)}</td>
       <td>${escapeHtml(s.grade || '—')}</td>
-      <td>${coursesTags(s.courses)}</td>
+      <td class="course-cell">${coursesTags(s.courses)}<button class="course-edit-btn" data-action="edit" title="コース・月謝・学年を変更">✏️ 変更</button></td>
       <td class="ta-r fee-cell">${yen(s.fee)}</td>
       <td><input type="text" class="email-input" data-action="email" placeholder="未登録" value="${escapeHtml(getEmail(s.id))}"></td>
       <td><input type="text" class="payer-input" data-action="payer" placeholder="—" value="${escapeHtml(getPayerName(s.id))}"></td>
@@ -1681,7 +1952,7 @@ function renderAll() {
     const btn = e.target.closest('[data-action]');
     if (!btn) return;
     const a = btn.dataset.action;
-    if (a !== 'toggle' && a !== 'link-reg' && a !== 'unlink-reg') return;  // email/payer/status は oninput/onchange 側で処理
+    if (a !== 'toggle' && a !== 'link-reg' && a !== 'unlink-reg' && a !== 'edit') return;  // email/payer/status は oninput/onchange 側で処理
     const tr = btn.closest('tr');
     const id = parseInt(tr.dataset.studentId, 10);
     if (a === 'toggle') {
@@ -1693,6 +1964,8 @@ function renderAll() {
       handleLinkRegClick(id, btn.dataset.regId, btn.dataset.customerId);
     } else if (a === 'unlink-reg') {
       handleUnlinkRegClick(id);
+    } else if (a === 'edit') {
+      openEditStudentModal(id);
     }
   };
   tbody.onchange = (e) => {
@@ -3957,6 +4230,18 @@ async function importAll(file) {
         payerNames: { ...(STATE.overrides.payerNames || {}), ...(ov.payerNames || {}) },
         mailSent: { ...(STATE.overrides.mailSent || {}), ...(ov.mailSent || {}) },
         status: { ...(STATE.overrides.status || {}), ...(ov.status || {}) },
+        // 2026-06-03: バックアップ復元で 編集/追加生徒/紐付け/招待送信記録 を失わない (ov 優先で現行に重ねる)
+        stripeInviteSent: { ...(STATE.overrides.stripeInviteSent || {}), ...(ov.stripeInviteSent || {}) },
+        regLinks: { ...(STATE.overrides.regLinks || {}), ...(ov.regLinks || {}) },
+        studentEdits: { ...(STATE.overrides.studentEdits || {}), ...(ov.studentEdits || {}) },
+        newStudents: (() => {
+          const cur = Array.isArray(STATE.overrides.newStudents) ? STATE.overrides.newStudents.slice() : [];
+          const ids = new Set(cur.map(s => s && s.id));
+          for (const ns of (Array.isArray(ov.newStudents) ? ov.newStudents : [])) {
+            if (ns && typeof ns.id === 'number' && !ids.has(ns.id)) { cur.push(ns); ids.add(ns.id); }
+          }
+          return cur;
+        })(),
       };
       for (const m of Object.keys(ov.payments || {})) {
         merged.payments[m] = { ...(merged.payments[m] || {}), ...ov.payments[m] };
@@ -3972,6 +4257,9 @@ async function importAll(file) {
       const banner = document.getElementById('initial-import-banner');
       if (banner) banner.remove();
     }
+    // 2026-06-03: 復元した 追加生徒/編集 を in-memory に反映 (元データ差し替え後に再適用)
+    if (typeof mergeNewStudentsIntoData === 'function') mergeNewStudentsIntoData();
+    if (typeof applyStudentEdits === 'function') applyStudentEdits();
     if (json.settings && Object.keys(json.settings).length) {
       SETTINGS = { ...DEFAULT_SETTINGS, ...SETTINGS, ...json.settings };
       saveSettings();
@@ -5282,6 +5570,21 @@ function setupModals() {
   if (ascb) ascb.addEventListener('click', closeAddStudentModalSafe);
   const assb = document.getElementById('addStudentSaveBtn');
   if (assb) assb.addEventListener('click', saveNewStudent);
+
+  // 2026-06-03: 生徒編集モーダル
+  const escb = document.getElementById('editStudentCancelBtn');
+  if (escb) escb.addEventListener('click', closeEditStudentModalSafe);
+  const essb = document.getElementById('editStudentSaveBtn');
+  if (essb) essb.addEventListener('click', saveStudentEdit);
+  const esrb = document.getElementById('editStudentResetBtn');
+  if (esrb) esrb.addEventListener('click', resetStudentEdit);
+  const escc = document.getElementById('editStudentClearCourses');
+  if (escc) escc.addEventListener('click', () => {
+    const ta = document.getElementById('editStudentCourses');
+    if (ta) { ta.value = ''; syncEditChipActive(); }
+  });
+  const esrf = document.getElementById('editStudentRecalcFee');
+  if (esrf) esrf.addEventListener('click', recalcEditFeeFromCourses);
 
   // Stripe Invite (一斉送信)
   const sib = document.getElementById('stripeInviteBtn');

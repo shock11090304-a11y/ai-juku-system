@@ -299,6 +299,48 @@ body {
   margin: 1px 2px 1px 0;
 }
 
+/* 2026-06-03: 全生徒一覧の「✏️ 変更」ボタン (コース列) */
+.course-edit-btn {
+  display: inline-block;
+  margin: 1px 0 1px 4px;
+  padding: 0.12rem 0.45rem;
+  border-radius: 5px;
+  border: 1px solid rgba(99,102,241,0.4);
+  background: rgba(99,102,241,0.10);
+  color: var(--primary-light);
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.course-edit-btn:hover {
+  background: rgba(99,102,241,0.28);
+  border-color: var(--primary-light);
+}
+.course-cell { line-height: 1.7; }
+
+/* 2026-06-03: 編集モーダルのコース選択チップ */
+.course-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.25);
+  color: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.course-chip:hover { border-color: var(--primary-light); }
+.course-chip.chip-active {
+  background: rgba(99,102,241,0.85);
+  border-color: var(--primary-light);
+  color: #fff;
+  font-weight: 600;
+}
+
 .status-tag {
   padding: 0.2rem 0.6rem;
   border-radius: 4px;
