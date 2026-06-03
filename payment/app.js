@@ -467,6 +467,8 @@ async function openEditStudentModal(id) {
   gradeSel.value = grade;
   document.getElementById('editStudentFee').value = (typeof s.fee === 'number') ? s.fee : '';
   document.getElementById('editStudentCourses').value = (s.courses || []).join('\n');  // 1行=1コース
+  // 差額自動反映の基準 = 現在の月謝に既に織り込まれているコース集合 (= 現在のコース)
+  editFeeBaseCourses = parseCoursesText(document.getElementById('editStudentCourses').value);
   document.getElementById('editStudentRecalcNote').textContent = '';
   // 「編集を取消」ボタンは studentEdits 済みの生徒だけ表示
   const hasEdit = !!(STATE.overrides.studentEdits && STATE.overrides.studentEdits[id]);
@@ -492,7 +494,7 @@ async function renderEditCourseChips() {
   wrap.innerHTML = chips.map(c =>
     `<button type="button" class="course-chip" data-course="${escapeHtml(c.name)}">${escapeHtml(c.name)}${c.price ? `<span style="opacity:.55;margin-left:5px;">¥${c.price.toLocaleString()}</span>` : ''}</button>`
   ).join('');
-  wrap.onclick = (e) => {
+  wrap.onclick = async (e) => {
     const b = e.target.closest('.course-chip'); if (!b) return;
     const name = b.dataset.course;
     const ta = document.getElementById('editStudentCourses');
@@ -500,10 +502,14 @@ async function renderEditCourseChips() {
     if (cur.includes(name)) ta.value = cur.filter(x => x !== name).join('\n');  // トグル off
     else { cur.push(name); ta.value = cur.join('\n'); }                          // トグル on (1行=1コース)
     syncEditChipActive();
+    await autoAdjustFeeForCourseChange();   // チップ変更分を月謝に差額自動反映
   };
-  // textarea 直接編集にも追従
+  // textarea: 入力中はチップ表示を同期 (oninput)、入力確定 (blur=onchange) で月謝に差額反映
   const ta = document.getElementById('editStudentCourses');
-  if (ta) ta.oninput = syncEditChipActive;
+  if (ta) {
+    ta.oninput = syncEditChipActive;
+    ta.onchange = autoAdjustFeeForCourseChange;
+  }
   syncEditChipActive();
 }
 
@@ -517,7 +523,9 @@ function syncEditChipActive() {
   });
 }
 
-// コース → 月謝 再計算 (courses.json の単価合計・例外があるので手動ボタン)
+// コース → 月謝 「合計で上書き」(courses.json の単価合計でゼロから計算し直す)。
+// 通常のコース変更は autoAdjustFeeForCourseChange の差額自動反映で済むが、
+// 月謝を一度カタログ合計にリセットしたい時のためのボタン。
 async function recalcEditFeeFromCourses() {
   const list = await loadCoursePriceList();
   const priceMap = {}; for (const c of list) priceMap[c.name] = c.price;
@@ -527,17 +535,77 @@ async function recalcEditFeeFromCourses() {
     if (priceMap[cn] != null) sum += priceMap[cn];
     else missing.push(cn);
   }
+  // 上書きは設備費・割引・個別指導などの上乗せ分を消すため、現在額と差があれば確認
+  const curFee = parseInt(document.getElementById('editStudentFee').value, 10);
+  if (!isNaN(curFee) && curFee !== sum) {
+    if (!confirm(`月謝をコース単価の合計 ¥${sum.toLocaleString()} で上書きします。\n現在の ¥${curFee.toLocaleString()} は消えます（設備費・割引・個別指導などの上乗せ分も消えます）。\n\nよろしいですか?`)) return;
+  }
   document.getElementById('editStudentFee').value = sum;
+  flashEditFee();
+  editFeeBaseCourses = courses;   // 上書き後の基準を更新 (以後の差額反映の起点)
+  if (!courses.length) setEditNote('コースが未入力です', true);
+  else if (missing.length) setEditNote(`合計 ¥${sum.toLocaleString()} で上書き（カタログ未登録: ${missing.join('・')} は ¥0 換算 → 手動調整してください）`, true);
+  else setEditNote(`合計 ¥${sum.toLocaleString()} で上書き（設備費・割引があれば手動調整）`, false);
+}
+
+// コース変更分を月謝に「差額」で自動反映する。設備費・個別指導などの上乗せ分を保つため
+// 「合計で上書き」ではなく、追加/削除されたコースのカタログ単価だけを増減する。
+// editFeeBaseCourses = 現在の月謝額に既に織り込まれているコース集合 (= 二重カウント防止の基準)。
+let editFeeBaseCourses = [];
+function setEditNote(msg, warn) {
   const note = document.getElementById('editStudentRecalcNote');
-  if (!courses.length) note.textContent = 'コースが未入力です';
-  else if (missing.length) note.textContent = `合計 ¥${sum.toLocaleString()}（カタログ未登録: ${missing.join('・')} は ¥0 換算 → 手動調整してください）`;
-  else note.textContent = `合計 ¥${sum.toLocaleString()} を反映（設備費・割引があれば手動調整）`;
+  if (!note) return;
+  note.textContent = msg;
+  note.style.color = warn ? '#fbbf24' : '#a5b4fc';   // 警告は橙・通常は藍
+}
+function flashEditFee() {
+  const el = document.getElementById('editStudentFee');
+  if (!el) return;
+  el.classList.remove('fee-flash');
+  void el.offsetWidth;          // reflow で再アニメーションをトリガー
+  el.classList.add('fee-flash');
+}
+async function autoAdjustFeeForCourseChange() {
+  const list = await loadCoursePriceList();
+  const priceMap = {}; for (const c of list) priceMap[c.name] = c.price;
+  const newCourses = parseCoursesText(document.getElementById('editStudentCourses').value);
+  const baseSet = new Set(editFeeBaseCourses);
+  const newSet = new Set(newCourses);
+  const added = newCourses.filter(c => !baseSet.has(c));
+  const removed = editFeeBaseCourses.filter(c => !newSet.has(c));
+  if (!added.length && !removed.length) return;   // コース変化なし
+  let delta = 0; const unknown = [];
+  for (const c of added)   { if (priceMap[c] != null) delta += priceMap[c]; else unknown.push(c); }
+  for (const c of removed) { if (priceMap[c] != null) delta -= priceMap[c]; else unknown.push(c); }
+  editFeeBaseCourses = newCourses;   // 基準を更新 (二重カウント防止)
+  if (delta !== 0) {
+    const feeEl = document.getElementById('editStudentFee');
+    const cur = parseInt(feeEl.value, 10);
+    const raw = (isNaN(cur) ? 0 : cur) + delta;
+    const next = Math.max(0, raw);
+    feeEl.value = next;
+    flashEditFee();
+    if (raw < 0) {
+      // 割引等で差額がマイナス → 黙って ¥0 にせず警告 (請求 0 円事故の防止)
+      setEditNote('⚠ 月謝欄を ¥0 にしました（差額で計算するとマイナスになります）。割引・設備費を含む実額を手動でご入力ください。', true);
+    } else {
+      const parts = [];
+      for (const c of added)   if (priceMap[c] != null) parts.push(`${c} +¥${priceMap[c].toLocaleString()}`);
+      for (const c of removed) if (priceMap[c] != null) parts.push(`${c} −¥${priceMap[c].toLocaleString()}`);
+      if (unknown.length) setEditNote(`月謝欄を ¥${next.toLocaleString()} に更新（${parts.join(' / ')}）。ただし ${unknown.join('・')} は単価カタログに無いため未調整 → 手動でご確認を`, true);
+      else setEditNote(`月謝欄を ¥${next.toLocaleString()} に更新（${parts.join(' / ')}）`, false);
+    }
+  } else if (unknown.length) {
+    setEditNote(`⚠ ${unknown.join('・')} は単価カタログに無いため月謝は自動調整していません。手動でご入力ください。`, true);
+  }
 }
 
 async function saveStudentEdit() {
   const id = parseInt(document.getElementById('editStudentId').value, 10);
   const s = STATE.data.students.find(st => st.id === id);
   if (!s) { alert('生徒が見つかりません'); return; }
+  // textarea を blur せず保存した場合の取りこぼし対策 (差額が未反映なら反映)。基準追従なので冪等。
+  await autoAdjustFeeForCourseChange();
   const name = document.getElementById('editStudentName').value.trim();
   const grade = document.getElementById('editStudentGrade').value.trim();
   // 月謝: 全角数字→半角・カンマ/空白除去で「165,000」「１６５００」の取りこぼし/silent切り捨てを防ぐ
@@ -552,12 +620,16 @@ async function saveStudentEdit() {
   if (fee > 1000000) {
     if (!confirm(`月謝 ¥${fee.toLocaleString()} は通常より大きい値です。よろしいですか?`)) return;
   }
+  // 月謝 ¥0 の保存は明示確認 (差額反映で気付かず ¥0 になった場合の請求漏れ防止)
+  if (fee === 0) {
+    if (!confirm('月謝が ¥0 です。本当に 0 円でよろしいですか?\n（この生徒は請求対象から外れます。割引・設備費を含む実額がある場合は入力し直してください）')) return;
+  }
   // 月謝の桁ミス防止 (請求書 invoice は編集後 fee をそのまま請求額に使うため): 既存額と大きく乖離する場合は確認
   const oldFee = (typeof s.fee === 'number') ? s.fee : null;
   if (oldFee && oldFee > 0 && fee !== oldFee && fee <= 1000000) {
     const ratio = fee / oldFee;
     if (ratio >= 3 || ratio <= 1 / 3 || Math.abs(fee - oldFee) >= 50000) {
-      if (!confirm(`月謝を ¥${oldFee.toLocaleString()} → ¥${fee.toLocaleString()} に変更します。\n変更幅が大きいため確認します（桁ミスにご注意ください）。\n\n※ 未払い者へ「請求書(invoice)」を発行すると、この金額がそのまま請求額になります。\n\nこの金額でよろしいですか?`)) return;
+      if (!confirm(`月謝を ¥${oldFee.toLocaleString()} → ¥${fee.toLocaleString()} に変更します。\n変更幅が大きいため確認します（桁ミスや反映漏れにご注意ください）。\nコースを足した結果であればそのままで問題ありません。\n\n※ 未払い者へ「請求書(invoice)」を発行すると、この金額がそのまま請求額になります。\n\nこの金額でよろしいですか?`)) return;
     }
   }
   // 氏名変更は Stripe 照合/振込人名マッチに影響するため軽く確認
@@ -5579,9 +5651,9 @@ function setupModals() {
   const esrb = document.getElementById('editStudentResetBtn');
   if (esrb) esrb.addEventListener('click', resetStudentEdit);
   const escc = document.getElementById('editStudentClearCourses');
-  if (escc) escc.addEventListener('click', () => {
+  if (escc) escc.addEventListener('click', async () => {
     const ta = document.getElementById('editStudentCourses');
-    if (ta) { ta.value = ''; syncEditChipActive(); }
+    if (ta) { ta.value = ''; syncEditChipActive(); await autoAdjustFeeForCourseChange(); }
   });
   const esrf = document.getElementById('editStudentRecalcFee');
   if (esrf) esrf.addEventListener('click', recalcEditFeeFromCourses);

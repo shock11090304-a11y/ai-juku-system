@@ -341,6 +341,13 @@ body {
   font-weight: 600;
 }
 
+/* 2026-06-03: コース変更で月謝欄が自動更新された時の一瞬のハイライト (画面外でも気付けるよう) */
+@keyframes feeFlash {
+  0%   { background: rgba(99,102,241,0.6); }
+  100% { background: rgba(0,0,0,0.3); }
+}
+.fee-flash { animation: feeFlash 0.7s ease-out; }
+
 .status-tag {
   padding: 0.2rem 0.6rem;
   border-radius: 4px;

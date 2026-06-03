@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>塾月謝 入金管理</title>
-<link rel="stylesheet" href="style.css?v=20260603-course-edit">
+<link rel="stylesheet" href="style.css?v=20260603-fee-autoadjust">
 <!-- pdf.js (CDN・client-side PDF text 抽出用 / 2026-05-07 楽天銀行PDF取込追加) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
 </head>
@@ -761,16 +761,16 @@
         <textarea id="editStudentCourses" rows="4" placeholder="1行に1コースを入力（下のチップをクリックでも追加できます）&#10;例:&#10;中学2年&#10;英文法レベル１" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.3);color:inherit;font-size:0.95rem;font-family:inherit;resize:vertical;"></textarea>
       </label>
       <div style="display:flex;flex-direction:column;gap:6px;">
-        <span style="font-size:0.76rem;color:var(--text-muted,#9ca3af);">クリックで追加 ↓ (コース単価カタログ)</span>
+        <span style="font-size:0.76rem;color:var(--text-muted,#9ca3af);">クリックで追加/削除 ↓ (コース単価カタログ・月謝に差額が自動反映されます)</span>
         <div id="editStudentCourseChips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <button type="button" id="editStudentRecalcFee" class="btn btn-ghost btn-sm" style="font-size:0.78rem;">🧮 コースから月謝を再計算</button>
-        <span id="editStudentRecalcNote" style="font-size:0.76rem;color:var(--text-muted,#9ca3af);"></span>
+        <button type="button" id="editStudentRecalcFee" class="btn btn-ghost btn-sm" style="font-size:0.78rem;" title="月謝をコース単価の合計でゼロから入れ直します">🧮 コース合計で月謝を上書き</button>
+        <span id="editStudentRecalcNote" style="font-size:0.76rem;color:#a5b4fc;"></span>
       </div>
       <p style="margin:6px 0 0;font-size:0.76rem;color:var(--text-muted,#9ca3af);line-height:1.4;">
-        変更は <code>STATE.overrides.studentEdits</code> に保存され、クラウド同期で携帯/PC 間で共有されます。<br>
-        ※ data.json (元データ) は変更されません。月謝は設備費・個別指導など例外があるため再計算は手動です。
+        💡 コースを変更すると、その<strong>差額が月謝に自動で反映</strong>されます（設備費・個別指導などの上乗せ分はそのまま保持）。金額は手動でも調整できます。<br>
+        ※ 変更は <code>studentEdits</code> に保存・クラウド同期され、data.json (元データ) は変更されません。
       </p>
     </div>
     <!-- footer (sticky・常に表示) -->
@@ -1058,6 +1058,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="app.js?v=20260603-course-edit"></script>
+<script src="app.js?v=20260603-fee-autoadjust"></script>
 </body>
 </html>
