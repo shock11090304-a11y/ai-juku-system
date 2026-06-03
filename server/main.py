@@ -4525,11 +4525,14 @@ def student_lesson_prints(
       - subject: 数学 / 英語 / 国語 / 理科 / 社会 / 小論文 / 模試
       - level: 基礎 / 標準 / 発展 / 医学部レベル / 東大レベル
       - target_type: 授業用 / 自習用 / 演習問題集 / 模試
-      - limit: max 100, offset: pagination
+      - limit: max 500, offset: pagination
     返却: {prints: [...], total: int}
     """
+    # 🛡️ 2026-06-03: cap を 100→500 に拡大。模試ライブラリ(大学別実践模試)が 100 件を超え、
+    #   ORDER BY created_at DESC + LIMIT 100 で古い模試がリストから脱落し生徒に不可視となる
+    #   不具合を修正 (total=122 なのに 100 件しか返らず 22 件不可視)。frontend mock-exam.js も limit=500。
     _check_rate_limit_ip(request, bucket="lesson_prints_list", limit=60, window=60)
-    limit = max(1, min(int(limit or 30), 100))
+    limit = max(1, min(int(limit or 30), 500))
     offset = max(0, int(offset or 0))
 
     where_clauses = ["is_published = 1"]

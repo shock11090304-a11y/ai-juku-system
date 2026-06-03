@@ -570,7 +570,7 @@
     const wrap = document.getElementById('mePdfList');
     if (!wrap) return;
     try {
-      const res = await fetch(`${BACKEND_URL}/api/student/lesson-prints?subject=${encodeURIComponent('模試')}&limit=100`);
+      const res = await fetch(`${BACKEND_URL}/api/student/lesson-prints?subject=${encodeURIComponent('模試')}&limit=500`);
       const data = await res.json().catch(() => ({}));
       const groups = groupMockPdfs(data.prints || []);
       if (!groups.length) { wrap.innerHTML = '<p class="me-pdf-empty">PDF版の模試は準備中です。</p>'; return; }
