@@ -3247,6 +3247,7 @@ ${data}
 
   const response = await callClaude(systemPrompt, userMsg, { kind: 'diagnostic', maxTokens: 2000 });
   out.innerHTML = formatMarkdown(escapeHtml(response));
+  renderMathInNode(out); // 🔢 2026-06-04 数式文字化け横展開: AI応答の $...$ / \(...\) を KaTeX 組版
 }
 
 // ==========================================================================
@@ -3534,6 +3535,7 @@ ${level}
 
   const response = await callClaude(systemPrompt, userMsg, { kind: 'curriculum', maxTokens: 6000 });
   out.innerHTML = formatMarkdown(escapeHtml(response));
+  renderMathInNode(out); // 🔢 2026-06-04 数式文字化け横展開: AI応答の $...$ / \(...\) を KaTeX 組版
   // 「学習計画・管理」タブが取込で参照する最終生成結果を保存
   window._lastCurriculumMarkdown = response;
   try { localStorage.setItem('ai_juku_last_curriculum', response); } catch {}
@@ -6183,6 +6185,7 @@ ${answerImg ? '## 📝 読み取った答案（確認用）\n[画像から読み
       model: MODEL_STANDARD,
     });
     out.innerHTML = formatMarkdown(escapeHtml(response));
+  renderMathInNode(out); // 🔢 2026-06-04 数式文字化け横展開: AI応答の $...$ / \(...\) を KaTeX 組版
     return;
   }
 
@@ -6200,6 +6203,7 @@ ${answer}
 
   const response = await callClaude(systemPrompt, userMsg, { kind: 'essay', maxTokens: 3500 });
   out.innerHTML = formatMarkdown(escapeHtml(response));
+  renderMathInNode(out); // 🔢 2026-06-04 数式文字化け横展開: AI応答の $...$ / \(...\) を KaTeX 組版
 }
 
 // 英作文: 問題・答案 画像添付ハンドラ
@@ -6288,6 +6292,7 @@ AIへの質問数: 47件
 
   const response = await callClaude(systemPrompt, userMsg, { kind: 'parent', maxTokens: 2000 });
   out.innerHTML = formatMarkdown(escapeHtml(response));
+  renderMathInNode(out); // 🔢 2026-06-04 数式文字化け横展開: AI応答の $...$ / \(...\) を KaTeX 組版
 }
 
 // ==========================================================================
@@ -6356,6 +6361,7 @@ async function generateSessionPrep() {
 
   const response = await callClaude(systemPrompt, userMsg, { kind: 'prep', maxTokens: 1500 });
   out.innerHTML = formatMarkdown(escapeHtml(response));
+  renderMathInNode(out); // 🔢 2026-06-04 数式文字化け横展開: AI応答の $...$ / \(...\) を KaTeX 組版
 }
 
 // ==========================================================================
@@ -6870,6 +6876,7 @@ Please evaluate using text-only transcript. Flag any transcription artifacts tha
   }
 
   feedbackContent.innerHTML = formatMarkdown(escapeHtml(response));
+  renderMathInNode(feedbackContent); // 🔢 2026-06-04 数式文字化け横展開
 }
 
 // ==========================================================================
