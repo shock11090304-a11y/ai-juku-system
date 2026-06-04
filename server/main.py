@@ -24202,7 +24202,7 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
     # status='paid' はStripeトライアル中、'trial'はまだ未決済のトライアル
     # 継続意思のない (= 一度もログインしていない) 顧客はスキップ (塾長指示 2026-05-06)
     c.execute(
-        """SELECT id, name, email, trial_end, status, last_login_at FROM students
+        """SELECT id, name, email, trial_end, status, last_login_at, course FROM students
            WHERE status IN ('trial','paid') AND email IS NOT NULL
              AND trial_end IS NOT NULL
              AND trial_end > ? AND trial_end <= ?""",
@@ -24214,8 +24214,20 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
     skipped = 0
     skipped_silent = 0
     skipped_silent_ids = []
+    skipped_course = 0
+    skipped_course_ids = []
     preview = []
     for row in candidates:
+        # 国公立難関大学コース ('kokuritsu_nankan') は塾の通塾生 = SaaS 体験課金 funnel の対象外。
+        # 体験終了リマインド (継続登録の案内) を送らない (塾長指示 2026-06-04・早川真央さん事例)。
+        try:
+            _course = row["course"]
+        except (KeyError, IndexError):
+            _course = None
+        if _course == "kokuritsu_nankan":
+            skipped_course += 1
+            skipped_course_ids.append(row["id"])
+            continue
         # サイレント顧客スキップ: 一度もログインしていない = 継続の連絡がない顧客 (塾長指示 2026-05-06)
         try:
             _last_login = row["last_login_at"]
@@ -24266,9 +24278,21 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
             conn.commit()
         except Exception as _e:
             log.warning(f"[trial-reminders] silent skip audit failed: {_e}")
+    # 国公立難関大学コース skip の audit (塾長指示 2026-06-04)
+    if skipped_course > 0 and not dry_run:
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("trial_reminder_course_skipped",
+                 json.dumps({"count": skipped_course, "student_ids": skipped_course_ids[:50], "reason": "course=kokuritsu_nankan (通塾生・体験funnel対象外)"}, ensure_ascii=False),
+                 "cron")
+            )
+            conn.commit()
+        except Exception as _e:
+            log.warning(f"[trial-reminders] course skip audit failed: {_e}")
     conn.commit()
     conn.close()
-    return {"sent": sent, "skipped": skipped, "skipped_silent": skipped_silent, "candidates": len(candidates), "preview": preview if dry_run else None}
+    return {"sent": sent, "skipped": skipped, "skipped_silent": skipped_silent, "skipped_course": skipped_course, "candidates": len(candidates), "preview": preview if dry_run else None}
 
 
 @app.post("/api/cron/trial-nurture")
