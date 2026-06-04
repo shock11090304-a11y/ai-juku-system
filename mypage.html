@@ -14,7 +14,24 @@
   <link rel="stylesheet" href="mypage.css?v=20260529-past-due-grace">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="auth-guard.js?v=20260529-past-due-grace"></script>
+  <!-- 🧒 塾長プレビュー (2026-06-04): ?preview_mode= の時、このタブでのみ生徒トークン/識別キーを getItem で隠す。
+       localStorage の実体は消さない (setItem/removeItem 不介入) ので塾長の session は破壊しない。
+       これで全ての token ベース fetch が「未ログイン」扱いになり (if(!token)return or 401)、getCurrentStudent も
+       ゲストに落ちる → 実生徒データ (氏名/メール/保護者メール/課金/紹介/AI質問数/学習記録等) が一切表示されない。
+       個別ウィジェットのゲートに依存しない単一防御 (将来の新規 fetch 経路も自動的に塞ぐ)。auth-guard より前に実行。 -->
+  <script>
+    (function () {
+      try {
+        var _pm = new URLSearchParams(window.location.search).get('preview_mode');
+        if (_pm === 'chugaku' || _pm === 'shougaku' || _pm === 'kosei') {
+          var _origGet = localStorage.getItem.bind(localStorage);
+          var _hidden = { 'ai_juku_session_token': 1, 'ai_juku_session_student': 1, 'ai_juku_current_student': 1, 'ai_juku_students': 1 };
+          localStorage.getItem = function (k) { return _hidden[k] ? null : _origGet(k); };
+        }
+      } catch (_e) { /* 失敗時は通常動作 */ }
+    })();
+  </script>
+  <script src="auth-guard.js?v=20260604-preview-guard"></script>
 </head>
 <body class="mypage-body">
   <div class="bg-gradient"></div>
@@ -53,6 +70,7 @@
       body.aj-mode-chugaku #studentModeBadge { background: rgba(16,185,129,0.22) !important; border-color: rgba(16,185,129,0.5) !important; color: #6ee7b7 !important; }
       body.aj-mode-shougaku #studentModeBadge { background: rgba(245,158,11,0.22) !important; border-color: rgba(245,158,11,0.5) !important; color: #fcd34d !important; }
     </style>
+    <section id="previewBanner" style="display:none; margin:0 0 1rem 0; padding:0.7rem 1rem; background:linear-gradient(90deg, rgba(99,102,241,0.18), rgba(99,102,241,0.05)); border:1px solid rgba(99,102,241,0.45); border-radius:12px; color:#c7d2fe; font-size:0.82rem; font-weight:700;" role="status">👁 プレビュー表示中｜実際の生徒データは表示されません（塾長の見た目確認用）</section>
     <section id="juniorModeHero" style="display:none;" role="region" aria-label="学年モードのご案内">
       <div class="jmh-title" id="jmhTitle"></div>
       <p class="jmh-sub" id="jmhSub"></p>
@@ -1245,7 +1263,7 @@
   <script src="exam-prep.js?v=20260529-past-due-grace"></script>
   <script src="referral-program.js?v=20260529-past-due-grace"></script>
   <script src="student-mode.js?v=20260604-junior-preview"></script>
-  <script src="mypage.js?v=20260530-weekday-minutes"></script>
+  <script src="mypage.js?v=20260604-preview"></script>
   <script>
     // ウィジェット初期描画
     (function() {
@@ -1254,12 +1272,17 @@
         const student = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null');
         const studentId = student ? student.id : 'guest';
         // 🧒 中学生モード (2026-06-04): 学年でモード判定 → body class + バッジ + 専用ヒーロー。kosei(高校生) は現行どおり。
-        let _ajMode = 'kosei';
+        let _ajMode = 'kosei', _isPreview = false;
         try {
           _ajMode = (typeof window.ajCurrentMode === 'function') ? window.ajCurrentMode() : 'kosei';
           const _meta = (window.AJ_MODE_META && window.AJ_MODE_META[_ajMode]) || null;
           document.body.classList.remove('aj-mode-kosei', 'aj-mode-chugaku', 'aj-mode-shougaku');
           document.body.classList.add('aj-mode-' + _ajMode);
+          // 👁 塾長プレビュー時のみ「実データは表示されません」バナーを出す
+          _isPreview = (typeof window.ajPreviewMode === 'function') && !!window.ajPreviewMode();
+          if (_isPreview) {
+            const _pb = document.getElementById('previewBanner'); if (_pb) _pb.style.display = '';
+          }
           const _badge = document.getElementById('studentModeBadge');
           if (_badge && _meta && _ajMode !== 'kosei') {
             _badge.textContent = _meta.emoji + ' ' + _meta.label;
@@ -1281,17 +1304,21 @@
             }
           }
         } catch (_e) { /* モード判定失敗時は現行表示 */ }
-        LB.renderTodayReview('lbTodayReview', studentId);
-        LB.renderStudyTimeWidget('lbStudyTimeWidget', studentId);
-        ExamPrep.renderUpcomingWidget('examPrepWidget');
-        ReferralProgram.renderReferralWidget('referralWidget', student);
-        renderUsageQuotaWidget('usageQuotaWidget');
-        renderCurriculumWeekWidget('curriculumWeekWidget');
-        renderVocabSrsWidget('vocabSrsWidget', studentId);
-        renderLessonPrints(student); // 📚 2026-05-26 塾長指示「配布プリント全自動」(モード絞り込み内蔵)
-        // 🧒 中学生モード (2026-06-04): 大学受験オリエンテッドなウィジェットは高校生(kosei)のみ表示。
+        // 🧒 塾長プレビュー (2026-06-04): 実生徒データを叩くウィジェットは全てスキップ。
+        //   バナー「実データは表示されません」を厳守 (同一端末に生徒 token があっても他生徒データを出さない)。
+        if (!_isPreview) {
+          LB.renderTodayReview('lbTodayReview', studentId);
+          LB.renderStudyTimeWidget('lbStudyTimeWidget', studentId);
+          ExamPrep.renderUpcomingWidget('examPrepWidget');
+          ReferralProgram.renderReferralWidget('referralWidget', student);
+          renderUsageQuotaWidget('usageQuotaWidget');
+          renderCurriculumWeekWidget('curriculumWeekWidget');
+          renderVocabSrsWidget('vocabSrsWidget', studentId);
+        }
+        renderLessonPrints(student); // 📚 配布プリント (公開カタログ・モード絞り込み・プレビューでも表示)
+        // 🧒 中学生モード (2026-06-04): 大学受験オリエンテッドなウィジェットは高校生(kosei)のみ表示。プレビューでは出さない。
         //   中学生/小学生では大学レベルの推薦・志望大学合格判定を出さない(専用コンテンツ拡充までゲート)。
-        if (_ajMode === 'kosei') {
+        if (_ajMode === 'kosei' && !_isPreview) {
           renderWeaknessTop3(student); // 🎯 2026-05-13 塾長指示「個別問題推薦」(大学受験プール)
           renderWeeklyWorksheet(student); // 📅 2026-05-22 塾長指示「週次弱点プリント」
           renderAdmissionLikelihood(student); // 🎯 2026-05-26 塾長指示「AI 合格判定ダッシュボード」(志望大学)
@@ -1969,7 +1996,7 @@
         if (!goalBlock || !goalList) return;
         if (!student || !student.id) { goalBlock.style.display = 'none'; return; }
         // 🧒 中学生モード (2026-06-04): 志望大学ベースの推薦は高校生(大学受験)モードのみ表示。中学生/小学生では非表示。
-        if (((typeof window.ajCurrentMode === 'function') ? window.ajCurrentMode() : 'kosei') !== 'kosei') {
+        if (((typeof window.ajCurrentMode === 'function') ? window.ajCurrentMode() : 'kosei') !== 'kosei' || (typeof window.ajPreviewMode === 'function' && window.ajPreviewMode())) {
           goalBlock.style.display = 'none';
           const _ub2 = document.getElementById('lessonPrintsByUniv');
           if (_ub2) _ub2.style.display = 'none';
@@ -2037,7 +2064,7 @@
         }
         // 🧒 中学生モード (2026-06-04): 弱点ベース推薦は大学受験(高校生)モードのみ表示。
         //   recommended API は target_grade を返さないため、中学生/小学生では非表示にして大学レベル推薦の流入を防ぐ。
-        if (((typeof window.ajCurrentMode === 'function') ? window.ajCurrentMode() : 'kosei') !== 'kosei') {
+        if (((typeof window.ajCurrentMode === 'function') ? window.ajCurrentMode() : 'kosei') !== 'kosei' || (typeof window.ajPreviewMode === 'function' && window.ajPreviewMode())) {
           if (recommendedBlock) recommendedBlock.style.display = 'none';
           return;
         }

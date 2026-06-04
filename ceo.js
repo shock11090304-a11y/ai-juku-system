@@ -809,6 +809,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const mode = (sel === 'chugaku' || sel === 'shougaku') ? sel : 'chugaku';
     window.open('mock-exam.html?preview_mode=' + encodeURIComponent(mode), '_blank', 'noopener');
   });
+  // 🧒 マイページ プレビュー (2026-06-04): 選択中モードで mypage を別タブ表示 (実生徒不要・実データ非表示)。
+  const _pvMyBtn = document.getElementById('previewMypageBtn');
+  if (_pvMyBtn) _pvMyBtn.addEventListener('click', () => {
+    const sel = (document.getElementById('rosterGradeMode') || {}).value || 'chugaku';
+    const mode = (sel === 'chugaku' || sel === 'shougaku') ? sel : 'chugaku';
+    window.open('mypage.html?preview_mode=' + encodeURIComponent(mode), '_blank', 'noopener');
+  });
 
   document.querySelectorAll('.chart-toggle').forEach(btn => {
     btn.addEventListener('click', () => {

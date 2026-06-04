@@ -67,6 +67,13 @@
    * セッションを破棄してログインへ誘導する。
    */
   async function enforceAuth() {
+    // 🧒 塾長プレビュー (2026-06-04): ?preview_mode=chugaku|shougaku|kosei が付いていれば認証を要求せず
+    //   器のみ描画する (実データは backend が token 無しリクエストを全て 401 で弾くため漏洩ゼロ)。
+    //   ※ student-mode.js は未読込の可能性があるため、ここで自前ホワイトリスト判定する。
+    try {
+      const _pm = new URLSearchParams(window.location.search).get('preview_mode');
+      if (_pm === 'chugaku' || _pm === 'shougaku' || _pm === 'kosei') return;
+    } catch (_e) { /* URL 解析失敗時は通常の認証フローへ */ }
     const token = getSessionToken();
     if (!token || isLocalExpired()) {
       redirectToLogin('no_session');

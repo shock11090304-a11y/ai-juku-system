@@ -272,6 +272,8 @@ function escapeHtml(s) {
 // Activity Tracking (for alert system)
 // ==========================================================================
 function logActivity(type) {
+  // 🧒 塾長プレビュー (2026-06-04): プレビュー閲覧を生徒の活動ログに記録しない
+  if (typeof window.ajPreviewMode === 'function' && window.ajPreviewMode()) return;
   const student = getCurrentStudent();
   if (!student.id) return;
   const BACKEND = window.location.hostname === 'localhost' && window.location.port === '8090'
@@ -632,6 +634,12 @@ function _slFormatErrDetail(detail) {
 }
 
 async function slApiFetch(path, options = {}) {
+  // 🧒 塾長プレビュー (2026-06-04): ?preview_mode= 中は実 API を一切叩かない (no-op)。
+  //   実生徒データを表示せず、session token も触らない (401→clearSession による session 破壊を防止)。
+  //   既存の throw 失敗パスに合流し、各 widget の try/catch が空表示で耐える。
+  if (typeof window.ajPreviewMode === 'function' && window.ajPreviewMode()) {
+    const e = new Error('プレビュー表示中のためデータは取得しません'); e.status = 0; e.preview = true; throw e;
+  }
   const token = _slToken();
   const headers = Object.assign({'Content-Type': 'application/json'}, options.headers || {});
   if (token) headers['Authorization'] = 'Bearer ' + token;
