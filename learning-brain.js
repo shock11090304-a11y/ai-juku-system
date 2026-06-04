@@ -399,6 +399,31 @@
   // ==========================================================================
   // UI: 「今日の復習」レンダラー (mypage に埋め込む想定)
   // ==========================================================================
+  // 🧮 KaTeX 自動組版 (CDN defer load 対応で未ロード時はリトライ・app.js/english-exam.js と同方式)。
+  //   delimiters は $$ / \[ / \( のみ (単一 $ は英語カードの通貨 $ 誤組版を避けるため除外。理系カードは \( 使用)。
+  function _lbApplyKatex(rootEl) {
+    if (!rootEl) return;
+    const run = () => {
+      if (typeof window.renderMathInElement !== 'function') return false;
+      try {
+        window.renderMathInElement(rootEl, {
+          delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '\\[', right: '\\]', display: true },
+            { left: '\\(', right: '\\)', display: false },
+          ],
+          throwOnError: false,
+          errorColor: '#f87171',
+          strict: 'ignore',
+        });
+      } catch (e) { console.warn('[LB katex] render failed', e); }
+      return true;
+    };
+    if (run()) return;
+    let tries = 0;
+    const id = setInterval(() => { tries++; if (run() || tries > 20) clearInterval(id); }, 200);
+  }
+
   function renderTodayReview(containerId, studentId) {
     const el = document.getElementById(containerId);
     if (!el) return;
@@ -582,6 +607,9 @@
       ${stumblingHtml}
       ${dueHtml}
     `;
+    // 🧮 2026-06-04 文字化け横展開: 理系カード(数学/物理/化学/生物)の LaTeX \(..\)/\[..\]/$$ を KaTeX 組版。
+    //   ※ 単一 $ は英語カードの通貨表記($840 等)誤組版を避けるため delimiter に入れない (理系は \( を使う)。
+    _lbApplyKatex(el);
     // ✅ 2026-05-22 致命 fix: data-* + event 委任で click ハンドラを必ず attach
     // (旧 inline onclick は問題文の ' / " で JS が壊れて 79 件全カードが silent fail していた)
     if (!el.dataset.lbHandlerAttached) {

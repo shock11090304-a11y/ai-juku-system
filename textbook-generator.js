@@ -1171,13 +1171,18 @@ function renderView(view) {
     if (typeof renderMathInElement === 'function') {
       try {
         renderMathInElement(el, {
+          // 🔢 2026-06-04 文字化け修正: pool 教材 (batch29 等・数学C/物理/生物) は単一 $..$ で数式を多用するが
+          //   従来 delimiter は \( / \[ / $$ のみで単一 $ を拾えず生 LaTeX 表示されていた。
+          //   app.js / ai-tutor-photo.html と同構成に統一 ($$ を $ より先に並べ display を優先マッチ・\( 系pool も維持)。
           delimiters: [
-            { left: '\\(', right: '\\)', display: false },
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false },
             { left: '\\[', right: '\\]', display: true },
-            { left: '$$', right: '$$', display: true }
+            { left: '\\(', right: '\\)', display: false },
           ],
           throwOnError: false,
-          errorColor: '#cc0000',
+          errorColor: '#fca5a5',
+          strict: 'ignore',
         });
       } catch (e) {
         console.warn('[KaTeX] レンダリング失敗:', e);

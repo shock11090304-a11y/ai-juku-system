@@ -14,6 +14,10 @@
   <link rel="stylesheet" href="mypage.css?v=20260529-past-due-grace">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- 🧮 KaTeX: 今日の復習(SRS)カードの理系 LaTeX \(..\)/\[..\]/$$ を描画 (2026-06-04・index.html と同構成) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
   <!-- 🧒 塾長プレビュー (2026-06-04): ?preview_mode= の時、このタブでのみ生徒トークン/識別キーを getItem で隠す。
        localStorage の実体は消さない (setItem/removeItem 不介入) ので塾長の session は破壊しない。
        これで全ての token ベース fetch が「未ログイン」扱いになり (if(!token)return or 401)、getCurrentStudent も
@@ -1259,7 +1263,7 @@
     <p>© 2026 AIコーチング | Mypage v1.0</p>
   </footer>
 
-  <script src="learning-brain.js?v=20260529-past-due-grace"></script>
+  <script src="learning-brain.js?v=20260604-katex-cards"></script>
   <script src="exam-prep.js?v=20260529-past-due-grace"></script>
   <script src="referral-program.js?v=20260529-past-due-grace"></script>
   <script src="student-mode.js?v=20260604-junior-preview"></script>
