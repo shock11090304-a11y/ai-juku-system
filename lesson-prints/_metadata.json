@@ -11,7 +11,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 10,
-      "file_size_kb": 636,
+      "file_size_kb": 582,
       "sub_question_topics": "[{\"daimon\": 5, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 5, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 5, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-05-25_授業テキスト_現代文評論の読み方.pdf"
     },
@@ -31,6 +31,36 @@
       "file_path": "/lesson-prints/2026-05-25_授業テキスト_現代文評論の読み方_answers.pdf"
     },
     {
+      "title": "授業テキスト 現代文評論の読み方 (本番試験版)",
+      "subject": "国語",
+      "topic": "授業テキスト_現代文評論の読み方",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "本番試験版",
+      "target_university": null,
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 10,
+      "file_size_kb": 582,
+      "sub_question_topics": "[{\"daimon\": 5, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 5, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 5, \"sub_q\": 3, \"topic\": \"未分類\"}]",
+      "file_path": "/lesson-prints/2026-05-25_授業テキスト_現代文評論の読み方_問題.pdf"
+    },
+    {
+      "title": "授業テキスト 現代文評論の読み方 (解答解説)",
+      "subject": "国語",
+      "topic": "授業テキスト_現代文評論の読み方",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "解答解説",
+      "target_university": null,
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 2,
+      "file_size_kb": 241,
+      "sub_question_topics": "[{\"daimon\": 5, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 5, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 5, \"sub_q\": 3, \"topic\": \"未分類\"}]",
+      "file_path": "/lesson-prints/2026-05-25_授業テキスト_現代文評論の読み方_解説.pdf"
+    },
+    {
       "title": "第1回模試 国語",
       "subject": "国語",
       "topic": "第1回模試_国語",
@@ -41,7 +71,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 31,
-      "file_size_kb": 1178,
+      "file_size_kb": 1151,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 5, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 5, \"topic\": \"未分類\"}, {\"daimon\": 4, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 4, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 4, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 4, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 4, \"sub_q\": 5, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-05-25_第1回模試_国語.pdf"
     },
@@ -71,7 +101,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 31,
-      "file_size_kb": 1177,
+      "file_size_kb": 1151,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 5, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 5, \"topic\": \"未分類\"}, {\"daimon\": 4, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 4, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 4, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 4, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 4, \"sub_q\": 5, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-05-25_第1回模試_国語_問題.pdf"
     },
@@ -161,7 +191,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 9,
-      "file_size_kb": 555,
+      "file_size_kb": 514,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 5, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 6, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-05-26_京都大学_国語_過去問風_現代文.pdf"
     },
@@ -191,7 +221,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 9,
-      "file_size_kb": 555,
+      "file_size_kb": 514,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 5, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 6, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-05-26_京都大学_国語_過去問風_現代文_問題.pdf"
     },
@@ -251,7 +281,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 9,
-      "file_size_kb": 543,
+      "file_size_kb": 505,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 5, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 6, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-05-26_早稲田大学_国語_過去問風_現代文.pdf"
     },
@@ -269,6 +299,36 @@
       "file_size_kb": 356,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 5, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 6, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-05-26_早稲田大学_国語_過去問風_現代文_answers.pdf"
+    },
+    {
+      "title": "早稲田大学 国語 過去問風 現代文 (本番試験版)",
+      "subject": "国語",
+      "topic": "早稲田大学_国語_過去問風_現代文",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "本番試験版",
+      "target_university": "早稲田大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 9,
+      "file_size_kb": 505,
+      "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 5, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 6, \"topic\": \"未分類\"}]",
+      "file_path": "/lesson-prints/2026-05-26_早稲田大学_国語_過去問風_現代文_問題.pdf"
+    },
+    {
+      "title": "早稲田大学 国語 過去問風 現代文 (解答解説)",
+      "subject": "国語",
+      "topic": "早稲田大学_国語_過去問風_現代文",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "解答解説",
+      "target_university": "早稲田大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 4,
+      "file_size_kb": 356,
+      "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 5, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 6, \"topic\": \"未分類\"}]",
+      "file_path": "/lesson-prints/2026-05-26_早稲田大学_国語_過去問風_現代文_解説.pdf"
     },
     {
       "title": "明治大学 国語 過去問風 現代文",
@@ -341,7 +401,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 17,
-      "file_size_kb": 986,
+      "file_size_kb": 917,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-05-27_一橋国語_現代文経済思想市場道徳-政治哲学リベラリズム-情報社会論_本番水準.pdf"
     },
@@ -361,6 +421,36 @@
       "file_path": "/lesson-prints/2026-05-27_一橋国語_現代文経済思想市場道徳-政治哲学リベラリズム-情報社会論_本番水準_answers.pdf"
     },
     {
+      "title": "一橋国語 現代文経済思想市場道徳-政治哲学リベラリズム-情報社会論 本番水準 (本番試験版)",
+      "subject": "国語",
+      "topic": "一橋国語_現代文経済思想市場道徳-政治哲学リベラリズム-情報社会論_本番水準",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "本番試験版",
+      "target_university": "一橋大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 17,
+      "file_size_kb": 917,
+      "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
+      "file_path": "/lesson-prints/2026-05-27_一橋国語_現代文経済思想市場道徳-政治哲学リベラリズム-情報社会論_本番水準_問題.pdf"
+    },
+    {
+      "title": "一橋国語 現代文経済思想市場道徳-政治哲学リベラリズム-情報社会論 本番水準 (解答解説)",
+      "subject": "国語",
+      "topic": "一橋国語_現代文経済思想市場道徳-政治哲学リベラリズム-情報社会論_本番水準",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "解答解説",
+      "target_university": "一橋大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 10,
+      "file_size_kb": 647,
+      "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
+      "file_path": "/lesson-prints/2026-05-27_一橋国語_現代文経済思想市場道徳-政治哲学リベラリズム-情報社会論_本番水準_解説.pdf"
+    },
+    {
       "title": "中央国語 現代文記述-現代文評論民事訴訟-現代文内容一致 本番水準",
       "subject": "国語",
       "topic": "中央国語_現代文記述-現代文評論民事訴訟-現代文内容一致_本番水準",
@@ -371,7 +461,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 16,
-      "file_size_kb": 842,
+      "file_size_kb": 773,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-05-27_中央国語_現代文記述-現代文評論民事訴訟-現代文内容一致_本番水準.pdf"
     },
@@ -391,6 +481,36 @@
       "file_path": "/lesson-prints/2026-05-27_中央国語_現代文記述-現代文評論民事訴訟-現代文内容一致_本番水準_answers.pdf"
     },
     {
+      "title": "中央国語 現代文記述-現代文評論民事訴訟-現代文内容一致 本番水準 (本番試験版)",
+      "subject": "国語",
+      "topic": "中央国語_現代文記述-現代文評論民事訴訟-現代文内容一致_本番水準",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "本番試験版",
+      "target_university": null,
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 16,
+      "file_size_kb": 773,
+      "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
+      "file_path": "/lesson-prints/2026-05-27_中央国語_現代文記述-現代文評論民事訴訟-現代文内容一致_本番水準_問題.pdf"
+    },
+    {
+      "title": "中央国語 現代文記述-現代文評論民事訴訟-現代文内容一致 本番水準 (解答解説)",
+      "subject": "国語",
+      "topic": "中央国語_現代文記述-現代文評論民事訴訟-現代文内容一致_本番水準",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "解答解説",
+      "target_university": null,
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 7,
+      "file_size_kb": 580,
+      "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
+      "file_path": "/lesson-prints/2026-05-27_中央国語_現代文記述-現代文評論民事訴訟-現代文内容一致_本番水準_解説.pdf"
+    },
+    {
       "title": "学習院国語 現代文評論-現代文経済評論-古文係り結び 本番水準",
       "subject": "国語",
       "topic": "学習院国語_現代文評論-現代文経済評論-古文係り結び_本番水準",
@@ -401,7 +521,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 15,
-      "file_size_kb": 835,
+      "file_size_kb": 780,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-05-27_学習院国語_現代文評論-現代文経済評論-古文係り結び_本番水準.pdf"
     },
@@ -421,6 +541,36 @@
       "file_path": "/lesson-prints/2026-05-27_学習院国語_現代文評論-現代文経済評論-古文係り結び_本番水準_answers.pdf"
     },
     {
+      "title": "学習院国語 現代文評論-現代文経済評論-古文係り結び 本番水準 (本番試験版)",
+      "subject": "国語",
+      "topic": "学習院国語_現代文評論-現代文経済評論-古文係り結び_本番水準",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "本番試験版",
+      "target_university": null,
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 15,
+      "file_size_kb": 780,
+      "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
+      "file_path": "/lesson-prints/2026-05-27_学習院国語_現代文評論-現代文経済評論-古文係り結び_本番水準_問題.pdf"
+    },
+    {
+      "title": "学習院国語 現代文評論-現代文経済評論-古文係り結び 本番水準 (解答解説)",
+      "subject": "国語",
+      "topic": "学習院国語_現代文評論-現代文経済評論-古文係り結び_本番水準",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "解答解説",
+      "target_university": null,
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 11,
+      "file_size_kb": 628,
+      "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
+      "file_path": "/lesson-prints/2026-05-27_学習院国語_現代文評論-現代文経済評論-古文係り結び_本番水準_解説.pdf"
+    },
+    {
       "title": "立教国語 古文擬古文中世説話-現代文翻訳原典-古文解釈 本番水準",
       "subject": "国語",
       "topic": "立教国語_古文擬古文中世説話-現代文翻訳原典-古文解釈_本番水準",
@@ -431,7 +581,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 15,
-      "file_size_kb": 869,
+      "file_size_kb": 816,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-05-27_立教国語_古文擬古文中世説話-現代文翻訳原典-古文解釈_本番水準.pdf"
     },
@@ -451,6 +601,36 @@
       "file_path": "/lesson-prints/2026-05-27_立教国語_古文擬古文中世説話-現代文翻訳原典-古文解釈_本番水準_answers.pdf"
     },
     {
+      "title": "立教国語 古文擬古文中世説話-現代文翻訳原典-古文解釈 本番水準 (本番試験版)",
+      "subject": "国語",
+      "topic": "立教国語_古文擬古文中世説話-現代文翻訳原典-古文解釈_本番水準",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "本番試験版",
+      "target_university": null,
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 15,
+      "file_size_kb": 816,
+      "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
+      "file_path": "/lesson-prints/2026-05-27_立教国語_古文擬古文中世説話-現代文翻訳原典-古文解釈_本番水準_問題.pdf"
+    },
+    {
+      "title": "立教国語 古文擬古文中世説話-現代文翻訳原典-古文解釈 本番水準 (解答解説)",
+      "subject": "国語",
+      "topic": "立教国語_古文擬古文中世説話-現代文翻訳原典-古文解釈_本番水準",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "解答解説",
+      "target_university": null,
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 10,
+      "file_size_kb": 658,
+      "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
+      "file_path": "/lesson-prints/2026-05-27_立教国語_古文擬古文中世説話-現代文翻訳原典-古文解釈_本番水準_解説.pdf"
+    },
+    {
       "title": "青学国語 現代文評論内容一致-記憶と記録-古文平安随筆 本番水準",
       "subject": "国語",
       "topic": "青学国語_現代文評論内容一致-記憶と記録-古文平安随筆_本番水準",
@@ -461,7 +641,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 16,
-      "file_size_kb": 867,
+      "file_size_kb": 810,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-05-27_青学国語_現代文評論内容一致-記憶と記録-古文平安随筆_本番水準.pdf"
     },
@@ -479,6 +659,36 @@
       "file_size_kb": 651,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-05-27_青学国語_現代文評論内容一致-記憶と記録-古文平安随筆_本番水準_answers.pdf"
+    },
+    {
+      "title": "青学国語 現代文評論内容一致-記憶と記録-古文平安随筆 本番水準 (本番試験版)",
+      "subject": "国語",
+      "topic": "青学国語_現代文評論内容一致-記憶と記録-古文平安随筆_本番水準",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "本番試験版",
+      "target_university": "青山学院大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 16,
+      "file_size_kb": 810,
+      "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
+      "file_path": "/lesson-prints/2026-05-27_青学国語_現代文評論内容一致-記憶と記録-古文平安随筆_本番水準_問題.pdf"
+    },
+    {
+      "title": "青学国語 現代文評論内容一致-記憶と記録-古文平安随筆 本番水準 (解答解説)",
+      "subject": "国語",
+      "topic": "青学国語_現代文評論内容一致-記憶と記録-古文平安随筆_本番水準",
+      "level": "標準",
+      "target_grade": "高校生",
+      "target_type": "解答解説",
+      "target_university": "青山学院大学",
+      "video_url": null,
+      "video_duration_sec": 0,
+      "pages": 11,
+      "file_size_kb": 651,
+      "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
+      "file_path": "/lesson-prints/2026-05-27_青学国語_現代文評論内容一致-記憶と記録-古文平安随筆_本番水準_解説.pdf"
     },
     {
       "title": "共通テスト国語 評論-小説-古文-漢文 本番水準",
@@ -8501,7 +8711,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 10,
-      "file_size_kb": 738,
+      "file_size_kb": 687,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"漢字 読み\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"現代文 評論 問題提起の意図\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"現代文 評論 対比の役割\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"現代文 評論 理由説明\"}, {\"daimon\": 1, \"sub_q\": 5, \"topic\": \"現代文 評論 理由説明\"}, {\"daimon\": 1, \"sub_q\": 6, \"topic\": \"現代文 評論 主旨\"}]",
       "file_path": "/lesson-prints/2026-06-02_共通テスト_国語_現代文_評論_贈与と交換_本番水準_問題.pdf"
     },
@@ -8531,7 +8741,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 18,
-      "file_size_kb": 964,
+      "file_size_kb": 916,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-02_東大実践模試_国語_問題.pdf"
     },
@@ -8561,7 +8771,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 15,
-      "file_size_kb": 835,
+      "file_size_kb": 793,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_一橋実践模試_国語_問題.pdf"
     },
@@ -8591,7 +8801,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 18,
-      "file_size_kb": 916,
+      "file_size_kb": 872,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_中央実践模試_国語_問題.pdf"
     },
@@ -8621,7 +8831,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 17,
-      "file_size_kb": 919,
+      "file_size_kb": 871,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_九大実践模試_国語_問題.pdf"
     },
@@ -8651,7 +8861,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 18,
-      "file_size_kb": 942,
+      "file_size_kb": 895,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_京大実践模試_国語_問題.pdf"
     },
@@ -8681,7 +8891,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 26,
-      "file_size_kb": 763,
+      "file_size_kb": 718,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 5, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 5, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 4, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 4, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 4, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 4, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 4, \"sub_q\": 5, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_公立高校入試模試_国語_問題.pdf"
     },
@@ -8741,7 +8951,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 17,
-      "file_size_kb": 976,
+      "file_size_kb": 924,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_北大実践模試_国語_問題.pdf"
     },
@@ -8771,7 +8981,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 18,
-      "file_size_kb": 951,
+      "file_size_kb": 899,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_千葉大実践模試_国語_問題.pdf"
     },
@@ -8801,7 +9011,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 18,
-      "file_size_kb": 902,
+      "file_size_kb": 861,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_同志社実践模試_国語_問題.pdf"
     },
@@ -8831,7 +9041,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 18,
-      "file_size_kb": 927,
+      "file_size_kb": 877,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_名大実践模試_国語_問題.pdf"
     },
@@ -8861,7 +9071,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 19,
-      "file_size_kb": 874,
+      "file_size_kb": 827,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_埼玉大実践模試_国語_問題.pdf"
     },
@@ -8891,7 +9101,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 18,
-      "file_size_kb": 879,
+      "file_size_kb": 829,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_岡山大実践模試_国語_問題.pdf"
     },
@@ -8921,7 +9131,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 17,
-      "file_size_kb": 870,
+      "file_size_kb": 831,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_新潟大実践模試_国語_問題.pdf"
     },
@@ -8951,7 +9161,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 18,
-      "file_size_kb": 892,
+      "file_size_kb": 848,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_早稲田実践模試_国語_問題.pdf"
     },
@@ -8981,7 +9191,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 20,
-      "file_size_kb": 925,
+      "file_size_kb": 874,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 5, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_明治実践模試_国語_問題.pdf"
     },
@@ -8996,7 +9206,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 11,
-      "file_size_kb": 638,
+      "file_size_kb": 639,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 5, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_明治実践模試_国語_解説.pdf"
     },
@@ -9011,7 +9221,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 17,
-      "file_size_kb": 924,
+      "file_size_kb": 879,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_東北大実践模試_国語_問題.pdf"
     },
@@ -9041,7 +9251,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 18,
-      "file_size_kb": 931,
+      "file_size_kb": 883,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_横国大実践模試_国語_問題.pdf"
     },
@@ -9071,7 +9281,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 20,
-      "file_size_kb": 1007,
+      "file_size_kb": 954,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 5, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_法政実践模試_国語_問題.pdf"
     },
@@ -9101,7 +9311,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 18,
-      "file_size_kb": 941,
+      "file_size_kb": 889,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_神戸大実践模試_国語_問題.pdf"
     },
@@ -9131,7 +9341,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 18,
-      "file_size_kb": 968,
+      "file_size_kb": 899,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_立命館実践模試_国語_問題.pdf"
     },
@@ -9161,7 +9371,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 18,
-      "file_size_kb": 953,
+      "file_size_kb": 908,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_立教実践模試_国語_問題.pdf"
     },
@@ -9191,7 +9401,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 18,
-      "file_size_kb": 899,
+      "file_size_kb": 857,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_筑波大実践模試_国語_問題.pdf"
     },
@@ -9221,7 +9431,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 20,
-      "file_size_kb": 931,
+      "file_size_kb": 882,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 5, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_関西大実践模試_国語_問題.pdf"
     },
@@ -9251,7 +9461,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 18,
-      "file_size_kb": 958,
+      "file_size_kb": 909,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_関西学院実践模試_国語_問題.pdf"
     },
@@ -9281,7 +9491,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 18,
-      "file_size_kb": 915,
+      "file_size_kb": 876,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_阪大実践模試_国語_問題.pdf"
     },
@@ -9311,7 +9521,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 18,
-      "file_size_kb": 979,
+      "file_size_kb": 935,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_青学実践模試_国語_問題.pdf"
     },
@@ -9341,7 +9551,7 @@
       "video_url": null,
       "video_duration_sec": 0,
       "pages": 18,
-      "file_size_kb": 854,
+      "file_size_kb": 808,
       "sub_question_topics": "[{\"daimon\": 1, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 1, \"sub_q\": 4, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 2, \"sub_q\": 3, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 1, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 2, \"topic\": \"未分類\"}, {\"daimon\": 3, \"sub_q\": 3, \"topic\": \"未分類\"}]",
       "file_path": "/lesson-prints/2026-06-03_静岡大実践模試_国語_問題.pdf"
     },
