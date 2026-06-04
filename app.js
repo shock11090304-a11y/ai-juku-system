@@ -2711,12 +2711,18 @@ function renderMathInNode(el) {
   if (!el || typeof window.renderMathInElement !== 'function') return;
   try {
     window.renderMathInElement(el, {
+      // 🔢 2026-06-04 石井くん事例の文字化け修正: AI チューターは単一 $...$ で数式を返すが
+      //   従来 delimiter は $$ / \( / \[ のみで単一 $ を拾えず生表示されていた。
+      //   ai-tutor-photo.html と同じ構成に統一 ($$ を $ より先に並べて display math を優先マッチ)。
       delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '$', right: '$', display: false },
         { left: '\\[', right: '\\]', display: true },
         { left: '\\(', right: '\\)', display: false },
-        { left: '$$', right: '$$', display: true },
       ],
       throwOnError: false,
+      errorColor: '#fca5a5',
+      strict: 'ignore',
     });
   } catch (e) {
     console.warn('KaTeX render failed:', e);
