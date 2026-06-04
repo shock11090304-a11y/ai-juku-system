@@ -23671,6 +23671,7 @@ def _detect_at_risk_trial_students(now: datetime) -> list:
                  AND s.trial_start IS NOT NULL
                  AND s.trial_start <= ?
                  AND s.trial_start >= ?
+                 AND (s.course IS NULL OR s.course != 'kokuritsu_nankan')
                LIMIT 200""",
             (now.isoformat(), cutoff_recent, early_cutoff, late_cutoff)
         )
@@ -23978,7 +23979,7 @@ def cron_trial_followups(x_cron_secret: str = Header(None), dry_run: bool = Fals
 
         # 継続意思のない (= 一度もログインしていない) 顧客はスキップ (塾長指示 2026-05-06)
         c.execute(
-            "SELECT id, name, email, trial_end, last_login_at FROM students WHERE status='expired' AND email IS NOT NULL AND trial_end IS NOT NULL"
+            "SELECT id, name, email, trial_end, last_login_at FROM students WHERE status='expired' AND email IS NOT NULL AND trial_end IS NOT NULL AND (course IS NULL OR course != 'kokuritsu_nankan')"
         )
         expired_students = list(c.fetchall())
 
@@ -24329,7 +24330,7 @@ def cron_trial_nurture(x_cron_secret: str = Header(None), dry_run: bool = False)
             """SELECT id, name, email, last_login_at, created_at FROM students
                WHERE status IN ('trial', 'paid') AND email IS NOT NULL
                  AND created_at > ? AND created_at <= ?
-                 AND (trial_end IS NULL OR trial_end > ?)""",
+                 AND (trial_end IS NULL OR trial_end > ?) AND (course IS NULL OR course != 'kokuritsu_nankan')""",
             (d2_lower.isoformat(), d2_upper.isoformat(), trial_end_threshold)
         )
         for row in c.fetchall():
@@ -24366,7 +24367,7 @@ def cron_trial_nurture(x_cron_secret: str = Header(None), dry_run: bool = False)
             """SELECT id, name, email, last_login_at, created_at FROM students
                WHERE status IN ('trial', 'paid') AND email IS NOT NULL
                  AND created_at > ? AND created_at <= ?
-                 AND (trial_end IS NULL OR trial_end > ?)""",
+                 AND (trial_end IS NULL OR trial_end > ?) AND (course IS NULL OR course != 'kokuritsu_nankan')""",
             (d5_lower.isoformat(), d5_upper.isoformat(), trial_end_threshold)
         )
         for row in c.fetchall():
@@ -24437,7 +24438,7 @@ def cron_trial_unused_warning(x_cron_secret: str = Header(None), dry_run: bool =
         c.execute(
             """SELECT id, name, email, created_at, trial_end FROM students
                WHERE status = 'trial' AND email IS NOT NULL AND last_login_at IS NULL
-                 AND created_at > ? AND created_at <= ?""",
+                 AND created_at > ? AND created_at <= ? AND (course IS NULL OR course != 'kokuritsu_nankan')""",
             (early_lower.isoformat(), early_upper.isoformat())
         )
         for row in c.fetchall():
@@ -24476,7 +24477,7 @@ def cron_trial_unused_warning(x_cron_secret: str = Header(None), dry_run: bool =
         c.execute(
             """SELECT id, name, email, trial_end FROM students
                WHERE status = 'trial' AND email IS NOT NULL AND last_login_at IS NULL
-                 AND trial_end IS NOT NULL AND trial_end > ? AND trial_end <= ?""",
+                 AND trial_end IS NOT NULL AND trial_end > ? AND trial_end <= ? AND (course IS NULL OR course != 'kokuritsu_nankan')""",
             (late_lower.isoformat(), late_upper.isoformat())
         )
         for row in c.fetchall():
