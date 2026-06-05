@@ -295,6 +295,20 @@
       </div>
     </section>
 
+    <!-- 📊 みんなの中での自分 (匿名・集団比較・2026-06-05 塾長指示)
+         initComparisonSection() が全項目データ不足/未受験なら section ごと非表示。
+         他者の個人データは表示せず、自分の偏差値/順位/上位%/平均比較のみ。 -->
+    <section id="comparisonSection" style="display:none; margin: 0 0 1.5rem 0; padding:1.25rem; background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(168,85,247,0.10)); border:1px solid rgba(129,140,248,0.4); border-radius:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.4rem;">
+        <h3 style="margin:0;font-size:1.05rem;font-weight:800;color:#a5b4fc;">📊 みんなの中での自分</h3>
+        <button type="button" id="comparisonRefresh" style="padding:0.3rem 0.7rem;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#a5b4fc;font-weight:700;font-size:0.78rem;cursor:pointer;">🔄 更新</button>
+      </div>
+      <p style="font-size:0.8rem;color:#cbd5e1;margin:0 0 0.9rem 0;">他の学習者と比べた、いまの自分の位置です（匿名・他の人の個人成績は表示されません）。</p>
+      <div id="comparisonBody" style="display:grid;gap:0.7rem;">
+        <div style="color:#71717a; text-align:center; padding:1.2rem 0; font-size:0.85rem;">⏳ 読み込み中...</div>
+      </div>
+    </section>
+
     <!-- 🤖 ai-juku 公式 Custom GPT (2026-05-23 塾長指示「C: 生徒画面に Custom GPT 案内」)
          streak-section 直後 (memory feedback_study_log_engagement_cta: engagement CTA 最上部) -->
     <section id="customGptSection" style="display:none; margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(34,197,94,0.13), rgba(99,102,241,0.10)); border: 1px solid rgba(34,197,94,0.35); border-radius: 14px;">
@@ -1351,7 +1365,7 @@
   <script src="exam-prep.js?v=20260529-past-due-grace"></script>
   <script src="referral-program.js?v=20260529-past-due-grace"></script>
   <script src="student-mode.js?v=20260604-junior-preview"></script>
-  <script src="mypage.js?v=20260605"></script>
+  <script src="mypage.js?v=20260605b"></script>
   <script>
     // ウィジェット初期描画
     (function() {

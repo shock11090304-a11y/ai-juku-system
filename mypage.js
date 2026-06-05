@@ -320,6 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
   try { initCustomGptBlock(); } catch (e) { console.error('initCustomGptBlock failed:', e); }
   try { initHomeworkSection(); } catch (e) { console.error('initHomeworkSection failed:', e); }
   try { initGrammarDrillSection(); } catch (e) { console.error('initGrammarDrillSection failed:', e); }
+  try { initComparisonSection(); } catch (e) { console.error('initComparisonSection failed:', e); }
 });
 
 // 🤖 ai-juku 公式 Custom GPT 案内 block (2026-05-23 塾長指示「C: 生徒画面に Custom GPT 案内」)
@@ -4279,6 +4280,88 @@ function _gdRenderResultItem(r) {
     ${choiceLines}
     ${explBlock}
   </div>`;
+}
+
+// 📊 みんなの中での自分 (匿名・集団比較・2026-06-05)
+// /api/student/comparison/overview は集計値のみ返す (他者の個人データなし)。
+// 全項目データ不足/未受験なら section ごと非表示。
+async function initComparisonSection() {
+  const section = document.getElementById('comparisonSection');
+  if (!section) return;
+  const body = section.querySelector('#comparisonBody');
+  const refreshBtn = section.querySelector('#comparisonRefresh');
+  if (!body) return;
+
+  function _cmpCard(title, badges, sub) {
+    return `<div style="background:rgba(0,0,0,0.22);border-radius:10px;padding:0.7rem 0.85rem;">
+      <div style="font-size:0.85rem;font-weight:700;color:#e5e7eb;margin-bottom:0.35rem;">${escapeHtml(title)}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.5rem 0.9rem;font-size:0.9rem;color:#cbd5e1;">${badges.filter(Boolean).join('<span style="color:#52525b;">・</span>')}</div>
+      ${sub ? `<div style="font-size:0.75rem;color:#94a3b8;margin-top:0.35rem;">${escapeHtml(sub)}</div>` : ''}
+    </div>`;
+  }
+  function _cmpMuted(title, msg) {
+    return `<div style="background:rgba(0,0,0,0.13);border-radius:10px;padding:0.6rem 0.85rem;opacity:0.75;">
+      <div style="font-size:0.85rem;font-weight:700;color:#a1a1aa;">${escapeHtml(title)}</div>
+      <div style="font-size:0.76rem;color:#71717a;margin-top:0.2rem;">${escapeHtml(msg)}</div>
+    </div>`;
+  }
+  // 数値は Number 化してから埋め込む (サーバ由来でも念のため型を固定)
+  const N = (v) => (v == null || isNaN(Number(v))) ? null : Number(v);
+
+  async function load() {
+    body.innerHTML = `<div style="color:#71717a;text-align:center;padding:1.2rem 0;font-size:0.85rem;">⏳ 読み込み中...</div>`;
+    let data;
+    try {
+      data = await slApiFetch('/api/student/comparison/overview');
+    } catch (e) {
+      if (e && e.preview) { section.style.display = 'none'; return; }
+      section.style.display = 'block';
+      body.innerHTML = `<div style="color:#fca5a5;padding:12px;background:rgba(239,68,68,0.08);border-radius:8px;font-size:0.85rem;">⚠ 取得に失敗しました (${escapeHtml(String((e && (e.message || e)) || ''))})</div>`;
+      return;
+    }
+    const cards = [];
+    // ① 模試 (exam_type 別・集団内偏差値)
+    ((data && data.mock_exams) || []).forEach(m => {
+      if (!m || !m.available) return;
+      const dev = N(m.deviation), rank = N(m.rank), pop = N(m.population), top = N(m.top_percent), my = N(m.my_value), avg = N(m.average);
+      const badges = [
+        (rank != null && pop != null) ? `${pop}人中 <b style="color:#fcd34d;font-size:1.15em;">${rank}位</b>` : null,
+        (top != null && top <= 50) ? `上位 <b>${top}%</b>` : null,
+        dev != null ? `偏差値 ${dev}` : null,
+      ];
+      const sub = (my != null && avg != null) ? `あなた ${my}% / みんなの平均 ${avg}%` : '';
+      cards.push(_cmpCard('📝 模試: ' + String(m.exam_label || m.exam_type || ''), badges, sub));
+    });
+    // ② 学習時間 (直近7日)
+    const stt = data && data.study_time;
+    if (stt && stt.available) {
+      const myH = (N(stt.my_value) / 60).toFixed(1), avgH = (N(stt.average) / 60).toFixed(1);
+      const diffH = (N(stt.diff_from_avg) / 60).toFixed(1);
+      const sttTop = N(stt.top_percent);
+      cards.push(_cmpCard('⏱ 学習時間 (直近7日)',
+        [`<b style="color:#fcd34d;font-size:1.1em;">${myH}時間</b>`, `${N(stt.population)}人中 <b>${N(stt.rank)}位</b>`, (sttTop != null && sttTop <= 50) ? `上位 <b>${sttTop}%</b>` : null],
+        `みんなの平均 ${avgH}時間 (あなた ${N(stt.diff_from_avg) >= 0 ? '+' : ''}${diffH}時間)`));
+    } else if (stt && stt.reason === 'insufficient_population') {
+      cards.push(_cmpMuted('⏱ 学習時間 (直近7日)', `あと${N(stt.need) - N(stt.population)}人ぶんの学習記録が集まれば表示されます`));
+    }
+    // ③ 問題の正解率 (直近30日)
+    const acc = data && data.accuracy;
+    if (acc && acc.available) {
+      const accTop = N(acc.top_percent);
+      cards.push(_cmpCard('🎯 問題の正解率 (直近30日)',
+        [`あなた <b style="color:#fcd34d;font-size:1.1em;">${N(acc.my_value)}%</b>`, `${N(acc.population)}人中 <b>${N(acc.rank)}位</b>`, (accTop != null && accTop <= 50) ? `上位 <b>${accTop}%</b>` : null],
+        `みんなの平均 ${N(acc.average)}% (あなた ${N(acc.diff_from_avg) >= 0 ? '+' : ''}${N(acc.diff_from_avg)}%)`));
+    } else if (acc && acc.reason === 'insufficient_population') {
+      cards.push(_cmpMuted('🎯 問題の正解率 (直近30日)', `あと${N(acc.need) - N(acc.population)}人ぶんのデータが集まれば表示されます`));
+    }
+
+    if (cards.length === 0) { section.style.display = 'none'; return; }  // 全項目データ不足/未受験 → 非表示
+    section.style.display = 'block';
+    body.innerHTML = cards.join('');
+  }
+
+  if (refreshBtn) refreshBtn.addEventListener('click', () => { load(); });
+  await load();
 }
 
 async function initGrammarDrillSection() {

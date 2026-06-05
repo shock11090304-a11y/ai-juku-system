@@ -31904,6 +31904,94 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
         conn.close()
 
 
+# ==========================================================================
+# 📊 学習者間比較 (匿名・集団統計・塾長指示 2026-06-05)
+# 他の学習者と比べた自分の位置を匿名で表示。他者の個人データ(名前/個別スコア)は
+# 一切返さず、サーバ側で計算した集計値(自分の偏差値/順位/上位%/平均)のみを返す。
+# ==========================================================================
+def _comp_stat(my_id, value_map, higher_better=True, unit="", min_n=3, with_deviation=False):
+    """value_map={student_id:value}。自分の順位/上位%/平均/(偏差値)を匿名集計。他者の値は返さない。
+    min_n 未満の母集団は available=False (データ不足)。偏差値は母標準偏差で算出。"""
+    if my_id not in value_map:
+        return {"available": False, "reason": "no_data"}
+    n = len(value_map)
+    if n < min_n:
+        return {"available": False, "reason": "insufficient_population", "population": n, "need": min_n}
+    my_val = value_map[my_id]
+    vals = list(value_map.values())
+    # 同値は同順位にせず「自分より上の人数+1」(競技順位)。higher_better=Trueなら値が大きいほど上位。
+    if higher_better:
+        rank = sum(1 for v in vals if v > my_val) + 1
+    else:
+        rank = sum(1 for v in vals if v < my_val) + 1
+    mu = sum(vals) / n
+    out = {
+        "available": True, "my_value": round(my_val, 1), "rank": rank, "population": n,
+        "top_percent": round(100 * rank / n, 1), "average": round(mu, 1),
+        "diff_from_avg": round(my_val - mu, 1), "unit": unit,
+    }
+    if with_deviation:
+        sigma = (sum((v - mu) ** 2 for v in vals) / n) ** 0.5
+        out["deviation"] = round(50 + 10 * (my_val - mu) / sigma, 1) if sigma > 0 else 50.0
+    return out
+
+
+@app.get("/api/student/comparison/overview")
+def student_comparison_overview(request: Request, authorization: Optional[str] = Header(None)):
+    """🎓 生徒: 他の学習者と比べた自分の位置(匿名)。①学習時間(直近7日) ②模試(exam_type別・偏差値) ③正解率(直近30日)。
+    🔒 他者の個人データ(名前/個別スコア)は一切返さず、集計値のみを返す。"""
+    _check_rate_limit_caller(request, authorization, bucket="comparison_overview", limit=30, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    sid = student["id"]
+    conn = db()
+    try:
+        c = conn.cursor()
+        result = {"ok": True}
+        # ① 学習時間 (直近7日合計・分・在籍生徒[paid/trial]のみ = 退会者/期限切れを母集団から除外)
+        cutoff7 = (_today_jst() - timedelta(days=6)).isoformat()
+        c.execute("SELECT sl.student_id AS stu_id, SUM(sl.minutes) AS total FROM study_logs sl "
+                  "JOIN students s ON s.id = sl.student_id AND s.status IN ('paid','trial') "
+                  "WHERE sl.studied_date >= ? GROUP BY sl.student_id", (cutoff7,))
+        stmap = {r["stu_id"]: int(r["total"] or 0) for r in c.fetchall() if (r["total"] or 0) > 0}
+        st = _comp_stat(sid, stmap, higher_better=True, unit="minutes", min_n=3)
+        st["period_days"] = 7
+        result["study_time"] = st
+        # ② 模試 (exam_type別・正答率%で公平比較[満点変動を吸収]・各生徒の最新・在籍生徒のみ・偏差値)
+        c.execute("SELECT m.exam_type AS et, m.student_id AS stu_id, m.score_total AS sc, m.score_max AS mx "
+                  "FROM mock_exam_sessions m JOIN students s ON s.id = m.student_id AND s.status IN ('paid','trial') "
+                  "WHERE m.submitted_at IS NOT NULL AND m.score_total IS NOT NULL AND m.score_max > 0 "
+                  "ORDER BY m.submitted_at ASC")
+        groups = {}
+        for r in c.fetchall():
+            pct = round(100 * int(r["sc"]) / int(r["mx"]), 1)  # 生スコアでなく正答率(出題数/満点の差を吸収し公平に)
+            groups.setdefault(r["et"], {})[r["stu_id"]] = pct  # ASC順なので各生徒の最新で上書き
+        mock_list = []
+        for et, gmap in groups.items():
+            if sid not in gmap:
+                continue
+            # min_n=5: 偏差値の安定 + 小母集団での他者スコア逆算(平均からの復元)を防止
+            stat = _comp_stat(sid, gmap, higher_better=True, min_n=5, with_deviation=True)
+            if stat.get("available"):
+                stat["exam_type"] = et
+                stat["exam_label"] = (MOCK_EXAM_TEMPLATES.get(et, {}) or {}).get("label", et)
+                mock_list.append(stat)
+        result["mock_exams"] = mock_list
+        # ③ 正解率 (直近30日 question_attempts・5問以上・在籍生徒のみ)
+        cutoff30 = (_today_jst() - timedelta(days=29)).isoformat()
+        c.execute("SELECT qa.student_id AS stu_id, AVG(CAST(qa.is_correct AS REAL)) AS acc, COUNT(*) AS cnt "
+                  "FROM question_attempts qa JOIN students s ON s.id = qa.student_id AND s.status IN ('paid','trial') "
+                  "WHERE qa.is_correct IS NOT NULL AND qa.created_at >= ? GROUP BY qa.student_id HAVING COUNT(*) >= 5", (cutoff30,))
+        accmap = {r["stu_id"]: round(100 * float(r["acc"]), 1) for r in c.fetchall()}
+        acc = _comp_stat(sid, accmap, higher_better=True, unit="percent", min_n=3)
+        acc["period_days"] = 30
+        result["accuracy"] = acc
+        return result
+    finally:
+        conn.close()
+
+
 @app.post("/api/admin/students/{student_id}/plan")
 def admin_set_student_plan(student_id: int, payload: StudentPlanSetRequest, authorization: Optional[str] = Header(None)):
     """塾長: 生徒のプランを設定。"""
