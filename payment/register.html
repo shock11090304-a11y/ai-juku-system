@@ -341,6 +341,12 @@ const GRADE_COURSE_MAP = {
   'その他':  null,
 };
 
+// 学年に依存しないコース(個別指導など)は推奨/不一致判定の対象外にする
+const GRADE_NEUTRAL_TIERS = ['kobetsu'];
+function neutralCourseIds() {
+  return new Set(STATE.courses.filter(c => GRADE_NEUTRAL_TIERS.includes(c.tier)).map(c => c.id));
+}
+
 async function init() {
   try {
     const res = await fetch('courses.json', { cache: 'no-store' });
@@ -368,10 +374,12 @@ function bindGrade() {
 
 function refreshGradeMarkers() {
   const allowedCourses = GRADE_COURSE_MAP[STATE.grade];
+  const neutral = neutralCourseIds();
   const cards = document.querySelectorAll('.course-card');
   cards.forEach(card => {
     card.classList.remove('recommended', 'mismatch');
     if (!STATE.grade || !allowedCourses) return;
+    if (neutral.has(card.dataset.id)) return;  // 個別指導等は学年中立(推奨も不一致も付けない)
     if (allowedCourses.includes(card.dataset.id)) card.classList.add('recommended');
     else card.classList.add('mismatch');
   });
@@ -382,7 +390,8 @@ function refreshGradeWarning() {
   if (!STATE.grade || STATE.grade === 'その他') { warn.classList.remove('show'); return; }
   const allowed = GRADE_COURSE_MAP[STATE.grade];
   if (!allowed) { warn.classList.remove('show'); return; }
-  const hasMismatch = [...STATE.selected].some(id => !allowed.includes(id));
+  const neutral = neutralCourseIds();
+  const hasMismatch = [...STATE.selected].some(id => !allowed.includes(id) && !neutral.has(id));
   warn.classList.toggle('show', hasMismatch);
 }
 
@@ -414,6 +423,7 @@ function renderCourses() {
   const grid = document.getElementById('courseGrid');
   // Group by tier
   const tiers = [
+    { key: 'kobetsu', label: '👤 個別指導' },
     { key: 'premium', label: '🎓 大学受験 (難関)' },
     { key: 'high',    label: '📈 学習管理コース' },
     { key: 'mid',     label: '🏛 私立大学コース' },
@@ -528,7 +538,8 @@ function showConfirmModal() {
   let mismatchNote = '';
   const allowed = GRADE_COURSE_MAP[p.grade];
   if (allowed) {
-    const mismatched = p.courses.filter(id => !allowed.includes(id));
+    const neutral = neutralCourseIds();
+    const mismatched = p.courses.filter(id => !allowed.includes(id) && !neutral.has(id));
     if (mismatched.length) {
       const names = mismatched.map(id => STATE.courses.find(c => c.id === id)?.name).filter(Boolean);
       mismatchNote = `<div class="summary-note" style="background:rgba(239,68,68,0.10);border-color:rgba(239,68,68,0.4);color:#fca5a5;">⚠️ 学年「${escapeHtml(p.grade)}」と一致しないコースが含まれています: ${escapeHtml(names.join(', '))}<br>このまま登録すると ¥${total.toLocaleString()} で月額決済が開始されます。問題ない場合のみ進んでください。</div>`;

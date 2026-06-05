@@ -69,6 +69,7 @@ def _json(handler, status, payload):
 # ─────────────── コースカタログ (server-side single source of truth) ───────────────
 # courses.json と同期。価格改定時はこちらも更新すること。
 COURSES = {
+    "kobetsu":       {"name": "個別指導",      "price": 25000},
     "ronin":         {"name": "浪人生",        "price": 30000},
     "kokuritsu":     {"name": "国公立難関大学", "price": 25000},
     "kanri":         {"name": "学習管理",      "price": 22500},

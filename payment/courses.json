@@ -3,6 +3,7 @@
   "version": "2026-05-03",
   "currency": "JPY",
   "courses": [
+    { "id": "kobetsu",      "name": "個別指導",          "price": 25000, "tier": "kobetsu" },
     { "id": "ronin",        "name": "浪人生",            "price": 30000, "tier": "premium" },
     { "id": "kokuritsu",    "name": "国公立難関大学",      "price": 25000, "tier": "premium" },
     { "id": "kanri",        "name": "学習管理",          "price": 22500, "tier": "high" },
