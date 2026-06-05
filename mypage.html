@@ -137,8 +137,10 @@
 
     <!-- 📲 LINE連携 (2026-06-05): メール不達対策。連携すると ログインコード/お知らせが LINE に届く。
          /api/line/link-code で本人のワンタイムコードを発行 → 公式LINEに送信で紐付け完了。
-         非ログイン(プレビュー)時は token shadow で 401 → 案内表示のみ。 -->
-    <section class="line-link-cta" id="lineLinkSection" style="margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(6,199,85,0.16), rgba(16,185,129,0.10)); border: 1px solid rgba(6,199,85,0.4); border-radius: 14px; box-shadow: 0 8px 24px rgba(6,199,85,0.12);">
+         非ログイン(プレビュー)時は token shadow で 401 → 案内表示のみ。
+         🚧 2026-06-05 一時非表示 (display:none): LINE Console で webhook 未登録のため、生徒が連携しても
+            紐付かない(無効コードを発行させてしまう)。webhook 登録が済んだら下の style から display:none を外す。 -->
+    <section class="line-link-cta" id="lineLinkSection" style="display:none; margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(6,199,85,0.16), rgba(16,185,129,0.10)); border: 1px solid rgba(6,199,85,0.4); border-radius: 14px; box-shadow: 0 8px 24px rgba(6,199,85,0.12);">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:0.9rem; flex-wrap:wrap;">
         <div style="flex:1 1 240px; min-width:220px;">
           <div style="display:inline-block; padding:0.18rem 0.65rem; background:#06c755; border-radius:999px; font-size:0.7rem; font-weight:800; color:#fff; margin-bottom:0.4rem; letter-spacing:0.02em;">📲 LINE連携</div>
