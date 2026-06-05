@@ -4305,6 +4305,14 @@ async function initComparisonSection() {
       <div style="font-size:0.76rem;color:#71717a;margin-top:0.2rem;">${escapeHtml(msg)}</div>
     </div>`;
   }
+  // 未記録の子に「あなた0時間・最下位・みんなの平均」を赤系で見せて記録を促す(危機感カード)
+  function _cmpWarn(title, badges, sub) {
+    return `<div style="background:rgba(239,68,68,0.10);border:1px solid rgba(248,113,113,0.45);border-radius:10px;padding:0.7rem 0.85rem;">
+      <div style="font-size:0.85rem;font-weight:700;color:#fca5a5;margin-bottom:0.35rem;">${escapeHtml(title)} <span style="font-size:0.9em;">⚠️</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.5rem 0.9rem;font-size:0.9rem;color:#e5e7eb;">${badges.filter(Boolean).join('<span style="color:#52525b;">・</span>')}</div>
+      ${sub ? `<div style="font-size:0.78rem;color:#fca5a5;margin-top:0.4rem;font-weight:600;">${escapeHtml(sub)}</div>` : ''}
+    </div>`;
+  }
   // 数値は Number 化してから埋め込む (サーバ由来でも念のため型を固定)
   const N = (v) => (v == null || isNaN(Number(v))) ? null : Number(v);
 
@@ -4337,7 +4345,14 @@ async function initComparisonSection() {
     else cards.push(_cmpMuted('📝 模試', 'アプリ内の模試を受けると、同じ模試を解いた人の中での偏差値・順位が出ます'));
     // ② 学習時間 (直近7日)
     const stt = data && data.study_time;
-    if (stt && stt.available) {
+    if (stt && stt.available && stt.not_recorded && N(stt.population) != null && N(stt.rank) != null) {
+      // 未記録 → 危機感(赤系): あなた0時間・みんなの平均。促すのは「学習量」でなく「記録」(中学生配慮)。
+      // 「未記録」「がんばっています」等の人格・努力断定は避け、記録行動への前向きな促しに留める。
+      const avgH0 = (N(stt.average) / 60).toFixed(1);
+      cards.push(_cmpWarn('⏱ 学習時間 (直近7日)',
+        [`あなたの記録 <b style="color:#f87171;font-size:1.1em;">0時間</b>`, `${N(stt.population)}人中 <b style="color:#f87171;">${N(stt.rank)}位</b>`],
+        `みんなは今週 平均 ${avgH0}時間 を記録しているよ。あなたも今日の分から学習記録をつけて、追いついていこう！`));
+    } else if (stt && stt.available) {
       const myH = (N(stt.my_value) / 60).toFixed(1), avgH = (N(stt.average) / 60).toFixed(1);
       const diffH = (N(stt.diff_from_avg) / 60).toFixed(1);
       const sttTop = N(stt.top_percent);

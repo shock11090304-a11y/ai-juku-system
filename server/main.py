@@ -31909,16 +31909,26 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
 # 他の学習者と比べた自分の位置を匿名で表示。他者の個人データ(名前/個別スコア)は
 # 一切返さず、サーバ側で計算した集計値(自分の偏差値/順位/上位%/平均)のみを返す。
 # ==========================================================================
-def _comp_stat(my_id, value_map, higher_better=True, unit="", min_n=3, with_deviation=False):
+def _comp_stat(my_id, value_map, higher_better=True, unit="", min_n=3, with_deviation=False, include_zero_self=False):
     """value_map={student_id:value}。自分の順位/上位%/平均/(偏差値)を匿名集計。他者の値は返さない。
-    min_n 未満の母集団は available=False (データ不足)。偏差値は母標準偏差で算出。"""
-    if my_id not in value_map:
+    min_n 未満の母集団は available=False (データ不足)。偏差値は母標準偏差で算出。
+    include_zero_self=True (学習記録の危機感喚起用): 自分が未記録(value_map外)でも、母集団(記録者)が
+    min_n 以上なら自分を 0 として最下位扱いで表示し out['not_recorded']=True を付与。記録を促す。"""
+    in_pop = my_id in value_map
+    if not in_pop and not include_zero_self:
         return {"available": False, "reason": "no_data"}
-    n = len(value_map)
-    if n < min_n:
-        return {"available": False, "reason": "insufficient_population", "population": n, "need": min_n}
-    my_val = value_map[my_id]
-    vals = list(value_map.values())
+    if not in_pop:
+        # 自分未記録 → 0 扱い。母集団(記録している子)が min_n 以上のときだけ「あなた0・最下位・みんなの平均」を表示
+        if len(value_map) < min_n:
+            return {"available": False, "reason": "insufficient_population", "population": len(value_map), "need": min_n}
+        my_val = 0
+        vals = list(value_map.values()) + [0]
+    else:
+        if len(value_map) < min_n:
+            return {"available": False, "reason": "insufficient_population", "population": len(value_map), "need": min_n}
+        my_val = value_map[my_id]
+        vals = list(value_map.values())
+    n = len(vals)
     # 同値は同順位にせず「自分より上の人数+1」(競技順位)。higher_better=Trueなら値が大きいほど上位。
     if higher_better:
         rank = sum(1 for v in vals if v > my_val) + 1
@@ -31930,6 +31940,12 @@ def _comp_stat(my_id, value_map, higher_better=True, unit="", min_n=3, with_devi
         "top_percent": round(100 * rank / n, 1), "average": round(mu, 1),
         "diff_from_avg": round(my_val - mu, 1), "unit": unit,
     }
+    if not in_pop:
+        out["not_recorded"] = True  # 自分は未記録(0扱い・最下位)＝記録を促す危機感表示
+        # 「みんなの平均」は記録者のみで算出(自分の0を含めず差を正しく見せる)。rank/populationは自分込み(最下位)のまま
+        _rec_mu = sum(value_map.values()) / len(value_map)
+        out["average"] = round(_rec_mu, 1)
+        out["diff_from_avg"] = round(my_val - _rec_mu, 1)
     if with_deviation:
         sigma = (sum((v - mu) ** 2 for v in vals) / n) ** 0.5
         out["deviation"] = round(50 + 10 * (my_val - mu) / sigma, 1) if sigma > 0 else 50.0
@@ -31955,7 +31971,13 @@ def student_comparison_overview(request: Request, authorization: Optional[str] =
                   "JOIN students s ON s.id = sl.student_id AND (s.status IN ('paid','trial') OR s.course = 'kokuritsu_nankan') "
                   "WHERE sl.studied_date >= ? GROUP BY sl.student_id", (cutoff7,))
         stmap = {r["stu_id"]: int(r["total"] or 0) for r in c.fetchall() if (r["total"] or 0) > 0}
-        st = _comp_stat(sid, stmap, higher_better=True, unit="minutes", min_n=3)
+        # include_zero_self: 学習記録を付けていない子にも「あなた0時間・最下位・みんなの平均」を見せ記録を促す
+        # (塾長指示 2026-06-06)。ただし学習記録機能の対象者(国公立難関/プレミアム等)のみ — 記録手段が無い子は煽らない。
+        try:
+            _require_study_log_course(student); _study_eligible = True
+        except HTTPException:
+            _study_eligible = False
+        st = _comp_stat(sid, stmap, higher_better=True, unit="minutes", min_n=3, include_zero_self=_study_eligible)
         st["period_days"] = 7
         result["study_time"] = st
         # ② 模試 (exam_type別・正答率%で公平比較[満点変動を吸収]・各生徒の最新・在籍生徒のみ・偏差値)
