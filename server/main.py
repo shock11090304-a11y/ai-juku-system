@@ -912,6 +912,49 @@ def init_db():
     );
     CREATE INDEX IF NOT EXISTS idx_homework_student_status ON homework_assignments(student_id, status, due_date);
     CREATE INDEX IF NOT EXISTS idx_homework_due ON homework_assignments(due_date, status);
+    -- 📝 単元別ドリル (英文法・塾長指示 2026-06-05)
+    -- 既存 exam_questions の英文法を 1 問 1 行に分解し単元タグを付与した専用プール。
+    -- choices は JSON 文字列、answer は 0 始まり正解 index。level: basic/standard/advanced。
+    CREATE TABLE IF NOT EXISTS grammar_questions (
+        id {pk},
+        unit TEXT NOT NULL,
+        level TEXT NOT NULL DEFAULT 'standard',
+        stem TEXT NOT NULL,
+        choices TEXT NOT NULL,
+        answer INTEGER NOT NULL,
+        explanation TEXT,
+        source TEXT DEFAULT 'pool',
+        source_exam_question_id INTEGER,
+        active INTEGER DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_grammar_q_unit ON grammar_questions(unit, level, active);
+    -- ドリル (CEO が単元指定で作成。作成時に出題問題を固定 = 全生徒同一 25 問 → 問題別正解率が比較可能)
+    CREATE TABLE IF NOT EXISTS grammar_drills (
+        id {pk},
+        title TEXT NOT NULL,
+        unit TEXT NOT NULL,
+        level TEXT,
+        question_ids TEXT NOT NULL,
+        created_by TEXT DEFAULT 'admin',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_grammar_drills_created ON grammar_drills(created_at);
+    -- ドリル割当 (どの生徒にどのドリルを配信したか + 各生徒の結果スナップショット)
+    CREATE TABLE IF NOT EXISTS grammar_drill_assignments (
+        id {pk},
+        drill_id INTEGER NOT NULL,
+        student_id INTEGER NOT NULL,
+        status TEXT DEFAULT 'open',
+        score_correct INTEGER,
+        score_total INTEGER,
+        answers_json TEXT,
+        assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        completed_at TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_grammar_da_student ON grammar_drill_assignments(student_id, status);
+    CREATE INDEX IF NOT EXISTS idx_grammar_da_drill ON grammar_drill_assignments(drill_id);
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_grammar_da ON grammar_drill_assignments(drill_id, student_id);
     -- 合格カリキュラム (Phase 4 - 国公立難関大学コース限定・塾長指示 2026-05-06)
     -- 難関大学 (国公立 + 難関私立) 志望者向けの全体ロードマップ。1生徒に通常1件 active。
     CREATE TABLE IF NOT EXISTS curricula (
@@ -31196,6 +31239,640 @@ def admin_homework_delete(
         except Exception:
             pass
         return {"ok": True, "deleted": 1, "removed": info}
+    finally:
+        conn.close()
+
+
+# ==========================================================================
+# 📝 単元別ドリル (英文法・塾長指示 2026-06-05)
+# CEO が単元を指定 → 偏差値55-65帯の4択を25問固定 → 選んだ生徒に配信。
+# 生徒が解く → 採点 + question_attempts 記録。CEO が問題別正解率を分析。
+# 出題元は grammar_questions (exam_questions の英文法を1問1行に分解・単元分類したプール)。
+# homework と違い「塾長が選んだ生徒」が配信対象なのでコース制限はしない (assignment 有無で制御)。
+# ==========================================================================
+GRAMMAR_UNITS = [
+    "時制", "助動詞", "受動態", "不定詞", "動名詞", "分詞", "分詞構文",
+    "関係詞", "仮定法", "比較", "接続詞", "前置詞", "疑問詞・間接疑問",
+    "否定・倒置", "強調・省略", "冠詞", "名詞・代名詞", "形容詞・副詞",
+    "話法", "語法・イディオム",
+]
+GRAMMAR_LEVELS = {"basic": "基礎", "standard": "標準", "advanced": "やや難"}
+
+
+def _grammar_admin_authed(authorization, x_cron_secret):
+    """admin Bearer or X-Cron-Secret 認証 (homework と同一パターン)。"""
+    if authorization and authorization.startswith("Bearer "):
+        if _verify_admin_token(authorization[len("Bearer "):].strip()):
+            return True
+    if CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        return True
+    return False
+
+
+@app.get("/api/admin/grammar/units")
+def admin_grammar_units(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """🧑‍🏫 admin: 英文法の単元一覧 + 各単元×level の在庫数。CEO のドリル作成フォーム用。"""
+    if not _grammar_admin_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT unit, level, COUNT(*) AS n FROM grammar_questions WHERE active = 1 GROUP BY unit, level"
+        )
+        agg = {}
+        for r in c.fetchall():
+            u = r["unit"]; lv = r["level"]; n = int(r["n"])
+            slot = agg.setdefault(u, {"unit": u, "basic": 0, "standard": 0, "advanced": 0, "total": 0})
+            if lv in slot:
+                slot[lv] += n
+            slot["total"] += n
+        # GRAMMAR_UNITS の順序で、在庫が無い単元も 0 で返す
+        units = []
+        for u in GRAMMAR_UNITS:
+            units.append(agg.get(u, {"unit": u, "basic": 0, "standard": 0, "advanced": 0, "total": 0}))
+        # GRAMMAR_UNITS に無い分類 (想定外 unit) も末尾に追加
+        for u, slot in agg.items():
+            if u not in GRAMMAR_UNITS:
+                units.append(slot)
+        return {"ok": True, "units": units, "levels": GRAMMAR_LEVELS}
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/grammar/import")
+def admin_grammar_import(
+    payload: dict,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🧑‍🏫 admin/CRON: grammar_questions に分類済み英文法問題を一括投入。
+    payload: { questions: [ {unit, level, stem, choices:[..], answer:int(0始まり), explanation?, source?, source_exam_question_id?} ], dedup?: true }
+    dedup=true (既定) なら同一 (source_exam_question_id + stem) / (stem + unit) は skip。再投入で重複しない。"""
+    if not _grammar_admin_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    questions = payload.get("questions") or []
+    if not isinstance(questions, list):
+        raise HTTPException(status_code=422, detail="questions が配列ではありません")
+    if len(questions) > 2000:
+        raise HTTPException(status_code=422, detail="一度に投入できるのは2000問までです")
+    dedup = payload.get("dedup", True)
+    inserted = 0
+    skipped = 0
+    errors = 0
+    conn = db()
+    try:
+        c = conn.cursor()
+        for q in questions:
+            try:
+                unit = (q.get("unit") or "").strip()
+                stem = (q.get("stem") or "").strip()
+                choices = q.get("choices")
+                answer = q.get("answer")
+                if not unit or not stem or not isinstance(choices, list) or len(choices) < 2 or answer is None:
+                    skipped += 1
+                    continue
+                if unit not in GRAMMAR_UNITS:
+                    skipped += 1  # 想定外の単元名は弾く (集計・表示・onclick の一貫性確保)
+                    continue
+                try:
+                    answer = int(answer)
+                except (TypeError, ValueError):
+                    skipped += 1
+                    continue
+                if answer < 0 or answer >= len(choices):
+                    skipped += 1
+                    continue
+                level = (q.get("level") or "standard").strip()
+                if level not in GRAMMAR_LEVELS:
+                    level = "standard"
+                explanation = q.get("explanation") or None
+                source = (q.get("source") or "pool").strip()[:30]
+                seq = q.get("source_exam_question_id")
+                try:
+                    seq = int(seq) if seq is not None else None
+                except (TypeError, ValueError):
+                    seq = None
+                if dedup:
+                    if seq is not None:
+                        c.execute("SELECT 1 FROM grammar_questions WHERE source_exam_question_id = ? AND stem = ? LIMIT 1", (seq, stem))
+                    else:
+                        c.execute("SELECT 1 FROM grammar_questions WHERE stem = ? AND unit = ? LIMIT 1", (stem, unit))
+                    if c.fetchone():
+                        skipped += 1
+                        continue
+                c.execute(
+                    "INSERT INTO grammar_questions (unit, level, stem, choices, answer, explanation, source, source_exam_question_id) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (unit, level, stem, json.dumps(choices, ensure_ascii=False), answer, explanation, source, seq),
+                )
+                inserted += 1
+            except Exception:
+                errors += 1
+        conn.commit()
+        return {"ok": True, "inserted": inserted, "skipped": skipped, "errors": errors, "received": len(questions)}
+    finally:
+        conn.close()
+
+
+@app.post("/api/admin/grammar-drill/create")
+def admin_grammar_drill_create(
+    payload: dict,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🧑‍🏫 admin: 単元を指定してドリルを作成 + 選んだ生徒に配信。
+    payload: { unit (必須), levels?: ["standard","advanced"] (既定=偏差値55-65), count?: 25, student_ids: [..] (必須・非空) }
+    作成時に出題を固定 (全生徒同一問題) → 問題別正解率が比較可能。"""
+    if not _grammar_admin_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+
+    unit = (payload.get("unit") or "").strip()
+    if not unit:
+        raise HTTPException(status_code=422, detail="unit (単元) が必要です")
+    levels = payload.get("levels") or ["standard", "advanced"]
+    if not isinstance(levels, list):
+        levels = [levels]
+    levels = [str(l).strip() for l in levels if str(l).strip() in GRAMMAR_LEVELS]
+    if not levels:
+        levels = ["standard", "advanced"]
+    try:
+        count = int(payload.get("count") or 25)
+    except (TypeError, ValueError):
+        count = 25
+    count = max(5, min(count, 50))
+    student_ids = payload.get("student_ids") or []
+    if not isinstance(student_ids, list) or not student_ids:
+        raise HTTPException(status_code=422, detail="student_ids (配信先の生徒) を1人以上選んでください")
+    # int 化 + 重複除去
+    try:
+        student_ids = sorted({int(s) for s in student_ids})
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="student_ids が不正です")
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 1) 在庫から count 問をランダム固定
+        ph = ",".join(["?"] * len(levels))
+        c.execute(
+            f"SELECT id FROM grammar_questions WHERE unit = ? AND level IN ({ph}) AND active = 1 "
+            f"ORDER BY RANDOM() LIMIT ?",
+            (unit, *levels, count),
+        )
+        qids = [r["id"] for r in c.fetchall()]
+        if len(qids) < count:
+            raise HTTPException(
+                status_code=400,
+                detail=f"単元「{unit}」の在庫が不足しています (要求 {count}問 / 在庫 {len(qids)}問)。"
+                       f"レベルを広げるか、問題を補充してください。",
+            )
+        level_label = "・".join(GRAMMAR_LEVELS.get(l, l) for l in levels)
+        title = f"{unit}ドリル（{level_label}・{count}問）"
+
+        # 2) ドリル作成 (question_ids 固定)
+        c.execute(
+            "INSERT INTO grammar_drills (title, unit, level, question_ids, created_by) "
+            "VALUES (?, ?, ?, ?, 'admin') RETURNING id",
+            (title, unit, ",".join(levels), json.dumps(qids)),
+        )
+        dr = c.fetchone()
+        drill_id = (dr["id"] if hasattr(dr, "keys") else dr[0]) if dr else None
+        conn.commit()
+        if not drill_id:
+            raise HTTPException(status_code=500, detail="ドリル作成に失敗しました")
+
+        # 3) 配信 (存在する生徒のみ assignment 作成)
+        ph2 = ",".join(["?"] * len(student_ids))
+        c.execute(f"SELECT id, name FROM students WHERE id IN ({ph2})", tuple(student_ids))
+        found = {r["id"]: r["name"] for r in c.fetchall()}
+        assigned = []
+        for sid in student_ids:
+            if sid not in found:
+                continue
+            try:
+                c.execute(
+                    "INSERT INTO grammar_drill_assignments (drill_id, student_id, status, score_total) "
+                    "VALUES (?, ?, 'open', ?)",
+                    (drill_id, sid, count),
+                )
+                assigned.append({"student_id": sid, "name": found[sid]})
+            except Exception:
+                pass  # uq 重複等は skip
+        conn.commit()
+
+        # 4) 監査 events
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("grammar_drill_created", json.dumps({
+                    "drill_id": drill_id, "unit": unit, "levels": levels,
+                    "count": count, "student_ids": [a["student_id"] for a in assigned],
+                }, ensure_ascii=False), "admin"),
+            )
+            conn.commit()
+        except Exception:
+            pass
+
+        return {
+            "ok": True,
+            "drill_id": drill_id,
+            "title": title,
+            "unit": unit,
+            "question_count": count,
+            "assigned": assigned,
+            "skipped": [s for s in student_ids if s not in found],
+            "message": f"✅ ドリル「{title}」を {len(assigned)}名に配信しました",
+        }
+    except HTTPException:
+        raise
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/grammar-drill/list")
+def admin_grammar_drill_list(
+    limit: int = 50,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🧑‍🏫 admin: 作成済みドリル一覧 + 配信/完了/平均正解率サマリ。"""
+    if not _grammar_admin_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    try:
+        limit = max(1, min(int(limit or 50), 200))
+    except Exception:
+        limit = 50
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT id, title, unit, level, question_ids, created_at FROM grammar_drills "
+            "ORDER BY created_at DESC, id DESC LIMIT ?",
+            (limit,),
+        )
+        drills = c.fetchall()
+        items = []
+        for d in drills:
+            did = d["id"]
+            c.execute(
+                "SELECT status, score_correct, score_total FROM grammar_drill_assignments WHERE drill_id = ?",
+                (did,),
+            )
+            a_rows = c.fetchall()
+            assigned = len(a_rows)
+            completed = sum(1 for a in a_rows if a["status"] == "completed")
+            # 平均正解率 (完了分のみ)
+            rates = [
+                (a["score_correct"] / a["score_total"])
+                for a in a_rows
+                if a["status"] == "completed" and a["score_total"]
+            ]
+            avg_rate = round(100 * sum(rates) / len(rates), 1) if rates else None
+            try:
+                qcount = len(json.loads(d["question_ids"] or "[]"))
+            except Exception:
+                qcount = 0
+            items.append({
+                "id": did,
+                "title": d["title"],
+                "unit": d["unit"],
+                "level": d["level"],
+                "question_count": qcount,
+                "assigned": assigned,
+                "completed": completed,
+                "avg_correct_rate": avg_rate,
+                "created_at": str(d["created_at"]) if d["created_at"] else None,
+            })
+        return {"ok": True, "items": items}
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/grammar-drill/{drill_id}/analytics")
+def admin_grammar_drill_analytics(
+    drill_id: int,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🧑‍🏫 admin: ドリルの問題別正解率 + 単元定着度。塾長が「どの問題が弱いか」を一覧。"""
+    if not _grammar_admin_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, title, unit, level, question_ids, created_at FROM grammar_drills WHERE id = ?", (drill_id,))
+        d = c.fetchone()
+        if not d:
+            raise HTTPException(status_code=404, detail="ドリルが見つかりません")
+        try:
+            qids = json.loads(d["question_ids"] or "[]")
+        except Exception:
+            qids = []
+        # 問題本体 (stem/choices/answer/explanation)
+        qmap = {}
+        if qids:
+            ph = ",".join(["?"] * len(qids))
+            c.execute(f"SELECT id, stem, choices, answer, explanation FROM grammar_questions WHERE id IN ({ph})", tuple(qids))
+            for r in c.fetchall():
+                qmap[r["id"]] = r
+        # 全 assignment の解答を集計
+        c.execute("SELECT status, answers_json, score_correct, score_total FROM grammar_drill_assignments WHERE drill_id = ?", (drill_id,))
+        a_rows = c.fetchall()
+        assigned = len(a_rows)
+        completed = 0
+        score_sum = 0.0
+        per_q = {qid: {"answered": 0, "correct": 0} for qid in qids}
+        for a in a_rows:
+            if a["status"] != "completed":
+                continue
+            completed += 1
+            if a["score_total"]:
+                score_sum += (a["score_correct"] or 0) / a["score_total"]
+            try:
+                ans = json.loads(a["answers_json"] or "{}")
+            except Exception:
+                ans = {}
+            for qid in qids:
+                key = str(qid)
+                if key not in ans and qid not in ans:
+                    continue
+                chosen = ans.get(key, ans.get(qid))
+                per_q[qid]["answered"] += 1
+                q = qmap.get(qid)
+                if q is not None:
+                    try:
+                        if int(chosen) == int(q["answer"]):
+                            per_q[qid]["correct"] += 1
+                    except (TypeError, ValueError):
+                        pass
+        # 問題別 (出題順)
+        questions = []
+        for idx, qid in enumerate(qids, 1):
+            q = qmap.get(qid)
+            stat = per_q.get(qid, {"answered": 0, "correct": 0})
+            rate = round(100 * stat["correct"] / stat["answered"], 1) if stat["answered"] else None
+            try:
+                choices = json.loads(q["choices"]) if q else []
+            except Exception:
+                choices = []
+            questions.append({
+                "no": idx,
+                "question_id": qid,
+                "stem": q["stem"] if q else "(削除済み)",
+                "choices": choices,
+                "answer": (int(q["answer"]) if q and q["answer"] is not None else None),
+                "explanation": q["explanation"] if q else None,
+                "answered": stat["answered"],
+                "correct": stat["correct"],
+                "correct_rate": rate,
+            })
+        avg_score = round(100 * score_sum / completed, 1) if completed else None
+        return {
+            "ok": True,
+            "drill": {
+                "id": drill_id, "title": d["title"], "unit": d["unit"], "level": d["level"],
+                "created_at": str(d["created_at"]) if d["created_at"] else None,
+            },
+            "summary": {"assigned": assigned, "completed": completed, "avg_correct_rate": avg_score},
+            "questions": questions,
+        }
+    except HTTPException:
+        raise
+    finally:
+        conn.close()
+
+
+@app.get("/api/student/grammar-drills")
+def student_grammar_drills(request: Request, authorization: Optional[str] = Header(None)):
+    """🎓 生徒: 自分に配信されたドリル一覧 (未完了→完了の順)。"""
+    _check_rate_limit_caller(request, authorization, bucket="grammar_drills_list", limit=30, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT a.id AS assignment_id, a.drill_id, a.status, a.score_correct, a.score_total, "
+            "       a.assigned_at, a.completed_at, d.title, d.unit, d.level "
+            "FROM grammar_drill_assignments a JOIN grammar_drills d ON d.id = a.drill_id "
+            "WHERE a.student_id = ? "
+            "ORDER BY (a.status = 'open') DESC, a.assigned_at DESC",
+            (student["id"],),
+        )
+        items = []
+        for r in c.fetchall():
+            items.append({
+                "drill_id": r["drill_id"],
+                "title": r["title"],
+                "unit": r["unit"],
+                "level": r["level"],
+                "status": r["status"],
+                "score_correct": r["score_correct"],
+                "score_total": r["score_total"],
+                "assigned_at": str(r["assigned_at"]) if r["assigned_at"] else None,
+                "completed_at": str(r["completed_at"]) if r["completed_at"] else None,
+            })
+        open_count = sum(1 for it in items if it["status"] == "open")
+        completed_count = sum(1 for it in items if it["status"] == "completed")
+        return {"ok": True, "items": items, "summary": {"open": open_count, "completed": completed_count, "total": len(items)}}
+    finally:
+        conn.close()
+
+
+@app.get("/api/student/grammar-drill/{drill_id}")
+def student_grammar_drill_get(drill_id: int, request: Request, authorization: Optional[str] = Header(None)):
+    """🎓 生徒: ドリルの問題を取得 (解答用)。未完了なら answer/explanation は隠す。完了済みなら復習用に開示。"""
+    _check_rate_limit_caller(request, authorization, bucket="grammar_drill_get", limit=60, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 🛡️ IDOR: この生徒に配信されている assignment のみ
+        c.execute(
+            "SELECT id, status, answers_json, score_correct, score_total FROM grammar_drill_assignments "
+            "WHERE drill_id = ? AND student_id = ?",
+            (drill_id, student["id"]),
+        )
+        a = c.fetchone()
+        if not a:
+            raise HTTPException(status_code=404, detail="このドリルは配信されていません")
+        c.execute("SELECT id, title, unit, level, question_ids FROM grammar_drills WHERE id = ?", (drill_id,))
+        d = c.fetchone()
+        if not d:
+            raise HTTPException(status_code=404, detail="ドリルが見つかりません")
+        try:
+            qids = json.loads(d["question_ids"] or "[]")
+        except Exception:
+            qids = []
+        reveal = (a["status"] == "completed")
+        try:
+            prev_ans = json.loads(a["answers_json"] or "{}") if reveal else {}
+        except Exception:
+            prev_ans = {}
+        qmap = {}
+        if qids:
+            ph = ",".join(["?"] * len(qids))
+            c.execute(f"SELECT id, stem, choices, answer, explanation FROM grammar_questions WHERE id IN ({ph})", tuple(qids))
+            for r in c.fetchall():
+                qmap[r["id"]] = r
+        questions = []
+        for idx, qid in enumerate(qids, 1):
+            q = qmap.get(qid)
+            if not q:
+                continue
+            try:
+                choices = json.loads(q["choices"])
+            except Exception:
+                choices = []
+            item = {"no": idx, "question_id": qid, "stem": q["stem"], "choices": choices}
+            if reveal:
+                item["answer"] = int(q["answer"]) if q["answer"] is not None else None
+                item["explanation"] = q["explanation"]
+                item["your_answer"] = prev_ans.get(str(qid), prev_ans.get(qid))
+            questions.append(item)
+        return {
+            "ok": True,
+            "drill": {"id": drill_id, "title": d["title"], "unit": d["unit"], "level": d["level"]},
+            "status": a["status"],
+            "score_correct": a["score_correct"],
+            "score_total": a["score_total"],
+            "questions": questions,
+        }
+    except HTTPException:
+        raise
+    finally:
+        conn.close()
+
+
+@app.post("/api/student/grammar-drill/{drill_id}/submit")
+def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request, authorization: Optional[str] = Header(None)):
+    """🎓 生徒: ドリルを提出・採点。
+    payload: { answers: { "<question_id>": <choice_index 0始まり> } }
+    返却: 採点結果 + 各問の正誤・正解・解説 (誤答のみフロントで解説展開)。"""
+    _check_rate_limit_caller(request, authorization, bucket="grammar_drill_submit", limit=30, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    answers = payload.get("answers") or {}
+    if not isinstance(answers, dict):
+        raise HTTPException(status_code=422, detail="answers が不正です")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT id, status FROM grammar_drill_assignments WHERE drill_id = ? AND student_id = ?",
+            (drill_id, student["id"]),
+        )
+        a = c.fetchone()
+        if not a:
+            raise HTTPException(status_code=404, detail="このドリルは配信されていません")
+        if a["status"] == "completed":
+            raise HTTPException(status_code=409, detail="このドリルは既に提出済みです")
+        c.execute("SELECT unit, question_ids FROM grammar_drills WHERE id = ?", (drill_id,))
+        d = c.fetchone()
+        if not d:
+            raise HTTPException(status_code=404, detail="ドリルが見つかりません")
+        unit = d["unit"]
+        try:
+            qids = json.loads(d["question_ids"] or "[]")
+        except Exception:
+            qids = []
+        qmap = {}
+        if qids:
+            ph = ",".join(["?"] * len(qids))
+            c.execute(f"SELECT id, stem, choices, answer, explanation FROM grammar_questions WHERE id IN ({ph})", tuple(qids))
+            for r in c.fetchall():
+                qmap[r["id"]] = r
+
+        results = []
+        correct_count = 0
+        now_iso = datetime.now(timezone.utc).isoformat()
+        attempts = []  # (eq_id, is_correct) for question_attempts
+        norm_answers = {}  # 保存用 (str key)
+        for idx, qid in enumerate(qids, 1):
+            q = qmap.get(qid)
+            if not q:
+                continue  # 配信後に無効化/削除された問題は採点対象外 (表示数=母数を一致させる)
+            raw = answers.get(str(qid), answers.get(qid))
+            try:
+                chosen = int(raw) if raw is not None and str(raw) != "" else None
+            except (TypeError, ValueError):
+                chosen = None
+            if chosen is not None:
+                norm_answers[str(qid)] = chosen
+            correct_idx = int(q["answer"]) if q["answer"] is not None else None
+            is_correct = (chosen is not None and correct_idx is not None and chosen == correct_idx)
+            if is_correct:
+                correct_count += 1
+            try:
+                choices = json.loads(q["choices"])
+            except Exception:
+                choices = []
+            results.append({
+                "no": idx,
+                "question_id": qid,
+                "stem": q["stem"],
+                "choices": choices,
+                "your_answer": chosen,
+                "correct_answer": correct_idx,
+                "is_correct": is_correct,
+                "explanation": q["explanation"],
+            })
+            attempts.append((qid, 1 if is_correct else 0))
+
+        total = len(results)  # 実在問題数 (削除済みを除く・表示数と一致)
+        # assignment 更新
+        c.execute(
+            "UPDATE grammar_drill_assignments SET status = 'completed', score_correct = ?, score_total = ?, "
+            "answers_json = ?, completed_at = CURRENT_TIMESTAMP WHERE drill_id = ? AND student_id = ? AND status != 'completed'",
+            (correct_count, total, json.dumps(norm_answers, ensure_ascii=False), drill_id, student["id"]),
+        )
+        # 🛡️ 二重提出レース防御: status ガード付き UPDATE が 0 行 = 別リクエストが先に確定済み
+        # (SELECT→UPDATE 間の競合で question_attempts が二重計上され弱点集計が汚染されるのを防ぐ)
+        if c.rowcount == 0:
+            conn.rollback()
+            raise HTTPException(status_code=409, detail="このドリルは既に提出済みです")
+        conn.commit()
+        # question_attempts に記録 (source=grammar_drill・既存の弱点集計に乗せる)
+        try:
+            for (eq_id, is_corr) in attempts:
+                meta = json.dumps({"drill_id": drill_id, "unit": unit}, ensure_ascii=False)
+                c.execute(
+                    "INSERT INTO question_attempts (student_id, source, exam_question_id, subject, topic, "
+                    "is_correct, score_got, score_max, metadata, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                    (student["id"], "grammar_drill", eq_id, "english", unit, is_corr, is_corr, 1, meta, now_iso),
+                )
+            conn.commit()
+        except Exception as e:
+            log.warning(f"[grammar_drill_submit] question_attempts INSERT failed (non-fatal): {e}")
+        # 監査 events
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("grammar_drill_completed", json.dumps({
+                    "drill_id": drill_id, "student_id": student["id"],
+                    "score_correct": correct_count, "score_total": total,
+                }, ensure_ascii=False), f"student_{student['id']}"),
+            )
+            conn.commit()
+        except Exception:
+            pass
+        pct = round(100 * correct_count / total, 1) if total else 0
+        return {
+            "ok": True,
+            "drill_id": drill_id,
+            "unit": unit,
+            "score_correct": correct_count,
+            "score_total": total,
+            "percentage": pct,
+            "results": results,
+        }
+    except HTTPException:
+        raise
     finally:
         conn.close()
 

@@ -424,6 +424,44 @@
       </div>
     </section>
 
+    <!-- 📝 英文法 単元別ドリル (2026-06-05 塾長指示) -->
+    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(96,165,250,0.06); border: 1px solid rgba(96,165,250,0.30); border-radius: 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem;">
+        <h2 style="font-size:1.15rem;color:#93c5fd;margin:0;">📝 英文法 単元別ドリル <span style="font-size:0.7rem;color:#71717a;font-weight:400;">(偏差値55-65・4択・選んだ生徒に配信 → 問題別の正解率)</span></h2>
+        <button onclick="gdRefresh()" style="background:rgba(96,165,250,0.18);color:#93c5fd;border:1px solid rgba(96,165,250,0.40);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">🔄 一覧更新</button>
+      </div>
+      <div style="background:rgba(0,0,0,0.18);border-radius:10px;padding:0.9rem;margin-bottom:0.8rem;">
+        <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.4rem;">① 単元を選ぶ <span style="color:#71717a;">(数字 = 偏差値55-65帯の在庫。<span style="color:#34d399;">緑=25問+</span> / <span style="color:#fbbf24;">黄=少なめ</span> / <span style="color:#71717a;">灰=補充要</span>)</span></div>
+        <div id="gdUnits" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.9rem;">読み込み中...</div>
+        <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;margin-bottom:0.8rem;">
+          <label style="font-size:0.8rem;color:#94a3b8;">② レベル
+            <select id="gdLevel" onchange="gdRenderUnits()" style="margin-left:0.3rem;background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:5px;padding:0.3rem;font-size:0.8rem;">
+              <option value="sa">標準〜やや難 (偏差値55-65) ★既定</option>
+              <option value="std">標準のみ</option>
+              <option value="adv">やや難のみ</option>
+              <option value="all">基礎も含める</option>
+            </select>
+          </label>
+          <label style="font-size:0.8rem;color:#94a3b8;">③ 問題数
+            <input id="gdCount" type="number" value="25" min="5" max="50" style="width:4rem;margin-left:0.3rem;background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:5px;padding:0.3rem;font-size:0.8rem;">
+          </label>
+        </div>
+        <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.35rem;">④ 配信する生徒を選ぶ
+          <input id="gdStudentFilter" oninput="gdFilterStudents(this.value)" placeholder="名前/IDで絞り込み" style="margin-left:0.4rem;background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:5px;padding:0.25rem 0.5rem;font-size:0.78rem;width:12rem;">
+          <button onclick="gdSelectAll(true)" style="margin-left:0.3rem;background:none;color:#60a5fa;border:1px solid #475569;border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;cursor:pointer;">全選択</button>
+          <button onclick="gdSelectAll(false)" style="background:none;color:#94a3b8;border:1px solid #475569;border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;cursor:pointer;">解除</button>
+        </div>
+        <div id="gdStudents" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.2rem;max-height:180px;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:6px;padding:0.5rem;margin-bottom:0.7rem;">読み込み中...</div>
+        <div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;">
+          <button onclick="gdCreate()" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;padding:0.55rem 1.2rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">📤 ドリルを配信</button>
+          <span id="gdCreateMsg" style="font-size:0.82rem;"></span>
+        </div>
+      </div>
+      <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.4rem;">📋 配信済みドリル <span style="color:#71717a;">(クリックで問題別の正解率を表示)</span></div>
+      <div id="gdList" style="display:grid;gap:0.4rem;">読み込み中...</div>
+      <div id="gdAnalytics" style="display:none;margin-top:0.8rem;"></div>
+    </section>
+
     <!-- 申込状況サマリ (60秒ごとに自動更新) -->
     <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
@@ -3493,6 +3531,113 @@
       } catch (e) { console.warn('[loadE2ESyntheticStatus] failed:', e); }
     }
     function escapeHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    // ========== 📝 英文法 単元別ドリル (2026-06-05 塾長指示) ==========
+    let _gdUnits = [], _gdStudents = [], _gdSelUnit = null;
+    async function gdInit() {
+      if (!window.AdminAuth || !AdminAuth.getToken()) return;
+      try { await Promise.all([gdLoadUnits(), gdLoadStudents()]); gdRefresh(); }
+      catch (e) { console.warn('[gd] init', e); }
+    }
+    async function gdLoadUnits() {
+      const res = await AdminAuth.fetch('/api/admin/grammar/units');
+      if (!res.ok) return;
+      const data = await res.json();
+      _gdUnits = data.units || [];
+      gdRenderUnits();
+    }
+    function gdCurrentLevels() {
+      const lv = (document.getElementById('gdLevel') || {}).value || 'sa';
+      return lv === 'all' ? ['basic', 'standard', 'advanced'] : (lv === 'std' ? ['standard'] : (lv === 'adv' ? ['advanced'] : ['standard', 'advanced']));
+    }
+    function gdRenderUnits() {
+      const box = document.getElementById('gdUnits'); if (!box) return;
+      const levels = gdCurrentLevels();
+      box.innerHTML = _gdUnits.map(u => {
+        const sa = levels.reduce((acc, lv) => acc + (u[lv] || 0), 0);  // 選択中レベルの在庫で色判定 (バッジと配信可否を一致)
+        const color = sa >= 25 ? '#34d399' : (sa >= 5 ? '#fbbf24' : '#71717a');
+        const dis = sa >= 5 ? '' : 'opacity:0.45;';
+        return `<button type="button" onclick="gdSelUnit('${escapeHtml(u.unit)}')" data-unit="${escapeHtml(u.unit)}" style="background:rgba(96,165,250,0.10);border:1px solid #475569;border-radius:6px;padding:0.3rem 0.6rem;font-size:0.78rem;color:#e5e7eb;cursor:pointer;${dis}">${escapeHtml(u.unit)} <span style="color:${color};font-weight:700;">${sa}</span></button>`;
+      }).join('') || '<span style="color:#71717a;">単元なし</span>';
+    }
+    function gdSelUnit(unit) {
+      _gdSelUnit = unit;
+      document.querySelectorAll('#gdUnits button').forEach(b => { b.style.outline = (b.dataset.unit === unit) ? '2px solid #60a5fa' : 'none'; });
+      const m = document.getElementById('gdCreateMsg'); if (m) m.innerHTML = `<span style="color:#93c5fd;">単元「${escapeHtml(unit)}」を選択中</span>`;
+    }
+    async function gdLoadStudents() {
+      const res = await AdminAuth.fetch('/api/admin/stats');
+      if (!res.ok) return;
+      const data = await res.json();
+      _gdStudents = (data.students || []).filter(s => s.status !== 'canceled');
+      gdRenderStudents('');
+    }
+    function gdRenderStudents(filter) {
+      const box = document.getElementById('gdStudents'); if (!box) return;
+      const f = (filter || '').toLowerCase();
+      const list = _gdStudents.filter(s => !f || (s.name || '').toLowerCase().includes(f) || String(s.id).includes(f));
+      box.innerHTML = list.map(s =>
+        `<label style="display:flex;align-items:center;gap:0.3rem;font-size:0.76rem;color:#e5e7eb;padding:0.15rem;"><input type="checkbox" class="gd-st" value="${s.id}"> ${escapeHtml(s.name || '(無名)')} <span style="color:#71717a;">#${s.id}</span></label>`
+      ).join('') || '<div style="color:#71717a;font-size:0.78rem;">該当生徒なし</div>';
+    }
+    function gdFilterStudents(v) { gdRenderStudents(v); }
+    function gdSelectAll(on) { document.querySelectorAll('.gd-st').forEach(c => { c.checked = on; }); }
+    async function gdCreate() {
+      const msg = document.getElementById('gdCreateMsg');
+      if (!_gdSelUnit) { if (msg) msg.innerHTML = '<span style="color:#fca5a5;">先に単元を選んでください</span>'; return; }
+      const lv = document.getElementById('gdLevel').value;
+      const levels = lv === 'all' ? ['basic', 'standard', 'advanced'] : (lv === 'std' ? ['standard'] : (lv === 'adv' ? ['advanced'] : ['standard', 'advanced']));
+      const count = parseInt(document.getElementById('gdCount').value, 10) || 25;
+      const ids = Array.from(document.querySelectorAll('.gd-st:checked')).map(c => parseInt(c.value, 10));
+      if (!ids.length) { if (msg) msg.innerHTML = '<span style="color:#fca5a5;">配信する生徒を1人以上選んでください</span>'; return; }
+      if (msg) msg.innerHTML = '⏳ 配信中...';
+      try {
+        const res = await AdminAuth.fetch('/api/admin/grammar-drill/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ unit: _gdSelUnit, levels, count, student_ids: ids }) });
+        const data = await res.json();
+        if (!res.ok) { if (msg) msg.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(data.detail || '配信失敗')}</span>`; return; }
+        if (msg) msg.innerHTML = `<span style="color:#86efac;">${escapeHtml(data.message || '配信完了')}</span>`;
+        gdSelectAll(false); gdRefresh();
+      } catch (e) { if (msg) msg.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(String(e))}</span>`; }
+    }
+    async function gdRefresh() {
+      try {
+        const res = await AdminAuth.fetch('/api/admin/grammar-drill/list');
+        if (!res.ok) return;
+        const data = await res.json();
+        const box = document.getElementById('gdList'); if (!box) return;
+        const items = data.items || [];
+        if (!items.length) { box.innerHTML = '<div style="color:#71717a;font-size:0.8rem;padding:0.4rem;">まだドリルがありません</div>'; return; }
+        box.innerHTML = items.map(d => {
+          const rate = d.avg_correct_rate == null ? '—' : `${d.avg_correct_rate}%`;
+          const rc = d.avg_correct_rate == null ? '#71717a' : (d.avg_correct_rate >= 70 ? '#34d399' : (d.avg_correct_rate >= 50 ? '#fbbf24' : '#fca5a5'));
+          return `<div onclick="gdAnalytics(${d.id})" style="cursor:pointer;background:rgba(0,0,0,0.2);border:1px solid #334155;border-radius:8px;padding:0.5rem 0.7rem;"><div style="font-size:0.84rem;color:#e5e7eb;font-weight:700;">${escapeHtml(d.title)}</div><div style="font-size:0.75rem;color:#94a3b8;">配信 ${d.assigned}名 / 完了 ${d.completed}名 ・ 平均正解率 <span style="color:${rc};font-weight:700;">${rate}</span></div></div>`;
+        }).join('');
+      } catch (e) { console.warn('[gd] list', e); }
+    }
+    async function gdAnalytics(drillId) {
+      const box = document.getElementById('gdAnalytics'); if (!box) return;
+      box.style.display = 'block'; box.innerHTML = '<div style="color:#94a3b8;padding:0.5rem;">⏳ 分析を取得中...</div>';
+      try {
+        const res = await AdminAuth.fetch(`/api/admin/grammar-drill/${drillId}/analytics`);
+        const data = await res.json();
+        if (!res.ok) { box.innerHTML = `<span style="color:#fca5a5;">${escapeHtml(data.detail || '取得失敗')}</span>`; return; }
+        const s = data.summary || {};
+        let html = `<div style="background:rgba(0,0,0,0.28);border:1px solid #475569;border-radius:10px;padding:0.9rem;"><div style="display:flex;justify-content:space-between;align-items:center;"><strong style="color:#93c5fd;">📊 ${escapeHtml(data.drill.title)}</strong><button onclick="gdCloseAnalytics()" style="background:none;color:#94a3b8;border:1px solid #475569;border-radius:4px;padding:0.15rem 0.5rem;cursor:pointer;">✕ 閉じる</button></div>`;
+        html += `<div style="font-size:0.8rem;color:#94a3b8;margin:0.4rem 0 0.6rem;">配信 ${s.assigned}名 / 完了 ${s.completed}名 ・ 平均正解率 ${s.avg_correct_rate == null ? '—' : s.avg_correct_rate + '%'}</div>`;
+        html += (data.questions || []).map(q => {
+          const rate = q.correct_rate == null ? '—' : `${q.correct_rate}%`;
+          const rc = q.correct_rate == null ? '#71717a' : (q.correct_rate >= 70 ? '#34d399' : (q.correct_rate >= 50 ? '#fbbf24' : '#fca5a5'));
+          const corr = (q.choices && q.answer != null && q.choices[q.answer] != null) ? `正解 ${q.answer + 1}. ${escapeHtml(String(q.choices[q.answer]))}` : '';
+          return `<div style="border-top:1px solid #334155;padding:0.45rem 0;"><div style="font-size:0.82rem;color:#e5e7eb;"><strong>問${q.no}</strong> ・ 正解率 <span style="color:${rc};font-weight:800;">${rate}</span> <span style="color:#71717a;">(${q.correct}/${q.answered}人)</span></div><div style="font-size:0.8rem;color:#cbd5e1;margin:0.15rem 0;">${escapeHtml(q.stem)}</div><div style="font-size:0.75rem;color:#86efac;">${corr}</div></div>`;
+        }).join('');
+        html += '</div>';
+        box.innerHTML = html;
+        box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } catch (e) { box.innerHTML = `<span style="color:#fca5a5;">${escapeHtml(String(e))}</span>`; }
+    }
+    function gdCloseAnalytics() { const b = document.getElementById('gdAnalytics'); if (b) { b.style.display = 'none'; b.innerHTML = ''; } }
+    window.gdSelUnit = gdSelUnit; window.gdFilterStudents = gdFilterStudents; window.gdSelectAll = gdSelectAll; window.gdCreate = gdCreate; window.gdRefresh = gdRefresh; window.gdAnalytics = gdAnalytics; window.gdCloseAnalytics = gdCloseAnalytics; window.gdRenderUnits = gdRenderUnits;
+    document.addEventListener('DOMContentLoaded', gdInit);
 
     // 📚 教材プール 未作成リクエスト 一覧読込
     async function loadTextbookMissingRequests() {

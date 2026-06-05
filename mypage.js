@@ -319,6 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
   try { initReferralSection(); } catch (e) { console.error('initReferralSection failed:', e); }
   try { initCustomGptBlock(); } catch (e) { console.error('initCustomGptBlock failed:', e); }
   try { initHomeworkSection(); } catch (e) { console.error('initHomeworkSection failed:', e); }
+  try { initGrammarDrillSection(); } catch (e) { console.error('initGrammarDrillSection failed:', e); }
 });
 
 // 🤖 ai-juku 公式 Custom GPT 案内 block (2026-05-23 塾長指示「C: 生徒画面に Custom GPT 案内」)
@@ -4103,4 +4104,383 @@ async function initHomeworkSection() {
   });
 
   await refresh();
+}
+
+// ==========================================================================
+// 📝 単元別ドリル (英文法 4 択ドリル・2026-06-05)
+//   - 配信されていれば誰でも解ける (course ゲート無し)。drill 0 件なら section 非表示。
+//   - 認証は slApiFetch() 経由 (内部で _slToken() → AuthGuard.getToken()/localStorage → Authorization: Bearer)。
+//   - stem/explanation/choices/title は全て _gdEscape (= escapeHtml ベース) でエスケープ後に表示。
+//     さらに stem/explanation は <u>...</u> を復活 (下線対応・既存 3 ファイル whitelist 方式に準拠) し、
+//     $$/\[/\( の数式を KaTeX で組版 (learning-brain.js の _lbApplyKatex と同方式・CDN defer retry 付き)。
+// ==========================================================================
+
+// XSS エスケープ (homework の _hwEscape と同様・グローバル escapeHtml に委譲)
+function _gdEscape(s) {
+  return escapeHtml(s);
+}
+
+// 下線対応: エスケープ済み文字列の中の &lt;u&gt;...&lt;/u&gt; だけを <u>...</u> に復活。
+// (english-exam.js / learning-brain.js / mock-exam.js の whitelist 復活方式に準拠。属性は付けない)
+function _gdRestoreUnderline(escaped) {
+  return String(escaped == null ? '' : escaped)
+    .replace(/&lt;u&gt;/g, '<u>')
+    .replace(/&lt;\/u&gt;/g, '</u>');
+}
+
+// stem/explanation 用: エスケープ → <u> 復活 (数式 delimiters はそのまま残し KaTeX に渡す)
+function _gdRich(s) {
+  return _gdRestoreUnderline(_gdEscape(s));
+}
+
+// 🧮 KaTeX 自動組版 (CDN defer load 対応で未ロード時はリトライ・learning-brain.js _lbApplyKatex と同方式)。
+//   delimiters は $$ / \[ / \( + 単一 $ (英文法ドリルは通貨 $ を含まない前提・stem の $...$ 数式を拾うため)。
+function _gdApplyKatex(rootEl) {
+  if (!rootEl) return;
+  const run = () => {
+    if (typeof window.renderMathInElement !== 'function') return false;
+    try {
+      window.renderMathInElement(rootEl, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '\\[', right: '\\]', display: true },
+          { left: '\\(', right: '\\)', display: false },
+          { left: '$', right: '$', display: false },
+        ],
+        throwOnError: false,
+        errorColor: '#f87171',
+        strict: 'ignore',
+      });
+    } catch (e) { console.warn('[GD katex] render failed', e); }
+    return true;
+  };
+  if (run()) return;
+  let tries = 0;
+  const id = setInterval(() => { tries++; if (run() || tries > 20) clearInterval(id); }, 200);
+}
+
+// 一覧用の状態バッジ (未完了 / ✅完了 score)
+function _gdStatusBadge(item) {
+  if (item.status === 'completed') {
+    const sc = (item.score_correct != null && item.score_total != null)
+      ? ` ${item.score_correct}/${item.score_total}` : '';
+    return `<span style="font-size:0.74rem; padding:2px 8px; background:rgba(52,211,153,0.18); color:#6ee7b7; border-radius:8px; font-weight:bold;">✅ 完了${_gdEscape(sc)}</span>`;
+  }
+  return `<span style="font-size:0.74rem; padding:2px 8px; background:rgba(20,184,166,0.22); color:#5eead4; border-radius:8px; font-weight:bold;">未完了</span>`;
+}
+
+// 一覧の 1 行
+function _gdRenderListItem(item) {
+  const isOpen = item.status !== 'completed';
+  const unitBadge = item.unit
+    ? `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(99,102,241,0.2); color:#a5b4fc; border-radius:8px;">${_gdEscape(item.unit)}</span>`
+    : '';
+  const levelBadge = item.level
+    ? `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(255,255,255,0.06); color:#a1a1aa; border-radius:8px;">${_gdEscape(item.level)}</span>`
+    : '';
+  const cta = isOpen ? '解く ▶' : '結果を見る ▶';
+  return `<div class="gd-item" data-gd-open="${_gdEscape(item.drill_id)}" role="button" tabindex="0" style="padding:14px 16px; background:${isOpen ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.02)'}; border:1px solid ${isOpen ? 'rgba(20,184,166,0.3)' : 'rgba(255,255,255,0.06)'}; border-radius:10px; margin-bottom:10px; cursor:pointer;">
+    <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+      ${unitBadge}${levelBadge}${_gdStatusBadge(item)}
+    </div>
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div style="color:${isOpen ? '#fff' : '#cbd5e1'}; font-weight:bold; font-size:0.96rem;">${_gdRich(item.title)}</div>
+      <span style="flex:0 0 auto; font-size:0.8rem; color:#5eead4; font-weight:bold;">${cta}</span>
+    </div>
+  </div>`;
+}
+
+// 1 問の選択肢ラジオ群を描画 (表示は ①②③④ = index+1、value は 0 始まり index)
+function _gdRenderChoices(drillId, q) {
+  const marks = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧'];
+  const choices = Array.isArray(q.choices) ? q.choices : [];
+  const name = `gd_${_gdEscape(String(drillId))}_q_${_gdEscape(String(q.question_id))}`;
+  return choices.map((c, i) => {
+    const mark = marks[i] || `(${i + 1})`;
+    return `<label class="gd-choice" style="display:flex; align-items:flex-start; gap:8px; padding:9px 11px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1); border-radius:8px; margin-bottom:7px; cursor:pointer;">
+      <input type="radio" name="${name}" value="${i}" data-gd-qid="${_gdEscape(String(q.question_id))}" style="margin-top:3px; flex:0 0 auto;">
+      <span style="color:#e2e8f0; font-size:0.9rem; line-height:1.5;"><span style="color:#5eead4; font-weight:bold; margin-right:4px;">${mark}</span>${_gdRich(c)}</span>
+    </label>`;
+  }).join('');
+}
+
+// 解答前 / 復習表示の 1 問ブロック
+function _gdRenderQuestionBlock(drillId, q, opts) {
+  opts = opts || {};
+  const review = !!opts.review; // 完了済みドリルの復習表示か
+  const marks = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧'];
+  let body;
+  if (review) {
+    // 完了済み: your_answer / answer(正解 index) / explanation を表示。間違えた問だけ explanation を展開。
+    const yourIdx = (q.your_answer == null) ? null : Number(q.your_answer);
+    const correctIdx = (q.answer == null) ? null : Number(q.answer);
+    const isCorrect = (yourIdx != null && correctIdx != null && yourIdx === correctIdx);
+    const choices = Array.isArray(q.choices) ? q.choices : [];
+    const choiceLines = choices.map((c, i) => {
+      const mark = marks[i] || `(${i + 1})`;
+      const isYour = (yourIdx === i);
+      const isCorr = (correctIdx === i);
+      let bg = 'rgba(0,0,0,0.2)', border = 'rgba(255,255,255,0.08)', tag = '';
+      if (isCorr) { bg = 'rgba(52,211,153,0.12)'; border = 'rgba(52,211,153,0.45)'; tag = ' <span style="color:#6ee7b7; font-weight:bold;">✓ 正解</span>'; }
+      if (isYour && !isCorr) { bg = 'rgba(239,68,68,0.12)'; border = 'rgba(239,68,68,0.45)'; tag = ' <span style="color:#fca5a5; font-weight:bold;">✗ あなたの解答</span>'; }
+      else if (isYour && isCorr) { tag = ' <span style="color:#6ee7b7; font-weight:bold;">← あなたの解答 ✓</span>'; }
+      return `<div style="padding:8px 11px; background:${bg}; border:1px solid ${border}; border-radius:8px; margin-bottom:6px; font-size:0.9rem; color:#e2e8f0; line-height:1.5;"><span style="color:#5eead4; font-weight:bold; margin-right:4px;">${mark}</span>${_gdRich(c)}${tag}</div>`;
+    }).join('');
+    body = choiceLines + _gdExplanationBlock(q, isCorrect);
+  } else {
+    body = _gdRenderChoices(drillId, q);
+  }
+  const statusMark = review
+    ? ((q.your_answer != null && q.answer != null && Number(q.your_answer) === Number(q.answer))
+        ? '<span style="color:#6ee7b7;">✓</span>' : '<span style="color:#fca5a5;">✗</span>')
+    : '';
+  return `<div class="gd-q" data-gd-q-block="${_gdEscape(String(q.question_id))}" style="padding:14px 15px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:10px; margin-bottom:12px;">
+    <div style="font-weight:bold; color:#fff; font-size:0.95rem; margin-bottom:10px; line-height:1.6;"><span style="color:#5eead4; margin-right:6px;">Q${_gdEscape(String(q.no))}.</span> ${statusMark} ${_gdRich(q.stem)}</div>
+    ${body}
+  </div>`;
+}
+
+// 解説ブロック: 間違えた問題だけ explanation を展開表示 (正解時は折りたたみ表示)
+function _gdExplanationBlock(q, isCorrect) {
+  const expl = q.explanation;
+  if (!expl) return '';
+  if (isCorrect) {
+    // 正解は控えめに (details で任意展開)
+    return `<details style="margin-top:8px;"><summary style="cursor:pointer; color:#6ee7b7; font-size:0.8rem;">📖 解説を見る</summary><div style="margin-top:6px; padding:9px 12px; background:rgba(52,211,153,0.06); border-left:3px solid #34d399; border-radius:6px; font-size:0.85rem; color:#cbd5e1; line-height:1.65; white-space:pre-wrap;">${_gdRich(expl)}</div></details>`;
+  }
+  // 誤答は常に展開
+  return `<div style="margin-top:8px; padding:9px 12px; background:rgba(239,68,68,0.07); border-left:3px solid #ef4444; border-radius:6px; font-size:0.85rem; color:#fde68a; line-height:1.65;"><span style="color:#fca5a5; font-weight:bold;">📖 解説</span><div style="color:#cbd5e1; margin-top:4px; white-space:pre-wrap;">${_gdRich(expl)}</div></div>`;
+}
+
+// 採点結果 (submit レスポンス results[]) の 1 問
+function _gdRenderResultItem(r) {
+  const marks = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧'];
+  const choices = Array.isArray(r.choices) ? r.choices : [];
+  const yourIdx = (r.your_answer == null) ? null : Number(r.your_answer);
+  const correctIdx = (r.correct_answer == null) ? null : Number(r.correct_answer);
+  const isCorrect = !!r.is_correct;
+  const choiceLines = choices.map((c, i) => {
+    const mark = marks[i] || `(${i + 1})`;
+    const isYour = (yourIdx === i);
+    const isCorr = (correctIdx === i);
+    let bg = 'rgba(0,0,0,0.2)', border = 'rgba(255,255,255,0.08)', tag = '';
+    if (isCorr) { bg = 'rgba(52,211,153,0.12)'; border = 'rgba(52,211,153,0.45)'; tag = ' <span style="color:#6ee7b7; font-weight:bold;">✓ 正解</span>'; }
+    if (isYour && !isCorr) { bg = 'rgba(239,68,68,0.12)'; border = 'rgba(239,68,68,0.45)'; tag = ' <span style="color:#fca5a5; font-weight:bold;">✗ あなたの解答</span>'; }
+    else if (isYour && isCorr) { tag = ' <span style="color:#6ee7b7; font-weight:bold;">← あなたの解答 ✓</span>'; }
+    return `<div style="padding:8px 11px; background:${bg}; border:1px solid ${border}; border-radius:8px; margin-bottom:6px; font-size:0.9rem; color:#e2e8f0; line-height:1.5;"><span style="color:#5eead4; font-weight:bold; margin-right:4px;">${mark}</span>${_gdRich(c)}${tag}</div>`;
+  }).join('');
+  const head = isCorrect
+    ? '<span style="color:#6ee7b7; font-weight:bold;">✓ 正解</span>'
+    : '<span style="color:#fca5a5; font-weight:bold;">✗ 不正解</span>';
+  // 間違えた問題だけ explanation を展開 (正解は details で任意展開)
+  const explBlock = _gdExplanationBlock({ explanation: r.explanation }, isCorrect);
+  return `<div style="padding:14px 15px; background:rgba(255,255,255,0.02); border:1px solid ${isCorrect ? 'rgba(52,211,153,0.25)' : 'rgba(239,68,68,0.3)'}; border-radius:10px; margin-bottom:12px;">
+    <div style="font-weight:bold; color:#fff; font-size:0.95rem; margin-bottom:10px; line-height:1.6;"><span style="color:#5eead4; margin-right:6px;">Q${_gdEscape(String(r.no))}.</span> ${head} <span style="margin-left:4px;">${_gdRich(r.stem)}</span></div>
+    ${choiceLines}
+    ${explBlock}
+  </div>`;
+}
+
+async function initGrammarDrillSection() {
+  const section = document.getElementById('grammarDrillSection');
+  if (!section) return;
+  const list = section.querySelector('#grammarDrillList');
+  const badge = section.querySelector('#grammarDrillBadge');
+  if (!list) return;
+
+  // 一覧描画 (戻れるように再利用)
+  async function loadList() {
+    let data;
+    try {
+      data = await slApiFetch('/api/student/grammar-drills');
+    } catch (e) {
+      // 取得失敗時: プレビュー(no-op)や未配信は section 非表示に倒す (宿題と同様 1 機能 1 表示)
+      if (e && e.preview) { section.style.display = 'none'; return; }
+      // 真の取得失敗のみ section を出してエラー表示 (drill 有無不明のため)
+      section.style.display = 'block';
+      list.innerHTML = `<div style="color:#fca5a5; padding:12px; background:rgba(239,68,68,0.08); border-radius:8px; font-size:0.85rem;">⚠ ドリルの取得に失敗しました (${_gdEscape((e && (e.message || e)) || '')})</div>`;
+      return;
+    }
+    const items = (data && data.items) || [];
+    if (items.length === 0) {
+      // ドリル 0 件 → section ごと非表示
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = 'block';
+
+    // バッジ (未完了件数)
+    const openN = (data.summary && data.summary.open != null)
+      ? data.summary.open : items.filter(it => it.status !== 'completed').length;
+    if (openN > 0) {
+      badge.style.display = 'inline-block';
+      badge.textContent = `未完了 ${openN}`;
+    } else {
+      badge.style.display = 'none';
+    }
+
+    // API は未完了→完了の順で返す前提。念のため未完了優先で安定ソート。
+    const openItems = items.filter(it => it.status !== 'completed');
+    const doneItems = items.filter(it => it.status === 'completed');
+    let html = openItems.map(_gdRenderListItem).join('');
+    if (doneItems.length > 0) {
+      html += `<div style="margin-top:1.2rem; padding-top:0.9rem; border-top:1px dashed rgba(255,255,255,0.08);">
+        <div style="color:#a1a1aa; font-size:0.78rem; margin-bottom:8px;">✅ 完了済みドリル (タップで復習)</div>
+        ${doneItems.map(_gdRenderListItem).join('')}
+      </div>`;
+    }
+    list.innerHTML = html;
+    _gdApplyKatex(list);
+  }
+
+  // ドリルを開く (GET /api/student/grammar-drill/{id})
+  async function openDrill(drillId) {
+    list.innerHTML = `<div style="color:#71717a; text-align:center; padding:1.2rem 0; font-size:0.85rem;">⏳ 読み込み中...</div>`;
+    let data;
+    try {
+      data = await slApiFetch(`/api/student/grammar-drill/${encodeURIComponent(drillId)}`);
+    } catch (e) {
+      list.innerHTML = `<div style="color:#fca5a5; padding:12px; background:rgba(239,68,68,0.08); border-radius:8px; font-size:0.85rem;">⚠ ドリルを開けませんでした (${_gdEscape((e && (e.message || e)) || '')})</div>
+        <div style="text-align:center; margin-top:10px;"><button type="button" data-gd-back="1" style="padding:7px 16px; background:rgba(255,255,255,0.06); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); border-radius:8px; cursor:pointer; font-size:0.82rem;">← 一覧に戻る</button></div>`;
+      return;
+    }
+    const drill = (data && data.drill) || {};
+    const questions = (data && data.questions) || [];
+    const isCompleted = data.status === 'completed';
+    const titleHtml = _gdRich(drill.title || '');
+    const meta = [drill.unit, drill.level].filter(Boolean).map(x => _gdEscape(x)).join(' ・ ');
+
+    if (isCompleted) {
+      // 完了済み → 復習表示 (your_answer / answer / explanation)
+      const sc = (data.score_correct != null && data.score_total != null)
+        ? `${data.score_correct}/${data.score_total}` : '';
+      const pct = (data.score_correct != null && data.score_total)
+        ? Math.round((data.score_correct / data.score_total) * 100) : null;
+      const blocks = questions.map(q => _gdRenderQuestionBlock(drillId, q, { review: true })).join('');
+      list.innerHTML = `
+        <div style="margin-bottom:12px;">
+          <button type="button" data-gd-back="1" style="padding:7px 16px; background:rgba(255,255,255,0.06); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); border-radius:8px; cursor:pointer; font-size:0.82rem;">← 一覧に戻る</button>
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="font-size:1.0rem; font-weight:800; color:#fff;">${titleHtml}</div>
+          ${meta ? `<div style="font-size:0.8rem; color:#94a3b8; margin-top:3px;">${meta}</div>` : ''}
+          <div style="margin-top:10px; padding:10px 14px; background:rgba(52,211,153,0.1); border:1px solid rgba(52,211,153,0.35); border-radius:10px; color:#6ee7b7; font-weight:bold; font-size:0.95rem;">✅ 完了済み スコア ${_gdEscape(sc)}${pct != null ? ` (${pct}%)` : ''}</div>
+        </div>
+        ${blocks}
+        <div style="text-align:center; margin-top:6px;">
+          <button type="button" data-gd-back="1" style="padding:8px 18px; background:rgba(255,255,255,0.06); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); border-radius:8px; cursor:pointer; font-size:0.85rem;">← 一覧に戻る</button>
+        </div>`;
+      _gdApplyKatex(list);
+      return;
+    }
+
+    // 未完了 → 解答フォーム
+    const blocks = questions.map(q => _gdRenderQuestionBlock(drillId, q, { review: false })).join('');
+    list.innerHTML = `
+      <div style="margin-bottom:12px;">
+        <button type="button" data-gd-back="1" style="padding:7px 16px; background:rgba(255,255,255,0.06); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); border-radius:8px; cursor:pointer; font-size:0.82rem;">← 一覧に戻る</button>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:1.0rem; font-weight:800; color:#fff;">${titleHtml}</div>
+        ${meta ? `<div style="font-size:0.8rem; color:#94a3b8; margin-top:3px;">${meta}</div>` : ''}
+        <div style="font-size:0.78rem; color:#94a3b8; margin-top:6px;">全 ${questions.length} 問 — すべて答えてから「提出」を押してください。</div>
+      </div>
+      <div data-gd-form="${_gdEscape(String(drillId))}">${blocks}</div>
+      <div data-gd-submit-msg style="text-align:center; color:#fca5a5; font-size:0.82rem; min-height:1.1em; margin-bottom:8px;"></div>
+      <div style="text-align:center;">
+        <button type="button" data-gd-submit="${_gdEscape(String(drillId))}" data-gd-total="${questions.length}" style="padding:11px 28px; background:linear-gradient(135deg,#14b8a6,#10b981); color:#fff; border:0; border-radius:10px; font-weight:bold; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 12px rgba(20,184,166,0.3);">📤 提出して採点する</button>
+      </div>`;
+    _gdApplyKatex(list);
+  }
+
+  // 提出 (POST /api/student/grammar-drill/{id}/submit)
+  async function submitDrill(drillId, expectedTotal, btn) {
+    const form = list.querySelector(`[data-gd-form="${CSS && CSS.escape ? CSS.escape(String(drillId)) : drillId}"]`)
+      || list.querySelector('[data-gd-form]');
+    const msgEl = list.querySelector('[data-gd-submit-msg]');
+    const answers = {};
+    if (form) {
+      form.querySelectorAll('input[type="radio"]:checked').forEach(inp => {
+        const qid = inp.getAttribute('data-gd-qid');
+        if (qid != null) answers[qid] = Number(inp.value);
+      });
+    }
+    const answeredN = Object.keys(answers).length;
+    if (expectedTotal && answeredN < Number(expectedTotal)) {
+      if (msgEl) msgEl.textContent = `⚠ 未回答の問題があります (${answeredN}/${expectedTotal})。すべて答えてください。`;
+      return;
+    }
+    if (msgEl) msgEl.textContent = '';
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ 採点中...'; }
+    let res;
+    try {
+      res = await slApiFetch(`/api/student/grammar-drill/${encodeURIComponent(drillId)}/submit`, {
+        method: 'POST',
+        body: JSON.stringify({ answers }),
+      });
+    } catch (e) {
+      if (msgEl) msgEl.textContent = '❌ 提出に失敗しました: ' + ((e && (e.message || e)) || '');
+      if (btn) { btn.disabled = false; btn.textContent = '📤 提出して採点する'; }
+      return;
+    }
+    renderResult(drillId, res);
+  }
+
+  // 採点結果表示
+  function renderResult(drillId, res) {
+    const results = (res && res.results) || [];
+    const correct = (res && res.score_correct != null) ? res.score_correct : 0;
+    const total = (res && res.score_total != null) ? res.score_total : results.length;
+    const pct = (res && res.percentage != null)
+      ? res.percentage
+      : (total ? Math.round((correct / total) * 100) : 0);
+    const blocks = results.map(_gdRenderResultItem).join('');
+    list.innerHTML = `
+      <div style="margin-bottom:12px;">
+        <button type="button" data-gd-back="1" style="padding:7px 16px; background:rgba(255,255,255,0.06); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); border-radius:8px; cursor:pointer; font-size:0.82rem;">← 一覧に戻る</button>
+      </div>
+      <div style="text-align:center; margin-bottom:16px; padding:16px; background:linear-gradient(135deg,rgba(20,184,166,0.14),rgba(16,185,129,0.1)); border:1px solid rgba(20,184,166,0.4); border-radius:12px;">
+        <div style="font-size:0.85rem; color:#94a3b8; margin-bottom:4px;">採点結果</div>
+        <div style="font-size:2rem; font-weight:800; color:#5eead4;">${_gdEscape(String(correct))} / ${_gdEscape(String(total))} <span style="font-size:1.1rem; color:#cbd5e1;">(${_gdEscape(String(pct))}%)</span></div>
+        <div style="font-size:0.82rem; color:#cbd5e1; margin-top:6px;">${pct >= 80 ? '🎉 素晴らしい!' : pct >= 60 ? '👍 もう一歩!' : '📖 間違えた問題の解説を確認しましょう'}</div>
+      </div>
+      ${blocks}
+      <div style="text-align:center; margin-top:6px;">
+        <button type="button" data-gd-back="1" style="padding:9px 20px; background:rgba(255,255,255,0.06); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); border-radius:8px; cursor:pointer; font-size:0.85rem;">← 一覧に戻る</button>
+      </div>`;
+    _gdApplyKatex(list);
+  }
+
+  // イベント委譲 (一覧の行クリック / 戻る / 提出)
+  list.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!t || !t.closest) return;
+    const back = t.closest('[data-gd-back]');
+    if (back) { loadList(); return; }
+    const submitBtn = t.closest('[data-gd-submit]');
+    if (submitBtn) {
+      const did = submitBtn.getAttribute('data-gd-submit');
+      const total = submitBtn.getAttribute('data-gd-total');
+      submitDrill(did, total, submitBtn);
+      return;
+    }
+    const openEl = t.closest('[data-gd-open]');
+    if (openEl) {
+      const did = openEl.getAttribute('data-gd-open');
+      if (did) openDrill(did);
+      return;
+    }
+  });
+  // キーボード操作 (一覧行の Enter/Space で開く)
+  list.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const openEl = e.target && e.target.closest && e.target.closest('[data-gd-open]');
+    if (openEl) {
+      e.preventDefault();
+      const did = openEl.getAttribute('data-gd-open');
+      if (did) openDrill(did);
+    }
+  });
+
+  await loadList();
 }
