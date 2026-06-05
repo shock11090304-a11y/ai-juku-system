@@ -31952,7 +31952,7 @@ def student_comparison_overview(request: Request, authorization: Optional[str] =
         # ① 学習時間 (直近7日合計・分・在籍生徒[paid/trial]のみ = 退会者/期限切れを母集団から除外)
         cutoff7 = (_today_jst() - timedelta(days=6)).isoformat()
         c.execute("SELECT sl.student_id AS stu_id, SUM(sl.minutes) AS total FROM study_logs sl "
-                  "JOIN students s ON s.id = sl.student_id AND s.status IN ('paid','trial') "
+                  "JOIN students s ON s.id = sl.student_id AND (s.status IN ('paid','trial') OR s.course = 'kokuritsu_nankan') "
                   "WHERE sl.studied_date >= ? GROUP BY sl.student_id", (cutoff7,))
         stmap = {r["stu_id"]: int(r["total"] or 0) for r in c.fetchall() if (r["total"] or 0) > 0}
         st = _comp_stat(sid, stmap, higher_better=True, unit="minutes", min_n=3)
@@ -31960,7 +31960,7 @@ def student_comparison_overview(request: Request, authorization: Optional[str] =
         result["study_time"] = st
         # ② 模試 (exam_type別・正答率%で公平比較[満点変動を吸収]・各生徒の最新・在籍生徒のみ・偏差値)
         c.execute("SELECT m.exam_type AS et, m.student_id AS stu_id, m.score_total AS sc, m.score_max AS mx "
-                  "FROM mock_exam_sessions m JOIN students s ON s.id = m.student_id AND s.status IN ('paid','trial') "
+                  "FROM mock_exam_sessions m JOIN students s ON s.id = m.student_id AND (s.status IN ('paid','trial') OR s.course = 'kokuritsu_nankan') "
                   "WHERE m.submitted_at IS NOT NULL AND m.score_total IS NOT NULL AND m.score_max > 0 "
                   "ORDER BY m.submitted_at ASC")
         groups = {}
@@ -31971,8 +31971,9 @@ def student_comparison_overview(request: Request, authorization: Optional[str] =
         for et, gmap in groups.items():
             if sid not in gmap:
                 continue
-            # min_n=5: 偏差値の安定 + 小母集団での他者スコア逆算(平均からの復元)を防止
-            stat = _comp_stat(sid, gmap, higher_better=True, min_n=5, with_deviation=True)
+            # min_n=2: 塾長指示(2026-06-05)で小規模塾向けに2人から表示。
+            # ⚠️ 2人だと「平均×2−自分」で相手の正答率が逆算可能(プライバシー留意)・塾長承知の上。
+            stat = _comp_stat(sid, gmap, higher_better=True, min_n=2, with_deviation=True)
             if stat.get("available"):
                 stat["exam_type"] = et
                 stat["exam_label"] = (MOCK_EXAM_TEMPLATES.get(et, {}) or {}).get("label", et)
@@ -31981,7 +31982,7 @@ def student_comparison_overview(request: Request, authorization: Optional[str] =
         # ③ 正解率 (直近30日 question_attempts・5問以上・在籍生徒のみ)
         cutoff30 = (_today_jst() - timedelta(days=29)).isoformat()
         c.execute("SELECT qa.student_id AS stu_id, AVG(CAST(qa.is_correct AS REAL)) AS acc, COUNT(*) AS cnt "
-                  "FROM question_attempts qa JOIN students s ON s.id = qa.student_id AND s.status IN ('paid','trial') "
+                  "FROM question_attempts qa JOIN students s ON s.id = qa.student_id AND (s.status IN ('paid','trial') OR s.course = 'kokuritsu_nankan') "
                   "WHERE qa.is_correct IS NOT NULL AND qa.created_at >= ? GROUP BY qa.student_id HAVING COUNT(*) >= 5", (cutoff30,))
         accmap = {r["stu_id"]: round(100 * float(r["acc"]), 1) for r in c.fetchall()}
         acc = _comp_stat(sid, accmap, higher_better=True, unit="percent", min_n=3)
