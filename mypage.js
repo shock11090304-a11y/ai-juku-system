@@ -4320,7 +4320,8 @@ async function initComparisonSection() {
       return;
     }
     const cards = [];
-    // ① 模試 (exam_type 別・集団内偏差値)
+    // ① 模試 (exam_type 別・集団内偏差値)。available が無ければ「準備中」案内を出す(常時表示)。
+    const mockCards = [];
     ((data && data.mock_exams) || []).forEach(m => {
       if (!m || !m.available) return;
       const dev = N(m.deviation), rank = N(m.rank), pop = N(m.population), top = N(m.top_percent), my = N(m.my_value), avg = N(m.average);
@@ -4330,8 +4331,10 @@ async function initComparisonSection() {
         dev != null ? `偏差値 ${dev}` : null,
       ];
       const sub = (my != null && avg != null) ? `あなた ${my}% / みんなの平均 ${avg}%` : '';
-      cards.push(_cmpCard('📝 模試: ' + String(m.exam_label || m.exam_type || ''), badges, sub));
+      mockCards.push(_cmpCard('📝 模試: ' + String(m.exam_label || m.exam_type || ''), badges, sub));
     });
+    if (mockCards.length) cards.push(...mockCards);
+    else cards.push(_cmpMuted('📝 模試', 'アプリ内の模試を受けると、同じ模試を解いた人の中での偏差値・順位が出ます'));
     // ② 学習時間 (直近7日)
     const stt = data && data.study_time;
     if (stt && stt.available) {
@@ -4343,6 +4346,8 @@ async function initComparisonSection() {
         `みんなの平均 ${avgH}時間 (あなた ${N(stt.diff_from_avg) >= 0 ? '+' : ''}${diffH}時間)`));
     } else if (stt && stt.reason === 'insufficient_population') {
       cards.push(_cmpMuted('⏱ 学習時間 (直近7日)', `あと${N(stt.need) - N(stt.population)}人ぶんの学習記録が集まれば表示されます`));
+    } else {
+      cards.push(_cmpMuted('⏱ 学習時間 (直近7日)', '学習時間を記録すると、みんなの中での順位が出ます'));
     }
     // ③ 問題の正解率 (直近30日)
     const acc = data && data.accuracy;
@@ -4353,9 +4358,11 @@ async function initComparisonSection() {
         `みんなの平均 ${N(acc.average)}% (あなた ${N(acc.diff_from_avg) >= 0 ? '+' : ''}${N(acc.diff_from_avg)}%)`));
     } else if (acc && acc.reason === 'insufficient_population') {
       cards.push(_cmpMuted('🎯 問題の正解率 (直近30日)', `あと${N(acc.need) - N(acc.population)}人ぶんのデータが集まれば表示されます`));
+    } else {
+      cards.push(_cmpMuted('🎯 問題の正解率 (直近30日)', 'ドリルや問題を解くと、みんなの中での正解率の位置が出ます'));
     }
 
-    if (cards.length === 0) { section.style.display = 'none'; return; }  // 全項目データ不足/未受験 → 非表示
+    // 常に表示 (各項目: データありは中身 / 無しは「○○すると表示」案内)。preview時は上の catch で非表示維持。
     section.style.display = 'block';
     body.innerHTML = cards.join('');
   }
