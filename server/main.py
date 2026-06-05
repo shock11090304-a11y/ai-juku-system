@@ -31643,6 +31643,33 @@ def admin_grammar_drill_analytics(
         conn.close()
 
 
+@app.delete("/api/admin/grammar-drill/{drill_id}")
+def admin_grammar_drill_delete(drill_id: int, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """🧑‍🏫 admin: ドリルを削除 (誤配信の撤回・テストデータ整理用)。割当(assignments)も連動削除。"""
+    if not _grammar_admin_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, title FROM grammar_drills WHERE id = ?", (drill_id,))
+        row = c.fetchone()
+        if not row:
+            return {"ok": True, "deleted": 0, "message": "既に存在しません (no-op)"}
+        title = row["title"]
+        c.execute("DELETE FROM grammar_drill_assignments WHERE drill_id = ?", (drill_id,))
+        c.execute("DELETE FROM grammar_drills WHERE id = ?", (drill_id,))
+        conn.commit()
+        try:
+            c.execute("INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("grammar_drill_deleted", json.dumps({"drill_id": drill_id, "title": title}, ensure_ascii=False), "admin"))
+            conn.commit()
+        except Exception:
+            pass
+        return {"ok": True, "deleted": 1, "drill_id": drill_id, "title": title}
+    finally:
+        conn.close()
+
+
 @app.get("/api/student/grammar-drills")
 def student_grammar_drills(request: Request, authorization: Optional[str] = Header(None)):
     """🎓 生徒: 自分に配信されたドリル一覧 (未完了→完了の順)。"""

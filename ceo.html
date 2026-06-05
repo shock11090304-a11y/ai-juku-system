@@ -3610,7 +3610,7 @@
         box.innerHTML = items.map(d => {
           const rate = d.avg_correct_rate == null ? '—' : `${d.avg_correct_rate}%`;
           const rc = d.avg_correct_rate == null ? '#71717a' : (d.avg_correct_rate >= 70 ? '#34d399' : (d.avg_correct_rate >= 50 ? '#fbbf24' : '#fca5a5'));
-          return `<div onclick="gdAnalytics(${d.id})" style="cursor:pointer;background:rgba(0,0,0,0.2);border:1px solid #334155;border-radius:8px;padding:0.5rem 0.7rem;"><div style="font-size:0.84rem;color:#e5e7eb;font-weight:700;">${escapeHtml(d.title)}</div><div style="font-size:0.75rem;color:#94a3b8;">配信 ${d.assigned}名 / 完了 ${d.completed}名 ・ 平均正解率 <span style="color:${rc};font-weight:700;">${rate}</span></div></div>`;
+          return `<div style="display:flex;align-items:center;gap:0.5rem;background:rgba(0,0,0,0.2);border:1px solid #334155;border-radius:8px;padding:0.5rem 0.7rem;"><div onclick="gdAnalytics(${d.id})" style="cursor:pointer;flex:1;min-width:0;"><div style="font-size:0.84rem;color:#e5e7eb;font-weight:700;">${escapeHtml(d.title)}</div><div style="font-size:0.75rem;color:#94a3b8;">配信 ${d.assigned}名 / 完了 ${d.completed}名 ・ 平均正解率 <span style="color:${rc};font-weight:700;">${rate}</span></div></div><button onclick="gdDelete(${d.id})" title="ドリルを削除" style="background:none;border:1px solid #475569;color:#fca5a5;border-radius:5px;padding:0.25rem 0.5rem;font-size:0.72rem;cursor:pointer;flex-shrink:0;">🗑</button></div>`;
         }).join('');
       } catch (e) { console.warn('[gd] list', e); }
     }
@@ -3636,7 +3636,16 @@
       } catch (e) { box.innerHTML = `<span style="color:#fca5a5;">${escapeHtml(String(e))}</span>`; }
     }
     function gdCloseAnalytics() { const b = document.getElementById('gdAnalytics'); if (b) { b.style.display = 'none'; b.innerHTML = ''; } }
-    window.gdSelUnit = gdSelUnit; window.gdFilterStudents = gdFilterStudents; window.gdSelectAll = gdSelectAll; window.gdCreate = gdCreate; window.gdRefresh = gdRefresh; window.gdAnalytics = gdAnalytics; window.gdCloseAnalytics = gdCloseAnalytics; window.gdRenderUnits = gdRenderUnits;
+    async function gdDelete(drillId) {
+      if (!confirm('このドリルを削除しますか？（生徒への配信と結果も削除されます）')) return;
+      try {
+        const res = await AdminAuth.fetch(`/api/admin/grammar-drill/${drillId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok) { gdRefresh(); gdCloseAnalytics(); }
+        else alert('削除失敗: ' + (data.detail || ''));
+      } catch (e) { alert('削除失敗: ' + e); }
+    }
+    window.gdSelUnit = gdSelUnit; window.gdFilterStudents = gdFilterStudents; window.gdSelectAll = gdSelectAll; window.gdCreate = gdCreate; window.gdRefresh = gdRefresh; window.gdAnalytics = gdAnalytics; window.gdCloseAnalytics = gdCloseAnalytics; window.gdRenderUnits = gdRenderUnits; window.gdDelete = gdDelete;
     document.addEventListener('DOMContentLoaded', gdInit);
 
     // 📚 教材プール 未作成リクエスト 一覧読込
