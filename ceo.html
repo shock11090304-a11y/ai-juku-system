@@ -633,6 +633,16 @@
           </div>
           <div id="otpIssueResult" style="display:none;margin-top:0.6rem;padding:0.6rem;background:rgba(0,0,0,0.45);border-radius:6px;font-size:0.78rem;line-height:1.55;color:#e4e4e7;"></div>
         </div>
+        <!-- 📲 LINE連携コード発行: 塾長が生徒の LINE 連携を代理発行 (2026-06-05・メール不達の恒久対策) -->
+        <div style="margin-top:0.8rem;padding:0.7rem;background:rgba(6,199,85,0.08);border:1px solid rgba(6,199,85,0.3);border-radius:8px;">
+          <div style="font-weight:800;color:#34d399;font-size:0.82rem;margin-bottom:0.4rem;">📲 LINE連携コード発行 — ログインコードを LINE で届けたい生徒向け</div>
+          <div style="font-size:0.72rem;color:#86efac;margin-bottom:0.5rem;line-height:1.55;">連携コードを発行し生徒に伝達。生徒が <strong>①公式LINEを友だち追加 → ②コードをトークに送信</strong> で紐付け完了。以降そのコは<strong style="color:#86efac;">ログインコードが LINE に届く</strong>(メール不達の解消)。<strong>30 分有効・1 回で無効</strong>。</div>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
+            <input type="text" id="lineLinkQuery" placeholder="生徒名 / ID / メアド" style="flex:1;min-width:170px;padding:0.4rem 0.55rem;background:rgba(0,0,0,0.4);border:1px solid rgba(6,199,85,0.3);border-radius:6px;color:#e4e4e7;font-size:0.78rem;font-family:inherit;">
+            <button id="lineLinkIssueBtn" type="button" style="background:rgba(6,199,85,0.22);color:#34d399;border:1px solid rgba(6,199,85,0.5);padding:0.4rem 0.85rem;border-radius:6px;font-size:0.78rem;font-weight:800;cursor:pointer;">📲 発行</button>
+          </div>
+          <div id="lineLinkIssueResult" style="display:none;margin-top:0.6rem;padding:0.6rem;background:rgba(0,0,0,0.45);border-radius:6px;font-size:0.78rem;line-height:1.55;color:#e4e4e7;"></div>
+        </div>
       </div>
 
       <!-- 📧 自分宛メモ送信 (= Threads 投稿テキスト等を Gmail に送る・iPhone でコピペしやすく / 2026-05-07 追加) -->
@@ -5255,6 +5265,62 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       });
       if (otpIssueQuery) otpIssueQuery.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.preventDefault(); otpIssueBtn.click(); }
+      });
+
+      // 📲 LINE連携コード発行 (2026-06-05: 塾長が生徒の LINE 連携を代理発行・メール不達の恒久対策)
+      const lineLinkIssueBtn = document.getElementById('lineLinkIssueBtn');
+      const lineLinkQuery = document.getElementById('lineLinkQuery');
+      const lineLinkIssueResult = document.getElementById('lineLinkIssueResult');
+      function lineEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+      function renderLineLinkResult(html, isError) {
+        if (!lineLinkIssueResult) return;
+        lineLinkIssueResult.style.display = 'block';
+        lineLinkIssueResult.style.borderLeft = isError ? '3px solid #f87171' : '3px solid #34d399';
+        lineLinkIssueResult.innerHTML = html;
+      }
+      async function issueLineLink(payload) {
+        try {
+          const r = await AdminAuth.fetch('/api/admin/students/issue-line-link', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+          });
+          const d = await r.json();
+          if (!r.ok) { renderLineLinkResult(`❌ ${lineEsc(d.detail || '発行失敗')}`, true); return; }
+          if (d.needs_disambiguation) {
+            let html = `<div style="color:#fbbf24;font-weight:700;margin-bottom:0.4rem;">⚠️ ${lineEsc(d.message)}</div><div style="display:flex;flex-direction:column;gap:0.3rem;">`;
+            d.candidates.forEach(s => {
+              html += `<button type="button" data-sid="${s.id}" class="linelink-candidate-btn" style="text-align:left;padding:0.45rem 0.6rem;background:rgba(6,199,85,0.13);border:1px solid rgba(6,199,85,0.4);border-radius:5px;color:#86efac;font-family:inherit;font-size:0.76rem;cursor:pointer;">#${s.id} ${lineEsc(s.name)} &lt;${lineEsc(s.email)}&gt;</button>`;
+            });
+            html += '</div>';
+            renderLineLinkResult(html, false);
+            document.querySelectorAll('.linelink-candidate-btn').forEach(btn => {
+              btn.addEventListener('click', () => issueLineLink({ student_id: parseInt(btn.dataset.sid, 10) }));
+            });
+            return;
+          }
+          const s = d.student; const code = d.code;
+          let html = `<div style="color:#34d399;font-weight:800;margin-bottom:0.4rem;">✅ #${s.id} ${lineEsc(s.name)} さま</div>`;
+          html += `<div style="font-size:0.7rem;color:#a3a3a3;margin-bottom:0.4rem;">登録メアド: ${lineEsc(s.email)}${d.already_linked ? ' ｜ <span style="color:#fbbf24;">※既にLINE連携済 (再連携用)</span>' : ''}</div>`;
+          html += `<div style="background:rgba(0,0,0,0.5);padding:0.8rem;border-radius:8px;text-align:center;margin:0.6rem 0;"><div style="font-size:0.7rem;color:#a3a3a3;margin-bottom:0.3rem;">連携コード (30 分有効・1 回で無効)</div><div style="font-size:1.35rem;font-weight:900;letter-spacing:0.06rem;color:#6ee7b7;font-family:'SF Mono',monospace;word-break:break-all;">${lineEsc(code)}</div><button type="button" id="lineLinkCopyBtn" style="margin-top:0.4rem;background:rgba(110,231,183,0.2);color:#6ee7b7;border:1px solid rgba(110,231,183,0.4);padding:0.3rem 0.7rem;border-radius:5px;font-size:0.72rem;font-weight:700;cursor:pointer;">📋 コピー</button></div>`;
+          html += `<div style="margin-top:0.5rem;padding:0.5rem;background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.3);border-radius:6px;color:#fde68a;font-size:0.72rem;line-height:1.6;">${lineEsc(d.instructions || '')}</div>`;
+          renderLineLinkResult(html, false);
+          const cBtn = document.getElementById('lineLinkCopyBtn');
+          if (cBtn) cBtn.addEventListener('click', async () => {
+            try { await navigator.clipboard.writeText(code); cBtn.textContent = '✅ コピー済'; setTimeout(() => cBtn.textContent = '📋 コピー', 1500); } catch (_e) {}
+          });
+        } catch (e) { renderLineLinkResult(`❌ エラー: ${lineEsc(e.message)}`, true); }
+      }
+      if (lineLinkIssueBtn) lineLinkIssueBtn.addEventListener('click', () => {
+        const q = (lineLinkQuery.value || '').trim();
+        if (!q) { renderLineLinkResult('⚠️ 生徒名 / ID / メアド を入力してください', true); return; }
+        let payload;
+        if (/^\d+$/.test(q)) payload = { student_id: parseInt(q, 10) };
+        else if (q.includes('@')) payload = { email: q };
+        else payload = { name_query: q };
+        renderLineLinkResult('⏳ 発行中...', false);
+        issueLineLink(payload);
+      });
+      if (lineLinkQuery) lineLinkQuery.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); lineLinkIssueBtn.click(); }
       });
 
       // ⚡ 「JS エラー一括解決」ボタン (2026-04-28 self-healing)

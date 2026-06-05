@@ -82,6 +82,13 @@ STRIPE_PRICE_TRIAL = os.getenv("STRIPE_PRICE_TRIAL", "price_trial_placeholder")
 STRIPE_PRICE_ENROLLMENT = os.getenv("STRIPE_PRICE_ENROLLMENT", "price_enrollment_placeholder")
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET", "")
+# 🔗 LINE 連携 (2026-06-04): 友だち追加 URL + LINE Login (OAuth) 用チャネル。
+# LINE_ADD_FRIEND_URL = 公式アカウントの友だち追加 URL (https://lin.ee/xxxx 等)。
+# LINE Login は Messaging API とは別チャネル (同一プロバイダー配下で userId が一致する)。
+LINE_ADD_FRIEND_URL = os.getenv("LINE_ADD_FRIEND_URL", "")
+LINE_LOGIN_CHANNEL_ID = os.getenv("LINE_LOGIN_CHANNEL_ID", "")
+LINE_LOGIN_CHANNEL_SECRET = os.getenv("LINE_LOGIN_CHANNEL_SECRET", "")
+LINE_LOGIN_REDIRECT_URI = os.getenv("LINE_LOGIN_REDIRECT_URI", "")
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 # 🔑 2026-05-31 塾長指示「マジックリンク再発行してもすぐログインできない子が多い → 時間制限を無しに」:
 #   OTP = single-use + 5 回失敗ロックアウトで安全 → 完全無期限 (0 = 無期限)
@@ -1189,6 +1196,26 @@ def init_db():
     );
     CREATE INDEX IF NOT EXISTS idx_lpd_student ON lesson_print_downloads(student_id, downloaded_at DESC);
     CREATE INDEX IF NOT EXISTS idx_lpd_print ON lesson_print_downloads(print_id, downloaded_at DESC);
+    CREATE TABLE IF NOT EXISTS line_link_tokens (
+        token TEXT PRIMARY KEY,
+        student_id INTEGER NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        used_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_line_link_student ON line_link_tokens(student_id);
+    CREATE TABLE IF NOT EXISTS line_oauth_states (
+        state TEXT PRIMARY KEY,
+        nonce TEXT NOT NULL,
+        redirect_to TEXT,
+        expires_at TIMESTAMP NOT NULL,
+        used_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS line_webhook_events (
+        event_id TEXT PRIMARY KEY,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
     """)
     # 既存DBに不足列を追加 (idempotent migration)
     # Postgres: 「column already exists」エラーで トランザクションが abort されると
@@ -7887,7 +7914,7 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
     #   student_email (子) でも検索できるようにする。子供が自分のアドレスでログイン要求しても
     #   見つかるように LOWER(email)=? OR LOWER(student_email)=? で照合。
     c.execute(
-        "SELECT id, name, email, student_email, status, trial_end, course FROM students "
+        "SELECT id, name, email, student_email, status, trial_end, course, line_user_id FROM students "
         "WHERE LOWER(email) = ? OR LOWER(COALESCE(student_email, '')) = ? LIMIT 1",
         (email_lower, email_lower),
     )
@@ -7940,41 +7967,53 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
         token = _create_magic_link_token(row["id"])
         magic_url = f"{BASE_URL}/auth.html?t={token}"
         otp_code = _create_otp(row["id"])
-        # 🔑 2026-05-31 塾長指示「親には届くが子には届かない」: 親 (email) + 子 (student_email)
-        #   両方に送信する (signup の CC ロジックを再ログインにも適用)。
-        #   同一 OTP/magic_url を両方に送るので、どちらの端末からでもログイン可能。
+        # 🔗 2026-06-04 LINE 優先配信 (メール不達の解消): line_user_id 紐付け済みなら
+        #   ログインコード/リンクを LINE で送る。成功すればメール送信をスキップ (不達ゼロ + 重複回避)。
+        #   未紐付け / LINE 失敗時のみ従来のメール (親 + 子) にフォールバック。
         _row_keys = row.keys()
         _parent_email = (row["email"] or "").strip()
         _student_email = (row["student_email"] if "student_email" in _row_keys else "") or ""
         _student_email = _student_email.strip()
-        send_result = _send_magic_link_with_retry(
-            _parent_email, row["name"] or "", magic_url, otp_code=otp_code, is_welcome=False,
-        ) or {}
-        # 子メールが設定済 + 親メールと異なる → 子にも同じリンク/コードを送信
-        student_send_result = {}
-        if _student_email and _student_email.lower() != _parent_email.lower():
-            student_send_result = _send_magic_link_with_retry(
-                _student_email, row["name"] or "", magic_url, otp_code=otp_code, is_welcome=False,
+        line_sent = _try_line_login_push(row, magic_url, otp_code)
+        if line_sent:
+            send_event_props.update({
+                "channel": "line",
+                "line_sent": True,
+                "email_sent": False,
+                "reason": "sent_via_line",
+                "error": None,
+            })
+        else:
+            send_result = _send_magic_link_with_retry(
+                _parent_email, row["name"] or "", magic_url, otp_code=otp_code, is_welcome=False,
             ) or {}
-        send_event_props.update({
-            "email_sent": bool(send_result.get("sent")),
-            "error": (send_result.get("error") or "")[:200] if not send_result.get("sent") else None,
-            "permanent": bool(send_result.get("permanent")),
-            "retried": bool(send_result.get("retried")),
-            "synthetic": bool(send_result.get("synthetic")),
-            "reason": "sent" if send_result.get("sent") else "send_failed",
-            "student_email_sent": bool(student_send_result.get("sent")) if _student_email else None,
-        })
-        if not send_result.get("sent"):
-            log.error(
-                f"[MagicLink] Send FAILED for student_id={row['id']} email={_parent_email}: "
-                f"{send_result.get('error')} (permanent={send_result.get('permanent')}, retried={send_result.get('retried')})"
-            )
-        if _student_email and not student_send_result.get("sent"):
-            log.warning(
-                f"[MagicLink] 子メール送信 FAILED student_id={row['id']} student_email={_student_email}: "
-                f"{student_send_result.get('error')}"
-            )
+            # 子メールが設定済 + 親メールと異なる → 子にも同じリンク/コードを送信
+            student_send_result = {}
+            if _student_email and _student_email.lower() != _parent_email.lower():
+                student_send_result = _send_magic_link_with_retry(
+                    _student_email, row["name"] or "", magic_url, otp_code=otp_code, is_welcome=False,
+                ) or {}
+            send_event_props.update({
+                "channel": "email",
+                "line_sent": False,
+                "email_sent": bool(send_result.get("sent")),
+                "error": (send_result.get("error") or "")[:200] if not send_result.get("sent") else None,
+                "permanent": bool(send_result.get("permanent")),
+                "retried": bool(send_result.get("retried")),
+                "synthetic": bool(send_result.get("synthetic")),
+                "reason": "sent" if send_result.get("sent") else "send_failed",
+                "student_email_sent": bool(student_send_result.get("sent")) if _student_email else None,
+            })
+            if not send_result.get("sent"):
+                log.error(
+                    f"[MagicLink] Send FAILED for student_id={row['id']} email={_parent_email}: "
+                    f"{send_result.get('error')} (permanent={send_result.get('permanent')}, retried={send_result.get('retried')})"
+                )
+            if _student_email and not student_send_result.get("sent"):
+                log.warning(
+                    f"[MagicLink] 子メール送信 FAILED student_id={row['id']} student_email={_student_email}: "
+                    f"{student_send_result.get('error')}"
+                )
     elif is_trial_expired:
         log.info(f"Magic link requested but trial expired: {email_lower}")
         send_event_props.update({"email_sent": False, "reason": "trial_expired", "error": None})
@@ -17336,6 +17375,10 @@ def admin_issue_otp_direct(payload: dict, authorization: Optional[str] = Header(
         # 古い OTP を全無効化 (混乱防止)
         _invalidate_active_otps(sid)
         otp_code = _create_otp(sid)
+        # 🔗 2026-06-04: LINE 紐付け済みなら OTP/ワンクリック URL を自動で LINE 配信する準備
+        c.execute("SELECT line_user_id FROM students WHERE id = ?", (sid,))
+        _lu_row = c.fetchone()
+        _line_uid = _lu_row["line_user_id"] if _lu_row else None
         # 監査ログ: 塾長が誰の OTP を口頭伝達するか必ず追跡可能にする
         log.warning(f"[AdminOTPDirect] admin issued OTP for student_id={sid} email={row['email']} name={row['name']}")
         try:
@@ -17365,9 +17408,18 @@ def admin_issue_otp_direct(payload: dict, authorization: Optional[str] = Header(
         qs = urlencode({"email": row["email"], "code": otp_code, "skip_send": "1"})
         direct_login_url = f"{BASE_URL}/login.html?{qs}"
         _is_infinite = not (_OTP_TTL_SECONDS and _OTP_TTL_SECONDS > 0)
+        # 🔗 LINE 紐付け済みなら OTP/ワンクリック URL を自動配信 (塾長の手動コピペ不要に)
+        line_sent = False
+        if _line_uid:
+            try:
+                _push = _do_line_push(sid, "magic_link_login", {"otp_code": otp_code, "magic_url": direct_login_url})
+                line_sent = bool(_push.get("ok"))
+            except Exception as _e:
+                log.warning(f"[AdminOTPDirect] LINE push failed sid={sid}: {_e}")
         return {
             "ok": True,
             "otp": otp_code,
+            "line_sent": line_sent,
             "expires_at": None if _is_infinite else int(_t.time()) + _OTP_TTL_SECONDS,
             "ttl_seconds": 0 if _is_infinite else _OTP_TTL_SECONDS,
             "no_expiry": _is_infinite,
@@ -23212,6 +23264,138 @@ LINE_TEMPLATES = {
     },
 }
 
+
+# ==========================================================================
+# 🔗 LINE 連携ヘルパー (2026-06-04): 紐付けワンタイムコード / OAuth state / webhook 冪等。
+# 紐付けの本人性 = 「認証済みコンテキスト (mypage ログイン中 or 管理者発行) で生成したコードを、
+# 本人の LINE から送り返す」双方向で担保。コードは single-use (used_at) + 期限 (expires_at)。
+# 期限比較は DB 時刻表現差 (Postgres datetime / SQLite str) を避けるため Python 側で行う
+# (_verify_student_active の trial_end 判定と同じ方針)。
+# ==========================================================================
+def _parse_db_dt(raw) -> Optional[datetime]:
+    """DB から取り出した TIMESTAMP (Postgres=datetime / SQLite=str) を tz-aware datetime に正規化。"""
+    if raw is None:
+        return None
+    try:
+        dt = raw if isinstance(raw, datetime) else datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except Exception:
+        return None
+
+
+def _create_line_link_token(student_id: int, ttl_seconds: int = 1800) -> str:
+    """生徒 ↔ LINE 紐付け用のワンタイムコードを発行し DB 保存。ttl デフォルト 30 分。"""
+    import secrets as _sec
+    token = _sec.token_urlsafe(18)
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds)
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(
+            "INSERT INTO line_link_tokens (token, student_id, expires_at) VALUES (?, ?, ?)",
+            (token, int(student_id), expires_at.isoformat()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return token
+
+
+def _consume_line_link_token(token: str) -> Optional[int]:
+    """ワンタイムコードを single-use で消費し student_id を返す。無効/使用済/期限切れは None。"""
+    if not token:
+        return None
+    now = datetime.now(timezone.utc)
+    conn = db()
+    c = conn.cursor()
+    try:
+        # used_at を atomic に確保 (race 防止)。期限は取り出してから Python 側で判定。
+        c.execute(
+            """UPDATE line_link_tokens SET used_at = ?
+               WHERE token = ? AND used_at IS NULL
+               RETURNING student_id, expires_at""",
+            (now.isoformat(), token.strip()),
+        )
+        row = c.fetchone()
+        conn.commit()
+    finally:
+        conn.close()
+    if not row:
+        return None
+    exp = _parse_db_dt(row["expires_at"])
+    if exp is not None and now > exp:
+        return None  # 期限切れ (used 化済みなので再利用も不可)
+    return int(row["student_id"])
+
+
+def _create_oauth_state(redirect_to: str = "") -> tuple:
+    """LINE Login OAuth の state/nonce を発行し DB 保存 (CSRF + リプレイ防止)。ttl 10 分。"""
+    import secrets as _sec
+    state = _sec.token_urlsafe(24)
+    nonce = _sec.token_urlsafe(16)
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=600)
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(
+            "INSERT INTO line_oauth_states (state, nonce, redirect_to, expires_at) VALUES (?, ?, ?, ?)",
+            (state, nonce, (redirect_to or "")[:300], expires_at.isoformat()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return state, nonce
+
+
+def _consume_oauth_state(state: str) -> Optional[dict]:
+    """state を single-use で消費し {nonce, redirect_to} を返す。無効/使用済/期限切れは None。"""
+    if not state:
+        return None
+    now = datetime.now(timezone.utc)
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute(
+            """UPDATE line_oauth_states SET used_at = ?
+               WHERE state = ? AND used_at IS NULL
+               RETURNING nonce, redirect_to, expires_at""",
+            (now.isoformat(), state),
+        )
+        row = c.fetchone()
+        conn.commit()
+    finally:
+        conn.close()
+    if not row:
+        return None
+    exp = _parse_db_dt(row["expires_at"])
+    if exp is not None and now > exp:
+        return None
+    return {"nonce": row["nonce"], "redirect_to": row["redirect_to"] or ""}
+
+
+def _line_event_seen(event_id: str) -> bool:
+    """LINE webhook の冪等性チェック。既処理なら True、未処理なら記録して False (LINE 再送対策)。"""
+    if not event_id:
+        return False
+    conn = db()
+    c = conn.cursor()
+    try:
+        try:
+            c.execute("INSERT INTO line_webhook_events (event_id) VALUES (?)", (str(event_id),))
+            conn.commit()
+            return False
+        except Exception:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            return True
+    finally:
+        conn.close()
+
+
 def _do_line_push(student_id: int, template: str, params: Optional[dict] = None) -> dict:
     """LINE push の内部実装。cron からは HTTP ではなくこちらを直接呼ぶ。"""
     if not LINE_CHANNEL_ACCESS_TOKEN:
@@ -23262,6 +23446,24 @@ def _do_line_push(student_id: int, template: str, params: Optional[dict] = None)
     return {"ok": success}
 
 
+def _try_line_login_push(row, magic_url: str, otp_code: str) -> bool:
+    """row に line_user_id があれば magic_link_login テンプレで LINE 配信。成功で True。
+    未紐付け / LINE 未設定 / 失敗は False (呼び出し側がメールにフォールバック)。
+    row は sqlite3.Row / psycopg dict_row のどちらでも keys() を持つ前提。"""
+    try:
+        line_uid = row["line_user_id"] if ("line_user_id" in row.keys()) else None
+    except Exception:
+        line_uid = None
+    if not line_uid:
+        return False
+    try:
+        push = _do_line_push(int(row["id"]), "magic_link_login", {"otp_code": otp_code, "magic_url": magic_url})
+        return bool(push.get("ok"))
+    except Exception as e:
+        log.warning(f"[LINE deliver] login push failed: {e}")
+        return False
+
+
 @app.post("/api/line/push")
 def line_push(payload: LinePushRequest, x_cron_secret: str = Header(None)):
     """LINE push の公開エンドポイント。CRON_SECRET を必須化し、
@@ -23273,19 +23475,262 @@ def line_push(payload: LinePushRequest, x_cron_secret: str = Header(None)):
     return _do_line_push(payload.student_id, payload.template, payload.params)
 
 
+# ---- LINE Messaging API 低レベルヘルパー (reply / push 生メッセージ) ----
+def _line_api_call(endpoint: str, body: dict) -> bool:
+    """LINE Messaging API を叩く (message/reply, message/push 共通)。成功で True。"""
+    if not LINE_CHANNEL_ACCESS_TOKEN:
+        return False
+    import urllib.request as _u
+    req = _u.Request(
+        f"https://api.line.me/v2/bot/{endpoint}",
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}",
+        },
+        data=json.dumps(body).encode("utf-8"),
+    )
+    try:
+        with _u.urlopen(req, timeout=10) as resp:
+            return resp.status == 200
+    except Exception as e:
+        log.warning(f"[LINE API] {endpoint} failed: {e}")
+        return False
+
+
+def _line_reply_text(reply_token: str, text: str) -> bool:
+    if not reply_token:
+        return False
+    return _line_api_call("message/reply", {"replyToken": reply_token, "messages": [{"type": "text", "text": (text or "")[:4900]}]})
+
+
+def _line_push_text(user_id: str, text: str) -> bool:
+    if not user_id:
+        return False
+    return _line_api_call("message/push", {"to": user_id, "messages": [{"type": "text", "text": (text or "")[:4900]}]})
+
+
+def _peek_line_link_token(token: str) -> Optional[int]:
+    """連携コードを消費せず (used_at を立てず) student_id を返す。有効・未使用・未期限のみ。
+    taken 事前判定のための read-only 版。実際の紐付けは _consume_line_link_token で atomic に消費する。"""
+    if not token:
+        return None
+    now = datetime.now(timezone.utc)
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT student_id, expires_at, used_at FROM line_link_tokens WHERE token = ?", (token.strip(),))
+        row = c.fetchone()
+    finally:
+        conn.close()
+    if not row or row["used_at"] is not None:
+        return None
+    exp = _parse_db_dt(row["expires_at"])
+    if exp is not None and now > exp:
+        return None
+    return int(row["student_id"])
+
+
+def _line_user_taken_by_other(line_user_id: str, student_id: int) -> bool:
+    """この line_user_id が別の生徒に既に紐付いているか (1:1 制約の事前判定)。"""
+    if not line_user_id:
+        return False
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT 1 FROM students WHERE line_user_id = ? AND id != ? LIMIT 1", (line_user_id, int(student_id)))
+        return c.fetchone() is not None
+    finally:
+        conn.close()
+
+
+def _bind_line_user(student_id: int, line_user_id: str) -> str:
+    """連携コード検証済みの student に line_user_id を 1:1 で紐付け。
+    戻り値: "ok" | "taken" (line_user_id が既に別生徒に紐付き)。"""
+    conn = db()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT id FROM students WHERE line_user_id = ? AND id != ?", (line_user_id, int(student_id)))
+        if c.fetchone():
+            return "taken"
+        c.execute("UPDATE students SET line_user_id = ? WHERE id = ?", (line_user_id, int(student_id)))
+        conn.commit()
+        return "ok"
+    finally:
+        conn.close()
+
+
+_LINE_BG_TASKS: set = set()
+
+
 @app.post("/api/line/webhook")
 async def line_webhook(request: Request, x_line_signature: str = Header(None)):
+    """LINE Messaging API webhook。署名検証後、各イベントを非同期ハンドラに投げて即 200 を返す
+    (LINE は 3 秒以内の応答を要求)。follow=連携案内 / message=連携コード照合 / image=AI 解答 (Phase C)。"""
     body = await request.body()
-    if LINE_CHANNEL_SECRET:
-        hash_ = hmac.new(LINE_CHANNEL_SECRET.encode("utf-8"), body, hashlib.sha256).digest()
-        if base64.b64encode(hash_).decode() != x_line_signature:
-            raise HTTPException(status_code=400, detail="Invalid signature")
-    data = json.loads(body)
-    # Handle follow events: bind LINE user id to student via email/name
+    # 🔒 fail-closed: SECRET 未設定なら受信拒否 (偽イベントの無認証投入を防ぐ)。
+    #   本番は Messaging API チャネルの SECRET 設定済み前提。webhook URL を LINE Console に
+    #   登録する際に SECRET も必ず設定すること (ACCESS_TOKEN とペア)。
+    if not LINE_CHANNEL_SECRET:
+        log.error("[LINE webhook] LINE_CHANNEL_SECRET 未設定のため受信拒否 (fail-closed)")
+        raise HTTPException(status_code=503, detail="LINE webhook not configured")
+    hash_ = hmac.new(LINE_CHANNEL_SECRET.encode("utf-8"), body, hashlib.sha256).digest()
+    if not x_line_signature or not hmac.compare_digest(base64.b64encode(hash_).decode(), x_line_signature):
+        raise HTTPException(status_code=400, detail="Invalid signature")
+    try:
+        data = json.loads(body)
+    except Exception:
+        return {"ok": True}
+    import asyncio as _aio
     for event in data.get("events", []):
-        if event["type"] == "follow":
-            log.info(f"LINE follow: {event['source']['userId']}")
+        try:
+            _t = _aio.create_task(_handle_line_event(event))
+            _LINE_BG_TASKS.add(_t)
+            _t.add_done_callback(_LINE_BG_TASKS.discard)
+        except Exception as e:
+            log.warning(f"[LINE webhook] dispatch failed: {e}")
     return {"ok": True}
+
+
+async def _handle_line_event(event: dict):
+    """LINE webhook イベントの非同期ハンドラ。冪等性 + follow + message(連携コード) を処理。
+    image = AIチューター写真解答は Phase C で _handle_line_image を追加して分岐する。"""
+    try:
+        etype = event.get("type")
+        source = event.get("source") or {}
+        user_id = source.get("userId")
+        reply_token = event.get("replyToken")
+        # 冪等性: follow 等の副作用は二重実行を避ける。ただし message(連携コード) は bind が冪等で、
+        #   かつ初回処理が一時失敗した際の LINE 再送で連携を取りこぼさないよう、seen スキップ対象外にする。
+        event_id = event.get("webhookEventId")
+        if etype != "message" and event_id and _line_event_seen(event_id):
+            return
+
+        if etype == "follow":
+            _line_reply_text(
+                reply_token,
+                "🎓 AIコーチング 公式LINEへようこそ！\n\n"
+                "ログインコードやお知らせをこちらにお届けします。\n\n"
+                "ご利用にはアカウント連携が必要です。マイページの「LINE連携」で\n"
+                "連携コードを発行し、このトークにそのまま送信してください。\n\n"
+                "※コードが分からない場合は塾までご連絡ください。",
+            )
+            return
+
+        if etype == "message":
+            msg = event.get("message") or {}
+            if msg.get("type") == "text":
+                text = (msg.get("text") or "").strip()
+                # 先に消費せず peek → 別生徒に紐付く LINE なら有効コードを burn せず案内 (リトライ余地を残す)
+                peek_sid = _peek_line_link_token(text) if text else None
+                if peek_sid and user_id:
+                    if _line_user_taken_by_other(user_id, peek_sid):
+                        log.warning(f"[LINE bind] taken: userId(...{user_id[-6:]}) は別生徒に紐付き済 (要求 sid={peek_sid})")
+                        _line_reply_text(reply_token, "⚠️ このLINEは既に別の生徒アカウントに連携済みです。\nお心当たりがなければ塾までご連絡ください。")
+                        return
+                    sid = _consume_line_link_token(text)  # ここで初めて atomic single-use 消費
+                    if sid:
+                        result = _bind_line_user(sid, user_id)
+                        if result == "ok":
+                            log.info(f"[LINE bind] student_id={sid} linked (userId ...{user_id[-6:]})")
+                            _line_reply_text(reply_token, "✅ LINE連携が完了しました！\n今後はログインコードやお知らせがLINEに届きます。")
+                        else:
+                            log.warning(f"[LINE bind] taken(race): student_id={sid} userId(...{user_id[-6:]})")
+                            _line_reply_text(reply_token, "⚠️ このLINEは既に別の生徒アカウントに連携済みです。\nお心当たりがなければ塾までご連絡ください。")
+                    else:
+                        _line_reply_text(reply_token, "⚠️ 連携コードが無効または期限切れです。マイページで新しいコードを発行してください。")
+                else:
+                    _line_reply_text(
+                        reply_token,
+                        "メッセージありがとうございます。\n"
+                        "ログインでお困りの場合は、マイページの「LINE連携」で発行した\n"
+                        "連携コードをこのトークに送信してください。",
+                    )
+            return
+    except Exception as e:
+        log.error(f"[LINE event] handler error: {type(e).__name__}: {e}")
+
+
+@app.post("/api/line/link-code")
+def line_link_code(authorization: Optional[str] = Header(None)):
+    """ログイン中の生徒が自分の LINE 連携コードを発行する (mypage の「LINE連携」ボタン)。
+    本人性: session_token で認証された生徒のみ → 自分の student_id にしか紐付かない。"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="ログインが必要です")
+    claims = _verify_session_token(authorization[len("Bearer "):].strip())
+    if not claims or not claims.get("student_id"):
+        raise HTTPException(status_code=401, detail="セッションの有効期限が切れています")
+    sid = int(claims["student_id"])
+    code = _create_line_link_token(sid, ttl_seconds=1800)
+    return {
+        "ok": True,
+        "code": code,
+        "expires_in_min": 30,
+        "add_friend_url": LINE_ADD_FRIEND_URL,
+        "instructions": "①公式LINEを友だち追加 → ②このコードをトークに送信、で連携完了です（30分間有効）。",
+    }
+
+
+@app.post("/api/admin/students/issue-line-link")
+def admin_issue_line_link(payload: dict, authorization: Optional[str] = Header(None),
+                          x_cron_secret: Optional[str] = Header(None)):
+    """🔗 管理者が任意の生徒の LINE 連携コードを発行する (ログインできない生徒の救済)。
+    認証: admin Bearer または X-Cron-Secret。検索は issue-otp-direct と同じ (id/email/name_query)。
+    本人性: 発行されたコードは「本人の LINE から送信」されて初めて紐付くため、コードを知る塾長
+    が発行しても、生徒本人の LINE userId にしか紐付かない (なりすまし不可)。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+        else:
+            raise HTTPException(status_code=401, detail="セッション期限切れ")
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    sid_arg = payload.get("student_id") or payload.get("id")
+    email_arg = (payload.get("email") or "").strip().lower()
+    name_query = (payload.get("name_query") or "").strip()
+    conn = db()
+    c = conn.cursor()
+    try:
+        row = None
+        if sid_arg:
+            c.execute("SELECT id, name, email, line_user_id FROM students WHERE id = ? LIMIT 1", (int(sid_arg),))
+            row = c.fetchone()
+        elif email_arg:
+            c.execute("SELECT id, name, email, line_user_id FROM students WHERE LOWER(email) = ? LIMIT 1", (email_arg,))
+            row = c.fetchone()
+        elif name_query:
+            like = f"%{name_query}%"
+            c.execute("SELECT id, name, email, line_user_id FROM students WHERE name LIKE ? ORDER BY id DESC LIMIT 10", (like,))
+            cands = c.fetchall()
+            if not cands:
+                raise HTTPException(status_code=404, detail=f"name_query '{name_query}' に一致する生徒なし")
+            if len(cands) > 1:
+                return {"ok": False, "needs_disambiguation": True,
+                        "candidates": [{"id": r["id"], "name": r["name"], "email": r["email"]} for r in cands],
+                        "message": f"{len(cands)} 件ヒット。student_id を指定してください。"}
+            row = cands[0]
+        else:
+            raise HTTPException(status_code=400, detail="student_id / email / name_query のいずれか必須")
+        if not row:
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        sid = int(row["id"])
+        already = bool(row["line_user_id"]) if ("line_user_id" in row.keys()) else False
+        code = _create_line_link_token(sid, ttl_seconds=1800)
+        return {
+            "ok": True,
+            "code": code,
+            "already_linked": already,
+            "add_friend_url": LINE_ADD_FRIEND_URL,
+            "student": {"id": sid, "name": row["name"], "email": row["email"]},
+            "instructions": "この連携コードを生徒に伝え、①公式LINEを友だち追加 → ②コードをトークに送信、で連携完了です（30分間有効）。",
+        }
+    finally:
+        conn.close()
 
 # ==========================================================================
 # Routes: Cron-style (triggered externally)
