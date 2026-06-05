@@ -4542,6 +4542,7 @@ def student_lesson_prints(
     subject: Optional[str] = None,
     level: Optional[str] = None,
     target_type: Optional[str] = None,
+    grade: Optional[str] = None,
     limit: int = 30,
     offset: int = 0,
 ):
@@ -4573,6 +4574,21 @@ def student_lesson_prints(
     if target_type:
         where_clauses.append("target_type = ?")
         params.append(target_type)
+    # 🛡️ 2026-06-05 学年フィルタ: 中受モード(小学生)と大学受験モード(高校生)を分離取得し、
+    #   窓(LIMIT)を学年混在で奪い合わないようにする (中受80件投入で大学受験生の既定一覧が空になる回帰を防ぐ)。
+    #   grade=小学生 → 小学生のみ / grade=高校生 → 小学生以外 (高校生系すべて)。未指定は従来どおり全学年。
+    if grade == "小学生":
+        where_clauses.append("target_grade = ?")
+        params.append("小学生")
+    elif grade == "高校生":
+        # 🛡️ NULL安全: 無タグ(target_grade IS NULL)も高校生モードで表示する。
+        #   フロント ajPrintMatchesMode の kosei=「中学/小学タグ以外(無タグ含む)を表示」と一致させ、
+        #   無タグで配信済みの高校生向けプリントが silent 消失する回帰を防ぐ。
+        where_clauses.append("(target_grade IS NULL OR target_grade != ?)")
+        params.append("小学生")
+    elif grade == "中学生":
+        where_clauses.append("target_grade = ?")
+        params.append("中学生")
     where_sql = " AND ".join(where_clauses)
 
     conn = db()
@@ -4588,7 +4604,10 @@ def student_lesson_prints(
             f"SELECT id, title, subtitle, subject, topic, level, target_grade, target_type, "
             f"description, file_path, pages, file_size_kb, download_count, created_at "
             f"FROM lesson_prints WHERE {where_sql} "
-            f"ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            # 🛡️ 2026-06-05 タイブレーク id DESC 追加: 1回の sync で作る多数の print が同一 created_at を共有し
+            #   (Postgres CURRENT_TIMESTAMP=Tx時刻)、ORDER BY created_at DESC のみだと窓(LIMIT)を特定群が占有して
+            #   他学年の既定一覧が空になる回帰を防ぐ (中受80件投入で大学受験生の一覧が空になる事象)。
+            f"ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
             params + [limit, offset],
         )
         rows = c.fetchall()

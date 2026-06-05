@@ -454,6 +454,8 @@
             <option value="地理">🗺️ 地理</option>
             <option value="公民">⚖️ 公民</option>
             <option value="社会">📜 社会</option>
+            <option value="算数">🧮 算数</option>
+            <option value="理科">🔬 理科</option>
             <option value="小論文">✍️ 小論文</option>
             <option value="模試">📝 模試</option>
           </select>
@@ -1953,6 +1955,7 @@
       const subjectIcon = {
         '国語':'📖','英語':'🇬🇧','数学':'🔢','物理':'⚛️','化学':'🧪','生物':'🧬',
         '日本史':'🏯','世界史':'🌍','地理':'🗺️','公民':'⚖️','社会':'📜','小論文':'✍️','模試':'📝',
+        '算数':'🧮','理科':'🔬',
       };
       const levelColor = {
         '基礎':'#34d399','標準':'#60a5fa','発展':'#a78bfa',
@@ -2171,6 +2174,12 @@
           if (filterSubject.value) params.set('subject', filterSubject.value);
           if (filterLevel.value) params.set('level', filterLevel.value);
           if (filterType.value) params.set('target_type', filterType.value);
+          // 🛡️ 2026-06-05 学年フィルタ: モードに応じ grade を渡し、窓(limit=50)を学年混在で奪われないようにする
+          //   (中受80件投入で大学受験生の既定一覧が空になる回帰を防ぐ。kosei=高校生のみ / shougaku=小学生のみ取得)。
+          const _modeF = (typeof window.ajCurrentMode === 'function') ? window.ajCurrentMode() : 'kosei';
+          if (_modeF === 'kosei') params.set('grade', '高校生');
+          else if (_modeF === 'shougaku') params.set('grade', '小学生');
+          else if (_modeF === 'chugaku') params.set('grade', '中学生');
           params.set('limit', '50');
           // loading state (3 視点 review UX 改善)
           list.innerHTML = '<div style="padding:0.8rem; color:#a1a1aa; font-size:0.85rem; text-align:center;">⏳ 読み込み中…</div>';
