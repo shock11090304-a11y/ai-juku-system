@@ -1,5 +1,5 @@
 {
-  "_comment": "AI学習コーチ塾 コース単価カタログ。register.html と register-subscribe.py の両方で参照される。価格改定時はこのファイルを更新するだけで OK。",
+  "_comment": "AI学習コーチ塾 コース単価カタログ。register.html (表示) と api/register-subscribe.py の COURSES/OPTIONS (実課金額) の両方で参照される。価格改定時は両ファイルを必ず同じ値に更新し、`python3 scripts/check_course_price_sync.py` で一致を検証すること (ズレると表示価格と請求額が食い違う)。",
   "version": "2026-05-03",
   "currency": "JPY",
   "courses": [

@@ -67,7 +67,8 @@ def _json(handler, status, payload):
 
 
 # ─────────────── コースカタログ (server-side single source of truth) ───────────────
-# courses.json と同期。価格改定時はこちらも更新すること。
+# payment/courses.json と同期 (こちらが実課金額の計算元)。価格改定時は両方を同じ値に更新し、
+# `python3 scripts/check_course_price_sync.py` で一致を検証すること。
 COURSES = {
     "kobetsu":       {"name": "個別指導",      "price": 25000},
     "ronin":         {"name": "浪人生",        "price": 30000},
