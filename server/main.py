@@ -17981,6 +17981,7 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
         related_tables = [
             ("study_logs", "student_id"),
             ("study_plans", "student_id"),
+            ("homework_assignments", "student_id"),
             ("exam_results", "student_id"),
             ("curricula", "student_id"),
             ("notifications", "student_id"),
@@ -18047,6 +18048,7 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
         delete_tables = [
             ("study_logs", "DELETE FROM study_logs WHERE student_id=?"),
             ("study_plans", "DELETE FROM study_plans WHERE student_id=?"),
+            ("homework_assignments", "DELETE FROM homework_assignments WHERE student_id=?"),
             ("exam_results", "DELETE FROM exam_results WHERE student_id=?"),
             ("curricula", "DELETE FROM curricula WHERE student_id=?"),
             ("notifications", "DELETE FROM notifications WHERE student_id=?"),
@@ -31239,6 +31241,116 @@ def admin_homework_delete(
         except Exception:
             pass
         return {"ok": True, "deleted": 1, "removed": info}
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/homework/overview")
+def admin_homework_overview(
+    limit: int = 4000,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🧑‍🏫 admin: 全生徒の宿題を「宿題(タイトル+期限+科目)ごと」にまとめ、誰が完了/未完了かを横断表示。
+    塾長指示 2026-06-06「宿題を誰がやったか分かるように」。生徒詳細モーダルを1人ずつ開かなくても
+    実施状況を一覧できる集計。返すのは宿題の完了状況(生徒名+完了/未完了+完了日時)のみで、点数等は返さない。
+    認証: admin Bearer または X-Cron-Secret。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    try:
+        limit = max(1, min(int(limit or 4000), 8000))
+    except Exception:
+        limit = 4000
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 新しい順に取得。古い宿題は limit で切り、truncated で塾長に明示 (silent cap 回避)。
+        # 🛡️ 退会(canceled)/期限切れ(expired) 生徒の宿題は集計から除外 — もう塾にいない子が
+        #    永久に「未完了」として完了率を歪め、追うべき在籍生を埋もれさせるのを防ぐ。
+        #    past_due(猶予中)/active/paid/trial の在籍生は残す。NULL status も COALESCE で表示側に。
+        c.execute(
+            "SELECT h.id, h.student_id, h.title, h.subject, h.due_date, h.status, "
+            "       h.completed_at, h.created_at, h.student_note, s.name AS student_name "
+            "FROM homework_assignments h JOIN students s ON s.id = h.student_id "
+            "WHERE COALESCE(s.status, '') NOT IN ('canceled', 'expired') "
+            "ORDER BY h.created_at DESC LIMIT ?",
+            (limit,),
+        )
+        rows = c.fetchall()
+        truncated = len(rows) >= limit
+
+        groups = {}
+        order = []  # 初出順 = created_at DESC (新しい宿題が先)
+        for r in rows:
+            due = str(r["due_date"]) if r["due_date"] else None
+            key = ((r["title"] or "").strip(), due or "", (r["subject"] or "").strip())
+            g = groups.get(key)
+            if g is None:
+                g = {
+                    "title": r["title"],
+                    "subject": r["subject"],
+                    "due_date": due,
+                    "created_at": str(r["created_at"]) if r["created_at"] else None,
+                    "students": [],
+                }
+                groups[key] = g
+                order.append(key)
+            ca = str(r["created_at"]) if r["created_at"] else None
+            if ca and (g["created_at"] is None or ca < g["created_at"]):
+                g["created_at"] = ca  # グループの出題日 = 最初に割当てた日
+            g["students"].append({
+                "homework_id": r["id"],
+                "student_id": r["student_id"],
+                "student_name": r["student_name"],
+                "completed": (r["status"] == "completed"),
+                "completed_at": str(r["completed_at"]) if r["completed_at"] else None,
+                "has_note": bool(r["student_note"]),
+            })
+
+        today = _today_jst().isoformat()
+        out_groups = []
+        for key in order:
+            g = groups[key]
+            studs = g["students"]
+            done = [s for s in studs if s["completed"]]
+            todo = [s for s in studs if not s["completed"]]
+            done.sort(key=lambda s: s["completed_at"] or "", reverse=True)
+            todo.sort(key=lambda s: (s["student_name"] or ""))
+            g["students"] = todo + done  # 未完了を先頭 = 誰がやってないか一目で分かる
+            g["total"] = len(studs)
+            g["completed_count"] = len(done)
+            g["pending_count"] = len(todo)
+            # floor (round でなく) — 199/200 を 100% と誤表示せず「99%・未完了1」を正しく見せる
+            g["completion_rate"] = int(100 * len(done) / len(studs)) if studs else 0
+            g["overdue"] = bool(g["due_date"] and g["due_date"] < today and len(todo) > 0)
+            out_groups.append(g)
+
+        # 並び: 未完了が残る宿題を上に → 期限が近い順(None最後)。安定ソートで同点は出題新しい順を維持。
+        out_groups.sort(key=lambda g: (0 if g["pending_count"] > 0 else 1, g["due_date"] or "9999-12-31"))
+
+        total_assign = sum(g["total"] for g in out_groups)
+        total_done = sum(g["completed_count"] for g in out_groups)
+        return {
+            "ok": True,
+            "groups": out_groups,
+            "truncated": truncated,
+            "summary": {
+                "homework_count": len(out_groups),
+                "assignment_count": total_assign,
+                "completed_count": total_done,
+                "pending_count": total_assign - total_done,
+                "completion_rate": int(100 * total_done / total_assign) if total_assign else 0,
+            },
+        }
     finally:
         conn.close()
 
