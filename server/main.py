@@ -6259,6 +6259,9 @@ def _maybe_run_never_login_nudge(now_jst: datetime) -> dict:
     targets: list = []
     try:
         try:
+            # 🛡️ 本クラス生 (course='kokuritsu_nankan'・通塾生) は除外: is_welcome=True の
+            #    「14日間の無料体験が始まりました」文面は無期限の通塾生に不適切な体験funnel案内。
+            #    継続/再エンゲージ通知の course 除外 (check_inactivity / 継続メール全7経路) と同じ。
             c.execute(
                 """SELECT id, name, email
                    FROM students
@@ -6266,6 +6269,7 @@ def _maybe_run_never_login_nudge(now_jst: datetime) -> dict:
                      AND status IN ('trial', 'paid')
                      AND email IS NOT NULL AND email != ''
                      AND created_at <= ?
+                     AND (course IS NULL OR course != 'kokuritsu_nankan')
                    ORDER BY created_at ASC
                    LIMIT ?""",
                 (cutoff, NEVER_LOGIN_NUDGE_MAX_PER_DAY)
@@ -25958,11 +25962,15 @@ def check_inactivity(payload: AlertCheckRequest, x_cron_secret: str = Header(Non
     conn = db()
     c = conn.cursor()
     # Find students inactive for N days（N日以上更新がない生徒）
+    # 🛡️ 国公立難関大学コース ('kokuritsu_nankan') = 塾の通塾生 (無期限) は再エンゲージ/継続案内の
+    #    対象外 (塾長指示)。streak_reminder / trial_ending (10年trial生に不適切) の LINE push を送らない。
+    #    継続メール全7経路 (trial-reminders/followups/nurture/unused-warning/rescue) と同じ除外。
     c.execute(
         """SELECT id, name, line_user_id, status, updated_at
            FROM students
            WHERE status IN ('trial', 'paid')
-             AND updated_at <= ?""",
+             AND updated_at <= ?
+             AND (course IS NULL OR course != 'kokuritsu_nankan')""",
         (threshold_dt,)
     )
     inactive = c.fetchall()
@@ -32285,11 +32293,13 @@ def admin_set_student_course(student_id: int, payload: StudentCourseSetRequest, 
             # 期限切れ(expired)/解約(canceled)の生徒は在籍(trial)に戻し、内部 status も整える。
             # → expire-trials(trial_end < now)の対象外になり status が勝手に expired 化しない。
             far_end = (datetime.now(timezone.utc) + timedelta(days=3650)).isoformat()
+            # 🛡️ updated_at も bump: 復帰直後の本クラス生が古い updated_at のまま check_inactivity
+            #    (再エンゲージ LINE push) に即該当するのを防ぐ (course 除外との二重防御)。
             if old_status in ("expired", "canceled"):
-                c.execute("UPDATE students SET course = ?, trial_end = ?, status = 'trial' WHERE id = ?",
+                c.execute("UPDATE students SET course = ?, trial_end = ?, status = 'trial', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
                           (new_course, far_end, student_id))
             else:
-                c.execute("UPDATE students SET course = ?, trial_end = ? WHERE id = ?",
+                c.execute("UPDATE students SET course = ?, trial_end = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
                           (new_course, far_end, student_id))
         else:
             # 本クラス解除 (null): course のみ戻す。trial_end/status は触らない。
