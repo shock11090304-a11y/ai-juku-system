@@ -31708,14 +31708,15 @@ def admin_grammar_drill_analytics(
         roster = []
         for a in a_rows:
             _done = (a["status"] == "completed")
-            roster.append({
+            entry = {
                 "student_id": a["student_id"],
                 "student_name": a["student_name"],
                 "completed": _done,
                 "score_correct": a["score_correct"],
                 "score_total": a["score_total"],
                 "completed_at": str(a["completed_at"]) if a["completed_at"] else None,
-            })
+            }
+            roster.append(entry)
             if not _done:
                 continue
             completed += 1
@@ -31725,7 +31726,8 @@ def admin_grammar_drill_analytics(
                 ans = json.loads(a["answers_json"] or "{}")
             except Exception:
                 ans = {}
-            for qid in qids:
+            wrong_nos = []  # この生徒が間違えた設問番号 (1始まり・出題順)。塾長が「どこを間違えたか」を見るため。
+            for idx, qid in enumerate(qids, 1):
                 key = str(qid)
                 if key not in ans and qid not in ans:
                     continue
@@ -31736,8 +31738,11 @@ def admin_grammar_drill_analytics(
                     try:
                         if int(chosen) == int(q["answer"]):
                             per_q[qid]["correct"] += 1
+                        else:
+                            wrong_nos.append(idx)
                     except (TypeError, ValueError):
                         pass
+            entry["wrong_qnos"] = wrong_nos
         # ロスター: 未完了を先頭(名前順) → 完了(完了日時の新しい順)。誰がやってないか一目で分かる。
         _r_done = [r for r in roster if r["completed"]]
         _r_todo = [r for r in roster if not r["completed"]]
