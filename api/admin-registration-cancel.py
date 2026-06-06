@@ -118,6 +118,57 @@ class handler(BaseHTTPRequestHandler):
                 _json(self, 400, {"error": "MISSING_REG_ID"})
                 return
 
+            # 🔀 action="update_fee": 月謝額の更新 (生徒一覧の月謝編集を月末引き落とし額=registration.monthly_fee に同期)。
+            #    Vercel Hobby の Serverless Function 12個上限のため独立 function にせず本 function に同居。
+            #    action 未指定/その他 = 従来の退塾(cancel)処理 (既存クライアント完全互換)。退塾ロジックは下記で無改変。
+            #    安全: read-modify-write で全フィールド保持・EX無し・index/done_key/history 不可侵・customerId 二重照合。
+            action = (payload.get("action") or "").strip()
+            if action == "update_fee":
+                raw_fee = payload.get("monthly_fee", None)
+                if raw_fee is None:
+                    _json(self, 400, {"error": "MISSING_FEE"}); return
+                try:
+                    new_fee = int(raw_fee)
+                except (TypeError, ValueError):
+                    _json(self, 400, {"error": "INVALID_FEE", "message": "monthly_fee は整数で指定してください"}); return
+                if new_fee < 0 or new_fee > 1000000:
+                    _json(self, 400, {"error": "FEE_OUT_OF_RANGE", "message": "monthly_fee は 0〜1,000,000 の範囲で指定してください"}); return
+                fee_breakdown = payload.get("fee_breakdown", None)
+                if fee_breakdown is not None:
+                    fee_breakdown = str(fee_breakdown)[:300]
+                expect_customer_id = (payload.get("expectCustomerId") or "").strip()
+                got_u = _redis("GET", f"reg:completed:{rid}")
+                if not got_u or not isinstance(got_u, dict) or not got_u.get("result"):
+                    _json(self, 404, {"error": "REGISTRATION_NOT_FOUND",
+                                      "message": "登録が見つかりません(未紐付け/解除済み)。引き落とし額は更新されません。"}); return
+                try:
+                    reg_u = json.loads(got_u["result"])
+                except Exception:
+                    _json(self, 500, {"error": "PARSE_ERROR"}); return
+                # 🛡️ 誤レコード更新防止: expectCustomerId が送られたら KV の stripe_customer_id と一致を確認 (重複登録対策)
+                actual_cust = (reg_u.get("stripe_customer_id") or "").strip()
+                if expect_customer_id and actual_cust and expect_customer_id != actual_cust:
+                    _json(self, 409, {"error": "CUSTOMER_MISMATCH",
+                                      "message": "紐付け情報と登録レコードの顧客IDが一致しません。重複登録の可能性があるため更新を中止しました。"}); return
+                prev_fee = int(reg_u.get("monthly_fee", 0) or 0)
+                now_u = int(time.time())
+                # read-modify-write: 全既存フィールド保持・monthly_fee(+任意 breakdown)のみ更新・EX 付けない
+                record_u = {**reg_u, "monthly_fee": new_fee, "monthly_fee_prev": prev_fee,
+                            "monthly_fee_edited_at": now_u, "monthly_fee_edited_by": "admin-roster-edit"}
+                if fee_breakdown is not None:
+                    record_u["fee_breakdown"] = fee_breakdown
+                set_u = _redis("SET", f"reg:completed:{rid}", json.dumps(record_u, ensure_ascii=False))
+                if not set_u or not isinstance(set_u, dict) or set_u.get("result") != "OK":
+                    _log(f"update-fee SET failed rid={rid} res={set_u}")
+                    _json(self, 502, {"error": "KV_WRITE_FAILED", "message": "登録金額の保存に失敗しました。再度お試しください。"}); return
+                sname_u = (reg_u.get("studentName") or reg_u.get("student_name") or "").strip()
+                _log(f"update-fee: rid={rid} fee {prev_fee} -> {new_fee} customer={actual_cust} name={sname_u}")
+                _json(self, 200, {"ok": True, "registrationId": rid, "monthly_fee": new_fee, "prev": prev_fee,
+                                  "studentName": sname_u,
+                                  "message": f"{sname_u} さんの月末引き落とし額を ¥{prev_fee:,} → ¥{new_fee:,} に更新しました"})
+                return
+            # ===== 以下、従来の退塾(cancel)処理 (action 未指定時・無改変) =====
+
             # KV から取得
             got = _redis("GET", f"reg:completed:{rid}")
             if not got or not isinstance(got, dict) or not got.get("result"):

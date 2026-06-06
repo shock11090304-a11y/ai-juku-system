@@ -57,7 +57,7 @@
     },
     {
       "source": "/payment/api/admin-update-registration",
-      "destination": "/api/admin-update-registration"
+      "destination": "/api/admin-registration-cancel"
     },
     {
       "source": "/api/:path*",

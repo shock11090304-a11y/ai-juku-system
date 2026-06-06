@@ -673,6 +673,7 @@ async function saveStudentEdit() {
           method: 'POST',
           headers: { 'X-Admin-Password': _pw, 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            action: 'update_fee',
             registrationId: _link.regId,
             monthly_fee: fee,
             fee_breakdown: courses.join(' / '),
