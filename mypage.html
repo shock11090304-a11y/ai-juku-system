@@ -7,7 +7,7 @@
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="0">
   <title>マイページ | AIコーチング</title>
-  <script src="cache-purge.js?v=20260529-past-due-grace"></script>
+  <script src="cache-purge.js?v=20260606-honclass-mypage"></script>
 
   <script src="frontend-error-monitor.js?v=20260529-past-due-grace"></script>
   <link rel="stylesheet" href="style.css?v=20260529-past-due-grace">
@@ -2322,13 +2322,18 @@
         const data = await res.json();
         const s = data.student;
         if (!s) return;
-        const statusText = {
-          'trial': '🎖 14日間 完全無料体験中（クレカ登録なし）',
-          'paid': '✅ 月額プラン契約中',
-          'past_due': '⚠️ お支払いを確認できませんでした（カード情報の更新をお願いします）',
-          'canceled': '⏹ 解約済み（期間終了まで利用可）',
-          'expired': '⏱ 体験終了',
-        }[s.status] || s.status;
+        // 🎓 本クラス(国公立難関・無期限)生は SaaS の体験/継続UIを出さない (塾長指示 2026-06-06)。
+        // course bypass で status に関係なく無期限アクセスなので、status='expired' でも「体験終了」表示にしない。
+        const isHonClass = (s.course === 'kokuritsu_nankan');
+        const statusText = isHonClass
+          ? '🎓 本クラス会員（国公立難関コース・無期限利用）'
+          : ({
+            'trial': '🎖 14日間 完全無料体験中（クレカ登録なし）',
+            'paid': '✅ 月額プラン契約中',
+            'past_due': '⚠️ お支払いを確認できませんでした（カード情報の更新をお願いします）',
+            'canceled': '⏹ 解約済み（期間終了まで利用可）',
+            'expired': '⏱ 体験終了',
+          }[s.status] || s.status);
         // 入塾金免除キャンペーン適用済みのバッジ
         const waivedBadge = s.enrollment_fee_waived
           ? `<br><span style="background:rgba(251,191,36,0.18);color:#fbbf24;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.78rem;font-weight:700;">🎁 入塾金 ¥10,000 免除キャンペーン適用済み</span>`
@@ -2337,25 +2342,30 @@
         // 💳 past_due (決済失敗・猶予期間中): カード更新を促す赤バナーを表示
         const dunningBanner = document.getElementById('dunningBanner');
         if (dunningBanner) {
-          if (s.status === 'past_due') {
+          // 本クラス生(無期限・通塾生)には決済失敗バナーを出さない (SaaS課金督促は不要)
+          if (!isHonClass && s.status === 'past_due') {
             dunningBanner.style.display = '';
           } else {
             dunningBanner.style.display = 'none';
           }
         }
-        // trial ユーザーは継続登録ボタンを表示
+        // trial/expired ユーザーは継続登録ボタンを表示。ただし本クラス生(無期限)には出さない。
         const upgradeBtn = document.getElementById('upgradeBtn');
         if (upgradeBtn) {
-          if (s.status === 'trial' || s.status === 'expired') {
+          if (!isHonClass && (s.status === 'trial' || s.status === 'expired')) {
             upgradeBtn.style.display = '';
             upgradeBtn.href = 'upgrade.html?email=' + encodeURIComponent(s.email);
+          } else {
+            upgradeBtn.style.display = 'none';
           }
         }
-        // Stripe顧客情報がある場合はポータルを表示 (past_due もカード更新のため表示)
-        if (s.status === 'paid' || s.status === 'canceled' || s.status === 'past_due') {
+        // Stripe顧客情報がある場合はポータルを表示 (past_due もカード更新のため表示)。
+        // 本クラス生(無期限・通塾生)はSaaSサブスクでないため支払い・プラン変更ポータルを出さない。
+        if (!isHonClass && (s.status === 'paid' || s.status === 'canceled' || s.status === 'past_due')) {
           portalBtn.style.display = '';
         }
-        if (s.status === 'trial' || s.status === 'paid' || s.status === 'past_due') {
+        // 本クラス生(通塾生・無期限)には「解約」を出さない (SaaSサブスクではないため・誤操作防止)
+        if (!isHonClass && (s.status === 'trial' || s.status === 'paid' || s.status === 'past_due')) {
           cancelBtn.style.display = '';
         }
       } catch (e) {
