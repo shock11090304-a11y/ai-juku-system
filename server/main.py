@@ -31274,14 +31274,16 @@ def admin_homework_overview(
     try:
         c = conn.cursor()
         # 新しい順に取得。古い宿題は limit で切り、truncated で塾長に明示 (silent cap 回避)。
-        # 🛡️ 退会(canceled)/期限切れ(expired) 生徒の宿題は集計から除外 — もう塾にいない子が
-        #    永久に「未完了」として完了率を歪め、追うべき在籍生を埋もれさせるのを防ぐ。
-        #    past_due(猶予中)/active/paid/trial の在籍生は残す。NULL status も COALESCE で表示側に。
+        # 🛡️ 退会(canceled)生徒の宿題のみ集計から除外 — 退塾した子が永久に「未完了」として
+        #    完了率を歪めるのを防ぐ。**'expired' は除外しない**: 本クラス(kokuritsu_nankan)生徒は
+        #    通塾中でもデジタル体験版が切れて status='expired' になる在籍生で、彼らに出した宿題が
+        #    消えると本機能が破綻する (退会フォローが kokuritsu/expired を除外する L24491 と同じ理由)。
+        #    paid/trial/past_due/expired/active/NULL の在籍生は全て残す。canceled のみ退塾扱い。
         c.execute(
             "SELECT h.id, h.student_id, h.title, h.subject, h.due_date, h.status, "
             "       h.completed_at, h.created_at, h.student_note, s.name AS student_name "
             "FROM homework_assignments h JOIN students s ON s.id = h.student_id "
-            "WHERE COALESCE(s.status, '') NOT IN ('canceled', 'expired') "
+            "WHERE COALESCE(s.status, '') != 'canceled' "
             "ORDER BY h.created_at DESC LIMIT ?",
             (limit,),
         )

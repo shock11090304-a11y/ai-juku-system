@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <script src="cache-purge.js?v=20260606-homework-status"></script>
+  <script src="cache-purge.js?v=20260606-homework-fix"></script>
   <!-- html2canvas: テンプレートから画像生成 (templates → PNG) 用 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
     integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA=="
@@ -3788,7 +3788,7 @@
               + '未完了 <strong style="color:#fca5a5;">' + (sm.pending_count || 0) + '</strong>'
               + (sm.assignment_count ? '（完了率 ' + (sm.completion_rate || 0) + '%）' : '')
               + (j && j.truncated ? ' <span style="color:#fbbf24;">※宿題が非常に多く、古い一部は集計外（直近4000件まで）</span>' : '')
-              + ' <span style="color:#71717a;font-size:0.92em;">(退会・期限切れの生徒は除外)</span>';
+              + ' <span style="color:#71717a;font-size:0.92em;">(退会した生徒のみ除外)</span>';
           }
           if (groups.length === 0) {
             box.innerHTML = '';
