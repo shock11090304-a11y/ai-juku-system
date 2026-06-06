@@ -31690,15 +31690,33 @@ def admin_grammar_drill_analytics(
             c.execute(f"SELECT id, stem, choices, answer, explanation FROM grammar_questions WHERE id IN ({ph})", tuple(qids))
             for r in c.fetchall():
                 qmap[r["id"]] = r
-        # 全 assignment の解答を集計
-        c.execute("SELECT status, answers_json, score_correct, score_total FROM grammar_drill_assignments WHERE drill_id = ?", (drill_id,))
+        # 全 assignment の解答を集計 + 誰が完了/未完了かの per-student ロスター (塾長指示 2026-06-06)
+        # LEFT JOIN で assigned 件数は不変、生徒名を付与 (削除済み生徒は name=NULL → frontend で ID 表示)。
+        c.execute(
+            "SELECT a.student_id AS student_id, s.name AS student_name, a.status AS status, "
+            "       a.answers_json AS answers_json, a.score_correct AS score_correct, "
+            "       a.score_total AS score_total, a.completed_at AS completed_at "
+            "FROM grammar_drill_assignments a LEFT JOIN students s ON s.id = a.student_id "
+            "WHERE a.drill_id = ?",
+            (drill_id,),
+        )
         a_rows = c.fetchall()
         assigned = len(a_rows)
         completed = 0
         score_sum = 0.0
         per_q = {qid: {"answered": 0, "correct": 0} for qid in qids}
+        roster = []
         for a in a_rows:
-            if a["status"] != "completed":
+            _done = (a["status"] == "completed")
+            roster.append({
+                "student_id": a["student_id"],
+                "student_name": a["student_name"],
+                "completed": _done,
+                "score_correct": a["score_correct"],
+                "score_total": a["score_total"],
+                "completed_at": str(a["completed_at"]) if a["completed_at"] else None,
+            })
+            if not _done:
                 continue
             completed += 1
             if a["score_total"]:
@@ -31720,6 +31738,12 @@ def admin_grammar_drill_analytics(
                             per_q[qid]["correct"] += 1
                     except (TypeError, ValueError):
                         pass
+        # ロスター: 未完了を先頭(名前順) → 完了(完了日時の新しい順)。誰がやってないか一目で分かる。
+        _r_done = [r for r in roster if r["completed"]]
+        _r_todo = [r for r in roster if not r["completed"]]
+        _r_done.sort(key=lambda r: r["completed_at"] or "", reverse=True)
+        _r_todo.sort(key=lambda r: (r["student_name"] or ""))
+        roster = _r_todo + _r_done
         # 問題別 (出題順)
         questions = []
         for idx, qid in enumerate(qids, 1):
@@ -31749,6 +31773,7 @@ def admin_grammar_drill_analytics(
                 "created_at": str(d["created_at"]) if d["created_at"] else None,
             },
             "summary": {"assigned": assigned, "completed": completed, "avg_correct_rate": avg_score},
+            "students": roster,
             "questions": questions,
         }
     except HTTPException:
