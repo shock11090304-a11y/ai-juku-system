@@ -656,7 +656,49 @@ async function saveStudentEdit() {
   } else {
     cloudMsg = 'ℹ クラウド未ログイン: localStorage のみに保存 (右上 🔒 でログインすると同期)';
   }
-  alert(`✓ ${name} さん (ID #${id}) の情報を更新しました。\n\n学年: ${grade || '未設定'} / 月謝: ¥${fee.toLocaleString()}\nコース: ${courses.join('・') || '(なし)'}\n\n${cloudMsg}`);
+
+  // 💴 月末引き落とし額の同期 (2026-06-06): 月末引き落としは登録(registration KV)の monthly_fee を使うため、
+  // 名簿の月謝編集を「紐付け✓確定済み」の生徒だけ registration にも反映する。
+  // → 月末引き落とし(preview/execute/この人だけ/滞納)が新金額になる。
+  // 安全: 紐付け確定済みのみ(氏名推測マッチはしない=重複登録の誤更新防止)・PW未入力/未紐付けは silent fail させず明示。
+  let feeSyncMsg = '';
+  const _link = getRegLink(id);
+  if (_link && _link.regId) {
+    const _pw = getChatPw();
+    if (!_pw) {
+      feeSyncMsg = '\n\n⚠ 月末引き落とし額は未更新です: チャット管理パスワード未入力。\n(「💬 チャット」等のタブで管理パスワードを入力後、もう一度保存すると引き落とし額も同期されます)';
+    } else {
+      try {
+        const _r = await fetch('/payment/api/admin-update-registration', {
+          method: 'POST',
+          headers: { 'X-Admin-Password': _pw, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            registrationId: _link.regId,
+            monthly_fee: fee,
+            fee_breakdown: courses.join(' / '),
+            expectCustomerId: _link.customerId || undefined,
+          }),
+        });
+        const _d = await _r.json().catch(() => ({}));
+        if (_r.ok && _d.ok) {
+          feeSyncMsg = `\n\n✓ 月末引き落とし額も ¥${(_d.prev || 0).toLocaleString()} → ¥${fee.toLocaleString()} に同期しました (次回引き落としから反映)`;
+          try { if (typeof loadRegisteredCustomers === 'function') await loadRegisteredCustomers(true); } catch (e) {}
+        } else if (_r.status === 401) {
+          feeSyncMsg = '\n\n⚠ 月末引き落とし額は未更新: 管理パスワードが違います';
+        } else if (_r.status === 404) {
+          feeSyncMsg = '\n\nℹ 月末引き落とし額の同期はスキップ: この生徒の登録が見つかりません(未紐付け/解除済み)';
+        } else if (_r.status === 409) {
+          feeSyncMsg = `\n\n⚠ 月末引き落とし額は未更新: ${_d.message || '紐付けと登録の顧客IDが不一致(重複登録の可能性)'}`;
+        } else {
+          feeSyncMsg = `\n\n⚠ 月末引き落とし額の同期に失敗: ${_d.message || ('HTTP ' + _r.status)}`;
+        }
+      } catch (e) {
+        feeSyncMsg = `\n\n⚠ 月末引き落とし額の同期エラー: ${e && e.message ? e.message : e}`;
+      }
+    }
+  }
+
+  alert(`✓ ${name} さん (ID #${id}) の情報を更新しました。\n\n学年: ${grade || '未設定'} / 月謝: ¥${fee.toLocaleString()}\nコース: ${courses.join('・') || '(なし)'}\n\n${cloudMsg}${feeSyncMsg}`);
 }
 
 // 編集を取消して元データ (data.json) の値に戻す
