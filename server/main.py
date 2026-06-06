@@ -32273,12 +32273,27 @@ def admin_set_student_course(student_id: int, payload: StudentCourseSetRequest, 
     conn = db()
     try:
         c = conn.cursor()
-        c.execute("SELECT id, course FROM students WHERE id = ?", (student_id,))
+        c.execute("SELECT id, course, status FROM students WHERE id = ?", (student_id,))
         row = c.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="生徒が見つかりません")
         old_course = row["course"] if "course" in row.keys() else None
-        c.execute("UPDATE students SET course = ? WHERE id = ?", (new_course, student_id))
+        old_status = row["status"] if "status" in row.keys() else None
+        if new_course == _STUDY_LOG_TARGET_COURSE:
+            # 🎓 本クラス(無期限)化 (塾長指示 2026-06-06「体験期限も無期限化」):
+            # 体験期限を 10 年後に設定し、承認フロー(永久無料=trial_end 3650日後)と揃える。
+            # 期限切れ(expired)/解約(canceled)の生徒は在籍(trial)に戻し、内部 status も整える。
+            # → expire-trials(trial_end < now)の対象外になり status が勝手に expired 化しない。
+            far_end = (datetime.now(timezone.utc) + timedelta(days=3650)).isoformat()
+            if old_status in ("expired", "canceled"):
+                c.execute("UPDATE students SET course = ?, trial_end = ?, status = 'trial' WHERE id = ?",
+                          (new_course, far_end, student_id))
+            else:
+                c.execute("UPDATE students SET course = ?, trial_end = ? WHERE id = ?",
+                          (new_course, far_end, student_id))
+        else:
+            # 本クラス解除 (null): course のみ戻す。trial_end/status は触らない。
+            c.execute("UPDATE students SET course = ? WHERE id = ?", (new_course, student_id))
         # 監査ログ (events テーブル)
         try:
             c.execute(
