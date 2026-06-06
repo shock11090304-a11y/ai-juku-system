@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <script src="cache-purge.js?v=20260606-drill-roster"></script>
+  <script src="cache-purge.js?v=20260606-reactivate-btn"></script>
   <!-- html2canvas: テンプレートから画像生成 (templates → PNG) 用 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
     integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA=="
@@ -7382,6 +7382,14 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             : `<button type="button" class="sd-waive-enrollment-btn" data-student-id="${esc(st.id)}" data-student-name="${esc(st.name || '')}" style="width:100%;padding:11px 16px;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:0.92rem;cursor:pointer;">🆓 入塾金を免除する</button>`}
           <div style="margin-top:6px;color:#71717a;font-size:0.75rem;line-height:1.5;">体験→有料転換時の初回請求に乗る入塾金 ¥10,000 を免除します (Stripe の保留請求も自動削除)。</div>
         </div>`,
+        // 🔄 アカウント復活 (2026-06-06 塾長指示): 解約/体験終了の生徒のみ表示。テスト垢を在籍(体験)へ戻す。
+        ((st.status === 'canceled' || st.status === 'expired')
+          ? `<div style="margin-top:12px;padding:14px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.25);border-radius:10px;">
+          <div style="color:#c4b5fd;font-weight:600;font-size:0.88rem;margin-bottom:8px;">🔄 アカウント復活 (現在: ${esc(statusLabel)})</div>
+          <button type="button" class="sd-reactivate-btn" data-student-id="${esc(st.id)}" data-student-name="${esc(st.name || '')}" data-current-plan="${esc(st.plan || '')}" style="width:100%;padding:11px 16px;background:linear-gradient(135deg,#9333ea,#a855f7);color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:0.92rem;cursor:pointer;">🔄 体験(trial)として復活させる</button>
+          <div style="margin-top:6px;color:#71717a;font-size:0.75rem;line-height:1.5;">解約/体験終了の生徒を在籍(体験)に戻します。塾長のチェック用テストアカウント (足立翔平 など) を、英文法ドリルの配信先選択や各種一覧に再表示するための機能です。</div>
+        </div>`
+          : ''),
       ].join('');
 
       // 🎯 2026-05-26 audit fix: 学年/志望校 編集 button の listener 配線
@@ -7450,6 +7458,41 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             else document.getElementById('studentDetailModal').style.display = 'none';
           } catch (e) {
             alert(`エラー: ${e.message}`);
+          }
+        });
+      });
+
+      // 🔄 アカウント復活ボタンの配線 (2026-06-06 塾長指示: テスト垢を在籍へ戻す)
+      // reactivate は admin Bearer 必須 → AdminAuth.fetch (塾長のログインセッション) で実行。
+      infoPane.querySelectorAll('.sd-reactivate-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const sid = Number(btn.dataset.studentId) || 0;
+          const nm = btn.dataset.studentName || '';
+          const curPlan = btn.dataset.currentPlan || '';
+          if (sid <= 0) { alert('student_id 不正'); return; }
+          if (!confirm(`${nm} さん (ID ${sid}) を「体験(trial)」として復活させます。\nドリル配信の生徒選択や各種一覧に再表示されます。よろしいですか？`)) return;
+          const _orig = btn.textContent;
+          btn.disabled = true; btn.textContent = '⏳ 復活中...';
+          try {
+            const body = { id: sid, status: 'trial' };
+            if (curPlan) body.plan = curPlan;
+            const r = await AdminAuth.fetch('/api/admin/students/reactivate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            });
+            const d = await r.json();
+            if (r.ok && d.ok) {
+              if (st) st.status = (d.after && d.after.status) || 'trial';
+              alert(`✅ ${nm} さんを復活しました (${(d.before && d.before.status) || '?'} → ${(d.after && d.after.status) || 'trial'})。画面を更新します。`);
+              location.reload();
+            } else {
+              alert('復活失敗: ' + (d.detail || ('HTTP ' + r.status)));
+              btn.disabled = false; btn.textContent = _orig;
+            }
+          } catch (e) {
+            alert('復活エラー: ' + (e && e.message ? e.message : e));
+            btn.disabled = false; btn.textContent = _orig;
           }
         });
       });
