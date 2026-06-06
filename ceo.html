@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <script src="cache-purge.js?v=20260606-drill-wrong-q"></script>
+  <script src="cache-purge.js?v=20260606-honclass-tag"></script>
   <!-- html2canvas: テンプレートから画像生成 (templates → PNG) 用 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
     integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA=="
@@ -7399,6 +7399,15 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           <div style="margin-top:6px;color:#71717a;font-size:0.75rem;line-height:1.5;">解約/体験終了の生徒を在籍(体験)に戻します。塾長のチェック用テストアカウント (足立翔平 など) を、英文法ドリルの配信先選択や各種一覧に再表示するための機能です。</div>
         </div>`
           : ''),
+        // 🎓 本クラス(国公立難関)タグ付け (2026-06-06): 通塾している無期限生を course=kokuritsu_nankan に。
+        // → アプリ無期限利用(体験期限で切れない) + 体験終了/継続案内メール対象外。未タグ(本クラスでない)時のみ表示。
+        (st.course !== 'kokuritsu_nankan'
+          ? `<div style="margin-top:12px;padding:14px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.28);border-radius:10px;">
+          <div style="color:#fde68a;font-weight:600;font-size:0.88rem;margin-bottom:8px;">🎓 本クラス(国公立難関) 登録 <span style="color:#71717a;font-weight:400;">(現在: ${st.course ? esc(st.course) : '未設定'})</span></div>
+          <button type="button" class="sd-setcourse-btn" data-student-id="${esc(st.id)}" data-student-name="${esc(st.name || '')}" style="width:100%;padding:11px 16px;background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:0.92rem;cursor:pointer;">🎓 本クラス(無期限)に登録する</button>
+          <div style="margin-top:6px;color:#71717a;font-size:0.75rem;line-height:1.5;">通塾している<strong style="color:#fde68a;">無期限の本クラス生</strong>をタグ付け。設定すると <strong style="color:#fde68a;">アプリが無期限利用可</strong> になり(体験期限で切れない) + <strong style="color:#fde68a;">体験終了・継続案内メールの対象外</strong>になり、学習記録/計画も解放されます。</div>
+        </div>`
+          : `<div style="margin-top:12px;padding:10px 14px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:10px;color:#fde68a;font-size:0.8rem;">🎓 本クラス(国公立難関) 登録済 — 無期限利用・継続案内メール対象外</div>`),
       ].join('');
 
       // 🎯 2026-05-26 audit fix: 学年/志望校 編集 button の listener 配線
@@ -7501,6 +7510,38 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             }
           } catch (e) {
             alert('復活エラー: ' + (e && e.message ? e.message : e));
+            btn.disabled = false; btn.textContent = _orig;
+          }
+        });
+      });
+
+      // 🎓 本クラス(国公立難関)登録ボタンの配線 (2026-06-06): course=kokuritsu_nankan に設定。
+      // → 無期限アクセス(体験期限で切れない) + 継続案内メール対象外。admin Bearer(塾長セッション)で実行。
+      infoPane.querySelectorAll('.sd-setcourse-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const sid = Number(btn.dataset.studentId) || 0;
+          const nm = btn.dataset.studentName || '';
+          if (sid <= 0) { alert('student_id 不正'); return; }
+          if (!confirm(`${nm} さん (ID ${sid}) を「本クラス(国公立難関)」に登録します。\nアプリが無期限利用可能になり、体験終了・継続案内メールの対象外になります。よろしいですか？`)) return;
+          const _orig = btn.textContent;
+          btn.disabled = true; btn.textContent = '⏳ 登録中...';
+          try {
+            const r = await AdminAuth.fetch(`/api/admin/students/${sid}/course`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ course: 'kokuritsu_nankan' }),
+            });
+            const d = await r.json().catch(() => ({}));
+            if (r.ok) {
+              if (st) st.course = 'kokuritsu_nankan';
+              alert(`✅ ${nm} さんを本クラス(国公立難関)に登録しました。無期限利用・継続案内メール対象外になりました。画面を更新します。`);
+              location.reload();
+            } else {
+              alert('登録失敗: ' + (d.detail || ('HTTP ' + r.status)));
+              btn.disabled = false; btn.textContent = _orig;
+            }
+          } catch (e) {
+            alert('登録エラー: ' + (e && e.message ? e.message : e));
             btn.disabled = false; btn.textContent = _orig;
           }
         });
