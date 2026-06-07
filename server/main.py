@@ -17760,25 +17760,32 @@ def admin_send_report(payload: dict, authorization: Optional[str] = Header(None)
 
 
 @app.post("/api/admin/students/reactivate")
-def admin_students_reactivate(payload: dict, authorization: Optional[str] = Header(None)):
+def admin_students_reactivate(payload: dict, authorization: Optional[str] = Header(None),
+                              x_cron_secret: Optional[str] = Header(None)):
     """canceled / expired student を任意の status に再アクティベート。
     塾長自身のテスト用アカウント (status=canceled) を復活させて magic link を
     届くようにする用途 (2026-05-03 塾長指示)。
     payload: {"id": 6, "status": "paid", "plan": "founder_special"}
-    """
-    if not authorization or not authorization.startswith("Bearer "):
+    認証 (2026-06-07 拡張): admin Bearer (塾長セッション) or X-Cron-Secret (Claude 運用)。
+    cron-secret は trial 復活のみ許可。paid 付与 (課金実体の無い entitlement) は admin Bearer 必須。"""
+    is_admin_bearer = bool(
+        authorization and authorization.startswith("Bearer ")
+        and _verify_admin_token(authorization[len("Bearer "):].strip())
+    )
+    is_cron = bool(CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET))
+    if not (is_admin_bearer or is_cron):
         raise HTTPException(status_code=401, detail="未認証")
-    token = authorization[len("Bearer "):].strip()
-    if not _verify_admin_token(token):
-        raise HTTPException(status_code=401, detail="セッション期限切れ")
 
     sid = int(payload.get("id") or 0)
     new_status = (payload.get("status") or "paid").strip()
-    new_plan = (payload.get("plan") or "founder_special").strip()
+    new_plan = (payload.get("plan") or "").strip()  # 空 = 既存 plan を保持 (founder_special を勝手に付けない)
     if not sid:
         raise HTTPException(status_code=400, detail="id required")
     if new_status not in ("paid", "trial"):
         raise HTTPException(status_code=400, detail="status must be 'paid' or 'trial'")
+    # 🛡 cron-secret では paid 付与不可 (entitlement 偽造防止)。admin Bearer のみ paid 可。
+    if new_status == "paid" and not is_admin_bearer:
+        raise HTTPException(status_code=403, detail="paid 復活は管理者ログインが必要です (cron-secret は trial のみ)")
 
     conn = db()
     c = conn.cursor()
@@ -17788,21 +17795,37 @@ def admin_students_reactivate(payload: dict, authorization: Optional[str] = Head
         if not row:
             raise HTTPException(status_code=404, detail=f"student id={sid} not found")
         before = {"status": row["status"], "plan": row["plan"]}
+        # plan 変更は admin Bearer のみ。cron-secret は status 復活のみで plan は既存維持
+        # (trial+founder_special で AI予算20倍などの entitlement 偽造を防止)。未指定は既存保持。
+        eff_plan = (new_plan or row["plan"]) if is_admin_bearer else row["plan"]
         if new_status == "paid":
             c.execute(
                 "UPDATE students SET status='paid', plan=?, paid_since=COALESCE(paid_since, ?), trial_end=NULL WHERE id=?",
-                (new_plan, datetime.now(timezone.utc), sid),
+                (eff_plan, datetime.now(timezone.utc), sid),
             )
         else:
             new_trial_end = datetime.now(timezone.utc) + timedelta(days=30)
             c.execute(
                 "UPDATE students SET status='trial', plan=?, trial_end=? WHERE id=?",
-                (new_plan, new_trial_end, sid),
+                (eff_plan, new_trial_end, sid),
             )
         conn.commit()
         c.execute("SELECT id, name, email, status, plan, trial_end, paid_since FROM students WHERE id=?", (sid,))
         after_row = c.fetchone()
-        log.info(f"[admin/reactivate] id={sid} {before} -> status={new_status} plan={new_plan}")
+        actor = "admin" if is_admin_bearer else "cron"
+        log.info(f"[admin/reactivate] id={sid} {before} -> status={new_status} plan={eff_plan} actor={actor}")
+        # 🔍 監査 events (billing status 変更 → actor + before/after を残す)
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("student_reactivated", json.dumps({
+                    "student_id": sid, "before": before,
+                    "after_status": new_status, "plan": eff_plan, "actor": actor,
+                }, ensure_ascii=False), actor),
+            )
+            conn.commit()
+        except Exception:
+            pass
         return {
             "ok": True,
             "id": sid,
@@ -23329,6 +23352,15 @@ LINE_TEMPLATES = {
                 f"計 {p.get('question_count', 0)} 問を準備しました。\n\n"
                 f"マイページから確認できます👇\n"
                 f"{p.get('url', BASE_URL)}/mypage.html?focus=worksheet"
+    },
+    # 📝 2026-06-07 塾長指示: 英文法ドリル配信時に生徒へ能動通知 (「配信=通知ゼロ」問題の恒久対策)
+    "grammar_drill_assigned": lambda p: {
+        "type": "text",
+        "text": f"📝 新しい英文法の宿題が届きました\n\n"
+                f"{p.get('name', '生徒')}さんへ、「{p.get('unit', '英文法')}」の問題 {p.get('question_count', 25)}問が配信されました。\n\n"
+                f"解いて提出すると、間違えた問題はその場で解説が出ます。\n"
+                f"マイページから挑戦👇\n"
+                f"{p.get('url', BASE_URL)}/mypage.html"
     },
 }
 
@@ -31497,9 +31529,67 @@ def admin_grammar_import(
         conn.close()
 
 
+def _notify_grammar_drill_assigned(notify_list: list, unit: str, question_count: int):
+    """BackgroundTasks: 配信されたドリルを各生徒へ LINE / メールで能動通知 (best-effort)。
+    notify_list: [{"id":int,"name":str,"email":str|None,"line_user_id":str|None}]
+    - _do_line_push は line_user_id 無しだと 404 を投げるため、紐付け済みのみ呼ぶ。
+    - 1 人失敗しても他生徒の通知は止めない ([[feedback-silent-fail-send-email]] 準拠で log に残す)。
+    - 同期 def なので FastAPI は threadpool で実行 = event loop を塞がない (admin_send_message と同方式)。
+    - Resend 無料枠 (1通/秒) 回避: email は 2通目以降 1.5秒間隔 + 429 は指数バックオフ
+      (_dispatch_message_emails と同方針)。「全選択」で 100名超でも 429 silent fail しない。"""
+    import time as _t
+    line_ok = mail_ok = mail_fail = 0
+    email_idx = 0
+    for s in notify_list:
+        sid = s.get("id")
+        if not sid:
+            continue
+        # LINE (紐付け済みのみ・無いと _do_line_push が 404 を投げるためガード)
+        try:
+            if s.get("line_user_id"):
+                r = _do_line_push(int(sid), "grammar_drill_assigned",
+                                  {"unit": unit, "question_count": question_count, "url": BASE_URL})
+                if isinstance(r, dict) and r.get("ok"):
+                    line_ok += 1
+        except Exception as e:
+            log.warning(f"[GrammarDrillNotify] LINE failed sid={sid}: {e}")
+        # メール (有効アドレスのみ・synthetic は _send_message_email 側で skip)
+        email = (s.get("email") or "").strip()
+        if not (email and "@" in email):
+            continue
+        if email_idx > 0:
+            _t.sleep(1.5)  # Resend rate limit 回避
+        email_idx += 1
+        subj = f"📝 新しい英文法の宿題「{unit}」が届きました"
+        body = (
+            f"「{unit}」の英文法ドリル（全{question_count}問）が配信されました。\n\n"
+            f"マイページからログインして挑戦してください:\n"
+            f"{BASE_URL}/mypage.html\n\n"
+            f"※ 解いて提出すると、間違えた問題の解説がその場で表示されます。"
+        )
+        res = None
+        for attempt in range(3):  # 429 リトライ (最大3回・指数バックオフ)
+            try:
+                res = _send_message_email(email, subj, body, student_name=s.get("name"))
+            except Exception as e:
+                log.warning(f"[GrammarDrillNotify] email raised sid={sid}: {e}")
+                res = {"sent": False, "error": str(e)}
+            if res.get("sent") or "429" not in str(res.get("error", "")):
+                break
+            if attempt < 2:  # 最終試行後は待たない (無駄な backoff を省く)
+                _t.sleep(3 * (2 ** attempt))
+        if res and res.get("sent"):
+            mail_ok += 1
+        else:
+            mail_fail += 1
+            log.warning(f"[GrammarDrillNotify] email not sent sid={sid}: {(res or {}).get('error')}")
+    log.info(f"[GrammarDrillNotify] done: line_ok={line_ok} mail_ok={mail_ok} mail_fail={mail_fail}")
+
+
 @app.post("/api/admin/grammar-drill/create")
 def admin_grammar_drill_create(
     payload: dict,
+    background_tasks: BackgroundTasks,
     authorization: Optional[str] = Header(None),
     x_cron_secret: Optional[str] = Header(None),
 ):
@@ -31566,21 +31656,31 @@ def admin_grammar_drill_create(
 
         # 3) 配信 (存在する生徒のみ assignment 作成)
         ph2 = ",".join(["?"] * len(student_ids))
-        c.execute(f"SELECT id, name FROM students WHERE id IN ({ph2})", tuple(student_ids))
-        found = {r["id"]: r["name"] for r in c.fetchall()}
+        c.execute(f"SELECT id, name, email, line_user_id FROM students WHERE id IN ({ph2})", tuple(student_ids))
+        found = {}
+        for r in c.fetchall():
+            found[r["id"]] = {"name": r["name"], "email": r["email"], "line_user_id": r["line_user_id"]}
         assigned = []
+        notify_list = []  # 🔔 配信通知用 (LINE/メール) — 新規割当に成功した生徒のみ
         for sid in student_ids:
             if sid not in found:
                 continue
-            try:
-                c.execute(
-                    "INSERT INTO grammar_drill_assignments (drill_id, student_id, status, score_total) "
-                    "VALUES (?, ?, 'open', ?)",
-                    (drill_id, sid, count),
-                )
-                assigned.append({"student_id": sid, "name": found[sid]})
-            except Exception:
-                pass  # uq 重複等は skip
+            # ON CONFLICT DO NOTHING で既配信 (uq 重複) を原子的に skip。
+            # 例外を投げないので Postgres のトランザクション poisoning (重複1件で
+            # 後続 INSERT 全滅 + commit 時 全ロールバック) を回避。新規 INSERT 成功時のみ
+            # RETURNING で行が返るため、assigned/notify_list に積むのは新規割当だけ
+            # = 既配信生徒への再通知も部分割当ロールバックも起きない。
+            c.execute(
+                "INSERT INTO grammar_drill_assignments (drill_id, student_id, status, score_total) "
+                "VALUES (?, ?, 'open', ?) ON CONFLICT (drill_id, student_id) DO NOTHING RETURNING id",
+                (drill_id, sid, count),
+            )
+            if c.fetchone():  # 新規割当 (DO NOTHING 時は None)
+                assigned.append({"student_id": sid, "name": found[sid]["name"]})
+                notify_list.append({
+                    "id": sid, "name": found[sid]["name"],
+                    "email": found[sid]["email"], "line_user_id": found[sid]["line_user_id"],
+                })
         conn.commit()
 
         # 4) 監査 events
@@ -31596,6 +31696,15 @@ def admin_grammar_drill_create(
         except Exception:
             pass
 
+        # 5) 🔔 配信通知 (LINE/メール) を BackgroundTasks で非同期送信。
+        #    DB 書込(配信)と通知を分離し HTTP は即返却。新規割当に成功した生徒のみが対象なので
+        #    既存ドリルの再通知 (uq 重複 skip 分) は起きない。
+        if notify_list:
+            try:
+                background_tasks.add_task(_notify_grammar_drill_assigned, notify_list, unit, count)
+            except Exception as e:
+                log.warning(f"[GrammarDrillNotify] schedule failed: {e}")
+
         return {
             "ok": True,
             "drill_id": drill_id,
@@ -31603,8 +31712,9 @@ def admin_grammar_drill_create(
             "unit": unit,
             "question_count": count,
             "assigned": assigned,
+            "notified": len(notify_list),
             "skipped": [s for s in student_ids if s not in found],
-            "message": f"✅ ドリル「{title}」を {len(assigned)}名に配信しました",
+            "message": f"✅ ドリル「{title}」を {len(assigned)}名に配信し、LINE/メールで通知を送信しました",
         }
     except HTTPException:
         raise
