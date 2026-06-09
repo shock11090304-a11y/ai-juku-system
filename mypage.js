@@ -4109,7 +4109,8 @@ async function initHomeworkSection() {
 
 // ==========================================================================
 // 📝 単元別ドリル (英文法 4 択ドリル・2026-06-05)
-//   - 配信されていれば誰でも解ける (course ゲート無し)。drill 0 件なら section 非表示。
+//   - 配信されていれば誰でも解ける (course ゲート無し)。drill 0 件でも section は常時表示し
+//     空状態を出す (2026-06-09 塾長指示「宿題欄を常時表示に改修」・発見性向上)。preview 時のみ非表示。
 //   - 認証は slApiFetch() 経由 (内部で _slToken() → AuthGuard.getToken()/localStorage → Authorization: Bearer)。
 //   - stem/explanation/choices/title は全て _gdEscape (= escapeHtml ベース) でエスケープ後に表示。
 //     さらに stem/explanation は <u>...</u> を復活 (下線対応・既存 3 ファイル whitelist 方式に準拠) し、
@@ -4408,8 +4409,17 @@ async function initGrammarDrillSection() {
     }
     const items = (data && data.items) || [];
     if (items.length === 0) {
-      // ドリル 0 件 → section ごと非表示
-      section.style.display = 'none';
+      // 🚨 2026-06-09 塾長指示「宿題欄を常時表示に改修」: 配信 0 件でも section を消さず、
+      //   「いま宿題 (ドリル) が無い」ことを明示する空状態を出す。生徒が「宿題がどこに表示されるか」を
+      //   常に把握でき、配信されているのに見えない異常 (別アカウント/旧キャッシュ等) に気付けるようにする。
+      //   study-log セクションの「絶対に消えない」方針に準拠。
+      //   ※ プレビュー (?preview_mode=) 時は上の catch(e.preview) で既に非表示なのでここには来ない。
+      section.style.display = 'block';
+      if (badge) badge.style.display = 'none';
+      list.innerHTML = `<div style="color:#94a3b8; padding:14px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:10px; font-size:0.86rem; line-height:1.7;">
+        📭 いま出ている宿題（単元別ドリル）はありません。<br>
+        <span style="color:#71717a; font-size:0.8rem;">塾長が宿題を出すと、ここに表示されます。最近やったはずなのに表示されない時は、ページ上部の「🔄 更新」を押してみてください。</span>
+      </div>`;
       return;
     }
     section.style.display = 'block';
