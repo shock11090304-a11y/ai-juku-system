@@ -1504,6 +1504,9 @@ function renderCalendar(data) {
 // ==========================================================================
 let _msgCurrentTarget = 'student';
 let _msgLastBroadcastCount = -1;  // 0名 confirm 防止 (Frontend C-2)
+// 👥 一斉送信の個別選択 (broadcast_filter=selected / 2026-06-09 塾長指示)
+let _msgAllStudentsCache = null;        // /api/admin/students/by-course の結果キャッシュ (再 fetch 抑制)
+const _msgSelectedIds = new Set();      // ハンドピックで選択中の student_id 群 (フィルタ再描画を跨いで保持)
 
 // ISO → JST 'YYYY-MM-DD HH:MM' 変換 (UX C-1)
 function _msgFmtJst(s) {
@@ -1529,6 +1532,18 @@ function initMessageDashboard() {
   if (sendBtn) sendBtn.addEventListener('click', sendMessage);
   if (refreshBtn) refreshBtn.addEventListener('click', loadMessageHistory);
   if (broadcastFilter) broadcastFilter.addEventListener('change', updateBroadcastCount);
+  // 👥 個別選択 UI のイベント (broadcast_filter=selected / 2026-06-09)
+  const selSearch = document.getElementById('msgSelectedSearch');
+  if (selSearch) selSearch.addEventListener('input', () => renderMsgSelectedList());
+  const selAllBtn = document.getElementById('msgSelectAllBtn');
+  if (selAllBtn) selAllBtn.addEventListener('click', () => {
+    _msgFilteredStudents().forEach(s => _msgSelectedIds.add(s.id));
+    renderMsgSelectedList(); updateMsgSelectedCount();
+  });
+  const selNoneBtn = document.getElementById('msgSelectNoneBtn');
+  if (selNoneBtn) selNoneBtn.addEventListener('click', () => {
+    _msgSelectedIds.clear(); renderMsgSelectedList(); updateMsgSelectedCount();
+  });
   // E: AI で文案を作る (一斉/個別共通)
   const aiDraftBtn = document.getElementById('msgAiDraftBtn');
   if (aiDraftBtn && !aiDraftBtn._bound) {
@@ -1593,14 +1608,27 @@ async function updateBroadcastCount() {
   const filter = document.getElementById('msgBroadcastFilter');
   const countEl = document.getElementById('msgBroadcastCount');
   if (!filter || !countEl) return;
+  const selWrap = document.getElementById('msgSelectedWrap');
+  const f = filter.value;
+  // 👥 個別選択モード: チェックした人数を対象人数とする (2026-06-09 塾長指示)
+  if (f === 'selected') {
+    if (selWrap) selWrap.style.display = '';
+    countEl.textContent = '👥 個別に選んだ生徒に送信します';
+    countEl.style.color = '#a1a1aa';
+    await ensureMsgStudentsLoaded();
+    renderMsgSelectedList();
+    updateMsgSelectedCount();
+    return;
+  }
+  if (selWrap) selWrap.style.display = 'none';
   countEl.textContent = '対象人数を計算中...';
   try {
     const res = await window.AdminAuth.fetch('/api/admin/students/by-course');
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     const all = data.students || [];
+    _msgAllStudentsCache = all;   // 個別選択 UI でも再利用 (再 fetch 抑制)
     let cnt = 0;
-    const f = filter.value;
     if (f === 'all') cnt = all.length;
     else if (f === 'kokuritsu_nankan') cnt = all.filter(s => s.course === 'kokuritsu_nankan').length;
     else if (f === 'paid_only') cnt = all.filter(s => s.status === 'paid').length;
@@ -1612,6 +1640,60 @@ async function updateBroadcastCount() {
     countEl.textContent = '対象人数取得失敗';
     _msgLastBroadcastCount = -1;
   }
+}
+
+// 👥 一斉送信 個別選択ヘルパー (2026-06-09 塾長指示)
+async function ensureMsgStudentsLoaded() {
+  if (Array.isArray(_msgAllStudentsCache)) return _msgAllStudentsCache;
+  try {
+    const res = await window.AdminAuth.fetch('/api/admin/students/by-course');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    _msgAllStudentsCache = data.students || [];
+  } catch (e) {
+    _msgAllStudentsCache = [];
+  }
+  return _msgAllStudentsCache;
+}
+
+function _msgFilteredStudents() {
+  const all = Array.isArray(_msgAllStudentsCache) ? _msgAllStudentsCache : [];
+  const box = document.getElementById('msgSelectedSearch');
+  const q = (box ? box.value : '').trim().toLowerCase();
+  if (!q) return all;
+  return all.filter(s => (s.name || '').toLowerCase().includes(q) || String(s.id).includes(q));
+}
+
+function renderMsgSelectedList() {
+  const list = document.getElementById('msgSelectedList');
+  if (!list) return;
+  const students = _msgFilteredStudents();
+  if (students.length === 0) {
+    list.innerHTML = '<div style="color:#71717a; font-size:0.78rem; padding:0.3rem;">該当する生徒がいません</div>';
+    return;
+  }
+  list.innerHTML = students.map(s => {
+    const checked = _msgSelectedIds.has(s.id) ? 'checked' : '';
+    const courseTag = s.course === 'kokuritsu_nankan' ? ' <span style="color:#67e8f9;">[難関]</span>' : '';
+    const statusTag = s.status === 'trial' ? ' <span style="color:#fbbf24;">体験</span>' : '';
+    return `<label style="display:flex; align-items:center; gap:0.3rem; font-size:0.76rem; color:#e5e7eb; padding:0.15rem; cursor:pointer;">`
+      + `<input type="checkbox" class="msg-sel-cb" value="${escapeHtml(String(s.id))}" ${checked}> `
+      + `${escapeHtml(s.name || '(無名)')}${courseTag}${statusTag} <span style="color:#71717a;">#${escapeHtml(String(s.id))}</span></label>`;
+  }).join('');
+  list.querySelectorAll('.msg-sel-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const id = parseInt(cb.value, 10);
+      if (cb.checked) _msgSelectedIds.add(id); else _msgSelectedIds.delete(id);
+      updateMsgSelectedCount();
+    });
+  });
+}
+
+function updateMsgSelectedCount() {
+  const n = _msgSelectedIds.size;
+  const cEl = document.getElementById('msgSelectedCount');
+  if (cEl) cEl.textContent = `${n} 名選択中`;
+  _msgLastBroadcastCount = n;   // 送信ゲート(0名/未取得防止)と confirm 表示に流用
 }
 
 async function sendMessage() {
@@ -1662,7 +1744,15 @@ async function sendMessage() {
     if (!sid) { if (msg) { msg.textContent = '送信先生徒を選択してください'; msg.style.color = '#fca5a5'; } return; }
     payload.student_id = parseInt(sid, 10);
   } else {
-    payload.broadcast_filter = document.getElementById('msgBroadcastFilter').value;
+    const bf = document.getElementById('msgBroadcastFilter').value;
+    payload.broadcast_filter = bf;
+    // 👥 個別選択モード: チェックした生徒IDを宛先にする (2026-06-09 塾長指示)
+    if (bf === 'selected') {
+      const ids = Array.from(_msgSelectedIds);
+      if (ids.length === 0) { if (msg) { msg.textContent = '送信先の生徒を1名以上選択してください'; msg.style.color = '#fca5a5'; } return; }
+      payload.student_ids = ids;
+      _msgLastBroadcastCount = ids.length;  // ゲート/confirm 表示用に最新化
+    }
     // 0 名 / 取得失敗時は送信拒否 (Frontend C-2)
     if (_msgLastBroadcastCount === 0) { if (msg) { msg.textContent = '対象人数 0 名のため送信できません'; msg.style.color = '#fca5a5'; } return; }
     if (_msgLastBroadcastCount < 0) { if (msg) { msg.textContent = '対象人数を取得してから再度実行してください'; msg.style.color = '#fca5a5'; } return; }
@@ -1700,6 +1790,12 @@ async function sendMessage() {
     document.getElementById('msgBody').value = '';
     if (attachInput) attachInput.value = '';
     if (attachStatus) attachStatus.textContent = '';
+    // 👥 個別選択で送った後は選択をリセット (同じ集団への誤再送を防ぐ / 2026-06-09)
+    if (payload.broadcast_filter === 'selected') {
+      _msgSelectedIds.clear();
+      renderMsgSelectedList();
+      updateMsgSelectedCount();
+    }
     await loadMessageHistory();
   } catch (e) {
     if (msg) { msg.textContent = '❌ ' + (e.message || '送信失敗'); msg.style.color = '#fca5a5'; }
@@ -1758,7 +1854,7 @@ async function loadMessageHistory() {
     if (broadcasts.length) {
       html += '<div style="font-size:0.8rem; color:#a1a1aa; margin:0.5rem 0;">📢 一斉送信</div>';
       html += broadcasts.map(b => {
-        const fLabel = { all: '全生徒', kokuritsu_nankan: '国公立難関', paid_only: '有料のみ', trial_only: '体験のみ' }[b.broadcast_filter] || b.broadcast_filter;
+        const fLabel = { all: '全生徒', kokuritsu_nankan: '国公立難関', paid_only: '有料のみ', trial_only: '体験のみ', selected: '👥個別選択' }[b.broadcast_filter] || b.broadcast_filter;
         return `
           <div style="background:rgba(255,255,255,0.04); border-left:3px solid #ec4899; border-radius:6px; padding:0.7rem; margin-bottom:0.5rem;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">

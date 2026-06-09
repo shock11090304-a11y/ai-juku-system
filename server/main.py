@@ -33269,7 +33269,7 @@ def admin_study_plans_calendar(request: Request, authorization: Optional[str] = 
 # 塾長指示 2026-05-05: Studyplus for School のメッセージ機能を内製代替。
 # 個別 / 一斉 (フィルタ: コース/学年/ステータス) を email + アプリ内で配信。
 # ==========================================================================
-_MSG_BROADCAST_FILTERS = {"all", "kokuritsu_nankan", "paid_only", "trial_only"}
+_MSG_BROADCAST_FILTERS = {"all", "kokuritsu_nankan", "paid_only", "trial_only", "selected"}
 
 
 def _send_message_email(to_email: str, subject: str, body_text: str, student_name: Optional[str] = None) -> dict:
@@ -33350,7 +33350,8 @@ def _send_message_email(to_email: str, subject: str, body_text: str, student_nam
 class MessageSendRequest(BaseModel):
     target: str  # 'student' (個別) or 'broadcast' (一斉)
     student_id: Optional[int] = None  # target='student' 時に必須
-    broadcast_filter: Optional[str] = None  # 'all'/'kokuritsu_nankan'/'paid_only'/'trial_only'
+    broadcast_filter: Optional[str] = None  # 'all'/'kokuritsu_nankan'/'paid_only'/'trial_only'/'selected'
+    student_ids: Optional[List[int]] = None  # broadcast_filter='selected' 時にハンドピックした生徒ID群 (2026-06-09 塾長指示)
     subject: Optional[str] = None
     body: str
     send_email: bool = True
@@ -33504,6 +33505,28 @@ def admin_send_message(payload: MessageSendRequest, background_tasks: Background
                 c.execute("SELECT id, name, email FROM students WHERE status = 'paid'")
             elif bf == "trial_only":
                 c.execute("SELECT id, name, email FROM students WHERE status = 'trial'")
+            elif bf == "selected":
+                # 👥 ハンドピックした生徒群 (2026-06-09 塾長指示)。重複除去・上限内・paid/trial のみ宛先化。
+                raw_ids = (payload.student_ids or [])[:1000]  # 巨大入力での DoS 回避に早期 cap
+                seen_ids = set()
+                sel_ids = []
+                for x in raw_ids:
+                    try:
+                        xi = int(x)
+                    except (TypeError, ValueError):
+                        continue
+                    if xi not in seen_ids:
+                        seen_ids.add(xi)
+                        sel_ids.append(xi)
+                if not sel_ids:
+                    raise HTTPException(status_code=400, detail="送信先の生徒を1名以上選択してください")
+                if len(sel_ids) > 500:
+                    raise HTTPException(status_code=413, detail=f"一度に選択できるのは500名までです (選択: {len(sel_ids)}名)")
+                ph = ",".join(["?"] * len(sel_ids))
+                c.execute(
+                    f"SELECT id, name, email FROM students WHERE id IN ({ph}) AND status IN ('paid','trial')",
+                    tuple(sel_ids),
+                )
             for r in c.fetchall():
                 targets.append({"id": r["id"], "name": r["name"], "email": r["email"]})
 

@@ -2281,8 +2281,20 @@
             <option value="kokuritsu_nankan">国公立難関大学コース 受講生のみ</option>
             <option value="paid_only">有料生徒のみ</option>
             <option value="trial_only">体験中生徒のみ</option>
+            <option value="selected">👥 生徒を個別に選ぶ</option>
           </select>
           <div id="msgBroadcastCount" style="font-size:0.78rem; color:#a1a1aa; margin-top:0.3rem;"></div>
+
+          <!-- 👥 個別選択 (broadcast_filter=selected 時のみ表示・複数ハンドピック / 2026-06-09 塾長指示) -->
+          <div id="msgSelectedWrap" style="display:none; margin-top:0.6rem; padding:0.7rem; background:rgba(0,0,0,0.25); border:1px solid rgba(236,72,153,0.25); border-radius:8px;">
+            <input type="text" id="msgSelectedSearch" placeholder="🔍 名前・ID で絞り込み" style="width:100%; padding:0.45rem 0.6rem; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:0.85rem; margin-bottom:0.45rem; box-sizing:border-box;">
+            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.45rem; flex-wrap:wrap;">
+              <button id="msgSelectAllBtn" type="button" style="padding:0.3rem 0.65rem; background:rgba(236,72,153,0.2); border:1px solid rgba(236,72,153,0.4); border-radius:6px; color:#f9a8d4; font-size:0.75rem; cursor:pointer;">表示中をすべて選択</button>
+              <button id="msgSelectNoneBtn" type="button" style="padding:0.3rem 0.65rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#cbd5e1; font-size:0.75rem; cursor:pointer;">選択を解除</button>
+              <span id="msgSelectedCount" style="font-size:0.78rem; color:#f9a8d4; font-weight:700;">0 名選択中</span>
+            </div>
+            <div id="msgSelectedList" style="max-height:220px; overflow-y:auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:0.15rem; background:rgba(0,0,0,0.2); border-radius:6px; padding:0.45rem;">読み込み中...</div>
+          </div>
         </div>
 
         <div style="margin-bottom:0.75rem;">
@@ -2391,7 +2403,7 @@
 
   <script src="plans.js?v=20260529-waive-enrollment"></script>
   <script src="student-mode.js?v=20260604-junior-preview"></script>
-  <script src="ceo.js?v=20260604-mypage-preview"></script>
+  <script src="ceo.js?v=20260609-msg-select"></script>
   <script>
     // プラン管理テーブル描画
     (function renderPlanMgmt() {
