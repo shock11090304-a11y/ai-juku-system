@@ -392,12 +392,29 @@
       emailInput.focus();
     });
 
-    // Resend button
+    // Resend button (60秒クールダウン付き: checkout-success.html と同様の連打防止。
+    // 2026-06-12 review 指摘 — メール遅延中の連打が受信者単位の送信上限 (爆撃対策 10通/時)
+    // に達すると最大1時間届かなくなるため、フロント側でもペースを抑える)
     resendBtn.addEventListener('click', async () => {
-      if (!currentEmail) return;
+      if (!currentEmail || resendBtn.disabled) return;
+      resendBtn.disabled = true;
       resendBtn.textContent = '📮 送信中...';
       await sendCode(currentEmail, true);
-      resendBtn.textContent = 'コードを再送信';
+      // sendCode の finally が resendBtn.disabled = false に戻すため、クールダウン開始前に
+      // 再 disable する (これが無いとカウントダウン表示だけで連打が全部 API に届く)
+      resendBtn.disabled = true;
+      let remaining = 60;
+      resendBtn.textContent = `コードを再送信 (${remaining}秒後に再送できます)`;
+      const cooldownTimer = setInterval(() => {
+        remaining -= 1;
+        if (remaining <= 0) {
+          clearInterval(cooldownTimer);
+          resendBtn.disabled = false;
+          resendBtn.textContent = 'コードを再送信';
+        } else {
+          resendBtn.textContent = `コードを再送信 (${remaining}秒後に再送できます)`;
+        }
+      }, 1000);
     });
 
     // Auto-strip non-digits from OTP input
