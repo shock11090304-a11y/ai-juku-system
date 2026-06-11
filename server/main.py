@@ -17923,9 +17923,14 @@ def admin_issue_otp_direct(payload: dict, authorization: Optional[str] = Header(
             )
             row = c.fetchone()
         elif email_arg:
+            # 🔑 2026-06-12 review 指摘: 親 email のみだと子メール (student_email) 指定で 404。
+            #   magic-link / verify-code (2026-06-11 統一) と同一条件・同一優先順で照合し、
+            #   ログイン経路と同じ生徒に OTP が発行されることを保証する。
             c.execute(
-                "SELECT id, name, email, status, trial_end FROM students WHERE LOWER(email) = ? LIMIT 1",
-                (email_arg,),
+                "SELECT id, name, email, status, trial_end FROM students "
+                "WHERE LOWER(email) = ? OR LOWER(COALESCE(student_email, '')) = ? "
+                "ORDER BY CASE WHEN LOWER(email) = ? THEN 0 ELSE 1 END, id LIMIT 1",
+                (email_arg, email_arg, email_arg),
             )
             row = c.fetchone()
         elif name_query:
@@ -24521,7 +24526,14 @@ def admin_issue_line_link(payload: dict, authorization: Optional[str] = Header(N
             c.execute("SELECT id, name, email, line_user_id FROM students WHERE id = ? LIMIT 1", (int(sid_arg),))
             row = c.fetchone()
         elif email_arg:
-            c.execute("SELECT id, name, email, line_user_id FROM students WHERE LOWER(email) = ? LIMIT 1", (email_arg,))
+            # 🔑 2026-06-12 review 指摘: issue-otp-direct と同様、子メール (student_email) でも
+            #   検索可能に (magic-link / verify-code と同一条件・親メール優先)。
+            c.execute(
+                "SELECT id, name, email, line_user_id FROM students "
+                "WHERE LOWER(email) = ? OR LOWER(COALESCE(student_email, '')) = ? "
+                "ORDER BY CASE WHEN LOWER(email) = ? THEN 0 ELSE 1 END, id LIMIT 1",
+                (email_arg, email_arg, email_arg),
+            )
             row = c.fetchone()
         elif name_query:
             like = f"%{name_query}%"
@@ -33216,6 +33228,25 @@ def admin_set_student_email(student_id: int, payload: StudentEmailSetRequest,
         parent_email = (row["email"] or "").strip().lower()
         # 親 email と同一の子メールは無意味 (両方送信時に重複) なので警告だけ・保存は許可
         same_as_parent = bool(new_email_norm and new_email_norm == parent_email)
+        # 🛡️ 2026-06-12 review 指摘: 他生徒とのアドレス重複を保存前に拒否する。重複したまま
+        #   保存すると、ログイン検索 (親メール優先 ORDER BY → id 昇順) はどちらか一方の生徒
+        #   しか選ばないため、負けた側はそのアドレスでログイン不能になる (エラーも出ない
+        #   サイレント障害)。別生徒の「親メール」との衝突は親一致優先で必ず相手が勝つため特に危険。
+        if new_email_norm:
+            c.execute(
+                "SELECT id, name, CASE WHEN LOWER(email) = ? THEN '親メール' ELSE '子メール' END AS field "
+                "FROM students WHERE id <> ? AND (LOWER(email) = ? OR LOWER(COALESCE(student_email, '')) = ?) "
+                "ORDER BY id LIMIT 1",
+                (new_email_norm, student_id, new_email_norm, new_email_norm),
+            )
+            dup = c.fetchone()
+            if dup:
+                raise HTTPException(
+                    status_code=409,
+                    detail=(f"登録を中止しました: このアドレスは既に別の生徒 (id={dup['id']} {dup['name']}) の"
+                            f"{dup['field']}として使用されています。このまま登録するとログイン時に"
+                            f"どちらか一方の生徒が当該アドレスでログインできなくなります。先に重複を解消してください。"),
+                )
         c.execute("UPDATE students SET student_email = ? WHERE id = ?", (new_email_norm, student_id))
         try:
             c.execute(
