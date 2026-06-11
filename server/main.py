@@ -24352,6 +24352,14 @@ def _bind_line_user(student_id: int, line_user_id: str) -> str:
 
 _LINE_BG_TASKS: set = set()
 
+# 連携コードらしい文字列か (token_urlsafe(18) ≈ 24 字の base64url)。通常のトーク (挨拶・質問・
+#   日本語・URL・スペース含み) には一致しない。チャット:オン の有人運用と bot が干渉しないよう、
+#   これに一致しないテキストへは bot は一切返信しない (2026-06-11 塾長指示「1+2」)。
+import re as _line_re
+# 実コードは token_urlsafe(18) = 常に 24 字。±4 字のタイプミスのみ許容し、16 字英単語
+#   ('misunderstanding' 等) や 16 桁数字への誤反応を避ける (英語塾なので英単語 1 語送信は現実にある)。
+_LINE_CODE_LIKE = _line_re.compile(r"^[A-Za-z0-9_-]{20,28}$")
+
 
 @app.post("/api/line/webhook")
 async def line_webhook(request: Request, x_line_signature: str = Header(None)):
@@ -24365,7 +24373,13 @@ async def line_webhook(request: Request, x_line_signature: str = Header(None)):
         log.error("[LINE webhook] LINE_CHANNEL_SECRET 未設定のため受信拒否 (fail-closed)")
         raise HTTPException(status_code=503, detail="LINE webhook not configured")
     hash_ = hmac.new(LINE_CHANNEL_SECRET.encode("utf-8"), body, hashlib.sha256).digest()
-    if not x_line_signature or not hmac.compare_digest(base64.b64encode(hash_).decode(), x_line_signature):
+    # bytes 同士で比較: compare_digest(str, str) は非 ASCII ヘッダで TypeError → 500 になるため
+    #   (攻撃者制御の x-line-signature に対し 400 を維持する既存バグ修理)。
+    try:
+        sig_bytes = (x_line_signature or "").encode("utf-8")
+    except Exception:
+        sig_bytes = b""
+    if not sig_bytes or not hmac.compare_digest(base64.b64encode(hash_), sig_bytes):
         raise HTTPException(status_code=400, detail="Invalid signature")
     try:
         data = json.loads(body)
@@ -24397,14 +24411,10 @@ async def _handle_line_event(event: dict):
             return
 
         if etype == "follow":
-            _line_reply_text(
-                reply_token,
-                "🎓 AIコーチング 公式LINEへようこそ！\n\n"
-                "ログインコードやお知らせをこちらにお届けします。\n\n"
-                "ご利用にはアカウント連携が必要です。マイページの「LINE連携」で\n"
-                "連携コードを発行し、このトークにそのまま送信してください。\n\n"
-                "※コードが分からない場合は塾までご連絡ください。",
-            )
+            # bot からの follow 自動返信は送らない (2026-06-11 塾長指示「1+2」)。
+            #   新規友だちの大半はマーケ流入の見込み客で、「連携コード」案内は混乱の元。
+            #   あいさつは OA Manager の「あいさつメッセージ」(塾長作成・有効) に一本化し、
+            #   生徒への連携手順は mypage の「LINE連携」UI 側で案内する。
             return
 
         if etype == "message":
@@ -24429,13 +24439,12 @@ async def _handle_line_event(event: dict):
                             _line_reply_text(reply_token, "⚠️ このLINEは既に別の生徒アカウントに連携済みです。\nお心当たりがなければ塾までご連絡ください。")
                     else:
                         _line_reply_text(reply_token, "⚠️ 連携コードが無効または期限切れです。マイページで新しいコードを発行してください。")
-                else:
-                    _line_reply_text(
-                        reply_token,
-                        "メッセージありがとうございます。\n"
-                        "ログインでお困りの場合は、マイページの「LINE連携」で発行した\n"
-                        "連携コードをこのトークに送信してください。",
-                    )
+                elif text and not peek_sid and _LINE_CODE_LIKE.fullmatch(text):
+                    # コードらしき文字列だが実際に無効 (期限切れ/タイプミス/使用済) → ここだけ案内を返す。
+                    #   peek_sid 有効 + user_id 欠落 (グループ/ルーム投稿等 bind 不可能な経路) は誤案内せず沈黙。
+                    _line_reply_text(reply_token, "⚠️ 連携コードが無効または期限切れです。マイページで新しいコードを発行してください。")
+                # それ以外の通常トーク (挨拶・質問・チャット) には bot は沈黙する。
+                #   チャット:オン の有人対応・応答メッセージ運用と干渉しないため (2026-06-11 塾長指示)。
             return
     except Exception as e:
         log.error(f"[LINE event] handler error: {type(e).__name__}: {e}")
