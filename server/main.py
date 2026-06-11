@@ -8015,8 +8015,9 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
     #   見つかるように LOWER(email)=? OR LOWER(student_email)=? で照合。
     c.execute(
         "SELECT id, name, email, student_email, status, trial_end, course, line_user_id FROM students "
-        "WHERE LOWER(email) = ? OR LOWER(COALESCE(student_email, '')) = ? LIMIT 1",
-        (email_lower, email_lower),
+        "WHERE LOWER(email) = ? OR LOWER(COALESCE(student_email, '')) = ? "
+        "ORDER BY CASE WHEN LOWER(email) = ? THEN 0 ELSE 1 END, id LIMIT 1",
+        (email_lower, email_lower, email_lower),
     )
     row = c.fetchone()
     conn.close()
@@ -8050,6 +8051,11 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
                         is_trial_expired = True
                 except Exception:
                     pass
+        elif row["status"] == "expired":
+            # 日次 cron (expire-trials) が trial→expired に変換した後も「体験期間終了」案内を返す。
+            # これが無いと expired 化後は汎用 200 に落ち、フロントの trial_expired 分岐が発火せず
+            # 「✅ 送信しました」誤表示が翌日以降に再発する (canceled は元 paid の可能性があるため対象外)
+            is_trial_expired = True
 
     # 観測性 (2026-05-11 致命修正): 再ログイン時の magic-link 送信成否を必ず events に記録する。
     # 以前は _send_magic_link_with_retry の戻り値を捨て、失敗してもクライアント 200 OK → silent fail。
@@ -8156,7 +8162,10 @@ def verify_code(payload: VerifyCodeRequest, request: Request):
     email_lower = (payload.email or "").lower().strip()
     code_raw = (payload.code or "")
     # 全角数字 → 半角化、空白・ハイフン・タブ等を除去 (UX: コピペ事故救済)
-    _zen_to_han = str.maketrans("0123456789", "0123456789")
+    # 🔧 2026-06-11 review 指摘: 旧コードは第一引数も半角 "0123456789" で no-op だった。
+    #   全角6桁は isdigit()=True で 400 ガードを通過 → DB 照合失敗 → 401 + 失敗カウンタ消費
+    #   → 5回でロックアウト、という実害があったため全角→半角を実際に変換する。
+    _zen_to_han = str.maketrans("０１２３４５６７８９", "0123456789")
     code = code_raw.translate(_zen_to_han)
     code = "".join(ch for ch in code if ch.isdigit())
     if not email_lower or not code or len(code) != 6 or not code.isdigit():
@@ -8167,7 +8176,17 @@ def verify_code(payload: VerifyCodeRequest, request: Request):
 
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, course FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
+    # 🔑 2026-06-11 子メールログイン修正: magic-link は email (親) OR student_email (子) で
+    #   検索するのに、ここは email のみで照合していたため、子メールで OTP を請求した生徒は
+    #   コードが届いても必ず 401 になっていた。magic-link と完全に同一の条件・順序で照合し、
+    #   両エンドポイントが同じ生徒を選ぶことを保証する (OTP は student_id 紐付けのため)。
+    #   親メール一致を優先 (同じアドレスが他生徒の student_email に入っている場合でも従来挙動を維持)。
+    c.execute(
+        "SELECT id, name, email, grade, goal, plan, status, trial_end, course FROM students "
+        "WHERE LOWER(email) = ? OR LOWER(COALESCE(student_email, '')) = ? "
+        "ORDER BY CASE WHEN LOWER(email) = ? THEN 0 ELSE 1 END, id LIMIT 1",
+        (email_lower, email_lower, email_lower),
+    )
     student = c.fetchone()
 
     generic_401 = HTTPException(status_code=401, detail="コードが正しくないか、有効期限が切れています")
@@ -22817,10 +22836,12 @@ def create_checkout_session(payload: CheckoutRequest):
                 # 2026-05-07: PII reduction (Round 2 audit) — name を log に出さない
                 log.info(f"[Checkout] name lookup ok: email={payload.email} student_id={payload.student_id} (name resolved from DB)")
             else:
-                # 既存生徒が見つからない (新規ユーザが name 抜きで来た) → 親切なエラー
+                # 既存生徒が見つからない (新規ユーザが name 抜きで来た / 子メール・typo で照合失敗) → 親切なエラー
+                # 子メール (student_email) はこの lookup の対象外のため、保護者メールへの誘導を明示する
+                # (login.html の trial_expired 導線が子メールを prefill してここに到達し得る・2026-06-11 review 指摘)
                 raise HTTPException(
                     status_code=400,
-                    detail="お名前が必要です。お手数ですが LP からお手続きをお願いいたします (新規登録の場合は氏名入力欄あり)。"
+                    detail="ご登録情報が見つかりませんでした。お子さま用ではなく、ご登録の保護者メールアドレスでお試しください。新規の方は LP (新規登録) からお手続きをお願いいたします。"
                 )
         except HTTPException:
             raise
