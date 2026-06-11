@@ -73,6 +73,19 @@
       /* モードバッジを学年色に */
       body.aj-mode-chugaku #studentModeBadge { background: rgba(16,185,129,0.22) !important; border-color: rgba(16,185,129,0.5) !important; color: #6ee7b7 !important; }
       body.aj-mode-shougaku #studentModeBadge { background: rgba(245,158,11,0.22) !important; border-color: rgba(245,158,11,0.5) !important; color: #fcd34d !important; }
+      /* 🔰 シンプルモード Phase 2 (2026-06-11 塾長指示): 新規アカウントは基本機能のみ表示し、
+         ✅達成の積み上げで段階開放 (aj-adv1=3日 / aj-adv2=7日)。body class を外すだけで
+         各 section は元の inline/JS 表示状態に戻る (display 値を強制しないので JS 制御と衝突しない)。
+         判定・開放ロジックは mypage.js applyUiLevel()。既存生徒 (created_at が導入日より前) は
+         body class が付かず従来どおり全表示 = 回帰ゼロ。
+         ⚠ 2026-05-13「絶対に消えない」指示 (学習計画/カリキュラム/模試) との関係: 本ゲートは
+         「導入日以降の新規アカウント」限定の意図的例外。kokuritsu_nankan コース生と
+         「購入済み (paid/past_due) × _canUseStudyMgmt 該当プラン」は _uiSimpleEligible() で
+         対象外 (trial の plan は申込時の希望プランのため status で購入判定する)。
+         LINE 連携 section も aj-adv2 だが、webhook 再有効化の際はオンボーディング動作
+         (メール不達対策) なので core への昇格を検討すること。 */
+      body.aj-hide-adv1 section.aj-adv1 { display: none !important; }
+      body.aj-hide-adv2 section.aj-adv2 { display: none !important; }
     </style>
     <section id="previewBanner" style="display:none; margin:0 0 1rem 0; padding:0.7rem 1rem; background:linear-gradient(90deg, rgba(99,102,241,0.18), rgba(99,102,241,0.05)); border:1px solid rgba(99,102,241,0.45); border-radius:12px; color:#c7d2fe; font-size:0.82rem; font-weight:700;" role="status">👁 プレビュー表示中｜実際の生徒データは表示されません（塾長の見た目確認用）</section>
     <section id="juniorModeHero" style="display:none;" role="region" aria-label="学年モードのご案内">
@@ -157,7 +170,7 @@
          非ログイン(プレビュー)時は token shadow で 401 → 案内表示のみ。
          🚧 2026-06-05 一時非表示 (display:none): LINE Console で webhook 未登録のため、生徒が連携しても
             紐付かない(無効コードを発行させてしまう)。webhook 登録が済んだら下の style から display:none を外す。 -->
-    <section class="line-link-cta" id="lineLinkSection" style="display:none; margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(6,199,85,0.16), rgba(16,185,129,0.10)); border: 1px solid rgba(6,199,85,0.4); border-radius: 14px; box-shadow: 0 8px 24px rgba(6,199,85,0.12);">
+    <section class="line-link-cta aj-adv2" id="lineLinkSection" style="display:none; margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(6,199,85,0.16), rgba(16,185,129,0.10)); border: 1px solid rgba(6,199,85,0.4); border-radius: 14px; box-shadow: 0 8px 24px rgba(6,199,85,0.12);">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:0.9rem; flex-wrap:wrap;">
         <div style="flex:1 1 240px; min-width:220px;">
           <div style="display:inline-block; padding:0.18rem 0.65rem; background:#06c755; border-radius:999px; font-size:0.7rem; font-weight:800; color:#fff; margin-bottom:0.4rem; letter-spacing:0.02em;">📲 LINE連携</div>
@@ -224,7 +237,7 @@
     <!-- 🎯 弱点 TOP3 + 該当問題推薦 (2026-05-13 塾長指示)
          ai_tutor_solve_log → student_weakness の日次集計 cron で生成された弱点を表示。
          「練習問題を解く」CTA で exam_questions pool から該当 subject/topic の問題へ遷移。 -->
-    <section class="weakness-section" id="weaknessSection" style="display:none; margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(248,113,113,0.13), rgba(251,191,36,0.10)); border: 1px solid rgba(248,113,113,0.35); border-radius: 14px;">
+    <section class="weakness-section aj-adv1" id="weaknessSection" style="display:none; margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(248,113,113,0.13), rgba(251,191,36,0.10)); border: 1px solid rgba(248,113,113,0.35); border-radius: 14px;">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:0.6rem; margin-bottom:0.6rem; flex-wrap:wrap;">
         <h3 style="margin:0; font-size:1.05rem; color:#fff; font-weight:800;">🎯 あなたの弱点 TOP3 <span style="font-size:0.65em; color:#fbbf24; font-weight:600;">(過去 30 日の質問から AI が判定)</span></h3>
         <button type="button" id="weaknessRefreshBtn" aria-label="弱点リストを再取得" style="padding:0.35rem 0.7rem; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.20); border-radius:8px; color:#fbbf24; font-weight:700; font-size:0.78rem; cursor:pointer;">🔄 更新</button>
@@ -236,7 +249,7 @@
     </section>
 
     <!-- 📅 2026-05-22 塾長指示: 週次弱点プリント (毎週日曜朝 5:00 JST 自動配信) -->
-    <section id="weeklyWorksheetSection" style="display:none; margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(59,130,246,0.10)); border: 1px solid rgba(16,185,129,0.35); border-radius: 14px;">
+    <section id="weeklyWorksheetSection" class="aj-adv1" style="display:none; margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(59,130,246,0.10)); border: 1px solid rgba(16,185,129,0.35); border-radius: 14px;">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:0.6rem; margin-bottom:0.6rem; flex-wrap:wrap;">
         <h3 style="margin:0; font-size:1.05rem; color:#fff; font-weight:800;">📅 今週の弱点プリント <span style="font-size:0.65em; color:#10b981; font-weight:600;">(毎週日曜 5:00 自動生成)</span></h3>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
@@ -317,7 +330,7 @@
     <!-- 📊 みんなの中での自分 (匿名・集団比較・2026-06-05 塾長指示)
          initComparisonSection() が全項目データ不足/未受験なら section ごと非表示。
          他者の個人データは表示せず、自分の偏差値/順位/上位%/平均比較のみ。 -->
-    <section id="comparisonSection" style="display:none; margin: 0 0 1.5rem 0; padding:1.25rem; background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(168,85,247,0.10)); border:1px solid rgba(129,140,248,0.4); border-radius:14px;">
+    <section id="comparisonSection" class="aj-adv2" style="display:none; margin: 0 0 1.5rem 0; padding:1.25rem; background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(168,85,247,0.10)); border:1px solid rgba(129,140,248,0.4); border-radius:14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.4rem;">
         <h3 style="margin:0;font-size:1.05rem;font-weight:800;color:#a5b4fc;">📊 みんなの中での自分</h3>
         <button type="button" id="comparisonRefresh" style="padding:0.3rem 0.7rem;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#a5b4fc;font-weight:700;font-size:0.78rem;cursor:pointer;">🔄 更新</button>
@@ -330,7 +343,7 @@
 
     <!-- 🤖 ai-juku 公式 Custom GPT (2026-05-23 塾長指示「C: 生徒画面に Custom GPT 案内」)
          streak-section 直後 (memory feedback_study_log_engagement_cta: engagement CTA 最上部) -->
-    <section id="customGptSection" style="display:none; margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(34,197,94,0.13), rgba(99,102,241,0.10)); border: 1px solid rgba(34,197,94,0.35); border-radius: 14px;">
+    <section id="customGptSection" class="aj-adv2" style="display:none; margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(34,197,94,0.13), rgba(99,102,241,0.10)); border: 1px solid rgba(34,197,94,0.35); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7rem;flex-wrap:wrap;gap:0.5rem;">
         <h3 style="margin:0;font-size:1.0rem;font-weight:800;color:#34d399;">🤖 ai-juku 公式 Custom GPT (ChatGPT で追加練習)</h3>
         <button type="button" id="customGptToggle" aria-expanded="true" style="padding:0.3rem 0.7rem;background:rgba(0,0,0,0.3);border:1px solid rgba(34,197,94,0.4);border-radius:6px;color:#34d399;font-weight:700;font-size:0.78rem;cursor:pointer;">▼ 折りたたむ</button>
@@ -347,7 +360,7 @@
 
     <div class="dashboard-grid">
       <!-- 🎯 AI 合格判定 ダッシュボード (塾長指示 2026-05-26) -->
-      <section id="admissionLikelihoodSection" style="display:none; margin: 0 0 1.5rem 0; padding: 1.2rem 1.4rem; background: linear-gradient(135deg, rgba(239,68,68,0.13), rgba(251,191,36,0.10)); border: 2px solid rgba(239,68,68,0.4); border-radius: 16px; box-shadow: 0 8px 24px rgba(239,68,68,0.15);">
+      <section id="admissionLikelihoodSection" class="aj-adv2" style="display:none; margin: 0 0 1.5rem 0; padding: 1.2rem 1.4rem; background: linear-gradient(135deg, rgba(239,68,68,0.13), rgba(251,191,36,0.10)); border: 2px solid rgba(239,68,68,0.4); border-radius: 16px; box-shadow: 0 8px 24px rgba(239,68,68,0.15);">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:0.8rem; flex-wrap:wrap; margin-bottom:0.8rem;">
           <h3 style="margin:0; font-size:1.1rem; font-weight:800; color:#fff;">📊 AI 合格判定 <span style="font-size:0.65em; color:#fca5a5; font-weight:600;">(現状の合格可能性・残り日数)</span></h3>
           <button type="button" id="admissionRefreshBtn" style="padding:0.35rem 0.7rem; background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.4); border-radius:8px; color:#fca5a5; font-weight:700; font-size:0.78rem; cursor:pointer;">🔄 再計算</button>
@@ -381,7 +394,7 @@
       </section>
 
       <!-- Quick Actions -->
-      <section class="action-card-section">
+      <section class="action-card-section aj-adv1">
         <div class="section-title"><h2>⚡ クイックアクション</h2></div>
         <div class="action-buttons">
           <a href="quick-start.html" class="action-btn action-btn-highlight" style="background:linear-gradient(135deg,rgba(251,191,36,0.22),rgba(236,72,153,0.12));border:2px solid rgba(251,191,36,0.55);">
@@ -461,7 +474,7 @@
       <!-- 📚 配布プリント (塾長指示 2026-05-26 — Quick Actions 直下に配置)
            Claude が ~/Desktop/問題生成/ で作成した PDF を全生徒に配信。
            弱点 TOP3 マッチプリントを上部・以下は科目フィルタで一覧 -->
-      <section id="lessonPrintsSection" style="margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(59,130,246,0.13), rgba(168,85,247,0.10)); border: 1px solid rgba(59,130,246,0.35); border-radius: 14px; scroll-margin-top: 80px;">
+      <section id="lessonPrintsSection" class="aj-adv1" style="margin: 0 0 1.5rem 0; padding: 1.1rem 1.25rem; background: linear-gradient(135deg, rgba(59,130,246,0.13), rgba(168,85,247,0.10)); border: 1px solid rgba(59,130,246,0.35); border-radius: 14px; scroll-margin-top: 80px;">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:0.6rem; margin-bottom:0.7rem; flex-wrap:wrap;">
           <h3 style="margin:0; font-size:1.05rem; color:#fff; font-weight:800;">📚 配布プリント <span style="font-size:0.65em; color:#93c5fd; font-weight:600;">(授業用・自習用・演習問題集 PDF + 詳細解説)</span></h3>
           <button type="button" id="lessonPrintsRefreshBtn" aria-label="プリント一覧を再取得" style="padding:0.35rem 0.7rem; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.20); border-radius:8px; color:#93c5fd; font-weight:700; font-size:0.78rem; cursor:pointer;">🔄 更新</button>
@@ -531,7 +544,7 @@
       </section>
 
       <!-- Today's Stats -->
-      <section class="today-stats">
+      <section class="today-stats aj-adv1">
         <div class="section-title"><h2>📊 今日の学習</h2></div>
         <div class="stats-grid">
           <div class="stat-item">
@@ -604,7 +617,7 @@
     </section>
 
     <!-- Weekly Progress -->
-    <section class="weekly-section">
+    <section class="weekly-section aj-adv2">
       <div class="section-title"><h2>📈 今週の学習ペース</h2></div>
       <div class="weekly-chart-box">
         <canvas id="weeklyChart"></canvas>
@@ -723,7 +736,7 @@
 
     <!-- 📊 模試結果 (Phase 4.5 - 国公立難関大学コース限定)
          🚨 2026-05-13 塾長指示「絶対に消えない」: display:none 撤廃。JS 制御に統一 -->
-    <section class="exam-section" style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:14px;">
+    <section class="exam-section aj-adv2" style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:14px;">
       <div class="section-title"><h2>📊 模試結果 <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">プレミアム限定</span></h2></div>
       <p style="font-size:0.85rem; color:#a1a1aa; margin-bottom:1rem;">河合・駿台・東進などの外部模試結果を登録 → AI カリキュラム生成時に自動反映されます。</p>
 
@@ -854,7 +867,7 @@
 
     <!-- 🎓 合格カリキュラム (Phase 4 - 国公立難関大学コース限定 / 難関私立も対象)
          🚨 2026-05-13 塾長指示「絶対に消えない」: display:none 撤廃 -->
-    <section class="curriculum-section" style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:14px;">
+    <section class="curriculum-section aj-adv2" style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:14px;">
       <div class="section-title"><h2>🎓 合格カリキュラム <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">プレミアム限定</span></h2></div>
       <p style="font-size:0.85rem; color:#a1a1aa; margin-bottom:1rem;">入試日から逆算した合格までの全体ロードマップ。フェーズ分割で「いつまでに何を」が一目瞭然。</p>
 
@@ -1007,7 +1020,7 @@
 
     <!-- 📅 学習計画 (Phase 2 - 国公立難関大学コース受講生限定)
          🚨 2026-05-13 塾長指示「絶対に消えない」: display:none 撤廃 -->
-    <section class="study-plan-section" style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:14px;">
+    <section class="study-plan-section aj-adv2" style="margin-top:2rem; padding:1.5rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:14px;">
       <div class="section-title"><h2>📅 学習計画 <span style="font-size:0.65em;background:linear-gradient(135deg,#fbbf24,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;">プレミアム限定</span></h2></div>
       <p style="font-size:0.85rem; color:#a1a1aa; margin-bottom:1rem;">
         志望校合格までの学習計画を立てよう。期間内の達成率は学習記録から自動集計されます。
@@ -1276,6 +1289,15 @@
       </div>
     </section>
 
+    <!-- 🔰 シンプルモード切替バー (Phase 2): 新規アカウントのみ表示。開放の進捗 + 手動切替。
+         表示制御は mypage.js renderUiToggle() (対象外の生徒には一切出さない) -->
+    <section id="uiLevelToggle" style="display:none; margin:0 0 1.5rem 0; padding:0.8rem 1.1rem; background:rgba(255,255,255,0.04); border:1px dashed rgba(255,255,255,0.18); border-radius:12px;" role="region" aria-label="表示モード切替">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:0.8rem; flex-wrap:wrap;">
+        <span id="uiLevelMsg" role="status" aria-live="polite" style="font-size:0.82rem; color:#cbd5e1; line-height:1.55; flex:1 1 240px;"></span>
+        <button type="button" id="uiLevelBtn" style="padding:0.55rem 0.95rem; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); border-radius:9px; color:#e5e7eb; font-size:0.8rem; font-weight:700; cursor:pointer; min-height:44px;"></button>
+      </div>
+    </section>
+
     <!-- Motivation Quote -->
     <section class="motivation-section">
       <div class="motivation-card">
@@ -1291,7 +1313,7 @@
 
     <!-- 契約・解約管理 -->
     <!-- 🎁 紹介ループ (友達紹介で双方に特典) -->
-    <section class="referral-section" style="margin-top:2rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(236,72,153,0.10)); border: 1px solid rgba(167,139,250,0.35); border-radius: 14px;">
+    <section class="referral-section aj-adv2" style="margin-top:2rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(236,72,153,0.10)); border: 1px solid rgba(167,139,250,0.35); border-radius: 14px;">
       <div class="section-title"><h2>🎁 友達紹介で双方に特典</h2></div>
       <p id="referralAudienceCopy" style="font-size:0.88rem;color:#cbd5e1;margin:0 0 1rem 0;line-height:1.6;">
         塾の友達 / クラスメイトに教えるだけで <strong style="color:#a78bfa;">あなたは ¥3,000 OFF</strong>、相手は <strong style="color:#ec4899;">入塾金 ¥10,000 免除</strong>。
@@ -1343,7 +1365,7 @@
     </section>
 
     <!-- 📊 保護者メール設定 (塾長指示 2026-05-26: 週次レポート保護者並行配信) -->
-    <section id="parentEmailSection" style="margin-top:1.5rem; padding:1.2rem 1.4rem; background:linear-gradient(135deg, rgba(99,102,241,0.10), rgba(168,85,247,0.08)); border:1px solid rgba(99,102,241,0.30); border-radius:14px;">
+    <section id="parentEmailSection" class="aj-adv2" style="margin-top:1.5rem; padding:1.2rem 1.4rem; background:linear-gradient(135deg, rgba(99,102,241,0.10), rgba(168,85,247,0.08)); border:1px solid rgba(99,102,241,0.30); border-radius:14px;">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:0.6rem; margin-bottom:0.6rem; flex-wrap:wrap;">
         <h3 style="margin:0; font-size:1.0rem; color:#a5b4fc; font-weight:800;">📊 保護者向け週次レポート</h3>
         <span style="font-size:0.7rem; color:#94a3b8;">毎週日曜 19:00 配信</span>
@@ -1388,7 +1410,7 @@
   <script src="exam-prep.js?v=20260529-past-due-grace"></script>
   <script src="referral-program.js?v=20260529-past-due-grace"></script>
   <script src="student-mode.js?v=20260604-junior-preview"></script>
-  <script src="mypage.js?v=20260611-coach-next-move"></script>
+  <script src="mypage.js?v=20260611-simple-mode"></script>
   <script>
     // ウィジェット初期描画
     (function() {

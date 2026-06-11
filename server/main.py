@@ -7900,7 +7900,10 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
         return None
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT id, name, email, grade, goal, plan, status, stripe_customer_id, trial_end, enrollment_fee_waived, course, past_due_since FROM students WHERE id = ?", (claims["student_id"],))
+    # created_at は 2026-06-11 追加 (mypage シンプルモード: 新規アカウント判定に使用・既存生徒は全表示維持)
+    # last_login_at も同時追加: auth_me の 4h スロットルが「dict に無いキー参照で常に None」になり
+    # 毎リクエスト UPDATE が走っていた既存バグの修正 (review 指摘)
+    c.execute("SELECT id, name, email, grade, goal, plan, status, stripe_customer_id, trial_end, enrollment_fee_waived, course, past_due_since, created_at, last_login_at FROM students WHERE id = ?", (claims["student_id"],))
     row = c.fetchone()
     conn.close()
     if not row:
@@ -7958,6 +7961,16 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
         course_val = row["course"] if "course" in row.keys() else None
     except (KeyError, TypeError, IndexError):
         course_val = None
+    created_at_val = None
+    try:
+        created_at_val = str(row["created_at"]) if ("created_at" in row.keys() and row["created_at"]) else None
+    except (KeyError, TypeError, IndexError):
+        created_at_val = None
+    last_login_val = None
+    try:
+        last_login_val = str(row["last_login_at"]) if ("last_login_at" in row.keys() and row["last_login_at"]) else None
+    except (KeyError, TypeError, IndexError):
+        last_login_val = None
     return {
         "id": row["id"],
         "name": row["name"],
@@ -7968,6 +7981,8 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
         "status": status,
         "enrollment_fee_waived": waived,  # mypage の「免除済みバッジ」表示に使用
         "course": course_val,  # 国公立難関大学コース ('kokuritsu_nankan') 識別 (塾長指示 2026-05-04)
+        "created_at": created_at_val,  # mypage シンプルモードの新規アカウント判定 (2026-06-11)
+        "last_login_at": last_login_val,  # auth_me 4h スロットル用 (2026-06-11・欠落で毎回 UPDATE が走っていた)
     }
 
 

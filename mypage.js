@@ -186,6 +186,15 @@ function render() {
   // 🏆 アチーブメントを実データで再判定 (2026-06-11: 静的 HTML の架空「獲得済み」を廃止)
   refreshAchievements(data);
 
+  // 🔰 シンプルモード適用 (Phase 2)。✅達成→render() のたびに開放 tier を再評価。
+  // AuthGuard の student 取得 (created_at) が初回ロードで遅れるケースに備え 1.5s 後にも 1 回再適用。
+  applyUiLevel();
+  if (!window._ajUiLevelRetried) {
+    window._ajUiLevelRetried = true;
+    setTimeout(applyUiLevel, 1500);
+    setTimeout(applyUiLevel, 4000); // 低速回線で /api/auth/me が遅れるケースの取りこぼし防止
+  }
+
   // Motivation
   rotateMotivation();
 }
@@ -4763,7 +4772,9 @@ async function initCoachNextMove(student, ajMode, isPreview) {
 
   // ✅ 達成ボタン: streak/XP を実際に進めて保存 (この経路が唯一の streak 加算 = 数字は本物)
   doneBtn.onclick = function () {
+    let _tierUnlocked = false;
     try {
+      const _tierBefore = _uiUnlockTier(getMypageData());
       localStorage.setItem(_cnmDoneKey(), todayKeyJST());
       const data = getMypageData();
       const last = localStorage.getItem(_cnmLastDoneKey());
@@ -4781,9 +4792,14 @@ async function initCoachNextMove(student, ajMode, isPreview) {
       data.xp = (data.xp || 0) + 50;
       localStorage.setItem(_cnmLastDoneKey(), todayKeyJST());
       saveMypageData(data);
-      render(); // ヘッダーの streak/Lv./XP バーとアチーブメントを実値で更新
+      render(); // ヘッダーの streak/Lv./XP バーとアチーブメント・シンプルモード開放を実値で更新
+      _tierUnlocked = _uiUnlockTier(data) > _tierBefore;
     } catch (_) { /* noop */ }
     showDoneState();
+    // 🎉 開放 section は画面下方に出るため、達成メッセージで知らせる (review N4)
+    if (_tierUnlocked && doneMsg) {
+      doneMsg.textContent = '🎉 おめでとう！新しい機能が開放されたよ。下にスクロールして見てみよう';
+    }
   };
 
   // 今日すでに達成済みなら達成状態で表示
@@ -4867,4 +4883,128 @@ async function initCoachNextMove(student, ajMode, isPreview) {
       href: 'english-exam.html?focus=daigaku&grade=kyotsu',
     });
   }
+}
+
+
+// ==========================================================================
+// 🔰 シンプルモード Phase 2 (2026-06-11 塾長指示: 低学力層オンボーディング)
+//   新規アカウント (created_at >= 導入日) のみ、mypage を基本機能だけに絞って開始。
+//   ✅達成の積み上げ (xp) で段階開放: tier1 (3日分=150xp) → aj-adv1 表示 /
+//   tier2 (7日分=350xp) → 全表示。「すべての機能を表示する」で手動切替もいつでも可 (永続)。
+//   既存生徒 (created_at が導入日より前 or 取得不能) は何も変わらない (fail-safe = full)。
+//   表示機構: body class (aj-hide-adv1/2) を外すだけ — 各 section は元の inline/JS 状態に
+//   戻るため、JS の show/hide 制御と衝突しない (中学生モードと同じ思想)。
+// ==========================================================================
+const _UI_SIMPLE_CUTOFF = '2026-06-11'; // この日以降に作成されたアカウントのみシンプル開始
+function _uiFullOverrideKey() { return 'aj-ui-full:' + mypageKeyForCurrentStudent(); }
+function _uiTierSeenKey() { return 'aj-ui-tier-seen:' + mypageKeyForCurrentStudent(); }
+
+function _uiSimpleEligible() {
+  try {
+    const s = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || null;
+    if (!s || !s.created_at) return false; // created_at 不明 = 既存セッション → 全表示 (fail-safe)
+    // 学習管理機能 (学習計画/カリキュラム/模試) を「購入済み」の生徒・コース生は対象外 (review N1)。
+    // 買った中核機能を初日に隠さない + 2026-05-13「絶対に消えない」指示の section を購入者には隠さない。
+    // ⚠ trial の plan は申込時の「希望プラン」(checkout のデフォルト radio = founder_special) が
+    // 入るため、plan だけで除外すると主対象の新規体験生がほぼ全員対象外になる (review 指摘)。
+    // → 除外は「購入済み (paid / past_due=猶予中の課金者) × _canUseStudyMgmt 該当プラン」に限定。
+    if (s.course === 'kokuritsu_nankan') return false; // 国公立難関コース生は契約形態によらず全表示
+    const _purchased = s.status === 'paid' || s.status === 'past_due';
+    if (_purchased && _canUseStudyMgmt(s)) return false;
+    const ca = String(s.created_at).slice(0, 10);
+    return ca >= _UI_SIMPLE_CUTOFF;
+  } catch (_) { return false; }
+}
+function _uiUnlockTier(data) {
+  const xp = (data && data.xp) || 0;
+  if (xp >= 350) return 2; // ✅ 7日分
+  if (xp >= 150) return 1; // ✅ 3日分
+  return 0;
+}
+// メール (週次プリント focus=worksheet) やアンカー直リンクが隠れ section を指す時は
+// その訪問だけ全表示にして dead-end を防ぐ (review N3・永続化はしない)
+function _uiDeepLinkWantsFull() {
+  try {
+    if (new URLSearchParams(window.location.search).get('focus') === 'worksheet') return true;
+    const h = (window.location.hash || '').replace('#', '');
+    if (!h) return false;
+    const el = document.getElementById(h);
+    return !!(el && el.closest && el.closest('section.aj-adv1, section.aj-adv2'));
+  } catch (_) { return false; }
+}
+
+function applyUiLevel() {
+  try {
+    const body = document.body;
+    // 塾長プレビュー: ?preview_ui=simple|simple1|simple2|full (preview_mode と独立・併用可)
+    const pv = new URLSearchParams(window.location.search).get('preview_ui');
+    let simple = false;
+    let tier = 0;
+    let transientFull = false;
+    if (pv) {
+      simple = pv.indexOf('simple') === 0;
+      tier = pv === 'simple1' ? 1 : (pv === 'simple2' ? 2 : 0);
+    } else if (_uiSimpleEligible()) {
+      let manualFull = false;
+      try { manualFull = localStorage.getItem(_uiFullOverrideKey()) === '1'; } catch (_) { /* noop */ }
+      simple = !manualFull;
+      tier = _uiUnlockTier(getMypageData());
+      if (simple && tier < 2 && _uiDeepLinkWantsFull()) { tier = 2; transientFull = true; }
+    }
+    body.classList.toggle('aj-hide-adv1', simple && tier < 1);
+    body.classList.toggle('aj-hide-adv2', simple && tier < 2);
+    renderUiToggle(simple, tier, !!pv, transientFull);
+  } catch (_) { /* 表示系のみ・失敗時は全表示のまま */ }
+}
+
+function renderUiToggle(simple, tier, isPreviewUi, transientFull) {
+  const sec = document.getElementById('uiLevelToggle');
+  const msg = document.getElementById('uiLevelMsg');
+  const btn = document.getElementById('uiLevelBtn');
+  if (!sec || !msg || !btn) return;
+  const eligible = isPreviewUi || _uiSimpleEligible();
+  if (!eligible) { sec.style.display = 'none'; return; }
+  sec.style.display = '';
+  // 残り日数は xp から動的計算 (review N5: 固定「3日/4日」は途中達成で不正確になる)
+  let xp = 0;
+  try { xp = (getMypageData().xp || 0); } catch (_) { /* noop */ }
+  const daysTo = function (target) { return Math.max(1, Math.ceil((target - xp) / 50)); };
+  // 🎉 新規開放の検知。preview / 一時全表示 (deep link) では seen を汚さない (review 指摘)
+  let seen = 0;
+  try { seen = parseInt(localStorage.getItem(_uiTierSeenKey()) || '0', 10) || 0; } catch (_) { /* noop */ }
+  const newlyUnlocked = simple && !isPreviewUi && !transientFull && tier > seen;
+  if (!isPreviewUi && !transientFull && tier > seen) {
+    try { localStorage.setItem(_uiTierSeenKey(), String(tier)); } catch (_) { /* noop */ }
+  }
+  if (transientFull) {
+    msg.textContent = '🔰 リンク先を表示するため、今回はすべての機能を表示しています';
+    btn.style.display = 'none';
+    return;
+  }
+  if (simple) {
+    if (tier >= 2) {
+      msg.textContent = (newlyUnlocked ? '🎉 全機能が開放されました！' : '🔰 全機能が開放済みです。') + 'これからも 1 日 1 つ積み上げよう';
+      btn.style.display = 'none';
+    } else if (tier === 1) {
+      msg.textContent = (newlyUnlocked ? '🎉 配布プリント・弱点分析が開放されました！' : '🔰 シンプル表示中。') + '✅をあと ' + daysTo(350) + ' 日達成すると全機能が開放';
+      btn.style.display = '';
+      btn.textContent = 'すべての機能を表示する';
+    } else {
+      msg.textContent = '🔰 いまは基本機能だけを表示しています。✅をあと ' + daysTo(150) + ' 日達成すると新しい機能が開放！';
+      btn.style.display = '';
+      btn.textContent = 'すべての機能を表示する';
+    }
+  } else {
+    msg.textContent = '全機能を表示中です。表示をシンプルに戻すこともできます';
+    btn.style.display = '';
+    btn.textContent = '🔰 シンプル表示に戻す';
+  }
+  if (isPreviewUi) { btn.onclick = null; btn.style.display = 'none'; return; }
+  btn.onclick = function () {
+    try {
+      if (simple) localStorage.setItem(_uiFullOverrideKey(), '1');
+      else localStorage.removeItem(_uiFullOverrideKey());
+    } catch (_) { /* noop */ }
+    applyUiLevel();
+  };
 }
