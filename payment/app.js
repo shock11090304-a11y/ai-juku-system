@@ -1398,6 +1398,12 @@ async function loadRegisteredCustomers(force = false) {
   return STRIPE_CUST_CACHE.customers;
 }
 
+// 'YYYY-MM' → 'YYYY年M月分' (請求書 description 用・形式外は '〜分' のまま)
+function monthLabelJa(month) {
+  const m = /^(\d{4})-(\d{2})$/.exec(month || '');
+  return m ? `${m[1]}年${Number(m[2])}月分` : `${month}分`;
+}
+
 // 生徒名から Stripe Customer をマッチ (matchPayer の正規化を流用)
 function matchCustomerForStudent(student) {
   if (!STRIPE_CUST_CACHE.customers.length) return null;
@@ -1980,7 +1986,7 @@ async function sendPastDueInvoiceFor(studentId) {
     const res = await fetch('/payment/api/past-due-invoice', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Admin-Password': pw },
-      body: JSON.stringify({ items: [{ customerId: cust.customerId, studentName: s.name, month, amount: fee, description: `通塾月謝 ${month}分` }] }),
+      body: JSON.stringify({ items: [{ customerId: cust.customerId, studentName: s.name, month, amount: fee, description: `通塾月謝 ${monthLabelJa(month)}` }] }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { alert(`エラー: ${data.message || data.error || 'unknown'}`); return; }
@@ -2015,7 +2021,7 @@ async function sendBulkPastDueInvoices() {
   for (const s of unpaid) {
     const cust = matchCustomerForStudent(s);
     if (cust && cust.customerId && (s.fee || 0) > 0) {
-      items.push({ customerId: cust.customerId, studentName: s.name, month, amount: s.fee, description: `通塾月謝 ${month}分` });
+      items.push({ customerId: cust.customerId, studentName: s.name, month, amount: s.fee, description: `通塾月謝 ${monthLabelJa(month)}` });
     }
   }
   if (!items.length) { alert(`Stripe 登録済の未払い者がいません (${month})`); return; }

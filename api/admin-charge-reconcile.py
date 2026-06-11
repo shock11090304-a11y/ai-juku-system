@@ -36,6 +36,15 @@ import urllib.error
 from datetime import datetime, timezone, timedelta
 
 
+def _month_label_ja(month):
+    """'YYYY-MM' → 'YYYY年M月分' (請求 description 用・形式外はそのまま)"""
+    m = (month or "").strip()
+    parts = m.split("-")
+    if len(parts) == 2 and len(parts[0]) == 4 and parts[0].isdigit() and parts[1].isdigit():
+        return f"{parts[0]}年{int(parts[1])}月分"
+    return m
+
+
 def _log(msg):
     try: print(msg, file=sys.stderr, flush=True)
     except Exception: pass
@@ -274,7 +283,7 @@ class handler(BaseHTTPRequestHandler):
                     ("payment_method", payment_method_id),
                     ("off_session", "true"),
                     ("confirm", "true"),
-                    ("description", f"通塾月謝 — {student_name} ({month}・手動 retry)"[:220]),
+                    ("description", f"通塾月謝 — {student_name} ({_month_label_ja(month)}・手動 retry)"[:220]),
                 ]
                 if email and "@" in email:
                     form.append(("receipt_email", email))

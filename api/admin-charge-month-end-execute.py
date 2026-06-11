@@ -54,6 +54,15 @@ import urllib.error
 from datetime import datetime, timezone, timedelta
 
 
+def _month_label_ja(month):
+    """'YYYY-MM' → 'YYYY年M月分' (請求 description 用・形式外はそのまま)"""
+    m = (month or "").strip()
+    parts = m.split("-")
+    if len(parts) == 2 and len(parts[0]) == 4 and parts[0].isdigit() and parts[1].isdigit():
+        return f"{parts[0]}年{int(parts[1])}月分"
+    return m
+
+
 def _log(msg):
     try: print(msg, file=sys.stderr, flush=True)
     except Exception: pass
@@ -132,7 +141,7 @@ def _create_payment_intent(secret_key, customer_id, payment_method_id, amount, m
         form.append(("receipt_email", _email))
     # description (Stripe Dashboard 表示用)
     student = metadata.get("student_name", "")
-    desc = f"通塾月謝 — {student} ({metadata.get('month', '')})"[:220]
+    desc = f"通塾月謝 — {student} ({_month_label_ja(metadata.get('month', ''))})"[:220]
     form.append(("description", desc))
     for k, v in metadata.items():
         if v is None: continue

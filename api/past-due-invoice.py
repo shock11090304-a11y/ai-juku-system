@@ -59,6 +59,15 @@ import urllib.request
 import urllib.error
 
 
+def _month_label_ja(month):
+    """'YYYY-MM' → 'YYYY年M月分' (請求書 description 用・形式外は '〜分' のまま)"""
+    m = (month or "").strip()
+    parts = m.split("-")
+    if len(parts) == 2 and len(parts[0]) == 4 and parts[0].isdigit() and parts[1].isdigit():
+        return f"{parts[0]}年{int(parts[1])}月分"
+    return f"{m}分" if m else ""
+
+
 def _log(msg):
     try:
         print(msg, file=sys.stderr, flush=True)
@@ -147,7 +156,7 @@ def _create_one_invoice(secret_key, item):
     student_name = (item.get("studentName") or "").strip()[:80]
     month = (item.get("month") or "").strip()[:10]
     amount = int(item.get("amount", 0))
-    description = (item.get("description") or "").strip()[:240] or f"通塾月謝 {month}分"
+    description = (item.get("description") or "").strip()[:240] or f"通塾月謝 {_month_label_ja(month)}".strip()
 
     if not customer_id.startswith("cus_"):
         return {"status": "error", "error": "invalid_customer_id", "studentName": student_name, "month": month}
