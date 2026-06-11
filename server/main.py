@@ -1341,6 +1341,17 @@ def init_db():
             try: conn.rollback()
             except Exception: pass
             log.debug(f"[init_db] Skip ALTER for {col_name}: {type(e).__name__}: {str(e)[:100]}")
+    # 💰 2026-06-11 payments dedup: invoice.paid と invoice.payment_succeeded は別 event_id で届くため
+    # processed_events では防げない二重 INSERT を invoice 単位の UNIQUE 制約で最終防衛する。
+    # NULL は複数許容 (SQLite/Postgres 共通)・本番 payments は 0 行のため UNIQUE 化は安全。
+    # 失敗 (既存重複行など) を debug で握り潰すと並行配信の防御が NOT EXISTS だけになるため warning で可視化。
+    try:
+        c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_stripe_pi ON payments(stripe_payment_intent)")
+        conn.commit()
+    except Exception as e:
+        try: conn.rollback()
+        except Exception: pass
+        log.warning(f"[init_db] payments UNIQUE index 作成失敗 (二重INSERT防御が弱まる・重複行を確認): {type(e).__name__}: {str(e)[:200]}")
     conn.close()
 init_db()
 
@@ -3262,6 +3273,9 @@ async def _trial_management_scheduler():
                 # 🔄 Stripe ↔ DB 整合性同期 (webhook 取りこぼし救済・双方向・2026-05-29 追加)
                 # 昇格(active→paid) + 降格(past_due/canceled) を毎日 reconcile。STRIPE 未設定なら内部で 503→例外で skip。
                 ("stripe-reconcile", lambda: admin_stripe_reconcile(authorization=None, x_cron_secret=secret)),
+                # 💰 payments 記録の自己修復 (2026-06-11 追加): webhook 失敗/生徒未紐付けで取りこぼした
+                # paid invoice を日次で冪等 backfill (dedup キーは invoice id 正規化済・35日窓で十分)
+                ("stripe-backfill-payments", lambda: admin_stripe_backfill_payments(payload={"dry_run": False, "days": 35}, authorization=None, x_cron_secret=secret)),
             ]
             results = {}
             for task_name, fn in tasks:
@@ -6055,7 +6069,7 @@ def _evaluate_alerts(snapshot: dict) -> list:
             "title": f"⚠️ Stripe Webhook が24h ゼロ (paid {snapshot['paid_total']} 名在籍)",
             "detail": (
                 f"有料 {snapshot['paid_total']} 名が在籍していますが、直近24h で処理した Stripe webhook が 0 件です。"
-                "月次の自動課金 (invoice.payment_succeeded) が届かなくなると、決済成功/失敗を検知できず "
+                "月次の自動課金 (invoice.paid / invoice.payment_succeeded) が届かなくなると、決済成功/失敗を検知できず "
                 "status と実入金が乖離します。Stripe Dashboard → Developers → Webhooks で "
                 "endpoint の配信エラー (4xx/5xx) を確認してください。"
             ),
@@ -8611,7 +8625,8 @@ def admin_revenue_timeline(authorization: Optional[str] = Header(None), days: in
         except Exception: pass
     try:
         c.execute(
-            "SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status='succeeded' AND paid_at < ?",
+            # 🔴 2026-06-11 fix: webhook の INSERT は status='paid' で書く (旧 'succeeded' は永遠に 0 件のバグ)
+            "SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status='paid' AND paid_at < ?",
             (start_utc,)
         )
         cumulative_revenue = c.fetchone()[0] or 0
@@ -8637,7 +8652,7 @@ def admin_revenue_timeline(authorization: Optional[str] = Header(None), days: in
         # 当日の決済額
         try:
             c.execute(
-                "SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status='succeeded' AND paid_at >= ? AND paid_at < ?",
+                "SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status='paid' AND paid_at >= ? AND paid_at < ?",
                 (d_start_utc, d_end_utc)
             )
             day_revenue = c.fetchone()[0] or 0
@@ -11715,7 +11730,7 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
             try:
                 if (getattr(sub, "metadata", None) or {}).get("system", "").startswith("juku-payment"):
                     continue
-                c.execute("SELECT id, status FROM students WHERE stripe_subscription_id=?", (sub.id,))
+                c.execute("SELECT id, status, name, email FROM students WHERE stripe_subscription_id=?", (sub.id,))
                 row = c.fetchone()
                 if not row:
                     continue
@@ -11738,6 +11753,27 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
                         conn.commit()
                         downgraded.append({"student_id": sid, "old_status": "paid", "new_status": _db_st, "stripe_status": _stripe_st})
                         log.warning(f"[Reconcile downgrade] student_id={sid} paid→{_db_st} (Stripe {_stripe_st}) sub={sub.id}")
+                        if _db_st == "past_due":
+                            # 🔔 2026-06-11: 本番 webhook が invoice.payment_failed を購読していない間は
+                            # この reconcile が唯一の past_due 降格経路 → サイレント降格だと CEO 監視
+                            # (payment_failed_48h) も督促メールも一切発火しない。webhook 経路と同じ
+                            # 通知 (stripe_payment_failed event + dunning メール) をここでも発火する。
+                            # dunning は helper 側 7日 dedup 済のため日次実行でも連投しない。
+                            try:
+                                _record_ai_critical_event("stripe_payment_failed", {
+                                    "student_id": sid,
+                                    "name": row["name"],
+                                    "email": row["email"],
+                                    "subscription_id": sub.id,
+                                    "stripe_status": _stripe_st,
+                                    "source": "reconcile_downgrade",
+                                })
+                            except Exception as _ce:
+                                log.error(f"[Reconcile downgrade] critical event record failed for {sid}: {_ce}")
+                            try:
+                                _send_payment_failed_dunning_email(sid, row["name"], row["email"])
+                            except Exception as _de:
+                                log.error(f"[Reconcile downgrade] dunning email failed for {sid}: {_de}")
             except Exception as e:
                 errors.append({"downgrade_sub_id": getattr(sub, "id", "?"), "error": str(e)})
                 try: conn.rollback()
@@ -11753,6 +11789,367 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
         "errors": len(errors),
         "details": {"reconciled": reconciled, "downgraded": downgraded, "orphans": orphans, "errors": errors},
         "message": f"✅ 昇格 {len(reconciled)} 件 / 降格 {len(downgraded)} 件を Stripe に同期。orphan {len(orphans)} 件は手動確認推奨。",
+    }
+
+
+@app.post("/api/admin/stripe/backfill-payments")
+def admin_stripe_backfill_payments(
+    payload: dict = None,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """💰 過去の Stripe paid invoice を payments テーブルへ backfill (2026-06-11)
+
+    webhook が invoice.payment_succeeded のみ処理 (本番は invoice.paid しか購読されておらず
+    一度も発火しない) だったバグで payments が全期間 0 行 → Stripe API から status=paid の
+    invoice を取得して投入する。保存 dedup キーは webhook と同じ invoice:<id> 正規化
+    (照合は payment_intent も含む) のため何度実行しても冪等。生徒不一致 invoice は
+    INSERT せず unmatched_student で報告のみ (juku-payment 月謝の混入防止と合わせ 3 視点 review 反映)。
+
+    認証: admin Bearer または X-Cron-Secret。
+    payload: {dry_run?: true (デフォルト true・明示 false で実 INSERT), days?: 365 (走査範囲)}
+    返り値: {ok, dry_run, scanned, inserted, skipped_duplicate, skipped_zero, skipped_juku_payment, unmatched_student, details}
+    """
+    _authed = False
+    if authorization and authorization.startswith("Bearer "):
+        _tok = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(_tok):
+            _authed = True
+    if not _authed and x_cron_secret and CRON_SECRET and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        _authed = True
+    if not _authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="STRIPE_SECRET_KEY が未設定")
+
+    payload = payload or {}
+    dry_run = bool(payload.get("dry_run", True))  # 安全側デフォルト: 明示 false の時だけ実 INSERT
+    try:
+        days = max(1, min(int(payload.get("days", 365) or 365), 730))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="days は数値で指定してください")
+    _cutoff = int((datetime.now(timezone.utc) - timedelta(days=days)).timestamp())
+
+    s = get_stripe()
+    try:
+        paid_invoices = list(s.Invoice.list(status="paid", limit=100, created={"gte": _cutoff}).auto_paging_iter())
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Stripe Invoice.list 失敗: {e}")
+
+    conn = db()
+    c = conn.cursor()
+    inserted, skipped_dup, skipped_zero, skipped_juku, unmatched = [], [], [], [], []
+    errors = []
+    for inv in paid_invoices:
+        try:
+            inv_id = inv.get("id")
+            # juku-payment 月謝の完全除外 (invoice.metadata + 滞納 source + サブスク metadata の 3 経路)
+            _skip_reason = _is_non_aijuku_invoice(inv)
+            if _skip_reason:
+                skipped_juku.append({"invoice": inv_id, "reason": _skip_reason})
+                continue
+            amount_paid = inv.get("amount_paid", 0) or 0
+            if amount_paid <= 0:
+                skipped_zero.append(inv_id)
+                continue
+            inv_pi = inv.get("payment_intent")
+            if isinstance(inv_pi, dict):
+                inv_pi = inv_pi.get("id")
+            # 保存キーは webhook と同じ invoice id 正規化 (CRITICAL-2: 全 API バージョンで同一値に衝突させる)
+            store_key = f"invoice:{inv_id}" if inv_id else None
+            dedup_keys = [k for k in (store_key, inv_pi) if k]
+            if not store_key:
+                # 実質起こり得ないが、黙って落とすと scanned と各バケツ合計が合わなくなる
+                errors.append({"invoice": inv_id, "error": "invoice id missing"})
+                continue
+            _ph = ",".join("?" * len(dedup_keys))
+            c.execute(f"SELECT 1 FROM payments WHERE stripe_payment_intent IN ({_ph})", tuple(dedup_keys))
+            if c.fetchone():
+                skipped_dup.append(inv_id)
+                continue
+            # student_id 解決: subscription → customer の順 (webhook と同ロジック)
+            student_id = None
+            inv_sub = _invoice_subscription_id(inv)
+            inv_cust = inv.get("customer")
+            if inv_sub:
+                c.execute("SELECT id FROM students WHERE stripe_subscription_id=?", (inv_sub,))
+                row = c.fetchone()
+                if row:
+                    student_id = row["id"]
+            if student_id is None and inv_cust:
+                c.execute("SELECT id FROM students WHERE stripe_customer_id=?", (inv_cust,))
+                row = c.fetchone()
+                if row:
+                    student_id = row["id"]
+            if student_id is None:
+                # email fallback (2026-06-11 ラウンド1 review): 解約→再契約で stripe_customer_id が
+                # 新 customer に上書きされた生徒の旧 customer 配下 invoice を救済
+                # (reconcile の email fallback と同方針。students.email は UNIQUE)
+                _inv_email = (inv.get("customer_email") or "").strip().lower()
+                if _inv_email:
+                    c.execute("SELECT id FROM students WHERE LOWER(email)=?", (_inv_email,))
+                    row = c.fetchone()
+                    if row:
+                        student_id = row["id"]
+            paid_ts = ((inv.get("status_transitions") or {}).get("paid_at")) or inv.get("created")
+            paid_at_dt = datetime.fromtimestamp(paid_ts, tz=timezone.utc) if paid_ts else datetime.now(timezone.utc)
+            entry = {
+                "invoice": inv_id, "student_id": student_id, "amount": amount_paid,
+                "paid_at": paid_at_dt.isoformat(), "subscription": inv_sub, "customer": inv_cust,
+            }
+            if student_id is None:
+                # 生徒不一致は INSERT せず報告のみ (CRITICAL-3: NULL student_id 行を作らない)。
+                # 生徒行が後から紐付いた場合は次回実行 (日次 cron) が冪等に投入する。
+                unmatched.append(entry)
+                continue
+            if not dry_run:
+                try:
+                    c.execute(
+                        f"""INSERT INTO payments (student_id, stripe_payment_intent, amount, status, paid_at)
+                            SELECT ?, ?, ?, 'paid', ?
+                            WHERE NOT EXISTS (SELECT 1 FROM payments WHERE stripe_payment_intent IN ({_ph}))""",
+                        (student_id, store_key, amount_paid, paid_at_dt, *dedup_keys)
+                    )
+                    conn.commit()
+                    if getattr(c, "rowcount", 0) > 0:
+                        inserted.append(entry)
+                    else:
+                        skipped_dup.append(inv_id)
+                except IntegrityError:
+                    try: conn.rollback()
+                    except Exception: pass
+                    skipped_dup.append(inv_id)
+            else:
+                inserted.append(entry)
+        except Exception as e:
+            errors.append({"invoice": getattr(inv, "id", "?"), "error": str(e)})
+            try: conn.rollback()
+            except Exception: pass
+    conn.close()
+
+    log.info(
+        f"[Stripe backfill-payments] dry_run={dry_run} scanned={len(paid_invoices)} "
+        f"inserted={len(inserted)} dup={len(skipped_dup)} zero={len(skipped_zero)} "
+        f"juku={len(skipped_juku)} unmatched={len(unmatched)} errors={len(errors)}"
+    )
+    return {
+        "ok": True,
+        "dry_run": dry_run,
+        "days": days,
+        "scanned": len(paid_invoices),
+        "inserted": len(inserted),
+        "skipped_duplicate": len(skipped_dup),
+        "skipped_zero": len(skipped_zero),
+        "skipped_juku_payment": len(skipped_juku),
+        "unmatched_student": len(unmatched),
+        "errors": len(errors),
+        "details": {"inserted": inserted, "unmatched_student": unmatched, "errors": errors},
+        "message": (
+            f"{'(dry run) ' if dry_run else ''}走査 {len(paid_invoices)} 件 → "
+            f"投入{'予定' if dry_run else ''} {len(inserted)} 件 / 重複 skip {len(skipped_dup)} 件 / "
+            f"$0 skip {len(skipped_zero)} 件 / 生徒未一致 {len(unmatched)} 件"
+        ),
+    }
+
+
+# AIコーチング webhook handler (stripe_webhook) が実装済みで、本番運用に必須の購読イベント。
+# invoice.payment_succeeded は invoice.paid の旧名 alias のため購読しない (両方届くと配信量が倍になるだけ。
+# handler 側は両イベント対応済 + invoice 単位 dedup があるのでどちらが届いても安全)。
+_REQUIRED_WEBHOOK_EVENTS = (
+    "checkout.session.completed",
+    "invoice.paid",
+    "invoice.payment_failed",
+    "customer.subscription.updated",
+    "customer.subscription.deleted",
+    "charge.refunded",  # 返金の逆仕訳 (2026-06-11 ラウンド1 review: 無いと売上が恒久過大表示)
+)
+
+
+@app.post("/api/admin/stripe/webhook-events-sync")
+def admin_stripe_webhook_events_sync(
+    payload: dict = None,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🔧 Stripe webhook endpoint の購読イベント自己修復 (2026-06-11)
+
+    監査で本番 webhook endpoint が checkout.session.completed / invoice.paid /
+    customer.subscription.deleted の 3 種しか購読しておらず、invoice.payment_failed と
+    customer.subscription.updated が一度も届かない (= past_due 降格・督促メール・課金回復の
+    webhook 経路が全て不発) ことが判明 → 不足イベントを API で追加する self-healing endpoint。
+
+    ・AIコーチングの webhook URL (path に /api/stripe/webhook を含む) のみ対象。
+      juku-payment 側 (/api/stripe-webhook ハイフン区切り・Vercel) は path 不一致で触らない。
+    ・Dashboard 作成の endpoint は Stripe 仕様で API 更新不可 → エラー内容と手動手順を返す。
+    ・認証: admin Bearer または X-Cron-Secret。dry_run デフォルト true (明示 false で実更新)。
+    """
+    _authed = False
+    if authorization and authorization.startswith("Bearer "):
+        _tok = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(_tok):
+            _authed = True
+    if not _authed and x_cron_secret and CRON_SECRET and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        _authed = True
+    if not _authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="STRIPE_SECRET_KEY が未設定")
+
+    payload = payload or {}
+    dry_run = bool(payload.get("dry_run", True))
+    s = get_stripe()
+    try:
+        endpoints = list(s.WebhookEndpoint.list(limit=100).auto_paging_iter())
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Stripe WebhookEndpoint.list 失敗: {e}")
+
+    results = []
+    for ep in endpoints:
+        ep_id = ep.get("id")
+        url = ep.get("url") or ""
+        entry = {"id": ep_id, "url": url, "status": ep.get("status")}
+        if "/api/stripe/webhook" not in url:
+            entry["skipped"] = "AIコーチング webhook ではない (juku-payment 等) → 変更しない"
+            results.append(entry)
+            continue
+        current = list(ep.get("enabled_events") or [])
+        entry["current_events"] = current
+        if "*" in current:
+            entry["missing_events"] = []
+            entry["note"] = "全イベント購読 (*) のため変更不要"
+            results.append(entry)
+            continue
+        missing = [e for e in _REQUIRED_WEBHOOK_EVENTS if e not in current]
+        entry["missing_events"] = missing
+        if not missing:
+            entry["note"] = "必須イベント購読済・変更不要"
+            results.append(entry)
+            continue
+        target = sorted(set(current) | set(_REQUIRED_WEBHOOK_EVENTS))
+        if dry_run:
+            entry["would_update_to"] = target
+            results.append(entry)
+            continue
+        try:
+            s.WebhookEndpoint.modify(ep_id, enabled_events=target)
+            entry["updated"] = True
+            entry["added_events"] = missing
+            log.info(f"[Stripe webhook-events-sync] endpoint {ep_id} に {len(missing)} イベント追加: {missing}")
+        except Exception as e:
+            # Dashboard 作成 endpoint は API 更新不可 (Stripe 仕様)。手動手順を案内する。
+            entry["error"] = str(e)
+            entry["manual_fix"] = (
+                "Stripe Dashboard → 開発者 → Webhooks → 該当 endpoint → 「イベントを追加」で "
+                + ", ".join(missing) + " を追加してください"
+            )
+            log.error(f"[Stripe webhook-events-sync] endpoint {ep_id} 更新失敗: {e}")
+        results.append(entry)
+
+    return {
+        "ok": True,
+        "dry_run": dry_run,
+        "required_events": list(_REQUIRED_WEBHOOK_EVENTS),
+        "endpoints": results,
+    }
+
+
+@app.get("/api/admin/stripe/diagnose-orphan-subs")
+def admin_stripe_diagnose_orphan_subs(
+    days: int = 30,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🔍 customer.subscription.deleted のうち生徒不一致 (orphan) の解約イベントを Stripe Events から
+    特定する read-only 診断 (2026-06-11)。
+
+    背景: 6/8 にどの生徒の stripe_subscription_id とも一致しない subscription.deleted が届いており、
+    同一顧客の重複サブスク (二重課金) の疑い → Stripe Events API (保持 30 日) から該当イベントを取得し、
+    sub_id / customer / 同一 customer の生徒照合 / 直近 invoice 履歴を返して人手判断を支援する。
+    Stripe への書込は一切行わない。認証: admin Bearer または X-Cron-Secret。
+    """
+    _authed = False
+    if authorization and authorization.startswith("Bearer "):
+        _tok = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(_tok):
+            _authed = True
+    if not _authed and x_cron_secret and CRON_SECRET and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        _authed = True
+    if not _authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="STRIPE_SECRET_KEY が未設定")
+
+    days = max(1, min(int(days), 30))  # Stripe Events の保持期間は 30 日
+    _cutoff = int((datetime.now(timezone.utc) - timedelta(days=days)).timestamp())
+    s = get_stripe()
+    try:
+        evts = list(s.Event.list(type="customer.subscription.deleted", created={"gte": _cutoff}, limit=100).auto_paging_iter())
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Stripe Event.list 失敗: {e}")
+
+    conn = db()
+    c = conn.cursor()
+    out = []
+    errors = []
+    for ev in evts:
+        try:
+            sub = (ev.get("data") or {}).get("object") or {}
+            sub_id = sub.get("id")
+            cust = sub.get("customer")
+            meta = sub.get("metadata") or {}
+            entry = {
+                "event_id": ev.get("id"),
+                "deleted_at": datetime.fromtimestamp(ev.get("created"), tz=timezone.utc).isoformat() if ev.get("created") else None,
+                "subscription_id": sub_id,
+                "customer": cust,
+                "system_tag": meta.get("system"),
+                "sub_created": datetime.fromtimestamp(sub.get("created"), tz=timezone.utc).isoformat() if sub.get("created") else None,
+            }
+            # sub_id 一致の生徒 (居れば正常な解約イベント)
+            c.execute("SELECT id, name, status FROM students WHERE stripe_subscription_id=?", (sub_id,))
+            m = c.fetchone()
+            entry["matched_student"] = {"student_id": m["id"], "name": m["name"], "status": m["status"]} if m else None
+            entry["orphan"] = m is None
+            # customer 一致の生徒 (sub_id 不一致でも同一人物の別サブスク = 重複サブスク疑いの判定材料)
+            if cust:
+                c.execute("SELECT id, name, status, stripe_subscription_id FROM students WHERE stripe_customer_id=?", (cust,))
+                cm = c.fetchone()
+                entry["same_customer_student"] = (
+                    {"student_id": cm["id"], "name": cm["name"], "status": cm["status"],
+                     "current_subscription_id": cm["stripe_subscription_id"]} if cm else None
+                )
+                # 同一 customer の直近 invoice (二重課金の有無を見る)
+                try:
+                    _invs = s.Invoice.list(customer=cust, limit=10)
+                    entry["recent_invoices"] = [
+                        {
+                            "id": i.get("id"),
+                            "status": i.get("status"),
+                            "amount_paid": i.get("amount_paid"),
+                            "subscription": _invoice_subscription_id(i),
+                            "created": datetime.fromtimestamp(i.get("created"), tz=timezone.utc).isoformat() if i.get("created") else None,
+                        }
+                        for i in (_invs.get("data") or [])
+                    ]
+                except Exception as ie:
+                    entry["recent_invoices_error"] = str(ie)
+            out.append(entry)
+        except Exception as e:
+            errors.append({"event_id": ev.get("id") if hasattr(ev, "get") else "?", "error": str(e)})
+            # Postgres は失敗 statement で txn が abort する → rollback しないと以降の全 event が連鎖失敗
+            try: conn.rollback()
+            except Exception: pass
+    conn.close()
+
+    orphan_count = sum(1 for o in out if o.get("orphan"))
+    return {
+        "ok": True,
+        "days": days,
+        "scanned_events": len(evts),
+        "orphan_count": orphan_count,
+        "events": out,
+        "errors": errors,
+        "message": f"subscription.deleted {len(evts)} 件中 orphan (生徒不一致) {orphan_count} 件",
     }
 
 
@@ -13302,6 +13699,7 @@ def admin_autopilot_dashboard(authorization: Optional[str] = Header(None)):
             "textbook_generated": "📚 教材プール 自動生成",
             "exam_question_generated": "📝 問題プール 自動生成",
             "stripe_payment_failed": "🔴 月次課金 決済失敗 (past_due 降格)",
+            "payment_unmatched_invoice": "🔭 生徒未紐付けの入金 (backfill 待ち)",
         }
         actions_summary = []
         try:
@@ -20200,6 +20598,7 @@ def admin_ai_recent_failures(limit: int = 30, x_cron_secret: Optional[str] = Hea
         # 2026-05-13 塾長指摘「3 AI 中 1 のみ応答」の診断用に追加
         "'tutor_solve_individual_failure', 'tutor_solve_total_failure', "
         "'stripe_payment_failed', "  # 2026-05-29 月次課金 決済失敗 (past_due 降格) を失敗 feed にも表示
+        "'payment_unmatched_invoice', "  # 2026-06-11 生徒未紐付けの入金 (backfill 取りこぼし観測)
         "'frontend_error') "
         "ORDER BY created_at DESC LIMIT ?",
         (limit,),
@@ -22726,6 +23125,58 @@ def _issue_referral_coupon(c, conn, s, referral_row_id: int, customer_id: str, r
     conn.commit()
 
 
+def _is_non_aijuku_invoice(invoice: dict) -> Optional[str]:
+    """ai-juku の売上として記録してはいけない invoice なら理由文字列、対象なら None。
+    同一 Stripe アカウントを juku-payment (月謝・Vercel webhook 管轄) と共有しているため
+    3 視点 review (2026-06-11) で発見された 4 つのすり抜け経路を全て塞ぐ:
+    ① invoice.metadata.system=juku-payment* (既存チェック)
+    ② 滞納月謝請求 api/past-due-invoice.py は metadata.source=past-due-invoice-v1 のみで system 無し
+    ③ 旧 mode=subscription 月謝サブスクの system タグは subscription metadata にあり
+       invoice.metadata へ伝播しない (acacia: subscription_details.metadata /
+       basil: parent.subscription_details.metadata — Vercel 側 api/stripe-webhook.py と同じ対処)
+    ④ v1 月謝サブスク (2026-05-03〜05-13) は system タグ自体が無い → registration_id /
+       source=self-register-v1 を juku-payment マーカーとして照合"""
+    # 3 層 (invoice 直下 / acacia: subscription_details / basil: parent.subscription_details) を
+    # 同一基準で照合する。④ は 2026-06-11 ラウンド1 review (MEDIUM) で追加:
+    # 旧 v1 自己登録月謝サブスク (2026-05-03〜05-13 作成) は system タグが無く
+    # registration_id + source=self-register-v1 しか持たない → Vercel 側
+    # api/stripe-webhook.py の registration_id 一次マーカー判定とパリティを取る
+    # (ai-juku サブスクの metadata は plan/purchase_type 系のみで registration_id を持たない)。
+    _layers = (
+        ("metadata", invoice.get("metadata") or {}),
+        ("subscription_details.metadata", (invoice.get("subscription_details") or {}).get("metadata") or {}),
+        ("parent.subscription_details.metadata", (((invoice.get("parent") or {}).get("subscription_details") or {}).get("metadata") or {})),
+    )
+    for _layer_name, _m in _layers:
+        if (_m.get("system") or "").startswith("juku-payment"):
+            return f"{_layer_name}.system=juku-payment"
+        if (_m.get("source") or "").startswith("past-due-invoice"):
+            return f"{_layer_name}.source=past-due-invoice (滞納月謝)"
+        if (_m.get("source") or "").startswith("self-register"):
+            return f"{_layer_name}.source=self-register (旧v1月謝サブスク)"
+        if _m.get("registration_id"):
+            return f"{_layer_name}.registration_id あり (juku-payment 月謝)"
+    return None
+
+
+def _invoice_subscription_id(invoice: dict) -> Optional[str]:
+    """invoice payload から subscription id を API バージョン互換で取り出す。
+    旧 API (〜2024 acacia): invoice.subscription / 新 API (2025-03-31 basil〜):
+    invoice.parent.subscription_details.subscription に移動したため両対応。
+    webhook payload のバージョンは Dashboard の endpoint 設定依存で手元から確定できない (2026-06-11)。"""
+    sub = invoice.get("subscription")
+    if isinstance(sub, dict):  # expand されている場合は id を取る
+        sub = sub.get("id")
+    if sub:
+        return sub
+    _parent = invoice.get("parent") or {}
+    _sub_details = _parent.get("subscription_details") or {}
+    sub = _sub_details.get("subscription")
+    if isinstance(sub, dict):
+        sub = sub.get("id")
+    return sub or None
+
+
 # ==========================================================================
 # Routes: Stripe Webhook
 # ==========================================================================
@@ -23048,45 +23499,172 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
         conn.close()
         log.info(f"✅ Checkout completed: type={purchase_type}, plan={plan}, customer={customer}")
 
-    elif event["type"] == "invoice.payment_succeeded":
+    elif event["type"] in ("invoice.payment_succeeded", "invoice.paid"):
+        # 🔴 2026-06-11 CRITICAL fix: 本番の Stripe webhook endpoint は invoice.paid のみ購読されており
+        # invoice.payment_succeeded は全期間 0 件 (processed_events で実証) → この分岐が一度も発火せず
+        # payments テーブルが 0 行のままだった。届くイベント (invoice.paid) でも同じ処理を発火させる。
+        # 両イベントが届く環境では event_id が異なり processed_events では dedup できないため、
+        # invoice 単位の dedup キー (payment_intent / invoice id) で二重 INSERT を防ぐ。
         invoice = event["data"]["object"]
-        # 🚨 2026-05-13: AIコーチングと juku-payment 月謝の完全分離 (二重保険)
-        _inv_meta = invoice.get("metadata", {}) or {}
-        if (_inv_meta.get("system") or "").startswith("juku-payment"):
-            log.info(f"[Stripe webhook] Skipping juku-payment invoice (system={_inv_meta.get('system')}) - handled by Vercel webhook")
-            return JSONResponse({"received": True, "skipped_reason": "juku-payment system tag"}, status_code=200)
+        # 🚨 2026-05-13 + 2026-06-11 強化: AIコーチングと juku-payment 月謝の完全分離。
+        # invoice.metadata だけでなく滞納月謝 (metadata.source) とサブスク metadata
+        # (subscription_details / parent.subscription_details) も照合 (3 視点 review CRITICAL-1)
+        _skip_reason = _is_non_aijuku_invoice(invoice)
+        if _skip_reason:
+            log.info(f"[Stripe webhook] Skipping non-ai-juku invoice ({_skip_reason}) - handled by Vercel webhook")
+            return JSONResponse({"received": True, "skipped_reason": _skip_reason}, status_code=200)
         conn = db()
-        c = conn.cursor()
-        c.execute(
-            """INSERT INTO payments (stripe_payment_intent, amount, status, paid_at)
-               VALUES (?, ?, 'paid', CURRENT_TIMESTAMP)""",
-            (invoice.get("payment_intent"), invoice.get("amount_paid", 0))
-        )
-        # payments 記録を先に確定 (回復 UPDATE 失敗で入金記録まで巻き戻らないよう txn 分離)
-        conn.commit()
-        # 🔁 2026-05-29 課金回復: 過去に決済失敗で past_due 化した生徒が、
-        # リトライ成功 (invoice.payment_succeeded) したら自動で paid に戻す (二重保険)。
-        # 主経路は customer.subscription.updated (status active) だが、webhook 順序や
-        # 取りこぼしに備えてこちらでも回復させる。canceled/expired には触れない。
-        _inv_sub_id = invoice.get("subscription")
-        if _inv_sub_id:
-            try:
-                c.execute(
-                    """UPDATE students SET status='paid',
-                           paid_since=COALESCE(paid_since, CURRENT_TIMESTAMP),
-                           past_due_since=NULL,
-                           updated_at=CURRENT_TIMESTAMP
-                       WHERE stripe_subscription_id=? AND status='past_due'""",
-                    (_inv_sub_id,)
+        try:
+            c = conn.cursor()
+            _inv_id = invoice.get("id")
+            _inv_pi = invoice.get("payment_intent")
+            if isinstance(_inv_pi, dict):
+                _inv_pi = _inv_pi.get("id")
+            _inv_sub_id = _invoice_subscription_id(invoice)
+            _inv_customer = invoice.get("customer")
+            _amount_paid = invoice.get("amount_paid", 0) or 0
+            # 保存する dedup キーは全 API バージョンで存在する invoice id に正規化 (3 視点 review CRITICAL-2:
+            # basil 系 payload は payment_intent が無く、backfill (acacia) と保存キーが食い違うと二重挿入する)。
+            # NOT EXISTS の照合リストには payment_intent も含めて旧形式の行とも衝突検知できるようにする。
+            _store_key = f"invoice:{_inv_id}" if _inv_id else None
+            _dedup_keys = [k for k in (_store_key, _inv_pi) if k]
+            # student_id 解決: subscription 優先・無ければ customer で照合
+            _pay_student_id = None
+            if _inv_sub_id:
+                c.execute("SELECT id FROM students WHERE stripe_subscription_id=?", (_inv_sub_id,))
+                _ps = c.fetchone()
+                if _ps:
+                    _pay_student_id = _ps["id"]
+            if _pay_student_id is None and _inv_customer:
+                c.execute("SELECT id FROM students WHERE stripe_customer_id=?", (_inv_customer,))
+                _ps = c.fetchone()
+                if _ps:
+                    _pay_student_id = _ps["id"]
+            if _amount_paid > 0 and _store_key and _pay_student_id is not None:
+                try:
+                    # paid_at は Stripe 側の支払確定時刻を採用 (webhook 再送・遅延配信でもズレない)。
+                    # 注: invoice.paid は paid_out_of_band (Dashboard 手動消込・振込) でも発火するが、
+                    # それも実売上として意図的に記録する。
+                    _paid_ts = ((invoice.get("status_transitions") or {}).get("paid_at")) or invoice.get("created")
+                    _paid_at_dt = datetime.fromtimestamp(_paid_ts, tz=timezone.utc) if _paid_ts else datetime.now(timezone.utc)
+                    _ph = ",".join("?" * len(_dedup_keys))
+                    c.execute(
+                        f"""INSERT INTO payments (student_id, stripe_payment_intent, amount, status, paid_at)
+                            SELECT ?, ?, ?, 'paid', ?
+                            WHERE NOT EXISTS (SELECT 1 FROM payments WHERE stripe_payment_intent IN ({_ph}))""",
+                        (_pay_student_id, _store_key, _amount_paid, _paid_at_dt, *_dedup_keys)
+                    )
+                    # payments 記録を先に確定 (回復 UPDATE 失敗で入金記録まで巻き戻らないよう txn 分離)
+                    conn.commit()
+                    if getattr(c, "rowcount", 0) > 0:
+                        log.info(f"[Stripe webhook {event['type']}] payment recorded: student_id={_pay_student_id} amount={_amount_paid} invoice={_inv_id}")
+                    else:
+                        log.info(f"[Stripe webhook {event['type']}] duplicate payment skipped (invoice={_inv_id})")
+                except IntegrityError:
+                    # UNIQUE index (idx_payments_stripe_pi) との競合 = 並行配信での二重 INSERT → 無視で OK
+                    try: conn.rollback()
+                    except Exception: pass
+                    log.info(f"[Stripe webhook {event['type']}] duplicate payment blocked by unique index (invoice={_inv_id})")
+                except Exception as _pay_e:
+                    log.error(f"[Stripe webhook {event['type']}] payments INSERT failed: {_pay_e}")
+                    try: conn.rollback()
+                    except Exception: pass
+            elif _amount_paid > 0 and _pay_student_id is None:
+                # 生徒不一致の有料 invoice は INSERT しない (3 視点 review CRITICAL-3: NULL student_id 行は
+                # 削除 cascade に乗らず再リンク経路も無い)。checkout 完了前の初回 invoice 競合も含め、
+                # 生徒行が揃った後の日次 backfill (stripe-backfill-payments) が冪等に拾い直す。
+                log.warning(
+                    f"[Stripe webhook {event['type']}] paid invoice with no matching student — skipped. "
+                    f"35日以内は日次 backfill が拾い直す / 35日超は手動 backfill (days=365) が必要 "
+                    f"(invoice={_inv_id} sub={_inv_sub_id} customer={_inv_customer} amount={_amount_paid})"
                 )
+                try:
+                    # 🔭 取りこぼし観測 (2026-06-11 ラウンド1 review): scheduler 停止等で backfill が
+                    # 走らない場合に CEO 失敗 feed で気付けるよう events に記録 (対処= backfill 実行)。
+                    _record_ai_critical_event("payment_unmatched_invoice", {
+                        "invoice": _inv_id,
+                        "subscription_id": _inv_sub_id,
+                        "customer": _inv_customer,
+                        "amount": _amount_paid,
+                        "source": "webhook_invoice_paid",
+                    })
+                except Exception as _ue:
+                    log.error(f"[Stripe webhook {event['type']}] unmatched observation event failed: {_ue}")
+            elif _amount_paid <= 0:
+                # $0 invoice (trial 期間・100% クーポン) は入金ではないため記録しない (payment_failed 分岐と同基準)
+                log.info(f"[Stripe webhook {event['type']}] skip $0 invoice (invoice={_inv_id} sub={_inv_sub_id})")
+            # 🔁 2026-05-29 課金回復: 過去に決済失敗で past_due 化した生徒が、
+            # リトライ成功 (invoice.paid / invoice.payment_succeeded) したら自動で paid に戻す (二重保険)。
+            # 主経路は customer.subscription.updated (status active) だが、webhook 順序や
+            # 取りこぼしに備えてこちらでも回復させる。canceled/expired には触れない。
+            if _inv_sub_id:
+                try:
+                    c.execute(
+                        """UPDATE students SET status='paid',
+                               paid_since=COALESCE(paid_since, CURRENT_TIMESTAMP),
+                               past_due_since=NULL,
+                               updated_at=CURRENT_TIMESTAMP
+                           WHERE stripe_subscription_id=? AND status='past_due'""",
+                        (_inv_sub_id,)
+                    )
+                    conn.commit()
+                    if c.rowcount > 0:
+                        log.info(f"[Stripe webhook {event['type']}] past_due→paid recovered: sub={_inv_sub_id} ({c.rowcount} students)")
+                except Exception as _rec_e:
+                    log.error(f"[Stripe webhook {event['type']}] recovery update failed: {_rec_e}")
+                    try: conn.rollback()
+                    except Exception: pass
+        finally:
+            # 生徒解決 SELECT が try 外にあった旧構造は例外時に conn リーク + HTTP 500 を起こし得た
+            # (2026-06-11 ラウンド1 review LOW) → 分岐全体を try/finally で閉じる
+            try: conn.close()
+            except Exception: pass
+
+    elif event["type"] == "charge.refunded":
+        # 💸 2026-06-11 (ラウンド1 review): 返金の逆仕訳。payments が売上集計 (revenue-timeline /
+        # 30日売上 / mrr_yen) の真実になったため、返金を反映しないと売上が恒久的に過大表示になる。
+        # ai-juku 判定は「payments に該当行が存在するか」で行う: juku-payment の charge は
+        # payments に行が無いので自然に no-op (別系統の metadata 判定を再実装しない)。
+        # amount_refunded は cumulative なので同イベントが何度届いても冪等。
+        charge = event["data"]["object"]
+        _ch_inv = charge.get("invoice")
+        if isinstance(_ch_inv, dict):
+            _ch_inv = _ch_inv.get("id")
+        _ch_pi = charge.get("payment_intent")
+        if isinstance(_ch_pi, dict):
+            _ch_pi = _ch_pi.get("id")
+        _refund_keys = [k for k in (f"invoice:{_ch_inv}" if _ch_inv else None, _ch_pi) if k]
+        _amount_refunded = charge.get("amount_refunded", 0) or 0
+        _ch_amount = charge.get("amount", 0) or 0
+        if _refund_keys and _amount_refunded > 0:
+            conn = db()
+            try:
+                c = conn.cursor()
+                _ph = ",".join("?" * len(_refund_keys))
+                if charge.get("refunded") or (_ch_amount and _amount_refunded >= _ch_amount):
+                    # 全額返金: status='refunded' に倒す (売上 SUM は status='paid' のみなので自然に除外)
+                    c.execute(
+                        f"UPDATE payments SET status='refunded' WHERE stripe_payment_intent IN ({_ph})",
+                        tuple(_refund_keys),
+                    )
+                else:
+                    # 一部返金: 残額に更新 (status は 'paid' のまま)。全額返金済 ('refunded') 行には触れない
+                    c.execute(
+                        f"UPDATE payments SET amount=? WHERE stripe_payment_intent IN ({_ph}) AND status='paid'",
+                        (_ch_amount - _amount_refunded, *_refund_keys),
+                    )
                 conn.commit()
-                if c.rowcount > 0:
-                    log.info(f"[Stripe webhook invoice.payment_succeeded] past_due→paid recovered: sub={_inv_sub_id} ({c.rowcount} students)")
-            except Exception as _rec_e:
-                log.error(f"[Stripe webhook invoice.payment_succeeded] recovery update failed: {_rec_e}")
+                if getattr(c, "rowcount", 0) > 0:
+                    log.info(f"[Stripe webhook charge.refunded] 返金反映: keys={_refund_keys} refunded={_amount_refunded}/{_ch_amount}")
+                else:
+                    log.info(f"[Stripe webhook charge.refunded] payments に該当行なし (juku-payment / 未記録) → no-op (keys={_refund_keys})")
+            except Exception as _rf_e:
+                log.error(f"[Stripe webhook charge.refunded] 反映失敗: {_rf_e}")
                 try: conn.rollback()
                 except Exception: pass
-        conn.close()
+            finally:
+                try: conn.close()
+                except Exception: pass
 
     elif event["type"] == "invoice.payment_failed":
         # 🔴 2026-05-29 MAJOR fix: 月次サブスクの決済失敗を検知して status='past_due' に降格。
@@ -23099,11 +23677,11 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
         # ・リトライ成功時は invoice.payment_succeeded / subscription.updated(active) で自動 paid 回復
         # ・CEO へ critical event 記録 + 生徒へカード更新案内メール (dedup)
         invoice = event["data"]["object"]
-        _inv_meta = invoice.get("metadata", {}) or {}
-        if (_inv_meta.get("system") or "").startswith("juku-payment"):
-            log.info(f"[Stripe webhook] Skipping juku-payment invoice.payment_failed (system={_inv_meta.get('system')}) - handled by Vercel webhook")
-            return JSONResponse({"received": True, "skipped_reason": "juku-payment system tag"}, status_code=200)
-        _fail_sub_id = invoice.get("subscription")
+        _skip_reason = _is_non_aijuku_invoice(invoice)
+        if _skip_reason:
+            log.info(f"[Stripe webhook] Skipping non-ai-juku invoice.payment_failed ({_skip_reason}) - handled by Vercel webhook")
+            return JSONResponse({"received": True, "skipped_reason": _skip_reason}, status_code=200)
+        _fail_sub_id = _invoice_subscription_id(invoice)
         _fail_customer = invoice.get("customer")
         _amount_due = invoice.get("amount_due", 0)
         _attempt = invoice.get("attempt_count", 0)
@@ -23198,8 +23776,16 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
         c = conn.cursor()
         c.execute("UPDATE students SET status='canceled', updated_at=CURRENT_TIMESTAMP WHERE stripe_subscription_id=?",
                   (sub.get("id"),))
+        _del_matched = c.rowcount
         conn.commit()
         conn.close()
+        if _del_matched == 0:
+            # 🔍 2026-06-11: どの生徒の stripe_subscription_id にも一致しない解約イベントを可視化。
+            # 同一顧客の重複サブスク (二重課金) や手動作成サブスクの解約を見逃さないための観測ログ。
+            log.warning(
+                f"[Stripe webhook {event['type']}] no matching student for sub={sub.get('id')} "
+                f"customer={sub.get('customer')} — 重複サブスク/手動サブスクの可能性。Stripe Dashboard で要確認"
+            )
 
     elif event["type"] == "customer.subscription.updated":
         # 🎁 2026-05-19: +7 日 trial → paid 化検知 (集客 funnel #4)
