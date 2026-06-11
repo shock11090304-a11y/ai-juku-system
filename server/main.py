@@ -1329,6 +1329,11 @@ def init_db():
         # 猶予 (grace) 期間中はアクセス維持、GRACE 日数超過で scheduler が canceled 化する基準時刻。
         # 課金回復 (paid) 時は NULL に戻す。
         ("past_due_since", "ALTER TABLE students ADD COLUMN past_due_since TIMESTAMP DEFAULT NULL"),
+        # 🛡️ 子メール確認フラグ (security review 2026-06-11): 自己登録 (trial_signup) は任意の
+        # 第三者アドレスを student_email に設定できるため、未確認 (0) のアドレスには magic-link
+        # 再発行メールを送らない (受信者 cap 10通/時 をすり抜ける持続的な嫌がらせ送信の遮断)。
+        # 確認済み化は (a) 申込時 welcome 内 magicv リンクのクリック (b) 塾長の admin 設定。
+        ("student_email_verified", "ALTER TABLE students ADD COLUMN student_email_verified INTEGER DEFAULT 0"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -1336,6 +1341,18 @@ def init_db():
             c.execute(sql)
             conn.commit()
             log.info(f"[init_db] Added column students.{col_name}")
+            if col_name == "student_email_verified":
+                # 列新設の瞬間に存在する行 = 本機能デプロイ前の登録 (塾長が把握している既存生徒)。
+                # 既存の子メール運用 (2026-05-31 機能) を壊さないため一括で確認済みにする。
+                # ALTER 成功時のみ実行 = DB ごとに 1 回きり (再起動時は ALTER 失敗でスキップ)。
+                try:
+                    c.execute("UPDATE students SET student_email_verified = 1 WHERE COALESCE(student_email, '') <> ''")
+                    conn.commit()
+                    log.info("[init_db] Grandfathered existing student_email rows as verified")
+                except Exception as ge:
+                    try: conn.rollback()
+                    except Exception: pass
+                    log.warning(f"[init_db] student_email_verified grandfather failed: {type(ge).__name__}: {str(ge)[:200]}")
         except Exception as e:
             # 既に存在する or 他のエラー → ロールバックしてトランザクション abort をクリア
             try: conn.rollback()
@@ -2334,6 +2351,31 @@ def _create_magic_link_token(student_id: int, ttl_seconds: int = None) -> str:
     return _sign_session_token(student_id, ttl_seconds=_eff, token_type="magic")
 
 
+def _student_email_hash(email: str) -> str:
+    """magicv トークンに埋める子メールの短縮ハッシュ (16 hex)。発行後に student_email が
+    変更された場合、古いリンクのクリックで新アドレスを誤って確認済み化しないための束縛。"""
+    return hashlib.sha256((email or "").strip().lower().encode()).hexdigest()[:16]
+
+
+def _create_student_email_verify_token(student_id: int, email: str, ttl_seconds: int = None) -> str:
+    """🛡️ 子メール (student_email) 宛 welcome 専用 magic link トークン (security review 2026-06-11)。
+    通常の magic と同じく /api/auth/verify でログインできるが、token type 'magicv' を見た
+    verify 側が「このリンクは student_email 宛にのみ送られた = クリック者はそのアドレスを
+    受信できた」とみなし student_email_verified=1 を立てる (メール確認フロー)。
+    親宛リンク (type 'magic') の転送では確認されない点が重要 — 確認に使えるのは
+    子アドレスの受信箱に届いた本トークンだけ。payload にアドレスのハッシュを含め、
+    発行後に student_email が変わっていたら確認しない。
+    フォーマット: base64("magicv.{sid}.{exp}.{email_hash16}.{sig}") — _verify_session_token の
+    5 パート分岐で検証。"""
+    import time as _t
+    _eff = ttl_seconds if ttl_seconds is not None else _MAGIC_LINK_TTL_SECONDS
+    exp = int(_t.time()) + _eff
+    payload = f"magicv.{student_id}.{exp}.{_student_email_hash(email)}"
+    sig = hmac.new(MAGIC_LINK_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
+    raw = f"{payload}.{sig}"
+    return base64.urlsafe_b64encode(raw.encode()).decode().rstrip("=")
+
+
 def _verify_session_token(token: str, expected_type: str = "session") -> Optional[dict]:
     """トークンを検証して {student_id, exp, token_type} を返す。無効/期限切れなら None。
 
@@ -2349,6 +2391,23 @@ def _verify_session_token(token: str, expected_type: str = "session") -> Optiona
         padded = token + "=" * (-len(token) % 4)
         raw = base64.urlsafe_b64decode(padded).decode()
         parts = raw.split(".")
+        # 子メール確認付き magic link (magicv.sid.exp.emailhash.sig・5 parts) — 2026-06-12
+        # security review: クリックでログイン + student_email_verified=1 (/api/auth/verify 側)。
+        # expected_type チェックにより session を要求する認証 API には使えない (verify 専用)。
+        if len(parts) == 5:
+            ttype, sid_str, exp_str, ehash, sig = parts
+            if ttype != "magicv":
+                return None
+            payload = f"{ttype}.{sid_str}.{exp_str}.{ehash}"
+            expected = hmac.new(MAGIC_LINK_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
+            if not hmac.compare_digest(sig, expected):
+                return None
+            if expected_type and ttype != expected_type:
+                return None
+            exp = int(exp_str)
+            if exp < int(time.time()):
+                return None
+            return {"student_id": int(sid_str), "exp": exp, "token_type": ttype, "email_hash": ehash}
         # 新フォーマット (type.sid.exp.sig)
         if len(parts) == 4:
             ttype, sid_str, exp_str, sig = parts
@@ -7602,22 +7661,37 @@ def _create_otp(student_id: int, ttl_seconds: int = None) -> str:
     return code
 
 
-def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, otp_code: str = "", is_welcome: bool = False) -> dict:
-    """Resend 経由でマジックリンクメール送信。OTPコードも含める。未設定ならコンソール出力。"""
+def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, otp_code: str = "", is_welcome: bool = False,
+                            is_child_verify: bool = False) -> dict:
+    """Resend 経由でマジックリンクメール送信。OTPコードも含める。未設定ならコンソール出力。
+    is_child_verify: 子メール (student_email) 宛の確認付き welcome (magicv リンク)。
+      🛡️ 2026-06-12 UX review H1: 通常 welcome の宛名は「保護者さま」で、子が OTP を入力すれば
+      ログインできてしまうためリンクをクリックする動機が無く、確認 (verified) が永久に立たず
+      以後のログインコード再発行が子に届かなくなる。子宛は宛名を本人にし、リンクのタップが
+      「今後このアドレスでコードを受け取るための確認」だと明示する。"""
     import html as _html
     subject_welcome = "【AIコーチング】ご登録ありがとうございます（ログインコード）"
     subject_relogin = "【AIコーチング】ログインコードをお送りします"
-    subject = subject_welcome if is_welcome else subject_relogin
+    subject_child = "【AIコーチング】はじめに1度タップ（あなたのメールでログインを有効化）"
+    subject = subject_child if is_child_verify else (subject_welcome if is_welcome else subject_relogin)
 
     # XSS対策: student_name に含まれる特殊文字をエスケープ
     safe_name = _html.escape(student_name or "")
-    greeting = f"{safe_name}さまの保護者さま" if safe_name else "保護者さま"
-    body_intro = (
-        f"""<p>{greeting}、ご登録ありがとうございます 🎉</p>
+    if is_child_verify:
+        greeting = f"{safe_name}さん" if safe_name else "こんにちは"
+        body_intro = (
+            f"""<p>{greeting}、ようこそ 🎉</p>
+    <p>このメールアドレスでログインコードを受け取れるようにするため、<strong>下の「🔗 ログインを有効化」を一度だけタップ</strong>してください。タップすると、今後ログインが必要なときにこのアドレスにもコードが届くようになります。</p>
+    <p style="font-size:0.9rem;color:#555;">※ タップする前は、保護者さまのメールアドレスにコードが届きます。今すぐログインしたい場合は、下の6桁コードを入力してもログインできます（その場合も、後でこのリンクを一度タップしておくと安心です）。</p>"""
+        )
+    else:
+        greeting = f"{safe_name}さまの保護者さま" if safe_name else "保護者さま"
+        body_intro = (
+            f"""<p>{greeting}、ご登録ありがとうございます 🎉</p>
     <p>14日間の無料体験が始まりました。<strong>以下の6桁コードをアプリに入力</strong>してログインしてください。</p>"""
-        if is_welcome else
-        f"<p>{greeting}、以下の6桁コードをアプリに入力してログインしてください。</p>"
-    )
+            if is_welcome else
+            f"<p>{greeting}、以下の6桁コードをアプリに入力してログインしてください。</p>"
+        )
 
     # OTPコード表示ブロック (視認性重視、コピーしやすいフォーマット)
     _otp_validity_label = "1 回使うと無効・有効期限なし" if not (_OTP_TTL_SECONDS and _OTP_TTL_SECONDS > 0) else f"{_OTP_TTL_SECONDS // 60}分間有効"
@@ -7630,18 +7704,26 @@ def _send_magic_link_email(to_email: str, student_name: str, magic_url: str, otp
     </p>
   </div>""" if otp_code else ""
 
+    # 子宛は確認リンクが主役なのでボタン文言・上の説明を確認寄りにする
+    _link_label = "🔗 ログインを有効化（タップ）" if is_child_verify else "🔗 ワンクリックでログイン"
+    _link_caption = (
+        "👇 まずはこのボタンを一度タップしてください（このアドレスでのログインが有効になります）:"
+        if is_child_verify else
+        "または以下のリンクから直接ログイン（30日間有効）:"
+    )
+
     html = f"""<!DOCTYPE html>
 <html>
 <body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 560px; margin: 0 auto; padding: 2rem;">
   <h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AIコーチング</h1>
   {body_intro}
-  {otp_block}
-  <p style="font-size:0.85rem; color:#666; text-align:center;">または以下のリンクから直接ログイン（30日間有効）:</p>
+  <p style="font-size:0.85rem; color:#666; text-align:center;">{_link_caption}</p>
   <p style="text-align:center; margin: 1rem 0 2rem;">
     <a href="{magic_url}" style="display:inline-block; padding: 0.7rem 1.5rem; background:linear-gradient(135deg,#6366f1,#ec4899); color:white; text-decoration:none; border-radius:8px; font-weight:700; font-size:0.9rem;">
-      🔗 ワンクリックでログイン
+      {_link_label}
     </a>
   </p>
+  {otp_block}
   <hr style="margin:2rem 0; border:none; border-top:1px solid #eee;">
   <p style="font-size:0.8rem; color:#999;">
     このメールに心当たりがない場合は無視してください（{_otp_validity_label}、リンクは30日で自動失効します）。<br>
@@ -7706,7 +7788,8 @@ def _is_carrier_email(email: str) -> bool:
 def _send_magic_link_with_retry(to_email: str, student_name: str, magic_url: str,
                                   otp_code: str = "", is_welcome: bool = False,
                                   max_attempts: int = 3,
-                                  bypass_recipient_cap: bool = False) -> dict:
+                                  bypass_recipient_cap: bool = False,
+                                  is_child_verify: bool = False) -> dict:
     """_send_magic_link_email を 429/一時エラー対応で最大 max_attempts 回リトライ。
     指数バックオフ (1s → 2s → 4s)。bounce/blocked 系のレスポンスは即諦める。
     キャリアメール宛は注意ログを出す。
@@ -7727,7 +7810,7 @@ def _send_magic_link_with_retry(to_email: str, student_name: str, magic_url: str
         try:
             result = _send_magic_link_email(
                 to_email, student_name, magic_url,
-                otp_code=otp_code, is_welcome=is_welcome,
+                otp_code=otp_code, is_welcome=is_welcome, is_child_verify=is_child_verify,
             )
             if isinstance(result, dict) and result.get("sent"):
                 return result
@@ -8069,13 +8152,26 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
     # 🔑 2026-05-31 塾長指示「親には届くが子には届かない」: email (親) だけでなく
     #   student_email (子) でも検索できるようにする。子供が自分のアドレスでログイン要求しても
     #   見つかるように LOWER(email)=? OR LOWER(student_email)=? で照合。
-    c.execute(
-        "SELECT id, name, email, student_email, status, trial_end, course, line_user_id FROM students "
-        "WHERE LOWER(email) = ? OR LOWER(COALESCE(student_email, '')) = ? "
-        "ORDER BY CASE WHEN LOWER(email) = ? THEN 0 ELSE 1 END, id LIMIT 1",
-        (email_lower, email_lower, email_lower),
-    )
-    row = c.fetchone()
+    # 🛡️ 2026-06-12 review (security M1 / data LOW-1): student_email_verified 列が無い旧 DB
+    #   (ALTER 失敗・部分デプロイ) でこの SELECT が 500 を投げると magic-link 全死 = 全員
+    #   ログイン不能になる。admin_stats / verify_magic_link と同じ try/except fallback で対称化。
+    try:
+        c.execute(
+            "SELECT id, name, email, student_email, student_email_verified, status, trial_end, course, line_user_id FROM students "
+            "WHERE LOWER(email) = ? OR LOWER(COALESCE(student_email, '')) = ? "
+            "ORDER BY CASE WHEN LOWER(email) = ? THEN 0 ELSE 1 END, id LIMIT 1",
+            (email_lower, email_lower, email_lower),
+        )
+        row = c.fetchone()
+    except Exception:
+        conn.rollback()
+        c.execute(
+            "SELECT id, name, email, student_email, status, trial_end, course, line_user_id FROM students "
+            "WHERE LOWER(email) = ? OR LOWER(COALESCE(student_email, '')) = ? "
+            "ORDER BY CASE WHEN LOWER(email) = ? THEN 0 ELSE 1 END, id LIMIT 1",
+            (email_lower, email_lower, email_lower),
+        )
+        row = c.fetchone()
     conn.close()
 
     # 体験期間中の trial ユーザーも送信対象（trial_end 未経過のみ）
@@ -8197,23 +8293,35 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
                 # 子メールが設定済 + 親メールと異なる → 子にも同じリンク/コードを送信
                 student_send_result = {}
                 _child_blocked = False
+                _child_unverified = False
                 if _student_email and _student_email.lower() != _parent_email.lower():
-                    # 🛡️ 2026-06-12 security MEDIUM fix: 子メールが「他生徒の親 email」と一致する場合は
-                    # 送信スキップ。signup/admin 側で設定時に拒否済みだが、過去データに残る衝突への
-                    # 最終防壁 (他人の保護者宛にこのアカウントの OTP が届く = 爆撃 + 誤ログイン誘導)。
-                    # 他生徒の「子メール」との衝突 (子子衝突) はここでは敢えて遮断しない —
-                    # 過去データの正規ケース (両親それぞれのアカウントで子メール共有) を壊さないため。
-                    # 新規の子子衝突は signup/admin 両方の設定時チェックで既に作れない。
-                    _conn_g = db(); _c_g = _conn_g.cursor()
-                    _c_g.execute("SELECT 1 FROM students WHERE LOWER(email) = ? LIMIT 1", (_student_email.lower(),))
-                    _child_blocked = bool(_c_g.fetchone())
-                    _conn_g.close()
-                    if _child_blocked:
-                        log.warning(f"[MagicLink] 子メール送信 BLOCKED (他生徒の親emailと衝突) student_id={row['id']}")
+                    # 🛡️ 2026-06-12 security review: 未確認 (student_email_verified=0) の子メールには
+                    # 再発行を送らない。自己登録で第三者アドレスを student_email に設定し magic-link
+                    # 連打でその相手にメールを送り続ける嫌がらせ (受信者 cap 10通/時 を残存させた
+                    # 構造的限界) をゼロ化する。確認は (a) 申込時 welcome の magicv リンククリック
+                    # (b) 塾長の admin 設定。既存行は migration 時に grandfather 済み。
+                    # 親宛は通常通り送るため正規家庭は「親に届いたコードを使う」で常にログイン可能。
+                    _sev = bool(row["student_email_verified"]) if "student_email_verified" in _row_keys else True
+                    if not _sev:
+                        _child_unverified = True
+                        log.info(f"[MagicLink] 未確認 student_email への送信をスキップ student_id={row['id']}")
                     else:
-                        student_send_result = _send_magic_link_with_retry(
-                            _student_email, row["name"] or "", magic_url, otp_code=otp_code, is_welcome=False,
-                        ) or {}
+                        # 🛡️ 2026-06-12 security MEDIUM fix: 子メールが「他生徒の親 email」と一致する場合は
+                        # 送信スキップ。signup/admin 側で設定時に拒否済みだが、過去データに残る衝突への
+                        # 最終防壁 (他人の保護者宛にこのアカウントの OTP が届く = 爆撃 + 誤ログイン誘導)。
+                        # 他生徒の「子メール」との衝突 (子子衝突) はここでは敢えて遮断しない —
+                        # 過去データの正規ケース (両親それぞれのアカウントで子メール共有) を壊さないため。
+                        # 新規の子子衝突は signup/admin 両方の設定時チェックで既に作れない。
+                        _conn_g = db(); _c_g = _conn_g.cursor()
+                        _c_g.execute("SELECT 1 FROM students WHERE LOWER(email) = ? LIMIT 1", (_student_email.lower(),))
+                        _child_blocked = bool(_c_g.fetchone())
+                        _conn_g.close()
+                        if _child_blocked:
+                            log.warning(f"[MagicLink] 子メール送信 BLOCKED (他生徒の親emailと衝突) student_id={row['id']}")
+                        else:
+                            student_send_result = _send_magic_link_with_retry(
+                                _student_email, row["name"] or "", magic_url, otp_code=otp_code, is_welcome=False,
+                            ) or {}
                 send_event_props.update({
                     "channel": "email",
                     "line_sent": False,
@@ -8225,13 +8333,14 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
                     "reason": "sent" if send_result.get("sent") else "send_failed",
                     "student_email_sent": bool(student_send_result.get("sent")) if _student_email else None,
                     "student_email_blocked": _child_blocked or None,
+                    "student_email_skipped": "unverified" if _child_unverified else None,
                 })
                 if not send_result.get("sent"):
                     log.error(
                         f"[MagicLink] Send FAILED for student_id={row['id']} email={_parent_email}: "
                         f"{send_result.get('error')} (permanent={send_result.get('permanent')}, retried={send_result.get('retried')})"
                     )
-                if _student_email and not _child_blocked and not student_send_result.get("sent"):
+                if _student_email and not _child_blocked and not _child_unverified and not student_send_result.get("sent"):
                     log.warning(
                         f"[MagicLink] 子メール送信 FAILED student_id={row['id']} student_email={_student_email}: "
                         f"{student_send_result.get('error')}"
@@ -8256,7 +8365,16 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
             "trial_expired": True,
             "message": "体験期間が終了しています。継続をご希望の方は本登録（継続のお手続き）をお願いします。",
         }
-    return {"ok": True, "message": "該当するアカウントがあればメールをお送りしました。届かない場合は迷惑メールフォルダもご確認ください。"}
+    # 🛡️ 2026-06-12 UX review H3: 未確認の生徒用メールでログイン要求すると、コードは保護者
+    #   メールに届き当該アドレスには届かない (確認フロー)。だが応答は列挙対策で全ケース同一に
+    #   保つ必要があるため、ここで「未確認だから届かない」を名指しできない。代わりに全員へ同じ
+    #   汎用ヒントを添え、生徒用メールを使う家庭が silent に詰まらないよう導線を残す
+    #   (応答が宛先の状態で変化しない = 列挙オラクルにならない)。
+    return {
+        "ok": True,
+        "message": "該当するアカウントがあればメールをお送りしました。届かない場合は迷惑メールフォルダもご確認ください。",
+        "child_email_hint": "お子さま用のメールアドレスでログインする場合は、登録時にお送りしたメール内の「ログインを有効化」リンクを一度タップしてからご利用ください。タップ前は保護者さまのメールアドレスにコードが届きます。",
+    }
 
 
 class VerifyCodeRequest(BaseModel):
@@ -8421,15 +8539,22 @@ def verify_magic_link(t: str):
     出力: 必ず新規 'session' トークンを発行 (URL 漏洩リスクを切り離す)。
     クライアントは localStorage にこの新トークンを保存する (4番手 監査 2026-04-30)。"""
     import time as _t
-    # expected_type=None で magic / session 両方を許容
+    # expected_type=None で magic / session / magicv (子メール確認付き) を許容
     claims = _verify_session_token(t, expected_type=None)
     if not claims:
         raise HTTPException(status_code=401, detail="Invalid or expired link")
 
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, course FROM students WHERE id = ?", (claims["student_id"],))
-    row = c.fetchone()
+    # student_email / student_email_verified は magicv (子メール確認) 用。migration 直後の
+    # 旧 DB に列が無い可能性に備え admin_stats と同様の fallback を持つ。
+    try:
+        c.execute("SELECT id, name, email, student_email, student_email_verified, grade, goal, plan, status, trial_end, course FROM students WHERE id = ?", (claims["student_id"],))
+        row = c.fetchone()
+    except Exception:
+        conn.rollback()
+        c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, course FROM students WHERE id = ?", (claims["student_id"],))
+        row = c.fetchone()
     conn.close()
     if not row:
         raise HTTPException(status_code=404, detail="Student not found")
@@ -8461,6 +8586,45 @@ def verify_magic_link(t: str):
             pass
     if not _allowed:
         raise HTTPException(status_code=403, detail="体験期間が終了しました。継続をご希望の方は本登録（継続のお手続き）をお願いします。")
+
+    # 🛡️ 子メール確認 (security review 2026-06-11): magicv トークン = student_email 宛にのみ
+    # 送られたリンク。クリック到達 = そのアドレスの受信者なので student_email_verified=1 を
+    # 立てる。トークン内の email ハッシュが現在の student_email と一致する場合のみ
+    # (発行後にアドレスが変わった古いリンクで新アドレスを誤確認しない)。失敗してもログインは
+    # 続行 (確認は次回 welcome / admin 設定で復旧可能・ログイン不能の方が実害大)。
+    if claims.get("token_type") == "magicv":
+        try:
+            _row_keys_v = row.keys()
+            _cur_se = ((row["student_email"] if "student_email" in _row_keys_v else "") or "").strip().lower()
+            _cur_sev = bool(row["student_email_verified"]) if "student_email_verified" in _row_keys_v else True
+            if _cur_se and not _cur_sev and _student_email_hash(_cur_se) == claims.get("email_hash"):
+                # 🛡️ 2026-06-12 review (data MED-1): verified UPDATE を先に commit してから
+                #   audit INSERT を別 connection で行う。同一 connection だと Postgres では
+                #   INSERT 失敗がトランザクション全体を abort し、後続 commit が verified を
+                #   サイレントに巻き戻す (確認が消える)。確認の確定を最優先する。
+                conn_v = db()
+                c_v = conn_v.cursor()
+                c_v.execute("UPDATE students SET student_email_verified = 1 WHERE id = ?", (row["id"],))
+                conn_v.commit()
+                conn_v.close()
+                log.info(f"[Auth] student_email verified via magicv click: student_id={row['id']}")
+                try:
+                    conn_a = db()
+                    c_a = conn_a.cursor()
+                    c_a.execute(
+                        "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                        ("student_email_verified", json.dumps({
+                            "student_id": row["id"],
+                            "domain": (_cur_se.split("@")[-1] if "@" in _cur_se else None),
+                            "actor": "magicv_click",
+                        }, ensure_ascii=False), f"student:{row['id']}")
+                    )
+                    conn_a.commit()
+                    conn_a.close()
+                except Exception:
+                    pass
+        except Exception as _ve:
+            log.warning(f"[Auth] magicv verification update failed (login continues): {_ve}")
 
     # 新規 session token を発行 (URL の magic token は1時間で破棄、セッションは30日)
     new_session_token = _sign_session_token(row["id"])
@@ -8577,7 +8741,7 @@ def admin_stats(authorization: Optional[str] = Header(None)):
     c = conn.cursor()
     # last_login_at は migration 直後の旧 DB に存在しない可能性あり → try/except でフォールバック
     try:
-        c.execute("SELECT id, name, email, student_email, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at, line_user_id, course, enrollment_fee_waived FROM students ORDER BY id DESC")
+        c.execute("SELECT id, name, email, student_email, student_email_verified, grade, goal, plan, status, trial_end, paid_since, created_at, last_login_at, line_user_id, course, enrollment_fee_waived FROM students ORDER BY id DESC")
         rows = c.fetchall()
         has_last_login = True
     except Exception:
@@ -8656,6 +8820,9 @@ def admin_stats(authorization: Optional[str] = Header(None)):
             "email": row["email"],
             # 🔑 2026-05-31: 子供メール (3つ目 fallback SELECT には無いので row.keys() で安全取得)
             "student_email": (row["student_email"] if "student_email" in row.keys() else None),
+            # 🛡️ 2026-06-12: 子メール確認状態 (未確認 = 自己登録のみ・magicv 未クリック)。
+            # 列が無い fallback SELECT 時は None (フロントは null をバッジ非表示扱い)。
+            "student_email_verified": (bool(row["student_email_verified"]) if "student_email_verified" in row.keys() else None),
             "grade": row["grade"],
             "goal": row["goal"],
             "plan": row["plan"],
@@ -22611,18 +22778,27 @@ def trial_signup(payload: TrialSignup, request: Request):
         returned = c.fetchone()
         student_id = returned["id"] if returned else None
         conn.commit()
+        # 🛡️ 2026-06-12 security review: 新規行の student_email はこの申込で初めて設定された
+        # = 未確認 (student_email_verified は DEFAULT 0)。welcome は magicv リンクで送る。
+        student_email_newly_set = bool(student_email_norm)
     except IntegrityError:
         # 既存メール: 同一 email の student_id を返す。
         # paid ユーザーは plan/status を変更しない (誤って ¥14,500 → trial 降格させない)。
         # trial 期限切れ/canceled は trial を再延長 (リカバリ申込として扱う)。
         conn.rollback()
         is_existing = True
-        c.execute("SELECT id, status, trial_end FROM students WHERE LOWER(email) = ? LIMIT 1", (email_norm,))
+        student_email_newly_set = False
+        c.execute("SELECT id, status, trial_end, student_email FROM students WHERE LOWER(email) = ? LIMIT 1", (email_norm,))
         row = c.fetchone()
         student_id = row["id"] if row else None
         if not student_id:
             conn.close()
             raise HTTPException(status_code=400, detail="Email conflict")
+        # 既存行の student_email が空で、今回の申込が新値を持つ場合のみ「新規設定」扱い
+        # (下の UPDATE は CASE で空の時だけ埋める。既存値がある再申込では上書きも再送もしない —
+        #  これが無いと同一親メールの再 POST のたびに任意の student_email へ welcome を
+        #  送れてしまう: security review 2026-06-11 の反復送信ベクター)。
+        _prior_child_email = ((row["student_email"] if "student_email" in row.keys() else "") or "").strip()
         try:
             existing_status = row["status"] if row else None
             prev_trial_end = row["trial_end"] if row else None
@@ -22673,6 +22849,9 @@ def trial_signup(payload: TrialSignup, request: Request):
                     )
                     conn.commit()
                     log.info(f"[Signup] Trial re-grant SKIPPED (cooldown {TRIAL_REGRANT_COOLDOWN_DAYS}d) student {student_id} ({email_norm}) prev_status={existing_status} prev_trial_end={prev_trial_end}")
+                # 上の UPDATE (CASE) で空欄→新値が実際に保存されたケースのみ welcome 対象
+                if student_email_norm and not _prior_child_email:
+                    student_email_newly_set = True
         except Exception as _e:
             log.warning(f"[Signup] re-activation update failed for student {student_id}: {_e}")
     conn.close()
@@ -22770,19 +22949,45 @@ def trial_signup(payload: TrialSignup, request: Request):
                 email_error = (result or {}).get("error", "send_failed")
                 log.error(f"[Signup] Welcome email failed for student {student_id} ({email_norm}): {email_error}")
             # 生徒メール (任意) にも送信 (失敗しても親メールが届いていれば OK 扱い)
-            if student_email_norm and student_email_norm != email_norm:
+            # 🛡️ 2026-06-12 security review: 「この申込で新規に保存された」場合のみ送信
+            # (student_email_newly_set)。既存値ありの再 POST では送らない — 同一親メールの
+            # 再申込連打を任意アドレスへの送信装置にさせない。
+            # リンクは親と共通の magic_url ではなく magicv トークン (子メール宛にのみ届く):
+            # クリック = アドレス到達の証明として /api/auth/verify が student_email_verified=1
+            # を立て、以後の magic-link 再発行が子にも届くようになる (未確認のままなら親のみ)。
+            if student_email_newly_set and student_email_norm and student_email_norm != email_norm:
                 try:
+                    child_token = _create_student_email_verify_token(student_id, student_email_norm)
+                    child_magic_url = f"{BASE_URL}/auth.html?t={child_token}"
                     student_result = _send_magic_link_with_retry(
                         student_email_norm,
                         payload.name or "",
-                        magic_url,
+                        child_magic_url,
                         otp_code=otp_code,
                         is_welcome=True,
+                        is_child_verify=True,
                     )
                     student_email_sent = bool(student_result.get("sent"))
                     log.info(f"[Signup] Student-email send for {student_id}: sent={student_email_sent} ({student_email_norm})")
                 except Exception as se:
                     log.warning(f"[Signup] Student-email send exception for {student_id}: {se}")
+                # 📋 audit (security review ③): 自己登録による student_email 設定を events に記録
+                # (admin 設定時の student_email_set と同名 event・actor で区別。CEO ダッシュの
+                #  未確認バッジと合わせて「誰がいつ設定した子メールか」を追跡可能にする)
+                try:
+                    conn_a = db(); c_a = conn_a.cursor()
+                    c_a.execute(
+                        "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                        ("student_email_set", json.dumps({
+                            "student_id": student_id,
+                            "new_domain": (student_email_norm.split("@")[-1] if "@" in student_email_norm else None),
+                            "actor": "self_signup",
+                            "verified": False,
+                        }, ensure_ascii=False), f"student:{student_id}")
+                    )
+                    conn_a.commit(); conn_a.close()
+                except Exception as _ae:
+                    log.warning(f"[Signup] student_email_set event record failed: {_ae}")
         except Exception as e:
             email_error = f"{type(e).__name__}: {e}"
             log.error(f"[Signup] Welcome email exception for student {student_id} ({email_norm}): {email_error}")
@@ -23848,8 +24053,15 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                             # スキップされると「子の受信箱に何も来ない」が再発するため)。
                             # max_attempts=1: 子宛は副本のため、Resend 障害時に webhook の同期
                             # ブロッキングを親 (~33s) からさらに倍増させない (review MEDIUM)。
-                            _child_result = _send_magic_link_with_retry(_child_email, s_row["name"] or "", _magic_url, otp_code=_otp_code, is_welcome=True,
-                                                                        max_attempts=1, bypass_recipient_cap=True) or {}
+                            # 🛡️ 2026-06-12 UX review H2: 子宛は親と共通の magic トークンではなく
+                            #   magicv (確認付き) トークンを使う。子がこのリンクをタップすると
+                            #   student_email_verified=1 が立ち、以後の magic-link 再発行が子にも届く。
+                            #   親の magic リンク併用だとクリックしても確認が立たず、次回再ログインで
+                            #   「子に届かない」が再発するため (signup の子 welcome と同方針)。
+                            _child_token = _create_student_email_verify_token(s_row["id"], _child_email)
+                            _child_magic_url = f"{BASE_URL}/auth.html?t={_child_token}"
+                            _child_result = _send_magic_link_with_retry(_child_email, s_row["name"] or "", _child_magic_url, otp_code=_otp_code, is_welcome=True,
+                                                                        max_attempts=1, bypass_recipient_cap=True, is_child_verify=True) or {}
                             _child_sent = bool(_child_result.get("sent"))
                 except Exception as _ce:
                     log.warning(f"[Webhook] welcome 子メール送信 failed: {_ce}")
@@ -33503,7 +33715,11 @@ def admin_set_student_email(student_id: int, payload: StudentEmailSetRequest,
                             f"{dup['field']}として使用されています。このまま登録するとログイン時に"
                             f"どちらか一方の生徒が当該アドレスでログインできなくなります。先に重複を解消してください。"),
                 )
-        c.execute("UPDATE students SET student_email = ? WHERE id = ?", (new_email_norm, student_id))
+        # 🛡️ 2026-06-12 security review: 塾長が設定するアドレスは本人確認済みとして
+        # student_email_verified=1 を立てる (塾長は家庭と直接やり取りして設定するため信頼起点)。
+        # クリア時は 0 に戻す。自己登録 (trial_signup) 経由は 0 のままで magicv クリック確認待ち。
+        c.execute("UPDATE students SET student_email = ?, student_email_verified = ? WHERE id = ?",
+                  (new_email_norm, 1 if new_email_norm else 0, student_id))
         try:
             c.execute(
                 "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
@@ -33525,7 +33741,7 @@ def admin_set_student_email(student_id: int, payload: StudentEmailSetRequest,
             "message": (
                 "子メールをクリアしました" if not new_email_norm
                 else ("⚠️ 親メールと同じです (両方送信時に重複)" if same_as_parent
-                      else "子メールを登録しました。今後のマジックリンク再発行は親+子の両方に届きます。")
+                      else "子メールを登録しました (確認済み扱い)。今後のマジックリンク再発行は親+子の両方に届きます。")
             ),
         }
     finally:

@@ -7370,8 +7370,15 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       // 🔑 2026-05-31 塾長指示「親には届くが子には届かない」: 子供メール (student_email) を編集可能に
       // 設定すると、マジックリンク再発行が親 (保護者メール) + 子 (子供メール) の両方に届く。
       const editStudentEmailBtn = `<button class="sd-edit-profile-btn" data-student-id="${esc(st.id)}" data-field="student_email" data-current="${esc(st.student_email || '')}" style="${editBtnStyle}">✏️ 編集</button>`;
+      // 🛡️ 2026-06-12 security review: 未確認バッジ。自己登録で設定された子メールは
+      // welcome 内リンクのクリック (本人到達確認) まで magic-link 再発行が届かない。
+      // 塾長が「✏️ 編集」で同じアドレスを設定し直せば確認済み扱いになる (admin = 信頼起点)。
+      // student_email_verified === false のみバッジ表示 (null/undefined = 旧 API・列なしは非表示)。
+      const studentEmailUnverifiedBadge = (st.student_email && st.student_email_verified === false)
+        ? ` <span style="color:#fbbf24;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);border-radius:5px;padding:1px 7px;font-size:0.7rem;font-weight:600;" title="自己登録で設定された未確認アドレス。生徒が申込時メールのリンクをクリックすると確認済みになります。それまでログインコードの再発行はこのアドレスに届きません (親メールには届きます)。急ぐ場合は ✏️ 編集で同じアドレスを設定し直すと確認済みにできます。">⚠️ 未確認</span>`
+        : '';
       const studentEmailDisplay = st.student_email
-        ? `<span style="color:#86efac;">${esc(st.student_email)}</span>`
+        ? `<span style="color:#86efac;">${esc(st.student_email)}</span>${studentEmailUnverifiedBadge}`
         : `<span style="color:#71717a;">未登録 (親メールのみ)</span>`;
       infoPane.innerHTML = [
         row('申込日時',     fmtDate(st.created_at)),
@@ -7450,6 +7457,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
               if (!res.ok || !data.ok) { alert(`更新失敗: ${data.detail || data.message || 'HTTP ' + res.status}`); return; }
               alert(`✅ ${data.message || '子供メールを更新しました'}`);
               if (st) st.student_email = trimmed || null;
+              // 🛡️ 2026-06-12: admin 設定は確認済み扱い (サーバ側と同期・未確認バッジを消す)
+              if (st) st.student_email_verified = trimmed ? true : false;
               btn.dataset.current = trimmed;
               const closeBtn = document.getElementById('studentDetailClose');
               if (closeBtn) closeBtn.click();
