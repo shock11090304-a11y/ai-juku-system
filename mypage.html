@@ -80,6 +80,23 @@
       <p class="jmh-sub" id="jmhSub"></p>
       <div class="jmh-chips" id="jmhChips"></div>
     </section>
+    <!-- 🧭 コーチの今日の一手 (2026-06-11 塾長指示: 低学力層オンボーディング)
+         「何から始めればいいか分からない」離脱への単一 CTA。優先順位ルールは mypage.js
+         initCoachNextMove() — ①宿題ドリル ②復習カード ③弱点TOP3 ④学習記録 ⑤基礎演習。
+         ✅達成で streak/XP が実際に進む (偽 seed 廃止とセット)。表示は JS 制御 (デフォルト非表示) -->
+    <section id="coachNextMove" style="display:none; margin:0 0 1.25rem 0; padding:1.15rem 1.3rem; background:linear-gradient(135deg, rgba(251,191,36,0.20), rgba(236,72,153,0.12)); border:1px solid rgba(251,191,36,0.5); border-radius:16px; box-shadow:0 8px 24px rgba(251,191,36,0.15);" role="region" aria-label="コーチの今日の一手">
+      <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem; flex-wrap:wrap;">
+        <span style="font-size:0.72rem; font-weight:800; padding:0.2rem 0.65rem; border-radius:999px; background:linear-gradient(135deg,#fbbf24,#f97316); color:#fff; letter-spacing:0.02em;">📣 コーチの今日の一手</span>
+        <span id="cnmStreakChip" style="display:none; font-size:0.72rem; font-weight:700; padding:0.2rem 0.6rem; border-radius:999px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); color:#fde68a;"></span>
+      </div>
+      <h2 id="cnmTitle" style="margin:0 0 0.3rem 0; font-size:1.18rem; font-weight:800; color:#fff; line-height:1.4;">今日はこれだけやろう</h2>
+      <p id="cnmReason" style="margin:0 0 0.8rem 0; font-size:0.84rem; color:#fde68a; line-height:1.55;"></p>
+      <div style="display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center;">
+        <a id="cnmActionBtn" href="#" style="display:inline-flex; align-items:center; padding:0.7rem 1.4rem; background:linear-gradient(135deg,#f59e0b,#ec4899); border-radius:12px; color:#fff; font-weight:800; font-size:0.95rem; text-decoration:none; min-height:44px; box-shadow:0 4px 14px rgba(245,158,11,0.35);">▶ やってみる</a>
+        <button type="button" id="cnmDoneBtn" aria-label="今日の一手を達成として記録" style="padding:0.6rem 1rem; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.22); border-radius:10px; color:#d1fae5; font-weight:700; font-size:0.85rem; cursor:pointer; min-height:44px;">✅ できた！</button>
+      </div>
+      <div id="cnmDoneMsg" role="status" aria-live="polite" style="display:none; margin-top:0.6rem; font-size:0.9rem; color:#86efac; font-weight:700;"></div>
+    </section>
     <!-- 📝 学習記録 クイック CTA (国公立難関大学コース or プレミアム以上のみ JS で表示制御)
          2026-05-11 塾長指示: ページ最上部 (header 直下) に固定配置。
          入力フォーム埋もれ engagement 問題への対処 + 上部 #todayMinutes を real data 反映
@@ -532,49 +549,53 @@
       </section>
     </div>
 
-    <!-- Achievements -->
+    <!-- Achievements
+         🏆 2026-06-11 塾長指示 (低学力層オンボーディング): 旧版は「4/12 獲得」+ 4 個が
+         静的 HTML で常時点灯する架空表示だった (何もしていない新規生徒にも「添削マスター」が
+         点灯 = 信頼毀損)。全て locked スタートにし、mypage.js refreshAchievements() が
+         実データ (streak 実値・初質問は /api/usage/me 実績) で判定して点灯する。 -->
     <section class="achievements-section">
       <div class="section-title">
         <h2>🏆 アチーブメント</h2>
-        <span class="quest-progress" id="achProgress">4/12 獲得</span>
+        <span class="quest-progress" id="achProgress">これから獲得しよう</span>
       </div>
       <div class="achievements-grid">
-        <div class="achievement unlocked">
-          <div class="ach-icon">🔥</div>
+        <div class="achievement locked" data-ach="streak3" data-ach-icon="🔥">
+          <div class="ach-icon">🔒</div>
           <div class="ach-name">3日連続</div>
-          <div class="ach-desc">3日連続で学習した</div>
+          <div class="ach-desc">コーチの一手を3日連続達成</div>
         </div>
-        <div class="achievement unlocked">
-          <div class="ach-icon">🌟</div>
+        <div class="achievement locked" data-ach="first_question" data-ach-icon="🌟">
+          <div class="ach-icon">🔒</div>
           <div class="ach-name">初質問</div>
           <div class="ach-desc">AIチューターに質問した</div>
         </div>
-        <div class="achievement unlocked">
-          <div class="ach-icon">📚</div>
+        <div class="achievement locked" data-ach="hours10" data-ach-icon="📚">
+          <div class="ach-icon">🔒</div>
           <div class="ach-name">10時間勉強</div>
           <div class="ach-desc">週に10時間以上勉強</div>
         </div>
-        <div class="achievement unlocked">
-          <div class="ach-icon">✏️</div>
+        <div class="achievement locked" data-ach="sakubun5" data-ach-icon="✏️">
+          <div class="ach-icon">🔒</div>
           <div class="ach-name">添削マスター</div>
           <div class="ach-desc">英作文添削を5回</div>
         </div>
-        <div class="achievement locked">
+        <div class="achievement locked" data-ach="streak7" data-ach-icon="🏅">
           <div class="ach-icon">🔒</div>
           <div class="ach-name">7日連続</div>
-          <div class="ach-desc">7日連続で学習</div>
+          <div class="ach-desc">コーチの一手を7日連続達成</div>
         </div>
-        <div class="achievement locked">
+        <div class="achievement locked" data-ach="q100" data-ach-icon="🎯">
           <div class="ach-icon">🔒</div>
           <div class="ach-name">問題マスター</div>
           <div class="ach-desc">AI問題を100問解答</div>
         </div>
-        <div class="achievement locked">
+        <div class="achievement locked" data-ach="night5" data-ach-icon="🌙">
           <div class="ach-icon">🔒</div>
           <div class="ach-name">深夜の戦士</div>
           <div class="ach-desc">深夜0-3時に学習5回</div>
         </div>
-        <div class="achievement locked">
+        <div class="achievement locked" data-ach="month50" data-ach-icon="👑">
           <div class="ach-icon">🔒</div>
           <div class="ach-name">月間ヒーロー</div>
           <div class="ach-desc">月50時間達成</div>
@@ -1367,7 +1388,7 @@
   <script src="exam-prep.js?v=20260529-past-due-grace"></script>
   <script src="referral-program.js?v=20260529-past-due-grace"></script>
   <script src="student-mode.js?v=20260604-junior-preview"></script>
-  <script src="mypage.js?v=20260609"></script>
+  <script src="mypage.js?v=20260611-coach-next-move"></script>
   <script>
     // ウィジェット初期描画
     (function() {
@@ -1410,6 +1431,10 @@
         } catch (_e) { /* モード判定失敗時は現行表示 */ }
         // 🧒 塾長プレビュー (2026-06-04): 実生徒データを叩くウィジェットは全てスキップ。
         //   バナー「実データは表示されません」を厳守 (同一端末に生徒 token があっても他生徒データを出さない)。
+        // 🧭 コーチの今日の一手 (2026-06-11): プレビュー時は関数内で静的サンプルに切替
+        if (typeof initCoachNextMove === 'function') {
+          try { initCoachNextMove(student, _ajMode, _isPreview); } catch (_e) { /* 失敗しても他 widget に波及させない */ }
+        }
         if (!_isPreview) {
           LB.renderTodayReview('lbTodayReview', studentId);
           LB.renderStudyTimeWidget('lbStudyTimeWidget', studentId);

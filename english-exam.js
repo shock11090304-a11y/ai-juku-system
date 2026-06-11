@@ -888,10 +888,34 @@ function _renderGradeSelect(grid, examId, items) {
   });
   const sortedCats = Object.keys(groups).sort((a, b) => groups[a].order - groups[b].order);
 
+  // 🔰 2026-06-11 塾長指示 (低学力層オンボーディング): 「受験する大学を選んでください」が
+  // 最初の質問だと、自分のレベルが分からない生徒はここで答えられず離脱する (監査で確認)。
+  // 共通テスト (基礎〜標準) を「迷ったらここから」として pulldown の上に 1 タップ導線で置く。
+  const _recKey = examId === 'daigaku' ? 'kyotsu' : (examId === 'rikei' ? 'kyotsu_rikei' : null);
+  const _recItem = _recKey ? _filteredItems.find(g => g.key === _recKey) : null;
+  if (_recItem) {
+    const rec = document.createElement('div');
+    // grid-column: 1/-1 必須: 親 .grade-grid は auto-fit grid のため、子 2 個になると
+    // PC/iPad で推奨ボタンとプルダウンが横並びに崩れる (review B1・Playwright 実測)
+    rec.style.cssText = 'max-width: 640px; margin: 1.2rem auto 0; padding: 0 1rem; grid-column: 1 / -1; width: 100%; box-sizing: border-box;';
+    rec.innerHTML = `
+      <button type="button" id="gradeRecommendBtn" style="display:block; width:100%; text-align:left; padding:0.95rem 1.15rem; background:linear-gradient(135deg, rgba(16,185,129,0.22), rgba(14,165,233,0.12)); border:1px solid rgba(16,185,129,0.55); border-radius:14px; cursor:pointer; min-height:44px;">
+        <span style="display:block; font-size:1rem; font-weight:800; color:#fff; line-height:1.4;">🔰 迷ったらここから — ${escapeHtml(_recItem.name)}</span>
+        <span style="display:block; font-size:0.78rem; color:#a7f3d0; margin-top:0.25rem; line-height:1.5;">大学名はまだ選ばなくて OK。基礎〜標準レベルから始めて、あとからいつでも変えられます。</span>
+      </button>
+      <div style="text-align:center; color:#71717a; font-size:0.75rem; margin-top:0.6rem;">— または志望大学で選ぶ —</div>`;
+    grid.appendChild(rec);
+    rec.querySelector('#gradeRecommendBtn').addEventListener('click', () => {
+      state.eikenGrade = _recItem.key;
+      state.eikenGradeName = _recItem.name;
+      pickExamSections(examId);
+    });
+  }
   // build select
   const wrapper = document.createElement('div');
   wrapper.className = 'grade-select-wrapper';
-  wrapper.style.cssText = 'max-width: 640px; margin: 1.5rem auto; padding: 0 1rem;';
+  // grid-column: 1/-1 は推奨ボタンと縦積みにするため (上の rec と同じ理由・両方に必要)
+  wrapper.style.cssText = 'max-width: 640px; margin: 1.5rem auto; padding: 0 1rem; grid-column: 1 / -1; width: 100%; box-sizing: border-box;';
   // 🎯 2026-05-15 hint が設定されているときはラベルに subject を明示
   const _subjLabel = _qsHint ? _qsSubjectHintLabel(_qsHint) : '';
   const label = examId === 'daigaku' ? '🎓 受験する大学/試験を選択'
@@ -5316,6 +5340,23 @@ document.addEventListener('DOMContentLoaded', () => {
         // DOM bind 完了後に発火させるため 1 tick 遅延 + 完了後に gradePickSection へスクロール
         setTimeout(() => {
           try { card.click(); } catch (e) {}
+          // 🔰 2026-06-11: &grade=kyotsu 等で大学選択ステップもスキップ
+          // (mypage「コーチの今日の一手」から基礎レベル演習へ 1 タップ直行させる用)
+          const _gradeKey = new URLSearchParams(window.location.search).get('grade');
+          if (_gradeKey) {
+            setTimeout(() => {
+              try {
+                const _exam = EXAMS[focusExam];
+                const _g = ((_exam && _exam.grades) || []).find(x => x.key === _gradeKey);
+                if (_g) {
+                  state.eikenGrade = _g.key;
+                  state.eikenGradeName = _g.name;
+                  pickExamSections(focusExam);
+                  return;
+                }
+              } catch (e) { /* 不正 grade は通常フロー (大学選択画面) に落とす */ }
+            }, 300);
+          }
           // gradePicker が出たらそこにスクロール (200ms 後)
           setTimeout(() => {
             const target = document.getElementById('gradePickSection');

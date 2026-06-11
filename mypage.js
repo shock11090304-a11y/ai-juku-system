@@ -75,23 +75,57 @@ function todayKeyJST() {
   return jst.toISOString().slice(0, 10);
 }
 
+// 🔰 2026-06-11 塾長指示 (低学力層オンボーディング改修): 旧コードは新規生徒に
+// 架空の進捗 (xp680/streak7/今日45分/週次グラフ) を seed していた。何もしていないのに
+// 「7日連続学習・Lv.4」が出る嘘は信頼を壊すため廃止し、正直に 0 から開始する。
+// streak/XP は「コーチの今日の一手」の ✅達成 で実際に増える本物の値になった。
+function _zeroMypageData() {
+  return {
+    xp: 0,
+    streak: 0,
+    streakHistory: [0, 0, 0, 0, 0, 0, 0],
+    todayMinutes: 0,
+    todayQuestions: 0,
+    weeklyMinutes: [0, 0, 0, 0, 0, 0, 0],
+    lastLogin: todayKeyJST(),
+  };
+}
+
 function getMypageData() {
   const key = mypageKeyForCurrentStudent();
   const saved = JSON.parse(localStorage.getItem(key) || 'null');
-  if (saved) return saved;
-  // Generate realistic starting data
-  const data = {
-    xp: 680,
-    streak: 7,
-    streakHistory: [1, 1, 1, 1, 1, 1, 1], // 7 days
-    todayMinutes: 45,
-    todayQuestions: 5,
-    // todayXp/todayDoneQuests/quests は塾長指示 2026-05-15 で削除 (XP/クエスト gamification 廃止)
-    weeklyMinutes: [60, 45, 80, 30, 90, 75, 45],
-    lastLogin: todayKeyJST(),
-  };
+  if (saved) {
+    // 旧 seed の架空値が localStorage に保存済みの既存生徒を 1 回だけ 0 にリセット。
+    // 署名 = streak7 + 今日45分 + 固定週次配列の完全一致。xp は旧クエスト機能 (2026-05-15 廃止)
+    // が ±変更していた時期があるため署名に含めない (review 指摘: xp 条件があると当時の
+    // クエスト操作者だけ偽 streak/グラフが残る)。streak/todayMinutes/weeklyMinutes に
+    // 書き込む経路は seed 以外に存在しなかったことを git 履歴で確認済み → 誤爆しない。
+    const _legacySeed = saved.streak === 7 && saved.todayMinutes === 45 &&
+      Array.isArray(saved.weeklyMinutes) && saved.weeklyMinutes.join(',') === '60,45,80,30,90,75,45';
+    if (_legacySeed) {
+      const reset = _zeroMypageData();
+      localStorage.setItem(key, JSON.stringify(reset));
+      return reset;
+    }
+    return saved;
+  }
+  const data = _zeroMypageData();
   localStorage.setItem(key, JSON.stringify(data));
   return data;
+}
+
+// 🔰 初回訪問日の記録 (新規生徒判定用・比較セクションの「最下位通告」を初週は出さない)
+function _firstSeenKey() { return 'aj-first-seen:' + mypageKeyForCurrentStudent(); }
+function _markFirstSeen() {
+  try { if (!localStorage.getItem(_firstSeenKey())) localStorage.setItem(_firstSeenKey(), todayKeyJST()); } catch (_) { /* noop */ }
+}
+function _isFreshStudent(days = 7) {
+  try {
+    const first = localStorage.getItem(_firstSeenKey());
+    if (!first) return true;
+    const diff = (new Date(todayKeyJST()) - new Date(first)) / 86400000;
+    return diff < days;
+  } catch (_) { return false; }
 }
 
 function saveMypageData(data) {
@@ -103,6 +137,7 @@ function saveMypageData(data) {
 // ==========================================================================
 function render() {
   const student = getCurrentStudent();
+  _markFirstSeen(); // 🔰 新規生徒判定 (比較セクションの初週ゲート) 用に初回訪問日を記録
   const data = getMypageData();
   const { current, next } = getLevel(data.xp);
   const xpInLevel = data.xp - current.xp;
@@ -148,8 +183,56 @@ function render() {
   // Weekly chart
   renderWeeklyChart(data.weeklyMinutes);
 
+  // 🏆 アチーブメントを実データで再判定 (2026-06-11: 静的 HTML の架空「獲得済み」を廃止)
+  refreshAchievements(data);
+
   // Motivation
   rotateMotivation();
+}
+
+// ==========================================================================
+// 🏆 アチーブメント (2026-06-11 塾長指示: 偽の「4/12 獲得」固定表示を実データ判定に置換)
+//   - ルール判定できるもの (streak 系) は getMypageData() の実値から自動判定
+//   - イベント由来 (初質問など) は _unlockAchievement(key) で生徒ごとに永続化
+//   - 判定材料が無いものは locked のまま (嘘の点灯はしない)
+// ==========================================================================
+const _ACH_RULES = {
+  streak3: (d) => (d.streak || 0) >= 3,
+  streak7: (d) => (d.streak || 0) >= 7,
+};
+function _achStoreKey(k) { return 'aj-ach:' + k + ':' + mypageKeyForCurrentStudent(); }
+function refreshAchievements(data) {
+  try {
+    const els = document.querySelectorAll('.achievement[data-ach]');
+    if (!els.length) return;
+    let unlocked = 0;
+    els.forEach((el) => {
+      const k = el.dataset.ach;
+      let on = false;
+      try { on = localStorage.getItem(_achStoreKey(k)) === '1'; } catch (_) { /* noop */ }
+      const rule = _ACH_RULES[k];
+      if (!on && rule && data && rule(data)) {
+        on = true;
+        // 一度獲得したバッジは streak が途切れても剥奪しない (アチーブメントの普遍ルール・review 指摘)
+        try { localStorage.setItem(_achStoreKey(k), '1'); } catch (_) { /* noop */ }
+      }
+      el.classList.toggle('unlocked', on);
+      el.classList.toggle('locked', !on);
+      const icon = el.querySelector('.ach-icon');
+      if (icon) icon.textContent = on ? (el.dataset.achIcon || '🏅') : '🔒';
+      if (on) unlocked++;
+    });
+    const prog = document.getElementById('achProgress');
+    // 0 個のときは「0/8 獲得」より HTML 初期文言「これから獲得しよう」の方が新規生徒に冷たくない
+    if (prog && unlocked > 0) prog.textContent = unlocked + '/' + els.length + ' 獲得';
+  } catch (_) { /* 表示系のみ・失敗しても他機能に影響させない */ }
+}
+function _unlockAchievement(k) {
+  try {
+    if (localStorage.getItem(_achStoreKey(k)) === '1') return;
+    localStorage.setItem(_achStoreKey(k), '1');
+    refreshAchievements(getMypageData());
+  } catch (_) { /* noop */ }
 }
 
 // AI 質問数を /api/usage/me から取得して #todayQ を上書き
@@ -165,6 +248,8 @@ async function _refreshAiQuestionsFromBackend() {
     const aiq = data.ai_questions || {};
     const todayEl = document.getElementById('todayQ');
     if (todayEl && typeof aiq.today === 'number') todayEl.textContent = aiq.today;
+    // 🏆 初質問アチーブメント: 実際に AI へ質問した実績がある生徒のみ点灯 (2026-06-11)
+    if ((Number(aiq.today) || 0) > 0 || (Number(aiq.total) || 0) > 0) _unlockAchievement('first_question');
   } catch (e) { console.warn('[AI質問数] backend 同期失敗:', e); }
 }
 
@@ -4346,7 +4431,12 @@ async function initComparisonSection() {
     else cards.push(_cmpMuted('📝 模試', 'アプリ内の模試を受けると、同じ模試を解いた人の中での偏差値・順位が出ます'));
     // ② 学習時間 (直近7日)
     const stt = data && data.study_time;
-    if (stt && stt.available && stt.not_recorded && N(stt.population) != null && N(stt.rank) != null) {
+    if (stt && stt.available && stt.not_recorded && _isFreshStudent()) {
+      // 🔰 2026-06-11 (低学力層オンボーディング): 初週の新規生徒に「あなた 0時間・最下位」の
+      // 赤カードを初日から見せると自己効力感を折って離脱を招くため、初回訪問から 7 日間は
+      // 中立の案内に置き換える。8 日目以降の未記録者には従来どおり危機感カードで記録を促す。
+      cards.push(_cmpMuted('⏱ 学習時間 (直近7日)', '学習記録をつけはじめると、みんなとの比較がここに表示されます。まずは上の「コーチの今日の一手」から始めよう'));
+    } else if (stt && stt.available && stt.not_recorded && N(stt.population) != null && N(stt.rank) != null) {
       // 未記録 → 危機感(赤系): あなた0時間・みんなの平均。促すのは「学習量」でなく「記録」(中学生配慮)。
       // 「未記録」「がんばっています」等の人格・努力断定は避け、記録行動への前向きな促しに留める。
       const avgH0 = (N(stt.average) / 60).toFixed(1);
@@ -4598,4 +4688,183 @@ async function initGrammarDrillSection() {
   });
 
   await loadList();
+}
+
+// ==========================================================================
+// 🧭 コーチの今日の一手 (2026-06-11 塾長指示: 低学力層オンボーディング)
+//   課題: 機能が多く「何から始めればいいか分からない」生徒が何も始めずに離脱する
+//   (実データ: 離脱者の 71% は機能利用ゼロ・「1回使って挫折」は 0%)。
+//   解決: mypage 最上部に「今日はこれだけ」の単一 CTA を毎日 1 枚。優先順位は
+//   決定論的ルール (AI 課金ゼロ): ①塾長の宿題ドリル → ②忘却曲線の復習カード →
+//   ③弱点 TOP3 (kosei のみ) → ④学習記録 (対象プランのみ) → ⑤基礎レベル演習。
+//   ✅達成で streak/XP が「実際に」増える (偽 seed 廃止とセットで本物の数字になる)。
+// ==========================================================================
+function _yesterdayKeyJST() {
+  const jst = new Date(Date.now() + 9 * 60 * 60 * 1000 - 24 * 60 * 60 * 1000);
+  return jst.toISOString().slice(0, 10);
+}
+function _cnmDoneKey() { return 'aj-cnm-done:' + mypageKeyForCurrentStudent(); }
+function _cnmLastDoneKey() { return 'aj-cnm-last:' + mypageKeyForCurrentStudent(); }
+
+async function initCoachNextMove(student, ajMode, isPreview) {
+  const sec = document.getElementById('coachNextMove');
+  if (!sec) return;
+  const titleEl = document.getElementById('cnmTitle');
+  const reasonEl = document.getElementById('cnmReason');
+  const actionBtn = document.getElementById('cnmActionBtn');
+  const doneBtn = document.getElementById('cnmDoneBtn');
+  const doneMsg = document.getElementById('cnmDoneMsg');
+  const streakChip = document.getElementById('cnmStreakChip');
+  if (!titleEl || !reasonEl || !actionBtn || !doneBtn) return;
+
+  function showSection() { sec.style.display = ''; }
+  function setMove(move) {
+    titleEl.textContent = move.title;
+    reasonEl.textContent = move.reason;
+    if (move.href) {
+      actionBtn.href = move.href;
+      actionBtn.onclick = null;
+    } else if (move.scrollTo) {
+      actionBtn.href = '#';
+      actionBtn.onclick = function (e) {
+        e.preventDefault();
+        const t = document.getElementById(move.scrollTo);
+        if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+    }
+    showSection();
+  }
+  function showDoneState() {
+    titleEl.textContent = '✅ 今日のミッション達成！';
+    reasonEl.textContent = 'よく頑張った！また明日、新しい一手を出すよ。';
+    actionBtn.style.display = 'none';
+    doneBtn.style.display = 'none';
+    if (doneMsg) { doneMsg.style.display = ''; doneMsg.textContent = '🔥 この調子で毎日 1 つずつ積み上げよう'; }
+    showSection();
+  }
+
+  // streak チップ (実データ・0 のときは出さない)
+  try {
+    const d0 = getMypageData();
+    if (streakChip && (d0.streak || 0) > 0) {
+      streakChip.textContent = '🔥 ' + d0.streak + ' 日連続';
+      streakChip.style.display = '';
+    }
+  } catch (_) { /* noop */ }
+
+  // 👁 塾長プレビュー: 実データを叩かず見た目サンプルのみ (生徒データ非表示の原則)
+  if (isPreview) {
+    setMove({ title: 'ドリル「仮定法」をやろう（サンプル表示）', reason: 'プレビュー用の表示例です。実際は宿題・復習・弱点データから自動で 1 つ選ばれます。', href: '#' });
+    actionBtn.onclick = function (e) { e.preventDefault(); };
+    doneBtn.style.opacity = '0.5';
+    doneBtn.onclick = null;
+    return;
+  }
+
+  // ✅ 達成ボタン: streak/XP を実際に進めて保存 (この経路が唯一の streak 加算 = 数字は本物)
+  doneBtn.onclick = function () {
+    try {
+      localStorage.setItem(_cnmDoneKey(), todayKeyJST());
+      const data = getMypageData();
+      const last = localStorage.getItem(_cnmLastDoneKey());
+      if (last === todayKeyJST()) { showDoneState(); return; }
+      if (last === _yesterdayKeyJST()) data.streak = (data.streak || 0) + 1;
+      else data.streak = 1;
+      // streakHistory: 前回達成から空いた日数分 0 を詰めてから今日の 1 を積む (直近14日のみ保持)
+      let hist = Array.isArray(data.streakHistory) ? data.streakHistory.slice() : [];
+      if (last) {
+        const gapDays = Math.max(0, Math.round((new Date(todayKeyJST()) - new Date(last)) / 86400000) - 1);
+        for (let i = 0; i < Math.min(gapDays, 14); i++) hist.push(0);
+      }
+      hist.push(1);
+      data.streakHistory = hist.slice(-14);
+      data.xp = (data.xp || 0) + 50;
+      localStorage.setItem(_cnmLastDoneKey(), todayKeyJST());
+      saveMypageData(data);
+      render(); // ヘッダーの streak/Lv./XP バーとアチーブメントを実値で更新
+    } catch (_) { /* noop */ }
+    showDoneState();
+  };
+
+  // 今日すでに達成済みなら達成状態で表示
+  try {
+    if (localStorage.getItem(_cnmDoneKey()) === todayKeyJST()) { showDoneState(); return; }
+  } catch (_) { /* noop */ }
+
+  const sid = student ? student.id : 'guest';
+
+  // ① 塾長からの宿題ドリル (未完了があれば最優先)
+  try {
+    const d = await slApiFetch('/api/student/grammar-drills');
+    const open = ((d && d.items) || []).filter(function (it) { return it && it.status !== 'completed'; });
+    if (open.length > 0) {
+      const unit = (open[0].unit || open[0].title || '').toString();
+      setMove({
+        title: unit ? 'ドリル「' + unit + '」をやろう' : '塾長からの宿題ドリルをやろう',
+        reason: '塾長から出ている宿題が ' + open.length + ' 件あります。これを終わらせれば今日は OK！',
+        scrollTo: 'grammarDrillSection',
+      });
+      return;
+    }
+  } catch (_) { /* 未配信/未対応プランは次のルールへ */ }
+
+  // ② 復習カード (忘却曲線で今日が復習期限のもの)
+  try {
+    if (window.LB && typeof LB.getDueReviews === 'function') {
+      const due = LB.getDueReviews(sid, 100) || [];
+      if (due.length > 0) {
+        setMove({
+          title: '復習カードを ' + Math.min(due.length, 10) + ' 枚やろう',
+          reason: '忘れかける今日のタイミングで見直すと、いちばん記憶に残ります。',
+          scrollTo: 'lbTodayReview',
+        });
+        return;
+      }
+    }
+  } catch (_) { /* noop */ }
+
+  // ③ 弱点 TOP3 の 1 位 (大学受験モードのみ・データが溜まっている生徒)
+  if (ajMode === 'kosei' && student && student.id != null) {
+    try {
+      const w = await slApiFetch('/api/student/weakness-top3?student_id=' + encodeURIComponent(sid) + '&limit=1&recommend_each=0');
+      const top = ((w && w.weaknesses) || [])[0];
+      if (top && (top.topic || top.subject)) {
+        const label = (top.topic || top.subject).toString();
+        setMove({
+          title: '苦手の 1 位「' + label + '」を 1 問だけ質問してみよう',
+          reason: '最近のミスから AI が見つけたあなたの弱点です。写真を撮って送るだけで 3 つの AI が解説します。',
+          href: 'ai-tutor-photo.html?subject=' + encodeURIComponent(top.subject || '') + '&topic=' + encodeURIComponent(top.topic || ''),
+        });
+        return;
+      }
+    } catch (_) { /* noop */ }
+  }
+
+  // ④ 学習記録 (対象プランのみ・データ上いちばん多い「最初の一歩」)
+  try {
+    const authStudent = (window.AuthGuard && window.AuthGuard.getStudent && window.AuthGuard.getStudent()) || student;
+    if (authStudent && _canUseStudyMgmt(authStudent)) {
+      setMove({
+        title: '今日の勉強を 30 秒で記録しよう',
+        reason: '続けて記録した人から伸びています。「⚡ 30分」ボタンを押すだけ！',
+        scrollTo: 'study-log',
+      });
+      return;
+    }
+  } catch (_) { /* noop */ }
+
+  // ⑤ fallback: 基礎レベル演習 (大学名を選ばず 1 タップで開始できる導線)
+  if (ajMode === 'chugaku' || ajMode === 'shougaku') {
+    setMove({
+      title: 'AI の模試で実力チェックをしてみよう',
+      reason: 'まずは今の実力を知るところから始めよう。',
+      href: 'mock-exam.html',
+    });
+  } else {
+    setMove({
+      title: '英語の基礎問題に挑戦してみよう（共通テストレベル）',
+      reason: '大学名はまだ選ばなくて OK。基礎〜標準レベルから AI が出題します。',
+      href: 'english-exam.html?focus=daigaku&grade=kyotsu',
+    });
+  }
 }
