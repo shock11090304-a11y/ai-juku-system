@@ -278,6 +278,9 @@
       }
     })();
 
+    // XSS 対策: showMsg は innerHTML を使うため、サーバ由来文字列は必ず esc() を通す (auth.html と同一実装)
+    const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
     function showMsg(type, text) {
       msg.className = 'auth-msg ' + type;
       msg.innerHTML = text;
@@ -306,17 +309,17 @@
           step2.classList.remove('active');
           step1.classList.remove('hidden');
           showMsg('error',
-            '⚠️ ' + (data.message || '体験期間が終了しています。継続をご希望の方は本登録をお願いします。') +
+            '⚠️ ' + esc(data.message || '体験期間が終了しています。継続をご希望の方は本登録をお願いします。') +
             `<br>👉 <a href="upgrade.html?email=${encodeURIComponent(email)}" style="color:#fecaca; font-weight:700; text-decoration:underline;">継続のお手続き（本登録）はこちら</a>`);
         } else if (res.ok) {
           currentEmail = email;
           emailShown.textContent = email;
           step1.classList.add('hidden');
           step2.classList.add('active');
-          showMsg('success', `✅ <strong>${email}</strong> 宛にコードを送信しました`);
+          showMsg('success', `✅ <strong>${esc(email)}</strong> 宛にコードを送信しました`);
           setTimeout(() => otpInput.focus(), 100);
         } else {
-          showMsg('error', '⚠️ ' + (data.detail || 'エラーが発生しました'));
+          showMsg('error', '⚠️ ' + esc(data.detail || 'エラーが発生しました'));
         }
       } catch (err) {
         showMsg('error', '⚠️ ネットワークエラーが発生しました。しばらくしてから再度お試しください。');
@@ -358,7 +361,7 @@
           localStorage.setItem('ai_juku_session_token', data.token);
           localStorage.setItem('ai_juku_session_expires', String(data.expires_at));
           localStorage.setItem('ai_juku_session_student', JSON.stringify(data.student));
-          showMsg('success', `✅ ようこそ、${data.student.name || 'ゲスト'}さま！学習環境へ移動します...`);
+          showMsg('success', `✅ ようこそ、${esc(data.student.name || 'ゲスト')}さま！学習環境へ移動します...`);
           setTimeout(() => {
             // オープンリダイレクト対策: 同一オリジンの相対パスのみ許可
             // 🎯 2026-05-21 塾長指示: 生徒は新規ログイン時 quick-start.html に直行 (5 科目クイック演習 + 定期テスト UI)
@@ -369,7 +372,7 @@
             window.location.href = safe ? raw : 'quick-start.html';
           }, 800);
         } else {
-          showMsg('error', '⚠️ ' + (data.detail || 'コードが正しくありません'));
+          showMsg('error', '⚠️ ' + esc(data.detail || 'コードが正しくありません'));
           codeBtn.disabled = false;
           codeBtn.textContent = '✅ ログイン';
         }
