@@ -1980,7 +1980,7 @@ async function sendPastDueInvoiceFor(studentId) {
     const res = await fetch('/payment/api/past-due-invoice', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Admin-Password': pw },
-      body: JSON.stringify({ items: [{ customerId: cust.customerId, studentName: s.name, month, amount: fee, description: `AIコーチング ${month} 月謝` }] }),
+      body: JSON.stringify({ items: [{ customerId: cust.customerId, studentName: s.name, month, amount: fee, description: `通塾月謝 ${month}分` }] }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { alert(`エラー: ${data.message || data.error || 'unknown'}`); return; }
@@ -2015,7 +2015,7 @@ async function sendBulkPastDueInvoices() {
   for (const s of unpaid) {
     const cust = matchCustomerForStudent(s);
     if (cust && cust.customerId && (s.fee || 0) > 0) {
-      items.push({ customerId: cust.customerId, studentName: s.name, month, amount: s.fee, description: `AIコーチング ${month} 月謝` });
+      items.push({ customerId: cust.customerId, studentName: s.name, month, amount: s.fee, description: `通塾月謝 ${month}分` });
     }
   }
   if (!items.length) { alert(`Stripe 登録済の未払い者がいません (${month})`); return; }

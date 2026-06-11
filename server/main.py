@@ -11652,6 +11652,8 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
     reconciled = []
     orphans = []
     errors = []
+    # 生徒ごとの active ai-juku サブ集合 (stale 紐付け自己修復パスで使用)
+    _aijuku_subs_by_student = {}
     # auto_paging_iter で 100 件上限を超えても全 active sub を走査 (在籍 200+ でも取りこぼさない)
     try:
         active_subs = list(s.Subscription.list(status="active", limit=100).auto_paging_iter())
@@ -11662,8 +11664,13 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
     c = conn.cursor()
     for sub in active_subs:
         try:
-            # juku-payment 系 subscription は ai-juku DB に触れない (二重保険)
-            if (getattr(sub, "metadata", None) or {}).get("system", "").startswith("juku-payment"):
+            # juku-payment 系 subscription は ai-juku DB に触れない (二重保険)。
+            # system タグに加え v1 月謝サブスク (タグ無し・registration_id / source=self-register* のみ)
+            # も除外し _is_non_aijuku_invoice とマーカーパリティを取る (2026-06-11 review 推奨)
+            _sub_meta = (getattr(sub, "metadata", None) or {})
+            if ((_sub_meta.get("system") or "").startswith("juku-payment")
+                    or (_sub_meta.get("source") or "").startswith(("self-register", "past-due-invoice"))
+                    or _sub_meta.get("registration_id")):
                 continue
             customer = sub.customer
             plan = (sub.metadata or {}).get("plan", "")
@@ -11674,16 +11681,22 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
             except Exception:
                 pass
             # DB 検索: stripe_customer_id 優先・無ければ email
-            c.execute("SELECT id, status, plan FROM students WHERE stripe_customer_id = ?", (customer,))
+            c.execute("SELECT id, status, plan, stripe_subscription_id FROM students WHERE stripe_customer_id = ?", (customer,))
             row = c.fetchone()
             if not row and email:
-                c.execute("SELECT id, status, plan FROM students WHERE email = ?", (email,))
+                c.execute("SELECT id, status, plan, stripe_subscription_id FROM students WHERE email = ?", (email,))
                 row = c.fetchone()
             if not row:
                 # Stripe 側に sub があるが DB に該当生徒なし → orphan
                 orphans.append({"customer": customer, "email": email, "subscription": sub.id, "plan": plan})
                 continue
             sid, status, db_plan = row[0], row[1], row[2]
+            _aijuku_subs_by_student.setdefault(sid, []).append({
+                "sub_id": sub.id,
+                "customer": customer,
+                "created": getattr(sub, "created", 0) or 0,
+                "stored_sub": row["stripe_subscription_id"],
+            })
             if status != "paid":
                 c.execute(
                     """UPDATE students SET status='paid', stripe_customer_id=?, stripe_subscription_id=?,
@@ -11703,6 +11716,34 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
                 reconciled.append({"student_id": sid, "email": email, "plan_change": f"{db_plan} → {plan}"})
         except Exception as e:
             errors.append({"sub_id": sub.id, "error": str(e)})
+            try: conn.rollback()
+            except Exception: pass
+
+    # 🔗 stale 紐付け自己修復パス (2026-06-11 塾長指示・森澤さん事例): 既に paid で plan も一致する
+    # 生徒は上の昇格パスで一切 UPDATE されず、解約済み/juku-payment サブスクへの古い紐付けが残り続ける。
+    # 紐付けが死んでいると invoice.payment_failed / subscription.deleted がその生徒に届かず
+    # past_due 降格・督促・解約検知が発火しない → stored sub が「その生徒の active ai-juku サブ集合」に
+    # 無い場合のみ active サブ (複数なら created 最新) へ張り替える。正当な複数サブ保持者は flap させない。
+    relinked = []
+    _touched_ids = {r.get("student_id") for r in reconciled}
+    for _sid, _subs in _aijuku_subs_by_student.items():
+        try:
+            if _sid in _touched_ids:
+                continue  # 昇格/plan 変更パスが今回すでに正しい紐付けを書いた生徒はスキップ
+            _active_ids = {x["sub_id"] for x in _subs}
+            _stored = _subs[0]["stored_sub"]
+            if _stored in _active_ids:
+                continue
+            _best = max(_subs, key=lambda x: x.get("created") or 0)
+            c.execute(
+                "UPDATE students SET stripe_subscription_id=?, stripe_customer_id=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                (_best["sub_id"], _best["customer"], _sid),
+            )
+            conn.commit()
+            relinked.append({"student_id": _sid, "old_subscription": _stored, "new_subscription": _best["sub_id"]})
+            log.warning(f"[Reconcile relink] student_id={_sid} stale sub {_stored} → {_best['sub_id']}")
+        except Exception as e:
+            errors.append({"relink_student": _sid, "error": str(e)})
             try: conn.rollback()
             except Exception: pass
 
@@ -11729,7 +11770,10 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
             continue
         for sub in _iter:
             try:
-                if (getattr(sub, "metadata", None) or {}).get("system", "").startswith("juku-payment"):
+                _dsub_meta = (getattr(sub, "metadata", None) or {})
+                if ((_dsub_meta.get("system") or "").startswith("juku-payment")
+                        or (_dsub_meta.get("source") or "").startswith(("self-register", "past-due-invoice"))
+                        or _dsub_meta.get("registration_id")):
                     continue
                 c.execute("SELECT id, status, name, email FROM students WHERE stripe_subscription_id=?", (sub.id,))
                 row = c.fetchone()
@@ -11785,11 +11829,12 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
         "ok": True,
         "stripe_active_subscriptions": len(active_subs),
         "reconciled": len(reconciled),
+        "relinked": len(relinked),
         "downgraded": len(downgraded),
         "orphans": len(orphans),
         "errors": len(errors),
-        "details": {"reconciled": reconciled, "downgraded": downgraded, "orphans": orphans, "errors": errors},
-        "message": f"✅ 昇格 {len(reconciled)} 件 / 降格 {len(downgraded)} 件を Stripe に同期。orphan {len(orphans)} 件は手動確認推奨。",
+        "details": {"reconciled": reconciled, "relinked": relinked, "downgraded": downgraded, "orphans": orphans, "errors": errors},
+        "message": f"✅ 昇格 {len(reconciled)} 件 / 紐付け修復 {len(relinked)} 件 / 降格 {len(downgraded)} 件を Stripe に同期。orphan {len(orphans)} 件は手動確認推奨。",
     }
 
 

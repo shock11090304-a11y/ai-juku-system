@@ -10,7 +10,7 @@ Body (JSON):
         "studentName": "山田 太郎",
         "month": "2026-04",            # 請求対象月 (記録用、metadata)
         "amount": 7500,                # JPY 整数 (zero-decimal)
-        "description": "AIコーチング 2026年4月分 月謝"
+        "description": "通塾月謝 2026年4月分"
       },
       ...
     ]
@@ -147,7 +147,7 @@ def _create_one_invoice(secret_key, item):
     student_name = (item.get("studentName") or "").strip()[:80]
     month = (item.get("month") or "").strip()[:10]
     amount = int(item.get("amount", 0))
-    description = (item.get("description") or "").strip()[:240] or f"AIコーチング {month} 月謝"
+    description = (item.get("description") or "").strip()[:240] or f"通塾月謝 {month}分"
 
     if not customer_id.startswith("cus_"):
         return {"status": "error", "error": "invalid_customer_id", "studentName": student_name, "month": month}
