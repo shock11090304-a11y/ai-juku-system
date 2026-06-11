@@ -140,6 +140,9 @@
     const resendEmail = document.getElementById('resendEmail');
     const resendMsg = document.getElementById('resendMsg');
 
+    // サーバ detail を innerHTML に入れる前の HTML エスケープ (XSS 防御の統一)
+    const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
     function showError(msg, linkHtml = '') {
       emoji.textContent = '⚠️';
       emoji.className = 'auth-emoji error';
@@ -187,7 +190,7 @@
             const data = await r.json().catch(() => ({}));
             if (data.trial_expired) {
               // 体験期間終了時はサーバが 200 を返すがメールは送信していない → 継続登録へ誘導
-              showResendMsg('error', '⚠️ ' + (data.message || '体験期間が終了しています。継続をご希望の方は本登録をお願いします。') + `<br>👉 <a href="upgrade.html?email=${encodeURIComponent(email)}" style="color:#fecaca;font-weight:700;text-decoration:underline;">継続のお手続き（本登録）はこちら</a>`);
+              showResendMsg('error', '⚠️ ' + esc(data.message || '体験期間が終了しています。継続をご希望の方は本登録をお願いします。') + `<br>👉 <a href="upgrade.html?email=${encodeURIComponent(email)}" style="color:#fecaca;font-weight:700;text-decoration:underline;">継続のお手続き（本登録）はこちら</a>`);
             } else {
               showResendMsg('success', `✅ <strong>${email}</strong> 宛に新しいログインリンクを送信しました。1〜2分で届きます。届かない場合は迷惑メールフォルダもご確認ください。<br><br><a class="auth-btn" href="login.html?email=${encodeURIComponent(email)}" style="margin-top:0.6rem;">🔐 ログインページで6桁コードを入力</a>`);
             }
@@ -195,7 +198,7 @@
             showResendMsg('error', '⚠️ リクエスト過多です。1分ほど時間をおいてお試しください。');
           } else {
             const data = await r.json().catch(() => ({}));
-            showResendMsg('error', `⚠️ ${data.detail || '送信に失敗しました'}。<a href="mailto:info@trillion-ai-juku.com" style="color:#fca5a5;text-decoration:underline;">info@trillion-ai-juku.com</a> までご連絡ください。`);
+            showResendMsg('error', `⚠️ ${esc(data.detail || '送信に失敗しました')}。<a href="mailto:info@trillion-ai-juku.com" style="color:#fca5a5;text-decoration:underline;">info@trillion-ai-juku.com</a> までご連絡ください。`);
           }
         } catch (_e) {
           showResendMsg('error', '⚠️ ネットワークエラーが発生しました。時間をおいてお試しください。');
@@ -218,9 +221,16 @@
           if (res.status === 401) {
             showError('このリンクは <strong>有効期限が切れている</strong>、または既に使用済みです。<br>下のフォームから新しいリンクを再発行できます。', '<br><a class="auth-btn" href="login.html">ログインページへ</a>');
           } else if (res.status === 403) {
-            showError('アカウントが有効ではありません。', '<br><a class="auth-btn" href="mailto:info@trillion-ai-juku.com">お問い合わせ</a>');
+            // 体験期限切れ・解約済み。/api/auth/verify の 403 detail はサーバ固定文字列だが、
+            // innerHTML に入れるため念のためエスケープして表示する。
+            // 403 時点ではメールアドレス不明のため upgrade.html は email パラメータなし。
+            const detail403 = (typeof data.detail === 'string' && data.detail) ? esc(data.detail) : 'アカウントが有効ではありません。';
+            showError(
+              detail403 + '<br>👉 <a href="upgrade.html" style="color:#fecaca;font-weight:700;text-decoration:underline;">継続のお手続き（本登録）はこちら</a>',
+              '<br><a class="auth-btn" href="mailto:info@trillion-ai-juku.com">お問い合わせ</a>'
+            );
           } else {
-            showError(data.detail || 'ログインに失敗しました。');
+            showError(esc(data.detail || 'ログインに失敗しました。'));
           }
           return;
         }
