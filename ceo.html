@@ -5467,6 +5467,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       const otpIssueBtn = document.getElementById('otpIssueBtn');
       const otpIssueQuery = document.getElementById('otpIssueQuery');
       const otpIssueResult = document.getElementById('otpIssueResult');
+      // HTML エスケープ (OTP 発行と LINE 連携コード発行の結果表示で共用)
+      function lineEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
       function renderOtpResult(html, isError) {
         otpIssueResult.style.display = 'block';
         otpIssueResult.style.borderLeft = isError ? '3px solid #f87171' : '3px solid #34d399';
@@ -5481,14 +5483,14 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           });
           const d = await r.json();
           if (!r.ok) {
-            renderOtpResult(`❌ ${d.detail || '発行失敗'}`, true);
+            renderOtpResult(`❌ ${lineEsc(d.detail || '発行失敗')}`, true);
             return;
           }
           if (d.needs_disambiguation) {
-            let html = `<div style="color:#fbbf24;font-weight:700;margin-bottom:0.4rem;">⚠️ ${d.message}</div>`;
+            let html = `<div style="color:#fbbf24;font-weight:700;margin-bottom:0.4rem;">⚠️ ${lineEsc(d.message)}</div>`;
             html += '<div style="display:flex;flex-direction:column;gap:0.3rem;">';
             d.candidates.forEach(s => {
-              html += `<button type="button" data-sid="${s.id}" class="otp-candidate-btn" style="text-align:left;padding:0.45rem 0.6rem;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.4);border-radius:5px;color:#a5b4fc;font-family:inherit;font-size:0.76rem;cursor:pointer;">#${s.id} ${s.name} &lt;${s.email}&gt; (${s.status})</button>`;
+              html += `<button type="button" data-sid="${s.id}" class="otp-candidate-btn" style="text-align:left;padding:0.45rem 0.6rem;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.4);border-radius:5px;color:#a5b4fc;font-family:inherit;font-size:0.76rem;cursor:pointer;">#${s.id} ${lineEsc(s.name)} &lt;${lineEsc(s.email)}&gt; (${lineEsc(s.status)})</button>`;
             });
             html += '</div>';
             renderOtpResult(html, false);
@@ -5501,22 +5503,22 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           const otp = d.otp;
           const url = d.direct_login_url;
           const html = `
-            <div style="color:#34d399;font-weight:800;margin-bottom:0.5rem;">✅ #${s.id} ${s.name} さま (${s.status})</div>
-            <div style="font-size:0.7rem;color:#a3a3a3;margin-bottom:0.4rem;">登録メアド: ${s.email}</div>
+            <div style="color:#34d399;font-weight:800;margin-bottom:0.5rem;">✅ #${s.id} ${lineEsc(s.name)} さま (${lineEsc(s.status)})</div>
+            <div style="font-size:0.7rem;color:#a3a3a3;margin-bottom:0.4rem;">登録メアド: ${lineEsc(s.email)}</div>
             <div style="background:rgba(0,0,0,0.5);padding:0.8rem;border-radius:8px;text-align:center;margin:0.6rem 0;">
               <div style="font-size:0.7rem;color:#a3a3a3;margin-bottom:0.3rem;">6 桁ログインコード (${d.no_expiry ? '有効期限なし・1 回使うと無効' : (d.ttl_seconds ? Math.round(d.ttl_seconds/60)+' 分有効' : '10 分有効')})</div>
-              <div id="otpCodeDisplay" style="font-size:2rem;font-weight:900;letter-spacing:0.5rem;color:#6ee7b7;font-family:'SF Mono',monospace;">${otp}</div>
+              <div id="otpCodeDisplay" style="font-size:2rem;font-weight:900;letter-spacing:0.5rem;color:#6ee7b7;font-family:'SF Mono',monospace;">${lineEsc(otp)}</div>
               <button type="button" id="otpCopyBtn" style="margin-top:0.4rem;background:rgba(110,231,183,0.2);color:#6ee7b7;border:1px solid rgba(110,231,183,0.4);padding:0.3rem 0.7rem;border-radius:5px;font-size:0.72rem;font-weight:700;cursor:pointer;">📋 コピー</button>
             </div>
             <div style="margin:0.6rem 0;">
               <div style="font-size:0.72rem;color:#a3a3a3;margin-bottom:0.25rem;">📲 ワンクリックログイン URL (LINE で送る):</div>
               <div style="display:flex;gap:0.3rem;align-items:center;">
-                <input type="text" id="otpUrlDisplay" readonly value="${url}" style="flex:1;padding:0.4rem 0.55rem;background:rgba(0,0,0,0.5);border:1px solid rgba(99,102,241,0.3);border-radius:5px;color:#a5b4fc;font-size:0.7rem;font-family:'SF Mono',monospace;">
+                <input type="text" id="otpUrlDisplay" readonly value="${lineEsc(url)}" style="flex:1;padding:0.4rem 0.55rem;background:rgba(0,0,0,0.5);border:1px solid rgba(99,102,241,0.3);border-radius:5px;color:#a5b4fc;font-size:0.7rem;font-family:'SF Mono',monospace;">
                 <button type="button" id="otpUrlCopyBtn" style="background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);padding:0.4rem 0.7rem;border-radius:5px;font-size:0.72rem;font-weight:700;cursor:pointer;white-space:nowrap;">📋 URL コピー</button>
               </div>
             </div>
             <div style="margin-top:0.6rem;padding:0.5rem;background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.3);border-radius:6px;color:#fde68a;font-size:0.72rem;line-height:1.6;">
-              ${d.instructions}
+              ${lineEsc(d.instructions)}
             </div>
           `;
           renderOtpResult(html, false);
@@ -5530,7 +5532,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             try { await navigator.clipboard.writeText(url); urlCopyBtn.textContent = '✅ コピー済'; setTimeout(()=>urlCopyBtn.textContent='📋 URL コピー',1500); } catch(_e){}
           });
         } catch (e) {
-          renderOtpResult(`❌ エラー: ${e.message}`, true);
+          renderOtpResult(`❌ エラー: ${lineEsc(e.message)}`, true);
         }
       }
       if (otpIssueBtn) otpIssueBtn.addEventListener('click', () => {
@@ -5552,7 +5554,6 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       const lineLinkIssueBtn = document.getElementById('lineLinkIssueBtn');
       const lineLinkQuery = document.getElementById('lineLinkQuery');
       const lineLinkIssueResult = document.getElementById('lineLinkIssueResult');
-      function lineEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
       function renderLineLinkResult(html, isError) {
         if (!lineLinkIssueResult) return;
         lineLinkIssueResult.style.display = 'block';
