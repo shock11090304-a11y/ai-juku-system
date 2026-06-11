@@ -50,6 +50,10 @@
         <input type="email" id="email" name="email" required autocomplete="email"
                style="width:100%; padding:0.85rem 1rem; background:rgba(0,0,0,0.3); border:1px solid var(--panel-border); border-radius:10px; color:var(--text); font-size:1rem; font-family:inherit; box-sizing:border-box;"
                placeholder="parent@example.com">
+        <p style="margin:0.4rem 0 0; font-size:0.75rem; color:var(--text-dim, #94a3b8); line-height:1.5;">
+          ご登録時の保護者メール・お子さま用メールのどちらでもお手続きできます。<br>
+          お子さま用メールの場合、決済画面・領収書は保護者の方のメールアドレス宛になります。
+        </p>
 
         <div class="plan-group" id="planGroup">
           <!-- 🎁 創設メンバー (推奨・人気No.1) -->
@@ -100,6 +104,7 @@
 
         <button type="submit" id="submitBtn" class="up-cta">💳 決済画面に進む →</button>
         <div id="errorBox" class="error-box"></div>
+        <div id="infoBox" style="display:none; margin-top:1rem; padding:0.85rem; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3); border-radius:8px; color:#93c5fd; font-size:0.85rem;"></div>
       </form>
 
       <div class="up-foot">
@@ -190,6 +195,31 @@
         });
         const data = await res.json().catch(() => ({}));
         if (res.ok && data.checkout_url) {
+          // checkout-success.html の「ログインコード送信先」表示用メタ (signup フローと同形式)
+          try {
+            sessionStorage.setItem('ai_juku_signup_meta', JSON.stringify({
+              // ⚠️ 必ず入力された平文アドレスを入れる。data.billing_email はマスク済み
+              // (pa***@example.com) で、checkout-success.html の「再送信」ボタンが
+              // この email を /api/auth/magic-link に POST するため、マスク済みだと
+              // 「✅ 再送信しました」と出るのに実際は届かない silent fail になる。
+              // 子メール入力でも magic-link は子メール照合に対応済 (2026-06-12)。
+              // 請求先が保護者メールになる案内は下の infoBox で別途行う。
+              email: email,
+              plan: plan,
+              source: 'upgrade',
+              // checkout-success.html の文言分岐用 (即課金サブスク — 体験文言を出さない)
+              purchase_type: plan === 'student_addon' ? 'student_addon' : 'monthly',
+            }));
+          } catch (_e) { /* private mode 等は無視 */ }
+          // 子メール入力 → 請求先が保護者メールに切り替わる場合は一言案内してから遷移
+          if (data.billing_email_switched && data.billing_email) {
+            const infoBox = document.getElementById('infoBox');
+            infoBox.textContent = `ℹ️ ご請求・領収書は保護者メール (${data.billing_email}) 宛になります。決済画面に進みます…`;
+            infoBox.style.display = 'block';
+            // ボタンの「準備中...」と infoBox の「進みます」が矛盾しないよう文言を揃える
+            btn.textContent = '✅ まもなく決済画面へ移動します…';
+            await new Promise(r => setTimeout(r, 2500));
+          }
           window.location.href = data.checkout_url;
         } else {
           // 422 (validation) / 400 / 403 / 500 すべて読める文字列に変換

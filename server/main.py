@@ -22967,8 +22967,22 @@ def create_trial_checkout(payload: dict):
     }
 
 
+def _mask_email_for_display(addr: str) -> str:
+    """メールアドレスをマスク表示用に変換 (pa***@example.com)。
+    checkout 応答で平文の親メールを返すと「子メール → 親メール」の無認証開示オラクルに
+    なるため、API 応答には必ずマスク済みを載せる (2026-06-12 review 指摘)。"""
+    try:
+        local, _, domain = (addr or "").partition("@")
+        if not local or not domain:
+            return ""
+        keep = 2 if len(local) >= 3 else 1
+        return local[:keep] + "***@" + domain
+    except Exception:
+        return ""
+
+
 @app.post("/api/stripe/checkout")
-def create_checkout_session(payload: CheckoutRequest):
+def create_checkout_session(payload: CheckoutRequest, request: Request):
     """
     新プラン構造でのチェックアウト:
     - 創設メンバープラン (founder_special): 永年¥14,500/月 (50名限定・全機能無制限)
@@ -22976,39 +22990,62 @@ def create_checkout_session(payload: CheckoutRequest):
     - 通塾生プラン (student_addon): ¥5,000/月・**招待コード必須** (HMAC トークン)
     - 体験は別途 /api/stripe/trial-checkout で 14日間 完全無料 (Stripe を経由しない)
     """
+    # 🛡️ 2026-06-12 review 指摘: この endpoint は未認証なのに rate limit が無く、
+    # 400/200 の応答差で登録済みアドレス (親+子) を無制限列挙できた。verify-code と同水準に制限。
+    _check_rate_limit_ip(request, bucket="checkout", limit=10, window=60)
+
     price_info = PRICE_MAP.get(payload.plan)
     if not price_info:
         raise HTTPException(status_code=400, detail=f"Invalid plan: {payload.plan}")
     price_id, amount, plan_name, max_students = price_info
 
+    # 子メール → 親メール差し替えの追跡 (応答の billing_email_switched と invite 照合で使用)
+    _input_email_lower = (payload.email or "").strip().lower()
+    _billing_email_switched = False
+
     # 🔧 2026-05-07: name 空で来た場合 (upgrade.html 継続登録) は email から既存生徒を lookup
     # → trial 中に登録した name を DB から復元 (顧客 wrmama10 が [object Object] 報告した
     # 致命バグの根本対策)
+    # 🔑 2026-06-12: 子メール (student_email) でも照合する。login.html/auth.html の体験期限切れ
+    #   導線は生徒が入力したアドレス (子メールあり得る) を upgrade.html に prefill するが、
+    #   旧 lookup は親 email のみ対象で 400 になっていた (2026-06-11 review 指摘)。
+    #   verify-code / magic-link と完全に同一の条件・順序で照合し、ログインと checkout が
+    #   同じ生徒を選ぶことを保証する (親メール一致を優先)。
     payload_name = (payload.name or "").strip()
     if not payload_name:
         try:
+            _email_lower = (payload.email or "").strip().lower()
             _conn_lookup = db()
             _c_lookup = _conn_lookup.cursor()
             _c_lookup.execute(
-                "SELECT id, name FROM students WHERE LOWER(email) = LOWER(?) ORDER BY id DESC LIMIT 1",
-                (payload.email,),
+                "SELECT id, name, email FROM students "
+                "WHERE LOWER(email) = ? OR LOWER(COALESCE(student_email, '')) = ? "
+                "ORDER BY CASE WHEN LOWER(email) = ? THEN 0 ELSE 1 END, id LIMIT 1",
+                (_email_lower, _email_lower, _email_lower),
             )
             _row_lookup = _c_lookup.fetchone()
             _conn_lookup.close()
             if _row_lookup and _row_lookup["name"]:
                 payload_name = (_row_lookup["name"] or "").strip()
                 # student_id も埋めておく (後続の re-checkout 判定や履歴継承で使う)
-                if not payload.student_id and _row_lookup.get("id"):
+                if not payload.student_id and _row_lookup["id"]:
                     payload.student_id = _row_lookup["id"]
+                # 子メール一致だった場合は親メール (students.email) に差し替えて Stripe に渡す。
+                # 領収書・督促メールは契約者 (保護者) に届けるべきで、子メールを Stripe の
+                # customer email にすると invoice reconcile 等の email fallback (LOWER(email)
+                # = 親メール前提) からも外れるため。webhook 紐付け自体は metadata.student_id で行う。
+                _parent_email = (_row_lookup["email"] or "").strip()
+                if _parent_email and _parent_email.lower() != _email_lower:
+                    payload.__dict__["email"] = _parent_email
+                    _billing_email_switched = True
+                    log.info(f"[Checkout] student_email matched: billing email switched to parent (student_id={payload.student_id})")
                 # 2026-05-07: PII reduction (Round 2 audit) — name を log に出さない
                 log.info(f"[Checkout] name lookup ok: email={payload.email} student_id={payload.student_id} (name resolved from DB)")
             else:
-                # 既存生徒が見つからない (新規ユーザが name 抜きで来た / 子メール・typo で照合失敗) → 親切なエラー
-                # 子メール (student_email) はこの lookup の対象外のため、保護者メールへの誘導を明示する
-                # (login.html の trial_expired 導線が子メールを prefill してここに到達し得る・2026-06-11 review 指摘)
+                # 既存生徒が見つからない (新規ユーザが name 抜きで来た / typo で照合失敗) → 親切なエラー
                 raise HTTPException(
                     status_code=400,
-                    detail="ご登録情報が見つかりませんでした。お子さま用ではなく、ご登録の保護者メールアドレスでお試しください。新規の方は LP (新規登録) からお手続きをお願いいたします。"
+                    detail="ご登録情報が見つかりませんでした。ご登録済みのメールアドレス (保護者の方のアドレス、またはお子さま用アドレス) でお試しください。新規の方は LP (新規登録) からお手続きをお願いいたします。"
                 )
         except HTTPException:
             raise
@@ -23031,7 +23068,12 @@ def create_checkout_session(payload: CheckoutRequest):
         try:
             _conn_pc = db()
             _c_pc = _conn_pc.cursor()
-            _c_pc.execute("SELECT status FROM students WHERE id = ? AND email = ?", (payload.student_id, payload.email.lower().strip()))
+            # 🔑 2026-06-12: 子メール (student_email) 一致も許可 — name 入力ありで lookup を
+            # 通らず子メールのまま来る経路 (checkout.js 等) でも既存 paid 判定が成立するように
+            _c_pc.execute(
+                "SELECT status FROM students WHERE id = ? AND (LOWER(email) = ? OR LOWER(COALESCE(student_email, '')) = ?)",
+                (payload.student_id, (payload.email or "").lower().strip(), (payload.email or "").lower().strip()),
+            )
             _row_pc = _c_pc.fetchone()
             if _row_pc and _row_pc["status"] == "paid":
                 _is_existing_paid_student = True
@@ -23057,9 +23099,12 @@ def create_checkout_session(payload: CheckoutRequest):
             }.get(reason, "招待コードが無効です。")
             raise HTTPException(status_code=403, detail=err_msg)
         # invite token の email と payload.email の一致を検証 (他人の招待を流用させない)
+        # 🔑 2026-06-12: 差し替え前の元入力アドレスとの一致も許可。招待が子メール宛に発行され、
+        # 生徒が子メールを入力した場合、lookup の親メール差し替え後に照合すると「入力した
+        # まさにそのアドレスで申し込め」という自己矛盾 403 ループになるため (review 指摘)。
         invite_email = (invite_check.get("email") or "").strip().lower()
         payload_email = (payload.email or "").strip().lower()
-        if invite_email and payload_email and invite_email != payload_email:
+        if invite_email and payload_email and invite_email != payload_email and invite_email != _input_email_lower:
             log.warning(f"[Checkout] student_addon invite_code email mismatch: invite={invite_email} payload={payload_email}")
             raise HTTPException(
                 status_code=403,
@@ -23106,28 +23151,42 @@ def create_checkout_session(payload: CheckoutRequest):
 
     # student_id が指定されている場合、email との一致を検証する。
     # これをしないと連番IDで他生徒の stripe_customer_id を上書きでき、課金を奪える。
+    # 🔑 2026-06-12: 子メール (student_email) 一致も許可 — ログイン (magic-link/verify-code) と
+    #   同じ照合面。子メールはログインに使える = 当該生徒のアカウントに到達できるアドレスのため、
+    #   ここだけ弾いても防御にならない。子メール一致で通過した場合は Stripe へ親メールで渡す
+    #   (領収書/督促の宛先・invoice reconcile の email fallback との一貫性)。
     if payload.student_id:
         conn_ck = db()
         c_ck = conn_ck.cursor()
-        c_ck.execute("SELECT email FROM students WHERE id = ?", (payload.student_id,))
+        c_ck.execute("SELECT email, student_email FROM students WHERE id = ?", (payload.student_id,))
         _row_ck = c_ck.fetchone()
         conn_ck.close()
         if not _row_ck:
             raise HTTPException(status_code=404, detail="Student not found")
-        if (_row_ck["email"] or "").lower() != (payload.email or "").lower():
+        _ck_parent = (_row_ck["email"] or "").strip().lower()
+        _ck_child = (_row_ck["student_email"] or "").strip().lower()
+        _ck_payload = (payload.email or "").strip().lower()
+        if _ck_payload != _ck_parent and (not _ck_child or _ck_payload != _ck_child):
             raise HTTPException(status_code=403, detail="student_id/email mismatch")
+        if _ck_payload != _ck_parent and _ck_parent:
+            payload.__dict__["email"] = (_row_ck["email"] or "").strip()
+            _billing_email_switched = True
+            log.info(f"[Checkout] student_email matched at id-check: billing email switched to parent (student_id={payload.student_id})")
 
     if not STRIPE_SECRET_KEY:
         # Mock mode: return fake checkout URL（API key未設定時のデモ用）
         return {
             "mock": True,
-            "checkout_url": f"{BASE_URL}/checkout-success.html?session_id=mock_{payload.plan}",
+            "checkout_url": f"{BASE_URL}/checkout-success.html?session_id=mock_{payload.plan}&purchase={'student_addon' if payload.plan == 'student_addon' else 'monthly'}",
             "plan": payload.plan,
             "plan_name": plan_name,
             "amount": amount,
             "max_students": max_students,
             "enrollment_fee": ENROLLMENT_FEE if payload.plan not in ENROLLMENT_FEE_EXEMPT else 0,
             "trial_fee": FOUNDER_TRIAL_PRICE if payload.plan != "student_addon" else 0,
+            # 子メール入力 → 親メール差し替え後の請求先 (マスク済・フロント表示用)
+            "billing_email": _mask_email_for_display(str(payload.email or "")),
+            "billing_email_switched": _billing_email_switched,
             "note": "Stripe API key未設定。ENVに STRIPE_SECRET_KEY を設定すると実際の決済画面に誘導されます。"
         }
 
@@ -23154,6 +23213,9 @@ def create_checkout_session(payload: CheckoutRequest):
             "plan_name": plan_name,
             "monthly_fee": amount,
             "enrollment_fee": 0,
+            # 子メール入力 → 親メール差し替え後の請求先 (マスク済。Stripe checkout には平文で prefill される)
+            "billing_email": _mask_email_for_display(str(payload.email or "")),
+            "billing_email_switched": _billing_email_switched,
         }
 
     # 継続本契約: 月額サブスク。トライアル無し（即時課金）。
@@ -23236,6 +23298,9 @@ def create_checkout_session(payload: CheckoutRequest):
         "trial_fee": FOUNDER_TRIAL_PRICE,
         "enrollment_fee": ENROLLMENT_FEE if payload.plan not in ENROLLMENT_FEE_EXEMPT else 0,
         "max_students": max_students,
+        # 子メール入力 → 親メール差し替え後の請求先 (マスク済。Stripe checkout には平文で prefill される)
+        "billing_email": _mask_email_for_display(str(payload.email or "")),
+        "billing_email_switched": _billing_email_switched,
     }
 
 
@@ -23747,11 +23812,11 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
         # 429 / 一時エラー対応: _send_magic_link_with_retry を使用 (trial_signup と DRY 統一)
         try:
             if student_id and student_id != "":
-                c.execute("SELECT id, name, email FROM students WHERE id=?", (student_id,))
+                c.execute("SELECT id, name, email, student_email FROM students WHERE id=?", (student_id,))
             elif email:
-                c.execute("SELECT id, name, email FROM students WHERE email=?", (email,))
+                c.execute("SELECT id, name, email, student_email FROM students WHERE email=?", (email,))
             else:
-                c.execute("SELECT id, name, email FROM students WHERE 1=0")
+                c.execute("SELECT id, name, email, student_email FROM students WHERE 1=0")
             s_row = c.fetchone()
             if s_row and s_row["email"]:
                 # 既存 OTP を無効化してから新発行 (重複コード混乱防止)
@@ -23765,6 +23830,29 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                 # ログイン案内が直前の再送連打などでスキップされる事故の方が実害が大きい。
                 _wresult = _send_magic_link_with_retry(s_row["email"], s_row["name"] or "", _magic_url, otp_code=_otp_code, is_welcome=True,
                                                         bypass_recipient_cap=True)
+                # 🔑 2026-06-12: 子メール (student_email) にも同じリンク/コードを併送。
+                # 子メールで checkout した生徒は領収書も welcome も親宛のみで「自分の受信箱に
+                # 何も届かない」誤報告になるため (request_magic_link の親+子デュアル送信と対称)。
+                _child_sent = None
+                _child_blocked = False
+                try:
+                    _child_email = ((s_row["student_email"] if "student_email" in s_row.keys() else "") or "").strip()
+                    if _child_email and _child_email.lower() != (s_row["email"] or "").lower():
+                        # 他生徒の親 email と衝突するレガシーデータは送信しない (誤配防止・magic-link 側と同方針)
+                        c.execute("SELECT 1 FROM students WHERE LOWER(email) = ? LIMIT 1", (_child_email.lower(),))
+                        if c.fetchone():
+                            _child_blocked = True
+                            log.warning(f"[Webhook] welcome 子メール送信 skip (他生徒の親emailと衝突) student_id={s_row['id']}")
+                        else:
+                            # cap bypass は親と同じ理屈 (決済トリガーで乱発不可・直前の再送連打で
+                            # スキップされると「子の受信箱に何も来ない」が再発するため)。
+                            # max_attempts=1: 子宛は副本のため、Resend 障害時に webhook の同期
+                            # ブロッキングを親 (~33s) からさらに倍増させない (review MEDIUM)。
+                            _child_result = _send_magic_link_with_retry(_child_email, s_row["name"] or "", _magic_url, otp_code=_otp_code, is_welcome=True,
+                                                                        max_attempts=1, bypass_recipient_cap=True) or {}
+                            _child_sent = bool(_child_result.get("sent"))
+                except Exception as _ce:
+                    log.warning(f"[Webhook] welcome 子メール送信 failed: {_ce}")
                 # 監視: signup_email_status と統一フォーマットで記録
                 try:
                     _conn_e = db()
@@ -23777,6 +23865,8 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                                 "student_id": s_row["id"],
                                 "email_sent": bool(_wresult.get("sent")),
                                 "error": (_wresult.get("error") or "")[:200] if not _wresult.get("sent") else None,
+                                "student_email_sent": _child_sent,
+                                "student_email_blocked": _child_blocked or None,
                                 "source": "stripe_webhook",
                             }, ensure_ascii=False),
                             f"student:{s_row['id']}",
