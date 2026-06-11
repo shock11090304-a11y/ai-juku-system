@@ -5370,18 +5370,18 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           const d = await r.json();
           let html = '';
           // API キー状態
-          html += `<div style="margin-bottom:0.4rem;">🔑 API キー: ${d.api_key_valid ? '<span style="color:#34d399;">✅ 有効</span>' : '<span style="color:#f87171;">❌ 無効</span>'}${d.api_key_error ? ' — ' + d.api_key_error : ''}</div>`;
-          html += `<div style="margin-bottom:0.4rem;">📧 FROM: <code style="background:rgba(255,255,255,0.1);padding:0.15rem 0.3rem;border-radius:3px;">${d.from_email || '未設定'}</code></div>`;
+          html += `<div style="margin-bottom:0.4rem;">🔑 API キー: ${d.api_key_valid ? '<span style="color:#34d399;">✅ 有効</span>' : '<span style="color:#f87171;">❌ 無効</span>'}${d.api_key_error ? ' — ' + lineEsc(d.api_key_error) : ''}</div>`;
+          html += `<div style="margin-bottom:0.4rem;">📧 FROM: <code style="background:rgba(255,255,255,0.1);padding:0.15rem 0.3rem;border-radius:3px;">${lineEsc(d.from_email) || '未設定'}</code></div>`;
           // ドメイン状態
           const ds = d.domain_status || 'unknown';
           const domainOk = ds === 'verified' || ds === 'active';
           const domainColor = domainOk ? '#34d399' : ds === 'resend_default_sender' ? '#fbbf24' : '#f87171';
-          html += `<div style="margin-bottom:0.4rem;">🌐 ドメイン: <span style="color:${domainColor};font-weight:700;">${ds}</span></div>`;
+          html += `<div style="margin-bottom:0.4rem;">🌐 ドメイン: <span style="color:${domainColor};font-weight:700;">${lineEsc(ds)}</span></div>`;
           if (d.domains && d.domains.length) {
             html += '<div style="margin-bottom:0.4rem;padding-left:1rem;">';
             d.domains.forEach(dm => {
               const ok = dm.status === 'verified' || dm.status === 'active';
-              html += `<div>${ok ? '✅' : '❌'} ${dm.name} — ${dm.status}</div>`;
+              html += `<div>${ok ? '✅' : '❌'} ${lineEsc(dm.name)} — ${lineEsc(dm.status)}</div>`;
             });
             html += '</div>';
           }
@@ -5415,7 +5415,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
                 const hint = e.email_hint ? ` ${e.email_hint}` : '';
                 const sid = e.student_id ? ` student#${e.student_id}` : '';
                 const errTxt = e.error || e.reason || 'unknown';
-                html += `<div style="padding-left:1rem;color:#fca5a5;font-size:0.72rem;word-break:break-all;">• ${eventLabel}${sid}${hint}: ${errTxt} <span style="color:#71717a;">(${e.created_at})</span></div>`;
+                html += `<div style="padding-left:1rem;color:#fca5a5;font-size:0.72rem;word-break:break-all;">• ${eventLabel}${sid}${lineEsc(hint)}: ${lineEsc(errTxt)} <span style="color:#71717a;">(${lineEsc(e.created_at)})</span></div>`;
               });
             }
           }
@@ -5449,16 +5449,16 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
                   });
                   const tj = await tr.json();
                   document.getElementById('emailTestResult').innerHTML = tj.sent
-                    ? `<span style="color:#34d399;">✅ 送信成功 (${tj.resend_id})</span>`
-                    : `<span style="color:#f87171;">❌ 失敗: ${tj.error}</span>`;
-                } catch (e) { document.getElementById('emailTestResult').innerHTML = `<span style="color:#f87171;">❌ ${e.message}</span>`; }
+                    ? `<span style="color:#34d399;">✅ 送信成功 (${lineEsc(tj.resend_id)})</span>`
+                    : `<span style="color:#f87171;">❌ 失敗: ${lineEsc(tj.error)}</span>`;
+                } catch (e) { document.getElementById('emailTestResult').innerHTML = `<span style="color:#f87171;">❌ ${lineEsc(e.message)}</span>`; }
                 tsBtn.disabled = false; tsBtn.textContent = '📨 テスト送信 (自分宛)';
               });
             }, 100);
           }
           resultDiv.innerHTML = html;
         } catch (e) {
-          resultDiv.innerHTML = `<span style="color:#f87171;">❌ 診断失敗: ${e.message}</span>`;
+          resultDiv.innerHTML = `<span style="color:#f87171;">❌ 診断失敗: ${lineEsc(e.message)}</span>`;
         }
         emailDiagBtn.disabled = false; emailDiagBtn.textContent = '🩺 メール診断';
       });
@@ -5467,7 +5467,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       const otpIssueBtn = document.getElementById('otpIssueBtn');
       const otpIssueQuery = document.getElementById('otpIssueQuery');
       const otpIssueResult = document.getElementById('otpIssueResult');
-      // HTML エスケープ (OTP 発行と LINE 連携コード発行の結果表示で共用)
+      // HTML エスケープ (メール診断・OTP 発行・LINE 連携コード発行の結果表示で共用 — 上の診断ハンドラからは function 巻き上げで参照)
       function lineEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
       function renderOtpResult(html, isError) {
         otpIssueResult.style.display = 'block';
