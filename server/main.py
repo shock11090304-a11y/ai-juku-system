@@ -4157,9 +4157,13 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
     try:
         c = conn.cursor()
         c.execute(
+            # 2026-06-11 (ミニ診断対応): 件数同点なら正答率が低い単元を優先する tie-break を追加
+            # (診断は全単元 2 問ずつ = 同数のため、これで間違えた単元が上位に立つ)。
+            # ⚠ avg>=0.8 の WHERE 除外は review で取り止め: avg_confidence_score には AIチューターの
+            # 「AI 自身の解答自信度」(≈1.0) も混入しており、写真質問由来の弱点を誤って消すため。
             "SELECT subject, topic, question_count, avg_confidence_score, last_seen_at "
             "FROM student_weakness WHERE student_id = ? "
-            "ORDER BY question_count DESC, last_seen_at DESC LIMIT ?",
+            "ORDER BY question_count DESC, COALESCE(avg_confidence_score, 0.5) ASC, last_seen_at DESC LIMIT ?",
             (student_id, limit),
         )
         rows = c.fetchall()
@@ -32425,7 +32429,10 @@ def admin_grammar_drill_list(
     try:
         c = conn.cursor()
         c.execute(
+            # 生徒の自己発行ミニ診断 (created_by='diagnostic') は除外 (2026-06-11):
+            # 生徒数分の「🔰 実力チェック」行が CEO の配信ドリル一覧 TOP50 を押し出すのを防ぐ
             "SELECT id, title, unit, level, question_ids, created_at FROM grammar_drills "
+            "WHERE COALESCE(created_by, 'admin') != 'diagnostic' "
             "ORDER BY created_at DESC, id DESC LIMIT ?",
             (limit,),
         )
@@ -32656,6 +32663,128 @@ def student_grammar_drills(request: Request, authorization: Optional[str] = Head
         conn.close()
 
 
+# 🔰 はじめての実力チェック (3分ミニ診断・2026-06-11 塾長指示「自走に必要なもの」)
+# 新規生徒の学力を測る placement が無く、コーチの一手の演習推薦が固定レベルだった問題への対応。
+# 主要 5 単元 × 2 問 (基礎+標準) = 10 問を既存 grammar_questions バンクから自動編成し、
+# 既存のドリル UI / 採点 / question_attempts / 弱点集計をそのまま再利用する (新規 UI なし)。
+_DIAGNOSTIC_UNIT_PREFS = ["時制", "関係詞", "仮定法", "不定詞", "比較", "受動態", "助動詞", "接続詞", "分詞", "動名詞"]
+_DIAGNOSTIC_UNIT_LABEL = "診断"  # grammar_drills.unit のマーカー (submit 側の即時集計トリガーと対応)
+
+
+@app.post("/api/student/diagnostic/start")
+def student_diagnostic_start(request: Request, authorization: Optional[str] = Header(None)):
+    """🔰 生徒: ミニ診断ドリルを自己発行する (1 人 1 回・冪等)。
+
+    - 既に open の診断があればそれを返す / completed 済なら already_completed を返す (再発行しない)
+    - 単元選定: _DIAGNOSTIC_UNIT_PREFS の先頭から「基礎+標準が 1 問ずつ取れる単元」を 5 つ採用。
+      レベル別在庫が無い単元は任意レベル 2 問で代替。3 単元未満しか組めない場合は 503。
+    - 出題は既存の grammar_drill フロー (一覧/取得/提出/採点/弱点集計) に乗る。
+    """
+    _check_rate_limit_ip(request, bucket="diagnostic_start", limit=10, window=60)
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 冪等: 既存の診断 assignment を確認 (open なら再利用・completed なら再発行しない)
+        c.execute(
+            "SELECT a.drill_id, a.status FROM grammar_drill_assignments a "
+            "JOIN grammar_drills d ON d.id = a.drill_id "
+            "WHERE a.student_id = ? AND d.created_by = 'diagnostic' "
+            "ORDER BY a.assigned_at DESC LIMIT 1",
+            (student["id"],),
+        )
+        existing = c.fetchone()
+        if existing:
+            if existing["status"] == "completed":
+                return {"ok": True, "already_completed": True, "drill_id": existing["drill_id"]}
+            return {"ok": True, "drill_id": existing["drill_id"], "reused": True}
+
+        # 単元選定 + 出題固定 (1 単元 = 基礎 1 + 標準 1。無ければ任意レベル 2 問)
+        picked_qids = []
+        picked_units = []
+        for u in _DIAGNOSTIC_UNIT_PREFS:
+            if len(picked_units) >= 5:
+                break
+            unit_qids = []
+            for lv in ("basic", "standard"):
+                c.execute(
+                    "SELECT id FROM grammar_questions WHERE unit = ? AND level = ? AND active = 1 "
+                    "ORDER BY RANDOM() LIMIT 1",
+                    (u, lv),
+                )
+                r = c.fetchone()
+                if r:
+                    unit_qids.append(r["id"])
+            if len(unit_qids) < 2:
+                # レベル別に揃わない単元は任意レベルで 2 問 (それも無ければこの単元はスキップ)
+                c.execute(
+                    "SELECT id FROM grammar_questions WHERE unit = ? AND active = 1 "
+                    "ORDER BY RANDOM() LIMIT 2",
+                    (u,),
+                )
+                unit_qids = [r["id"] for r in c.fetchall()]
+            if len(unit_qids) >= 2:
+                picked_qids.extend(unit_qids[:2])
+                picked_units.append(u)
+        if len(picked_units) < 3:
+            raise HTTPException(status_code=503, detail="診断用の問題在庫が不足しています (塾長に連絡してください)")
+
+        title = f"🔰 はじめての実力チェック（{len(picked_qids)}問・約3分）"
+        c.execute(
+            "INSERT INTO grammar_drills (title, unit, level, question_ids, created_by) "
+            "VALUES (?, ?, 'basic,standard', ?, 'diagnostic') RETURNING id",
+            (title, _DIAGNOSTIC_UNIT_LABEL, json.dumps(picked_qids)),
+        )
+        dr = c.fetchone()
+        drill_id = (dr["id"] if hasattr(dr, "keys") else dr[0]) if dr else None
+        if not drill_id:
+            conn.rollback()
+            raise HTTPException(status_code=500, detail="診断の作成に失敗しました")
+        c.execute(
+            "INSERT INTO grammar_drill_assignments (drill_id, student_id, status) VALUES (?, ?, 'open')",
+            (drill_id, student["id"]),
+        )
+        conn.commit()
+        # 🛡️ 並行リクエスト対策 (review B1・claim-after-check): SELECT→INSERT の窓で二重発行された場合、
+        # 最古 (id 最小) の診断を勝者とし、自分が勝者でなければ自分を取り消して勝者を返す。
+        # 両リクエストとも同じ勝者を観測するため診断は必ず 1 つに収束する。
+        try:
+            c.execute(
+                "SELECT a.drill_id FROM grammar_drill_assignments a JOIN grammar_drills d ON d.id = a.drill_id "
+                "WHERE a.student_id = ? AND d.created_by = 'diagnostic' ORDER BY a.id ASC LIMIT 1",
+                (student["id"],),
+            )
+            first = c.fetchone()
+            if first and first["drill_id"] != drill_id:
+                c.execute("DELETE FROM grammar_drill_assignments WHERE drill_id = ? AND student_id = ?", (drill_id, student["id"]))
+                c.execute("DELETE FROM grammar_drills WHERE id = ? AND created_by = 'diagnostic'", (drill_id,))
+                conn.commit()
+                return {"ok": True, "drill_id": first["drill_id"], "reused": True}
+        except Exception as _race_e:
+            log.warning(f"[diagnostic_start] race check failed (non-fatal): {_race_e}")
+        log.info(f"[diagnostic_start] student={student['id']} drill={drill_id} units={picked_units}")
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("diagnostic_started", json.dumps({"student_id": student["id"], "drill_id": drill_id, "units": picked_units}, ensure_ascii=False), f"student_{student['id']}"),
+            )
+            conn.commit()
+        except Exception:
+            pass
+        return {"ok": True, "drill_id": drill_id, "title": title, "units": picked_units}
+    except HTTPException:
+        raise
+    except Exception as e:
+        try: conn.rollback()
+        except Exception: pass
+        log.error(f"[diagnostic_start] failed: {e}")
+        raise HTTPException(status_code=500, detail="診断の作成に失敗しました")
+    finally:
+        conn.close()
+
+
 @app.get("/api/student/grammar-drill/{drill_id}")
 def student_grammar_drill_get(drill_id: int, request: Request, authorization: Optional[str] = Header(None)):
     """🎓 生徒: ドリルの問題を取得 (解答用)。未完了なら answer/explanation は隠す。完了済みなら復習用に開示。"""
@@ -32759,14 +32888,16 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
         qmap = {}
         if qids:
             ph = ",".join(["?"] * len(qids))
-            c.execute(f"SELECT id, stem, choices, answer, explanation FROM grammar_questions WHERE id IN ({ph})", tuple(qids))
+            # unit は 2026-06-11 追加: 横断ミニ診断 (drill.unit='診断') では設問ごとに単元が異なるため、
+            # 弱点集計 (question_attempts.topic) を設問自身の単元で記録する
+            c.execute(f"SELECT id, unit, stem, choices, answer, explanation FROM grammar_questions WHERE id IN ({ph})", tuple(qids))
             for r in c.fetchall():
                 qmap[r["id"]] = r
 
         results = []
         correct_count = 0
         now_iso = datetime.now(timezone.utc).isoformat()
-        attempts = []  # (eq_id, is_correct) for question_attempts
+        attempts = []  # (eq_id, is_correct, q_unit) for question_attempts (2026-06-11 設問単元を追加)
         norm_answers = {}  # 保存用 (str key)
         for idx, qid in enumerate(qids, 1):
             q = qmap.get(qid)
@@ -32787,9 +32918,15 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
                 choices = json.loads(q["choices"])
             except Exception:
                 choices = []
+            # 設問自身の単元 (通常ドリルは drill.unit と同一・診断ドリルのみ混在)
+            try:
+                q_unit = q["unit"] or unit
+            except (KeyError, TypeError, IndexError):
+                q_unit = unit
             results.append({
                 "no": idx,
                 "question_id": qid,
+                "unit": q_unit,  # フロントの復習カード連携 (topic) 用 (2026-06-11)
                 "stem": q["stem"],
                 "choices": choices,
                 "your_answer": chosen,
@@ -32797,7 +32934,7 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
                 "is_correct": is_correct,
                 "explanation": q["explanation"],
             })
-            attempts.append((qid, 1 if is_correct else 0))
+            attempts.append((qid, 1 if is_correct else 0, q_unit))
 
         total = len(results)  # 実在問題数 (削除済みを除く・表示数と一致)
         # assignment 更新
@@ -32813,17 +32950,28 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
             raise HTTPException(status_code=409, detail="このドリルは既に提出済みです")
         conn.commit()
         # question_attempts に記録 (source=grammar_drill・既存の弱点集計に乗せる)
+        # topic は設問自身の単元 (2026-06-11): 横断ミニ診断で単元別の弱点が正しく立つように
         try:
-            for (eq_id, is_corr) in attempts:
-                meta = json.dumps({"drill_id": drill_id, "unit": unit}, ensure_ascii=False)
+            for (eq_id, is_corr, q_unit) in attempts:
+                meta = json.dumps({"drill_id": drill_id, "unit": q_unit, "drill_unit": unit}, ensure_ascii=False)
                 c.execute(
                     "INSERT INTO question_attempts (student_id, source, exam_question_id, subject, topic, "
                     "is_correct, score_got, score_max, metadata, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                    (student["id"], "grammar_drill", eq_id, "english", unit, is_corr, is_corr, 1, meta, now_iso),
+                    (student["id"], "grammar_drill", eq_id, "english", q_unit, is_corr, is_corr, 1, meta, now_iso),
                 )
             conn.commit()
         except Exception as e:
             log.warning(f"[grammar_drill_submit] question_attempts INSERT failed (non-fatal): {e}")
+        # 🔰 ミニ診断 (unit='診断') の提出直後は弱点集計を即時実行 (2026-06-11):
+        # 翌朝 4:00 の日次 cron を待たずに弱点 TOP3 / コーチの一手 / プリント推薦へ反映する。
+        # 全体集計だが在籍規模では軽量 (失敗しても提出自体は成功扱い・cron が翌朝拾う)
+        if unit == "診断":
+            try:
+                _t0 = time.time()
+                _agg = _run_weakness_aggregation()
+                log.info(f"[grammar_drill_submit] diagnostic instant aggregation: {_agg.get('students_processed')} students in {time.time()-_t0:.1f}s")
+            except Exception as e:
+                log.warning(f"[grammar_drill_submit] diagnostic aggregation failed (non-fatal): {e}")
         # 監査 events
         try:
             c.execute(

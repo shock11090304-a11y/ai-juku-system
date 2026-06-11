@@ -4608,6 +4608,52 @@ async function initGrammarDrillSection() {
   }
 
   // 提出 (POST /api/student/grammar-drill/{id}/submit)
+  // 🔰 コーチの今日の一手から診断ドリルを直接開くための公開フック (2026-06-11)
+  window._gdOpenDrill = openDrill;
+  window._gdReloadList = loadList;
+
+  // 採点結果 → LB 復習カード同期 (誤答のみ新規カード化・正解は既存カードの前進のみ)
+  function _gdSyncResultsToReview(res) {
+    if (!window.LB || !window.LB.recordAttempt) return;
+    const results = (res && res.results) || [];
+    if (!results.length) return;
+    let sid = 'guest';
+    try {
+      const s = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null');
+      if (s && s.id != null) sid = s.id;
+    } catch (_) { /* noop */ }
+    const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+    results.forEach(function (r) {
+      try {
+        const choices = Array.isArray(r.choices) ? r.choices : [];
+        const problem = String(r.stem || '') + '\n' +
+          choices.map(function (cTxt, i) { return '(' + (letters[i] || (i + 1)) + ') ' + cTxt; }).join('\n');
+        const ci = (r.correct_answer == null) ? null : Number(r.correct_answer);
+        const answer = (ci != null && letters[ci] ? '(' + letters[ci] + ') ' : '') + (ci != null ? (choices[ci] || '') : '');
+        const key = ('英語__' + problem).slice(0, 200);
+        if (!r.is_correct) {
+          LB.recordAttempt(sid, {
+            key: key,
+            subject: '英語',
+            topic: (r.unit || '英文法').toString(),
+            problem: problem.slice(0, 1200),
+            answer: answer,
+            explanation: String(r.explanation || ''),
+          }, false);
+        } else {
+          // 既存カード (過去に間違えた同一問題) のみ前進。
+          // ⚠ LB.markCard はカード不在だと alert を出すため、存在を確認してから呼ぶ
+          let exists = false;
+          try {
+            const cardsRaw = localStorage.getItem('ai_juku_lb__' + sid + '__cards');
+            exists = !!(cardsRaw && JSON.parse(cardsRaw)[key]);
+          } catch (_) { exists = false; }
+          if (exists) LB.markCard(key, true, sid);
+        }
+      } catch (_) { /* 1 問の失敗で他を止めない */ }
+    });
+  }
+
   async function submitDrill(drillId, expectedTotal, btn) {
     const form = list.querySelector(`[data-gd-form="${CSS && CSS.escape ? CSS.escape(String(drillId)) : drillId}"]`)
       || list.querySelector('[data-gd-form]');
@@ -4637,6 +4683,11 @@ async function initGrammarDrillSection() {
       if (btn) { btn.disabled = false; btn.textContent = '📤 提出して採点する'; }
       return;
     }
+    // 🔁 誤答→復習カード連携 (2026-06-11 塾長指示「自走に必要なもの②」):
+    // 間違えた問題を LB (忘却曲線) に登録し翌日「今日の復習」に自動で出す。
+    // 正解した問題は「過去に間違えてカード化済み」の場合のみ前進させる (正解問題で復習を埋めない)。
+    // フレッシュ提出時のみ実行 (renderResult は完了済みドリルの再閲覧でも呼ばれるためここに置く)。
+    try { _gdSyncResultsToReview(res); } catch (_) { /* best-effort */ }
     renderResult(drillId, res);
   }
 
@@ -4657,6 +4708,7 @@ async function initGrammarDrillSection() {
         <div style="font-size:0.85rem; color:#94a3b8; margin-bottom:4px;">採点結果</div>
         <div style="font-size:2rem; font-weight:800; color:#5eead4;">${_gdEscape(String(correct))} / ${_gdEscape(String(total))} <span style="font-size:1.1rem; color:#cbd5e1;">(${_gdEscape(String(pct))}%)</span></div>
         <div style="font-size:0.82rem; color:#cbd5e1; margin-top:6px;">${pct >= 80 ? '🎉 素晴らしい!' : pct >= 60 ? '👍 もう一歩!' : '📖 間違えた問題の解説を確認しましょう'}</div>
+        ${res && res.unit === '診断' ? '<div style="font-size:0.8rem; color:#86efac; margin-top:8px; font-weight:700;">🔰 AI があなたの苦手を記録しました。明日からの「コーチの今日の一手」があなた専用になります</div>' : ''}
       </div>
       ${blocks}
       <div style="text-align:center; margin-top:6px;">
@@ -4730,7 +4782,11 @@ async function initCoachNextMove(student, ajMode, isPreview) {
   function setMove(move) {
     titleEl.textContent = move.title;
     reasonEl.textContent = move.reason;
-    if (move.href) {
+    if (move.onClick) {
+      // 一手がページ内アクション (診断開始等) の場合
+      actionBtn.href = '#';
+      actionBtn.onclick = function (e) { e.preventDefault(); move.onClick(actionBtn); };
+    } else if (move.href) {
       actionBtn.href = move.href;
       actionBtn.onclick = null;
     } else if (move.scrollTo) {
@@ -4809,15 +4865,21 @@ async function initCoachNextMove(student, ajMode, isPreview) {
 
   const sid = student ? student.id : 'guest';
 
-  // ① 塾長からの宿題ドリル (未完了があれば最優先)
+  // ① 塾長からの宿題ドリル (未完了があれば最優先)。やりかけのミニ診断もここで拾う
+  let _drillItems = [];
   try {
     const d = await slApiFetch('/api/student/grammar-drills');
-    const open = ((d && d.items) || []).filter(function (it) { return it && it.status !== 'completed'; });
+    _drillItems = (d && d.items) || [];
+    const open = _drillItems.filter(function (it) { return it && it.status !== 'completed'; });
     if (open.length > 0) {
+      const isDiag = open[0].unit === '診断';
       const unit = (open[0].unit || open[0].title || '').toString();
       setMove({
-        title: unit ? 'ドリル「' + unit + '」をやろう' : '塾長からの宿題ドリルをやろう',
-        reason: '塾長から出ている宿題が ' + open.length + ' 件あります。これを終わらせれば今日は OK！',
+        title: isDiag ? '🔰 はじめての実力チェック（10問・約3分）'
+          : (unit ? 'ドリル「' + unit + '」をやろう' : '塾長からの宿題ドリルをやろう'),
+        reason: isDiag
+          ? 'やりかけの実力チェックが残っています。終わらせると AI があなたの苦手を見つけます。'
+          : '塾長から出ている宿題が ' + open.length + ' 件あります。これを終わらせれば今日は OK！',
         scrollTo: 'grammarDrillSection',
       });
       return;
@@ -4854,6 +4916,42 @@ async function initCoachNextMove(student, ajMode, isPreview) {
         return;
       }
     } catch (_) { /* noop */ }
+  }
+
+  // ③.5 🔰 ミニ診断 (2026-06-11 塾長指示「自走に必要なもの③」): 弱点データが無い =
+  // AI がまだその子を知らない状態なら、10 問の実力チェックを最初の一手にする。
+  // 提出すると弱点が即時集計され、翌日からの一手・プリント推薦が個別化される。
+  // 診断ドリルが既にある (open はルール①で拾済み / completed は再診断しない) 場合は出さない。
+  if (ajMode === 'kosei' && student && student.id != null) {
+    const _hasDiag = _drillItems.some(function (it) { return it && it.unit === '診断'; });
+    if (!_hasDiag) {
+      setMove({
+        title: '🔰 はじめての実力チェック（10問・約3分）',
+        reason: '10問だけ解くと、AI があなたの苦手な単元を見つけて、明日からの「一手」をあなた専用にします。',
+        onClick: async function (btn) {
+          // 🛡️ 二重クリックガード (review B1): <a> は disabled 不可のため dataset + pointerEvents で再入防止
+          if (btn && btn.dataset.busy === '1') return;
+          const _orig = btn ? btn.textContent : '';
+          try {
+            if (btn) { btn.dataset.busy = '1'; btn.style.pointerEvents = 'none'; btn.style.opacity = '0.6'; btn.textContent = '⏳ 問題を準備中...'; }
+            const r = await slApiFetch('/api/student/diagnostic/start', { method: 'POST', body: '{}' });
+            const sec2 = document.getElementById('grammarDrillSection');
+            if (sec2) { sec2.style.display = 'block'; sec2.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+            if (r && r.drill_id && typeof window._gdOpenDrill === 'function') {
+              window._gdOpenDrill(r.drill_id);
+            } else if (typeof window._gdReloadList === 'function') {
+              window._gdReloadList();
+            }
+          } catch (e) {
+            // サーバの detail (例: 在庫不足は塾長連絡案内) があればそれを優先表示
+            alert((e && e.message) ? String(e.message) : '診断の準備に失敗しました。少し待ってからもう一度お試しください。');
+          } finally {
+            if (btn) { btn.dataset.busy = ''; btn.style.pointerEvents = ''; btn.style.opacity = ''; btn.textContent = _orig || '▶ やってみる'; }
+          }
+        },
+      });
+      return;
+    }
   }
 
   // ④ 学習記録 (対象プランのみ・データ上いちばん多い「最初の一歩」)

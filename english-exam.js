@@ -1255,6 +1255,53 @@ function _getPoolCount(poolMap, examId, partKey, grade) {
   return (v === undefined) ? 0 : v;
 }
 
+// 🔁 誤答→復習カード連携 (2026-06-11 塾長指示「自走に必要なもの②」):
+// 4択の採点直後に呼び、間違えた問題を LB (忘却曲線・mypage「今日の復習」) に登録する。
+// 正解は「過去に間違えてカード化済み」の場合のみ前進させる (正解問題で復習を埋めない)。
+// learning-brain.js 未読込・例外時は何もしない (採点機能に影響させない best-effort)。
+function _lbRecordMc(q, isCorrect, exam, section) {
+  try {
+    if (!window.LB || !window.LB.recordAttempt) return;
+    // 英語系試験のみ復習カード化 (review NB-2): rikei (数学/理科)・bunkei (国語/社会) も同じ採点
+    // ループを通るため、無条件だと「英語」バッジ付きの数学カードが生まれ LB プロファイルも汚染する。
+    const _engExams = ['toefl', 'toeic', 'ielts', 'eiken', 'daigaku'];
+    const _examId = ((typeof state !== 'undefined' && state && state.examId) || (exam && exam.id) || '').toString();
+    if (_engExams.indexOf(_examId) < 0) return;
+    // 本文 (passage)・音声台本 (listening)・図表に依存する設問は、カード単体では解けない
+    // 復習問題になるためスキップ (review 指摘・NB-1)。文法・語法など独立設問のみカード化する。
+    if (typeof state !== 'undefined' && state && (state.passage || state.audioScript || state.figureSvg || state.figureB64)) return;
+    let sid = 'guest';
+    try {
+      const s = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null');
+      if (s && s.id != null) sid = s.id;
+    } catch (_) { /* noop */ }
+    const choices = Array.isArray(q.choices) ? q.choices : [];
+    const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+    const problem = String(q.stem || '') + '\n' +
+      choices.map((cTxt, i) => `(${letters[i] || (i + 1)}) ${cTxt}`).join('\n');
+    const ansIdx = parseInt(q.answer, 10);
+    const key = ('英語__' + problem).slice(0, 200);
+    if (!isCorrect) {
+      LB.recordAttempt(sid, {
+        key,
+        subject: '英語',
+        topic: ((section && section.name) || (exam && exam.name) || '英語演習').toString(),
+        problem: problem.slice(0, 1200),
+        answer: (Number.isInteger(ansIdx) && letters[ansIdx] ? `(${letters[ansIdx]}) ` : '') + (Number.isInteger(ansIdx) ? (choices[ansIdx] || '') : ''),
+        explanation: String(q.explanation || ''),
+      }, false);
+    } else {
+      // ⚠ LB.markCard はカード不在だと alert を出すため存在確認してから前進させる
+      let exists = false;
+      try {
+        const raw = localStorage.getItem('ai_juku_lb__' + sid + '__cards');
+        exists = !!(raw && JSON.parse(raw)[key]);
+      } catch (_) { exists = false; }
+      if (exists) LB.markCard(key, true, sid);
+    }
+  } catch (_) { /* best-effort */ }
+}
+
 async function pickExamSections(examId) {
   const exam = EXAMS[examId];
   if (!exam) return;
@@ -3156,6 +3203,8 @@ async function scoreWithClaude(exam, section) {
           window._pushSessionAttempt(q.id, isCorrect);
         }
       } catch (e) { /* silent */ }
+      // 🔁 誤答は復習カードへ (忘却曲線・mypage「今日の復習」に翌日出題)
+      _lbRecordMc(q, isCorrect, exam, section);
     } else {
       perQuestion.push({
         qid: q.id, stem: q.stem,
@@ -3274,6 +3323,8 @@ function scoreLocally(exam, section) {
           window._pushSessionAttempt(q.id, isCorrect);
         }
       } catch (e) { /* silent */ }
+      // 🔁 誤答は復習カードへ (忘却曲線・mypage「今日の復習」に翌日出題)
+      _lbRecordMc(q, isCorrect, exam, section);
     } else {
       perQuestion.push({
         qid: q.id, stem: q.stem,
