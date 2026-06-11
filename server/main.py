@@ -8132,7 +8132,7 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
         return {
             "ok": True,
             "trial_expired": True,
-            "message": "体験期間が終了しています。継続をご希望の方はLPから本登録をお願いします。",
+            "message": "体験期間が終了しています。継続をご希望の方は本登録（継続のお手続き）をお願いします。",
         }
     return {"ok": True, "message": "該当するアカウントがあればメールをお送りしました。届かない場合は迷惑メールフォルダもご確認ください。"}
 
@@ -8325,7 +8325,7 @@ def verify_magic_link(t: str):
         except Exception:
             pass
     if not _allowed:
-        raise HTTPException(status_code=403, detail="体験期間が終了しました。継続登録をご希望の方はLPからお申し込みください。")
+        raise HTTPException(status_code=403, detail="体験期間が終了しました。継続をご希望の方は本登録（継続のお手続き）をお願いします。")
 
     # 新規 session token を発行 (URL の magic token は1時間で破棄、セッションは30日)
     new_session_token = _sign_session_token(row["id"])

@@ -299,7 +299,16 @@
           body: JSON.stringify({ email }),
         });
         const data = await res.json();
-        if (res.ok) {
+        if (res.ok && data.trial_expired) {
+          // 体験期間終了時はサーバが HTTP 200 を返すがメールは送信していない
+          // → Step2 に進めると「メールが届かない」誤報告になるため、ここで継続登録へ誘導して止める
+          // (Step2 からの再送信で発生した場合も Step1 に戻す)
+          step2.classList.remove('active');
+          step1.classList.remove('hidden');
+          showMsg('error',
+            '⚠️ ' + (data.message || '体験期間が終了しています。継続をご希望の方は本登録をお願いします。') +
+            `<br>👉 <a href="upgrade.html?email=${encodeURIComponent(email)}" style="color:#fecaca; font-weight:700; text-decoration:underline;">継続のお手続き（本登録）はこちら</a>`);
+        } else if (res.ok) {
           currentEmail = email;
           emailShown.textContent = email;
           step1.classList.add('hidden');

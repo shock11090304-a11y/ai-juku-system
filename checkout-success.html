@@ -367,6 +367,14 @@
             body: JSON.stringify({ email }),
           });
           if (res.ok) {
+            const data = await res.json().catch(() => ({}));
+            if (data.trial_expired) {
+              // 決済直後は webhook 未反映の間 trial_expired が返りメールは送信されない → 反映待ちを案内
+              showResendMsg('error', '⚠️ お支払いの反映待ちのため、まだメールを送信できませんでした。1〜2分ほど待ってから、もう一度「再送信」を押してください。');
+              resendBtn.disabled = false;
+              resendBtn.textContent = '📧 ログインメール再送信';
+              return;
+            }
             // バックエンドはアカウント列挙対策で常に 200 を返すが、UI 上は「再送信完了」を出す。
             showResendMsg('success', `✅ <strong>${maskEmail(email)}</strong> 宛に再送信しました。1〜2分以内に届きます。届かない場合は迷惑メールフォルダもご確認ください。`);
             // email_sent=false 警告は再送が成功したので隠す
