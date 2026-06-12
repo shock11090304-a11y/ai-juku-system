@@ -178,12 +178,13 @@
             <span class="total">¥0</span>
           </div>
           <p class="summary-note" id="trialNote">
-            <strong>📅 料金スケジュール</strong><br>
+            <strong>📅 料金スケジュール（クレジットカード登録なし・14日間体験の場合）</strong><br>
             ・本日: ¥0（クレジットカード登録不要・自動課金なし）<br>
-            ・10日後: 「ご継続のご意思」を確認するメールが届きます<br>
+            ・体験終了の1〜2日前: 「ご継続のご意思」を確認するメールが届きます<br>
             <span id="enrollmentScheduleNote">・<strong>ご継続をお申込みいただいた場合のみ</strong>、初回月額に入塾金 ¥10,000 を合算で請求</span><br>
             ・<strong>2回目以降の課金は契約日を起算日として毎月同日</strong>（例: 7月15日にご契約→毎月15日に自動課金）<br>
             ・何もしなければ体験は自動終了し、料金は一切発生しません<br>
+            ※下記「クレジットカード登録で +7 日延長」をご選択の場合は、21日間の体験終了後に創設メンバープラン ¥14,500/月（税込）の自動課金が始まります（料金・解約条件は下記の説明をご確認ください）<br>
             ※「塾生アドオン」プランでは入塾金は発生しません
           </p>
           <!-- 🎓 通塾生プラン (student_addon) 専用 note: 即課金・無料体験なし・履歴継承 -->
@@ -205,8 +206,9 @@
         </div>
 
         <!-- 🎁 集客 funnel #4 (塾長指示 2026-05-19): +7 日延長 opt-in
-             クレカ事前登録 → 14日 + 7日 = 21日 完全無料・終了 24h 前に Stripe メール通知
-             デフォルト OFF (off 時はクレカ不要の 14 日体験)・チェックで Stripe Subscription 経路 -->
+             クレカ事前登録 → 14日 + 7日 = 21日 完全無料・終了 1〜2 日前に課金前通知メール (cron trial-reminders の trial_ending_card)
+             解約は体験中いつでも mypage「解約する」(/api/billing/cancel-trial 即時解約・体験中は請求なし) — Stripe Portal は trial 中の mypage に出ない
+             デフォルト OFF (off 時はクレカ不要の 14 日体験)・チェックで Stripe Subscription 経路 (常に founder_special を subscribe) -->
         <div style="margin: 1.2rem 0; padding: 1rem 1.1rem; background: linear-gradient(135deg, rgba(34,197,94,0.10), rgba(251,191,36,0.08)); border: 1px solid rgba(74,222,128,0.40); border-radius: 10px;">
           <label style="display:flex; align-items:flex-start; gap:0.7rem; cursor:pointer;">
             <input type="checkbox" id="enableCardExtension" style="margin-top:0.3rem; min-width:1.1rem; min-height:1.1rem; accent-color:#22c55e;">
@@ -217,10 +219,9 @@
               <div style="font-size:0.82rem; color:#cbd5e1; line-height:1.5;">
                 ・カード情報は <strong>Stripe</strong> に直接登録され弊社は保存しません<br>
                 ・体験期間中 (21 日間) は<strong>一切課金されません</strong><br>
-                ・<strong>21 日経過後、選択中プランの月額が Stripe より自動課金</strong>されます<br>
-                  &nbsp;&nbsp;(創設メンバープラン例: ¥14,500/月・税込)<br>
-                ・体験終了 24 時間前に Stripe から課金開始日・金額の通知メール<br>
-                ・続けない場合は終了 24 時間前までに Stripe Portal から 1 クリック解約可<br>
+                ・<strong>21 日間の体験終了後、創設メンバープラン ¥14,500/月（税込）が自動課金</strong>されます<br>
+                ・体験終了の 1〜2 日前に、課金開始のご案内メールが届きます<br>
+                ・解約は<strong>体験期間中いつでも</strong>マイページの「解約する」から可能（体験中の解約で料金は一切かかりません。メールでのご連絡でも解約できます）<br>
                 ・解約手続きを忘れない安心が欲しい方向け (チェックなしでも 14 日完全無料体験 OK)
               </div>
             </div>
@@ -285,11 +286,11 @@
         if (cb.checked) {
           const ok = confirm(
             '⚠️ クレジットカード登録の確認\n\n' +
-            '21 日経過後、選択中プランの月額が自動課金されます。\n' +
-            '(創設メンバープラン: ¥14,500/月 税込)\n\n' +
+            '21 日間の体験終了後、創設メンバープラン ¥14,500/月（税込）が自動課金されます。\n\n' +
             '✅ 体験期間中 (21 日間) は一切課金されません\n' +
-            '✅ 終了 24h 前に Stripe からメール通知あり\n' +
-            '✅ Stripe Portal から 1 クリックで解約可\n' +
+            '✅ 体験終了の 1〜2 日前に課金開始のご案内メールあり\n' +
+            '✅ 体験期間中いつでもマイページの「解約する」から解約可\n' +
+            '   (体験中の解約で料金は一切かかりません)\n' +
             '✅ 解約手続きを忘れない安心が欲しい方向け\n\n' +
             '上記を理解の上、クレカ登録で +7 日延長を希望しますか?\n' +
             '(チェックを外せば 14 日完全無料体験のままで OK)'
