@@ -2321,9 +2321,10 @@ def stats(x_stats_token: str = Header(None)):
     seven_days_ago = now - timedelta(days=7)
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT COUNT(*) AS n FROM students WHERE status='paid'")
+    # 合成監視 sentinel (監視 守) は KPI から除外 (cleanup 失敗 orphan のノイズ防止)
+    c.execute(f"SELECT COUNT(*) AS n FROM students WHERE status='paid' AND {_synth_exclude_sql()}")
     paid = c.fetchone()["n"]
-    c.execute("SELECT COUNT(*) AS n FROM students WHERE status='trial'")
+    c.execute(f"SELECT COUNT(*) AS n FROM students WHERE status='trial' AND {_synth_exclude_sql()}")
     trial = c.fetchone()["n"]
     c.execute("SELECT SUM(amount) AS s FROM payments WHERE status='paid' AND paid_at > ?", (thirty_days_ago,))
     mrr = c.fetchone()["s"] or 0
@@ -6188,14 +6189,14 @@ def _collect_health_snapshot() -> dict:
             except Exception: pass
             return 0
 
-    # 申込 (trial signup) 数
+    # 申込 (trial signup) 数 — 合成監視 sentinel の orphan は実申込でないため除外
     snapshot["signups_24h"] = safe_count(
-        "SELECT COUNT(*) FROM students WHERE created_at >= ?", (h24,)
+        f"SELECT COUNT(*) FROM students WHERE created_at >= ? AND {_synth_exclude_sql()}", (h24,)
     )
     snapshot["signups_1h"] = safe_count(
-        "SELECT COUNT(*) FROM students WHERE created_at >= ?", (h1,)
+        f"SELECT COUNT(*) FROM students WHERE created_at >= ? AND {_synth_exclude_sql()}", (h1,)
     )
-    snapshot["signups_total"] = safe_count("SELECT COUNT(*) FROM students")
+    snapshot["signups_total"] = safe_count(f"SELECT COUNT(*) FROM students WHERE {_synth_exclude_sql()}")
 
     # paid (本契約) 数
     snapshot["paid_total"] = safe_count(
@@ -6270,12 +6271,13 @@ def _collect_health_snapshot() -> dict:
     # 過去 24h 申込数のうち、何名がログイン済みか。50% 以下は赤バナー警告。
     try:
         c.execute(
-            """SELECT
+            f"""SELECT
                  COUNT(*) AS signups,
                  COUNT(last_login_at) AS logged_in
                FROM students
                WHERE created_at >= ?
-                 AND status IN ('trial', 'paid')""",
+                 AND status IN ('trial', 'paid')
+                 AND {_synth_exclude_sql()}""",
             (h24,)
         )
         login_row = c.fetchone()
@@ -6641,13 +6643,14 @@ def _maybe_run_never_login_nudge(now_jst: datetime) -> dict:
             #    「14日間の無料体験が始まりました」文面は無期限の通塾生に不適切な体験funnel案内。
             #    継続/再エンゲージ通知の course 除外 (check_inactivity / 継続メール全7経路) と同じ。
             c.execute(
-                """SELECT id, name, email
+                f"""SELECT id, name, email
                    FROM students
                    WHERE last_login_at IS NULL
                      AND status IN ('trial', 'paid')
                      AND email IS NOT NULL AND email != ''
                      AND created_at <= ?
                      AND (course IS NULL OR course != 'kokuritsu_nankan')
+                     AND {_synth_exclude_sql()}
                    ORDER BY created_at ASC
                    LIMIT ?""",
                 (cutoff, NEVER_LOGIN_NUDGE_MAX_PER_DAY)
@@ -7201,6 +7204,39 @@ _SYNTHETIC_CHECKOUT_LAST = {
 }
 _SYNTHETIC_CHECKOUT_FIX_MARKERS = ["if (target)", "__urlPlanOverride"]
 _SYNTHETIC_CHECKOUT_ALERTED_AT = {"ts": 0.0}
+
+# 🫥 合成監視 sentinel 生徒の共通判定 (2026-06-13 塾長指示: 普段の管理画面から非表示)
+# cleanup 失敗で残った orphan「監視 守」が CEO ダッシュの生徒一覧・KPI・未ログイン
+# アラートに実生徒として並んでしまうため、管理系の list/集計 API はデフォルトで
+# この判定に合致する生徒を除外する。実体の削除は従来どおり
+# /api/admin/students/purge-stale-data (🧹) が担当 (このフィルタは表示のみ)。
+_SYNTH_STUDENT_EMAIL_MARKER = "@synthetic-monitor."
+_SYNTH_STUDENT_GOAL_MARKER = "[E2E synthetic monitor"
+_SYNTH_STUDENT_NAMES = {"監視　守", "監視 守"}
+
+
+def _is_synthetic_student(email, goal=None, name=None) -> bool:
+    if email and _SYNTH_STUDENT_EMAIL_MARKER in str(email).lower():
+        return True
+    if goal and str(goal).strip().startswith(_SYNTH_STUDENT_GOAL_MARKER):
+        return True
+    if name and str(name).strip() in _SYNTH_STUDENT_NAMES:
+        return True
+    return False
+
+
+def _synth_exclude_sql(alias: str = "") -> str:
+    """WHERE 句に AND で連結する合成監視除外フラグメント。
+    email ドメインが第一の識別子 (sentinel は必ず @synthetic-monitor.* で作られる)。
+    goal marker / name は email validator 変更時の保険で、_is_synthetic_student と
+    判定を揃える (片方だけだと roster と summary count がズレる)。literal % は
+    db() ラッパが pg 時に %% へ escape するため params 有無どちらの経路でも安全。"""
+    p = f"{alias}." if alias else ""
+    return (
+        f"COALESCE({p}email, '') NOT LIKE '%@synthetic-monitor.%' "
+        f"AND COALESCE({p}goal, '') NOT LIKE '[E2E synthetic monitor%' "
+        f"AND COALESCE({p}name, '') NOT IN ('監視　守', '監視 守')"
+    )
 
 
 async def _run_synthetic_checkout_test() -> dict:
@@ -8990,8 +9026,9 @@ def admin_verify(authorization: Optional[str] = Header(None)):
 
 
 @app.get("/api/admin/stats")
-def admin_stats(authorization: Optional[str] = Header(None)):
-    """管理者専用の経営統計。/api/statsよりリッチな情報を返す。"""
+def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: int = 0):
+    """管理者専用の経営統計。/api/statsよりリッチな情報を返す。
+    合成監視 sentinel (監視 守) はデフォルト除外。?include_synthetic=1 で表示。"""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="未認証")
     token = authorization[len("Bearer "):].strip()
@@ -9014,6 +9051,9 @@ def admin_stats(authorization: Optional[str] = Header(None)):
             c.execute("SELECT id, name, email, grade, goal, plan, status, trial_end, paid_since, created_at FROM students ORDER BY id DESC")
             rows = c.fetchall()
             has_last_login = False
+    # 🫥 合成監視 sentinel は普段の roster から除外 (?include_synthetic=1 で確認可)
+    if not include_synthetic:
+        rows = [r for r in rows if not _is_synthetic_student(r["email"], r["goal"], r["name"])]
     # 最終アクティビティ計算 (last_login_at + events + study_logs + exam_results の MAX)
     # 集約クエリで 3 回 DB ヒットに抑える (N+1 回避)
     # NOTE: events.session_id は "123" と "student:123" 両形式が混在 (legacy 不整合)
@@ -9099,14 +9139,15 @@ def admin_stats(authorization: Optional[str] = Header(None)):
             # 🆓 2026-05-29: 入塾金免除バッジ表示用 (生徒詳細モーダル)
             "enrollment_fee_waived": (bool(row["enrollment_fee_waived"]) if "enrollment_fee_waived" in row.keys() else False),
         })
-    # 集計
-    c.execute("SELECT COUNT(*) AS n FROM students WHERE status='paid'")
+    # 集計 (合成監視 sentinel は status/新規申込カウントからも除外)
+    synth_sql = "" if include_synthetic else f" AND {_synth_exclude_sql()}"
+    c.execute(f"SELECT COUNT(*) AS n FROM students WHERE status='paid'{synth_sql}")
     paid_count = c.fetchone()["n"]
-    c.execute("SELECT COUNT(*) AS n FROM students WHERE status='trial'")
+    c.execute(f"SELECT COUNT(*) AS n FROM students WHERE status='trial'{synth_sql}")
     trial_count = c.fetchone()["n"]
-    c.execute("SELECT COUNT(*) AS n FROM students WHERE status='canceled'")
+    c.execute(f"SELECT COUNT(*) AS n FROM students WHERE status='canceled'{synth_sql}")
     canceled_count = c.fetchone()["n"]
-    c.execute("SELECT COUNT(*) AS n FROM students WHERE status='expired'")
+    c.execute(f"SELECT COUNT(*) AS n FROM students WHERE status='expired'{synth_sql}")
     expired_count = c.fetchone()["n"]
 
     # 期間別新規申込数 (created_at ベース・JST)
@@ -9114,11 +9155,11 @@ def admin_stats(authorization: Optional[str] = Header(None)):
     today_start = (now_jst.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(hours=9))
     week_start = today_start - timedelta(days=7)
     month_start = today_start - timedelta(days=30)
-    c.execute("SELECT COUNT(*) AS n FROM students WHERE created_at >= ?", (today_start,))
+    c.execute(f"SELECT COUNT(*) AS n FROM students WHERE created_at >= ?{synth_sql}", (today_start,))
     new_today = c.fetchone()["n"]
-    c.execute("SELECT COUNT(*) AS n FROM students WHERE created_at >= ?", (week_start,))
+    c.execute(f"SELECT COUNT(*) AS n FROM students WHERE created_at >= ?{synth_sql}", (week_start,))
     new_7d = c.fetchone()["n"]
-    c.execute("SELECT COUNT(*) AS n FROM students WHERE created_at >= ?", (month_start,))
+    c.execute(f"SELECT COUNT(*) AS n FROM students WHERE created_at >= ?{synth_sql}", (month_start,))
     new_30d = c.fetchone()["n"]
 
     # 入塾金免除キャンペーン適用済数
@@ -18100,12 +18141,13 @@ def admin_students_never_logged_in(
     try:
         try:
             c.execute(
-                """SELECT id, name, email, created_at, last_login_at, status, plan
+                f"""SELECT id, name, email, created_at, last_login_at, status, plan
                    FROM students
                    WHERE last_login_at IS NULL
                      AND status IN ('trial', 'paid')
                      AND email IS NOT NULL AND email != ''
                      AND created_at <= ?
+                     AND {_synth_exclude_sql()}
                    ORDER BY created_at ASC""",
                 (cutoff,)
             )
@@ -18116,11 +18158,12 @@ def admin_students_never_logged_in(
             except Exception:
                 pass
             c.execute(
-                """SELECT id, name, email, created_at, status, plan
+                f"""SELECT id, name, email, created_at, status, plan
                    FROM students
                    WHERE status IN ('trial', 'paid')
                      AND email IS NOT NULL AND email != ''
                      AND created_at <= ?
+                     AND {_synth_exclude_sql()}
                    ORDER BY created_at ASC""",
                 (cutoff,)
             )
@@ -18204,7 +18247,7 @@ def admin_students_active_no_record(
         # 「使ってるが記録ゼロ」 = active かつ records=0 かつ (ai_tutor_count>0 or login が最近)
         try:
             c.execute(
-                """SELECT s.id, s.name, s.email, s.grade, s.course, s.plan, s.status,
+                f"""SELECT s.id, s.name, s.email, s.grade, s.course, s.plan, s.status,
                           s.last_login_at, s.created_at,
                           COALESCE(sl.records, 0) AS records,
                           COALESCE(tl.tutor_count, 0) AS tutor_count
@@ -18222,6 +18265,7 @@ def admin_students_active_no_record(
                      AND s.last_login_at IS NOT NULL
                      AND s.last_login_at >= ?
                      AND COALESCE(sl.records, 0) = 0
+                     AND {_synth_exclude_sql('s')}
                    ORDER BY tl.tutor_count DESC NULLS LAST, s.last_login_at DESC""",
                 (cutoff, cutoff),
             )
@@ -35110,12 +35154,12 @@ def admin_list_students_by_course(authorization: Optional[str] = Header(None), c
         c = conn.cursor()
         if course:
             c.execute(
-                "SELECT id, name, grade, status, course FROM students WHERE course = ? AND status IN ('paid','trial') ORDER BY name",
+                f"SELECT id, name, grade, status, course FROM students WHERE course = ? AND status IN ('paid','trial') AND {_synth_exclude_sql()} ORDER BY name",
                 (course,)
             )
         else:
             c.execute(
-                "SELECT id, name, grade, status, course FROM students WHERE status IN ('paid','trial') ORDER BY name"
+                f"SELECT id, name, grade, status, course FROM students WHERE status IN ('paid','trial') AND {_synth_exclude_sql()} ORDER BY name"
             )
         rows = c.fetchall()
         students = [{
@@ -36138,13 +36182,13 @@ def admin_send_message(payload: MessageSendRequest, background_tasks: Background
             import uuid as _uuid
             broadcast_group_id = f"bc_{_uuid.uuid4().hex[:12]}"
             if bf == "all":
-                c.execute("SELECT id, name, email FROM students WHERE status IN ('paid','trial')")
+                c.execute(f"SELECT id, name, email FROM students WHERE status IN ('paid','trial') AND {_synth_exclude_sql()}")
             elif bf == "kokuritsu_nankan":
-                c.execute("SELECT id, name, email FROM students WHERE status IN ('paid','trial') AND course = ?", (_STUDY_LOG_TARGET_COURSE,))
+                c.execute(f"SELECT id, name, email FROM students WHERE status IN ('paid','trial') AND course = ? AND {_synth_exclude_sql()}", (_STUDY_LOG_TARGET_COURSE,))
             elif bf == "paid_only":
-                c.execute("SELECT id, name, email FROM students WHERE status = 'paid'")
+                c.execute(f"SELECT id, name, email FROM students WHERE status = 'paid' AND {_synth_exclude_sql()}")
             elif bf == "trial_only":
-                c.execute("SELECT id, name, email FROM students WHERE status = 'trial'")
+                c.execute(f"SELECT id, name, email FROM students WHERE status = 'trial' AND {_synth_exclude_sql()}")
             elif bf == "selected":
                 # 👥 ハンドピックした生徒群 (2026-06-09 塾長指示)。重複除去・上限内・paid/trial のみ宛先化。
                 raw_ids = (payload.student_ids or [])[:1000]  # 巨大入力での DoS 回避に早期 cap
