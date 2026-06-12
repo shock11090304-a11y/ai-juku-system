@@ -674,6 +674,19 @@ def init_db():
     );
     CREATE INDEX IF NOT EXISTS idx_tutor_solve_student_created ON ai_tutor_solve_log(student_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_tutor_solve_subject ON ai_tutor_solve_log(subject_guess, created_at DESC);
+    -- 🤖 AI チューター会話履歴 [tutor-history] (2026-06-12 塾長指示「会話の履歴を残せるように」)
+    -- 旧実装は端末 localStorage のみ (直近 30 件・端末変更/クリアで消失)。サーバ永続化で
+    -- 端末をまたいだ復元を可能にする。書込はフロント (app.js) が 1 往復ごとに POST。
+    CREATE TABLE IF NOT EXISTS ai_tutor_messages (
+        id {pk},
+        student_id INTEGER NOT NULL,
+        role TEXT NOT NULL,
+        content TEXT NOT NULL,
+        model TEXT,
+        kind TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_ai_tutor_msg_student_created ON ai_tutor_messages(student_id, created_at DESC);
     -- 🎯 弱点分類: ai_tutor_solve_log → 日次 cron で集計 → 生徒個別問題推薦に活用 (2026-05-13)
     -- subject (math/english/japanese/...) + topic (具体的単元) ごとに 30 日内の質問頻度を集計。
     -- 日次更新で常に最新弱点を反映。生徒ダッシュ「あなたの弱点 TOP3」で参照。
@@ -19371,6 +19384,7 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
             ("mock_exam_sessions", "student_id"),
             ("vocab_progress", "student_id"),
             ("payments", "student_id"),
+            ("ai_tutor_messages", "student_id"),
         ]
         for tbl, col in related_tables:
             try:
@@ -19437,6 +19451,7 @@ def admin_student_delete(student_id: int, payload: StudentDeleteRequest,
             ("usage_monthly", "DELETE FROM usage_monthly WHERE student_id=?"),
             ("mock_exam_sessions", "DELETE FROM mock_exam_sessions WHERE student_id=?"),
             ("vocab_progress", "DELETE FROM vocab_progress WHERE student_id=?"),
+            ("ai_tutor_messages", "DELETE FROM ai_tutor_messages WHERE student_id=?"),
             ("payments", "DELETE FROM payments WHERE student_id=?"),
         ]
         deleted_counts = {}
@@ -22626,6 +22641,7 @@ def admin_students_purge_stale(payload: dict = None, authorization: Optional[str
                 ("mock_exam_sessions", f"DELETE FROM mock_exam_sessions WHERE student_id IN ({placeholders})"),
                 ("vocab_progress", f"DELETE FROM vocab_progress WHERE student_id IN ({placeholders})"),
                 ("payments", f"DELETE FROM payments WHERE student_id IN ({placeholders})"),
+                ("ai_tutor_messages", f"DELETE FROM ai_tutor_messages WHERE student_id IN ({placeholders})"),
             ]
             for tbl, sql in cascade_tables:
                 try: c.execute(sql, tup)
@@ -36409,6 +36425,100 @@ def admin_broadcast_detail(group_id: str, authorization: Optional[str] = Header(
         ]}
     finally:
         conn.close()
+
+
+# ==========================================================================
+# 🤖 AI チューター会話履歴 [tutor-history] (2026-06-12 塾長指示「会話の履歴を残せるように」)
+# ==========================================================================
+@app.get("/api/ai-tutor/history/me")
+def get_my_tutor_history(request: Request, authorization: Optional[str] = Header(None), limit: int = 100):
+    """生徒: 自分の AI チューター会話履歴を取得 (古い順)。端末をまたいだ復元用。"""
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _check_rate_limit_caller(request, authorization, bucket="tutor_history_get", limit=30, window=60)
+    try:
+        limit = max(1, min(int(limit or 100), 300))
+    except (TypeError, ValueError):
+        limit = 100
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT id, role, content, model, kind, created_at FROM ai_tutor_messages "
+            "WHERE student_id = ? ORDER BY id DESC LIMIT ?",
+            (student["id"], limit),
+        )
+        rows = list(c.fetchall())
+    finally:
+        conn.close()
+    rows.reverse()  # 古い順で返す (フロントはそのまま上から描画)
+    return {"ok": True, "messages": [
+        {"id": r["id"], "role": r["role"], "content": r["content"], "model": r["model"],
+         "kind": r["kind"], "created_at": str(r["created_at"]) if r["created_at"] else None}
+        for r in rows
+    ]}
+
+
+@app.post("/api/ai-tutor/history")
+def append_tutor_history(payload: dict, request: Request, authorization: Optional[str] = Header(None)):
+    """生徒: 会話 1 往復 (user + assistant) を保存。items: [{role, content, model?, kind?}] 1〜4 件。
+    画像/PDF の添付データ自体は保存しない (テキストのみ・容量と PII 最小化)。"""
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _check_rate_limit_caller(request, authorization, bucket="tutor_history_save", limit=30, window=60)
+    items = (payload or {}).get("items")
+    if not isinstance(items, list) or not (1 <= len(items) <= 4):
+        raise HTTPException(status_code=400, detail="items は 1〜4 件の配列で指定してください")
+    cleaned = []
+    for it in items:
+        if not isinstance(it, dict):
+            raise HTTPException(status_code=400, detail="items の要素が不正です")
+        role = str(it.get("role") or "").strip()
+        if role not in ("user", "assistant"):
+            raise HTTPException(status_code=400, detail="role は user / assistant のみ指定できます")
+        # AI の長い解説 (maxTokens 4000) が切れないよう messages.body (5000) より広めの 12000 字
+        content = _sanitize_text(it.get("content"), 12000)
+        if not content:
+            raise HTTPException(status_code=400, detail="content は必須です")
+        cleaned.append((role, content, _sanitize_text(it.get("model"), 80), _sanitize_text(it.get("kind"), 20)))
+    conn = db()
+    try:
+        c = conn.cursor()
+        for role, content, model, kind in cleaned:
+            c.execute(
+                "INSERT INTO ai_tutor_messages (student_id, role, content, model, kind) VALUES (?,?,?,?,?)",
+                (student["id"], role, content, model, kind),
+            )
+        # 容量ガード: 生徒あたり直近 500 件のみ保持 (復元 API の上限 300 に対して十分)
+        c.execute(
+            "DELETE FROM ai_tutor_messages WHERE student_id = ? AND id NOT IN ("
+            "SELECT id FROM ai_tutor_messages WHERE student_id = ? ORDER BY id DESC LIMIT 500)",
+            (student["id"], student["id"]),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True, "saved": len(cleaned)}
+
+
+@app.delete("/api/ai-tutor/history/me")
+def clear_my_tutor_history(request: Request, authorization: Optional[str] = Header(None)):
+    """生徒: 「会話をクリア」でサーバ側履歴も全削除 (localStorage クリアと対で呼ばれる)。"""
+    student = _get_current_student(authorization)
+    if not student:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    _check_rate_limit_caller(request, authorization, bucket="tutor_history_clear", limit=10, window=60)
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("DELETE FROM ai_tutor_messages WHERE student_id = ?", (student["id"],))
+        deleted = c.rowcount
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True, "deleted": deleted}
 
 
 @app.get("/api/messages/me")

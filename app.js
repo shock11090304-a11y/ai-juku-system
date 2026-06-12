@@ -245,6 +245,37 @@ const BACKEND_URL = (window.location.hostname === 'localhost' && window.location
   : 'https://ai-juku-api-production.up.railway.app';
 let BACKEND_AI_AVAILABLE = null;  // Auto-detected on init
 
+// 🤖 [tutor-history] (2026-06-12 塾長指示「会話の履歴を残せるように」):
+// AI チューター会話のサーバ永続化。ログイン済み (session token 有効) ならサーバを正として
+// 復元し、1 往復ごとに保存する。未ログイン/デモは従来どおり localStorage のみ。
+// 保存/復元の失敗はチャット体験を止めないよう silent (console.warn のみ)。
+function tutorHistoryToken() {
+  const exp = parseInt(localStorage.getItem('ai_juku_session_expires') || '0', 10);
+  const tok = localStorage.getItem('ai_juku_session_token');
+  return (tok && Math.floor(Date.now() / 1000) < exp) ? tok : null;
+}
+async function tutorHistoryFetch(path, options = {}) {
+  const tok = tutorHistoryToken();
+  if (!tok) return null;
+  const res = await fetch(`${BACKEND_URL}${path}`, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok, ...(options.headers || {}) },
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+function saveTutorExchange(userText, assistantText, kind) {
+  try {
+    if (!tutorHistoryToken()) return;
+    const items = [];
+    if (userText) items.push({ role: 'user', content: String(userText).slice(0, 12000), kind });
+    if (assistantText) items.push({ role: 'assistant', content: String(assistantText).slice(0, 12000), kind });
+    if (!items.length) return;
+    tutorHistoryFetch('/api/ai-tutor/history', { method: 'POST', body: JSON.stringify({ items }) })
+      .catch(e => console.warn('[tutorHistory] save failed:', e));
+  } catch (e) { /* silent */ }
+}
+
 // 🛡️ silent fail diagnostic reporter (2026-05-19 audit fix)
 // console.warn のみの catch block で実 server に observation を残す。
 // fire-and-forget で UX に影響を与えず、CEO ダッシュで「frontend_error」events 経由で
@@ -2703,6 +2734,27 @@ function loadChatHistory() {
   const container = document.getElementById('chatMessages');
   // Keep greeting, render history
   history.forEach(msg => appendMessage(msg.role, msg.content, false));
+
+  // 🤖 [tutor-history] サーバ履歴があればそれを正として置き換え (端末をまたいだ復元)。
+  // localStorage は直近 30 件のオフラインキャッシュとして併用する。
+  tutorHistoryFetch('/api/ai-tutor/history/me?limit=100')
+    .then(data => {
+      const msgs = (data && data.messages) || [];
+      if (!msgs.length) return;
+      const localSnapshot = JSON.stringify(state.chatHistory.map(m => [m.role, m.content]));
+      state.chatHistory = msgs.map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
+      storage.set(STORAGE_KEYS.CHAT_HISTORY, state.chatHistory.slice(-30));
+      // ローカルキャッシュと同一内容なら再描画しない (置き換え時の一瞬のちらつき防止)
+      if (JSON.stringify(state.chatHistory.map(m => [m.role, m.content])) === localSnapshot) return;
+      const c2 = document.getElementById('chatMessages');
+      if (c2) {
+        const greeting = c2.querySelector('.message');
+        c2.innerHTML = '';
+        if (greeting) c2.appendChild(greeting);
+        state.chatHistory.forEach(m => appendMessage(m.role, m.content, false));
+      }
+    })
+    .catch(e => console.warn('[tutorHistory] restore failed:', e));
 }
 
 // KaTeX描画ヘルパ。\( ... \) と \[ ... \] 区切りを描画。
@@ -3177,6 +3229,13 @@ ${attached.length ? (attached.some(a => a.isPdf) ? '- 添付された PDF (問�
   const aiHistEntry = { role: 'assistant', content: response };
   state.chatHistory.push(aiHistEntry);
   storage.set(STORAGE_KEYS.CHAT_HISTORY, state.chatHistory.slice(-30));
+  // 🤖 [tutor-history] 1 往復をサーバへ保存 (画像/PDF の添付データは保存しない・テキストのみ)。
+  // 「続き」ボタンで応答が連結された場合、サーバには初回チャンクのみ残る (連結後の再保存はしない仕様)
+  saveTutorExchange(
+    text || (attached.length ? '(画像/PDF つき質問)' : ''),
+    response,
+    attached.length ? 'vision' : 'chat'
+  );
   // 🛡️ 2026-06-02 塾長指示「数学の長い解説が途中で切れる」対策: maxTokens で打ち切られたら「続き」ボタン。
   // aiHistEntry の参照を渡し、続き連結時はその参照を直接更新 (reverse-scan のレース回避)
   maybeAttachContinueButton(aiDiv, response, systemPrompt, aiHistEntry);
@@ -3201,9 +3260,12 @@ function updateStats() {
 }
 
 function clearChat() {
-  if (!confirm('会話履歴をクリアしますか？')) return;
+  if (!confirm('会話履歴をクリアしますか？\n(この端末だけでなく、サーバに保存された履歴も削除されます)')) return;
   state.chatHistory = [];
   storage.set(STORAGE_KEYS.CHAT_HISTORY, []);
+  // 🤖 [tutor-history] サーバ側履歴も対で削除 (端末をまたいで復活しないように)
+  tutorHistoryFetch('/api/ai-tutor/history/me', { method: 'DELETE' })
+    .catch(e => console.warn('[tutorHistory] clear failed:', e));
   const container = document.getElementById('chatMessages');
   container.innerHTML = `
     <div class="message ai-msg">
