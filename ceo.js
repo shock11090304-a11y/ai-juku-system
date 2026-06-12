@@ -1839,6 +1839,15 @@ async function loadMessageHistory() {
           : `<button data-sid="${escapeHtml(String(q.from_student_id))}" data-q-id="${escapeHtml(String(q.id))}" class="msg-approve-btn" style="background:linear-gradient(135deg,#10b981,#34d399); color:#fff; border:0; padding:0.4rem 0.9rem; border-radius:8px; cursor:pointer; font-size:0.78rem; font-weight:700;">✅ 加入させる</button>`;
         const replyBtn = `<button data-sid="${escapeHtml(String(q.from_student_id))}" data-name="${escapeHtml(q.from_student_name || '')}" class="msg-reply-btn" style="background:rgba(99,102,241,0.2); color:#c7d2fe; border:0; padding:0.4rem 0.9rem; border-radius:8px; cursor:pointer; font-size:0.78rem;">💬 返信</button>`;
         const aiReplyBtn = `<button data-sid="${escapeHtml(String(q.from_student_id))}" data-name="${escapeHtml(q.from_student_name || '')}" data-context="${escapeHtml(q.body || '')}" class="msg-ai-reply-btn" style="background:linear-gradient(135deg,#a78bfa,#ec4899); color:#fff; border:0; padding:0.4rem 0.9rem; border-radius:8px; cursor:pointer; font-size:0.78rem; font-weight:700;">🤖 AI 返信案</button>`;
+        // 📎 生徒からの添付 (API は attachment={filename,mime,size} を返すが旧 UI は無視していて
+        // 「生徒から送られてきたファイルが見れない」状態だった (塾長報告 2026-06-12)。
+        // 表示+ダウンロード導線は mypage.js loadMyMessages の実証済みパターンをミラー。
+        const attBlock = q.attachment
+          ? `<div style="margin-bottom:0.5rem; padding:0.45rem 0.6rem; background:rgba(0,0,0,0.3); border:1px solid rgba(251,191,36,0.25); border-radius:6px; display:flex; justify-content:space-between; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+              <span style="font-size:0.78rem; color:#cbd5e1;">📎 ${escapeHtml(q.attachment.filename || 'attachment')} <span style="color:#71717a; font-size:0.85em;">(${Math.round((q.attachment.size || 0) / 1024)} KB)</span></span>
+              <button type="button" data-msg-id="${escapeHtml(String(q.id))}" class="msg-admin-att-dl" style="background:rgba(99,102,241,0.25); color:#c7d2fe; border:0; padding:0.3rem 0.7rem; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:700;">⬇️ ダウンロード</button>
+            </div>`
+          : '';
         return `
           <div style="background:rgba(251,191,36,0.05); border:1px solid rgba(251,191,36,0.3); border-left:4px solid #fbbf24; border-radius:8px; padding:0.85rem; margin-bottom:0.6rem;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.3rem;">
@@ -1846,6 +1855,7 @@ async function loadMessageHistory() {
               <div style="font-size:0.72rem; color:#71717a;">${escapeHtml(_msgFmtJst(q.created_at))}</div>
             </div>
             <div style="font-size:0.85rem; color:#d4d4d8; padding:0.4rem 0.6rem; background:rgba(0,0,0,0.25); border-radius:6px; margin-bottom:0.5rem;">${escapeHtml(q.body)}</div>
+            ${attBlock}
             <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">${actionBtn}${replyBtn}${aiReplyBtn}</div>
             <div class="msg-approve-result" style="margin-top:0.4rem; font-size:0.78rem;"></div>
           </div>`;
@@ -1879,6 +1889,13 @@ async function loadMessageHistory() {
           : '<span style="color:#fbbf24;">未読</span>';
         const emailBadge = m.email_status === 'sent' ? '<span style="color:#86efac;">📧 送信済</span>'
           : (m.email_status && m.email_status.startsWith('failed')) ? `<span style="color:#fca5a5;" title="${escapeHtml(m.email_status)}">⚠ メール失敗</span>` : '';
+        // 📎 送信時の添付も履歴から再取得できるようにする (問い合わせ側と同じ DL ボタン)
+        const attBlockI = m.attachment
+          ? `<div style="margin-bottom:0.4rem; padding:0.4rem 0.6rem; background:rgba(0,0,0,0.3); border-radius:6px; display:flex; justify-content:space-between; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+              <span style="font-size:0.74rem; color:#cbd5e1;">📎 ${escapeHtml(m.attachment.filename || 'attachment')} <span style="color:#71717a; font-size:0.85em;">(${Math.round((m.attachment.size || 0) / 1024)} KB)</span></span>
+              <button type="button" data-msg-id="${escapeHtml(String(m.id))}" class="msg-admin-att-dl" style="background:rgba(99,102,241,0.25); color:#c7d2fe; border:0; padding:0.25rem 0.6rem; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:700;">⬇️ ダウンロード</button>
+            </div>`
+          : '';
         return `
           <div style="background:rgba(255,255,255,0.04); border-left:3px solid rgba(236,72,153,0.5); border-radius:6px; padding:0.7rem; margin-bottom:0.5rem;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
@@ -1886,11 +1903,42 @@ async function loadMessageHistory() {
               <div style="font-size:0.72rem; color:#71717a;">${escapeHtml(_msgFmtJst(m.created_at))}</div>
             </div>
             <div style="font-size:0.78rem; color:#d4d4d8; max-height:3em; overflow:hidden; margin-bottom:0.4rem;">${escapeHtml(m.body)}</div>
+            ${attBlockI}
             <div style="display:flex; gap:0.7rem; font-size:0.72rem;">${emailBadge} ${readBadge}</div>
           </div>`;
       }).join('');
     }
     el.innerHTML = html;
+
+    // 📎 添付ダウンロード bind (mypage.js の msg-att-dl と同パターン / Content-Disposition から filename 復元)
+    el.querySelectorAll('.msg-admin-att-dl').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-msg-id');
+        const orig = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '⏳ 取得中...';
+        try {
+          const r = await window.AdminAuth.fetch(`/api/admin/messages/${encodeURIComponent(id)}/attachment`);
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          const blob = await r.blob();
+          const cd = r.headers.get('content-disposition') || '';
+          let fn = 'attachment';
+          const m1 = cd.match(/filename\*=UTF-8''([^;]+)/i);
+          if (m1) { try { fn = decodeURIComponent(m1[1]); } catch {} }
+          else { const m2 = cd.match(/filename="?([^";]+)/i); if (m2) fn = m2[1]; }
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = fn; document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1500);
+        } catch (err) {
+          alert('添付のダウンロードに失敗しました: ' + (err.message || err));
+        } finally {
+          btn.disabled = false;
+          btn.textContent = orig;
+        }
+      });
+    });
 
     // 「✅ 加入させる」ボタン bind
     el.querySelectorAll('.msg-approve-btn').forEach(btn => {
