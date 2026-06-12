@@ -1396,7 +1396,7 @@
         <button id="cancelTrialBtn" class="btn-secondary btn-small" style="display:none; color: #fca5a5; border-color: rgba(239, 68, 68, 0.3);">🚪 解約する</button>
         <a href="mailto:info@trillion-ai-juku.com" class="btn-secondary btn-small" style="text-decoration:none; color:#a78bfa;">📧 お問い合わせ</a>
       </div>
-      <p style="margin-top:1rem; font-size:0.8rem; color: #94a3b8;">
+      <p id="cancelPolicyNote" style="margin-top:1rem; font-size:0.8rem; color: #94a3b8;">
         ※ 解約後も、既に支払った期間の終わりまで引き続きご利用いただけます。返金はございません。
       </p>
     </section>
@@ -2360,6 +2360,9 @@
     const statusLabel = document.getElementById('billingStatusLabel');
     const portalBtn = document.getElementById('openPortalBtn');
     const cancelBtn = document.getElementById('cancelTrialBtn');
+    // refresh() が取得した /api/auth/me の student。解約 confirm の文言分岐 (trial_extended 判別) に使う。
+    // cancelBtn は refresh() 成功時にしか表示されないため、クリック時点では必ずセット済み。
+    let currentStudent = null;
 
     // 現在のステータス表示
     async function refresh() {
@@ -2371,11 +2374,19 @@
         const data = await res.json();
         const s = data.student;
         if (!s) return;
+        currentStudent = s;
         // 🎓 本クラス(国公立難関・無期限)生は SaaS の体験/継続UIを出さない (塾長指示 2026-06-06)。
         // course bypass で status に関係なく無期限アクセスなので、status='expired' でも「体験終了」表示にしない。
         const isHonClass = (s.course === 'kokuritsu_nankan');
+        // trial_extended (カード登録 +7日延長体験): status='trial' かつ card_registered (/api/auth/me 2026-06-12 追加)。
+        // 無課金 trial と違い 21 日体験・終了後に ¥14,500/月 (税込) の自動課金が始まるため、
+        // 「クレカ登録なし」を出すと課金前通知メールと矛盾する。文言は checkout-success.html の
+        // trial_extended 分岐とミラー。card_registered 未対応の旧 API では undefined → 従来表示に fallback。
+        const isCardTrial = (s.status === 'trial' && !!s.card_registered);
         const statusText = isHonClass
           ? '🎓 本クラス会員（国公立難関コース・無期限利用）'
+          : isCardTrial
+          ? '🎖 21日間 完全無料体験中（カード登録済み・体験終了後は ¥14,500/月 税込の自動課金開始）'
           : ({
             'trial': '🎖 14日間 完全無料体験中（クレカ登録なし）',
             'paid': '✅ 月額プラン契約中',
@@ -2416,9 +2427,11 @@
           }
         }
         // trial/expired ユーザーは継続登録ボタンを表示。ただし本クラス生(無期限)には出さない。
+        // trial_extended (isCardTrial) にも出さない — 体験終了後は自動継続 (手続き不要) なので
+        // 「自動課金開始」ラベルと矛盾し、押すと既存 trialing サブスクと二重契約になる導線 (review M-2)。
         const upgradeBtn = document.getElementById('upgradeBtn');
         if (upgradeBtn) {
-          if (!isHonClass && (s.status === 'trial' || s.status === 'expired')) {
+          if (!isHonClass && !isCardTrial && (s.status === 'trial' || s.status === 'expired')) {
             upgradeBtn.style.display = '';
             upgradeBtn.href = 'upgrade.html?email=' + encodeURIComponent(s.email);
           } else {
@@ -2433,6 +2446,13 @@
         // 本クラス生(通塾生・無期限)には「解約」を出さない (SaaSサブスクではないため・誤操作防止)
         if (!isHonClass && !isCancelReserved && (s.status === 'trial' || s.status === 'paid' || s.status === 'past_due')) {
           cancelBtn.style.display = '';
+        }
+        // trial_extended には「支払った期間の終わりまで利用可」(支払いが無いので不成立・confirm と矛盾) を
+        // 出さず、confirm/サーバ応答と整合する注記に差し替える (review M-1)。無課金 trial/paid は既存のまま。
+        // 本クラス生は体験 UI 自体を出さない方針なので差し替えもしない。
+        const cancelPolicyNote = document.getElementById('cancelPolicyNote');
+        if (cancelPolicyNote && isCardTrial && !isHonClass) {
+          cancelPolicyNote.textContent = '※ 体験期間中に解約された場合、その時点で体験は終了し、ご登録のカードへの請求は発生しません。';
         }
       } catch (e) {
         console.warn('Failed to load billing status', e);
@@ -2467,7 +2487,14 @@
 
     // 解約ボタン (トライアル中心、有料でもStripe API経由)
     cancelBtn.addEventListener('click', async () => {
-      if (!confirm('本当に解約しますか？\n\n・14日間の無料体験期間が残っている場合は、期間終了まで利用可能です\n・体験中は元々課金されていないため返金は発生しません\n・後日再契約は可能です')) return;
+      // trial_extended (カード登録済み体験) は「14日間」「元々課金されていない」が事実と異なるため文言分岐。
+      // 解約は /api/billing/cancel-trial → Stripe Subscription.delete (即時解約) — 体験中の解約なら
+      // カードへの請求は発生しない (checkout-success.html の trial_extended 注記とミラー)。
+      const isCardTrial = !!(currentStudent && currentStudent.status === 'trial' && currentStudent.card_registered);
+      const confirmMsg = isCardTrial
+        ? '本当に解約しますか？\n\n・体験期間中に解約すれば、ご登録のカードへの請求は一切発生しません（自動課金は始まりません）\n・解約した時点で体験は終了し、サービスのご利用ができなくなります\n・後日再契約は可能です'
+        : '本当に解約しますか？\n\n・14日間の無料体験期間が残っている場合は、期間終了まで利用可能です\n・体験中は元々課金されていないため返金は発生しません\n・後日再契約は可能です';
+      if (!confirm(confirmMsg)) return;
       cancelBtn.disabled = true;
       cancelBtn.textContent = '⏳ 処理中...';
       try {

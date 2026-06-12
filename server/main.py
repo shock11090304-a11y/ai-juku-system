@@ -8137,7 +8137,8 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
     # created_at は 2026-06-11 追加 (mypage シンプルモード: 新規アカウント判定に使用・既存生徒は全表示維持)
     # last_login_at も同時追加: auth_me の 4h スロットルが「dict に無いキー参照で常に None」になり
     # 毎リクエスト UPDATE が走っていた既存バグの修正 (review 指摘)
-    c.execute("SELECT id, name, email, grade, goal, plan, status, stripe_customer_id, trial_end, enrollment_fee_waived, course, past_due_since, created_at, last_login_at FROM students WHERE id = ?", (claims["student_id"],))
+    # stripe_subscription_id は 2026-06-12 追加 [mypage-keiyaku-copy]: card_registered フラグ算出用
+    c.execute("SELECT id, name, email, grade, goal, plan, status, stripe_customer_id, stripe_subscription_id, trial_end, enrollment_fee_waived, course, past_due_since, created_at, last_login_at FROM students WHERE id = ?", (claims["student_id"],))
     row = c.fetchone()
     conn.close()
     if not row:
@@ -8213,6 +8214,10 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
         "goal": row["goal"],
         "plan": row["plan"],
         "status": status,
+        # クレカ登録済みフラグ [mypage-keiyaku-copy] (2026-06-12): status='trial' かつ True なら
+        # trial_extended (カード登録 +7日延長体験・終了後 ¥14,500/月 自動課金)。mypage 契約管理が
+        # 「クレカ登録なし」文言を出し分けるのに使用。生の subscription_id は渡さない (有無の bool のみ)。
+        "card_registered": bool(row["stripe_subscription_id"]),
         "enrollment_fee_waived": waived,  # mypage の「免除済みバッジ」表示に使用
         "course": course_val,  # 国公立難関大学コース ('kokuritsu_nankan') 識別 (塾長指示 2026-05-04)
         "created_at": created_at_val,  # mypage シンプルモードの新規アカウント判定 (2026-06-11)
