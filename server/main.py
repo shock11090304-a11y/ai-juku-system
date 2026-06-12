@@ -12624,6 +12624,8 @@ def admin_stripe_diagnose_orphan_subs(
                 "subscription_id": sub_id,
                 "customer": cust,
                 "system_tag": meta.get("system"),
+                # [upgrade-supersede] 月額移行/再申込で webhook が即時解約した旧サブスク (生徒不一致が正常)
+                "superseded_by": meta.get("superseded_by"),
                 "sub_created": datetime.fromtimestamp(sub.get("created"), tz=timezone.utc).isoformat() if sub.get("created") else None,
             }
             # sub_id 一致の生徒 (居れば正常な解約イベント)
@@ -23992,6 +23994,56 @@ def _invoice_subscription_id(invoice: dict) -> Optional[str]:
     return sub or None
 
 
+def _cancel_superseded_subscription(stripe_client, old_sub_id, new_sub_id, student_id, context: str):
+    """新 subscription への置換で不要になった旧 subscription を Stripe 上で即時解約する。
+
+    🔁 [upgrade-supersede] (2026-06-12): trial_extended (カード登録 21 日体験) 中に月額移行すると
+    checkout は新 subscription を作るが、旧 trial サブスクは Stripe に残ったまま trial 明けに
+    active 化して ¥14,500/月 の二重課金が始まる。trial_extended の再申込でも同型の孤児が生まれる。
+    DB の stripe_subscription_id を新サブスクで上書き・commit した **後** に呼ぶこと —
+    subscription.deleted webhook は sub_id 厳密一致なので、置換済みの生徒が誤って canceled 化される
+    ことはない。解約前に metadata.superseded_by を付け、deleted webhook の orphan 警告
+    (重複サブスク疑い) と /api/admin/stripe/diagnose-orphan-subs の誤検知を防ぐ。
+    """
+    if not old_sub_id or not new_sub_id or old_sub_id == new_sub_id:
+        return  # 置換が成立していない (旧サブスク無し / webhook 再配送で同一 sub) — 何もしない
+    try:
+        try:
+            stripe_client.Subscription.modify(old_sub_id, metadata={"superseded_by": new_sub_id, "superseded_context": context})
+        except Exception as _me:
+            # タグ付け失敗は致命ではない (orphan 警告のノイズより旧サブスク取り残しの実害が大きい) — 解約は続行
+            log.info(f"[{context}] superseded tag failed for {old_sub_id} (解約は続行): {type(_me).__name__}: {_me}")
+        stripe_client.Subscription.delete(old_sub_id)
+        log.info(f"[{context}] 旧 subscription {old_sub_id} を即時解約 (置換先 {new_sub_id}, student_id={student_id})")
+    except Exception as e:
+        _msg = str(e).lower()
+        if type(e).__name__ == "InvalidRequestError" and any(
+            _t in _msg for _t in (
+                "no such subscription", "resource_missing",
+                "already canceled", "already_canceled",
+                "has been canceled", "canceled subscription",
+            )
+        ):
+            log.info(f"[{context}] 旧 subscription {old_sub_id} は既に解約済み")
+            return
+        # 放置すると旧サブスクの trial 明けに二重課金が始まる — 手動対応必須の critical event として記録
+        log.error(
+            f"[{context}] FAILED to cancel superseded subscription {old_sub_id} "
+            f"(student_id={student_id}, new={new_sub_id}): {type(e).__name__}: {e}"
+        )
+        _record_ai_critical_event("superseded_subscription_cancel_failed", {
+            "student_id": student_id,
+            "old_subscription": old_sub_id,
+            "new_subscription": new_sub_id,
+            "context": context,
+            "error": str(e)[:200],
+            "action_required": (
+                f"Stripe Dashboard で旧 subscription {old_sub_id} を手動解約してください "
+                f"(student_id={student_id}・新契約 {new_sub_id} は有効・放置すると trial 明けに二重課金)"
+            ),
+        })
+
+
 # ==========================================================================
 # Routes: Stripe Webhook
 # ==========================================================================
@@ -24097,23 +24149,27 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
             trial_end = now + timedelta(days=EXTENDED_TRIAL_DAYS)
             log.info(f"[Stripe webhook trial_extended] student_id={student_id}, email={email}, customer={customer}, subscription={subscription}")
             target_id = None
+            _old_sub_te = None  # 🔁 [upgrade-supersede] 再申込時の旧 subscription (置換成立後に即時解約)
             # 🛡 R3-B fix (2026-05-19): student_id は metadata 経由でユーザー制御可能 (LP form の hidden field 経由)
             # 他人の student_id を渡されると IDOR で被害者の subscription_id/status を上書きする攻撃が可能。
             # → student_id を指定された場合も email 一致を必ず検証してから採用 (email は Stripe verified)
             if student_id and student_id != "" and email:
                 try:
-                    c.execute("SELECT id FROM students WHERE id=? AND LOWER(email)=?", (student_id, email))
+                    c.execute("SELECT id, stripe_subscription_id FROM students WHERE id=? AND LOWER(email)=?", (student_id, email))
                     _vrow = c.fetchone()
                     if _vrow:
-                        target_id = _vrow[0]
+                        target_id = _vrow["id"]
+                        _old_sub_te = _vrow["stripe_subscription_id"]
                     else:
                         log.warning(f"[Stripe webhook trial_extended] student_id={student_id} does NOT match email={email}; falling back to email lookup (possible IDOR attempt)")
                 except Exception as _ve:
                     log.warning(f"[Stripe webhook trial_extended] student_id ownership check failed: {_ve}")
             if target_id is None and email:
-                c.execute("SELECT id FROM students WHERE LOWER(email)=?", (email,))
+                c.execute("SELECT id, stripe_subscription_id FROM students WHERE LOWER(email)=?", (email,))
                 row = c.fetchone()
-                if row: target_id = row[0]
+                if row:
+                    target_id = row["id"]
+                    _old_sub_te = row["stripe_subscription_id"]
             if target_id:
                 # 🛡 既存 student を UPDATE (trial_signup endpoint で既に INSERT 済の想定)
                 # plan='founder_special' (現在の +7 日延長 default プラン・将来 plan metadata 受け取りで切替可)
@@ -24132,6 +24188,9 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                 conn.commit()
                 if _te_updated > 0:
                     log.info(f"[Stripe webhook trial_extended] updated student {target_id}, trial_end={trial_end.isoformat()}")
+                    # 🔁 [upgrade-supersede] trial_extended 再申込: 旧 subscription を残すと
+                    # 旧側の trial 明けに二重課金が始まるため、置換が成立した時点で即時解約
+                    _cancel_superseded_subscription(s, _old_sub_te, subscription, target_id, "trial_extended-recheckout-supersede")
                 elif subscription:
                     # [cancel-consistency] 解約先行 (canceled) または行消失 → 作成済み subscription を孤立した
                     # まま放置すると課金が始まるため即時解約する。
@@ -24190,6 +24249,13 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
             _VALID_PLAN_KEYS = {"founder_special", "founder1", "premium", "family", "standard", "student_addon"}
             plan_valid = bool(plan) and plan in _VALID_PLAN_KEYS
 
+            # 🔁 [upgrade-supersede] (2026-06-12): 上書き前に旧 subscription を捕捉する。
+            # trial_extended (カード登録 21 日体験) 中の月額移行では checkout が新 subscription を
+            # 作るため、旧 trial サブスクを Stripe 上で解約しないと残留し、trial 明けに active 化して
+            # ¥14,500/月 の二重課金が始まる。commit 後に _cancel_superseded_subscription で即時解約。
+            _old_sub_monthly = None
+            _supersede_student_id = None
+
             if student_id and student_id != "":
                 # 既存 ID 指定: ai-juku 申込フォーム経由なので plan が空でも UPDATE 続行 (後方互換)
                 # 🛡️ 2026-06-12: trial_end=NULL を追加 (admin set-status paid / subscription.updated
@@ -24198,6 +24264,15 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                 # 未来 trial_end の行になり、cron_trial_reminders の窓 (trial_end が 24-48h 先) に
                 # 必ず一度入って、契約者に無課金 trial 用「自動課金は発生しません」メールが
                 # 誤配される (3ffa446 の 3視点 review root cause 指摘)。
+                try:
+                    c.execute("SELECT stripe_subscription_id FROM students WHERE id=?", (student_id,))
+                    _r_old = c.fetchone()
+                    if _r_old:
+                        _old_sub_monthly = _r_old["stripe_subscription_id"]
+                        _supersede_student_id = student_id
+                except Exception as _oe:
+                    # 捕捉失敗でも paid 化は止めない (旧サブスク残留は reconcile/orphan 監視が後追い検出)
+                    log.warning(f"[Stripe webhook monthly] old subscription lookup failed (student_id={student_id}): {_oe}")
                 c.execute(
                     """UPDATE students SET status='paid', stripe_customer_id=?, stripe_subscription_id=?,
                            paid_since=CURRENT_TIMESTAMP, plan=?, trial_end=NULL, cancel_at=NULL, updated_at=CURRENT_TIMESTAMP
@@ -24205,15 +24280,17 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                     (customer, subscription, plan, student_id)
                 )
             elif email:
-                c.execute("SELECT id FROM students WHERE email=?", (email,))
+                c.execute("SELECT id, stripe_subscription_id FROM students WHERE email=?", (email,))
                 row = c.fetchone()
                 if row:
+                    _old_sub_monthly = row["stripe_subscription_id"]
+                    _supersede_student_id = row["id"]
                     # 既存 email: trial → paid 化等の正常 case (trial_end=NULL は上の ID 指定 UPDATE と同理由)
                     c.execute(
                         """UPDATE students SET status='paid', stripe_customer_id=?, stripe_subscription_id=?,
                                paid_since=CURRENT_TIMESTAMP, plan=?, trial_end=NULL, cancel_at=NULL, updated_at=CURRENT_TIMESTAMP
                            WHERE id=?""",
-                        (customer, subscription, plan, row[0])
+                        (customer, subscription, plan, row["id"])
                     )
                 else:
                     # 新規 email: ai-juku で初登場の顧客
@@ -24240,6 +24317,10 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                         except Exception:
                             pass
             conn.commit()
+
+            # 🔁 [upgrade-supersede] DB が新 subscription を指した後に旧サブスクを即時解約する
+            # (subscription.deleted webhook は sub_id 厳密一致 → 置換済みの生徒は canceled 化されない)
+            _cancel_superseded_subscription(s, _old_sub_monthly, subscription, _supersede_student_id, "monthly-checkout-supersede")
 
             # 入塾金 InvoiceItem (月額のみ・先着100名キャンペーン適用時はスキップ)
             # Race condition 対策: webhook 処理時に再度枠チェック (atomic)。
@@ -24706,6 +24787,13 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                 log.info(
                     f"[Stripe webhook {event['type']}] sub={sub.get('id')} customer={sub.get('customer')} "
                     f"は処理済み (canceled & sub_id クリア済み) — 重複イベントとして無視"
+                )
+            elif (_sub_meta.get("superseded_by") or "").strip():
+                # 🔁 [upgrade-supersede] 月額移行/再申込で置換され webhook 側から即時解約した旧サブスク。
+                # DB は新 sub_id を指しているため不一致が正常 — orphan 警告 (要確認) を出さない。
+                log.info(
+                    f"[Stripe webhook {event['type']}] sub={sub.get('id')} は置換済み旧サブスクの解約 "
+                    f"(superseded_by={_sub_meta.get('superseded_by')}) — 正常"
                 )
             else:
                 # 🔍 2026-06-11: どの生徒の stripe_subscription_id にも一致しない解約イベントを可視化。
