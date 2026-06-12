@@ -1493,7 +1493,7 @@
         const data = await res.json();
         const labels = { problems: '問題生成', essays: '添削', textbooks: '参考書生成' };
         const colors = { problems: '#a78bfa', essays: '#34d399', textbooks: '#fbbf24' };
-        const planName = { trial: 'トライアル', standard: 'スタンダード', premium: 'プレミアム', family: '家族プラン', student_addon: '塾生アドオン' }[data.plan] || data.plan;
+        const planName = { trial: 'トライアル', standard: 'スタンダード', premium: 'プレミアム', family: '家族プラン', student_addon: '塾生アドオン', founder_special: '創設メンバー', founder1: '創設メンバー', hybrid: 'プレミアム', intensive: '家族プラン', ai: 'スタンダード' }[data.plan] || data.plan;
         const isUnlimited = Object.values(data.usage).every(u => u.limit === null);
         const rows = Object.entries(data.usage).map(([key, u]) => {
           const label = labels[key] || key;

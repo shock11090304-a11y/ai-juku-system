@@ -242,6 +242,13 @@ PLAN_QUOTAS = {
     "premium":       {"problems": None, "essays": None, "textbooks": None},
     "family":        {"problems": None, "essays": None, "textbooks": None},
     "student_addon": {"problems": None, "essays": None, "textbooks": None},
+    # premium 同等 tier — PREMIUM_TIER_PLANS と同期必須
+    # (キー漏れは .get() の trial fallback で 50/20/5 制限が誤適用される)
+    "founder_special": {"problems": None, "essays": None, "textbooks": None},  # 創設メンバー (永年¥14,500・premium 全機能)
+    "founder1":        {"problems": None, "essays": None, "textbooks": None},  # 後方互換 (旧 founder_special)
+    "hybrid":          {"problems": None, "essays": None, "textbooks": None},  # 後方互換 (旧 premium)
+    "intensive":       {"problems": None, "essays": None, "textbooks": None},  # 後方互換 (旧 family)
+    "ai":              {"problems": 50, "essays": 20, "textbooks": 5},         # 後方互換 (旧 standard)
     # トライアル中もスタンダードと同等の制限
     "trial":         {"problems": 50, "essays": 20, "textbooks": 5},
 }
@@ -22902,7 +22909,10 @@ def usage_me(authorization: Optional[str] = Header(None)):
     student = _get_current_student(authorization)
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    plan = (student.get("plan") or "trial").lower()
+    # 実効プラン (status='trial' は希望プランを無視して一律 trial — _effective_quota_plan 参照)。
+    # レスポンスの "plan" もこの実効値を返す: 体験中の生徒に希望プラン名 (創設メンバー等) と
+    # 無制限表示を誤って見せず、mypage の利用状況パネルがトライアル表示+残回数で一貫する。
+    plan = _effective_quota_plan(student)
     # 国公立難関大学コース = premium 同等 → 全機能無制限 (塾長指示)
     _u_course = student.get("course")
     if _u_course == "kokuritsu_nankan":
@@ -24107,14 +24117,55 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
             if target_id:
                 # 🛡 既存 student を UPDATE (trial_signup endpoint で既に INSERT 済の想定)
                 # plan='founder_special' (現在の +7 日延長 default プラン・将来 plan metadata 受け取りで切替可)
+                # 🛡 [cancel-consistency] (2026-06-12): status='canceled' の行は trial に書き戻さない。
+                # checkout 完了〜webhook 到達の間に /api/billing/cancel-trial が呼ばれると、sub_id 未保存の
+                # ため純 trial 経路で DB は canceled になるが Stripe subscription は生きている。ここで無条件に
+                # trial へ復活させると「解約したはずの生徒に 21 日後、自動課金が始まる」ため、canceled は
+                # 維持して subscription を即時解約する (解約が生徒の最終意思)。
                 c.execute(
                     """UPDATE students SET status='trial', stripe_customer_id=?, stripe_subscription_id=?,
                            trial_start=?, trial_end=?, plan='founder_special', cancel_at=NULL, updated_at=CURRENT_TIMESTAMP
-                       WHERE id=?""",
+                       WHERE id=? AND status != 'canceled'""",
                     (customer, subscription, now.isoformat(), trial_end.isoformat(), target_id)
                 )
+                _te_updated = c.rowcount
                 conn.commit()
-                log.info(f"[Stripe webhook trial_extended] updated student {target_id}, trial_end={trial_end.isoformat()}")
+                if _te_updated > 0:
+                    log.info(f"[Stripe webhook trial_extended] updated student {target_id}, trial_end={trial_end.isoformat()}")
+                elif subscription:
+                    # [cancel-consistency] 解約先行 (canceled) または行消失 → 作成済み subscription を孤立した
+                    # まま放置すると課金が始まるため即時解約する。
+                    log.warning(
+                        f"[Stripe webhook trial_extended] student {target_id} is canceled (or gone) — "
+                        f"canceling fresh subscription {subscription} to prevent billing"
+                    )
+                    try:
+                        _stripe_te = get_stripe()
+                        _stripe_te.Subscription.delete(subscription)
+                        log.info(f"[Stripe webhook trial_extended] subscription {subscription} canceled (post-cancel race resolved)")
+                    except Exception as _ce:
+                        _ce_msg = str(_ce).lower()
+                        if type(_ce).__name__ == "InvalidRequestError" and any(
+                            _s in _ce_msg for _s in (
+                                "no such subscription", "resource_missing",
+                                "already canceled", "already_canceled",
+                                "has been canceled", "canceled subscription",
+                            )
+                        ):
+                            log.info(f"[Stripe webhook trial_extended] subscription {subscription} already gone")
+                        else:
+                            # 解約済み生徒への課金が始まってしまうため、手動対応必須の critical event として記録
+                            log.error(
+                                f"[Stripe webhook trial_extended] FAILED to cancel subscription {subscription} "
+                                f"for canceled student {target_id}: {type(_ce).__name__}: {_ce}"
+                            )
+                            _record_ai_critical_event("trial_extended_cancel_race_unresolved", {
+                                "student_id": target_id,
+                                "subscription": subscription,
+                                "customer": customer,
+                                "error": str(_ce)[:200],
+                                "action_required": "Stripe Dashboard で subscription を手動解約してください (生徒は解約済み・放置すると 21 日後に課金開始)",
+                            })
             else:
                 # 想定外: trial_signup endpoint で先に INSERT されているはずだが、何らかの理由で
                 # 見つからない場合 → 新規 INSERT で fallback (audit log で警告)
@@ -24629,18 +24680,40 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
         c = conn.cursor()
         # cancel_at=NULL [cancel-period-end]: 期間末解約の完了 (または即時解約) で予約状態を解消。
         # 残すと再契約時 (新サブスク紐付け前の表示) に「解約予約済み」が誤表示される。
-        c.execute("UPDATE students SET status='canceled', cancel_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE stripe_subscription_id=?",
+        # 🧹 [cancel-consistency] (2026-06-12): canceled 遷移時に stripe_subscription_id も NULL クリア。
+        # 死んだ sub_id が残留すると、trial 再付与 (win-back/admin) 後に card_registered 誤表示 /
+        # cancel-trial の Stripe 502 (UI から解約不能) / expire-trials cron 除外 (永久に失効しない) /
+        # 課金前通知の誤送信を引き起こす (trial_extended 文言分岐レビューで発覚)。
+        # past_due_since も canceled 遷移で解消 (05604ea の不変条件と同じ。monthly checkout の paid 化は
+        # past_due_since をクリアしないため、stale な猶予起点が再契約後の決済失敗で即失効を招く)。
+        c.execute("UPDATE students SET status='canceled', cancel_at=NULL, stripe_subscription_id=NULL, past_due_since=NULL, updated_at=CURRENT_TIMESTAMP WHERE stripe_subscription_id=?",
                   (sub.get("id"),))
         _del_matched = c.rowcount
+        _dup_cleared = False
+        if _del_matched == 0:
+            # [cancel-consistency] updated(canceled) ハンドラが先に sub_id を NULL クリア済みだと
+            # ここは 0 件一致になる。その場合は処理済みイベントの重複なので警告を出さない (誤報抑制)。
+            try:
+                c.execute("SELECT 1 FROM students WHERE stripe_customer_id=? AND status='canceled' LIMIT 1",
+                          (sub.get("customer"),))
+                _dup_cleared = bool(c.fetchone())
+            except Exception:
+                pass
         conn.commit()
         conn.close()
         if _del_matched == 0:
-            # 🔍 2026-06-11: どの生徒の stripe_subscription_id にも一致しない解約イベントを可視化。
-            # 同一顧客の重複サブスク (二重課金) や手動作成サブスクの解約を見逃さないための観測ログ。
-            log.warning(
-                f"[Stripe webhook {event['type']}] no matching student for sub={sub.get('id')} "
-                f"customer={sub.get('customer')} — 重複サブスク/手動サブスクの可能性。Stripe Dashboard で要確認"
-            )
+            if _dup_cleared:
+                log.info(
+                    f"[Stripe webhook {event['type']}] sub={sub.get('id')} customer={sub.get('customer')} "
+                    f"は処理済み (canceled & sub_id クリア済み) — 重複イベントとして無視"
+                )
+            else:
+                # 🔍 2026-06-11: どの生徒の stripe_subscription_id にも一致しない解約イベントを可視化。
+                # 同一顧客の重複サブスク (二重課金) や手動作成サブスクの解約を見逃さないための観測ログ。
+                log.warning(
+                    f"[Stripe webhook {event['type']}] no matching student for sub={sub.get('id')} "
+                    f"customer={sub.get('customer')} — 重複サブスク/手動サブスクの可能性。Stripe Dashboard で要確認"
+                )
 
     elif event["type"] == "customer.subscription.updated":
         # 🎁 2026-05-19: +7 日 trial → paid 化検知 (集客 funnel #4)
@@ -24757,8 +24830,11 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
             conn = db()
             c = conn.cursor()
             try:
+                # 🧹 [cancel-consistency] (2026-06-12): deleted ハンドラ同様、canceled 遷移時に sub_id も
+                # NULL クリア (死んだ sub_id 残留による card_registered 誤表示 / cancel-trial 502 /
+                # expire-trials cron 除外を防ぐ)。past_due_since も同時解消 (canceled 遷移の不変条件)。
                 c.execute(
-                    "UPDATE students SET status='canceled', cancel_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE stripe_subscription_id=? AND status IN ('paid','trial','past_due')",
+                    "UPDATE students SET status='canceled', cancel_at=NULL, stripe_subscription_id=NULL, past_due_since=NULL, updated_at=CURRENT_TIMESTAMP WHERE stripe_subscription_id=? AND status IN ('paid','trial','past_due')",
                     (sub_id,)
                 )
                 if c.rowcount > 0:
@@ -26786,6 +26862,31 @@ def cancel_trial(authorization: Optional[str] = Header(None)):
                 _sub = _stripe.Subscription.modify(row["stripe_subscription_id"], cancel_at_period_end=True)
                 log.info(f"Stripe subscription scheduled to cancel at period end for student {student['id']}")
         except Exception as e:
+            # 🧹 [cancel-consistency] (2026-06-12): Stripe 側で既に解約済み / 存在しない subscription は
+            # 「解約完了」として扱う。死んだ sub_id が DB に残留した行 (旧 webhook が canceled 遷移時に
+            # sub_id を消していなかった残骸) では Stripe 呼び出しが必ず失敗 → 502 になり、UI から
+            # 永久に解約できなくなるため。この場合 subscription.deleted webhook はもう来ないので、
+            # ここで直接 DB を canceled に更新し、死んだ sub_id もクリアする (自己修復)。
+            _e_msg = str(e).lower()
+            _gone_missing = any(_s in _e_msg for _s in ("no such subscription", "resource_missing"))
+            _gone_canceled = any(_s in _e_msg for _s in (
+                "already canceled", "already_canceled", "has been canceled", "canceled subscription",
+            ))
+            if type(e).__name__ == "InvalidRequestError" and (_gone_missing or _gone_canceled):
+                log.info(f"Stripe subscription already gone for student {student['id']} (treated as canceled): {e}")
+                # cancel_at / past_due_since も NULL クリア: canceled 遷移の不変条件
+                # (03b70c4 の解約予約解消・05604ea の stale 猶予起点解消と同一の自己修復)。
+                c.execute(
+                    "UPDATE students SET status='canceled', stripe_subscription_id=NULL, cancel_at=NULL, past_due_since=NULL, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                    (student["id"],)
+                )
+                conn.commit()
+                conn.close()
+                if _gone_missing and not _gone_canceled:
+                    # サブスク不存在は「別のサブスクが存在しない」ことまで保証できないため請求断言なし
+                    # (前段ガード 05604ea の resource_missing 文言と統一)。
+                    return {"ok": True, "message": "解約手続きは既に完了しています。ご不明な点がございましたら、お気軽に info@trillion-ai-juku.com までお問い合わせください。"}
+                return {"ok": True, "message": "解約手続きが完了しました。ご利用は終了となり、今後のご請求は発生しません。"}
             log.error(f"Stripe cancel failed for student {student['id']}: {type(e).__name__}: {e}")
             conn.close()
             raise HTTPException(
@@ -27224,6 +27325,18 @@ def _get_all_monthly_usage(student_id: int, year_month: Optional[str] = None) ->
     return {r["feature"]: int(r["used_count"]) for r in rows}
 
 
+def _effective_quota_plan(student: dict) -> str:
+    """月次クォータ計算に使う実効プラン名を返す。
+    status='trial' の students.plan には申込時の「希望プラン」が入る (checkout の
+    デフォルト radio = founder_special / trial_signup のデフォルト hybrid) ため、
+    plan だけで引くと無課金体験に premium 相当の無制限クォータが漏れる。
+    体験中は一律 trial 制限とし、支払い確定 (status='paid') 後に plan 本来の
+    クォータが有効化される。past_due は猶予期間中のアクセス維持方針に合わせ plan を維持。"""
+    if (student.get("status") or "").lower() == "trial":
+        return "trial"
+    return (student.get("plan") or "trial").lower()
+
+
 def _check_quota(student: dict, feature: str) -> None:
     """その生徒のプランで feature が今月の上限に達していないか確認。
     達していれば 429 + プラン情報付きエラーを返す。"""
@@ -27233,7 +27346,7 @@ def _check_quota(student: dict, feature: str) -> None:
     _sq_course = student.get("course")
     if _sq_course == "kokuritsu_nankan":
         return  # 無制限
-    plan = (student.get("plan") or "trial").lower()
+    plan = _effective_quota_plan(student)
     quotas = PLAN_QUOTAS.get(plan, PLAN_QUOTAS["trial"])
     limit = quotas.get(feature)
     if limit is None:
