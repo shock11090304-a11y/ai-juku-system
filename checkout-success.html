@@ -163,10 +163,13 @@
   <main class="checkout-main">
     <div class="success-hero">
       <div class="success-emoji">🎉</div>
-      <h1 class="success-title">ご登録<span class="gradient-text">完了しました！</span></h1>
-      <p class="success-sub">
-        🎖 創設メンバーとしてご登録ありがとうございます！<br>
-        14日間 完全無料の体験が始まります。クレジットカード登録不要・自動課金なし・解約手続きも不要です。
+      <h1 class="success-title" id="successTitle">お手続きが<span class="gradient-text">完了しました！</span></h1>
+      <!-- 文言は購入種別 (trial / monthly / student_addon) に応じて JS が差し替える。
+           種別不明 (メールのリンク再訪等で ?purchase= も sessionStorage も無い) 時は
+           この中立文言のまま表示する — 月額契約者に「自動課金なし」を見せないため。 -->
+      <p class="success-sub" id="successSub">
+        ご登録ありがとうございます。お手続きが完了しました。<br>
+        ログイン用のメールをお送りしています。下記のステップにお進みください。
       </p>
 
       <!-- ⚠️ メール送信失敗時の赤い大バナー (email_sent=false 検知時のみ) -->
@@ -248,14 +251,77 @@
 
       <p style="margin-top:2rem;font-size:0.85rem;color:var(--text-muted);">
         ご質問・お困りごとは、<a href="mailto:info@trillion-ai-juku.com" style="color:var(--primary-light);">info@trillion-ai-juku.com</a> までお気軽にどうぞ。<br>
-        体験期間中はいつでも<a href="legal.html#tokusho" style="color:var(--primary-light);">解約可能</a>です。
+        <span id="cancelNote">解約は<a href="legal.html#tokusho" style="color:var(--primary-light);">いつでも可能</a>です。</span>
       </p>
     </div>
   </main>
 
   <script>
+    // ============================================================
+    // 🏷️ 購入種別の判定 (trial / trial_extended / monthly / student_addon / unknown)
+    // このページは無料体験と有料継続契約 (即課金サブスク) 両方の success_url。
+    // 体験文言を固定表示すると月額契約直後の人に「自動課金なし」が出る誤案内に
+    // なるため、?purchase= (サーバが success_url に付与) → sessionStorage の
+    // 申込メタ の順で判定し、どちらも無ければ unknown として中立文言のまま出す。
+    // ============================================================
+    const _q = new URLSearchParams(window.location.search);
+    let signupMeta = null;
+    try {
+      const raw = sessionStorage.getItem('ai_juku_signup_meta');
+      if (raw) signupMeta = JSON.parse(raw);
+    } catch (_e) { signupMeta = null; }
+
+    const purchaseType = (function detectPurchaseType() {
+      const p = (_q.get('purchase') || '').toLowerCase();
+      if (p === 'trial' || p === 'trial_extended' || p === 'monthly' || p === 'student_addon') return p;
+      // 旧 URL 互換: trial 系経路だけが使う固定 session_id / +7日延長フラグ。
+      // extended=1 はクレカ登録 (21日後に自動課金) なので無印 trial と混同しないこと。
+      const sid = _q.get('session_id') || '';
+      if (_q.get('extended') === '1') return 'trial_extended';
+      if (sid === 'free_trial' || sid === 'mock_trial') return 'trial';
+      if (signupMeta) {
+        if (['trial', 'trial_extended', 'monthly', 'student_addon'].includes(signupMeta.purchase_type)) {
+          return signupMeta.purchase_type;
+        }
+        if (signupMeta.source === 'upgrade') {
+          return signupMeta.plan === 'student_addon' ? 'student_addon' : 'monthly';
+        }
+        // 旧 checkout.js の meta (purchase_type なし・email_sent あり) は体験/即時本契約/通塾生の
+        // 区別がつかない (旧 JS は全フロー共通で書く) ため種別判定に使わず unknown の中立文言に
+        // 落とす — trial 扱いにすると月額契約者へ「自動課金なし」が出る (review BLOCKING 2026-06-12)
+      }
+      return 'unknown';
+    })();
+
+    // 種別ごとの hero / 解約注記の差し替え (全て固定文字列のみ — サーバ/ユーザー由来文字列は入れない)
+    (function applyPurchaseCopy() {
+      const titleEl = document.getElementById('successTitle');
+      const subEl = document.getElementById('successSub');
+      const cancelEl = document.getElementById('cancelNote');
+      if (purchaseType === 'trial') {
+        if (titleEl) titleEl.innerHTML = 'ご登録<span class="gradient-text">完了しました！</span>';
+        if (subEl) subEl.innerHTML = '🎖 創設メンバーとしてご登録ありがとうございます！<br>14日間 完全無料の体験が始まります。クレジットカード登録不要・自動課金なし・解約手続きも不要です。';
+        if (cancelEl) cancelEl.innerHTML = '体験期間中はいつでも<a href="legal.html#tokusho" style="color:var(--primary-light);">解約可能</a>です。';
+      } else if (purchaseType === 'trial_extended') {
+        // クレカ登録 +7日延長 (21日無料 → 終了後に founder_special 月額の自動課金開始)。
+        // checkout.html の opt-in 同意文言とミラー — 「自動課金なし」「カード登録不要」は絶対に出さない。
+        if (titleEl) titleEl.innerHTML = 'ご登録<span class="gradient-text">完了しました！</span>';
+        if (subEl) subEl.innerHTML = '🎖 創設メンバーとしてご登録ありがとうございます！<br>カード登録特典により <strong>21日間 完全無料</strong>の体験が始まります。体験期間中は一切課金されません。21日経過後は創設メンバープラン ¥14,500/月 (税込) の自動課金が始まります。';
+        if (cancelEl) cancelEl.innerHTML = '続けない場合は体験期間中に<a href="legal.html#tokusho" style="color:var(--primary-light);">解約</a>いただければ、料金は一切かかりません。';
+      } else if (purchaseType === 'monthly' || purchaseType === 'student_addon') {
+        if (titleEl) titleEl.innerHTML = 'ご契約<span class="gradient-text">完了しました！</span>';
+        if (subEl) subEl.innerHTML = (purchaseType === 'student_addon')
+          ? '🏫 通塾生プランのご契約ありがとうございます！<br>本日より月額プランが開始されます。'
+          : '🎓 ご契約ありがとうございます！<br>本日より月額プランが開始されます。引き続き学習環境をご利用いただけます。';
+        if (cancelEl) cancelEl.innerHTML = '解約は<a href="legal.html#tokusho" style="color:var(--primary-light);">いつでも可能</a>です。';
+      }
+      // unknown: HTML 既定の中立文言のまま (体験/契約どちらにも誤らない)
+    })();
+
     // Trial Onboarding の開始日を購入日にセット
+    // (月額契約完了時は書かない — app 側の体験UIが誤って出るのを防ぐ)
     (function initTrial() {
+      if (purchaseType === 'monthly' || purchaseType === 'student_addon') return;
       try {
         const existing = localStorage.getItem('ai_juku_trial_onboarding');
         if (!existing) {
@@ -298,24 +364,25 @@
     fetch(`${API_BASE}/api/track`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'checkout_completed', props: { session_id: new URLSearchParams(window.location.search).get('session_id') } })
+      body: JSON.stringify({ name: 'checkout_completed', props: { session_id: _q.get('session_id'), purchase_type: purchaseType } })
     }).catch(() => {});
 
     // 入塾金免除キャンペーン残枠を取得して適用予定バナーを表示
-    fetch(`${API_BASE}/api/campaigns/enrollment-waiver/status`).then(r => r.ok ? r.json() : null).then(d => {
-      if (!d || !d.is_active || d.remaining <= 0) return;
-      const banner = document.getElementById('enrollmentWaiverConfirm');
-      if (banner) banner.style.display = '';
-    }).catch(() => {});
+    // (バナー文言が「月額移行時に免除・初回請求 ¥34,980→¥24,980」という体験者向けの約束なので trial のときだけ。
+    //  trial_extended は Stripe Subscription が月額のみを自動請求し入塾金の請求行が無いため、
+    //  この金額表示は当てはまらない。月額契約完了直後や種別不明時に出すと誤案内になる)
+    if (purchaseType === 'trial') {
+      fetch(`${API_BASE}/api/campaigns/enrollment-waiver/status`).then(r => r.ok ? r.json() : null).then(d => {
+        if (!d || !d.is_active || d.remaining <= 0) return;
+        const banner = document.getElementById('enrollmentWaiverConfirm');
+        if (banner) banner.style.display = '';
+      }).catch(() => {});
+    }
 
     // ============================================================
     // 📧 申込メタ情報の復元 + メール導線 UI 制御
+    // (signupMeta はスクリプト冒頭の購入種別判定でパース済み)
     // ============================================================
-    let signupMeta = null;
-    try {
-      const raw = sessionStorage.getItem('ai_juku_signup_meta');
-      if (raw) signupMeta = JSON.parse(raw);
-    } catch (_e) { signupMeta = null; }
 
     // 表示用にマスクされた email を生成 (例: par***@gmail.com)
     function maskEmail(e) {

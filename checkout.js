@@ -318,12 +318,21 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     // signupData.email_sent + email を sessionStorage に渡す。
     // (success_url は Stripe の {CHECKOUT_SESSION_ID} を含むため、URL 改変では渡せない場面がある)
     try {
+      // 購入種別 (checkout-success.html の文言分岐用)。success_url の ?purchase= が正だが、
+      // デプロイ跨ぎの旧 Stripe セッション完了など param が無い場合の fallback として
+      // ここでも正しい種別を書く。extend opt-in (21日 trial → 自動課金) と
+      // 即時本契約 (#immediateBtn / student_addon) は体験と案内が真逆になるため区別必須。
+      const _extOptIn = !!document.getElementById('enableCardExtension')?.checked;
+      const _planMeta = (document.querySelector('input[name="plan"]:checked')?.value || window.__urlPlanOverride || 'founder_special');
+      const _purchaseTypeMeta = (_planMeta === 'student_addon') ? 'student_addon'
+        : (_immediateSubmit ? 'monthly' : (_extOptIn ? 'trial_extended' : 'trial'));
       sessionStorage.setItem('ai_juku_signup_meta', JSON.stringify({
         email: payload.email,
         name: payload.name,
         student_id: signupData.student_id || null,
         email_sent: !!signupData.email_sent,
         is_carrier_email: isCarrierEmail(payload.email),
+        purchase_type: _purchaseTypeMeta,
         ts: Date.now(),
       }));
     } catch (_e) { /* sessionStorage が無効でも遷移自体は続行 */ }

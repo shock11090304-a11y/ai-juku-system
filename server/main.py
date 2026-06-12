@@ -23193,7 +23193,7 @@ def create_trial_checkout(payload: dict):
                         "trial_settings": {"end_behavior": {"missing_payment_method": "cancel"}},
                     },
                     customer_email=email,
-                    success_url=f"{BASE_URL}/checkout-success.html?session_id={{CHECKOUT_SESSION_ID}}&extended=1",
+                    success_url=f"{BASE_URL}/checkout-success.html?session_id={{CHECKOUT_SESSION_ID}}&extended=1&purchase=trial_extended",
                     cancel_url=f"{BASE_URL}/checkout-cancel.html",
                     metadata={
                         "purchase_type": "trial_extended",
@@ -23219,7 +23219,7 @@ def create_trial_checkout(payload: dict):
     if FOUNDER_TRIAL_PRICE == 0:
         return {
             "free": True,
-            "checkout_url": f"{BASE_URL}/checkout-success.html?session_id=free_trial&student_id={student_id or ''}",
+            "checkout_url": f"{BASE_URL}/checkout-success.html?session_id=free_trial&student_id={student_id or ''}&purchase=trial",
             "amount": 0,
             "trial_days": FOUNDER_TRIAL_DAYS,
         }
@@ -23245,7 +23245,7 @@ def create_trial_checkout(payload: dict):
     if not STRIPE_SECRET_KEY:
         return {
             "mock": True,
-            "checkout_url": f"{BASE_URL}/checkout-success.html?session_id=mock_trial",
+            "checkout_url": f"{BASE_URL}/checkout-success.html?session_id=mock_trial&purchase=trial",
             "amount": FOUNDER_TRIAL_PRICE,
         }
 
@@ -23265,7 +23265,7 @@ def create_trial_checkout(payload: dict):
             "quantity": 1,
         }],
         customer_email=email,
-        success_url=f"{BASE_URL}/checkout-success.html?session_id={{CHECKOUT_SESSION_ID}}",
+        success_url=f"{BASE_URL}/checkout-success.html?session_id={{CHECKOUT_SESSION_ID}}&purchase=trial",
         cancel_url=f"{BASE_URL}/checkout-cancel.html",
         metadata={
             "purchase_type": "trial",
@@ -23512,13 +23512,15 @@ def create_checkout_session(payload: CheckoutRequest, request: Request):
             payment_method_types=["card"],
             line_items=[{"price": price_id, "quantity": 1}],
             customer_email=payload.email,
-            success_url=f"{BASE_URL}/checkout-success.html?session_id={{CHECKOUT_SESSION_ID}}",
+            success_url=f"{BASE_URL}/checkout-success.html?session_id={{CHECKOUT_SESSION_ID}}&purchase=student_addon",
             cancel_url=f"{BASE_URL}/checkout-cancel.html",
             allow_promotion_codes=True,
             subscription_data={
-                "metadata": {"plan": payload.plan, "student_id": str(payload.student_id or ""), "type": "student_addon"}
+                # purchase_type: webhook の分岐は else (monthly 系 catch-all) のままで不変だが、
+                # ログ/分析で student_addon が monthly に混ざらないよう明示 (他プランと同じ規約)
+                "metadata": {"plan": payload.plan, "student_id": str(payload.student_id or ""), "type": "student_addon", "purchase_type": "student_addon"}
             },
-            metadata={"plan": payload.plan, "student_id": str(payload.student_id or ""), "type": "student_addon"}
+            metadata={"plan": payload.plan, "student_id": str(payload.student_id or ""), "type": "student_addon", "purchase_type": "student_addon"}
         )
         return {
             "checkout_url": session.url,
@@ -23582,7 +23584,7 @@ def create_checkout_session(payload: CheckoutRequest, request: Request):
         "payment_method_types": ["card"],
         "line_items": [{"price": price_id, "quantity": 1}],
         "customer_email": payload.email,
-        "success_url": f"{BASE_URL}/checkout-success.html?session_id={{CHECKOUT_SESSION_ID}}",
+        "success_url": f"{BASE_URL}/checkout-success.html?session_id={{CHECKOUT_SESSION_ID}}&purchase=monthly",
         "cancel_url": f"{BASE_URL}/checkout-cancel.html",
         "subscription_data": subscription_data,
         "metadata": {
