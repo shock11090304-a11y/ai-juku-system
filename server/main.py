@@ -1181,7 +1181,7 @@ def init_db():
     -- 2026-05-07: URL 焼き込み方式は塾長 typo で email 不一致 → 顧客失敗の事故あり (森澤さん)
     -- → 短い code (AJK-XXXXXXXX) を発行し、checkout.html の入力欄に貼ってもらう運用に切替
     -- code は server で DB lookup → email/expires/kind を解決 (typo 不可・iab 安全)
-    -- 🎯 AI 合格判定 (塾長指示 2026-05-26): 生徒の学習データから AI が合格可能性を判定
+    -- 🎯 合格可能性スコア (旧称: AI 合格判定・塾長指示 2026-05-26): 学習データから SQL 決定論で算出
     -- score (0-100): 現状の合格可能性パーセント
     -- breakdown_json: 科目別偏差値・必要改善ポイント・残り日数の JSON
     -- generated_at: 計算時刻 (日次 cron で更新)
@@ -5099,8 +5099,10 @@ def student_lesson_prints_recommended(
 
 def _calculate_admission_likelihood(student_id: int) -> dict:
     """🎯 合格可能性を簡易計算 (塾長指示 2026-05-26)。
-    学習時間・弱点 TOP3 数・模試成績・残り日数から 0-100 スコアを算出。
-    Claude/Gemini を使わず SQL ベースで高速計算 (cron で日次更新可)。
+    学習時間・弱点数・配布プリント DL・単語帳進捗・模試偏差値 (最新) から 0-100 スコアを算出。
+    Claude/Gemini を使わず SQL ベースの決定論計算 (cron で日次更新可・「AI 判定」ではない)。
+    本番日は curricula.exam_date (active) → 学年からの推定 → 高3標準 (翌 2/25) の順で決める
+    (🎯 [adm-accuracy] 2026-06-12: 全員一律 2/25 固定と模試未反映の 3 視点監査指摘を修正)。
 
     返却: {score, breakdown, analysis, target_university, days_remaining}
     """
@@ -5108,14 +5110,14 @@ def _calculate_admission_likelihood(student_id: int) -> dict:
     try:
         c = conn.cursor()
         # 生徒情報取得
-        c.execute("SELECT goal, created_at FROM students WHERE id = ?", (student_id,))
+        c.execute("SELECT goal, created_at, grade FROM students WHERE id = ?", (student_id,))
         srow = c.fetchone()
         if not srow:
             return None
         try:
-            goal = srow["goal"]; created_at = srow["created_at"]
+            goal = srow["goal"]; created_at = srow["created_at"]; grade = srow["grade"]
         except (TypeError, KeyError, IndexError):
-            goal = srow[0]; created_at = srow[1]
+            goal = srow[0]; created_at = srow[1]; grade = srow[2]
         levels, goal_label, matched_kw = _infer_levels_from_goal(goal or "")
 
         # ベースライン score: マッチした志望校レベルから
@@ -5179,13 +5181,88 @@ def _calculate_admission_likelihood(student_id: int) -> dict:
             vocab_cnt = (rv[0] if rv else 0) or 0
         vocab_bonus = min(10, vocab_cnt // 50)
 
-        score = max(5, min(95, baseline + study_bonus + dl_bonus + vocab_bonus - weakness_penalty))
+        # 📝 模試 (mock_exam_sessions) の最新偏差値を反映 — docstring の「模試成績」が
+        # 実装に存在しなかった乖離の解消 ([adm-accuracy] 2026-06-12 監査指摘)。
+        # 模試 D 判定でも学習時間さえ積めば高スコアになる誤導を防ぐ。未受験なら ±0。
+        c.execute(
+            "SELECT deviation_estimate FROM mock_exam_sessions "
+            "WHERE student_id = ? AND submitted_at IS NOT NULL AND deviation_estimate IS NOT NULL "
+            "ORDER BY submitted_at DESC LIMIT 1",
+            (student_id,),
+        )
+        rmock = c.fetchone()
+        try:
+            mock_dev = float(rmock["deviation_estimate"]) if rmock and rmock["deviation_estimate"] is not None else None
+        except (TypeError, KeyError, IndexError, ValueError):
+            mock_dev = None
+        if mock_dev is None:
+            mock_adjust = 0
+        elif mock_dev >= 65:
+            mock_adjust = 10
+        elif mock_dev >= 60:
+            mock_adjust = 6
+        elif mock_dev >= 55:
+            mock_adjust = 3
+        elif mock_dev >= 50:
+            mock_adjust = 0
+        elif mock_dev >= 45:
+            mock_adjust = -5
+        else:
+            mock_adjust = -10
 
-        # 残り日数 (志望校試験日が不明なため受験年度の 2月初旬まで)
+        score = max(5, min(95, baseline + study_bonus + dl_bonus + vocab_bonus + mock_adjust - weakness_penalty))
+
+        # 🗓 残り日数 ([adm-accuracy] 2026-06-12: 全員一律「翌年 2/25」固定を動的化)。
+        # 優先順: ① curricula.exam_date (active・未来日) ② 学年からの推定 ③ 高3標準 (翌 2/25)。
+        # 学年推定: 高N/中N は 2/25 アンカー (大学入試・公立高校入試とも 2 月下旬近辺)、
+        # 小N は 2/1 アンカー (中学受験・首都圏 2/1)。日付は JST 基準 (サーバ UTC の日付ズレ防止)。
         import datetime
-        today = datetime.date.today()
-        exam_date = datetime.date(today.year if today.month < 3 else today.year + 1, 2, 25)
+        today = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))).date()
+        _base_year = today.year if today.month < 3 else today.year + 1
+        exam_date = None
+        exam_basis = "default"
+        try:
+            c.execute(
+                "SELECT exam_date FROM curricula WHERE student_id = ? AND status = 'active' "
+                "ORDER BY exam_date ASC LIMIT 1",
+                (student_id,),
+            )
+            rcur = c.fetchone()
+            if rcur and rcur["exam_date"]:
+                _ed = rcur["exam_date"]
+                _ed_date = _ed if isinstance(_ed, datetime.date) else datetime.date.fromisoformat(str(_ed)[:10])
+                if _ed_date > today:  # 過去日のカリキュラムは無視して推定へフォールバック
+                    exam_date = _ed_date
+                    exam_basis = "curricula"
+        except Exception:
+            pass  # 解析不能な exam_date は推定にフォールバック
+        if exam_date is None:
+            _g = str(grade or "")
+            import re as _re_adm
+            _m = _re_adm.search(r"高(?:校)?\s*([1-3])", _g)
+            if _m:
+                exam_date = datetime.date(_base_year + (3 - int(_m.group(1))), 2, 25)
+                exam_basis = "grade"
+            elif _re_adm.search(r"既卒|浪人|受験生", _g):
+                exam_date = datetime.date(_base_year, 2, 25)
+                exam_basis = "grade"
+            else:
+                _m = _re_adm.search(r"中(?:学)?\s*([1-3])", _g)
+                if _m:
+                    # 高校入試 (公立は 2 月下旬〜3 月上旬が多数) — 2/25 アンカー
+                    exam_date = datetime.date(_base_year + (3 - int(_m.group(1))), 2, 25)
+                    exam_basis = "grade"
+                else:
+                    _m = _re_adm.search(r"小(?:学)?\s*([1-6])", _g)
+                    if _m:
+                        # 中学受験 (首都圏 2/1 解禁) — 2/1 アンカー
+                        exam_date = datetime.date(_base_year + (6 - int(_m.group(1))), 2, 1)
+                        exam_basis = "grade"
+        if exam_date is None:
+            exam_date = datetime.date(_base_year, 2, 25)  # 従来どおりの高3標準 fallback
         days_remaining = max(0, (exam_date - today).days)
+        _basis_label = {"curricula": "カリキュラム設定", "grade": "学年から推定", "default": "高3標準"}[exam_basis]
+        exam_date_label = f"{exam_date.isoformat()} ({_basis_label})"
 
         # breakdown JSON
         import json as _json
@@ -5199,6 +5276,12 @@ def _calculate_admission_likelihood(student_id: int) -> dict:
             "dl_bonus": dl_bonus,
             "vocab_progress": vocab_cnt,
             "vocab_bonus": vocab_bonus,
+            # 🎯 [adm-accuracy] 2026-06-12: 模試反映 + 本番想定日の根拠を内訳に開示
+            "mock_deviation": mock_dev,
+            "mock_adjust": mock_adjust,
+            "exam_date": exam_date.isoformat(),
+            "exam_basis": exam_basis,
+            "exam_date_label": exam_date_label,
             "goal_levels": levels,
         }
         breakdown_str = _json.dumps(breakdown, ensure_ascii=False)
@@ -5221,7 +5304,7 @@ def _calculate_admission_likelihood(student_id: int) -> dict:
         # 学習データがほぼ無い場合も「データ蓄積中」として扱う (study_min == 0 かつ dl_cnt == 0)
         has_no_activity = (study_min == 0 and dl_cnt == 0 and vocab_cnt == 0)
         if is_new_student or has_no_activity:
-            analysis = f"📊 データ蓄積中 ({target_univ} 志望)。学習記録・配布プリント DL・単語帳練習を進めると、より正確な合格判定が表示されます。"
+            analysis = f"📊 データ蓄積中 ({target_univ} 志望)。学習記録・配布プリント DL・単語帳練習を進めると、より精度の高い参考値が表示されます。"
         elif score >= 70:
             analysis = f"順調です ✨ {target_univ} 合格可能性は高水準。引き続き弱点 TOP3 の解消に集中。"
         elif score >= 50:
@@ -5258,7 +5341,7 @@ def student_admission_likelihood(
     request: Request, student_id: int,
     authorization: Optional[str] = Header(None),
 ):
-    """🎯 AI 合格判定 (塾長指示 2026-05-26: 個別生徒の合格可能性を可視化)。
+    """🎯 合格可能性スコア (旧称: AI 合格判定・塾長指示 2026-05-26: 個別生徒の合格可能性を可視化)。
     認証: admin Bearer or 本人 session token のみ。
     SQL ベースで高速計算 → admission_likelihood テーブルにキャッシュ。
     """

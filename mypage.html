@@ -359,10 +359,11 @@
     <!-- Today's Quest: 塾長指示 2026-05-15 で削除 (XP/クエスト gamification 機能廃止) -->
 
     <div class="dashboard-grid">
-      <!-- 🎯 AI 合格判定 ダッシュボード (塾長指示 2026-05-26) -->
+      <!-- 🎯 合格可能性スコア ダッシュボード (塾長指示 2026-05-26。🎯 [adm-accuracy] 2026-06-12:
+           実体は SQL ヒューリスティックのため名称を「AI 合格判定」から変更 + 免責を常時表示化) -->
       <section id="admissionLikelihoodSection" class="aj-adv2" style="display:none; margin: 0 0 1.5rem 0; padding: 1.2rem 1.4rem; background: linear-gradient(135deg, rgba(239,68,68,0.13), rgba(251,191,36,0.10)); border: 2px solid rgba(239,68,68,0.4); border-radius: 16px; box-shadow: 0 8px 24px rgba(239,68,68,0.15);">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:0.8rem; flex-wrap:wrap; margin-bottom:0.8rem;">
-          <h3 style="margin:0; font-size:1.1rem; font-weight:800; color:#fff;">📊 AI 合格判定 <span style="font-size:0.65em; color:#fca5a5; font-weight:600;">(現状の合格可能性・残り日数)</span></h3>
+          <h3 style="margin:0; font-size:1.1rem; font-weight:800; color:#fff;">📊 合格可能性スコア <span style="font-size:0.65em; color:#fca5a5; font-weight:600;">(学習データからの参考値・残り日数)</span></h3>
           <button type="button" id="admissionRefreshBtn" style="padding:0.35rem 0.7rem; background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.4); border-radius:8px; color:#fca5a5; font-weight:700; font-size:0.78rem; cursor:pointer;">🔄 再計算</button>
         </div>
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:0.8rem; margin-bottom:0.8rem;">
@@ -387,6 +388,8 @@
           </div>
         </div>
         <div id="admAnalysis" style="padding:0.7rem 0.9rem; background:rgba(0,0,0,0.20); border-left:3pt solid #fbbf24; border-radius:6px; font-size:0.85rem; color:#fde68a; line-height:1.6; margin-bottom:0.6rem;">⏳ 計算中…</div>
+        <!-- 🎯 [adm-accuracy] 免責を内訳の外に常時表示 (details を開かないと見えなかった指摘の修正) -->
+        <div style="font-size:0.7rem; color:#a1a1aa; margin-bottom:0.6rem;">※ 学習記録・弱点・模試結果などから自動算出した参考値です (AI による合否予測ではありません)。</div>
         <details style="background:rgba(0,0,0,0.15); border-radius:8px; padding:0.5rem 0.7rem;">
           <summary style="cursor:pointer; font-size:0.78rem; color:#cbd5e1; font-weight:700;">📊 スコア内訳</summary>
           <div id="admBreakdown" style="margin-top:0.6rem; font-size:0.75rem; color:#a1a1aa; line-height:1.7;"></div>
@@ -1472,7 +1475,7 @@
         if (_ajMode === 'kosei' && !_isPreview) {
           renderWeaknessTop3(student); // 🎯 2026-05-13 塾長指示「個別問題推薦」(大学受験プール)
           renderWeeklyWorksheet(student); // 📅 2026-05-22 塾長指示「週次弱点プリント」
-          renderAdmissionLikelihood(student); // 🎯 2026-05-26 塾長指示「AI 合格判定ダッシュボード」(志望大学)
+          renderAdmissionLikelihood(student); // 🎯 2026-05-26 塾長指示 合格可能性スコア (旧 AI 合格判定・志望大学)
         }
       }
       if (document.readyState === 'loading') {
@@ -1949,7 +1952,7 @@
       });
     })();
 
-    // 🎯 AI 合格判定 (2026-05-26 塾長指示)
+    // 🎯 合格可能性スコア (旧 AI 合格判定・2026-05-26 塾長指示)
     async function renderAdmissionLikelihood(student) {
       const section = document.getElementById('admissionLikelihoodSection');
       if (!section) return;
@@ -1992,8 +1995,10 @@
             html += `<tr><td style="padding:2px 6px;">配布プリント DL</td><td style="text-align:right; color:#86efac;">${b.lesson_print_downloads || 0} 件 → +${b.dl_bonus || 0}</td></tr>`;
             html += `<tr><td style="padding:2px 6px;">単語帳 進捗</td><td style="text-align:right; color:#86efac;">${b.vocab_progress || 0} 単語 → +${b.vocab_bonus || 0}</td></tr>`;
             html += `<tr><td style="padding:2px 6px;">弱点単元数</td><td style="text-align:right; color:#fca5a5;">${b.weakness_count || 0} 件 → ${b.weakness_penalty || 0}</td></tr>`;
+            // 🎯 [adm-accuracy] 2026-06-12: 模試反映 + 本番想定日の根拠を開示
+            html += `<tr><td style="padding:2px 6px;">模試 偏差値 (最新)</td><td style="text-align:right; color:${(b.mock_adjust || 0) < 0 ? '#fca5a5' : '#86efac'};">${b.mock_deviation != null ? escapeHTML(String(b.mock_deviation)) : '未受験'} → ${(b.mock_adjust || 0) >= 0 ? '+' : ''}${b.mock_adjust || 0}</td></tr>`;
+            html += `<tr><td style="padding:2px 6px;">本番想定日</td><td style="text-align:right; color:#cbd5e1;">${escapeHTML(b.exam_date_label || '')}</td></tr>`;
             html += '</table>';
-            html += '<div style="margin-top:0.4rem; font-size:0.7rem; color:#71717a;">※ AI 推定値・参考程度に活用してください。</div>';
             breakdownEl.innerHTML = html;
           }
         } catch (e) {
