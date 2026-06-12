@@ -25584,6 +25584,41 @@ def _peek_line_link_token(token: str) -> Optional[int]:
     return int(row["student_id"])
 
 
+def _line_link_token_status(token: str) -> dict:
+    """🔍 連携コードの状態診断 (read-only)。[line-link-diag] (2026-06-12 塾長報告
+    「発行直後なのに期限切れ」の原因特定用): webhook の invalid 時ログと
+    /api/admin/line/link-token-status で共用。reason: valid|used|expired|not_found。"""
+    out = {"found": False, "reason": "not_found", "server_now": datetime.now(timezone.utc).isoformat()}
+    if not token:
+        return out
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT student_id, expires_at, used_at, created_at FROM line_link_tokens WHERE token = ?",
+            (token.strip(),),
+        )
+        row = c.fetchone()
+    finally:
+        conn.close()
+    if not row:
+        return out
+    out["found"] = True
+    out["student_id"] = row["student_id"]
+    out["created_at_raw"] = str(row["created_at"]) if row["created_at"] is not None else None
+    out["expires_at_raw"] = str(row["expires_at"])
+    out["used_at"] = str(row["used_at"]) if row["used_at"] is not None else None
+    _exp = _parse_db_dt(row["expires_at"])
+    out["expires_at_parsed"] = _exp.isoformat() if _exp else None
+    if row["used_at"] is not None:
+        out["reason"] = "used"
+    elif _exp is not None and datetime.now(timezone.utc) > _exp:
+        out["reason"] = "expired"
+    else:
+        out["reason"] = "valid"
+    return out
+
+
 def _line_user_taken_by_other(line_user_id: str, student_id: int) -> bool:
     """この line_user_id が別の生徒に既に紐付いているか (1:1 制約の事前判定)。"""
     if not line_user_id:
@@ -25869,7 +25904,21 @@ async def _handle_line_event(event: dict):
                 elif text and not peek_sid and _LINE_CODE_LIKE.fullmatch(text):
                     # コードらしき文字列だが実際に無効 (期限切れ/タイプミス/使用済) → ここだけ案内を返す。
                     #   peek_sid 有効 + user_id 欠落 (グループ/ルーム投稿等 bind 不可能な経路) は誤案内せず沈黙。
-                    _line_reply_text(reply_token, "⚠️ 連携コードが無効または期限切れです。マイページで新しいコードを発行してください。")
+                    # 🔍 [line-link-diag] (2026-06-12): 「発行直後なのに期限切れ」報告の原因特定のため
+                    #   理由 (not_found/used/expired) をログに残す (コード全文は短命 secret のため先頭のみ)。
+                    _diag = _line_link_token_status(text)
+                    if user_id and _diag.get("reason") in ("used", "not_found") and _line_student_by_user(user_id):
+                        # 既に連携済みの LINE からの (使用済み/古い) コード再送 — 初回処理で reply だけ
+                        # 失われたケースを「期限切れ」と誤案内せず、連携完了を伝える。
+                        log.info(f"[LINE link] code from already-linked user (...{str(user_id)[-6:]}): reason={_diag.get('reason')}")
+                        _line_reply_text(reply_token, "✅ このLINEはすでに連携済みです。\n「やること」と送ると今日のまとめが届きます。")
+                    else:
+                        log.warning(
+                            f"[LINE link] invalid code-like rejected: reason={_diag.get('reason')} "
+                            f"prefix={text[:6]}… len={len(text)} server_now={_diag.get('server_now')} "
+                            f"expires_at={_diag.get('expires_at_parsed')}"
+                        )
+                        _line_reply_text(reply_token, "⚠️ 連携コードが無効または期限切れです。マイページで新しいコードを発行してください。")
                 elif text and user_id and _LINE_CMD_TODO.fullmatch(text):
                     # 🤝 [line-phase1] やること確認: 固定文字列の完全一致のみ反応 (リッチメニュー対応)
                     _cmd_row = _line_student_by_user(user_id)
@@ -25909,6 +25958,24 @@ def line_link_code(authorization: Optional[str] = Header(None)):
         "add_friend_url": LINE_ADD_FRIEND_URL,
         "instructions": "①公式LINEを友だち追加 → ②このコードをトークに送信、で連携完了です（30分間有効）。",
     }
+
+
+@app.get("/api/admin/line/link-token-status")
+def admin_line_link_token_status(token: str, authorization: Optional[str] = Header(None),
+                                 x_cron_secret: Optional[str] = Header(None)):
+    """🔍 [line-link-diag] 連携コードの状態診断 (read-only)。「発行直後なのに期限切れ」等の
+    トラブル時に、コードが not_found (別環境/別DB) / used (二重処理) / expired (時刻ズレ) /
+    valid のどれかを即特定する。認証: admin Bearer または X-Cron-Secret。"""
+    _authed = False
+    if authorization and authorization.startswith("Bearer "):
+        _tok = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(_tok):
+            _authed = True
+    if not _authed and x_cron_secret and CRON_SECRET and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        _authed = True
+    if not _authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    return {"ok": True, **_line_link_token_status((token or "").strip())}
 
 
 @app.post("/api/admin/students/issue-line-link")
