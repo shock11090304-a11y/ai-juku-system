@@ -2380,7 +2380,7 @@
             'trial': '🎖 14日間 完全無料体験中（クレカ登録なし）',
             'paid': '✅ 月額プラン契約中',
             'past_due': '⚠️ お支払いを確認できませんでした（カード情報の更新をお願いします）',
-            'canceled': '⏹ 解約済み（期間終了まで利用可）',
+            'canceled': '⏹ 解約済み',
             'expired': '⏱ 体験終了',
           }[s.status] || s.status);
         // 入塾金免除キャンペーン適用済みのバッジ
@@ -2388,6 +2388,23 @@
           ? `<br><span style="background:rgba(251,191,36,0.18);color:#fbbf24;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.78rem;font-weight:700;">🎁 入塾金 ¥10,000 免除キャンペーン適用済み</span>`
           : '';
         statusLabel.innerHTML = `ステータス: <strong style="color:#c7d2fe;">${statusText}</strong><br>プラン: <strong>${s.plan || '—'}</strong> / メール: ${s.email}${waivedBadge}`;
+        // 🚪 解約予約済み [cancel-period-end] (2026-06-12): paid/past_due の解約は Stripe の期間末解約
+        // (cancel_at_period_end) に変更され、auth/me が予約時刻 cancel_at (ISO・UTC) を返すようになった。
+        // 予約中は利用期限をステータスに明示し、下の「解約する」ボタンは出さない (既に予約済みのため)。
+        // 旧 API (cancel_at 未対応) では undefined → 従来表示のまま。日付はブラウザのローカル TZ (JST) で表示。
+        const isCancelReserved = !isHonClass && !!s.cancel_at && (s.status === 'paid' || s.status === 'past_due');
+        if (isCancelReserved) {
+          const cancelDate = new Date(s.cancel_at);
+          // 年またぎ (12月解約→翌1月終了等) は年も表示。past_due は猶予期間切れで cancel_at より早く
+          // 止まり得るため日付を断言せず (上の dunning バナーが猶予期間を説明)、請求停止のみ伝える。
+          const showDate = s.status === 'paid' && !isNaN(cancelDate.getTime());
+          const yearStr = (showDate && cancelDate.getFullYear() !== new Date().getFullYear()) ? `${cancelDate.getFullYear()}年` : '';
+          const cancelDateStr = showDate ? `${yearStr}${cancelDate.getMonth() + 1}月${cancelDate.getDate()}日` : '';
+          const reservedText = (s.status === 'past_due')
+            ? '🚪 解約予約済み（以降の請求はありません）'
+            : `🚪 解約予約済み — ${cancelDateStr ? cancelDateStr + 'まで' : 'ご契約期間の終了まで'}ご利用いただけます（以降の請求はありません）`;
+          statusLabel.innerHTML += `<br><span style="background:rgba(96,165,250,0.15);color:#93c5fd;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.78rem;font-weight:700;">${reservedText}</span>`;
+        }
         // 💳 past_due (決済失敗・猶予期間中): カード更新を促す赤バナーを表示
         const dunningBanner = document.getElementById('dunningBanner');
         if (dunningBanner) {
@@ -2414,7 +2431,7 @@
           portalBtn.style.display = '';
         }
         // 本クラス生(通塾生・無期限)には「解約」を出さない (SaaSサブスクではないため・誤操作防止)
-        if (!isHonClass && (s.status === 'trial' || s.status === 'paid' || s.status === 'past_due')) {
+        if (!isHonClass && !isCancelReserved && (s.status === 'trial' || s.status === 'paid' || s.status === 'past_due')) {
           cancelBtn.style.display = '';
         }
       } catch (e) {

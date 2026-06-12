@@ -1334,6 +1334,11 @@ def init_db():
         # 再発行メールを送らない (受信者 cap 10通/時 をすり抜ける持続的な嫌がらせ送信の遮断)。
         # 確認済み化は (a) 申込時 welcome 内 magicv リンクのクリック (b) 塾長の admin 設定。
         ("student_email_verified", "ALTER TABLE students ADD COLUMN student_email_verified INTEGER DEFAULT 0"),
+        # 🚪 解約予約 [cancel-period-end] (2026-06-12): paid/past_due の解約を即時 delete から
+        # Stripe cancel_at_period_end=True の期間末解約に変更。予約された終了時刻 (UTC ISO) を保持し、
+        # mypage が「解約予約済み・◯月◯日まで利用可」を表示する。status は従来どおり期間末の
+        # subscription.deleted webhook で canceled 化。deleted / 新サブスク紐付けで NULL に戻す。
+        ("cancel_at", "ALTER TABLE students ADD COLUMN cancel_at TIMESTAMP DEFAULT NULL"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -12112,7 +12117,7 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
                 # (trial_extended の 21 日 trial 中の生徒がここで paid 化されることはない)。
                 c.execute(
                     """UPDATE students SET status='paid', stripe_customer_id=?, stripe_subscription_id=?,
-                           plan=?, paid_since=COALESCE(paid_since, CURRENT_TIMESTAMP), trial_end=NULL, updated_at=CURRENT_TIMESTAMP
+                           plan=?, paid_since=COALESCE(paid_since, CURRENT_TIMESTAMP), trial_end=NULL, cancel_at=NULL, updated_at=CURRENT_TIMESTAMP
                        WHERE id=?""",
                     (customer, sub.id, plan or db_plan, sid),
                 )
@@ -12121,7 +12126,7 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
             elif db_plan != plan and plan:
                 # plan だけ違う → 更新
                 c.execute(
-                    "UPDATE students SET plan=?, stripe_subscription_id=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                    "UPDATE students SET plan=?, stripe_subscription_id=?, cancel_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE id=?",
                     (plan, sub.id, sid),
                 )
                 conn.commit()
@@ -12158,7 +12163,7 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
                 continue
             _best = max(_subs, key=lambda x: x.get("created") or 0)
             c.execute(
-                "UPDATE students SET stripe_subscription_id=?, stripe_customer_id=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                "UPDATE students SET stripe_subscription_id=?, stripe_customer_id=?, cancel_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE id=?",
                 (_best["sub_id"], _best["customer"], _sid),
             )
             conn.commit()
@@ -22711,6 +22716,31 @@ def auth_me(authorization: Optional[str] = Header(None)):
                 conn.close()
     except Exception as _e:
         log.warning(f"[auth_me] last_login_at refresh skipped: {_e}")
+    # 🚪 [cancel-period-end] (2026-06-12): 解約予約 (cancel_at_period_end) の期間末時刻を mypage に渡す。
+    # _get_current_student の共通 SELECT (全 API の hot path) には列を足さず、ページロード時の auth/me
+    # でのみ 1 クエリ追加で取得。tz-naive (PG の TIMESTAMP は naive で返る・書込は常に UTC) は UTC を
+    # 付与して ISO で返し、ブラウザ側 new Date() の JST 解釈ずれ (日付が前後する) を防ぐ。
+    # 旧 DB (列未追加) で SELECT が失敗しても auth/me 自体は落とさない (magic-link の fallback と同思想)。
+    student["cancel_at"] = None
+    try:
+        conn = db()
+        try:
+            c = conn.cursor()
+            c.execute("SELECT cancel_at FROM students WHERE id = ?", (student["id"],))
+            _ca_row = c.fetchone()
+        finally:
+            conn.close()
+        _ca_val = _ca_row["cancel_at"] if _ca_row else None
+        if _ca_val:
+            if isinstance(_ca_val, str):
+                _ca_dt = datetime.fromisoformat(_ca_val.replace("Z", "+00:00"))
+            else:
+                _ca_dt = _ca_val
+            if _ca_dt.tzinfo is None:
+                _ca_dt = _ca_dt.replace(tzinfo=timezone.utc)
+            student["cancel_at"] = _ca_dt.isoformat()
+    except Exception as _cae:
+        log.warning(f"[auth_me] cancel_at fetch skipped: {_cae}")
     return {"ok": True, "student": student}
 
 
@@ -24074,7 +24104,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                 # plan='founder_special' (現在の +7 日延長 default プラン・将来 plan metadata 受け取りで切替可)
                 c.execute(
                     """UPDATE students SET status='trial', stripe_customer_id=?, stripe_subscription_id=?,
-                           trial_start=?, trial_end=?, plan='founder_special', updated_at=CURRENT_TIMESTAMP
+                           trial_start=?, trial_end=?, plan='founder_special', cancel_at=NULL, updated_at=CURRENT_TIMESTAMP
                        WHERE id=?""",
                     (customer, subscription, now.isoformat(), trial_end.isoformat(), target_id)
                 )
@@ -24114,7 +24144,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                 # 誤配される (3ffa446 の 3視点 review root cause 指摘)。
                 c.execute(
                     """UPDATE students SET status='paid', stripe_customer_id=?, stripe_subscription_id=?,
-                           paid_since=CURRENT_TIMESTAMP, plan=?, trial_end=NULL, updated_at=CURRENT_TIMESTAMP
+                           paid_since=CURRENT_TIMESTAMP, plan=?, trial_end=NULL, cancel_at=NULL, updated_at=CURRENT_TIMESTAMP
                        WHERE id=?""",
                     (customer, subscription, plan, student_id)
                 )
@@ -24125,7 +24155,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                     # 既存 email: trial → paid 化等の正常 case (trial_end=NULL は上の ID 指定 UPDATE と同理由)
                     c.execute(
                         """UPDATE students SET status='paid', stripe_customer_id=?, stripe_subscription_id=?,
-                               paid_since=CURRENT_TIMESTAMP, plan=?, trial_end=NULL, updated_at=CURRENT_TIMESTAMP
+                               paid_since=CURRENT_TIMESTAMP, plan=?, trial_end=NULL, cancel_at=NULL, updated_at=CURRENT_TIMESTAMP
                            WHERE id=?""",
                         (customer, subscription, plan, row[0])
                     )
@@ -24592,7 +24622,9 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
             return JSONResponse({"received": True, "skipped_reason": "juku-payment system tag"}, status_code=200)
         conn = db()
         c = conn.cursor()
-        c.execute("UPDATE students SET status='canceled', updated_at=CURRENT_TIMESTAMP WHERE stripe_subscription_id=?",
+        # cancel_at=NULL [cancel-period-end]: 期間末解約の完了 (または即時解約) で予約状態を解消。
+        # 残すと再契約時 (新サブスク紐付け前の表示) に「解約予約済み」が誤表示される。
+        c.execute("UPDATE students SET status='canceled', cancel_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE stripe_subscription_id=?",
                   (sub.get("id"),))
         _del_matched = c.rowcount
         conn.commit()
@@ -24618,6 +24650,31 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
             return JSONResponse({"received": True, "skipped_reason": "juku-payment system tag"}, status_code=200)
         sub_id = sub.get("id")
         sub_status = sub.get("status")  # 'trialing', 'active', 'past_due', 'unpaid', 'canceled'
+        # 🚪 [cancel-period-end] (2026-06-12): cancel_at_period_end / cancel_at を students.cancel_at に常時同期。
+        # 自社の /api/billing/cancel-trial (paid/past_due は期間末解約に変更) だけでなく、Stripe Customer
+        # Portal での「期間末解約の予約」や「予約の取消 (契約再開)」もこの updated イベントで届くため、
+        # イベントの値を真実として毎回書く (予約が無ければ NULL に戻る = 自己修復)。
+        # status の canceled 化は従来どおり deleted ハンドラ / 下の canceled 分岐が担当し、ここでは触らない。
+        try:
+            _cap_flag = bool(sub.get("cancel_at_period_end"))
+            _cap_ts = sub.get("cancel_at") or (sub.get("current_period_end") if _cap_flag else None)
+            _cap_iso = None
+            if _cap_ts:
+                _cap_iso = datetime.fromtimestamp(int(_cap_ts), tz=timezone.utc).isoformat()
+            _conn_cap = db()
+            try:
+                _c_cap = _conn_cap.cursor()
+                _c_cap.execute(
+                    "UPDATE students SET cancel_at=?, updated_at=CURRENT_TIMESTAMP WHERE stripe_subscription_id=?",
+                    (_cap_iso, sub_id)
+                )
+                if _c_cap.rowcount > 0 and _cap_iso:
+                    log.info(f"[Stripe webhook subscription.updated] cancel_at sync: sub={sub_id} cancel_at={_cap_iso}")
+                _conn_cap.commit()
+            finally:
+                _conn_cap.close()
+        except Exception as _cape:
+            log.error(f"[Stripe webhook subscription.updated] cancel_at sync failed for sub={sub_id}: {_cape}")
         if sub_status == "active":
             # trial → paid (自動課金成功) もしくは past_due → paid (リトライ成功で回復)。past_due_since もクリア。
             # 🔴 2026-06-12: 'expired' も回復対象に追加。expire-trials cron が本 webhook より先に走る /
@@ -24696,7 +24753,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
             c = conn.cursor()
             try:
                 c.execute(
-                    "UPDATE students SET status='canceled', updated_at=CURRENT_TIMESTAMP WHERE stripe_subscription_id=? AND status IN ('paid','trial','past_due')",
+                    "UPDATE students SET status='canceled', cancel_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE stripe_subscription_id=? AND status IN ('paid','trial','past_due')",
                     (sub_id,)
                 )
                 if c.rowcount > 0:
@@ -25516,7 +25573,8 @@ def cron_expire_trials(x_cron_secret: str = Header(None), dry_run: bool = False)
             if dry_run:
                 past_due_canceled.append({"id": _r["id"], "email": _r["email"]})
                 continue
-            c.execute("UPDATE students SET status='canceled', updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='past_due'", (_r["id"],))
+            # cancel_at=NULL [cancel-period-end]: 解約予約中の past_due が猶予切れで canceled 化する場合も予約状態を解消
+            c.execute("UPDATE students SET status='canceled', cancel_at=NULL, updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='past_due'", (_r["id"],))
             past_due_canceled.append(_r["id"])
             log.warning(f"[Grace backstop] past_due→canceled (grace {PAST_DUE_GRACE_DAYS}d 超過) student_id={_r['id']} email={_r['email']}")
     except Exception as _ge:
@@ -26665,9 +26723,21 @@ def cancel_trial(authorization: Optional[str] = Header(None)):
         if not _stripe:
             conn.close()
             raise HTTPException(status_code=503, detail="決済サービスが一時的に利用できません。しばらくしてから再度お試しください。")
+        # 🚪 [cancel-period-end] (2026-06-12) 解約方式を status で分岐:
+        # - trial (trial_extended・課金前): 従来どおり即時解約 (Subscription.delete)。請求は発生しない。
+        # - paid / past_due (課金開始後): Subscription.modify(cancel_at_period_end=True) の期間末解約。
+        #   従来は全員 delete → deleted webhook で status='canceled' → アクセスガード即拒否となり、
+        #   支払済み期間が残っていても即時利用停止 = 「期間終了まで利用可」の応答・mypage・legal の
+        #   案内と全部矛盾していた。期間末解約なら status='paid' のままアクセス継続し、期間末に
+        #   Stripe が subscription.deleted を送ってきた時点で canceled 化される (ガード変更不要)。
+        _is_trial_cancel = (row["status"] == "trial")
         try:
-            _stripe.Subscription.delete(row["stripe_subscription_id"])
-            log.info(f"Stripe subscription canceled for student {student['id']}")
+            if _is_trial_cancel:
+                _stripe.Subscription.delete(row["stripe_subscription_id"])
+                log.info(f"Stripe subscription canceled for student {student['id']}")
+            else:
+                _sub = _stripe.Subscription.modify(row["stripe_subscription_id"], cancel_at_period_end=True)
+                log.info(f"Stripe subscription scheduled to cancel at period end for student {student['id']}")
         except Exception as e:
             log.error(f"Stripe cancel failed for student {student['id']}: {type(e).__name__}: {e}")
             conn.close()
@@ -26675,10 +26745,40 @@ def cancel_trial(authorization: Optional[str] = Header(None)):
                 status_code=502,
                 detail="Stripeでの解約処理に失敗しました。お手数ですが info@trillion-ai-juku.com までお問い合わせください。"
             )
-        # DB更新はStripe webhook (customer.subscription.deleted) が担当する。
-        # ただしwebhook到達まで遅延があるためクライアントには即時成功を返す。
+        if _is_trial_cancel:
+            # DB更新はStripe webhook (customer.subscription.deleted) が担当する。
+            # ただしwebhook到達まで遅延があるためクライアントには即時成功を返す。
+            conn.close()
+            # [mypage-keiyaku-copy] (2026-06-12) trial 中のサブスク解約 (trial_extended) は上の
+            # Subscription.delete で即時解約 — 「契約期間終了まで利用可」は事実と逆 (課金は始まらず、
+            # webhook 反映後はアクセス終了) なので、mypage の confirm 文言と整合する専用文言を返す。
+            return {"ok": True, "message": "解約手続きを受け付けました。体験期間中の解約であれば、ご登録のカードへの請求は発生しません。体験はこれで終了となります（画面への反映には数分かかる場合があります）。"}
+        # [cancel-period-end] 期間末解約の予約時刻を即時 DB 反映。webhook (subscription.updated) も同期する
+        # が、到達遅延中に mypage が「解約予約済み」を出せるようここでも書く。Stripe 側の解約予約は既に
+        # 確定済みなので、ここの DB 失敗では 5xx を返さない (webhook が後追いで同期する)。
+        _cancel_iso = None
+        try:
+            _cancel_ts = _sub.get("cancel_at") or _sub.get("current_period_end")
+            if _cancel_ts:
+                _cancel_iso = datetime.fromtimestamp(int(_cancel_ts), tz=timezone.utc).isoformat()
+        except Exception as _ce:
+            log.warning(f"[cancel-period-end] cancel_at parse failed for student {student['id']}: {_ce}")
+        try:
+            c.execute("UPDATE students SET cancel_at=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                      (_cancel_iso, student["id"]))
+            conn.commit()
+        except Exception as _de:
+            log.warning(f"[cancel-period-end] cancel_at DB update failed for student {student['id']}: {_de}")
+            try:
+                conn.rollback()
+            except Exception:
+                pass
         conn.close()
-        return {"ok": True, "message": "解約手続きを受け付けました。現在のご契約期間終了まではご利用いただけます。"}
+        if row["status"] == "past_due":
+            # past_due は直近のお支払いが未確認 — 「期間終了まで利用可」と断言すると猶予期間切れの
+            # アクセス停止と矛盾するため、猶予期間ベースの正確な文言を返す。
+            return {"ok": True, "message": "解約手続きを受け付けました。次回以降のご請求はありません。なお、直近のお支払いが確認できていないため、ご利用いただけるのはお支払い猶予期間の終了までとなります。"}
+        return {"ok": True, "message": "解約手続きを受け付けました。現在のご契約期間終了まではご利用いただけます（期間終了後のご請求はありません）。"}
 
     # 純trial (Stripe顧客なし) の場合のみDBを直接更新
     c.execute("UPDATE students SET status='canceled', updated_at=CURRENT_TIMESTAMP WHERE id=?", (student["id"],))
