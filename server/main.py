@@ -26728,6 +26728,48 @@ def cancel_trial(authorization: Optional[str] = Header(None)):
         if not _stripe:
             conn.close()
             raise HTTPException(status_code=503, detail="決済サービスが一時的に利用できません。しばらくしてから再度お試しください。")
+        # 🔁 [cancel-idempotent] (2026-06-12) 解約 API の冪等化 (前段ガード)。成功応答の直後に mypage を
+        # 再読込すると webhook 反映 (status 更新) まで解約ボタンが残り、再クリックで解約済みサブスクへの
+        # delete/modify が Stripe エラー → 502「解約処理に失敗しました。お問い合わせください」になっていた。
+        # 直前に「受け付けました」と案内した保護者に失敗を返すと「解約できていない? 課金される?」という
+        # 不安を与えるため、先に retrieve して既に終了済み (canceled / incomplete_expired) なら成功扱い。
+        # その際は後段の文字列判定 (delete/modify 失敗時の既解約フォールバック) と同一の自己修復を行う:
+        # subscription.deleted webhook は過去に送信済みで再送されないため、ここで status='canceled' と
+        # 死んだ sub_id のクリアまで行わないと、「完了しました」と案内したのに DB が trial/paid のまま
+        # 解約ボタンが永遠に残り続ける。エラー文字列に依存しない status 直接判定なので、Stripe の
+        # エラーメッセージ変更にも頑健。retrieve の一時障害は握りつぶして従来の解約処理に進む
+        # (本処理失敗時の 502 / 既解約フォールバック経路は既存のまま)。
+        _pre_status = None
+        _pre_missing = False
+        try:
+            _pre_sub = _stripe.Subscription.retrieve(row["stripe_subscription_id"])
+            _pre_status = _pre_sub.get("status") if _pre_sub is not None else None
+        except Exception as _pre_e:
+            _pre_msg = str(_pre_e).lower()
+            # 存在しないサブスクも既終了扱い (admin 退会処理 delete_student の既解約イディオムと同一判定)。
+            # ただし canceled を実確認できた場合と違い「別のサブスクが存在しない」ことまでは保証できない
+            # ので、応答文言は請求断言なし + 問い合わせ導線つきに分ける (3視点 review UX 指摘)。
+            if any(_s in _pre_msg for _s in ("no such subscription", "resource_missing")):
+                _pre_status = "canceled"
+                _pre_missing = True
+                log.info(f"[cancel-idempotent] subscription missing on Stripe for student {student['id']} — treated as already canceled: {_pre_e}")
+            else:
+                log.warning(f"[cancel-idempotent] pre-cancel retrieve failed for student {student['id']}: {type(_pre_e).__name__}: {_pre_e} — proceeding with cancel")
+        if _pre_status in ("canceled", "incomplete_expired"):
+            log.info(f"[cancel-idempotent] subscription already ended (status={_pre_status}) for student {student['id']} — treated as success")
+            # cancel_at=NULL [cancel-period-end]: canceled 遷移は解約予約状態も必ず解消する (不変条件)。
+            # past_due_since=NULL: 猶予起点も canceled 化と同時に解消 (3視点 review data 指摘) —
+            # 残すと再契約後の決済失敗時に COALESCE(past_due_since, …) が stale な起点を拾い、
+            # 猶予期間が即失効した状態で始まる事故の温床になる。
+            c.execute(
+                "UPDATE students SET status='canceled', stripe_subscription_id=NULL, cancel_at=NULL, past_due_since=NULL, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                (student["id"],)
+            )
+            conn.commit()
+            conn.close()
+            if _pre_missing:
+                return {"ok": True, "message": "解約手続きは既に完了しています。ご不明な点がございましたら、お気軽に info@trillion-ai-juku.com までお問い合わせください。"}
+            return {"ok": True, "message": "解約手続きが完了しました。ご利用は終了となり、今後のご請求は発生しません。"}
         # 🚪 [cancel-period-end] (2026-06-12) 解約方式を status で分岐:
         # - trial (trial_extended・課金前): 従来どおり即時解約 (Subscription.delete)。請求は発生しない。
         # - paid / past_due (課金開始後): Subscription.modify(cancel_at_period_end=True) の期間末解約。
