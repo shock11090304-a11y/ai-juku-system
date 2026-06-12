@@ -25484,6 +25484,170 @@ import re as _line_re
 #   ('misunderstanding' 等) や 16 桁数字への誤反応を避ける (英語塾なので英単語 1 語送信は現実にある)。
 _LINE_CODE_LIKE = _line_re.compile(r"^[A-Za-z0-9_-]{20,28}$")
 
+# 🤝 [line-phase1] (2026-06-12 塾長指示): LINE で「やること」確認 + 「質問」を塾長へ転送。
+#   沈黙ルール (31bce58 有人チャット共存) は維持 — bot が反応するのは以下の固定形のみで、
+#   それ以外の通常トークには引き続き一切返信しない。リッチメニューのボタンはこの固定文字列を送る想定。
+#   ・やること: 「やること」「今日のやること」の完全一致のみ
+#   ・質問:     「質問」単独 (使い方案内) または「質問 <内容>」「質問：<内容>」(区切りり必須)。
+#               「質問があります」のような自然文は区切りが無いため反応しない (有人チャット誤爆防止)
+_LINE_CMD_TODO = _line_re.compile(r"^(やること|今日のやること)$")
+_LINE_CMD_QUESTION = _line_re.compile(r"^質問($|[\s:：]+)")
+_LINE_NOT_LINKED_GUIDE = (
+    "このLINEはまだ生徒アカウントと連携されていません。\n"
+    "マイページにログイン → 「LINE連携」でコードを発行し、このトークに送ってください。"
+)
+_LINE_QUESTION_USAGE = (
+    "質問の内容を続けて送ってください。\n"
+    "例: 質問 仮定法の使い方がわかりません\n"
+    "塾長に届き、LINE またはメールで返信があります。"
+)
+
+
+def _line_student_by_user(user_id: str):
+    """line_user_id → 生徒行の逆引き (コマンド処理用)。未連携なら None。"""
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, name, course, status FROM students WHERE line_user_id = ?", (user_id,))
+        return c.fetchone()
+    finally:
+        conn.close()
+
+
+def _line_build_todo_text(student) -> str:
+    """「やること」コマンドの返信本文。mypage「コーチの今日の一手」と同じデータ源
+    (宿題ドリル → 弱点 → 今日の学習記録) をサーバ側だけで集約する (AI 課金ゼロ・決定論)。
+    復習カード (忘却曲線) は client localStorage のみのため含めない。"""
+    sid = student["id"]
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT d.title, d.unit FROM grammar_drill_assignments a "
+            "JOIN grammar_drills d ON d.id = a.drill_id "
+            "WHERE a.student_id = ? AND a.status = 'open' "
+            "ORDER BY a.assigned_at LIMIT 3",
+            (sid,),
+        )
+        drills = list(c.fetchall())
+        c.execute(
+            "SELECT COUNT(*) AS n FROM grammar_drill_assignments WHERE student_id = ? AND status = 'open'",
+            (sid,),
+        )
+        drill_total = c.fetchone()["n"] or 0
+        c.execute(
+            "SELECT subject, topic FROM student_weakness "
+            "WHERE student_id = ? AND question_count > 0 "
+            "ORDER BY question_count DESC LIMIT 1",
+            (sid,),
+        )
+        weak = c.fetchone()
+        c.execute(
+            "SELECT COALESCE(SUM(minutes), 0) AS m FROM study_logs WHERE student_id = ? AND studied_date = ?",
+            (sid, _today_jst().isoformat()),
+        )
+        today_min = c.fetchone()["m"] or 0
+    finally:
+        conn.close()
+
+    name = (student["name"] or "").strip() or "生徒"
+    lines = [f"📋 {name}さんの今日のやること", ""]
+    if drill_total > 0:
+        lines.append(f"📚 塾長からの宿題ドリル: {drill_total}件")
+        for d in drills:
+            lines.append(f"・{d['title']} ({d['unit']})")
+        if drill_total > len(drills):
+            lines.append(f"…ほか {drill_total - len(drills)} 件")
+    else:
+        lines.append("📚 未完了の宿題ドリルはありません 👏")
+    if weak:
+        lines.append(f"🎯 苦手の復習: {(weak['topic'] or weak['subject'])[:30]}")
+    if today_min > 0:
+        lines.append(f"⏱ 今日の学習記録: {today_min}分")
+    else:
+        lines.append("⏱ 今日の学習記録: まだ0分 — まず1つ取り組んでみよう")
+    lines += ["", "▶ マイページで取り組む", f"{BASE_URL}/mypage.html"]
+    return "\n".join(lines)
+
+
+def _line_handle_question(student, content: str, reply_token: str):
+    """「質問 <内容>」を塾長への問い合わせ (messages) として保存 + email 通知。
+    CEO ダッシュ「受信した申込問い合わせ」(sender_type='student' AND recipient_type='admin')
+    に表示され、既存の 返信 / AI 返信案 ボタンがそのまま使える。"""
+    body = _sanitize_text(content, 5000)
+    if not body:
+        _line_reply_text(reply_token, _LINE_QUESTION_USAGE)
+        return
+    sid = student["id"]
+    name = (student["name"] or "").strip() or "生徒"
+    subject = f"📱 LINE質問: {name}さん"
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 連投ガード: LINE 経由は未認証面のため、生徒あたり 10 件/時で打ち止め (爆撃・誤連打対策)
+        _cutoff_h = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
+        c.execute(
+            "SELECT COUNT(*) AS n FROM messages WHERE sender_type='student' AND sender_id=? "
+            "AND sent_via='line' AND created_at >= ?",
+            (sid, _cutoff_h),
+        )
+        if (c.fetchone()["n"] or 0) >= 10:
+            _line_reply_text(reply_token, "⚠️ 短時間に送れる質問の上限に達しました。しばらくしてからお試しください。")
+            return
+        # 冪等ガード: message イベントは webhookEventId dedup の対象外 (連携コード再送考慮) のため、
+        # LINE の再配送で同一質問が二重登録されないよう 同一生徒・同一本文 5 分以内は INSERT しない
+        _cutoff_m = (datetime.now(timezone.utc) - timedelta(minutes=5)).strftime("%Y-%m-%d %H:%M:%S")
+        c.execute(
+            "SELECT id FROM messages WHERE sender_type='student' AND sender_id=? AND sent_via='line' "
+            "AND body=? AND created_at >= ? LIMIT 1",
+            (sid, body, _cutoff_m),
+        )
+        if c.fetchone():
+            _line_reply_text(reply_token, "✅ 質問を塾長に届けました！\n返信は LINE またはメールでお知らせします。")
+            return
+        c.execute(
+            "INSERT INTO messages (sender_type, sender_id, recipient_type, recipient_id, broadcast_filter, subject, body, sent_via, email_status) "
+            "VALUES (?,?,?,?,?,?,?,?,?)",
+            ("student", sid, "admin", None, None, subject, body, "line", None),
+        )
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("student_message_sent",
+                 json.dumps({"student_id": sid, "name": name, "source": "line",
+                             "subject": subject[:120]}, ensure_ascii=False),
+                 str(sid)),
+            )
+        except Exception:
+            pass
+        conn.commit()
+        log.info(f"[LINE question] student={sid} → messages 登録 (len={len(body)})")
+    finally:
+        conn.close()
+    # 塾長 email 通知 (student_send_message と同パターン・失敗しても質問自体は保存済み)
+    if DAILY_SNS_TO_EMAIL and RESEND_API_KEY and FROM_EMAIL:
+        try:
+            import urllib.request as _ur
+            email_body = (
+                f"{name}さん (生徒ID:{sid}) から LINE 経由で質問が届きました。\n\n{body}\n\n"
+                f"CEO ダッシュ「📨 メッセージ配信」 → 履歴 で内容確認 + 返信できます。"
+            )
+            req = _ur.Request(
+                "https://api.resend.com/emails",
+                data=json.dumps({
+                    "from": FROM_EMAIL,
+                    "to": [DAILY_SNS_TO_EMAIL],
+                    "subject": f"📱 [LINE質問] {name}さん",
+                    "text": email_body,
+                }).encode("utf-8"),
+                headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json", "User-Agent": "ai-juku-system/1.0"},
+                method="POST",
+            )
+            _ur.urlopen(req, timeout=10).read()
+        except Exception as _e:
+            log.warning(f"[LINE question] email notify failed: {_e}")
+    _line_reply_text(reply_token, "✅ 質問を塾長に届けました！\n返信は LINE またはメールでお知らせします。")
+
 
 @app.post("/api/line/webhook")
 async def line_webhook(request: Request, x_line_signature: str = Header(None)):
@@ -25567,6 +25731,20 @@ async def _handle_line_event(event: dict):
                     # コードらしき文字列だが実際に無効 (期限切れ/タイプミス/使用済) → ここだけ案内を返す。
                     #   peek_sid 有効 + user_id 欠落 (グループ/ルーム投稿等 bind 不可能な経路) は誤案内せず沈黙。
                     _line_reply_text(reply_token, "⚠️ 連携コードが無効または期限切れです。マイページで新しいコードを発行してください。")
+                elif text and user_id and _LINE_CMD_TODO.fullmatch(text):
+                    # 🤝 [line-phase1] やること確認: 固定文字列の完全一致のみ反応 (リッチメニュー対応)
+                    _cmd_row = _line_student_by_user(user_id)
+                    if _cmd_row:
+                        _line_reply_text(reply_token, _line_build_todo_text(_cmd_row))
+                    else:
+                        _line_reply_text(reply_token, _LINE_NOT_LINKED_GUIDE)
+                elif text and user_id and _LINE_CMD_QUESTION.match(text):
+                    # 🤝 [line-phase1] 質問転送: 「質問」単独 or 「質問 <内容>」(区切り必須) のみ反応
+                    _cmd_row = _line_student_by_user(user_id)
+                    if _cmd_row:
+                        _line_handle_question(_cmd_row, _LINE_CMD_QUESTION.sub("", text, count=1), reply_token)
+                    else:
+                        _line_reply_text(reply_token, _LINE_NOT_LINKED_GUIDE)
                 # それ以外の通常トーク (挨拶・質問・チャット) には bot は沈黙する。
                 #   チャット:オン の有人対応・応答メッセージ運用と干渉しないため (2026-06-11 塾長指示)。
             return
