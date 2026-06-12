@@ -2570,17 +2570,20 @@ def _check_rate_limit_caller(request, authorization: Optional[str], bucket: str,
     _RATE_LIMIT_STORE[key] = timestamps
 
 
-def _send_trial_unused_warning_email(to_email: str, student_name: str, stage: str, login_url: str, days_unused: int) -> dict:
+def _send_trial_unused_warning_email(to_email: str, student_name: str, stage: str, login_url: str, days_unused: int, card_registered: bool = False) -> dict:
     """体験中で未利用 (last_login_at IS NULL) の生徒に通告メール。
     stage='early' (登録 3 日経過): 「使ってみませんか?」
     stage='late' (体験終了 2 日前): 「終了が迫ってます」
-    塾長指示 2026-05-06: 登録のみで使用歴がない人に通告"""
+    塾長指示 2026-05-06: 登録のみで使用歴がない人に通告
+    card_registered=True (trial_extended 等クレカ登録済み) は「課金は発生しません」が
+    事実と逆になるため、自動課金の開始と解約方法を案内する文面に差し替える (2026-06-12)。"""
     import html as _html
     if not RESEND_API_KEY:
         log.warning(f"[DEV-MODE] Trial unused warning ({stage}) skipped for {to_email}")
         return {"sent": False, "dev_mode": True}
     safe_name = _html.escape(student_name or "")
     greeting = f"{safe_name}さまの保護者さま" if safe_name else "保護者さま"
+    _card_price_text = f"¥{FOUNDER_SPECIAL_PRICE:,}/月（税込）"
 
     if stage == "early":
         subject = "【AIコーチング】まだログインされていません — 体験を始めてみませんか?"
@@ -2590,9 +2593,18 @@ def _send_trial_unused_warning_email(to_email: str, student_name: str, stage: st
             f"AI チューターや問題生成・学習記録など、体験できる機能はすべて無料で使えます。"
         )
         cta_label = "🎓 ログインして体験を始める"
-        bottom = "体験期間は 14 日間。何もしなければ自動終了し、課金は一切発生しません。"
+        if card_registered:
+            bottom = (
+                f"体験期間は {FOUNDER_TRIAL_DAYS + 7} 日間（カード登録特典）。体験終了後は創設メンバープラン {_card_price_text} の自動課金が始まります。"
+                f"続けない場合は体験期間中にマイページの「解約する」または特定商取引法に基づく表記記載の方法で解約できます（体験中の解約で料金は一切かかりません）。"
+            )
+        else:
+            bottom = "体験期間は 14 日間。何もしなければ自動終了し、課金は一切発生しません。"
     elif stage == "late":
-        subject = f"【AIコーチング】無料体験 終了まで {days_unused} 日 — まだ未利用です"
+        if card_registered:
+            subject = f"【AIコーチング】無料体験 終了まで {days_unused} 日 — 終了後は自動課金が始まります"
+        else:
+            subject = f"【AIコーチング】無料体験 終了まで {days_unused} 日 — まだ未利用です"
         body_intro = (
             f"無料体験の終了が近づいています。\n\n"
             f"残り {days_unused} 日 ですが、まだログイン履歴がありません。\n\n"
@@ -2600,7 +2612,13 @@ def _send_trial_unused_warning_email(to_email: str, student_name: str, stage: st
             f" 1 度ログインしてから判断されるのをお勧めします。"
         )
         cta_label = "📅 ログインして残り日数を体験する"
-        bottom = "体験期間終了後は自動的にアクセスが失効します (課金は発生しません・データは保持)。"
+        if card_registered:
+            bottom = (
+                f"体験終了後は、ご登録のクレジットカードに創設メンバープラン {_card_price_text} の自動課金が始まります。"
+                f"続けない場合は体験期間中にマイページの「解約する」または特定商取引法に基づく表記記載の方法で解約してください（体験中の解約で料金は一切かかりません）。"
+            )
+        else:
+            bottom = "体験期間終了後は自動的にアクセスが失効します (課金は発生しません・データは保持)。"
     else:
         subject = "【AIコーチング】体験のご案内"
         body_intro = "AI AIコーチングの体験のご案内です。"
@@ -2775,6 +2793,8 @@ def _send_trial_nurture_day5_email(to_email: str, student_name: str, login_url: 
 def _send_trial_ending_email(to_email: str, student_name: str, days_left: int, upgrade_url: str) -> dict:
     """体験終了リマインダーメール。継続したい人向けに本契約フォームへの誘導。
     体験終了時の自動課金は行わないので、何もしなければアカウントは自動失効する（データは保持）。
+    ⚠️ 無課金 trial 専用 — クレカ登録済み (trial_extended) には「自動課金は発生しません」が
+    事実と逆になるため _send_trial_extended_ending_email を使うこと (2026-06-12 review)。
     """
     import html as _html
     if not RESEND_API_KEY:
@@ -2827,6 +2847,72 @@ def _send_trial_ending_email(to_email: str, student_name: str, days_left: int, u
             return {"sent": True, "resend_id": result.get("id")}
     except Exception as e:
         log.error(f"Trial reminder email failed for {to_email}: {type(e).__name__}: {e}")
+        return {"sent": False, "error": str(e)}
+
+
+def _send_trial_extended_ending_email(to_email: str, student_name: str, days_left: int) -> dict:
+    """クレカ登録済み +7 日延長体験 (trial_extended) 用の終了リマインダーメール。
+    無課金 trial 用 _send_trial_ending_email と違い、体験終了後は founder_special
+    (¥14,500/月・税込) の自動課金が始まるため、課金開始の事実と解約方法を明示する。
+    文言は checkout-success.html の trial_extended 文言とミラー (2026-06-12)。
+    """
+    import html as _html
+    if not RESEND_API_KEY:
+        log.warning(f"[DEV-MODE] Trial extended (card) reminder skipped for {to_email}")
+        return {"sent": False, "dev_mode": True}
+    safe_name = _html.escape(student_name or "")
+    greeting = f"{safe_name}さまの保護者さま" if safe_name else "保護者さま"
+    days_text = "あと1日" if days_left <= 1 else f"あと{days_left}日"
+    total_days = FOUNDER_TRIAL_DAYS + 7  # 21 日 (create_trial_checkout の EXTENDED_TRIAL_DAYS と同値)
+    price_text = f"¥{FOUNDER_SPECIAL_PRICE:,}/月（税込）"
+    # 件名はモバイルで先頭 25-30 字に切られるため「自動課金」を前方へ (21日間は本文で明示)
+    subject = f"【AIコーチング】体験は{days_text}で終了 — {price_text}の自動課金が始まります"
+    mypage_url = f"{BASE_URL}/mypage.html"
+    tokusho_url = f"{BASE_URL}/legal.html#tokusho"
+    html = f"""<!DOCTYPE html>
+<html><body style="font-family: -apple-system, sans-serif; line-height: 1.7; color: #333; max-width: 560px; margin: 0 auto; padding: 2rem;">
+<h1 style="font-size: 1.4rem; color: #6366f1;">🎓 AIコーチング</h1>
+<p>{greeting}、体験のご利用ありがとうございます。</p>
+
+<p style="background:#fff7ed; padding:1rem; border-left:4px solid #f59e0b; border-radius:4px; margin: 1.5rem 0;">
+  📅 <strong>カード登録特典の{total_days}日間 無料体験は{days_text}で終了します</strong><br>
+  体験終了後は、ご登録のクレジットカードに<strong>創設メンバープラン {price_text} の自動課金が始まります</strong>。
+</p>
+
+<p><strong>継続される場合</strong>、お手続きは不要です。体験終了後もそのまま全機能をご利用いただけます。</p>
+
+<div style="background:#fafafa; padding:1rem; border-radius:6px; margin: 1.5rem 0; font-size: 0.9rem;">
+  <strong>🚪 続けない場合（体験期間中の解約で料金は一切かかりません）</strong><br>
+  ・<a href="{mypage_url}" style="color:#6366f1;">マイページ</a>にログイン → 契約管理の「解約する」から手続き<br>
+  ・または<a href="{tokusho_url}" style="color:#6366f1;">特定商取引法に基づく表記</a>記載の方法（メール連絡）でも解約できます
+</div>
+
+<p style="text-align:center; margin: 2rem 0;">
+  <a href="{mypage_url}" style="display:inline-block; padding: 1rem 2rem; background:linear-gradient(135deg,#6366f1,#ec4899); color:white; text-decoration:none; border-radius:8px; font-weight:700; font-size:1.05rem;">
+    📱 マイページを開く
+  </a>
+</p>
+
+<p style="font-size:0.85rem; color:#666;">ご不明な点はお問い合わせください。</p>
+<hr style="margin:2rem 0; border:none; border-top:1px solid #eee;">
+<p style="font-size:0.8rem; color:#999;">
+  お問い合わせ: <a href="mailto:info@trillion-ai-juku.com" style="color:#6366f1;">info@trillion-ai-juku.com</a>
+</p>
+</body></html>"""
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({"from": FROM_EMAIL, "to": [to_email], "subject": subject, "html": html}).encode("utf-8"),
+            headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json", "User-Agent": "ai-juku-system/1.0"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode())
+            log.info(f"Trial extended (card) reminder sent to {to_email}: {result.get('id')}")
+            return {"sent": True, "resend_id": result.get("id")}
+    except Exception as e:
+        log.error(f"Trial extended (card) reminder email failed for {to_email}: {type(e).__name__}: {e}")
         return {"sent": False, "error": str(e)}
 
 
@@ -26047,7 +26133,10 @@ def admin_send_followup(payload: dict, authorization: Optional[str] = Header(Non
 @app.post("/api/cron/trial-reminders")
 def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = False):
     """毎日1回外部cronから呼び出し。trial_end が 1-2 日先の生徒にリマインダー送信。
-    notifications テーブルで重複送信防止。"""
+    notifications テーブルで重複送信防止。
+    クレカ登録済み trial (status='trial' かつ stripe_subscription_id あり = trial_extended 経路)
+    は体験終了後に自動課金が始まるため、無課金 trial と別テンプレ (trial_ending_card) で
+    課金開始の事実と解約方法を通知する (2026-06-12 checkout-success 文言分岐 review)。"""
     if not CRON_SECRET:
         raise HTTPException(status_code=503, detail="Cron not configured")
     if not x_cron_secret or not hmac.compare_digest(x_cron_secret, CRON_SECRET):
@@ -26060,8 +26149,10 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
     t_end = now + timedelta(hours=48)     # 48時間以内
     # status='paid' はStripeトライアル中、'trial'はまだ未決済のトライアル
     # 継続意思のない (= 一度もログインしていない) 顧客はスキップ (塾長指示 2026-05-06)
+    # ただしクレカ登録済み (_card_registered) は例外 — ループ内コメント参照 (2026-06-12)
     c.execute(
-        """SELECT id, name, email, trial_end, status, last_login_at, course FROM students
+        """SELECT id, name, email, trial_end, status, last_login_at, course, stripe_subscription_id
+           FROM students
            WHERE status IN ('trial','paid') AND email IS NOT NULL
              AND trial_end IS NOT NULL
              AND trial_end > ? AND trial_end <= ?""",
@@ -26070,11 +26161,14 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
     candidates = list(c.fetchall())
 
     sent = 0
+    sent_card = 0
     skipped = 0
     skipped_silent = 0
     skipped_silent_ids = []
     skipped_course = 0
     skipped_course_ids = []
+    silent_card_notified = 0
+    silent_card_ids = []
     preview = []
     for row in candidates:
         # 国公立難関大学コース ('kokuritsu_nankan') は塾の通塾生 = SaaS 体験課金 funnel の対象外。
@@ -26087,20 +26181,41 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
             skipped_course += 1
             skipped_course_ids.append(row["id"])
             continue
+        # クレカ登録済み trial 判定: trial_extended 経路 (create_trial_checkout の extend 分岐) は
+        # webhook が stripe_subscription_id を保存し、status='trial' のまま 21 日 trial 中。
+        # status='trial' の AND ゲートが必須 — monthly webhook は trial_end をクリアしないため、
+        # 体験中に月額契約した生徒 (status='paid' + subscription + 未来 trial_end) が窓に入る。
+        # その人に「これから自動課金が始まる」「体験中の解約で料金はかからない」は虚偽になる
+        # (premium/family 契約者には価格も誤り)。3視点 review MAJOR 指摘 (2026-06-12)。
+        try:
+            _card_registered = bool(row["stripe_subscription_id"]) and row["status"] == "trial"
+        except (KeyError, IndexError):
+            _card_registered = False
         # サイレント顧客スキップ: 一度もログインしていない = 継続の連絡がない顧客 (塾長指示 2026-05-06)
+        # ただし _card_registered はスキップしない — 放置すると課金される契約であり、
+        # 一度もログインしていない人こそ課金サプライズのリスクが最も高い (2026-06-12 review)
         try:
             _last_login = row["last_login_at"]
         except (KeyError, IndexError):
             _last_login = None
-        if not _last_login:
+        if not _last_login and not _card_registered:
             skipped_silent += 1
             skipped_silent_ids.append(row["id"])
             continue
-        # 重複チェック: この生徒に trial_ending 通知を既に送っていたらスキップ
-        c.execute(
-            "SELECT id FROM notifications WHERE student_id=? AND template='trial_ending' AND success=1 LIMIT 1",
-            (row["id"],)
-        )
+        # 重複チェック: この生徒に終了通知を既に送っていたらスキップ
+        # (trial_ending_card は channel='email' 限定で照合 — LINE 放置アラートが同名 'trial_ending' を
+        #  channel='line' で記録するため、card 向け課金前通知まで誤って抑止されないように)
+        _tmpl = "trial_ending_card" if _card_registered else "trial_ending"
+        if _card_registered:
+            c.execute(
+                "SELECT id FROM notifications WHERE student_id=? AND channel='email' AND template='trial_ending_card' AND success=1 LIMIT 1",
+                (row["id"],)
+            )
+        else:
+            c.execute(
+                "SELECT id FROM notifications WHERE student_id=? AND template='trial_ending' AND success=1 LIMIT 1",
+                (row["id"],)
+            )
         if c.fetchone():
             skipped += 1
             continue
@@ -26115,16 +26230,26 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
         except Exception:
             days_left = 2
         if dry_run:
-            preview.append({"student_id": row["id"], "email": row["email"], "days_left": days_left})
+            preview.append({"student_id": row["id"], "email": row["email"], "days_left": days_left,
+                            "template": _tmpl, "silent": not _last_login})
             continue
-        result = _send_trial_ending_email(row["email"], row["name"] or "", days_left, f"{BASE_URL}/upgrade.html?email={row['email']}")
+        if _card_registered:
+            result = _send_trial_extended_ending_email(row["email"], row["name"] or "", days_left)
+        else:
+            result = _send_trial_ending_email(row["email"], row["name"] or "", days_left, f"{BASE_URL}/upgrade.html?email={row['email']}")
         c.execute(
             """INSERT INTO notifications (student_id, channel, template, payload, success, error)
-               VALUES (?, 'email', 'trial_ending', ?, ?, ?)""",
-            (row["id"], json.dumps({"days_left": days_left}), 1 if result.get("sent") else 0, result.get("error", ""))
+               VALUES (?, 'email', ?, ?, ?, ?)""",
+            (row["id"], _tmpl, json.dumps({"days_left": days_left, "card_registered": _card_registered}),
+             1 if result.get("sent") else 0, result.get("error", ""))
         )
         if result.get("sent"):
             sent += 1
+            if _card_registered:
+                sent_card += 1
+                if not _last_login:
+                    silent_card_notified += 1
+                    silent_card_ids.append(row["id"])
     # events に audit log (CEO ダッシュ可視化用)
     if skipped_silent > 0 and not dry_run:
         try:
@@ -26137,6 +26262,19 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
             conn.commit()
         except Exception as _e:
             log.warning(f"[trial-reminders] silent skip audit failed: {_e}")
+    # クレカ登録済み×未ログインへの課金前通知の audit (特商法対応の証跡・2026-06-12)
+    if silent_card_notified > 0 and not dry_run:
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("trial_reminder_card_silent_notified",
+                 json.dumps({"count": silent_card_notified, "student_ids": silent_card_ids[:50],
+                             "reason": "card_registered (stripe_subscription_id あり) は自動課金前通知のため silent skip 対象外"}, ensure_ascii=False),
+                 "cron")
+            )
+            conn.commit()
+        except Exception as _e:
+            log.warning(f"[trial-reminders] card silent notify audit failed: {_e}")
     # 国公立難関大学コース skip の audit (塾長指示 2026-06-04)
     if skipped_course > 0 and not dry_run:
         try:
@@ -26151,7 +26289,9 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
             log.warning(f"[trial-reminders] course skip audit failed: {_e}")
     conn.commit()
     conn.close()
-    return {"sent": sent, "skipped": skipped, "skipped_silent": skipped_silent, "skipped_course": skipped_course, "candidates": len(candidates), "preview": preview if dry_run else None}
+    return {"sent": sent, "sent_card": sent_card, "skipped": skipped, "skipped_silent": skipped_silent,
+            "skipped_course": skipped_course, "silent_card_notified": silent_card_notified,
+            "candidates": len(candidates), "preview": preview if dry_run else None}
 
 
 @app.post("/api/cron/trial-nurture")
@@ -26276,7 +26416,9 @@ def cron_trial_unused_warning(x_cron_secret: str = Header(None), dry_run: bool =
     Stage 1 (early): 登録から 3 日経過 → 「体験を始めてみませんか?」
     Stage 2 (late): 体験終了 2 日前 → 「終了が迫ってます」
     notifications テーブルで重複送信防止 (template='trial_unused_early' / 'trial_unused_late')
-    塾長指示 2026-05-06: 登録のみで使用歴がない人に通告"""
+    塾長指示 2026-05-06: 登録のみで使用歴がない人に通告
+    クレカ登録済み (stripe_subscription_id あり = trial_extended) には card_registered=True を
+    渡し「課金は発生しません」ではなく自動課金開始+解約方法の文面で送る (2026-06-12)。"""
     if not CRON_SECRET:
         raise HTTPException(status_code=503, detail="Cron not configured")
     if not x_cron_secret or not hmac.compare_digest(x_cron_secret, CRON_SECRET):
@@ -26294,7 +26436,7 @@ def cron_trial_unused_warning(x_cron_secret: str = Header(None), dry_run: bool =
         early_lower = now - timedelta(days=4)  # 4 日経過は対象外 (重複防止のための窓)
         early_upper = now - timedelta(days=3)  # 3 日経過
         c.execute(
-            """SELECT id, name, email, created_at, trial_end FROM students
+            """SELECT id, name, email, created_at, trial_end, stripe_subscription_id FROM students
                WHERE status = 'trial' AND email IS NOT NULL AND last_login_at IS NULL
                  AND created_at > ? AND created_at <= ? AND (course IS NULL OR course != 'kokuritsu_nankan')""",
             (early_lower.isoformat(), early_upper.isoformat())
@@ -26316,15 +26458,19 @@ def cron_trial_unused_warning(x_cron_secret: str = Header(None), dry_run: bool =
                 days_unused = max(1, int((now - ca).total_seconds() / 86400))
             except Exception:
                 days_unused = 3
+            try:
+                _card_registered = bool(row["stripe_subscription_id"])
+            except (KeyError, IndexError):
+                _card_registered = False
             if dry_run:
-                preview.append({"student_id": row["id"], "email": row["email"], "stage": "early", "days_unused": days_unused})
+                preview.append({"student_id": row["id"], "email": row["email"], "stage": "early", "days_unused": days_unused, "card_registered": _card_registered})
                 continue
             login_url = f"{BASE_URL}/login.html?email={row['email']}"
-            result = _send_trial_unused_warning_email(row["email"], row["name"] or "", "early", login_url, days_unused)
+            result = _send_trial_unused_warning_email(row["email"], row["name"] or "", "early", login_url, days_unused, card_registered=_card_registered)
             c.execute(
                 """INSERT INTO notifications (student_id, channel, template, payload, success, error)
                    VALUES (?, 'email', 'trial_unused_early', ?, ?, ?)""",
-                (row["id"], json.dumps({"days_unused": days_unused}), 1 if result.get("sent") else 0, result.get("error", ""))
+                (row["id"], json.dumps({"days_unused": days_unused, "card_registered": _card_registered}), 1 if result.get("sent") else 0, result.get("error", ""))
             )
             if result.get("sent"):
                 sent_early += 1
@@ -26333,7 +26479,7 @@ def cron_trial_unused_warning(x_cron_secret: str = Header(None), dry_run: bool =
         late_lower = now
         late_upper = now + timedelta(days=2)
         c.execute(
-            """SELECT id, name, email, trial_end FROM students
+            """SELECT id, name, email, trial_end, stripe_subscription_id FROM students
                WHERE status = 'trial' AND email IS NOT NULL AND last_login_at IS NULL
                  AND trial_end IS NOT NULL AND trial_end > ? AND trial_end <= ? AND (course IS NULL OR course != 'kokuritsu_nankan')""",
             (late_lower.isoformat(), late_upper.isoformat())
@@ -26354,15 +26500,19 @@ def cron_trial_unused_warning(x_cron_secret: str = Header(None), dry_run: bool =
                 days_left = max(1, int((te - now).total_seconds() / 86400))
             except Exception:
                 days_left = 2
+            try:
+                _card_registered = bool(row["stripe_subscription_id"])
+            except (KeyError, IndexError):
+                _card_registered = False
             if dry_run:
-                preview.append({"student_id": row["id"], "email": row["email"], "stage": "late", "days_left": days_left})
+                preview.append({"student_id": row["id"], "email": row["email"], "stage": "late", "days_left": days_left, "card_registered": _card_registered})
                 continue
             login_url = f"{BASE_URL}/login.html?email={row['email']}"
-            result = _send_trial_unused_warning_email(row["email"], row["name"] or "", "late", login_url, days_left)
+            result = _send_trial_unused_warning_email(row["email"], row["name"] or "", "late", login_url, days_left, card_registered=_card_registered)
             c.execute(
                 """INSERT INTO notifications (student_id, channel, template, payload, success, error)
                    VALUES (?, 'email', 'trial_unused_late', ?, ?, ?)""",
-                (row["id"], json.dumps({"days_left": days_left}), 1 if result.get("sent") else 0, result.get("error", ""))
+                (row["id"], json.dumps({"days_left": days_left, "card_registered": _card_registered}), 1 if result.get("sent") else 0, result.get("error", ""))
             )
             if result.get("sent"):
                 sent_late += 1
