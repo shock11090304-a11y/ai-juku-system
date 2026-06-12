@@ -5471,7 +5471,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       function lineEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
       function renderOtpResult(html, isError) {
         otpIssueResult.style.display = 'block';
-        otpIssueResult.style.borderLeft = isError ? '3px solid #f87171' : '3px solid #34d399';
+        // isError: true=エラー(赤) / 'warn'=警告(琥珀・URL 発行不可など) / false=成功(緑)
+        otpIssueResult.style.borderLeft = isError === 'warn' ? '3px solid #fbbf24' : (isError ? '3px solid #f87171' : '3px solid #34d399');
         otpIssueResult.innerHTML = html;
       }
       async function issueOtpDirect(payload) {
@@ -5490,10 +5491,10 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             let html = `<div style="color:#fbbf24;font-weight:700;margin-bottom:0.4rem;">⚠️ ${lineEsc(d.message)}</div>`;
             html += '<div style="display:flex;flex-direction:column;gap:0.3rem;">';
             d.candidates.forEach(s => {
-              html += `<button type="button" data-sid="${s.id}" class="otp-candidate-btn" style="text-align:left;padding:0.45rem 0.6rem;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.4);border-radius:5px;color:#a5b4fc;font-family:inherit;font-size:0.76rem;cursor:pointer;">#${s.id} ${lineEsc(s.name)} &lt;${lineEsc(s.email)}&gt; (${lineEsc(s.status)})</button>`;
+              html += `<button type="button" data-sid="${s.id}" class="otp-candidate-btn" style="text-align:left;padding:0.45rem 0.6rem;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.4);border-radius:5px;color:#a5b4fc;font-family:inherit;font-size:0.76rem;cursor:pointer;">#${s.id} ${lineEsc(s.name)} &lt;${lineEsc(s.email || '(メール未登録)')}&gt; (${lineEsc(s.status)})</button>`;
             });
             html += '</div>';
-            renderOtpResult(html, false);
+            renderOtpResult(html, 'warn');
             document.querySelectorAll('.otp-candidate-btn').forEach(btn => {
               btn.addEventListener('click', () => issueOtpDirect({ student_id: parseInt(btn.dataset.sid, 10) }));
             });
@@ -5502,26 +5503,37 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           const s = d.student;
           const otp = d.otp;
           const url = d.direct_login_url;
-          const html = `
-            <div style="color:#34d399;font-weight:800;margin-bottom:0.5rem;">✅ #${s.id} ${lineEsc(s.name)} さま (${lineEsc(s.status)})</div>
-            <div style="font-size:0.7rem;color:#a3a3a3;margin-bottom:0.4rem;">登録メアド: ${lineEsc(s.email)}</div>
-            <div style="background:rgba(0,0,0,0.5);padding:0.8rem;border-radius:8px;text-align:center;margin:0.6rem 0;">
-              <div style="font-size:0.7rem;color:#a3a3a3;margin-bottom:0.3rem;">6 桁ログインコード (${d.no_expiry ? '有効期限なし・1 回使うと無効' : (d.ttl_seconds ? Math.round(d.ttl_seconds/60)+' 分有効' : '10 分有効')})</div>
-              <div id="otpCodeDisplay" style="font-size:2rem;font-weight:900;letter-spacing:0.5rem;color:#6ee7b7;font-family:'SF Mono',monospace;">${lineEsc(otp)}</div>
-              <button type="button" id="otpCopyBtn" style="margin-top:0.4rem;background:rgba(110,231,183,0.2);color:#6ee7b7;border:1px solid rgba(110,231,183,0.4);padding:0.3rem 0.7rem;border-radius:5px;font-size:0.72rem;font-weight:700;cursor:pointer;">📋 コピー</button>
-            </div>
+          // 🩹 2026-06-12: email 未登録/照合不能 (legacy 行) は url=null + warning が返る。
+          //   警告はコードより上に表示 (✅とコードだけ見て、使えないコードを生徒に伝達する事故防止)。
+          //   メアド空も「(未登録)」と明示して admin が気付けるようにする。
+          const warnBlock = url ? '' : `
+            <div style="margin:0.5rem 0;padding:0.6rem;background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.45);border-radius:6px;color:#fca5a5;font-size:0.74rem;font-weight:700;line-height:1.7;">⚠️ ${lineEsc(d.warning || 'メール未登録のためワンクリック URL を発行できません')}</div>`;
+          const urlBlock = url ? `
             <div style="margin:0.6rem 0;">
               <div style="font-size:0.72rem;color:#a3a3a3;margin-bottom:0.25rem;">📲 ワンクリックログイン URL (LINE で送る):</div>
               <div style="display:flex;gap:0.3rem;align-items:center;">
                 <input type="text" id="otpUrlDisplay" readonly value="${lineEsc(url)}" style="flex:1;padding:0.4rem 0.55rem;background:rgba(0,0,0,0.5);border:1px solid rgba(99,102,241,0.3);border-radius:5px;color:#a5b4fc;font-size:0.7rem;font-family:'SF Mono',monospace;">
                 <button type="button" id="otpUrlCopyBtn" style="background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);padding:0.4rem 0.7rem;border-radius:5px;font-size:0.72rem;font-weight:700;cursor:pointer;white-space:nowrap;">📋 URL コピー</button>
               </div>
+            </div>` : '';
+          const html = `
+            <div style="color:#34d399;font-weight:800;margin-bottom:0.5rem;">✅ #${s.id} ${lineEsc(s.name)} さま (${lineEsc(s.status)})</div>
+            <div style="font-size:0.7rem;color:${s.email ? '#a3a3a3' : '#fbbf24'};margin-bottom:0.4rem;">登録メアド: ${lineEsc(s.email || '(未登録)')}</div>
+            ${d.login_email && d.login_email !== s.email ? `<div style="font-size:0.7rem;color:#a3a3a3;margin-bottom:0.4rem;">ログイン照合メアド (子メール): ${lineEsc(d.login_email)}</div>` : ''}
+            ${d.line_sent ? `<div style="font-size:0.72rem;color:#6ee7b7;margin-bottom:0.4rem;">📲 LINE に自動送信済み</div>` : ''}
+            ${warnBlock}
+            <div style="background:rgba(0,0,0,0.5);padding:0.8rem;border-radius:8px;text-align:center;margin:0.6rem 0;${url ? '' : 'opacity:0.6;'}">
+              <div style="font-size:0.7rem;color:#a3a3a3;margin-bottom:0.3rem;">6 桁ログインコード (${d.no_expiry ? '有効期限なし・1 回使うと無効' : (d.ttl_seconds ? Math.round(d.ttl_seconds/60)+' 分有効' : '10 分有効')}${url ? '' : '・現在は使用不可 (上記参照)'})</div>
+              <div id="otpCodeDisplay" style="font-size:2rem;font-weight:900;letter-spacing:0.5rem;color:#6ee7b7;font-family:'SF Mono',monospace;">${lineEsc(otp)}</div>
+              <button type="button" id="otpCopyBtn" style="margin-top:0.4rem;background:rgba(110,231,183,0.2);color:#6ee7b7;border:1px solid rgba(110,231,183,0.4);padding:0.3rem 0.7rem;border-radius:5px;font-size:0.72rem;font-weight:700;cursor:pointer;">📋 コピー</button>
             </div>
-            <div style="margin-top:0.6rem;padding:0.5rem;background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.3);border-radius:6px;color:#fde68a;font-size:0.72rem;line-height:1.6;">
+            ${urlBlock}
+            ${url ? `<div style="margin-top:0.6rem;padding:0.5rem;background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.3);border-radius:6px;color:#fde68a;font-size:0.72rem;line-height:1.6;">
               ${lineEsc(d.instructions)}
-            </div>
+            </div>` : ''}
           `;
-          renderOtpResult(html, false);
+          // status_active === false (契約状態でログイン拒否) は URL があっても amber 枠で注意喚起
+          renderOtpResult(html, (url && d.status_active !== false) ? false : 'warn');
           // copy buttons
           const copyBtn = document.getElementById('otpCopyBtn');
           if (copyBtn) copyBtn.addEventListener('click', async () => {

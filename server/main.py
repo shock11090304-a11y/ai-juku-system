@@ -18251,9 +18251,12 @@ def admin_issue_otp_direct(payload: dict, authorization: Optional[str] = Header(
         _invalidate_active_otps(sid)
         otp_code = _create_otp(sid)
         # 🔗 2026-06-04: LINE 紐付け済みなら OTP/ワンクリック URL を自動で LINE 配信する準備
-        c.execute("SELECT line_user_id FROM students WHERE id = ?", (sid,))
+        #   (student_email はワンクリック URL 用メアドの fallback 判定にも使う — 2026-06-12)
+        c.execute("SELECT line_user_id, student_email, course FROM students WHERE id = ?", (sid,))
         _lu_row = c.fetchone()
         _line_uid = _lu_row["line_user_id"] if _lu_row else None
+        _student_email = ((_lu_row["student_email"] if _lu_row else None) or "").strip()
+        _course = _lu_row["course"] if _lu_row else None
         # 監査ログ: 塾長が誰の OTP を口頭伝達するか必ず追跡可能にする
         log.warning(f"[AdminOTPDirect] admin issued OTP for student_id={sid} email={row['email']} name={row['name']}")
         try:
@@ -18280,17 +18283,119 @@ def admin_issue_otp_direct(payload: dict, authorization: Optional[str] = Header(
         # (login.html 側の対応必要。skip_send=1 で Step1 の magic-link 再発行を抑止)
         import time as _t
         from urllib.parse import urlencode
-        qs = urlencode({"email": row["email"], "code": otp_code, "skip_send": "1"})
-        direct_login_url = f"{BASE_URL}/login.html?{qs}"
         _is_infinite = not (_OTP_TTL_SECONDS and _OTP_TTL_SECONDS > 0)
-        # 🔗 LINE 紐付け済みなら OTP/ワンクリック URL を自動配信 (塾長の手動コピペ不要に)
+        # 🩹 2026-06-12: email NULL の legacy 行 (student_id / name_query 検索で到達可能) に
+        #   `email=None` 入りの壊れた URL を返していた。verify-code は親 email / 子 student_email を
+        #   親優先・id 昇順の LIMIT 1 で照合するため、同一クエリで「この生徒に解決するメアド」を
+        #   確認できた場合のみ URL を発行する (重複メアドで他生徒に解決するケースも除外)。
+        #   解決メアドが無い生徒は 6 桁コード入力ログインも不可能 (verify-code が email 必須) なので、
+        #   URL は null + warning を返す。LINE 連携済みなら唯一の有効手段であるメール不要の
+        #   magic link (auth.html?t=) を代わりに自動 push する。
+        _parent_email = (row["email"] or "").strip()
+        _login_email = None
+        _dup_with = None  # 候補メアドが他生徒に解決した場合の (id, name) — 重複警告に使う
+        from pydantic import TypeAdapter as _TypeAdapter
+        _email_ta = _TypeAdapter(EmailStr)
+        for _cand in (_parent_email, _student_email):
+            if not _cand:
+                continue
+            # verify-code は pydantic EmailStr で形式検証するため、形式不正な legacy 値
+            # (空白混入・@ 重複等) は SQL 照合を通っても URL を踏んだ瞬間 422 になる →
+            # 同じ validator で事前に弾く。さらに validator の正規化値 (punycode/NFD →
+            # 表示形) で照合・URL 生成する: verify-code も正規化後の値で照合するため、
+            # 生値だとこの場で一致しても URL を踏んだ時に 401 になり得る
+            try:
+                _cand = _email_ta.validate_python(_cand)
+            except Exception:
+                continue
+            _cl = _cand.lower()
+            c.execute(
+                "SELECT id, name FROM students "
+                "WHERE LOWER(email) = ? OR LOWER(COALESCE(student_email, '')) = ? "
+                "ORDER BY CASE WHEN LOWER(email) = ? THEN 0 ELSE 1 END, id LIMIT 1",
+                (_cl, _cl, _cl),
+            )
+            _resolved = c.fetchone()
+            if _resolved and int(_resolved["id"]) == sid:
+                _login_email = _cand
+                break
+            if _resolved is not None and _dup_with is None:
+                _dup_with = (int(_resolved["id"]), str(_resolved["name"] or ""))
+        direct_login_url = None
+        warning = None
+        if _login_email:
+            qs = urlencode({"email": _login_email, "code": otp_code, "skip_send": "1"})
+            direct_login_url = f"{BASE_URL}/login.html?{qs}"
+        elif _dup_with:
+            warning = (f"登録メールアドレスが他の生徒 (#{_dup_with[0]} {_dup_with[1]}) と重複して照合されるため、"
+                       "この生徒では URL ログインも 6 桁コード入力ログインも利用できません。"
+                       "メールアドレスの重複を解消してから再発行してください。")
+        elif _parent_email or _student_email:
+            warning = ("登録メールアドレスが正しく照合できない形式です (空白混入・形式不正などの表記ゆれ)。"
+                       "この生徒では URL ログインも 6 桁コード入力ログインも利用できません。"
+                       "メールアドレスを修正してから再発行してください。")
+        else:
+            warning = ("メール未登録のため URL ログイン不可。6 桁コードも login.html でメアド照合が必要なため、"
+                       "メールアドレスを登録するまで利用できません (メール登録後にこの画面でもう一度発行してください)。")
+        if warning:
+            log.warning(f"[AdminOTPDirect] usable login email not found for student_id={sid}; direct_login_url skipped")
+        # verify-code / auth.html?t= は契約状態でも弾く (_active 判定と同等)。ログインできない
+        # 生徒に「確実 / 今すぐログインできます」と案内しないための注意書き (kokuritsu_nankan は永久無料)
+        _st_active = row["status"] in ("paid", "past_due") or _course == "kokuritsu_nankan"
+        if not _st_active and row["status"] == "trial" and row["trial_end"]:
+            try:
+                _te = row["trial_end"]
+                _te_dt = datetime.fromisoformat(str(_te).replace("Z", "+00:00")) if isinstance(_te, str) else _te
+                if _te_dt.tzinfo is None:
+                    _te_dt = _te_dt.replace(tzinfo=timezone.utc)
+                _st_active = _te_dt > datetime.now(timezone.utc)
+            except Exception:
+                pass  # 解析不能な trial_end は verify-code も拒否する → 注意書きを出すのが正
+        _status_caveat = ("" if _st_active else
+                          f" ⚠️ 現在の契約状態 ({row['status'] or '不明'}) ではコード/リンクともログインが拒否されます"
+                          " (体験期限切れ・退会など)。先に契約状態を確認してください。")
+        # 🔗 LINE 紐付け済みなら自動配信 (塾長の手動コピペ不要に):
+        #   - URL を発行できた場合は従来どおり OTP + ワンクリック URL を push
+        #   - URL を発行できない場合はコード入力ログインも不可能なので、メール不要でログイン
+        #     できる magic link (auth.html?t=・magic-link 送信と同じ token) を代わりに push
         line_sent = False
-        if _line_uid:
+        if _line_uid and direct_login_url:
             try:
                 _push = _do_line_push(sid, "magic_link_login", {"otp_code": otp_code, "magic_url": direct_login_url})
                 line_sent = bool(_push.get("ok"))
             except Exception as _e:
                 log.warning(f"[AdminOTPDirect] LINE push failed sid={sid}: {_e}")
+        elif _line_uid:
+            try:
+                _ml_token = _create_magic_link_token(sid)
+                # otp_code は空で送る: この生徒ではコード入力ログインが成立しないため、
+                # 使えないコードを LINE に載せると誤入力 → 失敗ロックアウトを誘発する
+                _push = _do_line_push(sid, "magic_link_login",
+                                      {"otp_code": "", "magic_url": f"{BASE_URL}/auth.html?t={_ml_token}"})
+                line_sent = bool(_push.get("ok"))
+            except Exception as _e:
+                log.warning(f"[AdminOTPDirect] LINE magic-link fallback push failed sid={sid}: {_e}")
+            if line_sent and _st_active:
+                warning += (" 📲 ただしこの生徒は LINE 連携済みのため、メール不要のログインリンク (magic link) を"
+                            " LINE に自動送信しました。生徒は今すぐそのリンクからログインできます。")
+            elif line_sent:
+                warning += (" 📲 この生徒は LINE 連携済みのため、メール不要のログインリンク (magic link) を"
+                            " LINE に自動送信しましたが、契約状態の問題を解消するまではこのリンクでもログインできません。")
+        if warning and _status_caveat:
+            warning += _status_caveat
+        _expiry_note = ("⏱ コード自体に時間切れはありません (1 回使うと無効)。" if _is_infinite
+                        else f"⏱ コードは {max(1, _OTP_TTL_SECONDS // 60)} 分以内に使ってください。")
+        if direct_login_url:
+            instructions = (
+                "【伝達方法 2 通り】(A) ワンクリック URL を LINE で送る → 生徒は URL クリックで即ログイン (確実なのはこちら)。"
+                f"(B) 6 桁コードを電話で伝える場合は順序が重要 → 先に生徒に login.html でメアド {_login_email} を入力させ"
+                "『ログインコードを送信』を押させてコード入力画面を開かせる → その後にこの画面の『🔑 発行』をもう一度押し、"
+                "新しく表示されたコードを伝える (いま画面に出ているコードは、生徒がボタンを押した時点で無効化されるため)。"
+                + _expiry_note + _status_caveat
+            )
+        else:
+            # コードが使えない状態なので OTP の期限文言は混ぜない (warning に注意書きは付与済み)
+            instructions = warning
         return {
             "ok": True,
             "otp": otp_code,
@@ -18299,13 +18404,16 @@ def admin_issue_otp_direct(payload: dict, authorization: Optional[str] = Header(
             "ttl_seconds": 0 if _is_infinite else _OTP_TTL_SECONDS,
             "no_expiry": _is_infinite,
             "direct_login_url": direct_login_url,
+            "login_email": _login_email,
+            "warning": warning,
+            "status_active": _st_active,
             "student": {
                 "id": sid,
                 "name": row["name"],
                 "email": row["email"],
                 "status": row["status"],
             },
-            "instructions": "【伝達方法 2 通り】(A) ワンクリック URL を LINE で送る → 生徒は URL クリックで即ログイン。(B) 6 桁コードを口頭/電話で伝える → 生徒は login.html で登録メアド入力 → コード入力。" + ("⏱ 有効期限なし (いつでも使えます・1 回使うと無効)。" if _is_infinite else f"{_OTP_TTL_SECONDS // 60} 分以内に使ってください。"),
+            "instructions": instructions,
         }
     finally:
         conn.close()
@@ -24520,11 +24628,14 @@ LINE_TEMPLATES = {
     # メールが届かない (キャリアメール / 迷惑振り分け) 生徒向け fallback
     "magic_link_login": lambda p: {
         "type": "text",
+        # otp_code 空 = コード入力ログインが使えない生徒 (メール未登録等) へのリンクのみ配信 (2026-06-12)
         "text": f"🎓 AIコーチング ログイン\n\n"
                 f"{p.get('name', '生徒')}さん、ログインリンクをお送りします。\n\n"
-                f"🔢 ログインコード（1 回使うと無効）: {p.get('otp_code', '')}\n\n"
-                f"または下記リンクから直接ログイン（30日間有効）👇\n"
-                f"{p.get('magic_url', '')}\n\n"
+                + (f"🔢 ログインコード（1 回使うと無効）: {p['otp_code']}\n\n"
+                   f"または下記リンクから直接ログイン（30日間有効）👇\n"
+                   if p.get('otp_code') else
+                   "下記リンクからログインしてください（30日間有効）👇\n")
+                + f"{p.get('magic_url', '')}\n\n"
                 f"※ メールが届かない場合の代替送信です。\n"
                 f"心当たりがない場合は無視してください。"
     },
