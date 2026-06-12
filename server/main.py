@@ -24596,6 +24596,9 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
         sub_status = sub.get("status")  # 'trialing', 'active', 'past_due', 'unpaid', 'canceled'
         if sub_status == "active":
             # trial → paid (自動課金成功) もしくは past_due → paid (リトライ成功で回復)。past_due_since もクリア。
+            # 🔴 2026-06-12: 'expired' も回復対象に追加。expire-trials cron が本 webhook より先に走る /
+            # 配送遅延・失敗すると、カード登録済み生徒 (trial_extended) が expired に落ち
+            # 「Stripe は課金継続・アクセスは失効」のまま固定されていた。active 受信時点で paid に自己回復させる。
             conn = db()
             c = conn.cursor()
             try:
@@ -24605,13 +24608,13 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                            trial_end=NULL,
                            past_due_since=NULL,
                            updated_at=CURRENT_TIMESTAMP
-                       WHERE stripe_subscription_id=? AND status IN ('trial','past_due')""",
+                       WHERE stripe_subscription_id=? AND status IN ('trial','past_due','expired')""",
                     (sub_id,)
                 )
                 affected = c.rowcount
                 conn.commit()
                 if affected > 0:
-                    log.info(f"[Stripe webhook subscription.updated] →paid (trial/past_due解消): sub={sub_id} ({affected} students)")
+                    log.info(f"[Stripe webhook subscription.updated] →paid (trial/past_due/expired解消): sub={sub_id} ({affected} students)")
             except Exception as e:
                 log.error(f"[Stripe webhook subscription.updated active] failed: {e}")
                 try: conn.rollback()
@@ -25436,9 +25439,13 @@ def cron_expire_trials(x_cron_secret: str = Header(None), dry_run: bool = False)
     conn = db()
     c = conn.cursor()
     now = datetime.now(timezone.utc)
-    # trial かつ trial_end 経過済みのユーザーを expired に
+    # trial かつ trial_end 経過済みのユーザーを expired に。
+    # 💳 2026-06-12: stripe_subscription_id を持つカード登録済み生徒 (trial_extended 経路) は除外。
+    # 彼らの trial_end 後の paid 化/解約は Stripe webhook (subscription.updated/deleted) が正であり、
+    # cron が webhook より先に expired 化すると「Stripe は課金継続・アクセスは失効」事故になるため。
     c.execute(
-        "SELECT id, name, email, trial_end FROM students WHERE status='trial' AND trial_end IS NOT NULL AND trial_end < ?",
+        "SELECT id, name, email, trial_end FROM students WHERE status='trial' AND trial_end IS NOT NULL AND trial_end < ?"
+        " AND (stripe_subscription_id IS NULL OR stripe_subscription_id = '')",
         (now.isoformat(),)
     )
     candidates = list(c.fetchall())
@@ -25449,6 +25456,24 @@ def cron_expire_trials(x_cron_secret: str = Header(None), dry_run: bool = False)
             continue
         c.execute("UPDATE students SET status='expired', updated_at=CURRENT_TIMESTAMP WHERE id=?", (row["id"],))
         expired_ids.append(row["id"])
+
+    # 💳 観測 backstop: カード生徒が trial_end+3日 を過ぎても trial のまま = webhook 未達 (active も
+    # deleted も来ていない) の疑い。上記除外により cron では expired 化しないので、放置をログで可視化する。
+    stuck_card = []
+    try:
+        c.execute(
+            "SELECT id, email FROM students WHERE status='trial' AND trial_end IS NOT NULL AND trial_end < ?"
+            " AND stripe_subscription_id IS NOT NULL AND stripe_subscription_id != ''",
+            ((now - timedelta(days=3)).isoformat(),)
+        )
+        stuck_card = [{"id": _r["id"], "email": _r["email"]} for _r in c.fetchall()]
+        if stuck_card:
+            log.warning(
+                f"[expire-trials] カード登録済み trial が trial_end+3日超過でも未遷移 "
+                f"(webhook 未達疑い・Stripe Dashboard 要確認): {stuck_card[:20]}"
+            )
+    except Exception as _ce:
+        log.error(f"[expire-trials] stuck-card check failed: {_ce}")
 
     # 💳 past_due の grace 超過 backstop: past_due_since から PAST_DUE_GRACE_DAYS 超過で canceled に。
     # past_due_since が NULL の past_due (旧行/エッジ) はまず now を打刻して grace を開始 (即 canceled にはしない)。
@@ -25475,11 +25500,12 @@ def cron_expire_trials(x_cron_secret: str = Header(None), dry_run: bool = False)
 
     conn.commit()
     conn.close()
-    log.info(f"Trial expiry: {len(expired_ids)} expired / {len(past_due_canceled)} past_due→canceled (grace超過)")
+    log.info(f"Trial expiry: {len(expired_ids)} expired / {len(past_due_canceled)} past_due→canceled (grace超過) / {len(stuck_card)} card-trial stuck")
     return {
         "expired": len(expired_ids),
         "candidates": len(candidates),
         "past_due_canceled": len(past_due_canceled),
+        "stuck_card": len(stuck_card),
         "preview": expired_ids if dry_run else None,
     }
 
@@ -25922,8 +25948,13 @@ def cron_trial_followups(x_cron_secret: str = Header(None), dry_run: bool = Fals
         now = datetime.now(timezone.utc)
 
         # 継続意思のない (= 一度もログインしていない) 顧客はスキップ (塾長指示 2026-05-06)
+        # 💳 2026-06-12: カード登録済み (stripe_subscription_id あり) の expired も除外。
+        # webhook 遅延等の異常系で expired に落ちたカード生徒は Stripe 上は課金継続中でありうるため、
+        # 「自動課金は一切発生しません」という本ドリップの文面が誤案内になる
+        # (彼らの paid 回復は subscription.updated active ハンドラが担当)。
         c.execute(
             "SELECT id, name, email, trial_end, last_login_at FROM students WHERE status='expired' AND email IS NOT NULL AND trial_end IS NOT NULL AND (course IS NULL OR course != 'kokuritsu_nankan')"
+            " AND (stripe_subscription_id IS NULL OR stripe_subscription_id = '')"
         )
         expired_students = list(c.fetchall())
 
