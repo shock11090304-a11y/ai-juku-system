@@ -12624,7 +12624,7 @@ def admin_stripe_diagnose_orphan_subs(
                 "subscription_id": sub_id,
                 "customer": cust,
                 "system_tag": meta.get("system"),
-                # [upgrade-supersede] 月額移行/再申込で webhook が即時解約した旧サブスク (生徒不一致が正常)
+                # 🔁 [upgrade-supersede] (2026-06-12): 月額移行/再申込で webhook が即時解約した旧サブスク (生徒不一致が正常)
                 "superseded_by": meta.get("superseded_by"),
                 "sub_created": datetime.fromtimestamp(sub.get("created"), tz=timezone.utc).isoformat() if sub.get("created") else None,
             }
@@ -12632,7 +12632,9 @@ def admin_stripe_diagnose_orphan_subs(
             c.execute("SELECT id, name, status FROM students WHERE stripe_subscription_id=?", (sub_id,))
             m = c.fetchone()
             entry["matched_student"] = {"student_id": m["id"], "name": m["name"], "status": m["status"]} if m else None
-            entry["orphan"] = m is None
+            # superseded_by 付きは置換済み旧サブスク (生徒不一致が正常) — orphan (重複サブスク疑い) とは区別して数えない
+            entry["superseded"] = bool(meta.get("superseded_by"))
+            entry["orphan"] = m is None and not entry["superseded"]
             # customer 一致の生徒 (sub_id 不一致でも同一人物の別サブスク = 重複サブスク疑いの判定材料)
             if cust:
                 c.execute("SELECT id, name, status, stripe_subscription_id FROM students WHERE stripe_customer_id=?", (cust,))
@@ -12665,14 +12667,16 @@ def admin_stripe_diagnose_orphan_subs(
     conn.close()
 
     orphan_count = sum(1 for o in out if o.get("orphan"))
+    superseded_count = sum(1 for o in out if o.get("superseded"))
     return {
         "ok": True,
         "days": days,
         "scanned_events": len(evts),
         "orphan_count": orphan_count,
+        "superseded_count": superseded_count,
         "events": out,
         "errors": errors,
-        "message": f"subscription.deleted {len(evts)} 件中 orphan (生徒不一致) {orphan_count} 件",
+        "message": f"subscription.deleted {len(evts)} 件中 orphan (生徒不一致) {orphan_count} 件 / 置換済み (superseded) {superseded_count} 件",
     }
 
 
@@ -24026,7 +24030,7 @@ def _cancel_superseded_subscription(stripe_client, old_sub_id, new_sub_id, stude
         ):
             log.info(f"[{context}] 旧 subscription {old_sub_id} は既に解約済み")
             return
-        # 放置すると旧サブスクの trial 明けに二重課金が始まる — 手動対応必須の critical event として記録
+        # 放置すると旧サブスクの課金開始時に二重課金が始まる — 手動対応必須の critical event として記録
         log.error(
             f"[{context}] FAILED to cancel superseded subscription {old_sub_id} "
             f"(student_id={student_id}, new={new_sub_id}): {type(e).__name__}: {e}"
@@ -24039,7 +24043,7 @@ def _cancel_superseded_subscription(stripe_client, old_sub_id, new_sub_id, stude
             "error": str(e)[:200],
             "action_required": (
                 f"Stripe Dashboard で旧 subscription {old_sub_id} を手動解約してください "
-                f"(student_id={student_id}・新契約 {new_sub_id} は有効・放置すると trial 明けに二重課金)"
+                f"(student_id={student_id}・新契約 {new_sub_id} は有効・放置すると課金開始時に二重課金)"
             ),
         })
 
