@@ -1346,6 +1346,10 @@ def init_db():
         # mypage が「解約予約済み・◯月◯日まで利用可」を表示する。status は従来どおり期間末の
         # subscription.deleted webhook で canceled 化。deleted / 新サブスク紐付けで NULL に戻す。
         ("cancel_at", "ALTER TABLE students ADD COLUMN cancel_at TIMESTAMP DEFAULT NULL"),
+        # 🎯 [adm-accuracy-2] (2026-06-12): 合格可能性スコアの「本番日」個別設定。
+        # 私立・地域で入試日が標準アンカー (2/25, 2/1) とズレる生徒向けに、本人/塾長が
+        # 実際の本番日を設定できる。設定があれば学年推定より最優先で残り日数に使う。
+        ("exam_target_date", "ALTER TABLE students ADD COLUMN exam_target_date DATE DEFAULT NULL"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -4723,9 +4727,10 @@ def update_student_profile(
     request: Request,
     authorization: Optional[str] = Header(None),
 ):
-    """生徒の grade (学年) / goal (志望校) を更新。
+    """生徒の grade (学年) / goal (志望校) / exam_target_date (本番日) を更新。
 
-    payload: {"student_id": int, "grade": Optional[str], "goal": Optional[str]}
+    payload: {"student_id": int, "grade": Optional[str], "goal": Optional[str],
+              "exam_target_date": Optional[str]}  # YYYY-MM-DD・"" で解除 ([adm-accuracy-2])
     認証 (hybrid pattern・weakness_top3 と同等):
       - admin Bearer (_verify_admin_token) → 任意の student_id にアクセス可
       - student Bearer (_verify_session_token) → claims["student_id"] == query student_id のみ
@@ -4771,12 +4776,29 @@ def update_student_profile(
     # 入力 validation (modal の maxlength と整合)
     grade = payload.get("grade")
     goal = payload.get("goal")
-    if grade is None and goal is None:
-        raise HTTPException(status_code=400, detail="grade or goal 必須")
+    # 🎯 [adm-accuracy-2] 本番日 (合格可能性スコアの残り日数で最優先利用)。"" は解除 (NULL)。
+    exam_target_date = payload.get("exam_target_date")
+    if grade is None and goal is None and exam_target_date is None:
+        raise HTTPException(status_code=400, detail="grade / goal / exam_target_date のいずれか必須")
     if grade is not None:
         grade = str(grade).strip()[:20]
     if goal is not None:
         goal = str(goal).strip()[:60]
+    _etd_value = None  # None=未指定 / ("set", date) / ("clear", None)
+    if exam_target_date is not None:
+        _etd_raw = str(exam_target_date).strip()
+        if _etd_raw == "":
+            _etd_value = ("clear", None)
+        else:
+            import datetime as _dt_p
+            try:
+                _etd_date = _dt_p.date.fromisoformat(_etd_raw[:10])
+            except ValueError:
+                raise HTTPException(status_code=400, detail="exam_target_date は YYYY-MM-DD 形式で指定してください")
+            _today_p = _dt_p.datetime.now(_dt_p.timezone(_dt_p.timedelta(hours=9))).date()
+            if not (_today_p < _etd_date <= _today_p + _dt_p.timedelta(days=365 * 7)):
+                raise HTTPException(status_code=400, detail="本番日は明日以降・7 年以内の日付を指定してください")
+            _etd_value = ("set", _etd_date.isoformat())
 
     conn = db()
     c = conn.cursor()
@@ -4787,19 +4809,25 @@ def update_student_profile(
         if not row:
             raise HTTPException(status_code=404, detail="student not found")
 
-        # 部分更新 (grade only / goal only / both)
-        if grade is not None and goal is not None:
-            c.execute("UPDATE students SET grade=?, goal=? WHERE id=?", (grade, goal, student_id))
-        elif grade is not None:
-            c.execute("UPDATE students SET grade=? WHERE id=?", (grade, student_id))
-        elif goal is not None:
-            c.execute("UPDATE students SET goal=? WHERE id=?", (goal, student_id))
+        # 部分更新 (指定されたフィールドのみ動的 SET)
+        _sets, _args = [], []
+        if grade is not None:
+            _sets.append("grade=?"); _args.append(grade)
+        if goal is not None:
+            _sets.append("goal=?"); _args.append(goal)
+        if _etd_value is not None:
+            _sets.append("exam_target_date=?"); _args.append(_etd_value[1])
+        if _sets:
+            _args.append(student_id)
+            c.execute(f"UPDATE students SET {', '.join(_sets)} WHERE id=?", tuple(_args))
         conn.commit()
 
         # 更新後の値を返却
-        c.execute("SELECT id, grade, goal FROM students WHERE id=?", (student_id,))
+        c.execute("SELECT id, grade, goal, exam_target_date FROM students WHERE id=?", (student_id,))
         row = c.fetchone()
-        d = dict(row) if hasattr(row, 'keys') else {"id": row[0], "grade": row[1], "goal": row[2]}
+        d = dict(row) if hasattr(row, 'keys') else {"id": row[0], "grade": row[1], "goal": row[2], "exam_target_date": row[3]}
+        if d.get("exam_target_date") is not None:
+            d["exam_target_date"] = str(d["exam_target_date"])[:10]
         return {"ok": True, "student": d}
     finally:
         conn.close()
@@ -5097,6 +5125,21 @@ def student_lesson_prints_recommended(
         conn.close()
 
 
+def _normalize_grade_numerals(g) -> str:
+    """学年表記の数字ゆれ (全角・漢数字・ローマ数字) を半角数字へ正規化 ([adm-accuracy-2] 2026-06-12)。
+    自由入力の「高二」「高校２年」「中Ⅲ」等を学年推定 regex に乗せるための前処理。"""
+    if not g:
+        return ""
+    t = str(g)
+    for src, dst in (
+        ("１", "1"), ("２", "2"), ("３", "3"), ("４", "4"), ("５", "5"), ("６", "6"),
+        ("一", "1"), ("二", "2"), ("三", "3"), ("四", "4"), ("五", "5"), ("六", "6"),
+        ("Ⅰ", "1"), ("Ⅱ", "2"), ("Ⅲ", "3"), ("ⅰ", "1"), ("ⅱ", "2"), ("ⅲ", "3"),
+    ):
+        t = t.replace(src, dst)
+    return t
+
+
 def _calculate_admission_likelihood(student_id: int) -> dict:
     """🎯 合格可能性を簡易計算 (塾長指示 2026-05-26)。
     学習時間・弱点数・配布プリント DL・単語帳進捗・模試偏差値 (最新) から 0-100 スコアを算出。
@@ -5110,14 +5153,15 @@ def _calculate_admission_likelihood(student_id: int) -> dict:
     try:
         c = conn.cursor()
         # 生徒情報取得
-        c.execute("SELECT goal, created_at, grade FROM students WHERE id = ?", (student_id,))
+        c.execute("SELECT goal, created_at, grade, exam_target_date FROM students WHERE id = ?", (student_id,))
         srow = c.fetchone()
         if not srow:
             return None
         try:
             goal = srow["goal"]; created_at = srow["created_at"]; grade = srow["grade"]
+            exam_target_date = srow["exam_target_date"]
         except (TypeError, KeyError, IndexError):
-            goal = srow[0]; created_at = srow[1]; grade = srow[2]
+            goal = srow[0]; created_at = srow[1]; grade = srow[2]; exam_target_date = srow[3]
         levels, goal_label, matched_kw = _infer_levels_from_goal(goal or "")
 
         # ベースライン score: マッチした志望校レベルから
@@ -5221,23 +5265,35 @@ def _calculate_admission_likelihood(student_id: int) -> dict:
         _base_year = today.year if today.month < 3 else today.year + 1
         exam_date = None
         exam_basis = "default"
+        # ⓪ 本人/塾長が設定した本番日 ([adm-accuracy-2]): 私立・地域の個別日程はここで吸収。
+        #   未来日のみ採用 (過去日は学年推定へフォールバック = 受験後の翌サイクルへ自然移行)
+        if exam_target_date:
+            try:
+                _etd = exam_target_date if isinstance(exam_target_date, datetime.date) else datetime.date.fromisoformat(str(exam_target_date)[:10])
+                if _etd > today:
+                    exam_date = _etd
+                    exam_basis = "self"
+            except Exception:
+                pass
         try:
-            c.execute(
-                "SELECT exam_date FROM curricula WHERE student_id = ? AND status = 'active' "
-                "ORDER BY exam_date ASC LIMIT 1",
-                (student_id,),
-            )
-            rcur = c.fetchone()
-            if rcur and rcur["exam_date"]:
-                _ed = rcur["exam_date"]
-                _ed_date = _ed if isinstance(_ed, datetime.date) else datetime.date.fromisoformat(str(_ed)[:10])
-                if _ed_date > today:  # 過去日のカリキュラムは無視して推定へフォールバック
-                    exam_date = _ed_date
-                    exam_basis = "curricula"
+            if exam_date is None:
+                c.execute(
+                    "SELECT exam_date FROM curricula WHERE student_id = ? AND status = 'active' "
+                    "ORDER BY exam_date ASC LIMIT 1",
+                    (student_id,),
+                )
+                rcur = c.fetchone()
+                if rcur and rcur["exam_date"]:
+                    _ed = rcur["exam_date"]
+                    _ed_date = _ed if isinstance(_ed, datetime.date) else datetime.date.fromisoformat(str(_ed)[:10])
+                    if _ed_date > today:  # 過去日のカリキュラムは無視して推定へフォールバック
+                        exam_date = _ed_date
+                        exam_basis = "curricula"
         except Exception:
             pass  # 解析不能な exam_date は推定にフォールバック
         if exam_date is None:
-            _g = str(grade or "")
+            # [adm-accuracy-2] 全角・漢数字・ローマ数字の学年表記を正規化してから推定
+            _g = _normalize_grade_numerals(grade)
             import re as _re_adm
             _m = _re_adm.search(r"高(?:校)?\s*([1-3])", _g)
             if _m:
@@ -5261,7 +5317,7 @@ def _calculate_admission_likelihood(student_id: int) -> dict:
         if exam_date is None:
             exam_date = datetime.date(_base_year, 2, 25)  # 従来どおりの高3標準 fallback
         days_remaining = max(0, (exam_date - today).days)
-        _basis_label = {"curricula": "カリキュラム設定", "grade": "学年から推定", "default": "高3標準"}[exam_basis]
+        _basis_label = {"self": "本人/塾長設定", "curricula": "カリキュラム設定", "grade": "学年から推定", "default": "高3標準"}[exam_basis]
         exam_date_label = f"{exam_date.isoformat()} ({_basis_label})"
 
         # breakdown JSON
