@@ -2487,13 +2487,21 @@
 
     // 解約ボタン (トライアル中心、有料でもStripe API経由)
     cancelBtn.addEventListener('click', async () => {
-      // trial_extended (カード登録済み体験) は「14日間」「元々課金されていない」が事実と異なるため文言分岐。
-      // 解約は /api/billing/cancel-trial → Stripe Subscription.delete (即時解約) — 体験中の解約なら
-      // カードへの請求は発生しない (checkout-success.html の trial_extended 注記とミラー)。
+      // 解約方式は status で分岐し、confirm 文言も server cancel_trial の応答とミラーする:
+      // - trial / trial_extended: Subscription.delete (即時解約) — 解約した時点で体験終了・カードへの請求なし。
+      //   従来の「期間終了まで利用可能です」は DB 直接 canceled 化 (即時遮断) の事実と逆だった。
+      // - paid: cancel_at_period_end の期間末解約 — 契約期間終了まで利用可・以降の請求なし。
+      // - past_due: 期間末解約だが直近のお支払いが未確認 — 利用はお支払い猶予期間の終了まで。
+      // trial_extended は「14日間」「元々課金されていない」が事実と異なるため無課金 trial とも文言分岐。
       const isCardTrial = !!(currentStudent && currentStudent.status === 'trial' && currentStudent.card_registered);
+      const st = currentStudent ? currentStudent.status : null;
       const confirmMsg = isCardTrial
         ? '本当に解約しますか？\n\n・体験期間中に解約すれば、ご登録のカードへの請求は一切発生しません（自動課金は始まりません）\n・解約した時点で体験は終了し、サービスのご利用ができなくなります\n・後日再契約は可能です'
-        : '本当に解約しますか？\n\n・14日間の無料体験期間が残っている場合は、期間終了まで利用可能です\n・体験中は元々課金されていないため返金は発生しません\n・後日再契約は可能です';
+        : st === 'paid'
+        ? '本当に解約しますか？\n\n・現在のご契約期間の終わりまでは、これまで通りご利用いただけます\n・期間終了後のご請求は発生しません（日割りの返金はございません）\n・後日再契約は可能です'
+        : st === 'past_due'
+        ? '本当に解約しますか？\n\n・次回以降のご請求はありません\n・直近のお支払いが確認できていないため、ご利用いただけるのはお支払い猶予期間の終了までとなります\n・後日再契約は可能です'
+        : '本当に解約しますか？\n\n・解約した時点で体験は終了し、サービスのご利用ができなくなります\n・体験中は元々課金されていないため、請求・返金はありません\n・後日再契約は可能です';
       if (!confirm(confirmMsg)) return;
       cancelBtn.disabled = true;
       cancelBtn.textContent = '⏳ 処理中...';
