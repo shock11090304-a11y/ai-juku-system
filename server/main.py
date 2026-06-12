@@ -12039,6 +12039,8 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
     webhook 配信失敗で生じる status ズレを双方向に救済できる (冪等):
       - upgrade: Stripe active なのに DB が trial/past_due → paid に昇格
       - downgrade: Stripe past_due/canceled なのに DB が paid → past_due/canceled に降格
+      - stale trial_end: Stripe active 確認済みの paid 行に未来の trial_end が残存 → NULL に
+        (monthly webhook の trial_end クリア漏れ fix (2026-06-12) 以前の残留データ救済)
     認証: admin Bearer または X-Cron-Secret (日次 scheduler から呼ぶため)。
 
     返り値: {reconciled: N, details: [...]}"""
@@ -12088,10 +12090,10 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
             except Exception:
                 pass
             # DB 検索: stripe_customer_id 優先・無ければ email
-            c.execute("SELECT id, status, plan, stripe_subscription_id FROM students WHERE stripe_customer_id = ?", (customer,))
+            c.execute("SELECT id, status, plan, stripe_subscription_id, trial_end FROM students WHERE stripe_customer_id = ?", (customer,))
             row = c.fetchone()
             if not row and email:
-                c.execute("SELECT id, status, plan, stripe_subscription_id FROM students WHERE email = ?", (email,))
+                c.execute("SELECT id, status, plan, stripe_subscription_id, trial_end FROM students WHERE email = ?", (email,))
                 row = c.fetchone()
             if not row:
                 # Stripe 側に sub があるが DB に該当生徒なし → orphan
@@ -12105,9 +12107,12 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
                 "stored_sub": row["stripe_subscription_id"],
             })
             if status != "paid":
+                # 🛡️ 2026-06-12: trial_end=NULL を伴う (paid 化の共通規約)。この list は
+                # status="active" 限定 = Stripe 側で trialing でないことが確認済みなので安全
+                # (trial_extended の 21 日 trial 中の生徒がここで paid 化されることはない)。
                 c.execute(
                     """UPDATE students SET status='paid', stripe_customer_id=?, stripe_subscription_id=?,
-                           plan=?, paid_since=COALESCE(paid_since, CURRENT_TIMESTAMP), updated_at=CURRENT_TIMESTAMP
+                           plan=?, paid_since=COALESCE(paid_since, CURRENT_TIMESTAMP), trial_end=NULL, updated_at=CURRENT_TIMESTAMP
                        WHERE id=?""",
                     (customer, sub.id, plan or db_plan, sid),
                 )
@@ -12121,6 +12126,16 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
                 )
                 conn.commit()
                 reconciled.append({"student_id": sid, "email": email, "plan_change": f"{db_plan} → {plan}"})
+            elif row["trial_end"]:
+                # 🛡️ 2026-06-12: status='paid' なのに trial_end が残る stale 行の Stripe 検証付き backfill。
+                # monthly webhook が paid 化時に trial_end をクリアしなかった fix 前の残留データで、
+                # 放置すると cron_trial_reminders の窓に入り契約者へ無課金 trial 用メールが誤配される。
+                # この分岐は active sub 確認済み (trialing は list に入らない) の行しか通らないので
+                # blind backfill にならない。日次 scheduler 経由で冪等に収束する。
+                # (plan ズレと併発時は前の elif が先に走り、翌日のこの分岐で trial_end が消える)
+                c.execute("UPDATE students SET trial_end=NULL, updated_at=CURRENT_TIMESTAMP WHERE id=?", (sid,))
+                conn.commit()
+                reconciled.append({"student_id": sid, "email": email, "stale_trial_end_cleared": str(row["trial_end"])})
         except Exception as e:
             errors.append({"sub_id": sub.id, "error": str(e)})
             try: conn.rollback()
@@ -24091,9 +24106,15 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
 
             if student_id and student_id != "":
                 # 既存 ID 指定: ai-juku 申込フォーム経由なので plan が空でも UPDATE 続行 (後方互換)
+                # 🛡️ 2026-06-12: trial_end=NULL を追加 (admin set-status paid / subscription.updated
+                # active の paid 化と同じ規約)。monthly checkout はトライアル無し即時課金なので
+                # クリアは無条件に正しい。体験中の月額移行で trial_end が残ると status='paid' +
+                # 未来 trial_end の行になり、cron_trial_reminders の窓 (trial_end が 24-48h 先) に
+                # 必ず一度入って、契約者に無課金 trial 用「自動課金は発生しません」メールが
+                # 誤配される (3ffa446 の 3視点 review root cause 指摘)。
                 c.execute(
                     """UPDATE students SET status='paid', stripe_customer_id=?, stripe_subscription_id=?,
-                           paid_since=CURRENT_TIMESTAMP, plan=?, updated_at=CURRENT_TIMESTAMP
+                           paid_since=CURRENT_TIMESTAMP, plan=?, trial_end=NULL, updated_at=CURRENT_TIMESTAMP
                        WHERE id=?""",
                     (customer, subscription, plan, student_id)
                 )
@@ -24101,10 +24122,10 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                 c.execute("SELECT id FROM students WHERE email=?", (email,))
                 row = c.fetchone()
                 if row:
-                    # 既存 email: trial → paid 化等の正常 case
+                    # 既存 email: trial → paid 化等の正常 case (trial_end=NULL は上の ID 指定 UPDATE と同理由)
                     c.execute(
                         """UPDATE students SET status='paid', stripe_customer_id=?, stripe_subscription_id=?,
-                               paid_since=CURRENT_TIMESTAMP, plan=?, updated_at=CURRENT_TIMESTAMP
+                               paid_since=CURRENT_TIMESTAMP, plan=?, trial_end=NULL, updated_at=CURRENT_TIMESTAMP
                            WHERE id=?""",
                         (customer, subscription, plan, row[0])
                     )
@@ -24388,11 +24409,14 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
             # リトライ成功 (invoice.paid / invoice.payment_succeeded) したら自動で paid に戻す (二重保険)。
             # 主経路は customer.subscription.updated (status active) だが、webhook 順序や
             # 取りこぼしに備えてこちらでも回復させる。canceled/expired には触れない。
+            # trial_end=NULL は主経路 (subscription.updated active) と同じ規約 (2026-06-12) —
+            # paid 行に未来の trial_end が残ると cron_trial_reminders で誤テンプレ送信になる。
             if _inv_sub_id:
                 try:
                     c.execute(
                         """UPDATE students SET status='paid',
                                paid_since=COALESCE(paid_since, CURRENT_TIMESTAMP),
+                               trial_end=NULL,
                                past_due_since=NULL,
                                updated_at=CURRENT_TIMESTAMP
                            WHERE stripe_subscription_id=? AND status='past_due'""",
@@ -26178,7 +26202,10 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
     now = datetime.now(timezone.utc)
     t_start = now + timedelta(hours=24)   # 24時間後以降
     t_end = now + timedelta(hours=48)     # 48時間以内
-    # status='paid' はStripeトライアル中、'trial'はまだ未決済のトライアル
+    # 送信対象は status='trial' のみ (無課金 trial も trial_extended も 'trial')。
+    # 'paid' は本来この窓に入らない規約 (paid 化は trial_end=NULL を伴う・2026-06-12 fix) だが、
+    # fix 前の stale 行 (paid なのに未来 trial_end) を検出・audit するため SELECT には残し、
+    # ループ冒頭で skip する — paid 行に正しいテンプレは存在しない (無課金用も card 用も虚偽になる)。
     # 継続意思のない (= 一度もログインしていない) 顧客はスキップ (塾長指示 2026-05-06)
     # ただしクレカ登録済み (_card_registered) は例外 — ループ内コメント参照 (2026-06-12)
     c.execute(
@@ -26198,6 +26225,8 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
     skipped_silent_ids = []
     skipped_course = 0
     skipped_course_ids = []
+    skipped_paid_stale = 0
+    skipped_paid_stale_ids = []
     silent_card_notified = 0
     silent_card_ids = []
     preview = []
@@ -26212,12 +26241,21 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
             skipped_course += 1
             skipped_course_ids.append(row["id"])
             continue
+        # 🛡️ 2026-06-12: status='paid' は skip (送信対象外)。paid 行に正しいテンプレは無い —
+        # 無課金用「自動課金は発生しません」も card 用「これから課金が始まる」も契約者には虚偽。
+        # monthly webhook の paid 化が trial_end=NULL を伴う同日 fix 後は新規流入しないはずで、
+        # ここに来る paid 行 = fix 前の stale データ。skip + audit で可視化し、是正は Stripe
+        # 実状態を確認できる reconcile (active sub 限定で trial_end クリア) に委ねる。
+        if row["status"] == "paid":
+            skipped_paid_stale += 1
+            skipped_paid_stale_ids.append(row["id"])
+            continue
         # クレカ登録済み trial 判定: trial_extended 経路 (create_trial_checkout の extend 分岐) は
         # webhook が stripe_subscription_id を保存し、status='trial' のまま 21 日 trial 中。
-        # status='trial' の AND ゲートが必須 — monthly webhook は trial_end をクリアしないため、
-        # 体験中に月額契約した生徒 (status='paid' + subscription + 未来 trial_end) が窓に入る。
-        # その人に「これから自動課金が始まる」「体験中の解約で料金はかからない」は虚偽になる
-        # (premium/family 契約者には価格も誤り)。3視点 review MAJOR 指摘 (2026-06-12)。
+        # status='trial' の AND ゲートは上の paid skip との二重防御 — 体験中に月額契約した生徒
+        # (status='paid' + subscription) に「これから自動課金が始まる」「体験中の解約で料金は
+        # かからない」card テンプレは虚偽になる (premium/family 契約者には価格も誤り)。
+        # 3視点 review MAJOR 指摘 (2026-06-12)。
         try:
             _card_registered = bool(row["stripe_subscription_id"]) and row["status"] == "trial"
         except (KeyError, IndexError):
@@ -26318,10 +26356,24 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
             conn.commit()
         except Exception as _e:
             log.warning(f"[trial-reminders] course skip audit failed: {_e}")
+    # paid なのに未来 trial_end が残る stale 行の audit (要是正リストの可視化・2026-06-12)
+    if skipped_paid_stale > 0 and not dry_run:
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("trial_reminder_paid_stale_skipped",
+                 json.dumps({"count": skipped_paid_stale, "student_ids": skipped_paid_stale_ids[:50],
+                             "reason": "status='paid' なのに未来の trial_end が残存 (monthly webhook fix 前の stale 行) — reconcile 実行で解消"}, ensure_ascii=False),
+                 "cron")
+            )
+            conn.commit()
+        except Exception as _e:
+            log.warning(f"[trial-reminders] paid stale skip audit failed: {_e}")
     conn.commit()
     conn.close()
     return {"sent": sent, "sent_card": sent_card, "skipped": skipped, "skipped_silent": skipped_silent,
-            "skipped_course": skipped_course, "silent_card_notified": silent_card_notified,
+            "skipped_course": skipped_course, "skipped_paid_stale": skipped_paid_stale,
+            "silent_card_notified": silent_card_notified,
             "candidates": len(candidates), "preview": preview if dry_run else None}
 
 
