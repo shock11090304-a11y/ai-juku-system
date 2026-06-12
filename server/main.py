@@ -33841,6 +33841,7 @@ def admin_set_student_email(student_id: int, payload: StudentEmailSetRequest,
                     "old_domain": (old_email.split("@")[-1] if old_email and "@" in old_email else None),
                     "new_domain": (new_email_norm.split("@")[-1] if new_email_norm and "@" in new_email_norm else None),
                     "actor": "admin",
+                    "verified": bool(new_email_norm),
                 }, ensure_ascii=False), "admin_action")
             )
         except Exception:
