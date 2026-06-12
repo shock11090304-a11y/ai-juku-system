@@ -3478,6 +3478,12 @@ async def _trial_management_scheduler():
                 # paid invoice を日次で冪等 backfill (dedup キーは invoice id 正規化済・35日窓で十分)
                 # details は invoice 明細で巨大になり得るため scheduler 記録 (4000字 truncate) からは落とす
                 ("stripe-backfill-payments", lambda: {k: v for k, v in admin_stripe_backfill_payments(payload={"dry_run": False, "days": 35}, authorization=None, x_cron_secret=secret).items() if k != "details"}),
+                # 🔍 trialing 残留サブスク検出 (2026-06-12 追加): reconcile は active のみ・
+                # diagnose-orphan-subs は deleted のみで「生きている残留 trial サブ」が課金開始まで
+                # 不可視だった穴を塞ぐ。leftover/orphan があれば critical event で塾長に可視化。
+                # STRIPE 未設定なら内部で 503→例外で skip。normal (進行中 trial_extended 全件) は
+                # scheduler 記録の肥大化防止で落とす (backfill の details と同じ規約)。
+                ("trialing-leftovers", lambda: {k: v for k, v in admin_stripe_diagnose_trialing_leftovers(notify=1, authorization=None, x_cron_secret=secret).items() if k != "normal"}),
             ]
             results = {}
             for task_name, fn in tasks:
@@ -12678,6 +12684,174 @@ def admin_stripe_diagnose_orphan_subs(
         "errors": errors,
         "message": f"subscription.deleted {len(evts)} 件中 orphan (生徒不一致) {orphan_count} 件 / 置換済み (superseded) {superseded_count} 件",
     }
+
+
+@app.get("/api/admin/stripe/diagnose-trialing-leftovers")
+def admin_stripe_diagnose_trialing_leftovers(
+    notify: int = 0,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🔍 Stripe 上で生きている trialing subscription のうち「生徒の現契約と不一致」な残留を
+    列挙する read-only 診断 (2026-06-12)。
+
+    背景 🔁 [upgrade-supersede] (2026-06-12): 32954aa 以前は体験中 (trial_extended) の月額移行で
+    旧 trial サブスクが Stripe に残留し、trial 明けに ¥14,500/月 の二重課金が始まった。
+    既存の reconcile は Subscription.list(status="active") のみ走査・diagnose-orphan-subs は
+    deleted イベントのみ走査のため、「まだ生きている trialing 残留」は課金が始まるまで
+    どの機構にも見えなかった (3 視点監査 2026-06-12 で特定した検出の穴)。
+    本 endpoint は status="trialing" を全走査し、課金開始 **前** に残留を検出する。
+
+    分類:
+      - normal:   sub_id が生徒の stripe_subscription_id と一致 (進行中の trial_extended・正常)
+      - leftover: 生徒は特定できるが stored sub と不一致 (月額移行/解約後の残留 →
+                  trial 明けに二重課金)。metadata.superseded_by 付きで生存 = 置換時の解約失敗も含む
+      - orphan:   どの生徒にも紐づかない trialing サブ (手動作成など・要個別確認)
+    notify=1 (日次 scheduler 用): leftover/orphan があれば critical event を記録して塾長に可視化。
+    同一の検出集合 (sub_id の digest 一致) は 3 日間再記録しない = 3 日ごとの督促に減速して
+    CEO ダッシュの critical event ノイズ化を防ぐ (3視点 review 指摘 2026-06-12)。集合が変われば即記録。
+    Stripe への書込は一切行わない。認証: admin Bearer または X-Cron-Secret。
+    """
+    _authed = False
+    if authorization and authorization.startswith("Bearer "):
+        _tok = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(_tok):
+            _authed = True
+    if not _authed and x_cron_secret and CRON_SECRET and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        _authed = True
+    if not _authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="STRIPE_SECRET_KEY が未設定")
+
+    s = get_stripe()
+    try:
+        trialing_subs = list(s.Subscription.list(status="trialing", limit=100).auto_paging_iter())
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Stripe Subscription.list 失敗: {e}")
+
+    conn = db()
+    c = conn.cursor()
+    normal, leftovers, orphans, errors = [], [], [], []
+    for sub in trialing_subs:
+        try:
+            meta = (getattr(sub, "metadata", None) or {})
+            # juku-payment / 旧 v1 月謝系は ai-juku の管轄外 (reconcile と同じ除外規約)
+            if ((meta.get("system") or "").startswith("juku-payment")
+                    or (meta.get("source") or "").startswith(("self-register", "past-due-invoice"))
+                    or meta.get("registration_id")):
+                continue
+            sub_id = sub.id
+            customer = getattr(sub, "customer", None)
+            _te_ts = getattr(sub, "trial_end", None)
+            entry = {
+                "subscription_id": sub_id,
+                "customer": customer,
+                "trial_end": datetime.fromtimestamp(int(_te_ts), tz=timezone.utc).isoformat() if _te_ts else None,
+                "superseded_by": meta.get("superseded_by"),
+            }
+            # 1) sub_id 一致 = その生徒の現契約 (正常な trial_extended 進行中)
+            c.execute("SELECT id, name, status FROM students WHERE stripe_subscription_id=?", (sub_id,))
+            row = c.fetchone()
+            if row:
+                entry["student"] = {"student_id": row["id"], "name": row["name"], "status": row["status"]}
+                normal.append(entry)
+                continue
+            # 2) customer → email (親/子) の順で生徒を探す。見つかれば stored sub 不一致の残留
+            # Customer.retrieve は customer 不一致の sub でのみ発火 (最大 trialing 件数分の N+1 だが
+            # founder 50 名規模 + 日次 1 回なので Stripe rate limit (100req/s) に対して十分許容)
+            row = None
+            if customer:
+                c.execute("SELECT id, name, status, stripe_subscription_id FROM students WHERE stripe_customer_id=?", (customer,))
+                row = c.fetchone()
+            if not row and customer:
+                _lo_email = None
+                try:
+                    _lo_email = ((getattr(s.Customer.retrieve(customer), "email", None) or "").strip().lower()) or None
+                except Exception:
+                    _lo_email = None
+                if _lo_email:
+                    c.execute(
+                        "SELECT id, name, status, stripe_subscription_id FROM students "
+                        "WHERE LOWER(email)=? OR LOWER(COALESCE(student_email,''))=?",
+                        (_lo_email, _lo_email),
+                    )
+                    row = c.fetchone()
+            if row:
+                entry["student"] = {"student_id": row["id"], "name": row["name"], "status": row["status"],
+                                    "current_subscription_id": row["stripe_subscription_id"]}
+                entry["reason"] = (
+                    "supersede_cancel_failed" if meta.get("superseded_by")
+                    else f"student_status_{row['status']}_with_mismatched_live_trial"
+                )
+                leftovers.append(entry)
+            else:
+                orphans.append(entry)
+        except Exception as e:
+            errors.append({"sub_id": getattr(sub, "id", "?"), "error": str(e)})
+            # Postgres は失敗 statement で txn が abort する → rollback しないと以降が連鎖失敗
+            try: conn.rollback()
+            except Exception: pass
+    conn.close()
+
+    result = {
+        "ok": True,
+        "scanned_trialing": len(trialing_subs),
+        "leftover_count": len(leftovers),
+        "orphan_count": len(orphans),
+        "normal_count": len(normal),
+        "leftovers": leftovers,
+        "orphans": orphans,
+        "normal": normal,
+        "errors": errors,
+        "message": (
+            f"trialing {len(trialing_subs)} 件中 残留 (leftover) {len(leftovers)} 件 / "
+            f"生徒不明 (orphan) {len(orphans)} 件 / 正常 {len(normal)} 件"
+        ),
+    }
+    if notify and (leftovers or orphans):
+        # 連日同一内容の積み上げ防止 (3視点 review 指摘 2026-06-12): 検出集合 (sub_id) の digest が
+        # 直近 3 日の記録と一致するなら再記録しない。集合が変わったら即記録 (新規残留を遅延させない)。
+        _digest = hashlib.sha256(json.dumps(sorted(
+            [e["subscription_id"] for e in leftovers] + [e["subscription_id"] for e in orphans]
+        )).encode("utf-8")).hexdigest()[:16]
+        _dup = False
+        try:
+            _conn_d = db()
+            _c_d = _conn_d.cursor()
+            # created_at は DB 既定の "YYYY-MM-DD HH:MM:SS" (UTC) — 同形式の文字列で範囲比較する
+            _cutoff_d = (datetime.now(timezone.utc) - timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")
+            _c_d.execute(
+                "SELECT props FROM events WHERE name=? AND session_id='ai_failsafe' AND created_at>=? ORDER BY id DESC LIMIT 1",
+                ("trialing_leftover_subscription_detected", _cutoff_d),
+            )
+            _prev = _c_d.fetchone()
+            _conn_d.close()
+            if _prev:
+                try:
+                    _dup = (json.loads(_prev["props"]).get("digest") == _digest)
+                except Exception:
+                    _dup = False
+        except Exception as _de:
+            # dedup 照会失敗は記録継続 (重複ノイズより残留の見逃しの方が実害大)
+            log.warning(f"[trialing-leftovers] dedup lookup failed (記録は続行): {_de}")
+        if _dup:
+            log.info(f"[trialing-leftovers] 同一内容を 3 日以内に記録済み (digest={_digest}) — critical event 再記録スキップ")
+        else:
+            _record_ai_critical_event("trialing_leftover_subscription_detected", {
+                "digest": _digest,
+                "leftover_count": len(leftovers),
+                "orphan_count": len(orphans),
+                "subscriptions": (
+                    [{"subscription_id": e["subscription_id"], "trial_end": e["trial_end"],
+                      "student_id": (e.get("student") or {}).get("student_id"), "reason": e.get("reason")}
+                     for e in leftovers]
+                    + [{"subscription_id": e["subscription_id"], "trial_end": e["trial_end"],
+                        "student_id": None, "reason": "orphan"} for e in orphans]
+                ),
+                "action_required": "Stripe Dashboard で各 subscription を確認し、残留なら Cancel immediately してください (放置すると trial 明けに二重課金)",
+            })
+    return result
 
 
 @app.post("/api/admin/marketing/send-ig-carousel")
