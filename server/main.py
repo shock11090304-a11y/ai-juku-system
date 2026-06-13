@@ -2360,8 +2360,8 @@ def _sign_session_token(student_id: int, ttl_seconds: int = SESSION_TTL_SECONDS,
 
     token_type:
     - 'session' (default): 30日有効、Authorization: Bearer で認証 API を叩く長期トークン
-    - 'magic': 1時間有効、magic link URL に埋め込む短期トークン。/api/auth/verify で
-       長期 session トークンへ交換する。
+    - 'magic': magic link URL に埋め込むトークン。default 30日有効 (_MAGIC_LINK_TTL_SECONDS・
+       2026-05-31「時間制限を無しに」で旧 1時間から延長)。/api/auth/verify で長期 session に交換。
 
     後方互換: 旧フォーマット ("sid.exp.sig" 3 parts) は session として受理する。"""
     import time
@@ -7898,7 +7898,14 @@ def _create_otp(student_id: int, ttl_seconds: int = None) -> str:
     expires_at = datetime.now(timezone.utc) + timedelta(seconds=_store_ttl)
     conn = db()
     c = conn.cursor()
-    # 1) 同一 student の active OTP を最大 3件に制限
+    # 1) 同一 student の active OTP を最大 5件に制限。
+    # 🔑 2026-06-14 [otp-keep-old-codes] 室坂さん「番号が期限切れで使えない」の根治:
+    #   従来は発行/再送のたびに旧コードを全無効化していたため、複数回送って受信箱に複数コードが
+    #   届いた生徒が「先に届いた(=最新でない)古いメールのコード」を入力すると、コードは時間的に
+    #   有効でも used 化済みで照合 0 行 → verify-code が generic 401「有効期限が切れています」と
+    #   誤表示していた。再送時の明示無効化は全経路で撤廃し、この上限 GC のみを唯一の整理手段に
+    #   統一する。直近5件を生かすので、メール到着順の入れ替わりでも手元のどのコードでもログイン可。
+    #   複数併存は安全: OTP は single-use + 5回失敗ロックアウト + verify-code は active 全コード照合。
     try:
         c.execute(
             "SELECT id FROM otp_codes WHERE student_id = ? AND used_at IS NULL "
@@ -7906,9 +7913,9 @@ def _create_otp(student_id: int, ttl_seconds: int = None) -> str:
             (student_id,)
         )
         rows = c.fetchall()
-        # 新規発行で 4件目になるなら、古い分を invalidate
-        if len(rows) >= 3:
-            stale_ids = [r["id"] for r in rows[:-2]]  # 直近2件以外を無効化
+        # 新規発行で 6件目になるなら、最も古い分だけ invalidate (直近4件 + 新規 = 最大5件を維持)
+        if len(rows) >= 5:
+            stale_ids = [r["id"] for r in rows[:-4]]  # 直近4件以外を無効化
             placeholders = ",".join(["?"] * len(stale_ids))
             c.execute(
                 f"UPDATE otp_codes SET used_at = CURRENT_TIMESTAMP WHERE id IN ({placeholders})",
@@ -7917,9 +7924,12 @@ def _create_otp(student_id: int, ttl_seconds: int = None) -> str:
     except Exception as _e:
         log.debug(f"[OTP] active-otp limit cleanup failed: {_e}")
     # 2) 新規 OTP 挿入
+    # [otp-keep-old-codes] 衛生: naive TIMESTAMP 列へは UTC 壁時計 naive で保存 (_utc_naive_iso)。
+    #   現状 OTP の期限判定は全て SQL 側 expires_at > CURRENT_TIMESTAMP で無害だが、将来 Python 側
+    #   read-back (_parse_db_dt) 比較を足した瞬間に LINE 連携コードと同じ TZ 事故になる時限爆弾を断つ。
     c.execute(
         "INSERT INTO otp_codes (student_id, code, expires_at) VALUES (?, ?, ?)",
-        (student_id, code, expires_at.isoformat())
+        (student_id, code, _utc_naive_iso(expires_at))
     )
     conn.commit()
     conn.close()
@@ -8126,9 +8136,13 @@ def _send_magic_link_with_retry(to_email: str, student_name: str, magic_url: str
 
 
 def _invalidate_active_otps(student_id: int, keep_code: str = None) -> None:
-    """指定生徒の有効な OTP を全て無効化。重複申込・magic-link 再送時に旧コード混乱防止。
-    keep_code を渡すとそのコードだけは無効化しない (送信成功後に「新コードのみ有効化」する用途)。
-    失敗してもログのみ (致命ではない)。"""
+    """指定生徒の有効な OTP を全て無効化する helper。
+    ⚠️ 2026-06-14 [otp-keep-old-codes] 以降、コード発行/再送の全経路からは呼ばない。
+       発行時に旧コードを殺すと「複数回送って受信箱に複数コードが届いた生徒が古い方を入力 →
+       used 化済で『期限切れ』誤表示」を生むため (室坂さん事例)。OTP 群の整理は _create_otp の
+       上限 GC (直近5件) のみに一本化した。本 helper は将来のアカウント侵害対応等、明示的に
+       「全コードを今すぐ失効させたい」セキュリティイベント専用に温存する (発行経路に再配線禁止)。
+    keep_code を渡すとそのコードだけは無効化しない。失敗してもログのみ (致命ではない)。"""
     try:
         conn = db()
         c = conn.cursor()
@@ -8587,7 +8601,8 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
             #   未紐付け / LINE 失敗時のみ従来のメール (親 + 子) にフォールバック。
             line_sent = _try_line_login_push(row, magic_url, otp_code)
             if line_sent:
-                _invalidate_active_otps(row["id"], keep_code=otp_code)  # 配信成功 → 新コードのみ有効化
+                # [otp-keep-old-codes] 旧コードは無効化しない (直近メールが届く前に古いメールの
+                #   コードを入力しても通るように)。整理は _create_otp の上限 GC のみに委ねる。
                 send_event_props.update({
                     "channel": "line",
                     "line_sent": True,
@@ -8631,11 +8646,8 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
                             student_send_result = _send_magic_link_with_retry(
                                 _student_email, row["name"] or "", magic_url, otp_code=otp_code, is_welcome=False,
                             ) or {}
-                # [magic-otp-preserve] 親 or 子いずれかへ送信成功した時のみ旧コードを掃除。
-                #   どちらも失敗 (Resend 障害等) なら旧コードを温存し、既に届いている古いコードで
-                #   ログイン継続できるようにする。
-                if send_result.get("sent") or student_send_result.get("sent"):
-                    _invalidate_active_otps(row["id"], keep_code=otp_code)
+                # [otp-keep-old-codes] 旧コードは無効化しない (再送で増えた複数コードのどれでも
+                #   ログインできるように)。整理は _create_otp の上限 GC (直近5件) のみに委ねる。
                 send_event_props.update({
                     "channel": "email",
                     "line_sent": False,
@@ -8737,7 +8749,10 @@ def verify_code(payload: VerifyCodeRequest, request: Request):
     )
     student = c.fetchone()
 
-    generic_401 = HTTPException(status_code=401, detail="コードが正しくないか、有効期限が切れています")
+    # [otp-keep-old-codes] 文言を「最新コード優先」へ誘導 (列挙オラクル化を避けるため理由は
+    #   非開示のまま全失敗で同一文言)。コード違い/使用済/ロックアウト/状態不一致を区別せず、
+    #   ユーザーには「最新メールのコードを使う」だけ案内する。
+    generic_401 = HTTPException(status_code=401, detail="コードが正しくないか、有効期限が切れています。最新のメール（または塾からの連絡）に記載のコードをご確認ください。")
 
     # trial_end 未経過の trial ユーザーも許可
     # 国公立難関大学コース所属生徒は trial_end に関係なく常に許可 (永久無料)
@@ -8849,7 +8864,7 @@ def verify_code(payload: VerifyCodeRequest, request: Request):
 def verify_magic_link(t: str):
     """auth.html からのトークン検証。有効なら生徒情報 + 新規 session token を返す。
 
-    入力: 'magic' タイプ (1時間有効、URL 埋め込み用) または旧フォーマット ('session', 30日)。
+    入力: 'magic' タイプ (default 30日有効、URL 埋め込み用) または旧フォーマット ('session', 30日)。
     出力: 必ず新規 'session' トークンを発行 (URL 漏洩リスクを切り離す)。
     クライアントは localStorage にこの新トークンを保存する (4番手 監査 2026-04-30)。"""
     import time as _t
@@ -18656,8 +18671,7 @@ def admin_send_magic_link_to_address(payload: dict, authorization: Optional[str]
     if not row:
         raise HTTPException(status_code=404, detail="student not found")
 
-    # 古い OTP を無効化してから新規発行
-    _invalidate_active_otps(row["id"])
+    # [otp-keep-old-codes] 旧 OTP は無効化しない (生徒が手元の古いコードでもログイン可能に)。
     session_token = _create_magic_link_token(row["id"])
     magic_url = f"{BASE_URL}/auth.html?t={session_token}"
     otp_code = _create_otp(row["id"])
@@ -18758,8 +18772,8 @@ def admin_issue_otp_direct(payload: dict, authorization: Optional[str] = Header(
             raise HTTPException(status_code=404, detail="生徒が見つかりません")
 
         sid = int(row["id"])
-        # 古い OTP を全無効化 (混乱防止)
-        _invalidate_active_otps(sid)
+        # [otp-keep-old-codes] 旧 OTP は無効化しない。塾長が口頭用コードを出しても、生徒が
+        #   既に持っている (メール/前回口頭の) コードを殺さない (整理は上限 GC のみ)。
         otp_code = _create_otp(sid)
         # 🔗 2026-06-04: LINE 紐付け済みなら OTP/ワンクリック URL を自動で LINE 配信する準備
         #   (student_email はワンクリック URL 用メアドの fallback 判定にも使う — 2026-06-12)
@@ -18989,7 +19003,7 @@ def admin_send_kokuritsu_url_bundle(
                 skipped_no_email += 1
                 continue
             try:
-                _invalidate_active_otps(sid)
+                # [otp-keep-old-codes] 旧 OTP は無効化しない (整理は上限 GC のみ)
                 otp_code = _create_otp(sid)  # ttl 未指定 = env 設定 (無期限)
             except Exception as e:
                 log.warning(f"[KokuritsuBundle] OTP issue failed sid={sid}: {e}")
@@ -23577,12 +23591,8 @@ def trial_signup(payload: TrialSignup, request: Request):
     student_email_sent = False
     if student_id:
         try:
-            # 重複申込時は古い OTP を無効化 (旧コード混乱防止)。
-            # 🛡️ 2026-06-12 review 指摘: 受信者 cap 到達中は無効化しない —
-            # welcome 送信が cap でスキップされるのに旧コードまで殺すと
-            # 「届いている旧コードでもログインできない」状態を作るため (magic-link 側と同方針)。
-            if is_existing and not _recipient_send_cap_exceeded(email_norm):
-                _invalidate_active_otps(student_id)
+            # [otp-keep-old-codes] 重複申込時も旧 OTP は無効化しない (届いている古いコードでも
+            #   ログイン可能に・整理は _create_otp の上限 GC のみ)。
             # 1時間有効な短命 magic link token (4番手 監査 2026-04-30)
             session_token = _create_magic_link_token(student_id)
             magic_url = f"{BASE_URL}/auth.html?t={session_token}"
@@ -24802,8 +24812,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                 c.execute("SELECT id, name, email, student_email FROM students WHERE 1=0")
             s_row = c.fetchone()
             if s_row and s_row["email"]:
-                # 既存 OTP を無効化してから新発行 (重複コード混乱防止)
-                _invalidate_active_otps(s_row["id"])
+                # [otp-keep-old-codes] 旧 OTP は無効化しない (整理は上限 GC のみ)
                 # 1時間有効な短命 magic link token (4番手 監査 2026-04-30)
                 _token = _create_magic_link_token(s_row["id"])
                 _magic_url = f"{BASE_URL}/auth.html?t={_token}"
