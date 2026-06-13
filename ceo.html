@@ -348,13 +348,48 @@
   </nav>
 
   <main class="ceo-main">
+    <!-- 🧭 ハブナビ (2026-06-13 塾長指示: スクロール探索が面倒 → ボタン式でセクションを開く) -->
+    <!-- 表示モード: menu(ボタン一覧) / sec:<id>(単一セクション) / all(従来の縦長表示)。 -->
+    <!-- 隠蔽は .hub-hidden クラスで行う (expiredUsersSection 等は JS が style.display を直接
+         書き換えるため、インライン style での隠蔽は競合する)。 -->
+    <style>
+      .hub-hidden { display: none !important; }
+      #ceoHubBar { position: sticky; top: 0.5rem; z-index: 50; display: flex; align-items: center;
+        gap: 0.6rem; flex-wrap: wrap; background: rgba(13,11,26,0.92); backdrop-filter: blur(10px);
+        border: 1px solid rgba(167,139,250,0.30); border-radius: 12px; padding: 0.5rem 0.8rem;
+        margin: 0 0 1.2rem 0; box-shadow: 0 4px 18px rgba(0,0,0,0.35); }
+      .hub-bar-btn { background: rgba(167,139,250,0.16); color: #e4e4e7; border: 1px solid rgba(167,139,250,0.4);
+        border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+        font-family: inherit; white-space: nowrap; }
+      .hub-bar-btn:hover { background: rgba(167,139,250,0.3); }
+      #hubBarTitle { flex: 1; font-weight: 800; color: #e4e4e7; font-size: 0.92rem; min-width: 8rem; }
+      #hubBarAlert { display: none; background: rgba(239,68,68,0.18); color: #fca5a5;
+        border: 1px solid rgba(239,68,68,0.5); animation: hubPulse 1.6s ease-in-out infinite; }
+      @keyframes hubPulse { 50% { box-shadow: 0 0 10px rgba(239,68,68,0.55); } }
+      .hub-btn { cursor: pointer; font-family: inherit; position: relative; }
+      .hub-badge { position: absolute; top: 4px; right: 4px; background: #ec4899; color: #fff;
+        font-size: 0.62rem; font-weight: 800; padding: 0.05rem 0.4rem; border-radius: 999px;
+        border: 1px solid rgba(0,0,0,0.35); pointer-events: none; }
+      @media (max-width: 640px) {
+        #ceoHubBar { padding: 0.35rem 0.5rem; gap: 0.35rem; }
+        #hubBarTitle { min-width: 4rem; font-size: 0.8rem; }
+        .hub-bar-btn { padding: 0.25rem 0.55rem; font-size: 0.7rem; }
+      }
+    </style>
+    <section id="ceoHubBar">
+      <button type="button" id="hubBtnMenu" class="hub-bar-btn">🏠 メニュー</button>
+      <span id="hubBarTitle"></span>
+      <button type="button" id="hubBarAlert" class="hub-bar-btn" title="監視アラート発生中 — クリックで監視セクションを開く">🚨 監視アラート</button>
+      <button type="button" id="hubBtnAll" class="hub-bar-btn" title="従来どおり全セクションを縦に並べて表示">📜 全表示</button>
+    </section>
+
     <!-- 💸 Anthropic credit 残量予測バナー (2026-05-13 塾長指示) -->
     <section id="anthropicCreditBanner" style="display:none;margin:0 0 1rem 0;padding:0.85rem 1rem;border-radius:12px;font-size:0.9rem;">
       <!-- JS で動的描画 -->
     </section>
 
     <!-- KPI Hero -->
-    <section class="ceo-hero">
+    <section id="heroKpiSection" class="ceo-hero">
       <div class="hero-metric main">
         <div class="metric-label">月次収益 (MRR)</div>
         <div class="metric-value" id="mrr">¥0</div>
@@ -373,7 +408,7 @@
     </section>
 
     <!-- Secondary KPIs -->
-    <section class="kpi-row">
+    <section id="kpiRowSection" class="kpi-row">
       <div class="kpi-card">
         <div class="kpi-icon">👥</div>
         <div class="kpi-info">
@@ -408,8 +443,72 @@
       </div>
     </section>
 
+    <!-- 🧭 ハブメニュー: ダッシュボード内セクションをボタンで開く (クイックアクセスツールバーと同じ見た目) -->
+    <section id="ceoHubMenu">
+      <div class="ceo-toolbar" style="margin:0;">
+        <div class="tb-group">
+          <h3>💰 収益・契約</h3>
+          <div class="tb-buttons">
+            <button type="button" class="tb-btn hub-btn" data-hub-target="signupSummarySection" data-hub-label="📋 申込状況サマリ"><span class="tb-icon">📋</span><span class="tb-label">申込サマリ</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="revenueDailySection" data-hub-label="💰 収益日次推移"><span class="tb-icon">💰</span><span class="tb-label">収益日次</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="mrrBreakdownSection" data-hub-label="💰 月次収益 (MRR) の根拠"><span class="tb-icon">🧾</span><span class="tb-label">MRR根拠</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="revenuePlanChartsSection" data-hub-label="💰 売上シミュレーション / プラン分布"><span class="tb-icon">📈</span><span class="tb-label">売上シミュ</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="planManageSection" data-hub-label="🎛 プラン管理"><span class="tb-icon">🎛</span><span class="tb-label">プラン管理</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="founderSeatsSection" data-hub-label="🎁 創設メンバー 残り枠"><span class="tb-icon">🎁</span><span class="tb-label">創設枠</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="inviteUrlSection" data-hub-label="📨 通塾生 招待URL発行"><span class="tb-icon">📨</span><span class="tb-label">招待URL</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="expiredUsersSection" data-hub-label="🔔 体験終了者フォローアップ"><span class="tb-icon">🔔</span><span class="tb-label">体験終了フォロー</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="courseAppsSection" data-hub-label="📋 難関コース 申込待ち"><span class="tb-icon">🎓</span><span class="tb-label">難関申込待ち</span></button>
+          </div>
+        </div>
+        <div class="tb-group">
+          <h3>👨‍🎓 生徒・学習</h3>
+          <div class="tb-buttons">
+            <button type="button" class="tb-btn hub-btn" data-hub-target="rosterSection" data-hub-label="📋 生徒ロスター (課金状況)"><span class="tb-icon">📋</span><span class="tb-label">生徒ロスター</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="weaknessHeatmapSection" data-hub-label="🎯 全生徒弱点ヒートマップ"><span class="tb-icon">🎯</span><span class="tb-label">弱点ヒートマップ</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="homeworkStatusSection" data-hub-label="📚 宿題 実施状況"><span class="tb-icon">📚</span><span class="tb-label">宿題状況</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="studyLogSection" data-hub-label="📚 学習記録ダッシュボード"><span class="tb-icon">📖</span><span class="tb-label">学習記録</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="studyPlanSection" data-hub-label="📅 学習計画ダッシュボード"><span class="tb-icon">📅</span><span class="tb-label">学習計画</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="messagesSection" data-hub-label="📨 メッセージ配信"><span class="tb-icon">💬</span><span class="tb-label">メッセージ</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="magicLinkSendSection" data-hub-label="🔗 magic link 指定アドレス送信"><span class="tb-icon">🔗</span><span class="tb-label">ログインリンク</span></button>
+          </div>
+        </div>
+        <div class="tb-group">
+          <h3>📚 コンテンツ</h3>
+          <div class="tb-buttons">
+            <button type="button" class="tb-btn hub-btn" data-hub-target="grammarDrillSection" data-hub-label="📝 英文法 単元別ドリル"><span class="tb-icon">📝</span><span class="tb-label">英文法ドリル</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="examPoolSection" data-hub-label="🎓 試験問題プール"><span class="tb-icon">🎓</span><span class="tb-label">問題プール</span></button>
+          </div>
+        </div>
+        <div class="tb-group">
+          <h3>📣 マーケティング</h3>
+          <div class="tb-buttons">
+            <button type="button" class="tb-btn hub-btn" data-hub-target="marketingAssetsSection" data-hub-label="📸 マーケティング素材ダウンロード"><span class="tb-icon">📸</span><span class="tb-label">宣伝素材</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="qrCodeSection" data-hub-label="📱 QR コード発行"><span class="tb-icon">📱</span><span class="tb-label">QRコード</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="accessMonitorSection" data-hub-label="📊 アクセス数モニター"><span class="tb-icon">📊</span><span class="tb-label">アクセス数</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="lpFunnelSection" data-hub-label="📊 LP A/B ファネル"><span class="tb-icon">🧪</span><span class="tb-label">LPファネル</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="referralMetricsSection" data-hub-label="🎁 紹介ループ ファネル"><span class="tb-icon">🎁</span><span class="tb-label">紹介ループ</span></button>
+          </div>
+        </div>
+        <div class="tb-group">
+          <h3>📈 経営 KPI</h3>
+          <div class="tb-buttons">
+            <button type="button" class="tb-btn hub-btn" data-hub-target="gradeCostChartsSection" data-hub-label="📍 学年別分布 / コスト構造"><span class="tb-icon">📍</span><span class="tb-label">分布・コスト</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="actionItemsSection" data-hub-label="🎯 CEO 今週の意思決定ポイント"><span class="tb-icon">🎯</span><span class="tb-label">意思決定</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="projectionSection" data-hub-label="📅 3000万円達成までの道のり"><span class="tb-icon">🗻</span><span class="tb-label">3000万への道</span></button>
+          </div>
+        </div>
+        <div class="tb-group">
+          <h3>🛠 監視・システム</h3>
+          <div class="tb-buttons">
+            <button type="button" class="tb-btn hub-btn" data-hub-target="monitorSection" data-hub-label="🩺 申込→決済 常時監視・運用ツール"><span class="tb-icon">🩺</span><span class="tb-label">監視・運用</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="dbBackupSection" data-hub-label="💾 DB Backup (Cloudflare R2)"><span class="tb-icon">💾</span><span class="tb-label">DBバックアップ</span></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- 🎯 全生徒弱点ヒートマップ (2026-05-13 Task 3) - 教材作成優先度の意思決定支援 -->
-    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(248,113,113,0.06); border: 1px solid rgba(248,113,113,0.30); border-radius: 14px;">
+    <section id="weaknessHeatmapSection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(248,113,113,0.06); border: 1px solid rgba(248,113,113,0.30); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem;">
         <h2 style="font-size:1.15rem;color:#fca5a5;margin:0;">🎯 全生徒弱点ヒートマップ <span style="font-size:0.7rem;color:#71717a;font-weight:400;">(教材作成優先度)</span></h2>
         <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
@@ -425,7 +524,7 @@
     </section>
 
     <!-- 📚 宿題 実施状況 (2026-06-06 塾長指示「宿題を誰がやったか分かるように」) — 宿題ごとに生徒横断で完了/未完了を一覧 -->
-    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(139,92,246,0.06); border: 1px solid rgba(139,92,246,0.30); border-radius: 14px;">
+    <section id="homeworkStatusSection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(139,92,246,0.06); border: 1px solid rgba(139,92,246,0.30); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem;">
         <h2 style="font-size:1.15rem;color:#c4b5fd;margin:0;">📚 宿題 実施状況 <span style="font-size:0.7rem;color:#71717a;font-weight:400;">(誰が完了 / 未完了か — 生徒を横断して一覧)</span></h2>
         <button id="refreshHomeworkStatusBtn" type="button" style="background:rgba(139,92,246,0.18);color:#c4b5fd;border:1px solid rgba(139,92,246,0.40);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">🔄 更新</button>
@@ -438,7 +537,7 @@
     </section>
 
     <!-- 📝 英文法 単元別ドリル (2026-06-05 塾長指示) -->
-    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(96,165,250,0.06); border: 1px solid rgba(96,165,250,0.30); border-radius: 14px;">
+    <section id="grammarDrillSection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(96,165,250,0.06); border: 1px solid rgba(96,165,250,0.30); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem;">
         <h2 style="font-size:1.15rem;color:#93c5fd;margin:0;">📝 英文法 単元別ドリル <span style="font-size:0.7rem;color:#71717a;font-weight:400;">(偏差値55-65・4択・選んだ生徒に配信 → 問題別の正解率)</span></h2>
         <button onclick="gdRefresh()" style="background:rgba(96,165,250,0.18);color:#93c5fd;border:1px solid rgba(96,165,250,0.40);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">🔄 一覧更新</button>
@@ -476,7 +575,7 @@
     </section>
 
     <!-- 申込状況サマリ (60秒ごとに自動更新) -->
-    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.25); border-radius: 14px;">
+    <section id="signupSummarySection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
         <h2 style="font-size:1.15rem;color:#a78bfa;margin:0;">📋 申込状況サマリ <span id="signupSummaryUpdated" style="font-size:0.7rem;color:#71717a;font-weight:400;">--</span></h2>
         <button id="refreshSignupSummary" style="background:rgba(167,139,250,0.2);color:#a78bfa;border:1px solid rgba(167,139,250,0.4);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">🔄 今すぐ更新</button>
@@ -533,7 +632,7 @@
     </section>
 
     <!-- 創設メンバー残枠 (実数値 vs 顧客表示値) -->
-    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.25); border-radius: 14px;">
+    <section id="founderSeatsSection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
         <h2 style="font-size:1.15rem;color:#fbbf24;margin:0;">🎁 創設メンバー 残り枠 (内部 vs 公開)</h2>
         <span id="foundersUpdated" style="font-size:0.7rem;color:#71717a;">--</span>
@@ -560,7 +659,7 @@
     </section>
 
     <!-- 💰 収益日次推移 (過去30日) -->
-    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.25); border-radius: 14px;">
+    <section id="revenueDailySection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
         <h2 style="font-size:1.15rem;color:#fbbf24;margin:0;">💰 収益日次推移 <span id="revenueUpdated" style="font-size:0.7rem;color:#71717a;font-weight:400;">--</span></h2>
         <select id="revenueRange" style="background:rgba(0,0,0,0.4);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);padding:0.35rem 0.7rem;border-radius:6px;font-size:0.85rem;">
@@ -593,7 +692,7 @@
     </section>
 
     <!-- 申込→決済 常時監視ヘルス -->
-    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(52,211,153,0.06); border: 1px solid rgba(52,211,153,0.25); border-radius: 14px;">
+    <section id="monitorSection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(52,211,153,0.06); border: 1px solid rgba(52,211,153,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
         <h2 style="font-size:1.15rem;color:#34d399;margin:0;">🩺 申込→決済 常時監視 <span id="monitorUpdated" style="font-size:0.7rem;color:#71717a;font-weight:400;">--</span></h2>
         <div style="display:flex;gap:0.4rem;">
@@ -1218,7 +1317,7 @@
     <!-- ========================================== -->
     <!-- 📨 通塾生 招待 URL 発行 (DM 受付運用) -->
     <!-- ========================================== -->
-    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(217,70,239,0.06); border: 1px solid rgba(217,70,239,0.25); border-radius: 14px;">
+    <section id="inviteUrlSection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(217,70,239,0.06); border: 1px solid rgba(217,70,239,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7rem;flex-wrap:wrap;gap:0.5rem;">
         <h2 style="font-size:1.15rem;color:#d946ef;margin:0;">📨 通塾生 招待URL発行</h2>
         <span style="font-size:0.7rem;color:#71717a;">DM 受付 → 個別発行 → DM 返信</span>
@@ -1279,7 +1378,7 @@
     <!-- ========================================== -->
     <!-- 📸 マーケティング素材ダウンロード (Instagram/Threads/チラシ等の宣伝素材) -->
     <!-- ========================================== -->
-    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(236,72,153,0.06); border: 1px solid rgba(236,72,153,0.25); border-radius: 14px;">
+    <section id="marketingAssetsSection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(236,72,153,0.06); border: 1px solid rgba(236,72,153,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7rem;flex-wrap:wrap;gap:0.5rem;">
         <h2 style="font-size:1.15rem;color:#ec4899;margin:0;">📸 マーケティング素材ダウンロード</h2>
         <span style="font-size:0.7rem;color:#71717a;">Instagram・Threads・チラシ印刷用</span>
@@ -1474,7 +1573,7 @@
     <!-- ========================================== -->
     <!-- 📱 QR コード発行 (チラシ・教室掲示・SNS・名刺などからの申込導線) -->
     <!-- ========================================== -->
-    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(34,211,238,0.06); border: 1px solid rgba(34,211,238,0.25); border-radius: 14px;">
+    <section id="qrCodeSection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(34,211,238,0.06); border: 1px solid rgba(34,211,238,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7rem;flex-wrap:wrap;gap:0.5rem;">
         <h2 style="font-size:1.15rem;color:#22d3ee;margin:0;">📱 QR コード発行 (申込導線)</h2>
         <span style="font-size:0.7rem;color:#71717a;">チラシ・教室掲示・SNS・名刺 → 申込ページ</span>
@@ -1586,7 +1685,7 @@
     <!-- ========================================== -->
     <!-- 🔗 magic link 指定アドレス送信 (親の携帯で登録 → 子供のアドレスに送り直す等) -->
     <!-- ========================================== -->
-    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.25); border-radius: 14px;">
+    <section id="magicLinkSendSection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7rem;flex-wrap:wrap;gap:0.5rem;">
         <h2 style="font-size:1.15rem;color:#a5b4fc;margin:0;">🔗 magic link 指定アドレス送信</h2>
         <span style="font-size:0.7rem;color:#71717a;">親の携帯で登録 → 子供のアドレスに送り直す</span>
@@ -1606,7 +1705,7 @@
     </section>
 
     <!-- 🎓 問題プール状況 (随時自動追加スケジューラの可視化) -->
-    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(14,165,233,0.06); border: 1px solid rgba(14,165,233,0.25); border-radius: 14px;">
+    <section id="examPoolSection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(14,165,233,0.06); border: 1px solid rgba(14,165,233,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
         <h2 style="font-size:1.15rem;color:#0ea5e9;margin:0;">🎓 試験問題プール <span id="poolUpdated" style="font-size:0.7rem;color:#71717a;font-weight:400;">--</span></h2>
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
@@ -1662,7 +1761,7 @@
     </section>
 
     <!-- アクセス数モニター (LP / CTA / フォーム送信を events から集計) -->
-    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.25); border-radius: 14px;">
+    <section id="accessMonitorSection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
         <h2 style="font-size:1.15rem;color:#38bdf8;margin:0;">📊 アクセス数モニター <span id="analyticsUpdated" style="font-size:0.7rem;color:#71717a;font-weight:400;">--</span></h2>
         <button id="refreshAnalytics" style="background:rgba(56,189,248,0.2);color:#38bdf8;border:1px solid rgba(56,189,248,0.4);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">🔄 今すぐ更新</button>
@@ -1763,7 +1862,7 @@
 
     <!-- Charts -->
     <!-- 📊 LP A/B コンバージョンファネル (2026-05-03 追加) -->
-    <section style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.25); border-radius: 14px;">
+    <section id="lpFunnelSection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
         <h3 style="margin:0;color:#a78bfa;">📊 LP A/B ファネル (events 集計)</h3>
         <div style="display:flex;gap:0.5rem;align-items:center;">
@@ -1930,7 +2029,7 @@
     })();
     </script>
 
-    <section class="charts-section">
+    <section id="revenuePlanChartsSection" class="charts-section">
       <div class="chart-box wide">
         <div class="chart-header">
           <h3>💰 月別売上推移（シミュレーション）</h3>
@@ -1948,7 +2047,7 @@
       </div>
     </section>
 
-    <section class="charts-section">
+    <section id="gradeCostChartsSection" class="charts-section">
       <div class="chart-box">
         <h3>📍 学年別生徒分布 <span id="gradeChartSource" style="font-size:0.7rem;color:#71717a;font-weight:400;margin-left:0.4rem;">デモ</span></h3>
         <canvas id="gradeChart"></canvas>
@@ -1964,7 +2063,7 @@
     </section>
 
     <!-- Plan Management -->
-    <section class="roster-section" style="margin-top:2rem;">
+    <section id="planManageSection" class="roster-section" style="margin-top:2rem;">
       <div class="section-header-row">
         <h2>🎛 プラン管理</h2>
         <small style="color:#888;">価格・機能は <code>plans.js</code> の設定で変更可能</small>
@@ -1973,7 +2072,7 @@
     </section>
 
     <!-- Student Roster -->
-    <section class="roster-section">
+    <section id="rosterSection" class="roster-section">
       <div class="section-header-row">
         <h2>📋 生徒ロスター (課金状況) <span id="rosterCounter" style="font-size:0.75rem;color:#94a3b8;font-weight:400;margin-left:0.5rem;"></span></h2>
         <div class="roster-controls">
@@ -2113,13 +2212,13 @@
     </section>
 
     <!-- Action Items -->
-    <section class="action-section">
+    <section id="actionItemsSection" class="action-section">
       <h2>🎯 CEO 今週の意思決定ポイント</h2>
       <div id="actionItems" class="action-list"></div>
     </section>
 
     <!-- Financial Projection -->
-    <section class="projection-section">
+    <section id="projectionSection" class="projection-section">
       <h2>📅 3000万円達成までの道のり</h2>
       <div class="milestone-grid">
         <div class="milestone">
@@ -2378,21 +2477,140 @@
         <div id="r2BackupList" style="font-size:0.8rem;color:#94a3b8;">「🔄 状態更新」を押して取得</div>
       </div>
     </section>
-    <!-- 🔀 2026-06-02 塾長指示: ダッシュボードのセクション表示順を入れ替え (DOM で並べ替え) -->
-    <!-- 上から: 19生徒ロスター, 20MRR内訳, 25学習記録, 27国公立申込待ち, 12magic link, 9招待URL → 残りは使用頻度が高そうな順 -->
-    <!-- order = 元のソース順での section 番号(1始まり)。並びを変えたい時はこの配列だけ編集すれば良い。 -->
-    <!-- 全セクション + 各種スコープ style/script は元のまま (チャート初期化等は parse 時に実行済) なので、 -->
-    <!-- このスクリプトは可視セクションを新しい順に並べ替えるだけ。セクション数が変わったら安全に no-op (元順維持)。 -->
+    <!-- 🧭 ハブナビ制御 (2026-06-13 塾長指示: ボタン式でセクションを開く)。 -->
+    <!-- 旧 2026-06-02 のセクション並べ替えスクリプトは撤去: section 数 29 前提で既に no-op
+         だった上、ハブ化後は menu モードのボタン順が実質の表示順になるため不要。 -->
     <script>
     (function () {
-      try {
-        var main = document.querySelector('.ceo-main');
-        if (!main) return;
-        var order = [19, 20, 25, 27, 12, 9, 8, 26, 28, 5, 2, 3, 1, 7, 21, 22, 4, 13, 14, 23, 24, 18, 10, 11, 15, 16, 17, 6, 29];
-        var secs = Array.prototype.slice.call(main.querySelectorAll(':scope > section'));
-        if (secs.length !== order.length) return; // 構成変化時は安全に no-op (元の順序を維持)
-        order.forEach(function (i) { var el = secs[i - 1]; if (el) main.appendChild(el); });
-      } catch (e) { /* 失敗時は元の順序のまま (ダッシュボードは絶対に壊さない) */ }
+      var main = document.querySelector('.ceo-main');
+      if (!main) return;
+      // 常時表示: バナーは自前 JS が display を制御 / バーはナビ本体
+      var ALWAYS = { ceoHubBar: 1, anthropicCreditBanner: 1 };
+      // メニューモードのみ表示 (単一セクション表示時は隠して集中させる)
+      var MENU_ONLY = { heroKpiSection: 1, kpiRowSection: 1, ceoHubMenu: 1 };
+      var LS_KEY = 'ceo_hub_view';   // 'menu' | 'all' のみ永続化 (sec: は再読込で menu に戻す)
+      var current = 'menu';
+      var barTitle = document.getElementById('hubBarTitle');
+      var btnMenu = document.getElementById('hubBtnMenu');
+      var btnAll = document.getElementById('hubBtnAll');
+      var barAlert = document.getElementById('hubBarAlert');
+
+      function sections() {
+        return Array.prototype.slice.call(main.querySelectorAll(':scope > section'));
+      }
+      function setHidden(el, hidden) { el.classList.toggle('hub-hidden', !!hidden); }
+      function labelOf(secId) {
+        var b = document.querySelector('#ceoHubMenu [data-hub-target="' + secId + '"]');
+        return b ? (b.getAttribute('data-hub-label') || secId) : secId;
+      }
+      // 非表示中に Chart.js (v4) が destroy→再生成されると 0 サイズになるため、表示時に resize
+      function fixCharts(sec) {
+        try {
+          if (window.Chart && Chart.getChart) {
+            sec.querySelectorAll('canvas').forEach(function (cv) {
+              var ch = Chart.getChart(cv);
+              if (ch) ch.resize();
+            });
+          }
+        } catch (e) { /* チャート無しでも致命ではない */ }
+        try { window.dispatchEvent(new Event('resize')); } catch (e) {}
+      }
+      function apply(view) {
+        current = view;
+        var secId = view.indexOf('sec:') === 0 ? view.slice(4) : null;
+        sections().forEach(function (s) {
+          // id 無し section はボタンで開けないため通常コンテンツ扱い (all のみ表示)
+          if (!s.id) { setHidden(s, view !== 'all'); return; }
+          if (ALWAYS[s.id]) { setHidden(s, false); return; }
+          if (view === 'all') { setHidden(s, false); return; }
+          if (view === 'menu') { setHidden(s, !MENU_ONLY[s.id]); return; }
+          setHidden(s, s.id !== secId);
+        });
+        if (barTitle) barTitle.textContent = secId ? labelOf(secId) : (view === 'all' ? '📜 全表示 (従来表示)' : '🧭 セクションを選んでください');
+        if (btnMenu) btnMenu.style.display = view === 'menu' ? 'none' : '';
+        if (btnAll) btnAll.style.display = view === 'all' ? 'none' : '';
+        try { localStorage.setItem(LS_KEY, view === 'all' ? 'all' : 'menu'); } catch (e) {}
+        if (secId) {
+          var sec = document.getElementById(secId);
+          if (sec) {
+            // expiredUsersSection 等は自前 JS が inline display:none を持つ —
+            // ボタンで明示的に開いた時だけは枠ごと見せる (空でも「対象なし」が分かる)
+            if (sec.style.display === 'none') sec.style.display = '';
+            fixCharts(sec);
+          }
+        }
+        try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, 0); }
+      }
+      window.ceoHubShow = function (secId) { apply('sec:' + secId); };
+
+      // メニューボタン bind
+      Array.prototype.forEach.call(document.querySelectorAll('#ceoHubMenu [data-hub-target]'), function (b) {
+        b.addEventListener('click', function () { apply('sec:' + b.getAttribute('data-hub-target')); });
+      });
+      if (btnMenu) btnMenu.addEventListener('click', function () { apply('menu'); });
+      if (btnAll) btnAll.addEventListener('click', function () { apply('all'); });
+      if (barAlert) barAlert.addEventListener('click', function () { apply('sec:monitorSection'); });
+
+      // 返信/AI文案フロー: messagesSection へ scrollIntoView する既存コード (ceo.js) は
+      // section が隠れていると no-op になるため、capture で先にセクションを開く
+      document.addEventListener('click', function (e) {
+        if (!e.target || !e.target.closest) return;
+        var t = e.target.closest('.msg-reply-btn, #aiDraftUseAsReply, #aiDraftUseAsBroadcast');
+        if (t && current !== 'all' && current !== 'sec:messagesSection') apply('sec:messagesSection');
+      }, true);
+
+      // 学習記録 section 内の fixed モーダルは先祖が display:none だと不可視になるため body 直下へ
+      var slModal = document.getElementById('slCourseManageModal');
+      if (slModal) document.body.appendChild(slModal);
+
+      // 🔔 バッジミラー: 各 section 内のアラート件数をメニューボタン上に転写し、
+      // メニューモードでも緊急サインが埋もれないようにする (60 秒 interval の既存 fetch が DOM を
+      // 更新し続けるので、ここでは DOM を読むだけで API は叩かない)
+      function intOf(id) {
+        var el = document.getElementById(id);
+        if (!el) return 0;
+        var n = parseInt(String(el.textContent || '').replace(/[^0-9]/g, ''), 10);
+        return isNaN(n) ? 0 : n;
+      }
+      function shown(id) {
+        var el = document.getElementById(id);
+        return !!el && el.style.display !== 'none';
+      }
+      function setBadge(secId, text) {
+        var b = document.querySelector('#ceoHubMenu [data-hub-target="' + secId + '"]');
+        if (!b) return;
+        var badge = b.querySelector('.hub-badge');
+        if (!text) { if (badge) badge.remove(); return; }
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'hub-badge';
+          b.appendChild(badge);
+        }
+        badge.textContent = text;
+      }
+      function syncBadges() {
+        var never = shown('neverLoginAlert') ? intOf('neverLoginCount') : 0;
+        var noRec = shown('activeNoRecordAlert') ? intOf('activeNoRecordCount') : 0;
+        setBadge('rosterSection', (never + noRec) > 0 ? String(never + noRec) : '');
+        setBadge('expiredUsersSection', shown('expiredUsersSection') ? '!' : '');
+        setBadge('courseAppsSection', shown('caPendingBadge') ? String(intOf('caPendingBadge') || '!') : '');
+        // 監視ヘルス: バッジ文言に 🚨 が出たらメニューボタン + バー右の赤ボタンに昇格
+        var health = document.getElementById('monitorHealthBadge');
+        var synth = document.getElementById('syntheticStatus');
+        var critical = (health && health.textContent.indexOf('🚨') >= 0) ||
+                       (synth && synth.textContent.indexOf('🚨') >= 0);
+        var warn = health && health.textContent.indexOf('⚠️') >= 0;
+        setBadge('monitorSection', critical ? '🚨' : (warn ? '⚠️' : ''));
+        if (barAlert) barAlert.style.display = critical ? '' : 'none';
+      }
+      setInterval(syncBadges, 20000);
+      setTimeout(syncBadges, 4000);   // 初回 fetch (login 後 ~2.5s) の少し後
+      setTimeout(syncBadges, 12000);
+
+      // 初期表示: 'all' を選んでいた場合のみ従来表示、それ以外はメニュー
+      var saved = null;
+      try { saved = localStorage.getItem(LS_KEY); } catch (e) {}
+      apply(saved === 'all' ? 'all' : 'menu');
     })();
     </script>
   </main>
