@@ -25444,13 +25444,21 @@ def _normalize_link_code(s: str) -> str:
     return re.sub(r"[^A-Za-z0-9_-]", "", unicodedata.normalize("NFKC", s))
 
 
-def _create_line_link_token(student_id: int, ttl_seconds: int = 3600) -> str:
-    """生徒 ↔ LINE 紐付け用のワンタイムコードを発行し DB 保存。ttl デフォルト 60 分。
-    2026-06-13 [line-link-tzfix]: 保存は UTC 壁時計 naive (_utc_naive_iso) でセッション TZ 非依存に。
-    TTL は誤期限切れ解消に合わせ 30→60 分 (発行〜LINE 送付の実時間遅延に余裕を持たせる)。"""
+def _create_line_link_token(student_id: int, ttl_seconds: int = None) -> str:
+    """生徒 ↔ LINE 紐付け用のワンタイムコードを発行し DB 保存。
+    2026-06-13 [line-link-noexpiry] 塾長指示「LINE 連携コードは期限なしに」:
+    ttl_seconds=None (デフォルト) で実質無期限 (約100年後の遠未来を保存)。コードは依然
+    single-use (used_at) + 1:1 bind なので、使えば無効化され安全性は保たれる。
+    expires_at 列は NOT NULL のため NULL でなく遠未来 sentinel を使い、既存の
+    `expires_at > now` 比較ロジック (consume/peek/status) を一切変えずに無期限化する。
+    [line-link-tzfix]: 保存は UTC 壁時計 naive (_utc_naive_iso) でセッション TZ 非依存。"""
     import secrets as _sec
     token = _sec.token_urlsafe(18)
-    expires_at = datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds)
+    if ttl_seconds is None:
+        # 無期限 sentinel: datetime.max 付近は OS/DB 差で危ういため約100年後に固定
+        expires_at = datetime.now(timezone.utc) + timedelta(days=36525)
+    else:
+        expires_at = datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds)
     conn = db()
     c = conn.cursor()
     try:
@@ -26061,13 +26069,13 @@ def line_link_code(authorization: Optional[str] = Header(None)):
     if not claims or not claims.get("student_id"):
         raise HTTPException(status_code=401, detail="セッションの有効期限が切れています")
     sid = int(claims["student_id"])
-    code = _create_line_link_token(sid, ttl_seconds=3600)
+    code = _create_line_link_token(sid)  # [line-link-noexpiry] 期限なし (single-use のみ)
     return {
         "ok": True,
         "code": code,
-        "expires_in_min": 60,
+        "expires_in_min": None,  # 無期限 (後方互換のためキーは残す)
         "add_friend_url": LINE_ADD_FRIEND_URL,
-        "instructions": "①公式LINEを友だち追加 → ②このコードをトークに送信、で連携完了です（60分間有効）。",
+        "instructions": "①公式LINEを友だち追加 → ②このコードをトークに送信、で連携完了です（期限なし・1回で完了）。",
     }
 
 
@@ -26145,14 +26153,14 @@ def admin_issue_line_link(payload: dict, authorization: Optional[str] = Header(N
             raise HTTPException(status_code=404, detail="生徒が見つかりません")
         sid = int(row["id"])
         already = bool(row["line_user_id"]) if ("line_user_id" in row.keys()) else False
-        code = _create_line_link_token(sid, ttl_seconds=3600)
+        code = _create_line_link_token(sid)  # [line-link-noexpiry] 期限なし (single-use のみ)
         return {
             "ok": True,
             "code": code,
             "already_linked": already,
             "add_friend_url": LINE_ADD_FRIEND_URL,
             "student": {"id": sid, "name": row["name"], "email": row["email"]},
-            "instructions": "この連携コードを生徒に伝え、①公式LINEを友だち追加 → ②コードをトークに送信、で連携完了です（60分間有効）。",
+            "instructions": "この連携コードを生徒に伝え、①公式LINEを友だち追加 → ②コードをトークに送信、で連携完了です（期限なし・1回で完了）。",
         }
     finally:
         conn.close()
