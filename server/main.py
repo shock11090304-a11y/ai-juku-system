@@ -8125,17 +8125,25 @@ def _send_magic_link_with_retry(to_email: str, student_name: str, magic_url: str
     return {"sent": False, "error": last_error or "unknown", "retried": True}
 
 
-def _invalidate_active_otps(student_id: int) -> None:
+def _invalidate_active_otps(student_id: int, keep_code: str = None) -> None:
     """指定生徒の有効な OTP を全て無効化。重複申込・magic-link 再送時に旧コード混乱防止。
+    keep_code を渡すとそのコードだけは無効化しない (送信成功後に「新コードのみ有効化」する用途)。
     失敗してもログのみ (致命ではない)。"""
     try:
         conn = db()
         c = conn.cursor()
-        c.execute(
-            "UPDATE otp_codes SET used_at = CURRENT_TIMESTAMP "
-            "WHERE student_id = ? AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP",
-            (student_id,)
-        )
+        if keep_code:
+            c.execute(
+                "UPDATE otp_codes SET used_at = CURRENT_TIMESTAMP "
+                "WHERE student_id = ? AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP AND code != ?",
+                (student_id, keep_code)
+            )
+        else:
+            c.execute(
+                "UPDATE otp_codes SET used_at = CURRENT_TIMESTAMP "
+                "WHERE student_id = ? AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP",
+                (student_id,)
+            )
         conn.commit()
         conn.close()
     except Exception as e:
@@ -8563,8 +8571,11 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
                     "error": "recipient_rate_limited",
                 })
         else:
-            # 古い OTP を全て無効化してから新規発行 (再送 UX: 新コードのみ有効)
-            _invalidate_active_otps(row["id"])
+            # 🛡️ 2026-06-13 [magic-otp-preserve] 旧 OTP 無効化を「送信成功後」に移動。
+            #   従来は発行前に旧コードを全無効化していたため、メール遅延中に焦って再送した塾長/
+            #   生徒が「既に届いている旧コードまで殺し、新コードは Resend 障害等で届かない」全滅
+            #   状態を作っていた (室坂さん『何度送ってもログインできない』の悪化要因)。
+            #   新コードを先に発行し、配信が成功した時だけ keep_code= 新コードで旧コードを掃除する。
             # magic link には 1時間のみ有効な短命トークンを使う (4番手 監査 2026-04-30):
             # 30日 session token を URL に直入れすると referer / browser history 経由で漏洩した時の
             # 影響範囲が大きすぎる。/api/auth/verify が新規 session token に交換する。
@@ -8576,6 +8587,7 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
             #   未紐付け / LINE 失敗時のみ従来のメール (親 + 子) にフォールバック。
             line_sent = _try_line_login_push(row, magic_url, otp_code)
             if line_sent:
+                _invalidate_active_otps(row["id"], keep_code=otp_code)  # 配信成功 → 新コードのみ有効化
                 send_event_props.update({
                     "channel": "line",
                     "line_sent": True,
@@ -8619,6 +8631,11 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
                             student_send_result = _send_magic_link_with_retry(
                                 _student_email, row["name"] or "", magic_url, otp_code=otp_code, is_welcome=False,
                             ) or {}
+                # [magic-otp-preserve] 親 or 子いずれかへ送信成功した時のみ旧コードを掃除。
+                #   どちらも失敗 (Resend 障害等) なら旧コードを温存し、既に届いている古いコードで
+                #   ログイン継続できるようにする。
+                if send_result.get("sent") or student_send_result.get("sent"):
+                    _invalidate_active_otps(row["id"], keep_code=otp_code)
                 send_event_props.update({
                     "channel": "email",
                     "line_sent": False,
@@ -25398,8 +25415,39 @@ def _parse_db_dt(raw) -> Optional[datetime]:
         return None
 
 
-def _create_line_link_token(student_id: int, ttl_seconds: int = 1800) -> str:
-    """生徒 ↔ LINE 紐付け用のワンタイムコードを発行し DB 保存。ttl デフォルト 30 分。"""
+def _utc_naive_iso(dt: datetime = None) -> str:
+    """aware datetime (省略時は現在時刻) を「UTC 壁時計の naive isoformat」にする。
+
+    🛡️ 2026-06-13 [line-link-tzfix] 連携コード『発行直後に期限切れ』の根本対策:
+    naive TIMESTAMP 列に aware な .isoformat() ('...+00:00') を INSERT すると、psycopg3 は
+    文字列を unknown 型で送り Postgres がサーバ側で text→timestamp キャストする際、offset を
+    セッション TimeZone で解釈して壁時計に変換し offset を捨てる。本番 Postgres のセッション TZ
+    が UTC でない環境では保存値がズレ、読み出し時に _parse_db_dt が naive を UTC ラベルするため
+    即期限切れになっていた (SQLite は offset 付き TEXT をそのまま保存するため再現せず=
+    『ローカル正常・本番異常』)。offset を持たない UTC 壁時計 naive で保存すれば Postgres は
+    セッション TZ 変換をせず素の値を入れ、_parse_db_dt の naive→UTC ラベルと往復一致する。"""
+    if dt is None:
+        dt = datetime.now(timezone.utc)
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt.isoformat()
+
+
+def _normalize_link_code(s: str) -> str:
+    """連携コードを照合前に正規化: NFKC 正規化 + token_urlsafe 構成文字以外を除去。
+    コピペ時の前後空白・改行・ゼロ幅スペース(ZWSP/BOM)・全角化を吸収する。
+    token_urlsafe(18) は常に [A-Za-z0-9_-] のみなので正規コードは無傷で残る。"""
+    if not s:
+        return ""
+    import unicodedata
+    import re
+    return re.sub(r"[^A-Za-z0-9_-]", "", unicodedata.normalize("NFKC", s))
+
+
+def _create_line_link_token(student_id: int, ttl_seconds: int = 3600) -> str:
+    """生徒 ↔ LINE 紐付け用のワンタイムコードを発行し DB 保存。ttl デフォルト 60 分。
+    2026-06-13 [line-link-tzfix]: 保存は UTC 壁時計 naive (_utc_naive_iso) でセッション TZ 非依存に。
+    TTL は誤期限切れ解消に合わせ 30→60 分 (発行〜LINE 送付の実時間遅延に余裕を持たせる)。"""
     import secrets as _sec
     token = _sec.token_urlsafe(18)
     expires_at = datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds)
@@ -25408,7 +25456,7 @@ def _create_line_link_token(student_id: int, ttl_seconds: int = 1800) -> str:
     try:
         c.execute(
             "INSERT INTO line_link_tokens (token, student_id, expires_at) VALUES (?, ?, ?)",
-            (token, int(student_id), expires_at.isoformat()),
+            (token, int(student_id), _utc_naive_iso(expires_at)),
         )
         conn.commit()
     finally:
@@ -25417,30 +25465,29 @@ def _create_line_link_token(student_id: int, ttl_seconds: int = 1800) -> str:
 
 
 def _consume_line_link_token(token: str) -> Optional[int]:
-    """ワンタイムコードを single-use で消費し student_id を返す。無効/使用済/期限切れは None。"""
+    """ワンタイムコードを single-use で消費し student_id を返す。無効/使用済/期限切れは None。
+    2026-06-13 [line-link-tzfix]: ① token を正規化 (コピペ混入文字を吸収) ② 期限判定を
+    UPDATE の WHERE に入れ、期限切れトークンを burn しない (used 化されず診断 reason が
+    expired のまま残る)。比較は UTC 壁時計 naive 同士で TZ 非依存 (_utc_naive_iso)。"""
+    token = _normalize_link_code(token)
     if not token:
         return None
-    now = datetime.now(timezone.utc)
+    now_iso = _utc_naive_iso()
     conn = db()
     c = conn.cursor()
     try:
-        # used_at を atomic に確保 (race 防止)。期限は取り出してから Python 側で判定。
+        # 未使用 かつ 未期限 のコードのみ atomic に確保 (race 防止 + 期限切れを温存)
         c.execute(
             """UPDATE line_link_tokens SET used_at = ?
-               WHERE token = ? AND used_at IS NULL
-               RETURNING student_id, expires_at""",
-            (now.isoformat(), token.strip()),
+               WHERE token = ? AND used_at IS NULL AND expires_at > ?
+               RETURNING student_id""",
+            (now_iso, token, now_iso),
         )
         row = c.fetchone()
         conn.commit()
     finally:
         conn.close()
-    if not row:
-        return None
-    exp = _parse_db_dt(row["expires_at"])
-    if exp is not None and now > exp:
-        return None  # 期限切れ (used 化済みなので再利用も不可)
-    return int(row["student_id"])
+    return int(row["student_id"]) if row else None
 
 
 def _create_oauth_state(redirect_to: str = "") -> tuple:
@@ -25454,7 +25501,7 @@ def _create_oauth_state(redirect_to: str = "") -> tuple:
     try:
         c.execute(
             "INSERT INTO line_oauth_states (state, nonce, redirect_to, expires_at) VALUES (?, ?, ?, ?)",
-            (state, nonce, (redirect_to or "")[:300], expires_at.isoformat()),
+            (state, nonce, (redirect_to or "")[:300], _utc_naive_iso(expires_at)),  # [line-link-tzfix] UTC naive
         )
         conn.commit()
     finally:
@@ -25466,24 +25513,23 @@ def _consume_oauth_state(state: str) -> Optional[dict]:
     """state を single-use で消費し {nonce, redirect_to} を返す。無効/使用済/期限切れは None。"""
     if not state:
         return None
-    now = datetime.now(timezone.utc)
+    now_iso = _utc_naive_iso()
     conn = db()
     c = conn.cursor()
     try:
+        # [line-link-tzfix] _consume_line_link_token と同じく期限判定を WHERE に入れ、
+        # 全 single-use consume の挙動を統一 (期限切れは burn しない・両辺 UTC naive で TZ 非依存)。
         c.execute(
             """UPDATE line_oauth_states SET used_at = ?
-               WHERE state = ? AND used_at IS NULL
-               RETURNING nonce, redirect_to, expires_at""",
-            (now.isoformat(), state),
+               WHERE state = ? AND used_at IS NULL AND expires_at > ?
+               RETURNING nonce, redirect_to""",
+            (now_iso, state, now_iso),
         )
         row = c.fetchone()
         conn.commit()
     finally:
         conn.close()
     if not row:
-        return None
-    exp = _parse_db_dt(row["expires_at"])
-    if exp is not None and now > exp:
         return None
     return {"nonce": row["nonce"], "redirect_to": row["redirect_to"] or ""}
 
@@ -25626,13 +25672,14 @@ def _line_push_text(user_id: str, text: str) -> bool:
 def _peek_line_link_token(token: str) -> Optional[int]:
     """連携コードを消費せず (used_at を立てず) student_id を返す。有効・未使用・未期限のみ。
     taken 事前判定のための read-only 版。実際の紐付けは _consume_line_link_token で atomic に消費する。"""
+    token = _normalize_link_code(token)
     if not token:
         return None
     now = datetime.now(timezone.utc)
     conn = db()
     c = conn.cursor()
     try:
-        c.execute("SELECT student_id, expires_at, used_at FROM line_link_tokens WHERE token = ?", (token.strip(),))
+        c.execute("SELECT student_id, expires_at, used_at FROM line_link_tokens WHERE token = ?", (token,))
         row = c.fetchone()
     finally:
         conn.close()
@@ -25649,6 +25696,7 @@ def _line_link_token_status(token: str) -> dict:
     「発行直後なのに期限切れ」の原因特定用): webhook の invalid 時ログと
     /api/admin/line/link-token-status で共用。reason: valid|used|expired|not_found。"""
     out = {"found": False, "reason": "not_found", "server_now": datetime.now(timezone.utc).isoformat()}
+    token = _normalize_link_code(token)
     if not token:
         return out
     conn = db()
@@ -25656,7 +25704,7 @@ def _line_link_token_status(token: str) -> dict:
         c = conn.cursor()
         c.execute(
             "SELECT student_id, expires_at, used_at, created_at FROM line_link_tokens WHERE token = ?",
-            (token.strip(),),
+            (token,),
         )
         row = c.fetchone()
     finally:
@@ -25943,14 +25991,17 @@ async def _handle_line_event(event: dict):
             msg = event.get("message") or {}
             if msg.get("type") == "text":
                 text = (msg.get("text") or "").strip()
+                # 連携コード照合は正規化版で行う (コピペの前後空白・改行・ゼロ幅スペース・全角を吸収)。
+                # コマンド (やること/質問) や有人チャット判定は元の text を使う。
+                code_text = _normalize_link_code(text)
                 # 先に消費せず peek → 別生徒に紐付く LINE なら有効コードを burn せず案内 (リトライ余地を残す)
-                peek_sid = _peek_line_link_token(text) if text else None
+                peek_sid = _peek_line_link_token(code_text) if code_text else None
                 if peek_sid and user_id:
                     if _line_user_taken_by_other(user_id, peek_sid):
                         log.warning(f"[LINE bind] taken: userId(...{user_id[-6:]}) は別生徒に紐付き済 (要求 sid={peek_sid})")
                         _line_reply_text(reply_token, "⚠️ このLINEは既に別の生徒アカウントに連携済みです。\nお心当たりがなければ塾までご連絡ください。")
                         return
-                    sid = _consume_line_link_token(text)  # ここで初めて atomic single-use 消費
+                    sid = _consume_line_link_token(code_text)  # ここで初めて atomic single-use 消費
                     if sid:
                         result = _bind_line_user(sid, user_id)
                         if result == "ok":
@@ -25961,12 +26012,12 @@ async def _handle_line_event(event: dict):
                             _line_reply_text(reply_token, "⚠️ このLINEは既に別の生徒アカウントに連携済みです。\nお心当たりがなければ塾までご連絡ください。")
                     else:
                         _line_reply_text(reply_token, "⚠️ 連携コードが無効または期限切れです。マイページで新しいコードを発行してください。")
-                elif text and not peek_sid and _LINE_CODE_LIKE.fullmatch(text):
+                elif code_text and not peek_sid and _LINE_CODE_LIKE.fullmatch(code_text):
                     # コードらしき文字列だが実際に無効 (期限切れ/タイプミス/使用済) → ここだけ案内を返す。
                     #   peek_sid 有効 + user_id 欠落 (グループ/ルーム投稿等 bind 不可能な経路) は誤案内せず沈黙。
                     # 🔍 [line-link-diag] (2026-06-12): 「発行直後なのに期限切れ」報告の原因特定のため
                     #   理由 (not_found/used/expired) をログに残す (コード全文は短命 secret のため先頭のみ)。
-                    _diag = _line_link_token_status(text)
+                    _diag = _line_link_token_status(code_text)
                     if user_id and _diag.get("reason") in ("used", "not_found") and _line_student_by_user(user_id):
                         # 既に連携済みの LINE からの (使用済み/古い) コード再送 — 初回処理で reply だけ
                         # 失われたケースを「期限切れ」と誤案内せず、連携完了を伝える。
@@ -25975,7 +26026,7 @@ async def _handle_line_event(event: dict):
                     else:
                         log.warning(
                             f"[LINE link] invalid code-like rejected: reason={_diag.get('reason')} "
-                            f"prefix={text[:6]}… len={len(text)} server_now={_diag.get('server_now')} "
+                            f"prefix={code_text[:6]}… len={len(code_text)} server_now={_diag.get('server_now')} "
                             f"expires_at={_diag.get('expires_at_parsed')}"
                         )
                         _line_reply_text(reply_token, "⚠️ 連携コードが無効または期限切れです。マイページで新しいコードを発行してください。")
@@ -26010,13 +26061,13 @@ def line_link_code(authorization: Optional[str] = Header(None)):
     if not claims or not claims.get("student_id"):
         raise HTTPException(status_code=401, detail="セッションの有効期限が切れています")
     sid = int(claims["student_id"])
-    code = _create_line_link_token(sid, ttl_seconds=1800)
+    code = _create_line_link_token(sid, ttl_seconds=3600)
     return {
         "ok": True,
         "code": code,
-        "expires_in_min": 30,
+        "expires_in_min": 60,
         "add_friend_url": LINE_ADD_FRIEND_URL,
-        "instructions": "①公式LINEを友だち追加 → ②このコードをトークに送信、で連携完了です（30分間有効）。",
+        "instructions": "①公式LINEを友だち追加 → ②このコードをトークに送信、で連携完了です（60分間有効）。",
     }
 
 
@@ -26094,14 +26145,14 @@ def admin_issue_line_link(payload: dict, authorization: Optional[str] = Header(N
             raise HTTPException(status_code=404, detail="生徒が見つかりません")
         sid = int(row["id"])
         already = bool(row["line_user_id"]) if ("line_user_id" in row.keys()) else False
-        code = _create_line_link_token(sid, ttl_seconds=1800)
+        code = _create_line_link_token(sid, ttl_seconds=3600)
         return {
             "ok": True,
             "code": code,
             "already_linked": already,
             "add_friend_url": LINE_ADD_FRIEND_URL,
             "student": {"id": sid, "name": row["name"], "email": row["email"]},
-            "instructions": "この連携コードを生徒に伝え、①公式LINEを友だち追加 → ②コードをトークに送信、で連携完了です（30分間有効）。",
+            "instructions": "この連携コードを生徒に伝え、①公式LINEを友だち追加 → ②コードをトークに送信、で連携完了です（60分間有効）。",
         }
     finally:
         conn.close()

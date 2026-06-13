@@ -46,6 +46,17 @@ function getStudents() {
   return DEMO_STUDENTS;
 }
 
+// 🛡️ 2026-06-13 [roster-single-source] ロスター描画の単一ソース。
+// 本番 API (loadLiveMetrics) が取得した実名簿を window.__apiRoster に保持しておき、
+// 検索/並び替え/学年トグル・定期再描画は必ずこれを使う。以前は getStudents() を
+// 直接呼んでいたため、本番表示中に塾長がこれらを操作した瞬間 localStorage/DEMO_STUDENTS
+// (架空8名 or 旧インポート名簿) に化けていた (= 実際と違う名簿が出る症状の主因)。
+// 本番ロード前 (未認証デモ) は従来どおり getStudents() のデモ案内を出す。
+function rosterSource() {
+  if (Array.isArray(window.__apiRoster) && window.__apiRoster.length > 0) return window.__apiRoster;
+  return getStudents();
+}
+
 function isDemoMode() {
   const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || 'null');
   return !stored || stored.length === 0;
@@ -177,7 +188,10 @@ function renderMetrics() {
       `更新: ${new Date().toLocaleTimeString('ja-JP')}`;
   }
 
-  renderRoster(m.students);
+  // ロスターは単一ソース (本番 API ロード済みなら __apiRoster) を使い、localStorage/DEMO で
+  // 上書きしない。KPI/チャートは従来どおり m (localStorage 由来) で描くが、loadLiveMetrics が
+  // 本番値で即上書きするため視覚的な実害はない。[roster-single-source 2026-06-13]
+  renderRoster(rosterSource());
   renderActionItems(m);
   initCharts(m);
 }
@@ -794,13 +808,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (editBtn) editBtn.addEventListener('click', editCosts);
 
   document.getElementById('rosterSearch').addEventListener('input', () => {
-    renderRoster(getStudents());
+    renderRoster(rosterSource());
   });
   document.getElementById('rosterSort').addEventListener('change', () => {
-    renderRoster(getStudents());
+    renderRoster(rosterSource());
   });
   const _rgmEl = document.getElementById('rosterGradeMode');
-  if (_rgmEl) _rgmEl.addEventListener('change', () => { renderRoster(getStudents()); });
+  if (_rgmEl) _rgmEl.addEventListener('change', () => { renderRoster(rosterSource()); });
   // 🧒 中学生モードのプレビュー (2026-06-04): 選択中モードで完全模試を別タブ表示 (実生徒不要)。
   //   高校生/全モード選択時は中学生モードをプレビュー (現行=高校生は見る意味が薄いため)。
   const _pvBtn = document.getElementById('previewModeBtn');
