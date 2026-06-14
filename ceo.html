@@ -7862,11 +7862,23 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           <input type="text" class="hw-form-title" maxlength="200" placeholder="タイトル (例: 数学IIIの極限 演習問題 #4-6)" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.92rem;margin-bottom:8px;">
           <textarea class="hw-form-desc" maxlength="2000" rows="3" placeholder="詳細・指示 (任意・問題範囲や注意点など)" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.88rem;resize:vertical;font-family:inherit;margin-bottom:8px;"></textarea>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-            <select class="hw-form-subject" style="padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.88rem;">
-              <option value="">— 科目 (任意) —</option>
-              <option>英語</option><option>数学</option><option>国語</option><option>現代文</option><option>古文</option><option>漢文</option><option>物理</option><option>化学</option><option>生物</option><option>地学</option><option>日本史</option><option>世界史</option><option>地理</option><option>政治経済</option><option>倫理</option><option>その他</option>
+            <div>
+              <label style="display:block;font-size:0.72rem;color:#a5b4fc;margin-bottom:3px;">📕 科目 (任意)</label>
+              <select class="hw-form-subject" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.88rem;">
+                <option value="">— 科目 (任意) —</option>
+                <option>英語</option><option>数学</option><option>国語</option><option>現代文</option><option>古文</option><option>漢文</option><option>物理</option><option>化学</option><option>生物</option><option>地学</option><option>日本史</option><option>世界史</option><option>地理</option><option>政治経済</option><option>倫理</option><option>その他</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:0.72rem;color:#a5b4fc;margin-bottom:3px;">📅 期限 (任意)</label>
+              <input type="date" class="hw-form-due" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.88rem;">
+            </div>
+          </div>
+          <div style="margin-bottom:10px;">
+            <label style="display:block;font-size:0.72rem;color:#a5b4fc;margin-bottom:3px;">📄 添付プリント (任意・配布プリントから選択 → 生徒のマイページでPDFを開けます)</label>
+            <select class="hw-form-print" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.88rem;">
+              <option value="">— 添付なし —</option>
             </select>
-            <input type="date" class="hw-form-due" style="padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.88rem;">
           </div>
           <button type="button" class="hw-form-submit" data-student-id="${esc(studentId)}" style="width:100%;padding:10px 16px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;${eligible ? '' : 'opacity:0.5;cursor:not-allowed;'}" ${eligible ? '' : 'disabled'}>📚 宿題を割当てる</button>
           <div class="hw-form-msg" style="margin-top:8px;font-size:0.85rem;"></div>
@@ -7878,6 +7890,31 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       const histBox = pane.querySelector('.hw-history');
       const formMsg = pane.querySelector('.hw-form-msg');
       const submitBtn = pane.querySelector('.hw-form-submit');
+      const printSel = pane.querySelector('.hw-form-print');
+
+      // 📄 配布プリント一覧を添付ドロップダウンに読み込む (科目ごとに optgroup)
+      (async () => {
+        if (!printSel || !eligible) return;
+        try {
+          const pr = await AdminAuth.fetch('/api/admin/lesson-prints/list?limit=1000');
+          if (!pr.ok) return;
+          const pd = await pr.json();
+          const list = (pd && pd.items) || [];
+          if (!list.length) return;
+          const groups = {};
+          list.forEach(p => { (groups[p.subject || 'その他'] = groups[p.subject || 'その他'] || []).push(p); });
+          let html = '<option value="">— 添付なし —</option>';
+          Object.keys(groups).sort().forEach(subj => {
+            html += `<optgroup label="${esc(subj)}">`;
+            groups[subj].forEach(p => {
+              const tt = p.target_type ? ` [${esc(p.target_type)}]` : '';
+              html += `<option value="${esc(p.id)}">${esc(p.title)}${tt}</option>`;
+            });
+            html += '</optgroup>';
+          });
+          printSel.innerHTML = html;
+        } catch (_e) { /* 取得失敗時は「添付なし」のみ */ }
+      })();
 
       async function refreshList() {
         try {
@@ -7899,6 +7936,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             const completedAt = it.completed_at ? `<div style="color:#6ee7b7;font-size:0.72rem;margin-top:4px;">✅ 完了 ${esc(String(it.completed_at).slice(0,16).replace('T',' '))}</div>` : '';
             const studentNote = it.student_note ? `<div style="color:#cbd5e1;font-size:0.78rem;margin-top:4px;padding:6px 8px;background:rgba(0,0,0,0.25);border-radius:5px;white-space:pre-wrap;">💬 ${esc(it.student_note)}</div>` : '';
             const desc = it.description ? `<div style="color:#a1a1aa;font-size:0.78rem;margin-top:4px;white-space:pre-wrap;">${esc(it.description)}</div>` : '';
+            const attach = (it.attachment_print && it.attachment_print.title)
+              ? `<div style="color:#93c5fd;font-size:0.76rem;margin-top:4px;">📄 添付プリント: ${esc(it.attachment_print.title)}</div>` : '';
             const delBtn = `<button type="button" class="hw-delete-btn" data-hw-id="${esc(it.id)}" style="padding:3px 8px;background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);border-radius:5px;cursor:pointer;font-size:0.7rem;">🗑 削除</button>`;
             return `<div style="padding:10px 12px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:8px;margin-bottom:8px;">
               <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
@@ -7906,7 +7945,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
                 ${delBtn}
               </div>
               <div style="font-weight:bold;color:#fff;margin-top:6px;font-size:0.9rem;">${esc(it.title)}</div>
-              ${desc}${completedAt}${studentNote}
+              ${desc}${attach}${completedAt}${studentNote}
             </div>`;
           }).join('');
           // 削除ボタン bind
@@ -7933,6 +7972,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         const desc = pane.querySelector('.hw-form-desc').value.trim();
         const subject = pane.querySelector('.hw-form-subject').value;
         const due = pane.querySelector('.hw-form-due').value;
+        const printVal = printSel ? printSel.value : '';
         if (!title) { formMsg.style.color = '#fbbf24'; formMsg.textContent = '⚠ タイトルは必須です'; return; }
         submitBtn.disabled = true; submitBtn.textContent = '⏳ 送信中...';
         formMsg.style.color = '#a1a1aa'; formMsg.textContent = '送信中...';
@@ -7943,6 +7983,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             body: JSON.stringify({
               student_id: parseInt(studentId, 10),
               title, description: desc || null, subject: subject || null, due_date: due || null,
+              attachment_print_id: printVal ? parseInt(printVal, 10) : null,
             }),
           });
           const data = await r.json().catch(() => ({}));
@@ -7960,6 +8001,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           pane.querySelector('.hw-form-desc').value = '';
           pane.querySelector('.hw-form-subject').value = '';
           pane.querySelector('.hw-form-due').value = '';
+          if (printSel) printSel.value = '';
           submitBtn.disabled = false; submitBtn.textContent = '📚 宿題を割当てる';
           await refreshList();
         } catch (e) {

@@ -4092,6 +4092,10 @@ function _renderHomeworkItem(item) {
          ${item.student_note ? `<div style="color:#cbd5e1; margin-top:4px; white-space:pre-wrap;">${_hwEscape(item.student_note)}</div>` : ''}
        </div>`
     : '';
+  // 📄 添付プリント (配布プリント) があれば「PDFを開く」ボタン
+  const printBtn = (item.attachment_print && item.attachment_print.id)
+    ? `<button type="button" data-hw-print="${_hwEscape(item.attachment_print.id)}" style="margin-top:10px; margin-right:8px; padding:8px 14px; background:rgba(59,130,246,0.18); color:#93c5fd; border:1px solid rgba(59,130,246,0.4); border-radius:8px; font-weight:bold; font-size:0.84rem; cursor:pointer;">📄 PDFを開く${item.attachment_print.title ? '（' + _hwEscape(item.attachment_print.title) + '）' : ''}</button>`
+    : '';
   const completeBtn = isOpen
     ? `<button type="button" data-hw-complete="${_hwEscape(item.id)}" style="margin-top:10px; padding:8px 16px; background:linear-gradient(135deg,#34d399,#10b981); color:#fff; border:0; border-radius:8px; font-weight:bold; font-size:0.86rem; cursor:pointer;">✅ 完了する</button>`
     : '';
@@ -4102,7 +4106,7 @@ function _renderHomeworkItem(item) {
     <div style="margin-top:8px; color:${isOpen ? '#fff' : '#a1a1aa'}; font-weight:bold; font-size:0.96rem; ${isOpen ? '' : 'text-decoration:line-through;'}">${_hwEscape(item.title)}</div>
     ${desc}
     ${completedBlock}
-    ${completeBtn}
+    <div>${printBtn}${completeBtn}</div>
   </div>`;
 }
 
@@ -4182,6 +4186,29 @@ async function initHomeworkSection() {
       toggleWrap.style.display = 'none';
     }
   }
+
+  // 📄 添付プリント「PDFを開く」(event delegation)。download endpoint で file_path を取得 → 検証 → 新タブ表示。
+  list.addEventListener('click', async (e) => {
+    const pbtn = e.target.closest && e.target.closest('[data-hw-print]');
+    if (!pbtn) return;
+    const pid = pbtn.getAttribute('data-hw-print');
+    if (!pid) return;
+    pbtn.disabled = true; const _orig = pbtn.textContent; pbtn.textContent = '⏳ 準備中…';
+    try {
+      // slApiFetch は成功時に parse 済み JSON を返す (Response ではない)
+      const data = await slApiFetch(`/api/student/lesson-prints/${encodeURIComponent(pid)}/download`, { method: 'POST', body: JSON.stringify({}) });
+      let fpath = String((data && data.file_path) || '').replace(/\+/g, '-');
+      // 既存プリントビューアと同じ path 検証 (lesson-prints 配下の .pdf のみ・.. 不可)
+      if (!/^\/lesson-prints\/[^?#\s]+\.pdf$/i.test(fpath) || fpath.includes('..')) {
+        alert('⚠️ PDFの取得に失敗しました'); return;
+      }
+      window.open(fpath, '_blank', 'noopener,noreferrer');
+    } catch (e3) {
+      alert('❌ PDFを開けませんでした: ' + (e3.message || e3));
+    } finally {
+      setTimeout(() => { pbtn.textContent = _orig; pbtn.disabled = false; }, 800);
+    }
+  });
 
   // 完了ボタン (event delegation)
   list.addEventListener('click', async (e) => {

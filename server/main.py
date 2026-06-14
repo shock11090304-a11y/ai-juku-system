@@ -1315,6 +1315,8 @@ def init_db():
         ("msg_attachment_mime", "ALTER TABLE messages ADD COLUMN attachment_mime TEXT"),
         ("msg_attachment_size", "ALTER TABLE messages ADD COLUMN attachment_size INTEGER"),
         ("msg_attachment_data_b64", "ALTER TABLE messages ADD COLUMN attachment_data_b64 TEXT"),
+        # 📚 2026-06-15 宿題に配布プリント(lesson_prints)を添付できるようにする列
+        ("hw_attachment_print_id", "ALTER TABLE homework_assignments ADD COLUMN attachment_print_id INTEGER"),
         # 📊 集客 attribution (塾長指示 2026-05-19): paid 化した生徒の流入元を分析するため utm 列追加
         # signup_utm_source: threads/x/instagram/chatgpt_store/google/youtube 等のチャネル識別
         # signup_utm_content: 投稿型識別 (authority/testimonial 等の SNS 学習用)
@@ -33683,10 +33685,51 @@ class HomeworkAssignRequest(BaseModel):
     description: Optional[str] = None
     subject: Optional[str] = None
     due_date: Optional[str] = None  # YYYY-MM-DD
+    attachment_print_id: Optional[int] = None  # 📚 添付する配布プリント (lesson_prints.id・任意)
 
 
 class HomeworkCompleteRequest(BaseModel):
     student_note: Optional[str] = None
+
+
+def _attach_homework_prints(conn, items: list) -> None:
+    """📚 宿題 items に添付プリント情報 (attachment_print: {id,title,subject}) を付与する。
+    本 SELECT は変更せず別クエリで解決するので、attachment_print_id 列が無い旧 DB でも安全
+    (列なし時は全件 attachment_print=None)。生徒/管理者の宿題一覧の両方で共用。"""
+    for it in items:
+        it["attachment_print"] = None
+    hw_ids = [it["id"] for it in items if it.get("id") is not None]
+    if not hw_ids:
+        return
+    c = conn.cursor()
+    ph = ",".join(["?"] * len(hw_ids))
+    pid_by_hw = {}
+    try:
+        c.execute(f"SELECT id, attachment_print_id FROM homework_assignments WHERE id IN ({ph})", tuple(hw_ids))
+        for r in c.fetchall():
+            pid = r["attachment_print_id"] if hasattr(r, "keys") else r[1]
+            if pid:
+                pid_by_hw[(r["id"] if hasattr(r, "keys") else r[0])] = pid
+    except Exception:
+        return  # 列が無い旧 DB → 添付なしで返す
+    if not pid_by_hw:
+        return
+    pids = sorted(set(pid_by_hw.values()))
+    ph2 = ",".join(["?"] * len(pids))
+    prints = {}
+    try:
+        c.execute(f"SELECT id, title, subject FROM lesson_prints WHERE id IN ({ph2}) AND is_published = 1", tuple(pids))
+        for r in c.fetchall():
+            prints[(r["id"] if hasattr(r, "keys") else r[0])] = {
+                "id": r["id"] if hasattr(r, "keys") else r[0],
+                "title": r["title"] if hasattr(r, "keys") else r[1],
+                "subject": r["subject"] if hasattr(r, "keys") else r[2],
+            }
+    except Exception:
+        return
+    for it in items:
+        pid = pid_by_hw.get(it["id"])
+        it["attachment_print"] = prints.get(pid) if pid else None
 
 
 @app.get("/api/student/homework")
@@ -33746,6 +33789,7 @@ def get_my_homework(authorization: Optional[str] = Header(None), status_filter: 
                 "completed_at": str(r["completed_at"]) if r["completed_at"] else None,
                 "created_by": r["created_by"],
             })
+        _attach_homework_prints(conn, items)  # 📚 添付プリント情報を付与
         # 簡易集計
         open_count = sum(1 for it in items if it["status"] == "open")
         completed_count = sum(1 for it in items if it["status"] == "completed")
@@ -33818,6 +33862,53 @@ def complete_my_homework(homework_id: int, payload: HomeworkCompleteRequest, aut
         conn.close()
 
 
+@app.get("/api/admin/lesson-prints/list")
+def admin_lesson_prints_list(
+    limit: int = 500,
+    subject: Optional[str] = None,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🧑‍🏫 admin: 宿題に添付する配布プリントの選択用一覧 (公開中のみ)。
+    返却: {ok, items:[{id,title,subject,target_type,pages}]}。認証: admin Bearer / X-Cron-Secret。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    try:
+        limit = max(1, min(int(limit or 500), 1000))
+    except Exception:
+        limit = 500
+    conn = db()
+    try:
+        c = conn.cursor()
+        if subject:
+            c.execute(
+                "SELECT id, title, subject, target_type, pages FROM lesson_prints "
+                "WHERE is_published = 1 AND subject = ? ORDER BY subject, title LIMIT ?",
+                (subject, limit),
+            )
+        else:
+            c.execute(
+                "SELECT id, title, subject, target_type, pages FROM lesson_prints "
+                "WHERE is_published = 1 ORDER BY subject, title LIMIT ?",
+                (limit,),
+            )
+        items = [{
+            "id": r["id"], "title": r["title"], "subject": r["subject"],
+            "target_type": (r["target_type"] if "target_type" in r.keys() else None),
+            "pages": (r["pages"] if "pages" in r.keys() else None),
+        } for r in c.fetchall()]
+        return {"ok": True, "count": len(items), "items": items}
+    finally:
+        conn.close()
+
+
 @app.post("/api/admin/homework/assign")
 def admin_homework_assign(
     payload: HomeworkAssignRequest,
@@ -33851,10 +33942,24 @@ def admin_homework_assign(
             datetime.strptime(due_date, "%Y-%m-%d")
         except ValueError:
             raise HTTPException(status_code=422, detail="due_date は YYYY-MM-DD 形式")
+    # 📚 添付プリント (任意): 実在 + 公開中の lesson_prints のみ受理
+    attachment_print_id = None
+    if payload.attachment_print_id is not None:
+        try:
+            attachment_print_id = int(payload.attachment_print_id)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=422, detail="attachment_print_id が不正です")
 
     conn = db()
     try:
         c = conn.cursor()
+        if attachment_print_id is not None:
+            c.execute("SELECT id, is_published FROM lesson_prints WHERE id = ?", (attachment_print_id,))
+            _pr = c.fetchone()
+            if not _pr:
+                raise HTTPException(status_code=404, detail="添付プリントが見つかりません")
+            if not (_pr["is_published"] if hasattr(_pr, "keys") else _pr[1]):
+                raise HTTPException(status_code=400, detail="そのプリントは非公開のため添付できません")
         # 生徒存在 + 学習管理対象コース確認
         c.execute("SELECT id, name, course, plan, status FROM students WHERE id = ?", (payload.student_id,))
         st = c.fetchone()
@@ -33873,9 +33978,9 @@ def admin_homework_assign(
             raise
 
         c.execute(
-            "INSERT INTO homework_assignments (student_id, title, description, subject, due_date, status, created_by) "
-            "VALUES (?, ?, ?, ?, ?, 'open', 'admin')",
-            (payload.student_id, title, description, subject, due_date),
+            "INSERT INTO homework_assignments (student_id, title, description, subject, due_date, attachment_print_id, status, created_by) "
+            "VALUES (?, ?, ?, ?, ?, ?, 'open', 'admin')",
+            (payload.student_id, title, description, subject, due_date, attachment_print_id),
         )
         conn.commit()
         # PostgreSQL の場合 lastrowid 不可 → RETURNING 必要だが既存 INSERT パターン踏襲
@@ -33968,6 +34073,7 @@ def admin_homework_list(
                 "completed_at": str(r["completed_at"]) if r["completed_at"] else None,
                 "created_by": r["created_by"],
             })
+        _attach_homework_prints(conn, items)  # 📚 添付プリント情報を付与
         open_count = sum(1 for it in items if it["status"] == "open")
         completed_count = sum(1 for it in items if it["status"] == "completed")
         return {
