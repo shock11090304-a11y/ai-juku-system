@@ -7876,9 +7876,14 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           </div>
           <div style="margin-bottom:10px;">
             <label style="display:block;font-size:0.72rem;color:#a5b4fc;margin-bottom:3px;">📄 添付プリント (任意・配布プリントから選択 → 生徒のマイページでPDFを開けます)</label>
-            <select class="hw-form-print" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.88rem;">
-              <option value="">— 添付なし —</option>
-            </select>
+            <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:8px;">
+              <select class="hw-form-print-subject" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.88rem;">
+                <option value="">① 科目を選択</option>
+              </select>
+              <select class="hw-form-print" disabled style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.88rem;">
+                <option value="">② プリントを選択 (先に科目)</option>
+              </select>
+            </div>
           </div>
           <button type="button" class="hw-form-submit" data-student-id="${esc(studentId)}" style="width:100%;padding:10px 16px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;${eligible ? '' : 'opacity:0.5;cursor:not-allowed;'}" ${eligible ? '' : 'disabled'}>📚 宿題を割当てる</button>
           <div class="hw-form-msg" style="margin-top:8px;font-size:0.85rem;"></div>
@@ -7891,30 +7896,46 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       const formMsg = pane.querySelector('.hw-form-msg');
       const submitBtn = pane.querySelector('.hw-form-submit');
       const printSel = pane.querySelector('.hw-form-print');
+      const printSubjSel = pane.querySelector('.hw-form-print-subject');
 
-      // 📄 配布プリント一覧を添付ドロップダウンに読み込む (科目ごとに optgroup)
+      // 📄 ① 公開プリントの「科目一覧」を読み込む (件数制限の偏りを避ける2段階方式)
       (async () => {
-        if (!printSel || !eligible) return;
+        if (!printSubjSel || !eligible) return;
         try {
-          const pr = await AdminAuth.fetch('/api/admin/lesson-prints/list?limit=1000');
-          if (!pr.ok) return;
-          const pd = await pr.json();
-          const list = (pd && pd.items) || [];
-          if (!list.length) return;
-          const groups = {};
-          list.forEach(p => { (groups[p.subject || 'その他'] = groups[p.subject || 'その他'] || []).push(p); });
-          let html = '<option value="">— 添付なし —</option>';
-          Object.keys(groups).sort().forEach(subj => {
-            html += `<optgroup label="${esc(subj)}">`;
-            groups[subj].forEach(p => {
-              const tt = p.target_type ? ` [${esc(p.target_type)}]` : '';
-              html += `<option value="${esc(p.id)}">${esc(p.title)}${tt}</option>`;
-            });
-            html += '</optgroup>';
-          });
-          printSel.innerHTML = html;
-        } catch (_e) { /* 取得失敗時は「添付なし」のみ */ }
+          const sr = await AdminAuth.fetch('/api/admin/lesson-prints/subjects');
+          if (!sr.ok) return;
+          const sd = await sr.json();
+          const subs = (sd && sd.subjects) || [];
+          if (!subs.length) { printSubjSel.innerHTML = '<option value="">(公開プリントなし)</option>'; return; }
+          printSubjSel.innerHTML = '<option value="">① 科目を選択</option>' +
+            subs.map(s => `<option value="${esc(s.subject)}">${esc(s.subject)} (${esc(s.count)})</option>`).join('');
+        } catch (_e) { /* 取得失敗時は空のまま */ }
       })();
+
+      // 📄 ② 科目を選んだら、その科目のプリントだけを読み込む
+      if (printSubjSel && printSel) {
+        printSubjSel.addEventListener('change', async () => {
+          const subj = printSubjSel.value;
+          printSel.value = '';
+          if (!subj) { printSel.innerHTML = '<option value="">② プリントを選択 (先に科目)</option>'; printSel.disabled = true; return; }
+          printSel.disabled = true;
+          printSel.innerHTML = '<option value="">⏳ 読み込み中…</option>';
+          try {
+            const pr = await AdminAuth.fetch(`/api/admin/lesson-prints/list?subject=${encodeURIComponent(subj)}&limit=2000`);
+            const pd = pr.ok ? await pr.json() : {};
+            const list = (pd && pd.items) || [];
+            let html = '<option value="">— 添付なし —</option>' + list.map(p => {
+              const tt = p.target_type ? ` [${esc(p.target_type)}]` : '';
+              return `<option value="${esc(p.id)}">${esc(p.title)}${tt}</option>`;
+            }).join('');
+            if (pd.truncated) html += '<option value="" disabled>… (件数が多く一部のみ表示)</option>';
+            printSel.innerHTML = html;
+            printSel.disabled = false;
+          } catch (_e) {
+            printSel.innerHTML = '<option value="">取得失敗</option>'; printSel.disabled = false;
+          }
+        });
+      }
 
       async function refreshList() {
         try {
@@ -8001,7 +8022,8 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           pane.querySelector('.hw-form-desc').value = '';
           pane.querySelector('.hw-form-subject').value = '';
           pane.querySelector('.hw-form-due').value = '';
-          if (printSel) printSel.value = '';
+          if (printSubjSel) printSubjSel.value = '';
+          if (printSel) { printSel.value = ''; printSel.innerHTML = '<option value="">② プリントを選択 (先に科目)</option>'; printSel.disabled = true; }
           submitBtn.disabled = false; submitBtn.textContent = '📚 宿題を割当てる';
           await refreshList();
         } catch (e) {

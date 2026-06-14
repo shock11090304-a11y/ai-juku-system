@@ -33862,15 +33862,48 @@ def complete_my_homework(homework_id: int, payload: HomeworkCompleteRequest, aut
         conn.close()
 
 
+@app.get("/api/admin/lesson-prints/subjects")
+def admin_lesson_prints_subjects(
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🧑‍🏫 admin: 公開中の配布プリントの「科目一覧 (distinct + 件数)」。
+    🐛 2026-06-15 fix: 宿題添付の一覧を ORDER BY subject LIMIT で1クエリ取得すると、本番に
+    数千件あるとソート順で先頭科目しか返らず一部科目が欠落した。科目を先に選ばせる2段階に
+    するための distinct 科目取得 (件数制限の影響を受けない)。認証: admin Bearer / X-Cron-Secret。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT COALESCE(subject, '(科目なし)') AS subject, COUNT(*) AS cnt FROM lesson_prints "
+            "WHERE is_published = 1 GROUP BY subject ORDER BY cnt DESC"
+        )
+        subjects = [{"subject": r["subject"], "count": int(r["cnt"] or 0)} for r in c.fetchall()]
+        return {"ok": True, "subjects": subjects, "total_published": sum(s["count"] for s in subjects)}
+    finally:
+        conn.close()
+
+
 @app.get("/api/admin/lesson-prints/list")
 def admin_lesson_prints_list(
-    limit: int = 500,
+    limit: int = 2000,
     subject: Optional[str] = None,
     authorization: Optional[str] = Header(None),
     x_cron_secret: Optional[str] = Header(None),
 ):
     """🧑‍🏫 admin: 宿題に添付する配布プリントの選択用一覧 (公開中のみ)。
-    返却: {ok, items:[{id,title,subject,target_type,pages}]}。認証: admin Bearer / X-Cron-Secret。"""
+    🐛 2026-06-15 fix: 通常は ?subject=<科目> で「その科目だけ」を取得する2段階運用にし、
+    全件1クエリ (旧 LIMIT で先頭科目に偏る) を避ける。subject 指定時は当該科目を最大 limit 件。
+    返却: {ok, items:[{id,title,subject,target_type,pages}], truncated}。認証: admin Bearer / X-Cron-Secret。"""
     authed = False
     if authorization and authorization.startswith("Bearer "):
         token = authorization[len("Bearer "):].strip()
@@ -33881,30 +33914,35 @@ def admin_lesson_prints_list(
     if not authed:
         raise HTTPException(status_code=401, detail="未認証")
     try:
-        limit = max(1, min(int(limit or 500), 1000))
+        limit = max(1, min(int(limit or 2000), 5000))
     except Exception:
-        limit = 500
+        limit = 2000
     conn = db()
     try:
         c = conn.cursor()
         if subject:
             c.execute(
                 "SELECT id, title, subject, target_type, pages FROM lesson_prints "
-                "WHERE is_published = 1 AND subject = ? ORDER BY subject, title LIMIT ?",
-                (subject, limit),
+                "WHERE is_published = 1 AND subject = ? ORDER BY title LIMIT ?",
+                (subject, limit + 1),  # +1 で truncated 判定
             )
         else:
+            # subject 未指定 (後方互換): 件数制限の偏りを避けるため科目横断は推奨しないが、
+            # 全科目を title 順で最大 limit 件返す (旧挙動より limit を大きく)
             c.execute(
                 "SELECT id, title, subject, target_type, pages FROM lesson_prints "
                 "WHERE is_published = 1 ORDER BY subject, title LIMIT ?",
-                (limit,),
+                (limit + 1,),
             )
+        rows = c.fetchall()
+        truncated = len(rows) > limit
+        rows = rows[:limit]
         items = [{
             "id": r["id"], "title": r["title"], "subject": r["subject"],
             "target_type": (r["target_type"] if "target_type" in r.keys() else None),
             "pages": (r["pages"] if "pages" in r.keys() else None),
-        } for r in c.fetchall()]
-        return {"ok": True, "count": len(items), "items": items}
+        } for r in rows]
+        return {"ok": True, "count": len(items), "items": items, "truncated": truncated}
     finally:
         conn.close()
 
