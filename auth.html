@@ -192,7 +192,10 @@
               // 体験期間終了時はサーバが 200 を返すがメールは送信していない → 継続登録へ誘導
               showResendMsg('error', '⚠️ ' + esc(data.message || '体験期間が終了しています。継続をご希望の方は本登録をお願いします。') + `<br>👉 <a href="upgrade.html?email=${encodeURIComponent(email)}" style="color:#fecaca;font-weight:700;text-decoration:underline;">継続のお手続き（本登録）はこちら</a>`);
             } else {
-              showResendMsg('success', `✅ <strong>${email}</strong> 宛に新しいログインリンクを送信しました。1〜2分で届きます。届かない場合は迷惑メールフォルダもご確認ください。<br><br><a class="auth-btn" href="login.html?email=${encodeURIComponent(email)}" style="margin-top:0.6rem;">🔐 ログインページで6桁コードを入力</a>`);
+              // 🔑 2026-06-14 [magic-honest-msg] 送信失敗でも 200 のため、断定せずサーバの控えめ文言を出す
+              showResendMsg('success', '📧 ' + esc(data.message || `該当アカウントがあれば <strong>${email}</strong> 宛にログインリンクをお送りしました。1〜2分で届きます。届かない場合は迷惑メールフォルダもご確認ください。`) +
+                (data.child_email_hint ? `<br><span style="font-size:0.82em;opacity:0.85;display:block;margin-top:0.3rem;">${esc(data.child_email_hint)}</span>` : '') +
+                `<br><br><a class="auth-btn" href="login.html?email=${encodeURIComponent(email)}" style="margin-top:0.6rem;">🔐 ログインページで6桁コードを入力</a>`);
             }
           } else if (r.status === 429) {
             showResendMsg('error', '⚠️ リクエスト過多です。1分ほど時間をおいてお試しください。');

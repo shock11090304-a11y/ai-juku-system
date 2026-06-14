@@ -220,6 +220,9 @@ NEVER_LOGIN_NUDGE_ENABLED = os.getenv("NEVER_LOGIN_NUDGE_ENABLED", "1") == "1"
 NEVER_LOGIN_NUDGE_HOUR_JST = int(os.getenv("NEVER_LOGIN_NUDGE_HOUR_JST", "9"))  # 朝9時にnudge
 NEVER_LOGIN_NUDGE_HOURS_THRESHOLD = int(os.getenv("NEVER_LOGIN_NUDGE_HOURS", "24"))  # 申込から24h以上経過
 NEVER_LOGIN_NUDGE_MAX_PER_DAY = int(os.getenv("NEVER_LOGIN_NUDGE_MAX_PER_DAY", "30"))  # 1日上限 (Resend rate 対策)
+# 🔑 2026-06-14 [nudge-cooldown] 受信者ごとの再送 cooldown (日)。同じ未ログイン生徒へ毎日無期限に
+#   welcome を再送するスパムを防ぐ。直近この日数に nudge 済みの生徒は対象から除外する。
+NEVER_LOGIN_NUDGE_RECIPIENT_COOLDOWN_DAYS = int(os.getenv("NEVER_LOGIN_NUDGE_COOLDOWN_DAYS", "3"))
 _NEVER_LOGIN_NUDGE_LAST_RUN: dict = {"date": ""}  # 同日内多重起動防止
 
 # 🌐 ドメイン状態監視 (2026-05-06 致命事故対応 — clientHold で全停止した教訓)
@@ -6678,11 +6681,35 @@ def _maybe_run_never_login_nudge(now_jst: datetime) -> dict:
     finally:
         conn.close()
 
+    # 🔑 [nudge-cooldown] 直近 N 日に nudge 済みの受信者を除外 (毎日無期限再送スパム防止)。
+    #   events.never_login_nudge_sent (session_id='student:{id}') を真実とし cross-restart 安全。
+    _cooldown_days = int(NEVER_LOGIN_NUDGE_RECIPIENT_COOLDOWN_DAYS)
+    if targets and _cooldown_days > 0:
+        recently_nudged = set()
+        try:
+            conn_cd = db(); c_cd = conn_cd.cursor()
+            try:
+                if USE_POSTGRES:
+                    c_cd.execute(f"SELECT session_id FROM events WHERE name='never_login_nudge_sent' AND created_at > CURRENT_TIMESTAMP - INTERVAL '{_cooldown_days} days'")
+                else:
+                    c_cd.execute(f"SELECT session_id FROM events WHERE name='never_login_nudge_sent' AND created_at > datetime('now','-{_cooldown_days} days')")
+                for r in c_cd.fetchall():
+                    sidv = r["session_id"] if hasattr(r, "keys") else r[0]
+                    if sidv and str(sidv).startswith("student:"):
+                        try: recently_nudged.add(int(str(sidv).split(":", 1)[1]))
+                        except Exception: pass
+            finally:
+                conn_cd.close()
+        except Exception as e:
+            log.warning(f"[Monitor:Nudge] cooldown 照会失敗 (filter 無しで続行): {e}")
+        if recently_nudged:
+            targets = [s for s in targets if s["id"] not in recently_nudged]
+
     # 今日実行したフラグは「対象を取得できた時点で」立てる (空でも今日はもう走らない)
     _NEVER_LOGIN_NUDGE_LAST_RUN["date"] = today_key
 
     if not targets:
-        log.info("[Monitor:Nudge] no targets — skip")
+        log.info("[Monitor:Nudge] no targets (cooldown 除外後) — skip")
         return {"ran": True, "matched": 0, "sent": 0}
 
     sent = 0
@@ -6701,6 +6728,16 @@ def _maybe_run_never_login_nudge(now_jst: datetime) -> dict:
             )
             if isinstance(result, dict) and result.get("sent"):
                 sent += 1
+                # [nudge-cooldown] 送信成功した受信者を記録し、次の cooldown 窓で再送しない
+                try:
+                    conn_n = db(); c_n = conn_n.cursor()
+                    c_n.execute(
+                        "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                        ("never_login_nudge_sent", "{}", f"student:{s['id']}")
+                    )
+                    conn_n.commit(); conn_n.close()
+                except Exception:
+                    pass
             else:
                 failed.append({"id": s["id"], "error": str((result or {}).get("error", "send_failed"))[:120]})
         except Exception as e:

@@ -317,7 +317,11 @@
           emailShown.textContent = email;
           step1.classList.add('hidden');
           step2.classList.add('active');
-          showMsg('success', `✅ <strong>${esc(email)}</strong> 宛にコードを送信しました`);
+          // 🔑 2026-06-14 [magic-honest-msg] サーバは送信失敗 (cap/不達/未確認子メール等) でも 200 +
+          //   data.message に列挙対策の控えめ文言を返す。従来は res.ok だけで「✅送信しました」と断定し、
+          //   1通も送れていなくても成功に見えて「届かない」誤報告の原因だった。サーバ文言をそのまま出す。
+          showMsg('success', '📧 ' + esc(data.message || `該当アカウントがあれば ${email} 宛にコードをお送りしました。届かない場合は迷惑メールフォルダもご確認ください。`) +
+            (data.child_email_hint ? `<br><span style="font-size:0.82em;opacity:0.85;display:block;margin-top:0.4rem;">${esc(data.child_email_hint)}</span>` : ''));
           setTimeout(() => otpInput.focus(), 100);
         } else {
           showMsg('error', '⚠️ ' + esc(data.detail || 'エラーが発生しました'));
