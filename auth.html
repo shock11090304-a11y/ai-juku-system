@@ -238,6 +238,21 @@
         localStorage.setItem('ai_juku_session_token', data.token);
         localStorage.setItem('ai_juku_session_expires', String(data.expires_at));
         localStorage.setItem('ai_juku_session_student', JSON.stringify(data.student));
+        // 🔑 2026-06-14 [mypage-guest-fix] 各生徒ページ (mypage 等) の氏名表示は
+        //   ai_juku_current_student + ai_juku_students を読む (getCurrentStudent 系)。
+        //   これらは従来 index.html の app.js init でしか同期されず、magic link/OTP の URL →
+        //   quick-start → mypage 経路では未設定のままで「ゲスト」に化けていた。ログイン時点で
+        //   authed 生徒 (氏名込み) を反映し、全ページで正しい名前が出るようにする。
+        try {
+          if (data.student && data.student.id != null) {
+            localStorage.setItem('ai_juku_current_student', JSON.stringify(data.student.id));
+            const _list = JSON.parse(localStorage.getItem('ai_juku_students') || '[]');
+            const _i = _list.findIndex(s => s && s.id === data.student.id);
+            if (_i >= 0) _list[_i] = { ..._list[_i], ...data.student };
+            else _list.push(data.student);
+            localStorage.setItem('ai_juku_students', JSON.stringify(_list));
+          }
+        } catch (_e) {}
         showSuccess(data.student.name || 'ゲスト');
         setTimeout(() => {
           // オープンリダイレクト対策: 同一オリジンの相対パスのみ許可
