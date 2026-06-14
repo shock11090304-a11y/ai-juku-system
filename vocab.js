@@ -37,16 +37,30 @@
     } catch (e) { console.warn('TTS failed', e); }
   }
 
+  // 🔑 2026-06-14 [trust-identity] 現在の生徒は「サーバ検証済みのログイン本人」(AuthGuard)を
+  //   権威ソースにする。従来は aj_current_student_id 未設定時にハードコード 1 へ落ち、別生徒
+  //   (id=1) の単語統計を表示し採点を id=1 に書き込む二重事故があった。ハードコード 1 は撤去。
   function getStudentId() {
+    try {
+      const s = (window.AuthGuard && window.AuthGuard.getStudent) ? window.AuthGuard.getStudent() : null;
+      if (s && s.id != null) return s.id;
+    } catch (e) {}
     const id = localStorage.getItem('aj_current_student_id');
-    return id ? parseInt(id) : 1;
+    return id ? parseInt(id) : null; // 本人不明: backend が Bearer token から本人 id を強制解決する
+  }
+
+  // 認証付き fetch (Authorization: Bearer を自動付与)。backend はこの token から本人 id を
+  //   解決し、URL の student_id がずれていても他生徒データを返さない/汚染させない。
+  function vfetch(url, init) {
+    if (window.AuthGuard && window.AuthGuard.authFetch) return window.AuthGuard.authFetch(url, init);
+    return fetch(url, init); // auth-guard 未読込時の後方互換 (通常は起きない)
   }
 
   // === 統計取得 ===
   async function loadStats() {
     try {
       const studentId = getStudentId();
-      const res = await fetch(`${BACKEND_URL}/api/vocab/stats?student_id=${studentId}`);
+      const res = await vfetch(`${BACKEND_URL}/api/vocab/stats?student_id=${studentId}`);
       if (!res.ok) return;
       const s = await res.json();
       document.getElementById('vcStatsCard').style.display = '';
@@ -93,7 +107,7 @@
       const params = new URLSearchParams({ student_id: studentId, limit: 100 });
       if (currentLevel) params.set('level', currentLevel);
       if (currentUniv) params.set('univ', currentUniv);
-      const res = await fetch(`${BACKEND_URL}/api/vocab/mistaken-words?${params}`);
+      const res = await vfetch(`${BACKEND_URL}/api/vocab/mistaken-words?${params}`);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       const items = data.items || [];
@@ -134,7 +148,7 @@
     if (univ) params.set('univ', univ);
     if (useMistakesOnly) params.set('mistakes_only', '1');
     try {
-      const res = await fetch(`${BACKEND_URL}/api/vocab/quiz?${params}`);
+      const res = await vfetch(`${BACKEND_URL}/api/vocab/quiz?${params}`);
       if (!res.ok) throw new Error(`Quiz fetch failed: ${res.status}`);
       const data = await res.json();
       queue = (data.quiz || []).slice(0, 20);
@@ -257,7 +271,7 @@
 
     // grade を SRS バックエンドに送信
     const studentId = getStudentId();
-    fetch(`${BACKEND_URL}/api/vocab/grade`, {
+    vfetch(`${BACKEND_URL}/api/vocab/grade`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ student_id: studentId, word_id: w.id, knew: isCorrect }),

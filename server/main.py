@@ -30756,12 +30756,31 @@ def vocab_queue(student_id: int, level: Optional[str] = None, limit: int = 20):
     return {"queue": out, "count": len(out), "requested_limit": orig_limit, "applied_limit": limit}
 
 
+def _vocab_resolve_student_id(client_sid, authorization: Optional[str]):
+    """🔑 2026-06-14 [trust-identity / IDOR fix] vocab endpoint 共通の生徒解決。
+    生徒トークン → 本人 id に固定 (client が送る student_id は完全に無視し、他生徒の
+    単語統計取得・採点書込みを構造的に不可能にする)。admin トークン → client 値を許可
+    (ceo の生徒なりすまし/閲覧用)。トークン無し/無効 → 401。
+    従来 vocab は token 検証ゼロ・client の student_id を直接信用しており、未ログインや
+    別 id 指定で他生徒の vocab を閲覧・汚染できた (mock-exam は IDOR fix 済だった差)。"""
+    if authorization and authorization.startswith("Bearer "):
+        tok = authorization[len("Bearer "):].strip()
+        claims = _verify_session_token(tok)
+        if claims and claims.get("student_id"):
+            return int(claims["student_id"])
+        if _verify_admin_token(tok):
+            if client_sid is None:
+                raise HTTPException(status_code=400, detail="student_id required")
+            return int(client_sid)
+    raise HTTPException(status_code=401, detail="ログインが必要です")
+
+
 @app.post("/api/vocab/grade")
-def vocab_grade(payload: dict):
+def vocab_grade(payload: dict, authorization: Optional[str] = Header(None)):
     """単語の自己評価を記録。Leitner box 方式で次回復習日を更新。
-    payload: {"student_id": N, "word_id": M, "knew": true/false}
+    payload: {"word_id": M, "knew": true/false} — student_id は token から解決 (IDOR fix)。
     """
-    student_id = payload.get("student_id")
+    student_id = _vocab_resolve_student_id(payload.get("student_id"), authorization)
     word_id = payload.get("word_id")
     knew = bool(payload.get("knew"))
     if not student_id or not word_id:
@@ -30796,13 +30815,21 @@ def vocab_grade(payload: dict):
 
 
 @app.get("/api/vocab/stats")
-def vocab_stats(student_id: int):
-    """生徒の単語学習統計 (mypage 用)。"""
+def vocab_stats(student_id: Optional[int] = None, authorization: Optional[str] = Header(None)):
+    """生徒の単語学習統計 (mypage 用)。student_id は token から解決 (IDOR fix)。"""
+    student_id = _vocab_resolve_student_id(student_id, authorization)
     def _val(row, idx, key):
+        # sqlite3.Row / psycopg _Row どちらも row[key] (列名アクセス) をサポートする。
+        # 旧コードは row.get(key) を使い sqlite3.Row に .get が無く SQLite で crash していた
+        # (本番 Postgres のみ動作・ローカル不可だった) ため row[key] へ統一。
         if row is None: return 0
-        if hasattr(row, 'keys'):
-            return row.get(key, 0) or 0
-        return (row[idx] if idx < len(row) else 0) or 0
+        try:
+            return row[key] or 0
+        except (KeyError, IndexError, TypeError):
+            try:
+                return (row[idx] if idx < len(row) else 0) or 0
+            except Exception:
+                return 0
 
     conn = db()
     c = conn.cursor()
@@ -30927,12 +30954,13 @@ def _expand_levels(level: Optional[str]) -> list:
 
 
 @app.get("/api/vocab/mistaken-words")
-def vocab_mistaken_words(student_id: int, level: Optional[str] = None, univ: Optional[str] = None, limit: int = 100):
-    """🔴 間違えた単語一覧 (一度でも誤答した全単語)。
+def vocab_mistaken_words(student_id: Optional[int] = None, level: Optional[str] = None, univ: Optional[str] = None, limit: int = 100, authorization: Optional[str] = Header(None)):
+    """🔴 間違えた単語一覧 (一度でも誤答した全単語)。student_id は token から解決 (IDOR fix)。
     塾長指示 2026-05-25 (生徒要望): 間違えた単語を別タグに保存して復習可能に。
     定義: review_count > correct_count → 過去に1回以上誤答ありの単語。
     並び順: 誤答回数多い順 → 直近誤答順 (mistake_count DESC, last_reviewed_at DESC)。
     """
+    student_id = _vocab_resolve_student_id(student_id, authorization)
     # limit clamp
     if limit is None or limit < 1:
         limit = 100
@@ -31002,7 +31030,7 @@ def vocab_mistaken_words(student_id: int, level: Optional[str] = None, univ: Opt
 
 
 @app.get("/api/vocab/quiz")
-def vocab_quiz(student_id: int, level: Optional[str] = None, limit: int = 10, univ: Optional[str] = None, mistakes_only: int = 0):
+def vocab_quiz(student_id: Optional[int] = None, level: Optional[str] = None, limit: int = 10, univ: Optional[str] = None, mistakes_only: int = 0, authorization: Optional[str] = Header(None)):
     """4 択形式の単語クイズキュー。各 item は target word + 同 pos の distractor 3 個 + 品詞 + 自他動詞ラベル。
     塾長指示 (2026-05-03): 4 択は同品詞で固める / 自他動詞 + 品詞を表示。
     フロントが distractors を shuffle して出題する想定 (server は shuffle 済み choices も返す)。
@@ -31013,7 +31041,9 @@ def vocab_quiz(student_id: int, level: Optional[str] = None, limit: int = 10, un
 
     mistakes_only=1: 過去に誤答ありの単語 (review_count > correct_count) のみ。
     SRS スケジュール無視で即出題。塾長指示 2026-05-25 (生徒要望「間違えた単語を別タグに」)。
+    student_id は token から解決 (IDOR fix)。
     """
+    student_id = _vocab_resolve_student_id(student_id, authorization)
     import random as _r
     # limit clamp (silent fallback 防止)
     orig_limit = limit

@@ -57,11 +57,11 @@ function getLevel(xp) {
 function getCurrentStudent() {
   const students = JSON.parse(localStorage.getItem(KEYS.STUDENTS) || '[]');
   let currentId = JSON.parse(localStorage.getItem(KEYS.CURRENT) || 'null');
-  // 🔑 2026-06-14 [mypage-guest-fix] 自己修復: magic link/OTP の URL ログインは authed 生徒を
-  //   ai_juku_session_student にだけ保存し、ai_juku_current_student/ai_juku_students は
-  //   app.js (index.html 専用) でしか同期されない。未設定だと旧コードは {name:'ゲスト'} に
-  //   落ちていた。既にログイン済みのユーザー (= session_student 有) を再ログイン無しで救済する
-  //   ため、ここで session 生徒を取り込みローカルへ反映する。初回のみ書込み (定常状態は read-only)。
+  // 🔑 2026-06-14 [trust-identity] ai_juku_session_student (= サーバ署名トークンを
+  //   /api/auth/me で検証した本人・氏名込み) を常に権威ソースにする。これがあれば戻り値は
+  //   必ず本人 (氏名等は session で上書き) になり、表示ポインタずれによる別生徒の氏名表示
+  //   (室坂海來さん事故) を構造的に排除する。ハードリロードや非同期 /api/auth/me 解決を
+  //   待たずに開いた瞬間から本人表示。書き戻しは初回のみ (定常は read-only)。
   try {
     const sess = JSON.parse(localStorage.getItem('ai_juku_session_student') || 'null');
     if (sess && sess.id != null) {
@@ -69,10 +69,12 @@ function getCurrentStudent() {
       if (currentId !== sess.id || idx < 0) {
         if (idx >= 0) students[idx] = { ...students[idx], ...sess };
         else students.push(sess);
-        currentId = sess.id;
         localStorage.setItem(KEYS.STUDENTS, JSON.stringify(students));
         localStorage.setItem(KEYS.CURRENT, JSON.stringify(sess.id));
       }
+      // 戻り値は write 有無に関わらず常に「本人」を返す (氏名/学年/志望校は session を優先)。
+      const base = students.find(s => s && s.id === sess.id) || {};
+      return { ...base, ...sess };
     }
   } catch (e) {}
   return students.find(s => s.id === currentId) || students[0] || { name: 'ゲスト', grade: '未設定', goal: '未設定' };

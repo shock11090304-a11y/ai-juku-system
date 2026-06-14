@@ -20,10 +20,41 @@
     return (window.location.origin.includes(':8090')) ? 'http://localhost:8000' : window.location.origin;
   }
 
+  // 表示用ポインタのキー (氏名/学習データの「現在の生徒」を指す別系統)
+  const CURRENT_STUDENT_KEY = 'ai_juku_current_student';
+  const STUDENTS_LIST_KEY = 'ai_juku_students';
+  const ALT_CURRENT_KEY = 'aj_current_student_id'; // vocab/mock-exam が読む別キー
+
   function clearSession() {
     localStorage.removeItem(SESSION_TOKEN_KEY);
     localStorage.removeItem(SESSION_EXPIRES_KEY);
     localStorage.removeItem(SESSION_STUDENT_KEY);
+    // 🔑 2026-06-14 [trust-identity] 表示ポインタも必ず消す。残すと、ログアウト後や
+    //   別生徒が同端末でログインする前の一瞬に、古いポインタで別生徒の氏名/学習データを
+    //   表示してしまう (室坂海來さんの別生徒名表示事故の構造的原因)。再ログイン時は各経路が
+    //   session_student から再構築するため削除して実害なし。
+    localStorage.removeItem(CURRENT_STUDENT_KEY);
+    localStorage.removeItem(STUDENTS_LIST_KEY);
+    localStorage.removeItem(ALT_CURRENT_KEY);
+  }
+
+  // 🔑 2026-06-14 [trust-identity] サーバ検証済みの本人を全表示ポインタに固定する。
+  //   auth-guard.js を読む全ページで「画面に出る生徒 = ログイン本人」を保証する中核処理。
+  //   /api/auth/me (HMAC トークンの student_id をサーバが検証) の結果のみを権威ソースにする。
+  function applyVerifiedStudent(student) {
+    if (!student || student.id == null) return;
+    try {
+      localStorage.setItem(SESSION_STUDENT_KEY, JSON.stringify(student));
+      localStorage.setItem(CURRENT_STUDENT_KEY, JSON.stringify(student.id));
+      localStorage.setItem(ALT_CURRENT_KEY, String(student.id));
+      let list = [];
+      try { const raw = localStorage.getItem(STUDENTS_LIST_KEY); list = raw ? JSON.parse(raw) : []; } catch (e) { list = []; }
+      if (!Array.isArray(list)) list = [];
+      const i = list.findIndex(s => s && s.id === student.id);
+      if (i >= 0) list[i] = Object.assign({}, list[i], student); // name まで本人で上書き
+      else list.push(student);
+      localStorage.setItem(STUDENTS_LIST_KEY, JSON.stringify(list));
+    } catch (e) { /* localStorage 不可でも認証は継続 */ }
   }
 
   function redirectToLogin(reason) {
@@ -97,7 +128,9 @@
       }
       const data = await res.json();
       if (data && data.student) {
-        localStorage.setItem(SESSION_STUDENT_KEY, JSON.stringify(data.student));
+        // 🔑 サーバ検証済み本人を全表示ポインタに固定 (session_student だけでなく
+        //   current_student / students / aj_current_student_id まで本人へ揃える)
+        applyVerifiedStudent(data.student);
       }
     } catch (e) {
       // ネットワークエラー時はローカル値を信用して続行（オフライン耐性）。
