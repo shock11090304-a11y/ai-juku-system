@@ -1098,15 +1098,19 @@
                 <ul style="margin:0.6rem 0 0 1.2rem; padding:0; font-size:0.85rem; color:#c7d2fe; line-height:1.7;">${daimonHtml}</ul>
                 ${reasonHtml}
                 ${missedTopicsHtml}
-                <div style="margin-top:0.6rem; font-size:0.78rem; color:#a1a1aa;">記録しました。マイページの「🎯 弱点 TOP3」に反映されます。詳しい解説は「📝 解答解説 PDF」でご確認ください。</div>`;
+                <div data-record-note style="margin-top:0.6rem; font-size:0.78rem; color:#a1a1aa;">記録中…</div>`;
               // UI lock
               document.querySelectorAll('.ux-sub-mark-btn, .ux-difficulty-btn, .ux-sub-reason, .ux-add-sub-q-btn, .ux-daimon-tab, #uxAddDaimon').forEach(el => { el.disabled = true; el.style.cursor = 'default'; });
               finalBtn.disabled = true; finalBtn.textContent = '✓ 採点済み'; finalBtn.style.opacity = '0.5';
               // DB 記録 (1 PDF = 1 attempt・metadata に大問別 + 小問詳細)
+              // 🔑 2026-06-14 [silent-failure 修正] キーが 'ai_juku_token' (存在しない) のため
+              //   fetch が一度も発火せず採点が question_attempts に保存されないのに「記録しました」と
+              //   虚偽表示していた。正キー ai_juku_session_token に修正し、結果に応じて文言を出す。
+              let _recorded = false;
               try {
-                const token = localStorage.getItem('ai_juku_token') || '';
+                const token = localStorage.getItem('ai_juku_session_token') || '';
                 if (token) {
-                  await fetch(`${BACKEND_URL}/api/question-attempts`, {
+                  const _r = await fetch(`${BACKEND_URL}/api/question-attempts`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({
@@ -1124,8 +1128,18 @@
                       }
                     })
                   });
+                  _recorded = !!(_r && _r.ok);
                 }
               } catch (e) { console.warn('attempt record failed:', e); }
+              try {
+                const _note = resultEl.querySelector('[data-record-note]');
+                if (_note) {
+                  _note.innerHTML = _recorded
+                    ? '記録しました。マイページの「🎯 弱点 TOP3」に反映されます。詳しい解説は「📝 解答解説 PDF」でご確認ください。'
+                    : '⚠️ 結果を保存できませんでした（ログインの有効期限切れ or 通信エラー）。マイページからログインし直すと弱点分析に反映されます。';
+                  _note.style.color = _recorded ? '#a1a1aa' : '#fca5a5';
+                }
+              } catch (_e) {}
             });
           }
         }

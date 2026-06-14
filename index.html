@@ -1556,7 +1556,10 @@
         if (!sid) { badge.style.display = 'inline-flex'; badge.textContent = 'NEW'; return; }
         const API_BASE = (window.location.origin.includes(':8090') || window.location.origin.includes('localhost:8090'))
           ? 'http://localhost:8000' : window.location.origin;
-        fetch(`${API_BASE}/api/vocab/stats?student_id=${encodeURIComponent(sid)}`)
+        // 🔑 2026-06-14 [trust-identity 道連れ修正] vocab API は token 必須に硬化済。
+        //   Bearer を付けないと全ログイン生徒で 401 → バッジが永久に更新されない (regression)。
+        const _tok = localStorage.getItem('ai_juku_session_token');
+        fetch(`${API_BASE}/api/vocab/stats?student_id=${encodeURIComponent(sid)}`, _tok ? { headers: { 'Authorization': 'Bearer ' + _tok } } : {})
           .then(r => r.ok ? r.json() : null)
           .then(d => {
             if (!d) return;

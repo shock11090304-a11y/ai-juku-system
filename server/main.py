@@ -144,6 +144,21 @@ PRICE_MAP = {
     "intensive": (STRIPE_PRICE_FAMILY, 59800, "家族プラン（最大3名）", 3),
 }
 
+
+def _mrr_fee(plan: str) -> int:
+    """🔧 2026-06-14 [mrr-consistency] MRR 認識用の月額 (円) を全経路で単一ソース化。
+    - 非 founder は PRICE_MAP の list price をそのまま使用 (legacy ai/hybrid/intensive も網羅し、
+      旧プランが残る paid 生徒を ¥0 計上してしまう事故=過去の founder_special 漏れ型を防ぐ)。
+    - founder_special/founder1 は THREADS6K クーポン適用後の実効額 ¥12,000 を採用 (募集時の
+      主要導線がクーポン経路・memory/CEO ダッシュの既存値と一致・過大計上を避ける保守値)。
+    これまで admin_stats は独自 dict(founder=12000・legacy 欠落)、autopilot は PRICE_MAP
+    (founder=14500) と経路ごとに別 MRR を返していた不整合を解消する。
+    ※ 顧客別の厳密な実額 (クーポン有無) は payments テーブルの SUM が真実 (将来そこへ統一が理想)。"""
+    if plan in ("founder_special", "founder1"):
+        return 12000
+    info = PRICE_MAP.get(plan or "")
+    return int(info[1]) if info else 0
+
 # 入塾金（トライアル後の初回請求に追加・通塾生アドオンは免除）
 ENROLLMENT_FEE = 10000
 
@@ -7136,15 +7151,21 @@ async def _monitor_scheduler():
                     _SYNTHETIC_CONSECUTIVE_FAILS["last_failure_ts"] = time.time()
                     # 🚨 2連続失敗 (= 10分間連続して壊れている) → 自動 rollback 試行
                     if _SYNTHETIC_CONSECUTIVE_FAILS["count"] >= 2 and AUTO_ROLLBACK_ENABLED:
-                        log.warning(f"[Monitor:Synth] 2 consecutive failures detected - attempting auto-rollback")
-                        rb = await _attempt_auto_rollback(reason="synthetic checkout test 2x failure", failures=synth.get("failures", []))
-                        if rb.get("ok"):
-                            log.warning(f"[Monitor:Synth] auto-rollback SUCCESS: reverted to {rb.get('reverted_to_sha','')[:8]}")
-                            # rollback 後はカウンタリセット (deploy 完了待ち + 次の合成テストで真の状態を再評価)
-                            _SYNTHETIC_CONSECUTIVE_FAILS["count"] = 0
-                            _SYNTHETIC_CONSECUTIVE_FAILS["last_rollback_ts"] = time.time()
+                        # 🛡️ [rollback-runaway-fix] 失敗が全て外部/一過性 (メール不達・5xx・ネット・
+                        #   Vercel経由) なら、直前 commit を revert しても直らない (むしろ過去版へ
+                        #   後退する燃料)。rollback せず通知のみ (alert は synthetic 側で発火済)。
+                        if _failures_are_all_external(synth.get("failures", [])):
+                            log.warning("[Monitor:Synth] 2x fail だが全て外部/一過性要因 — auto-rollback skip (revert では直らない)")
                         else:
-                            log.error(f"[Monitor:Synth] auto-rollback FAILED: {rb.get('error')}")
+                            log.warning(f"[Monitor:Synth] 2 consecutive CODE failures detected - attempting auto-rollback")
+                            rb = await _attempt_auto_rollback(reason="synthetic checkout test 2x failure (code regression)", failures=synth.get("failures", []))
+                            if rb.get("ok"):
+                                log.warning(f"[Monitor:Synth] auto-rollback SUCCESS: reverted to {rb.get('reverted_to_sha','')[:8]}")
+                                # rollback 後はカウンタリセット (deploy 完了待ち + 次の合成テストで真の状態を再評価)
+                                _SYNTHETIC_CONSECUTIVE_FAILS["count"] = 0
+                                _SYNTHETIC_CONSECUTIVE_FAILS["last_rollback_ts"] = time.time()
+                            else:
+                                log.error(f"[Monitor:Synth] auto-rollback FAILED/SKIPPED: {rb.get('error')}")
                 else:
                     if _SYNTHETIC_CONSECUTIVE_FAILS["count"] > 0:
                         log.info(f"[Monitor:Synth] recovered after {_SYNTHETIC_CONSECUTIVE_FAILS['count']} failure(s)")
@@ -7529,7 +7550,69 @@ GITHUB_REPO = os.getenv("GITHUB_REPO", "shock11090304-a11y/ai-juku-system")
 AUTO_ROLLBACK_ENABLED = os.getenv("AUTO_ROLLBACK_ENABLED", "1") == "1"
 AUTO_ROLLBACK_BRANCH = os.getenv("AUTO_ROLLBACK_BRANCH", "main")
 _SYNTHETIC_CONSECUTIVE_FAILS = {"count": 0, "last_failure_ts": 0.0, "last_rollback_ts": 0.0}
-_AUTO_ROLLBACK_HISTORY = []  # [{ts, from_sha, to_sha, reason}]
+_AUTO_ROLLBACK_HISTORY = []  # [{ts, from_sha, to_sha, reason}] — 表示用のみ (安全判定は DB)
+
+
+def _recent_auto_rollback_stats() -> dict:
+    """🛡️ 2026-06-14 [rollback-runaway-fix] auto_rollback の直近実行を events から集計。
+    cooldown/24h 上限を in-memory global で持つと rollback 自身が誘発する再 deploy →
+    プロセス再起動で毎回リセットされ実質キャップが消え、本番 main が無限後退しうる。
+    cross-restart / cross-replica で唯一信頼できる events (DB) を安全判定の真実とする。
+    DB 照会失敗時は _query_failed=True を返し、呼び出し側は安全側 (rollback しない)。"""
+    out = {"count_24h": 0, "last_within_1h": False, "last_to_sha": None}
+    try:
+        conn = db(); c = conn.cursor()
+        try:
+            if USE_POSTGRES:
+                c.execute("SELECT COUNT(*) AS n FROM events WHERE name='auto_rollback' AND created_at > CURRENT_TIMESTAMP - INTERVAL '24 hours'")
+            else:
+                c.execute("SELECT COUNT(*) AS n FROM events WHERE name='auto_rollback' AND created_at > datetime('now','-24 hours')")
+            out["count_24h"] = int((c.fetchone() or {"n": 0})["n"] or 0)
+            if USE_POSTGRES:
+                c.execute("SELECT props FROM events WHERE name='auto_rollback' AND created_at > CURRENT_TIMESTAMP - INTERVAL '1 hour' ORDER BY created_at DESC LIMIT 1")
+            else:
+                c.execute("SELECT props FROM events WHERE name='auto_rollback' AND created_at > datetime('now','-1 hour') ORDER BY created_at DESC LIMIT 1")
+            row = c.fetchone()
+            # 戻り先 SHA は cooldown 窓に関係なく直近 1 件から取る (ループ防止用)
+            c.execute("SELECT props FROM events WHERE name='auto_rollback' ORDER BY created_at DESC LIMIT 1")
+            last_row = c.fetchone()
+            if row:
+                out["last_within_1h"] = True
+            if last_row:
+                try:
+                    p = last_row["props"]
+                    p = json.loads(p) if isinstance(p, str) else p
+                    if isinstance(p, dict):
+                        out["last_to_sha"] = p.get("to_sha")
+                except Exception:
+                    pass
+        finally:
+            conn.close()
+    except Exception as e:
+        log.warning(f"[auto-rollback] DB stats 照会失敗 (fail-safe: rollback 抑止): {e}")
+        out["_query_failed"] = True
+    return out
+
+
+def _failures_are_all_external(failures: list) -> bool:
+    """合成テスト失敗が全て外部/一過性要因 (メール不達・5xx/429・ネットワーク・Vercel経由) なら True。
+    🛡️ [rollback-runaway-fix] 外部起因は直前 commit を revert しても直らない (むしろ過去版へ
+    無限後退する燃料になる) ため rollback 対象から除外し通知のみとする。コード退化
+    (fix marker 消失・route 404・listener 喪失等) が 1 つでもあれば False = rollback 対象。
+    失敗内容不明 (空) は安全側で True (rollback しない)。"""
+    if not failures:
+        return True
+    ext_markers = [
+        "email_sent=false", "email_sent_false", "recipient_capped", "recipient_rate",
+        "Railway→Vercel", "signup_email_status", "Resend",
+        "status=500", "status=502", "status=503", "status=504", "status=429", "status=0",
+        "timeout", "Timeout", "URLError", "ConnectionError", "内部接続",
+    ]
+    for f in failures:
+        fs = str(f)
+        if not any(m in fs for m in ext_markers):
+            return False  # 外部要因で説明できない失敗 = コード退化の疑い → rollback 可
+    return True
 
 
 def _github_api(method: str, path: str, body: dict = None, timeout: int = 15) -> dict:
@@ -7582,13 +7665,17 @@ async def _attempt_auto_rollback(reason: str, failures: list = None, force: bool
         return {"ok": False, "error": "AUTO_ROLLBACK_ENABLED=0 (kill-switch active)"}
     if not GITHUB_REVERT_PAT:
         return {"ok": False, "error": "GITHUB_REVERT_PAT not configured. Railway env で設定してください"}
-    # 1 時間 cooldown
-    if not force and nowts - _SYNTHETIC_CONSECUTIVE_FAILS.get("last_rollback_ts", 0) < 3600:
-        return {"ok": False, "error": "cooldown: 直近 1 時間以内に rollback 実行済み (force=true で強制可)"}
-    # 24h max 3
-    recent_24h = [r for r in _AUTO_ROLLBACK_HISTORY if nowts - r["ts"] < 86400]
-    if not force and len(recent_24h) >= 3:
-        return {"ok": False, "error": f"24h 内に既に {len(recent_24h)} 回 rollback 済み (上限 3)。人間判断が必要です"}
+    # 🛡️ [rollback-runaway-fix] cooldown / 24h 上限は DB (events) を真実に判定する。
+    #   in-memory global は rollback→再deploy→再起動で消え、実質キャップが無くなり無限後退する。
+    rb_stats = _recent_auto_rollback_stats()
+    if rb_stats.get("_query_failed") and not force:
+        return {"ok": False, "error": "rollback 履歴の DB 照会に失敗 — 暴走防止のため安全側で skip"}
+    # 1 時間 cooldown (DB)
+    if not force and rb_stats.get("last_within_1h"):
+        return {"ok": False, "error": "cooldown(DB): 直近 1 時間以内に rollback 実行済み (force=true で強制可)"}
+    # 24h max 3 (DB)
+    if not force and rb_stats.get("count_24h", 0) >= 3:
+        return {"ok": False, "error": f"24h 内に既に {rb_stats['count_24h']} 回 rollback 済み (DB・上限 3)。人間判断が必要です"}
 
     loop = asyncio.get_event_loop()
 
@@ -7599,6 +7686,12 @@ async def _attempt_auto_rollback(reason: str, failures: list = None, force: bool
     current_sha = (r_head.get("json") or {}).get("object", {}).get("sha")
     if not current_sha:
         return {"ok": False, "error": "could not parse current HEAD sha"}
+
+    # 🛡️ [rollback-runaway-fix] ループ防止: 現 HEAD が「直近 rollback の戻り先」そのものなら、
+    #   その rollback 後も合成テストが失敗している = revert で直らない問題なので、これ以上
+    #   過去版へ後退させない (無限後退の根本遮断)。人間判断に委ねる。
+    if not force and rb_stats.get("last_to_sha") and current_sha == rb_stats.get("last_to_sha"):
+        return {"ok": False, "error": f"loop 防止: 現 HEAD ({current_sha[:8]}) は直近 rollback の戻り先と同一。さらに巻き戻すと過去版へ後退するため skip (要人間判断)"}
 
     # ---- 2. parent SHA (1 つ前のコミット) ----
     r_commit = await loop.run_in_executor(None, _github_api, "GET", f"/repos/{GITHUB_REPO}/commits/{current_sha}")
@@ -9206,20 +9299,10 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
 
     conn.close()
 
-    # 🔧 plan→月額料金マップ。MRR/ARR 集計はこのマップに無いプランを 0 円扱いするため、
-    # 全有効プランをここに列挙する必要がある (2026-05-03 founder_special 漏れで MRR=0 致命事故)。
-    # founder_special は THREADS6K クーポン経路 ¥12,000 永年 (memory note 根拠)。
-    # founder1 は旧 founder_special の後方互換キー (line 111 と同期)。
-    plan_fees = {
-        "standard": 24980,
-        "premium": 39800,
-        "family": 59800,
-        "student_addon": 5000,
-        "founder_special": 12000,
-        "founder1": 12000,
-    }
+    # 🔧 [mrr-consistency] MRR は _mrr_fee() を単一ソースに集計。legacy プラン (ai/hybrid/
+    # intensive) も PRICE_MAP 経由で網羅され ¥0 計上を防ぐ。autopilot ダッシュと同一ロジック。
     paid_students = [s for s in students if s["status"] == "paid"]
-    mrr = sum(plan_fees.get(s.get("plan") or "", 0) for s in paid_students)
+    mrr = sum(_mrr_fee(s.get("plan") or "") for s in paid_students)
 
     # 体験 → 月額 転換率 (累積ベース・粗計算)
     # 分母: trial に入った全ユーザー (現trial + 現paid + 現canceled + 現expired)
@@ -14589,13 +14672,12 @@ def admin_autopilot_dashboard(authorization: Optional[str] = Header(None)):
         except Exception:
             plan_counts = {}
 
-        # MRR 計算 (PRICE_MAP の amount 参照)
+        # MRR 計算 ([mrr-consistency] admin_stats と同一の _mrr_fee を単一ソースに。
+        #   founder は post-coupon ¥12,000 で揃え、経路ごとに別 MRR を返す不整合を解消)
         mrr = 0
         for plan, cnt in plan_counts.items():
             try:
-                price_info = PRICE_MAP.get(plan)
-                if price_info:
-                    mrr += price_info[1] * cnt
+                mrr += _mrr_fee(plan) * cnt
             except Exception:
                 pass
 
@@ -30697,12 +30779,14 @@ def vocab_import(payload: dict, authorization: Optional[str] = Header(None), x_c
 
 
 @app.get("/api/vocab/queue")
-def vocab_queue(student_id: int, level: Optional[str] = None, limit: int = 20):
-    """次に復習すべき単語キューを返す。
+def vocab_queue(student_id: Optional[int] = None, level: Optional[str] = None, limit: int = 20, authorization: Optional[str] = Header(None)):
+    """次に復習すべき単語キューを返す。student_id は token から解決 (IDOR fix)。
     優先順位: 1) 今復習期限の単語 2) まだ未学習の単語
 
     limit clamp: max=100 / min=1。 quiz endpoint と統一 (2026-05-03)。
     """
+    # 🔑 [trust-identity] vocab IDOR fix の取りこぼし (queue だけ未対策だった) を塞ぐ
+    student_id = _vocab_resolve_student_id(student_id, authorization)
     # limit clamp (silent fallback 防止)
     orig_limit = limit
     if limit is None or limit < 1:
