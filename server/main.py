@@ -36160,6 +36160,141 @@ def delete_student_material(material_id: int, request: Request, authorization: O
         conn.close()
 
 
+class AdminStudyPlanAssignRequest(BaseModel):
+    student_id: int
+    title: str
+    subject: str
+    material: Optional[str] = None
+    start_date: str  # YYYY-MM-DD
+    end_date: str    # YYYY-MM-DD
+    target_minutes: Optional[int] = None
+    target_pages: Optional[int] = None
+    color: Optional[str] = None
+    note: Optional[str] = None
+    week_pattern: Optional[str] = None
+
+
+def _admin_or_cron_authed(authorization: Optional[str], x_cron_secret: Optional[str]) -> bool:
+    if authorization and authorization.startswith("Bearer ") and _verify_admin_token(authorization[len("Bearer "):].strip()):
+        return True
+    if CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        return True
+    return False
+
+
+@app.post("/api/admin/study-plans/assign")
+def admin_study_plan_assign(payload: AdminStudyPlanAssignRequest, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """🧑‍🏫 2026-06-15 塾長指示: admin が指定生徒に学習計画(1件)を作成し、その生徒のマイページ
+    学習計画ダッシュボードに転送 (study_plans.student_id で即反映)。生徒の自己作成と同じ検証を
+    再利用。対象は学習管理対象コース/プランの生徒のみ。認証: admin Bearer / X-Cron-Secret。"""
+    if not _admin_or_cron_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    title = _sanitize_text(payload.title, 100)
+    if not title:
+        raise HTTPException(status_code=400, detail="タイトルは必須です")
+    subject = (payload.subject or "").strip()
+    if subject not in _STUDY_SUBJECTS:
+        raise HTTPException(status_code=400, detail="科目が不正です")
+    material = _sanitize_text(payload.material, 200)
+    note = _sanitize_text(payload.note, 1000)
+    sd, ed = _validate_plan_dates(payload.start_date, payload.end_date)
+    color = _validate_plan_color(payload.color) or '#6366f1'
+    target_minutes = None
+    if payload.target_minutes is not None:
+        try:
+            tm = int(payload.target_minutes)
+            if tm < 0 or tm > 60000:
+                raise HTTPException(status_code=400, detail="目標分数は 0〜60000 で指定してください")
+            target_minutes = tm
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="目標分数が不正です")
+    target_pages = None
+    if payload.target_pages is not None:
+        try:
+            tp = int(payload.target_pages)
+            if tp < 0 or tp > 100000:
+                raise HTTPException(status_code=400, detail="目標ページは 0〜100000 で指定してください")
+            target_pages = tp
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="目標ページが不正です")
+    week_pattern = _validate_week_pattern(payload.week_pattern)
+
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("SELECT id, name, course, plan, status FROM students WHERE id = ?", (payload.student_id,))
+        st = c.fetchone()
+        if not st:
+            raise HTTPException(status_code=404, detail="生徒が見つかりません")
+        try:
+            _require_study_log_course({"course": st["course"], "plan": st["plan"], "status": st["status"]})
+        except HTTPException as e:
+            if e.status_code == 403:
+                raise HTTPException(status_code=400, detail=f"この生徒 ({st['name']}) は学習管理機能の対象外コース/プランです (course={st['course']} / plan={st['plan']})")
+            raise
+        try:
+            c.execute(
+                "INSERT INTO study_plans (student_id, title, subject, material, start_date, end_date, target_minutes, target_pages, color, note, week_pattern) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?) RETURNING id",
+                (payload.student_id, title, subject, material, sd.isoformat(), ed.isoformat(), target_minutes, target_pages, color, note, week_pattern)
+            )
+            returned = c.fetchone()
+            new_id = returned["id"] if returned else None
+            conn.commit()
+        except IntegrityError:
+            conn.rollback()
+            raise HTTPException(status_code=409, detail="同じ内容の計画が既に存在します (科目+教材+期間が一致)")
+        log.info(f"[StudyPlan] admin assign id={new_id} student={payload.student_id} subj={subject}")
+        return {"ok": True, "id": new_id, "message": f"{st['name']} さんに学習計画「{title}」を作成しました"}
+    finally:
+        conn.close()
+
+
+@app.get("/api/admin/study-plans/list")
+def admin_study_plans_list(student_id: int, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """🧑‍🏫 admin: 指定生徒の学習計画一覧 (生徒詳細モーダルの学習計画タブ用)。"""
+    if not _admin_or_cron_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute(
+            "SELECT id, title, subject, material, start_date, end_date, target_minutes, target_pages, "
+            "       color, status, note, week_pattern, created_at "
+            "FROM study_plans WHERE student_id = ? ORDER BY start_date DESC, created_at DESC LIMIT 200",
+            (student_id,),
+        )
+        items = [{
+            "id": r["id"], "title": r["title"], "subject": r["subject"], "material": r["material"],
+            "start_date": str(r["start_date"]) if r["start_date"] else None,
+            "end_date": str(r["end_date"]) if r["end_date"] else None,
+            "target_minutes": r["target_minutes"], "target_pages": r["target_pages"],
+            "color": r["color"], "status": r["status"], "note": r["note"],
+            "week_pattern": (r["week_pattern"] if "week_pattern" in r.keys() else None),
+        } for r in c.fetchall()]
+        return {"ok": True, "student_id": student_id, "items": items, "count": len(items)}
+    finally:
+        conn.close()
+
+
+@app.delete("/api/admin/study-plans/{plan_id}")
+def admin_study_plan_delete(plan_id: int, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """🧑‍🏫 admin: 学習計画を削除 (生徒の画面からも消える)。"""
+    if not _admin_or_cron_authed(authorization, x_cron_secret):
+        raise HTTPException(status_code=401, detail="未認証")
+    conn = db()
+    try:
+        c = conn.cursor()
+        c.execute("DELETE FROM study_plans WHERE id = ?", (plan_id,))
+        removed = (c.rowcount or 0) > 0
+        conn.commit()
+        if not removed:
+            raise HTTPException(status_code=404, detail="該当する学習計画が見つかりません (既に削除済みの可能性)")
+        return {"ok": True, "deleted": plan_id}
+    finally:
+        conn.close()
+
+
 @app.get("/api/admin/study-plans/gantt")
 def admin_study_plans_gantt(request: Request, authorization: Optional[str] = Header(None), days: int = 60, student_id: Optional[int] = None):
     """塾長: 全コース受講生のガントチャート用データ (期間+進捗)。"""

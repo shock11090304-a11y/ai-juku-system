@@ -7514,6 +7514,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         <button class="sd-tab-btn" data-tab="activity" style="flex:1;padding:12px 16px;background:none;color:#71717a;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.92rem;font-weight:600;">⚡ アクティビティ履歴</button>
         <button class="sd-tab-btn" data-tab="stats" style="flex:1;padding:12px 16px;background:none;color:#71717a;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.92rem;font-weight:600;">📊 利用統計</button>
         <button class="sd-tab-btn" data-tab="homework" style="flex:1;padding:12px 16px;background:none;color:#71717a;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.92rem;font-weight:600;">📚 宿題</button>
+        <button class="sd-tab-btn" data-tab="studyplan" style="flex:1;padding:12px 16px;background:none;color:#71717a;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:0.92rem;font-weight:600;">📅 学習計画</button>
       </div>
       <!-- タブパネル -->
       <div id="studentDetailBody" style="padding:24px;color:#e4e4e7;font-size:0.92rem;line-height:1.7;">
@@ -7521,6 +7522,7 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         <div class="sd-tab-pane" data-pane="activity" style="display:none;">読み込み中...</div>
         <div class="sd-tab-pane" data-pane="stats" style="display:none;">読み込み中...</div>
         <div class="sd-tab-pane" data-pane="homework" style="display:none;">読み込み中...</div>
+        <div class="sd-tab-pane" data-pane="studyplan" style="display:none;">読み込み中...</div>
       </div>
     </div>
   </div>
@@ -7820,6 +7822,16 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         homeworkPane.dataset.loaded = '';
         homeworkPane.innerHTML = '<div style="color:#71717a;text-align:center;padding:1.5rem;">タブをクリックして読み込みます</div>';
       }
+      // 📅 学習計画タブ (新規 2026-06-15): 同じ lazy fetch パターン
+      const studyPlanPane = modal.querySelector('[data-pane="studyplan"]');
+      if (studyPlanPane) {
+        studyPlanPane.dataset.studentId = String(st.id);
+        studyPlanPane.dataset.studentName = String(st.name || '');
+        studyPlanPane.dataset.studentCourse = String(st.course || '');
+        studyPlanPane.dataset.studentPlan = String(st.plan || '');
+        studyPlanPane.dataset.loaded = '';
+        studyPlanPane.innerHTML = '<div style="color:#71717a;text-align:center;padding:1.5rem;">タブをクリックして読み込みます</div>';
+      }
       modal.style.display = 'flex';
     }
 
@@ -8035,6 +8047,201 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       await refreshList();
     }
 
+    // 📅 学習計画タブ load (新規 2026-06-15): admin が個別生徒の学習計画を作成 → 生徒マイページに転送
+    function _spStatusBadge(status) {
+      if (status === 'completed') return '<span style="font-size:0.72rem;padding:2px 7px;background:rgba(52,211,153,0.2);color:#6ee7b7;border-radius:8px;">✅ 完了</span>';
+      if (status === 'archived') return '<span style="font-size:0.72rem;padding:2px 7px;background:rgba(113,113,122,0.25);color:#a1a1aa;border-radius:8px;">📦 アーカイブ</span>';
+      return '<span style="font-size:0.72rem;padding:2px 7px;background:rgba(99,102,241,0.2);color:#a5b4fc;border-radius:8px;">▶ 進行中</span>';
+    }
+    function _spWeekLabel(wp) {
+      if (!wp || wp === 'all') return '毎日';
+      const names = { '1': '月', '2': '火', '3': '水', '4': '木', '5': '金', '6': '土', '7': '日' };
+      return String(wp).split(',').map(d => names[d.trim()] || d).join('・');
+    }
+    async function loadStudentStudyPlans(studentId, pane) {
+      const studentName = pane.dataset.studentName || '';
+      const course = pane.dataset.studentCourse || '';
+      const plan = pane.dataset.studentPlan || '';
+      const eligible = _canUseHomework(course, plan); // 学習計画も同じ対象判定 (course=kokuritsu_nankan or premium系plan)
+
+      const eligibleNote = eligible
+        ? `<div style="padding:8px 12px;background:rgba(52,211,153,0.08);border-left:3px solid #34d399;border-radius:6px;color:#6ee7b7;font-size:0.82rem;">✅ 学習管理対象 (course=${esc(course)} / plan=${esc(plan || '無し')})。作成した計画は生徒のマイページ「学習計画」に即反映されます。</div>`
+        : `<div style="padding:8px 12px;background:rgba(251,191,36,0.1);border-left:3px solid #fbbf24;border-radius:6px;color:#fde68a;font-size:0.82rem;">⚠ 学習管理対象外コース/プランです (course=${esc(course)} / plan=${esc(plan || '無し')})。学習計画は作成できません (生徒画面に表示されません)。</div>`;
+
+      const subjectOpts = ['英語','数学','国語','現代文','古文','漢文','理科','物理','化学','生物','地学','社会','日本史','世界史','地理','倫理','政経','情報','小論文','面接対策','その他']
+        .map(s => `<option>${esc(s)}</option>`).join('');
+
+      pane.innerHTML = `
+        <div style="margin-bottom:14px;">${eligibleNote}</div>
+        <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.3);border-radius:10px;padding:14px;margin-bottom:18px;${eligible ? '' : 'opacity:0.5;pointer-events:none;'}">
+          <div style="color:#a5b4fc;font-weight:600;font-size:0.88rem;margin-bottom:10px;">🧑‍🏫 ${esc(studentName)} さんに学習計画を作成</div>
+          <input type="text" class="sp-form-title" maxlength="100" placeholder="計画タイトル (例: 数学IA 青チャート完成)" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.92rem;margin-bottom:8px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+            <div>
+              <label style="display:block;font-size:0.72rem;color:#a5b4fc;margin-bottom:3px;">📕 科目 (必須)</label>
+              <select class="sp-form-subject" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.88rem;">
+                <option value="">— 科目を選択 —</option>${subjectOpts}
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:0.72rem;color:#a5b4fc;margin-bottom:3px;">📘 教材 (任意)</label>
+              <input type="text" class="sp-form-material" maxlength="200" placeholder="例: 青チャートIA" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.88rem;">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+            <div>
+              <label style="display:block;font-size:0.72rem;color:#a5b4fc;margin-bottom:3px;">📅 開始日 (必須)</label>
+              <input type="date" class="sp-form-start" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.88rem;">
+            </div>
+            <div>
+              <label style="display:block;font-size:0.72rem;color:#a5b4fc;margin-bottom:3px;">🏁 終了日 (必須)</label>
+              <input type="date" class="sp-form-end" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.88rem;">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">
+            <div>
+              <label style="display:block;font-size:0.72rem;color:#a5b4fc;margin-bottom:3px;">⏱ 1日の目標分数 (任意)</label>
+              <input type="number" min="0" max="60000" class="sp-form-minutes" placeholder="例: 60" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.88rem;">
+            </div>
+            <div>
+              <label style="display:block;font-size:0.72rem;color:#a5b4fc;margin-bottom:3px;">📖 目標ページ数 (任意)</label>
+              <input type="number" min="0" max="100000" class="sp-form-pages" placeholder="例: 10" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.88rem;">
+            </div>
+            <div>
+              <label style="display:block;font-size:0.72rem;color:#a5b4fc;margin-bottom:3px;">🔁 取組み日 (任意)</label>
+              <select class="sp-form-week" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.88rem;">
+                <option value="all">毎日</option>
+                <option value="1,2,3,4,5">平日 (月〜金)</option>
+                <option value="6,7">週末 (土日)</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <label style="font-size:0.72rem;color:#a5b4fc;">🎨 色</label>
+            <input type="color" class="sp-form-color" value="#6366f1" style="width:48px;height:32px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;cursor:pointer;padding:2px;">
+            <textarea class="sp-form-note" maxlength="1000" rows="1" placeholder="メモ (任意)" style="flex:1;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.85rem;resize:vertical;font-family:inherit;"></textarea>
+          </div>
+          <button type="button" class="sp-form-submit" data-student-id="${esc(studentId)}" style="width:100%;padding:10px 16px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;${eligible ? '' : 'opacity:0.5;cursor:not-allowed;'}" ${eligible ? '' : 'disabled'}>📅 学習計画を作成して転送</button>
+          <div class="sp-form-msg" style="margin-top:8px;font-size:0.85rem;"></div>
+        </div>
+        <div style="color:#a78bfa;font-weight:600;font-size:0.88rem;margin-bottom:8px;">📋 学習計画一覧</div>
+        <div class="sp-history" style="min-height:60px;"><div style="color:#71717a;text-align:center;padding:1rem;">⏳ 読み込み中...</div></div>
+      `;
+
+      const histBox = pane.querySelector('.sp-history');
+      const formMsg = pane.querySelector('.sp-form-msg');
+      const submitBtn = pane.querySelector('.sp-form-submit');
+
+      async function refreshList() {
+        try {
+          const res = await AdminAuth.fetch(`/api/admin/study-plans/list?student_id=${encodeURIComponent(studentId)}`);
+          if (!res.ok) {
+            histBox.innerHTML = `<div style="color:#fca5a5;padding:10px;background:rgba(239,68,68,0.08);border-radius:6px;font-size:0.85rem;">⚠ 取得失敗 HTTP ${res.status}</div>`;
+            return;
+          }
+          const data = await res.json();
+          const items = (data && data.items) || [];
+          if (items.length === 0) {
+            histBox.innerHTML = `<div style="color:#71717a;text-align:center;padding:1rem;font-size:0.86rem;">📭 まだ学習計画はありません</div>`;
+            return;
+          }
+          histBox.innerHTML = items.map(it => {
+            const badge = _spStatusBadge(it.status);
+            const subj = it.subject ? `<span style="font-size:0.7rem;padding:2px 6px;background:rgba(167,139,250,0.15);color:#a5b4fc;border-radius:6px;margin-right:6px;">${esc(it.subject)}</span>` : '';
+            const dot = it.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${esc(it.color)};margin-right:6px;vertical-align:middle;"></span>` : '';
+            const period = `<span style="color:#a1a1aa;font-size:0.75rem;">${esc(it.start_date || '')} 〜 ${esc(it.end_date || '')}</span>`;
+            const targets = [];
+            if (it.target_minutes) targets.push(`⏱ ${esc(it.target_minutes)}分/日`);
+            if (it.target_pages) targets.push(`📖 ${esc(it.target_pages)}p`);
+            targets.push(`🔁 ${esc(_spWeekLabel(it.week_pattern))}`);
+            const mat = it.material ? `<span style="color:#cbd5e1;font-size:0.78rem;margin-left:6px;">📘 ${esc(it.material)}</span>` : '';
+            const note = it.note ? `<div style="color:#a1a1aa;font-size:0.78rem;margin-top:4px;white-space:pre-wrap;">${esc(it.note)}</div>` : '';
+            const delBtn = `<button type="button" class="sp-delete-btn" data-sp-id="${esc(it.id)}" style="padding:3px 8px;background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);border-radius:5px;cursor:pointer;font-size:0.7rem;">🗑 削除</button>`;
+            return `<div style="padding:10px 12px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);border-radius:8px;margin-bottom:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${subj}${badge}${period}</div>
+                ${delBtn}
+              </div>
+              <div style="font-weight:bold;color:#fff;margin-top:6px;font-size:0.9rem;">${dot}${esc(it.title)}${mat}</div>
+              <div style="color:#93c5fd;font-size:0.76rem;margin-top:4px;">${esc(targets.join('　/　'))}</div>
+              ${note}
+            </div>`;
+          }).join('');
+          histBox.querySelectorAll('.sp-delete-btn').forEach(b => {
+            b.addEventListener('click', async () => {
+              const spId = b.dataset.spId;
+              if (!spId || !window.confirm('この学習計画を削除しますか? (生徒の画面からも消えます)')) return;
+              b.disabled = true; b.textContent = '⏳';
+              try {
+                const r = await AdminAuth.fetch(`/api/admin/study-plans/${encodeURIComponent(spId)}`, { method: 'DELETE' });
+                // 404 = 既に削除済み (別タブ/二重クリック) → エラー扱いせず一覧を更新するだけ
+                if (!r.ok && r.status !== 404) { alert(`削除失敗 HTTP ${r.status}`); b.disabled = false; b.textContent = '🗑 削除'; return; }
+                await refreshList();
+              } catch (e) { alert('削除エラー: ' + (e.message || e)); b.disabled = false; b.textContent = '🗑 削除'; }
+            });
+          });
+        } catch (e) {
+          histBox.innerHTML = `<div style="color:#fca5a5;padding:10px;font-size:0.85rem;">⚠ ${esc(String(e.message || e))}</div>`;
+        }
+      }
+
+      submitBtn.addEventListener('click', async () => {
+        const title = pane.querySelector('.sp-form-title').value.trim();
+        const subject = pane.querySelector('.sp-form-subject').value;
+        const material = pane.querySelector('.sp-form-material').value.trim();
+        const start = pane.querySelector('.sp-form-start').value;
+        const end = pane.querySelector('.sp-form-end').value;
+        const minutes = pane.querySelector('.sp-form-minutes').value;
+        const pages = pane.querySelector('.sp-form-pages').value;
+        const week = pane.querySelector('.sp-form-week').value;
+        const color = pane.querySelector('.sp-form-color').value;
+        const note = pane.querySelector('.sp-form-note').value.trim();
+        if (!title) { formMsg.style.color = '#fbbf24'; formMsg.textContent = '⚠ タイトルは必須です'; return; }
+        if (!subject) { formMsg.style.color = '#fbbf24'; formMsg.textContent = '⚠ 科目は必須です'; return; }
+        if (!start || !end) { formMsg.style.color = '#fbbf24'; formMsg.textContent = '⚠ 開始日・終了日は必須です'; return; }
+        if (end < start) { formMsg.style.color = '#fbbf24'; formMsg.textContent = '⚠ 終了日は開始日以降にしてください'; return; }
+        submitBtn.disabled = true; submitBtn.textContent = '⏳ 送信中...';
+        formMsg.style.color = '#a1a1aa'; formMsg.textContent = '送信中...';
+        try {
+          const r = await AdminAuth.fetch('/api/admin/study-plans/assign', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              student_id: parseInt(studentId, 10),
+              title, subject, material: material || null,
+              start_date: start, end_date: end,
+              target_minutes: minutes ? parseInt(minutes, 10) : null,
+              target_pages: pages ? parseInt(pages, 10) : null,
+              color: color || null, note: note || null, week_pattern: week || 'all',
+            }),
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            formMsg.style.color = '#fca5a5';
+            const det = data.detail || data.message || 'unknown error';
+            formMsg.textContent = '❌ ' + (typeof det === 'string' ? det : JSON.stringify(det));
+            submitBtn.disabled = false; submitBtn.textContent = '📅 学習計画を作成して転送';
+            return;
+          }
+          formMsg.style.color = '#86efac';
+          formMsg.textContent = `✅ ${data.message || '作成完了'}`;
+          pane.querySelector('.sp-form-title').value = '';
+          pane.querySelector('.sp-form-subject').value = '';
+          pane.querySelector('.sp-form-material').value = '';
+          pane.querySelector('.sp-form-minutes').value = '';
+          pane.querySelector('.sp-form-pages').value = '';
+          pane.querySelector('.sp-form-note').value = '';
+          submitBtn.disabled = false; submitBtn.textContent = '📅 学習計画を作成して転送';
+          await refreshList();
+        } catch (e) {
+          formMsg.style.color = '#fca5a5'; formMsg.textContent = '❌ ' + (e.message || e);
+          submitBtn.disabled = false; submitBtn.textContent = '📅 学習計画を作成して転送';
+        }
+      });
+
+      await refreshList();
+    }
+
     // タブ切り替え + lazy fetch
     async function loadStudentActivity(studentId, pane) {
       pane.innerHTML = '<div style="color:#71717a;text-align:center;padding:1.5rem;">⏳ 読み込み中...</div>';
@@ -8231,6 +8438,15 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           if (sid && typeof loadStudentHomework === 'function') {
             pane.dataset.loaded = 'loading';
             loadStudentHomework(sid, pane).then(() => { pane.dataset.loaded = 'done'; })
+              .catch(e => { pane.innerHTML = `<div style="color:#fca5a5;padding:1rem;">⚠ ${String(e.message || e)}</div>`; pane.dataset.loaded = ''; });
+          }
+        }
+        // 📅 学習計画タブ (新規 2026-06-15): typeof で fallback safe
+        if (target === 'studyplan' && pane && !pane.dataset.loaded) {
+          const sid = pane.dataset.studentId;
+          if (sid && typeof loadStudentStudyPlans === 'function') {
+            pane.dataset.loaded = 'loading';
+            loadStudentStudyPlans(sid, pane).then(() => { pane.dataset.loaded = 'done'; })
               .catch(e => { pane.innerHTML = `<div style="color:#fca5a5;padding:1rem;">⚠ ${String(e.message || e)}</div>`; pane.dataset.loaded = ''; });
           }
         }
