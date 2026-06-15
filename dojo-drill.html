@@ -32,6 +32,9 @@
     .timer.warn { color:#fbbf24; } .timer.danger { color:#fca5a5; }
 
     .passage { white-space:pre-wrap; line-height:1.85; font-size:0.95rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.10); border-radius:10px; padding:1rem 1.1rem; margin-bottom:1rem; }
+    /* 傍線部 (模試風の下線 + ラベル) */
+    .exam-underline { text-decoration:underline; text-decoration-color:#a5b4fc; text-decoration-thickness:2px; text-underline-offset:3px; background:rgba(129,140,248,0.14); padding:0 1px; border-radius:2px; }
+    .exam-underline[data-mark]::before { content:"(" attr(data-mark) ")"; font-size:0.7em; font-weight:800; color:#c4b5fd; vertical-align:super; margin-right:1px; }
     .q-block { background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.10); border-radius:10px; padding:1rem 1.1rem; margin-bottom:0.9rem; }
     .q-stem { font-weight:600; line-height:1.7; margin-bottom:0.6rem; }
     .choice { display:flex; gap:0.6rem; align-items:flex-start; padding:0.55rem 0.7rem; border:1px solid rgba(255,255,255,0.12); border-radius:8px; margin:0.35rem 0; cursor:pointer; line-height:1.6; }
@@ -145,12 +148,47 @@
     }
     function formatScientific(s) {
       let html = escapeHtml(s);
+      // 案B: AI が下線部に出す <u>/<em>/<strong> を whitelist で復活 (english-exam.js と同一・模試風下線)
+      html = html.replace(/&lt;u&gt;/gi, '<u class="exam-underline">').replace(/&lt;\/u&gt;/gi, '</u>');
+      html = html.replace(/&lt;em&gt;/gi, '<em>').replace(/&lt;\/em&gt;/gi, '</em>');
+      html = html.replace(/&lt;strong&gt;/gi, '<strong>').replace(/&lt;\/strong&gt;/gi, '</strong>');
+      // 案A: 自動傍線の sentinel (<label> … ) を復元 (markUnderlines が挿入)
+      html = html.replace(/(.)/g, '<u class="exam-underline" data-mark="$1">').replace(//g, '</u>');
       html = html.replace(/([A-Z][a-z]?)_(\d+)/g, '$1<sub>$2</sub>');
       html = html.replace(/\b([a-z])_(\d+)\b/g, '$1<sub>$2</sub>');
       html = html.replace(/\^\(([^)]+)\)/g, '<sup>$1</sup>');
       html = html.replace(/\^(\d+[-+]?)/g, '<sup>$1</sup>');
       html = html.replace(/\n/g, '<br>');
       return html;
+    }
+    // 🎯 [傍線部表示 2026-06-15] 本文にマークアップが無くても、設問が引用する傍線部/下線部「…」を
+    //   本文中から探して下線+ラベル(A,B…)を付与する (Desktop 国語生成器と同方式・データ非改変)。
+    //   sentinel を挿入し formatScientific が <u class=exam-underline data-mark> に復元。見つからなければ無処理。
+    function markUnderlines(passage, qs) {
+      if (!passage || !Array.isArray(qs)) return passage;
+      if (/<u[ >]/i.test(passage)) return passage;   // 既に <u> markup があれば二重付与しない
+      const phrases = [];
+      qs.forEach(q => {
+        const t = (q && q.stem) || '';
+        const re = /(?:傍線部|下線部|傍線|下線)\s*[「『]([^」』\n]{2,80})[」『]?[」』]?/g;
+        let m; while ((m = re.exec(t))) { const p = m[1].replace(/[」』]+$/, ''); if (p) phrases.push(p); }
+      });
+      if (!phrases.length) return passage;
+      // 本文中の最初の出現位置を求め、出現順・非重複で採用
+      const spans = [];
+      phrases.forEach(ph => { const i = passage.indexOf(ph); if (i >= 0) spans.push({ start: i, end: i + ph.length, ph }); });
+      if (!spans.length) return passage;
+      spans.sort((a, b) => a.start - b.start || b.end - a.end);
+      const chosen = []; let lastEnd = -1;
+      spans.forEach(s => { if (s.start >= lastEnd) { chosen.push(s); lastEnd = s.end; } });
+      let out = ''; let cur = 0;
+      chosen.forEach((s, i) => {
+        const label = String.fromCharCode(65 + i);
+        out += passage.slice(cur, s.start) + '' + label + '' + s.ph + '';
+        cur = s.end;
+      });
+      out += passage.slice(cur);
+      return out;
     }
     const token = () => localStorage.getItem('ai_juku_session_token') || '';
 
@@ -207,7 +245,8 @@
       let body = `<div class="timer-bar"><div><strong>${escapeHtml(preset.name)}</strong> <span class="muted">/ 全${qs.length}問</span></div><div class="timer" id="timer">--:--</div></div>`;
       if (passage) {
         const label = daimon.audio_script ? '【放送内容（読んで解答）】\n' : '';
-        body += `<div class="passage">${formatScientific(label + passage)}</div>`;
+        // 設問が引用する傍線部/下線部を本文中で下線+ラベル表示 (案A)
+        body += `<div class="passage">${formatScientific(label + markUnderlines(passage, qs))}</div>`;
       }
       qs.forEach((q, qi) => {
         const choices = normChoices(q.choices);
