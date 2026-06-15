@@ -21335,7 +21335,13 @@ def public_exam_questions_archive(
         total = 0
     conn.close()
 
-    items = []
+    # 📜 [kokugo-passage-fix] 国語 (古文/漢文/現代文) の本文欠落・傍線部不一致 (解答不能) の大問は
+    #    アーカイブ browse でも遮断する。english-exam.js「これを解く」は preview の id を辿るため、
+    #    ここで破損国語を消せば生徒に破損 id 自体を渡さずに済む (bank API 配信フィルタと同一規約)。
+    #    previews を row 順 (created_at DESC) のまま保持し、除外/全滅フォールバックでも並び順を崩さない。
+    previews = []          # [(preview, is_dead_kokugo)] を row 順で保持
+    kokugo_total = 0       # このページに含まれた daigaku 国語の総数
+    kokugo_dead = 0        # うち解答不能 (除外候補) の数
     for r in rows:
         try:
             data = json.loads(r["question_data"])
@@ -21343,7 +21349,7 @@ def public_exam_questions_archive(
             # year filter (post-fetch・DBに year カラムは無いので JSON 内の年度で判定)
             if year and yr and int(yr) != int(year):
                 continue
-            items.append({
+            preview = {
                 "id": r["id"],
                 "exam": r["exam_id"],
                 "part": r["part_key"],
@@ -21353,9 +21359,29 @@ def public_exam_questions_archive(
                 "passage_preview": (data.get("passage", "") or data.get("audio_script", "") or data.get("prompt", ""))[:200],
                 "question_count": len(data.get("questions", [])),
                 "created_at": str(r["created_at"]),
-            })
+            }
+            # strict=False: 「本文が無い/語句が本文に存在しない」= 解答不能の大問だけ遮断
+            #   (装飾括弧・句読点だけの差異は本文を読めば解答可能なので配信する)。
+            dead = False
+            if r["exam_id"] == "daigaku" and r["part_key"] in DAIGAKU_KOKUGO_PARTS:
+                kokugo_total += 1
+                if not _validate_kokugo_question(data, r["part_key"], strict=False)[0]:
+                    dead = True
+                    kokugo_dead += 1
+            previews.append((preview, dead))
         except Exception:
             pass
+    # 全滅フォールバック: 国語が1件以上あって全件解答不能のときだけ、枯渇回避のため除外せず配信。
+    #   一部でも生きていれば不良は一切出さない (bank API server/main.py の安全弁と同じ)。
+    #   row 順から漏れを取り除くだけなので created_at DESC は維持。repair_kokugo_questions.py が急務。
+    keep_dead = kokugo_total > 0 and kokugo_dead == kokugo_total
+    items = [p for (p, dead) in previews if keep_dead or not dead]
+    if keep_dead:
+        log.warning(f"[Archive:Kokugo] ALL {kokugo_total} daigaku 国語 item(s) on this page unanswerable "
+                    f"(exam={exam} part={part} grade={eiken_grade}); serving unfiltered — repair pool ASAP")
+    elif kokugo_dead:
+        log.info(f"[Archive:Kokugo] list filtered {kokugo_dead} unanswerable 国語 item(s) "
+                 f"(exam={exam} part={part} grade={eiken_grade}); {kokugo_total - kokugo_dead} servable remain")
     return {"mode": "list", "total": total, "limit": limit, "offset": offset, "items": items}
 
 
@@ -21380,6 +21406,15 @@ def public_exam_questions_archive_detail(question_id: int):
         data = json.loads(row["question_data"])
     except Exception:
         raise HTTPException(status_code=500, detail="問題データ破損")
+    # 📜 [kokugo-passage-fix] 直 id 取得 (english-exam.js「これを解く」) でも国語の解答不能大問を検出。
+    #   ただし detail は候補が常に1件 = 除外すれば全滅。bank API と同じ全滅フォールバック規約に従い
+    #   代替が無いため従来通り配信するが、破損が生徒に届くので warning を残す
+    #   (通常は上流の list フィルタで破損 id が生徒に渡らないため、ここは deep-link 等の保険)。
+    if row["exam_id"] == "daigaku" and row["part_key"] in DAIGAKU_KOKUGO_PARTS:
+        ok, reasons = _validate_kokugo_question(data, row["part_key"], strict=False)
+        if not ok:
+            log.warning(f"[Archive:Kokugo] detail served unanswerable 国語 item id={row['id']} "
+                        f"part={row['part_key']} reasons={reasons}; repair pool ASAP")
     return {
         "id": row["id"],
         "exam": row["exam_id"],
