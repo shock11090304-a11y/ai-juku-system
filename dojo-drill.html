@@ -18,7 +18,12 @@
     .hero h1 { font-size:1.7rem; margin:0 0 0.4rem; background:linear-gradient(135deg,#34d399,#10b981); -webkit-background-clip:text; background-clip:text; color:transparent; }
     .hero p { color:#cbd5e1; margin:0.2rem 0; font-size:0.92rem; line-height:1.6; }
 
+    .sec-h { margin:1.6rem 0 0.4rem; font-size:1.05rem; font-weight:800; color:#e4e4e7; border-bottom:1px solid rgba(255,255,255,0.12); padding-bottom:0.35rem; }
     .subj-h { margin:1.3rem 0 0.5rem; font-size:0.95rem; color:#fcd34d; font-weight:800; }
+    .univ-chips { display:flex; flex-wrap:wrap; gap:0.5rem; }
+    .univ-chip { padding:0.5rem 0.95rem; background:rgba(0,0,0,0.3); border:1.5px solid rgba(255,255,255,0.12); border-radius:999px; color:#e4e4e7; font-weight:700; font-size:0.9rem; cursor:pointer; transition:all .15s; }
+    .univ-chip:hover { border-color:rgba(16,185,129,0.55); transform:translateY(-1px); }
+    .univ-chip.active { background:rgba(16,185,129,0.2); border-color:#10b981; color:#6ee7b7; }
     .preset-grid { display:grid; grid-template-columns:1fr; gap:0.7rem; }
     @media (min-width:600px){ .preset-grid { grid-template-columns:1fr 1fr; } }
     .preset { display:flex; align-items:center; justify-content:space-between; gap:0.6rem; padding:0.85rem 1rem; background:rgba(0,0,0,0.30); border:1.5px solid rgba(255,255,255,0.10); border-radius:10px; cursor:pointer; transition:all .15s; text-align:left; color:#e4e4e7; }
@@ -79,7 +84,7 @@
   <main class="wrap">
     <section class="hero">
       <h1>⏱ 隙間時間ドリル</h1>
-      <p>共通テストの<strong>大問1個</strong>を <strong>10〜15分</strong>で。スキマ時間に1セット解いて、弱点を即チェック。</p>
+      <p>共通テスト・<strong>難関大</strong>の<strong>大問1個</strong>を <strong>10〜25分</strong>で。スキマ時間に1セット解いて、弱点を即チェック。</p>
       <p class="muted">解答すると小問ごとの正誤・つまずき理由が記録され、マイページの「🎯 弱点 TOP3」に反映されます。</p>
     </section>
 
@@ -110,6 +115,35 @@
       { subject: '社会', name: '共通テスト 世界史', exam: 'daigaku', part: 'sekaishi', grade: 'kyotsu', min: 12, topic: '共通テスト世界史' },
       { subject: '社会', name: '共通テスト 地理', exam: 'daigaku', part: 'chiri', grade: 'kyotsu', min: 12, topic: '共通テスト地理' },
     ];
+
+    // ───────── 大学別 (二次・私大): 同じ bank API を eiken_grade=大学キー で利用 (サーバ改修不要) ─────────
+    const _rlong = (key, name, min) => ({ exam: 'daigaku', part: 'r_long', grade: key, min, topic: `${name} 英語長文読解`, label: '英語 長文読解' });
+    const _rikei = (key, name, subj, part, min) => ({ exam: 'rikei', part, grade: key, min, topic: `${name}理系 ${subj}`, label: `理系 ${subj}` });
+    const UNIVERSITIES = [
+      { key: 'todai', name: '東大', group: '国公立', parts: [_rlong('todai', '東大', 20), _rikei('todai_rikei', '東大', '数学', 'math_q1', 25), _rikei('todai_rikei', '東大', '物理', 'phys_q1', 25), _rikei('todai_rikei', '東大', '化学', 'chem_q1', 25)] },
+      { key: 'kyodai', name: '京大', group: '国公立', parts: [_rlong('kyodai', '京大', 20), _rikei('kyodai_rikei', '京大', '数学', 'math_q1', 25), _rikei('kyodai_rikei', '京大', '物理', 'phys_q1', 25), _rikei('kyodai_rikei', '京大', '化学', 'chem_q1', 25)] },
+      { key: 'osaka', name: '阪大', group: '国公立', parts: [_rlong('osaka', '阪大', 18)] },
+      { key: 'nagoya', name: '名大', group: '国公立', parts: [_rlong('nagoya', '名大', 18)] },
+      { key: 'tohoku', name: '東北大', group: '国公立', parts: [_rlong('tohoku', '東北大', 18)] },
+      { key: 'hokudai', name: '北大', group: '国公立', parts: [_rlong('hokudai', '北大', 18)] },
+      { key: 'kyushu', name: '九大', group: '国公立', parts: [_rlong('kyushu', '九大', 18)] },
+      { key: 'hitotsu', name: '一橋', group: '国公立', parts: [_rlong('hitotsu', '一橋', 18)] },
+      { key: 'tokoda', name: '東工大', group: '国公立', parts: [_rlong('tokoda', '東工大', 18)] },
+      { key: 'kobe', name: '神戸大', group: '国公立', parts: [_rlong('kobe', '神戸大', 18)] },
+      { key: 'tsukuba', name: '筑波大', group: '国公立', parts: [_rlong('tsukuba', '筑波大', 18)] },
+      { key: 'waseda', name: '早稲田', group: '私立', parts: [_rlong('waseda', '早稲田', 18)] },
+      { key: 'keio', name: '慶應', group: '私立', parts: [_rlong('keio', '慶應', 18)] },
+      { key: 'sophia', name: '上智', group: '私立', parts: [_rlong('sophia', '上智', 18)] },
+      { key: 'icu', name: 'ICU', group: '私立', parts: [_rlong('icu', 'ICU', 18)] },
+      { key: 'meiji', name: '明治', group: '私立', parts: [_rlong('meiji', '明治', 15)] },
+      { key: 'rikkyo', name: '立教', group: '私立', parts: [_rlong('rikkyo', '立教', 15)] },
+      { key: 'doshisha', name: '同志社', group: '私立', parts: [_rlong('doshisha', '同志社', 15)] },
+      { key: 'ritsumei', name: '立命館', group: '私立', parts: [_rlong('ritsumei', '立命館', 15)] },
+    ];
+    // 共テ + 大学別 を1配列に集約 (data-idx 共有)
+    const UNIV_FLAT = [];
+    UNIVERSITIES.forEach(u => u.parts.forEach(p => UNIV_FLAT.push({ ...p, univKey: u.key, univName: u.name, name: `${u.name} ${p.label}` })));
+    const ALL = PRESETS.concat(UNIV_FLAT);
     const REASONS = [
       { v: '', t: '理由を選択…' },
       { v: 'understanding', t: '理解不足（知識・解法が分からなかった）' },
@@ -197,23 +231,48 @@
     let timerId = null, remainSec = 0;
 
     // ───────── preset view ─────────
+    const presetCard = (p, dispName) => `<button class="preset" data-idx="${ALL.indexOf(p)}">
+        <span><span class="preset-name">${escapeHtml(dispName)}</span><span class="preset-sub">${escapeHtml(p.topic)}</span></span>
+        <span class="preset-min">${p.min}分</span>
+      </button>`;
+
     function renderPresets() {
-      const subjects = [...new Set(PRESETS.map(p => p.subject))];
       let html = '';
-      subjects.forEach(sub => {
+      // 📘 共通テスト
+      html += '<div class="sec-h">📘 共通テスト</div>';
+      [...new Set(PRESETS.map(p => p.subject))].forEach(sub => {
         html += `<div class="subj-h">${escapeHtml(sub)}</div><div class="preset-grid">`;
-        PRESETS.filter(p => p.subject === sub).forEach((p, i) => {
-          const idx = PRESETS.indexOf(p);
-          html += `<button class="preset" data-idx="${idx}">
-            <span><span class="preset-name">${escapeHtml(p.name.replace('共通テスト ', ''))}</span><span class="preset-sub">${escapeHtml(p.topic)}</span></span>
-            <span class="preset-min">${p.min}分</span>
-          </button>`;
-        });
+        PRESETS.filter(p => p.subject === sub).forEach(p => { html += presetCard(p, p.name.replace('共通テスト ', '')); });
         html += `</div>`;
       });
+      // 🎓 大学別 (二次・私大)
+      html += '<div class="sec-h">🎓 大学別（二次・私大）<span class="muted" style="font-weight:normal;font-size:0.75rem;"> — 大学を選んでください</span></div>';
+      ['国公立', '私立'].forEach(g => {
+        html += `<div class="subj-h">${g}</div><div class="univ-chips">`;
+        UNIVERSITIES.filter(u => u.group === g).forEach(u => { html += `<button class="univ-chip" data-univ="${u.key}">${escapeHtml(u.name)}</button>`; });
+        html += `</div>`;
+      });
+      html += '<div id="univParts"></div>';
       const v = document.getElementById('presetView');
       v.innerHTML = html;
-      v.querySelectorAll('.preset').forEach(b => b.addEventListener('click', () => startDrill(PRESETS[parseInt(b.dataset.idx, 10)])));
+      v.querySelectorAll('.preset').forEach(b => b.addEventListener('click', () => startDrill(ALL[parseInt(b.dataset.idx, 10)])));
+      v.querySelectorAll('.univ-chip').forEach(b => b.addEventListener('click', () => renderUnivParts(b.dataset.univ)));
+    }
+
+    function renderUnivParts(univKey) {
+      const u = UNIVERSITIES.find(x => x.key === univKey);
+      const c = document.getElementById('univParts');
+      if (!u || !c) return;
+      document.querySelectorAll('.univ-chip').forEach(b => b.classList.toggle('active', b.dataset.univ === univKey));
+      let html = `<div class="subj-h" style="color:#6ee7b7;">${escapeHtml(u.name)} の大問を選ぶ</div><div class="preset-grid">`;
+      u.parts.forEach(p => {
+        const item = UNIV_FLAT.find(x => x.univKey === u.key && x.part === p.part && x.grade === p.grade);
+        if (item) html += presetCard(item, p.label);
+      });
+      html += `</div>`;
+      c.innerHTML = html;
+      c.querySelectorAll('.preset').forEach(b => b.addEventListener('click', () => startDrill(ALL[parseInt(b.dataset.idx, 10)])));
+      c.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
 
     async function startDrill(preset) {
