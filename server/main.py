@@ -3719,12 +3719,28 @@ def _run_weekly_worksheet_generation() -> dict:
                             sample_size = min(3, total)
                             offsets = _rnd.sample(range(total), sample_size)
                             picked_ids = []
+                            # 📜 2026-06-16: japanese 弱点が gendai/kobun/kanbun pool を引くようになった (4307) ため、
+                            #   国語 pool では question_data も取得し、本文欠落/傍線部不一致の破損大問 (解答不能) を
+                            #   週次プリントに混入させない。bank API:21136 と同じ _validate_kokugo_question 規約。
+                            #   未修復の既存 kokugo 行 (repair_kokugo_questions.py 未適用) への配信側防御。
+                            _is_kokugo_pool = (pool_exam == "daigaku" and pool_part in DAIGAKU_KOKUGO_PARTS)
                             for off in offsets:
-                                off_sql = f"SELECT id FROM exam_questions WHERE {' AND '.join(count_params)} LIMIT 1 OFFSET ?"
+                                if _is_kokugo_pool:
+                                    off_sql = f"SELECT id, question_data FROM exam_questions WHERE {' AND '.join(count_params)} LIMIT 1 OFFSET ?"
+                                else:
+                                    off_sql = f"SELECT id FROM exam_questions WHERE {' AND '.join(count_params)} LIMIT 1 OFFSET ?"
                                 c.execute(off_sql, tuple(count_args) + (off,))
                                 row_id = c.fetchone()
                                 if row_id:
                                     qid = row_id[0] if not hasattr(row_id, 'keys') else row_id[0]
+                                    if _is_kokugo_pool:
+                                        try:
+                                            _qd_raw = row_id[1]
+                                            _qd = json.loads(_qd_raw) if isinstance(_qd_raw, str) else (_qd_raw or {})
+                                        except Exception:
+                                            _qd = {}
+                                        if not _validate_kokugo_question(_qd if isinstance(_qd, dict) else {}, pool_part, strict=False)[0]:
+                                            continue  # 解答不能の不良大問はスキップ (次 offset / 次 pool へ fallthrough)
                                     picked_ids.append(qid)
                             if picked_ids:
                                 # P0-4: id のみ記録 (full question_data 保存を回避し容量 1/200 に削減)
@@ -3881,14 +3897,23 @@ def student_worksheet_this_week(authorization: Optional[str] = Header(None)):
                 continue
             qid = q.get("question_id")
             eq_info = eq_map.get(qid) or {}
+            _exam_id = q.get("exam_id") or eq_info.get("exam_id")
+            _part_key = q.get("part_key") or eq_info.get("part_key")
+            _qdata = q.get("question_data") or eq_info.get("question_data") or {}
+            # 📜 2026-06-16: 二重防御 — 国語 (古文/漢文/現代文) の破損大問 (本文欠落/傍線部不一致 = 解答不能)
+            #   は描画前にドロップ (bank API:21136 と同規約)。選定時 (3721 付近) でも弾くが、旧プリントや
+            #   別経路で worksheet_archives に混入した行に対する最終防御。
+            if _exam_id == "daigaku" and _part_key in DAIGAKU_KOKUGO_PARTS:
+                if not _validate_kokugo_question(_qdata if isinstance(_qdata, dict) else {}, _part_key, strict=False)[0]:
+                    continue
             hydrated_questions.append({
                 "question_id": qid,
-                "exam_id": q.get("exam_id") or eq_info.get("exam_id"),
-                "part_key": q.get("part_key") or eq_info.get("part_key"),
+                "exam_id": _exam_id,
+                "part_key": _part_key,
                 "eiken_grade": eq_info.get("eiken_grade"),
                 "weakness_subject": q.get("weakness_subject"),
                 "weakness_topic": q.get("weakness_topic"),
-                "question_data": q.get("question_data") or eq_info.get("question_data") or {},
+                "question_data": _qdata,
             })
         ws = {
             "id": _g("id", 0),
@@ -4302,9 +4327,16 @@ _WEAKNESS_SUBJECT_TO_POOL = {
     "physics": [("rikei", None)],
     "chemistry": [("rikei", None)],
     "biology": [("rikei", None)],
-    "english": [("daigaku", "r_long"), ("daigaku", "g_grammar"), ("daigaku", "w_essay"),
+    "english": [("daigaku", "r_long"), ("daigaku", "r_grammar"), ("daigaku", "g_grammar"), ("daigaku", "w_essay"),
                 ("eiken", "r_q1"), ("eiken", "r_q3")],
-    "japanese": [("daigaku", "r_summary"), ("daigaku", "r_long")],  # 国語 pool が少ないため英語長文も
+    # ↑ 2026-06-16: r_grammar を追加。単元別英文法ドリル (dojo-drill UNIT_PRESETS=r_grammar/teiki) が
+    #   実際に埋める pool は r_grammar だが従来 english リストに無く、weakness-top3 推薦 (全 pool 走査) で
+    #   文法問題を一切出せず長文のみだった。g_grammar (osaka/waseda 2次型・疎) は維持。
+    #   ※daily-nudge は最初の非空 pool で break するため r_long 優先のまま (この修正の効果は top3 path)。
+    # 📜 2026-06-16: kokugo 修復 (f517687) で 古文/漢文/現代文 pool が生成可能になったため英語長文相乗りを解消。
+    # 先頭2件 (daily-nudge pool_keys[:2] が参照) を実 国語 pool にし、r_long は最終フォールバックとして残す。
+    # 従来 [r_summary, r_long] は両方とも英語 pool で、国語弱点に英文しか推薦されていなかった (reverse map 4341 と不整合)。
+    "japanese": [("daigaku", "gendai"), ("daigaku", "kobun"), ("daigaku", "kanbun"), ("daigaku", "r_long")],
     "social": [("daigaku", "nihonshi"), ("daigaku", "sekaishi"),
                ("daigaku", "chiri"), ("daigaku", "kouminka"),
                ("daigaku", "r_long")],  # 2026-05-14 社会専門 pool 整備済 (4 科目) + r_long フォールバック
