@@ -11502,6 +11502,261 @@ def _get_recent_exam_combinations(student_id: Optional[int], days: int = 7) -> l
         return []
 
 
+# ─────────────────────────────────────────────────────────────────────────
+# 📜 [kokugo-passage-fix 2026-06-15] 共通テスト国語 (古文/漢文/現代文) の致命データ生成不全対応。
+#   症状: kobun/kanbun の大問の約半数が passage(本文)空 or 傍線部「X」が passage に存在せず
+#         (漢文は白文の漢字順入替/句読点挿入で不一致)、隙間時間ドリル/単元別演習で解答不能。
+#   原因: 国語 part が exam_id="daigaku" の英語専用プロンプトに相乗りしており、
+#         出力スキーマが「passage は Reading の場合のみ・それ以外は空文字」だったため
+#         本文が空のまま 傍線部 を引用する大問が量産されていた。本文非空・傍線部 verbatim の保証が無かった。
+#   対処: 国語専用の生成器 (_generate_kokugo_exam_question) + 機械検証 (_validate_kokugo_question)。
+#         検証規約は dojo-drill.html の markUnderlines (passage.indexOf・正規化なし exact 一致) に一致させる。
+# ─────────────────────────────────────────────────────────────────────────
+DAIGAKU_KOKUGO_PARTS = ("kobun", "kanbun", "gendai")
+
+# ⚠️ dojo-drill.html markUnderlines (line ~207) の正規表現と **完全一致** させること。
+#    validator は renderer が passage.indexOf() で探すのと同一の文字列を抽出する必要がある
+#    (ズレると「描画では下線が引けないのに validator は OK」= 不良見逃し / 逆の誤検出 が起きる)。
+#    どちらかを変えるときは必ず両方を同時に変更する。
+_KOKUGO_REF_PAT = r'(?:傍線部|下線部|傍線|下線)'
+_KOKUGO_QUOTE_PAT = r'(?:傍線部|下線部|傍線|下線)\s*[「『]([^」』\n]{2,80})[」『]?[」』]?'
+
+
+def _kokugo_underline_quotes(stem: str) -> list:
+    """stem から 傍線部「X」/下線部「X」形式の引用句 X を抽出 (dojo-drill.html markUnderlines と同一規約)。"""
+    import re
+    out = []
+    if not stem:
+        return out
+    for m in re.findall(_KOKUGO_QUOTE_PAT, stem):
+        p = re.sub(r'[」』]+$', '', m)  # markUnderlines と同一: 末尾の閉じ括弧を除去
+        if p:
+            out.append(p)
+    return out
+
+
+# 装飾的な括弧・句読点・空白の集合。lenient 比較で除去し、「本文に語句自体が無い (解答不能)」を
+# 「装飾括弧/句読点だけ違う (下線は引けないが本文を読めば解答可能)」と区別するために使う。
+# ⚠️ 長音符「ー」・各種ダッシュ「―－-」・中黒に準ずる content 担持文字は **含めない** —
+#    カタカナ綴りの差 (グローバル/グロバル 等) を誤って「解答可能」と見なすと本物の drift を見逃すため。
+_KOKUGO_DECOR = set("「」『』（）()｛｝[]【】〔〕、。，．…‥　 \t\n")
+
+
+def _kokugo_norm(s: str) -> str:
+    """装飾括弧・句読点・空白を除いた正規化文字列を返す (lenient 比較用)。"""
+    if not isinstance(s, str):
+        return ""
+    return "".join(ch for ch in s if ch not in _KOKUGO_DECOR)
+
+
+def _validate_kokugo_question(qd: dict, part_key: str, strict: bool = True) -> tuple:
+    """生成された国語大問が出題可能かを機械検証。(ok: bool, reasons: list[str]) を返す。
+
+    共通: 設問が傍線部/下線部を参照するのに passage が空なら不良 (本文が描画されず解答不能 = Class A)。
+
+    strict=True (既定・生成器の self-check 用): dojo-drill.html markUnderlines の passage.indexOf と
+        完全一致。傍線部「X」が passage に一字一句 (装飾括弧・句読点・空白まで) 存在しないと不良。
+        → 新規生成は下線がきれいに描画される完全な大問だけを通す (繰り返し作り直し)。
+    strict=False (配信フィルタ/監査の「解答不能」判定用): 装飾括弧・句読点・空白を除いて比較。
+        本文に語句自体が無い (例: 漢文の漢字順入替 所擢→擢所・古文の言い換え 後の妻→継母) =
+        生徒が傍線部を本文から特定できない **解答不能** のみを検出。装飾括弧/句読点だけの差異
+        (例: 本文「同じ時間」を設問が「同じ『時間』」と引用・下線は引けないが本文を読めば解答可能) は不良としない。
+
+    daigaku/kobun・kanbun・gendai 専用。answer 形式 ([[ai-juku-answer-index-convention]]) は別問題なので検査しない。"""
+    import re
+    reasons = []
+    if not isinstance(qd, dict):
+        return False, ["not_a_dict"]
+    # passage が文字列でない (モデルが数値/配列/None を返す) ケースは bad data 扱い (空文字に正規化して
+    # 後段の `in` / .strip() が TypeError/AttributeError で同期呼び出し元を巻き込まないようにする)
+    passage = qd.get("passage")
+    passage = passage if isinstance(passage, str) else ""
+    qs = qd.get("questions") or []
+    if not isinstance(qs, list) or not qs:
+        return False, ["no_questions"]
+    haystack = passage if strict else _kokugo_norm(passage)
+    refs_any = False
+    for q in qs:
+        if not isinstance(q, dict):
+            continue
+        stem = q.get("stem") or ""
+        if re.search(_KOKUGO_REF_PAT, stem):
+            refs_any = True
+        for quote in _kokugo_underline_quotes(stem):
+            needle = quote if strict else _kokugo_norm(quote)
+            if needle and needle not in haystack:
+                reasons.append(f"quote_not_in_passage:{quote[:24]}")
+    if refs_any and not passage.strip():
+        reasons.insert(0, "empty_passage_with_underline_ref")
+    return (len(reasons) == 0), reasons
+
+
+def _generate_kokugo_exam_question(
+    part_key: str,
+    univ_key: Optional[str] = None,
+    exclude_combinations: Optional[list] = None,
+    topic_hint: Optional[str] = None,
+) -> Optional[dict]:
+    """📜 [kokugo-passage-fix] 共通テスト/二次の国語 (古文/漢文/現代文) を1セット生成。
+    本文(passage)を必ず非空で出力し、傍線部の引用句が passage に verbatim で含まれることを
+    プロンプトの self-check + 生成後の機械検証 (_validate_kokugo_question) の二段で保証する。
+    検証 NG なら最大 _ATTEMPTS 回まで作り直し、それでも NG なら None (= pool を汚さず fail-closed)。"""
+    if not ANTHROPIC_API_KEY:
+        return None
+    import random
+
+    univ_key = univ_key or "kyotsu"
+    univ_info = DAIGAKU_UNIV_STYLES.get(univ_key, {"name": univ_key})
+    univ_name = univ_info.get("name", univ_key)
+    part_label = DAIGAKU_PART_HINTS.get(part_key, part_key)
+
+    if univ_key == "kyotsu":
+        year_candidates = list(range(2021, 2027))
+    elif univ_key == "center":
+        year_candidates = list(range(2005, 2021))
+    else:
+        year_candidates = list(range(2005, 2027))
+    excluded = set()
+    if exclude_combinations:
+        for (eu, ey) in exclude_combinations:
+            if eu == univ_key:
+                try:
+                    excluded.add(int(ey))
+                except Exception:
+                    pass
+    remaining = [y for y in year_candidates if y not in excluded]
+    year = random.choice(remaining) if remaining else (year_candidates[0] if year_candidates else 2024)
+
+    # 共通テスト/センターは4択マーク式・東大京大は記述式
+    is_kishu = univ_key in ("todai", "kyodai")
+    if is_kishu:
+        form_clause = ("- 出題形式: 記述式。各設問 type は \"short_answer\" (本文の語句説明・現代語訳・趣旨説明を字数指定で)。\n"
+                       "- choices は空配列 []。answer は模範解答テキスト全文。")
+    else:
+        form_clause = ("- 出題形式: 共通テスト型の **4択マーク式**。各設問 type は \"multiple_choice\"・choices は必ず4要素。\n"
+                       "- answer は **正解選択肢の 0始まり index 文字列** (\"0\"〜\"3\")。([[ai-juku-answer-index-convention]] 標準形式)")
+
+    if part_key == "kobun":
+        subject_rules = (
+            "【古文 本文ルール】\n"
+            "- passage は歴史的仮名遣いの古文本文 (会話・和歌・敬語・助動詞が自然に出る地の文)。\n"
+            "- 傍線部「X」は **passage 本文に実在する語句をそのまま**「」で引用する (語句を言い換えない・要約しない)。\n"
+            "- 設問は 語意/文法(助動詞・助詞の識別)/敬語の方向/和歌修辞/口語訳/趣旨 等を本文に即して問う。")
+    elif part_key == "kanbun":
+        subject_rules = (
+            "【漢文 本文ルール (致命傷防止・厳守)】\n"
+            "- passage には **白文 (訓点・返り点付きの漢文本文)** を載せる。書き下し文・現代語訳は passage に入れず explanation 側へ。\n"
+            "- 傍線部「X」は **白文 (passage に載せた漢字列) の語句をそのまま**「」で引用する。\n"
+            "  ❌ 禁止: 書き下し文を傍線部に引用する / 漢字の順序を入れ替える (例: passage 『所擢者』を傍線部で『擢所者』と書く) /\n"
+            "          passage に無い句読点 (、。) を傍線部の引用に勝手に挿入する。\n"
+            "- 設問は 訓読/書き下し/再読文字/置き字/句法(使役・受身・比較・抑揚)/故事成語/趣旨 等を本文に即して問う。")
+    else:  # gendai
+        subject_rules = (
+            "【現代文 本文ルール】\n"
+            "- passage は評論/小説/実用文の現代日本語本文。\n"
+            "- 傍線部「X」は **passage 本文に実在する語句をそのまま**「」で引用する (言い換え・要約禁止)。\n"
+            "- 設問は 傍線部説明/指示語/語彙/趣旨/筆者の主張 等を本文の論理に即して問う。")
+
+    topic_clause = ""
+    if topic_hint:
+        topic_clause = f"\n【単元指定 (絶対遵守)】この大問の中心単元は「{topic_hint}」に固定する。\n"
+
+    avoid_clause = ""
+    if exclude_combinations:
+        same = [(u, y) for (u, y) in exclude_combinations if u == univ_key]
+        if same:
+            pairs = ", ".join([f"({u}, {y})" for (u, y) in same[:20]])
+            avoid_clause = (f"\n【直近出題回避】同生徒に直近出した組合せ: {pairs}。本枠は y={year} を選定済。"
+                            "異なるテーマ・出典で出題すること。\n")
+
+    system = f"""あなたは日本の大学入試「国語」(古文・漢文・現代文) の作問に精通した専門家です。
+**{univ_name} {year}年度** の **{part_label}** に準拠した良質な類題を1セット新規作成してください (過去問丸写しは著作権上禁止・形式準拠の新作)。
+
+{subject_rules}
+{form_clause}
+
+【🚨 本文と傍線部の絶対整合ルール (今回の致命バグの根本対策・1つでも破ったら不合格)】
+1. passage (本文) は **絶対に非空**。設問が「傍線部」「下線部」を参照する以上、本文が無ければ解答不能。
+2. 各設問の 傍線部「X」/下線部「X」の X は、**passage 本文の中に一字一句 (漢字・仮名・送り仮名・句読点・空白まで) 違わず登場する連続した部分文字列**であること。passage に存在しない語句・言い換えた語句・順序を入れ替えた語句を傍線部として引用してはならない。
+3. 採点システムは passage.indexOf("X") で傍線部を本文中に位置特定する。1文字でも違えば本文に下線が引けず出題が破綻する。
+
+【explanation フォーマット (Markdown・\\n でエスケープして JSON 文字列化)】
+## 現代語訳   〔古文/漢文は本文の現代語訳。漢文は書き下し文も併記〕
+## 解答の根拠 〔正解の根拠を本文から「」で引用して説明〕
+## 誤答 NG 理由 〔multiple_choice の場合・各誤答が NG な理由を1行ずつ〕
+
+- 出力は純粋な JSON のみ (前置き・コードフェンス不要)。"""
+
+    user = f"""**{univ_name} {year}年度** 形式の **{part_key}** ({part_label}) の国語の類題を1セット生成してください。
+{topic_clause}{avoid_clause}
+【出力形式】純粋な JSON のみ:
+{{
+  "passage": "(本文・**必ず非空**。古文=歴史的仮名遣いの本文 / 漢文=白文(返り点付き) / 現代文=現代日本語本文)",
+  "passage_title": "(出典・タイトル 例: 『源氏物語』に擬した擬古文 / 『十八史略』風 等)",
+  "year_simulated": {year},
+  "univ_simulated": "{univ_name}",
+  "questions": [
+    {{
+      "id": "q1",
+      "type": "{'short_answer' if is_kishu else 'multiple_choice'}",
+      "stem": "設問文 (傍線部「X」の X は passage 本文に verbatim で実在する語句のみ)",
+      "choices": {'[]' if is_kishu else '["選択肢1","選択肢2","選択肢3","選択肢4"]'},
+      "answer": "{'模範解答テキスト全文' if is_kishu else '正解選択肢の0始まりindex文字列 (例 「2」)'}",
+      "explanation": "解説 Markdown (## 現代語訳 → ## 解答の根拠 → ## 誤答 NG 理由)"
+    }}
+  ]
+}}
+
+【🔁 出力前 self-check (全て YES でなければ作り直す)】
+✅ passage は非空か?
+✅ 各設問の傍線部「X」を passage 本文から検索して **一字一句一致でヒット**するか? (空白・句読点・漢字順も完全一致)
+{'✅ (漢文) 傍線部は白文の語句か? 書き下し文や順序入替・句読点挿入をしていないか?' if part_key == 'kanbun' else '✅ 傍線部は本文の語句を言い換え・要約せずそのまま引用しているか?'}
+✅ {'記述: answer は模範解答全文か?' if is_kishu else 'multiple_choice: choices は4要素・answer は 「0」〜「3」 の index 文字列か?'}
+1つでも違和感があれば passage と stem を整合させてから出力する。self-check FAIL = 不良問題なので絶対に出力しない。"""
+
+    _ATTEMPTS = 3
+    last_reasons = None
+    for attempt in range(1, _ATTEMPTS + 1):
+        data = None
+        try:
+            data = _call_anthropic_safe(
+                {
+                    "model": EXAM_QUESTIONS_MODEL,
+                    "max_tokens": 12000,
+                    "system": system,
+                    "messages": [{"role": "user", "content": user}],
+                },
+                kind=f"examq_kokugo_{part_key}",
+            )
+            text = data["content"][0]["text"].strip()
+            if text.startswith("```"):
+                text = text.split("```", 2)[1]
+                if text.startswith("json"):
+                    text = text[4:]
+                text = text.strip().rstrip("`").strip()
+            qd = json.loads(text)
+        except HTTPException as e:
+            log.error(f"[ExamQ:Kokugo] {part_key}/{univ_key} HTTP {e.status_code}: {e.detail}")
+            return None
+        except Exception as e:
+            preview = ""
+            try:
+                preview = (data.get('content', [{}])[0].get('text', '')[:200] if isinstance(data, dict) else "")
+            except Exception:
+                preview = ""
+            log.error(f"[ExamQ:Kokugo] parse failed {part_key}/{univ_key} attempt {attempt}: {type(e).__name__}: {e} (preview={preview!r})")
+            continue
+        ok, reasons = _validate_kokugo_question(qd, part_key)
+        if ok:
+            if attempt > 1:
+                log.info(f"[ExamQ:Kokugo] {part_key}/{univ_key} OK on attempt {attempt}")
+            return qd
+        last_reasons = reasons
+        log.warning(f"[ExamQ:Kokugo] {part_key}/{univ_key} validation FAIL attempt {attempt}: {reasons[:4]}")
+    log.error(f"[ExamQ:Kokugo] {part_key}/{univ_key} exhausted {_ATTEMPTS} attempts; skipping (last={last_reasons})")
+    return None
+
+
 def _generate_exam_question(
     exam_id: str,
     part_key: str,
@@ -11566,6 +11821,10 @@ def _generate_exam_question(
     # ===== 大学入試: 大学×年度×大問の高解像度プロンプト =====
     if exam_id == "daigaku":
         import random
+        # 📜 [kokugo-passage-fix] 国語 (古文/漢文/現代文) は本文必須・傍線部 verbatim 保証のため専用生成器へ委譲。
+        # 英語専用プロンプトに相乗りすると passage 空・傍線部不一致の不良大問が量産される (2026-06-15 致命バグ)。
+        if part_key in DAIGAKU_KOKUGO_PARTS:
+            return _generate_kokugo_exam_question(part_key, eiken_grade, exclude_combinations, topic_hint)
         univ_key = eiken_grade or "todai"
         univ_info = DAIGAKU_UNIV_STYLES.get(univ_key, {"name": univ_key, "style": "汎用大学入試型"})
         univ_name = univ_info["name"]
@@ -20858,6 +21117,25 @@ def public_exam_questions_bank(
         filtered = [it for it in items if _matches_topic(it)]
         if filtered:
             items = filtered
+
+    # 📜 [kokugo-passage-fix 2026-06-15] 国語 (古文/漢文/現代文) は本文欠落・傍線部不一致の不良大問を
+    #    consumer (ドリル/試験対策スタジオ/quick-start) に絶対に出さない (出題不能/解答不能の防止)。
+    #    既存プールの破損データは repair_kokugo_questions.py で再生成するまでの繋ぎとして配信側でも遮断。
+    #    検証は _validate_kokugo_question (markUnderlines と同一規約)。全滅時のみ従来通り (急なプール枯渇の安全弁)。
+    if exam == "daigaku" and part in DAIGAKU_KOKUGO_PARTS and items:
+        # strict=False: 「本文が無い/語句自体が本文に無い」= 解答不能の大問だけ遮断する。
+        # 装飾括弧・句読点だけの差異 (下線は引けないが本文を読めば解答可能) は配信して構わない。
+        valid_items = [it for it in items if _validate_kokugo_question(it, part, strict=False)[0]]
+        if valid_items:
+            if len(valid_items) < len(items):
+                log.info(f"[ExamQ:Kokugo] bank filtered {len(items) - len(valid_items)} unanswerable {part} item(s) "
+                         f"(exam={exam} grade={eiken_grade}); {len(valid_items)} servable remain")
+            items = valid_items
+        else:
+            # プールが全滅 (全件 解答不能)。枯渇を避けるため従来通り配信するが、生徒に不良が届くので警告。
+            # repair_kokugo_questions.py での再生成が急務。on-demand refill も別途 trigger される想定。
+            log.warning(f"[ExamQ:Kokugo] ALL {len(items)} {part} item(s) unanswerable "
+                        f"(exam={exam} grade={eiken_grade}); serving unfiltered — repair pool ASAP")
 
     # 直近 7 日除外 (相対的多様性): student_id があれば過去出題と同じ (univ, year) を後回しに
     exclude_combinations = _get_recent_exam_combinations(student_id, days=7) if student_id else []
