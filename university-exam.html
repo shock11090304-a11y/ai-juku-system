@@ -586,12 +586,19 @@
 
       function renderDetail(p) {
         const detail = document.getElementById('uxDetail');
-        const isMC = p.problem_type === 'multiple_choice';
+        // 🛡️ 2026-06-15 fix: choices を正規化し、非空 choices があれば 4択 として扱う。
+        //   従来は problem_type==='multiple_choice' 厳密一致が条件で、problem_type 欠落/表記ゆれ時に
+        //   選択肢が描画されなかった (塾長報告「選択肢が出ない」)。
+        //   明示的に記述式 (free_response / short_answer) でない限り、choices があれば選択肢表示。
+        const choices = normChoices(p.choices);
+        const isMC = choices.length > 0 && p.problem_type !== 'free_response' && p.problem_type !== 'short_answer';
+        // 正解 index を堅牢に解決 (0始まりindex/英字/丸数字/テキスト いずれの answer 形式も許容)
+        const correctIdx = resolveAnswerIndex(p.answer, choices);
         let choicesHtml = '';
-        if (isMC && Array.isArray(p.choices)) {
+        if (isMC) {
           choicesHtml = `
             <div class="ux-choices-block" id="uxChoices">
-              ${p.choices.map((c, i) => `
+              ${choices.map((c, i) => `
                 <div class="ux-choice-row" data-key="${String.fromCharCode(65+i)}" data-idx="${i}">
                   <div class="ux-choice-key">${String.fromCharCode(65+i)}.</div>
                   <div>${formatScientific(c)}</div>
@@ -675,7 +682,9 @@
         const answerExplanationHtml = hasMainPdf ? '' : `
             <div class="ux-answer-block" id="uxAnswerBlock">
               <div class="ux-answer-label">📝 解答</div>
-              <div class="ux-answer-text">${formatScientific(p.answer)}</div>
+              <div class="ux-answer-text">${(isMC && correctIdx >= 0)
+                ? String.fromCharCode(65 + correctIdx) + '. ' + formatScientific(choices[correctIdx])
+                : formatScientific(p.answer)}</div>
             </div>
             <div class="ux-explanation-block" id="uxExplanationBlock">
               <div class="ux-explanation-label">💡 解説</div>
@@ -701,16 +710,18 @@
         `;
 
         // MC: クリックで自動採点
-        if (isMC && Array.isArray(p.choices)) {
+        if (isMC) {
           document.querySelectorAll('#uxChoices .ux-choice-row').forEach(row => {
             row.addEventListener('click', () => {
-              const userKey = row.dataset.key;
-              const correctKey = String(p.answer).trim().toUpperCase().slice(0,1);
+              // 🛡️ 2026-06-15 fix: 正解判定を index 基準に統一 (data-idx と correctIdx を比較)。
+              //   従来は answer 先頭1文字を A/B/C/D と照合していたため answer="0"(index形式) で全問誤判定。
+              const userIdx = parseInt(row.dataset.idx, 10);
               document.querySelectorAll('#uxChoices .ux-choice-row').forEach(r => {
                 r.classList.add('disabled');
                 r.style.cursor = 'default';
-                if (r.dataset.key === correctKey) r.classList.add('correct');
-                else if (r.dataset.key === userKey) r.classList.add('wrong');
+                const ri = parseInt(r.dataset.idx, 10);
+                if (correctIdx >= 0 && ri === correctIdx) r.classList.add('correct');
+                else if (ri === userIdx) r.classList.add('wrong');
               });
               // 🛡️ 2026-05-27 PDF 紐付き問題では AnswerBlock 不在 → null guard 必須
               const ab = document.getElementById('uxAnswerBlock');
@@ -1143,6 +1154,54 @@
             });
           }
         }
+      }
+
+      // 🛡️ 2026-06-15 fix (塾長報告「解答が違う/選択肢が出ない」根治):
+      //   choices を配列に正規化。サーバ側で json.loads 済だが、文字列で来た場合も救済する。
+      function normChoices(raw) {
+        if (Array.isArray(raw)) return raw;
+        if (typeof raw === 'string' && raw.trim()) {
+          try { const a = JSON.parse(raw); return Array.isArray(a) ? a : []; }
+          catch (e) { return []; }
+        }
+        return [];
+      }
+
+      // 🛡️ 2026-06-15 fix: 解答表記 → 0始まり choices index を堅牢に解決。
+      //   data の answer は「0始まりindex(int/数字文字列)」が標準だが、英字(A始まり)・
+      //   丸数字(①②③)・選択肢テキスト全文 のいずれもありうる (生成プロンプト仕様)。
+      //   従来は String(answer).slice(0,1) を A/B/C/D と照合していたため answer="0" 等で
+      //   正解が永久に一致せず誤判定 → server 側 generate_studio_pdfs.py の resolve_idx と同一規則に統一。
+      //   解決不能なら -1 を返す。
+      function resolveAnswerIndex(raw, choices) {
+        if (raw == null || !Array.isArray(choices) || choices.length === 0) return -1;
+        if (typeof raw === 'boolean') return -1;
+        if (typeof raw === 'number' && Number.isInteger(raw)) {
+          return (raw >= 0 && raw < choices.length) ? raw : -1;
+        }
+        const s = String(raw).trim();
+        if (!s) return -1;
+        const CIRC = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫';
+        const ci = CIRC.indexOf(s);
+        if (ci >= 0) return ci < choices.length ? ci : -1;
+        if (/^\d+$/.test(s)) {                                    // 数字文字列 = 0始まり index
+          const i = parseInt(s, 10);
+          return (i >= 0 && i < choices.length) ? i : -1;
+        }
+        const m = s.match(/^[(（]?\s*([A-Ha-hＡ-Ｈ])\s*[).．）]?$/); // 英字 = A始まり 0
+        if (m) {
+          const ch = m[1];
+          const full = 'ＡＢＣＤＥＦＧＨ'.indexOf(ch);
+          const i = full >= 0 ? full : (ch.toUpperCase().charCodeAt(0) - 65);
+          return (i >= 0 && i < choices.length) ? i : -1;
+        }
+        const nrm = x => String(x).replace(/\s+/g, '');           // テキスト一致 (ラベル除去後も)
+        const ns = nrm(s);
+        for (let i = 0; i < choices.length; i++) {
+          const cb = String(choices[i]).replace(/^\s*[(（]?[A-Ha-h]\s*[.):：）．]\s*/, '');
+          if (nrm(choices[i]) === ns || nrm(cb) === ns) return i;
+        }
+        return -1;
       }
 
       function escapeHtml(s) {
