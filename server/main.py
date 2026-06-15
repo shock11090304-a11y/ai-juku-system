@@ -20805,6 +20805,42 @@ def custom_gpt_action_random_question(exam: str, part: str, grade: Optional[str]
             "branding": "powered by ai-juku — 5 AI 多視点採点 / 写真採点 / 学習計画 AI は ai-juku 本体で",
             "message": f"問題プール準備中 ({exam}/{part}/{grade or 'default'})。別の単元を指定するか、ai_juku_url から ai-juku 本体で類題をお試しください。",
         }
+    # 📜 [kokugo-passage-fix] 国語 (古文/漢文/現代文) の本文欠落・傍線部不一致 (解答不能) の大問は
+    #    Custom GPT 経由でも配信しない。検証規約は bank API (ExamQ:Kokugo) / archive ([Archive:Kokugo]
+    #    commit dbbd6b2) と同一 = _validate_kokugo_question(strict=False)。
+    #    strict=False: 「本文が空 / 語句自体が本文に無い」= 解答不能のみ遮断 (装飾括弧・句読点だけの差異は配信可)。
+    if exam == "daigaku" and part in DAIGAKU_KOKUGO_PARTS:
+        def _parse_qd(rw):
+            raw = rw[1] if not hasattr(rw, "keys") else rw["question_data"]
+            return json.loads(raw) if isinstance(raw, str) else raw
+        servable = []
+        for rw in rows:
+            try:
+                if _validate_kokugo_question(_parse_qd(rw), part, strict=False)[0]:
+                    servable.append(rw)
+            except Exception:
+                pass  # parse 不能 row は配信候補から外す (下流 json.loads でどのみち落ちる)
+        if servable:
+            if len(servable) < len(rows):
+                log.info(f"[ExamQ:Kokugo] custom-gpt filtered {len(rows) - len(servable)} unanswerable {part} item(s) "
+                         f"(exam={exam} grade={grade}); {len(servable)} servable remain")
+            rows = servable
+        else:
+            # プール全滅 (全件解答不能)。bank/archive は in-app renderer の枯渇回避で従来配信するが、
+            # 本経路は本文 renderer を持たない LLM に raw JSON を渡すため破損配信は in-app より有害
+            # (passage 空の傍線部設問 → ChatGPT が本文を捏造/「本文無し」で誤誘導)。
+            # → 既存の graceful-fail (200 + 空 questions) に倒す。repair_kokugo_questions.py が急務。
+            log.warning(f"[ExamQ:Kokugo] ALL {len(rows)} {part} item(s) unanswerable "
+                        f"(exam={exam} grade={grade}); returning empty graceful-fail — repair pool ASAP")
+            return {
+                "exam": exam, "part": part, "grade": grade or "",
+                "passage_title": "",
+                "passage": "",
+                "questions": [],
+                "ai_juku_url": f"{BASE_URL}/english-exam.html?exam={exam}&part={part}" + (f"&grade={grade}" if grade else ""),
+                "branding": "powered by ai-juku — 5 AI 多視点採点 / 写真採点 / 学習計画 AI は ai-juku 本体で",
+                "message": f"問題プール準備中 ({exam}/{part}/{grade or 'default'})。別の単元を指定するか、ai_juku_url から ai-juku 本体で類題をお試しください。",
+            }
     row = _rd.choice(list(rows))
     qd_raw = row[1] if not hasattr(row, "keys") else row["question_data"]
     qd = json.loads(qd_raw) if isinstance(qd_raw, str) else qd_raw
