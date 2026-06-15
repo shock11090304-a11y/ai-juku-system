@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
+  <title>⏱ 隙間時間ドリル | 入試問題道場</title>
+  <script src="cache-purge.js?v=20260615-dojo-drill"></script>
+  <script src="frontend-error-monitor.js?v=20260615-dojo-drill"></script>
+  <style>
+    body { background: linear-gradient(135deg, #0f0f1e, #1a1a2e); color: #e4e4e7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; margin: 0; }
+    a { color: #93c5fd; }
+    .nav { display:flex; align-items:center; justify-content:space-between; padding:1rem 1.5rem; background:rgba(0,0,0,0.4); border-bottom:1px solid rgba(255,255,255,0.08); }
+    .nav-title { font-size:1.05rem; font-weight:800; background:linear-gradient(135deg,#34d399,#10b981); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .nav-links a { padding:0.45rem 0.9rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#e4e4e7; text-decoration:none; font-size:0.82rem; font-weight:700; margin-left:0.4rem; }
+    .wrap { max-width: 860px; margin: 1.4rem auto; padding: 0 1rem 4rem; }
+    .hero { text-align:center; margin:1.2rem 0 1.6rem; padding:1.4rem 1rem; background:linear-gradient(135deg,rgba(16,185,129,0.10),rgba(59,130,246,0.06)); border:1px solid rgba(16,185,129,0.30); border-radius:14px; }
+    .hero h1 { font-size:1.7rem; margin:0 0 0.4rem; background:linear-gradient(135deg,#34d399,#10b981); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .hero p { color:#cbd5e1; margin:0.2rem 0; font-size:0.92rem; line-height:1.6; }
+
+    .subj-h { margin:1.3rem 0 0.5rem; font-size:0.95rem; color:#fcd34d; font-weight:800; }
+    .preset-grid { display:grid; grid-template-columns:1fr; gap:0.7rem; }
+    @media (min-width:600px){ .preset-grid { grid-template-columns:1fr 1fr; } }
+    .preset { display:flex; align-items:center; justify-content:space-between; gap:0.6rem; padding:0.85rem 1rem; background:rgba(0,0,0,0.30); border:1.5px solid rgba(255,255,255,0.10); border-radius:10px; cursor:pointer; transition:all .15s; text-align:left; color:#e4e4e7; }
+    .preset:hover { border-color:rgba(16,185,129,0.5); transform:translateY(-2px); }
+    .preset-name { font-weight:700; font-size:0.95rem; }
+    .preset-sub { font-size:0.74rem; color:#a1a1aa; margin-top:0.15rem; }
+    .preset-min { flex-shrink:0; padding:0.25rem 0.6rem; background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.4); color:#86efac; border-radius:999px; font-size:0.78rem; font-weight:800; }
+
+    .timer-bar { position:sticky; top:0; z-index:10; display:flex; align-items:center; justify-content:space-between; padding:0.7rem 1rem; background:rgba(10,10,25,0.95); border:1px solid rgba(16,185,129,0.35); border-radius:10px; margin-bottom:1rem; backdrop-filter:blur(6px); }
+    .timer { font-size:1.4rem; font-weight:800; font-variant-numeric:tabular-nums; color:#86efac; }
+    .timer.warn { color:#fbbf24; } .timer.danger { color:#fca5a5; }
+
+    .passage { white-space:pre-wrap; line-height:1.85; font-size:0.95rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.10); border-radius:10px; padding:1rem 1.1rem; margin-bottom:1rem; }
+    .q-block { background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.10); border-radius:10px; padding:1rem 1.1rem; margin-bottom:0.9rem; }
+    .q-stem { font-weight:600; line-height:1.7; margin-bottom:0.6rem; }
+    .choice { display:flex; gap:0.6rem; align-items:flex-start; padding:0.55rem 0.7rem; border:1px solid rgba(255,255,255,0.12); border-radius:8px; margin:0.35rem 0; cursor:pointer; line-height:1.6; }
+    .choice:hover { background:rgba(99,102,241,0.10); }
+    .choice.sel { border-color:#6366f1; background:rgba(99,102,241,0.18); }
+    .choice.correct { border-color:#10b981; background:rgba(16,185,129,0.18); }
+    .choice.wrong { border-color:#ef4444; background:rgba(239,68,68,0.16); }
+    .choice-key { font-weight:800; color:#c7d2fe; flex-shrink:0; }
+    .q-free textarea { width:100%; box-sizing:border-box; min-height:64px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#e4e4e7; padding:0.5rem; font-size:0.9rem; }
+    .selfmark { margin-top:0.5rem; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; }
+    .selfmark button { padding:0.3rem 0.7rem; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.06); color:#e4e4e7; cursor:pointer; font-weight:700; }
+    .selfmark button.on-correct { background:rgba(16,185,129,0.25); border-color:#10b981; color:#86efac; }
+    .selfmark button.on-wrong { background:rgba(239,68,68,0.22); border-color:#ef4444; color:#fca5a5; }
+    .reason { margin-top:0.5rem; display:none; }
+    .reason.show { display:block; }
+    .reason select { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.2); color:#e4e4e7; border-radius:6px; padding:0.3rem 0.5rem; font-size:0.82rem; }
+    .expl { margin-top:0.6rem; padding:0.6rem 0.8rem; background:rgba(59,130,246,0.10); border:1px solid rgba(59,130,246,0.3); border-radius:8px; font-size:0.86rem; line-height:1.7; display:none; }
+    .expl.show { display:block; }
+    .expl-ans { color:#86efac; font-weight:700; }
+
+    .btn { display:inline-block; padding:0.6rem 1.1rem; border:none; border-radius:8px; font-weight:800; font-size:0.92rem; cursor:pointer; }
+    .btn-primary { background:linear-gradient(135deg,#10b981,#059669); color:#fff; }
+    .btn-ghost { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.18); color:#e4e4e7; }
+    .actions { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.8rem; }
+    .result-card { padding:1.1rem 1.2rem; background:rgba(0,0,0,0.3); border:1px solid rgba(16,185,129,0.3); border-radius:12px; }
+    .result-score { font-size:1.3rem; font-weight:800; }
+    .weak-box { margin-top:0.8rem; padding:0.7rem 0.9rem; background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.35); border-radius:8px; }
+    .muted { color:#a1a1aa; font-size:0.8rem; }
+    .loading { text-align:center; color:#a1a1aa; padding:2rem; }
+    sub,sup { font-size:0.72em; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-title">⏱ 隙間時間ドリル</div>
+    <div class="nav-links">
+      <a href="nyushi-dojo.html">道場トップ</a>
+      <a href="mypage.html">マイページ</a>
+    </div>
+  </nav>
+
+  <main class="wrap">
+    <section class="hero">
+      <h1>⏱ 隙間時間ドリル</h1>
+      <p>共通テストの<strong>大問1個</strong>を <strong>10〜15分</strong>で。スキマ時間に1セット解いて、弱点を即チェック。</p>
+      <p class="muted">解答すると小問ごとの正誤・つまずき理由が記録され、マイページの「🎯 弱点 TOP3」に反映されます。</p>
+    </section>
+
+    <div id="presetView"></div>
+    <div id="drillView" style="display:none;"></div>
+    <div id="resultView" style="display:none;"></div>
+  </main>
+
+  <script src="auth-guard.js?v=20260615-dojo-drill"></script>
+  <script>
+  (function () {
+    const BACKEND_URL = (window.location.hostname === 'localhost' && window.location.port === '8090')
+      ? 'http://localhost:8000'
+      : window.location.origin;
+
+    // ───────── presets (有効な exam/part/eiken_grade の組合せのみ) ─────────
+    const PRESETS = [
+      { subject: '英語', name: '共通テスト 英語R 第1問（短文・対話）', exam: 'daigaku', part: 'r_short', grade: 'kyotsu', min: 10, topic: '共通テスト英語 短文・対話' },
+      { subject: '英語', name: '共通テスト 英語R 長文読解', exam: 'daigaku', part: 'r_long', grade: 'kyotsu', min: 15, topic: '共通テスト英語 長文読解' },
+      { subject: '国語', name: '共通テスト 現代文（評論・小説）', exam: 'daigaku', part: 'gendai', grade: 'kyotsu', min: 15, topic: '共通テスト国語 現代文' },
+      { subject: '国語', name: '共通テスト 古文', exam: 'daigaku', part: 'kobun', grade: 'kyotsu', min: 12, topic: '共通テスト国語 古文' },
+      { subject: '数学', name: '共通テスト 数学IA', exam: 'rikei', part: 'math_1a', grade: 'kyotsu_rikei', min: 15, topic: '共通テスト数学IA' },
+      { subject: '数学', name: '共通テスト 数学IIB', exam: 'rikei', part: 'math_2b', grade: 'kyotsu_rikei', min: 15, topic: '共通テスト数学IIB' },
+      { subject: '理科', name: '共通テスト 化学基礎', exam: 'rikei', part: 'chem_basic', grade: 'kyotsu_rikei', min: 12, topic: '共通テスト化学基礎' },
+      { subject: '理科', name: '共通テスト 物理基礎', exam: 'rikei', part: 'phys_basic', grade: 'kyotsu_rikei', min: 12, topic: '共通テスト物理基礎' },
+      { subject: '理科', name: '共通テスト 生物基礎', exam: 'rikei', part: 'bio_basic', grade: 'kyotsu_rikei', min: 12, topic: '共通テスト生物基礎' },
+      { subject: '社会', name: '共通テスト 日本史', exam: 'daigaku', part: 'nihonshi', grade: 'kyotsu', min: 12, topic: '共通テスト日本史' },
+      { subject: '社会', name: '共通テスト 世界史', exam: 'daigaku', part: 'sekaishi', grade: 'kyotsu', min: 12, topic: '共通テスト世界史' },
+      { subject: '社会', name: '共通テスト 地理', exam: 'daigaku', part: 'chiri', grade: 'kyotsu', min: 12, topic: '共通テスト地理' },
+    ];
+    const REASONS = [
+      { v: '', t: '理由を選択…' },
+      { v: 'understanding', t: '理解不足（知識・解法が分からなかった）' },
+      { v: 'careless', t: 'ケアレスミス（分かってたのに）' },
+      { v: 'time', t: '時間切れ（手が回らなかった）' },
+      { v: 'misread', t: '読み違い（問題・本文の取り違え）' },
+      { v: 'other', t: 'その他' },
+    ];
+
+    // ───────── helpers (university-exam.html と同一の堅牢な解決ロジック) ─────────
+    function escapeHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+    }
+    function normChoices(raw) {
+      if (Array.isArray(raw)) return raw;
+      if (typeof raw === 'string' && raw.trim()) { try { const a = JSON.parse(raw); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+      return [];
+    }
+    // 解答表記 → 0始まり index (数字/英字/丸数字/テキスト一致)。解決不能なら -1。
+    function resolveAnswerIndex(raw, choices) {
+      if (raw == null || !Array.isArray(choices) || choices.length === 0) return -1;
+      if (typeof raw === 'boolean') return -1;
+      if (typeof raw === 'number' && Number.isInteger(raw)) return (raw >= 0 && raw < choices.length) ? raw : -1;
+      const s = String(raw).trim(); if (!s) return -1;
+      const CIRC = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫'; const ci = CIRC.indexOf(s);
+      if (ci >= 0) return ci < choices.length ? ci : -1;
+      if (/^\d+$/.test(s)) { const i = parseInt(s, 10); return (i >= 0 && i < choices.length) ? i : -1; }
+      const m = s.match(/^[(（]?\s*([A-Ha-hＡ-Ｈ])\s*[).．）]?$/);
+      if (m) { const ch = m[1]; const full = 'ＡＢＣＤＥＦＧＨ'.indexOf(ch); const i = full >= 0 ? full : (ch.toUpperCase().charCodeAt(0) - 65); return (i >= 0 && i < choices.length) ? i : -1; }
+      const nrm = x => String(x).replace(/\s+/g, ''); const ns = nrm(s);
+      for (let i = 0; i < choices.length; i++) {
+        const cb = String(choices[i]).replace(/^\s*[(（]?[A-Ha-h]\s*[.):：）．]\s*/, '');
+        if (nrm(choices[i]) === ns || nrm(cb) === ns) return i;
+      }
+      return -1;
+    }
+    function formatScientific(s) {
+      let html = escapeHtml(s);
+      html = html.replace(/([A-Z][a-z]?)_(\d+)/g, '$1<sub>$2</sub>');
+      html = html.replace(/\b([a-z])_(\d+)\b/g, '$1<sub>$2</sub>');
+      html = html.replace(/\^\(([^)]+)\)/g, '<sup>$1</sup>');
+      html = html.replace(/\^(\d+[-+]?)/g, '<sup>$1</sup>');
+      html = html.replace(/\n/g, '<br>');
+      return html;
+    }
+    const token = () => localStorage.getItem('ai_juku_session_token') || '';
+
+    // ───────── state ─────────
+    let cur = null;       // {preset, daimon(question_data), startedAt}
+    let timerId = null, remainSec = 0;
+
+    // ───────── preset view ─────────
+    function renderPresets() {
+      const subjects = [...new Set(PRESETS.map(p => p.subject))];
+      let html = '';
+      subjects.forEach(sub => {
+        html += `<div class="subj-h">${escapeHtml(sub)}</div><div class="preset-grid">`;
+        PRESETS.filter(p => p.subject === sub).forEach((p, i) => {
+          const idx = PRESETS.indexOf(p);
+          html += `<button class="preset" data-idx="${idx}">
+            <span><span class="preset-name">${escapeHtml(p.name.replace('共通テスト ', ''))}</span><span class="preset-sub">${escapeHtml(p.topic)}</span></span>
+            <span class="preset-min">${p.min}分</span>
+          </button>`;
+        });
+        html += `</div>`;
+      });
+      const v = document.getElementById('presetView');
+      v.innerHTML = html;
+      v.querySelectorAll('.preset').forEach(b => b.addEventListener('click', () => startDrill(PRESETS[parseInt(b.dataset.idx, 10)])));
+    }
+
+    async function startDrill(preset) {
+      document.getElementById('presetView').style.display = 'none';
+      const dv = document.getElementById('drillView');
+      dv.style.display = '';
+      dv.innerHTML = '<div class="loading">問題を読み込み中…</div>';
+      try {
+        const r = await fetch(`${BACKEND_URL}/api/exam-questions/bank?exam=${encodeURIComponent(preset.exam)}&part=${encodeURIComponent(preset.part)}&eiken_grade=${encodeURIComponent(preset.grade)}&limit=1`);
+        const d = await r.json();
+        const daimon = d && d.selected;
+        const qs = daimon && Array.isArray(daimon.questions) ? daimon.questions.filter(q => q && q.stem) : [];
+        if (!daimon || qs.length === 0) {
+          dv.innerHTML = `<div class="loading">この大問はまだ準備中です。<br><button class="btn btn-ghost" id="back">← 別の大問を選ぶ</button></div>`;
+          document.getElementById('back').addEventListener('click', backToPresets);
+          return;
+        }
+        cur = { preset, daimon, qs, startedAt: Date.now() };
+        renderDrill();
+      } catch (e) {
+        dv.innerHTML = `<div class="loading">読込エラー: ${escapeHtml(e.message)}<br><button class="btn btn-ghost" id="back">← 戻る</button></div>`;
+        document.getElementById('back').addEventListener('click', backToPresets);
+      }
+    }
+
+    function renderDrill() {
+      const { preset, daimon, qs } = cur;
+      const passage = daimon.passage || daimon.audio_script || daimon.prompt || '';
+      let body = `<div class="timer-bar"><div><strong>${escapeHtml(preset.name)}</strong> <span class="muted">/ 全${qs.length}問</span></div><div class="timer" id="timer">--:--</div></div>`;
+      if (passage) {
+        const label = daimon.audio_script ? '【放送内容（読んで解答）】\n' : '';
+        body += `<div class="passage">${formatScientific(label + passage)}</div>`;
+      }
+      qs.forEach((q, qi) => {
+        const choices = normChoices(q.choices);
+        const isMC = choices.length > 0;
+        body += `<div class="q-block" data-qi="${qi}">
+          <div class="q-stem">問${qi + 1}. ${formatScientific(q.stem)}</div>`;
+        if (isMC) {
+          body += `<div class="choices">` + choices.map((c, ci) =>
+            `<div class="choice" data-qi="${qi}" data-ci="${ci}"><span class="choice-key">${String.fromCharCode(65 + ci)}.</span><span>${formatScientific(c)}</span></div>`
+          ).join('') + `</div>`;
+        } else {
+          body += `<div class="q-free"><textarea placeholder="解答を入力（記述・自己採点）" data-qi="${qi}"></textarea></div>`;
+        }
+        body += `<div class="selfmark" data-qi="${qi}" style="display:none;"></div>
+          <div class="reason" data-qi="${qi}"></div>
+          <div class="expl" data-qi="${qi}"></div>
+        </div>`;
+      });
+      body += `<div class="actions"><button class="btn btn-primary" id="gradeBtn">📝 採点する</button><button class="btn btn-ghost" id="quitBtn">← やめて戻る</button></div>`;
+      const dv = document.getElementById('drillView');
+      dv.innerHTML = body;
+
+      // choice select
+      dv.querySelectorAll('.choice').forEach(el => el.addEventListener('click', () => {
+        const qi = el.dataset.qi;
+        dv.querySelectorAll(`.choice[data-qi="${qi}"]`).forEach(c => c.classList.remove('sel'));
+        el.classList.add('sel');
+      }));
+      document.getElementById('gradeBtn').addEventListener('click', () => grade(false));
+      document.getElementById('quitBtn').addEventListener('click', () => { stopTimer(); backToPresets(); });
+      startTimer(preset.min * 60);
+    }
+
+    function startTimer(sec) {
+      remainSec = sec;
+      const el = document.getElementById('timer');
+      const tick = () => {
+        const m = Math.floor(remainSec / 60), s = remainSec % 60;
+        el.textContent = `${m}:${String(s).padStart(2, '0')}`;
+        el.classList.toggle('warn', remainSec <= 120 && remainSec > 30);
+        el.classList.toggle('danger', remainSec <= 30);
+        if (remainSec <= 0) { stopTimer(); grade(true); return; }
+        remainSec--;
+      };
+      tick();
+      timerId = setInterval(tick, 1000);
+    }
+    function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
+
+    function grade(timeUp) {
+      stopTimer();
+      const dv = document.getElementById('drillView');
+      const { qs, preset } = cur;
+      cur.results = [];
+      qs.forEach((q, qi) => {
+        const choices = normChoices(q.choices);
+        const isMC = choices.length > 0;
+        const block = dv.querySelector(`.q-block[data-qi="${qi}"]`);
+        const exEl = block.querySelector(`.expl[data-qi="${qi}"]`);
+        const smEl = block.querySelector(`.selfmark[data-qi="${qi}"]`);
+        const reasonEl = block.querySelector(`.reason[data-qi="${qi}"]`);
+        let isCorrect = null, autoGraded = false, correctIdx = -1;
+        if (isMC) {
+          correctIdx = resolveAnswerIndex(q.answer, choices);
+          const selEl = block.querySelector(`.choice[data-qi="${qi}"].sel`);
+          const userIdx = selEl ? parseInt(selEl.dataset.ci, 10) : -1;
+          block.querySelectorAll(`.choice[data-qi="${qi}"]`).forEach(c => {
+            const ci = parseInt(c.dataset.ci, 10); c.style.cursor = 'default';
+            if (correctIdx >= 0 && ci === correctIdx) c.classList.add('correct');
+            else if (ci === userIdx) c.classList.add('wrong');
+          });
+          if (correctIdx >= 0 && userIdx >= 0) { isCorrect = (userIdx === correctIdx); autoGraded = true; }
+        }
+        // 解説 + 正答表示
+        const ansText = (isMC && correctIdx >= 0) ? `${String.fromCharCode(65 + correctIdx)}. ${formatScientific(choices[correctIdx])}` : formatScientific(String(q.answer == null ? '' : q.answer));
+        exEl.innerHTML = `<div class="expl-ans">正解: ${ansText}</div>${q.explanation ? `<div style="margin-top:0.3rem;">${formatScientific(q.explanation)}</div>` : ''}`;
+        exEl.classList.add('show');
+        // 自己採点 (自動採点できない記述/未選択) → ○×ボタン
+        if (!autoGraded) {
+          smEl.style.display = 'flex';
+          smEl.innerHTML = `<span class="muted">自己採点:</span><button data-m="correct">⭕ 正解</button><button data-m="wrong">❌ 不正解</button>`;
+          smEl.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+            const mk = btn.dataset.m;
+            cur.results[qi].isCorrect = (mk === 'correct');
+            smEl.querySelectorAll('button').forEach(b => b.classList.remove('on-correct', 'on-wrong'));
+            btn.classList.add(mk === 'correct' ? 'on-correct' : 'on-wrong');
+            toggleReason(qi, mk === 'wrong');
+            updateFinalizeHint();
+          }));
+        }
+        // 理由 select (不正解時に表示)
+        reasonEl.innerHTML = `<span class="muted">つまずき理由:</span> <select data-qi="${qi}">${REASONS.map(r => `<option value="${r.v}">${r.t}</option>`).join('')}</select>`;
+        reasonEl.querySelector('select').addEventListener('change', updateFinalizeHint);
+        if (autoGraded && isCorrect === false) reasonEl.classList.add('show');
+
+        cur.results[qi] = { qi, sub_id: q.id || `q${qi + 1}`, isMC, isCorrect, autoGraded, correctIdx };
+      });
+      // 採点後のフッタ: 確定ボタン
+      const act = dv.querySelector('.actions');
+      act.innerHTML = `<button class="btn btn-primary" id="finalizeBtn">✅ 結果を記録して弱点に反映</button><button class="btn btn-ghost" id="quitBtn2">← やめて戻る</button>
+        <div class="muted" id="finalizeHint" style="width:100%; margin-top:0.3rem;"></div>`;
+      document.getElementById('finalizeBtn').addEventListener('click', finalize);
+      document.getElementById('quitBtn2').addEventListener('click', backToPresets);
+      if (timeUp) { const tb = document.querySelector('.timer'); if (tb) { tb.textContent = '時間切れ'; tb.classList.add('danger'); } }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      updateFinalizeHint();
+    }
+
+    function toggleReason(qi, show) {
+      const r = document.querySelector(`.reason[data-qi="${qi}"]`);
+      if (r) r.classList.toggle('show', show);
+    }
+    function getReason(qi) {
+      const sel = document.querySelector(`.reason[data-qi="${qi}"] select`);
+      return sel ? sel.value : '';
+    }
+    function updateFinalizeHint() {
+      // 不正解なのに理由未選択の小問数
+      const pending = cur.results.filter(r => r.isCorrect === false && !getReason(r.qi)).length;
+      const ungraded = cur.results.filter(r => r.isCorrect === null).length;
+      const hint = document.getElementById('finalizeHint');
+      if (!hint) return;
+      if (ungraded > 0) hint.textContent = `※ ${ungraded}問が未採点です（⭕/❌ をタップ）。そのまま記録もできます。`;
+      else if (pending > 0) hint.textContent = `💡 不正解 ${pending}問の「つまずき理由」を選ぶと、弱点分析がより深くなります（任意）。`;
+      else hint.textContent = '記録の準備ができました。';
+    }
+
+    async function finalize() {
+      const { preset, daimon, qs, results, startedAt } = cur;
+      const graded = results.filter(r => r.isCorrect !== null);
+      const correct = graded.filter(r => r.isCorrect).length;
+      const totalElapsedMs = Date.now() - startedAt;
+      const perMs = graded.length ? Math.round(totalElapsedMs / graded.length) : null;
+      // 記録: 小問ごとに 1 attempt (topic 単位で十分なサンプル数を弱点集計に渡す)
+      const tk = token();
+      const subAttempts = results.map(r => ({ sub_id: r.sub_id, is_correct: r.isCorrect === null ? null : (r.isCorrect ? 1 : 0), reason: getReason(r.qi) || null, auto_graded: r.autoGraded }));
+      let recorded = 0;
+      if (tk && graded.length) {
+        const reqs = graded.map(r => fetch(`${BACKEND_URL}/api/question-attempts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tk}` },
+          body: JSON.stringify({
+            source: 'practice',
+            exam_question_id: daimon._question_id || null,
+            exam_id: preset.exam, part_key: preset.part,
+            topic: preset.topic,
+            is_correct: r.isCorrect ? 1 : 0,
+            elapsed_ms: perMs,
+            metadata: {
+              drill: true, drill_preset: preset.name, sub_id: r.sub_id,
+              reason: getReason(r.qi) || null, auto_graded: r.autoGraded,
+              year_simulated: daimon.year_simulated || null
+            }
+          })
+        }).then(res => { if (res && res.ok) recorded++; }).catch(() => {}));
+        await Promise.all(reqs);
+      }
+      renderResult({ correct, total: graded.length, elapsedMs: totalElapsedMs, recorded, subAttempts });
+    }
+
+    function renderResult({ correct, total, elapsedMs, recorded, subAttempts }) {
+      document.getElementById('drillView').style.display = 'none';
+      const rv = document.getElementById('resultView');
+      rv.style.display = '';
+      const mm = Math.floor(elapsedMs / 60000), ss = Math.floor((elapsedMs % 60000) / 1000);
+      const rate = total ? Math.round((correct / total) * 100) : 0;
+      // 理由集計
+      const reasonCounts = {};
+      subAttempts.forEach(s => { if (s.is_correct === 0 && s.reason) reasonCounts[s.reason] = (reasonCounts[s.reason] || 0) + 1; });
+      const reasonLabel = { understanding: '理解不足', careless: 'ケアレスミス', time: '時間切れ', misread: '読み違い', other: 'その他' };
+      const reasonHtml = Object.keys(reasonCounts).length
+        ? `<div class="weak-box"><strong style="color:#d8b4fe;">つまずき傾向:</strong> ${Object.entries(reasonCounts).map(([k, v]) => `${reasonLabel[k] || k} ×${v}`).join(' / ')}</div>` : '';
+      const recNote = recorded > 0
+        ? `<div class="muted" style="margin-top:0.6rem;">✅ ${recorded}問分を記録しました。マイページの「🎯 弱点 TOP3」に反映されます（毎朝集計）。</div>`
+        : `<div class="muted" style="margin-top:0.6rem; color:#fca5a5;">⚠️ 結果を保存できませんでした（未ログイン or 通信エラー）。マイページからログインすると弱点分析に反映されます。</div>`;
+      rv.innerHTML = `<div class="result-card">
+        <div class="result-score">${rate >= 80 ? '🎉' : rate >= 50 ? '👍' : '💪'} ${correct} / ${total} 問正解（${rate}%）</div>
+        <div class="muted" style="margin-top:0.3rem;">所要時間: ${mm}分${String(ss).padStart(2, '0')}秒 ${cur.preset ? '／ 目安 ' + cur.preset.min + '分' : ''}</div>
+        ${reasonHtml}
+        ${recNote}
+        <div class="actions" style="margin-top:1rem;">
+          <button class="btn btn-primary" id="againBtn">⏱ もう1セット</button>
+          <a class="btn btn-ghost" href="mypage.html">弱点をマイページで見る →</a>
+          <a class="btn btn-ghost" href="nyushi-dojo.html">道場トップ</a>
+        </div>
+      </div>`;
+      document.getElementById('againBtn').addEventListener('click', backToPresets);
+    }
+
+    function backToPresets() {
+      stopTimer();
+      cur = null;
+      document.getElementById('drillView').style.display = 'none';
+      document.getElementById('resultView').style.display = 'none';
+      document.getElementById('presetView').style.display = '';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    renderPresets();
+  })();
+  </script>
+</body>
+</html>

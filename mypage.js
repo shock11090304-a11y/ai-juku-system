@@ -4955,10 +4955,28 @@ async function initCoachNextMove(student, ajMode, isPreview) {
       const top = ((w && w.weaknesses) || [])[0];
       if (top && (top.topic || top.subject)) {
         const label = (top.topic || top.subject).toString();
+        // 🎯 [dojo-drill Phase2/2+ 2026-06-15 / review fix] バックエンドが reason・遅さから出し分けた
+        //   recommended_action(label/hint/mode) を title/reason/href すべてで一貫して使う
+        //   (片方だけ上書きすると三者矛盾が出るため・review fix #3)。理由データ無しの既定は
+        //   mode='ai_tutor' なので従来の topic 深リンクが維持される (review fix #4)。
+        const act = top.recommended_action || {};
+        const useDrill = act.mode === 'drill';
+        let reasonMsg = act.hint || '最近のミスから AI が見つけたあなたの弱点です。';
+        if (top.low_confidence) {
+          reasonMsg += '（まだ数問なので、もう少し解くと分析の精度が上がります）';
+        }
+        // 「正答だが遅い単元」は別枠 time_focus で明示 (本命の弱点と別単元なら一言添える・review fix #2)
+        const tf = (w && w.time_focus) || null;
+        if (tf && tf.topic && tf.topic !== (top.topic || '')) {
+          reasonMsg += ' なお「' + tf.topic + '」は正答できていますが解くのが遅めです。時間配分も意識を。';
+        }
+        const moveTitle = act.label
+          ? ('苦手の 1 位「' + label + '」: ' + act.label)
+          : ('苦手の 1 位「' + label + '」を 1 問だけ質問してみよう');
         setMove({
-          title: '苦手の 1 位「' + label + '」を 1 問だけ質問してみよう',
-          reason: '最近のミスから AI が見つけたあなたの弱点です。写真を撮って送るだけで 3 つの AI が解説します。',
-          href: 'ai-tutor-photo.html?subject=' + encodeURIComponent(top.subject || '') + '&topic=' + encodeURIComponent(top.topic || ''),
+          title: moveTitle,
+          reason: reasonMsg + (useDrill ? ' ⏱ 隙間時間ドリルで反復できます。' : ' 写真を撮って送るだけで 3 つの AI が解説します。'),
+          href: useDrill ? 'dojo-drill.html' : ('ai-tutor-photo.html?subject=' + encodeURIComponent(top.subject || '') + '&topic=' + encodeURIComponent(top.topic || '')),
         });
         return;
       }

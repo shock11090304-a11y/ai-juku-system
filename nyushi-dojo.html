@@ -44,7 +44,7 @@
     }
 
     .dojo-modes { display: grid; grid-template-columns: 1fr; gap: 1.2rem; }
-    @media (min-width: 720px) { .dojo-modes { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 720px) { .dojo-modes { grid-template-columns: repeat(2, 1fr); } }
 
     .dojo-mode-card {
       display: flex; flex-direction: column;
@@ -74,6 +74,7 @@
     .dojo-mode-tag.tag-practice { background: rgba(34,197,94,0.2); color: #86efac; border: 1px solid rgba(34,197,94,0.4); }
     .dojo-mode-tag.tag-detail { background: rgba(167,139,250,0.2); color: #c4b5fd; border: 1px solid rgba(167,139,250,0.4); }
     .dojo-mode-tag.tag-mock { background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); }
+    .dojo-mode-tag.tag-drill { background: rgba(16,185,129,0.22); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.45); }
 
     .dojo-mode-cta {
       margin-top: 1rem;
@@ -106,11 +107,24 @@
   <main class="dojo-container">
     <section class="dojo-hero">
       <h1>🏛️ 入試問題 道場</h1>
-      <p class="dojo-hero-sub">単元別演習・大学別深掘り・本番想定模試 — 入試対策のすべてが、ここに。</p>
+      <p class="dojo-hero-sub">隙間時間ドリル・単元別演習・大学別深掘り・本番想定模試 — 入試対策のすべてが、ここに。</p>
       <span class="dojo-hero-count">📊 全 18,000 問+ の演習プール</span>
     </section>
 
     <section class="dojo-modes">
+      <!-- Mode 0: 隙間時間ドリル -->
+      <a href="dojo-drill.html" class="dojo-mode-card">
+        <div class="dojo-mode-icon">⏱</div>
+        <div class="dojo-mode-title">隙間時間ドリル</div>
+        <span class="dojo-mode-count">共通テスト 大問 1 個 / 10-15 分</span>
+        <div class="dojo-mode-desc">
+          通学・休み時間のスキマに <strong>共通テストの大問 1 個</strong>を 10〜15 分で。
+          解くだけで <strong>小問ごとの正誤・つまずき理由</strong>を記録し、弱点を深く分析。
+        </div>
+        <span class="dojo-mode-tag tag-drill">⏱ スキマ時間</span>
+        <div class="dojo-mode-cta">→ 10 分ドリルをはじめる</div>
+      </a>
+
       <!-- Mode 1: 単元別演習 -->
       <a href="english-exam.html" class="dojo-mode-card">
         <div class="dojo-mode-icon">📚</div>
@@ -154,6 +168,7 @@
     <section class="dojo-guidance">
       <h3>💡 使い分けのコツ</h3>
       <ul>
+        <li><strong>スキマ時間</strong>: ⏱ 隙間時間ドリルで共通テスト大問 1 個 (10-15分) → 小問別の弱点を即チェック</li>
         <li><strong>日常学習</strong>: 📚 単元別演習で苦手分野を反復 → AI 単語帳で語彙固め</li>
         <li><strong>志望校対策</strong>: 🎓 大学別 1問深掘りで出題スタイルに慣れる → 詳細解説で論点把握</li>
         <li><strong>月 1-2 回</strong>: 🎯 本番想定 完全模試で偏差値推定・時間配分の練習</li>

@@ -1383,6 +1383,14 @@ def init_db():
         # 私立・地域で入試日が標準アンカー (2/25, 2/1) とズレる生徒向けに、本人/塾長が
         # 実際の本番日を設定できる。設定があれば学年推定より最優先で残り日数に使う。
         ("exam_target_date", "ALTER TABLE students ADD COLUMN exam_target_date DATE DEFAULT NULL"),
+        # 🎯 [dojo-drill 弱点深掘り Phase2] (2026-06-15): 隙間時間ドリル等が記録する小問別の
+        # つまずき理由 (metadata.reason) と所要時間 (elapsed_ms) を弱点集計で活用するため、
+        # student_weakness に「理由内訳 (JSON)」と「平均所要時間 (ms)」を保持する。
+        ("sw_reason_counts", "ALTER TABLE student_weakness ADD COLUMN reason_counts TEXT"),
+        ("sw_avg_elapsed_ms", "ALTER TABLE student_weakness ADD COLUMN avg_elapsed_ms INTEGER"),
+        # question_attempts のみの実測正答率。avg_confidence_score は AIチューターの自己解答自信度(≈1.0)が
+        # 混入するため、「正答だが遅い」判定には混ざらない実測正答率 qa_accuracy を使う (review fix)。
+        ("sw_qa_accuracy", "ALTER TABLE student_weakness ADD COLUMN qa_accuracy REAL"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -4118,7 +4126,9 @@ def _run_weakness_aggregation() -> dict:
     c = conn.cursor()
     try:
         cutoff = datetime.utcnow() - _td(days=30)
-        agg: dict = defaultdict(lambda: {"count": 0, "score_sum": 0.0, "score_n": 0, "last": None})
+        agg: dict = defaultdict(lambda: {"count": 0, "score_sum": 0.0, "score_n": 0, "last": None,
+                                         "reasons": {}, "elapsed_sum": 0.0, "elapsed_n": 0,
+                                         "qa_correct": 0, "qa_graded": 0})
         conf_score_map = {"high": 1.0, "medium": 0.6, "low": 0.2}
         rows_examined = 0
 
@@ -4153,7 +4163,7 @@ def _run_weakness_aggregation() -> dict:
 
         # === 系統 2: 過去 30 日の question_attempts (mock_exam / practice / essay_grade) ===
         c.execute(
-            "SELECT student_id, subject, topic, is_correct, score_got, score_max, created_at "
+            "SELECT student_id, subject, topic, is_correct, score_got, score_max, created_at, metadata, elapsed_ms "
             "FROM question_attempts "
             "WHERE student_id IS NOT NULL AND student_id > 0 "
             "AND subject IS NOT NULL "
@@ -4166,8 +4176,11 @@ def _run_weakness_aggregation() -> dict:
             try:
                 sid = r["student_id"]; subj = r["subject"]; topic = r["topic"]
                 ic = r["is_correct"]; sg = r["score_got"]; sm = r["score_max"]; created = r["created_at"]
+                meta_raw = r["metadata"]; elapsed_raw = r["elapsed_ms"]
             except (TypeError, KeyError, IndexError):
                 sid, subj, topic, ic, sg, sm, created = r[0], r[1], r[2], r[3], r[4], r[5], r[6]
+                meta_raw = r[7] if len(r) > 7 else None
+                elapsed_raw = r[8] if len(r) > 8 else None
             if not sid or not subj:
                 continue
             topic_norm = (topic or "")[:120]
@@ -4182,6 +4195,46 @@ def _run_weakness_aggregation() -> dict:
             if sc is not None:
                 agg[key]["score_sum"] += sc
                 agg[key]["score_n"] += 1
+            # 🎯 Phase2 (+review fix #1): つまずき理由を集計。記録形式が起点で2通りある:
+            #   - 隙間ドリル (dojo-drill): 小問1件=1 attempt・不正解時 metadata.reason
+            #   - 大学別1問深掘り (university-exam): 1大問=1 attempt・metadata.total_reason_counts {reason:count}
+            #   両対応しないと過去問のみ解く生徒で dominant_reason が永遠に None になる。
+            md = None
+            if meta_raw:
+                try:
+                    md = json.loads(meta_raw) if isinstance(meta_raw, str) else (meta_raw if isinstance(meta_raw, dict) else None)
+                except Exception:
+                    md = None
+            if md:
+                trc = md.get("total_reason_counts")
+                if isinstance(trc, dict) and trc:
+                    for rk, rv in trc.items():
+                        try:
+                            n = int(rv)
+                        except (TypeError, ValueError):
+                            continue
+                        if rk and n > 0:
+                            k2 = str(rk)[:40]
+                            agg[key]["reasons"][k2] = agg[key]["reasons"].get(k2, 0) + n
+                elif ic is not None and int(ic) == 0:
+                    rsn = md.get("reason")
+                    if rsn:
+                        rsn = str(rsn)[:40]
+                        agg[key]["reasons"][rsn] = agg[key]["reasons"].get(rsn, 0) + 1
+            # 🎯 review fix #6: question_attempts のみの実測正答率 (AI自信度を混ぜずに slow_but_correct 判定するため)
+            if ic is not None:
+                agg[key]["qa_graded"] += 1
+                if int(ic) == 1:
+                    agg[key]["qa_correct"] += 1
+            # 🎯 Phase2: 所要時間 (elapsed_ms) を集計 (「正答だが遅い単元」検出用)。0〜60分の妥当値のみ。
+            if elapsed_raw is not None:
+                try:
+                    elv = int(elapsed_raw)
+                    if 0 < elv < 3_600_000:
+                        agg[key]["elapsed_sum"] += elv
+                        agg[key]["elapsed_n"] += 1
+                except Exception:
+                    pass
             if created and (agg[key]["last"] is None or str(created) > str(agg[key]["last"])):
                 agg[key]["last"] = created
 
@@ -4195,6 +4248,11 @@ def _run_weakness_aggregation() -> dict:
         inserted = 0; updated = 0
         for (sid, subj, topic), v in agg.items():
             avg_score = (v["score_sum"] / v["score_n"]) if v["score_n"] > 0 else None
+            # 🎯 Phase2: つまずき理由内訳 (JSON) と 平均所要時間 (ms)
+            reasons = v.get("reasons") or {}
+            reason_counts_json = json.dumps(reasons, ensure_ascii=False) if reasons else None
+            avg_elapsed = int(round(v["elapsed_sum"] / v["elapsed_n"])) if v.get("elapsed_n") else None
+            qa_acc = (v["qa_correct"] / v["qa_graded"]) if v.get("qa_graded") else None
             # 既存 check
             c.execute(
                 "SELECT id FROM student_weakness WHERE student_id = ? AND subject = ? AND topic = ?",
@@ -4204,16 +4262,17 @@ def _run_weakness_aggregation() -> dict:
             if existing:
                 c.execute(
                     "UPDATE student_weakness SET question_count = ?, avg_confidence_score = ?, "
+                    "reason_counts = ?, avg_elapsed_ms = ?, qa_accuracy = ?, "
                     "last_seen_at = ?, aggregated_at = CURRENT_TIMESTAMP "
                     "WHERE student_id = ? AND subject = ? AND topic = ?",
-                    (v["count"], avg_score, v["last"], sid, subj, topic),
+                    (v["count"], avg_score, reason_counts_json, avg_elapsed, qa_acc, v["last"], sid, subj, topic),
                 )
                 updated += 1
             else:
                 c.execute(
                     "INSERT INTO student_weakness (student_id, subject, topic, question_count, "
-                    " avg_confidence_score, last_seen_at) VALUES (?, ?, ?, ?, ?, ?)",
-                    (sid, subj, topic, v["count"], avg_score, v["last"]),
+                    " avg_confidence_score, reason_counts, avg_elapsed_ms, qa_accuracy, last_seen_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (sid, subj, topic, v["count"], avg_score, reason_counts_json, avg_elapsed, qa_acc, v["last"]),
                 )
                 inserted += 1
         # ✅ 2026-05-22 P1 fix: 30 日経過の stale row を削除 (古い弱点が worksheet に出続けるのを防ぐ)
@@ -4344,6 +4403,35 @@ def admin_credit_monitor_now(authorization: Optional[str] = Header(None),
         raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {str(e)[:300]}")
 
 
+def _weakness_recommended_action(dominant_reason: Optional[str], slow: bool = False, accurate: bool = False) -> dict:
+    """🎯 [dojo-drill Phase2+ 2026-06-15 / review fix] 弱点の主因(+遅さ)から「次にやるべき対策」を出し分ける。
+    key: speed_training / review_basics / repeat_drill / careful_reading / general。
+    mode: 推奨導線 ('ai_tutor'=写真質問で topic 深リンク / 'drill'=隙間ドリルで反復・速解)。
+    優先順位 (review fix #3): 「正答できているが遅い」は今の課題=時間配分なので、過去の stale な
+    つまずき理由より優先する。理由データが無い既定は ai_tutor (従来の topic 深リンクを維持・review fix #4)。"""
+    if slow and accurate:
+        return {"key": "speed_training", "label": "解くスピードを上げる練習",
+                "hint": "正答できていますが解答が遅めです。時間配分を意識した演習が効きます。", "mode": "drill"}
+    r = (dominant_reason or "").lower()
+    if r == "understanding":
+        return {"key": "review_basics", "label": "まず解説で基礎を固める",
+                "hint": "解き方が曖昧なつまずきが多めです。解説をじっくり読んでから演習しましょう。", "mode": "ai_tutor"}
+    if r == "careless":
+        return {"key": "repeat_drill", "label": "同形式を反復してミスを減らす",
+                "hint": "分かっているのに失点が多めです。同じ形式を数問こなして手を慣らしましょう。", "mode": "drill"}
+    if r == "time":
+        return {"key": "speed_training", "label": "時間を計って速解の練習",
+                "hint": "時間切れでの失点が目立ちます。制限時間を意識した演習が効きます。", "mode": "drill"}
+    if r == "misread":
+        return {"key": "careful_reading", "label": "設問・本文の精読を意識",
+                "hint": "読み違いが多めです。設問の条件に線を引く癖をつけましょう。", "mode": "ai_tutor"}
+    if slow:
+        return {"key": "speed_training", "label": "解くスピードを上げる練習",
+                "hint": "解答に時間がかかっています。制限時間を意識して演習しましょう。", "mode": "drill"}
+    return {"key": "general", "label": "1 問だけ質問してみる",
+            "hint": "最近のミスから AI が見つけたあなたの弱点です。", "mode": "ai_tutor"}
+
+
 @app.get("/api/student/weakness-top3")
 def student_weakness_top3(request: Request, student_id: int, limit: int = 3, recommend_each: int = 3,
                           authorization: Optional[str] = Header(None)):
@@ -4406,19 +4494,37 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
             # (診断は全単元 2 問ずつ = 同数のため、これで間違えた単元が上位に立つ)。
             # ⚠ avg>=0.8 の WHERE 除外は review で取り止め: avg_confidence_score には AIチューターの
             # 「AI 自身の解答自信度」(≈1.0) も混入しており、写真質問由来の弱点を誤って消すため。
-            "SELECT subject, topic, question_count, avg_confidence_score, last_seen_at "
+            "SELECT subject, topic, question_count, avg_confidence_score, last_seen_at, reason_counts, avg_elapsed_ms, qa_accuracy "
             "FROM student_weakness WHERE student_id = ? "
             "ORDER BY question_count DESC, COALESCE(avg_confidence_score, 0.5) ASC, last_seen_at DESC LIMIT ?",
             (student_id, limit),
         )
         rows = c.fetchall()
+        # 🎯 [Phase2+ / review fix #5] 「正答だが遅い単元」判定用に、この生徒の全単元の avg_elapsed_ms から
+        # 自己相対の中央値ベースラインを算出 (科目で絶対時間が違うため絶対閾値でなく自己比較)。
+        # 単元が 3 件未満だと中央値=自分自身付近で比較が成り立たないため slow 判定は保留 (None)。
+        # 偶数件は真の中央値 (中央2値の平均) を使う。
+        try:
+            c.execute("SELECT avg_elapsed_ms FROM student_weakness WHERE student_id = ? AND avg_elapsed_ms IS NOT NULL AND avg_elapsed_ms > 0", (student_id,))
+            _el = sorted(int(x["avg_elapsed_ms"] if hasattr(x, "keys") else x[0]) for x in c.fetchall())
+            if len(_el) >= 3:
+                _m = len(_el) // 2
+                _elapsed_median = _el[_m] if (len(_el) % 2 == 1) else (_el[_m - 1] + _el[_m]) / 2.0
+            else:
+                _elapsed_median = None
+        except Exception:
+            _elapsed_median = None
         weaknesses = []
         for r in rows:
             try:
                 subj = r["subject"]; topic = r["topic"]; cnt = r["question_count"]
                 avg_score = r["avg_confidence_score"]; last = r["last_seen_at"]
+                reason_counts_raw = r["reason_counts"]; avg_elapsed = r["avg_elapsed_ms"]; qa_accuracy = r["qa_accuracy"]
             except (TypeError, KeyError, IndexError):
                 subj, topic, cnt, avg_score, last = r[0], r[1], r[2], r[3], r[4]
+                reason_counts_raw = r[5] if len(r) > 5 else None
+                avg_elapsed = r[6] if len(r) > 6 else None
+                qa_accuracy = r[7] if len(r) > 7 else None
             # 該当 subject に紐づく pool から問題を推薦
             # 🎯 Task 1 (2026-05-13): topic LIKE 検索でピンポイント絞り込み
             # 弱点 topic (例「三角関数 加法定理」) を分かち書きキーワードに分解し、
@@ -4485,6 +4591,25 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
                 if len(recommended) >= recommend_each:
                     break
                 _try_fetch(exam_id, part_key, None)
+            # 🎯 Phase2: つまずき理由内訳・主因・平均所要時間・サンプル信頼度を付与
+            reason_counts = {}
+            if reason_counts_raw:
+                try:
+                    reason_counts = json.loads(reason_counts_raw) if isinstance(reason_counts_raw, str) else (reason_counts_raw if isinstance(reason_counts_raw, dict) else {})
+                except Exception:
+                    reason_counts = {}
+            # review fix(low): 同点は dict scan 順依存で非決定的になるため、件数降順→指導優先度で決定化
+            dominant_reason = (sorted(reason_counts.items(),
+                                      key=lambda kv: (-kv[1], {"understanding": 0, "misread": 1, "time": 2, "careless": 3, "other": 4}.get(kv[0], 99)))[0][0]
+                               if reason_counts else None)
+            # 🎯 [Phase2+ / review fix #5,#6] 「遅い」判定 (自己中央値の1.4倍超・単元3件以上のときのみ)。
+            #   「正答だが遅い」の正答判定は AI自信度を含まない qa_accuracy で行う (review fix #6)。
+            _ae = int(avg_elapsed) if avg_elapsed is not None else None
+            _qa = float(qa_accuracy) if qa_accuracy is not None else None
+            slow = bool(_elapsed_median and _ae and _ae > _elapsed_median * 1.4)
+            accurate = bool(_qa is not None and _qa >= 0.6)
+            slow_but_correct = bool(slow and accurate)
+            recommended_action = _weakness_recommended_action(dominant_reason, slow, accurate)
             weaknesses.append({
                 "subject": subj,
                 "topic": topic or "",
@@ -4492,8 +4617,40 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
                 "avg_confidence_score": float(avg_score) if avg_score is not None else None,
                 "last_seen_at": str(last) if last else None,
                 "recommended": recommended,
+                # Phase2: 深い弱点分析
+                "reason_counts": reason_counts,
+                "dominant_reason": dominant_reason,
+                "avg_elapsed_ms": _ae,
+                "qa_accuracy": round(_qa, 2) if _qa is not None else None,
+                "low_confidence": int(cnt or 0) < 3,  # 試行数 < 3 は信頼度低 (要追加演習)
+                # Phase2+: 遅さ判定 + 対策出し分け
+                "slow": slow,
+                "slow_but_correct": slow_but_correct,
+                "recommended_action": recommended_action,
             })
-        return {"ok": True, "student_id": student_id, "weaknesses": weaknesses}
+        # 🎯 [review fix #2] 「正答だが遅い単元」は不正確優先ソートの top-N に乗りにくいため、
+        #   全単元から別途 1 件 (最も遅い・正答率>=0.6・試行>=3) を time_focus として返す。
+        #   mypage が本命の弱点とは別に「明示」表示できる。
+        time_focus = None
+        if _elapsed_median:
+            try:
+                c.execute(
+                    "SELECT subject, topic, avg_elapsed_ms, qa_accuracy, question_count FROM student_weakness "
+                    "WHERE student_id = ? AND avg_elapsed_ms IS NOT NULL AND qa_accuracy IS NOT NULL", (student_id,))
+                best = None
+                for x in c.fetchall():
+                    xs = x["subject"] if hasattr(x, "keys") else x[0]
+                    xt = x["topic"] if hasattr(x, "keys") else x[1]
+                    xe = x["avg_elapsed_ms"] if hasattr(x, "keys") else x[2]
+                    xa = x["qa_accuracy"] if hasattr(x, "keys") else x[3]
+                    xc = x["question_count"] if hasattr(x, "keys") else x[4]
+                    if xe and xa is not None and float(xa) >= 0.6 and int(xc or 0) >= 3 and xe > _elapsed_median * 1.4:
+                        if best is None or xe > best["avg_elapsed_ms"]:
+                            best = {"subject": xs, "topic": xt or "", "avg_elapsed_ms": int(xe), "qa_accuracy": round(float(xa), 2)}
+                time_focus = best
+            except Exception:
+                time_focus = None
+        return {"ok": True, "student_id": student_id, "weaknesses": weaknesses, "time_focus": time_focus}
     finally:
         conn.close()
 
