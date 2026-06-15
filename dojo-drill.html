@@ -241,6 +241,14 @@
       out += passage.slice(cur);
       return out;
     }
+    // 🎯 [小問→単元 炙り出し 2026-06-15] 小問ごとの単元を導出: 生成タグ q.unit > 解説/設問の【単元】 > プリセットtopic。
+    //   これで大問内に複数単元が混在(共テ数学IA等)しても、間違えた小問の単元で弱点記録できる。集計は無改修で単元別に立つ。
+    function deriveUnit(q, preset) {
+      if (q && q.unit && String(q.unit).trim()) return String(q.unit).trim().slice(0, 60);
+      const m = (((q && q.explanation) || '') + '\n' + ((q && q.stem) || '')).match(/【単元】\s*([^】\n(（]+)/);
+      if (m && m[1].trim()) return m[1].trim().slice(0, 60);
+      return preset ? preset.topic : '';
+    }
     const token = () => localStorage.getItem('ai_juku_session_token') || '';
 
     // ───────── state ─────────
@@ -437,7 +445,7 @@
         reasonEl.querySelector('select').addEventListener('change', updateFinalizeHint);
         if (autoGraded && isCorrect === false) reasonEl.classList.add('show');
 
-        cur.results[qi] = { qi, sub_id: q.id || `q${qi + 1}`, isMC, isCorrect, autoGraded, correctIdx };
+        cur.results[qi] = { qi, sub_id: q.id || `q${qi + 1}`, unit: deriveUnit(q, preset), isMC, isCorrect, autoGraded, correctIdx };
       });
       // 採点後のフッタ: 確定ボタン
       const act = dv.querySelector('.actions');
@@ -477,7 +485,7 @@
       const perMs = graded.length ? Math.round(totalElapsedMs / graded.length) : null;
       // 記録: 小問ごとに 1 attempt (topic 単位で十分なサンプル数を弱点集計に渡す)
       const tk = token();
-      const subAttempts = results.map(r => ({ sub_id: r.sub_id, is_correct: r.isCorrect === null ? null : (r.isCorrect ? 1 : 0), reason: getReason(r.qi) || null, auto_graded: r.autoGraded }));
+      const subAttempts = results.map(r => ({ sub_id: r.sub_id, unit: r.unit, is_correct: r.isCorrect === null ? null : (r.isCorrect ? 1 : 0), reason: getReason(r.qi) || null, auto_graded: r.autoGraded }));
       let recorded = 0;
       if (tk && graded.length) {
         const reqs = graded.map(r => fetch(`${BACKEND_URL}/api/question-attempts`, {
@@ -487,11 +495,11 @@
             source: 'practice',
             exam_question_id: daimon._question_id || null,
             exam_id: preset.exam, part_key: preset.part,
-            topic: preset.topic,
+            topic: r.unit || preset.topic,
             is_correct: r.isCorrect ? 1 : 0,
             elapsed_ms: perMs,
             metadata: {
-              drill: true, drill_preset: preset.name, sub_id: r.sub_id,
+              drill: true, drill_preset: preset.name, sub_id: r.sub_id, sub_unit: r.unit || null,
               reason: getReason(r.qi) || null, auto_graded: r.autoGraded,
               year_simulated: daimon.year_simulated || null
             }
@@ -514,12 +522,18 @@
       const reasonLabel = { understanding: '理解不足', careless: 'ケアレスミス', time: '時間切れ', misread: '読み違い', other: 'その他' };
       const reasonHtml = Object.keys(reasonCounts).length
         ? `<div class="weak-box"><strong style="color:#d8b4fe;">つまずき傾向:</strong> ${Object.entries(reasonCounts).map(([k, v]) => `${reasonLabel[k] || k} ×${v}`).join(' / ')}</div>` : '';
+      // 🎯 間違えた小問の単元集計 (小問→単元の炙り出し)
+      const missedUnits = {};
+      subAttempts.forEach(s => { if (s.is_correct === 0 && s.unit) missedUnits[s.unit] = (missedUnits[s.unit] || 0) + 1; });
+      const unitHtml = Object.keys(missedUnits).length
+        ? `<div class="weak-box" style="background:rgba(239,68,68,0.10); border-color:rgba(239,68,68,0.35);"><strong style="color:#fca5a5;">🎯 弱点が出た単元:</strong> ${Object.entries(missedUnits).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${escapeHtml(k)} ×${v}`).join(' / ')}<div class="muted" style="margin-top:0.3rem;">この単元が弱点として記録され、マイページの分析に反映されます。</div></div>` : '';
       const recNote = recorded > 0
         ? `<div class="muted" style="margin-top:0.6rem;">✅ ${recorded}問分を記録しました。マイページの「🎯 弱点 TOP3」に反映されます（毎朝集計）。</div>`
         : `<div class="muted" style="margin-top:0.6rem; color:#fca5a5;">⚠️ 結果を保存できませんでした（未ログイン or 通信エラー）。マイページからログインすると弱点分析に反映されます。</div>`;
       rv.innerHTML = `<div class="result-card">
         <div class="result-score">${rate >= 80 ? '🎉' : rate >= 50 ? '👍' : '💪'} ${correct} / ${total} 問正解（${rate}%）</div>
         <div class="muted" style="margin-top:0.3rem;">所要時間: ${mm}分${String(ss).padStart(2, '0')}秒 ${cur.preset ? '／ 目安 ' + cur.preset.min + '分' : ''}</div>
+        ${unitHtml}
         ${reasonHtml}
         ${recNote}
         <div class="actions" style="margin-top:1rem;">
