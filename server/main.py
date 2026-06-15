@@ -4323,10 +4323,23 @@ def _run_weakness_aggregation() -> dict:
 # 🎯 弱点 subject → exam_questions 検索のマッピング (UI 推薦用)
 # 弱点の subject (math/english/japanese/...) と pool 側 (exam_questions の exam_id/part_key) を対応付け。
 _WEAKNESS_SUBJECT_TO_POOL = {
-    "math": [("rikei", None), ("daigaku", "r_long")],  # 数学は rikei pool 優先
-    "physics": [("rikei", None)],
-    "chemistry": [("rikei", None)],
-    "biology": [("rikei", None)],
+    # 🔬 2026-06-16: 理系科目を rikei part_key へ厳密に絞り込み (科目横断 contamination 修正)。
+    #   従来 [("rikei", None)] は part_key フィルタ無し=rikei プール全件 (数学/物理/化学/生物/地学 が混在)。
+    #   消費側 (週次プリント:3700 と weakness-top3:4565) は exam_id だけで WHERE するため、
+    #   例えば「数学」弱点に物理/化学/生物の問題が推薦・出題されていた (reverse map _WEAKNESS_POOL_TO_SUBJECT と不整合)。
+    #   ordering: 先頭=共通テスト水準 part (math=math_1a / 理科=各 *_basic・dojo-drill PRESETS 直結・全理系生の代表水準)、
+    #            2件目=最多 ROTATION combo の q1 (週次 pool_keys[:2] が空にならぬ高 fill フォールバック)、以降 q2/q3/basic。
+    #   ⚠ rikei 全件 fallback は意図的に削除: 空ならその科目は skip (consumers が graceful) し他科目混入を防ぐ。
+    #     (substitute すると「数学弱点」に物理問題を出す誤配信になり、無配信より有害)
+    #   ⚠ math の旧 ("daigaku","r_long") fallback も削除: r_long は英語 pool (reverse map 4366) で、
+    #     数学弱点に英語長文を出す誤配信だった。math は実 rikei part 6 種で充足。
+    "math": [("rikei", "math_1a"), ("rikei", "math_q1"), ("rikei", "math_2b"),
+             ("rikei", "math_q2"), ("rikei", "math_q3"), ("rikei", "math_basic")],
+    "physics": [("rikei", "phys_basic"), ("rikei", "phys_q1"), ("rikei", "phys_q2"),
+                ("rikei", "phys_q3"), ("rikei", "phys_basic_q")],
+    "chemistry": [("rikei", "chem_basic"), ("rikei", "chem_q1"), ("rikei", "chem_q2"),
+                  ("rikei", "chem_q3"), ("rikei", "chem_basic_q")],
+    "biology": [("rikei", "bio_basic"), ("rikei", "bio_q1"), ("rikei", "bio_basic_q")],
     "english": [("daigaku", "r_long"), ("daigaku", "r_grammar"), ("daigaku", "g_grammar"), ("daigaku", "w_essay"),
                 ("eiken", "r_q1"), ("eiken", "r_q3")],
     # ↑ 2026-06-16: r_grammar を追加。単元別英文法ドリル (dojo-drill UNIT_PRESETS=r_grammar/teiki) が
