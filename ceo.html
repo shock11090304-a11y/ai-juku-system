@@ -1780,6 +1780,10 @@
             <button id="examImportSeedMathBtn" class="exam-seed-btn" data-seed="/seed-data/rikei_kyotsu_math_manual.json" data-parts="rikei,math_1a,kyotsu_rikei;rikei,math_2b,kyotsu_rikei" data-size="30" title="リポジトリ同梱の手作りシード(共テ数学IA/IIB)をワンクリックで取り込む" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.82rem;font-weight:800;cursor:pointer;">🌐 共テ数学IA/IIBを取込</button>
             <span class="exam-seed-status" data-for="examImportSeedMathBtn" style="font-size:0.74rem;font-weight:700;color:#71717a;">…</span>
           </span>
+          <span style="display:inline-flex;align-items:center;gap:0.35rem;">
+            <button id="examImportSeedStemBtn" class="exam-seed-btn" data-seed="/seed-data/dojo_stem_units_manual.json" data-parts="rikei,phys_kyotsu,kyotsu_rikei;rikei,chem_kyotsu,kyotsu_rikei;rikei,math_2b,kyotsu_rikei" data-size="68" data-model="manual2" title="隙間時間ドリルの薄い理科単元(物理5/化学無機・有機/数微積)を大量補充する手作りシード(68大問/390小問・3重正答検証済)。ワンクリック取込・無課金。" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.82rem;font-weight:800;cursor:pointer;">🧪 理科単元別を大量取込 (物理/化学/数微積 390問)</button>
+            <span class="exam-seed-status" data-for="examImportSeedStemBtn" style="font-size:0.74rem;font-weight:700;color:#71717a;">…</span>
+          </span>
           <span id="examImportMsg" style="font-size:0.8rem;"></span>
         </div>
       </details>
@@ -3680,12 +3684,15 @@
     //   本番に入っているかを区別 (AI生成分とは別カウント)。取込済みなら btn.dataset.imported を立てる。
     function updateSeedButtonStates(parts) {
       const manualMap = {};
-      (parts || []).forEach(p => { manualMap[`${p.exam}|${p.part}|${p.grade || ''}`] = (p.manual || 0); });
+      const manual2Map = {};
+      (parts || []).forEach(p => { const k = `${p.exam}|${p.part}|${p.grade || ''}`; manualMap[k] = (p.manual || 0); manual2Map[k] = (p.manual2 || 0); });
       document.querySelectorAll('.exam-seed-btn[data-parts]').forEach(btn => {
         const tuples = (btn.getAttribute('data-parts') || '').split(';').map(s => s.trim()).filter(Boolean);
         const size = parseInt(btn.getAttribute('data-size') || '0', 10) || 0;
+        // data-model="manual2" のボタンは単元別増量シード分(manual2)で判定。既定は従来の manual。
+        const useMap = btn.dataset.model === 'manual2' ? manual2Map : manualMap;
         let manualSum = 0;
-        tuples.forEach(t => { const a = t.split(','); manualSum += (manualMap[`${a[0]}|${a[1]}|${a[2] || ''}`] || 0); });
+        tuples.forEach(t => { const a = t.split(','); manualSum += (useMap[`${a[0]}|${a[1]}|${a[2] || ''}`] || 0); });
         const imported = size > 0 ? manualSum >= size : manualSum > 0;
         btn.dataset.imported = imported ? '1' : '';
         btn.dataset.manualCount = String(manualSum);

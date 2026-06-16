@@ -409,7 +409,9 @@
       dv.style.display = '';
       dv.innerHTML = '<div class="loading">問題を読み込み中…</div>';
       try {
-        const lim = preset.agg || 1;
+        // 🔀 増量プールを活かす: agg モードは多めに取得して後でシャッフル(毎回違う小問)。
+        //   非agg(共テ/大学別)も多めに取り、server側の random.choice の母数を増やして単発でも問題が変わるように。
+        const lim = preset.agg ? Math.min(50, preset.agg * 8) : 30;
         let url = `${BACKEND_URL}/api/exam-questions/bank?exam=${encodeURIComponent(preset.exam)}&part=${encodeURIComponent(preset.part)}&eiken_grade=${encodeURIComponent(preset.grade)}&limit=${lim}`;
         if (preset.filter) url += `&topic=${encodeURIComponent(preset.filter)}`;   // 単元フィルタ (bank が SQL LIKE)
         const d = await (await fetch(url)).json();
@@ -429,6 +431,8 @@
             const exact = questions.filter(q => pref(q.unit).startsWith(preset.filter));
             if (exact.length) questions = exact;
           }
+          // 🔀 集約した小問をシャッフルしてから agg 問取り出す → 増量プールから毎回違う問題が出て弱点が浮き彫りに
+          for (let _i = questions.length - 1; _i > 0; _i--) { const _j = Math.floor(Math.random() * (_i + 1)); const _t = questions[_i]; questions[_i] = questions[_j]; questions[_j] = _t; }
           daimon = { passage: '', questions: questions.slice(0, preset.agg), _question_id: (pool[0] && pool[0]._question_id) || null };
           qs = daimon.questions;
         } else {
