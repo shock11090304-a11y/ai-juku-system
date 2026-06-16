@@ -296,10 +296,12 @@ const EXAMS = {
       { key: 'march_rikei',   name: 'MARCH 理工',      cefr: '中上級', target: '明治/青学/立教/中央/法政 理工系' },
     ],
     sectionsByGrade: {
-      // 共通テスト 理系: 数IA/IIB + 物理/化学/生物/地学 基礎
+      // 共通テスト 理系: 数IA/IIB + 物理/化学 (フル科目) + 物理/化学/生物/地学 基礎
       kyotsu_rikei: [
         { key: 'math_1a',     name: '数学 IA (大問1-5)',      icon: '📐', timeMin: 70, qCount: 8, scoreMax: 100, desc: '二次関数・図形と計量・データ・確率・整数' },
         { key: 'math_2b',     name: '数学 IIB (大問1-5)',     icon: '📐', timeMin: 70, qCount: 8, scoreMax: 100, desc: '三角関数・指数対数・微積・数列・ベクトル' },
+        { key: 'phys_kyotsu', name: '物理',                   icon: '⚛️', timeMin: 60, qCount: 5, scoreMax: 100, desc: '力学・熱力学・波動・電磁気・原子の全範囲' },
+        { key: 'chem_kyotsu', name: '化学',                   icon: '🧪', timeMin: 60, qCount: 5, scoreMax: 100, desc: '理論・無機・有機・高分子の全範囲' },
         { key: 'phys_basic',  name: '物理基礎',               icon: '⚛️', timeMin: 30, qCount: 5, scoreMax: 50, desc: '力学・熱・波・電気の基礎' },
         { key: 'chem_basic',  name: '化学基礎',               icon: '🧪', timeMin: 30, qCount: 5, scoreMax: 50, desc: '物質量・酸塩基・酸化還元の基礎' },
         { key: 'bio_basic',   name: '生物基礎',               icon: '🧬', timeMin: 30, qCount: 5, scoreMax: 50, desc: '細胞・遺伝・生態系の基礎' },

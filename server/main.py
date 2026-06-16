@@ -4465,9 +4465,9 @@ _WEAKNESS_SUBJECT_TO_POOL = {
     #     数学弱点に英語長文を出す誤配信だった。math は実 rikei part 6 種で充足。
     "math": [("rikei", "math_1a"), ("rikei", "math_q1"), ("rikei", "math_2b"),
              ("rikei", "math_q2"), ("rikei", "math_q3"), ("rikei", "math_basic")],
-    "physics": [("rikei", "phys_basic"), ("rikei", "phys_q1"), ("rikei", "phys_q2"),
+    "physics": [("rikei", "phys_basic"), ("rikei", "phys_kyotsu"), ("rikei", "phys_q1"), ("rikei", "phys_q2"),
                 ("rikei", "phys_q3"), ("rikei", "phys_basic_q")],
-    "chemistry": [("rikei", "chem_basic"), ("rikei", "chem_q1"), ("rikei", "chem_q2"),
+    "chemistry": [("rikei", "chem_basic"), ("rikei", "chem_kyotsu"), ("rikei", "chem_q1"), ("rikei", "chem_q2"),
                   ("rikei", "chem_q3"), ("rikei", "chem_basic_q")],
     "biology": [("rikei", "bio_basic"), ("rikei", "bio_q1"), ("rikei", "bio_basic_q")],
     # 🌏 2026-06-16: earth (地学) の forward entry を新規追加。reverse map (_WEAKNESS_POOL_TO_SUBJECT:4377)
@@ -4498,11 +4498,11 @@ _WEAKNESS_POOL_TO_SUBJECT = {
     ("rikei", "math_q1"): "math", ("rikei", "math_q2"): "math", ("rikei", "math_q3"): "math",
     ("rikei", "math_basic"): "math",
     # 物理
-    ("rikei", "phys_basic"): "physics",
+    ("rikei", "phys_basic"): "physics", ("rikei", "phys_kyotsu"): "physics",
     ("rikei", "phys_q1"): "physics", ("rikei", "phys_q2"): "physics", ("rikei", "phys_q3"): "physics",
     ("rikei", "phys_basic_q"): "physics",
     # 化学
-    ("rikei", "chem_basic"): "chemistry",
+    ("rikei", "chem_basic"): "chemistry", ("rikei", "chem_kyotsu"): "chemistry",
     ("rikei", "chem_q1"): "chemistry", ("rikei", "chem_q2"): "chemistry", ("rikei", "chem_q3"): "chemistry",
     ("rikei", "chem_basic_q"): "chemistry",
     # 生物
@@ -11287,6 +11287,22 @@ EXAM_QUESTIONS_PER_TICK = int(os.getenv("EXAM_QUESTIONS_PER_TICK", "5"))        
 EXAM_QUESTIONS_TARGET_POOL = int(os.getenv("EXAM_QUESTIONS_TARGET_POOL", "30"))     # 各 part の目標蓄積数 (これに達したら以降生成スキップ・暴走防止)
 EXAM_QUESTIONS_MIN_POOL = int(os.getenv("EXAM_QUESTIONS_MIN_POOL", "3"))            # この数を下回る part を最優先補充
 EXAM_QUESTIONS_DAILY_MAX = int(os.getenv("EXAM_QUESTIONS_DAILY_MAX", "500"))       # 1日の総生成数のハードリミット (デフォ 500・上限引き上げ。CEO の課金許可済み)
+
+# 🔬 2026-06-16 塾長指示「隙間時間ドリルの共通テスト理科(物理・化学)を増やす」:
+#   特定区分だけ目標蓄積数 (TARGET_POOL) を引き上げる個別オーバーライド。
+#   未掲載の区分は EXAM_QUESTIONS_TARGET_POOL (既定30) を使う。scheduler/refill/burst-seed が
+#   この目標に達するまで生成する。物理・化学(共テ・基礎+フル)を 60 まで蓄積し出題バリエーションを増やす。
+EXAM_QUESTIONS_TARGET_POOL_OVERRIDE = {
+    ("rikei", "phys_basic",  "kyotsu_rikei"): 60,  # 物理基礎 (共テ)
+    ("rikei", "chem_basic",  "kyotsu_rikei"): 60,  # 化学基礎 (共テ)
+    ("rikei", "phys_kyotsu", "kyotsu_rikei"): 60,  # 物理 (共テ・フル科目・2026-06-16 新設)
+    ("rikei", "chem_kyotsu", "kyotsu_rikei"): 60,  # 化学 (共テ・フル科目・2026-06-16 新設)
+}
+
+
+def _target_pool_for(exam_id: str, part_key: str, eiken_grade) -> int:
+    """区分ごとの目標蓄積数。OVERRIDE があればそれを、無ければ全体既定 (EXAM_QUESTIONS_TARGET_POOL)。"""
+    return EXAM_QUESTIONS_TARGET_POOL_OVERRIDE.get((exam_id, part_key, eiken_grade), EXAM_QUESTIONS_TARGET_POOL)
 EXAM_QUESTIONS_MODEL = os.getenv("EXAM_QUESTIONS_MODEL", "claude-sonnet-4-6")
 
 # ローテーション対象の (exam_id, part_key, eiken_grade) リスト
@@ -11444,6 +11460,8 @@ EXAM_QUESTION_ROTATION = [
     ("rikei", "math_2b",      "kyotsu_rikei"),
     ("rikei", "phys_basic",   "kyotsu_rikei"),
     ("rikei", "chem_basic",   "kyotsu_rikei"),
+    ("rikei", "phys_kyotsu",  "kyotsu_rikei"),  # 2026-06-16 共通テスト 物理 (フル科目・基礎ではない・塾長指示)
+    ("rikei", "chem_kyotsu",  "kyotsu_rikei"),  # 2026-06-16 共通テスト 化学 (フル科目・基礎ではない・塾長指示)
     ("rikei", "bio_basic",    "kyotsu_rikei"),
     ("rikei", "earth_basic",  "kyotsu_rikei"),  # 2026-05-22 P1 fix: UI 既存・ROTATION 漏れ
     # 東大 理系
@@ -11613,7 +11631,7 @@ DAIGAKU_PART_HINTS = {
 
 # 🔬 大学入試 理系科目 (数学/物理/化学/生物/地学) 大学×レベル スタイル定義
 RIKEI_UNIV_STYLES = {
-    "kyotsu_rikei":    {"name": "共通テスト 理系", "style": "数IA/IIB の標準難度・物理基礎/化学基礎/生物基礎/地学基礎の出題範囲。マーク式・基本公式の運用が中心。"},
+    "kyotsu_rikei":    {"name": "共通テスト 理系", "style": "数IA/IIB の標準難度。理科は『物理・化学・生物』(フル科目=理系本番) および『物理基礎・化学基礎・生物基礎・地学基礎』。いずれもマーク式中心で、基本公式の運用に加え実験データ/グラフ/図の読解と思考力を問う共通テスト型。**フル科目(物理/化学)は基礎科目より出題範囲が広く難度も上**なので、part 指定が基礎(〜基礎)かフル科目かを必ず区別して作問する。"},
     "todai_rikei":     {"name": "東京大学 理系",   "style": "計算量多め・数学は微積/確率/整数論の融合・物理は力学/電磁気の本格的な記述・化学は理論+無機+有機の各大問・記述式採点 (途中式重視)。"},
     "kyodai_rikei":    {"name": "京都大学 理系",   "style": "抽象的・骨太な解析。数学は整数論/確率の独自性・物理は物理的考察重視 (公式適用より概念理解)・化学は反応速度/平衡。"},
     "osaka_rikei":     {"name": "大阪大学 理系",   "style": "標準〜やや難。数学はベクトル/微積・物理は力学+電磁気・化学は理論+有機・解答プロセスを論理的に書ききる力。"},
@@ -11639,12 +11657,14 @@ RIKEI_PART_HINTS = {
     "math_basic":  "数学 (基礎演習・微積/ベクトル/確率/数列を 5問・標準的記述)",
     # 物理
     "phys_basic":  "物理基礎 (共通テスト型・力学/熱/波/電気の基礎・5問・マーク式)",
+    "phys_kyotsu": "共通テスト『物理』(基礎ではないフル科目・力学/熱力学/波動/電磁気/原子の全範囲・大問4-5構成・マーク式・実験/グラフ/思考力重視で計算と概念理解の両面・物理基礎より難度高)",
     "phys_q1":     "物理 大問1 (力学・記述式・運動方程式/エネルギー保存/円運動/単振動・図解必須)",
     "phys_q2":     "物理 大問2 (電磁気・記述式・回路解析/キルヒホッフ/電磁誘導/コンデンサ・回路図 SVG 必須)",
     "phys_q3":     "物理 大問3 (波/熱・記述式・干渉/反射屈折/熱力学/状態方程式)",
     "phys_basic_q": "物理 (基礎演習・力学/電磁気/波動/熱の標準問題 5問)",
     # 化学
     "chem_basic":  "化学基礎 (共通テスト型・物質量/酸塩基/酸化還元の基礎・5問)",
+    "chem_kyotsu": "共通テスト『化学』(基礎ではないフル科目・理論化学(熱化学/化学平衡/電気化学/反応速度)+無機+有機+高分子の全範囲・大問4-5構成・マーク式・計算と知識の両面・化学基礎より難度高)",
     "chem_q1":     "化学 大問1 (理論化学・記述式・熱化学/平衡/電気化学/反応速度・計算式必須)",
     "chem_q2":     "化学 大問2 (無機化学・記述式・無機物質/沈殿反応/錯体・反応式必須)",
     "chem_q3":     "化学 大問3 (有機化学・記述式・構造決定/合成経路/高分子・構造式 SVG 必須)",
@@ -12465,7 +12485,7 @@ def _run_exam_questions_generation(quota: int = None, respect_daily_max: bool = 
         (exam_id, part_key, grade)
         for (exam_id, part_key, grade) in EXAM_QUESTION_ROTATION
         if (exam_id, part_key, grade) not in EXAM_QUESTION_AUTO_GENERATE_SKIP
-        and counts.get((exam_id, part_key, grade), 0) < EXAM_QUESTIONS_TARGET_POOL
+        and counts.get((exam_id, part_key, grade), 0) < _target_pool_for(exam_id, part_key, grade)
     ]
     candidates.sort(key=lambda t: counts.get(t, 0))
     sorted_targets = candidates[:quota]
@@ -12525,7 +12545,7 @@ async def _refill_part_async(
             return
         # 既に target_pool 到達なら skip
         counts = _exam_pool_counts()
-        if counts.get(key, 0) >= EXAM_QUESTIONS_TARGET_POOL:
+        if counts.get(key, 0) >= _target_pool_for(*key):
             return
         n_to_gen = min(target, EXAM_QUESTIONS_DAILY_MAX - today_count)
         log.info(f"[ExamQ:Refill] Generating {n_to_gen} for {key} (current pool={counts.get(key, 0)}, exclude={len(exclude_combinations or [])}, topic={topic_hint})")
@@ -15994,17 +16014,23 @@ def admin_exam_questions_delete_by_id(
 
 @app.post("/api/admin/exam-questions/burst-seed")
 async def admin_exam_questions_burst_seed(payload: dict = None, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
-    """🚀 全 ROTATION 枠を最低 N 問まで一括生成 (初期投入・サービスローンチ前用)。
+    """🚀 ROTATION 枠を目標 N 問まで一括生成 (初期投入・特定科目の即時増量用)。
 
     payload (任意):
-      {"target_per_part": 5, "max_total": 100, "concurrency": 3}
-    省略時のデフォルト: target=5, max_total=100, concurrency=3
+      {"target_per_part": 30, "max_total": 3000, "concurrency": 5,
+       "parts": [["rikei","phys_kyotsu","kyotsu_rikei"], ["rikei","chem_kyotsu","kyotsu_rikei"]]}
+    省略時のデフォルト: target=30, max_total=3000, concurrency=5
 
     動作:
-    - EXAM_QUESTION_ROTATION 全枠を読み、現在 count < target_per_part の枠を抽出
+    - EXAM_QUESTION_ROTATION 全枠 (parts 指定時はその区分のみ) を読み、現在 count < 実効目標 の枠を抽出
+    - 実効目標 = max(target_per_part, 区分別 OVERRIDE)。物理/化学(共テ)は OVERRIDE=60 まで充填
     - 不足分の合計 (cap max_total) を asyncio で並列生成
     - DAILY_MAX 制約はバイパス (CEO 判断・1回限りの一括投入)
     - 完了時に詳細サマリ返却
+
+    🔬 例 (物理・化学の共テ問題だけ今すぐ60問まで増やす):
+      curl -X POST .../api/admin/exam-questions/burst-seed -H 'X-Cron-Secret: $CRON_SECRET' \
+        -d '{"parts":[["rikei","phys_kyotsu","kyotsu_rikei"],["rikei","chem_kyotsu","kyotsu_rikei"],["rikei","phys_basic","kyotsu_rikei"],["rikei","chem_basic","kyotsu_rikei"]]}'
 
     レスポンス:
     {ok, target_per_part, scanned_parts, parts_under_target, generated, failed, duration_sec, details: [...]}
@@ -16026,21 +16052,37 @@ async def admin_exam_questions_burst_seed(payload: dict = None, authorization: O
     target = int(payload.get("target_per_part", 30))    # CEO 課金許可済 → デフォを TARGET_POOL=30 に
     max_total = int(payload.get("max_total", 3000))     # 全枠 30問満杯まで届く上限
     concurrency = max(1, min(int(payload.get("concurrency", 5)), 8))  # 1-8 並列 (5 デフォ・速度優先)
+    # 🔬 任意 parts フィルタ: [[exam,part,grade], ...] 指定時はその区分のみ生成 (例: 物理/化学だけ即時投入)。
+    parts_filter = payload.get("parts")
+    parts_set = None
+    if isinstance(parts_filter, list) and parts_filter:
+        parts_set = set()
+        for it in parts_filter:
+            if isinstance(it, (list, tuple)) and len(it) == 3:
+                parts_set.add((it[0], it[1], it[2]))
+
+    # 各区分の実効目標 = max(payload target, 区分別 OVERRIDE)。物理/化学(共テ)は OVERRIDE=60 まで充填する。
+    def _eff_target(e, p, g):
+        return max(target, _target_pool_for(e, p, g))
 
     counts = _exam_pool_counts()
-    # 不足枠を抽出 (count < target)
+    # 不足枠を抽出 (count < 実効目標)
     # 🛡 EXAM_QUESTION_AUTO_GENERATE_SKIP に含まれる枠は AI 課金回避のため burst-seed 経由生成しない
     needs = []
     for (exam_id, part_key, grade), n in counts.items():
         if (exam_id, part_key, grade) in EXAM_QUESTION_AUTO_GENERATE_SKIP:
             continue
-        deficit = max(0, target - n)
+        if parts_set is not None and (exam_id, part_key, grade) not in parts_set:
+            continue
+        deficit = max(0, _eff_target(exam_id, part_key, grade) - n)
         if deficit > 0:
             for _ in range(deficit):
                 needs.append((exam_id, part_key, grade))
     parts_under_target = sum(
         1 for (e, p, g), n in counts.items()
-        if (e, p, g) not in EXAM_QUESTION_AUTO_GENERATE_SKIP and n < target
+        if (e, p, g) not in EXAM_QUESTION_AUTO_GENERATE_SKIP
+        and (parts_set is None or (e, p, g) in parts_set)
+        and n < _eff_target(e, p, g)
     )
     # max_total キャップ
     if len(needs) > max_total:
@@ -16209,7 +16251,7 @@ def _exam_questions_import_core(questions: list, skip_full: bool = False) -> dic
                 if (exam_id, part_key, eiken_grade) not in valid_rotation:
                     failed.append({"i": i, "reason": f"invalid rotation: {exam_id}/{part_key}/{eiken_grade}"})
                     continue
-                if skip_full and counts.get((exam_id, part_key, eiken_grade), 0) >= EXAM_QUESTIONS_TARGET_POOL:
+                if skip_full and counts.get((exam_id, part_key, eiken_grade), 0) >= _target_pool_for(exam_id, part_key, eiken_grade):
                     skipped += 1
                     continue
 
@@ -22068,7 +22110,8 @@ def admin_exam_questions_pool_status(
     low_pool = 0
     for (exam_id, part_key, eiken_grade), n in counts.items():
         total += n
-        is_full = n >= EXAM_QUESTIONS_TARGET_POOL
+        _tgt = _target_pool_for(exam_id, part_key, eiken_grade)
+        is_full = n >= _tgt
         is_low = n < EXAM_QUESTIONS_MIN_POOL
         if is_full: full_pool += 1
         if is_low: low_pool += 1
@@ -22077,6 +22120,7 @@ def admin_exam_questions_pool_status(
             "part": part_key,
             "grade": eiken_grade,
             "count": n,
+            "target": _tgt,
             "is_full": is_full,
             "is_low": is_low,
         })
