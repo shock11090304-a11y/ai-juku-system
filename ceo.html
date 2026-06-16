@@ -1759,6 +1759,22 @@
         <summary style="cursor:pointer;font-weight:700;color:#e4e4e7;font-size:0.88rem;">📋 part 別蓄積一覧 (薄い順)</summary>
         <div id="poolPartsBox" style="margin-top:0.6rem;font-size:0.78rem;line-height:1.7;max-height:340px;overflow-y:auto;"></div>
       </details>
+
+      <!-- 📥 手動取り込み (JSON貼付・無課金): AI生成を使わず、作成済みの問題JSONを直接プールへ登録 -->
+      <details style="margin-top:0.7rem;background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:0.6rem 0.9rem;">
+        <summary style="cursor:pointer;font-weight:800;color:#34d399;font-size:0.88rem;">📥 問題を手動取り込み (JSON貼付・無課金 / AI生成なし)</summary>
+        <div style="margin-top:0.7rem;font-size:0.78rem;color:#94a3b8;line-height:1.6;">
+          作成済みの問題JSONを貼り付けて「取り込む」を押すと、AI生成を使わずにそのままプールへ登録します (課金なし)。
+          形式: <code style="color:#cbd5e1;">{"questions":[{"exam_id","part_key","eiken_grade","question_data","model"}], "skip_full":false}</code>
+          または <code style="color:#cbd5e1;">[ ...questions... ]</code> の配列でも可。<span style="color:#f87171;">※同じJSONを2回取り込むと重複します。</span>
+        </div>
+        <textarea id="examImportJson" placeholder='{"questions":[ ... ]}' style="width:100%;box-sizing:border-box;margin-top:0.5rem;min-height:140px;background:#0f172a;color:#e5e7eb;border:1px solid #475569;border-radius:6px;padding:0.5rem;font-size:0.74rem;font-family:monospace;"></textarea>
+        <div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;margin-top:0.5rem;">
+          <label style="font-size:0.76rem;color:#94a3b8;"><input type="checkbox" id="examImportSkipFull"> 満杯枠(目標到達)をskip</label>
+          <button id="examImportBtn" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.82rem;font-weight:800;cursor:pointer;">📥 取り込む</button>
+          <span id="examImportMsg" style="font-size:0.8rem;"></span>
+        </div>
+      </details>
     </section>
 
     <!-- アクセス数モニター (LP / CTA / フォーム送信を events から集計) -->
@@ -7398,6 +7414,38 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
         if (!confirm(`🔥 全 ROTATION 枠を 30問 (TARGET_POOL 上限) まで一気に満杯にします。\n\n推定: 全枠埋まるまで生成・最大3000問・所要 30-60分・推定費用 約 $180≈¥27,000\n\n(課金許可済み前提・続行?)`)) return;
         runBurstSeed(30, 3000, 8, poolMaxFillBtn);  // 並列8 で速度最大
+      });
+
+      // 📥 手動取り込み (JSON貼付・無課金): 作成済み問題JSONを /api/admin/exam-questions/import へ直接POST
+      const examImportBtn = document.getElementById('examImportBtn');
+      if (examImportBtn) examImportBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        const msg = document.getElementById('examImportMsg');
+        const raw = (document.getElementById('examImportJson') || {}).value || '';
+        if (!raw.trim()) { if (msg) msg.innerHTML = '<span style="color:#fca5a5;">JSONを貼り付けてください</span>'; return; }
+        let parsed;
+        try { parsed = JSON.parse(raw); }
+        catch (e) { if (msg) msg.innerHTML = `<span style="color:#fca5a5;">❌ JSON parse 失敗: ${escapeHtml(String(e.message || e))}</span>`; return; }
+        // {questions:[...]} / 配列 のどちらも受理
+        const questions = Array.isArray(parsed) ? parsed : (parsed && Array.isArray(parsed.questions) ? parsed.questions : null);
+        if (!questions || !questions.length) { if (msg) msg.innerHTML = '<span style="color:#fca5a5;">questions 配列が空です</span>'; return; }
+        const skipFull = !!(document.getElementById('examImportSkipFull') || {}).checked;
+        if (!confirm(`${questions.length}問を本番プールに取り込みます。\n(同じJSONを2回取り込むと重複します)\n続行しますか?`)) return;
+        examImportBtn.disabled = true; const _o = examImportBtn.textContent; examImportBtn.textContent = '⏳ 取り込み中...';
+        if (msg) msg.innerHTML = '⏳ 取り込み中...';
+        try {
+          const res = await AdminAuth.fetch('/api/admin/exam-questions/import', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ questions, skip_full: skipFull }),
+          });
+          const d = await res.json();
+          if (!res.ok) { if (msg) msg.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(d.detail || '取り込み失敗')}</span>`; return; }
+          const failHint = (d.failed && d.failed_details && d.failed_details.length)
+            ? ` / 失敗例: ${escapeHtml(JSON.stringify(d.failed_details.slice(0, 3)))}` : '';
+          if (msg) msg.innerHTML = `<span style="color:#86efac;">✅ ${d.inserted}問 取り込み (skip ${d.skipped_full}・失敗 ${d.failed})${failHint}</span>`;
+          if (typeof loadPoolStatus === 'function') loadPoolStatus();
+        } catch (e) { if (msg) msg.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(String(e.message || e))}</span>`; }
+        finally { examImportBtn.disabled = false; examImportBtn.textContent = _o; }
       });
 
       const sumBtn = document.getElementById('sendDailySummary');
