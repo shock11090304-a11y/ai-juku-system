@@ -159,6 +159,136 @@ def _mrr_fee(plan: str) -> int:
     info = PRICE_MAP.get(plan or "")
     return int(info[1]) if info else 0
 
+
+# 🔧 2026-06-16 [mrr-stripe-actual] founder MRR の「実支払統一」(塾長承認 Option A 2026-06-16):
+#   _mrr_fee は founder=12000 固定の近似で、クーポンの有無/種別が顧客別に異なる実態を反映できない。
+#   active Stripe Subscription の実額 (クーポン適用後・月額換算・入塾金等の一回性項目は recurring 判定で
+#   自然に除外) を真実とし、_mrr_fee は「Stripe から取れない生徒のフォールバック」に格下げする。
+#   - Stripe 呼び出しは Subscription.list(status='active') で全件まとめ取り (1-2 call) → {sub_id: 月額純額}。
+#   - 10分 TTL キャッシュ (admin/autopilot ダッシュは塾長閲覧用・分単位の鮮度で十分・呼び出し負荷も抑制)。
+#   - Stripe 未設定/失敗時は {} を返し、全生徒が _mrr_fee にフォールバック = 現行挙動を完全保存 (no-crash)。
+_MRR_STRIPE_CACHE: dict = {"map": None, "computed_at": None}
+_MRR_STRIPE_CACHE_TTL_SEC = 600
+# interval 別の「1期間 = 何ヶ月か」(月額換算用)。day/week は概算 (30日月) — 実運用は month/year のみ。
+_INTERVAL_MONTHS = {"day": 1.0 / 30.0, "week": 7.0 / 30.0, "month": 1.0, "year": 12.0}
+
+
+def _subscription_monthly_net_yen(sub) -> Optional[int]:
+    """Stripe Subscription (dict ライク) からクーポン適用後の月額 (円) を算出。算出不能なら None。
+    - JPY は最小単位=円なので unit_amount をそのまま円扱い。
+    - recurring 項目のみ合算し interval を月換算 (year は /12)。一回性項目 (入塾金等) は除外。
+    - discount は duration が forever/repeating のときだけ適用 (once は継続収益でない)。"""
+    try:
+        items = ((sub.get("items") or {}).get("data")) or []
+        gross_monthly = 0.0
+        for it in items:
+            price = it.get("price") or {}
+            rec = price.get("recurring") or {}
+            if not rec:
+                continue  # 一回性項目 (入塾金等) は MRR に含めない
+            unit = price.get("unit_amount")
+            if unit is None:
+                continue
+            qty = it.get("quantity") or 1
+            interval = rec.get("interval") or "month"
+            interval_count = rec.get("interval_count") or 1
+            months_per_period = _INTERVAL_MONTHS.get(interval, 1.0) * float(interval_count or 1)
+            if months_per_period <= 0:
+                continue
+            gross_monthly += (float(unit) * float(qty)) / months_per_period
+        # 割引適用: sub.discount [単数・stripe 11.x は inline] と sub.discounts [配列] の双方を拾うが、
+        # 同一クーポンが両フィールドに同時に現れる版があるため、coupon id (無ければ属性) で重複排除して
+        # から適用する (二重適用すると founder が 12000 でなく 9500 等に過少計上される)。
+        # 一回限り (once) は継続収益 (MRR) に影響しないので除外。
+        coupons = {}
+        for disc in [sub.get("discount")] + list(sub.get("discounts") or []):
+            if isinstance(disc, dict) and isinstance(disc.get("coupon"), dict):
+                coup = disc["coupon"]
+                key = coup.get("id") or f"{coup.get('amount_off')}|{coup.get('percent_off')}|{coup.get('duration')}"
+                coupons.setdefault(key, coup)
+        for coup in coupons.values():
+            if (coup.get("duration") or "") not in ("forever", "repeating"):
+                continue
+            pct = coup.get("percent_off")
+            amt = coup.get("amount_off")
+            if pct:
+                gross_monthly *= (1.0 - float(pct) / 100.0)
+            elif amt:
+                gross_monthly -= float(amt)  # JPY: amount_off は円
+        return max(0, int(round(gross_monthly)))
+    except Exception:
+        return None
+
+
+def _stripe_active_sub_amounts(use_cache: bool = True) -> dict:
+    """active Stripe Subscription を列挙し {sub_id: 月額純額(円)} を返す。
+    1-2 API 呼び出し・10分キャッシュ。Stripe 未設定/失敗時は {} (= 呼び出し側で _mrr_fee フォールバック)。"""
+    if not STRIPE_SECRET_KEY:
+        return {}
+    now = datetime.now(timezone.utc)
+    cached = _MRR_STRIPE_CACHE.get("map")
+    ts = _MRR_STRIPE_CACHE.get("computed_at")
+    if use_cache and cached is not None and ts and (now - ts).total_seconds() < _MRR_STRIPE_CACHE_TTL_SEC:
+        return cached
+    out: dict = {}
+    try:
+        s = get_stripe()
+        starting_after = None
+        for _ in range(50):  # 安全上限: 5000 件 (page=100)
+            # ⚠️ 割引の読み取りは SDK バージョン依存。prod は requirements.txt で stripe==11.1.0
+            # (API 2024-06-20) にピン: Subscription.discount(単数) が coupon 込みで inline 返却されるため
+            # expand 不要 (_subscription_monthly_net_yen が単数 discount を読む)。この API では Discount.coupon
+            # は ExpandableField ではない (inline) ので expand=["data.discounts.coupon"] を付けると逆に
+            # InvalidRequestError → list 全体失敗 → 全生徒が _mrr_fee に落ちて本機能が無効化される。
+            # discounts(配列) は未 expand だと ID 文字列で返り無視されるので二重計上もしない。
+            # 🔁 SDK を ≥15.x に上げると単数 discount が廃止され discounts/coupon が ExpandableField になるので、
+            #    その際は expand=["data.discounts.coupon"] を付与し直すこと (未対応だとクーポンが落ち founder が
+            #    12000 でなく 14500 表示になる)。
+            kwargs = {"status": "active", "limit": 100}
+            if starting_after:
+                kwargs["starting_after"] = starting_after
+            resp = s.Subscription.list(**kwargs)
+            data = (resp.get("data") if isinstance(resp, dict) else getattr(resp, "data", None)) or []
+            for sub in data:
+                try:
+                    sid = sub.get("id")
+                except Exception:
+                    sid = getattr(sub, "id", None)
+                amt = _subscription_monthly_net_yen(sub)
+                if sid and amt is not None:
+                    out[sid] = amt
+            has_more = resp.get("has_more") if isinstance(resp, dict) else getattr(resp, "has_more", False)
+            if not has_more or not data:
+                break
+            last = data[-1]
+            starting_after = (last.get("id") if isinstance(last, dict) else getattr(last, "id", None))
+            if not starting_after:
+                break
+        _MRR_STRIPE_CACHE["map"] = out
+        _MRR_STRIPE_CACHE["computed_at"] = now
+        return out
+    except Exception as e:
+        log.warning(f"[MRR] Stripe Subscription.list 失敗 (直近 map か _mrr_fee へフォールバック): {type(e).__name__}: {e}")
+        # 失敗も negative-cache: computed_at を更新し TTL 内は再ブロックさせない (障害時に毎ロード ~80s
+        # 再発火するのを防ぐ)。直近の成功 map があればそれを維持して返し (正確値を保つ)、一度も成功して
+        # いなければ空 map をキャッシュ ( = 全生徒 _mrr_fee フォールバック・現行挙動)。次回 TTL 切れで再試行。
+        _MRR_STRIPE_CACHE["computed_at"] = now
+        if cached is None:
+            _MRR_STRIPE_CACHE["map"] = {}
+            return {}
+        return cached
+
+
+def _student_mrr_yen(plan: str, sub_id: Optional[str], amounts: Optional[dict] = None) -> int:
+    """1 生徒の MRR(円)。active Stripe サブスクの実額があればそれを・無ければ _mrr_fee(plan)。
+    amounts を渡すと Stripe 呼び出しを 1 リクエストで共有できる (呼び出し側で事前取得推奨)。"""
+    if amounts is None:
+        amounts = _stripe_active_sub_amounts()
+    if sub_id and sub_id in amounts:
+        return amounts[sub_id]
+    return _mrr_fee(plan)
+
+
 # 入塾金（トライアル後の初回請求に追加・通塾生アドオンは免除）
 ENROLLMENT_FEE = 10000
 
@@ -9543,12 +9673,26 @@ def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: 
     except Exception:
         waiver_used = 0
 
+    # 🔧 2026-06-16 [mrr-stripe-actual] MRR は active Stripe サブスクの実額 (クーポン適用後) を真実とし、
+    # Stripe から取れない生徒だけ _mrr_fee(plan) でフォールバック。founder の ¥12,000 固定近似や
+    # クーポン顧客別差を解消する (塾長承認 Option A)。autopilot ダッシュ (admin_analytics) と同一ロジック。
+    # conn を閉じる前に paid 生徒の sub_id を取得 (取得失敗時は plan ベース fallback)。
+    paid_students = [s for s in students if s["status"] == "paid"]
+    _subid_by_id: dict = {}
+    if paid_students:
+        _pids = [s["id"] for s in paid_students]
+        try:
+            _ph = ",".join("?" * len(_pids))
+            c.execute(f"SELECT id, stripe_subscription_id FROM students WHERE id IN ({_ph})", tuple(_pids))
+            for r in c.fetchall():
+                _subid_by_id[r["id"]] = (r["stripe_subscription_id"] if "stripe_subscription_id" in r.keys() else None)
+        except Exception as _sub_e:
+            log.warning(f"[admin_stats] stripe_subscription_id 取得失敗 (MRR は plan ベースに fallback): {_sub_e}")
+
     conn.close()
 
-    # 🔧 [mrr-consistency] MRR は _mrr_fee() を単一ソースに集計。legacy プラン (ai/hybrid/
-    # intensive) も PRICE_MAP 経由で網羅され ¥0 計上を防ぐ。autopilot ダッシュと同一ロジック。
-    paid_students = [s for s in students if s["status"] == "paid"]
-    mrr = sum(_mrr_fee(s.get("plan") or "") for s in paid_students)
+    _mrr_amounts = _stripe_active_sub_amounts()
+    mrr = sum(_student_mrr_yen(s.get("plan") or "", _subid_by_id.get(s["id"]), _mrr_amounts) for s in paid_students)
 
     # 体験 → 月額 転換率 (累積ベース・粗計算)
     # 分母: trial に入った全ユーザー (現trial + 現paid + 現canceled + 現expired)
@@ -15169,24 +15313,33 @@ def admin_autopilot_dashboard(authorization: Optional[str] = Header(None)):
             paid_conversions_7d = 0
 
         # 全体 active paid (MRR の基盤)
+        # 🔧 2026-06-16 [mrr-stripe-actual] per-student の sub_id も取得し Stripe 実額で MRR 集計。
+        #   plan_counts は後段の plan_breakdown/active_paid_total で使うため従来どおり維持。
+        plan_counts = {}
+        _paid_rows = []  # [(plan, sub_id), ...]
         try:
             c.execute(
-                "SELECT plan, COUNT(*) FROM students WHERE status='paid' AND plan IS NOT NULL GROUP BY plan"
+                "SELECT plan, stripe_subscription_id FROM students WHERE status='paid' AND plan IS NOT NULL"
             )
-            plan_counts = {}
             for r in c.fetchall():
-                p = r[0] if not hasattr(r, "keys") else r["plan"]
-                cnt = r[1] if not hasattr(r, "keys") else (r["count"] if "count" in r.keys() else list(r.values())[1])
-                plan_counts[p] = cnt
+                _p = r["plan"] if hasattr(r, "keys") else r[0]
+                try:
+                    _sid = r["stripe_subscription_id"] if hasattr(r, "keys") else r[1]
+                except Exception:
+                    _sid = None
+                plan_counts[_p] = plan_counts.get(_p, 0) + 1
+                _paid_rows.append((_p, _sid))
         except Exception:
             plan_counts = {}
+            _paid_rows = []
 
-        # MRR 計算 ([mrr-consistency] admin_stats と同一の _mrr_fee を単一ソースに。
-        #   founder は post-coupon ¥12,000 で揃え、経路ごとに別 MRR を返す不整合を解消)
+        # MRR 計算 ([mrr-stripe-actual] active Stripe サブスク実額・取れない分は _mrr_fee フォールバック。
+        #   admin_stats と同一ロジック。founder クーポン顧客別差や ¥12,000 固定近似を解消)
+        _mrr_amounts = _stripe_active_sub_amounts()
         mrr = 0
-        for plan, cnt in plan_counts.items():
+        for _p, _sid in _paid_rows:
             try:
-                mrr += _mrr_fee(plan) * cnt
+                mrr += _student_mrr_yen(_p or "", _sid, _mrr_amounts)
             except Exception:
                 pass
 
@@ -35860,9 +36013,88 @@ def student_comparison_overview(request: Request, authorization: Optional[str] =
         conn.close()
 
 
+def _sync_subscription_plan(sub_id: Optional[str], new_plan: str, student_id: int) -> dict:
+    """🔧 2026-06-16 [admin-plan-stripe-sync] 塾長のプラン変更を Stripe サブスクの price にも反映する。
+    proration_behavior='none' (塾長承認 2026-06-16): 即時の差額請求/返金を出さず、次回請求から新価格。
+    対象は active 課金サブスク (sub_id 保有・trial_extended 含む)。sub 無し/Stripe 未設定/解約済み/
+    price 解決不能/API 失敗は synced=False + detail で返す (DB のプラン変更自体は呼び出し側で確定済み)。
+    戻り値: {synced: bool, detail: str}。"""
+    if not sub_id:
+        return {"synced": False, "detail": "no_subscription"}  # trial/手動/解約済み — 同期対象なし
+    if not STRIPE_SECRET_KEY:
+        return {"synced": False, "detail": "stripe_not_configured"}
+    new_price_id = _lookup_plan_price_id(new_plan)
+    if not new_price_id:
+        return {"synced": False, "detail": "price_id_unresolved"}
+    try:
+        s = get_stripe()
+        sub = s.Subscription.retrieve(sub_id)
+        items = ((sub.get("items") or {}).get("data")) or []
+        target_item = None
+        for it in items:
+            if (it.get("price") or {}).get("recurring"):
+                target_item = it
+                break
+        if target_item is None:
+            return {"synced": False, "detail": "no_recurring_item"}
+        current_price_id = (target_item.get("price") or {}).get("id")
+        if current_price_id == new_price_id:
+            # founder_special↔founder1 や hybrid→premium 等、別 plan 名でも同一 Price なら既に整合
+            return {"synced": True, "detail": "already_on_target_price"}
+        # 🛡️ founder の subscription レベルクーポン (THREADS6K ¥2,500/月 forever 等) を無視して price だけ
+        # 差し替えると過/過少請求になる: founder→premium は coupon が残り恒久値引き / premium→founder は
+        # coupon 不在で list 価格をそのまま請求。割引付きサブスク or founder 絡みの変更は自動 modify せず
+        # synced=False + critical event で手動レビューに回す (DB plan は更新済み・proration 設定とは独立)。
+        # discounts は retrieve 既定の ID 配列でも存在判定できる (展開不要)。
+        has_discount = bool(sub.get("discounts") or sub.get("discount"))
+        new_is_founder = new_plan in ("founder_special", "founder1")
+        if has_discount or new_is_founder:
+            _record_ai_critical_event("admin_plan_stripe_sync_needs_review", {
+                "student_id": student_id,
+                "subscription_id": sub_id,
+                "new_plan": new_plan,
+                "has_discount": has_discount,
+                "target_is_founder": new_is_founder,
+                "action_required": (
+                    f"subscription {sub_id} は割引付き or founder 絡みのため price 自動同期を保留しました。"
+                    f"Stripe Dashboard で price を {new_plan} ({new_price_id}) に変更し、必要に応じて"
+                    f"クーポンも手動調整してください (DB plan は更新済み・proration なし)"),
+            })
+            return {"synced": False, "detail": "manual_review_discount_or_founder"}
+        s.Subscription.modify(
+            sub_id,
+            items=[{"id": target_item.get("id"), "price": new_price_id}],
+            proration_behavior="none",
+            metadata={"admin_plan_change": new_plan},
+        )
+        log.info(f"[admin-plan-stripe-sync] sub {sub_id} price {current_price_id} -> {new_price_id} "
+                 f"(plan={new_plan}, student={student_id}, proration=none)")
+        return {"synced": True, "detail": f"price_updated:{new_price_id}"}
+    except Exception as e:
+        _msg = str(e).lower()
+        if type(e).__name__ == "InvalidRequestError" and any(
+            _t in _msg for _t in ("no such subscription", "resource_missing",
+                                  "canceled subscription", "has been canceled", "already canceled")
+        ):
+            return {"synced": False, "detail": "subscription_canceled_or_missing"}
+        # 同期失敗は DB と実請求の乖離 — 手動対応必須の critical event として記録 (CEO 失敗 feed に出す)
+        log.error(f"[admin-plan-stripe-sync] FAILED sub {sub_id} -> {new_plan} "
+                  f"(student={student_id}): {type(e).__name__}: {e}")
+        _record_ai_critical_event("admin_plan_stripe_sync_failed", {
+            "student_id": student_id,
+            "subscription_id": sub_id,
+            "new_plan": new_plan,
+            "error": str(e)[:200],
+            "action_required": (f"Stripe Dashboard で subscription {sub_id} の price を {new_plan} "
+                                f"({new_price_id}) に手動変更してください (DB は更新済み・proration なし)"),
+        })
+        return {"synced": False, "detail": f"stripe_error:{type(e).__name__}"}
+
+
 @app.post("/api/admin/students/{student_id}/plan")
 def admin_set_student_plan(student_id: int, payload: StudentPlanSetRequest, authorization: Optional[str] = Header(None)):
-    """塾長: 生徒のプランを設定。"""
+    """塾長: 生徒のプランを設定。active 課金サブスクがあれば Stripe の price も同期する
+    (proration なし・次回請求から新価格)。"""
     _verify_admin_required(authorization)
     new_plan = (payload.plan or "").strip().lower()
     if new_plan not in _VALID_PLANS:
@@ -35870,11 +36102,12 @@ def admin_set_student_plan(student_id: int, payload: StudentPlanSetRequest, auth
     conn = db()
     try:
         c = conn.cursor()
-        c.execute("SELECT id, plan FROM students WHERE id = ?", (student_id,))
+        c.execute("SELECT id, plan, stripe_subscription_id FROM students WHERE id = ?", (student_id,))
         row = c.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="生徒が見つかりません")
         old_plan = row["plan"]
+        sub_id = (row["stripe_subscription_id"] if "stripe_subscription_id" in row.keys() else None)
         c.execute("UPDATE students SET plan = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (new_plan, student_id))
         try:
             c.execute(
@@ -35885,7 +36118,25 @@ def admin_set_student_plan(student_id: int, payload: StudentPlanSetRequest, auth
             log.warning(f"[Admin] plan_change event log failed: {ev_err}")
         conn.commit()
         log.info(f"[Admin] set plan student={student_id} {old_plan} -> {new_plan}")
-        return {"ok": True, "student_id": student_id, "plan": new_plan}
+
+        # 🔧 [admin-plan-stripe-sync] DB 更新後に Stripe サブスクの price も同期 (塾長承認: proration なし)。
+        # プラン未変更なら同期不要。同期は失敗しても DB 変更を維持し synced/detail を返す
+        # (塾長 UI が「Stripe 未同期=要手動対応」を把握できるよう)。
+        if (old_plan or "").strip().lower() == new_plan:
+            sync = {"synced": True, "detail": "no_change"}
+        else:
+            sync = _sync_subscription_plan(sub_id, new_plan, student_id)
+            try:
+                c.execute(
+                    "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                    ("plan_change_stripe_sync", json.dumps(
+                        {"student_id": student_id, "new": new_plan, "sub": sub_id, **sync}, ensure_ascii=False), "admin_action")
+                )
+                conn.commit()
+            except Exception:
+                pass
+        return {"ok": True, "student_id": student_id, "plan": new_plan,
+                "stripe_synced": sync.get("synced"), "stripe_sync_detail": sync.get("detail")}
     finally:
         conn.close()
 
