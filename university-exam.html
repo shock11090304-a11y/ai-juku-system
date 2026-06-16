@@ -6,6 +6,10 @@
   <title>大学別 過去問風オリジナル | AIコーチング</title>
   <script src="cache-purge.js?v=20260602-print-fix2"></script>
   <script src="frontend-error-monitor.js"></script>
+  <!-- 🧮 KaTeX: AI生成の数学/理科のLaTeX(\(...\)/\[...\]/\frac 等)を教科書通りに描画 (defer・失敗時はプレーン表示) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
   <link rel="stylesheet" href="lp.css?v=20260502-cvr-boost-r2">
   <link rel="stylesheet" href="vocab.css?v=20260525-mistakes-tag">
   <style>
@@ -708,6 +712,7 @@
             ${answerExplanationHtml}
           </div>
         `;
+        _uxApplyKatex(detail);  // 🧮 問題文/選択肢/解答解説の LaTeX 数式を描画
 
         // MC: クリックで自動採点
         if (isMC) {
@@ -1213,6 +1218,12 @@
       // 化学式・数式・設問番号を読みやすくレンダリング (2026-05-22 塾長指示・3 視点 review 致命 2 件 fix 反映)
       function formatScientific(s) {
         let html = escapeHtml(s);
+        // 🧮 LaTeX 数式 (\(...\)/\[...\]/$$...$$) を退避。以降の _/^→sub/sup 等で数式が壊れるのを防ぎ、
+        //    最後に復元して KaTeX(_uxApplyKatex) が描画する。単一 $ は通貨衝突回避で対象外。
+        const _tex = [];
+        html = html.replace(/\$\$[\s\S]*?\$\$|\\\([\s\S]*?\\\)|\\\[[\s\S]*?\\\]/g, (m) => {
+          _tex.push(m); return '@@UXTEX' + (_tex.length - 1) + '@@';
+        });
         // S_N1, S_N2 (求核置換) → S<sub>N</sub>1, S<sub>N</sub>2
         html = html.replace(/\bS_N([12])\b/g, 'S<sub>N</sub>$1');
         // (CH_3)_3, (NH_4)_2 → (CH<sub>3</sub>)<sub>3</sub>, (NH<sub>4</sub>)<sub>2</sub>
@@ -1235,7 +1246,30 @@
         html = html.replace(/(^|\n)\((\d+)\)\s?/g, '$1<strong style="color:#fcd34d;display:inline-block;min-width:2.6em;">($2)</strong> ');
         // 反応矢印 → ⇌ ⇄ ⟶ の前後に半角スペース確保
         html = html.replace(/\s*([→⇌⇄⟶])\s*/g, ' $1 ');
+        // 🧮 退避した LaTeX を復元 (escape 済みのまま戻す→innerHTML 安全・KaTeX が textContent から描画)
+        if (_tex.length) html = html.replace(/@@UXTEX(\d+)@@/g, (_m, i) => _tex[+i]);
         return html;
+      }
+      // 🧮 KaTeX 自動描画 (delimiters $$/\[/\(・単一$は通貨衝突回避で除外・defer retry・失敗時プレーン表示)
+      function _uxApplyKatex(rootEl) {
+        if (!rootEl) return;
+        const run = () => {
+          if (typeof window.renderMathInElement !== 'function') return false;
+          try {
+            window.renderMathInElement(rootEl, {
+              delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '\\[', right: '\\]', display: true },
+                { left: '\\(', right: '\\)', display: false },
+              ],
+              throwOnError: false, errorColor: '#f87171', strict: 'ignore',
+            });
+          } catch (e) { console.warn('[ux katex] render failed', e); }
+          return true;
+        };
+        if (run()) return;
+        let tries = 0;
+        const id = setInterval(() => { tries++; if (run() || tries > 20) clearInterval(id); }, 200);
       }
 
       document.addEventListener('DOMContentLoaded', loadMeta);
