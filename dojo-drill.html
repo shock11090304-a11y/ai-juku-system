@@ -163,6 +163,21 @@
       { subj: '基礎数学', name: '数学 データの分析', exam: 'rikei', part: 'math_1a', grade: 'kyotsu_rikei', filter: 'データ', agg: 6, min: 15, topic: '基礎数学 データ' },
       { subj: '基礎数学', name: '数学 数列', exam: 'rikei', part: 'math_2b', grade: 'kyotsu_rikei', filter: '数列', agg: 6, min: 15, topic: '基礎数学 数列' },
       { subj: '基礎数学', name: '数学 微分・積分', exam: 'rikei', part: 'math_2b', grade: 'kyotsu_rikei', filter: '微分', agg: 6, min: 15, topic: '基礎数学 微積' },
+      { subj: '基礎数学', name: '数学 図形と計量・三角比', exam: 'rikei', part: 'math_1a', grade: 'kyotsu_rikei', filter: '図形と計量', unitExact: true, agg: 6, min: 15, topic: '基礎数学 図形と計量' },
+      { subj: '基礎数学', name: '数学 三角関数', exam: 'rikei', part: 'math_2b', grade: 'kyotsu_rikei', filter: '三角関数', unitExact: true, agg: 6, min: 15, topic: '基礎数学 三角関数' },
+      { subj: '基礎数学', name: '数学 指数・対数関数', exam: 'rikei', part: 'math_2b', grade: 'kyotsu_rikei', filter: '指数', unitExact: true, agg: 6, min: 15, topic: '基礎数学 指数対数' },
+      { subj: '基礎数学', name: '数学 ベクトル', exam: 'rikei', part: 'math_2b', grade: 'kyotsu_rikei', filter: 'ベクトル', unitExact: true, agg: 6, min: 15, topic: '基礎数学 ベクトル' },
+      // 理科 単元別 (共テ物理/化学のフル科目プール=手作り147問を unit でフィルタ・弱点補強直結)
+      //   unitExact=true: bank の LIKE で拾った大問を、小問の unit 接頭辞 === filter で厳密に絞る
+      //   (「力学」が「熱力学」を部分一致で巻き込む等を防止。タグ不在なら従来の LIKE 結果へ graceful fallback)。
+      { subj: '物理', name: '物理 力学', exam: 'rikei', part: 'phys_kyotsu', grade: 'kyotsu_rikei', filter: '力学', unitExact: true, agg: 6, min: 12, topic: '物理 力学' },
+      { subj: '物理', name: '物理 電磁気', exam: 'rikei', part: 'phys_kyotsu', grade: 'kyotsu_rikei', filter: '電磁気', unitExact: true, agg: 6, min: 12, topic: '物理 電磁気' },
+      { subj: '物理', name: '物理 波動', exam: 'rikei', part: 'phys_kyotsu', grade: 'kyotsu_rikei', filter: '波動', unitExact: true, agg: 6, min: 12, topic: '物理 波動' },
+      { subj: '物理', name: '物理 熱力学', exam: 'rikei', part: 'phys_kyotsu', grade: 'kyotsu_rikei', filter: '熱力学', unitExact: true, agg: 6, min: 12, topic: '物理 熱力学' },
+      { subj: '物理', name: '物理 原子', exam: 'rikei', part: 'phys_kyotsu', grade: 'kyotsu_rikei', filter: '原子', unitExact: true, agg: 5, min: 12, topic: '物理 原子' },
+      { subj: '化学', name: '化学 理論化学', exam: 'rikei', part: 'chem_kyotsu', grade: 'kyotsu_rikei', filter: '理論化学', unitExact: true, agg: 6, min: 12, topic: '化学 理論化学' },
+      { subj: '化学', name: '化学 無機化学', exam: 'rikei', part: 'chem_kyotsu', grade: 'kyotsu_rikei', filter: '無機化学', unitExact: true, agg: 6, min: 12, topic: '化学 無機化学' },
+      { subj: '化学', name: '化学 有機化学', exam: 'rikei', part: 'chem_kyotsu', grade: 'kyotsu_rikei', filter: '有機化学', unitExact: true, agg: 6, min: 12, topic: '化学 有機化学' },
     ];
     // 共テ + 単元別 + 大学別 を1配列に集約 (data-idx 共有)
     const UNIV_FLAT = [];
@@ -362,8 +377,18 @@
         if (preset.agg) {
           // 単元別: 1問/payload の独立小問を agg 問ぶん集約して 1 セットに (passage 無し)
           const pool = (d && Array.isArray(d.all)) ? d.all : (d && d.selected ? [d.selected] : []);
-          const questions = [];
+          let questions = [];
           pool.forEach(it => ((it && Array.isArray(it.questions)) ? it.questions : []).forEach(q => { if (q && q.stem) questions.push(q); }));
+          // 🎯 unitExact: 小問 unit の接頭辞 (「(」「（」「:」「：」の前) が filter と完全一致する小問だけに厳密化。
+          //   タグ付き理科プールで「力学」フィルタが「熱力学」を部分一致で巻き込むのを防ぐ。
+          //   一致 0 件 (= unit 未タグの AI 生成プール等) は従来の LIKE 結果のまま使う (graceful fallback)。
+          if (preset.unitExact && preset.filter) {
+            const pref = (u) => String(u == null ? '' : u).split(/[（(：:]/)[0].trim();
+            // 接頭辞が filter で始まる小問だけ採用。「熱力学」は「力学」で始まらないので巻き込まない。
+            // 「指数」は「指数関数・対数関数」「指数・対数」を拾い「数列」を除く。
+            const exact = questions.filter(q => pref(q.unit).startsWith(preset.filter));
+            if (exact.length) questions = exact;
+          }
           daimon = { passage: '', questions: questions.slice(0, preset.agg), _question_id: (pool[0] && pool[0]._question_id) || null };
           qs = daimon.questions;
         } else {
