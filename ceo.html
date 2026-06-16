@@ -1772,6 +1772,7 @@
         <div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;margin-top:0.5rem;">
           <label style="font-size:0.76rem;color:#94a3b8;"><input type="checkbox" id="examImportSkipFull"> 満杯枠(目標到達)をskip</label>
           <button id="examImportBtn" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.82rem;font-weight:800;cursor:pointer;">📥 取り込む</button>
+          <button id="examImportSeedBtn" title="リポジトリ同梱の手作りシード(共テ物理/化学147問)をワンクリックで取り込む" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.82rem;font-weight:800;cursor:pointer;">🌐 共テ物理/化学147問を取込</button>
           <span id="examImportMsg" style="font-size:0.8rem;"></span>
         </div>
       </details>
@@ -7446,6 +7447,28 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
           if (typeof loadPoolStatus === 'function') loadPoolStatus();
         } catch (e) { if (msg) msg.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(String(e.message || e))}</span>`; }
         finally { examImportBtn.disabled = false; examImportBtn.textContent = _o; }
+      });
+
+      // 🌐 リポジトリ同梱の手作りシード(共テ物理/化学147問)を fetch → textarea へ流し込み → 取込ボタンを実行
+      const examImportSeedBtn = document.getElementById('examImportSeedBtn');
+      if (examImportSeedBtn) examImportSeedBtn.addEventListener('click', async () => {
+        const msg = document.getElementById('examImportMsg');
+        const ta = document.getElementById('examImportJson');
+        examImportSeedBtn.disabled = true; const _s = examImportSeedBtn.textContent; examImportSeedBtn.textContent = '⏳ 読込中...';
+        if (msg) msg.innerHTML = '⏳ シード読込中...';
+        try {
+          // 静的配信されている同梱シード (同一オリジン)。キャッシュ回避で _cb 付与。
+          const r = await fetch('/seed-data/rikei_kyotsu_phys_chem_manual.json?_cb=' + Date.now(), { cache: 'no-store' });
+          if (!r.ok) throw new Error('シード取得失敗 HTTP ' + r.status);
+          const txt = await r.text();
+          if (ta) ta.value = txt;  // 取り込む内容を可視化 (確認できる)
+          if (msg) msg.innerHTML = `<span style="color:#93c5fd;">シード読込完了 (${Math.round(txt.length / 1024)} KB)。下の確認に進みます…</span>`;
+          examImportBtn.click();   // 既存の取込フロー(確認ダイアログ→POST)を再利用
+        } catch (e) {
+          if (msg) msg.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(String(e.message || e))}</span>`;
+        } finally {
+          examImportSeedBtn.disabled = false; examImportSeedBtn.textContent = _s;
+        }
       });
 
       const sumBtn = document.getElementById('sendDailySummary');
