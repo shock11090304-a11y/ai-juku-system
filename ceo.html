@@ -8073,8 +8073,15 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
 
       pane.innerHTML = `
         <div style="margin-bottom:14px;">${eligibleNote}</div>
+        <div style="background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.3);border-radius:10px;padding:14px;margin-bottom:18px;${eligible ? '' : 'opacity:0.5;pointer-events:none;'}">
+          <div style="color:#86efac;font-weight:600;font-size:0.88rem;margin-bottom:6px;">📥 AI一括取り込み (JSONを貼って一度に作成)</div>
+          <div style="color:#a1a1aa;font-size:0.76rem;margin-bottom:8px;">AI が用意した学習計画 (JSON 配列) をそのまま貼り付け →「一括で作成して転送」。<b style="color:#cbd5e1;">${esc(studentName)}</b> さんに全件作成されます。週パターンは「毎日／平日／週末」または "all"/"1,2,3,4,5"/"6,7" のどちらでも可。</div>
+          <textarea class="sp-bulk-json" rows="4" placeholder='[ {"title":"...","subject":"数学","material":"...","start_date":"2026-06-15","end_date":"2026-08-31","target_minutes":90,"target_pages":5,"week_pattern":"毎日","note":"...","color":"#6366f1"}, ... ]' style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.45);border:1px solid rgba(52,211,153,0.3);border-radius:6px;color:#fff;font-size:0.78rem;resize:vertical;font-family:monospace;margin-bottom:8px;"></textarea>
+          <button type="button" class="sp-bulk-submit" style="width:100%;padding:10px 16px;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;${eligible ? '' : 'opacity:0.5;cursor:not-allowed;'}" ${eligible ? '' : 'disabled'}>📥 一括で作成して転送</button>
+          <div class="sp-bulk-msg" style="margin-top:8px;font-size:0.82rem;line-height:1.5;"></div>
+        </div>
         <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.3);border-radius:10px;padding:14px;margin-bottom:18px;${eligible ? '' : 'opacity:0.5;pointer-events:none;'}">
-          <div style="color:#a5b4fc;font-weight:600;font-size:0.88rem;margin-bottom:10px;">🧑‍🏫 ${esc(studentName)} さんに学習計画を作成</div>
+          <div style="color:#a5b4fc;font-weight:600;font-size:0.88rem;margin-bottom:10px;">🧑‍🏫 ${esc(studentName)} さんに学習計画を作成 (1件ずつ)</div>
           <input type="text" class="sp-form-title" maxlength="100" placeholder="計画タイトル (例: 数学IA 青チャート完成)" style="width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(167,139,250,0.3);border-radius:6px;color:#fff;font-size:0.92rem;margin-bottom:8px;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
             <div>
@@ -8131,6 +8138,59 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       const histBox = pane.querySelector('.sp-history');
       const formMsg = pane.querySelector('.sp-form-msg');
       const submitBtn = pane.querySelector('.sp-form-submit');
+
+      // 📥 AI一括取り込み (新規 2026-06-15): JSON配列を貼って全件を assign に流す
+      const _SP_WP = { '毎日': 'all', '平日': '1,2,3,4,5', '週末': '6,7' };
+      const bulkBtn = pane.querySelector('.sp-bulk-submit');
+      const bulkJson = pane.querySelector('.sp-bulk-json');
+      const bulkMsg = pane.querySelector('.sp-bulk-msg');
+      if (bulkBtn && bulkJson) {
+        bulkBtn.addEventListener('click', async () => {
+          let arr;
+          try {
+            arr = JSON.parse((bulkJson.value || '').trim());
+          } catch (e) {
+            bulkMsg.style.color = '#fca5a5'; bulkMsg.textContent = '❌ JSONの形式が不正です: ' + (e.message || e); return;
+          }
+          if (!Array.isArray(arr) || arr.length === 0) {
+            bulkMsg.style.color = '#fbbf24'; bulkMsg.textContent = '⚠ JSON配列 ([ {...}, {...} ]) を貼り付けてください'; return;
+          }
+          if (!window.confirm(`${studentName || 'この生徒'} さんに学習計画 ${arr.length} 件を作成して転送します。よろしいですか?`)) return;
+          bulkBtn.disabled = true; bulkBtn.textContent = '⏳ 作成中...';
+          let ok = 0; const fails = [];
+          for (let i = 0; i < arr.length; i++) {
+            const p = arr[i] || {};
+            const body = {
+              student_id: parseInt(studentId, 10),
+              title: p.title, subject: p.subject, material: p.material || null,
+              start_date: p.start_date, end_date: p.end_date,
+              target_minutes: (p.target_minutes != null && p.target_minutes !== '') ? parseInt(p.target_minutes, 10) : null,
+              target_pages: (p.target_pages != null && p.target_pages !== '') ? parseInt(p.target_pages, 10) : null,
+              color: p.color || null, note: p.note || null,
+              week_pattern: _SP_WP[p.week_pattern] || p.week_pattern || 'all',
+            };
+            try {
+              const r = await AdminAuth.fetch('/api/admin/study-plans/assign', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+              });
+              const d = await r.json().catch(() => ({}));
+              if (r.ok) { ok++; } else { fails.push(`${i + 1}件目「${p.title || '(無題)'}」: ${(d.detail || d.message || ('HTTP ' + r.status))}`); }
+            } catch (e) {
+              fails.push(`${i + 1}件目「${p.title || '(無題)'}」: ${(e.message || e)}`);
+            }
+            bulkMsg.style.color = '#a1a1aa'; bulkMsg.textContent = `処理中... ${i + 1}/${arr.length} (成功 ${ok})`;
+          }
+          bulkBtn.disabled = false; bulkBtn.textContent = '📥 一括で作成して転送';
+          if (fails.length === 0) {
+            bulkMsg.style.color = '#86efac'; bulkMsg.textContent = `✅ ${ok}件すべて作成・転送しました (${studentName} さん)`;
+            bulkJson.value = '';
+          } else {
+            bulkMsg.style.color = '#fbbf24';
+            bulkMsg.innerHTML = `⚠ ${ok}/${arr.length}件成功、${fails.length}件失敗:<br>` + fails.map(f => esc(f)).join('<br>');
+          }
+          await refreshList();
+        });
+      }
 
       async function refreshList() {
         try {
