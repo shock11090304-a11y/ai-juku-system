@@ -22101,6 +22101,21 @@ def admin_exam_questions_pool_status(
     if not authed:
         raise HTTPException(status_code=401, detail="未認証")
     counts = _exam_pool_counts()
+    # 🌐 手動取込シードの「取込済み/未取込」判定用: model='manual' の行数を (exam,part,grade) 別に集計。
+    #   ceo のシード取込ボタンが AI生成分と区別して取込済みを表示するのに使う。
+    manual_counts = {}
+    _mc = None
+    try:
+        _mc = db(); _mcur = _mc.cursor()
+        _mcur.execute("SELECT exam_id, part_key, eiken_grade, COUNT(*) AS n FROM exam_questions WHERE model = 'manual' GROUP BY exam_id, part_key, eiken_grade")
+        for _r in _mcur.fetchall():
+            manual_counts[(_r["exam_id"], _r["part_key"], _r["eiken_grade"])] = int(_r["n"])
+    except Exception as _e:
+        log.warning(f"[pool-status] manual count query failed: {_e}")
+    finally:
+        if _mc is not None:
+            try: _mc.close()
+            except Exception: pass
     JST = timezone(timedelta(hours=9))
     today_count = _exam_generated_today()
     parts = []
@@ -22121,6 +22136,7 @@ def admin_exam_questions_pool_status(
             "grade": eiken_grade,
             "count": n,
             "target": _tgt,
+            "manual": manual_counts.get((exam_id, part_key, eiken_grade), 0),  # 手作りシード取込分
             "is_full": is_full,
             "is_low": is_low,
         })

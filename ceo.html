@@ -1772,8 +1772,14 @@
         <div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;margin-top:0.5rem;">
           <label style="font-size:0.76rem;color:#94a3b8;"><input type="checkbox" id="examImportSkipFull"> 満杯枠(目標到達)をskip</label>
           <button id="examImportBtn" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.82rem;font-weight:800;cursor:pointer;">📥 取り込む</button>
-          <button id="examImportSeedBtn" class="exam-seed-btn" data-seed="/seed-data/rikei_kyotsu_phys_chem_manual.json" title="リポジトリ同梱の手作りシード(共テ物理/化学)をワンクリックで取り込む" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.82rem;font-weight:800;cursor:pointer;">🌐 共テ物理/化学を取込</button>
-          <button id="examImportSeedMathBtn" class="exam-seed-btn" data-seed="/seed-data/rikei_kyotsu_math_manual.json" title="リポジトリ同梱の手作りシード(共テ数学IA/IIB)をワンクリックで取り込む" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.82rem;font-weight:800;cursor:pointer;">🌐 共テ数学IA/IIBを取込</button>
+          <span style="display:inline-flex;align-items:center;gap:0.35rem;">
+            <button id="examImportSeedBtn" class="exam-seed-btn" data-seed="/seed-data/rikei_kyotsu_phys_chem_manual.json" data-parts="rikei,phys_kyotsu,kyotsu_rikei;rikei,chem_kyotsu,kyotsu_rikei" data-size="30" title="リポジトリ同梱の手作りシード(共テ物理/化学)をワンクリックで取り込む" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.82rem;font-weight:800;cursor:pointer;">🌐 共テ物理/化学を取込</button>
+            <span class="exam-seed-status" data-for="examImportSeedBtn" style="font-size:0.74rem;font-weight:700;color:#71717a;">…</span>
+          </span>
+          <span style="display:inline-flex;align-items:center;gap:0.35rem;">
+            <button id="examImportSeedMathBtn" class="exam-seed-btn" data-seed="/seed-data/rikei_kyotsu_math_manual.json" data-parts="rikei,math_1a,kyotsu_rikei;rikei,math_2b,kyotsu_rikei" data-size="30" title="リポジトリ同梱の手作りシード(共テ数学IA/IIB)をワンクリックで取り込む" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.82rem;font-weight:800;cursor:pointer;">🌐 共テ数学IA/IIBを取込</button>
+            <span class="exam-seed-status" data-for="examImportSeedMathBtn" style="font-size:0.74rem;font-weight:700;color:#71717a;">…</span>
+          </span>
           <span id="examImportMsg" style="font-size:0.8rem;"></span>
         </div>
       </details>
@@ -3669,6 +3675,30 @@
       }
     }
 
+    // 🌐 シード取込ボタンに「取込済み/未取込」を表示 (pool-status の per-part manual 行数で判定)。
+    //   各ボタンの data-parts="exam,part,grade;..." と data-size から、手作りシード(model='manual')が
+    //   本番に入っているかを区別 (AI生成分とは別カウント)。取込済みなら btn.dataset.imported を立てる。
+    function updateSeedButtonStates(parts) {
+      const manualMap = {};
+      (parts || []).forEach(p => { manualMap[`${p.exam}|${p.part}|${p.grade || ''}`] = (p.manual || 0); });
+      document.querySelectorAll('.exam-seed-btn[data-parts]').forEach(btn => {
+        const tuples = (btn.getAttribute('data-parts') || '').split(';').map(s => s.trim()).filter(Boolean);
+        const size = parseInt(btn.getAttribute('data-size') || '0', 10) || 0;
+        let manualSum = 0;
+        tuples.forEach(t => { const a = t.split(','); manualSum += (manualMap[`${a[0]}|${a[1]}|${a[2] || ''}`] || 0); });
+        const imported = size > 0 ? manualSum >= size : manualSum > 0;
+        btn.dataset.imported = imported ? '1' : '';
+        btn.dataset.manualCount = String(manualSum);
+        btn.style.opacity = imported ? '0.6' : '1';
+        const st = document.querySelector(`.exam-seed-status[data-for="${btn.id}"]`);
+        if (st) {
+          if (imported) st.innerHTML = `<span style="color:#34d399;">✅ 取込済み (手作り${manualSum}問)</span>`;
+          else if (manualSum > 0) st.innerHTML = `<span style="color:#fbbf24;">△ 一部のみ (手作り${manualSum}/${size || '?'}問)</span>`;
+          else st.innerHTML = `<span style="color:#f87171;">⚠️ 未取込</span>`;
+        }
+      });
+    }
+
     // 🎓 試験問題プール状況をロード
     async function loadPoolStatus() {
       if (!window.AdminAuth || !AdminAuth.getToken()) return;
@@ -3714,6 +3744,7 @@
           </div>`;
         }).join('');
 
+        try { updateSeedButtonStates(parts); } catch (e) { console.warn('[seedStatus]', e); }
         const t = new Date();
         document.getElementById('poolUpdated').textContent = `(更新: ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}:${String(t.getSeconds()).padStart(2,'0')})`;
       } catch (e) {
@@ -7460,6 +7491,11 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         const ta = document.getElementById('examImportJson');
         const url = btn.getAttribute('data-seed');
         if (!url) return;
+        // 既に取込済み (model='manual' 行が seed サイズ以上ある) なら重複警告
+        if (btn.dataset.imported === '1') {
+          const n = btn.dataset.manualCount || '?';
+          if (!confirm(`このシードは既に取込済みです (手作り問題 ${n}問がプールにあります)。\n再取込すると重複します。続行しますか?`)) return;
+        }
         btn.disabled = true; const _s = btn.textContent; btn.textContent = '⏳ 読込中...';
         if (msg) msg.innerHTML = '⏳ シード読込中...';
         try {
