@@ -35186,8 +35186,10 @@ def admin_grammar_drill_create(
     x_cron_secret: Optional[str] = Header(None),
 ):
     """🧑‍🏫 admin: 単元を指定してドリルを作成 + 選んだ生徒に配信。
-    payload: { unit (必須), levels?: ["standard","advanced"] (既定=偏差値55-65), count?: 25, student_ids: [..] (必須・非空) }
-    作成時に出題を固定 (全生徒同一問題) → 問題別正解率が比較可能。"""
+    payload: { unit (必須), levels?: ["standard","advanced"] (既定=偏差値55-65), count?: 25, student_ids: [..] (必須・非空),
+               exclude_drill_id?: int (任意・このドリルで出した問題を除外=同単元の新問のみ出題), title?: str (任意・タイトル上書き) }
+    作成時に出題を固定 (全生徒同一問題) → 問題別正解率が比較可能。
+    🎯 exclude_drill_id を渡すと「弱点対策ドリル」: 間違いの多かった単元を、前回と被らない新しい問題で再出題できる。"""
     if not _grammar_admin_authed(authorization, x_cron_secret):
         raise HTTPException(status_code=401, detail="未認証")
 
@@ -35213,26 +35215,57 @@ def admin_grammar_drill_create(
         student_ids = sorted({int(s) for s in student_ids})
     except (TypeError, ValueError):
         raise HTTPException(status_code=422, detail="student_ids が不正です")
+    # 🎯 弱点対策ドリル (2026-06-16): 指定ドリルで出した問題を除外し「同単元の新しい問題」で
+    #    再出題するための任意パラメータ。間違いの多かった単元を、前回と被らない新問で復習させる。
+    exclude_drill_id = payload.get("exclude_drill_id")
+    if exclude_drill_id is not None:
+        try:
+            exclude_drill_id = int(exclude_drill_id)
+        except (TypeError, ValueError):
+            exclude_drill_id = None
+    # タイトル上書き (任意): 対策ドリルに「🎯弱点対策」等を付けて一覧/宿題で識別できるようにする。
+    # str() で囲うのは title が非文字列 (数値/配列等) で来ても 500 を出さず無害化するため (count/student_ids と同方針)。
+    title_override = str(payload.get("title") or "").strip()[:200] or None
 
     conn = db()
     try:
         c = conn.cursor()
-        # 1) 在庫から count 問をランダム固定
+        # 🎯 除外問題 ID を解決 (exclude_drill_id のドリルで出題済みの question_ids)
+        exclude_ids = []
+        if exclude_drill_id:
+            c.execute("SELECT question_ids FROM grammar_drills WHERE id = ?", (exclude_drill_id,))
+            _exrow = c.fetchone()
+            if _exrow:
+                try:
+                    _exraw = (_exrow["question_ids"] if hasattr(_exrow, "keys") else _exrow[0]) or "[]"
+                    exclude_ids = [int(x) for x in json.loads(_exraw)]
+                except Exception:
+                    exclude_ids = []
+        # 1) 在庫から count 問をランダム固定 (exclude_ids があれば除外 = 前回と被らない新問のみ)
         ph = ",".join(["?"] * len(levels))
-        c.execute(
-            f"SELECT id FROM grammar_questions WHERE unit = ? AND level IN ({ph}) AND active = 1 "
-            f"ORDER BY RANDOM() LIMIT ?",
-            (unit, *levels, count),
-        )
+        if exclude_ids:
+            ex_ph = ",".join(["?"] * len(exclude_ids))
+            c.execute(
+                f"SELECT id FROM grammar_questions WHERE unit = ? AND level IN ({ph}) AND active = 1 "
+                f"AND id NOT IN ({ex_ph}) ORDER BY RANDOM() LIMIT ?",
+                (unit, *levels, *exclude_ids, count),
+            )
+        else:
+            c.execute(
+                f"SELECT id FROM grammar_questions WHERE unit = ? AND level IN ({ph}) AND active = 1 "
+                f"ORDER BY RANDOM() LIMIT ?",
+                (unit, *levels, count),
+            )
         qids = [r["id"] for r in c.fetchall()]
         if len(qids) < count:
             raise HTTPException(
                 status_code=400,
-                detail=f"単元「{unit}」の在庫が不足しています (要求 {count}問 / 在庫 {len(qids)}問)。"
-                       f"レベルを広げるか、問題を補充してください。",
+                detail=f"単元「{unit}」の在庫が不足しています (要求 {count}問 / "
+                       f"{'前回の問題を除いた' if exclude_ids else ''}在庫 {len(qids)}問)。"
+                       f"レベルを広げるか、問題数を減らすか、問題を補充してください。",
             )
         level_label = "・".join(GRAMMAR_LEVELS.get(l, l) for l in levels)
-        title = f"{unit}ドリル（{level_label}・{count}問）"
+        title = title_override or f"{unit}ドリル（{level_label}・{count}問）"
 
         # 2) ドリル作成 (question_ids 固定)
         c.execute(

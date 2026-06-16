@@ -4110,16 +4110,40 @@ function _renderHomeworkItem(item) {
   </div>`;
 }
 
+// 📝 英文法ドリルを「宿題カード」として描画 (2026-06-16 塾長指示「ドリルも宿題に入れる」)。
+// クリック → window._gdOpenDrill(drill_id) が解答エリア(#grammarDrillSection)に問題を展開する。
+function _renderDrillAsHwItem(item) {
+  const isOpen = item.status !== 'completed';
+  const typeBadge = `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(20,184,166,0.22); color:#5eead4; border-radius:8px; font-weight:bold;">📝 英文法ドリル</span>`;
+  const unitBadge = item.unit
+    ? `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(99,102,241,0.2); color:#a5b4fc; border-radius:8px;">${_hwEscape(item.unit)}</span>`
+    : '';
+  const levelBadge = item.level
+    ? `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(255,255,255,0.06); color:#a1a1aa; border-radius:8px;">${_hwEscape(item.level)}</span>`
+    : '';
+  const scoreBlock = (!isOpen && item.score_total != null)
+    ? `<div style="margin-top:8px; padding:8px 11px; background:rgba(52,211,153,0.08); border-left:3px solid #34d399; border-radius:6px; font-size:0.78rem; color:#6ee7b7;">✅ 完了 スコア ${_hwEscape(String(item.score_correct == null ? '?' : item.score_correct))}/${_hwEscape(String(item.score_total))}</div>`
+    : '';
+  const cta = isOpen ? '▶ 解いて提出する' : '結果・解説を見る ▶';
+  const btnStyle = isOpen
+    ? 'background:linear-gradient(135deg,#14b8a6,#10b981); color:#fff; border:0;'
+    : 'background:rgba(255,255,255,0.05); color:#a1a1aa; border:1px solid rgba(255,255,255,0.12);';
+  const btn = `<button type="button" data-hw-drill-open="${_hwEscape(item.drill_id)}" style="margin-top:10px; padding:8px 16px; ${btnStyle} border-radius:8px; font-weight:bold; font-size:0.86rem; cursor:pointer;">${cta}</button>`;
+  return `<div class="hw-item hw-drill-item" style="padding:14px 16px; background:${isOpen ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.02)'}; border:1px solid ${isOpen ? 'rgba(20,184,166,0.3)' : 'rgba(255,255,255,0.06)'}; border-radius:10px; margin-bottom:10px;">
+    <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">${typeBadge}${unitBadge}${levelBadge}</div>
+    <div style="margin-top:8px; color:${isOpen ? '#fff' : '#a1a1aa'}; font-weight:bold; font-size:0.96rem;">${_gdRich(item.title)}</div>
+    ${scoreBlock}
+    <div>${btn}</div>
+  </div>`;
+}
+
 async function initHomeworkSection() {
   const section = document.querySelector('.homework-section');
   if (!section) return;
   const student = getCurrentStudent();
-  if (!_canUseStudyMgmt(student)) {
-    // 対象外コース/プランは section ごと非表示 (study-log のように upgrade banner は出さない・1機能 1 banner で十分)
-    section.style.display = 'none';
-    return;
-  }
-  section.style.display = 'block';
+  // 宿題 (homework_assignments) は対象コース/プラン限定。英文法ドリルは全生徒に配信されうるため、
+  // 「ドリルがある非対象生徒」にも宿題セクションを出してドリルを宿題として見せる (塾長指示 2026-06-16)。
+  const premium = _canUseStudyMgmt(student);
 
   const list = section.querySelector('#homeworkList');
   const badge = section.querySelector('#homeworkBadge');
@@ -4127,65 +4151,118 @@ async function initHomeworkSection() {
   const toggleBtn = section.querySelector('#homeworkShowCompleted');
   if (!list) return;
 
-  let openItems = [];
-  let completedItems = [];
-  let showCompleted = false;
+  // 非premium (宿題=homework 対象外) は「英文法ドリル」専用見出しに切替 (宿題は出ないため misleading 回避)
+  const titleEl = section.querySelector('#homeworkTitleText');
+  const introEl = section.querySelector('#homeworkIntro');
+  if (!premium) {
+    if (titleEl) titleEl.textContent = '📝 英文法ドリル';
+    if (introEl) introEl.textContent = '英文法ドリルです。「▶ 解いて提出する」を押して取り組みましょう。';
+  }
 
-  async function refresh() {
+  let openHw = [], doneHw = [], overdueN = 0;
+  let openDrills = [], doneDrills = [];
+  let showCompleted = false;
+  let previewMode = false;   // preview(?preview_mode=) no-op 検出 → section 非表示 (旧 teal 挙動を踏襲)
+  let drillsFailed = false;  // ドリル取得の「真の失敗」検出 → 空と区別しエラー表示 (非表示にしない)
+
+  // 宿題 (premium のみ・403/失敗時はドリルだけで続行)
+  async function loadHomework() {
+    openHw = []; doneHw = []; overdueN = 0;
+    if (!premium) return;
     try {
       const data = await slApiFetch('/api/student/homework?limit=100');
       const items = (data && data.items) || [];
-      openItems = items.filter(it => it.status === 'open');
-      completedItems = items.filter(it => it.status === 'completed');
-      // badge
-      const overdueN = (data.summary && data.summary.overdue) || 0;
-      if (openItems.length > 0) {
-        badge.style.display = 'inline-block';
-        if (overdueN > 0) {
-          badge.textContent = `⚠ 期限超過 ${overdueN} / 未完了 ${openItems.length}`;
-          badge.style.background = '#ef4444';
-        } else {
-          badge.textContent = `未完了 ${openItems.length}`;
-          badge.style.background = '#6366f1';
-        }
-      } else {
-        badge.style.display = 'none';
-      }
-      render();
+      openHw = items.filter(it => it.status === 'open');
+      doneHw = items.filter(it => it.status === 'completed');
+      overdueN = (data.summary && data.summary.overdue) || 0;
     } catch (e) {
-      list.innerHTML = `<div style="color:#fca5a5; padding:12px; background:rgba(239,68,68,0.08); border-radius:8px; font-size:0.85rem;">⚠ 宿題の取得に失敗しました (${_hwEscape(e.message || e)})</div>`;
+      if (e && e.preview) { previewMode = true; return; }
+      console.warn('[hw] homework load failed (ドリルのみ表示):', e && (e.message || e));
     }
   }
 
+  // 英文法ドリル (全生徒・配信されていれば宿題として表示)
+  async function loadDrills() {
+    openDrills = []; doneDrills = []; drillsFailed = false;
+    try {
+      const data = await slApiFetch('/api/student/grammar-drills');
+      const items = (data && data.items) || [];
+      openDrills = items.filter(it => it.status !== 'completed');
+      doneDrills = items.filter(it => it.status === 'completed');
+    } catch (e) {
+      // preview(no-op) は section 非表示。真の失敗 (500/network) は「ドリル有無不明」なので
+      // 空と区別して section は出しエラー表示する (旧 teal loadList の安全網を踏襲)。
+      if (e && e.preview) { previewMode = true; }
+      else { drillsFailed = true; console.warn('[hw] grammar-drills load failed:', e && (e.message || e)); }
+    }
+  }
+
+  async function refresh() {
+    previewMode = false;
+    await Promise.all([loadHomework(), loadDrills()]);
+    // preview(?preview_mode=) は no-op → section 非表示 (旧 teal セクションの e.preview 挙動を踏襲)。
+    if (previewMode) { section.style.display = 'none'; return; }
+    // それ以外は常時表示 (2026-06-09 塾長指示「宿題欄を常時表示に改修」: 配信0件でも空状態で発見性を担保。
+    //   非premium でドリル0件でも「📝 英文法ドリル」の空状態を出す=ドリルがどこに来るか常に分かる)。
+    section.style.display = 'block';
+    // badge: 未完了(宿題 + ドリル)
+    const openTotal = openHw.length + openDrills.length;
+    if (openTotal > 0) {
+      badge.style.display = 'inline-block';
+      if (overdueN > 0) {
+        badge.textContent = `⚠ 期限超過 ${overdueN} / 未完了 ${openTotal}`;
+        badge.style.background = '#ef4444';
+      } else {
+        badge.textContent = `未完了 ${openTotal}`;
+        badge.style.background = '#6366f1';
+      }
+    } else {
+      badge.style.display = 'none';
+    }
+    render();
+  }
+
   function render() {
-    if (openItems.length === 0 && completedItems.length === 0) {
-      list.innerHTML = `<div style="color:#71717a; text-align:center; padding:1.5rem 0; font-size:0.88rem;">📭 現在、塾長から割当てられている宿題はありません。<br><span style="font-size:0.74rem;">塾長が割当てると、ここに表示されます。</span></div>`;
+    // ドリル取得が真に失敗した時はエラーを明示 (空と誤認させない・旧 teal の安全網を踏襲)
+    const errBanner = drillsFailed
+      ? `<div style="color:#fca5a5; padding:12px; background:rgba(239,68,68,0.08); border-radius:8px; font-size:0.85rem; margin-bottom:10px;">⚠ ドリルの取得に失敗しました。ページを再読み込み（更新）してみてください。</div>`
+      : '';
+    const emptyMsg = premium ? '📭 いま出ている宿題・ドリルはありません。' : '📭 いま出ている英文法ドリルはありません。';
+    const totalAll = openHw.length + doneHw.length + openDrills.length + doneDrills.length;
+    if (totalAll === 0) {
+      list.innerHTML = errBanner + `<div style="color:#71717a; text-align:center; padding:1.5rem 0; font-size:0.88rem;">${emptyMsg}<br><span style="font-size:0.74rem;">塾長が出すと、ここに表示されます。最近やったのに無い時は、ページを再読み込みしてみてください。</span></div>`;
       toggleWrap.style.display = 'none';
       return;
     }
-    let html = '';
-    if (openItems.length > 0) {
-      html += openItems.map(_renderHomeworkItem).join('');
+    let html = errBanner;
+    // 未完了: 英文法ドリルを先頭に (やってもらいたい) → 宿題
+    const openCards = openDrills.map(_renderDrillAsHwItem).concat(openHw.map(_renderHomeworkItem));
+    if (openCards.length > 0) {
+      html += openCards.join('');
     } else {
-      html += `<div style="color:#86efac; text-align:center; padding:1rem 0; font-size:0.9rem;">🎉 未完了の宿題はありません。素晴らしい!</div>`;
+      html += `<div style="color:#86efac; text-align:center; padding:1rem 0; font-size:0.9rem;">🎉 未完了の宿題・ドリルはありません。素晴らしい!</div>`;
     }
-    if (showCompleted && completedItems.length > 0) {
+    const doneCount = doneHw.length + doneDrills.length;
+    if (showCompleted && doneCount > 0) {
       html += `<div style="margin-top:1.5rem; padding-top:1rem; border-top:1px dashed rgba(255,255,255,0.08);">
-        <div style="color:#a1a1aa; font-size:0.78rem; margin-bottom:8px;">✅ 過去の完了宿題 (直近 ${completedItems.length} 件)</div>
-        ${completedItems.map(_renderHomeworkItem).join('')}
+        <div style="color:#a1a1aa; font-size:0.78rem; margin-bottom:8px;">✅ 過去の完了 (直近 ${doneCount} 件・タップで復習)</div>
+        ${doneDrills.map(_renderDrillAsHwItem).join('')}${doneHw.map(_renderHomeworkItem).join('')}
       </div>`;
     }
     list.innerHTML = html;
     // toggle 表示制御
-    if (completedItems.length > 0) {
+    if (doneCount > 0) {
       toggleWrap.style.display = 'block';
       toggleBtn.textContent = showCompleted
-        ? `過去の完了宿題を隠す ▴`
-        : `過去の完了宿題を表示 (${completedItems.length}) ▾`;
+        ? `過去の完了を隠す ▴`
+        : `過去の完了を表示 (${doneCount}) ▾`;
     } else {
       toggleWrap.style.display = 'none';
     }
   }
+
+  // 🔁 ドリル解答エリアの「← 一覧に戻る」/ 提出後 から宿題リストを再読込するためのフック
+  window._hwRefreshDrills = refresh;
 
   // 📄 添付プリント「PDFを開く」(event delegation)。download endpoint で file_path を取得 → 検証 → 新タブ表示。
   list.addEventListener('click', async (e) => {
@@ -4239,6 +4316,19 @@ async function initHomeworkSection() {
     }
   });
 
+  // 📝 ドリルを開く (event delegation) — 解答エリア(#grammarDrillSection)に展開
+  list.addEventListener('click', (e) => {
+    const dbtn = e.target.closest && e.target.closest('[data-hw-drill-open]');
+    if (!dbtn) return;
+    const did = dbtn.getAttribute('data-hw-drill-open');
+    if (!did) return;
+    if (typeof window._gdOpenDrill === 'function') {
+      window._gdOpenDrill(did);
+    } else {
+      alert('ドリルを開けませんでした。ページを再読み込みしてください。');
+    }
+  });
+
   // toggle 完了履歴
   toggleBtn.addEventListener('click', () => {
     showCompleted = !showCompleted;
@@ -4250,9 +4340,11 @@ async function initHomeworkSection() {
 
 // ==========================================================================
 // 📝 単元別ドリル (英文法 4 択ドリル・2026-06-05)
-//   - 配信されていれば誰でも解ける (course ゲート無し)。drill 0 件でも section は常時表示し
-//     空状態を出す (2026-06-09 塾長指示「宿題欄を常時表示に改修」・発見性向上)。preview 時のみ非表示。
-//   - 認証は slApiFetch() 経由 (内部で _slToken() → AuthGuard.getToken()/localStorage → Authorization: Bearer)。
+//   - 2026-06-16 役割変更: ドリル一覧は initHomeworkSection (📚 宿題) に統合済み。
+//     この section (#grammarDrillSection) は「解答エリア」専用で、宿題カードの「▶ 解いて提出する」
+//     から openDrill() が表示する。一覧の常時表示・空状態・発見性 (2026-06-09 塾長指示) は
+//     initHomeworkSection 側で担保 (premium 不問・配信0件でも空状態・preview のみ非表示)。
+//   - 配信されていれば誰でも解ける (course ゲート無し)。認証は slApiFetch() 経由。
 //   - stem/explanation/choices/title は全て _gdEscape (= escapeHtml ベース) でエスケープ後に表示。
 //     さらに stem/explanation は <u>...</u> を復活 (下線対応・既存 3 ファイル whitelist 方式に準拠) し、
 //     $$/\[/\( の数式を KaTeX で組版 (learning-brain.js の _lbApplyKatex と同方式・CDN defer retry 付き)。
@@ -4302,36 +4394,9 @@ function _gdApplyKatex(rootEl) {
   const id = setInterval(() => { tries++; if (run() || tries > 20) clearInterval(id); }, 200);
 }
 
-// 一覧用の状態バッジ (未完了 / ✅完了 score)
-function _gdStatusBadge(item) {
-  if (item.status === 'completed') {
-    const sc = (item.score_correct != null && item.score_total != null)
-      ? ` ${item.score_correct}/${item.score_total}` : '';
-    return `<span style="font-size:0.74rem; padding:2px 8px; background:rgba(52,211,153,0.18); color:#6ee7b7; border-radius:8px; font-weight:bold;">✅ 完了${_gdEscape(sc)}</span>`;
-  }
-  return `<span style="font-size:0.74rem; padding:2px 8px; background:rgba(20,184,166,0.22); color:#5eead4; border-radius:8px; font-weight:bold;">未完了</span>`;
-}
-
-// 一覧の 1 行
-function _gdRenderListItem(item) {
-  const isOpen = item.status !== 'completed';
-  const unitBadge = item.unit
-    ? `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(99,102,241,0.2); color:#a5b4fc; border-radius:8px;">${_gdEscape(item.unit)}</span>`
-    : '';
-  const levelBadge = item.level
-    ? `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(255,255,255,0.06); color:#a1a1aa; border-radius:8px;">${_gdEscape(item.level)}</span>`
-    : '';
-  const cta = isOpen ? '解く ▶' : '結果を見る ▶';
-  return `<div class="gd-item" data-gd-open="${_gdEscape(item.drill_id)}" role="button" tabindex="0" style="padding:14px 16px; background:${isOpen ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.02)'}; border:1px solid ${isOpen ? 'rgba(20,184,166,0.3)' : 'rgba(255,255,255,0.06)'}; border-radius:10px; margin-bottom:10px; cursor:pointer;">
-    <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
-      ${unitBadge}${levelBadge}${_gdStatusBadge(item)}
-    </div>
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-      <div style="color:${isOpen ? '#fff' : '#cbd5e1'}; font-weight:bold; font-size:0.96rem;">${_gdRich(item.title)}</div>
-      <span style="flex:0 0 auto; font-size:0.8rem; color:#5eead4; font-weight:bold;">${cta}</span>
-    </div>
-  </div>`;
-}
+// (2026-06-16) ドリル一覧の行/バッジ描画はここから削除: 一覧は 📚 宿題セクション
+//   (_renderDrillAsHwItem) に統合し、この section は解答エリア専用になったため。
+//   完了バッジ等の表示は _renderDrillAsHwItem 側で宿題カードとして描画する。
 
 // 1 問の選択肢ラジオ群を描画 (表示は ①②③④ = index+1、value は 0 始まり index)
 function _gdRenderChoices(drillId, q) {
@@ -4540,62 +4605,24 @@ async function initGrammarDrillSection() {
   const badge = section.querySelector('#grammarDrillBadge');
   if (!list) return;
 
-  // 一覧描画 (戻れるように再利用)
+  // 「← 一覧に戻る」= 解答エリアを閉じて宿題リストへ戻る (2026-06-16 ドリルは宿題セクションに統合済み)。
+  // 解答/採点後にここを通り、宿題リストを再読込 (完了が反映される) して宿題セクションへスクロール。
   async function loadList() {
-    let data;
-    try {
-      data = await slApiFetch('/api/student/grammar-drills');
-    } catch (e) {
-      // 取得失敗時: プレビュー(no-op)や未配信は section 非表示に倒す (宿題と同様 1 機能 1 表示)
-      if (e && e.preview) { section.style.display = 'none'; return; }
-      // 真の取得失敗のみ section を出してエラー表示 (drill 有無不明のため)
-      section.style.display = 'block';
-      list.innerHTML = `<div style="color:#fca5a5; padding:12px; background:rgba(239,68,68,0.08); border-radius:8px; font-size:0.85rem;">⚠ ドリルの取得に失敗しました (${_gdEscape((e && (e.message || e)) || '')})</div>`;
-      return;
+    section.style.display = 'none';
+    list.innerHTML = '';
+    if (typeof window._hwRefreshDrills === 'function') {
+      try { await window._hwRefreshDrills(); } catch (_) { /* noop */ }
     }
-    const items = (data && data.items) || [];
-    if (items.length === 0) {
-      // 🚨 2026-06-09 塾長指示「宿題欄を常時表示に改修」: 配信 0 件でも section を消さず、
-      //   「いま宿題 (ドリル) が無い」ことを明示する空状態を出す。生徒が「宿題がどこに表示されるか」を
-      //   常に把握でき、配信されているのに見えない異常 (別アカウント/旧キャッシュ等) に気付けるようにする。
-      //   study-log セクションの「絶対に消えない」方針に準拠。
-      //   ※ プレビュー (?preview_mode=) 時は上の catch(e.preview) で既に非表示なのでここには来ない。
-      section.style.display = 'block';
-      if (badge) badge.style.display = 'none';
-      list.innerHTML = `<div style="color:#94a3b8; padding:14px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:10px; font-size:0.86rem; line-height:1.7;">
-        📭 いま出ている宿題（単元別ドリル）はありません。<br>
-        <span style="color:#71717a; font-size:0.8rem;">塾長が宿題を出すと、ここに表示されます。最近やったはずなのに表示されない時は、ページ上部の「🔄 更新」を押してみてください。</span>
-      </div>`;
-      return;
+    const hw = document.getElementById('homeworkSection');
+    if (hw && hw.style.display !== 'none') {
+      try { hw.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) { /* noop */ }
     }
-    section.style.display = 'block';
-
-    // バッジ (未完了件数)
-    const openN = (data.summary && data.summary.open != null)
-      ? data.summary.open : items.filter(it => it.status !== 'completed').length;
-    if (openN > 0) {
-      badge.style.display = 'inline-block';
-      badge.textContent = `未完了 ${openN}`;
-    } else {
-      badge.style.display = 'none';
-    }
-
-    // API は未完了→完了の順で返す前提。念のため未完了優先で安定ソート。
-    const openItems = items.filter(it => it.status !== 'completed');
-    const doneItems = items.filter(it => it.status === 'completed');
-    let html = openItems.map(_gdRenderListItem).join('');
-    if (doneItems.length > 0) {
-      html += `<div style="margin-top:1.2rem; padding-top:0.9rem; border-top:1px dashed rgba(255,255,255,0.08);">
-        <div style="color:#a1a1aa; font-size:0.78rem; margin-bottom:8px;">✅ 完了済みドリル (タップで復習)</div>
-        ${doneItems.map(_gdRenderListItem).join('')}
-      </div>`;
-    }
-    list.innerHTML = html;
-    _gdApplyKatex(list);
   }
 
-  // ドリルを開く (GET /api/student/grammar-drill/{id})
+  // ドリルを開く (GET /api/student/grammar-drill/{id}) — 宿題リストの「▶ 解いて提出する」から呼ばれる。
   async function openDrill(drillId) {
+    section.style.display = 'block';  // 解答エリアを表示 (通常は非表示)
+    try { section.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) { /* noop */ }
     list.innerHTML = `<div style="color:#71717a; text-align:center; padding:1.2rem 0; font-size:0.85rem;">⏳ 読み込み中...</div>`;
     let data;
     try {
@@ -4795,7 +4822,9 @@ async function initGrammarDrillSection() {
     }
   });
 
-  await loadList();
+  // 初期表示: 解答エリアは通常 非表示。ドリル一覧は宿題セクション(#homeworkSection)が描画し、
+  // 「▶ 解いて提出する」で openDrill() がここを表示する (2026-06-16 ドリルを宿題に統合)。
+  section.style.display = 'none';
 }
 
 // ==========================================================================
@@ -4921,13 +4950,22 @@ async function initCoachNextMove(student, ajMode, isPreview) {
     if (open.length > 0) {
       const isDiag = open[0].unit === '診断';
       const unit = (open[0].unit || open[0].title || '').toString();
+      const firstDrillId = open[0].drill_id;
       setMove({
         title: isDiag ? '🔰 はじめての実力チェック（10問・約3分）'
           : (unit ? 'ドリル「' + unit + '」をやろう' : '塾長からの宿題ドリルをやろう'),
         reason: isDiag
           ? 'やりかけの実力チェックが残っています。終わらせると AI があなたの苦手を見つけます。'
           : '塾長から出ている宿題が ' + open.length + ' 件あります。これを終わらせれば今日は OK！',
-        scrollTo: 'grammarDrillSection',
+        // ドリルは宿題セクションに統合済み。一手から直接 解答エリアを開く (2026-06-16)。
+        onClick: function () {
+          if (firstDrillId != null && typeof window._gdOpenDrill === 'function') {
+            window._gdOpenDrill(firstDrillId);
+          } else {
+            const sec = document.getElementById('homeworkSection') || document.getElementById('grammarDrillSection');
+            if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        },
       });
       return;
     }

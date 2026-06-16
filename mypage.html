@@ -299,29 +299,29 @@
     <!-- 📚 宿題 (Phase 5 - 国公立難関大学コース + 同等プラン限定・塾長指示 2026-05-24)
          3 視点 UX review 致命指摘で streak-section 直後に配置 (期限超過バッジを即座に発見可能)
          JS の initHomeworkSection() が auth/course を判定して表示制御 (ineligible は section ごと非表示) -->
-    <section class="homework-section" style="margin: 0 0 1.5rem 0; padding:1.25rem 1.25rem; background:linear-gradient(135deg,rgba(99,102,241,0.16),rgba(139,92,246,0.10)); border:1px solid rgba(99,102,241,0.4); border-radius:14px; display:none; box-shadow:0 8px 24px rgba(99,102,241,0.15);">
+    <section id="homeworkSection" class="homework-section" style="margin: 0 0 1.5rem 0; padding:1.25rem 1.25rem; background:linear-gradient(135deg,rgba(99,102,241,0.16),rgba(139,92,246,0.10)); border:1px solid rgba(99,102,241,0.4); border-radius:14px; display:none; box-shadow:0 8px 24px rgba(99,102,241,0.15);">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.6rem;">
-        <h3 style="margin:0;font-size:1.05rem;font-weight:800;color:#a5b4fc;">📚 宿題 <span id="homeworkBadge" style="display:none; font-size:0.72em; padding:2px 8px; background:#ef4444; color:#fff; border-radius:10px; vertical-align:middle; margin-left:6px;"></span></h3>
+        <h3 style="margin:0;font-size:1.05rem;font-weight:800;color:#a5b4fc;"><span id="homeworkTitleText">📚 宿題</span> <span id="homeworkBadge" style="display:none; font-size:0.72em; padding:2px 8px; background:#ef4444; color:#fff; border-radius:10px; vertical-align:middle; margin-left:6px;"></span></h3>
       </div>
-      <p style="font-size:0.82rem; color:#cbd5e1; margin:0 0 0.9rem 0;">塾長から割当てられた宿題です。完了したら「✅ 完了する」を押してください。</p>
+      <p id="homeworkIntro" style="font-size:0.82rem; color:#cbd5e1; margin:0 0 0.9rem 0;">塾長からの宿題と英文法ドリルです。ドリルは「▶ 解いて提出する」、宿題は終わったら「✅ 完了する」を押してください。</p>
       <div id="homeworkList" style="min-height:60px;">
         <div style="color:#71717a; text-align:center; padding:1.2rem 0; font-size:0.85rem;">⏳ 読み込み中...</div>
       </div>
       <div id="homeworkCompletedToggle" style="margin-top:0.8rem; text-align:center; display:none;">
-        <button type="button" id="homeworkShowCompleted" style="padding:6px 14px; background:rgba(255,255,255,0.05); color:#a1a1aa; border:1px solid rgba(255,255,255,0.12); border-radius:18px; cursor:pointer; font-size:0.76rem;">過去の完了宿題を表示 ▾</button>
+        <button type="button" id="homeworkShowCompleted" style="padding:6px 14px; background:rgba(255,255,255,0.05); color:#a1a1aa; border:1px solid rgba(255,255,255,0.12); border-radius:18px; cursor:pointer; font-size:0.76rem;">過去の完了を表示 ▾</button>
       </div>
     </section>
 
-    <!-- 📝 単元別ドリル (英文法 4 択ドリル・配信されていれば誰でも解ける = course ゲート無し)
-         JS の initGrammarDrillSection() が、配信 0 件でも section を常時表示し空状態を出す
-         (2026-06-09 塾長指示「宿題欄を常時表示に改修」)。preview(?preview_mode=) 時のみ非表示。
-         初期 display:none は描画前のチラつき防止用で、loadList() が表示状態を決める。
-         宿題セクション直後に配置 (割当て課題は近接させて発見性を高める)。 -->
+    <!-- 📝 英文法ドリル 解答エリア (2026-06-16 塾長指示「ドリルも宿題に入れる」で役割変更)
+         ドリルの一覧は上の「📚 宿題」セクション(#homeworkSection)に統合済み。この section は
+         宿題リストの「▶ 解いて提出する」を押した時に initGrammarDrillSection() の openDrill() が
+         表示し、解答フォーム / 採点結果 / 復習をここに描画する「解答エリア」専用。
+         初期 display:none・通常は非表示で、ドリルを開いた時だけ表示される。 -->
     <section id="grammarDrillSection" class="grammar-drill-section" style="margin: 0 0 1.5rem 0; padding:1.25rem 1.25rem; background:linear-gradient(135deg,rgba(20,184,166,0.16),rgba(16,185,129,0.10)); border:1px solid rgba(20,184,166,0.4); border-radius:14px; display:none; box-shadow:0 8px 24px rgba(20,184,166,0.15);">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.6rem;">
-        <h3 style="margin:0;font-size:1.05rem;font-weight:800;color:#5eead4;">📝 単元別ドリル（宿題） <span id="grammarDrillBadge" style="display:none; font-size:0.72em; padding:2px 8px; background:#14b8a6; color:#fff; border-radius:10px; vertical-align:middle; margin-left:6px;"></span></h3>
+        <h3 style="margin:0;font-size:1.05rem;font-weight:800;color:#5eead4;">📝 英文法ドリル <span id="grammarDrillBadge" style="display:none; font-size:0.72em; padding:2px 8px; background:#14b8a6; color:#fff; border-radius:10px; vertical-align:middle; margin-left:6px;"></span></h3>
       </div>
-      <p style="font-size:0.82rem; color:#cbd5e1; margin:0 0 0.9rem 0;">英文法の単元別 4 択ドリルです。問題に答えて「提出」を押すと、その場で採点と解説が表示されます。</p>
+      <p style="font-size:0.82rem; color:#cbd5e1; margin:0 0 0.9rem 0;">問題に答えて「提出」を押すと、その場で採点と解説が表示されます。</p>
       <div id="grammarDrillList" style="min-height:60px;">
         <div style="color:#71717a; text-align:center; padding:1.2rem 0; font-size:0.85rem;">⏳ 読み込み中...</div>
       </div>

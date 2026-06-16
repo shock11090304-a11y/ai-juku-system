@@ -566,6 +566,7 @@
         <div id="gdStudents" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.2rem;max-height:180px;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:6px;padding:0.5rem;margin-bottom:0.7rem;">読み込み中...</div>
         <div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;">
           <button onclick="gdCreate()" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;padding:0.55rem 1.2rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">📤 ドリルを配信</button>
+          <span id="gdRemediationBadge" style="display:none;align-items:center;gap:0.4rem;font-size:0.76rem;font-weight:800;color:#fbcfe8;background:rgba(236,72,153,0.16);border:1px solid rgba(236,72,153,0.45);border-radius:14px;padding:0.2rem 0.7rem;">🎯 弱点対策モード（前回の問題を除外）<button onclick="_gdClearRemediation()" title="通常配信に戻す" style="background:none;border:1px solid rgba(236,72,153,0.5);color:#f9a8d4;border-radius:10px;padding:0 0.4rem;font-size:0.72rem;cursor:pointer;">✕ 解除</button></span>
           <span id="gdCreateMsg" style="font-size:0.82rem;"></span>
         </div>
       </div>
@@ -3781,6 +3782,20 @@
 
     // ========== 📝 英文法 単元別ドリル (2026-06-05 塾長指示) ==========
     let _gdUnits = [], _gdStudents = [], _gdSelUnit = null;
+    // 🎯 弱点対策ドリル (2026-06-16): 分析中ドリルの結果を保持し、間違いの多かった単元の
+    //    「新しい問題」を苦戦生徒に再配信するための状態。_gdExcludeDrillId がセットされている間は
+    //    gdCreate が exclude_drill_id を付けて配信し、前回と被らない新問だけを出題する。
+    let _gdLastAnalytics = null, _gdExcludeDrillId = null;
+    // 弱点対策モードの ON/OFF を「見える化」: バッジ表示で塾長が armed 状態を必ず認識でき、
+    // 失敗リトライ(在庫不足→レベル拡大)では維持・誤って通常配信に紛れ込むのは「✕解除」で1クリック解除。
+    function _gdArmRemediation(drillId) {
+      _gdExcludeDrillId = drillId;
+      const b = document.getElementById('gdRemediationBadge'); if (b) b.style.display = 'inline-flex';
+    }
+    function _gdClearRemediation() {
+      _gdExcludeDrillId = null;
+      const b = document.getElementById('gdRemediationBadge'); if (b) b.style.display = 'none';
+    }
     async function gdInit() {
       if (!window.AdminAuth || !AdminAuth.getToken()) return;
       try { await Promise.all([gdLoadUnits(), gdLoadStudents()]); gdRefresh(); }
@@ -3808,6 +3823,7 @@
       }).join('') || '<span style="color:#71717a;">単元なし</span>';
     }
     function gdSelUnit(unit) {
+      _gdClearRemediation();  // 手動で単元を選び直したら弱点対策モードは解除 (通常配信に戻す)
       _gdSelUnit = unit;
       document.querySelectorAll('#gdUnits button').forEach(b => { b.style.outline = (b.dataset.unit === unit) ? '2px solid #60a5fa' : 'none'; });
       const m = document.getElementById('gdCreateMsg'); if (m) m.innerHTML = `<span style="color:#93c5fd;">単元「${escapeHtml(unit)}」を選択中</span>`;
@@ -3838,10 +3854,15 @@
       const ids = Array.from(document.querySelectorAll('.gd-st:checked')).map(c => parseInt(c.value, 10));
       if (!ids.length) { if (msg) msg.innerHTML = '<span style="color:#fca5a5;">配信する生徒を1人以上選んでください</span>'; return; }
       if (msg) msg.innerHTML = '⏳ 配信中...';
+      const body = { unit: _gdSelUnit, levels, count, student_ids: ids };
+      // 🎯 弱点対策モード: 前回(分析中)のドリルの問題を除外し、識別用タイトルを付けて新問を配信
+      if (_gdExcludeDrillId) { body.exclude_drill_id = _gdExcludeDrillId; body.title = `🎯弱点対策 ${_gdSelUnit}（新問${count}問）`; }
       try {
-        const res = await AdminAuth.fetch('/api/admin/grammar-drill/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ unit: _gdSelUnit, levels, count, student_ids: ids }) });
+        const res = await AdminAuth.fetch('/api/admin/grammar-drill/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const data = await res.json();
+        // 失敗時は対策モードを維持 (在庫不足→レベル拡大して再送できるように)。バッジで armed が見える。
         if (!res.ok) { if (msg) msg.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(data.detail || '配信失敗')}</span>`; return; }
+        _gdClearRemediation();  // 配信成功 → 対策モード解除 (次は通常配信)
         if (msg) msg.innerHTML = `<span style="color:#86efac;">${escapeHtml(data.message || '配信完了')}</span>`;
         gdSelectAll(false); gdRefresh();
       } catch (e) { if (msg) msg.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(String(e))}</span>`; }
@@ -3863,14 +3884,20 @@
     }
     async function gdAnalytics(drillId) {
       const box = document.getElementById('gdAnalytics'); if (!box) return;
+      _gdClearRemediation();  // 別ドリルの分析を開く/開き直す = 文脈リセット (stale な対策モードを持ち越さない)
       box.style.display = 'block'; box.innerHTML = '<div style="color:#94a3b8;padding:0.5rem;">⏳ 分析を取得中...</div>';
       try {
         const res = await AdminAuth.fetch(`/api/admin/grammar-drill/${drillId}/analytics`);
         const data = await res.json();
         if (!res.ok) { box.innerHTML = `<span style="color:#fca5a5;">${escapeHtml(data.detail || '取得失敗')}</span>`; return; }
+        _gdLastAnalytics = data;  // 🎯 弱点対策ドリル作成で参照 (苦戦生徒・単元・レベルを抽出)
         const s = data.summary || {};
         let html = `<div style="background:rgba(0,0,0,0.28);border:1px solid #475569;border-radius:10px;padding:0.9rem;"><div style="display:flex;justify-content:space-between;align-items:center;"><strong style="color:#93c5fd;">📊 ${escapeHtml(data.drill.title)}</strong><button onclick="gdCloseAnalytics()" style="background:none;color:#94a3b8;border:1px solid #475569;border-radius:4px;padding:0.15rem 0.5rem;cursor:pointer;">✕ 閉じる</button></div>`;
         html += `<div style="font-size:0.8rem;color:#94a3b8;margin:0.4rem 0 0.6rem;">配信 ${s.assigned}名 / 完了 ${s.completed}名 ・ 平均正解率 ${s.avg_correct_rate == null ? '—' : s.avg_correct_rate + '%'}</div>`;
+        // 🎯 弱点対策ドリル: 完了者がいる時だけ表示。正解率の低い生徒に同単元の新問を再配信。
+        if ((s.completed || 0) > 0) {
+          html += `<div style="margin:0 0 0.7rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;"><button onclick="gdRemediation(${data.drill.id})" style="background:linear-gradient(135deg,#ec4899,#db2777);color:#fff;border:none;padding:0.5rem 1rem;border-radius:8px;font-size:0.82rem;font-weight:800;cursor:pointer;">🎯 弱点対策ドリルを作成</button><span style="font-size:0.72rem;color:#94a3b8;">正解率の低かった生徒に、同単元の<b>新しい問題</b>を配信（前回の問題は除外）</span></div>`;
+        }
         // 👥 誰が完了/未完了か (塾長指示 2026-06-06「宿題を誰がやってるか分からない」)。未完了を先頭・赤で強調。
         const _roster = data.students || [];
         if (_roster.length) {
@@ -3916,7 +3943,56 @@
         box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       } catch (e) { box.innerHTML = `<span style="color:#fca5a5;">${escapeHtml(String(e))}</span>`; }
     }
-    function gdCloseAnalytics() { const b = document.getElementById('gdAnalytics'); if (b) { b.style.display = 'none'; b.innerHTML = ''; } }
+    function gdCloseAnalytics() { _gdClearRemediation(); const b = document.getElementById('gdAnalytics'); if (b) { b.style.display = 'none'; b.innerHTML = ''; } }
+    // 元ドリルの level (CSV) を作成フォームの ② レベル select 値に変換 (踏襲用)
+    function _gdLevelToSelect(levelCsv) {
+      const k = String(levelCsv || '').split(',').map(s => s.trim()).filter(Boolean).sort().join(',');
+      if (k === 'standard') return 'std';
+      if (k === 'advanced') return 'adv';
+      if (k === 'advanced,basic,standard') return 'all';
+      return 'sa';  // 'advanced,standard' や不明は既定 (標準〜やや難)
+    }
+    // 🎯 弱点対策ドリル: 分析中ドリルで正解率の低かった生徒に、同単元の「新しい問題」を再配信する準備。
+    //    配信フォームを対策モードにプリセットし、塾長が問題数を確認して「📤 ドリルを配信」を押すだけにする
+    //    (外部送信=LINE/メール通知が走るため、ワンクリック完結ではなく塾長の最終確認を挟む)。
+    function gdRemediation(drillId) {
+      const msg = document.getElementById('gdCreateMsg');
+      const data = _gdLastAnalytics;
+      if (!data || !data.drill || String(data.drill.id) !== String(drillId)) {
+        if (msg) msg.innerHTML = '<span style="color:#fca5a5;">分析を開き直してから対策ドリルを作成してください</span>'; return;
+      }
+      const unit = data.drill.unit;
+      const known = _gdUnits.some(u => u.unit === unit);
+      if (!unit || !known) {
+        if (msg) msg.innerHTML = `<span style="color:#fca5a5;">このドリル（単元「${escapeHtml(String(unit || '?'))}」）は弱点対策ドリルの自動作成に対応していません</span>`; return;
+      }
+      // 苦戦した生徒 = 完了済み かつ 正答率 70%未満。いなければ「誤答が1問でもある完了者」。
+      const completed = (data.students || []).filter(r => r.completed && r.score_total);
+      let strugglers = completed.filter(r => (r.score_correct || 0) / r.score_total < 0.7);
+      if (!strugglers.length) strugglers = completed.filter(r => Array.isArray(r.wrong_qnos) && r.wrong_qnos.length > 0);
+      if (!strugglers.length) {
+        if (msg) msg.innerHTML = '<span style="color:#86efac;">🎉 全員よくできています。対策ドリルは不要そうです</span>'; return;
+      }
+      // 配信フォームを対策モードにプリセット
+      _gdArmRemediation(drillId);
+      _gdSelUnit = unit;
+      const lvSel = document.getElementById('gdLevel'); if (lvSel) lvSel.value = _gdLevelToSelect(data.drill.level);
+      const cntEl = document.getElementById('gdCount'); if (cntEl) cntEl.value = 10;  // 同単元の新問は少なめ (在庫不足は配信時に警告)
+      gdRenderUnits();  // 選択レベルで在庫色を再計算
+      document.querySelectorAll('#gdUnits button').forEach(b => { b.style.outline = (b.dataset.unit === unit) ? '2px solid #f472b6' : 'none'; });
+      // 生徒選択: フィルタ解除 → 全解除 → 苦戦生徒だけチェック
+      const filterEl = document.getElementById('gdStudentFilter'); if (filterEl) filterEl.value = '';
+      gdRenderStudents(''); gdSelectAll(false);
+      const idset = new Set(strugglers.map(r => String(r.student_id)));
+      let checkedN = 0;
+      document.querySelectorAll('.gd-st').forEach(c => { if (idset.has(String(c.value))) { c.checked = true; checkedN++; } });
+      if (!checkedN) {
+        _gdClearRemediation();
+        if (msg) msg.innerHTML = '<span style="color:#fca5a5;">対象生徒が見つかりませんでした（退会済みの可能性）</span>'; return;
+      }
+      if (msg) msg.innerHTML = `<span style="color:#f9a8d4;">🎯 弱点対策モード: 「${escapeHtml(unit)}」の<b>新しい問題</b>を、正解率の低かった <b>${checkedN}名</b> に配信します（前回の問題は除外）。問題数を確認し、下の「📤 ドリルを配信」を押してください。</span>`;
+      const anchor = document.getElementById('gdUnits'); if (anchor && anchor.scrollIntoView) anchor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
     async function gdDelete(drillId) {
       if (!confirm('このドリルを削除しますか？（生徒への配信と結果も削除されます）')) return;
       try {
@@ -3926,7 +4002,7 @@
         else alert('削除失敗: ' + (data.detail || ''));
       } catch (e) { alert('削除失敗: ' + e); }
     }
-    window.gdSelUnit = gdSelUnit; window.gdFilterStudents = gdFilterStudents; window.gdSelectAll = gdSelectAll; window.gdCreate = gdCreate; window.gdRefresh = gdRefresh; window.gdAnalytics = gdAnalytics; window.gdCloseAnalytics = gdCloseAnalytics; window.gdRenderUnits = gdRenderUnits; window.gdDelete = gdDelete;
+    window.gdSelUnit = gdSelUnit; window.gdFilterStudents = gdFilterStudents; window.gdSelectAll = gdSelectAll; window.gdCreate = gdCreate; window.gdRefresh = gdRefresh; window.gdAnalytics = gdAnalytics; window.gdCloseAnalytics = gdCloseAnalytics; window.gdRenderUnits = gdRenderUnits; window.gdDelete = gdDelete; window.gdRemediation = gdRemediation; window._gdClearRemediation = _gdClearRemediation;
     document.addEventListener('DOMContentLoaded', gdInit);
 
     // 📚 教材プール 未作成リクエスト 一覧読込
