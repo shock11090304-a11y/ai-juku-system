@@ -1,0 +1,2281 @@
+{
+"words": [
+{
+"word": "classroom",
+"pos": "noun",
+"meaning_jp": "教室",
+"example_en": "Our classroom is on the second floor.",
+"example_jp": "私たちの教室は2階にあります。",
+"level": "chu1",
+"tags": "school"
+},
+{
+"word": "lunch",
+"pos": "noun",
+"meaning_jp": "昼食、ランチ",
+"example_en": "I eat lunch with my friends at noon.",
+"example_jp": "私は正午に友達と昼食を食べます。",
+"level": "chu1",
+"tags": "food"
+},
+{
+"word": "friend",
+"pos": "noun",
+"meaning_jp": "友達、友人",
+"example_en": "My best friend lives next to my house.",
+"example_jp": "私の親友は私の家の隣に住んでいます。",
+"level": "chu1",
+"tags": "people"
+},
+{
+"word": "notebook",
+"pos": "noun",
+"meaning_jp": "ノート",
+"example_en": "I write new words in my notebook.",
+"example_jp": "私は新しい単語をノートに書きます。",
+"level": "chu1",
+"tags": "school"
+},
+{
+"word": "window",
+"pos": "noun",
+"meaning_jp": "窓",
+"example_en": "Please open the window because it is hot.",
+"example_jp": "暑いので窓を開けてください。",
+"level": "chu1",
+"tags": "house"
+},
+{
+"word": "breakfast",
+"pos": "noun",
+"meaning_jp": "朝食",
+"example_en": "I have rice and soup for breakfast.",
+"example_jp": "私は朝食にご飯とスープを食べます。",
+"level": "chu1",
+"tags": "food"
+},
+{
+"word": "teacher",
+"pos": "noun",
+"meaning_jp": "先生、教師",
+"example_en": "Our English teacher is very kind to us.",
+"example_jp": "私たちの英語の先生はとても親切です。",
+"level": "chu1",
+"tags": "school"
+},
+{
+"word": "study",
+"pos": "verb",
+"meaning_jp": "〜を勉強する、学ぶ",
+"example_en": "I study English every evening.",
+"example_jp": "私は毎晩英語を勉強します。",
+"level": "chu1",
+"tags": "school"
+},
+{
+"word": "play",
+"pos": "verb",
+"meaning_jp": "(スポーツなどを)する、遊ぶ",
+"example_en": "We play soccer after school.",
+"example_jp": "私たちは放課後にサッカーをします。",
+"level": "chu1",
+"tags": "sport"
+},
+{
+"word": "live",
+"pos": "verb",
+"meaning_jp": "住む、生活する",
+"example_en": "I live in a small town near the sea.",
+"example_jp": "私は海の近くの小さな町に住んでいます。",
+"level": "chu1",
+"tags": "daily"
+},
+{
+"word": "clean",
+"pos": "verb",
+"meaning_jp": "〜を掃除する",
+"example_en": "We clean our classroom every day.",
+"example_jp": "私たちは毎日教室を掃除します。",
+"level": "chu1",
+"tags": "school"
+},
+{
+"word": "learn",
+"pos": "verb",
+"meaning_jp": "〜を習う、身につける",
+"example_en": "I want to learn how to swim this summer.",
+"example_jp": "私はこの夏に泳ぎ方を習いたいです。",
+"level": "chu1",
+"tags": "school"
+},
+{
+"word": "carry",
+"pos": "verb",
+"meaning_jp": "〜を運ぶ、持ち運ぶ",
+"example_en": "Can you help me carry these heavy books?",
+"example_jp": "この重い本を運ぶのを手伝ってくれますか。",
+"level": "chu1",
+"tags": "daily"
+},
+{
+"word": "visit",
+"pos": "verb",
+"meaning_jp": "〜を訪れる、訪問する",
+"example_en": "We visit our grandmother every weekend.",
+"example_jp": "私たちは毎週末おばあちゃんを訪ねます。",
+"level": "chu1",
+"tags": "daily"
+},
+{
+"word": "kind",
+"pos": "adjective",
+"meaning_jp": "親切な、優しい",
+"example_en": "She is always kind to new students.",
+"example_jp": "彼女はいつも新入生に親切です。",
+"level": "chu1",
+"tags": "emotion"
+},
+{
+"word": "busy",
+"pos": "adjective",
+"meaning_jp": "忙しい",
+"example_en": "My father is busy on weekdays.",
+"example_jp": "父は平日は忙しいです。",
+"level": "chu1",
+"tags": "daily"
+},
+{
+"word": "fast",
+"pos": "adjective",
+"meaning_jp": "速い",
+"example_en": "That runner is very fast.",
+"example_jp": "あの走者はとても速いです。",
+"level": "chu1",
+"tags": "sport"
+},
+{
+"word": "here",
+"pos": "adverb",
+"meaning_jp": "ここに、ここで",
+"example_en": "Please sit here next to me.",
+"example_jp": "私の隣のここに座ってください。",
+"level": "chu1",
+"tags": "place"
+},
+{
+"word": "now",
+"pos": "adverb",
+"meaning_jp": "今、現在",
+"example_en": "I am doing my homework now.",
+"example_jp": "私は今、宿題をしています。",
+"level": "chu1",
+"tags": "time"
+},
+{
+"word": "well",
+"pos": "adverb",
+"meaning_jp": "上手に、よく",
+"example_en": "She sings very well.",
+"example_jp": "彼女はとても上手に歌います。",
+"level": "chu1",
+"tags": "daily"
+},
+{
+"word": "early",
+"pos": "adverb",
+"meaning_jp": "早く",
+"example_en": "I get up early every morning.",
+"example_jp": "私は毎朝早く起きます。",
+"level": "chu1",
+"tags": "time"
+},
+{
+"word": "thirsty",
+"pos": "adjective",
+"meaning_jp": "のどが渇いた",
+"example_en": "I am thirsty, so I want some water.",
+"example_jp": "のどが渇いたので、水が欲しいです。",
+"level": "chu1",
+"tags": "feeling,everyday"
+},
+{
+"word": "empty",
+"pos": "adjective",
+"meaning_jp": "空(から)の、空いている",
+"example_en": "The box is empty, so we can put toys in it.",
+"example_jp": "その箱は空なので、おもちゃを入れられます。",
+"level": "chu1",
+"tags": "state,everyday"
+},
+{
+"word": "heavy",
+"pos": "adjective",
+"meaning_jp": "重い",
+"example_en": "This bag is too heavy for me to carry.",
+"example_jp": "このかばんは重すぎて私には運べません。",
+"level": "chu1",
+"tags": "weight,everyday"
+},
+{
+"word": "sleepy",
+"pos": "adjective",
+"meaning_jp": "眠い",
+"example_en": "I feel sleepy after a big lunch.",
+"example_jp": "たくさん昼ごはんを食べた後は眠くなります。",
+"level": "chu1",
+"tags": "feeling,everyday"
+},
+{
+"word": "agree",
+"pos": "verb",
+"meaning_jp": "同意する、賛成する",
+"example_en": "I agree with your idea.",
+"example_jp": "私はあなたの考えに賛成です。",
+"level": "chu2",
+"tags": "communication"
+},
+{
+"word": "hope",
+"pos": "verb",
+"meaning_jp": "〜を望む、願う",
+"example_en": "I hope it will be sunny tomorrow.",
+"example_jp": "明日は晴れるといいなと思います。",
+"level": "chu2",
+"tags": "emotion"
+},
+{
+"word": "weather",
+"pos": "noun",
+"meaning_jp": "天気、天候",
+"example_en": "The weather was cold and rainy yesterday.",
+"example_jp": "昨日は寒くて雨の天気でした。",
+"level": "chu2",
+"tags": "nature"
+},
+{
+"word": "hobby",
+"pos": "noun",
+"meaning_jp": "趣味",
+"example_en": "My hobby is taking photos of birds.",
+"example_jp": "私の趣味は鳥の写真を撮ることです。",
+"level": "chu2",
+"tags": "daily-life"
+},
+{
+"word": "dream",
+"pos": "noun",
+"meaning_jp": "夢、将来の希望",
+"example_en": "His dream is to become a doctor.",
+"example_jp": "彼の夢は医者になることです。",
+"level": "chu2",
+"tags": "future"
+},
+{
+"word": "future",
+"pos": "noun",
+"meaning_jp": "未来、将来",
+"example_en": "I want to be a teacher in the future.",
+"example_jp": "私は将来、教師になりたいです。",
+"level": "chu2",
+"tags": "future"
+},
+{
+"word": "problem",
+"pos": "noun",
+"meaning_jp": "問題、困りごと",
+"example_en": "We solved the problem together.",
+"example_jp": "私たちは一緒にその問題を解決しました。",
+"level": "chu2",
+"tags": "daily-life"
+},
+{
+"word": "trip",
+"pos": "noun",
+"meaning_jp": "旅行、遠出",
+"example_en": "Our school trip to Kyoto was a lot of fun.",
+"example_jp": "京都への修学旅行はとても楽しかったです。",
+"level": "chu2",
+"tags": "travel"
+},
+{
+"word": "reason",
+"pos": "noun",
+"meaning_jp": "理由、わけ",
+"example_en": "Please tell me the reason you were late.",
+"example_jp": "遅刻した理由を教えてください。",
+"level": "chu2",
+"tags": "communication"
+},
+{
+"word": "popular",
+"pos": "adjective",
+"meaning_jp": "人気のある",
+"example_en": "This song is very popular among students.",
+"example_jp": "この歌は生徒たちの間でとても人気があります。",
+"level": "chu2",
+"tags": "daily-life"
+},
+{
+"word": "famous",
+"pos": "adjective",
+"meaning_jp": "有名な",
+"example_en": "This city is famous for its old temples.",
+"example_jp": "この街は古い寺で有名です。",
+"level": "chu2",
+"tags": "daily-life"
+},
+{
+"word": "convenient",
+"pos": "adjective",
+"meaning_jp": "便利な、都合のよい",
+"example_en": "This station is convenient for shopping.",
+"example_jp": "この駅は買い物に便利です。",
+"level": "chu2",
+"tags": "daily-life"
+},
+{
+"word": "late",
+"pos": "adverb",
+"meaning_jp": "遅く、遅れて",
+"example_en": "He came home late last night.",
+"example_jp": "彼は昨夜遅くに帰宅しました。",
+"level": "chu2",
+"tags": "time"
+},
+{
+"word": "hard",
+"pos": "adverb",
+"meaning_jp": "一生懸命に、熱心に",
+"example_en": "She studied hard for the test.",
+"example_jp": "彼女はテストのために一生懸命勉強しました。",
+"level": "chu2",
+"tags": "school"
+},
+{
+"word": "repeat",
+"pos": "verb",
+"meaning_jp": "〜を繰り返す、もう一度言う",
+"example_en": "Please repeat the question slowly.",
+"example_jp": "その質問をゆっくりもう一度言ってください。",
+"level": "chu2",
+"tags": "daily"
+},
+{
+"word": "follow",
+"pos": "verb",
+"meaning_jp": "〜について行く、〜に従う",
+"example_en": "The dog followed me to school.",
+"example_jp": "その犬は私について学校まで来た。",
+"level": "chu2",
+"tags": "daily,past"
+},
+{
+"word": "spend",
+"pos": "verb",
+"meaning_jp": "(時間・お金)〜を使う、過ごす",
+"example_en": "We spent two hours at the park.",
+"example_jp": "私たちは公園で2時間過ごした。",
+"level": "chu2",
+"tags": "daily,past"
+},
+{
+"word": "climb",
+"pos": "verb",
+"meaning_jp": "〜に登る",
+"example_en": "They climbed the mountain last summer.",
+"example_jp": "彼らは去年の夏その山に登った。",
+"level": "chu2",
+"tags": "daily,past"
+},
+{
+"word": "shout",
+"pos": "verb",
+"meaning_jp": "叫ぶ、大声で言う",
+"example_en": "He shouted my name across the street.",
+"example_jp": "彼は通りの向こうから私の名前を叫んだ。",
+"level": "chu2",
+"tags": "daily,past"
+},
+{
+"word": "narrow",
+"pos": "adjective",
+"meaning_jp": "(幅が)狭い、細い",
+"example_en": "The old road was very narrow.",
+"example_jp": "その古い道はとても狭かった。",
+"level": "chu2",
+"tags": "daily,past"
+},
+{
+"word": "polite",
+"pos": "adjective",
+"meaning_jp": "礼儀正しい、丁寧な",
+"example_en": "She is more polite than her brother.",
+"example_jp": "彼女は兄より礼儀正しい。",
+"level": "chu2",
+"tags": "daily,comparative"
+},
+{
+"word": "almost",
+"pos": "adverb",
+"meaning_jp": "ほとんど、もう少しで",
+"example_en": "We almost missed the train this morning.",
+"example_jp": "私たちは今朝もう少しで電車に乗り遅れるところだった。",
+"level": "chu2",
+"tags": "daily,past"
+},
+{
+"word": "easily",
+"pos": "adverb",
+"meaning_jp": "簡単に、たやすく",
+"example_en": "He solved the puzzle easily.",
+"example_jp": "彼はそのパズルを簡単に解いた。",
+"level": "chu2",
+"tags": "daily,past"
+},
+{
+"word": "carefully",
+"pos": "adverb",
+"meaning_jp": "注意深く、慎重に",
+"example_en": "She carefully crossed the busy road.",
+"example_jp": "彼女は注意深く混んだ道路を渡った。",
+"level": "chu2",
+"tags": "daily,past"
+},
+{
+"word": "loudly",
+"pos": "adverb",
+"meaning_jp": "大きな声で、騒がしく",
+"example_en": "The children laughed loudly during the game.",
+"example_jp": "子どもたちはゲーム中に大きな声で笑った。",
+"level": "chu2",
+"tags": "daily,past"
+},
+{
+"word": "experience",
+"pos": "noun",
+"meaning_jp": "経験、体験",
+"example_en": "Living abroad was a great experience for me.",
+"example_jp": "海外で暮らしたことは私にとって素晴らしい経験だった。",
+"level": "chu3",
+"tags": "life"
+},
+{
+"word": "opinion",
+"pos": "noun",
+"meaning_jp": "意見、考え",
+"example_en": "Everyone has a different opinion about the new rule.",
+"example_jp": "その新しいルールについては誰もが違う意見を持っている。",
+"level": "chu3",
+"tags": "discussion"
+},
+{
+"word": "peace",
+"pos": "noun",
+"meaning_jp": "平和、安らぎ",
+"example_en": "People all over the world hope for peace.",
+"example_jp": "世界中の人々が平和を願っている。",
+"level": "chu3",
+"tags": "society"
+},
+{
+"word": "culture",
+"pos": "noun",
+"meaning_jp": "文化",
+"example_en": "I want to learn about the culture of other countries.",
+"example_jp": "私は他の国の文化について学びたい。",
+"level": "chu3",
+"tags": "society"
+},
+{
+"word": "chance",
+"pos": "noun",
+"meaning_jp": "機会、チャンス",
+"example_en": "This is a good chance to practice English.",
+"example_jp": "これは英語を練習する良い機会だ。",
+"level": "chu3",
+"tags": "life"
+},
+{
+"word": "goal",
+"pos": "noun",
+"meaning_jp": "目標、ゴール",
+"example_en": "My goal is to study at a university in America.",
+"example_jp": "私の目標はアメリカの大学で学ぶことだ。",
+"level": "chu3",
+"tags": "life"
+},
+{
+"word": "share",
+"pos": "verb",
+"meaning_jp": "〜を分かち合う、〜を共有する",
+"example_en": "I want to share my idea with the whole class.",
+"example_jp": "私は自分の考えをクラス全体と共有したい。",
+"level": "chu3",
+"tags": "communication"
+},
+{
+"word": "solve",
+"pos": "verb",
+"meaning_jp": "〜を解決する、〜を解く",
+"example_en": "We worked together to solve the difficult problem.",
+"example_jp": "私たちはその難しい問題を解決するために協力した。",
+"level": "chu3",
+"tags": "thinking"
+},
+{
+"word": "accept",
+"pos": "verb",
+"meaning_jp": "〜を受け入れる、〜を受け取る",
+"example_en": "She decided to accept his kind offer.",
+"example_jp": "彼女は彼の親切な申し出を受け入れることにした。",
+"level": "chu3",
+"tags": "communication"
+},
+{
+"word": "continue",
+"pos": "verb",
+"meaning_jp": "〜を続ける、続く",
+"example_en": "He will continue to study music after high school.",
+"example_jp": "彼は高校卒業後も音楽を学び続けるつもりだ。",
+"level": "chu3",
+"tags": "life"
+},
+{
+"word": "useful",
+"pos": "adjective",
+"meaning_jp": "役に立つ、便利な",
+"example_en": "This dictionary is very useful for studying.",
+"example_jp": "この辞書は勉強にとても役立つ。",
+"level": "chu3",
+"tags": "tools"
+},
+{
+"word": "serious",
+"pos": "adjective",
+"meaning_jp": "深刻な、真剣な",
+"example_en": "Climate change is a serious problem for everyone.",
+"example_jp": "気候変動は誰にとっても深刻な問題だ。",
+"level": "chu3",
+"tags": "society"
+},
+{
+"word": "afraid",
+"pos": "adjective",
+"meaning_jp": "怖がって、恐れて",
+"example_en": "She was afraid of speaking in front of many people.",
+"example_jp": "彼女は大勢の前で話すのを怖がっていた。",
+"level": "chu3",
+"tags": "emotion"
+},
+{
+"word": "foreign",
+"pos": "adjective",
+"meaning_jp": "外国の",
+"example_en": "He can speak three foreign languages.",
+"example_jp": "彼は三つの外国語を話すことができる。",
+"level": "chu3",
+"tags": "society"
+},
+{
+"word": "natural",
+"pos": "adjective",
+"meaning_jp": "自然の、当然の",
+"example_en": "This park is full of natural beauty.",
+"example_jp": "この公園は自然の美しさにあふれている。",
+"level": "chu3",
+"tags": "nature"
+},
+{
+"word": "finally",
+"pos": "adverb",
+"meaning_jp": "ついに、最後に",
+"example_en": "After many tries, she finally passed the test.",
+"example_jp": "何度も挑戦した後、彼女はついに試験に合格した。",
+"level": "chu3",
+"tags": "time"
+},
+{
+"word": "perhaps",
+"pos": "adverb",
+"meaning_jp": "もしかすると、たぶん",
+"example_en": "Perhaps it will rain this afternoon.",
+"example_jp": "もしかすると今日の午後は雨が降るかもしれない。",
+"level": "chu3",
+"tags": "thinking"
+},
+{
+"word": "especially",
+"pos": "adverb",
+"meaning_jp": "特に、とりわけ",
+"example_en": "I like sports, especially soccer.",
+"example_jp": "私はスポーツが好きで、特にサッカーが好きだ。",
+"level": "chu3",
+"tags": "preference"
+},
+{
+"word": "quickly",
+"pos": "adverb",
+"meaning_jp": "すばやく、急いで",
+"example_en": "He finished his homework quickly and went out.",
+"example_jp": "彼は宿題をすばやく終わらせて外出した。",
+"level": "chu3",
+"tags": "manner"
+},
+{
+"word": "complain",
+"pos": "verb",
+"meaning_jp": "〜について不平を言う、苦情を言う",
+"example_en": "She often complains about the cold weather.",
+"example_jp": "彼女はよく寒い天気について不平を言う。",
+"level": "chu3",
+"tags": "emotion,daily"
+},
+{
+"word": "recommend",
+"pos": "verb",
+"meaning_jp": "〜を勧める、推薦する",
+"example_en": "Could you recommend a good book for me to read?",
+"example_jp": "私が読むのに良い本を勧めてもらえますか。",
+"level": "chu3",
+"tags": "advice,daily"
+},
+{
+"word": "imagine",
+"pos": "verb",
+"meaning_jp": "〜を想像する、思い描く",
+"example_en": "I can't imagine living without my phone.",
+"example_jp": "私はスマホなしの生活を想像できない。",
+"level": "chu3",
+"tags": "thought,abstract"
+},
+{
+"word": "healthy",
+"pos": "adjective",
+"meaning_jp": "健康的な、健康によい",
+"example_en": "Eating vegetables is good for a healthy life.",
+"example_jp": "野菜を食べることは健康的な生活に良い。",
+"level": "basic",
+"tags": "health"
+},
+{
+"word": "usually",
+"pos": "adverb",
+"meaning_jp": "たいてい、普通は",
+"example_en": "I usually walk to school in the morning.",
+"example_jp": "私は朝たいてい歩いて学校へ行く。",
+"level": "basic",
+"tags": "daily"
+},
+{
+"word": "probably",
+"pos": "adverb",
+"meaning_jp": "おそらく、たぶん",
+"example_en": "It will probably rain this afternoon.",
+"example_jp": "今日の午後はおそらく雨が降るだろう。",
+"level": "basic",
+"tags": "daily"
+},
+{
+"word": "neighbor",
+"pos": "noun",
+"meaning_jp": "隣人、近所の人",
+"example_en": "My neighbor often helps me carry heavy bags up the stairs.",
+"example_jp": "隣の人はよく重い荷物を階段の上まで運ぶのを手伝ってくれる。",
+"level": "basic",
+"tags": "daily,people"
+},
+{
+"word": "journey",
+"pos": "noun",
+"meaning_jp": "旅、道のり",
+"example_en": "The journey from the village to the city takes about three hours by bus.",
+"example_jp": "その村から都市までの道のりはバスでおよそ3時間かかる。",
+"level": "basic",
+"tags": "travel"
+},
+{
+"word": "surface",
+"pos": "noun",
+"meaning_jp": "表面、外面",
+"example_en": "Please wipe the surface of the table before we eat.",
+"example_jp": "食事の前にテーブルの表面を拭いてください。",
+"level": "basic",
+"tags": "object,science"
+},
+{
+"word": "effort",
+"pos": "noun",
+"meaning_jp": "努力、骨折り",
+"example_en": "With a little more effort, you can finish the report tonight.",
+"example_jp": "もう少し努力すれば、今夜その報告書を仕上げられる。",
+"level": "basic",
+"tags": "abstract,work"
+},
+{
+"word": "crowd",
+"pos": "noun",
+"meaning_jp": "群衆、人ごみ",
+"example_en": "A large crowd gathered in front of the station to watch the parade.",
+"example_jp": "パレードを見ようと駅の前に大勢の人々が集まった。",
+"level": "basic",
+"tags": "people,event"
+},
+{
+"word": "region",
+"pos": "noun",
+"meaning_jp": "地域、地方",
+"example_en": "This region is famous for its apples and clean mountain air.",
+"example_jp": "この地域はリンゴときれいな山の空気で有名だ。",
+"level": "basic",
+"tags": "geography"
+},
+{
+"word": "purpose",
+"pos": "noun",
+"meaning_jp": "目的、意図",
+"example_en": "The main purpose of this meeting is to plan next year's festival.",
+"example_jp": "この会議の主な目的は来年の祭りを計画することだ。",
+"level": "basic",
+"tags": "abstract"
+},
+{
+"word": "shortage",
+"pos": "noun",
+"meaning_jp": "不足、欠乏",
+"example_en": "A water shortage forced the town to limit how much each family could use.",
+"example_jp": "水不足のため、その町は各家庭が使える量を制限せざるを得なかった。",
+"level": "basic",
+"tags": "social,economy"
+},
+{
+"word": "prevent",
+"pos": "verb",
+"meaning_jp": "〜を防ぐ、妨げる",
+"example_en": "Washing your hands often can prevent many common illnesses.",
+"example_jp": "よく手を洗うことで多くの一般的な病気を防ぐことができる。",
+"level": "basic",
+"tags": "health,action"
+},
+{
+"word": "repair",
+"pos": "verb",
+"meaning_jp": "〜を修理する、直す",
+"example_en": "My father can repair almost any broken bicycle in an afternoon.",
+"example_jp": "父は午後のうちにほとんどどんな壊れた自転車でも修理できる。",
+"level": "basic",
+"tags": "action,daily"
+},
+{
+"word": "deliver",
+"pos": "verb",
+"meaning_jp": "〜を配達する、届ける",
+"example_en": "The shop will deliver the new sofa to our house on Friday.",
+"example_jp": "その店は金曜日に新しいソファを家まで配達してくれる。",
+"level": "basic",
+"tags": "action,service"
+},
+{
+"word": "remind",
+"pos": "verb",
+"meaning_jp": "〜に思い出させる",
+"example_en": "Please remind me to call the dentist tomorrow morning.",
+"example_jp": "明日の朝、歯医者に電話するよう私に思い出させてください。",
+"level": "basic",
+"tags": "communication"
+},
+{
+"word": "separate",
+"pos": "verb",
+"meaning_jp": "〜を分ける、分離する",
+"example_en": "We separate the plastic from the paper before throwing it out.",
+"example_jp": "私たちは捨てる前にプラスチックを紙から分ける。",
+"level": "basic",
+"tags": "action,daily"
+},
+{
+"word": "replace",
+"pos": "verb",
+"meaning_jp": "〜を取り替える、〜の代わりをする",
+"example_en": "You should replace the old batteries before the trip.",
+"example_jp": "旅行の前に古い電池を取り替えるべきだ。",
+"level": "basic",
+"tags": "action"
+},
+{
+"word": "translate",
+"pos": "verb",
+"meaning_jp": "〜を翻訳する、訳す",
+"example_en": "Could you translate this letter into English for me?",
+"example_jp": "この手紙を英語に翻訳してもらえますか。",
+"level": "basic",
+"tags": "language,communication"
+},
+{
+"word": "strict",
+"pos": "adjective",
+"meaning_jp": "厳しい、厳格な",
+"example_en": "Our teacher is strict about turning in homework on time.",
+"example_jp": "私たちの先生は宿題を時間通りに提出することに厳しい。",
+"level": "basic",
+"tags": "personality"
+},
+{
+"word": "familiar",
+"pos": "adjective",
+"meaning_jp": "よく知っている、なじみのある",
+"example_en": "His voice sounded familiar, but I couldn't remember his name.",
+"example_jp": "彼の声は聞き覚えがあったが、名前を思い出せなかった。",
+"level": "basic",
+"tags": "state,perception"
+},
+{
+"word": "nervous",
+"pos": "adjective",
+"meaning_jp": "緊張して、不安な",
+"example_en": "She felt nervous before her first speech in front of the class.",
+"example_jp": "彼女はクラスの前での初めてのスピーチの前に緊張していた。",
+"level": "basic",
+"tags": "emotion"
+},
+{
+"word": "rarely",
+"pos": "adverb",
+"meaning_jp": "めったに〜ない",
+"example_en": "He rarely watches television because he prefers reading.",
+"example_jp": "彼は読書を好むので、めったにテレビを見ない。",
+"level": "basic",
+"tags": "frequency"
+},
+{
+"word": "nearly",
+"pos": "adverb",
+"meaning_jp": "ほとんど、もう少しで",
+"example_en": "It was nearly midnight when we finally got home.",
+"example_jp": "私たちがようやく帰宅したとき、ほとんど真夜中だった。",
+"level": "basic",
+"tags": "degree"
+},
+{
+"word": "instead",
+"pos": "adverb",
+"meaning_jp": "その代わりに",
+"example_en": "The cafe was closed, so we ate at home instead.",
+"example_jp": "カフェが閉まっていたので、その代わりに家で食べた。",
+"level": "basic",
+"tags": "contrast"
+},
+{
+"word": "recognize",
+"pos": "verb",
+"meaning_jp": "〜を認識する、見分ける、認める",
+"example_en": "I didn't recognize my old teacher at first.",
+"example_jp": "最初は昔の先生だと気づかなかった。",
+"level": "intermediate",
+"tags": "perception"
+},
+{
+"word": "encourage",
+"pos": "verb",
+"meaning_jp": "〜を励ます、促す",
+"example_en": "Good teachers encourage students to ask questions.",
+"example_jp": "良い先生は生徒に質問するよう促す。",
+"level": "intermediate",
+"tags": "education"
+},
+{
+"word": "provide",
+"pos": "verb",
+"meaning_jp": "〜を提供する、供給する",
+"example_en": "The company provides free training to all new employees.",
+"example_jp": "その会社はすべての新入社員に無料の研修を提供している。",
+"level": "intermediate",
+"tags": "business"
+},
+{
+"word": "maintain",
+"pos": "verb",
+"meaning_jp": "〜を維持する、保つ",
+"example_en": "It is important to maintain a healthy balance between work and rest.",
+"example_jp": "仕事と休息の健康的なバランスを保つことが大切だ。",
+"level": "intermediate",
+"tags": "health"
+},
+{
+"word": "attitude",
+"pos": "noun",
+"meaning_jp": "態度、心構え、姿勢",
+"example_en": "A positive attitude can help you overcome difficulties.",
+"example_jp": "前向きな態度は困難を乗り越える助けになる。",
+"level": "intermediate",
+"tags": "emotion"
+},
+{
+"word": "reliable",
+"pos": "adjective",
+"meaning_jp": "信頼できる、頼りになる",
+"example_en": "We need a reliable source of information before making a decision.",
+"example_jp": "決定を下す前に信頼できる情報源が必要だ。",
+"level": "intermediate",
+"tags": "reasoning"
+},
+{
+"word": "complicated",
+"pos": "adjective",
+"meaning_jp": "複雑な、込み入った",
+"example_en": "The instructions were too complicated for me to follow.",
+"example_jp": "その説明は複雑すぎて私には従えなかった。",
+"level": "intermediate",
+"tags": "reasoning"
+},
+{
+"word": "willing",
+"pos": "adjective",
+"meaning_jp": "進んで〜する、いとわない",
+"example_en": "She was willing to help us even though she was busy.",
+"example_jp": "彼女は忙しいのに進んで私たちを手伝ってくれた。",
+"level": "intermediate",
+"tags": "emotion"
+},
+{
+"word": "eventually",
+"pos": "adverb",
+"meaning_jp": "最終的に、結局",
+"example_en": "After many attempts, he eventually passed the exam.",
+"example_jp": "何度も挑戦した末、彼は最終的に試験に合格した。",
+"level": "intermediate",
+"tags": "time"
+},
+{
+"word": "obviously",
+"pos": "adverb",
+"meaning_jp": "明らかに、明白に",
+"example_en": "She was obviously tired after the long journey.",
+"example_jp": "彼女は長旅のあと明らかに疲れていた。",
+"level": "intermediate",
+"tags": "reasoning"
+},
+{
+"word": "frequently",
+"pos": "adverb",
+"meaning_jp": "頻繁に、しばしば",
+"example_en": "He frequently visits the library to borrow new books.",
+"example_jp": "彼は新しい本を借りるために頻繁に図書館を訪れる。",
+"level": "intermediate",
+"tags": "time"
+},
+{
+"word": "outcome",
+"pos": "noun",
+"meaning_jp": "結果、成果",
+"example_en": "The outcome of the experiment surprised even the researchers who designed it.",
+"example_jp": "その実験の結果は、それを設計した研究者でさえ驚かせた。",
+"level": "intermediate",
+"tags": "academic,general"
+},
+{
+"word": "insight",
+"pos": "noun",
+"meaning_jp": "洞察、深い理解",
+"example_en": "Her lecture gave us valuable insight into the causes of climate change.",
+"example_jp": "彼女の講義は、気候変動の原因についての貴重な洞察を私たちに与えてくれた。",
+"level": "intermediate",
+"tags": "academic,abstract"
+},
+{
+"word": "motive",
+"pos": "noun",
+"meaning_jp": "動機",
+"example_en": "The detective could not find any clear motive for the crime.",
+"example_jp": "その刑事は、犯罪の明確な動機を一切見つけられなかった。",
+"level": "intermediate",
+"tags": "general,academic"
+},
+{
+"word": "framework",
+"pos": "noun",
+"meaning_jp": "枠組み、骨組み",
+"example_en": "The new law provides a legal framework for protecting personal data.",
+"example_jp": "その新しい法律は、個人データを保護するための法的な枠組みを提供している。",
+"level": "intermediate",
+"tags": "academic,abstract"
+},
+{
+"word": "threat",
+"pos": "noun",
+"meaning_jp": "脅威、脅し",
+"example_en": "Rising sea levels pose a serious threat to many coastal communities.",
+"example_jp": "海面上昇は、多くの沿岸地域社会にとって深刻な脅威となっている。",
+"level": "intermediate",
+"tags": "general,social"
+},
+{
+"word": "trait",
+"pos": "noun",
+"meaning_jp": "特性、特徴",
+"example_en": "Honesty is a trait that many employers value highly.",
+"example_jp": "誠実さは、多くの雇用主が高く評価する特性だ。",
+"level": "intermediate",
+"tags": "academic,psychology"
+},
+{
+"word": "resemble",
+"pos": "verb",
+"meaning_jp": "〜に似ている",
+"example_en": "The boy closely resembles his grandfather in both looks and manner.",
+"example_jp": "その少年は、容姿も態度も祖父によく似ている。",
+"level": "intermediate",
+"tags": "general"
+},
+{
+"word": "undertake",
+"pos": "verb",
+"meaning_jp": "〜に着手する、〜を引き受ける",
+"example_en": "The team agreed to undertake a thorough review of the company's finances.",
+"example_jp": "そのチームは、会社の財務の徹底的な見直しに着手することに同意した。",
+"level": "intermediate",
+"tags": "academic,formal"
+},
+{
+"word": "disrupt",
+"pos": "verb",
+"meaning_jp": "〜を混乱させる、〜を中断させる",
+"example_en": "The heavy snow disrupted train services across the entire region.",
+"example_jp": "その大雪は、地域全体の鉄道の運行を混乱させた。",
+"level": "intermediate",
+"tags": "general,social"
+},
+{
+"word": "allocate",
+"pos": "verb",
+"meaning_jp": "〜を割り当てる、〜を配分する",
+"example_en": "The government decided to allocate more funds to public education.",
+"example_jp": "政府は、公教育により多くの資金を割り当てることを決定した。",
+"level": "intermediate",
+"tags": "academic,economics"
+},
+{
+"word": "deliberate",
+"pos": "adjective",
+"meaning_jp": "意図的な、慎重な",
+"example_en": "Her refusal to answer the question was a deliberate act of protest.",
+"example_jp": "彼女がその質問に答えなかったのは、意図的な抗議の行為だった。",
+"level": "intermediate",
+"tags": "academic,abstract"
+},
+{
+"word": "vulnerable",
+"pos": "adjective",
+"meaning_jp": "傷つきやすい、弱い立場の",
+"example_en": "Elderly people are especially vulnerable to extreme heat in summer.",
+"example_jp": "高齢者は、夏の極端な暑さに特に弱い。",
+"level": "intermediate",
+"tags": "general,social"
+},
+{
+"word": "merely",
+"pos": "adverb",
+"meaning_jp": "単に、ただ〜にすぎない",
+"example_en": "She was not complaining; she was merely stating the facts.",
+"example_jp": "彼女は不平を言っていたのではなく、単に事実を述べていただけだった。",
+"level": "intermediate",
+"tags": "academic,formal"
+},
+{
+"word": "barely",
+"pos": "adverb",
+"meaning_jp": "かろうじて、ほとんど〜ない",
+"example_en": "She spoke so quietly that I could barely hear her.",
+"example_jp": "彼女があまりに静かに話したので、私はかろうじて聞き取れるほどだった。",
+"level": "intermediate",
+"tags": "general"
+},
+{
+"word": "compensate",
+"pos": "verb",
+"meaning_jp": "〜を補う、埋め合わせる",
+"example_en": "She studied extra hours to compensate for the classes she had missed.",
+"example_jp": "彼女は欠席した授業を埋め合わせるために余分に勉強した。",
+"level": "advanced",
+"tags": "school"
+},
+{
+"word": "reconcile",
+"pos": "verb",
+"meaning_jp": "〜を調和させる、両立させる",
+"example_en": "It is difficult to reconcile economic growth with environmental protection.",
+"example_jp": "経済成長と環境保護を両立させるのは難しい。",
+"level": "advanced",
+"tags": "environment"
+},
+{
+"word": "exacerbate",
+"pos": "verb",
+"meaning_jp": "〜を悪化させる",
+"example_en": "Cutting down forests can exacerbate the effects of climate change.",
+"example_jp": "森林を伐採することは気候変動の影響を悪化させかねない。",
+"level": "advanced",
+"tags": "environment"
+},
+{
+"word": "discrepancy",
+"pos": "noun",
+"meaning_jp": "食い違い、不一致",
+"example_en": "There was a clear discrepancy between his words and his actions.",
+"example_jp": "彼の言葉と行動の間には明らかな食い違いがあった。",
+"level": "advanced",
+"tags": "logic"
+},
+{
+"word": "consensus",
+"pos": "noun",
+"meaning_jp": "合意、総意",
+"example_en": "After hours of debate, the committee finally reached a consensus.",
+"example_jp": "何時間もの議論の末、委員会はついに合意に達した。",
+"level": "advanced",
+"tags": "society"
+},
+{
+"word": "prerequisite",
+"pos": "noun",
+"meaning_jp": "前提条件、必要条件",
+"example_en": "A basic knowledge of statistics is a prerequisite for this course.",
+"example_jp": "統計学の基礎知識がこの講座の前提条件である。",
+"level": "advanced",
+"tags": "school"
+},
+{
+"word": "resilience",
+"pos": "noun",
+"meaning_jp": "回復力、立ち直る力",
+"example_en": "The community showed remarkable resilience after the disaster.",
+"example_jp": "その地域社会は災害の後に驚くべき回復力を見せた。",
+"level": "advanced",
+"tags": "society"
+},
+{
+"word": "detrimental",
+"pos": "adjective",
+"meaning_jp": "有害な、不利益な",
+"example_en": "A lack of sleep is detrimental to both health and concentration.",
+"example_jp": "睡眠不足は健康にも集中力にも有害である。",
+"level": "advanced",
+"tags": "health"
+},
+{
+"word": "inherently",
+"pos": "adverb",
+"meaning_jp": "本質的に、本来",
+"example_en": "Scientific research is inherently uncertain and open to revision.",
+"example_jp": "科学研究は本質的に不確実で、修正の余地がある。",
+"level": "advanced",
+"tags": "science"
+},
+{
+"word": "arguably",
+"pos": "adverb",
+"meaning_jp": "おそらく、ほぼ間違いなく",
+"example_en": "He is arguably the most influential writer of his generation.",
+"example_jp": "彼はおそらく同世代で最も影響力のある作家だ。",
+"level": "advanced",
+"tags": "opinion"
+},
+{
+"word": "predominantly",
+"pos": "adverb",
+"meaning_jp": "主に、大部分は",
+"example_en": "The audience at the lecture was predominantly made up of students.",
+"example_jp": "その講義の聴衆は主に学生で構成されていた。",
+"level": "advanced",
+"tags": "school"
+},
+{
+"word": "consequently",
+"pos": "adverb",
+"meaning_jp": "その結果として、したがって",
+"example_en": "He missed the deadline and consequently lost the contract.",
+"example_jp": "彼は締め切りに間に合わず、その結果として契約を失った。",
+"level": "advanced",
+"tags": "business"
+},
+{
+"word": "scarcity",
+"pos": "noun",
+"meaning_jp": "希少性、不足、欠乏",
+"example_en": "The scarcity of clean water in the region forced the government to ration supplies.",
+"example_jp": "その地域での清潔な水の不足が、政府に供給の配給制を強いた。",
+"level": "advanced",
+"tags": "economics,society"
+},
+{
+"word": "aftermath",
+"pos": "noun",
+"meaning_jp": "(災害・事件などの)余波、その後の混乱した状況",
+"example_en": "In the aftermath of the earthquake, thousands of families were left without shelter.",
+"example_jp": "地震の余波で、何千もの家族が住まいを失ったままになった。",
+"level": "advanced",
+"tags": "disaster,society"
+},
+{
+"word": "threshold",
+"pos": "noun",
+"meaning_jp": "閾値、境界線、起点",
+"example_en": "Once income passes a certain threshold, the tax rate rises sharply.",
+"example_jp": "所得がある一定の閾値を超えると、税率が急激に上がる。",
+"level": "advanced",
+"tags": "science,abstract"
+},
+{
+"word": "premonition",
+"pos": "noun",
+"meaning_jp": "(不吉な)予感、虫の知らせ",
+"example_en": "She had a strange premonition that something was about to go wrong.",
+"example_jp": "彼女は何かが起ころうとしているという奇妙な予感を抱いた。",
+"level": "advanced",
+"tags": "emotion,abstract"
+},
+{
+"word": "relinquish",
+"pos": "verb",
+"meaning_jp": "(権利・地位など)を放棄する、手放す",
+"example_en": "The monarch was eventually forced to relinquish his absolute power.",
+"example_jp": "その君主はついに絶対的な権力を放棄せざるを得なかった。",
+"level": "advanced",
+"tags": "politics,formal"
+},
+{
+"word": "discourage",
+"pos": "verb",
+"meaning_jp": "に思いとどまらせる、を落胆させる",
+"example_en": "High tuition fees may discourage talented students from applying.",
+"example_jp": "高額な授業料は、有能な学生が出願するのを思いとどまらせるかもしれない。",
+"level": "advanced",
+"tags": "education,society"
+},
+{
+"word": "lucrative",
+"pos": "adjective",
+"meaning_jp": "利益の多い、もうかる",
+"example_en": "Consulting proved to be a far more lucrative career than teaching.",
+"example_jp": "コンサルティングは教職よりはるかに利益の多い職業だとわかった。",
+"level": "advanced",
+"tags": "business,economics"
+},
+{
+"word": "deceptive",
+"pos": "adjective",
+"meaning_jp": "人を欺く、見かけ倒しの",
+"example_en": "The calm surface of the lake was deceptive, hiding a strong undercurrent.",
+"example_jp": "その湖の穏やかな水面は見かけ倒しで、強い潮流を隠していた。",
+"level": "advanced",
+"tags": "abstract,description"
+},
+{
+"word": "formidable",
+"pos": "adjective",
+"meaning_jp": "手強い、恐るべき、手に負えない",
+"example_en": "The young challenger faced a formidable opponent in the final round.",
+"example_jp": "その若い挑戦者は最終ラウンドで手強い相手と対決した。",
+"level": "advanced",
+"tags": "description,formal"
+},
+{
+"word": "negligible",
+"pos": "adjective",
+"meaning_jp": "とるに足りない、ほとんど無視できる",
+"example_en": "The difference between the two methods was so small as to be negligible.",
+"example_jp": "二つの手法の違いは、無視できるほどわずかだった。",
+"level": "advanced",
+"tags": "science,formal"
+},
+{
+"word": "indifferent",
+"pos": "adjective",
+"meaning_jp": "無関心な、どうでもよいと思っている",
+"example_en": "Many citizens remained indifferent to the outcome of the election.",
+"example_jp": "多くの市民は選挙の結果に無関心のままだった。",
+"level": "advanced",
+"tags": "emotion,society"
+},
+{
+"word": "rabbit",
+"pos": "noun",
+"meaning_jp": "ウサギ",
+"example_en": "The white rabbit is eating a carrot in the garden.",
+"example_jp": "白いウサギが庭でニンジンを食べています。",
+"level": "eiken_g5",
+"tags": "animal"
+},
+{
+"word": "spoon",
+"pos": "noun",
+"meaning_jp": "スプーン",
+"example_en": "I eat my soup with a spoon every morning.",
+"example_jp": "私は毎朝スプーンでスープを飲みます。",
+"level": "eiken_g5",
+"tags": "kitchen"
+},
+{
+"word": "plate",
+"pos": "noun",
+"meaning_jp": "皿",
+"example_en": "Please put the cake on a clean plate.",
+"example_jp": "きれいな皿の上にケーキをのせてください。",
+"level": "eiken_g5",
+"tags": "kitchen"
+},
+{
+"word": "umbrella",
+"pos": "noun",
+"meaning_jp": "傘",
+"example_en": "Take an umbrella because it is going to rain.",
+"example_jp": "雨が降りそうなので傘を持っていきなさい。",
+"level": "eiken_g5",
+"tags": "weather"
+},
+{
+"word": "kitchen",
+"pos": "noun",
+"meaning_jp": "台所、キッチン",
+"example_en": "My mother is cooking dinner in the kitchen.",
+"example_jp": "母は台所で夕食を作っています。",
+"level": "eiken_g5",
+"tags": "home"
+},
+{
+"word": "sunday",
+"pos": "noun",
+"meaning_jp": "日曜日",
+"example_en": "We do not have school on Sunday.",
+"example_jp": "日曜日は学校がありません。",
+"level": "eiken_g5",
+"tags": "weekday"
+},
+{
+"word": "sing",
+"pos": "verb",
+"meaning_jp": "歌う、〜を歌う",
+"example_en": "The children sing a happy song at school.",
+"example_jp": "子どもたちは学校で楽しい歌を歌います。",
+"level": "eiken_g5",
+"tags": "music"
+},
+{
+"word": "close",
+"pos": "verb",
+"meaning_jp": "〜を閉める",
+"example_en": "Please close the door when you leave the room.",
+"example_jp": "部屋を出るときはドアを閉めてください。",
+"level": "eiken_g5",
+"tags": "action"
+},
+{
+"word": "walk",
+"pos": "verb",
+"meaning_jp": "歩く",
+"example_en": "I walk to school with my friends every day.",
+"example_jp": "私は毎日友達と学校まで歩きます。",
+"level": "eiken_g5",
+"tags": "action"
+},
+{
+"word": "wash",
+"pos": "verb",
+"meaning_jp": "〜を洗う",
+"example_en": "You should wash your hands before dinner.",
+"example_jp": "夕食の前に手を洗うべきです。",
+"level": "eiken_g5",
+"tags": "daily"
+},
+{
+"word": "jump",
+"pos": "verb",
+"meaning_jp": "跳ぶ、ジャンプする",
+"example_en": "The dog can jump over the small fence.",
+"example_jp": "その犬は小さな柵を跳び越えることができます。",
+"level": "eiken_g5",
+"tags": "action"
+},
+{
+"word": "draw",
+"pos": "verb",
+"meaning_jp": "(絵を)描く",
+"example_en": "My sister likes to draw pictures of cats.",
+"example_jp": "妹は猫の絵を描くのが好きです。",
+"level": "eiken_g5",
+"tags": "art"
+},
+{
+"word": "help",
+"pos": "verb",
+"meaning_jp": "〜を手伝う、助ける",
+"example_en": "I help my mother clean the house on weekends.",
+"example_jp": "私は週末に母が家を掃除するのを手伝います。",
+"level": "eiken_g5",
+"tags": "daily"
+},
+{
+"word": "tall",
+"pos": "adjective",
+"meaning_jp": "背が高い、(高さが)高い",
+"example_en": "My brother is very tall for his age.",
+"example_jp": "兄は年齢のわりにとても背が高いです。",
+"level": "eiken_g5",
+"tags": "description"
+},
+{
+"word": "slowly",
+"pos": "adverb",
+"meaning_jp": "ゆっくりと",
+"example_en": "Please speak slowly so I can understand you.",
+"example_jp": "理解できるようにゆっくり話してください。",
+"level": "eiken_g5",
+"tags": "manner"
+},
+{
+"word": "together",
+"pos": "adverb",
+"meaning_jp": "一緒に",
+"example_en": "Let's study English together after class.",
+"example_jp": "放課後に一緒に英語を勉強しましょう。",
+"level": "eiken_g5",
+"tags": "manner"
+},
+{
+"word": "cold",
+"pos": "adjective",
+"meaning_jp": "寒い、冷たい",
+"example_en": "The water is very cold today.",
+"example_jp": "今日は水がとても冷たいです。",
+"level": "eiken_g5",
+"tags": "temperature,basic,a1"
+},
+{
+"word": "hot",
+"pos": "adjective",
+"meaning_jp": "暑い、熱い",
+"example_en": "It is hot in summer.",
+"example_jp": "夏は暑いです。",
+"level": "eiken_g5",
+"tags": "temperature,basic,a1"
+},
+{
+"word": "small",
+"pos": "adjective",
+"meaning_jp": "小さい",
+"example_en": "I have a small dog.",
+"example_jp": "私は小さい犬を飼っています。",
+"level": "eiken_g5",
+"tags": "size,basic,a1"
+},
+{
+"word": "young",
+"pos": "adjective",
+"meaning_jp": "若い",
+"example_en": "My brother is young.",
+"example_jp": "私の弟は若いです。",
+"level": "eiken_g5",
+"tags": "age,basic,a1"
+},
+{
+"word": "new",
+"pos": "adjective",
+"meaning_jp": "新しい",
+"example_en": "This is my new bag.",
+"example_jp": "これは私の新しいかばんです。",
+"level": "eiken_g5",
+"tags": "basic,a1"
+},
+{
+"word": "cute",
+"pos": "adjective",
+"meaning_jp": "かわいい",
+"example_en": "The cat is very cute.",
+"example_jp": "その猫はとてもかわいいです。",
+"level": "eiken_g5",
+"tags": "appearance,basic,a1"
+},
+{
+"word": "too",
+"pos": "adverb",
+"meaning_jp": "〜もまた、〜すぎる",
+"example_en": "I like apples too.",
+"example_jp": "私もリンゴが好きです。",
+"level": "eiken_g5",
+"tags": "basic,a1"
+},
+{
+"word": "there",
+"pos": "adverb",
+"meaning_jp": "そこに、あそこに",
+"example_en": "My book is over there.",
+"example_jp": "私の本はあそこにあります。",
+"level": "eiken_g5",
+"tags": "place,basic,a1"
+},
+{
+"word": "again",
+"pos": "adverb",
+"meaning_jp": "再び、もう一度",
+"example_en": "Please say it again.",
+"example_jp": "もう一度言ってください。",
+"level": "eiken_g5",
+"tags": "basic,a1"
+},
+{
+"word": "collect",
+"pos": "verb",
+"meaning_jp": "〜を集める",
+"example_en": "My brother likes to collect old stamps.",
+"example_jp": "兄は古い切手を集めるのが好きです。",
+"level": "eiken_g4",
+"tags": "hobby"
+},
+{
+"word": "ticket",
+"pos": "noun",
+"meaning_jp": "切符、チケット",
+"example_en": "I bought two tickets for the morning bus.",
+"example_jp": "私は朝のバスの切符を2枚買いました。",
+"level": "eiken_g4",
+"tags": "travel"
+},
+{
+"word": "airport",
+"pos": "noun",
+"meaning_jp": "空港",
+"example_en": "We met my uncle at the airport last night.",
+"example_jp": "私たちは昨夜空港でおじに会いました。",
+"level": "eiken_g4",
+"tags": "travel"
+},
+{
+"word": "customer",
+"pos": "noun",
+"meaning_jp": "客、顧客",
+"example_en": "The shop was full of customers on Sunday.",
+"example_jp": "その店は日曜日に客でいっぱいでした。",
+"level": "eiken_g4",
+"tags": "shopping"
+},
+{
+"word": "festival",
+"pos": "noun",
+"meaning_jp": "祭り、行事",
+"example_en": "Our school festival is held every autumn.",
+"example_jp": "私たちの学園祭は毎年秋に開かれます。",
+"level": "eiken_g4",
+"tags": "school"
+},
+{
+"word": "souvenir",
+"pos": "noun",
+"meaning_jp": "土産、記念品",
+"example_en": "She bought a small souvenir for her sister.",
+"example_jp": "彼女は妹に小さな土産を買いました。",
+"level": "eiken_g4",
+"tags": "travel"
+},
+{
+"word": "schedule",
+"pos": "noun",
+"meaning_jp": "予定、計画表",
+"example_en": "Let's check the schedule before we leave.",
+"example_jp": "出発する前に予定を確認しましょう。",
+"level": "eiken_g4",
+"tags": "travel"
+},
+{
+"word": "recipe",
+"pos": "noun",
+"meaning_jp": "レシピ、調理法",
+"example_en": "This curry recipe is easy and very tasty.",
+"example_jp": "このカレーのレシピは簡単でとてもおいしいです。",
+"level": "eiken_g4",
+"tags": "food"
+},
+{
+"word": "delicious",
+"pos": "adjective",
+"meaning_jp": "とてもおいしい",
+"example_en": "The cake at that bakery is really delicious.",
+"example_jp": "あのパン屋のケーキは本当においしいです。",
+"level": "eiken_g4",
+"tags": "food"
+},
+{
+"word": "expensive",
+"pos": "adjective",
+"meaning_jp": "高価な、値段が高い",
+"example_en": "This bag is too expensive for me.",
+"example_jp": "このかばんは私には高すぎます。",
+"level": "eiken_g4",
+"tags": "shopping"
+},
+{
+"word": "crowded",
+"pos": "adjective",
+"meaning_jp": "混雑した、混んだ",
+"example_en": "The train was crowded this morning.",
+"example_jp": "今朝の電車は混雑していました。",
+"level": "eiken_g4",
+"tags": "travel"
+},
+{
+"word": "abroad",
+"pos": "adverb",
+"meaning_jp": "外国へ、海外で",
+"example_en": "My sister studied abroad for one year.",
+"example_jp": "姉は1年間海外で勉強しました。",
+"level": "eiken_g4",
+"tags": "travel"
+},
+{
+"word": "enjoy",
+"pos": "verb",
+"meaning_jp": "〜を楽しむ",
+"example_en": "We enjoyed the school trip very much.",
+"example_jp": "私たちは修学旅行をとても楽しみました。",
+"level": "eiken_g4",
+"tags": "daily,school"
+},
+{
+"word": "order",
+"pos": "verb",
+"meaning_jp": "(食べ物などを)注文する",
+"example_en": "She ordered a hamburger and a salad.",
+"example_jp": "彼女はハンバーガーとサラダを注文しました。",
+"level": "eiken_g4",
+"tags": "food,restaurant"
+},
+{
+"word": "pay",
+"pos": "verb",
+"meaning_jp": "(代金を)支払う",
+"example_en": "Can I pay for the food with this card?",
+"example_jp": "この食べ物の代金をこのカードで払えますか。",
+"level": "eiken_g4",
+"tags": "shopping,food"
+},
+{
+"word": "wear",
+"pos": "verb",
+"meaning_jp": "(服などを)身につけている",
+"example_en": "He is wearing a blue coat today.",
+"example_jp": "彼は今日青いコートを着ています。",
+"level": "eiken_g4",
+"tags": "shopping,daily"
+},
+{
+"word": "cheap",
+"pos": "adjective",
+"meaning_jp": "(値段が)安い",
+"example_en": "This bag is very cheap, so I will buy it.",
+"example_jp": "このかばんはとても安いので、私は買います。",
+"level": "eiken_g4",
+"tags": "shopping"
+},
+{
+"word": "favorite",
+"pos": "adjective",
+"meaning_jp": "お気に入りの、一番好きな",
+"example_en": "Pizza is my favorite food.",
+"example_jp": "ピザは私の一番好きな食べ物です。",
+"level": "eiken_g4",
+"tags": "food,daily"
+},
+{
+"word": "free",
+"pos": "adjective",
+"meaning_jp": "暇な、自由な",
+"example_en": "Are you free this weekend?",
+"example_jp": "今週末は暇ですか。",
+"level": "eiken_g4",
+"tags": "daily,school"
+},
+{
+"word": "outside",
+"pos": "adverb",
+"meaning_jp": "外で、外に",
+"example_en": "The children are playing outside now.",
+"example_jp": "子どもたちは今、外で遊んでいます。",
+"level": "eiken_g4",
+"tags": "daily"
+},
+{
+"word": "tomorrow",
+"pos": "adverb",
+"meaning_jp": "明日(は)",
+"example_en": "We have a sports day tomorrow.",
+"example_jp": "私たちは明日、運動会があります。",
+"level": "eiken_g4",
+"tags": "school,daily"
+},
+{
+"word": "really",
+"pos": "adverb",
+"meaning_jp": "本当に、とても",
+"example_en": "This movie was really interesting.",
+"example_jp": "この映画は本当に面白かったです。",
+"level": "eiken_g4",
+"tags": "daily"
+},
+{
+"word": "reinforce",
+"pos": "verb",
+"meaning_jp": "〜を強化する、〜を補強する",
+"example_en": "The new data reinforce the researchers' earlier conclusions.",
+"example_jp": "新しいデータは研究者たちの以前の結論を補強している。",
+"level": "march",
+"tags": "research"
+},
+{
+"word": "undergo",
+"pos": "verb",
+"meaning_jp": "〜を経験する、(変化など)を受ける",
+"example_en": "The city has undergone dramatic changes over the past decade.",
+"example_jp": "その都市は過去十年で劇的な変化を経験してきた。",
+"level": "march",
+"tags": "change"
+},
+{
+"word": "convey",
+"pos": "verb",
+"meaning_jp": "〜を伝える、〜を運ぶ",
+"example_en": "Good writing should convey ideas clearly to the reader.",
+"example_jp": "良い文章は読者に考えを明確に伝えるべきだ。",
+"level": "march",
+"tags": "communication"
+},
+{
+"word": "diminish",
+"pos": "verb",
+"meaning_jp": "〜を減らす、減少する",
+"example_en": "Regular exercise can diminish the risk of heart disease.",
+"example_jp": "定期的な運動は心臓病のリスクを減らすことができる。",
+"level": "march",
+"tags": "health"
+},
+{
+"word": "hypothesis",
+"pos": "noun",
+"meaning_jp": "仮説",
+"example_en": "Scientists tested the hypothesis through a series of experiments.",
+"example_jp": "科学者たちは一連の実験を通してその仮説を検証した。",
+"level": "march",
+"tags": "research"
+},
+{
+"word": "consequence",
+"pos": "noun",
+"meaning_jp": "結果、影響",
+"example_en": "Few people consider the long-term consequences of their choices.",
+"example_jp": "自分の選択の長期的な結果を考える人はほとんどいない。",
+"level": "march",
+"tags": "logic"
+},
+{
+"word": "phenomenon",
+"pos": "noun",
+"meaning_jp": "現象",
+"example_en": "Global warming is a phenomenon that affects the entire planet.",
+"example_jp": "地球温暖化は地球全体に影響を及ぼす現象だ。",
+"level": "march",
+"tags": "science"
+},
+{
+"word": "perspective",
+"pos": "noun",
+"meaning_jp": "観点、視点",
+"example_en": "Travel can give you a fresh perspective on your own culture.",
+"example_jp": "旅行は自分自身の文化に対する新鮮な視点を与えてくれる。",
+"level": "march",
+"tags": "thinking"
+},
+{
+"word": "tendency",
+"pos": "noun",
+"meaning_jp": "傾向、性質",
+"example_en": "He has a tendency to interrupt others during meetings.",
+"example_jp": "彼は会議中に他人の話を遮る傾向がある。",
+"level": "march",
+"tags": "behavior"
+},
+{
+"word": "controversy",
+"pos": "noun",
+"meaning_jp": "論争、議論",
+"example_en": "The new policy sparked considerable controversy among voters.",
+"example_jp": "その新しい政策は有権者の間にかなりの論争を引き起こした。",
+"level": "march",
+"tags": "society"
+},
+{
+"word": "abstract",
+"pos": "adjective",
+"meaning_jp": "抽象的な",
+"example_en": "Young children often struggle with abstract concepts like justice.",
+"example_jp": "幼い子どもは正義のような抽象的な概念を理解するのに苦労することが多い。",
+"level": "march",
+"tags": "thinking"
+},
+{
+"word": "widespread",
+"pos": "adjective",
+"meaning_jp": "広範囲にわたる、普及した",
+"example_en": "The use of smartphones has become widespread among teenagers.",
+"example_jp": "スマートフォンの使用は十代の若者の間で広く普及した。",
+"level": "march",
+"tags": "society"
+},
+{
+"word": "nevertheless",
+"pos": "adverb",
+"meaning_jp": "それにもかかわらず",
+"example_en": "The task was difficult; nevertheless, she completed it on time.",
+"example_jp": "その仕事は難しかったが、それにもかかわらず彼女は時間通りに終わらせた。",
+"level": "march",
+"tags": "connective"
+},
+{
+"word": "increasingly",
+"pos": "adverb",
+"meaning_jp": "ますます、いっそう",
+"example_en": "Companies are increasingly relying on artificial intelligence.",
+"example_jp": "企業はますます人工知能に頼るようになっている。",
+"level": "march",
+"tags": "trend"
+},
+{
+"word": "primarily",
+"pos": "adverb",
+"meaning_jp": "主に、第一に",
+"example_en": "The study focused primarily on students in urban areas.",
+"example_jp": "その研究は主に都市部の学生に焦点を当てた。",
+"level": "march",
+"tags": "academic"
+},
+{
+"word": "deliberately",
+"pos": "adverb",
+"meaning_jp": "故意に、意図的に",
+"example_en": "He deliberately ignored the warning signs.",
+"example_jp": "彼は故意にその警告のサインを無視した。",
+"level": "march",
+"tags": "behavior"
+},
+{
+"word": "attribute",
+"pos": "verb",
+"meaning_jp": "〜を(…に)起因すると考える、〜の原因を…に帰する",
+"example_en": "Scientists attribute the rise in temperatures to human activity.",
+"example_jp": "科学者たちは気温の上昇を人間の活動が原因だと考えている。",
+"level": "march",
+"tags": "academic,causation"
+},
+{
+"word": "constitute",
+"pos": "verb",
+"meaning_jp": "〜を構成する、〜と見なされる",
+"example_en": "Women constitute nearly half of the country's workforce.",
+"example_jp": "女性はその国の労働力のほぼ半分を構成している。",
+"level": "march",
+"tags": "academic,formal"
+},
+{
+"word": "yield",
+"pos": "verb",
+"meaning_jp": "(結果・利益など)を生み出す、〜に屈する",
+"example_en": "The experiment yielded results that surprised the entire research team.",
+"example_jp": "その実験は研究チーム全体を驚かせる結果を生み出した。",
+"level": "march",
+"tags": "academic,science"
+},
+{
+"word": "curtail",
+"pos": "verb",
+"meaning_jp": "〜を切り詰める、〜を縮小する",
+"example_en": "The government decided to curtail public spending during the recession.",
+"example_jp": "政府は不況の間、公共支出を切り詰めることを決定した。",
+"level": "soukeijou",
+"tags": "economy"
+},
+{
+"word": "epitomize",
+"pos": "verb",
+"meaning_jp": "〜の典型である、〜を体現する",
+"example_en": "Her dedication epitomizes the values the company hopes to promote.",
+"example_jp": "彼女の献身は会社が掲げたい価値観を体現している。",
+"level": "soukeijou",
+"tags": "business"
+},
+{
+"word": "premise",
+"pos": "noun",
+"meaning_jp": "前提、根拠",
+"example_en": "His entire argument rests on a flawed premise.",
+"example_jp": "彼の議論全体は誤った前提の上に成り立っている。",
+"level": "soukeijou",
+"tags": "logic"
+},
+{
+"word": "hindrance",
+"pos": "noun",
+"meaning_jp": "妨げ、障害",
+"example_en": "A lack of funding proved to be a serious hindrance to the project.",
+"example_jp": "資金不足はそのプロジェクトにとって深刻な妨げとなった。",
+"level": "soukeijou",
+"tags": "business"
+},
+{
+"word": "indispensable",
+"pos": "adjective",
+"meaning_jp": "不可欠な、欠かせない",
+"example_en": "A reliable internet connection has become indispensable to modern work.",
+"example_jp": "信頼できるインターネット接続は現代の仕事に不可欠なものとなった。",
+"level": "soukeijou",
+"tags": "technology"
+},
+{
+"word": "inadvertently",
+"pos": "adverb",
+"meaning_jp": "うっかりと、意図せずに",
+"example_en": "He inadvertently revealed the surprise by mentioning the party.",
+"example_jp": "彼はパーティーのことを口にして、うっかりとサプライズをばらしてしまった。",
+"level": "soukeijou",
+"tags": "daily"
+},
+{
+"word": "conversely",
+"pos": "adverb",
+"meaning_jp": "逆に、反対に",
+"example_en": "Some students thrive under pressure; conversely, others perform worse.",
+"example_jp": "一部の学生はプレッシャーの下で力を発揮するが、逆に他の学生は成績が落ちる。",
+"level": "soukeijou",
+"tags": "logic"
+},
+{
+"word": "connoisseur",
+"pos": "noun",
+"meaning_jp": "(芸術・食などの)目利き、鑑定家、玄人",
+"example_en": "A true connoisseur of wine can identify the vineyard from a single sip.",
+"example_jp": "本物のワインの目利きは、一口飲んだだけで産地を言い当てられる。",
+"level": "soukeijou",
+"tags": "art,expertise"
+},
+{
+"word": "predicament",
+"pos": "noun",
+"meaning_jp": "苦境、窮地、困難な状況",
+"example_en": "The sudden funding cut left the research team in a serious predicament.",
+"example_jp": "突然の資金打ち切りで、研究チームは深刻な窮地に陥った。",
+"level": "soukeijou",
+"tags": "difficulty"
+},
+{
+"word": "semblance",
+"pos": "noun",
+"meaning_jp": "うわべ、外見、(本物に似た)気配",
+"example_en": "After hours of negotiation, the two sides finally restored a semblance of order.",
+"example_jp": "何時間もの交渉の末、両者はようやく表面上の秩序を取り戻した。",
+"level": "soukeijou",
+"tags": "appearance"
+},
+{
+"word": "upheaval",
+"pos": "noun",
+"meaning_jp": "激変、大変動、動乱",
+"example_en": "The political upheaval forced thousands of families to flee the capital.",
+"example_jp": "政治的激変により、何千もの家族が首都からの避難を余儀なくされた。",
+"level": "soukeijou",
+"tags": "change,society"
+},
+{
+"word": "affinity",
+"pos": "noun",
+"meaning_jp": "親近感、相性のよさ、(化学的)親和性",
+"example_en": "She felt a strong affinity for cultures shaped by long maritime histories.",
+"example_jp": "彼女は長い海洋史に育まれた文化に強い親近感を覚えた。",
+"level": "soukeijou",
+"tags": "feeling,relation"
+},
+{
+"word": "abate",
+"pos": "verb",
+"meaning_jp": "(勢い・程度が)弱まる、和らぐ、~を弱める",
+"example_en": "The storm showed no sign that its fury would abate before dawn.",
+"example_jp": "その嵐は、夜明け前に勢いが弱まる気配を一向に見せなかった。",
+"level": "soukeijou",
+"tags": "decrease,weather"
+},
+{
+"word": "reconvene",
+"pos": "verb",
+"meaning_jp": "(会議などが)再び集まる、再開する",
+"example_en": "The committee agreed to reconvene the following week to finalize the budget.",
+"example_jp": "委員会は予算を最終決定するため翌週に再び集まることで合意した。",
+"level": "soukeijou",
+"tags": "meeting"
+},
+{
+"word": "galvanize",
+"pos": "verb",
+"meaning_jp": "~を奮い立たせる、(行動へと)駆り立てる",
+"example_en": "The activist's speech galvanized the crowd into immediate action.",
+"example_jp": "その活動家の演説は群衆を奮い立たせ、即座の行動へと駆り立てた。",
+"level": "soukeijou",
+"tags": "motivation"
+},
+{
+"word": "squander",
+"pos": "verb",
+"meaning_jp": "(金・才能・機会を)浪費する、無駄に使う",
+"example_en": "He squandered his inheritance on a string of doomed ventures.",
+"example_jp": "彼は遺産を、ことごとく失敗する事業につぎ込んで浪費した。",
+"level": "soukeijou",
+"tags": "waste,money"
+},
+{
+"word": "insinuate",
+"pos": "verb",
+"meaning_jp": "~をそれとなくほのめかす、遠回しに言う",
+"example_en": "The reporter insinuated that the official had accepted bribes.",
+"example_jp": "その記者は、当局者が賄賂を受け取ったとそれとなくほのめかした。",
+"level": "soukeijou",
+"tags": "communication"
+},
+{
+"word": "sumptuous",
+"pos": "adjective",
+"meaning_jp": "豪華な、ぜいたくな",
+"example_en": "The ambassador hosted a sumptuous banquet for the visiting delegation.",
+"example_jp": "大使は訪問団のために豪華な晩餐会を催した。",
+"level": "soukeijou",
+"tags": "luxury"
+},
+{
+"word": "insidious",
+"pos": "adjective",
+"meaning_jp": "知らぬ間に進行する、陰険な、油断ならない",
+"example_en": "The disease is insidious, often advancing for years before any symptoms appear.",
+"example_jp": "その病気は知らぬ間に進行し、症状が現れる前に何年も進むことが多い。",
+"level": "soukeijou",
+"tags": "danger,health"
+},
+{
+"word": "tenuous",
+"pos": "adjective",
+"meaning_jp": "(根拠・つながりが)希薄な、もろい、薄弱な",
+"example_en": "The prosecution's case rested on tenuous circumstantial evidence.",
+"example_jp": "検察側の主張は、薄弱な状況証拠に頼っていた。",
+"level": "soukeijou",
+"tags": "weak,evidence"
+},
+{
+"word": "austere",
+"pos": "adjective",
+"meaning_jp": "質素な、厳格な、飾り気のない",
+"example_en": "The monks led an austere life with few possessions and strict routines.",
+"example_jp": "修道士たちは、わずかな持ち物と厳格な日課のもと質素な生活を送った。",
+"level": "soukeijou",
+"tags": "simple,strict"
+},
+{
+"word": "precarious",
+"pos": "adjective",
+"meaning_jp": "不安定な、危なっかしい、危うい",
+"example_en": "Many gig workers earn a precarious living without any job security.",
+"example_jp": "多くのギグワーカーは、何の雇用保障もないまま不安定な生計を立てている。",
+"level": "soukeijou",
+"tags": "unstable,work"
+},
+{
+"word": "innocuous",
+"pos": "adjective",
+"meaning_jp": "無害な、当たり障りのない",
+"example_en": "What seemed an innocuous remark sparked a heated controversy online.",
+"example_jp": "当たり障りのない発言に思えたものが、ネット上で激しい論争を巻き起こした。",
+"level": "soukeijou",
+"tags": "harmless"
+},
+{
+"word": "ostensibly",
+"pos": "adverb",
+"meaning_jp": "表向きは、うわべは",
+"example_en": "He stayed late ostensibly to finish his work, but really to avoid going home.",
+"example_jp": "彼は表向きは仕事を終わらせるため遅くまで残ったが、実際は帰宅を避けるためだった。",
+"level": "soukeijou",
+"tags": "appearance,manner"
+},
+{
+"word": "invariably",
+"pos": "adverb",
+"meaning_jp": "決まって、常に、例外なく",
+"example_en": "His predictions about the market invariably turned out to be wrong.",
+"example_jp": "相場についての彼の予測は、決まって外れた。",
+"level": "soukeijou",
+"tags": "frequency,manner"
+},
+{
+"word": "begrudgingly",
+"pos": "adverb",
+"meaning_jp": "しぶしぶ、いやいやながら",
+"example_en": "He begrudgingly admitted that his rival's solution was more elegant.",
+"example_jp": "彼はしぶしぶ、競争相手の解決策のほうが洗練されていると認めた。",
+"level": "soukeijou",
+"tags": "manner,attitude"
+},
+{
+"word": "reputation",
+"pos": "noun",
+"meaning_jp": "評判、名声",
+"example_en": "The university has a strong reputation for medical research.",
+"example_jp": "その大学は医学研究で高い評判を持っている。",
+"level": "chihokkokuritsu",
+"tags": "society"
+},
+{
+"word": "obstacle",
+"pos": "noun",
+"meaning_jp": "障害、妨げ",
+"example_en": "Lack of money was the biggest obstacle to his plan.",
+"example_jp": "資金不足が彼の計画にとって最大の障害だった。",
+"level": "chihokkokuritsu",
+"tags": "challenge"
+},
+{
+"word": "appropriate",
+"pos": "adjective",
+"meaning_jp": "適切な、ふさわしい",
+"example_en": "It is important to choose words appropriate for the situation.",
+"example_jp": "その場にふさわしい言葉を選ぶことが大切だ。",
+"level": "chihokkokuritsu",
+"tags": "description"
+},
+{
+"word": "diverse",
+"pos": "adjective",
+"meaning_jp": "多様な、さまざまな",
+"example_en": "The city is home to people from diverse cultural backgrounds.",
+"example_jp": "その都市にはさまざまな文化的背景を持つ人々が暮らしている。",
+"level": "chihokkokuritsu",
+"tags": "society"
+},
+{
+"word": "thoroughly",
+"pos": "adverb",
+"meaning_jp": "徹底的に、完全に",
+"example_en": "You should read the contract thoroughly before signing it.",
+"example_jp": "署名する前に契約書を徹底的に読むべきだ。",
+"level": "chihokkokuritsu",
+"tags": "manner"
+},
+{
+"word": "drawback",
+"pos": "noun",
+"meaning_jp": "欠点、難点",
+"example_en": "The main drawback of this method is its high cost.",
+"example_jp": "この方法の主な欠点は費用が高いことだ。",
+"level": "chihokkokuritsu",
+"tags": "general,argument"
+},
+{
+"word": "assess",
+"pos": "verb",
+"meaning_jp": "〜を評価する、査定する",
+"example_en": "Teachers assess students' progress at the end of each term.",
+"example_jp": "教師は各学期の終わりに生徒の進歩を評価する。",
+"level": "chihokkokuritsu",
+"tags": "academic,education"
+},
+{
+"word": "derive",
+"pos": "verb",
+"meaning_jp": "〜を引き出す、由来する",
+"example_en": "Many English words derive from Latin roots.",
+"example_jp": "多くの英単語はラテン語の語源に由来する。",
+"level": "chihokkokuritsu",
+"tags": "academic,language"
+},
+{
+"word": "compile",
+"pos": "verb",
+"meaning_jp": "〜を編集する、まとめる",
+"example_en": "The committee compiled the data into a single report.",
+"example_jp": "委員会はそのデータを一つの報告書にまとめた。",
+"level": "chihokkokuritsu",
+"tags": "academic,data"
+},
+{
+"word": "restrict",
+"pos": "verb",
+"meaning_jp": "〜を制限する",
+"example_en": "The new law restricts the use of plastic bags in stores.",
+"example_jp": "その新しい法律は店舗でのレジ袋の使用を制限する。",
+"level": "chihokkokuritsu",
+"tags": "policy,social"
+},
+{
+"word": "verify",
+"pos": "verb",
+"meaning_jp": "〜を検証する、確認する",
+"example_en": "Scientists must verify their results through repeated tests.",
+"example_jp": "科学者は繰り返しの試験を通じて結果を検証しなければならない。",
+"level": "chihokkokuritsu",
+"tags": "science,academic"
+},
+{
+"word": "vital",
+"pos": "adjective",
+"meaning_jp": "極めて重要な、不可欠の",
+"example_en": "Clean water is vital to the health of the community.",
+"example_jp": "きれいな水は地域社会の健康にとって極めて重要だ。",
+"level": "chihokkokuritsu",
+"tags": "general,importance"
+},
+{
+"word": "vague",
+"pos": "adjective",
+"meaning_jp": "曖昧な、漠然とした",
+"example_en": "The instructions were too vague for the students to follow.",
+"example_jp": "その指示は曖昧すぎて生徒たちは従えなかった。",
+"level": "chihokkokuritsu",
+"tags": "general,description"
+},
+{
+"word": "remarkably",
+"pos": "adverb",
+"meaning_jp": "著しく、目立って",
+"example_en": "The team performed remarkably well despite limited resources.",
+"example_jp": "そのチームは限られた資源にもかかわらず著しく良い成績を収めた。",
+"level": "chihokkokuritsu",
+"tags": "general,degree"
+},
+{
+"word": "presumably",
+"pos": "adverb",
+"meaning_jp": "おそらく、たぶん",
+"example_en": "He is not here yet, so presumably his train was delayed.",
+"example_jp": "彼はまだここにいないので、おそらく電車が遅れたのだろう。",
+"level": "chihokkokuritsu",
+"tags": "general,inference"
+},
+{
+"word": "scarcely",
+"pos": "adverb",
+"meaning_jp": "ほとんど〜ない",
+"example_en": "There was scarcely any food left after the long journey.",
+"example_jp": "長い旅の後には食べ物がほとんど残っていなかった。",
+"level": "chihokkokuritsu",
+"tags": "general,degree"
+},
+{
+"word": "accordingly",
+"pos": "adverb",
+"meaning_jp": "それに応じて、したがって",
+"example_en": "The weather changed, and we adjusted our plans accordingly.",
+"example_jp": "天候が変わったので、私たちはそれに応じて計画を調整した。",
+"level": "chihokkokuritsu",
+"tags": "general,connector"
+}
+]
+}

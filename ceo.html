@@ -1785,6 +1785,28 @@
       </details>
     </section>
 
+    <!-- 📖 単語帳 取込パネル (Phase 2 2026-06-17 無課金・手作りシード): 英単語/英熟語を vocab_words へ一括登録 -->
+    <section id="vocabImportSection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(168,85,247,0.06); border: 1px solid rgba(168,85,247,0.28); border-radius: 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem;">
+        <h2 style="font-size:1.15rem;color:#a855f7;margin:0;">📖 単語帳に英単語・英熟語を取込</h2>
+        <a href="vocab.html" style="font-size:0.78rem;color:#c4b5fd;">単語帳を開く →</a>
+      </div>
+      <div style="font-size:0.78rem;color:#94a3b8;line-height:1.6;margin-bottom:0.7rem;">
+        リポジトリ同梱の手作りシードを <code style="color:#cbd5e1;">/api/admin/vocab/import</code> へ登録します (AI生成なし・無課金)。これまで空だった11レベル(中1〜難関私大)＋英熟語2レベルを埋めます。<span style="color:#86efac;">同じ語は自動スキップされ重複しません。</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+        <span style="display:inline-flex;align-items:center;gap:0.35rem;">
+          <button id="vocabImportWordsBtn" class="vocab-seed-btn" data-seed="/seed-data/vocab_phase2_words.json" data-levels="chu1,chu2,chu3,basic,intermediate,advanced,eiken_g5,eiken_g4,march,soukeijou,chihokkokuritsu" data-size="253" title="英単語253語(空だった11レベル)を一括取込" style="background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.82rem;font-weight:800;cursor:pointer;">📥 英単語253語を取込</button>
+          <span class="vocab-seed-status" data-for="vocabImportWordsBtn" style="font-size:0.74rem;font-weight:700;color:#71717a;">…</span>
+        </span>
+        <span style="display:inline-flex;align-items:center;gap:0.35rem;">
+          <button id="vocabImportIdiomsBtn" class="vocab-seed-btn" data-seed="/seed-data/vocab_phase2_idioms.json" data-levels="idiom_basic,idiom_exam" data-size="44" title="英熟語44語(基礎/受験頻出)を一括取込" style="background:linear-gradient(135deg,#ec4899,#db2777);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.82rem;font-weight:800;cursor:pointer;">📥 英熟語44語を取込</button>
+          <span class="vocab-seed-status" data-for="vocabImportIdiomsBtn" style="font-size:0.74rem;font-weight:700;color:#71717a;">…</span>
+        </span>
+        <span id="vocabImportMsg" style="font-size:0.8rem;"></span>
+      </div>
+    </section>
+
     <!-- アクセス数モニター (LP / CTA / フォーム送信を events から集計) -->
     <section id="accessMonitorSection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.25); border-radius: 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
@@ -4102,6 +4124,7 @@
       loadE2ESyntheticStatus();
       loadRevenueTimeline();
       loadPoolStatus();
+      if (typeof loadVocabSeedStatus === 'function') loadVocabSeedStatus();
       loadTextbookMissingRequests();
       setInterval(loadSignupSummary, 60000);
       setInterval(loadLiveRoster, 60000);
@@ -7512,6 +7535,63 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         }
       }
       document.querySelectorAll('.exam-seed-btn[data-seed]').forEach(btn => btn.addEventListener('click', () => _runSeedImport(btn)));
+
+      // 📖 単語帳 取込 (Phase 2 2026-06-17): 英単語/英熟語シードを /api/admin/vocab/import へ登録 + 取込済み表示
+      async function loadVocabSeedStatus() {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return;
+        try {
+          const res = await AdminAuth.fetch('/api/admin/vocab/level-counts');
+          if (!res.ok) return;
+          const j = await res.json();
+          const counts = j.counts || {};
+          document.querySelectorAll('.vocab-seed-btn[data-levels]').forEach(btn => {
+            const levels = (btn.getAttribute('data-levels') || '').split(',').map(s => s.trim()).filter(Boolean);
+            const sum = levels.reduce((a, l) => a + (counts[l] || 0), 0);
+            const size = parseInt(btn.getAttribute('data-size') || '0', 10);
+            const st = document.querySelector(`.vocab-seed-status[data-for="${btn.id}"]`);
+            if (size > 0 && sum >= size) {
+              btn.dataset.imported = '1'; btn.dataset.count = sum; btn.style.opacity = '0.55';
+              if (st) { st.textContent = `✅ 取込済み (${sum}語)`; st.style.color = '#22c55e'; }
+            } else if (sum > 0) {
+              btn.dataset.imported = '0'; btn.style.opacity = '1';
+              if (st) { st.textContent = `△ 一部のみ (${sum}/${size}語)`; st.style.color = '#fbbf24'; }
+            } else {
+              btn.dataset.imported = '0'; btn.style.opacity = '1';
+              if (st) { st.textContent = '⚠️ 未取込'; st.style.color = '#f87171'; }
+            }
+          });
+        } catch (e) { console.warn('[vocabSeedStatus]', e); }
+      }
+      async function _runVocabImport(btn) {
+        const url = btn.getAttribute('data-seed');
+        const msg = document.getElementById('vocabImportMsg');
+        if (!url) return;
+        if (btn.dataset.imported === '1') {
+          if (!confirm(`このシードは既に取込済みです (${btn.dataset.count || '?'}語)。\n再取込しても同じ語は自動スキップされ重複しません。続行しますか?`)) return;
+        }
+        btn.disabled = true; const _t = btn.textContent; btn.textContent = '⏳ 取込中...';
+        if (msg) msg.innerHTML = '⏳ シード読込中...';
+        try {
+          const r = await fetch(url + '?_cb=' + Date.now(), { cache: 'no-store' });
+          if (!r.ok) throw new Error('シード取得失敗 HTTP ' + r.status);
+          const data = await r.json();
+          const words = data.words || data;
+          if (!Array.isArray(words) || !words.length) throw new Error('シードが空です');
+          if (msg) msg.innerHTML = `<span style="color:#c4b5fd;">${words.length}語を登録中…</span>`;
+          const res = await AdminAuth.fetch('/api/admin/vocab/import', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ words })
+          });
+          const j = await res.json();
+          if (!res.ok || !j.ok) throw new Error(j.detail || ('HTTP ' + res.status));
+          if (msg) msg.innerHTML = `<span style="color:#86efac;">✅ 取込完了: 新規 ${j.inserted}語 / 既存スキップ ${j.skipped}語${j.failed ? ` / 失敗 ${j.failed}` : ''}</span>`;
+          await loadVocabSeedStatus();
+        } catch (e) {
+          if (msg) msg.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(String(e.message || e))}</span>`;
+        } finally {
+          btn.disabled = false; btn.textContent = _t;
+        }
+      }
+      document.querySelectorAll('.vocab-seed-btn[data-seed]').forEach(btn => btn.addEventListener('click', () => _runVocabImport(btn)));
 
       const sumBtn = document.getElementById('sendDailySummary');
       if (sumBtn) sumBtn.addEventListener('click', async () => {

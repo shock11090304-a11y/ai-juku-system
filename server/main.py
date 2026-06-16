@@ -31590,6 +31590,35 @@ def vocab_import(payload: dict, authorization: Optional[str] = Header(None), x_c
     return {"ok": True, "inserted": inserted, "skipped": skipped, "failed": len(failed), "failed_details": failed[:10]}
 
 
+@app.get("/api/admin/vocab/level-counts")
+def vocab_level_counts(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """level 別の単語数 (admin)。ceo 取込パネルの「取込済み/未取込」表示用 (Phase 2 2026-06-17)。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+    conn = db()
+    c = conn.cursor()
+    counts = {}
+    total = 0
+    try:
+        c.execute("SELECT level, COUNT(*) AS n FROM vocab_words GROUP BY level")
+        for r in c.fetchall():
+            d = dict(r) if hasattr(r, 'keys') else {"level": r[0], "n": r[1]}
+            lv = d.get("level") or ""
+            n = int(d.get("n") or 0)
+            counts[lv] = n
+            total += n
+    finally:
+        conn.close()
+    return {"ok": True, "counts": counts, "total": total}
+
+
 @app.get("/api/vocab/queue")
 def vocab_queue(student_id: Optional[int] = None, level: Optional[str] = None, limit: int = 20, authorization: Optional[str] = Header(None)):
     """次に復習すべき単語キューを返す。student_id は token から解決 (IDOR fix)。
@@ -31837,6 +31866,9 @@ _LEVEL_RELATED = {
     'march':          ['advanced'],
     'soukeijou':      ['advanced', 'march'],
     'todai_kyodai':   ['soukeijou', 'advanced'],
+    # 英熟語 (Phase 2 2026-06-17): 相互に関連付け、同品詞(熟語)distractor プールを共有
+    'idiom_basic':    ['idiom_exam'],
+    'idiom_exam':     ['idiom_basic'],
 }
 
 
