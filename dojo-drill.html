@@ -25,6 +25,16 @@
 
     .sec-h { margin:1.6rem 0 0.4rem; font-size:1.05rem; font-weight:800; color:#e4e4e7; border-bottom:1px solid rgba(255,255,255,0.12); padding-bottom:0.35rem; }
     .subj-h { margin:1.3rem 0 0.5rem; font-size:0.95rem; color:#fcd34d; font-weight:800; }
+    /* レベル/科目タブ (長スクロール回避: レベル→科目タブ→問題選択) */
+    .dd-tabs { display:flex; flex-wrap:wrap; gap:0.45rem; }
+    .dd-level { margin:0.6rem 0 0.2rem; }
+    .dd-subtabs { margin:0.55rem 0 0.2rem; padding-bottom:0.7rem; border-bottom:1px solid rgba(255,255,255,0.10); }
+    .dd-tab { padding:0.5rem 1rem; background:rgba(0,0,0,0.3); border:1.5px solid rgba(255,255,255,0.12); border-radius:999px; color:#e4e4e7; font-weight:800; font-size:0.9rem; cursor:pointer; transition:all .15s; }
+    .dd-tab:hover { border-color:rgba(16,185,129,0.55); transform:translateY(-1px); }
+    .dd-tab.active { background:rgba(16,185,129,0.2); border-color:#10b981; color:#6ee7b7; }
+    .dd-sub .dd-tab { font-size:0.84rem; padding:0.42rem 0.9rem; font-weight:700; }
+    .dd-sub .dd-tab.active { color:#fcd34d; border-color:#fbbf24; background:rgba(251,191,36,0.14); }
+    #ddTabContent { margin-top:0.4rem; }
     .univ-chips { display:flex; flex-wrap:wrap; gap:0.5rem; }
     .univ-chip { padding:0.5rem 0.95rem; background:rgba(0,0,0,0.3); border:1.5px solid rgba(255,255,255,0.12); border-radius:999px; color:#e4e4e7; font-weight:700; font-size:0.9rem; cursor:pointer; transition:all .15s; }
     .univ-chip:hover { border-color:rgba(16,185,129,0.55); transform:translateY(-1px); }
@@ -317,34 +327,64 @@
         <span class="preset-min">${p.min}分</span>
       </button>`;
 
+    // ───────── タブ UI (レベル→科目タブ→問題選択。問題が増えても縦スクロールしない) ─────────
+    const DD_LEVELS = [
+      { key: 'kyotsu', label: '📘 共通テスト' },
+      { key: 'unit',   label: '✍️ 単元別（弱点克服）' },
+      { key: 'univ',   label: '🎓 大学別（二次・私大）' },
+    ];
+    let ddLevel = 'kyotsu';
+    const ddSubject = { kyotsu: null, unit: null, univ: '国公立' };  // レベルごとに選択中の科目を保持
+
+    function ddSubjectsFor(level) {
+      if (level === 'kyotsu') return [...new Set(PRESETS.map(p => p.subject))];
+      if (level === 'unit')   return [...new Set(UNIT_PRESETS.map(p => p.subj))];
+      return ['国公立', '私立'];
+    }
+
     function renderPresets() {
-      let html = '';
-      // 📘 共通テスト
-      html += '<div class="sec-h">📘 共通テスト</div>';
-      [...new Set(PRESETS.map(p => p.subject))].forEach(sub => {
-        html += `<div class="subj-h">${escapeHtml(sub)}</div><div class="preset-grid">`;
-        PRESETS.filter(p => p.subject === sub).forEach(p => { html += presetCard(p, p.name.replace('共通テスト ', '')); });
-        html += `</div>`;
-      });
-      // ✍️ 単元別 (弱点克服) — 苦手な単元を 10〜15 分で
-      html += '<div class="sec-h">✍️ 単元別（弱点克服）<span class="muted" style="font-weight:normal;font-size:0.75rem;"> — 苦手な単元を10〜15分で</span></div>';
-      [...new Set(UNIT_PRESETS.map(p => p.subj))].forEach(sub => {
-        html += `<div class="subj-h">${escapeHtml(sub)}</div><div class="preset-grid">`;
-        UNIT_PRESETS.filter(p => p.subj === sub).forEach(p => { html += presetCard(p, p.name, `${p.agg}問セット`); });
-        html += `</div>`;
-      });
-      // 🎓 大学別 (二次・私大)
-      html += '<div class="sec-h">🎓 大学別（二次・私大）<span class="muted" style="font-weight:normal;font-size:0.75rem;"> — 大学を選んでください</span></div>';
-      ['国公立', '私立'].forEach(g => {
-        html += `<div class="subj-h">${g}</div><div class="univ-chips">`;
-        UNIVERSITIES.filter(u => u.group === g).forEach(u => { html += `<button class="univ-chip" data-univ="${u.key}">${escapeHtml(u.name)}</button>`; });
-        html += `</div>`;
-      });
-      html += '<div id="univParts"></div>';
       const v = document.getElementById('presetView');
-      v.innerHTML = html;
-      v.querySelectorAll('.preset').forEach(b => b.addEventListener('click', () => startDrill(ALL[parseInt(b.dataset.idx, 10)])));
-      v.querySelectorAll('.univ-chip').forEach(b => b.addEventListener('click', () => renderUnivParts(b.dataset.univ)));
+      v.innerHTML = '<div class="dd-tabs dd-level" id="ddLevelTabs"></div>'
+                  + '<div class="dd-tabs dd-sub dd-subtabs" id="ddSubjTabs"></div>'
+                  + '<div id="ddTabContent"></div>';
+      const lvBar = document.getElementById('ddLevelTabs');
+      lvBar.innerHTML = DD_LEVELS.map(l => `<button class="dd-tab ${l.key === ddLevel ? 'active' : ''}" data-lv="${l.key}">${l.label}</button>`).join('');
+      lvBar.querySelectorAll('.dd-tab').forEach(b => b.addEventListener('click', () => {
+        ddLevel = b.dataset.lv;
+        lvBar.querySelectorAll('.dd-tab').forEach(x => x.classList.toggle('active', x.dataset.lv === ddLevel));
+        renderTabContent();
+      }));
+      renderTabContent();
+    }
+
+    function renderTabContent() {
+      // 科目タブ (レベルに応じて切替。選択中科目はレベルごとに記憶)
+      const subs = ddSubjectsFor(ddLevel);
+      let activeSub = ddSubject[ddLevel];
+      if (!subs.includes(activeSub)) { activeSub = subs[0]; ddSubject[ddLevel] = activeSub; }
+      const subBar = document.getElementById('ddSubjTabs');
+      subBar.innerHTML = subs.map(s => `<button class="dd-tab ${s === activeSub ? 'active' : ''}" data-sub="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join('');
+      subBar.querySelectorAll('.dd-tab').forEach(b => b.addEventListener('click', () => { ddSubject[ddLevel] = b.dataset.sub; renderTabContent(); }));
+
+      // 問題カード (選択中レベル×科目のみ描画 → 縦スクロール最小化)
+      const c = document.getElementById('ddTabContent');
+      let html = '';
+      if (ddLevel === 'kyotsu') {
+        html += '<div class="preset-grid">';
+        PRESETS.filter(p => p.subject === activeSub).forEach(p => { html += presetCard(p, p.name.replace('共通テスト ', '')); });
+        html += '</div>';
+      } else if (ddLevel === 'unit') {
+        html += '<div class="muted" style="margin:0 0 0.6rem;">苦手な単元を10〜15分で</div><div class="preset-grid">';
+        UNIT_PRESETS.filter(p => p.subj === activeSub).forEach(p => { html += presetCard(p, p.name, `${p.agg}問セット`); });
+        html += '</div>';
+      } else {
+        html += '<div class="muted" style="margin:0 0 0.6rem;">大学を選んでください</div><div class="univ-chips">';
+        UNIVERSITIES.filter(u => u.group === activeSub).forEach(u => { html += `<button class="univ-chip" data-univ="${u.key}">${escapeHtml(u.name)}</button>`; });
+        html += '</div><div id="univParts"></div>';
+      }
+      c.innerHTML = html;
+      c.querySelectorAll('.preset').forEach(b => b.addEventListener('click', () => startDrill(ALL[parseInt(b.dataset.idx, 10)])));
+      c.querySelectorAll('.univ-chip').forEach(b => b.addEventListener('click', () => renderUnivParts(b.dataset.univ)));
     }
 
     function renderUnivParts(univKey) {
