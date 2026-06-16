@@ -4340,6 +4340,11 @@ _WEAKNESS_SUBJECT_TO_POOL = {
     "chemistry": [("rikei", "chem_basic"), ("rikei", "chem_q1"), ("rikei", "chem_q2"),
                   ("rikei", "chem_q3"), ("rikei", "chem_basic_q")],
     "biology": [("rikei", "bio_basic"), ("rikei", "bio_q1"), ("rikei", "bio_basic_q")],
+    # 🌏 2026-06-16: earth (地学) の forward entry を新規追加。reverse map (_WEAKNESS_POOL_TO_SUBJECT:4377)
+    #   は ("rikei","earth_basic")→"earth" を書き込むのに forward に "earth" キーが無く、消費側
+    #   (週次プリント:3700 / weakness-top3:4578) が .get("earth",[])=空 → 地学弱点に問題ゼロ配信だった。
+    #   earth_basic が ROTATION 唯一の地学 part (1 combo: kyotsu_rikei・dojo-drill preset 無し) のため pool は薄いが非空。
+    "earth": [("rikei", "earth_basic")],
     "english": [("daigaku", "r_long"), ("daigaku", "r_grammar"), ("daigaku", "g_grammar"), ("daigaku", "w_essay"),
                 ("eiken", "r_q1"), ("eiken", "r_q3")],
     # ↑ 2026-06-16: r_grammar を追加。単元別英文法ドリル (dojo-drill UNIT_PRESETS=r_grammar/teiki) が
