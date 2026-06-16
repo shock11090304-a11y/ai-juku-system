@@ -7,6 +7,11 @@
   <title>⏱ 隙間時間ドリル | 入試問題道場</title>
   <script src="cache-purge.js?v=20260615-dojo-drill"></script>
   <script src="frontend-error-monitor.js?v=20260615-dojo-drill"></script>
+  <!-- 🧮 KaTeX: AI生成の数学/理科問題の LaTeX (\(...\)/\[...\]/\frac 等) を教科書通りに描画。
+       defer ロードで未ロード時は _ddApplyKatex がリトライ。失敗してもプレーンテキスト表示で非致命。 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
   <style>
     body { background: linear-gradient(135deg, #0f0f1e, #1a1a2e); color: #e4e4e7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; margin: 0; }
     a { color: #93c5fd; }
@@ -201,6 +206,13 @@
     }
     function formatScientific(s) {
       let html = escapeHtml(s);
+      // 🧮 LaTeX 数式 (\(...\)/\[...\]/$$...$$) を一旦プレースホルダに退避。以降の _/^→sub/sup 変換や
+      //    \n→<br> が数式内を壊すのを防ぐ。最後に復元し KaTeX(_ddApplyKatex) が教科書通りに描画する。
+      //    単一 $ は通貨($5 等)と衝突するため対象外 (learning-brain.js と同方針)。
+      const _tex = [];
+      html = html.replace(/\$\$[\s\S]*?\$\$|\\\([\s\S]*?\\\)|\\\[[\s\S]*?\\\]/g, (m) => {
+        _tex.push(m); return '' + (_tex.length - 1) + '';
+      });
       // 案B: AI が下線部に出す <u>/<em>/<strong> を whitelist で復活 (english-exam.js と同一・模試風下線)
       html = html.replace(/&lt;u&gt;/gi, '<u class="exam-underline">').replace(/&lt;\/u&gt;/gi, '</u>');
       html = html.replace(/&lt;em&gt;/gi, '<em>').replace(/&lt;\/em&gt;/gi, '</em>');
@@ -212,7 +224,34 @@
       html = html.replace(/\^\(([^)]+)\)/g, '<sup>$1</sup>');
       html = html.replace(/\^(\d+[-+]?)/g, '<sup>$1</sup>');
       html = html.replace(/\n/g, '<br>');
+      // 🧮 退避した LaTeX 数式を復元 (escape 済みのまま戻す→innerHTML 安全・KaTeX が textContent から描画)
+      if (_tex.length) {
+        const _re = new RegExp(String.fromCharCode(0xE010) + '(\\d+)' + String.fromCharCode(0xE011), 'g');
+        html = html.replace(_re, (_m, i) => _tex[+i]);
+      }
       return html;
+    }
+    // 🧮 KaTeX 自動描画 (learning-brain.js _lbApplyKatex と同方式・defer ロード retry 付き)。
+    //   delimiters は $$ / \[ / \( のみ (単一 $ は通貨衝突回避で対象外)。未ロード/失敗時はプレーン表示 (非致命)。
+    function _ddApplyKatex(rootEl) {
+      if (!rootEl) return;
+      const run = () => {
+        if (typeof window.renderMathInElement !== 'function') return false;
+        try {
+          window.renderMathInElement(rootEl, {
+            delimiters: [
+              { left: '$$', right: '$$', display: true },
+              { left: '\\[', right: '\\]', display: true },
+              { left: '\\(', right: '\\)', display: false },
+            ],
+            throwOnError: false, errorColor: '#f87171', strict: 'ignore',
+          });
+        } catch (e) { console.warn('[dojo katex] render failed', e); }
+        return true;
+      };
+      if (run()) return;
+      let tries = 0;
+      const id = setInterval(() => { tries++; if (run() || tries > 20) clearInterval(id); }, 200);
     }
     // 🎯 [傍線部表示 2026-06-15] 本文にマークアップが無くても、設問が引用する傍線部/下線部「…」を
     //   本文中から探して下線+ラベル(A,B…)を付与する (Desktop 国語生成器と同方式・データ非改変)。
@@ -373,6 +412,7 @@
       body += `<div class="actions"><button class="btn btn-primary" id="gradeBtn">📝 採点する</button><button class="btn btn-ghost" id="quitBtn">← やめて戻る</button></div>`;
       const dv = document.getElementById('drillView');
       dv.innerHTML = body;
+      _ddApplyKatex(dv);  // 🧮 本文/設問/選択肢の LaTeX 数式を描画
 
       // choice select
       dv.querySelectorAll('.choice').forEach(el => el.addEventListener('click', () => {
@@ -429,6 +469,7 @@
         const ansText = (isMC && correctIdx >= 0) ? `${String.fromCharCode(65 + correctIdx)}. ${formatScientific(choices[correctIdx])}` : formatScientific(String(q.answer == null ? '' : q.answer));
         exEl.innerHTML = `<div class="expl-ans">正解: ${ansText}</div>${q.explanation ? `<div style="margin-top:0.3rem;">${formatScientific(q.explanation)}</div>` : ''}`;
         exEl.classList.add('show');
+        _ddApplyKatex(exEl);  // 🧮 正答・解説内の LaTeX 数式を描画
         // 自己採点 (自動採点できない記述/未選択) → ○×ボタン
         if (!autoGraded) {
           smEl.style.display = 'flex';
