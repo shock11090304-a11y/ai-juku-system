@@ -3699,15 +3699,17 @@
         const target = cfg.target_pool || 30;
         const min = cfg.min_pool || 3;
         document.getElementById('poolPartsBox').innerHTML = parts.map(p => {
-          const ratio = Math.min(100, Math.round((p.count / target) * 100));
+          const pt = p.target || target;  // 区分別の目標 (物理/化学共テは override=60)。無ければ全体既定。
+          const ratio = Math.min(100, Math.round((p.count / pt) * 100));
           const color = p.is_low ? '#f87171' : (p.is_full ? '#22c55e' : '#fbbf24');
           const label = (labelMap[p.exam] || p.exam) + (p.grade ? ` <span style="color:#71717a;">[${p.grade}]</span>` : '');
+          const tgtMark = (pt !== target) ? ` <span style="color:#0ea5e9;font-size:0.7rem;">(目標↑)</span>` : '';
           return `<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.3rem;">
-            <div style="flex:1;min-width:200px;">${label} <code style="font-size:0.72rem;color:#94a3b8;">${p.part}</code></div>
+            <div style="flex:1;min-width:200px;">${label} <code style="font-size:0.72rem;color:#94a3b8;">${p.part}</code>${tgtMark}</div>
             <div style="flex:2;background:rgba(255,255,255,0.05);border-radius:4px;height:6px;overflow:hidden;">
               <div style="width:${ratio}%;height:100%;background:${color};"></div>
             </div>
-            <div style="font-weight:800;color:${color};min-width:60px;text-align:right;">${p.count} / ${target}</div>
+            <div style="font-weight:800;color:${color};min-width:60px;text-align:right;">${p.count} / ${pt}</div>
           </div>`;
         }).join('');
 
