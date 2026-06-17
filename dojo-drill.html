@@ -252,6 +252,9 @@
       { subj: '英文法', name: '英文法 前置詞', exam: 'daigaku', part: 'r_grammar', grade: 'teiki', filter: '前置詞', unitExact: true, agg: 10, min: 12, topic: '英文法 前置詞' },
       { subj: '英文法', name: '英文法 語法', exam: 'daigaku', part: 'r_grammar', grade: 'teiki', filter: '語法', unitExact: true, agg: 10, min: 12, topic: '英文法 語法' },
       { subj: '英文法', name: '英文法 倒置・強調', exam: 'daigaku', part: 'r_grammar', grade: 'teiki', filter: '倒置', unitExact: true, agg: 10, min: 12, topic: '英文法 倒置' },
+      // 現代文 読解 (本文付き・非agg=本文1題まるごと出題 / 2026-06-17 Batch5)
+      { subj: '国語', name: '現代文 評論読解', exam: 'daigaku', part: 'gendai', grade: 'kyotsu', filter: '評論読解', min: 15, topic: '現代文 評論読解' },
+      { subj: '国語', name: '現代文 小説読解', exam: 'daigaku', part: 'gendai', grade: 'kyotsu', filter: '小説読解', min: 15, topic: '現代文 小説読解' },
     ];
     // 共テ + 単元別 + 大学別 を1配列に集約 (data-idx 共有)
     const UNIV_FLAT = [];
@@ -439,7 +442,7 @@
         html += '</div>';
       } else if (ddLevel === 'unit') {
         html += '<div class="muted" style="margin:0 0 0.6rem;">苦手な単元を10〜15分で</div><div class="preset-grid">';
-        UNIT_PRESETS.filter(p => p.subj === activeSub).forEach(p => { html += presetCard(p, p.name, `${p.agg}問セット`); });
+        UNIT_PRESETS.filter(p => p.subj === activeSub).forEach(p => { html += presetCard(p, p.name, p.agg ? `${p.agg}問セット` : '本文読解'); });
         html += '</div>';
       } else {
         html += '<div class="muted" style="margin:0 0 0.6rem;">大学を選んでください</div><div class="univ-chips">';
