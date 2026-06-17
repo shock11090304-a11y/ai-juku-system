@@ -5003,18 +5003,33 @@ async function initCoachNextMove(student, ajMode, isPreview) {
         if (top.low_confidence) {
           reasonMsg += '（まだ数問なので、もう少し解くと分析の精度が上がります）';
         }
+        // 🎯 [習得クローズドループ 2026-06-17] 「習得(卒業)まであと何が必要か」を一手に明示
+        if (top.mastery_hint) { reasonMsg += ' 🎯 ' + top.mastery_hint; }
         // 「正答だが遅い単元」は別枠 time_focus で明示 (本命の弱点と別単元なら一言添える・review fix #2)
         const tf = (w && w.time_focus) || null;
         if (tf && tf.topic && tf.topic !== (top.topic || '')) {
           reasonMsg += ' なお「' + tf.topic + '」は正答できていますが解くのが遅めです。時間配分も意識を。';
         }
+        // これまで習得(卒業)した単元数をモチベ表示
+        if (w && w.mastered_count > 0) { reasonMsg += ' ✅ これまで ' + w.mastered_count + ' 単元を習得済み。'; }
         const moveTitle = act.label
           ? ('苦手の 1 位「' + label + '」: ' + act.label)
           : ('苦手の 1 位「' + label + '」を 1 問だけ質問してみよう');
+        // 🎯 ワンタップ演習: ドリル推奨ならその弱点単元の隙間ドリルを直接開く (?w_subject/w_topic で自動起動)
+        const drillHref = 'dojo-drill.html?w_subject=' + encodeURIComponent(top.subject || '') + '&w_topic=' + encodeURIComponent(top.topic || '');
         setMove({
           title: moveTitle,
-          reason: reasonMsg + (useDrill ? ' ⏱ 隙間時間ドリルで反復できます。' : ' 写真を撮って送るだけで 3 つの AI が解説します。'),
-          href: useDrill ? 'dojo-drill.html' : ('ai-tutor-photo.html?subject=' + encodeURIComponent(top.subject || '') + '&topic=' + encodeURIComponent(top.topic || '')),
+          reason: reasonMsg + (useDrill ? ' ⏱ この単元の隙間ドリルをすぐ開けます。' : ' 写真を撮って送るだけで 3 つの AI が解説します。'),
+          href: useDrill ? drillHref : ('ai-tutor-photo.html?subject=' + encodeURIComponent(top.subject || '') + '&topic=' + encodeURIComponent(top.topic || '')),
+        });
+        return;
+      }
+      // 🎯 [習得クローズドループ 2026-06-17] 弱点が空 + 習得済みあり = 苦手を全クリア → 称賛して次の単元へ
+      if (w && w.mastered_count > 0) {
+        setMove({
+          title: '🎉 苦手だった ' + w.mastered_count + ' 単元を習得！次の単元に挑戦しよう',
+          reason: '記録された苦手をすべて基準クリアしました。新しい単元のドリルを解くと、また弱点を見つけて対策できます。',
+          href: 'dojo-drill.html',
         });
         return;
       }

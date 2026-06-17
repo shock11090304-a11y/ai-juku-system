@@ -382,6 +382,59 @@
       if (m && m[1].trim()) return m[1].trim().slice(0, 60);
       return preset ? preset.topic : '';
     }
+    // 🎯 [習得クローズドループ 2026-06-17] マイページの弱点「コーチの一手」から ?w_subject=&w_topic= で来たとき、
+    //   その弱点単元に最も近いドリルを自動で開く (ワンタップ演習)。一致しなければ通常メニューのまま。
+    function findPresetForWeakness(wTopic, wSubject) {
+      const wt = String(wTopic || '').trim();
+      if (!wt) return null;
+      const pref = (u) => String(u == null ? '' : u).split(/[（(：:]/)[0].trim();
+      const wtPref = pref(wt);
+      const cands = UNIT_PRESETS.concat(PRESETS);
+      const subjOf = (p) => String(p.subj || p.subject || '');
+      // 弱点 subject (英語/pool 名) → preset.subj に含まれうる語。社会系は全部 'social' に潰れて
+      //   日本史/世界史の区別が付かないため、曖昧時は「誤った科目を開かず」メニューに戻すのが安全。
+      const SUBJ_HINT = { social: ['日本史', '世界史', '地理', '倫理', '政経', '公民', '社会'], physics: ['物理'], chemistry: ['化学'], biology: ['生物'], english: ['英'], japanese: ['国語', '古文', '漢文', '現代文'], math: ['数学'] };
+      const hints = SUBJ_HINT[String(wSubject || '').toLowerCase()] || null;
+      const subjOk = (p) => !hints || hints.some(h => subjOf(p).indexOf(h) >= 0);
+      // 候補が 1 件なら確定。複数なら subject で絞り、なお複数(例: 日本史/世界史 共に「中世」)なら
+      //   誤誘導を避けて null を返す (= 通常メニュー表示)。
+      const pick = (arr) => {
+        if (arr.length === 1) return arr[0];
+        if (arr.length > 1) { const f = arr.filter(subjOk); return f.length === 1 ? f[0] : null; }
+        return null;
+      };
+      // 1) topic 完全一致 (記録 topic が preset.topic 由来のとき。例「物理 力学」)
+      let r = pick(cands.filter(p => p.topic === wt));
+      if (r) return r;
+      // 2) タグ付き単元 (例「力学(運動方程式)」) → 接頭辞が filter で始まる中で「最も長い(具体的な)filter」を優先。
+      //    「熱力学」は「力学」で始まらず、「熱」より「熱力学」が長いので物理 熱力学に正しく解決する。
+      const pm = cands.filter(p => p.filter && wtPref.startsWith(p.filter));
+      if (pm.length) {
+        const maxLen = Math.max.apply(null, pm.map(p => p.filter.length));
+        r = pick(pm.filter(p => p.filter.length === maxLen));
+        if (r) return r;
+      }
+      // 3) topic 同士の包含 (記述フレーズ同士なので部分一致でも誤爆しにくい)
+      r = pick(cands.filter(p => p.topic && (wt.indexOf(p.topic) >= 0 || p.topic.indexOf(wt) >= 0)));
+      return r || null;
+    }
+    function maybeAutoStartFromWeakness() {
+      try {
+        const sp = new URLSearchParams(window.location.search);
+        const wTopic = sp.get('w_topic') || sp.get('topic') || '';
+        const wSubject = sp.get('w_subject') || '';
+        if (!wTopic && !wSubject) return false;
+        const p = findPresetForWeakness(wTopic, wSubject);
+        if (!p) return false;
+        // 戻ったときに該当タブが開いているよう、レベル/科目を合わせてからドリル開始
+        const inUnit = UNIT_PRESETS.indexOf(p) >= 0;
+        ddLevel = inUnit ? 'unit' : 'kyotsu';
+        ddSubject[ddLevel] = inUnit ? p.subj : p.subject;
+        renderPresets();
+        startDrill(p);
+        return true;
+      } catch (_) { return false; }
+    }
     const token = () => localStorage.getItem('ai_juku_session_token') || '';
 
     // ───────── state ─────────
@@ -685,6 +738,15 @@
           })
         }).then(res => { if (res && res.ok) recorded++; }).catch(() => {}));
         await Promise.all(reqs);
+        // 🎯 [習得クローズドループ 2026-06-17] 記録直後に「自分の弱点だけ」を即時再集計 →
+        //   毎朝の cron を待たず TOP3 / 習得(卒業)判定に反映 (解く→改善が即見える)。失敗は非致命。
+        if (recorded > 0) {
+          try {
+            await fetch(`${BACKEND_URL}/api/student/weakness/refresh-self`, {
+              method: 'POST', headers: { 'Authorization': `Bearer ${tk}` }
+            });
+          } catch (_) { /* noop */ }
+        }
       }
       renderResult({ correct, total: graded.length, elapsedMs: totalElapsedMs, recorded, subAttempts });
     }
@@ -707,7 +769,7 @@
       const unitHtml = Object.keys(missedUnits).length
         ? `<div class="weak-box" style="background:rgba(239,68,68,0.10); border-color:rgba(239,68,68,0.35);"><strong style="color:#fca5a5;">🎯 弱点が出た単元:</strong> ${Object.entries(missedUnits).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${escapeHtml(k)} ×${v}`).join(' / ')}<div class="muted" style="margin-top:0.3rem;">この単元が弱点として記録され、マイページの分析に反映されます。</div></div>` : '';
       const recNote = recorded > 0
-        ? `<div class="muted" style="margin-top:0.6rem;">✅ ${recorded}問分を記録しました。マイページの「🎯 弱点 TOP3」に反映されます（毎朝集計）。</div>`
+        ? `<div class="muted" style="margin-top:0.6rem;">✅ ${recorded}問分を記録しました。マイページの「🎯 弱点 TOP3」に<strong style="color:#86efac;">すぐ反映</strong>されます。正答率80%以上を5問で「習得（卒業）」になり、弱点から外れます。</div>`
         : `<div class="muted" style="margin-top:0.6rem; color:#fca5a5;">⚠️ 結果を保存できませんでした（未ログイン or 通信エラー）。マイページからログインすると弱点分析に反映されます。</div>`;
       rv.innerHTML = `<div class="result-card">
         <div class="result-score">${rate >= 80 ? '🎉' : rate >= 50 ? '👍' : '💪'} ${correct} / ${total} 問正解（${rate}%）</div>
@@ -734,6 +796,7 @@
     }
 
     renderPresets();
+    maybeAutoStartFromWeakness();  // 🎯 弱点リンク(?w_subject/w_topic)で来たら該当ドリルを自動で開く
   })();
   </script>
 </body>

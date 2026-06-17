@@ -1573,14 +1573,25 @@
           section.style.display = '';
 
           const items = data.weaknesses || [];
+          const masteredCount = data.mastered_count || 0;
           if (items.length === 0) {
-            list.innerHTML = '';
-            empty.style.display = '';
+            // 🎯 [習得クローズドループ 2026-06-17] 弱点が空でも習得済みがあれば称賛 (卒業の見える化)
+            if (masteredCount > 0) {
+              empty.style.display = 'none';
+              list.innerHTML = `<div style="padding:0.9rem;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.35);border-radius:10px;color:#86efac;font-weight:700;">🎓 苦手だった ${masteredCount} 単元をすべて習得しました！新しい単元のドリルを解くと、また弱点を見つけて対策できます。</div>`;
+            } else {
+              list.innerHTML = '';
+              empty.style.display = '';
+            }
             return;
           }
           empty.style.display = 'none';
 
           let html = '';
+          // 🎯 これまで習得(卒業)した単元数をモチベ表示
+          if (masteredCount > 0) {
+            html += `<div style="padding:0.6rem 0.8rem;margin-bottom:0.6rem;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.35);border-radius:10px;color:#86efac;font-size:0.84rem;font-weight:700;">🎓 これまで ${masteredCount} 単元を習得（卒業）しました！</div>`;
+          }
           items.forEach((w, idx) => {
             const subj = subjectLabel[(w.subject || '').toLowerCase()] || ('📚 ' + (w.subject || '?'));
             const topic = w.topic ? `<span style="font-size:0.85rem;color:#fbbf24;font-weight:700;">「${escapeHTML(w.topic)}」</span>` : '';
@@ -1591,6 +1602,9 @@
               <div style="font-size:0.84rem;color:#fde68a;margin-top:0.25rem;">
                 📊 過去 30 日の質問頻度: <strong style="color:#a78bfa;font-size:0.95rem;">${w.question_count} 回</strong>${confNote}
               </div>`;
+            // 🎯 [習得クローズドループ 2026-06-17] 「習得(卒業)まであと何が必要か」を明示
+            const masteryRow = w.mastery_hint
+              ? `<div style="font-size:0.8rem;color:#86efac;margin-top:0.25rem;">🎯 ${escapeHTML(w.mastery_hint)}</div>` : '';
 
             // 推薦リンク: ai-tutor-photo.html へ subject/topic プリセット遷移
             // 🎯 Task 1 (2026-05-13): topic LIKE 絞り込み完了 → match_quality でピンポイント表示
@@ -1602,6 +1616,7 @@
               <div style="margin-top:0.6rem;padding-top:0.5rem;border-top:1px dashed rgba(255,255,255,0.10);">
                 <div style="font-size:0.78rem;color:#a1a1aa;margin-bottom:0.4rem;">📚 この単元の練習方法:</div>
                 <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                  <a href="dojo-drill.html?w_subject=${subjectQuery}&w_topic=${topicQuery}" style="display:inline-block;padding:0.35rem 0.75rem;background:rgba(99,102,241,0.25);border:1px solid rgba(99,102,241,0.50);border-radius:8px;color:#c7d2fe;font-size:0.78rem;font-weight:700;text-decoration:none;">⏱ この単元を解く</a>
                   <a href="ai-tutor-photo.html?subject=${subjectQuery}&topic=${topicQuery}" style="display:inline-block;padding:0.35rem 0.75rem;background:rgba(34,197,94,0.20);border:1px solid rgba(34,197,94,0.40);border-radius:8px;color:#86efac;font-size:0.78rem;font-weight:700;text-decoration:none;">📷 写真で質問 + 3 AI 解答</a>
                   <button type="button" data-subj="${escapeHTML(w.subject || '')}" data-topic="${escapeHTML(w.topic || '')}" class="weakness-progress-btn" style="display:inline-block;padding:0.35rem 0.75rem;background:rgba(251,191,36,0.18);border:1px solid rgba(251,191,36,0.40);border-radius:8px;color:#fde68a;font-size:0.78rem;font-weight:700;cursor:pointer;">📈 進捗を見る (30日)</button>
                   ${recCount > 0 ? `<span style="display:inline-block;padding:0.35rem 0.75rem;background:rgba(99,102,241,0.10);border:1px dashed rgba(99,102,241,0.35);border-radius:8px;color:#a1a1aa;font-size:0.74rem;">📂 関連 pool: ${recCount} 件${topicMatched > 0 ? ` <span style="color:#86efac;">(うち ${topicMatched} 件 = topic 一致 🎯)</span>` : ''}</span>` : ''}
@@ -1616,6 +1631,7 @@
                   <strong style="color:#fff;font-size:0.95rem;">${subj}</strong> ${topic}
                 </div>
                 ${countRow}
+                ${masteryRow}
                 ${recHtml}
               </div>`;
           });

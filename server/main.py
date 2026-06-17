@@ -1521,6 +1521,11 @@ def init_db():
         # question_attempts のみの実測正答率。avg_confidence_score は AIチューターの自己解答自信度(≈1.0)が
         # 混入するため、「正答だが遅い」判定には混ざらない実測正答率 qa_accuracy を使う (review fix)。
         ("sw_qa_accuracy", "ALTER TABLE student_weakness ADD COLUMN qa_accuracy REAL"),
+        # 🎯 [弱点 習得クローズドループ 2026-06-17 塾長指示「改善されるまで勉強できる仕組み」]
+        # qa_attempts = 採点済み演習回数 (qa_accuracy の分母)。qa_accuracy(実測正答率) >= 0.8 かつ
+        # qa_attempts >= 5 でその単元を「習得(卒業)」と判定し、弱点 TOP3 / 週次プリントから除外する。
+        # これで「弱点を解く → 正答率が基準を超えるまで残り続ける → 超えたら卒業」の閉ループになる。
+        ("sw_qa_attempts", "ALTER TABLE student_weakness ADD COLUMN qa_attempts INTEGER"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -3805,14 +3810,18 @@ def _run_weekly_worksheet_generation() -> dict:
                 if c.fetchone():
                     continue
 
-                # 弱点 TOP3 取得 (count desc, score asc - 低スコアほど弱点)
+                # 弱点 TOP3 取得 (未克服順・習得済みは除外)
+                # 🎯 [習得クローズドループ 2026-06-17] weakness-top3 と同基準: qa_accuracy>=0.8 かつ
+                #   qa_attempts>=5 の「習得済み(卒業)」単元は週次プリントに再出題しない。順序も未克服優先に。
                 c.execute(
                     "SELECT subject, topic, question_count, avg_confidence_score "
                     "FROM student_weakness "
                     "WHERE student_id=? AND question_count >= 1 "
-                    "ORDER BY question_count DESC, COALESCE(avg_confidence_score, 0.5) ASC "
+                    "AND NOT (COALESCE(qa_accuracy, -1) >= ? AND COALESCE(qa_attempts, 0) >= ?) "
+                    "ORDER BY (CASE WHEN COALESCE(qa_attempts, 0) >= 2 THEN qa_accuracy ELSE 1.0 END) ASC, "
+                    "question_count DESC, COALESCE(avg_confidence_score, 0.5) ASC "
                     "LIMIT 3",
-                    (sid,)
+                    (sid, _WEAKNESS_MASTERY_ACCURACY, _WEAKNESS_MASTERY_MIN_ATTEMPTS)
                 )
                 weaknesses = c.fetchall() or []
                 if not weaknesses:
@@ -4268,11 +4277,14 @@ async def _weakness_aggregation_scheduler():
             await asyncio.sleep(3600)
 
 
-def _run_weakness_aggregation() -> dict:
+def _run_weakness_aggregation(only_student_id: Optional[int] = None) -> dict:
     """🎯 2026-05-22 塾長指示で UNION 拡張: ai_tutor_solve_log + question_attempts (mock_exam/practice/essay_grade)
     の 2 系統 (過去 30 日) を student × subject × topic で集計し student_weakness を更新。
     既存レコードは UPSERT (UNIQUE 制約に依拠)。
     confidence/正誤 score: high=1.0 / medium=0.6 / low=0.2 / 正解=1.0 / 不正解=0.0 → 低いほど弱点。
+    qa_attempts = 採点済み(is_correct あり)演習回数。qa_accuracy = その実測正答率 → 習得(卒業)判定に使う。
+    only_student_id を渡すと「その生徒だけ」を即時集計 (ドリル直後の弱点反映=閉ループの即応性)。
+    None なら全生徒 (毎晩 cron / ミニ診断後 / 手動)。
     返却: {students_processed, weaknesses_inserted, weaknesses_updated, rows_examined}
     """
     from datetime import timedelta as _td
@@ -4286,6 +4298,9 @@ def _run_weakness_aggregation() -> dict:
                                          "qa_correct": 0, "qa_graded": 0})
         conf_score_map = {"high": 1.0, "medium": 0.6, "low": 0.2}
         rows_examined = 0
+        # 🎯 [習得クローズドループ] only_student_id 指定時は WHERE に student_id を足して 1 人分だけ集計
+        _only_sid = int(only_student_id) if only_student_id else None
+        _sid_clause = " AND student_id = ?" if _only_sid else ""
 
         # === 系統 1: 過去 30 日の ai_tutor_solve_log (写真質問) ===
         c.execute(
@@ -4293,8 +4308,8 @@ def _run_weakness_aggregation() -> dict:
             "FROM ai_tutor_solve_log "
             "WHERE student_id IS NOT NULL AND student_id > 0 "
             "AND subject_guess IS NOT NULL "
-            "AND created_at >= ?",
-            (cutoff,),
+            "AND created_at >= ?" + _sid_clause,
+            ((cutoff, _only_sid) if _only_sid else (cutoff,)),
         )
         tutor_rows = c.fetchall()
         rows_examined += len(tutor_rows)
@@ -4322,8 +4337,8 @@ def _run_weakness_aggregation() -> dict:
             "FROM question_attempts "
             "WHERE student_id IS NOT NULL AND student_id > 0 "
             "AND subject IS NOT NULL "
-            "AND created_at >= ?",
-            (cutoff,),
+            "AND created_at >= ?" + _sid_clause,
+            ((cutoff, _only_sid) if _only_sid else (cutoff,)),
         )
         qa_rows = c.fetchall()
         rows_examined += len(qa_rows)
@@ -4407,7 +4422,8 @@ def _run_weakness_aggregation() -> dict:
             reasons = v.get("reasons") or {}
             reason_counts_json = json.dumps(reasons, ensure_ascii=False) if reasons else None
             avg_elapsed = int(round(v["elapsed_sum"] / v["elapsed_n"])) if v.get("elapsed_n") else None
-            qa_acc = (v["qa_correct"] / v["qa_graded"]) if v.get("qa_graded") else None
+            qa_graded = int(v.get("qa_graded") or 0)
+            qa_acc = (v["qa_correct"] / qa_graded) if qa_graded else None
             # 既存 check
             c.execute(
                 "SELECT id FROM student_weakness WHERE student_id = ? AND subject = ? AND topic = ?",
@@ -4417,24 +4433,27 @@ def _run_weakness_aggregation() -> dict:
             if existing:
                 c.execute(
                     "UPDATE student_weakness SET question_count = ?, avg_confidence_score = ?, "
-                    "reason_counts = ?, avg_elapsed_ms = ?, qa_accuracy = ?, "
+                    "reason_counts = ?, avg_elapsed_ms = ?, qa_accuracy = ?, qa_attempts = ?, "
                     "last_seen_at = ?, aggregated_at = CURRENT_TIMESTAMP "
                     "WHERE student_id = ? AND subject = ? AND topic = ?",
-                    (v["count"], avg_score, reason_counts_json, avg_elapsed, qa_acc, v["last"], sid, subj, topic),
+                    (v["count"], avg_score, reason_counts_json, avg_elapsed, qa_acc, qa_graded, v["last"], sid, subj, topic),
                 )
                 updated += 1
             else:
                 c.execute(
                     "INSERT INTO student_weakness (student_id, subject, topic, question_count, "
-                    " avg_confidence_score, reason_counts, avg_elapsed_ms, qa_accuracy, last_seen_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    (sid, subj, topic, v["count"], avg_score, reason_counts_json, avg_elapsed, qa_acc, v["last"]),
+                    " avg_confidence_score, reason_counts, avg_elapsed_ms, qa_accuracy, qa_attempts, last_seen_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (sid, subj, topic, v["count"], avg_score, reason_counts_json, avg_elapsed, qa_acc, qa_graded, v["last"]),
                 )
                 inserted += 1
         # ✅ 2026-05-22 P1 fix: 30 日経過の stale row を削除 (古い弱点が worksheet に出続けるのを防ぐ)
         stale_deleted = 0
         try:
             stale_cutoff = (datetime.utcnow() - _td(days=30)).isoformat()
-            c.execute("DELETE FROM student_weakness WHERE aggregated_at < ?", (stale_cutoff,))
+            if _only_sid:
+                c.execute("DELETE FROM student_weakness WHERE student_id = ? AND aggregated_at < ?", (_only_sid, stale_cutoff))
+            else:
+                c.execute("DELETE FROM student_weakness WHERE aggregated_at < ?", (stale_cutoff,))
             stale_deleted = c.rowcount or 0
         except Exception as e:
             log.warning(f"[Weakness] stale row cleanup failed (non-fatal): {e}")
@@ -4583,6 +4602,14 @@ def admin_credit_monitor_now(authorization: Optional[str] = Header(None),
         raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {str(e)[:300]}")
 
 
+# 🎯 [弱点 習得クローズドループ 2026-06-17] 単元の「習得(卒業)」判定しきい値。
+#   実測正答率 (qa_accuracy) >= _WEAKNESS_MASTERY_ACCURACY かつ 採点済み演習 (qa_attempts) >= _WEAKNESS_MASTERY_MIN_ATTEMPTS
+#   を満たした (student, subject, topic) は「改善済み」とみなし弱点 TOP3 / 週次プリントから除外する。
+#   30 日窓のローリング集計なので、その後ミスが増えて正答率が落ちれば自動で弱点に復帰する(=自己修復ループ)。
+_WEAKNESS_MASTERY_ACCURACY = 0.8
+_WEAKNESS_MASTERY_MIN_ATTEMPTS = 5
+
+
 def _weakness_recommended_action(dominant_reason: Optional[str], slow: bool = False, accurate: bool = False) -> dict:
     """🎯 [dojo-drill Phase2+ 2026-06-15 / review fix] 弱点の主因(+遅さ)から「次にやるべき対策」を出し分ける。
     key: speed_training / review_basics / repeat_drill / careful_reading / general。
@@ -4674,10 +4701,18 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
             # (診断は全単元 2 問ずつ = 同数のため、これで間違えた単元が上位に立つ)。
             # ⚠ avg>=0.8 の WHERE 除外は review で取り止め: avg_confidence_score には AIチューターの
             # 「AI 自身の解答自信度」(≈1.0) も混入しており、写真質問由来の弱点を誤って消すため。
-            "SELECT subject, topic, question_count, avg_confidence_score, last_seen_at, reason_counts, avg_elapsed_ms, qa_accuracy "
+            # 🎯 [習得クローズドループ 2026-06-17] 「未克服順」に変更し「習得済み(卒業)」を除外する:
+            #   - WHERE NOT(...): qa_accuracy(実測正答率) >= 0.8 かつ qa_attempts(採点済み) >= 5 = 習得済み → 弱点から外す。
+            #     NULL は COALESCE で「未習得」側に倒し誤って消さない (写真質問のみ等は qa_accuracy NULL → 残す)。
+            #   - ORDER BY: 採点済み >= 2 件ある単元は「実測正答率の低い順(未克服順)」を最優先。
+            #     採点不足(写真質問のみ等)は accuracy=1.0 扱いで後ろへ回し、従来どおり件数の多い順で拾う。
+            #   旧仕様(件数 DESC 一本)は「よく解いた単元は正答率が上がっても上位に残り卒業しない」問題があった。
+            "SELECT subject, topic, question_count, avg_confidence_score, last_seen_at, reason_counts, avg_elapsed_ms, qa_accuracy, qa_attempts "
             "FROM student_weakness WHERE student_id = ? "
-            "ORDER BY question_count DESC, COALESCE(avg_confidence_score, 0.5) ASC, last_seen_at DESC LIMIT ?",
-            (student_id, limit),
+            "AND NOT (COALESCE(qa_accuracy, -1) >= ? AND COALESCE(qa_attempts, 0) >= ?) "
+            "ORDER BY (CASE WHEN COALESCE(qa_attempts, 0) >= 2 THEN qa_accuracy ELSE 1.0 END) ASC, "
+            "question_count DESC, COALESCE(avg_confidence_score, 0.5) ASC, last_seen_at DESC LIMIT ?",
+            (student_id, _WEAKNESS_MASTERY_ACCURACY, _WEAKNESS_MASTERY_MIN_ATTEMPTS, limit),
         )
         rows = c.fetchall()
         # 🎯 [Phase2+ / review fix #5] 「正答だが遅い単元」判定用に、この生徒の全単元の avg_elapsed_ms から
@@ -4700,11 +4735,13 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
                 subj = r["subject"]; topic = r["topic"]; cnt = r["question_count"]
                 avg_score = r["avg_confidence_score"]; last = r["last_seen_at"]
                 reason_counts_raw = r["reason_counts"]; avg_elapsed = r["avg_elapsed_ms"]; qa_accuracy = r["qa_accuracy"]
+                qa_attempts = r["qa_attempts"]
             except (TypeError, KeyError, IndexError):
                 subj, topic, cnt, avg_score, last = r[0], r[1], r[2], r[3], r[4]
                 reason_counts_raw = r[5] if len(r) > 5 else None
                 avg_elapsed = r[6] if len(r) > 6 else None
                 qa_accuracy = r[7] if len(r) > 7 else None
+                qa_attempts = r[8] if len(r) > 8 else None
             # 該当 subject に紐づく pool から問題を推薦
             # 🎯 Task 1 (2026-05-13): topic LIKE 検索でピンポイント絞り込み
             # 弱点 topic (例「三角関数 加法定理」) を分かち書きキーワードに分解し、
@@ -4790,6 +4827,18 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
             accurate = bool(_qa is not None and _qa >= 0.6)
             slow_but_correct = bool(slow and accurate)
             recommended_action = _weakness_recommended_action(dominant_reason, slow, accurate)
+            # 🎯 [習得クローズドループ 2026-06-17] 「習得(卒業)まであと何が必要か」を一言で。
+            #   正答率は十分だが回数不足 → あと N 問 / 正答率が足りない → 何%まで / 採点データ無し → まず解く。
+            _qat = int(qa_attempts) if qa_attempts is not None else 0
+            _acc_pct = int(round(_WEAKNESS_MASTERY_ACCURACY * 100))
+            if _qa is not None and _qa >= _WEAKNESS_MASTERY_ACCURACY:
+                _need = max(0, _WEAKNESS_MASTERY_MIN_ATTEMPTS - _qat)
+                mastery_hint = (f"正答率は十分です。この調子であと{_need}問解けば「習得」になります。" if _need > 0
+                                else "もう少しで「習得」です。")
+            elif _qa is not None:
+                mastery_hint = f"正答率を{_acc_pct}%まで上げると「習得」です（現在{int(round(_qa * 100))}%）。"
+            else:
+                mastery_hint = f"この単元を解くと記録され、正答率{_acc_pct}%以上を{_WEAKNESS_MASTERY_MIN_ATTEMPTS}問で「習得」になります。"
             weaknesses.append({
                 "subject": subj,
                 "topic": topic or "",
@@ -4803,6 +4852,9 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
                 "avg_elapsed_ms": _ae,
                 "qa_accuracy": round(_qa, 2) if _qa is not None else None,
                 "low_confidence": int(cnt or 0) < 3,  # 試行数 < 3 は信頼度低 (要追加演習)
+                # 🎯 習得クローズドループ: 採点済み回数 + 「習得まで」ヒント
+                "qa_attempts": _qat,
+                "mastery_hint": mastery_hint,
                 # Phase2+: 遅さ判定 + 対策出し分け
                 "slow": slow,
                 "slow_but_correct": slow_but_correct,
@@ -4830,9 +4882,59 @@ def student_weakness_top3(request: Request, student_id: int, limit: int = 3, rec
                 time_focus = best
             except Exception:
                 time_focus = None
-        return {"ok": True, "student_id": student_id, "weaknesses": weaknesses, "time_focus": time_focus}
+        # 🎯 [習得クローズドループ 2026-06-17] 「習得済み(卒業)単元」= qa_accuracy>=0.8 かつ qa_attempts>=5。
+        #   弱点リストからは除外済みなので、別枠で「これまで克服した N 単元」をモチベ表示用に返す。
+        mastered = []
+        try:
+            c.execute(
+                "SELECT subject, topic, qa_accuracy, qa_attempts FROM student_weakness "
+                "WHERE student_id = ? AND COALESCE(qa_accuracy, -1) >= ? AND COALESCE(qa_attempts, 0) >= ? "
+                "ORDER BY qa_accuracy DESC, qa_attempts DESC LIMIT 50",
+                (student_id, _WEAKNESS_MASTERY_ACCURACY, _WEAKNESS_MASTERY_MIN_ATTEMPTS),
+            )
+            for x in c.fetchall():
+                xs = x["subject"] if hasattr(x, "keys") else x[0]
+                xt = x["topic"] if hasattr(x, "keys") else x[1]
+                xa = x["qa_accuracy"] if hasattr(x, "keys") else x[2]
+                xn = x["qa_attempts"] if hasattr(x, "keys") else x[3]
+                mastered.append({"subject": xs, "topic": xt or "",
+                                 "qa_accuracy": round(float(xa), 2) if xa is not None else None,
+                                 "qa_attempts": int(xn or 0)})
+        except Exception:
+            mastered = []
+        return {"ok": True, "student_id": student_id, "weaknesses": weaknesses, "time_focus": time_focus,
+                "mastered": mastered, "mastered_count": len(mastered),
+                "mastery_threshold": {"accuracy": _WEAKNESS_MASTERY_ACCURACY,
+                                      "min_attempts": _WEAKNESS_MASTERY_MIN_ATTEMPTS}}
     finally:
         conn.close()
+
+
+@app.post("/api/student/weakness/refresh-self")
+def student_weakness_refresh_self(request: Request, authorization: Optional[str] = Header(None)):
+    """🎯 [習得クローズドループ 2026-06-17] ドリル直後に「自分の弱点だけ」を即時再集計する。
+    隙間ドリル等で解答 (question_attempts に記録) した直後に呼ぶと、毎晩 cron を待たずに
+    弱点 TOP3 / 習得 (卒業) 判定が即更新される (「改善されるまで回す」閉ループの即応性)。
+    認証: 本人 session token のみ (token の student_id を集計対象に固定 = IDOR 不可)。rate limit 10/60s。
+    """
+    _check_rate_limit_ip(request, bucket="weakness_refresh_self", limit=10, window=60)
+    sid: Optional[int] = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        claims = _verify_session_token(token)
+        if claims and claims.get("student_id"):
+            try:
+                sid = int(claims["student_id"])
+            except (TypeError, ValueError):
+                sid = None
+    if not sid or sid <= 0:
+        raise HTTPException(status_code=403, detail="ログインが必要です")
+    try:
+        result = _run_weakness_aggregation(only_student_id=sid)
+        return {"ok": True, "result": result}
+    except Exception as e:
+        log.error(f"[weakness/refresh-self] failed: {type(e).__name__}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {str(e)[:200]}")
 
 
 @app.get("/api/student/weakness-progress")
