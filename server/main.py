@@ -4483,7 +4483,7 @@ _WEAKNESS_SUBJECT_TO_POOL = {
     #   ⚠ math の旧 ("daigaku","r_long") fallback も削除: r_long は英語 pool (reverse map 4366) で、
     #     数学弱点に英語長文を出す誤配信だった。math は実 rikei part 6 種で充足。
     "math": [("rikei", "math_1a"), ("rikei", "math_q1"), ("rikei", "math_2b"),
-             ("rikei", "math_q2"), ("rikei", "math_q3"), ("rikei", "math_basic"), ("rikei", "math_unit")],
+             ("rikei", "math_q2"), ("rikei", "math_q3"), ("rikei", "math_basic"), ("rikei", "math_unit"), ("rikei", "math3c_unit")],
     "physics": [("rikei", "phys_basic"), ("rikei", "phys_kyotsu"), ("rikei", "phys_q1"), ("rikei", "phys_q2"),
                 ("rikei", "phys_q3"), ("rikei", "phys_basic_q")],
     "chemistry": [("rikei", "chem_basic"), ("rikei", "chem_kyotsu"), ("rikei", "chem_q1"), ("rikei", "chem_q2"),
@@ -4517,7 +4517,7 @@ _WEAKNESS_POOL_TO_SUBJECT = {
     # 数学
     ("rikei", "math_1a"): "math", ("rikei", "math_2b"): "math",
     ("rikei", "math_q1"): "math", ("rikei", "math_q2"): "math", ("rikei", "math_q3"): "math",
-    ("rikei", "math_basic"): "math", ("rikei", "math_unit"): "math",
+    ("rikei", "math_basic"): "math", ("rikei", "math_unit"): "math", ("rikei", "math3c_unit"): "math",
     # 物理
     ("rikei", "phys_basic"): "physics", ("rikei", "phys_kyotsu"): "physics",
     ("rikei", "phys_q1"): "physics", ("rikei", "phys_q2"): "physics", ("rikei", "phys_q3"): "physics",
@@ -11595,6 +11595,7 @@ EXAM_QUESTION_ROTATION = [
     ("rikei", "math_1a",      "kyotsu_rikei"),
     ("rikei", "math_2b",      "kyotsu_rikei"),
     ("rikei", "math_unit",    "kyotsu_rikei"),  # 数学 共テ穴埋め単元別 (数と式/集合と命題/図形の性質/式と証明/図形と方程式/統計的な推測・手動取込のみ・2026-06-17)
+    ("rikei", "math3c_unit",  "kyotsu_rikei"),  # 数学III 極限 / 数学C 複素数平面 (4択・手動取込のみ・2026-06-17)
     ("rikei", "phys_basic",   "kyotsu_rikei"),
     ("rikei", "chem_basic",   "kyotsu_rikei"),
     ("rikei", "phys_kyotsu",  "kyotsu_rikei"),  # 2026-06-16 共通テスト 物理 (フル科目・基礎ではない・塾長指示)
@@ -11699,6 +11700,8 @@ EXAM_QUESTION_AUTO_GENERATE_SKIP = {
     ("daigaku", "r_grammar_unit", "teiki"),
     # 数学 共テ穴埋め単元別 (手動取込のみ・AI生成しない / 2026-06-17)
     ("rikei", "math_unit", "kyotsu_rikei"),
+    # 数学III 極限 / 数学C 複素数平面 (手動取込のみ・AI生成しない / 2026-06-17)
+    ("rikei", "math3c_unit", "kyotsu_rikei"),
 }
 
 

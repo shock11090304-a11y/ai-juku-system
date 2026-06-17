@@ -188,8 +188,11 @@
       // 数学B
       { subj: '数学B', name: '数列', exam: 'rikei', part: 'math_2b', grade: 'kyotsu_rikei', filter: '数列', agg: 6, min: 15, topic: '基礎数学 数列' },
       { subj: '数学B', name: '統計的な推測', exam: 'rikei', part: 'math_unit', grade: 'kyotsu_rikei', filter: '統計的な推測', unitExact: true, agg: 6, min: 15, topic: '数学B 統計的な推測' },
+      // 数学III (新規作問・4択 / 2026-06-17)
+      { subj: '数学III', name: '極限', exam: 'rikei', part: 'math3c_unit', grade: 'kyotsu_rikei', filter: '極限', unitExact: true, agg: 6, min: 15, topic: '数学III 極限' },
       // 数学C (新課程でベクトルは数C。part=math_2b は bank filter が機能するので不変)
       { subj: '数学C', name: 'ベクトル', exam: 'rikei', part: 'math_2b', grade: 'kyotsu_rikei', filter: 'ベクトル', unitExact: true, agg: 6, min: 15, topic: '基礎数学 ベクトル' },
+      { subj: '数学C', name: '複素数平面', exam: 'rikei', part: 'math3c_unit', grade: 'kyotsu_rikei', filter: '複素数平面', unitExact: true, agg: 6, min: 15, topic: '数学C 複素数平面' },
       // 理科 単元別 (共テ物理/化学のフル科目プール=手作り147問を unit でフィルタ・弱点補強直結)
       //   unitExact=true: bank の LIKE で拾った大問を、小問の unit 接頭辞 === filter で厳密に絞る
       //   (「力学」が「熱力学」を部分一致で巻き込む等を防止。タグ不在なら従来の LIKE 結果へ graceful fallback)。
