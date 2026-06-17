@@ -431,7 +431,8 @@
         ddLevel = inUnit ? 'unit' : 'kyotsu';
         ddSubject[ddLevel] = inUnit ? p.subj : p.subject;
         renderPresets();
-        startDrill(p);
+        startDrill(p);  // startDrill が先頭で drillOrigin=null するので、その直後に元の弱点を stamp する
+        drillOrigin = { subject: (wSubject || '').trim(), topic: (wTopic || '').trim() };
         return true;
       } catch (_) { return false; }
     }
@@ -440,6 +441,9 @@
     // ───────── state ─────────
     let cur = null;       // {preset, daimon(question_data), startedAt}
     let timerId = null, remainSec = 0;
+    // 🎯 [習得ループ完成 2026-06-17] 弱点リンク(?w_subject/w_topic)から自動起動したときの「元の弱点」。
+    //   解いた採点結果をこの (subject,topic) にも記録し、写真質問由来など採点信号の無い弱点も卒業可能にする。
+    let drillOrigin = null;  // {subject, topic} or null (手動選択時は常に null)
 
     // ───────── preset view ─────────
     const presetCard = (p, dispName, subText) => `<button class="preset" data-idx="${ALL.indexOf(p)}">
@@ -524,6 +528,7 @@
     }
 
     async function startDrill(preset) {
+      drillOrigin = null;  // 手動選択は元弱点クレジット無し (弱点リンク経由のときだけ呼び出し側が直後に再設定)
       document.getElementById('presetView').style.display = 'none';
       const dv = document.getElementById('drillView');
       dv.style.display = '';
@@ -738,6 +743,27 @@
           })
         }).then(res => { if (res && res.ok) recorded++; }).catch(() => {}));
         await Promise.all(reqs);
+        // 🎯 [習得ループ完成 2026-06-17] 弱点リンク経由なら、採点結果を「元の弱点(subject,topic)」にも記録。
+        //   写真質問由来の弱点は採点信号(is_correct)を持たず qa_attempts=0 のままで卒業不能 → ここで
+        //   採点済み credit を与え、正答率80%・5問で卒業できるようにする(=ループが全弱点で閉じる)。
+        //   自然単元(r.unit||preset.topic)と同 topic の小問は除外(自然POSTで計上済=二重計上防止)。
+        if (tk && drillOrigin && drillOrigin.topic && graded.length) {
+          const originReqs = graded
+            .filter(r => (r.unit || preset.topic) !== drillOrigin.topic)
+            .map(r => fetch(`${BACKEND_URL}/api/question-attempts`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tk}` },
+              body: JSON.stringify({
+                source: 'practice', exam_id: preset.exam, part_key: preset.part,
+                subject: drillOrigin.subject || undefined,
+                topic: drillOrigin.topic,
+                is_correct: r.isCorrect ? 1 : 0,
+                elapsed_ms: perMs,
+                metadata: { drill: true, drill_preset: preset.name, sub_id: r.sub_id, weakness_credit: true, origin_topic: drillOrigin.topic }
+              })
+            }).then(() => {}).catch(() => {}));
+          await Promise.all(originReqs);
+        }
         // 🎯 [習得クローズドループ 2026-06-17] 記録直後に「自分の弱点だけ」を即時再集計 →
         //   毎朝の cron を待たず TOP3 / 習得(卒業)判定に反映 (解く→改善が即見える)。失敗は非致命。
         if (recorded > 0) {
@@ -789,6 +815,7 @@
     function backToPresets() {
       stopTimer();
       cur = null;
+      drillOrigin = null;
       document.getElementById('drillView').style.display = 'none';
       document.getElementById('resultView').style.display = 'none';
       document.getElementById('presetView').style.display = '';

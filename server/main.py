@@ -4917,7 +4917,8 @@ def student_weakness_refresh_self(request: Request, authorization: Optional[str]
     弱点 TOP3 / 習得 (卒業) 判定が即更新される (「改善されるまで回す」閉ループの即応性)。
     認証: 本人 session token のみ (token の student_id を集計対象に固定 = IDOR 不可)。rate limit 10/60s。
     """
-    _check_rate_limit_ip(request, bucket="weakness_refresh_self", limit=10, window=60)
+    # 🎯 生徒キーの rate limit (校内 NAT で多数の生徒が同一 IP でも誤 429 にならない=即時反映を守る)
+    _check_rate_limit_caller(request, authorization, bucket="weakness_refresh_self", limit=10, window=60)
     sid: Optional[int] = None
     if authorization and authorization.startswith("Bearer "):
         token = authorization[len("Bearer "):].strip()
@@ -36086,7 +36087,8 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
         if unit == "診断":
             try:
                 _t0 = time.time()
-                _agg = _run_weakness_aggregation()
+                # 🎯 提出した本人だけを即時集計 (全生徒走査は不要・only_student_id でスコープ)
+                _agg = _run_weakness_aggregation(only_student_id=student["id"])
                 log.info(f"[grammar_drill_submit] diagnostic instant aggregation: {_agg.get('students_processed')} students in {time.time()-_t0:.1f}s")
             except Exception as e:
                 log.warning(f"[grammar_drill_submit] diagnostic aggregation failed (non-fatal): {e}")

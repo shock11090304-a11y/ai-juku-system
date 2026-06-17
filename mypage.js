@@ -4873,6 +4873,17 @@ async function initCoachNextMove(student, ajMode, isPreview) {
         if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
       };
     }
+    // 🎯 [習得ループ完成 2026-06-17] 任意の副アクション(例: 写真質問が主でも「⏱この単元を解く」を併設)。
+    //   全 setMove 呼出で必ず通る位置でリセットし、別ブランチの一手に副リンクが残らないようにする。
+    const secBtn = document.getElementById('cnmSecondaryBtn');
+    if (secBtn) {
+      if (move.secondaryHref && move.secondaryLabel) {
+        secBtn.href = move.secondaryHref; secBtn.textContent = move.secondaryLabel;
+        secBtn.onclick = null; secBtn.style.display = 'inline-flex';
+      } else {
+        secBtn.style.display = 'none'; secBtn.onclick = null;
+      }
+    }
     showSection();
   }
   function showDoneState() {
@@ -4880,6 +4891,7 @@ async function initCoachNextMove(student, ajMode, isPreview) {
     reasonEl.textContent = 'よく頑張った！また明日、新しい一手を出すよ。';
     actionBtn.style.display = 'none';
     doneBtn.style.display = 'none';
+    { const sb = document.getElementById('cnmSecondaryBtn'); if (sb) sb.style.display = 'none'; }
     if (doneMsg) { doneMsg.style.display = ''; doneMsg.textContent = '🔥 この調子で毎日 1 つずつ積み上げよう'; }
     showSection();
   }
@@ -5021,6 +5033,9 @@ async function initCoachNextMove(student, ajMode, isPreview) {
           title: moveTitle,
           reason: reasonMsg + (useDrill ? ' ⏱ この単元の隙間ドリルをすぐ開けます。' : ' 写真を撮って送るだけで 3 つの AI が解説します。'),
           href: useDrill ? drillHref : ('ai-tutor-photo.html?subject=' + encodeURIComponent(top.subject || '') + '&topic=' + encodeURIComponent(top.topic || '')),
+          // 主アクションが写真質問のときは「解く」導線(=卒業ルート)を副ボタンで併設。主がドリルなら重複させない。
+          secondaryHref: useDrill ? null : drillHref,
+          secondaryLabel: useDrill ? null : '⏱ この単元を解く',
         });
         return;
       }
