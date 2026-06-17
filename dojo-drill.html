@@ -188,6 +188,30 @@
       { subj: '化学', name: '化学 理論化学', exam: 'rikei', part: 'chem_kyotsu', grade: 'kyotsu_rikei', filter: '理論化学', unitExact: true, agg: 6, min: 12, topic: '化学 理論化学' },
       { subj: '化学', name: '化学 無機化学', exam: 'rikei', part: 'chem_kyotsu', grade: 'kyotsu_rikei', filter: '無機化学', unitExact: true, agg: 6, min: 12, topic: '化学 無機化学' },
       { subj: '化学', name: '化学 有機化学', exam: 'rikei', part: 'chem_kyotsu', grade: 'kyotsu_rikei', filter: '有機化学', unitExact: true, agg: 6, min: 12, topic: '化学 有機化学' },
+      // 日本史 (共テ・単元別・10問束ね / 2026-06-17 網羅拡充)
+      { subj: '日本史', name: '日本史 古代', exam: 'daigaku', part: 'nihonshi', grade: 'kyotsu', filter: '古代', unitExact: true, agg: 10, min: 12, topic: '日本史 古代' },
+      { subj: '日本史', name: '日本史 中世', exam: 'daigaku', part: 'nihonshi', grade: 'kyotsu', filter: '中世', unitExact: true, agg: 10, min: 12, topic: '日本史 中世' },
+      { subj: '日本史', name: '日本史 近世', exam: 'daigaku', part: 'nihonshi', grade: 'kyotsu', filter: '近世', unitExact: true, agg: 10, min: 12, topic: '日本史 近世' },
+      { subj: '日本史', name: '日本史 近代', exam: 'daigaku', part: 'nihonshi', grade: 'kyotsu', filter: '近代', unitExact: true, agg: 10, min: 12, topic: '日本史 近代' },
+      { subj: '日本史', name: '日本史 現代', exam: 'daigaku', part: 'nihonshi', grade: 'kyotsu', filter: '現代', unitExact: true, agg: 10, min: 12, topic: '日本史 現代' },
+      // 世界史
+      { subj: '世界史', name: '世界史 古代', exam: 'daigaku', part: 'sekaishi', grade: 'kyotsu', filter: '古代', unitExact: true, agg: 10, min: 12, topic: '世界史 古代' },
+      { subj: '世界史', name: '世界史 中世', exam: 'daigaku', part: 'sekaishi', grade: 'kyotsu', filter: '中世', unitExact: true, agg: 10, min: 12, topic: '世界史 中世' },
+      { subj: '世界史', name: '世界史 近世', exam: 'daigaku', part: 'sekaishi', grade: 'kyotsu', filter: '近世', unitExact: true, agg: 10, min: 12, topic: '世界史 近世' },
+      { subj: '世界史', name: '世界史 近代', exam: 'daigaku', part: 'sekaishi', grade: 'kyotsu', filter: '近代', unitExact: true, agg: 10, min: 12, topic: '世界史 近代' },
+      { subj: '世界史', name: '世界史 現代', exam: 'daigaku', part: 'sekaishi', grade: 'kyotsu', filter: '現代', unitExact: true, agg: 10, min: 12, topic: '世界史 現代' },
+      // 地理
+      { subj: '地理', name: '地理 地形', exam: 'daigaku', part: 'chiri', grade: 'kyotsu', filter: '地形', unitExact: true, agg: 10, min: 12, topic: '地理 地形' },
+      { subj: '地理', name: '地理 気候', exam: 'daigaku', part: 'chiri', grade: 'kyotsu', filter: '気候', unitExact: true, agg: 10, min: 12, topic: '地理 気候' },
+      { subj: '地理', name: '地理 産業', exam: 'daigaku', part: 'chiri', grade: 'kyotsu', filter: '産業', unitExact: true, agg: 10, min: 12, topic: '地理 産業' },
+      { subj: '地理', name: '地理 人口・都市', exam: 'daigaku', part: 'chiri', grade: 'kyotsu', filter: '人口', unitExact: true, agg: 10, min: 12, topic: '地理 人口都市' },
+      { subj: '地理', name: '地理 地誌', exam: 'daigaku', part: 'chiri', grade: 'kyotsu', filter: '地誌', unitExact: true, agg: 10, min: 12, topic: '地理 地誌' },
+      // 生物基礎
+      { subj: '生物', name: '生物 細胞', exam: 'rikei', part: 'bio_basic', grade: 'kyotsu_rikei', filter: '細胞', unitExact: true, agg: 10, min: 12, topic: '生物基礎 細胞' },
+      { subj: '生物', name: '生物 代謝', exam: 'rikei', part: 'bio_basic', grade: 'kyotsu_rikei', filter: '代謝', unitExact: true, agg: 10, min: 12, topic: '生物基礎 代謝' },
+      { subj: '生物', name: '生物 遺伝情報', exam: 'rikei', part: 'bio_basic', grade: 'kyotsu_rikei', filter: '遺伝', unitExact: true, agg: 10, min: 12, topic: '生物基礎 遺伝情報' },
+      { subj: '生物', name: '生物 体内環境', exam: 'rikei', part: 'bio_basic', grade: 'kyotsu_rikei', filter: '体内環境', unitExact: true, agg: 10, min: 12, topic: '生物基礎 体内環境' },
+      { subj: '生物', name: '生物 植生・生態系', exam: 'rikei', part: 'bio_basic', grade: 'kyotsu_rikei', filter: '生態系', unitExact: true, agg: 10, min: 12, topic: '生物基礎 生態系' },
     ];
     // 共テ + 単元別 + 大学別 を1配列に集約 (data-idx 共有)
     const UNIV_FLAT = [];
