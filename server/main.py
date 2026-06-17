@@ -11459,6 +11459,7 @@ EXAM_QUESTION_ROTATION = [
     ("daigaku", "r_long",        "teiki"),  # 定期テスト長文 (400-500 語・教科書系)
     ("daigaku", "r_short",       "teiki"),  # 定期テスト短文 (会話/物語・教科書系)
     ("daigaku", "r_grammar",     "teiki"),  # 定期テスト文法 (関係詞/分詞/仮定法/比較等 単元別)
+    ("daigaku", "r_grammar_unit","teiki"),  # 英文法 単元別・精密(関係詞/仮定法/時制/比較/分詞 のタグ付き手作り問題のみ・2026-06-17)
     ("daigaku", "w_essay",       "teiki"),  # 定期テスト英作文 (40-60 語・授業ノート活用テーマ)
     # 🔬 大学入試 理系科目 (数学/物理/化学/生物/地学・eiken_grade に大学キー)
     # 共通テスト 理系
@@ -11564,6 +11565,8 @@ EXAM_QUESTION_AUTO_GENERATE_SKIP = {
     ("daigaku", "kobun_unit", "kyotsu"),
     ("daigaku", "kanbun_unit", "kyotsu"),
     ("daigaku", "gendai_unit", "kyotsu"),
+    # 英文法 単元別・精密 (手動取込のみ / 2026-06-17)
+    ("daigaku", "r_grammar_unit", "teiki"),
 }
 
 
