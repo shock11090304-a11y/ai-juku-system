@@ -30834,41 +30834,45 @@ MOCK_EXAM_TEMPLATES = {
     # 🎯 2026-06-17 全教科模試: 既に単元タグ済みの共テ pool を section に割り当て。Defect A 修正で
     #   小問単位の弱点が立ち、⏱解く→卒業に乗る。eiken_grade は pool の ROTATION タグと一致必須
     #   (rikei→'kyotsu_rikei' / daigaku 社会・国語→'kyotsu')。全 multiple_choice = 自動採点可。
+    # count/points_per は本番実測の「大問あたり小問数」に合わせて調整 (2026-06-17):
+    #   日本史/世界史/地理/生物基礎は 1小問/大問 → count を増やし十分な出題数を確保。
+    #   倫理/政経/現/古/漢/物/化は複数小問/大問 → count 少なめ。points_per は採点可能分のみ満点なので
+    #   各セクションが概ね均等な重みになるよう設定 (偏差値は % ベースなので厳密一致は不要)。
     "kyotsu_math": {
         "label": "共通テスト 数学 (IA・IIB)",
         "duration_min": 70,
         "sections": [
-            {"name": "数学I・A", "exam_id": "rikei", "part_key": "math_1a", "eiken_grade": "kyotsu_rikei", "count": 2, "points_per": 25},
-            {"name": "数学II・B", "exam_id": "rikei", "part_key": "math_2b", "eiken_grade": "kyotsu_rikei", "count": 2, "points_per": 25},
+            {"name": "数学I・A", "exam_id": "rikei", "part_key": "math_1a", "eiken_grade": "kyotsu_rikei", "count": 3, "points_per": 30},
+            {"name": "数学II・B", "exam_id": "rikei", "part_key": "math_2b", "eiken_grade": "kyotsu_rikei", "count": 3, "points_per": 30},
         ],
     },
     "kyotsu_rika": {
         "label": "共通テスト 理科 (物理・化学・生物)",
         "duration_min": 80,
         "sections": [
-            {"name": "物理", "exam_id": "rikei", "part_key": "phys_kyotsu", "eiken_grade": "kyotsu_rikei", "count": 2, "points_per": 20},
-            {"name": "化学", "exam_id": "rikei", "part_key": "chem_kyotsu", "eiken_grade": "kyotsu_rikei", "count": 2, "points_per": 20},
-            {"name": "生物基礎", "exam_id": "rikei", "part_key": "bio_basic", "eiken_grade": "kyotsu_rikei", "count": 1, "points_per": 20},
+            {"name": "物理", "exam_id": "rikei", "part_key": "phys_kyotsu", "eiken_grade": "kyotsu_rikei", "count": 2, "points_per": 30},
+            {"name": "化学", "exam_id": "rikei", "part_key": "chem_kyotsu", "eiken_grade": "kyotsu_rikei", "count": 2, "points_per": 30},
+            {"name": "生物基礎", "exam_id": "rikei", "part_key": "bio_basic", "eiken_grade": "kyotsu_rikei", "count": 8, "points_per": 8},
         ],
     },
     "kyotsu_shakai": {
         "label": "共通テスト 社会 (日/世/地/倫/政経)",
         "duration_min": 60,
         "sections": [
-            {"name": "日本史", "exam_id": "daigaku", "part_key": "nihonshi", "eiken_grade": "kyotsu", "count": 1, "points_per": 20},
-            {"name": "世界史", "exam_id": "daigaku", "part_key": "sekaishi", "eiken_grade": "kyotsu", "count": 1, "points_per": 20},
-            {"name": "地理", "exam_id": "daigaku", "part_key": "chiri", "eiken_grade": "kyotsu", "count": 1, "points_per": 20},
-            {"name": "倫理", "exam_id": "daigaku", "part_key": "rinri", "eiken_grade": "kyotsu", "count": 1, "points_per": 20},
-            {"name": "政治・経済", "exam_id": "daigaku", "part_key": "seiji_keizai", "eiken_grade": "kyotsu", "count": 1, "points_per": 20},
+            {"name": "日本史", "exam_id": "daigaku", "part_key": "nihonshi", "eiken_grade": "kyotsu", "count": 6, "points_per": 6},
+            {"name": "世界史", "exam_id": "daigaku", "part_key": "sekaishi", "eiken_grade": "kyotsu", "count": 6, "points_per": 6},
+            {"name": "地理", "exam_id": "daigaku", "part_key": "chiri", "eiken_grade": "kyotsu", "count": 6, "points_per": 6},
+            {"name": "倫理", "exam_id": "daigaku", "part_key": "rinri", "eiken_grade": "kyotsu", "count": 1, "points_per": 30},
+            {"name": "政治・経済", "exam_id": "daigaku", "part_key": "seiji_keizai", "eiken_grade": "kyotsu", "count": 1, "points_per": 30},
         ],
     },
     "kyotsu_kokugo": {
         "label": "共通テスト 国語 (現代文・古文・漢文の知識)",
         "duration_min": 50,
         "sections": [
-            {"name": "現代文 (漢字・語彙・評論)", "exam_id": "daigaku", "part_key": "gendai_unit", "eiken_grade": "kyotsu", "count": 2, "points_per": 20},
-            {"name": "古文 (単語・文法・敬語)", "exam_id": "daigaku", "part_key": "kobun_unit", "eiken_grade": "kyotsu", "count": 1, "points_per": 20},
-            {"name": "漢文 (句法・重要語)", "exam_id": "daigaku", "part_key": "kanbun_unit", "eiken_grade": "kyotsu", "count": 1, "points_per": 20},
+            {"name": "現代文 (漢字・語彙・評論)", "exam_id": "daigaku", "part_key": "gendai_unit", "eiken_grade": "kyotsu", "count": 1, "points_per": 30},
+            {"name": "古文 (単語・文法・敬語)", "exam_id": "daigaku", "part_key": "kobun_unit", "eiken_grade": "kyotsu", "count": 1, "points_per": 30},
+            {"name": "漢文 (句法・重要語)", "exam_id": "daigaku", "part_key": "kanbun_unit", "eiken_grade": "kyotsu", "count": 1, "points_per": 30},
         ],
     },
 }
@@ -30967,25 +30971,33 @@ def mock_exam_generate(payload: dict, request: Request, authorization: Optional[
                 "questions": sub_questions,
             })
             # 採点用 snapshot
+            # 🎯 [全問正解=100% fix 2026-06-17] 採点可能(multiple_choice)の小問だけを満点に数える。
+            #   非選択式(記述/数列の一般項 等)は自動採点できないので満点からも除外し、全問正解=100% にする。
+            #   配点は points_per を「MC 小問数」で割る(非MC小問で薄めない)。MC 0 件(essay 等)は満点に 0 加算。
+            mc_subs = [sq for sq in sub_questions if sq.get("type") == "multiple_choice"]
+            per_pt = max(sec["points_per"] // max(len(mc_subs), 1), 1)  # 端数で 0 点問題にならないよう下限1
+            snap_subs = [{"id": sq.get("id"), "answer": sq.get("answer"), "points": per_pt} for sq in mc_subs]
             snapshot.append({
                 "section_name": sec["name"],
                 "exam_question_id": qid,
-                "sub_questions": [
-                    {"id": sq.get("id"), "answer": sq.get("answer"), "points": sec["points_per"] // max(len(sub_questions), 1)}
-                    for sq in sub_questions if sq.get("type") == "multiple_choice"
-                ],
+                "sub_questions": snap_subs,
             })
+            max_score += per_pt * len(snap_subs)  # 採点可能分のみ満点に加算 (= 全問正解で 100%)
         sections_out.append({
             "name": sec["name"],
             "points_per_question": sec["points_per"],
             "questions": section_questions,
             "auto_graded": sec.get("part_key") != "w_essay",  # essay は別経路 (5 AI 多視点・自動採点対象外)
         })
-        # 2026-05-11 修正: w_essay section は自動採点 (multiple_choice) されないので
-        # score_max に加算すると 偏差値が見かけ上急落する致命バグ。auto 採点対象のみ加算。
-        # (3視点 review 致命指摘対応・東大模試 essay 追加で 14.6 ポイント急落バグ防止)
-        if sec.get("part_key") != "w_essay":
-            max_score += sec["count"] * sec["points_per"]
+        # 🎯 [2026-06-17] max_score は上の per-大問 ループで「採点可能(MC)小問の配点合計」を加算済み。
+        #   旧実装 (count * points_per) は非MC小問や端数を満点に含め、全問正解でも 100% 未満になる
+        #   致命バグだった (例: 数列の一般項型を含む数学で全問正解=75%)。w_essay も MC 0 件で自動的に 0 加算。
+
+    # 🎯 [2026-06-17 guard] 全セクションが記述/非MCで gradeable 合計が 0 の回 (todai/kyodai の全記述抽選等)は、
+    #   旧来どおり nominal 満点 (count*points_per・w_essay 除く) を denominator に使い score_max=0 を回避。
+    #   (MC が無い回なので % は 0 になるが記述は別途 5AI 採点へ。旧実装と同挙動で reader への波及なし)
+    if max_score <= 0:
+        max_score = sum(s["count"] * s["points_per"] for s in tpl["sections"] if s.get("part_key") != "w_essay")
 
     # セッション作成
     snapshot_json = json.dumps({"sections": sections_out, "answer_key": snapshot}, ensure_ascii=False)
