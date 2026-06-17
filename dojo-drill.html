@@ -231,6 +231,27 @@
       { subj: '国語', name: '現代文 漢字', exam: 'daigaku', part: 'gendai_unit', grade: 'kyotsu', filter: '漢字', unitExact: true, agg: 10, min: 12, topic: '現代文 漢字' },
       { subj: '国語', name: '現代文 語彙・四字熟語', exam: 'daigaku', part: 'gendai_unit', grade: 'kyotsu', filter: '語彙', unitExact: true, agg: 10, min: 12, topic: '現代文 語彙' },
       { subj: '国語', name: '現代文 評論キーワード', exam: 'daigaku', part: 'gendai_unit', grade: 'kyotsu', filter: '評論', unitExact: true, agg: 10, min: 12, topic: '現代文 評論' },
+      // 物理基礎 (基礎科目・共テ単元別 / 2026-06-17 Batch4)
+      { subj: '物理基礎', name: '物理基礎 運動', exam: 'rikei', part: 'phys_basic', grade: 'kyotsu_rikei', filter: '運動', unitExact: true, agg: 10, min: 12, topic: '物理基礎 運動' },
+      { subj: '物理基礎', name: '物理基礎 仕事とエネルギー', exam: 'rikei', part: 'phys_basic', grade: 'kyotsu_rikei', filter: '仕事', unitExact: true, agg: 10, min: 12, topic: '物理基礎 仕事' },
+      { subj: '物理基礎', name: '物理基礎 熱', exam: 'rikei', part: 'phys_basic', grade: 'kyotsu_rikei', filter: '熱', unitExact: true, agg: 10, min: 12, topic: '物理基礎 熱' },
+      { subj: '物理基礎', name: '物理基礎 波', exam: 'rikei', part: 'phys_basic', grade: 'kyotsu_rikei', filter: '波', unitExact: true, agg: 10, min: 12, topic: '物理基礎 波' },
+      { subj: '物理基礎', name: '物理基礎 電気', exam: 'rikei', part: 'phys_basic', grade: 'kyotsu_rikei', filter: '電気', unitExact: true, agg: 10, min: 12, topic: '物理基礎 電気' },
+      // 化学基礎
+      { subj: '化学基礎', name: '化学基礎 物質の構成', exam: 'rikei', part: 'chem_basic', grade: 'kyotsu_rikei', filter: '構成', unitExact: true, agg: 10, min: 12, topic: '化学基礎 構成' },
+      { subj: '化学基礎', name: '化学基礎 化学結合', exam: 'rikei', part: 'chem_basic', grade: 'kyotsu_rikei', filter: '結合', unitExact: true, agg: 10, min: 12, topic: '化学基礎 結合' },
+      { subj: '化学基礎', name: '化学基礎 物質量と反応式', exam: 'rikei', part: 'chem_basic', grade: 'kyotsu_rikei', filter: '物質量', unitExact: true, agg: 10, min: 12, topic: '化学基礎 物質量' },
+      { subj: '化学基礎', name: '化学基礎 酸と塩基', exam: 'rikei', part: 'chem_basic', grade: 'kyotsu_rikei', filter: '酸塩基', unitExact: true, agg: 10, min: 12, topic: '化学基礎 酸塩基' },
+      { subj: '化学基礎', name: '化学基礎 酸化還元', exam: 'rikei', part: 'chem_basic', grade: 'kyotsu_rikei', filter: '酸化還元', unitExact: true, agg: 10, min: 12, topic: '化学基礎 酸化還元' },
+      // 英文法 追加単元 (既存 r_grammar に unitExact で精密追加)
+      { subj: '英文法', name: '英文法 助動詞', exam: 'daigaku', part: 'r_grammar', grade: 'teiki', filter: '助動詞', unitExact: true, agg: 10, min: 12, topic: '英文法 助動詞' },
+      { subj: '英文法', name: '英文法 受動態', exam: 'daigaku', part: 'r_grammar', grade: 'teiki', filter: '受動態', unitExact: true, agg: 10, min: 12, topic: '英文法 受動態' },
+      { subj: '英文法', name: '英文法 不定詞', exam: 'daigaku', part: 'r_grammar', grade: 'teiki', filter: '不定詞', unitExact: true, agg: 10, min: 12, topic: '英文法 不定詞' },
+      { subj: '英文法', name: '英文法 動名詞', exam: 'daigaku', part: 'r_grammar', grade: 'teiki', filter: '動名詞', unitExact: true, agg: 10, min: 12, topic: '英文法 動名詞' },
+      { subj: '英文法', name: '英文法 接続詞', exam: 'daigaku', part: 'r_grammar', grade: 'teiki', filter: '接続詞', unitExact: true, agg: 10, min: 12, topic: '英文法 接続詞' },
+      { subj: '英文法', name: '英文法 前置詞', exam: 'daigaku', part: 'r_grammar', grade: 'teiki', filter: '前置詞', unitExact: true, agg: 10, min: 12, topic: '英文法 前置詞' },
+      { subj: '英文法', name: '英文法 語法', exam: 'daigaku', part: 'r_grammar', grade: 'teiki', filter: '語法', unitExact: true, agg: 10, min: 12, topic: '英文法 語法' },
+      { subj: '英文法', name: '英文法 倒置・強調', exam: 'daigaku', part: 'r_grammar', grade: 'teiki', filter: '倒置', unitExact: true, agg: 10, min: 12, topic: '英文法 倒置' },
     ];
     // 共テ + 単元別 + 大学別 を1配列に集約 (data-idx 共有)
     const UNIV_FLAT = [];
