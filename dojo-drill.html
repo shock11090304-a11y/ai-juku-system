@@ -166,17 +166,24 @@
       { subj: '英文法', name: '英文法 比較', exam: 'daigaku', part: 'r_grammar_unit', grade: 'teiki', filter: '比較', unitExact: true, agg: 10, min: 12, topic: '英文法 比較' },
       { subj: '英文法', name: '英文法 分詞', exam: 'daigaku', part: 'r_grammar_unit', grade: 'teiki', filter: '分詞', unitExact: true, agg: 10, min: 12, topic: '英文法 分詞' },
       { subj: '英文法', name: '英文法 総合', exam: 'daigaku', part: 'r_grammar', grade: 'teiki', agg: 8, min: 12, topic: '英文法 総合' },
-      // 基礎数学 (共テ単元別・6問束ね)
-      { subj: '基礎数学', name: '数学 二次関数', exam: 'rikei', part: 'math_1a', grade: 'kyotsu_rikei', filter: '二次関数', agg: 6, min: 15, topic: '基礎数学 二次関数' },
-      { subj: '基礎数学', name: '数学 場合の数・確率', exam: 'rikei', part: 'math_1a', grade: 'kyotsu_rikei', filter: '確率', agg: 6, min: 15, topic: '基礎数学 確率' },
-      { subj: '基礎数学', name: '数学 整数の性質', exam: 'rikei', part: 'math_1a', grade: 'kyotsu_rikei', filter: '整数', agg: 6, min: 15, topic: '基礎数学 整数' },
-      { subj: '基礎数学', name: '数学 データの分析', exam: 'rikei', part: 'math_1a', grade: 'kyotsu_rikei', filter: 'データ', agg: 6, min: 15, topic: '基礎数学 データ' },
-      { subj: '基礎数学', name: '数学 数列', exam: 'rikei', part: 'math_2b', grade: 'kyotsu_rikei', filter: '数列', agg: 6, min: 15, topic: '基礎数学 数列' },
-      { subj: '基礎数学', name: '数学 微分・積分', exam: 'rikei', part: 'math_2b', grade: 'kyotsu_rikei', filter: '微分', agg: 6, min: 15, topic: '基礎数学 微積' },
-      { subj: '基礎数学', name: '数学 図形と計量・三角比', exam: 'rikei', part: 'math_1a', grade: 'kyotsu_rikei', filter: '図形と計量', unitExact: true, agg: 6, min: 15, topic: '基礎数学 図形と計量' },
-      { subj: '基礎数学', name: '数学 三角関数', exam: 'rikei', part: 'math_2b', grade: 'kyotsu_rikei', filter: '三角関数', unitExact: true, agg: 6, min: 15, topic: '基礎数学 三角関数' },
-      { subj: '基礎数学', name: '数学 指数・対数関数', exam: 'rikei', part: 'math_2b', grade: 'kyotsu_rikei', filter: '指数', unitExact: true, agg: 6, min: 15, topic: '基礎数学 指数対数' },
-      { subj: '基礎数学', name: '数学 ベクトル', exam: 'rikei', part: 'math_2b', grade: 'kyotsu_rikei', filter: 'ベクトル', unitExact: true, agg: 6, min: 15, topic: '基礎数学 ベクトル' },
+      // 数学 (新課程・数I/A/II/B/C 単元別・6問束ね)。subj でサブタブ分割 (理科の物理/化学と同じ仕組み・JSコード変更不要)。
+      //   ⚠ topic は弱点キー (mock/dojo 共通で卒業に積算) なので不変。part/grade/filter/unitExact も不変=出題に影響なし。
+      //   数学III (極限/微分法/積分法/複素数平面) は内容(新規作問)追加時に subj:'数学III' で別途タイル追加。
+      // 数学I
+      { subj: '数学I', name: '二次関数', exam: 'rikei', part: 'math_1a', grade: 'kyotsu_rikei', filter: '二次関数', agg: 6, min: 15, topic: '基礎数学 二次関数' },
+      { subj: '数学I', name: 'データの分析', exam: 'rikei', part: 'math_1a', grade: 'kyotsu_rikei', filter: 'データ', agg: 6, min: 15, topic: '基礎数学 データ' },
+      { subj: '数学I', name: '図形と計量・三角比', exam: 'rikei', part: 'math_1a', grade: 'kyotsu_rikei', filter: '図形と計量', unitExact: true, agg: 6, min: 15, topic: '基礎数学 図形と計量' },
+      // 数学A
+      { subj: '数学A', name: '場合の数・確率', exam: 'rikei', part: 'math_1a', grade: 'kyotsu_rikei', filter: '確率', agg: 6, min: 15, topic: '基礎数学 確率' },
+      { subj: '数学A', name: '整数の性質', exam: 'rikei', part: 'math_1a', grade: 'kyotsu_rikei', filter: '整数', agg: 6, min: 15, topic: '基礎数学 整数' },
+      // 数学II
+      { subj: '数学II', name: '微分・積分の考え', exam: 'rikei', part: 'math_2b', grade: 'kyotsu_rikei', filter: '微分', agg: 6, min: 15, topic: '基礎数学 微積' },
+      { subj: '数学II', name: '三角関数', exam: 'rikei', part: 'math_2b', grade: 'kyotsu_rikei', filter: '三角関数', unitExact: true, agg: 6, min: 15, topic: '基礎数学 三角関数' },
+      { subj: '数学II', name: '指数・対数関数', exam: 'rikei', part: 'math_2b', grade: 'kyotsu_rikei', filter: '指数', unitExact: true, agg: 6, min: 15, topic: '基礎数学 指数対数' },
+      // 数学B
+      { subj: '数学B', name: '数列', exam: 'rikei', part: 'math_2b', grade: 'kyotsu_rikei', filter: '数列', agg: 6, min: 15, topic: '基礎数学 数列' },
+      // 数学C (新課程でベクトルは数C。part=math_2b は bank filter が機能するので不変)
+      { subj: '数学C', name: 'ベクトル', exam: 'rikei', part: 'math_2b', grade: 'kyotsu_rikei', filter: 'ベクトル', unitExact: true, agg: 6, min: 15, topic: '基礎数学 ベクトル' },
       // 理科 単元別 (共テ物理/化学のフル科目プール=手作り147問を unit でフィルタ・弱点補強直結)
       //   unitExact=true: bank の LIKE で拾った大問を、小問の unit 接頭辞 === filter で厳密に絞る
       //   (「力学」が「熱力学」を部分一致で巻き込む等を防止。タグ不在なら従来の LIKE 結果へ graceful fallback)。
