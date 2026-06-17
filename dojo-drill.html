@@ -221,6 +221,16 @@
       { subj: '政経', name: '政経 政治分野', exam: 'daigaku', part: 'seiji_keizai', grade: 'kyotsu', filter: '政治', unitExact: true, agg: 10, min: 12, topic: '政経 政治' },
       { subj: '政経', name: '政経 経済分野', exam: 'daigaku', part: 'seiji_keizai', grade: 'kyotsu', filter: '経済', unitExact: true, agg: 10, min: 12, topic: '政経 経済' },
       { subj: '政経', name: '政経 国際分野', exam: 'daigaku', part: 'seiji_keizai', grade: 'kyotsu', filter: '国際', unitExact: true, agg: 10, min: 12, topic: '政経 国際' },
+      // 国語 単元別 (本文不要の知識問題・guard対象外の新part / 2026-06-17 網羅拡充 Batch3)
+      { subj: '国語', name: '古文 重要単語', exam: 'daigaku', part: 'kobun_unit', grade: 'kyotsu', filter: '単語', unitExact: true, agg: 10, min: 12, topic: '古文 単語' },
+      { subj: '国語', name: '古文 文法(助動詞・識別)', exam: 'daigaku', part: 'kobun_unit', grade: 'kyotsu', filter: '文法', unitExact: true, agg: 10, min: 12, topic: '古文 文法' },
+      { subj: '国語', name: '古文 敬語', exam: 'daigaku', part: 'kobun_unit', grade: 'kyotsu', filter: '敬語', unitExact: true, agg: 10, min: 12, topic: '古文 敬語' },
+      { subj: '国語', name: '漢文 句法', exam: 'daigaku', part: 'kanbun_unit', grade: 'kyotsu', filter: '句法', unitExact: true, agg: 10, min: 12, topic: '漢文 句法' },
+      { subj: '国語', name: '漢文 重要語・再読文字', exam: 'daigaku', part: 'kanbun_unit', grade: 'kyotsu', filter: '重要語', unitExact: true, agg: 10, min: 12, topic: '漢文 重要語' },
+      { subj: '国語', name: '漢詩・文学常識', exam: 'daigaku', part: 'kanbun_unit', grade: 'kyotsu', filter: '漢詩', unitExact: true, agg: 10, min: 12, topic: '漢文 漢詩' },
+      { subj: '国語', name: '現代文 漢字', exam: 'daigaku', part: 'gendai_unit', grade: 'kyotsu', filter: '漢字', unitExact: true, agg: 10, min: 12, topic: '現代文 漢字' },
+      { subj: '国語', name: '現代文 語彙・四字熟語', exam: 'daigaku', part: 'gendai_unit', grade: 'kyotsu', filter: '語彙', unitExact: true, agg: 10, min: 12, topic: '現代文 語彙' },
+      { subj: '国語', name: '現代文 評論キーワード', exam: 'daigaku', part: 'gendai_unit', grade: 'kyotsu', filter: '評論', unitExact: true, agg: 10, min: 12, topic: '現代文 評論' },
     ];
     // 共テ + 単元別 + 大学別 を1配列に集約 (data-idx 共有)
     const UNIV_FLAT = [];

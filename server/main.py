@@ -11433,6 +11433,12 @@ EXAM_QUESTION_ROTATION = [
     # 共通テスト国語の古文・漢文部分 (現代文は r_summary 東大などで一部対応)
     ("daigaku", "kobun",         "kyotsu"),  # 古文 (本文 + 設問・現代語訳・文法)
     ("daigaku", "kanbun",        "kyotsu"),  # 漢文 (返り点・書き下し・現代語訳)
+    # 📜 国語 単元別 (2026-06-17 隙間ドリル網羅): 本文不要の知識問題(古文文法/単語・漢文句法・現代文漢字/語彙)。
+    #   ★ DAIGAKU_KOKUGO_PARTS には入れない → 本文必須ガード対象外。共テ国語(kobun/kanbun/gendai)とも別pool。
+    #   ★ AUTO_GENERATE_SKIP に登録 → 手動取込のみ(AI生成しない)。
+    ("daigaku", "kobun_unit",    "kyotsu"),  # 古文単元別 (単語/文法/敬語)
+    ("daigaku", "kanbun_unit",   "kyotsu"),  # 漢文単元別 (句法/重要語/漢詩)
+    ("daigaku", "gendai_unit",   "kyotsu"),  # 現代文単元別 (漢字/語彙/評論キーワード)
     ("daigaku", "kobun",         "todai"),    # 東大国語 (記述式古文)
     ("daigaku", "kanbun",        "todai"),    # 東大国語 (記述式漢文)
     ("daigaku", "kobun",         "kyodai"),   # 京大国語 (記述式古文)
@@ -11554,6 +11560,10 @@ EXAM_QUESTION_ROTATION = [
 # memory: feedback_claude_max_seed.md「売上前は Anthropic API 課金禁止」
 EXAM_QUESTION_AUTO_GENERATE_SKIP = {
     ("daigaku", "nihonshi", "waseda"),  # 早稲田大日本史 (語群選択 9 択 + 0 = 該当なし型・手動投入のみ)
+    # 📜 国語 単元別 (手動取込のみ・AI生成しない / 2026-06-17)
+    ("daigaku", "kobun_unit", "kyotsu"),
+    ("daigaku", "kanbun_unit", "kyotsu"),
+    ("daigaku", "gendai_unit", "kyotsu"),
 }
 
 
