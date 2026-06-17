@@ -100,6 +100,7 @@
         </section>
       `;
     }).join('');
+    _meApplyKatex(wrap);  // 🧮 数学/理科の LaTeX 数式を描画
 
     // 入力監視で進捗更新
     wrap.addEventListener('change', onAnswerChange);
@@ -108,9 +109,9 @@
   }
 
   function renderQuestion(sec, q, sIdx, qIdx) {
-    const passage = q.passage ? `<div class="me-passage"><pre>${escapeHtmlBody(q.passage)}</pre></div>` : '';
+    const passage = q.passage ? `<div class="me-passage"><pre>${_meProtectMath(escapeHtmlBody, q.passage)}</pre></div>` : '';
     const audio = q.audio_script ? `<details class="me-audio-script"><summary>📢 音声スクリプト</summary><pre>${escapeHtmlBody(q.audio_script)}</pre></details>` : '';
-    const prompt = q.prompt ? `<div class="me-prompt"><strong>${escapeHtmlBody(q.prompt)}</strong></div>` : '';
+    const prompt = q.prompt ? `<div class="me-prompt"><strong>${_meProtectMath(escapeHtmlBody, q.prompt)}</strong></div>` : '';
     const yearLabel = q.year_simulated || q.univ_simulated ? `<div class="me-q-meta">${escapeHtml(q.univ_simulated || '')} ${q.year_simulated || ''}</div>` : '';
 
     const subQs = (q.questions || []).map(sq => {
@@ -119,12 +120,12 @@
           <label class="me-choice">
             <input type="radio" name="q_${q.exam_question_id}_${sq.id}" value="${idx}" data-eq="${q.exam_question_id}" data-sub="${sq.id}">
             <span class="me-choice-letter">${String.fromCharCode(65 + idx)}.</span>
-            <span class="me-choice-text">${escapeHtml(ch)}</span>
+            <span class="me-choice-text">${_meProtectMath(escapeHtml, ch)}</span>
           </label>
         `).join('');
         return `
           <div class="me-subq">
-            <div class="me-subq-stem">${escapeHtmlBody(sq.stem)}</div>
+            <div class="me-subq-stem">${_meProtectMath(escapeHtmlBody, sq.stem)}</div>
             <div class="me-choices">${choices}</div>
           </div>
         `;
@@ -134,7 +135,7 @@
         // 5 視点で並列採点して accordion 表示
         const subqUid = `${q.exam_question_id}_${sq.id}`;
         const stemEscAttr = escapeHtml(sq.stem || '');  // data-* attribute 用 (素 escape)
-        const stemEscBody = escapeHtmlBody(sq.stem || '');  // body 表示用 (<u> + 自動下線)
+        const stemEscBody = _meProtectMath(escapeHtmlBody, sq.stem || '');  // body 表示用 (<u> + 自動下線 + LaTeX)
         const examLevel = (currentSession && currentSession.exam_type) || 'todai';
         return `
           <div class="me-subq me-subq-essay" data-uid="${subqUid}">
@@ -502,6 +503,43 @@
   function escapeHtml(s) {
     if (s == null) return '';
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // 🧮 [全教科模試 2026-06-17] 数学/理科の LaTeX 数式を教科書通りに描画 (dojo-drill と同方式)。
+  //   _meProtectMath: LaTeX($$/\[/\( 区切り)を退避→escape→復元。escape が数式内の < > を壊して
+  //   KaTeX を壊すのを防ぐ (単一 $ は通貨衝突回避で対象外)。escFn は escapeHtml / escapeHtmlBody。
+  var _ME_SENT_L = String.fromCharCode(0xE010), _ME_SENT_R = String.fromCharCode(0xE011);
+  function _meProtectMath(escFn, s) {
+    const tex = [];
+    let str = String(s == null ? '' : s).replace(/\$\$[\s\S]*?\$\$|\\\([\s\S]*?\\\)|\\\[[\s\S]*?\\\]/g, (m) => {
+      tex.push(m); return _ME_SENT_L + (tex.length - 1) + _ME_SENT_R;
+    });
+    let out = escFn(str);
+    if (tex.length) {
+      out = out.replace(new RegExp(_ME_SENT_L + '(\\d+)' + _ME_SENT_R, 'g'), (_m, i) => tex[+i]);
+    }
+    return out;
+  }
+  //   _meApplyKatex: 描画後の DOM に KaTeX auto-render を適用 (defer ロード retry 付き・失敗は非致命)。
+  function _meApplyKatex(rootEl) {
+    if (!rootEl) return;
+    const run = () => {
+      if (typeof window.renderMathInElement !== 'function') return false;
+      try {
+        window.renderMathInElement(rootEl, {
+          delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '\\[', right: '\\]', display: true },
+            { left: '\\(', right: '\\)', display: false },
+          ],
+          throwOnError: false, errorColor: '#f87171', strict: 'ignore',
+        });
+      } catch (e) { console.warn('[mock katex] render failed', e); }
+      return true;
+    };
+    if (run()) return;
+    let tries = 0;
+    const id = setInterval(() => { tries++; if (run() || tries > 20) clearInterval(id); }, 200);
   }
 
   // 🎯 2026-05-26 audit Phase 3: 共通 toast/alert helper

@@ -4494,7 +4494,7 @@ _WEAKNESS_SUBJECT_TO_POOL = {
     #   (週次プリント:3700 / weakness-top3:4578) が .get("earth",[])=空 → 地学弱点に問題ゼロ配信だった。
     #   earth_basic が ROTATION 唯一の地学 part (1 combo: kyotsu_rikei・dojo-drill preset 無し) のため pool は薄いが非空。
     "earth": [("rikei", "earth_basic")],
-    "english": [("daigaku", "r_long"), ("daigaku", "r_grammar"), ("daigaku", "g_grammar"), ("daigaku", "w_essay"),
+    "english": [("daigaku", "r_long"), ("daigaku", "r_grammar"), ("daigaku", "r_grammar_unit"), ("daigaku", "g_grammar"), ("daigaku", "w_essay"),
                 ("eiken", "r_q1"), ("eiken", "r_q3")],
     # ↑ 2026-06-16: r_grammar を追加。単元別英文法ドリル (dojo-drill UNIT_PRESETS=r_grammar/teiki) が
     #   実際に埋める pool は r_grammar だが従来 english リストに無く、weakness-top3 推薦 (全 pool 走査) で
@@ -4503,10 +4503,12 @@ _WEAKNESS_SUBJECT_TO_POOL = {
     # 📜 2026-06-16: kokugo 修復 (f517687) で 古文/漢文/現代文 pool が生成可能になったため英語長文相乗りを解消。
     # 先頭2件 (daily-nudge pool_keys[:2] が参照) を実 国語 pool にし、r_long は最終フォールバックとして残す。
     # 従来 [r_summary, r_long] は両方とも英語 pool で、国語弱点に英文しか推薦されていなかった (reverse map 4341 と不整合)。
-    "japanese": [("daigaku", "gendai"), ("daigaku", "kobun"), ("daigaku", "kanbun"), ("daigaku", "r_long")],
+    "japanese": [("daigaku", "gendai"), ("daigaku", "gendai_unit"), ("daigaku", "kobun"), ("daigaku", "kobun_unit"),
+                 ("daigaku", "kanbun"), ("daigaku", "kanbun_unit"), ("daigaku", "r_long")],
     "social": [("daigaku", "nihonshi"), ("daigaku", "sekaishi"),
                ("daigaku", "chiri"), ("daigaku", "kouminka"),
-               ("daigaku", "r_long")],  # 2026-05-14 社会専門 pool 整備済 (4 科目) + r_long フォールバック
+               ("daigaku", "rinri"), ("daigaku", "seiji_keizai"),
+               ("daigaku", "r_long")],  # 2026-05-14 社会専門 pool 整備済 + 2026-06-17 倫理/政経追加 + r_long フォールバック
 }
 
 # 📝 2026-05-22 塾長指示: (exam_id, part_key) → subject の逆引きマッピング
@@ -4541,7 +4543,31 @@ _WEAKNESS_POOL_TO_SUBJECT = {
     # 社会
     ("daigaku", "nihonshi"): "social", ("daigaku", "sekaishi"): "social",
     ("daigaku", "chiri"): "social", ("daigaku", "kouminka"): "social",
+    # 🎯 2026-06-17 模試全教科化: 公民(倫理/政経)・国語知識・英文法単元 の subject 解決を追加。
+    #   欠けると _infer_subject_from_pool が 'daigaku' を返し弱点が孤立 (推薦も卒業もされない)。
+    ("daigaku", "rinri"): "social", ("daigaku", "seiji_keizai"): "social",
+    ("daigaku", "gendai_unit"): "japanese", ("daigaku", "kobun_unit"): "japanese",
+    ("daigaku", "kanbun_unit"): "japanese", ("daigaku", "r_grammar_unit"): "english",
 }
+
+
+def _derive_question_unit(sq: dict, fallback: Optional[str] = None) -> Optional[str]:
+    """🎯 [模試 Defect A fix 2026-06-17] 小問の単元を導出。dojo-drill deriveUnit と同一規約:
+    q.unit > 解説/設問の【単元】 > fallback。mock と dojo が同じ単元文字列で記録する=同じ
+    student_weakness key (student, subject, topic) に積算され、どちらで解いても卒業が連動する。"""
+    import re as _re  # main.py は re をモジュール先頭で import していないため関数内で取得
+    if not isinstance(sq, dict):
+        return fallback
+    u = sq.get("unit")
+    if u and str(u).strip():
+        return str(u).strip()[:60]
+    text = (str(sq.get("explanation") or "") + "\n" + str(sq.get("stem") or ""))
+    m = _re.search(r"【単元】\s*([^】\n(（]+)", text)
+    if m and m.group(1).strip():
+        return m.group(1).strip()[:60]
+    return fallback
+
+
 def _infer_subject_from_pool(exam_id: str, part_key: Optional[str] = None) -> str:
     """(exam_id, part_key) から subject を推定。マッピング無しは exam_id を fallback として返す。"""
     if not exam_id:
@@ -30805,6 +30831,46 @@ MOCK_EXAM_TEMPLATES = {
             {"name": "長文読解", "exam_id": "eiken", "part_key": "r_q3", "eiken_grade": "g1", "count": 2, "points_per": 10},
         ],
     },
+    # 🎯 2026-06-17 全教科模試: 既に単元タグ済みの共テ pool を section に割り当て。Defect A 修正で
+    #   小問単位の弱点が立ち、⏱解く→卒業に乗る。eiken_grade は pool の ROTATION タグと一致必須
+    #   (rikei→'kyotsu_rikei' / daigaku 社会・国語→'kyotsu')。全 multiple_choice = 自動採点可。
+    "kyotsu_math": {
+        "label": "共通テスト 数学 (IA・IIB)",
+        "duration_min": 70,
+        "sections": [
+            {"name": "数学I・A", "exam_id": "rikei", "part_key": "math_1a", "eiken_grade": "kyotsu_rikei", "count": 2, "points_per": 25},
+            {"name": "数学II・B", "exam_id": "rikei", "part_key": "math_2b", "eiken_grade": "kyotsu_rikei", "count": 2, "points_per": 25},
+        ],
+    },
+    "kyotsu_rika": {
+        "label": "共通テスト 理科 (物理・化学・生物)",
+        "duration_min": 80,
+        "sections": [
+            {"name": "物理", "exam_id": "rikei", "part_key": "phys_kyotsu", "eiken_grade": "kyotsu_rikei", "count": 2, "points_per": 20},
+            {"name": "化学", "exam_id": "rikei", "part_key": "chem_kyotsu", "eiken_grade": "kyotsu_rikei", "count": 2, "points_per": 20},
+            {"name": "生物基礎", "exam_id": "rikei", "part_key": "bio_basic", "eiken_grade": "kyotsu_rikei", "count": 1, "points_per": 20},
+        ],
+    },
+    "kyotsu_shakai": {
+        "label": "共通テスト 社会 (日/世/地/倫/政経)",
+        "duration_min": 60,
+        "sections": [
+            {"name": "日本史", "exam_id": "daigaku", "part_key": "nihonshi", "eiken_grade": "kyotsu", "count": 1, "points_per": 20},
+            {"name": "世界史", "exam_id": "daigaku", "part_key": "sekaishi", "eiken_grade": "kyotsu", "count": 1, "points_per": 20},
+            {"name": "地理", "exam_id": "daigaku", "part_key": "chiri", "eiken_grade": "kyotsu", "count": 1, "points_per": 20},
+            {"name": "倫理", "exam_id": "daigaku", "part_key": "rinri", "eiken_grade": "kyotsu", "count": 1, "points_per": 20},
+            {"name": "政治・経済", "exam_id": "daigaku", "part_key": "seiji_keizai", "eiken_grade": "kyotsu", "count": 1, "points_per": 20},
+        ],
+    },
+    "kyotsu_kokugo": {
+        "label": "共通テスト 国語 (現代文・古文・漢文の知識)",
+        "duration_min": 50,
+        "sections": [
+            {"name": "現代文 (漢字・語彙・評論)", "exam_id": "daigaku", "part_key": "gendai_unit", "eiken_grade": "kyotsu", "count": 2, "points_per": 20},
+            {"name": "古文 (単語・文法・敬語)", "exam_id": "daigaku", "part_key": "kobun_unit", "eiken_grade": "kyotsu", "count": 1, "points_per": 20},
+            {"name": "漢文 (句法・重要語)", "exam_id": "daigaku", "part_key": "kanbun_unit", "eiken_grade": "kyotsu", "count": 1, "points_per": 20},
+        ],
+    },
 }
 
 
@@ -31017,7 +31083,12 @@ def mock_exam_submit(payload: dict, request: Request, authorization: Optional[st
         eq_id = ak["exam_question_id"]
         sec = section_scores.setdefault(sec_name, {"got": 0, "max": 0})
         # exam_questions から subject/topic を取得 (1 query per eq_id)
-        eq_subject, eq_topic = None, None
+        # 🎯 [Defect A fix 2026-06-17] 弱点 topic を「大問単位」から「小問単位の単元」へ。
+        #   旧: eq_topic = qd.topic or univ_simulated(校名) を全小問に付与 → 弱点が '共通テスト' や
+        #   校名に潰れて単元別に立たず、findPresetForWeakness も解決できず卒業もしなかった。
+        #   新: 小問ごとに _derive_question_unit (dojo と同一規約) で単元を引く。fallback も校名でなく
+        #   qd.topic > section 名 とし、ゴミ単元 (校名) を作らない。
+        eq_subject, eq_topic_fallback, sub_unit_map = None, None, {}
         try:
             c.execute("SELECT exam_id, part_key, question_data FROM exam_questions WHERE id=?", (eq_id,))
             eqrow = c.fetchone()
@@ -31029,9 +31100,13 @@ def mock_exam_submit(payload: dict, request: Request, authorization: Optional[st
                 eq_subject = _infer_subject_from_pool(eq_exam, eq_part)
                 try:
                     qd = json.loads(eq_qdata) if isinstance(eq_qdata, str) else (eq_qdata or {})
-                    eq_topic = qd.get("topic") or qd.get("univ_simulated") or None
+                    eq_topic_fallback = qd.get("topic") or sec_name  # 校名(univ_simulated)は使わない
+                    for q in (qd.get("questions") or []):
+                        qidk = q.get("id")
+                        if qidk is not None:
+                            sub_unit_map[str(qidk)] = _derive_question_unit(q)
                 except Exception:
-                    eq_topic = None
+                    eq_topic_fallback = sec_name
         except Exception:
             pass
         for sq in ak["sub_questions"]:
@@ -31050,9 +31125,11 @@ def mock_exam_submit(payload: dict, request: Request, authorization: Optional[st
                 weak_topics.append({"section": sec_name, "exam_question_id": eq_id, "sub_id": sub_id})
             # ✅ 2026-05-22 P0 fix: section_name fallback は canonical key と不一致で worksheet 無視リスク
             # → eq_subject が無ければ "unknown" に統一 (集計時に "unknown" 行は無視される)
+            # 🎯 [Defect A fix] 小問ごとの単元を topic に (無ければ大問 fallback)
+            unit_topic = sub_unit_map.get(str(sub_id)) or eq_topic_fallback
             attempts_to_insert.append((
                 eq_subject if eq_subject else "unknown",  # subject canonical fallback
-                eq_topic,                # topic (may be None)
+                unit_topic,              # topic = 小問単位の単元 (Defect A fix)
                 is_correct,
                 score_got,
                 points,
