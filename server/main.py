@@ -22274,6 +22274,40 @@ def admin_exam_questions_pool_status(
         if _mc is not None:
             try: _mc.close()
             except Exception: pass
+    # 🎯 増量シードの「本当に取込まれたか」判定用: 各増量シード固有の inner-id 接頭辞を持つ
+    #   manual2 行数を数える。バッジが「同part既存batchの数」で早とちり✅化する問題(2026-06-18 塾長
+    #   報告)の根治。接頭辞は増量seedのみが使う coined token なので、同partに既存manual2があっても
+    #   その増量分の実在数だけを正確に拾える。data-idprefix を持つ ceo ボタンがこれで判定する。
+    seed_prefix_counts = {}
+    _sp = None
+    try:
+        _sp = db(); _spcur = _sp.cursor()
+        _spcur.execute(
+            "SELECT "
+            "SUM(CASE WHEN question_data LIKE '%mexp%' THEN 1 ELSE 0 END) AS mexp, "
+            "SUM(CASE WHEN question_data LIKE '%rexp%' THEN 1 ELSE 0 END) AS rexp, "
+            "SUM(CASE WHEN question_data LIKE '%sexp%' THEN 1 ELSE 0 END) AS sexp, "
+            "SUM(CASE WHEN question_data LIKE '%kexp%' THEN 1 ELSE 0 END) AS kexp, "
+            "SUM(CASE WHEN question_data LIKE '%gexp%' THEN 1 ELSE 0 END) AS gexp "
+            "FROM exam_questions WHERE model = 'manual2'"
+        )
+        _spr = _spcur.fetchone()
+        if _spr is not None:
+            for _pf in ("mexp", "rexp", "sexp", "kexp", "gexp"):
+                try:
+                    _v = _spr[_pf]
+                except Exception:
+                    _v = None
+                try:
+                    seed_prefix_counts[_pf] = int(_v or 0)
+                except Exception:
+                    seed_prefix_counts[_pf] = 0
+    except Exception as _e:
+        log.warning(f"[pool-status] seed prefix count query failed: {_e}")
+    finally:
+        if _sp is not None:
+            try: _sp.close()
+            except Exception: pass
     JST = timezone(timedelta(hours=9))
     today_count = _exam_generated_today()
     parts = []
@@ -22309,6 +22343,7 @@ def admin_exam_questions_pool_status(
         "low_pool_parts": low_pool,
         "in_flight_refills": len(_REFILL_INFLIGHT),
         "today_generated": today_count,
+        "seed_prefix_counts": seed_prefix_counts,  # 増量シード固有ID接頭辞の実在大問数 (バッジ判定用)
         "config": {
             "interval_hours": EXAM_QUESTIONS_INTERVAL_HOURS,
             "per_tick": EXAM_QUESTIONS_PER_TICK,
