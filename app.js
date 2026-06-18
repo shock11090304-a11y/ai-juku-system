@@ -375,6 +375,34 @@ const storage = {
 })();
 
 // ==========================================================================
+// 🛡️ [cross-student-cache-guard] (2026-06-18): 同一ブラウザで別生徒に切り替わった瞬間
+//   (ログイン / 塾長なりすまし「生徒として入る」/ 再ログイン) に、前生徒の per-student
+//   ローカルキャッシュ (AIチューター履歴・統計・問題履歴・活動・カリキュラム) を破棄する。
+//   これらは studentId でスコープされていない GLOBAL localStorage キーのため、放置すると
+//   前生徒の学習データが次の生徒に表示される (江花さんが別生徒のチャット履歴を見てしまう事故)。
+//   サーバは session token の生徒IDで厳密に絞っており IDOR/サーバ漏洩は無い=クライアント
+//   キャッシュのみの対策。識別は信頼できる ai_juku_session_student.id を使う
+//   (auth-guard が /api/auth/me で確定し、login/なりすまし経路もサーバ応答から設定するキー)。
+(function guardPerStudentCaches() {
+  try {
+    if (!localStorage.getItem('ai_juku_session_token')) return; // 未ログイン/デモ: ローカルのみで動作
+    var sid = '';
+    try { sid = String((JSON.parse(localStorage.getItem('ai_juku_session_student') || '{}') || {}).id ?? ''); } catch (_) {}
+    if (!sid) sid = String(localStorage.getItem('aj_current_student_id') || '');
+    if (!sid) return; // 本人ID未確定: 次回ロードに委ねる
+    var OWNER_KEY = 'ai_juku_cache_owner_sid';
+    if (localStorage.getItem(OWNER_KEY) === sid) return; // 同一生徒: 何もしない
+    // 生徒が変わった (または本ガード初回) → per-student キャッシュを破棄。重要データは
+    //   サーバが正なので再取得され実害なし (chat=/api/ai-tutor/history/me 等)。
+    ['ai_juku_chat_history', 'ai_juku_stats', 'ai_juku_problem_history',
+      'ai_juku_activity', 'ai_juku_last_curriculum'].forEach(function (k) {
+      try { localStorage.removeItem(k); } catch (_) {}
+    });
+    localStorage.setItem(OWNER_KEY, sid);
+  } catch (_) { /* 失敗してもアプリ動作は止めない */ }
+})();
+
+// ==========================================================================
 // Seed Data (初期サンプル生徒)
 // ==========================================================================
 const seedStudents = [
@@ -2739,8 +2767,13 @@ function loadChatHistory() {
   // localStorage は直近 30 件のオフラインキャッシュとして併用する。
   tutorHistoryFetch('/api/ai-tutor/history/me?limit=100')
     .then(data => {
+      // data===null は未ログイン (tutorHistoryFetch が token 無しで null を返す) → ローカル(デモ)保持。
+      //   ログイン中 (data あり) はサーバを正とし、空配列でも反映する = 別生徒の残存キャッシュを
+      //   クリアする。旧実装は msgs 空で return しており、履歴ゼロの生徒に前生徒のチャットが
+      //   残ったままになる漏洩バグだった (2026-06-18 修正)。クリアは .then (成功) のみ=
+      //   ネットワークエラー (.catch) ではローカルを保持しオフライン体験を壊さない。
+      if (data === null) return;
       const msgs = (data && data.messages) || [];
-      if (!msgs.length) return;
       const localSnapshot = JSON.stringify(state.chatHistory.map(m => [m.role, m.content]));
       state.chatHistory = msgs.map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
       storage.set(STORAGE_KEYS.CHAT_HISTORY, state.chatHistory.slice(-30));

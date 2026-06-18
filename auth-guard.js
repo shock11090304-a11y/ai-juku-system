@@ -36,6 +36,12 @@
     localStorage.removeItem(CURRENT_STUDENT_KEY);
     localStorage.removeItem(STUDENTS_LIST_KEY);
     localStorage.removeItem(ALT_CURRENT_KEY);
+    // 🛡️ 2026-06-18 [cross-student-cache-guard] per-student のローカル学習キャッシュも消す。
+    //   残すとログアウト→別生徒ログイン時に前生徒のチャット/統計/問題履歴/活動/カリキュラムが
+    //   漏れる (app.js の guardPerStudentCaches と対。こちらは logout/無効セッション経路を担保)。
+    ['ai_juku_chat_history', 'ai_juku_stats', 'ai_juku_problem_history', 'ai_juku_activity', 'ai_juku_last_curriculum', 'ai_juku_cache_owner_sid'].forEach(function (k) {
+      try { localStorage.removeItem(k); } catch (_) {}
+    });
   }
 
   // 🔑 2026-06-14 [trust-identity] サーバ検証済みの本人を全表示ポインタに固定する。
