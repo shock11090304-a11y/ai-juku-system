@@ -1099,8 +1099,11 @@
       const grid = document.getElementById('pricingGrid');
       if (!grid || !window.PLAN_CONFIG) return;
       const plans = window.PLAN_CONFIG.plans;
-      grid.innerHTML = Object.values(plans).map(p => {
-        const diff = p.id === 'premium' ? plans.premium.price - plans.standard.price : null;
+      // 🛡️ 2026-06-18 募集停止の旧プラン(legacy:true 例: ¥24,980 スタンダード)を料金カードから除外。
+      //   既存契約者は据置だが、新規の顧客には現行プラン(創設¥14,500/プレミアム¥39,800/家族)のみ表示する。
+      grid.innerHTML = Object.values(plans).filter(p => !p.legacy).map(p => {
+        // 旧スタンダード比較(差額表示)は legacy 非表示に伴い廃止。
+        const diff = null;
         return `
           <div class="pricing-card ${p.recommended ? 'featured' : ''}">
             ${p.recommended ? '<div class="plan-badge">🔥 人気No.1</div>' : ''}
