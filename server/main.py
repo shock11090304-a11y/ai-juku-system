@@ -22288,12 +22288,13 @@ def admin_exam_questions_pool_status(
             "SUM(CASE WHEN question_data LIKE '%rexp%' THEN 1 ELSE 0 END) AS rexp, "
             "SUM(CASE WHEN question_data LIKE '%sexp%' THEN 1 ELSE 0 END) AS sexp, "
             "SUM(CASE WHEN question_data LIKE '%kexp%' THEN 1 ELSE 0 END) AS kexp, "
-            "SUM(CASE WHEN question_data LIKE '%gexp%' THEN 1 ELSE 0 END) AS gexp "
+            "SUM(CASE WHEN question_data LIKE '%gexp%' THEN 1 ELSE 0 END) AS gexp, "
+            "SUM(CASE WHEN question_data LIKE '%m3x%' THEN 1 ELSE 0 END) AS m3x "
             "FROM exam_questions WHERE model = 'manual2'"
         )
         _spr = _spcur.fetchone()
         if _spr is not None:
-            for _pf in ("mexp", "rexp", "sexp", "kexp", "gexp"):
+            for _pf in ("mexp", "rexp", "sexp", "kexp", "gexp", "m3x"):
                 try:
                     _v = _spr[_pf]
                 except Exception:
