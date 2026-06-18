@@ -11698,6 +11698,9 @@ EXAM_QUESTION_AUTO_GENERATE_SKIP = {
     ("daigaku", "gendai_unit", "kyotsu"),
     # 英文法 単元別・精密 (手動取込のみ / 2026-06-17)
     ("daigaku", "r_grammar_unit", "teiki"),
+    # 英文法 定期テスト文法 (手動プール大量増量229問で深化済・無課金徹底のためAI生成/オンデマンド補充も停止 / 2026-06-18)
+    #   ※ teiki のみ skip。center/kiso グレードの r_grammar は従来通りAI生成可(別グレード)。
+    ("daigaku", "r_grammar", "teiki"),
     # 数学 共テ穴埋め単元別 (手動取込のみ・AI生成しない / 2026-06-17)
     ("rikei", "math_unit", "kyotsu_rikei"),
     # 数学III 極限 / 数学C 複素数平面 (手動取込のみ・AI生成しない / 2026-06-17)
