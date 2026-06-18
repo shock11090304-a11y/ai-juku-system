@@ -2609,8 +2609,13 @@ def _verify_session_token(token: str, expected_type: str = "session") -> Optiona
             if not hmac.compare_digest(sig, expected):
                 return None
             if expected_type and ttype != expected_type:
-                # session を期待した API に magic を投げてきた等は拒否
-                return None
+                # 🔐 管理者なりすまし(impersonation)トークンは、session を要求する全 API で
+                #   session と同様に受理する (status gate の回避は _get_current_student が
+                #   token_type='impersonation' を見て行う)。impersonation は admin 認証経由でしか
+                #   発行されない。それ以外の型不一致 (magic 等) は従来どおり拒否。
+                if not (expected_type == "session" and ttype == "impersonation"):
+                    # session を期待した API に magic を投げてきた等は拒否
+                    return None
             exp = int(exp_str)
             if exp < int(time.time()):
                 return None
@@ -8953,6 +8958,8 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
     claims = _verify_session_token(token)
     if not claims:
         return None
+    # 🔐 管理者なりすましトークンは在籍ステータスゲートを回避 (どの生徒でも入室確認可)。
+    _is_impersonation = (claims.get("token_type") == "impersonation")
     conn = db()
     c = conn.cursor()
     # created_at は 2026-06-11 追加 (mypage シンプルモード: 新規アカウント判定に使用・既存生徒は全表示維持)
@@ -8968,7 +8975,10 @@ def _get_current_student(authorization: Optional[str], allow_canceled: bool = Fa
     status = row["status"]
     now = datetime.now(timezone.utc)
     is_allowed = False
-    if status == "paid":
+    if _is_impersonation:
+        # 🔐 管理者なりすまし: 在籍状態 (canceled/expired/trial切れ/past_due 超過) に関係なく許可。
+        is_allowed = True
+    elif status == "paid":
         is_allowed = True
     elif status == "trial":
         # trial_end 未経過なら許可
@@ -20103,7 +20113,10 @@ def admin_login_as_student(payload: dict, authorization: Optional[str] = Header(
             try: conn.rollback()
             except Exception: pass
 
-        session_token = _sign_session_token(sid, token_type="session")
+        # 🔐 なりすまし専用 token_type。session を要求する全 API では session 同様に通り
+        #   (_verify_session_token)、かつ _get_current_student の在籍ステータスゲートを回避する
+        #   (canceled/expired/trial切れの生徒でも塾長が入室確認できる)。発行は本 admin 経路のみ。
+        session_token = _sign_session_token(sid, token_type="impersonation")
         import time as _t
         return {
             "ok": True,
