@@ -9101,40 +9101,12 @@ def request_magic_link(payload: MagicLinkRequest, request: Request):
         row = c.fetchone()
     conn.close()
 
-    # 体験期間中の trial ユーザーも送信対象（trial_end 未経過のみ）
-    # 国公立難関大学コース所属生徒は trial_end に関係なく常に送信可 (永久無料)
-    is_sendable = False
-    is_trial_expired = False
-    if row:
-        _row_course = row["course"] if "course" in row.keys() else None
-        if row["status"] == "paid":
-            is_sendable = True
-        elif row["status"] == "past_due":
-            # 💳 決済失敗の猶予期間中もログイン可 (カード更新のため mypage/Stripe ポータルへ到達させる・2026-05-29)
-            is_sendable = True
-        elif _row_course == "kokuritsu_nankan":
-            is_sendable = True
-        elif row["status"] == "trial":
-            te = row["trial_end"]
-            if te:
-                try:
-                    if isinstance(te, str):
-                        te_dt = datetime.fromisoformat(te.replace("Z", "+00:00"))
-                    else:
-                        te_dt = te
-                    if te_dt.tzinfo is None:
-                        te_dt = te_dt.replace(tzinfo=timezone.utc)
-                    if te_dt > datetime.now(timezone.utc):
-                        is_sendable = True
-                    else:
-                        is_trial_expired = True
-                except Exception:
-                    pass
-        elif row["status"] == "expired":
-            # 日次 cron (expire-trials) が trial→expired に変換した後も「体験期間終了」案内を返す。
-            # これが無いと expired 化後は汎用 200 に落ち、フロントの trial_expired 分岐が発火せず
-            # 「✅ 送信しました」誤表示が翌日以降に再発する (canceled は元 paid の可能性があるため対象外)
-            is_trial_expired = True
+    # 🚪 [login-allow-inactive] 2026-06-19 (方針A): 実在する生徒なら status を問わず OTP を送る。
+    #   体験切れ/未契約 (expired/canceled/trial期限切れ) でも「ログイン自体は許可」し、ログイン後に
+    #   継続登録(再開)画面へ誘導する方針のため、本人にコードを届ける。存在しないメールは列挙対策で
+    #   送信しない (generic 200)。有料機能のアクセス制限は各 API の _get_current_student が担保。
+    is_sendable = bool(row)
+    is_trial_expired = False  # 方針A: 送信側で「体験終了」ブロックはしない (旧 trial_expired 分岐は無効化)
 
     # 観測性 (2026-05-11 致命修正): 再ログイン時の magic-link 送信成否を必ず events に記録する。
     # 以前は _send_magic_link_with_retry の戻り値を捨て、失敗してもクライアント 200 OK → silent fail。
@@ -9362,32 +9334,12 @@ def verify_code(payload: VerifyCodeRequest, request: Request):
     #   ユーザーには「最新メールのコードを使う」だけ案内する。
     generic_401 = HTTPException(status_code=401, detail="コードが正しくないか、有効期限が切れています。最新のメール（または塾からの連絡）に記載のコードをご確認ください。")
 
-    # trial_end 未経過の trial ユーザーも許可
-    # 国公立難関大学コース所属生徒は trial_end に関係なく常に許可 (永久無料)
-    _active = False
-    if student:
-        _st_course = student["course"] if "course" in student.keys() else None
-        if student["status"] == "paid":
-            _active = True
-        elif student["status"] == "past_due":
-            # 💳 決済失敗の猶予期間中もログイン許可 (カード更新導線・2026-05-29)
-            _active = True
-        elif _st_course == "kokuritsu_nankan":
-            _active = True
-        elif student["status"] == "trial" and student["trial_end"]:
-            try:
-                te = student["trial_end"]
-                if isinstance(te, str):
-                    te_dt = datetime.fromisoformat(te.replace("Z", "+00:00"))
-                else:
-                    te_dt = te
-                if te_dt.tzinfo is None:
-                    te_dt = te_dt.replace(tzinfo=timezone.utc)
-                if te_dt > datetime.now(timezone.utc):
-                    _active = True
-            except Exception:
-                pass
-    if not _active:
+    # 🚪 [login-allow-inactive] 2026-06-19 (塾長指示・方針A): 体験切れ/未契約 (expired/canceled/
+    #   trial期限切れ) でも「ログイン自体は通す」。有料機能のアクセスは各APIの _get_current_student
+    #   (厳格・変更なし) が引き続きゲートし、ログイン後に auth-guard が entitled=false を見て継続登録
+    #   (upgrade.html) 画面へ誘導する。ここでは本人性 (有効なOTP) のみ確認する。
+    #   存在しないメールは列挙対策で OTP 失敗と同一文言の generic_401。
+    if not student:
         c.execute("SELECT 1")
         conn.close()
         raise generic_401
@@ -9496,33 +9448,10 @@ def verify_magic_link(t: str):
     if not row:
         raise HTTPException(status_code=404, detail="Student not found")
 
-    # paid or trial(未経過)のみ許可
-    # 国公立難関大学コース所属生徒は trial_end に関係なく常に許可 (永久無料)
-    _allowed = False
-    _v_course = row["course"] if "course" in row.keys() else None
-    if row["status"] == "paid":
-        _allowed = True
-    elif row["status"] == "past_due":
-        # 💳 決済失敗の猶予期間中もログイン許可 (カード更新導線・2026-05-29)。
-        # grace 超過は scheduler が canceled 化するため、ここで past_due ならまだ猶予内。
-        _allowed = True
-    elif _v_course == "kokuritsu_nankan":
-        _allowed = True
-    elif row["status"] == "trial" and row["trial_end"]:
-        try:
-            te = row["trial_end"]
-            if isinstance(te, str):
-                te_dt = datetime.fromisoformat(te.replace("Z", "+00:00"))
-            else:
-                te_dt = te
-            if te_dt.tzinfo is None:
-                te_dt = te_dt.replace(tzinfo=timezone.utc)
-            if te_dt > datetime.now(timezone.utc):
-                _allowed = True
-        except Exception:
-            pass
-    if not _allowed:
-        raise HTTPException(status_code=403, detail="体験期間が終了しました。継続をご希望の方は本登録（継続のお手続き）をお願いします。")
+    # 🚪 [login-allow-inactive] 2026-06-19 (方針A): magic-link クリックでも体験切れ/未契約 (expired/
+    #   canceled/trial期限切れ) で「ログイン自体は許可」する (row は上で存在確認済み)。verify-code(OTP)と
+    #   一貫させる。有料機能のアクセスは各APIの _get_current_student (厳格) が引き続きゲートし、ログイン後に
+    #   auth-guard が entitled=false を見て継続登録(upgrade.html)へ誘導する。
 
     # 🛡️ 子メール確認 (security review 2026-06-11): magicv トークン = student_email 宛にのみ
     # 送られたリンク。クリック到達 = そのアドレスの受信者なので student_email_verified=1 を
@@ -24214,7 +24143,26 @@ def auth_me(authorization: Optional[str] = Header(None)):
     + last_login_at を 4 時間以上前なら更新 (継続利用を「最終ログイン」に反映するため)"""
     student = _get_current_student(authorization)
     if not student:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+        # 🚪 [login-allow-inactive] 2026-06-19 (方針A): トークンが有効な本人なら、体験切れ/未契約でも
+        #   200 を返す (entitled=false)。auth-guard はこれを見てログインへ飛ばさず継続登録(upgrade.html)へ
+        #   誘導する。有料 API は _get_current_student (厳格) のままなので無料開放にはならない。
+        _tok = authorization[len("Bearer "):].strip() if (authorization and authorization.startswith("Bearer ")) else None
+        _claims = _verify_session_token(_tok) if _tok else None
+        if not _claims:
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        _conn = db(); _c = _conn.cursor()
+        try:
+            _c.execute("SELECT id, name, email, grade, status, trial_end, course FROM students WHERE id = ?", (_claims["student_id"],))
+            _row = _c.fetchone()
+        finally:
+            _conn.close()
+        if not _row:
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        return {"ok": True, "student": {
+            "id": _row["id"], "name": _row["name"], "email": _row["email"],
+            "grade": _row["grade"], "status": _row["status"], "course": _row["course"],
+            "entitled": False, "access_status": _row["status"],
+        }}
     # last_login_at リフレッシュ: 4 時間に 1 回まで (DB 書込抑制)
     try:
         last_login_raw = student.get("last_login_at")
@@ -24265,6 +24213,7 @@ def auth_me(authorization: Optional[str] = Header(None)):
             student["cancel_at"] = _ca_dt.isoformat()
     except Exception as _cae:
         log.warning(f"[auth_me] cancel_at fetch skipped: {_cae}")
+    student["entitled"] = True  # 🚪 [login-allow-inactive] active 本人。auth-guard は entitled で分岐。
     return {"ok": True, "student": student}
 
 

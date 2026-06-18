@@ -137,6 +137,17 @@
         // 🔑 サーバ検証済み本人を全表示ポインタに固定 (session_student だけでなく
         //   current_student / students / aj_current_student_id まで本人へ揃える)
         applyVerifiedStudent(data.student);
+        // 🚪 2026-06-19 [login-allow-inactive] 方針A: 体験切れ/未契約 (entitled===false) は
+        //   ログインへ飛ばさず「継続登録(再開)」画面へ誘導する。upgrade.html / checkout 系は
+        //   auth-guard を読まないのでループしない。entitled が未定義(旧backend等)なら従来通り通す
+        //   (active を誤って締め出さない安全側)。有料機能のアクセスは各APIの厳格ゲートが担保。
+        if (data.student.entitled === false) {
+          var _path = (window.location.pathname || '');
+          if (!/\/(upgrade|checkout|checkout-success|checkout-cancel|login)\.html$/.test(_path)) {
+            window.location.replace('upgrade.html?reason=resubscribe');
+          }
+          return;
+        }
       }
     } catch (e) {
       // ネットワークエラー時はローカル値を信用して続行（オフライン耐性）。
