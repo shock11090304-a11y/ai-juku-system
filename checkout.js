@@ -337,7 +337,7 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
       }));
     } catch (_e) { /* sessionStorage が無効でも遷移自体は続行 */ }
 
-    // 2. 10日間 完全無料体験 (バックエンドが FOUNDER_TRIAL_PRICE=0 を検出すると
+    // 2. 14日間 完全無料体験 (バックエンドが FOUNDER_TRIAL_PRICE=0 を検出すると
     //    Stripe をスキップして即座に checkout-success.html へ遷移する)。
     //    継続は別途 upgrade.html で本契約。
     // 招待コード (通塾生 student_addon プラン用) を取得して送信

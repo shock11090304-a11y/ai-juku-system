@@ -113,11 +113,11 @@ const PLAN_CONFIG = {
     },
   },
 
-  // 完全無料 10日間体験 (GW長期休みに集中体験 → 休み明け本契約戦略)
+  // 完全無料 14日間体験 (学習習慣化の最小単位=14日。FOUNDER_TRIAL_DAYS と一致)
   trial: {
     price: 0,
     priceLabel: '完全無料',
-    duration: '10日間',
+    duration: '14日間',
     description: 'クレジットカード登録不要・自動課金なし・解約手続き不要',
   },
 
