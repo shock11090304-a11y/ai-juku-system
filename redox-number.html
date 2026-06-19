@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>酸化還元と酸化数 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px; flex-wrap:wrap;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .toggle{font-size:13px; padding:6px 12px;}
+  .toggle.on{background:var(--info-bg); border-color:var(--info-ink); color:var(--info-ink); font-weight:600;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:15px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .ox{color:var(--red); font-weight:600;}
+  .relation .rd{color:var(--blue); font-weight:600;}
+  .relation .eqnote{display:block; margin-top:6px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none; font-weight:600;}
+  footer a:hover{text-decoration:underline;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>酸化還元と酸化数</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。例の反応 <b>Zn + Cu²⁺ → Zn²⁺ + Cu</b>（水溶液中）で、酸化数の増減と電子 e⁻ の移動を追います。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>酸化と還元は必ず同時に起こる</b>。一方が電子を失えば（酸化）、もう一方が必ずその電子を受け取る（還元）。酸化数の<b>増加=酸化</b>、<b>減少=還元</b>と覚えます。</div>
+
+  <!-- ① 酸化数の変化と電子の移動 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="rxBadge">step 1 / 4</span>
+        <span class="steptitle" id="rxTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="rxPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="rxNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">酸化数の変化と電子の授受</h2>
+    <p class="hint">各化学種の酸化数（0, +2, +2, 0）に注目し、電子 e⁻ が Zn から Cu²⁺ へ2個移るようすを段階的に見ます。</p>
+    <div class="stage">
+      <svg id="rxSvg" viewBox="0 0 600 360" role="img" aria-label="Zn と Cu²⁺ の酸化還元反応と酸化数の変化">
+        <!-- 反応式（中央・常時） -->
+        <!-- Zn -->
+        <text id="t_zn"   data-ms="1" x="92"  y="170" font-size="34" font-weight="600" text-anchor="middle" fill="var(--ink)">Zn</text>
+        <text id="t_plus" data-ms="1" x="160" y="170" font-size="30" text-anchor="middle" fill="var(--sub)">+</text>
+        <!-- Cu2+ -->
+        <text id="t_cu2"  data-ms="1" x="232" y="170" font-size="34" font-weight="600" text-anchor="middle" fill="var(--ink)">Cu</text>
+        <text             data-ms="1" x="271" y="156" font-size="20" text-anchor="middle" fill="var(--ink)">2+</text>
+        <!-- arrow -->
+        <line   id="t_arr"  data-ms="1" x1="300" y1="162" x2="358" y2="162" stroke="var(--ink)" stroke-width="2.5"></line>
+        <polyline id="t_arh" data-ms="1" points="350,156 360,162 350,168" fill="none" stroke="var(--ink)" stroke-width="2.5"></polyline>
+        <!-- Zn2+ -->
+        <text id="t_zn2"  data-ms="1" x="408" y="170" font-size="34" font-weight="600" text-anchor="middle" fill="var(--ink)">Zn</text>
+        <text             data-ms="1" x="447" y="156" font-size="20" text-anchor="middle" fill="var(--ink)">2+</text>
+        <text id="t_plus2" data-ms="1" x="488" y="170" font-size="30" text-anchor="middle" fill="var(--sub)">+</text>
+        <!-- Cu -->
+        <text id="t_cu"   data-ms="1" x="540" y="170" font-size="34" font-weight="600" text-anchor="middle" fill="var(--ink)">Cu</text>
+
+        <!-- 酸化数ラベル（各化学種の上・常時） -->
+        <text id="ox_zn"  data-ms="1" x="92"  y="108" font-size="22" font-weight="600" text-anchor="middle" fill="var(--sub)">0</text>
+        <text id="ox_cu2" data-ms="1" x="250" y="108" font-size="22" font-weight="600" text-anchor="middle" fill="var(--sub)">+2</text>
+        <text id="ox_zn2" data-ms="1" x="425" y="108" font-size="22" font-weight="600" text-anchor="middle" fill="var(--sub)">+2</text>
+        <text id="ox_cu"  data-ms="1" x="540" y="108" font-size="22" font-weight="600" text-anchor="middle" fill="var(--sub)">0</text>
+        <text             data-ms="1" x="300" y="84"  font-size="13" text-anchor="middle" fill="var(--gray)">酸化数</text>
+
+        <!-- Zn(反応物 0) -> Zn²⁺(生成物 +2) 赤矢印（酸化＝酸化数の増加・右の +2 を指す） step2 -->
+        <line     id="ar_ox"  data-ms="2" x1="100" y1="90" x2="417" y2="90" stroke="var(--red)" stroke-width="2.5"></line>
+        <polyline id="ar_oxh" data-ms="2" points="405,84 419,90 405,96" fill="none" stroke="var(--red)" stroke-width="2.5"></polyline>
+        <text     id="ar_oxl" data-ms="2" x="258" y="50" font-size="15" font-weight="600" text-anchor="middle" fill="var(--red)">酸化（酸化数 0 → +2 に増加）</text>
+        <line     id="ar_oxg" data-ms="2" x1="258" y1="56" x2="258" y2="82" stroke="var(--red)" stroke-width="1" stroke-dasharray="3 3"></line>
+
+        <!-- Cu²⁺(反応物 +2) -> Cu(生成物 0) 青矢印（還元＝酸化数の減少・右の 0 を指す） step3 -->
+        <line     id="ar_rd"  data-ms="3" x1="258" y1="138" x2="533" y2="138" stroke="var(--blue)" stroke-width="2.5"></line>
+        <polyline id="ar_rdh" data-ms="3" points="523,132 535,138 523,144" fill="none" stroke="var(--blue)" stroke-width="2.5"></polyline>
+        <text     id="ar_rdl" data-ms="3" x="396" y="248" font-size="15" font-weight="600" text-anchor="middle" fill="var(--blue)">還元（酸化数 +2 → 0 に減少）</text>
+        <line     id="ar_rdg" data-ms="3" x1="396" y1="144" x2="396" y2="234" stroke="var(--blue)" stroke-width="1" stroke-dasharray="3 3"></line>
+
+        <!-- 電子 e⁻ ×2 が Zn -> Cu²⁺ へ step4 -->
+        <line     id="e_arr"  data-ms="4" x1="120" y1="300" x2="248" y2="300" stroke="var(--green)" stroke-width="2.5"></line>
+        <polyline id="e_arh"  data-ms="4" points="238,294 250,300 238,306" fill="none" stroke="var(--green)" stroke-width="2.5"></polyline>
+        <circle   id="e_c1"   data-ms="4" cx="150" cy="300" r="13" fill="var(--green)"></circle>
+        <circle   id="e_c2"   data-ms="4" cx="186" cy="300" r="13" fill="var(--green)"></circle>
+        <text     id="e_t1"   data-ms="4" x="150" y="305" font-size="13" font-weight="600" text-anchor="middle" fill="#ffffff">e⁻</text>
+        <text     id="e_t2"   data-ms="4" x="186" y="305" font-size="13" font-weight="600" text-anchor="middle" fill="#ffffff">e⁻</text>
+        <text     id="e_lab"  data-ms="4" x="300" y="305" font-size="15" font-weight="600" text-anchor="start" fill="var(--green)">電子 2個 が移動</text>
+        <text     id="e_from" data-ms="4" x="92"  y="335" font-size="13" text-anchor="middle" fill="var(--sub)">Zn（放出＝還元剤）</text>
+        <text     id="e_to"   data-ms="4" x="250" y="335" font-size="13" text-anchor="middle" fill="var(--sub)">Cu²⁺（受取＝酸化剤）</text>
+      </svg>
+    </div>
+    <p class="cap" id="rxCap"></p>
+    <div class="ctl">
+      <label>ハイライト</label>
+      <button id="tgOx" class="toggle">酸化（Zn）</button>
+      <button id="tgRd" class="toggle">還元（Cu）</button>
+      <button id="tgE"  class="toggle">電子の流れ</button>
+    </div>
+    <div class="relation" id="rxRel">
+      <span class="ox">酸化</span> = 酸化数↑（電子を失う）／
+      <span class="rd">還元</span> = 酸化数↓（電子を得る）
+      <span class="eqnote" id="rxEq">酸化と還元は必ず同時に起こる ・ イオン化傾向 Zn &gt; Cu</span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ 化学式の上付き／下付きや酸化数は指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function vis(svgId,step){
+    var ns=el(svgId).querySelectorAll("[data-ms]");
+    for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}
+  }
+
+  /* ===== 酸化還元と酸化数 ===== */
+  (function(){
+    var step=1, hi={ox:false,rd:false,e:false};
+    var info=[null,
+      {t:"反応式", c:"Zn + Cu²⁺ → Zn²⁺ + Cu（水溶液中）。各原子の酸化数（0, +2, +2, 0）に注目します。単体の酸化数は 0、単原子イオンの酸化数はその電荷に等しいので Cu²⁺・Zn²⁺ は +2 です。"},
+      {t:"Zn の酸化", c:"Zn: 0 → +2。酸化数が増加したので Zn は『酸化された』。Zn は電子を2個失い、相手を還元するので『還元剤』です。"},
+      {t:"Cu の還元", c:"Cu: +2 → 0。酸化数が減少したので Cu²⁺ は『還元された』。Cu²⁺ は電子を2個得て、相手を酸化するので『酸化剤』です。"},
+      {t:"電子の移動", c:"電子 e⁻ が2個、Zn から Cu²⁺ へ移動します。Zn が失った電子をそのまま Cu²⁺ が受け取るので、酸化と還元は必ず同時に起こります。イオン化傾向 Zn > Cu（亜鉛の方が陽イオンになりやすい）がこの向きを決めています。"}];
+
+    function applyHi(){
+      // 透明度ベースの常時図に、トグルで「強調（減光しない）／非強調（減光）」を重ねる
+      var any = hi.ox||hi.rd||hi.e;
+      function dim(ids,active){
+        for(var i=0;i<ids.length;i++){
+          var e=el(ids[i]); if(!e) continue;
+          // step由来の base 表示（0 or 1）を踏まえつつ強調制御
+          var baseShown = e.style.opacity!=="0";
+          if(!baseShown){ continue; }
+          e.style.opacity = (!any || active) ? "1" : "0.18";
+        }
+      }
+      dim(["ar_ox","ar_oxh","ar_oxl","ar_oxg"], hi.ox);
+      dim(["ar_rd","ar_rdh","ar_rdl","ar_rdg"], hi.rd);
+      dim(["e_arr","e_arh","e_c1","e_c2","e_t1","e_t2","e_lab","e_from","e_to"], hi.e);
+    }
+
+    function render(){
+      vis("rxSvg",step);
+      applyHi();
+      el("rxBadge").textContent="step "+step+" / 4";
+      el("rxTitle").textContent=info[step].t;
+      el("rxCap").textContent=info[step].c;
+      el("rxPrev").disabled=step<=1;
+      el("rxNext").disabled=step>=4;
+      // トグルは該当段階に達したときだけ有効
+      el("tgOx").disabled=step<2; el("tgRd").disabled=step<3; el("tgE").disabled=step<4;
+      el("tgOx").className="toggle"+(hi.ox?" on":"");
+      el("tgRd").className="toggle"+(hi.rd?" on":"");
+      el("tgE").className="toggle"+(hi.e?" on":"");
+    }
+    el("rxNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("rxPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("tgOx").addEventListener("click",function(){if(step>=2){hi.ox=!hi.ox;render();}});
+    el("tgRd").addEventListener("click",function(){if(step>=3){hi.rd=!hi.rd;render();}});
+    el("tgE").addEventListener("click",function(){if(step>=4){hi.e=!hi.e;render();}});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

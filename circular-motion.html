@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>円運動と向心力 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:88px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:15px; border:1px solid var(--bd); line-height:2.1;}
+  .relation .v{font-weight:600;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>円運動と向心力</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで <b>半径 r・速さ v・質量 m</b> を変えると、向心加速度と向心力がどう変わるか見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>円運動には中心向きの力（向心力）が必要</b>。速さが一定でも速度の<b>向き</b>が絶えず変わるので加速度があり、その加速度・力はつねに <b>中心向き</b>。速度 v と向心力 F は<b>直交</b>します。<b>F = m v² ⁄ r</b>。</div>
+
+  <!-- 等速円運動と向心力 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="cBadge">step 1 / 4</span>
+        <span class="steptitle" id="cTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="cPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="cNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">等速円運動と向心力</h2>
+    <p class="hint">半径 r の円を一定の速さ v で回る物体。速度は接線方向、向心加速度 a=v²/r と向心力 F=mv²/r は中心向き。</p>
+    <div class="stage">
+      <svg id="cSvg" viewBox="0 0 600 360" role="img" aria-label="等速円運動と向心力の図">
+        <!-- marker for arrowheads -->
+        <defs>
+          <marker id="ahV" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--blue)"></path>
+          </marker>
+          <marker id="ahF" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--red)"></path>
+          </marker>
+        </defs>
+        <!-- circular path -->
+        <circle id="c_circle" data-ms="1" fill="none" stroke="var(--blue)" stroke-width="2.5"></circle>
+        <!-- radius line -->
+        <line id="c_rad" data-ms="1" stroke="var(--gray)" stroke-width="1.5" stroke-dasharray="5 5"></line>
+        <!-- center O -->
+        <circle id="c_O" data-ms="1" r="4" fill="var(--gray)"></circle>
+        <text id="c_lO" data-ms="1" font-size="14" text-anchor="middle" fill="var(--gray)">O</text>
+        <!-- radius label -->
+        <text id="c_lR" data-ms="1" font-size="15" font-style="italic" text-anchor="middle" fill="var(--gray)">r</text>
+        <!-- right-angle marker between v and F -->
+        <polyline id="c_ang" data-ms="2" fill="none" stroke="var(--gray)" stroke-width="1.5"></polyline>
+        <!-- velocity vector (tangent) -->
+        <line id="c_v" data-ms="2" stroke="var(--blue)" stroke-width="3" marker-end="url(#ahV)"></line>
+        <text id="c_lV" data-ms="2" font-size="16" font-style="italic" text-anchor="middle" fill="var(--blue)">v</text>
+        <!-- centripetal force vector (toward center) -->
+        <line id="c_F" data-ms="4" stroke="var(--red)" stroke-width="3" marker-end="url(#ahF)"></line>
+        <text id="c_lF" data-ms="4" font-size="16" font-style="italic" text-anchor="middle" fill="var(--red)">F</text>
+        <!-- acceleration vector (toward center, shown at step 3) -->
+        <line id="c_a" data-ms="3" stroke="var(--green)" stroke-width="2.5" stroke-dasharray="6 5"></line>
+        <text id="c_lA" data-ms="3" font-size="15" font-style="italic" text-anchor="middle" fill="var(--green)">a</text>
+        <!-- object on the circle -->
+        <circle id="c_obj" data-ms="1" r="6.5" fill="var(--ink)"></circle>
+        <text id="c_lObj" data-ms="1" font-size="13" text-anchor="middle" fill="var(--ink)">m</text>
+      </svg>
+    </div>
+    <p class="cap" id="cCap"></p>
+    <div class="ctl">
+      <label for="cR">半径 r</label>
+      <input type="range" id="cR" min="0.5" max="3" step="0.1" value="2">
+      <span class="out" id="cROut">r=2.0 m</span>
+    </div>
+    <div class="ctl">
+      <label for="cV">速さ v</label>
+      <input type="range" id="cV" min="1" max="10" step="0.5" value="4">
+      <span class="out" id="cVOut">v=4.0 m/s</span>
+    </div>
+    <div class="ctl">
+      <label for="cM">質量 m</label>
+      <input type="range" id="cM" min="0.5" max="3" step="0.5" value="1">
+      <span class="out" id="cMOut">m=1.0 kg</span>
+    </div>
+    <div class="relation" id="cRel">
+      <span class="sr">読み出し</span>
+      角速度 ω = v ⁄ r = <span class="v" style="color:var(--blue)" id="cW">2.00</span> rad/s
+      &nbsp;・&nbsp;
+      周期 T = 2πr ⁄ v = <span class="v" id="cT2">3.14</span> s
+      <br>
+      向心加速度 a = v² ⁄ r = <span class="v" style="color:var(--green)" id="cA">8.00</span> m/s²
+      &nbsp;・&nbsp;
+      向心力 F = m v² ⁄ r = <span class="v" style="color:var(--red)" id="cF">8.00</span> N
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ ベクトルや記号は指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 等速円運動と向心力 ===== */
+  (function(){
+    /* SVG geometry: x,y equal scale so the circle is a true circle.
+       Center O fixed at pixel (CX,CY); on-screen radius fixed (RPX) so the
+       drawing stays well-framed; physics values come from r,v,m. The object
+       sits at angle TH (upper-right) so v (tangent) and F (radial) are clearly
+       separated and visibly perpendicular. */
+    var CX=300, CY=185, RPX=120, TH=-Math.PI/4; /* -45deg => upper-right */
+    var step=1, r=2, v=4, m=1;
+    var info=[null,
+      {t:"円を回る物体", c:"半径 r の円周上を、一定の速さ v で物体（質量 m）が回ります。半径 r が大きいほど大きな円、速さ v が速いほど速く回ります。"},
+      {t:"速度は接線方向", c:"速度 v は円の接線方向（半径と直交）を向きます。速さ（大きさ）は一定でも、進む向きが絶えず変わっているのがポイントです。"},
+      {t:"中心向きの加速度", c:"向きが変わる＝速度が変化する＝加速度がある。この向心加速度 a = v² ⁄ r は、つねに円の中心を向きます（速度 v と直交）。"},
+      {t:"向心力が中心を向く", c:"加速度があれば力がある。向心力 F = m a = m v² ⁄ r が中心を向き、この力が物体を円軌道につなぎ止めます。速度 v と向心力 F は直交します。"}];
+
+    /* object position (pixels), unit vectors */
+    function pos(){return {x:CX+RPX*Math.cos(TH), y:CY+RPX*Math.sin(TH)};}
+    /* radial inward unit vector = from object toward center */
+    function inward(){return {x:-Math.cos(TH), y:-Math.sin(TH)};}
+    /* tangent unit vector (counter-clockwise sense on screen). On screen y is
+       down, so use (sin, -cos) which is perpendicular to the radial (cos,sin). */
+    function tangent(){return {x:Math.sin(TH), y:-Math.cos(TH)};}
+
+    function render(){
+      var P=pos(), IN=inward(), TG=tangent();
+      var Cx=CX, Cy=CY;
+
+      /* circle + radius line + center */
+      attr("c_circle","cx",Cx); attr("c_circle","cy",Cy); attr("c_circle","r",RPX);
+      setLine("c_rad",Cx,Cy,P.x,P.y);
+      setC("c_O",Cx,Cy);
+      setT("c_lO",Cx-14,Cy+5);
+      /* radius label at midpoint of radius line, offset perpendicular */
+      var midx=(Cx+P.x)/2, midy=(Cy+P.y)/2;
+      setT("c_lR",midx+TG.x*14,midy+TG.y*14+4);
+
+      /* object */
+      setC("c_obj",P.x,P.y);
+      setT("c_lObj",P.x+IN.x*0+ TG.x*0, P.y-14);
+
+      /* velocity vector (tangent), fixed visual length */
+      var VL=72;
+      var vEndX=P.x+TG.x*VL, vEndY=P.y+TG.y*VL;
+      setLine("c_v",P.x,P.y,vEndX,vEndY);
+      setT("c_lV",vEndX+TG.x*12,vEndY+TG.y*12+5);
+
+      /* force vector (radial inward), fixed visual length */
+      var FL=66;
+      var fEndX=P.x+IN.x*FL, fEndY=P.y+IN.y*FL;
+      setLine("c_F",P.x,P.y,fEndX,fEndY);
+      setT("c_lF",fEndX+IN.x*12,fEndY+IN.y*12+5);
+
+      /* acceleration vector (radial inward), slightly shorter, offset so both visible */
+      var AL=44;
+      var aEndX=P.x+IN.x*AL, aEndY=P.y+IN.y*AL;
+      setLine("c_a",P.x,P.y,aEndX,aEndY);
+      setT("c_lA",P.x+IN.x*(AL+12)+TG.x*16, P.y+IN.y*(AL+12)+TG.y*16+5);
+
+      /* right-angle marker at object between tangent(v) and inward(F) */
+      var s=13;
+      var p1x=P.x+TG.x*s, p1y=P.y+TG.y*s;
+      var cpx=P.x+TG.x*s+IN.x*s, cpy=P.y+TG.y*s+IN.y*s;
+      var p2x=P.x+IN.x*s, p2y=P.y+IN.y*s;
+      attr("c_ang","points",p1x.toFixed(1)+","+p1y.toFixed(1)+" "+cpx.toFixed(1)+","+cpy.toFixed(1)+" "+p2x.toFixed(1)+","+p2y.toFixed(1));
+
+      vis("cSvg",step);
+
+      /* physics readouts (guard against div-by-zero: r>=0.5,v>=1 always) */
+      var w=v/r;                 /* rad/s */
+      var a=v*v/r;               /* m/s^2 */
+      var F=m*v*v/r;             /* N */
+      var Tp=2*Math.PI*r/v;      /* s */
+      el("cW").textContent=w.toFixed(2);
+      el("cA").textContent=a.toFixed(2);
+      el("cF").textContent=F.toFixed(2);
+      el("cT2").textContent=Tp.toFixed(2);
+      el("cROut").textContent="r="+r.toFixed(1)+" m";
+      el("cVOut").textContent="v="+v.toFixed(1)+" m/s";
+      el("cMOut").textContent="m="+m.toFixed(1)+" kg";
+
+      el("cBadge").textContent="step "+step+" / 4";
+      el("cTitle").textContent=info[step].t;
+      el("cCap").textContent=info[step].c;
+      el("cPrev").disabled=step<=1; el("cNext").disabled=step>=4;
+    }
+    el("cNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("cPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("cR").addEventListener("input",function(e){r=parseFloat(e.target.value);render();});
+    el("cV").addEventListener("input",function(e){v=parseFloat(e.target.value);render();});
+    el("cM").addEventListener("input",function(e){m=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

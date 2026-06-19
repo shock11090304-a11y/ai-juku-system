@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>熱量と比熱 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  button.mat{font-size:13px; padding:6px 11px;}
+  button.mat.on{background:var(--info-bg); color:var(--info-ink); border-color:var(--info-ink); font-weight:600;}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .mats{display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 2px;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>熱量と比熱</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで <b>質量 m</b> と <b>温度変化 ΔT</b> を、トグルで <b>物質（比熱 c）</b> を変えると、必要な熱量 <b>Q = mcΔT</b> が見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>Q = mcΔT</b>。同じ熱量を加えても、比熱 c が大きい物質（水）ほど温度変化 ΔT は小さい＝<b>温まりにくく冷めにくい</b>。</div>
+
+  <!-- 熱量 Q=mcΔT -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="hBadge">step 1 / 4</span>
+        <span class="steptitle" id="hTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="hPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="hNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">熱量と比熱</h2>
+    <p class="hint">質量 m〔g〕の物質を ΔT〔K〕温めるのに必要な熱量 Q〔J〕。比熱 c は「1 g を 1 K 上げる熱量」。</p>
+    <div class="stage">
+      <svg id="hSvg" viewBox="0 0 600 360" role="img" aria-label="温度計と熱量の棒グラフ">
+        <!-- 温度計 -->
+        <g id="thermo">
+          <!-- ガラス管の外枠 -->
+          <rect id="t_tube" data-ms="1" x="92" y="40" width="26" height="232" rx="13" fill="none" stroke="var(--gray)" stroke-width="2"></rect>
+          <circle id="t_bulbOut" data-ms="1" cx="105" cy="296" r="30" fill="none" stroke="var(--gray)" stroke-width="2"></circle>
+          <!-- 水銀(基準分) -->
+          <rect id="t_base" data-ms="1" x="98" y="250" width="14" height="20" rx="7" fill="var(--gray)"></rect>
+          <circle id="t_bulb" data-ms="1" cx="105" cy="296" r="24" fill="var(--gray)"></circle>
+          <!-- 上昇分(色つき) -->
+          <rect id="t_rise" data-ms="2" x="98" width="14" rx="7" fill="var(--red)"></rect>
+          <!-- 目盛 -->
+          <g id="t_ticks" data-ms="1"></g>
+          <text id="t_dTlab" data-ms="2" font-size="14" fill="var(--red)" text-anchor="start">ΔT</text>
+          <line id="t_dTtop" data-ms="2" stroke="var(--red)" stroke-width="1.2" stroke-dasharray="4 4"></line>
+        </g>
+        <!-- 物質ラベル -->
+        <text id="m_name" data-ms="1" x="180" y="58" font-size="17" font-weight="600" text-anchor="start" fill="var(--ink)">水</text>
+        <text id="m_c" data-ms="1" x="180" y="80" font-size="14" text-anchor="start" fill="var(--sub)">比熱 c = 4.20 J/(g·K)</text>
+        <text id="m_m" data-ms="1" x="180" y="100" font-size="14" text-anchor="start" fill="var(--sub)">質量 m = 100 g</text>
+
+        <!-- 熱量Qの縦棒 -->
+        <line id="q_axis" data-ms="2" stroke="var(--gray)" stroke-width="1.2"></line>
+        <g id="q_ticks" data-ms="2"></g>
+        <rect id="q_bar" data-ms="2" rx="4" fill="var(--blue)"></rect>
+        <text id="q_lab" data-ms="2" font-size="15" font-weight="600" text-anchor="middle" fill="var(--ink)">Q</text>
+        <text id="q_val" data-ms="3" font-size="15" font-weight="600" text-anchor="middle" fill="var(--blue)">Q</text>
+        <text id="q_formula" data-ms="2" x="540" y="58" font-size="15" font-style="italic" text-anchor="end" fill="var(--ink)">Q = m c ΔT</text>
+      </svg>
+    </div>
+    <p class="cap" id="hCap"></p>
+    <div class="mats" id="hMats">
+      <button class="mat on" data-i="0">水 (4.2)</button>
+      <button class="mat" data-i="1">アルミ (0.90)</button>
+      <button class="mat" data-i="2">鉄 (0.45)</button>
+      <button class="mat" data-i="3">銅 (0.38)</button>
+    </div>
+    <div class="ctl">
+      <label for="hMass">質量 m〔g〕</label>
+      <input type="range" id="hMass" min="10" max="500" step="10" value="100">
+      <span class="out" id="hMassOut">m = 100 g</span>
+    </div>
+    <div class="ctl">
+      <label for="hDT">温度変化 ΔT〔K〕</label>
+      <input type="range" id="hDT" min="0" max="100" step="5" value="50">
+      <span class="out" id="hDTOut">ΔT = 50 K</span>
+    </div>
+    <div class="relation" id="hRel">
+      <span style="color:var(--ink)">Q = m c ΔT</span> =
+      <span id="hCalc">100 × 4.20 × 50</span> =
+      <span style="color:var(--blue); font-weight:600" id="hQ">21000 J</span>
+      <span class="eqnote" id="hKj"></span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ 比熱の値は指導用の代表値〔J/(g·K)〕です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 熱量 Q = m c ΔT ===== */
+  (function(){
+    var MATS=[
+      {name:"水",   c:4.20, col:"#2563eb"},
+      {name:"アルミ", c:0.90, col:"#16a34a"},
+      {name:"鉄",   c:0.45, col:"#e2483a"},
+      {name:"銅",   c:0.38, col:"#b45309"}
+    ];
+    var step=1, mi=0, m=100, dT=50;
+
+    // 温度計レイアウト
+    var TUBE_TOP=40, TUBE_BOT=270, TUBE_X=98, TUBE_W=14;
+    var BASE_Y=250;                 // ΔT=0 のときの水銀上端
+    var SPAN=BASE_Y-TUBE_TOP-6;     // ΔT=100K でこの高さまで上昇
+    // 熱量棒レイアウト
+    var QX=400, QW=110, QBASE=300, QTOP=70;
+    var QMAX=500*4.20*100;          // 上限スケール(水・最大): 210000 J
+
+    var info=[null,
+      {t:"温める", c:"質量 m〔g〕・比熱 c の物質を、温度差 ΔT〔K〕だけ温めます。温度計の色つき部分が温度上昇 ΔT を表します。"},
+      {t:"必要な熱量 Q", c:"必要な熱量は Q = m c ΔT〔J〕。右の縦棒の高さが Q を表します。m・ΔT を大きくするほど棒は伸びます。"},
+      {t:"比熱 c の意味", c:"比熱 c は「その物質 1 g を 1 K 上げるのに必要な熱量」。水は c=4.2 と大きく、温まりにくく冷めにくい。アルミ0.90・鉄0.45・銅0.38。"},
+      {t:"同じ熱量なら", c:"同じ熱量 Q を加えても、比熱 c が大きい物質ほど温度変化 ΔT は小さい（ΔT = Q/(m c)）。物質トグルを切り替えて棒の高さを見くらべましょう。"}];
+
+    function ticks(){
+      var g=el("t_ticks"); g.innerHTML="";
+      // 0..100 K を 20K刻みで目盛
+      for(var v=0; v<=100; v+=20){
+        var y=BASE_Y - (v/100)*SPAN;
+        g.innerHTML+='<line x1="'+(TUBE_X-8)+'" y1="'+y.toFixed(1)+'" x2="'+TUBE_X+'" y2="'+y.toFixed(1)+'" stroke="var(--gray)" stroke-width="1"/>'+
+          '<text x="'+(TUBE_X-12)+'" y="'+(y+4).toFixed(1)+'" font-size="10" fill="var(--sub)" text-anchor="end">'+v+'</text>';
+      }
+    }
+    function qticks(){
+      var g=el("q_ticks"); g.innerHTML="";
+      // 50000 J 刻み
+      for(var v=0; v<=200000; v+=50000){
+        var y=QBASE - (v/QMAX)*(QBASE-QTOP);
+        var lab=(v/1000)+"k";
+        g.innerHTML+='<line x1="'+(QX-6)+'" y1="'+y.toFixed(1)+'" x2="'+QX+'" y2="'+y.toFixed(1)+'" stroke="var(--gray)" stroke-width="1"/>'+
+          '<text x="'+(QX-9)+'" y="'+(y+4).toFixed(1)+'" font-size="10" fill="var(--sub)" text-anchor="end">'+lab+'</text>';
+      }
+    }
+
+    function fmtQ(q){
+      var s=Math.round(q)+" J";
+      if(q>=1000) s+=" = "+(q/1000).toFixed(1)+" kJ";
+      return s;
+    }
+
+    function render(){
+      var mat=MATS[mi];
+      var Q=m*mat.c*dT;             // J
+
+      // --- 温度計 ---
+      var riseH=(dT/100)*SPAN;      // 上昇分の高さ
+      var topY=BASE_Y - riseH;
+      var rEl=el("t_rise");
+      rEl.setAttribute("x",TUBE_X);
+      rEl.setAttribute("y",topY.toFixed(1));
+      rEl.setAttribute("width",TUBE_W);
+      rEl.setAttribute("height",Math.max(0,riseH).toFixed(1));
+      el("t_bulb").setAttribute("fill",mat.col);
+      el("t_rise").setAttribute("fill",mat.col);
+      setLine("t_dTtop",TUBE_X-2,topY,TUBE_X+TUBE_W+30,topY);
+      setT("t_dTlab",TUBE_X+TUBE_W+12, (BASE_Y+topY)/2+4, "ΔT="+dT+" K");
+
+      // --- 物質ラベル ---
+      setT("m_name",180,58,mat.name);
+      setT("m_c",180,80,"比熱 c = "+mat.c.toFixed(2)+" J/(g·K)");
+      setT("m_m",180,100,"質量 m = "+m+" g");
+
+      // --- 熱量の縦棒 ---
+      setLine("q_axis",QX,QBASE,QX,QTOP-4);
+      qticks();
+      var barH=(Q/QMAX)*(QBASE-QTOP);
+      barH=Math.max(0,Math.min(QBASE-QTOP,barH));
+      var by=QBASE-barH;
+      var bEl=el("q_bar");
+      bEl.setAttribute("x",QX+8);
+      bEl.setAttribute("y",by.toFixed(1));
+      bEl.setAttribute("width",QW);
+      bEl.setAttribute("height",barH.toFixed(1));
+      bEl.setAttribute("fill",mat.col);
+      setT("q_lab",QX+8+QW/2,QBASE+20,"熱量 Q");
+      setT("q_val",QX+8+QW/2, Math.max(QTOP+2,by-10).toFixed(1), Math.round(Q)+" J");
+
+      // --- 読み出し ---
+      el("hMassOut").textContent="m = "+m+" g";
+      el("hDTOut").textContent="ΔT = "+dT+" K";
+      el("hCalc").textContent=m+" × "+mat.c.toFixed(2)+" × "+dT;
+      el("hQ").textContent=Math.round(Q)+" J";
+      el("hQ").style.color=mat.col;
+      el("hKj").textContent=(Q>=1000)?("= "+(Q/1000).toFixed(1)+" kJ"):"";
+
+      // --- 段階表示 / ステップヘッダ ---
+      vis("hSvg",step);
+      el("hBadge").textContent="step "+step+" / 4";
+      el("hTitle").textContent=info[step].t;
+      el("hCap").textContent=info[step].c;
+      el("hPrev").disabled=step<=1; el("hNext").disabled=step>=4;
+    }
+
+    // 物質トグル
+    var btns=el("hMats").querySelectorAll("button.mat");
+    for(var i=0;i<btns.length;i++){
+      (function(b){
+        b.addEventListener("click",function(){
+          mi=+b.getAttribute("data-i");
+          for(var j=0;j<btns.length;j++) btns[j].className="mat";
+          b.className="mat on";
+          render();
+        });
+      })(btns[i]);
+    }
+    el("hNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("hPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("hMass").addEventListener("input",function(e){m=parseInt(e.target.value,10);render();});
+    el("hDT").addEventListener("input",function(e){dT=parseInt(e.target.value,10);render();});
+
+    ticks();
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

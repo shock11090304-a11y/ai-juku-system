@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>浮力 — アルキメデスの原理 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --water:#bfe0f5; --waterln:#3b9fe0;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --water:#1d3a52; --waterln:#4f9bd4;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:138px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .readout{display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:12px; font-size:14px;}
+  .readout .item{color:var(--sub);} .readout .item b{color:var(--ink); font-weight:600;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>浮力 — アルキメデスの原理</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで <b>物体の密度</b> を変えると、浮く／沈むの境目が見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>浮力は「押しのけた液体の重さ」</b>。F<sub>浮</sub> = ρ<sub>液</sub>·V<sub>沈</sub>·g。物体の密度が液体より小さい（ρ<sub>物</sub> &lt; ρ<sub>液</sub>）と浮き、沈む割合は ρ<sub>物</sub>/ρ<sub>液</sub> になります。</div>
+
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="bBadge">step 1 / 4</span>
+        <span class="steptitle" id="bTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="bPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="bNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">浮力とアルキメデスの原理</h2>
+    <p class="hint">水（ρ<sub>液</sub>=1000 kg/m³）に体積 V=0.001 m³ の物体を入れる。g=9.8 m/s²。スライダーで物体の密度を変えてみよう。</p>
+    <div class="stage">
+      <svg id="bSvg" viewBox="0 0 600 360" role="img" aria-label="浮力とアルキメデスの原理の図">
+        <!-- 水槽の枠 -->
+        <rect x="120" y="40" width="360" height="280" fill="none" stroke="var(--ink)" stroke-width="2.5"></rect>
+        <!-- 水（液面より下を塗る。yは描画時に設定） -->
+        <rect id="b_water" x="122" y="120" width="356" height="198" fill="var(--water)"></rect>
+        <!-- 水面線 -->
+        <line id="b_surf" data-ms="1" stroke="var(--waterln)" stroke-width="2.5"></line>
+        <text id="b_surfl" data-ms="1" font-size="13" fill="var(--waterln)" text-anchor="start">水面</text>
+        <!-- 物体（箱） -->
+        <rect id="b_body" data-ms="1" fill="#caa46a" stroke="#8a6d3b" stroke-width="2"></rect>
+        <text id="b_bodyl" data-ms="1" font-size="13" fill="#5a4422" text-anchor="middle">物体</text>
+        <!-- 重力ベクトル W（下向き・物体中心から） -->
+        <line id="b_wv" data-ms="2" stroke="var(--red)" stroke-width="3"></line>
+        <polygon id="b_wh" data-ms="2" fill="var(--red)"></polygon>
+        <text id="b_wl" data-ms="2" font-size="15" fill="var(--red)" text-anchor="start">W（重力）</text>
+        <!-- 浮力ベクトル F浮（上向き・物体中心から） -->
+        <line id="b_fv" data-ms="3" stroke="var(--blue)" stroke-width="3"></line>
+        <polygon id="b_fh" data-ms="3" fill="var(--blue)"></polygon>
+        <text id="b_fl" data-ms="3" font-size="15" fill="var(--blue)" text-anchor="end">F浮（浮力）</text>
+        <!-- 沈んだ部分のラベル -->
+        <text id="b_subl" data-ms="4" font-size="13" fill="var(--waterln)" text-anchor="start"></text>
+      </svg>
+    </div>
+    <p class="cap" id="bCap"></p>
+    <div class="ctl">
+      <label for="bSlider">物体の密度 ρ物</label>
+      <input type="range" id="bSlider" min="200" max="1500" step="50" value="600">
+      <span class="out" id="bOut">ρ物 = 600 kg/m³</span>
+    </div>
+    <div class="relation" id="bRel">
+      <span style="color:var(--blue)">F浮</span> = <span id="bF">5.88</span> N
+      <span id="bSign" style="margin:0 8px; font-weight:600">=</span>
+      <span style="color:var(--red)">W</span> = <span id="bW">5.88</span> N
+      <span class="eqnote" id="bEq"></span>
+    </div>
+    <div class="readout">
+      <span class="item">物体の密度 <b><span id="rRhoB">600</span> kg/m³</b></span>
+      <span class="item">液体 水 <b>ρ液 = 1000 kg/m³</b></span>
+      <span class="item">体積 <b>V = 0.001 m³</b></span>
+      <span class="item">浮力 <b>F浮 = <span id="rF">5.88</span> N</b></span>
+      <span class="item">重さ <b>W = <span id="rW">5.88</span> N</b></span>
+      <span class="item">状態 <b id="rState">浮く</b></span>
+      <span class="item">沈む割合 <b id="rFrac">60.0 %</b></span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ 物理量の単位（N, kg/m³, m³）と図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setRect(id,x,y,w,h){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);e.setAttribute("width",w);e.setAttribute("height",h);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 浮力とアルキメデスの原理 ===== */
+  (function(){
+    var RHO_L=1000, V=0.001, G=9.8;       /* 水の密度, 体積, 重力加速度 */
+    var step=1, rhoB=600;                 /* 物体の密度 */
+
+    /* 図のジオメトリ（viewBox 0 0 600 360, 等スケール） */
+    var TANK_X=120, TANK_W=360, TANK_Y=40, TANK_H=280;
+    var SURF_Y=120;                        /* 水面の y */
+    var TANK_BOT=TANK_Y+TANK_H;            /* 320 = 水槽の底 */
+    var BODY_W=92, BODY_H=92;              /* 物体（箱）のサイズ */
+    var BODY_CX=TANK_X+TANK_W/2;           /* 物体の中心 x = 300 */
+
+    var info=[null,
+      {t:"浮力がはたらく", c:"液体中の物体には、上向きの力＝浮力がはたらきます。だから水中では物が軽く感じます。"},
+      {t:"重さW", c:"物体には下向きの重力 W = ρ物·V·g がはたらきます。浮力 F浮 と W のつり合いで浮き沈みが決まります。"},
+      {t:"アルキメデスの原理", c:"浮力 = 押しのけた液体の重さ。F浮 = ρ液·V沈·g（V沈 = 水中に入った体積）。水中に多く入るほど浮力は大きい。"},
+      {t:"浮く条件と沈む割合", c:"ρ物 < ρ液 なら浮く。浮いているとき F浮 = W がつり合い、沈む割合 = ρ物/ρ液。ρ物 ≧ ρ液 なら全没して沈む。スライダーで境目を確かめよう。"}];
+
+    function render(){
+      var floats = rhoB < RHO_L;                 /* 浮く条件 */
+      var W = rhoB * V * G;                       /* 重さ (N) */
+      var frac = floats ? (rhoB/RHO_L) : 1;       /* 沈む割合(0..1) */
+      /* 浮力: 浮く時は F=W(つり合い), 沈む時は全没で F=ρ液·V·g (<W) */
+      var Vsub = floats ? (frac*V) : V;           /* 押しのけた体積 */
+      var F = RHO_L * Vsub * G;                   /* 浮力 (N) */
+
+      /* --- 水面・水の塗り --- */
+      setLine("b_surf", TANK_X, SURF_Y, TANK_X+TANK_W, SURF_Y);
+      setT("b_surfl", TANK_X+TANK_W+6, SURF_Y+4, null);
+      setRect("b_water", TANK_X+2, SURF_Y, TANK_W-4, TANK_BOT-SURF_Y);
+
+      /* --- 物体の配置 --- */
+      var bodyX = BODY_CX - BODY_W/2, bodyY;
+      if(floats){
+        /* 上端を水面より上に出し、沈む割合だけ水面下に。
+           箱のうち frac の高さが水面下に入るように上端を置く。 */
+        bodyY = SURF_Y - BODY_H*(1-frac);
+      }else{
+        /* 全没して底に着く */
+        bodyY = TANK_BOT - BODY_H - 6;
+      }
+      setRect("b_body", bodyX, bodyY, BODY_W, BODY_H);
+      setT("b_bodyl", BODY_CX, bodyY+BODY_H/2+5, null);
+
+      var cx = BODY_CX, cy = bodyY + BODY_H/2;     /* 物体の中心 */
+
+      /* --- 重力ベクトル W（下向き, 中心から） --- */
+      var wLen = 40 + 46*(W/14.7);                 /* W∈[~1.96,~14.7] を見やすい長さに */
+      var wTop = cy, wBot = cy + wLen;
+      setLine("b_wv", cx-22, wTop, cx-22, wBot);
+      attr("b_wh","points",(cx-22)+","+(wBot+12)+" "+(cx-29)+","+wBot+" "+(cx-15)+","+wBot);
+      setT("b_wl", cx-10, wBot+8, null);
+
+      /* --- 浮力ベクトル F浮（上向き, 中心から） --- */
+      var fLen = 40 + 46*(F/14.7);
+      var fBot = cy, fTop = cy - fLen;
+      setLine("b_fv", cx+22, fBot, cx+22, fTop);
+      attr("b_fh","points",(cx+22)+","+(fTop-12)+" "+(cx+29)+","+fTop+" "+(cx+15)+","+fTop);
+      setT("b_fl", cx+62, fTop+6, null);
+
+      /* --- 沈んだ部分ラベル --- */
+      var subPct = (floats?frac:1)*100;
+      setT("b_subl", TANK_X+8, SURF_Y+18, "水中の体積 V沈 = "+(subPct).toFixed(0)+"% × V");
+
+      vis("bSvg",step);
+
+      /* --- 読み出し --- */
+      el("bF").textContent=F.toFixed(2); el("bW").textContent=W.toFixed(2);
+      el("rF").textContent=F.toFixed(2); el("rW").textContent=W.toFixed(2);
+      el("rRhoB").textContent=rhoB.toFixed(0);
+      el("bOut").textContent="ρ物 = "+rhoB.toFixed(0)+" kg/m³";
+      el("rState").textContent = floats ? "浮く" : "沈む";
+      el("rFrac").textContent = floats ? (frac*100).toFixed(1)+" %" : "全没（沈む）";
+
+      /* --- relation: 浮く時 F=W, 沈む時 F<W --- */
+      var balanced = floats;
+      el("bSign").textContent = balanced ? "=" : "＜";
+      el("bEq").textContent = balanced ? "つり合い（F浮 = W）" : "F浮 ＜ W なので沈む";
+      el("bRel").className = balanced ? "relation eq" : "relation";
+
+      /* --- ステップヘッダ --- */
+      el("bBadge").textContent="step "+step+" / 4";
+      el("bTitle").textContent=info[step].t; el("bCap").textContent=info[step].c;
+      el("bPrev").disabled=step<=1; el("bNext").disabled=step>=4;
+    }
+    el("bNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("bPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("bSlider").addEventListener("input",function(e){rhoB=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>
