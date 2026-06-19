@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>中和反応と塩 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --acid:#e2483a; --base:#2563eb; --neutral:#16a34a;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  button.toggle.on{background:var(--info-bg); border-color:var(--info-ink); color:var(--info-ink); font-weight:600;}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .toggles{display:flex; align-items:center; gap:8px; margin:8px 0 2px; flex-wrap:wrap;}
+  .toggles .tlabel{font-size:13px; color:var(--sub);}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>中和反応と塩</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで <b>加えた塩基の体積 V_b</b> を動かし、トグルで <b>酸の種類（価数）</b> を切り替えると、中和点が変わるのが見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>価数を掛けた量的関係</b>。中和は「酸+塩基→塩+水」。過不足なく反応する条件は <b>(酸の価数 a)·c_a·V_a = (塩基の価数 b)·c_b·V_b</b>。2価の酸は同じ濃度でも <b>2倍の塩基</b>が必要です。</div>
+
+  <!-- 中和反応と量的関係 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="nBadge">step 1 / 4</span>
+        <span class="steptitle" id="nTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="nPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="nNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">中和の量的関係</h2>
+    <p class="hint">ビュレットから NaOH(0.10 mol/L) を滴下し、酸 0.10 mol/L・20 mL を中和します。酸の mol と塩基の mol を横棒でくらべます。</p>
+    <div class="stage">
+      <svg id="nSvg" viewBox="0 0 600 360" role="img" aria-label="中和滴定のビーカーと量的関係の棒グラフ">
+        <!-- ビュレット(スタンド)と滴下 -->
+        <rect id="bu_body" data-ms="1" x="120" y="18" width="20" height="120" rx="3" fill="none" stroke="var(--ink)" stroke-width="2"></rect>
+        <rect id="bu_liq" data-ms="1" x="122" y="40" width="16" height="96" fill="var(--base)" opacity="0.30"></rect>
+        <path id="bu_tip" data-ms="1" d="M120 138 L130 152 L140 138 Z" fill="none" stroke="var(--ink)" stroke-width="2"></path>
+        <text id="bu_lab" data-ms="1" x="148" y="40" font-size="12" fill="var(--base)" text-anchor="start">NaOH</text>
+        <text id="bu_lab2" data-ms="1" x="148" y="56" font-size="11" fill="var(--sub)" text-anchor="start">0.10 mol/L</text>
+        <circle id="bu_drop" data-ms="3" cx="130" cy="172" r="4" fill="var(--base)"></circle>
+
+        <!-- ビーカー(酸) -->
+        <path id="bk_body" data-ms="1" d="M70 200 L80 318 Q82 330 96 330 L164 330 Q178 330 180 318 L190 200 Z" fill="none" stroke="var(--ink)" stroke-width="2"></path>
+        <path id="bk_liq" data-ms="1" fill="var(--acid)" opacity="0.22"></path>
+        <text id="bk_lab" data-ms="1" x="130" y="348" font-size="12" fill="var(--sub)" text-anchor="middle">酸 0.10 mol/L, 20 mL</text>
+
+        <!-- 量的関係 棒グラフ -->
+        <text id="g_head" data-ms="2" x="300" y="40" font-size="13" fill="var(--sub)" text-anchor="start">量的関係（mol）</text>
+        <!-- 酸の棒 -->
+        <text id="g_acidl" data-ms="2" x="296" y="78" font-size="13" fill="var(--acid)" text-anchor="end">酸 a·c_a·V_a</text>
+        <rect id="g_acidbg" data-ms="2" x="308" y="62" width="260" height="22" rx="4" fill="none" stroke="var(--bd)" stroke-width="1"></rect>
+        <rect id="g_acidbar" data-ms="2" x="308" y="62" height="22" rx="4" fill="var(--acid)" opacity="0.85"></rect>
+        <text id="g_acidv" data-ms="2" x="572" y="78" font-size="12" fill="var(--acid)" text-anchor="start"></text>
+        <!-- 塩基の棒 -->
+        <text id="g_basel" data-ms="3" x="296" y="118" font-size="13" fill="var(--base)" text-anchor="end">塩基 b·c_b·V_b</text>
+        <rect id="g_basebg" data-ms="3" x="308" y="102" width="260" height="22" rx="4" fill="none" stroke="var(--bd)" stroke-width="1"></rect>
+        <rect id="g_basebar" data-ms="3" x="308" y="102" height="22" rx="4" fill="var(--base)" opacity="0.85"></rect>
+        <text id="g_basev" data-ms="3" x="572" y="118" font-size="12" fill="var(--base)" text-anchor="start"></text>
+        <!-- 中和点マーカー(縦線) -->
+        <line id="g_eqline" data-ms="3" stroke="var(--neutral)" stroke-width="2" stroke-dasharray="5 4"></line>
+        <text id="g_eqlab" data-ms="3" font-size="12" fill="var(--neutral)" text-anchor="middle">中和点</text>
+
+        <!-- 状態と生成する塩 -->
+        <rect id="st_box" data-ms="3" x="308" y="158" width="262" height="64" rx="8" fill="none" stroke="var(--bd)" stroke-width="1.2"></rect>
+        <text id="st_state" data-ms="3" x="320" y="184" font-size="16" font-weight="600" text-anchor="start"></text>
+        <text id="st_salt" data-ms="4" x="320" y="210" font-size="13" fill="var(--sub)" text-anchor="start"></text>
+
+        <!-- 反応式 -->
+        <text id="rx_eq" data-ms="1" x="300" y="290" font-size="15" fill="var(--ink)" text-anchor="start"></text>
+        <text id="rx_eqn" data-ms="2" x="300" y="318" font-size="13" fill="var(--sub)" text-anchor="start"></text>
+      </svg>
+    </div>
+    <p class="cap" id="nCap"></p>
+    <div class="toggles">
+      <span class="tlabel">酸の種類</span>
+      <button id="tHCl" class="toggle on">HCl（1価）</button>
+      <button id="tH2SO4" class="toggle">H₂SO₄（2価）</button>
+    </div>
+    <div class="ctl">
+      <label for="nSlider">加えた塩基 V_b</label>
+      <input type="range" id="nSlider" min="0" max="40" step="1" value="0">
+      <span class="out" id="nOut">V_b = 0 mL</span>
+    </div>
+    <div class="relation" id="nRel">
+      <span style="color:var(--acid)">酸 a·c_a·V_a</span> = <span id="rAcid">2.00</span> mmol
+      <span id="rSign" style="margin:0 8px; font-weight:600">≷</span>
+      <span style="color:var(--base)">塩基 b·c_b·V_b</span> = <span id="rBase">0.00</span> mmol
+      <span class="eqnote" id="rEq"></span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ 化学記号や図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setRectW(id,w){el(id).setAttribute("width",w);}
+  function setT(id,x,y,txt){var e=el(id);if(x!=null)e.setAttribute("x",x);if(y!=null)e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 中和反応と量的関係 ===== */
+  (function(){
+    var step=1, Vb=0, acid="HCl";
+    // 固定条件
+    var ca=0.10, Va=20, cb=0.10; // mol/L, mL, mol/L
+    // 酸の定義: a=価数, eqVb=中和点, salt=生成する塩, rx=反応式
+    var ACIDS={
+      "HCl":   {a:1, salt:"NaCl",     rx:"HCl + NaOH → NaCl + H₂O"},
+      "H2SO4": {a:2, salt:"Na₂SO₄",   rx:"H₂SO₄ + 2NaOH → Na₂SO₄ + 2H₂O"}
+    };
+    var b=1; // NaOH は1価
+    // 棒グラフ幅スケール: mmol → px。最大 a·ca·Va = 4.0 mmol(2価) を 260px に収める
+    var barX=308, barMaxW=260, molMax=4.0;
+    function molToW(m){var w=(m/molMax)*barMaxW; if(w<0)w=0; if(w>barMaxW)w=barMaxW; return w;}
+
+    var info=[null,
+      {t:"中和とは", c:"酸と塩基が反応して塩と水ができる反応を中和という。例：HCl + NaOH → NaCl + H₂O。トグルで酸の種類を切り替えられます。"},
+      {t:"量的関係", c:"過不足なく反応する条件は (酸の価数 a)·c_a·V_a = (塩基の価数 b)·c_b·V_b。NaOH は1価(b=1)。1価どうしなら c_a·V_a = c_b·V_b。"},
+      {t:"塩基を滴下", c:"ビュレットから NaOH を加える。スライダーで V_b を動かすと塩基の棒がのびる。中和点(縦の緑線)でちょうど一致し、過不足なく塩と水だけになります。"},
+      {t:"中和点の前後", c:"中和点より少ない=酸が過剰で酸性。多い=塩基が過剰で塩基性。2価の酸 H₂SO₄ は中和に2倍の塩基(40 mL)が必要です。"}];
+
+    function render(){
+      var A=ACIDS[acid];
+      var a=A.a;
+      var acidMol = a*ca*Va;            // mmol (mol/L × mL = mmol)
+      var baseMol = b*cb*Vb;            // mmol
+      var eqVb = (a*ca*Va)/(b*cb);      // 中和点 V_b (mL)
+
+      // ---- ビーカー液面: V_b に応じて少しふえる(視覚演出) ----
+      var liqTopY = 240 - (Vb/40)*22;   // 0→240, 40mL→218
+      var bkLiq = "M72 "+liqTopY.toFixed(1)+" L188 "+liqTopY.toFixed(1)+
+                  " L180 318 Q178 330 164 330 L96 330 Q82 330 80 318 Z";
+      attr("bk_liq","d",bkLiq);
+      // 滴下のしずく: 滴下中(0<Vb<eqVb 付近)だけ見せる演出 → step3以降
+      el("bu_drop").style.opacity = (step>=3 && Vb>0 && Vb<eqVb+0.5) ? "1" : "0";
+
+      // ---- 棒グラフ ----
+      setRectW("g_acidbar", molToW(acidMol).toFixed(1));
+      setRectW("g_basebar", molToW(baseMol).toFixed(1));
+      setT("g_acidv",null,null, acidMol.toFixed(2)+" mmol");
+      setT("g_basev",null,null, baseMol.toFixed(2)+" mmol");
+
+      // ---- 中和点マーカー: 酸の棒の右端(=中和に必要な塩基mol)位置に縦線 ----
+      var eqMolW = molToW(acidMol); // 中和に必要な塩基mol = 酸mol(価数込み)
+      var eqPx = barX + eqMolW;
+      setLine("g_eqline", eqPx, 56, eqPx, 130);
+      setT("g_eqlab", eqPx, 48, null);
+
+      // ---- 状態判定 ----
+      var state, stColor;
+      var diff = baseMol - acidMol;     // >0 塩基過剰, <0 酸過剰, =0 中性
+      if(Math.abs(diff)<1e-6){ state="中性（過不足なし）"; stColor="var(--neutral)"; }
+      else if(diff<0){ state="酸性（酸が過剰）"; stColor="var(--acid)"; }
+      else { state="塩基性（塩基が過剰）"; stColor="var(--base)"; }
+      setT("st_state",null,null, state);
+      el("st_state").setAttribute("fill", stColor);
+      setT("st_salt",null,null, "生成する塩： "+A.salt+"（中和点 V_b = "+eqVb.toFixed(0)+" mL）");
+
+      // ---- 反応式 ----
+      setT("rx_eq",null,null, A.rx);
+      setT("rx_eqn",null,null, "a·c_a·V_a = b·c_b·V_b → "+a+"·0.10·20 = 1·0.10·V_b");
+
+      vis("nSvg",step);
+
+      // ---- 読み出し ----
+      el("rAcid").textContent = acidMol.toFixed(2);
+      el("rBase").textContent = baseMol.toFixed(2);
+      el("nOut").textContent = "V_b = "+Vb.toFixed(0)+" mL";
+      var eq = Math.abs(diff)<1e-6;
+      el("rSign").textContent = eq ? "=" : (diff<0 ? ">" : "<");
+      el("rEq").textContent = eq ? ("中和点！(V_b="+eqVb.toFixed(0)+" mL, "+A.salt+")") : "";
+      el("nRel").className = eq ? "relation eq" : "relation";
+
+      // ---- ステップヘッダ ----
+      el("nBadge").textContent = "step "+step+" / 4";
+      el("nTitle").textContent = info[step].t;
+      el("nCap").textContent = info[step].c;
+      el("nPrev").disabled = step<=1;
+      el("nNext").disabled = step>=4;
+
+      // ---- トグル外観 ----
+      el("tHCl").className = "toggle"+(acid==="HCl"?" on":"");
+      el("tH2SO4").className = "toggle"+(acid==="H2SO4"?" on":"");
+    }
+
+    el("nNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("nPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("nSlider").addEventListener("input",function(e){Vb=parseFloat(e.target.value);render();});
+    el("tHCl").addEventListener("click",function(){acid="HCl";render();});
+    el("tH2SO4").addEventListener("click",function(){acid="H2SO4";render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

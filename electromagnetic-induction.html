@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>電磁誘導とレンツの法則 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .seg{display:inline-flex; border:1px solid var(--bd); border-radius:10px; overflow:hidden;}
+  .seg button{border:none; border-radius:0; padding:8px 16px;}
+  .seg button.on{background:var(--blue); color:#fff;}
+  .seg button.on:hover{background:var(--blue);}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .readouts{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
+  .ro{flex:1 1 46%; min-width:160px; border:1px solid var(--bd); border-radius:10px; padding:9px 12px; font-size:14px;}
+  .ro .k{color:var(--sub); font-size:12px; display:block; margin-bottom:2px;}
+  .ro .v{font-weight:600;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>電磁誘導とレンツの法則</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。<b>磁石の動き</b>を切り替えると、誘導電流の向きと検流計の振れが反転します。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>レンツの法則</b>。誘導電流は「コイルを貫く磁束の変化を妨げる向き」に流れます。近づける／遠ざけるで電流は逆向きになります。</div>
+
+  <!-- 電磁誘導 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="emBadge">step 1 / 4</span>
+        <span class="steptitle" id="emTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="emPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="emNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">電磁誘導とレンツの法則</h2>
+    <p class="hint">棒磁石のN極をコイルに向けて動かすと、コイルを貫く磁束Φが変化し、誘導電流が流れます。</p>
+    <div class="stage">
+      <svg id="emSvg" viewBox="0 0 600 360" role="img" aria-label="磁石とコイルの電磁誘導">
+        <g id="em_coil" data-ms="1" fill="none" stroke="var(--ink)" stroke-width="3"></g>
+        <g id="em_flux" data-ms="2"></g>
+        <g id="em_magnet" data-ms="1"></g>
+        <g id="em_move" data-ms="1"></g>
+        <g id="em_wires" data-ms="1" fill="none" stroke="var(--ink)" stroke-width="2.4"></g>
+        <g id="em_curr" data-ms="3"></g>
+        <g id="em_pole" data-ms="3"></g>
+        <g id="em_galv" data-ms="1"></g>
+        <g id="em_needle" data-ms="3"></g>
+      </svg>
+    </div>
+    <p class="cap" id="emCap"></p>
+    <div class="ctl">
+      <label>磁石の動き</label>
+      <span class="seg" role="group" aria-label="磁石の動きを選ぶ">
+        <button id="emApproach" class="on">近づける</button>
+        <button id="emRecede">遠ざける</button>
+      </span>
+    </div>
+    <div class="relation" id="emRel">
+      <span style="color:var(--blue)">誘導起電力</span>
+      <span id="emEmf" style="margin-left:8px; font-weight:600">V = −N ΔΦ/Δt</span>
+      <span class="eqnote" id="emEqn"></span>
+    </div>
+    <div class="readouts">
+      <div class="ro"><span class="k">磁束 Φ の変化</span><span class="v" id="emFlux">増加 (N極が接近)</span></div>
+      <div class="ro"><span class="k">誘導電流(妨げる向き)</span><span class="v" id="emCurr">磁石側が N 極 → 反発</span></div>
+      <div class="ro"><span class="k">検流計の針</span><span class="v" id="emGalv">右に振れる</span></div>
+      <div class="ro"><span class="k">起電力が大きくなる条件</span><span class="v">速い・磁界が強い・N が多い</span></div>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a> ・ © AI塾 / trillion-ai-juku.com ・ 図のラベルや極の表記は指導用に整理した表現です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 電磁誘導 ===== */
+  (function(){
+    var step=1, dir=1; // dir=+1 近づける(approach), -1 遠ざける(recede)
+
+    var info=[null,
+      {t:"磁束Φが変化", c:"コイルに棒磁石のN極を近づけると、コイルを貫く磁束Φが変化します。この磁束の変化が電磁誘導の原因です。"},
+      {t:"レンツの法則", c:"レンツの法則: 誘導電流は『磁束の変化を妨げる』向きに流れます。増えるなら減らそうと、減るなら保とうと働きます。"},
+      {t:"近づける", c:"N極を近づける=磁束(N向き)が増加。これを妨げるため、コイルの磁石側がN極になる向きに誘導電流が流れ、磁石を反発します。"},
+      {t:"遠ざける", c:"N極を遠ざける=磁束が減少。これを引き止めるため、コイルの磁石側がS極になる向きに誘導電流が流れ(近づける時と逆)、磁石を引きつけます。"}];
+
+    var cAX=315, cAY=180;
+    var loopRx=18, loopRy=58;
+    var loops=4, loopGap=26;
+    var coilLeft=cAX-(loops-1)/2*loopGap;
+
+    function buildCoil(){
+      var g=el("em_coil"), s="";
+      for(var i=0;i<loops;i++){
+        var cx=coilLeft+i*loopGap;
+        s+='<ellipse cx="'+cx.toFixed(1)+'" cy="'+cAY+'" rx="'+loopRx+'" ry="'+loopRy+'" />';
+      }
+      g.innerHTML=s;
+    }
+
+    function buildMagnet(){
+      var g=el("em_magnet");
+      var mTop=cAY-26, mH=52;
+      var mLeft=70;
+      var nearD = (dir>0)? 0 : 70;
+      var x=mLeft+nearD;
+      var halfW=70;
+      var s="";
+      s+='<rect x="'+x+'" y="'+mTop+'" width="'+halfW+'" height="'+mH+'" rx="6" fill="#3b82f6" />';
+      s+='<rect x="'+(x+halfW)+'" y="'+mTop+'" width="'+halfW+'" height="'+mH+'" rx="6" fill="var(--red)" />';
+      s+='<text x="'+(x+halfW/2)+'" y="'+(mTop+mH/2+7)+'" font-size="22" font-weight="700" fill="#fff" text-anchor="middle">S</text>';
+      s+='<text x="'+(x+halfW+halfW/2)+'" y="'+(mTop+mH/2+7)+'" font-size="22" font-weight="700" fill="#fff" text-anchor="middle">N</text>';
+      g.innerHTML=s;
+      g._nx=x+2*halfW;
+    }
+
+    function buildMove(){
+      var g=el("em_magnet");
+      var nx=g._nx;
+      var mv=el("em_move");
+      var ay=120, x1, x2;
+      if(dir>0){ x1=nx+6; x2=nx+58; }
+      else     { x1=nx+58; x2=nx+6; }
+      var s='<line x1="'+x1+'" y1="'+ay+'" x2="'+x2+'" y2="'+ay+'" stroke="var(--sub)" stroke-width="3"/>';
+      if(dir>0){
+        s+='<polygon points="'+x2+','+ay+' '+(x2-12)+','+(ay-7)+' '+(x2-12)+','+(ay+7)+'" fill="var(--sub)"/>';
+      }else{
+        s+='<polygon points="'+x2+','+ay+' '+(x2+12)+','+(ay-7)+' '+(x2+12)+','+(ay+7)+'" fill="var(--sub)"/>';
+      }
+      s+='<text x="'+((x1+x2)/2)+'" y="'+(ay-12)+'" font-size="13" fill="var(--sub)" text-anchor="middle">'+(dir>0?"近づける":"遠ざける")+'</text>';
+      mv.innerHTML=s;
+    }
+
+    function buildFlux(){
+      var g=el("em_flux");
+      var y=cAY;
+      var n = (dir>0)? 3 : 2;
+      var op = (dir>0)? 1 : 0.55;
+      var s="";
+      var xStart=coilLeft-loopRx-24, xEnd=coilLeft+(loops-1)*loopGap+loopRx+24;
+      for(var i=0;i<n;i++){
+        var yy = y - (n-1)*9/2 + i*9;
+        s+='<line x1="'+xStart.toFixed(1)+'" y1="'+yy.toFixed(1)+'" x2="'+(xEnd-12).toFixed(1)+'" y2="'+yy.toFixed(1)+'" stroke="var(--green)" stroke-width="2" opacity="'+op+'"/>';
+        s+='<polygon points="'+xEnd.toFixed(1)+','+yy.toFixed(1)+' '+(xEnd-12).toFixed(1)+','+(yy-5).toFixed(1)+' '+(xEnd-12).toFixed(1)+','+(yy+5).toFixed(1)+'" fill="var(--green)" opacity="'+op+'"/>';
+      }
+      s+='<text x="'+((xStart+xEnd)/2).toFixed(1)+'" y="'+(y-(n-1)*4.5-12).toFixed(1)+'" font-size="13" fill="var(--green)" text-anchor="middle">磁束 &#934; ('+(dir>0?"増加":"減少")+')</text>';
+      g.innerHTML=s;
+    }
+
+    function buildWires(){
+      var g=el("em_wires");
+      var topX=coilLeft, botX=coilLeft+(loops-1)*loopGap;
+      var yBot=cAY+loopRy;
+      var gx=470, gy=300, gr=34;
+      var s="";
+      s+='<path d="M'+topX+' '+yBot+' L'+topX+' 300 L'+(gx-gr-8)+' 300" />';
+      s+='<path d="M'+botX+' '+yBot+' L'+botX+' 330 L'+(gx)+' 330 L'+(gx)+' '+(gy+gr)+'" />';
+      g.innerHTML=s;
+      g._gx=gx; g._gy=gy; g._gr=gr;
+      g._leftX=topX; g._rightX=botX; g._yBot=yBot;
+    }
+
+    function buildGalv(){
+      var w=el("em_wires");
+      var gx=w._gx, gy=w._gy, gr=w._gr;
+      var g=el("em_galv");
+      var s='<circle cx="'+gx+'" cy="'+gy+'" r="'+gr+'" fill="var(--card)" stroke="var(--ink)" stroke-width="2.4"/>';
+      s+='<line x1="'+(gx-gr*0.66)+'" y1="'+(gy-gr*0.55)+'" x2="'+(gx+gr*0.66)+'" y2="'+(gy-gr*0.55)+'" stroke="var(--gray)" stroke-width="1.4"/>';
+      s+='<text x="'+gx+'" y="'+(gy+gr*0.78)+'" font-size="16" font-weight="700" fill="var(--ink)" text-anchor="middle">G</text>';
+      g.innerHTML=s;
+    }
+
+    function buildNeedle(){
+      var w=el("em_wires");
+      var gx=w._gx, gy=w._gy, gr=w._gr;
+      var g=el("em_needle");
+      var ang = (dir>0)? 32 : -32;
+      var rad = ang*Math.PI/180;
+      var len = gr*0.72;
+      var pivY = gy+gr*0.42;
+      var tipX = gx + len*Math.sin(rad);
+      var tipY = pivY - len*Math.cos(rad);
+      var s='<line x1="'+gx.toFixed(1)+'" y1="'+pivY.toFixed(1)+'" x2="'+tipX.toFixed(1)+'" y2="'+tipY.toFixed(1)+'" stroke="var(--red)" stroke-width="2.6"/>';
+      s+='<circle cx="'+gx+'" cy="'+pivY.toFixed(1)+'" r="2.6" fill="var(--ink)"/>';
+      g.innerHTML=s;
+    }
+
+    function buildCurrent(){
+      var w=el("em_wires");
+      var g=el("em_curr");
+      var topX=w._leftX, gx=w._gx, gr=w._gr;
+      var ax1=topX+24, ax2=gx-gr-30;
+      var midX=(ax1+ax2)/2, midY=300;
+      var s="";
+      if(dir>0){
+        s+='<polygon points="'+(midX+12)+','+midY+' '+(midX-6)+','+(midY-8)+' '+(midX-6)+','+(midY+8)+'" fill="var(--blue)"/>';
+      }else{
+        s+='<polygon points="'+(midX-12)+','+midY+' '+(midX+6)+','+(midY-8)+' '+(midX+6)+','+(midY+8)+'" fill="var(--blue)"/>';
+      }
+      s+='<text x="'+midX+'" y="'+(midY+22)+'" font-size="13" fill="var(--blue)" text-anchor="middle">誘導電流 I</text>';
+      var cx=coilLeft, cyTop=cAY-loopRy;
+      if(dir>0){
+        s+='<polygon points="'+(cx+9)+','+(cyTop)+' '+(cx-5)+','+(cyTop-7)+' '+(cx-5)+','+(cyTop+7)+'" fill="var(--blue)" opacity="0.9"/>';
+      }else{
+        s+='<polygon points="'+(cx-9)+','+(cyTop)+' '+(cx+5)+','+(cyTop-7)+' '+(cx+5)+','+(cyTop+7)+'" fill="var(--blue)" opacity="0.9"/>';
+      }
+      g.innerHTML=s;
+    }
+
+    function buildPole(){
+      var g=el("em_pole");
+      var px=coilLeft-loopRx-6, py=cAY+5;
+      var pole = (dir>0)? "N" : "S";
+      var col = (dir>0)? "var(--red)" : "#3b82f6";
+      var note = (dir>0)? "反発" : "引きつけ";
+      var s='<text x="'+px+'" y="'+py+'" font-size="20" font-weight="700" fill="'+col+'" text-anchor="end">'+pole+'</text>';
+      s+='<text x="'+px+'" y="'+(py+18)+'" font-size="12" fill="'+col+'" text-anchor="end">('+note+')</text>';
+      g.innerHTML=s;
+    }
+
+    function render(){
+      dir = (step===4) ? -1 : 1;   // dirはstepから一意に決定(step4=遠ざける/それ以外=近づける)→本文(info[step])と図・読み出しが常に一致
+      buildCoil(); buildMagnet(); buildMove(); buildFlux();
+      buildWires(); buildGalv(); buildNeedle(); buildCurrent(); buildPole();
+      vis("emSvg",step);
+
+      el("emFlux").textContent = (dir>0) ? "増加 (N極が接近)" : "減少 (N極が離れる)";
+      el("emCurr").textContent = (dir>0) ? "磁石側が N 極 → 反発" : "磁石側が S 極 → 引きつけ";
+      el("emGalv").textContent = (dir>0) ? "右に振れる" : "左に振れる";
+
+      el("emRel").className = "relation eq";
+      el("emEqn").textContent = "（V = −N ΔΦ/Δt：変化を妨げる向き）";
+
+      el("emApproach").className = (dir>0) ? "on" : "";
+      el("emRecede").className   = (dir>0) ? "" : "on";
+
+      el("emBadge").textContent="step "+step+" / 4";
+      el("emTitle").textContent=info[step].t;
+      el("emCap").textContent=info[step].c;
+      el("emPrev").disabled=step<=1; el("emNext").disabled=step>=4;
+    }
+
+    el("emNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("emPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("emApproach").addEventListener("click",function(){step=3; render();}); // 近づける=step3(dirは自動で+1)
+    el("emRecede").addEventListener("click",function(){step=4; render();});   // 遠ざける=step4(dirは自動で-1)
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

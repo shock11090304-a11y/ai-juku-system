@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ドップラー効果 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  button.toggle.on{background:var(--info-bg); color:var(--info-ink); border-color:var(--info-ink);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.up{background:var(--info-bg); border-color:var(--info-ink);}
+  .relation.down{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ドップラー効果</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで <b>音源の速さ</b> を、トグルで <b>近づく／遠ざかる</b> を切り替えると、観測される音の高さ（振動数）が変わります。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>音源が動くと前方では波面が詰まり、後方では広がる</b>。近づくと振動数が大きく（高い音）、遠ざかると小さく（低い音）。式は f′ = f₀·V/(V∓vs)。</div>
+
+  <!-- 動く音源によるドップラー効果 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="dBadge">step 1 / 4</span>
+        <span class="steptitle" id="dTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="dPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="dNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">動く音源によるドップラー効果</h2>
+    <p class="hint">音速 V=340 m/s・音源振動数 f₀=500 Hz は固定。観測者は静止。波面（同心円）は等スケールで真円に描いています。</p>
+    <div class="stage">
+      <svg id="dSvg" viewBox="0 0 600 360" role="img" aria-label="動く音源のドップラー効果と波面">
+        <!-- 進行方向の軸 -->
+        <line id="d_axis" data-ms="2" stroke="var(--gray)" stroke-width="1.2" stroke-dasharray="5 5"></line>
+        <!-- 波面（同心円）：4つの円 -->
+        <circle id="d_w1" class="wave" data-ms="1" fill="none" stroke="var(--blue)" stroke-width="2"></circle>
+        <circle id="d_w2" class="wave" data-ms="1" fill="none" stroke="var(--blue)" stroke-width="2"></circle>
+        <circle id="d_w3" class="wave" data-ms="1" fill="none" stroke="var(--blue)" stroke-width="2"></circle>
+        <circle id="d_w4" class="wave" data-ms="1" fill="none" stroke="var(--blue)" stroke-width="2"></circle>
+        <!-- 前方/後方の説明 -->
+        <text id="d_front" data-ms="2" font-size="13" text-anchor="middle" fill="var(--red)">前方：波面が詰まる（高い）</text>
+        <text id="d_back" data-ms="2" font-size="13" text-anchor="middle" fill="var(--green)">後方：波面が広がる（低い）</text>
+        <!-- 音源 -->
+        <circle id="d_src" data-ms="1" r="6.5" fill="var(--ink)"></circle>
+        <text id="d_srcl" data-ms="1" font-size="13" text-anchor="middle" fill="var(--ink)">音源 S</text>
+        <!-- 音源の速度ベクトル -->
+        <line id="d_vec" data-ms="2" stroke="var(--ink)" stroke-width="2.5"></line>
+        <polyline id="d_vech" data-ms="2" fill="none" stroke="var(--ink)" stroke-width="2.5"></polyline>
+        <text id="d_vecl" data-ms="2" font-size="14" font-style="italic" text-anchor="middle" fill="var(--ink)">vs</text>
+        <!-- 観測者（耳） -->
+        <circle id="d_obs" data-ms="1" r="5.5" fill="var(--red)"></circle>
+        <text id="d_obsl" data-ms="1" font-size="13" text-anchor="middle" fill="var(--red)">観測者 O</text>
+        <!-- 振動数の表示 -->
+        <text id="d_fbig" data-ms="3" font-size="20" font-weight="600" text-anchor="middle" fill="var(--ink)"></text>
+      </svg>
+    </div>
+    <p class="cap" id="dCap"></p>
+    <div class="ctl">
+      <label for="dSlider">音源の速さ vs</label>
+      <input type="range" id="dSlider" min="0" max="120" step="5" value="60">
+      <span class="out" id="dOut">vs = 60 m/s</span>
+    </div>
+    <div class="ctl">
+      <label>音源の向き</label>
+      <button id="dToggle" class="toggle on">近づく ←</button>
+      <span class="out" id="dDir" style="min-width:0; flex:1; text-align:left; color:var(--sub); font-weight:400;">観測者に近づいています</span>
+    </div>
+    <div class="relation" id="dRel">
+      <span style="color:var(--red)">f′ = f₀·V/(V−vs)</span> = <span id="dFp">607</span> Hz
+      <span class="eqnote" id="dNote"></span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ 物理量の単位（Hz・m/s）と波面の真円表示は指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y,r){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);if(r!=null)e.setAttribute("r",r);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 動く音源によるドップラー効果 ===== */
+  (function(){
+    var V=340, f0=500;          // 固定: 音速[m/s], 音源振動数[Hz]
+    var step=1, vs=60, near=true; // near=true: 近づく
+    // 図のジオメトリ（x,y 等スケール = 真円）
+    var CY=170;                 // 波面の中心となる横軸の y
+    var ORIGIN=300;             // 音源の現在位置 x（中央）
+    var baseR=46;               // 静止時の波長相当（円の基準半径）
+    // 各波面が放出された「時刻前」の段階 n=1..4（古いほど大きく、音源は当時 後方寄り）
+    function render(){
+      var dirSign = +1;   // 音源は常に右へ進む（前方=右=波面が詰まる / 後方=左=広がる）。近づく/遠ざかるは観測者の位置で表す
+      // 速さに応じた波面のずれ量（見やすさのための係数。物理比 vs/V に比例）。step1は静止＝同心円
+      var shift = (step>=2) ? (vs/V) * baseR : 0;      // 1波長あたりの中心移動量
+      // 音源は右(観測者方向)に進む想定で描画。遠ざかる時は左へ。
+      // 波面 n（n=1 が最新・小, n=4 が最古・大）。半径 = n*baseR。
+      // 中心は、放出時の音源位置 = ORIGIN - dirSign*(n-1)*shift（過去ほど進行方向の逆側）
+      var ids=["d_w1","d_w2","d_w3","d_w4"];
+      for(var n=1;n<=4;n++){
+        var R=n*baseR;
+        var cx=ORIGIN - dirSign*(n-1)*shift;
+        setC(ids[n-1], cx, CY, R);
+      }
+      // 進行方向軸
+      setLine("d_axis", 40, CY, 560, CY);
+      // 音源（現在位置）
+      setC("d_src", ORIGIN, CY, 6.5);
+      setT("d_srcl", ORIGIN, CY+24, null);
+      // 速度ベクトル（進行方向）
+      var vx0=ORIGIN, vlen=34*dirSign;
+      setLine("d_vec", vx0, CY-22, vx0+vlen, CY-22);
+      var hx=vx0+vlen;
+      setT("d_vecl", vx0+vlen/2, CY-30, null);
+      // 矢じり
+      attr("d_vech","points",(hx-7*dirSign)+","+(CY-28)+" "+hx+","+(CY-22)+" "+(hx-7*dirSign)+","+(CY-16));
+      // 観測者：近づく＝前方(右・波面が詰まる側), 遠ざかる＝後方(左・波面が広がる側)
+      var obsX = ORIGIN + (near ? 1 : -1)*230;
+      setC("d_obs", obsX, CY, 5.5);
+      setT("d_obsl", obsX, CY+24, null);
+      // 前方/後方ラベル（進行方向＝dirSign側が前方）
+      setT("d_front", ORIGIN + dirSign*150, CY+95, null);
+      setT("d_back",  ORIGIN - dirSign*150, CY+95, null);
+      // 観測振動数（step1 は静止扱い＝vsEff=0 で f′=f₀、同心円の説明と一致させる）
+      var vsEff = (step>=2) ? vs : 0;
+      var denom = near ? (V - vsEff) : (V + vsEff);   // vs<V なので常に正
+      var fp = f0 * V / denom;
+      var fpR = Math.round(fp);
+      // 段階表示
+      vis("dSvg",step);
+      // 大きな振動数表示（step3 以降）
+      setT("d_fbig", obsX, CY-40, "f′ = "+fpR+" Hz");
+      // 読み出し更新
+      el("dOut").textContent = "vs = "+vs.toFixed(0)+" m/s";
+      el("dFp").textContent = fpR;
+      // 式の表示（近づく/遠ざかるで分母記号を切替）
+      var formula = el("dRel").querySelector("span");
+      if(step<2){
+        // 静止：全方向 f₀（step1 の同心円と一致）
+        formula.textContent = "静止：f′ = f₀ = 500 Hz";
+        el("dDir").textContent = "音源は静止 → どの向きでも f₀=500 Hz（同心円）";
+        el("dRel").className = "relation";
+        el("dNote").textContent = "「次へ」で音源が動き出します";
+        el("dNote").style.color = "var(--sub)";
+        el("dToggle").textContent = near ? "近づく ←" : "遠ざかる →";
+        el("dToggle").className = near ? "toggle on" : "toggle";
+      }else if(near){
+        formula.textContent = "f′ = f₀·V/(V−vs)";
+        el("dDir").textContent = "観測者に近づいています → 高くなる（振動数大）";
+        el("dRel").className = "relation up";
+        el("dNote").textContent = (vs>0) ? ("f₀=500 Hz より高い（+"+(fpR-f0)+" Hz）") : "vs=0 なら f′=f₀=500 Hz";
+        el("dNote").style.color = "var(--info-ink)";
+        el("dToggle").textContent = "近づく ←";
+        el("dToggle").className = "toggle on";
+      }else{
+        formula.textContent = "f′ = f₀·V/(V+vs)";
+        el("dDir").textContent = "観測者から遠ざかっています → 低くなる（振動数小）";
+        el("dRel").className = "relation down";
+        el("dNote").textContent = (vs>0) ? ("f₀=500 Hz より低い（−"+(f0-fpR)+" Hz）") : "vs=0 なら f′=f₀=500 Hz";
+        el("dNote").style.color = "var(--ok-ink)";
+        el("dToggle").textContent = "遠ざかる →";
+        el("dToggle").className = "toggle";
+      }
+      // 波面の色：前方（進行方向側）の波面は詰まる＝強調
+      // 段階ステップ説明
+      var info=[null,
+        {t:"静止なら同心円", c:"静止した音源は、まわりに同心円状の波を一定の波長で出します。どの向きでも波長は同じなので、音の高さも全方向で f₀=500 Hz です。"},
+        {t:"動くと波面がずれる", c:"音源が動くと、進行方向（前方）では波面が詰まって波長が短くなり（高い音）、後方では波面が広がって波長が長くなります（低い音）。トグルで観測者を前方（近づく＝高い）／後方（遠ざかる＝低い）に置けます。"},
+        {t:"観測振動数の式", c:"観測者が静止で音源が動くとき、近づく：f′=f₀·V/(V−vs)、遠ざかる：f′=f₀·V/(V+vs)。V=340 m/s, f₀=500 Hz。vs<V なので分母は常に正（0除算なし）。"},
+        {t:"速いほど大きく変化", c:"スライダーで vs を大きくすると、前方の波面はより詰まり、観測振動数 f′ の変化も大きくなります。トグルで向きを変え、高い／低いの切り替わりを確認しましょう。"}];
+      el("dBadge").textContent="step "+step+" / 4";
+      el("dTitle").textContent=info[step].t;
+      el("dCap").textContent=info[step].c;
+      el("dPrev").disabled=step<=1; el("dNext").disabled=step>=4;
+    }
+    el("dNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("dPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("dSlider").addEventListener("input",function(e){vs=parseFloat(e.target.value);render();});
+    el("dToggle").addEventListener("click",function(){near=!near;render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

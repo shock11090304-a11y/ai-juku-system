@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>凸レンズの結像 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>凸レンズの結像</h1>
+    <p class="lead">「次へ／戻る」で作図が1ステップずつ完成。スライダーで <b>物体距離 a</b> を動かすと、2本の主要光線の交点に <b>倒立実像</b> ができる様子が見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>レンズの公式 1/a + 1/b = 1/f</b> と <b>倍率 m = b/a</b>。物体が焦点より外側（a &gt; f）にあるとき、像はレンズの反対側に <b>倒立実像</b> としてできます。</div>
+
+  <!-- 凸レンズの結像作図 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="lensBadge">step 1 / 4</span>
+        <span class="steptitle" id="lensTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="lensPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="lensNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">凸レンズによる実像の作図</h2>
+    <p class="hint">焦点距離 f=4（目盛単位）固定。物体は焦点より外側（a &gt; f）なので、必ず倒立実像ができます。</p>
+    <div class="stage">
+      <svg id="lensSvg" viewBox="0 0 600 360" role="img" aria-label="凸レンズによる実像の作図">
+        <!-- 光軸 -->
+        <line id="x_axis" data-ms="1" stroke="var(--gray)" stroke-width="1.2"></line>
+        <!-- 凸レンズ本体 -->
+        <path id="x_lens" data-ms="1" fill="var(--info-bg)" stroke="var(--blue)" stroke-width="2"></path>
+        <line id="x_lensline" data-ms="1" stroke="var(--blue)" stroke-width="2"></line>
+        <!-- 焦点 -->
+        <circle id="x_fL" data-ms="1" r="3.5" fill="var(--gray)"></circle>
+        <circle id="x_fR" data-ms="1" r="3.5" fill="var(--gray)"></circle>
+        <text id="x_fLl" data-ms="1" font-size="13" text-anchor="middle" fill="var(--sub)">F</text>
+        <text id="x_fRl" data-ms="1" font-size="13" text-anchor="middle" fill="var(--sub)">F'</text>
+        <!-- 物体（上向き矢印） -->
+        <line id="x_obj" data-ms="1" stroke="var(--ink)" stroke-width="2.5"></line>
+        <polygon id="x_objHead" data-ms="1" fill="var(--ink)"></polygon>
+        <text id="x_objl" data-ms="1" font-size="14" text-anchor="middle" fill="var(--ink)">物体</text>
+        <!-- 距離 a の目盛ラベル -->
+        <text id="x_al" data-ms="1" font-size="14" font-style="italic" text-anchor="middle" fill="var(--sub)">a</text>
+        <!-- 光線① 平行→反対側の焦点 -->
+        <polyline id="x_ray1" data-ms="2" fill="none" stroke="var(--red)" stroke-width="2"></polyline>
+        <!-- 光線② 中心を通って直進 -->
+        <polyline id="x_ray2" data-ms="2" fill="none" stroke="var(--green)" stroke-width="2"></polyline>
+        <!-- 像（下向き矢印=倒立） -->
+        <line id="x_img" data-ms="3" stroke="var(--blue)" stroke-width="2.5"></line>
+        <polygon id="x_imgHead" data-ms="3" fill="var(--blue)"></polygon>
+        <text id="x_imgl" data-ms="3" font-size="14" text-anchor="middle" fill="var(--blue)">倒立実像</text>
+        <text id="x_bl" data-ms="3" font-size="14" font-style="italic" text-anchor="middle" fill="var(--sub)">b</text>
+        <!-- 交点 -->
+        <circle id="x_cross" data-ms="3" r="4.5" fill="var(--blue)"></circle>
+      </svg>
+    </div>
+    <p class="cap" id="lensCap"></p>
+    <div class="ctl">
+      <label for="lensSlider">物体距離 a を動かす</label>
+      <input type="range" id="lensSlider" min="6" max="12" step="0.5" value="8">
+      <span class="out" id="lensOut">a=8.0</span>
+    </div>
+    <div class="relation" id="lensRel">
+      <span style="color:var(--sub)">f = 4</span>
+      <span style="margin:0 6px">,</span>
+      <span style="color:var(--ink)">a = <span id="lensA">8.00</span></span>
+      <span style="margin:0 8px; font-weight:600">→</span>
+      <span style="color:var(--blue)">b = af/(a−f) = <span id="lensB">8.00</span></span>
+      <span style="margin:0 8px; font-weight:600">,</span>
+      <span style="color:var(--green)">m = b/a = <span id="lensM">1.00</span></span>
+      <span class="eqnote" id="lensKind">倒立実像</span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a> ・ © AI塾 / trillion-ai-juku.com ・ 数式記号や図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 凸レンズの結像 ===== */
+  (function(){
+    /* 等スケール: 1光学単位 = k px。光軸は y=CY、レンズは x=CX。 */
+    var k=20, CX=300, CY=185, f=4, step=1, a=8;
+    var objH=2.4;                 /* 物体の高さ(光学単位・図示用) */
+    function MX(u){return CX+u*k;} /* u: レンズからの符号付き距離(右が+) */
+    function MY(h){return CY-h*k;} /* h: 光軸からの高さ(上が+) */
+    var info=[null,
+      {t:"光軸・凸レンズ・焦点・物体", c:"水平な光軸の中央に凸レンズを置きます。レンズの左右に焦点 F（距離 f=4）。レンズの左に、距離 a の位置から上向きの矢印で物体を立てます。a > f なので物体は焦点より外側です。"},
+      {t:"主要光線を2本ひく", c:"① 物体の先端から光軸に平行な光線（赤）→ レンズで屈折し、反対側の焦点 F' を通る。② レンズの中心を通る光線（緑）→ 曲がらず直進する。この2本を延長します。"},
+      {t:"交点に倒立実像", c:"2本の光線の交点が像の先端です。物体と反対の下向き矢印=倒立実像。像距離 b はレンズの公式 1/a + 1/b = 1/f から決まります。a > f のとき b > 0 なので、レンズの反対側に実像ができます。"},
+      {t:"レンズの公式と倍率", c:"1/a + 1/b = 1/f を解くと b = af/(a−f)。倍率は m = b/a。スライダーで a を 6 に近づけると像は拡大(m>1)、12 に近づけると縮小(m<1)、a=8 でちょうど等倍(m=1)になります。"}];
+
+    /* 凸レンズの輪郭(両凸の弧2本) */
+    function lensPath(){
+      var top=CY-3.0*k, bot=CY+3.0*k, bulge=14;
+      return "M"+CX+","+top.toFixed(1)+
+             " Q"+(CX+bulge)+","+CY+" "+CX+","+bot.toFixed(1)+
+             " Q"+(CX-bulge)+","+CY+" "+CX+","+top.toFixed(1)+" Z";
+    }
+
+    function render(){
+      /* 物理計算: レンズの公式 1/a + 1/b = 1/f → b = af/(a-f) */
+      var denom=a-f;               /* a>f(=4)かつ a>=6 ゆえ denom>=2 で 0除算なし。a>=6で像が画面内に収まる */
+      var b=a*f/denom;             /* 像距離 b>0 */
+      var m=b/a;                   /* 倍率 m>0 */
+      var imgH=objH*m;             /* 像の高さ(光学単位)。倒立なので作図では下向き */
+
+      /* --- 光軸 --- */
+      setLine("x_axis",MX(-a-1.2),CY,MX(b+1.2),CY);
+
+      /* --- レンズ --- */
+      attr("x_lens","d",lensPath());
+      setLine("x_lensline",CX,CY-3.0*k,CX,CY+3.0*k);
+
+      /* --- 焦点 --- */
+      setC("x_fL",MX(-f),CY); setC("x_fR",MX(f),CY);
+      setT("x_fLl",MX(-f),CY+18); setT("x_fRl",MX(f),CY+18);
+
+      /* --- 物体(上向き矢印, レンズ左 距離a) --- */
+      var ox=MX(-a), otop=MY(objH);
+      setLine("x_obj",ox,CY,ox,otop);
+      attr("x_objHead","points",ox+","+(otop-9)+" "+(ox-5)+","+(otop+2)+" "+(ox+5)+","+(otop+2));
+      setT("x_objl",ox,CY+34);
+      setT("x_al",(CX+ox)/2,CY-6); /* a の目盛(光軸の上に置き F ラベルと衝突回避) */
+
+      /* --- 光線① 物体先端→光軸に平行→レンズで屈折し反対側焦点を通る --- */
+      /* 平行部: (-a,objH)→(0,objH)、屈折後: (0,objH)→F'(f,0)→延長して像位置 b へ */
+      var p1x=MX(-a), p1y=otop;          /* 物体先端 */
+      var p2x=CX,     p2y=otop;          /* レンズ上の入射点(高さobjH) */
+      var p3x=MX(b),  p3y=MY(-imgH);     /* 像先端(下向き=倒立) */
+      attr("x_ray1","points",p1x+","+p1y+" "+p2x+","+p2y+" "+p3x.toFixed(1)+","+p3y.toFixed(1));
+
+      /* --- 光線② 物体先端→レンズ中心→直進(像先端まで) --- */
+      attr("x_ray2","points",p1x+","+p1y+" "+CX+","+CY+" "+p3x.toFixed(1)+","+p3y.toFixed(1));
+
+      /* --- 像(下向き矢印=倒立, レンズ右 距離b) --- */
+      var ix=MX(b), ibot=MY(-imgH);
+      setLine("x_img",ix,CY,ix,ibot);
+      attr("x_imgHead","points",ix+","+(ibot+9)+" "+(ix-5)+","+(ibot-2)+" "+(ix+5)+","+(ibot-2));
+      setT("x_imgl",ix,CY-10);
+      setT("x_bl",(CX+ix)/2,CY-6); /* b の目盛(光軸の上に置き F' ラベルと衝突回避) */
+      setC("x_cross",ix,ibot);
+
+      vis("lensSvg",step);
+
+      /* --- 読み出し --- */
+      el("lensA").textContent=a.toFixed(2);
+      el("lensB").textContent=b.toFixed(2);
+      el("lensM").textContent=m.toFixed(2);
+      el("lensOut").textContent="a="+a.toFixed(1);
+      var kind="倒立実像";
+      if(m>1.02) kind="倒立実像（拡大 m>1）";
+      else if(m<0.98) kind="倒立実像（縮小 m<1）";
+      else kind="倒立実像（等倍 m=1）";
+      el("lensKind").textContent=kind;
+      el("lensRel").className="relation eq";
+
+      el("lensBadge").textContent="step "+step+" / 4";
+      el("lensTitle").textContent=info[step].t;
+      el("lensCap").textContent=info[step].c;
+      el("lensPrev").disabled=step<=1;
+      el("lensNext").disabled=step>=4;
+    }
+    el("lensNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("lensPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("lensSlider").addEventListener("input",function(e){a=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

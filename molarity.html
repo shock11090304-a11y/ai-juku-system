@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>モル濃度と希釈 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+    --sol:#2563eb;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a;
+           --sol:#3b82f6; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>モル濃度と希釈</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで溶質の物質量 <b>n</b> と溶液の体積 <b>V</b> を変えると、<b>モル濃度 c = n / V</b> が色の濃さで見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>c = n / V (mol/L)</b>。希釈では溶質の量 (mol) は変わらないので <b>c₁V₁ = c₂V₂</b>。水を加えて体積を2倍にすると、濃度は半分になります。</div>
+
+  <!-- ① モル濃度と希釈のビーカー -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="bkBadge">step 1 / 4</span>
+        <span class="steptitle" id="bkTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="bkPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="bkNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">モル濃度と希釈</h2>
+    <p class="hint">液面の高さは体積 V に、色の濃さはモル濃度 c に比例します。溶質の粒子の数は物質量 n に応じて散らばります。</p>
+    <div class="stage">
+      <svg id="bkSvg" viewBox="0 0 600 360" role="img" aria-label="モル濃度と希釈のビーカー">
+        <!-- 溶液（液面の高さ∝V、色∝c） -->
+        <rect id="b_liq" data-ms="1" x="120" y="120" width="160" height="180" rx="4" fill="var(--sol)"></rect>
+        <!-- 溶質粒子 -->
+        <g id="b_dots" data-ms="1"></g>
+        <!-- ビーカー外形 -->
+        <path id="b_glass" d="M112 70 L112 308 Q112 316 120 316 L280 316 Q288 316 288 308 L288 70"
+              fill="none" stroke="var(--ink)" stroke-width="2.5"></path>
+        <!-- 目盛り 0..4 L -->
+        <g id="b_scale"></g>
+        <!-- 液面ライン -->
+        <line id="b_surf" data-ms="1" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="0"></line>
+        <!-- 希釈の矢印と注記（step3 以降） -->
+        <line id="b_warr" data-ms="3" stroke="var(--green)" stroke-width="2.5" marker-end="url(#bk_ah)"></line>
+        <text id="b_wlab" data-ms="3" font-size="14" fill="var(--green)" text-anchor="middle">水を加える</text>
+        <text id="b_riseL" data-ms="3" font-size="13" fill="var(--green)" text-anchor="start">液面が上がる→色は薄く</text>
+        <!-- 読み出しラベル群 -->
+        <text id="b_cN"  data-ms="1" font-size="16" fill="var(--ink)" text-anchor="start">n =</text>
+        <text id="b_cV"  data-ms="1" font-size="16" fill="var(--ink)" text-anchor="start">V =</text>
+        <text id="b_cC"  data-ms="1" font-size="18" fill="var(--blue)" text-anchor="start" font-weight="600">c = n / V =</text>
+        <text id="b_dilL" data-ms="3" font-size="15" fill="var(--green)" text-anchor="start">c₁V₁ = c₂V₂</text>
+        <defs>
+          <marker id="bk_ah" markerWidth="9" markerHeight="9" refX="6.5" refY="3.2" orient="auto">
+            <path d="M0 0 L7 3.2 L0 6.4 Z" fill="var(--green)"></path>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+    <p class="cap" id="bkCap"></p>
+    <div class="ctl">
+      <label for="bkSliderN">溶質の物質量 n</label>
+      <input type="range" id="bkSliderN" min="0.1" max="2.0" step="0.1" value="1.0">
+      <span class="out" id="bkOutN">n = 1.0 mol</span>
+    </div>
+    <div class="ctl">
+      <label for="bkSliderV">溶液の体積 V</label>
+      <input type="range" id="bkSliderV" min="0.5" max="4.0" step="0.5" value="1.0">
+      <span class="out" id="bkOutV">V = 1.0 L</span>
+    </div>
+    <div class="relation" id="bkRel">
+      <span style="color:var(--ink)">c = n / V</span> =
+      <span id="bkN">1.0</span> mol / <span id="bkV">1.0</span> L =
+      <span style="color:var(--blue); font-weight:600"><span id="bkC">1.00</span> mol/L</span>
+      <span class="eqnote" id="bkEq"></span>
+    </div>
+  </section>
+
+  <!-- ② 希釈の関係 c₁V₁ = c₂V₂ -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="dlBadge">step 1 / 2</span>
+        <span class="steptitle" id="dlTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="dlPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="dlNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">希釈の関係</h2>
+    <p class="hint">希釈の前後で溶質の量 (mol) は不変。「希釈する」トグルで、もとの溶液に水を加えて体積を2倍にした様子を見比べます。</p>
+    <div class="stage">
+      <svg id="dlSvg" viewBox="0 0 600 320" role="img" aria-label="希釈前後の比較">
+        <!-- 左：希釈前 -->
+        <rect id="d_liq1" x="80" y="120" width="120" height="150" rx="4" fill="var(--sol)"></rect>
+        <g id="d_dots1"></g>
+        <path d="M74 60 L74 262 Q74 270 82 270 L198 270 Q206 270 206 262 L206 60"
+              fill="none" stroke="var(--ink)" stroke-width="2.5"></path>
+        <line id="d_surf1" x1="74" y1="120" x2="206" y2="120" stroke="var(--ink)" stroke-width="1.5"></line>
+        <text x="140" y="42" font-size="14" fill="var(--ink)" text-anchor="middle">希釈前</text>
+        <text id="d_lab1" x="140" y="296" font-size="15" fill="var(--blue)" text-anchor="middle" font-weight="600">c₁ = 1.00 mol/L</text>
+        <text x="140" y="314" font-size="12" fill="var(--sub)" text-anchor="middle">V₁ = 1.0 L, n = 1.0 mol</text>
+        <!-- 矢印 -->
+        <line id="d_arr" data-ms="2" x1="232" y1="170" x2="318" y2="170" stroke="var(--green)" stroke-width="2.5" marker-end="url(#dl_ah)"></line>
+        <text id="d_arrl" data-ms="2" x="275" y="158" font-size="13" fill="var(--green)" text-anchor="middle">+ 水</text>
+        <text id="d_arrl2" data-ms="2" x="275" y="190" font-size="12" fill="var(--green)" text-anchor="middle">V を2倍</text>
+        <!-- 右：希釈後 -->
+        <rect id="d_liq2" data-ms="2" x="380" y="60" width="120" height="210" rx="4" fill="var(--sol)"></rect>
+        <g id="d_dots2" data-ms="2"></g>
+        <path id="d_glass2" data-ms="2" d="M374 40 L374 262 Q374 270 382 270 L498 270 Q506 270 506 262 L506 40"
+              fill="none" stroke="var(--ink)" stroke-width="2.5"></path>
+        <line id="d_surf2" data-ms="2" x1="374" y1="60" x2="506" y2="60" stroke="var(--ink)" stroke-width="1.5"></line>
+        <text id="d_t2" data-ms="2" x="440" y="28" font-size="14" fill="var(--ink)" text-anchor="middle">希釈後</text>
+        <text id="d_lab2" data-ms="2" x="440" y="296" font-size="15" fill="var(--green)" text-anchor="middle" font-weight="600">c₂ = 0.50 mol/L</text>
+        <text id="d_lab2b" data-ms="2" x="440" y="314" font-size="12" fill="var(--sub)" text-anchor="middle">V₂ = 2.0 L, n = 1.0 mol</text>
+        <defs>
+          <marker id="dl_ah" markerWidth="9" markerHeight="9" refX="6.5" refY="3.2" orient="auto">
+            <path d="M0 0 L7 3.2 L0 6.4 Z" fill="var(--green)"></path>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+    <p class="cap" id="dlCap"></p>
+    <div class="ctl">
+      <label for="dlToggle">希釈する（水を加えて V を2倍に）</label>
+      <button id="dlToggle">希釈する →</button>
+      <span class="out" id="dlOut">希釈前</span>
+    </div>
+    <div class="relation" id="dlRel">
+      <span style="color:var(--blue)">c₁V₁</span> = <span id="dlLeft">1.00 × 1.0 = 1.0 mol</span>
+      <span style="margin:0 8px; font-weight:600">=</span>
+      <span style="color:var(--green)">c₂V₂</span> = <span id="dlRight">0.50 × 2.0 = 1.0 mol</span>
+      <span class="eqnote" id="dlEq">溶質の量 (mol) は不変</span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ 化学記号や図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* 色の濃さ(不透明度)をモル濃度 c から決める。c=0→淡, c=2→濃。0除算なし(V>=0.5)。 */
+  function opacityFromC(c){
+    var o=0.18+0.40*c;            /* c=0.025→0.19, c=2.0→0.98 */
+    if(o<0.12)o=0.12; if(o>0.96)o=0.96;
+    return o.toFixed(3);
+  }
+  /* ビーカー内に粒子を散らす。countは n に比例した整数。 */
+  function dots(gid, count, x0, y0, w, h){
+    var g=el(gid); g.innerHTML="";
+    /* 疑似乱数（固定seed）で再現性を保つ */
+    var seed=1234567;
+    function rnd(){seed=(seed*1103515245+12345)&0x7fffffff; return seed/0x7fffffff;}
+    var n=Math.max(0,Math.round(count));
+    var pad=10;
+    for(var i=0;i<n;i++){
+      var px=(x0+pad)+rnd()*(w-2*pad);
+      var py=(y0+pad)+rnd()*(h-2*pad);
+      g.innerHTML+='<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="3.2" fill="var(--red)" opacity="0.9"/>';
+    }
+  }
+
+  /* ===== ① モル濃度と希釈のビーカー ===== */
+  (function(){
+    /* ビーカー内部の座標: x 120..280 (幅160), 底 y=300, 満杯(V=4L)で y=80 (高さ220) */
+    var BX=120, BW=160, BOT=300, FULLH=220, VMAX=4.0;
+    var step=1, n=1.0, V=1.0;
+    var info=[null,
+      {t:"モル濃度 c = n / V", c:"モル濃度は「溶液1リットルあたりに溶けている溶質の物質量 (mol)」。式は c = n / V (mol/L)。単位は mol/L です。"},
+      {t:"体積が大きいほど薄い", c:"同じ溶質の量 n でも、溶液の体積 V が大きいほど濃度 c は小さくなります（色が薄くなる）。V を大きくしてみましょう。"},
+      {t:"希釈：水を加える", c:"水を加えても溶質の量 (mol) は増えません。体積 V だけが増えるので、c = n / V より濃度は下がります。これが希釈で、c₁V₁ = c₂V₂ が成り立ちます。"},
+      {t:"体積2倍 → 濃度半分", c:"溶質の量を一定にしたまま体積を2倍にすると、c = n / V の分母が2倍になるので濃度はちょうど半分になります。"}];
+
+    function render(){
+      var c=n/V;                          /* V>=0.5 ゆえ0除算なし */
+      var h=FULLH*(V/VMAX);               /* 液面高さ∝V */
+      var top=BOT-h;
+      el("b_liq").setAttribute("x",BX); el("b_liq").setAttribute("y",top.toFixed(1));
+      el("b_liq").setAttribute("width",BW); el("b_liq").setAttribute("height",h.toFixed(1));
+      el("b_liq").setAttribute("fill-opacity",opacityFromC(c));
+      setLine("b_surf",BX,top,BX+BW,top);
+      /* 粒子数 = n に比例（n=1.0→14粒, n=2.0→28粒）。液中に散らす。 */
+      dots("b_dots", n*14, BX, top, BW, h);
+
+      /* 目盛り 0..4 L */
+      var sc=el("b_scale"); sc.innerHTML="";
+      for(var L=0;L<=4;L++){
+        var y=BOT-FULLH*(L/VMAX);
+        sc.innerHTML+='<line x1="288" y1="'+y.toFixed(1)+'" x2="298" y2="'+y.toFixed(1)+'" stroke="var(--gray)" stroke-width="1"/>'+
+                      '<text x="303" y="'+(y+4).toFixed(1)+'" font-size="11" fill="var(--sub)" text-anchor="start">'+L+' L</text>';
+      }
+
+      /* 希釈矢印（右側） */
+      setLine("b_warr",330,top+20,330,Math.max(90,top-40));
+      setT("b_wlab",392,top-8,null);
+      setT("b_riseL",330,top-52,null);
+      setT("b_dilL",330,Math.max(70,top-72),null);
+
+      /* 読み出しラベル */
+      setT("b_cN",340,150,"n = "+n.toFixed(1)+" mol");
+      setT("b_cV",340,176,"V = "+V.toFixed(1)+" L");
+      setT("b_cC",340,208,"c = n / V = "+c.toFixed(2)+" mol/L");
+
+      vis("bkSvg",step);
+
+      el("bkN").textContent=n.toFixed(1); el("bkV").textContent=V.toFixed(1); el("bkC").textContent=c.toFixed(2);
+      el("bkOutN").textContent="n = "+n.toFixed(1)+" mol";
+      el("bkOutV").textContent="V = "+V.toFixed(1)+" L";
+      /* c=1.00 を「ちょうど 1 mol/L」として強調 */
+      var one=Math.abs(c-1.0)<0.005;
+      el("bkEq").textContent=one?"ちょうど 1 mol/L":"";
+      el("bkRel").className=one?"relation eq":"relation";
+
+      el("bkBadge").textContent="step "+step+" / 4"; el("bkTitle").textContent=info[step].t; el("bkCap").textContent=info[step].c;
+      el("bkPrev").disabled=step<=1; el("bkNext").disabled=step>=4;
+    }
+    el("bkNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("bkPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("bkSliderN").addEventListener("input",function(e){n=parseFloat(e.target.value);render();});
+    el("bkSliderV").addEventListener("input",function(e){V=parseFloat(e.target.value);render();});
+    render();
+  })();
+
+  /* ===== ② 希釈の関係 c₁V₁ = c₂V₂ ===== */
+  (function(){
+    var step=1;                 /* 1: 希釈前のみ / 2: 希釈後も表示 */
+    var nFix=1.0, V1=1.0, V2=2.0;
+    var c1=nFix/V1, c2=nFix/V2;
+    var info=[null,
+      {t:"希釈前", c:"濃度 c₁ = 1.00 mol/L、体積 V₁ = 1.0 L の溶液（溶質 1.0 mol）です。「希釈する」を押すと水を加えます。"},
+      {t:"希釈後：体積2倍・濃度半分", c:"水を加えて体積を V₂ = 2.0 L（2倍）にすると、溶質の量は 1.0 mol のままなので c₂ = 1.0 / 2.0 = 0.50 mol/L。濃度はちょうど半分になり、c₁V₁ = c₂V₂ が成り立ちます。"}];
+
+    function paintDots(){
+      /* 希釈前：濃い色・粒子は狭い範囲 / 希釈後：薄い色・同じ粒子数を広い範囲に */
+      el("d_liq1").setAttribute("fill-opacity",(0.18+0.40*c1).toFixed(3));
+      dots("d_dots1",14,80,120,120,150);
+      el("d_liq2").setAttribute("fill-opacity",(0.18+0.40*c2).toFixed(3));
+      dots("d_dots2",14,380,60,120,210);
+    }
+    function render(){
+      paintDots();
+      el("d_lab1").textContent="c₁ = "+c1.toFixed(2)+" mol/L";
+      el("d_lab2").textContent="c₂ = "+c2.toFixed(2)+" mol/L";
+      vis("dlSvg",step);
+
+      var left=c1.toFixed(2)+" × "+V1.toFixed(1)+" = "+(c1*V1).toFixed(1)+" mol";
+      var right=c2.toFixed(2)+" × "+V2.toFixed(1)+" = "+(c2*V2).toFixed(1)+" mol";
+      el("dlLeft").textContent=left;
+      el("dlRight").textContent=right;
+      var eq=step>=2;
+      el("dlRel").className=eq?"relation eq":"relation";
+      el("dlEq").textContent=eq?"溶質の量 (mol) は不変":"";
+      el("dlOut").textContent=eq?"希釈後 (V 2倍)":"希釈前";
+      el("dlToggle").textContent=eq?"← 元にもどす":"希釈する →";
+
+      el("dlBadge").textContent="step "+step+" / 2"; el("dlTitle").textContent=info[step].t; el("dlCap").textContent=info[step].c;
+      el("dlPrev").disabled=step<=1; el("dlNext").disabled=step>=2;
+    }
+    el("dlNext").addEventListener("click",function(){if(step<2){step++;render();}});
+    el("dlPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("dlToggle").addEventListener("click",function(){step=(step>=2)?1:2;render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>
