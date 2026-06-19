@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>波 — 速さ v=fλ — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>波 — 速さ v=fλ</h1>
+    <p class="lead">「次へ／戻る」で正弦波の見方が1ステップずつ完成。スライダーで <b>振動数 f</b> と <b>波長 λ</b> を動かすと、<b>波の速さ v=fλ</b> が変わります。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>v = f λ</b>（速さ＝振動数×波長）と <b>T = 1/f</b>（周期＝振動数の逆数）。波形の「1個分の長さ」が波長 λ [m]、「1秒間の振動回数」が振動数 f [Hz] です。</div>
+
+  <!-- ① 正弦波と v=fλ -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="wBadge">step 1 / 4</span>
+        <span class="steptitle" id="wTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="wPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="wNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">正弦波の波形と波の速さ</h2>
+    <p class="hint">横軸は位置 x [m]、縦軸は変位 y。波形は y = sin(2π·x/λ)（振幅 A=1）。1波長分の長さが λ [m] です。</p>
+    <div class="stage">
+      <svg id="wSvg" viewBox="0 0 600 360" role="img" aria-label="正弦波のスナップショットと波長">
+        <!-- 軸 -->
+        <line id="w_ax" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="w_ay" stroke="var(--gray)" stroke-width="1.2"></line>
+        <g id="w_ticks"></g>
+        <!-- 波形 -->
+        <path id="w_curve" data-ms="1" fill="none" stroke="var(--blue)" stroke-width="2.6"></path>
+        <!-- 波長の両矢印 -->
+        <line id="w_lamArrow" data-ms="2" stroke="var(--red)" stroke-width="2.2"></line>
+        <polyline id="w_lamHeadL" data-ms="2" fill="none" stroke="var(--red)" stroke-width="2.2"></polyline>
+        <polyline id="w_lamHeadR" data-ms="2" fill="none" stroke="var(--red)" stroke-width="2.2"></polyline>
+        <line id="w_lamTickL" data-ms="2" stroke="var(--red)" stroke-width="1.4" stroke-dasharray="4 4"></line>
+        <line id="w_lamTickR" data-ms="2" stroke="var(--red)" stroke-width="1.4" stroke-dasharray="4 4"></line>
+        <text id="w_lamLabel" data-ms="2" font-size="16" fill="var(--red)" text-anchor="middle">λ</text>
+        <!-- 振動を表す動点 -->
+        <circle id="w_pt" data-ms="3" r="5.5" fill="var(--green)"></circle>
+        <line id="w_ampL" data-ms="3" stroke="var(--green)" stroke-width="1.4" stroke-dasharray="4 4"></line>
+        <text id="w_ampLab" data-ms="3" font-size="13" fill="var(--green)" text-anchor="start">A=1</text>
+        <!-- 軸ラベル -->
+        <text id="w_xl" font-size="14" fill="var(--sub)" text-anchor="middle">x [m]</text>
+        <text id="w_yl" font-size="14" fill="var(--sub)" text-anchor="middle">y</text>
+      </svg>
+    </div>
+    <p class="cap" id="wCap"></p>
+    <div class="ctl">
+      <label for="fSlider">振動数 f</label>
+      <input type="range" id="fSlider" min="0.5" max="4" step="0.5" value="2">
+      <span class="out" id="fOut">f = 2.0 Hz</span>
+    </div>
+    <div class="ctl">
+      <label for="lamSlider">波長 λ</label>
+      <input type="range" id="lamSlider" min="1" max="6" step="0.5" value="3">
+      <span class="out" id="lamOut">λ = 3.0 m</span>
+    </div>
+    <div class="relation" id="wRel">
+      <span style="color:var(--blue)">速さ v = f λ</span> = <span id="wV">6.00</span> m/s
+      <span class="eqnote" id="wEq">周期 T = 1/f = 0.50 s</span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ 物理量の単位や図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 正弦波と v=fλ ===== */
+  (function(){
+    /* 描画領域: x∈[0,8]m → 横, y∈[-1.5,1.5] → 縦 */
+    var L=58, R=566, T=30, B=330;            // SVG ピクセル枠
+    var XM=8;                                 // x 軸最大 [m]
+    var YMIN=-1.5, YMAX=1.5;                  // y 軸範囲
+    function GX(v){return L+(v/XM)*(R-L);}
+    function GY(v){return B - ((v-YMIN)/(YMAX-YMIN))*(B-T);}
+    var A=1;                                   // 振幅(固定)
+    var step=1, f=2, lam=3;
+
+    var info=[null,
+      {t:"正弦波の波形", c:"ある瞬間の波形(スナップショット)。横軸は位置 x [m]、縦軸は変位 y。山と谷がくり返す正弦波 y = sin(2π·x/λ) です。"},
+      {t:"波長 λ", c:"波1個分の長さが波長 λ [m]。山から次の山まで(または同じ位相がくり返す最短の長さ)です。赤い両矢印が1波長分を示しています。"},
+      {t:"振動数 f・周期 T", c:"媒質の1点(緑)は上下に振動します。1秒間の振動回数が振動数 f [Hz]、1回の振動にかかる時間が周期 T = 1/f [s] です。"},
+      {t:"波の速さ v = f λ", c:"波は1周期 T の間にちょうど1波長 λ だけ進むので、速さ v = λ/T = f λ [m/s]。f と λ を上げるほど速くなります。"}];
+
+    /* 波形 y=sin(2π x/λ) を細かく描く */
+    function curve(){
+      var p=[];
+      for(var i=0;i<=320;i++){
+        var x=XM*i/320;
+        var y=A*Math.sin(2*Math.PI*x/lam);
+        p.push((p.length?"L":"M")+GX(x).toFixed(1)+","+GY(y).toFixed(1));
+      }
+      return p.join(" ");
+    }
+
+    /* x軸・y軸目盛 */
+    function ticks(){
+      var g=el("w_ticks"); g.innerHTML="";
+      var y0=GY(0);
+      function tk(vx,lab){
+        var t=GX(vx);
+        g.innerHTML+='<line x1="'+t.toFixed(1)+'" y1="'+y0+'" x2="'+t.toFixed(1)+'" y2="'+(y0+5)+'" stroke="var(--gray)" stroke-width="1"/>'+
+          '<text x="'+t.toFixed(1)+'" y="'+(y0+18)+'" font-size="11" fill="var(--sub)" text-anchor="middle">'+lab+'</text>';
+      }
+      function ty(vy,lab){
+        var t=GY(vy);
+        g.innerHTML+='<line x1="'+L+'" y1="'+t.toFixed(1)+'" x2="'+(L-5)+'" y2="'+t.toFixed(1)+'" stroke="var(--gray)" stroke-width="1"/>'+
+          '<text x="'+(L-9)+'" y="'+(t+4).toFixed(1)+'" font-size="11" fill="var(--sub)" text-anchor="end">'+lab+'</text>';
+      }
+      for(var xi=0;xi<=XM;xi+=2) tk(xi, xi+"");
+      ty(1,"+1"); ty(0,"0"); ty(-1,"−1");
+    }
+
+    function render(){
+      var y0=GY(0);
+      /* 軸: x軸は y=0 の高さ、y軸は左端 */
+      setLine("w_ax", L, y0, R, y0);
+      setLine("w_ay", L, T, L, B);
+      ticks();
+
+      /* 波形 */
+      attr("w_curve","d",curve());
+
+      /* 波長の両矢印: x=0 から x=λ まで(または描画域内に収まる範囲) */
+      var lamEnd = Math.min(lam, XM);
+      var ay = GY(0) + 36;            // 矢印を x軸の少し下に
+      var x1 = GX(0), x2 = GX(lamEnd);
+      setLine("w_lamArrow", x1, ay, x2, ay);
+      /* 矢じり(左右) */
+      el("w_lamHeadL").setAttribute("points", (x1+9)+","+(ay-5)+" "+x1+","+ay+" "+(x1+9)+","+(ay+5));
+      el("w_lamHeadR").setAttribute("points", (x2-9)+","+(ay-5)+" "+x2+","+ay+" "+(x2-9)+","+(ay+5));
+      /* 両端の縦点線 */
+      setLine("w_lamTickL", x1, GY(0), x1, ay+6);
+      setLine("w_lamTickR", x2, GY(YMAX), x2, ay+6);
+      setT("w_lamLabel", (x1+x2)/2, ay-9, "λ = "+lam.toFixed(1)+" m");
+
+      /* 振動の動点: x=λ/4 の山(y=+A)の位置に置き、上下振動を象徴 */
+      var px = Math.min(lam/4, XM);
+      setC("w_pt", GX(px), GY(A));
+      setLine("w_ampL", GX(px), GY(0), GX(px), GY(A));
+      setT("w_ampLab", GX(px)+8, (GY(0)+GY(A))/2+4, "A = "+A.toFixed(0));
+
+      /* 軸ラベル */
+      setT("w_xl", (L+R)/2, B+24, null);
+      setT("w_yl", L-30, T+2, null);
+
+      vis("wSvg", step);
+
+      /* 読み出し: v=fλ, T=1/f */
+      var v = f*lam;                 // m/s
+      var Tp = (f>0) ? 1/f : 0;       // s, f は最小0.5なので0除算は起きないが境界保護
+      el("fOut").textContent  = "f = "+f.toFixed(1)+" Hz";
+      el("lamOut").textContent= "λ = "+lam.toFixed(1)+" m";
+      el("wV").textContent    = v.toFixed(2);
+      el("wEq").textContent   = "周期 T = 1/f = "+(Tp>0?Tp.toFixed(2):"—")+" s";
+
+      el("wBadge").textContent="step "+step+" / 4";
+      el("wTitle").textContent=info[step].t;
+      el("wCap").textContent=info[step].c;
+      el("wPrev").disabled=step<=1; el("wNext").disabled=step>=4;
+    }
+
+    el("wNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("wPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("fSlider").addEventListener("input",function(e){f=parseFloat(e.target.value);render();});
+    el("lamSlider").addEventListener("input",function(e){lam=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

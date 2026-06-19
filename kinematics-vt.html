@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>等加速度運動 — v-tグラフと変位 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>等加速度運動 — v-tグラフと変位</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーを動かすと <b>v-tグラフの傾き=加速度</b>、<b>面積=変位</b> の関係が見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>v-tグラフの「傾き」と「面積」</b>。傾きが加速度 a [m/s²]、グラフと t軸が囲む符号付き面積が変位 x [m] です。公式 x = v₀t + ½at² はこの面積（台形）そのものです。</div>
+
+  <!-- 等加速度直線運動 v-tグラフ -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="vtBadge">step 1 / 4</span>
+        <span class="steptitle" id="vtTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="vtPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="vtNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">等加速度直線運動の v-tグラフ</h2>
+    <p class="hint">横軸 時刻 t [s]、縦軸 速度 v [m/s]。直線 v = v₀ + a·t を描き、0〜t の面積が変位になります。</p>
+    <div class="stage">
+      <svg id="vtSvg" viewBox="0 0 600 360" role="img" aria-label="等加速度運動の v-tグラフと変位">
+        <!-- 軸 -->
+        <line id="k_ax" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="k_ay" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="k_zero" stroke="var(--gray)" stroke-width="1" stroke-dasharray="3 4"></line>
+        <g id="k_ticks"></g>
+        <!-- 変位の面積(正・負) -->
+        <polygon id="k_areaP" data-ms="3" fill="var(--blue)" fill-opacity="0.16" stroke="none"></polygon>
+        <polygon id="k_areaN" data-ms="3" fill="var(--red)" fill-opacity="0.16" stroke="none"></polygon>
+        <!-- 直線 v=v0+at -->
+        <line id="k_line" data-ms="1" stroke="var(--blue)" stroke-width="2.6"></line>
+        <!-- 傾き(加速度)の補助三角 -->
+        <polyline id="k_slope" data-ms="2" fill="none" stroke="var(--green)" stroke-width="2"></polyline>
+        <text id="k_slopeDt" data-ms="2" font-size="13" fill="var(--green)" text-anchor="middle">Δt</text>
+        <text id="k_slopeDv" data-ms="2" font-size="13" fill="var(--green)" text-anchor="start">Δv</text>
+        <text id="k_slopeL" data-ms="2" font-size="14" fill="var(--green)" text-anchor="start">傾き = a</text>
+        <!-- 現在時刻 t の縦破線と点 -->
+        <line id="k_tline" data-ms="1" stroke="var(--gray)" stroke-width="1.2" stroke-dasharray="4 4"></line>
+        <circle id="k_v0" data-ms="1" r="4.5" fill="var(--ink)"></circle>
+        <circle id="k_pt" data-ms="1" r="5.5" fill="var(--red)"></circle>
+        <!-- ラベル -->
+        <text id="k_xl" font-size="14" fill="var(--sub)" text-anchor="middle">t [s]</text>
+        <text id="k_yl" font-size="14" fill="var(--sub)" text-anchor="middle">v [m/s]</text>
+        <text id="k_v0l" data-ms="1" font-size="13" fill="var(--ink)" text-anchor="end">v₀</text>
+        <text id="k_tl" data-ms="1" font-size="13" fill="var(--sub)" text-anchor="middle">t</text>
+        <text id="k_areaL" data-ms="3" font-size="15" fill="var(--blue)" text-anchor="middle">面積 = 変位 x</text>
+      </svg>
+    </div>
+    <p class="cap" id="vtCap"></p>
+    <div class="ctl">
+      <label for="vtV0">初速 v₀ [m/s]</label>
+      <input type="range" id="vtV0" min="0" max="20" step="1" value="10">
+      <span class="out" id="vtV0out">v₀ = 10 m/s</span>
+    </div>
+    <div class="ctl">
+      <label for="vtA">加速度 a [m/s²]</label>
+      <input type="range" id="vtA" min="-4" max="4" step="0.5" value="2">
+      <span class="out" id="vtAout">a = 2.0 m/s²</span>
+    </div>
+    <div class="ctl">
+      <label for="vtT">時刻 t [s]</label>
+      <input type="range" id="vtT" min="0" max="10" step="0.5" value="4">
+      <span class="out" id="vtTout">t = 4.0 s</span>
+    </div>
+    <div class="relation" id="vtRel">
+      <span style="color:var(--red)">v(t) = v₀ + a·t</span> = <span id="vtV">18.00</span> m/s 　／
+      <span style="color:var(--blue)">x = v₀t + ½at²</span> = <span id="vtX">56.00</span> m
+      <span class="eqnote" id="vtNote"></span>
+    </div>
+    <p class="cap" id="vtSub" style="min-height:24px"></p>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ 物理量の単位と図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 等加速度直線運動 v-tグラフ ===== */
+  (function(){
+    /* 画面座標: t∈[0,10]s を横, v を縦に。v軸は [VMIN, VMAX]=[-20,40] m/s 固定でクリップ */
+    var L=70, R=560, T=24, BT=336;            /* 描画領域(px) */
+    var TMAX=10;                               /* 時刻の最大 [s] */
+    var VMIN=-20, VMAX=40;                     /* 速度の表示範囲 [m/s] */
+    var step=1, v0=10, a=2, t=4;
+
+    function GX(tv){return L+(tv/TMAX)*(R-L);}                 /* 時刻 -> x[px] */
+    function GY(vv){var c=Math.max(VMIN,Math.min(VMAX,vv));    /* 速度 -> y[px] (クリップ) */
+      return BT-((c-VMIN)/(VMAX-VMIN))*(BT-T);}
+    var Y0=GY(0);                                              /* v=0 の画面 y */
+    function vAt(tv){return v0+a*tv;}                          /* v(t)=v0+a t [m/s] */
+    function xAt(tv){return v0*tv+0.5*a*tv*tv;}               /* x(t)=v0 t + 1/2 a t^2 [m] */
+
+    var info=[null,
+      {t:"v-tグラフ(直線)", c:"速度は v = v₀ + a·t。時刻 t [s] に対して直線になります。スライダーで初速 v₀、加速度 a、時刻 t を動かしてみましょう。赤い点が現在の (t, v(t)) です。"},
+      {t:"加速度 = 傾き", c:"直線の傾き Δv/Δt が加速度 a [m/s²]。1秒(Δt=1 s)あたり速度が a [m/s] だけ変化します。緑の段差がその傾きです。"},
+      {t:"変位 = 面積", c:"グラフと t軸が囲む符号付き面積が変位 x [m]。v>0 の部分(青)は前進、v<0 の部分(赤)は後退として面積を引きます。"},
+      {t:"公式 x = v₀t + ½at²", c:"0〜t の図形は台形(または三角形)。その面積を式にしたものが x = v₀·t + ½·a·t² [m] です。下の読み出しで数値代入を確認しましょう。"}];
+
+    function ticks(){
+      var g=el("k_ticks"); g.innerHTML="";
+      var i;
+      for(i=0;i<=TMAX;i+=2){ var tx=GX(i);
+        g.innerHTML+='<line x1="'+tx+'" y1="'+Y0+'" x2="'+tx+'" y2="'+(Y0+5)+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+tx+'" y="'+(Y0+19)+'" font-size="12" fill="var(--sub)" text-anchor="middle">'+i+'</text>';
+      }
+      var vv=[-20,-10,0,10,20,30,40];
+      for(i=0;i<vv.length;i++){ var ty=GY(vv[i]);
+        g.innerHTML+='<line x1="'+L+'" y1="'+ty+'" x2="'+(L-5)+'" y2="'+ty+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+(L-9)+'" y="'+(ty+4)+'" font-size="12" fill="var(--sub)" text-anchor="end">'+vv[i]+'</text>';
+      }
+    }
+
+    /* 0〜t の面積を v>=0 / v<0 で塗り分ける。直線が v=0 を横切る場合は分割。 */
+    function buildAreas(){
+      var pPos=[], pNeg=[];
+      var N=120;
+      /* t=0 の値と t の値 */
+      function pushSeg(arr, t1, t2){
+        /* t1..t2 区間を多角形で(t軸からグラフへ) */
+        arr.push(GX(t1)+","+Y0);
+        for(var i=0;i<=N;i++){ var tv=t1+(t2-t1)*i/N; arr.push(GX(tv)+","+GY(vAt(tv))); }
+        arr.push(GX(t2)+","+Y0);
+      }
+      if(t<=0.0001){
+        el("k_areaP").setAttribute("points","");
+        el("k_areaN").setAttribute("points","");
+        return;
+      }
+      /* v(t)=v0+a t がゼロを横切る時刻 tc */
+      var crosses = (Math.abs(a)>1e-9) ? (-v0/a) : Infinity;
+      var hasCross = (crosses>0.0001 && crosses<t-0.0001);
+      if(!hasCross){
+        /* 区間内で符号一定。中点で符号判定 */
+        var vmid=vAt(t/2);
+        if(vmid>=0) pushSeg(pPos,0,t); else pushSeg(pNeg,0,t);
+      }else{
+        /* 0..tc と tc..t で分割 */
+        var vA=vAt((0+crosses)/2);
+        if(vA>=0) pushSeg(pPos,0,crosses); else pushSeg(pNeg,0,crosses);
+        var vB=vAt((crosses+t)/2);
+        if(vB>=0) pushSeg(pPos,crosses,t); else pushSeg(pNeg,crosses,t);
+      }
+      el("k_areaP").setAttribute("points", pPos.join(" "));
+      el("k_areaN").setAttribute("points", pNeg.join(" "));
+    }
+
+    function render(){
+      /* 軸・目盛・v=0 線 */
+      setLine("k_ax",L,Y0,R,Y0);     /* t軸(v=0) */
+      setLine("k_ay",L,BT,L,T);      /* v軸 */
+      setLine("k_zero",L,Y0,R,Y0);
+      ticks();
+
+      /* 直線 v=v0+a t を t=0..TMAX で描く(クリップは GY が処理) */
+      setLine("k_line",GX(0),GY(vAt(0)),GX(TMAX),GY(vAt(TMAX)));
+
+      /* 面積(変位) */
+      buildAreas();
+
+      /* 傾き(加速度)補助三角: t=0 から1秒ぶん。a=0なら水平に見せる */
+      var sx0=GX(1.0), sx1=GX(2.0);
+      var sv0=vAt(1.0), sv1=vAt(2.0);
+      var sy0=GY(sv0), sy1=GY(sv1);
+      el("k_slope").setAttribute("points", GX(1.0)+","+sy0+" "+sx1+","+sy0+" "+sx1+","+sy1);
+      setT("k_slopeDt",(sx0+sx1)/2, sy0+15, "Δt=1 s");
+      setT("k_slopeDv",sx1+6,(sy0+sy1)/2+4, "Δv="+a.toFixed(1)+" m/s");
+      setT("k_slopeL",sx1+6, sy1-8, "傾き = a = "+a.toFixed(1)+" m/s²");
+
+      /* 現在時刻 t の縦破線・点 */
+      var vt=vAt(t);
+      setLine("k_tline",GX(t),Y0,GX(t),GY(vt));
+      setC("k_v0",GX(0),GY(v0));
+      setC("k_pt",GX(t),GY(vt));
+
+      /* ラベル */
+      setT("k_xl",(L+R)/2,BT+2,null);
+      setT("k_yl",L-2,T-8,null);
+      setT("k_v0l",GX(0)-8,GY(v0)+4,"v₀="+v0+" m/s");
+      setT("k_tl",GX(t),Y0+( vt>=0 ? 34 : -8 ),"t="+t.toFixed(1)+" s");
+      /* 面積ラベル: グラフ中央あたり、画面内にクランプ */
+      var ax=GX(t/2);
+      var avgV=(v0+vt)/2;
+      var ay=GY(avgV*0.5);
+      ay=Math.max(T+14, Math.min(BT-6, ay));
+      setT("k_areaL",ax,ay, (xAt(t)>=0?"面積 = 変位 x":"面積 = 変位 x (符号付き)") );
+
+      vis("vtSvg",step);
+
+      /* 読み出し */
+      var vVal=vAt(t), xVal=xAt(t);
+      el("vtV").textContent=vVal.toFixed(2);
+      el("vtX").textContent=xVal.toFixed(2);
+      el("vtV0out").textContent="v₀ = "+v0+" m/s";
+      el("vtAout").textContent="a = "+a.toFixed(1)+" m/s²";
+      el("vtTout").textContent="t = "+t.toFixed(1)+" s";
+
+      /* 注記: 減速 / 等速 / 加速 + 数値代入 */
+      var note="";
+      if(a>0.0001) note="加速中";
+      else if(a<-0.0001) note="減速中 (a<0)";
+      else note="等速 (a=0)";
+      el("vtNote").textContent=note;
+      el("vtRel").className = (Math.abs(a)<0.0001) ? "relation eq" : "relation";
+
+      var half=0.5*a*t*t;
+      var sub="数値代入: v = "+v0+" + ("+a.toFixed(1)+")×"+t.toFixed(1)+" = "+vVal.toFixed(2)+" m/s 　／　 "+
+              "x = "+v0+"×"+t.toFixed(1)+" + ½×("+a.toFixed(1)+")×"+t.toFixed(1)+"² = "+
+              (v0*t).toFixed(2)+" + "+half.toFixed(2)+" = "+xVal.toFixed(2)+" m";
+      el("vtSub").textContent=sub;
+
+      /* ステップ表示 */
+      el("vtBadge").textContent="step "+step+" / 4";
+      el("vtTitle").textContent=info[step].t;
+      el("vtCap").textContent=info[step].c;
+      el("vtPrev").disabled=step<=1;
+      el("vtNext").disabled=step>=4;
+    }
+
+    el("vtNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("vtPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("vtV0").addEventListener("input",function(e){v0=parseFloat(e.target.value);render();});
+    el("vtA").addEventListener("input",function(e){a=parseFloat(e.target.value);render();});
+    el("vtT").addEventListener("input",function(e){t=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

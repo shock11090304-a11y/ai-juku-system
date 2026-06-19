@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>気体の状態方程式 PV=nRT — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>気体の状態方程式 PV=nRT</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで <b>温度 T</b> と <b>体積 V</b> を動かすと、圧力 P がどう変わるか（ボイル・シャルル）が見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>PV = nRT</b>（n=1 mol, R=0.0821 L·atm/(mol·K)）。体積を小さくすると圧力が上がり（ボイル: T一定で P ∝ 1/V）、温度を上げると圧力が上がる（シャルル/ゲーリュサック: V一定で P ∝ T）。</div>
+
+  <!-- 気体の状態方程式 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="gBadge">step 1 / 4</span>
+        <span class="steptitle" id="gTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="gPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="gNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">気体の状態方程式</h2>
+    <p class="hint">左はシリンダー＋ピストン（気体の高さ ∝ 体積 V）、右は P-V 等温曲線（いまの温度 T での P=nRT/V）。</p>
+    <div class="stage">
+      <svg id="gSvg" viewBox="0 0 600 360" role="img" aria-label="気体の状態方程式 PV=nRT の図">
+        <!-- === 左: シリンダー + ピストン === -->
+        <!-- シリンダー枠 (内寸 x:60..160, 底 y=320, 天井 y=60) -->
+        <rect data-ms="1" x="60" y="60" width="100" height="260" fill="none" stroke="var(--gray)" stroke-width="2"></rect>
+        <!-- 気体領域 (高さ ∝ V) -->
+        <rect id="g_gas" data-ms="1" x="61" fill="var(--blue)" opacity="0.16"></rect>
+        <!-- 気体分子(点) -->
+        <g id="g_mol" data-ms="1"></g>
+        <!-- ピストン本体 -->
+        <rect id="g_piston" data-ms="1" x="58" width="104" height="14" rx="3" fill="var(--ink)"></rect>
+        <!-- ピストンロッド -->
+        <line id="g_rod" data-ms="1" stroke="var(--ink)" stroke-width="4"></line>
+        <!-- 圧力の矢印(ピストンを押し返す) -->
+        <line id="g_parrow" data-ms="2" stroke="var(--red)" stroke-width="2.5"></line>
+        <polygon id="g_phead" data-ms="2" fill="var(--red)"></polygon>
+        <text id="g_plab" data-ms="2" font-size="14" fill="var(--red)" text-anchor="middle">P</text>
+        <text data-ms="1" x="110" y="345" font-size="13" fill="var(--sub)" text-anchor="middle">シリンダー (n=1 mol)</text>
+        <text id="g_vlab" data-ms="1" font-size="14" fill="var(--blue)" text-anchor="start">V</text>
+
+        <!-- === 右: P-V 等温曲線 === -->
+        <line id="c_ax" data-ms="1" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="c_ay" data-ms="1" stroke="var(--gray)" stroke-width="1.2"></line>
+        <g id="c_ticks" data-ms="1"></g>
+        <path id="c_curve" data-ms="4" fill="none" stroke="var(--blue)" stroke-width="2.6"></path>
+        <line id="c_dx" data-ms="1" stroke="var(--gray)" stroke-width="1" stroke-dasharray="3 4"></line>
+        <line id="c_dy" data-ms="1" stroke="var(--gray)" stroke-width="1" stroke-dasharray="3 4"></line>
+        <circle id="c_pt" data-ms="1" r="5.5" fill="var(--red)"></circle>
+        <text id="c_xl" data-ms="1" font-size="13" fill="var(--sub)" text-anchor="middle">V (L)</text>
+        <text id="c_yl" data-ms="1" font-size="13" fill="var(--sub)" text-anchor="middle">P (atm)</text>
+        <text id="c_curvel" data-ms="4" font-size="13" fill="var(--blue)" text-anchor="end">P = nRT/V</text>
+      </svg>
+    </div>
+    <p class="cap" id="gCap"></p>
+    <div class="ctl">
+      <label for="tSlider">温度 T (K)</label>
+      <input type="range" id="tSlider" min="200" max="500" step="10" value="300">
+      <span class="out" id="tOut">T = 300 K</span>
+    </div>
+    <div class="ctl">
+      <label for="vSlider">体積 V (L)</label>
+      <input type="range" id="vSlider" min="10" max="40" step="1" value="25">
+      <span class="out" id="vOut">V = 25 L</span>
+    </div>
+    <div class="relation" id="gRel">
+      <span style="color:var(--green)">P = nRT/V</span> =
+      <span id="gP">0.985</span> atm
+      <span class="eqnote" id="gNote"></span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a>　・　© AI塾 / trillion-ai-juku.com ・ 物理量の単位（atm, L, K, mol 等）は指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 気体の状態方程式 PV=nRT ===== */
+  (function(){
+    var n=1, R=0.0821;          // n=1 mol, R=0.0821 L·atm/(mol·K)
+    var step=1, T=300, V=25;    // 既定 T=300K, V=25L
+    var Vmin=10, Vmax=40, Tmin=200, Tmax=500;
+
+    /* --- 左: シリンダー幾何 --- */
+    var CYL_X=60, CYL_W=100, CYL_TOP=60, CYL_BOT=320; // 内寸高さ 260px = V=40L 相当
+    var CYL_H=CYL_BOT-CYL_TOP;
+    // 気体の高さ(px) = V/Vmax * CYL_H  (V≦Vmax なので天井を超えない)
+    function gasH(){ return (V/Vmax)*CYL_H; }
+    function gasTopY(){ return CYL_BOT - gasH(); }
+
+    // 分子(点)の固定相対座標 (0..1 の格子) — 描画時に気体領域へマップ
+    var molRel=[];
+    (function(){
+      var cols=4, rows=6;
+      for(var r=0;r<rows;r++){for(var c=0;c<cols;c++){
+        molRel.push({u:(c+0.5)/cols, v:(r+0.5)/rows});
+      }}
+    })();
+
+    /* --- 右: P-V グラフ幾何 --- */
+    var GL=300, GR=560, GT=60, GB=320;   // プロット枠
+    var GXmax=40;                        // V軸 [0,40] L
+    // P軸の上限を適応的に: 現在の最大圧力(min体積×max温度)を見越す + 現在Pも収める
+    function Pcalc(t,v){ return n*R*t/v; }     // = 0.0821*t/v (n=1)
+    // 適応上限: Vmin と現在Tでの最大P を基準に少し余裕。最低でも現在P*1.1。
+    function Pmax(){
+      var byCurT = Pcalc(T,Vmin);          // いまの温度での最大圧力(V=Vmin)
+      var cur = Pcalc(T,V);
+      var m = Math.max(byCurT, cur*1.1, 0.5);
+      // きりのよい上限に丸める(0.5刻み)
+      return Math.ceil(m/0.5)*0.5;
+    }
+    function GX(v){ return GL + (v/GXmax)*(GR-GL); }
+    function GY(p){ var pm=Pmax(); if(pm<=0) pm=1; return GB - (p/pm)*(GB-GT); }
+
+    var info=[null,
+      {t:"状態方程式 PV=nRT", c:"気体の圧力 P、体積 V、温度 T の関係は PV = nRT。ここでは n=1 mol、R=0.0821 L·atm/(mol·K) で固定。スライダーで T と V を動かすと右の点(V, P)が動きます。"},
+      {t:"圧力 P=nRT/V（ボイル）", c:"式を P について解くと P = nRT/V。温度 T を一定にして体積 V を小さくすると圧力 P は大きくなる（P ∝ 1/V、ボイルの法則）。V を 40 L→10 L にすると P は約4倍。"},
+      {t:"温度を上げると P↑（シャルル/ゲーリュサック）", c:"体積 V を一定にして温度 T を上げると圧力 P も上がる（V一定で P ∝ T、ゲーリュサックの法則）。分子の運動が激しくなりピストンを押す力が増えます。"},
+      {t:"P-V 等温曲線（反比例）", c:"いまの温度 T を固定した P-V グラフは反比例の曲線 P = nRT/V（双曲線）。点(V, P)はこの曲線上を動きます。温度を変えると曲線全体が上下にずれます。"}];
+
+    function molecules(){
+      var g=el("g_mol"); g.innerHTML="";
+      var topY=gasTopY();
+      var h=gasH();
+      if(h<1) return;
+      // 分子の見かけの密度感: 速さ(温度)で色濃さ・サイズをわずかに変える
+      var tNorm=(T-Tmin)/(Tmax-Tmin); if(tNorm<0)tNorm=0; if(tNorm>1)tNorm=1;
+      var rad=(1.6+tNorm*1.4).toFixed(2);
+      for(var i=0;i<molRel.length;i++){
+        var m=molRel[i];
+        var cx=(CYL_X+4)+m.u*(CYL_W-8);
+        var cy=topY+ m.v*h;
+        g.innerHTML+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+rad+'" fill="var(--blue)" opacity="0.7"></circle>';
+      }
+    }
+
+    function curve(){
+      // P = nRT/V を V=2..40 で描く(V→0で発散するので下限を切る)
+      var p=[]; var pm=Pmax();
+      for(var i=0;i<=200;i++){
+        var v=2 + (GXmax-2)*i/200;
+        var pp=Pcalc(T,v);
+        if(pp>pm) continue;        // 枠上端を超えたら描かない
+        p.push((p.length?"L":"M")+GX(v).toFixed(1)+","+GY(pp).toFixed(1));
+      }
+      return p.join(" ");
+    }
+
+    function ticks(){
+      var g=el("c_ticks"); g.innerHTML="";
+      // X(V)目盛
+      function tk(vx,lab){var t=GX(vx);
+        g.innerHTML+='<line x1="'+t.toFixed(1)+'" y1="'+GB+'" x2="'+t.toFixed(1)+'" y2="'+(GB+5)+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+t.toFixed(1)+'" y="'+(GB+18)+'" font-size="11" fill="var(--sub)" text-anchor="middle">'+lab+'</text>';}
+      tk(10,"10"); tk(20,"20"); tk(30,"30"); tk(40,"40");
+      // Y(P)目盛 — Pmax を 4分割
+      var pm=Pmax();
+      for(var i=1;i<=4;i++){
+        var pv=pm*i/4; var t=GY(pv);
+        g.innerHTML+='<line x1="'+GL+'" y1="'+t.toFixed(1)+'" x2="'+(GL-5)+'" y2="'+t.toFixed(1)+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+(GL-8)+'" y="'+(t+4).toFixed(1)+'" font-size="11" fill="var(--sub)" text-anchor="end">'+pv.toFixed(1)+'</text>';
+      }
+    }
+
+    function render(){
+      var P=Pcalc(T,V);
+
+      /* --- 左: シリンダー --- */
+      var topY=gasTopY(), h=gasH();
+      attr("g_gas","y",topY.toFixed(1));
+      attr("g_gas","width",(CYL_W-2));
+      attr("g_gas","height",h.toFixed(1));
+      // ピストン: 気体の上に乗る
+      var pistY=topY-14;
+      attr("g_piston","y",pistY.toFixed(1));
+      setLine("g_rod",(CYL_X+CYL_W/2),pistY,(CYL_X+CYL_W/2),Math.max(CYL_TOP-26,pistY-26));
+      molecules();
+      // 圧力の矢印(ピストンを下から押し返す: 上向き)。長さは P に応じて(視覚)
+      var aLen=14+Math.min( (P/Math.max(Pcalc(T,Vmin),0.5))*36, 36 );
+      var ax=CYL_X+CYL_W/2;
+      var ay0=topY+Math.min(h*0.5,40);  // 気体内部から
+      var ay1=ay0-aLen;
+      setLine("g_parrow",ax,ay0,ax,ay1);
+      el("g_phead").setAttribute("points",
+        ax+","+(ay1-7)+" "+(ax-5)+","+(ay1+2)+" "+(ax+5)+","+(ay1+2));
+      setT("g_plab",ax+18,(ay0+ay1)/2,null);
+      setT("g_vlab",CYL_X+CYL_W+6,(topY+CYL_BOT)/2,"V="+V.toFixed(0)+" L");
+
+      /* --- 右: P-V グラフ --- */
+      setLine("c_ax",GL,GB,GR,GB);
+      setLine("c_ay",GL,GB,GL,GT);
+      ticks();
+      attr("c_curve","d",curve());
+      var px=GX(V), py=GY(P);
+      // 点が枠内に収まらない場合(Pがpm超)はクランプ
+      if(py<GT) py=GT;
+      setC("c_pt",px,py);
+      setLine("c_dx",px,py,px,GB);
+      setLine("c_dy",px,py,GL,py);
+      setT("c_xl",(GL+GR)/2,GB+34,null);
+      setT("c_yl",GL-2,GT-12,null);
+      setT("c_curvel",GR,GT+16,null);
+
+      vis("gSvg",step);
+
+      /* --- 読み出し --- */
+      el("tOut").textContent="T = "+T.toFixed(0)+" K";
+      el("vOut").textContent="V = "+V.toFixed(0)+" L";
+      el("gP").textContent=P.toFixed(3);
+      // step 別の補足
+      var note="";
+      if(step===2){ note="ボイル: T一定で P ∝ 1/V"; }
+      else if(step===3){ note="ゲーリュサック: V一定で P ∝ T"; }
+      else if(step===4){ note="点(V, P)は曲線上"; }
+      el("gNote").textContent=note;
+      // 既定値ぴったりは強調
+      var atDefault=(Math.abs(T-300)<0.5 && Math.abs(V-25)<0.5);
+      el("gRel").className=atDefault?"relation eq":"relation";
+      if(atDefault){ el("gNote").textContent="既定値: T=300 K, V=25 L → P≈0.985 atm"; }
+
+      el("gBadge").textContent="step "+step+" / 4";
+      el("gTitle").textContent=info[step].t;
+      el("gCap").textContent=info[step].c;
+      el("gPrev").disabled=step<=1;
+      el("gNext").disabled=step>=4;
+    }
+
+    el("gNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("gPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("tSlider").addEventListener("input",function(e){
+      var v=parseFloat(e.target.value);
+      if(isNaN(v)) v=300; if(v<Tmin)v=Tmin; if(v>Tmax)v=Tmax; T=v; render();
+    });
+    el("vSlider").addEventListener("input",function(e){
+      var v=parseFloat(e.target.value);
+      if(isNaN(v)) v=25; if(v<Vmin)v=Vmin; if(v>Vmax)v=Vmax; V=v; render();
+    });
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

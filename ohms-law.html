@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>オームの法則と回路 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>オームの法則と回路</h1>
+    <p class="lead">「次へ／戻る」で回路が1ステップずつ完成。スライダーで <b>電圧 V</b> と <b>抵抗 R</b> を変えると、電流 I と消費電力 P がどう動くか見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>V = IR</b>。電圧 V を抵抗 R で割ると電流 I が決まり（I = V/R）、消費電力は P = VI = V²/R。直列は抵抗の<b>和</b>、並列は<b>逆数の和</b>で合成します。</div>
+
+  <!-- ① オームの法則と回路 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="cBadge">step 1 / 4</span>
+        <span class="steptitle" id="cTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="cPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="cNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">オームの法則と回路</h2>
+    <p class="hint">電池（電圧 V）と抵抗 R を導線でつないだ回路。電流 I = V/R が流れ、抵抗で P = VI = V²/R の電力を消費します。</p>
+    <div class="stage">
+      <svg id="cSvg" viewBox="0 0 600 320" role="img" aria-label="電池と抵抗の直流回路図">
+        <!-- 導線ループ(長方形) -->
+        <rect id="c_wire" data-ms="1" x="120" y="70" width="360" height="180" rx="4" fill="none" stroke="var(--ink)" stroke-width="3"></rect>
+
+        <!-- 上辺の電流矢印(複数) -->
+        <g id="c_arrTop" data-ms="2"></g>
+        <!-- 下辺の電流矢印(複数) -->
+        <g id="c_arrBot" data-ms="2"></g>
+
+        <!-- 電池(左辺の中央)。長板=+極, 短板=−極 -->
+        <g id="c_batt" data-ms="1">
+          <line x1="120" y1="135" x2="120" y2="153" stroke="var(--ink)" stroke-width="3"></line>
+          <line x1="100" y1="143" x2="140" y2="143" stroke="var(--red)" stroke-width="4"></line>
+          <line x1="111" y1="170" x2="129" y2="170" stroke="var(--ink)" stroke-width="3"></line>
+          <line x1="120" y1="170" x2="120" y2="185" stroke="var(--ink)" stroke-width="3"></line>
+          <text x="150" y="139" font-size="17" fill="var(--red)" text-anchor="middle">+</text>
+          <text x="150" y="180" font-size="20" fill="var(--ink)" text-anchor="middle">−</text>
+          <text id="c_vlab" x="62" y="161" font-size="16" fill="var(--blue)" text-anchor="middle">V</text>
+        </g>
+
+        <!-- 抵抗(右辺の中央)。ギザギザ(縦) -->
+        <g id="c_res" data-ms="1">
+          <rect x="453" y="120" width="56" height="80" rx="6" fill="var(--card)" stroke="var(--red)" stroke-width="2.5"></rect>
+          <text x="481" y="166" font-size="20" fill="var(--red)" text-anchor="middle" font-style="italic">R</text>
+        </g>
+
+        <!-- 値ラベル(読み出しの可視化) -->
+        <text id="c_lab_I" data-ms="2" x="300" y="48" font-size="17" fill="var(--green)" text-anchor="middle" font-weight="600">I</text>
+        <text id="c_lab_P" data-ms="3" x="481" y="232" font-size="15" fill="var(--red)" text-anchor="middle">P</text>
+
+        <!-- 凡例パネル -->
+        <g id="c_panel" data-ms="2">
+          <line x1="300" y1="135" x2="300" y2="185" stroke="var(--bd)" stroke-width="0"></line>
+          <text id="c_pV"  x="178" y="285" font-size="15" fill="var(--blue)"  text-anchor="start">V = 6.0 V</text>
+          <text id="c_pR"  x="300" y="285" font-size="15" fill="var(--red)"   text-anchor="start">R = 3 Ω</text>
+          <text id="c_pI"  x="178" y="307" font-size="15" fill="var(--green)" text-anchor="start">I = 2.00 A</text>
+          <text id="c_pP"  x="300" y="307" font-size="15" fill="var(--ink)"   text-anchor="start">P = 12.00 W</text>
+        </g>
+      </svg>
+    </div>
+    <p class="cap" id="cCap"></p>
+    <div class="ctl">
+      <label for="vSlider">電圧 V</label>
+      <input type="range" id="vSlider" min="1" max="12" step="0.5" value="6">
+      <span class="out" id="vOut">V = 6.0 V</span>
+    </div>
+    <div class="ctl">
+      <label for="rSlider">抵抗 R</label>
+      <input type="range" id="rSlider" min="1" max="20" step="1" value="3">
+      <span class="out" id="rOut">R = 3 Ω</span>
+    </div>
+    <div class="relation" id="cRel">
+      <span style="color:var(--blue)">V</span> = <span id="cV">6.0</span> V，
+      <span style="color:var(--red)">R</span> = <span id="cR">3</span> Ω →
+      <span style="color:var(--green)">I = V/R</span> = <span id="cI">2.00</span> A，
+      <span style="color:var(--ink)">P = VI</span> = <span id="cP">12.00</span> W
+      <span class="eqnote" id="cEq"></span>
+    </div>
+  </section>
+
+  <!-- ② 合成抵抗(直列・並列) -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="sBadge">step 4 / 4</span>
+        <span class="steptitle" id="sTitle">合成抵抗</span>
+      </div>
+    </div>
+    <h2 style="display:none">合成抵抗（直列・並列）</h2>
+    <p class="hint">2つの抵抗 R₁, R₂ のつなぎ方で全体の抵抗が変わります。直列は和 R = R₁+R₂、並列は逆数の和 1/R = 1/R₁ + 1/R₂。</p>
+    <div class="stage">
+      <svg id="sSvg" viewBox="0 0 600 240" role="img" aria-label="直列接続と並列接続の合成抵抗">
+        <!-- 直列(上段) -->
+        <text x="40" y="44" font-size="14" fill="var(--sub)" text-anchor="start">直列</text>
+        <line x1="120" y1="56" x2="180" y2="56" stroke="var(--ink)" stroke-width="2.5"></line>
+        <rect x="180" y="42" width="70" height="28" rx="5" fill="var(--card)" stroke="var(--red)" stroke-width="2"></rect>
+        <text x="215" y="61" font-size="14" fill="var(--red)" text-anchor="middle">R₁=2Ω</text>
+        <line x1="250" y1="56" x2="320" y2="56" stroke="var(--ink)" stroke-width="2.5"></line>
+        <rect x="320" y="42" width="70" height="28" rx="5" fill="var(--card)" stroke="var(--red)" stroke-width="2"></rect>
+        <text x="355" y="61" font-size="14" fill="var(--red)" text-anchor="middle">R₂=3Ω</text>
+        <line x1="390" y1="56" x2="450" y2="56" stroke="var(--ink)" stroke-width="2.5"></line>
+        <text x="540" y="61" font-size="15" fill="var(--green)" text-anchor="middle" font-weight="600">R = 5 Ω</text>
+
+        <!-- 並列(下段) -->
+        <text x="40" y="168" font-size="14" fill="var(--sub)" text-anchor="start">並列</text>
+        <line x1="120" y1="168" x2="160" y2="168" stroke="var(--ink)" stroke-width="2.5"></line>
+        <line x1="160" y1="128" x2="160" y2="208" stroke="var(--ink)" stroke-width="2.5"></line>
+        <!-- 上枝 R1 -->
+        <line x1="160" y1="128" x2="250" y2="128" stroke="var(--ink)" stroke-width="2.5"></line>
+        <rect x="250" y="114" width="70" height="28" rx="5" fill="var(--card)" stroke="var(--red)" stroke-width="2"></rect>
+        <text x="285" y="133" font-size="14" fill="var(--red)" text-anchor="middle">R₁=2Ω</text>
+        <line x1="320" y1="128" x2="410" y2="128" stroke="var(--ink)" stroke-width="2.5"></line>
+        <!-- 下枝 R2 -->
+        <line x1="160" y1="208" x2="250" y2="208" stroke="var(--ink)" stroke-width="2.5"></line>
+        <rect x="250" y="194" width="70" height="28" rx="5" fill="var(--card)" stroke="var(--red)" stroke-width="2"></rect>
+        <text x="285" y="213" font-size="14" fill="var(--red)" text-anchor="middle">R₂=3Ω</text>
+        <line x1="320" y1="208" x2="410" y2="208" stroke="var(--ink)" stroke-width="2.5"></line>
+        <!-- 合流 -->
+        <line x1="410" y1="128" x2="410" y2="208" stroke="var(--ink)" stroke-width="2.5"></line>
+        <line x1="410" y1="168" x2="450" y2="168" stroke="var(--ink)" stroke-width="2.5"></line>
+        <text x="540" y="173" font-size="15" fill="var(--green)" text-anchor="middle" font-weight="600">R = 1.2 Ω</text>
+      </svg>
+    </div>
+    <p class="cap" id="sCap">直列は抵抗が一直線につながり、長い抵抗のように働くので和（R₁+R₂ = 5 Ω）。並列は電流の通り道が増えるので、合成抵抗はどちらより小さく（1/R = 1/2 + 1/3 = 5/6 → R = 1.2 Ω）なります。</p>
+    <div class="relation eq" id="sRel">
+      直列: <span style="color:var(--red)">R = R₁ + R₂</span> = 2 Ω + 3 Ω = <span style="color:var(--green)">5 Ω</span>
+      <span style="margin:0 10px; color:var(--gray)">／</span>
+      並列: <span style="color:var(--red)">1/R = 1/R₁ + 1/R₂</span> → R = <span style="color:var(--green)">1.2 Ω</span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a> ・ © AI塾 / trillion-ai-juku.com ・ 物理量の単位（V, Ω, A, W）は指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setT(id,x,y,txt){var e=el(id);if(x!=null)e.setAttribute("x",x);if(y!=null)e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== ① オームの法則と回路 ===== */
+  (function(){
+    var step=1, V=6, R=3;
+    var info=[null,
+      {t:"回路をつくる", c:"電池（電圧 V）と抵抗 R を導線でつなぎ、ひとつのループにします。電池の長い板が +極、短い板が −極です。"},
+      {t:"オームの法則", c:"電池が電圧 V をかけると、電流 I = V/R が流れます。抵抗 R が大きいほど電流は流れにくく、I は小さくなります（単位: V÷Ω = A）。"},
+      {t:"消費電力", c:"抵抗が消費する電力は P = VI。I = V/R を代入すると P = V²/R とも書けます（単位: V×A = W）。"},
+      {t:"合成抵抗へ", c:"抵抗が2つあるとき、つなぎ方で全体の抵抗が変わります。下の図で直列（和）と並列（逆数の和）を確認しましょう。"}];
+
+    // 矢印群を生成(電流の流れる向き: +極→上辺→右へ→抵抗→下辺→−極へ戻る通常表示の電流)
+    function buildArrows(){
+      // 上辺: 左(電池+極側)から右へ。y=70
+      var top=el("c_arrTop"), bot=el("c_arrBot"); top.innerHTML=""; bot.innerHTML="";
+      var topXs=[180,250,320,390], botXs=[390,320,250,180];
+      for(var i=0;i<topXs.length;i++){
+        var x=topXs[i];
+        top.innerHTML+='<polygon points="'+(x-8)+',64 '+(x+8)+',70 '+(x-8)+',76" fill="var(--green)"></polygon>';
+      }
+      // 下辺: 右から左へ(電流は右辺を下り、下辺を左へ戻る)。y=250
+      for(var j=0;j<botXs.length;j++){
+        var bx=botXs[j];
+        bot.innerHTML+='<polygon points="'+(bx+8)+',244 '+(bx-8)+',250 '+(bx+8)+',256" fill="var(--green)"></polygon>';
+      }
+    }
+
+    function render(){
+      // 物理量(0除算なし: R>=1 を保証)
+      var I=V/R;            // A
+      var P=V*I;            // W (= V*V/R)
+      buildArrows();
+      vis("cSvg",step);
+
+      // 矢印の太さ/濃さを電流に応じて強調(I は 12/1=12A〜1/20=0.05A)
+      var inten=Math.max(0.25, Math.min(1, I/6));
+      var sw=(1.5+inten*2.5).toFixed(1);
+      attr("c_wire","stroke-width",sw);
+      var arrG=[el("c_arrTop"),el("c_arrBot")];
+      for(var g=0; g<arrG.length; g++){ arrG[g].style.opacity=(step>=2)? (0.35+inten*0.65).toFixed(2) : "0"; }
+
+      // SVG内ラベル
+      setT("c_pV",null,null,"V = "+V.toFixed(1)+" V");
+      setT("c_pR",null,null,"R = "+R.toFixed(0)+" Ω");
+      setT("c_pI",null,null,"I = "+I.toFixed(2)+" A");
+      setT("c_pP",null,null,"P = "+P.toFixed(2)+" W");
+      setT("c_lab_I",null,null,"I = "+I.toFixed(2)+" A");
+      setT("c_lab_P",null,null,"P = "+P.toFixed(2)+" W");
+
+      // コントロール読み出し
+      el("vOut").textContent="V = "+V.toFixed(1)+" V";
+      el("rOut").textContent="R = "+R.toFixed(0)+" Ω";
+
+      // .relation
+      el("cV").textContent=V.toFixed(1);
+      el("cR").textContent=R.toFixed(0);
+      el("cI").textContent=I.toFixed(2);
+      el("cP").textContent=P.toFixed(2);
+      // P = V^2/R との一致を簡単に注記
+      el("cEq").textContent="（P = V²/R = "+(V*V/R).toFixed(2)+" W）";
+      el("cRel").className="relation eq";
+
+      el("cBadge").textContent="step "+step+" / 4";
+      el("cTitle").textContent=info[step].t;
+      el("cCap").textContent=info[step].c;
+      el("cPrev").disabled=step<=1; el("cNext").disabled=step>=4;
+    }
+    el("cNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("cPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("vSlider").addEventListener("input",function(e){V=parseFloat(e.target.value);render();});
+    el("rSlider").addEventListener("input",function(e){R=parseFloat(e.target.value); if(R<1)R=1; render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>中和滴定 — pH曲線</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--sub);}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>中和滴定 — pH曲線</h1>
+    <p class="lead">「次へ／戻る」で解説が1ステップずつ進みます。スライダーで滴下量 V<sub>b</sub> を動かすと、<b>当量点(V<sub>b</sub>=20 mL)</b> でpHが急変する様子が見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>当量点でpHが急変する</b>こと。強酸(HCl)を強塩基(NaOH)で滴定すると、当量点では過不足なく中和され <b>pH=7</b>。pHは <b>pH = −log₁₀[H⁺]</b> で求めます。</div>
+
+  <!-- 中和滴定 pH曲線 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="tBadge">step 1 / 4</span>
+        <span class="steptitle" id="tTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="tPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="tNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">中和滴定の pH曲線</h2>
+    <p class="hint">HCl 0.1 mol/L を 20 mL とり、NaOH 0.1 mol/L を滴下したときの pH 変化です。</p>
+    <div class="stage">
+      <svg id="tSvg" viewBox="0 0 600 360" role="img" aria-label="中和滴定のpH曲線">
+        <!-- 軸 -->
+        <line id="t_ax" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="t_ay" stroke="var(--gray)" stroke-width="1.2"></line>
+        <g id="t_grid"></g>
+        <g id="t_ticks"></g>
+        <!-- 当量点の補助線(縦破線) -->
+        <line id="t_eqv" data-ms="3" stroke="var(--gray)" stroke-width="1.2" stroke-dasharray="5 5"></line>
+        <line id="t_ph7" data-ms="3" stroke="var(--gray)" stroke-width="1.2" stroke-dasharray="5 5"></line>
+        <!-- 滴定曲線 -->
+        <path id="t_curve" data-ms="2" fill="none" stroke="var(--blue)" stroke-width="2.6"></path>
+        <!-- 当量点の強調点 -->
+        <circle id="t_eqpt" data-ms="3" r="5.5" fill="var(--green)"></circle>
+        <!-- 現在のVbの赤点と補助線 -->
+        <line id="t_dx" data-ms="1" stroke="var(--gray)" stroke-width="1" stroke-dasharray="3 4"></line>
+        <line id="t_dy" data-ms="1" stroke="var(--gray)" stroke-width="1" stroke-dasharray="3 4"></line>
+        <circle id="t_pt" data-ms="1" r="5.5" fill="var(--red)"></circle>
+        <!-- ラベル -->
+        <text id="t_xl" font-size="14" fill="var(--sub)" text-anchor="middle">滴下量 V_b (mL)</text>
+        <text id="t_yl" font-size="14" fill="var(--sub)" text-anchor="middle">pH</text>
+        <text id="t_eql" data-ms="3" font-size="14" fill="var(--green)" text-anchor="middle">当量点 (20 mL, pH 7)</text>
+        <text id="t_acidl" data-ms="4" font-size="13" fill="var(--red)" text-anchor="middle">酸性</text>
+        <text id="t_basel" data-ms="4" font-size="13" fill="var(--blue)" text-anchor="middle">塩基性</text>
+      </svg>
+    </div>
+    <p class="cap" id="tCap"></p>
+    <div class="ctl">
+      <label for="tSlider">滴下量 V<sub>b</sub> を動かす</label>
+      <input type="range" id="tSlider" min="0" max="40" step="0.5" value="0">
+      <span class="out" id="tOut">V_b=0.0 mL</span>
+    </div>
+    <div class="relation" id="tRel">
+      <span style="color:var(--red)">V<sub>b</sub></span> = <span id="tVb">0.0</span> mL
+      <span style="margin:0 8px; font-weight:600">→</span>
+      <span style="color:var(--blue)">pH</span> = <span id="tPH">1.00</span>
+      <span class="eqnote" id="tEq"></span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a> ・ © AI塾 / trillion-ai-juku.com ・ 数式記号や図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+  function log10(v){return Math.log(v)/Math.LN10;}
+
+  /* ===== 中和滴定 pH曲線 ===== */
+  (function(){
+    /* グラフ枠: 横軸 Vb[0,40] mL, 縦軸 pH[0,14] */
+    var L=70,R=560,T=24,B=300, VBM=40, PHM=14, step=1, Vb=0;
+    function GX(v){return L+(v/VBM)*(R-L);}      /* Vb -> x */
+    function GY(p){return B-(p/PHM)*(B-T);}      /* pH -> y */
+
+    /* 化学計算: 全て計算で求める。微小値ガードでNaN/Inf/負log回避 */
+    var nH0 = 0.1*20/1000;   /* 初めのH+物質量 = 0.002 mol */
+    function pHof(vb){
+      var nOH = 0.1*vb/1000;          /* 加えたOH物質量 mol */
+      var Vtot = (20+vb)/1000;        /* 全体積 L (vb>=0 なので常に正) */
+      var diff = nH0 - nOH;           /* 過剰H+ (正)/過剰OH(負) */
+      var EPS = 1e-12;                /* 当量点近傍ガード(物質量[mol]スケール) */
+      if(diff > EPS){
+        /* 酸過剰 */
+        var cH = diff/Vtot;
+        if(cH < 1e-14) cH = 1e-14;    /* log負無限大ガード */
+        return -log10(cH);
+      } else if(diff < -EPS){
+        /* 塩基過剰 */
+        var cOH = (-diff)/Vtot;
+        if(cOH < 1e-14) cOH = 1e-14;
+        var pOH = -log10(cOH);
+        return 14 - pOH;
+      } else {
+        /* 当量点(過不足なし): 強酸+強塩基 -> 中性 pH=7 */
+        return 7;
+      }
+    }
+    /* pH を描画範囲[0,14]にクランプ(数値安全) */
+    function clampPH(p){ if(!isFinite(p)) return 7; if(p<0)return 0; if(p>14)return 14; return p; }
+
+    var info=[null,
+      {t:"強酸を滴定する", c:"HCl 0.1 mol/L を 20 mL とります。初めは強酸なので [H⁺] が大きく pH は低い(V_b=0 mL で pH=1.00)。赤点が現在のpHです。"},
+      {t:"塩基を加える", c:"NaOH 0.1 mol/L を加えると H⁺ が中和されて減り、pH が少しずつ上がります(V_b=10 mL で pH≈1.48)。曲線が滴定の進行を表します。"},
+      {t:"当量点で急変", c:"V_b=20 mL で H⁺ と OH⁻ が過不足なく中和(当量点)。ここで pH が急激に変化し、強酸+強塩基なので pH=7(中性)になります。緑点が当量点です。"},
+      {t:"塩基過剰", c:"当量点を過ぎると NaOH が過剰になり、[OH⁻] が増えて pH>7(塩基性)に。V_b=30 mL で pH≈12.30。当量点付近(18〜22 mL)での急変が滴定の最大の特徴です。"}];
+
+    /* 滴定曲線を細かくプロット(0除算/負logは pHof 側でガード済) */
+    function curve(){
+      var p=[], N=400;
+      for(var i=0;i<=N;i++){
+        var vb = VBM*i/N;
+        var ph = clampPH(pHof(vb));
+        p.push((p.length?"L":"M")+GX(vb).toFixed(1)+","+GY(ph).toFixed(1));
+      }
+      return p.join(" ");
+    }
+
+    /* グリッド(薄い横線) */
+    function grid(){
+      var g=el("t_grid"); g.innerHTML="";
+      for(var ph=2; ph<=12; ph+=2){
+        var y=GY(ph);
+        g.innerHTML+='<line x1="'+L+'" y1="'+y.toFixed(1)+'" x2="'+R+'" y2="'+y.toFixed(1)+'" stroke="var(--bd)" stroke-width="1"/>';
+      }
+    }
+    function ticks(){
+      var g=el("t_ticks"); g.innerHTML="";
+      function tx(vx,lab){var t=GX(vx);
+        g.innerHTML+='<line x1="'+t.toFixed(1)+'" y1="'+B+'" x2="'+t.toFixed(1)+'" y2="'+(B+5)+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+t.toFixed(1)+'" y="'+(B+20)+'" font-size="12" fill="var(--sub)" text-anchor="middle">'+lab+'</text>';}
+      function ty(vy,lab){var t=GY(vy);
+        g.innerHTML+='<line x1="'+L+'" y1="'+t.toFixed(1)+'" x2="'+(L-5)+'" y2="'+t.toFixed(1)+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+(L-9)+'" y="'+(t+4).toFixed(1)+'" font-size="12" fill="var(--sub)" text-anchor="end">'+lab+'</text>';}
+      tx(0,"0"); tx(10,"10"); tx(20,"20"); tx(30,"30"); tx(40,"40");
+      ty(0,"0"); ty(2,"2"); ty(4,"4"); ty(7,"7"); ty(10,"10"); ty(12,"12"); ty(14,"14");
+    }
+
+    function render(){
+      setLine("t_ax",L,B,R,B); setLine("t_ay",L,B,L,T);
+      grid(); ticks();
+      attr("t_curve","d",curve());
+
+      /* 当量点の補助線・点(Vb=20, pH=7) */
+      var ex=GX(20), e7=GY(7);
+      setLine("t_eqv",ex,B,ex,e7);
+      setLine("t_ph7",L,e7,ex,e7);
+      setC("t_eqpt",ex,e7);
+      setT("t_eql",ex,GY(7)-12,null);
+
+      /* 現在のVbの赤点 */
+      var ph=clampPH(pHof(Vb));
+      var px=GX(Vb), py=GY(ph);
+      setC("t_pt",px,py);
+      setLine("t_dx",px,py,px,B);
+      setLine("t_dy",px,py,L,py);
+
+      /* 軸ラベル */
+      setT("t_xl",(L+R)/2,B+38,null);
+      setT("t_yl",L-44,T+2,null);
+      setT("t_acidl",GX(8),GY(2.0),null);
+      setT("t_basel",GX(33),GY(13.0),null);
+
+      vis("tSvg",step);
+
+      /* 読み出し */
+      el("tVb").textContent=Vb.toFixed(1);
+      el("tPH").textContent=ph.toFixed(2);
+      el("tOut").textContent="V_b="+Vb.toFixed(1)+" mL";
+
+      /* 当量点付近(18-22 mL)で急変を強調 */
+      var near = (Vb>=18 && Vb<=22);
+      var atEq = Math.abs(Vb-20)<0.001;
+      if(atEq){
+        el("tEq").textContent="当量点！pH=7 (中性)";
+      } else if(near){
+        el("tEq").textContent="当量点付近 — pHが急変中";
+      } else {
+        el("tEq").textContent="";
+      }
+      el("tRel").className=(near?"relation eq":"relation");
+
+      el("tBadge").textContent="step "+step+" / 4";
+      el("tTitle").textContent=info[step].t;
+      el("tCap").textContent=info[step].c;
+      el("tPrev").disabled=step<=1; el("tNext").disabled=step>=4;
+    }
+    el("tNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("tPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("tSlider").addEventListener("input",function(e){Vb=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

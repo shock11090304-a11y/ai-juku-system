@@ -130,6 +130,16 @@
      desc:"2定点からの距離比 PA:PB=k の軌跡。k≠1 は円(アポロニウスの円)、k=1 は垂直二等分線になる。"},
     {title:"分詞構文 — 接続詞からの書き換え", subject:"英語", type:"動く解説", access:"public", url:"participle-construction.html", section:"free",
      desc:"接続詞文↔分詞構文をトグルで。接続詞・主語を消し動詞を~ingにする手順を例で確認(理由/時)。"},
+    {title:"等加速度運動 — v-tグラフと変位", subject:"物理", type:"動く解説", access:"public", url:"kinematics-vt.html", section:"free",
+     desc:"v0・a・t スライダーで等加速度運動。v-tグラフの傾き=加速度、面積=変位 x=v0t+½at² を可視化。"},
+    {title:"波 — 速さ v=fλ", subject:"物理", type:"動く解説", access:"public", url:"wave-vflambda.html", section:"free",
+     desc:"f・λ スライダーで正弦波。波の速さ v=fλ、周期 T=1/f を波形と連動表示。"},
+    {title:"オームの法則と回路", subject:"物理", type:"動く解説", access:"public", url:"ohms-law.html", section:"free",
+     desc:"V・R スライダーでオームの法則 I=V/R・消費電力 P=VI。直列/並列の合成抵抗も。"},
+    {title:"気体の状態方程式 PV=nRT", subject:"化学", type:"動く解説", access:"public", url:"gas-law.html", section:"free",
+     desc:"T・V スライダーで PV=nRT。体積↓で圧力↑(ボイル)、P-V等温曲線を可視化。"},
+    {title:"中和滴定 — pH曲線", subject:"化学", type:"動く解説", access:"public", url:"titration-ph.html", section:"free",
+     desc:"滴下量スライダーで中和滴定の pH曲線。当量点(20mL)でpHが急変、強酸+強塩基はpH7。"},
     {title:"相加・相乗平均 ノート（PDF）", subject:"数学", type:"PDF", access:"public", url:"souka-soujou-note.pdf", section:"free",
      desc:"動く解説の要点を1枚に凝縮した印刷用ノート（図入り・等号確認の手順つき）。オフラインで復習・書き込みできます。"},
     {title:"大学別 過去問風オリジナル", subject:"横断", type:"過去問", access:"public", url:"university-exam.html", section:"free",
@@ -154,16 +164,17 @@
   ];
   var ROADMAP=[
     {title:"三角関数 — 加法定理", subject:"数学"},
-    {title:"二項定理 — パスカルの三角形", subject:"数学"},
-    {title:"整数 — ユークリッド互除法", subject:"数学"},
-    {title:"図形の性質 — チェバ・メネラウスの定理", subject:"数学"},
+    {title:"力学的エネルギー保存", subject:"物理"},
+    {title:"単振動 — ばねと振り子", subject:"物理"},
+    {title:"化学平衡 — ルシャトリエの原理", subject:"化学"},
+    {title:"モル計算 — 質量・分子数・気体の体積", subject:"化学"},
     {title:"比較 — 比較級・最上級", subject:"英語"}
   ];
   var SECTIONS=[
     {id:"free",  label:"🎬 無料で試せる（登録不要）", note:"ここは登録なしで全部試せます。気に入ったら無料体験へ。"},
     {id:"tools", label:"📚 演習・学習ツール（要ログイン）", note:"ログインすると正解率・弱点・履歴があなたに紐づいて記録されます。"}
   ];
-  var SUBJECTS=["すべて","数学","英語","横断"];
+  var SUBJECTS=["すべて","数学","物理","化学","英語","横断"];
   var ACCESS=[["すべて","すべて"],["無料（登録不要）","public"],["要ログイン","login"]];
 
   var state={subject:"すべて", access:"すべて"};
