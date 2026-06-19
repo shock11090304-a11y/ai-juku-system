@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>相加・相乗平均 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>相加・相乗平均 — 動く解説</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーを動かすと <b>等号成立 a = b</b> の瞬間が見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>等号成立条件の確認</b>。「≧」が言えても、その値を実際にとる（等号が成り立つ）ことを確かめて初めて最小値と言えます。</div>
+
+  <!-- ① 幾何的証明 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="geoBadge">step 1 / 5</span>
+        <span class="steptitle" id="geoTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="geoPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="geoNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">幾何的証明</h2>
+    <p class="hint">半円と方べきの定理で「√(ab) ≦ (a+b)/2」を示します。</p>
+    <div class="stage">
+      <svg id="geoSvg" viewBox="0 0 600 330" role="img" aria-label="相加相乗平均の半円作図">
+        <path id="g_arc" data-ms="2" fill="none" stroke="var(--blue)" stroke-width="2.5"></path>
+        <line id="g_dia" data-ms="1" stroke="var(--ink)" stroke-width="2"></line>
+        <line id="g_rad" data-ms="4" stroke="var(--green)" stroke-width="2.5"></line>
+        <line id="g_perp" data-ms="3" stroke="var(--red)" stroke-width="2.5" stroke-dasharray="6 5"></line>
+        <polyline id="g_ang" data-ms="3" fill="none" stroke="var(--gray)" stroke-width="1.5"></polyline>
+        <circle id="g_pA" data-ms="1" r="4" fill="var(--ink)"></circle>
+        <circle id="g_pB" data-ms="1" r="4" fill="var(--ink)"></circle>
+        <circle id="g_pP" data-ms="1" r="4" fill="var(--ink)"></circle>
+        <circle id="g_pO" data-ms="2" r="4" fill="var(--gray)"></circle>
+        <circle id="g_pQ" data-ms="3" r="4.5" fill="var(--red)"></circle>
+        <text id="g_lA" data-ms="1" font-size="14" text-anchor="middle" fill="var(--ink)">A</text>
+        <text id="g_lB" data-ms="1" font-size="14" text-anchor="middle" fill="var(--ink)">B</text>
+        <text id="g_lP" data-ms="1" font-size="14" text-anchor="middle" fill="var(--ink)">P</text>
+        <text id="g_lO" data-ms="2" font-size="14" text-anchor="middle" fill="var(--gray)">O</text>
+        <text id="g_sA" data-ms="1" font-size="16" font-style="italic" text-anchor="middle" fill="var(--ink)">a</text>
+        <text id="g_sB" data-ms="1" font-size="16" font-style="italic" text-anchor="middle" fill="var(--ink)">b</text>
+        <text id="g_lSq" data-ms="3" font-size="16" text-anchor="end" fill="var(--red)">√(ab)</text>
+        <text id="g_lAv" data-ms="4" font-size="16" text-anchor="start" fill="var(--green)">(a+b)/2</text>
+      </svg>
+    </div>
+    <p class="cap" id="geoCap"></p>
+    <div class="ctl">
+      <label for="geoSlider">a と b を動かす</label>
+      <input type="range" id="geoSlider" min="1" max="9" step="0.1" value="2">
+      <span class="out" id="geoOut">a=2.0, b=8.0</span>
+    </div>
+    <div class="relation" id="geoRel">
+      <span style="color:var(--red)">√(ab)</span> = <span id="geoSq">2.83</span>
+      <span id="geoSign" style="margin:0 8px; font-weight:600">≦</span>
+      <span style="color:var(--green)">(a+b)/2</span> = <span id="geoAv">5.00</span>
+      <span class="eqnote" id="geoEq"></span>
+    </div>
+  </section>
+
+  <!-- ② 例題① y=x+2/x のグラフ -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="grBadge">step 1 / 4</span>
+        <span class="steptitle" id="grTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="grPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="grNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">例題 y=x+2/x の最小値</h2>
+    <p class="hint">x &gt; 0 のとき y = x + 2/x の最小値。「≧2√2」だけでは不十分で、等号 x=√2 の確認が要ります。</p>
+    <div class="stage">
+      <svg id="grSvg" viewBox="0 0 600 360" role="img" aria-label="y=x+2/x のグラフ">
+        <line id="r_ax" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="r_ay" stroke="var(--gray)" stroke-width="1.2"></line>
+        <g id="r_ticks"></g>
+        <line id="r_min2" data-ms="2" stroke="var(--green)" stroke-width="2" stroke-dasharray="7 5"></line>
+        <text id="r_min2l" data-ms="2" font-size="15" fill="var(--green)" text-anchor="start">y = 2√2</text>
+        <line id="r_vx" data-ms="3" stroke="var(--gray)" stroke-width="1.2" stroke-dasharray="4 4"></line>
+        <path id="r_curve" data-ms="1" fill="none" stroke="var(--blue)" stroke-width="2.6"></path>
+        <line id="r_dx" data-ms="1" stroke="var(--gray)" stroke-width="1" stroke-dasharray="3 4"></line>
+        <line id="r_dy" data-ms="1" stroke="var(--gray)" stroke-width="1" stroke-dasharray="3 4"></line>
+        <circle id="r_min" data-ms="3" r="5" fill="var(--green)"></circle>
+        <circle id="r_pt" data-ms="1" r="5.5" fill="var(--red)"></circle>
+        <text id="r_xl" font-size="14" fill="var(--sub)" text-anchor="middle">x</text>
+        <text id="r_yl" font-size="14" fill="var(--sub)" text-anchor="middle">y</text>
+        <text id="r_minl" data-ms="3" font-size="14" fill="var(--green)" text-anchor="middle">最小 (√2, 2√2)</text>
+      </svg>
+    </div>
+    <p class="cap" id="grCap"></p>
+    <div class="ctl">
+      <label for="grSlider">x を動かす</label>
+      <input type="range" id="grSlider" min="0.3" max="5" step="0.05" value="3.2">
+      <span class="out" id="grOut">x=3.20</span>
+    </div>
+    <div class="relation" id="grRel">
+      <span style="color:var(--red)">y = x + 2/x</span> = <span id="grY">3.83</span>
+      <span id="grSign" style="margin:0 8px; font-weight:600">≧</span>
+      2√2 = <span>2.83</span>
+      <span class="eqnote" id="grEq"></span>
+    </div>
+  </section>
+
+  <footer>© AI塾 / trillion-ai-juku.com ・ 数式記号や図のラベルは指導用に整理した表記です。</footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== ① 幾何的証明 ===== */
+  (function(){
+    var S=10,k=42,OX=80,OY=275, step=1, a=2;
+    function MX(x){return OX+x*k;} function MY(y){return OY-y*k;}
+    var info=[null,
+      {t:"直径をひく", c:"長さ a+b の線分をひき、点 P で a と b に分けます。"},
+      {t:"半円をかく", c:"この線分を直径とする半円をかきます。中心 O、半径は (a+b)/2 です。"},
+      {t:"垂線をたてる", c:"P から垂線をたて、円との交点を Q とします。方べきの定理より、垂線の長さ PQ は √(ab) です。"},
+      {t:"半径をむすぶ", c:"O と Q をむすびます。OQ は半円の半径なので (a+b)/2。三角形 OPQ は P が直角です。"},
+      {t:"くらべる", c:"直角三角形では斜辺 OQ は垂線 PQ 以上。つまり √(ab) ≦ (a+b)/2。スライダーで a=b にすると P が O に重なり、等号が成立します。"}];
+    function arc(){var p=[];for(var i=0;i<=64;i++){var th=Math.PI*i/64;p.push((MX(5)+210*Math.cos(th)).toFixed(1)+","+(OY-210*Math.sin(th)).toFixed(1));}return "M"+p.join(" L");}
+    function render(){
+      var b=S-a, r=S/2, h=Math.sqrt(a*b);
+      attr("g_arc","d",arc());
+      setLine("g_dia",MX(0),MY(0),MX(S),MY(0));
+      setLine("g_perp",MX(a),MY(0),MX(a),MY(h));
+      setLine("g_rad",MX(r),MY(0),MX(a),MY(h));
+      attr("g_ang","points",(MX(a)+11)+","+MY(0)+" "+(MX(a)+11)+","+(MY(0)-11)+" "+MX(a)+","+(MY(0)-11));
+      setC("g_pA",MX(0),MY(0));setC("g_pB",MX(S),MY(0));setC("g_pP",MX(a),MY(0));setC("g_pO",MX(r),MY(0));setC("g_pQ",MX(a),MY(h));
+      setT("g_lA",MX(0),OY+22);setT("g_lB",MX(S),OY+22);
+      setT("g_sA",MX(a/2),OY+22);setT("g_sB",MX((a+S)/2),OY+22);
+      setT("g_lP",MX(a),OY+40);setT("g_lO",MX(r),OY+40);
+      setT("g_lSq",MX(a)-10,MY(h/2)+5);
+      setT("g_lAv",(MX(r)+MX(a))/2+10,(MY(0)+MY(h))/2-4);
+      vis("geoSvg",step);
+      el("geoSq").textContent=h.toFixed(2); el("geoAv").textContent=r.toFixed(2);
+      el("geoOut").textContent="a="+a.toFixed(1)+", b="+b.toFixed(1);
+      var eq=Math.abs(a-b)<0.06;
+      el("geoSign").textContent=eq?"=":"≦"; el("geoEq").textContent=eq?"等号成立 (a=b)":"";
+      el("geoRel").className=eq?"relation eq":"relation";
+      el("geoBadge").textContent="step "+step+" / 5"; el("geoTitle").textContent=info[step].t; el("geoCap").textContent=info[step].c;
+      el("geoPrev").disabled=step<=1; el("geoNext").disabled=step>=5;
+    }
+    el("geoNext").addEventListener("click",function(){if(step<5){step++;render();}});
+    el("geoPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("geoSlider").addEventListener("input",function(e){a=parseFloat(e.target.value);render();});
+    render();
+  })();
+
+  /* ===== ② y=x+2/x のグラフ ===== */
+  (function(){
+    var L=58,R=560,T=28,B=300, XM=6, YM=9, step=1, x=3.2;
+    function GX(v){return L+(v/XM)*(R-L);} function GY(v){return B-(v/YM)*(B-T);}
+    function f(v){return v+2/v;}
+    var xm=Math.sqrt(2), ym=2*Math.sqrt(2);
+    var info=[null,
+      {t:"グラフをかく", c:"y = x + 2/x （x>0）のグラフ。スライダーで曲線上の点を動かせます。"},
+      {t:"下限を示す", c:"相加相乗平均より x + 2/x ≧ 2√2（約2.83）。グラフはこの水平線より上にあります。"},
+      {t:"等号を確認", c:"「≧2√2 だから最小2√2」は早い。等号は x = 2/x すなわち x = √2 のときだけ成り立ちます。"},
+      {t:"最小値", c:"x = √2 のとき実際に y = 2√2 をとり、ここが最小値。スライダーを x=√2 付近に合わせると点が最小点に重なります。"}];
+    function curve(){var p=[];for(var i=0;i<=240;i++){var v=0.235+(XM-0.235)*i/240;var y=f(v);if(y>YM)continue;p.push((p.length?"L":"M")+GX(v).toFixed(1)+","+GY(y).toFixed(1));}return p.join(" ");}
+    function ticks(){
+      var g=el("r_ticks"); g.innerHTML="";
+      function tk(vx,lab){var t=GX(vx);
+        g.innerHTML+='<line x1="'+t+'" y1="'+B+'" x2="'+t+'" y2="'+(B+5)+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+t+'" y="'+(B+20)+'" font-size="12" fill="var(--sub)" text-anchor="middle">'+lab+'</text>';}
+      function ty(vy,lab){var t=GY(vy);
+        g.innerHTML+='<line x1="'+L+'" y1="'+t+'" x2="'+(L-5)+'" y2="'+t+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+(L-9)+'" y="'+(t+4)+'" font-size="12" fill="var(--sub)" text-anchor="end">'+lab+'</text>';}
+      tk(xm,"√2"); tk(2,"2"); tk(3,"3"); tk(4,"4"); tk(5,"5");
+      ty(ym,"2√2"); ty(4,"4"); ty(6,"6"); ty(8,"8");
+    }
+    function render(){
+      setLine("r_ax",L,B,R,B); setLine("r_ay",L,B,L,T);
+      ticks();
+      attr("r_curve","d",curve());
+      setLine("r_min2",L,GY(ym),R,GY(ym)); setT("r_min2l",R-66,GY(ym)-8,null);
+      setLine("r_vx",GX(xm),B,GX(xm),GY(ym));
+      setC("r_min",GX(xm),GY(ym)); setT("r_minl",GX(xm)+74,GY(ym)-14,null);
+      var y=f(x);
+      setC("r_pt",GX(x),GY(y));
+      setLine("r_dx",GX(x),GY(y),GX(x),B);
+      setLine("r_dy",GX(x),GY(y),L,GY(y));
+      setT("r_xl",(L+R)/2,B+34,null); setT("r_yl",L-30,T+4,null);
+      vis("grSvg",step);
+      el("grY").textContent=y.toFixed(2); el("grOut").textContent="x="+x.toFixed(2);
+      var eq=Math.abs(x-xm)<0.04;
+      el("grSign").textContent=eq?"=":"≧"; el("grEq").textContent=eq?"最小値！(x=√2)":"";
+      el("grRel").className=eq?"relation eq":"relation";
+      el("grBadge").textContent="step "+step+" / 4"; el("grTitle").textContent=info[step].t; el("grCap").textContent=info[step].c;
+      el("grPrev").disabled=step<=1; el("grNext").disabled=step>=4;
+    }
+    el("grNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("grPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("grSlider").addEventListener("input",function(e){x=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>
