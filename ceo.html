@@ -604,6 +604,13 @@
         <h2 style="font-size:1.15rem;color:#93c5fd;margin:0;">📝 英文法 単元別ドリル <span style="font-size:0.7rem;color:#71717a;font-weight:400;">(偏差値55-65・4択・選んだ生徒に配信 → 問題別の正解率)</span></h2>
         <button onclick="gdRefresh()" style="background:rgba(96,165,250,0.18);color:#93c5fd;border:1px solid rgba(96,165,250,0.40);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">🔄 一覧更新</button>
       </div>
+      <!-- ✏️ 問題プール補充 (2026-06-19): grammar_questions に手作り4択(3名検証済)を無課金で一括投入 -->
+      <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.30);border-radius:10px;padding:0.8rem;margin-bottom:0.8rem;">
+        <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+          <button id="grammarPoolImportBtn" type="button" data-seed="/seed-data/grammar_drill_pool_v1.json" data-size="703" title="英文法ドリルの問題プール(grammar_questions)を補充: 20単元×基礎/標準/やや難の手作り4択703問(3名独立ソルバー全員一致検証済・正解位置均等化・説明は値参照)。全単元が緑(在庫25問+)になる。再押下しても重複は自動スキップ。ワンクリック取込・無課金。" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;padding:0.5rem 1.1rem;border-radius:8px;font-size:0.84rem;font-weight:800;cursor:pointer;">✏️ 英文法ドリルを補充 (20単元 703問・無課金)</button>
+          <span id="grammarPoolImportMsg" style="font-size:0.8rem;color:#94a3b8;">押すと全20単元のドリル在庫が緑(25問+)になります。重複は自動スキップ。</span>
+        </div>
+      </div>
       <div style="background:rgba(0,0,0,0.18);border-radius:10px;padding:0.9rem;margin-bottom:0.8rem;">
         <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.4rem;">① 単元を選ぶ <span style="color:#71717a;">(数字 = 偏差値55-65帯の在庫。<span style="color:#34d399;">緑=25問+</span> / <span style="color:#fbbf24;">黄=少なめ</span> / <span style="color:#71717a;">灰=補充要</span>)</span></div>
         <div id="gdUnits" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.9rem;">読み込み中...</div>
@@ -4197,6 +4204,42 @@
     }
     window.gdSelUnit = gdSelUnit; window.gdFilterStudents = gdFilterStudents; window.gdSelectAll = gdSelectAll; window.gdCreate = gdCreate; window.gdRefresh = gdRefresh; window.gdAnalytics = gdAnalytics; window.gdCloseAnalytics = gdCloseAnalytics; window.gdRenderUnits = gdRenderUnits; window.gdDelete = gdDelete; window.gdRemediation = gdRemediation; window._gdClearRemediation = _gdClearRemediation;
     document.addEventListener('DOMContentLoaded', gdInit);
+
+    // ✏️ 英文法ドリル 問題プール補充 (2026-06-19): seed JSON を grammar_questions に一括投入 (無課金・dedup)
+    async function grammarPoolImport() {
+      const btn = document.getElementById('grammarPoolImportBtn');
+      const msg = document.getElementById('grammarPoolImportMsg');
+      if (!btn || !window.AdminAuth) return;
+      const seedUrl = btn.getAttribute('data-seed');
+      if (!confirm('英文法ドリルの問題プールに 703問(検証済) を取り込みます。よろしいですか？（重複は自動スキップ・無課金）')) return;
+      btn.disabled = true; const orig = btn.textContent; btn.textContent = '⏳ 取込中...';
+      if (msg) { msg.style.color = '#94a3b8'; msg.textContent = 'シード読込中...'; }
+      try {
+        const sr = await fetch(seedUrl, { cache: 'no-store' });
+        if (!sr.ok) throw new Error('シード取得失敗 HTTP ' + sr.status);
+        const seed = await sr.json();
+        const questions = (seed && seed.questions) || [];
+        if (!questions.length) throw new Error('シードに問題がありません');
+        if (msg) msg.textContent = `投入中... (${questions.length}問)`;
+        const res = await AdminAuth.fetch('/api/admin/grammar/import', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ questions, dedup: true }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (data.detail || ('取込失敗 HTTP ' + res.status)); } return; }
+        if (msg) { msg.style.color = '#86efac'; msg.textContent = `✅ 取込 ${data.inserted}問 / 重複スキップ ${data.skipped} / エラー ${data.errors}（受領 ${data.received}）。単元の在庫色を更新します。`; }
+        try { await gdLoadUnits(); gdRenderUnits(); } catch (_e) {}  // 在庫色(緑/黄/灰)を即更新
+      } catch (e) {
+        if (msg) { msg.style.color = '#fca5a5'; msg.textContent = '❌ ' + (e.message || String(e)); }
+      } finally {
+        btn.disabled = false; btn.textContent = orig;
+      }
+    }
+    window.grammarPoolImport = grammarPoolImport;
+    document.addEventListener('DOMContentLoaded', () => {
+      const b = document.getElementById('grammarPoolImportBtn');
+      if (b) b.addEventListener('click', grammarPoolImport);
+    });
 
     // ========== 📤 宿題 一括割当 (2026-06-19 塾長指示: 英文法ドリルのように複数生徒へ一括で宿題) ==========
     let _hwbStudents = [];
