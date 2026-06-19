@@ -569,6 +569,9 @@
           </div>
           <div>
             <label style="display:block;font-size:0.78rem;color:#c4b5fd;margin-bottom:0.25rem;">⑤ 添付プリント (任意・配布プリントから選択 → 生徒のマイページでPDF)</label>
+            <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.74rem;color:#a5b4fc;margin-bottom:0.35rem;cursor:pointer;">
+              <input type="checkbox" id="hwbPrintGentle" checked> 🕒 難関(発展/医学部レベル/東大レベル/本番レベル)を除外＝「いきなり入試」を避けて基礎〜標準を中心に表示
+            </label>
             <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:0.5rem;">
               <select id="hwbPrintSubject" style="width:100%;background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:6px;padding:0.5rem;font-size:0.84rem;">
                 <option value="">① 科目を選択</option>
@@ -577,6 +580,7 @@
                 <option value="">② プリントを選択 (先に科目)</option>
               </select>
             </div>
+            <div id="hwbPrintCount" style="font-size:0.72rem;color:#71717a;margin-top:0.25rem;"></div>
           </div>
         </div>
         <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.35rem;">⑥ 配信する生徒を選ぶ
@@ -4240,25 +4244,35 @@
     async function hwbOnPrintSubjectChange() {
       const subjSel = document.getElementById('hwbPrintSubject');
       const printSel = document.getElementById('hwbPrint');
+      const cntEl = document.getElementById('hwbPrintCount');
       if (!subjSel || !printSel) return;
       const subj = subjSel.value;
       printSel.value = '';
+      if (cntEl) cntEl.textContent = '';
       if (!subj) { printSel.innerHTML = '<option value="">② プリントを選択 (先に科目)</option>'; printSel.disabled = true; return; }
       printSel.disabled = true;
       printSel.innerHTML = '<option value="">⏳ 読み込み中…</option>';
+      // 🕒「いきなり入試」を避ける: 難関レベルを除外して基礎〜標準中心に。level未設定(NULL)はサーバ側で残す。
+      const gentle = (document.getElementById('hwbPrintGentle') || {}).checked;
+      // ★level の実値は 東大レベル/医学部レベル/本番レベル/発展/標準/基礎 (_metadata.json 8193件で実測)。
+      //   schema コメントの略記(東大/医学部)は誤りなので必ず「〜レベル」の実値で除外する。本番レベルが最難。
+      const exParam = gentle ? '&exclude_level=' + encodeURIComponent('発展,医学部レベル,東大レベル,本番レベル') : '';
       try {
-        const pr = await AdminAuth.fetch(`/api/admin/lesson-prints/list?subject=${encodeURIComponent(subj)}&limit=2000`);
+        const pr = await AdminAuth.fetch(`/api/admin/lesson-prints/list?subject=${encodeURIComponent(subj)}&limit=2000${exParam}`);
         const pd = pr.ok ? await pr.json() : {};
         const list = (pd && pd.items) || [];
         let html = '<option value="">— 添付なし —</option>' + list.map(p => {
-          const tt = p.target_type ? ` [${escapeHtml(p.target_type)}]` : '';
-          return `<option value="${escapeHtml(String(p.id))}">${escapeHtml(p.title)}${tt}</option>`;
+          const lv = p.level ? ` [${escapeHtml(p.level)}]` : '';            // 難易度
+          const pg = (p.pages != null && p.pages > 0) ? ` ${p.pages}p` : ''; // ページ数=分量の目安
+          return `<option value="${escapeHtml(String(p.id))}">${escapeHtml(p.title)}${lv}${pg}</option>`;
         }).join('');
         if (pd.truncated) html += '<option value="" disabled>… (件数が多く一部のみ表示)</option>';
         printSel.innerHTML = html;
         printSel.disabled = false;
+        if (cntEl) cntEl.textContent = `該当 ${list.length}件${pd.truncated ? '+' : ''}${gentle ? '（難関除外中・チェックを外すと全件）' : '（全レベル表示中）'}`;
       } catch (_e) {
         printSel.innerHTML = '<option value="">取得失敗</option>'; printSel.disabled = false;
+        if (cntEl) cntEl.textContent = '';
       }
     }
     async function hwbAssign() {
@@ -4304,6 +4318,9 @@
       hwbInit();
       const ps = document.getElementById('hwbPrintSubject');
       if (ps) ps.addEventListener('change', hwbOnPrintSubjectChange);
+      // 🕒「難関除外」トグルを切り替えたら、科目が選択済みなら一覧を引き直す
+      const gentle = document.getElementById('hwbPrintGentle');
+      if (gentle) gentle.addEventListener('change', () => { if (ps && ps.value) hwbOnPrintSubjectChange(); });
     });
 
     // 📚 教材プール 未作成リクエスト 一覧読込

@@ -1373,7 +1373,7 @@ def init_db():
     CREATE INDEX IF NOT EXISTS idx_invite_codes_email ON invite_codes(email);
     CREATE INDEX IF NOT EXISTS idx_invite_codes_expires ON invite_codes(expires_at);
     -- 📚 配布プリント (塾長指示 2026-05-26): Claude が作成した PDF 教材を生徒に配信
-    -- subject (国語/英語/数学/理科/社会/小論文/模試) × topic (具体テーマ) × level (基礎/標準/発展/医学部/東大)
+    -- subject (国語/英語/数学/理科/社会/小論文/模試) × topic (具体テーマ) × level (基礎/標準/発展/医学部レベル/東大レベル/本番レベル) ※実値は「〜レベル」付き(略記の医学部/東大ではマッチしない)
     -- file_path は Vercel static asset の URL (/lesson-prints/2026-05-26_xxx.pdf)
     -- 公開 (a) 全生徒・改訂 (a) Claude 即自動公開 設定で運用
     CREATE TABLE IF NOT EXISTS lesson_prints (
@@ -34951,13 +34951,18 @@ def admin_lesson_prints_subjects(
 def admin_lesson_prints_list(
     limit: int = 2000,
     subject: Optional[str] = None,
+    level: Optional[str] = None,
+    exclude_level: Optional[str] = None,
     authorization: Optional[str] = Header(None),
     x_cron_secret: Optional[str] = Header(None),
 ):
     """🧑‍🏫 admin: 宿題に添付する配布プリントの選択用一覧 (公開中のみ)。
     🐛 2026-06-15 fix: 通常は ?subject=<科目> で「その科目だけ」を取得する2段階運用にし、
     全件1クエリ (旧 LIMIT で先頭科目に偏る) を避ける。subject 指定時は当該科目を最大 limit 件。
-    返却: {ok, items:[{id,title,subject,target_type,pages}], truncated}。認証: admin Bearer / X-Cron-Secret。"""
+    🆕 2026-06-19: 宿題に「いきなり入試はきつい」を避けるため難易度で絞れるよう level 列を返し、
+      ?level=基礎,標準 (include) / ?exclude_level=発展,医学部レベル,東大レベル,本番レベル (exclude・level未設定=NULLは残す) に対応。
+      ※level の実値は 基礎/標準/発展/医学部レベル/東大レベル/本番レベル (略記の「医学部」「東大」ではマッチしない)。
+    返却: {ok, items:[{id,title,subject,level,target_type,pages}], truncated}。認証: admin Bearer / X-Cron-Secret。"""
     authed = False
     if authorization and authorization.startswith("Bearer "):
         token = authorization[len("Bearer "):].strip()
@@ -34971,28 +34976,36 @@ def admin_lesson_prints_list(
         limit = max(1, min(int(limit or 2000), 5000))
     except Exception:
         limit = 2000
+    inc_levels = [s.strip() for s in str(level or "").split(",") if s.strip()][:8]
+    exc_levels = [s.strip() for s in str(exclude_level or "").split(",") if s.strip()][:8]
     conn = db()
     try:
         c = conn.cursor()
+        where = ["is_published = 1"]
+        params = []
         if subject:
-            c.execute(
-                "SELECT id, title, subject, target_type, pages FROM lesson_prints "
-                "WHERE is_published = 1 AND subject = ? ORDER BY title LIMIT ?",
-                (subject, limit + 1),  # +1 で truncated 判定
-            )
-        else:
-            # subject 未指定 (後方互換): 件数制限の偏りを避けるため科目横断は推奨しないが、
-            # 全科目を title 順で最大 limit 件返す (旧挙動より limit を大きく)
-            c.execute(
-                "SELECT id, title, subject, target_type, pages FROM lesson_prints "
-                "WHERE is_published = 1 ORDER BY subject, title LIMIT ?",
-                (limit + 1,),
-            )
+            where.append("subject = ?")
+            params.append(subject)
+        if inc_levels:
+            where.append("level IN (%s)" % ",".join(["?"] * len(inc_levels)))
+            params.extend(inc_levels)
+        if exc_levels:
+            # level 未設定 (NULL) は「難関と確定できない」ので残す = いきなり入試を確実に外しつつ取りこぼし回避
+            where.append("(level IS NULL OR level NOT IN (%s))" % ",".join(["?"] * len(exc_levels)))
+            params.extend(exc_levels)
+        order = "ORDER BY title" if subject else "ORDER BY subject, title"
+        params.append(limit + 1)  # +1 で truncated 判定
+        c.execute(
+            "SELECT id, title, subject, level, target_type, pages FROM lesson_prints "
+            "WHERE " + " AND ".join(where) + " " + order + " LIMIT ?",
+            tuple(params),
+        )
         rows = c.fetchall()
         truncated = len(rows) > limit
         rows = rows[:limit]
         items = [{
             "id": r["id"], "title": r["title"], "subject": r["subject"],
+            "level": (r["level"] if "level" in r.keys() else None),
             "target_type": (r["target_type"] if "target_type" in r.keys() else None),
             "pages": (r["pages"] if "pages" in r.keys() else None),
         } for r in rows]
