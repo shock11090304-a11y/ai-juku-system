@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>場合の数 — 順列と組合せ — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:78px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .readout{margin-top:12px; padding:11px 14px; border-radius:10px; border:1px solid var(--bd); background:var(--bg);
+           font-size:14px; line-height:2.0;}
+  .readout b{font-weight:600;}
+  .readout .perm{color:var(--blue);} .readout .comb{color:var(--green);} .readout .fac{color:var(--red);}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>場合の数 — 順列と組合せ</h1>
+    <p class="lead">「次へ／戻る」で考え方が1ステップずつ完成。スライダーで n と r を動かすと、<b>順列 nPr</b> と <b>組合せ nCr</b> の大きさの差がそのまま見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>「並べる」か「選ぶ」かの区別</b>。順序を区別するなら順列 nPr、区別しないなら組合せ nCr。両者は <b>nPr = nCr × r!</b> でつながり、並べ方 r! 通りの重複を割ったものが nCr です。</div>
+
+  <!-- ① 順列と組合せの比較 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="pcBadge">step 1 / 4</span>
+        <span class="steptitle" id="pcTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="pcPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="pcNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">順列と組合せ</h2>
+    <p class="hint">n 個から r 個。「並べる(順序あり)= nPr」と「選ぶ(順序なし)= nCr」を棒の長さでくらべます。</p>
+    <div class="stage">
+      <svg id="pcSvg" viewBox="0 0 600 320" role="img" aria-label="順列nPrと組合せnCrの比較棒グラフ">
+        <!-- 取り出しの図(step1〜) -->
+        <text id="pc_pick" data-ms="1" x="300" y="34" font-size="15" text-anchor="middle" fill="var(--sub)"></text>
+        <g id="pc_balls" data-ms="1"></g>
+
+        <!-- 軸 -->
+        <line id="pc_base" data-ms="2" stroke="var(--gray)" stroke-width="1.2"></line>
+
+        <!-- 順列バー(step2〜) -->
+        <rect id="pc_barP" data-ms="2" rx="5" fill="var(--blue)" opacity="0.85"></rect>
+        <text id="pc_labP" data-ms="2" font-size="14" text-anchor="start" fill="var(--ink)">順列 nPr（並べる・順序あり）</text>
+        <text id="pc_valP" data-ms="2" font-size="15" font-weight="600" text-anchor="start" fill="#ffffff"></text>
+
+        <!-- 組合せバー(step3〜) -->
+        <rect id="pc_barC" data-ms="3" rx="5" fill="var(--green)" opacity="0.85"></rect>
+        <text id="pc_labC" data-ms="3" font-size="14" text-anchor="start" fill="var(--ink)">組合せ nCr（選ぶ・順序なし）</text>
+        <text id="pc_valC" data-ms="3" font-size="15" font-weight="600" text-anchor="start" fill="var(--green)"></text>
+
+        <!-- 関係注記(step4) -->
+        <text id="pc_rel" data-ms="4" font-size="15" font-weight="600" text-anchor="middle" fill="var(--red)"></text>
+        <text id="pc_rel2" data-ms="4" font-size="13" text-anchor="middle" fill="var(--sub)"></text>
+      </svg>
+    </div>
+    <p class="cap" id="pcCap"></p>
+    <div class="ctl">
+      <label for="pcN">n（全体の個数）</label>
+      <input type="range" id="pcN" min="1" max="10" step="1" value="5">
+      <span class="out" id="pcNout">n=5</span>
+    </div>
+    <div class="ctl">
+      <label for="pcR">r（取り出す個数）</label>
+      <input type="range" id="pcR" min="0" max="10" step="1" value="2">
+      <span class="out" id="pcRout">r=2</span>
+    </div>
+    <div class="relation" id="pcRel">
+      <span style="color:var(--blue)">nPr</span> = <span id="pcShowP">20</span>
+      <span style="margin:0 8px; font-weight:600">=</span>
+      <span style="color:var(--green)">nCr</span> × r! = <span id="pcShowC">10</span> × <span id="pcShowF">2</span>
+      <span class="eqnote" id="pcEq"></span>
+    </div>
+    <div class="readout" id="pcReadout"></div>
+  </section>
+
+  <footer>© AI塾 / trillion-ai-juku.com ・ 数式記号や図のラベルは指導用に整理した表記です。
+    <br><a href="kyozai.html">← 教材ライブラリ</a></footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setT(id,x,y,txt){var e=el(id);if(x!=null)e.setAttribute("x",x);if(y!=null)e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function setRect(id,x,y,w,h){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);e.setAttribute("width",Math.max(0,w));e.setAttribute("height",Math.max(0,h));}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* 階乗(有限・10!まで)。0!=1 */
+  function fact(m){var f=1;for(var i=2;i<=m;i++){f*=i;}return f;}
+  /* nPr = n*(n-1)*...*(n-r+1)。r=0で1 */
+  function nPr(n,r){if(r<=0)return 1;if(r>n)r=n;var p=1;for(var i=0;i<r;i++){p*=(n-i);}return p;}
+  /* nCr = nPr / r! 。整数で安全に */
+  function nCr(n,r){if(r<0)return 0;if(r>n)r=n;return Math.round(nPr(n,r)/fact(r));}
+
+  /* ===== ① 順列と組合せの比較 ===== */
+  (function(){
+    var step=1, n=5, r=2;
+    var info=[null,
+      {t:"n個からr個を取り出す", c:"全体 n 個の中から r 個を取り出します。スライダーで n と r を動かせます（r は n を超えられません）。この「取り出し方」を数えるのが場合の数です。"},
+      {t:"順列 nPr（並べる）", c:"取り出した r 個を一列に並べる（順序を区別する）数が順列 nPr＝n!/(n-r)!＝n·(n-1)···(n-r+1)。青い棒の長さが nPr です。"},
+      {t:"組合せ nCr（選ぶ）", c:"順序を区別せず「どれを選ぶか」だけ数えるのが組合せ nCr＝n!/(r!(n-r)!)。緑の棒は青い棒の 1/r! の長さ。並べ替えの分だけ短くなります。"},
+      {t:"関係 nPr = nCr × r!", c:"同じ r 個の選び方に対し、並べ方が r! 通り。だから順列は組合せの r! 倍。逆に nCr は nPr を r! で割って重複を消したものです。"}];
+
+    /* 取り出しの玉を描く: n個並べ、先頭r個をハイライト */
+    function balls(){
+      var g=el("pc_balls"); g.innerHTML="";
+      var rr=(r>n)?n:r;
+      var gap=Math.min(46, 540/Math.max(n,1));
+      var rad=Math.min(15, gap*0.40);
+      var totalW=gap*(n-1);
+      var sx=300-totalW/2;
+      var cy=70;
+      for(var i=0;i<n;i++){
+        var cx=sx+gap*i;
+        var picked=(i<rr);
+        var fill=picked?"var(--blue)":"var(--card)";
+        var stroke=picked?"var(--blue)":"var(--gray)";
+        var tcol=picked?"#ffffff":"var(--sub)";
+        g.innerHTML+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy+'" r="'+rad.toFixed(1)+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1.6"/>'+
+          '<text x="'+cx.toFixed(1)+'" y="'+(cy+4)+'" font-size="'+(rad*0.95).toFixed(0)+'" text-anchor="middle" fill="'+tcol+'">'+(i+1)+'</text>';
+      }
+    }
+
+    function render(){
+      /* クランプ: r は n を超えない。rのmaxを動的にnへ */
+      el("pcR").max=n;
+      if(r>n){r=n; el("pcR").value=r;}
+      var rr=r; // already clamped
+
+      var P=nPr(n,rr), C=nCr(n,rr), F=fact(rr);
+
+      /* 図 */
+      el("pc_pick").textContent="全 "+n+" 個から "+rr+" 個を取り出す";
+      balls();
+
+      /* バー領域: x基準135, 最大幅は右端560まで=425px。nPrを基準幅に */
+      var bx=135, bxMax=560, fullW=bxMax-bx;
+      /* Pバー */
+      var pY=150, cY=210, bh=34;
+      setRect("pc_barP", bx, pY, fullW, bh);
+      setT("pc_labP", bx, pY-8, null);
+      setT("pc_valP", bx+6, pY+bh*0.66, "nPr = "+P);
+      /* Cバー: 幅 = fullW * (C/P) = fullW * (1/r!)。P>=1なので0除算なし */
+      var ratio=(P>0)?(C/P):0;
+      var cW=fullW*ratio;
+      setRect("pc_barC", bx, cY, cW, bh);
+      setT("pc_labC", bx, cY-8, null);
+      /* 値ラベルは棒が短いとき外側に出す */
+      var cLabelX=(cW>120)?(bx+6):(bx+cW+8);
+      var cLabelFill=(cW>120)?"#ffffff":"var(--green)";
+      el("pc_valC").setAttribute("fill",cLabelFill);
+      setT("pc_valC", cLabelX, cY+bh*0.66, "nCr = "+C);
+
+      /* 軸線 */
+      el("pc_base").setAttribute("x1",bx); el("pc_base").setAttribute("y1",110);
+      el("pc_base").setAttribute("x2",bx); el("pc_base").setAttribute("y2",260);
+
+      /* 関係注記 */
+      el("pc_rel").setAttribute("x",300); el("pc_rel").setAttribute("y",290);
+      el("pc_rel").textContent="nPr = nCr × r! → "+P+" = "+C+" × "+F;
+      el("pc_rel2").setAttribute("x",300); el("pc_rel2").setAttribute("y",310);
+      el("pc_rel2").textContent="(緑は青の 1/r! = 1/"+F+" の長さ)";
+
+      vis("pcSvg",step);
+
+      /* 出力 */
+      el("pcNout").textContent="n="+n;
+      el("pcRout").textContent="r="+rr;
+
+      /* 関係式バー(等号は常に成立) */
+      el("pcShowP").textContent=P;
+      el("pcShowC").textContent=C;
+      el("pcShowF").textContent=F;
+      var ok=(P===C*F);
+      el("pcEq").textContent=ok?"成立":"";
+      el("pcRel").className=ok?"relation eq":"relation";
+
+      /* 詳しい読み出し */
+      var pExpand = "";
+      if(rr<=0){ pExpand="（空の積 = 1）"; }
+      else { var terms=[]; for(var i=0;i<rr;i++){terms.push(n-i);} pExpand="= "+terms.join("·")+" = "+P; }
+      el("pcReadout").innerHTML =
+        '<b>n</b> = '+n+' ， <b>r</b> = '+rr+'<br>'+
+        '<span class="perm">'+n+'P'+rr+'</span> = n!/(n-r)! = n·(n-1)···(n-r+1) '+pExpand+'<br>'+
+        '<span class="comb">'+n+'C'+rr+'</span> = n!/(r!(n-r)!) = '+n+'P'+rr+' / r! = '+P+' / '+F+' = <b>'+C+'</b><br>'+
+        '<span class="fac">r!</span> = '+rr+'! = '+F+'<br>'+
+        '<b>関係:</b> <span class="perm">'+n+'P'+rr+'</span> = <span class="comb">'+n+'C'+rr+'</span> × <span class="fac">r!</span> → '+P+' = '+C+' × '+F;
+
+      /* ステップヘッダ */
+      el("pcBadge").textContent="step "+step+" / 4";
+      el("pcTitle").textContent=info[step].t;
+      el("pcCap").textContent=info[step].c;
+      el("pcPrev").disabled=step<=1;
+      el("pcNext").disabled=step>=4;
+    }
+    el("pcNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("pcPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("pcN").addEventListener("input",function(e){n=parseInt(e.target.value,10);if(r>n){r=n;el("pcR").value=r;}render();});
+    el("pcR").addEventListener("input",function(e){r=parseInt(e.target.value,10);if(r>n){r=n;e.target.value=r;}render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

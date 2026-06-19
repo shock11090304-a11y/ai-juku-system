@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>対数 — 底の変換と大小比較 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>対数 — 底の変換と大小比較</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで <b>底 a</b> を動かすと、曲線のしなり方と <b>(a, 1) を通る</b>ことが見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>底をそろえて比べる</b>。対数の大小は底が違うと直接くらべられません。底の変換公式 <b>log<sub>a</sub> x = ln x / ln a</b> で「自然対数 ln」にそろえれば、ただの分数の大小に化けます。</div>
+
+  <!-- ① y=log_a(x) のグラフ -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="lgBadge">step 1 / 4</span>
+        <span class="steptitle" id="lgTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="lgPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="lgNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">y = log_a(x) のグラフと底の変換</h2>
+    <p class="hint">底 a &gt; 1 の対数関数 y = log<sub>a</sub> x。点 (1, 0) と (a, 1) を必ず通ります。</p>
+    <div class="stage">
+      <svg id="lgSvg" viewBox="0 0 600 360" role="img" aria-label="y=log_a(x) のグラフ">
+        <line id="l_ax" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="l_ay" stroke="var(--gray)" stroke-width="1.2"></line>
+        <g id="l_ticks"></g>
+        <line id="l_h1" data-ms="2" stroke="var(--red)" stroke-width="1.2" stroke-dasharray="4 4"></line>
+        <line id="l_vA" data-ms="2" stroke="var(--red)" stroke-width="1.2" stroke-dasharray="4 4"></line>
+        <path id="l_curve" data-ms="1" fill="none" stroke="var(--blue)" stroke-width="2.6"></path>
+        <circle id="l_p1" data-ms="1" r="5.5" fill="var(--green)"></circle>
+        <circle id="l_pA" data-ms="2" r="5.5" fill="var(--red)"></circle>
+        <text id="l_xl" font-size="14" fill="var(--sub)" text-anchor="middle">x</text>
+        <text id="l_yl" font-size="14" fill="var(--sub)" text-anchor="middle">y</text>
+        <text id="l_p1l" data-ms="1" font-size="14" fill="var(--green)" text-anchor="middle">(1, 0)</text>
+        <text id="l_pAl" data-ms="2" font-size="14" fill="var(--red)" text-anchor="start">(a, 1)</text>
+        <text id="l_curvel" data-ms="1" font-size="15" fill="var(--blue)" text-anchor="start" font-style="italic">y = log_a x</text>
+      </svg>
+    </div>
+    <p class="cap" id="lgCap"></p>
+    <div class="ctl">
+      <label for="lgSlider">底 a を動かす</label>
+      <input type="range" id="lgSlider" min="1.2" max="8" step="0.1" value="2">
+      <span class="out" id="lgOut">a = 2.0</span>
+    </div>
+    <div class="relation" id="lgRel">
+      <span style="color:var(--red)">log<sub>a</sub> 2</span> = <span id="lgL2">1.00</span>
+      <span style="margin:0 10px; color:var(--sub)">/</span>
+      <span style="color:var(--blue)">log<sub>a</sub> 4</span> = <span id="lgL4">2.00</span>
+      <span class="eqnote" id="lgConv"></span>
+    </div>
+  </section>
+
+  <!-- ② 底の変換で大小比較 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="cmBadge">step 1 / 3</span>
+        <span class="steptitle" id="cmTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="cmPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="cmNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">底をそろえて大小比較</h2>
+    <p class="hint">log<sub>2</sub> 3 と log<sub>3</sub> 2 はどちらが大きい? 底が違うので、ln にそろえて分数で比べます。</p>
+    <div class="stage">
+      <svg id="cmSvg" viewBox="0 0 600 300" role="img" aria-label="底をそろえた大小比較の棒グラフ">
+        <line id="c_base" stroke="var(--gray)" stroke-width="1.2"></line>
+        <g id="c_grid"></g>
+        <rect id="c_bar1" data-ms="1" fill="var(--blue)" opacity="0.85" rx="3"></rect>
+        <rect id="c_bar2" data-ms="1" fill="var(--green)" opacity="0.85" rx="3"></rect>
+        <text id="c_lab1" data-ms="1" font-size="14" fill="var(--blue)" text-anchor="middle">log_2 3</text>
+        <text id="c_lab2" data-ms="1" font-size="14" fill="var(--green)" text-anchor="middle">log_3 2</text>
+        <text id="c_val1" data-ms="2" font-size="15" font-weight="600" fill="var(--blue)" text-anchor="middle"></text>
+        <text id="c_val2" data-ms="2" font-size="15" font-weight="600" fill="var(--green)" text-anchor="middle"></text>
+        <text id="c_frac1" data-ms="3" font-size="13" fill="var(--blue)" text-anchor="middle">ln3 / ln2</text>
+        <text id="c_frac2" data-ms="3" font-size="13" fill="var(--green)" text-anchor="middle">ln2 / ln3</text>
+      </svg>
+    </div>
+    <p class="cap" id="cmCap"></p>
+    <div class="ctl">
+      <label for="cmToggle">比べる組を切替</label>
+      <button id="cmToggle" style="flex:1; justify-content:center;">log₂3 と log₃2</button>
+      <span class="out" id="cmOut">底 2 と 3</span>
+    </div>
+    <div class="relation" id="cmRel">
+      <span style="color:var(--blue)" id="cmName1">log₂3</span> = <span id="cmV1">1.58</span>
+      <span id="cmSign" style="margin:0 8px; font-weight:600">&gt;</span>
+      <span style="color:var(--green)" id="cmName2">log₃2</span> = <span id="cmV2">0.63</span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a> ・ © AI塾 / trillion-ai-juku.com ・ 数式記号や図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function setRect(id,x,y,w,h){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);e.setAttribute("width",Math.max(0,w));e.setAttribute("height",Math.max(0,h));}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+  var LN2=Math.log(2), LN3=Math.log(3);
+
+  /* ===== ① y=log_a(x) のグラフ ===== */
+  (function(){
+    /* x in (0,8] -> [L,R] ; y in [-3,4] -> [B(=y=-3),T(=y=4)] */
+    var L=58,R=560,T=24,B=336, XM=8, YLO=-3, YHI=4, step=1, a=2;
+    function GX(x){return L+(x/XM)*(R-L);}
+    function GY(y){return B-((y-YLO)/(YHI-YLO))*(B-T);}
+    function loga(x){return Math.log(x)/Math.log(a);}
+    var info=[null,
+      {t:"y = log_a x の形", c:"対数関数は右上がりの曲線。x=1 で y=0（緑の点）を必ず通り、x が 1 より小さいと y は負へ落ち込みます。"},
+      {t:"点 (a, 1) を通る", c:"log_a a = 1 なので、曲線は必ず点 (a, 1)（赤の点）を通ります。スライダーで底 a を大きくすると、この点が右へ動き、曲線は同じ x でも y が小さく＝ゆるやかになります。"},
+      {t:"底の変換", c:"log_a x = ln x / ln a。底を自然対数 ln にそろえる公式です（一般には log_c x / log_c a でもよい）。a が大きいほど分母 ln a が大きく、値が小さくなります。"},
+      {t:"大小は底をそろえて", c:"底の違う対数はそのまま比べられません。底の変換で ln にそろえれば、分数の大小として一発で比較できます（次のカードへ）。"}];
+    function ticks(){
+      var g=el("l_ticks"); g.innerHTML="";
+      function tx(vx,lab){var t=GX(vx),y0=GY(0);
+        g.innerHTML+='<line x1="'+t+'" y1="'+y0+'" x2="'+t+'" y2="'+(y0+5)+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+t+'" y="'+(y0+18)+'" font-size="11" fill="var(--sub)" text-anchor="middle">'+lab+'</text>';}
+      function ty(vy,lab){var t=GY(vy);
+        g.innerHTML+='<line x1="'+L+'" y1="'+t+'" x2="'+(L-5)+'" y2="'+t+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+(L-9)+'" y="'+(t+4)+'" font-size="11" fill="var(--sub)" text-anchor="end">'+lab+'</text>';}
+      tx(1,"1"); tx(2,"2"); tx(4,"4"); tx(6,"6"); tx(8,"8");
+      ty(-3,"-3"); ty(-2,"-2"); ty(-1,"-1"); ty(0,"0"); ty(1,"1"); ty(2,"2"); ty(3,"3"); ty(4,"4");
+    }
+    function curve(){
+      var p=[]; var started=false;
+      for(var i=0;i<=300;i++){
+        var x=0.05+(XM-0.05)*i/300;
+        var y=loga(x);
+        if(y<YLO-0.2){ started=false; continue; }
+        if(y>YHI+0.2){ continue; }
+        p.push((started?"L":"M")+GX(x).toFixed(1)+","+GY(y).toFixed(1));
+        started=true;
+      }
+      return p.join(" ");
+    }
+    function render(){
+      /* axes: x-axis at y=0, y-axis at x=0 (which maps to L) */
+      setLine("l_ax",L,GY(0),R,GY(0)); setLine("l_ay",L,T,L,B);
+      ticks();
+      attr("l_curve","d",curve());
+      /* point (1,0) */
+      setC("l_p1",GX(1),GY(0)); setT("l_p1l",GX(1),GY(0)+30,null);
+      /* point (a,1) — clamp drawing inside view but a<=8 always fits */
+      var ax=GX(a), ay=GY(1);
+      setC("l_pA",ax,ay);
+      setLine("l_h1",L,GY(1),ax,GY(1));
+      setLine("l_vA",ax,GY(0),ax,GY(1));
+      setT("l_pAl",ax+8,ay-8,"(a, 1) → a="+a.toFixed(1));
+      /* curve label near upper-right of curve */
+      var lx=GX(7), ly=GY(loga(7));
+      if(ly<T+14) ly=T+14;
+      setT("l_curvel",lx-150,ly-10,null);
+      setT("l_xl",R-6,GY(0)-8,null); setT("l_yl",L+12,T+10,null);
+      vis("lgSvg",step);
+      var l2=loga(2), l4=loga(4);
+      el("lgL2").textContent=l2.toFixed(2);
+      el("lgL4").textContent=l4.toFixed(2);
+      el("lgOut").textContent="a = "+a.toFixed(1);
+      el("lgConv").textContent = step>=3 ? ("log_a 2 = ln2/ln a = "+LN2.toFixed(3)+"/"+Math.log(a).toFixed(3)) : "";
+      el("lgConv").style.color="var(--info-ink)";
+      el("lgBadge").textContent="step "+step+" / 4"; el("lgTitle").textContent=info[step].t; el("lgCap").textContent=info[step].c;
+      el("lgPrev").disabled=step<=1; el("lgNext").disabled=step>=4;
+    }
+    el("lgNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("lgPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("lgSlider").addEventListener("input",function(e){a=parseFloat(e.target.value);if(!(a>1.0001))a=1.2;render();});
+    render();
+  })();
+
+  /* ===== ② 底をそろえて大小比較 ===== */
+  (function(){
+    var L=70,R=560,TOP=40,BASE=235, step=1, mode=0;
+    /* two comparison sets */
+    var sets=[
+      { n1:"log₂3", n2:"log₃2", v1:LN3/LN2, v2:LN2/LN3, f1:"ln3 / ln2", f2:"ln2 / ln3" },
+      { n1:"log₂5", n2:"log₅3", v1:Math.log(5)/LN2, v2:Math.log(3)/Math.log(5), f1:"ln5 / ln2", f2:"ln3 / ln5" }
+    ];
+    var YMAX=2.6; /* bar scale: value -> pixel height */
+    function H(v){return ((BASE-TOP)*(v/YMAX));}
+    var info=[null,
+      {t:"棒で見える化", c:"2つの対数の値を棒の高さで表します。まずは底をそろえる前の状態。底が違うので、このままでは「どちらが大きい」と即答できません。"},
+      {t:"値を出す", c:"底の変換 log_a x = ln x / ln a（ln a を分母にした分数）で、それぞれの値を計算します。棒の上に小数値が出ます。高い方が大きい対数です。"},
+      {t:"底をそろえて比較", c:"どちらも分母を ln にそろえた分数で表せます。同じ分母どうしなら分子の大小、いまの例では分数のまま比べて大小を確定できます。"}];
+    function grid(){
+      var g=el("c_grid"); g.innerHTML="";
+      for(var v=0; v<=YMAX+0.001; v+=0.5){
+        var y=BASE-H(v);
+        g.innerHTML+='<line x1="'+L+'" y1="'+y.toFixed(1)+'" x2="'+R+'" y2="'+y.toFixed(1)+'" stroke="var(--bd)" stroke-width="1"/>'+
+        '<text x="'+(L-8)+'" y="'+(y+4).toFixed(1)+'" font-size="11" fill="var(--sub)" text-anchor="end">'+v.toFixed(1)+'</text>';
+      }
+    }
+    function render(){
+      var s=sets[mode];
+      setLine("c_base",L,BASE,R,BASE);
+      grid();
+      var bw=110;
+      var cx1=L+150, cx2=L+340;
+      var h1=H(s.v1), h2=H(s.v2);
+      setRect("c_bar1",cx1-bw/2,BASE-h1,bw,h1);
+      setRect("c_bar2",cx2-bw/2,BASE-h2,bw,h2);
+      setT("c_lab1",cx1,BASE+22,s.n1); setT("c_lab2",cx2,BASE+22,s.n2);
+      setT("c_val1",cx1,BASE-h1-8,s.v1.toFixed(2));
+      setT("c_val2",cx2,BASE-h2-8,s.v2.toFixed(2));
+      setT("c_frac1",cx1,BASE-h1-26,s.f1);
+      setT("c_frac2",cx2,BASE-h2-26,s.f2);
+      vis("cmSvg",step);
+      el("cmName1").innerHTML=s.n1; el("cmName2").innerHTML=s.n2;
+      el("cmV1").textContent=s.v1.toFixed(2); el("cmV2").textContent=s.v2.toFixed(2);
+      var sign = s.v1>s.v2 ? ">" : (s.v1<s.v2 ? "<" : "=");
+      el("cmSign").textContent=sign;
+      el("cmRel").className = (sign==="=") ? "relation eq" : "relation";
+      el("cmToggle").textContent = mode===0 ? "log₂3 と log₃2" : "log₂5 と log₅3";
+      el("cmOut").textContent = mode===0 ? "底 2 と 3" : "底 2 と 5";
+      el("cmBadge").textContent="step "+step+" / 3"; el("cmTitle").textContent=info[step].t; el("cmCap").textContent=info[step].c;
+      el("cmPrev").disabled=step<=1; el("cmNext").disabled=step>=3;
+    }
+    el("cmNext").addEventListener("click",function(){if(step<3){step++;render();}});
+    el("cmPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("cmToggle").addEventListener("click",function(){mode=(mode+1)%2;render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>図形と方程式 — 不等式の表す領域</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:96px; text-align:right;}
+  .toggle{display:flex; gap:8px; margin:10px 0 2px;}
+  .toggle button{flex:1; justify-content:center;}
+  .toggle button.on{background:var(--info-bg); border-color:var(--info-ink); color:var(--info-ink); font-weight:600;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .relation.no{background:#fdecea; border-color:var(--red);}
+  @media (prefers-color-scheme: dark){ .relation.no{background:#3a1714;} }
+  .relation .nonote{margin-left:8px; color:var(--red); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>図形と方程式 — 不等式の表す領域</h1>
+    <p class="lead">「次へ／戻る」で考え方が1ステップずつ完成。スライダーで <b>境界 y=ax+b</b> を、トグルで <b>上側／下側</b> を切り替えると、塗られた領域と判定が連動します。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>「どちら側を塗るか」をテスト点で確かめる</b>。<b>y ≧ ax+b は直線の上側</b>、<b>y ≦ ax+b は下側</b>。≦・≧（等号つき）なので境界の直線も領域に含まれ、実線でかきます。</div>
+
+  <!-- 不等式の表す領域 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="rgBadge">step 1 / 4</span>
+        <span class="steptitle" id="rgTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="rgPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="rgNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">不等式の表す領域</h2>
+    <p class="hint">直線 y=ax+b を境界に、半平面 y≧ax+b（上側）／ y≦ax+b（下側）を塗ります。テスト点 (2, 1) が領域に入るかも判定します。</p>
+    <div class="stage">
+      <svg id="rgSvg" viewBox="0 0 600 360" role="img" aria-label="不等式の表す領域">
+        <!-- 塗りつぶし領域 (最背面) -->
+        <path id="rg_fill" data-ms="2" fill="var(--blue)" fill-opacity="0.16" stroke="none"></path>
+        <!-- 格子 -->
+        <g id="rg_grid"></g>
+        <!-- 軸 -->
+        <line id="rg_ax" stroke="var(--gray)" stroke-width="1.4"></line>
+        <line id="rg_ay" stroke="var(--gray)" stroke-width="1.4"></line>
+        <g id="rg_ticks"></g>
+        <text id="rg_xl" font-size="14" fill="var(--sub)" text-anchor="middle">x</text>
+        <text id="rg_yl" font-size="14" fill="var(--sub)" text-anchor="middle">y</text>
+        <!-- 上向き / 下向き 矢印 (どちら側か) -->
+        <line id="rg_arrow" data-ms="2" stroke="var(--blue)" stroke-width="2" marker-end="url(#rg_head)"></line>
+        <!-- 境界の直線 -->
+        <line id="rg_line" data-ms="1" stroke="var(--ink)" stroke-width="2.6"></line>
+        <text id="rg_linel" data-ms="1" font-size="15" fill="var(--ink)" text-anchor="start">y = ax+b</text>
+        <!-- テスト点 -->
+        <circle id="rg_tpt" data-ms="4" r="6" fill="var(--green)"></circle>
+        <text id="rg_tlab" data-ms="4" font-size="14" fill="var(--ink)" text-anchor="start">T(2, 1)</text>
+        <text id="rg_tmark" data-ms="4" font-size="22" font-weight="700" text-anchor="middle">〇</text>
+        <defs>
+          <marker id="rg_head" markerWidth="9" markerHeight="9" refX="6" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 Z" fill="var(--blue)"></path>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+    <p class="cap" id="rgCap"></p>
+    <div class="ctl">
+      <label for="rgA">傾き a</label>
+      <input type="range" id="rgA" min="-2" max="2" step="0.5" value="1">
+      <span class="out" id="rgAOut">a = 1.0</span>
+    </div>
+    <div class="ctl">
+      <label for="rgB">切片 b</label>
+      <input type="range" id="rgB" min="-3" max="3" step="0.5" value="0">
+      <span class="out" id="rgBOut">b = 0.0</span>
+    </div>
+    <div class="toggle">
+      <button id="rgUp" class="on">y ≧ ax+b（上側）</button>
+      <button id="rgDown">y ≦ ax+b（下側）</button>
+    </div>
+    <div class="relation" id="rgRel">
+      <span style="color:var(--ink)">境界 y = <span id="rgLineEq">x</span></span>
+      ・<span style="color:var(--info-ink)" id="rgIneq">y ≧ x</span>
+      <span class="eqnote" id="rgEq"></span>
+      <span class="nonote" id="rgNo"></span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ 数式記号や図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+  function fmt(v){var s=(Math.abs(v)<1e-9?0:v).toFixed(1); return s;}
+
+  /* ===== 不等式の表す領域 ===== */
+  (function(){
+    /* 座標系: x,y ∈ [-5,5]。SVG viewBox 0 0 600 360。
+       描画領域は中央に正方格子。1単位=PX、原点(OX,OY)。 */
+    var XMIN=-5, XMAX=5, YMIN=-5, YMAX=5;
+    var PLOTL=70, PLOTR=540, PLOTT=20, PLOTB=340;   /* プロット枠 */
+    var k=(PLOTR-PLOTL)/(XMAX-XMIN);                /* px / unit (x) */
+    var ky=(PLOTB-PLOTT)/(YMAX-YMIN);               /* px / unit (y) */
+    var OX=PLOTL+(0-XMIN)*k;                         /* 原点 x px */
+    var OY=PLOTT+(YMAX-0)*ky;                        /* 原点 y px */
+    function MX(x){return OX+x*k;}
+    function MY(y){return OY-y*ky;}
+    function clampX(x){return x<XMIN?XMIN:(x>XMAX?XMAX:x);}
+    function clampY(y){return y<YMIN?YMIN:(y>YMAX?YMAX:y);}
+
+    var step=1, a=1, b=0, up=true;               /* up=true → y≧ (上側) */
+    var TX=2, TY=1;                              /* テスト点 T(2,1) */
+
+    function lineEqStr(){
+      /* a x + b の表示 (a=1→x, a=-1→-x, a=0→定数のみ) */
+      var s="";
+      if(Math.abs(a)<1e-9){ s=""; }
+      else if(Math.abs(a-1)<1e-9){ s="x"; }
+      else if(Math.abs(a+1)<1e-9){ s="-x"; }
+      else { s=fmt(a)+"x"; }
+      var bb=(Math.abs(b)<1e-9?0:b);
+      if(s===""){ return fmt(bb); }
+      if(bb>1e-9){ return s+" + "+fmt(bb); }
+      if(bb<-1e-9){ return s+" - "+fmt(Math.abs(bb)); }
+      return s; /* b=0 */
+    }
+
+    var info=[null,
+      {t:"境界の直線", c:"まず境界となる直線 y = ax+b を実線でひきます。スライダーで傾き a と切片 b を変えられます。≦・≧（等号つき）の問題なので、この直線そのものも領域に含めます。"},
+      {t:"上側を塗る (y≧)", c:"y ≧ ax+b は「同じ x で、直線より y が大きい点」の集まり＝直線の上側の半平面。トグルが『上側』のとき、青く塗った部分が領域です。"},
+      {t:"下側を塗る (y≦)", c:"トグルを『下側』にすると y ≦ ax+b。直線の下側を塗ります。上向き／下向きの矢印が塗る向きを示します。境界の直線はどちらでも領域に含みます。"},
+      {t:"点(2,1)で判定", c:"テスト点 T(2,1) を代入。a·2+b の値と y=1 を比べ、選んだ不等式を満たせば領域内（緑〇）、満たさなければ領域外（赤✕）。塗った側に T があるかと一致するはずです。"}];
+
+    function grid(){
+      var g=el("rg_grid"); var s="";
+      for(var x=XMIN;x<=XMAX;x++){ var px=MX(x);
+        s+='<line x1="'+px.toFixed(1)+'" y1="'+PLOTT+'" x2="'+px.toFixed(1)+'" y2="'+PLOTB+'" stroke="var(--bd)" stroke-width="1"/>';
+      }
+      for(var y=YMIN;y<=YMAX;y++){ var py=MY(y);
+        s+='<line x1="'+PLOTL+'" y1="'+py.toFixed(1)+'" x2="'+PLOTR+'" y2="'+py.toFixed(1)+'" stroke="var(--bd)" stroke-width="1"/>';
+      }
+      g.innerHTML=s;
+    }
+    function ticks(){
+      var g=el("rg_ticks"); var s="";
+      for(var x=XMIN;x<=XMAX;x++){ if(x===0)continue; var px=MX(x);
+        s+='<text x="'+px.toFixed(1)+'" y="'+(OY+15)+'" font-size="11" fill="var(--sub)" text-anchor="middle">'+x+'</text>';
+      }
+      for(var y=YMIN;y<=YMAX;y++){ if(y===0)continue; var py=MY(y);
+        s+='<text x="'+(OX-9)+'" y="'+(py+4).toFixed(1)+'" font-size="11" fill="var(--sub)" text-anchor="end">'+y+'</text>';
+      }
+      s+='<text x="'+(OX-9)+'" y="'+(OY+15)+'" font-size="11" fill="var(--sub)" text-anchor="end">O</text>';
+      g.innerHTML=s;
+    }
+
+    /* 境界直線 y=ax+b が枠 [XMIN,XMAX]x[YMIN,YMAX] と交わる2端点 (unit座標) */
+    function lineEndpoints(){
+      var pts=[];
+      /* 左右の縦辺で y を計算 */
+      var yL=a*XMIN+b, yR=a*XMAX+b;
+      if(yL>=YMIN-1e-9 && yL<=YMAX+1e-9) pts.push([XMIN,yL]);
+      if(yR>=YMIN-1e-9 && yR<=YMAX+1e-9) pts.push([XMAX,yR]);
+      /* 上下の横辺で x を計算 (a!=0) */
+      if(Math.abs(a)>1e-9){
+        var xT=(YMAX-b)/a, xB=(YMIN-b)/a;
+        if(xT>XMIN-1e-9 && xT<XMAX+1e-9) pts.push([xT,YMAX]);
+        if(xB>XMIN-1e-9 && xB<XMAX+1e-9) pts.push([xB,YMIN]);
+      }
+      /* 重複除去 */
+      var uniq=[];
+      for(var i=0;i<pts.length;i++){
+        var dup=false;
+        for(var j=0;j<uniq.length;j++){
+          if(Math.abs(pts[i][0]-uniq[j][0])<1e-6 && Math.abs(pts[i][1]-uniq[j][1])<1e-6){dup=true;break;}
+        }
+        if(!dup) uniq.push(pts[i]);
+      }
+      return uniq;
+    }
+
+    /* 半平面の塗り (枠を直線で2分し、選んだ側の多角形を返す) */
+    function fillPolygon(){
+      /* 枠の4頂点 (反時計回りでなくてよい)。直線で分けたうち up側/down側を集める。
+         "上側" = y >= a x + b を満たす点。判定 side(x,y)=y-(a x+b)。
+         up: side>=0 を含む頂点群 + 直線との交点。down: side<=0。 */
+      var corners=[[XMIN,YMAX],[XMAX,YMAX],[XMAX,YMIN],[XMIN,YMIN]]; /* 時計回り(左上→右上→右下→左下) */
+      function side(p){return p[1]-(a*p[0]+b);}
+      var poly=[];
+      for(var i=0;i<4;i++){
+        var cur=corners[i], nxt=corners[(i+1)%4];
+        var sc=side(cur), sn=side(nxt);
+        var keepCur = up ? (sc>=-1e-9) : (sc<=1e-9);
+        var keepNxt = up ? (sn>=-1e-9) : (sn<=1e-9);
+        if(keepCur) poly.push(cur);
+        /* 符号が変わる辺で交点を追加 */
+        if((sc>1e-9 && sn<-1e-9)||(sc<-1e-9 && sn>1e-9)){
+          var t=sc/(sc-sn);
+          var ix=cur[0]+t*(nxt[0]-cur[0]);
+          var iy=cur[1]+t*(nxt[1]-cur[1]);
+          poly.push([ix,iy]);
+        }
+      }
+      return poly;
+    }
+
+    function render(){
+      grid(); ticks();
+      setLine("rg_ax",PLOTL,OY,PLOTR,OY);
+      setLine("rg_ay",OX,PLOTB,OX,PLOTT);
+      setT("rg_xl",PLOTR+10,OY+4,null);
+      setT("rg_yl",OX,PLOTT-6,null);
+
+      /* 境界直線 */
+      var ep=lineEndpoints();
+      if(ep.length>=2){
+        setLine("rg_line",MX(ep[0][0]),MY(ep[0][1]),MX(ep[1][0]),MY(ep[1][1]));
+        el("rg_line").style.display="";
+      } else {
+        el("rg_line").style.display="none";
+      }
+      /* 直線ラベル: 左端点付近 */
+      var lx = ep.length? ep[0][0] : XMIN;
+      var ly = a*lx+b;
+      var lyC=clampY(ly);
+      setT("rg_linel", MX(clampX(lx))+8, MY(lyC)-8, "y = "+lineEqStr());
+
+      /* 塗り */
+      var poly=fillPolygon();
+      var d="";
+      for(var i=0;i<poly.length;i++){
+        d+=(i===0?"M":"L")+MX(poly[i][0]).toFixed(1)+","+MY(poly[i][1]).toFixed(1)+" ";
+      }
+      if(poly.length>=3){ d+="Z"; attr("rg_fill","d",d); el("rg_fill").style.display=""; }
+      else { el("rg_fill").style.display="none"; }
+      attr("rg_fill","fill", up?"var(--blue)":"var(--red)");
+
+      /* 向き矢印: 原点近くの境界点から上/下へ */
+      var ax0=0; /* x=0 で境界 y=b */
+      var by=b;
+      if(by<YMIN+0.5) by=YMIN+0.5; if(by>YMAX-0.5) by=YMAX-0.5;
+      var arrFrom=MY(by);
+      var arrTo= up ? MY(clampY(by+1.6)) : MY(clampY(by-1.6));
+      setLine("rg_arrow", MX(clampX(ax0)), arrFrom, MX(clampX(ax0)), arrTo);
+      el("rg_arrow").setAttribute("stroke", up?"var(--blue)":"var(--red)");
+      el("rg_head").querySelector("path").setAttribute("fill", up?"var(--blue)":"var(--red)");
+
+      /* テスト点 T(2,1) */
+      setC("rg_tpt",MX(TX),MY(TY));
+      setT("rg_tlab",MX(TX)+11,MY(TY)+5,"T(2, 1)");
+      /* 判定: 線形値 LHS=TY=1, RHS=a*2+b。up: 1>=RHS, down: 1<=RHS。境界含む(=)もOK */
+      var rhs=a*TX+b;
+      var inside = up ? (TY>=rhs-1e-9) : (TY<=rhs+1e-9);
+      el("rg_tpt").setAttribute("fill", inside?"var(--green)":"var(--red)");
+      setT("rg_tmark",MX(TX),MY(TY)-12,inside?"〇":"✕");
+      el("rg_tmark").setAttribute("fill", inside?"var(--green)":"var(--red)");
+
+      vis("rgSvg",step);
+
+      /* 読み出し */
+      el("rgAOut").textContent="a = "+fmt(a);
+      el("rgBOut").textContent="b = "+fmt(b);
+      el("rgLineEq").textContent=lineEqStr();
+      el("rgIneq").textContent= up ? ("y ≧ "+lineEqStr()) : ("y ≦ "+lineEqStr());
+      /* 計算の表示: 1 と a·2+b */
+      var cmpSign = up ? (TY>=rhs-1e-9?"≧":"<") : (TY<=rhs+1e-9?"≦":">");
+      var calc = "判定: y=1, a·2+b = "+fmt(a)+"·2"+(b>=0?" + "+fmt(b):" - "+fmt(Math.abs(b)))+" = "+fmt(rhs)
+                 +" → 1 "+cmpSign+" "+fmt(rhs);
+      if(inside){
+        el("rgEq").textContent="満たす（領域内 〇）／ "+calc;
+        el("rgNo").textContent="";
+        el("rgRel").className="relation eq";
+      } else {
+        el("rgNo").textContent="満たさない（領域外 ✕）／ "+calc;
+        el("rgEq").textContent="";
+        el("rgRel").className="relation no";
+      }
+
+      /* トグル on 表示 */
+      el("rgUp").className = up?"on":"";
+      el("rgDown").className = up?"":"on";
+
+      el("rgBadge").textContent="step "+step+" / 4";
+      el("rgTitle").textContent=info[step].t;
+      el("rgCap").textContent=info[step].c;
+      el("rgPrev").disabled=step<=1; el("rgNext").disabled=step>=4;
+    }
+
+    el("rgNext").addEventListener("click",function(){if(step<4){step++; if(step>=3){} render();}});
+    el("rgPrev").addEventListener("click",function(){if(step>1){step--; render();}});
+    el("rgA").addEventListener("input",function(e){a=parseFloat(e.target.value);render();});
+    el("rgB").addEventListener("input",function(e){b=parseFloat(e.target.value);render();});
+    el("rgUp").addEventListener("click",function(){up=true; if(step<2)step=2; render();});
+    el("rgDown").addEventListener("click",function(){up=false; if(step<3)step=3; render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

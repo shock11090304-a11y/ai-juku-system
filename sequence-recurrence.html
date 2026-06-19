@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>数列 — 漸化式と一般項 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:74px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .terms{margin-top:10px; font-size:14px; color:var(--ink); text-align:center; word-break:break-word;}
+  .terms b{color:var(--blue);}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>数列 — 漸化式と一般項</h1>
+    <p class="lead">「次へ／戻る」で考え方が1ステップずつ進みます。スライダーで <b>初項 a₁・p・q</b> を動かすと、各項の点と一般項の式が連動します。</p>
+  </header>
+
+  <div class="takeaway">最重要ポイント = <b>不動点 α を引いて等比型に変形</b>。漸化式 a<sub>n+1</sub> = p·a<sub>n</sub> + q は、特性方程式の解 α を使って (a<sub>n</sub>−α) が公比 p の等比数列になることを利用します。</div>
+
+  <!-- ① 漸化式から一般項へ -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="seqBadge">step 1 / 4</span>
+        <span class="steptitle" id="seqTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="seqPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="seqNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">漸化式と一般項</h2>
+    <p class="hint">線形漸化式 a<sub>n+1</sub> = p·a<sub>n</sub> + q を等比型に変形して一般項を求めます。</p>
+    <div class="stage">
+      <svg id="seqSvg" viewBox="0 0 600 360" role="img" aria-label="漸化式で定まる数列の各項の散布図">
+        <line id="s_ax" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="s_ay" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="s_zero" stroke="var(--bd)" stroke-width="1" stroke-dasharray="3 4"></line>
+        <g id="s_ticks"></g>
+        <line id="s_alpha" data-ms="3" stroke="var(--green)" stroke-width="2" stroke-dasharray="7 5"></line>
+        <text id="s_alphal" data-ms="3" font-size="14" fill="var(--green)" text-anchor="start">α</text>
+        <g id="s_pts" data-ms="2"></g>
+        <text id="s_xl" font-size="14" fill="var(--sub)" text-anchor="middle">n</text>
+        <text id="s_yl" font-size="14" fill="var(--sub)" text-anchor="middle">aₙ</text>
+      </svg>
+    </div>
+    <p class="cap" id="seqCap"></p>
+
+    <div class="ctl">
+      <label for="a1Slider">初項 a₁</label>
+      <input type="range" id="a1Slider" min="-4" max="8" step="1" value="1">
+      <span class="out" id="a1Out">1</span>
+    </div>
+    <div class="ctl">
+      <label for="pSlider">公比 p</label>
+      <input type="range" id="pSlider" min="-1.5" max="1.5" step="0.25" value="0.5">
+      <span class="out" id="pOut">0.50</span>
+    </div>
+    <div class="ctl">
+      <label for="qSlider">定数 q</label>
+      <input type="range" id="qSlider" min="-4" max="4" step="1" value="2">
+      <span class="out" id="qOut">2</span>
+    </div>
+
+    <div class="relation" id="seqRel">
+      <span style="color:var(--green)">不動点 α</span> = <span id="seqAlpha">4.00</span>
+      <span class="eqnote" id="seqConv"></span>
+    </div>
+    <div class="terms" id="seqFormula"></div>
+    <div class="terms" id="seqList"></div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a> ・ © AI塾 / trillion-ai-juku.com ・ 数式記号や図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+  function fnum(v){ if(!isFinite(v)) return "0.00"; return v.toFixed(2); }
+
+  /* ===== ① 漸化式と一般項 ===== */
+  (function(){
+    var L=58,R=566,T=26,B=300, NMAX=12, step=1;
+    var a1=1, p=0.5, q=2;
+
+    // 表示する a_n の値域。各項を計算して自動でスケール。
+    function terms(count){
+      var arr=[a1];
+      for(var n=1;n<count;n++){ arr.push(p*arr[n-1]+q); }
+      return arr;
+    }
+    function fixed(){ // 不動点 α（p=1 では定義不可）
+      if(Math.abs(p-1)<1e-9) return null;
+      return q/(1-p);
+    }
+    function yRange(arr,alpha){
+      var lo=Math.min.apply(null,arr), hi=Math.max.apply(null,arr);
+      if(alpha!=null && isFinite(alpha)){ lo=Math.min(lo,alpha); hi=Math.max(hi,alpha); }
+      lo=Math.min(lo,0); hi=Math.max(hi,0);
+      if(hi-lo<1e-6){ hi=lo+1; }
+      var pad=(hi-lo)*0.12; lo-=pad; hi+=pad;
+      return {lo:lo,hi:hi};
+    }
+    var rng={lo:0,hi:1};
+    function GX(n){ return L+((n-1)/(NMAX-1))*(R-L); }
+    function GY(v){ return B-((v-rng.lo)/(rng.hi-rng.lo))*(B-T); }
+
+    function ticks(){
+      var g=el("s_ticks"); g.innerHTML="";
+      // x 目盛 n=1..12（偶数のみラベル、線は全部）
+      for(var n=1;n<=NMAX;n++){
+        var tx=GX(n);
+        g.innerHTML+='<line x1="'+tx.toFixed(1)+'" y1="'+B+'" x2="'+tx.toFixed(1)+'" y2="'+(B+5)+'" stroke="var(--gray)" stroke-width="1"/>';
+        if(n===1||n%2===0){
+          g.innerHTML+='<text x="'+tx.toFixed(1)+'" y="'+(B+20)+'" font-size="12" fill="var(--sub)" text-anchor="middle">'+n+'</text>';
+        }
+      }
+      // y 目盛 5本（lo..hi を等分）
+      for(var i=0;i<=4;i++){
+        var v=rng.lo+(rng.hi-rng.lo)*i/4;
+        var ty=GY(v);
+        g.innerHTML+='<line x1="'+L+'" y1="'+ty.toFixed(1)+'" x2="'+(L-5)+'" y2="'+ty.toFixed(1)+'" stroke="var(--gray)" stroke-width="1"/>'+
+          '<text x="'+(L-9)+'" y="'+(ty+4).toFixed(1)+'" font-size="11" fill="var(--sub)" text-anchor="end">'+(Math.abs(v)>=100?v.toFixed(0):v.toFixed(1))+'</text>';
+      }
+    }
+
+    function drawPoints(arr,alpha){
+      var g=el("s_pts"); g.innerHTML="";
+      // 折れ線（範囲内のみ）でつなぐ
+      var path="", started=false;
+      for(var n=1;n<=arr.length;n++){
+        var v=arr[n-1];
+        if(v<rng.lo-0.001||v>rng.hi+0.001){ started=false; continue; }
+        var x=GX(n), y=GY(v);
+        path += (started?"L":"M")+x.toFixed(1)+","+y.toFixed(1)+" ";
+        started=true;
+      }
+      if(path) g.innerHTML+='<path d="'+path.trim()+'" fill="none" stroke="var(--blue)" stroke-width="1.6" opacity="0.55"/>';
+      for(var n2=1;n2<=arr.length;n2++){
+        var vv=arr[n2-1];
+        if(vv<rng.lo-0.001||vv>rng.hi+0.001) continue; // クリップ
+        var cx=GX(n2), cy=GY(vv);
+        var col=(n2===1)?"var(--red)":"var(--blue)";
+        var rr=(n2===1)?5.5:4.5;
+        g.innerHTML+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+rr+'" fill="'+col+'"/>';
+      }
+      // 初項のラベル
+      var v1=arr[0];
+      if(v1>=rng.lo-0.001 && v1<=rng.hi+0.001){
+        g.innerHTML+='<text x="'+(GX(1)).toFixed(1)+'" y="'+(GY(v1)-10).toFixed(1)+'" font-size="13" fill="var(--red)" text-anchor="middle">a₁</text>';
+      }
+    }
+
+    var info=[null,
+      {t:"漸化式と初項", c:"a_{n+1} = p·a_n + q と初項 a₁ で数列が定まります。スライダーで a₁・p・q を変えてみましょう（既定 a₁=1, p=0.5, q=2）。"},
+      {t:"各項を計算", c:"a₁ から順に a₂ = p·a₁+q, a₃ = p·a₂+q, … と各項を計算して点で並べます。赤い点が初項 a₁ です。"},
+      {t:"特性方程式と不動点", c:"α = p·α + q を解くと不動点 α = q/(1−p)。p≠1 のとき緑の破線が α。|p|<1 なら各項は α へ収束、|p|>1 なら α から発散します。"},
+      {t:"等比型へ変形→一般項", c:"両辺から α を引くと a_n − α = (a₁ − α)·p^{n−1}（公比 p の等比数列）。よって一般項は a_n = α + (a₁ − α)·p^{n−1}。p=1 のときは等差数列 a_n = a₁ + (n−1)q。"}];
+
+    function render(){
+      var alpha=fixed();
+      var arr=terms(NMAX);
+      rng=yRange(arr,alpha);
+
+      // 軸
+      setLine("s_ax",L,B,R,B); setLine("s_ay",L,B,L,T);
+      // y=0 の基準線（範囲内のときだけ意味を持つが常時描画）
+      var y0=GY(0); setLine("s_zero",L,y0,R,y0);
+      ticks();
+
+      // α 線（step3 以降, p≠1 のみ）
+      if(alpha!=null && isFinite(alpha) && alpha>=rng.lo && alpha<=rng.hi){
+        var ya=GY(alpha);
+        setLine("s_alpha",L,ya,R,ya);
+        setT("s_alphal",R-44,ya-7,"α="+fnum(alpha));
+        el("s_alpha").style.display=""; el("s_alphal").style.display="";
+      } else {
+        // p=1 か範囲外なら α 線を出さない
+        el("s_alpha").style.display="none"; el("s_alphal").style.display="none";
+      }
+
+      drawPoints(arr,alpha);
+      setT("s_xl",(L+R)/2,B+34,null); setT("s_yl",L-32,T+2,null);
+
+      vis("seqSvg",step);
+
+      // スライダー読み出し
+      el("a1Out").textContent=a1.toFixed(0);
+      el("pOut").textContent=p.toFixed(2);
+      el("qOut").textContent=q.toFixed(0);
+
+      // 不動点 α 読み出し
+      if(alpha==null){
+        el("seqAlpha").textContent="等差(αなし)";
+        el("seqConv").textContent="p=1 → 公差 q の等差数列";
+        el("seqRel").className="relation";
+      } else {
+        el("seqAlpha").textContent=fnum(alpha);
+        if(Math.abs(p)<1){
+          el("seqConv").textContent="|p|<1 → α="+fnum(alpha)+" に収束";
+          el("seqRel").className="relation eq";
+        } else if(Math.abs(p)>1){
+          el("seqConv").textContent="|p|>1 → 発散";
+          el("seqRel").className="relation";
+        } else { // p=-1
+          el("seqConv").textContent="|p|=1 → α の周りで振動";
+          el("seqRel").className="relation";
+        }
+      }
+
+      // 一般項の式（数値入り）
+      var fEl=el("seqFormula");
+      if(alpha==null){
+        // 等差: a_n = a1 + (n-1)q
+        var sign=(q>=0)?"+":"−"; var aq=Math.abs(q);
+        fEl.innerHTML='一般項（等差）: <b>a<sub>n</sub> = '+a1.toFixed(0)+' '+sign+' '+aq.toFixed(0)+'(n−1)</b>';
+      } else {
+        var d=a1-alpha; // (a1 - α)
+        var dStr=fnum(d);
+        fEl.innerHTML='一般項: <b>a<sub>n</sub> = '+fnum(alpha)+' + ('+dStr+')·('+p.toFixed(2)+')<sup>n−1</sup></b>';
+      }
+
+      // a_1..数項
+      var arrL=terms(6);
+      var parts=[];
+      for(var i=0;i<arrL.length;i++){ parts.push("a"+(i+1)+"="+arrL[i].toFixed(2)); }
+      el("seqList").textContent=parts.join(" ,  ");
+
+      el("seqBadge").textContent="step "+step+" / 4";
+      el("seqTitle").textContent=info[step].t;
+      el("seqCap").textContent=info[step].c;
+      el("seqPrev").disabled=step<=1; el("seqNext").disabled=step>=4;
+    }
+
+    el("seqNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("seqPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("a1Slider").addEventListener("input",function(e){a1=parseFloat(e.target.value);render();});
+    el("pSlider").addEventListener("input",function(e){p=parseFloat(e.target.value);render();});
+    el("qSlider").addEventListener("input",function(e){q=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

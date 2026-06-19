@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>関係詞 — 制限用法と非制限用法 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+    --amber:#d97706; --amber-bg:#fef3e2;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a;
+           --amber:#f0b357; --amber-bg:#33270f; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .toggle{display:flex; flex:1; gap:0; border:1px solid var(--bd); border-radius:10px; overflow:hidden;}
+  .toggle button{flex:1; border:0; border-radius:0; justify-content:center; padding:9px 8px; font-size:13.5px; background:var(--card); color:var(--sub);}
+  .toggle button:hover{background:var(--info-bg);}
+  .toggle button.on{background:var(--blue); color:#fff; font-weight:600;}
+  .toggle button.on:hover{background:var(--blue);}
+  .example{margin-top:12px; padding:12px 14px; border-radius:10px; border:1px solid var(--bd); background:var(--card);}
+  .example .en{font-size:16.5px; line-height:1.9; word-break:break-word;}
+  .example .ja{font-size:14px; color:var(--sub); margin-top:8px;}
+  .rc{color:var(--blue); font-weight:600; background:var(--info-bg); border-radius:4px; padding:0 3px;}
+  .comma{color:var(--red); font-weight:700;}
+  .anchor{color:var(--green); font-weight:600;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:15px; border:1px solid var(--bd);}
+  .relation.restrict{background:var(--info-bg); border-color:var(--info-ink); color:var(--info-ink);}
+  .relation.nonrestrict{background:var(--ok-bg); border-color:var(--ok-ink); color:var(--ok-ink);}
+  .relation .note{display:block; margin-top:4px; font-size:13px; color:var(--sub);}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  .warn{background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber); border-radius:10px; padding:10px 13px; font-size:13.5px; margin-top:12px;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>関係詞 — 制限用法と非制限用法</h1>
+    <p class="lead">「次へ／戻る」で考え方が1ステップずつ完成。下のトグルで <b>コンマなし(制限)</b> と <b>コンマあり(非制限)</b> を切り替えると、図と例文・意味が連動して変わります。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>コンマの有無で意味が変わる</b>。コンマなし＝<b>制限用法(限定)</b>＝「どの〜か」を絞り込む。コンマあり＝<b>非制限用法(補足)</b>＝すでに決まった名詞への補足説明。</div>
+
+  <!-- ① 制限用法 / 非制限用法の切替 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="rcBadge">step 1 / 4</span>
+        <span class="steptitle" id="rcTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="rcPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="rcNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">制限用法と非制限用法</h2>
+    <p class="hint">関係詞節（who lives in Tokyo）が先行詞 sister をどう修飾するか。コンマの有無がカギです。</p>
+    <div class="stage">
+      <svg id="rcSvg" viewBox="0 0 600 330" role="img" aria-label="姉の人数イメージ図">
+        <!-- 見出し -->
+        <text id="s_head" x="300" y="30" font-size="17" font-weight="600" text-anchor="middle" fill="var(--ink)">restrictive</text>
+        <text id="s_sub" x="300" y="52" font-size="13" text-anchor="middle" fill="var(--gray)">no comma</text>
+
+        <!-- 制限用法: 3人の姉から1人を絞り込む -->
+        <g id="g_restrict" data-ms="1">
+          <!-- 姉 1 (Osaka) -->
+          <g id="rs1" data-ms="1">
+            <circle cx="150" cy="135" r="24" fill="none" stroke="var(--gray)" stroke-width="2.5"></circle>
+            <line x1="150" y1="159" x2="150" y2="215" stroke="var(--gray)" stroke-width="2.5"></line>
+            <line x1="150" y1="172" x2="124" y2="200" stroke="var(--gray)" stroke-width="2.5"></line>
+            <line x1="150" y1="172" x2="176" y2="200" stroke="var(--gray)" stroke-width="2.5"></line>
+            <line x1="150" y1="215" x2="130" y2="258" stroke="var(--gray)" stroke-width="2.5"></line>
+            <line x1="150" y1="215" x2="170" y2="258" stroke="var(--gray)" stroke-width="2.5"></line>
+            <text x="150" y="282" font-size="12.5" text-anchor="middle" fill="var(--gray)">sister (Osaka)</text>
+          </g>
+          <!-- 姉 2 (Tokyo) = 強調・絞り込み対象 -->
+          <g id="rs2" data-ms="2">
+            <circle cx="300" cy="135" r="27" fill="none" stroke="var(--green)" stroke-width="3.5"></circle>
+            <line x1="300" y1="162" x2="300" y2="218" stroke="var(--green)" stroke-width="3.5"></line>
+            <line x1="300" y1="175" x2="272" y2="203" stroke="var(--green)" stroke-width="3.5"></line>
+            <line x1="300" y1="175" x2="328" y2="203" stroke="var(--green)" stroke-width="3.5"></line>
+            <line x1="300" y1="218" x2="279" y2="261" stroke="var(--green)" stroke-width="3.5"></line>
+            <line x1="300" y1="218" x2="321" y2="261" stroke="var(--green)" stroke-width="3.5"></line>
+            <text x="300" y="285" font-size="13" font-weight="600" text-anchor="middle" fill="var(--green)">sister (Tokyo)</text>
+          </g>
+          <!-- 絞り込みの囲み -->
+          <ellipse id="g_lasso" data-ms="3" cx="300" cy="158" rx="48" ry="72" fill="none" stroke="var(--blue)" stroke-width="2.5" stroke-dasharray="7 5"></ellipse>
+          <text id="g_lassoT" data-ms="3" x="300" y="74" font-size="13.5" font-weight="600" text-anchor="middle" fill="var(--blue)">who lives in Tokyo</text>
+          <!-- 姉 3 (Nagoya) -->
+          <g id="rs3" data-ms="1">
+            <circle cx="450" cy="135" r="24" fill="none" stroke="var(--gray)" stroke-width="2.5"></circle>
+            <line x1="450" y1="159" x2="450" y2="215" stroke="var(--gray)" stroke-width="2.5"></line>
+            <line x1="450" y1="172" x2="424" y2="200" stroke="var(--gray)" stroke-width="2.5"></line>
+            <line x1="450" y1="172" x2="476" y2="200" stroke="var(--gray)" stroke-width="2.5"></line>
+            <line x1="450" y1="215" x2="430" y2="258" stroke="var(--gray)" stroke-width="2.5"></line>
+            <line x1="450" y1="215" x2="470" y2="258" stroke="var(--gray)" stroke-width="2.5"></line>
+            <text x="450" y="282" font-size="12.5" text-anchor="middle" fill="var(--gray)">sister (Nagoya)</text>
+          </g>
+          <text id="g_msg" data-ms="4" x="300" y="312" font-size="13" text-anchor="middle" fill="var(--ink)">narrow down to WHICH sister</text>
+        </g>
+
+        <!-- 非制限用法: 1人の姉 + 補足の吹き出し -->
+        <g id="g_nonrestrict" data-ms="1" style="opacity:0">
+          <!-- 唯一の姉 -->
+          <g data-ms="1">
+            <circle cx="240" cy="140" r="29" fill="none" stroke="var(--green)" stroke-width="3.5"></circle>
+            <line x1="240" y1="169" x2="240" y2="226" stroke="var(--green)" stroke-width="3.5"></line>
+            <line x1="240" y1="182" x2="211" y2="211" stroke="var(--green)" stroke-width="3.5"></line>
+            <line x1="240" y1="182" x2="269" y2="211" stroke="var(--green)" stroke-width="3.5"></line>
+            <line x1="240" y1="226" x2="218" y2="270" stroke="var(--green)" stroke-width="3.5"></line>
+            <line x1="240" y1="226" x2="262" y2="270" stroke="var(--green)" stroke-width="3.5"></line>
+            <text x="240" y="292" font-size="14" font-weight="600" text-anchor="middle" fill="var(--green)">my (only) sister</text>
+          </g>
+          <!-- 補足の吹き出し -->
+          <g id="n_bubble" data-ms="3">
+            <rect x="372" y="92" width="196" height="72" rx="14" fill="var(--ok-bg)" stroke="var(--ok-ink)" stroke-width="2"></rect>
+            <polygon points="372,136 350,152 380,154" fill="var(--ok-bg)" stroke="var(--ok-ink)" stroke-width="2"></polygon>
+            <text x="470" y="122" font-size="13.5" font-weight="600" text-anchor="middle" fill="var(--ok-ink)">, who lives in Tokyo ,</text>
+            <text x="470" y="146" font-size="12.5" text-anchor="middle" fill="var(--sub)">extra info (FYI)</text>
+          </g>
+          <text id="n_msg" data-ms="4" x="300" y="318" font-size="13" text-anchor="middle" fill="var(--ink)">just adds a note about the one sister</text>
+        </g>
+      </svg>
+    </div>
+    <p class="cap" id="rcCap"></p>
+
+    <div class="ctl">
+      <label>用法を切替</label>
+      <div class="toggle" role="tablist" aria-label="用法の切替">
+        <button id="tRes" class="on" role="tab" aria-selected="true">制限用法（コンマなし）</button>
+        <button id="tNon" role="tab" aria-selected="false">非制限用法（コンマあり）</button>
+      </div>
+    </div>
+
+    <div class="example" id="rcEx">
+      <div class="en" id="rcEn"></div>
+      <div class="ja" id="rcJa"></div>
+    </div>
+
+    <div class="relation" id="rcRel">
+      <span id="rcRelMain"></span>
+      <span class="note">コンマの有無で意味が変わる（制限＝限定 / 非制限＝補足）</span>
+    </div>
+
+    <div class="warn">注意：非制限用法では <b>that は使えません</b>（who / which を使う）。コンマありの「, who …」「, which …」に that は不可。</div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ 例文と図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 関係詞: 制限用法 / 非制限用法 ===== */
+  (function(){
+    var step=1, mode="res"; /* "res"=制限(コンマなし), "non"=非制限(コンマあり) */
+    var MAX=4;
+
+    var info=[null,
+      {t:"関係詞節は名詞を修飾", c:"関係詞節（who lives in Tokyo など）は、その直前の名詞＝先行詞（sister）を修飾します。まずは「どの語にかかるか」を押さえます。"},
+      {t:"制限用法＝コンマなし", c:"コンマなしの who … は、候補が複数あるときに「どの〜か」を限定します。姉が複数いるとき、東京に住む姉に絞り込むはたらき。"},
+      {t:"非制限用法＝コンマあり", c:"コンマあり「, who …,」は、すでに特定されている名詞（1人だけの姉など）への補足説明。「ちなみに〜」と情報を付け足すだけです。"},
+      {t:"例文で意味を比較", c:"トグルを切り替えて見比べましょう。コンマなしは姉が複数→1人に限定、コンマありは姉は1人→補足。同じ語句でも意味が変わります。"}];
+
+    // 例文データ（改変禁止の正確な英文・和訳）
+    var EX={
+      res:{
+        en:'I have <b>two</b> sisters. My sister <span class="rc">who lives in Tokyo</span> is a doctor.',
+        ja:'（姉は2人いて、そのうち東京に住む方の姉が医者）和訳：「東京に住んでいる(方の)姉は医者だ」（＝どの姉かを限定）',
+        rel:'コンマ <b>なし</b> ＝ 制限用法（限定）：複数の姉から「東京に住む姉」を絞り込む',
+        relCls:'relation restrict'
+      },
+      non:{
+        en:'I have <b>one</b> sister. My sister<span class="comma">,</span> <span class="rc">who lives in Tokyo</span><span class="comma">,</span> is a doctor.',
+        ja:'（姉は1人で、ちなみに東京在住、という補足）和訳：「私の姉は——東京に住んでいるのだが——医者だ」（＝補足説明）',
+        rel:'コンマ <b>あり</b> ＝ 非制限用法（補足）：1人の姉に「東京在住」という情報を付け足す',
+        relCls:'relation nonrestrict'
+      }
+    };
+
+    function setMode(m){
+      mode=m;
+      el("tRes").classList.toggle("on", m==="res");
+      el("tNon").classList.toggle("on", m==="non");
+      el("tRes").setAttribute("aria-selected", m==="res"?"true":"false");
+      el("tNon").setAttribute("aria-selected", m==="non"?"true":"false");
+      render();
+    }
+
+    function render(){
+      // まず data-ms 段階表示を全要素へ適用（親グループの data-ms も含む）
+      vis("rcSvg",step);
+      // 図: モードで制限/非制限グループを切替（vis の後に上書きして排他制御）
+      var gR=el("g_restrict"), gN=el("g_nonrestrict");
+      gR.style.transition="opacity .3s"; gN.style.transition="opacity .3s";
+      if(mode==="res"){
+        gR.style.opacity="1"; gN.style.opacity="0";
+        el("s_head").textContent="restrictive"; el("s_sub").textContent="no comma";
+      }else{
+        gR.style.opacity="0"; gN.style.opacity="1";
+        el("s_head").textContent="non-restrictive"; el("s_sub").textContent="with commas";
+      }
+
+      // 例文・和訳・読み出し
+      var d=EX[mode];
+      el("rcEn").innerHTML=d.en;
+      el("rcJa").innerHTML=d.ja;
+      el("rcRelMain").innerHTML=d.rel;
+      el("rcRel").className=d.relCls;
+
+      // ステップ表示
+      el("rcBadge").textContent="step "+step+" / "+MAX;
+      el("rcTitle").textContent=info[step].t;
+      el("rcCap").textContent=info[step].c;
+      el("rcPrev").disabled=step<=1;
+      el("rcNext").disabled=step>=MAX;
+    }
+
+    el("rcNext").addEventListener("click",function(){ if(step<MAX){ step++; render(); } });
+    el("rcPrev").addEventListener("click",function(){ if(step>1){ step--; render(); } });
+    el("tRes").addEventListener("click",function(){ setMode("res"); });
+    el("tNon").addEventListener("click",function(){ setMode("non"); });
+
+    render();
+  })();
+})();
+</script>
+</body>
+</html>
