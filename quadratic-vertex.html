@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2次関数 — 平方完成と頂点</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:74px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .relation .warn{display:block; margin-top:6px; color:var(--red); font-size:13px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>2次関数 — 平方完成と頂点</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダー <b>a, p, q</b> を動かすと <b>標準形 y = a(x − p)² + q</b> の放物線・頂点・軸が即連動します。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>標準形 y = a(x − p)² + q</b> を読むこと。頂点は <b>(p, q)</b>、軸は <b>x = p</b>。a が開き方と向き、p が左右、q が上下を決めます。</div>
+
+  <!-- ① 標準形と頂点 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="qBadge">step 1 / 5</span>
+        <span class="steptitle" id="qTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="qPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="qNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">標準形と頂点</h2>
+    <p class="hint">y = a(x − p)² + q。頂点 (p, q)、軸 x = p。スライダーで a・p・q を変えると放物線が動きます。</p>
+    <div class="stage">
+      <svg id="qSvg" viewBox="0 0 600 360" role="img" aria-label="2次関数 標準形のグラフ">
+        <defs>
+          <clipPath id="qClip"><rect x="40" y="20" width="520" height="320"></rect></clipPath>
+        </defs>
+        <g id="q_grid"></g>
+        <line id="q_ax" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="q_ay" stroke="var(--gray)" stroke-width="1.2"></line>
+        <g id="q_ticks"></g>
+        <g clip-path="url(#qClip)">
+          <line id="q_axis" data-ms="5" stroke="var(--red)" stroke-width="1.6" stroke-dasharray="6 5"></line>
+          <path id="q_curve" data-ms="1" fill="none" stroke="var(--blue)" stroke-width="2.8"></path>
+        </g>
+        <circle id="q_vtx" data-ms="5" r="5.5" fill="var(--green)"></circle>
+        <text id="q_xl" font-size="14" fill="var(--sub)" text-anchor="middle">x</text>
+        <text id="q_yl" font-size="14" fill="var(--sub)" text-anchor="middle">y</text>
+        <text id="q_axisl" data-ms="5" font-size="14" fill="var(--red)" text-anchor="middle">x = p</text>
+        <text id="q_vtxl" data-ms="5" font-size="14" fill="var(--green)" text-anchor="start">頂点 (p, q)</text>
+      </svg>
+    </div>
+    <p class="cap" id="qCap"></p>
+    <div class="ctl">
+      <label for="qa">a (開き方・向き)</label>
+      <input type="range" id="qa" min="-3" max="3" step="0.5" value="1">
+      <span class="out" id="qaOut">a = 1.0</span>
+    </div>
+    <div class="ctl">
+      <label for="qp">p (左右の移動)</label>
+      <input type="range" id="qp" min="-4" max="4" step="0.5" value="0">
+      <span class="out" id="qpOut">p = 0.0</span>
+    </div>
+    <div class="ctl">
+      <label for="qq">q (上下の移動)</label>
+      <input type="range" id="qq" min="-4" max="4" step="0.5" value="0">
+      <span class="out" id="qqOut">q = 0.0</span>
+    </div>
+    <div class="relation" id="qRel">
+      <span style="color:var(--blue)">y = <span id="qEqA">1</span>(x − <span id="qEqP">0</span>)² + <span id="qEqQ">0</span></span>
+      　頂点 <span style="color:var(--green)">(<span id="qVx">0.0</span>, <span id="qVy">0.0</span>)</span>
+      　軸 <span style="color:var(--red)">x = <span id="qVa">0.0</span></span>
+      <span class="warn" id="qWarn"></span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a>　・　© AI塾 / trillion-ai-juku.com
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== ① 標準形 y = a(x − p)² + q ===== */
+  (function(){
+    /* グラフ領域: x∈[-6,6], y∈[-8,8] を viewBox 0 0 600 360 にマップ */
+    var L=40, R=560, T=20, B=340;            /* プロット枠 */
+    var XMIN=-6, XMAX=6, YMIN=-8, YMAX=8;
+    function GX(x){return L+(x-XMIN)/(XMAX-XMIN)*(R-L);}
+    function GY(y){return B-(y-YMIN)/(YMAX-YMIN)*(B-T);}
+    var step=1, a=1, p=0, q=0;
+
+    var info=[null,
+      {t:"基本形 y = x²", c:"まず最も基本の放物線 y = x²。頂点は原点 (0, 0)、軸は y軸 (x = 0)。a・p・q を 1, 0, 0 に戻すとこの形です。"},
+      {t:"a — 開き方と向き", c:"a を変えると開き方と向きが変わります。a>0 で下に凸（上向き）、a<0 で上に凸（下向き）。|a| が大きいほど細く、小さいほど横に広がります。"},
+      {t:"p — 左右の平行移動", c:"p は頂点の左右位置。y = (x − p)² は右へ p だけ移動します（p>0 で右）。符号の −p に引きずられて「左」と誤解しがちなので注意。"},
+      {t:"q — 上下の平行移動", c:"q は頂点の上下位置。+q でグラフ全体が上へ q だけ移動します（q>0 で上、q<0 で下）。"},
+      {t:"頂点 (p, q)・軸 x = p", c:"標準形 y = a(x − p)² + q では頂点が (p, q)、軸が x = p。緑の点が頂点、赤い破線が軸です。a・p・q を動かして頂点と軸の連動を確かめましょう。"}];
+
+    function grid(){
+      var g=el("q_grid"); g.innerHTML="";
+      for(var x=XMIN;x<=XMAX;x++){ if(x===0)continue;
+        g.innerHTML+='<line x1="'+GX(x).toFixed(1)+'" y1="'+T+'" x2="'+GX(x).toFixed(1)+'" y2="'+B+'" stroke="var(--bd)" stroke-width="1"/>'; }
+      for(var y=YMIN;y<=YMAX;y+=2){ if(y===0)continue;
+        g.innerHTML+='<line x1="'+L+'" y1="'+GY(y).toFixed(1)+'" x2="'+R+'" y2="'+GY(y).toFixed(1)+'" stroke="var(--bd)" stroke-width="1"/>'; }
+    }
+    function ticks(){
+      var g=el("q_ticks"); g.innerHTML="";
+      var x0=GX(0), y0=GY(0);
+      for(var x=XMIN;x<=XMAX;x++){ if(x===0)continue; var t=GX(x);
+        g.innerHTML+='<text x="'+t.toFixed(1)+'" y="'+(y0+16)+'" font-size="11" fill="var(--sub)" text-anchor="middle">'+x+'</text>'; }
+      for(var y=YMIN;y<=YMAX;y+=2){ if(y===0)continue; var t=GY(y);
+        g.innerHTML+='<text x="'+(x0-8)+'" y="'+(t+4).toFixed(1)+'" font-size="11" fill="var(--sub)" text-anchor="end">'+y+'</text>'; }
+    }
+    function curve(){
+      /* 範囲外は描かない: y が [YMIN,YMAX] に入る区間だけを連結 */
+      var pen=false, out="";
+      var N=240;
+      for(var i=0;i<=N;i++){
+        var x=XMIN+(XMAX-XMIN)*i/N;
+        var y=a*(x-p)*(x-p)+q;
+        if(y>=YMIN && y<=YMAX){
+          out+=(pen?" L":" M")+GX(x).toFixed(1)+","+GY(y).toFixed(1);
+          pen=true;
+        }else{
+          pen=false; /* break: 範囲外でペンを上げる(クリップ) */
+        }
+      }
+      return out.trim();
+    }
+    function render(){
+      grid();
+      setLine("q_ax",L,GY(0),R,GY(0));      /* x軸 */
+      setLine("q_ay",GX(0),T,GX(0),B);      /* y軸 */
+      ticks();
+      attr("q_curve","d",curve());
+
+      /* 頂点と軸 */
+      var vx=GX(p), vy=GY(q);
+      setC("q_vtx",vx,vy);
+      setLine("q_axis",GX(p),T,GX(p),B);
+      /* 頂点ラベルは枠内に収まるよう配置 */
+      var lx=vx+10; if(lx>R-70) lx=vx-90;
+      var ly=vy-12; if(ly<T+14) ly=vy+22;
+      setT("q_vtxl",lx,ly,"頂点 ("+p.toFixed(1)+", "+q.toFixed(1)+")");
+      var alx=GX(p); var aly=T+14;
+      setT("q_axisl",alx,aly,"x = "+p.toFixed(1));
+      setT("q_xl",R+0,GY(0)-8,null); setT("q_yl",GX(0)+12,T+6,null);
+
+      vis("qSvg",step);
+
+      /* 読み出し: 式・頂点・軸 */
+      el("qaOut").textContent="a = "+a.toFixed(1);
+      el("qpOut").textContent="p = "+p.toFixed(1);
+      el("qqOut").textContent="q = "+q.toFixed(1);
+      el("qEqA").textContent=a.toFixed(1);
+      el("qEqP").textContent=p.toFixed(1);
+      el("qEqQ").textContent=q.toFixed(1);
+      el("qVx").textContent=p.toFixed(1);
+      el("qVy").textContent=q.toFixed(1);
+      el("qVa").textContent=p.toFixed(1);
+
+      /* キー誤解の強調: p≠0 のとき右/左の注記 */
+      var w=el("qWarn");
+      if(Math.abs(p)>=0.05){
+        if(p>0) w.textContent="注意: (x − "+p.toFixed(1)+")² は基本形より 右へ "+p.toFixed(1)+" 平行移動（左ではない）。";
+        else    w.textContent="注意: (x − ("+p.toFixed(1)+"))² = (x + "+Math.abs(p).toFixed(1)+")² で 左へ "+Math.abs(p).toFixed(1)+" 平行移動。";
+        el("qRel").className="relation eq";
+      }else{
+        w.textContent="";
+        el("qRel").className="relation";
+      }
+
+      el("qBadge").textContent="step "+step+" / 5";
+      el("qTitle").textContent=info[step].t;
+      el("qCap").textContent=info[step].c;
+      el("qPrev").disabled=step<=1; el("qNext").disabled=step>=5;
+    }
+    el("qNext").addEventListener("click",function(){if(step<5){step++;render();}});
+    el("qPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("qa").addEventListener("input",function(e){a=parseFloat(e.target.value);render();});
+    el("qp").addEventListener("input",function(e){p=parseFloat(e.target.value);render();});
+    el("qq").addEventListener("input",function(e){q=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

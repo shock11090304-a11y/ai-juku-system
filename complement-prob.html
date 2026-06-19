@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>確率 — 余事象「少なくとも1回」 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>確率 — 余事象「少なくとも1回」</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで <b>p</b> と <b>n</b> を動かすと、<b>少なくとも1回 = 1−(1−p)<sup>n</sup></b> が見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>「少なくとも1回」は余事象で解く</b>。確率 p を n 回ぶん足す（p×n）のは誤り（1 を超えてしまう）。「1回も起きない」を引いて 1−(1−p)<sup>n</sup> とします。</div>
+
+  <!-- 少なくとも1回の確率 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="cpBadge">step 1 / 4</span>
+        <span class="steptitle" id="cpTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="cpPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="cpNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">少なくとも1回の確率</h2>
+    <p class="hint">1回で確率 p の事象を、独立に n 回くり返す。少なくとも1回起こる確率を求めます。</p>
+    <div class="stage">
+      <svg id="cpSvg" viewBox="0 0 600 320" role="img" aria-label="余事象のバーと収束グラフ">
+        <!-- 確率バー [0,1] を2分割 -->
+        <text id="b_title" data-ms="1" x="40" y="34" font-size="14" fill="var(--sub)" text-anchor="start">全体の確率 = 1</text>
+        <rect id="b_outline" data-ms="1" x="40" y="44" width="520" height="46" rx="6" fill="none" stroke="var(--gray)" stroke-width="1.5"></rect>
+        <rect id="b_hit" data-ms="3" y="44" height="46" fill="var(--blue)" opacity="0.85"></rect>
+        <rect id="b_miss" data-ms="2" y="44" height="46" fill="var(--gray)" opacity="0.30"></rect>
+        <line id="b_split" data-ms="3" stroke="var(--ink)" stroke-width="1.5"></line>
+        <text id="b_hitl" data-ms="3" font-size="14" fill="#ffffff" text-anchor="middle" y="73">少なくとも1回</text>
+        <text id="b_missl" data-ms="2" font-size="13" fill="var(--ink)" text-anchor="middle" y="73">1回も起きない</text>
+        <text id="b_hitv" data-ms="3" font-size="12" fill="#eaf2ff" text-anchor="middle" y="108"></text>
+        <text id="b_missv" data-ms="2" font-size="12" fill="var(--sub)" text-anchor="middle" y="108"></text>
+
+        <!-- 折れ線グラフ: n=1..12 の 1-(1-p)^n -->
+        <line id="g_ax" x1="60" y1="290" x2="560" y2="290" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="g_ay" x1="60" y1="290" x2="60" y2="150" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="g_one" data-ms="4" stroke="var(--green)" stroke-width="1.5" stroke-dasharray="6 5"></line>
+        <text id="g_onel" data-ms="4" font-size="12" fill="var(--green)" text-anchor="start">確率 1</text>
+        <g id="g_ticks"></g>
+        <polyline id="g_line" data-ms="2" fill="none" stroke="var(--blue)" stroke-width="2.4"></polyline>
+        <g id="g_dots"></g>
+        <circle id="g_cur" data-ms="2" r="6" fill="var(--red)"></circle>
+        <text id="g_curl" data-ms="2" font-size="12" fill="var(--red)" text-anchor="middle"></text>
+        <text id="g_xl" x="310" y="312" font-size="13" fill="var(--sub)" text-anchor="middle">くり返し回数 n</text>
+      </svg>
+    </div>
+    <p class="cap" id="cpCap"></p>
+    <div class="ctl">
+      <label for="pSlider">1回の確率 p</label>
+      <input type="range" id="pSlider" min="0.05" max="0.9" step="0.05" value="0.2">
+      <span class="out" id="pOut">p=0.20</span>
+    </div>
+    <div class="ctl">
+      <label for="nSlider">くり返し回数 n</label>
+      <input type="range" id="nSlider" min="1" max="12" step="1" value="1">
+      <span class="out" id="nOut">n=1</span>
+    </div>
+    <div class="relation" id="cpRel">
+      <span style="color:var(--blue)">少なくとも1回</span> = 1 − (1−p)<sup>n</sup> = 1 − <span id="cpMiss">0.80</span> = <span id="cpHit" style="color:var(--blue); font-weight:600">0.20</span>
+      <span id="cpPct">（20.0%）</span>
+      <span class="eqnote" id="cpEq"></span>
+    </div>
+  </section>
+
+  <footer><a href="kyozai.html">← 教材ライブラリ</a> ・ © AI塾 / trillion-ai-juku.com</footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 余事象「少なくとも1回」 ===== */
+  (function(){
+    var BX=40, BW=520, step=1, p=0.2, n=1;
+    /* バーは [0,1] → x:[BX, BX+BW] にマップ */
+    function BMAP(t){return BX + t*BW;}
+    /* 折れ線グラフ領域 */
+    var GX0=60, GX1=560, GY0=290, GYTOP=160; /* y=290 が確率0、y=160 が確率1 */
+    function NX(i){return GX0 + (i-1)/(12-1)*(GX1-GX0);}   /* n=1..12 */
+    function PY(v){return GY0 - v*(GY0-GYTOP);}             /* v=0..1 */
+
+    var info=[null,
+      {t:"1回で起こる確率 p", c:"1回の試行で事象が起こる確率を p とします。スライダーで p を変えられます。残り 1−p が「起きない」確率です。"},
+      {t:"n回とも起きない", c:"独立に n 回くり返すと、毎回「起きない（確率 1−p）」が続く確率は (1−p)^n。バーの薄い部分です。n を増やすと小さくなります。"},
+      {t:"少なくとも1回 = 余事象", c:"「少なくとも1回起こる」は「1回も起きない」の余事象。だから 1−(1−p)^n（バーの色つき部分）。p を n 回足す（p×n）と 1 を超えてしまい誤りです。"},
+      {t:"nを増やすと1に近づく", c:"n を大きくすると (1−p)^n → 0 なので、少なくとも1回の確率は限りなく 1 に近づきます。折れ線が緑の「確率 1」へ寄っていく様子を確認しましょう。"}];
+
+    function buildLine(){
+      var pts=[], dots="";
+      for(var i=1;i<=12;i++){
+        var v=1-Math.pow(1-p,i);
+        var x=NX(i), y=PY(v);
+        pts.push(x.toFixed(1)+","+y.toFixed(1));
+        dots+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="2.6" fill="var(--blue)"></circle>';
+      }
+      attr("g_line","points",pts.join(" "));
+      el("g_dots").innerHTML=dots;
+    }
+    function buildTicks(){
+      var g=el("g_ticks"); g.innerHTML="";
+      var labels=[1,4,8,12];
+      for(var j=0;j<labels.length;j++){
+        var i=labels[j], x=NX(i);
+        g.innerHTML+='<line x1="'+x.toFixed(1)+'" y1="'+GY0+'" x2="'+x.toFixed(1)+'" y2="'+(GY0+5)+'" stroke="var(--gray)" stroke-width="1"/>'+
+          '<text x="'+x.toFixed(1)+'" y="'+(GY0+18)+'" font-size="11" fill="var(--sub)" text-anchor="middle">'+i+'</text>';
+      }
+      /* y軸: 0 と 1 */
+      g.innerHTML+='<text x="'+(GX0-8)+'" y="'+(GY0+4)+'" font-size="11" fill="var(--sub)" text-anchor="end">0</text>'+
+        '<text x="'+(GX0-8)+'" y="'+(PY(1)+4)+'" font-size="11" fill="var(--sub)" text-anchor="end">1</text>';
+    }
+
+    function render(){
+      var miss=Math.pow(1-p, n);          /* (1-p)^n : 1回も起きない */
+      var hit=1-miss;                     /* 少なくとも1回 */
+
+      /* --- バー: 左=少なくとも1回(色), 右=1回も起きない(薄) --- */
+      var splitX=BMAP(hit);
+      attr("b_hit","x",BX); attr("b_hit","width",Math.max(0,(splitX-BX)).toFixed(1));
+      attr("b_miss","x",splitX.toFixed(1)); attr("b_miss","width",Math.max(0,(BX+BW-splitX)).toFixed(1));
+      setLine("b_split",splitX.toFixed(1),44,splitX.toFixed(1),90);
+      /* ラベルはそれぞれの区画中央へ。幅が狭いときは見えにくいが位置は中央維持 */
+      setT("b_hitl",(BX+splitX)/2,73,null);
+      setT("b_missl",(splitX+BX+BW)/2,73,null);
+      setT("b_hitv",(BX+splitX)/2,108,hit.toFixed(2));
+      setT("b_missv",(splitX+BX+BW)/2,108,miss.toFixed(2));
+
+      /* --- 折れ線グラフ --- */
+      buildLine(); buildTicks();
+      setLine("g_one",GX0,PY(1),GX1,PY(1));
+      setT("g_onel",GX1-44,PY(1)-6,null);
+      var cv=hit, cx=NX(n), cy=PY(cv);
+      setC("g_cur",cx,cy);
+      setT("g_curl",cx, (cy-12<150?cy+18:cy-12), "n="+n);
+
+      vis("cpSvg",step);
+
+      /* --- 読み出し --- */
+      el("pOut").textContent="p="+p.toFixed(2);
+      el("nOut").textContent="n="+n;
+      el("cpMiss").textContent=miss.toFixed(2);
+      el("cpHit").textContent=hit.toFixed(2);
+      el("cpPct").textContent="（"+(hit*100).toFixed(1)+"%）";
+
+      /* キーの瞬間: n が大きく hit がほぼ1 のとき緑強調 */
+      var nearOne = hit>=0.99;
+      el("cpRel").className = nearOne ? "relation eq" : "relation";
+      el("cpEq").textContent = nearOne ? "ほぼ確実（1に接近）" : "";
+
+      el("cpBadge").textContent="step "+step+" / 4";
+      el("cpTitle").textContent=info[step].t;
+      el("cpCap").textContent=info[step].c;
+      el("cpPrev").disabled=step<=1; el("cpNext").disabled=step>=4;
+    }
+    el("cpNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("cpPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("pSlider").addEventListener("input",function(e){p=parseFloat(e.target.value);render();});
+    el("nSlider").addEventListener("input",function(e){n=parseInt(e.target.value,10);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ベクトルの内積と正射影 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ベクトルの内積と正射影</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで角 θ を動かすと、<b>内積 a·b の符号</b>がどう変わるかが見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>内積の符号は角 θ で決まる</b>。鋭角(θ&lt;90°)なら正、直角(θ=90°)なら 0、鈍角(θ&gt;90°)なら負。内積は「b の a 方向への影 |b|cosθ」に |a| を掛けたものです。</div>
+
+  <!-- ① 内積と正射影 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="dotBadge">step 1 / 4</span>
+        <span class="steptitle" id="dotTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="dotPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="dotNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">内積と正射影</h2>
+    <p class="hint">a·b = |a||b|cosθ。b の a 方向への正射影 |b|cosθ に |a| を掛けた量が内積です。</p>
+    <div class="stage">
+      <svg id="dotSvg" viewBox="0 0 600 360" role="img" aria-label="ベクトルの内積と正射影の作図">
+        <!-- 補助の座標軸 -->
+        <line id="d_axis" stroke="var(--gray)" stroke-width="1" stroke-dasharray="3 4"></line>
+        <!-- 角θの弧 -->
+        <path id="d_arc" data-ms="1" fill="none" stroke="var(--gray)" stroke-width="1.8"></path>
+        <text id="d_arcl" data-ms="1" font-size="15" text-anchor="middle" fill="var(--sub)">θ</text>
+        <!-- a上の正射影線分(強調) -->
+        <line id="d_proj" data-ms="3" stroke="var(--green)" stroke-width="6" stroke-linecap="round" opacity="0"></line>
+        <!-- bからa直線への垂線(破線) -->
+        <line id="d_perp" data-ms="3" stroke="var(--red)" stroke-width="1.8" stroke-dasharray="6 5"></line>
+        <!-- ベクトル a -->
+        <line id="d_a" data-ms="1" stroke="var(--blue)" stroke-width="3"></line>
+        <polygon id="d_ahead" data-ms="1" fill="var(--blue)"></polygon>
+        <!-- ベクトル b -->
+        <line id="d_b" data-ms="1" stroke="var(--red)" stroke-width="3"></line>
+        <polygon id="d_bhead" data-ms="1" fill="var(--red)"></polygon>
+        <!-- 原点と射影の足 -->
+        <circle id="d_O" r="4.5" fill="var(--ink)"></circle>
+        <circle id="d_foot" data-ms="3" r="4" fill="var(--red)"></circle>
+        <!-- ラベル -->
+        <text id="d_lO" font-size="14" text-anchor="end" fill="var(--ink)">O</text>
+        <text id="d_la" data-ms="1" font-size="17" font-style="italic" font-weight="600" text-anchor="middle" fill="var(--blue)">a</text>
+        <text id="d_lb" data-ms="1" font-size="17" font-style="italic" font-weight="600" text-anchor="middle" fill="var(--red)">b</text>
+        <text id="d_lproj" data-ms="3" font-size="14" text-anchor="middle" fill="var(--green)">|b|cosθ</text>
+      </svg>
+    </div>
+    <p class="cap" id="dotCap"></p>
+    <div class="ctl">
+      <label for="dotSlider">角 θ を動かす</label>
+      <input type="range" id="dotSlider" min="0" max="180" step="5" value="45">
+      <span class="out" id="dotOut">θ=45°</span>
+    </div>
+    <div class="relation" id="dotRel">
+      <span style="color:var(--red)">a·b</span> = |a||b|cosθ = <span id="dotVal">8.49</span>
+      <span id="dotSign" style="margin:0 10px; font-weight:700">→ 正</span>
+      <span class="eqnote" id="dotEq"></span>
+      <div style="font-size:14px;color:var(--sub);margin-top:6px;">cosθ = <span id="dotCos">0.71</span> ／ 正射影 |b|cosθ = <span id="dotProj">2.12</span></div>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a> ・ © AI塾 / trillion-ai-juku.com ・ 数式記号や図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== ① ベクトルの内積と正射影 ===== */
+  (function(){
+    var k=40;                 /* 40px / 単位 */
+    var OX=120, OY=220;       /* 原点(やや中央寄せ・左下) */
+    var La=4, Lb=3;           /* |a|=4, |b|=3 */
+    var step=1, thDeg=45;
+    /* 数学座標(原点O, x右, y上)→SVG */
+    function MX(x){return OX+x*k;}
+    function MY(y){return OY-y*k;}
+    /* 矢じり用ポリゴンを向き(ux,uy:単位ベクトル,数学座標)で作る */
+    function head(px,py,ux,uy,sz){
+      /* 数学→SVGの向き: y成分は反転 */
+      var dx=ux, dy=-uy;                 /* SVG画面上の進行方向 */
+      var nx=-dy, ny=dx;                 /* 直交 */
+      var bx=px-dx*sz, by=py-dy*sz;
+      return px.toFixed(1)+","+py.toFixed(1)+" "
+            +(bx+nx*sz*0.55).toFixed(1)+","+(by+ny*sz*0.55).toFixed(1)+" "
+            +(bx-nx*sz*0.55).toFixed(1)+","+(by-ny*sz*0.55).toFixed(1);
+    }
+    var info=[null,
+      {t:"ベクトルと角θ", c:"原点 O から a (右向き, |a|=4) と b (|b|=3) をひきます。a と b のなす角が θ。スライダーで θ を 0°〜180° に動かせます。"},
+      {t:"内積の定義", c:"内積は a·b = |a||b|cosθ。長さの積に cosθ を掛けた「向きの近さ」を表す量で、答えはベクトルではなく数(スカラー)です。"},
+      {t:"正射影(影)", c:"b から a の直線へ垂線をおろした足までが、b の a 方向への正射影 |b|cosθ (緑)。内積は この影の長さ × |a| に等しい。"},
+      {t:"符号で読む", c:"θ=90° では cosθ=0 で内積は 0(影なし)。θ>90°(鈍角)では cosθ<0 となり、影が a と逆向きで内積は負になります。"}];
+    /* 角θの弧(数学座標で a(0°)から θ まで) */
+    function arc(){
+      var rr=34, p=[], N=40;
+      for(var i=0;i<=N;i++){
+        var t=(thDeg*Math.PI/180)*i/N;
+        p.push((MX(0)+rr*Math.cos(t)).toFixed(1)+","+(MY(0)-rr*Math.sin(t)).toFixed(1));
+      }
+      return "M"+p.join(" L");
+    }
+    function render(){
+      var th=thDeg*Math.PI/180, c=Math.cos(th), s=Math.sin(th);
+      /* a の終点(数学) */
+      var ax=La, ay=0;
+      /* b の終点(数学) */
+      var bx=Lb*c, by=Lb*s;
+      /* 正射影スカラー(符号つき) */
+      var proj=Lb*c;            /* |b|cosθ */
+      var dot=La*Lb*c;          /* a·b = |a||b|cosθ */
+
+      /* 補助軸(a方向の直線, 影の負を見せるため左へも延長) */
+      setLine("d_axis",MX(-1.2),MY(0),MX(La+0.6),MY(0));
+
+      /* ベクトル a */
+      var axE=MX(ax), ayE=MY(ay);
+      setLine("d_a",MX(0),MY(0),axE,ayE);
+      attr("d_ahead","points",head(axE,ayE,1,0,12));
+      setT("d_la",MX(ax/2),MY(0)+22,null);
+
+      /* ベクトル b */
+      var bxE=MX(bx), byE=MY(by);
+      setLine("d_b",MX(0),MY(0),bxE,byE);
+      /* bの単位ベクトル(数学) */
+      attr("d_bhead","points",head(bxE,byE,c,s,12));
+      setT("d_lb",MX(bx/2)+(s>0.05? -16: -16),MY(by/2)-6,null);
+
+      /* 角θの弧 */
+      attr("d_arc","d",arc());
+      var ah=(thDeg/2)*Math.PI/180;
+      setT("d_arcl",MX(0)+52*Math.cos(ah),MY(0)-52*Math.sin(ah)+5,null);
+
+      /* 正射影: a直線(y=0)上の点 (proj,0) */
+      var fx=MX(proj), fy=MY(0);
+      /* 影の線分 O→(proj,0) を強調 */
+      setLine("d_proj",MX(0),MY(0),fx,fy);
+      el("d_proj").style.opacity=(step>=3)?"1":"0";
+      /* bから垂線(b終点→影の足) */
+      setLine("d_perp",bxE,byE,fx,fy);
+      setC("d_foot",fx,fy);
+      setT("d_lproj",(MX(0)+fx)/2,MY(0)+(proj>=0?-12:30),null);
+
+      /* 原点 */
+      setC("d_O",MX(0),MY(0));
+      setT("d_lO",MX(0)-8,MY(0)+18,null);
+
+      vis("dotSvg",step);
+
+      /* 読み出し */
+      el("dotOut").textContent="θ="+thDeg.toFixed(0)+"°";
+      el("dotVal").textContent=dot.toFixed(2);
+      el("dotCos").textContent=c.toFixed(2);
+      el("dotProj").textContent=proj.toFixed(2);
+      /* 符号で色と語 */
+      var rel=el("dotRel"), sg=el("dotSign");
+      var EPS=1e-9;
+      if(Math.abs(dot)<EPS || thDeg===90){
+        sg.textContent="→ ゼロ"; sg.style.color="var(--gray)";
+        rel.className="relation";
+        el("dotEq").textContent="θ=90° → 直交 (a·b=0)"; el("dotEq").style.color="var(--gray)";
+      }else if(dot>0){
+        sg.textContent="→ 正"; sg.style.color="var(--green)";
+        rel.className="relation eq";
+        el("dotEq").textContent="鋭角 (θ<90°)"; el("dotEq").style.color="var(--ok-ink)";
+      }else{
+        sg.textContent="→ 負"; sg.style.color="var(--red)";
+        rel.className="relation";
+        el("dotEq").textContent="鈍角 (θ>90°) → 影は逆向き"; el("dotEq").style.color="var(--red)";
+      }
+
+      el("dotBadge").textContent="step "+step+" / 4";
+      el("dotTitle").textContent=info[step].t;
+      el("dotCap").textContent=info[step].c;
+      el("dotPrev").disabled=step<=1; el("dotNext").disabled=step>=4;
+    }
+    el("dotNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("dotPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("dotSlider").addEventListener("input",function(e){thDeg=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

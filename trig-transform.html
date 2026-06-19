@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>三角関数のグラフ変形（振幅・周期・位相） — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap; min-width:124px;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:64px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>三角関数のグラフ変形（振幅・周期・位相）</h1>
+    <p class="lead">「次へ／戻る」で y = A sin(B(x − C)) + D が1つずつ組み上がります。4本のスライダーを動かすと、波がどう変わるかが見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>周期は 2π/B</b>（2πB ではない）。B が大きいほど周期は<b>短く</b>なります。位相 C は波を<b>右へ C</b> ずらします。</div>
+
+  <!-- ① y=A sin(B(x-C))+D のグラフ変形 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="tfBadge">step 1 / 5</span>
+        <span class="steptitle" id="tfTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="tfPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="tfNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">三角関数のグラフ変形</h2>
+    <p class="hint">基本の y=sin x から、振幅 A・周期 2π/B・位相 C（右へ）・上下 D の順に変形します。</p>
+    <div class="stage">
+      <svg id="tfSvg" viewBox="0 0 600 360" role="img" aria-label="y=A sin(B(x-C))+D のグラフ">
+        <rect id="t_band" data-ms="2" fill="var(--green)" opacity="0.10"></rect>
+        <line id="t_ax" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="t_ay" stroke="var(--gray)" stroke-width="1.2"></line>
+        <g id="t_ticks"></g>
+        <line id="t_mid" data-ms="5" stroke="var(--green)" stroke-width="1.6" stroke-dasharray="7 5"></line>
+        <text id="t_midl" data-ms="5" font-size="14" fill="var(--green)" text-anchor="start">y = D</text>
+        <path id="t_base" data-ms="1" fill="none" stroke="var(--gray)" stroke-width="1.6" stroke-dasharray="4 4"></path>
+        <path id="t_curve" data-ms="1" fill="none" stroke="var(--blue)" stroke-width="2.6"></path>
+        <text id="t_xl" font-size="14" fill="var(--sub)" text-anchor="middle">x</text>
+        <text id="t_yl" font-size="14" fill="var(--sub)" text-anchor="middle">y</text>
+      </svg>
+    </div>
+    <p class="cap" id="tfCap"></p>
+    <div class="ctl">
+      <label for="aSlider">A（振幅）を動かす</label>
+      <input type="range" id="aSlider" min="0.5" max="3" step="0.5" value="1">
+      <span class="out" id="aOut">A=1.0</span>
+    </div>
+    <div class="ctl">
+      <label for="bSlider">B（周期2π/B）を動かす</label>
+      <input type="range" id="bSlider" min="0.5" max="3" step="0.5" value="1">
+      <span class="out" id="bOut">B=1.0</span>
+    </div>
+    <div class="ctl">
+      <label for="cSlider">C（位相・右へ）を動かす</label>
+      <input type="range" id="cSlider" min="-2" max="2" step="0.5" value="0">
+      <span class="out" id="cOut">C=0.0</span>
+    </div>
+    <div class="ctl">
+      <label for="dSlider">D（上下）を動かす</label>
+      <input type="range" id="dSlider" min="-2" max="2" step="0.5" value="0">
+      <span class="out" id="dOut">D=0.0</span>
+    </div>
+    <div class="relation" id="tfRel">
+      <span style="color:var(--blue)">y = A sin(B(x − C)) + D</span>
+      <span class="eqnote" id="tfInfo"></span>
+    </div>
+    <div class="relation" id="tfRel2" style="margin-top:8px;">
+      周期 = 2π/B = <span id="tfPer" style="color:var(--green); font-weight:600">6.28</span>
+      <span style="margin:0 10px; color:var(--sub)">／</span>
+      振幅 = A = <span id="tfAmp" style="color:var(--red); font-weight:600">1.0</span>
+    </div>
+  </section>
+
+  <footer><a href="kyozai.html">← 教材ライブラリ</a> ・ © AI塾 / trillion-ai-juku.com</footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== ① y = A sin(B(x-C)) + D のグラフ変形 ===== */
+  (function(){
+    var L=58,R=560,T=24,B=336, XMAX=4*Math.PI, YMIN=-5, YMAX=5, step=1;
+    var A=1, Bp=1, C=0, D=0;
+    var PI=Math.PI;
+    function GX(v){return L+(v/XMAX)*(R-L);}
+    function GY(v){return B-((v-YMIN)/(YMAX-YMIN))*(B-T);}
+    function f(v){return A*Math.sin(Bp*(v-C))+D;}
+    var info=[null,
+      {t:"y = sin x", c:"基本の波 y = sin x。山と谷を1.0、周期は 2π（約6.28）です。スライダーは下にありますが、まずはこの形を基準にします。"},
+      {t:"A：振幅", c:"A は振幅（縦の拡大縮小）。波の高さが ±A になります。A を 2 にすると山は 2.0、谷は −2.0。緑の帯が振幅帯 D±A です。"},
+      {t:"B：周期 2π/B", c:"周期は 2π/B。B が大きいほど周期は短く（波が詰まる）、B が小さいほど長く（波がのびる）。よくある誤りは「周期＝2πB」。正しくは 2π/B です。"},
+      {t:"C：位相（右へ C）", c:"C は位相のずれ。y = A sin(B(x − C)) の形では、グラフは右へ C だけ平行移動します。C を正にすると波が右へ、負にすると左へずれます。"},
+      {t:"D：上下平行移動", c:"D は上下の平行移動。波の中心線が y = D（緑の破線）になり、最大は D+A、最小は D−A。4つを合わせると一般形 y = A sin(B(x − C)) + D の完成です。"}];
+    function pathFor(amp,bb,cc,dd){
+      var p=[];
+      for(var i=0;i<=480;i++){
+        var v=XMAX*i/480;
+        var y=amp*Math.sin(bb*(v-cc))+dd;
+        if(y>YMAX)y=YMAX; if(y<YMIN)y=YMIN;
+        p.push((i?"L":"M")+GX(v).toFixed(1)+","+GY(y).toFixed(1));
+      }
+      return p.join(" ");
+    }
+    function ticks(){
+      var g=el("t_ticks"); g.innerHTML="";
+      function tk(vx,lab){var t=GX(vx);
+        g.innerHTML+='<line x1="'+t.toFixed(1)+'" y1="'+GY(0)+'" x2="'+t.toFixed(1)+'" y2="'+(GY(0)+5)+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+t.toFixed(1)+'" y="'+(B+18)+'" font-size="12" fill="var(--sub)" text-anchor="middle">'+lab+'</text>';}
+      function ty(vy,lab){var t=GY(vy);
+        g.innerHTML+='<line x1="'+L+'" y1="'+t.toFixed(1)+'" x2="'+(L-5)+'" y2="'+t.toFixed(1)+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+(L-9)+'" y="'+(t+4).toFixed(1)+'" font-size="12" fill="var(--sub)" text-anchor="end">'+lab+'</text>';}
+      tk(0,"0"); tk(PI,"π"); tk(2*PI,"2π"); tk(3*PI,"3π"); tk(4*PI,"4π");
+      ty(4,"4"); ty(2,"2"); ty(0,"0"); ty(-2,"−2"); ty(-4,"−4");
+    }
+    function render(){
+      // 段階に応じて適用するパラメータ（誤適用を避け、累積的に効かせる）
+      var useA = step>=2 ? A : 1;
+      var useB = step>=3 ? Bp : 1;
+      var useC = step>=4 ? C : 0;
+      var useD = step>=5 ? D : 0;
+
+      setLine("t_ax",L,GY(0),R,GY(0));
+      setLine("t_ay",L,B,L,T);
+      ticks();
+
+      // 振幅帯 D±A（step2以降）
+      var top=GY(useD+useA), bot=GY(useD-useA);
+      var be=el("t_band");
+      be.setAttribute("x",L); be.setAttribute("y",Math.min(top,bot).toFixed(1));
+      be.setAttribute("width",(R-L).toFixed(1)); be.setAttribute("height",Math.abs(bot-top).toFixed(1));
+
+      // 中心線 y=D（step5）
+      setLine("t_mid",L,GY(useD),R,GY(useD));
+      setT("t_midl",L+8,GY(useD)-7,"y = D");
+
+      // 基準の sin（薄い破線）と本体カーブ
+      attr("t_base","d",pathFor(1,1,0,0));
+      attr("t_curve","d",pathFor(useA,useB,useC,useD));
+
+      setT("t_xl",(L+R)/2,B+30,null);
+      setT("t_yl",L-32,T+10,null);
+
+      vis("tfSvg",step);
+
+      // 読み出し
+      var per=2*PI/useB;
+      el("tfPer").textContent=per.toFixed(2);
+      el("tfAmp").textContent=useA.toFixed(1);
+
+      // スライダー読み出し
+      el("aOut").textContent="A="+A.toFixed(1);
+      el("bOut").textContent="B="+Bp.toFixed(1);
+      el("cOut").textContent="C="+C.toFixed(1);
+      el("dOut").textContent="D="+D.toFixed(1);
+
+      // 関係式の補足（キー強調）
+      var note="";
+      if(step>=3){ note="周期 = 2π/B = "+per.toFixed(2)+"（B が大きいほど短い）"; }
+      if(step>=4 && Math.abs(useC)>1e-9){ note="位相：右へ C = "+useC.toFixed(1); }
+      el("tfInfo").textContent=note;
+
+      // キー強調：位相・周期が「ちょうど効いている」瞬間（C=0でない or B≠1）を緑に
+      var key=(step>=4 && Math.abs(useC)>1e-9) || (step>=3 && Math.abs(useB-1)>1e-9);
+      el("tfRel").className=key?"relation eq":"relation";
+
+      el("tfBadge").textContent="step "+step+" / 5";
+      el("tfTitle").textContent=info[step].t;
+      el("tfCap").textContent=info[step].c;
+      el("tfPrev").disabled=step<=1; el("tfNext").disabled=step>=5;
+    }
+    el("tfNext").addEventListener("click",function(){if(step<5){step++;render();}});
+    el("tfPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("aSlider").addEventListener("input",function(e){A=parseFloat(e.target.value);if(step<2)step=2;render();});
+    el("bSlider").addEventListener("input",function(e){Bp=parseFloat(e.target.value);if(step<3)step=3;render();});
+    el("cSlider").addEventListener("input",function(e){C=parseFloat(e.target.value);if(step<4)step=4;render();});
+    el("dSlider").addEventListener("input",function(e){D=parseFloat(e.target.value);if(step<5)step=5;render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>
