@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>データの分析 — 分散と標準偏差</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .readout{margin-top:12px; padding:11px 14px; border-radius:10px; border:1px solid var(--bd); font-size:14px; line-height:1.9;}
+  .readout .k{color:var(--sub); margin-right:6px;}
+  .readout b{font-variant-numeric:tabular-nums;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>データの分析 — 分散と標準偏差</h1>
+    <p class="lead">「次へ／戻る」で考え方が1ステップずつ完成。<b>ばらつき</b>スライダーを動かすと、データの散らばりと <b>分散・標準偏差</b> が連動して変化します。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>分散 = 偏差² の平均</b>、<b>標準偏差 = √分散</b>。分散は2乗のため単位がデータと変わりますが、標準偏差はルートで戻すのでデータと同じ単位の「散らばりの目安」になります。</div>
+
+  <!-- ① 5個のデータと平均/偏差/分散/標準偏差 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="vBadge">step 1 / 4</span>
+        <span class="steptitle" id="vTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="vPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="vNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">分散と標準偏差</h2>
+    <p class="hint">5個のデータの 平均・偏差・分散・標準偏差。ばらつきを上げると点が広がり、分散・標準偏差が増えます。</p>
+    <div class="stage">
+      <svg id="vSvg" viewBox="0 0 600 320" role="img" aria-label="数直線上の5個のデータと平均・偏差・分散">
+        <!-- 偏差² の正方形（面積で分散のイメージ） -->
+        <g id="v_squares" data-ms="3"></g>
+        <!-- 数直線 -->
+        <line id="v_axis" stroke="var(--ink)" stroke-width="2"></line>
+        <g id="v_ticks"></g>
+        <!-- 平均の縦線 -->
+        <line id="v_meanline" data-ms="1" stroke="var(--green)" stroke-width="2.5" stroke-dasharray="6 5"></line>
+        <text id="v_meanlbl" data-ms="1" font-size="14" fill="var(--green)" text-anchor="middle">平均 5.0</text>
+        <!-- 偏差の線分（各点→平均の高さで横ずれを表現） -->
+        <g id="v_devs" data-ms="2"></g>
+        <!-- データ点 -->
+        <g id="v_points"></g>
+      </svg>
+    </div>
+    <p class="cap" id="vCap"></p>
+    <div class="ctl">
+      <label for="vSlider">ばらつき s を動かす</label>
+      <input type="range" id="vSlider" min="0" max="4" step="0.25" value="2">
+      <span class="out" id="vOut">s=2.00</span>
+    </div>
+    <div class="readout" id="vRead">
+      <div><span class="k">データ x</span><b id="vData">3, 4, 5, 6, 7</b></div>
+      <div>
+        <span class="k">平均</span><b id="vMean" style="color:var(--green)">5.00</b>
+        <span class="k" style="margin-left:14px">分散</span><b id="vVar" style="color:var(--red)">2.00</b>
+        <span class="k" style="margin-left:14px">標準偏差</span><b id="vSd" style="color:var(--blue)">1.41</b>
+      </div>
+    </div>
+    <div class="relation" id="vRel">
+      分散 = <span id="vVar2" style="color:var(--red)">2.00</span> ,
+      標準偏差 = √分散 = <span id="vSd2" style="color:var(--blue)">1.41</span>
+      <span class="eqnote" id="vEq"></span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a> ・ © AI塾 / trillion-ai-juku.com ・ 数式記号や図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== ① 分散と標準偏差 ===== */
+  (function(){
+    // 数直線 0..10 → x座標。基準オフセット o, 平均 M=5 固定。
+    var L=70, Rgt=560, AX=10, BASE=170, UNIT=(Rgt-L)/AX; // 1単位あたりpx
+    var M=5, OFF=[-2,-1,0,1,2], step=1, s=2;
+    function NX(v){return L+v*UNIT;}              // 数直線値→x
+    var info=[null,
+      {t:"データ5個と平均", c:"5個のデータを数直線上にとります。平均は全データの合計を個数で割った値で、ここでは常に 5.0。緑の縦線が平均の位置です。"},
+      {t:"偏差 = 各データ − 平均", c:"各データが平均からどれだけ離れているかが「偏差」。平均より大きければ正、小さければ負。偏差の合計は必ず 0 になります（だから平均しても散らばりは測れない）。"},
+      {t:"分散 = 偏差² の平均", c:"偏差を2乗して符号を消し、その平均をとったものが「分散」。各点の上の正方形の面積が偏差²で、その平均が分散です。ばらつきが大きいほど面積も分散も大きくなります。"},
+      {t:"標準偏差 = √分散", c:"分散は2乗したので単位がデータと変わります。√をとって戻したものが「標準偏差」。データと同じ単位で「散らばりの目安」を表します。s=0 ではすべて平均に重なり分散も標準偏差も 0 です。"}];
+
+    function ticks(){
+      var g=el("v_ticks"); var h="";
+      for(var v=0; v<=AX; v++){
+        var t=NX(v);
+        h+='<line x1="'+t.toFixed(1)+'" y1="'+BASE+'" x2="'+t.toFixed(1)+'" y2="'+(BASE+6)+'" stroke="var(--gray)" stroke-width="1"/>';
+        h+='<text x="'+t.toFixed(1)+'" y="'+(BASE+22)+'" font-size="11" fill="var(--sub)" text-anchor="middle">'+v+'</text>';
+      }
+      g.innerHTML=h;
+    }
+
+    function render(){
+      // データ算出（実データから計算）
+      var xs=[], i;
+      for(i=0;i<5;i++){ xs.push(M+OFF[i]*s); }
+      var sum=0; for(i=0;i<5;i++){ sum+=xs[i]; }
+      var mean=sum/5;                                  // = 5
+      var sq=0, devs=[];
+      for(i=0;i<5;i++){ var d=xs[i]-mean; devs.push(d); sq+=d*d; }
+      var variance=sq/5;
+      var sd=Math.sqrt(Math.max(0,variance));
+
+      // 数直線
+      setLine("v_axis",L,BASE,Rgt,BASE);
+      ticks();
+      // 平均縦線
+      setLine("v_meanline",NX(mean),BASE+10,NX(mean),40);
+      setT("v_meanlbl",NX(mean),30,"平均 "+mean.toFixed(1));
+
+      // 偏差² 正方形の面積スケール: 偏差²(最大 (2*4)^2=64) を見やすい高さに
+      // 辺長 = |偏差|に比例させると面積が偏差²になる。1単位偏差を 16px に対応。
+      var PX=16; // 偏差1あたりの正方形辺長(px)
+      // データ点・正方形を描画
+      var pts="", dv="", sqr="";
+      for(i=0;i<5;i++){
+        var px=NX(xs[i]);
+        var dpx=devs[i]*PX;            // 偏差に比例した辺長(符号付)
+        var side=Math.abs(dpx);        // 正方形の辺長
+        // 正方形(偏差²の面積) — データ点の上に積む
+        if(side>0.5){
+          var rectX=px - side/2;
+          var rectY=BASE-12-side;
+          sqr+='<rect x="'+rectX.toFixed(1)+'" y="'+rectY.toFixed(1)+'" width="'+side.toFixed(1)+'" height="'+side.toFixed(1)+'" fill="rgba(226,72,58,0.14)" stroke="var(--red)" stroke-width="1.2"/>';
+        }
+        // データ点
+        pts+='<circle cx="'+px.toFixed(1)+'" cy="'+BASE+'" r="6" fill="var(--blue)" stroke="var(--card)" stroke-width="1.5"/>';
+        pts+='<text x="'+px.toFixed(1)+'" y="'+(BASE-14)+'" font-size="11" fill="var(--ink)" text-anchor="middle">'+xs[i].toFixed(xs[i]%1===0?0:2)+'</text>';
+      }
+      // 偏差を「平均からの水平な矢印」として描く（重なり回避のため少し縦にずらす）
+      for(i=0;i<5;i++){
+        var px2=NX(xs[i]);
+        var yy=BASE-46-i*11;
+        var col = devs[i]>=0 ? "var(--green)" : "var(--red)";
+        dv+='<line x1="'+NX(mean).toFixed(1)+'" y1="'+yy+'" x2="'+px2.toFixed(1)+'" y2="'+yy+'" stroke="'+col+'" stroke-width="2"/>';
+        dv+='<circle cx="'+px2.toFixed(1)+'" cy="'+yy+'" r="2.5" fill="'+col+'"/>';
+        var lbl=(devs[i]>=0?"+":"")+devs[i].toFixed(devs[i]%1===0?0:1);
+        dv+='<text x="'+(px2 + (devs[i]>=0?6:-6)).toFixed(1)+'" y="'+(yy+4)+'" font-size="10" fill="'+col+'" text-anchor="'+(devs[i]>=0?"start":"end")+'">'+lbl+'</text>';
+      }
+
+      el("v_devs").innerHTML=dv;
+      el("v_points").innerHTML=pts;
+      el("v_squares").innerHTML=sqr;
+      vis("vSvg",step);
+
+      // 読み出し
+      var dataStr=[];
+      for(i=0;i<5;i++){ dataStr.push(xs[i].toFixed(xs[i]%1===0?0:2)); }
+      el("vData").textContent=dataStr.join(", ");
+      el("vMean").textContent=mean.toFixed(2);
+      el("vVar").textContent=variance.toFixed(2);
+      el("vSd").textContent=sd.toFixed(2);
+      el("vVar2").textContent=variance.toFixed(2);
+      el("vSd2").textContent=sd.toFixed(2);
+      el("vOut").textContent="s="+s.toFixed(2);
+
+      var zero=(s===0);
+      el("vEq").textContent=zero?"ばらつき 0 → 全データが平均に一致" : (s>=3.5?"ばらつき大 → 分散・標準偏差も大" : "");
+      el("vRel").className=zero?"relation eq":"relation";
+
+      el("vBadge").textContent="step "+step+" / 4";
+      el("vTitle").textContent=info[step].t;
+      el("vCap").textContent=info[step].c;
+      el("vPrev").disabled=step<=1; el("vNext").disabled=step>=4;
+    }
+    el("vNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("vPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("vSlider").addEventListener("input",function(e){s=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>現在完了 — 完了・経験・継続 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --orange:#ea7a1c;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .toggle{display:flex; gap:8px; flex:1; flex-wrap:wrap;}
+  .toggle button{flex:1; justify-content:center; min-width:88px;}
+  .toggle button.on{background:var(--blue); color:#fff; border-color:var(--blue); font-weight:600;}
+  .toggle button.on:hover{background:var(--blue);}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .exbox{margin-top:12px; padding:12px 14px; border-radius:10px; border:1px solid var(--bd); background:var(--bg);}
+  .exbox .en{font-size:17px; line-height:1.9;}
+  .exbox .ja{font-size:14px; color:var(--sub); margin-top:4px;}
+  .hl-hv{color:var(--blue); font-weight:600;}
+  .hl-pp{color:var(--red); font-weight:600;}
+  .hl-kw{color:var(--orange); font-weight:600;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>現在完了 — 完了・経験・継続</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。下の3択トグルで <b>完了・経験・継続</b> の3用法を切り替えると、タイムラインと英文が連動します。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>have + 過去分詞は「過去と現在をつなぐ」</b>。過去形（finished it yesterday）が「今と切り離れた一点」なのに対し、現在完了は過去の出来事を今に結びつけます。</div>
+
+  <!-- ① 現在完了タイムライン -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="ppBadge">step 1 / 4</span>
+        <span class="steptitle" id="ppTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="ppPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="ppNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">現在完了のタイムライン</h2>
+    <p class="hint">横軸は「過去 —— 現在(now)」。トグルで用法を切り替えると印の付き方が変わります。</p>
+    <div class="stage">
+      <svg id="ppSvg" viewBox="0 0 600 300" role="img" aria-label="現在完了のタイムライン">
+        <!-- 時間軸 -->
+        <line id="t_axis" x1="60" y1="170" x2="540" y2="170" stroke="var(--ink)" stroke-width="2"></line>
+        <polygon id="t_arrow" points="540,170 528,164 528,176" fill="var(--ink)"></polygon>
+        <!-- 過去ラベル -->
+        <text x="70" y="200" font-size="14" fill="var(--sub)" text-anchor="start">past</text>
+        <!-- now の縦線 -->
+        <line id="t_now" x1="470" y1="120" x2="470" y2="200" stroke="var(--ink)" stroke-width="2" stroke-dasharray="5 4"></line>
+        <circle cx="470" cy="170" r="4.5" fill="var(--ink)"></circle>
+        <text x="470" y="218" font-size="14" fill="var(--ink)" text-anchor="middle" font-weight="600">now</text>
+
+        <!-- 過去形(参照): 今と切り離れた一点 -->
+        <g id="t_pastg" data-ms="2">
+          <circle id="t_pastpt" cx="190" cy="170" r="6" fill="var(--gray)"></circle>
+          <g id="t_pastlbl">
+            <text x="190" y="145" font-size="13" fill="var(--gray)" text-anchor="middle">past tense</text>
+            <text x="190" y="240" font-size="12" fill="var(--gray)" text-anchor="middle">cut off from now</text>
+          </g>
+        </g>
+
+        <!-- 完了: now の直前に完了マーク -->
+        <g id="t_done" data-ms="3" style="opacity:0">
+          <line x1="430" y1="170" x2="470" y2="170" stroke="var(--red)" stroke-width="7" stroke-linecap="round"></line>
+          <circle cx="440" cy="170" r="7" fill="var(--red)"></circle>
+          <text x="430" y="148" font-size="13" fill="var(--red)" text-anchor="middle">just finished</text>
+          <text x="450" y="252" font-size="12" fill="var(--red)" text-anchor="middle">result remains now</text>
+          <line x1="450" y1="232" x2="468" y2="178" stroke="var(--red)" stroke-width="1.2" stroke-dasharray="3 3"></line>
+        </g>
+
+        <!-- 経験: 過去に複数の点 -->
+        <g id="t_exp" data-ms="3" style="opacity:0">
+          <circle cx="150" cy="170" r="6" fill="var(--green)"></circle>
+          <circle cx="250" cy="170" r="6" fill="var(--green)"></circle>
+          <circle cx="350" cy="170" r="6" fill="var(--green)"></circle>
+          <text x="150" y="150" font-size="13" fill="var(--green)" text-anchor="middle">1st</text>
+          <text x="250" y="150" font-size="13" fill="var(--green)" text-anchor="middle">2nd</text>
+          <text x="350" y="150" font-size="13" fill="var(--green)" text-anchor="middle">3rd</text>
+          <text x="260" y="252" font-size="12" fill="var(--green)" text-anchor="middle">experiences up to now</text>
+        </g>
+
+        <!-- 継続: 過去から now までの帯 -->
+        <g id="t_cont" data-ms="3" style="opacity:0">
+          <rect x="150" y="160" width="320" height="20" rx="10" fill="var(--blue)" opacity="0.35"></rect>
+          <circle cx="150" cy="170" r="6" fill="var(--blue)"></circle>
+          <circle cx="470" cy="170" r="6" fill="var(--blue)"></circle>
+          <text x="150" y="150" font-size="13" fill="var(--blue)" text-anchor="middle">since / for</text>
+          <text x="310" y="252" font-size="12" fill="var(--blue)" text-anchor="middle">continues from past to now</text>
+        </g>
+      </svg>
+    </div>
+    <p class="cap" id="ppCap"></p>
+
+    <div class="ctl">
+      <label>用法を選ぶ</label>
+      <div class="toggle" id="ppToggle">
+        <button id="tgDone" data-use="done">完了</button>
+        <button id="tgExp"  data-use="exp">経験</button>
+        <button id="tgCont" data-use="cont">継続</button>
+      </div>
+    </div>
+
+    <div class="exbox" id="ppEx">
+      <div class="en" id="ppEn"></div>
+      <div class="ja" id="ppJa"></div>
+    </div>
+
+    <div class="relation" id="ppRel">
+      <span style="color:var(--blue)">現在完了 = 過去と今をつなぐ</span>
+      <span style="margin:0 8px; font-weight:600">／</span>
+      <span style="color:var(--gray)">過去形 = 今と切り離れた一点</span>
+      <span class="eqnote" id="ppEq"></span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a> ・ © AI塾 / trillion-ai-juku.com ・ 用法名やラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== ① 現在完了 3用法タイムライン ===== */
+  (function(){
+    var step=1, use="done", MAXSTEP=4;
+
+    // 正確な例文（改変しない）。have+過去分詞=hl-hv, キーワード=hl-kw。
+    var EX={
+      done:{
+        en:'I <span class="hl-hv">have</span> just <span class="hl-hv">finished</span> my homework.',
+        kw:['just','already','yet'],
+        ja:'ちょうど宿題を終えたところだ（完了して今その状態）。',
+        cap:'完了用法：just / already / yet。動作が今ちょうど終わり、その結果が現在に残っています。'
+      },
+      exp:{
+        en:'I <span class="hl-hv">have</span> <span class="hl-hv">visited</span> Kyoto <span class="hl-kw">three times</span>.',
+        kw:['ever','never','回数'],
+        ja:'京都に3回行ったことがある（過去から今までの経験）。',
+        cap:'経験用法：ever / never / 回数。過去から現在までに何回経験したかを表します。'
+      },
+      cont:{
+        en:'I <span class="hl-hv">have</span> <span class="hl-hv">lived</span> here <span class="hl-kw">for ten years</span>.',
+        kw:['for','since'],
+        ja:'10年間ここに住んでいる（過去から今も続く）。',
+        cap:'継続用法：for / since。過去のある時点から現在まで状態がずっと続いています。'
+      }
+    };
+    // 完了用法だけ just を hl-kw で色分け（en側に既に just があるので置換）
+    EX.done.en = 'I <span class="hl-hv">have</span> <span class="hl-kw">just</span> <span class="hl-hv">finished</span> my homework.';
+
+    var info=[null,
+      {t:"過去と現在をつなぐ", c:"have + 過去分詞は「過去の出来事を現在につなぐ」表現。過去形 I finished it yesterday.（灰色の点）は今と切り離れた一点ですが、現在完了は過去と now を結びます。"},
+      {t:"過去形との対比", c:"灰色の点が過去形＝yesterday のような「今と切り離れた一点」。次のステップから、トグルで3用法のつなぎ方を見ていきます。"},
+      {t:"3用法を切り替える", c:"下のトグルで 完了 / 経験 / 継続 を切り替えると印が変わります。完了＝now直前の完了マーク、経験＝過去の複数点、継続＝過去からnowまでの帯。"},
+      {t:"用法を見分ける", c:"キーワードで判断：just/already/yet→完了、ever/never/回数→経験、for/since→継続。いずれも「過去と今をつなぐ」点は共通です。"}];
+
+    function showUseGroups(){
+      // 用法グループの表示は step>=3 でトグルに従う。それ以前は全用法非表示。
+      var on = (step>=3);
+      el("t_done").style.opacity = (on && use==="done") ? "1" : "0";
+      el("t_exp").style.opacity  = (on && use==="exp")  ? "1" : "0";
+      el("t_cont").style.opacity = (on && use==="cont") ? "1" : "0";
+      // 用法の印が出ている間は、過去形参照の文字ラベルを隠して重なりを防ぐ（灰点は残す）
+      el("t_pastlbl").style.transition="opacity .25s";
+      el("t_pastlbl").style.opacity = on ? "0" : "1";
+    }
+
+    function setToggle(){
+      el("tgDone").className = (use==="done")?"on":"";
+      el("tgExp").className  = (use==="exp") ?"on":"";
+      el("tgCont").className = (use==="cont")?"on":"";
+    }
+
+    function render(){
+      // data-ms 段階表示（過去形参照点は step>=2）
+      vis("ppSvg",step);
+      showUseGroups();
+      setToggle();
+
+      var e=EX[use];
+      el("ppEn").innerHTML=e.en;
+      el("ppJa").textContent=e.ja;
+
+      // 読み出し：用法名 + キーワード（常時、現在完了/過去形の対比は固定文）
+      var label = (use==="done")?"完了":(use==="exp")?"経験":"継続";
+      el("ppEq").textContent = (step>=3) ? ("選択中："+label+"用法（キーワード "+e.kw.join(" / ")+"）") : "";
+      el("ppRel").className = (step>=3) ? "relation eq" : "relation";
+
+      // キャプション：step 3 のときは用法別、それ以外はステップ説明
+      el("ppCap").textContent = (step>=3) ? e.cap : info[step].c;
+
+      el("ppBadge").textContent="step "+step+" / "+MAXSTEP;
+      el("ppTitle").textContent=info[step].t;
+      el("ppPrev").disabled=step<=1; el("ppNext").disabled=step>=MAXSTEP;
+    }
+
+    el("ppNext").addEventListener("click",function(){if(step<MAXSTEP){step++;render();}});
+    el("ppPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+
+    function pick(u){
+      use=u;
+      // 用法を選んだら、図が連動するよう step を最低 3 に進める
+      if(step<3){step=3;}
+      render();
+    }
+    el("tgDone").addEventListener("click",function(){pick("done");});
+    el("tgExp").addEventListener("click",function(){pick("exp");});
+    el("tgCont").addEventListener("click",function(){pick("cont");});
+
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

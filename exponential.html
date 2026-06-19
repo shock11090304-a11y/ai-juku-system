@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>指数関数のグラフと方程式 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:78px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .relation.warn{background:var(--info-bg); border-color:var(--info-ink);}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>指数関数のグラフと方程式</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで <b>底 a</b> と <b>定数 k</b> を動かすと、方程式 <b>a<sup>x</sup>=k</b> の解 = グラフの交点 が見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元のキー = <b>a<sup>x</sup>=k ⟺ x=log<sub>a</sub>k</b>。方程式 a<sup>x</sup>=k の解は、曲線 y=a<sup>x</sup> と水平線 y=k の <b>交点の x 座標</b>として読めます。</div>
+
+  <!-- 指数関数 y=a^x のグラフと方程式 a^x=k -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="exBadge">step 1 / 4</span>
+        <span class="steptitle" id="exTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="exPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="exNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">指数関数 y=a^x のグラフと方程式 a^x=k</h2>
+    <p class="hint">y = a<sup>x</sup> は必ず点 (0,1) を通り、a&gt;1 で増加・0&lt;a&lt;1 で減少。方程式 a<sup>x</sup>=k の解は交点 x=log<sub>a</sub>k=ln k / ln a。</p>
+    <div class="stage">
+      <svg id="exSvg" viewBox="0 0 600 360" role="img" aria-label="y=a^x のグラフと方程式 a^x=k">
+        <line id="e_ax" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="e_ay" stroke="var(--gray)" stroke-width="1.2"></line>
+        <g id="e_ticks"></g>
+        <line id="e_kline" data-ms="3" stroke="var(--green)" stroke-width="2" stroke-dasharray="7 5"></line>
+        <text id="e_klab" data-ms="3" font-size="15" fill="var(--green)" text-anchor="start">y = k</text>
+        <path id="e_curve" data-ms="1" fill="none" stroke="var(--blue)" stroke-width="2.6"></path>
+        <line id="e_drop" data-ms="4" stroke="var(--red)" stroke-width="1.4" stroke-dasharray="4 4"></line>
+        <circle id="e_p1" data-ms="1" r="5" fill="var(--green)"></circle>
+        <circle id="e_sol" data-ms="4" r="5.5" fill="var(--red)"></circle>
+        <text id="e_xl" font-size="14" fill="var(--sub)" text-anchor="middle">x</text>
+        <text id="e_yl" font-size="14" fill="var(--sub)" text-anchor="middle">y</text>
+        <text id="e_p1l" data-ms="1" font-size="13" fill="var(--green)" text-anchor="start">(0, 1)</text>
+        <text id="e_curvel" data-ms="2" font-size="15" font-style="italic" fill="var(--blue)" text-anchor="start">y = a^x</text>
+        <text id="e_soll" data-ms="4" font-size="13" fill="var(--red)" text-anchor="middle">x = log_a k</text>
+      </svg>
+    </div>
+    <p class="cap" id="exCap"></p>
+    <div class="ctl">
+      <label for="aSlider">底 a を動かす</label>
+      <input type="range" id="aSlider" min="0.3" max="4" step="0.1" value="2">
+      <span class="out" id="aOut">a=2.0</span>
+    </div>
+    <div class="ctl">
+      <label for="kSlider">定数 k を動かす</label>
+      <input type="range" id="kSlider" min="0.3" max="7" step="0.1" value="4">
+      <span class="out" id="kOut">k=4.0</span>
+    </div>
+    <div class="relation" id="exRel">
+      <span style="color:var(--blue)">a<sup>1</sup>=a</span> = <span id="exA">2.00</span>,
+      <span style="color:var(--blue)">a<sup>2</sup></span> = <span id="exA2">4.00</span>　|
+      <span style="color:var(--red)">a<sup>x</sup>=k の解</span>
+      <span id="exArrow" style="margin:0 6px; font-weight:600">⟹</span>
+      <span style="color:var(--red)">x = log<sub>a</sub>k</span> = <span id="exSol">2.00</span>
+      <span class="eqnote" id="exNote"></span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a> ・ © AI塾 / trillion-ai-juku.com ・ 数式記号や図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+  function clamp(v,lo,hi){return v<lo?lo:(v>hi?hi:v);}
+
+  /* ===== 指数関数 y=a^x のグラフと方程式 a^x=k ===== */
+  (function(){
+    /* 図: x∈[-3,3], y∈[0,8] */
+    var L=58,R=560,T=24,B=300, XMIN=-3, XMAX=3, YMIN=0, YMAX=8, step=1, a=2, k=4;
+    function GX(v){return L+((v-XMIN)/(XMAX-XMIN))*(R-L);}
+    function GY(v){return B-((v-YMIN)/(YMAX-YMIN))*(B-T);}
+    var info=[null,
+      {t:"y=a^x をかく", c:"指数関数 y = a^x のグラフ。x=0 のとき a^0=1 なので、底 a が何であっても必ず点 (0,1) を通ります。"},
+      {t:"底aで形がきまる", c:"a>1 なら右上がり（増加）、0<a<1 なら右下がり（減少）。底 a のスライダーを動かすと曲線の傾きが変わります。"},
+      {t:"方程式 a^x=k", c:"方程式 a^x=k の解は、曲線 y=a^x と水平線 y=k の交点。k のスライダーで水平線の高さを変えられます。"},
+      {t:"解は x=log_a k", c:"交点の x 座標が解。x = log_a k = ln k / ln a。赤点から x 軸へおろした足が解の値です。"}];
+    var DEGEN = function(){ return Math.abs(a-1) < 0.05; }; /* a=1付近は定数関数として交点計算スキップ */
+
+    function curve(){
+      /* y=a^x を x∈[-3,3] で描き、y∈[0,8] にクリップ */
+      var p=[], lnA=Math.log(a), started=false;
+      for(var i=0;i<=240;i++){
+        var v=XMIN+(XMAX-XMIN)*i/240;
+        var y=Math.exp(lnA*v); /* a^v = e^(v ln a)。a=1 でも y=1 で安全 */
+        if(y<YMIN||y>YMAX){ started=false; continue; }
+        p.push((started?"L":"M")+GX(v).toFixed(1)+","+GY(y).toFixed(1));
+        started=true;
+      }
+      return p.length?p.join(" "):"M"+GX(0).toFixed(1)+","+GY(1).toFixed(1);
+    }
+    function ticks(){
+      var g=el("e_ticks"); g.innerHTML="";
+      function tk(vx,lab){var t=GX(vx);
+        g.innerHTML+='<line x1="'+t+'" y1="'+B+'" x2="'+t+'" y2="'+(B+5)+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+t+'" y="'+(B+20)+'" font-size="12" fill="var(--sub)" text-anchor="middle">'+lab+'</text>';}
+      function ty(vy,lab){var t=GY(vy);
+        g.innerHTML+='<line x1="'+L+'" y1="'+t+'" x2="'+(L-5)+'" y2="'+t+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+(L-9)+'" y="'+(t+4)+'" font-size="12" fill="var(--sub)" text-anchor="end">'+lab+'</text>';}
+      tk(-3,"-3"); tk(-2,"-2"); tk(-1,"-1"); tk(0,"0"); tk(1,"1"); tk(2,"2"); tk(3,"3");
+      ty(0,"0"); ty(1,"1"); ty(2,"2"); ty(4,"4"); ty(6,"6"); ty(8,"8");
+    }
+    function render(){
+      /* 軸 */
+      setLine("e_ax",L,GY(0),R,GY(0)); setLine("e_ay",GX(0),B,GX(0),T);
+      ticks();
+      attr("e_curve","d",curve());
+      setT("e_curvel",GX(2.05),GY(Math.min(7.3,Math.max(1.2,Math.exp(Math.log(a)*2.2)))),null);
+
+      /* (0,1) を通る緑点 */
+      setC("e_p1",GX(0),GY(1)); setT("e_p1l",GX(0)+8,GY(1)-8,null);
+
+      /* 水平線 y=k */
+      var kc=clamp(k,YMIN+0.01,YMAX);
+      setLine("e_kline",L,GY(kc),R,GY(kc));
+      setT("e_klab",L+6,GY(kc)-8,"y = "+k.toFixed(1));
+
+      /* 数値読み出し: a^1, a^2 */
+      var a1=a, a2=a*a;
+      el("exA").textContent=a1.toFixed(2);
+      el("exA2").textContent=a2.toFixed(2);
+      el("aOut").textContent="a="+a.toFixed(1);
+      el("kOut").textContent="k="+k.toFixed(1);
+
+      var degen = DEGEN();
+      if(degen){
+        /* a=1 は定数関数 y=1。交点計算をスキップ(0除算/ln1=0回避) */
+        el("e_sol").style.display="none";
+        el("e_drop").style.display="none";
+        el("e_soll").style.display="none";
+        el("exArrow").textContent="";
+        el("exSol").textContent="—";
+        el("exNote").textContent="a=1 は定数関数 y=1（解なし／全解）";
+        el("exRel").className="relation warn";
+      } else {
+        el("e_sol").style.display="";
+        el("e_drop").style.display="";
+        el("e_soll").style.display="";
+        /* 解 x = log_a k = ln k / ln a */
+        var sol = Math.log(k)/Math.log(a);
+        el("exArrow").textContent="⟹";
+        el("exSol").textContent=sol.toFixed(2);
+        el("exNote").textContent="";
+        el("exRel").className="relation";
+        /* 交点(描画はクリップ範囲のみ) */
+        if(sol>=XMIN && sol<=XMAX && k>=YMIN && k<=YMAX){
+          setC("e_sol",GX(sol),GY(k));
+          setLine("e_drop",GX(sol),GY(k),GX(sol),GY(0));
+          setT("e_soll",clamp(GX(sol),L+30,R-30),B-8,"x = "+sol.toFixed(2));
+          el("e_sol").style.opacity=(step>=4)?"1":"0";
+        } else {
+          /* 交点が表示範囲外: 赤点と破線は隠す(関係式の数値は残す) */
+          el("e_sol").style.opacity="0";
+          el("e_drop").style.opacity="0";
+          el("e_soll").style.opacity="0";
+        }
+      }
+
+      setT("e_xl",R-6,GY(0)+22,null); setT("e_yl",GX(0)-14,T+6,null);
+      vis("exSvg",step);
+      el("exBadge").textContent="step "+step+" / 4";
+      el("exTitle").textContent=info[step].t;
+      el("exCap").textContent=info[step].c;
+      el("exPrev").disabled=step<=1; el("exNext").disabled=step>=4;
+    }
+    el("exNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("exPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("aSlider").addEventListener("input",function(e){a=parseFloat(e.target.value);render();});
+    el("kSlider").addEventListener("input",function(e){k=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

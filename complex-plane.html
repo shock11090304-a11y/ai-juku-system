@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>複素数平面 — 極形式と回転</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:96px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd); line-height:2.0;}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>複素数平面 — 極形式と回転</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーを動かすと <b>(cosφ+i sinφ) 倍 = 角度 φ の回転</b> が見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>複素数の積は「絶対値の積・偏角の和」</b>。とくに <b>(cosφ+i sinφ) を掛けることは、原点まわりに角度 φ だけ回転させること</b>と同じです（絶対値は変わりません）。</div>
+
+  <!-- 極形式と回転 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="cpBadge">step 1 / 4</span>
+        <span class="steptitle" id="cpTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="cpPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="cpNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">極形式と回転</h2>
+    <p class="hint">z = r(cosθ + i sinθ) に (cosφ + i sinφ) を掛けると、絶対値 r はそのままで偏角が θ+φ になります。</p>
+    <div class="stage">
+      <svg id="cpSvg" viewBox="0 0 600 360" role="img" aria-label="複素数平面と極形式・回転">
+        <!-- 軸 -->
+        <line id="c_axx" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="c_axy" stroke="var(--gray)" stroke-width="1.2"></line>
+        <g id="c_ticks"></g>
+        <text id="c_lre" font-size="13" fill="var(--sub)" text-anchor="middle">実軸</text>
+        <text id="c_lim" font-size="13" fill="var(--sub)" text-anchor="middle">虚軸</text>
+        <!-- 角の弧 -->
+        <path id="c_arcT" data-ms="2" fill="none" stroke="var(--blue)" stroke-width="2" opacity="0"></path>
+        <path id="c_arcP" data-ms="3" fill="none" stroke="var(--green)" stroke-width="2" opacity="0"></path>
+        <text id="c_labT" data-ms="2" font-size="14" fill="var(--blue)" text-anchor="middle">θ</text>
+        <text id="c_labP" data-ms="3" font-size="14" fill="var(--green)" text-anchor="middle">φ</text>
+        <!-- 回転後 w（赤） -->
+        <line id="c_wline" data-ms="3" stroke="var(--red)" stroke-width="2.6"></line>
+        <polygon id="c_whead" data-ms="3" fill="var(--red)"></polygon>
+        <!-- z（青） -->
+        <line id="c_zline" data-ms="1" stroke="var(--blue)" stroke-width="2.6"></line>
+        <polygon id="c_zhead" data-ms="1" fill="var(--blue)"></polygon>
+        <!-- 点とラベル -->
+        <circle id="c_pO" r="4" fill="var(--gray)"></circle>
+        <circle id="c_pZ" data-ms="1" r="5" fill="var(--blue)"></circle>
+        <circle id="c_pW" data-ms="3" r="5" fill="var(--red)"></circle>
+        <text id="c_lZ" data-ms="1" font-size="15" font-weight="600" text-anchor="middle" fill="var(--blue)">z</text>
+        <text id="c_lW" data-ms="3" font-size="15" font-weight="600" text-anchor="middle" fill="var(--red)">w</text>
+        <text id="c_lO" font-size="13" text-anchor="middle" fill="var(--sub)">O</text>
+      </svg>
+    </div>
+    <p class="cap" id="cpCap"></p>
+    <div class="ctl">
+      <label for="cpR">r = |z|</label>
+      <input type="range" id="cpR" min="1" max="4" step="0.5" value="2">
+      <span class="out" id="cpRout">r=2.0</span>
+    </div>
+    <div class="ctl">
+      <label for="cpT">θ（偏角）</label>
+      <input type="range" id="cpT" min="0" max="360" step="15" value="30">
+      <span class="out" id="cpTout">θ=30°</span>
+    </div>
+    <div class="ctl">
+      <label for="cpP">φ（回転角）</label>
+      <input type="range" id="cpP" min="0" max="360" step="15" value="90">
+      <span class="out" id="cpPout">φ=90°</span>
+    </div>
+    <div class="relation" id="cpRel">
+      <span style="color:var(--blue)">z</span> = <span id="cpZa">1.73</span> + <span id="cpZb">1.00</span>i
+      = <span id="cpZpolar">2.0(cos30° + i sin30°)</span><br>
+      <span style="color:var(--red)">w = (cosφ + i sinφ)·z</span> の偏角 = θ+φ = <span id="cpWarg">120°</span>,
+      <span style="color:var(--red)">w</span> = <span id="cpWa">-1.00</span> + <span id="cpWb">1.73</span>i
+      <span class="eqnote" id="cpNote"></span>
+    </div>
+  </section>
+
+  <footer>← <a href="kyozai.html" style="color:var(--info-ink)">教材ライブラリ</a> ・ © AI塾 / trillion-ai-juku.com ・ 数式記号や図のラベルは指導用に整理した表記です。</footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 複素数平面：極形式と回転 ===== */
+  (function(){
+    /* 原点中央。実軸=x(右+)、虚軸=y(上+) → 画面yは反転 */
+    var OX=300, OY=180, UNIT=58;            /* |z|max=4 → 4*58=232px が収まる(中心から上180,横300) */
+    var step=1, r=2, thDeg=30, phDeg=90;
+    function MX(re){return OX+re*UNIT;}
+    function MY(im){return OY-im*UNIT;}     /* 虚軸 上向き反転 */
+    function rad(d){return d*Math.PI/180;}
+
+    var info=[null,
+      {t:"複素数 z を平面に", c:"複素数 z = a + bi は、実部 a を横（実軸）・虚部 b を縦（虚軸）にとった平面上の点・ベクトルで表せます。青い矢印が z です。"},
+      {t:"極形式で表す", c:"原点からの距離 r = |z|（絶対値）と、実軸の正の向きからの角 θ（偏角）を使うと z = r(cosθ + i sinθ)。a = r cosθ、b = r sinθ です。"},
+      {t:"(cosφ+i sinφ) を掛ける", c:"z に (cosφ + i sinφ) を掛けると、絶対値 r はそのまま・偏角だけ θ → θ+φ に。つまり原点まわりに角度 φ だけ回転した点が赤い矢印 w です。φ を動かして回転を確かめましょう。"},
+      {t:"積は「絶対値の積・偏角の和」", c:"一般に2つの複素数の積は、絶対値どうしを掛け・偏角どうしを足します。(cosφ+i sinφ) は絶対値1なので、掛けても大きさは変わらず角度 φ の回転だけが起こります。"}];
+
+    function arrow(id,headId,x2,y2){
+      /* 原点(OX,OY)から(x2,y2)への矢印。先端に三角ヘッド */
+      setLine(id,OX,OY,x2,y2);
+      var dx=x2-OX, dy=y2-OY, len=Math.sqrt(dx*dx+dy*dy);
+      if(len<1){ attr(headId,"points",x2+","+y2+" "+x2+","+y2+" "+x2+","+y2); return; }
+      var ux=dx/len, uy=dy/len, px=-uy, py=ux, hs=9, hw=5;
+      var bx=x2-ux*hs, by=y2-uy*hs;
+      attr(headId,"points",
+        x2.toFixed(1)+","+y2.toFixed(1)+" "+
+        (bx+px*hw).toFixed(1)+","+(by+py*hw).toFixed(1)+" "+
+        (bx-px*hw).toFixed(1)+","+(by-py*hw).toFixed(1));
+    }
+
+    function arcPath(startDeg,endDeg,rad0){
+      /* 偏角(数学的, 反時計回り正)を画面座標の弧に。短い方の回転を描く */
+      var a0=rad(startDeg), a1=rad(endDeg), n=Math.max(2,Math.round(Math.abs(endDeg-startDeg)/6)), p=[];
+      for(var i=0;i<=n;i++){
+        var t=a0+(a1-a0)*i/n;
+        var x=OX+rad0*Math.cos(t), y=OY-rad0*Math.sin(t);
+        p.push((i?"L":"M")+x.toFixed(1)+","+y.toFixed(1));
+      }
+      return p.join(" ");
+    }
+
+    function ticks(){
+      var g=el("c_ticks"); g.innerHTML="";
+      for(var i=-4;i<=4;i++){
+        if(i===0) continue;
+        var x=MX(i), y=MY(i);
+        /* 実軸目盛 */
+        g.innerHTML+='<line x1="'+x.toFixed(1)+'" y1="'+(OY-4)+'" x2="'+x.toFixed(1)+'" y2="'+(OY+4)+'" stroke="var(--gray)" stroke-width="1"/>';
+        /* 虚軸目盛 */
+        g.innerHTML+='<line x1="'+(OX-4)+'" y1="'+y.toFixed(1)+'" x2="'+(OX+4)+'" y2="'+y.toFixed(1)+'" stroke="var(--gray)" stroke-width="1"/>';
+        if(i===2||i===-2||i===4||i===-4){
+          g.innerHTML+='<text x="'+x.toFixed(1)+'" y="'+(OY+16)+'" font-size="11" fill="var(--sub)" text-anchor="middle">'+i+'</text>';
+          g.innerHTML+='<text x="'+(OX-9)+'" y="'+(y+4).toFixed(1)+'" font-size="11" fill="var(--sub)" text-anchor="end">'+i+'</text>';
+        }
+      }
+    }
+
+    function fmt(v){ /* -0.00 を 0.00 に正規化 */
+      var s=v.toFixed(2); if(s==="-0.00") s="0.00"; return s; }
+
+    function render(){
+      /* 軸 */
+      setLine("c_axx",OX-260,OY,OX+260,OY);
+      setLine("c_axy",OX,OY-150,OX,OY+150);
+      ticks();
+      setT("c_lre",OX+248,OY-8,null);
+      setT("c_lim",OX+18,OY-142,null);
+      setT("c_lO",OX-12,OY+15,null);
+      setC("c_pO",OX,OY);
+
+      /* z（青） */
+      var th=rad(thDeg);
+      var za=r*Math.cos(th), zb=r*Math.sin(th);
+      var zx=MX(za), zy=MY(zb);
+      arrow("c_zline","c_zhead",zx,zy);
+      setC("c_pZ",zx,zy);
+      setT("c_lZ",zx+(za>=0?16:-16),zy+(zb>=0?-8:18),null);
+
+      /* w（赤）= 回転後。偏角 θ+φ、絶対値 r 不変 */
+      var wDeg=thDeg+phDeg;
+      var wr=rad(wDeg);
+      var wa=r*Math.cos(wr), wb=r*Math.sin(wr);
+      var wx=MX(wa), wy=MY(wb);
+      arrow("c_wline","c_whead",wx,wy);
+      setC("c_pW",wx,wy);
+      setT("c_lW",wx+(wa>=0?16:-16),wy+(wb>=0?-8:18),null);
+
+      /* θ弧（青）：実軸正の向き0°→θ */
+      var rT=30;
+      attr("c_arcT","d",arcPath(0,thDeg,rT));
+      var tmid=rad(thDeg/2);
+      setT("c_labT",OX+(rT+14)*Math.cos(tmid),OY-(rT+14)*Math.sin(tmid)+4,null);
+
+      /* φ弧（緑）：z の角 θ→θ+φ（回転を表す） */
+      var rP=46;
+      attr("c_arcP","d",arcPath(thDeg,wDeg,rP));
+      var pmid=rad((thDeg+wDeg)/2);
+      setT("c_labP",OX+(rP+14)*Math.cos(pmid),OY-(rP+14)*Math.sin(pmid)+4,null);
+
+      vis("cpSvg",step);
+
+      /* 読み出し */
+      el("cpRout").textContent="r="+r.toFixed(1);
+      el("cpTout").textContent="θ="+thDeg+"°";
+      el("cpPout").textContent="φ="+phDeg+"°";
+      el("cpZa").textContent=fmt(za);
+      el("cpZb").textContent=fmt(zb);
+      el("cpZpolar").textContent=r.toFixed(1)+"(cos"+thDeg+"° + i sin"+thDeg+"°)";
+      var wArgNorm=((wDeg%360)+360)%360;
+      el("cpWarg").textContent=thDeg+"+"+phDeg+"° = "+wArgNorm+"°";
+      el("cpWa").textContent=fmt(wa);
+      el("cpWb").textContent=fmt(wb);
+
+      var same=(phDeg%360===0);
+      el("cpNote").textContent = same ? (phDeg===0 ? "（φ=0° なので回転なし：w=z）" : "（φ="+phDeg+"° は1回転で元に戻る：w=z）") : "（絶対値は r="+r.toFixed(1)+" のまま）";
+      el("cpRel").className = same ? "relation eq" : "relation";
+
+      el("cpBadge").textContent="step "+step+" / 4";
+      el("cpTitle").textContent=info[step].t;
+      el("cpCap").textContent=info[step].c;
+      el("cpPrev").disabled=step<=1;
+      el("cpNext").disabled=step>=4;
+    }
+
+    el("cpNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("cpPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("cpR").addEventListener("input",function(e){r=parseFloat(e.target.value);render();});
+    el("cpT").addEventListener("input",function(e){thDeg=parseInt(e.target.value,10);render();});
+    el("cpP").addEventListener("input",function(e){phDeg=parseInt(e.target.value,10);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>
