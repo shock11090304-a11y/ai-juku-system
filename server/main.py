@@ -22320,6 +22320,67 @@ NEWS_FEEDS = {
 }
 
 
+@app.get("/api/admin/db-diag")
+def admin_db_diag(authorization: Optional[str] = Header(None), q: Optional[str] = None):
+    """🕐 [db-diag] 本番DBのセッションタイムゾーンと trial_end の生値を返す診断 (admin専用・読取専用)。
+    trial_end を naive 列に aware iso 保存している TZ ズレ (active 生徒の誤expired化) を本番で確認するため。
+    q を渡すと名前/メール一致の生徒、無指定なら trial/expired の直近を返す。書込は一切行わない。"""
+    if not authorization or not authorization.startswith("Bearer ") or not _verify_admin_token(authorization[len("Bearer "):].strip()):
+        raise HTTPException(status_code=401, detail="未認証")
+
+    def _fv(row):
+        if row is None:
+            return None
+        try:
+            return list(row.values())[0]
+        except Exception:
+            try:
+                return row[0]
+            except Exception:
+                return str(row)
+
+    out = {"use_postgres": USE_POSTGRES, "now_utc": datetime.now(timezone.utc).isoformat()}
+    conn = db()
+    c = conn.cursor()
+    try:
+        if USE_POSTGRES:
+            try:
+                c.execute("SHOW timezone")
+                out["timezone"] = _fv(c.fetchone())
+            except Exception as _e:
+                out["timezone_error"] = f"{type(_e).__name__}: {_e}"
+        else:
+            out["timezone"] = "sqlite (ローカル開発・本番はPostgres)"
+        try:
+            c.execute("SELECT CURRENT_TIMESTAMP AS now_db")
+            out["now_db"] = str(_fv(c.fetchone()))
+        except Exception as _e:
+            out["now_db_error"] = f"{type(_e).__name__}: {_e}"
+        try:
+            if q and q.strip():
+                _like = f"%{q.strip()}%"
+                c.execute(
+                    "SELECT id, name, status, trial_end FROM students "
+                    "WHERE name LIKE ? OR LOWER(COALESCE(email,'')) LIKE LOWER(?) OR LOWER(COALESCE(student_email,'')) LIKE LOWER(?) "
+                    "ORDER BY id DESC LIMIT 10",
+                    (_like, _like, _like),
+                )
+            else:
+                c.execute(
+                    "SELECT id, name, status, trial_end FROM students "
+                    "WHERE status IN ('trial','expired') ORDER BY id DESC LIMIT 10"
+                )
+            out["trial_end_samples"] = [
+                {"id": r["id"], "name": r["name"], "status": r["status"], "trial_end_raw": str(r["trial_end"])}
+                for r in c.fetchall()
+            ]
+        except Exception as _e:
+            out["samples_error"] = f"{type(_e).__name__}: {_e}"
+    finally:
+        conn.close()
+    return out
+
+
 def _fetch_news_feed(feed_key: str, limit: int = 5) -> list[dict]:
     """RSS フィードを取得して [{title, link, summary, published}] のリストを返す。
     XML パースは標準ライブラリのみで実装 (xml.etree.ElementTree)。"""

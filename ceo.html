@@ -317,7 +317,9 @@
         <a href="alerts.html" class="tb-btn"><span class="tb-icon">🔔</span><span class="tb-label">自動アラート</span></a>
         <a href="personalized-outreach.html" class="tb-btn"><span class="tb-icon">📨</span><span class="tb-label">個別展開</span></a>
         <a href="access-map.html" class="tb-btn"><span class="tb-icon">🗺</span><span class="tb-label">画面マップ</span></a>
+        <button id="dbDiagBtn" type="button" class="tb-btn" title="本番DBのタイムゾーンと trial_end の生値を確認 (誤expired化のTZバグ診断・読取専用)" style="background:linear-gradient(135deg,rgba(56,189,248,0.18),rgba(14,165,233,0.10));border:1px solid rgba(56,189,248,0.45);cursor:pointer;color:inherit;font:inherit;"><span class="tb-icon">🕐</span><span class="tb-label">DB確認</span></button>
       </div>
+      <pre id="dbDiagResult" style="display:none;white-space:pre-wrap;margin:0.6rem 0 0;padding:0.7rem 0.9rem;background:rgba(2,6,23,0.6);border:1px solid rgba(56,189,248,0.4);border-radius:8px;font-size:0.78rem;color:#bae6fd;max-height:340px;overflow:auto;"></pre>
     </div>
     <div class="tb-group">
       <h3>✨ コンテンツ制作</h3>
@@ -7761,6 +7763,49 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', bind);
       } else { bind(); }
+    })();
+  </script>
+
+  <!-- 🕐 DBタイムゾーン確認 (trial_end の誤expired化 TZ診断・読取専用) -->
+  <script>
+    (function () {
+      function bindDbDiag() {
+        const btn = document.getElementById('dbDiagBtn');
+        if (!btn) return;
+        btn.addEventListener('click', async () => {
+          if (!window.AdminAuth || !AdminAuth.getToken()) { alert('管理者ログインが必要です'); return; }
+          const q = prompt('特定の生徒で確認しますか？\n名前またはメールを入力 (空欄 = trial/expired の直近一覧)', '江花');
+          if (q === null) return; // キャンセル
+          const url = '/api/admin/db-diag' + (q && q.trim() ? ('?q=' + encodeURIComponent(q.trim())) : '');
+          const out = document.getElementById('dbDiagResult');
+          out.style.display = 'block';
+          out.textContent = '確認中...';
+          try {
+            const res = await AdminAuth.fetch(url);
+            const data = await res.json();
+            if (!res.ok) { out.textContent = '⚠️ ' + (data.detail || ('HTTP ' + res.status)); return; }
+            const lines = [];
+            lines.push('🕐 timezone : ' + (data.timezone != null ? data.timezone : (data.timezone_error || '?')));
+            lines.push('now_db      : ' + (data.now_db != null ? data.now_db : (data.now_db_error || '?')));
+            lines.push('now_utc     : ' + data.now_utc);
+            lines.push('use_postgres: ' + data.use_postgres);
+            lines.push('── trial_end 生値 ──');
+            (data.trial_end_samples || []).forEach(s => {
+              lines.push('#' + s.id + ' ' + s.name + ' [' + s.status + '] trial_end=' + s.trial_end_raw);
+            });
+            if (data.samples_error) lines.push('samples_error: ' + data.samples_error);
+            lines.push('');
+            lines.push('▶ timezone が UTC なら実害小。Asia/Tokyo 等なら trial_end のTZ修正推奨。');
+            lines.push('▶ trial_end が「+00:00」付きで保存され、かつ timezone≠UTC ならズレの疑い。この内容をそのまま共有してください。');
+            out.textContent = lines.join('\n');
+          } catch (e) {
+            out.textContent = '⚠️ 通信エラー: ' + e.message;
+          }
+        });
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bindDbDiag);
+      } else { bindDbDiag(); }
     })();
   </script>
 
