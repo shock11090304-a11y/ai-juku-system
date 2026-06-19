@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>教材ライブラリ | AIコーチング</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --green:#16a34a; --chip:#eef2f8; --chipon:#2563eb;
+    --free-bg:#e9f7ef; --free-ink:#0f7a43; --login-bg:#e8f1fe; --login-ink:#1f6feb; --wip:#9aa6b8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --chip:#1c2535; --free-bg:#10301f; --free-ink:#67d99a; --login-bg:#16263f; --login-ink:#7fb2f0; --wip:#5b6678; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); -webkit-text-size-adjust:100%;
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif; line-height:1.7;}
+  .wrap{max-width:980px; margin:0 auto; padding:22px 16px 56px;}
+  header h1{font-size:24px; font-weight:700; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 16px;}
+  .filters{display:flex; flex-direction:column; gap:8px; margin:0 0 6px;}
+  .chiprow{display:flex; gap:8px; overflow-x:auto; padding:2px 0; -webkit-overflow-scrolling:touch;}
+  .chiplabel{font-size:12px; color:var(--sub); align-self:center; white-space:nowrap; margin-right:2px;}
+  .chip{font:inherit; font-size:13px; padding:6px 13px; border:1px solid var(--bd); background:var(--chip); color:var(--ink);
+        border-radius:999px; cursor:pointer; white-space:nowrap; flex:0 0 auto;}
+  .chip[aria-pressed="true"]{background:var(--chipon); color:#fff; border-color:var(--chipon);}
+  .count{font-size:12px; color:var(--sub); margin:8px 2px 0;}
+  section.grp{margin:22px 0 4px;}
+  section.grp h2{font-size:18px; font-weight:700; margin:0 0 2px;}
+  section.grp .note{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(258px,1fr)); gap:14px;}
+  .mcard{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:15px 16px; display:flex; flex-direction:column;}
+  .mcard .top{display:flex; align-items:flex-start; justify-content:space-between; gap:8px;}
+  .mcard h3{font-size:16px; font-weight:600; margin:0; line-height:1.45;
+            display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+  .badge{font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px; white-space:nowrap; flex:0 0 auto;}
+  .badge.free{background:var(--free-bg); color:var(--free-ink);}
+  .badge.login{background:var(--login-bg); color:var(--login-ink);}
+  .tags{display:flex; gap:6px; flex-wrap:wrap; margin:8px 0 0;}
+  .tag{font-size:11px; color:var(--sub); background:var(--chip); border-radius:6px; padding:2px 8px;}
+  .mcard p.desc{font-size:13px; color:var(--sub); margin:9px 0 14px; flex:1;}
+  .cta{align-self:flex-start; font-size:14px; font-weight:600; color:var(--blue); text-decoration:none;}
+  .cta:hover{text-decoration:underline;}
+  .mcard.wip{opacity:.78;}
+  .mcard.wip .cta{color:var(--wip); font-weight:500;}
+  .guide{background:var(--login-bg); color:var(--login-ink); border-radius:12px; padding:14px 16px; font-size:13px; margin:26px 0 0; line-height:1.9;}
+  .guide b{color:var(--login-ink);}
+  footer{color:var(--sub); font-size:12px; margin-top:22px; display:flex; gap:14px; flex-wrap:wrap;}
+  footer a{color:var(--blue); text-decoration:none;}
+  .empty{color:var(--sub); font-size:14px; padding:18px; text-align:center; background:var(--card); border:1px solid var(--bd); border-radius:12px;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>教材ライブラリ</h1>
+    <p class="lead">動く解説・演習ツール・ダウンロード教材を、科目とアクセスで探せます。<b>無料で今すぐ試せる</b>ものはバッジ付き。</p>
+  </header>
+
+  <div class="filters" role="group" aria-label="教材の絞り込み">
+    <div class="chiprow" id="subjRow"><span class="chiplabel">科目</span></div>
+    <div class="chiprow" id="accRow"><span class="chiplabel">アクセス</span></div>
+  </div>
+  <div class="count" id="count"></div>
+
+  <div id="groups"></div>
+
+  <div class="guide">
+    <b>迷ったら：</b> スキマ時間に → <b>動く解説</b>・隙間時間ドリル ／ 毎日の演習 → <b>AI単語帳</b>・ドリル ／ 志望校対策 → <b>大学別過去問</b> ／ 印刷したい → <b>PDFノート</b>
+  </div>
+
+  <footer>
+    <a href="lp.html">← トップへ</a>
+    <a href="mypage.html">マイページ（要ログイン）</a>
+    <span>新しい動く解説は順次追加していきます。</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var MATERIALS=[
+    {title:"相加・相乗平均 — 動く解説", subject:"数学", type:"動く解説", access:"public", url:"souka-soujou.html", section:"free",
+     desc:"スライダーで等号成立 a=b の瞬間が見える。半円の作図が1ステップずつ完成。登録なしで全機能が動きます。"},
+    {title:"相加・相乗平均 ノート（PDF）", subject:"数学", type:"PDF", access:"public", url:"souka-soujou-note.pdf", section:"free",
+     desc:"動く解説の要点を1枚に凝縮した印刷用ノート（図入り・等号確認の手順つき）。オフラインで復習・書き込みできます。"},
+    {title:"大学別 過去問風オリジナル", subject:"横断", type:"過去問", access:"public", url:"university-exam.html", section:"free",
+     desc:"大学・科目・年度で絞ってオリジナルの過去問風問題に挑戦。問題を解くのは登録不要、結果の保存はログインで。"},
+    {title:"AIが東大英語2024を解いてみた", subject:"英語", type:"読み物", access:"public", url:"ai-todai-challenge.html", section:"free",
+     desc:"AIが各設問をどう解いたかの思考過程と受験生平均を比較できる学習ショーケース。登録なしで読めます。"},
+    {title:"英語6試験 対策ガイド", subject:"英語", type:"ガイド", access:"public", url:"english-exam.html", section:"free",
+     desc:"TOEFL/TOEIC/IELTS/英検/大学入試/共通テストの対策内容を試験別にまとめたガイド。誰でも閲覧できます。"},
+
+    {title:"隙間時間ドリル", subject:"横断", type:"ドリル", access:"login", url:"dojo-drill.html", section:"tools",
+     desc:"共通テスト大問1個を10〜15分で解き、弱点に自動反映する短時間ドリル。ログインで解答記録が残ります。"},
+    {title:"AI単語帳", subject:"英語", type:"単語帳", access:"login", url:"vocab.html", section:"tools",
+     desc:"レベル別の英単語を4択で覚えるAI単語帳。ログインすると語彙の進捗が自分に紐づいて記録されます。"},
+    {title:"写真で質問・3AI解答", subject:"横断", type:"AIツール", access:"login", url:"ai-tutor-photo.html", section:"tools",
+     desc:"問題の写真をアップロードすると3つのAIが解答・解説。利用にはログインが必要です。"},
+    {title:"オリジナル参考書ジェネレーター", subject:"横断", type:"AIツール", access:"login", url:"textbook-generator.html", section:"tools",
+     desc:"科目・単元・条件を指定するとAIがオリジナルの参考書／テキストを生成。生成にはログインが必要です。"},
+    {title:"教材スキャン", subject:"横断", type:"AIツール", access:"login", url:"material-scan.html", section:"tools",
+     desc:"手持ちの教材をスキャンしてAIが解析・活用。利用にはログインが必要です。"},
+    {title:"マイページ（宿題・英文法ドリル・AIチューター）", subject:"横断", type:"学習ハブ", access:"login", url:"mypage.html", section:"tools",
+     desc:"宿題リスト・弱点対策ドリル・AIチューター履歴など、自分専用の学習ハブ。ログインで学習状況が見えます。"}
+  ];
+  var ROADMAP=[
+    {title:"微分 = 接線の傾き（極限への収束）", subject:"数学"},
+    {title:"2次関数の平方完成と頂点の移動", subject:"数学"},
+    {title:"三角関数のグラフ変形（振幅・周期・位相）", subject:"数学"},
+    {title:"定積分 = 面積（区分求積のリーマン和）", subject:"数学"},
+    {title:"ベクトルの内積と正射影", subject:"数学"},
+    {title:"条件付き確率とベイズ（検査の偽陽性）", subject:"数学"},
+    {title:"確率の余事象（少なくとも1つ）", subject:"数学"},
+    {title:"仮定法の時制ズレ（1つ過去へ）", subject:"英語"}
+  ];
+  var SECTIONS=[
+    {id:"free",  label:"🎬 無料で試せる（登録不要）", note:"ここは登録なしで全部試せます。気に入ったら無料体験へ。"},
+    {id:"tools", label:"📚 演習・学習ツール（要ログイン）", note:"ログインすると正解率・弱点・履歴があなたに紐づいて記録されます。"}
+  ];
+  var SUBJECTS=["すべて","数学","英語","横断"];
+  var ACCESS=[["すべて","すべて"],["無料（登録不要）","public"],["要ログイン","login"]];
+
+  var state={subject:"すべて", access:"すべて"};
+  function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+  function href(m){ return m.access==="public" ? m.url : "login.html?redirect="+encodeURIComponent(m.url); }
+  function cta(m){ return m.access==="public" ? (m.type==="PDF" ? "ダウンロード →" : "無料で試す →") : "ログインして開く →"; }
+  function matchSubj(s){ return state.subject==="すべて" || s===state.subject; }
+  function matchAcc(a){ return state.access==="すべて" || a===state.access; }
+
+  function cardHTML(m){
+    var badge = m.access==="public"
+      ? '<span class="badge free">無料・登録不要</span>'
+      : '<span class="badge login">要ログイン</span>';
+    return '<div class="mcard">'
+      + '<div class="top"><h3>'+esc(m.title)+'</h3>'+badge+'</div>'
+      + '<div class="tags"><span class="tag">'+esc(m.subject)+'</span><span class="tag">'+esc(m.type)+'</span></div>'
+      + '<p class="desc">'+esc(m.desc)+'</p>'
+      + '<a class="cta" href="'+esc(href(m))+'">'+cta(m)+'</a>'
+      + '</div>';
+  }
+  function roadmapCard(r){
+    return '<div class="mcard wip">'
+      + '<div class="top"><h3>'+esc(r.title)+'</h3><span class="badge" style="background:var(--chip);color:var(--wip)">準備中</span></div>'
+      + '<div class="tags"><span class="tag">'+esc(r.subject)+'</span><span class="tag">動く解説</span></div>'
+      + '<p class="desc">近日公開予定。リクエストも歓迎です。</p>'
+      + '<span class="cta">準備中</span>'
+      + '</div>';
+  }
+
+  function render(){
+    var html="", shown=0;
+    SECTIONS.forEach(function(sec){
+      var list=MATERIALS.filter(function(m){return m.section===sec.id && matchSubj(m.subject) && matchAcc(m.access);});
+      if(!list.length) return;
+      shown+=list.length;
+      html+='<section class="grp"><h2>'+esc(sec.label)+'</h2><p class="note">'+esc(sec.note)+'</p>'
+          + '<div class="grid">'+list.map(cardHTML).join("")+'</div></section>';
+    });
+    // ロードマップ (アクセス=要ログインのみ選択時は隠す。科目フィルタは適用)
+    if(state.access!=="login"){
+      var rl=ROADMAP.filter(function(r){return matchSubj(r.subject);});
+      if(rl.length){
+        html+='<section class="grp"><h2>🚧 準備中（近日公開）</h2><p class="note">同じ「動く解説」の作りで、頻出・つまずきやすい単元から順に追加します。</p>'
+            + '<div class="grid">'+rl.map(roadmapCard).join("")+'</div></section>';
+      }
+    }
+    if(shown===0) html='<div class="empty">該当する教材がありません。条件をゆるめてください。</div>'+html;
+    document.getElementById("groups").innerHTML=html;
+    document.getElementById("count").textContent="公開教材 "+shown+" 件を表示中"+
+      (state.subject!=="すべて"||state.access!=="すべて" ? "（絞り込み中）" : "");
+    try{ var p=new URLSearchParams();
+      if(state.subject!=="すべて") p.set("subject",state.subject);
+      if(state.access!=="すべて") p.set("access",state.access);
+      history.replaceState(null,"", location.pathname+(p.toString()?"?"+p.toString():"")); }catch(e){}
+  }
+
+  function buildChips(rowId, items, getVal, getLabel, key){
+    var row=document.getElementById(rowId);
+    items.forEach(function(it){
+      var val=getVal(it), label=getLabel(it);
+      var b=document.createElement("button");
+      b.className="chip"; b.type="button"; b.textContent=label;
+      b.setAttribute("aria-pressed", String(state[key]===val));
+      b.addEventListener("click", function(){
+        state[key]=val;
+        row.querySelectorAll(".chip").forEach(function(c){c.setAttribute("aria-pressed","false");});
+        b.setAttribute("aria-pressed","true");
+        render();
+      });
+      row.appendChild(b);
+    });
+  }
+
+  // querystring 初期化 (deep-link: kyozai.html?subject=数学&access=public)
+  try{ var q=new URLSearchParams(location.search);
+    if(q.get("subject")&&SUBJECTS.indexOf(q.get("subject"))>=0) state.subject=q.get("subject");
+    var av=q.get("access"); if(av==="public"||av==="login") state.access=av;
+  }catch(e){}
+
+  buildChips("subjRow", SUBJECTS, function(s){return s;}, function(s){return s;}, "subject");
+  buildChips("accRow", ACCESS, function(a){return a[1];}, function(a){return a[0];}, "access");
+  render();
+})();
+</script>
+</body>
+</html>
