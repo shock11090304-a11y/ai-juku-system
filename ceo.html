@@ -468,6 +468,7 @@
             <button type="button" class="tb-btn hub-btn" data-hub-target="rosterSection" data-hub-label="📋 生徒ロスター (課金状況)"><span class="tb-icon">📋</span><span class="tb-label">生徒ロスター</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="weaknessHeatmapSection" data-hub-label="🎯 全生徒弱点ヒートマップ"><span class="tb-icon">🎯</span><span class="tb-label">弱点ヒートマップ</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="homeworkStatusSection" data-hub-label="📚 宿題 実施状況"><span class="tb-icon">📚</span><span class="tb-label">宿題状況</span></button>
+            <button type="button" class="tb-btn hub-btn" data-hub-target="homeworkBulkSection" data-hub-label="📚 宿題 一括割当"><span class="tb-icon">📤</span><span class="tb-label">宿題一括割当</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="studyLogSection" data-hub-label="📚 学習記録ダッシュボード"><span class="tb-icon">📖</span><span class="tb-label">学習記録</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="studyPlanSection" data-hub-label="📅 学習計画ダッシュボード"><span class="tb-icon">📅</span><span class="tb-label">学習計画</span></button>
             <button type="button" class="tb-btn hub-btn" data-hub-target="messagesSection" data-hub-label="📨 メッセージ配信"><span class="tb-icon">💬</span><span class="tb-label">メッセージ</span></button>
@@ -535,6 +536,61 @@
       <div id="homeworkStatusList" style="display:grid;gap:0.7rem;">読み込み中...</div>
       <div id="homeworkStatusEmpty" style="display:none;padding:0.8rem;color:#a1a1aa;font-size:0.85rem;text-align:center;background:rgba(0,0,0,0.2);border-radius:8px;">
         まだ宿題が割当てられていません。生徒の詳細モーダル「📚宿題」タブから割当てると、ここに実施状況が出ます。
+      </div>
+    </section>
+
+    <!-- 📤 宿題 一括割当 (2026-06-19 塾長指示: 英文法ドリルのように複数生徒へ一括で宿題) -->
+    <section id="homeworkBulkSection" style="margin: 1.5rem 0; padding: 1.2rem; background: rgba(139,92,246,0.06); border: 1px solid rgba(139,92,246,0.30); border-radius: 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem;">
+        <h2 style="font-size:1.15rem;color:#c4b5fd;margin:0;">📤 宿題 一括割当 <span style="font-size:0.7rem;color:#71717a;font-weight:400;">(同じ宿題を複数生徒へ一括配信 — 英文法ドリルと同じ操作感)</span></h2>
+      </div>
+      <div style="background:rgba(0,0,0,0.18);border-radius:10px;padding:0.9rem;">
+        <div style="display:grid;grid-template-columns:1fr;gap:0.6rem;margin-bottom:0.8rem;">
+          <div>
+            <label style="display:block;font-size:0.78rem;color:#c4b5fd;margin-bottom:0.25rem;">① タイトル <span style="color:#fca5a5;">*必須</span></label>
+            <input id="hwbTitle" type="text" maxlength="200" placeholder="例: 英文法ワークp.12-15 / 数学 二次関数 演習" style="width:100%;background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:6px;padding:0.5rem 0.7rem;font-size:0.86rem;box-sizing:border-box;">
+          </div>
+          <div>
+            <label style="display:block;font-size:0.78rem;color:#c4b5fd;margin-bottom:0.25rem;">② 説明 (任意)</label>
+            <textarea id="hwbDesc" maxlength="2000" rows="2" placeholder="やり方・範囲・提出方法など" style="width:100%;background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:6px;padding:0.5rem 0.7rem;font-size:0.84rem;box-sizing:border-box;resize:vertical;"></textarea>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;">
+            <div>
+              <label style="display:block;font-size:0.78rem;color:#c4b5fd;margin-bottom:0.25rem;">③ 教科 (任意)</label>
+              <select id="hwbSubject" style="width:100%;background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:6px;padding:0.5rem;font-size:0.84rem;">
+                <option value="">— 指定なし —</option>
+                <option>英語</option><option>数学</option><option>国語</option><option>現代文</option><option>古文</option><option>漢文</option><option>物理</option><option>化学</option><option>生物</option><option>地学</option><option>日本史</option><option>世界史</option><option>地理</option><option>政治経済</option><option>倫理</option><option>その他</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:0.78rem;color:#c4b5fd;margin-bottom:0.25rem;">④ 期限 (任意)</label>
+              <input id="hwbDue" type="date" style="width:100%;background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:6px;padding:0.45rem 0.5rem;font-size:0.84rem;box-sizing:border-box;">
+            </div>
+          </div>
+          <div>
+            <label style="display:block;font-size:0.78rem;color:#c4b5fd;margin-bottom:0.25rem;">⑤ 添付プリント (任意・配布プリントから選択 → 生徒のマイページでPDF)</label>
+            <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:0.5rem;">
+              <select id="hwbPrintSubject" style="width:100%;background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:6px;padding:0.5rem;font-size:0.84rem;">
+                <option value="">① 科目を選択</option>
+              </select>
+              <select id="hwbPrint" disabled style="width:100%;background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:6px;padding:0.5rem;font-size:0.84rem;">
+                <option value="">② プリントを選択 (先に科目)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.35rem;">⑥ 配信する生徒を選ぶ
+          <input id="hwbStudentFilter" oninput="hwbFilterStudents(this.value)" placeholder="名前/IDで絞り込み" style="margin-left:0.4rem;background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:5px;padding:0.25rem 0.5rem;font-size:0.78rem;width:12rem;">
+          <button type="button" onclick="hwbSelectAll(true)" style="margin-left:0.3rem;background:none;color:#a78bfa;border:1px solid #475569;border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;cursor:pointer;">全選択</button>
+          <button type="button" onclick="hwbSelectAll(false)" style="background:none;color:#94a3b8;border:1px solid #475569;border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;cursor:pointer;">解除</button>
+          <span id="hwbSelCount" style="margin-left:0.4rem;font-size:0.74rem;color:#c4b5fd;"></span>
+        </div>
+        <div id="hwbStudents" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.2rem;max-height:180px;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:6px;padding:0.5rem;margin-bottom:0.7rem;">読み込み中...</div>
+        <div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;">
+          <button type="button" onclick="hwbAssign()" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;border:none;padding:0.55rem 1.2rem;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer;">📤 宿題を一括割当</button>
+          <span id="hwbMsg" style="font-size:0.82rem;"></span>
+        </div>
+        <div style="font-size:0.72rem;color:#71717a;margin-top:0.5rem;">※学習管理の対象外コース/プランの生徒は自動でスキップされ、結果に表示されます。配信後の状況は「📚 宿題 実施状況」で確認できます。</div>
       </div>
     </section>
 
@@ -4137,6 +4193,118 @@
     }
     window.gdSelUnit = gdSelUnit; window.gdFilterStudents = gdFilterStudents; window.gdSelectAll = gdSelectAll; window.gdCreate = gdCreate; window.gdRefresh = gdRefresh; window.gdAnalytics = gdAnalytics; window.gdCloseAnalytics = gdCloseAnalytics; window.gdRenderUnits = gdRenderUnits; window.gdDelete = gdDelete; window.gdRemediation = gdRemediation; window._gdClearRemediation = _gdClearRemediation;
     document.addEventListener('DOMContentLoaded', gdInit);
+
+    // ========== 📤 宿題 一括割当 (2026-06-19 塾長指示: 英文法ドリルのように複数生徒へ一括で宿題) ==========
+    let _hwbStudents = [];
+    async function hwbInit() {
+      if (!window.AdminAuth || !AdminAuth.getToken()) return;
+      try { await Promise.all([hwbLoadStudents(), hwbLoadPrintSubjects()]); }
+      catch (e) { console.warn('[hwb] init', e); }
+    }
+    async function hwbLoadStudents() {
+      const res = await AdminAuth.fetch('/api/admin/stats');
+      if (!res.ok) return;
+      const data = await res.json();
+      // 退会済みは配信対象外。対象外コースはサーバ側で自動スキップされるので一覧には残す。
+      _hwbStudents = (data.students || []).filter(s => s.status !== 'canceled');
+      hwbRenderStudents('');
+    }
+    function hwbRenderStudents(filter) {
+      const box = document.getElementById('hwbStudents'); if (!box) return;
+      const f = (filter || '').toLowerCase();
+      const list = _hwbStudents.filter(s => !f || (s.name || '').toLowerCase().includes(f) || String(s.id).includes(f));
+      box.innerHTML = list.map(s =>
+        `<label style="display:flex;align-items:center;gap:0.3rem;font-size:0.76rem;color:#e5e7eb;padding:0.15rem;"><input type="checkbox" class="hwb-st" value="${s.id}" onchange="hwbUpdateCount()"> ${escapeHtml(s.name || '(無名)')} <span style="color:#71717a;">#${s.id}</span></label>`
+      ).join('') || '<div style="color:#71717a;font-size:0.78rem;">該当生徒なし</div>';
+      hwbUpdateCount();
+    }
+    function hwbFilterStudents(v) { hwbRenderStudents(v); }
+    function hwbSelectAll(on) { document.querySelectorAll('.hwb-st').forEach(c => { c.checked = on; }); hwbUpdateCount(); }
+    function hwbUpdateCount() {
+      const n = document.querySelectorAll('.hwb-st:checked').length;
+      const el = document.getElementById('hwbSelCount'); if (el) el.textContent = n ? `✓ ${n}名 選択中` : '';
+    }
+    // 添付プリント: 科目一覧 → 科目選択でその科目のプリント一覧 (個別モーダルと同一エンドポイント)
+    async function hwbLoadPrintSubjects() {
+      const sel = document.getElementById('hwbPrintSubject'); if (!sel) return;
+      try {
+        const sr = await AdminAuth.fetch('/api/admin/lesson-prints/subjects');
+        if (!sr.ok) return;
+        const sd = await sr.json();
+        const subs = (sd && sd.subjects) || [];
+        if (!subs.length) { sel.innerHTML = '<option value="">(公開プリントなし)</option>'; return; }
+        sel.innerHTML = '<option value="">① 科目を選択</option>' +
+          subs.map(s => `<option value="${escapeHtml(s.subject)}">${escapeHtml(s.subject)} (${escapeHtml(String(s.count))})</option>`).join('');
+      } catch (_e) { /* 取得失敗時は空のまま */ }
+    }
+    async function hwbOnPrintSubjectChange() {
+      const subjSel = document.getElementById('hwbPrintSubject');
+      const printSel = document.getElementById('hwbPrint');
+      if (!subjSel || !printSel) return;
+      const subj = subjSel.value;
+      printSel.value = '';
+      if (!subj) { printSel.innerHTML = '<option value="">② プリントを選択 (先に科目)</option>'; printSel.disabled = true; return; }
+      printSel.disabled = true;
+      printSel.innerHTML = '<option value="">⏳ 読み込み中…</option>';
+      try {
+        const pr = await AdminAuth.fetch(`/api/admin/lesson-prints/list?subject=${encodeURIComponent(subj)}&limit=2000`);
+        const pd = pr.ok ? await pr.json() : {};
+        const list = (pd && pd.items) || [];
+        let html = '<option value="">— 添付なし —</option>' + list.map(p => {
+          const tt = p.target_type ? ` [${escapeHtml(p.target_type)}]` : '';
+          return `<option value="${escapeHtml(String(p.id))}">${escapeHtml(p.title)}${tt}</option>`;
+        }).join('');
+        if (pd.truncated) html += '<option value="" disabled>… (件数が多く一部のみ表示)</option>';
+        printSel.innerHTML = html;
+        printSel.disabled = false;
+      } catch (_e) {
+        printSel.innerHTML = '<option value="">取得失敗</option>'; printSel.disabled = false;
+      }
+    }
+    async function hwbAssign() {
+      const msg = document.getElementById('hwbMsg');
+      const title = (document.getElementById('hwbTitle').value || '').trim();
+      if (!title) { if (msg) msg.innerHTML = '<span style="color:#fbbf24;">⚠ タイトルは必須です</span>'; return; }
+      const ids = Array.from(document.querySelectorAll('.hwb-st:checked')).map(c => parseInt(c.value, 10)).filter(n => !isNaN(n));
+      if (!ids.length) { if (msg) msg.innerHTML = '<span style="color:#fca5a5;">配信する生徒を1人以上選んでください</span>'; return; }
+      const desc = (document.getElementById('hwbDesc').value || '').trim();
+      const subject = document.getElementById('hwbSubject').value;
+      const due = document.getElementById('hwbDue').value;
+      const printVal = (document.getElementById('hwbPrint') || {}).value || '';
+      if (!window.confirm(`${ids.length}名に宿題「${title}」を一括割当します。よろしいですか？`)) return;
+      if (msg) msg.innerHTML = '⏳ 一括割当中...';
+      try {
+        const res = await AdminAuth.fetch('/api/admin/homework/assign-bulk', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            student_ids: ids, title,
+            description: desc || null, subject: subject || null, due_date: due || null,
+            attachment_print_id: printVal ? parseInt(printVal, 10) : null,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const det = data.detail || data.message || '割当失敗';
+          if (msg) msg.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(typeof det === 'string' ? det : JSON.stringify(det))}</span>`;
+          return;
+        }
+        let html = `<span style="color:#86efac;">✅ ${escapeHtml(String(data.assigned_count || 0))}名に宿題「${escapeHtml(title)}」を割当てました</span>`;
+        if (data.skipped_count) {
+          const names = (data.skipped || []).map(s => `${escapeHtml(s.name || ('#' + s.id))}(${escapeHtml(s.reason || '')})`).join('、');
+          html += `<br><span style="color:#fbbf24;font-size:0.78rem;">⚠ ${data.skipped_count}名スキップ: ${names}</span>`;
+        }
+        if (msg) msg.innerHTML = html;
+        hwbSelectAll(false);
+        // 「📚 宿題 実施状況」パネルがあれば即更新 (scope非依存にボタンclickで)
+        const rb = document.getElementById('refreshHomeworkStatusBtn'); if (rb) rb.click();
+      } catch (e) { if (msg) msg.innerHTML = `<span style="color:#fca5a5;">❌ ${escapeHtml(String(e))}</span>`; }
+    }
+    window.hwbFilterStudents = hwbFilterStudents; window.hwbSelectAll = hwbSelectAll; window.hwbUpdateCount = hwbUpdateCount; window.hwbAssign = hwbAssign;
+    document.addEventListener('DOMContentLoaded', () => {
+      hwbInit();
+      const ps = document.getElementById('hwbPrintSubject');
+      if (ps) ps.addEventListener('change', hwbOnPrintSubjectChange);
+    });
 
     // 📚 教材プール 未作成リクエスト 一覧読込
     async function loadTextbookMissingRequests() {

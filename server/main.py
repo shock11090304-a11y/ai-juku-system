@@ -35116,6 +35116,141 @@ def admin_homework_assign(
         conn.close()
 
 
+@app.post("/api/admin/homework/assign-bulk")
+def admin_homework_assign_bulk(
+    payload: dict,
+    authorization: Optional[str] = Header(None),
+    x_cron_secret: Optional[str] = Header(None),
+):
+    """🧑‍🏫 admin が複数生徒へ同じ宿題を一括割当 (英文法ドリル配信と同じ操作感)。
+    payload: { student_ids:[int] (必須・非空), title (必須・1-200c), description?, subject?, due_date? (YYYY-MM-DD), attachment_print_id? }
+    各生徒に homework_assignments を1件ずつ作成。対象外コース/不在生徒はスキップして結果に含める。
+    認証: admin Bearer または X-Cron-Secret。内容検証は1回だけ・添付/プリント実在も1回。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):].strip()
+        if _verify_admin_token(token):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    # 📋 配信先生徒 (重複除去・順序維持)
+    raw_ids = payload.get("student_ids") or []
+    if not isinstance(raw_ids, (list, tuple)):
+        raise HTTPException(status_code=422, detail="student_ids は配列で指定してください")
+    ids = []
+    for v in raw_ids:
+        try:
+            ids.append(int(v))
+        except (TypeError, ValueError):
+            continue
+    ids = list(dict.fromkeys(ids))  # 重複除去・順序維持
+    if not ids:
+        raise HTTPException(status_code=422, detail="student_ids (配信先生徒) が1人以上必要です")
+    if len(ids) > 500:
+        raise HTTPException(status_code=422, detail="一度に割当てられるのは500名までです")
+
+    # 内容 validation (single-assign と同一ロジック・1回だけ実施)
+    title = (payload.get("title") or "").strip()
+    if not title:
+        raise HTTPException(status_code=422, detail="title (宿題タイトル) が必要")
+    if len(title) > 200:
+        title = title[:200]
+    _desc_raw = payload.get("description")
+    description = str(_desc_raw).strip()[:2000] if _desc_raw else None
+    _subj_raw = payload.get("subject")
+    subject = str(_subj_raw).strip()[:50] if _subj_raw else None
+    _due_raw = payload.get("due_date")
+    due_date = str(_due_raw).strip() if _due_raw else None
+    if due_date:
+        try:
+            datetime.strptime(due_date, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(status_code=422, detail="due_date は YYYY-MM-DD 形式")
+    attachment_print_id = None
+    if payload.get("attachment_print_id") is not None:
+        try:
+            attachment_print_id = int(payload.get("attachment_print_id"))
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=422, detail="attachment_print_id が不正です")
+
+    assigned = []
+    skipped = []
+    conn = db()
+    try:
+        c = conn.cursor()
+        # 📚 添付プリント (任意): 実在 + 公開中の lesson_prints のみ受理 (1回だけ検証)
+        if attachment_print_id is not None:
+            c.execute("SELECT id, is_published FROM lesson_prints WHERE id = ?", (attachment_print_id,))
+            _pr = c.fetchone()
+            if not _pr:
+                raise HTTPException(status_code=404, detail="添付プリントが見つかりません")
+            if not (_pr["is_published"] if hasattr(_pr, "keys") else _pr[1]):
+                raise HTTPException(status_code=400, detail="そのプリントは非公開のため添付できません")
+        # 生徒を一括取得 (1クエリ)
+        ph = ",".join(["?"] * len(ids))
+        c.execute(f"SELECT id, name, course, plan, status FROM students WHERE id IN ({ph})", tuple(ids))
+        by_id = {}
+        for r in c.fetchall():
+            by_id[r["id"] if hasattr(r, "keys") else r[0]] = r
+        # 1人ずつ: 存在 + 学習管理対象を確認 → INSERT。対象外/不在はスキップして結果に残す。
+        # ※INSERT は upfront 検証済みなので例外は致命的(=全件 rollback)とし per-row では握りつぶさない
+        #   (PostgreSQL は1文失敗でtxn全体がabortするため per-row catch は無意味)。
+        for sid in ids:
+            st = by_id.get(sid)
+            if not st:
+                skipped.append({"id": sid, "name": None, "reason": "生徒が見つかりません"})
+                continue
+            try:
+                _require_study_log_course({
+                    "course": st["course"], "plan": st["plan"], "status": st["status"],
+                })
+            except HTTPException as e:
+                if e.status_code == 403:
+                    skipped.append({"id": sid, "name": st["name"], "reason": "学習管理対象外コース/プラン"})
+                    continue
+                raise
+            c.execute(
+                "INSERT INTO homework_assignments (student_id, title, description, subject, due_date, attachment_print_id, status, created_by) "
+                "VALUES (?, ?, ?, ?, ?, ?, 'open', 'admin')",
+                (sid, title, description, subject, due_date, attachment_print_id),
+            )
+            assigned.append({"id": sid, "name": st["name"]})
+        conn.commit()
+        # 監査 events (一括1件)
+        try:
+            c.execute(
+                "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                ("homework_assigned_bulk", json.dumps({
+                    "title": title, "due_date": due_date, "subject": subject,
+                    "attachment_print_id": attachment_print_id,
+                    "assigned_count": len(assigned), "skipped_count": len(skipped),
+                    "student_ids": [a["id"] for a in assigned],
+                }, ensure_ascii=False), "admin"),
+            )
+            conn.commit()
+        except Exception:
+            pass
+        _msg = f"✅ {len(assigned)}名に宿題「{title}」を一括割当しました"
+        if skipped:
+            _msg += f"（{len(skipped)}名は対象外/不在でスキップ）"
+        return {
+            "ok": True,
+            "assigned_count": len(assigned),
+            "skipped_count": len(skipped),
+            "assigned": assigned,
+            "skipped": skipped,
+            "title": title,
+            "message": _msg,
+        }
+    except HTTPException:
+        raise
+    finally:
+        conn.close()
+
+
 @app.get("/api/admin/homework/list")
 def admin_homework_list(
     student_id: int,
