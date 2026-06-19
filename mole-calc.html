@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>モル計算 — 質量・粒子数・体積</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8; --purple:#7c3aed;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .toggles{display:flex; gap:8px; margin:8px 0 2px; flex-wrap:wrap;}
+  .toggles button.on{background:var(--info-ink); color:#fff; border-color:var(--info-ink);}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:left; font-size:15px; border:1px solid var(--bd);}
+  .relation .line{display:flex; justify-content:space-between; gap:10px; padding:2px 0;}
+  .relation .line b{font-weight:600;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>モル計算 — 質量・粒子数・体積</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。物質を切り替え、スライダーで <b>物質量 n [mol]</b> を動かすと、質量・粒子数・気体の体積が同時に変わります。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>物質量 n [mol] がハブ（中継点）</b>。質量(g)・粒子数(個)・気体の体積(L) は、いったん n [mol] に直してから相互に変換します。</div>
+
+  <!-- モル計算 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="mBadge">step 1 / 4</span>
+        <span class="steptitle" id="mTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="mPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="mNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">物質量 n をハブに 3 つの量をつなぐ</h2>
+    <p class="hint">中心の n [mol] から、モル質量 M をかけて質量へ、アボガドロ数をかけて粒子数へ、22.4 をかけて気体の体積（標準状態）へ。</p>
+    <div class="stage">
+      <svg id="mSvg" viewBox="0 0 600 320" role="img" aria-label="物質量を中心に質量・粒子数・体積をつなぐ図">
+        <!-- 矢印定義 -->
+        <defs>
+          <marker id="ar_m" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 z" fill="var(--red)"></path>
+          </marker>
+          <marker id="ar_n" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 z" fill="var(--purple)"></path>
+          </marker>
+          <marker id="ar_v" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 z" fill="var(--green)"></path>
+          </marker>
+        </defs>
+
+        <!-- 3本の枝（矢印） -->
+        <line id="b_mass" data-ms="2" stroke="var(--red)" stroke-width="2.5" marker-end="url(#ar_m)"></line>
+        <line id="b_num"  data-ms="3" stroke="var(--purple)" stroke-width="2.5" marker-end="url(#ar_n)"></line>
+        <line id="b_vol"  data-ms="4" stroke="var(--green)" stroke-width="2.5" marker-end="url(#ar_v)"></line>
+
+        <!-- 枝のラベル（×M など） -->
+        <text id="b_massOp" data-ms="2" font-size="13" text-anchor="middle" fill="var(--red)">× M</text>
+        <text id="b_numOp"  data-ms="3" font-size="13" text-anchor="middle" fill="var(--purple)">× 6.02×10²³</text>
+        <text id="b_volOp"  data-ms="4" font-size="13" text-anchor="middle" fill="var(--green)">× 22.4</text>
+
+        <!-- 中心ノード n -->
+        <circle id="nd_n" data-ms="1" cx="300" cy="160" r="54" fill="var(--info-bg)" stroke="var(--info-ink)" stroke-width="2.5"></circle>
+        <text id="nd_nT" data-ms="1" x="300" y="150" font-size="15" font-weight="600" text-anchor="middle" fill="var(--info-ink)">物質量 n</text>
+        <text id="nd_nV" data-ms="1" x="300" y="176" font-size="18" font-weight="600" text-anchor="middle" fill="var(--info-ink)">2.0 mol</text>
+
+        <!-- 質量ノード（右上） -->
+        <rect id="nd_mB" data-ms="2" x="436" y="34" width="150" height="64" rx="11" fill="var(--card)" stroke="var(--red)" stroke-width="2"></rect>
+        <text id="nd_mT" data-ms="2" x="511" y="58" font-size="14" font-weight="600" text-anchor="middle" fill="var(--red)">質量 m</text>
+        <text id="nd_mV" data-ms="2" x="511" y="82" font-size="17" font-weight="600" text-anchor="middle" fill="var(--ink)">64.0 g</text>
+
+        <!-- 粒子数ノード（右下） -->
+        <rect id="nd_pB" data-ms="3" x="426" y="222" width="170" height="64" rx="11" fill="var(--card)" stroke="var(--purple)" stroke-width="2"></rect>
+        <text id="nd_pT" data-ms="3" x="511" y="246" font-size="14" font-weight="600" text-anchor="middle" fill="var(--purple)">粒子数 N</text>
+        <text id="nd_pV" data-ms="3" x="511" y="270" font-size="16" font-weight="600" text-anchor="middle" fill="var(--ink)">1.20×10²⁴ 個</text>
+
+        <!-- 体積ノード（左） -->
+        <rect id="nd_vB" data-ms="4" x="14" y="128" width="150" height="64" rx="11" fill="var(--card)" stroke="var(--green)" stroke-width="2"></rect>
+        <text id="nd_vT" data-ms="4" x="89" y="152" font-size="14" font-weight="600" text-anchor="middle" fill="var(--green)">気体の体積 V</text>
+        <text id="nd_vV" data-ms="4" x="89" y="176" font-size="17" font-weight="600" text-anchor="middle" fill="var(--ink)">44.8 L</text>
+        <text id="nd_vN" data-ms="4" x="89" y="206" font-size="11" text-anchor="middle" fill="var(--sub)">（標準状態）</text>
+      </svg>
+    </div>
+    <p class="cap" id="mCap"></p>
+
+    <div class="toggles" id="mToggles" role="group" aria-label="物質を選ぶ">
+      <button data-sym="O₂"  data-m="32" class="on">O₂ (M=32)</button>
+      <button data-sym="CO₂" data-m="44">CO₂ (M=44)</button>
+      <button data-sym="N₂"  data-m="28">N₂ (M=28)</button>
+    </div>
+
+    <div class="ctl">
+      <label for="mSlider">物質量 n を動かす</label>
+      <input type="range" id="mSlider" min="0.5" max="5" step="0.5" value="2">
+      <span class="out" id="mOut">n = 2.0 mol</span>
+    </div>
+
+    <div class="relation" id="mRel">
+      <div class="line"><span>物質（モル質量）</span><b id="rSub">O₂（M = 32 g/mol）</b></div>
+      <div class="line"><span>物質量 n</span><b id="rN">2.0 mol</b></div>
+      <div class="line"><span style="color:var(--red)">質量 m = n × M</span><b id="rM">64.0 g</b></div>
+      <div class="line"><span style="color:var(--purple)">粒子数 N = n × 6.02×10²³</span><b id="rNum">1.20×10²⁴ 個</b></div>
+      <div class="line"><span style="color:var(--green)">気体の体積 V = n × 22.4</span><b id="rV">44.80 L</b></div>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ 数式記号や図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setT(id,x,y,txt){var e=el(id);if(x!=null)e.setAttribute("x",x);if(y!=null)e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 粒子数の指数表記ヘルパ =====
+     値 = mantissa × 10^exp（mantissa は 1.00〜9.99）を作る。NA=6.02×10²³。 */
+  var SUP={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹"};
+  function sup(numStr){var s="";for(var i=0;i<numStr.length;i++){s+=SUP[numStr[i]]||numStr[i];}return s;}
+  function sci(value){
+    // value > 0 を mantissa(2桁小数) × 10^exp の文字列に
+    if(!(value>0)||!isFinite(value)) return "0";
+    var exp=Math.floor(Math.log(value)/Math.LN10);
+    var mant=value/Math.pow(10,exp);
+    // 丸めで 10.0 になったら桁上げ
+    if(mant>=9.995){mant=mant/10;exp++;}
+    return mant.toFixed(2)+"×10"+sup(String(exp));
+  }
+
+  (function(){
+    var step=1, n=2, M=32, sym="O₂";
+    var NA=6.02e23;
+    var info=[null,
+      {t:"物質量 n を中心に置く", c:"物質量 n [mol] は粒子（分子）の「まとまり」を数える単位。1 mol = 6.02×10²³ 個の集まりです。ここをハブにして 3 つの量へつなぎます。"},
+      {t:"質量へ（× M）", c:"物質量 n にモル質量 M [g/mol] をかけると質量 m [g] になります。m = n × M。物質を切り替えると M が変わり、質量も変わります。"},
+      {t:"粒子数へ（× 6.02×10²³）", c:"物質量 n にアボガドロ数 6.02×10²³ /mol をかけると粒子数 N [個] になります。N = n × 6.02×10²³。"},
+      {t:"気体の体積へ（× 22.4）", c:"標準状態では気体 1 mol の体積は 22.4 L。だから体積 V = n × 22.4 [L]。物質の種類によらず（気体なら）同じ係数です。"}];
+
+    function render(){
+      // ノード位置（中心 n と各ノードの代表点を結ぶ。等スケール座標）
+      var cx=300, cy=160, rN=54;
+      // 質量ノード中心(511,66) / 粒子ノード中心(511,254) / 体積ノード中心(89,160)
+      function branch(id,opId,tx,ty){
+        var dx=tx-cx, dy=ty-cy, len=Math.sqrt(dx*dx+dy*dy);
+        var ux=dx/len, uy=dy/len;
+        var sx=cx+ux*rN, sy=cy+uy*rN;            // 中心円の縁から出発
+        var ex=tx-ux*(len*0.30), ey=ty-uy*(len*0.30); // ノード手前で止める
+        setLine(id,sx.toFixed(1),sy.toFixed(1),ex.toFixed(1),ey.toFixed(1));
+        setT(opId,((sx+ex)/2).toFixed(1),((sy+ey)/2-6).toFixed(1),null);
+      }
+      branch("b_mass","b_massOp",470,66);
+      branch("b_num","b_numOp",470,254);
+      branch("b_vol","b_volOp",128,160);
+
+      // 計算
+      var m=n*M;                  // g
+      var N=n*NA;                 // 個
+      var V=n*22.4;               // L
+      var Nstr=sci(N)+" 個";
+
+      // 図の数値・ラベル
+      setT("nd_nV",null,null,n.toFixed(1)+" mol");
+      setT("nd_mV",null,null,m.toFixed(1)+" g");
+      setT("nd_pV",null,null,Nstr);
+      setT("nd_vV",null,null,V.toFixed(1)+" L");
+      setT("b_massOp",null,null,"× "+M);
+      vis("mSvg",step);
+
+      // 読み出し
+      el("rSub").textContent=sym+"（M = "+M+" g/mol）";
+      el("rN").textContent=n.toFixed(1)+" mol";
+      el("rM").textContent=m.toFixed(1)+" g";
+      el("rNum").textContent=Nstr;
+      el("rV").textContent=V.toFixed(2)+" L";
+      el("mOut").textContent="n = "+n.toFixed(1)+" mol";
+
+      // ステップ
+      el("mBadge").textContent="step "+step+" / 4";
+      el("mTitle").textContent=info[step].t;
+      el("mCap").textContent=info[step].c;
+      el("mPrev").disabled=step<=1;
+      el("mNext").disabled=step>=4;
+    }
+
+    el("mNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("mPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("mSlider").addEventListener("input",function(e){n=parseFloat(e.target.value);render();});
+
+    var tbtns=el("mToggles").querySelectorAll("button");
+    for(var i=0;i<tbtns.length;i++){
+      tbtns[i].addEventListener("click",function(e){
+        for(var j=0;j<tbtns.length;j++){tbtns[j].classList.remove("on");}
+        e.currentTarget.classList.add("on");
+        M=parseFloat(e.currentTarget.getAttribute("data-m"));
+        sym=e.currentTarget.getAttribute("data-sym");
+        render();
+      });
+    }
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

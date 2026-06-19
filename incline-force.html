@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>斜面上の力の分解 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>斜面上の力の分解</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで <b>斜面の角度 θ</b> を変えると、重力 mg が斜面に <b>平行な成分</b> と <b>垂直な成分</b> に分かれる様子が見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>重力 mg を「斜面に平行」と「斜面に垂直」の2方向に分解</b>すること。平行成分 = mg sinθ（すべり落とす力）、垂直成分 = mg cosθ（垂直抗力とつり合う）。θ が大きいほど sinθ が増え、滑りやすくなります。</div>
+
+  <!-- 斜面上の力の分解 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="fBadge">step 1 / 4</span>
+        <span class="steptitle" id="fTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="fPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="fNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">斜面上の重力の分解</h2>
+    <p class="hint">m = 1 kg, g = 9.8 m/s²（mg = 9.8 N 固定）。重力を斜面に平行・垂直な成分に分けます。</p>
+    <div class="stage">
+      <svg id="fSvg" viewBox="0 0 600 360" role="img" aria-label="斜面上の物体にはたらく重力の分解">
+        <defs>
+          <marker id="ahG" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto">
+            <path d="M0,0 L7,3 L0,6 Z" fill="var(--gray)"></path>
+          </marker>
+          <marker id="ahR" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto">
+            <path d="M0,0 L7,3 L0,6 Z" fill="var(--red)"></path>
+          </marker>
+          <marker id="ahB" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto">
+            <path d="M0,0 L7,3 L0,6 Z" fill="var(--blue)"></path>
+          </marker>
+          <marker id="ahO" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto">
+            <path d="M0,0 L7,3 L0,6 Z" fill="var(--green)"></path>
+          </marker>
+        </defs>
+        <!-- 斜面の三角形 -->
+        <polygon id="i_tri" fill="var(--info-bg)" stroke="var(--ink)" stroke-width="2"></polygon>
+        <line id="i_ground" stroke="var(--ink)" stroke-width="2"></line>
+        <!-- 角θの弧 -->
+        <path id="i_arc" data-ms="1" fill="none" stroke="var(--gray)" stroke-width="1.8"></path>
+        <text id="i_thl" data-ms="1" font-size="15" fill="var(--sub)" text-anchor="middle">θ</text>
+        <!-- 物体 -->
+        <rect id="i_box" data-ms="1" width="26" height="26" rx="3" fill="var(--card)" stroke="var(--ink)" stroke-width="2"></rect>
+        <circle id="i_dot" data-ms="1" r="4" fill="var(--ink)"></circle>
+        <!-- 補助の点線(分解の平行四辺形) -->
+        <line id="i_help1" data-ms="3" stroke="var(--gray)" stroke-width="1.2" stroke-dasharray="4 4"></line>
+        <line id="i_help2" data-ms="3" stroke="var(--gray)" stroke-width="1.2" stroke-dasharray="4 4"></line>
+        <!-- 重力 mg (鉛直下向き) -->
+        <line id="i_mg" data-ms="1" stroke="var(--gray)" stroke-width="3" marker-end="url(#ahG)"></line>
+        <text id="i_mgl" data-ms="1" font-size="15" fill="var(--sub)" text-anchor="start">mg = 9.8 N</text>
+        <!-- 斜面平行成分 mg sinθ -->
+        <line id="i_para" data-ms="2" stroke="var(--red)" stroke-width="3" marker-end="url(#ahR)"></line>
+        <text id="i_paral" data-ms="2" font-size="14" fill="var(--red)" text-anchor="middle">mg sinθ</text>
+        <!-- 斜面垂直成分 mg cosθ -->
+        <line id="i_perp" data-ms="3" stroke="var(--blue)" stroke-width="3" marker-end="url(#ahB)"></line>
+        <text id="i_perpl" data-ms="3" font-size="14" fill="var(--blue)" text-anchor="middle">mg cosθ</text>
+        <!-- 垂直抗力 N (step4) -->
+        <line id="i_normal" data-ms="4" stroke="var(--green)" stroke-width="3" marker-end="url(#ahO)"></line>
+        <text id="i_normall" data-ms="4" font-size="14" fill="var(--green)" text-anchor="middle">N</text>
+      </svg>
+    </div>
+    <p class="cap" id="fCap"></p>
+    <div class="ctl">
+      <label for="fSlider">斜面の角度 θ</label>
+      <input type="range" id="fSlider" min="0" max="80" step="5" value="30">
+      <span class="out" id="fOut">θ = 30°</span>
+    </div>
+    <div class="relation" id="fRel">
+      <span style="color:var(--red)">平行 mg sinθ</span> = <span id="fPara">4.90</span> N
+      <span style="margin:0 10px; color:var(--sub)">／</span>
+      <span style="color:var(--blue)">垂直 mg cosθ</span> = <span id="fPerp">8.49</span> N
+      <span class="eqnote" id="fEq"></span>
+    </div>
+  </section>
+
+  <footer>← <a href="kyozai.html" style="color:var(--info-ink)">教材ライブラリ</a> ・ © AI塾 / trillion-ai-juku.com</footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 斜面上の力の分解 ===== */
+  (function(){
+    // 等スケール座標: SVG ピクセル単位そのまま(x,yとも同じ倍率)で角度が正しく見えるように
+    var step=1, theta=30;            // deg
+    var mg=9.8;                       // N (= m*g, m=1, g=9.8)
+    var CX=300, GY=300;               // 図の水平中心(viewBox 0..600)と地面の y
+    var FORCE_SCALE=11;               // 1N あたりの矢印長(px)
+    var info=[null,
+      {t:"物体と重力 mg", c:"斜面(角θ)の上に質量 m = 1 kg の物体を置きます。重力 mg = 9.8 N が鉛直下向き(まっすぐ下)にはたらきます。"},
+      {t:"斜面に平行な成分", c:"重力を斜面方向に分解します。斜面に平行な成分(赤)= mg sinθ。これが物体を斜面に沿ってすべり落とそうとする力です。"},
+      {t:"斜面に垂直な成分", c:"もう一方は斜面に垂直な成分(青)= mg cosθ。点線の平行四辺形で、mg がこの2つの成分の合成であることが分かります。"},
+      {t:"θ が大きいほど滑りやすい", c:"垂直な成分は面が押し返す垂直抗力 N(緑)とつり合います(N = mg cosθ)。θ を大きくすると平行成分 mg sinθ が増え、垂直成分 mg cosθ は減るため、急な斜面ほど滑りやすくなります。"}];
+
+    function render(){
+      var th=theta*Math.PI/180;
+      var s=Math.sin(th), c=Math.cos(th);
+      // 斜面の傾き: 角θは右下 BR で測る。斜辺は BR から左上へ。
+      // 斜辺長 HYP を固定し、角θで方向を決める(x,y 等スケールゆえ角度は正しく描かれる)。
+      // 急角度で apex が上にはみ出さないよう垂直余白、緩角度で横にはみ出さないよう水平幅も制限。
+      var TOPMARGIN=60;               // 図上端からの余白(px)
+      var maxRise=GY-TOPMARGIN;       // apex が取れる最大の高さ
+      var maxBase=440;                // 底辺が取れる最大幅(px)
+      var HYP=380;                    // 基本の斜辺長(px)
+      if(s>0.0001 && HYP*s>maxRise){ HYP=maxRise/s; }   // 高さ制限
+      if(c>0.0001 && HYP*c>maxBase){ HYP=maxBase/c; }   // 幅制限
+      var base=HYP*c;                 // 底辺の長さ(px)
+      // 三角形を水平中心 CX に揃える: 直角頂点 BLx(左), 角θの頂点 BR(右)
+      var BLx={x: CX - base/2, y: GY};                  // 直角頂点(底辺左端・apex の真下)
+      var BR ={x: CX + base/2, y: GY};                  // 角θの頂点(底辺右端)
+      var TOP={x: BLx.x,       y: GY - HYP*s};          // 斜辺の上端(物体側の頂点)
+      attr("i_tri","points", BLx.x.toFixed(1)+","+BLx.y.toFixed(1)+" "+BR.x.toFixed(1)+","+BR.y.toFixed(1)+" "+TOP.x.toFixed(1)+","+TOP.y.toFixed(1));
+      setLine("i_ground", BLx.x-30, GY, BR.x+30, GY);
+
+      // 角θの弧(BR を中心に、底辺方向→斜辺方向)
+      var R=46;
+      var ax=BR.x - R, ay=BR.y;                          // 底辺方向(左向き)の点
+      var bx=BR.x - R*c, by=BR.y - R*s;                  // 斜辺方向の点
+      // large-arc=0, sweep=0 (反時計回りで上へ)
+      attr("i_arc","d","M"+ax.toFixed(1)+","+ay.toFixed(1)+" A"+R+","+R+" 0 0 1 "+bx.toFixed(1)+","+by.toFixed(1));
+      // θ ラベルは弧の中ほど(やや外側・下寄りで赤ラベルと分離)
+      var midA=(th)/2;
+      setT("i_thl", BR.x - (R+24)*Math.cos(midA), BR.y - (R+10)*Math.sin(midA)+8);
+
+      // 物体の位置: 斜面上、BR から斜辺に沿って距離 d(斜辺の約55%地点)
+      var d=HYP*0.55;
+      var P={x: BR.x - d*c, y: BR.y - d*s};              // 物体の接地点(斜面上)
+      // 物体(箱)は斜面の上に乗せる: 中心を法線方向に少し持ち上げる
+      var nx=s, ny=-c;                                   // 斜面の外向き法線(上向き=右上、(c,s)に直交)
+      var Pc={x:P.x + nx*15, y:P.y + ny*15};             // 箱の中心
+      // 箱
+      var bw=26;
+      var boxRef=el("i_box");
+      boxRef.setAttribute("x",(Pc.x-bw/2).toFixed(1));
+      boxRef.setAttribute("y",(Pc.y-bw/2).toFixed(1));
+      // 箱を斜面に合わせて回転
+      boxRef.setAttribute("transform","rotate("+(-theta).toFixed(2)+" "+Pc.x.toFixed(2)+" "+Pc.y.toFixed(2)+")");
+      setC("i_dot", Pc.x, Pc.y);
+
+      // 力の大きさ
+      var Fpara=mg*s;                 // mg sinθ
+      var Fperp=mg*c;                 // mg cosθ
+      // 力の始点(物体中心)
+      var O={x:Pc.x, y:Pc.y};
+      // 重力 mg: 鉛直下向き
+      var mgLen=mg*FORCE_SCALE;
+      var mgEnd={x:O.x, y:O.y+mgLen};
+      setLine("i_mg", O.x, O.y, mgEnd.x, mgEnd.y);
+      // mg ラベルは矢印の左側中ほど(地面線との重なり回避)、終端アンカー
+      el("i_mgl").setAttribute("text-anchor","end");
+      setT("i_mgl", O.x-8, O.y+mgLen*0.6);
+
+      // 斜面平行成分(すべり落とす向き=斜面下向き): 方向 (c, s) を BR 方向へ → 下り方向は (c, s)?
+      // 斜面下向き(BR向き)単位ベクトル = (cosθ, sinθ) （右下方向）→ 下りは BR 側
+      var dpx=c, dpy=s;               // 斜面に沿って下る向き
+      var paraLen=Fpara*FORCE_SCALE;
+      var paraEnd={x:O.x+dpx*paraLen, y:O.y+dpy*paraLen};
+      setLine("i_para", O.x, O.y, paraEnd.x, paraEnd.y);
+      // ラベルは矢じり付近、斜面の下側(内向き法線)へオフセットして衝突回避
+      setT("i_paral", paraEnd.x + 18*c + 14*s, paraEnd.y + 18*s + 20*c);
+
+      // 斜面垂直成分(斜面に押しつける向き=斜面の内向き法線 下向き): (s, -c)?
+      // 内向き法線(斜面に押しつける=下向き) = (sinθ, -? )… 外向き法線 n=(-s,-c) なので内向き = (s, c)
+      var dnx=-s, dny=c;              // 斜面に垂直で押しつける(内向き=左下、(c,s)に直交)
+      var perpLen=Fperp*FORCE_SCALE;
+      var perpEnd={x:O.x+dnx*perpLen, y:O.y+dny*perpLen};
+      setLine("i_perp", O.x, O.y, perpEnd.x, perpEnd.y);
+      // ラベルは矢じり付近、斜面の下り方向へオフセット
+      setT("i_perpl", perpEnd.x + 30*c, perpEnd.y + 30*s + 4);
+
+      // 垂直抗力 N(外向き法線・大きさ = Fperp): 物体中心から斜面外向き上
+      var Nlen=Fperp*FORCE_SCALE;
+      var Nend={x:O.x+nx*Nlen, y:O.y+ny*Nlen};
+      setLine("i_normal", O.x, O.y, Nend.x, Nend.y);
+      // N のラベルは矢じり付近、斜面の上り方向へオフセット
+      setT("i_normall", Nend.x - 22*c - 6, Nend.y - 22*s);
+
+      // 分解の平行四辺形の補助線(mg の先端から各成分の先端へ)
+      setLine("i_help1", paraEnd.x, paraEnd.y, mgEnd.x, mgEnd.y);
+      setLine("i_help2", perpEnd.x, perpEnd.y, mgEnd.x, mgEnd.y);
+
+      vis("fSvg",step);
+      el("fPara").textContent=Fpara.toFixed(2);
+      el("fPerp").textContent=Fperp.toFixed(2);
+      el("fOut").textContent="θ = "+theta+"°";
+      // 等号的ハイライト: θ=45 で平行=垂直
+      var balanced=Math.abs(theta-45)<0.5;
+      el("fEq").textContent=balanced?"平行 = 垂直 (θ=45°)":"";
+      el("fRel").className=balanced?"relation eq":"relation";
+      el("fBadge").textContent="step "+step+" / 4"; el("fTitle").textContent=info[step].t; el("fCap").textContent=info[step].c;
+      el("fPrev").disabled=step<=1; el("fNext").disabled=step>=4;
+    }
+    el("fNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("fPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("fSlider").addEventListener("input",function(e){theta=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

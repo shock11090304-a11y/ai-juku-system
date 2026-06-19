@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>化学平衡 — ルシャトリエの原理</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .toggles{display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 2px;}
+  .toggles button.tg{flex:1 1 46%; justify-content:center; padding:10px 8px; font-size:13.5px; line-height:1.4; text-align:center;}
+  .toggles button.tg.active{background:var(--info-ink); border-color:var(--info-ink); color:#fff; font-weight:600;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>化学平衡 — ルシャトリエの原理</h1>
+    <p class="lead">「次へ／戻る」でステップを進め、条件トグルを切り替えると <b>平衡の移動する向き</b> が図と読み出しで連動します。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>ルシャトリエの原理</b>。平衡状態にある反応に変化（濃度・圧力・温度）を加えると、<b>その変化を和らげる向き</b>に平衡が移動します。</div>
+
+  <!-- 平衡移動の解説 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="leBadge">step 1 / 4</span>
+        <span class="steptitle" id="leTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="lePrev" aria-label="前のステップ">← 戻る</button>
+        <button id="leNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">ルシャトリエの原理</h2>
+    <p class="hint">可逆反応 N₂ + 3H₂ ⇌ 2NH₃（発熱 ΔH&lt;0、気体分子数 4→2）。下のトグルで条件を選ぶと、平衡が右（NH₃が増）か左（NH₃が減）へ動きます。</p>
+    <div class="stage">
+      <svg id="leSvg" viewBox="0 0 600 360" role="img" aria-label="アンモニア合成の平衡移動">
+        <!-- 割合バー枠 -->
+        <rect x="40" y="40" width="240" height="26" rx="6" fill="none" stroke="var(--bd)" stroke-width="1.4"></rect>
+        <rect x="320" y="40" width="240" height="26" rx="6" fill="none" stroke="var(--bd)" stroke-width="1.4"></rect>
+        <rect id="le_barL" x="40" y="40" width="120" height="26" rx="6" fill="var(--blue)" opacity="0.32"></rect>
+        <rect id="le_barR" x="440" y="40" width="120" height="26" rx="6" fill="var(--green)" opacity="0.32"></rect>
+        <text x="160" y="30" font-size="13" text-anchor="middle" fill="var(--blue)">reactants（反応物）</text>
+        <text x="440" y="30" font-size="13" text-anchor="middle" fill="var(--green)">products（生成物）</text>
+        <text id="le_barLt" x="160" y="58" font-size="13" text-anchor="middle" fill="var(--ink)">50%</text>
+        <text id="le_barRt" x="440" y="58" font-size="13" text-anchor="middle" fill="var(--ink)">50%</text>
+
+        <!-- 反応式（中央）: 3要素を別x座標に配置して重なり防止 -->
+        <text x="160" y="160" font-size="28" text-anchor="middle" font-weight="600" fill="var(--blue)">N₂ + 3H₂</text>
+        <text id="le_eqArrow" x="300" y="161" font-size="32" text-anchor="middle" font-weight="700" fill="var(--ink)">⇌</text>
+        <text x="430" y="160" font-size="28" text-anchor="middle" font-weight="600" fill="var(--green)" id="le_prodText">2NH₃</text>
+        <text x="160" y="192" font-size="14" text-anchor="middle" fill="var(--sub)">4 mol（気体）</text>
+        <text x="430" y="192" font-size="14" text-anchor="middle" fill="var(--sub)">2 mol（気体）+ 熱</text>
+
+        <!-- 平衡移動の太い矢印 -->
+        <path id="le_shiftArrow" data-ms="2" fill="var(--green)" d=""></path>
+        <text id="le_shiftLabel" data-ms="2" x="300" y="262" font-size="18" text-anchor="middle" font-weight="700" fill="var(--green)">→ 右へ移動</text>
+
+        <!-- 速さの対比（step1用）-->
+        <g id="le_rates" data-ms="1">
+          <text x="220" y="300" font-size="14" text-anchor="end" fill="var(--blue)">正反応の速さ v₊</text>
+          <line x1="232" y1="296" x2="292" y2="296" stroke="var(--blue)" stroke-width="3"></line>
+          <polygon points="292,296 284,292 284,300" fill="var(--blue)"></polygon>
+          <text x="380" y="300" font-size="14" text-anchor="start" fill="var(--red)">v₋ 逆反応の速さ</text>
+          <line x1="368" y1="296" x2="308" y2="296" stroke="var(--red)" stroke-width="3"></line>
+          <polygon points="308,296 316,292 316,300" fill="var(--red)"></polygon>
+          <text x="300" y="330" font-size="15" text-anchor="middle" font-weight="600" fill="var(--ink)">v₊ = v₋ （平衡）</text>
+        </g>
+
+        <!-- 条件ラベル -->
+        <text id="le_condLabel" data-ms="2" x="300" y="330" font-size="15" text-anchor="middle" font-weight="600" fill="var(--ink)"></text>
+      </svg>
+    </div>
+    <p class="cap" id="leCap"></p>
+    <div class="toggles" id="leToggles">
+      <button class="tg" data-cond="pressure">① 圧力を上げる（体積↓）</button>
+      <button class="tg" data-cond="temp">② 温度を上げる</button>
+      <button class="tg" data-cond="addN2">③ N₂ を加える（濃度↑）</button>
+      <button class="tg" data-cond="removeNH3">④ NH₃ を取り除く</button>
+    </div>
+    <div class="relation" id="leRel">
+      <span id="le_relCond" style="font-weight:600">条件を選択</span>
+      <span id="le_relSign" style="margin:0 8px; font-weight:600; color:var(--green)">→</span>
+      <span id="le_relDir">平衡は移動しません</span>
+      <span class="eqnote" id="le_relNote"></span>
+    </div>
+    <div class="relation" style="margin-top:10px; font-size:14px;">
+      <b>ルシャトリエ＝加えた変化を和らげる向きに移動</b>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ 化学式や図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setT(id,x,y,txt){var e=el(id);if(x!=null)e.setAttribute("x",x);if(y!=null)e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== ルシャトリエの原理 ===== */
+  (function(){
+    var step=1, cond=null;
+
+    // 各条件: dir = +1(右/NH3増), -1(左/NH3減)
+    var conds={
+      pressure:{label:"圧力↑（体積↓）", dir:1,
+        reason:"気体分子数が減る向き（4 mol → 2 mol）へ移動。NH₃が増えます。",
+        why:"圧力を上げる＝気体分子数が減る向き＝右"},
+      temp:{label:"温度↑", dir:-1,
+        reason:"温度を上げると吸熱方向＝逆反応（発熱の逆）へ移動。NH₃が減ります。",
+        why:"温度を上げる＝吸熱（熱を吸収）の向き＝左"},
+      addN2:{label:"N₂ を加える", dir:1,
+        reason:"加えた N₂ を減らす向き＝右へ移動。NH₃が増えます。",
+        why:"加えた N₂ を減らす向き＝右"},
+      removeNH3:{label:"NH₃ を取り除く", dir:1,
+        reason:"減った NH₃ を補う向き＝右へ移動。NH₃が生成されます。",
+        why:"NH₃濃度を上げる向き＝右"}
+    };
+
+    var info=[null,
+      {t:"① 可逆反応が平衡", c:"正反応の速さ v₊ と逆反応の速さ v₋ が等しい（v₊ = v₋）状態が平衡。見かけ上、反応が止まって見えます。下のトグルで変化を加えてみましょう。"},
+      {t:"② 濃度変化", c:"③「N₂ を加える」を選ぶと、加えた N₂ を減らす向き＝右へ移動し、NH₃ が増えます。濃度↑ → それを減らす向き。"},
+      {t:"③ 圧力変化", c:"①「圧力を上げる」を選ぶと、気体分子数が減る向き（4 mol → 2 mol）＝右へ移動し NH₃ が増えます。圧力↑ → 分子数が減る向き。"},
+      {t:"④ 温度変化", c:"②「温度を上げる」を選ぶと、吸熱方向＝逆反応（発熱の逆）＝左へ移動し NH₃ が減ります。温度↑ → 吸熱の向き。"}];
+
+    // ステップごとに推奨条件をプリセット
+    var stepCond=[null,null,"addN2","pressure","temp"];
+
+    function drawArrow(dir){
+      // dir=+1 右向き、dir=-1 左向き。中央 y=235 付近に太い矢印
+      var cy=235, half=95, head=22, th=18;
+      var p;
+      if(dir>0){
+        var x0=300-half, x1=300+half;
+        var bx=x1-head;
+        p="M"+x0+","+(cy-th/2)+" L"+bx+","+(cy-th/2)+" L"+bx+","+(cy-th)+
+          " L"+x1+","+cy+" L"+bx+","+(cy+th)+" L"+bx+","+(cy+th/2)+" L"+x0+","+(cy+th/2)+" Z";
+      } else {
+        var X0=300+half, X1=300-half;
+        var BX=X1+head;
+        p="M"+X0+","+(cy-th/2)+" L"+BX+","+(cy-th/2)+" L"+BX+","+(cy-th)+
+          " L"+X1+","+cy+" L"+BX+","+(cy+th)+" L"+BX+","+(cy+th/2)+" L"+X0+","+(cy+th/2)+" Z";
+      }
+      attr("le_shiftArrow","d",p);
+    }
+
+    function render(){
+      vis("leSvg",step);
+      el("leBadge").textContent="step "+step+" / 4";
+      el("leTitle").textContent=info[step].t;
+      el("leCap").textContent=info[step].c;
+      el("lePrev").disabled=step<=1;
+      el("leNext").disabled=step>=4;
+
+      // トグルの active 表示
+      var tgs=el("leToggles").querySelectorAll("button.tg");
+      for(var i=0;i<tgs.length;i++){
+        tgs[i].className=(tgs[i].getAttribute("data-cond")===cond)?"tg active":"tg";
+      }
+
+      // 平衡の割合（qualitative）: 基準50%、移動で寄せる
+      var leftPct=50, rightPct=50;
+      if(cond){
+        var d=conds[cond].dir;
+        leftPct = d>0 ? 28 : 72;
+        rightPct= 100-leftPct;
+      }
+      var fullW=240;
+      var lw=(leftPct/100*fullW), rw=(rightPct/100*fullW);
+      // 反応物バー: 右端固定で左へ伸びるように左基準幅
+      attr("le_barL","width",lw.toFixed(1));
+      attr("le_barL","x",(280-lw).toFixed(1));
+      attr("le_barR","width",rw.toFixed(1));
+      attr("le_barR","x","320");
+      el("le_barLt").textContent=leftPct.toFixed(0)+"%";
+      el("le_barRt").textContent=rightPct.toFixed(0)+"%";
+      setT("le_barLt",(280-lw/2).toFixed(1),58,null);
+      setT("le_barRt",(320+rw/2).toFixed(1),58,null);
+
+      if(step===1 || !cond){
+        // 平衡状態（矢印・条件ラベル非表示は data-ms=2 が step1で0）
+        if(step===1){
+          el("le_rates").style.opacity="1";
+        }
+        if(!cond){
+          el("le_relCond").textContent="条件を選択";
+          el("le_relSign").textContent="→";
+          el("le_relSign").style.color="var(--sub)";
+          el("le_relDir").textContent="平衡は移動しません（v₊ = v₋）";
+          el("le_relNote").textContent="";
+          el("leRel").className="relation";
+          el("le_shiftLabel").style.opacity= cond?"1":"0";
+        }
+      }
+
+      if(cond){
+        var c=conds[cond], d=c.dir;
+        el("le_rates").style.opacity= (step===1)?"1":"0";
+        drawArrow(d);
+        el("le_shiftArrow").style.opacity="1";
+        el("le_shiftLabel").style.opacity="1";
+        var col = d>0 ? "var(--green)" : "var(--red)";
+        attr("le_shiftArrow","fill",col);
+        el("le_shiftLabel").setAttribute("fill",col);
+        el("le_shiftLabel").textContent = d>0 ? "→ 右へ移動（NH₃ が増える）" : "← 左へ移動（NH₃ が減る）";
+        setT("le_condLabel",null,null,"条件: "+c.label);
+        el("le_condLabel").setAttribute("fill","var(--ink)");
+
+        el("le_relCond").textContent=c.label;
+        el("le_relSign").textContent = d>0 ? "→" : "←";
+        el("le_relSign").style.color=col;
+        el("le_relDir").innerHTML = d>0 ? '<span style="color:'+col+';font-weight:600">右へ移動（NH₃増）</span>' : '<span style="color:'+col+';font-weight:600">左へ移動（NH₃減）</span>';
+        el("le_relDir").textContent = d>0 ? "右へ移動（NH₃ が増える）" : "左へ移動（NH₃ が減る）";
+        el("le_relDir").style.color=col;
+        el("le_relNote").textContent=c.why;
+        el("leRel").className="relation eq";
+      } else {
+        el("le_shiftLabel").style.opacity="0";
+        el("le_shiftArrow").style.opacity="0";
+        setT("le_condLabel",null,null,"");
+      }
+    }
+
+    function selectCond(c){ cond=c; render(); }
+
+    var tgs=el("leToggles").querySelectorAll("button.tg");
+    for(var i=0;i<tgs.length;i++){
+      (function(b){ b.addEventListener("click",function(){ selectCond(b.getAttribute("data-cond")); }); })(tgs[i]);
+    }
+    el("leNext").addEventListener("click",function(){ if(step<4){ step++; if(stepCond[step]) cond=stepCond[step]; render(); } });
+    el("lePrev").addEventListener("click",function(){ if(step>1){ step--; if(stepCond[step]) cond=stepCond[step]; else cond=null; render(); } });
+
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

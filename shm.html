@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>単振動 — ばねと変位・速度 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>単振動 — ばねと変位・速度</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで <b>振幅 A</b>・<b>角振動数 ω</b>・<b>時刻 t</b> を動かすと、x-t グラフと物体の位置が連動します。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>x = A cos(ωt)</b> という「時間の関数」。端（x=±A）では速さ 0、中央（x=0）では速さが最大 Aω になることをグラフで確認しましょう。</div>
+
+  <!-- 単振動 x = A cos(ωt) -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="shmBadge">step 1 / 4</span>
+        <span class="steptitle" id="shmTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="shmPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="shmNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">単振動 x = A cos(ωt)</h2>
+    <p class="hint">ばねにつないだ物体の位置 x は時間とともに往復します。x = A cos(ωt)、速度 v = −Aω sin(ωt)、周期 T = 2π/ω。</p>
+    <div class="stage">
+      <svg id="shmSvg" viewBox="0 0 600 360" role="img" aria-label="単振動 x-t グラフと物体の位置">
+        <!-- ===== 上: x-t グラフ ===== -->
+        <line id="s_ax" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="s_ay" stroke="var(--gray)" stroke-width="1.2"></line>
+        <g id="s_ticks"></g>
+        <!-- +A / -A の水平線 (振幅) -->
+        <line id="s_pA" data-ms="2" stroke="var(--green)" stroke-width="1.5" stroke-dasharray="6 5"></line>
+        <line id="s_nA" data-ms="2" stroke="var(--green)" stroke-width="1.5" stroke-dasharray="6 5"></line>
+        <text id="s_pAl" data-ms="2" font-size="13" fill="var(--green)" text-anchor="end">+A</text>
+        <text id="s_nAl" data-ms="2" font-size="13" fill="var(--green)" text-anchor="end">−A</text>
+        <!-- 周期 T の矢印 -->
+        <line id="s_Tl" data-ms="3" stroke="var(--gray)" stroke-width="1.4"></line>
+        <text id="s_Tt" data-ms="3" font-size="13" fill="var(--sub)" text-anchor="middle">T = 2π/ω</text>
+        <!-- x-t 曲線 -->
+        <path id="s_curve" data-ms="1" fill="none" stroke="var(--blue)" stroke-width="2.6"></path>
+        <!-- 現在時刻の縦線と点 -->
+        <line id="s_tline" data-ms="1" stroke="var(--gray)" stroke-width="1" stroke-dasharray="3 4"></line>
+        <circle id="s_pt" data-ms="1" r="5.5" fill="var(--red)"></circle>
+        <text id="s_axl" font-size="14" fill="var(--sub)" text-anchor="middle">t (s)</text>
+        <text id="s_ayl" font-size="14" fill="var(--sub)" text-anchor="middle">x (m)</text>
+        <!-- ===== 下: 物体の位置 (横軸上) ===== -->
+        <line id="o_axis" data-ms="1" stroke="var(--ink)" stroke-width="2"></line>
+        <line id="o_pos" data-ms="2" stroke="var(--green)" stroke-width="1.5" stroke-dasharray="5 5"></line>
+        <line id="o_neg" data-ms="2" stroke="var(--green)" stroke-width="1.5" stroke-dasharray="5 5"></line>
+        <line id="o_zero" data-ms="1" stroke="var(--gray)" stroke-width="1.4"></line>
+        <line id="o_spring" data-ms="1" fill="none" stroke="var(--gray)" stroke-width="1.6"></line>
+        <path id="o_coil" data-ms="1" fill="none" stroke="var(--gray)" stroke-width="1.6"></path>
+        <rect id="o_wall" data-ms="1" fill="var(--gray)"></rect>
+        <circle id="o_ball" data-ms="1" r="11" fill="var(--red)"></circle>
+        <text id="o_pAl" data-ms="2" font-size="13" fill="var(--green)" text-anchor="middle">+A</text>
+        <text id="o_nAl" data-ms="2" font-size="13" fill="var(--green)" text-anchor="middle">−A</text>
+        <text id="o_0l" data-ms="1" font-size="13" fill="var(--sub)" text-anchor="middle">x=0</text>
+        <text id="o_xl" data-ms="1" font-size="14" fill="var(--red)" text-anchor="middle">x</text>
+      </svg>
+    </div>
+    <p class="cap" id="shmCap"></p>
+    <div class="ctl">
+      <label for="aSlider">振幅 A</label>
+      <input type="range" id="aSlider" min="1" max="4" step="0.5" value="2">
+      <span class="out" id="aOut">A = 2.0 m</span>
+    </div>
+    <div class="ctl">
+      <label for="wSlider">角振動数 ω</label>
+      <input type="range" id="wSlider" min="0.5" max="3" step="0.5" value="1">
+      <span class="out" id="wOut">ω = 1.0 rad/s</span>
+    </div>
+    <div class="ctl">
+      <label for="tSlider">時刻 t</label>
+      <input type="range" id="tSlider" min="0" max="12" step="0.25" value="0">
+      <span class="out" id="tOut">t = 0.00 s</span>
+    </div>
+    <div class="relation" id="shmRel">
+      <span style="color:var(--red)">x = A cos(ωt)</span> = <span id="shmX">2.00</span> m
+      <span style="margin:0 10px; color:var(--blue)">v = −Aω sin(ωt) = <span id="shmV">0.00</span> m/s</span>
+      <span class="eqnote" id="shmEq"></span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ 数式記号や図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function setR(id,x,y,w,h){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);e.setAttribute("width",w);e.setAttribute("height",h);}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 単振動 x = A cos(ωt) ===== */
+  (function(){
+    /* --- グラフ座標系 (上半分) --- */
+    var TMAX=12, AMAX=4;                 // 軸スケール上限
+    var GL=64, GR=560, GT=24, GB=178;    // グラフ領域 (px)
+    var GMY=(GT+GB)/2;                    // x=0 の縦位置
+    function GX(t){return GL+(t/TMAX)*(GR-GL);}            // 時刻 -> px
+    function GY(x){return GMY-(x/AMAX)*((GB-GT)/2);}       // 変位 -> px (上が+)
+    /* --- 物体トラック (下半分) --- */
+    var OY=300;                          // 物体の中心 y
+    var OL=120, OR=540;                  // 物体可動域の左右端 (x=-AMAX .. +AMAX)
+    var OCX=(OL+OR)/2;                   // x=0 の px
+    function OX(x){return OCX+(x/AMAX)*((OR-OL)/2);}       // 変位 -> px (横)
+
+    var step=1, A=2, w=1, t=0;
+
+    var info=[null,
+      {t:"単振動 x = A cos(ωt)", c:"ばねにつないだ物体の位置 x は時間 t とともに往復します。x = A cos(ωt)（m）。時刻 t を動かすと、グラフの赤点と下の物体●が同時に動きます。"},
+      {t:"振幅 A と 角振動数 ω", c:"振幅 A は中央からの最大変位（m）。物体は x = +A と x = −A の間を往復します。角振動数 ω（rad/s）が大きいほど速く振動します。"},
+      {t:"周期 T = 2π/ω", c:"1往復にかかる時間が周期 T = 2π/ω（s）。ω が大きいほど T は短く、振動が速くなります。t を T だけ進めると同じ状態に戻ります。"},
+      {t:"速度 v = −Aω sin(ωt)", c:"速度 v = −Aω sin(ωt)（m/s）。端（x=±A）では速さ 0、中央（x=0）では速さが最大 Aω。グラフの傾きが速度に対応します。"}];
+
+    function curve(){
+      var p=[];
+      for(var i=0;i<=240;i++){
+        var tt=TMAX*i/240;
+        var x=A*Math.cos(w*tt);
+        p.push((p.length?"L":"M")+GX(tt).toFixed(1)+","+GY(x).toFixed(1));
+      }
+      return p.join(" ");
+    }
+
+    function ticks(){
+      var g=el("s_ticks"); g.innerHTML="";
+      for(var ti=0;ti<=TMAX;ti+=2){
+        var px=GX(ti);
+        g.innerHTML+='<line x1="'+px.toFixed(1)+'" y1="'+GB+'" x2="'+px.toFixed(1)+'" y2="'+(GB+5)+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+px.toFixed(1)+'" y="'+(GB+18)+'" font-size="11" fill="var(--sub)" text-anchor="middle">'+ti+'</text>';
+      }
+    }
+
+    /* ばねのコイル (壁 OWALL から物体まで) を描く path */
+    function coil(bx){
+      var x0=OL-30;                 // 壁の右端
+      var x1=bx-11;                 // 物体の左端
+      var span=x1-x0; if(span<6) span=6;
+      var n=8;                      // コイル山数
+      var p="M"+x0.toFixed(1)+","+OY;
+      var lead=10;                  // 直線の引き出し
+      p+=" L"+(x0+lead).toFixed(1)+","+OY;
+      var seg=(span-2*lead)/n; if(seg<2) seg=2;
+      for(var i=0;i<n;i++){
+        var sx=x0+lead+seg*i;
+        var up=(i%2===0)?-9:9;
+        p+=" L"+(sx+seg/2).toFixed(1)+","+(OY+up);
+      }
+      p+=" L"+(x1-lead).toFixed(1)+","+OY+" L"+x1.toFixed(1)+","+OY;
+      return p;
+    }
+
+    function render(){
+      /* --- 上: x-t グラフ --- */
+      setLine("s_ax",GL,GB,GR,GB);          // t 軸 (下端)
+      setLine("s_ay",GL,GT,GL,GB);          // x 軸 (左端)
+      ticks();
+      var x=A*Math.cos(w*t);
+      var v=-A*w*Math.sin(w*t);
+      var T=2*Math.PI/w;
+
+      attr("s_curve","d",curve());
+      // +A / -A 水平線
+      setLine("s_pA",GL,GY(A),GR,GY(A));
+      setLine("s_nA",GL,GY(-A),GR,GY(-A));
+      setT("s_pAl",GL-6,GY(A)+4,null);
+      setT("s_nAl",GL-6,GY(-A)+4,null);
+      // 周期 T の表示 (描けるときのみ)
+      if(T<=TMAX){
+        setLine("s_Tl",GX(0),GT+6,GX(T),GT+6);
+        setT("s_Tt",GX(T/2),GT-1,"T = "+T.toFixed(2)+" s");
+        el("s_Tl").style.display=""; el("s_Tt").style.display="";
+      } else {
+        el("s_Tl").style.display="none"; el("s_Tt").style.display="none";
+      }
+      // 現在時刻の縦線 + 点
+      setLine("s_tline",GX(t),GY(x),GX(t),GB);
+      setC("s_pt",GX(t),GY(x));
+      setT("s_axl",(GL+GR)/2,GB+34,null);
+      setT("s_ayl",GL-30,GT+2,null);
+
+      /* --- 下: 物体トラック --- */
+      setLine("o_axis",OL-30,OY,OR+18,OY);   // 横軸 (床)
+      setT("o_0l",OCX,OY+30,null);
+      setLine("o_zero",OCX,OY-22,OCX,OY+18); // x=0 の目印
+      // 壁
+      setR("o_wall",OL-38,OY-26,8,52);
+      // ±A の印
+      setLine("o_pos",OX(A),OY-20,OX(A),OY+14);
+      setLine("o_neg",OX(-A),OY-20,OX(-A),OY+14);
+      setT("o_pAl",OX(A),OY-26,null);
+      setT("o_nAl",OX(-A),OY-26,null);
+      // ばね + 物体
+      var bx=OX(x);
+      attr("o_coil","d",coil(bx));
+      setC("o_ball",bx,OY);
+      setT("o_xl",bx,OY-20,null);
+
+      vis("shmSvg",step);
+
+      /* --- 読み出し --- */
+      el("aOut").textContent="A = "+A.toFixed(1)+" m";
+      el("wOut").textContent="ω = "+w.toFixed(1)+" rad/s";
+      el("tOut").textContent="t = "+t.toFixed(2)+" s";
+      el("shmX").textContent=x.toFixed(2);
+      el("shmV").textContent=v.toFixed(2);
+
+      // 端/中央の状態でハイライト
+      var atEnd=Math.abs(Math.abs(x)-A)<0.02;       // x=±A
+      var atMid=Math.abs(x)<0.02;                   // x=0
+      if(atMid){
+        el("shmEq").textContent="中央: 速さ最大 |v| = Aω = "+(A*w).toFixed(2)+" m/s";
+        el("shmRel").className="relation eq";
+      } else if(atEnd){
+        el("shmEq").textContent="端: 速さ 0 m/s（折り返し）";
+        el("shmRel").className="relation eq";
+      } else {
+        el("shmEq").textContent="";
+        el("shmRel").className="relation";
+      }
+
+      el("shmBadge").textContent="step "+step+" / 4";
+      el("shmTitle").textContent=info[step].t;
+      el("shmCap").textContent=info[step].c;
+      el("shmPrev").disabled=step<=1;
+      el("shmNext").disabled=step>=4;
+    }
+
+    el("shmNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("shmPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("aSlider").addEventListener("input",function(e){A=parseFloat(e.target.value);render();});
+    el("wSlider").addEventListener("input",function(e){w=parseFloat(e.target.value);render();});
+    el("tSlider").addEventListener("input",function(e){t=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

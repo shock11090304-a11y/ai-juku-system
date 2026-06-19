@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>力学的エネルギー保存 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .readout{display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:12px; padding:11px 14px; border-radius:10px; border:1px solid var(--bd); font-size:14px;}
+  .readout .item{white-space:nowrap;}
+  .readout .item b{font-weight:600;}
+  .readout .v{font-weight:600;}
+  .readout .vpe{color:var(--blue);} .readout .vke{color:var(--red);} .readout .ve{color:var(--green);}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>力学的エネルギー保存</h1>
+    <p class="lead">「次へ／戻る」で考え方が1ステップずつ進みます。スライダーで <b>現在の高さ h</b> を動かすと、位置エネルギーと運動エネルギーが入れ替わっても <b>合計はいつも 49.0 J</b> のままなのが見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>力学的エネルギー（位置 + 運動）は摩擦がなければ一定</b>。落下で位置エネルギー PE が減った分だけ、運動エネルギー KE が増えるので、合計 E = PE + KE = mgH は変わりません。</div>
+
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="enBadge">step 1 / 4</span>
+        <span class="steptitle" id="enTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="enPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="enNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">自由落下のエネルギー保存</h2>
+    <p class="hint">高さ H = 5 m から落下する物体（m = 1 kg, g = 9.8 m/s², 摩擦なし）。左が落下のようす、右が PE（青）と KE（赤）の積み上げ棒です。合計はつねに E = mgH = 49.0 J。</p>
+    <div class="stage">
+      <svg id="enSvg" viewBox="0 0 600 360" role="img" aria-label="自由落下と力学的エネルギーの棒グラフ">
+        <!-- 左: 落下イメージ -->
+        <line id="e_ground" stroke="var(--ink)" stroke-width="2.5"></line>
+        <line id="e_pole" stroke="var(--gray)" stroke-width="1.5"></line>
+        <g id="e_ticks"></g>
+        <line id="e_drop" data-ms="2" stroke="var(--gray)" stroke-width="1.4" stroke-dasharray="4 5"></line>
+        <line id="e_varrow" data-ms="3" stroke="var(--red)" stroke-width="2.5"></line>
+        <polyline id="e_vhead" data-ms="3" fill="none" stroke="var(--red)" stroke-width="2.5"></polyline>
+        <circle id="e_ball" data-ms="1" r="13" fill="var(--blue)"></circle>
+        <text id="e_hlbl" data-ms="1" font-size="14" fill="var(--ink)" text-anchor="start">h</text>
+        <text id="e_vlbl" data-ms="3" font-size="14" fill="var(--red)" text-anchor="start">v</text>
+        <text id="e_glbl" font-size="13" fill="var(--sub)" text-anchor="middle">地面 (h = 0)</text>
+        <!-- 右: 積み上げ棒グラフ -->
+        <line id="e_baseY" stroke="var(--gray)" stroke-width="1.2"></line>
+        <g id="e_eticks"></g>
+        <line id="e_etot" data-ms="4" stroke="var(--green)" stroke-width="2" stroke-dasharray="7 5"></line>
+        <text id="e_etotl" data-ms="4" font-size="14" fill="var(--green)" text-anchor="end">E = 49.0 J</text>
+        <rect id="e_barPE" data-ms="1" fill="var(--blue)" rx="3"></rect>
+        <rect id="e_barKE" data-ms="2" fill="var(--red)" rx="3"></rect>
+        <text id="e_lPE" data-ms="1" font-size="13" fill="#fff" text-anchor="middle">PE</text>
+        <text id="e_lKE" data-ms="2" font-size="13" fill="#fff" text-anchor="middle">KE</text>
+        <text id="e_barlbl" font-size="13" fill="var(--sub)" text-anchor="middle">エネルギー (J)</text>
+      </svg>
+    </div>
+    <p class="cap" id="enCap"></p>
+    <div class="ctl">
+      <label for="enSlider">現在の高さ h を動かす</label>
+      <input type="range" id="enSlider" min="0" max="5" step="0.25" value="5">
+      <span class="out" id="enOut">h = 5.00 m</span>
+    </div>
+    <div class="relation" id="enRel">
+      <span style="color:var(--blue)">PE = mgh</span> = <span id="enPE">49.00</span> J
+      <span style="margin:0 6px; font-weight:600">+</span>
+      <span style="color:var(--red)">KE = mg(H−h)</span> = <span id="enKE">0.00</span> J
+      <span style="margin:0 6px; font-weight:600">=</span>
+      <span style="color:var(--green)">E</span> = <span id="enE">49.00</span> J
+      <span class="eqnote" id="enEq">力学的エネルギー保存 (E = mgH)</span>
+    </div>
+    <div class="readout" id="enReadout">
+      <span class="item"><b>h</b> = <span class="v" id="ro_h">5.00</span> m</span>
+      <span class="item"><b>PE = mgh</b> = <span class="v vpe" id="ro_pe">49.00</span> J</span>
+      <span class="item"><b>KE = mg(H−h)</b> = <span class="v vke" id="ro_ke">0.00</span> J</span>
+      <span class="item"><b>v = √(2g(H−h))</b> = <span class="v vke" id="ro_v">0.00</span> m/s</span>
+      <span class="item"><b>E = PE + KE</b> = <span class="v ve" id="ro_e">49.00</span> J（一定）</span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ 数式記号や図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function setRect(id,x,y,w,h){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);e.setAttribute("width",Math.max(0,w));e.setAttribute("height",Math.max(0,h));}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 力学的エネルギー保存 ===== */
+  (function(){
+    var m=1, g=9.8, H=5;          /* 物理定数 */
+    var step=1, h=5;              /* 状態 */
+    var E=m*g*H;                  /* = 49.0 J 一定 */
+
+    /* --- 左の落下イメージ座標 --- */
+    var GROUND_Y=305, TOP_Y=55;   /* h=0 と h=H の y 位置 */
+    var POLE_X=120;               /* 落下軸の x */
+    function HY(hv){return GROUND_Y-(hv/H)*(GROUND_Y-TOP_Y);} /* 高さ→y */
+
+    /* --- 右の棒グラフ座標 --- */
+    var BAR_X=400, BAR_W=130, BAR_BASE_Y=305, BAR_TOP_Y=55;
+    function EH(j){return (j/E)*(BAR_BASE_Y-BAR_TOP_Y);} /* エネルギー(J)→棒の高さpx */
+
+    var info=[null,
+      {t:"高さ H の物体", c:"高さ H = 5 m に静止した物体は、位置エネルギー PE = mgh = 49.0 J をもちます（h = H のとき）。運動エネルギーはまだ 0 J です。"},
+      {t:"落下で入れ替わる", c:"手を離すと落下します。高さが下がると位置エネルギーが減り、その分が運動エネルギーへ移ります。棒グラフの青（PE）が縮み、赤（KE）が伸びます。"},
+      {t:"運動エネルギーと速さ", c:"運動エネルギー KE = mg(H−h) = ½mv²。これを v について解くと、速さ v = √(2g(H−h)) m/s。H−h ≧ 0 なので √の中は必ず 0 以上です。"},
+      {t:"合計は一定（保存）", c:"力学的エネルギー E = PE + KE = mgH = 49.0 J。摩擦がなければ h をどこに動かしても合計は変わりません（力学的エネルギー保存）。緑の線が一定の高さを示します。"}];
+
+    function eticks(){
+      var grp=el("e_eticks"); grp.innerHTML="";
+      [0,10,20,30,40,49].forEach(function(j){
+        var y=BAR_BASE_Y-EH(j);
+        grp.innerHTML+='<line x1="'+(BAR_X-6)+'" y1="'+y.toFixed(1)+'" x2="'+(BAR_X+BAR_W+58)+'" y2="'+y.toFixed(1)+'" stroke="var(--bd)" stroke-width="1"/>'+
+          '<text x="'+(BAR_X-10)+'" y="'+(y+4).toFixed(1)+'" font-size="11" fill="var(--sub)" text-anchor="end">'+j+'</text>';
+      });
+    }
+    function htick(){
+      var grp=el("e_ticks"); grp.innerHTML="";
+      [0,1,2,3,4,5].forEach(function(hh){
+        var y=HY(hh);
+        grp.innerHTML+='<line x1="'+(POLE_X-6)+'" y1="'+y.toFixed(1)+'" x2="'+(POLE_X+6)+'" y2="'+y.toFixed(1)+'" stroke="var(--gray)" stroke-width="1.2"/>'+
+          '<text x="'+(POLE_X-12)+'" y="'+(y+4).toFixed(1)+'" font-size="11" fill="var(--sub)" text-anchor="end">'+hh+' m</text>';
+      });
+    }
+
+    function render(){
+      /* 物理量（負の√・0除算を回避: H-h>=0 を clamp） */
+      var dh=Math.max(0,H-h);
+      var PE=m*g*h;
+      var KE=m*g*dh;
+      var v=Math.sqrt(2*g*dh);
+
+      /* --- 左図 --- */
+      setLine("e_ground",70,GROUND_Y,235,GROUND_Y);
+      setLine("e_pole",POLE_X,GROUND_Y,POLE_X,TOP_Y);
+      htick();
+      var by=HY(h);
+      setC("e_ball",POLE_X,by);
+      setT("e_hlbl",POLE_X+22,by-4,"h = "+h.toFixed(2)+" m");
+      /* 落下した距離 H-h の点線（物体から出発点 h=H まで） */
+      setLine("e_drop",POLE_X,by,POLE_X,TOP_Y);
+      /* 速度ベクトル（下向き、長さは v に比例。最大 v≈9.9 を 70px に） */
+      var vlen=(v/Math.sqrt(2*g*H))*70;
+      var vy0=by+15, vy1=by+15+vlen;
+      setLine("e_varrow",POLE_X,vy0,POLE_X,vy1);
+      if(vlen>6){
+        attr("e_vhead","points",(POLE_X-5)+","+(vy1-8)+" "+POLE_X+","+vy1+" "+(POLE_X+5)+","+(vy1-8));
+        el("e_vhead").style.display="";
+      } else { el("e_vhead").style.display="none"; }
+      setT("e_vlbl",POLE_X+10,(vy0+vy1)/2+4,"v = "+v.toFixed(2)+" m/s");
+      setT("e_glbl",(70+235)/2,GROUND_Y+22,null);
+
+      /* --- 右図 棒グラフ --- */
+      setLine("e_baseY",BAR_X-6,BAR_BASE_Y,BAR_X+BAR_W+58,BAR_BASE_Y);
+      eticks();
+      var peH=EH(PE), keH=EH(KE);
+      /* PE を下、KE を上に積む（合計=E一定） */
+      var peY=BAR_BASE_Y-peH;
+      var keY=peY-keH;
+      setRect("e_barPE",BAR_X,peY,BAR_W,peH);
+      setRect("e_barKE",BAR_X,keY,BAR_W,keH);
+      var cx=BAR_X+BAR_W/2;
+      setT("e_lPE",cx,peY+peH/2+5, peH>20?("PE "+PE.toFixed(1)+" J"):"");
+      setT("e_lKE",cx,keY+keH/2+5, keH>20?("KE "+KE.toFixed(1)+" J"):"");
+      var totY=BAR_BASE_Y-EH(E);
+      setLine("e_etot",BAR_X-6,totY,BAR_X+BAR_W+58,totY);
+      setT("e_etotl",BAR_X+BAR_W+56,totY-6,"E = "+E.toFixed(1)+" J");
+      setT("e_barlbl",cx,BAR_BASE_Y+22,null);
+
+      vis("enSvg",step);
+
+      /* --- 読み出し --- */
+      el("enOut").textContent="h = "+h.toFixed(2)+" m";
+      el("enPE").textContent=PE.toFixed(2);
+      el("enKE").textContent=KE.toFixed(2);
+      el("enE").textContent=(PE+KE).toFixed(2);
+      el("ro_h").textContent=h.toFixed(2);
+      el("ro_pe").textContent=PE.toFixed(2);
+      el("ro_ke").textContent=KE.toFixed(2);
+      el("ro_v").textContent=v.toFixed(2);
+      el("ro_e").textContent=(PE+KE).toFixed(2);
+      el("enRel").className="relation eq"; /* 常に保存（=49.0J）なので緑表示 */
+
+      el("enBadge").textContent="step "+step+" / 4";
+      el("enTitle").textContent=info[step].t;
+      el("enCap").textContent=info[step].c;
+      el("enPrev").disabled=step<=1;
+      el("enNext").disabled=step>=4;
+    }
+    el("enNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("enPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("enSlider").addEventListener("input",function(e){h=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>
