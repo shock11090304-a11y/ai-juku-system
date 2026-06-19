@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>微分の応用 — 増減と極値 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .relation .mono{font-variant-numeric:tabular-nums;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--sub);}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>微分の応用 — 増減と極値</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで <b>a</b> を動かすと、3次関数 <b>f(x)=x³−3a·x</b> の極値が現れたり消えたりする様子が見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>導関数 f'(x) の符号で増減を判定する</b>こと。f'(x)=0 の解は「極値の候補」にすぎず、その前後で f' の符号が <b>＋→−</b> なら極大、<b>−→＋</b> なら極小。符号が変わらなければ極値ではありません。</div>
+
+  <!-- ① 3次関数 f(x)=x³−3ax の増減と極値 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="exBadge">step 1 / 4</span>
+        <span class="steptitle" id="exTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="exPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="exNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">3次関数の増減と極値</h2>
+    <p class="hint">f(x)=x³−3a·x を微分すると f'(x)=3x²−3a=3(x²−a)。a の値で極値の有無が変わります。</p>
+    <div class="stage">
+      <svg id="exSvg" viewBox="0 0 600 360" role="img" aria-label="f(x)=x³−3ax の増減と極値のグラフ">
+        <defs>
+          <clipPath id="exClip"><rect x="40" y="14" width="528" height="312"></rect></clipPath>
+        </defs>
+        <!-- 軸・目盛 -->
+        <line id="e_ax" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="e_ay" stroke="var(--gray)" stroke-width="1.2"></line>
+        <g id="e_ticks"></g>
+        <text id="e_xl" font-size="14" fill="var(--sub)" text-anchor="middle">x</text>
+        <text id="e_yl" font-size="14" fill="var(--sub)" text-anchor="middle">y</text>
+        <!-- 導関数 f'(x) の補助曲線 -->
+        <path id="e_deriv" data-ms="2" fill="none" stroke="var(--gray)" stroke-width="1.6" stroke-dasharray="6 5" clip-path="url(#exClip)"></path>
+        <text id="e_derivl" data-ms="2" font-size="13" fill="var(--gray)" text-anchor="start">y = f'(x)</text>
+        <!-- 極値候補の縦破線 -->
+        <line id="e_vL" data-ms="3" stroke="var(--gray)" stroke-width="1.1" stroke-dasharray="4 4"></line>
+        <line id="e_vR" data-ms="3" stroke="var(--gray)" stroke-width="1.1" stroke-dasharray="4 4"></line>
+        <!-- 本体曲線 y=f(x) -->
+        <path id="e_curve" data-ms="1" fill="none" stroke="var(--blue)" stroke-width="2.8" clip-path="url(#exClip)"></path>
+        <text id="e_curvel" data-ms="1" font-size="13" fill="var(--blue)" text-anchor="start">y = f(x)</text>
+        <!-- 極大・極小 点 -->
+        <circle id="e_max" data-ms="3" r="5.5" fill="var(--red)"></circle>
+        <circle id="e_min" data-ms="3" r="5.5" fill="var(--blue)"></circle>
+        <text id="e_maxl" data-ms="4" font-size="13" fill="var(--red)" text-anchor="middle">極大</text>
+        <text id="e_minl" data-ms="4" font-size="13" fill="var(--blue)" text-anchor="middle">極小</text>
+      </svg>
+    </div>
+    <p class="cap" id="exCap"></p>
+    <div class="ctl">
+      <label for="exSlider">a を動かす</label>
+      <input type="range" id="exSlider" min="-2" max="2" step="0.5" value="1">
+      <span class="out" id="exOut">a = 1.0</span>
+    </div>
+    <div class="relation" id="exRel">
+      <span style="color:var(--gray)">f'(x)</span> = <span id="exDeriv" class="mono">3(x²−1)</span>
+      <span class="eqnote" id="exExtrema"></span>
+    </div>
+  </section>
+
+  <footer>© AI塾 / trillion-ai-juku.com ・ 数式記号や図のラベルは指導用に整理した表記です。 ・ <a href="kyozai.html">← 教材ライブラリ</a></footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+  function clamp(v,lo,hi){return v<lo?lo:(v>hi?hi:v);}
+
+  /* ===== 3次関数 f(x)=x³−3ax の増減と極値 ===== */
+  (function(){
+    // グラフ枠: x∈[-3,3], y∈[-8,8] を描画領域にマップ
+    var L=40, Rr=568, T=14, Bm=326;          // 描画ボックス
+    var XMIN=-3, XMAX=3, YMIN=-8, YMAX=8;
+    var step=1, a=1;
+    function GX(x){return L+((x-XMIN)/(XMAX-XMIN))*(Rr-L);}
+    function GY(y){return Bm-((y-YMIN)/(YMAX-YMIN))*(Bm-T);}
+    function f(x){return x*x*x-3*a*x;}
+    function fp(x){return 3*(x*x-a);}
+
+    var info=[null,
+      {t:"関数 y=f(x) のグラフ", c:"f(x)=x³−3a·x のグラフ（青）。a の値によって山と谷ができたり、まっすぐ増え続けたりします。スライダーで a を動かしてみましょう。"},
+      {t:"導関数 f'(x)=3(x²−a)", c:"各点での接線の傾きを表すのが導関数 f'(x)=3x²−3a=3(x²−a)（灰の破線、下に凸の放物線）。f' が正なら増加、負なら減少です。"},
+      {t:"f'(x)=0 の解 = 極値の候補", c:"a>0 のとき f'(x)=0 すなわち x²=a の解は x=±√a。この2点が極値の候補（縦破線）。a≦0 のときは f'(x)=3(x²−a)≧0 で解がなく、候補もありません。"},
+      {t:"符号で増減を判定", c:"f' の符号変化で判定: ＋→− の x=−√a が極大、−→＋ の x=√a が極小。a≦0 のときは f'≧0 で一貫して増加 → 単調増加で極値なし。"}];
+
+    function buildPath(fn){
+      // x を細かく刻んで、描画領域内のみを折れ線で結ぶ（範囲外はクリップで切れる）
+      var p=[], pen=false, N=360;
+      for(var i=0;i<=N;i++){
+        var x=XMIN+(XMAX-XMIN)*i/N;
+        var y=fn(x);
+        if(!isFinite(y)){pen=false;continue;}
+        var py=GY(clamp(y,YMIN-2,YMAX+2)); // 上下に少しだけ余白を持たせてからクリップ
+        var px=GX(x);
+        p.push((pen?"L":"M")+px.toFixed(1)+","+py.toFixed(1));
+        pen=true;
+      }
+      return p.join(" ");
+    }
+
+    function ticks(){
+      var g=el("e_ticks"); g.innerHTML="";
+      var X0=GX(0), Y0=GY(0);
+      function tx(vx){ if(vx===0) return; var t=GX(vx);
+        g.innerHTML+='<line x1="'+t.toFixed(1)+'" y1="'+(Y0-4)+'" x2="'+t.toFixed(1)+'" y2="'+(Y0+4)+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+t.toFixed(1)+'" y="'+(Y0+17)+'" font-size="11" fill="var(--sub)" text-anchor="middle">'+vx+'</text>';}
+      function ty(vy){ if(vy===0) return; var t=GY(vy);
+        g.innerHTML+='<line x1="'+(X0-4)+'" y1="'+t.toFixed(1)+'" x2="'+(X0+4)+'" y2="'+t.toFixed(1)+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+(X0-8)+'" y="'+(t+4).toFixed(1)+'" font-size="11" fill="var(--sub)" text-anchor="end">'+vy+'</text>';}
+      tx(-2); tx(-1); tx(1); tx(2); tx(3); tx(-3);
+      ty(-6); ty(-4); ty(-2); ty(2); ty(4); ty(6);
+    }
+
+    function render(){
+      var X0=GX(0), Y0=GY(0);
+      // 軸（原点を通す）
+      setLine("e_ax", L, Y0, Rr, Y0);
+      setLine("e_ay", X0, Bm, X0, T);
+      setT("e_xl", Rr-2, Y0-8, null);
+      setT("e_yl", X0+12, T+10, null);
+      ticks();
+
+      // 本体・導関数の曲線
+      attr("e_curve","d", buildPath(f));
+      attr("e_deriv","d", buildPath(fp));
+      // ラベル位置（右上・原点近く）
+      setT("e_curvel", GX(1.55), GY(6.6), null);
+      setT("e_derivl", GX(-2.85), GY(6.6), null);
+
+      var hasExtrema = a>0;
+      var derivStr = "3(x²−"+a.toFixed(1).replace(/\.0$/,"")+")";
+      if(a===0) derivStr="3x²";
+      if(a<0) derivStr="3(x²+"+Math.abs(a).toFixed(1).replace(/\.0$/,"")+")";
+      el("exDeriv").textContent=derivStr;
+      el("exOut").textContent="a = "+a.toFixed(1);
+
+      if(hasExtrema){
+        var r=Math.sqrt(a);             // √a ( a>0 のみ計算 → NaN なし )
+        var yMax=2*a*r;                 // f(−√a)=2a√a
+        var yMin=-2*a*r;                // f(√a)=−2a√a
+        // 縦破線（候補 x=±√a）
+        setLine("e_vL", GX(-r), Bm, GX(-r), T);
+        setLine("e_vR", GX(r),  Bm, GX(r),  T);
+        // 極大（赤・x=−√a）/ 極小（青・x=√a）
+        setC("e_max", GX(-r), GY(clamp(yMax,YMIN,YMAX)));
+        setC("e_min", GX(r),  GY(clamp(yMin,YMIN,YMAX)));
+        setT("e_maxl", GX(-r), GY(clamp(yMax,YMIN,YMAX))-12, "極大");
+        setT("e_minl", GX(r),  GY(clamp(yMin,YMIN,YMAX))+22, "極小");
+        el("exExtrema").textContent="極大 ("+(-r).toFixed(2)+", "+yMax.toFixed(2)+") ／ 極小 ("+r.toFixed(2)+", "+yMin.toFixed(2)+")";
+        el("exRel").className="relation eq";
+        // 候補・点の表示を data-ms に従わせる
+        el("e_vL").style.display=""; el("e_vR").style.display="";
+        el("e_max").style.display=""; el("e_min").style.display="";
+        el("e_maxl").style.display=""; el("e_minl").style.display="";
+      } else {
+        el("exExtrema").textContent = "a≦0: f'(x)≧0 → 単調増加・極値なし";
+        el("exRel").className="relation";
+        // 極値関連は完全に隠す
+        el("e_vL").style.display="none"; el("e_vR").style.display="none";
+        el("e_max").style.display="none"; el("e_min").style.display="none";
+        el("e_maxl").style.display="none"; el("e_minl").style.display="none";
+      }
+
+      vis("exSvg", step);
+      el("exBadge").textContent="step "+step+" / 4";
+      el("exTitle").textContent=info[step].t;
+      el("exCap").textContent=info[step].c;
+      el("exPrev").disabled=step<=1;
+      el("exNext").disabled=step>=4;
+    }
+
+    el("exNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("exPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("exSlider").addEventListener("input",function(e){a=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

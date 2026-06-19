@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>積分の応用 — 囲まれた面積</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>積分の応用 — 囲まれた面積</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで水平線 <b>y = k</b> を動かすと、囲まれた面積 S が変わります。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>囲まれた面積 = ∫(上の関数 − 下の関数)dx</b>。2曲線の<b>交点が積分区間</b>になります。ここでは上が y=k、下が y=x² で、交点 x=±√k が範囲です。</div>
+
+  <!-- 放物線 y=x² と水平線 y=k で囲まれた面積 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="arBadge">step 1 / 4</span>
+        <span class="steptitle" id="arTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="arPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="arNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">放物線と水平線で囲まれた面積</h2>
+    <p class="hint">y = x² と y = k （k&gt;0）で囲まれた面積。S = ∫(上−下)dx = (4/3)k√k になります。</p>
+    <div class="stage">
+      <svg id="arSvg" viewBox="0 0 600 360" role="img" aria-label="放物線 y=x^2 と直線 y=k で囲まれた面積">
+        <line id="a_ax" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="a_ay" stroke="var(--gray)" stroke-width="1.2"></line>
+        <g id="a_ticks"></g>
+        <path id="a_fill" data-ms="2" fill="var(--blue)" fill-opacity="0.16" stroke="none"></path>
+        <line id="a_line" data-ms="1" stroke="var(--green)" stroke-width="2.2" stroke-dasharray="7 5"></line>
+        <text id="a_linel" data-ms="1" font-size="15" fill="var(--green)" text-anchor="start">y = k</text>
+        <path id="a_curve" data-ms="1" fill="none" stroke="var(--blue)" stroke-width="2.6"></path>
+        <text id="a_curvel" data-ms="1" font-size="15" font-style="italic" fill="var(--blue)" text-anchor="start">y = x²</text>
+        <line id="a_vL" data-ms="3" stroke="var(--gray)" stroke-width="1.1" stroke-dasharray="4 4"></line>
+        <line id="a_vR" data-ms="3" stroke="var(--gray)" stroke-width="1.1" stroke-dasharray="4 4"></line>
+        <circle id="a_pL" data-ms="3" r="5" fill="var(--red)"></circle>
+        <circle id="a_pR" data-ms="3" r="5" fill="var(--red)"></circle>
+        <text id="a_lL" data-ms="3" font-size="14" fill="var(--red)" text-anchor="middle">−√k</text>
+        <text id="a_lR" data-ms="3" font-size="14" fill="var(--red)" text-anchor="middle">+√k</text>
+        <text id="a_area" data-ms="4" font-size="16" font-weight="600" fill="var(--blue)" text-anchor="middle">S</text>
+        <text id="a_xl" font-size="14" fill="var(--sub)" text-anchor="middle">x</text>
+        <text id="a_yl" font-size="14" fill="var(--sub)" text-anchor="middle">y</text>
+      </svg>
+    </div>
+    <p class="cap" id="arCap"></p>
+    <div class="ctl">
+      <label for="arSlider">k を動かす</label>
+      <input type="range" id="arSlider" min="1" max="6" step="0.5" value="4">
+      <span class="out" id="arOut">k=4.0</span>
+    </div>
+    <div class="relation" id="arRel">
+      <span style="color:var(--red)">交点 x = ±√k</span> = ±<span id="arRoot">2.00</span>
+      <span style="margin:0 10px; color:var(--sub)">→</span>
+      <span style="color:var(--blue)">S = (4/3)k√k</span> = <span id="arS">10.67</span>
+      <span class="eqnote" id="arNote"></span>
+    </div>
+    <div class="relation" style="margin-top:8px; font-size:15px;">
+      <span style="color:var(--sub)">積分の式：</span>
+      S = <span id="arExpr">∫<sub>−√k</sub><sup>+√k</sup> (k − x²) dx</span>
+    </div>
+  </section>
+
+  <footer><a href="kyozai.html" style="color:var(--info-ink);">← 教材ライブラリ</a> ・ © AI塾 / trillion-ai-juku.com ・ 数式記号や図のラベルは指導用に整理した表記です。</footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 放物線 y=x^2 と水平線 y=k で囲まれた面積 ===== */
+  (function(){
+    /* x in [-3,3], y in [0,7] にマップ */
+    var L=58,R=560,T=24,B=312, XMIN=-3,XMAX=3, YMIN=0,YMAX=7, step=1, k=4;
+    function GX(v){return L+((v-XMIN)/(XMAX-XMIN))*(R-L);}
+    function GY(v){return B-((v-YMIN)/(YMAX-YMIN))*(B-T);}
+    function f(v){return v*v;}
+    var info=[null,
+      {t:"放物線と直線", c:"放物線 y = x² と水平線 y = k をかきます。スライダーで k を上下に動かせます。"},
+      {t:"囲まれた領域", c:"上の関数 y=k から下の関数 y=x² を引いた差 (k − x²) が正、つまり k ≧ x² の部分が囲まれた領域です。"},
+      {t:"交点＝積分区間", c:"x² = k を解くと交点 x = ±√k。この2点が積分区間の端になります（赤い点）。"},
+      {t:"面積を求める", c:"S = ∫(k − x²)dx = [kx − x³/3] を計算すると S = (4/3)k√k。これが囲まれた面積です。"}];
+
+    /* 放物線 y=x^2 のパス (描画範囲は表示yの上限まで) */
+    function curve(){
+      var p=[], N=120;
+      for(var i=0;i<=N;i++){
+        var v=XMIN+(XMAX-XMIN)*i/N;
+        var y=f(v);
+        if(y>YMAX) continue;
+        p.push((p.length?"L":"M")+GX(v).toFixed(1)+","+GY(y).toFixed(1));
+      }
+      return p.join(" ");
+    }
+
+    /* 囲まれた領域 (-√k から +√k まで、上=k線、下=放物線) の塗りパス */
+    function fillPath(){
+      var rt=Math.sqrt(k), N=80, p=[];
+      /* 上辺: 左の交点から右の交点へ (y=k) */
+      p.push("M"+GX(-rt).toFixed(1)+","+GY(k).toFixed(1));
+      p.push("L"+GX(rt).toFixed(1)+","+GY(k).toFixed(1));
+      /* 下辺: 右から左へ放物線に沿って戻る */
+      for(var i=0;i<=N;i++){
+        var v=rt-(2*rt)*i/N;
+        p.push("L"+GX(v).toFixed(1)+","+GY(f(v)).toFixed(1));
+      }
+      p.push("Z");
+      return p.join(" ");
+    }
+
+    function ticks(){
+      var g=el("a_ticks"); g.innerHTML="";
+      function tk(vx,lab){var t=GX(vx);
+        g.innerHTML+='<line x1="'+t.toFixed(1)+'" y1="'+B+'" x2="'+t.toFixed(1)+'" y2="'+(B+5)+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+t.toFixed(1)+'" y="'+(B+20)+'" font-size="12" fill="var(--sub)" text-anchor="middle">'+lab+'</text>';}
+      function ty(vy,lab){var t=GY(vy);
+        g.innerHTML+='<line x1="'+L+'" y1="'+t.toFixed(1)+'" x2="'+(L-5)+'" y2="'+t.toFixed(1)+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+(L-9)+'" y="'+(t+4).toFixed(1)+'" font-size="12" fill="var(--sub)" text-anchor="end">'+lab+'</text>';}
+      tk(-3,"-3"); tk(-2,"-2"); tk(-1,"-1"); tk(1,"1"); tk(2,"2"); tk(3,"3");
+      ty(1,"1"); ty(2,"2"); ty(3,"3"); ty(4,"4"); ty(5,"5"); ty(6,"6");
+    }
+
+    function render(){
+      /* 軸: x軸は y=0、y軸は x=0 */
+      setLine("a_ax",L,GY(0),R,GY(0));
+      setLine("a_ay",GX(0),B,GX(0),T);
+      ticks();
+
+      var rt=Math.sqrt(k);   /* k>=1 なので常に正・実数 */
+      attr("a_curve","d",curve());
+      setT("a_curvel",GX(2.55),GY(f(2.55))-6,null);
+
+      /* 水平線 y=k */
+      setLine("a_line",L,GY(k),R,GY(k));
+      setT("a_linel",R-58,GY(k)-8,null);
+
+      /* 塗り */
+      attr("a_fill","d",fillPath());
+
+      /* 交点と垂線 */
+      setC("a_pL",GX(-rt),GY(k)); setC("a_pR",GX(rt),GY(k));
+      setLine("a_vL",GX(-rt),GY(k),GX(-rt),GY(0));
+      setLine("a_vR",GX(rt),GY(k),GX(rt),GY(0));
+      setT("a_lL",GX(-rt),GY(0)+18,null);
+      setT("a_lR",GX(rt),GY(0)+18,null);
+
+      /* 面積ラベル (領域の中央あたり) */
+      setT("a_area",GX(0),GY(k*0.45),null);
+
+      /* 軸ラベル */
+      setT("a_xl",R-6,GY(0)-8,null);
+      setT("a_yl",GX(0)+12,T+10,null);
+
+      vis("arSvg",step);
+
+      var S=(4/3)*k*rt;   /* = (4/3)k^{3/2} */
+      el("arRoot").textContent=rt.toFixed(2);
+      el("arS").textContent=S.toFixed(2);
+      el("arOut").textContent="k="+k.toFixed(1);
+      el("arNote").textContent="";
+      el("arRel").className="relation";
+
+      el("arBadge").textContent="step "+step+" / 4";
+      el("arTitle").textContent=info[step].t;
+      el("arCap").textContent=info[step].c;
+      el("arPrev").disabled=step<=1; el("arNext").disabled=step>=4;
+    }
+    el("arNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("arPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("arSlider").addEventListener("input",function(e){var v=parseFloat(e.target.value); if(!isFinite(v))v=4; k=Math.min(6,Math.max(1,v)); render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

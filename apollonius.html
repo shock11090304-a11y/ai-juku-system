@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>軌跡 — アポロニウスの円 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>軌跡 — アポロニウスの円</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで比 <b>k</b> を動かすと、軌跡が <b>円</b> になったり <b>直線</b> になったりします。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>PA:PB=k:1（k≠1）の軌跡は円</b>（アポロニウスの円）。ただし <b>k=1</b> のときだけは線分 AB の垂直二等分線（直線 x=0）になります。境界 k=1 の場合分けが命です。</div>
+
+  <!-- ① アポロニウスの円 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="apBadge">step 1 / 4</span>
+        <span class="steptitle" id="apTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="apPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="apNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">アポロニウスの円</h2>
+    <p class="hint">2定点 A(-2,0), B(2,0) から PA:PB=k:1 を満たす点 P の軌跡。スライダーで k を動かすと軌跡が変わります。</p>
+    <div class="stage">
+      <svg id="apSvg" viewBox="0 0 600 360" role="img" aria-label="アポロニウスの円の作図">
+        <!-- 軸 -->
+        <line id="a_ax" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="a_ay" stroke="var(--gray)" stroke-width="1.2"></line>
+        <g id="a_ticks"></g>
+        <!-- 軌跡(円) -->
+        <circle id="a_locus" data-ms="4" fill="none" stroke="var(--blue)" stroke-width="2.6"></circle>
+        <!-- 軌跡(垂直二等分線) -->
+        <line id="a_locusL" data-ms="3" stroke="var(--blue)" stroke-width="2.6"></line>
+        <!-- PA, PB の線分 -->
+        <line id="a_pa" data-ms="2" stroke="var(--green)" stroke-width="2.4"></line>
+        <line id="a_pb" data-ms="2" stroke="var(--red)" stroke-width="2.4"></line>
+        <!-- 定点と P -->
+        <circle id="a_pA" data-ms="1" r="4.5" fill="var(--ink)"></circle>
+        <circle id="a_pB" data-ms="1" r="4.5" fill="var(--ink)"></circle>
+        <circle id="a_pP" data-ms="2" r="5.5" fill="var(--red)"></circle>
+        <circle id="a_pC" data-ms="4" r="3.5" fill="var(--blue)"></circle>
+        <!-- ラベル -->
+        <text id="a_lA" data-ms="1" font-size="14" text-anchor="middle" fill="var(--ink)">A(-2,0)</text>
+        <text id="a_lB" data-ms="1" font-size="14" text-anchor="middle" fill="var(--ink)">B(2,0)</text>
+        <text id="a_lP" data-ms="2" font-size="14" text-anchor="middle" fill="var(--red)">P</text>
+        <text id="a_lPA" data-ms="2" font-size="13" text-anchor="middle" fill="var(--green)">PA</text>
+        <text id="a_lPB" data-ms="2" font-size="13" text-anchor="middle" fill="var(--red)">PB</text>
+        <text id="a_lC" data-ms="4" font-size="12" text-anchor="middle" fill="var(--blue)">中心</text>
+        <text id="a_xl" font-size="14" fill="var(--sub)" text-anchor="middle">x</text>
+        <text id="a_yl" font-size="14" fill="var(--sub)" text-anchor="middle">y</text>
+      </svg>
+    </div>
+    <p class="cap" id="apCap"></p>
+    <div class="ctl">
+      <label for="apSlider">比 k を動かす</label>
+      <input type="range" id="apSlider" min="0.3" max="3" step="0.1" value="2">
+      <span class="out" id="apOut">k=2.0</span>
+    </div>
+    <div class="relation" id="apRel">
+      <span style="color:var(--green)">PA</span> = <span id="apPA">0.00</span>
+      <span style="margin:0 6px">,</span>
+      <span style="color:var(--red)">PB</span> = <span id="apPB">0.00</span>
+      <span style="margin:0 8px; font-weight:600">→</span>
+      PA/PB = <span id="apRatio">0.00</span>
+      <span class="eqnote" id="apEq"></span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a>
+    ・ © AI塾 / trillion-ai-juku.com ・ 数式記号や図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== アポロニウスの円 ===== */
+  (function(){
+    /* 数学座標 x∈[-6,6], y∈[-5,5] を viewBox 0..600 x 0..360 に写す(原点中央, y反転) */
+    var XMIN=-6, XMAX=6, YMIN=-5, YMAX=5;
+    var W=600, H=360;
+    var S=30, OX=300, OY=180;   /* 等スケール(x,yとも30px/単位): 軌跡円が真円に見える */
+    function MX(x){return OX + x*S;}
+    function MY(y){return OY - y*S;}
+    function SCX(){return S;}
+    function SCY(){return S;}
+    var Ax=-2, Bx=2;                                  /* 定点 */
+    var step=1, k=2;
+
+    var info=[null,
+      {t:"2定点と比", c:"2定点 A(-2,0), B(2,0) を結びます。点 P が満たす条件は PA:PB = k:1。スライダーで k を変えられます。"},
+      {t:"条件を満たす点P", c:"PA = k·PB となる点 P を1つとり、PA(緑)と PB(赤)を結びます。読み出しで PA/PB ≈ k を検算しましょう。"},
+      {t:"k=1 のとき", c:"k=1 なら PA=PB。A,B から等距離の点は線分 AB の垂直二等分線、すなわち直線 x=0 です（円にならない！）。"},
+      {t:"k≠1 はアポロニウスの円", c:"k≠1 のとき軌跡は円。中心 (-2(1+k²)/(1-k²), 0)、半径 √(中心x² - 4)。k で中心と半径が決まります。"}];
+
+    function ticks(){
+      var g=el("a_ticks"); g.innerHTML="";
+      function tk(vx){var t=MX(vx); if(vx===0) return;
+        g.innerHTML+='<line x1="'+t.toFixed(1)+'" y1="'+MY(0)+'" x2="'+t.toFixed(1)+'" y2="'+(MY(0)+5)+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+t.toFixed(1)+'" y="'+(MY(0)+18)+'" font-size="11" fill="var(--sub)" text-anchor="middle">'+vx+'</text>';}
+      function ty(vy){var t=MY(vy); if(vy===0) return;
+        g.innerHTML+='<line x1="'+MX(0)+'" y1="'+t.toFixed(1)+'" x2="'+(MX(0)-5)+'" y2="'+t.toFixed(1)+'" stroke="var(--gray)" stroke-width="1"/>'+
+        '<text x="'+(MX(0)-9)+'" y="'+(t+4).toFixed(1)+'" font-size="11" fill="var(--sub)" text-anchor="end">'+vy+'</text>';}
+      for(var i=XMIN;i<=XMAX;i++) tk(i);
+      for(var j=YMIN;j<=YMAX;j++) ty(j);
+    }
+
+    /* P を軌跡上にとる。
+       円の場合: 中心(cx,0)から半径rだけ真上(数学座標で +y) の円周上の点 -> (cx, r)
+       直線の場合(k=1): x=0 上の点 y=2.5 */
+    function render(){
+      /* 軸 */
+      setLine("a_ax", MX(XMIN), MY(0), MX(XMAX), MY(0));
+      setLine("a_ay", MX(0), MY(YMAX), MX(0), MY(YMIN));
+      ticks();
+      setT("a_xl", MX(XMAX)-6, MY(0)-8, null);
+      setT("a_yl", MX(0)+12, MY(YMAX)+4, null);
+
+      /* 定点 */
+      setC("a_pA", MX(Ax), MY(0)); setC("a_pB", MX(Bx), MY(0));
+      setT("a_lA", MX(Ax), MY(0)+34, null); setT("a_lB", MX(Bx), MY(0)+34, null);
+
+      var isLine = Math.abs(k-1) < 1e-9;   /* k=1 -> 直線分岐(0除算回避) */
+      var Px, Py, cx=0, r=0;
+
+      if(isLine){
+        /* 垂直二等分線 x=0 を描く。円は隠す */
+        el("a_locus").style.display="none";
+        el("a_locusL").style.display="";
+        setLine("a_locusL", MX(0), MY(YMAX), MX(0), MY(YMIN));
+        el("a_pC").style.display="none"; el("a_lC").style.display="none";
+        /* サンプルP: x=0, y=2.5 */
+        Px=0; Py=2.5;
+      } else {
+        el("a_locusL").style.display="none";
+        el("a_locus").style.display="";
+        el("a_pC").style.display=""; el("a_lC").style.display="";
+        /* 中心 cx = -2(1+k^2)/(1-k^2)。A=-2,B=2 一般の場合の特化(d=2) */
+        cx = -2*(1+k*k)/(1-k*k);
+        /* 半径: 円の方程式 (x+2)^2+y^2 = k^2((x-2)^2+y^2) を整理
+           => 検算用に直接 r^2 = cx^2 - 4 を使う */
+        var r2 = cx*cx - 4;
+        r = (r2>0) ? Math.sqrt(r2) : 0;
+        /* 等スケールなので r=r*S で真円。transform は使わない。 */
+        var e=el("a_locus");
+        e.setAttribute("cx", MX(cx));
+        e.setAttribute("cy", MY(0));
+        e.setAttribute("r", r*S);
+        e.removeAttribute("transform");
+        setC("a_pC", MX(cx), MY(0));
+        setT("a_lC", MX(cx), MY(0)-12, null);
+        /* サンプルP: 円周上 真上(数学座標) -> (cx, r) */
+        Px=cx; Py=r;
+      }
+
+      /* P と PA,PB */
+      setC("a_pP", MX(Px), MY(Py));
+      setT("a_lP", MX(Px)+14, MY(Py)-6, null);
+      setLine("a_pa", MX(Ax), MY(0), MX(Px), MY(Py));
+      setLine("a_pb", MX(Bx), MY(0), MX(Px), MY(Py));
+      setT("a_lPA", (MX(Ax)+MX(Px))/2 - 8, (MY(0)+MY(Py))/2 - 6, null);
+      setT("a_lPB", (MX(Bx)+MX(Px))/2 + 8, (MY(0)+MY(Py))/2 - 6, null);
+
+      /* 距離の検算 */
+      var PA=Math.sqrt((Px-Ax)*(Px-Ax)+Py*Py);
+      var PB=Math.sqrt((Px-Bx)*(Px-Bx)+Py*Py);
+      var ratio = (PB>1e-9) ? PA/PB : 0;
+
+      vis("apSvg", step);
+
+      el("apOut").textContent="k="+k.toFixed(1);
+      el("apPA").textContent=PA.toFixed(2);
+      el("apPB").textContent=PB.toFixed(2);
+      el("apRatio").textContent=ratio.toFixed(2);
+      var ok = Math.abs(ratio-k) < 0.02;
+      el("apEq").textContent = ok ? ("≈ k="+k.toFixed(1)+" ✓") : "";
+      el("apRel").className = ok ? "relation eq" : "relation";
+
+      el("apBadge").textContent="step "+step+" / 4";
+      el("apTitle").textContent=info[step].t;
+      el("apCap").textContent=info[step].c;
+      el("apPrev").disabled = step<=1;
+      el("apNext").disabled = step>=4;
+    }
+
+    el("apNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("apPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("apSlider").addEventListener("input",function(e){k=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>分詞構文 — 接続詞からの書き換え</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px; flex-wrap:wrap;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .toggle{display:flex; gap:8px; flex:1; flex-wrap:wrap;}
+  .toggle button.tg{flex:1; min-width:120px; justify-content:center; font-size:14px;}
+  .toggle button.tg[aria-pressed="true"]{background:var(--info-bg); border-color:var(--info-ink); color:var(--info-ink); font-weight:600;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:15px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--sub);}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>分詞構文 — 接続詞からの書き換え</h1>
+    <p class="lead">「次へ／戻る」で接続詞節が1ステップずつ分詞構文へ変形。トグルで <b>理由 / 時</b> の例文ペアを切り替えられます。</p>
+  </header>
+
+  <div class="takeaway">分詞構文の作り方 = <b>①接続詞を消す → ②(主節と同じ)主語を消す → ③動詞を ~ing(現在分詞)に</b>。時・理由・条件などを表します。</div>
+
+  <!-- 分詞構文への書き換え -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="pBadge">step 1 / 4</span>
+        <span class="steptitle" id="pTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="pPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="pNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">接続詞節を分詞構文に書き換える</h2>
+    <p class="hint">接続詞文（上）の <b>接続詞・主語</b> を消し、<b>動詞を ~ing</b> にすると分詞構文（下）になります。</p>
+    <div class="stage">
+      <svg id="pSvg" viewBox="0 0 600 360" role="img" aria-label="接続詞節から分詞構文への書き換え図">
+        <!-- 上段ラベル: 接続詞文 -->
+        <text x="30" y="40" font-size="14" fill="var(--sub)" text-anchor="start">subordinate clause + main clause</text>
+
+        <!-- 上段ボックス: 接続詞 / 主語 / 動詞 / 残り -->
+        <rect id="b_conj" x="30" y="54" width="138" height="46" rx="8" fill="none" stroke="var(--red)" stroke-width="2"></rect>
+        <text id="t_conj" x="99" y="82" font-size="17" text-anchor="middle" fill="var(--ink)">Because</text>
+        <text x="99" y="118" font-size="12" text-anchor="middle" fill="var(--red)">conjunction</text>
+
+        <rect id="b_subj" x="176" y="54" width="84" height="46" rx="8" fill="none" stroke="var(--blue)" stroke-width="2"></rect>
+        <text id="t_subj" x="218" y="82" font-size="17" text-anchor="middle" fill="var(--ink)">she</text>
+        <text x="218" y="118" font-size="12" text-anchor="middle" fill="var(--blue)">subject</text>
+
+        <rect id="b_verb" x="268" y="54" width="120" height="46" rx="8" fill="none" stroke="var(--green)" stroke-width="2"></rect>
+        <text id="t_verb" x="328" y="82" font-size="17" text-anchor="middle" fill="var(--ink)">felt</text>
+        <text x="328" y="118" font-size="12" text-anchor="middle" fill="var(--green)">verb</text>
+
+        <rect id="b_rest" x="396" y="54" width="104" height="46" rx="8" fill="none" stroke="var(--gray)" stroke-width="1.5"></rect>
+        <text id="t_rest" x="448" y="82" font-size="16" text-anchor="middle" fill="var(--ink)">tired,</text>
+
+        <!-- 打ち消し線 (接続詞・主語) -->
+        <line id="x_conj" data-ms="2" x1="36" y1="77" x2="162" y2="77" stroke="var(--red)" stroke-width="2.5"></line>
+        <line id="x_subj" data-ms="3" x1="182" y1="77" x2="254" y2="77" stroke="var(--blue)" stroke-width="2.5"></line>
+
+        <!-- 変形矢印 -->
+        <line id="arr" data-ms="4" x1="300" y1="150" x2="300" y2="196" stroke="var(--info-ink)" stroke-width="2.5"></line>
+        <polyline id="arrh" data-ms="4" points="292,186 300,198 308,186" fill="none" stroke="var(--info-ink)" stroke-width="2.5"></polyline>
+        <text id="arrlab" data-ms="4" x="318" y="178" font-size="13" text-anchor="start" fill="var(--info-ink)">~ing</text>
+
+        <!-- 下段ラベル: 分詞構文 -->
+        <text data-ms="4" x="30" y="232" font-size="14" fill="var(--sub)" text-anchor="start">participle phrase + main clause</text>
+
+        <!-- 下段ボックス: 分詞 (~ing) / 残り -->
+        <rect id="b_part" data-ms="4" x="30" y="246" width="150" height="50" rx="8" fill="var(--ok-bg)" stroke="var(--green)" stroke-width="2.5"></rect>
+        <text id="t_part" data-ms="4" x="105" y="277" font-size="19" font-weight="600" text-anchor="middle" fill="var(--green)">Feeling</text>
+        <text data-ms="4" x="105" y="314" font-size="12" text-anchor="middle" fill="var(--green)">participle (~ing)</text>
+
+        <rect id="b_rest2" data-ms="4" x="188" y="246" width="104" height="50" rx="8" fill="none" stroke="var(--gray)" stroke-width="1.5"></rect>
+        <text id="t_rest2" data-ms="4" x="240" y="277" font-size="16" text-anchor="middle" fill="var(--ink)">tired,</text>
+
+        <text id="t_main2" data-ms="4" x="304" y="277" font-size="16" text-anchor="start" fill="var(--sub)">she went to bed early.</text>
+
+        <!-- 主節 (上段の続き、常時表示) -->
+        <text id="t_main1" x="30" y="160" font-size="14" text-anchor="start" fill="var(--sub)">… she went to bed early.</text>
+      </svg>
+    </div>
+    <p class="cap" id="pCap"></p>
+    <div class="ctl">
+      <label>例文ペア</label>
+      <div class="toggle" role="group" aria-label="例文ペアの切替">
+        <button class="tg" id="tgReason" aria-pressed="true">理由 (Because)</button>
+        <button class="tg" id="tgTime" aria-pressed="false">時 (When)</button>
+      </div>
+    </div>
+    <div class="relation" id="pRel">
+      <span style="color:var(--red)">分詞構文</span> = 接続詞・主語を消し、動詞を <span style="color:var(--green)">~ing</span> に
+      <span class="eqnote" id="pEq"></span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a> ・ © AI塾 / trillion-ai-juku.com ・ 文法記号や図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function setT(id,txt){var e=el(id);if(e&&txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 分詞構文への書き換え ===== */
+  (function(){
+    var step=1, mode="reason";
+    // 例文ペア(改変しない)
+    var ex={
+      reason:{
+        conj:"Because", subj:"she", verb:"felt", rest:"tired,",
+        part:"Feeling", main:"she went to bed early.",
+        full:"Because she felt tired, she went to bed early.",
+        pc:"Feeling tired, she went to bed early.",
+        ja:"疲れていたので早く寝た", rel:"原因・理由 (because)"
+      },
+      time:{
+        conj:"When", subj:"he", verb:"saw", rest:"the dog,",
+        part:"Seeing", main:"he ran away.",
+        full:"When he saw the dog, he ran away.",
+        pc:"Seeing the dog, he ran away.",
+        ja:"犬を見たとき逃げた", rel:"時 (when)"
+      }
+    };
+    var info=[null,
+      {t:"分詞構文とは", c:"接続詞+主語+動詞の「副詞節」を、分詞句にギュッと圧縮した形が分詞構文です。下のトグルで理由・時の例を切り替えられます。"},
+      {t:"① 接続詞を消す", c:"まず文頭の接続詞 (Because / When …) を消します。意味は前後関係から読み取ります。"},
+      {t:"② 主語を消す", c:"副詞節の主語が主節の主語と同じとき、その主語を消します(2つとも同じ人なので省略できます)。"},
+      {t:"③ 動詞を ~ing に → 完成", c:"残った動詞を現在分詞 (~ing) にして文頭へ。これで分詞構文の完成です。完了・否定は発展ですが、まずはこの3手順が基本です。"}];
+
+    function render(){
+      var e=ex[mode];
+      // 上段ボックスの語(常に元の文を表示、消去はstepで×線)
+      setT("t_conj",e.conj); setT("t_subj",e.subj); setT("t_verb",e.verb); setT("t_rest",e.rest);
+      setT("t_main1","… "+e.main);
+      // 下段(完成形)
+      setT("t_part",e.part); setT("t_rest2",e.rest); setT("t_main2",e.main);
+
+      // 動詞ボックスの強調(step4で緑強調)
+      el("b_verb").setAttribute("stroke-width", step>=4?"3":"2");
+      el("t_verb").setAttribute("fill", step>=4?"var(--green)":"var(--ink)");
+
+      vis("pSvg",step);
+
+      el("pBadge").textContent="step "+step+" / 4";
+      el("pTitle").textContent=info[step].t;
+      el("pCap").textContent=info[step].c;
+      el("pPrev").disabled=step<=1; el("pNext").disabled=step>=4;
+
+      // 読み出し: 完成時に和訳と例文を出す
+      var done=step>=4;
+      el("pRel").className=done?"relation eq":"relation";
+      el("pEq").textContent=done?("→ "+e.pc+"（"+e.ja+"）"):"";
+
+      // トグルの押下状態
+      el("tgReason").setAttribute("aria-pressed", mode==="reason"?"true":"false");
+      el("tgTime").setAttribute("aria-pressed", mode==="time"?"true":"false");
+    }
+    el("pNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("pPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("tgReason").addEventListener("click",function(){mode="reason";render();});
+    el("tgTime").addEventListener("click",function(){mode="time";render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>
