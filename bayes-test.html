@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>条件付き確率とベイズ（検査の偽陽性） — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8; --amber:#f59e0b;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap; min-width:118px;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:64px; text-align:right;}
+  .legend{display:flex; gap:16px; flex-wrap:wrap; margin:10px 4px 2px; font-size:13px; color:var(--sub);}
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .legend i{width:13px; height:13px; border-radius:3px; display:inline-block;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.warn{background:#fff4e5; border-color:var(--amber); color:#9a5b00;}
+  @media (prefers-color-scheme: dark){ .relation.warn{background:#3a2a10; color:#f3c279;} }
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink);}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>条件付き確率とベイズ（検査の偽陽性）</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーを動かすと、<b>感度の高い検査でも罹患率が低いと P(病気|陽性) が意外に低い</b>ことが見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>P(陽性|病気) と P(病気|陽性) は別物</b>。前者（感度）が高くても、罹患率が低いと健康な人の偽陽性が数で上回り、後者は小さくなります。1000人の自然頻度で数えると直感的にわかります。</div>
+
+  <!-- 検査の偽陽性 自然頻度グリッド -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="bBadge">step 1 / 4</span>
+        <span class="steptitle" id="bTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="bPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="bNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">検査の偽陽性</h2>
+    <p class="hint">1000人を1マス＝1人で並べます。色分けで「陽性のうち本当に病気な人」の割合を数えます。</p>
+    <div class="stage">
+      <svg id="bSvg" viewBox="0 0 600 360" role="img" aria-label="1000人を50列20行で並べた検査結果のグリッド">
+        <g id="b_grid"></g>
+        <rect id="b_posbox" data-ms="4" fill="none" stroke="var(--blue)" stroke-width="2.5" rx="4"></rect>
+        <text id="b_poslab" data-ms="4" font-size="13" fill="var(--blue)" text-anchor="start"></text>
+      </svg>
+    </div>
+    <p class="cap" id="bCap"></p>
+    <div class="legend">
+      <span><i style="background:var(--red)"></i>真陽性（病気で陽性）</span>
+      <span><i style="background:var(--amber)"></i>偽陽性（健康で陽性）</span>
+      <span><i style="background:var(--gray);opacity:.45"></i>陰性（その他）</span>
+    </div>
+    <div class="ctl">
+      <label for="bPrev2">罹患率 P(病気)</label>
+      <input type="range" id="bPrev2" min="1" max="30" step="1" value="1">
+      <span class="out" id="bPrevOut">1%</span>
+    </div>
+    <div class="ctl">
+      <label for="bSens">感度 P(陽性|病気)</label>
+      <input type="range" id="bSens" min="80" max="99" step="1" value="95">
+      <span class="out" id="bSensOut">95%</span>
+    </div>
+    <div class="ctl">
+      <label for="bSpec">特異度 P(陰性|健康)</label>
+      <input type="range" id="bSpec" min="80" max="99" step="1" value="90">
+      <span class="out" id="bSpecOut">90%</span>
+    </div>
+    <div class="relation" id="bRel">
+      <span style="color:var(--red)">真陽性</span> <span id="bTP">10</span> /
+      <span style="color:var(--blue)">陽性総数</span> <span id="bPos">109</span>
+      &nbsp;→&nbsp; <b>P(病気|陽性) = <span id="bP">9%</span></b>
+      <span class="eqnote" id="bNote"></span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ グリッドは1000人への四捨五入近似で、表示の P は丸めた人数 真陽性/陽性総数 から算出しています。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+  function clamp(v,lo,hi){return v<lo?lo:(v>hi?hi:v);}
+
+  (function(){
+    var COLS=50, ROWS=20, N=COLS*ROWS;          /* 1000人 */
+    var GX0=40, GY0=18, CELL=10.4, GAP=1.0;      /* グリッド配置 */
+    var step=1, prev=1, sens=95, spec=90;
+    var cRed=getCol("--red"), cAmber="#f59e0b", cGray=getCol("--gray");
+    function getCol(name){
+      var v=getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v||"#888";
+    }
+    var info=[null,
+      {t:"1000人を並べる", c:"集団を1000人とし、1マス＝1人で並べます。罹患率が低いほど病気の人は全体のごく一部。まず全員を灰色（未判定）で表示します。"},
+      {t:"真陽性（赤）", c:"病気の人のうち検査で陽性になる人＝真陽性。感度が高いほど病気の人をよく拾えます。赤マスがそれです。"},
+      {t:"偽陽性（橙）", c:"健康なのに陽性と出てしまう人＝偽陽性。特異度が100%でない限り必ず出ます。健康な人は数が多いので、偽陽性は意外と多くなります。"},
+      {t:"P(病気|陽性)", c:"青枠が「陽性」と判定された全員。その中で本当に病気（赤）の割合が P(病気|陽性) です。罹患率が低いと、赤より橙が多くなり、この割合は小さくなります。"}];
+
+    /* セル中心座標 */
+    function cellXY(idx){
+      var r=Math.floor(idx/COLS), c=idx%COLS;
+      return {x:GX0+c*(CELL+GAP), y:GY0+r*(CELL+GAP)};
+    }
+
+    function compute(){
+      var p=prev/100, se=sens/100, sp=spec/100;
+      var sick=Math.round(N*p);
+      var well=N-sick;
+      var TP=Math.round(sick*se);
+      var FP=Math.round(well*(1-sp));
+      var pos=TP+FP;
+      return {sick:sick, well:well, TP:TP, FP:FP, pos:pos};
+    }
+
+    function drawGrid(d){
+      var g=el("b_grid"); var html="";
+      /* 並び順: TP(赤) -> FP(橙) -> 灰。step制御で色を出す。 */
+      for(var i=0;i<N;i++){
+        var p=cellXY(i);
+        var fill=cGray, op="0.45";
+        if(i<d.TP){ if(step>=2){fill=cRed; op="1";} }
+        else if(i<d.TP+d.FP){ if(step>=3){fill=cAmber; op="1";} }
+        html+='<rect x="'+p.x.toFixed(1)+'" y="'+p.y.toFixed(1)+'" width="'+CELL.toFixed(1)+'" height="'+CELL.toFixed(1)+'" rx="1.6" fill="'+fill+'" fill-opacity="'+op+'"/>';
+      }
+      g.innerHTML=html;
+    }
+
+    function posBox(d){
+      /* 陽性グループ(先頭 pos マス)を囲む枠。連続ブロックなので最初と最後のセルから矩形範囲を出す。 */
+      if(d.pos<=0){ attr("b_posbox","width",0); attr("b_posbox","height",0); return; }
+      var first=cellXY(0);
+      var lastIdx=d.pos-1;
+      var lr=Math.floor(lastIdx/COLS);
+      /* 矩形は先頭から lr 行目の末尾セルまでを大まかに囲む（行ブロック全体） */
+      var rightFull=GX0+(COLS-1)*(CELL+GAP)+CELL;
+      var bottom=GY0+lr*(CELL+GAP)+CELL;
+      var x=first.x-2.5, y=first.y-2.5;
+      var w=(rightFull-first.x)+5, h=(bottom-first.y)+5;
+      attr("b_posbox","x",x.toFixed(1)); attr("b_posbox","y",y.toFixed(1));
+      attr("b_posbox","width",w.toFixed(1)); attr("b_posbox","height",h.toFixed(1));
+      setT("b_poslab",first.x, y+h+15, "← この青枠の中が「陽性」"+d.pos+"人");
+    }
+
+    function render(){
+      var d=compute();
+      drawGrid(d);
+      posBox(d);
+      vis("bSvg",step);
+
+      /* 読み出し */
+      el("bPrevOut").textContent=prev+"%";
+      el("bSensOut").textContent=sens+"%";
+      el("bSpecOut").textContent=spec+"%";
+      el("bTP").textContent=d.TP;
+      el("bPos").textContent=d.pos;
+
+      var Pgrid, Pexact;
+      if(d.pos>0){
+        Pgrid=d.TP/d.pos*100;
+        var pp=prev/100, se=sens/100, sp=spec/100;
+        Pexact=pp*se/(pp*se+(1-pp)*(1-sp))*100;
+      }
+      var Pdisp;
+      if(d.pos<=0){ Pdisp="—"; el("bP").textContent="—"; }
+      else {
+        Pdisp=(Pgrid>=10?Pgrid.toFixed(0):Pgrid.toFixed(1));
+        el("bP").textContent=Pdisp+"%";
+      }
+
+      var rel=el("bRel"), note=el("bNote");
+      if(d.pos<=0){
+        rel.className="relation";
+        note.textContent="陽性者が0人です。スライダーを調整してください。";
+      } else if(Pgrid<50){
+        rel.className="relation warn";
+        note.textContent="陽性でも約"+Math.round(Pgrid)+"%しか病気でない＝偽陽性が多い！（厳密式 約"+Pexact.toFixed(1)+"%）";
+        note.style.color="";
+      } else {
+        rel.className="relation";
+        note.textContent="（厳密式でも約"+Pexact.toFixed(0)+"%）";
+        note.style.color="var(--sub)";
+      }
+
+      el("bBadge").textContent="step "+step+" / 4";
+      el("bTitle").textContent=info[step].t;
+      el("bCap").textContent=info[step].c;
+      el("bPrev").disabled=step<=1;
+      el("bNext").disabled=step>=4;
+    }
+
+    el("bNext").addEventListener("click",function(){step=clamp(step+1,1,4);render();});
+    el("bPrev").addEventListener("click",function(){step=clamp(step-1,1,4);render();});
+    el("bPrev2").addEventListener("input",function(e){prev=parseInt(e.target.value,10);render();});
+    el("bSens").addEventListener("input",function(e){sens=parseInt(e.target.value,10);render();});
+    el("bSpec").addEventListener("input",function(e){spec=parseInt(e.target.value,10);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

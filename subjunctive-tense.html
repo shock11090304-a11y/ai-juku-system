@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>仮定法の時制ズレ（1つ過去へ） — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+    --ifbox:#eef4ff; --ifink:#2563eb; --thenbox:#fdeeea; --thenink:#c23a2c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a;
+           --ifbox:#16263f; --ifink:#7fb2f0; --thenbox:#3a1d18; --thenink:#f0a392; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px; flex-wrap:wrap;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .toggle{display:flex; gap:8px; flex:1; flex-wrap:wrap;}
+  .toggle button{flex:1; min-width:200px; justify-content:center; text-align:center;}
+  .toggle button.on{background:var(--blue); color:#fff; border-color:var(--blue);}
+  .toggle button.on:hover{background:var(--blue);}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .sents{display:flex; flex-direction:column; gap:10px; margin:8px 0 2px;}
+  .clausebox{border-radius:11px; padding:11px 14px; border:1px solid var(--bd);}
+  .clausebox .lab{font-size:12px; font-weight:600; opacity:.85; margin-bottom:3px;}
+  .clausebox .en{font-size:16px; font-weight:600;}
+  .clausebox .en em{font-style:normal; text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:3px;}
+  .clausebox.ifb{background:var(--ifbox); color:var(--ifink); border-color:var(--ifink);}
+  .clausebox.thenb{background:var(--thenbox); color:var(--thenink); border-color:var(--thenink);}
+  .jp{font-size:14px; color:var(--sub); margin:8px 4px 0; text-align:center;}
+  .fact{font-size:13px; color:var(--sub); margin:6px 4px 0; text-align:center; font-style:italic;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink);}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>仮定法の時制ズレ（1つ過去へ）</h1>
+    <p class="lead">「次へ／戻る」で考え方が1ステップずつ完成。下のトグルで <b>現在／過去</b> を切り替えると、時制軸の矢印と例文が連動します。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>仮定法は見かけの時制を実際より「1つ過去」へずらす</b>。現在の反実仮想 → 仮定法過去（過去形）、過去の反実仮想 → 仮定法過去完了（過去完了）。be動詞は人称を問わず <b>were</b>。</div>
+
+  <!-- 仮定法 時制ズレ -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="sBadge">step 1 / 4</span>
+        <span class="steptitle" id="sTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="sPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="sNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">仮定法の時制ズレ</h2>
+    <p class="hint">時制軸（大過去 — 過去 — 現在）の上で、実際の時制から見かけの時制へ「1つ過去（左）」へずらします。</p>
+    <div class="stage">
+      <svg id="sSvg" viewBox="0 0 600 300" role="img" aria-label="仮定法の時制ズレを示す時制軸">
+        <!-- baseline axis -->
+        <line id="ax_line" x1="60" y1="170" x2="540" y2="170" stroke="var(--gray)" stroke-width="2"></line>
+        <!-- tick marks at 大過去 / 過去 / 現在 -->
+        <line x1="150" y1="162" x2="150" y2="178" stroke="var(--gray)" stroke-width="2"></line>
+        <line x1="300" y1="162" x2="300" y2="178" stroke="var(--gray)" stroke-width="2"></line>
+        <line x1="450" y1="162" x2="450" y2="178" stroke="var(--gray)" stroke-width="2"></line>
+        <text x="150" y="198" font-size="14" text-anchor="middle" fill="var(--sub)">大過去</text>
+        <text x="300" y="198" font-size="14" text-anchor="middle" fill="var(--sub)">過去</text>
+        <text x="450" y="198" font-size="14" text-anchor="middle" fill="var(--sub)">現在</text>
+        <text x="150" y="214" font-size="11" text-anchor="middle" fill="var(--gray)">had p.p.</text>
+        <text x="300" y="214" font-size="11" text-anchor="middle" fill="var(--gray)">過去形</text>
+        <text x="450" y="214" font-size="11" text-anchor="middle" fill="var(--gray)">現在形</text>
+        <text x="540" y="155" font-size="12" text-anchor="end" fill="var(--gray)">→ 時間の流れ</text>
+
+        <!-- arrow marker defs (no external refs) -->
+        <defs>
+          <marker id="arrowGreen" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L7,3 L0,6 Z" fill="var(--green)"></path>
+          </marker>
+        </defs>
+
+        <!-- 実際の時制マーカー (data-ms 1) -->
+        <circle id="m_real" data-ms="1" r="9" fill="var(--blue)"></circle>
+        <text id="m_realLab" data-ms="1" font-size="13" font-weight="600" text-anchor="middle" fill="var(--blue)">実際の時制</text>
+
+        <!-- 1つ過去へ ずらす矢印 (data-ms 2) -->
+        <path id="m_shift" data-ms="2" fill="none" stroke="var(--green)" stroke-width="2.6" marker-end="url(#arrowGreen)"></path>
+        <text id="m_shiftLab" data-ms="2" font-size="13" font-weight="600" text-anchor="middle" fill="var(--green)">1つ過去へ</text>
+
+        <!-- 見かけ(文法上)の時制マーカー (data-ms 2) -->
+        <circle id="m_app" data-ms="2" r="9" fill="none" stroke="var(--red)" stroke-width="2.6"></circle>
+        <text id="m_appLab" data-ms="2" font-size="13" font-weight="600" text-anchor="middle" fill="var(--red)">見かけの時制</text>
+        <text id="m_appForm" data-ms="3" font-size="14" font-weight="600" text-anchor="middle" fill="var(--red)"></text>
+      </svg>
+    </div>
+    <p class="cap" id="sCap"></p>
+
+    <div class="ctl">
+      <label>どちらの仮定？</label>
+      <div class="toggle">
+        <button id="tNow" class="on">現在の事実に反する仮定</button>
+        <button id="tPast">過去の事実に反する仮定</button>
+      </div>
+    </div>
+
+    <p class="fact" id="sFact"></p>
+    <div class="sents">
+      <div class="clausebox ifb">
+        <div class="lab">If 節（条件）</div>
+        <div class="en" id="sIf"></div>
+      </div>
+      <div class="clausebox thenb">
+        <div class="lab">主節（帰結）</div>
+        <div class="en" id="sThen"></div>
+      </div>
+    </div>
+    <p class="jp" id="sJp"></p>
+
+    <div class="relation" id="sRel">
+      <b>ルール：</b> 仮定法 = 見かけの時制を <b>1つ過去</b> へ
+      <span style="margin:0 6px; color:var(--gray)">／</span>
+      <span id="sRule"></span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ 例文・ラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  (function(){
+    var step=1, mode="now"; /* "now" = 現在の事実に反する, "past" = 過去の事実に反する */
+
+    /* axis positions: 大過去=150, 過去=300, 現在=450 */
+    var POS={kako:150, kage:300, now:450};
+
+    /* 例文データ（改変しない） */
+    var data={
+      now:{
+        realX:POS.now, appX:POS.kage,
+        fact:"現在の事実（直説法）：I am not rich, so I can't buy that house.（今お金持ちでないので買えない）",
+        ifEn:'If I <em>were</em> rich,',
+        thenEn:'I <em>could buy</em> that house.',
+        jp:"もし今お金持ちなら、あの家を買えるのに。（仮定法過去）",
+        appForm:"were / could+原形",
+        rule:'現在の反実仮想 → <b>仮定法過去</b>（過去形, be動詞は <b>were</b>）'
+      },
+      past:{
+        realX:POS.kage, appX:POS.kako,
+        fact:"過去の事実（直説法）：I was not rich, so I couldn't buy that house.（あの時お金持ちでなかったので買えなかった）",
+        ifEn:'If I <em>had been</em> rich,',
+        thenEn:'I <em>could have bought</em> that house.',
+        jp:"もしあの時お金持ちだったら、あの家を買えたのに。（仮定法過去完了）",
+        appForm:"had been / could have p.p.",
+        rule:'過去の反実仮想 → <b>仮定法過去完了</b>（過去完了, had + 過去分詞）'
+      }
+    };
+
+    var info=[null,
+      {t:"直説法（事実）", c:"まず「実際はどうか」を直説法で確認します。青い丸が実際の時制の位置です。トグルで現在／過去を切り替えられます。"},
+      {t:"1つ過去へずらす", c:"仮定法の基本ルールは「見かけの時制を実際より1つ過去（左）へずらす」。緑の矢印が左へ向かい、赤い丸（見かけの時制）に移ります。"},
+      {t:"見かけの時制の形", c:"ずらした先の時制で動詞を作ります。現在の仮定 → 過去形（be動詞は were）、過去の仮定 → 過去完了（had+過去分詞）。"},
+      {t:"例文で確認", c:"If 節（青）と主節（赤）を見比べ、和訳と合わせて「反実仮想」を読み取りましょう。トグルで2種を見比べると時制ズレが体感できます。"}];
+
+    function render(){
+      var d=data[mode];
+
+      /* SVG 配置: 実際=blue 丸 / 見かけ=red 丸 / shift矢印 */
+      var Y=170;
+      setC("m_real", d.realX, Y);
+      setT("m_realLab", d.realX, Y-22, null);
+
+      setC("m_app", d.appX, Y);
+      setT("m_appLab", d.appX, Y+ (d.appX===POS.kage? -22 : -22), null);
+
+      /* shift arrow: from just-left-of-real to just-right-of-app (going left) */
+      var ax1=d.realX-12, ax2=d.appX+14, ay=Y-32;
+      var pathD="M"+ax1+","+ay+" Q"+((ax1+ax2)/2)+","+(ay-26)+" "+ax2+","+ay;
+      el("m_shift").setAttribute("d", pathD);
+      setT("m_shiftLab", (ax1+ax2)/2, ay-30, null);
+
+      setT("m_appForm", d.appX, Y+46, d.appForm);
+
+      vis("sSvg", step);
+
+      /* 例文ボックス */
+      el("sIf").innerHTML=d.ifEn;
+      el("sThen").innerHTML=d.thenEn;
+      el("sJp").textContent=d.jp;
+      el("sFact").textContent=d.fact;
+      el("sRule").innerHTML=d.rule;
+
+      /* トグル状態 */
+      el("tNow").className = (mode==="now")?"on":"";
+      el("tPast").className = (mode==="past")?"on":"";
+
+      /* stepper */
+      el("sBadge").textContent="step "+step+" / 4";
+      el("sTitle").textContent=info[step].t;
+      el("sCap").textContent=info[step].c;
+      el("sPrev").disabled=step<=1;
+      el("sNext").disabled=step>=4;
+    }
+
+    el("sNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("sPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("tNow").addEventListener("click",function(){mode="now";render();});
+    el("tPast").addEventListener("click",function(){mode="past";render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>
