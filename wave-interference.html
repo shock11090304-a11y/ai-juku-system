@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>波の干渉 — 重ね合わせ — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+  .legend{display:flex; gap:16px; flex-wrap:wrap; font-size:13px; color:var(--sub); margin:6px 4px 0;}
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .legend i{width:18px; height:0; border-top-width:3px; border-top-style:solid; display:inline-block;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>波の干渉 — 重ね合わせ</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで <b>位相差 φ</b> を変えると、強め合い・弱め合いが見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>波は重ね合わせ</b>。各点の変位を足し合わせるだけ。同位相（φ=0）で強め合い、逆位相（φ=180°）で弱め合い。合成振幅 = 2A·cos(φ/2)。</div>
+
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="wBadge">step 1 / 4</span>
+        <span class="steptitle" id="wTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="wPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="wNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">波の干渉（重ね合わせ）</h2>
+    <p class="hint">2つの正弦波 y₁ = A sin(kx)、y₂ = A sin(kx − φ) を重ねると、合成波 y = y₁ + y₂ になります。</p>
+    <div class="stage">
+      <svg id="wSvg" viewBox="0 0 600 360" role="img" aria-label="2つの正弦波の重ね合わせ（干渉）">
+        <!-- 軸 -->
+        <line id="w_axx" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="w_axy" stroke="var(--gray)" stroke-width="1.2"></line>
+        <g id="w_grid"></g>
+        <text id="w_xl" font-size="14" fill="var(--sub)" text-anchor="middle">x</text>
+        <text id="w_yl" font-size="14" fill="var(--sub)" text-anchor="middle">y</text>
+        <!-- 成分波 y1, y2（薄い灰） -->
+        <path id="w_y1" data-ms="1" fill="none" stroke="var(--gray)" stroke-width="1.8" opacity="0"></path>
+        <path id="w_y2" data-ms="1" fill="none" stroke="var(--gray)" stroke-width="1.8" stroke-dasharray="6 4" opacity="0"></path>
+        <!-- 合成波（太い青） -->
+        <path id="w_sum" data-ms="2" fill="none" stroke="var(--blue)" stroke-width="3" opacity="0"></path>
+        <!-- ラベル -->
+        <text id="w_l1" data-ms="1" font-size="14" font-style="italic" fill="var(--sub)" text-anchor="start">y1 = A sin(kx)</text>
+        <text id="w_l2" data-ms="1" font-size="14" font-style="italic" fill="var(--sub)" text-anchor="start">y2 = A sin(kx − φ)</text>
+        <text id="w_ls" data-ms="2" font-size="14" font-style="italic" fill="var(--blue)" text-anchor="start">y = y1 + y2</text>
+        <!-- 合成振幅の包絡（上限ライン） -->
+        <line id="w_env" data-ms="2" stroke="var(--red)" stroke-width="1.4" stroke-dasharray="5 5" opacity="0"></line>
+        <line id="w_envn" data-ms="2" stroke="var(--red)" stroke-width="1.4" stroke-dasharray="5 5" opacity="0"></line>
+        <text id="w_envl" data-ms="2" font-size="13" fill="var(--red)" text-anchor="end">合成振幅</text>
+      </svg>
+    </div>
+    <div class="legend">
+      <span><i style="border-top-color:var(--gray)"></i> y₁</span>
+      <span><i style="border-top-color:var(--gray); border-top-style:dashed"></i> y₂</span>
+      <span><i style="border-top-color:var(--blue); border-top-width:4px"></i> 合成波 y</span>
+      <span><i style="border-top-color:var(--red); border-top-style:dashed"></i> 合成振幅 ±2A·|cos(φ/2)|</span>
+    </div>
+    <p class="cap" id="wCap"></p>
+    <div class="ctl">
+      <label for="wSlider">位相差 φ を動かす</label>
+      <input type="range" id="wSlider" min="0" max="360" step="15" value="0">
+      <span class="out" id="wOut">φ = 0°</span>
+    </div>
+    <div class="relation" id="wRel">
+      位相差 <span style="color:var(--sub)">φ</span> = <span id="wPhi">0°</span>
+      <span style="margin:0 10px;">合成振幅</span>
+      <span style="color:var(--red)">2A·|cos(φ/2)|</span> = <span id="wAmp">2.00</span>
+      <span class="eqnote" id="wState"></span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ A = 1（振幅）、波長は固定。位相差 φ だけを変えています。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 波の干渉 ===== */
+  (function(){
+    // 描画範囲：x ∈ [0, 4π]、y ∈ [-2.2, 2.2]
+    var L=58, Rr=560, T=20, B=340;          // SVG ピクセル枠
+    var CY=(T+B)/2;                            // y=0 のピクセル行（中央）
+    var XMAX=4*Math.PI;                        // 横軸：波 2 周期分
+    var YMAX=2.2;                              // 縦軸：±2.2
+    var A=1, k=1;                              // 振幅・波数（波長固定）
+    var step=1, phiDeg=0;
+    var N=300;                                 // 折れ線サンプル数
+
+    function GX(x){return L+(x/XMAX)*(Rr-L);}              // x → ピクセル
+    function GY(y){return CY-(y/YMAX)*((B-T)/2);}          // y → ピクセル（+yは上）
+
+    var info=[null,
+      {t:"2つの波", c:"同じ振幅 A・同じ波長の波が2つ。y1 = A sin(kx)（実線）と、位相が φ だけずれた y2 = A sin(kx − φ)（破線）。スライダーで φ を変えるとy2が横にずれます。"},
+      {t:"重ね合わせ", c:"重ね合わせの原理：各点で2つの変位を足すだけ。y = y1 + y2（太い青）。合成波も同じ波長の正弦波で、その振幅は 2A·|cos(φ/2)| になります。"},
+      {t:"同位相 → 強め合い", c:"φ = 0（同位相）では山と山・谷と谷がそろい、変位が最大に重なります。合成振幅 = 2A·|cos(0)| = 2A。スライダーを φ=0 に戻すと振幅が2倍になります。"},
+      {t:"逆位相 → 弱め合い", c:"φ = 180°（逆位相）では一方の山に他方の谷が重なり、各点でぴったり打ち消し合います。合成振幅 = 2A·|cos(90°)| = 0。スライダーを 180° にすると合成波が消えます。"}];
+
+    function path(fn){
+      var p=[];
+      for(var i=0;i<=N;i++){
+        var x=XMAX*i/N;
+        var y=fn(x);
+        if(y>YMAX)y=YMAX; if(y<-YMAX)y=-YMAX;   // クランプ（はみ出し防止）
+        p.push((i?"L":"M")+GX(x).toFixed(1)+","+GY(y).toFixed(1));
+      }
+      return p.join(" ");
+    }
+
+    function grid(){
+      var g=el("w_grid"); g.innerHTML="";
+      // 横軸目盛り：波長 λ = 2π/k ごと
+      var lam=2*Math.PI/k;
+      var labs=[["λ",lam],["2λ",2*lam],["3λ",3*lam],["4λ",4*lam]];
+      for(var i=0;i<labs.length;i++){
+        var vx=labs[i][1]; if(vx>XMAX+1e-6)continue;
+        var t=GX(vx);
+        g.innerHTML+='<line x1="'+t.toFixed(1)+'" y1="'+(B)+'" x2="'+t.toFixed(1)+'" y2="'+(B+5)+'" stroke="var(--gray)" stroke-width="1"/>'+
+          '<text x="'+t.toFixed(1)+'" y="'+(B+20)+'" font-size="12" fill="var(--sub)" text-anchor="middle">'+labs[i][0]+'</text>';
+      }
+      // 縦軸目盛り：+2A, +A, 0, -A, -2A
+      var yl=[[2,"2A"],[1,"A"],[0,"0"],[-1,"−A"],[-2,"−2A"]];
+      for(var j=0;j<yl.length;j++){
+        var ty=GY(yl[j][0]);
+        g.innerHTML+='<line x1="'+L+'" y1="'+ty.toFixed(1)+'" x2="'+(L-5)+'" y2="'+ty.toFixed(1)+'" stroke="var(--gray)" stroke-width="1"/>'+
+          '<text x="'+(L-9)+'" y="'+(ty+4).toFixed(1)+'" font-size="12" fill="var(--sub)" text-anchor="end">'+yl[j][1]+'</text>';
+      }
+    }
+
+    function render(){
+      var phi=phiDeg*Math.PI/180;
+      // 軸・グリッド
+      setLine("w_axx",L,CY,Rr,CY);          // x軸（y=0）
+      setLine("w_axy",L,T,L,B);             // y軸
+      grid();
+      setT("w_xl",(L+Rr)/2,B+34,null);
+      setT("w_yl",L-34,T+6,null);
+
+      // 波形
+      attr("w_y1","d",path(function(x){return A*Math.sin(k*x);}));
+      attr("w_y2","d",path(function(x){return A*Math.sin(k*x-phi);}));
+      attr("w_sum","d",path(function(x){return A*Math.sin(k*x)+A*Math.sin(k*x-phi);}));
+
+      // 合成振幅 = 2A|cos(φ/2)|
+      var amp=2*A*Math.abs(Math.cos(phi/2));
+      var ampC=Math.min(amp,YMAX);          // 包絡線描画用クランプ
+      setLine("w_env",L,GY(ampC),Rr,GY(ampC));
+      setLine("w_envn",L,GY(-ampC),Rr,GY(-ampC));
+      setT("w_envl",Rr-4,GY(ampC)-6,null);
+
+      // ラベル位置（波形に重ならない上部に配置）
+      setT("w_l1",L+8,T+14,null);
+      setT("w_l2",L+8,T+32,null);
+      setT("w_ls",Rr-150,T+14,null);
+
+      vis("wSvg",step);
+
+      // 読み出し
+      el("wPhi").textContent=phiDeg.toFixed(0)+"°";
+      el("wAmp").textContent=amp.toFixed(2);
+      el("wOut").textContent="φ = "+phiDeg.toFixed(0)+"°";
+
+      // 状態判定（強め合い / 弱め合い / 中間）
+      var st="", cls="relation";
+      // 強め合い：cos(φ/2) の絶対値が最大 → φ=0,360 で amp=2A
+      if(amp>=2*A-0.02){ st="強め合い（振幅2倍）"; cls="relation eq"; }
+      else if(amp<=0.02){ st="弱め合い（打ち消し）"; cls="relation eq"; }
+      else { st="中間"; cls="relation"; }
+      el("wState").textContent=st;
+      el("wRel").className=cls;
+
+      // ステップ UI
+      el("wBadge").textContent="step "+step+" / 4";
+      el("wTitle").textContent=info[step].t;
+      el("wCap").textContent=info[step].c;
+      el("wPrev").disabled=step<=1;
+      el("wNext").disabled=step>=4;
+    }
+
+    el("wNext").addEventListener("click",function(){
+      if(step<4){
+        step++;
+        // 教材として：ステップ3=同位相, ステップ4=逆位相 にスライダーを合わせる
+        if(step===3){ phiDeg=0; el("wSlider").value="0"; }
+        if(step===4){ phiDeg=180; el("wSlider").value="180"; }
+        render();
+      }
+    });
+    el("wPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("wSlider").addEventListener("input",function(e){phiDeg=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

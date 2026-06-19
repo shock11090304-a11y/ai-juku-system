@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>電池 — ダニエル電池のしくみ</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+    --zn:#9ca3af; --cu:#c2703a; --znsol:#eef2f7; --cusol:#cfe6ff;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a;
+           --zn:#8b93a1; --cu:#b9663a; --znsol:#1b2533; --cusol:#16324d; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:15px; border:1px solid var(--bd);}
+  .relation b{font-weight:600;}
+  .relation .neg{color:var(--zn);} .relation .pos{color:var(--cu);} .relation .ele{color:var(--blue);}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>電池 — ダニエル電池のしくみ</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。電極反応と電子 e⁻ の流れが順番に現れます。</p>
+  </header>
+
+  <div class="takeaway">最重要 = <b>負極＝酸化（Zn が溶ける）・正極＝還元（Cu が析出）・電子は導線を負極→正極へ</b>流れる。決め手は<b>イオン化傾向 Zn ＞ Cu</b>（溶けやすい亜鉛が負極）。</div>
+
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="dBadge">step 1 / 4</span>
+        <span class="steptitle" id="dTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="dPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="dNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">ダニエル電池</h2>
+    <p class="hint">ボルタ電池の改良型。2 つの水溶液を塩橋でつなぎ、起電力 約1.1V を取り出します。</p>
+    <div class="stage">
+      <svg id="dSvg" viewBox="0 0 600 360" role="img" aria-label="ダニエル電池の模式図">
+        <!-- ===== 静的:ビーカー(2個)と溶液 ===== -->
+        <!-- 左ビーカー(ZnSO4) -->
+        <path d="M70,130 L70,320 Q70,332 82,332 L208,332 Q220,332 220,320 L220,130"
+              fill="none" stroke="var(--ink)" stroke-width="2.4"></path>
+        <path d="M74,196 L74,318 Q74,328 84,328 L206,328 Q216,328 216,318 L216,196 Z"
+              fill="var(--znsol)" stroke="none"></path>
+        <line x1="74" y1="196" x2="216" y2="196" stroke="var(--gray)" stroke-width="1.4"></line>
+        <!-- 右ビーカー(CuSO4) -->
+        <path d="M380,130 L380,320 Q380,332 392,332 L518,332 Q530,332 530,320 L530,130"
+              fill="none" stroke="var(--ink)" stroke-width="2.4"></path>
+        <path d="M384,196 L384,318 Q384,328 394,328 L516,328 Q526,328 526,318 L526,196 Z"
+              fill="var(--cusol)" stroke="none"></path>
+        <line x1="384" y1="196" x2="526" y2="196" stroke="var(--gray)" stroke-width="1.4"></line>
+
+        <!-- 溶液ラベル -->
+        <text x="145" y="312" font-size="14" text-anchor="middle" fill="var(--sub)">ZnSO</text>
+        <text x="178" y="316" font-size="11" text-anchor="middle" fill="var(--sub)">4</text>
+        <text x="186" y="312" font-size="14" text-anchor="start" fill="var(--sub)"> 水溶液</text>
+        <text x="455" y="312" font-size="14" text-anchor="middle" fill="var(--sub)">CuSO</text>
+        <text x="488" y="316" font-size="11" text-anchor="middle" fill="var(--sub)">4</text>
+        <text x="496" y="312" font-size="14" text-anchor="start" fill="var(--sub)"> 水溶液</text>
+
+        <!-- ===== 電極(板) ===== -->
+        <!-- Zn板(負極) -->
+        <rect x="132" y="150" width="16" height="150" rx="2" fill="var(--zn)" stroke="var(--ink)" stroke-width="1.4"></rect>
+        <!-- Cu板(正極) -->
+        <rect x="452" y="150" width="16" height="150" rx="2" fill="var(--cu)" stroke="var(--ink)" stroke-width="1.4"></rect>
+
+        <!-- 電極記号 Zn / Cu -->
+        <text x="140" y="170" font-size="15" font-weight="700" text-anchor="middle" fill="#ffffff">Zn</text>
+        <text x="460" y="170" font-size="15" font-weight="700" text-anchor="middle" fill="#ffffff">Cu</text>
+
+        <!-- 極ラベル -->
+        <text x="140" y="124" font-size="14" text-anchor="middle" fill="var(--zn)">負極 (−)</text>
+        <text x="460" y="124" font-size="14" text-anchor="middle" fill="var(--cu)">正極 (+)</text>
+
+        <!-- ===== 導線(上部) と モーター記号 M ===== -->
+        <polyline points="140,150 140,52 270,52" fill="none" stroke="var(--ink)" stroke-width="2.4"></polyline>
+        <polyline points="460,150 460,52 330,52" fill="none" stroke="var(--ink)" stroke-width="2.4"></polyline>
+        <circle cx="300" cy="52" r="22" fill="var(--card)" stroke="var(--ink)" stroke-width="2.4"></circle>
+        <text x="300" y="58" font-size="17" font-weight="700" text-anchor="middle" fill="var(--ink)">M</text>
+
+        <!-- ===== 塩橋 ===== -->
+        <path d="M165,210 C165,168 200,168 250,168 L350,168 C400,168 435,168 435,210"
+              fill="none" stroke="var(--green)" stroke-width="12" stroke-linecap="round" opacity="0.32"></path>
+        <path d="M165,210 C165,168 200,168 250,168 L350,168 C400,168 435,168 435,210"
+              fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"></path>
+        <text x="300" y="158" font-size="13" text-anchor="middle" fill="var(--green)">塩橋</text>
+
+        <!-- ===== step2: 負極の酸化 ===== -->
+        <!-- Zn -> Zn2+ + 2e- が溶け出す矢印 -->
+        <g id="d_znIon" data-ms="2">
+          <line x1="150" y1="225" x2="186" y2="232" stroke="var(--zn)" stroke-width="2" marker-end="url(#arrZn)"></line>
+          <text x="196" y="230" font-size="14" font-weight="700" text-anchor="start" fill="var(--zn)">Zn</text>
+          <text x="221" y="227" font-size="10" text-anchor="start" fill="var(--zn)">2+</text>
+        </g>
+        <!-- 負極反応式 (図の下) -->
+        <text id="d_znRx" data-ms="2" x="145" y="352" font-size="14.5" text-anchor="middle" fill="var(--zn)">
+          <tspan font-weight="700">Zn</tspan><tspan> → Zn</tspan><tspan dy="-6" font-size="10">2+</tspan><tspan dy="6"> + 2e</tspan><tspan dy="-6" font-size="10">−</tspan>
+        </text>
+
+        <!-- ===== step3: 正極の還元 ===== -->
+        <g id="d_cuIon" data-ms="3">
+          <line x1="430" y1="232" x2="466" y2="226" stroke="var(--cu)" stroke-width="2" marker-end="url(#arrCu)"></line>
+          <text x="404" y="236" font-size="14" font-weight="700" text-anchor="start" fill="var(--cu)">Cu</text>
+          <text x="429" y="233" font-size="10" text-anchor="start" fill="var(--cu)">2+</text>
+        </g>
+        <text id="d_cuRx" data-ms="3" x="460" y="352" font-size="14.5" text-anchor="middle" fill="var(--cu)">
+          <tspan font-weight="700">Cu</tspan><tspan dy="-6" font-size="10">2+</tspan><tspan dy="6"> + 2e</tspan><tspan dy="-6" font-size="10">−</tspan><tspan dy="6"> → Cu</tspan>
+        </text>
+
+        <!-- ===== step4: 電子の流れ(導線上 Zn->Cu) ===== -->
+        <g id="d_eFlow" data-ms="4">
+          <!-- 流れ矢印 (左の縦線 上向き -> 上の横線 右向き -> 右の縦線 下向き) -->
+          <line x1="140" y1="120" x2="140" y2="86" stroke="var(--blue)" stroke-width="2.4" marker-end="url(#arrE)"></line>
+          <line x1="200" y1="52" x2="252" y2="52" stroke="var(--blue)" stroke-width="2.4" marker-end="url(#arrE)"></line>
+          <line x1="348" y1="52" x2="400" y2="52" stroke="var(--blue)" stroke-width="2.4" marker-end="url(#arrErev)"></line>
+          <line x1="460" y1="86" x2="460" y2="120" stroke="var(--blue)" stroke-width="2.4" marker-end="url(#arrEdown)"></line>
+          <!-- e- 粒子ラベル -->
+          <circle cx="140" cy="100" r="9" fill="var(--blue)"></circle>
+          <text x="140" y="104" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">e−</text>
+          <circle cx="225" cy="52" r="9" fill="var(--blue)"></circle>
+          <text x="225" y="56" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">e−</text>
+          <circle cx="375" cy="52" r="9" fill="var(--blue)"></circle>
+          <text x="375" y="56" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">e−</text>
+          <circle cx="460" cy="100" r="9" fill="var(--blue)"></circle>
+          <text x="460" y="104" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">e−</text>
+          <!-- 電子の向きラベル -->
+          <text x="300" y="28" font-size="13" text-anchor="middle" fill="var(--blue)">電子 e⁻ : 負極(Zn) → 正極(Cu)</text>
+          <!-- 電流の向き(逆) ラベル -->
+          <text x="300" y="84" font-size="12" text-anchor="middle" fill="var(--red)">電流 : 正極 → 負極 (逆向き)</text>
+        </g>
+      </svg>
+
+      <!-- 矢印マーカー定義 -->
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <defs>
+          <marker id="arrZn" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--zn)"></path>
+          </marker>
+          <marker id="arrCu" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--cu)"></path>
+          </marker>
+          <marker id="arrE" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--blue)"></path>
+          </marker>
+          <marker id="arrErev" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--blue)"></path>
+          </marker>
+          <marker id="arrEdown" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--blue)"></path>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+    <p class="cap" id="dCap"></p>
+    <div class="relation" id="dRel">
+      <b class="neg">負極＝酸化</b>（Zn が溶ける）　・　<b class="pos">正極＝還元</b>（Cu が析出）　・　<b class="ele">電子は導線を 負極→正極</b>　／　起電力 約1.1V
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a> ・ © AI塾 / trillion-ai-juku.com
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .3s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== ダニエル電池 (ステップ送り・スライダー無し) ===== */
+  (function(){
+    var step=1, MAX=4;
+    var info=[null,
+      {t:"全体の構造", c:"左に Zn 板（負極）と ZnSO₄ 水溶液、右に Cu 板（正極）と CuSO₄ 水溶液。上部を導線でモーター M につなぎ、2 つの溶液を塩橋でつなぎます。"},
+      {t:"負極（Zn）", c:"イオン化傾向の大きい亜鉛が溶けます。Zn → Zn²⁺ + 2e⁻（酸化）。Zn 板から Zn²⁺ が溶け出し、電子 e⁻ が板に残ります。"},
+      {t:"正極（Cu）", c:"溶液中の銅イオンが電子を受け取って析出します。Cu²⁺ + 2e⁻ → Cu（還元）。Cu 板に銅が付着して重くなります。"},
+      {t:"電子の流れ", c:"電子 e⁻ は導線を 負極(Zn) → 正極(Cu) へ流れます（電流はその逆＝正極→負極）。決め手はイオン化傾向 Zn ＞ Cu。起電力 約1.1V。"}];
+    function render(){
+      vis("dSvg",step);
+      el("dBadge").textContent="step "+step+" / "+MAX;
+      el("dTitle").textContent=info[step].t;
+      el("dCap").textContent=info[step].c;
+      el("dRel").className=(step>=4)?"relation eq":"relation";
+      el("dPrev").disabled=step<=1;
+      el("dNext").disabled=step>=MAX;
+    }
+    el("dNext").addEventListener("click",function(){if(step<MAX){step++;render();}});
+    el("dPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

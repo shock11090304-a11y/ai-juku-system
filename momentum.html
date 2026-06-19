@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>運動量保存と衝突 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--sub);}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>運動量保存と衝突</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで <b>m₁・m₂・v₁</b> を変えても、衝突前後で <b>全運動量が保存</b> される様子が見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>運動量 p = mv は外力がなければ保存</b>。物体どうしがくっつく（完全非弾性）衝突でも運動量は保存します。ただし力学的エネルギーは保存しません。</div>
+
+  <!-- 完全非弾性衝突(合体)での運動量保存 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="moBadge">step 1 / 4</span>
+        <span class="steptitle" id="moTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="moPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="moNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">完全非弾性衝突(合体)と運動量保存</h2>
+    <p class="hint">静止した物体2に物体1が衝突して合体する。衝突前の全運動量 m₁v₁ は、合体後 (m₁+m₂)v′ に等しくなります。</p>
+    <div class="stage">
+      <svg id="moSvg" viewBox="0 0 600 360" role="img" aria-label="完全非弾性衝突での運動量保存の図">
+        <!-- 上段: 衝突前 -->
+        <line id="m_floor1" data-ms="1" stroke="var(--gray)" stroke-width="1.5"></line>
+        <text id="m_ttl1" data-ms="1" font-size="14" font-weight="600" text-anchor="start" fill="var(--sub)">衝突前</text>
+        <rect id="m_b1" data-ms="1" rx="4" fill="var(--blue)" fill-opacity="0.85" stroke="var(--blue)" stroke-width="1.5"></rect>
+        <rect id="m_b2" data-ms="1" rx="4" fill="var(--gray)" fill-opacity="0.55" stroke="var(--gray)" stroke-width="1.5"></rect>
+        <text id="m_l1" data-ms="1" font-size="13" text-anchor="middle" fill="#ffffff">物体1</text>
+        <text id="m_l2" data-ms="1" font-size="13" text-anchor="middle" fill="var(--ink)">物体2</text>
+        <text id="m_m1" data-ms="1" font-size="13" text-anchor="middle" fill="var(--ink)">m₁</text>
+        <text id="m_m2" data-ms="1" font-size="13" text-anchor="middle" fill="var(--ink)">m₂</text>
+        <!-- 速度矢印(衝突前) -->
+        <line id="m_v1" data-ms="1" stroke="var(--red)" stroke-width="2.6" marker-end="url(#mArrow)"></line>
+        <text id="m_v1l" data-ms="1" font-size="14" text-anchor="middle" fill="var(--red)">v₁</text>
+        <text id="m_v2l" data-ms="1" font-size="13" text-anchor="middle" fill="var(--sub)">静止 v₂=0</text>
+        <!-- 衝突前の運動量ラベル -->
+        <text id="m_p1" data-ms="2" font-size="14" text-anchor="middle" fill="var(--blue)">p = m₁v₁</text>
+
+        <!-- 下段: 衝突後 -->
+        <line id="m_floor2" data-ms="3" stroke="var(--gray)" stroke-width="1.5"></line>
+        <text id="m_ttl2" data-ms="3" font-size="14" font-weight="600" text-anchor="start" fill="var(--sub)">衝突後(合体)</text>
+        <rect id="m_b3" data-ms="3" rx="4" fill="var(--green)" fill-opacity="0.78" stroke="var(--green)" stroke-width="1.5"></rect>
+        <text id="m_l3" data-ms="3" font-size="13" text-anchor="middle" fill="#ffffff">合体</text>
+        <text id="m_m3" data-ms="3" font-size="13" text-anchor="middle" fill="var(--ink)">m₁+m₂</text>
+        <!-- 速度矢印(衝突後) -->
+        <line id="m_v3" data-ms="4" stroke="var(--red)" stroke-width="2.6" marker-end="url(#mArrow)"></line>
+        <text id="m_v3l" data-ms="4" font-size="14" text-anchor="middle" fill="var(--red)">v′</text>
+        <!-- 衝突後の運動量ラベル -->
+        <text id="m_p3" data-ms="3" font-size="14" text-anchor="middle" fill="var(--green)">p = (m₁+m₂)v′ = m₁v₁</text>
+
+        <defs>
+          <marker id="mArrow" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto" markerUnits="userSpaceOnUse">
+            <path d="M0,0 L8,3.2 L0,6.4 Z" fill="var(--red)"></path>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+    <p class="cap" id="moCap"></p>
+    <div class="ctl">
+      <label for="moM1">物体1の質量 m₁</label>
+      <input type="range" id="moM1" min="1" max="5" step="0.5" value="2">
+      <span class="out" id="moM1out">m₁ = 2.0 kg</span>
+    </div>
+    <div class="ctl">
+      <label for="moM2">物体2の質量 m₂</label>
+      <input type="range" id="moM2" min="1" max="5" step="0.5" value="2">
+      <span class="out" id="moM2out">m₂ = 2.0 kg</span>
+    </div>
+    <div class="ctl">
+      <label for="moV1">物体1の速さ v₁</label>
+      <input type="range" id="moV1" min="1" max="8" step="0.5" value="4">
+      <span class="out" id="moV1out">v₁ = 4.0 m/s</span>
+    </div>
+    <div class="relation eq" id="moRel">
+      <span style="color:var(--blue)">衝突前 p = m₁v₁</span> = <span id="moPbefore">8.00</span> kg·m/s
+      <span style="margin:0 8px; font-weight:600">=</span>
+      <span style="color:var(--green)">衝突後 (m₁+m₂)v′</span> = <span id="moPafter">8.00</span> kg·m/s
+      <span class="eqnote" id="moEq">運動量は保存（合体後の速さ v′ = <span id="moVp">2.00</span> m/s）</span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a> ・ © AI塾 / trillion-ai-juku.com ・ 物理量の単位（kg, m/s, kg·m/s）は指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setRect(id,x,y,w,h){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);e.setAttribute("width",w);e.setAttribute("height",h);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 完全非弾性衝突(合体)での運動量保存 ===== */
+  (function(){
+    var step=1, m1=2, m2=2, v1=4;
+    // 上段(衝突前)の床 y、下段(衝突後)の床 y
+    var FY1=150, FY2=320, LX=70, RX=560;
+    // 質量 -> 箱の幅/高さ(視覚スケール)。質量1..5 -> 幅 34..90, 高さ 26..58
+    function boxW(m){return 34+(m-1)*14;}
+    function boxH(m){return 26+(m-1)*8;}
+    // 速さ -> 矢印長(視覚スケール)。速さ1..8 -> 長さ 28..96
+    function arrowLen(v){return 28+(v-1)*(68/7);}
+
+    var info=[null,
+      {t:"衝突前", c:"物体1（青）が速度 v₁ で右向きに進み、静止した物体2（灰）に向かっています。物体2の速度は v₂=0 です。"},
+      {t:"運動量 p = mv", c:"運動量は p = mv（単位 kg·m/s）。物体2は静止 v₂=0 なので、衝突前の全運動量は物体1の分だけ。全運動量 = m₁v₁ です。"},
+      {t:"完全非弾性衝突(合体)", c:"二つの物体がくっついて1つになります。外力がなければ全運動量は保存。すなわち m₁v₁ = (m₁+m₂)v′ が成り立ちます。"},
+      {t:"合体後の速さ", c:"保存則を v′ について解くと v′ = m₁v₁ /(m₁+m₂)。合体後の運動量 (m₁+m₂)v′ は衝突前 m₁v₁ と等しい。スライダーで m₁・m₂・v₁ を変えても両辺は常に一致します。"}];
+
+    function render(){
+      // ----- 物理量 -----
+      var pBefore = m1*v1;                 // kg·m/s
+      var M = m1+m2;                       // kg (>0 always)
+      var vp = pBefore/M;                  // m/s  (M>=2 > 0, no division by zero)
+      var pAfter = M*vp;                   // kg·m/s (= pBefore)
+
+      // ===== 上段: 衝突前 =====
+      setLine("m_floor1",LX,FY1,RX,FY1);
+      setT("m_ttl1",LX,FY1-86,null);
+
+      // 物体2(静止) を右寄りに固定
+      var w2=boxW(m2), h2=boxH(m2);
+      var x2=420, y2=FY1-h2;
+      setRect("m_b2",x2,y2,w2,h2);
+      setT("m_l2",x2+w2/2,y2+h2/2-2,null);
+      setT("m_m2",x2+w2/2,y2+h2/2+13,null);
+      setT("m_v2l",x2+w2/2,FY1+20,null);
+
+      // 物体1(運動) を左に。右端と物体2左端の間に矢印を描く
+      var w1=boxW(m1), h1=boxH(m1);
+      var x1=150, y1=FY1-h1;
+      setRect("m_b1",x1,y1,w1,h1);
+      setT("m_l1",x1+w1/2,y1+h1/2-2,null);
+      setT("m_m1",x1+w1/2,y1+h1/2+13,null);
+
+      // 速度矢印 v1: 物体1の右端から右向き。長さ∝速さ
+      var aLen=arrowLen(v1);
+      var ax1=x1+w1, ay=FY1-h1/2;
+      var ax2=Math.min(ax1+aLen, x2-6); // 物体2にめり込ませない
+      setLine("m_v1",ax1,ay,ax2,ay);
+      setT("m_v1l",(ax1+ax2)/2,ay-9,null);
+
+      // 衝突前の運動量ラベル(step2)
+      setT("m_p1",(x1+w1+x2)/2,FY1+44,null);
+
+      // ===== 下段: 衝突後(合体) =====
+      setLine("m_floor2",LX,FY2,RX,FY2);
+      setT("m_ttl2",LX,FY2-86,null);
+
+      // 合体した箱: 面積保存の感覚で幅は w1+w2、高さは大きい方
+      var w3=w1+w2, h3=Math.max(h1,h2);
+      var x3=300-w3/2, y3=FY2-h3;
+      setRect("m_b3",x3,y3,w3,h3);
+      setT("m_l3",x3+w3/2,y3+h3/2-2,null);
+      setT("m_m3",x3+w3/2,y3+h3/2+13,null);
+
+      // 速度矢印 v': 合体箱の右端から右向き。長さ∝速さ(v')
+      var aLen3=arrowLen(vp);
+      var bx1=x3+w3, bx2=Math.min(bx1+aLen3, RX-10);
+      setLine("m_v3",bx1,FY2-h3/2,bx2,FY2-h3/2);
+      setT("m_v3l",(bx1+bx2)/2,FY2-h3/2-9,null);
+
+      // 衝突後の運動量ラベル(step3)
+      setT("m_p3",300,FY2+30,null);
+
+      // ----- 可視段階 -----
+      vis("moSvg",step);
+
+      // ----- 読み出し -----
+      el("moM1out").textContent="m₁ = "+m1.toFixed(1)+" kg";
+      el("moM2out").textContent="m₂ = "+m2.toFixed(1)+" kg";
+      el("moV1out").textContent="v₁ = "+v1.toFixed(1)+" m/s";
+      el("moPbefore").textContent=pBefore.toFixed(2);
+      el("moPafter").textContent=pAfter.toFixed(2);
+      el("moVp").textContent=vp.toFixed(2);
+
+      // 運動量は常に保存 => 常に等号(eq)
+      el("moRel").className="relation eq";
+
+      // ----- ステップヘッダ -----
+      el("moBadge").textContent="step "+step+" / 4";
+      el("moTitle").textContent=info[step].t;
+      el("moCap").textContent=info[step].c;
+      el("moPrev").disabled=step<=1;
+      el("moNext").disabled=step>=4;
+    }
+
+    el("moNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("moPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("moM1").addEventListener("input",function(e){m1=parseFloat(e.target.value);render();});
+    el("moM2").addEventListener("input",function(e){m2=parseFloat(e.target.value);render();});
+    el("moV1").addEventListener("input",function(e){v1=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

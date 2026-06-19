@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>酸と塩基 — pHと電離 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .toggle{display:flex; gap:8px; margin:10px 0 2px;}
+  .toggle button{flex:1; justify-content:center;}
+  .toggle button.on{background:var(--info-bg); border-color:var(--info-ink); color:var(--info-ink); font-weight:600;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.acid{background:#fdecea; border-color:var(--red);}
+  .relation.base{background:#e8f1fe; border-color:var(--blue);}
+  .relation.neutral{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .judge{margin-left:8px; font-size:14px; font-weight:600;}
+  @media (prefers-color-scheme: dark){ .relation.acid{background:#34191a;} }
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>酸と塩基 — pHと電離</h1>
+    <p class="lead">「次へ／戻る」で考え方が1ステップずつ完成。<b>濃度スライダー</b>と<b>強酸／弱酸トグル</b>を動かすと pH の変化が見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>pH = −log₁₀[H⁺]</b>。強酸は完全電離して [H⁺]=c、弱酸は一部だけ電離して [H⁺]=√(Ka·c) &lt; c。だから<b>同じ濃度でも弱酸のほうが pH は大きい</b>（酸性は弱い）。</div>
+
+  <!-- ① pHスケールと電離 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="phBadge">step 1 / 4</span>
+        <span class="steptitle" id="phTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="phPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="phNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">pHと電離</h2>
+    <p class="hint">酸の濃度 c と電離のしかたから [H⁺] を求め、pH スケール上で酸性／中性／塩基性を読みます。</p>
+    <div class="stage">
+      <svg id="phSvg" viewBox="0 0 600 240" role="img" aria-label="pHスケールと水素イオン濃度">
+        <!-- pH color band: 0(酸性 赤) → 7(中性) → 14(塩基性 青) -->
+        <g id="ph_band"></g>
+        <!-- band frame & axis -->
+        <rect id="ph_frame" x="40" y="70" width="520" height="46" fill="none" stroke="var(--bd)" stroke-width="1.5" rx="6"></rect>
+        <g id="ph_ticks"></g>
+        <text x="40" y="148" font-size="13" fill="var(--red)" text-anchor="start">酸性</text>
+        <text x="300" y="148" font-size="13" fill="var(--sub)" text-anchor="middle">中性 (7)</text>
+        <text x="560" y="148" font-size="13" fill="var(--blue)" text-anchor="end">塩基性</text>
+        <!-- ion bar -->
+        <g id="ph_ionbar" data-ms="2">
+          <text id="ph_ionlab" x="40" y="194" font-size="13" fill="var(--ink)" text-anchor="start">[H⁺]</text>
+          <rect id="ph_iontrack" x="40" y="200" width="520" height="14" rx="7" fill="none" stroke="var(--bd)" stroke-width="1"></rect>
+          <rect id="ph_ionfill" x="40" y="200" width="0" height="14" rx="7" fill="var(--red)"></rect>
+        </g>
+        <!-- log mapping note -->
+        <text id="ph_logn" data-ms="1" x="300" y="40" font-size="13" fill="var(--sub)" text-anchor="middle">pH = −log₁₀[H⁺]</text>
+        <!-- pH marker -->
+        <g id="ph_marker" data-ms="3">
+          <line id="ph_mline" stroke="var(--ink)" stroke-width="2.5"></line>
+          <polygon id="ph_marrow" fill="var(--ink)"></polygon>
+          <rect id="ph_mlabbg" rx="5" fill="var(--card)" stroke="var(--ink)" stroke-width="1.3"></rect>
+          <text id="ph_mlab" font-size="14" font-weight="600" fill="var(--ink)" text-anchor="middle">pH</text>
+        </g>
+      </svg>
+    </div>
+    <p class="cap" id="phCap"></p>
+    <div class="toggle">
+      <button id="phStrong" class="on">強酸 HCl（完全電離）</button>
+      <button id="phWeak">弱酸 CH₃COOH（Ka=1.8×10⁻⁵）</button>
+    </div>
+    <div class="ctl">
+      <label for="phSlider">濃度 c</label>
+      <input type="range" id="phSlider" min="0.01" max="1" step="0.01" value="0.1">
+      <span class="out" id="phOut">c=0.10 mol/L</span>
+    </div>
+    <div class="relation" id="phRel">
+      <span style="color:var(--red)">[H⁺]</span> = <span id="phH">1.0×10⁻¹</span> mol/L
+      <span style="margin:0 8px; font-weight:600">→</span>
+      pH = <span id="phPH">1.00</span>
+      <span class="judge" id="phJudge"></span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ 化学記号や図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setRect(id,x,y,w,h){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);e.setAttribute("width",w);e.setAttribute("height",h);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  // superscript helper for exponent display (e.g. 1.3×10⁻³)
+  var SUP={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","-":"⁻"};
+  function sup(n){var s=(""+n).split(""),o="";for(var i=0;i<s.length;i++)o+=SUP[s[i]]||s[i];return o;}
+  function sci(v){ // v>0 → "m.m×10^e" string with superscript exponent
+    if(!(v>0))return "0";
+    var e=Math.floor(Math.log10(v));
+    var m=v/Math.pow(10,e);
+    // guard rounding pushing mantissa to 10
+    if(m>=9.995){m=m/10;e+=1;}
+    return m.toFixed(1)+"×10"+sup(e);
+  }
+
+  /* ===== ① pHスケールと電離 ===== */
+  (function(){
+    var BX=40, BW=520, BY=70, BH=46;   // pH band geometry
+    var step=1, c=0.1, strong=true;
+    var Ka=1.8e-5;
+    var PHMAX=14;
+    function PX(ph){return BX+(ph/PHMAX)*BW;}  // pH(0..14) → x
+
+    var info=[null,
+      {t:"pH の定義", c:"pH = −log₁₀[H⁺]。水素イオン濃度 [H⁺]（mol/L）の指標で、値が小さいほど強い酸性です。[H⁺] が10倍になると pH は 1 小さくなります。"},
+      {t:"強酸は完全電離", c:"強酸 HCl は水中でほぼ完全に電離するので [H⁺]=c。よって pH = −log c。下のバーが [H⁺] の大きさです（強酸ほど右に伸びる）。"},
+      {t:"弱酸は一部電離", c:"弱酸 CH₃COOH は一部しか電離せず [H⁺]=√(Ka·c) < c。同じ濃度でも [H⁺] が小さいので、マーカーは右（pH 大）へ動き、酸性は弱くなります。"},
+      {t:"酸性・中性・塩基性", c:"pH<7 が酸性、pH=7 が中性、pH>7 が塩基性。酸の水溶液は pH<7。トグルとスライダーで [H⁺] と pH の対応を確かめましょう。"}];
+
+    // build static color band (stops) + ticks once
+    function buildBand(){
+      var g=el("ph_band"); g.innerHTML="";
+      var seg=28;
+      for(var i=0;i<seg;i++){
+        var t=i/(seg-1);            // 0..1 across band
+        var ph=t*PHMAX;
+        var col;
+        if(ph<=7){ // 酸性側: 赤(0) → 薄い緑(7)
+          var u=ph/7; // 0..1
+          var r=Math.round(226+(160-226)*u);
+          var gg=Math.round(72+(205-72)*u);
+          var bb=Math.round(58+(120-58)*u);
+          col="rgb("+r+","+gg+","+bb+")";
+        }else{ // 塩基性側: 薄い緑(7) → 青(14)
+          var u2=(ph-7)/7;
+          var r2=Math.round(160+(37-160)*u2);
+          var g2=Math.round(205+(99-205)*u2);
+          var b2=Math.round(120+(235-120)*u2);
+          col="rgb("+r2+","+g2+","+b2+")";
+        }
+        var x=BX+(i/seg)*BW;
+        var w=BW/seg+0.8;
+        g.innerHTML+='<rect x="'+x.toFixed(1)+'" y="'+BY+'" width="'+w.toFixed(1)+'" height="'+BH+'"  fill="'+col+'"/>';
+      }
+      var tg=el("ph_ticks"); tg.innerHTML="";
+      for(var p=0;p<=14;p+=2){
+        var tx=PX(p);
+        tg.innerHTML+='<line x1="'+tx.toFixed(1)+'" y1="'+(BY+BH)+'" x2="'+tx.toFixed(1)+'" y2="'+(BY+BH+5)+'" stroke="var(--sub)" stroke-width="1"/>'+
+          '<text x="'+tx.toFixed(1)+'" y="'+(BY+BH+18)+'" font-size="11" fill="var(--sub)" text-anchor="middle">'+p+'</text>';
+      }
+    }
+
+    function render(){
+      // chemistry
+      var H = strong ? c : Math.sqrt(Ka*c);   // [H+] mol/L  (both >0 for c in [0.01,1])
+      var ph = -Math.log10(H);                  // pH
+      if(ph===0) ph=0;                          // normalize -0 → 0 (e.g. strong c=1)
+      // clamp pH for marker drawing only (display uses true value)
+      var phDraw = ph<0?0:(ph>14?14:ph);
+
+      // ion bar length: log scale of [H+] over [1e-5 .. 1] mol/L → 0..BW
+      var lo=-5, hi=0; // log10 range
+      var lh=Math.log10(H);
+      var frac=(lh-lo)/(hi-lo); if(frac<0)frac=0; if(frac>1)frac=1;
+      setRect("ph_ionfill",BX,200,(BW*frac),14);
+      el("ph_ionfill").setAttribute("fill", strong?"var(--red)":"#e07a4a");
+
+      // pH marker
+      var mx=PX(phDraw);
+      setLine("ph_mline",mx,BY-6,mx,BY+BH+2);
+      el("ph_marrow").setAttribute("points",(mx-6)+","+(BY-6)+" "+(mx+6)+","+(BY-6)+" "+mx+","+(BY+4));
+      var lab="pH "+ph.toFixed(2);
+      setT("ph_mlab",mx,BY-12,lab);
+      var lw=lab.length*7.6+12;
+      setRect("ph_mlabbg",mx-lw/2,BY-26,lw,17);
+
+      vis("phSvg",step);
+
+      // readouts
+      el("phH").textContent=sci(H);
+      el("phPH").textContent=ph.toFixed(2);
+      el("phOut").textContent="c="+c.toFixed(2)+" mol/L";
+
+      var cls,judge;
+      if(ph<6.999){cls="acid"; judge="酸性 (pH<7)";}
+      else if(ph>7.001){cls="base"; judge="塩基性 (pH>7)";}
+      else{cls="neutral"; judge="中性 (pH=7)";}
+      el("phRel").className="relation "+cls;
+      el("phJudge").textContent=judge;
+      el("phJudge").style.color = cls=="acid"?"var(--red)":(cls=="base"?"var(--blue)":"var(--ok-ink)");
+
+      el("phBadge").textContent="step "+step+" / 4";
+      el("phTitle").textContent=info[step].t;
+      el("phCap").textContent=info[step].c;
+      el("phPrev").disabled=step<=1; el("phNext").disabled=step>=4;
+    }
+
+    el("phNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("phPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("phSlider").addEventListener("input",function(e){c=parseFloat(e.target.value);if(!(c>0))c=0.01;render();});
+    el("phStrong").addEventListener("click",function(){strong=true;el("phStrong").classList.add("on");el("phWeak").classList.remove("on");render();});
+    el("phWeak").addEventListener("click",function(){strong=false;el("phWeak").classList.add("on");el("phStrong").classList.remove("on");render();});
+
+    buildBand();
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

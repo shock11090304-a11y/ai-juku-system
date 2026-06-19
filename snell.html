@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>屈折 — スネルの法則 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+    --m1:#eaf3ff; --m2:#dfeae0;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a;
+           --m1:#142133; --m2:#16261a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:118px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>屈折 — スネルの法則</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで <b>入射角 θ₁</b> と <b>媒質2の屈折率 n₂</b> を動かすと、屈折角 θ₂ の変化と <b>n₁ sinθ₁ = n₂ sinθ₂</b> が見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>スネルの法則 n₁ sinθ₁ = n₂ sinθ₂</b>。屈折率が大きい（密な）媒質ほど光は <b>法線寄り</b> に曲がり、屈折角 θ₂ は小さくなります。角度はすべて <b>法線から</b> 測ります。</div>
+
+  <!-- 光の屈折 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="snBadge">step 1 / 4</span>
+        <span class="steptitle" id="snTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="snPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="snNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">光の屈折とスネルの法則</h2>
+    <p class="hint">空気（n₁=1.0）から屈折率 n₂ の媒質へ入る光。境界に立てた法線から測った入射角 θ₁ と屈折角 θ₂ の関係を見ます。</p>
+    <div class="stage">
+      <svg id="snSvg" viewBox="0 0 600 360" role="img" aria-label="スネルの法則の光線図">
+        <!-- 媒質領域(色分け) -->
+        <rect id="s_m1" data-ms="1" x="0" y="0" width="600" height="170" fill="var(--m1)"></rect>
+        <rect id="s_m2" data-ms="1" x="0" y="170" width="600" height="190" fill="var(--m2)"></rect>
+        <!-- 境界線 -->
+        <line id="s_bound" data-ms="1" stroke="var(--ink)" stroke-width="2"></line>
+        <!-- 法線(縦の破線) -->
+        <line id="s_norm" data-ms="1" stroke="var(--gray)" stroke-width="1.6" stroke-dasharray="6 5"></line>
+        <!-- 入射角の弧・屈折角の弧 -->
+        <path id="s_arc1" data-ms="2" fill="none" stroke="var(--red)" stroke-width="1.6"></path>
+        <path id="s_arc2" data-ms="2" fill="none" stroke="var(--green)" stroke-width="1.6"></path>
+        <!-- 入射光線 -->
+        <line id="s_inc" data-ms="1" stroke="var(--blue)" stroke-width="2.8"></line>
+        <polygon id="s_incArrow" data-ms="1" fill="var(--blue)"></polygon>
+        <!-- 屈折光線 -->
+        <line id="s_ref" data-ms="2" stroke="var(--green)" stroke-width="2.8"></line>
+        <polygon id="s_refArrow" data-ms="2" fill="var(--green)"></polygon>
+        <!-- 境界点 -->
+        <circle id="s_pO" data-ms="1" r="4.5" fill="var(--ink)"></circle>
+        <!-- ラベル -->
+        <text id="s_lm1" data-ms="1" font-size="14" text-anchor="start" fill="var(--sub)">媒質1 空気 n₁ = 1.0</text>
+        <text id="s_lm2" data-ms="1" font-size="14" text-anchor="start" fill="var(--sub)">媒質2 n₂</text>
+        <text id="s_lnorm" data-ms="1" font-size="13" text-anchor="middle" fill="var(--gray)">法線</text>
+        <text id="s_lt1" data-ms="2" font-size="15" text-anchor="middle" fill="var(--red)">θ₁</text>
+        <text id="s_lt2" data-ms="2" font-size="15" text-anchor="middle" fill="var(--green)">θ₂</text>
+        <text id="s_linc" data-ms="1" font-size="13" text-anchor="middle" fill="var(--blue)">入射光線</text>
+        <text id="s_lref" data-ms="2" font-size="13" text-anchor="middle" fill="var(--green)">屈折光線</text>
+      </svg>
+    </div>
+    <p class="cap" id="snCap"></p>
+    <div class="ctl">
+      <label for="snT1">入射角 θ₁</label>
+      <input type="range" id="snT1" min="0" max="80" step="5" value="40">
+      <span class="out" id="snT1Out">θ₁ = 40°</span>
+    </div>
+    <div class="ctl">
+      <label for="snN2">媒質2の屈折率 n₂</label>
+      <input type="range" id="snN2" min="1.0" max="2.0" step="0.1" value="1.5">
+      <span class="out" id="snN2Out">n₂ = 1.5</span>
+    </div>
+    <div class="relation" id="snRel">
+      <span style="color:var(--red)">n₁ sinθ₁</span> = <span id="snLHS">0.643</span>
+      <span id="snSign" style="margin:0 8px; font-weight:600">=</span>
+      <span style="color:var(--green)">n₂ sinθ₂</span> = <span id="snRHS">0.643</span>
+      <span class="eqnote" id="snEq">屈折角 θ₂ = 25.4°</span>
+    </div>
+  </section>
+
+  <footer>© AI塾 / trillion-ai-juku.com ・ 数式記号や図のラベルは指導用に整理した表記です。</footer>
+  <p style="margin-top:14px"><a href="kyozai.html" style="color:var(--info-ink); text-decoration:none; font-size:14px;">← 教材ライブラリ</a></p>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function clamp(v,lo,hi){return v<lo?lo:(v>hi?hi:v);}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 光の屈折 / スネルの法則 ===== */
+  (function(){
+    var step=1, t1deg=40, n2=1.5, n1=1.0;
+    /* 図形定数。viewBox 0..600 / 0..360。x,y は同一スケール(1単位=1px)で等方。 */
+    var OX=300, OY=170;        // 境界点(法線が境界と交わる点)
+    var Lray=150;              // 光線の長さ(px) 入射・屈折で共通
+    var Rarc=64;               // 角度の弧の半径(px)
+    var DEG=Math.PI/180;
+
+    var info=[null,
+      {t:"媒質1から媒質2へ", c:"上が媒質1(空気 n₁=1.0)、下が媒質2(屈折率 n₂)。境界面と、境界に立てた法線(縦の破線)をかきます。光は上から境界点に向かって進みます。"},
+      {t:"入射角θ₁と屈折角θ₂", c:"角度はすべて法線から測ります。入射光線が法線となす角が入射角θ₁、屈折光線が法線となす角が屈折角θ₂。屈折光線は媒質2側へ進みます。"},
+      {t:"スネルの法則", c:"n₁ sinθ₁ = n₂ sinθ₂。境界をはさんで n×sinθ が等しく保たれます。入射側 n₁ sinθ₁ を計算すると、屈折側 n₂ sinθ₂ も同じ値になります。"},
+      {t:"密な媒質ほど法線寄り", c:"n₂が大きいほど sinθ₂ = sinθ₁/(n₂/n₁) が小さくなり、θ₂は小さく(法線寄りに)なります。屈折率の大きい=密な媒質ほど、光は法線へ寄って曲がります。スライダーでn₂を上げて確かめましょう。"}];
+
+    /* 弧(始点角〜終点角)のSVGパス。角度は法線(下向き/上向き)から測る。 */
+    function arcPath(cx,cy,r,a0,a1,sweep){
+      var x0=cx+r*Math.sin(a0), y0=cy+ (sweep<0? -r*Math.cos(a0): r*Math.cos(a0));
+      var x1=cx+r*Math.sin(a1), y1=cy+ (sweep<0? -r*Math.cos(a1): r*Math.cos(a1));
+      return "M"+x0.toFixed(1)+","+y0.toFixed(1)+" A"+r+","+r+" 0 0 "+(sweep<0?1:0)+" "+x1.toFixed(1)+","+y1.toFixed(1);
+    }
+
+    function render(){
+      var t1=t1deg*DEG;
+      // n2 >= n1 なので sin値 <= 1、実数。clampで安全に。
+      var sinT2=clamp(n1*Math.sin(t1)/n2,-1,1);
+      var t2=Math.asin(sinT2);            // ラジアン
+      var t2deg=t2/DEG;
+      var lhs=n1*Math.sin(t1);
+      var rhs=n2*Math.sin(t2);
+
+      // 背景・境界・法線
+      attr("s_m1","width",600); attr("s_m2","width",600);
+      setLine("s_bound",30,OY,570,OY);
+      setLine("s_norm",OX,OY-150,OX,OY+150);
+      setC("s_pO",OX,OY);
+
+      // 入射光線: 媒質1(上)から境界点へ。法線(上向き)から左にθ1。
+      // 入射光の到来側端点(上・左)
+      var ix=OX - Lray*Math.sin(t1);
+      var iy=OY - Lray*Math.cos(t1);
+      setLine("s_inc",ix,iy,OX,OY);
+      // 入射矢印(境界点に向かう向き)
+      drawArrow("s_incArrow",ix,iy,OX,OY);
+
+      // 屈折光線: 境界点から媒質2(下)へ。法線(下向き)から左にθ2。
+      var rx=OX - Lray*Math.sin(t2);
+      var ry=OY + Lray*Math.cos(t2);
+      setLine("s_ref",OX,OY,rx,ry);
+      drawArrow("s_refArrow",OX,OY,rx,ry);
+
+      // 入射角の弧: 上向き法線(角0,上)から入射光線方向(角t1)まで。sweep<0=上側
+      attr("s_arc1","d",arcPath(OX,OY,Rarc,0,t1,-1));
+      // 屈折角の弧: 下向き法線から屈折光線方向まで。sweep>0=下側
+      attr("s_arc2","d",arcPath(OX,OY,Rarc,0,t2,1));
+
+      // 角度ラベル(弧の中央付近、法線とのあいだ)
+      var amid1=t1/2, amid2=t2/2, Rlab=Rarc+16;
+      setT("s_lt1",OX-Rlab*Math.sin(amid1), OY-Rlab*Math.cos(amid1)+5, "θ₁");
+      setT("s_lt2",OX-Rlab*Math.sin(amid2), OY+Rlab*Math.cos(amid2)+5, "θ₂");
+
+      // テキストラベル
+      setT("s_lm1",18,28,"媒質1 空気 n₁ = 1.0");
+      setT("s_lm2",18,OY+24,"媒質2 n₂ = "+n2.toFixed(1));
+      setT("s_lnorm",OX+30,OY-138,"法線");
+      // 入射/屈折ラベルを線の途中・外側に
+      setT("s_linc",(ix+OX)/2-40,(iy+OY)/2,"入射光線");
+      setT("s_lref",(rx+OX)/2-40,(ry+OY)/2+4,"屈折光線");
+
+      vis("snSvg",step);
+
+      // 読み出し
+      el("snT1Out").textContent="θ₁ = "+t1deg.toFixed(0)+"°";
+      el("snN2Out").textContent="n₂ = "+n2.toFixed(1);
+      el("snLHS").textContent=lhs.toFixed(3);
+      el("snRHS").textContent=rhs.toFixed(3);
+      el("snEq").textContent="屈折角 θ₂ = "+t2deg.toFixed(1)+"°";
+      // 法則は常に成立=。表示は常に等号(緑)。
+      el("snSign").textContent="=";
+      el("snRel").className="relation eq";
+
+      el("snBadge").textContent="step "+step+" / 4";
+      el("snTitle").textContent=info[step].t;
+      el("snCap").textContent=info[step].c;
+      el("snPrev").disabled=step<=1; el("snNext").disabled=step>=4;
+    }
+
+    function drawArrow(id,x0,y0,x1,y1){
+      var dx=x1-x0, dy=y1-y0, len=Math.sqrt(dx*dx+dy*dy);
+      if(len<1){el(id).setAttribute("points","");return;}
+      var ux=dx/len, uy=dy/len;          // 進行方向
+      var px=-uy, py=ux;                  // 垂直
+      var s=9;                            // 矢じりサイズ
+      var tipx=x0+ux*(len*0.62), tipy=y0+uy*(len*0.62); // 線の途中に矢じり
+      var b1x=tipx-ux*s+px*(s*0.55), b1y=tipy-uy*s+py*(s*0.55);
+      var b2x=tipx-ux*s-px*(s*0.55), b2y=tipy-uy*s-py*(s*0.55);
+      el(id).setAttribute("points",
+        tipx.toFixed(1)+","+tipy.toFixed(1)+" "+
+        b1x.toFixed(1)+","+b1y.toFixed(1)+" "+
+        b2x.toFixed(1)+","+b2y.toFixed(1));
+    }
+
+    el("snNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("snPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("snT1").addEventListener("input",function(e){t1deg=parseFloat(e.target.value);render();});
+    el("snN2").addEventListener("input",function(e){n2=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>
