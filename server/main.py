@@ -16371,11 +16371,21 @@ def _exam_questions_import_core(questions: list, skip_full: bool = False) -> dic
                      json.dumps(question_data, ensure_ascii=False) if not isinstance(question_data, str) else question_data,
                      model),
                 )
+                # 🔧 2026-06-20 [pg-txn-fix] 成功行は即 commit する。
+                # 旧実装: 失敗行の except で conn.rollback() を呼ぶと、未 commit の成功行を含む
+                #   トランザクション全体が巻き戻った。さらに Postgres では 1 行でも失敗した時点で
+                #   txn が abort 状態になり、後続 INSERT が全て «current transaction is aborted» で
+                #   黙殺される (SQLite では非再現 → 本番だけ大量サイレント欠落・inserted も過大計上)。
+                #   行ごとに commit すれば、失敗行は単独 rollback で捨てつつ既存の成功行を保全できる。
+                #   memory: homework-bulk-assign-and-pg-txn-trap / ai-juku-naive-timestamp-tz-trap
+                conn.commit()
                 inserted += 1
                 if skip_full:
                     counts[(exam_id, part_key, eiken_grade)] = counts.get((exam_id, part_key, eiken_grade), 0) + 1
             except Exception as e:
                 failed.append({"i": i, "reason": f"{type(e).__name__}: {e}"})
+                # 失敗行の未 commit 変更のみ破棄し、Postgres の abort 状態を解除する
+                # (既に commit 済みの成功行には影響しない)。
                 try: conn.rollback()
                 except Exception: pass
         conn.commit()
