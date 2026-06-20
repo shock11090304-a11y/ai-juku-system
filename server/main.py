@@ -10430,6 +10430,16 @@ def _call_gemini(body: dict, *, model: str = None, kind: str = "chat") -> dict:
 # - 致命 3 (DB size): 1024 PNG ≈ 2MB base64・list endpoint では projection 除外推奨 (別 commit)
 EXAM_IMPORT_AUTO_DALLE = os.getenv("EXAM_IMPORT_AUTO_DALLE", "0") == "1"
 EXAM_IMPORT_DALLE_MAX_PER_BATCH = int(os.getenv("EXAM_IMPORT_DALLE_MAX_PER_BATCH", "10"))
+# 🔧 2026-06-20 [exam-import-batch-commit] ad8b296 の per-row commit は txn-abort バグを
+#   解消したが、Railway Postgres では 1 行 1 fsync = 大量 re-seed (数百〜数千行) で request
+#   timeout に近づく。対策: N 行ごとに 1 commit しつつ、各行を SAVEPOINT で隔離して
+#   「1 行失敗 → その行だけ ROLLBACK TO SAVEPOINT」で abort cascade も既存成功行の巻戻しも
+#   防ぐ (per-row commit と同じ「失敗行が成功行を巻き込まない」floor を維持)。
+#   EXAM_IMPORT_COMMIT_BATCH=1 にすれば実質 per-row commit に戻せる (安全弁)。
+EXAM_IMPORT_COMMIT_BATCH = max(1, int(os.getenv("EXAM_IMPORT_COMMIT_BATCH", "100")))
+# admin endpoint /api/admin/exam-questions/import の 1 リクエスト最大行数 (timeout backstop)。
+#   savepoint batching でも INSERT 自体は行数に線形なので、病的に巨大な配列は分割させる。
+EXAM_IMPORT_MAX_ROWS = max(1, int(os.getenv("EXAM_IMPORT_MAX_ROWS", "5000")))
 
 def _generate_figure_b64_safe(figure_description: str, subject_hint: str = "", topic_hint: str = "") -> Optional[dict]:
     """DALL-E 3 で図解 1 枚生成 → base64 data URI 化。失敗時 None を返す (致命にしない)。
@@ -16285,6 +16295,13 @@ def _mirror_questions_to_supabase(mirror_url: str, ok_questions: list, valid_rot
     mirror_inserted = 0
     mirror_failed = 0
     try:
+        # ✅ 2026-06-20 [exam-import-batch-commit] txn-abort cascade に対する安全性の根拠:
+        #   この接続は autocommit=True。psycopg3 の autocommit では各 execute が独立した
+        #   暗黙トランザクションとして即時 commit され、囲うトランザクションが存在しない。
+        #   よって 1 行 INSERT が失敗しても「current transaction is aborted」状態は発生せず、
+        #   後続行は無影響 → except で rollback 不要 (mirror_failed カウントのみで安全)。
+        #   ⚠️ もし将来この connect から autocommit=True を外すなら、本番 import 側
+        #   (_exam_questions_import_core) と同じ per-row SAVEPOINT 隔離を必ず入れること。
         with _psycopg.connect(mirror_url, connect_timeout=10, autocommit=True) as conn:
             for q in ok_questions:
                 exam_id = q.get("exam_id")
@@ -16332,8 +16349,70 @@ def _exam_questions_import_core(questions: list, skip_full: bool = False) -> dic
     failed = []
     conn = db()
     c = conn.cursor()
+    # 🔧 2026-06-20 [exam-import-batch-commit] N 行ごと commit + 行ごと SAVEPOINT 隔離。
+    #   ad8b296 の per-row commit は正しいが Railway PG では 1 行 1 fsync で大量 re-seed が
+    #   timeout に近づく。SAVEPOINT で各行を隔離すれば 1 行失敗は ROLLBACK TO SAVEPOINT で
+    #   その行だけ捨てられ、同一 batch 内の既存成功行も Postgres の txn-abort cascade も巻き
+    #   込まない (= per-row commit と同じ floor を維持したまま fsync 回数を 1/N に削減)。
+    #   ⚠️ SQLite footgun: 既定 isolation_level="" は DML 前に暗黙 BEGIN を打ち、手動
+    #   SAVEPOINT/COMMIT と競合する。この接続だけ manual mode (isolation_level=None) に切替え、
+    #   BEGIN/SAVEPOINT/COMMIT を明示制御することで PG と同一コードパスを通す
+    #   (→ 下のローカル SQLite 機能テストが本番 PG と同じ savepoint ロジックを検証できる)。
+    if not USE_POSTGRES:
+        try:
+            conn._conn.isolation_level = None  # Python sqlite3 を手動トランザクションモードへ
+        except Exception:
+            pass
+
+    def _begin_txn():
+        # SQLite manual mode では SAVEPOINT を「ネスト」させる (= RELEASE で即 commit させない)
+        # ために明示 BEGIN が要る。Postgres(psycopg3 非autocommit) は最初の execute で txn を
+        # 自動 BEGIN するため何もしない (明示 BEGIN は psycopg3 では不要/警告対象)。
+        if not USE_POSTGRES:
+            c.execute("BEGIN")
+
+    # ⚠️ DALL-E 同期生成 (数秒/枚) がループ内にある時に batch commit すると、未 commit の
+    #   先行行が DALL-E HTTP 呼び出しの間ずっと「idle in transaction」になり、Railway PG の
+    #   idle_in_transaction_session_timeout に当たって batch ごと失われ得る。DALL-E 有効時は
+    #   per-row commit (batch_n=1) に落とし、遅い呼び出しを跨いで txn を開いたままにしない
+    #   (DALL-E 無効=既定の大量 re-seed 経路でのみ batch commit の fsync 削減を効かせる)。
+    batch_n = 1 if EXAM_IMPORT_AUTO_DALLE else EXAM_IMPORT_COMMIT_BATCH
+    since_commit = 0  # 直近 commit 以降の未 commit 成功行数
+    batch_keys = []   # 直近 commit 以降に skip_full で counts++ したキー (batch破棄時に巻き戻す)
+
+    def _discard_open_batch():
+        # 未 commit の現 batch (since_commit 件) を捨てた時、inserted と skip_full の counts を
+        # 実DB状態 (batch分は未耐久) に整合させ、txn を開き直す。Postgres の abort 状態も解除。
+        nonlocal since_commit, inserted, batch_keys
+        try: conn.rollback()
+        except Exception: pass
+        inserted -= since_commit
+        if skip_full:
+            for k in batch_keys:
+                counts[k] = max(0, counts.get(k, 0) - 1)
+        since_commit = 0
+        batch_keys = []
+        try: _begin_txn()
+        except Exception: pass
+
+    def _commit_batch():
+        # 現 batch を耐久化。commit 自体が失敗したら batch を破棄して整合 (例外は伝播させない)。
+        nonlocal since_commit, batch_keys
+        try:
+            conn.commit()
+        except Exception as ce:
+            log.warning(f"[ExamQ:Import] batch commit 失敗→当該batch破棄: {type(ce).__name__}: {ce}")
+            _discard_open_batch()
+            return
+        since_commit = 0
+        batch_keys = []
+        try: _begin_txn()
+        except Exception: pass
+
     try:
+        _begin_txn()
         for i, q in enumerate(questions):
+            sp_open = False  # この行で SAVEPOINT を張ったか (except での復旧分岐に使う)
             try:
                 exam_id = q.get("exam_id")
                 part_key = q.get("part_key")
@@ -16371,30 +16450,48 @@ def _exam_questions_import_core(questions: list, skip_full: bool = False) -> dic
                             log.warning(f"[ExamQ:Import] DALL-E figure generation skipped: {type(fe).__name__}: {fe}")
                             # 致命にしない (figure なしでも問題は使える)
 
+                # 🔧 2026-06-20 [exam-import-batch-commit] 1 行を SAVEPOINT で隔離して INSERT。
+                #   失敗時は ROLLBACK TO SAVEPOINT でその行だけ捨て、同一 batch 内の既存成功行も
+                #   Postgres の txn-abort cascade も巻き込まない。commit は N 行ごと (下) なので
+                #   fsync 回数は 1/N に減るが、「失敗行が成功行を巻き込まない」floor は不変。
+                c.execute("SAVEPOINT exam_import_sp")
+                sp_open = True
                 c.execute(
                     "INSERT INTO exam_questions (exam_id, part_key, eiken_grade, question_data, model) VALUES (?, ?, ?, ?, ?)",
                     (exam_id, part_key, eiken_grade,
                      json.dumps(question_data, ensure_ascii=False) if not isinstance(question_data, str) else question_data,
                      model),
                 )
-                # 🔧 2026-06-20 [pg-txn-fix] 成功行は即 commit する。
-                # 旧実装: 失敗行の except で conn.rollback() を呼ぶと、未 commit の成功行を含む
-                #   トランザクション全体が巻き戻った。さらに Postgres では 1 行でも失敗した時点で
-                #   txn が abort 状態になり、後続 INSERT が全て «current transaction is aborted» で
-                #   黙殺される (SQLite では非再現 → 本番だけ大量サイレント欠落・inserted も過大計上)。
-                #   行ごとに commit すれば、失敗行は単独 rollback で捨てつつ既存の成功行を保全できる。
-                #   memory: homework-bulk-assign-and-pg-txn-trap / ai-juku-naive-timestamp-tz-trap
-                conn.commit()
+                c.execute("RELEASE SAVEPOINT exam_import_sp")
+                sp_open = False
                 inserted += 1
+                since_commit += 1
                 if skip_full:
-                    counts[(exam_id, part_key, eiken_grade)] = counts.get((exam_id, part_key, eiken_grade), 0) + 1
+                    _k = (exam_id, part_key, eiken_grade)
+                    counts[_k] = counts.get(_k, 0) + 1
+                    batch_keys.append(_k)
+                # N 行たまったら commit (= 1 回の fsync で N 行を耐久化)。_commit_batch は commit
+                # 失敗時も当該 batch を破棄して inserted/counts を整合し、txn を開き直す。
+                if since_commit >= batch_n:
+                    _commit_batch()
             except Exception as e:
                 failed.append({"i": i, "reason": f"{type(e).__name__}: {e}"})
-                # 失敗行の未 commit 変更のみ破棄し、Postgres の abort 状態を解除する
-                # (既に commit 済みの成功行には影響しない)。
-                try: conn.rollback()
-                except Exception: pass
-        conn.commit()
+                recovered = False
+                if sp_open:
+                    # 通常: 失敗行だけ ROLLBACK TO SAVEPOINT で捨て、batch の既存成功行は残す。
+                    # 直近 commit 以降の成功行 (since_commit 件) は savepoint より外なので残る。
+                    # (Postgres の abort 状態もこれで解除され、後続行を処理続行できる)。
+                    try:
+                        c.execute("ROLLBACK TO SAVEPOINT exam_import_sp")
+                        c.execute("RELEASE SAVEPOINT exam_import_sp")
+                        recovered = True
+                    except Exception:
+                        recovered = False
+                if not recovered:
+                    # SAVEPOINT 自体が失敗 or savepoint 復旧不能 = txn が壊れている可能性。
+                    # 現 batch を丸ごと破棄して inserted/counts を整合し、txn を開き直す。
+                    _discard_open_batch()
+        _commit_batch()  # 端数 (batch_n 未満) の成功行を耐久化 (commit 失敗時も整合)
     finally:
         conn.close()
 
@@ -16453,6 +16550,14 @@ def admin_exam_questions_import(payload: dict, authorization: Optional[str] = He
     questions = payload.get("questions") or []
     if not isinstance(questions, list) or not questions:
         raise HTTPException(status_code=400, detail="questions が空 or 配列ではありません")
+    # 🔧 2026-06-20 [exam-import-batch-commit] timeout backstop: savepoint batching でも INSERT は
+    #   行数に線形なので、病的に巨大な 1 リクエストは分割させる (既定 5000・env で調整可)。
+    if len(questions) > EXAM_IMPORT_MAX_ROWS:
+        raise HTTPException(
+            status_code=413,
+            detail=f"questions が多すぎます ({len(questions)}件 > 上限{EXAM_IMPORT_MAX_ROWS}件)。"
+                   f"分割して送信してください (env EXAM_IMPORT_MAX_ROWS で上限変更可)",
+        )
 
     skip_full = bool(payload.get("skip_full", False))
     return _exam_questions_import_core(questions, skip_full)
