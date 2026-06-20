@@ -13180,14 +13180,20 @@ def admin_stripe_reconcile(authorization: Optional[str] = Header(None), x_cron_s
             email = None
             try:
                 cust_obj = s.Customer.retrieve(customer)
-                email = cust_obj.email
+                # 🔧 2026-06-20 [email-norm] Stripe の email は大文字混じり得るが、students.email は
+                #   小文字正規化で保存 (signup/admin_set とも .lower())。素の email で照合すると
+                #   "Parent@Example.com" が DB ヒットせず、実在生徒を誤って orphan 計上し reconcile
+                #   から漏らしていた。login 経路 (~9088/9326) と同じく小文字化して突合する。
+                email = (cust_obj.email or "").strip().lower() or None
             except Exception:
                 pass
             # DB 検索: stripe_customer_id 優先・無ければ email
             c.execute("SELECT id, status, plan, stripe_subscription_id, trial_end FROM students WHERE stripe_customer_id = ?", (customer,))
             row = c.fetchone()
             if not row and email:
-                c.execute("SELECT id, status, plan, stripe_subscription_id, trial_end FROM students WHERE email = ?", (email,))
+                # LOWER(email) で legacy の大文字混じり DB 行にも対応 (param は上で小文字化済)。
+                # ORDER BY id LIMIT 1 = 万一 casing 違いの重複行があっても決定的に1件選ぶ (login 経路と同規約)
+                c.execute("SELECT id, status, plan, stripe_subscription_id, trial_end FROM students WHERE LOWER(email) = ? ORDER BY id LIMIT 1", (email,))
                 row = c.fetchone()
             if not row:
                 # Stripe 側に sub があるが DB に該当生徒なし → orphan
