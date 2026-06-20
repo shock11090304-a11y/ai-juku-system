@@ -25654,7 +25654,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                     (customer, now.isoformat(), trial_end.isoformat(), student_id)
                 )
             elif email:
-                c.execute("SELECT id FROM students WHERE email=?", (email,))
+                c.execute("SELECT id FROM students WHERE LOWER(email) = ? ORDER BY id LIMIT 1", (email,))
                 row = c.fetchone()
                 if row:
                     c.execute(
@@ -25697,7 +25697,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                 except Exception as _ve:
                     log.warning(f"[Stripe webhook trial_extended] student_id ownership check failed: {_ve}")
             if target_id is None and email:
-                c.execute("SELECT id, stripe_subscription_id FROM students WHERE LOWER(email)=?", (email,))
+                c.execute("SELECT id, stripe_subscription_id FROM students WHERE LOWER(email) = ? ORDER BY id LIMIT 1", (email,))
                 row = c.fetchone()
                 if row:
                     target_id = row["id"]
@@ -25812,7 +25812,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                     (customer, subscription, plan, student_id)
                 )
             elif email:
-                c.execute("SELECT id, stripe_subscription_id FROM students WHERE email=?", (email,))
+                c.execute("SELECT id, stripe_subscription_id FROM students WHERE LOWER(email) = ? ORDER BY id LIMIT 1", (email,))
                 row = c.fetchone()
                 if row:
                     _old_sub_monthly = row["stripe_subscription_id"]
@@ -25895,7 +25895,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                         c.execute(
                             "UPDATE students SET enrollment_fee_waived = 1, "
                             "enrollment_waiver_applied_at = CURRENT_TIMESTAMP "
-                            "WHERE email = ? AND enrollment_waiver_applied_at IS NULL",
+                            "WHERE LOWER(email) = ? AND enrollment_waiver_applied_at IS NULL",
                             (email,),
                         )
                     conn.commit()
@@ -25914,7 +25914,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                 if student_id and student_id != "":
                     resolved_referred_id = int(student_id)
                 elif email:
-                    c.execute("SELECT id FROM students WHERE email=? LIMIT 1", (email,))
+                    c.execute("SELECT id FROM students WHERE LOWER(email) = ? ORDER BY id LIMIT 1", (email,))
                     _row = c.fetchone()
                     if _row:
                         resolved_referred_id = _row["id"] if hasattr(_row, "keys") else _row[0]
@@ -25935,7 +25935,7 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
             if student_id and student_id != "":
                 c.execute("SELECT id, name, email, student_email FROM students WHERE id=?", (student_id,))
             elif email:
-                c.execute("SELECT id, name, email, student_email FROM students WHERE email=?", (email,))
+                c.execute("SELECT id, name, email, student_email FROM students WHERE LOWER(email) = ? ORDER BY id LIMIT 1", (email,))
             else:
                 c.execute("SELECT id, name, email, student_email FROM students WHERE 1=0")
             s_row = c.fetchone()
