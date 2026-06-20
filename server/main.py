@@ -16349,6 +16349,35 @@ def _exam_questions_import_core(questions: list, skip_full: bool = False) -> dic
     failed = []
     conn = db()
     c = conn.cursor()
+
+    # 🔧 2026-06-20 [exam-import-dedup] 重複取込ガード: 同一 (exam_id,part_key,eiken_grade) かつ
+    #   question_data が完全一致の行は skip する。過去の手動 re-import で約2000件の重複が蓄積した
+    #   ため (dedup-20260620 でクリーンアップ済)。既存 pool の content hash を batch が触る (exam_id,
+    #   part_key) ぶんだけ前ロードし、batch 内の重複も seen_hashes で弾く。md5 は SQLite に無いので
+    #   Python 側で計算 (両 backend 共通・既存行の question_data 文字列を hash して一致判定)。
+    def _content_hash(qd):
+        s = qd if isinstance(qd, str) else json.dumps(qd, ensure_ascii=False)
+        return hashlib.md5(s.encode("utf-8")).hexdigest()
+    existing_hashes = set()
+    _pairs = sorted({(q.get("exam_id"), q.get("part_key")) for q in questions
+                     if q.get("exam_id") and q.get("part_key")})
+    if _pairs:
+        _cond = " OR ".join(["(exam_id=? AND part_key=?)"] * len(_pairs))
+        _params = tuple(v for pr in _pairs for v in pr)
+        try:
+            c.execute("SELECT exam_id, part_key, COALESCE(eiken_grade,''), question_data "
+                      f"FROM exam_questions WHERE {_cond}", _params)
+            for _r in c.fetchall():
+                existing_hashes.add((_r[0], _r[1], (_r[2] or ""), _content_hash(_r[3])))
+        except Exception as _e:
+            log.warning(f"[ExamQ:Import] dedup preload skipped (guard off): {type(_e).__name__}: {_e}")
+            existing_hashes = set()
+        else:
+            log.info(f"[ExamQ:Import] dedup preload: {len(_pairs)} pools, {len(existing_hashes)} existing hashes")
+    seen_hashes = set()
+    skipped_dup = 0
+    inserted_idx = set()  # 実際に primary へ INSERT した行 index (mirror を挿入済のみに限定)
+
     # 🔧 2026-06-20 [exam-import-batch-commit] N 行ごと commit + 行ごと SAVEPOINT 隔離。
     #   ad8b296 の per-row commit は正しいが Railway PG では 1 行 1 fsync で大量 re-seed が
     #   timeout に近づく。SAVEPOINT で各行を隔離すれば 1 行失敗は ROLLBACK TO SAVEPOINT で
@@ -16430,6 +16459,19 @@ def _exam_questions_import_core(questions: list, skip_full: bool = False) -> dic
                     skipped += 1
                     continue
 
+                # 🔧 2026-06-20 [exam-import-dedup] 既存 pool or 同一 batch 内と content 完全一致なら skip
+                #   (DALL-E mutation 前の生 question_data で hash → 同一ソースの re-import を弾く)。
+                #   ★hash 計算は SAVEPOINT より前。非JSON 等で例外を投げると batch ごと巻き戻るため、
+                #   hash 不能なら dedup を諦めて通常 INSERT 経路へ流す (= その行は SAVEPOINT 内で失敗し
+                #   単独 ROLLBACK・他の成功行を巻き込まない)。
+                try:
+                    _hkey = (exam_id, part_key, (eiken_grade or ""), _content_hash(question_data))
+                except Exception:
+                    _hkey = None
+                if _hkey is not None and (_hkey in existing_hashes or _hkey in seen_hashes):
+                    skipped_dup += 1
+                    continue
+
                 # 🎨 2026-05-23 塾長指示「DALL-E 図解付き問題プール生成」:
                 # 致命 1 fix: 同期 DALL-E call は Railway timeout (60-300s) 超過リスクのため env gate (default OFF)
                 # default OFF: figure_description のみ DB 保存 → 別 endpoint /api/admin/exam-questions/generate-pending-figures で後追い生成
@@ -16466,6 +16508,9 @@ def _exam_questions_import_core(questions: list, skip_full: bool = False) -> dic
                 sp_open = False
                 inserted += 1
                 since_commit += 1
+                if _hkey is not None:
+                    seen_hashes.add(_hkey)  # 以降の同一 content 行 (batch 内重複) を弾く
+                inserted_idx.add(i)         # mirror 対象 = 実際に挿入した行のみ
                 if skip_full:
                     _k = (exam_id, part_key, eiken_grade)
                     counts[_k] = counts.get(_k, 0) + 1
@@ -16501,9 +16546,10 @@ def _exam_questions_import_core(questions: list, skip_full: bool = False) -> dic
     mirror_result = None
     mirror_url = os.getenv("SUPABASE_MIRROR_URL", "").strip()
     if mirror_url and inserted > 0:
-        # 失敗した index を集めて、それ以外を mirror 対象に
-        failed_idx = {f.get("i") for f in failed if isinstance(f, dict)}
-        ok_questions = [q for i, q in enumerate(questions) if i not in failed_idx]
+        # 🔧 2026-06-20 [exam-import-dedup] mirror は「実際に primary へ INSERT した行」のみ対象に。
+        #   旧実装 (failed 以外=全部) は dup-skip / skip_full の未挿入行まで Supabase へ mirror し、
+        #   primary に無い行を staging に増やしていた (mirror 結果が inserted と不一致)。
+        ok_questions = [q for i, q in enumerate(questions) if i in inserted_idx]
         try:
             mirror_result = _mirror_questions_to_supabase(mirror_url, ok_questions, valid_rotation)
             log.info(f"[ExamQ:Mirror→Supabase] {mirror_result}")
@@ -16516,10 +16562,11 @@ def _exam_questions_import_core(questions: list, skip_full: bool = False) -> dic
         "received": len(questions),
         "inserted": inserted,
         "skipped_full": skipped,
+        "skipped_dup": skipped_dup,  # 既存/batch内と完全一致で弾いた重複数 (取込ガード)
         "failed": len(failed),
         "failed_details": failed[:20],
         "mirror": mirror_result,  # Supabase mirror result (None if SUPABASE_MIRROR_URL not set)
-        "message": f"✅ {inserted}問 import (skip {skipped}・失敗 {len(failed)})",
+        "message": f"✅ {inserted}問 import (skip {skipped}・重複skip {skipped_dup}・失敗 {len(failed)})",
     }
 
 
