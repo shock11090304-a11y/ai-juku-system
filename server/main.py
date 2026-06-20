@@ -10440,6 +10440,12 @@ EXAM_IMPORT_COMMIT_BATCH = max(1, int(os.getenv("EXAM_IMPORT_COMMIT_BATCH", "100
 # admin endpoint /api/admin/exam-questions/import の 1 リクエスト最大行数 (timeout backstop)。
 #   savepoint batching でも INSERT 自体は行数に線形なので、病的に巨大な配列は分割させる。
 EXAM_IMPORT_MAX_ROWS = max(1, int(os.getenv("EXAM_IMPORT_MAX_ROWS", "5000")))
+# 🔧 2026-06-20 [exam-import-selfcheck] 自己完結ゲート: 取込前に「生徒が見える情報(passage+stem+choices+図)
+#   だけで解けるか」を検証して不良を弾く。Layer A = 静的ヒューリスティック(無料・常時)、
+#   Layer B = Gemini Flash 盲ソルバー(Google AI Studio 無料枠 1500req/日・既定OFF=opt-in)。
+#   EXAM_IMPORT_SELFCHECK=0 で完全停止可(安全弁)。EXAM_IMPORT_VERIFY_AI=1 で Layer B も有効化。
+EXAM_IMPORT_SELFCHECK = os.getenv("EXAM_IMPORT_SELFCHECK", "1") == "1"      # Layer A (常時・無料)
+EXAM_IMPORT_VERIFY_AI = os.getenv("EXAM_IMPORT_VERIFY_AI", "0") == "1"      # Layer B (Gemini無料枠・opt-in)
 
 def _generate_figure_b64_safe(figure_description: str, subject_hint: str = "", topic_hint: str = "") -> Optional[dict]:
     """DALL-E 3 で図解 1 枚生成 → base64 data URI 化。失敗時 None を返す (致命にしない)。
@@ -11903,6 +11909,92 @@ def _validate_kokugo_question(qd: dict, part_key: str, strict: bool = True) -> t
     if refs_any and not passage.strip():
         reasons.insert(0, "empty_passage_with_underline_ref")
     return (len(reasons) == 0), reasons
+
+
+def _verify_self_contained_ai(qd: dict) -> tuple:
+    """Layer B: Gemini Flash(Google AI Studio 無料枠) に「生徒が見える情報(本文+問題文+選択肢)だけ」を
+    渡し、各問が追加情報なしで一意に解答可能かを盲判定させる。explanation/answer は渡さない。
+    (ok: bool, reasons: list[str])。例外は呼び出し側(_self_containment_gate)で握る → fail-open。"""
+    import re as _re
+    passage = qd.get("passage") if isinstance(qd.get("passage"), str) else ""
+    qs = qd.get("questions") or []
+    lines = []
+    if passage.strip():
+        lines.append("【前提・本文】\n" + passage)
+    for idx, q in enumerate(qs):
+        if not isinstance(q, dict):
+            continue
+        lines.append(f"\n問{idx + 1}. " + (q.get("stem") or ""))
+        ch = q.get("choices")
+        if isinstance(ch, list) and ch:
+            for ci, c in enumerate(ch):
+                lines.append(f"  {chr(65 + ci)}. {c}")
+    view = "\n".join(lines).strip()
+    if not view:
+        return True, []
+    body = {
+        "model": GEMINI_MODEL,
+        "max_tokens": 600,
+        "system": (
+            "あなたは厳格な作問校閲者です。与えられた【前提・本文】と各問の問題文・選択肢『だけ』を見て、"
+            "各問が追加情報なしで一意に解答可能か判定してください。解くのに必要な数値・条件・図・本文が"
+            "与えられていない問は『解答不能』です。勝手に値を仮定して補完しないこと。"
+            'JSON のみ出力: {"all_solvable": true/false, "unsolvable": [解けない問番号(整数)...], "reason": "簡潔な理由"}'
+        ),
+        "messages": [{"role": "user", "content": view}],
+        "response_format": {"type": "json_object"},
+    }
+    data = _call_gemini(body, model=GEMINI_MODEL)
+    txt = (((data.get("content") or [{}])[0]) or {}).get("text") or ""
+    m = _re.search(r'\{.*\}', txt, _re.S)
+    obj = json.loads(m.group(0) if m else txt)
+    if obj.get("all_solvable") is False:
+        uns = obj.get("unsolvable") or []
+        return False, [f"ai_unsolvable:{uns}:{str(obj.get('reason') or '')[:80]}"]
+    return True, []
+
+
+def _self_containment_gate(qd: dict) -> tuple:
+    """取込前の自己完結ゲート。(ok: bool, reasons: list[str]) を返す。
+    Layer A = 静的(無料・常時): ベクトル等の成分が「解説にしか無い」= 解答不能 を高精度に検出。
+    Layer B = Gemini Flash(無料枠・EXAM_IMPORT_VERIFY_AI=1 のとき): 盲ソルバーで一般的に解答可能か判定。
+    ★例外は内部で全て握り ok=True(fail-open) を返す: この関数は SAVEPOINT より前で呼ばれるため、
+      throw すると未 commit batch を巻き込む(_discard_open_batch)。取込自体も止めない設計。"""
+    import re as _re
+    reasons = []
+    try:
+        if not isinstance(qd, dict):
+            return True, []
+        passage = qd.get("passage")
+        passage = passage if isinstance(passage, str) else ""
+        qs = qd.get("questions") or []
+        if not isinstance(qs, list) or not qs:
+            return True, []
+        COORD = _re.compile(r'\(\s*-?\d+\s*[,，]\s*-?\d')              # 座標ペア (3,1)/(-1, 2)
+        VECREF = _re.compile(r'\\vec\s*\{|\\overrightarrow\s*\{|ベクトル\s*[A-Za-z\\]')
+        for idx, q in enumerate(qs):
+            if not isinstance(q, dict):
+                continue
+            stem = q.get("stem") or ""
+            expl = q.get("explanation") or ""
+            visible = passage + "\n" + stem
+            # ベクトル記号を使うのに、見える範囲(本文+問題文)に成分定義が無く、解説にだけ座標がある
+            #   = 成分が「解説にしか無い」= 生徒は解けない (id=18133 型。本来は passage に定義されるべき)
+            if VECREF.search(stem) and not COORD.search(visible) and COORD.search(expl):
+                reasons.append(f"q{idx + 1}:vector_defined_only_in_solution")
+    except Exception as _e:
+        log.warning(f"[ExamQ:SelfCheck] Layer A error (fail-open): {type(_e).__name__}: {_e}")
+        return True, []
+    if reasons:
+        return False, reasons   # Layer A で確定不良 → Layer B(課金/レート)を呼ばずに確定
+    if EXAM_IMPORT_VERIFY_AI:
+        try:
+            ok_b, why_b = _verify_self_contained_ai(qd)
+            if not ok_b:
+                return False, why_b
+        except Exception as _e:
+            log.warning(f"[ExamQ:SelfCheck] Layer B error (fail-open): {type(_e).__name__}: {_e}")
+    return True, []
 
 
 def _generate_kokugo_exam_question(
@@ -16376,6 +16468,7 @@ def _exam_questions_import_core(questions: list, skip_full: bool = False) -> dic
             log.info(f"[ExamQ:Import] dedup preload: {len(_pairs)} pools, {len(existing_hashes)} existing hashes")
     seen_hashes = set()
     skipped_dup = 0
+    gated_selfcheck = 0   # 自己完結ゲート(Layer A/B)で弾いた数
     inserted_idx = set()  # 実際に primary へ INSERT した行 index (mirror を挿入済のみに限定)
 
     # 🔧 2026-06-20 [exam-import-batch-commit] N 行ごと commit + 行ごと SAVEPOINT 隔離。
@@ -16405,7 +16498,9 @@ def _exam_questions_import_core(questions: list, skip_full: bool = False) -> dic
     #   idle_in_transaction_session_timeout に当たって batch ごと失われ得る。DALL-E 有効時は
     #   per-row commit (batch_n=1) に落とし、遅い呼び出しを跨いで txn を開いたままにしない
     #   (DALL-E 無効=既定の大量 re-seed 経路でのみ batch commit の fsync 削減を効かせる)。
-    batch_n = 1 if EXAM_IMPORT_AUTO_DALLE else EXAM_IMPORT_COMMIT_BATCH
+    # Layer B(AI検証)有効時も per-row commit(batch_n=1)に落とす: 各行の Gemini 呼び出し(数秒)を
+    # 跨いで txn を開いたままにすると Railway PG の idle_in_transaction_session_timeout に当たるため。
+    batch_n = 1 if (EXAM_IMPORT_AUTO_DALLE or EXAM_IMPORT_VERIFY_AI) else EXAM_IMPORT_COMMIT_BATCH
     since_commit = 0  # 直近 commit 以降の未 commit 成功行数
     batch_keys = []   # 直近 commit 以降に skip_full で counts++ したキー (batch破棄時に巻き戻す)
 
@@ -16471,6 +16566,16 @@ def _exam_questions_import_core(questions: list, skip_full: bool = False) -> dic
                 if _hkey is not None and (_hkey in existing_hashes or _hkey in seen_hashes):
                     skipped_dup += 1
                     continue
+
+                # 🔧 2026-06-20 [exam-import-selfcheck] 自己完結ゲート(Layer A 常時 + Layer B Gemini 無料枠)。
+                #   生徒が見える情報(passage+stem+choices)だけで解けない問題を取込前に弾く。gate は内部で
+                #   例外を握り fail-open(SAVEPOINT 前なので throw 厳禁)。不良は failed に積んで continue。
+                if EXAM_IMPORT_SELFCHECK:
+                    _sc_ok, _sc_why = _self_containment_gate(question_data)
+                    if not _sc_ok:
+                        failed.append({"i": i, "reason": "not_self_contained: " + "; ".join(_sc_why)})
+                        gated_selfcheck += 1
+                        continue
 
                 # 🎨 2026-05-23 塾長指示「DALL-E 図解付き問題プール生成」:
                 # 致命 1 fix: 同期 DALL-E call は Railway timeout (60-300s) 超過リスクのため env gate (default OFF)
@@ -16563,10 +16668,11 @@ def _exam_questions_import_core(questions: list, skip_full: bool = False) -> dic
         "inserted": inserted,
         "skipped_full": skipped,
         "skipped_dup": skipped_dup,  # 既存/batch内と完全一致で弾いた重複数 (取込ガード)
+        "gated_selfcheck": gated_selfcheck,  # 自己完結ゲートで弾いた数 (Layer A常時/Layer B Gemini)
         "failed": len(failed),
         "failed_details": failed[:20],
         "mirror": mirror_result,  # Supabase mirror result (None if SUPABASE_MIRROR_URL not set)
-        "message": f"✅ {inserted}問 import (skip {skipped}・重複skip {skipped_dup}・失敗 {len(failed)})",
+        "message": f"✅ {inserted}問 import (skip {skipped}・重複skip {skipped_dup}・自己完結NG {gated_selfcheck}・失敗 {len(failed)})",
     }
 
 
