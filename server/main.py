@@ -11934,7 +11934,10 @@ def _verify_self_contained_ai(qd: dict) -> tuple:
         return True, []
     body = {
         "model": GEMINI_MODEL,
-        "max_tokens": 600,
+        # Gemini 2.5 Flash は「思考(thinking)」トークンを出力予算から先に消費するため、小さい上限だと
+        # finishReason=MAX_TOKENS で JSON が途中で切れ json.loads 失敗→常に fail-open になる(2026-06-21 監査で判明)。
+        # 思考分の余裕を見て 3000 に引き上げる(判定JSON自体は短いので課金影響は軽微)。
+        "max_tokens": 3000,
         "system": (
             "あなたは厳格な作問校閲者です。与えられた【前提・本文】と各問の問題文・選択肢『だけ』を見て、"
             "各問が追加情報なしで一意に解答可能か判定してください。解くのに必要な数値・条件・図・本文が"
