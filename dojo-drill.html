@@ -561,10 +561,19 @@
         const d = await (await fetch(url)).json();
         let daimon, qs;
         if (preset.agg) {
-          // 単元別: 1問/payload の独立小問を agg 問ぶん集約して 1 セットに (passage 無し)
+          // 単元別: 1問/payload の独立小問を agg 問ぶん集約して 1 セットに。
+          //   🔧 2026-06-20: 各小問にその大問の passage(共通設定「\vec{a}=(3,1),\vec{b}=(-1,2)とする」等)を
+          //   _passage として引き継ぐ。集約+シャッフルで親大問の前提が剥がれ、passage に条件を置いた
+          //   小問(ベクトル/倫理/社会の資料問題など)が「条件落ち」で解けなくなっていたため、小問単位で
+          //   前提を保持し renderDrill で各問の上に表示して自己完結化する。
           const pool = (d && Array.isArray(d.all)) ? d.all : (d && d.selected ? [d.selected] : []);
           let questions = [];
-          pool.forEach(it => ((it && Array.isArray(it.questions)) ? it.questions : []).forEach(q => { if (q && q.stem) questions.push(q); }));
+          pool.forEach(it => {
+            const _p = (it && (it.passage || it.audio_script || it.prompt)) || '';
+            ((it && Array.isArray(it.questions)) ? it.questions : []).forEach(q => {
+              if (q && q.stem) questions.push(_p ? { ...q, _passage: _p } : q);
+            });
+          });
           // 🎯 unitExact: 小問 unit の接頭辞 (「(」「（」「:」「：」の前) が filter と完全一致する小問だけに厳密化。
           //   タグ付き理科プールで「力学」フィルタが「熱力学」を部分一致で巻き込むのを防ぐ。
           //   一致 0 件 (= unit 未タグの AI 生成プール等) は従来の LIKE 結果のまま使う (graceful fallback)。
@@ -608,8 +617,13 @@
       qs.forEach((q, qi) => {
         const choices = normChoices(q.choices);
         const isMC = choices.length > 0;
-        body += `<div class="q-block" data-qi="${qi}">
-          <div class="q-stem">問${qi + 1}. ${formatScientific(q.stem)}</div>`;
+        body += `<div class="q-block" data-qi="${qi}">`;
+        // 🔧 2026-06-20: agg集約で大問から引き継いだ共通設定(前提)を小問の上に表示し自己完結化。
+        //   非agg時は q._passage が無い(本文は上部に1回表示)ので二重表示にはならない。
+        if (q._passage) {
+          body += `<div class="passage">${formatScientific(markUnderlines(q._passage, [q]))}</div>`;
+        }
+        body += `<div class="q-stem">問${qi + 1}. ${formatScientific(q.stem)}</div>`;
         if (isMC) {
           body += `<div class="choices">` + choices.map((c, ci) =>
             `<div class="choice" data-qi="${qi}" data-ci="${ci}"><span class="choice-key">${String.fromCharCode(65 + ci)}.</span><span>${formatScientific(c)}</span></div>`
