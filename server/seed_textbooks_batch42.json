@@ -1,0 +1,992 @@
+{
+ "textbooks": [
+  {
+   "subject": "英語（英検準1級）",
+   "topic": "分詞構文",
+   "level": "高校標準",
+   "length": "long",
+   "type": "full_textbook",
+   "title": "分詞構文 — 時・理由・付帯状況と独立分詞構文",
+   "tags": [
+    "分詞構文",
+    "participle",
+    "付帯状況",
+    "having+p.p.",
+    "独立分詞構文",
+    "with+O+分詞",
+    "懸垂分詞",
+    "慣用表現"
+   ],
+   "content": {
+    "title": "分詞構文 — 時・理由・付帯状況と独立分詞構文",
+    "subtitle": "接続詞節を -ing/p.p. で圧縮する技術を、作り方・意味・完了形・否定・受動・独立分詞構文・with構文・慣用表現まで体系化する",
+    "subject": "英語（英検準1級）",
+    "topic": "分詞構文",
+    "level": "高校標準",
+    "sections": [
+     {
+      "type": "intro",
+      "heading": "分詞構文とは何か",
+      "body": "**分詞構文**とは、`When I saw her, I waved.`（彼女を見たとき、私は手を振った）のような **接続詞+主語+動詞** の副詞節を、接続詞と主語を消して動詞を **分詞（-ing / p.p.）** に変え、`Seeing her, I waved.` のように圧縮した表現です。\n\n読み手から見れば、分詞構文は文頭・文中・文末に置かれた **副詞のかたまり** であり、主節に対して「時・理由・条件・譲歩・付帯状況」などの情報を添えます。接続詞が消えるぶん **意味は文脈で判断** する必要があり、ここが読解の山場になります。\n\n英検準1級では、長文中で分詞構文を **正しく接続詞節に展開して意味を取る** 力と、英作文・整序で **自分で正しく分詞構文を作る** 力の両方が問われます。本書では「作り方→意味→完了/否定/受動→独立分詞構文→with構文→慣用表現」の順に、**書き換えの可逆性** を常に意識しながら体系化します。"
+     },
+     {
+      "type": "theory",
+      "heading": "分詞構文の全体系",
+      "body": "**① 作り方（副詞節 → 分詞構文）**\n手順は3つです。(1) **接続詞を消す**。(2) 副詞節の主語が主節の主語と **同じなら主語を消す**（違うなら残す＝独立分詞構文）。(3) 動詞を **-ing形** にする。\n例: `Because she felt tired, she went to bed early.` → 接続詞 because を削除 → 主語 she が主節と一致なので削除 → felt を feeling に → **`Feeling tired, she went to bed early.`**（疲れていたので、彼女は早く寝た）。\n\n**② 意味（文脈で決まる）**\n- **時**: When/As/After …（〜するとき／〜しながら／〜したあと）\n- **理由**: Because/Since/As …（〜なので）\n- **条件**: If …（〜すれば）\n- **譲歩**: Although/Though …（〜だけれども）※やや書き言葉的\n- **付帯状況（同時動作・連続動作）**: and / while …（〜しながら／そして〜する）\n\n**③ 完了分詞構文 `Having + p.p.`**\n副詞節の動作が **主節より前** に起きたことを示すときは `having + 過去分詞` を使います。\n例: `Having finished my homework, I went out.` ＝ `After I had finished my homework, I went out.`（宿題を終えてから出かけた）。\n\n**④ 否定**\n否定語 **not / never を分詞の直前** に置きます。`Not knowing what to say, he kept silent.`（何と言えばよいか分からず、彼は黙っていた）。\n\n**⑤ 受動の分詞構文**\n受動態 `be + p.p.` の be が being になり、その **being はふつう省略** されます。\n例: `(Being) Written in simple English, this book is easy to read.`（簡単な英語で書かれているので、この本は読みやすい）。主節より前の受動なら `Having been + p.p.`。\n\n**⑥ 独立分詞構文**\n副詞節の主語が主節の主語と **異なる** ときは、主語を消さずに分詞の前に残します。\n例: `It being fine, we went on a picnic.`（天気が良かったので、私たちはピクニックに行った）。`There being no bus, we walked.`（バスがなかったので歩いた）。\n\n**⑦ with + O + 分詞（付帯状況）**\n`with + 名詞 + 分詞/形容詞/前置詞句` で「〜した状態で／〜しながら」。O と分詞が **能動関係なら -ing、受動関係なら p.p.**。\n例: `with the engine running`（エンジンをかけたまま／能動）、`with his arms folded`（腕を組んで／受動）。\n\n**⑧ 慣用的分詞構文（意味上の主語を問わない決まり文句）**\n`generally speaking`（一般的に言えば）、`frankly speaking`（率直に言えば）、`judging from ~`（〜から判断すると）、`considering ~`（〜を考慮すると）、`given (that) ~`（〜を考えれば）、`weather permitting`（天気が良ければ）、`all things considered`（すべてを考慮すると）。これらは主語の一致を気にせず使える定型表現です。",
+      "table": [
+       [
+        "副詞節（接続詞つき）",
+        "分詞構文",
+        "意味"
+       ],
+       [
+        "When he saw me, he smiled.",
+        "Seeing me, he smiled.",
+        "時（〜したとき）"
+       ],
+       [
+        "Because I was tired, I rested.",
+        "Being tired, I rested.（Being省略可: Tired, I rested.）",
+        "理由（〜なので）"
+       ],
+       [
+        "After I had eaten lunch, I left.",
+        "Having eaten lunch, I left.",
+        "完了（主節より前）"
+       ],
+       [
+        "As I did not know the way, I asked.",
+        "Not knowing the way, I asked.",
+        "否定（〜しないので）"
+       ],
+       [
+        "As it was written in French, …",
+        "(Being) Written in French, …",
+        "受動（〜されているので）"
+       ],
+       [
+        "As it was getting dark, we hurried.",
+        "It getting dark, we hurried.",
+        "独立（主語が異なる）"
+       ]
+      ]
+     },
+     {
+      "type": "tip",
+      "title": "意味は『and でつなぐ』とまず訳す",
+      "body": "分詞構文の意味（時・理由・条件・譲歩・付帯状況）は文脈次第で、初見では迷います。困ったら **まず「そして／〜しながら」と機械的に and 接続でつなぎ**、文意が通るかを確認しましょう。\n例: `Smiling brightly, she opened the door.` → 「明るくほほえみ **ながら**、ドアを開けた」。これで自然なら付帯状況です。\n文頭の分詞構文は「**〜して／〜なので／〜ながら**」、文末の分詞構文（`She sat by the fire, reading a book.`）は「**そして〜する／〜しながら**」と訳すと、9割方うまくいきます。細かい意味分類（理由か時か）は、最後に主節との論理関係で詰めれば十分です。"
+     },
+     {
+      "type": "warn",
+      "title": "分詞構文で必ず狙われる失点ポイント",
+      "body": "次の誤りは英検準1級でも頻出です。○が正、❌が誤り。\n\n**1. 懸垂分詞（dangling participle）＝意味上の主語のズレ**\n分詞の意味上の主語は、原則 **主節の主語と一致** させます。\n❌ `Walking down the street, the dog bit me.`（歩いていたのは『犬』になってしまう）\n○ `While I was walking down the street, the dog bit me.` / ○ `Walking down the street, I was bitten by a dog.`\n\n**2. 時のズレを無視して -ing にする**\n主節より前の動作なのに単純-ingにすると時制が崩れます。\n❌ `Finishing the report, he submitted it yesterday.`（終える＝提出が同時に読める）\n○ `Having finished the report, he submitted it yesterday.`（終えてから提出）\n\n**3. 否定語の位置**\n❌ `Knowing not the answer, …`\n○ `Not knowing the answer, …`（not は分詞の **直前**）\n\n**4. 受動なのに -ing にする**\n❌ `Writing in English, the sign was hard to read.`（標識が『書く』側になる）\n○ `(Being) Written in English, the sign was hard to read.`\n\n**5. 独立分詞構文で主語を消してしまう**\n主語が主節と違うのに消すと懸垂分詞になります。\n❌ `Being fine, we went out.`（『私たち』が fine になる）\n○ `It being fine, we went out.`（天候を表す It を残す）\n\n**6. with構文で能動・受動を取り違える**\n❌ `with his arms folding`（腕が自分で『折る』）\n○ `with his arms folded`（腕は『組まれる』＝受動 → p.p.）\n○ `with the engine running`（エンジンは『動く』＝能動 → -ing）\n\n**7. 慣用表現を一般則で『直そう』とする**\n❌ `Judging from his accent, he must be from Osaka.` を懸垂だと誤判定して直す必要はない。\n○ `judging from / generally speaking / considering` などは **主語一致を問わない定型** なので、そのまま正しい。\n\n**8. 接続詞を残したまま分詞にする（中途半端）**\n❌ `Because feeling tired, she rested.`（because を残すなら節のまま）\n○ `Feeling tired, she rested.` または `Because she felt tired, she rested.`"
+     },
+     {
+      "type": "example",
+      "number": 1,
+      "question": "次の文を構造分析し、接続詞節に展開して和訳しなさい。\n`Smiling at the children, she handed out the candy.`",
+      "thought": "文頭にコンマ区切りの -ing 句があるので分詞構文。主節は `she handed out the candy`。分詞 Smiling の意味上の主語は主節主語 she と一致（彼女がほほえみ、彼女が配る）。時制のズレを示す having はなく単純-ingなので、主節と **同時** の動作＝付帯状況と判断する。",
+      "answer": "和訳: **「子どもたちにほほえみかけながら、彼女はキャンディーを配った。」**\n展開: `(While she was) smiling at the children, she handed out the candy.`",
+      "explanation": "構造分析: 主節は **S** `she` / **V** `handed out` / **O** `the candy`。分詞句 `Smiling at the children` は文全体にかかる **M（副詞句）**。\n意味上の主語: Smiling の主語は主節の she と一致するため省略されている（懸垂ではない）。\n時制: `handed`（過去）と同時の動作を表す単純-ing。前後関係はなく『〜しながら』の **付帯状況（同時動作）**。よって接続詞節に戻すなら while が自然で、`While she was smiling at the children, she handed out the candy.` となる。\n誤りやすい点: ここで `Having smiled …` にすると「ほほえみ終えてから配った」と連続動作になり、原文のニュアンス（同時にほほえみながら）からズレる。"
+     },
+     {
+      "type": "example",
+      "number": 2,
+      "question": "次の文を構造分析し、接続詞節に展開して和訳しなさい。完了分詞構文に注意。\n`Having lived in London for ten years, she speaks English fluently.`",
+      "thought": "文頭が `Having + p.p.` なので **完了分詞構文**。これは分詞の動作が主節より **前** に起きたことを示す。主節は `she speaks English fluently`（現在）。意味上の主語は she で一致。『10年間ロンドンに住んだ（経験・継続が過去にあった）→ だから今は流暢』という理由・前後関係を表す。",
+      "answer": "和訳: **「（これまで）10年間ロンドンに住んでいたので、彼女は英語を流暢に話す。」**\n展開: `Because she has lived in London for ten years, she speaks English fluently.`",
+      "explanation": "構造分析: 主節は **S** `she` / **V** `speaks` / **O** `English` / **M** `fluently`。文頭の `Having lived in London for ten years` が **M（副詞句）**。\n時制が要点: 主節は現在 `speaks`。それより前から続く経験・継続を示すため `Having lived`（完了分詞構文）が使われる。展開すると現在完了 `has lived`（継続）＋理由の because が最も自然。\n対比: もし単純-ing で `Living in London, …` とすると『（今）ロンドンに住みながら』と **主節と同時** の意味になり、『過去10年の経験ゆえ今流暢』という因果が表せない。`for ten years` という継続の期間表現とも `Having lived` の方が整合する。"
+     },
+     {
+      "type": "example",
+      "number": 3,
+      "question": "次の文を構造分析し、接続詞節（または同等の節）に展開して和訳しなさい。独立分詞構文・with構文に注意。\n`The sun having set, we hurried home with the streetlights coming on one by one.`",
+      "thought": "前半 `The sun having set` は分詞 having set の前に主語 The sun が残っている → **独立分詞構文**（主節主語 we と異なる）。しかも having なので主節より前の完了。後半 `with the streetlights coming on …` は **with+O+分詞** の付帯状況。streetlights と come on は能動関係なので -ing。",
+      "answer": "和訳: **「日が沈んでしまったので、私たちは街灯が一つまた一つと灯る中、急いで家路についた。」**\n展開: `Because the sun had set, we hurried home, and the streetlights were coming on one by one.`",
+      "explanation": "構造分析: 主節は **S** `we` / **V** `hurried` / **M** `home`。\n独立分詞構文: `The sun having set` は意味上の主語 `The sun` が主節主語 `we` と異なるため主語を残す。`having set` は **完了**＝主節 hurried より前に日が沈んだことを示すので、展開は `Because the sun had set`（過去完了）。\nwith+O+分詞: `with the streetlights coming on one by one` は付帯状況。O=`the streetlights` と動詞 `come on`（点灯する）は **能動関係**（街灯が灯る）なので分詞は **-ing**。展開すると `the streetlights were coming on …` と同時進行の状況描写になる。\n総合訳の流れ: 〔理由：日没（主節より前）〕→〔主節：急いで帰宅〕→〔付帯：街灯が次々点灯する情景〕。"
+     },
+     {
+      "type": "practice",
+      "number": 1,
+      "question": "次の副詞節を分詞構文に書き換えなさい。\n`As I had never seen such a beautiful sunset before, I took many photos.`"
+     },
+     {
+      "type": "practice",
+      "number": 2,
+      "question": "次の文には懸垂分詞（dangling participle）の誤りがあります。意味上の主語が正しくなるように、文全体を2通り（①分詞構文のまま主節を直す ②接続詞節に戻す）で訂正しなさい。\n`Driving to the office, my phone suddenly rang.`"
+     },
+     {
+      "type": "practice",
+      "number": 3,
+      "question": "次の分詞構文を含む文を、構造（特に with+O+分詞）に注意して和訳しなさい。\n`She listened to the lecture with her eyes closed, taking notes from time to time.`"
+     },
+     {
+      "type": "answer",
+      "number": 1,
+      "answer": "**`Having never seen such a beautiful sunset before, I took many photos.`**\n（否定語を前に出して `Never having seen such a beautiful sunset before, …` も可）",
+      "explanation": "手順: (1) 接続詞 As を削除。(2) 副詞節の主語 I は主節の主語 I と一致するので削除。(3) 動詞を分詞化。ここで時制が鍵で、原文は `had never seen`（過去完了）＝主節 `took`（過去）より **前** の経験なので、単純-ing ではなく **完了分詞構文 `Having seen`** を用いる。\n否定の扱い: never は分詞の **直前** に置く。`Having never seen …` が標準的だが、否定語を句頭に出した `Never having seen …` も英検レベルでは許容される。\nよくある誤答: ❌ `Seeing never …`(否定語 never の位置が不適切)。なお △ `Not having seen …` は文法的には可だが、原文 `had never seen` の『一度も〜ない』という強い否定が弱まるため `Having never seen` が最適。時制を無視した ❌ `Never seeing such a beautiful sunset, …` は、主節より前の経験を表せないため不可。"
+     },
+     {
+      "type": "answer",
+      "number": 2,
+      "answer": "原文の問題点: `Driving …` の意味上の主語が、主節主語 `my phone` になってしまい『電話が運転する』という懸垂分詞。\n**① 分詞構文のまま主節を直す**: `Driving to the office, I suddenly heard my phone ring.`（または `… I got a sudden phone call.`）\n**② 接続詞節に戻す**: `While I was driving to the office, my phone suddenly rang.`",
+      "explanation": "懸垂分詞の修正は2方針です。\n**方針①（分詞を残す）**: 分詞 Driving の主語は『運転する人＝I』。だから主節の主語も I にそろえる必要があります。`I suddenly heard my phone ring`（知覚動詞 hear + O + 原形）とすれば、Driving の主語＝I で一致し、文意（運転中に電話が鳴った）も保てます。\n**方針②（接続詞節に戻す）**: 分詞構文をやめ、`While I was driving …` と明示的な主語付きの節にすれば、主節は元の `my phone suddenly rang` のままでも整合します。\nポイント: 懸垂分詞の訂正は『分詞の主語と主節の主語を一致させる』のが本質。①は主節を、②は分詞句側を、それぞれ主語が合うように作り替えています。\n誤答注意: ❌ `Driving to the office, my phone …` のまま語順だけ変えても主語不一致は解消しない。"
+     },
+     {
+      "type": "answer",
+      "number": 3,
+      "answer": "和訳: **「彼女は目を閉じて講義を聞き、ときどきメモを取っていた。」**",
+      "explanation": "構造分析: 主節は **S** `She` / **V** `listened to` / **O** `the lecture`。\n`with her eyes closed`: **with+O+分詞** の付帯状況。O=`her eyes` と動詞 close は **受動関係**（目は『閉じられる』）なので過去分詞 **closed**。意味は『目を閉じた状態で』。もし ❌ `with her eyes closing` とすると『目がひとりでに閉じていく』動作の進行になり不自然。\n`taking notes from time to time`: 文末の分詞構文（付帯状況）。意味上の主語は主節主語 She と一致し、`listened` と同時の動作なので単純-ing。展開すると `and she took notes from time to time` または `while she took notes …`。\nまとめ: 1文の中に『with+O+p.p.（状態）』と『文末-ing 分詞構文（同時動作）』の2種類の付帯状況が共存している点が学習ポイント。"
+     },
+     {
+      "type": "summary",
+      "heading": "分詞構文 総まとめ",
+      "points": [
+       "作り方は3手順: ①接続詞を消す ②主語が主節と同じなら消す ③動詞を-ingにする。",
+       "意味は文脈で決まる: 時(When/As)・理由(Because/Since)・条件(If)・譲歩(Although)・付帯状況(and/while)。迷ったらまず『〜しながら/そして』と訳す。",
+       "主節より前の動作は完了分詞構文 `Having+p.p.` を使う（単純-ingは主節と同時）。",
+       "否定は `Not -ing / Never -ing` のように否定語を分詞の直前に置く。",
+       "受動は `(Being) p.p.` で being はふつう省略。主節より前なら `Having been p.p.`。",
+       "意味上の主語が主節と違うときは主語を残す＝独立分詞構文（It being fine, … / There being no bus, …）。",
+       "with+O+分詞は付帯状況: O と分詞が能動なら-ing(`with the engine running`)、受動ならp.p.(`with his arms folded`)。",
+       "最大の失点は懸垂分詞: 分詞の意味上の主語は原則『主節の主語』と一致させる(×Walking …, the dog bit me)。",
+       "慣用表現(generally/frankly speaking, judging from, considering, given that, weather permitting, all things considered)は主語一致を問わない定型として暗記する。",
+       "読解では分詞構文を接続詞節に展開して時制・主語・意味関係を確定し、英作文では逆に節を正しく圧縮する——可逆的に運用できることがゴール。"
+      ]
+     }
+    ]
+   },
+   "status": "published",
+   "source": "claude_max_batch42"
+  },
+  {
+   "subject": "英語（早慶上智）",
+   "topic": "語法・文法 (ランダム高難度)",
+   "level": "高校標準",
+   "length": "medium",
+   "type": "unit_lesson",
+   "title": "早慶上智の語法・文法 高難度ランダム特訓",
+   "tags": [
+    "語法",
+    "文法",
+    "仮定法",
+    "倒置",
+    "比較",
+    "クジラ構文",
+    "早慶上智",
+    "誤文訂正"
+   ],
+   "content": {
+    "title": "早慶上智の語法・文法 高難度ランダム特訓",
+    "subtitle": "頻出だが落としやすい動詞語法・仮定法倒置・比較・関係詞の盲点を一気に潰す",
+    "subject": "英語（早慶上智）",
+    "topic": "語法・文法 (ランダム高難度)",
+    "level": "高校標準",
+    "sections": [
+     {
+      "type": "intro",
+      "heading": "なぜ「語法」で差がつくのか",
+      "body": "早慶上智の文法・語法問題は、知っていれば一瞬・知らなければ確実に落とす **二択化された知識** を狙ってきます。たとえば `suggest that he go`(原形)と `suggest him to go`(誤り)の区別、`Were I rich`(仮定法倒置)、`no more A than B`(クジラ構文)などは、ルールを正確に覚えていれば即答できますが、あいまいだと distractor に吸い込まれます。\n\nこの講では、**動詞語法・仮定法の応用・倒置/強調構文・比較の難所・関係詞/準動詞・数量語法** から高頻度ポイントを横断的に集めました。すべて「なぜそれが正解で、他がなぜ誤りか」を構造で説明します。暗記ではなく **判別の手順** を身につけてください。"
+     },
+     {
+      "type": "theory",
+      "heading": "最重要 動詞語法・構文パターン一覧",
+      "body": "まず核となる型を表で押さえます。要求・提案・主張を表す動詞(`suggest / insist / demand / recommend / propose / require`)が **「~すべきだ」という当為** を導く that節では、動詞は **`(should) + 原形`**(主語の人称・時制に関わらず原形)になります。これを **仮定法現在** と呼びます。`spare / deprive / rob / remind / convince / provide / substitute / prefer` などは取る前置詞が固定されており、これを取り違えると一発で誤りです。",
+      "table": [
+       [
+        "パターン",
+        "意味",
+        "正しい例 / 注意"
+       ],
+       [
+        "suggest / insist / demand that S (should) 原形",
+        "~するよう提案/主張/要求する",
+        "`I suggested that he be present.`(原形 be)/ `suggest him to do`は不可"
+       ],
+       [
+        "spare A B",
+        "AにB(手間・時間)を割く/省く",
+        "`Spare me the details.`(私に詳細を省く=言わないで)"
+       ],
+       [
+        "deprive / rob / strip A of B",
+        "AからBを奪う",
+        "`The war deprived him of his home.`(前置詞は of)"
+       ],
+       [
+        "remind / convince A of B",
+        "AにBを思い出させる/納得させる",
+        "`This reminds me of my childhood.`(remind A to do も別義で可)"
+       ],
+       [
+        "provide / present A with B",
+        "AにBを供給/提供する",
+        "`provide him with food`=`provide food for him`"
+       ],
+       [
+        "substitute A for B",
+        "Bの代わりにAを使う(AでBを置換)",
+        "`substitute margarine for butter`=バターの代わりにマーガリンを使う"
+       ],
+       [
+        "prefer A to B",
+        "BよりAを好む",
+        "`I prefer tea to coffee.`(than でなく to)/ `prefer to do rather than do`"
+       ]
+      ]
+     },
+     {
+      "type": "tip",
+      "title": "仮定法倒置は「ifの消去+助動詞前出し」",
+      "body": "`if` を省略すると **(助)動詞が主語の前に出て倒置** します。3パターンだけ覚えれば十分です。\n\n1. `If I were rich` → **`Were I rich`**\n2. `If I had known` → **`Had I known`**\n3. `If you should need help` → **`Should you need help`**(万一~なら)\n\nいずれも倒置形では `if` を **書かない**(`If were I`…は誤り)。`Had I known the truth, I would have told you.` のように、主節は通常の仮定法の形(`would / could / might + (have) 過去分詞`)を保ちます。"
+     },
+     {
+      "type": "warn",
+      "title": "ありがちな誤り 5連発",
+      "body": "次はすべて **誤り** です。理由とセットで覚えましょう。\n\n- ✕ `He suggested me to go.` → ◯ `He suggested that I (should) go.` / `He suggested going.`(suggest は to不定詞目的語をとらない)\n- ✕ `I prefer staying home than going out.` → ◯ `I prefer staying home to going out.`(prefer は to)\n- ✕ `It is time we go home.` → ◯ `It is time we **went** home.`(`It is (high) time S+過去形`=仮定法過去)\n- ✕ `The number of students are increasing.` → ◯ `The number of students **is** increasing.`(`the number of ~`は単数扱い)\n- ✕ `A whale is no more a fish than a horse is **not**.` → ◯ `A whale is no more a fish than a horse is.`(クジラ構文に not は不要)"
+     },
+     {
+      "type": "example",
+      "number": 1,
+      "question": "空所に最も適切なものを選べ。\n\n( ) the truth at that time, I would have acted differently.\n(A) If I knew  (B) Had I known  (C) If I have known  (D) Knowing",
+      "thought": "「あの時(at that time)真実を知っていたら、違う行動をしただろう」=過去の事実に反する仮定なので **仮定法過去完了**。主節が `would have acted` だから、条件節は `If I had known` 相当。`if` が無い選択肢を探すと、(B) `Had I known` は `if` 省略による仮定法倒置で完全一致。",
+      "answer": "(B) Had I known",
+      "explanation": "主節 `would have acted differently` は仮定法過去完了の主節。これに対応する条件節は `If I had known the truth …`。選択肢に `If I had known` は無いが、`if` を省くと **`Had I known`**(倒置)となり、これが (B)。(A) `If I knew` は仮定法過去で、現在の事実に反する仮定→過去の `at that time` および主節の `have acted` と時制が合わず不可。(C) `If I have known` は現在完了で仮定法ではない。(D) `Knowing the truth …` は分詞構文だが「知っていたら(反実)」の意味を出せず、主節の過去完了と噛み合わない。"
+     },
+     {
+      "type": "example",
+      "number": 2,
+      "question": "下線部に誤りがあれば訂正せよ(誤文訂正)。\n\nMy boss demanded that the report (ア)was (イ)submitted by Friday, and (ウ)reminded me (エ)of the strict deadline.",
+      "thought": "`demand that ~`(要求・命令)の that 節は **`(should) + 原形`**。「金曜までに提出するよう要求した」なので受動態の原形 `the report (should) be submitted` が正しく、(ア)`was` が誤り。`remind A of B` は前置詞 of で正しい。",
+      "answer": "(ア) was → (should) be  ※`the report (should) be submitted by Friday`",
+      "explanation": "要求・命令・提案・主張(当為)を表す動詞 — **demand / require / insist / suggest / recommend / propose** — の後の that 節は **`(should) + 動詞の原形`** になります(mandative subjunctive)。本文は `demand`(要求)なので、受動態の原形 **`be submitted`**(または `should be submitted`)が正しく、(ア)`was` は誤り。(イ)`submitted` は過去分詞で正しい(受動)。(ウ)`reminded` は `remind A of B`=「AにBを思い出させる」、(エ)`of` は正しい前置詞。よって訂正箇所は (ア) のみ。\n\n※ `insist` は「~すべきだと要求する」当為の意では同じく `(should) 原形`、「~は事実だと主張する」意では通常の時制をとり文脈で割れる。本問は紛れのない `demand` で出題している。"
+     },
+     {
+      "type": "practice",
+      "number": 1,
+      "question": "空所に最も適切なものを選べ。\n\nA computer is to a modern office ( ) an engine is to a car: indispensable.\n(A) which  (B) that  (C) what  (D) as"
+     },
+     {
+      "type": "practice",
+      "number": 2,
+      "question": "下線部に誤りがあれば訂正せよ(誤文訂正)。\n\n(ア)Not until he failed the exam (イ)he realized that he (ウ)should have studied (エ)much harder."
+     },
+     {
+      "type": "answer",
+      "number": 1,
+      "answer": "(C) what",
+      "explanation": "`A is to B what C is to D`=「AのBに対する関係は、CのDに対する関係と同じ」という比例の定型表現です。ここでは「コンピュータがオフィスにとっての存在は、エンジンが車にとっての存在と同じ(=不可欠)」。この `what` は **先行詞を含む関係代名詞**(関係代名詞 what)で、`the thing that ~` に相当し、後ろに不完全文 `an engine is to a car` を従えます。(A)`which`・(B)`that` は先行詞を必要とするためここでは不可。(D)`as` は `A is to B as C is to D` という別構文では使えますが、本問の定型は `what` を問うており、`as` を入れると `what` 構文として成立しません(早慶頻出の定型として `what` が正解)。"
+     },
+     {
+      "type": "answer",
+      "number": 2,
+      "answer": "(イ) he realized → did he realize  ※`Not until he failed the exam did he realize …`",
+      "explanation": "**否定の副詞句が文頭に出ると、主節は倒置**(疑問文の語順)になります。`Not until ~`(~して初めて)が文頭にある場合、その後の **主節** が倒置されます。注意点は、倒置するのは `Not until` 直後の従属節 `he failed the exam` ではなく、**主節** `he realized` の側だという点です。したがって `did he realize` が正しく、(イ)`he realized` が誤り。完成形は `Not until he failed the exam **did he realize** that he should have studied much harder.`(試験に落ちて初めて、もっと猛勉強すべきだったと悟った)。(ウ)`should have studied`(=~すべきだったのにしなかった)・(エ)`much harder`(比較級の強調 much)はいずれも正しい。"
+     },
+     {
+      "type": "summary",
+      "heading": "総まとめ 判別チェックリスト",
+      "points": [
+       "要求・提案・主張(suggest/insist/demand/recommend/require)の that節は **(should) 原形**。`suggest 人 to do` は不可。",
+       "前置詞固定語法: **deprive/rob/strip A of B**, **remind/convince A of B**, **provide A with B**, **substitute A for B**, **prefer A to B**。",
+       "仮定法倒置は if 省略+(助)動詞前出し: **Were I / Had I known / Should you ~**。主節は通常の仮定法の形を保つ。",
+       "`It is (high) time S + 過去形`(仮定法過去)。`It is time we went` であって `we go` ではない。",
+       "否定語句(Not until / Never / Hardly / Only after)が文頭→**主節が倒置**。倒すのは従属節でなく主節。",
+       "クジラ構文 `A is no more X than B (is)`=「BがXでないのとちょうどAも同様にXでない」。例 `A whale is no more a fish than a horse is.`",
+       "比例構文 `A is to B what C is to D`(関係代名詞 what)。",
+       "数量一致: **the number of ~ は単数** / a number of ~ は複数。`each/every+単数`、`most of the+名詞` と `almost` の混同に注意。"
+      ]
+     }
+    ]
+   },
+   "status": "published",
+   "source": "claude_max_batch42"
+  },
+  {
+   "subject": "英語（早慶上智）",
+   "topic": "会話表現・イディオム",
+   "level": "高校標準",
+   "length": "long",
+   "type": "full_textbook",
+   "title": "会話表現・イディオム完全攻略（早慶上智）",
+   "tags": [
+    "会話表現",
+    "イディオム",
+    "句動詞",
+    "会話空所補充",
+    "早慶上智",
+    "上智",
+    "慶應SFC",
+    "言い換え"
+   ],
+   "content": {
+    "title": "会話表現・イディオム完全攻略（早慶上智）",
+    "subtitle": "会話定型表現と頻出イディオム・句動詞を「文字どおりに読まない」視点で攻略する",
+    "subject": "英語（早慶上智）",
+    "topic": "会話表現・イディオム",
+    "level": "高校標準",
+    "sections": [
+     {
+      "type": "intro",
+      "heading": "なぜ早慶上智は会話表現・イディオムを問うのか",
+      "body": "早慶上智の英語では、**会話文の空所補充**・**会話定型表現の選択**・**イディオムの言い換え（paraphrase）**・**長文中・正誤問題に紛れたイディオム**が頻出です。とくに**上智**と**慶應SFC**は会話・口語表現の比重が高く、**早大**は長文・正誤の中でイディオムの意味を問います。\n\nこれらの設問の本質は、**「英文を文字どおりに読まない」**点にあります。たとえば `pull someone's leg` は「人の脚を引っ張る」ではなく**からかう**、`under the weather` は天気の話ではなく**体調が悪い**です。直訳すると必ず誤答に誘導されます。\n\n攻略の軸は3つです。①**会話定型表現**を「場面（電話・買い物・依頼・謝罪）」ごとに塊で覚える、②**句動詞・イディオム**を意味と自然な例文ごと記憶する、③空所補充では**応答（response）から逆算して問い（prompt）を推測**する。本テキストは2つの分類表でストックを作り、早慶上智形式の例題と演習で運用力まで仕上げます。"
+     },
+     {
+      "type": "theory",
+      "heading": "理論1：会話定型表現（場面別ストック）",
+      "body": "会話空所補充は**場面の型**を知っているかで決まります。下表は早慶上智で狙われる定型表現を「**聞き返す/助力を申し出る/提案/電話/買い物・飲食/謝罪と応答/やわらげ表現**」に分類したものです。\n\nとくに注意すべき**応答の定型**：謝罪 `I'm sorry.` への返答は `Never mind.`（気にしないで）/ `No worries.`（大丈夫）/ `That's all right.`。感謝 `Thank you.` への返答は `You're welcome.` / `Not at all.` / `My pleasure.`。会計を「私のおごり」と申し出るのは `It's on me.`（×`It's on the house.` は店側のサービス＝店のおごり）。電話で「私です」は `Speaking.`、「お待ちください」は `Hold on, please.` / `Hold the line.`、「おつなぎします」は `I'll put you through.`。",
+      "table": [
+       [
+        "場面 / カテゴリー",
+        "表現",
+        "意味・使う場面"
+       ],
+       [
+        "聞き返す",
+        "I beg your pardon? / (I'm) sorry? / Come again?",
+        "「もう一度言っていただけますか」。Come again? はくだけた口語"
+       ],
+       [
+        "賛成する",
+        "I couldn't agree more. / You can say that again. / Tell me about it.",
+        "「まったく同感だ」。You can say that again. は強い同意"
+       ],
+       [
+        "反対・保留",
+        "I'm not so sure (about that). / I see your point, but ...",
+        "やわらかい不同意。頭から No と言わない大人の言い方"
+       ],
+       [
+        "助力を申し出る",
+        "Shall I help you? / Why don't I carry it?",
+        "「〜しましょうか」。Shall I 〜? は申し出の定型"
+       ],
+       [
+        "提案する",
+        "Why don't we ...? / How about ...ing? / Let's ...",
+        "「〜しませんか」。Why don't we は誘い、How about の後は名詞か動名詞"
+       ],
+       [
+        "電話",
+        "Speaking. / Hold on, please. / I'll put you through. / The line is busy.",
+        "Speaking.=「私です」、put 〜 through=「電話をつなぐ」"
+       ],
+       [
+        "買い物・飲食",
+        "I'll take it. / Could I have the check (bill)?, please. / It's on me.",
+        "I'll take it.=「それ買います」、check=米/bill=英、It's on me.=「私のおごり」"
+       ],
+       [
+        "謝罪と応答",
+        "I'm afraid I can't. / Never mind. / No worries. / That's all right.",
+        "謝罪・断りに対し Never mind 等で「気にしないで」と返す"
+       ],
+       [
+        "やわらげ（softener）",
+        "I'm afraid ... / If you don't mind, ... / Would you mind ...ing?",
+        "I'm afraid は悪い知らせの前置き。Would you mind 〜? への承諾は Not at all."
+       ]
+      ]
+     },
+     {
+      "type": "theory",
+      "heading": "理論2：頻出イディオム・句動詞（意味と例文）",
+      "body": "句動詞は**動詞＋前置詞/副詞**で意味が一変します。`put up with`（我慢する）、`call off`（中止する）のように、構成語の直訳からは意味が読めないものが多く、**意味と例文をセットで暗記**するのが最短です。\n\n下表前半が句動詞、後半が比喩的イディオムです。とくに混同注意：`make up`（仲直りする／でっち上げる／化粧する）vs `make up for`（埋め合わせる）vs `make up one's mind`（決心する）。`look up to`（尊敬する）⇔`look down on`（見下す）。比喩イディオムは**全て非文字どおり**：`cost an arm and a leg`（腕と脚の値段ではなく**非常に高価**）、`a piece of cake`（ケーキ一切れではなく**朝飯前**）。",
+      "table": [
+       [
+        "種別",
+        "イディオム / 句動詞",
+        "意味と例文"
+       ],
+       [
+        "句動詞",
+        "put up with",
+        "我慢する。`I can't put up with this noise any longer.`（この騒音にもう耐えられない）"
+       ],
+       [
+        "句動詞",
+        "get along with",
+        "（人と）うまくやる。`She gets along well with her colleagues.`"
+       ],
+       [
+        "句動詞",
+        "look up to / look down on",
+        "尊敬する / 見下す。`Many students look up to their coach.`"
+       ],
+       [
+        "句動詞",
+        "run out of",
+        "（〜を）使い果たす。`We've run out of milk.`（牛乳を切らした）"
+       ],
+       [
+        "句動詞",
+        "come up with",
+        "（案などを）思いつく。`He came up with a brilliant idea.`"
+       ],
+       [
+        "句動詞",
+        "call off / put off",
+        "中止する / 延期する。`They called off the match.` / `Let's put off the meeting till Friday.`"
+       ],
+       [
+        "句動詞",
+        "take after",
+        "（親などに）似ている。`He takes after his father in temper.`"
+       ],
+       [
+        "句動詞",
+        "bring up / turn down",
+        "育てる・話題に出す / 断る・音量を下げる。`She was brought up in Kyoto.` / `He turned down the offer.`"
+       ],
+       [
+        "句動詞",
+        "stand for / make up for",
+        "を表す・象徴する / を埋め合わせる。`UN stands for the United Nations.` / `I'll make up for the lost time.`"
+       ],
+       [
+        "句動詞",
+        "cut down on / get over / look forward to",
+        "減らす / 克服する・回復する / を楽しみに待つ。`Cut down on sugar.` / `I'm looking forward to seeing you.`（to の後は動名詞）"
+       ],
+       [
+        "イディオム",
+        "once in a blue moon",
+        "ごくまれに。`He calls his parents once in a blue moon.`"
+       ],
+       [
+        "イディオム",
+        "beat around the bush",
+        "遠回しに言う・要点を避ける。`Stop beating around the bush and tell me the truth.`"
+       ],
+       [
+        "イディオム",
+        "under the weather",
+        "体調が悪い。`I'm feeling a bit under the weather today.`"
+       ],
+       [
+        "イディオム",
+        "on the same page",
+        "（考え・認識が）一致して。`Let's make sure we're all on the same page.`"
+       ],
+       [
+        "イディオム",
+        "a piece of cake / hit the books",
+        "とても簡単なこと（朝飯前） / 猛勉強する。`The test was a piece of cake.` / `I have to hit the books tonight.`"
+       ],
+       [
+        "イディオム",
+        "break the ice / pull someone's leg",
+        "（初対面の）緊張をほぐす / 人をからかう。`He told a joke to break the ice.` / `Are you pulling my leg?`"
+       ],
+       [
+        "イディオム",
+        "cost an arm and a leg / let the cat out of the bag",
+        "非常に高価である / うっかり秘密を漏らす。`This bag cost an arm and a leg.` / `Don't let the cat out of the bag.`"
+       ]
+      ]
+     },
+     {
+      "type": "tip",
+      "title": "会話空所補充の解き方：応答から問いを逆算する",
+      "body": "会話空所補充は、**空所の前後の発話（とくに応答）から逆算**するのが鉄則です。\n\n①**応答を先に読む**：空所が問いかけ側なら、相手の答え（`Yes, please.` / `No, thanks.` / `Sure.` / `Not at all.`）が空所の型を決めます。たとえば応答が `Not at all.` なら、空所は `Would you mind ...?` の依頼文だと逆算できます（`Would you mind 〜?` への承諾は `Not at all.`＝「いいですよ」）。\n\n②**tone / register（口調・丁寧さ）を合わせる**：店員と客、上司と部下など、場面に合う丁寧さの表現を選ぶ。くだけた `Come again?` を商談の場で選ぶと register mismatch で誤り。\n\n③**イディオムは非文字どおりで判断**：選択肢にイディオムが混じったら、文字どおりの意味で文脈に合うかではなく、**比喩的意味**で判定する。\n\n④**つながり語に注目**：`I'm afraid ...`（悪い知らせ）、`Actually, ...`（訂正）、`I mean, ...`（言い換え）など、後続内容を予告する目印を手がかりにする。"
+     },
+     {
+      "type": "warn",
+      "title": "頻出の罠：直訳・register・和製英語・紛らわしい語",
+      "body": "次の落とし穴に注意してください。\n\n1. **イディオムの直訳ミス**：`pull someone's leg`＝×「足を引っ張る（邪魔する）」→正しくは**からかう**。`under the weather`＝×天気の話→**体調が悪い**。`beat around the bush`＝**遠回しに言う**。\n\n2. **make 系の混同**：`make up`（仲直り／でっち上げ／化粧）／`make up for`（埋め合わせる）／`make up one's mind`（決心する）を区別。\n\n3. **register（丁寧さ）の不一致**：フォーマルな場で `Come again?` や `No way!` を選ぶ／客に対し店員が `What?` と聞き返すのは不自然。聞き返しは `(I'm) sorry?` / `I beg your pardon?` が無難。\n\n4. **It's on me と It's on the house の混同**：`It's on me.`＝**私のおごり**（話者が払う）／`It's on the house.`＝**店のおごり**（店が無料提供）。\n\n5. **How about you? の誤用**：`How about you?` は相手に**同じ質問を振り返す**表現。「あなたはどう思う？」の意で唐突に使うと不自然。意見を尋ねるなら `What do you think?`。\n\n6. **My name is ... の多用**：口頭の自己紹介は `I'm 〜.` が自然。電話で名乗るときは `This is 〜 (speaking).`（×`I am 〜.` / ×`My name is 〜.` は電話では不自然）。\n\n7. **Never mind の取り違え**：`Never mind.`＝**気にしないで／何でもない**。「決して気にするな（強い禁止）」ではない。\n\n8. **look forward to の to**：これは**前置詞 to**。後は**動名詞**（`looking forward to seeing you`）。×`to see` は典型的な誤り。\n\n9. **and の前後の vs 紛らわしい句動詞**：`call off`（中止）と`put off`（延期）は別物。中止＝開催しない、延期＝日を改める。"
+     },
+     {
+      "type": "example",
+      "number": 1,
+      "question": "電話の会話です。空所に最も適切なものを選びなさい。\n\nA: Hello, this is Tom Baker. Could I speak to Ms. Carter, please?\nB: I'm sorry, but she's in a meeting right now. (        )\nA: Yes, please. Could you tell her to call me back?\n\n(1) Speaking.\n(2) You've got the wrong number.\n(3) Would you like to leave a message?\n(4) Hold the line, please.",
+      "thought": "電話の場面。空所の応答が `Yes, please. Could you tell her to call me back?`（はい、折り返しの伝言を）である点が決め手。応答から逆算すると、空所は**伝言を残すか尋ねる定型**でなければならない。",
+      "answer": "(3) Would you like to leave a message?",
+      "explanation": "応答 `Yes, please. Could you tell her to call me back?` は**伝言を頼む**内容なので、その直前の空所は**「伝言を残しますか？」**＝(3) `Would you like to leave a message?` が必然。\n\n(1) `Speaking.` は「（電話口は）私です」。本人が出たときの返答で、ここではB はCarter本人ではないので不可。\n(2) `You've got the wrong number.`（番号違いです）は、A は相手を正しく名指ししており文脈に合わない。\n(4) `Hold the line, please.`（お待ちください）なら応答は `OK, I'll wait.` 等になるはずで、`Yes, please. Could you tell her ...` という伝言依頼につながらない。\n\nよって**(3)** が唯一整合する。"
+     },
+     {
+      "type": "example",
+      "number": 2,
+      "question": "下線部の意味に最も近いものを選びなさい。\n\nMy boss kept beating around the bush, so I never found out whether I got the promotion.\n\n(1) speaking very rudely\n(2) avoiding the main point\n(3) working very hard\n(4) telling the truth directly",
+      "thought": "`beat around the bush` は文字どおり「茂みの周りを叩く」ではなく**遠回しに言う・要点を避ける**というイディオム。後半 `I never found out ...`（結局わからなかった）が「要点を避けていた」ことと整合する。",
+      "answer": "(2) avoiding the main point",
+      "explanation": "`beat around the bush`＝**遠回しに言って核心を避ける**。だから話者は昇進したか「結局わからなかった」のであり、(2) `avoiding the main point`（要点を避ける）が同義。\n\n(1) `speaking very rudely`（無礼に話す）は意味が別。遠回し＝無礼ではない。\n(3) `working very hard` は `hit the books` などと混同させる罠。\n(4) `telling the truth directly`（率直に真実を言う）は**正反対**で、文脈の「わからなかった」と矛盾する。\n\nよって**(2)**。"
+     },
+     {
+      "type": "example",
+      "number": 3,
+      "question": "レストランでの会話です。空所に最も適切なものを選びなさい。\n\nA: That was a wonderful dinner. Thank you so much for inviting me.\nB: My pleasure. (        )\nA: Oh, no, I can't let you do that. Let me at least pay for my share.\nB: Don't be silly. I insist.\n\n(1) Could I have the check, please?\n(2) It's on me tonight.\n(3) You've got the wrong number.\n(4) I'm afraid I can't make it.",
+      "thought": "Aが `I can't let you do that. Let me at least pay for my share.`（そんなことさせられない、せめて自分の分は払う）と返している。これは**Bが「私が払う（おごる）」と言った**ことへの遠慮の反応。よって空所は「私のおごり」の定型。",
+      "answer": "(2) It's on me tonight.",
+      "explanation": "Aの応答 `I can't let you do that. Let me at least pay for my share.` は、相手が**支払いを申し出た**ことへの遠慮。したがって空所は `It's on me tonight.`（今夜は私のおごり）＝(2) が正解。続く `I insist.`（ぜひ払わせて）とも整合する。\n\n(1) `Could I have the check, please?`（お会計をください）は店員に言う表現で、Aの「自分の分は払う」という遠慮の反応を引き出さない。\n(3) `You've got the wrong number.` は電話表現で場面違い。\n(4) `I'm afraid I can't make it.`（都合がつかず行けません）は招待を断る表現で、すでに食事を終えた場面と矛盾。\n\nなお `It's on me.`（私のおごり）と `It's on the house.`（店のおごり）の混同に注意。ここは話者B が払うので **on me**。よって**(2)**。"
+     },
+     {
+      "type": "practice",
+      "number": 1,
+      "question": "空所に最も適切なものを選びなさい。\n\nA: Excuse me, would you mind opening the window? It's a bit stuffy in here.\nB: (        ) I was feeling hot, too.\n\n(1) Yes, I would.\n(2) Not at all.\n(3) Never mind.\n(4) You can say that again."
+     },
+     {
+      "type": "practice",
+      "number": 2,
+      "question": "下線部の意味に最も近いものを選びなさい。\n\nI was going to surprise her with the gift, but my little brother let the cat out of the bag.\n\n(1) lost the present\n(2) revealed the secret\n(3) bought a pet\n(4) made her angry"
+     },
+     {
+      "type": "practice",
+      "number": 3,
+      "question": "空所に最も適切なものを選びなさい。\n\nThe concert was (        ) because of the storm; it won't be held at all.\n\n(1) put off\n(2) called off\n(3) looked up\n(4) taken after"
+     },
+     {
+      "type": "answer",
+      "number": 1,
+      "answer": "(2) Not at all.",
+      "explanation": "`Would you mind ...ing?`（〜していただけますか）は直訳すると「〜するのを気にしますか」。承諾するときは**「気にしません」＝`Not at all.` / `No, not at all.` / `Of course not.`** と**否定で答える**のが定型。続く `I was feeling hot, too.`（私も暑かった）とも整合する。\n\n(1) `Yes, I would.` は「はい、気にします（嫌です）」＝**拒否**になり、直後の「私も暑かった」と矛盾。`Would you mind 〜?` に Yes で答えると断りになる点が最大の罠。\n(3) `Never mind.`（気にしないで）は依頼への承諾表現ではない。\n(4) `You can say that again.`（まったくその通り）は強い同意の相づちで、依頼への可否の返答になっていない。\n\nよって**(2)**。"
+     },
+     {
+      "type": "answer",
+      "number": 2,
+      "answer": "(2) revealed the secret",
+      "explanation": "`let the cat out of the bag`＝**うっかり秘密を漏らす**。文脈は「彼女をギフトで驚かせるつもりだったのに、弟が（秘密を）ばらした」。したがって(2) `revealed the secret`（秘密を明かした）が同義。\n\n(1) `lost the present`（プレゼントをなくした）は文字どおりの誤読。\n(3) `bought a pet`（ペットを買った）は `cat` に引きずられた直訳の罠。\n(4) `made her angry`（彼女を怒らせた）は意味が別で、サプライズが台無しになった因果を表さない。\n\nよって**(2)**。"
+     },
+     {
+      "type": "answer",
+      "number": 3,
+      "answer": "(2) called off",
+      "explanation": "最初の文は `it won't be held at all`（まったく開催されない）が決め手。**完全に中止**するのは `call off`＝**中止する**。受動の文脈に合わせ過去分詞 `called off`。`The concert was called off because of the storm.` が自然。\n\n(1) `put off`＝**延期する**。延期なら別日に開催されるはずで、`won't be held at all`（一切開催されない）と矛盾するため不可。call off と put off の区別がポイント。\n(3) `looked up`（〜を調べる／（up to で）尊敬する）は意味が合わない。\n(4) `taken after`（〜に似ている）は人について使い、コンサートには不適。\n\nよって正解は **(2)**。"
+     },
+     {
+      "type": "summary",
+      "heading": "まとめ：早慶上智の会話表現・イディオム攻略",
+      "points": [
+       "会話定型表現は「場面（電話・買い物/飲食・依頼・謝罪・聞き返し）」ごとに塊で覚える。応答の型（Not at all. / Never mind. / Speaking. など）が空所を決める。",
+       "会話空所補充は**応答（response）から問い（prompt）を逆算**し、tone/register（丁寧さ）を一致させる。",
+       "`Would you mind ...?` への承諾は **Not at all.**（否定で承諾）。Yes は拒否になる最重要トラップ。",
+       "句動詞は意味と例文をセットで暗記。混同注意：call off（中止）/put off（延期）、make up/make up for/make up one's mind、look up to/look down on。",
+       "比喩イディオムは**全て非文字どおり**：under the weather=体調が悪い、beat around the bush=遠回しに言う、pull someone's leg=からかう、let the cat out of the bag=秘密を漏らす、cost an arm and a leg=非常に高価、a piece of cake=朝飯前。",
+       "和製英語・直訳の罠に注意：It's on me（私のおごり）≠It's on the house（店のおごり）、電話の名乗りは This is 〜、look forward to の to は前置詞で後は動名詞。",
+       "言い換え（paraphrase）問題は、文字どおりの意味ではなく**比喩的意味**で選択肢を判定する。"
+      ]
+     }
+    ]
+   },
+   "status": "published",
+   "source": "claude_max_batch42"
+  },
+  {
+   "subject": "英語（英検準1級）",
+   "topic": "単語強化 (Part1)",
+   "level": "高校標準",
+   "length": "long",
+   "type": "full_textbook",
+   "title": "英検準1級 単語強化 Part1 — 頻出動詞・形容詞・名詞45語",
+   "tags": [
+    "英検準1級",
+    "語彙",
+    "単語強化",
+    "大問1",
+    "コロケーション",
+    "語源",
+    "B2",
+    "英検"
+   ],
+   "content": {
+    "title": "英検準1級 単語強化 Part1 — 頻出動詞・形容詞・名詞45語",
+    "subtitle": "大問1の短文空所25問を制する高頻度語を、語源とコロケーションで一気に固める。",
+    "subject": "英語（英検準1級）",
+    "topic": "単語強化 (Part1)",
+    "level": "高校標準",
+    "sections": [
+     {
+      "type": "intro",
+      "heading": "なぜ語彙が合否を分けるのか",
+      "body": "英検準1級の筆記試験は、冒頭の大問1が短文の空所補充25問で構成されます。1問ごとに1語(または1イディオム)を4択から選ぶ形式で、配点比率が高く、ここでの取りこぼしが合否に直結します。準1級の語彙レベルはおよそCEFR B2、累積で約7,500語水準とされ、`enhance`(高める)や`feasible`(実行可能な)のような、新聞・エッセイ・ビジネス文で多用される抽象語が中心です。\n\n効率よく定着させる鍵は3つあります。第一に語源・接辞です。`al-leviate`(←ラテン語 `levis` 軽い)のように成り立ちを知ると、意味が論理的に思い出せます。第二にコロケーション(語と語の自然な結びつき)です。準1級では「意味は合うが結びつきが不自然」な選択肢が必ず混ざるため、`comply WITH a rule`(規則に従う)のように前置詞ごと覚えるのが得点源になります。第三に言い換え(類義語)です。本文の語を別語で説明できると、長文・要約問題にも波及します。本Part1では動詞・形容詞・名詞を各約15語、計45語を扱います。"
+     },
+     {
+      "type": "theory",
+      "heading": "高頻度の動詞 15語",
+      "body": "まずは大問1で最頻出の抽象動詞です。多くは前置詞とセットで問われるため、「主なコロケーション」欄の前置詞まで声に出して覚えてください。",
+      "table": [
+       [
+        "単語",
+        "品詞",
+        "意味",
+        "例文/コロケーション"
+       ],
+       [
+        "enhance",
+        "動",
+        "(質・価値などを)高める、向上させる",
+        "`enhance productivity` 生産性を高める"
+       ],
+       [
+        "alleviate",
+        "動",
+        "(苦痛・問題を)和らげる、緩和する",
+        "`alleviate poverty` 貧困を緩和する"
+       ],
+       [
+        "comply",
+        "動",
+        "(規則などに)従う、応じる(comply with)",
+        "`comply with the regulations` 規則に従う"
+       ],
+       [
+        "undermine",
+        "動",
+        "(徐々に)弱める、傷つける、損なう",
+        "`undermine confidence` 信頼を損なう"
+       ],
+       [
+        "deteriorate",
+        "動",
+        "悪化する、劣化する(自動詞)",
+        "Her health `deteriorated` rapidly. 健康が急速に悪化した"
+       ],
+       [
+        "allocate",
+        "動",
+        "(資源・予算を)割り当てる、配分する",
+        "`allocate funds to a project` 計画に資金を割り当てる"
+       ],
+       [
+        "mitigate",
+        "動",
+        "(危険・損害を)軽減する、緩和する",
+        "`mitigate the risk` リスクを軽減する"
+       ],
+       [
+        "accumulate",
+        "動",
+        "蓄積する、徐々にたまる/ためる",
+        "`accumulate wealth` 富を蓄える"
+       ],
+       [
+        "advocate",
+        "動",
+        "(公に)主張する、提唱する",
+        "`advocate reform` 改革を提唱する"
+       ],
+       [
+        "implement",
+        "動",
+        "(計画・政策を)実施する、実行に移す",
+        "`implement a policy` 政策を実施する"
+       ],
+       [
+        "restore",
+        "動",
+        "(元の状態に)回復させる、復元する",
+        "`restore order` 秩序を回復する"
+       ],
+       [
+        "suspend",
+        "動",
+        "一時停止する、保留する、つるす",
+        "`suspend operations` 操業を一時停止する"
+       ],
+       [
+        "withdraw",
+        "動",
+        "撤回する、引き出す、撤退する",
+        "`withdraw money / troops` 金を引き出す/軍を撤退させる"
+       ],
+       [
+        "anticipate",
+        "動",
+        "予期する、見越す",
+        "`anticipate problems` 問題を予期する"
+       ],
+       [
+        "compensate",
+        "動",
+        "(損失を)埋め合わせる、補償する(for)",
+        "`compensate for the loss` 損失を埋め合わせる"
+       ]
+      ]
+     },
+     {
+      "type": "theory",
+      "heading": "高頻度の形容詞 15語",
+      "body": "形容詞は名詞修飾と補語(be動詞の後)の両方で問われます。`susceptible TO`, `eligible FOR` のように後ろに来る前置詞も一緒に押さえましょう。",
+      "table": [
+       [
+        "単語",
+        "品詞",
+        "意味",
+        "例文/コロケーション"
+       ],
+       [
+        "feasible",
+        "形",
+        "実行可能な、実現できる",
+        "a `feasible` plan 実行可能な計画"
+       ],
+       [
+        "inevitable",
+        "形",
+        "避けられない、必然の",
+        "an `inevitable` consequence 避けられない結果"
+       ],
+       [
+        "susceptible",
+        "形",
+        "(影響などを)受けやすい(to)",
+        "`susceptible to disease` 病気にかかりやすい"
+       ],
+       [
+        "ambiguous",
+        "形",
+        "曖昧な、多義的な",
+        "an `ambiguous` answer 曖昧な答え"
+       ],
+       [
+        "redundant",
+        "形",
+        "余分な、冗長な、(英)解雇された",
+        "`redundant` information 余分な情報"
+       ],
+       [
+        "lucrative",
+        "形",
+        "もうかる、収益性の高い",
+        "a `lucrative` business 利益の大きい事業"
+       ],
+       [
+        "mandatory",
+        "形",
+        "義務的な、必須の",
+        "`mandatory` attendance 出席義務"
+       ],
+       [
+        "sustainable",
+        "形",
+        "持続可能な",
+        "`sustainable` growth 持続可能な成長"
+       ],
+       [
+        "vulnerable",
+        "形",
+        "傷つきやすい、攻撃に弱い(to)",
+        "`vulnerable to attack` 攻撃に弱い"
+       ],
+       [
+        "prominent",
+        "形",
+        "著名な、目立つ、突出した",
+        "a `prominent` figure 著名な人物"
+       ],
+       [
+        "adverse",
+        "形",
+        "不利な、有害な、逆の",
+        "`adverse` effects 悪影響"
+       ],
+       [
+        "prevalent",
+        "形",
+        "広く行き渡った、流行している",
+        "a `prevalent` belief 広く浸透した考え"
+       ],
+       [
+        "tedious",
+        "形",
+        "退屈な、うんざりするほど長い",
+        "a `tedious` task 退屈な作業"
+       ],
+       [
+        "viable",
+        "形",
+        "実行可能な、存続できる",
+        "a `viable` alternative 実現可能な代替案"
+       ],
+       [
+        "eligible",
+        "形",
+        "資格のある、適格な(for)",
+        "`eligible for a refund` 返金を受ける資格がある"
+       ]
+      ]
+     },
+     {
+      "type": "theory",
+      "heading": "高頻度の名詞 15語",
+      "body": "名詞は時事・社会・経済の文脈で頻出です。`controversy over`, `consensus on` のように後ろの前置詞が問われることもあるため、結びつきごと覚えましょう。",
+      "table": [
+       [
+        "単語",
+        "品詞",
+        "意味",
+        "例文/コロケーション"
+       ],
+       [
+        "incentive",
+        "名",
+        "動機づけ、誘因、報奨",
+        "a financial `incentive` 金銭的な誘因"
+       ],
+       [
+        "drawback",
+        "名",
+        "欠点、難点、不利な点",
+        "a major `drawback` 大きな欠点"
+       ],
+       [
+        "surplus",
+        "名",
+        "余剰、黒字(↔deficit)",
+        "a trade `surplus` 貿易黒字"
+       ],
+       [
+        "breakthrough",
+        "名",
+        "(大きな)進展、突破口、躍進",
+        "a medical `breakthrough` 医学的な大発見"
+       ],
+       [
+        "controversy",
+        "名",
+        "論争、論議(over/about)",
+        "`controversy over the policy` その政策をめぐる論争"
+       ],
+       [
+        "deficit",
+        "名",
+        "赤字、不足(額)",
+        "a budget `deficit` 財政赤字"
+       ],
+       [
+        "consensus",
+        "名",
+        "総意、合意、一致(on)",
+        "reach a `consensus` 合意に達する"
+       ],
+       [
+        "infrastructure",
+        "名",
+        "(社会)基盤、インフラ",
+        "aging `infrastructure` 老朽化したインフラ"
+       ],
+       [
+        "allegation",
+        "名",
+        "(証拠のない)主張、申し立て、疑惑",
+        "deny the `allegations` 疑惑を否定する"
+       ],
+       [
+        "recession",
+        "名",
+        "景気後退、不況",
+        "fall into `recession` 不況に陥る"
+       ],
+       [
+        "epidemic",
+        "名",
+        "(病気の)流行、まん延",
+        "a flu `epidemic` インフルエンザの流行"
+       ],
+       [
+        "dilemma",
+        "名",
+        "板挟み、ジレンマ",
+        "face a `dilemma` ジレンマに直面する"
+       ],
+       [
+        "transition",
+        "名",
+        "移行、変遷、過渡(期)",
+        "the `transition` to clean energy クリーンエネルギーへの移行"
+       ],
+       [
+        "criteria",
+        "名",
+        "基準(複数形。単数 criterion)",
+        "meet the `criteria` 基準を満たす"
+       ],
+       [
+        "hypothesis",
+        "名",
+        "仮説(複数 hypotheses)",
+        "test a `hypothesis` 仮説を検証する"
+       ]
+      ]
+     },
+     {
+      "type": "tip",
+      "title": "語源・接辞で覚え、類義語は使い分けで定着させる",
+      "body": "■ 語源・接辞でロジカルに覚える\n・`alleviate` = `al-`(=ad- 〜へ)+ `levi`(←`levis` 軽い)+ `-ate`(動詞化)→「軽くする=和らげる」。`elevate`(持ち上げる)・`levity`(軽さ)と同根。\n・`susceptible` = `sus-`(=sub- 下に)+ `cept`(取る、capereより)+ `-ible`(〜され得る)→「下に取り込まれやすい=影響を受けやすい」。`accept`(受け取る)・`reception`と同根。\n・`undermine` = `under`(下)+ `mine`(坑道を掘る)→「土台を掘り崩す=徐々に損なう」。\n・`compensate` = `com-`(共に)+ `pens`(←`pendere` 重さを量る、支払う)→「釣り合わせる=埋め合わせる」。`pension`(年金)と同根。\n\n■ 類義語の使い分け\n・「軽減する」系: `alleviate`/`mitigate`/`relieve` は痛み・問題を和らげる。`alleviate` は苦痛や貧困に、`mitigate` はリスク・損害・刑罰に好相性。\n・「実行可能な」系: `feasible` は「物理的・技術的に実現できる」、`viable` は「実現後も存続・成功し得る(採算が取れる)」。a `viable` business=採算の取れる事業。\n・「広まった」系: `prevalent`(中立的に広く存在)/`epidemic`(病気の流行)/`pervasive`(隅々まで浸透)。"
+     },
+     {
+      "type": "warn",
+      "title": "紛らわしいペア・品詞違い・前置詞ミスに注意",
+      "body": "大問1の誤答選択肢は「綴りが似た別語」「品詞違い」「前置詞ミス」で作られます。次のペアを取り違えないこと。\n\n1. `adopt`(採用する・養子にする) ↔ `adapt`(適応させる・順応する)。adapt は `adapt TO a new environment`。\n2. `comprehensive`(包括的な・網羅的な) ↔ `comprehensible`(理解できる)。a comprehensive report=網羅的な報告。\n3. `economic`(経済の) ↔ `economical`(節約になる・お得な)。an economical car=燃費の良い車。\n4. `sensitive`(敏感な・繊細な) ↔ `sensible`(分別のある・賢明な)。a sensible decision=賢明な決定。\n5. `considerable`(かなりの・相当な) ↔ `considerate`(思いやりのある)。a considerable amount=相当な量。\n6. `industrial`(産業の・工業の) ↔ `industrious`(勤勉な)。an industrious student=勤勉な学生。\n7. `principal`(主要な/校長) ↔ `principle`(原理・原則)。\n\n■ 前置詞ミス(コロケーション)\n・`comply WITH`(従う)を comply to としない。\n・`susceptible TO` / `vulnerable TO`(〜に弱い)。\n・`compensate FOR`(〜を埋め合わせる)。compensate someone for damage の語順にも注意。\n・`eligible FOR`(〜の資格がある)。\n\n■ 品詞違い\n・`advocate` は動詞「提唱する」と名詞「擁護者」両方。空所が動詞位置か名詞位置かで判断。\n・`criteria` は複数形(単数 criterion)、`hypothesis` の複数は `hypotheses`、`phenomenon` の複数は `phenomena`。動詞の数の一致に注意。"
+     },
+     {
+      "type": "example",
+      "number": 1,
+      "question": "The new manager introduced several measures to ( ) employee morale, which had been low for months.\n1. undermine  2. enhance  3. suspend  4. withdraw",
+      "thought": "空所は morale(士気)を目的語に取る動詞。直後に「何か月も低かった士気」とあり、改善のための measures(対策)を導入した文脈。プラス方向に「高める」語が必要。",
+      "answer": "2. enhance",
+      "explanation": "`enhance employee morale` で「従業員の士気を高める」。文脈は「低かった士気を上げるための対策」なのでプラスの動詞が必要。1 `undermine`(損なう)はマイナス方向で、低い士気をさらに損なうのは「対策を導入した」流れと矛盾。3 `suspend`(一時停止する)は morale を目的語に取れず意味不明。4 `withdraw`(撤回・撤退する)も morale とは結びつかない。正解は 2。"
+     },
+     {
+      "type": "example",
+      "number": 2,
+      "question": "Elderly people are especially ( ) to extreme heat, so the city opened cooling centers during the heat wave.\n1. eligible  2. feasible  3. susceptible  4. prominent",
+      "thought": "空所は be動詞の後の補語。直後に `to extreme heat`(猛暑に)があり、熱中症対策として避暑センターを開いたという因果。前置詞 to と結びつき「〜に弱い/影響を受けやすい」が文意に合う。",
+      "answer": "3. susceptible",
+      "explanation": "`susceptible to extreme heat` で「猛暑の影響を受けやすい」。高齢者が暑さに弱いから対策を取った、という因果が成立。1 `eligible` は `eligible FOR`(資格がある)で前置詞も意味も不適。2 `feasible`(実行可能な)は計画などに使い、人が「〜に feasible」とは言わない。4 `prominent`(著名な)は to を取らず文意にも合わない。`susceptible to` の前置詞ごと覚えるのが鍵。正解は 3。"
+     },
+     {
+      "type": "practice",
+      "number": 1,
+      "question": "The government decided to ( ) more funds to disaster relief after the earthquake.\n1. accumulate  2. allocate  3. anticipate  4. deteriorate"
+     },
+     {
+      "type": "practice",
+      "number": 2,
+      "question": "Despite the high salary, the job had one serious ( ): it required frequent travel away from home.\n1. incentive  2. consensus  3. drawback  4. surplus"
+     },
+     {
+      "type": "practice",
+      "number": 3,
+      "question": "Choose the word closest in meaning to the underlined word.\nThe two sides finally reached a CONSENSUS after weeks of negotiation.\n1. agreement  2. conflict  3. deadline  4. proposal"
+     },
+     {
+      "type": "answer",
+      "number": 1,
+      "answer": "2. allocate",
+      "explanation": "`allocate funds to ~` で「〜に資金を割り当てる」。震災後に救援へ資金を配分する文脈に合致。1 `accumulate`(蓄積する)は「ためる」で、特定用途への配分という意味にならない。3 `anticipate`(予期する)は funds を目的語に取っても「資金を予期する」となり不自然。4 `deteriorate`(悪化する)は自動詞で目的語を取れず意味も逆。正解は 2。"
+     },
+     {
+      "type": "answer",
+      "number": 2,
+      "answer": "3. drawback",
+      "explanation": "`drawback` は「欠点、難点」。「高給だが一つ深刻な欠点があった=頻繁な出張」という譲歩構文(Despite ...)に合う。1 `incentive`(誘因・動機づけ)はプラスの要素で、「深刻な〜」「自宅を離れる出張」というマイナス内容と矛盾。2 `consensus`(合意)は仕事の特徴を表さない。4 `surplus`(余剰・黒字)も文脈に無関係。正解は 3。"
+     },
+     {
+      "type": "answer",
+      "number": 3,
+      "answer": "1. agreement",
+      "explanation": "`consensus` は「総意・合意」で、`agreement`(合意)が最も近い。交渉の末に合意に達した、という文意とも一致。2 `conflict`(対立)は反対の意味。3 `deadline`(締め切り)・4 `proposal`(提案)は意味が異なる。`reach a consensus = reach an agreement` の言い換えで押さえておくと長文でも役立つ。正解は 1。"
+     },
+     {
+      "type": "summary",
+      "heading": "Part1 のまとめ — 覚え方と必須45語",
+      "points": [
+       "大問1は短文空所25問。配点比率が高く、語彙力が合否を直接左右する。",
+       "覚え方の3本柱は「語源・接辞」「コロケーション(前置詞ごと)」「言い換え(類義語)」。",
+       "動詞は前置詞とセットで: `comply with`(従う)/`compensate for`(埋め合わせる)/`advocate`(提唱する)/`allocate ~ to`(割り当てる)。",
+       "改善系の動詞: `enhance`(高める)/`alleviate`・`mitigate`(和らげる)/`restore`(回復する)を方向性で区別。",
+       "悪化・抑制系: `undermine`(損なう)/`deteriorate`(悪化する/自動詞)/`suspend`(一時停止)/`withdraw`(撤回)。",
+       "形容詞は前置詞を伴うものに注意: `susceptible to`・`vulnerable to`(〜に弱い)/`eligible for`(資格がある)。",
+       "「実行可能」の使い分け: `feasible`(技術的に実現可能)/`viable`(存続・採算が取れる)。",
+       "名詞は時事頻出: `incentive`/`drawback`/`surplus`↔`deficit`/`consensus`/`recession`/`infrastructure`。",
+       "不規則複数に注意: `criteria`(単 criterion)/`hypotheses`(単 hypothesis)。動詞の数の一致も問われる。",
+       "紛らわしいペアを取り違えない: adopt/adapt・economic/economical・sensitive/sensible・considerable/considerate・industrial/industrious。"
+      ]
+     }
+    ]
+   },
+   "status": "published",
+   "source": "claude_max_batch42"
+  }
+ ]
+}
