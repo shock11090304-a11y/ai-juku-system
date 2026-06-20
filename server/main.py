@@ -11917,18 +11917,31 @@ def _verify_self_contained_ai(qd: dict) -> tuple:
     (ok: bool, reasons: list[str])。例外は呼び出し側(_self_containment_gate)で握る → fail-open。"""
     import re as _re
     passage = qd.get("passage") if isinstance(qd.get("passage"), str) else ""
+    audio = qd.get("audio_script") if isinstance(qd.get("audio_script"), str) else ""
+    qd_has_fig = bool(qd.get("figure_svg") or qd.get("figure_b64") or ("<svg" in passage))
     qs = qd.get("questions") or []
     lines = []
     if passage.strip():
         lines.append("【前提・本文】\n" + passage)
+    # 🔧 2026-06-21 [selfcheck-layerb-harden] 監査で判明した誤検出を防ぐ:
+    #   音声(リスニング)は audio_script に入る・図は figure_svg/b64 に入る → view に含めない/印を出さないと
+    #   Gemini が「音声/図が無い」と誤判定する。中身が省略でも「添付されている」事実を伝える。
+    if audio.strip():
+        lines.append("【放送(リスニング)スクリプト】\n" + audio)
+    if qd_has_fig:
+        lines.append("【図/画像】この大問には図・画像が添付されています(内容はこのテキストでは省略)。")
     for idx, q in enumerate(qs):
         if not isinstance(q, dict):
             continue
         lines.append(f"\n問{idx + 1}. " + (q.get("stem") or ""))
+        if q.get("figure_svg") or q.get("figure_b64"):
+            lines.append("  [この問題には図/画像が添付されています(内容は省略)]")
         ch = q.get("choices")
         if isinstance(ch, list) and ch:
             for ci, c in enumerate(ch):
                 lines.append(f"  {chr(65 + ci)}. {c}")
+        else:
+            lines.append("  [記述式(選択肢なし)]")
     view = "\n".join(lines).strip()
     if not view:
         return True, []
@@ -11939,9 +11952,13 @@ def _verify_self_contained_ai(qd: dict) -> tuple:
         # 思考分の余裕を見て 3000 に引き上げる(判定JSON自体は短いので課金影響は軽微)。
         "max_tokens": 3000,
         "system": (
-            "あなたは厳格な作問校閲者です。与えられた【前提・本文】と各問の問題文・選択肢『だけ』を見て、"
-            "各問が追加情報なしで一意に解答可能か判定してください。解くのに必要な数値・条件・図・本文が"
-            "与えられていない問は『解答不能』です。勝手に値を仮定して補完しないこと。"
+            "あなたは作問校閲者です。与えられた【前提・本文】【放送スクリプト】【図/画像の有無】と各問の問題文・"
+            "選択肢『だけ』から、各問を解くのに必要な情報(本文・数値・条件・図・音声)が与えられているかを判定します。\n"
+            "・4択問題: 本文/データ/図/音声に正解を選ぶ根拠があるか。\n"
+            "・記述式(選択肢なし=翻訳・要約・小論文等): 解答の根拠となる本文/データ/図が与えられていれば『解答可能』。"
+            "模範解答が一意でなくてよい(記述式は元来そう=これだけを理由に解答不能としない)。\n"
+            "・図/音声が『添付されている』と示されていれば、中身が省略されていても『与えられている』とみなす。\n"
+            "本当に必要な数値・条件・図・本文・音声が欠けている問だけを『解答不能』とする。勝手に値を仮定しない。\n"
             'JSON のみ出力: {"all_solvable": true/false, "unsolvable": [解けない問番号(整数)...], "reason": "簡潔な理由"}'
         ),
         "messages": [{"role": "user", "content": view}],
