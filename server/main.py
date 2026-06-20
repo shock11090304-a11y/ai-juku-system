@@ -11970,17 +11970,23 @@ def _self_containment_gate(qd: dict) -> tuple:
         qs = qd.get("questions") or []
         if not isinstance(qs, list) or not qs:
             return True, []
-        COORD = _re.compile(r'\(\s*-?\d+\s*[,，]\s*-?\d')              # 座標ペア (3,1)/(-1, 2)
+        # 座標ペアの検出: LaTeX 空白 (\,  \; ~ 改行) を含む (1,\ 0,\ 2) や A(3,\ 0) も拾えるよう寛容に。
+        #   括弧直後が数字/マイナス(=数値座標)のみ対象 → (a_1,a_2,a_3) 等の記号定義は意図的に拾わない。
+        COORD = _re.compile(r'\(\s*-?\d[^()]*[,，][^()]*-?\d')
         VECREF = _re.compile(r'\\vec\s*\{|\\overrightarrow\s*\{|ベクトル\s*[A-Za-z\\]')
+        # ★「見える範囲」は大問全体(passage + 全小問の stem)。同一大問の別小問で定義された成分
+        #   (例: 小問1で \vec{a}=(1,2,3) を定義 → 小問2「同じ \vec{a},\vec{b}」を参照) を誤検出しない。
+        #   (2026-06-21 監査で id=17912/18620/18622 を誤検出 → 大問全体+LaTeX空白寛容化で解消)
+        all_stems = "\n".join((q.get("stem") or "") for q in qs if isinstance(q, dict))
+        coords_visible = bool(COORD.search(passage + "\n" + all_stems))
         for idx, q in enumerate(qs):
             if not isinstance(q, dict):
                 continue
             stem = q.get("stem") or ""
             expl = q.get("explanation") or ""
-            visible = passage + "\n" + stem
-            # ベクトル記号を使うのに、見える範囲(本文+問題文)に成分定義が無く、解説にだけ座標がある
-            #   = 成分が「解説にしか無い」= 生徒は解けない (id=18133 型。本来は passage に定義されるべき)
-            if VECREF.search(stem) and not COORD.search(visible) and COORD.search(expl):
+            # ベクトル記号を使うのに、大問全体(本文+全小問)に成分定義が無く、解説にだけ座標がある
+            #   = 成分が「解説にしか無い」= 生徒は解けない。
+            if VECREF.search(stem) and not coords_visible and COORD.search(expl):
                 reasons.append(f"q{idx + 1}:vector_defined_only_in_solution")
     except Exception as _e:
         log.warning(f"[ExamQ:SelfCheck] Layer A error (fail-open): {type(_e).__name__}: {_e}")
