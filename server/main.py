@@ -11917,12 +11917,19 @@ def _verify_self_contained_ai(qd: dict) -> tuple:
     (ok: bool, reasons: list[str])。例外は呼び出し側(_self_containment_gate)で握る → fail-open。"""
     import re as _re
     passage = qd.get("passage") if isinstance(qd.get("passage"), str) else ""
+    prompt = qd.get("prompt") if isinstance(qd.get("prompt"), str) else ""
     audio = qd.get("audio_script") if isinstance(qd.get("audio_script"), str) else ""
     qd_has_fig = bool(qd.get("figure_svg") or qd.get("figure_b64") or ("<svg" in passage))
     qs = qd.get("questions") or []
     lines = []
     if passage.strip():
         lines.append("【前提・本文】\n" + passage)
+    # 🔧 2026-06-21 [selfcheck-layerb-prompt] 英作文/要約/翻訳の課題・出典文や現代文の設問は passage でなく
+    #   qd.prompt / 各問の stem_jp に入り、生徒には表示される(english-exam.js の「✍️ Prompt」/ mock-exam.js)。
+    #   これらを view に含めないと Gemini が「課題/本文が無い」として全 essay/記述問題を誤reject する
+    #   (2026-06-21 監査で26フラグ中16件がこの prompt 欠落・2件が stem_jp 欠落の誤検出と判明)。
+    if prompt.strip():
+        lines.append("【課題・設問プロンプト/出典】\n" + prompt)
     # 🔧 2026-06-21 [selfcheck-layerb-harden] 監査で判明した誤検出を防ぐ:
     #   音声(リスニング)は audio_script に入る・図は figure_svg/b64 に入る → view に含めない/印を出さないと
     #   Gemini が「音声/図が無い」と誤判定する。中身が省略でも「添付されている」事実を伝える。
@@ -11933,7 +11940,14 @@ def _verify_self_contained_ai(qd: dict) -> tuple:
     for idx, q in enumerate(qs):
         if not isinstance(q, dict):
             continue
-        lines.append(f"\n問{idx + 1}. " + (q.get("stem") or ""))
+        stem_txt = (q.get("stem") or "")
+        _sj = q.get("stem_jp")
+        if isinstance(_sj, str) and _sj.strip() and _sj.strip() != stem_txt.strip():
+            stem_txt = (stem_txt + "\n" + _sj).strip()   # 現代文等は stem_jp に設問本体が入る
+        lines.append(f"\n問{idx + 1}. " + stem_txt)
+        _qp = q.get("prompt")
+        if isinstance(_qp, str) and _qp.strip():
+            lines.append("  【この問の課題】" + _qp)
         if q.get("figure_svg") or q.get("figure_b64"):
             lines.append("  [この問題には図/画像が添付されています(内容は省略)]")
         ch = q.get("choices")
