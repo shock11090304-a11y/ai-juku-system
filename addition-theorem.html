@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>三角関数 — 加法定理 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8; --purple:#7c3aed;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; --purple:#a78bfa; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:72px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:15px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>三角関数 — 加法定理</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで <b>α</b> と <b>β</b> を動かすと、単位円から読む値と加法定理の右辺が <b>常に一致</b> します。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>角を「足す」と sin・cos がどう混ざるか</b>。単位円の点 P(cos(α+β), sin(α+β)) の座標が、そのまま sinα·cosβ+cosα·sinβ などに分解できることを目で確かめます。</div>
+
+  <!-- ① 単位円で加法定理 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="ucBadge">step 1 / 4</span>
+        <span class="steptitle" id="ucTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="ucPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="ucNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">単位円による加法定理</h2>
+    <p class="hint">半径 1 の単位円。動径の角を α から α+β へ回し、点 P の座標 (cos(α+β), sin(α+β)) を加法定理で表します。</p>
+    <div class="stage">
+      <svg id="ucSvg" viewBox="0 0 420 420" role="img" aria-label="単位円による加法定理の作図">
+        <!-- 軸 -->
+        <line id="u_ax" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="u_ay" stroke="var(--gray)" stroke-width="1.2"></line>
+        <text id="u_axl" font-size="13" fill="var(--sub)" text-anchor="middle">x</text>
+        <text id="u_ayl" font-size="13" fill="var(--sub)" text-anchor="middle">y</text>
+        <!-- 単位円 -->
+        <circle id="u_circle" data-ms="1" fill="none" stroke="var(--bd)" stroke-width="2"></circle>
+        <text id="u_r1" data-ms="1" font-size="12" fill="var(--sub)" text-anchor="middle">半径 1</text>
+        <!-- 角αの弧と動径 -->
+        <path id="u_arcA" data-ms="1" fill="none" stroke="var(--blue)" stroke-width="2.5"></path>
+        <line id="u_radA" data-ms="1" stroke="var(--blue)" stroke-width="2" stroke-dasharray="5 4"></line>
+        <text id="u_labA" data-ms="1" font-size="14" fill="var(--blue)" text-anchor="middle">α</text>
+        <!-- 角βの弧(αの上に積む) -->
+        <path id="u_arcB" data-ms="1" fill="none" stroke="var(--purple)" stroke-width="2.5"></path>
+        <text id="u_labB" data-ms="1" font-size="14" fill="var(--purple)" text-anchor="middle">β</text>
+        <!-- 合成角α+βの動径 -->
+        <line id="u_radS" data-ms="2" stroke="var(--red)" stroke-width="2.5"></line>
+        <text id="u_labS" data-ms="2" font-size="13" fill="var(--red)" text-anchor="middle">α+β</text>
+        <!-- 垂線(Pのyを示す)・水平線(Pのxを示す) -->
+        <line id="u_perp" data-ms="3" stroke="var(--green)" stroke-width="2" stroke-dasharray="6 5"></line>
+        <line id="u_horiz" data-ms="4" stroke="var(--info-ink)" stroke-width="2" stroke-dasharray="6 5"></line>
+        <!-- sin/cos のラベル -->
+        <text id="u_sinl" data-ms="3" font-size="14" fill="var(--green)" text-anchor="start">sin(α+β)</text>
+        <text id="u_cosl" data-ms="4" font-size="14" fill="var(--info-ink)" text-anchor="middle">cos(α+β)</text>
+        <!-- 点P -->
+        <circle id="u_P" data-ms="2" r="5" fill="var(--red)"></circle>
+        <text id="u_Pl" data-ms="2" font-size="14" fill="var(--red)" text-anchor="start">P</text>
+        <!-- 足元・x軸上の点 -->
+        <circle id="u_foot" data-ms="3" r="3.5" fill="var(--green)"></circle>
+        <circle id="u_yfoot" data-ms="4" r="3.5" fill="var(--info-ink)"></circle>
+      </svg>
+    </div>
+    <p class="cap" id="ucCap"></p>
+    <div class="ctl">
+      <label for="ucSliderA">α を動かす</label>
+      <input type="range" id="ucSliderA" min="0" max="90" step="5" value="30">
+      <span class="out" id="ucOutA">α=30°</span>
+    </div>
+    <div class="ctl">
+      <label for="ucSliderB">β を動かす</label>
+      <input type="range" id="ucSliderB" min="0" max="90" step="5" value="45">
+      <span class="out" id="ucOutB">β=45°</span>
+    </div>
+    <div class="relation" id="ucRelSin">
+      <span style="color:var(--green)">sin(α+β)</span> = <span id="ucSin">0.966</span>
+      <span style="margin:0 6px; font-weight:600">=</span>
+      <span style="color:var(--green)">sinα cosβ + cosα sinβ</span> = <span id="ucSinR">0.966</span>
+      <span class="eqnote" id="ucEqS">一致 ✓</span>
+    </div>
+    <div class="relation eq" id="ucRelCos" style="margin-top:8px;">
+      <span style="color:var(--info-ink)">cos(α+β)</span> = <span id="ucCos">0.259</span>
+      <span style="margin:0 6px; font-weight:600">=</span>
+      <span style="color:var(--info-ink)">cosα cosβ − sinα sinβ</span> = <span id="ucCosR">0.259</span>
+      <span class="eqnote" id="ucEqC">一致 ✓</span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ 数式記号や図のラベルは指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+  function clamp(v,lo,hi){return v<lo?lo:(v>hi?hi:v);}
+  function rad(d){return d*Math.PI/180;}
+
+  /* ===== ① 単位円による加法定理 ===== */
+  (function(){
+    // 等スケール: x,y とも同じ係数 R(px/単位)。原点 OX,OY。viewBox 420x420。
+    var OX=145, OY=275, R=130; // 半径130px, 単位円。原点を中央やや左下に置き全円を収める
+    var step=1, A=30, B=45;
+    function MX(c){return OX + c*R;}   // c は cos値(座標)
+    function MY(s){return OY - s*R;}   // s は sin値(座標)
+    var info=[null,
+      {t:"角 α と角 β", c:"単位円(半径1)で、x軸正の向きから角 α をとり、その動径の先からさらに角 β をとります。合わせると角 α+β です。"},
+      {t:"合成角 α+β と点 P", c:"角 α+β の動径が単位円と交わる点が P。単位円上なので P の座標は (cos(α+β), sin(α+β)) になります。"},
+      {t:"sin の加法定理", c:"P から x軸へ垂線をおろすと、その高さ(P の y座標)が sin(α+β)。これは sinα·cosβ + cosα·sinβ に等しくなります。"},
+      {t:"cos の加法定理", c:"P から y軸への距離(P の x座標)が cos(α+β)。これは cosα·cosβ − sinα·sinβ に等しい。左辺(円から読む)と右辺(公式)が常に一致します。"}];
+
+    // 弧の path: 半径 rad(px) の円弧を 角th0→th1 (ラジアン, 数学的反時計回り)
+    function arcPath(rpx, th0, th1){
+      var p=[], N=48;
+      for(var i=0;i<=N;i++){
+        var th=th0+(th1-th0)*i/N;
+        var x=MX(rpx/R*Math.cos(th)).toFixed(2);
+        var y=MY(rpx/R*Math.sin(th)).toFixed(2);
+        p.push((i?"L":"M")+x+","+y);
+      }
+      return p.join(" ");
+    }
+
+    function render(){
+      // α+β ≤ 180 制約
+      if(A+B>180){ B=180-A; el("ucSliderB").value=B; }
+      var aR=rad(A), bR=rad(B), sR=rad(A+B);
+      var cosS=Math.cos(sR), sinS=Math.sin(sR);
+      var Px=MX(cosS), Py=MY(sinS);
+
+      // 軸 (viewBox 0..420 内に収める)
+      setLine("u_ax", 20, OY, 400, OY);
+      setLine("u_ay", OX, 30, OX, 400);
+      setT("u_axl", 408, OY+4, null);
+      setT("u_ayl", OX, 22, null);
+
+      // 単位円
+      var cir=el("u_circle"); cir.setAttribute("cx",OX); cir.setAttribute("cy",OY); cir.setAttribute("r",R);
+      setT("u_r1", MX(0.62*Math.cos(rad(8))), MY(0.62*Math.sin(rad(8)))-2, null);
+
+      // 角αの弧(小半径) と 動径α
+      attr("u_arcA","d",arcPath(40, 0, aR));
+      setLine("u_radA", OX, OY, MX(Math.cos(aR)), MY(Math.sin(aR)));
+      var aMid=aR/2;
+      setT("u_labA", MX(0.36*Math.cos(aMid)), MY(0.36*Math.sin(aMid))+5, null);
+
+      // 角βの弧(αの上に積む, 中半径)
+      attr("u_arcB","d",arcPath(62, aR, sR));
+      var bMid=(aR+sR)/2;
+      setT("u_labB", MX(0.50*Math.cos(bMid)), MY(0.50*Math.sin(bMid))+5, null);
+
+      // 合成動径 α+β と 点P
+      setLine("u_radS", OX, OY, Px, Py);
+      // α+β ラベルは動径から左へ垂直オフセットして重なりを避ける
+      var sMid=sR, off=18;
+      var nx=-Math.sin(sMid), ny=Math.cos(sMid); // 動径方向の法線(左向き)
+      setT("u_labS", MX(0.55*Math.cos(sMid))+nx*off, MY(0.55*Math.sin(sMid))-ny*off, null);
+      setC("u_P", Px, Py);
+      setT("u_Pl", Math.max(6, Px+ (cosS<0?-22:9)), Py-7, null);
+
+      // 垂線 (P → x軸): sin(α+β) の高さ
+      setLine("u_perp", Px, Py, Px, OY);
+      setC("u_foot", Px, OY);
+      // P が左半分(cosS<0)は垂線の右側=中心寄り かつ 下げて(角ラベルとの衝突回避)、右半分は従来の中点位置
+      setT("u_sinl", Px+9, (cosS<0 ? OY-18 : (Py+OY)/2+4), null);
+
+      // 水平線 (P → y軸): cos(α+β) の長さ。Pが高いとき(上方)はラベルを線の下に置き重なり回避
+      setLine("u_horiz", Px, Py, OX, Py);
+      setC("u_yfoot", OX, Py);
+      var cosLabY=(sinS>0.85)? Py+16 : Py-7;
+      setT("u_cosl", (OX+Px)/2, cosLabY, null);
+
+      vis("ucSvg",step);
+
+      // 数値読み出し
+      var lhsSin=Math.sin(sR), rhsSin=Math.sin(aR)*Math.cos(bR)+Math.cos(aR)*Math.sin(bR);
+      var lhsCos=Math.cos(sR), rhsCos=Math.cos(aR)*Math.cos(bR)-Math.sin(aR)*Math.sin(bR);
+      el("ucSin").textContent=lhsSin.toFixed(3);
+      el("ucSinR").textContent=rhsSin.toFixed(3);
+      el("ucCos").textContent=lhsCos.toFixed(3);
+      el("ucCosR").textContent=rhsCos.toFixed(3);
+      el("ucOutA").textContent="α="+A.toFixed(0)+"°";
+      el("ucOutB").textContent="β="+B.toFixed(0)+"°";
+
+      el("ucBadge").textContent="step "+step+" / 4";
+      el("ucTitle").textContent=info[step].t;
+      el("ucCap").textContent=info[step].c;
+      el("ucPrev").disabled=step<=1; el("ucNext").disabled=step>=4;
+    }
+    el("ucNext").addEventListener("click",function(){step=clamp(step+1,1,4);render();});
+    el("ucPrev").addEventListener("click",function(){step=clamp(step-1,1,4);render();});
+    el("ucSliderA").addEventListener("input",function(e){A=parseFloat(e.target.value);if(A+B>180){B=180-A;el("ucSliderB").value=B;}render();});
+    el("ucSliderB").addEventListener("input",function(e){B=parseFloat(e.target.value);if(A+B>180){B=180-A;e.target.value=B;}render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

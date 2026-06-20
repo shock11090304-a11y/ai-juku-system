@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>仕事と運動エネルギー — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8; --orange:#ea7317;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:78px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:16px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .eqnote{margin-left:8px; color:var(--ok-ink); font-size:14px;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>仕事と運動エネルギー</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。スライダーで <b>力 F・距離 s・質量 m</b> を変えると、仕事 W = Fs がそのまま運動エネルギー K になる様子が見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>仕事＝運動エネルギーの変化</b>（W = ΔK）。力 F が物体にした仕事 W = Fs は、そのまま運動エネルギー K = ½mv² の増加になります。だから速さは v = √(2Fs/m)。</div>
+
+  <!-- 仕事と運動エネルギーの関係 -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="weBadge">step 1 / 4</span>
+        <span class="steptitle" id="weTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="wePrev" aria-label="前のステップ">← 戻る</button>
+        <button id="weNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">仕事と運動エネルギーの関係</h2>
+    <p class="hint">なめらかな床で静止した物体に一定の力 F を距離 s だけ加えます。した仕事がそのまま運動エネルギーに変わります。</p>
+    <div class="stage">
+      <svg id="weSvg" viewBox="0 0 600 360" role="img" aria-label="仕事と運動エネルギーの図">
+        <!-- 床 -->
+        <line id="w_floor" stroke="var(--gray)" stroke-width="2"></line>
+        <g id="w_hatch"></g>
+        <!-- 開始位置(点線の箱) -->
+        <rect id="w_box0" data-ms="1" x="0" y="0" width="56" height="44" rx="4" fill="none" stroke="var(--gray)" stroke-width="1.6" stroke-dasharray="5 4"></rect>
+        <text id="w_box0l" data-ms="1" font-size="13" text-anchor="middle" fill="var(--sub)">v₀=0</text>
+        <!-- 寸法線 s -->
+        <line id="w_dim" data-ms="1" stroke="var(--sub)" stroke-width="1.2"></line>
+        <polyline id="w_dimL" data-ms="1" fill="none" stroke="var(--sub)" stroke-width="1.2"></polyline>
+        <polyline id="w_dimR" data-ms="1" fill="none" stroke="var(--sub)" stroke-width="1.2"></polyline>
+        <text id="w_dimT" data-ms="1" font-size="15" text-anchor="middle" fill="var(--sub)">距離 s</text>
+        <!-- 移動後の箱 -->
+        <rect id="w_box1" data-ms="1" x="0" y="0" width="56" height="44" rx="4" fill="var(--info-bg)" stroke="var(--blue)" stroke-width="2"></rect>
+        <text id="w_boxm" data-ms="1" font-size="15" font-style="italic" text-anchor="middle" fill="var(--ink)">m</text>
+        <!-- 力 F の矢印 -->
+        <line id="w_F" data-ms="2" stroke="var(--red)" stroke-width="3"></line>
+        <polygon id="w_Fh" data-ms="2" fill="var(--red)"></polygon>
+        <text id="w_Fl" data-ms="2" font-size="15" font-weight="600" text-anchor="middle" fill="var(--red)">力 F</text>
+        <!-- 速度 v の矢印 -->
+        <line id="w_v" data-ms="4" stroke="var(--green)" stroke-width="3"></line>
+        <polygon id="w_vh" data-ms="4" fill="var(--green)"></polygon>
+        <text id="w_vl" data-ms="4" font-size="15" font-weight="600" text-anchor="middle" fill="var(--green)">速さ v</text>
+        <!-- エネルギー棒グラフ -->
+        <text id="w_barTtl" data-ms="2" font-size="14" text-anchor="start" fill="var(--sub)">エネルギーのつり合い</text>
+        <!-- W bar -->
+        <rect id="w_barWbg" data-ms="2" rx="4" fill="none" stroke="var(--bd)" stroke-width="1"></rect>
+        <rect id="w_barW" data-ms="2" rx="4" fill="var(--red)" opacity="0.85"></rect>
+        <text id="w_barWl" data-ms="2" font-size="14" text-anchor="end" fill="var(--red)">仕事 W=Fs</text>
+        <text id="w_barWv" data-ms="2" font-size="13" text-anchor="start" fill="var(--ink)"></text>
+        <!-- K bar -->
+        <rect id="w_barKbg" data-ms="3" rx="4" fill="none" stroke="var(--bd)" stroke-width="1"></rect>
+        <rect id="w_barK" data-ms="3" rx="4" fill="var(--green)" opacity="0.85"></rect>
+        <text id="w_barKl" data-ms="3" font-size="14" text-anchor="end" fill="var(--green)">運動E K=½mv²</text>
+        <text id="w_barKv" data-ms="3" font-size="13" text-anchor="start" fill="var(--ink)"></text>
+        <text id="w_eqMark" data-ms="3" font-size="20" font-weight="700" text-anchor="middle" fill="var(--ok-ink)">=</text>
+      </svg>
+    </div>
+    <p class="cap" id="weCap"></p>
+    <div class="ctl">
+      <label for="weF">力 F</label>
+      <input type="range" id="weF" min="1" max="20" step="1" value="10">
+      <span class="out" id="weFout">10 N</span>
+    </div>
+    <div class="ctl">
+      <label for="weS">距離 s</label>
+      <input type="range" id="weS" min="1" max="10" step="0.5" value="5">
+      <span class="out" id="weSout">5.0 m</span>
+    </div>
+    <div class="ctl">
+      <label for="weM">質量 m</label>
+      <input type="range" id="weM" min="1" max="10" step="1" value="2">
+      <span class="out" id="weMout">2 kg</span>
+    </div>
+    <div class="relation eq" id="weRel">
+      <span style="color:var(--red)">仕事 W = Fs = <span id="weW">50.0</span> J</span>
+      <span style="margin:0 8px; font-weight:700; color:var(--ok-ink)">=</span>
+      <span style="color:var(--green)">運動E K = ½mv² = <span id="weK">50.0</span> J</span>
+      <span class="eqnote">→ 速さ v = √(2Fs/m) = <span id="weV">7.07</span> m/s</span>
+    </div>
+  </section>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a><br>
+    © AI塾 / trillion-ai-juku.com ・ 物理量は単位つきで表記。なめらかな床（摩擦なし）・初速 v₀=0 を仮定しています。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function attr(id,k,v){el(id).setAttribute(k,v);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setRect(id,x,y,w,h){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);e.setAttribute("width",w);e.setAttribute("height",h);}
+  function setT(id,x,y,txt){var e=el(id);e.setAttribute("x",x);e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ===== 仕事と運動エネルギー ===== */
+  (function(){
+    var step=1, F=10, s=5, m=2;
+    // レイアウト座標(等スケールは図形ごとに自己完結。寸法・矢印は水平のみ)
+    var FLOOR=190;            // 床のy
+    var BOXW=56, BOXH=44;
+    var X0=70;                // 開始位置の箱の左端x
+    var SX_MIN=0, SX_MAX=320; // 移動距離のpx換算レンジ(s=1..10)
+    var info=[null,
+      {t:"力を加える", c:"なめらかな床で静止した物体（初速 v₀=0）に、一定の力 F を距離 s だけ加えます。"},
+      {t:"仕事を求める", c:"力がした仕事は W = F × s （単位 J）。下の赤い棒が仕事の大きさです。"},
+      {t:"運動エネルギーに変わる", c:"した仕事はすべて運動エネルギーに変わります。W = ΔK = K = ½mv²。赤い棒（仕事）と緑の棒（運動E）が等しくなります。"},
+      {t:"速さを求める", c:"½mv² = W より v = √(2Fs/m)。仕事の分だけ運動エネルギーが増え、物体は速さ v で動き出します。"}];
+
+    function pxPerM(){ return (SX_MAX-SX_MIN)/(10-1); } // s=1..10 を一定px幅に
+    function sPx(){ return SX_MIN + (s-1)*pxPerM(); }    // 移動距離のpx
+
+    function render(){
+      var W = F*s;                       // 仕事 (J)
+      var v = Math.sqrt(2*F*s/m);        // 速さ (m/s), F,s,m>0 で √内>0
+      var K = 0.5*m*v*v;                 // 運動E (J) = W
+
+      // ---- 床とハッチング ----
+      setLine("w_floor", 40, FLOOR, 560, FLOOR);
+      var hatch=""; for(var hx=44; hx<=556; hx+=22){ hatch += '<line x1="'+hx+'" y1="'+FLOOR+'" x2="'+(hx-10)+'" y2="'+(FLOOR+11)+'" stroke="var(--gray)" stroke-width="1"/>'; }
+      el("w_hatch").innerHTML = hatch;
+
+      var boxTop = FLOOR - BOXH;
+      var sp = sPx();
+      var X1 = X0 + sp;                  // 移動後の箱の左端x
+
+      // ---- 開始位置(点線箱) ----
+      setRect("w_box0", X0, boxTop, BOXW, BOXH);
+      setT("w_box0l", X0+BOXW/2, boxTop-8, null);
+
+      // ---- 寸法線 s (箱中心どうし) ----
+      var c0 = X0+BOXW/2, c1 = X1+BOXW/2, dimY = FLOOR+34;
+      setLine("w_dim", c0, dimY, c1, dimY);
+      attr("w_dimL","points",(c0+7)+","+(dimY-5)+" "+c0+","+dimY+" "+(c0+7)+","+(dimY+5));
+      attr("w_dimR","points",(c1-7)+","+(dimY-5)+" "+c1+","+dimY+" "+(c1-7)+","+(dimY+5));
+      setT("w_dimT",(c0+c1)/2, dimY+18, "距離 s = "+s.toFixed(1)+" m");
+
+      // ---- 移動後の箱 ----
+      setRect("w_box1", X1, boxTop, BOXW, BOXH);
+      setT("w_boxm", X1+BOXW/2, boxTop+BOXH/2+5, "m");
+
+      // ---- 力 F の矢印(右向き, 箱の中段右側へ) ----
+      var fy = boxTop + BOXH/2 + 6;
+      var fLen = 30 + F*2.2;            // F=1..20 → 約32..74px
+      var fx0 = X1 + BOXW + 4, fx1 = fx0 + fLen;
+      setLine("w_F", fx0, fy, fx1-7, fy);
+      attr("w_Fh","points",(fx1)+","+fy+" "+(fx1-11)+","+(fy-6)+" "+(fx1-11)+","+(fy+6));
+      setT("w_Fl",(fx0+fx1)/2, fy+18, "力 F = "+F.toFixed(0)+" N");
+
+      // ---- 速度 v の矢印(右向き, 箱の上) ----
+      var vy = boxTop - 22;
+      var vLen = 22 + Math.min(v,12)*5; // v をクランプ表示(図のはみ出し防止)
+      var vx0 = X1 + BOXW/2, vx1 = vx0 + vLen;
+      setLine("w_v", vx0, vy, vx1-7, vy);
+      attr("w_vh","points",(vx1)+","+vy+" "+(vx1-11)+","+(vy-6)+" "+(vx1-11)+","+(vy+6));
+      setT("w_vl",(vx0+vx1)/2, vy-9, "速さ v = "+v.toFixed(2)+" m/s");
+
+      // ---- エネルギー棒グラフ(下部) ----
+      var barX = 220, barMaxW = 300, barY = 268, barH = 22, gap = 36;
+      var Wmax = 20*10;                  // F_max*s_max = 200 J を満尺に
+      var lenW = Math.max(2, barMaxW * Math.min(W,Wmax)/Wmax);
+      var lenK = Math.max(2, barMaxW * Math.min(K,Wmax)/Wmax);
+      setT("w_barTtl", 40, barY-10, null);
+      // W bar
+      setRect("w_barWbg", barX, barY, barMaxW, barH);
+      setRect("w_barW",  barX, barY, lenW, barH);
+      setT("w_barWl", barX-8, barY+barH-6, null);
+      setT("w_barWv", barX+lenW+8, barY+barH-6, W.toFixed(1)+" J");
+      // K bar
+      var barY2 = barY+gap;
+      setRect("w_barKbg", barX, barY2, barMaxW, barH);
+      setRect("w_barK",  barX, barY2, lenK, barH);
+      setT("w_barKl", barX-8, barY2+barH-6, null);
+      setT("w_barKv", barX+lenK+8, barY2+barH-6, K.toFixed(1)+" J");
+      // = 記号(2本の棒の中間左)
+      setT("w_eqMark", barX-150, (barY+barY2)/2+barH/2+2, null);
+
+      vis("weSvg",step);
+
+      // ---- 読み出し ----
+      el("weFout").textContent = F.toFixed(0)+" N";
+      el("weSout").textContent = s.toFixed(1)+" m";
+      el("weMout").textContent = m.toFixed(0)+" kg";
+      el("weW").textContent = W.toFixed(1);
+      el("weK").textContent = K.toFixed(1);
+      el("weV").textContent = v.toFixed(2);
+
+      el("weBadge").textContent = "step "+step+" / 4";
+      el("weTitle").textContent = info[step].t;
+      el("weCap").textContent = info[step].c;
+      el("wePrev").disabled = step<=1;
+      el("weNext").disabled = step>=4;
+    }
+
+    el("weNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("wePrev").addEventListener("click",function(){if(step>1){step--;render();}});
+    el("weF").addEventListener("input",function(e){F=parseFloat(e.target.value);render();});
+    el("weS").addEventListener("input",function(e){s=parseFloat(e.target.value);render();});
+    el("weM").addEventListener("input",function(e){m=parseFloat(e.target.value);render();});
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

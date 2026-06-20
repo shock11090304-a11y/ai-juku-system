@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>比較級・最上級 — 動く解説</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:22px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 18px;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:48px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px; flex-wrap:wrap;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .toggle{display:flex; gap:6px; flex-wrap:wrap;}
+  .toggle button{font-size:13px; padding:6px 11px;}
+  .toggle button.on{background:var(--blue); color:#fff; border-color:var(--blue);}
+  .toggle button.on:hover{background:var(--blue);}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:left; font-size:15px; border:1px solid var(--bd); line-height:2;}
+  .relation .deg{display:inline-block; min-width:62px; color:var(--sub); font-size:13px;}
+  .relation .pos{color:var(--ink); font-weight:600;}
+  .relation .comp{color:var(--blue); font-weight:600;}
+  .relation .sup{color:var(--red); font-weight:600;}
+  .relation .ex{display:block; margin-top:8px; padding-top:8px; border-top:1px dashed var(--bd); font-size:14px; color:var(--ink);}
+  .relation .ex i{color:var(--sub); font-style:normal;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:18px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>比較級・最上級</h1>
+    <p class="lead">「次へ／戻る」で図が1ステップずつ完成。<b>語の種類</b>を切り替えると、形が -er/-est・more/most・不規則でどう変わるか見えます。</p>
+  </header>
+
+  <div class="takeaway">この単元の最重要ポイント = <b>比べる数で形がきまる</b>。2つを比べる→<b>比較級</b>（-er / more ~ + than）、3つ以上で一番→<b>最上級</b>（the + -est / most ~ + of/in）。長い語は more/most、不規則は good-better-best など。</div>
+
+  <!-- 語の種類トグル + ステップ -->
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="cBadge">step 1 / 4</span>
+        <span class="steptitle" id="cTitle"></span>
+      </div>
+      <div class="btns">
+        <button id="cPrev" aria-label="前のステップ">← 戻る</button>
+        <button id="cNext">次へ →</button>
+      </div>
+    </div>
+    <h2 style="display:none">比較級・最上級</h2>
+    <p class="hint">3人 A &lt; B &lt; C の高さを棒で比べます。語の種類を切り替えて、形のつくり方を確かめましょう。</p>
+
+    <div class="ctl">
+      <label>語の種類</label>
+      <div class="toggle" id="cToggle">
+        <button data-k="0" class="on">短い語 (tall)</button>
+        <button data-k="1">長い語 (famous)</button>
+        <button data-k="2">不規則 (good)</button>
+      </div>
+    </div>
+
+    <div class="stage">
+      <svg id="cSvg" viewBox="0 0 600 320" role="img" aria-label="3人の高さの比較">
+        <!-- baseline -->
+        <line id="c_base" x1="60" y1="250" x2="560" y2="250" stroke="var(--gray)" stroke-width="1.5"></line>
+        <!-- bars -->
+        <rect id="c_barA" x="100" y="190" width="80" height="60" rx="5" fill="var(--gray)" opacity="0.55"></rect>
+        <rect id="c_barB" x="260" y="130" width="80" height="120" rx="5" fill="var(--blue)" opacity="0.55"></rect>
+        <rect id="c_barC" x="420" y="70" width="80" height="180" rx="5" fill="var(--red)" opacity="0.55"></rect>
+        <!-- labels under bars -->
+        <text id="c_lA" x="140" y="272" font-size="15" text-anchor="middle" fill="var(--ink)">A</text>
+        <text id="c_lB" x="300" y="272" font-size="15" text-anchor="middle" fill="var(--ink)">B</text>
+        <text id="c_lC" x="460" y="272" font-size="15" text-anchor="middle" fill="var(--ink)">C</text>
+        <!-- height value labels inside top of each bar (avoid bracket/crown overlap) -->
+        <text id="c_hA" x="140" y="208" font-size="12" text-anchor="middle" fill="var(--sub)">160 cm</text>
+        <text id="c_hB" x="300" y="148" font-size="12" text-anchor="middle" fill="#eef3ff">170 cm</text>
+        <text id="c_hC" x="460" y="88" font-size="12" text-anchor="middle" fill="#fff">180 cm</text>
+        <!-- degree word on each bar -->
+        <text id="c_wA" x="140" y="224" font-size="14" text-anchor="middle" fill="var(--ink)" font-style="italic"></text>
+        <text id="c_wB" x="300" y="194" font-size="14" text-anchor="middle" fill="#fff" font-style="italic"></text>
+        <text id="c_wC" x="460" y="164" font-size="14" text-anchor="middle" fill="#fff" font-style="italic"></text>
+        <!-- comparative bracket (B vs A) : step >=2 -->
+        <g id="c_comp" data-ms="2">
+          <line x1="140" y1="100" x2="300" y2="100" stroke="var(--blue)" stroke-width="2"></line>
+          <line x1="140" y1="100" x2="140" y2="190" stroke="var(--blue)" stroke-width="2" stroke-dasharray="4 4"></line>
+          <line x1="300" y1="100" x2="300" y2="130" stroke="var(--blue)" stroke-width="2" stroke-dasharray="4 4"></line>
+          <text id="c_compT" x="220" y="92" font-size="14" text-anchor="middle" fill="var(--blue)" font-weight="600">B is taller than A</text>
+        </g>
+        <!-- superlative crown on C : step >=3 -->
+        <g id="c_sup" data-ms="3">
+          <polyline points="438,52 446,38 454,50 462,38 470,50 482,38 482,58 438,58"
+                    fill="none" stroke="var(--red)" stroke-width="2" stroke-linejoin="round"></polyline>
+          <text id="c_supT" x="460" y="34" font-size="14" text-anchor="middle" fill="var(--red)" font-weight="600">the tallest</text>
+        </g>
+        <!-- "of the three" note : step >=3 -->
+        <text id="c_supN" data-ms="3" x="460" y="302" font-size="13" text-anchor="middle" fill="var(--red)">C is the tallest of the three.</text>
+        <!-- irregular note : step >=4 -->
+        <text id="c_irrN" data-ms="4" x="300" y="302" font-size="13" text-anchor="middle" fill="var(--green)"></text>
+      </svg>
+    </div>
+    <p class="cap" id="cCap"></p>
+
+    <div class="relation" id="cRel">
+      <div><span class="deg">原級</span> <span class="pos" id="rPos"></span></div>
+      <div><span class="deg">比較級</span> <span class="comp" id="rComp"></span> <span style="color:var(--sub)">+ than（2つを比べる）</span></div>
+      <div><span class="deg">最上級</span> <span class="sup" id="rSup"></span> <span style="color:var(--sub)">+ of/in（3つ以上で一番）</span></div>
+      <span class="ex" id="rEx"></span>
+    </div>
+  </section>
+
+  <footer>
+    <p style="margin:0 0 8px"><a href="kyozai.html" style="color:var(--info-ink); text-decoration:none;">← 教材ライブラリ</a></p>
+    © AI塾 / trillion-ai-juku.com ・ 英文・語形は指導用に整理した表記です。
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function setT(id,txt){var e=el(id); if(e&&txt!=null) e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  (function(){
+    var step=1, kind=0;
+    // word data: positive, comparative, superlative, two example sentences (comparative & superlative), irregular note
+    var words=[
+      { pos:"tall", comp:"taller", sup:"tallest",
+        type:"短い語 → 語尾 -er / -est をつける",
+        exC:"Tom is taller than Ken.", exCj:"トムはケンより背が高い。",
+        exS:"Tom is the tallest of the three.", exSj:"トムは3人の中で一番背が高い。",
+        irr:"短い語: tall-taller-tallest / big-bigger-biggest" },
+      { pos:"famous", comp:"more famous", sup:"most famous",
+        type:"長い語（つづりが長い）→ more / most を前につける",
+        exC:"This book is more interesting than that one.", exCj:"この本はあれより面白い。",
+        exS:"She is the most famous singer in Japan.", exSj:"彼女は日本で一番有名な歌手だ。",
+        irr:"長い語: famous-more famous-most famous / interesting-more interesting-most interesting" },
+      { pos:"good / well", comp:"better", sup:"best",
+        type:"不規則変化 → 形がまるごと変わる（要暗記）",
+        exC:"This phone is better than mine.", exCj:"このスマホは私のよりよい。",
+        exS:"He is the best player on the team.", exSj:"彼はチームで一番うまい選手だ。",
+        irr:"不規則: good/well-better-best, bad-worse-worst, many/much-more-most" }
+    ];
+    var info=[null,
+      {t:"原級・比較級・最上級", c:"形容詞には3段階あります。原級（もとの形）→ 比較級（より～）→ 最上級（一番～）。A<B<C の3人で見ていきます。"},
+      {t:"比較級 -er/more ~ + than", c:"2つを比べて「より～」。短い語は -er、長い語は more ~ をつけ、後ろに than（～より）を置きます。B は A より高い → B is taller than A."},
+      {t:"最上級 the -est/most ~ + of/in", c:"3つ以上で「一番～」。short は the -est、long は the most ~。範囲は of＋複数（of the three）か in＋場所・集団（in Japan）。C is the tallest of the three."},
+      {t:"不規則変化", c:"good/well-better-best, bad-worse-worst, many/much-more-most は -er/-est も more/most も使わず形ごと変わります。トグルで「不規則 (good)」を選んで確認しましょう。"}];
+
+    function render(){
+      var w=words[kind];
+      // bracket / crown labels follow current word
+      setT("c_compT", "B is "+w.comp+" than A");
+      setT("c_supT", "the "+w.sup);
+      setT("c_supN", "C is the "+w.sup+" of the three.");
+      // degree words drawn on bars (use short forms so they fit)
+      setT("c_wA", w.pos.split(" ")[0]);
+      setT("c_wB", w.comp);
+      setT("c_wC", w.sup);
+      // irregular note (only meaningful at step 4)
+      setT("c_irrN", w.irr.split(":")[0]==="不規則" ? "good - better - best" : "");
+
+      vis("cSvg",step);
+
+      // relation panel
+      setT("rPos", w.pos);
+      setT("rComp", w.comp);
+      setT("rSup", "the "+w.sup);
+      var ex = el("rEx");
+      ex.innerHTML =
+        '比較級: <b>'+w.exC+'</b> <i>（'+w.exCj+'）</i><br>'+
+        '最上級: <b>'+w.exS+'</b> <i>（'+w.exSj+'）</i><br>'+
+        '<i style="color:var(--sub)">'+w.type+'</i>';
+
+      setT("cBadge","step "+step+" / 4");
+      setT("cTitle",info[step].t);
+      setT("cCap",info[step].c);
+      el("cPrev").disabled=step<=1; el("cNext").disabled=step>=4;
+    }
+
+    el("cNext").addEventListener("click",function(){if(step<4){step++;render();}});
+    el("cPrev").addEventListener("click",function(){if(step>1){step--;render();}});
+
+    var tg=el("cToggle").querySelectorAll("button");
+    for(var i=0;i<tg.length;i++){
+      tg[i].addEventListener("click",function(e){
+        kind=+e.currentTarget.getAttribute("data-k");
+        for(var j=0;j<tg.length;j++){ tg[j].classList.toggle("on", +tg[j].getAttribute("data-k")===kind); }
+        // jump to irregular step when picking irregular so the note is visible
+        if(kind===2 && step<4) step=4;
+        render();
+      });
+    }
+    render();
+  })();
+})();
+</script>
+</body>
+</html>
