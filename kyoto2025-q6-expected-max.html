@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="auth-guard.js?v=20260621-kyoto2025"></script>
+<title>2025 京大 問6 — 最大番号の期待値</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8; --amber:#d97706;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+    --bar:rgba(37,99,235,.55); --barHi:#2563eb; --barLo:rgba(37,99,235,.22);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a;
+           --bar:rgba(127,178,240,.55); --barHi:#7fb2f0; --barLo:rgba(127,178,240,.20); }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:21px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 16px;}
+  .qbox{background:var(--card); border:1px solid var(--bd); border-left:4px solid var(--blue);
+        border-radius:10px; padding:12px 14px; font-size:14px; margin:0 0 16px;}
+  .qbox b{color:var(--blue);}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:58px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:96px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:15px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .big{font-size:19px; font-weight:700; color:var(--ok-ink);}
+  .relation .sub2{display:block; margin-top:6px; font-size:13px; color:var(--sub);}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:16px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+  .frac{display:inline-block; text-align:center; vertical-align:middle; font-size:.92em;}
+  .frac .n{display:block; padding:0 .25em;}
+  .frac .d{display:block; padding:0 .25em; border-top:1px solid currentColor;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>最大番号の期待値 <span style="color:var(--sub);font-weight:400;font-size:15px;">— 2025 京都大 問6</span></h1>
+    <p class="lead">スライダー <b>n</b> で札の枚数を変えると、最大番号 <b>X</b> の分布（棒グラフ）と期待値 <b>E[X]</b> が連動。<b>「次へ／戻る」</b>で考え方が1段ずつ進みます。</p>
+  </header>
+
+  <div class="qbox">
+    <b>問題.</b> n は3以上の整数とする。1からnまでの番号（重複なし）が書かれた札がn枚ある。この袋から同時に3枚を取り出し、
+    そのうち一番大きい番号を X とする。X の期待値 E[X] を求めよ。
+  </div>
+
+  <div class="takeaway">急所 = <b>「最大が k」⟺「k を1枚引き、残り2枚は k より小さい」</b>。残り2枚は k−1 枚から選ぶので <b>C(k−1, 2)</b> 通り。大きい番号ほど最大値になりやすく、分布は<b>右肩上がり</b>になります。</div>
+
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="badge">step 1 / 4</span>
+        <span class="steptitle" id="title"></span>
+      </div>
+      <div class="btns">
+        <button id="prev" aria-label="前のステップ">← 戻る</button>
+        <button id="next">次へ →</button>
+      </div>
+    </div>
+    <div class="stage">
+      <svg id="bSvg" viewBox="0 0 600 340" role="img" aria-label="最大番号Xの確率分布の棒グラフ">
+        <g id="b_grid"></g>
+        <line id="b_ax" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="b_ay" stroke="var(--gray)" stroke-width="1.2"></line>
+        <g id="b_bars"></g>
+        <g id="b_xlab"></g>
+        <g id="b_ylab"></g>
+        <line id="b_emark" data-ms="3" stroke="var(--red)" stroke-width="1.8" stroke-dasharray="6 5"></line>
+        <text id="b_elab" data-ms="3" font-size="12.5" font-weight="700" fill="var(--red)" text-anchor="middle"></text>
+        <text id="b_hi" data-ms="2" font-size="12" fill="var(--blue)" text-anchor="middle"></text>
+        <text x="594" y="316" font-size="12" fill="var(--sub)" text-anchor="end">k</text>
+        <text x="14" y="22" font-size="12" fill="var(--sub)">P(X=k)</text>
+      </svg>
+    </div>
+    <p class="cap" id="cap"></p>
+
+    <div class="ctl">
+      <label for="in">札の枚数 n（3〜20）</label>
+      <input type="range" id="in" min="3" max="20" step="1" value="6">
+      <span class="out" id="inOut">n = 6</span>
+    </div>
+
+    <div class="relation eq" id="rel">
+      <div>期待値 <span class="big" id="eVal">—</span></div>
+      <div class="sub2" id="eForm"></div>
+    </div>
+  </section>
+
+  <div class="takeaway" style="background:var(--ok-bg); color:var(--ok-ink);">
+    <b>答え.</b> P(X=k) = C(k−1, 2) / C(n, 3)（k=3,…,n）。これより
+    <b>E[X] = Σ k·P(X=k) =
+    <span class="frac"><span class="n">3(n+1)</span><span class="d">4</span></span></b>。
+    （対称性: 3枚で区間 1〜n を4つに分けると、平均的に n+1 を4等分し、最大は上から 3/4 の位置 → 同じ値。）
+  </div>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a>　・　© AI塾 / trillion-ai-juku.com
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setT(id,x,y,txt){var e=el(id);if(x!=null)e.setAttribute("x",x);if(y!=null)e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* 二項係数 C(n,r) */
+  function comb(n,r){
+    if(r<0||r>n) return 0;
+    if(r===0||r===n) return 1;
+    r=Math.min(r,n-r);
+    var c=1;
+    for(var i=0;i<r;i++){ c=c*(n-i)/(i+1); }
+    return Math.round(c);
+  }
+  /* 最大公約数（厳密分数表示用） */
+  function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){var t=b;b=a%b;a=t;}return a;}
+
+  /* ---- 棒グラフ枠: x=1..n, y=0..ymax ---- */
+  var L=46, R=584, T=24, B=296;
+  function plotW(){return R-L;}
+  function plotH(){return B-T;}
+
+  var step=1, n=6;
+
+  var info=[null,
+    {t:"X=k となる場合の数", c:"最大が k になるのは「k を必ず1枚引き、残り2枚はすべて k より小さい」とき。k より小さい番号は 1,…,k−1 の k−1 枚あり、そこから2枚を選ぶので C(k−1, 2) 通り。全体は3枚の選び方 C(n, 3) 通りです。"},
+    {t:"分布の棒グラフ", c:"よって P(X=k) = C(k−1, 2) / C(n, 3)（k=3,…,n。k≦2 では0）。番号が大きいほど「残り2枚が下にある」選び方が多く、棒は右肩上がり。最も高いのは k=n です。"},
+    {t:"期待値を計算", c:"E[X] = Σ_{k=3}^{n} k·P(X=k)。この和を整理すると、きれいに E[X] = 3(n+1)/4 になります（赤い破線が E の位置。整数とは限らず棒の間に来ます）。"},
+    {t:"対称性による別解", c:"札3枚を選ぶと区間 1〜n が4つの部分に分かれます。平均的には n+1 を4等分し、最大の番号は下から数えて 3/4 の地点。よって E[X] = (3/4)(n+1) = 3(n+1)/4。和の計算と完全に一致します。"}];
+
+  /* P(X=k) を返す（k=1..n の配列, 1始まり index は k） */
+  function dist(){
+    var Cn3=comb(n,3), p=[];
+    for(var k=0;k<=n;k++){ p[k]=(k>=3)?(comb(k-1,2)/Cn3):0; }
+    return {p:p, Cn3:Cn3};
+  }
+
+  /* x=k の棒の中心 px。k=1..n を等間隔に配置 */
+  function BX(k){ return L + (k-0.5)/n*plotW(); }
+  function bandW(){ return plotW()/n; }
+
+  function render(){
+    var d=dist(), p=d.p, Cn3=d.Cn3;
+    var pmax=0; for(var k=1;k<=n;k++){ if(p[k]>pmax) pmax=p[k]; }
+    var ymax = pmax>0 ? pmax*1.18 : 1;
+    function BY(v){ return B - v/ymax*plotH(); }
+
+    /* グリッド（横線） */
+    var g=el("b_grid"); g.innerHTML="";
+    var gstep = ymax<=0.25?0.05 : (ymax<=0.6?0.1 : 0.2);
+    for(var gy=gstep; gy<ymax; gy+=gstep){
+      g.innerHTML+='<line x1="'+L+'" y1="'+BY(gy).toFixed(1)+'" x2="'+R+'" y2="'+BY(gy).toFixed(1)+'" stroke="var(--bd)" stroke-width="1"/>';
+    }
+    /* 軸 */
+    setLine("b_ax",L,B,R,B);
+    setLine("b_ay",L,T,L,B);
+
+    /* y軸ラベル */
+    var yl=el("b_ylab"); yl.innerHTML="";
+    for(gy=gstep; gy<ymax; gy+=gstep){
+      yl.innerHTML+='<text x="'+(L-6)+'" y="'+(BY(gy)+4).toFixed(1)+'" font-size="10.5" fill="var(--sub)" text-anchor="end">'+gy.toFixed(2)+'</text>';
+    }
+
+    /* 棒 */
+    var bw=bandW()*0.66;
+    var bars=el("b_bars"); bars.innerHTML="";
+    for(k=1;k<=n;k++){
+      var cx=BX(k), h=B-BY(p[k]);
+      var col = (p[k]<=0) ? "var(--barLo)" : (k===n ? "var(--barHi)" : "var(--bar)");
+      bars.innerHTML+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+BY(p[k]).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(h,0).toFixed(1)+'" rx="2" fill="'+col+'"/>';
+    }
+
+    /* x軸ラベル（n が大きい時は間引き） */
+    var xl=el("b_xlab"); xl.innerHTML="";
+    var stride = n<=12 ? 1 : Math.ceil(n/12);
+    for(k=1;k<=n;k++){
+      if(k!==1 && k!==n && ((k-1)%stride!==0)) continue;
+      xl.innerHTML+='<text x="'+BX(k).toFixed(1)+'" y="'+(B+15)+'" font-size="10.5" fill="var(--sub)" text-anchor="middle">'+k+'</text>';
+    }
+
+    /* step2: 最大の棒(k=n)の注記 */
+    setT("b_hi", BX(n), BY(p[n])-7, "最大 k=n");
+
+    /* step3: 期待値マーカー E=3(n+1)/4 */
+    var E = 3*(n+1)/4;
+    /* E の x位置: 棒は k を中心に等間隔配置。連続位置 E に対応する px */
+    var Ex = L + (E-0.5)/n*plotW();
+    if(Ex<L) Ex=L; if(Ex>R) Ex=R;
+    setLine("b_emark", Ex, T, Ex, B);
+    var elx = Ex; if(elx>R-72) elx=R-72; if(elx<L+72) elx=L+72;
+    setT("b_elab", elx, T+13, "E[X] = "+E.toFixed(2));
+
+    vis("bSvg",step);
+
+    /* 読み出し */
+    el("inOut").textContent="n = "+n;
+
+    /* 厳密分数 3(n+1)/4 を約分表示 */
+    var num=3*(n+1), den=4, gg=gcd(num,den);
+    var fnum=num/gg, fden=den/gg;
+    var fracStr = (fden===1) ? (""+fnum) : (fnum+"/"+fden);
+
+    el("eVal").innerHTML = 'E[X] = '+E.toFixed(2)+'　(= '+fracStr+')';
+    el("eForm").innerHTML =
+      'C(n,3) = C('+n+',3) = '+Cn3+'　／　P(X=k)=C(k−1,2)/'+Cn3+'<br>'+
+      'E[X] = Σ k·P(X=k) = <b>3(n+1)/4</b> = 3·'+(n+1)+'/4 = '+fracStr;
+
+    el("badge").textContent="step "+step+" / 4";
+    el("title").textContent=info[step].t;
+    el("cap").textContent=info[step].c;
+    el("prev").disabled=step<=1; el("next").disabled=step>=4;
+  }
+
+  el("next").addEventListener("click",function(){if(step<4){step++;render();}});
+  el("prev").addEventListener("click",function(){if(step>1){step--;render();}});
+  el("in").addEventListener("input",function(e){n=parseInt(e.target.value,10);render();});
+  render();
+})();
+</script>
+</body>
+</html>

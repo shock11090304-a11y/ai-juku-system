@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="auth-guard.js?v=20260621-kyoto2025"></script>
+<title>2025 京大 問5 — 2曲線が囲む領域の回転体</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8; --amber:#d97706;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+    --fillU:rgba(37,99,235,.16); --fillL:rgba(226,72,58,.14);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a;
+           --fillU:rgba(127,178,240,.18); --fillL:rgba(226,72,58,.18); }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:21px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 16px;}
+  .qbox{background:var(--card); border:1px solid var(--bd); border-left:4px solid var(--blue);
+        border-radius:10px; padding:12px 14px; font-size:14px; margin:0 0 16px;}
+  .qbox b{color:var(--blue);}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .card h2{font-size:17px; font-weight:600; margin:0 0 2px;}
+  .card .hint{color:var(--sub); font-size:13px; margin:0 0 12px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  .twin{display:grid; grid-template-columns:1.25fr 1fr; gap:8px;}
+  @media (max-width:560px){ .twin{grid-template-columns:1fr;} }
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:54px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:96px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:15px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .big{font-size:18px; font-weight:700; color:var(--ok-ink);}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:16px 0;}
+  .pill{display:inline-block; font-size:12px; font-weight:600; padding:2px 8px; border-radius:6px; margin-right:6px;}
+  .pill.disk{background:rgba(22,163,74,.16); color:var(--green);}
+  .pill.ann{background:rgba(217,119,6,.16); color:var(--amber);}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>2曲線が囲む領域の回転体 <span style="color:var(--sub);font-weight:400;font-size:15px;">— 2025 京都大 問5</span></h1>
+    <p class="lead">スライダー <b>a</b> で領域 D<sub>a</sub> が変わり、走査線 <b>x</b> を動かすと断面（円板／円環）が連動。<b>「次へ／戻る」</b>で考え方が1段ずつ進みます。</p>
+  </header>
+
+  <div class="qbox">
+    <b>問題.</b> a は 0 &lt; a &lt; π を満たす実数とする。2つの関数 y = sin(x + a) と y = sin(x − a) のグラフの、
+    −π/2 ≦ x ≦ π/2 の部分が囲む領域を D<sub>a</sub> とする。x 軸のまわりに D<sub>a</sub> を1回転してできる立体の体積を求めよ。
+  </div>
+
+  <div class="takeaway">急所 = <b>領域が x 軸をまたぐ</b>こと。回転すると、またぐ区間は<b>すき間のない円板</b>、片側に寄った区間は<b>中空の円環（ドーナツ）</b>。単純な π∫(上²−下²) では<b>過大</b>になります。</div>
+
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="badge">step 1 / 4</span>
+        <span class="steptitle" id="title"></span>
+      </div>
+      <div class="btns">
+        <button id="prev" aria-label="前のステップ">← 戻る</button>
+        <button id="next">次へ →</button>
+      </div>
+    </div>
+    <div class="twin">
+      <div class="stage">
+        <svg id="gSvg" viewBox="0 0 480 360" role="img" aria-label="2つのサインカーブと囲む領域">
+          <g id="g_grid"></g>
+          <line id="g_ax" stroke="var(--gray)" stroke-width="1.2"></line>
+          <line id="g_ay" stroke="var(--gray)" stroke-width="1.2"></line>
+          <g id="g_ticks"></g>
+          <path id="g_region" data-ms="2" fill="var(--fillU)" stroke="none"></path>
+          <path id="g_curveU" data-ms="1" fill="none" stroke="var(--blue)" stroke-width="2.6"></path>
+          <path id="g_curveL" data-ms="1" fill="none" stroke="var(--red)" stroke-width="2.6"></path>
+          <line id="g_scan" data-ms="3" stroke="var(--amber)" stroke-width="1.6" stroke-dasharray="5 4"></line>
+          <circle id="g_pU" data-ms="3" r="4" fill="var(--blue)"></circle>
+          <circle id="g_pL" data-ms="3" r="4" fill="var(--red)"></circle>
+          <text id="g_lU" data-ms="1" font-size="13" fill="var(--blue)" text-anchor="start">sin(x+a)</text>
+          <text id="g_lL" data-ms="1" font-size="13" fill="var(--red)" text-anchor="start">sin(x−a)</text>
+          <text x="466" y="186" font-size="12" fill="var(--sub)" text-anchor="end">x</text>
+        </svg>
+      </div>
+      <div class="stage">
+        <svg id="cSvg" viewBox="0 0 260 360" role="img" aria-label="走査線位置での回転断面">
+          <line id="c_ax" data-ms="3" stroke="var(--gray)" stroke-width="1.2"></line>
+          <circle id="c_outer" data-ms="3" fill="none" stroke="var(--ink)" stroke-width="1.4"></circle>
+          <circle id="c_disk" data-ms="3" fill="rgba(22,163,74,.16)" stroke="none"></circle>
+          <path id="c_ringpath" data-ms="3" fill="rgba(217,119,6,.18)" fill-rule="evenodd" stroke="none"></path>
+          <line id="c_seg" data-ms="3" stroke="var(--amber)" stroke-width="3"></line>
+          <circle id="c_sU" data-ms="3" r="3.5" fill="var(--blue)"></circle>
+          <circle id="c_sL" data-ms="3" r="3.5" fill="var(--red)"></circle>
+          <text id="c_kind" data-ms="3" x="130" y="22" font-size="13" font-weight="700" text-anchor="middle"></text>
+          <text id="c_area" data-ms="3" x="130" y="346" font-size="12" fill="var(--sub)" text-anchor="middle"></text>
+        </svg>
+      </div>
+    </div>
+    <p class="cap" id="cap"></p>
+
+    <div class="ctl">
+      <label for="ia">a（0 &lt; a &lt; π）</label>
+      <input type="range" id="ia" min="0.15" max="2.99" step="0.01" value="0.79">
+      <span class="out" id="iaOut">a = 0.79</span>
+    </div>
+    <div class="ctl" id="xRow">
+      <label for="ix">走査線 x</label>
+      <input type="range" id="ix" min="-1.55" max="1.55" step="0.01" value="0">
+      <span class="out" id="ixOut">x = 0.00</span>
+    </div>
+
+    <div class="relation eq" id="rel">
+      <div>体積 <span class="big" id="vVal">—</span></div>
+      <div style="margin-top:6px; font-size:14px;" id="vForm"></div>
+    </div>
+  </section>
+
+  <div class="takeaway" style="background:var(--ok-bg); color:var(--ok-ink);">
+    <b>答え.</b> 0 &lt; a ≦ π/2 のとき V = πa + (3π/2)·sin 2a。
+    π/2 ≦ a &lt; π のとき V = π(π−a) − (3π/2)·sin 2a。
+    （a と π−a で同じ値。a=π/2 で最大ではなく、V は a=π/2 で π²/2。）
+  </div>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a>　・　© AI塾 / trillion-ai-juku.com
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y,r){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);if(r!=null)e.setAttribute("r",r);}
+  function setT(id,x,y,txt){var e=el(id);if(x!=null)e.setAttribute("x",x);if(y!=null)e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+  var PI=Math.PI;
+
+  /* ---- 左: 曲線プロット x∈[-π/2,π/2], y∈[-1.15,1.15] ---- */
+  var L=34,R=452,T=20,B=340, XMIN=-PI/2,XMAX=PI/2, YMIN=-1.15,YMAX=1.15;
+  function GX(x){return L+(x-XMIN)/(XMAX-XMIN)*(R-L);}
+  function GY(y){return B-(y-YMIN)/(YMAX-YMIN)*(B-T);}
+  /* ---- 右: 断面 (半径をpxに) ---- */
+  var CX=130, CYax=186, RSCALE=128; /* y=1 -> 128px 半径 */
+  function RX(){return CX;}
+
+  var step=1, a=0.79, x0=0;
+
+  var info=[null,
+    {t:"2つのサインカーブ", c:"y=sin(x+a)（青）と y=sin(x−a)（赤）。差は sin(x+a)−sin(x−a)=2cos x·sin a。−π/2≦x≦π/2 では cos x≧0、0<a<π で sin a>0 だから青が上、赤が下。2曲線は x=±π/2 でだけ交わります。"},
+    {t:"囲む領域 D_a", c:"2曲線の間が領域 D_a。注目すべきは x=0 付近で下端 sin(−a)=−sin a が負、上端 sin a が正 → 領域が x 軸をまたいでいること。ここが回転体の体積計算の急所です。"},
+    {t:"x 軸で回転 → 断面", c:"走査線 x を動かしてみよう。右が回転断面。上端と下端が x 軸の反対側（またぐ）なら、回転で中心まで埋まった『円板』。同じ側なら中空の『円環（ドーナツ）』になります。"},
+    {t:"断面積を積分", c:"断面積 A(x)=π·(外半径²−内半径²)。またぐ所は内半径=0（円板）。これを −π/2→π/2 で積分。原点対称なので 2×(0→π/2)。計算すると V=πa+(3π/2)sin2a（0<a≦π/2）。"}];
+
+  function grid(){
+    var g=el("g_grid"); g.innerHTML="";
+    var xs=[-PI/2,-PI/4,0,PI/4,PI/2];
+    for(var i=0;i<xs.length;i++){ var gx=GX(xs[i]);
+      g.innerHTML+='<line x1="'+gx.toFixed(1)+'" y1="'+T+'" x2="'+gx.toFixed(1)+'" y2="'+B+'" stroke="var(--bd)" stroke-width="1"/>'; }
+    for(var y=-1;y<=1;y+=0.5){ if(Math.abs(y)<1e-9)continue; var gy=GY(y);
+      g.innerHTML+='<line x1="'+L+'" y1="'+gy.toFixed(1)+'" x2="'+R+'" y2="'+gy.toFixed(1)+'" stroke="var(--bd)" stroke-width="1"/>'; }
+  }
+  function ticks(){
+    var g=el("g_ticks"); g.innerHTML="";
+    var y0=GY(0);
+    var lab=[["−π/2",-PI/2],["0",0],["π/2",PI/2]];
+    for(var i=0;i<lab.length;i++){ var gx=GX(lab[i][1]);
+      g.innerHTML+='<text x="'+gx.toFixed(1)+'" y="'+(y0+15)+'" font-size="11" fill="var(--sub)" text-anchor="middle">'+lab[i][0]+'</text>'; }
+    g.innerHTML+='<text x="'+(GX(0)-7)+'" y="'+(GY(1)+4)+'" font-size="11" fill="var(--sub)" text-anchor="end">1</text>';
+    g.innerHTML+='<text x="'+(GX(0)-7)+'" y="'+(GY(-1)+4)+'" font-size="11" fill="var(--sub)" text-anchor="end">−1</text>';
+  }
+  function curve(fn){
+    var out="",N=160;
+    for(var i=0;i<=N;i++){ var x=XMIN+(XMAX-XMIN)*i/N; var y=fn(x);
+      out+=(i?" L":"M")+GX(x).toFixed(1)+","+GY(y).toFixed(1); }
+    return out;
+  }
+  function region(){
+    var out="",N=160,i,x;
+    for(i=0;i<=N;i++){ x=XMIN+(XMAX-XMIN)*i/N; out+=(i?" L":"M")+GX(x).toFixed(1)+","+GY(Math.sin(x+a)).toFixed(1); }
+    for(i=N;i>=0;i--){ x=XMIN+(XMAX-XMIN)*i/N; out+=" L"+GX(x).toFixed(1)+","+GY(Math.sin(x-a)).toFixed(1); }
+    return out+" Z";
+  }
+
+  /* 体積（厳密式） */
+  function volume(av){
+    var s2=Math.sin(2*av);
+    if(av<=PI/2) return PI*av + (3*PI/2)*s2;
+    return PI*(PI-av) - (3*PI/2)*s2;
+  }
+
+  function render(){
+    grid(); ticks();
+    setLine("g_ax",L,GY(0),R,GY(0));
+    setLine("g_ay",GX(0),T,GX(0),B);
+    el("g_curveU").setAttribute("d",curve(function(x){return Math.sin(x+a);}));
+    el("g_curveL").setAttribute("d",curve(function(x){return Math.sin(x-a);}));
+    el("g_region").setAttribute("d",region());
+    /* labels near right end */
+    setT("g_lU",GX(0.55),GY(Math.sin(0.55+a))-6,null);
+    setT("g_lL",GX(0.2),GY(Math.sin(0.2-a))+14,null);
+
+    /* scan line + section */
+    var yU=Math.sin(x0+a), yL=Math.sin(x0-a);
+    setLine("g_scan",GX(x0),T,GX(x0),B);
+    setC("g_pU",GX(x0),GY(yU)); setC("g_pL",GX(x0),GY(yL));
+
+    var aU=Math.abs(yU), aL=Math.abs(yL);
+    var Rout=Math.max(aU,aL);
+    var straddle=(yU*yL)<0;
+    var rin=straddle?0:Math.min(aU,aL);
+    setLine("c_ax",20,CYax,240,CYax);
+    /* draw cross-section as circle(s) centered (CX,CYax) */
+    setC("c_outer",CX,CYax,(Rout*RSCALE).toFixed(1));
+    if(straddle){
+      el("c_disk").style.display=""; el("c_ringpath").style.display="none";
+      setC("c_disk",CX,CYax,(Rout*RSCALE).toFixed(1));
+      setT("c_kind",null,null,"円板（すき間なし）"); el("c_kind").setAttribute("fill","var(--green)");
+    }else{
+      el("c_disk").style.display="none"; el("c_ringpath").style.display="";
+      var Ro=(Rout*RSCALE), Ri=(rin*RSCALE);
+      /* annulus via evenodd: outer circle path + inner circle path */
+      var p="M "+(CX-Ro)+" "+CYax+" a "+Ro+" "+Ro+" 0 1 0 "+(2*Ro)+" 0 a "+Ro+" "+Ro+" 0 1 0 "+(-2*Ro)+" 0 Z";
+      p+=" M "+(CX-Ri)+" "+CYax+" a "+Ri+" "+Ri+" 0 1 0 "+(2*Ri)+" 0 a "+Ri+" "+Ri+" 0 1 0 "+(-2*Ri)+" 0 Z";
+      el("c_ringpath").setAttribute("d",p);
+      setT("c_kind",null,null,"円環（中空）"); el("c_kind").setAttribute("fill","var(--amber)");
+    }
+    /* segment showing yU..yL on the radius axis (vertical) */
+    setLine("c_seg",CX,CYax-yU*RSCALE,CX,CYax-yL*RSCALE);
+    setC("c_sU",CX,CYax-yU*RSCALE); setC("c_sL",CX,CYax-yL*RSCALE);
+    var Ax=PI*(Rout*Rout-rin*rin);
+    setT("c_area",null,null,"A(x) = "+Ax.toFixed(2));
+
+    vis("gSvg",step); vis("cSvg",step);
+
+    el("iaOut").textContent="a = "+a.toFixed(2);
+    el("ixOut").textContent="x = "+x0.toFixed(2);
+    el("xRow").style.opacity=(step>=3)?"1":"0.4";
+    el("ix").disabled=(step<3);
+
+    var V=volume(a);
+    el("vVal").textContent="V ≈ "+V.toFixed(3);
+    if(a<=PI/2) el("vForm").innerHTML="V = πa + (3π/2)·sin 2a　(0&lt;a≦π/2)";
+    else el("vForm").innerHTML="V = π(π−a) − (3π/2)·sin 2a　(π/2≦a&lt;π)";
+
+    el("badge").textContent="step "+step+" / 4";
+    el("title").textContent=info[step].t;
+    el("cap").textContent=info[step].c;
+    el("prev").disabled=step<=1; el("next").disabled=step>=4;
+  }
+
+  el("next").addEventListener("click",function(){if(step<4){step++;render();}});
+  el("prev").addEventListener("click",function(){if(step>1){step--;render();}});
+  el("ia").addEventListener("input",function(e){a=parseFloat(e.target.value);render();});
+  el("ix").addEventListener("input",function(e){x0=parseFloat(e.target.value);render();});
+  render();
+})();
+</script>
+</body>
+</html>

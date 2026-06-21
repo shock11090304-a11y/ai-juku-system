@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="auth-guard.js?v=20260621-kyoto2025"></script>
+<title>2025 京大 問3 — 係数を割り切る2べきの最大</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8; --amber:#d97706;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+    --bar:#7fa8e8; --barlo:#cdddf6; --barhi:#3a6fd0;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a;
+           --bar:#4f74b8; --barlo:#2a3b58; --barhi:#86b2f0; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:21px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 16px;}
+  .qbox{background:var(--card); border:1px solid var(--bd); border-left:4px solid var(--blue);
+        border-radius:10px; padding:12px 14px; font-size:14px; margin:0 0 16px;}
+  .qbox b{color:var(--blue);}
+  .qbox .frm{display:block; margin:8px 0 2px; font-size:15px; text-align:center;}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:60px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:64px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:15px; border:1px solid var(--bd);}
+  .relation.eq{background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .big{font-size:19px; font-weight:700; color:var(--ok-ink);}
+  .relation .sub2{display:block; margin-top:6px; font-size:13px; color:var(--sub);}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:16px 0;}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>係数を割り切る2べきの最大 <span style="color:var(--sub);font-weight:400;font-size:15px;">— 2025 京都大 問3</span></h1>
+    <p class="lead">スライダー <b>n</b> を動かすと、差の多項式の各係数の <b>2進付値 v₂</b>（2で割れる回数）が棒グラフで変わります。<b>「次へ／戻る」</b>で考え方が1段ずつ進みます。</p>
+  </header>
+
+  <div class="qbox">
+    <b>問題.</b> n は正の整数とする。整数係数の多項式
+    <span class="frm mono">(x+1)<sup>2^(n+1)</sup> − (x²+1)<sup>2^n</sup></span>
+    の全ての係数が 2<sup>m</sup> で割り切れるような正の整数 m のうち、最大のものが <b>n+1</b> であることを示せ。
+  </div>
+
+  <div class="takeaway">急所 = <b>x<sup>j</sup> の係数 = C(2<sup>n+1</sup>, j) − （j が偶数なら C(2<sup>n</sup>, j/2)、奇数なら 0）</b>。
+  両端 j=0, j=2<sup>n+1</sup> は 1−1=0 で消える。各係数の <b>v₂</b>（2で何回割れるか）の最小値が、求める m の最大値になります。</div>
+
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="badge">step 1 / 4</span>
+        <span class="steptitle" id="title"></span>
+      </div>
+      <div class="btns">
+        <button id="prev" aria-label="前のステップ">← 戻る</button>
+        <button id="next">次へ →</button>
+      </div>
+    </div>
+    <div class="stage">
+      <svg id="vSvg" viewBox="0 0 700 360" role="img" aria-label="各次数の係数の2進付値の棒グラフ">
+        <g id="v_grid"></g>
+        <line id="v_ax" stroke="var(--gray)" stroke-width="1.2"></line>
+        <line id="v_ay" stroke="var(--gray)" stroke-width="1.2"></line>
+        <g id="v_yticks"></g>
+        <g id="v_bars" data-ms="1"></g>
+        <g id="v_xticks"></g>
+        <line id="v_minline" data-ms="4" stroke="var(--red)" stroke-width="1.6" stroke-dasharray="6 5"></line>
+        <text id="v_minlab" data-ms="4" font-size="12" fill="var(--red)" text-anchor="start" font-weight="700"></text>
+        <text x="690" y="352" font-size="12" fill="var(--sub)" text-anchor="end">次数 j</text>
+        <text x="14" y="20" font-size="12" fill="var(--sub)">v₂（2で割れる回数）</text>
+      </svg>
+    </div>
+    <p class="cap" id="cap"></p>
+
+    <div class="ctl">
+      <label for="in">n（正の整数）</label>
+      <input type="range" id="in" min="1" max="4" step="1" value="2">
+      <span class="out" id="inOut">n = 2</span>
+    </div>
+
+    <div class="relation eq" id="rel">
+      <div>最小の v₂ = <span class="big" id="minVal">—</span>　（これがちょうど n+1 = <span class="big" id="n1Val">—</span>）</div>
+      <span class="sub2" id="relSub"></span>
+    </div>
+  </section>
+
+  <div class="takeaway" style="background:var(--ok-bg); color:var(--ok-ink); font-size:15px;">
+    <b>答え.</b> 全ての係数を割り切る 2<sup>m</sup> の最大の <b style="font-size:17px;">m = n+1</b>。
+    <span style="display:block; margin-top:6px; font-size:13.5px;">差は mod 2 で 0 ゆえ全係数は偶数、さらに精密化すると最小付値は n+1。x<sup>1</sup> と x<sup>2^(n+1)−1</sup> の係数が ちょうど 2<sup>n+1</sup>×（奇数）なので、それ以上は割れません。</span>
+  </div>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a>　・　© AI塾 / trillion-ai-juku.com
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setT(id,x,y,txt){var e=el(id);if(x!=null)e.setAttribute("x",x);if(y!=null)e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+
+  /* ---- BigInt 二項係数と2進付値 ---- */
+  function comb(n,k){
+    if(k<0n||k>n) return 0n;
+    if(k>n-k) k=n-k;
+    var r=1n;
+    for(var i=0n;i<k;i++){ r=r*(n-i)/(i+1n); }
+    return r;
+  }
+  function v2(x){ if(x===0n) return -1; var c=0; while(x%2n===0n){x/=2n;c++;} return c; }
+
+  /* n に対する係数列と各付値を計算（j=0..2^(n+1)） */
+  function compute(n){
+    var N=BigInt(Math.pow(2,n+1));      // 2^(n+1)
+    var M=BigInt(Math.pow(2,n));         // 2^n
+    var deg=Math.pow(2,n+1);
+    var vals=[], minv=Infinity;
+    for(var j=0;j<=deg;j++){
+      var J=BigInt(j);
+      var c=comb(N,J);
+      if(j%2===0) c-=comb(M,BigInt(j/2));
+      var v=v2(c);                       // -1 なら係数=0（両端のみ）
+      vals.push(v);
+      if(v>=0 && v<minv) minv=v;
+    }
+    return {vals:vals, minv:minv, deg:deg};
+  }
+
+  /* ---- 棒グラフ領域 ---- */
+  var L=46,R=688,T=30,B=320;            // プロット枠
+  function PX_RANGE(){return R-L;}
+
+  var step=1, n=2;
+
+  var info=[null,
+    {t:"展開して係数を並べる", c:"(x+1)^(2^(n+1)) を二項展開すると x^j の係数は C(2^(n+1), j)。そこから (x²+1)^(2^n) を引くと、x^j（j偶数）の係数 C(2^n, j/2) だけ差し引かれる。両端 j=0 と j=2^(n+1) は 1−1=0 で消えます。"},
+    {t:"mod 2 の発想", c:"(x+1)²=x²+2x+1≡x²+1 (mod 2)。よって (x+1)^(2^(n+1))=((x+1)²)^(2^n)≡(x²+1)^(2^n) (mod 2)。差は mod 2 で 0、つまり 全係数が偶数（少なくとも 2¹ で割れる）。まず m≧1 が言えました。"},
+    {t:"各係数の v₂ を棒グラフに", c:"各係数を 2 で割り切れる回数 v₂ を棒の高さにします。中央の係数ほど v₂ が大きく（よく割れる）、端に近いほど小さい。n を動かして全体の形を観察しましょう。最も低い棒（=最小付値）に注目。"},
+    {t:"最小は n+1", c:"最小の v₂ は ちょうど n+1（赤い破線）。これを達成するのが x¹ と x^(2^(n+1)−1) の係数で、いずれも 2^(n+1)×（奇数）。だから全係数の共通因子としての 2 べきは 2^(n+1) が上限。よって m の最大値は n+1。"}];
+
+  function render(){
+    var R2=compute(n);
+    var vals=R2.vals, minv=R2.minv, deg=R2.deg;
+    // 非零係数の最大付値（縦軸スケール用）
+    var maxv=0;
+    for(var j=0;j<=deg;j++){ if(vals[j]>maxv) maxv=vals[j]; }
+    var ymax=maxv+1;                    // 上に少し余白
+
+    function VY(v){ return B-(v/ymax)*(B-T); }
+    // 棒は j=1..deg-1（両端の0係数は描かない）
+    var nbar=deg-1;
+    var slot=PX_RANGE()/nbar;           // 1次数あたりの横幅
+    var bw=Math.max(2.4, slot*0.62);    // 棒の太さ
+    function CXj(j){ return L + (j-0.5)*slot; } // j本目の棒の中心（j=1→中心 slot*0.5）
+
+    /* --- y グリッド & 目盛 --- */
+    var grid=el("v_grid"); grid.innerHTML="";
+    var yt=el("v_yticks"); yt.innerHTML="";
+    for(var v=0; v<=ymax; v++){
+      var gy=VY(v);
+      grid.innerHTML+='<line x1="'+L+'" y1="'+gy.toFixed(1)+'" x2="'+R+'" y2="'+gy.toFixed(1)+'" stroke="var(--bd)" stroke-width="1"/>';
+      yt.innerHTML+='<text x="'+(L-7)+'" y="'+(gy+4).toFixed(1)+'" font-size="11" fill="var(--sub)" text-anchor="end">'+v+'</text>';
+    }
+    setLine("v_ax",L,B,R,B);
+    setLine("v_ay",L,T,L,B);
+
+    /* --- 棒 --- */
+    var bars=el("v_bars"); bars.innerHTML="";
+    for(j=1; j<=deg-1; j++){
+      var v=vals[j];
+      if(v<0) continue;                 // 念のため（内側は非零）
+      var isMin=(v===minv)&&(step>=4);   /* 最小バーの赤強調は step4 の reveal で */
+      var cx=CXj(j), bx=cx-bw/2, by=VY(v), bh=B-by;
+      var col;
+      if(isMin) col="var(--red)";
+      else {
+        // 付値で濃淡: 低いほど淡く、高いほど濃く
+        var t=(maxv>minv)?(v-minv)/(maxv-minv):0;
+        col = "color-mix(in srgb, var(--barhi) "+Math.round(20+t*80)+"%, var(--barlo))";
+      }
+      bars.innerHTML+='<rect x="'+bx.toFixed(1)+'" y="'+by.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="1.5" fill="'+col+'"/>';
+    }
+
+    /* --- x 目盛（端と中央。本数が多いとき間引く） --- */
+    var xt=el("v_xticks"); xt.innerHTML="";
+    var mid=deg/2;
+    var labs=[1, mid, deg-1];
+    // n が小さいなら全部、n=1,2 は細かく
+    if(deg<=8){ labs=[]; for(j=1;j<=deg-1;j++) labs.push(j); }
+    for(var li=0; li<labs.length; li++){
+      var jj=labs[li];
+      var lx=CXj(jj);
+      var txt=(jj===deg-1)?("2ⁿ⁺¹−1="+jj):((jj===mid)?("2ⁿ="+jj):(""+jj));
+      var anch=(jj===deg-1)?"end":((jj===1)?"start":"middle");
+      var ax=(jj===deg-1)?(lx+bw/2):((jj===1)?(lx-bw/2):lx);
+      xt.innerHTML+='<text x="'+ax.toFixed(1)+'" y="'+(B+16)+'" font-size="11" fill="var(--sub)" text-anchor="'+anch+'">'+txt+'</text>';
+    }
+
+    /* --- 最小付値の赤破線 --- */
+    var my=VY(minv);
+    setLine("v_minline",L,my,R,my);
+    setT("v_minlab",L+6,my-6,"最小 v₂ = "+minv+" （= n+1）");
+
+    /* --- 可視性 --- */
+    vis("vSvg",step);
+
+    /* --- relation --- */
+    el("inOut").textContent="n = "+n;
+    el("minVal").textContent=minv;
+    el("n1Val").textContent=(n+1);
+    el("relSub").textContent="最小を達成するのは x¹ と x^("+(deg-1)+") の係数（= 2^"+(n+1)+"×奇数 = "+Math.pow(2,n+1)+"×奇数）。よって全係数を割り切る最大の 2 べきは 2^"+(n+1)+"。";
+
+    /* --- step UI --- */
+    el("badge").textContent="step "+step+" / 4";
+    el("title").textContent=info[step].t;
+    el("cap").textContent=info[step].c;
+    el("prev").disabled=step<=1; el("next").disabled=step>=4;
+  }
+
+  el("next").addEventListener("click",function(){if(step<4){step++;render();}});
+  el("prev").addEventListener("click",function(){if(step>1){step--;render();}});
+  el("in").addEventListener("input",function(e){n=parseInt(e.target.value,10);render();});
+  render();
+})();
+</script>
+</body>
+</html>

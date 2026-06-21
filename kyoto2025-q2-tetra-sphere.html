@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="auth-guard.js?v=20260621-kyoto2025"></script>
+<title>2025 京大 問2 — 正四面体と球面</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8; --amber:#d97706;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+    --bad-bg:#fdecea; --bad-ink:#c0392b;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a;
+           --bad-bg:#3a1a17; --bad-ink:#f0857a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:21px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 16px;}
+  .qbox{background:var(--card); border:1px solid var(--bd); border-left:4px solid var(--blue);
+        border-radius:10px; padding:12px 14px; font-size:14px; margin:0 0 16px;}
+  .qbox b{color:var(--blue);}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:54px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:96px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:15px; border:1px solid var(--bd);}
+  .relation.safe{background:var(--ok-bg); border-color:var(--ok-ink); color:var(--ok-ink);}
+  .relation.hit{background:var(--bad-bg); border-color:var(--bad-ink); color:var(--bad-ink);}
+  .relation .big{font-size:17px; font-weight:700;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:16px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>正四面体と球面 <span style="color:var(--sub);font-weight:400;font-size:15px;">— 2025 京都大 問2</span></h1>
+    <p class="lead">点 <b>P</b> を辺 OA 上で動かすと、P から辺 BC までの距離 <b>[最小, 最大]</b> が帯を描きます。半径 <b>r</b> がその帯を避ければ、どの P でも球面は BC と交わりません。</p>
+  </header>
+
+  <div class="qbox">
+    <b>問題.</b> r は正の実数とする。1辺の長さが1の正四面体 OABC において、辺 OA 上に点 P をとる。
+    P が辺 OA 上のどこにあっても、点 P を中心とする半径 r の球面が、辺 BC と共有点をもたないような r の範囲を求めよ。
+  </div>
+
+  <div class="takeaway">急所 = 向かい合う辺 <b>OA ⊥ BC</b>。P=(t,0,0)、BC上の点=(0,s,1/√2) とすると <b>距離² = t² + s² + 1/2</b>。最近点 s=0、最遠点 s=±1/2 で距離の<b>帯</b>が決まります。</div>
+
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="badge">step 1 / 4</span>
+        <span class="steptitle" id="title"></span>
+      </div>
+      <div class="btns">
+        <button id="prev" aria-label="前のステップ">← 戻る</button>
+        <button id="next">次へ →</button>
+      </div>
+    </div>
+    <div class="stage">
+      <svg id="svg" viewBox="0 0 480 300" role="img" aria-label="正四面体 OABC と点P周りの球">
+        <!-- tetrahedron edges -->
+        <polygon id="face" fill="rgba(37,99,235,.06)" stroke="none"></polygon>
+        <line id="eOA" stroke="var(--blue)" stroke-width="2.6"></line>
+        <line id="eBC" stroke="var(--red)" stroke-width="2.6"></line>
+        <line id="eOB" stroke="var(--gray)" stroke-width="1.3"></line>
+        <line id="eOC" stroke="var(--gray)" stroke-width="1.3"></line>
+        <line id="eAB" stroke="var(--gray)" stroke-width="1.3"></line>
+        <line id="eAC" stroke="var(--gray)" stroke-width="1.3"></line>
+        <circle id="sphere" data-ms="2" fill="rgba(217,119,6,.10)" stroke="var(--amber)" stroke-width="1.5"></circle>
+        <line id="dmin" data-ms="3" stroke="var(--green)" stroke-width="2" stroke-dasharray="4 3"></line>
+        <line id="dmaxB" data-ms="3" stroke="var(--red)" stroke-width="1.6" stroke-dasharray="4 3"></line>
+        <line id="dmaxC" data-ms="3" stroke="var(--red)" stroke-width="1.6" stroke-dasharray="4 3"></line>
+        <circle id="pM" data-ms="3" r="3" fill="var(--green)"></circle>
+        <circle id="pP" r="5" fill="var(--amber)" stroke="#fff" stroke-width="1.2"></circle>
+        <text id="tO" font-size="12" fill="var(--sub)">O</text>
+        <text id="tA" font-size="12" fill="var(--sub)">A</text>
+        <text id="tB" font-size="12" fill="var(--red)">B</text>
+        <text id="tC" font-size="12" fill="var(--red)">C</text>
+        <text id="tP" font-size="12" fill="var(--amber)" font-weight="700">P</text>
+      </svg>
+    </div>
+
+    <div class="stage" style="margin-top:8px;">
+      <svg id="nl" viewBox="0 0 480 120" role="img" aria-label="半径 r の数直線と禁止帯">
+        <line id="nl_ax" x1="40" y1="70" x2="450" y2="70" stroke="var(--gray)" stroke-width="1.4"></line>
+        <rect id="nl_union" data-ms="4" y="40" height="30" fill="rgba(192,57,73,.16)" stroke="var(--bad-ink)" stroke-width="1" stroke-dasharray="3 3"></rect>
+        <rect id="nl_cur" data-ms="3" y="44" height="22" fill="rgba(217,119,6,.32)"></rect>
+        <g id="nl_ticks"></g>
+        <line id="nl_r" stroke="var(--blue)" stroke-width="2.4"></line>
+        <text id="nl_rlab" font-size="12" font-weight="700" fill="var(--blue)" text-anchor="middle"></text>
+        <text x="40" y="100" font-size="11" fill="var(--sub)" text-anchor="middle">0</text>
+        <text x="450" y="100" font-size="11" fill="var(--sub)" text-anchor="end">r</text>
+      </svg>
+    </div>
+    <p class="cap" id="cap"></p>
+
+    <div class="ctl">
+      <label for="it">P の位置 t</label>
+      <input type="range" id="it" min="-0.5" max="0.5" step="0.01" value="0">
+      <span class="out" id="itOut">t = 0.00</span>
+    </div>
+    <div class="ctl">
+      <label for="ir">半径 r</label>
+      <input type="range" id="ir" min="0.1" max="1.35" step="0.01" value="0.5">
+      <span class="out" id="irOut">r = 0.50</span>
+    </div>
+
+    <div class="relation safe" id="rel"></div>
+  </section>
+
+  <div class="takeaway" style="background:var(--ok-bg); color:var(--ok-ink);">
+    <b>答え.</b> P が動くと距離の帯 [√(t²+1/2), √(t²+3/4)] が <b>[1/√2, 1]</b> を埋め尽くす。
+    全ての P で球面が BC と交わらない r は <b>0 &lt; r &lt; 1/√2　または　r &gt; 1</b>。
+  </div>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a>　・　© AI塾 / trillion-ai-juku.com
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y,r){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);if(r!=null)e.setAttribute("r",r);}
+  function setT(id,x,y,txt){var e=el(id);if(x!=null)e.setAttribute("x",x);if(y!=null)e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(step){var ns=el("svg").querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}
+    var nn=el("nl").querySelectorAll("[data-ms]");for(i=0;i<nn.length;i++){var m=nn[i];m.style.opacity=(step>=+m.getAttribute("data-ms"))?"1":"0";}}
+  var SQ2=Math.SQRT2, H=1/Math.SQRT2;
+
+  /* 3D points (regular tetra, edge 1): O,A on x; B,C on y; gap h on z */
+  var P3={ O:[-0.5,0,0], A:[0.5,0,0], B:[0,-0.5,H], C:[0,0.5,H], M:[0,0,H] };
+  /* oblique projection */
+  var SCALE=150, OX=210, OY=200;
+  function proj(p){ var sx=p[0] + 0.5*p[1]; var sy=-(p[2]) - 0.30*p[1]; return [OX+sx*SCALE, OY+sy*SCALE]; }
+  function dist3(a,b){var dx=a[0]-b[0],dy=a[1]-b[1],dz=a[2]-b[2];return Math.sqrt(dx*dx+dy*dy+dz*dz);}
+
+  /* number line mapping r in [0,1.4] -> [40,450] */
+  function NLX(r){ return 40 + (r/1.4)*(450-40); }
+
+  var step=1, t=0, r=0.5;
+
+  var info=[null,
+    {t:"向かい合う辺は垂直", c:"正四面体 OABC で、向かい合う辺 OA（青）と BC（赤）は垂直。両者を結ぶ最短距離（中点どうし）は 1/√2 です。P は OA 上を動きます。"},
+    {t:"P を中心とする球面", c:"P を中心に半径 r の球面（橙）を描く。これが辺 BC と共有点をもつかどうかを調べます。t と r のスライダーを動かしてみましょう。"},
+    {t:"最近点と最遠点", c:"座標で P=(t,0,0)、BC上の点=(0,s,1/√2)（−1/2≦s≦1/2）。距離²=t²+s²+1/2。最も近い点は s=0 で d_min=√(t²+1/2)（緑）、最も遠い点は B,C で d_max=√(t²+3/4)（赤）。球面が BC と交わる ⟺ d_min ≦ r ≦ d_max。"},
+    {t:"帯 [1/√2, 1] を避ける", c:"P を端から端へ動かすと、区間 [d_min,d_max] が下の数直線上で [1/√2, 1]（赤帯）をすき間なく埋めます。だから全ての P で交わらない r は、この帯の外、すなわち r<1/√2 または r>1。"}];
+
+  function render(){
+    /* tetra edges */
+    var pO=proj(P3.O),pA=proj(P3.A),pB=proj(P3.B),pC=proj(P3.C),pM=proj(P3.M);
+    el("face").setAttribute("points",pO[0]+","+pO[1]+" "+pA[0]+","+pA[1]+" "+pB[0]+","+pB[1]+" "+pO[0]+","+pO[1]+" "+pC[0]+","+pC[1]+" "+pA[0]+","+pA[1]);
+    setLine("eOA",pO[0],pO[1],pA[0],pA[1]);
+    setLine("eBC",pB[0],pB[1],pC[0],pC[1]);
+    setLine("eOB",pO[0],pO[1],pB[0],pB[1]);
+    setLine("eOC",pO[0],pO[1],pC[0],pC[1]);
+    setLine("eAB",pA[0],pA[1],pB[0],pB[1]);
+    setLine("eAC",pA[0],pA[1],pC[0],pC[1]);
+    setT("tO",pO[0]-14,pO[1]+5); setT("tA",pA[0]+6,pA[1]+5);
+    setT("tB",pB[0]-14,pB[1]+2); setT("tC",pC[0]+6,pC[1]+2);
+
+    /* P on OA */
+    var P=[t,0,0], pP=proj(P);
+    setC("pP",pP[0],pP[1]); setT("tP",pP[0]-4,pP[1]+18);
+    /* sphere as circle radius r*SCALE (projected sphere ~ circle) */
+    setC("sphere",pP[0],pP[1], (r*SCALE).toFixed(1));
+
+    /* distance lines */
+    setLine("dmin",pP[0],pP[1],pM[0],pM[1]); setC("pM",pM[0],pM[1]);
+    setLine("dmaxB",pP[0],pP[1],pB[0],pB[1]);
+    setLine("dmaxC",pP[0],pP[1],pC[0],pC[1]);
+
+    /* distances */
+    var dmin=Math.sqrt(t*t+0.5), dmax=Math.sqrt(t*t+0.75);
+
+    /* number line */
+    var x1=NLX(dmin), x2=NLX(dmax);
+    el("nl_cur").setAttribute("x",x1.toFixed(1)); el("nl_cur").setAttribute("width",(x2-x1).toFixed(1));
+    var ux1=NLX(1/SQ2), ux2=NLX(1);
+    el("nl_union").setAttribute("x",ux1.toFixed(1)); el("nl_union").setAttribute("width",(ux2-ux1).toFixed(1));
+    /* ticks */
+    var tk=el("nl_ticks"); tk.innerHTML="";
+    var marks=[[1/SQ2,"1/√2"],[1,"1"]];
+    for(var i=0;i<marks.length;i++){ var mx=NLX(marks[i][0]);
+      tk.innerHTML+='<line x1="'+mx.toFixed(1)+'" y1="36" x2="'+mx.toFixed(1)+'" y2="74" stroke="var(--bad-ink)" stroke-width="1"/>';
+      tk.innerHTML+='<text x="'+mx.toFixed(1)+'" y="100" font-size="11" fill="var(--bad-ink)" text-anchor="middle">'+marks[i][1]+'</text>'; }
+    var rx=NLX(r);
+    setLine("nl_r",rx,30,rx,80); setT("nl_rlab",rx,24,"r");
+
+    var hit=(r>=dmin-1e-9 && r<=dmax+1e-9);
+    var rel=el("rel");
+    if(hit){ rel.className="relation hit";
+      rel.innerHTML='この P では <span class="big">球面が BC と交わる</span>（'+dmin.toFixed(3)+' ≦ r='+r.toFixed(2)+' ≦ '+dmax.toFixed(3)+'）'; }
+    else { rel.className="relation safe";
+      rel.innerHTML='この P では <span class="big">交わらない</span>（r='+r.toFixed(2)+' は ['+dmin.toFixed(3)+', '+dmax.toFixed(3)+'] の外）'; }
+
+    vis(step);
+    el("itOut").textContent="t = "+t.toFixed(2);
+    el("irOut").textContent="r = "+r.toFixed(2);
+    el("badge").textContent="step "+step+" / 4";
+    el("title").textContent=info[step].t;
+    el("cap").textContent=info[step].c;
+    el("prev").disabled=step<=1; el("next").disabled=step>=4;
+  }
+
+  el("next").addEventListener("click",function(){if(step<4){step++;render();}});
+  el("prev").addEventListener("click",function(){if(step>1){step--;render();}});
+  el("it").addEventListener("input",function(e){t=parseFloat(e.target.value);render();});
+  el("ir").addEventListener("input",function(e){r=parseFloat(e.target.value);render();});
+  render();
+})();
+</script>
+</body>
+</html>

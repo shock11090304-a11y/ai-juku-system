@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="auth-guard.js?v=20260621-kyoto2025"></script>
+<title>2025 京大 問1 — 共有点がちょうど2個</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8; --amber:#d97706;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+    --bad-bg:#fdecea; --bad-ink:#c0392b; --reg:rgba(22,163,74,.16);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a;
+           --bad-bg:#3a1a17; --bad-ink:#f0857a; --reg:rgba(103,217,154,.20); }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:21px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 16px;}
+  .qbox{background:var(--card); border:1px solid var(--bd); border-left:4px solid var(--blue);
+        border-radius:10px; padding:12px 14px; font-size:14px; margin:0 0 16px;}
+  .qbox b{color:var(--blue);}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  .twin{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  @media (max-width:560px){ .twin{grid-template-columns:1fr;} }
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:54px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:96px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:15px; border:1px solid var(--bd);}
+  .relation.two{background:var(--ok-bg); border-color:var(--ok-ink); color:var(--ok-ink);}
+  .relation.other{background:var(--bad-bg); border-color:var(--bad-ink); color:var(--bad-ink);}
+  .relation .big{font-size:18px; font-weight:700;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:16px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>共有点がちょうど2個 <span style="color:var(--sub);font-weight:400;font-size:15px;">— 2025 京都大 問1</span></h1>
+    <p class="lead">左で y=f(x) と水平線 <b>y=k</b> の共有点を数え、右の <b>(a, k) 平面</b>に「ちょうど2個」になる範囲を写します。a と k のスライダーで連動。</p>
+  </header>
+
+  <div class="qbox">
+    <b>問題.</b> a は1より大きい実数、k は実数。0&lt;x&lt;1 で f(x) = 1 / ( x²·(log(a/x))² ) とおく。
+    y=f(x) と y=k のグラフの共有点がちょうど2個存在する (a, k) の組の集合を座標平面上に図示せよ（log は自然対数）。
+  </div>
+
+  <div class="takeaway">急所 = f は x→0 で <b>+∞</b>、x→1 で <b>1/(log a)²</b>。1&lt;a&lt;e のとき x=a/e で<b>最小値 e²/a²</b>。水平線 y=k がこの「谷」をまたぐと共有点が2個になります。</div>
+
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="badge">step 1 / 4</span>
+        <span class="steptitle" id="title"></span>
+      </div>
+      <div class="btns">
+        <button id="prev" aria-label="前のステップ">← 戻る</button>
+        <button id="next">次へ →</button>
+      </div>
+    </div>
+    <div class="twin">
+      <div class="stage">
+        <svg id="fSvg" viewBox="0 0 300 320" role="img" aria-label="y=f(x) のグラフと水平線 y=k">
+          <g id="f_grid"></g>
+          <line id="f_ax" stroke="var(--gray)" stroke-width="1.1"></line>
+          <line id="f_ay" stroke="var(--gray)" stroke-width="1.1"></line>
+          <path id="f_curve" data-ms="1" fill="none" stroke="var(--blue)" stroke-width="2.4"></path>
+          <circle id="f_min" data-ms="1" r="3.5" fill="var(--green)"></circle>
+          <line id="f_kline" data-ms="2" stroke="var(--red)" stroke-width="1.8" stroke-dasharray="5 4"></line>
+          <g id="f_pts" data-ms="2"></g>
+          <text id="f_klab" data-ms="2" font-size="11" fill="var(--red)" text-anchor="end">y=k</text>
+          <text id="f_minlab" data-ms="1" font-size="10.5" fill="var(--green)" text-anchor="middle"></text>
+          <text x="288" y="300" font-size="11" fill="var(--sub)" text-anchor="end">x</text>
+          <text x="20" y="20" font-size="11" fill="var(--sub)">y</text>
+        </svg>
+      </div>
+      <div class="stage">
+        <svg id="rSvg" viewBox="0 0 300 320" role="img" aria-label="(a,k) 平面の領域">
+          <g id="r_grid"></g>
+          <line id="r_ax" stroke="var(--gray)" stroke-width="1.1"></line>
+          <line id="r_ay" stroke="var(--gray)" stroke-width="1.1"></line>
+          <path id="r_region" data-ms="4" fill="var(--reg)" stroke="none"></path>
+          <path id="r_lower" data-ms="3" fill="none" stroke="var(--green)" stroke-width="2"></path>
+          <path id="r_upper" data-ms="3" fill="none" stroke="var(--amber)" stroke-width="2"></path>
+          <line id="r_ae" data-ms="3" stroke="var(--gray)" stroke-width="1" stroke-dasharray="4 3"></line>
+          <circle id="r_mark" r="5" fill="var(--blue)" stroke="#fff" stroke-width="1.3"></circle>
+          <g id="r_ticks"></g>
+          <text id="r_lowlab" data-ms="3" font-size="10" fill="var(--green)" text-anchor="start">k=e²/a²</text>
+          <text id="r_upplab" data-ms="3" font-size="10" fill="var(--amber)" text-anchor="start">k=1/(log a)²</text>
+          <text x="288" y="300" font-size="11" fill="var(--sub)" text-anchor="end">a</text>
+          <text x="20" y="20" font-size="11" fill="var(--sub)">k</text>
+        </svg>
+      </div>
+    </div>
+    <p class="cap" id="cap"></p>
+
+    <div class="ctl">
+      <label for="ia">a（&gt;1）</label>
+      <input type="range" id="ia" min="1.05" max="2.95" step="0.01" value="1.50">
+      <span class="out" id="iaOut">a = 1.50</span>
+    </div>
+    <div class="ctl">
+      <label for="ik">k</label>
+      <input type="range" id="ik" min="0.2" max="8" step="0.05" value="4.5">
+      <span class="out" id="ikOut">k = 4.50</span>
+    </div>
+
+    <div class="relation two" id="rel"></div>
+  </section>
+
+  <div class="takeaway" style="background:var(--ok-bg); color:var(--ok-ink);">
+    <b>答え.</b> 共有点がちょうど2個 ⟺ <b>1 &lt; a &lt; e</b> かつ <b>e²/a² &lt; k &lt; 1/(log a)²</b>。
+    （(a,k)平面で、2曲線 k=e²/a²（下）と k=1/(log a)²（上）に挟まれ、a=e で1点 (e,1) に収束する領域。）
+  </div>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a>　・　© AI塾 / trillion-ai-juku.com
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y,r){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);if(r!=null)e.setAttribute("r",r);}
+  function setT(id,x,y,txt){var e=el(id);if(x!=null)e.setAttribute("x",x);if(y!=null)e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(svgId,step){var ns=el(svgId).querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+  var E=Math.E, LN=Math.log;
+
+  /* f(x)=1/(x ln(a/x))^2 on (0,1) */
+  function f(x,a){ var u=x*(LN(a)-LN(x)); return 1/(u*u); }
+
+  /* ---- left graph: x∈[0,1], y∈[0,YMAX] ---- */
+  var fL=40,fR=288,fT=20,fB=292, YMAX=8;
+  function FX(x){return fL+x*(fR-fL);}
+  function FY(y){return fB-Math.min(y,YMAX)/YMAX*(fB-fT);}
+  /* ---- right plane: a∈[1,3], k∈[0,8] ---- */
+  var rL=40,rR=288,rT=20,rB=292, AMIN=1,AMAX=3,KMAX=8;
+  function AX(a){return rL+(a-AMIN)/(AMAX-AMIN)*(rR-rL);}
+  function KY(k){return rB-Math.min(k,KMAX)/KMAX*(rB-rT);}
+
+  var step=1, a=1.50, k=4.5;
+
+  var info=[null,
+    {t:"y=f(x) のグラフ", c:"f(x)=1/(x·log(a/x))²。x→0 で u=x·log(a/x)→0 だから f→+∞。x→1 では f→1/(log a)²。1<a<e のときは x=a/e で最小値 e²/a²（緑点）をとり、谷の形になります。"},
+    {t:"y=k との共有点を数える", c:"赤い水平線 y=k を上下に動かす。k が谷の底（最小値）より下なら0個、谷をまたぐと2個、さらに上げると1個。共有点（赤点）の個数に注目。"},
+    {t:"ちょうど2個の条件", c:"2個になるのは「最小値 < k < x=1での値」、すなわち e²/a² < k < 1/(log a)²。a≧e では谷が消えて単調になり、2個にはなりません（1個まで）。"},
+    {t:"(a,k) 平面に図示", c:"右の平面へ写すと、下の曲線 k=e²/a²（緑）と上の曲線 k=1/(log a)²（橙）に挟まれた領域。1<a<e で、a=e のとき1点 (e,1) に収束します。点(a,k)が領域内なら共有点2個。"}];
+
+  function countHits(a,k){
+    var n=0, prev=null, N=2000;
+    for(var i=1;i<N;i++){ var x=i/N; var g=f(x,a)-k;
+      if(prev!==null){ if((prev<0&&g>0)||(prev>0&&g<0)) n++; if(prev===0)n++; }
+      prev=g; }
+    return n;
+  }
+  function findHits(a,k){
+    var xs=[], prev=null, px=null, N=4000;
+    for(var i=1;i<N;i++){ var x=i/N; var g=f(x,a)-k;
+      if(prev!==null && ((prev<0&&g>0)||(prev>0&&g<0))){ xs.push((px+x)/2); }
+      prev=g; px=x; }
+    return xs;
+  }
+
+  function render(){
+    /* ---- left ---- */
+    var fg=el("f_grid"); fg.innerHTML="";
+    for(var gx=0.25;gx<1;gx+=0.25){ fg.innerHTML+='<line x1="'+FX(gx).toFixed(1)+'" y1="'+fT+'" x2="'+FX(gx).toFixed(1)+'" y2="'+fB+'" stroke="var(--bd)" stroke-width="1"/>'; }
+    for(var gy=2;gy<YMAX;gy+=2){ fg.innerHTML+='<line x1="'+fL+'" y1="'+FY(gy).toFixed(1)+'" x2="'+fR+'" y2="'+FY(gy).toFixed(1)+'" stroke="var(--bd)" stroke-width="1"/>'; }
+    setLine("f_ax",fL,fB,fR,fB); setLine("f_ay",fL,fT,fL,fB);
+    /* curve */
+    var d="",pen=false;
+    for(var i=1;i<=400;i++){ var x=i/401; var y=f(x,a);
+      if(y<=YMAX){ d+=(pen?" L":"M")+FX(x).toFixed(1)+","+FY(y).toFixed(1); pen=true; }
+      else pen=false; }
+    el("f_curve").setAttribute("d",d);
+    /* min point (only if a<e) */
+    var fmin=el("f_min"), fminl=el("f_minlab");
+    if(a<E){ var xm=a/E, ym=(E/a)*(E/a); setC("f_min",FX(xm),FY(ym));
+      setT("f_minlab",FX(xm),FY(ym)+16,"最小 "+ym.toFixed(2)); fmin.style.display=""; fminl.style.display=""; }
+    else { fmin.style.display="none"; fminl.style.display="none"; }
+    /* k line + hits */
+    setLine("f_kline",fL,FY(k),fR,FY(k)); setT("f_klab",fR-2,FY(k)-4,null);
+    var hits=findHits(a,k), pts=el("f_pts"); pts.innerHTML="";
+    for(i=0;i<hits.length;i++){ pts.innerHTML+='<circle cx="'+FX(hits[i]).toFixed(1)+'" cy="'+FY(k).toFixed(1)+'" r="4" fill="var(--red)"/>'; }
+
+    /* ---- right plane ---- */
+    var rg=el("r_grid"); rg.innerHTML="";
+    setLine("r_ax",rL,rB,rR,rB); setLine("r_ay",rL,rT,rL,rB);
+    /* boundary curves for a in (1,e) */
+    var lo="",up="",reg="";
+    var aMinDraw=1.001;
+    for(i=0;i<=200;i++){ var av=aMinDraw+(E-aMinDraw)*i/200; var kl=(E/av)*(E/av);
+      lo+=(i?" L":"M")+AX(av).toFixed(1)+","+KY(kl).toFixed(1); }
+    el("r_lower").setAttribute("d",lo);
+    var upStarted=false, upD="";
+    for(i=0;i<=200;i++){ av=aMinDraw+(E-aMinDraw)*i/200; var ku=1/(LN(av)*LN(av));
+      if(ku<=KMAX){ upD+=(upStarted?" L":"M")+AX(av).toFixed(1)+","+KY(ku).toFixed(1); upStarted=true; } }
+    el("r_upper").setAttribute("d",upD);
+    /* region: between lower and upper, clipped to k<=KMAX */
+    var top="",bot="";
+    for(i=0;i<=200;i++){ av=aMinDraw+(E-aMinDraw)*i/200;
+      var ku=Math.min(1/(LN(av)*LN(av)),KMAX), kl=(E/av)*(E/av);
+      top+=(i?" L":"M")+AX(av).toFixed(1)+","+KY(ku).toFixed(1);
+      bot+=" L"+AX(av).toFixed(1)+","+KY(kl).toFixed(1); }
+    /* build closed path: top forward then lower backward */
+    var regPath="M";
+    var pts2=[];
+    for(i=0;i<=200;i++){ av=aMinDraw+(E-aMinDraw)*i/200; var ku=Math.min(1/(LN(av)*LN(av)),KMAX);
+      pts2.push(AX(av).toFixed(1)+","+KY(ku).toFixed(1)); }
+    for(i=200;i>=0;i--){ av=aMinDraw+(E-aMinDraw)*i/200; var kl=(E/av)*(E/av);
+      pts2.push(AX(av).toFixed(1)+","+KY(kl).toFixed(1)); }
+    el("r_region").setAttribute("d","M"+pts2.join(" L")+" Z");
+    /* a=e vertical */
+    setLine("r_ae",AX(E),rT,AX(E),rB);
+    /* ticks */
+    var tk=el("r_ticks"); tk.innerHTML="";
+    tk.innerHTML+='<text x="'+AX(1).toFixed(1)+'" y="'+(rB+14)+'" font-size="10" fill="var(--sub)" text-anchor="middle">1</text>';
+    tk.innerHTML+='<text x="'+AX(E).toFixed(1)+'" y="'+(rB+14)+'" font-size="10" fill="var(--gray)" text-anchor="middle">e</text>';
+    tk.innerHTML+='<text x="'+AX(2).toFixed(1)+'" y="'+(rB+14)+'" font-size="10" fill="var(--sub)" text-anchor="middle">2</text>';
+    tk.innerHTML+='<text x="'+(rL-5)+'" y="'+(KY(1)+3)+'" font-size="10" fill="var(--sub)" text-anchor="end">1</text>';
+    /* labels */
+    setT("r_lowlab",AX(2.1),KY(0.55),null);
+    setT("r_upplab",AX(1.6),KY(7.2),null);
+    /* marker */
+    setC("r_mark",AX(a),KY(k));
+
+    /* count & relation */
+    var n=countHits(a,k);
+    var inReg=(a<E) && (k>(E/a)*(E/a)) && (k<1/(LN(a)*LN(a)));
+    /* 解析解を優先: a が e に近いと谷の幅 (e²/a², 1/(log a)²) が極薄になりサンプリングが跨げない。
+       領域内なら理論どおり「2個」に補正する（数式の答えは不変、表示個数の取りこぼし防止）。 */
+    if(inReg && n<2) n=2;
+    var rel=el("rel");
+    if(n===2){ rel.className="relation two";
+      rel.innerHTML='共有点 <span class="big">'+n+' 個</span>　→ 集合に含まれる（e²/a²='+((E/a)*(E/a)).toFixed(2)+' < k < '+(1/(LN(a)*LN(a))).toFixed(2)+'=1/(log a)²）'; }
+    else { rel.className="relation other";
+      rel.innerHTML='共有点 <span class="big">'+n+' 個</span>　→ 集合に含まれない（ちょうど2個ではない）'; }
+
+    vis("fSvg",step); vis("rSvg",step);
+    el("iaOut").textContent="a = "+a.toFixed(2);
+    el("ikOut").textContent="k = "+k.toFixed(2);
+    el("badge").textContent="step "+step+" / 4";
+    el("title").textContent=info[step].t;
+    el("cap").textContent=info[step].c;
+    el("prev").disabled=step<=1; el("next").disabled=step>=4;
+  }
+
+  el("next").addEventListener("click",function(){if(step<4){step++;render();}});
+  el("prev").addEventListener("click",function(){if(step>1){step--;render();}});
+  el("ia").addEventListener("input",function(e){a=parseFloat(e.target.value);render();});
+  el("ik").addEventListener("input",function(e){k=parseFloat(e.target.value);render();});
+  render();
+})();
+</script>
+</body>
+</html>

@@ -94,6 +94,18 @@
      desc:"「少なくとも1回」=1−(1−p)ⁿ。p・n を動かし、余事象で解く理由(p×nは誤り)を体感。"},
     {title:"ベクトルの内積と正射影", subject:"数学", type:"動く解説", access:"public", url:"vector-dot.html", section:"free",
      desc:"角θを動かすと内積 a·b=|a||b|cosθ と正射影が変化。鋭角=正/直角=0/鈍角=負を視覚的に。"},
+    {title:"京大2025 問1 — 共有点がちょうど2個", subject:"数学", type:"入試解説", access:"login", url:"kyoto2025-q1-graph-intersections.html", section:"exam",
+     desc:"f(x)=1/(x²(log(a/x))²) と y=k の共有点を数え、ちょうど2個になる (a,k) を平面に図示。a・k スライダーでグラフと領域が連動。"},
+    {title:"京大2025 問2 — 正四面体と球面", subject:"数学", type:"入試解説", access:"login", url:"kyoto2025-q2-tetra-sphere.html", section:"exam",
+     desc:"OA⊥BC を使い、P を辺 OA 上で動かすと距離の帯 [1/√2,1] が埋まる様子を可視化。球面が辺 BC と交わらない r の範囲を体感。"},
+    {title:"京大2025 問3 — 係数の2進付値", subject:"数学", type:"入試解説", access:"login", url:"kyoto2025-q3-coeff-valuation.html", section:"exam",
+     desc:"(x+1)^(2^(n+1))−(x^2+1)^(2^n) の係数の2進付値を棒グラフで可視化。mod2 の発想で最小付値=n+1 を導く。"},
+    {title:"京大2025 問4 — 正方形を含む最小の正三角形", subject:"数学", type:"入試解説", access:"login", url:"kyoto2025-q4-square-triangle.html", section:"exam",
+     desc:"1辺1の正方形を傾き θ で回しながら最小の正三角形で包む。θ=0 で最小 L=1+2/√3≈2.155 になる様子をスライダーで。"},
+    {title:"京大2025 問5 — 2曲線が囲む領域の回転体", subject:"数学", type:"入試解説", access:"login", url:"kyoto2025-q5-rotation-volume.html", section:"exam",
+     desc:"y=sin(x±a) が囲む領域を x 軸回転。x 軸をまたぐ断面=円板、片側=円環の違いを走査線で見せ、体積 V=πa+(3π/2)sin2a を導く。"},
+    {title:"京大2025 問6 — 最大値の期待値", subject:"数学", type:"入試解説", access:"login", url:"kyoto2025-q6-expected-max.html", section:"exam",
+     desc:"1〜n から3枚引いた最大値 X の分布を棒グラフで。n スライダーで分布が変わり、期待値 E[X]=3(n+1)/4 を可視化。"},
     {title:"定積分 = 面積（区分求積）", subject:"数学", type:"動く解説", access:"public", url:"riemann-integral.html", section:"free",
      desc:"長方形n本で y=x² の面積を近似。nを増やすとリーマン和が定積分(8/3)に収束する様子が見える。"},
     {title:"条件付き確率とベイズ（偽陽性）", subject:"数学", type:"動く解説", access:"public", url:"bayes-test.html", section:"free",
@@ -222,6 +234,7 @@
   ];
   var SECTIONS=[
     {id:"free",  label:"🎬 無料で試せる（登録不要）", note:"ここは登録なしで全部試せます。気に入ったら無料体験へ。"},
+    {id:"exam",  label:"🎓 大学入試の動く解説（要ログイン）", note:"難関大の実際の入試問題を、図形・グラフ・分布を動かして直感的に。ログインで開けます。"},
     {id:"tools", label:"📚 演習・学習ツール（要ログイン）", note:"ログインすると正解率・弱点・履歴があなたに紐づいて記録されます。"}
   ];
   var SUBJECTS=["すべて","数学","物理","化学","英語","横断"];
