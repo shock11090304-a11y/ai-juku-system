@@ -5438,7 +5438,7 @@ def student_lesson_prints(
         for r in rows:
             try:
                 prints.append({
-                    "id": r["id"], "title": r["title"], "subtitle": r["subtitle"],
+                    "id": r["id"], "title": _beautify_print_title(r["title"]), "subtitle": r["subtitle"],
                     "subject": r["subject"], "topic": r["topic"], "level": r["level"],
                     "target_grade": r["target_grade"], "target_type": r["target_type"],
                     "description": r["description"], "file_path": r["file_path"],
@@ -5447,7 +5447,7 @@ def student_lesson_prints(
                 })
             except (TypeError, KeyError, IndexError):
                 prints.append({
-                    "id": r[0], "title": r[1], "subtitle": r[2], "subject": r[3], "topic": r[4],
+                    "id": r[0], "title": _beautify_print_title(r[1]), "subtitle": r[2], "subject": r[3], "topic": r[4],
                     "level": r[5], "target_grade": r[6], "target_type": r[7], "description": r[8],
                     "file_path": r[9], "pages": r[10], "file_size_kb": r[11],
                     "download_count": r[12], "created_at": str(r[13]) if r[13] else None,
@@ -35302,7 +35302,7 @@ def _attach_homework_prints(conn, items: list) -> None:
         for r in c.fetchall():
             prints[(r["id"] if hasattr(r, "keys") else r[0])] = {
                 "id": r["id"] if hasattr(r, "keys") else r[0],
-                "title": r["title"] if hasattr(r, "keys") else r[1],
+                "title": _beautify_print_title(r["title"] if hasattr(r, "keys") else r[1]),
                 "subject": r["subject"] if hasattr(r, "keys") else r[2],
             }
     except Exception:
@@ -35473,6 +35473,52 @@ def admin_lesson_prints_subjects(
         conn.close()
 
 
+# 📚 2026-06-22 配布プリントのローマ字交じりタイトルを日本語表示へ整形 (表示専用=DBは不変ゆえ
+#   recommendation の title LIKE マッチ・sync 上書きに無影響・行削除不要で完全可逆)。失敗時は原文。
+_PRINT_TITLE_TOKENS = {
+    "studio": "", "daigaku": "", "default": "", "gp": "",
+    "rikei": "理系", "bunkei": "文系", "igakubu": "医学部", "kokoritsu": "国公立", "kokuritsu": "国公立",
+    "shiritsu": "私立", "kiso": "基礎", "part": "パート",
+    "todai": "東大", "kyodai": "京大", "hokudai": "北大", "kyushu": "九大", "tohoku": "東北大",
+    "nagoya": "名大", "osaka": "阪大", "kobe": "神大", "waseda": "早大", "keio": "慶大",
+    "icu": "ICU", "seijo": "成城", "center": "センター", "kyotsu": "共通テスト", "teiki": "定期テスト",
+    # 大学(ローマ字名)— レビューで未マップと判明した分を追加(いずれも多文字で誤変換リスク低)
+    "tsukuba": "筑波", "sophia": "上智", "hitotsu": "一橋", "chiba": "千葉", "yokokoku": "横国",
+    "musashi": "武蔵", "hosei": "法政", "gakushuin": "学習院", "aogaku": "青学", "chuo": "中央",
+    "doshisha": "同志社", "kandai": "関大", "kangaku": "関学", "meiji": "明治", "rikkyo": "立教",
+    "ritsumei": "立命館", "seikei": "成蹊", "march": "MARCH",
+    "math": "数学", "phys": "物理", "chem": "化学", "bio": "生物",
+    "gendai": "現代文", "kobun": "古文", "kanbun": "漢文", "eigo": "英語", "kokugo": "国語",
+    # 社会(ローマ字)
+    "nihonshi": "日本史", "sekaishi": "世界史", "chiri": "地理", "gendaishakai": "現代社会",
+    "koukyou": "公共", "rinri": "倫理", "kouminka": "公民", "seiji": "政治", "keizai": "経済",
+    "long": "長文", "reading": "読解", "listening": "リスニング", "writing": "ライティング",
+    "speaking": "スピーキング", "grammar": "文法", "translation": "英文和訳",
+    "summary": "要約", "essay": "小論文",
+    "eiken": "英検", "ielts": "IELTS", "toefl": "TOEFL", "toeic": "TOEIC", "teap": "TEAP",
+}
+def _beautify_print_title(title):
+    if not title or not isinstance(title, str):
+        return title
+    try:
+        import re  # main.py は re を先頭 import しないため関数内で取得
+        t = title
+        t = re.sub(r'\bw[ _]?essay\b', '小論文', t, flags=re.IGNORECASE)
+        t = re.sub(r'\bbatch[ _]?0*(\d+)\b', lambda m: f'第{m.group(1)}弾', t, flags=re.IGNORECASE)
+        t = re.sub(r'\bq0*(\d+)\b', lambda m: f'第{m.group(1)}問', t, flags=re.IGNORECASE)
+        t = re.sub(r'\bid\s*\d+\b', '', t, flags=re.IGNORECASE)  # 内部id表記(id1403等)は除去
+        # 英検の級表記: gp1=準1級 / g1=1級 (eiken の直後のみ→単独 g/gp の短トークン誤爆を回避)
+        t = re.sub(r'\beiken[ _]+gp([1-5])\b', r'英検準\1級', t, flags=re.IGNORECASE)
+        t = re.sub(r'\beiken[ _]+g([1-5])\b', r'英検\1級', t, flags=re.IGNORECASE)
+        t = re.sub(r'[A-Za-z]+', lambda m: _PRINT_TITLE_TOKENS.get(m.group(0).lower(), m.group(0)), t)
+        t = re.sub(r'[ \t_]+', ' ', t).strip()
+        t = re.sub(r'\s+([)）」』】])', r'\1', t)
+        t = re.sub(r'([(（「『【])\s+', r'\1', t)
+        return t or title
+    except Exception:
+        return title
+
+
 @app.get("/api/admin/lesson-prints/list")
 def admin_lesson_prints_list(
     limit: int = 2000,
@@ -35530,7 +35576,7 @@ def admin_lesson_prints_list(
         truncated = len(rows) > limit
         rows = rows[:limit]
         items = [{
-            "id": r["id"], "title": r["title"], "subject": r["subject"],
+            "id": r["id"], "title": _beautify_print_title(r["title"]), "subject": r["subject"],
             "level": (r["level"] if "level" in r.keys() else None),
             "target_type": (r["target_type"] if "target_type" in r.keys() else None),
             "pages": (r["pages"] if "pages" in r.keys() else None),
