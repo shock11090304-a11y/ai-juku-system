@@ -1437,6 +1437,10 @@ def init_db():
     _migrations = [
         ("enrollment_fee_waived", "ALTER TABLE students ADD COLUMN enrollment_fee_waived INTEGER DEFAULT 0"),
         ("enrollment_waiver_applied_at", "ALTER TABLE students ADD COLUMN enrollment_waiver_applied_at TIMESTAMP"),
+        # 入塾金課金の冪等マーカー (2026-06-21)。trial_extended (カード登録21日体験) の自動 paid 化時に
+        # 入塾金を即時課金する処理 (customer.subscription.updated active) の二重課金防止に使用。
+        # NULL=未課金 / 値あり=課金済み。claim-first (UPDATE ... WHERE enrollment_fee_charged_at IS NULL) で確保。
+        ("enrollment_fee_charged_at", "ALTER TABLE students ADD COLUMN enrollment_fee_charged_at TIMESTAMP"),
         ("last_login_at", "ALTER TABLE students ADD COLUMN last_login_at TIMESTAMP"),
         ("student_email", "ALTER TABLE students ADD COLUMN student_email TEXT DEFAULT ''"),
         # 学習記録機能の対象コース識別 (国公立難関大学コース = 'kokuritsu_nankan')
@@ -20906,17 +20910,13 @@ def admin_create_invoice_for_student(
                 log.error(f"[admin/create-invoice] Stripe customer create/search failed: {type(e).__name__}: {e}")
                 raise HTTPException(status_code=500, detail=f"Stripe customer 作成失敗: {type(e).__name__}: {_sanitize_err(e)}")
 
-        # InvoiceItem → Invoice → finalize → send
-        # 🛡 二重請求リスク対策: pending_invoice_items_behavior="exclude" + InvoiceItem を明示紐付け
+        # Invoice (draft) → InvoiceItem を invoice= で直接紐付け → 検証 → finalize → send
+        # 🛡 2026-06-21 修正: 旧実装は InvoiceItem.create 後に InvoiceItem.modify(invoice=inv.id) で
+        #   紐付けていたが、この API バージョンでは modify の invoice パラメータが
+        #   "Received unknown parameter: invoice" で拒否され、item が orphan 化 →
+        #   ¥0 の空請求書が finalize/paid 化し、実際の金額が請求されない不具合があった。
+        #   正しくは「先に空 draft invoice を作り、InvoiceItem を invoice= 指定で生成」する。
         try:
-            inv_item = s.InvoiceItem.create(
-                customer=customer_id,
-                amount=amount,
-                currency="jpy",
-                description=item_name,
-                metadata={"student_id": str(student_id), "source": "admin_spot_invoice"},
-                idempotency_key=f"{_idem_prefix}_item",
-            )
             inv = s.Invoice.create(
                 customer=customer_id,
                 collection_method="send_invoice",
@@ -20931,14 +20931,29 @@ def admin_create_invoice_for_student(
                 pending_invoice_items_behavior="exclude",  # 既存 pending item の混入防止
                 idempotency_key=f"{_idem_prefix}_inv",
             )
-            # InvoiceItem を本 Invoice に明示紐付け (exclude で除外された分を取込)
-            try:
-                s.InvoiceItem.modify(inv_item.id, invoice=inv.id)
-            except Exception as _me:
-                # modify 失敗時は警告のみ (Stripe ロジック上 InvoiceItem が orphan 化するが finalize 前なら影響軽微)
-                log.warning(f"[admin/create-invoice] InvoiceItem.modify(invoice) 失敗: {type(_me).__name__}: {_me}")
+            inv_item = s.InvoiceItem.create(
+                customer=customer_id,
+                invoice=inv.id,               # ★ 作成時に本 invoice へ直接紐付け (modify(invoice=) は不可)
+                amount=amount,
+                currency="jpy",
+                description=item_name,
+                metadata={"student_id": str(student_id), "source": "admin_spot_invoice"},
+                idempotency_key=f"{_idem_prefix}_item",
+            )
+            # 🛡 ¥0 invoice 防止: finalize 前に金額が正しく載ったか検証 (紐付け失敗を握りつぶさない)
+            _chk = s.Invoice.retrieve(inv.id)
+            _chk_total = int(getattr(_chk, "total", 0) or 0)
+            if _chk_total != int(amount):
+                log.error(f"[admin/create-invoice] item 紐付け検証失敗: invoice total={_chk_total} != amount={amount} (inv={inv.id})")
+                try:
+                    s.Invoice.delete(inv.id)  # draft を破棄して ¥0 請求書を残さない
+                except Exception:
+                    pass
+                raise HTTPException(status_code=500, detail="Stripe 請求書への品目紐付けに失敗しました (¥0 請求書防止のため発行を中止)")
             finalized = s.Invoice.finalize_invoice(inv.id)
             sent = s.Invoice.send_invoice(finalized.id)
+        except HTTPException:
+            raise
         except Exception as e:
             log.error(f"[admin/create-invoice] Stripe invoice create/send failed: {type(e).__name__}: {e}")
             raise HTTPException(status_code=500, detail=f"Stripe 請求書発行失敗: {type(e).__name__}: {_sanitize_err(e)}")
@@ -26183,6 +26198,21 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                         metadata={"plan": plan, "type": "enrollment_fee"},
                     )
                     log.info(f"✅ Enrollment fee InvoiceItem created: customer={customer}")
+                    # 入塾金課金済みマーカー (conversion 経路 [enrollment-fee-on-conversion] と冪等共有・集計用)。
+                    # 既に値があれば上書きしない (COALESCE)。課金自体は成立済みのため失敗は無視。
+                    try:
+                        if student_id and student_id != "":
+                            c.execute(
+                                "UPDATE students SET enrollment_fee_charged_at="
+                                "COALESCE(enrollment_fee_charged_at, CURRENT_TIMESTAMP) WHERE id=?",
+                                (student_id,),
+                            )
+                            conn.commit()
+                    except Exception:
+                        # marker UPDATE 失敗時は txn abort を解消 (PG: 失敗SQLを握りつぶすと
+                        # txn全体abort→後続 referral 処理が連鎖失敗する罠を回避)。課金自体は成立済み。
+                        try: conn.rollback()
+                        except Exception: pass
                 except Exception as e:
                     log.error(f"Failed to create enrollment fee InvoiceItem: {type(e).__name__}: {e}")
             elif apply_waiver_now:
@@ -26702,6 +26732,136 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
                 try: conn.rollback()
                 except Exception: pass
             conn.close()
+
+            # 🆕 [enrollment-fee-on-conversion] (2026-06-21): trial_extended (カード登録21日体験) が
+            # 自動 paid 化する際、従来は入塾金 ¥10,000 を計上する処理が無く取りこぼしていた
+            # (monthly 経路は checkout webhook が課金するが、trial_extended 作成時も本 active 転換時も
+            #  入塾金処理が存在しなかった)。ここで即時カード課金する。
+            # 二重課金防止 (3重ガード):
+            #   ① purchase_type=='trial_extended' に限定 → monthly 経路 (purchase_type=='monthly') を除外
+            #   ② enrollment_fee_charged_at を claim-first で確保 → past_due 回復・イベント重複/再配送を除外
+            #   ③ 免除 (enrollment_fee_waived) / 免除対象プラン (ENROLLMENT_FEE_EXEMPT=student_addon) は skip
+            # 課金作成に失敗した時のみ claim を解放 (NULL 戻し) し、後続イベントで再試行可能にする。
+            try:
+                if (_sub_meta.get("purchase_type") or "") == "trial_extended":
+                    conn2 = db()
+                    c2 = conn2.cursor()
+                    try:
+                        c2.execute(
+                            "SELECT id, plan, COALESCE(enrollment_fee_waived,0) AS waived, "
+                            "enrollment_fee_charged_at AS charged FROM students "
+                            "WHERE stripe_subscription_id=?",
+                            (sub_id,)
+                        )
+                        _er = c2.fetchone()
+                        if _er and (_er["plan"] not in ENROLLMENT_FEE_EXEMPT) and not _er["waived"] and not _er["charged"]:
+                            # claim-first (atomic): フラグを確保できた worker だけが課金する
+                            c2.execute(
+                                "UPDATE students SET enrollment_fee_charged_at=CURRENT_TIMESTAMP "
+                                "WHERE id=? AND enrollment_fee_charged_at IS NULL",
+                                (_er["id"],)
+                            )
+                            _claimed = c2.rowcount
+                            conn2.commit()
+                            if _claimed > 0:
+                                _cust = sub.get("customer")
+                                # 顧客レベル default_payment_method が未設定でも、trial カードは
+                                # subscription.default_payment_method に紐づくため、それを明示指定する。
+                                _pm = sub.get("default_payment_method")
+                                if not _pm and _cust:
+                                    try:
+                                        _pml = s.PaymentMethod.list(customer=_cust, type="card", limit=1)
+                                        if _pml.data:
+                                            _pm = _pml.data[0].id
+                                    except Exception:
+                                        pass
+                                _einv = None
+                                _finalized_ok = False  # ★finalize を越えたら Stripe が回収責任を持つ→claim 解放禁止
+                                try:
+                                    if not _cust:
+                                        raise RuntimeError("subscription に customer が無い")
+                                    _auto = bool(_pm)
+                                    _ekw = dict(
+                                        customer=_cust,
+                                        auto_advance=False,
+                                        pending_invoice_items_behavior="exclude",
+                                        description="入塾金（システム登録費用・初回のみ）",
+                                        metadata={"student_id": str(_er["id"]), "type": "enrollment_fee",
+                                                  "source": "trial_extended_conversion"},
+                                    )
+                                    if _auto:
+                                        _ekw["collection_method"] = "charge_automatically"
+                                        _ekw["default_payment_method"] = _pm
+                                    else:
+                                        # カード解決不可 → メール請求にフォールバック (取りこぼし防止)
+                                        _ekw["collection_method"] = "send_invoice"
+                                        _ekw["days_until_due"] = 7
+                                    # 空 draft → invoice= 指定で item をその invoice 上に直接作成
+                                    # (InvoiceItem.modify(invoice=) は API で拒否されるため create(invoice=))
+                                    _einv = s.Invoice.create(**_ekw)
+                                    s.InvoiceItem.create(
+                                        customer=_cust, invoice=_einv.id,
+                                        amount=ENROLLMENT_FEE, currency="jpy",
+                                        description="入塾金（システム登録費用・初回のみ）",
+                                        metadata={"plan": _er["plan"], "type": "enrollment_fee",
+                                                  "source": "trial_extended_conversion"},
+                                    )
+                                    # ¥0/紐付け失敗防止: finalize 前に金額検証 (失敗なら下の except で draft 破棄+claim 解放)
+                                    _chk = s.Invoice.retrieve(_einv.id)
+                                    if int(getattr(_chk, "total", 0) or 0) != ENROLLMENT_FEE:
+                                        raise RuntimeError(
+                                            f"invoice total mismatch: {getattr(_chk, 'total', None)} != {ENROLLMENT_FEE}"
+                                        )
+                                    _efin = s.Invoice.finalize_invoice(_einv.id)
+                                    _finalized_ok = True  # ここ以降は二重課金防止のため claim を絶対解放しない
+                                    if _auto:
+                                        # auto_advance=False では finalize がカード課金を走らせない (Stripe 仕様)。
+                                        # 明示 pay で即時課金。カード拒否時は pay が例外を投げるが、invoice は open のまま
+                                        # Stripe dunning が自動再試行するため claim は保持 (warning のみ)。
+                                        try:
+                                            s.Invoice.pay(_efin.id)
+                                        except Exception as _pe:
+                                            log.warning(
+                                                f"[enrollment-fee-on-conversion] 即時 pay 失敗 (open のまま Stripe dunning が再試行): "
+                                                f"student={_er['id']} inv={_einv.id}: {type(_pe).__name__}: {_pe}"
+                                            )
+                                    else:
+                                        try:
+                                            s.Invoice.send_invoice(_efin.id)
+                                        except Exception as _se:
+                                            log.warning(
+                                                f"[enrollment-fee-on-conversion] send_invoice 失敗 (invoice は open・後で送信/回収可): "
+                                                f"student={_er['id']} inv={_einv.id}: {type(_se).__name__}: {_se}"
+                                            )
+                                    log.info(
+                                        f"✅ [enrollment-fee-on-conversion] enrollment fee ¥{ENROLLMENT_FEE} billed: "
+                                        f"student={_er['id']} sub={sub_id} inv={_einv.id} method={_ekw['collection_method']}"
+                                    )
+                                except Exception as _ece:
+                                    log.error(
+                                        f"[enrollment-fee-on-conversion] billing failed (finalized={_finalized_ok}): "
+                                        f"student={_er['id']} sub={sub_id}: {type(_ece).__name__}: {_ece}"
+                                    )
+                                    # finalize 前の失敗のみ: 空 draft を破棄し claim を解放 (後続イベントで再試行)。
+                                    # finalize 済の場合は invoice が存在し Stripe が回収するので絶対に解放しない (二重課金防止)。
+                                    if not _finalized_ok:
+                                        if _einv is not None:
+                                            try:
+                                                s.Invoice.delete(_einv.id)
+                                            except Exception:
+                                                pass
+                                        try:
+                                            c2.execute(
+                                                "UPDATE students SET enrollment_fee_charged_at=NULL WHERE id=?",
+                                                (_er["id"],)
+                                            )
+                                            conn2.commit()
+                                        except Exception:
+                                            pass
+                    finally:
+                        conn2.close()
+            except Exception as _eouter:
+                log.error(f"[enrollment-fee-on-conversion] unexpected sub={sub_id}: {type(_eouter).__name__}: {_eouter}")
         elif sub_status in ("past_due", "unpaid"):
             # 月次決済失敗で Stripe が past_due/unpaid に遷移 → DB も past_due に降格。
             # **paid のみ対象** (trial は除外: trial_extended 初回課金失敗での誤ロック防止。canceled/expired にも触れない)。
