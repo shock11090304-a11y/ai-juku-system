@@ -769,6 +769,17 @@ def init_db():
     );
     CREATE INDEX IF NOT EXISTS idx_eqa_original ON exam_questions_archive(original_id);
     CREATE INDEX IF NOT EXISTS idx_eqa_batch ON exam_questions_archive(replacement_batch_id);
+    -- 🚫 2026-06-21 [dojo-subq-blocklist] 不良小問(解答キー誤り/曖昧/図or前問依存)を道場ドリル配信から除外。
+    --   exam_questions は active 列が無く小問は question_data JSON 内のため、(大問id, 小問id) 単位で配信時に遮断する。
+    --   行削除で解除=可逆。bank API が fail-open で適用(大問が空なら大問ごと除外・全滅なら無filterで枯渇回避)。
+    CREATE TABLE IF NOT EXISTS exam_question_subq_blocklist (
+        exam_question_id INTEGER NOT NULL,
+        sub_id TEXT NOT NULL,
+        reason TEXT,
+        batch_id TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_eqsb ON exam_question_subq_blocklist(exam_question_id, sub_id);
     CREATE INDEX IF NOT EXISTS idx_eqa_replaced_at ON exam_questions_archive(replaced_at);
     CREATE TABLE IF NOT EXISTS textbook_pool (
         id {pk},
@@ -21811,6 +21822,41 @@ def public_exam_questions_bank(
             items.append(data)
         except Exception:
             pass
+
+    # 🚫 [dojo-subq-blocklist 2026-06-21] 不良小問(解答キー誤り/曖昧/図・前問依存)を配信から除外する。
+    #    (大問id, 小問id) 単位。大問内の不良小問だけ落とし、大問が空になれば大問ごと除外。
+    #    全プール全滅時は fail-open で無filter配信(急な枯渇回避・kokugo フィルタと同方針)。行削除で解除=可逆。
+    if items:
+        try:
+            _qids = [it.get("_question_id") for it in items if it.get("_question_id") is not None]
+            _blocked = {}
+            if _qids:
+                _bconn = db()
+                try:
+                    _bc = _bconn.cursor()
+                    _bph = ",".join(["?"] * len(_qids))
+                    _bc.execute(f"SELECT exam_question_id, sub_id FROM exam_question_subq_blocklist WHERE exam_question_id IN ({_bph})", tuple(_qids))
+                    for _r in _bc.fetchall():
+                        _eqid = _r["exam_question_id"] if hasattr(_r, "keys") else _r[0]
+                        _sid = _r["sub_id"] if hasattr(_r, "keys") else _r[1]
+                        _blocked.setdefault(_eqid, set()).add(_sid)
+                finally:
+                    _bconn.close()
+            if _blocked:
+                _kept = []
+                for it in items:
+                    _bset = _blocked.get(it.get("_question_id"))
+                    if not _bset:
+                        _kept.append(it); continue
+                    _qs = it.get("questions") or []
+                    _newqs = [q for q in _qs if not (isinstance(q, dict) and q.get("id") in _bset)]
+                    if _newqs:
+                        it = dict(it); it["questions"] = _newqs; _kept.append(it)
+                    # _newqs 空 = 全小問ブロック → 大問ごと配信しない
+                if _kept:  # 全滅(全大問が空)なら除外せず fail-open
+                    items = _kept
+        except Exception as _e:
+            log.warning(f"[ExamQ:Blocklist] sub-question filter skipped (non-fatal): {_e}")
 
     # 🎯 SQL LIKE で取得済の場合は Python レベル再フィルタ不要 (本来確実にマッチしているため)
     # ただし fallback (topic マッチ 0 件で全 pool 取得) や旧データで raw text が JSON 内になく
