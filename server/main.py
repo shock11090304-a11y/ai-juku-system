@@ -26827,8 +26827,8 @@ LINE_TEMPLATES = {
     # 📝 2026-06-07 塾長指示: 英文法ドリル配信時に生徒へ能動通知 (「配信=通知ゼロ」問題の恒久対策)
     "grammar_drill_assigned": lambda p: {
         "type": "text",
-        "text": f"📝 新しい英文法の宿題が届きました\n\n"
-                f"{p.get('name', '生徒')}さんへ、「{p.get('unit', '英文法')}」の問題 {p.get('question_count', 25)}問が配信されました。\n\n"
+        "text": f"📝 新しい{p.get('subject_label', '英文法')}の宿題が届きました\n\n"
+                f"{p.get('name', '生徒')}さんへ、「{p.get('unit', '')}」の問題 {p.get('question_count', 25)}問が配信されました。\n\n"
                 f"解いて提出すると、間違えた問題はその場で解説が出ます。\n"
                 f"マイページから挑戦👇\n"
                 f"{p.get('url', BASE_URL)}/mypage.html"
@@ -35834,6 +35834,14 @@ def _canon_grammar_subject(s):
         return k
     return _GRAMMAR_SUBJECT_ALIASES.get(k, "")
 
+# 科目コード→日本語ラベル(配信通知・表示用)。english は従来の「英文法」表記を維持。
+_GRAMMAR_SUBJECT_LABEL_JA = {
+    "english": "英文法", "math": "数学", "physics": "物理", "chemistry": "化学",
+    "biology": "生物", "earth": "地学", "japanese": "国語", "social": "社会",
+}
+def _grammar_subject_label_ja(subject):
+    return _GRAMMAR_SUBJECT_LABEL_JA.get(_canon_grammar_subject(subject), "英文法")
+
 
 def _grammar_admin_authed(authorization, x_cron_secret):
     """admin Bearer or X-Cron-Secret 認証 (homework と同一パターン)。"""
@@ -35968,7 +35976,7 @@ def admin_grammar_import(
         conn.close()
 
 
-def _notify_grammar_drill_assigned(notify_list: list, unit: str, question_count: int):
+def _notify_grammar_drill_assigned(notify_list: list, unit: str, question_count: int, subject: str = "english"):
     """BackgroundTasks: 配信されたドリルを各生徒へ LINE / メールで能動通知 (best-effort)。
     notify_list: [{"id":int,"name":str,"email":str|None,"line_user_id":str|None}]
     - _do_line_push は line_user_id 無しだと 404 を投げるため、紐付け済みのみ呼ぶ。
@@ -35977,6 +35985,7 @@ def _notify_grammar_drill_assigned(notify_list: list, unit: str, question_count:
     - Resend 無料枠 (1通/秒) 回避: email は 2通目以降 1.5秒間隔 + 429 は指数バックオフ
       (_dispatch_message_emails と同方針)。「全選択」で 100名超でも 429 silent fail しない。"""
     import time as _t
+    subj_label = _grammar_subject_label_ja(subject)  # 🧩 科目別ラベル(数学/国語… ・既定 英文法)
     line_ok = mail_ok = mail_fail = 0
     email_idx = 0
     for s in notify_list:
@@ -35987,7 +35996,7 @@ def _notify_grammar_drill_assigned(notify_list: list, unit: str, question_count:
         try:
             if s.get("line_user_id"):
                 r = _do_line_push(int(sid), "grammar_drill_assigned",
-                                  {"unit": unit, "question_count": question_count, "url": BASE_URL})
+                                  {"unit": unit, "question_count": question_count, "url": BASE_URL, "subject_label": subj_label})
                 if isinstance(r, dict) and r.get("ok"):
                     line_ok += 1
         except Exception as e:
@@ -35999,9 +36008,9 @@ def _notify_grammar_drill_assigned(notify_list: list, unit: str, question_count:
         if email_idx > 0:
             _t.sleep(1.5)  # Resend rate limit 回避
         email_idx += 1
-        subj = f"📝 新しい英文法の宿題「{unit}」が届きました"
+        subj = f"📝 新しい{subj_label}の宿題「{unit}」が届きました"
         body = (
-            f"「{unit}」の英文法ドリル（全{question_count}問）が配信されました。\n\n"
+            f"「{unit}」の{subj_label}ドリル（全{question_count}問）が配信されました。\n\n"
             f"マイページからログインして挑戦してください:\n"
             f"{BASE_URL}/mypage.html\n\n"
             f"※ 解いて提出すると、間違えた問題の解説がその場で表示されます。"
@@ -36176,7 +36185,7 @@ def admin_grammar_drill_create(
         #    既存ドリルの再通知 (uq 重複 skip 分) は起きない。
         if notify_list:
             try:
-                background_tasks.add_task(_notify_grammar_drill_assigned, notify_list, unit, count)
+                background_tasks.add_task(_notify_grammar_drill_assigned, notify_list, unit, count, subject)
             except Exception as e:
                 log.warning(f"[GrammarDrillNotify] schedule failed: {e}")
 
