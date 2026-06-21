@@ -36615,7 +36615,8 @@ def student_grammar_drill_get(drill_id: int, request: Request, authorization: Op
         qmap = {}
         if qids:
             ph = ",".join(["?"] * len(qids))
-            c.execute(f"SELECT id, stem, choices, answer, explanation FROM grammar_questions WHERE id IN ({ph})", tuple(qids))
+            # 🧩 2026-06-21 active=1 限定: 無効化(active=0)した不良問題は配信済ドリルでも非表示にする(問題文欠落の恒久対策)
+            c.execute(f"SELECT id, stem, choices, answer, explanation FROM grammar_questions WHERE id IN ({ph}) AND active = 1", tuple(qids))
             for r in c.fetchall():
                 qmap[r["id"]] = r
         questions = []
@@ -36689,7 +36690,7 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
             ph = ",".join(["?"] * len(qids))
             # unit は 2026-06-11 追加: 横断ミニ診断 (drill.unit='診断') では設問ごとに単元が異なるため、
             # 弱点集計 (question_attempts.topic) を設問自身の単元で記録する
-            c.execute(f"SELECT id, unit, stem, choices, answer, explanation FROM grammar_questions WHERE id IN ({ph})", tuple(qids))
+            c.execute(f"SELECT id, unit, stem, choices, answer, explanation FROM grammar_questions WHERE id IN ({ph}) AND active = 1", tuple(qids))
             for r in c.fetchall():
                 qmap[r["id"]] = r
 
