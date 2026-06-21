@@ -612,10 +612,23 @@
         </div>
       </div>
       <div style="background:rgba(0,0,0,0.18);border-radius:10px;padding:0.9rem;margin-bottom:0.8rem;">
-        <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.4rem;">① 単元を選ぶ <span style="color:#71717a;">(数字 = 偏差値55-65帯の在庫。<span style="color:#34d399;">緑=25問+</span> / <span style="color:#fbbf24;">黄=少なめ</span> / <span style="color:#71717a;">灰=補充要</span>)</span></div>
+        <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.5rem;">① 科目を選ぶ
+          <select id="gdSubject" onchange="gdSubjectChange()" style="margin-left:0.3rem;background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:5px;padding:0.3rem;font-size:0.8rem;">
+            <option value="english">英語（英文法）</option>
+            <option value="math">数学</option>
+            <option value="physics">物理</option>
+            <option value="chemistry">化学</option>
+            <option value="biology">生物</option>
+            <option value="earth">地学</option>
+            <option value="japanese">国語</option>
+            <option value="social">社会</option>
+          </select>
+          <span style="color:#71717a;font-size:0.72rem;margin-left:0.3rem;">選ぶと下の単元の在庫が切り替わります</span>
+        </div>
+        <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.4rem;">② 単元を選ぶ <span style="color:#71717a;">(数字 = 在庫。<span style="color:#34d399;">緑=25問+</span> / <span style="color:#fbbf24;">黄=少なめ</span> / <span style="color:#71717a;">灰=補充要</span>)</span></div>
         <div id="gdUnits" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.9rem;">読み込み中...</div>
         <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;margin-bottom:0.8rem;">
-          <label style="font-size:0.8rem;color:#94a3b8;">② レベル
+          <label style="font-size:0.8rem;color:#94a3b8;">③ レベル
             <select id="gdLevel" onchange="gdRenderUnits()" style="margin-left:0.3rem;background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:5px;padding:0.3rem;font-size:0.8rem;">
               <option value="sa">標準〜やや難 (偏差値55-65) ★既定</option>
               <option value="std">標準のみ</option>
@@ -623,11 +636,11 @@
               <option value="all">基礎も含める</option>
             </select>
           </label>
-          <label style="font-size:0.8rem;color:#94a3b8;">③ 問題数
+          <label style="font-size:0.8rem;color:#94a3b8;">④ 問題数
             <input id="gdCount" type="number" value="25" min="5" max="50" style="width:4rem;margin-left:0.3rem;background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:5px;padding:0.3rem;font-size:0.8rem;">
           </label>
         </div>
-        <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.35rem;">④ 配信する生徒を選ぶ
+        <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.35rem;">⑤ 配信する生徒を選ぶ
           <input id="gdStudentFilter" oninput="gdFilterStudents(this.value)" placeholder="名前/IDで絞り込み" style="margin-left:0.4rem;background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:5px;padding:0.25rem 0.5rem;font-size:0.78rem;width:12rem;">
           <button onclick="gdSelectAll(true)" style="margin-left:0.3rem;background:none;color:#60a5fa;border:1px solid #475569;border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;cursor:pointer;">全選択</button>
           <button onclick="gdSelectAll(false)" style="background:none;color:#94a3b8;border:1px solid #475569;border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;cursor:pointer;">解除</button>
@@ -3981,7 +3994,7 @@
     function escapeHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
     // ========== 📝 英文法 単元別ドリル (2026-06-05 塾長指示) ==========
-    let _gdUnits = [], _gdStudents = [], _gdSelUnit = null;
+    let _gdUnits = [], _gdStudents = [], _gdSelUnit = null, _gdSubject = 'english';  // 🧩 多科目化(既定 english)
     // 🎯 弱点対策ドリル (2026-06-16): 分析中ドリルの結果を保持し、間違いの多かった単元の
     //    「新しい問題」を苦戦生徒に再配信するための状態。_gdExcludeDrillId がセットされている間は
     //    gdCreate が exclude_drill_id を付けて配信し、前回と被らない新問だけを出題する。
@@ -4002,11 +4015,19 @@
       catch (e) { console.warn('[gd] init', e); }
     }
     async function gdLoadUnits() {
-      const res = await AdminAuth.fetch('/api/admin/grammar/units');
+      const res = await AdminAuth.fetch('/api/admin/grammar/units?subject=' + encodeURIComponent(_gdSubject || 'english'));
       if (!res.ok) return;
       const data = await res.json();
       _gdUnits = data.units || [];
       gdRenderUnits();
+    }
+    // 🧩 科目を切り替え: 単元集合が科目ごとに変わるため選択をリセットして在庫を読み直す。
+    async function gdSubjectChange() {
+      _gdSubject = (document.getElementById('gdSubject') || {}).value || 'english';
+      _gdSelUnit = null;
+      _gdClearRemediation();
+      const m = document.getElementById('gdCreateMsg'); if (m) m.innerHTML = '';
+      await gdLoadUnits();
     }
     function gdCurrentLevels() {
       const lv = (document.getElementById('gdLevel') || {}).value || 'sa';
@@ -4054,7 +4075,7 @@
       const ids = Array.from(document.querySelectorAll('.gd-st:checked')).map(c => parseInt(c.value, 10));
       if (!ids.length) { if (msg) msg.innerHTML = '<span style="color:#fca5a5;">配信する生徒を1人以上選んでください</span>'; return; }
       if (msg) msg.innerHTML = '⏳ 配信中...';
-      const body = { unit: _gdSelUnit, levels, count, student_ids: ids };
+      const body = { subject: _gdSubject || 'english', unit: _gdSelUnit, levels, count, student_ids: ids };
       // 🎯 弱点対策モード: 前回(分析中)のドリルの問題を除外し、識別用タイトルを付けて新問を配信
       if (_gdExcludeDrillId) { body.exclude_drill_id = _gdExcludeDrillId; body.title = `🎯弱点対策 ${_gdSelUnit}（新問${count}問）`; }
       try {
@@ -4202,7 +4223,7 @@
         else alert('削除失敗: ' + (data.detail || ''));
       } catch (e) { alert('削除失敗: ' + e); }
     }
-    window.gdSelUnit = gdSelUnit; window.gdFilterStudents = gdFilterStudents; window.gdSelectAll = gdSelectAll; window.gdCreate = gdCreate; window.gdRefresh = gdRefresh; window.gdAnalytics = gdAnalytics; window.gdCloseAnalytics = gdCloseAnalytics; window.gdRenderUnits = gdRenderUnits; window.gdDelete = gdDelete; window.gdRemediation = gdRemediation; window._gdClearRemediation = _gdClearRemediation;
+    window.gdSelUnit = gdSelUnit; window.gdFilterStudents = gdFilterStudents; window.gdSelectAll = gdSelectAll; window.gdCreate = gdCreate; window.gdRefresh = gdRefresh; window.gdAnalytics = gdAnalytics; window.gdCloseAnalytics = gdCloseAnalytics; window.gdRenderUnits = gdRenderUnits; window.gdDelete = gdDelete; window.gdRemediation = gdRemediation; window._gdClearRemediation = _gdClearRemediation; window.gdSubjectChange = gdSubjectChange;
     document.addEventListener('DOMContentLoaded', gdInit);
 
     // ✏️ 英文法ドリル 問題プール補充 (2026-06-19): seed JSON を grammar_questions に一括投入 (無課金・dedup)

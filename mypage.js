@@ -4112,9 +4112,12 @@ function _renderHomeworkItem(item) {
 
 // 📝 英文法ドリルを「宿題カード」として描画 (2026-06-16 塾長指示「ドリルも宿題に入れる」)。
 // クリック → window._gdOpenDrill(drill_id) が解答エリア(#grammarDrillSection)に問題を展開する。
+// 🧩 2026-06-21 [multi-subject-drill] 科目別ラベル。english は従来どおり「英文法」、他科目は科目名で表示。
+const _SUBJ_DRILL_LABEL = { english: '英文法', math: '数学', physics: '物理', chemistry: '化学', biology: '生物', earth: '地学', japanese: '国語', social: '社会' };
 function _renderDrillAsHwItem(item) {
   const isOpen = item.status !== 'completed';
-  const typeBadge = `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(20,184,166,0.22); color:#5eead4; border-radius:8px; font-weight:bold;">📝 英文法ドリル</span>`;
+  const _subjLabel = _SUBJ_DRILL_LABEL[item.subject] || '英文法';
+  const typeBadge = `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(20,184,166,0.22); color:#5eead4; border-radius:8px; font-weight:bold;">📝 ${_subjLabel}ドリル</span>`;
   const unitBadge = item.unit
     ? `<span style="font-size:0.72rem; padding:2px 7px; background:rgba(99,102,241,0.2); color:#a5b4fc; border-radius:8px;">${_hwEscape(item.unit)}</span>`
     : '';
@@ -4155,8 +4158,8 @@ async function initHomeworkSection() {
   const titleEl = section.querySelector('#homeworkTitleText');
   const introEl = section.querySelector('#homeworkIntro');
   if (!premium) {
-    if (titleEl) titleEl.textContent = '📝 英文法ドリル';
-    if (introEl) introEl.textContent = '英文法ドリルです。「▶ 解いて提出する」を押して取り組みましょう。';
+    if (titleEl) titleEl.textContent = '📝 ドリル';
+    if (introEl) introEl.textContent = 'ドリルです。「▶ 解いて提出する」を押して取り組みましょう。';
   }
 
   let openHw = [], doneHw = [], overdueN = 0;
@@ -4227,7 +4230,7 @@ async function initHomeworkSection() {
     const errBanner = drillsFailed
       ? `<div style="color:#fca5a5; padding:12px; background:rgba(239,68,68,0.08); border-radius:8px; font-size:0.85rem; margin-bottom:10px;">⚠ ドリルの取得に失敗しました。ページを再読み込み（更新）してみてください。</div>`
       : '';
-    const emptyMsg = premium ? '📭 いま出ている宿題・ドリルはありません。' : '📭 いま出ている英文法ドリルはありません。';
+    const emptyMsg = premium ? '📭 いま出ている宿題・ドリルはありません。' : '📭 いま出ているドリルはありません。';
     const totalAll = openHw.length + doneHw.length + openDrills.length + doneDrills.length;
     if (totalAll === 0) {
       list.innerHTML = errBanner + `<div style="color:#71717a; text-align:center; padding:1.5rem 0; font-size:0.88rem;">${emptyMsg}<br><span style="font-size:0.74rem;">塾長が出すと、ここに表示されます。最近やったのに無い時は、ページを再読み込みしてみてください。</span></div>`;
