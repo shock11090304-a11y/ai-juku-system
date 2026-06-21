@@ -1085,6 +1085,7 @@ def init_db():
     -- choices は JSON 文字列、answer は 0 始まり正解 index。level: basic/standard/advanced。
     CREATE TABLE IF NOT EXISTS grammar_questions (
         id {pk},
+        subject TEXT DEFAULT 'english',
         unit TEXT NOT NULL,
         level TEXT NOT NULL DEFAULT 'standard',
         stem TEXT NOT NULL,
@@ -1100,6 +1101,7 @@ def init_db():
     -- ドリル (CEO が単元指定で作成。作成時に出題問題を固定 = 全生徒同一 25 問 → 問題別正解率が比較可能)
     CREATE TABLE IF NOT EXISTS grammar_drills (
         id {pk},
+        subject TEXT DEFAULT 'english',
         title TEXT NOT NULL,
         unit TEXT NOT NULL,
         level TEXT,
@@ -1447,6 +1449,10 @@ def init_db():
         ("msg_attachment_data_b64", "ALTER TABLE messages ADD COLUMN attachment_data_b64 TEXT"),
         # 📚 2026-06-15 宿題に配布プリント(lesson_prints)を添付できるようにする列
         ("hw_attachment_print_id", "ALTER TABLE homework_assignments ADD COLUMN attachment_print_id INTEGER"),
+        # 🧩 2026-06-21 [multi-subject-drill] 4択自動採点ドリルを全科目へ一般化(英文法ドリル機構を流用)。
+        #   grammar_questions/grammar_drills に subject 列を追加。既存行は 'english' に degrade=後方互換。
+        ("grammar_q_subject", "ALTER TABLE grammar_questions ADD COLUMN subject TEXT DEFAULT 'english'"),
+        ("grammar_drill_subject", "ALTER TABLE grammar_drills ADD COLUMN subject TEXT DEFAULT 'english'"),
         # 📊 集客 attribution (塾長指示 2026-05-19): paid 化した生徒の流入元を分析するため utm 列追加
         # signup_utm_source: threads/x/instagram/chatgpt_store/google/youtube 等のチャネル識別
         # signup_utm_content: 投稿型識別 (authority/testimonial 等の SNS 学習用)
@@ -35807,6 +35813,27 @@ GRAMMAR_UNITS = [
 ]
 GRAMMAR_LEVELS = {"basic": "基礎", "standard": "標準", "advanced": "やや難"}
 
+# 🧩 2026-06-21 [multi-subject-drill] question_attempts.subject は弱点集計 _WEAKNESS_SUBJECT_TO_POOL の
+#   canonical キー(小文字英)でないと弱点ループが推薦0で空振りする(3並列レビュー指摘)。import/create で正規化・検証。
+_GRAMMAR_CANON_SUBJECTS = {"english", "math", "physics", "chemistry", "biology", "earth", "japanese", "social"}
+_GRAMMAR_SUBJECT_ALIASES = {
+    "英語": "english", "eng": "english",
+    "数学": "math", "mathematics": "math", "数iii": "math", "数学iii": "math",
+    "物理": "physics", "化学": "chemistry", "生物": "biology", "地学": "earth",
+    "国語": "japanese", "現代文": "japanese", "古文": "japanese", "漢文": "japanese",
+    "社会": "social", "日本史": "social", "世界史": "social", "地理": "social",
+    "公民": "social", "倫理": "social", "政治経済": "social", "政経": "social",
+}
+def _canon_grammar_subject(s):
+    """ドリル科目を弱点集計の canonical キーへ正規化。未指定は後方互換で 'english'、未知の非別名は '' を返す
+    (呼び出し側で 422/skip を判断)。日本語・別名は alias 表で canonical に吸収する。"""
+    k = str(s or "").strip().lower()
+    if not k:
+        return "english"
+    if k in _GRAMMAR_CANON_SUBJECTS:
+        return k
+    return _GRAMMAR_SUBJECT_ALIASES.get(k, "")
+
 
 def _grammar_admin_authed(authorization, x_cron_secret):
     """admin Bearer or X-Cron-Secret 認証 (homework と同一パターン)。"""
@@ -35819,15 +35846,20 @@ def _grammar_admin_authed(authorization, x_cron_secret):
 
 
 @app.get("/api/admin/grammar/units")
-def admin_grammar_units(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
-    """🧑‍🏫 admin: 英文法の単元一覧 + 各単元×level の在庫数。CEO のドリル作成フォーム用。"""
+def admin_grammar_units(subject: str = "english", authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """🧑‍🏫 admin: 指定科目の単元一覧 + 各単元×level の在庫数。CEO のドリル作成フォーム用。
+    subject 既定 'english'(従来UI互換)。在庫は subject でスコープ(複数科目で同名単元が合算される誤計上を防止=レビュー指摘#1)。"""
     if not _grammar_admin_authed(authorization, x_cron_secret):
         raise HTTPException(status_code=401, detail="未認証")
+    subj = _canon_grammar_subject(subject)
+    if subj not in _GRAMMAR_CANON_SUBJECTS:
+        subj = "english"
     conn = db()
     try:
         c = conn.cursor()
         c.execute(
-            "SELECT unit, level, COUNT(*) AS n FROM grammar_questions WHERE active = 1 GROUP BY unit, level"
+            "SELECT unit, level, COUNT(*) AS n FROM grammar_questions WHERE active = 1 AND subject = ? GROUP BY unit, level",
+            (subj,),
         )
         agg = {}
         for r in c.fetchall():
@@ -35836,15 +35868,18 @@ def admin_grammar_units(authorization: Optional[str] = Header(None), x_cron_secr
             if lv in slot:
                 slot[lv] += n
             slot["total"] += n
-        # GRAMMAR_UNITS の順序で、在庫が無い単元も 0 で返す
         units = []
-        for u in GRAMMAR_UNITS:
-            units.append(agg.get(u, {"unit": u, "basic": 0, "standard": 0, "advanced": 0, "total": 0}))
-        # GRAMMAR_UNITS に無い分類 (想定外 unit) も末尾に追加
-        for u, slot in agg.items():
-            if u not in GRAMMAR_UNITS:
-                units.append(slot)
-        return {"ok": True, "units": units, "levels": GRAMMAR_LEVELS}
+        if subj == "english":
+            # 英語は GRAMMAR_UNITS の順序で、在庫が無い単元も 0 で返す (従来UI互換)
+            for u in GRAMMAR_UNITS:
+                units.append(agg.get(u, {"unit": u, "basic": 0, "standard": 0, "advanced": 0, "total": 0}))
+            for u, slot in agg.items():
+                if u not in GRAMMAR_UNITS:
+                    units.append(slot)
+        else:
+            # 他科目は在庫のある単元のみ(total 降順) — 単元集合は科目ごとに取込内容で決まる
+            units = sorted(agg.values(), key=lambda s: -s["total"])
+        return {"ok": True, "subject": subj, "units": units, "levels": GRAMMAR_LEVELS}
     finally:
         conn.close()
 
@@ -35866,6 +35901,11 @@ def admin_grammar_import(
     if len(questions) > 2000:
         raise HTTPException(status_code=422, detail="一度に投入できるのは2000問までです")
     dedup = payload.get("dedup", True)
+    # 🧩 2026-06-21 [multi-subject-drill] 科目を受理(既定 english=後方互換)。canonical科目コードへ正規化(弱点集計の整合)。english 以外は GRAMMAR_UNITS 検証を外す。
+    _subj_in = payload.get("subject")
+    subject_default = _canon_grammar_subject(_subj_in)
+    if _subj_in and subject_default not in _GRAMMAR_CANON_SUBJECTS:
+        raise HTTPException(status_code=422, detail=f"subject が不正です。{sorted(_GRAMMAR_CANON_SUBJECTS)} のいずれか(別名 数学/英語/国語/社会等も可)で指定してください")
     inserted = 0
     skipped = 0
     errors = 0
@@ -35878,11 +35918,15 @@ def admin_grammar_import(
                 stem = (q.get("stem") or "").strip()
                 choices = q.get("choices")
                 answer = q.get("answer")
+                subj = _canon_grammar_subject(q.get("subject") or subject_default)
                 if not unit or not stem or not isinstance(choices, list) or len(choices) < 2 or answer is None:
                     skipped += 1
                     continue
-                if unit not in GRAMMAR_UNITS:
-                    skipped += 1  # 想定外の単元名は弾く (集計・表示・onclick の一貫性確保)
+                if subj not in _GRAMMAR_CANON_SUBJECTS:
+                    skipped += 1  # 非canonical科目は弱点集計に乗らないため弾く (レビュー指摘#2)
+                    continue
+                if subj == "english" and unit not in GRAMMAR_UNITS:
+                    skipped += 1  # 英語は想定外単元名を弾く (集計・表示の一貫性)。他科目は任意 unit を許可。
                     continue
                 try:
                     answer = int(answer)
@@ -35906,14 +35950,14 @@ def admin_grammar_import(
                     if seq is not None:
                         c.execute("SELECT 1 FROM grammar_questions WHERE source_exam_question_id = ? AND stem = ? LIMIT 1", (seq, stem))
                     else:
-                        c.execute("SELECT 1 FROM grammar_questions WHERE stem = ? AND unit = ? LIMIT 1", (stem, unit))
+                        c.execute("SELECT 1 FROM grammar_questions WHERE stem = ? AND unit = ? AND subject = ? LIMIT 1", (stem, unit, subj))
                     if c.fetchone():
                         skipped += 1
                         continue
                 c.execute(
-                    "INSERT INTO grammar_questions (unit, level, stem, choices, answer, explanation, source, source_exam_question_id) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                    (unit, level, stem, json.dumps(choices, ensure_ascii=False), answer, explanation, source, seq),
+                    "INSERT INTO grammar_questions (subject, unit, level, stem, choices, answer, explanation, source, source_exam_question_id) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (subj, unit, level, stem, json.dumps(choices, ensure_ascii=False), answer, explanation, source, seq),
                 )
                 inserted += 1
             except Exception:
@@ -35999,6 +36043,9 @@ def admin_grammar_drill_create(
     unit = (payload.get("unit") or "").strip()
     if not unit:
         raise HTTPException(status_code=422, detail="unit (単元) が必要です")
+    subject = _canon_grammar_subject(payload.get("subject"))  # 🧩 多科目化(既定 english)。canonical科目コードへ正規化
+    if subject not in _GRAMMAR_CANON_SUBJECTS:
+        raise HTTPException(status_code=422, detail=f"subject が不正です。{sorted(_GRAMMAR_CANON_SUBJECTS)} のいずれか(別名 数学/英語/国語/社会等も可)で指定してください")
     levels = payload.get("levels") or ["standard", "advanced"]
     if not isinstance(levels, list):
         levels = [levels]
@@ -36049,15 +36096,15 @@ def admin_grammar_drill_create(
         if exclude_ids:
             ex_ph = ",".join(["?"] * len(exclude_ids))
             c.execute(
-                f"SELECT id FROM grammar_questions WHERE unit = ? AND level IN ({ph}) AND active = 1 "
+                f"SELECT id FROM grammar_questions WHERE unit = ? AND subject = ? AND level IN ({ph}) AND active = 1 "
                 f"AND id NOT IN ({ex_ph}) ORDER BY RANDOM() LIMIT ?",
-                (unit, *levels, *exclude_ids, count),
+                (unit, subject, *levels, *exclude_ids, count),
             )
         else:
             c.execute(
-                f"SELECT id FROM grammar_questions WHERE unit = ? AND level IN ({ph}) AND active = 1 "
+                f"SELECT id FROM grammar_questions WHERE unit = ? AND subject = ? AND level IN ({ph}) AND active = 1 "
                 f"ORDER BY RANDOM() LIMIT ?",
-                (unit, *levels, count),
+                (unit, subject, *levels, count),
             )
         qids = [r["id"] for r in c.fetchall()]
         if len(qids) < count:
@@ -36072,9 +36119,9 @@ def admin_grammar_drill_create(
 
         # 2) ドリル作成 (question_ids 固定)
         c.execute(
-            "INSERT INTO grammar_drills (title, unit, level, question_ids, created_by) "
-            "VALUES (?, ?, ?, ?, 'admin') RETURNING id",
-            (title, unit, ",".join(levels), json.dumps(qids)),
+            "INSERT INTO grammar_drills (subject, title, unit, level, question_ids, created_by) "
+            "VALUES (?, ?, ?, ?, ?, 'admin') RETURNING id",
+            (subject, title, unit, ",".join(levels), json.dumps(qids)),
         )
         dr = c.fetchone()
         drill_id = (dr["id"] if hasattr(dr, "keys") else dr[0]) if dr else None
@@ -36375,7 +36422,7 @@ def student_grammar_drills(request: Request, authorization: Optional[str] = Head
         c = conn.cursor()
         c.execute(
             "SELECT a.id AS assignment_id, a.drill_id, a.status, a.score_correct, a.score_total, "
-            "       a.assigned_at, a.completed_at, d.title, d.unit, d.level "
+            "       a.assigned_at, a.completed_at, d.title, d.unit, d.level, d.subject "
             "FROM grammar_drill_assignments a JOIN grammar_drills d ON d.id = a.drill_id "
             "WHERE a.student_id = ? "
             "ORDER BY (a.status = 'open') DESC, a.assigned_at DESC",
@@ -36388,6 +36435,7 @@ def student_grammar_drills(request: Request, authorization: Optional[str] = Head
                 "title": r["title"],
                 "unit": r["unit"],
                 "level": r["level"],
+                "subject": (r["subject"] or "english"),  # 🧩 多科目化: フロントの科目別ラベル分岐用
                 "status": r["status"],
                 "score_correct": r["score_correct"],
                 "score_total": r["score_total"],
@@ -36448,7 +36496,7 @@ def student_diagnostic_start(request: Request, authorization: Optional[str] = He
             unit_qids = []
             for lv in ("basic", "standard"):
                 c.execute(
-                    "SELECT id FROM grammar_questions WHERE unit = ? AND level = ? AND active = 1 "
+                    "SELECT id FROM grammar_questions WHERE unit = ? AND level = ? AND active = 1 AND subject = 'english' "
                     "ORDER BY RANDOM() LIMIT 1",
                     (u, lv),
                 )
@@ -36458,7 +36506,7 @@ def student_diagnostic_start(request: Request, authorization: Optional[str] = He
             if len(unit_qids) < 2:
                 # レベル別に揃わない単元は任意レベルで 2 問 (それも無ければこの単元はスキップ)
                 c.execute(
-                    "SELECT id FROM grammar_questions WHERE unit = ? AND active = 1 "
+                    "SELECT id FROM grammar_questions WHERE unit = ? AND active = 1 AND subject = 'english' "
                     "ORDER BY RANDOM() LIMIT 2",
                     (u,),
                 )
@@ -36614,11 +36662,15 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
             raise HTTPException(status_code=404, detail="このドリルは配信されていません")
         if a["status"] == "completed":
             raise HTTPException(status_code=409, detail="このドリルは既に提出済みです")
-        c.execute("SELECT unit, question_ids FROM grammar_drills WHERE id = ?", (drill_id,))
+        c.execute("SELECT subject, unit, question_ids FROM grammar_drills WHERE id = ?", (drill_id,))
         d = c.fetchone()
         if not d:
             raise HTTPException(status_code=404, detail="ドリルが見つかりません")
         unit = d["unit"]
+        try:
+            drill_subject = d["subject"] or "english"   # 🧩 多科目化: question_attempts の subject 帰属に使用
+        except (KeyError, TypeError, IndexError):
+            drill_subject = "english"
         try:
             qids = json.loads(d["question_ids"] or "[]")
         except Exception:
@@ -36695,7 +36747,7 @@ def student_grammar_drill_submit(drill_id: int, payload: dict, request: Request,
                 c.execute(
                     "INSERT INTO question_attempts (student_id, source, exam_question_id, subject, topic, "
                     "is_correct, score_got, score_max, metadata, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                    (student["id"], "grammar_drill", eq_id, "english", q_unit, is_corr, is_corr, 1, meta, now_iso),
+                    (student["id"], "grammar_drill", eq_id, drill_subject, q_unit, is_corr, is_corr, 1, meta, now_iso),
                 )
             conn.commit()
         except Exception as e:
