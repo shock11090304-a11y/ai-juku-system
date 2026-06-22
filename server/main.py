@@ -28699,7 +28699,7 @@ def admin_send_followup(payload: dict, authorization: Optional[str] = Header(Non
         # 24h cooldown: 直近24時間以内に手動送信済みならブロック
         cooldown_since = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
         c.execute(
-            "SELECT id FROM notifications WHERE student_id=? AND template='trial_followup_manual' AND success=1 AND created_at > ? LIMIT 1",
+            "SELECT id FROM notifications WHERE student_id=? AND template='trial_followup_manual' AND success=1 AND sent_at > ? LIMIT 1",
             (sid, cooldown_since)
         )
         if c.fetchone():
