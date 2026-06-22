@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="auth-guard.js?v=20260622-todai2025"></script>
+<title>2025 東大物理 第3問 — レンズと望遠レンズ</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8; --amber:#d97706;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+    --lens:rgba(37,99,235,.16); --ray:#e2483a;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a;
+           --lens:rgba(127,178,240,.20); --ray:#f0857a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:21px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 16px;}
+  .qbox{background:var(--card); border:1px solid var(--bd); border-left:4px solid var(--blue);
+        border-radius:10px; padding:12px 14px; font-size:14px; margin:0 0 16px;}
+  .qbox b{color:var(--blue);}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:58px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:104px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:15px; border:1px solid var(--bd); background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .big{font-size:17px; font-weight:700; color:var(--ok-ink);}
+  .relation .sub2{display:block; margin-top:6px; font-size:13px; color:var(--sub);}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:16px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>レンズと望遠レンズ <span style="color:var(--sub);font-weight:400;font-size:15px;">— 2025 東大物理 第3問</span></h1>
+    <p class="lead">遠方の物体は焦点距離 <b>d</b> の位置に像を結び、像の高さは <b>h=Hd/D</b>。凸＋凹の<b>望遠レンズ</b>は、短い鏡筒で長焦点（高倍率）を実現します。</p>
+  </header>
+
+  <div class="qbox">
+    <b>問題.</b> レンズで遠方の物体の実像をスクリーンに投影する（レンズの厚みは無視）。焦点距離 d の凸レンズで距離 D(≫d) の高さ H の物体を写す。
+    さらに凸レンズ L₂（焦点距離5d）と凹レンズ L₃ を組み合わせた望遠レンズを考える。
+  </div>
+
+  <div class="takeaway">急所 = レンズの式 1/D+1/b=1/d で <b>D≫d なら b≈d</b>（像はレンズから焦点距離 d）。像の高さ <b>h=Hd/D</b>（焦点が長いほど大）。望遠は <b>凸で集めかけ→凹で広げ</b>、物理長を縮めつつ長焦点（高倍率）にします。</div>
+
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="badge">step 1 / 4</span>
+        <span class="steptitle" id="title"></span>
+      </div>
+      <div class="btns">
+        <button id="prev" aria-label="前のステップ">← 戻る</button>
+        <button id="next">次へ →</button>
+      </div>
+    </div>
+    <div class="stage">
+      <svg id="svg" viewBox="0 0 600 360" role="img" aria-label="レンズの光線図">
+        <!-- ===== Group A: 単レンズ ===== -->
+        <g id="grpA">
+          <line x1="20" y1="160" x2="592" y2="160" stroke="var(--gray)" stroke-width="1.1" stroke-dasharray="4 4"></line>
+          <ellipse id="lensA" cx="430" cy="160" rx="13" ry="78" fill="var(--lens)" stroke="var(--blue)" stroke-width="2"></ellipse>
+          <text x="430" y="68" font-size="12" fill="var(--blue)" text-anchor="middle">L₁(焦点d)</text>
+          <!-- 物体 -->
+          <line id="objA" x1="572" y1="160" x2="572" y2="92" stroke="var(--ink)" stroke-width="3" marker-end="url(#ahK)"></line>
+          <text x="572" y="84" font-size="11" fill="var(--ink)" text-anchor="middle">物体A</text>
+          <text x="540" y="178" font-size="11" fill="var(--sub)" text-anchor="middle">遠方 D≫d</text>
+          <!-- 光線 -->
+          <g id="raysA"></g>
+          <!-- スクリーンと像 -->
+          <line id="scrA" stroke="var(--green)" stroke-width="2"></line>
+          <text id="scrAl" font-size="11" fill="var(--green)" text-anchor="middle">S</text>
+          <line id="imgA" stroke="var(--red)" stroke-width="3.4" marker-end="url(#ahR3)"></line>
+          <text id="imgAl" font-size="11" fill="var(--red)" text-anchor="middle"></text>
+          <!-- d 寸法線 -->
+          <line id="dlineA" stroke="var(--sub)" stroke-width="1"></line>
+          <text id="dlabA" font-size="11" fill="var(--sub)" text-anchor="middle">d</text>
+        </g>
+        <!-- ===== Group B: 望遠レンズ ===== -->
+        <g id="grpB" style="opacity:0">
+          <line x1="20" y1="120" x2="592" y2="120" stroke="var(--gray)" stroke-width="1.1" stroke-dasharray="4 4"></line>
+          <!-- L2 凸 -->
+          <ellipse cx="540" cy="120" rx="11" ry="60" fill="var(--lens)" stroke="var(--blue)" stroke-width="2"></ellipse>
+          <text x="540" y="50" font-size="11" fill="var(--blue)" text-anchor="middle">L₂凸(5d)</text>
+          <!-- L3 凹 -->
+          <g transform="translate(332,120)"><path d="M-9,-46 Q1,0 -9,46 M9,-46 Q-1,0 9,46" fill="none" stroke="var(--red)" stroke-width="2"></path></g>
+          <text x="332" y="50" font-size="11" fill="var(--red)" text-anchor="middle">L₃凹(3d/2)</text>
+          <!-- スクリーン P2 -->
+          <line x1="176" y1="64" x2="176" y2="176" stroke="var(--green)" stroke-width="2"></line>
+          <text x="176" y="58" font-size="11" fill="var(--green)" text-anchor="middle">S(P₂)</text>
+          <!-- P1 (L2の焦点, あれば像) -->
+          <circle cx="280" cy="120" r="3" fill="var(--sub)"></circle>
+          <text x="280" y="138" font-size="10" fill="var(--sub)" text-anchor="middle">P₁=L₂焦点(5d)</text>
+          <!-- 光線: 平行(高さw)→L2→(P1方向)→L3→P2 -->
+          <polyline points="592,80 540,80" fill="none" stroke="var(--ray)" stroke-width="2"></polyline>
+          <polyline points="540,80 332,135" fill="none" stroke="var(--ray)" stroke-width="2"></polyline>
+          <line x1="332" y1="135" x2="280" y2="120" stroke="var(--sub)" stroke-width="1" stroke-dasharray="4 3"></line>
+          <polyline points="332,135 176,120" fill="none" stroke="var(--ray)" stroke-width="2"></polyline>
+          <text x="566" y="74" font-size="11" fill="var(--ray)" text-anchor="middle">w</text>
+          <text id="alab" x="210" y="112" font-size="11" fill="var(--ray)">α</text>
+          <!-- 距離 -->
+          <line x1="332" y1="196" x2="540" y2="196" stroke="var(--sub)" stroke-width="1"></line>
+          <text x="436" y="210" font-size="11" fill="var(--sub)" text-anchor="middle">4d</text>
+          <line x1="176" y1="196" x2="332" y2="196" stroke="var(--sub)" stroke-width="1"></line>
+          <text x="254" y="210" font-size="11" fill="var(--sub)" text-anchor="middle">3d</text>
+          <!-- 長さ比較バー -->
+          <text x="20" y="232" font-size="11.5" fill="var(--ink)" font-weight="600">同じ大きさの像を作るのに必要な長さ</text>
+          <rect x="118" y="244" width="168" height="13" rx="3" fill="var(--blue)"></rect>
+          <text x="292" y="254" font-size="11" fill="var(--blue)">望遠 7d</text>
+          <rect x="118" y="268" width="360" height="13" rx="3" fill="var(--amber)"></rect>
+          <text x="484" y="278" font-size="11" fill="var(--amber)">単レンズ 15d</text>
+          <text x="118" y="304" font-size="12" fill="var(--ok-ink)" font-weight="700">→ 7d の鏡筒で 15d 相当の高倍率（小型・望遠の利点）</text>
+        </g>
+        <defs>
+          <marker id="ahK" markerWidth="9" markerHeight="9" refX="4.5" refY="8" orient="auto"><path d="M0,9 L4.5,0 L9,9 z" fill="var(--ink)"/></marker>
+          <marker id="ahR3" markerWidth="9" markerHeight="9" refX="4.5" refY="8" orient="auto"><path d="M0,9 L4.5,0 L9,9 z" fill="var(--red)"/></marker>
+        </defs>
+      </svg>
+    </div>
+    <p class="cap" id="cap"></p>
+
+    <div class="ctl" id="dRow">
+      <label for="id">焦点距離 d</label>
+      <input type="range" id="id" min="70" max="200" step="2" value="120">
+      <span class="out" id="idOut">d = 120</span>
+    </div>
+
+    <div class="relation" id="rel"></div>
+  </section>
+
+  <div class="takeaway" style="background:var(--ok-bg); color:var(--ok-ink);">
+    <b>答え.</b> 明瞭な像はレンズから焦点距離 <b>d の位置</b>（D≫d で b≈d）。像の高さ <b>h=Hd/D</b>（焦点が長いほど大→選択肢(b)）。
+    望遠：凹レンズ L₃ の焦点距離 <b>3d/2</b>、光線が光軸となす角 <b>tanα=w/(15d)</b>、等価な単凸レンズの焦点 <b>15d</b>。物理長7dで15d相当＝<b>小型・高倍率</b>。
+  </div>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a>　・　© AI塾 / trillion-ai-juku.com
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setT(id,x,y,txt){var e=el(id);if(x!=null)e.setAttribute("x",x);if(y!=null)e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+
+  /* 単レンズ群: レンズ x=430, 光軸 cy=160, 物体 x=572 */
+  var LX=430, cy=160, OBJX=572, HD=0.32;   /* HD = H/D 比(描画用, 固定) */
+  var step=1, d=120;
+
+  var info=[null,
+    {t:"焦点距離 d の位置に像", c:"遠方(D≫d)の物体からの光は、レンズを出ると焦点に集まる。レンズの式 1/D+1/b=1/d で 1/D≈0 だから b≈d。つまりスクリーンをレンズから焦点距離 d の位置に置くと明瞭な実像(倒立)が映る。"},
+    {t:"像の高さ h=Hd/D", c:"レンズ中央を通る光は直進する。これに注目すると、像の高さは h=H·(d/D)=Hd/D。dスライダーを大きくすると像も大きくなる。つまり大きく写すには焦点距離の長いレンズがよい(表の答えは (ア)=Hd/D, (イ)=長い → (b))。"},
+    {t:"望遠レンズの作図", c:"凸レンズ L₂(焦点5d)に入った平行光は焦点 P₁(5d先)へ向かうが、手前(P₁のd手前)に置いた凹レンズ L₃ が光を広げ、スクリーン S(L₃から3d)上の P₂ で結像。L₃の焦点距離は 3d/2。スクリーンに達する光線が光軸となす角は tanα=w/(15d)。"},
+    {t:"小型で高倍率（利点）", c:"この光線を1枚の凸レンズで再現するには焦点距離 F=w/tanα=15d が必要。望遠レンズは物理的な長さ(L₂〜S=7d)が短いのに、焦点距離15dの単レンズと同じ大きな像(高倍率)を得られる。これが望遠レンズが凸＋凹の構成をとる利点。"}];
+
+  function renderA(){
+    var scrX=LX-d;                       /* スクリーン位置 = レンズから焦点距離d */
+    var h=HD*d;                          /* 像の高さ(px) = (H/D)*d */
+    /* 光線: 3本の平行光(傾き -h/d, 物体上端から)→レンズ→像上端(scrX, cy+h) */
+    var P=[scrX, cy+h];                  /* 像上端(倒立=下) */
+    var slope=-h/d;                      /* 入射平行光の傾き(右で上) */
+    var heights=[0,-46,46];              /* レンズ入射高さ(中央/上/下) */
+    var g=el("raysA"); g.innerHTML="";
+    for(var i=0;i<heights.length;i++){
+      var ey=cy+heights[i];              /* レンズ入射点 */
+      /* 入射側(右): レンズから物体方向へ平行に */
+      var rx=OBJX, ry=ey+slope*(rx-LX);
+      g.innerHTML+='<line x1="'+rx.toFixed(1)+'" y1="'+ry.toFixed(1)+'" x2="'+LX+'" y2="'+ey.toFixed(1)+'" stroke="var(--ray)" stroke-width="1.6"/>';
+      /* 出射側(左): レンズ入射点 → 像上端 P へ収束 */
+      g.innerHTML+='<line x1="'+LX+'" y1="'+ey.toFixed(1)+'" x2="'+P[0].toFixed(1)+'" y2="'+P[1].toFixed(1)+'" stroke="var(--ray)" stroke-width="1.6"/>';
+    }
+    /* スクリーン・像 */
+    setLine("scrA",scrX,cy-92,scrX,cy+92); setT("scrAl",scrX,cy-98,null);
+    setLine("imgA",scrX,cy,scrX,cy+h);
+    setT("imgAl",scrX-14,cy+h+4,"h="+(h).toFixed(0));
+    /* d 寸法線 */
+    setLine("dlineA",scrX,cy+104,LX,cy+104);
+    setT("dlabA",(scrX+LX)/2,cy+118,"d");
+  }
+
+  function render(){
+    var inB=(step>=3);
+    el("grpA").style.opacity=inB?"0":"1";
+    el("grpB").style.opacity=inB?"1":"0";
+    el("dRow").style.opacity=inB?"0.4":"1";
+    el("id").disabled=inB;
+    if(!inB) renderA();
+
+    el("idOut").textContent="d = "+d;
+    var rel=el("rel");
+    if(step===1){
+      rel.innerHTML='<div>スクリーンは <span class="big">レンズから距離 d</span> の位置</div>'
+        +'<span class="sub2">1/D+1/b=1/d, D≫d → 1/D≈0 → b≈d（倒立の実像）</span>';
+    }else if(step===2){
+      rel.innerHTML='<div>像の高さ <span class="big">h = Hd/D</span></div>'
+        +'<span class="sub2">中央を通る光は直進 → 倍率 d/D。焦点 d が長いほど像は大きい → 表の答えは (b)</span>';
+    }else if(step===3){
+      rel.innerHTML='<div>凹レンズ L₃ の焦点距離 <span class="big">3d/2</span>　/　tanα = w/(15d)</div>'
+        +'<span class="sub2">平行光はL₂で5d先のP₁へ→L₃(P₁のd手前)で広げ→3d先のP₂で結像</span>';
+    }else{
+      rel.innerHTML='<div>等価な単凸レンズの焦点距離 <span class="big">F = 15d</span></div>'
+        +'<span class="sub2">物理長7dで焦点15d相当の高倍率＝小型化できるのが望遠レンズの利点</span>';
+    }
+    el("badge").textContent="step "+step+" / 4";
+    el("title").textContent=info[step].t;
+    el("cap").textContent=info[step].c;
+    el("prev").disabled=step<=1; el("next").disabled=step>=4;
+  }
+
+  el("next").addEventListener("click",function(){if(step<4){step++;render();}});
+  el("prev").addEventListener("click",function(){if(step>1){step--;render();}});
+  el("id").addEventListener("input",function(e){d=parseInt(e.target.value,10);render();});
+  render();
+})();
+</script>
+</body>
+</html>

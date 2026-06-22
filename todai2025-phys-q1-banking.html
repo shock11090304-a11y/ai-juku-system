@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="auth-guard.js?v=20260622-todai2025"></script>
+<title>2025 東大物理 第1問 — 一輪車の円運動とバンク</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8; --amber:#d97706;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+    --bad-bg:#fdecea; --bad-ink:#c0392b; --ground:#cbd5e1;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a;
+           --bad-bg:#3a1a17; --bad-ink:#f0857a; --ground:#3a465c; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:21px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 16px;}
+  .qbox{background:var(--card); border:1px solid var(--bd); border-left:4px solid var(--blue);
+        border-radius:10px; padding:12px 14px; font-size:14px; margin:0 0 16px;}
+  .qbox b{color:var(--blue);}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  svg text.lbl{ paint-order:stroke; stroke:var(--bg); stroke-width:3.4px; stroke-linejoin:round; }
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:54px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:104px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:15px; border:1px solid var(--bd);}
+  .relation.safe{background:var(--ok-bg); border-color:var(--ok-ink); color:var(--ok-ink);}
+  .relation.hit{background:var(--bad-bg); border-color:var(--bad-ink); color:var(--bad-ink);}
+  .relation .big{font-size:17px; font-weight:700;}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:16px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>一輪車の円運動とバンク <span style="color:var(--sub);font-weight:400;font-size:15px;">— 2025 東大物理 第1問</span></h1>
+    <p class="lead">速さ <b>v₀</b> を上げると剛体棒が内側に倒れ（<b>tanθ=gR/v₀²</b>）、路面に <b>バンク角 φ</b> を付けると「すべらない最大速さ」が上がります。スライダーで体感。</p>
+  </header>
+
+  <div class="qbox">
+    <b>問題.</b> 一輪車を「車輪＋長さL・質量mの剛体棒」でモデル化。車輪と路面の静止摩擦係数を μ、重力加速度を g とする。
+    剛体棒が水平面・バンク面上を半径R(≫L)で等速円運動するときの傾きと、すべらずに運動・加速できる条件を考える。
+  </div>
+
+  <div class="takeaway">急所 = 棒の傾きは<b>「重力＋遠心力の合力」</b>で決まる（合力の向きに棒が並ぶ）。すべらない条件は<b>必要な摩擦力 ≤ μN</b>。バンクは垂直抗力Nの水平成分で<b>向心力を分担</b>します。直線加速の最大は <b>a=μg</b>。</div>
+
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="badge">step 1 / 4</span>
+        <span class="steptitle" id="title"></span>
+      </div>
+      <div class="btns">
+        <button id="prev" aria-label="前のステップ">← 戻る</button>
+        <button id="next">次へ →</button>
+      </div>
+    </div>
+    <div class="stage">
+      <svg id="svg" viewBox="0 0 600 380" role="img" aria-label="一輪車の円運動の断面図(半径-鉛直)">
+        <!-- 中心軸 -->
+        <line id="axis" x1="70" y1="56" x2="70" y2="330" stroke="var(--gray)" stroke-width="1.3" stroke-dasharray="7 4 2 4"></line>
+        <text x="70" y="48" font-size="12" fill="var(--sub)" text-anchor="middle">回転の中心軸</text>
+        <!-- 半径R 寸法線 -->
+        <line id="rline" x1="70" y1="350" x2="380" y2="350" stroke="var(--sub)" stroke-width="1"></line>
+        <text id="rlab" x="225" y="366" font-size="12" fill="var(--sub)" text-anchor="middle">R</text>
+        <!-- 路面(バンク) -->
+        <g id="ground"></g>
+        <line id="surf" stroke="var(--ink)" stroke-width="2.4"></line>
+        <!-- 法線N と 摩擦f -->
+        <line id="vN" data-ms="3" stroke="var(--green)" stroke-width="2.4" marker-end="url(#ahG)"></line>
+        <text id="vNl" class="lbl" data-ms="3" font-size="12" fill="var(--green)">N</text>
+        <!-- 剛体棒 -->
+        <line id="rod" stroke="var(--blue)" stroke-width="5" stroke-linecap="round"></line>
+        <circle id="wheel" r="9" fill="none" stroke="var(--ink)" stroke-width="2.5"></circle>
+        <circle id="wheelc" r="3" fill="var(--ink)"></circle>
+        <!-- 力ベクトル(CM) -->
+        <line id="vG" stroke="var(--red)" stroke-width="2.4" marker-end="url(#ahR)"></line>
+        <text id="vGl" class="lbl" font-size="12" fill="var(--red)">mg</text>
+        <line id="vC" data-ms="1" stroke="var(--amber)" stroke-width="2.4" marker-end="url(#ahA)"></line>
+        <text id="vCl" class="lbl" data-ms="1" font-size="12" fill="var(--amber)" text-anchor="start">mv₀²/R</text>
+        <line id="vRes" data-ms="2" stroke="var(--sub)" stroke-width="1.6" stroke-dasharray="5 4"></line>
+        <!-- θ ラベル -->
+        <text id="thl" class="lbl" font-size="13" fill="var(--blue)" font-weight="700"></text>
+        <!-- φ ラベル -->
+        <text id="phl" data-ms="3" font-size="12" fill="var(--ink)"></text>
+        <defs>
+          <marker id="ahR" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--red)"/></marker>
+          <marker id="ahA" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--amber)"/></marker>
+          <marker id="ahG" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--green)"/></marker>
+        </defs>
+      </svg>
+    </div>
+    <p class="cap" id="cap"></p>
+
+    <div class="ctl">
+      <label for="iv">速さ v₀</label>
+      <input type="range" id="iv" min="3" max="16" step="0.5" value="7">
+      <span class="out" id="ivOut">v₀ = 7.0 m/s</span>
+    </div>
+    <div class="ctl" id="phiRow">
+      <label for="ip">バンク角 φ</label>
+      <input type="range" id="ip" min="0" max="35" step="1" value="0">
+      <span class="out" id="ipOut">φ = 0°</span>
+    </div>
+
+    <div class="relation safe" id="rel"></div>
+  </section>
+
+  <div class="takeaway" style="background:var(--ok-bg); color:var(--ok-ink);">
+    <b>答え.</b> 直線加速の最大 <b>a = μg</b>。傾き <b>tanθ = gR/v₀²</b>（水平から）。
+    平面のすべらない最大速さ <b>v₁ = √(μgR)</b>。バンク角φでは <b>v₂ = √( gR(tanφ+μ)/(1−μtanφ) )</b>（tanφ&lt;1/μ）。
+    だから高速カーブや競輪場は<b>外側を高く</b>して、より速く曲がれるようにしている。
+  </div>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a>　・　© AI塾 / trillion-ai-juku.com
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,x,y,txt){var e=el(id);if(x!=null)e.setAttribute("x",x);if(y!=null)e.setAttribute("y",y);if(txt!=null)e.textContent=txt;}
+  function vis(step){var ns=el("svg").querySelectorAll("[data-ms]");for(var i=0;i<ns.length;i++){var n=ns[i];n.style.transition="opacity .25s";n.style.opacity=(step>=+n.getAttribute("data-ms"))?"1":"0";}}
+  var D2R=Math.PI/180;
+
+  /* 定数 */
+  var R=20, g=9.8, MU=0.5;
+  /* 接触点(画面) と 棒の長さ */
+  var Cx=380, Cy=300, Lpx=150;
+
+  var step=1, v0=7, phiDeg=0;
+
+  var info=[null,
+    {t:"円運動で棒が倒れる", c:"半径Rの等速円運動では、重力 mg（下）と遠心力 mv₀²/R（外向き）の合力の向きに棒が並ぶ（合力が棒の延長＝接触点を通れば回らない）。よって水平とのなす角は tanθ = gR/v₀²。v₀が大きいほど内側に深く倒れる（θ小）。（なお直線での等加速度は最大 a=μg。）"},
+    {t:"合力＝重力＋遠心力", c:"灰色の破線が合力。これと棒（青）がぴったり一直線になっているのがポイント。v₀を上げると遠心力（橙）が伸び、合力が外へ傾き、棒はより内側へ倒れます。tanθ = gR/v₀²。"},
+    {t:"すべらない最大速さ（平面）", c:"平面（φ=0）では摩擦が向心力 mv²/R をまかなう。摩擦 ≤ μN = μmg より v² ≤ μgR、最大速さ v₁ = √(μgR)。v₀ を上げて v₁ を超えると「すべる」（赤）。法線N（緑）は真上向き。"},
+    {t:"バンクで速く曲がれる", c:"路面を外側ほど高く（バンク角φ）すると、垂直抗力Nが傾き、その水平成分が向心力を分担。摩擦に頼る分が減り、最大速さは v₂ = √( gR(tanφ+μ)/(1−μtanφ) ) に増える。これが高速道路のカーブや競輪場が外側を高くする理由。"}];
+
+  function vmaxBanked(phi){
+    var t=Math.tan(phi), den=1-MU*t;
+    if(den<=0) return Infinity;            /* tanφ≥1/μ では摩擦なしでも曲がれる(発散) */
+    return Math.sqrt(g*R*(t+MU)/den);
+  }
+
+  function render(){
+    var phi=phiDeg*D2R;
+    /* 棒の傾き θ (水平から), tanθ = gR/v0^2 */
+    var th=Math.atan2(g*R, v0*v0);         /* ラジアン, 0..90° */
+    var thDeg=th/D2R;
+
+    /* 路面(バンク): 接触点を通り角φで右上がり。φ小さく見えるよう描画 */
+    var sx=Math.cos(phi), sy=Math.sin(phi);
+    setLine("surf", Cx-150*sx, Cy+150*sy, Cx+150*sx, Cy-150*sy);
+    /* ハッチング(面の下側) */
+    var gd=el("ground"); gd.innerHTML="";
+    for(var k=-7;k<=7;k++){
+      var bx=Cx+k*20*sx, by=Cy-k*20*sy;
+      gd.innerHTML+='<line x1="'+bx.toFixed(1)+'" y1="'+by.toFixed(1)+'" x2="'+(bx-12*sy-7).toFixed(1)+'" y2="'+(by+12*sx+12).toFixed(1)+'" stroke="var(--ground)" stroke-width="2"/>';
+    }
+    /* 中心軸からの半径Rは固定表示(R≫L) */
+    setLine("rline",70,350,Cx,350);
+
+    /* 棒: 接触点から内側(左)・上へ角θ */
+    var ux=-Math.cos(th), uy=-Math.sin(th);   /* 棒方向(左上) */
+    var tipx=Cx+ux*Lpx, tipy=Cy+uy*Lpx;
+    var cmx=Cx+ux*Lpx/2, cmy=Cy+uy*Lpx/2;
+    setLine("rod",Cx,Cy,tipx,tipy);
+    setC("wheel",Cx,Cy); setC("wheelc",Cx,Cy);
+
+    /* 力ベクトル at CM */
+    var Glen=46;                          /* mg の長さ */
+    var Clen=46*(v0*v0/(R*g));            /* 遠心/重力 = v0^2/(Rg) */
+    if(Clen>120) Clen=120;
+    setLine("vG",cmx,cmy,cmx,cmy+Glen);
+    setT("vGl",cmx+6,cmy+Glen+13,null);
+    setLine("vC",cmx,cmy,cmx+Clen,cmy);
+    setT("vCl",cmx+Clen+5,cmy-3,null);
+    setLine("vRes",cmx,cmy,cmx+Clen,cmy+Glen);
+
+    /* 法線N(面に垂直, 上向き側)。外側(右)が高いバンク面の法線は中心側(左)へ傾く
+       → 水平成分が向心力(中心向き)を分担する。これが本問の核心。 */
+    var nx=-Math.sin(phi), ny=-Math.cos(phi);
+    setLine("vN",Cx,Cy,Cx+nx*52,Cy+ny*52);
+    setT("vNl",Cx+nx*52+ (nx>=0?4:-12),Cy+ny*52-2,null);
+
+    /* θラベル(棒の外側=右へ逃がす) */
+    setT("thl",Cx+ux*58+13,Cy+uy*58+4,"θ="+thDeg.toFixed(0)+"°");
+    setT("phl",Cx+70,Cy-3,"φ="+phiDeg+"°");
+
+    vis(step);
+
+    /* 読み出し */
+    el("ivOut").textContent="v₀ = "+v0.toFixed(1)+" m/s";
+    el("ipOut").textContent="φ = "+phiDeg+"°";
+    el("phiRow").style.opacity=(step>=4)?"1":"0.45";
+    el("ip").disabled=(step<4);
+    if(step<4 && phiDeg!==0){ phiDeg=0; el("ip").value=0; return render(); }
+
+    var v1=Math.sqrt(MU*g*R);
+    var vmax=(step>=4)?vmaxBanked(phi):v1;
+    var rel=el("rel");
+    var vmaxTxt=(vmax===Infinity)?"∞":vmax.toFixed(2)+" m/s";
+    if(v0<=vmax+1e-9){
+      rel.className="relation safe";
+      rel.innerHTML='tanθ=gR/v₀²='+(g*R/(v0*v0)).toFixed(2)+'（θ='+thDeg.toFixed(0)+'°）　<span class="big">すべらない</span><br>'
+        +'すべらない最大速さ = '+vmaxTxt+'（v₁=√(μgR)='+v1.toFixed(2)+(step>=4?' → φで増加':'')+'）';
+    }else{
+      rel.className="relation hit";
+      rel.innerHTML='tanθ=gR/v₀²='+(g*R/(v0*v0)).toFixed(2)+'（θ='+thDeg.toFixed(0)+'°）　<span class="big">すべる！</span><br>'
+        +'v₀='+v0.toFixed(1)+' > 最大 '+vmaxTxt+'（μ='+MU+', R='+R+'m, g='+g+'）';
+    }
+
+    el("badge").textContent="step "+step+" / 4";
+    el("title").textContent=info[step].t;
+    el("cap").textContent=info[step].c;
+    el("prev").disabled=step<=1; el("next").disabled=step>=4;
+  }
+
+  el("next").addEventListener("click",function(){if(step<4){step++;render();}});
+  el("prev").addEventListener("click",function(){if(step>1){step--;render();}});
+  el("iv").addEventListener("input",function(e){v0=parseFloat(e.target.value);render();});
+  el("ip").addEventListener("input",function(e){phiDeg=parseInt(e.target.value,10);render();});
+  render();
+})();
+</script>
+</body>
+</html>

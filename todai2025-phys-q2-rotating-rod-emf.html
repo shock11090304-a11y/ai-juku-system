@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="auth-guard.js?v=20260622-todai2025"></script>
+<title>2025 東大物理 第2問 — 回転する導体棒の電磁誘導</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --bd:#e3e8f0; --ink:#1f2a44; --sub:#5b6472;
+    --blue:#2563eb; --red:#e2483a; --green:#16a34a; --gray:#94a3b8; --amber:#d97706;
+    --info-bg:#e8f1fe; --info-ink:#1f6feb; --ok-bg:#e9f7ef; --ok-ink:#0f7a43;
+    --rail:#64748b; --sweep:rgba(37,99,235,.14);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f141c; --card:#161d29; --bd:#283142; --ink:#e8edf5; --sub:#9aa6b8;
+           --info-bg:#16263f; --info-ink:#7fb2f0; --ok-bg:#10301f; --ok-ink:#67d99a;
+           --rail:#8595ab; --sweep:rgba(127,178,240,.18); }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+       line-height:1.75; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+  header h1{font-size:21px; font-weight:600; margin:0 0 4px;}
+  header p.lead{color:var(--sub); font-size:14px; margin:0 0 16px;}
+  .qbox{background:var(--card); border:1px solid var(--bd); border-left:4px solid var(--blue);
+        border-radius:10px; padding:12px 14px; font-size:14px; margin:0 0 16px;}
+  .qbox b{color:var(--blue);}
+  .card{background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin:18px 0;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .badge{font-size:12px; padding:4px 10px; border-radius:8px; background:var(--info-bg); color:var(--info-ink); white-space:nowrap;}
+  .steptitle{font-size:15px; font-weight:600;}
+  .btns{display:flex; gap:8px;}
+  button{font:inherit; font-size:14px; padding:7px 12px; border:1px solid var(--bd); background:var(--card); color:var(--ink);
+          border-radius:9px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;}
+  button:hover{background:var(--info-bg);} button:active{transform:scale(.98);}
+  button:disabled{opacity:.4; cursor:default; transform:none; background:var(--card);}
+  .stage{background:var(--bg); border-radius:12px; padding:6px;}
+  svg{width:100%; height:auto; display:block;}
+  .cap{font-size:14px; color:var(--sub); margin:12px 4px 4px; min-height:58px;}
+  .ctl{display:flex; align-items:center; gap:12px; margin:8px 0 2px;}
+  .ctl label{font-size:13px; color:var(--sub); white-space:nowrap;}
+  .ctl input[type=range]{flex:1; accent-color:var(--blue);}
+  .ctl .out{font-size:14px; font-weight:600; min-width:104px; text-align:right;}
+  .relation{margin-top:12px; padding:11px 14px; border-radius:10px; text-align:center; font-size:15px; border:1px solid var(--bd); background:var(--ok-bg); border-color:var(--ok-ink);}
+  .relation .big{font-size:17px; font-weight:700; color:var(--ok-ink);}
+  .relation .sub2{display:block; margin-top:6px; font-size:13px; color:var(--sub);}
+  .takeaway{background:var(--info-bg); color:var(--info-ink); border-radius:12px; padding:12px 14px; font-size:14px; margin:16px 0;}
+  footer{color:var(--sub); font-size:12px; margin-top:24px;}
+  footer a{color:var(--info-ink); text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>回転する導体棒の電磁誘導 <span style="color:var(--sub);font-weight:400;font-size:15px;">— 2025 東大物理 第2問</span></h1>
+    <p class="lead">磁場の中で導体棒を回すと起電力 <b>E=½BωL²</b>。電源につなぐと<b>モーター</b>になり、逆起電力で <b>ω₂=2V/BL²</b> まで加速して止まります。</p>
+  </header>
+
+  <div class="qbox">
+    <b>問題.</b> 半径Lの円形レール（水平面）。中心の回転軸に長さLの導体棒の一端、他端がレールに接して回転。
+    鉛直上向きの一様磁束密度B、回路抵抗R、直流電源V、コンデンサーC₁。起電力・トルク・終端角速度を求める。
+  </div>
+
+  <div class="takeaway">急所 = 回転棒の起電力 <b>E=∫₀ᴸ B(ωr)dr = ½BωL²</b>（係数 α=½BL²）。電流を流すとローレンツ力で<b>トルク</b>が生じ加速、回ると<b>逆起電力</b>が増えて電流が減り、E=V で電流0＝終端角速度に達します。</div>
+
+  <section class="card">
+    <div class="row">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="badge">step 1 / 4</span>
+        <span class="steptitle" id="title"></span>
+      </div>
+      <div class="btns">
+        <button id="prev" aria-label="前のステップ">← 戻る</button>
+        <button id="next">次へ →</button>
+      </div>
+    </div>
+    <div class="stage">
+      <svg id="svg" viewBox="0 0 440 340" role="img" aria-label="円形レール上を回転する導体棒(上から見た図)">
+        <g id="bfield"></g>
+        <circle id="rail" cx="220" cy="160" r="132" fill="none" stroke="var(--rail)" stroke-width="3"></circle>
+        <path id="sweep" fill="var(--sweep)" stroke="none"></path>
+        <line id="rod" stroke="var(--blue)" stroke-width="5" stroke-linecap="round"></line>
+        <circle id="axisC" cx="220" cy="160" r="5" fill="var(--ink)"></circle>
+        <circle id="rodtip" r="6" fill="var(--blue)"></circle>
+        <path id="rotarrow" fill="none" stroke="var(--amber)" stroke-width="2.4" marker-end="url(#ahA2)"></path>
+        <text id="bflab" x="14" y="20" font-size="12" fill="var(--green)">B（上向き ⊙）</text>
+        <text id="elab" x="426" y="20" font-size="13" font-weight="700" fill="var(--blue)" text-anchor="end"></text>
+        <defs>
+          <marker id="ahA2" markerWidth="9" markerHeight="9" refX="6" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--amber)"/></marker>
+        </defs>
+      </svg>
+    </div>
+    <p class="cap" id="cap"></p>
+
+    <div class="ctl">
+      <label for="iw">角速度 ω</label>
+      <input type="range" id="iw" min="0" max="80" step="1" value="20">
+      <span class="out" id="iwOut">ω = 20 rad/s</span>
+    </div>
+
+    <div class="relation" id="rel"></div>
+  </section>
+
+  <div class="takeaway" style="background:var(--ok-bg); color:var(--ok-ink);">
+    <b>答え.</b> 起電力 <b>E=½BωL²</b>（α=½BL²）。電源直後のトルク <b>N=BVL²/(2R)</b>。終端角速度 <b>ω₂=2V/(BL²)</b>。
+    コンデンサーに蓄えられるエネルギー <b>U=½C₁(αω₃)²</b>。回転体は仮想コンデンサー <b>C₂=β/α²</b> と見なせ、電荷保存で <b>ω₃=ω₂·C₂/(C₁+C₂)</b>。
+  </div>
+
+  <footer>
+    <a href="kyozai.html">← 教材ライブラリ</a>　・　© AI塾 / trillion-ai-juku.com
+  </footer>
+</div>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id);}
+  function setLine(id,x1,y1,x2,y2){var e=el(id);e.setAttribute("x1",x1);e.setAttribute("y1",y1);e.setAttribute("x2",x2);e.setAttribute("y2",y2);}
+  function setC(id,x,y){var e=el(id);e.setAttribute("cx",x);e.setAttribute("cy",y);}
+  function setT(id,txt){el(id).textContent=txt;}
+
+  /* 定数 (例) */
+  var B=0.5, L=0.4, Rres=2.0, V=3.0;
+  var alpha=0.5*B*L*L;                 /* =0.04 */
+  var w2=2*V/(B*L*L);                  /* 終端角速度 =75 */
+  var cx=220, cy=160, RAD=128;
+
+  var step=1, omega=20, rot=0, lastT=null;
+
+  var info=[null,
+    {t:"回転で生じる起電力", c:"磁場B中で棒が角速度ωで回ると、棒の各部分(中心から距離r)は速さωrで動く。微小区間の起電力 B(ωr)dr を r=0→L で足すと E=∫₀ᴸ B(ωr)dr = ½BωL²。係数 α=½BL²。ωを上げると起電力が比例して増えます。"},
+    {t:"電源につなぐ＝モーター", c:"棒を電源V(回路抵抗R)につなぐと電流 I=(V−E)/R が流れ、磁場からローレンツ力＝トルク N=½B·I·L² を受けて回り出す。静止直後(E=0)は N=BVL²/(2R) と最大。回るほど逆起電力Eが増え電流が減り、トルクも減ります。"},
+    {t:"逆起電力で終端角速度", c:"E=½BωL² が電源電圧Vに達すると電流が0になり、トルクも0。これ以上は加速しない＝終端角速度 ω₂=2V/(BL²)。ωスライダーを ω₂ に近づけると電流・トルクが0に近づくのが分かります。"},
+    {t:"回転体＝仮想コンデンサー", c:"ω₂で回る棒をコンデンサーC₁につなぐと、運動エネルギー ½βω²(β=慣性モーメント)が電気エネルギーに移り、一定のω₃に落ち着く。回転体を「容量C₂=β/α²・電圧αωの仮想コンデンサー」と見ると、電荷保存で ω₃=ω₂·C₂/(C₁+C₂)。蓄えられるエネルギー U=½C₁(αω₃)²。"}];
+
+  function pol(ang,r){ return [cx+r*Math.cos(ang), cy+r*Math.sin(ang)]; }
+
+  function drawField(){
+    var g=el("bfield"); g.innerHTML="";
+    var pts=[[-70,-70],[0,-86],[70,-70],[-92,0],[92,0],[-70,70],[0,86],[70,70],[0,0,1]];
+    for(var i=0;i<pts.length;i++){ var p=pts[i]; if(p[2])continue;
+      var X=cx+p[0], Y=cy+p[1];
+      g.innerHTML+='<circle cx="'+X+'" cy="'+Y+'" r="7" fill="none" stroke="var(--green)" stroke-width="1.3"/>'
+                 +'<circle cx="'+X+'" cy="'+Y+'" r="1.8" fill="var(--green)"/>'; }
+  }
+
+  function drawRod(){
+    var tip=pol(rot,RAD);
+    setLine("rod",cx,cy,tip[0],tip[1]);
+    setC("rodtip",tip[0],tip[1]);
+    var moving=(omega>0);
+    el("sweep").style.opacity=moving?"1":"0";       /* 静止(ω=0)では掃引跡を消す */
+    el("rotarrow").style.opacity=moving?"1":"0";
+    /* 掃引扇形(直前0.7radの軌跡) */
+    var a0=rot-0.7, p0=pol(a0,RAD), p1=tip;
+    el("sweep").setAttribute("d","M"+cx+","+cy+" L"+p0[0].toFixed(1)+","+p0[1].toFixed(1)
+      +" A"+RAD+","+RAD+" 0 0 1 "+p1[0].toFixed(1)+","+p1[1].toFixed(1)+" Z");
+    /* 回転方向の弧矢印(棒の少し先を追従) */
+    var b0=pol(rot+0.22,RAD+15), b1=pol(rot+0.92,RAD+15);
+    el("rotarrow").setAttribute("d","M"+b0[0].toFixed(1)+","+b0[1].toFixed(1)
+      +" A"+(RAD+15)+","+(RAD+15)+" 0 0 1 "+b1[0].toFixed(1)+","+b1[1].toFixed(1));
+  }
+
+  function readouts(){
+    var E=alpha*omega;
+    setT("elab","E = ½BωL² = "+E.toFixed(2)+" V");
+    var rel=el("rel");
+    if(step===1){
+      rel.innerHTML='<div>起電力 <span class="big">E = ½BωL² = '+E.toFixed(2)+' V</span></div>'
+        +'<span class="sub2">B='+B+' T, L='+L+' m, ω='+omega+' rad/s → α=½BL²='+alpha.toFixed(3)+'</span>';
+    }else if(step===2){
+      var I=(V-E)/Rres; var N=alpha*I;
+      rel.innerHTML='<div>電流 I=(V−E)/R = <b>'+I.toFixed(3)+' A</b>　トルク <span class="big">N=αI = '+N.toFixed(4)+' N·m</span></div>'
+        +'<span class="sub2">静止直後(ω=0)は N=BVL²/2R='+(alpha*V/Rres).toFixed(4)+' N·m が最大。V='+V+' V, R='+Rres+' Ω</span>';
+    }else if(step===3){
+      var I3=(V-E)/Rres;
+      rel.innerHTML='<div>終端角速度 <span class="big">ω₂ = 2V/(BL²) = '+w2.toFixed(1)+' rad/s</span></div>'
+        +'<span class="sub2">今 ω='+omega+' で 電流 I='+I3.toFixed(3)+' A・E='+E.toFixed(2)+' V。E→V(ω→ω₂)で電流もトルクも0。</span>';
+    }else{
+      rel.innerHTML='<div>回転体＝仮想コンデンサー <span class="big">C₂ = β/α²</span></div>'
+        +'<span class="sub2">電荷保存より ω₃ = ω₂·C₂/(C₁+C₂)、蓄えられるエネルギー U=½C₁(αω₃)²（α=½BL²='+alpha.toFixed(3)+'）</span>';
+    }
+  }
+
+  function syncUI(){
+    el("iwOut").textContent="ω = "+omega+" rad/s";
+    el("badge").textContent="step "+step+" / 4";
+    el("title").textContent=info[step].t;
+    el("cap").textContent=info[step].c;
+    el("prev").disabled=step<=1; el("next").disabled=step>=4;
+    readouts();
+  }
+
+  function frame(t){
+    if(lastT==null) lastT=t;
+    var dt=(t-lastT)/1000; lastT=t;
+    var vis=Math.min(omega*0.045, 3.2);   /* 表示用の回転速度(rad/s) */
+    rot=(rot+vis*dt)%(2*Math.PI);
+    drawRod();
+    requestAnimationFrame(frame);
+  }
+
+  drawField(); drawRod(); syncUI();
+  el("next").addEventListener("click",function(){if(step<4){step++;syncUI();}});
+  el("prev").addEventListener("click",function(){if(step>1){step--;syncUI();}});
+  el("iw").addEventListener("input",function(e){omega=parseInt(e.target.value,10);syncUI();});
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
