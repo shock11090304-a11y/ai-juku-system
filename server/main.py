@@ -5502,14 +5502,14 @@ def _attach_companion_prints(cursor, prints: list, seen_ids: set) -> None:
         seen_ids.add(pid)
         try:
             prints.append({
-                "id": r["id"], "title": r["title"], "subject": r["subject"],
+                "id": r["id"], "title": _beautify_print_title(r["title"]), "subject": r["subject"],
                 "topic": r["topic"], "level": r["level"],
                 "target_type": r["target_type"], "file_path": r["file_path"],
                 "pages": r["pages"],
             })
         except (TypeError, KeyError, IndexError):
             prints.append({
-                "id": r[0], "title": r[1], "subject": r[2], "topic": r[3],
+                "id": r[0], "title": _beautify_print_title(r[1]), "subject": r[2], "topic": r[3],
                 "level": r[4], "target_type": r[5], "file_path": r[6],
                 "pages": r[7],
             })
@@ -5594,14 +5594,14 @@ def student_lesson_prints_recommended(
                         seen_ids.add(pid)
                         try:
                             matched_prints.append({
-                                "id": r["id"], "title": r["title"], "subject": r["subject"],
+                                "id": r["id"], "title": _beautify_print_title(r["title"]), "subject": r["subject"],
                                 "topic": r["topic"], "level": r["level"],
                                 "target_type": r["target_type"], "file_path": r["file_path"],
                                 "pages": r["pages"], "match_keyword": kw,
                             })
                         except (TypeError, KeyError, IndexError):
                             matched_prints.append({
-                                "id": r[0], "title": r[1], "subject": r[2], "topic": r[3],
+                                "id": r[0], "title": _beautify_print_title(r[1]), "subject": r[2], "topic": r[3],
                                 "level": r[4], "target_type": r[5], "file_path": r[6],
                                 "pages": r[7], "match_keyword": kw,
                             })
@@ -5628,14 +5628,14 @@ def student_lesson_prints_recommended(
                     seen_ids.add(pid)
                     try:
                         matched_prints.append({
-                            "id": r["id"], "title": r["title"], "subject": r["subject"],
+                            "id": r["id"], "title": _beautify_print_title(r["title"]), "subject": r["subject"],
                             "topic": r["topic"], "level": r["level"],
                             "target_type": r["target_type"], "file_path": r["file_path"],
                             "pages": r["pages"], "match_keyword": None,
                         })
                     except (TypeError, KeyError, IndexError):
                         matched_prints.append({
-                            "id": r[0], "title": r[1], "subject": r[2], "topic": r[3],
+                            "id": r[0], "title": _beautify_print_title(r[1]), "subject": r[2], "topic": r[3],
                             "level": r[4], "target_type": r[5], "file_path": r[6],
                             "pages": r[7], "match_keyword": None,
                         })
@@ -6099,14 +6099,14 @@ def student_lesson_prints_by_goal(
                             seen_ids.add(pid)
                             try:
                                 univ_prints.append({
-                                    "id": r["id"], "title": r["title"], "subject": r["subject"],
+                                    "id": r["id"], "title": _beautify_print_title(r["title"]), "subject": r["subject"],
                                     "topic": r["topic"], "level": r["level"],
                                     "target_type": r["target_type"], "file_path": r["file_path"],
                                     "pages": r["pages"],
                                 })
                             except (TypeError, KeyError, IndexError):
                                 univ_prints.append({
-                                    "id": r[0], "title": r[1], "subject": r[3], "topic": r[4],
+                                    "id": r[0], "title": _beautify_print_title(r[1]), "subject": r[3], "topic": r[4],
                                     "level": r[5], "target_type": r[7], "file_path": r[9],
                                     "pages": r[10],
                                 })
@@ -6139,14 +6139,14 @@ def student_lesson_prints_by_goal(
                 seen_ids.add(pid)
                 try:
                     prints_for_level.append({
-                        "id": r["id"], "title": r["title"], "subject": r["subject"],
+                        "id": r["id"], "title": _beautify_print_title(r["title"]), "subject": r["subject"],
                         "topic": r["topic"], "level": r["level"],
                         "target_type": r["target_type"], "file_path": r["file_path"],
                         "pages": r["pages"],
                     })
                 except (TypeError, KeyError, IndexError):
                     prints_for_level.append({
-                        "id": r[0], "title": r[1], "subject": r[3], "topic": r[4],
+                        "id": r[0], "title": _beautify_print_title(r[1]), "subject": r[3], "topic": r[4],
                         "level": r[5], "target_type": r[7], "file_path": r[9],
                         "pages": r[10],
                     })
@@ -35486,7 +35486,7 @@ _PRINT_TITLE_TOKENS = {
     "tsukuba": "筑波", "sophia": "上智", "hitotsu": "一橋", "chiba": "千葉", "yokokoku": "横国",
     "musashi": "武蔵", "hosei": "法政", "gakushuin": "学習院", "aogaku": "青学", "chuo": "中央",
     "doshisha": "同志社", "kandai": "関大", "kangaku": "関学", "meiji": "明治", "rikkyo": "立教",
-    "ritsumei": "立命館", "seikei": "成蹊", "march": "MARCH",
+    "ritsumei": "立命館", "seikei": "成蹊", "march": "MARCH", "tokoda": "東工大",
     "math": "数学", "phys": "物理", "chem": "化学", "bio": "生物",
     "gendai": "現代文", "kobun": "古文", "kanbun": "漢文", "eigo": "英語", "kokugo": "国語",
     # 社会(ローマ字)
