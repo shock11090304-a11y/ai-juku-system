@@ -513,9 +513,32 @@
       const c = document.getElementById('ddTabContent');
       let html = '';
       if (ddLevel === 'kyotsu') {
-        html += '<div class="preset-grid">';
-        PRESETS.filter(p => p.subject === activeSub).forEach(p => { html += presetCard(p, p.name.replace('共通テスト ', '')); });
-        html += '</div>';
+        if (activeSub === '数学') {
+          // 🎯 [2026-06-23] 共通テスト数学は IA/IIB を単元タグに細分化して提示。
+          //   各カードは UNIT_PRESETS の単元 (part/filter/unitExact/agg を内包) を再利用するため、
+          //   クリック時の出題ロジック (startDrill) は単元別タブと完全に同一=無改修で動作する。
+          //   ⚠ 広い math_1a/math_2b カードは「数と式/集合と命題/図形の性質/式と証明/図形と方程式/統計」
+          //   (part=math_unit) を取りこぼすため、細分化は出題網羅性の改善にもなる。
+          const DD_MATH_GROUPS = [
+            { label: '数学IA', subjs: ['数学I', '数学A'], broadPart: 'math_1a' },
+            { label: '数学IIB', subjs: ['数学II', '数学B'], broadPart: 'math_2b' },
+          ];
+          html += '<div class="muted" style="margin:0 0 0.6rem;">単元タグを選んで10〜15分で（IA/IIBを細分化）</div>';
+          DD_MATH_GROUPS.forEach(g => {
+            const cards = UNIT_PRESETS.filter(p => g.subjs.includes(p.subj));
+            if (!cards.length) return;
+            html += `<div class="subj-h" style="color:#6ee7b7;margin:0.6rem 0 0.3rem;">${escapeHtml(g.label)}</div><div class="preset-grid">`;
+            // 退行防止: 旧「数学IA/IIB」(part=math_1a/2b の総合・ランダム大問) も「総合」カードとして残す。
+            const broad = PRESETS.find(p => p.subject === '数学' && p.part === g.broadPart);
+            if (broad) html += presetCard(broad, '総合（全範囲ランダム）', broad.topic);
+            cards.forEach(p => { html += presetCard(p, p.name, p.agg ? `${p.agg}問セット` : '本文読解'); });
+            html += '</div>';
+          });
+        } else {
+          html += '<div class="preset-grid">';
+          PRESETS.filter(p => p.subject === activeSub).forEach(p => { html += presetCard(p, p.name.replace('共通テスト ', '')); });
+          html += '</div>';
+        }
       } else if (ddLevel === 'unit') {
         html += '<div class="muted" style="margin:0 0 0.6rem;">苦手な単元を10〜15分で</div><div class="preset-grid">';
         UNIT_PRESETS.filter(p => p.subj === activeSub).forEach(p => { html += presetCard(p, p.name, p.agg ? `${p.agg}問セット` : '本文読解'); });
