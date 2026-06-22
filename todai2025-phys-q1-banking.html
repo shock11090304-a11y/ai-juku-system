@@ -218,7 +218,7 @@
     /* 読み出し */
     el("ivOut").textContent="v₀ = "+v0.toFixed(1)+" m/s";
     el("ipOut").textContent="φ = "+phiDeg+"°";
-    el("phiRow").style.opacity=(step>=4)?"1":"0.45";
+    el("phiRow").style.display=(step>=4)?"flex":"none";   /* バンクはstep4のみ→それ以外はφスライダーを隠す */
     el("ip").disabled=(step<4);
     if(step<4 && phiDeg!==0){ phiDeg=0; el("ip").value=0; return render(); }
 

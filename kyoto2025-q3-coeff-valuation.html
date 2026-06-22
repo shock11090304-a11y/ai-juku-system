@@ -89,6 +89,8 @@
         <g id="v_yticks"></g>
         <g id="v_bars" data-ms="1"></g>
         <g id="v_xticks"></g>
+        <line id="v_oneline" data-ms="2" stroke="var(--amber)" stroke-width="1.4" stroke-dasharray="5 4"></line>
+        <text id="v_onelab" data-ms="2" font-size="11" fill="var(--amber)" text-anchor="start"></text>
         <line id="v_minline" data-ms="4" stroke="var(--red)" stroke-width="1.6" stroke-dasharray="6 5"></line>
         <text id="v_minlab" data-ms="4" font-size="12" fill="var(--red)" text-anchor="start" font-weight="700"></text>
         <text x="690" y="352" font-size="12" fill="var(--sub)" text-anchor="end">次数 j</text>
@@ -200,8 +202,9 @@
       var cx=CXj(j), bx=cx-bw/2, by=VY(v), bh=B-by;
       var col;
       if(isMin) col="var(--red)";
+      else if(step<3) col="var(--bar)";  /* step1-2は一色(係数を並べただけ) */
       else {
-        // 付値で濃淡: 低いほど淡く、高いほど濃く
+        // step3: 付値で濃淡(低いほど淡く、高いほど濃く)
         var t=(maxv>minv)?(v-minv)/(maxv-minv):0;
         col = "color-mix(in srgb, var(--barhi) "+Math.round(20+t*80)+"%, var(--barlo))";
       }
@@ -223,7 +226,11 @@
       xt.innerHTML+='<text x="'+ax.toFixed(1)+'" y="'+(B+16)+'" font-size="11" fill="var(--sub)" text-anchor="'+anch+'">'+txt+'</text>';
     }
 
-    /* --- 最小付値の赤破線 --- */
+    /* --- mod2 の弱い下界: v₂=1 の線(step2) --- */
+    var y1=VY(1);
+    setLine("v_oneline",L,y1,R,y1);
+    setT("v_onelab",L+6,y1-5,"mod 2 → 全係数が偶数（v₂ ≥ 1）");
+    /* --- 最小付値の赤破線(step4) --- */
     var my=VY(minv);
     setLine("v_minline",L,my,R,my);
     setT("v_minlab",L+6,my-6,"最小 v₂ = "+minv+" （= n+1）");

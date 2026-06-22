@@ -253,7 +253,7 @@
 
     el("iaOut").textContent="a = "+a.toFixed(2);
     el("ixOut").textContent="x = "+x0.toFixed(2);
-    el("xRow").style.opacity=(step>=3)?"1":"0.4";
+    el("xRow").style.display=(step>=3)?"flex":"none";   /* 走査線(断面)はstep3以降→それ以前はxスライダーを隠す */
     el("ix").disabled=(step<3);
 
     var V=volume(a);
