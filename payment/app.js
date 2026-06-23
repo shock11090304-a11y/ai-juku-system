@@ -2376,6 +2376,10 @@ function renderMonthEndTable(data) {
     const oneBtn = chargeable
       ? `<button class="btn btn-ghost btn-sm" onclick="chargeOneMonthEnd('${rid}')" title="この人だけ今すぐ引き落とし" style="color:#34d399;border-color:rgba(16,185,129,0.45);">💳 この人だけ</button> `
       : '';
+    // 🎓 講習費用の単発スポット課金 (任意金額・1回限り・月謝は変えない)。カード紐付け(ready)なら当月請求済でも可。
+    const spotBtn = c.ready
+      ? `<button class="btn btn-ghost btn-sm" onclick="chargeSpotFor('${rid}')" title="講習費用などを任意金額で今すぐ1回だけ請求 (月謝は変わりません)" style="color:#a78bfa;border-color:rgba(139,92,246,0.45);">🎓 講習費用</button> `
+      : '';
     return `<tr>
       ${toggleCell}
       <td>${escapeHtmlME(c.studentName)}</td>
@@ -2385,7 +2389,7 @@ function renderMonthEndTable(data) {
       <td class="ta-r"><strong>${fmtYenME(c.monthlyFee)}</strong>${arrearsSub}</td>
       <td style="font-size:0.85rem;color:var(--text-dim)">${escapeHtmlME(c.feeBreakdown)}</td>
       <td>${statusBadge}</td>
-      <td style="white-space:nowrap">${oneBtn}<button class="btn btn-ghost btn-sm" onclick="cancelRegistration('${rid}', '${escapeHtmlME(c.studentName)}')" style="color:#f87171" title="退塾処理">🗑</button></td>
+      <td style="white-space:nowrap">${oneBtn}${spotBtn}<button class="btn btn-ghost btn-sm" onclick="cancelRegistration('${rid}', '${escapeHtmlME(c.studentName)}')" style="color:#f87171" title="退塾処理">🗑</button></td>
     </tr>`;
   }).join('');
   tbody.innerHTML = rows;
@@ -2480,6 +2484,51 @@ async function chargeOneMonthEnd(rid) {
   }
 }
 window.chargeOneMonthEnd = chargeOneMonthEnd;
+
+// 🎓 講習費用の単発スポット課金。月謝(monthly_fee)は変えず、保存カードに任意金額を1回だけ即時引落。
+//   専用エンドポイント /payment/api/admin-charge-spot を叩く (月末バッチの done_key とは別ロック)。
+async function chargeSpotFor(rid) {
+  if (MONTHEND_STATE.busy) return;
+  const pw = getMonthEndAdminPw();
+  if (!pw) { setMonthEndStatus('🔒 管理パスワードを入力してください', 'warn'); return; }
+  const preview = MONTHEND_STATE.lastPreview;
+  if (!preview) { setMonthEndStatus('⚠️ 先に「🔄 プレビュー更新」を押してください', 'warn'); return; }
+  const c = (preview.customers || []).find(x => x.registrationId === rid);
+  if (!c) { setMonthEndStatus('対象が見つかりません。「🔄 プレビュー更新」を押してください', 'warn'); return; }
+  if (!c.ready) { setMonthEndStatus('この生徒はカード即時引落の対象外です (カード未登録/不備)', 'warn'); return; }
+  const amtStr = prompt(`🎓 ${c.studentName} さんのカードに「講習費用」を今すぐ1回だけ請求します。\n月謝は変わりません。\n\n金額（円）を入力してください:`, '');
+  if (amtStr == null) return;  // キャンセル
+  const amt = parseInt(String(amtStr).replace(/[^0-9]/g, ''), 10);
+  if (!amt || amt < 1000 || amt > 500000) { setMonthEndStatus('⚠️ 金額は 1,000〜500,000 円で入力してください', 'error'); return; }
+  if (!confirm(`💳 ${c.studentName} さんのカードに\n\n　講習費用: ${fmtYenME(amt)}\n\nを今すぐ請求します。実行後は取り消せません。よろしいですか?`)) return;
+  // 二重押下防止トークン (確認ごとに一意。サーバ側 SET NX + Stripe Idempotency-Key で二重課金防止)
+  const idemToken = `spot-${rid}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  MONTHEND_STATE.busy = true;
+  setMonthEndStatus(`⏳ ${c.studentName} さんに講習費用 ${fmtYenME(amt)} を請求中...`, 'info');
+  try {
+    const res = await fetch('/payment/api/admin-charge-spot', {
+      method: 'POST',
+      headers: { 'X-Admin-Password': pw, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ registrationId: rid, amount: amt, label: '講習費用', idemToken }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setMonthEndStatus(`❌ 実行エラー: ${data.message || data.error || 'unknown'}`, 'error'); return; }
+    if (data.status === 'success') {
+      setMonthEndStatus(`✅ ${data.studentName} さんに講習費用 ${fmtYenME(data.amount)} を請求しました (${data.paymentIntentId})`, 'success');
+    } else if (data.status === 'requires_action') {
+      setMonthEndStatus(`🔐 ${data.studentName} さん: カード会社の3DS本人確認が必要です。確認後に課金が確定します`, 'warn');
+    } else if (data.status === 'uncertain') {
+      setMonthEndStatus(`⚠️ 課金有無が不明です。Stripe Dashboard で確認してください: ${data.error || ''}`, 'error');
+    } else {
+      setMonthEndStatus(`❌ 請求失敗: ${data.error || data.declineCode || data.errorCode || 'unknown'}`, 'error');
+    }
+  } catch (e) {
+    setMonthEndStatus(`❌ ネットワークエラー: ${e.message}`, 'error');
+  } finally {
+    MONTHEND_STATE.busy = false;
+  }
+}
+window.chargeSpotFor = chargeSpotFor;
 
 function escapeHtmlME(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

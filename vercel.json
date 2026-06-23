@@ -44,6 +44,10 @@
       "destination": "/api/admin-charge-month-end-execute"
     },
     {
+      "source": "/payment/api/admin-charge-spot",
+      "destination": "/api/admin-charge-spot"
+    },
+    {
       "source": "/payment/api/admin-charge-history",
       "destination": "/api/admin-charge-history"
     },
