@@ -123,6 +123,9 @@
       { subject: '国語', name: '共通テスト 古文', exam: 'daigaku', part: 'kobun', grade: 'kyotsu', min: 12, topic: '共通テスト国語 古文' },
       { subject: '数学', name: '共通テスト 数学IA', exam: 'rikei', part: 'math_1a', grade: 'kyotsu_rikei', min: 15, topic: '共通テスト数学IA' },
       { subject: '数学', name: '共通テスト 数学IIB', exam: 'rikei', part: 'math_2b', grade: 'kyotsu_rikei', min: 15, topic: '共通テスト数学IIB' },
+      // 🎯 [2026-06-23] 本番形式(会話文・データの連動した1大問)。非agg=大問まるごと(passage+連動設問)を出題。手動取込のみの専用part。
+      { subject: '数学', name: '共通テスト型 数学IA 発展', exam: 'rikei', part: 'math_exam_ia', grade: 'kyotsu_rikei', min: 18, topic: '共通テスト型 数学IA 発展' },
+      { subject: '数学', name: '共通テスト型 数学IIB 発展', exam: 'rikei', part: 'math_exam_iib', grade: 'kyotsu_rikei', min: 18, topic: '共通テスト型 数学IIB 発展' },
       { subject: '理科', name: '共通テスト 物理', exam: 'rikei', part: 'phys_kyotsu', grade: 'kyotsu_rikei', min: 15, topic: '共通テスト物理' },
       { subject: '理科', name: '共通テスト 化学', exam: 'rikei', part: 'chem_kyotsu', grade: 'kyotsu_rikei', min: 15, topic: '共通テスト化学' },
       { subject: '理科', name: '共通テスト 化学基礎', exam: 'rikei', part: 'chem_basic', grade: 'kyotsu_rikei', min: 12, topic: '共通テスト化学基礎' },
@@ -520,8 +523,8 @@
           //   ⚠ 広い math_1a/math_2b カードは「数と式/集合と命題/図形の性質/式と証明/図形と方程式/統計」
           //   (part=math_unit) を取りこぼすため、細分化は出題網羅性の改善にもなる。
           const DD_MATH_GROUPS = [
-            { label: '数学IA', subjs: ['数学I', '数学A'], broadPart: 'math_1a' },
-            { label: '数学IIB', subjs: ['数学II', '数学B'], broadPart: 'math_2b' },
+            { label: '数学IA', subjs: ['数学I', '数学A'], broadPart: 'math_1a', examPart: 'math_exam_ia' },
+            { label: '数学IIB', subjs: ['数学II', '数学B'], broadPart: 'math_2b', examPart: 'math_exam_iib' },
           ];
           html += '<div class="muted" style="margin:0 0 0.6rem;">単元タグを選んで10〜15分で（IA/IIBを細分化）</div>';
           DD_MATH_GROUPS.forEach(g => {
@@ -531,6 +534,9 @@
             // 退行防止: 旧「数学IA/IIB」(part=math_1a/2b の総合・ランダム大問) も「総合」カードとして残す。
             const broad = PRESETS.find(p => p.subject === '数学' && p.part === g.broadPart);
             if (broad) html += presetCard(broad, '総合（全範囲ランダム）', broad.topic);
+            // 本番形式: 会話文・データの連動した1大問(非agg)。専用part=math_exam_ia/iib。
+            const examP = PRESETS.find(p => p.subject === '数学' && p.part === g.examPart);
+            if (examP) html += presetCard(examP, '🎯 発展（共通テスト型・連動1大問）', '会話文・データの本番形式');
             cards.forEach(p => { html += presetCard(p, p.name, p.agg ? `${p.agg}問セット` : '本文読解'); });
             html += '</div>';
           });

@@ -11572,6 +11572,8 @@ EXAM_QUESTION_ROTATION = [
     ("rikei", "math_2b",      "kyotsu_rikei"),
     ("rikei", "math_unit",    "kyotsu_rikei"),  # 数学 共テ穴埋め単元別 (数と式/集合と命題/図形の性質/式と証明/図形と方程式/統計的な推測・手動取込のみ・2026-06-17)
     ("rikei", "math3c_unit",  "kyotsu_rikei"),  # 数学III 極限 / 数学C 複素数平面 (4択・手動取込のみ・2026-06-17)
+    ("rikei", "math_exam_ia", "kyotsu_rikei"),  # 共通テスト型 数学IA 発展 (会話文/データ連動の1大問・本番形式・手動取込のみ・2026-06-23)
+    ("rikei", "math_exam_iib","kyotsu_rikei"),  # 共通テスト型 数学IIB 発展 (会話文/データ連動の1大問・本番形式・手動取込のみ・2026-06-23)
     ("rikei", "phys_basic",   "kyotsu_rikei"),
     ("rikei", "chem_basic",   "kyotsu_rikei"),
     ("rikei", "phys_kyotsu",  "kyotsu_rikei"),  # 2026-06-16 共通テスト 物理 (フル科目・基礎ではない・塾長指示)
@@ -11681,6 +11683,9 @@ EXAM_QUESTION_AUTO_GENERATE_SKIP = {
     ("rikei", "math_unit", "kyotsu_rikei"),
     # 数学III 極限 / 数学C 複素数平面 (手動取込のみ・AI生成しない / 2026-06-17)
     ("rikei", "math3c_unit", "kyotsu_rikei"),
+    # 共通テスト型 数学IA/IIB 発展 (本番形式の連動大問・手動取込のみ・AI生成しない / 2026-06-23)
+    ("rikei", "math_exam_ia", "kyotsu_rikei"),
+    ("rikei", "math_exam_iib", "kyotsu_rikei"),
 }
 
 
