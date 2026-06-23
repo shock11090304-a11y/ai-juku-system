@@ -29861,9 +29861,9 @@ def _record_ai_call_failure(stage: str, status_code: int, detail: str, payload_o
 
 
 @app.post("/api/ai/call")
-async def ai_proxy(payload: AIProxyRequest, request: Request):
+async def ai_proxy(payload: AIProxyRequest, request: Request, authorization: Optional[str] = Header(None)):
     """顧客の全AI呼び出しを塾長のAPIキーで代理実行。
-    Origin検証・student_id存在/有効性検証・1日あたりトークンbudgetで多層防御。"""
+    認証=セッショントークン必須(IDOR修正 2026-06-23)・Origin検証・1日あたりトークンbudgetで多層防御。"""
     if not ANTHROPIC_API_KEY:
         _record_ai_call_failure("anthropic_unconfigured", 503, "ANTHROPIC_API_KEY 未設定", payload, request)
         raise HTTPException(
@@ -29886,10 +29886,18 @@ async def ai_proxy(payload: AIProxyRequest, request: Request):
         )
         raise HTTPException(status_code=403, detail="Origin not allowed")
 
-    # 2-3) student_id と budget 検証。DBエラー時は 500 を裸文字列ではなく JSON で返す。
+    # 2-3) 🔐 IDOR修正 2026-06-23: セッショントークン必須化。payload.student_id は信用せず token 由来の
+    #      student_id を権威化する(従来は payload.student_id だけで認証でき、有効な生徒IDを列挙すれば
+    #      第三者が塾長のAPIキーを焼けた)。_get_current_student は paid/trial/past_due猶予/kokuritsu_nankan/
+    #      なりすまし を _verify_student_active と等価以上にゲートするため、これだけで在籍検証も兼ねる。
+    #      認証後 payload.student_id を token 由来 id に上書きし、以降の全 downstream(budget/usage/events)を安全化。
+    #      DBエラー時は 500 を裸文字列ではなく JSON で返す。
     student_row = None
     try:
-        student_row = _verify_student_active(payload.student_id)
+        student_row = _get_current_student(authorization)
+        if not student_row:
+            raise HTTPException(status_code=401, detail="ログインが必要です。お手数ですが再ログインしてください。")
+        payload.student_id = student_row["id"]
         _check_ai_budget(payload.student_id)
         # 機能別月次クォータ check (problems / essays / textbooks)
         if payload.feature:
@@ -33458,8 +33466,12 @@ async def mock_exam_grade_essay_multiview(payload: dict, authorization: Optional
     except (TypeError, ValueError):
         student_id = 0
 
-    # 🛡️ session_token あれば payload を override (IDOR 防御)
-    if not is_admin_call and _auth_student_id_from_claims:
+    # 🔐 IDOR修正 2026-06-23: 非adminはセッショントークン必須化(token無→payload student_idへフォールバックする
+    #    穴を閉じる)。token 由来 id を権威化し payload.student_id は信用しない。呼出元(mock-exam.js/ai-tutor-photo)は
+    #    既に Bearer 送出済のため強制化しても正規利用は壊れない。is_admin_call は従来通り payload 自由(CEO demo/監査)。
+    if not is_admin_call:
+        if not _auth_student_id_from_claims:
+            raise HTTPException(status_code=401, detail="ログインが必要です(セッショントークンが必要です)")
         student_id = _auth_student_id_from_claims
 
     if not is_admin_call:
@@ -34342,8 +34354,12 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
     except (TypeError, ValueError):
         student_id = 0
 
-    # 🛡️ session_token あれば payload を override (IDOR 防御)
-    if not is_admin_call and _auth_student_id_from_claims:
+    # 🔐 IDOR修正 2026-06-23: 非adminはセッショントークン必須化(token無→payload student_idへフォールバックする
+    #    穴を閉じる)。token 由来 id を権威化し payload.student_id は信用しない。呼出元(mock-exam.js/ai-tutor-photo)は
+    #    既に Bearer 送出済のため強制化しても正規利用は壊れない。is_admin_call は従来通り payload 自由(CEO demo/監査)。
+    if not is_admin_call:
+        if not _auth_student_id_from_claims:
+            raise HTTPException(status_code=401, detail="ログインが必要です(セッショントークンが必要です)")
         student_id = _auth_student_id_from_claims
 
     if not is_admin_call:
