@@ -1,0 +1,24 @@
+name: vercel-function-cap
+
+# 🛡️ Vercel Hobby の Serverless Function 上限(12個)ガード。
+#   api/*.py が13個になると Vercel デプロイが「全体」失敗し本番が前ビルドで凍結するが、
+#   Vercel のログは難解で過去3回(74e2c5fb/216d9ac/d59461f)診断に時間を要した。
+#   この CI は同じ push で「FUNCTION_CAP_EXCEEDED」を即・明確に赤チェック化し、原因特定を秒で済ませる。
+#   (Vercel デプロイ自体を止める力は無いが、cryptic な失敗を named failure に変える)
+on:
+  push:
+    paths:
+      - 'api/**'
+      - 'scripts/check_vercel_function_cap.sh'
+      - '.github/workflows/vercel-function-cap.yml'
+  pull_request:
+    paths:
+      - 'api/**'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check api/*.py count <= 12 (Vercel Hobby cap)
+        run: bash scripts/check_vercel_function_cap.sh
