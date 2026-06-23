@@ -37,7 +37,7 @@
     },
     {
       "source": "/payment/api/admin-charge-month-end-preview",
-      "destination": "/api/admin-charge-month-end-preview"
+      "destination": "/api/admin-charge-readonly?__ep=preview"
     },
     {
       "source": "/payment/api/admin-charge-month-end-execute",
@@ -49,7 +49,7 @@
     },
     {
       "source": "/payment/api/admin-charge-history",
-      "destination": "/api/admin-charge-history"
+      "destination": "/api/admin-charge-readonly?__ep=history"
     },
     {
       "source": "/payment/api/admin-charge-reconcile",
