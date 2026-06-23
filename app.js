@@ -7595,12 +7595,16 @@ async function _fetchProblemsFromPool(subject, units, topic, count) {
 
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), 5000);  // pool は速い前提・5s timeout
+      // 🛡️ IDOR fix 2026-06-23: bank は query の student_id を信用しなくなった(token由来idのみ採用)。
+      //   直近7日の多様性除外を維持するため Bearer 送出(backendが token から本人idを解決)。token無→匿名(除外なし)。
+      const _bankTok = (window.AuthGuard && window.AuthGuard.getToken && window.AuthGuard.getToken()) || localStorage.getItem('ai_juku_session_token') || '';
       let res;
       try {
         res = await fetch(`${BACKEND_URL}/api/exam-questions/bank?${params}`, {
           signal: ctrl.signal,
           cache: 'no-store',
           credentials: 'same-origin',
+          headers: _bankTok ? { 'Authorization': 'Bearer ' + _bankTok } : {},
         });
       } finally {
         clearTimeout(timer);

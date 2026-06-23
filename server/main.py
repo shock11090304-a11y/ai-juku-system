@@ -21775,13 +21775,19 @@ def public_exam_questions_bank(
     limit: int = 20,
     student_id: Optional[int] = None,
     topic: Optional[str] = None,
+    authorization: Optional[str] = Header(None),
 ):
     """公開API: 試験パートの最新N問を返す (フロントが AUTO_GENERATED_BANKS に流し込む)。
-    認証不要 (出題内容は公開可・実回答は提出不要)。
+    出題内容の取得は認証不要 (公開可・実回答は提出不要)。
     univ パラメータは大学入試 (daigaku) 用 — DB スキーマ上は eiken_grade カラムに大学キーを保存している。
     student_id があれば直近 7 日に出した (univ, year) を pool 側でも除外し、refill 側にも exclude を伝播。
+    🔐 IDOR修正 2026-06-23: query の student_id は信用しない(任意idで被害者へ exam_question_served events を
+    注入し出題履歴/除外を汚染できた)。token があればその id のみ採用、無ければ None(=匿名・除外もevents書込も無し)。
+    token 無しの通常読取は _get_current_student が DB 前に早期 return するため性能影響なし。
     topic は単元タグ (例: '関係代名詞') — refill 時の AI prompt に注入される。"""
     limit = max(1, min(limit, 50))
+    _tok_student = _get_current_student(authorization)
+    student_id = _tok_student["id"] if _tok_student else None
     # daigaku の場合 univ → eiken_grade として扱う (DB スキーマ共有)
     if exam == "daigaku" and univ and not eiken_grade:
         eiken_grade = univ
@@ -30200,19 +30206,20 @@ class AlertTestRequest(BaseModel):
     destination: str
 
 @app.post("/api/activity/log")
-def log_activity(payload: dict, request: Request):
+def log_activity(payload: dict, request: Request, authorization: Optional[str] = Header(None)):
     """生徒の活動を記録（ログイン、質問、クエスト完了等）。
-    無認証POSTでDB汚染（他人のupdated_at偽装、events爆撃）されないよう
-    Origin検証＋生徒有効性検証＋サイズ上限を課す。"""
+    🔐 IDOR修正 2026-06-23: セッショントークン必須化。従来は payload.student_id だけで他人の
+    updated_at 偽装・events 爆撃が可能だった。token 由来 id のみを使い payload.student_id は信用しない。
+    Origin検証＋サイズ上限も併用。"""
     if not _origin_allowed(request):
         raise HTTPException(status_code=403, detail="Origin not allowed")
     if len(json.dumps(payload)) > 4000:
         raise HTTPException(status_code=413, detail="payload too large")
-    student_id = payload.get("student_id")
+    auth_student = _get_current_student(authorization)
+    if not auth_student:
+        raise HTTPException(status_code=401, detail="ログインが必要です")
+    student_id = auth_student["id"]
     activity_type = str(payload.get("type", "unknown"))[:64]
-    if not student_id:
-        raise HTTPException(status_code=400, detail="student_id required")
-    _verify_student_active(int(student_id))
     conn = db()
     c = conn.cursor()
     c.execute(
@@ -30324,10 +30331,12 @@ def save_problem(payload: dict, request: Request, authorization: Optional[str] =
 
     # 🛡️ session_token あれば claims override (payload-driven IDOR 防御)
     auth_student_id: Optional[int] = None
+    is_admin_call = False
     if authorization and authorization.startswith("Bearer "):
         token = authorization[len("Bearer "):].strip()
-        # admin Bearer は payload student_id 自由 (CEO demo 用)
-        if not _verify_admin_token(token):
+        if _verify_admin_token(token):
+            is_admin_call = True  # admin Bearer は payload student_id 自由 (CEO demo 用)
+        else:
             claims = _verify_session_token(token)
             if claims and claims.get("student_id"):
                 try:
@@ -30338,6 +30347,10 @@ def save_problem(payload: dict, request: Request, authorization: Optional[str] =
     sid = payload.get("student_id")
     if auth_student_id:
         sid = auth_student_id  # 生徒 token あれば payload を信用しない (IDOR 防御)
+    elif not is_admin_call:
+        # 🔐 IDOR修正 2026-06-23: token無の非adminは payload.student_id を信用せず匿名(None)保存。
+        #   他生徒に紐づけた問題量産を封鎖(token無→従来は payload 素通しだった)。
+        sid = None
     if sid:
         try:
             _verify_student_active(int(sid))

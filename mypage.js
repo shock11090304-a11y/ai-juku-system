@@ -392,9 +392,13 @@ function logActivity(type) {
   if (!student.id) return;
   const BACKEND = window.location.hostname === 'localhost' && window.location.port === '8090'
     ? 'http://localhost:8000' : window.location.origin;
+  // 🛡️ IDOR fix 2026-06-23: activity/log が token 必須化されたため Bearer 送出(backend が token 由来 id を採用)
+  const _alToken = (window.AuthGuard && window.AuthGuard.getToken && window.AuthGuard.getToken()) || localStorage.getItem('ai_juku_session_token') || '';
+  const _alHeaders = { 'Content-Type': 'application/json' };
+  if (_alToken) _alHeaders['Authorization'] = 'Bearer ' + _alToken;
   fetch(`${BACKEND}/api/activity/log`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: _alHeaders,
     body: JSON.stringify({ student_id: student.id, type, timestamp: new Date().toISOString() }),
   }).catch(() => {});
 }
@@ -543,9 +547,13 @@ function initCustomGptBlock() {
       try {
         const stu = (typeof getCurrentStudent === 'function') ? getCurrentStudent() : {};
         const meta = { gpt_id: g.id, source: 'mypage_block', url: g.url };
+        // 🛡️ IDOR fix 2026-06-23: activity/log は token 必須化されたため Bearer 送出
+        const _gcToken = (window.AuthGuard && window.AuthGuard.getToken && window.AuthGuard.getToken()) || localStorage.getItem('ai_juku_session_token') || '';
+        const _gcHeaders = { 'Content-Type': 'application/json' };
+        if (_gcToken) _gcHeaders['Authorization'] = 'Bearer ' + _gcToken;
         fetch(`${BACKEND_URL}/api/activity/log`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: _gcHeaders,
           body: JSON.stringify({ student_id: stu && stu.id, type: 'custom_gpt_click', meta }),
           keepalive: true
         }).catch(() => {});
