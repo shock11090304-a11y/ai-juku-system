@@ -441,6 +441,15 @@
       }
       // 3) topic 同士の包含 (記述フレーズ同士なので部分一致でも誤爆しにくい)
       r = pick(cands.filter(p => p.topic && (wt.indexOf(p.topic) >= 0 || p.topic.indexOf(wt) >= 0)));
+      if (r) return r;
+      // 4) 🎯 発展(連動大問)弱点: 記録 topic は小問固有の unit (例「発展 化学平衡(Kc)」) で preset.topic と
+      //    一致しないため 1〜3 で漏れる。topic「発展」始まり + subject から対応する発展カードへ。
+      //    化学/物理は発展カード1枚で確定起動。数学は IA/IIB 2枚で曖昧→誤誘導回避でメニューに戻す。
+      if (/発展/.test(wt)) {
+        const SUBJ_EXAM = { chemistry: ['chem_exam'], physics: ['phys_exam'], math: ['math_exam_ia', 'math_exam_iib'] };
+        const wants = SUBJ_EXAM[String(wSubject || '').toLowerCase()];
+        if (wants) { const ep = PRESETS.filter(p => wants.indexOf(p.part) >= 0); if (ep.length === 1) return ep[0]; }
+      }
       return r || null;
     }
     function maybeAutoStartFromWeakness() {

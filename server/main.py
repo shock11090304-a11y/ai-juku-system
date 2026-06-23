@@ -4508,12 +4508,15 @@ _WEAKNESS_SUBJECT_TO_POOL = {
     #     (substitute すると「数学弱点」に物理問題を出す誤配信になり、無配信より有害)
     #   ⚠ math の旧 ("daigaku","r_long") fallback も削除: r_long は英語 pool (reverse map 4366) で、
     #     数学弱点に英語長文を出す誤配信だった。math は実 rikei part 6 種で充足。
+    # 🎯 発展(連動大問) は各リスト末尾に追加: 週次プリントは pool_keys[:2] のみ参照=PDFには出ず、
+    #   weakness-top3(全pool走査)では推薦され得る=「発展を解く→同科目フォロー」が成立。
     "math": [("rikei", "math_1a"), ("rikei", "math_q1"), ("rikei", "math_2b"),
-             ("rikei", "math_q2"), ("rikei", "math_q3"), ("rikei", "math_basic"), ("rikei", "math_unit"), ("rikei", "math3c_unit")],
+             ("rikei", "math_q2"), ("rikei", "math_q3"), ("rikei", "math_basic"), ("rikei", "math_unit"), ("rikei", "math3c_unit"),
+             ("rikei", "math_exam_ia"), ("rikei", "math_exam_iib")],
     "physics": [("rikei", "phys_basic"), ("rikei", "phys_kyotsu"), ("rikei", "phys_q1"), ("rikei", "phys_q2"),
-                ("rikei", "phys_q3"), ("rikei", "phys_basic_q")],
+                ("rikei", "phys_q3"), ("rikei", "phys_basic_q"), ("rikei", "phys_exam")],
     "chemistry": [("rikei", "chem_basic"), ("rikei", "chem_kyotsu"), ("rikei", "chem_q1"), ("rikei", "chem_q2"),
-                  ("rikei", "chem_q3"), ("rikei", "chem_basic_q")],
+                  ("rikei", "chem_q3"), ("rikei", "chem_basic_q"), ("rikei", "chem_exam")],
     "biology": [("rikei", "bio_basic"), ("rikei", "bio_q1"), ("rikei", "bio_basic_q")],
     # 🌏 2026-06-16: earth (地学) の forward entry を新規追加。reverse map (_WEAKNESS_POOL_TO_SUBJECT:4377)
     #   は ("rikei","earth_basic")→"earth" を書き込むのに forward に "earth" キーが無く、消費側
@@ -4544,14 +4547,17 @@ _WEAKNESS_POOL_TO_SUBJECT = {
     ("rikei", "math_1a"): "math", ("rikei", "math_2b"): "math",
     ("rikei", "math_q1"): "math", ("rikei", "math_q2"): "math", ("rikei", "math_q3"): "math",
     ("rikei", "math_basic"): "math", ("rikei", "math_unit"): "math", ("rikei", "math3c_unit"): "math",
+    # 🎯 2026-06-23 共通テスト型 発展(連動大問)。これを欠くと _infer_subject_from_pool が "rikei" に化け
+    #   弱点集計/TOP3/習得ループが空振り(発展を解いても弱点に乗らない)。dojo-drill「弱点TOP3に反映」を成立させる。
+    ("rikei", "math_exam_ia"): "math", ("rikei", "math_exam_iib"): "math",
     # 物理
     ("rikei", "phys_basic"): "physics", ("rikei", "phys_kyotsu"): "physics",
     ("rikei", "phys_q1"): "physics", ("rikei", "phys_q2"): "physics", ("rikei", "phys_q3"): "physics",
-    ("rikei", "phys_basic_q"): "physics",
+    ("rikei", "phys_basic_q"): "physics", ("rikei", "phys_exam"): "physics",  # 発展(連動大問) 2026-06-23
     # 化学
     ("rikei", "chem_basic"): "chemistry", ("rikei", "chem_kyotsu"): "chemistry",
     ("rikei", "chem_q1"): "chemistry", ("rikei", "chem_q2"): "chemistry", ("rikei", "chem_q3"): "chemistry",
-    ("rikei", "chem_basic_q"): "chemistry",
+    ("rikei", "chem_basic_q"): "chemistry", ("rikei", "chem_exam"): "chemistry",  # 発展(連動大問) 2026-06-23
     # 生物
     ("rikei", "bio_basic"): "biology",
     ("rikei", "bio_q1"): "biology", ("rikei", "bio_basic_q"): "biology",
