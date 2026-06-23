@@ -1472,6 +1472,17 @@ function stripeRegBadge(student) {
   return `<span class="badge" style="background:rgba(107,114,128,0.18);color:#9ca3af;padding:2px 8px;border-radius:6px;font-size:0.78rem;">未登録</span>`;
 }
 
+// 生徒一覧 行の「🎓講習費用」ボタン。確定カード紐付け(getRegLink.regId)がある生徒のみ有効化。
+// 候補(fuzzy)や未登録は無効化+理由ツールチップ (誤って別人/カード無しに課金しないため)。
+function spotChargeBtnForStudent(student) {
+  const link = getRegLink(student.id);
+  const cardReady = !!(link && link.regId);
+  if (cardReady) {
+    return `<button class="icon-btn" data-action="spot-charge" title="講習費用などを任意金額で今すぐ1回だけ請求 (月謝は変わりません)" style="color:#a78bfa;border-color:rgba(139,92,246,0.45);">🎓講習費用</button>`;
+  }
+  return `<button class="icon-btn" disabled title="カード未登録のため講習費用のカード請求はできません。先に「✓確定」でカード紐付けが必要です。" style="opacity:0.35;cursor:not-allowed;">🎓講習費用</button>`;
+}
+
 // 候補バッジの「✓確定」ボタン → 手動で紐付け確定 (renderAll 等で共通利用)
 function handleLinkRegClick(studentId, regId, customerId) {
   if (!regId) { alert('登録情報が見つかりません。画面を再読込してください。'); return; }
@@ -2115,7 +2126,7 @@ function renderAll() {
       <td class="ta-c">
         <button class="pay-toggle ${paid ? 'paid' : ''}" data-action="toggle" title="${paid ? '入金済' : '未払い'}">${paid ? '✓' : '○'}</button>
       </td>
-      <td class="ta-c">${stripeRegBadge(s)}</td>
+      <td class="ta-c">${stripeRegBadge(s)} ${spotChargeBtnForStudent(s)}</td>
     </tr>`;
   }).join('');
 
@@ -2123,7 +2134,7 @@ function renderAll() {
     const btn = e.target.closest('[data-action]');
     if (!btn) return;
     const a = btn.dataset.action;
-    if (a !== 'toggle' && a !== 'link-reg' && a !== 'unlink-reg' && a !== 'edit') return;  // email/payer/status は oninput/onchange 側で処理
+    if (a !== 'toggle' && a !== 'link-reg' && a !== 'unlink-reg' && a !== 'edit' && a !== 'spot-charge') return;  // email/payer/status は oninput/onchange 側で処理
     const tr = btn.closest('tr');
     const id = parseInt(tr.dataset.studentId, 10);
     if (a === 'toggle') {
@@ -2137,6 +2148,11 @@ function renderAll() {
       handleUnlinkRegClick(id);
     } else if (a === 'edit') {
       openEditStudentModal(id);
+    } else if (a === 'spot-charge') {
+      const link = getRegLink(id);
+      if (!link || !link.regId) { alert('この生徒はカード未登録のため講習費用の請求はできません。'); return; }
+      const nm = (tr.querySelector('.name-cell')?.textContent || `#${id}`).trim();
+      openSpotChargeModal(link.regId, nm, link.customerId);
     }
   };
   tbody.onchange = (e) => {
@@ -2487,48 +2503,100 @@ window.chargeOneMonthEnd = chargeOneMonthEnd;
 
 // 🎓 講習費用の単発スポット課金。月謝(monthly_fee)は変えず、保存カードに任意金額を1回だけ即時引落。
 //   専用エンドポイント /payment/api/admin-charge-spot を叩く (月末バッチの done_key とは別ロック)。
-async function chargeSpotFor(rid) {
-  if (MONTHEND_STATE.busy) return;
-  const pw = getMonthEndAdminPw();
-  if (!pw) { setMonthEndStatus('🔒 管理パスワードを入力してください', 'warn'); return; }
+// 月末タブの行内🎓ボタン → 専用モーダルを開く (prompt 廃止)。カード紐付け(ready)のみ。
+function chargeSpotFor(rid) {
   const preview = MONTHEND_STATE.lastPreview;
   if (!preview) { setMonthEndStatus('⚠️ 先に「🔄 プレビュー更新」を押してください', 'warn'); return; }
   const c = (preview.customers || []).find(x => x.registrationId === rid);
   if (!c) { setMonthEndStatus('対象が見つかりません。「🔄 プレビュー更新」を押してください', 'warn'); return; }
   if (!c.ready) { setMonthEndStatus('この生徒はカード即時引落の対象外です (カード未登録/不備)', 'warn'); return; }
-  const amtStr = prompt(`🎓 ${c.studentName} さんのカードに「講習費用」を今すぐ1回だけ請求します。\n月謝は変わりません。\n\n金額（円）を入力してください:`, '');
-  if (amtStr == null) return;  // キャンセル
-  const amt = parseInt(String(amtStr).replace(/[^0-9]/g, ''), 10);
-  if (!amt || amt < 1000 || amt > 500000) { setMonthEndStatus('⚠️ 金額は 1,000〜500,000 円で入力してください', 'error'); return; }
-  if (!confirm(`💳 ${c.studentName} さんのカードに\n\n　講習費用: ${fmtYenME(amt)}\n\nを今すぐ請求します。実行後は取り消せません。よろしいですか?`)) return;
+  openSpotChargeModal(rid, c.studentName, c.customerId);
+}
+window.chargeSpotFor = chargeSpotFor;
+
+// === 🎓 講習費用 専用モーダル (月末タブ/生徒一覧 両導線の共通UI・常設の金額入力欄) ===
+function setSpotChargeStatus(html, level) {
+  const el = document.getElementById('spotChargeStatus');
+  if (!el) return;
+  const colorMap = { info: '#a5b4fc', success: '#34d399', error: '#f87171', warn: '#fbbf24' };
+  if (!html) { el.innerHTML = ''; el.style.cssText = 'font-size:0.84rem;'; return; }
+  el.innerHTML = html;
+  el.style.cssText = `font-size:0.84rem;font-weight:600;line-height:1.4;color:${colorMap[level || 'info']};`;
+}
+
+// rid(reg_xxx) が無い=カード未登録は開けない (呼び出し側でガード済みだが二重に防止)
+function openSpotChargeModal(rid, studentName, customerId) {
+  if (!rid) { alert('この生徒はカード未登録のため講習費用のカード請求はできません。先にカード紐付けが必要です。'); return; }
+  const m = document.getElementById('spotChargeModal');
+  if (!m) return;
+  document.getElementById('spotChargeRid').value = rid;
+  document.getElementById('spotChargeStudentName').textContent = studentName || '(氏名不明)';
+  document.getElementById('spotChargeInfo').textContent = customerId ? `Stripe: ${customerId} / ${rid}` : rid;
+  document.getElementById('spotChargeAmount').value = '';
+  document.getElementById('spotChargeLabel').value = '講習費用';
+  document.getElementById('spotChargePw').value = getMonthEndAdminPw() || '';
+  setSpotChargeStatus('', '');
+  const btn = document.getElementById('spotChargeSubmitBtn');
+  if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+  m.classList.remove('hidden');
+  m.style.display = '';
+  setTimeout(() => { try { document.getElementById('spotChargeAmount').focus(); } catch (_) {} }, 50);
+}
+window.openSpotChargeModal = openSpotChargeModal;
+
+function closeSpotChargeModal() {
+  const m = document.getElementById('spotChargeModal');
+  if (!m) return;
+  m.classList.add('hidden');
+  m.style.display = 'none';
+}
+window.closeSpotChargeModal = closeSpotChargeModal;
+
+let SPOT_CHARGE_BUSY = false;
+async function submitSpotCharge() {
+  if (SPOT_CHARGE_BUSY) return;
+  const rid = document.getElementById('spotChargeRid').value;
+  const studentName = (document.getElementById('spotChargeStudentName').textContent || '').trim();
+  const pw = (document.getElementById('spotChargePw').value || '').trim();
+  const label = (document.getElementById('spotChargeLabel').value || '講習費用').trim() || '講習費用';
+  const amt = parseInt(String(document.getElementById('spotChargeAmount').value).replace(/[^0-9]/g, ''), 10);
+  if (!rid) { setSpotChargeStatus('対象が不正です。画面を再読込してください。', 'error'); return; }
+  if (!pw) { setSpotChargeStatus('🔒 管理パスワードを入力してください', 'warn'); return; }
+  if (!amt || amt < 1000 || amt > 500000) { setSpotChargeStatus('⚠️ 金額は 1,000〜500,000 円で入力してください', 'error'); return; }
+  if (!confirm(`💳 ${studentName} さんのカードに\n\n　${label}: ${fmtYenME(amt)}\n\nを今すぐ請求します。実行後は取り消せません。よろしいですか?`)) return;
   // 二重押下防止トークン (確認ごとに一意。サーバ側 SET NX + Stripe Idempotency-Key で二重課金防止)
   const idemToken = `spot-${rid}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  MONTHEND_STATE.busy = true;
-  setMonthEndStatus(`⏳ ${c.studentName} さんに講習費用 ${fmtYenME(amt)} を請求中...`, 'info');
+  SPOT_CHARGE_BUSY = true;
+  const btn = document.getElementById('spotChargeSubmitBtn');
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+  setSpotChargeStatus(`⏳ ${studentName} さんに ${label} ${fmtYenME(amt)} を請求中...`, 'info');
   try {
     const res = await fetch('/payment/api/admin-charge-spot', {
       method: 'POST',
       headers: { 'X-Admin-Password': pw, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ registrationId: rid, amount: amt, label: '講習費用', idemToken }),
+      body: JSON.stringify({ registrationId: rid, amount: amt, label, idemToken }),
     });
     const data = await res.json();
-    if (!res.ok) { setMonthEndStatus(`❌ 実行エラー: ${data.message || data.error || 'unknown'}`, 'error'); return; }
+    if (!res.ok) { setSpotChargeStatus(`❌ 実行エラー: ${data.message || data.error || 'unknown'}`, 'error'); return; }
     if (data.status === 'success') {
-      setMonthEndStatus(`✅ ${data.studentName} さんに講習費用 ${fmtYenME(data.amount)} を請求しました (${data.paymentIntentId})`, 'success');
+      setSpotChargeStatus(`✅ ${data.studentName} さんに ${label} ${fmtYenME(data.amount)} を請求しました (${data.paymentIntentId})`, 'success');
+      // 月末プレビューが開いていれば最新化 (spot は月謝に非干渉だが履歴反映のため)
+      if (MONTHEND_STATE.lastPreview && typeof fetchMonthEndPreview === 'function') { try { fetchMonthEndPreview(); } catch (_) {} }
     } else if (data.status === 'requires_action') {
-      setMonthEndStatus(`🔐 ${data.studentName} さん: カード会社の3DS本人確認が必要です。確認後に課金が確定します`, 'warn');
+      setSpotChargeStatus(`🔐 ${data.studentName} さん: カード会社の3DS本人確認が必要です。確認後に課金が確定します`, 'warn');
     } else if (data.status === 'uncertain') {
-      setMonthEndStatus(`⚠️ 課金有無が不明です。Stripe Dashboard で確認してください: ${data.error || ''}`, 'error');
+      setSpotChargeStatus(`⚠️ 課金有無が不明です。Stripe Dashboard で確認してください: ${data.error || ''}`, 'error');
     } else {
-      setMonthEndStatus(`❌ 請求失敗: ${data.error || data.declineCode || data.errorCode || 'unknown'}`, 'error');
+      setSpotChargeStatus(`❌ 請求失敗: ${data.error || data.declineCode || data.errorCode || 'unknown'}`, 'error');
     }
   } catch (e) {
-    setMonthEndStatus(`❌ ネットワークエラー: ${e.message}`, 'error');
+    setSpotChargeStatus(`❌ ネットワークエラー: ${e.message}`, 'error');
   } finally {
-    MONTHEND_STATE.busy = false;
+    SPOT_CHARGE_BUSY = false;
+    if (btn) { btn.disabled = false; btn.style.opacity = ''; }
   }
 }
-window.chargeSpotFor = chargeSpotFor;
+window.submitSpotCharge = submitSpotCharge;
 
 function escapeHtmlME(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
