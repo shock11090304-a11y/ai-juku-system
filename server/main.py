@@ -11578,6 +11578,8 @@ EXAM_QUESTION_ROTATION = [
     ("rikei", "chem_basic",   "kyotsu_rikei"),
     ("rikei", "phys_kyotsu",  "kyotsu_rikei"),  # 2026-06-16 共通テスト 物理 (フル科目・基礎ではない・塾長指示)
     ("rikei", "chem_kyotsu",  "kyotsu_rikei"),  # 2026-06-16 共通テスト 化学 (フル科目・基礎ではない・塾長指示)
+    ("rikei", "chem_exam",    "kyotsu_rikei"),  # 共通テスト型 化学 発展 (実験/データ文脈の連動大問・図不要の数値検証型・手動取込のみ・2026-06-23)
+    ("rikei", "phys_exam",    "kyotsu_rikei"),  # 共通テスト型 物理 発展 (実験/データ文脈の連動大問・図不要の数値検証型・手動取込のみ・2026-06-23)
     ("rikei", "bio_basic",    "kyotsu_rikei"),
     ("rikei", "earth_basic",  "kyotsu_rikei"),  # 2026-05-22 P1 fix: UI 既存・ROTATION 漏れ
     # 東大 理系
@@ -11686,6 +11688,9 @@ EXAM_QUESTION_AUTO_GENERATE_SKIP = {
     # 共通テスト型 数学IA/IIB 発展 (本番形式の連動大問・手動取込のみ・AI生成しない / 2026-06-23)
     ("rikei", "math_exam_ia", "kyotsu_rikei"),
     ("rikei", "math_exam_iib", "kyotsu_rikei"),
+    # 共通テスト型 化学/物理 発展 (図不要の数値検証型・連動大問・手動取込のみ・AI生成しない / 2026-06-23)
+    ("rikei", "chem_exam", "kyotsu_rikei"),
+    ("rikei", "phys_exam", "kyotsu_rikei"),
 }
 
 
