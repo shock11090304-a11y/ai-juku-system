@@ -1376,9 +1376,14 @@ async function callClaude(systemPrompt, userMessage, options = {}) {
   const backendOK = await detectBackendAI();
   if (backendOK) {
     try {
+      // 🛡️ IDOR fix 2026-06-23: セッショントークンを Bearer 送出。backend は token 由来の student_id を
+      //   権威化し payload.student_id を信用しない(他生徒IDを詐称した塾APIキー濫用を防止)。正パターン= mock-exam.js。
+      const _aiCallToken = (window.AuthGuard && window.AuthGuard.getToken && window.AuthGuard.getToken()) || localStorage.getItem('ai_juku_session_token') || '';
+      const _aiCallHeaders = { 'Content-Type': 'application/json' };
+      if (_aiCallToken) _aiCallHeaders['Authorization'] = 'Bearer ' + _aiCallToken;
       const res = await fetch(`${BACKEND_URL}/api/ai/call`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: _aiCallHeaders,
         body: JSON.stringify({
           system: systemPrompt,
           messages,
