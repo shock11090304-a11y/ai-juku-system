@@ -1,0 +1,665 @@
+{
+ "questions": [
+  {
+   "exam_id": "daigaku",
+   "part_key": "r_long",
+   "eiken_grade": "kyotsu",
+   "model": "claude-eng2026-verified",
+   "question_data": {
+    "passage": "In your English class, you are writing an essay on the question, \"Should students be allowed to bring smartphones to school?\" To prepare, you collected opinions from four classmates and found two sources of information. Read the comments and the sources, and complete your notes.\n\n**Opinions from your classmates**\n\n**Aoi:** I think we should be able to bring our phones. Last winter my train was suddenly stopped because of heavy snow, and I used my phone to tell my parents I would be late. Without it, they would have been worried for hours. Schools should focus on teaching us how to use phones responsibly, not on banning them. After all, we will all use phones every day once we leave school, so learning self-control now is far more useful than simply having the devices taken away from us.\n\n**Ken:** I understand that phones can be handy in an emergency, but in class they are a disaster. Whenever I try to study, a buzzing notification pulls my attention away, and it takes me several minutes to focus again. Honestly, even when my phone is silent in my bag, part of my mind keeps wondering whether a message has arrived. I'd rather leave mine in a locker during lessons. I'm not against phones themselves, only against having them within reach while we are supposed to be learning.\n\n**Mei:** People keep saying phones ruin study, but that's not the whole picture. In our science class we use a dictionary app and look up news articles for discussion, and that has made lessons more interesting. The problem isn't the device; it's the rules. If teachers decide clearly when phones may and may not be used, the same tool that distracts us can actually help us learn. Banning them completely just wastes a chance to teach us a skill we genuinely need.\n\n**Riku:** I worry less about grades and more about how attached we are becoming. Some of my friends check their screens the moment a break starts and barely talk to anyone face to face. If phones are always in our pockets at school, that habit only gets stronger. School should be one place where we step away from our screens and actually practice talking with real people. I'd accept phones being collected each morning and returned at the end of the day.\n\n**Source A**\n\nA recent report from an education research center looked at how mobile phones affect young people's school life. Researchers found that the issue is rarely the phone itself, but how and when it is used. When phones are used under clear teacher guidance—for example, to look up information during a specific task—students often become more engaged. Problems appear when use is unrestricted: students who keep notifications switched on during lessons take noticeably longer to return to a task after each interruption, a delay that adds up across a school day. The report also notes a separate concern: heavy personal phone use during breaks can reduce face-to-face conversation, weakening the social skills that schools are meant to develop. Its overall recommendation is not a total ban but a clear set of rules about when devices may be used.\n\n**Source B**\n\nA survey asked 500 high school students how a change in their school's phone policy affected them. Students whose schools introduced clear rules about when phones could be used were compared with students whose schools simply banned phones completely. The results are shown in the graph below (Source B).",
+    "subject": "英語",
+    "univ_simulated": "共通テスト",
+    "year_simulated": 2026,
+    "source": "kyotsu-eng2026-graph2-20260624",
+    "format_type": "FMT_GRAPH8",
+    "figure_svg": "<svg viewBox=\"0 0 460 290\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"sans-serif\"><text x=\"230\" y=\"18\" fill=\"#e5e7eb\" font-size=\"13\" text-anchor=\"middle\">Students reporting a positive effect after the policy change (%)</text><line x1=\"48\" y1=\"38\" x2=\"48\" y2=\"232\" stroke=\"#9aa0a6\" stroke-width=\"1\"/><line x1=\"48\" y1=\"232\" x2=\"444\" y2=\"232\" stroke=\"#9aa0a6\" stroke-width=\"1\"/><line x1=\"48\" y1=\"232.0\" x2=\"444\" y2=\"232.0\" stroke=\"#3a3a3a\" stroke-width=\"0.5\"/><text x=\"42\" y=\"235.5\" fill=\"#9aa0a6\" font-size=\"10\" text-anchor=\"end\">0</text><line x1=\"48\" y1=\"135.0\" x2=\"444\" y2=\"135.0\" stroke=\"#3a3a3a\" stroke-width=\"0.5\"/><text x=\"42\" y=\"138.5\" fill=\"#9aa0a6\" font-size=\"10\" text-anchor=\"end\">40</text><line x1=\"48\" y1=\"38.0\" x2=\"444\" y2=\"38.0\" stroke=\"#3a3a3a\" stroke-width=\"0.5\"/><text x=\"42\" y=\"41.5\" fill=\"#9aa0a6\" font-size=\"10\" text-anchor=\"end\">80</text><rect x=\"76.0\" y=\"81.7\" width=\"38.0\" height=\"150.3\" fill=\"#60a5fa\"/><text x=\"95.0\" y=\"78.7\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">62</text><rect x=\"114.0\" y=\"93.8\" width=\"38.0\" height=\"138.2\" fill=\"#fbbf24\"/><text x=\"133.0\" y=\"90.8\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">57</text><text x=\"114.0\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">Better focus in class</text><rect x=\"208.0\" y=\"91.3\" width=\"38.0\" height=\"140.7\" fill=\"#60a5fa\"/><text x=\"227.0\" y=\"88.3\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">58</text><rect x=\"246.0\" y=\"198.1\" width=\"38.0\" height=\"33.9\" fill=\"#fbbf24\"/><text x=\"265.0\" y=\"195.1\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">14</text><text x=\"246.0\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">Used phone for learning</text><rect x=\"340.0\" y=\"113.2\" width=\"38.0\" height=\"118.8\" fill=\"#60a5fa\"/><text x=\"359.0\" y=\"110.2\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">49</text><rect x=\"378.0\" y=\"59.8\" width=\"38.0\" height=\"172.2\" fill=\"#fbbf24\"/><text x=\"397.0\" y=\"56.8\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">71</text><text x=\"378.0\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">More face-to-face talk</text><rect x=\"48\" y=\"267\" width=\"11\" height=\"11\" fill=\"#60a5fa\"/><text x=\"63\" y=\"276\" fill=\"#cbd5e1\" font-size=\"10.5\">Clear-rules schools</text><rect x=\"199.39999999999998\" y=\"267\" width=\"11\" height=\"11\" fill=\"#fbbf24\"/><text x=\"214.39999999999998\" y=\"276\" fill=\"#cbd5e1\" font-size=\"10.5\">Total-ban schools</text></svg>",
+    "chart_data": {
+     "title": "Students reporting a positive effect after the policy change (%)",
+     "y_unit": "%",
+     "categories": [
+      "Better focus in class",
+      "Used phone for learning",
+      "More face-to-face talk"
+     ],
+     "series": [
+      {
+       "name": "Clear-rules schools",
+       "values": [
+        62,
+        58,
+        49
+       ]
+      },
+      {
+       "name": "Total-ban schools",
+       "values": [
+        57,
+        14,
+        71
+       ]
+      }
+     ]
+    },
+    "questions": [
+     {
+      "id": "e26-graph2-0-0",
+      "type": "multiple_choice",
+      "stem": "Which of the following best expresses Mei's main point?",
+      "choices": [
+       "Whether phones help or harm learning depends on having clear rules for their use.",
+       "Smartphones should be banned because they make science lessons too difficult.",
+       "Students should be free to use their phones at any time during lessons.",
+       "Dictionary apps are the only acceptable use of phones in school."
+      ],
+      "answer": 0,
+      "unit": "意見要旨",
+      "explanation": "正解は「Whether phones help or harm learning depends on having clear rules for their use.」。Meiは「問題は端末ではなくルール(The problem isn't the device; it's the rules)」「教師が使用時を明確に決めれば、同じ道具が学習を助けうる」と述べており、ルール次第で有益にも有害にもなるという趣旨。完全禁止や常時自由使用は彼女の主張と異なり、辞書アプリのみという限定もしていない。"
+     },
+     {
+      "id": "e26-graph2-0-1",
+      "type": "multiple_choice",
+      "stem": "What do Ken and Riku have in common in their comments?",
+      "choices": [
+       "Both believe phones should be completely banned from school grounds.",
+       "Both are willing to accept phones being kept away from students during the school day.",
+       "Both think phones bring no benefits to students at all.",
+       "Both are mainly worried about students' grades falling."
+      ],
+      "answer": 1,
+      "unit": "共通点把握",
+      "explanation": "正解は「Both are willing to accept phones being kept away from students during the school day.」。Kenは「授業中はロッカーに入れておきたい(leave mine in a locker during lessons)」、Rikuは「毎朝集めて下校時に返すのは受け入れる(phones being collected each morning and returned)」と、日中は手元から離す案を容認している。Kenは緊急時の利便性を認めており「完全禁止」「利点ゼロ」ではなく、Rikuは成績より依存を懸念しているため他は誤り。"
+     },
+     {
+      "id": "e26-graph2-0-2",
+      "type": "multiple_choice",
+      "stem": "Whose opinion is most clearly in agreement with the recommendation made in Source A?",
+      "choices": [
+       "Aoi, because she says phones must always be available to students.",
+       "Ken, because he wants phones locked away at all times.",
+       "Mei, because she argues that clear rules let phones help learning.",
+       "Riku, because he focuses only on reducing screen attachment."
+      ],
+      "answer": 2,
+      "unit": "立場の統合",
+      "explanation": "正解は「Mei, because she argues that clear rules let phones help learning.」。Source Aの結論は「完全禁止ではなく、いつ使ってよいかの明確なルール(a clear set of rules about when devices may be used)」であり、教師の指導下で使えば生徒の関与が高まるとする。これはMeiの「教師が使用時を明確に決めれば道具は学習を助ける」と一致する。Aoiの常時利用やKenの常時禁止はSource Aの『明確なルール』方針とずれ、Rikuは依存問題のみに焦点を当てている。"
+     },
+     {
+      "id": "e26-graph2-0-3",
+      "type": "multiple_choice",
+      "stem": "What conclusion can be drawn from Source A?",
+      "choices": [
+       "The mere presence of a phone is the main cause of poor learning.",
+       "Notifications during lessons have no measurable effect on students' focus.",
+       "Schools should remove all phones to protect students' social skills.",
+       "The way and timing of phone use, rather than the phone itself, determines its effect on school life."
+      ],
+      "answer": 3,
+      "unit": "Source A推論",
+      "explanation": "正解は「The way and timing of phone use, rather than the phone itself, determines its effect on school life.」。Source Aは「問題は端末そのものではなく、いつどう使うか(rarely the phone itself, but how and when it is used)」と述べ、指導下では関与が高まり、通知を切らない無制限使用では復帰に時間がかかる、と使い方次第で結果が変わることを一貫して示す。完全撤去の推奨や通知に影響なしという記述は本文と矛盾する。"
+     },
+     {
+      "id": "e26-graph2-0-4",
+      "type": "multiple_choice",
+      "stem": "Which statement is best supported by Source B when read together with the opinions and Source A?",
+      "choices": [
+       "Clear-rules schools supported Mei's view by letting far more students use phones for learning, while total bans did better at increasing face-to-face talk, matching Riku's concern.",
+       "Clear rules and total bans produced almost the same result for using phones to learn.",
+       "Total-ban schools were better than clear-rules schools at helping students use phones for learning.",
+       "Because total-ban schools had the highest single figure, banning phones is clearly the best overall policy."
+      ],
+      "answer": 0,
+      "unit": "グラフと主張の統合",
+      "explanation": "正解は「Clear-rules schools supported Mei's view by letting far more students use phones for learning, while total bans did better at increasing face-to-face talk, matching Riku's concern.」。グラフで『学習に活用』はclear-rules 58%に対しtotal-ban 14%と大差で、Meiの「ルールがあれば学習を助ける」を裏づける。一方『対面の会話増加』はtotal-ban 71%>clear-rules 49%で、画面依存を減らし対話を取り戻したいRikuの懸念と整合する。選択肢1・2は58%対14%の差を取り違えており、選択肢4は単一の最大値だけを見て他指標(学習活用での大差)を無視した過度の一般化で誤り。"
+     }
+    ]
+   }
+  },
+  {
+   "exam_id": "daigaku",
+   "part_key": "r_long",
+   "eiken_grade": "kyotsu",
+   "model": "claude-eng2026-verified",
+   "question_data": {
+    "passage": "In your English class, you are writing an essay on the topic \"Should high school students reduce their club activity hours to focus more on study?\" To prepare, you collected opinions from four classmates and found two sources.\n\nDaichi: I strongly believe clubs should keep their current hours. At my baseball club, I learned how to manage my time far better than I ever did before. Because practice ends late, I have to use the short gaps in my day wisely, and my grades have actually gone up since I joined. Cutting club time would not give students more useful study hours; it would just take away the very place where I learned discipline.\n\nHana: I see things differently. Many of my friends in the brass band practice until eight at night, then start homework exhausted. They fall asleep in class the next day. I am not against clubs themselves, but the hours have become too long. If schools limited practice to a reasonable level, students could rest properly and still enjoy their activities. Balance is the real goal, not choosing one side over the other.\n\nRiku: For me, the answer depends on the student. A few of my classmates are aiming for very competitive universities, and for them every extra hour matters. But others find their main purpose in club life, and forcing them to study more would only make them unhappy. Schools should not set one rule for everyone. Instead, students themselves should be allowed to decide how much time their clubs take.\n\nMei: Honestly, I think the worry about clubs is exaggerated. Studies that compare students often forget that active, motivated people tend to do many things well at once. The problem is not the clock but how tired students are. A shorter practice that is poorly organized helps no one, while a long but well-run practice can leave students fresh enough to study. We should focus on the quality of practice, not simply the number of hours.\n\nSource A:\nResearchers who study teenagers point out that the link between club hours and school performance is not as simple as it first appears. In several studies, students who spent moderate time in clubs scored higher on tests than students who did no club activity at all, while those with extremely long practice hours scored lower. Experts explain this as a curve rather than a straight line: a reasonable amount of activity supports concentration and motivation, but beyond a certain point, tiredness begins to harm learning. Importantly, the researchers warn that comparing club members and non-members directly can be misleading, because committed students often differ in personality and habits before they ever join a club. The amount of sleep students get, they conclude, may matter more than the raw number of hours spent at practice.\n\nSource B:\nA national survey asked first-year high school students how many hours they spent on weekday club practice and recorded their average test scores and average nightly sleep. The results are summarized in the graph below (Source B). Students were grouped by their daily practice length, and for each group the survey reported both the average test score (out of 100) and the average hours of sleep on a school night.",
+    "subject": "英語",
+    "univ_simulated": "共通テスト",
+    "year_simulated": 2026,
+    "source": "kyotsu-eng2026-graph2-20260624",
+    "format_type": "FMT_GRAPH8",
+    "figure_svg": "<svg viewBox=\"0 0 460 290\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"sans-serif\"><text x=\"230\" y=\"18\" fill=\"#e5e7eb\" font-size=\"13\" text-anchor=\"middle\">Average Test Score and Nightly Sleep by Daily Club Practice Length (score / hours)</text><line x1=\"48\" y1=\"38\" x2=\"48\" y2=\"232\" stroke=\"#9aa0a6\" stroke-width=\"1\"/><line x1=\"48\" y1=\"232\" x2=\"444\" y2=\"232\" stroke=\"#9aa0a6\" stroke-width=\"1\"/><line x1=\"48\" y1=\"232.0\" x2=\"444\" y2=\"232.0\" stroke=\"#3a3a3a\" stroke-width=\"0.5\"/><text x=\"42\" y=\"235.5\" fill=\"#9aa0a6\" font-size=\"10\" text-anchor=\"end\">0</text><line x1=\"48\" y1=\"135.0\" x2=\"444\" y2=\"135.0\" stroke=\"#3a3a3a\" stroke-width=\"0.5\"/><text x=\"42\" y=\"138.5\" fill=\"#9aa0a6\" font-size=\"10\" text-anchor=\"end\">40</text><line x1=\"48\" y1=\"38.0\" x2=\"444\" y2=\"38.0\" stroke=\"#3a3a3a\" stroke-width=\"0.5\"/><text x=\"42\" y=\"41.5\" fill=\"#9aa0a6\" font-size=\"10\" text-anchor=\"end\">80</text><rect x=\"59.1\" y=\"81.7\" width=\"28.5\" height=\"150.3\" fill=\"#60a5fa\"/><text x=\"73.3\" y=\"78.7\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">62</text><rect x=\"87.6\" y=\"213.1\" width=\"28.5\" height=\"18.9\" fill=\"#fbbf24\"/><text x=\"101.9\" y=\"210.1\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">7.8</text><text x=\"87.6\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">0 hrs</text><rect x=\"138.3\" y=\"67.1\" width=\"28.5\" height=\"164.9\" fill=\"#60a5fa\"/><text x=\"152.5\" y=\"64.1\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">68</text><rect x=\"166.8\" y=\"213.8\" width=\"28.5\" height=\"18.2\" fill=\"#fbbf24\"/><text x=\"181.1\" y=\"210.8\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">7.5</text><text x=\"166.8\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">1 hr</text><rect x=\"217.5\" y=\"59.8\" width=\"28.5\" height=\"172.2\" fill=\"#60a5fa\"/><text x=\"231.7\" y=\"56.8\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">71</text><rect x=\"246.0\" y=\"214.8\" width=\"28.5\" height=\"17.2\" fill=\"#fbbf24\"/><text x=\"260.3\" y=\"211.8\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">7.1</text><text x=\"246.0\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">2 hrs</text><rect x=\"296.7\" y=\"72.0\" width=\"28.5\" height=\"160.0\" fill=\"#60a5fa\"/><text x=\"310.9\" y=\"69.0\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">66</text><rect x=\"325.2\" y=\"216.5\" width=\"28.5\" height=\"15.5\" fill=\"#fbbf24\"/><text x=\"339.5\" y=\"213.5\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">6.4</text><text x=\"325.2\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">3 hrs</text><rect x=\"375.9\" y=\"91.3\" width=\"28.5\" height=\"140.7\" fill=\"#60a5fa\"/><text x=\"390.1\" y=\"88.3\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">58</text><rect x=\"404.4\" y=\"218.4\" width=\"28.5\" height=\"13.6\" fill=\"#fbbf24\"/><text x=\"418.7\" y=\"215.4\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">5.6</text><text x=\"404.4\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">4+ hrs</text><rect x=\"48\" y=\"267\" width=\"11\" height=\"11\" fill=\"#60a5fa\"/><text x=\"63\" y=\"276\" fill=\"#cbd5e1\" font-size=\"10.5\">Average test score (out of 100)</text><rect x=\"278.6\" y=\"267\" width=\"11\" height=\"11\" fill=\"#fbbf24\"/><text x=\"293.6\" y=\"276\" fill=\"#cbd5e1\" font-size=\"10.5\">Average sleep (hours)</text></svg>",
+    "chart_data": {
+     "title": "Average Test Score and Nightly Sleep by Daily Club Practice Length",
+     "y_unit": "score / hours",
+     "categories": [
+      "0 hrs",
+      "1 hr",
+      "2 hrs",
+      "3 hrs",
+      "4+ hrs"
+     ],
+     "series": [
+      {
+       "name": "Average test score (out of 100)",
+       "values": [
+        62,
+        68,
+        71,
+        66,
+        58
+       ]
+      },
+      {
+       "name": "Average sleep (hours)",
+       "values": [
+        7.8,
+        7.5,
+        7.1,
+        6.4,
+        5.6
+       ]
+      }
+     ]
+    },
+    "questions": [
+     {
+      "id": "e26-graph2-1-0",
+      "type": "multiple_choice",
+      "stem": "Which of the following best expresses Daichi's opinion?",
+      "choices": [
+       "Club hours should be reduced so that students can finally get enough sleep at night.",
+       "Club activities should keep their hours because they teach skills like time management that actually help studying.",
+       "Whether to cut club hours should be left entirely up to each individual student.",
+       "The number of practice hours matters less than how well each practice is organized."
+      ],
+      "answer": 1,
+      "unit": "意見要旨",
+      "explanation": "正解は「Club activities should keep their hours because they teach skills like time management that actually help studying.」。Daichi は野球部で時間管理を学び成績が上がったと述べ、club time を削ることはむしろ規律を学ぶ場を奪うと主張している。よって現状維持＋クラブが勉強に役立つ技能を与えるという趣旨が最も近い。選択肢2は Hana、3は Riku、4は Mei の意見であり Daichi の趣旨ではない。"
+     },
+     {
+      "id": "e26-graph2-1-1",
+      "type": "multiple_choice",
+      "stem": "What do Hana and Mei have in common in their opinions?",
+      "choices": [
+       "Both insist that all schools must set a strict legal limit on club practice hours.",
+       "Both conclude that students should personally decide how long their clubs run.",
+       "Both think that students' tiredness, rather than the existence of clubs itself, is the key issue.",
+       "Both argue that club activities have no real effect on academic performance."
+      ],
+      "answer": 2,
+      "unit": "共通点把握",
+      "explanation": "正解は「Both think that students' tiredness, rather than the existence of clubs itself, is the key issue.」。Hana は「クラブそのものに反対ではないが時間が長すぎて休めない」と述べ、Mei は「問題は時計（時間数）ではなく生徒がどれだけ疲れているか」と述べる。両者とも疲労・休息こそが核心だと考えている点で一致する。厳格な法的制限を求めるのは Hana 寄りだが Mei は質を重視し制限要求はしておらず、個人裁量は Riku の主張である。"
+     },
+     {
+      "id": "e26-graph2-1-2",
+      "type": "multiple_choice",
+      "stem": "Whose opinions are most directly supported by Source A?",
+      "choices": [
+       "Daichi and Riku",
+       "Riku and Mei",
+       "Daichi and Hana",
+       "Hana and Mei"
+      ],
+      "answer": 3,
+      "unit": "立場の統合",
+      "explanation": "正解は「Hana and Mei」。Source A は、適度なクラブ活動は成績を支えるが極端に長い練習は疲労で学習を害するという「曲線」関係を示し、さらに睡眠時間が練習時間そのものより重要かもしれず、また部員と非部員の単純比較は誤解を招くと警告する。長時間練習による疲労・休息の重要性を訴える Hana と、問題は時間でなく疲労・睡眠であり単純比較は当てにならないとする Mei が、この記事の主旨と最もよく整合する。Daichi(現状維持)や Riku(個人裁量)は記事が扱う疲労・睡眠の論点とは直接結びつかない。"
+     },
+     {
+      "id": "e26-graph2-1-3",
+      "type": "multiple_choice",
+      "stem": "What conclusion can be drawn from Source A?",
+      "choices": [
+       "A moderate amount of club activity can help learning, but too much may hurt it mainly because students lose sleep.",
+       "The more hours a student practices, the higher that student's test scores will steadily become.",
+       "Doing no club activity at all is the surest way to achieve the highest test scores.",
+       "Differences in test scores between club members and non-members are caused only by the number of practice hours."
+      ],
+      "answer": 0,
+      "unit": "Source A推論",
+      "explanation": "正解は「A moderate amount of club activity can help learning, but too much may hurt it mainly because students lose sleep.」。Source A は適度な活動は集中力と意欲を支えるが一定を超えると疲労が学習を害する「曲線」関係を述べ、睡眠時間が練習時間より重要かもしれないと結論づける。よって適度なら有益・過度は睡眠減を通じて有害、という推論が導ける。選択肢1は「活動ゼロが最高得点」とするが記事はゼロの生徒は適度な生徒より低得点だとしており矛盾。選択肢2の単調増加も曲線という記述に反する。選択肢4は記事が「単純比較は誤解を招く・性格や習慣の差がある」と警告している点と矛盾する。"
+     },
+     {
+      "id": "e26-graph2-1-4",
+      "type": "multiple_choice",
+      "stem": "Which statement is best supported by Source B when read together with the opinions and Source A?",
+      "choices": [
+       "Because the 0-hour group does not have the highest score, club activities must always raise test scores no matter how long they last.",
+       "The group practicing 4+ hours has both the lowest test score and the least sleep, supporting the view that excessive practice and lost sleep can harm learning.",
+       "Since the 2-hour group sleeps fewer hours than the 1-hour group, more sleep always leads directly to higher test scores.",
+       "The steady rise in scores from 0 to 4+ hours shows that students should practice as long as possible."
+      ],
+      "answer": 1,
+      "unit": "グラフと主張の統合",
+      "explanation": "正解は「The group practicing 4+ hours has both the lowest test score and the least sleep, supporting the view that excessive practice and lost sleep can harm learning.」。グラフでは 4+ hrs 群が test score 58 で最低、sleep 5.6 時間で最少であり、これは Source A の「過度な練習は疲労・睡眠減を通じて学習を害する」、および Hana・Mei の疲労重視の主張を裏づける。選択肢2は 0時間群(62)が最高でない事実から「クラブは常に得点を上げる」と過度に一般化しており誤り(2hrs の71が最高で、長すぎると下がる)。選択肢3は睡眠が少ない2時間群がむしろ高得点である点と矛盾し因果を取り違えている。選択肢4はスコアが単調増加していない(2時間以降は低下)ため誤読である。"
+     }
+    ]
+   }
+  },
+  {
+   "exam_id": "daigaku",
+   "part_key": "r_long",
+   "eiken_grade": "kyotsu",
+   "model": "claude-eng2026-verified",
+   "question_data": {
+    "passage": "For your English class, you are writing a report on the question, \"For studying, are paper books or e-books better?\" You have collected opinions from four classmates and two sources of information.\n\nRiku: I strongly prefer paper books for studying. When I read on paper, I can see how far I have come just by feeling the pages, and that sense of progress keeps me going. I also write notes in the margins and underline important points by hand, which helps me remember them later. With a screen, I tend to skim quickly and forget what I read. For me, paper simply makes deep, focused study possible, even if it is heavier to carry around.\n\nMei: Honestly, I think e-books are the smarter choice for students today. I carry hundreds of textbooks on one light tablet, and I can search for any word in a second instead of flipping through pages. The built-in dictionary saves me so much time when I study English. Of course, screens can tire my eyes, so I take short breaks. But the convenience is worth it. If we want to study anywhere, anytime, e-books are clearly the better tool.\n\nAoi: I don't think one is simply better than the other; it depends on what you are doing. For quick review or looking things up, e-books are excellent because they are fast and portable. But when I really need to concentrate and understand something difficult, paper helps me stay focused without notifications pulling my attention away. So I use both, choosing the right tool for each task rather than insisting that only one works.\n\nSota: I used to love new gadgets, but my own experience changed my mind. Last year I switched to studying entirely on a tablet, and my test scores actually dropped. I kept getting distracted by messages and other apps, and I rarely remembered where information appeared. When I went back to paper for my hardest subjects, my concentration returned. I'm not against technology, but for serious studying that demands memory, paper works better for me.\n\nSource A:\nResearchers have studied how the reading medium affects learning. Several experiments show that when people read informative texts to understand and remember them, they often perform slightly better on paper than on screens. One reason may be that the physical layout of a page helps readers build a mental \"map\" of where information is located, which supports memory. Screens, by contrast, often invite faster, shallower reading and carry the risk of digital distractions such as messages or links. However, researchers also note that the device itself is not the only factor. How carefully a student reads, and whether they avoid distractions, can matter just as much as the medium. For tasks like quick searching or skimming, digital texts can even be more efficient.\n\nSource B (the graph below): A class survey asked students which format they preferred for four different study activities. The results are shown in the chart.",
+    "subject": "英語",
+    "univ_simulated": "共通テスト",
+    "year_simulated": 2026,
+    "source": "kyotsu-eng2026-graph2-20260624",
+    "format_type": "FMT_GRAPH8",
+    "figure_svg": "<svg viewBox=\"0 0 460 290\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"sans-serif\"><text x=\"230\" y=\"18\" fill=\"#e5e7eb\" font-size=\"13\" text-anchor=\"middle\">Students Preferring Each Format by Study Activity (%)</text><line x1=\"48\" y1=\"38\" x2=\"48\" y2=\"232\" stroke=\"#9aa0a6\" stroke-width=\"1\"/><line x1=\"48\" y1=\"232\" x2=\"444\" y2=\"232\" stroke=\"#9aa0a6\" stroke-width=\"1\"/><line x1=\"48\" y1=\"232.0\" x2=\"444\" y2=\"232.0\" stroke=\"#3a3a3a\" stroke-width=\"0.5\"/><text x=\"42\" y=\"235.5\" fill=\"#9aa0a6\" font-size=\"10\" text-anchor=\"end\">0</text><line x1=\"48\" y1=\"135.0\" x2=\"444\" y2=\"135.0\" stroke=\"#3a3a3a\" stroke-width=\"0.5\"/><text x=\"42\" y=\"138.5\" fill=\"#9aa0a6\" font-size=\"10\" text-anchor=\"end\">50</text><line x1=\"48\" y1=\"38.0\" x2=\"444\" y2=\"38.0\" stroke=\"#3a3a3a\" stroke-width=\"0.5\"/><text x=\"42\" y=\"41.5\" fill=\"#9aa0a6\" font-size=\"10\" text-anchor=\"end\">100</text><rect x=\"61.9\" y=\"92.3\" width=\"35.6\" height=\"139.7\" fill=\"#60a5fa\"/><text x=\"79.7\" y=\"89.3\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">72</text><rect x=\"97.5\" y=\"177.7\" width=\"35.6\" height=\"54.3\" fill=\"#fbbf24\"/><text x=\"115.3\" y=\"174.7\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">28</text><text x=\"97.5\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">Deep reading</text><rect x=\"160.9\" y=\"105.9\" width=\"35.6\" height=\"126.1\" fill=\"#60a5fa\"/><text x=\"178.7\" y=\"102.9\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">65</text><rect x=\"196.5\" y=\"164.1\" width=\"35.6\" height=\"67.9\" fill=\"#fbbf24\"/><text x=\"214.3\" y=\"161.1\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">35</text><text x=\"196.5\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">Memorizing</text><rect x=\"259.9\" y=\"193.2\" width=\"35.6\" height=\"38.8\" fill=\"#60a5fa\"/><text x=\"277.7\" y=\"190.2\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">20</text><rect x=\"295.5\" y=\"76.8\" width=\"35.6\" height=\"155.2\" fill=\"#fbbf24\"/><text x=\"313.3\" y=\"73.8\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">80</text><text x=\"295.5\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">Quick search</text><rect x=\"358.9\" y=\"202.9\" width=\"35.6\" height=\"29.1\" fill=\"#60a5fa\"/><text x=\"376.7\" y=\"199.9\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">15</text><rect x=\"394.5\" y=\"67.1\" width=\"35.6\" height=\"164.9\" fill=\"#fbbf24\"/><text x=\"412.3\" y=\"64.1\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">85</text><text x=\"394.5\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">Carrying many books</text><rect x=\"48\" y=\"267\" width=\"11\" height=\"11\" fill=\"#60a5fa\"/><text x=\"63\" y=\"276\" fill=\"#cbd5e1\" font-size=\"10.5\">Paper</text><rect x=\"107\" y=\"267\" width=\"11\" height=\"11\" fill=\"#fbbf24\"/><text x=\"122\" y=\"276\" fill=\"#cbd5e1\" font-size=\"10.5\">E-book</text></svg>",
+    "chart_data": {
+     "title": "Students Preferring Each Format by Study Activity (%)",
+     "y_unit": "%",
+     "categories": [
+      "Deep reading",
+      "Memorizing",
+      "Quick search",
+      "Carrying many books"
+     ],
+     "series": [
+      {
+       "name": "Paper",
+       "values": [
+        72,
+        65,
+        20,
+        15
+       ]
+      },
+      {
+       "name": "E-book",
+       "values": [
+        28,
+        35,
+        80,
+        85
+       ]
+      }
+     ]
+    },
+    "questions": [
+     {
+      "id": "e26-graph2-2-0",
+      "type": "multiple_choice",
+      "stem": "Which of the following best expresses the main point of Aoi's opinion?",
+      "choices": [
+       "Paper books are always better than e-books for any kind of study.",
+       "E-books should replace paper books because they are faster and lighter.",
+       "Neither format is best overall; the right choice depends on the task.",
+       "Students should avoid screens entirely to protect their concentration."
+      ],
+      "answer": 2,
+      "unit": "意見要旨",
+      "explanation": "正解は「Neither format is best overall; the right choice depends on the task.」。Aoiは「one is simply better than the other とは思わない・it depends on what you are doing」と述べ、素早い確認には電子書籍、深い集中には紙、と用途で使い分けている。どちらか一方を全面的に推す他の選択肢は彼女の趣旨と合わない。"
+     },
+     {
+      "id": "e26-graph2-2-1",
+      "type": "multiple_choice",
+      "stem": "What do Riku and Sota have in common in their opinions?",
+      "choices": [
+       "Both believe e-books are better for memorizing difficult material.",
+       "Both prefer tablets because they are lighter and easier to carry.",
+       "Both think the choice of format makes no real difference to studying.",
+       "Both say that paper helps them concentrate and remember better."
+      ],
+      "answer": 3,
+      "unit": "共通点把握",
+      "explanation": "正解は「Both say that paper helps them concentrate and remember better.」。Rikuは「paper makes deep, focused study possible」「手書きで覚えられる」と述べ、Sotaは紙に戻して「my concentration returned」、画面では「rarely remembered where information appeared」と述べる。二人とも紙が集中と記憶に役立つ点で一致する。"
+     },
+     {
+      "id": "e26-graph2-2-2",
+      "type": "multiple_choice",
+      "stem": "Whose opinion is most clearly supported by the information in Source A?",
+      "choices": [
+       "Sota, because Source A links screens to distraction and weaker memory.",
+       "Mei, because Source A says e-books are better for all serious study.",
+       "Riku, because Source A says handwriting in margins is always necessary.",
+       "No one, because Source A states the device makes no difference at all."
+      ],
+      "answer": 0,
+      "unit": "立場の統合",
+      "explanation": "正解は「Sota, because Source A links screens to distraction and weaker memory.」。Source Aは「screensは速く浅い読みを招き、messagesやlinksというdigital distractionsのリスクがある」「紙の物理的レイアウトが記憶を支える mental map を作る」と述べる。Sotaの「画面で気が散り、情報の場所を覚えられず点数が下がった」という経験と最もよく一致する。Meiの全面肯定や、デバイス無関係とする説明は本文と矛盾する。"
+     },
+     {
+      "id": "e26-graph2-2-3",
+      "type": "multiple_choice",
+      "stem": "Which conclusion can best be drawn from Source A?",
+      "choices": [
+       "The reading device alone decides how well a student learns.",
+       "The medium matters, but how carefully a student reads matters too.",
+       "Screens are useless for any kind of academic study.",
+       "Paper is more efficient than screens for every reading task."
+      ],
+      "answer": 1,
+      "unit": "Source A推論",
+      "explanation": "正解は「The medium matters, but how carefully a student reads matters too.」。Source Aは紙が記憶でやや有利と述べつつ、「the device itself is not the only factor」「how carefully a student reads … can matter just as much as the medium」と明言し、検索や流し読みでは digital が効率的とも述べる。媒体だけで決まる、画面は無用、紙が全タスクで効率的、という極端な結論は本文を超えており誤り。"
+     },
+     {
+      "id": "e26-graph2-2-4",
+      "type": "multiple_choice",
+      "stem": "Based on Source B, which statement is best supported when read together with the classmates' opinions and Source A?",
+      "choices": [
+       "Because most students chose e-books for carrying many books, e-books must also be better for deep reading.",
+       "Since 72% preferred paper for deep reading, no student finds e-books useful for any purpose.",
+       "The survey shows students favor paper for tasks needing concentration and memory, but e-books for searching and portability, matching the idea that each format suits different tasks.",
+       "The high e-book figure for quick search proves that paper books make searching impossible."
+      ],
+      "answer": 2,
+      "unit": "グラフと主張の統合",
+      "explanation": "正解は「The survey shows students favor paper for tasks needing concentration and memory, but e-books for searching and portability, matching the idea that each format suits different tasks.」。Source Bでは Deep reading(紙72%)・Memorizing(紙65%)で紙が多数、Quick search(電子80%)・Carrying many books(電子85%)で電子が多数。これは集中・記憶は紙、検索・携帯は電子というAoiの使い分けやSource Aの記述と一致する。選択肢1は携帯の数値から深い読みへ誤って一般化(因果の取り違え)、3は一部の数値だけ見た過度の一般化、4はグラフの読み違いで、いずれも誤り。"
+     }
+    ]
+   }
+  },
+  {
+   "exam_id": "daigaku",
+   "part_key": "r_long",
+   "eiken_grade": "kyotsu",
+   "model": "claude-eng2026-verified",
+   "question_data": {
+    "passage": "For your school newspaper, you are writing an essay about the question, \"Should students wear school uniforms, or should they be allowed to wear their own clothes?\" To prepare, you collected opinions from four classmates and found two sources of information.\n\nMika: I think uniforms are a good idea, but only because they make mornings easier. When I had to choose my own clothes for a school trip last year, I spent twenty minutes deciding and was almost late. With a uniform, I never have to think about what to wear. Still, I admit the design of our uniform is uncomfortable in summer, so I would not be sad if the school let us wear cooler clothes on very hot days. The point for me is saving time and trouble, not looking the same as everyone else.\n\nDaniel: Honestly, I am against uniforms. Clothes are one of the few ways students can show who they are, and a uniform takes that freedom away. When everyone wears the same thing, we lose a chance to express our personalities and respect each other's differences. Some people say uniforms stop bullying, but I have seen students teased about other things, like their bags or shoes. A piece of clothing will not solve that problem. I would rather we learn to accept different styles than hide them.\n\nSaki: I support uniforms, mainly for a reason people often forget: cost. Buying fashionable clothes every season is expensive, and not every family can afford it. If we wore our own clothes, students from richer families might show off, and others could feel left out or embarrassed. A uniform hides those differences, so no one is judged by how much money their family has. To me, fairness between students matters more than personal style.\n\nRen: I am somewhere in the middle. I do not think the school should force everyone into the exact same outfit, but total freedom could cause problems too. My idea is a set of rules instead, such as choosing from a few approved colors. That way students keep some choice while the school keeps order. What bothers me about strict uniforms is not the clothing itself but being told there is only one correct way to look.\n\nSource A:\nResearchers who study school clothing policies point out that the effects of uniforms are often misunderstood. Uniforms do not directly improve test scores; what matters is the sense of belonging and routine they can create. In schools where uniforms work well, students report feeling part of a community and waste less time on appearance, leaving more energy for learning. However, the same studies warn that uniforms alone cannot stop social problems. Bullying and exclusion are driven by differences in money, popularity, and behavior, and these continue even when clothing is identical. The clearest benefit, experts agree, is practical: a shared rule removes daily decisions and small status competitions over fashion, but only if the rule is applied fairly to everyone.\n\nSource B (the graph below): A national group surveyed high school students and asked them to name the single most important reason they preferred uniforms or preferred their own clothes. The results are shown for four reasons.",
+    "subject": "英語",
+    "univ_simulated": "共通テスト",
+    "year_simulated": 2026,
+    "source": "kyotsu-eng2026-graph2-20260624",
+    "format_type": "FMT_GRAPH8",
+    "figure_svg": "<svg viewBox=\"0 0 460 290\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"sans-serif\"><text x=\"230\" y=\"18\" fill=\"#e5e7eb\" font-size=\"13\" text-anchor=\"middle\">Most Important Reason Students Gave (Survey, %)</text><line x1=\"48\" y1=\"38\" x2=\"48\" y2=\"232\" stroke=\"#9aa0a6\" stroke-width=\"1\"/><line x1=\"48\" y1=\"232\" x2=\"444\" y2=\"232\" stroke=\"#9aa0a6\" stroke-width=\"1\"/><line x1=\"48\" y1=\"232.0\" x2=\"444\" y2=\"232.0\" stroke=\"#3a3a3a\" stroke-width=\"0.5\"/><text x=\"42\" y=\"235.5\" fill=\"#9aa0a6\" font-size=\"10\" text-anchor=\"end\">0</text><line x1=\"48\" y1=\"135.0\" x2=\"444\" y2=\"135.0\" stroke=\"#3a3a3a\" stroke-width=\"0.5\"/><text x=\"42\" y=\"138.5\" fill=\"#9aa0a6\" font-size=\"10\" text-anchor=\"end\">20</text><line x1=\"48\" y1=\"38.0\" x2=\"444\" y2=\"38.0\" stroke=\"#3a3a3a\" stroke-width=\"0.5\"/><text x=\"42\" y=\"41.5\" fill=\"#9aa0a6\" font-size=\"10\" text-anchor=\"end\">40</text><rect x=\"78.5\" y=\"67.1\" width=\"38.0\" height=\"164.9\" fill=\"#60a5fa\"/><text x=\"97.5\" y=\"64.1\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">34</text><text x=\"97.5\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">Saving time</text><rect x=\"177.5\" y=\"91.3\" width=\"38.0\" height=\"140.7\" fill=\"#60a5fa\"/><text x=\"196.5\" y=\"88.3\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">29</text><text x=\"196.5\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">Self-expression</text><rect x=\"276.5\" y=\"110.8\" width=\"38.0\" height=\"121.3\" fill=\"#60a5fa\"/><text x=\"295.5\" y=\"107.8\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">25</text><text x=\"295.5\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">Lower cost</text><rect x=\"375.5\" y=\"173.8\" width=\"38.0\" height=\"58.2\" fill=\"#60a5fa\"/><text x=\"394.5\" y=\"170.8\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">12</text><text x=\"394.5\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">Stopping bullying</text></svg>",
+    "chart_data": {
+     "title": "Most Important Reason Students Gave (Survey, %)",
+     "y_unit": "%",
+     "categories": [
+      "Saving time",
+      "Self-expression",
+      "Lower cost",
+      "Stopping bullying"
+     ],
+     "series": [
+      {
+       "name": "Share of students",
+       "values": [
+        34,
+        29,
+        25,
+        12
+       ]
+      }
+     ]
+    },
+    "questions": [
+     {
+      "id": "e26-graph2-3-0",
+      "type": "multiple_choice",
+      "stem": "What do Daniel and Ren have in common in their opinions?",
+      "choices": [
+       "Both believe uniforms successfully prevent bullying at school.",
+       "Both want the school to remove all clothing rules completely.",
+       "Both think saving money is the strongest reason for uniforms.",
+       "Both dislike being forced into only one accepted way of looking."
+      ],
+      "answer": 3,
+      "unit": "共通点把握",
+      "explanation": "正解は「Both dislike being forced into only one accepted way of looking.」。Danielは『制服は個性を表す自由を奪う』と述べ、Renは『嫌なのは服そのものでなく、正しい見た目は一つだけだと言われること』と述べる。両者に共通するのは『唯一の見た目を強制されること』への反発。Renは完全な自由には反対(approved colorsの規則を提案)なので選択肢2は誤り。費用(選択肢4)はSaki、いじめ防止(選択肢1)はどちらも支持していない。"
+     },
+     {
+      "id": "e26-graph2-3-1",
+      "type": "multiple_choice",
+      "stem": "Whose opinion best agrees with the explanation given in Source A?",
+      "choices": [
+       "Mika, because Source A says the clearest benefit of uniforms is practical.",
+       "Saki, because Source A says uniforms end all unfairness between families.",
+       "Daniel, because Source A says clothing freedom raises test scores.",
+       "Ren, because Source A recommends a few approved colors for students."
+      ],
+      "answer": 0,
+      "unit": "立場の統合",
+      "explanation": "正解は「Mika, because Source A says the clearest benefit of uniforms is practical.」。Source Aは『専門家が一致する最も明確な利点は実用的なもの＝日々の決定や些細な見栄の競争を取り除くこと』と述べる。これはMikaの『時間と手間の節約』という実用重視の意見と一致する。Source Aは成績向上を直接否定(選択肢1は逆)し、いじめ・排除は服が同じでも続くと述べるのでSakiの『すべての不公平をなくす』(選択肢2)は言い過ぎ。Source Aはapproved colorsを推奨していない(選択肢4はRenの主張でありSource Aの内容ではない)。"
+     },
+     {
+      "id": "e26-graph2-3-2",
+      "type": "multiple_choice",
+      "stem": "What can be concluded from Source A?",
+      "choices": [
+       "Making all students wear identical clothing removes social problems such as bullying.",
+       "Uniforms help mainly by reducing daily choices, not by directly raising academic results.",
+       "Schools with uniforms always have higher test scores than schools without them.",
+       "The biggest advantage of uniforms is that they make students express themselves freely."
+      ],
+      "answer": 1,
+      "unit": "Source A推論",
+      "explanation": "正解は「Uniforms help mainly by reducing daily choices, not by directly raising academic results.」。Source Aは『制服は成績を直接上げるのではない』『最も明確な利点は実用的＝日々の決定や見栄の競争を取り除くこと』と述べる。この二点を統合すると、制服の主な助けは学力向上ではなく日々の選択を減らす点にあると結論できる。いじめ等の社会問題は服が同じでも続くと明記(選択肢1は矛盾)。成績が必ず高い(選択肢3)も否定。自己表現(選択肢4)は制服がむしろ減らす側で本文と逆。"
+     },
+     {
+      "id": "e26-graph2-3-3",
+      "type": "multiple_choice",
+      "stem": "Source B shows the survey results. Which statement is best supported when the data is combined with the classmates' opinions?",
+      "choices": [
+       "Because 'Stopping bullying' got the lowest share, the survey proves uniforms cause bullying.",
+       "Most students chose 'Self-expression,' so the data clearly supports Saki's view about cost.",
+       "The reason Mika emphasizes was chosen by more students than any other single reason.",
+       "Since 'Lower cost' and 'Self-expression' together pass 50%, students mainly reject uniforms."
+      ],
+      "answer": 2,
+      "unit": "グラフと主張の統合",
+      "explanation": "正解は「The reason Mika emphasizes was chosen by more students than any other single reason.」。Mikaが最重視するのは『時間と手間の節約』で、グラフの「Saving time」は34%と4つの理由で最大。よってMikaが強調する理由が単独で最も多くの生徒に選ばれたという記述がデータと意見の統合として最も支持される。選択肢1は最小値(12%)を『いじめを引き起こす証拠』とする因果の取り違え。選択肢2はSelf-expression(29%)が最多ではなく、しかもそれをコスト重視のSakiと結び付けており二重に誤り。選択肢4は2つの理由を足して『制服を拒否』と解釈する過度の一般化で、Self-expressionは制服反対だがLower costは制服支持の理由なので合算は無意味。"
+     }
+    ]
+   }
+  },
+  {
+   "exam_id": "daigaku",
+   "part_key": "r_long",
+   "eiken_grade": "kyotsu",
+   "model": "claude-eng2026-verified",
+   "question_data": {
+    "passage": "In your English class, you are writing an essay on the question: \"As we plan for the future of education, should schools focus more on online classes or on in-person classes?\" You collected opinions from four classmates and two sources to support your writing.\n\nHana: I really believe online classes should be at the center of future learning. When my family moved last year, I could keep attending my old school's lessons from home without losing any time. Online classes also let students rewatch recorded lessons until they truly understand, and shy students who never speak in a classroom often ask questions through chat. For students in small towns far from good schools, the internet is the only way to reach skilled teachers. We should not throw away a tool that opens doors for so many people.\n\nDaniel: I understand the appeal, but I think in-person classes must remain the heart of school. Learning is not only about information; it is about working with others, reading faces, and building friendships. At home, many of my classmates leave the camera off and quietly do other things. Teachers cannot notice when a student is confused or upset through a screen. The skills we need for work and life, like teamwork and patience, grow best when real people share the same room.\n\nAisha: I don't think we must choose only one. A \"blended\" approach makes the most sense to me. Routine lessons, such as watching a science video or practicing grammar, work well online and save travel time. But discussions, science experiments, and group projects belong in the classroom. If schools mix the two wisely, students enjoy both freedom and human connection. The real question is not online or in-person, but which subjects and activities suit each style.\n\nKenji: Honestly, I worry that we are rushing into online learning too quickly. Not every family has a fast internet connection or a quiet space to study, so some students are left behind. Staring at a screen for hours also tires the eyes and makes it hard to focus. I am not against technology, but until these problems are solved fairly for everyone, schools should keep in-person lessons as the safe and equal foundation for all students.\n\nSource A\nResearchers who study education warn that the format of a class matters less than how carefully it is designed. A well-planned online lesson with clear goals, regular feedback, and chances for students to interact can match or even beat a poorly run classroom lesson. However, studies also find that younger learners and those who struggle to manage their own time tend to fall behind when left alone in front of a screen. These students benefit most from the structure and personal attention of a classroom. Experts therefore advise schools not to ask \"which format is better?\" but rather \"which format fits this lesson, this subject, and these particular students?\" The goal, they argue, should be the right tool for each purpose, not one tool for everything.\n\nSource B\nA national group surveyed high school students who had experienced both online and in-person classes. Students were asked which format they felt was better for four different purposes. The graph below shows the percentage of students who chose \"online\" for each purpose. (Source B is shown in the graph below.)",
+    "subject": "英語",
+    "univ_simulated": "共通テスト",
+    "year_simulated": 2026,
+    "source": "kyotsu-eng2026-graph2-20260624",
+    "format_type": "FMT_GRAPH8",
+    "figure_svg": "<svg viewBox=\"0 0 460 290\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"sans-serif\"><text x=\"230\" y=\"18\" fill=\"#e5e7eb\" font-size=\"13\" text-anchor=\"middle\">Percentage of Students Who Preferred Online Format, by Purpose (%)</text><line x1=\"48\" y1=\"38\" x2=\"48\" y2=\"232\" stroke=\"#9aa0a6\" stroke-width=\"1\"/><line x1=\"48\" y1=\"232\" x2=\"444\" y2=\"232\" stroke=\"#9aa0a6\" stroke-width=\"1\"/><line x1=\"48\" y1=\"232.0\" x2=\"444\" y2=\"232.0\" stroke=\"#3a3a3a\" stroke-width=\"0.5\"/><text x=\"42\" y=\"235.5\" fill=\"#9aa0a6\" font-size=\"10\" text-anchor=\"end\">0</text><line x1=\"48\" y1=\"135.0\" x2=\"444\" y2=\"135.0\" stroke=\"#3a3a3a\" stroke-width=\"0.5\"/><text x=\"42\" y=\"138.5\" fill=\"#9aa0a6\" font-size=\"10\" text-anchor=\"end\">40</text><line x1=\"48\" y1=\"38.0\" x2=\"444\" y2=\"38.0\" stroke=\"#3a3a3a\" stroke-width=\"0.5\"/><text x=\"42\" y=\"41.5\" fill=\"#9aa0a6\" font-size=\"10\" text-anchor=\"end\">80</text><rect x=\"78.5\" y=\"42.8\" width=\"38.0\" height=\"189.2\" fill=\"#60a5fa\"/><text x=\"97.5\" y=\"39.8\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">78</text><text x=\"97.5\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">Reviewing lessons at own pace</text><rect x=\"177.5\" y=\"59.8\" width=\"38.0\" height=\"172.2\" fill=\"#60a5fa\"/><text x=\"196.5\" y=\"56.8\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">71</text><text x=\"196.5\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">Saving travel time</text><rect x=\"276.5\" y=\"178.7\" width=\"38.0\" height=\"53.4\" fill=\"#60a5fa\"/><text x=\"295.5\" y=\"175.7\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">22</text><text x=\"295.5\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">Group discussion</text><rect x=\"375.5\" y=\"198.1\" width=\"38.0\" height=\"33.9\" fill=\"#60a5fa\"/><text x=\"394.5\" y=\"195.1\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">14</text><text x=\"394.5\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">Making friends</text></svg>",
+    "chart_data": {
+     "title": "Percentage of Students Who Preferred Online Format, by Purpose",
+     "y_unit": "%",
+     "categories": [
+      "Reviewing lessons at own pace",
+      "Saving travel time",
+      "Group discussion",
+      "Making friends"
+     ],
+     "series": [
+      {
+       "name": "Preferred online",
+       "values": [
+        78,
+        71,
+        22,
+        14
+       ]
+      }
+     ]
+    },
+    "questions": [
+     {
+      "id": "e26-graph2-4-0",
+      "type": "multiple_choice",
+      "stem": "Which of the following best expresses Aisha's main point?",
+      "choices": [
+       "Online classes should gradually replace in-person classes in every subject.",
+       "Online learning should be avoided until internet access becomes equal for all.",
+       "In-person classes are the only way to build real friendships at school.",
+       "Schools should match each subject or activity to the format that suits it best."
+      ],
+      "answer": 3,
+      "unit": "意見要旨",
+      "explanation": "正解は「Schools should match each subject or activity to the format that suits it best.」。Aishaは \"a 'blended' approach makes the most sense\" と述べ、ルーティン学習はオンライン、討論や実験は教室がよいと例示し、\"which subjects and activities suit each style\" が本当の問いだと結論づけている。よって科目・活動ごとに最適な形式を当てはめるべき、という趣旨が最も近い。"
+     },
+     {
+      "id": "e26-graph2-4-1",
+      "type": "multiple_choice",
+      "stem": "What is one point on which Hana and Kenji disagree?",
+      "choices": [
+       "Whether the internet helps students who live far from good schools or instead leaves some students behind.",
+       "Whether students should ever be allowed to rewatch recorded lessons.",
+       "Whether teamwork and patience can be learned at school.",
+       "Whether teachers can notice a confused student through a screen."
+      ],
+      "answer": 0,
+      "unit": "共通点把握",
+      "explanation": "正解は「Whether the internet helps students who live far from good schools or instead leaves some students behind.」。Hanaは \"For students in small towns far from good schools, the internet is the only way to reach skilled teachers\" とオンラインの恩恵を強調する一方、Kenjiは \"Not every family has a fast internet connection... so some students are left behind\" と、ネット環境の不平等で取り残される生徒がいると懸念する。両者はインターネットが生徒を助けるか取り残すかで対立している。"
+     },
+     {
+      "id": "e26-graph2-4-2",
+      "type": "multiple_choice",
+      "stem": "Whose opinion is most consistent with the advice given in Source A?",
+      "choices": [
+       "Hana, because Source A says online classes are always better than classroom lessons.",
+       "Aisha, because Source A says schools should choose the format that fits each lesson and student.",
+       "Kenji, because Source A says online learning should wait until access is equal.",
+       "Daniel, because Source A says in-person classes should remain the heart of school."
+      ],
+      "answer": 1,
+      "unit": "立場の統合",
+      "explanation": "正解は「Aisha, because Source A says schools should choose the format that fits each lesson and student.」。Source Aは \"not 'which format is better?' but rather 'which format fits this lesson, this subject, and these particular students?'\" と助言し、用途ごとの使い分けを勧める。これはAishaの blended（混合型）= 科目・活動ごとに最適な形式を選ぶ立場と一致する。Source Aはどちらか一方が常に優れるとは述べていないので他は誤り。"
+     },
+     {
+      "id": "e26-graph2-4-3",
+      "type": "multiple_choice",
+      "stem": "Which conclusion can best be drawn from Source A?",
+      "choices": [
+       "Classroom lessons are always superior to online lessons regardless of planning.",
+       "Online lessons are always superior as long as they include videos and chat.",
+       "The quality of a lesson's design matters more than whether it is online or in-person, but some students still need a classroom's structure.",
+       "Younger students learn just as well online as older students do."
+      ],
+      "answer": 2,
+      "unit": "Source A推論",
+      "explanation": "正解は「The quality of a lesson's design matters more than whether it is online or in-person, but some students still need a classroom's structure.」。Source Aは \"the format of a class matters less than how carefully it is designed\" と述べつつ、\"younger learners and those who struggle to manage their own time tend to fall behind... benefit most from the structure... of a classroom\" とも述べる。両面をまとめた選択肢が記事の主旨から導ける結論。always superior 系は記事の慎重な立場と矛盾し誤り。"
+     },
+     {
+      "id": "e26-graph2-4-4",
+      "type": "multiple_choice",
+      "stem": "Which statement is best supported by combining Source B with the classmates' opinions?",
+      "choices": [
+       "Because most students preferred online for making friends, Daniel's worry about losing friendships is unfounded.",
+       "Because only 14% preferred online for making friends, online classes have no real value for any purpose.",
+       "Since 78% preferred online for reviewing lessons, schools should move all subjects online as Hana wishes.",
+       "Students tended to prefer online for individual tasks like reviewing and saving time, but in-person for social tasks like discussion and friendship, which supports Aisha's blended approach."
+      ],
+      "answer": 3,
+      "unit": "グラフと主張の統合",
+      "explanation": "正解は「Students tended to prefer online for individual tasks like reviewing and saving time, but in-person for social tasks like discussion and friendship, which supports Aisha's blended approach.」。グラフでは個人作業（復習78%・移動時間節約71%）でオンライン選好が高く、社会的活動（討論22%・友達づくり14%）では低い。この用途による差は、用途ごとに形式を使い分けるAishaのblended論を支持する。選択肢1は friendship でオンライン選好が高いという誤読、3は一部の数値だけで全科目移行と過度に一般化、4はオンラインに価値がないと飛躍しており、いずれも誤り。"
+     }
+    ]
+   }
+  },
+  {
+   "exam_id": "daigaku",
+   "part_key": "r_long",
+   "eiken_grade": "kyotsu",
+   "model": "claude-eng2026-verified",
+   "question_data": {
+    "passage": "You are writing an essay for your English class on the question, \"Is promoting tourism in our local area good for the people who live there?\" To prepare, you collected opinions from four classmates and two sources of information.\n\n[Opinions from classmates]\n\nMei: I think bringing more tourists to our town is clearly a good thing. Before the new train line opened, half the shops near the station were empty, and many of my friends' parents lost their jobs. Now small restaurants, guesthouses, and craft shops are busy again, and some young people who moved away have come back to work. Tourism gives our town money it badly needs, and that money pays for schools and roads. To me, a town with visitors is a living town, not a dying one.\n\nDaniel: I understand the money side, but I am against pushing tourism so hard. On weekends I can no longer use my own neighborhood properly. The buses are full of visitors, the streets are noisy late at night, and it takes me twice as long to do simple shopping. We residents pay taxes here and live here every day, yet our daily lives are becoming harder so that strangers can enjoy themselves for a weekend. A town should serve the people who live in it first.\n\nSophie: Whether tourism helps or hurts depends entirely on how the town manages it. If thousands of people arrive with no rules, we get crowding, rising prices, and damage. But if the town sets limits, charges visitors a small fee, and uses that fee to fix problems, tourism can be good for everyone. The benefits and the problems usually appear together, so the real question is not \"tourism: yes or no?\" but \"how do we control it well?\"\n\nKenji: My worry is the natural environment. Our coast and forest are the reason tourists come, but more visitors means more trash, more cars, and more damage to the very places we love. Money is useful, but once a beautiful river or beach is ruined, no amount of money brings it back. If we protect nature first, tourism can continue for many years. If we ignore it, we sell our future for a quick profit.\n\nSource A\nResearchers who study \"sustainable tourism\" point out that the choice is rarely between welcoming all visitors and refusing them. In many towns, uncontrolled tourism does raise incomes at first, but crowding, higher prices, and environmental damage soon push local residents to oppose it. The towns that keep both their economy and their residents' goodwill tend to be the ones that manage visitor numbers actively. Common tools include daily limits on entry to popular sites, a small visitor fee, and spending that fee on local transport, cleaning, and repairs. Studies report that when such measures are introduced, both tourism income and resident satisfaction can rise together, because the benefits stay while the worst problems are reduced.\n\nSource B\nA town office surveyed local residents and asked which effects of recent tourism they had personally experienced. The results are shown in the graph below.",
+    "subject": "英語",
+    "univ_simulated": "共通テスト",
+    "year_simulated": 2026,
+    "source": "kyotsu-eng2026-graph2-20260624",
+    "format_type": "FMT_GRAPH8",
+    "figure_svg": "<svg viewBox=\"0 0 460 290\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"sans-serif\"><text x=\"230\" y=\"18\" fill=\"#e5e7eb\" font-size=\"13\" text-anchor=\"middle\">Effects of recent tourism personally experienced by local residents (%)</text><line x1=\"48\" y1=\"38\" x2=\"48\" y2=\"232\" stroke=\"#9aa0a6\" stroke-width=\"1\"/><line x1=\"48\" y1=\"232\" x2=\"444\" y2=\"232\" stroke=\"#9aa0a6\" stroke-width=\"1\"/><line x1=\"48\" y1=\"232.0\" x2=\"444\" y2=\"232.0\" stroke=\"#3a3a3a\" stroke-width=\"0.5\"/><text x=\"42\" y=\"235.5\" fill=\"#9aa0a6\" font-size=\"10\" text-anchor=\"end\">0</text><line x1=\"48\" y1=\"135.0\" x2=\"444\" y2=\"135.0\" stroke=\"#3a3a3a\" stroke-width=\"0.5\"/><text x=\"42\" y=\"138.5\" fill=\"#9aa0a6\" font-size=\"10\" text-anchor=\"end\">40</text><line x1=\"48\" y1=\"38.0\" x2=\"444\" y2=\"38.0\" stroke=\"#3a3a3a\" stroke-width=\"0.5\"/><text x=\"42\" y=\"41.5\" fill=\"#9aa0a6\" font-size=\"10\" text-anchor=\"end\">80</text><rect x=\"78.5\" y=\"76.8\" width=\"38.0\" height=\"155.2\" fill=\"#60a5fa\"/><text x=\"97.5\" y=\"73.8\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">64</text><text x=\"97.5\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">More local jobs</text><rect x=\"177.5\" y=\"91.3\" width=\"38.0\" height=\"140.7\" fill=\"#60a5fa\"/><text x=\"196.5\" y=\"88.3\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">58</text><text x=\"196.5\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">Worse crowding/traffic</text><rect x=\"276.5\" y=\"118.0\" width=\"38.0\" height=\"114.0\" fill=\"#60a5fa\"/><text x=\"295.5\" y=\"115.0\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">47</text><text x=\"295.5\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">Higher local prices</text><rect x=\"375.5\" y=\"137.4\" width=\"38.0\" height=\"94.6\" fill=\"#60a5fa\"/><text x=\"394.5\" y=\"134.4\" fill=\"#e5e7eb\" font-size=\"9.5\" text-anchor=\"middle\">39</text><text x=\"394.5\" y=\"248.0\" fill=\"#cbd5e1\" font-size=\"10.5\" text-anchor=\"middle\">Better public facilities</text></svg>",
+    "chart_data": {
+     "title": "Effects of recent tourism personally experienced by local residents",
+     "y_unit": "%",
+     "categories": [
+      "More local jobs",
+      "Worse crowding/traffic",
+      "Higher local prices",
+      "Better public facilities"
+     ],
+     "series": [
+      {
+       "name": "Residents reporting this effect",
+       "values": [
+        64,
+        58,
+        47,
+        39
+       ]
+      }
+     ]
+    },
+    "questions": [
+     {
+      "id": "e26-graph2-5-0",
+      "type": "multiple_choice",
+      "stem": "Which of the following best expresses the main point of Mei's opinion?",
+      "choices": [
+       "Tourism brings income that revives local business and keeps the town alive.",
+       "Tourists should be welcomed only if the town first sets clear rules.",
+       "The natural environment matters more than the money tourism brings.",
+       "Residents' daily lives become harder when too many tourists arrive."
+      ],
+      "answer": 0,
+      "unit": "意見要旨",
+      "explanation": "正解は「Tourism brings income that revives local business and keeps the town alive.」。Meiは空き店舗が再び賑わい、町を出た若者が戻り、観光の収入が学校や道路を支えると述べ、観光がもたらす経済的活力を一貫して主張している。選択肢1はSophie、3はKenji、4はDanielの趣旨であり、Meiの要旨ではない。"
+     },
+     {
+      "id": "e26-graph2-5-1",
+      "type": "multiple_choice",
+      "stem": "What do Sophie and Kenji have in common in how they think about tourism?",
+      "choices": [
+       "Both believe tourism should be stopped completely in their town.",
+       "Both argue that tourism is acceptable only if its harmful effects are controlled or prevented.",
+       "Both think tourism mainly harms residents' daily shopping and transport.",
+       "Both claim that the economic benefits of tourism are not real."
+      ],
+      "answer": 1,
+      "unit": "共通点把握",
+      "explanation": "正解は「Both argue that tourism is acceptable only if its harmful effects are controlled or prevented.」。Sophieは「制限や料金で管理すれば皆に良い」と条件付きで認め、Kenjiは「自然を先に守れば観光は長く続けられる」と述べる。両者とも観光を全否定せず、害を抑える条件下でのみ容認する点で一致する。選択肢1は両者とも全面禁止を主張していないため誤り。"
+     },
+     {
+      "id": "e26-graph2-5-2",
+      "type": "multiple_choice",
+      "stem": "Whose opinion is most directly supported by the information in Source A?",
+      "choices": [
+       "Daniel, because Source A says residents should always come before visitors.",
+       "Mei, because Source A says tourism income always keeps rising.",
+       "Sophie, because Source A says actively managing visitor numbers lets income and resident satisfaction rise together.",
+       "Kenji, because Source A says nature can never be repaired once damaged."
+      ],
+      "answer": 2,
+      "unit": "立場の統合",
+      "explanation": "正解は「Sophie, because Source A says actively managing visitor numbers lets income and resident satisfaction rise together.」。Source Aは、訪問者数を積極的に管理し料金を地域に還元する町では観光収入と住民満足が共に上がり得ると述べる。これは「管理すれば皆に良い」というSophieの条件付きの立場と直接一致する。他の選択肢はSource Aが述べていない内容を理由にしている。"
+     },
+     {
+      "id": "e26-graph2-5-3",
+      "type": "multiple_choice",
+      "stem": "Which conclusion can best be drawn from Source A?",
+      "choices": [
+       "Refusing all tourists is the only way to protect residents' daily lives.",
+       "Tourism income and resident satisfaction can never rise at the same time.",
+       "Visitor fees should be returned to tourists rather than spent in the town.",
+       "How a town manages tourism, rather than tourism itself, decides whether residents end up supporting or opposing it."
+      ],
+      "answer": 3,
+      "unit": "Source A推論",
+      "explanation": "正解は「How a town manages tourism, rather than tourism itself, decides whether residents end up supporting or opposing it.」。Source Aは、無秩序な観光は反発を生むが、積極的に管理した町は経済と住民の好意の両方を保てると説明する。つまり結果を分けるのは観光そのものでなく管理の仕方だ、と全体から導ける。選択肢4は本文の「共に上がり得る」と矛盾、3は料金を地域に使うとの記述と矛盾する。"
+     },
+     {
+      "id": "e26-graph2-5-4",
+      "type": "multiple_choice",
+      "stem": "Which statement is best supported when Source B is read together with the classmates' opinions?",
+      "choices": [
+       "Source B shows that jobs and crowding were both reported by large shares of residents, supporting Sophie's view that benefits and problems tend to appear together.",
+       "Source B shows crowding was reported by more residents than any other effect, confirming Daniel's view above all others.",
+       "Source B shows that almost no residents gained anything from tourism, proving Mei wrong.",
+       "Source B shows that better public facilities were the most common effect, supporting Kenji's environmental concern."
+      ],
+      "answer": 0,
+      "unit": "グラフと主張の統合",
+      "explanation": "正解は「Source B shows that jobs and crowding were both reported by large shares of residents, supporting Sophie's view that benefits and problems tend to appear together.」。グラフでは「仕事が増えた」64%と「混雑・交通の悪化」58%がともに高く、利益と問題が同時に広く生じていることを示す。これはSophieの「利益と問題はたいてい一緒に現れる」という主張を最もよく支える。選択肢2は混雑(58%)が最多とする誤読で、実際は仕事(64%)が最多。1は64%が利益を報告している事実と矛盾、4は公共施設39%が最少である点とKenjiの論点の両方で誤り。"
+     }
+    ]
+   }
+  }
+ ]
+}

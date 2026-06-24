@@ -52,6 +52,11 @@
     .timer.warn { color:#fbbf24; } .timer.danger { color:#fca5a5; }
 
     .passage { white-space:pre-wrap; line-height:1.85; font-size:0.95rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.10); border-radius:10px; padding:1rem 1.1rem; margin-bottom:1rem; }
+    .passage .dd-tbl { white-space:normal; border-collapse:collapse; margin:0.7rem 0; width:100%; font-size:0.88rem; }
+    .passage .dd-tbl th, .passage .dd-tbl td { border:1px solid rgba(255,255,255,0.20); padding:5px 9px; text-align:left; vertical-align:top; }
+    .passage .dd-tbl th { background:rgba(255,255,255,0.08); font-weight:600; }
+    .dd-figure { margin:0.6rem 0 1rem; text-align:center; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.10); border-radius:10px; padding:0.8rem; }
+    .dd-figure svg { max-width:100%; height:auto; }
     /* 傍線部 (模試風の下線 + ラベル) */
     .exam-underline { text-decoration:underline; text-decoration-color:#a5b4fc; text-decoration-thickness:2px; text-underline-offset:3px; background:rgba(129,140,248,0.14); padding:0 1px; border-radius:2px; }
     .exam-underline[data-mark]::before { content:"(" attr(data-mark) ")"; font-size:0.7em; font-weight:800; color:#c4b5fd; vertical-align:super; margin-right:1px; }
@@ -297,6 +302,74 @@
     // ───────── helpers (university-exam.html と同一の堅牢な解決ロジック) ─────────
     function escapeHtml(s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+    }
+    // 🧱 2026-06-24 markdown 表 → HTML table。本文に「| a | b |」+「|---|---|」+データ行があれば罫線表に。
+    //   セルは escapeHtml 済。markUnderlines の sentinel 衝突を避けるため、抽出は markUnderlines より前に行い
+    //   (_ddPassageHtml 参照)、placeholder(U+E020/E021)を formatScientific 通過後に table HTML へ復元する。
+    const _DDT0 = String.fromCharCode(0xE020), _DDT1 = String.fromCharCode(0xE021);
+    const _DDT_RE = new RegExp(_DDT0 + '(\\d+)' + _DDT1, 'g');
+    function _ddBuildTable(block) {
+      const lines = block.split('\n').filter(l => l.trim() !== '');
+      if (lines.length < 2) return null;
+      const sep = lines[1].trim();
+      if (!/-/.test(sep) || !/^[\s:|-]+$/.test(sep)) return null;
+      const cells = l => l.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|').map(c => c.trim());
+      const header = cells(lines[0]);
+      let h = '<table class="dd-tbl"><thead><tr>' + header.map(c => '<th>' + escapeHtml(c) + '</th>').join('') + '</tr></thead><tbody>';
+      lines.slice(2).forEach(l => { h += '<tr>' + cells(l).map(c => '<td>' + escapeHtml(c) + '</td>').join('') + '</tr>'; });
+      return h + '</tbody></table>';
+    }
+    function _ddExtractTables(src, store) {
+      const lines = String(src == null ? '' : src).split('\n'); const out = [];
+      for (let i = 0; i < lines.length;) {
+        const sep = lines[i + 1];
+        if (lines[i].indexOf('|') >= 0 && sep != null && /-/.test(sep) && sep.indexOf('|') >= 0 && /^[\s:|-]+$/.test(sep.trim())) {
+          let j = i + 2;
+          while (j < lines.length && lines[j].indexOf('|') >= 0 && lines[j].trim() !== '') j++;
+          const html = _ddBuildTable(lines.slice(i, j).join('\n'));
+          if (html) { store.push(html); out.push(_DDT0 + (store.length - 1) + _DDT1); i = j; continue; }
+        }
+        out.push(lines[i]); i++;
+      }
+      return out.join('\n');
+    }
+    // 🖼 inline SVG を sanitize。★正規表現サニタイズは HTML パーサとの解釈差で `/onmouseover=` 等が
+    //   すり抜ける(レビューで実証されたXSS)。innerHTML と同じ text/html でパースし、DOM 木を allowlist で
+    //   歩いて (a)許可外要素を除去 (b)on* 属性を全除去 (c)href/xlink:href は安全スキームのみ (d)危険な style を除去
+    //   → 直列化。文字列正規表現を一切信用しない。失敗時は fail-closed で空文字 (図非表示)。
+    const _DD_SVG_OK = new Set(['svg', 'g', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon',
+      'path', 'text', 'tspan', 'defs', 'lineargradient', 'radialgradient', 'stop', 'title', 'desc',
+      'marker', 'clippath', 'use', 'symbol', 'pattern']);
+    function _ddSanitizeSvg(s) {
+      if (!s || typeof s !== 'string' || s.indexOf('<svg') < 0) return '';
+      try {
+        const doc = new DOMParser().parseFromString('<div>' + s + '</div>', 'text/html');
+        const svg = doc.body && doc.body.querySelector('svg');
+        if (!svg) return '';
+        const clean = (el) => {
+          // 属性: on* は全除去、href/xlink:href は javascript:/data: を除去、style は url()/expression を除去
+          Array.from(el.attributes).forEach((a) => {
+            const n = a.name.toLowerCase();
+            if (/(?:^|:)on/.test(n)) { el.removeAttribute(a.name); return; }                  // on* / xlink:on* 等を除去
+            if (n === 'href' || n === 'xlink:href') { if (!/^\s*#/.test(a.value)) el.removeAttribute(a.name); return; }  // フラグメント(#id)参照以外の href は全除去(外部fetch/javascript:/data: を遮断)
+            if (n === 'style' && /url\s*\(|expression|javascript:/i.test(a.value)) el.removeAttribute(a.name);
+          });
+          Array.from(el.children).forEach((c) => {
+            if (!_DD_SVG_OK.has(c.tagName.toLowerCase())) { c.remove(); return; }
+            clean(c);
+          });
+        };
+        clean(svg);
+        return svg.outerHTML;
+      } catch (e) { return ''; }
+    }
+    // 本文描画: 表を退避 → markUnderlines(傍線) → formatScientific(escape/数式/改行) → 表を復元。
+    function _ddPassageHtml(text, qs) {
+      const tbl = [];
+      const src = _ddExtractTables(text, tbl);
+      let html = formatScientific(markUnderlines(src, qs));
+      if (tbl.length) html = html.replace(_DDT_RE, (m, i) => tbl[+i]);
+      return html;
     }
     function normChoices(raw) {
       if (Array.isArray(raw)) return raw;
@@ -652,9 +725,11 @@
       let body = `<div class="timer-bar"><div><strong>${escapeHtml(preset.name)}</strong> <span class="muted">/ 全${qs.length}問</span></div><div class="timer" id="timer">--:--</div></div>`;
       if (passage) {
         const label = daimon.audio_script ? '【放送内容（読んで解答）】\n' : '';
-        // 設問が引用する傍線部/下線部を本文中で下線+ラベル表示 (案A)
-        body += `<div class="passage">${formatScientific(label + markUnderlines(passage, qs))}</div>`;
+        // 設問が引用する傍線部/下線部を本文中で下線+ラベル表示 (案A)・markdown表はHTML table化
+        body += `<div class="passage">${_ddPassageHtml(label + passage, qs)}</div>`;
       }
+      // 🖼 2026-06-24 大問レベルの図 (figure_svg) を本文の下に描画 (sanitize 済 inline SVG)
+      { const _fig = _ddSanitizeSvg(daimon.figure_svg || daimon.figure || ''); if (_fig) body += `<div class="dd-figure">${_fig}</div>`; }
       qs.forEach((q, qi) => {
         const choices = normChoices(q.choices);
         const isMC = choices.length > 0;
@@ -662,9 +737,10 @@
         // 🔧 2026-06-20: agg集約で大問から引き継いだ共通設定(前提)を小問の上に表示し自己完結化。
         //   非agg時は q._passage が無い(本文は上部に1回表示)ので二重表示にはならない。
         if (q._passage) {
-          body += `<div class="passage">${formatScientific(markUnderlines(q._passage, [q]))}</div>`;
+          body += `<div class="passage">${_ddPassageHtml(q._passage, [q])}</div>`;
         }
         body += `<div class="q-stem">問${qi + 1}. ${formatScientific(q.stem)}</div>`;
+        { const _qfig = _ddSanitizeSvg(q.figure_svg || q.figure || ''); if (_qfig) body += `<div class="dd-figure">${_qfig}</div>`; }
         if (isMC) {
           body += `<div class="choices">` + choices.map((c, ci) =>
             `<div class="choice" data-qi="${qi}" data-ci="${ci}"><span class="choice-key">${String.fromCharCode(65 + ci)}.</span><span>${formatScientific(c)}</span></div>`
