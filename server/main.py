@@ -3754,7 +3754,7 @@ async def _trial_management_scheduler():
                 ("trial-followups", lambda: cron_trial_followups(x_cron_secret=secret, dry_run=False)),
                 ("trial-unused-warning", lambda: cron_trial_unused_warning(x_cron_secret=secret, dry_run=False)),
                 # 🚨 体験中・離脱予兆者への AI 個別フォロー (2026-05-11 追加)
-                ("trial-rescue", lambda: admin_trial_rescue_now(payload={"dry_run": False}, x_cron_secret=secret)),
+                ("trial-rescue", lambda: admin_trial_rescue_now(payload={"dry_run": False}, authorization=None, x_cron_secret=secret)),
                 # 📧 体験 Day 2 / Day 5 nurture メール (集客 funnel #3・2026-05-19 追加)
                 ("trial-nurture", lambda: cron_trial_nurture(x_cron_secret=secret, dry_run=False)),
                 # 🔄 Stripe ↔ DB 整合性同期 (webhook 取りこぼし救済・双方向・2026-05-29 追加)
