@@ -21,6 +21,7 @@ from datetime import datetime, timezone, timedelta, time as dt_time
 import os
 import json
 import sqlite3
+import threading
 import hmac
 import hashlib
 import asyncio
@@ -657,9 +658,11 @@ class _Cursor:
 
 
 class _Connection:
-    def __init__(self, conn, is_pg):
+    def __init__(self, conn, is_pg, pool=None):
         self._conn = conn
         self._is_pg = is_pg
+        self._pool = pool          # not None = プール借用接続 (close で putconn 返却)
+        self._returned = False
 
     def cursor(self):
         if self._is_pg:
@@ -675,15 +678,91 @@ class _Connection:
         self._conn.rollback()
 
     def close(self):
-        self._conn.close()
+        # 二重 close/return をガード (close() と __del__ の両方から呼ばれうる)
+        if self._returned:
+            return
+        self._returned = True
+        if self._pool is not None:
+            # プールへ返却。戻す前に rollback でクリーンに (read txn / 未commit を破棄 = 直接 close と同 semantics)。
+            try:
+                self._conn.rollback()
+            except Exception:
+                pass
+            try:
+                self._pool.putconn(self._conn)
+                return
+            except Exception as e:
+                log.warning(f"[db-pool] putconn 失敗→直接close: {type(e).__name__}: {e}")
+        try:
+            self._conn.close()
+        except Exception:
+            pass
+
+    def __del__(self):
+        # ★リーク安全網: call site が close() を忘れる/例外で飛ばしても、GC(CPython 参照カウントで
+        #   関数終了時)に接続を返却/close する。従来の「毎回 connect→GC で後始末」と同等のリーク耐性を維持し、
+        #   プール化で「借りっぱなしで枯渇」する事故を防ぐ。
+        if not getattr(self, "_returned", True):
+            try:
+                self.close()
+            except Exception:
+                pass
+
+
+# --- Postgres 接続プール (psycopg_pool) ------------------------------------------------
+# 毎回 psycopg.connect する db() を、接続を再利用するプールへ差し替える (churn/接続枯渇/latency 低減)。
+# ★ベストエフォート層: import 失敗 / pool init 失敗 / getconn 失敗 / DB_POOL_ENABLED=0 のいずれでも
+#   従来の「直接 connect」へ完全フォールバックする (プール不具合で本番を壊さない安全弁。env で即無効化可)。
+# ★死接続は check=check_connection で getconn 時に検出→差替。max_lifetime/max_idle で定期リサイクル。
+_DB_POOL_ENABLED = os.getenv("DB_POOL_ENABLED", "1") == "1"
+_DB_POOL_MIN = int(os.getenv("DB_POOL_MIN", "2"))
+_DB_POOL_MAX = int(os.getenv("DB_POOL_MAX", "16"))
+_DB_POOL_TIMEOUT = float(os.getenv("DB_POOL_TIMEOUT", "10"))
+_PG_POOL = None            # ConnectionPool or None
+_PG_POOL_DISABLED = False   # 一度 init 失敗したら以後 fallback 固定 (再試行で毎回失敗コストを払わない)
+_PG_POOL_LOCK = threading.Lock()  # 遅延生成の競合防止 (sync route は Starlette スレッドプールで並行)
+
+
+def _get_pg_pool():
+    """Postgres 接続プールを遅延生成して返す。利用不可なら None (= db() は直接 connect へフォールバック)。
+    ★double-checked locking: 起動直後の同時 db() で複数プールを生成し orphan 化する競合を防ぐ。"""
+    global _PG_POOL, _PG_POOL_DISABLED
+    if not (USE_POSTGRES and _DB_POOL_ENABLED) or _PG_POOL_DISABLED:
+        return None
+    if _PG_POOL is not None:   # fast path (生成済はロック不要)
+        return _PG_POOL
+    with _PG_POOL_LOCK:
+        if _PG_POOL is None and not _PG_POOL_DISABLED:
+            try:
+                from psycopg_pool import ConnectionPool
+                _PG_POOL = ConnectionPool(
+                    DATABASE_URL,
+                    min_size=_DB_POOL_MIN, max_size=_DB_POOL_MAX, timeout=_DB_POOL_TIMEOUT,
+                    max_lifetime=1800, max_idle=300,
+                    check=ConnectionPool.check_connection,  # getconn 時に死接続を検出→差替
+                    name="aijuku", open=True,
+                )
+                log.info(f"[db-pool] ConnectionPool open (min={_DB_POOL_MIN} max={_DB_POOL_MAX})")
+            except Exception as e:
+                _PG_POOL_DISABLED = True
+                _PG_POOL = None
+                log.warning(f"[db-pool] init 失敗→直接connectへ恒久フォールバック: {type(e).__name__}: {e}")
+    return _PG_POOL
 
 
 def db():
     if USE_POSTGRES:
-        return _Connection(psycopg.connect(DATABASE_URL), is_pg=True)
+        pool = _get_pg_pool()
+        if pool is not None:
+            try:
+                return _Connection(pool.getconn(timeout=_DB_POOL_TIMEOUT), is_pg=True, pool=pool)
+            except Exception as e:
+                # プールが詰まった/壊れた等 → このリクエストは直接 connect で必ず処理する (可用性優先)
+                log.warning(f"[db-pool] getconn 失敗→直接connect: {type(e).__name__}: {e}")
+        return _Connection(psycopg.connect(DATABASE_URL), is_pg=True, pool=None)
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
-    return _Connection(conn, is_pg=False)
+    return _Connection(conn, is_pg=False, pool=None)
 
 
 def row_to_dict(row):
