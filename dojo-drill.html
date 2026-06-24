@@ -123,7 +123,17 @@
     // ───────── presets (有効な exam/part/eiken_grade の組合せのみ) ─────────
     const PRESETS = [
       { subject: '英語', name: '共通テスト 英語R 第1問（短文・対話）', exam: 'daigaku', part: 'r_short', grade: 'kyotsu', min: 10, topic: '共通テスト英語 短文・対話' },
-      { subject: '英語', name: '共通テスト 英語R 長文読解', exam: 'daigaku', part: 'r_long', grade: 'kyotsu', min: 15, topic: '共通テスト英語 長文読解' },
+      // 🎯 [2026-06-24] 本番の大問形式ごとにカードを分割。filter=question_data.format_type を bank の &topic に渡し
+      //   SQL LIKE でその形式の大問だけに絞る (非agg=大問まるごと1題を selected で出題)。サーバ改修・再取込なし。
+      { subject: '英語', name: '共通テスト 英語R 第2問（調査・意見）', exam: 'daigaku', part: 'r_long', grade: 'kyotsu', filter: 'FMT2', min: 15, topic: '共通テスト英語 第2問 調査・意見' },
+      { subject: '英語', name: '共通テスト 英語R 第3問（物語・要旨）', exam: 'daigaku', part: 'r_long', grade: 'kyotsu', filter: 'FMT3', min: 15, topic: '共通テスト英語 第3問 物語・要旨' },
+      { subject: '英語', name: '共通テスト 英語R 第4問（文章校正）', exam: 'daigaku', part: 'r_long', grade: 'kyotsu', filter: 'FMT4', min: 15, topic: '共通テスト英語 第4問 文章校正' },
+      { subject: '英語', name: '共通テスト 英語R 第5問（複数資料統合）', exam: 'daigaku', part: 'r_long', grade: 'kyotsu', filter: 'FMT5', min: 18, topic: '共通テスト英語 第5問 複数資料' },
+      { subject: '英語', name: '共通テスト 英語R 第6問（物語・要点整理）', exam: 'daigaku', part: 'r_long', grade: 'kyotsu', filter: 'FMT6', min: 18, topic: '共通テスト英語 第6問 物語・要点整理' },
+      { subject: '英語', name: '共通テスト 英語R 第7問（論説・要点）', exam: 'daigaku', part: 'r_long', grade: 'kyotsu', filter: 'FMT7', min: 18, topic: '共通テスト英語 第7問 論説・要点' },
+      { subject: '英語', name: '共通テスト 英語R 第8問（意見統合＋グラフ）', exam: 'daigaku', part: 'r_long', grade: 'kyotsu', filter: 'FMT_GRAPH8', min: 18, topic: '共通テスト英語 第8問 意見統合グラフ' },
+      { subject: '英語', name: '共通テスト 英語R 第8問（意見統合・資料）', exam: 'daigaku', part: 'r_long', grade: 'kyotsu', filter: 'FMT8', min: 18, topic: '共通テスト英語 第8問 意見統合' },
+      { subject: '英語', name: '共通テスト 英語R 長文読解（全形式おまかせ）', exam: 'daigaku', part: 'r_long', grade: 'kyotsu', min: 15, topic: '共通テスト英語 長文読解' },
       { subject: '国語', name: '共通テスト 現代文（評論・小説）', exam: 'daigaku', part: 'gendai', grade: 'kyotsu', min: 15, topic: '共通テスト国語 現代文' },
       { subject: '国語', name: '共通テスト 古文', exam: 'daigaku', part: 'kobun', grade: 'kyotsu', min: 12, topic: '共通テスト国語 古文' },
       { subject: '数学', name: '共通テスト 数学IA', exam: 'rikei', part: 'math_1a', grade: 'kyotsu_rikei', min: 15, topic: '共通テスト数学IA' },
