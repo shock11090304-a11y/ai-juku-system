@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="cache-purge.js?v=20260624-taiken"></script>
+  <script src="frontend-error-monitor.js?v=20260427-init"></script>
+  <title>体験授業のお申し込み | トリリオン オンライン英語塾</title>
+  <meta name="robots" content="noindex">
+  <meta name="description" content="元大手予備校講師による有料体験授業（¥1,500）。本気で伸ばしたい受験生だけに、全力の1コマを。入塾すれば初月謝から全額差し引きで実質無料。">
+  <link rel="stylesheet" href="lp.css">
+  <style>
+    /* ===== taiken.html 専用スタイル（lp.css の :root 変数を利用） ===== */
+    .tk-main { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; padding: 2.5rem 1.2rem 4rem; }
+
+    .tk-hero { text-align: center; margin-bottom: 2.5rem; }
+    .tk-eyebrow {
+      display: inline-block; font-weight: 900; font-size: 0.82rem; letter-spacing: 0.08em;
+      color: #fca5a5; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.4);
+      padding: 0.35rem 0.9rem; border-radius: 999px; margin-bottom: 1rem;
+    }
+    .tk-hero h1 { font-size: clamp(1.7rem, 5.5vw, 2.6rem); font-weight: 900; line-height: 1.25; margin-bottom: 0.9rem; }
+    .tk-hero h1 .grad {
+      background: linear-gradient(135deg, #818cf8, #ec4899);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .tk-hero p { color: var(--text-dim); font-size: 1.02rem; max-width: 560px; margin: 0 auto; }
+
+    /* 実績バンド */
+    .tk-proof {
+      background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(236,72,153,0.10));
+      border: 1px solid rgba(129,140,248,0.35); border-radius: 16px;
+      padding: 1.3rem 1.2rem; margin-bottom: 2.2rem; text-align: center;
+    }
+    .tk-proof .tk-proof-big { font-size: 1.25rem; font-weight: 900; color: #fcd34d; margin-bottom: 0.5rem; }
+    .tk-proof .tk-proof-list { font-size: 0.9rem; color: var(--text); line-height: 1.7; }
+    .tk-proof .tk-proof-list strong { color: #a5b4fc; }
+
+    .tk-section { margin-bottom: 2.2rem; }
+    .tk-section h2 { font-size: 1.25rem; font-weight: 800; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+
+    .tk-card {
+      background: var(--panel); border: 1px solid var(--panel-border);
+      border-radius: 14px; padding: 1.2rem 1.3rem; backdrop-filter: blur(8px);
+    }
+    .tk-list { list-style: none; display: grid; gap: 0.8rem; }
+    .tk-list li { display: flex; gap: 0.7rem; align-items: flex-start; font-size: 0.96rem; line-height: 1.55; }
+    .tk-list li .ic { flex-shrink: 0; font-size: 1.1rem; }
+    .tk-list li strong { color: #fff; }
+
+    /* なぜ有料か */
+    .tk-why { display: grid; gap: 0.9rem; }
+    .tk-why .tk-why-item {
+      background: var(--panel); border: 1px solid var(--panel-border); border-left: 3px solid var(--accent);
+      border-radius: 10px; padding: 0.95rem 1.1rem;
+    }
+    .tk-why .tk-why-item b { display: block; color: #f9a8d4; font-size: 0.98rem; margin-bottom: 0.25rem; }
+    .tk-why .tk-why-item span { color: var(--text-dim); font-size: 0.9rem; line-height: 1.55; }
+
+    /* 料金カード */
+    .tk-price {
+      text-align: center; background: linear-gradient(135deg, rgba(16,185,129,0.10), rgba(251,191,36,0.08));
+      border: 1px solid rgba(52,211,153,0.4); border-radius: 16px; padding: 1.6rem 1.2rem; margin-bottom: 1.4rem;
+    }
+    .tk-price .tk-price-amount { font-size: 2.6rem; font-weight: 900; color: #fff; line-height: 1; }
+    .tk-price .tk-price-amount span { font-size: 1rem; font-weight: 700; color: var(--text-dim); }
+    .tk-price .tk-cashback {
+      display: inline-block; margin-top: 0.9rem; background: rgba(52,211,153,0.16);
+      color: #34d399; font-weight: 800; font-size: 0.92rem; padding: 0.4rem 0.9rem; border-radius: 999px;
+      border: 1px solid rgba(52,211,153,0.4);
+    }
+    .tk-price .tk-price-note { margin-top: 0.7rem; font-size: 0.82rem; color: var(--text-dim); }
+
+    /* 流れ */
+    .tk-steps { display: grid; gap: 0.7rem; counter-reset: step; }
+    .tk-steps .tk-step {
+      display: flex; gap: 0.85rem; align-items: flex-start;
+      background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px; padding: 0.85rem 1rem;
+    }
+    .tk-steps .tk-step::before {
+      counter-increment: step; content: counter(step);
+      flex-shrink: 0; width: 1.7rem; height: 1.7rem; border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff;
+      font-weight: 900; font-size: 0.9rem; display: flex; align-items: center; justify-content: center;
+    }
+    .tk-steps .tk-step div { font-size: 0.93rem; line-height: 1.5; }
+    .tk-steps .tk-step b { color: #fff; }
+
+    /* CTA */
+    .tk-cta-wrap { text-align: center; margin: 2rem 0 1rem; }
+    .tk-cta-btn {
+      display: inline-block; width: 100%; max-width: 460px;
+      background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff;
+      font-weight: 900; font-size: 1.15rem; padding: 1.1rem 1.5rem; border-radius: 14px;
+      text-decoration: none; border: none; cursor: pointer;
+      box-shadow: 0 10px 30px rgba(99,102,241,0.35); transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .tk-cta-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 38px rgba(236,72,153,0.4); }
+    .tk-cta-sub { margin-top: 0.8rem; font-size: 0.82rem; color: var(--text-dim); }
+    .tk-trust { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; margin-top: 1rem; }
+    .tk-trust span { font-size: 0.78rem; color: var(--text-dim); background: var(--panel); border: 1px solid var(--panel-border); padding: 0.3rem 0.7rem; border-radius: 8px; }
+
+    /* FAQ */
+    .tk-faq details {
+      background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px;
+      padding: 0.4rem 1rem; margin-bottom: 0.6rem;
+    }
+    .tk-faq summary { cursor: pointer; font-weight: 700; padding: 0.6rem 0; font-size: 0.95rem; }
+    .tk-faq details p { color: var(--text-dim); font-size: 0.9rem; line-height: 1.6; padding: 0 0 0.7rem; }
+
+    .tk-footer { text-align: center; color: var(--text-muted); font-size: 0.8rem; margin-top: 3rem; line-height: 1.8; }
+    .tk-footer a { color: var(--text-dim); }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="floating-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="lp.html" class="nav-logo">
+        <span class="logo-icon">🎓</span>
+        <span class="logo-text">トリリオン</span>
+      </a>
+      <div class="nav-cta">
+        <a href="lp.html" class="btn-ghost">← トップ</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="tk-main">
+
+    <!-- HERO -->
+    <section class="tk-hero">
+      <div class="tk-eyebrow">🔥 本気の受験生だけ</div>
+      <h1>元大手予備校講師の<br><span class="grad">有料 体験授業</span></h1>
+      <p>「冷やかし」はお断り。本気で成績を上げたい人にだけ、全力の1コマをお届けします。料金は <strong>¥1,500</strong>。入塾すれば初月謝から全額お返しします。</p>
+    </section>
+
+    <!-- 実績 -->
+    <section class="tk-proof">
+      <div class="tk-proof-big">📈 英検合格 のべ 1,000名以上</div>
+      <div class="tk-proof-list">
+        <strong>昨年度 合格実績</strong>：東京大学・京都大学・九州大学・早稲田大学・慶應義塾大学・MARCH・関関同立
+      </div>
+    </section>
+
+    <!-- なぜ有料か -->
+    <section class="tk-section">
+      <h2>💴 なぜ「有料」なのか</h2>
+      <div class="tk-why">
+        <div class="tk-why-item">
+          <b>① 本気の人にだけ来てほしいから</b>
+          <span>無料だと「とりあえず」で申し込む人が増えます。あえて¥1,500いただくことで、本当に成績を上げたい人だけが集まります。</span>
+        </div>
+        <div class="tk-why-item">
+          <b>② 来てくれた1人に全力を注ぐため</b>
+          <span>体験でも手は抜きません。あなたの弱点を分析し、合格までの道筋まで本気で提案します。</span>
+        </div>
+        <div class="tk-why-item">
+          <b>③ 入塾するなら、実質無料</b>
+          <span>体験後に入塾された場合、¥1,500は初月の月謝から全額差し引きます。本気の人にとっては負担ゼロです。</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 体験で得られるもの -->
+    <section class="tk-section">
+      <h2>🎯 体験授業で手に入るもの</h2>
+      <div class="tk-card">
+        <ul class="tk-list">
+          <li><span class="ic">👨‍🏫</span><div><strong>元大手予備校講師による本気の授業（1コマ）</strong>。対面授業に負けない指導をオンラインで。</div></li>
+          <li><span class="ic">🔍</span><div><strong>あなたの弱点の見える化</strong>。今どこでつまずいているかをプロが診断します。</div></li>
+          <li><span class="ic">🗺️</span><div><strong>志望校までの学習プラン提案</strong>。何を・どの順で・いつまでにやるかが分かります。</div></li>
+          <li><span class="ic">💬</span><div><strong>勉強・進路の相談し放題</strong>。受験の不安を、その場でぶつけてください。</div></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="tk-section">
+      <h2>💳 参加費</h2>
+      <div class="tk-price">
+        <div class="tk-price-amount">¥1,500<span>（税込・1回）</span></div>
+        <div class="tk-cashback">✅ 入塾で初月謝から ¥1,500 全額差し引き → 実質無料</div>
+        <div class="tk-price-note">お支払いはクレジットカード（Stripeの安全な決済画面）。決済後、日程調整のご連絡をします。</div>
+      </div>
+    </section>
+
+    <!-- 流れ -->
+    <section class="tk-section">
+      <h2>📝 お申し込みの流れ</h2>
+      <div class="tk-steps">
+        <div class="tk-step"><div><b>申し込みボタンを押す</b>（24時間いつでもOK）</div></div>
+        <div class="tk-step"><div><b>¥1,500をカードでお支払い</b>（Stripeの安全な画面・お名前/学年などを入力）</div></div>
+        <div class="tk-step"><div><b>日程調整のご連絡</b>が届きます（メール / DM）</div></div>
+        <div class="tk-step"><div><b>体験授業（オンライン）を受講</b>。弱点診断＆学習プランをお渡しします</div></div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <div class="tk-cta-wrap">
+      <!--
+        ⚠️ 下の href を、Stripe ダッシュボードで作成した「¥1,500・1回限り」の
+        Payment Link URL に置き換えてください（例: https://buy.stripe.com/xxxxxxxx）。
+        未置換のまま公開しても、押した人にはエラーではなく「準備中」案内が出ます。
+      -->
+      <a id="taikenCta" class="tk-cta-btn"
+         href="https://buy.stripe.com/aFa9AV72Zc777plePE4F200">
+        🔥 体験授業を申し込む（¥1,500）→
+      </a>
+      <div class="tk-cta-sub">本気の人だけ・先着順 / 入塾で実質無料</div>
+      <div class="tk-trust">
+        <span>🔒 SSL暗号化</span>
+        <span>💳 Stripe決済</span>
+        <span>🏢 カード情報は当塾に保存されません</span>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <section class="tk-section tk-faq">
+      <h2>❓ よくある質問</h2>
+      <details>
+        <summary>オンラインですか？対面ですか？</summary>
+        <p>オンライン（ビデオ通話）で行います。全国どこからでも受講できます。決済後にURL・日程をご案内します。</p>
+      </details>
+      <details>
+        <summary>対象の学年は？</summary>
+        <p>中学生〜高校生・既卒生（受験生）が中心です。学年は決済画面でお伺いします。迷う場合はまずDMでご相談ください。</p>
+      </details>
+      <details>
+        <summary>¥1,500はどうやって支払いますか？</summary>
+        <p>クレジットカードでのお支払いです。申し込みボタンからStripe（世界基準の決済サービス）の安全な画面に進みます。カード情報が当塾に保存されることはありません。</p>
+      </details>
+      <details>
+        <summary>体験後、必ず入塾しないといけませんか？</summary>
+        <p>いいえ。無理な勧誘はしません。合うと感じた方だけご入塾ください。入塾された場合は¥1,500を初月謝から差し引きます。</p>
+      </details>
+    </section>
+
+    <div class="tk-footer">
+      ご不明な点は Instagram / Threads のDM、または
+      <a href="mailto:info@trillion-ai-juku.com">info@trillion-ai-juku.com</a> までお気軽にどうぞ。<br>
+      <a href="legal.html#tokusho">特商法に基づく表記</a> ・
+      <a href="legal.html#terms">利用規約</a> ・
+      <a href="legal.html#privacy">プライバシーポリシー</a><br>
+      © 2026 トリリオン オンライン英語塾
+    </div>
+  </main>
+
+  <script>
+    // Payment Link 未設定（プレースホルダのまま）の場合は、決済画面ではなく「準備中」案内を出す。
+    // URL を本物に差し替えると data-placeholder を外して通常リンクとして機能させる。
+    (function () {
+      var cta = document.getElementById('taikenCta');
+      if (!cta) return;
+      var href = cta.getAttribute('href') || '';
+      var isPlaceholder = href.indexOf('REPLACE_WITH_YOUR') !== -1;
+      if (isPlaceholder) {
+        cta.addEventListener('click', function (e) {
+          e.preventDefault();
+          alert('🙏 ただいま申込ページを準備中です。\n少々お待ちいただくか、Instagram / Threads のDMからお問い合わせください。');
+        });
+      } else {
+        cta.removeAttribute('data-placeholder');
+      }
+    })();
+  </script>
+</body>
+</html>
