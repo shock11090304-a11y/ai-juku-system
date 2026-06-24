@@ -11,7 +11,10 @@ import json, os, sys, urllib.request, urllib.error, time
 
 URL = 'https://trillion-ai-juku.com/api/admin/exam-questions/import'
 DEFAULT_SEED = os.path.join(os.path.dirname(__file__), '..', '..', 'seed-data', 'dojo_eng_kyotsu2026_manual.json')
-CHUNK = 4
+# Gemine 自己完結ゲート(EXAM_IMPORT_VERIFY_AI=1)は1大問ずつ走り、長文(第8問型)+図は1リクエスト
+# 4大問だと120sを超えることがある(graph取込で実測タイムアウト)。env CHUNK で調整可・既定は安全側の2。
+CHUNK = int(os.environ.get('IMPORT_CHUNK', '2'))
+REQ_TIMEOUT = int(os.environ.get('IMPORT_TIMEOUT', '180'))
 
 def main():
     seed = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_SEED
@@ -33,7 +36,7 @@ def main():
             'X-Cron-Secret': secret,
         })
         try:
-            with urllib.request.urlopen(req, timeout=120) as resp:
+            with urllib.request.urlopen(req, timeout=REQ_TIMEOUT) as resp:
                 d = json.loads(resp.read().decode('utf-8'))
         except urllib.error.HTTPError as e:
             print(f'  chunk {cn}: HTTP {e.code} {e.read()[:300]!r}')
