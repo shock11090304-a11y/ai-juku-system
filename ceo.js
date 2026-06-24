@@ -425,7 +425,7 @@ async function loadGrowthKpis() {
     const res = await window.AdminAuth.fetch('/api/admin/growth-kpis');
     if (!res.ok) { cards.innerHTML = '<div style="color:#ef4444;font-size:0.85rem;">KPI取得失敗 (' + res.status + ')</div>'; return; }
     const d = await res.json();
-    const s = d.students || {}, e = d.engagement || {}, f = d.enrollment_fee || {};
+    const s = d.students || {}, e = d.engagement || {}, f = d.enrollment_fee || {}, cf = d.conversion_funnel || {};
     const card = (label, value, sub, color) =>
       '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:0.8rem;">'
       + '<div style="font-size:0.72rem;color:#9ca3af;">' + label + '</div>'
@@ -437,8 +437,9 @@ async function loadGrowthKpis() {
       + card('ドリル利用率', (e.drill_rate_pct || 0) + '%', (e.drill_users || 0) + ' / ' + (s.total || 0) + ' 名が解いた', '#38bdf8')
       + card('5問到達率', (e.reach5_rate_pct || 0) + '%', (e.reach5 || 0) + ' / ' + (e.weakness_topics || 0) + ' 弱点topic', '#f59e0b')
       + card('習得卒業', (e.graduations || 0), '正答80%&5問の単元数', '#a78bfa')
-      + card('入塾金 未回収', (f.uncollected || 0) + '名', '回収 ' + (f.charged || 0) + ' / 免除 ' + (f.waived || 0), (f.uncollected ? '#ef4444' : '#22c55e'))
-      + card('期限切れ(再活性化)', (s.expired || 0) + '名', 'フォローアップ対象', (s.expired ? '#f59e0b' : '#22c55e'));
+      + card('入塾金', '免除 ' + (f.waived || 0), '未回収 ' + (f.uncollected || 0) + ' は意図的(回収不要) / 回収 ' + (f.charged || 0), '#9ca3af')
+      + card('期限切れ', (s.expired || 0) + '名', '方針: そのまま(再活性化しない)', '#9ca3af')
+      + card('転換(誘導→有料)', (cf.rate_pct || 0) + '%', '直近30日 誘導 ' + (cf.nudged_30d || 0) + ' → 有料 ' + (cf.converted || 0), '#34d399');
     const asOf = document.getElementById('growthKpiAsOf');
     if (asOf && d.as_of) { try { asOf.textContent = '更新: ' + new Date(d.as_of).toLocaleString('ja-JP'); } catch (_) {} }
   } catch (err) {

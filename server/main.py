@@ -9742,6 +9742,26 @@ def admin_growth_kpis(authorization: Optional[str] = Header(None)):
     weak_total = len(wrows)
     reach5 = sum(1 for w in wrows if (w["qa_attempts"] or 0) >= 5)
     graduations = sum(1 for w in wrows if (w["qa_attempts"] or 0) >= 5 and (w["qa_accuracy"] or 0) >= 0.8)
+    # 📈 転換ファネル: 直近30日に upgrade 誘導(trial終了前メール)を送った実生徒 → 現在 'paid' になった数。
+    #   events.session_id は 'student:{id}' / '{id}' 混在ゆえ両対応で id 抽出 (legacy 不整合)。
+    status_by_id = {r["id"]: r["status"] for r in rows}
+    nudged_ids = set()
+    try:
+        c.execute("SELECT DISTINCT session_id FROM events WHERE name=? AND created_at > ?",
+                  ("upgrade_nudge_sent", datetime.now(timezone.utc) - timedelta(days=30)))
+        for r in c.fetchall():
+            sid = str(r["session_id"] or "")
+            if sid.startswith("student:"):
+                sid = sid[len("student:"):]
+            try:
+                nudged_ids.add(int(sid))
+            except (TypeError, ValueError):
+                pass
+    except Exception as _e:
+        log.warning(f"[growth-kpis] funnel query failed: {type(_e).__name__}: {_e}")
+    nudged_ids &= real_ids
+    nudged = len(nudged_ids)
+    converted = sum(1 for sid in nudged_ids if status_by_id.get(sid) == "paid")
     conn.close()
 
     def pct(a, b):
@@ -9759,6 +9779,9 @@ def admin_growth_kpis(authorization: Optional[str] = Header(None)):
             "weakness_topics": weak_total,
             "reach5": reach5, "reach5_rate_pct": pct(reach5, weak_total),
             "graduations": graduations,
+        },
+        "conversion_funnel": {
+            "nudged_30d": nudged, "converted": converted, "rate_pct": pct(converted, nudged),
         },
     }
 
@@ -28939,6 +28962,7 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
 
     sent = 0
     sent_card = 0
+    nudged_for_event = []  # 📈 転換ファネル: 誘導済(id,days_left)を収集→ループ後に別txnで events 記録
     skipped = 0
     skipped_silent = 0
     skipped_silent_ids = []
@@ -29038,6 +29062,12 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
                 if not _last_login:
                     silent_card_notified += 1
                     silent_card_ids.append(row["id"])
+            else:
+                # 📈 転換ファネル計測 (2026-06-24): 無課金trialへ送った upgrade 誘導を収集のみ(SQLはループ後)。
+                #   ★ループ内で events INSERT すると、PG(非autocommit)で失敗時に txn が abort し、後続の
+                #     notifications INSERT/末尾commit を連鎖失敗させる(既知の PG txn-abort 罠)。よって id を
+                #     貯めて、notifications を commit した後の別トランザクションでまとめて記録する。
+                nudged_for_event.append((row["id"], days_left))
     # events に audit log (CEO ダッシュ可視化用)
     if skipped_silent > 0 and not dry_run:
         try:
@@ -29089,6 +29119,25 @@ def cron_trial_reminders(x_cron_secret: str = Header(None), dry_run: bool = Fals
         except Exception as _e:
             log.warning(f"[trial-reminders] paid stale skip audit failed: {_e}")
     conn.commit()
+    # 📈 転換ファネル: 誘導済を notifications コミット後の「別トランザクション」でまとめて記録する。
+    #   ★PG txn-abort 罠回避: ここで events INSERT が失敗しても、notifications/メール送信は既にコミット済で無傷。
+    #     失敗時は rollback で abort 状態を解除し、close をクリーンに保つ(計測は非致命)。
+    if nudged_for_event and not dry_run:
+        try:
+            for _sid, _dleft in nudged_for_event:
+                c.execute(
+                    "INSERT INTO events (name, props, session_id) VALUES (?, ?, ?)",
+                    ("upgrade_nudge_sent",
+                     json.dumps({"days_left": _dleft, "channel": "email", "template": "trial_ending"}, ensure_ascii=False),
+                     f"student:{_sid}")
+                )
+            conn.commit()
+        except Exception as _e:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            log.warning(f"[trial-reminders] upgrade_nudge_sent events 記録失敗(非致命): {type(_e).__name__}: {_e}")
     conn.close()
     return {"sent": sent, "sent_card": sent_card, "skipped": skipped, "skipped_silent": skipped_silent,
             "skipped_course": skipped_course, "skipped_paid_stale": skipped_paid_stale,
