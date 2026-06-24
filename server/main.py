@@ -125,6 +125,12 @@ GEMINI_MODEL_LIGHT = os.getenv("GEMINI_MODEL_LIGHT", "gemini-2.5-flash")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 OPENAI_MODEL_LIGHT = os.getenv("OPENAI_MODEL_LIGHT", "gpt-4o-mini")  # 二段 fallback 用 (将来 gpt-3.5 等)
+# Mathpix 手書き数式 OCR (2026-06-24 導入・PoC): AI チューターの写真解答の前処理。
+# 手書き/印刷の数式を高精度に LaTeX (Mathpix Markdown) へ変換し、3 AI の「読み取り」誤りを減らす。
+# 発行: https://mathpix.com/  → Convert API (v3/text)。$0.002/req と安価。
+# 両キー未設定なら OCR 前処理は完全スキップ (既存挙動を 1mm も変えない安全な opt-in)。
+MATHPIX_APP_ID = os.getenv("MATHPIX_APP_ID", "")
+MATHPIX_APP_KEY = os.getenv("MATHPIX_APP_KEY", "")
 CRON_SECRET = os.getenv("CRON_SECRET", "")  # 未設定時は cron 系エンドポイントを全拒否
 STATS_TOKEN = os.getenv("STATS_TOKEN", "")  # 未設定時は /api/stats を全拒否
 # HMAC 署名鍵（保護者ビュー署名・他の署名用途で利用）
@@ -34014,6 +34020,80 @@ def _check_solve_rate(student_id: int, weight: int = 1) -> None:
     _SOLVE_RATE_LIMIT[student_id] = ts
 
 
+def _mathpix_ocr_one(b64: str, mime: str) -> Optional[str]:
+    """1 枚の画像を Mathpix Convert API (v3/text) で OCR し、Mathpix Markdown (LaTeX 混在) を返す。
+
+    手書き/印刷の数式を高精度に LaTeX 化する専用 OCR。汎用 Vision (Gemini/GPT/Claude) が
+    一番苦手な「手書き数式の読み取り」を補強する前処理として使う。
+    返却: OCR テキスト (str) / 失敗・空なら None (呼び元で握りつぶし、既存挙動にフォールバック)。
+    キー未設定なら呼ばれない前提だが、二重に防御 (None 返し)。
+    """
+    if not (MATHPIX_APP_ID and MATHPIX_APP_KEY):
+        return None
+    try:
+        req_body = {
+            "src": f"data:{mime or 'image/jpeg'};base64,{b64}",
+            "formats": ["text"],
+            # 数式は LaTeX、表/化学式も Mathpix Markdown で取得。手書きも自動対応。
+            "data_options": {"include_latex": True, "include_asciimath": False},
+            "rm_spaces": True,
+        }
+        req = urllib.request.Request(
+            "https://api.mathpix.com/v3/text",
+            data=json.dumps(req_body).encode("utf-8"),
+            headers={
+                "app_id": MATHPIX_APP_ID,
+                "app_key": MATHPIX_APP_KEY,
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        # Mathpix v3/text: {"text": "...", "confidence": 0.x, "error": ...}
+        if data.get("error"):
+            log.warning(f"[mathpix] API error: {data.get('error')}")
+            return None
+        text = (data.get("text") or "").strip()
+        if not text:
+            return None
+        # 信頼度が極端に低い読み取りは混乱の元なので採用しない (誤 OCR を AI に渡さない)
+        conf = data.get("confidence")
+        if isinstance(conf, (int, float)) and conf < 0.2:
+            log.info(f"[mathpix] low confidence {conf:.2f} → skip OCR injection")
+            return None
+        return text[:4000]  # 念のため上限
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="ignore")[:300]
+        log.warning(f"[mathpix] HTTPError {e.code}: {body}")
+        return None
+    except Exception as e:
+        log.warning(f"[mathpix] OCR failed: {type(e).__name__}: {e}")
+        return None
+
+
+def _mathpix_ocr_images(image_items: list) -> Optional[str]:
+    """複数画像をまとめて OCR し、AI へ渡す補足テキストを組み立てる。
+    1 枚も読めなければ None。キー未設定なら即 None (コスト 0)。
+    """
+    if not (MATHPIX_APP_ID and MATHPIX_APP_KEY):
+        return None
+    if not image_items:
+        return None
+    chunks = []
+    for idx, it in enumerate(image_items):
+        b64 = it.get("b64")
+        if not b64:
+            continue
+        ocr = _mathpix_ocr_one(b64, it.get("mime") or "image/jpeg")
+        if ocr:
+            label = f"画像{idx + 1}" if len(image_items) > 1 else "画像"
+            chunks.append(f"【{label}の数式OCR(Mathpix)】\n{ocr}")
+    if not chunks:
+        return None
+    return "\n\n".join(chunks)
+
+
 def _solve_one_ai(ai_id: str, images: Optional[list], mime_pdf: bool,
                    problem_text: Optional[str], prior_answers: Optional[list] = None) -> dict:
     """1 AI で 1 round の解答を実行 (sync・thread pool から呼ぶ)。
@@ -34663,6 +34743,31 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
     import time as _t
     t0_total = _t.time()
     loop = _asyncio.get_running_loop()
+
+    # ---- Mathpix 手書き数式 OCR 前処理 (2026-06-24 PoC) ----
+    # キー設定時のみ・画像モードのみ (native PDF fallback の mime_pdf=True はスキップ)。
+    # 高精度 LaTeX OCR を problem_text に追記し 3 AI 全部の「読み取り」を底上げする。
+    # 失敗/未設定なら None → 既存挙動そのまま (完全 opt-in・フォールバック安全)。
+    mathpix_used = False
+    mathpix_chars = 0
+    if image_items and not mime_pdf and MATHPIX_APP_ID and MATHPIX_APP_KEY:
+        try:
+            ocr_text = await loop.run_in_executor(None, _mathpix_ocr_images, image_items)
+        except Exception as _me:
+            log.warning(f"[solve-from-image] mathpix preprocess failed: {_me}")
+            ocr_text = None
+        if ocr_text:
+            mathpix_used = True
+            mathpix_chars = len(ocr_text)
+            _ocr_block = (
+                "## 📐 数式OCR (Mathpix・参考)\n"
+                "以下は画像から専用 OCR で抽出した数式の文字起こし(LaTeX)です。"
+                "画像の読み取りの補助として活用し、画像と食い違う場合は画像を優先してください。\n"
+                f"{ocr_text}\n"
+            )
+            problem_text = (problem_text + "\n\n" + _ocr_block) if problem_text else _ocr_block
+            log.info(f"[solve-from-image] mathpix OCR injected: {mathpix_chars} chars")
+
     ai_ids = list(_SOLVE_AI_DEFINITIONS.keys())
     tasks_r1 = []
     for aid in ai_ids:
@@ -34830,6 +34935,7 @@ async def ai_tutor_solve_from_image(payload: dict, authorization: Optional[str] 
         "consensus": consensus,
         "elapsed_ms_total": elapsed_ms_total,
         "pdf_conversion": pdf_conversion_info,  # PDF→画像変換情報 (PDF 受信時のみ非 null)
+        "mathpix_ocr": {"used": mathpix_used, "chars": mathpix_chars},  # 数式 OCR 前処理の有無 (2026-06-24)
         "ai_health": {
             "anthropic_credit_low": anthropic_credit_low,
             "active_count": len(active_ais),
