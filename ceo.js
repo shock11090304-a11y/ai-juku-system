@@ -416,6 +416,37 @@ function renderActionItems(m) {
 // ==========================================================================
 // 🔔 体験終了者フォローアップ管理
 // ==========================================================================
+// 📊 経営KPI(成長指標) — 合成監視を除いた実生徒ベースで有料率/利用率/習得/入塾金回収を表示。
+async function loadGrowthKpis() {
+  if (!window.AdminAuth || !window.AdminAuth.getToken()) return;
+  const cards = document.getElementById('growthKpiCards');
+  if (!cards) return;
+  try {
+    const res = await window.AdminAuth.fetch('/api/admin/growth-kpis');
+    if (!res.ok) { cards.innerHTML = '<div style="color:#ef4444;font-size:0.85rem;">KPI取得失敗 (' + res.status + ')</div>'; return; }
+    const d = await res.json();
+    const s = d.students || {}, e = d.engagement || {}, f = d.enrollment_fee || {};
+    const card = (label, value, sub, color) =>
+      '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:0.8rem;">'
+      + '<div style="font-size:0.72rem;color:#9ca3af;">' + label + '</div>'
+      + '<div style="font-size:1.5rem;font-weight:800;color:' + (color || '#e5e7eb') + ';margin:2px 0;">' + value + '</div>'
+      + '<div style="font-size:0.72rem;color:#71717a;">' + (sub || '') + '</div></div>';
+    cards.innerHTML =
+      card('有料率', (s.paid_rate_pct || 0) + '%', '有料 ' + (s.paid || 0) + ' / 実生徒 ' + (s.total || 0), '#22c55e')
+      + card('実生徒数', (s.total || 0) + '名', '体験 ' + (s.trial || 0) + ' / 期限切れ ' + (s.expired || 0))
+      + card('ドリル利用率', (e.drill_rate_pct || 0) + '%', (e.drill_users || 0) + ' / ' + (s.total || 0) + ' 名が解いた', '#38bdf8')
+      + card('5問到達率', (e.reach5_rate_pct || 0) + '%', (e.reach5 || 0) + ' / ' + (e.weakness_topics || 0) + ' 弱点topic', '#f59e0b')
+      + card('習得卒業', (e.graduations || 0), '正答80%&5問の単元数', '#a78bfa')
+      + card('入塾金 未回収', (f.uncollected || 0) + '名', '回収 ' + (f.charged || 0) + ' / 免除 ' + (f.waived || 0), (f.uncollected ? '#ef4444' : '#22c55e'))
+      + card('期限切れ(再活性化)', (s.expired || 0) + '名', 'フォローアップ対象', (s.expired ? '#f59e0b' : '#22c55e'));
+    const asOf = document.getElementById('growthKpiAsOf');
+    if (asOf && d.as_of) { try { asOf.textContent = '更新: ' + new Date(d.as_of).toLocaleString('ja-JP'); } catch (_) {} }
+  } catch (err) {
+    console.error('loadGrowthKpis failed:', err);
+    cards.innerHTML = '<div style="color:#ef4444;font-size:0.85rem;">KPI取得エラー</div>';
+  }
+}
+
 async function loadExpiredUsers() {
   if (!window.AdminAuth || !window.AdminAuth.getToken()) return;
   try {
@@ -862,6 +893,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 🔔 体験終了者フォローアップ + 🎁 紹介ループ metrics: AdminAuth 認証後に読み込み
   const tryLoadAdminSections = (retries = 10) => {
     if (window.AdminAuth && window.AdminAuth.getToken()) {
+      loadGrowthKpis();
       loadExpiredUsers();
       loadReferralMetrics();
       return;

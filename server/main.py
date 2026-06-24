@@ -9700,6 +9700,69 @@ def admin_verify(authorization: Optional[str] = Header(None)):
     return {"ok": True}
 
 
+@app.get("/api/admin/growth-kpis")
+def admin_growth_kpis(authorization: Optional[str] = Header(None)):
+    """📊 経営KPI(成長指標): 有料率・ドリル利用率・5問到達率・習得卒業・入塾金回収。read-only・既存DBクエリのみ。
+    ★合成監視 sentinel を除外した「実生徒」ベースで算出する。
+      (sentinel は trial signup を常時量産するため、含めると分母が膨らみ有料率/利用率を過小評価する。
+       実際 2026-06-23 時点で sentinel 除外後の実生徒は ~38名・有料率は 6.8%(合成込み) でなく 13.2% が正
+       (ドリル利用も合成込み42%でなく実生徒28/38=~74%)。)"""
+    if (not authorization or not authorization.startswith("Bearer ")
+            or not _verify_admin_token(authorization[len("Bearer "):].strip())):
+        raise HTTPException(status_code=401, detail="未認証")
+    conn = db()
+    c = conn.cursor()
+    c.execute("SELECT id, status, email, goal, name, enrollment_fee_charged_at, enrollment_fee_waived FROM students")
+    rows = [r for r in c.fetchall() if not _is_synthetic_student(r["email"], r["goal"], r["name"])]
+    real_ids = {r["id"] for r in rows}
+    total = len(rows)
+    by_status, paid, trial, expired = {}, 0, 0, 0
+    charged = waived = uncollected = 0
+    for r in rows:
+        st = r["status"] or "unknown"
+        by_status[st] = by_status.get(st, 0) + 1
+        if st == "paid":
+            paid += 1
+        elif st == "trial":
+            trial += 1
+        elif st == "expired":
+            expired += 1
+        if r["enrollment_fee_charged_at"]:
+            charged += 1
+        elif r["enrollment_fee_waived"]:
+            waived += 1
+        else:
+            uncollected += 1
+    # ドリル利用: 実生徒で1問でも解いた distinct 数 (退会済の孤児 student_id は real_ids 交差で除外)
+    c.execute("SELECT DISTINCT student_id FROM question_attempts")
+    drill_users = len({x["student_id"] for x in c.fetchall()} & real_ids)
+    # 弱点ループ: 実生徒の student_weakness (topic 単位)
+    c.execute("SELECT student_id, qa_attempts, qa_accuracy FROM student_weakness")
+    wrows = [w for w in c.fetchall() if w["student_id"] in real_ids]
+    weak_total = len(wrows)
+    reach5 = sum(1 for w in wrows if (w["qa_attempts"] or 0) >= 5)
+    graduations = sum(1 for w in wrows if (w["qa_attempts"] or 0) >= 5 and (w["qa_accuracy"] or 0) >= 0.8)
+    conn.close()
+
+    def pct(a, b):
+        return round(a / b * 100, 1) if b else 0.0
+    return {
+        "as_of": datetime.now(timezone.utc).isoformat(),
+        "note": "合成監視sentinelを除外した実生徒ベース",
+        "students": {
+            "total": total, "paid": paid, "trial": trial, "expired": expired,
+            "by_status": by_status, "paid_rate_pct": pct(paid, total),
+        },
+        "enrollment_fee": {"charged": charged, "waived": waived, "uncollected": uncollected},
+        "engagement": {
+            "drill_users": drill_users, "drill_rate_pct": pct(drill_users, total),
+            "weakness_topics": weak_total,
+            "reach5": reach5, "reach5_rate_pct": pct(reach5, weak_total),
+            "graduations": graduations,
+        },
+    }
+
+
 @app.get("/api/admin/stats")
 def admin_stats(authorization: Optional[str] = Header(None), include_synthetic: int = 0):
     """管理者専用の経営統計。/api/statsよりリッチな情報を返す。
