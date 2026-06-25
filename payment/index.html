@@ -409,6 +409,18 @@
       </div>
     </div>
 
+    <!-- 📅 請求対象月の選択: 今月分 / 翌月分 (月末に翌月分を前倒し請求する運用・2026-06-26 塾長要望) -->
+    <div style="margin-bottom:1rem;display:flex;align-items:center;gap:14px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.3);border-radius:10px;padding:10px 14px;flex-wrap:wrap;">
+      <span style="font-size:0.9rem;font-weight:600;">📅 請求対象月</span>
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.9rem;">
+        <input type="radio" name="monthEndBillMode" value="current" checked style="width:16px;height:16px;cursor:pointer;"> 今月分
+      </label>
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.9rem;">
+        <input type="radio" name="monthEndBillMode" value="next" style="width:16px;height:16px;cursor:pointer;"> 翌月分（月末に前倒し請求）
+      </label>
+      <span style="font-size:0.78rem;color:var(--text-dim);">※ 切替で自動再プレビュー。翌月分モードでは滞納分の同時請求はできません。</span>
+    </div>
+
     <!-- 🕒 滞納分も含める トグル (2026-06-01 塾長要望: 過去3ヶ月の未払い月もカード一括引き落とし) -->
     <div style="margin-bottom:1rem;display:flex;align-items:center;gap:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:10px 14px;">
       <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:0.9rem;line-height:1.5;">

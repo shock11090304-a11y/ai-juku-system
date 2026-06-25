@@ -81,6 +81,20 @@ def _current_month_jst():
     return datetime.now(JST).strftime("%Y-%m")
 
 
+def _add_month(ym, delta):
+    """'YYYY-MM' に delta ヶ月を加えた 'YYYY-MM' を返す (形式外はそのまま)。"""
+    try:
+        y, m = int(ym[:4]), int(ym[5:7])
+    except Exception:
+        return ym
+    m += delta
+    while m > 12:
+        m -= 12; y += 1
+    while m <= 0:
+        m += 12; y -= 1
+    return f"{y:04d}-{m:02d}"
+
+
 def _fetch_index(index_key, month):
     """ZRANGE で全 entries を取り、{rid:month} → rid を抽出 (指定月のみ)"""
     zr = _redis("ZRANGE", index_key, "0", "-1", "REV")
@@ -109,7 +123,15 @@ def _fetch_record(key):
 
 # ===== プレビュー (旧 admin-charge-month-end-preview.py do_GET) =====
 def _handle_preview(handler):
-    month_str = _current_month_jst()
+    # 請求対象月: X-Target-Month ヘッダ (今月 or 翌月) を許可。月末に翌月分を前倒し請求する
+    # 運用 (2026-06-26 塾長要望) に対応。許可外/未指定はカレンダー月にフォールバック。
+    # ヘッダ採用は Vercel rewrite の query 取り回しに依存しないため (確実に handler へ届く)。
+    current_month = _current_month_jst()
+    next_month = _add_month(current_month, 1)
+    target = (handler.headers.get("X-Target-Month", "") or "").strip()
+    billing_month = target if target in (current_month, next_month) else current_month
+    # 以降の already-charged 判定・表示・集計はすべて請求対象月 (billing_month) で行う
+    month_str = billing_month
 
     # 全カード登録済顧客を取得 (新しい順)
     zr = _redis("ZRANGE", "reg:completed:index", "0", "-1", "REV")
@@ -214,7 +236,10 @@ def _handle_preview(handler):
         })
 
     _json(handler, 200, {
-        "month": month_str,
+        "month": month_str,                # 請求対象月 (今月 or 翌月) = billing_month
+        "current_month": current_month,    # カレンダー月 (フロントの confirmMonth ガード・freshness 用)
+        "next_month": next_month,          # 翌月 (UI の請求対象月セレクタ表示用)
+        "billing_month": billing_month,
         "preview_at": int(time.time()),
         "total_customers": len(customers),
         "total_amount": total_amount,

@@ -108,19 +108,24 @@ def _current_month_jst():
     return datetime.now(JST).strftime("%Y-%m")
 
 
-def _allowed_charge_months(current_ym, back=3):
-    """current_ym ("YYYY-MM") と直前 back ヶ月の集合を返す (滞納請求の対象月をサーバ側で限定)。
-    任意月・未来月・古すぎる月を弾くためのホワイトリスト。集合の要素は必ず整形済み YYYY-MM。"""
+def _allowed_charge_months(current_ym, back=3, fwd=1):
+    """current_ym ("YYYY-MM") と直前 back ヶ月・直後 fwd ヶ月の集合を返す
+    (請求対象月をサーバ側でホワイトリスト化)。
+    fwd=1 は「月末に翌月分を請求する」運用 (2026-06-26 塾長要望) のための翌月分。
+    fwd を超える未来月・back を超える古すぎる月は弾く。集合の要素は必ず整形済み YYYY-MM。"""
     try:
         y, m = int(current_ym[:4]), int(current_ym[5:7])
     except Exception:
         return {current_ym}
     out = set()
-    for i in range(0, back + 1):
+    for i in range(-fwd, back + 1):
         yy, mm = y, m - i
         while mm <= 0:
             mm += 12
             yy -= 1
+        while mm > 12:
+            mm -= 12
+            yy += 1
         out.add(f"{yy:04d}-{mm:02d}")
     return out
 
@@ -197,8 +202,9 @@ class handler(BaseHTTPRequestHandler):
                 })
                 return
 
-            # 滞納分対応 (2026-06-01): chargeMonth が指定されたら、その月を請求対象にする。
-            # 安全のためサーバ側で「現在月＋直前3ヶ月」に限定 (任意月・未来月・古すぎる月は弾く)。
+            # 滞納分 / 翌月前倒し対応: chargeMonth が指定されたら、その月を請求対象にする。
+            # 安全のためサーバ側で「翌月＋現在月＋直前3ヶ月」に限定 (それ以外の未来月・古すぎる月は弾く)。
+            # 翌月 (fwd=1) は「月末に翌月分を請求する」運用のため (2026-06-26 塾長要望)。
             # 未指定なら従来どおり現在月。confirmMonth ガードは上で「現在月」に対して既に通過済み
             # (operator は現在月を確認済み)。金額は常にサーバ保存の monthly_fee (クライアント金額は不使用)。
             # current_month を target 月に rebind するだけで、以降の done_key / idempotency / history /

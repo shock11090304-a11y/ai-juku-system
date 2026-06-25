@@ -2239,7 +2239,29 @@ function refresh() {
 // ===========================================================================
 // 💳 月末一斉引き落とし (Stripe Setup Mode + 月末バッチ請求) - 2026-05-13
 // ===========================================================================
-const MONTHEND_STATE = { lastPreview: null, busy: false, excluded: new Set(), includeArrears: false };
+const MONTHEND_STATE = { lastPreview: null, busy: false, excluded: new Set(), includeArrears: false, billMode: 'current' };
+
+// 請求対象月ヘルパー (2026-06-26: 月末に翌月分を前倒し請求する運用)。
+//   billMode 'current' → カレンダー月 / 'next' → 翌月。
+function monthEndCalMonth() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+function monthEndAddMonth(ym, delta) {
+  let y = parseInt(ym.slice(0, 4), 10), m = parseInt(ym.slice(5, 7), 10) + delta;
+  while (m > 12) { m -= 12; y++; }
+  while (m <= 0) { m += 12; y--; }
+  return `${y}-${String(m).padStart(2, '0')}`;
+}
+function monthEndTargetMonth() {
+  const cal = monthEndCalMonth();
+  return MONTHEND_STATE.billMode === 'next' ? monthEndAddMonth(cal, 1) : cal;
+}
+// プレビューが翌月分モードか (請求対象月 ≠ カレンダー月)。滞納同時請求はこのとき無効化する。
+function monthEndIsNextMode(prev) {
+  prev = prev || MONTHEND_STATE.lastPreview;
+  return !!(prev && prev.current_month && prev.month && prev.month !== prev.current_month);
+}
 
 function fmtYenME(n) {
   try { return '¥' + Number(n || 0).toLocaleString('ja-JP'); }
@@ -2296,7 +2318,7 @@ async function fetchMonthEndPreview() {
   try {
     const res = await fetch('/payment/api/admin-charge-month-end-preview', {
       method: 'GET',
-      headers: { 'X-Admin-Password': pw },
+      headers: { 'X-Admin-Password': pw, 'X-Target-Month': monthEndTargetMonth() },
     });
     if (res.status === 401) {
       setMonthEndStatus('❌ 認証失敗。管理パスワードを確認してください', 'error');
@@ -2376,8 +2398,9 @@ function renderMonthEndTable(data) {
     }
     const rid = escapeHtmlME(c.registrationId);
     // 滞納分の明細 (includeArrears ON ∧ 紐付け✓確定済み ∧ 過去に未払い月あり のとき)
+    // 翌月分モードでは滞納同時請求は不可 (誤請求防止) → 明細も出さない。
     let arrearsSub = '';
-    if (MONTHEND_STATE.includeArrears && chargeable) {
+    if (MONTHEND_STATE.includeArrears && chargeable && !monthEndIsNextMode(data)) {
       const a = monthEndArrearsFor(c, meRegToStudent, mePriorMonths);
       if (a) {
         const lbl = a.months.map(m => `${parseInt(m.slice(5), 10)}月`).join('・');
@@ -2441,8 +2464,9 @@ function updateMonthEndSelectionSummary() {
   const sel = chargeable.filter(c => !MONTHEND_STATE.excluded.has(c.registrationId));
   const curSum = sel.reduce((a, c) => a + (Number(c.monthlyFee) || 0), 0);
   // 滞納分の合計 (includeArrears ON のとき・選択中の人のみ)。実行で実際に請求される総額に反映。
+  // 翌月分モードでは滞納同時請求は不可のため合計に含めない。
   let arrearsSum = 0;
-  if (MONTHEND_STATE.includeArrears) {
+  if (MONTHEND_STATE.includeArrears && !monthEndIsNextMode(prev)) {
     const regToStudent = buildRegIdToStudentMap();
     const priorMonths = monthEndPriorMonths(prev.month, 3);
     for (const c of sel) {
@@ -2474,20 +2498,25 @@ async function chargeOneMonthEnd(rid) {
   const c = (preview.customers || []).find(x => x.registrationId === rid);
   if (!c) { setMonthEndStatus('対象が見つかりません。「🔄 プレビュー更新」を押してください', 'warn'); return; }
   if (!c.ready || c.alreadyChargedThisMonth) { setMonthEndStatus('この人は請求対象外です (未 ready または当月請求済)', 'warn'); return; }
-  const nowMonth = (function () { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; })();
-  if (preview.month !== nowMonth) {
-    setMonthEndStatus(`⚠️ プレビューの月 (${preview.month}) と現在月 (${nowMonth}) が不一致。「🔄 プレビュー更新」を押してください`, 'error');
+  const nowMonth = monthEndCalMonth();
+  const calMonth = preview.current_month || preview.month;   // カレンダー月 (confirmMonth ガード用)
+  const billMonth = preview.month;                           // 請求対象月 (今月 or 翌月)
+  const isNextMonth = billMonth !== calMonth;
+  if (calMonth !== nowMonth) {
+    setMonthEndStatus(`⚠️ プレビューの基準月 (${calMonth}) と現在月 (${nowMonth}) が不一致。「🔄 プレビュー更新」を押してください`, 'error');
     return;
   }
   const amt = Number(c.monthlyFee) || 0;
-  if (!confirm(`💳 ${c.studentName} さん 1 名だけを今すぐ引き落とします。\n\n金額: ${fmtYenME(amt)}\n月: ${preview.month}\n\n実行後は取り消せません。よろしいですか?`)) return;
+  if (!confirm(`💳 ${c.studentName} さん 1 名だけを今すぐ引き落とします。\n\n金額: ${fmtYenME(amt)}\n請求月: ${billMonth}${isNextMonth ? ' (翌月分)' : ''}\n\n実行後は取り消せません。よろしいですか?`)) return;
   MONTHEND_STATE.busy = true;
   setMonthEndStatus(`⏳ ${c.studentName} さんを引き落とし中...`, 'info');
   try {
+    const body = { dryRun: false, confirmMonth: calMonth, registrationIds: [rid] };
+    if (isNextMonth) body.chargeMonth = billMonth;   // 翌月分の前倒し請求
     const res = await fetch('/payment/api/admin-charge-month-end-execute', {
       method: 'POST',
       headers: { 'X-Admin-Password': pw, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dryRun: false, confirmMonth: preview.month, registrationIds: [rid] }),
+      body: JSON.stringify(body),
     });
     const data = await res.json();
     if (!res.ok) { setMonthEndStatus(`❌ 実行エラー: ${data.message || data.error || 'unknown'}`, 'error'); MONTHEND_STATE.busy = false; return; }
@@ -2639,12 +2668,12 @@ async function executeMonthEndCharge(dryRun) {
 
   // 🚨 freshness check: preview が 10 分以上前 or 月が変わっている場合は再取得を強制
   const previewAge = Date.now() / 1000 - (preview.preview_at || 0);
-  const nowMonth = (function() {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  })();
-  if (preview.month !== nowMonth) {
-    setMonthEndStatus(`⚠️ プレビューの月 (${preview.month}) と現在月 (${nowMonth}) が一致しません。「🔄 プレビュー更新」を押してください`, 'error');
+  const nowMonth = monthEndCalMonth();
+  const calMonth = preview.current_month || preview.month;   // サーバのカレンダー月 (confirmMonth ガード用)
+  const billMonth = preview.month;                           // 請求対象月 (今月 or 翌月)
+  const isNextMonth = billMonth !== calMonth;
+  if (calMonth !== nowMonth) {
+    setMonthEndStatus(`⚠️ プレビューの基準月 (${calMonth}) と現在月 (${nowMonth}) が一致しません。「🔄 プレビュー更新」を押してください`, 'error');
     return;
   }
   if (previewAge > 600 && !dryRun) {
@@ -2652,7 +2681,7 @@ async function executeMonthEndCharge(dryRun) {
     return;
   }
 
-  const month = preview.month;
+  const month = billMonth;   // 表示・名簿反映ラベルは請求対象月
 
   // 対象トグルで選択された人だけを請求 (ready ∧ 当月未請求 ∧ ON)。0 名なら必ず中止 (空配列を送らない)。
   const selectedIds = selectedMonthEndIds();
@@ -2670,7 +2699,7 @@ async function executeMonthEndCharge(dryRun) {
   const arrearsPlan = {};            // { "YYYY-MM": [registrationId, ...] }
   const arrearsLines = [];
   let arrearsTotal = 0;
-  if (MONTHEND_STATE.includeArrears) {
+  if (MONTHEND_STATE.includeArrears && !isNextMonth) {
     for (const c of selCustomers) {
       const a = monthEndArrearsFor(c, regToStudent, priorMonths);
       if (!a) continue;
@@ -2687,22 +2716,24 @@ async function executeMonthEndCharge(dryRun) {
     const arrearsMsg = (MONTHEND_STATE.includeArrears && arrearsTotal > 0)
       ? `\n\n🕒 滞納分 (過去最大3ヶ月): ¥${arrearsTotal.toLocaleString()}\n${arrearsLines.slice(0, 10).join('\n')}${arrearsLines.length > 10 ? `\n  ...他 ${arrearsLines.length - 10} 名` : ''}\n合計 (当月＋滞納): ¥${grandTotal.toLocaleString()}`
       : '';
-    const msg = `🚨 本当に実行しますか?\n\n当月 (${month}): ${selectedIds.length} 名 / ¥${selTotal.toLocaleString()}${arrearsMsg}\n\n(対象トグル OFF の人・既に引落済みの月は自動で除外されます)\n実行後は取り消せません。`;
+    const billLabel = isNextMonth ? `翌月分 (${month})` : `当月 (${month})`;
+    const msg = `🚨 本当に実行しますか?\n\n${billLabel}: ${selectedIds.length} 名 / ¥${selTotal.toLocaleString()}${arrearsMsg}\n\n(対象トグル OFF の人・既に引落済みの月は自動で除外されます)\n実行後は取り消せません。`;
     if (!confirm(msg)) return;
-    // 2 回目の確認: 月名を手動で入力させて typo 防止
-    const typed = prompt(`安全のため、現在月を入力してください (例: ${month}) して OK を押してください。\nキャンセルで中止できます。`);
+    // 2 回目の確認: 請求対象月を手動で入力させて typo 防止
+    const typed = prompt(`安全のため、請求対象月を入力してください (例: ${month}) して OK を押してください。\nキャンセルで中止できます。`);
     if (typed === null) return;
     if ((typed || '').trim() !== month) {
-      alert(`入力 (${typed}) が現在月 (${month}) と一致しません。中止します。`);
+      alert(`入力 (${typed}) が請求対象月 (${month}) と一致しません。中止します。`);
       return;
     }
   }
   MONTHEND_STATE.busy = true;
   setMonthEndStatus(dryRun ? '⏳ ドライラン実行中...' : '⏳ 一斉引き落とし実行中... (数分かかる場合があります)', 'info');
   try {
-    // 請求コール一覧: 当月 (registrationIds) + 滞納各月 (chargeMonth + その月を未払いの生徒)。各月 1 コール。
-    const calls = [{ month: month, ids: selectedIds, arrears: false }];
-    if (MONTHEND_STATE.includeArrears) {
+    // 請求コール一覧: 請求対象月 (registrationIds) + 滞納各月 (chargeMonth + その月を未払いの生徒)。各月 1 コール。
+    // 翌月分モードでは main コールに chargeMonth=翌月 を渡してその月で請求する (滞納は同時不可)。
+    const calls = [{ month: billMonth, ids: selectedIds, arrears: false, chargeMonth: isNextMonth ? billMonth : null }];
+    if (MONTHEND_STATE.includeArrears && !isNextMonth) {
       for (const pm of priorMonths) {
         const ids = arrearsPlan[pm];
         if (ids && ids.length) calls.push({ month: pm, ids: ids, arrears: true });
@@ -2717,8 +2748,11 @@ async function executeMonthEndCharge(dryRun) {
     let writeBackN = 0;
     let lastError = '';
     for (const call of calls) {
-      const body = { dryRun: dryRun, confirmMonth: month, registrationIds: call.ids };
-      if (call.arrears) body.chargeMonth = call.month;   // 滞納月はサーバ側で「直前3ヶ月」に限定検証される
+      // confirmMonth は常にカレンダー月 (サーバの MONTH_MISMATCH ガード用)。
+      // chargeMonth で実際の請求対象月を指定 (滞納=過去月 / 翌月前倒し=翌月)。
+      const body = { dryRun: dryRun, confirmMonth: calMonth, registrationIds: call.ids };
+      if (call.arrears) body.chargeMonth = call.month;            // 滞納月 (過去・サーバ側で範囲検証)
+      else if (call.chargeMonth) body.chargeMonth = call.chargeMonth;  // 翌月分の前倒し請求
       const { ok, data } = await postMonthEndExecuteCall(pw, body);
       if (!ok) { lastError = data.message || data.error || 'unknown'; continue; }
       const s = data.summary || {};
@@ -5948,6 +5982,26 @@ function setupModals() {
   document.getElementById('monthEndIncludeArrears')?.addEventListener('change', (e) => {
     MONTHEND_STATE.includeArrears = !!e.target.checked;
     if (MONTHEND_STATE.lastPreview) renderMonthEndTable(MONTHEND_STATE.lastPreview);
+  });
+  // 📅 請求対象月セレクタ (2026-06-26): 今月分 / 翌月分。切替で再プレビュー。
+  // 翌月分モードでは滞納分トグルを無効化 (誤請求防止)。
+  document.querySelectorAll('input[name="monthEndBillMode"]').forEach((el) => {
+    el.addEventListener('change', (e) => {
+      MONTHEND_STATE.billMode = e.target.value === 'next' ? 'next' : 'current';
+      const arr = document.getElementById('monthEndIncludeArrears');
+      if (arr) {
+        if (MONTHEND_STATE.billMode === 'next') {
+          arr.checked = false;
+          arr.disabled = true;
+          MONTHEND_STATE.includeArrears = false;
+        } else {
+          arr.disabled = false;
+        }
+      }
+      MONTHEND_STATE.excluded = new Set();   // モード切替で選択状態はリセット
+      if (getMonthEndAdminPw()) fetchMonthEndPreview();
+      else if (MONTHEND_STATE.lastPreview) renderMonthEndTable(MONTHEND_STATE.lastPreview);
+    });
   });
   document.getElementById('monthEndExportCsvBtn')?.addEventListener('click', downloadMonthEndCsv);
   document.getElementById('monthEndAdminPw')?.addEventListener('keypress', (e) => {
