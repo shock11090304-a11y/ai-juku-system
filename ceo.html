@@ -1796,8 +1796,11 @@
           <button id="poolGenerateBtn" style="background:rgba(34,197,94,0.2);color:#22c55e;border:1px solid rgba(34,197,94,0.4);padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">⚡ 今すぐ生成</button>
           <button id="poolBurstBtn" style="background:linear-gradient(135deg,#7c3aed,#ec4899);color:#fff;border:none;padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(124,58,237,0.4);">🚀 一括 burst seed</button>
           <button id="poolMaxFillBtn" style="background:linear-gradient(135deg,#dc2626,#f59e0b);color:#fff;border:none;padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(220,38,38,0.4);">🔥 全枠 30問 満杯</button>
+          <button id="wolframTestBtn" title="理系数学を1問生成し、Wolframで解答キーを検算してその場で結果表示" style="background:linear-gradient(135deg,#0891b2,#6366f1);color:#fff;border:none;padding:0.35rem 0.8rem;border-radius:6px;font-size:0.78rem;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(99,102,241,0.4);">🧮 検算テスト</button>
         </div>
       </div>
+      <!-- 🧮 Wolfram 検算テスト結果表示 -->
+      <div id="wolframTestResult" style="display:none;margin-bottom:1rem;padding:0.9rem 1rem;border-radius:10px;font-size:0.82rem;line-height:1.6;"></div>
 
       <!-- KPI カード -->
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.7rem;margin-bottom:1rem;">
@@ -7740,7 +7743,67 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         poolGenBtn.disabled = false; poolGenBtn.textContent = '⚡ 今すぐ生成';
       });
 
-      // 共通: burst seed 実行関数
+      // 🧮 Wolfram 検算テスト: 理系数学を1問生成→検算結果をその場で表示
+      const wolframTestBtn = document.getElementById('wolframTestBtn');
+      if (wolframTestBtn) wolframTestBtn.addEventListener('click', async () => {
+        if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
+        if (!confirm('理系数学(共通テスト型)を1問生成し、Wolframで解答キーを検算します。\nAnthropic 生成1回 + Wolfram検算1回の少額課金が発生します。続行?')) return;
+        const box = document.getElementById('wolframTestResult');
+        wolframTestBtn.disabled = true; wolframTestBtn.textContent = '⏳ 生成+検算中...';
+        if (box) {
+          box.style.display = 'block';
+          box.style.background = 'rgba(99,102,241,0.12)';
+          box.style.border = '1px solid rgba(99,102,241,0.4)';
+          box.style.color = '#c7d2fe';
+          box.innerHTML = '⏳ 理系数学を生成して Wolfram で検算しています… (15〜30秒)';
+        }
+        try {
+          const r = await AdminAuth.fetch('/api/admin/exam-questions/generate', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ exam_id: 'rikei', part_key: 'math_1a', eiken_grade: 'kyotsu_rikei', count: 1 })
+          });
+          const j = await r.json();
+          // 通常(助言)は details[0].wolfram。ブロックモードで弾かれた場合は rejected_details[0].wolfram。
+          const det = (j.details || [])[0] || {};
+          const rej = (j.rejected_details || [])[0] || {};
+          const w = det.wolfram || rej.wolfram; // {checked, verified, mismatch, unverifiable, other}
+          if (!box) { alert(JSON.stringify(j)); }
+          else if (!w || !w.checked) {
+            // 検算が走らなかった (WOLFRAM_APP_ID未設定 / 選択肢解決不可 / 図依存 など)
+            box.style.background = 'rgba(234,179,8,0.12)';
+            box.style.border = '1px solid rgba(234,179,8,0.45)';
+            box.style.color = '#fde68a';
+            box.innerHTML = `⚠️ 検算は走りませんでした (生成 ${j.generated || 0}問)。`
+              + `<br>考えられる原因: WOLFRAM_APP_ID 未設定 / 図に依存する問題 / 選択肢を解決できなかった。`
+              + `<br>もう一度押すと別の問題で再試行します。`;
+          } else {
+            const mismatch = w.mismatch || 0;
+            const verified = w.verified || 0;
+            const unver = w.unverifiable || 0;
+            const good = mismatch === 0;
+            box.style.background = good ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.14)';
+            box.style.border = good ? '1px solid rgba(34,197,94,0.45)' : '1px solid rgba(239,68,68,0.5)';
+            box.style.color = good ? '#86efac' : '#fca5a5';
+            let html = `🧮 <b>Wolfram検算 発火OK</b> — 検算 ${w.checked}件中: `
+              + `✅一致 ${verified} / ❌誤答キー疑い ${mismatch} / ❓計算不可 ${unver}`;
+            if (mismatch > 0) html += `<br>🚨 <b>誤答キーの疑いを検出しました</b>。生成された解答キーが Wolfram の計算と食い違っています。`;
+            else if (verified > 0) html += `<br>✅ 解答キーは Wolfram の計算と一致しました。`;
+            else html += `<br>（この問題は計算で検証できませんでした）`;
+            box.innerHTML = html;
+          }
+          loadPoolStatus();
+        } catch (e) {
+          if (box) {
+            box.style.background = 'rgba(239,68,68,0.14)';
+            box.style.border = '1px solid rgba(239,68,68,0.5)';
+            box.style.color = '#fca5a5';
+            box.innerHTML = '⚠️ エラー: ' + (e.message || e);
+          } else { alert('⚠️ ' + e.message); }
+        }
+        wolframTestBtn.disabled = false; wolframTestBtn.textContent = '🧮 検算テスト';
+      });
+
+
       async function runBurstSeed(target, maxTotal, concurrency, btnEl) {
         if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
         const orig = btnEl.innerHTML;
