@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0f0f1e">
+  <title>トリリオン塾生アプリ 登録</title>
+  <script src="cache-purge.js?v=20260625-juku-reg"></script>
+  <style>
+    body { background: linear-gradient(135deg, #0f0f1e, #1a1a2e); color: #e4e4e7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; margin: 0; padding: 0 0 3rem; }
+    a { color: #c4b5fd; }
+    .appbar { display:flex; align-items:center; justify-content:space-between; padding:0.9rem 1.1rem; background:rgba(0,0,0,0.5); border-bottom:1px solid rgba(255,255,255,0.08); }
+    .brand { font-size:1.02rem; font-weight:800; background:linear-gradient(135deg,#a78bfa,#818cf8); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .wrap { max-width: 520px; margin: 1.4rem auto; padding: 0 1.1rem; }
+    .hero { text-align:center; margin:0.5rem 0 1.4rem; }
+    .hero h1 { font-size:1.5rem; margin:0 0 0.5rem; }
+    .hero p { color:#cbd5e1; font-size:0.92rem; line-height:1.7; margin:0.3rem 0; }
+    .card { background:rgba(255,255,255,0.04); border:1px solid rgba(129,140,248,0.30); border-radius:14px; padding:1.3rem 1.2rem; }
+    label { display:block; font-size:0.82rem; color:#cbd5e1; font-weight:700; margin:0.9rem 0 0.35rem; }
+    label .req { color:#fca5a5; }
+    input, textarea { width:100%; box-sizing:border-box; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.16); border-radius:9px; color:#e4e4e7; padding:0.7rem; font-size:0.95rem; font-family:inherit; }
+    input:focus, textarea:focus { outline:none; border-color:#818cf8; }
+    textarea { min-height:64px; resize:vertical; }
+    .hint { font-size:0.75rem; color:#a1a1aa; margin-top:0.3rem; line-height:1.5; }
+    .btn { display:block; width:100%; margin-top:1.3rem; padding:0.8rem; border:none; border-radius:10px; font-weight:800; font-size:1rem; cursor:pointer; background:linear-gradient(135deg,#818cf8,#6366f1); color:#fff; font-family:inherit; }
+    .btn:disabled { opacity:0.55; cursor:default; }
+    .msg { margin-top:1rem; padding:0.9rem 1rem; border-radius:10px; font-size:0.9rem; line-height:1.7; display:none; }
+    .msg.show { display:block; }
+    .msg.ok { background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.4); color:#6ee7b7; }
+    .msg.err { background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); color:#fca5a5; }
+    .foot { text-align:center; margin-top:1.4rem; font-size:0.82rem; }
+    .steps { display:flex; gap:0.5rem; justify-content:center; margin:0.8rem 0 0.2rem; flex-wrap:wrap; font-size:0.76rem; color:#a1a1aa; }
+    .steps span { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:999px; padding:0.25rem 0.7rem; }
+  </style>
+</head>
+<body>
+  <header class="appbar">
+    <div class="brand">📚 トリリオン塾生アプリ</div>
+  </header>
+
+  <main class="wrap">
+    <div class="hero">
+      <h1>📚 塾生アプリ 登録</h1>
+      <p>通塾生のみなさん向けの登録フォームです。<br>登録後、<strong>塾長の確認が取れ次第</strong>、ログイン用リンクをメールでお送りします。</p>
+      <div class="steps"><span>① 入力して送信</span><span>② 塾長が確認</span><span>③ メールのリンクでログイン</span></div>
+    </div>
+
+    <div class="card">
+      <form id="regForm" novalidate>
+        <label>お名前 <span class="req">*</span></label>
+        <input id="name" type="text" autocomplete="name" placeholder="例: 山田 太郎" maxlength="100" required>
+
+        <label>メールアドレス <span class="req">*</span></label>
+        <input id="email" type="email" autocomplete="email" inputmode="email" placeholder="例: taro@example.com" maxlength="200" required>
+        <div class="hint">ログイン用のリンクをこのアドレスに送ります。普段使っているアドレスを入れてください。</div>
+
+        <label>ひとこと（任意）</label>
+        <textarea id="note" maxlength="500" placeholder="学年・塾での呼び名・通っている曜日など、塾長が本人確認しやすい情報があれば"></textarea>
+
+        <button id="submitBtn" class="btn" type="submit">この内容で登録する</button>
+        <div id="msg" class="msg"></div>
+      </form>
+    </div>
+
+    <div class="foot">
+      <p>すでに登録済みの方は <a href="login.html">こちらからログイン</a></p>
+    </div>
+  </main>
+
+  <script>
+  (function () {
+    var BACKEND_URL = (window.location.hostname === 'localhost' && window.location.port === '8090')
+      ? 'http://localhost:8000' : window.location.origin;
+    var form = document.getElementById('regForm');
+    var btn = document.getElementById('submitBtn');
+    var msgEl = document.getElementById('msg');
+
+    function showMsg(text, isErr) {
+      msgEl.innerHTML = text;
+      msgEl.className = 'msg show ' + (isErr ? 'err' : 'ok');
+    }
+    function fmtDetail(d) {
+      if (!d) return '';
+      if (typeof d === 'string') return d;
+      if (Array.isArray(d)) return d.map(function (x) { return (x && (x.msg || x.message)) || ''; }).filter(Boolean).join(' / ');
+      return (d.msg || d.message) || '';
+    }
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var name = (document.getElementById('name').value || '').trim();
+      var email = (document.getElementById('email').value || '').trim();
+      var note = (document.getElementById('note').value || '').trim();
+      if (!name) { showMsg('お名前を入力してください。', true); return; }
+      if (!email || email.indexOf('@') < 0) { showMsg('有効なメールアドレスを入力してください。', true); return; }
+      btn.disabled = true;
+      var orig = btn.textContent; btn.textContent = '送信中…';
+      msgEl.className = 'msg';
+      try {
+        var res = await fetch(BACKEND_URL + '/api/course-applications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: name, email: email, note: note || undefined, referrer: '塾生アプリ' })
+        });
+        var data = null; try { data = await res.json(); } catch (e2) {}
+        if (res.ok) {
+          form.style.display = 'none';
+          showMsg('✅ 登録を受け付けました！<br>塾長の確認後、<strong>' + email.replace(/[<>&]/g, '') + '</strong> 宛にログイン用リンクをお送りします。メールが届くまでお待ちください。', false);
+        } else if (res.status === 409) {
+          showMsg('このメールアドレスはすでに登録済み（または申請済み）です。ログイン用リンクが届いていないか、メールをご確認ください。届いていなければ塾長までご連絡ください。', true);
+          btn.disabled = false; btn.textContent = orig;
+        } else {
+          showMsg('送信に失敗しました：' + (fmtDetail(data && data.detail) || ('HTTP ' + res.status)), true);
+          btn.disabled = false; btn.textContent = orig;
+        }
+      } catch (err) {
+        showMsg('通信エラーが発生しました。電波の良い場所で、もう一度お試しください。', true);
+        btn.disabled = false; btn.textContent = orig;
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -2210,14 +2210,17 @@ async function loadCourseApps() {
     list.innerHTML = apps.map(a => `
       <div data-id="${a.id}" style="background:rgba(255,255,255,0.04); border:1px solid rgba(167,139,250,0.3); border-left:4px solid #a78bfa; border-radius:10px; padding:0.85rem; margin-bottom:0.5rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.3rem;">
-          <div style="font-weight:800; color:#e4e4e7;">📥 ${escapeHtml(a.name)}${a.grade ? ` <span style="color:#71717a; font-size:0.78rem;">(${escapeHtml(a.grade)})</span>` : ''}</div>
+          <div style="font-weight:800; color:#e4e4e7;">📥 ${escapeHtml(a.name)}${a.grade ? ` <span style="color:#71717a; font-size:0.78rem;">(${escapeHtml(a.grade)})</span>` : ''}
+            ${a.referrer === '塾生アプリ'
+              ? '<span style="background:rgba(129,140,248,0.22); color:#c7d2fe; border:1px solid rgba(129,140,248,0.45); border-radius:999px; padding:0.05rem 0.5rem; font-size:0.68rem; font-weight:700; margin-left:0.35rem;">🏫 塾生アプリ</span>'
+              : '<span style="background:rgba(167,139,250,0.18); color:#ddd6fe; border:1px solid rgba(167,139,250,0.4); border-radius:999px; padding:0.05rem 0.5rem; font-size:0.68rem; font-weight:700; margin-left:0.35rem;">🎓 難関コース</span>'}</div>
           <div style="font-size:0.72rem; color:#71717a;">${escapeHtml(_msgFmtJst(a.created_at))}</div>
         </div>
         <div style="display:grid; grid-template-columns:auto 1fr; gap:0.3rem 0.7rem; font-size:0.82rem; margin-bottom:0.5rem;">
           <span style="color:#a1a1aa;">📧 メール:</span> <span style="color:#e4e4e7;">${escapeHtml(a.email)}</span>
           ${a.target_university ? `<span style="color:#a1a1aa;">🎯 志望校:</span> <span style="color:#fbbf24;">${escapeHtml(a.target_university)}</span>` : ''}
           ${a.phone ? `<span style="color:#a1a1aa;">📞 電話:</span> <span style="color:#e4e4e7;">${escapeHtml(a.phone)}</span>` : ''}
-          ${a.referrer ? `<span style="color:#a1a1aa;">👥 紹介者:</span> <span style="color:#e4e4e7;">${escapeHtml(a.referrer)}</span>` : ''}
+          ${a.referrer && a.referrer !== '塾生アプリ' ? `<span style="color:#a1a1aa;">👥 紹介者:</span> <span style="color:#e4e4e7;">${escapeHtml(a.referrer)}</span>` : ''}
         </div>
         ${a.note ? `<div style="background:rgba(0,0,0,0.25); padding:0.45rem 0.6rem; border-radius:6px; font-size:0.82rem; color:#d4d4d8; margin-bottom:0.5rem;">💬 ${escapeHtml(a.note)}</div>` : ''}
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">

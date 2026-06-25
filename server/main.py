@@ -41026,20 +41026,23 @@ def public_course_application(payload: CourseApplicationRequest, request: Reques
     admin_to = os.getenv("DAILY_SNS_TO_EMAIL") or os.getenv("MONITORING_TO_EMAIL")
     if admin_to and RESEND_API_KEY:
         try:
+            _is_juku = (referrer == "塾生アプリ")
+            _kind = "🏫 トリリオン塾生アプリ 新規登録申請" if _is_juku else "国公立難関大学コースへの新規申込"
             body_text = (
                 f"塾長へ\n\n"
-                f"国公立難関大学コースへの新規申込が届きました。\n\n"
+                f"{_kind}が届きました。\n\n"
                 f"## 申込者情報\n"
                 f"お名前: {name}\n"
                 f"メール: {email_lower}\n"
                 f"学年: {grade or '未記入'}\n"
-                f"志望校: {target_uni or '未記入'}\n"
-                f"電話: {phone or '未記入'}\n"
-                f"紹介者: {referrer or 'なし'}\n"
-                f"メモ: {note or 'なし'}\n\n"
-                f"CEO ダッシュ → 📋 難関コース申込待ち から承認できます。"
+                + ("" if _is_juku else f"志望校: {target_uni or '未記入'}\n")
+                + ("" if _is_juku else f"電話: {phone or '未記入'}\n")
+                + (f"出所: 塾生アプリ登録フォーム\n" if _is_juku else f"紹介者: {referrer or 'なし'}\n")
+                + f"メモ: {note or 'なし'}\n\n"
+                f"CEO ダッシュ → 📋 申込待ち から承認できます。"
             )
-            _send_message_email(admin_to, f"📥 難関コース 新規申込: {name}", body_text, student_name="塾長")
+            _subj = f"📥 塾生アプリ 新規登録: {name}" if _is_juku else f"📥 難関コース 新規申込: {name}"
+            _send_message_email(admin_to, _subj, body_text, student_name="塾長")
         except Exception as ee:
             log.warning(f"[CourseApp] admin email failed: {ee}")
 
@@ -41098,7 +41101,7 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
     conn = db()
     try:
         c = conn.cursor()
-        c.execute("SELECT id, name, email, status FROM course_applications WHERE id = ?", (app_id,))
+        c.execute("SELECT id, name, email, status, referrer FROM course_applications WHERE id = ?", (app_id,))
         row = c.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="申込が見つかりません")
@@ -41106,6 +41109,8 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
             raise HTTPException(status_code=409, detail=f"既に {row['status']} 状態です")
         email_lower = (row["email"] or "").lower().strip()
         name = row["name"]
+        # 🏫 トリリオン塾生アプリの自己登録(referrer='塾生アプリ')は、難関コースとは別文面のウェルカムを送る
+        _is_juku_app_reg = ((row["referrer"] if "referrer" in row.keys() else None) or "") == "塾生アプリ"
 
         # 既存生徒検索 → なければ trial として新規作成
         c.execute("SELECT id, status, course FROM students WHERE LOWER(email) = ? LIMIT 1", (email_lower,))
@@ -41149,21 +41154,38 @@ def admin_approve_course_application(app_id: int, payload: CourseApplicationAppr
         # 🔑 2026-05-31 統一: magic link は _create_magic_link_token (default 30 日) 経由に
         magic_token = _create_magic_link_token(student_id)
         login_url = f"https://trillion-ai-juku.com/auth.html?t={magic_token}"
-        body_text = (
-            f"{name} さん\n\n"
-            f"国公立難関大学コースへのご加入が承認されました!\n"
-            f"以下のリンクから1-クリックでログインできます (有効期限 1時間):\n\n"
-            f"{login_url}\n\n"
-            f"ログイン後、マイページで以下が利用可能になります:\n"
-            f"📚 学習記録 + ヒートマップ\n"
-            f"🎓 合格カリキュラム (AI 自動生成)\n"
-            f"📊 模試結果 + AI ギャップ分析\n"
-            f"🎯 AI 弱点プリント生成 + スタサプ補強推薦\n"
-            f"📅 学習計画 (ガント + カレンダー)\n"
-            f"📨 塾長との直接メッセージ\n\n"
-            f"ご利用料金につきましては別途ご案内いたします。"
-        )
-        res = _send_message_email(email_lower, "✅ 国公立難関大学コース ご加入承認", body_text, student_name=name)
+        if _is_juku_app_reg:
+            # 🏫 トリリオン塾生アプリの登録者向け文面 (難関コースのAI機能案内は出さない)
+            welcome_subject = "✅ トリリオン塾生アプリ ご登録承認"
+            body_text = (
+                f"{name} さん\n\n"
+                f"トリリオン塾生アプリのご登録が承認されました!\n"
+                f"以下のリンクから1クリックでログインできます (有効期限 30日間):\n\n"
+                f"{login_url}\n\n"
+                f"ログイン後、マイページの「📚 トリリオン塾生アプリ」から以下が使えます:\n"
+                f"📅 授業の予定・配布ファイル・出欠の連絡\n"
+                f"📝 宿題 (アプリ内ドリルで解いて提出)\n"
+                f"🎬 授業の録画アーカイブ\n"
+                f"💬 塾長へのメッセージ\n\n"
+                f"※リンクの有効期限が切れた場合は、ログイン画面でメールアドレスを入力すれば再送できます。"
+            )
+        else:
+            welcome_subject = "✅ 国公立難関大学コース ご加入承認"
+            body_text = (
+                f"{name} さん\n\n"
+                f"国公立難関大学コースへのご加入が承認されました!\n"
+                f"以下のリンクから1-クリックでログインできます (有効期限 30日間):\n\n"
+                f"{login_url}\n\n"
+                f"ログイン後、マイページで以下が利用可能になります:\n"
+                f"📚 学習記録 + ヒートマップ\n"
+                f"🎓 合格カリキュラム (AI 自動生成)\n"
+                f"📊 模試結果 + AI ギャップ分析\n"
+                f"🎯 AI 弱点プリント生成 + スタサプ補強推薦\n"
+                f"📅 学習計画 (ガント + カレンダー)\n"
+                f"📨 塾長との直接メッセージ\n\n"
+                f"ご利用料金につきましては別途ご案内いたします。"
+            )
+        res = _send_message_email(email_lower, welcome_subject, body_text, student_name=name)
         sent_link = res.get("sent", False)
     except Exception as e:
         log.warning(f"[CourseApp] welcome email failed: {e}")
