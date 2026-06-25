@@ -7743,76 +7743,50 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
         poolGenBtn.disabled = false; poolGenBtn.textContent = '⚡ 今すぐ生成';
       });
 
-      // 🧮 Wolfram 検算テスト: 理系数学を1問生成→検算結果をその場で表示
+      // 🧮 Wolfram 検算テスト: 軽量自己診断 (問題生成なし・既知問題でパイプラインを検証)
       const wolframTestBtn = document.getElementById('wolframTestBtn');
       if (wolframTestBtn) wolframTestBtn.addEventListener('click', async () => {
         if (!window.AdminAuth || !AdminAuth.getToken()) return alert('管理者ログインが必要');
-        if (!confirm('理系数学(共通テスト型)を1問生成し、Wolframで解答キーを検算します。\nAnthropic 生成1回 + Wolfram検算1回の少額課金が発生します。続行?')) return;
         const box = document.getElementById('wolframTestResult');
-        wolframTestBtn.disabled = true; wolframTestBtn.textContent = '⏳ 生成+検算中...';
-        if (box) {
+        wolframTestBtn.disabled = true; wolframTestBtn.textContent = '⏳ 検算チェック中...';
+        const setBox = (bg, bd, col, html) => {
+          if (!box) return;
           box.style.display = 'block';
-          box.style.background = 'rgba(99,102,241,0.12)';
-          box.style.border = '1px solid rgba(99,102,241,0.4)';
-          box.style.color = '#c7d2fe';
-          box.innerHTML = '⏳ 理系数学を生成して Wolfram で検算しています… (15〜30秒)';
-        }
+          box.style.background = bg; box.style.border = '1px solid ' + bd; box.style.color = col;
+          box.innerHTML = html;
+        };
+        setBox('rgba(99,102,241,0.12)', 'rgba(99,102,241,0.4)', '#c7d2fe',
+          '⏳ 既知の数学問題で Wolfram 検算パイプラインを確認しています… (5〜10秒)');
         try {
-          const r = await AdminAuth.fetch('/api/admin/exam-questions/generate', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ exam_id: 'rikei', part_key: 'math_1a', eiken_grade: 'kyotsu_rikei', count: 1 })
-          });
-          // 応答を堅牢にパース: 非JSON(502/504 HTML 等)でも落とさず中身を見せる
+          const r = await AdminAuth.fetch('/api/admin/wolfram/selftest', { method: 'GET' });
           const raw = await r.text();
-          let j = null;
-          try { j = JSON.parse(raw); } catch (_) { j = null; }
+          let j = null; try { j = JSON.parse(raw); } catch (_) { j = null; }
           if (!r.ok || !j) {
-            // サーバ側エラー or 非JSON応答 → 診断情報をそのまま表示
-            box.style.background = 'rgba(239,68,68,0.14)';
-            box.style.border = '1px solid rgba(239,68,68,0.5)';
-            box.style.color = '#fca5a5';
-            const detail = j ? (j.detail || JSON.stringify(j)) : (raw || '(空応答)').slice(0, 400);
-            box.innerHTML = `⚠️ サーバ応答エラー (HTTP ${r.status})<br><span style="font-size:0.78rem;color:#fecaca;">${String(detail).replace(/</g,'&lt;')}</span>`;
-            wolframTestBtn.disabled = false; wolframTestBtn.textContent = '🧮 検算テスト';
-            loadPoolStatus();
-            return;
-          }
-          // 通常(助言)は details[0].wolfram。ブロックモードで弾かれた場合は rejected_details[0].wolfram。
-          const det = (j.details || [])[0] || {};
-          const rej = (j.rejected_details || [])[0] || {};
-          const w = det.wolfram || rej.wolfram; // {checked, verified, mismatch, unverifiable, other}
-          if (!box) { alert(JSON.stringify(j)); }
-          else if (!w || !w.checked) {
-            // 検算が走らなかった (WOLFRAM_APP_ID未設定 / 選択肢解決不可 / 図依存 など)
-            box.style.background = 'rgba(234,179,8,0.12)';
-            box.style.border = '1px solid rgba(234,179,8,0.45)';
-            box.style.color = '#fde68a';
-            box.innerHTML = `⚠️ 検算は走りませんでした (生成 ${j.generated || 0}問)。`
-              + `<br>考えられる原因: WOLFRAM_APP_ID 未設定 / 図に依存する問題 / 選択肢を解決できなかった。`
-              + `<br>もう一度押すと別の問題で再試行します。`;
+            setBox('rgba(239,68,68,0.14)', 'rgba(239,68,68,0.5)', '#fca5a5',
+              `⚠️ サーバ応答エラー (HTTP ${r.status})<br><span style="font-size:0.78rem;color:#fecaca;">${String(j ? (j.detail||JSON.stringify(j)) : (raw||'(空応答)')).slice(0,400).replace(/</g,'&lt;')}</span>`);
+          } else if (!j.configured) {
+            // WOLFRAM_APP_ID 未設定 → 設定手順を案内
+            setBox('rgba(234,179,8,0.12)', 'rgba(234,179,8,0.45)', '#fde68a',
+              `⚠️ <b>WOLFRAM_APP_ID が未設定です</b><br>`
+              + `Railway → ai-juku-api → Variables に <code>WOLFRAM_APP_ID</code> を追加して Deploy してください。`
+              + `<br>App ID は <a href="https://developer.wolframalpha.com/" target="_blank" style="color:#93c5fd;">developer.wolframalpha.com</a> の「Get an App ID」で発行できます(非商用は無料)。`);
           } else {
-            const mismatch = w.mismatch || 0;
-            const verified = w.verified || 0;
-            const unver = w.unverifiable || 0;
-            const good = mismatch === 0;
-            box.style.background = good ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.14)';
-            box.style.border = good ? '1px solid rgba(34,197,94,0.45)' : '1px solid rgba(239,68,68,0.5)';
-            box.style.color = good ? '#86efac' : '#fca5a5';
-            let html = `🧮 <b>Wolfram検算 発火OK</b> — 検算 ${w.checked}件中: `
-              + `✅一致 ${verified} / ❌誤答キー疑い ${mismatch} / ❓計算不可 ${unver}`;
-            if (mismatch > 0) html += `<br>🚨 <b>誤答キーの疑いを検出しました</b>。生成された解答キーが Wolfram の計算と食い違っています。`;
-            else if (verified > 0) html += `<br>✅ 解答キーは Wolfram の計算と一致しました。`;
-            else html += `<br>（この問題は計算で検証できませんでした）`;
-            box.innerHTML = html;
+            const st = (j.selftest_correct || {}).status;
+            if (st === 'verified') {
+              setBox('rgba(34,197,94,0.12)', 'rgba(34,197,94,0.45)', '#86efac',
+                `🧮 <b>Wolfram検算パイプライン 正常稼働</b> ✅<br>`
+                + `既知問題 (x²−5x+6=0 → x=2,3) を Wolfram で検算し、解答キーの一致を確認しました。`
+                + `<br>本番の理系数学生成でも誤答キー検算が有効です。`);
+            } else {
+              const j2 = j.selftest_correct || {};
+              setBox('rgba(234,179,8,0.12)', 'rgba(234,179,8,0.45)', '#fde68a',
+                `⚠️ 検算は走りましたが結果が「${st || '不明'}」でした。`
+                + (j.anthropic_configured === false ? '<br>Anthropic APIキー未設定/残高切れの可能性。' : '')
+                + `<br><span style="font-size:0.76rem;color:#fde68a;">query: ${String(j2.query||'-').slice(0,160).replace(/</g,'&lt;')} / wolfram: ${String(j2.wolfram||'-').slice(0,160).replace(/</g,'&lt;')}</span>`);
+            }
           }
-          loadPoolStatus();
         } catch (e) {
-          if (box) {
-            box.style.background = 'rgba(239,68,68,0.14)';
-            box.style.border = '1px solid rgba(239,68,68,0.5)';
-            box.style.color = '#fca5a5';
-            box.innerHTML = '⚠️ エラー: ' + (e.message || e);
-          } else { alert('⚠️ ' + e.message); }
+          setBox('rgba(239,68,68,0.14)', 'rgba(239,68,68,0.5)', '#fca5a5', '⚠️ エラー: ' + (e.message || e));
         }
         wolframTestBtn.disabled = false; wolframTestBtn.textContent = '🧮 検算テスト';
       });
