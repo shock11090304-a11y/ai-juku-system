@@ -5,19 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
   <meta name="robots" content="noindex">
-  <title>🏫 塾生メニュー | トリリオンAI塾</title>
-  <script src="cache-purge.js?v=20260625-class"></script>
+  <meta name="theme-color" content="#0f0f1e">
+  <title>トリリオン塾生アプリ</title>
+  <script src="cache-purge.js?v=20260625-juku-app"></script>
   <style>
-    :root { --accent:#818cf8; --accent2:#a78bfa; }
-    body { background: linear-gradient(135deg, #0f0f1e, #1a1a2e); color: #e4e4e7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; margin: 0; }
+    :root { --accent:#818cf8; --accent2:#a78bfa; --bg:#0f0f1e; }
+    * { -webkit-tap-highlight-color: transparent; }
+    body { background: linear-gradient(135deg, #0f0f1e, #1a1a2e); color: #e4e4e7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; margin: 0; padding-bottom: 72px; }
     a { color: #c4b5fd; }
-    .nav { display:flex; align-items:center; justify-content:space-between; padding:1rem 1.5rem; background:rgba(0,0,0,0.4); border-bottom:1px solid rgba(255,255,255,0.08); position:sticky; top:0; z-index:20; backdrop-filter:blur(6px); }
-    .nav-title { font-size:1.05rem; font-weight:800; background:linear-gradient(135deg,#a78bfa,#818cf8); -webkit-background-clip:text; background-clip:text; color:transparent; }
-    .nav-links a { padding:0.45rem 0.9rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#e4e4e7; text-decoration:none; font-size:0.82rem; font-weight:700; margin-left:0.4rem; }
-    .wrap { max-width: 860px; margin: 1.4rem auto; padding: 0 1rem 4rem; }
-    .hero { text-align:center; margin:1.2rem 0 1.6rem; padding:1.4rem 1rem; background:linear-gradient(135deg,rgba(129,140,248,0.12),rgba(167,139,250,0.06)); border:1px solid rgba(129,140,248,0.30); border-radius:14px; }
-    .hero h1 { font-size:1.7rem; margin:0 0 0.4rem; background:linear-gradient(135deg,#a78bfa,#818cf8); -webkit-background-clip:text; background-clip:text; color:transparent; }
-    .hero p { color:#cbd5e1; margin:0.2rem 0; font-size:0.92rem; line-height:1.6; }
+    .appbar { display:flex; align-items:center; justify-content:space-between; padding:0.9rem 1.1rem; background:rgba(0,0,0,0.5); border-bottom:1px solid rgba(255,255,255,0.08); position:sticky; top:0; z-index:30; backdrop-filter:blur(8px); }
+    .appbar .brand { font-size:1.02rem; font-weight:800; background:linear-gradient(135deg,#a78bfa,#818cf8); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .appbar .back { padding:0.4rem 0.8rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#e4e4e7; text-decoration:none; font-size:0.78rem; font-weight:700; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 1rem 1rem 2rem; }
+    .view-title { font-size:1.25rem; font-weight:800; margin:0.5rem 0 1rem; }
+    .view-title .sub { display:block; font-size:0.8rem; font-weight:500; color:#a1a1aa; margin-top:0.2rem; }
 
     .notice { padding:1.2rem 1.3rem; background:rgba(251,191,36,0.10); border:1px solid rgba(251,191,36,0.35); border-radius:12px; line-height:1.7; }
     .notice h2 { margin:0 0 0.5rem; font-size:1.1rem; color:#fcd34d; }
@@ -25,72 +26,122 @@
     .notice.err h2 { color:#fca5a5; }
     .loading { text-align:center; color:#a1a1aa; padding:2.5rem; }
     .muted { color:#a1a1aa; font-size:0.82rem; }
+    .empty { text-align:center; color:#a1a1aa; padding:2rem 1rem; line-height:1.7; }
 
-    .sec-h { margin:1.8rem 0 0.7rem; font-size:1.1rem; font-weight:800; color:#e4e4e7; border-bottom:1px solid rgba(255,255,255,0.12); padding-bottom:0.4rem; }
-
-    .session { background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.10); border-radius:14px; padding:1.1rem 1.2rem; margin-bottom:1.1rem; }
-    .session-head { display:flex; justify-content:space-between; align-items:flex-start; gap:0.6rem; flex-wrap:wrap; }
-    .session-date { display:inline-block; padding:0.2rem 0.6rem; background:rgba(129,140,248,0.18); border:1px solid rgba(129,140,248,0.4); border-radius:999px; color:#c7d2fe; font-size:0.78rem; font-weight:800; }
-    .session-title { font-size:1.08rem; font-weight:800; margin:0.45rem 0 0.2rem; }
-    .session-meta { color:#a1a1aa; font-size:0.82rem; }
-    .session-notes { margin-top:0.5rem; color:#cbd5e1; font-size:0.86rem; line-height:1.6; white-space:pre-wrap; }
-    .subj-chip { display:inline-block; padding:0.12rem 0.5rem; background:rgba(167,139,250,0.16); border:1px solid rgba(167,139,250,0.35); border-radius:6px; color:#ddd6fe; font-size:0.72rem; font-weight:700; }
-
-    .block { margin-top:0.9rem; }
-    .block-label { font-size:0.8rem; font-weight:800; color:#a5b4fc; margin-bottom:0.4rem; }
+    /* カード共通 */
+    .card { background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.10); border-radius:14px; padding:1rem 1.1rem; margin-bottom:0.9rem; }
+    .chip { display:inline-block; padding:0.14rem 0.55rem; border-radius:999px; font-size:0.74rem; font-weight:800; }
+    .chip-date { background:rgba(129,140,248,0.18); border:1px solid rgba(129,140,248,0.4); color:#c7d2fe; }
+    .chip-subj { background:rgba(167,139,250,0.16); border:1px solid rgba(167,139,250,0.35); color:#ddd6fe; }
+    .chip-open { background:rgba(251,191,36,0.18); border:1px solid rgba(251,191,36,0.4); color:#fde68a; }
+    .chip-done { background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.4); color:#6ee7b7; }
+    .chip-over { background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.4); color:#fca5a5; }
+    .card-title { font-size:1.05rem; font-weight:800; margin:0.45rem 0 0.2rem; }
+    .card-meta { color:#a1a1aa; font-size:0.82rem; }
+    .card-body { margin-top:0.5rem; color:#cbd5e1; font-size:0.88rem; line-height:1.65; white-space:pre-wrap; }
+    .block { margin-top:0.85rem; }
+    .block-label { font-size:0.78rem; font-weight:800; color:#a5b4fc; margin-bottom:0.4rem; }
     .res-row { display:flex; align-items:center; gap:0.6rem; padding:0.55rem 0.7rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.10); border-radius:9px; margin:0.35rem 0; }
-    .res-icon { font-size:1.1rem; flex-shrink:0; }
+    .res-icon { font-size:1.05rem; flex-shrink:0; }
     .res-name { flex:1; font-size:0.9rem; font-weight:600; min-width:0; word-break:break-word; }
     .res-sub { font-size:0.72rem; color:#a1a1aa; }
-    .btn { display:inline-block; padding:0.45rem 0.9rem; border:none; border-radius:8px; font-weight:800; font-size:0.84rem; cursor:pointer; text-decoration:none; }
+
+    .btn { display:inline-block; padding:0.5rem 0.95rem; border:none; border-radius:9px; font-weight:800; font-size:0.85rem; cursor:pointer; text-decoration:none; font-family:inherit; }
     .btn-primary { background:linear-gradient(135deg,#818cf8,#6366f1); color:#fff; }
     .btn-ghost { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#e4e4e7; }
+    .btn-green { background:linear-gradient(135deg,#10b981,#059669); color:#fff; }
     .btn:disabled { opacity:0.5; cursor:default; }
+    .row-actions { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.8rem; }
 
+    /* 出欠 */
     .att { margin-top:0.9rem; padding:0.8rem 0.9rem; background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.28); border-radius:10px; }
     .att-row { display:flex; gap:0.5rem; flex-wrap:wrap; }
-    .att-btn { padding:0.5rem 1rem; border-radius:8px; border:1.5px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.05); color:#e4e4e7; font-weight:800; font-size:0.88rem; cursor:pointer; }
+    .att-btn { padding:0.5rem 1rem; border-radius:8px; border:1.5px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.05); color:#e4e4e7; font-weight:800; font-size:0.88rem; cursor:pointer; font-family:inherit; }
     .att-btn.sel-present { background:rgba(16,185,129,0.25); border-color:#10b981; color:#6ee7b7; }
     .att-btn.sel-absent { background:rgba(239,68,68,0.22); border-color:#ef4444; color:#fca5a5; }
     .att-btn.sel-late { background:rgba(251,191,36,0.20); border-color:#fbbf24; color:#fde68a; }
     .att-reason { margin-top:0.55rem; }
-    .att-reason textarea { width:100%; box-sizing:border-box; min-height:48px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#e4e4e7; padding:0.5rem; font-size:0.85rem; }
+    .att-reason textarea, .compose textarea, .compose input { width:100%; box-sizing:border-box; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#e4e4e7; padding:0.55rem; font-size:0.88rem; font-family:inherit; }
+    .att-reason textarea { min-height:48px; }
     .att-status { margin-top:0.5rem; font-size:0.84rem; font-weight:700; }
     .att-saved { color:#6ee7b7; }
 
-    .video-wrap { position:relative; width:100%; padding-top:56.25%; margin-top:0.5rem; border-radius:10px; overflow:hidden; background:#000; }
+    /* 動画 */
+    .video-wrap { position:relative; width:100%; padding-top:56.25%; margin-top:0.55rem; border-radius:10px; overflow:hidden; background:#000; }
     .video-wrap iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
-    .toast { position:fixed; left:50%; bottom:1.5rem; transform:translateX(-50%); background:rgba(20,20,40,0.97); border:1px solid rgba(129,140,248,0.5); color:#e4e4e7; padding:0.7rem 1.1rem; border-radius:10px; font-size:0.88rem; font-weight:700; z-index:50; box-shadow:0 6px 24px rgba(0,0,0,0.5); opacity:0; transition:opacity .2s; pointer-events:none; }
-    .toast.show { opacity:1; }
-    .toast.err { border-color:rgba(239,68,68,0.6); color:#fca5a5; }
+
+    /* メッセージ */
+    .msg { background:rgba(255,255,255,0.04); border-radius:10px; padding:0.8rem 0.9rem; margin-bottom:0.6rem; }
+    .msg.in { border-left:3px solid #818cf8; }
+    .msg.out { border-left:3px solid #34d399; }
+    .msg.unread { background:rgba(129,140,248,0.10); }
+    .msg-head { display:flex; justify-content:space-between; align-items:center; gap:0.5rem; font-size:0.74rem; color:#a1a1aa; }
+    .msg-from { font-weight:800; color:#c7d2fe; }
+    .msg-from.out { color:#6ee7b7; }
+    .msg-subj { font-weight:700; margin:0.3rem 0 0.2rem; font-size:0.92rem; }
+    .msg-body { font-size:0.88rem; line-height:1.6; color:#e4e4e7; white-space:pre-wrap; }
+    .compose { background:rgba(0,0,0,0.28); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:0.9rem; margin-bottom:1.2rem; }
+    .compose label { display:block; font-size:0.74rem; color:#a1a1aa; margin:0.5rem 0 0.25rem; }
+
+    /* タブバー */
+    .tabbar { position:fixed; left:0; right:0; bottom:0; z-index:40; display:flex; background:rgba(10,10,22,0.96); border-top:1px solid rgba(255,255,255,0.10); backdrop-filter:blur(10px); padding-bottom:env(safe-area-inset-bottom); }
+    .tabbar button { flex:1; background:none; border:0; color:#9ca3af; font-family:inherit; padding:0.5rem 0.2rem 0.55rem; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:0.15rem; position:relative; }
+    .tabbar button .ic { font-size:1.25rem; line-height:1; }
+    .tabbar button .lb { font-size:0.66rem; font-weight:700; }
+    .tabbar button.active { color:#c4b5fd; }
+    .tabbar button.active .ic { transform:translateY(-1px); }
+    .tab-badge { position:absolute; top:0.15rem; right:50%; transform:translateX(1.2rem); min-width:16px; height:16px; padding:0 4px; box-sizing:border-box; background:#ec4899; color:#fff; border-radius:999px; font-size:0.62rem; font-weight:800; line-height:16px; text-align:center; display:none; }
+    .tab-badge.show { display:block; }
+
+    .toast { position:fixed; left:50%; bottom:84px; transform:translateX(-50%); background:rgba(20,20,40,0.97); border:1px solid rgba(129,140,248,0.5); color:#e4e4e7; padding:0.7rem 1.1rem; border-radius:10px; font-size:0.88rem; font-weight:700; z-index:60; box-shadow:0 6px 24px rgba(0,0,0,0.5); opacity:0; transition:opacity .2s; pointer-events:none; }
+    .toast.show { opacity:1; } .toast.err { border-color:rgba(239,68,68,0.6); color:#fca5a5; }
+    [hidden] { display:none !important; }
   </style>
 </head>
 <body>
-  <nav class="nav">
-    <div class="nav-title">🏫 塾生メニュー</div>
-    <div class="nav-links">
-      <a href="mypage.html">マイページ</a>
-    </div>
-  </nav>
+  <header class="appbar">
+    <div class="brand">📚 トリリオン塾生アプリ</div>
+    <a class="back" href="mypage.html">マイページ</a>
+  </header>
 
   <main class="wrap">
-    <section class="hero">
-      <h1>🏫 塾生メニュー</h1>
-      <p>授業の<strong>配布ファイル</strong>・<strong>録画</strong>の確認と、<strong>出欠の連絡</strong>がここからできます。</p>
-      <p class="muted">通塾生専用。授業ごとに資料・録画・出欠がまとまっています。</p>
+    <div id="gate"></div>
+
+    <section id="view-schedule" class="view" hidden>
+      <h1 class="view-title">📅 予定<span class="sub">授業の予定・配布ファイル・出欠の連絡</span></h1>
+      <div id="scheduleBody"><div class="loading">読み込み中…</div></div>
     </section>
 
-    <div id="content"><div class="loading">読み込み中…</div></div>
+    <section id="view-homework" class="view" hidden>
+      <h1 class="view-title">📝 宿題<span class="sub">出された宿題をアプリ内のドリルで解いて提出(自動採点)</span></h1>
+      <div id="homeworkBody"><div class="loading">読み込み中…</div></div>
+    </section>
+
+    <section id="view-videos" class="view" hidden>
+      <h1 class="view-title">🎬 動画アーカイブ<span class="sub">授業の録画をいつでも見返せます</span></h1>
+      <div id="videosBody"><div class="loading">読み込み中…</div></div>
+    </section>
+
+    <section id="view-messages" class="view" hidden>
+      <h1 class="view-title">💬 メッセージ<span class="sub">塾長に質問・連絡できます</span></h1>
+      <div id="messagesBody"><div class="loading">読み込み中…</div></div>
+    </section>
   </main>
+
+  <nav class="tabbar" id="tabbar" hidden>
+    <button data-tab="schedule" class="active"><span class="ic">📅</span><span class="lb">予定</span></button>
+    <button data-tab="homework"><span class="ic">📝</span><span class="lb">宿題</span><span class="tab-badge" id="hwBadge"></span></button>
+    <button data-tab="videos"><span class="ic">🎬</span><span class="lb">動画</span></button>
+    <button data-tab="messages"><span class="ic">💬</span><span class="lb">メッセージ</span><span class="tab-badge" id="msgBadge"></span></button>
+  </nav>
 
   <div id="toast" class="toast"></div>
 
-  <script src="auth-guard.js?v=20260625-class"></script>
+  <script src="auth-guard.js?v=20260625-juku-app"></script>
   <script>
   (function () {
     const BACKEND_URL = (window.location.hostname === 'localhost' && window.location.port === '8090')
-      ? 'http://localhost:8000'
-      : window.location.origin;
+      ? 'http://localhost:8000' : window.location.origin;
 
     function token() {
       return (window.AuthGuard && window.AuthGuard.getToken && window.AuthGuard.getToken())
@@ -98,28 +149,19 @@
     }
     function esc(s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, m => (
-        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]
-      ));
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
     }
-    // href に入れる URL は http(s) のみ許可 (javascript:/data: スキーム注入を多層防御)
     function safeHref(u) {
       try { var p = new URL(u, location.href); return (p.protocol === 'http:' || p.protocol === 'https:') ? u : '#'; }
       catch (e) { return '#'; }
     }
-    function fmtKB(bytes) {
-      if (!bytes) return '';
-      const kb = bytes / 1024;
-      return kb >= 1024 ? (kb / 1024).toFixed(1) + ' MB' : Math.max(1, Math.round(kb)) + ' KB';
-    }
-    function fmtDur(sec) {
-      if (!sec) return '';
-      const m = Math.floor(sec / 60), s = sec % 60;
-      return m + '分' + (s ? (' ' + s + '秒') : '');
-    }
+    function fmtKB(b) { if (!b) return ''; var kb = b / 1024; return kb >= 1024 ? (kb / 1024).toFixed(1) + ' MB' : Math.max(1, Math.round(kb)) + ' KB'; }
+    function fmtDur(sec) { if (!sec) return ''; var m = Math.floor(sec / 60), s = sec % 60; return m + '分' + (s ? (' ' + s + '秒') : ''); }
+    function fmtDate(s) { if (!s) return ''; return String(s).slice(0, 16).replace('T', ' '); }
     function ytId(url) {
       if (!url) return null;
       try {
-        const u = new URL(url);
+        var u = new URL(url);
         if (u.hostname.indexOf('youtu.be') >= 0) return (u.pathname.slice(1).split('/')[0]) || null;
         if (u.hostname.indexOf('youtube.com') >= 0) {
           if (u.pathname.indexOf('/embed/') === 0) return u.pathname.split('/')[2] || null;
@@ -129,217 +171,341 @@
       } catch (e) {}
       return null;
     }
-    let _toastTimer = null;
+    var _toastTimer = null;
     function toast(msg, isErr) {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.className = 'toast show' + (isErr ? ' err' : '');
-      clearTimeout(_toastTimer);
-      _toastTimer = setTimeout(() => { t.className = 'toast'; }, 2600);
+      var t = document.getElementById('toast');
+      t.textContent = msg; t.className = 'toast show' + (isErr ? ' err' : '');
+      clearTimeout(_toastTimer); _toastTimer = setTimeout(function () { t.className = 'toast'; }, 2600);
     }
-
     async function api(path, opts) {
       opts = opts || {};
-      const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
-      const tk = token();
-      if (tk) headers['Authorization'] = 'Bearer ' + tk;
-      const res = await fetch(BACKEND_URL + path, Object.assign({}, opts, { headers }));
+      var headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+      var tk = token(); if (tk) headers['Authorization'] = 'Bearer ' + tk;
+      var res = await fetch(BACKEND_URL + path, Object.assign({}, opts, { headers }));
       if (!res.ok) {
-        let detail = '';
-        try { const j = await res.json(); detail = (j && j.detail) || ''; } catch (e) {}
-        const err = new Error(typeof detail === 'string' && detail ? detail : ('HTTP ' + res.status));
-        err.status = res.status;
-        throw err;
+        var detail = '';
+        try { var j = await res.json(); detail = (j && j.detail) || ''; } catch (e) {}
+        var err = new Error(typeof detail === 'string' && detail ? detail : ('HTTP ' + res.status));
+        err.status = res.status; throw err;
       }
       return res.json();
     }
 
-    const content = document.getElementById('content');
+    // ---------- state ----------
+    var feedData = null, hwLoaded = false, msgLoaded = false;
+    var TABS = ['schedule', 'homework', 'videos', 'messages'];
 
-    function recordingHtml(r) {
-      const id = r.provider === 'youtube' ? ytId(r.video_url) : null;
-      const dur = r.duration_sec ? ('<span class="res-sub"> ・ ' + esc(fmtDur(r.duration_sec)) + '</span>') : '';
-      if (id) {
-        return '<div class="res-row" style="flex-direction:column;align-items:stretch;">'
-          + '<div style="display:flex;align-items:center;gap:0.6rem;">'
-          + '<span class="res-icon">🎬</span><span class="res-name">' + esc(r.title) + dur + '</span>'
-          + '<button class="btn btn-ghost rec-toggle" data-yt="' + esc(id) + '">▶ 再生</button></div>'
-          + '<div class="rec-player" style="display:none;"></div></div>';
-      }
-      // YouTube 以外 / ID 抽出失敗 → 外部リンク
-      return '<div class="res-row"><span class="res-icon">🎬</span>'
-        + '<span class="res-name">' + esc(r.title) + dur + '</span>'
-        + '<a class="btn btn-ghost" href="' + esc(safeHref(r.video_url)) + '" target="_blank" rel="noopener">↗ 開く</a></div>';
+    function showTab(name) {
+      TABS.forEach(function (t) {
+        var v = document.getElementById('view-' + t);
+        if (v) v.hidden = (t !== name);
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('#tabbar button'), function (b) {
+        b.classList.toggle('active', b.getAttribute('data-tab') === name);
+      });
+      try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, 0); }
+      if (name === 'homework' && !hwLoaded) loadHomework();
+      if (name === 'messages' && !msgLoaded) loadMessages();
     }
 
-    function fileHtml(f) {
-      const sub = f.file_size ? ('<span class="res-sub"> ・ ' + esc(fmtKB(f.file_size)) + '</span>') : '';
+    // ===================== 予定 (schedule) =====================
+    var scheduleBody = document.getElementById('scheduleBody');
+    function sessionHtml(s) {
+      var date = s.session_date ? esc(s.session_date) : '日付未定';
+      var time = [s.start_time, s.end_time].filter(Boolean).join('〜');
+      var meta = [];
+      if (time) meta.push('🕐 ' + esc(time));
+      if (s.location) meta.push('📍 ' + esc(s.location));
+      var subj = s.subject ? ' <span class="chip chip-subj">' + esc(s.subject) + '</span>' : '';
+      var h = '<div class="card"><div><span class="chip chip-date">' + date + '</span></div>'
+        + '<div class="card-title">' + esc(s.title) + subj + '</div>';
+      if (meta.length) h += '<div class="card-meta">' + meta.join(' ・ ') + '</div>';
+      if (s.notes) h += '<div class="card-body">' + esc(s.notes) + '</div>';
+      if (s.files && s.files.length) {
+        h += '<div class="block"><div class="block-label">📄 配布ファイル</div>'
+          + s.files.map(fileRow).join('') + '</div>';
+      }
+      if (s.recordings && s.recordings.length) {
+        h += '<div class="block"><div class="block-label">🎬 録画</div>'
+          + '<div class="muted">「動画」タブでまとめて視聴できます（このコマ: ' + s.recordings.length + '本）</div></div>';
+      }
+      h += attendanceHtml(s);
+      h += '</div>';
+      return h;
+    }
+    function fileRow(f) {
+      var sub = f.file_size ? ('<span class="res-sub"> ・ ' + esc(fmtKB(f.file_size)) + '</span>') : '';
       return '<div class="res-row"><span class="res-icon">📄</span>'
         + '<span class="res-name">' + esc(f.title) + sub + '</span>'
         + '<button class="btn btn-primary file-dl" data-id="' + f.id + '" data-fn="' + esc(f.filename || f.title) + '">⬇ 取得</button></div>';
     }
-
     function attendanceHtml(s) {
-      const cur = s.my_attendance && s.my_attendance.status;
-      const mk = (st, label) => '<button class="att-btn att-set' + (cur === st ? ' sel-' + st : '')
-        + '" data-sess="' + s.id + '" data-st="' + st + '">' + label + '</button>';
-      const reasonVal = (s.my_attendance && s.my_attendance.reason) ? esc(s.my_attendance.reason) : '';
-      const statusLine = cur
+      var cur = s.my_attendance && s.my_attendance.status;
+      var mk = function (st, label) {
+        return '<button class="att-btn att-set' + (cur === st ? ' sel-' + st : '')
+          + '" data-sess="' + s.id + '" data-st="' + st + '">' + label + '</button>';
+      };
+      var reasonVal = (s.my_attendance && s.my_attendance.reason) ? esc(s.my_attendance.reason) : '';
+      var statusLine = cur
         ? '<div class="att-status att-saved">✓ 申告済み: ' + esc({ present: '出席', absent: '欠席', late: '遅刻' }[cur] || cur) + '（変更も可能）</div>'
         : '<div class="att-status muted">まだ申告していません</div>';
-      return '<div class="att" data-sess-wrap="' + s.id + '">'
-        + '<div class="block-label">📋 出欠の連絡</div>'
+      return '<div class="att" data-sess-wrap="' + s.id + '"><div class="block-label">🙋 出欠の連絡</div>'
         + '<div class="att-row">' + mk('present', '出席') + mk('absent', '欠席') + mk('late', '遅刻') + '</div>'
-        + '<div class="att-reason"><textarea data-reason="' + s.id + '" placeholder="（任意）欠席・遅刻の理由や連絡事項">' + reasonVal + '</textarea></div>'
+        + '<div class="att-reason"><textarea data-reason="' + s.id + '" placeholder="（任意）欠席・遅刻の理由や連絡">' + reasonVal + '</textarea></div>'
         + statusLine + '</div>';
     }
-
-    function sessionHtml(s) {
-      const dateLabel = s.session_date ? esc(s.session_date) : '日付未定';
-      const time = [s.start_time, s.end_time].filter(Boolean).join('〜');
-      const metaBits = [];
-      if (time) metaBits.push('🕐 ' + esc(time));
-      if (s.location) metaBits.push('📍 ' + esc(s.location));
-      const subj = s.subject ? ' <span class="subj-chip">' + esc(s.subject) + '</span>' : '';
-      let html = '<div class="session">'
-        + '<div class="session-head"><span class="session-date">' + dateLabel + '</span></div>'
-        + '<div class="session-title">' + esc(s.title) + subj + '</div>';
-      if (metaBits.length) html += '<div class="session-meta">' + metaBits.join(' ・ ') + '</div>';
-      if (s.notes) html += '<div class="session-notes">' + esc(s.notes) + '</div>';
-      if (s.files && s.files.length) {
-        html += '<div class="block"><div class="block-label">📄 配布ファイル</div>' + s.files.map(fileHtml).join('') + '</div>';
+    function renderSchedule() {
+      var sessions = (feedData && feedData.sessions) || [];
+      var lf = (feedData && feedData.loose_files) || [];
+      var parts = [];
+      if (sessions.length) parts.push(sessions.map(sessionHtml).join(''));
+      if (lf.length) {
+        parts.push('<div class="block-label" style="margin-top:1rem;">🗂️ その他の配布ファイル</div>'
+          + '<div class="card">' + lf.map(fileRow).join('') + '</div>');
       }
-      if (s.recordings && s.recordings.length) {
-        html += '<div class="block"><div class="block-label">🎬 授業の録画</div>' + s.recordings.map(recordingHtml).join('') + '</div>';
-      }
-      html += attendanceHtml(s);
-      html += '</div>';
-      return html;
+      if (!parts.length) parts.push('<div class="empty">📭 まだ授業の予定がありません。<br>登録されるとここに表示されます。</div>');
+      scheduleBody.innerHTML = parts.join('');
+      wireSchedule();
     }
-
-    function render(data) {
-      const parts = [];
-      const sessions = data.sessions || [];
-      if (sessions.length) {
-        parts.push('<div class="sec-h">📅 授業</div>');
-        parts.push(sessions.map(sessionHtml).join(''));
-      }
-      const lf = data.loose_files || [], lr = data.loose_recordings || [];
-      if (lf.length || lr.length) {
-        parts.push('<div class="sec-h">🗂️ その他の資料</div>');
-        let block = '<div class="session">';
-        if (lf.length) block += '<div class="block"><div class="block-label">📄 配布ファイル</div>' + lf.map(fileHtml).join('') + '</div>';
-        if (lr.length) block += '<div class="block"><div class="block-label">🎬 録画</div>' + lr.map(recordingHtml).join('') + '</div>';
-        block += '</div>';
-        parts.push(block);
-      }
-      if (!parts.length) {
-        parts.push('<div class="notice"><h2>📭 まだ授業がありません</h2>授業のファイルや録画が登録されると、ここに表示されます。</div>');
-      }
-      content.innerHTML = parts.join('');
-      wireEvents();
-    }
-
-    function wireEvents() {
-      // 録画の再生トグル
-      content.querySelectorAll('.rec-toggle').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const player = btn.closest('.res-row').querySelector('.rec-player');
-          if (!player) return;
-          if (player.style.display === 'none') {
-            const id = btn.getAttribute('data-yt');
-            player.innerHTML = '<div class="video-wrap"><iframe src="https://www.youtube.com/embed/'
-              + encodeURIComponent(id) + '?rel=0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>';
-            player.style.display = 'block';
-            btn.textContent = '■ 閉じる';
-          } else {
-            player.innerHTML = '';
-            player.style.display = 'none';
-            btn.textContent = '▶ 再生';
-          }
-        });
+    function wireSchedule() {
+      scheduleBody.querySelectorAll('.file-dl').forEach(function (btn) {
+        btn.addEventListener('click', function () { downloadFile(btn); });
       });
-      // ファイルダウンロード (認証ヘッダ必須 → fetch + blob)
-      content.querySelectorAll('.file-dl').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const id = btn.getAttribute('data-id');
-          const fn = btn.getAttribute('data-fn') || 'lesson_file';
-          const orig = btn.textContent;
-          btn.disabled = true; btn.textContent = '取得中…';
-          try {
-            const res = await fetch(BACKEND_URL + '/api/student/class/files/' + id + '/download', {
-              headers: { 'Authorization': 'Bearer ' + token() }
-            });
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = fn;
-            document.body.appendChild(a); a.click(); a.remove();
-            setTimeout(() => URL.revokeObjectURL(url), 4000);
-          } catch (e) {
-            toast('ダウンロードに失敗しました', true);
-          } finally {
-            btn.disabled = false; btn.textContent = orig;
-          }
-        });
-      });
-      // 出欠の申告
-      content.querySelectorAll('.att-set').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const sess = btn.getAttribute('data-sess');
-          const st = btn.getAttribute('data-st');
-          const wrap = content.querySelector('[data-sess-wrap="' + sess + '"]');
-          const reasonEl = content.querySelector('[data-reason="' + sess + '"]');
-          const reason = reasonEl ? reasonEl.value : '';
-          const allBtns = wrap.querySelectorAll('.att-set');
-          allBtns.forEach(b => { b.disabled = true; });
-          try {
-            const r = await api('/api/student/class/attendance', {
-              method: 'POST',
-              body: JSON.stringify({ session_id: Number(sess), status: st, reason: reason })
-            });
-            // 選択状態を更新
-            allBtns.forEach(b => {
-              b.className = 'att-btn att-set' + (b.getAttribute('data-st') === st ? ' sel-' + st : '');
-            });
-            const statusEl = wrap.querySelector('.att-status');
-            if (statusEl) {
-              statusEl.className = 'att-status att-saved';
-              statusEl.textContent = '✓ 申告済み: ' + (r.label || st) + '（変更も可能）';
-            }
-            toast('出欠を記録しました（' + (r.label || st) + '）');
-          } catch (e) {
-            toast(e.message || '記録に失敗しました', true);
-          } finally {
-            allBtns.forEach(b => { b.disabled = false; });
-          }
-        });
+      scheduleBody.querySelectorAll('.att-set').forEach(function (btn) {
+        btn.addEventListener('click', function () { reportAttendance(btn); });
       });
     }
-
-    async function load() {
+    async function downloadFile(btn) {
+      var id = btn.getAttribute('data-id'), fn = btn.getAttribute('data-fn') || 'lesson_file';
+      var orig = btn.textContent; btn.disabled = true; btn.textContent = '取得中…';
       try {
-        const data = await api('/api/student/class/feed');
-        render(data);
+        var res = await fetch(BACKEND_URL + '/api/student/class/files/' + id + '/download', { headers: { 'Authorization': 'Bearer ' + token() } });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        var blob = await res.blob(); var url = URL.createObjectURL(blob);
+        var a = document.createElement('a'); a.href = url; a.download = fn; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      } catch (e) { toast('ダウンロードに失敗しました', true); }
+      finally { btn.disabled = false; btn.textContent = orig; }
+    }
+    async function reportAttendance(btn) {
+      var sess = btn.getAttribute('data-sess'), st = btn.getAttribute('data-st');
+      var wrap = scheduleBody.querySelector('[data-sess-wrap="' + sess + '"]');
+      var reasonEl = scheduleBody.querySelector('[data-reason="' + sess + '"]');
+      var reason = reasonEl ? reasonEl.value : '';
+      var allBtns = wrap.querySelectorAll('.att-set');
+      allBtns.forEach(function (b) { b.disabled = true; });
+      try {
+        var r = await api('/api/student/class/attendance', { method: 'POST', body: JSON.stringify({ session_id: Number(sess), status: st, reason: reason }) });
+        allBtns.forEach(function (b) { b.className = 'att-btn att-set' + (b.getAttribute('data-st') === st ? ' sel-' + st : ''); });
+        var se = wrap.querySelector('.att-status');
+        if (se) { se.className = 'att-status att-saved'; se.textContent = '✓ 申告済み: ' + (r.label || st) + '（変更も可能）'; }
+        toast('出欠を記録しました（' + (r.label || st) + '）');
+      } catch (e) { toast(e.message || '記録に失敗しました', true); }
+      finally { allBtns.forEach(function (b) { b.disabled = false; }); }
+    }
+
+    // ===================== 動画 (videos) =====================
+    function renderVideos() {
+      var body = document.getElementById('videosBody');
+      var recs = [];
+      ((feedData && feedData.sessions) || []).forEach(function (s) {
+        (s.recordings || []).forEach(function (r) { recs.push({ rec: r, sess: s.title, date: s.session_date }); });
+      });
+      ((feedData && feedData.loose_recordings) || []).forEach(function (r) { recs.push({ rec: r, sess: null, date: null }); });
+      if (!recs.length) { body.innerHTML = '<div class="empty">🎬 まだ録画はありません。<br>授業の録画が登録されるとここに並びます。</div>'; return; }
+      body.innerHTML = recs.map(function (x, i) {
+        var r = x.rec;
+        var id = r.provider === 'youtube' ? ytId(r.video_url) : null;
+        var dur = r.duration_sec ? (' ・ ' + esc(fmtDur(r.duration_sec))) : '';
+        var ctx = x.sess ? ('<div class="card-meta">' + (x.date ? (esc(x.date) + ' ・ ') : '') + esc(x.sess) + '</div>') : '';
+        var player;
+        if (id) {
+          player = '<button class="btn btn-ghost rec-toggle" data-yt="' + esc(id) + '" data-i="' + i + '">▶ 再生</button>'
+            + '<div class="rec-player" data-pi="' + i + '" hidden></div>';
+        } else {
+          player = '<a class="btn btn-ghost" href="' + esc(safeHref(r.video_url)) + '" target="_blank" rel="noopener">↗ 開く</a>';
+        }
+        return '<div class="card"><div class="card-title" style="font-size:0.98rem;">🎬 ' + esc(r.title) + '<span class="res-sub">' + dur + '</span></div>'
+          + ctx + '<div class="row-actions">' + player + '</div></div>';
+      }).join('');
+      body.querySelectorAll('.rec-toggle').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var pl = body.querySelector('.rec-player[data-pi="' + btn.getAttribute('data-i') + '"]');
+          if (!pl) return;
+          if (pl.hidden) {
+            pl.innerHTML = '<div class="video-wrap"><iframe src="https://www.youtube.com/embed/' + encodeURIComponent(btn.getAttribute('data-yt'))
+              + '?rel=0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>';
+            pl.hidden = false; btn.textContent = '■ 閉じる';
+          } else { pl.innerHTML = ''; pl.hidden = true; btn.textContent = '▶ 再生'; }
+        });
+      });
+    }
+
+    // ===================== 宿題 (homework) =====================
+    async function loadHomework() {
+      var body = document.getElementById('homeworkBody');
+      body.innerHTML = '<div class="loading">読み込み中…</div>';
+      try {
+        var d = await api('/api/student/homework');
+        hwLoaded = true;
+        renderHomework(d);
+        updateBadge('hwBadge', (d.summary && d.summary.open) || 0);
+      } catch (e) {
+        if (e.status === 403) { body.innerHTML = '<div class="empty">この機能は通塾生のみ利用できます。</div>'; }
+        else { body.innerHTML = '<div class="notice err"><h2>読み込みに失敗しました</h2>' + esc(e.message || '') + '</div>'; }
+      }
+    }
+    function renderHomework(d) {
+      var body = document.getElementById('homeworkBody');
+      var items = (d && d.items) || [];
+      if (!items.length) { body.innerHTML = '<div class="empty">📝 今は出ている宿題はありません。</div>'; return; }
+      var today = new Date().toISOString().slice(0, 10);
+      body.innerHTML = items.map(function (it) {
+        var done = it.status === 'completed';
+        var overdue = !done && it.due_date && it.due_date < today;
+        var statusChip = done ? '<span class="chip chip-done">完了</span>'
+          : (overdue ? '<span class="chip chip-over">期限切れ</span>' : '<span class="chip chip-open">未提出</span>');
+        var subj = it.subject ? ' <span class="chip chip-subj">' + esc(it.subject) + '</span>' : '';
+        var due = it.due_date ? ('<div class="card-meta">📅 期限: ' + esc(it.due_date) + '</div>') : '';
+        var drillUrl = 'dojo-drill.html' + (it.subject ? ('?w_subject=' + encodeURIComponent(it.subject)) : '');
+        var actions = '<div class="row-actions">';
+        if (!done) {
+          actions += '<a class="btn btn-primary" href="' + esc(drillUrl) + '">📝 ドリルで解く</a>'
+            + '<button class="btn btn-green hw-done" data-id="' + it.id + '">✓ 提出（完了）にする</button>';
+        } else {
+          actions += '<a class="btn btn-ghost" href="' + esc(drillUrl) + '">🔁 もう一度解く</a>';
+        }
+        actions += '</div>';
+        return '<div class="card">' + statusChip + subj + '<div class="card-title">' + esc(it.title || '宿題') + '</div>'
+          + due + (it.description ? ('<div class="card-body">' + esc(it.description) + '</div>') : '')
+          + (done && it.completed_at ? ('<div class="muted" style="margin-top:0.4rem;">提出: ' + esc(fmtDate(it.completed_at)) + '</div>') : '')
+          + actions + '</div>';
+      }).join('');
+      body.querySelectorAll('.hw-done').forEach(function (btn) {
+        btn.addEventListener('click', function () { completeHomework(btn); });
+      });
+    }
+    async function completeHomework(btn) {
+      var id = btn.getAttribute('data-id');
+      btn.disabled = true; var orig = btn.textContent; btn.textContent = '送信中…';
+      try {
+        await api('/api/student/homework/' + id + '/complete', { method: 'POST', body: JSON.stringify({ student_note: '' }) });
+        toast('提出しました！おつかれさま 🎉');
+        hwLoaded = false; await loadHomework();
+      } catch (e) { toast(e.message || '失敗しました', true); btn.disabled = false; btn.textContent = orig; }
+    }
+
+    // ===================== メッセージ (messages) =====================
+    async function loadMessages() {
+      var body = document.getElementById('messagesBody');
+      if (!msgLoaded) body.innerHTML = '<div class="loading">読み込み中…</div>';
+      try {
+        var d = await api('/api/messages/me?limit=50');
+        msgLoaded = true;
+        renderMessages(d);
+        updateBadge('msgBadge', d.unread_count || 0);
+      } catch (e) {
+        body.innerHTML = '<div class="notice err"><h2>読み込みに失敗しました</h2>' + esc(e.message || '') + '</div>';
+      }
+    }
+    function renderMessages(d) {
+      var body = document.getElementById('messagesBody');
+      var msgs = (d && d.messages) || [];
+      var compose = '<div class="compose">'
+        + '<div class="block-label">✍️ 塾長にメッセージを送る</div>'
+        + '<label>件名（任意）</label><input id="msgSubject" type="text" placeholder="例: 数学の宿題について">'
+        + '<label>本文</label><textarea id="msgBody" style="min-height:70px;" placeholder="質問や連絡を書いてください"></textarea>'
+        + '<div class="row-actions"><button class="btn btn-primary" id="msgSendBtn">送信</button></div></div>';
+      var list = msgs.length ? msgs.map(function (m) {
+        var out = m.direction === 'out';
+        var who = out ? '自分 → 塾長' : '塾長';
+        var att = m.attachment ? ('<div style="margin-top:0.5rem;"><button class="btn btn-ghost msg-att" data-id="' + m.id + '" data-fn="' + esc(m.attachment.filename || 'file') + '">📎 ' + esc(m.attachment.filename || '添付') + '</button></div>') : '';
+        return '<div class="msg ' + (out ? 'out' : 'in') + (m.is_unread ? ' unread' : '') + '" data-id="' + m.id + '" data-unread="' + (m.is_unread ? 1 : 0) + '">'
+          + '<div class="msg-head"><span class="msg-from ' + (out ? 'out' : '') + '">' + esc(who) + '</span><span>' + esc(fmtDate(m.created_at)) + '</span></div>'
+          + (m.subject ? ('<div class="msg-subj">' + esc(m.subject) + '</div>') : '')
+          + '<div class="msg-body">' + esc(m.body || '') + '</div>' + att + '</div>';
+      }).join('') : '<div class="empty">まだメッセージはありません。上から送ってみましょう。</div>';
+      body.innerHTML = compose + '<div class="block-label" style="margin-top:0.3rem;">📨 やりとり</div>' + list;
+
+      document.getElementById('msgSendBtn').addEventListener('click', sendMessage);
+      body.querySelectorAll('.msg-att').forEach(function (b) {
+        b.addEventListener('click', function () { downloadMsgAttachment(b); });
+      });
+      // 受信した未読を既読化（best-effort）
+      body.querySelectorAll('.msg[data-unread="1"]').forEach(function (el) {
+        var id = el.getAttribute('data-id');
+        api('/api/messages/me/' + id + '/read', { method: 'POST' }).then(function () {
+          el.classList.remove('unread'); el.setAttribute('data-unread', '0');
+        }).catch(function () {});
+      });
+      if (msgs.some(function (m) { return m.is_unread; })) updateBadge('msgBadge', 0);
+    }
+    async function sendMessage() {
+      var btn = document.getElementById('msgSendBtn');
+      var subject = (document.getElementById('msgSubject').value || '').trim();
+      var bodyTxt = (document.getElementById('msgBody').value || '').trim();
+      if (!bodyTxt) { toast('本文を入力してください', true); return; }
+      btn.disabled = true; var orig = btn.textContent; btn.textContent = '送信中…';
+      try {
+        await api('/api/student/messages/send', { method: 'POST', body: JSON.stringify({ subject: subject, body: bodyTxt }) });
+        document.getElementById('msgSubject').value = ''; document.getElementById('msgBody').value = '';
+        toast('送信しました');
+        msgLoaded = false; await loadMessages();
+      } catch (e) { toast(e.message || '送信に失敗しました', true); }
+      finally { btn.disabled = false; btn.textContent = orig; }
+    }
+    async function downloadMsgAttachment(btn) {
+      var id = btn.getAttribute('data-id'), fn = btn.getAttribute('data-fn') || 'file';
+      try {
+        var res = await fetch(BACKEND_URL + '/api/messages/me/' + id + '/attachment', { headers: { 'Authorization': 'Bearer ' + token() } });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        var blob = await res.blob(); var url = URL.createObjectURL(blob);
+        var a = document.createElement('a'); a.href = url; a.download = fn; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      } catch (e) { toast('添付の取得に失敗しました', true); }
+    }
+
+    function updateBadge(id, n) {
+      var b = document.getElementById(id);
+      if (!b) return;
+      if (n > 0) { b.textContent = n > 99 ? '99+' : n; b.classList.add('show'); }
+      else { b.textContent = ''; b.classList.remove('show'); }
+    }
+
+    // ---------- boot ----------
+    function showAppChrome() {
+      document.getElementById('tabbar').hidden = false;
+    }
+    async function boot() {
+      var gate = document.getElementById('gate');
+      try {
+        feedData = await api('/api/student/class/feed');
       } catch (e) {
         if (e.status === 403) {
-          content.innerHTML = '<div class="notice"><h2>🏫 通塾生専用メニューです</h2>'
-            + 'このページは通塾生（本クラス・通塾生プラン）向けの機能です。<br>'
-            + 'ご不明な点は塾長までお問い合わせください。'
+          gate.innerHTML = '<div class="notice"><h2>📚 通塾生専用アプリです</h2>'
+            + 'このアプリは通塾生向けです。ご不明な点は塾長までお問い合わせください。'
             + '<div style="margin-top:0.9rem;"><a class="btn btn-ghost" href="mypage.html">← マイページに戻る</a></div></div>';
-        } else if (e.status === 401) {
-          // auth-guard が通常リダイレクトするが念のため
-          content.innerHTML = '<div class="notice"><h2>ログインが必要です</h2>'
-            + '<a class="btn btn-primary" href="login.html">ログイン</a></div>';
-        } else {
-          content.innerHTML = '<div class="notice err"><h2>⚠️ 読み込みに失敗しました</h2>'
-            + esc(e.message || '') + '<div style="margin-top:0.7rem;"><button class="btn btn-ghost" onclick="location.reload()">再読み込み</button></div></div>';
+          return;
         }
+        if (e.status === 401) { gate.innerHTML = '<div class="notice"><h2>ログインが必要です</h2><a class="btn btn-primary" href="login.html">ログイン</a></div>'; return; }
+        gate.innerHTML = '<div class="notice err"><h2>⚠️ 読み込みに失敗しました</h2>' + esc(e.message || '')
+          + '<div style="margin-top:0.7rem;"><button class="btn btn-ghost" onclick="location.reload()">再読み込み</button></div></div>';
+        return;
       }
+      // 認可OK → アプリ表示
+      showAppChrome();
+      renderSchedule();
+      renderVideos();
+      showTab('schedule');
+      // バッジ（宿題未提出・メッセージ未読）を先読み
+      api('/api/student/homework').then(function (d) { updateBadge('hwBadge', (d.summary && d.summary.open) || 0); }).catch(function () {});
+      api('/api/messages/me/unread-count').then(function (d) { updateBadge('msgBadge', d.unread_count || 0); }).catch(function () {});
+      // タブ
+      Array.prototype.forEach.call(document.querySelectorAll('#tabbar button'), function (b) {
+        b.addEventListener('click', function () { showTab(b.getAttribute('data-tab')); });
+      });
     }
-
-    load();
+    boot();
   })();
   </script>
 </body>

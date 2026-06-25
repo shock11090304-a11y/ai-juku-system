@@ -39903,9 +39903,9 @@ def student_send_message(payload: StudentMessageSendRequest, request: Request, a
     student = _get_current_student(authorization)
     if not student:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    # 本クラス所属生徒のみ (course='kokuritsu_nankan')
-    if (student.get("course") or "") != _STUDY_LOG_TARGET_COURSE:
-        raise HTTPException(status_code=403, detail="塾長へのメッセージ送信は国公立難関大学コース 本クラス受講生のみ利用可能です")
+    # 通塾生のみ (本クラス course='kokuritsu_nankan' または 通塾生プラン plan='student_addon')。
+    # 通塾生アプリ(トリリオン塾生アプリ)のメッセージ機能から student_addon の通塾生も送れるよう緩和。
+    _require_tsujuku_student(student)
 
     body = _sanitize_text(payload.body, 5000)
     if not body:
