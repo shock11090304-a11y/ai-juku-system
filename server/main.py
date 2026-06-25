@@ -21762,6 +21762,39 @@ def admin_exam_questions_generate(payload: dict, authorization: Optional[str] = 
         return _run_exam_questions_generation(quota=count or EXAM_QUESTIONS_DAILY_QUOTA)
 
 
+@app.get("/api/admin/wolfram/selftest")
+def admin_wolfram_selftest(authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
+    """🧮 Wolfram 検算パイプラインの軽量自己診断 (問題生成なし・高速)。
+    既知問題 (x^2-5x+6=0 → x=2,3) で「LLM抽出 → Wolfram計算 → LLM判定」を実走し、
+    WOLFRAM_APP_ID の設定有無と検算結果を返す。CEO の「検算テスト」ボタンが呼ぶ。"""
+    authed = False
+    if authorization and authorization.startswith("Bearer "):
+        if _verify_admin_token(authorization[len("Bearer "):].strip()):
+            authed = True
+    if not authed and CRON_SECRET and x_cron_secret and hmac.compare_digest(x_cron_secret, CRON_SECRET):
+        authed = True
+    if not authed:
+        raise HTTPException(status_code=401, detail="未認証")
+
+    configured = bool(WOLFRAM_APP_ID)
+    out = {
+        "configured": configured,
+        "block_mode": WOLFRAM_VERIFY_BLOCK,
+        "anthropic_configured": bool(ANTHROPIC_API_KEY),
+    }
+    if not configured:
+        out["message"] = "WOLFRAM_APP_ID が未設定です。Railway の Variables に追加してください。"
+        return out
+    # 既知の数学問題でパイプライン全体を検証 (正答 x=2,3 / 故意の誤答も併せて確認)
+    try:
+        correct = _wolfram_verify_one(
+            "Solve the quadratic equation x^2 - 5x + 6 = 0 for x.", "x = 2, x = 3")
+    except Exception as e:
+        correct = {"status": "error", "error": f"{type(e).__name__}: {str(e)[:160]}"}
+    out["selftest_correct"] = correct  # 期待: verified
+    return out
+
+
 # =====================================================================
 # 🤖 Custom GPT Action 連携 endpoint (2026-05-23 塾長指示「A」)
 # 既存 Custom GPT 6 体が ChatGPT 上で ai-juku 問題プールを直接取得できる。
