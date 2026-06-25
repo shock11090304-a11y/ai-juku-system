@@ -16,7 +16,11 @@ LABELS = {
     'FMT4': '第4問 文章校正', 'FMT5': '第5問 複数資料統合', 'FMT6': '第6問 物語＋アウトライン',
     'FMT7': '第7問 論説＋スライド', 'FMT8': '第8問 意見統合＋資料',
     'FMT_GRAPH': '調査・グラフ', 'FMT_GRAPH8': '第8問 意見統合＋グラフ',
+    'NIHONSHI_TANKYU': '日本史探究',
 }
+import re as _re_u
+def _strip_u(s):
+    return _re_u.sub(r'</?u[^>]*>', '', str(s or ''))
 
 SEED = sys.argv[3] if len(sys.argv) > 3 else SEED  # 第3引数で seed パス上書き可
 rows = json.load(open(SEED))['questions']
@@ -43,7 +47,7 @@ for r in rows:
     data.append({
         'fmt': qd.get('format_type'),
         'part': r['part_key'],
-        'passage': qd['passage'],
+        'passage': _strip_u(qd['passage']),
         'figure': qd.get('figure_svg', ''),
         'questions': [{
             'stem': q['stem'], 'choices': q['choices'], 'answer': q['answer'],
