@@ -1639,6 +1639,13 @@ def init_db():
         # qa_attempts >= 5 でその単元を「習得(卒業)」と判定し、弱点 TOP3 / 週次プリントから除外する。
         # これで「弱点を解く → 正答率が基準を超えるまで残り続ける → 超えたら卒業」の閉ループになる。
         ("sw_qa_attempts", "ALTER TABLE student_weakness ADD COLUMN qa_attempts INTEGER"),
+        # 🧠 [FSRS] (2026-06-24) 語彙SRSを固定間隔Leitnerから FSRS-4.5 へ進化。
+        # 各カードの「安定度 stability(日)」「難易度 difficulty(1-10)」と直近の付与間隔を保持。
+        # NULL = 未FSRS化(初回採点でboxから引き継ぎ初期化)。box列は併存させ、VOCAB_FSRS_ENABLED=0 で
+        # 即 Leitner へ無損失ロールバック可能。
+        ("vp_stability", "ALTER TABLE vocab_progress ADD COLUMN stability REAL"),
+        ("vp_difficulty", "ALTER TABLE vocab_progress ADD COLUMN difficulty REAL"),
+        ("vp_last_interval", "ALTER TABLE vocab_progress ADD COLUMN last_interval REAL"),
     ]
     conn.commit()  # executescript の結果を確実にコミット (abort状態をクリア)
     for col_name, sql in _migrations:
@@ -32755,6 +32762,89 @@ def mock_exam_history(request: Request, student_id: int, authorization: Optional
 
 LEITNER_INTERVALS = {1: 1, 2: 3, 3: 7, 4: 21, 5: 60}  # box → days until next review
 
+# =====================================================================
+# 🧠 FSRS-4.5 (Free Spaced Repetition Scheduler) — 2026-06-24 導入
+# 固定間隔の Leitner より少ない復習回数で同じ定着率を達成するアルゴリズム (Anki 採用)。
+# カードごとに stability(S=日) と difficulty(D=1-10) を保持し、復習時の retrievability(R) から
+# 次回間隔を動的に決める。VOCAB_FSRS_ENABLED=0 で Leitner へ即ロールバック (box 列は併存)。
+# 重みは FSRS-4.5 の既定値 (将来 生徒データで最適化する余地あり)。
+# =====================================================================
+VOCAB_FSRS_ENABLED = os.getenv("VOCAB_FSRS_ENABLED", "1") == "1"
+_FSRS_W = [
+    0.4072, 1.1829, 3.1262, 15.4722, 7.2102, 0.5316, 1.0651, 0.0234, 1.616,
+    0.1544, 1.0824, 1.9813, 0.0953, 0.2975, 2.2042, 0.2407, 2.9466, 0.5034, 0.6567,
+]
+_FSRS_DECAY = -0.5
+_FSRS_FACTOR = 19.0 / 81.0          # = 0.9**(1/DECAY) - 1
+_FSRS_TARGET_R = 0.9                # 目標保持率 (next interval は R がこの値まで落ちる日数)
+_FSRS_MAX_INTERVAL = 365           # 間隔上限(日)
+_FSRS_MIN_STABILITY = 0.1
+
+
+def _fsrs_clamp_d(d: float) -> float:
+    return max(1.0, min(10.0, d))
+
+
+def _fsrs_init_difficulty(g: int) -> float:
+    import math
+    return _fsrs_clamp_d(_FSRS_W[4] - math.exp(_FSRS_W[5] * (g - 1)) + 1)
+
+
+def _fsrs_init_stability(g: int) -> float:
+    # g: 1=Again 2=Hard 3=Good 4=Easy
+    return max(_FSRS_MIN_STABILITY, _FSRS_W[g - 1])
+
+
+def _fsrs_retrievability(elapsed_days: float, stability: float) -> float:
+    if stability <= 0:
+        return 0.0
+    return (1 + _FSRS_FACTOR * max(0.0, elapsed_days) / stability) ** _FSRS_DECAY
+
+
+def _fsrs_interval_days(stability: float) -> int:
+    import math
+    iv = (stability / _FSRS_FACTOR) * (_FSRS_TARGET_R ** (1 / _FSRS_DECAY) - 1)
+    return int(max(1, min(_FSRS_MAX_INTERVAL, round(iv))))
+
+
+def _fsrs_next_difficulty(d: float, g: int) -> float:
+    delta = -_FSRS_W[6] * (g - 3)
+    d_lin = d + delta * (10 - d) / 9          # linear damping
+    d_rev = _FSRS_W[7] * _fsrs_init_difficulty(4) + (1 - _FSRS_W[7]) * d_lin  # mean reversion → easy
+    return _fsrs_clamp_d(d_rev)
+
+
+def _fsrs_next_stability(d: float, s: float, r: float, g: int) -> float:
+    import math
+    if g == 1:
+        # 忘却 (lapse): 復習後安定度は直前 S を超えない
+        s_forget = (
+            _FSRS_W[11] * (d ** (-_FSRS_W[12])) * (((s + 1) ** _FSRS_W[13]) - 1)
+            * math.exp(_FSRS_W[14] * (1 - r))
+        )
+        return max(_FSRS_MIN_STABILITY, min(s_forget, s))
+    hard_penalty = _FSRS_W[15] if g == 2 else 1.0
+    easy_bonus = _FSRS_W[16] if g == 4 else 1.0
+    s_recall = s * (
+        1 + math.exp(_FSRS_W[8]) * (11 - d) * (s ** (-_FSRS_W[9]))
+        * (math.exp(_FSRS_W[10] * (1 - r)) - 1) * hard_penalty * easy_bonus
+    )
+    return max(_FSRS_MIN_STABILITY, s_recall)
+
+
+def _fsrs_review(prev_stability, prev_difficulty, elapsed_days: float, g: int) -> dict:
+    """1 回の復習を FSRS で処理。
+    prev_* が None = 初回(または未FSRS化) → 初期化式。返却: {stability, difficulty, interval_days}。"""
+    g = max(1, min(4, int(g)))
+    if prev_stability is None or prev_difficulty is None or prev_stability <= 0:
+        s = _fsrs_init_stability(g)
+        d = _fsrs_init_difficulty(g)
+    else:
+        r = _fsrs_retrievability(elapsed_days, float(prev_stability))
+        d = _fsrs_next_difficulty(float(prev_difficulty), g)
+        s = _fsrs_next_stability(d, float(prev_stability), r, g)
+    return {"stability": s, "difficulty": d, "interval_days": _fsrs_interval_days(s)}
+
 
 @app.post("/api/admin/vocab/import")
 def vocab_import(payload: dict, authorization: Optional[str] = Header(None), x_cron_secret: Optional[str] = Header(None)):
@@ -32888,41 +32978,97 @@ def _vocab_resolve_student_id(client_sid, authorization: Optional[str]):
 
 @app.post("/api/vocab/grade")
 def vocab_grade(payload: dict, authorization: Optional[str] = Header(None)):
-    """単語の自己評価を記録。Leitner box 方式で次回復習日を更新。
-    payload: {"word_id": M, "knew": true/false} — student_id は token から解決 (IDOR fix)。
+    """単語の自己評価を記録し、次回復習日を更新。
+    payload: {"word_id": M, "knew": true/false, "rating": 1..4 (任意)} — student_id は token から解決 (IDOR fix)。
+
+    スケジューラ: VOCAB_FSRS_ENABLED=1 (既定) で FSRS-4.5、0 で従来 Leitner。
+    box 列は常に併存更新するため、env を 0 に戻すだけで Leitner へ無損失ロールバックできる。
+    rating: 1=Again 2=Hard 3=Good 4=Easy。未指定時は knew(true→Good3 / false→Again1) にマップ。
     """
     student_id = _vocab_resolve_student_id(payload.get("student_id"), authorization)
     word_id = payload.get("word_id")
     knew = bool(payload.get("knew"))
+    # rating 明示があれば優先 (1-4)。無ければ knew からマップ。
+    try:
+        rating = int(payload.get("rating")) if payload.get("rating") is not None else (3 if knew else 1)
+    except (TypeError, ValueError):
+        rating = 3 if knew else 1
+    rating = max(1, min(4, rating))
+    knew = rating >= 2  # rating 主導の場合も box 更新の整合のため再定義 (Again のみ不正解扱い)
     if not student_id or not word_id:
         raise HTTPException(status_code=400, detail="student_id / word_id required")
 
     conn = db()
     c = conn.cursor()
-    c.execute("SELECT id, box, review_count, correct_count FROM vocab_progress WHERE student_id=? AND word_id=?", (student_id, word_id))
+    c.execute("SELECT id, box, review_count, correct_count, stability, difficulty, last_reviewed_at "
+              "FROM vocab_progress WHERE student_id=? AND word_id=?", (student_id, word_id))
     row = c.fetchone()
     now = datetime.now(timezone.utc)
+
+    def _g(r, idx, key):
+        return r[key] if hasattr(r, 'keys') else r[idx]
+
+    # FSRS 用: 直近復習からの経過日数
+    def _elapsed_days(last_iso) -> float:
+        if not last_iso:
+            return 0.0
+        try:
+            s = str(last_iso)
+            last_dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
+            if last_dt.tzinfo is None:
+                last_dt = last_dt.replace(tzinfo=timezone.utc)
+            return max(0.0, (now - last_dt).total_seconds() / 86400.0)
+        except Exception:
+            return 0.0
+
     if row:
-        # 既存: box を更新
-        prog_id = row[0] if not hasattr(row, 'keys') else row["id"]
-        cur_box = int(row[1] if not hasattr(row, 'keys') else row["box"])
-        review_count = int(row[2] if not hasattr(row, 'keys') else row["review_count"])
-        correct_count = int(row[3] if not hasattr(row, 'keys') else row["correct_count"])
+        prog_id = _g(row, 0, "id")
+        cur_box = int(_g(row, 1, "box") or 1)
+        review_count = int(_g(row, 2, "review_count") or 0)
+        correct_count = int(_g(row, 3, "correct_count") or 0)
+        prev_stability = _g(row, 4, "stability")
+        prev_difficulty = _g(row, 5, "difficulty")
+        last_reviewed_at = _g(row, 6, "last_reviewed_at")
+        # box は常に更新 (Leitner 併存・ロールバック安全網)
         new_box = min(5, cur_box + 1) if knew else 1
-        days = LEITNER_INTERVALS.get(new_box, 1)
+        if VOCAB_FSRS_ENABLED:
+            fs = _fsrs_review(prev_stability, prev_difficulty, _elapsed_days(last_reviewed_at), rating)
+            days = fs["interval_days"]
+            new_stability, new_difficulty = fs["stability"], fs["difficulty"]
+        else:
+            days = LEITNER_INTERVALS.get(new_box, 1)
+            new_stability, new_difficulty = prev_stability, prev_difficulty
         next_at = (now + timedelta(days=days)).isoformat()
-        c.execute("UPDATE vocab_progress SET box=?, next_review_at=?, last_reviewed_at=?, review_count=?, correct_count=? WHERE id=?",
-                  (new_box, next_at, now.isoformat(), review_count + 1, correct_count + (1 if knew else 0), prog_id))
+        c.execute("UPDATE vocab_progress SET box=?, next_review_at=?, last_reviewed_at=?, review_count=?, "
+                  "correct_count=?, stability=?, difficulty=?, last_interval=? WHERE id=?",
+                  (new_box, next_at, now.isoformat(), review_count + 1, correct_count + (1 if knew else 0),
+                   new_stability, new_difficulty, days, prog_id))
     else:
-        # 新規
+        # 新規カード
         new_box = 2 if knew else 1
-        days = LEITNER_INTERVALS.get(new_box, 1)
+        if VOCAB_FSRS_ENABLED:
+            fs = _fsrs_review(None, None, 0.0, rating)
+            days = fs["interval_days"]
+            new_stability, new_difficulty = fs["stability"], fs["difficulty"]
+        else:
+            days = LEITNER_INTERVALS.get(new_box, 1)
+            new_stability, new_difficulty = None, None
         next_at = (now + timedelta(days=days)).isoformat()
-        c.execute("INSERT INTO vocab_progress (student_id, word_id, box, next_review_at, last_reviewed_at, review_count, correct_count) VALUES (?,?,?,?,?,?,?)",
-                  (student_id, word_id, new_box, next_at, now.isoformat(), 1, 1 if knew else 0))
+        c.execute("INSERT INTO vocab_progress (student_id, word_id, box, next_review_at, last_reviewed_at, "
+                  "review_count, correct_count, stability, difficulty, last_interval) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                  (student_id, word_id, new_box, next_at, now.isoformat(), 1, 1 if knew else 0,
+                   new_stability, new_difficulty, days))
     conn.commit()
     conn.close()
-    return {"ok": True, "new_box": new_box, "next_review_in_days": LEITNER_INTERVALS.get(new_box, 1)}
+    return {
+        "ok": True,
+        "scheduler": "fsrs" if VOCAB_FSRS_ENABLED else "leitner",
+        "new_box": new_box,
+        "rating": rating,
+        "next_review_in_days": days,
+        "stability": round(new_stability, 2) if (VOCAB_FSRS_ENABLED and new_stability is not None) else None,
+        "difficulty": round(new_difficulty, 2) if (VOCAB_FSRS_ENABLED and new_difficulty is not None) else None,
+    }
 
 
 @app.get("/api/vocab/stats")
