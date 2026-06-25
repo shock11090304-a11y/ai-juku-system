@@ -13007,7 +13007,30 @@ explanation フィールドは Markdown で **以下4セクションを必ず明
 
 
 def _save_exam_question(exam_id: str, part_key: str, question_data: dict, eiken_grade: Optional[str] = None):
-    """生成済み問題を DB に保存"""
+    """生成済み問題を DB に保存。
+
+    🧮 Wolfram 検算 (2026-06-24): AI 生成 3 経路 (バッチ自動生成 / 補充 / 手動) すべての保存
+    choke point。rikei・記述式(short_answer)の数学/物理/化学のみ検算し、結果を
+    question_data.wolfram_verification に同梱保存する。
+    ※ seed 取込は別 INSERT 経路 (本関数を通らない) ため検算対象外 = 手作り問題を浪費しない。
+    ※ 手動 endpoint は呼出前に自前で検算+wolfram_verification を付与するため、ここでは再検算せず
+       (idempotent guard)。WOLFRAM_APP_ID 未設定なら no-op (コスト0・既存挙動不変)。
+    """
+    # 検算は DB 接続前に実施 (slow な LLM/Wolfram 呼び出し中に conn を保持しない)
+    if (exam_id == "rikei" and WOLFRAM_APP_ID and isinstance(question_data, dict)
+            and "wolfram_verification" not in question_data):
+        try:
+            verify = _wolfram_verify_question(question_data)
+        except Exception as e:
+            log.warning(f"[ExamQ] wolfram verify error (save): {e}")
+            verify = None
+        if verify:
+            question_data["wolfram_verification"] = verify
+            if WOLFRAM_VERIFY_BLOCK and verify.get("mismatch", 0) > 0:
+                # ブロックモード: 誤答キー疑い (mismatch) は保存しない → pool 汚染を防ぐ
+                log.warning(f"[ExamQ] save blocked by wolfram mismatch: {exam_id}/{part_key} "
+                            f"({verify.get('mismatch')} mismatched)")
+                return
     conn = db()
     c = conn.cursor()
     try:
