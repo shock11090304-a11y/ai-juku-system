@@ -7762,7 +7762,21 @@ https://trillion-ai-juku.com/ai-todai-share-image.html を開いてスクショ 
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ exam_id: 'rikei', part_key: 'math_1a', eiken_grade: 'kyotsu_rikei', count: 1 })
           });
-          const j = await r.json();
+          // 応答を堅牢にパース: 非JSON(502/504 HTML 等)でも落とさず中身を見せる
+          const raw = await r.text();
+          let j = null;
+          try { j = JSON.parse(raw); } catch (_) { j = null; }
+          if (!r.ok || !j) {
+            // サーバ側エラー or 非JSON応答 → 診断情報をそのまま表示
+            box.style.background = 'rgba(239,68,68,0.14)';
+            box.style.border = '1px solid rgba(239,68,68,0.5)';
+            box.style.color = '#fca5a5';
+            const detail = j ? (j.detail || JSON.stringify(j)) : (raw || '(空応答)').slice(0, 400);
+            box.innerHTML = `⚠️ サーバ応答エラー (HTTP ${r.status})<br><span style="font-size:0.78rem;color:#fecaca;">${String(detail).replace(/</g,'&lt;')}</span>`;
+            wolframTestBtn.disabled = false; wolframTestBtn.textContent = '🧮 検算テスト';
+            loadPoolStatus();
+            return;
+          }
           // 通常(助言)は details[0].wolfram。ブロックモードで弾かれた場合は rejected_details[0].wolfram。
           const det = (j.details || [])[0] || {};
           const rej = (j.rejected_details || [])[0] || {};
